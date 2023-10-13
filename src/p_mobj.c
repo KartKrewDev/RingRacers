@@ -7656,7 +7656,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		if (mobj->flags2 & MF2_AMBUSH)
 		{
-			if (P_IsObjectOnGround(mobj))
+			if (mobj->extravalue1 == 0 && P_IsObjectOnGround(mobj))
 			{
 				if (P_CheckDeathPitCollide(mobj))
 				{
@@ -7665,6 +7665,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				}
 
 				mobj->momx = mobj->momy = 0;
+				mobj->flags2 |= MF2_STRONGBOX;
 			}
 
 			teststate = (mobj->state-states);
@@ -7674,6 +7675,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			if (gamedata->thisprisoneggpickup_cached->type == UC_PRISONEGGCD)
 			{
 				teststate = S_PRISONEGGDROP_CD;
+				mobj->renderflags |= RF_SEMIBRIGHT;
 			}
 
 			P_SetMobjState(mobj, teststate);
@@ -7691,7 +7693,43 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		if (teststate == S_PRISONEGGDROP_CD)
 		{
-			mobj->angle += ANGLE_MAX/TICRATE;
+			if (mobj->extravalue1)
+			{
+				++mobj->extravalue1;
+
+				INT32 trans = (mobj->extravalue1 * NUMTRANSMAPS) / (TICRATE);
+				if (trans >= NUMTRANSMAPS)
+				{
+					P_RemoveMobj(mobj);
+					return false;
+				}
+
+				mobj->angle += ANGLE_MAX/(TICRATE/3);
+				mobj->renderflags = (mobj->renderflags & ~RF_TRANSMASK) | (trans << RF_TRANSSHIFT);
+			}
+			else
+			{
+				if (mobj->flags2 & MF2_STRONGBOX)
+					mobj->angle += ANGLE_MAX/TICRATE;
+				else
+					mobj->angle += ANGLE_MAX/(TICRATE/3);
+
+				// Non-RNG-advancing equivalent of Obj_SpawnEmeraldSparks
+				if (leveltime % 3 == 0)
+				{
+					mobj_t *sparkle = P_SpawnMobjFromMobj(
+						mobj,
+						M_RandomRange(-48, 48) * FRACUNIT,
+						M_RandomRange(-48, 48) * FRACUNIT,
+						M_RandomRange(0, 64) * FRACUNIT,
+						MT_SPARK
+					);
+					P_SetMobjState(sparkle, mobjinfo[MT_EMERALDSPARK].spawnstate);
+
+					sparkle->color = M_RandomChance(FRACUNIT/2) ? SKINCOLOR_ULTRAMARINE : SKINCOLOR_MAGENTA;
+					sparkle->momz += 8 * mobj->scale * P_MobjFlip(mobj);
+				}
+			}
 		}
 
 		break;

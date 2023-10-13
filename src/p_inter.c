@@ -826,6 +826,12 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 					return;
 				}
 
+				if (special->extravalue1)
+				{
+					// Don't get during destruction
+					return;
+				}
+
 				if (
 					grandprixinfo.gp == true // Bonus Round
 					&& netgame == false // game design + makes it easier to implement
@@ -833,11 +839,28 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				)
 				{
 					gamedata->thisprisoneggpickupgrabbed = true;
-					gamedata->prisoneggstothispickup = GDINIT_PRISONSTOPRIZE;
+					if (gamedata->prisoneggstothispickup < GDINIT_PRISONSTOPRIZE)
+					{
+						// Just in case it's set absurdly low for testing.
+						gamedata->prisoneggstothispickup = GDINIT_PRISONSTOPRIZE;
+					}
 
 					if (!M_UpdateUnlockablesAndExtraEmblems(true, true))
 						S_StartSound(NULL, sfx_ncitem);
 					gamedata->deferredsave = true;
+				}
+
+				statenum_t teststate = (special->state-states);
+
+				if (teststate == S_PRISONEGGDROP_CD)
+				{
+					special->momz = P_MobjFlip(special) * 2 * mapobjectscale;
+					special->flags = (special->flags & ~MF_SPECIAL) | (MF_NOGRAVITY|MF_NOCLIPHEIGHT);
+					special->extravalue1 = 1;
+
+					special->renderflags = (special->renderflags & ~RF_BRIGHTMASK) | (RF_ADD | RF_FULLBRIGHT);
+
+					return;
 				}
 
 				break;
@@ -1011,10 +1034,7 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *source)
 
 			mobj_t *secretpickup = P_SpawnMobj(
 				target->x, target->y,
-				target->z + (
-					target->height
-					- FixedMul(mobjinfo[MT_PRISONEGGDROP].height, mapobjectscale)
-				),
+				target->z + target->height/2,
 				MT_PRISONEGGDROP
 			);
 
