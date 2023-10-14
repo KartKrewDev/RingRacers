@@ -50,7 +50,9 @@ void Obj_SpawnInstaWhipRecharge(player_t *player, angle_t angleOffset)
 {
 	mobj_t *x = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_INSTAWHIP_RECHARGE);
 
-	x->tics = max(INSTAWHIP_CHARGETIME - player->instaWhipCharge - states[x->info->raisestate].tics, 0);
+	// This was previously used to delay the visual, back when this was VFX for a cooldown
+	// instead of VFX for a charge. We want to instantly bail out of that state now.
+	x->tics = 1;
 	x->renderflags |= RF_SLOPESPLAT | RF_NOSPLATBILLBOARD;
 
 	P_SetTarget(&recharge_target(x), player->mo);
