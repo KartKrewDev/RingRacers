@@ -74,3 +74,25 @@ void Obj_InstaWhipRechargeThink(mobj_t *x)
 	// Flickers every other frame
 	x->renderflags ^= RF_DONTDRAW;
 }
+
+void Obj_SpawnInstaWhipReject(player_t *player)
+{
+	mobj_t *x = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_INSTAWHIP_REJECT);
+
+	P_SetTarget(&recharge_target(x), player->mo);
+}
+
+void Obj_InstaWhipRejectThink(mobj_t *x)
+{
+	mobj_t *target = x->target;
+
+	if (P_MobjWasRemoved(target) || !target->player->instaWhipCharge)
+	{
+		P_RemoveMobj(x);
+		return;
+	}
+
+	x->angle = x->target->angle;
+	P_MoveOrigin(x, target->x, target->y, target->z);
+	P_InstaScale(x, target->scale);
+}

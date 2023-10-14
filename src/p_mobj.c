@@ -8462,6 +8462,16 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		Obj_InstaWhipThink(mobj);
 		break;
 	}
+	case MT_INSTAWHIP_REJECT:
+	{
+		Obj_InstaWhipRejectThink(mobj);
+
+		if (P_MobjWasRemoved(mobj))
+		{
+			return false;
+		}
+		break;
+	}
 	case MT_BLOCKRING:
 	{
 		Obj_BlockRingThink(mobj);

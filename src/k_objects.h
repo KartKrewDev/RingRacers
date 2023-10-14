@@ -118,6 +118,8 @@ boolean Obj_DropTargetMorphThink(mobj_t *morph);
 void Obj_InstaWhipThink(mobj_t *whip);
 void Obj_SpawnInstaWhipRecharge(player_t *player, angle_t angleOffset);
 void Obj_InstaWhipRechargeThink(mobj_t *mobj);
+void Obj_SpawnInstaWhipReject(player_t *player);
+void Obj_InstaWhipRejectThink(mobj_t *mobj);
 
 /* Block VFX */
 void Obj_BlockRingThink(mobj_t *ring);

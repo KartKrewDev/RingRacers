@@ -8275,6 +8275,26 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (!(player->cmd.buttons & BT_ATTACK)) // Deliberate Item button release, no need to protect you from lockout
 		player->instaWhipChargeLockout = 0;
 
+	if (player->instaWhipCharge && player->instaWhipCharge < INSTAWHIP_COOLDOWN)
+	{
+		if (!S_SoundPlaying(player->mo, sfx_wchrg1))
+			S_StartSound(player->mo, sfx_wchrg1);
+	}
+	else
+	{
+		S_StopSoundByID(player->mo, sfx_wchrg1);
+	}
+
+	if (player->instaWhipCharge >= INSTAWHIP_COOLDOWN)
+	{
+		if (!S_SoundPlaying(player->mo, sfx_wchrg2))
+			S_StartSound(player->mo, sfx_wchrg2);
+	}
+	else
+	{
+		S_StopSoundByID(player->mo, sfx_wchrg2);
+	}
+
 	if (P_PlayerInPain(player) || player->itemamount)
 		player->instaWhipCharge = 0;
 
@@ -11030,6 +11050,17 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						Obj_SpawnInstaWhipRecharge(player, 0);
 						Obj_SpawnInstaWhipRecharge(player, ANGLE_120);
 						Obj_SpawnInstaWhipRecharge(player, ANGLE_240);
+					}
+
+					if (player->instaWhipCharge == INSTAWHIP_COOLDOWN)
+					{
+						Obj_SpawnInstaWhipReject(player);
+					}
+
+					if (player->instaWhipCharge > INSTAWHIP_COOLDOWN)
+					{
+						if (leveltime%(TICRATE/2) == 0)
+							P_PlayerRingBurst(player, 1);
 					}
 				}
 				else if (releasedwhip)
