@@ -4265,7 +4265,8 @@ void P_PlayerThink(player_t *player)
 	else if (player->loop.radius != 0)
 	{
 		P_PlayerOrbit(player);
-		player->rmomx = player->rmomy = 0;
+		player->rmomx = player->mo->momx;
+		player->rmomy = player->mo->momy;
 	}
 	else
 	{
