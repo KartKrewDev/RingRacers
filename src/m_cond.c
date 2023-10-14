@@ -1349,6 +1349,12 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 					unlocked++;
 				}
 			}
+			// Special case for SECRET_COLOR
+			else if (cn->extrainfo1 == SECRET_COLOR)
+			{
+				total = gamedata->numspraycans;
+				unlocked = gamedata->gotspraycans;
+			}
 			// Special case for raw Challenge count
 			else if (cn->extrainfo1 == SECRET_NONE)
 			{
@@ -2017,8 +2023,8 @@ static const char *M_GetConditionString(condition_t *cn)
 					checkavailable = true;
 					break;
 				case SECRET_COLOR:
-					work = "of Spray Cans";
-					checkavailable = true;
+					work = (gamedata->gotspraycans == 0) ? "of ???" : "of Spray Cans";
+					//checkavailable = true;
 					break;
 				default:
 					return va("INVALID CHALLENGE FOR PERCENT \"%d\"", cn->requirement);
