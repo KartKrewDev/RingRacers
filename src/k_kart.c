@@ -7847,6 +7847,15 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->mo->sprzoff += player->cameraOffset;
 	}
 
+	if (player->loop.radius)
+	{
+		// Offset sprite Z position so wheels touch top of
+		// hitbox when rotated 180 degrees.
+		// TODO: this should be generalized for pitch/roll
+		angle_t pitch = FixedAngle(player->loop.revolution * 360) / 2;
+		player->mo->sprzoff += FixedMul(player->mo->height, FSIN(pitch));
+	}
+
 	K_UpdateOffroad(player);
 	K_UpdateDraft(player);
 	K_UpdateEngineSounds(player); // Thanks, VAda!

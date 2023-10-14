@@ -96,7 +96,7 @@ boolean P_PlayerOrbit(player_t *player)
 	angle_t pitch;
 	angle_t pitch_normal;
 
-	fixed_t xy, z;
+	fixed_t r, xy, z;
 	fixed_t xs, ys;
 
 	fixed_t step, th, left;
@@ -124,9 +124,13 @@ boolean P_PlayerOrbit(player_t *player)
 	pitch = get_pitch(s->revolution);
 	pitch_normal = get_pitch(normal_revolution(s) / 2);
 
+	r = abs(s->radius) -
+		FixedMul(player->mo->radius, abs(FSIN(pitch)));
 
-	xy = FixedMul(abs(s->radius), FSIN(pitch));
-	z = FixedMul(abs(s->radius), -(FCOS(pitch)));
+	xy = FixedMul(r, FSIN(pitch));
+
+	z = FixedMul(abs(s->radius), -(FCOS(pitch))) -
+		FixedMul(player->mo->height, FSIN(pitch / 2));
 
 	// XY shift is transformed on wave scale; less movement
 	// at start and end of rotation, more halfway.
