@@ -8270,8 +8270,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	// If the button stays held, delay charge a bit.
 	if (player->instaWhipChargeLockout)
 		player->instaWhipChargeLockout--;
-	if (player->rings > 0)
-		player->instaWhipChargeLockout = TICRATE/2;
+	if (player->rings > 0 || player->itemamount)
+		player->instaWhipChargeLockout = 3*TICRATE/4;
 	if (!(player->cmd.buttons & BT_ATTACK)) // Deliberate Item button release, no need to protect you from lockout
 		player->instaWhipChargeLockout = 0;
 
@@ -11017,6 +11017,88 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		}
 	}
 
+	// This looks a lot like the check that's right under it, but this check is specifically for instawhip charge,
+	// which is allowed during painstate as a last-ditch defensive option.
+	if (player && player->mo && player->mo->health > 0 && !player->spectator && !mapreset && leveltime > introtime)
+	{
+		boolean chargingwhip = (cmd->buttons & BT_ATTACK) && (player->rings <= 0) && (!player->instaWhipChargeLockout);
+		boolean releasedwhip = (!(cmd->buttons & BT_ATTACK)) && (player->rings <= 0 && player->instaWhipCharge) && !(P_PlayerInPain(player));
+
+		if (K_PowerUpRemaining(player, POWERUP_BADGE))
+		{
+			chargingwhip = false;
+			releasedwhip = (ATTACK_IS_DOWN && player->rings <= 0);
+			player->instaWhipCharge = INSTAWHIP_CHARGETIME;
+		}
+
+		if (leveltime < starttime || player->spindash)
+		{
+			chargingwhip = false;
+			player->instaWhipCharge = 0;
+		}
+
+		if (chargingwhip)
+		{
+			player->instaWhipCharge = min(player->instaWhipCharge + 1, INSTAWHIP_CHARGETIME + 1);
+
+			if (player->instaWhipCharge == 1)
+			{
+				Obj_SpawnInstaWhipRecharge(player, 0);
+				Obj_SpawnInstaWhipRecharge(player, ANGLE_120);
+				Obj_SpawnInstaWhipRecharge(player, ANGLE_240);
+			}
+
+			if (player->instaWhipCharge == INSTAWHIP_CHARGETIME)
+			{
+				Obj_SpawnInstaWhipReject(player);
+			}
+
+			if (player->instaWhipCharge > INSTAWHIP_CHARGETIME)
+			{
+				if ((leveltime%(INSTAWHIP_RINGDRAINEVERY)) == 0 && !(gametyperules & GTR_SPHERES))
+				{
+					if (player->rings > -20)
+						S_StartSound(player->mo, sfx_antiri);
+					player->rings--;
+				}
+			}
+		}
+		else if (releasedwhip)
+		{
+			if (player->instaWhipCharge < INSTAWHIP_CHARGETIME)
+			{
+				S_StartSound(player->mo, sfx_kc50);
+				player->instaWhipCharge = 0;
+			}
+			else
+			{
+				player->instaWhipCharge = 0;
+				player->guardCooldown = INSTAWHIP_DROPGUARD;
+				if (!K_PowerUpRemaining(player, POWERUP_BARRIER))
+				{
+					player->guardCooldown = INSTAWHIP_CHARGETIME;
+				}
+
+				S_StartSound(player->mo, sfx_iwhp);
+				mobj_t *whip = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_INSTAWHIP);
+				P_SetTarget(&player->whip, whip);
+				P_SetScale(whip, player->mo->scale);
+				P_SetTarget(&whip->target, player->mo);
+				K_MatchGenericExtraFlags(whip, player->mo);
+				P_SpawnFakeShadow(whip, 20);
+				whip->fuse = INSTAWHIP_DURATION;
+				player->flashing = max(player->flashing, INSTAWHIP_DURATION);
+
+				if (P_IsObjectOnGround(player->mo))
+				{
+					whip->flags2 |= MF2_AMBUSH;
+				}
+			}
+		}
+		else if (!(player->instaWhipCharge >= INSTAWHIP_CHARGETIME && P_PlayerInPain(player))) // Allow reversal whip
+			player->instaWhipCharge = 0;
+	}
+
 	if (player && player->mo && player->mo->health > 0 && !player->spectator && !P_PlayerInPain(player) && !mapreset && leveltime > introtime)
 	{
 		// First, the really specific, finicky items that function without the item being directly in your item slot.
@@ -11024,84 +11106,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			// Ring boosting
 			if (player->pflags & PF_USERINGS)
 			{
-				boolean chargingwhip = (cmd->buttons & BT_ATTACK) && (player->rings <= 0) && (!player->instaWhipChargeLockout);
-				boolean releasedwhip = (!(cmd->buttons & BT_ATTACK)) && (player->rings <= 0 && player->instaWhipCharge);
-
-				if (K_PowerUpRemaining(player, POWERUP_BADGE))
-				{
-					chargingwhip = false;
-					releasedwhip = (ATTACK_IS_DOWN && player->rings <= 0);
-					player->instaWhipCharge = INSTAWHIP_CHARGETIME;
-				}
-
-				if (leveltime < starttime || player->spindash)
-				{
-					chargingwhip = false;
-					player->instaWhipCharge = 0;
-				}
-
-				if (chargingwhip)
-				{
-					//CONS_Printf("charging %d\n", player->instaWhipCharge);
-					player->instaWhipCharge = min(player->instaWhipCharge + 1, INSTAWHIP_CHARGETIME + 1);
-
-					if (player->instaWhipCharge == 1)
-					{
-						Obj_SpawnInstaWhipRecharge(player, 0);
-						Obj_SpawnInstaWhipRecharge(player, ANGLE_120);
-						Obj_SpawnInstaWhipRecharge(player, ANGLE_240);
-					}
-
-					if (player->instaWhipCharge == INSTAWHIP_CHARGETIME)
-					{
-						Obj_SpawnInstaWhipReject(player);
-					}
-
-					if (player->instaWhipCharge > INSTAWHIP_CHARGETIME)
-					{
-						if ((leveltime%(INSTAWHIP_RINGDRAINEVERY)) == 0 && !(gametyperules & GTR_SPHERES))
-						{
-							if (player->rings > -20)
-								S_StartSound(player->mo, sfx_antiri);
-							player->rings--;
-						}
-					}
-				}
-				else if (releasedwhip)
-				{
-					if (player->instaWhipCharge < INSTAWHIP_CHARGETIME)
-					{
-						S_StartSound(player->mo, sfx_kc50);
-						player->instaWhipCharge = 0;
-					}
-					else
-					{
-						player->instaWhipCharge = 0;
-						player->guardCooldown = INSTAWHIP_DROPGUARD;
-						if (!K_PowerUpRemaining(player, POWERUP_BARRIER))
-						{
-							player->guardCooldown = INSTAWHIP_CHARGETIME;
-						}
-
-						S_StartSound(player->mo, sfx_iwhp);
-						mobj_t *whip = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_INSTAWHIP);
-						P_SetTarget(&player->whip, whip);
-						P_SetScale(whip, player->mo->scale);
-						P_SetTarget(&whip->target, player->mo);
-						K_MatchGenericExtraFlags(whip, player->mo);
-						P_SpawnFakeShadow(whip, 20);
-						whip->fuse = INSTAWHIP_DURATION;
-						player->flashing = max(player->flashing, INSTAWHIP_DURATION);
-
-						if (P_IsObjectOnGround(player->mo))
-						{
-							whip->flags2 |= MF2_AMBUSH;
-						}
-					}
-				}
-				else
-					player->instaWhipCharge = 0;
-
 				if ((cmd->buttons & BT_ATTACK) && !player->ringdelay && player->rings > 0)
 				{
 					mobj_t *ring = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_RING);
