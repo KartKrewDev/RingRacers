@@ -139,6 +139,7 @@ void FM_Rotate(matrix_t *dest, angle_t angle, fixed_t x, fixed_t y, fixed_t z);
 // FSIN(ANGLE_90) = FRACUNIT
 #define FSIN(n) FINESINE(ANGLETOFINE(n))
 #define FCOS(n) FINECOSINE(ANGLETOFINE(n))
+#define FTAN(n) FINETANGENT(((n) >> ANGLETOFINESHIFT) & ((FINEANGLES / 2) - 1))
 
 #ifdef __cplusplus
 } // extern "C"
