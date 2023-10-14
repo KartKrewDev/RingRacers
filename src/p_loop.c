@@ -160,11 +160,16 @@ boolean P_PlayerOrbit(player_t *player)
 
 	left = (s->max_revolution - s->revolution);
 
-	if (abs(left) < abs(step))
+	if (left == 0)
 	{
 		P_ExitPlayerOrbit(player);
 
 		return false;
+	}
+
+	if (abs(left) < abs(step))
+	{
+		step = left;
 	}
 
 	// If player slows down by too much, throw them out of
