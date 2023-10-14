@@ -23,6 +23,8 @@
 /// \file
 /// \brief SRB2 system stuff for SDL
 
+#include <thread>
+
 #include <signal.h>
 
 #ifdef _WIN32
@@ -168,6 +170,8 @@ static char returnWadPath[256];
 #include "../d_net.h"
 #include "../g_game.h"
 #include "../filesrch.h"
+#include "../s_sound.h"
+#include "../core/thread_pool.h"
 #include "endtxt.h"
 #include "sdlmain.h"
 
@@ -193,6 +197,8 @@ static char returnWadPath[256];
 #include "../d_clisrv.h"
 #include "../byteptr.h"
 #endif
+
+static std::thread::id g_main_thread_id;
 
 /**	\brief SDL info about joysticks
 */
@@ -350,7 +356,7 @@ static void I_ShowErrorMessageBox(const char *messagefordevelopers, boolean dump
 	// which should fail gracefully if it can't put a message box up
 	// on the target system
 	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-		"Dr. Robotnik's Ring Racers "VERSIONSTRING" Error",
+		"Dr. Robotnik's Ring Racers " VERSIONSTRING " Error",
 		finalmessage, NULL);
 
 	// Note that SDL_ShowSimpleMessageBox does *not* require SDL to be
@@ -423,6 +429,14 @@ static void I_ReportSignal(int num, int coredumped)
 #ifndef NEWSIGNALHANDLER
 FUNCNORETURN static ATTRNORETURN void signal_handler(INT32 num)
 {
+	if (g_main_thread_id != std::this_thread::get_id())
+	{
+		// Do not attempt any sort of recovery if this signal triggers off the main thread
+		signal(num, SIG_DFL);
+		raise(num);
+		exit(-2);
+	}
+
 	D_QuitNetGame(); // Fix server freezes
 	CL_AbortDownloadResume();
 	G_DirtyGameData();
@@ -799,6 +813,8 @@ static inline void I_ShutdownConsole(void){}
 //
 static void I_RegisterSignals (void)
 {
+	g_main_thread_id = std::this_thread::get_id();
+
 #ifdef SIGINT
 	signal(SIGINT , quit_handler);
 #endif
@@ -910,7 +926,7 @@ void I_OutputMsg(const char *fmt, ...)
 					return;
 				}
 
-				ReadConsoleOutputCharacter(co, oldLines, oldLength, coordNextWrite, &bytesWritten);
+				ReadConsoleOutputCharacter(co, (LPSTR)oldLines, oldLength, coordNextWrite, &bytesWritten);
 
 				// Move to where we what to print - which is where we would've been,
 				// had console input not been in the way,
@@ -1251,7 +1267,8 @@ const char *I_GetJoyName(INT32 joyindex)
 	tempname = SDL_JoystickNameForIndex(joyindex);
 	if (tempname)
 	{
-		strncpy(joyname, tempname, 255);
+		strncpy(joyname, tempname, 254);
+		joyname[254] = 0;
 	}
 
 	return joyname;
@@ -1267,7 +1284,7 @@ const char *I_GetJoyName(INT32 joyindex)
 #define DEG2RAD (0.017453292519943295769236907684883l) // TAU/360 or PI/180
 #define MUMBLEUNIT (64.0f) // FRACUNITS in a Meter
 
-static struct {
+static struct mumble_s {
 #ifdef WINMUMBLE
 	UINT32 uiVersion;
 	DWORD uiTick;
@@ -1300,7 +1317,7 @@ static void I_SetupMumble(void)
 	if (!hMap)
 		return;
 
-	mumble = MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(*mumble));
+	mumble = static_cast<mumble_s*>(MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(*mumble)));
 	if (!mumble)
 		CloseHandle(hMap);
 #elif defined (HAVE_SHM)
@@ -1587,6 +1604,8 @@ INT32 I_StartupSystem(void)
 #ifdef HAVE_THREADS
 	I_start_threads();
 	I_AddExitFunc(I_stop_threads);
+	I_ThreadPoolInit();
+	I_AddExitFunc(I_ThreadPoolShutdown);
 #endif
 	I_StartupConsole();
 #ifdef NEWSIGNALHANDLER
@@ -1693,6 +1712,12 @@ void I_Error(const char *error, ...)
 	va_list argptr;
 	char buffer[8192];
 
+	if (std::this_thread::get_id() != g_main_thread_id)
+	{
+		// Do not attempt a graceful shutdown. Errors off the main thread are unresolvable.
+		exit(-2);
+	}
+
 	// recursive error detecting
 	if (shutdowning)
 	{
@@ -1728,7 +1753,7 @@ void I_Error(const char *error, ...)
 			// on the target system
 			if (!M_CheckParm("-dedicated"))
 				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-					"Dr. Robotnik's Ring Racers "VERSIONSTRING" Recursive Error",
+					"Dr. Robotnik's Ring Racers " VERSIONSTRING " Recursive Error",
 					buffer, NULL);
 
 			W_Shutdown();
@@ -2074,7 +2099,7 @@ const char *I_ClipboardPaste(void)
 */
 static boolean isWadPathOk(const char *path)
 {
-	char *wad3path = malloc(256);
+	char *wad3path = static_cast<char*>(malloc(256));
 
 	if (!wad3path)
 		return false;

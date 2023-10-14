@@ -23,6 +23,7 @@
 #include "k_menu.h" // gametype_cons_t
 #include "r_things.h" // skins
 #include "mserv.h" // cv_advertise
+#include "s_sound.h"
 #include "z_zone.h"
 #include "byteptr.h"
 #include "stun.h"

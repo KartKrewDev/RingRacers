@@ -24,6 +24,7 @@
 #include "p_local.h"
 #include "p_mobj.h"
 #include "r_textures.h"
+#include "s_sound.h"
 #include "w_wad.h"
 #include "z_zone.h"
 
@@ -740,7 +741,7 @@ static void K_SpawnSplashParticles(mobj_t *mo, t_splash_t *s, fixed_t impact)
 	{
 		mobj_t *dust = NULL;
 		angle_t pushAngle = (particleSpread * i);
-		
+
 		fixed_t xOff = 0;
 		fixed_t yOff = 0;
 
