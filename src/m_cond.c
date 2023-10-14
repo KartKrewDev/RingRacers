@@ -1489,6 +1489,14 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 				&& !(player->pflags & PF_NOCONTEST)
 				&& M_NotFreePlay()
 				&& !K_IsPlayerLosing(player));
+		case UCRP_FINISHPERFECT:
+			return (player->exiting
+				&& !(player->pflags & PF_NOCONTEST)
+				&& M_NotFreePlay()
+				&& (gamespeed != KARTSPEED_EASY)
+				&& (player->tally.active == true)
+				&& (player->tally.totalLaps > 0) // Only true if not Time Attack
+				&& (player->tally.laps >= player->tally.totalLaps));
 		case UCRP_FINISHALLPRISONS:
 			return (battleprisons
 				&& !(player->pflags & PF_NOCONTEST)
@@ -2216,6 +2224,8 @@ static const char *M_GetConditionString(condition_t *cn)
 
 		case UCRP_FINISHCOOL:
 			return "finish in good standing";
+		case UCRP_FINISHPERFECT:
+			return "finish a perfect round";
 		case UCRP_FINISHALLPRISONS:
 			return "break every prison";
 		case UCRP_NOCONTEST:

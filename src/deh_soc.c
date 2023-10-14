@@ -2894,6 +2894,7 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 		ty = UCRP_PODIUMEMERALD + offset;
 	}
 	else if ((offset=0) || fastcmp(params[0], "FINISHCOOL")
+	||        (++offset && fastcmp(params[0], "FINISHPERFECT"))
 	||        (++offset && fastcmp(params[0], "FINISHALLPRISONS"))
 	||        (++offset && fastcmp(params[0], "NOCONTEST")))
 	{
