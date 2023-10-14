@@ -8295,7 +8295,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		S_StopSoundByID(player->mo, sfx_wchrg2);
 	}
 
-	if (player->itemamount || player->respawn.state != RESPAWNST_NONE || player->itemRoulette.eggman)
+	if (player->itemamount || player->respawn.state != RESPAWNST_NONE || player->pflags & (PF_ITEMOUT|PF_EGGMANOUT) || player->rocketsneakertimer)
 		player->instaWhipCharge = 0;
 
 	if (player->tiregrease)
@@ -11031,7 +11031,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			player->instaWhipCharge = INSTAWHIP_CHARGETIME;
 		}
 
-		if (leveltime < starttime || player->spindash)
+		if (leveltime < starttime || player->spindash || player->pflags & (PF_ITEMOUT|PF_EGGMANOUT) || player->rocketsneakertimer)
 		{
 			chargingwhip = false;
 			player->instaWhipCharge = 0;
