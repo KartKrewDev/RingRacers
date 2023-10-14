@@ -6859,7 +6859,7 @@ void M_DrawStatistics(void)
 
 			case statisticspage_maps:
 			{
-				pagename = "LEVELS & MEDALS";
+				pagename = "COURSES & MEDALS";
 				M_DrawStatsMaps();
 				break;
 			}
