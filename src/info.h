@@ -700,6 +700,7 @@ typedef enum sprite
 	SPR_EMBM, // Emblem
 	SPR_SPCN, // Spray Can
 	SPR_MMSH, // Ancient Shrine
+	SPR_MORB, // One Morbillion
 	SPR_EMRC, // Chaos Emeralds
 	SPR_SEMR, // Super Emeralds
 	SPR_ESPK,
@@ -2381,6 +2382,22 @@ typedef enum state
 
 	// Ancient Shrine
 	S_ANCIENTSHRINE,
+
+	S_MORB1,
+	S_MORB2,
+	S_MORB3,
+	S_MORB4,
+	S_MORB5,
+	S_MORB6,
+	S_MORB7,
+	S_MORB8,
+	S_MORB9,
+	S_MORB10,
+	S_MORB11,
+	S_MORB12,
+	S_MORB13,
+	S_MORB14,
+	S_MORB15,
 
 	// Chaos Emeralds
 	S_CHAOSEMERALD1,

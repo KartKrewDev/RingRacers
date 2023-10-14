@@ -12652,11 +12652,11 @@ void A_FireShrink(mobj_t *actor)
 	INT32 locvar1 = var1;
 	INT32 locvar2 = var2;
 
-	if (LUA_CallAction(A_FIRESHRINK, actor))
+	if (LUA_CallAction(A_FIRESHRINK, actor) || locvar2 == 0)
 		return;
 
 	actor->destscale = locvar1;
-	actor->scalespeed = FRACUNIT/locvar2;
+	actor->scalespeed = mapobjectscale/locvar2;
 }
 
 // Function: A_SpawnPterabytes

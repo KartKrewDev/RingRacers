@@ -1198,6 +1198,22 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	// Ancient Shrine
 	"S_ANCIENTSHRINE",
 
+	"S_MORB1",
+	"S_MORB2",
+	"S_MORB3",
+	"S_MORB4",
+	"S_MORB5",
+	"S_MORB6",
+	"S_MORB7",
+	"S_MORB8",
+	"S_MORB9",
+	"S_MORB10",
+	"S_MORB11",
+	"S_MORB12",
+	"S_MORB13",
+	"S_MORB14",
+	"S_MORB15",
+
 	// Chaos Emeralds
 	"S_CHAOSEMERALD1",
 	"S_CHAOSEMERALD2",

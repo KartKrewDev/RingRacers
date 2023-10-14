@@ -145,6 +145,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"EMBM", // Emblem
 	"SPCN", // Spray Can
 	"MMSH", // Ancient Shrine
+	"MORB", // One Morbillion
 	"EMRC", // Chaos Emeralds
 	"SEMR", // Super Emeralds
 	"ESPK",
@@ -1902,6 +1903,22 @@ state_t states[NUMSTATES] =
 	// Ancient Shrine
 	{SPR_MMSH, 0, -1, {NULL}, 0, 0, S_NULL}, // S_ANCIENTSHRINE
 
+	{SPR_MORB, 0|FF_ADD, 1, {A_FireShrink}, 2*FRACUNIT/3, 12, S_MORB2}, // S_MORB1
+	{SPR_MORB, 1|FF_ADD, 1, {NULL}, 0, 0, S_MORB3},  // S_MORB2
+	{SPR_MORB, 2|FF_ADD, 1, {NULL}, 0, 0, S_MORB4},  // S_MORB3
+	{SPR_MORB, 3|FF_ADD, 1, {NULL}, 0, 0, S_MORB5},  // S_MORB4
+	{SPR_MORB, 4|FF_ADD, 1, {NULL}, 0, 0, S_MORB6},  // S_MORB5
+	{SPR_MORB, 5|FF_ADD, 1, {NULL}, 0, 0, S_MORB7},  // S_MORB6
+	{SPR_MORB, 6|FF_ADD, 1, {NULL}, 0, 0, S_MORB8},  // S_MORB7
+	{SPR_MORB, 7|FF_ADD, 4, {NULL}, 0, 0, S_MORB9},  // S_MORB8
+	{SPR_MORB, 6|FF_ADD, 1, {A_FireShrink},            1, 12, S_MORB10}, // S_MORB9
+	{SPR_MORB, 5|FF_ADD, 1, {NULL}, 0, 0, S_MORB11}, // S_MORB10
+	{SPR_MORB, 4|FF_ADD, 1, {NULL}, 0, 0, S_MORB12}, // S_MORB11
+	{SPR_MORB, 3|FF_ADD, 1, {NULL}, 0, 0, S_MORB13}, // S_MORB12
+	{SPR_MORB, 2|FF_ADD, 1, {NULL}, 0, 0, S_MORB14}, // S_MORB13
+	{SPR_MORB, 1|FF_ADD, 1, {NULL}, 0, 0, S_MORB15}, // S_MORB14
+	{SPR_MORB, 0|FF_ADD, 1, {NULL}, 0, 0, S_NULL},   // S_MORB15
+
 	// Chaos Emeralds
 	{SPR_EMRC, FF_FULLBRIGHT,           1, {NULL}, 0, 0, S_CHAOSEMERALD2}, // S_CHAOSEMERALD1
 	{SPR_EMRC, FF_FULLBRIGHT|FF_ADD,    1, {NULL}, 0, 0, S_CHAOSEMERALD1}, // S_CHAOSEMERALD2
@@ -1923,7 +1940,7 @@ state_t states[NUMSTATES] =
 	{SPR_LENS, FF_FULLBRIGHT|FF_ADD|FF_TRANS10|FF_ANIMATE|11, 8, {NULL}, 7, 1, S_GAINAX_MID2}, // S_EMERALDFLARE1
 
 	// Prison Egg Drops
-	{SPR_ALTM, 0|FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_NULL}, // S_PRISONEGGDROP_CD
+	{SPR_ALTM, 0|FF_PAPERSPRITE|FF_SEMIBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_PRISONEGGDROP_CD
 
 	// Bubble Source
 	{SPR_BBLS, 0, 8, {A_BubbleSpawn}, 2048, 0, S_BUBBLES2}, // S_BUBBLES1

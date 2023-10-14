@@ -1827,7 +1827,7 @@ static const char *M_GetConditionString(condition_t *cn)
 			else if (cn->type == UC_MAPSPBATTACK)
 				work = "conquer";
 			else if (cn->type == UC_MAPMYSTICMELODY)
-				work = "activate the ancient shrine in";
+				work = "play a melody for the ancient shrine in";
 
 			work = va("%s%s %s",
 				prefix,

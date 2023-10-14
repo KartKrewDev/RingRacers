@@ -7257,16 +7257,55 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	}
 	case MT_ANCIENTSHRINE:
 	{
-		if (P_MobjWasRemoved(mobj->tracer) == false
-			&& mobj->tracer->fuse == 1)
-		{
-			if (!(mapheaderinfo[gamemap-1]->records.mapvisited & MV_MYSTICMELODY))
-			{
-				mapheaderinfo[gamemap-1]->records.mapvisited |= MV_MYSTICMELODY;
+		boolean docolorized = false;
 
-				if (!M_UpdateUnlockablesAndExtraEmblems(true, true))
-					S_StartSound(NULL, sfx_ncitem);
-				gamedata->deferredsave = true;
+		if (P_MobjWasRemoved(mobj->tracer) == false)
+		{
+			if (mobj->tracer->fuse == 1)
+			{
+				if (!(mapheaderinfo[gamemap-1]->records.mapvisited & MV_MYSTICMELODY))
+				{
+					mapheaderinfo[gamemap-1]->records.mapvisited |= MV_MYSTICMELODY;
+
+					if (!M_UpdateUnlockablesAndExtraEmblems(true, true))
+						S_StartSound(NULL, sfx_ncitem);
+					gamedata->deferredsave = true;
+				}
+			}
+
+			// Non-RNG-advancing equivalent of Obj_SpawnEmeraldSparks
+			if (leveltime % 3 == 0)
+			{
+				mobj_t *sparkle = P_SpawnMobjFromMobj(
+					mobj,
+					M_RandomRange(-48, 48) * FRACUNIT,
+					M_RandomRange(-48, 48) * FRACUNIT,
+					M_RandomRange(0, 64) * FRACUNIT,
+					MT_SPARK
+				);
+				P_SetMobjState(sparkle, S_MORB1);
+
+				sparkle->color = SKINCOLOR_PLAGUE;
+				sparkle->momz += 6 * mobj->scale * P_MobjFlip(mobj);
+				P_SetScale(sparkle, 2);
+			}
+
+			docolorized = !!(leveltime & 1);
+		}
+
+		if (mobj->colorized != docolorized)
+		{
+			if (docolorized)
+			{
+				mobj->colorized = true;
+				mobj->color = SKINCOLOR_PLAGUE;
+				mobj->spriteyoffset = 1;
+			}
+			else
+			{
+				mobj->colorized = false;
+				mobj->color = SKINCOLOR_NONE;
+				mobj->spriteyoffset = 0;
 			}
 		}
 
@@ -7678,7 +7717,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				mobj->renderflags |= RF_SEMIBRIGHT;
 			}
 
-			P_SetMobjState(mobj, teststate);
+			P_SetMobjStateNF(mobj, teststate);
 
 			if (P_MobjWasRemoved(mobj))
 			{
@@ -7724,7 +7763,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 						M_RandomRange(0, 64) * FRACUNIT,
 						MT_SPARK
 					);
-					P_SetMobjState(sparkle, mobjinfo[MT_EMERALDSPARK].spawnstate);
+					P_SetMobjStateNF(sparkle, mobjinfo[MT_EMERALDSPARK].spawnstate);
 
 					sparkle->color = M_RandomChance(FRACUNIT/2) ? SKINCOLOR_ULTRAMARINE : SKINCOLOR_MAGENTA;
 					sparkle->momz += 8 * mobj->scale * P_MobjFlip(mobj);
