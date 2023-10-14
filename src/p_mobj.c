@@ -13724,7 +13724,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 		static const size_t NUM_HANAGUMIHALL_NPC_STATES = sizeof(HANAGUMIHALL_NPC_STATES) / sizeof(statenum_t);
 
 		// an invalid NPC ID leaves you with Alfonso
-		if (mthing->thing_args[0] < 0 || mthing->thing_args[0] >= NUM_HANAGUMIHALL_NPC_STATES)
+		if ((size_t)mthing->thing_args[0] >= NUM_HANAGUMIHALL_NPC_STATES)
 			break;
 
 		// pick the state based on the NPC ID
