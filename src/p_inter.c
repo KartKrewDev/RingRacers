@@ -108,14 +108,6 @@ void P_RampConstant(const BasicFF_t *FFInfo, INT32 Start, INT32 End)
 // GET STUFF
 //
 
-boolean P_Whipping(player_t *player)
-{
-	if (player->instaWhipCharge)
-		return true;
-	if (player->whip && !P_MobjWasRemoved(player->whip))
-		return true;
-	return false;
-}
 
 //
 // P_CanPickupItem
@@ -132,7 +124,7 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 	// 2: Eggbox
 	// 3: Paperitem
 
-	if (weapon != 2 && P_Whipping(player))
+	if (weapon != 2 && player->instaWhipCharge)
 		return false;
 
 	if (weapon)

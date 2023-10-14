@@ -1410,7 +1410,7 @@ static void K_UpdateDraft(player_t *player)
 	}
 
 	// Want to berserk attack? Get your speed FIRST.
-	if (player->instaWhipCharge >= INSTAWHIP_CHARGETIME)
+	if (player->instaWhipCharge >= INSTAWHIP_TETHERBLOCK)
 		return;
 
 	// Not enough speed to draft.
@@ -11045,7 +11045,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 		if (chargingwhip)
 		{
-			player->instaWhipCharge = min(player->instaWhipCharge + 1, INSTAWHIP_CHARGETIME + 1);
+			player->instaWhipCharge = min(player->instaWhipCharge + 1, INSTAWHIP_TETHERBLOCK + 1);
 
 			if (player->instaWhipCharge == 1)
 			{

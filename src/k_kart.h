@@ -35,6 +35,8 @@ Make sure this matches the actual number of states
 #define INSTAWHIP_DROPGUARD (12)
 #define INSTAWHIP_RINGDRAINEVERY (TICRATE/2)
 #define INSTAWHIP_HOLD_DELAY (TICRATE*2)
+// MUST be longer or equal to INSTAWHIP_CHARGETIME.
+#define INSTAWHIP_TETHERBLOCK (TICRATE*2)
 #define GUARDBREAK_COOLDOWN (TICRATE*4)
 
 #define FLAMESHIELD_MAX (120)
