@@ -2296,6 +2296,55 @@ void reademblemdata(MYFILE *f, INT32 num)
 	Z_Free(s);
 }
 
+static INT16 parseunlockabletype(char *type)
+{
+	if (fastcmp(type, "EXTRAMEDAL"))
+		return SECRET_EXTRAMEDAL;
+	else if (fastcmp(type, "CUP"))
+		return SECRET_CUP;
+	else if (fastcmp(type, "MAP"))
+		return SECRET_MAP;
+	else if (fastcmp(type, "ALTMUSIC"))
+		return SECRET_ALTMUSIC;
+	else if (fastcmp(type, "SKIN"))
+		return SECRET_SKIN;
+	else if (fastcmp(type, "FOLLOWER"))
+		return SECRET_FOLLOWER;
+	else if (fastcmp(type, "COLOR"))
+		return SECRET_COLOR;
+
+	else if (fastcmp(type, "HARDSPEED"))
+		return SECRET_HARDSPEED;
+	else if (fastcmp(type, "MASTERMODE"))
+		return SECRET_MASTERMODE;
+	else if (fastcmp(type, "ENCORE"))
+		return SECRET_ENCORE;
+	else if (fastcmp(type, "TIMEATTACK"))
+		return SECRET_TIMEATTACK;
+	else if (fastcmp(type, "PRISONBREAK"))
+		return SECRET_PRISONBREAK;
+	else if (fastcmp(type, "SPECIALATTACK"))
+		return SECRET_SPECIALATTACK;
+	else if (fastcmp(type, "SPBATTACK"))
+		return SECRET_SPBATTACK;
+	else if (fastcmp(type, "ONLINE"))
+		return SECRET_ONLINE;
+	else if (fastcmp(type, "ADDONS"))
+		return SECRET_ADDONS;
+	else if (fastcmp(type, "EGGTV"))
+		return SECRET_EGGTV;
+	else if (fastcmp(type, "SOUNDTEST"))
+		return SECRET_SOUNDTEST;
+	else if (fastcmp(type, "ALTTITLE"))
+		return SECRET_ALTTITLE;
+	else if (fastcmp(type, "MEMETAUNTS"))
+		return SECRET_MEMETAUNTS;
+	else if (fastcmp(type, "ITEMFINDER"))
+		return SECRET_ITEMFINDER;
+
+	return SECRET_NONE;
+}
+
 void readunlockable(MYFILE *f, INT32 num)
 {
 	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
@@ -2350,52 +2399,7 @@ void readunlockable(MYFILE *f, INT32 num)
 					unlockables[num].majorunlock = (UINT8)(i != 0 || word2[0] == 'T' || word2[0] == 'Y');
 				else if (fastcmp(word, "TYPE"))
 				{
-					if (fastcmp(word2, "NONE"))
-						unlockables[num].type = SECRET_NONE;
-					else if (fastcmp(word2, "EXTRAMEDAL"))
-						unlockables[num].type = SECRET_EXTRAMEDAL;
-					else if (fastcmp(word2, "CUP"))
-						unlockables[num].type = SECRET_CUP;
-					else if (fastcmp(word2, "MAP"))
-						unlockables[num].type = SECRET_MAP;
-					else if (fastcmp(word2, "ALTMUSIC"))
-						unlockables[num].type = SECRET_ALTMUSIC;
-					else if (fastcmp(word2, "SKIN"))
-						unlockables[num].type = SECRET_SKIN;
-					else if (fastcmp(word2, "FOLLOWER"))
-						unlockables[num].type = SECRET_FOLLOWER;
-					else if (fastcmp(word2, "COLOR"))
-						unlockables[num].type = SECRET_COLOR;
-					else if (fastcmp(word2, "HARDSPEED"))
-						unlockables[num].type = SECRET_HARDSPEED;
-					else if (fastcmp(word2, "MASTERMODE"))
-						unlockables[num].type = SECRET_MASTERMODE;
-					else if (fastcmp(word2, "ENCORE"))
-						unlockables[num].type = SECRET_ENCORE;
-					else if (fastcmp(word2, "TIMEATTACK"))
-						unlockables[num].type = SECRET_TIMEATTACK;
-					else if (fastcmp(word2, "PRISONBREAK"))
-						unlockables[num].type = SECRET_PRISONBREAK;
-					else if (fastcmp(word2, "SPECIALATTACK"))
-						unlockables[num].type = SECRET_SPECIALATTACK;
-					else if (fastcmp(word2, "SPBATTACK"))
-						unlockables[num].type = SECRET_SPBATTACK;
-					else if (fastcmp(word2, "ONLINE"))
-						unlockables[num].type = SECRET_ONLINE;
-					else if (fastcmp(word2, "ADDONS"))
-						unlockables[num].type = SECRET_ADDONS;
-					else if (fastcmp(word2, "EGGTV"))
-						unlockables[num].type = SECRET_EGGTV;
-					else if (fastcmp(word2, "SOUNDTEST"))
-						unlockables[num].type = SECRET_SOUNDTEST;
-					else if (fastcmp(word2, "ALTTITLE"))
-						unlockables[num].type = SECRET_ALTTITLE;
-					else if (fastcmp(word2, "MEMETAUNTS"))
-						unlockables[num].type = SECRET_MEMETAUNTS;
-					else if (fastcmp(word2, "ITEMFINDER"))
-						unlockables[num].type = SECRET_ITEMFINDER;
-					else
-						unlockables[num].type = (INT16)i;
+					unlockables[num].type = parseunlockabletype(word2);
 					unlockables[num].stringVarCache = -1;
 				}
 				else if (fastcmp(word, "VAR"))
@@ -2697,6 +2701,31 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 		{
 			deh_warning("Condition set %d out of range (1 - %d) for condition ID %d", re, MAXCONDITIONSETS, id+1);
 			return;
+		}
+	}
+	else if (fastcmp(params[0], "UNLOCKPERCENT"))
+	{
+		PARAMCHECK(1);
+		ty = UC_UNLOCKPERCENT;
+		re = atoi(params[1]);
+		x1 = SECRET_NONE;
+
+		// Valid percentages only!
+		if (re <= 0 || re > 100)
+		{
+			deh_warning("Condition percent %d out of range (1 - 100) for condition ID %d", re, id+1);
+			return;
+		}
+
+		if (params[2] && params[2][0])
+		{
+			x1 = parseunlockabletype(params[2]);
+
+			if (x1 <= SECRET_NONE || x1 >= SECRET_ONEPERBOARD)
+			{
+				deh_warning("Condition challenge type \"%s\" invalid for condition ID %d", params[2], id+1);
+				return;
+			}
 		}
 	}
 	else if ((offset=0) || fastcmp(params[0], "ADDON")

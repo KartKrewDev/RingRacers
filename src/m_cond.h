@@ -56,6 +56,8 @@ typedef enum
 	UC_UNLOCKABLE,		// UNLOCKABLE [unlockable number]
 	UC_CONDITIONSET,	// CONDITIONSET [condition set number]
 
+	UC_UNLOCKPERCENT,	// Unlock <x percent> of [unlockable type]
+
 	UC_ADDON,			// Ever loaded a custom file?
 	UC_CREDITS,			// Finish watching the credits
 	UC_REPLAY,			// Save a replay
@@ -199,8 +201,11 @@ typedef enum
 	SECRET_FOLLOWER,			// Permit this follower
 	SECRET_COLOR,				// Permit this color
 
+	// Everything below this line is supposed to be only one per Challenges list
+	SECRET_ONEPERBOARD,
+
 	// Difficulty restrictions
-	SECRET_HARDSPEED,			// Permit Hard gamespeed
+	SECRET_HARDSPEED = SECRET_ONEPERBOARD, // Permit Hard gamespeed
 	SECRET_MASTERMODE,			// Permit Master Mode bots in GP
 	SECRET_ENCORE,				// Permit Encore option
 

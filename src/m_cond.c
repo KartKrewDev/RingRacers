@@ -1323,6 +1323,73 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 		case UC_CONDITIONSET: // requires condition set x to already be achieved
 			return M_Achieved(cn->requirement-1);
 
+		case UC_UNLOCKPERCENT:
+		{
+			UINT16 i, unlocked = 0, total = 0;
+
+			// Special case for maps
+			if (cn->extrainfo1 == SECRET_MAP)
+			{
+				for (i = 0; i < basenummapheaders; i++)
+				{
+					if (!mapheaderinfo[i] || mapheaderinfo[i]->menuflags & (LF2_HIDEINSTATS|LF2_HIDEINMENU))
+						continue;
+
+					total++;
+
+					// Check for completion
+					if ((mapheaderinfo[i]->menuflags & LF2_FINISHNEEDED)
+					&& !(mapheaderinfo[i]->records.mapvisited & MV_BEATEN))
+						continue;
+
+					// Check for unlock
+					if (M_MapLocked(i+1))
+						continue;
+
+					unlocked++;
+				}
+			}
+			// Special case for raw Challenge count
+			else if (cn->extrainfo1 == SECRET_NONE)
+			{
+				for (i = 0; i < MAXUNLOCKABLES; i++)
+				{
+					if (unlockables[i].type == SECRET_NONE)
+						continue;
+
+					total++;
+
+					if (M_Achieved(unlockables[i].conditionset - 1) == false)
+						continue;
+
+					unlocked++;
+				}
+
+				unlocked++; // Try to account for this one too
+			}
+			else
+			{
+				for (i = 0; i < MAXUNLOCKABLES; i++)
+				{
+					if (unlockables[i].type != cn->extrainfo1)
+						continue;
+
+					total++;
+
+					if (gamedata->unlocked[i] == false)
+						continue;
+
+					unlocked++;
+				}
+			}
+
+			if (!total)
+				return false;
+
+			// No need to do a pesky divide
+			return ((100 * unlocked) >= (total * cn->requirement));
+		}
+
 		case UC_ADDON:
 			return ((gamedata->everloadedaddon == true)
 				&& M_SecretUnlocked(SECRET_ADDONS, true));
@@ -1918,6 +1985,62 @@ static const char *M_GetConditionString(condition_t *cn)
 				gamedata->unlocked[cn->requirement-1]
 				? unlockables[cn->requirement-1].name
 				: "???");
+
+		case UC_UNLOCKPERCENT:
+		{
+			boolean checkavailable = false;
+
+			switch (cn->extrainfo1)
+			{
+				case SECRET_NONE:
+					work = "completion";
+					break;
+				case SECRET_EXTRAMEDAL:
+					work = "of Challenge Medals";
+					break;
+				case SECRET_CUP:
+					work = "of Cups";
+					break;
+				case SECRET_MAP:
+					work = "of Courses";
+					break;
+				case SECRET_ALTMUSIC:
+					work = "of alternate music";
+					checkavailable = true;
+					break;
+				case SECRET_SKIN:
+					work = "of Characters";
+					checkavailable = true;
+					break;
+				case SECRET_FOLLOWER:
+					work = "of Followers";
+					checkavailable = true;
+					break;
+				case SECRET_COLOR:
+					work = "of Spray Cans";
+					checkavailable = true;
+					break;
+				default:
+					return va("INVALID CHALLENGE FOR PERCENT \"%d\"", cn->requirement);
+			}
+
+			if (checkavailable == true)
+			{
+				for (i = 0; i < MAXUNLOCKABLES; ++i)
+				{
+					if (unlockables[i].type != cn->extrainfo1)
+						continue;
+					if (gamedata->unlocked[i] == false)
+						continue;
+					break;
+				}
+
+				if (i == MAXUNLOCKABLES)
+					work = "of ???";
+			}
+
+			return va("CHALLENGES: get %u%% %s", cn->requirement, work);
+		}
 
 		case UC_ADDON:
 			if (!M_SecretUnlocked(SECRET_ADDONS, true))
