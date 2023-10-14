@@ -331,6 +331,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->sliptideZipBoost);
 	else if (fastcmp(field,"instaWhipCharge"))
 		lua_pushinteger(L, plr->instaWhipCharge);
+	else if (fastcmp(field,"instaWhipCooldown"))
+		lua_pushinteger(L, plr->instaWhipCooldown);
 	else if (fastcmp(field,"guardCooldown"))
 		lua_pushinteger(L, plr->guardCooldown);
 	/*
@@ -808,6 +810,8 @@ static int player_set(lua_State *L)
 	else if (fastcmp(field,"sliptideZipBoost"))
 		plr->sliptideZipBoost = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"instaWhipCharge"))
+		plr->instaWhipCharge = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"instaWhipCooldown"))
 		plr->instaWhipCharge = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"guardCooldown"))
 		plr->guardCooldown = luaL_checkinteger(L, 3);

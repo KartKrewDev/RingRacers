@@ -39,6 +39,7 @@ static const struct monitor_part_config {
 #define monitor_emerald(o) ((o)->extravalue1)
 #define monitor_damage(o) ((o)->extravalue2)
 #define monitor_rammingspeed(o) ((o)->movefactor)
+#define monitor_combohit(o) ((o)->cusval)
 
 static inline UINT8
 get_monitor_itemcount (const mobj_t *monitor)
@@ -589,6 +590,11 @@ Obj_MonitorGetDamage
 		UINT8 damagetype)
 {
 	fixed_t damage;
+
+	if (leveltime - monitor_combohit(monitor) < 35) // Fast combo hits destroy monitors.
+		return FRACUNIT;
+
+	monitor_combohit(monitor) = leveltime;
 
 	switch (damagetype & DMG_TYPEMASK)
 	{

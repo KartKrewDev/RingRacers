@@ -858,6 +858,7 @@ struct player_t
 	mobj_t *flickyAttacker;
 
 	UINT8 instaWhipCharge;
+	UINT8 instaWhipCooldown;
 	UINT8 instaWhipChargeLockout;
 	UINT8 guardCooldown;
 

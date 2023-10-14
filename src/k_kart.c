@@ -8266,6 +8266,12 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->justbumped > 0)
 		player->justbumped--;
 
+	if (player->instaWhipCooldown)
+	{
+		player->instaWhipCharge = 0;
+		player->instaWhipCooldown--;
+	}
+
 	// Don't screw up chain ring pickup/usage with instawhip charge.
 	// If the button stays held, delay charge a bit.
 	if (player->instaWhipChargeLockout)
@@ -8278,7 +8284,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->instaWhipCharge && player->instaWhipCharge < INSTAWHIP_CHARGETIME)
 	{
 		if (!S_SoundPlaying(player->mo, sfx_wchrg1))
-			S_StartSound(player->mo, sfx_wchrg1);
+			S_StartSoundAtVolume(player->mo, sfx_wchrg1, 255/2);
 	}
 	else
 	{
@@ -8288,7 +8294,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->instaWhipCharge >= INSTAWHIP_CHARGETIME)
 	{
 		if (!S_SoundPlaying(player->mo, sfx_wchrg2))
-			S_StartSound(player->mo, sfx_wchrg2);
+			S_StartSoundAtVolume(player->mo, sfx_wchrg2, 255/3);
 	}
 	else
 	{
@@ -11031,7 +11037,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			player->instaWhipCharge = INSTAWHIP_CHARGETIME;
 		}
 
-		if (leveltime < starttime || player->spindash || player->pflags & (PF_ITEMOUT|PF_EGGMANOUT) || player->rocketsneakertimer)
+		if (leveltime < starttime || player->spindash || player->pflags & (PF_ITEMOUT|PF_EGGMANOUT) || player->rocketsneakertimer || player->instaWhipCooldown)
 		{
 			chargingwhip = false;
 			player->instaWhipCharge = 0;
@@ -11073,6 +11079,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			else
 			{
 				player->instaWhipCharge = 0;
+				player->instaWhipCooldown = INSTAWHIP_COOLDOWN;
 				player->guardCooldown = INSTAWHIP_DROPGUARD;
 				if (!K_PowerUpRemaining(player, POWERUP_BARRIER))
 				{
