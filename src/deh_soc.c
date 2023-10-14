@@ -1290,6 +1290,8 @@ void readlevelheader(MYFILE *f, char * name)
 				mapheaderinfo[num]->skybox_scaley = (INT16)i;
 			else if (fastcmp(word, "SKYBOXSCALEZ"))
 				mapheaderinfo[num]->skybox_scalez = (INT16)i;
+			else if (fastcmp(word, "DARKNESS"))
+				mapheaderinfo[num]->darkness = FloatToFixed(atof(word2));
 			else if (fastcmp(word, "LEVELFLAGS"))
 				mapheaderinfo[num]->levelflags = get_number(word2);
 			else if (fastcmp(word, "MENUFLAGS"))

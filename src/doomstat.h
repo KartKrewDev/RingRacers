@@ -507,6 +507,8 @@ struct mapheader_t
 	INT16 skybox_scaley;				///< Skybox Y axis scale.
 	INT16 skybox_scalez;				///< Skybox Z axis scale.
 
+	fixed_t darkness;					///< Pohbee darkness multiplier
+
 	// Distance information
 	fixed_t mobj_scale;					///< Defines the size all object calculations are relative to
 	fixed_t default_waypoint_radius;	///< 0 is a special value for DEFAULT_WAYPOINT_RADIUS, but scaled with mobjscale
