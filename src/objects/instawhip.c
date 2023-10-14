@@ -50,7 +50,7 @@ void Obj_SpawnInstaWhipRecharge(player_t *player, angle_t angleOffset)
 {
 	mobj_t *x = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_INSTAWHIP_RECHARGE);
 
-	x->tics = max(INSTAWHIP_COOLDOWN - player->instaWhipCharge - states[x->info->raisestate].tics, 0);
+	x->tics = max(INSTAWHIP_CHARGETIME - player->instaWhipCharge - states[x->info->raisestate].tics, 0);
 	x->renderflags |= RF_SLOPESPLAT | RF_NOSPLATBILLBOARD;
 
 	P_SetTarget(&recharge_target(x), player->mo);

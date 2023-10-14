@@ -8275,7 +8275,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (!(player->cmd.buttons & BT_ATTACK)) // Deliberate Item button release, no need to protect you from lockout
 		player->instaWhipChargeLockout = 0;
 
-	if (player->instaWhipCharge && player->instaWhipCharge < INSTAWHIP_COOLDOWN)
+	if (player->instaWhipCharge && player->instaWhipCharge < INSTAWHIP_CHARGETIME)
 	{
 		if (!S_SoundPlaying(player->mo, sfx_wchrg1))
 			S_StartSound(player->mo, sfx_wchrg1);
@@ -8285,7 +8285,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		S_StopSoundByID(player->mo, sfx_wchrg1);
 	}
 
-	if (player->instaWhipCharge >= INSTAWHIP_COOLDOWN)
+	if (player->instaWhipCharge >= INSTAWHIP_CHARGETIME)
 	{
 		if (!S_SoundPlaying(player->mo, sfx_wchrg2))
 			S_StartSound(player->mo, sfx_wchrg2);
@@ -8295,7 +8295,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		S_StopSoundByID(player->mo, sfx_wchrg2);
 	}
 
-	if (P_PlayerInPain(player) || player->itemamount)
+	if (P_PlayerInPain(player) || player->itemamount || player->respawn.state != RESPAWNST_NONE)
 		player->instaWhipCharge = 0;
 
 	if (player->tiregrease)
@@ -11031,7 +11031,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				{
 					chargingwhip = false;
 					releasedwhip = (ATTACK_IS_DOWN && player->rings <= 0);
-					player->instaWhipCharge = INSTAWHIP_COOLDOWN;
+					player->instaWhipCharge = INSTAWHIP_CHARGETIME;
 				}
 
 				if (leveltime < starttime || player->spindash)
@@ -11043,7 +11043,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				if (chargingwhip)
 				{
 					//CONS_Printf("charging %d\n", player->instaWhipCharge);
-					player->instaWhipCharge = min(player->instaWhipCharge + 1, INSTAWHIP_COOLDOWN + 1);
+					player->instaWhipCharge = min(player->instaWhipCharge + 1, INSTAWHIP_CHARGETIME + 1);
 
 					if (player->instaWhipCharge == 1)
 					{
@@ -11052,20 +11052,24 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						Obj_SpawnInstaWhipRecharge(player, ANGLE_240);
 					}
 
-					if (player->instaWhipCharge == INSTAWHIP_COOLDOWN)
+					if (player->instaWhipCharge == INSTAWHIP_CHARGETIME)
 					{
 						Obj_SpawnInstaWhipReject(player);
 					}
 
-					if (player->instaWhipCharge > INSTAWHIP_COOLDOWN)
+					if (player->instaWhipCharge > INSTAWHIP_CHARGETIME)
 					{
-						if (leveltime%(TICRATE/2) == 0)
-							P_PlayerRingBurst(player, 1);
+						if ((leveltime%(INSTAWHIP_RINGDRAINEVERY)) == 0 && !(gametyperules & GTR_SPHERES))
+						{
+							if (player->rings > -20)
+								S_StartSound(player->mo, sfx_antiri);
+							player->rings--;
+						}
 					}
 				}
 				else if (releasedwhip)
 				{
-					if (player->instaWhipCharge < INSTAWHIP_COOLDOWN)
+					if (player->instaWhipCharge < INSTAWHIP_CHARGETIME)
 					{
 						S_StartSound(player->mo, sfx_kc50);
 						player->instaWhipCharge = 0;
@@ -11076,7 +11080,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						player->guardCooldown = INSTAWHIP_DROPGUARD;
 						if (!K_PowerUpRemaining(player, POWERUP_BARRIER))
 						{
-							player->guardCooldown = INSTAWHIP_COOLDOWN;
+							player->guardCooldown = INSTAWHIP_CHARGETIME;
 						}
 
 						S_StartSound(player->mo, sfx_iwhp);
