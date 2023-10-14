@@ -801,6 +801,17 @@ char sprnames[NUMSPRITES + 1][5] =
 	"SARC",
 	"SSBM",
 
+	// Hanagumi Hall
+	"HGSP",
+	"HGC0",
+	"HGCA",
+	"HGCB",
+	"HGCC",
+	"HGCD",
+	"HGCE",
+	"HGCF",
+	"HGCG",
+
 	// SMK ports
 	"SMKP",
 	"MTYM",
@@ -5124,6 +5135,17 @@ state_t states[NUMSTATES] =
 	{SPR_NULL,                          0,          1, {NULL}, 0, 0, S_SPECIALSTAGEBOMB_FLICKERLOOP}, // S_SPECIALSTAGEBOMB_FLICKER2
 	{SPR_NULL,                          0,          0, {A_Repeat}, TICRATE, S_SPECIALSTAGEBOMB_FLICKER1, S_SPECIALSTAGEBOMB_RESET}, // S_SPECIALSTAGEBOMB_FLICKERLOOP
 	{SPR_NULL,                          0,          0, {A_SetObjectFlags}, MF_NOCLIPTHING, 1, S_SPECIALSTAGEBOMB}, // S_SPECIALSTAGEBOMB_RESET
+
+	// Hanagumi Hall
+	{SPR_HGSP, FF_FULLBRIGHT|FF_ANIMATE, -1, {NULL}, 10, 1, S_NULL}, // S_HANAGUMIHALL_STEAM
+	{SPR_HGC0, 0, -1, {NULL}, 0, 0, S_NULL}, // S_ALFONSO
+	{SPR_HGCA, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SAKURA
+	{SPR_HGCB, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SUMIRE
+	{SPR_HGCC, 0, -1, {NULL}, 0, 0, S_NULL}, // S_MARIA
+	{SPR_HGCD, 0, -1, {NULL}, 0, 0, S_NULL}, // S_IRIS
+	{SPR_HGCE, 0, -1, {NULL}, 0, 0, S_NULL}, // S_KOHRAN
+	{SPR_HGCF, 0, -1, {NULL}, 0, 0, S_NULL}, // S_KANNA
+	{SPR_HGCG, 0, -1, {NULL}, 0, 0, S_NULL}, // S_OGAMI
 
 	// SMK ports
 	{SPR_SMKP, 0, -1, {NULL}, 0, 0, S_SMK_PIPE1}, // S_SMK_PIPE1
@@ -28413,6 +28435,60 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,    // activesound
 		MF_SPECIAL,  // flags
 		S_SPECIALSTAGEBOMB_EXPLODE // raisestate
+	},
+
+	{           // MT_HANAGUMIHALL_STEAM
+		2023,        // doomednum
+		S_HANAGUMIHALL_STEAM, // spawnstate
+		1000,        // spawnhealth
+		S_NULL,      // seestate
+		sfx_None,    // seesound
+		0,           // reactiontime
+		sfx_None,    // attacksound
+		S_NULL,      // painstate
+		0,           // painchance
+		sfx_None,    // painsound
+		S_NULL,      // meleestate
+		S_NULL,      // missilestate
+		S_NULL,      // deathstate
+		S_NULL,      // xdeathstate
+		sfx_None,    // deathsound
+		0,           // speed
+		24*FRACUNIT, // radius
+		48*FRACUNIT, // height
+		0,           // dispoffset
+		0,           // mass
+		0,           // damage
+		sfx_None,    // activesound
+		MF_NOGRAVITY|MF_SCENERY|MF_NOBLOCKMAP|MF_NOCLIPTHING, // flags
+		S_NULL       // raisestate
+	},
+
+	{           // MT_HANAGUMIHALL_NPC
+		2024,        // doomednum
+		S_ALFONSO,   // spawnstate
+		1,           // spawnhealth
+		S_NULL,      // seestate
+		sfx_None,    // seesound
+		0,           // reactiontime
+		sfx_None,    // attacksound
+		S_NULL,      // painstate
+		0,           // painchance
+		sfx_None,    // painsound
+		S_NULL,      // meleestate
+		S_NULL,      // missilestate
+		S_NULL,      // deathstate
+		S_NULL,      // xdeathstate
+		sfx_None,    // deathsound
+		0,           // speed
+		64*FRACUNIT, // radius
+		128*FRACUNIT, // height
+		0,           // dispoffset
+		0,           // mass
+		0,           // damage
+		sfx_None,    // activesound
+		MF_DONTENCOREMAP|MF_NOCLIP|MF_SCENERY|MF_NOGRAVITY, // flags
+		S_NULL       // raisestate
 	},
 
 	{           // MT_SMK_PIPE

@@ -10596,6 +10596,9 @@ fixed_t P_GetMobjDefaultScale(mobj_t *mobj)
 			return 5*FRACUNIT;
 		case MT_SPECIALSTAGEBOMB:
 			return 3*FRACUNIT/4;
+		case MT_HANAGUMIHALL_STEAM:
+		case MT_HANAGUMIHALL_NPC:
+			return 2*FRACUNIT;
 		default:
 			break;
 	}
@@ -13702,6 +13705,48 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 			leaf->frame |= P_RandomKey(PR_DECORATION, 5);
 		}
 
+		break;
+	}
+	case MT_HANAGUMIHALL_NPC:
+	{
+		UINT8 i;
+		statenum_t state;
+
+		static const statenum_t HANAGUMIHALL_NPC_STATES[] = {
+			S_SAKURA,
+			S_SUMIRE,
+			S_MARIA,
+			S_IRIS,
+			S_KOHRAN,
+			S_KANNA,
+			S_OGAMI
+		};
+		static const size_t NUM_HANAGUMIHALL_NPC_STATES = sizeof(HANAGUMIHALL_NPC_STATES) / sizeof(statenum_t);
+
+		// an invalid NPC ID leaves you with Alfonso
+		if (mthing->thing_args[0] < 0 || mthing->thing_args[0] >= NUM_HANAGUMIHALL_NPC_STATES)
+			break;
+
+		// pick the state based on the NPC ID
+		state = HANAGUMIHALL_NPC_STATES[mthing->thing_args[0]];
+
+		// if the NPC is Sakura, but there is a Sakura player in game, use Alfonso instead
+		if (state == S_SAKURA)
+		{
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (!playeringame[i] || players[i].spectator == true)
+					continue;
+
+				if (strcmp(skins[players[i].skin].name, "sakura") == 0)
+				{
+					state = mobj->info->spawnstate;
+					break;
+				}
+			}
+		}
+
+		P_SetMobjState(mobj, state);
 		break;
 	}
 	case MT_BATTLECAPSULE:
