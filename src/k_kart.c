@@ -8295,7 +8295,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		S_StopSoundByID(player->mo, sfx_wchrg2);
 	}
 
-	if (P_PlayerInPain(player) || player->itemamount || player->respawn.state != RESPAWNST_NONE)
+	if (player->itemamount || player->respawn.state != RESPAWNST_NONE || player->itemRoulette.eggman)
 		player->instaWhipCharge = 0;
 
 	if (player->tiregrease)
