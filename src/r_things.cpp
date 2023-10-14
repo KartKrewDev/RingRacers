@@ -39,6 +39,7 @@
 #include "d_netfil.h" // blargh. for nameonly().
 #include "m_cheat.h" // objectplace
 #include "p_local.h" // stplyr
+#include "core/thread_pool.h"
 #ifdef HWRENDER
 #include "hardware/hw_md2.h"
 #include "hardware/hw_glob.h"
@@ -637,17 +638,17 @@ INT16 *mceilingclip;
 fixed_t spryscale = 0, sprtopscreen = 0, sprbotscreen = 0;
 fixed_t windowtop = 0, windowbottom = 0;
 
-void R_DrawMaskedColumn(column_t *column, column_t *brightmap, INT32 baseclip)
+void R_DrawMaskedColumn(drawcolumndata_t* dc, column_t *column, column_t *brightmap, INT32 baseclip)
 {
 	INT32 topscreen;
 	INT32 bottomscreen;
 	fixed_t basetexturemid;
 	INT32 topdelta, prevdelta = 0;
 
-	basetexturemid = dc_texturemid;
+	basetexturemid = dc->texturemid;
 
 	R_SetColumnFunc(colfunctype, brightmap != NULL);
-	dc_brightmap = NULL;
+	dc->brightmap = NULL;
 
 	for (; column->topdelta != 0xff ;)
 	{
@@ -660,49 +661,53 @@ void R_DrawMaskedColumn(column_t *column, column_t *brightmap, INT32 baseclip)
 		topscreen = sprtopscreen + spryscale*topdelta;
 		bottomscreen = topscreen + spryscale*column->length;
 
-		dc_yl = (topscreen+FRACUNIT-1)>>FRACBITS;
-		dc_yh = (bottomscreen-1)>>FRACBITS;
+		dc->yl = (topscreen+FRACUNIT-1)>>FRACBITS;
+		dc->yh = (bottomscreen-1)>>FRACBITS;
 
 		if (windowtop != INT32_MAX && windowbottom != INT32_MAX)
 		{
 			if (windowtop > topscreen)
-				dc_yl = (windowtop + FRACUNIT - 1)>>FRACBITS;
+				dc->yl = (windowtop + FRACUNIT - 1)>>FRACBITS;
 			if (windowbottom < bottomscreen)
-				dc_yh = (windowbottom - 1)>>FRACBITS;
+				dc->yh = (windowbottom - 1)>>FRACBITS;
 		}
 
-		if (dc_yh >= mfloorclip[dc_x])
-			dc_yh = mfloorclip[dc_x]-1;
-		if (dc_yl <= mceilingclip[dc_x])
-			dc_yl = mceilingclip[dc_x]+1;
+		if (dc->yh >= mfloorclip[dc->x])
+			dc->yh = mfloorclip[dc->x]-1;
+		if (dc->yl <= mceilingclip[dc->x])
+			dc->yl = mceilingclip[dc->x]+1;
 
-		if (dc_yl < 0)
-			dc_yl = 0;
-		if (dc_yh >= vid.height) // dc_yl must be < vid.height, so reduces number of checks in tight loop
-			dc_yh = vid.height - 1;
+		if (dc->yl < 0)
+			dc->yl = 0;
+		if (dc->yh >= vid.height) // dc_yl must be < vid.height, so reduces number of checks in tight loop
+			dc->yh = vid.height - 1;
 
-		if (dc_yh >= baseclip && baseclip != -1)
-			dc_yh = baseclip;
+		if (dc->yh >= baseclip && baseclip != -1)
+			dc->yh = baseclip;
 
-		if (dc_yl <= dc_yh && dc_yh > 0)
+		if (dc->yl <= dc->yh && dc->yh > 0)
 		{
-			dc_source = (UINT8 *)column + 3;
+			dc->source = (UINT8 *)column + 3;
 			if (brightmap != NULL)
 			{
-				dc_brightmap = (UINT8 *)brightmap + 3;
+				dc->brightmap = (UINT8 *)brightmap + 3;
 			}
 
-			dc_texturemid = basetexturemid - (topdelta<<FRACBITS);
+			dc->texturemid = basetexturemid - (topdelta<<FRACBITS);
 
 			// Drawn by R_DrawColumn.
 			// This stuff is a likely cause of the splitscreen water crash bug.
 			// FIXTHIS: Figure out what "something more proper" is and do it.
 			// quick fix... something more proper should be done!!!
-			if (ylookup[dc_yl])
-				colfunc();
+			if (ylookup[dc->yl])
+			{
+				drawcolumndata_t dc_copy = *dc;
+				coldrawfunc_t* colfunccopy = colfunc;
+				colfunccopy(const_cast<drawcolumndata_t*>(&dc_copy));
+			}
 #ifdef PARANOIA
 			else
-				I_Error("R_DrawMaskedColumn: Invalid ylookup for dc_yl %d", dc_yl);
+				I_Error("R_DrawMaskedColumn: Invalid ylookup for dc_yl %d", dc->yl);
 #endif
 		}
 		column = (column_t *)((UINT8 *)column + column->length + 4);
@@ -712,21 +717,21 @@ void R_DrawMaskedColumn(column_t *column, column_t *brightmap, INT32 baseclip)
 		}
 	}
 
-	dc_texturemid = basetexturemid;
+	dc->texturemid = basetexturemid;
 }
 
 INT32 lengthcol; // column->length : for flipped column function pointers and multi-patch on 2sided wall = texture->height
 
-void R_DrawFlippedMaskedColumn(column_t *column, column_t *brightmap, INT32 baseclip)
+void R_DrawFlippedMaskedColumn(drawcolumndata_t* dc, column_t *column, column_t *brightmap, INT32 baseclip)
 {
 	INT32 topscreen;
 	INT32 bottomscreen;
-	fixed_t basetexturemid = dc_texturemid;
+	fixed_t basetexturemid = dc->texturemid;
 	INT32 topdelta, prevdelta = -1;
 	UINT8 *d,*s;
 
 	R_SetColumnFunc(colfunctype, brightmap != NULL);
-	dc_brightmap = NULL;
+	dc->brightmap = NULL;
 
 	for (; column->topdelta != 0xff ;)
 	{
@@ -741,53 +746,57 @@ void R_DrawFlippedMaskedColumn(column_t *column, column_t *brightmap, INT32 base
 		bottomscreen = sprbotscreen == INT32_MAX ? topscreen + spryscale*column->length
 		                                      : sprbotscreen + spryscale*column->length;
 
-		dc_yl = (topscreen+FRACUNIT-1)>>FRACBITS;
-		dc_yh = (bottomscreen-1)>>FRACBITS;
+		dc->yl = (topscreen+FRACUNIT-1)>>FRACBITS;
+		dc->yh = (bottomscreen-1)>>FRACBITS;
 
 		if (windowtop != INT32_MAX && windowbottom != INT32_MAX)
 		{
 			if (windowtop > topscreen)
-				dc_yl = (windowtop + FRACUNIT - 1)>>FRACBITS;
+				dc->yl = (windowtop + FRACUNIT - 1)>>FRACBITS;
 			if (windowbottom < bottomscreen)
-				dc_yh = (windowbottom - 1)>>FRACBITS;
+				dc->yh = (windowbottom - 1)>>FRACBITS;
 		}
 
-		if (dc_yh >= mfloorclip[dc_x])
-			dc_yh = mfloorclip[dc_x]-1;
-		if (dc_yl <= mceilingclip[dc_x])
-			dc_yl = mceilingclip[dc_x]+1;
+		if (dc->yh >= mfloorclip[dc->x])
+			dc->yh = mfloorclip[dc->x]-1;
+		if (dc->yl <= mceilingclip[dc->x])
+			dc->yl = mceilingclip[dc->x]+1;
 
-		if (dc_yh >= baseclip && baseclip != -1)
-			dc_yh = baseclip;
+		if (dc->yh >= baseclip && baseclip != -1)
+			dc->yh = baseclip;
 
-		if (dc_yl < 0)
-			dc_yl = 0;
-		if (dc_yh >= vid.height) // dc_yl must be < vid.height, so reduces number of checks in tight loop
-			dc_yh = vid.height - 1;
+		if (dc->yl < 0)
+			dc->yl = 0;
+		if (dc->yh >= vid.height) // dc_yl must be < vid.height, so reduces number of checks in tight loop
+			dc->yh = vid.height - 1;
 
-		if (dc_yl <= dc_yh && dc_yh > 0)
+		if (dc->yl <= dc->yh && dc->yh > 0)
 		{
-			dc_source = static_cast<UINT8*>(ZZ_Alloc(column->length));
-			for (s = (UINT8 *)column+2+column->length, d = dc_source; d < dc_source+column->length; --s)
+			dc->source = static_cast<UINT8*>(ZZ_Alloc(column->length));
+			for (s = (UINT8 *)column+2+column->length, d = dc->source; d < dc->source+column->length; --s)
 				*d++ = *s;
 
 			if (brightmap != NULL)
 			{
-				dc_brightmap = static_cast<UINT8*>(ZZ_Alloc(brightmap->length));
-				for (s = (UINT8 *)brightmap+2+brightmap->length, d = dc_brightmap; d < dc_brightmap+brightmap->length; --s)
+				dc->brightmap = static_cast<UINT8*>(ZZ_Alloc(brightmap->length));
+				for (s = (UINT8 *)brightmap+2+brightmap->length, d = dc->brightmap; d < dc->brightmap+brightmap->length; --s)
 					*d++ = *s;
 			}
 
-			dc_texturemid = basetexturemid - (topdelta<<FRACBITS);
+			dc->texturemid = basetexturemid - (topdelta<<FRACBITS);
 
 			// Still drawn by R_DrawColumn.
-			if (ylookup[dc_yl])
-				colfunc();
+			if (ylookup[dc->yl])
+			{
+				drawcolumndata_t dc_copy = *dc;
+				coldrawfunc_t* colfunccopy = colfunc;
+				colfunccopy(const_cast<drawcolumndata_t*>(&dc_copy));
+			}
 #ifdef PARANOIA
 			else
-				I_Error("R_DrawMaskedColumn: Invalid ylookup for dc_yl %d", dc_yl);
+				I_Error("R_DrawMaskedColumn: Invalid ylookup for dc_yl %d", dc->yl);
 #endif
-			Z_Free(dc_source);
+			Z_Free(dc->source);
 		}
 		column = (column_t *)((UINT8 *)column + column->length + 4);
 		if (brightmap != NULL)
@@ -796,7 +805,7 @@ void R_DrawFlippedMaskedColumn(column_t *column, column_t *brightmap, INT32 base
 		}
 	}
 
-	dc_texturemid = basetexturemid;
+	dc->texturemid = basetexturemid;
 }
 
 static boolean hitlag_is_flashing(mobj_t *thing)
@@ -866,7 +875,7 @@ UINT8 *R_GetSpriteTranslation(vissprite_t *vis)
 static void R_DrawVisSprite(vissprite_t *vis)
 {
 	column_t *column, *bmcol = NULL;
-	void (*localcolfunc)(column_t *, column_t *, INT32);
+	void (*localcolfunc)(drawcolumndata_t*, column_t *, column_t *, INT32);
 	INT32 texturecolumn;
 	INT32 pwidth;
 	fixed_t frac;
@@ -876,6 +885,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 	INT32 x1, x2;
 	INT64 overflow_test;
 	INT32 baseclip = -1;
+	drawcolumndata_t dc {0};
 
 	if (!patch)
 		return;
@@ -917,9 +927,9 @@ static void R_DrawVisSprite(vissprite_t *vis)
 	}
 
 	R_SetColumnFunc(BASEDRAWFUNC, false); // hack: this isn't resetting properly somewhere.
-	dc_colormap = vis->colormap;
-	dc_fullbright = colormaps;
-	dc_translation = R_GetSpriteTranslation(vis);
+	dc.colormap = vis->colormap;
+	dc.fullbright = colormaps;
+	dc.translation = R_GetSpriteTranslation(vis);
 
 	// Hack: Use a special column function for drop shadows that bypasses
 	// invalid memory access crashes caused by R_ProjectDropShadow putting wrong values
@@ -927,8 +937,8 @@ static void R_DrawVisSprite(vissprite_t *vis)
 	if (vis->cut & SC_SHADOW)
 	{
 		R_SetColumnFunc(COLDRAWFUNC_DROPSHADOW, false);
-		dc_transmap = vis->transmap;
-		dc_shadowcolor = vis->color;
+		dc.transmap = vis->transmap;
+		dc.shadowcolor = vis->color;
 	}
 	else if (!(vis->cut & SC_PRECIP) &&
 			R_ThingIsFlashing(vis->mobj)) // Bosses "flash"
@@ -938,12 +948,12 @@ static void R_DrawVisSprite(vissprite_t *vis)
 	else if (vis->mobj->color && vis->transmap) // Color mapping
 	{
 		R_SetColumnFunc(COLDRAWFUNC_TRANSTRANS, false);
-		dc_transmap = vis->transmap;
+		dc.transmap = vis->transmap;
 	}
 	else if (vis->transmap)
 	{
 		R_SetColumnFunc(COLDRAWFUNC_FUZZY, false);
-		dc_transmap = vis->transmap;    //Fab : 29-04-98: translucency table
+		dc.transmap = vis->transmap;    //Fab : 29-04-98: translucency table
 	}
 	else if (vis->mobj->color) // translate green skin to another color
 		R_SetColumnFunc(COLDRAWFUNC_TRANS, false);
@@ -952,26 +962,26 @@ static void R_DrawVisSprite(vissprite_t *vis)
 
 	if (vis->extra_colormap && !(vis->cut & SC_FULLBRIGHT) && !(vis->renderflags & RF_NOCOLORMAPS))
 	{
-		if (!dc_colormap)
-			dc_colormap = vis->extra_colormap->colormap;
+		if (!dc.colormap)
+			dc.colormap = vis->extra_colormap->colormap;
 		else
-			dc_colormap = &vis->extra_colormap->colormap[dc_colormap - colormaps];
+			dc.colormap = &vis->extra_colormap->colormap[dc.colormap - colormaps];
 	}
-	if (!dc_colormap)
-		dc_colormap = colormaps;
+	if (!dc.colormap)
+		dc.colormap = colormaps;
 
-	dc_lightmap = colormaps;
+	dc.lightmap = colormaps;
 
-	dc_fullbright = colormaps;
+	dc.fullbright = colormaps;
 
 	if (encoremap && !vis->mobj->color && !(vis->mobj->flags & MF_DONTENCOREMAP))
 	{
-		dc_colormap += COLORMAP_REMAPOFFSET;
-		dc_fullbright += COLORMAP_REMAPOFFSET;
+		dc.colormap += COLORMAP_REMAPOFFSET;
+		dc.fullbright += COLORMAP_REMAPOFFSET;
 	}
 
-	dc_texturemid = vis->texturemid;
-	dc_texheight = 0;
+	dc.texturemid = vis->texturemid;
+	dc.texheight = 0;
 
 	frac = vis->startfrac;
 	windowtop = windowbottom = sprbotscreen = INT32_MAX;
@@ -991,16 +1001,16 @@ static void R_DrawVisSprite(vissprite_t *vis)
 			vis->xiscale = FixedDiv(vis->xiscale,this_scale);
 			vis->cut = static_cast<spritecut_e>(vis->cut | SC_ISSCALED);
 		}
-		dc_texturemid = FixedDiv(dc_texturemid,this_scale);
+		dc.texturemid = FixedDiv(dc.texturemid,this_scale);
 	}
 
 	spryscale = vis->scale;
 
 	if (!(vis->scalestep))
 	{
-		sprtopscreen = centeryfrac - FixedMul(dc_texturemid, spryscale);
+		sprtopscreen = centeryfrac - FixedMul(dc.texturemid, spryscale);
 		sprtopscreen += vis->shear.tan * vis->shear.offset;
-		dc_iscale = FixedDiv(FRACUNIT, vis->scale);
+		dc.iscale = FixedDiv(FRACUNIT, vis->scale);
 	}
 
 	if (vis->floorclip)
@@ -1037,9 +1047,9 @@ static void R_DrawVisSprite(vissprite_t *vis)
 		pwidth = patch->width;
 
 		// Papersprite drawing loop
-		for (dc_x = vis->x1; dc_x <= vis->x2; dc_x++, spryscale += scalestep)
+		for (dc.x = vis->x1; dc.x <= vis->x2; dc.x++, spryscale += scalestep)
 		{
-			angle_t angle = ((vis->centerangle + xtoviewangle[viewssnum][dc_x]) >> ANGLETOFINESHIFT) & 0xFFF;
+			angle_t angle = ((vis->centerangle + xtoviewangle[viewssnum][dc.x]) >> ANGLETOFINESHIFT) & 0xFFF;
 			texturecolumn = (vis->paperoffset - FixedMul(FINETANGENT(angle), vis->paperdistance)) / horzscale;
 
 			if (texturecolumn < 0 || texturecolumn >= pwidth)
@@ -1048,15 +1058,15 @@ static void R_DrawVisSprite(vissprite_t *vis)
 			if (vis->xiscale < 0) // Flipped sprite
 				texturecolumn = pwidth - 1 - texturecolumn;
 
-			sprtopscreen = (centeryfrac - FixedMul(dc_texturemid, spryscale));
-			dc_iscale = (0xffffffffu / (unsigned)spryscale);
+			sprtopscreen = (centeryfrac - FixedMul(dc.texturemid, spryscale));
+			dc.iscale = (0xffffffffu / (unsigned)spryscale);
 
 			column = (column_t *)((UINT8 *)patch->columns + (patch->columnofs[texturecolumn]));
 
 			if (bmpatch)
 				bmcol = (column_t *)((UINT8 *)bmpatch->columns + (bmpatch->columnofs[texturecolumn]));
 
-			localcolfunc (column, bmcol, baseclip);
+			localcolfunc (&dc, column, bmcol, baseclip);
 		}
 	}
 	else if (vis->cut & SC_SHEAR)
@@ -1066,7 +1076,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 #endif
 
 		// Vertically sheared sprite
-		for (dc_x = vis->x1; dc_x <= vis->x2; dc_x++, frac += vis->xiscale, dc_texturemid -= vis->shear.tan)
+		for (dc.x = vis->x1; dc.x <= vis->x2; dc.x++, frac += vis->xiscale, dc.texturemid -= vis->shear.tan)
 		{
 			texturecolumn = std::clamp(frac >> FRACBITS, 0, patch->width - 1);
 
@@ -1074,8 +1084,8 @@ static void R_DrawVisSprite(vissprite_t *vis)
 			if (bmpatch)
 				bmcol = (column_t *)((UINT8 *)bmpatch->columns + (bmpatch->columnofs[texturecolumn]));
 
-			sprtopscreen = (centeryfrac - FixedMul(dc_texturemid, spryscale));
-			localcolfunc (column, bmcol, baseclip);
+			sprtopscreen = (centeryfrac - FixedMul(dc.texturemid, spryscale));
+			localcolfunc (&dc, column, bmcol, baseclip);
 		}
 	}
 	else
@@ -1103,7 +1113,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 #endif // RANGECHECK
 
 		// Non-paper drawing loop
-		for (dc_x = vis->x1; dc_x <= vis->x2; dc_x++, frac += vis->xiscale, sprtopscreen += vis->shear.tan)
+		for (dc.x = vis->x1; dc.x <= vis->x2; dc.x++, frac += vis->xiscale, sprtopscreen += vis->shear.tan)
 		{
 			texturecolumn = std::clamp(frac >> FRACBITS, 0, patch->width - 1);
 
@@ -1112,12 +1122,12 @@ static void R_DrawVisSprite(vissprite_t *vis)
 			if (bmpatch)
 				bmcol = (column_t *)((UINT8 *)bmpatch->columns + (bmpatch->columnofs[texturecolumn]));
 
-			localcolfunc (column, bmcol, baseclip);
+			localcolfunc (&dc, column, bmcol, baseclip);
 		}
 	}
 
 	R_SetColumnFunc(BASEDRAWFUNC, false);
-	dc_hires = 0;
+	dc.hires = 0;
 
 	vis->x1 = x1;
 	vis->x2 = x2;
@@ -1132,6 +1142,7 @@ static void R_DrawPrecipitationVisSprite(vissprite_t *vis)
 	patch_t *patch;
 	fixed_t this_scale = vis->thingscale;
 	INT64 overflow_test;
+	drawcolumndata_t dc {0};
 
 	//Fab : R_InitSprites now sets a wad lump number
 	patch = vis->patch;
@@ -1146,26 +1157,26 @@ static void R_DrawPrecipitationVisSprite(vissprite_t *vis)
 	if (vis->transmap)
 	{
 		R_SetColumnFunc(COLDRAWFUNC_FUZZY, false);
-		dc_transmap = vis->transmap;    //Fab : 29-04-98: translucency table
+		dc.transmap = vis->transmap;    //Fab : 29-04-98: translucency table
 	}
 
-	dc_colormap = colormaps;
-	dc_fullbright = colormaps;
+	dc.colormap = colormaps;
+	dc.fullbright = colormaps;
 	if (encoremap)
 	{
-		dc_colormap += COLORMAP_REMAPOFFSET;
-		dc_fullbright += COLORMAP_REMAPOFFSET;
+		dc.colormap += COLORMAP_REMAPOFFSET;
+		dc.fullbright += COLORMAP_REMAPOFFSET;
 	}
 
-	dc_lightmap = colormaps;
+	dc.lightmap = colormaps;
 
-	dc_iscale = FixedDiv(FRACUNIT, vis->scale);
-	dc_texturemid = FixedDiv(vis->texturemid, this_scale);
-	dc_texheight = 0;
+	dc.iscale = FixedDiv(FRACUNIT, vis->scale);
+	dc.texturemid = FixedDiv(vis->texturemid, this_scale);
+	dc.texheight = 0;
 
 	frac = vis->startfrac;
 	spryscale = vis->scale;
-	sprtopscreen = centeryfrac - FixedMul(dc_texturemid,spryscale);
+	sprtopscreen = centeryfrac - FixedMul(dc.texturemid,spryscale);
 	windowtop = windowbottom = sprbotscreen = INT32_MAX;
 
 	if (vis->x1 < 0)
@@ -1174,7 +1185,7 @@ static void R_DrawPrecipitationVisSprite(vissprite_t *vis)
 	if (vis->x2 >= vid.width)
 		vis->x2 = vid.width-1;
 
-	for (dc_x = vis->x1; dc_x <= vis->x2; dc_x++, frac += vis->xiscale)
+	for (dc.x = vis->x1; dc.x <= vis->x2; dc.x++, frac += vis->xiscale)
 	{
 		texturecolumn = frac>>FRACBITS;
 
@@ -1185,7 +1196,7 @@ static void R_DrawPrecipitationVisSprite(vissprite_t *vis)
 
 		column = (column_t *)((UINT8 *)patch->columns + (patch->columnofs[texturecolumn]));
 
-		R_DrawMaskedColumn(column, NULL, -1);
+		R_DrawMaskedColumn(&dc, column, NULL, -1);
 	}
 
 	R_SetColumnFunc(BASEDRAWFUNC, false);
@@ -3815,6 +3826,7 @@ boolean R_ThingIsFullDark(mobj_t *thing)
 //
 static void R_DrawMaskedList (drawnode_t* head)
 {
+	ZoneScoped;
 	drawnode_t *r2;
 	drawnode_t *next;
 
@@ -3822,8 +3834,9 @@ static void R_DrawMaskedList (drawnode_t* head)
 	{
 		if (r2->plane)
 		{
+			drawspandata_t ds = {0};
 			next = r2->prev;
-			R_DrawSinglePlane(r2->plane);
+			R_DrawSinglePlane(&ds, r2->plane, false);
 			R_DoneWithNode(r2);
 			r2 = next;
 		}
@@ -3848,9 +3861,13 @@ static void R_DrawMaskedList (drawnode_t* head)
 
 			// Tails 08-18-2002
 			if (r2->sprite->cut & SC_PRECIP)
+			{
 				R_DrawPrecipitationSprite(r2->sprite);
+			}
 			else if (!r2->sprite->linkdraw)
+			{
 				R_DrawSprite(r2->sprite);
+			}
 			else // unbundle linkdraw
 			{
 				vissprite_t *ds = r2->sprite->linkdraw;
@@ -3858,12 +3875,16 @@ static void R_DrawMaskedList (drawnode_t* head)
 				for (;
 				(ds != NULL && r2->sprite->dispoffset > ds->dispoffset);
 				ds = ds->next)
+				{
 					R_DrawSprite(ds);
+				}
 
 				R_DrawSprite(r2->sprite);
 
 				for (; ds != NULL; ds = ds->next)
+				{
 					R_DrawSprite(ds);
+				}
 			}
 
 			R_DoneWithNode(r2);
@@ -3874,6 +3895,7 @@ static void R_DrawMaskedList (drawnode_t* head)
 
 void R_DrawMasked(maskcount_t* masks, INT32 nummasks)
 {
+	ZoneScoped;
 	drawnode_t *heads;	/**< Drawnode lists; as many as number of views/portals. */
 	INT32 i;
 
