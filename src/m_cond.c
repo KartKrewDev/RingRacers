@@ -1585,6 +1585,11 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 				&& player->realtime < timelimitintics
 				&& (timelimitintics + extratimeintics + secretextratime - player->realtime) >= (unsigned)cn->requirement);
 
+		case UCRP_RINGS:
+			return (player->hudrings >= cn->requirement);
+		case UCRP_RINGSEXACT:
+			return (player->hudrings == cn->requirement);
+
 		case UCRP_TRIGGER: // requires map trigger set
 			return !!(player->roundconditions.unlocktriggers & (1 << cn->requirement));
 
@@ -2259,6 +2264,13 @@ static const char *M_GetConditionString(condition_t *cn)
 				G_TicsToMinutes(cn->requirement, true),
 				G_TicsToSeconds(cn->requirement),
 				G_TicsToCentiseconds(cn->requirement));
+
+		case UCRP_RINGS:
+			if (cn->requirement != 20)
+				return va("with at least %d Rings", cn->requirement);
+			// FALLTHRU
+		case UCRP_RINGSEXACT:
+			return va("with exactly %d Rings", cn->requirement);
 
 		case UCRP_TRIGGER:
 			return "do something special";

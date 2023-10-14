@@ -2935,6 +2935,19 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 			return;
 		}
 	}
+	else if ((offset=0) || fastcmp(params[0], "RINGS")
+	||        (++offset && fastcmp(params[0], "RINGSEXACT")))
+	{
+		PARAMCHECK(1);
+		ty = UCRP_RINGS + offset;
+		re = get_number(params[1]);
+
+		if (re < -20 || re > 20)
+		{
+			deh_warning("Invalid ring count %d for condition ID %d", re, id+1);
+			return;
+		}
+	}
 	else if (fastcmp(params[0], "TRIGGER"))
 	{
 		PARAMCHECK(1);

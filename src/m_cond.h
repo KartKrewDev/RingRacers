@@ -107,6 +107,9 @@ typedef enum
 	UCRP_FINISHTIMEEXACT, // Finish == [time, tics]
 	UCRP_FINISHTIMELEFT, // Finish with at least [time, tics] to spare
 
+	UCRP_RINGS, // Finish >= [rings]
+	UCRP_RINGSEXACT, // Finish == [rings]
+
 	UCRP_TRIGGER,	// Map execution trigger [id]
 
 	UCRP_FALLOFF, // Fall off (or don't)
@@ -119,7 +122,7 @@ typedef enum
 	UCRP_LANDMINEDUNK, // huh? you died? that's weird. all i did was try to hug you...
 	UCRP_HITMIDAIR, // Hit another player mid-air with a kartfielditem
 
-	UCRP_WETPLAYER, // Don't touch [fluid]
+	UCRP_WETPLAYER, // Don't touch [strictness] [fluid]
 } conditiontype_t;
 
 // Condition Set information
