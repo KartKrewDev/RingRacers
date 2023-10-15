@@ -3289,7 +3289,15 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 			dist -= FixedMul(11*dist/16, player->karthud[khud_boostcam]);
 		}
 
-		speed = P_AproxDistance(P_AproxDistance(mo->momx, mo->momy), mo->momz / 16);
+		if (player->loop.radius)
+		{
+			speed = player->speed;
+		}
+		else
+		{
+			speed = P_AproxDistance(P_AproxDistance(mo->momx, mo->momy), mo->momz / 16);
+		}
+
 		lag = FRACUNIT - ((FixedDiv(speed, speedthreshold) - FRACUNIT) * 2);
 
 		if (lag > FRACUNIT)
