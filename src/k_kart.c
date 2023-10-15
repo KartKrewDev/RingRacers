@@ -11035,6 +11035,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			chargingwhip = false;
 			releasedwhip = (ATTACK_IS_DOWN && player->rings <= 0);
 			player->instaWhipCharge = INSTAWHIP_CHARGETIME;
+			player->instaWhipCooldown = 0;
 		}
 
 		if (leveltime < starttime || player->spindash || player->pflags & (PF_ITEMOUT|PF_EGGMANOUT) || player->rocketsneakertimer || player->instaWhipCooldown)
@@ -11063,7 +11064,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			{
 				if ((leveltime%(INSTAWHIP_RINGDRAINEVERY)) == 0 && !(gametyperules & GTR_SPHERES))
 				{
-					if (player->rings > -20)
+					if (player->rings > -20 && P_IsDisplayPlayer(player))
 						S_StartSound(player->mo, sfx_antiri);
 					player->rings--;
 				}
