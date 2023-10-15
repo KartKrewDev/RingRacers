@@ -10511,21 +10511,7 @@ static void K_KartSpindash(player_t *player)
 			P_InstaThrust(player->mo, player->mo->angle, thrust);
 		}
 
-		if (!player->tiregrease)
-		{
-			UINT8 i;
-			for (i = 0; i < 2; i++)
-			{
-				mobj_t *grease;
-				grease = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_TIREGREASE);
-				P_SetTarget(&grease->target, player->mo);
-				grease->angle = K_MomentumAngle(player->mo);
-				grease->extravalue1 = i;
-				K_ReduceVFX(grease, player);
-			}
-		}
-
-		player->tiregrease = 2*TICRATE;
+		K_SetTireGrease(player, 2*TICRATE);
 
 		player->spindash = 0;
 		S_ReducedVFXSound(player->mo, sfx_s23c, player);
@@ -12477,6 +12463,25 @@ boolean K_Cooperative(void)
 	}
 
 	return false;
+}
+
+void K_SetTireGrease(player_t *player, tic_t tics)
+{
+	if (!player->tiregrease)
+	{
+		UINT8 i;
+		for (i = 0; i < 2; i++)
+		{
+			mobj_t *grease;
+			grease = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_TIREGREASE);
+			P_SetTarget(&grease->target, player->mo);
+			grease->angle = K_MomentumAngle(player->mo);
+			grease->extravalue1 = i;
+			K_ReduceVFX(grease, player);
+		}
+	}
+
+	player->tiregrease = tics;
 }
 
 //}
