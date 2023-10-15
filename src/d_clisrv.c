@@ -6838,7 +6838,7 @@ static void CheckPresentPlayers(void)
 }
 
 // Handle "client-to-client" auth challenge flow.
-static void UpdateChallenges(void)
+void UpdateChallenges(void)
 {
 	if (!(Playing() && netgame))
 		return;
@@ -6857,7 +6857,7 @@ static void UpdateChallenges(void)
 	}
 	else // client
 	{
-		if (leveltime <= CHALLENGEALL_START)
+		if (leveltime < CHALLENGEALL_START)
 		expectChallenge = true;
 
 		if (leveltime == CHALLENGEALL_START)
@@ -7018,8 +7018,6 @@ void NetUpdate(void)
 	gametime = nowtime;
 
 	UpdatePingTable();
-
-	UpdateChallenges();
 
 	if (client)
 		maketic = neededtic;
