@@ -28,6 +28,7 @@
 #include "i_video.h" // rendermode
 #include "r_main.h"
 #include "r_fps.h"
+#include "d_clisrv.h" // UpdateChallenges
 
 // Object place
 #include "m_cheat.h"
@@ -965,6 +966,9 @@ void P_Ticker(boolean run)
 		LUA_HookThinkFrame();
 		ps_lua_thinkframe_time = I_GetPreciseTime() - ps_lua_thinkframe_time;
 	}
+
+	if (run)
+		UpdateChallenges();
 
 	// Run shield positioning
 	P_RunOverlays();
