@@ -1077,17 +1077,17 @@ boolean P_IsDisplayPlayer(player_t *player)
 		return false;
 	}
 
-	// Freecam still techically has a player in
-	// displayplayers. But since the camera is detached, it
-	// would be weird if sounds were heard from that player's
-	// perspective.
-	if (demo.freecam)
-	{
-		return false;
-	}
-
 	for (i = 0; i <= r_splitscreen; i++) // DON'T skip P1
 	{
+		if (camera[i].freecam)
+		{
+			// Freecam still techically has a player in
+			// displayplayers. But since the camera is
+			// detached, it would be weird if sounds were
+			// heard from that player's perspective.
+			continue;
+		}
+
 		if (player == &players[displayplayers[i]])
 			return true;
 	}
@@ -2802,11 +2802,10 @@ static void P_DeathThink(player_t *player)
 		}
 	}
 
-	// TODO: support splitscreen
 	// Spectate another player after 2 seconds
-	if (player == &players[consoleplayer] && playerGone == true && (gametyperules & GTR_BUMPERS) && player->deadtimer == 2*TICRATE)
+	if (G_IsPartyLocal(player - players) && playerGone == true && (gametyperules & GTR_BUMPERS) && player->deadtimer == 2*TICRATE)
 	{
-		K_ToggleDirector(true);
+		K_ToggleDirector(G_PartyPosition(player - players), true);
 	}
 
 	// Keep time rolling
@@ -2885,8 +2884,6 @@ fixed_t t_cam_dist[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
 fixed_t t_cam_height[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
 fixed_t t_cam_rotate[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
 
-struct demofreecam_s democam;
-
 void P_DemoCameraMovement(camera_t *cam, UINT8 num)
 {
 	ticcmd_t *cmd;
@@ -2914,27 +2911,31 @@ void P_DemoCameraMovement(camera_t *cam, UINT8 num)
 	cam->angle += turning;
 
 	// camera movement:
-	if (!democam.button_a_held)
+	if (!cam->button_a_held)
 	{
-		if (cmd->buttons & BT_ACCELERATE)
+		int dir = ((cmd->buttons & BT_ACCELERATE) ? 1 : 0) + ((cmd->buttons & BT_BRAKE) ? -1 : 0);
+
+		switch (dir)
 		{
-			cam->z += 32*mapobjectscale;
-			moving = true;
-		}
-		else if (cmd->buttons & BT_BRAKE)
-		{
-			cam->z -= 32*mapobjectscale;
-			moving = true;
+			case 1:
+				cam->z += 32*mapobjectscale;
+				moving = true;
+				break;
+
+			case -1:
+				cam->z -= 32*mapobjectscale;
+				moving = true;
+				break;
 		}
 	}
 
-	if (!(cmd->buttons & (BT_ACCELERATE | BT_DRIFT)) && democam.button_a_held)
+	if (!(cmd->buttons & (BT_ACCELERATE | BT_DRIFT)) && cam->button_a_held)
 	{
-		democam.button_a_held--;
+		cam->button_a_held--;
 	}
 
-	// if you hold item, you will lock on to displayplayer. (The last player you were ""f12-ing"")
-	if (demo.freecam && cmd->buttons & BT_ATTACK)
+	// if you hold Y, you will lock on to displayplayer. (The last player you were ""f12-ing"")
+	if (cam->freecam && cmd->buttons & BT_RESPAWN)
 	{
 		lastp = &players[displayplayers[0]];	// Fun fact, I was trying displayplayers[0]->mo as if it was Lua like an absolute idiot.
 		cam->angle = R_PointToAngle2(cam->x, cam->y, lastp->mo->x, lastp->mo->y);
@@ -2954,7 +2955,7 @@ void P_DemoCameraMovement(camera_t *cam, UINT8 num)
 	// forward/back will have a slope. So, as long as democam
 	// controls haven't been used to alter the vertical angle,
 	// slowly reset it to flat.
-	if ((cam->reset_aiming && moving) || ((cmd->buttons & BT_DRIFT) && !democam.button_a_held))
+	if ((cam->reset_aiming && moving) || ((cmd->buttons & BT_DRIFT) && !cam->button_a_held))
 	{
 		INT32 aiming = cam->aiming;
 		INT32 smooth = FixedMul(ANGLE_11hh / 4, FCOS(cam->aiming));
@@ -2995,17 +2996,19 @@ void P_DemoCameraMovement(camera_t *cam, UINT8 num)
 	cam->subsector = R_PointInSubsector(cam->x, cam->y);
 }
 
-void P_ToggleDemoCamera(void)
+void P_ToggleDemoCamera(UINT8 viewnum)
 {
-	if (!demo.freecam)	// toggle on
+	camera_t *cam = &camera[viewnum];
+
+	if (!cam->freecam)	// toggle on
 	{
-		demo.freecam = true;
-		democam.button_a_held = 2;
-		camera[0].reset_aiming = true;
+		cam->freecam = true;
+		cam->button_a_held = 2;
+		cam->reset_aiming = true;
 	}
 	else	// toggle off
 	{
-		demo.freecam = false;
+		cam->freecam = false;
 	}
 }
 
@@ -3014,7 +3017,7 @@ void P_ResetCamera(player_t *player, camera_t *thiscam)
 	tic_t tries = 0;
 	fixed_t x, y, z;
 
-	if (demo.freecam)
+	if (thiscam->freecam)
 		return;	// do not reset the camera there.
 
 	if (!player->mo)
@@ -3100,7 +3103,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		num = 0;
 	}
 
-	if (demo.freecam || player->spectator)
+	if (thiscam->freecam || player->spectator)
 	{
 		P_DemoCameraMovement(thiscam, num);
 		return true;

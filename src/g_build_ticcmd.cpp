@@ -86,6 +86,8 @@ class TiccmdBuilder
 	UINT8 forplayer() const { return ssplayer - 1; }
 	player_t* player() const { return &players[g_localplayers[forplayer()]]; }
 
+	bool freecam() const { return camera[forplayer()].freecam; }
+
 	UINT8 swap_ssplayer() const
 	{
 		if (ssplayer == cv_1pswap.value)
@@ -239,13 +241,13 @@ class TiccmdBuilder
 	{
 		if (M_MenuButtonPressed(pid, MBT_C))
 		{
-			P_ToggleDemoCamera();
+			P_ToggleDemoCamera(forplayer());
 		}
 	}
 
 	bool director_input()
 	{
-		if (demo.freecam || !K_DirectorIsAvailable(viewnum))
+		if (freecam() || !K_DirectorIsAvailable(viewnum))
 		{
 			return false;
 		}
@@ -253,13 +255,13 @@ class TiccmdBuilder
 		if (M_MenuButtonPressed(pid, MBT_A))
 		{
 			G_AdjustView(ssplayer, 1, true);
-			K_ToggleDirector(false);
+			K_ToggleDirector(forplayer(), false);
 		}
 
 		if (M_MenuButtonPressed(pid, MBT_X))
 		{
 			G_AdjustView(ssplayer, -1, true);
-			K_ToggleDirector(false);
+			K_ToggleDirector(forplayer(), false);
 		}
 
 		if (player()->spectator == true)
@@ -272,7 +274,7 @@ class TiccmdBuilder
 
 			if (M_MenuButtonPressed(pid, MBT_R))
 			{
-				K_ToggleDirector(true);
+				K_ToggleDirector(forplayer(), true);
 			}
 		}
 
@@ -283,7 +285,7 @@ class TiccmdBuilder
 
 	bool spectator_analog_input()
 	{
-		if (!player()->spectator && !objectplacing && !demo.freecam)
+		if (!player()->spectator && !objectplacing && !freecam())
 		{
 			return false;
 		}
@@ -387,7 +389,7 @@ class TiccmdBuilder
 		map(gc_item, BT_ATTACK); // fire
 
 		map(gc_lookback, BT_LOOKBACK); // rear view
-		map(gc_respawn, BT_RESPAWN | BT_EBRAKEMASK); // respawn
+		map(gc_respawn, BT_RESPAWN | (freecam() ? 0 : BT_EBRAKEMASK)); // respawn
 		map(gc_vote, BT_VOTE); // mp general function button
 
 		// lua buttons a thru c
@@ -406,7 +408,7 @@ public:
 			common_button_input();
 		};
 
-		if (demo.playback || demo.freecam || player()->spectator)
+		if (demo.playback || freecam() || player()->spectator)
 		{
 			// freecam is controllable even while paused
 
@@ -416,7 +418,7 @@ public:
 			{
 				regular_input();
 
-				if (demo.freecam)
+				if (freecam())
 				{
 					toggle_freecam_input();
 				}

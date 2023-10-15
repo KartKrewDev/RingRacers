@@ -3381,7 +3381,7 @@ static boolean K_ShowPlayerNametag(player_t *p)
 		return false;
 	}
 
-	if (demo.playback == true && demo.freecam == true)
+	if (demo.playback == true && camera[R_GetViewNumber()].freecam == true)
 	{
 		return true;
 	}
@@ -3762,7 +3762,7 @@ static void K_drawKartNameTags(void)
 
 			if (result.onScreen == true)
 			{
-				if (!(demo.playback == true && demo.freecam == true) && P_IsDisplayPlayer(ntplayer) &&
+				if (!(demo.playback == true && camera[cnum].freecam == true) && P_IsDisplayPlayer(ntplayer) &&
 						ntplayer != &players[displayplayers[cnum]])
 				{
 					localindicator = G_PartyPosition(ntplayer - players);
@@ -5169,77 +5169,6 @@ void K_drawButtonAnim(INT32 x, INT32 y, INT32 flags, patch_t *button[2], tic_t a
 	K_drawButton(x << FRACBITS, y << FRACBITS, flags, button, anim);
 }
 
-static void K_DrawDirectorButton(INT32 idx, const char *label, patch_t *kp[2], INT32 textflags)
-{
-	INT32 flags = V_SNAPTORIGHT | V_SLIDEIN | V_SPLITSCREEN;
-	INT32 x = (BASEVIDWIDTH/2) - 10;
-	INT32 y = (idx * 16);
-
-	if (r_splitscreen <= 1)
-	{
-		x = BASEVIDWIDTH - 60;
-		if (r_splitscreen == 0)
-		{
-			y += BASEVIDHEIGHT - 78;
-		}
-	}
-
-	textflags |= flags;
-
-	K_drawButtonAnim(x, y - 4, flags, kp, leveltime);
-	V_DrawRightAlignedThinString(x - 2, y, textflags, label);
-}
-
-static void K_drawDirectorHUD(void)
-{
-	const UINT8 viewnum = R_GetViewNumber();
-	const INT32 p = viewnum < G_PartySize(consoleplayer) ? G_PartyMember(consoleplayer, viewnum) : -1;
-	const char *itemtxt = "Join";
-	UINT8 offs = 0;
-
-	UINT8 numingame = 0;
-	UINT8 i;
-
-	if (!LUA_HudEnabled(hud_textspectator))
-	{
-		return;
-	}
-
-	for (i = 0; i < MAXPLAYERS; i++)
-		if (playeringame[i] && !players[i].spectator)
-			numingame++;
-
-	if (numingame > 1 && r_splitscreen == 0) // simplifies things a lot
-	{
-		K_DrawDirectorButton(1, "Next Player", kp_button_a[0], 0);
-		K_DrawDirectorButton(2, "Prev Player", kp_button_x[0], 0);
-		offs = 2;
-	}
-
-	K_DrawDirectorButton(offs + 1, "Freecam", kp_button_c[0], 0);
-
-	if (p == -1 || !playeringame[p] || players[p].spectator == false)
-	{
-		return;
-	}
-
-	// TODO: this is too close to the screen bottom
-	K_DrawDirectorButton(offs + 2, "Director", kp_button_r,
-		(directorinfo.active ? V_YELLOWMAP : 0));
-
-	if (players[p].flashing)
-		itemtxt = ". . .";
-	else if (players[p].pflags & PF_WANTSTOJOIN)
-		itemtxt = "Cancel Join";
-
-	if (cv_maxplayers.value)
-	{
-		itemtxt = va("%s [%d/%d]", itemtxt, numingame, cv_maxplayers.value);
-	}
-
-	K_DrawDirectorButton(0, itemtxt, kp_button_l, 0);
-}
-
 static void K_drawDistributionDebugger(void)
 {
 	itemroulette_t rouletteData = {0};
@@ -5455,8 +5384,8 @@ static void K_DrawGPRankDebugger(void)
 void K_drawKartHUD(void)
 {
 	boolean islonesome = false;
-	boolean freecam = demo.freecam;	//disable some hud elements w/ freecam
 	UINT8 viewnum = R_GetViewNumber();
+	boolean freecam = camera[viewnum].freecam;	//disable some hud elements w/ freecam
 
 	// Define the X and Y for each drawn object
 	// This is handled by console/menu values
@@ -5531,7 +5460,7 @@ void K_drawKartHUD(void)
 		}
 	}
 
-	if (!stplyr->spectator && !demo.freecam) // Bottom of the screen elements, don't need in spectate mode
+	if (!stplyr->spectator && !freecam) // Bottom of the screen elements, don't need in spectate mode
 	{
 		if (demo.title) // Draw title logo instead in demo.titles
 		{
@@ -5666,9 +5595,9 @@ void K_drawKartHUD(void)
 	if (stplyr->karthud[khud_trickcool])
 		K_drawTrickCool();
 
-	if (freecam)
+	if ((freecam || stplyr->spectator) && LUA_HudEnabled(hud_textspectator))
 	{
-		K_DrawDirectorButton(3, "Freecam", kp_button_c[0], 0);
+		K_drawSpectatorHUD(false);
 	}
 
 	if (modeattacking || freecam) // everything after here is MP and debug only
@@ -5687,9 +5616,9 @@ void K_drawKartHUD(void)
 
 	K_drawKartPowerUps();
 
-	if (K_DirectorIsAvailable(viewnum) == true)
+	if (K_DirectorIsAvailable(viewnum) == true && LUA_HudEnabled(hud_textspectator))
 	{
-		K_drawDirectorHUD();
+		K_drawSpectatorHUD(true);
 	}
 
 	if (cv_kartdebugdistribution.value)

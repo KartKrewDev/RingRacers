@@ -10,6 +10,7 @@
 #include "doomdef.h" // skincolornum_t
 #include "doomtype.h"
 #include "hu_stuff.h"
+#include "i_time.h"
 #include "k_hud.h"
 #include "m_fixed.h"
 #include "r_draw.h"
@@ -82,6 +83,53 @@ void Chain::string(const char* str, INT32 flags, Font font) const
 	}
 
 	V_DrawStringScaled(x, y, FloatToFixed(scale_), FRACUNIT, FRACUNIT, flags, colormap_, font_to_fontno(font), str);
+}
+
+namespace
+{
+
+patch_t** get_button_patch(Draw::Button type, int ver)
+{
+	switch (type)
+	{
+#define X(x) \
+	case Draw::Button::x:\
+		return kp_button_ ## x
+
+	X(a)[ver];
+	X(b)[ver];
+	X(c)[ver];
+	X(x)[ver];
+	X(y)[ver];
+	X(z)[ver];
+	X(start);
+	X(l);
+	X(r);
+	X(up);
+	X(down);
+	X(right);
+	X(left);
+
+#undef X
+	}
+
+	return nullptr;
+};
+
+}; // namespace
+
+void Chain::button(Button type, int ver, std::optional<bool> press) const
+{
+	const auto _ = Clipper(*this);
+
+	if (press)
+	{
+		K_drawButton(FloatToFixed(x_), FloatToFixed(y_), flags_, get_button_patch(type, ver), *press);
+	}
+	else
+	{
+		K_drawButtonAnim(x_, y_, flags_, get_button_patch(type, ver), I_GetTime());
+	}
 }
 
 Chain::Clipper::Clipper(const Chain& chain)

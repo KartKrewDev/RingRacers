@@ -50,6 +50,7 @@
 #include "k_director.h"
 #include "m_easing.h"
 #include "k_podium.h"
+#include "g_party.h"
 
 actioncache_t actioncachehead;
 
@@ -12220,22 +12221,29 @@ void P_SpawnPlayer(INT32 playernum)
 		}
 	}
 
-	// Spectating when there is literally any other player in
-	// the level enables director cam. Or if the first player
-	// enters the game, spectate them.
-	// TODO: how do we support splitscreen?
-	if (playernum == consoleplayer || pcount == 1)
-	{
-		K_ToggleDirector(players[consoleplayer].spectator && pcount > 0);
-	}
+	boolean director = p->spectator && pcount > 0;
 
-	// TODO: handle splitscreen
-	// Spectators can switch to freecam. This should be
-	// disabled when they enter the race, or when the level
-	// changes.
-	if (playernum == consoleplayer && !demo.playback)
+	if (G_IsPartyLocal(playernum))
 	{
-		demo.freecam = false;
+		// Spectating when there is literally any other
+		// player in the level enables director cam.
+		K_ToggleDirector(G_PartyPosition(playernum), director);
+
+		// Spectators can switch to freecam. This should be
+		// disabled when they enter the race, or when the level
+		// changes.
+		if (!demo.playback)
+		{
+			camera[G_PartyPosition(playernum)].freecam = false;
+		}
+	}
+	else if (pcount == 1)
+	{
+		// If the first player enters the game, view them.
+		for (i = 0; i <= r_splitscreen; ++i)
+		{
+			K_ToggleDirector(i, director);
+		}
 	}
 }
 

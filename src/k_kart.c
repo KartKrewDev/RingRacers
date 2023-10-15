@@ -12279,7 +12279,7 @@ void K_EggmanTransfer(player_t *source, player_t *victim)
 	victim->eggmanexplode = 6*TICRATE;
 	K_StopRoulette(&victim->itemRoulette);
 
-	if (P_IsDisplayPlayer(victim) && !demo.freecam)
+	if (P_IsDisplayPlayer(victim))
 		S_StartSound(NULL, sfx_itrole);
 
 	K_AddHitLag(source->mo, 2, true);
