@@ -25,6 +25,8 @@
 
 #include <thread>
 
+#include <fmt/format.h>
+
 #include <signal.h>
 
 #ifdef _WIN32
@@ -369,61 +371,52 @@ static void I_ShowErrorMessageBox(const char *messagefordevelopers, boolean dump
 static void I_ReportSignal(int num, int coredumped)
 {
 	//static char msg[] = "oh no! back to reality!\r\n";
-	const char *      sigmsg;
-	char msg[128];
+	auto report = [coredumped](std::string sigmsg)
+	{
+		if (coredumped)
+		{
+			sigmsg += " (core dumped)";
+		}
+
+		I_OutputMsg("\nProcess killed by signal: %s\n\n", sigmsg.c_str());
+
+		I_ShowErrorMessageBox(sigmsg.c_str(),
+#if defined (UNIXBACKTRACE)
+			true
+#elif defined (_WIN32)
+			!M_CheckParm("-noexchndl")
+#else
+			false
+#endif
+		);
+	};
 
 	switch (num)
 	{
 //	case SIGINT:
-//		sigmsg = "SIGINT - interrupted";
+//		report("SIGINT - interrupted");
 //		break;
 	case SIGILL:
-		sigmsg = "SIGILL - illegal instruction - invalid function image";
+		report("SIGILL - illegal instruction - invalid function image");
 		break;
 	case SIGFPE:
-		sigmsg = "SIGFPE - mathematical exception";
+		report("SIGFPE - mathematical exception");
 		break;
 	case SIGSEGV:
-		sigmsg = "SIGSEGV - segment violation";
+		report("SIGSEGV - segment violation");
 		break;
 //	case SIGTERM:
-//		sigmsg = "SIGTERM - Software termination signal from kill";
+//		report("SIGTERM - Software termination signal from kill");
 //		break;
 //	case SIGBREAK:
-//		sigmsg = "SIGBREAK - Ctrl-Break sequence";
+//		report("SIGBREAK - Ctrl-Break sequence");
 //		break;
 	case SIGABRT:
-		sigmsg = "SIGABRT - abnormal termination triggered by abort call";
+		report("SIGABRT - abnormal termination triggered by abort call");
 		break;
 	default:
-		sprintf(msg,"signal number %d", num);
-		if (coredumped)
-			sigmsg = 0;
-		else
-			sigmsg = msg;
+		report(fmt::format("signal number {}", num));
 	}
-
-	if (coredumped)
-	{
-		if (sigmsg)
-			sprintf(msg, "%s (core dumped)", sigmsg);
-		else
-			strcat(msg, " (core dumped)");
-
-		sigmsg = msg;
-	}
-
-	I_OutputMsg("\nProcess killed by signal: %s\n\n", sigmsg);
-
-	I_ShowErrorMessageBox(sigmsg,
-#if defined (UNIXBACKTRACE)
-		true
-#elif defined (_WIN32)
-		!M_CheckParm("-noexchndl")
-#else
-		false
-#endif
-	);
 }
 
 #ifndef NEWSIGNALHANDLER
@@ -581,8 +574,8 @@ static void I_StartupConsole(void)
 	signal(SIGTTIN, SIG_IGN);
 	signal(SIGTTOU, SIG_IGN);
 
-	consolevent = !M_CheckParm("-noconsole");
-	framebuffer = M_CheckParm("-framebuffer");
+	consolevent = static_cast<SDL_bool>(!M_CheckParm("-noconsole"));
+	framebuffer = static_cast<SDL_bool>(M_CheckParm("-framebuffer"));
 
 	if (framebuffer)
 		consolevent = SDL_FALSE;
@@ -622,7 +615,7 @@ static void I_StartupConsole(void)
 void I_GetConsoleEvents(void)
 {
 	// we use this when sending back commands
-	event_t ev = {0};
+	event_t ev = {};
 	char key = 0;
 	ssize_t d;
 
@@ -2199,43 +2192,43 @@ static const char *locateWad(void)
 
 	// examine default dirs
 #ifdef DEFAULTWADLOCATION1
-	I_OutputMsg(","DEFAULTWADLOCATION1);
+	I_OutputMsg("," DEFAULTWADLOCATION1);
 	strcpy(returnWadPath, DEFAULTWADLOCATION1);
 	if (isWadPathOk(returnWadPath))
 		return returnWadPath;
 #endif
 #ifdef DEFAULTWADLOCATION2
-	I_OutputMsg(","DEFAULTWADLOCATION2);
+	I_OutputMsg("," DEFAULTWADLOCATION2);
 	strcpy(returnWadPath, DEFAULTWADLOCATION2);
 	if (isWadPathOk(returnWadPath))
 		return returnWadPath;
 #endif
 #ifdef DEFAULTWADLOCATION3
-	I_OutputMsg(","DEFAULTWADLOCATION3);
+	I_OutputMsg("," DEFAULTWADLOCATION3);
 	strcpy(returnWadPath, DEFAULTWADLOCATION3);
 	if (isWadPathOk(returnWadPath))
 		return returnWadPath;
 #endif
 #ifdef DEFAULTWADLOCATION4
-	I_OutputMsg(","DEFAULTWADLOCATION4);
+	I_OutputMsg("," DEFAULTWADLOCATION4);
 	strcpy(returnWadPath, DEFAULTWADLOCATION4);
 	if (isWadPathOk(returnWadPath))
 		return returnWadPath;
 #endif
 #ifdef DEFAULTWADLOCATION5
-	I_OutputMsg(","DEFAULTWADLOCATION5);
+	I_OutputMsg("," DEFAULTWADLOCATION5);
 	strcpy(returnWadPath, DEFAULTWADLOCATION5);
 	if (isWadPathOk(returnWadPath))
 		return returnWadPath;
 #endif
 #ifdef DEFAULTWADLOCATION6
-	I_OutputMsg(","DEFAULTWADLOCATION6);
+	I_OutputMsg("," DEFAULTWADLOCATION6);
 	strcpy(returnWadPath, DEFAULTWADLOCATION6);
 	if (isWadPathOk(returnWadPath))
 		return returnWadPath;
 #endif
 #ifdef DEFAULTWADLOCATION7
-	I_OutputMsg(","DEFAULTWADLOCATION7);
+	I_OutputMsg("," DEFAULTWADLOCATION7);
 	strcpy(returnWadPath, DEFAULTWADLOCATION7);
 	if (isWadPathOk(returnWadPath))
 		return returnWadPath;
@@ -2252,21 +2245,21 @@ static const char *locateWad(void)
 #endif
 #ifdef DEFAULTSEARCHPATH1
 	// find in /usr/local
-	I_OutputMsg(", in:"DEFAULTSEARCHPATH1);
+	I_OutputMsg(", in:" DEFAULTSEARCHPATH1);
 	WadPath = searchWad(DEFAULTSEARCHPATH1);
 	if (WadPath)
 		return WadPath;
 #endif
 #ifdef DEFAULTSEARCHPATH2
 	// find in /usr/games
-	I_OutputMsg(", in:"DEFAULTSEARCHPATH2);
+	I_OutputMsg(", in:" DEFAULTSEARCHPATH2);
 	WadPath = searchWad(DEFAULTSEARCHPATH2);
 	if (WadPath)
 		return WadPath;
 #endif
 #ifdef DEFAULTSEARCHPATH3
 	// find in ???
-	I_OutputMsg(", in:"DEFAULTSEARCHPATH3);
+	I_OutputMsg(", in:" DEFAULTSEARCHPATH3);
 	WadPath = searchWad(DEFAULTSEARCHPATH3);
 	if (WadPath)
 		return WadPath;
@@ -2310,7 +2303,7 @@ const char *I_LocateWad(void)
 static long get_entry(const char* name, const char* buf)
 {
 	long val;
-	char* hit = strstr(buf, name);
+	char* hit = strstr(const_cast<char*>(buf), name);
 	if (hit == NULL) {
 		return -1;
 	}
