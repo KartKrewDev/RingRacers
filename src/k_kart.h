@@ -235,6 +235,8 @@ boolean K_Cooperative(void);
 // lat: used for when the player is in some weird state where it wouldn't be wise for it to be overwritten by another object that does similarly wacky shit.
 boolean K_isPlayerInSpecialState(player_t *p);
 
+void K_SetTireGrease(player_t *player, tic_t tics);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

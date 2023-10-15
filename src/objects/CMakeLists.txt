@@ -12,7 +12,7 @@ target_sources(SRB2SDL2 PRIVATE
 	ufo.c
 	monitor.c
 	item-spot.c
-	loops.c
+	loops.cpp
 	drop-target.c
 	ring-shooter.c
 	audience.c

@@ -471,6 +471,7 @@ typedef struct {
 	fixed_t revolution, min_revolution, max_revolution;
 	angle_t yaw;
 	vector3_t origin;
+	vector2_t origin_shift;
 	vector2_t shift;
 	boolean flip;
 } sonicloopvars_t;

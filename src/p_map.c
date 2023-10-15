@@ -323,25 +323,7 @@ P_DoSpringEx
 		object->player->springstars = max(abs(vertispeed), horizspeed) / FRACUNIT / 2;
 		object->player->springcolor = starcolor;
 
-		// Less friction when hitting springs
-		if (!object->player->tiregrease)
-		{
-			UINT8 i;
-			for (i = 0; i < 2; i++)
-			{
-				mobj_t *grease;
-				grease = P_SpawnMobj(object->x, object->y, object->z, MT_TIREGREASE);
-				P_SetTarget(&grease->target, object);
-				grease->angle = K_MomentumAngle(object);
-				grease->extravalue1 = i;
-				K_ReduceVFX(grease, object->player);
-			}
-		}
-
-		if (object->player->tiregrease < greasetics)
-		{
-			object->player->tiregrease = greasetics;
-		}
+		K_SetTireGrease(object->player, max(object->player->tiregrease, greasetics));
 	}
 }
 
