@@ -788,12 +788,12 @@ void I_GetConsoleEvents(void){}
 static inline void I_StartupConsole(void)
 {
 #ifdef _DEBUG
-	consolevent = !M_CheckParm("-noconsole");
+	consolevent = M_CheckParm("-noconsole") > 0 ? SDL_FALSE : SDL_TRUE;
 #else
-	consolevent = M_CheckParm("-console");
+	consolevent = M_CheckParm("-console") > 0 ? SDL_TRUE : SDL_FALSE;
 #endif
 
-	framebuffer = M_CheckParm("-framebuffer");
+	framebuffer = M_CheckParm("-framebuffer") > 0 ? SDL_TRUE : SDL_FALSE;
 
 	if (framebuffer)
 		consolevent = SDL_FALSE;
