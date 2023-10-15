@@ -1410,7 +1410,7 @@ static void K_UpdateDraft(player_t *player)
 	}
 
 	// Want to berserk attack? Get your speed FIRST.
-	if (player->instaWhipCharge >= INSTAWHIP_TETHERBLOCK)
+	if (player->instaWhipCharge >= INSTAWHIP_TETHERBLOCK || player->instaWhipCooldown)
 		return;
 
 	// Not enough speed to draft.
