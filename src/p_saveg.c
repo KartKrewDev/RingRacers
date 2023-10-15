@@ -541,7 +541,8 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		WRITEMEM(save->p, players[i].public_key, PUBKEYLENGTH);
 
-		WRITEUINT8(save->p, players[i].instaShieldCooldown);
+		WRITEUINT8(save->p, players[i].instaWhipCharge);
+		WRITEUINT8(save->p, players[i].instaWhipCooldown);
 		WRITEUINT8(save->p, players[i].guardCooldown);
 
 		WRITEUINT8(save->p, players[i].handtimer);
@@ -1051,7 +1052,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		READMEM(save->p, players[i].public_key, PUBKEYLENGTH);
 
-		players[i].instaShieldCooldown = READUINT8(save->p);
+		players[i].instaWhipCharge = READUINT8(save->p);
+		players[i].instaWhipCooldown = READUINT8(save->p);
 		players[i].guardCooldown = READUINT8(save->p);
 
 		players[i].handtimer = READUINT8(save->p);

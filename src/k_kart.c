@@ -1409,8 +1409,8 @@ static void K_UpdateDraft(player_t *player)
 		leniency *= 4;
 	}
 
-	// Opportunity cost for berserk attacking. Get your slingshot speed first!
-	if (player->instaShieldCooldown && player->rings <= 0)
+	// Want to berserk attack? Get your speed FIRST.
+	if (player->instaWhipCharge >= INSTAWHIP_TETHERBLOCK || player->instaWhipCooldown)
 		return;
 
 	// Not enough speed to draft.
@@ -3691,8 +3691,7 @@ void K_DoGuardBreak(mobj_t *t1, mobj_t *t2) {
 	if (P_PlayerInPain(t2->player))
 		return;
 
-	// short-circuit instashield for vfx visibility
-	t1->player->instaShieldCooldown = GUARDBREAK_COOLDOWN;
+	t1->player->instaWhipCharge = 0;
 	t1->player->guardCooldown = GUARDBREAK_COOLDOWN;
 
 	S_StartSound(t1, sfx_gbrk);
@@ -8136,32 +8135,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->gateBoost)
 		player->gateBoost--;
 
-	if (leveltime < starttime)
-	{
-		player->instaShieldCooldown = (gametyperules & GTR_SPHERES) ? INSTAWHIP_STARTOFBATTLE : INSTAWHIP_STARTOFRACE;
-	}
-	else if (player->rings > 0)
-	{
-		if (player->instaShieldCooldown > INSTAWHIP_COOLDOWN)
-			player->instaShieldCooldown--;
-		else
-			player->instaShieldCooldown = INSTAWHIP_COOLDOWN;
-	}
-	else
-	{
-		if (player->instaShieldCooldown)
-		{
-			player->instaShieldCooldown--;
-			if (!P_IsObjectOnGround(player->mo))
-				player->instaShieldCooldown = max(player->instaShieldCooldown, 1);
-		}
-	}
-
 	if (player->powerup.rhythmBadgeTimer > 0)
-	{
-		player->instaShieldCooldown = min(player->instaShieldCooldown, 1);
 		player->powerup.rhythmBadgeTimer--;
-	}
 
 	if (player->powerup.barrierTimer > 0)
 	{
@@ -8290,6 +8265,44 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->justbumped > 0)
 		player->justbumped--;
+
+	if (player->instaWhipCooldown)
+	{
+		player->instaWhipCharge = 0;
+		player->instaWhipCooldown--;
+	}
+
+	// Don't screw up chain ring pickup/usage with instawhip charge.
+	// If the button stays held, delay charge a bit.
+	if (player->instaWhipChargeLockout)
+		player->instaWhipChargeLockout--;
+	if (player->rings > 0 || player->itemamount || player->ringdelay)
+		player->instaWhipChargeLockout = INSTAWHIP_HOLD_DELAY;
+	if (!(player->cmd.buttons & BT_ATTACK)) // Deliberate Item button release, no need to protect you from lockout
+		player->instaWhipChargeLockout = 0;
+
+	if (player->instaWhipCharge && player->instaWhipCharge < INSTAWHIP_CHARGETIME)
+	{
+		if (!S_SoundPlaying(player->mo, sfx_wchrg1))
+			S_StartSoundAtVolume(player->mo, sfx_wchrg1, 255/2);
+	}
+	else
+	{
+		S_StopSoundByID(player->mo, sfx_wchrg1);
+	}
+
+	if (player->instaWhipCharge >= INSTAWHIP_CHARGETIME)
+	{
+		if (!S_SoundPlaying(player->mo, sfx_wchrg2))
+			S_StartSoundAtVolume(player->mo, sfx_wchrg2, 255/3);
+	}
+	else
+	{
+		S_StopSoundByID(player->mo, sfx_wchrg2);
+	}
+
+	if (player->itemamount || player->respawn.state != RESPAWNST_NONE || player->pflags & (PF_ITEMOUT|PF_EGGMANOUT) || player->rocketsneakertimer)
+		player->instaWhipCharge = 0;
 
 	if (player->tiregrease)
 	{
@@ -8447,9 +8460,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	{
 		player->pflags &= ~PF_DRIFTINPUT;
 	}
-
-	if (K_PlayerGuard(player) && !K_PowerUpRemaining(player, POWERUP_BARRIER))
-		player->instaShieldCooldown = max(player->instaShieldCooldown, INSTAWHIP_DROPGUARD);
 
 	// Roulette Code
 	K_KartItemRoulette(player, cmd);
@@ -10196,7 +10206,33 @@ boolean K_PlayerGuard(player_t *player)
 		return true;
 	}
 
-	return (K_PlayerEBrake(player) && player->spheres > 0);
+	if (player->spheres == 0)
+		return false;
+
+	// Ugh. Duplicating a lot of this because while Guard _superficially_ looks like it's
+	// restricted similarly to ebrake, it's actually _really_ bad if we can't guard after item bumps.
+
+	if (player->respawn.state != RESPAWNST_NONE
+		&& (player->respawn.init == true || player->respawn.fromRingShooter == true))
+	{
+		return false;
+	}
+
+	if (Obj_PlayerRingShooterFreeze(player) == true)
+	{
+		return false;
+	}
+
+	if (K_PressingEBrake(player) == true
+		&& (player->drift == 0 || P_IsObjectOnGround(player->mo) == false)
+		&& P_PlayerInPain(player) == false
+		&& player->spindashboost == 0
+		&& player->nocontrol == 0)
+	{
+		return true;
+	}
+
+	return false;
 }
 
 SINT8 K_Sliptiding(player_t *player)
@@ -10987,6 +11023,90 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		}
 	}
 
+	// This looks a lot like the check that's right under it, but this check is specifically for instawhip charge,
+	// which is allowed during painstate as a last-ditch defensive option.
+	if (player && player->mo && player->mo->health > 0 && !player->spectator && !mapreset && leveltime > introtime)
+	{
+		boolean chargingwhip = (cmd->buttons & BT_ATTACK) && (player->rings <= 0) && (!player->instaWhipChargeLockout);
+		boolean releasedwhip = (!(cmd->buttons & BT_ATTACK)) && (player->rings <= 0 && player->instaWhipCharge) && !(P_PlayerInPain(player));
+
+		if (K_PowerUpRemaining(player, POWERUP_BADGE))
+		{
+			chargingwhip = false;
+			releasedwhip = (ATTACK_IS_DOWN && player->rings <= 0);
+			player->instaWhipCharge = INSTAWHIP_CHARGETIME;
+			player->instaWhipCooldown = 0;
+		}
+
+		if (leveltime < starttime || player->spindash || player->pflags & (PF_ITEMOUT|PF_EGGMANOUT) || player->rocketsneakertimer || player->instaWhipCooldown)
+		{
+			chargingwhip = false;
+			player->instaWhipCharge = 0;
+		}
+
+		if (chargingwhip)
+		{
+			player->instaWhipCharge = min(player->instaWhipCharge + 1, INSTAWHIP_TETHERBLOCK + 1);
+
+			if (player->instaWhipCharge == 1)
+			{
+				Obj_SpawnInstaWhipRecharge(player, 0);
+				Obj_SpawnInstaWhipRecharge(player, ANGLE_120);
+				Obj_SpawnInstaWhipRecharge(player, ANGLE_240);
+			}
+
+			if (player->instaWhipCharge == INSTAWHIP_CHARGETIME)
+			{
+				Obj_SpawnInstaWhipReject(player);
+			}
+
+			if (player->instaWhipCharge > INSTAWHIP_CHARGETIME)
+			{
+				if ((leveltime%(INSTAWHIP_RINGDRAINEVERY)) == 0 && !(gametyperules & GTR_SPHERES))
+				{
+					if (player->rings > -20 && P_IsDisplayPlayer(player))
+						S_StartSound(player->mo, sfx_antiri);
+					player->rings--;
+				}
+			}
+		}
+		else if (releasedwhip)
+		{
+			if (player->instaWhipCharge < INSTAWHIP_CHARGETIME)
+			{
+				S_StartSound(player->mo, sfx_kc50);
+				player->instaWhipCharge = 0;
+			}
+			else
+			{
+				player->instaWhipCharge = 0;
+				player->instaWhipCooldown = INSTAWHIP_COOLDOWN;
+				player->guardCooldown = INSTAWHIP_DROPGUARD;
+				if (!K_PowerUpRemaining(player, POWERUP_BARRIER))
+				{
+					player->guardCooldown = INSTAWHIP_CHARGETIME;
+				}
+
+				S_StartSound(player->mo, sfx_iwhp);
+				mobj_t *whip = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_INSTAWHIP);
+				P_SetTarget(&player->whip, whip);
+				P_SetScale(whip, player->mo->scale);
+				P_SetTarget(&whip->target, player->mo);
+				K_MatchGenericExtraFlags(whip, player->mo);
+				P_SpawnFakeShadow(whip, 20);
+				whip->fuse = INSTAWHIP_DURATION;
+				player->flashing = max(player->flashing, INSTAWHIP_DURATION);
+
+				if (P_IsObjectOnGround(player->mo))
+				{
+					whip->flags2 |= MF2_AMBUSH;
+				}
+			}
+		}
+		else if (!(player->instaWhipCharge >= INSTAWHIP_CHARGETIME && P_PlayerInPain(player))) // Allow reversal whip
+			player->instaWhipCharge = 0;
+	}
+
 	if (player && player->mo && player->mo->health > 0 && !player->spectator && !P_PlayerInPain(player) && !mapreset && leveltime > introtime)
 	{
 		// First, the really specific, finicky items that function without the item being directly in your item slot.
@@ -10994,46 +11114,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			// Ring boosting
 			if (player->pflags & PF_USERINGS)
 			{
-				if (ATTACK_IS_DOWN && player->rings <= 0)
-				{
-					if (player->instaShieldCooldown || leveltime < starttime || player->spindash)
-					{
-						S_StartSound(player->mo, sfx_kc50);
-					}
-					else
-					{
-						player->instaShieldCooldown = INSTAWHIP_COOLDOWN;
-
-						if (!K_PowerUpRemaining(player, POWERUP_BARRIER))
-						{
-							player->guardCooldown = INSTAWHIP_COOLDOWN;
-						}
-
-						S_StartSound(player->mo, sfx_iwhp);
-						mobj_t *whip = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_INSTAWHIP);
-						P_SetTarget(&player->whip, whip);
-						P_SetScale(whip, player->mo->scale);
-						P_SetTarget(&whip->target, player->mo);
-						K_MatchGenericExtraFlags(whip, player->mo);
-						P_SpawnFakeShadow(whip, 20);
-						whip->fuse = INSTAWHIP_DURATION;
-						player->flashing = max(player->flashing, INSTAWHIP_DURATION);
-
-						if (P_IsObjectOnGround(player->mo))
-						{
-							whip->flags2 |= MF2_AMBUSH;
-						}
-
-						if (!K_PowerUpRemaining(player, POWERUP_BADGE))
-						{
-							// Spawn in triangle formation
-							Obj_SpawnInstaWhipRecharge(player, 0);
-							Obj_SpawnInstaWhipRecharge(player, ANGLE_120);
-							Obj_SpawnInstaWhipRecharge(player, ANGLE_240);
-						}
-					}
-				}
-
 				if ((cmd->buttons & BT_ATTACK) && !player->ringdelay && player->rings > 0)
 				{
 					mobj_t *ring = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_RING);

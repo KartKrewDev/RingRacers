@@ -404,6 +404,7 @@ struct mobj_t
 
 	// Custom values are not to be altered by us!
 	// They are for SOCs to store things in.
+	// (This rule is already broken by a bunch of shit so I'm just gonna believe in dreams - Tyron 2023-10-14)
 	INT32 cusval;
 	INT32 cvmem;
 

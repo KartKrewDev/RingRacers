@@ -1415,7 +1415,7 @@ static void K_BotItemInstashield(player_t *player, ticcmd_t *cmd)
 		return;
 	}
 
-	if (player->instaShieldCooldown || leveltime < starttime || player->spindash)
+	if (player->instaWhipCharge || leveltime < starttime || player->spindash)
 	{
 		// Instashield is on cooldown.
 		return;
