@@ -105,7 +105,7 @@ void SV_LoadStats(void)
 	}
 	else if (version < SERVERSTATSVER)
 	{
-		// We're converting - let'd create a backup.
+		// We're converting - let's create a backup.
 		FIL_WriteFile(va("%s" PATHSEP "%s.bak", srb2home, SERVERSTATSFILE), save.buffer, save.size);
 	}
 
@@ -173,7 +173,7 @@ void SV_SaveStats(void)
 	if (!FIL_WriteFile(va(pandf, srb2home, SERVERSTATSFILE), save.buffer, length))
 	{
 		P_SaveBufferFree(&save);
-		I_Error("Couldn't save server stats. Are you out of Disk space / playing in a protected folder?");
+		I_Error("Couldn't save server stats. Are you out of disk space / playing in a protected folder?");
 	}
 	P_SaveBufferFree(&save);
 }

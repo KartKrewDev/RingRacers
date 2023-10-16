@@ -1620,7 +1620,6 @@ void I_Quit(void)
 	SDLforceUngrabMouse();
 	quiting = SDL_FALSE;
 	M_SaveConfig(NULL); //save game config, cvars..
-	D_SaveBan(); // save the ban list
 	M_SaveJoinedIPs();
 
 	// Make sure you lose points for ALT-F4
@@ -1752,7 +1751,6 @@ void I_Error(const char *error, ...)
 	// ---
 
 	M_SaveConfig(NULL); // save game config, cvars..
-	D_SaveBan(); // save the ban list
 	G_DirtyGameData(); // done first in case an error is in G_SaveGameData
 	G_SaveGameData(); // Tails 12-08-2002
 

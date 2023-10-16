@@ -87,6 +87,7 @@
 #include "k_serverstats.h"
 #include "music.h"
 #include "k_dialogue.h"
+#include "k_bans.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h" // 3D View Rendering
@@ -1609,6 +1610,7 @@ void D_SRB2Main(void)
 	PR_LoadProfiles();	// load control profiles
 
 	SV_LoadStats();
+	SV_LoadBans();
 
 #if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
 	VID_PrepareModeList(); // Regenerate Modelist according to cv_fullscreen
@@ -1924,6 +1926,7 @@ void D_SRB2Main(void)
 	}
 
 	SV_SaveStats();
+	SV_SaveBans();
 
 	if (autostart || netgame)
 	{
