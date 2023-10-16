@@ -126,6 +126,8 @@ static void R_UpdatePlaneRipple(drawspandata_t* ds)
 	ds->planeripple.offset = (leveltime * 140);
 }
 
+static void R_SetSlopePlaneVectors(drawspandata_t* ds, visplane_t *pl, INT32 y, fixed_t xoff, fixed_t yoff);
+
 static void R_MapPlane(drawspandata_t *ds, spandrawfunc_t *spanfunc, INT32 y, INT32 x1, INT32 x2, boolean allow_parallel)
 {
 	ZoneScoped;
@@ -230,6 +232,9 @@ static void R_MapTiltedPlane(drawspandata_t *ds, void(*spanfunc)(drawspandata_t*
 		ds->bgofs = R_CalculateRippleOffset(ds, y);
 
 		R_SetTiltedSpan(ds, std::clamp(y, 0, viewheight));
+
+		R_CalculatePlaneRipple(ds, ds->currentplane->viewangle + ds->currentplane->plangle);
+		R_SetSlopePlaneVectors(ds, ds->currentplane, x1, (ds->xoffs + ds->planeripple.xfrac), (ds->yoffs + ds->planeripple.yfrac));
 
 		ds->bgofs >>= FRACBITS;
 
@@ -567,6 +572,7 @@ void R_ExpandPlane(visplane_t *pl, INT32 start, INT32 stop)
 
 static void R_MakeSpans(void (*mapfunc)(drawspandata_t* ds, void(*spanfunc)(drawspandata_t*), INT32, INT32, INT32, boolean), spandrawfunc_t* spanfunc, drawspandata_t* ds, INT32 x, INT32 t1, INT32 b1, INT32 t2, INT32 b2, boolean allow_parallel)
 {
+	ZoneScoped;
 	//    Alam: from r_splats's R_RasterizeFloorSplat
 	if (t1 >= vid.height) t1 = vid.height-1;
 	if (b1 >= vid.height) b1 = vid.height-1;
@@ -940,6 +946,8 @@ void R_DrawSinglePlane(drawspandata_t *ds, visplane_t *pl, boolean allow_paralle
 		return;
 
 	ZoneScoped;
+
+	R_UpdatePlaneRipple(ds);
 
 	// sky flat
 	if (pl->picnum == skyflatnum)
