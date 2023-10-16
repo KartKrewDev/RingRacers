@@ -11,6 +11,8 @@
 /// \brief 8bpp span/column drawer functions
 /// \note  no includes because this is included as part of r_draw.c
 
+#include <tracy/tracy/TracyC.h>
+
 // ==========================================================================
 // COLUMNS
 // ==========================================================================
@@ -1048,6 +1050,7 @@ void R_DrawTiltedSpan_8(drawspandata_t* ds)
 */
 void R_DrawTiltedTranslucentSpan_8(drawspandata_t* ds)
 {
+	TracyCZone(__zone, true);
 	// x1, x2 = ds_x1, ds_x2
 	int width = ds->x2 - ds->x1;
 	double iz, uz, vz;
@@ -1066,6 +1069,14 @@ void R_DrawTiltedTranslucentSpan_8(drawspandata_t* ds)
 	UINT32 stepu, stepv;
 	UINT32 bit;
 	INT32 tiltlighting[MAXVIDWIDTH];
+
+	INT32 x1 = ds->x1;
+	const INT32 nflatxshift = ds->nflatxshift;
+	const INT32 nflatyshift = ds->nflatyshift;
+	const INT32 nflatmask = ds->nflatmask;
+	UINT8 *transmap = ds->transmap;
+	lighttable_t **planezlight = ds->planezlight;
+	lighttable_t *ds_colormap = ds->colormap;
 
 	iz = ds->szp.z + ds->szp.y*(centery-ds->y) + ds->szp.x*(ds->x1-centerx);
 
@@ -1141,23 +1152,23 @@ void R_DrawTiltedTranslucentSpan_8(drawspandata_t* ds)
 		u = (INT64)(startu);
 		v = (INT64)(startv);
 
-		for (i = SPANSIZE-1; i >= 0; i--)
+		x1 = ds->x1;
+
+		for (i = 0; i < SPANSIZE; i++)
 		{
-			bit = ((v >> ds->nflatyshift) & ds->nflatmask) | (u >> ds->nflatxshift);
+			bit = (((v + stepv * i) >> nflatyshift) & nflatmask) | ((u + stepu * i) >> nflatxshift);
 			if (brightmap != NULL && brightmap[bit] == BRIGHTPIXEL)
 			{
-				*dest = *(ds->transmap + (fullbright[source[bit]] << 8) + *dest);
+				dest[i] = *(transmap + (fullbright[source[bit]] << 8) + dest[i]);
 			}
 			else
 			{
-				colormap = ds->planezlight[tiltlighting[ds->x1]] + (ds->colormap - colormaps);
-				*dest = *(ds->transmap + (colormap[source[bit]] << 8) + *dest);
+				colormap = planezlight[tiltlighting[x1 + i]] + (ds_colormap - colormaps);
+				dest[i] = *(transmap + (colormap[source[bit]] << 8) + dest[i]);
 			}
-			dest++;
-			ds->x1++;
-			u += stepu;
-			v += stepv;
 		}
+		ds->x1 += SPANSIZE;
+		dest += SPANSIZE;
 		startu = endu;
 		startv = endv;
 		width -= SPANSIZE;
@@ -1168,15 +1179,15 @@ void R_DrawTiltedTranslucentSpan_8(drawspandata_t* ds)
 		{
 			u = (INT64)(startu);
 			v = (INT64)(startv);
-			bit = ((v >> ds->nflatyshift) & ds->nflatmask) | (u >> ds->nflatxshift);
+			bit = ((v >> nflatyshift) & nflatmask) | (u >> nflatxshift);
 			if (brightmap != NULL && brightmap[bit] == BRIGHTPIXEL)
 			{
-				*dest = *(ds->transmap + (fullbright[source[bit]] << 8) + *dest);
+				*dest = *(transmap + (fullbright[source[bit]] << 8) + *dest);
 			}
 			else
 			{
-				colormap = ds->planezlight[tiltlighting[ds->x1]] + (ds->colormap - colormaps);
-				*dest = *(ds->transmap + (colormap[source[bit]] << 8) + *dest);
+				colormap = planezlight[tiltlighting[ds->x1]] + (ds_colormap - colormaps);
+				*dest = *(transmap + (colormap[source[bit]] << 8) + *dest);
 			}
 			ds->x1++;
 		}
@@ -1198,15 +1209,15 @@ void R_DrawTiltedTranslucentSpan_8(drawspandata_t* ds)
 
 			for (; width != 0; width--)
 			{
-				bit = ((v >> ds->nflatyshift) & ds->nflatmask) | (u >> ds->nflatxshift);
+				bit = ((v >> nflatyshift) & nflatmask) | (u >> nflatxshift);;
 				if (brightmap != NULL && brightmap[bit] == BRIGHTPIXEL)
 				{
-					*dest = *(ds->transmap + (fullbright[source[bit]] << 8) + *dest);
+					*dest = *(transmap + (fullbright[source[bit]] << 8) + *dest);
 				}
 				else
 				{
-					colormap = ds->planezlight[tiltlighting[ds->x1]] + (ds->colormap - colormaps);
-					*dest = *(ds->transmap + (colormap[source[bit]] << 8) + *dest);
+					colormap = planezlight[tiltlighting[ds->x1]] + (ds_colormap - colormaps);
+					*dest = *(transmap + (colormap[source[bit]] << 8) + *dest);
 				}
 				dest++;
 				ds->x1++;
@@ -1216,6 +1227,7 @@ void R_DrawTiltedTranslucentSpan_8(drawspandata_t* ds)
 		}
 	}
 #endif
+	TracyCZoneEnd(__zone);
 }
 
 /**	\brief The R_DrawTiltedTranslucentWaterSpan_8 function
@@ -1223,6 +1235,7 @@ void R_DrawTiltedTranslucentSpan_8(drawspandata_t* ds)
 */
 void R_DrawTiltedTranslucentWaterSpan_8(drawspandata_t* ds)
 {
+	TracyCZone(__zone, true);
 	// x1, x2 = ds_x1, ds_x2
 	int width = ds->x2 - ds->x1;
 	double iz, uz, vz;
@@ -1242,6 +1255,14 @@ void R_DrawTiltedTranslucentWaterSpan_8(drawspandata_t* ds)
 	UINT32 stepu, stepv;
 	UINT32 bit;
 	INT32 tiltlighting[MAXVIDWIDTH];
+
+	INT32 x1 = ds->x1;
+	const INT32 nflatxshift = ds->nflatxshift;
+	const INT32 nflatyshift = ds->nflatyshift;
+	const INT32 nflatmask = ds->nflatmask;
+	UINT8 *transmap = ds->transmap;
+	lighttable_t **planezlight = ds->planezlight;
+	lighttable_t *ds_colormap = ds->colormap;
 
 	iz = ds->szp.z + ds->szp.y*(centery-ds->y) + ds->szp.x*(ds->x1-centerx);
 
@@ -1318,24 +1339,24 @@ void R_DrawTiltedTranslucentWaterSpan_8(drawspandata_t* ds)
 		u = (INT64)(startu);
 		v = (INT64)(startv);
 
-		for (i = SPANSIZE-1; i >= 0; i--)
+		x1 = ds->x1;
+
+		for (i = 0; i < SPANSIZE; i++)
 		{
-			bit = ((v >> ds->nflatyshift) & ds->nflatmask) | (u >> ds->nflatxshift);
+			bit = (((v + stepv * i) >> nflatyshift) & nflatmask) | ((u + stepu * i) >> nflatxshift);
 			if (brightmap != NULL && brightmap[bit] == BRIGHTPIXEL)
 			{
-				*dest = *(ds->transmap + (fullbright[source[bit]] << 8) + *dsrc);
+				dest[i] = transmap[(fullbright[source[bit]] << 8) + dsrc[i]];
 			}
 			else
 			{
-				colormap = ds->planezlight[tiltlighting[ds->x1]] + (ds->colormap - colormaps);
-				*dest = *(ds->transmap + (colormap[source[bit]] << 8) + *dsrc);
+				colormap = planezlight[tiltlighting[x1 + i]] + (ds_colormap - colormaps);
+				dest[i] = transmap[(colormap[source[bit]] << 8) + dsrc[i]];
 			}
-			dest++;
-			ds->x1++;
-			dsrc++;
-			u += stepu;
-			v += stepv;
 		}
+		ds->x1 += SPANSIZE;
+		dest += SPANSIZE;
+		dsrc += SPANSIZE;
 		startu = endu;
 		startv = endv;
 		width -= SPANSIZE;
@@ -1346,15 +1367,15 @@ void R_DrawTiltedTranslucentWaterSpan_8(drawspandata_t* ds)
 		{
 			u = (INT64)(startu);
 			v = (INT64)(startv);
-			bit = ((v >> ds->nflatyshift) & ds->nflatmask) | (u >> ds->nflatxshift);
+			bit = ((v >> nflatyshift) & nflatmask) | (u >> nflatxshift);
 			if (brightmap != NULL && brightmap[bit] == BRIGHTPIXEL)
 			{
-				*dest = *(ds->transmap + (fullbright[source[bit]] << 8) + *dsrc);
+				*dest = *(transmap + (fullbright[source[bit]] << 8) + *dsrc);
 			}
 			else
 			{
-				colormap = ds->planezlight[tiltlighting[ds->x1]] + (ds->colormap - colormaps);
-				*dest = *(ds->transmap + (colormap[source[bit]] << 8) + *dsrc);
+				colormap = planezlight[tiltlighting[ds->x1]] + (ds_colormap - colormaps);
+				*dest = *(transmap + (colormap[source[bit]] << 8) + *dsrc);
 			}
 			ds->x1++;
 		}
@@ -1376,15 +1397,15 @@ void R_DrawTiltedTranslucentWaterSpan_8(drawspandata_t* ds)
 
 			for (; width != 0; width--)
 			{
-				bit = ((v >> ds->nflatyshift) & ds->nflatmask) | (u >> ds->nflatxshift);
+				bit = ((v >> nflatyshift) & nflatmask) | (u >> nflatxshift);
 				if (brightmap != NULL && brightmap[bit] == BRIGHTPIXEL)
 				{
-					*dest = *(ds->transmap + (fullbright[source[bit]] << 8) + *dsrc);
+					*dest = *(transmap + (fullbright[source[bit]] << 8) + *dsrc);
 				}
 				else
 				{
-					colormap = ds->planezlight[tiltlighting[ds->x1]] + (ds->colormap - colormaps);
-					*dest = *(ds->transmap + (colormap[source[bit]] << 8) + *dsrc);
+					colormap = planezlight[tiltlighting[ds->x1]] + (ds_colormap - colormaps);
+					*dest = *(transmap + (colormap[source[bit]] << 8) + *dsrc);
 				}
 				dest++;
 				ds->x1++;
@@ -1395,6 +1416,7 @@ void R_DrawTiltedTranslucentWaterSpan_8(drawspandata_t* ds)
 		}
 	}
 #endif
+	TracyCZoneEnd(__zone);
 }
 
 void R_DrawTiltedSplat_8(drawspandata_t* ds)
@@ -2116,6 +2138,11 @@ void R_DrawTiltedTranslucentFloorSprite_8(drawspandata_t* ds)
 	UINT32 stepu, stepv;
 	UINT32 bit;
 
+	const INT32 nflatxshift = ds->nflatxshift;
+	const INT32 nflatyshift = ds->nflatyshift;
+	const INT32 nflatmask = ds->nflatmask;
+	UINT8 *transmap = ds->transmap;
+
 	iz = ds->szp.z + ds->szp.y*(centery-ds->y) + ds->szp.x*(ds->x1-centerx);
 	uz = ds->sup.z + ds->sup.y*(centery-ds->y) + ds->sup.x*(ds->x1-centerx);
 	vz = ds->svp.z + ds->svp.y*(centery-ds->y) + ds->svp.x*(ds->x1-centerx);
@@ -2151,25 +2178,21 @@ void R_DrawTiltedTranslucentFloorSprite_8(drawspandata_t* ds)
 		u = (INT64)(startu);
 		v = (INT64)(startv);
 
-		for (i = SPANSIZE-1; i >= 0; i--)
+		for (i = 0; i < SPANSIZE; i++)
 		{
-			bit = ((v >> ds->nflatyshift) & ds->nflatmask) | (u >> ds->nflatxshift);
+			bit = (((v + stepv * i) >> nflatyshift) & nflatmask) | ((u + stepu * i) >> nflatxshift);
 			val = source[bit];
 			if (val & 0xFF00)
 			{
 				if (brightmap != NULL && brightmap[bit] == BRIGHTPIXEL)
 				{
-					*dest = *(ds->transmap + (fullbright[translation[val & 0xFF]] << 8) + *dest);
+					dest[i] = *(transmap + (fullbright[translation[val & 0xFF]] << 8) + dest[i]);
 				}
 				else
 				{
-					*dest = *(ds->transmap + (colormap[translation[val & 0xFF]] << 8) + *dest);
+					dest[i] = *(transmap + (colormap[translation[val & 0xFF]] << 8) + dest[i]);
 				}
 			}
-			dest++;
-
-			u += stepu;
-			v += stepv;
 		}
 		startu = endu;
 		startv = endv;
@@ -2181,17 +2204,17 @@ void R_DrawTiltedTranslucentFloorSprite_8(drawspandata_t* ds)
 		{
 			u = (INT64)(startu);
 			v = (INT64)(startv);
-			bit = ((v >> ds->nflatyshift) & ds->nflatmask) | (u >> ds->nflatxshift);
+			bit = ((v >> nflatyshift) & nflatmask) | (u >> nflatxshift);
 			val = source[bit];
 			if (val & 0xFF00)
 			{
 				if (brightmap != NULL && brightmap[bit] == BRIGHTPIXEL)
 				{
-					*dest = *(ds->transmap + (fullbright[translation[val & 0xFF]] << 8) + *dest);
+					*dest = *(transmap + (fullbright[translation[val & 0xFF]] << 8) + *dest);
 				}
 				else
 				{
-					*dest = *(ds->transmap + (colormap[translation[val & 0xFF]] << 8) + *dest);
+					*dest = *(transmap + (colormap[translation[val & 0xFF]] << 8) + *dest);
 				}
 			}
 		}
@@ -2213,17 +2236,17 @@ void R_DrawTiltedTranslucentFloorSprite_8(drawspandata_t* ds)
 
 			for (; width != 0; width--)
 			{
-				bit = ((v >> ds->nflatyshift) & ds->nflatmask) | (u >> ds->nflatxshift);
+				bit = ((v >> nflatyshift) & nflatmask) | (u >> nflatxshift);
 				val = source[bit];
 				if (val & 0xFF00)
 				{
 					if (brightmap != NULL && brightmap[bit] == BRIGHTPIXEL)
 					{
-						*dest = *(ds->transmap + (fullbright[translation[val & 0xFF]] << 8) + *dest);
+						*dest = *(transmap + (fullbright[translation[val & 0xFF]] << 8) + *dest);
 					}
 					else
 					{
-						*dest = *(ds->transmap + (colormap[translation[val & 0xFF]] << 8) + *dest);
+						*dest = *(transmap + (colormap[translation[val & 0xFF]] << 8) + *dest);
 					}
 				}
 				dest++;
