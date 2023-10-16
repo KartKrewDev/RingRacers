@@ -422,8 +422,6 @@ boolean I_InitNetwork(void)
 
 	mypacket.maxlen = hardware_MAXPACKETLENGTH;
 	I_NetOpenSocket = NET_OpenSocket;
-	I_Ban = NET_Ban;
-	I_ClearBans = NET_ClearBans;
 	I_GetNodeAddress = NET_GetNodeAddress;
 	I_GetBenAddress = NET_GetBenAddress;
 	I_SetBanAddress = NET_SetBanAddress;

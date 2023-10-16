@@ -69,6 +69,7 @@
 #include "k_bot.h"
 #include "k_powerup.h"
 #include "k_roulette.h"
+#include "k_bans.h"
 
 #ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 #include "m_avrecorder.h"

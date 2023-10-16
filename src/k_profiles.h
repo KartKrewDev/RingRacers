@@ -162,6 +162,7 @@ profile_t *PR_GetLocalPlayerProfile(INT32 player);
 boolean PR_IsLocalPlayerGuest(INT32 player);
 
 char *GetPrettyRRID(const unsigned char *bin, boolean brief);
+unsigned char *FromPrettyRRID(unsigned char *bin, const char *text);
 
 boolean PR_IsKeyGuest(uint8_t *key);
 
