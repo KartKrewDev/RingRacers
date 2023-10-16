@@ -412,7 +412,10 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			P_SetTarget(&special->target, toucher);
 			P_UpdateLastPickup(player, cheesetype);
 			// P_KillMobj(special, toucher, toucher, DMG_NORMAL);
-			if (special->extravalue1 >= RINGBOX_TIME)
+
+			statenum_t specialstate = special->state - states;
+
+			if (specialstate >= S_RANDOMITEM1 && specialstate <= S_RANDOMITEM12)
 				K_StartItemRoulette(player, false);
 			else
 				K_StartItemRoulette(player, true);

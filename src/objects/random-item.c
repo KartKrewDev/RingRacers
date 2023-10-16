@@ -125,10 +125,7 @@ void Obj_RandomItemVisuals(mobj_t *mobj)
 	{
 		mobj->extravalue1++;
 
-		if (specialstageinfo.valid) // Setting the timer in this case probably looks kinda goofy, but P_ItemPop checks xval1, not states.
-			mobj->extravalue1 = max(mobj->extravalue1, RINGBOX_TIME); // I will change this if this logic ever becomes even slightly more complicated.
-
-		if (mobj->extravalue1 == RINGBOX_TIME)
+		if (mobj->extravalue1 == RINGBOX_TIME || specialstageinfo.valid)
 		{
 			// Sync the position in RINGBOX and RANDOMITEM animations.
 			statenum_t animDelta = mobj->state - states - S_RINGBOX1;
