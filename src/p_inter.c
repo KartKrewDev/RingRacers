@@ -2621,7 +2621,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		if (inflictor && source && source->player)
 		{
 			if (source->player->roundconditions.hit_midair == false
-				&& K_IsMissileOrKartItem(source)
+				&& K_IsMissileOrKartItem(inflictor)
 				&& target->player->airtime > TICRATE/2
 				&& source->player->airtime > TICRATE/2)
 			{
