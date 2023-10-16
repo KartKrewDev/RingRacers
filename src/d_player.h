@@ -402,7 +402,7 @@ struct roundconditions_t
 	boolean landmine_dunk;
 	boolean hit_midair;
 
-	boolean hittrackhazard[MAX_LAPS+1];
+	UINT8 hittrackhazard[((MAX_LAPS+1)/8) + 1];
 
 	mobjeflag_t wet_player;
 

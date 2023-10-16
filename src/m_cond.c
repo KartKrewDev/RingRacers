@@ -1630,27 +1630,57 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			if (player->laps <= (requiredlap - cn->requirement))
 				return false;
 
-			const boolean desired = (cn->requirement == 1);
+			UINT8 requiredbit = 1<<(requiredlap & 7);
+			requiredlap /= 8;
+
 			if (cn->extrainfo1 == -1)
 			{
-				// Using cn->requirement as the first
-				// counted lap means that for conditions
-				// that require you to get hit every lap,
-				// that doesn't count POSITION -
-				// but if you can't get hit by a track
-				// hazard at all during the race,
-				// you're forbidden from getting hurt
-				// by a track hazard during POSITION.
-				for (; requiredlap >= cn->requirement; requiredlap--)
+				if (cn->requirement == 0)
 				{
-					if (player->roundconditions.hittrackhazard[requiredlap] != desired)
+					// The "don't get hit on any lap" check is trivial.
+					for (; requiredlap > 0; requiredlap--)
+					{
+						if (player->roundconditions.hittrackhazard[requiredlap] != 0)
+							return false;
+					}
+
+					return (player->roundconditions.hittrackhazard[0] == 0);
+				}
+
+				// The following is my attempt at a major optimisation.
+				// The naive version was MAX_LAP bools, which is ridiculous.
+
+				// Check the highest relevant byte for all necessary bits.
+				// We only do this if an == 0xFF/0xFE check wouldn't satisfy.
+				if (requiredbit != 7)
+				{
+					// Last bit MAYBE not needed, POSITION doesn't count.
+					const UINT8 finalbit = (requiredlap == 0) ? 1 : 0;
+					while (requiredbit != finalbit)
+					{
+						if (!(player->roundconditions.hittrackhazard[requiredlap] & requiredbit))
+							return false;
+						requiredbit /= 2;
+					}
+
+					if (requiredlap == 0)
+						return true;
+
+					requiredlap--;
+				}
+
+				// All bytes between the top and the bottom need to be checked for saturation.
+				for (; requiredlap > 0; requiredlap--)
+				{
+					if (player->roundconditions.hittrackhazard[requiredlap] != 0xFF)
 						return false;
 				}
 
-				return true;
+				// Last bit not needed, POSITION doesn't count.
+				return (player->roundconditions.hittrackhazard[0] == 0xFE);
 			}
 
-			return (player->roundconditions.hittrackhazard[requiredlap] == desired);
+			return (!(player->roundconditions.hittrackhazard[requiredlap] & requiredbit) != (cn->requirement == 1));
 		}
 
 		case UCRP_WETPLAYER:

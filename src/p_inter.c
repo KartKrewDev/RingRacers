@@ -2632,11 +2632,14 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		}
 		else if (!(inflictor && inflictor->player)
 			&& player->laps <= numlaps
-			&& damagetype != DMG_DEATHPIT
-			&& player->roundconditions.hittrackhazard[player->laps] == false)
+			&& damagetype != DMG_DEATHPIT)
 		{
-			player->roundconditions.hittrackhazard[player->laps] = true;
-			player->roundconditions.checkthisframe = true;
+			const UINT8 requiredbit = 1<<(player->laps & 7);
+			if (!(player->roundconditions.hittrackhazard[player->laps/8] & requiredbit))
+			{
+				player->roundconditions.hittrackhazard[player->laps/8] |= requiredbit;
+				player->roundconditions.checkthisframe = true;
+			}
 		}
 
 		// Instant-Death
