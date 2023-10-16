@@ -2981,6 +2981,32 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 		//PARAMCHECK(1);
 		ty = UCRP_TRIPWIREHYUU + offset;
 	}
+	else if (fastcmp(params[0], "TRACKHAZARD"))
+	{
+		PARAMCHECK(1);
+		ty = UCRP_TRACKHAZARD;
+		re = 1;
+		x1 = -1;
+
+		if (params[1][0] == 'F' || params[1][0] == 'N' || params[1][0] == '0')
+			re = 0;
+
+		if (params[2])
+		{
+			if (fastcmp(params[2], "FINAL"))
+				x1 = -2;
+			else
+			{
+				x1 = atoi(params[2]);
+
+				if (re < 0 || re > MAX_LAPS)
+				{
+					deh_warning("Lap number %d out of range (0 - %u) for condition ID %d", x1, MAX_LAPS, id+1);
+					return;
+				}
+			}
+		}
+	}
 	else
 	{
 		deh_warning("Invalid condition name %s for condition ID %d", params[0], id+1);

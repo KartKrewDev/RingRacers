@@ -122,6 +122,8 @@ typedef enum
 	UCRP_LANDMINEDUNK, // huh? you died? that's weird. all i did was try to hug you...
 	UCRP_HITMIDAIR, // Hit another player mid-air with a kartfielditem
 
+	UCRP_TRACKHAZARD, // (Don't) get hit by a track hazard (maybe specific lap)
+
 	UCRP_WETPLAYER, // Don't touch [strictness] [fluid]
 } conditiontype_t;
 

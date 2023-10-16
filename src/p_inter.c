@@ -2618,9 +2618,10 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			}
 		}
 
-		if (inflictor && source && source->player)
+		if (source && source->player)
 		{
 			if (source->player->roundconditions.hit_midair == false
+				&& inflictor
 				&& K_IsMissileOrKartItem(inflictor)
 				&& target->player->airtime > TICRATE/2
 				&& source->player->airtime > TICRATE/2)
@@ -2628,6 +2629,14 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				source->player->roundconditions.hit_midair = true;
 				source->player->roundconditions.checkthisframe = true;
 			}
+		}
+		else if (!(inflictor && inflictor->player)
+			&& player->laps <= numlaps
+			&& damagetype != DMG_DEATHPIT
+			&& player->roundconditions.hittrackhazard[player->laps] == false)
+		{
+			player->roundconditions.hittrackhazard[player->laps] = true;
+			player->roundconditions.checkthisframe = true;
 		}
 
 		// Instant-Death

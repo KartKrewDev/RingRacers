@@ -1611,6 +1611,48 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 		case UCRP_HITMIDAIR:
 			return (player->roundconditions.hit_midair);
 
+		case UCRP_TRACKHAZARD:
+		{
+			INT16 requiredlap = cn->extrainfo1;
+
+			if (requiredlap < 0)
+			{
+				// Prevents lowered numlaps from activating it
+				// (this also handles exiting, for all-laps situations)
+				requiredlap = max(mapheaderinfo[gamemap-1]->numlaps, numlaps);
+			}
+
+			// cn->requirement is used as an offset here
+			// so if you need to get hit on lap x, the
+			// condition can fire while that lap is active
+			// but if you need to NOT get hit on lap X,
+			// it only fires once the lap is complete
+			if (player->laps <= (requiredlap - cn->requirement))
+				return false;
+
+			const boolean desired = (cn->requirement == 1);
+			if (cn->extrainfo1 == -1)
+			{
+				// Using cn->requirement as the first
+				// counted lap means that for conditions
+				// that require you to get hit every lap,
+				// that doesn't count POSITION -
+				// but if you can't get hit by a track
+				// hazard at all during the race,
+				// you're forbidden from getting hurt
+				// by a track hazard during POSITION.
+				for (; requiredlap >= cn->requirement; requiredlap--)
+				{
+					if (player->roundconditions.hittrackhazard[requiredlap] != desired)
+						return false;
+				}
+
+				return true;
+			}
+
+			return (player->roundconditions.hittrackhazard[requiredlap] == desired);
+		}
+
 		case UCRP_WETPLAYER:
 			return (((player->roundconditions.wet_player & cn->requirement) == 0)
 				&& !player->roundconditions.fell_off); // Levels with water tend to texture their pits as water too
@@ -2292,6 +2334,18 @@ static const char *M_GetConditionString(condition_t *cn)
 			return "dunk a Landmine on another racer's head";
 		case UCRP_HITMIDAIR:
 			return "hit another racer with a projectile while you're both in the air";
+
+		case UCRP_TRACKHAZARD:
+		{
+			work = (cn->requirement == 1) ? "touch a track hazard" : "don't touch any track hazards";
+			if (cn->extrainfo1 == -1)
+				return va("%s%s", work, (cn->requirement == 1) ? " on every lap" : "");
+			if (cn->extrainfo1 == -2)
+				return va("%s on the final lap", work);
+			if (cn->extrainfo1 == 0)
+				return va("%s during POSITION", work);
+			return va("%s on lap %u", work, cn->extrainfo1);
+		}
 
 		case UCRP_WETPLAYER:
 			return va("without %s %s",

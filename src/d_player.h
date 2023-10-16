@@ -39,6 +39,10 @@
 extern "C" {
 #endif
 
+// Maximum laps per map.
+// (done here as p_local.h, the previous host, has this as a dependency - but we must use it here)
+#define MAX_LAPS 99
+
 // Extra abilities/settings for skins (combinable stuff)
 typedef enum
 {
@@ -397,6 +401,8 @@ struct roundconditions_t
 	boolean spb_neuter;
 	boolean landmine_dunk;
 	boolean hit_midair;
+
+	boolean hittrackhazard[MAX_LAPS+1];
 
 	mobjeflag_t wet_player;
 
