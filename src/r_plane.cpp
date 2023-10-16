@@ -93,8 +93,6 @@ static INT32 spanstart[MAXVIDHEIGHT];
 fixed_t yslopetab[MAXSPLITSCREENPLAYERS][MAXVIDHEIGHT*16];
 fixed_t *yslope;
 
-static floatv3_t ds_slope_origin, ds_slope_u, ds_slope_v;
-
 //
 // R_InitPlanes
 // Only at game startup.
@@ -773,9 +771,9 @@ static INT64 R_GetSlopeZAt(const pslope_t *slope, fixed_t x, fixed_t y)
 }
 
 // Sets the texture origin vector of the sloped plane.
-static void R_SetSlopePlaneOrigin(pslope_t *slope, fixed_t xpos, fixed_t ypos, fixed_t zpos, fixed_t xoff, fixed_t yoff, fixed_t angle)
+static void R_SetSlopePlaneOrigin(drawspandata_t *ds, pslope_t *slope, fixed_t xpos, fixed_t ypos, fixed_t zpos, fixed_t xoff, fixed_t yoff, fixed_t angle)
 {
-	floatv3_t *p = &ds_slope_origin;
+	floatv3_t *p = &ds->slope_origin;
 
 	INT64 vx = (INT64)xpos + (INT64)xoff;
 	INT64 vy = (INT64)ypos - (INT64)yoff;
@@ -797,11 +795,11 @@ void R_SetSlopePlane(drawspandata_t* ds, pslope_t *slope, fixed_t xpos, fixed_t 
 {
 	// Potentially override other stuff for now cus we're mean. :< But draw a slope plane!
 	// I copied ZDoom's code and adapted it to SRB2... -Red
-	floatv3_t *m = &ds_slope_v, *n = &ds_slope_u;
+	floatv3_t *m = &ds->slope_v, *n = &ds->slope_u;
 	fixed_t height, temp;
 	float ang;
 
-	R_SetSlopePlaneOrigin(slope, xpos, ypos, zpos, xoff, yoff, angle);
+	R_SetSlopePlaneOrigin(ds, slope, xpos, ypos, zpos, xoff, yoff, angle);
 	height = P_GetSlopeZAt(slope, xpos, ypos);
 	ds->zeroheight = FixedToFloat(height - zpos);
 
@@ -824,14 +822,14 @@ void R_SetSlopePlane(drawspandata_t* ds, pslope_t *slope, fixed_t xpos, fixed_t 
 // This function calculates all of the vectors necessary for drawing a sloped and scaled plane.
 void R_SetScaledSlopePlane(drawspandata_t* ds, pslope_t *slope, fixed_t xpos, fixed_t ypos, fixed_t zpos, fixed_t xs, fixed_t ys, fixed_t xoff, fixed_t yoff, angle_t angle, angle_t plangle)
 {
-	floatv3_t *m = &ds_slope_v, *n = &ds_slope_u;
+	floatv3_t *m = &ds->slope_v, *n = &ds->slope_u;
 	fixed_t height, temp;
 
 	float xscale = FixedToFloat(xs);
 	float yscale = FixedToFloat(ys);
 	float ang;
 
-	R_SetSlopePlaneOrigin(slope, xpos, ypos, zpos, xoff, yoff, angle);
+	R_SetSlopePlaneOrigin(ds, slope, xpos, ypos, zpos, xoff, yoff, angle);
 	height = P_GetSlopeZAt(slope, xpos, ypos);
 	ds->zeroheight = FixedToFloat(height - zpos);
 
@@ -860,9 +858,9 @@ void R_CalculateSlopeVectors(drawspandata_t* ds)
 d.x = (v1.y * v2.z) - (v1.z * v2.y);\
 d.y = (v1.z * v2.x) - (v1.x * v2.z);\
 d.z = (v1.x * v2.y) - (v1.y * v2.x)
-	CROSS(ds->sup, ds_slope_origin, ds_slope_v);
-	CROSS(ds->svp, ds_slope_origin, ds_slope_u);
-	CROSS(ds->szp, ds_slope_v, ds_slope_u);
+	CROSS(ds->sup, ds->slope_origin, ds->slope_v);
+	CROSS(ds->svp, ds->slope_origin, ds->slope_u);
+	CROSS(ds->szp, ds->slope_v, ds->slope_u);
 #undef CROSS
 
 	ds->sup.z *= focallengthf[viewssnum];

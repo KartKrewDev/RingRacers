@@ -1123,6 +1123,9 @@ typedef struct
 	floatv3_t sup;
 	floatv3_t svp;
 	floatv3_t szp;
+	floatv3_t slope_origin;
+	floatv3_t slope_u;
+	floatv3_t slope_v;
 
 	// Variable flat sizes
 	UINT32 nflatxshift;
