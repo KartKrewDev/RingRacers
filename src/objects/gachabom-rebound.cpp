@@ -73,6 +73,8 @@ bool award_target(mobj_t* mobj)
 		{
 			player->itemtype = KITEM_GACHABOM;
 			player->itemamount++;
+			if (player->roundconditions.gachabom_miser == 1)
+				player->roundconditions.gachabom_miser = 0;
 
 			return true;
 		}

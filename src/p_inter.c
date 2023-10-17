@@ -987,6 +987,10 @@ void P_TrackRoundConditionTargetDamage(targetdamaging_t targetdamaging)
 		if (players[g_localplayers[i]].spectator)
 			continue;
 		players[i].roundconditions.targetdamaging |= targetdamaging;
+		/* -- the following isn't needed because we can just check for targetdamaging == UFOD_GACHABOM
+		if (targetdamaging != UFOD_GACHABOM)
+			players[i].roundconditions.gachabom_miser = 0xFF;
+		*/
 	}
 }
 

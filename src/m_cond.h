@@ -126,6 +126,7 @@ typedef enum
 	UCRP_TRACKHAZARD, // (Don't) get hit by a track hazard (maybe specific lap)
 
 	UCRP_TARGETATTACKMETHOD, // Break targets/UFO using only one method
+	UCRP_GACHABOMMISER, // Break targets/UFO using exactly one Gachabom repeatedly
 
 	UCRP_WETPLAYER, // Don't touch [strictness] [fluid]
 } conditiontype_t;

@@ -3034,6 +3034,11 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 			return;
 		}
 	}
+	else if (fastcmp(params[0], "GACHABOMMISER"))
+	{
+		//PARAMCHECK(1);
+		ty = UCRP_GACHABOMMISER;
+	}
 	else
 	{
 		deh_warning("Invalid condition name %s for condition ID %d", params[0], id+1);

@@ -11722,6 +11722,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								K_ThrowKartItem(player, true, MT_GACHABOM, 0, 0, 0);
 								K_PlayAttackTaunt(player->mo);
 								player->itemamount--;
+								player->roundconditions.gachabom_miser = (
+									(player->roundconditions.gachabom_miser == 0)
+										? 1 : 0xFF
+								);
 								K_UpdateHnextList(player, false);
 							}
 							break;

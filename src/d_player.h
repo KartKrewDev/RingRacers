@@ -417,7 +417,9 @@ struct roundconditions_t
 
 	UINT8 hittrackhazard[((MAX_LAPS+1)/8) + 1];
 
+	// Attack-based conditions
 	targetdamaging_t targetdamaging;
+	UINT8 gachabom_miser;
 
 	mobjeflag_t wet_player;
 
