@@ -5738,7 +5738,7 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 		WRITEUINT32(save->p, grandprixinfo.rank.laps);
 		WRITEUINT32(save->p, grandprixinfo.rank.totalLaps);
 
-		WRITEUINT32(save->p, grandprixinfo.rank.continuesUsed);
+		WRITEUINT32(save->p, (grandprixinfo.rank.continuesUsed + 1));
 
 		WRITEUINT32(save->p, grandprixinfo.rank.prisons);
 		WRITEUINT32(save->p, grandprixinfo.rank.totalPrisons);
