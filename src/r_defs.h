@@ -1045,6 +1045,114 @@ struct spritedef_t
 	spriteframe_t *spriteframes;
 };
 
+// Column and span drawing data bundles
+
+typedef struct
+{
+	lighttable_t* colormap;
+	lighttable_t* fullbright;
+	INT32 x;
+	INT32 yl;
+	INT32 yh;
+	fixed_t iscale;
+	fixed_t texturemid;
+	UINT8 hires;
+	UINT8 shadowcolor;
+
+	UINT8* source; // first pixel in a column
+	UINT8* brightmap; // brightmap texture column, can be NULL
+	UINT8* lightmap; // lighting only
+
+	// translucency stuff here
+	UINT8* transmap;
+
+	// translation stuff here
+	UINT8* translation;
+
+	struct r_lightlist_t* lightlist;
+
+	INT32 numlights;
+	INT32 maxlights;
+
+	//Fix TUTIFRUTI
+	INT32 texheight;
+
+	UINT8 r8_flatcolor;
+} drawcolumndata_t;
+
+extern drawcolumndata_t g_dc;
+
+typedef struct {
+	float x, y, z;
+} floatv3_t;
+
+typedef struct
+{
+	INT32 y;
+	INT32 x1;
+	INT32 x2;
+	lighttable_t* colormap;
+	lighttable_t* fullbright;
+	lighttable_t* translation;
+	lighttable_t* flatlighting;
+
+	fixed_t xfrac;
+	fixed_t yfrac;
+	fixed_t xstep;
+	fixed_t ystep;
+	INT32 waterofs;
+	INT32 bgofs;
+
+	fixed_t xoffs;
+	fixed_t yoffs;
+
+	UINT16 flatwidth;
+	UINT16 flatheight;
+	boolean powersoftwo;
+
+	visplane_t *currentplane;
+	UINT8 *source;
+	UINT8 *brightmap;
+	UINT8 *transmap;
+
+	UINT8 flatcolor;
+
+	float zeroheight;
+
+	// Vectors for Software's tilted slope drawers
+	floatv3_t sup;
+	floatv3_t svp;
+	floatv3_t szp;
+	floatv3_t slope_origin;
+	floatv3_t slope_u;
+	floatv3_t slope_v;
+
+	// Variable flat sizes
+	UINT32 nflatxshift;
+	UINT32 nflatyshift;
+	UINT32 nflatshiftup;
+	UINT32 nflatmask;
+
+	fixed_t planeheight;
+	lighttable_t **planezlight;
+
+	//
+	// Water ripple effect
+	// Needs the height of the plane, and the vertical position of the span.
+	// Sets planeripple.xfrac and planeripple.yfrac, added to ds_xfrac and ds_yfrac, if the span is not tilted.
+	//
+	struct
+	{
+		INT32 offset;
+		fixed_t xfrac, yfrac;
+		boolean active;
+	} planeripple;
+
+	UINT8 r8_flatcolor;
+} drawspandata_t;
+
+extern drawspandata_t g_ds;
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

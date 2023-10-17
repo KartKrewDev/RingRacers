@@ -33,6 +33,30 @@
 #include "hardware/hw_main.h"
 #endif
 
+
+// --------------------------------------------
+// assembly or c drawer routines for 8bpp/16bpp
+// --------------------------------------------
+coldrawfunc_t *colfunc;
+coldrawfunc_t *colfuncs[COLDRAWFUNC_MAX];
+#ifdef USE_COL_SPAN_ASM
+coldrawfunc_t *colfuncs_asm[COLDRAWFUNC_MAX];
+#endif
+int colfunctype;
+
+spandrawfunc_t *spanfunc;
+
+spandrawfunc_t *spanfuncs[SPANDRAWFUNC_MAX];
+spandrawfunc_t *spanfuncs_npo2[SPANDRAWFUNC_MAX];
+#ifdef USE_COL_SPAN_ASM
+spandrawfunc_t *spanfuncs_asm[SPANDRAWFUNC_MAX];
+#endif
+spandrawfunc_t *spanfuncs_flat[SPANDRAWFUNC_MAX];
+
+drawcolumndata_t g_dc;
+drawspandata_t g_ds;
+
+
 // ==========================================================================
 //                     COMMON DATA FOR 8bpp AND 16bpp
 // ==========================================================================
@@ -74,17 +98,6 @@ UINT8 r8_flatcolor;
 //                      COLUMN DRAWING CODE STUFF
 // =========================================================================
 
-lighttable_t *dc_colormap;
-lighttable_t *dc_fullbright;
-INT32 dc_x = 0, dc_yl = 0, dc_yh = 0;
-
-fixed_t dc_iscale, dc_texturemid;
-UINT8 dc_hires; // under MSVC boolean is a byte, while on other systems, it a bit,
-               // soo lets make it a byte on all system for the ASM code
-UINT8 *dc_source;
-UINT8 *dc_brightmap;
-UINT8 *dc_lightmap;
-
 // -----------------------
 // translucency stuff here
 // -----------------------
@@ -107,40 +120,16 @@ UINT8 *dc_transmap; // one of the translucency tables
 UINT8 *dc_translation;
 
 struct r_lightlist_t *dc_lightlist = NULL;
-INT32 dc_numlights = 0, dc_maxlights, dc_texheight;
+INT32 dc_numlights = 0, dc_maxlights;
 
 // =========================================================================
 //                      SPAN DRAWING CODE STUFF
 // =========================================================================
 
-INT32 ds_y, ds_x1, ds_x2;
-lighttable_t *ds_colormap;
-lighttable_t *ds_fullbright;
-lighttable_t *ds_translation; // Lactozilla: Sprite splat drawer
-lighttable_t *ds_flatlighting;
-
-fixed_t ds_xfrac, ds_yfrac, ds_xstep, ds_ystep;
-INT32 ds_waterofs, ds_bgofs;
-
-UINT16 ds_flatwidth, ds_flatheight;
-boolean ds_powersoftwo;
-
-UINT8 *ds_source; // points to the start of a flat
-UINT8 *ds_brightmap; // start of brightmap flat
-UINT8 *ds_transmap; // one of the translucency tables
-
-UINT8 dc_shadowcolor;
-
 // Vectors for Software's tilted slope drawers
 floatv3_t *ds_su, *ds_sv, *ds_sz;
-floatv3_t *ds_sup, *ds_svp, *ds_szp;
 float focallengthf[MAXSPLITSCREENPLAYERS];
 float zeroheight;
-
-/**	\brief Variable flat sizes
-*/
-
-UINT32 nflatxshift, nflatyshift, nflatshiftup, nflatmask;
 
 // =========================================================================
 //                   TRANSLATION COLORMAP CODE

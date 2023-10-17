@@ -72,6 +72,7 @@
 #include "filesrch.h" // refreshdirmenu
 #include "g_input.h" // tutorial mode control scheming
 #include "m_perfstats.h"
+#include "core/memory.h"
 
 #include "monocypher/monocypher.h"
 #include "stun.h"
@@ -541,7 +542,7 @@ static void D_Display(void)
 						viewssnum = i;
 
 #ifdef HWRENDER
-						if (rendermode != render_soft)
+						if (rendermode == render_opengl)
 							HWR_RenderPlayerView();
 						else
 #endif
@@ -821,6 +822,8 @@ void D_SRB2Loop(void)
 		precise_t capbudget;
 		precise_t enterprecise = I_GetPreciseTime();
 		precise_t finishprecise = enterprecise;
+
+		Z_Frame_Reset();
 
 		{
 			// Casting the return value of a function is bad practice (apparently)

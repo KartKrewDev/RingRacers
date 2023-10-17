@@ -386,9 +386,6 @@ TYPEDEF (mprecipsecnode_t);
 TYPEDEF (lightmap_t);
 TYPEDEF (seg_t);
 
-// r_draw.h
-TYPEDEF (floatv3_t);
-
 // r_fps.h
 TYPEDEF (viewvars_t);
 TYPEDEF (interpmobjstate_t);

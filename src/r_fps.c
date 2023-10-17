@@ -408,8 +408,8 @@ void R_CreateInterpolator_Polyobj(thinker_t *thinker, polyobj_t *polyobj)
 	interp->polyobj.polyobj = polyobj;
 	interp->polyobj.vertices_size = polyobj->numVertices;
 
-	interp->polyobj.oldvertices = Z_CallocAlign(sizeof(fixed_t) * 2 * polyobj->numVertices, PU_LEVEL, NULL, 32);
-	interp->polyobj.bakvertices = Z_CallocAlign(sizeof(fixed_t) * 2 * polyobj->numVertices, PU_LEVEL, NULL, 32);
+	interp->polyobj.oldvertices = Z_Calloc(sizeof(fixed_t) * 2 * polyobj->numVertices, PU_LEVEL, NULL);
+	interp->polyobj.bakvertices = Z_Calloc(sizeof(fixed_t) * 2 * polyobj->numVertices, PU_LEVEL, NULL);
 	for (size_t i = 0; i < polyobj->numVertices; i++)
 	{
 		interp->polyobj.oldvertices[i * 2    ] = interp->polyobj.bakvertices[i * 2    ] = polyobj->vertices[i]->x;
@@ -579,7 +579,7 @@ void R_RestoreLevelInterpolators(void)
 	for (i = 0; i < levelinterpolators_len; i++)
 	{
 		levelinterpolator_t *interp = levelinterpolators[i];
-		
+
 		switch (interp->type)
 		{
 		case LVLINTERP_SectorPlane:
@@ -634,7 +634,7 @@ void R_DestroyLevelInterpolators(thinker_t *thinker)
 	for (i = 0; i < levelinterpolators_len; i++)
 	{
 		levelinterpolator_t *interp = levelinterpolators[i];
-		
+
 		if (interp->thinker == thinker)
 		{
 			// Swap the tail of the level interpolators to this spot

@@ -48,24 +48,6 @@
 #define RUSEASM //MSC.NET can't patch itself
 #endif
 
-// --------------------------------------------
-// assembly or c drawer routines for 8bpp/16bpp
-// --------------------------------------------
-void (*colfunc)(void);
-void (*colfuncs[COLDRAWFUNC_MAX])(void);
-#ifdef USE_COL_SPAN_ASM
-void (*colfuncs_asm[COLDRAWFUNC_MAX])(void);
-#endif
-int colfunctype;
-
-void (*spanfunc)(void);
-void (*spanfuncs[SPANDRAWFUNC_MAX])(void);
-void (*spanfuncs_npo2[SPANDRAWFUNC_MAX])(void);
-#ifdef USE_COL_SPAN_ASM
-void (*spanfuncs_asm[SPANDRAWFUNC_MAX])(void);
-#endif
-void (*spanfuncs_flat[SPANDRAWFUNC_MAX])(void);
-
 // ------------------
 // global video state
 // ------------------

@@ -7,6 +7,7 @@
 #include "../i_video.h" // I_UpdateNoBlit
 #include "../m_misc.h" // NUMLOGIP
 #include "../f_finale.h" // g_wipeskiprender
+#include "../s_sound.h"
 
 menuitem_t PLAY_MP_JoinIP[] =
 {

@@ -13,6 +13,8 @@
 ///        utility functions (BSP, geometry, trigonometry).
 ///        See tables.c, too.
 
+#include <algorithm>
+
 #include "doomdef.h"
 #include "g_game.h"
 #include "g_input.h"
@@ -37,6 +39,7 @@
 #include "i_system.h" // I_GetPreciseTime
 #include "doomstat.h" // MAXSPLITSCREENPLAYERS
 #include "r_fps.h" // Frame interpolation/uncapped
+#include "core/thread_pool.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
@@ -180,31 +183,31 @@ void SplitScreen_OnChange(void)
 		}
 	}
 }
-void Fov_OnChange(void);
+extern "C" void Fov_OnChange(void);
 void Fov_OnChange(void)
 {
 	R_SetViewSize();
 }
 
-void ChaseCam_OnChange(void);
+extern "C" void ChaseCam_OnChange(void);
 void ChaseCam_OnChange(void)
 {
 	;
 }
 
-void ChaseCam2_OnChange(void);
+extern "C" void ChaseCam2_OnChange(void);
 void ChaseCam2_OnChange(void)
 {
 	;
 }
 
-void ChaseCam3_OnChange(void);
+extern "C" void ChaseCam3_OnChange(void);
 void ChaseCam3_OnChange(void)
 {
 	;
 }
 
-void ChaseCam4_OnChange(void);
+extern "C" void ChaseCam4_OnChange(void);
 void ChaseCam4_OnChange(void)
 {
 	;
@@ -218,7 +221,7 @@ void ChaseCam4_OnChange(void)
 //
 // killough 5/2/98: reformatted
 //
-INT32 R_PointOnSide(fixed_t x, fixed_t y, node_t *restrict node)
+INT32 R_PointOnSide(fixed_t x, fixed_t y, node_t *node)
 {
 	if (!node->dx)
 		return x <= node->x ? node->dy > 0 : node->dy < 0;
@@ -457,10 +460,10 @@ void R_GetRenderBlockMapDimensions(fixed_t drawdist, INT32 *xl, INT32 *xh, INT32
 	const fixed_t vyright = viewy + FixedMul(drawdist, FSIN(right));
 
 	// Try to narrow the search to within only the field of view
-	*xl = (unsigned)(min(viewx, min(vxleft, vxright)) - bmaporgx)>>MAPBLOCKSHIFT;
-	*xh = (unsigned)(max(viewx, max(vxleft, vxright)) - bmaporgx)>>MAPBLOCKSHIFT;
-	*yl = (unsigned)(min(viewy, min(vyleft, vyright)) - bmaporgy)>>MAPBLOCKSHIFT;
-	*yh = (unsigned)(max(viewy, max(vyleft, vyright)) - bmaporgy)>>MAPBLOCKSHIFT;
+	*xl = (unsigned)(std::min(viewx, std::min(vxleft, vxright)) - bmaporgx)>>MAPBLOCKSHIFT;
+	*xh = (unsigned)(std::max(viewx, std::max(vxleft, vxright)) - bmaporgx)>>MAPBLOCKSHIFT;
+	*yl = (unsigned)(std::min(viewy, std::min(vyleft, vyright)) - bmaporgy)>>MAPBLOCKSHIFT;
+	*yh = (unsigned)(std::max(viewy, std::max(vyleft, vyright)) - bmaporgy)>>MAPBLOCKSHIFT;
 
 	if (*xh >= bmapwidth)
 		*xh = bmapwidth - 1;
@@ -685,7 +688,7 @@ void R_CheckViewMorph(int s)
 	{
 		if (v->scrmap)
 			free(v->scrmap);
-		v->scrmap = malloc(width * height * sizeof(INT32));
+		v->scrmap = static_cast<INT32*>(malloc(width * height * sizeof(INT32)));
 		v->scrmapsize = width * height;
 	}
 
@@ -714,7 +717,7 @@ void R_CheckViewMorph(int s)
 	}
 #endif
 
-	temp = max(x1, y1)*FRACUNIT;
+	temp = std::max(x1, y1)*FRACUNIT;
 	if (temp < FRACUNIT)
 		temp = FRACUNIT;
 	else
@@ -770,10 +773,10 @@ void R_CheckViewMorph(int s)
 		xb = width-1-xa;
 		yb = height-1-ya;
 
-		v->ceilingclip[xa] = min(v->ceilingclip[xa], ya);
-		v->floorclip[xa] = max(v->floorclip[xa], ya);
-		v->ceilingclip[xb] = min(v->ceilingclip[xb], yb);
-		v->floorclip[xb] = max(v->floorclip[xb], yb);
+		v->ceilingclip[xa] = std::min(v->ceilingclip[xa], ya);
+		v->floorclip[xa] = std::max(v->floorclip[xa], ya);
+		v->ceilingclip[xb] = std::min(v->ceilingclip[xb], yb);
+		v->floorclip[xb] = std::max(v->floorclip[xb], yb);
 		x2 += rollcos;
 		y2 += rollsin;
 	}
@@ -787,10 +790,10 @@ void R_CheckViewMorph(int s)
 		xb = width-1-xa;
 		yb = height-1-ya;
 
-		v->ceilingclip[xa] = min(v->ceilingclip[xa], ya);
-		v->floorclip[xa] = max(v->floorclip[xa], ya);
-		v->ceilingclip[xb] = min(v->ceilingclip[xb], yb);
-		v->floorclip[xb] = max(v->floorclip[xb], yb);
+		v->ceilingclip[xa] = std::min(v->ceilingclip[xa], ya);
+		v->floorclip[xa] = std::max(v->floorclip[xa], ya);
+		v->ceilingclip[xb] = std::min(v->ceilingclip[xb], yb);
+		v->floorclip[xb] = std::max(v->floorclip[xb], yb);
 		x2 -= rollsin;
 		y2 += rollcos;
 	}
@@ -1035,7 +1038,6 @@ void R_ExecuteSetViewSize(void)
 			Z_Free(ds_sz);
 
 		ds_su = ds_sv = ds_sz = NULL;
-		ds_sup = ds_svp = ds_szp = NULL;
 	}
 
 	memset(scalelight, 0xFF, sizeof(scalelight));
@@ -1212,7 +1214,7 @@ void R_SetupFrame(int s)
 	camera_t *thiscam = &camera[s];
 	boolean chasecam = (cv_chasecam[s].value != 0);
 
-	R_SetViewContext(VIEWCONTEXT_PLAYER1 + s);
+	R_SetViewContext(static_cast<viewcontext_e>(VIEWCONTEXT_PLAYER1 + s));
 
 	if (player->spectator)
 	{
@@ -1275,7 +1277,7 @@ void R_SkyboxFrame(int s)
 	player_t *player = &players[displayplayers[s]];
 	camera_t *thiscam = &camera[s];
 
-	R_SetViewContext(VIEWCONTEXT_SKY1 + s);
+	R_SetViewContext(static_cast<viewcontext_e>(VIEWCONTEXT_SKY1 + s));
 
 	// cut-away view stuff
 	newview->sky = true;
@@ -1474,7 +1476,7 @@ void R_RenderPlayerView(void)
 {
 	player_t * player = &players[displayplayers[viewssnum]];
 	INT32			nummasks	= 1;
-	maskcount_t*	masks		= malloc(sizeof(maskcount_t));
+	maskcount_t*	masks		= static_cast<maskcount_t*>(malloc(sizeof(maskcount_t)));
 
 	R_SetupFrame(viewssnum);
 	framecount++;
@@ -1511,7 +1513,11 @@ void R_RenderPlayerView(void)
 #endif
 	ps_numbspcalls = ps_numpolyobjects = ps_numdrawnodes = 0;
 	ps_bsptime = I_GetPreciseTime();
+
+	srb2::ThreadPool::Sema tp_sema;
+	srb2::g_main_threadpool->begin_sema();
 	R_RenderViewpoint(&masks[nummasks - 1]);
+
 	ps_bsptime = I_GetPreciseTime() - ps_bsptime;
 #ifdef TIMING
 	RDMSR(0x10, &mycount);
@@ -1534,6 +1540,11 @@ void R_RenderPlayerView(void)
 	ps_sw_portaltime = I_GetPreciseTime();
 	if (portal_base && !cv_debugrender_portal.value)
 	{
+		// tp_sema = srb2::g_main_threadpool->end_sema();
+		// srb2::g_main_threadpool->notify_sema(tp_sema);
+		// srb2::g_main_threadpool->wait_sema(tp_sema);
+		// srb2::g_main_threadpool->begin_sema();
+
 		portal_t *portal;
 
 		for(portal = portal_base; portal; portal = portal_base)
@@ -1556,12 +1567,13 @@ void R_RenderPlayerView(void)
 
 			validcount++;
 
-			masks = realloc(masks, (++nummasks)*sizeof(maskcount_t));
+			masks = static_cast<maskcount_t*>(realloc(masks, (++nummasks)*sizeof(maskcount_t)));
 
 			portalskipprecipmobjs = portal->isskybox;
 
 			// Render the BSP from the new viewpoint, and clip
 			// any sprites with the new clipsegs and window.
+
 			R_RenderViewpoint(&masks[nummasks - 1]);
 
 			portalskipprecipmobjs = false;
@@ -1570,11 +1582,19 @@ void R_RenderPlayerView(void)
 
 			Portal_Remove(portal);
 		}
+
+		// tp_sema = srb2::g_main_threadpool->end_sema();
+		// srb2::g_main_threadpool->notify_sema(tp_sema);
+		// srb2::g_main_threadpool->wait_sema(tp_sema);
+		// srb2::g_main_threadpool->begin_sema();
 	}
 	ps_sw_portaltime = I_GetPreciseTime() - ps_sw_portaltime;
 
 	ps_sw_planetime = I_GetPreciseTime();
 	R_DrawPlanes();
+	tp_sema = srb2::g_main_threadpool->end_sema();
+	srb2::g_main_threadpool->notify_sema(tp_sema);
+	srb2::g_main_threadpool->wait_sema(tp_sema);
 	ps_sw_planetime = I_GetPreciseTime() - ps_sw_planetime;
 
 	// draw mid texture and sprite
@@ -1596,8 +1616,8 @@ void R_RenderPlayerView(void)
 
 			for (i = 0; i < width; ++i)
 			{
-				INT32 yl = max(portal->ceilingclip[i] + 1, 0);
-				INT32 yh = min(portal->floorclip[i], viewheight);
+				INT32 yl = std::max(portal->ceilingclip[i] + 1, 0);
+				INT32 yh = std::min(static_cast<INT32>(portal->floorclip[i]), viewheight);
 
 				for (; yl < yh; ++yl)
 				{

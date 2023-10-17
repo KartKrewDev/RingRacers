@@ -98,13 +98,13 @@ void R_CheckTextureCache(INT32 tex);
 void R_ClearTextureNumCache(boolean btell);
 
 // Retrieve texture data.
-void *R_GetLevelFlat(levelflat_t *levelflat);
+void *R_GetLevelFlat(drawspandata_t* ds, levelflat_t *levelflat);
 UINT8 *R_GetColumn(fixed_t tex, INT32 col);
 UINT8 *R_GetBrightmapColumn(fixed_t tex, INT32 col);
 void *R_GetFlat(lumpnum_t flatnum);
 
-boolean R_CheckPowersOfTwo(void);
-void R_CheckFlatLength(size_t size);
+boolean R_CheckPowersOfTwo(drawspandata_t* ds);
+void R_CheckFlatLength(drawspandata_t* ds, size_t size);
 
 void R_UpdateTextureBrightmap(INT32 tx, INT32 bm);
 
