@@ -1468,7 +1468,7 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			return (grandprixinfo.gamespeed >= cn->requirement);
 
 		case UCRP_PODIUMCUP:
-			if (K_PodiumRanking() == false)
+			if (grandprixinfo.gp == false || K_PodiumRanking() == false)
 				return false;
 			if (grandprixinfo.cup == NULL
 				|| grandprixinfo.cup->id != cn->requirement)
@@ -1481,7 +1481,8 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			return true;
 		case UCRP_PODIUMEMERALD:
 		case UCRP_PODIUMPRIZE:
-			return (K_PodiumRanking() == true
+			return (grandprixinfo.gp == true
+				&& K_PodiumRanking() == true
 				&& grandprixinfo.rank.specialWon == true);
 
 		case UCRP_FINISHCOOL:
