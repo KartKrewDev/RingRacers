@@ -2900,7 +2900,8 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 	||        (++offset && fastcmp(params[0], "FINISHPERFECT"))
 	||        (++offset && fastcmp(params[0], "FINISHALLPRISONS"))
 	||        (++offset && fastcmp(params[0], "NOCONTEST"))
-	||        (++offset && fastcmp(params[0], "SMASHUFO")))
+	||        (++offset && fastcmp(params[0], "SMASHUFO"))
+	||        (++offset && fastcmp(params[0], "CHASEDBYSPB")))
 	{
 		//PARAMCHECK(1);
 		ty = UCRP_FINISHCOOL + offset;

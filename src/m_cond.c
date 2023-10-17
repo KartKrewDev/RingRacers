@@ -1513,6 +1513,11 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 					|| specialstageinfo.ufo->health <= 1
 				)
 			);
+		case UCRP_CHASEDBYSPB:
+			// The PERFECT implementation would check spbplace, iterate over trackercap, etc.
+			// But the game already has this handy-dandy SPB signal for us...
+			// It's only MAYBE invalid in modded context. And mods can already cheat...
+			return ((player->pflags & PF_RINGLOCK) == PF_RINGLOCK);
 
 		case UCRP_MAKERETIRE:
 		{
@@ -2386,6 +2391,9 @@ static const char *M_GetConditionString(condition_t *cn)
 					? "" : "at least",
 				cn->requirement
 			);
+
+		case UCRP_CHASEDBYSPB:
+			return "while chased by a Self-Propelled Bomb";
 
 		case UCRP_TRIGGER:
 			return "do something special";

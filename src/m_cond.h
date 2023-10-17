@@ -97,7 +97,9 @@ typedef enum
 	UCRP_FINISHPERFECT, // Finish a perfect race
 	UCRP_FINISHALLPRISONS, // Break all prisons
 	UCRP_NOCONTEST, // No Contest
+
 	UCRP_SMASHUFO, // Smash the UFO Catcher
+	UCRP_CHASEDBYSPB, // Chased by SPB
 
 	UCRP_MAKERETIRE, // Make another player of [skin] No Contest
 
