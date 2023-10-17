@@ -763,52 +763,80 @@ static void UFOKillPieces(mobj_t *ufo)
 
 static UINT8 GetUFODamage(mobj_t *inflictor, UINT8 damageType)
 {
+	UINT8 ret = 0;
+	ufodamaging_t ufodamaging = UFOD_GENERIC;
+
 	if (inflictor != NULL && P_MobjWasRemoved(inflictor) == false)
 	{
 		switch (inflictor->type)
 		{
+			// Shields deal chip damage.
 			case MT_JAWZ_SHIELD:
+			{
+				ufodamaging = UFOD_JAWZ;
+				ret = 10;
+				break;
+			}
 			case MT_ORBINAUT_SHIELD:
+			{
+				ufodamaging = UFOD_ORBINAUT;
+				ret = 10;
+				break;
+			}
 			case MT_INSTAWHIP:
 			{
-				// Shields deal chip damage.
-				return 10;
+				ufodamaging = UFOD_WHIP;
+				ret = 10;
+				break;
 			}
 			case MT_JAWZ:
 			{
 				// Thrown Jawz deal a bit extra.
-				return 15;
+				ufodamaging = UFOD_JAWZ;
+				ret = 15;
+				break;
 			}
 			case MT_ORBINAUT:
 			{
 				// Thrown orbinauts deal double damage.
-				return 20;
+				ufodamaging = UFOD_ORBINAUT;
+				ret = 20;
+				break;
 			}
 			case MT_SPB:
 			{
 				// SPB deals triple damage.
-				return 30;
+				ufodamaging |= UFOD_SPB;
+				ret = 30;
+				break;
 			}
 			case MT_BANANA:
 			{
+				ufodamaging = UFOD_BANANA;
+
 				// Banana snipes deal triple damage,
 				// laid down bananas deal regular damage.
 				if (inflictor->health > 1)
 				{
-					return 30;
+					ret = 30;
+					break;
 				}
 
-				return 10;
+				ret = 10;
+				break;
 			}
 			case MT_PLAYER:
 			{
 				// Players deal damage relative to how many sneakers they used.
-				return 15 * max(1, inflictor->player->numsneakers);
+				ufodamaging = UFOD_BOOST;
+				ret = 15 * max(1, inflictor->player->numsneakers);
+				break;
 			}
 			case MT_SPECIAL_UFO:
 			{
 				// UFODebugSetHealth
-				return 1;
+				ret = 1;
+				break;
 			}
 			default:
 			{
@@ -816,6 +844,23 @@ static UINT8 GetUFODamage(mobj_t *inflictor, UINT8 damageType)
 			}
 		}
 	}
+
+	{
+		// We have to iterate over all players, otherwise a player who gets exactly one hit in will trick the Challenges system.
+		UINT8 i;
+		for (i = 0; i <= splitscreen; i++)
+		{
+			if (!playeringame[g_localplayers[i]])
+				continue;
+			if (players[g_localplayers[i]].spectator)
+				continue;
+			players[i].roundconditions.ufodamaging |= ufodamaging;
+			players[i].roundconditions.checkthisframe = true;
+		}
+	}
+
+	if (ret)
+		return ret;
 
 	// Guess from damage type.
 	switch (damageType & DMG_TYPEMASK)

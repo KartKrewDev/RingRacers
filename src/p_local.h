@@ -260,7 +260,6 @@ void P_RecalcPrecipInSector(sector_t *sector);
 void P_PrecipitationEffects(void);
 
 void P_RemoveMobj(mobj_t *th);
-boolean P_MobjWasRemoved(const mobj_t *th);
 void P_RemoveSavegameMobj(mobj_t *th);
 boolean P_SetPlayerMobjState(mobj_t *mobj, statenum_t state);
 boolean P_SetMobjState(mobj_t *mobj, statenum_t state);

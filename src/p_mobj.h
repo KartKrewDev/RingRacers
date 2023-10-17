@@ -509,6 +509,9 @@ struct precipmobj_t
 	tic_t lastThink;
 };
 
+// It's extremely important that all mobj_t*-reading code have access to this.
+boolean P_MobjWasRemoved(const mobj_t *th);
+
 struct actioncache_t
 {
 	actioncache_t *next;

@@ -3007,6 +3007,25 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 			}
 		}
 	}
+	else if (fastcmp(params[0], "UFOATTACKMETHOD"))
+	{
+		PARAMCHECK(1);
+		ty = UCRP_UFOATTACKMETHOD;
+
+		// See ufodamaging_t
+		if ((offset=1) || fastcmp(params[1], "BOOST")
+		||        (++offset && fastcmp(params[1], "WHIP"))
+		||        (++offset && fastcmp(params[1], "BANANA"))
+		||        (++offset && fastcmp(params[1], "ORBINAUT"))
+		||        (++offset && fastcmp(params[1], "JAWZ"))
+		||        (++offset && fastcmp(params[1], "SPB")))
+			re = offset;
+		else
+		{
+			deh_warning("Unknown attack method %s for condition ID %d", params[1], id+1);
+			return;
+		}
+	}
 	else
 	{
 		deh_warning("Invalid condition name %s for condition ID %d", params[0], id+1);

@@ -387,6 +387,18 @@ struct botvars_t
 
 // player_t struct for round-specific condition tracking
 
+typedef enum
+{
+	UFOD_GENERIC	= 1, 
+	UFOD_BOOST		= 1<<1,
+	UFOD_WHIP		= 1<<2,
+	UFOD_BANANA		= 1<<3,
+	UFOD_ORBINAUT	= 1<<4,
+	UFOD_JAWZ		= 1<<5,
+	UFOD_SPB		= 1<<6,
+	// free up to and including 1<<31
+} ufodamaging_t;
+
 struct roundconditions_t
 {
 	// Reduce the number of checks by only updating when this is true
@@ -403,6 +415,8 @@ struct roundconditions_t
 	boolean hit_midair;
 
 	UINT8 hittrackhazard[((MAX_LAPS+1)/8) + 1];
+
+	ufodamaging_t ufodamaging;
 
 	mobjeflag_t wet_player;
 

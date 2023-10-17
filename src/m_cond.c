@@ -1683,6 +1683,16 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			return (!(player->roundconditions.hittrackhazard[requiredlap] & requiredbit) != (cn->requirement == 1));
 		}
 
+		case UCRP_UFOATTACKMETHOD:
+			return (
+				specialstageinfo.valid == true
+				&& (
+					P_MobjWasRemoved(specialstageinfo.ufo)
+					|| specialstageinfo.ufo->health <= 1
+				)
+				&& player->roundconditions.ufodamaging == (ufodamaging_t)(1<<cn->requirement)
+			);
+
 		case UCRP_WETPLAYER:
 			return (((player->roundconditions.wet_player & cn->requirement) == 0)
 				&& !player->roundconditions.fell_off); // Levels with water tend to texture their pits as water too
@@ -2375,6 +2385,43 @@ static const char *M_GetConditionString(condition_t *cn)
 			if (cn->extrainfo1 == 0)
 				return va("%s during POSITION", work);
 			return va("%s on lap %u", work, cn->extrainfo1);
+		}
+
+		case UCRP_UFOATTACKMETHOD:
+		{
+			if (!gamedata->everseenspecial)
+				return NULL;
+
+			work = NULL;
+
+			switch (cn->requirement)
+			{
+				case 1:
+					work = "boost power";
+					break;
+				case 2:
+					work = "Insta-Whip";
+					break;
+				case 3:
+					work = "Bananas";
+					break;
+				case 4:
+					work = "Orbinauts";
+					break;
+				case 5:
+					work = "Jawz";
+					break;
+				case 6:
+					work = "Self Propelled Bombs";
+					break;
+				default:
+					break;
+			}
+
+			if (work == NULL)
+				return va("INVALID ATTACK CONDITION \"%d:%d\"", cn->type, cn->requirement);
+
+			return va("smash the UFO Catcher using only %s", work);
 		}
 
 		case UCRP_WETPLAYER:

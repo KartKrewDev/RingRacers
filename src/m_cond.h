@@ -124,6 +124,8 @@ typedef enum
 
 	UCRP_TRACKHAZARD, // (Don't) get hit by a track hazard (maybe specific lap)
 
+	UCRP_UFOATTACKMETHOD, // Defeat a UFO Catcher using only one method
+
 	UCRP_WETPLAYER, // Don't touch [strictness] [fluid]
 } conditiontype_t;
 
