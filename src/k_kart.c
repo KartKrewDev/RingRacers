@@ -8408,7 +8408,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 				//player->flashing = 0;
 				eggsexplode = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_SPBEXPLOSION);
 				eggsexplode->height = 2 * player->mo->height;
-				eggsexplode->color = player->mo->color;
+				K_FlipFromObject(eggsexplode, player->mo);
 
 				if (player->eggmanblame >= 0
 				&& player->eggmanblame < MAXPLAYERS
@@ -12304,6 +12304,7 @@ void K_EggmanTransfer(player_t *source, player_t *victim)
 	K_AddHitLag(victim->mo, 2, true);
 	K_DropItems(victim);
 	victim->eggmanexplode = 6*TICRATE;
+	victim->eggmanblame = (source - players);
 	K_StopRoulette(&victim->itemRoulette);
 
 	if (P_IsDisplayPlayer(victim) && !demo.freecam)
@@ -12311,6 +12312,7 @@ void K_EggmanTransfer(player_t *source, player_t *victim)
 
 	K_AddHitLag(source->mo, 2, true);
 	source->eggmanexplode = 0;
+	source->eggmanblame = -1;
 	K_StopRoulette(&source->itemRoulette);
 	source->eggmanTransferDelay = 10;
 
