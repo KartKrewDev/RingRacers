@@ -7,7 +7,7 @@ target_sources(SRB2SDL2 PRIVATE
 	rhi_gl3_core_platform.hpp
 	i_threads.c
 	i_net.c
-	i_system.c
+	i_system.cpp
 	i_main.cpp
 	i_video.cpp
 	dosstr.c
@@ -91,6 +91,9 @@ endif()
 
 target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_MIXER -DSOUND=SOUND_MIXER)
 target_compile_definitions(SRB2SDL2 PRIVATE -DDIRECTFULLSCREEN -DHAVE_SDL)
+
+# NOMUMBLE till WRITE* macros are fixed for C++ or mumble integration is rewritten
+target_compile_definitions(SRB2SDL2 PRIVATE -DNOMUMBLE)
 
 #### Installation ####
 if("${CMAKE_SYSTEM_NAME}" MATCHES Darwin)

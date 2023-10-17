@@ -48,7 +48,7 @@ static player_t *GetItemBoxPlayer(mobj_t *mobj)
 		if (P_CanPickupItem(&players[i], 1))
 		{
 			// Check for players who can take this pickup, but won't be allowed to (antifarming)
-			UINT8 mytype = (mobj->flags2 & MF2_AMBUSH) ? 2 : 1;
+			UINT8 mytype = (mobj->flags2 & MF2_BOSSDEAD) ? 2 : 1;
 			if (P_IsPickupCheesy(&players[i], mytype))
 				continue;
 
@@ -120,7 +120,7 @@ void Obj_RandomItemVisuals(mobj_t *mobj)
 	// the player's cleared out a good portion of the map.
 	//
 	// Then extraval1 starts ticking up and triggers the transformation from Ringbox to Random Item.
-	if (mobj->fuse == 0 && !(mobj->flags & MF_NOCLIPTHING) && !(mobj->flags2 & MF2_AMBUSH) && !cv_thunderdome.value
+	if (mobj->fuse == 0 && !(mobj->flags & MF_NOCLIPTHING) && !(mobj->flags2 & MF2_BOSSDEAD) && !cv_thunderdome.value
 		&& (modeattacking == 0 || specialstageinfo.valid)) // Time Attacking in Special is a fucked-looking exception
 	{
 		mobj->extravalue1++;

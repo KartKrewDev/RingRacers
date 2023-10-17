@@ -17,6 +17,8 @@
 extern "C" {
 #endif
 
+#include "d_net.h"
+
 extern UINT16 current_port;
 
 /**	\brief	The I_InitTcpNetwork function

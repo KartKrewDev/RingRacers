@@ -236,7 +236,11 @@ void M_PlaybackToggleFreecam(INT32 choice)
 	splitscreen = 0;
 	R_ExecuteSetViewSize();
 
-	P_ToggleDemoCamera();
+	UINT8 i;
+	for (i = 0; i <= r_splitscreen; ++i)
+	{
+		P_ToggleDemoCamera(i);
+	}
 }
 
 void M_PlaybackQuit(INT32 choice)

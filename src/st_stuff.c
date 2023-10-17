@@ -1192,7 +1192,7 @@ static void ST_overlayDrawer(void)
 	{
 		if (cv_showviewpointtext.value)
 		{
-			if (!demo.title && !P_IsLocalPlayer(stplyr) && !demo.freecam)
+			if (!demo.title && !P_IsLocalPlayer(stplyr) && !camera[viewnum].freecam)
 			{
 				if (!r_splitscreen)
 				{
@@ -1210,55 +1210,6 @@ static void ST_overlayDrawer(void)
 				else if (r_splitscreen)
 				{
 					V_DrawCenteredThinString((vid.width/vid.dupx)/4, BASEVIDHEIGHT/2 - 12, V_HUDTRANSHALF|V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN, player_names[stplyr-players]);
-				}
-			}
-		}
-	}
-
-	if (!hu_showscores && netgame && !mapreset)
-	{
-		if (stplyr->spectator && displayplayers[viewnum] == g_localplayers[viewnum] && LUA_HudEnabled(hud_textspectator))
-		{
-			const char *itemtxt = M_GetText("Item - Join Game");
-
-			if (stplyr->flashing)
-				itemtxt = M_GetText("Item - . . .");
-			else if (stplyr->pflags & PF_WANTSTOJOIN)
-				itemtxt = M_GetText("Item - Cancel Join");
-			else if (G_GametypeHasTeams())
-				itemtxt = M_GetText("Item - Join Team");
-
-			if (cv_maxplayers.value)
-			{
-				UINT8 numingame = 0;
-				UINT8 i;
-
-				for (i = 0; i < MAXPLAYERS; i++)
-					if (playeringame[i] && !players[i].spectator)
-						numingame++;
-
-				itemtxt = va("%s (%s: %d)", itemtxt, M_GetText("Slots left"), max(0, cv_maxplayers.value - numingame));
-			}
-
-			// SRB2kart: changed positions & text
-			if (r_splitscreen)
-			{
-				V_DrawThinString(2, (BASEVIDHEIGHT/2)-20, V_YELLOWMAP|V_HUDTRANSHALF|V_SPLITSCREEN|V_SNAPTOLEFT|V_SNAPTOBOTTOM, M_GetText("- SPECTATING -"));
-				V_DrawThinString(2, (BASEVIDHEIGHT/2)-10, V_HUDTRANSHALF|V_SPLITSCREEN|V_SNAPTOLEFT|V_SNAPTOBOTTOM, itemtxt);
-			}
-			else
-			{
-				V_DrawString(2, BASEVIDHEIGHT-40, V_HUDTRANSHALF|V_SPLITSCREEN|V_YELLOWMAP|V_SNAPTOLEFT|V_SNAPTOBOTTOM, M_GetText("- SPECTATING -"));
-				V_DrawString(2, BASEVIDHEIGHT-30, V_HUDTRANSHALF|V_SPLITSCREEN|V_SNAPTOLEFT|V_SNAPTOBOTTOM, itemtxt);
-				if (stplyr->cmd.buttons & BT_LOOKBACK)
-				{
-					V_DrawString(2, BASEVIDHEIGHT-20, V_HUDTRANSHALF|V_SPLITSCREEN|V_SNAPTOLEFT|V_SNAPTOBOTTOM, M_GetText("Lookback - Camera pivot"));
-					V_DrawString(2, BASEVIDHEIGHT-10, V_HUDTRANSHALF|V_SPLITSCREEN|V_SNAPTOLEFT|V_SNAPTOBOTTOM, M_GetText("Aim forward/backward"));
-				}
-				else
-				{
-					V_DrawString(2, BASEVIDHEIGHT-20, V_HUDTRANSHALF|V_SPLITSCREEN|V_SNAPTOLEFT|V_SNAPTOBOTTOM, M_GetText("Accelerate - Float"));
-					V_DrawString(2, BASEVIDHEIGHT-10, V_HUDTRANSHALF|V_SPLITSCREEN|V_SNAPTOLEFT|V_SNAPTOBOTTOM, M_GetText("Brake - Sink"));
 				}
 			}
 		}

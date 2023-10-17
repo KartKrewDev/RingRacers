@@ -627,6 +627,28 @@ char *GetPrettyRRID(const unsigned char *bin, boolean brief)
 	return rrid_buf;
 }
 
+unsigned char *FromPrettyRRID(unsigned char *bin, const char *text)
+{
+	size_t i;
+	size_t len = PUBKEYLENGTH * 2;
+
+	if (strlen(text) != len)
+		return NULL;
+
+	for (i = 0; i < len; i += 2)
+	{
+		char byt[3] = { text[i], text[i+1], '\0' };
+		char *p;
+
+		bin[i/2] = strtol(byt, &p, 16);
+
+		if (*p) // input is not hexadecimal
+			return NULL;
+	}
+
+	return bin;
+}
+
 
 static char allZero[PUBKEYLENGTH];
 

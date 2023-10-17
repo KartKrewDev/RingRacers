@@ -64,6 +64,7 @@
 #include "k_serverstats.h"
 #include "k_zvote.h"
 #include "music.h"
+#include "k_bans.h"
 
 // cl loading screen
 #include "v_video.h"
@@ -2420,287 +2421,6 @@ static void CL_ConnectToServer(void)
 
 }
 
-static void Command_ShowBan(void) //Print out ban list
-{
-	size_t i;
-	const char *address, *mask, *reason, *username;
-	time_t unbanTime = NO_BAN_TIME;
-	const time_t curTime = time(NULL);
-
-	if (I_GetBanAddress)
-		CONS_Printf(M_GetText("Ban List:\n"));
-	else
-		return;
-
-	for (i = 0; (address = I_GetBanAddress(i)) != NULL; i++)
-	{
-		unbanTime = NO_BAN_TIME;
-		if (I_GetUnbanTime)
-			unbanTime = I_GetUnbanTime(i);
-
-		if (unbanTime != NO_BAN_TIME && curTime >= unbanTime)
-			continue;
-
-		CONS_Printf("%s: ", sizeu1(i+1));
-
-		if (I_GetBanUsername && (username = I_GetBanUsername(i)) != NULL)
-			CONS_Printf("%s - ", username);
-
-		if (!I_GetBanMask || (mask = I_GetBanMask(i)) == NULL)
-			CONS_Printf("%s", address);
-		else
-			CONS_Printf("%s/%s", address, mask);
-
-		if (I_GetBanReason && (reason = I_GetBanReason(i)) != NULL)
-			CONS_Printf(" - %s", reason);
-
-		if (unbanTime != NO_BAN_TIME)
-		{
-			 // these are fudged a little to match what a joiner sees
-			int minutes = ((unbanTime - curTime) + 30) / 60;
-			int hours = (minutes + 1) / 60;
-			int days = (hours + 1) / 24;
-			if (days)
-				CONS_Printf(" (%d day%s)", days, days > 1 ? "s" : "");
-			else if (hours)
-				CONS_Printf(" (%d hour%s)", hours, hours > 1 ? "s" : "");
-			else if (minutes)
-				CONS_Printf(" (%d minute%s)", minutes, minutes > 1 ? "s" : "");
-			else
-				CONS_Printf(" (<1 minute)");
-		}
-
-		CONS_Printf("\n");
-	}
-
-	if (i == 0 && !address)
-		CONS_Printf(M_GetText("(empty)\n"));
-}
-
-static boolean bansLoaded = false;
-// If you're a community contributor looking to improve how bans are written, please
-// offer your changes back to our Git repository. Kart Krew reserve the right to
-// utilise format numbers in use by community builds for different layouts.
-#define BANFORMAT 1
-
-void D_SaveBan(void)
-{
-	FILE *f;
-	size_t i;
-	const char *address, *mask;
-	const char *username, *reason;
-	const time_t curTime = time(NULL);
-	time_t unbanTime = NO_BAN_TIME;
-	const char *path = va("%s"PATHSEP"%s", srb2home, "ban.txt");
-
-	if (bansLoaded != true)
-	{
-		// You didn't even get to ATTEMPT to load bans.txt.
-		// Don't immediately save nothing over it.
-		return;
-	}
-
-	f = fopen(path, "w");
-
-	if (!f)
-	{
-		CONS_Alert(CONS_WARNING, M_GetText("Could not save ban list into ban.txt\n"));
-		return;
-	}
-
-	// Add header.
-	fprintf(f, "BANFORMAT %d\n", BANFORMAT);
-
-	for (i = 0; (address = I_GetBanAddress(i)) != NULL; i++)
-	{
-		if (I_GetUnbanTime)
-		{
-			unbanTime = I_GetUnbanTime(i);
-		}
-		else
-		{
-			unbanTime = NO_BAN_TIME;
-		}
-
-		if (unbanTime != NO_BAN_TIME && curTime >= unbanTime)
-		{
-			// This one has served their sentence.
-			// We don't need to save them in the file anymore.
-			continue;
-		}
-
-		mask = NULL;
-		if (!I_GetBanMask || (mask = I_GetBanMask(i)) == NULL)
-			fprintf(f, "%s/0", address);
-		else
-			fprintf(f, "%s/%s", address, mask);
-
-		// TODO: it'd be nice to convert this to an actual date-time,
-		// so it'd be easier to edit outside of the game.
-		fprintf(f, " %ld", (long)unbanTime);
-
-		username = NULL;
-		if (I_GetBanUsername && (username = I_GetBanUsername(i)) != NULL)
-			fprintf(f, " \"%s\"", username);
-		else
-			fprintf(f, " \"%s\"", "Direct IP ban");
-
-		reason = NULL;
-		if (I_GetBanReason && (reason = I_GetBanReason(i)) != NULL)
-			fprintf(f, " \"%s\"\n", reason);
-		else
-			fprintf(f, " \"%s\"\n", "No reason given");
-	}
-
-	fclose(f);
-}
-
-static void Command_ClearBans(void)
-{
-	if (!I_ClearBans)
-		return;
-
-	I_ClearBans();
-	D_SaveBan();
-}
-
-void D_LoadBan(boolean warning)
-{
-	FILE *f;
-	size_t i, j;
-	char *address, *mask;
-	char *username, *reason;
-	time_t unbanTime = NO_BAN_TIME;
-	char buffer[MAX_WADPATH];
-	UINT8 banmode = 0;
-	boolean malformed = false;
-
-	if (!I_ClearBans)
-		return;
-
-	// We at least attempted loading bans.txt
-	bansLoaded = true;
-
-	f = fopen(va("%s"PATHSEP"%s", srb2home, "ban.txt"), "r");
-
-	if (!f)
-	{
-		if (warning)
-			CONS_Alert(CONS_WARNING, M_GetText("Could not open ban.txt for ban list\n"));
-		return;
-	}
-
-	I_ClearBans();
-
-	for (i = 0; fgets(buffer, (int)sizeof(buffer), f); i++)
-	{
-		address = strtok(buffer, " /\t\r\n");
-		mask = strtok(NULL, " \t\r\n");
-
-		if (i == 0 && !strncmp(address, "BANFORMAT", 9))
-		{
-			if (mask)
-			{
-				banmode = atoi(mask);
-			}
-			switch (banmode)
-			{
-				case BANFORMAT: // currently supported format
-				//case 0: -- permitted only when BANFORMAT string not present
-					break;
-				default:
-				{
-					fclose(f);
-					CONS_Alert(CONS_WARNING, "Could not load unknown ban.txt for ban list (BANFORMAT %s, expected %d)\n", mask, BANFORMAT);
-					return;
-				}
-			}
-			continue;
-		}
-
-		if (I_SetBanAddress(address, mask) == false) // invalid IP input?
-		{
-			CONS_Alert(CONS_WARNING, "\"%s/%s\" is not a valid IP address, discarding...\n", address, mask);
-			continue;
-		}
-
-		// One-way legacy format conversion -- the game will crash otherwise
-		if (banmode == 0)
-		{
-			unbanTime = NO_BAN_TIME;
-			username = NULL; // not guaranteed to be accurate, but only sane substitute
-			reason = strtok(NULL, "\r\n");
-			if (reason && reason[0] == 'N' && reason[1] == 'A' && reason[2] == '\0')
-			{
-				reason = NULL;
-			}
-		}
-		else
-		{
-			reason = strtok(NULL, " \"\t\r\n");
-			if (reason)
-			{
-				unbanTime = atoi(reason);
-				reason = NULL;
-			}
-			else
-			{
-				unbanTime = NO_BAN_TIME;
-				malformed = true;
-			}
-
-			username = strtok(NULL, "\"\t\r\n"); // go until next "
-			if (!username)
-			{
-				malformed = true;
-			}
-
-			strtok(NULL, "\"\t\r\n"); // remove first "
-			reason = strtok(NULL, "\"\r\n"); // go until next "
-			if (!reason)
-			{
-				malformed = true;
-			}
-		}
-
-		// Enforce MAX_REASONLENGTH.
-		if (reason)
-		{
-			j = 0;
-			while (reason[j] != '\0')
-			{
-				if ((j++) < MAX_REASONLENGTH)
-					continue;
-				reason[j] = '\0';
-				break;
-			}
-		}
-
-		if (I_SetUnbanTime)
-			I_SetUnbanTime(unbanTime);
-
-		if (I_SetBanUsername)
-			I_SetBanUsername(username);
-
-		if (I_SetBanReason)
-			I_SetBanReason(reason);
-	}
-
-	if (malformed)
-	{
-		CONS_Alert(CONS_WARNING, "One or more lines of ban.txt are malformed. The game can correct for this, but some data may be lost.\n");
-	}
-
-	fclose(f);
-}
-
-#undef BANFORMAT
-
-static void Command_ReloadBan(void)  //recheck ban.txt
-{
-	D_LoadBan(true);
-}
-
 static void Command_connect(void)
 {
 
@@ -3122,71 +2842,6 @@ static void Command_Ban(void)
 		CONS_Printf(M_GetText("Only the server or a remote admin can use this.\n"));
 }
 
-static void Command_BanIP(void)
-{
-	size_t ac = COM_Argc();
-
-	if (ac < 2)
-	{
-		CONS_Printf(M_GetText("banip <ip> [<reason>]: ban an ip address\n"));
-		return;
-	}
-
-	if (server) // Only the server can use this, otherwise does nothing.
-	{
-		char *addressInput = Z_StrDup(COM_Argv(1));
-
-		const char *address = NULL;
-		const char *mask = NULL;
-
-		const char *reason = NULL;
-
-		address = strtok(addressInput, "/");
-		mask = strtok(NULL, "");
-
-		if (ac > 2)
-		{
-			reason = COM_Argv(2);
-		}
-
-		if (I_SetBanAddress && I_SetBanAddress(address, mask))
-		{
-			if (reason)
-			{
-				CONS_Printf(
-					"Banned IP address %s%s for: %s\n",
-					address,
-					(mask && (strlen(mask) > 0)) ? va("/%s", mask) : "",
-					reason
-				);
-			}
-			else
-			{
-				CONS_Printf(
-					"Banned IP address %s%s\n",
-					address,
-					(mask && (strlen(mask) > 0)) ? va("/%s", mask) : ""
-				);
-			}
-
-			if (I_SetUnbanTime)
-				I_SetUnbanTime(NO_BAN_TIME);
-
-			if (I_SetBanUsername)
-				I_SetBanUsername(NULL);
-
-			if (I_SetBanReason)
-				I_SetBanReason(reason);
-
-			D_SaveBan();
-		}
-		else
-		{
-			return;
-		}
-	}
-}
-
 static void Command_Kick(void)
 {
 	if (COM_Argc() < 2)
@@ -3262,6 +2917,10 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 	if (msg == KICK_MSG_CUSTOM_BAN || msg == KICK_MSG_CUSTOM_KICK)
 	{
 		READSTRINGN(*p, reason, MAX_REASONLENGTH+1);
+	}
+	else
+	{
+		memset(reason, 0, sizeof(buf));
 	}
 
 	// Is playernum authorized to make this kick?
@@ -3349,28 +3008,7 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 
 		if (msg == KICK_MSG_BANNED || msg == KICK_MSG_CUSTOM_BAN || banMinutes)
 		{
-			if (I_Ban && !I_Ban(playernode[(INT32)pnum]))
-			{
-				CONS_Alert(CONS_WARNING, M_GetText("Ban failed. Invalid node?\n"));
-			}
-			else
-			{
-				if (I_SetBanUsername)
-					I_SetBanUsername(player_names[pnum]);
-
-				if (I_SetBanReason)
-					I_SetBanReason(reason);
-
-				if (I_SetUnbanTime)
-				{
-					if (banMinutes)
-						I_SetUnbanTime(time(NULL) + (banMinutes * 60));
-					else
-						I_SetUnbanTime(NO_BAN_TIME);
-				}
-
-				D_SaveBan();
-			}
+			SV_BanPlayer(pnum, banMinutes, reason);
 		}
 	}
 
@@ -3670,10 +3308,9 @@ void D_ClientServerInit(void)
 	COM_AddCommand("getplayernum", Command_GetPlayerNum);
 	COM_AddCommand("kick", Command_Kick);
 	COM_AddCommand("ban", Command_Ban);
+	COM_AddCommand("listbans", Command_Listbans);
+	COM_AddCommand("unban", Command_Unban);
 	COM_AddCommand("banip", Command_BanIP);
-	COM_AddCommand("clearbans", Command_ClearBans);
-	COM_AddCommand("showbanlist", Command_ShowBan);
-	COM_AddCommand("reloadbans", Command_ReloadBan);
 	COM_AddCommand("connect", Command_connect);
 	COM_AddCommand("nodes", Command_Nodes);
 #ifdef HAVE_CURL
@@ -3697,7 +3334,6 @@ void D_ClientServerInit(void)
 		CV_RegisterList(cvlist_dumpconsistency);
 	}
 #endif
-	D_LoadBan(false);
 
 	gametic = 0;
 	localgametic = 0;
@@ -4460,41 +4096,46 @@ static void HandleConnect(SINT8 node)
 		if (playernode[i] != UINT8_MAX) // We use this to count players because it is affected by SV_AddWaitingPlayers when more than one client joins on the same tic, unlike playeringame and D_NumPlayers. UINT8_MAX denotes no node for that player
 			connectedplayers++;
 
-	if (bannednode && bannednode[node].banid != SIZE_MAX)
+	banrecord_t *ban = SV_GetBanByAddress(node);
+	if (ban == NULL)
 	{
-		const char *reason = NULL;
-
-		// Get the reason...
-		if (!I_GetBanReason || (reason = I_GetBanReason(bannednode[node].banid)) == NULL)
-			reason = "No reason given";
-
-		if (bannednode[node].timeleft != NO_BAN_TIME)
+		for (i = 0; i < netbuffer->u.clientcfg.localplayers - playerpernode[node]; i++)
 		{
-			 // these are fudged a little to allow it to sink in for impatient rejoiners
-			int minutes = (bannednode[node].timeleft + 30) / 60;
+			if (ban == NULL)
+				ban = SV_GetBanByKey(lastReceivedKey[node][i]);
+		}
+	}
+
+	if (ban != NULL && node != 0)
+	{
+		UINT32 timeremaining = 0;
+		if (ban->expires > time(NULL))
+		{
+			timeremaining = ban->expires - time(NULL);
+			int minutes = (timeremaining + 30) / 60;
 			int hours = (minutes + 1) / 60;
 			int days = (hours + 1) / 24;
 
 			if (days)
 			{
-				SV_SendRefuse(node, va("K|%s\n(Time remaining: %d day%s)", reason, days, days > 1 ? "s" : ""));
+				SV_SendRefuse(node, va("K|%s\n(Time remaining: %d day%s)", ban->reason, days, days > 1 ? "s" : ""));
 			}
 			else if (hours)
 			{
-				SV_SendRefuse(node, va("K|%s\n(Time remaining: %d hour%s)", reason, hours, hours > 1 ? "s" : ""));
+				SV_SendRefuse(node, va("K|%s\n(Time remaining: %d hour%s)", ban->reason, hours, hours > 1 ? "s" : ""));
 			}
 			else if (minutes)
 			{
-				SV_SendRefuse(node, va("K|%s\n(Time remaining: %d minute%s)", reason, minutes, minutes > 1 ? "s" : ""));
+				SV_SendRefuse(node, va("K|%s\n(Time remaining: %d minute%s)", ban->reason, minutes, minutes > 1 ? "s" : ""));
 			}
 			else
 			{
-				SV_SendRefuse(node, va("K|%s\n(Time remaining: <1 minute)", reason));
+				SV_SendRefuse(node, va("K|%s\n(Time remaining: <1 minute)", ban->reason));
 			}
 		}
 		else
 		{
-			SV_SendRefuse(node, va("B|%s", reason));
+			SV_SendRefuse(node, va("B|%s", ban->reason));
 		}
 	}
 	else if (netbuffer->u.clientcfg._255 != 255 ||

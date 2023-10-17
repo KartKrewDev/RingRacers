@@ -71,7 +71,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	r_debug_parser.cpp
 	r_draw.c
 	r_fps.c
-	r_main.c
+	r_main.cpp
 	r_plane.cpp
 	r_segs.cpp
 	r_skins.c
@@ -137,7 +137,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	k_terrain.c
 	k_brightmap.c
 	k_terrain.c
-	k_director.c
+	k_director.cpp
 	k_follower.c
 	k_profiles.c
 	k_specialstage.c
@@ -152,6 +152,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	k_hitlag.c
 	k_dialogue.cpp
 	k_tally.cpp
+	k_bans.cpp
 	music.cpp
 	music_manager.cpp
 )

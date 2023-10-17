@@ -2981,9 +2981,6 @@ void I_Quit(void)
 	quiting = SDL_FALSE;
 	I_ShutdownConsole();
 	M_SaveConfig(NULL); //save game config, cvars..
-#ifndef NONET
-	D_SaveBan(); // save the ban list
-#endif
 
 	// Make sure you lose points for ALT-F4
 	if (Playing())
@@ -3146,9 +3143,6 @@ void I_Error(const char *error, ...)
 		fflush(stderr);
 #endif
 	M_SaveConfig(NULL); // save game config, cvars..
-#ifndef NONET
-	D_SaveBan(); // save the ban list
-#endif
 	G_DirtyGameData(); // done first in case an error is in G_SaveGameData
 	G_SaveGameData(); // Tails 12-08-2002
 

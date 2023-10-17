@@ -30,6 +30,7 @@
 #include "m_cond.h"
 #include "k_kart.h"
 #include "m_random.h"
+#include "s_sound.h"
 #if 0
 #include "k_kart.h" // K_KartResetPlayerColor
 #endif
@@ -520,7 +521,7 @@ void SetRandomFakePlayerSkin(player_t* player, boolean fast)
 	{
 		S_StartSound(player->mo, sfx_kc33);
 		S_StartSound(player->mo, sfx_cdfm44);
-		
+
 		mobj_t *parent = player->mo;
 		fixed_t baseangle = P_RandomRange(PR_DECORATION, 0, 359);
 		INT32 j;
@@ -551,7 +552,7 @@ void SetRandomFakePlayerSkin(player_t* player, boolean fast)
 				box->cusval = 1;
 			else
 				box->cusval = 0;
-			
+
 			if (j > 3)
 			{
 				P_SetMobjState(box, (j == 4) ? S_MAGICIANBOX_TOP : S_MAGICIANBOX_BOTTOM);
@@ -1066,7 +1067,7 @@ next_token:
 				Z_Free(unloadedskin);
 
 				break;
-			
+
 			}
 		}
 

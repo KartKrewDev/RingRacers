@@ -896,7 +896,7 @@ void *R_GetFlat(lumpnum_t flatlumpnum)
 //
 // If needed, convert a texture or patch to a flat.
 //
-void *R_GetLevelFlat(levelflat_t *levelflat)
+void *R_GetLevelFlat(drawspandata_t* ds, levelflat_t *levelflat)
 {
 	boolean isleveltexture = (levelflat->type == LEVELFLAT_TEXTURE);
 	texture_t *texture = (isleveltexture ? textures[levelflat->u.texture.num] : NULL);
@@ -909,8 +909,8 @@ void *R_GetLevelFlat(levelflat_t *levelflat)
 		if (texture->flat)
 		{
 			flatdata = texture->flat;
-			ds_flatwidth = texture->width;
-			ds_flatheight = texture->height;
+			ds->flatwidth = texture->width;
+			ds->flatheight = texture->height;
 			texturechanged = false;
 		}
 		else
@@ -924,8 +924,8 @@ void *R_GetLevelFlat(levelflat_t *levelflat)
 		if (isleveltexture)
 		{
 			levelflat->picture = R_GenerateTextureAsFlat(levelflat->u.texture.num);
-			ds_flatwidth = levelflat->width = texture->width;
-			ds_flatheight = levelflat->height = texture->height;
+			ds->flatwidth = levelflat->width = texture->width;
+			ds->flatheight = levelflat->height = texture->height;
 		}
 		else
 		{
@@ -938,8 +938,8 @@ void *R_GetLevelFlat(levelflat_t *levelflat)
 				levelflat->width = (UINT16)pngwidth;
 				levelflat->height = (UINT16)pngheight;
 
-				ds_flatwidth = levelflat->width;
-				ds_flatheight = levelflat->height;
+				ds->flatwidth = levelflat->width;
+				ds->flatheight = levelflat->height;
 			}
 			else
 #endif
@@ -949,8 +949,8 @@ void *R_GetLevelFlat(levelflat_t *levelflat)
 				size_t size;
 				softwarepatch_t *patch = W_CacheLumpNum(levelflat->u.flat.lumpnum, PU_CACHE);
 
-				levelflat->width = ds_flatwidth = SHORT(patch->width);
-				levelflat->height = ds_flatheight = SHORT(patch->height);
+				levelflat->width = ds->flatwidth = SHORT(patch->width);
+				levelflat->height = ds->flatheight = SHORT(patch->height);
 
 				levelflat->picture = Z_Malloc(levelflat->width * levelflat->height, PU_LEVEL, NULL);
 				converted = Picture_FlatConvert(PICFMT_DOOMPATCH, patch, PICFMT_FLAT, 0, &size, levelflat->width, levelflat->height, SHORT(patch->topoffset), SHORT(patch->leftoffset), 0);
@@ -961,8 +961,8 @@ void *R_GetLevelFlat(levelflat_t *levelflat)
 	}
 	else
 	{
-		ds_flatwidth = levelflat->width;
-		ds_flatheight = levelflat->height;
+		ds->flatwidth = levelflat->width;
+		ds->flatheight = levelflat->height;
 	}
 
 	levelflat->u.texture.lastnum = levelflat->u.texture.num;
@@ -977,21 +977,21 @@ void *R_GetLevelFlat(levelflat_t *levelflat)
 //
 // Sets ds_powersoftwo true if the flat's dimensions are powers of two, and returns that.
 //
-boolean R_CheckPowersOfTwo(void)
+boolean R_CheckPowersOfTwo(drawspandata_t* ds)
 {
-	boolean wpow2 = (!(ds_flatwidth & (ds_flatwidth - 1)));
-	boolean hpow2 = (!(ds_flatheight & (ds_flatheight - 1)));
+	boolean wpow2 = (!(ds->flatwidth & (ds->flatwidth - 1)));
+	boolean hpow2 = (!(ds->flatheight & (ds->flatheight - 1)));
 
 	// Initially, the flat isn't powers-of-two-sized.
-	ds_powersoftwo = false;
+	ds->powersoftwo = false;
 
 	// But if the width and height are powers of two,
 	// and are EQUAL, then it's okay :]
-	if ((ds_flatwidth == ds_flatheight) && (wpow2 && hpow2))
-		ds_powersoftwo = true;
+	if ((ds->flatwidth == ds->flatheight) && (wpow2 && hpow2))
+		ds->powersoftwo = true;
 
 	// Just return ds_powersoftwo.
-	return ds_powersoftwo;
+	return ds->powersoftwo;
 }
 
 //
@@ -1037,72 +1037,72 @@ size_t R_FlatDimensionsFromLumpSize(size_t size)
 //
 // Determine the flat's dimensions from its lump length.
 //
-void R_CheckFlatLength(size_t size)
+void R_CheckFlatLength(drawspandata_t* ds, size_t size)
 {
 	switch (size)
 	{
 		case 4194304: // 2048x2048 lump
-			nflatmask = 0x3FF800;
-			nflatxshift = 21;
-			nflatyshift = 10;
-			nflatshiftup = 5;
-			ds_flatwidth = ds_flatheight = 2048;
+			ds->nflatmask = 0x3FF800;
+			ds->nflatxshift = 21;
+			ds->nflatyshift = 10;
+			ds->nflatshiftup = 5;
+			ds->flatwidth = ds->flatheight = 2048;
 			break;
 		case 1048576: // 1024x1024 lump
-			nflatmask = 0xFFC00;
-			nflatxshift = 22;
-			nflatyshift = 12;
-			nflatshiftup = 6;
-			ds_flatwidth = ds_flatheight = 1024;
+			ds->nflatmask = 0xFFC00;
+			ds->nflatxshift = 22;
+			ds->nflatyshift = 12;
+			ds->nflatshiftup = 6;
+			ds->flatwidth = ds->flatheight = 1024;
 			break;
 		case 262144:// 512x512 lump
-			nflatmask = 0x3FE00;
-			nflatxshift = 23;
-			nflatyshift = 14;
-			nflatshiftup = 7;
-			ds_flatwidth = ds_flatheight = 512;
+			ds->nflatmask = 0x3FE00;
+			ds->nflatxshift = 23;
+			ds->nflatyshift = 14;
+			ds->nflatshiftup = 7;
+			ds->flatwidth = ds->flatheight = 512;
 			break;
 		case 65536: // 256x256 lump
-			nflatmask = 0xFF00;
-			nflatxshift = 24;
-			nflatyshift = 16;
-			nflatshiftup = 8;
-			ds_flatwidth = ds_flatheight = 256;
+			ds->nflatmask = 0xFF00;
+			ds->nflatxshift = 24;
+			ds->nflatyshift = 16;
+			ds->nflatshiftup = 8;
+			ds->flatwidth = ds->flatheight = 256;
 			break;
 		case 16384: // 128x128 lump
-			nflatmask = 0x3F80;
-			nflatxshift = 25;
-			nflatyshift = 18;
-			nflatshiftup = 9;
-			ds_flatwidth = ds_flatheight = 128;
+			ds->nflatmask = 0x3F80;
+			ds->nflatxshift = 25;
+			ds->nflatyshift = 18;
+			ds->nflatshiftup = 9;
+			ds->flatwidth = ds->flatheight = 128;
 			break;
 		case 1024: // 32x32 lump
-			nflatmask = 0x3E0;
-			nflatxshift = 27;
-			nflatyshift = 22;
-			nflatshiftup = 11;
-			ds_flatwidth = ds_flatheight = 32;
+			ds->nflatmask = 0x3E0;
+			ds->nflatxshift = 27;
+			ds->nflatyshift = 22;
+			ds->nflatshiftup = 11;
+			ds->flatwidth = ds->flatheight = 32;
 			break;
 		case 256: // 16x16 lump
-			nflatmask = 0xF0;
-			nflatxshift = 28;
-			nflatyshift = 24;
-			nflatshiftup = 12;
-			ds_flatwidth = ds_flatheight = 16;
+			ds->nflatmask = 0xF0;
+			ds->nflatxshift = 28;
+			ds->nflatyshift = 24;
+			ds->nflatshiftup = 12;
+			ds->flatwidth = ds->flatheight = 16;
 			break;
 		case 64: // 8x8 lump
-			nflatmask = 0x38;
-			nflatxshift = 29;
-			nflatyshift = 26;
-			nflatshiftup = 13;
-			ds_flatwidth = ds_flatheight = 8;
+			ds->nflatmask = 0x38;
+			ds->nflatxshift = 29;
+			ds->nflatyshift = 26;
+			ds->nflatshiftup = 13;
+			ds->flatwidth = ds->flatheight = 8;
 			break;
 		default: // 64x64 lump
-			nflatmask = 0xFC0;
-			nflatxshift = 26;
-			nflatyshift = 20;
-			nflatshiftup = 10;
-			ds_flatwidth = ds_flatheight = 64;
+			ds->nflatmask = 0xFC0;
+			ds->nflatxshift = 26;
+			ds->nflatyshift = 20;
+			ds->nflatshiftup = 10;
+			ds->flatwidth = ds->flatheight = 64;
 			break;
 	}
 }

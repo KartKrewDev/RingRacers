@@ -10,6 +10,8 @@
 /// \file  loop-endpoint.c
 /// \brief Sonic loops, start and end points
 
+#include <optional>
+
 #include "../doomdef.h"
 #include "../k_kart.h"
 #include "../taglist.h"
@@ -149,6 +151,81 @@ get_binary_direction
 	}
 }
 
+static std::optional<vector2_t>
+intersect
+(		const mobj_t * anchor,
+		const mobj_t * toucher)
+{
+	struct Line
+	{
+		angle_t a;
+		vector2_t o;
+
+		angle_t k = AbsAngle(a);
+
+		Line(vector2_t o_, angle_t a_) : a(a_), o(o_) {}
+
+		bool vertical() const { return k == ANGLE_90; }
+
+		fixed_t m() const
+		{
+			// tangent table is offset 90 degrees
+			return FTAN(a - ANGLE_90);
+		}
+
+		fixed_t b() const
+		{
+			return o.y - FixedMul(o.x, m());
+		}
+
+		fixed_t y(fixed_t x) const
+		{
+			return FixedMul(m(), x) + b();
+		}
+	};
+
+	if (toucher->momx == 0 && toucher->momy == 0)
+	{
+		// undefined angle
+		return {};
+	}
+
+	Line a({toucher->x, toucher->y},
+		R_PointToAngle2(0, 0, toucher->momx, toucher->momy));
+
+	Line b({anchor->x, anchor->y}, anchor->angle + ANGLE_90);
+
+	if (a.k == b.k)
+	{
+		// parallel lines do not intersect
+		return {};
+	}
+
+	vector2_t v;
+
+	auto v_intersect = [&v](Line &a, Line &b)
+	{
+		if (a.vertical())
+		{
+			return false;
+		}
+
+		v.x = b.o.x;
+		v.y = a.y(v.x);
+
+		return true;
+	};
+
+	if (!v_intersect(a, b) && !v_intersect(b, a))
+	{
+		// untested!
+		v.x = FixedDiv(a.b() - b.b(), b.m() - a.m());
+		v.y = a.y(v.x);
+	}
+
+	return v;
+}
+
 mobj_t *
 Obj_FindLoopCenter (const mtag_t tag)
 {
@@ -226,8 +303,8 @@ Obj_LoopEndpointCollide
 	fixed_t radius;
 
 	/* predict movement for a smooth transition */
-	const fixed_t px = toucher->x + toucher->momx;
-	const fixed_t py = toucher->y + toucher->momy;
+	const fixed_t px = toucher->x + 2 * toucher->momx;
+	const fixed_t py = toucher->y + 2 * toucher->momy;
 
 	SINT8 flip;
 
@@ -251,6 +328,11 @@ Obj_LoopEndpointCollide
 	if (!P_MobjWasRemoved(anchor_other(anchor)))
 	{
 		set_shiftxy(player, anchor);
+
+		vector2_t i = intersect(anchor, toucher)
+			.value_or(vector2_t {px, py});
+
+		s->origin_shift = {i.x - px, i.y - py};
 	}
 
 	flip = get_binary_direction(pitch, toucher);
@@ -276,4 +358,7 @@ Obj_LoopEndpointCollide
 	/* cancel the effects of K_Squish */
 	toucher->spritexscale = FRACUNIT;
 	toucher->spriteyscale = FRACUNIT;
+
+	toucher->momx = 0;
+	toucher->momy = 0;
 }

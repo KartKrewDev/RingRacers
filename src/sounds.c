@@ -1191,6 +1191,10 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"clawk1", false,  64, 16, -1, NULL, 0,         -1,  -1, LUMPERROR, ""}, // SF_X8AWAYSOUND
   {"clawk2", false,  64, 16, -1, NULL, 0,         -1,  -1, LUMPERROR, ""}, // SF_X8AWAYSOUND
 
+  // SRB2Kart - whip charge/hold
+  {"wchrg1", false,  64, 64, -1, NULL, 0,         -1,  -1, LUMPERROR, ""}, // SF_X2AWAYSOUND
+  {"wchrg2", false,  64, 64, -1, NULL, 0,         -1,  -1, LUMPERROR, ""}, // SF_X2AWAYSOUND
+
   {"horn00", false,  255, 0, -1, NULL, 0,         -1,  -1, LUMPERROR, "/"}, // HORNCODE
   {"melody", false,  255, 0, -1, NULL, 0,         -1,  -1, LUMPERROR, "/"}, // Mystic Melody
   {"cdsprk", false,  255, 0, -1, NULL, 0,         -1,  -1, LUMPERROR, "/"}, // Prison Egg CD sparkling

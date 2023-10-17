@@ -4398,6 +4398,17 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_SPECIALSTAGEBOMB_FLICKERLOOP",
 	"S_SPECIALSTAGEBOMB_RESET",
 
+	// Hanagumi Hall
+	"S_HANAGUMIHALL_STEAM",
+	"S_ALFONSO",
+	"S_SAKURA",
+	"S_SUMIRE",
+	"S_MARIA",
+	"S_IRIS",
+	"S_KOHRAN",
+	"S_KANNA",
+	"S_OGAMI",
+
 	// SMK ports
 	"S_SMK_PIPE1", // Generic pipes
 	"S_SMK_PIPE2",
@@ -5778,6 +5789,10 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	// Chaos Chute
 	"MT_SPECIALSTAGEARCH",
 	"MT_SPECIALSTAGEBOMB",
+
+	// Hanagumi Hall
+	"MT_HANAGUMIHALL_STEAM",
+	"MT_HANAGUMIHALL_NPC",
 
 	// SMK ports
 	"MT_SMK_PIPE",

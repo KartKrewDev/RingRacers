@@ -72,6 +72,7 @@
 #include "filesrch.h" // refreshdirmenu
 #include "g_input.h" // tutorial mode control scheming
 #include "m_perfstats.h"
+#include "core/memory.h"
 
 #include "monocypher/monocypher.h"
 #include "stun.h"
@@ -87,6 +88,7 @@
 #include "k_serverstats.h"
 #include "music.h"
 #include "k_dialogue.h"
+#include "k_bans.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h" // 3D View Rendering
@@ -540,7 +542,7 @@ static void D_Display(void)
 						viewssnum = i;
 
 #ifdef HWRENDER
-						if (rendermode != render_soft)
+						if (rendermode == render_opengl)
 							HWR_RenderPlayerView();
 						else
 #endif
@@ -820,6 +822,8 @@ void D_SRB2Loop(void)
 		precise_t capbudget;
 		precise_t enterprecise = I_GetPreciseTime();
 		precise_t finishprecise = enterprecise;
+
+		Z_Frame_Reset();
 
 		{
 			// Casting the return value of a function is bad practice (apparently)
@@ -1609,6 +1613,7 @@ void D_SRB2Main(void)
 	PR_LoadProfiles();	// load control profiles
 
 	SV_LoadStats();
+	SV_LoadBans();
 
 #if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
 	VID_PrepareModeList(); // Regenerate Modelist according to cv_fullscreen
@@ -1924,6 +1929,7 @@ void D_SRB2Main(void)
 	}
 
 	SV_SaveStats();
+	SV_SaveBans();
 
 	if (autostart || netgame)
 	{

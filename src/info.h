@@ -1361,6 +1361,17 @@ typedef enum sprite
 	SPR_SARC,
 	SPR_SSBM,
 
+	// Hanagumi Hall
+	SPR_HGSP,
+	SPR_HGC0,
+	SPR_HGCA,
+	SPR_HGCB,
+	SPR_HGCC,
+	SPR_HGCD,
+	SPR_HGCE,
+	SPR_HGCF,
+	SPR_HGCG,
+
 	// SMK ports
 	SPR_SMKP,
 	SPR_MTYM,
@@ -5582,6 +5593,17 @@ typedef enum state
 	S_SPECIALSTAGEBOMB_FLICKERLOOP,
 	S_SPECIALSTAGEBOMB_RESET,
 
+	// Hanagumi Hall
+	S_HANAGUMIHALL_STEAM,
+	S_ALFONSO,
+	S_SAKURA,
+	S_SUMIRE,
+	S_MARIA,
+	S_IRIS,
+	S_KOHRAN,
+	S_KANNA,
+	S_OGAMI,
+
 	// SMK ports
 	S_SMK_PIPE1, // Generic pipes
 	S_SMK_PIPE2,
@@ -7001,6 +7023,10 @@ typedef enum mobj_type
 	// Chaos Chute
 	MT_SPECIALSTAGEARCH,
 	MT_SPECIALSTAGEBOMB,
+
+	// Hanagumi Hall
+	MT_HANAGUMIHALL_STEAM,
+	MT_HANAGUMIHALL_NPC,
 
 	// SMK ports
 	MT_SMK_PIPE,

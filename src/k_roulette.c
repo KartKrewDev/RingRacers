@@ -1633,7 +1633,7 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 			//player->karthud[khud_itemblinkmode] = 1;
 			//player->karthud[khud_rouletteoffset] = K_GetRouletteOffset(roulette, FRACUNIT);
 
-			if (P_IsDisplayPlayer(player) && !demo.freecam)
+			if (P_IsDisplayPlayer(player))
 			{
 				S_StartSound(NULL, sfx_itrole);
 			}
@@ -1680,7 +1680,7 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 			player->karthud[khud_itemblinkmode] = 0;
 			player->karthud[khud_rouletteoffset] = K_GetRouletteOffset(roulette, FRACUNIT);
 
-			if (P_IsDisplayPlayer(player) && !demo.freecam)
+			if (P_IsDisplayPlayer(player))
 			{
 				if (roulette->ringbox)
 				{
@@ -1714,7 +1714,7 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 		// This makes the roulette produce the random noises.
 		roulette->sound = (roulette->sound + 1) % 8;
 
-		if (P_IsDisplayPlayer(player) && !demo.freecam)
+		if (P_IsDisplayPlayer(player))
 		{
 			if (roulette->ringbox)
 				S_StartSound(NULL, sfx_s240);

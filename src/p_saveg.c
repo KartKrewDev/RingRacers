@@ -541,7 +541,8 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		WRITEMEM(save->p, players[i].public_key, PUBKEYLENGTH);
 
-		WRITEUINT8(save->p, players[i].instaShieldCooldown);
+		WRITEUINT8(save->p, players[i].instaWhipCharge);
+		WRITEUINT8(save->p, players[i].instaWhipCooldown);
 		WRITEUINT8(save->p, players[i].guardCooldown);
 
 		WRITEUINT8(save->p, players[i].handtimer);
@@ -673,6 +674,8 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEFIXED(save->p, players[i].loop.origin.x);
 		WRITEFIXED(save->p, players[i].loop.origin.y);
 		WRITEFIXED(save->p, players[i].loop.origin.z);
+		WRITEFIXED(save->p, players[i].loop.origin_shift.x);
+		WRITEFIXED(save->p, players[i].loop.origin_shift.y);
 		WRITEFIXED(save->p, players[i].loop.shift.x);
 		WRITEFIXED(save->p, players[i].loop.shift.y);
 		WRITEUINT8(save->p, players[i].loop.flip);
@@ -1051,7 +1054,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		READMEM(save->p, players[i].public_key, PUBKEYLENGTH);
 
-		players[i].instaShieldCooldown = READUINT8(save->p);
+		players[i].instaWhipCharge = READUINT8(save->p);
+		players[i].instaWhipCooldown = READUINT8(save->p);
 		players[i].guardCooldown = READUINT8(save->p);
 
 		players[i].handtimer = READUINT8(save->p);
@@ -1194,6 +1198,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].loop.origin.x = READFIXED(save->p);
 		players[i].loop.origin.y = READFIXED(save->p);
 		players[i].loop.origin.z = READFIXED(save->p);
+		players[i].loop.origin_shift.x = READFIXED(save->p);
+		players[i].loop.origin_shift.y = READFIXED(save->p);
 		players[i].loop.shift.x = READFIXED(save->p);
 		players[i].loop.shift.y = READFIXED(save->p);
 		players[i].loop.flip = READUINT8(save->p);

@@ -50,6 +50,7 @@
 #include "k_director.h"
 #include "m_easing.h"
 #include "k_podium.h"
+#include "g_party.h"
 
 actioncache_t actioncachehead;
 
@@ -8614,6 +8615,16 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		Obj_InstaWhipThink(mobj);
 		break;
 	}
+	case MT_INSTAWHIP_REJECT:
+	{
+		Obj_InstaWhipRejectThink(mobj);
+
+		if (P_MobjWasRemoved(mobj))
+		{
+			return false;
+		}
+		break;
+	}
 	case MT_BLOCKRING:
 	{
 		Obj_BlockRingThink(mobj);
@@ -10748,6 +10759,9 @@ fixed_t P_GetMobjDefaultScale(mobj_t *mobj)
 			return 5*FRACUNIT;
 		case MT_SPECIALSTAGEBOMB:
 			return 3*FRACUNIT/4;
+		case MT_HANAGUMIHALL_STEAM:
+		case MT_HANAGUMIHALL_NPC:
+			return 2*FRACUNIT;
 		default:
 			break;
 	}
@@ -12369,22 +12383,29 @@ void P_SpawnPlayer(INT32 playernum)
 		}
 	}
 
-	// Spectating when there is literally any other player in
-	// the level enables director cam. Or if the first player
-	// enters the game, spectate them.
-	// TODO: how do we support splitscreen?
-	if (playernum == consoleplayer || pcount == 1)
-	{
-		K_ToggleDirector(players[consoleplayer].spectator && pcount > 0);
-	}
+	boolean director = p->spectator && pcount > 0;
 
-	// TODO: handle splitscreen
-	// Spectators can switch to freecam. This should be
-	// disabled when they enter the race, or when the level
-	// changes.
-	if (playernum == consoleplayer && !demo.playback)
+	if (G_IsPartyLocal(playernum))
 	{
-		demo.freecam = false;
+		// Spectating when there is literally any other
+		// player in the level enables director cam.
+		K_ToggleDirector(G_PartyPosition(playernum), director);
+
+		// Spectators can switch to freecam. This should be
+		// disabled when they enter the race, or when the level
+		// changes.
+		if (!demo.playback)
+		{
+			camera[G_PartyPosition(playernum)].freecam = false;
+		}
+	}
+	else if (pcount == 1)
+	{
+		// If the first player enters the game, view them.
+		for (i = 0; i <= r_splitscreen; ++i)
+		{
+			K_ToggleDirector(i, director);
+		}
 	}
 }
 
@@ -13728,7 +13749,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 			}
 		}
 		if (mthing->thing_args[0] == 1)
-			mobj->flags2 |= MF2_AMBUSH;
+			mobj->flags2 |= MF2_BOSSDEAD;
 		break;
 	}
 	case MT_ITEMCAPSULE:
@@ -13870,6 +13891,48 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 			leaf->frame |= P_RandomKey(PR_DECORATION, 5);
 		}
 
+		break;
+	}
+	case MT_HANAGUMIHALL_NPC:
+	{
+		UINT8 i;
+		statenum_t state;
+
+		static const statenum_t HANAGUMIHALL_NPC_STATES[] = {
+			S_SAKURA,
+			S_SUMIRE,
+			S_MARIA,
+			S_IRIS,
+			S_KOHRAN,
+			S_KANNA,
+			S_OGAMI
+		};
+		static const size_t NUM_HANAGUMIHALL_NPC_STATES = sizeof(HANAGUMIHALL_NPC_STATES) / sizeof(statenum_t);
+
+		// an invalid NPC ID leaves you with Alfonso
+		if ((size_t)mthing->thing_args[0] >= NUM_HANAGUMIHALL_NPC_STATES)
+			break;
+
+		// pick the state based on the NPC ID
+		state = HANAGUMIHALL_NPC_STATES[mthing->thing_args[0]];
+
+		// if the NPC is Sakura, but there is a Sakura player in game, use Alfonso instead
+		if (state == S_SAKURA)
+		{
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (!playeringame[i] || players[i].spectator == true)
+					continue;
+
+				if (strcmp(skins[players[i].skin].name, "sakura") == 0)
+				{
+					state = mobj->info->spawnstate;
+					break;
+				}
+			}
+		}
+
+		P_SetMobjState(mobj, state);
 		break;
 	}
 	case MT_BATTLECAPSULE:

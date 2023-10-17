@@ -32,6 +32,7 @@
 #include "r_picformats.h"
 #include "r_things.h" // R_Char2Frame
 #include "r_sky.h"
+#include "s_sound.h"
 #include "fastcmp.h"
 #include "lua_script.h" // Reluctantly included for LUA_EvalMath
 #include "d_clisrv.h"
@@ -1225,7 +1226,7 @@ void readlevelheader(MYFILE *f, char * name)
 							mapheaderinfo[num]->cache_muslock[j - 1] = MAXUNLOCKABLES;
 						j++;
 					} while ((tmp = strtok(NULL,",")) != NULL);
-					
+
 					if (tmp != NULL)
 						deh_warning("Level header %d: additional music slots past %d discarded", num, MAXMUSNAMES);
 					mapheaderinfo[num]->musname_size = j;
@@ -1249,7 +1250,7 @@ void readlevelheader(MYFILE *f, char * name)
 							sizeof(mapheaderinfo[num]->associatedmus[j]), va("Level header %d: associated music", num));
 						j++;
 					} while ((tmp = strtok(NULL,",")) != NULL);
-					
+
 					if (tmp != NULL)
 						deh_warning("Level header %d: additional associated music slots past %d discarded", num, MAXMUSNAMES);
 					mapheaderinfo[num]->associatedmus_size = j;
@@ -1294,6 +1295,8 @@ void readlevelheader(MYFILE *f, char * name)
 				mapheaderinfo[num]->skybox_scaley = (INT16)i;
 			else if (fastcmp(word, "SKYBOXSCALEZ"))
 				mapheaderinfo[num]->skybox_scalez = (INT16)i;
+			else if (fastcmp(word, "DARKNESS"))
+				mapheaderinfo[num]->darkness = FloatToFixed(atof(word2));
 			else if (fastcmp(word, "LEVELFLAGS"))
 				mapheaderinfo[num]->levelflags = get_number(word2);
 			else if (fastcmp(word, "MENUFLAGS"))
@@ -2884,7 +2887,7 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 				deh_warning("Invalid cup result %s for condition ID %d", params[2], id+1);
 				return;
 			}
-				
+
 		}
 	}
 	else if ((offset=0) || fastcmp(params[0], "PODIUMEMERALD")

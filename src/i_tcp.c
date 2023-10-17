@@ -12,120 +12,12 @@
 ///        This is not really OS-dependent because all OSes have the same socket API.
 ///        Just use ifdef for OS-dependent parts.
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#ifdef __GNUC__
-#include <unistd.h>
-#endif
-
-#ifndef NO_IPV6
-	#define HAVE_IPV6
-#endif
-
-#ifdef _WIN32
-	#define USE_WINSOCK
-	#if defined (_WIN64) || defined (HAVE_IPV6)
-		#define USE_WINSOCK2
-	#else //_WIN64/HAVE_IPV6
-		#define USE_WINSOCK1
-	#endif
-#endif //WIN32 OS
-
-#ifdef USE_WINSOCK2
-	#include <ws2tcpip.h>
-#endif
-
-#include "doomdef.h"
-
-#ifdef USE_WINSOCK1
-	#include <winsock.h>
-#else
-	#ifndef USE_WINSOCK
-		#include <arpa/inet.h>
-		#ifdef __APPLE_CC__
-			#ifndef _BSD_SOCKLEN_T_
-				#define _BSD_SOCKLEN_T_
-			#endif //_BSD_SOCKLEN_T_
-		#endif //__APPLE_CC__
-		#include <sys/socket.h>
-		#include <netinet/in.h>
-		#include <netdb.h>
-		#include <sys/ioctl.h>
-	#endif //normal BSD API
-
-	#include <errno.h>
-	#include <time.h>
-
-	#if (defined (__unix__) && !defined (MSDOS)) || defined(__APPLE__) || defined (UNIXCOMMON)
-		#include <sys/time.h>
-	#endif // UNIXCOMMON
-#endif
-
-#ifdef USE_WINSOCK
-	// some undefined under win32
-	#undef errno
-	//#define errno WSAGetLastError() //Alam_GBC: this is the correct way, right?
-	#define errno h_errno // some very strange things happen when not using h_error?!?
-	#ifdef EWOULDBLOCK
-	#undef EWOULDBLOCK
-	#endif
-	#define EWOULDBLOCK WSAEWOULDBLOCK
-	#ifdef EMSGSIZE
-	#undef EMSGSIZE
-	#endif
-	#define EMSGSIZE WSAEMSGSIZE
-	#ifdef ECONNREFUSED
-	#undef ECONNREFUSED
-	#endif
-	#define ECONNREFUSED WSAECONNREFUSED
-	#ifdef ETIMEDOUT
-	#undef ETIMEDOUT
-	#endif
-	#define ETIMEDOUT WSAETIMEDOUT
-	#ifndef IOC_VENDOR
-	#define IOC_VENDOR 0x18000000
-	#endif
-	#ifndef _WSAIOW
-	#define _WSAIOW(x,y) (IOC_IN|(x)|(y))
-	#endif
-	#ifndef SIO_UDP_CONNRESET
-	#define SIO_UDP_CONNRESET _WSAIOW(IOC_VENDOR,12)
-	#endif
-	#ifndef AI_ADDRCONFIG
-	#define AI_ADDRCONFIG 0x00000400
-	#endif
-	#ifndef STATUS_INVALID_PARAMETER
-	#define STATUS_INVALID_PARAMETER 0xC000000D
-	#endif
-#endif // USE_WINSOCK
-
-typedef union
-{
-	struct sockaddr     any;
-	struct sockaddr_in  ip4;
-#ifdef HAVE_IPV6
-	struct sockaddr_in6 ip6;
-#endif
-} mysockaddr_t;
-
-#ifdef HAVE_MINIUPNPC
-	#ifdef STATIC_MINIUPNPC
-		#define STATICLIB
-	#endif
-	#include "miniupnpc/miniwget.h"
-	#include "miniupnpc/miniupnpc.h"
-	#include "miniupnpc/upnpcommands.h"
-	#undef STATICLIB
-	static UINT8 UPNP_support = TRUE;
-#endif // HAVE_MINIUPNC
-
+#include "i_tcp_detail.h"
 #include "i_system.h"
 #include "i_time.h"
 #include "i_net.h"
 #include "d_net.h"
 #include "d_netfil.h"
-#include "i_tcp.h"
 #include "m_argv.h"
 #include "stun.h"
 #include "z_zone.h"
@@ -175,15 +67,11 @@ static SOCKET_TYPE mysockets[MAXNETNODES+1] = {ERRSOCKET};
 static size_t mysocketses = 0;
 static int myfamily[MAXNETNODES+1] = {0};
 static SOCKET_TYPE nodesocket[MAXNETNODES+1] = {ERRSOCKET};
-static mysockaddr_t clientaddress[MAXNETNODES+1];
+mysockaddr_t clientaddress[MAXNETNODES+1];
 static mysockaddr_t broadcastaddress[MAXNETNODES+1];
 static size_t broadcastaddresses = 0;
 static boolean nodeconnected[MAXNETNODES+1];
-static banned_t *banned;
 static const INT32 hole_punch_magic = MSBF_LONG (0x52eb11);
-
-static size_t numbans = 0;
-static size_t banned_size = 0;
 
 static bannednode_t SOCK_bannednode[MAXNETNODES+1]; /// \note do we really need the +1?
 static boolean init_tcp_driver = false;
@@ -341,7 +229,14 @@ static inline void I_UPnP_rem(const char *port, const char * servicetype)
 }
 #endif
 
-static const char *SOCK_AddrToStr(mysockaddr_t *sk)
+// I spent 3 hours trying to work out why I couldn't sensibly access this from anywhere,
+// even when extern'd. I am not the person who should be doing this. -Tyron, 2023-10-08
+mysockaddr_t SOCK_DirectNodeToAddr(UINT8 node)
+{
+	return clientaddress[node];
+}
+
+const char *SOCK_AddrToStr(mysockaddr_t *sk)
 {
 	static char s[64]; // 255.255.255.255:65535 or IPv6:65535
 #ifdef HAVE_NTOP
@@ -401,45 +296,7 @@ static UINT32 SOCK_GetNodeAddressInt(INT32 node)
     return 0;
 }
 
-static const char *SOCK_GetBanAddress(size_t ban)
-{
-	if (ban >= numbans)
-		return NULL;
-	return SOCK_AddrToStr(&banned[ban].address);
-}
-
-static const char *SOCK_GetBanMask(size_t ban)
-{
-	static char s[16]; //255.255.255.255 netmask? no, just CDIR for only
-	if (ban >= numbans)
-		return NULL;
-	if (sprintf(s,"%d",banned[ban].mask) > 0)
-		return s;
-	return NULL;
-}
-
-static const char *SOCK_GetBanUsername(size_t ban)
-{
-	if (ban >= numbans)
-		return NULL;
-	return banned[ban].username;
-}
-
-static const char *SOCK_GetBanReason(size_t ban)
-{
-	if (ban >= numbans)
-		return NULL;
-	return banned[ban].reason;
-}
-
-static time_t SOCK_GetUnbanTime(size_t ban)
-{
-	if (ban >= numbans)
-		return NO_BAN_TIME;
-	return banned[ban].timestamp;
-}
-
-static boolean SOCK_cmpaddr(mysockaddr_t *a, mysockaddr_t *b, UINT8 mask)
+boolean SOCK_cmpaddr(mysockaddr_t *a, mysockaddr_t *b, UINT8 mask)
 {
 	UINT32 bitmask = INADDR_NONE;
 
@@ -565,7 +422,7 @@ static boolean hole_punch(ssize_t c)
 // Returns true if a packet was received from a new node, false in all other cases
 static boolean SOCK_Get(void)
 {
-	size_t i, n;
+	size_t n;
 	int j;
 	ssize_t c;
 	mysockaddr_t fromaddress;
@@ -607,50 +464,12 @@ static boolean SOCK_Get(void)
 			j = getfreenode();
 			if (j > 0)
 			{
-				const time_t curTime = time(NULL);
-
 				M_Memcpy(&clientaddress[j], &fromaddress, fromlen);
 				nodesocket[j] = mysockets[n];
 				DEBFILE(va("New node detected: node:%d address:%s\n", j,
 						SOCK_GetNodeAddress(j)));
 				doomcom->remotenode = (INT16)j; // good packet from a game player
 				doomcom->datalength = (INT16)c;
-
-				// check if it's a banned dude so we can send a refusal later
-				for (i = 0; i < numbans; i++)
-				{
-					if (SOCK_cmpaddr(&fromaddress, &banned[i].address, banned[i].mask))
-					{
-						if (banned[i].timestamp != NO_BAN_TIME)
-						{
-							if (curTime >= banned[i].timestamp)
-							{
-								SOCK_bannednode[j].timeleft = NO_BAN_TIME;
-								SOCK_bannednode[j].banid = SIZE_MAX;
-								DEBFILE("This dude was banned, but enough time has passed\n");
-								break;
-							}
-
-							SOCK_bannednode[j].timeleft = banned[i].timestamp - curTime;
-							SOCK_bannednode[j].banid = i;
-							DEBFILE("This dude has been temporarily banned\n");
-							break;
-						}
-						else
-						{
-							SOCK_bannednode[j].timeleft = NO_BAN_TIME;
-							SOCK_bannednode[j].banid = i;
-							DEBFILE("This dude has been banned\n");
-							break;
-						}
-					}
-				}
-
-				if (i == numbans)
-				{
-					SOCK_bannednode[j].timeleft = NO_BAN_TIME;
-					SOCK_bannednode[j].banid = SIZE_MAX;
-				}
 
 				return true;
 			}
@@ -1357,171 +1176,6 @@ static boolean SOCK_OpenSocket(void)
 	return UDP_Socket();
 }
 
-static void AddBannedIndex(void)
-{
-	if (numbans >= banned_size)
-	{
-		if (banned_size == 0)
-		{
-			banned_size = 8;
-		}
-		else
-		{
-			banned_size *= 2;
-		}
-
-		banned = Z_ReallocAlign(
-			(void*) banned,
-			sizeof(banned_t) * banned_size,
-			PU_STATIC,
-			NULL,
-			sizeof(banned_t) * 8
-		);
-	}
-
-	numbans++;
-}
-
-static boolean SOCK_Ban(INT32 node)
-{
-	INT32 ban;
-
-	if (node > MAXNETNODES)
-		return false;
-
-	ban = numbans;
-	AddBannedIndex();
-
-	M_Memcpy(&banned[ban].address, &clientaddress[node], sizeof (mysockaddr_t));
-
-	if (banned[ban].address.any.sa_family == AF_INET)
-	{
-		banned[ban].address.ip4.sin_port = 0;
-		banned[ban].mask = 32;
-	}
-#ifdef HAVE_IPV6
-	else if (banned[ban].address.any.sa_family == AF_INET6)
-	{
-		banned[ban].address.ip6.sin6_port = 0;
-		banned[ban].mask = 128;
-	}
-#endif
-
-	return true;
-}
-
-static boolean SOCK_SetBanUsername(const char *username)
-{
-	if (username == NULL || strlen(username) == 0)
-	{
-		username = "Direct IP ban";
-	}
-
-	if (banned[numbans - 1].username)
-	{
-		Z_Free(banned[numbans - 1].username);
-		banned[numbans - 1].username = NULL;
-	}
-
-	banned[numbans - 1].username = Z_StrDup(username);
-	return true;
-}
-
-static boolean SOCK_SetBanReason(const char *reason)
-{
-	if (reason == NULL || strlen(reason) == 0)
-	{
-		reason = "No reason given";
-	}
-
-	if (banned[numbans - 1].reason)
-	{
-		Z_Free(banned[numbans - 1].reason);
-		banned[numbans - 1].reason = NULL;
-	}
-
-	banned[numbans - 1].reason = Z_StrDup(reason);
-	return true;
-}
-
-static boolean SOCK_SetUnbanTime(time_t timestamp)
-{
-	banned[numbans - 1].timestamp = timestamp;
-	return true;
-}
-
-static boolean SOCK_SetBanAddress(const char *address, const char *mask)
-{
-	struct my_addrinfo *ai, *runp, hints;
-	int gaie;
-
-	if (!address)
-		return false;
-
-	memset(&hints, 0x00, sizeof(hints));
-	hints.ai_flags = 0;
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_DGRAM;
-	hints.ai_protocol = IPPROTO_UDP;
-
-	gaie = I_getaddrinfo(address, "0", &hints, &ai);
-	if (gaie != 0)
-		return false;
-
-	runp = ai;
-
-	while (runp != NULL)
-	{
-		INT32 ban;
-		UINT8 numericalmask;
-
-		ban = numbans;
-		AddBannedIndex();
-
-		memcpy(&banned[ban].address, runp->ai_addr, runp->ai_addrlen);
-
-#ifdef HAVE_IPV6
-		if (runp->ai_family == AF_INET6)
-			banned[ban].mask = 128;
-		else
-#endif
-			banned[ban].mask = 32;
-
-		if (mask)
-		{
-			numericalmask = (UINT8)atoi(mask);
-		}
-		else
-		{
-			numericalmask = 0;
-		}
-
-		if (numericalmask > 0 && numericalmask < banned[ban].mask)
-		{
-			banned[ban].mask = numericalmask;
-		}
-
-		// Set defaults, in case anything funny happens.
-		SOCK_SetBanUsername(NULL);
-		SOCK_SetBanReason(NULL);
-		SOCK_SetUnbanTime(NO_BAN_TIME);
-
-		runp = runp->ai_next;
-	}
-
-	I_freeaddrinfo(ai);
-
-	return true;
-}
-
-static void SOCK_ClearBans(void)
-{
-	numbans = 0;
-	banned_size = 0;
-	Z_Free(banned);
-	banned = NULL;
-}
-
 // https://github.com/jameds/holepunch/blob/master/holepunch.c#L75
 static int SOCK_IsExternalAddress (const void *p)
 {
@@ -1634,19 +1288,8 @@ boolean I_InitTcpNetwork(void)
 	}
 
 	I_NetOpenSocket = SOCK_OpenSocket;
-	I_Ban = SOCK_Ban;
-	I_ClearBans = SOCK_ClearBans;
 	I_GetNodeAddress = SOCK_GetNodeAddress;
 	I_GetNodeAddressInt = SOCK_GetNodeAddressInt;
-	I_GetBanAddress = SOCK_GetBanAddress;
-	I_GetBanMask = SOCK_GetBanMask;
-	I_GetBanUsername = SOCK_GetBanUsername;
-	I_GetBanReason = SOCK_GetBanReason;
-	I_GetUnbanTime = SOCK_GetUnbanTime;
-	I_SetBanAddress = SOCK_SetBanAddress;
-	I_SetBanUsername = SOCK_SetBanUsername;
-	I_SetBanReason = SOCK_SetBanReason;
-	I_SetUnbanTime = SOCK_SetUnbanTime;
 	I_IsExternalAddress = SOCK_IsExternalAddress;
 
 	bannednode = SOCK_bannednode;

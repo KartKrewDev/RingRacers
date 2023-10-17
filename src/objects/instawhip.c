@@ -2,6 +2,7 @@
 #include "../info.h"
 #include "../k_objects.h"
 #include "../p_local.h"
+#include "../k_kart.h" // INSTAWHIP_COOLDOWN
 
 #define recharge_target(o) ((o)->target)
 #define recharge_offset(o) ((o)->movedir)
@@ -49,7 +50,9 @@ void Obj_SpawnInstaWhipRecharge(player_t *player, angle_t angleOffset)
 {
 	mobj_t *x = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_INSTAWHIP_RECHARGE);
 
-	x->tics = max(player->instaShieldCooldown - states[x->info->raisestate].tics, 0);
+	// This was previously used to delay the visual, back when this was VFX for a cooldown
+	// instead of VFX for a charge. We want to instantly bail out of that state now.
+	x->tics = 1;
 	x->renderflags |= RF_SLOPESPLAT | RF_NOSPLATBILLBOARD;
 
 	P_SetTarget(&recharge_target(x), player->mo);
@@ -60,7 +63,7 @@ void Obj_InstaWhipRechargeThink(mobj_t *x)
 {
 	mobj_t *target = recharge_target(x);
 
-	if (P_MobjWasRemoved(target))
+	if (P_MobjWasRemoved(target) || !target->player->instaWhipCharge)
 	{
 		P_RemoveMobj(x);
 		return;
@@ -72,4 +75,26 @@ void Obj_InstaWhipRechargeThink(mobj_t *x)
 
 	// Flickers every other frame
 	x->renderflags ^= RF_DONTDRAW;
+}
+
+void Obj_SpawnInstaWhipReject(player_t *player)
+{
+	mobj_t *x = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_INSTAWHIP_REJECT);
+
+	P_SetTarget(&recharge_target(x), player->mo);
+}
+
+void Obj_InstaWhipRejectThink(mobj_t *x)
+{
+	mobj_t *target = x->target;
+
+	if (P_MobjWasRemoved(target) || !target->player->instaWhipCharge)
+	{
+		P_RemoveMobj(x);
+		return;
+	}
+
+	x->angle = x->target->angle;
+	P_MoveOrigin(x, target->x, target->y, target->z);
+	P_InstaScale(x, target->scale);
 }

@@ -30,10 +30,13 @@ Make sure this matches the actual number of states
 #define SHRINK_PHYSICS_SCALE (3*FRACUNIT/4)
 
 #define INSTAWHIP_DURATION (12)
-#define INSTAWHIP_COOLDOWN (TICRATE*2)
-#define INSTAWHIP_STARTOFRACE (255)
-#define INSTAWHIP_STARTOFBATTLE (1)
+#define INSTAWHIP_CHARGETIME (3*TICRATE/4)
+#define INSTAWHIP_COOLDOWN (5*TICRATE/4)
 #define INSTAWHIP_DROPGUARD (12)
+#define INSTAWHIP_RINGDRAINEVERY (TICRATE/2)
+#define INSTAWHIP_HOLD_DELAY (TICRATE*2)
+// MUST be longer or equal to INSTAWHIP_CHARGETIME.
+#define INSTAWHIP_TETHERBLOCK (TICRATE*4)
 #define GUARDBREAK_COOLDOWN (TICRATE*4)
 
 #define FLAMESHIELD_MAX (120)
@@ -231,6 +234,8 @@ boolean K_Cooperative(void);
 
 // lat: used for when the player is in some weird state where it wouldn't be wise for it to be overwritten by another object that does similarly wacky shit.
 boolean K_isPlayerInSpecialState(player_t *p);
+
+void K_SetTireGrease(player_t *player, tic_t tics);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -1351,7 +1351,7 @@ boolean G_Responder(event_t *ev)
 		}
 	}
 
-	if (gamestate == GS_LEVEL && ev->type == ev_keydown && multiplayer && demo.playback && !demo.freecam)
+	if (gamestate == GS_LEVEL && ev->type == ev_keydown && multiplayer && demo.playback)
 	{
 		// Allow pausing
 		if (

@@ -54,6 +54,23 @@ public:
 		kBoth,
 	};
 
+	enum class Button
+	{
+		a,
+		b,
+		c,
+		x,
+		y,
+		z,
+		start,
+		l,
+		r,
+		up,
+		down,
+		right,
+		left,
+	};
+
 	class TextElement
 	{
 	public:
@@ -146,6 +163,9 @@ public:
 
 		void fill(UINT8 color) const;
 
+		void button(Button type, std::optional<bool> press = {}) const { button(type, 0, press); }
+		void small_button(Button type, std::optional<bool> press = {}) const { button(type, 1, press); }
+
 	private:
 		constexpr Chain() {}
 		explicit Chain(float x, float y) : x_(x), y_(y) {}
@@ -178,6 +198,7 @@ public:
 		const UINT8* colormap_ = nullptr;
 
 		void string(const char* str, INT32 flags, Font font) const;
+		void button(Button type, int ver, std::optional<bool> press = {}) const;
 
 		friend Draw;
 	};
@@ -222,6 +243,7 @@ public:
 	VOID_METHOD(patch);
 	VOID_METHOD(thumbnail);
 	VOID_METHOD(fill);
+	VOID_METHOD(button);
 
 #undef VOID_METHOD
 

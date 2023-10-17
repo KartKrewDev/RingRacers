@@ -18,8 +18,11 @@
 extern "C" {
 #endif
 
+#define TYPEDEF3(tag, id, new_type) \
+	typedef tag id new_type
+
 #define TYPEDEF2(struct_id, new_type) \
-	typedef struct struct_id new_type
+	TYPEDEF3 (struct, struct_id, new_type)
 
 #define TYPEDEF(id) TYPEDEF2 (id, id)
 
@@ -163,6 +166,9 @@ TYPEDEF (JoyFF_t);
 // i_time.h
 TYPEDEF (timestate_t);
 
+// i_tcp.h
+TYPEDEF3 (union, mysockaddr_t, mysockaddr_t);
+
 // info.h
 TYPEDEF (state_t);
 TYPEDEF (mobjinfo_t);
@@ -204,8 +210,11 @@ TYPEDEF (pathfindsetup_t);
 // k_profiles.h
 TYPEDEF (profile_t);
 
-// h_serverstats.h
+// k_serverstats.h
 TYPEDEF (serverplayer_t);
+
+// k_bans.h
+TYPEDEF (banrecord_t);
 
 // k_terrain.h
 TYPEDEF (t_splash_t);
@@ -376,9 +385,6 @@ TYPEDEF (msecnode_t);
 TYPEDEF (mprecipsecnode_t);
 TYPEDEF (lightmap_t);
 TYPEDEF (seg_t);
-
-// r_draw.h
-TYPEDEF (floatv3_t);
 
 // r_fps.h
 TYPEDEF (viewvars_t);
