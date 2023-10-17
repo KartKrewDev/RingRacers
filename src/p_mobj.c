@@ -13581,7 +13581,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 			}
 		}
 		if (mthing->thing_args[0] == 1)
-			mobj->flags2 |= MF2_AMBUSH;
+			mobj->flags2 |= MF2_BOSSDEAD;
 		break;
 	}
 	case MT_ITEMCAPSULE:
