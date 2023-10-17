@@ -1316,7 +1316,7 @@ static void F_InitMenuPresValues(void)
 	curbgcolor = -1;
 	curbgxspeed = titlescrollxspeed;
 	curbgyspeed = titlescrollyspeed;
-	curbghide = false;
+	curbghide = true;
 
 	curhidepics = hidetitlepics;
 	curttmode = ttmode;
@@ -1426,15 +1426,13 @@ static void F_CacheTitleScreen(void)
 {
 	UINT16 i;
 
-	switch(curttmode)
+	switch (curttmode)
 	{
 		case TTMODE_NONE:
 			break;
 
-		case TTMODE_OLD:
-			break; // idk do we still want this?
-
 		case TTMODE_RINGRACERS:
+		{
 			if (!M_SecretUnlocked(SECRET_ALTTITLE, true))
 			{
 				CV_StealthSetValue(&cv_alttitle, 0);
@@ -1452,6 +1450,7 @@ static void F_CacheTitleScreen(void)
 			}
 			kts_copyright = W_CachePatchName("KTSCR", PU_PATCH_LOWPRIORITY);
 			break;
+		}
 
 		case TTMODE_USER:
 		{
@@ -1593,36 +1592,34 @@ void F_TitleScreenDrawer(void)
 {
 	boolean hidepics = false;
 
+#if 0
 	if (modeattacking)
 		return; // We likely came here from retrying. Don't do a damn thing.
+#endif
 
 	// Draw that sky!
 	if (curbgcolor >= 0)
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, curbgcolor);
 	else if (!curbghide || !titlemapinaction || gamestate == GS_WAITINGPLAYERS)
 		F_SkyScroll(curbgxspeed, curbgyspeed, curbgname);
-	else
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 
 	// Don't draw outside of the title screen, or if the patch isn't there.
 	if (gamestate != GS_TITLESCREEN && gamestate != GS_WAITINGPLAYERS)
 		return;
 
-	// Don't draw if title mode is set to Old/None and the patch isn't there
-	/*
-	if (!ttwing && (curttmode == TTMODE_OLD || curttmode == TTMODE_NONE))
-		return;
-	*/
-
 	// rei|miru: use title pics?
 	hidepics = curhidepics;
 	if (hidepics)
+	{
 		goto luahook;
+	}
 
-	switch(curttmode)
+	switch (curttmode)
 	{
 		case TTMODE_NONE:
+		{
 			break;
+		}
 
 		case TTMODE_RINGRACERS:
 		{
@@ -1657,64 +1654,11 @@ void F_TitleScreenDrawer(void)
 			V_DrawFixedPatch(0, 0, FRACUNIT, 0, kts_bumper, NULL);
 
 			V_DrawFixedPatch(0, 0, FRACUNIT, 0, kts_copyright, NULL);
-
-			F_VersionDrawer();
 			break;
 		}
 
-		case TTMODE_OLD:
-/*
-			if (finalecount < 50)
-			{
-				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
-
-				V_DrawSmallScaledPatch(84, 36, 0, ttbanner);
-
-				if (finalecount >= 20)
-					V_DrawSmallScaledPatch(84, 87, 0, ttkart);
-				else if (finalecount >= 10)
-					V_DrawSciencePatch((84<<FRACBITS) - FixedDiv(180<<FRACBITS, 10<<FRACBITS)*(20-finalecount), (87<<FRACBITS), 0, ttkart, FRACUNIT/2);
-			}
-			else if (finalecount < 52)
-			{
-				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
-				V_DrawSmallScaledPatch(84, 36, 0, ttkflash);
-			}
-			else
-			{
-				INT32 transval = 0;
-
-				if (finalecount <= (50+(9<<1)))
-					transval = (finalecount - 50)>>1;
-
-				V_DrawSciencePatch(0, 0 - FixedMul(40<<FRACBITS, FixedDiv(finalecount%70, 70)), V_SNAPTOTOP|V_SNAPTOLEFT, ttcheckers, FRACUNIT);
-				V_DrawSciencePatch(280<<FRACBITS, -(40<<FRACBITS) + FixedMul(40<<FRACBITS, FixedDiv(finalecount%70, 70)), V_SNAPTOTOP|V_SNAPTORIGHT, ttcheckers, FRACUNIT);
-
-				if (transval)
-					V_DrawFadeScreen(0, 10 - transval);
-
-				V_DrawSmallScaledPatch(84, 36, 0, ttbanner);
-
-				V_DrawSmallScaledPatch(84, 87, 0, ttkart);
-
-				if (!transval)
-					return;
-
-				V_DrawSmallScaledPatch(84, 36, transval<<V_ALPHASHIFT, ttkflash);
-			}
-*/
-			V_DrawCenteredString(BASEVIDWIDTH/2, 64, 0, "Dr. Robotnik's Ring Racers v2.0");
-
-#ifdef DEVELOP
-#if defined(TESTERS)
-			V_DrawCenteredString(BASEVIDWIDTH/2, 96, V_SKYMAP, "Tester EXE");
-#else
-			V_DrawCenteredString(BASEVIDWIDTH/2, 96, 0, "Development EXE");
-#endif
-#endif
-			break;
-
 		case TTMODE_USER:
+		{
 			if (!ttuser[max(0, ttuser_count)])
 			{
 				if(curttloop > -1 && ttuser[curttloop])
@@ -1728,8 +1672,11 @@ void F_TitleScreenDrawer(void)
 			V_DrawSciencePatch(curttx<<FRACBITS, curtty<<FRACBITS, 0, ttuser[ttuser_count], FRACUNIT);
 
 			if (!(finalecount % max(1, curtttics)))
+			{
 				ttuser_count++;
+			}
 			break;
+		}
 	}
 
 luahook:
@@ -1748,6 +1695,8 @@ luahook:
 		LUA_HookHUD(luahuddrawlist_title, HUD_HOOK(title));
 	}
 	LUA_HUD_DrawList(luahuddrawlist_title);
+
+	F_VersionDrawer();
 
 	if (finalecount > 0)
 		M_DrawMenuMessage();
