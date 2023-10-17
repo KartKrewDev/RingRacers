@@ -1920,6 +1920,19 @@ static void P_3dMovement(player_t *player)
 	// Calculates player's speed based on distance-of-a-line formula
 	player->speed = R_PointToDist2(0, 0, player->rmomx, player->rmomy);
 
+	const fixed_t topspeed = K_GetKartSpeed(player, false, true);
+
+	if (player->speed > topspeed)
+	{
+		const fixed_t convSpeed = (player->speed * 100) / topspeed;
+
+		if (convSpeed > player->roundconditions.maxspeed)
+		{
+			player->roundconditions.maxspeed = convSpeed;
+			//player->roundconditions.checkthisframe = true; -- no, safe to leave until lapchange at worst
+		}
+	}
+
 	// Monster Iestyn - 04-11-13
 	// Quadrants are stupid, excessive and broken, let's do this a much simpler way!
 	// Get delta angle from rmom angle and player angle first

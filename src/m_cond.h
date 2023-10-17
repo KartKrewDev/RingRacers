@@ -108,8 +108,10 @@ typedef enum
 	UCRP_FINISHTIMEEXACT, // Finish == [time, tics]
 	UCRP_FINISHTIMELEFT, // Finish with at least [time, tics] to spare
 
-	UCRP_RINGS, // Finish >= [rings]
-	UCRP_RINGSEXACT, // Finish == [rings]
+	UCRP_RINGS, // >= [rings]
+	UCRP_RINGSEXACT, // == [rings]
+
+	UCRP_SPEEDOMETER, // >= [percentage]
 
 	UCRP_TRIGGER,	// Map execution trigger [id]
 

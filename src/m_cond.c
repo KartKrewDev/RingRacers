@@ -1599,6 +1599,9 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 		case UCRP_RINGSEXACT:
 			return (player->hudrings == cn->requirement);
 
+		case UCRP_SPEEDOMETER:
+			return (player->roundconditions.maxspeed >= cn->requirement);
+
 		case UCRP_TRIGGER: // requires map trigger set
 			return !!(player->roundconditions.unlocktriggers & (1 << cn->requirement));
 
@@ -2368,6 +2371,13 @@ static const char *M_GetConditionString(condition_t *cn)
 			// FALLTHRU
 		case UCRP_RINGSEXACT:
 			return va("with exactly %d Rings", cn->requirement);
+
+		case UCRP_SPEEDOMETER:
+			return va("reach %s%u%% on the speedometer",
+				(cn->requirement == 999)
+					? "" : "at least",
+				cn->requirement
+			);
 
 		case UCRP_TRIGGER:
 			return "do something special";

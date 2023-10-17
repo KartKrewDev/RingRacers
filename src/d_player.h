@@ -422,6 +422,8 @@ struct roundconditions_t
 	targetdamaging_t targetdamaging;
 	UINT8 gachabom_miser;
 
+	fixed_t maxspeed;
+
 	mobjeflag_t wet_player;
 
 	// 32 triggers, one bit each, for map execution
