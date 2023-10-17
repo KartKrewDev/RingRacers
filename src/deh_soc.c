@@ -2891,7 +2891,8 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 		}
 	}
 	else if ((offset=0) || fastcmp(params[0], "PODIUMEMERALD")
-	||        (++offset && fastcmp(params[0], "PODIUMPRIZE")))
+	||        (++offset && fastcmp(params[0], "PODIUMPRIZE"))
+	||        (++offset && fastcmp(params[0], "PODIUMNOCONTINUES")))
 	{
 		//PARAMCHECK(1);
 		ty = UCRP_PODIUMEMERALD + offset;

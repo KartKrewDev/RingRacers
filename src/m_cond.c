@@ -1484,6 +1484,10 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			return (grandprixinfo.gp == true
 				&& K_PodiumRanking() == true
 				&& grandprixinfo.rank.specialWon == true);
+		case UCRP_PODIUMNOCONTINUES:
+			return (grandprixinfo.gp == true
+				&& K_PodiumRanking() == true
+				&& grandprixinfo.rank.continuesUsed == 0);
 
 		case UCRP_FINISHCOOL:
 			return (player->exiting
@@ -2335,6 +2339,8 @@ static const char *M_GetConditionString(condition_t *cn)
 			if (!gamedata->everseenspecial)
 				return "???";
 			return "collect the prize";
+		case UCRP_PODIUMNOCONTINUES:
+			return "without using any continues";
 
 		case UCRP_FINISHCOOL:
 			return "finish in good standing";

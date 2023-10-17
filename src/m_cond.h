@@ -92,6 +92,7 @@ typedef enum
 	UCRP_PODIUMCUP, // cup == [cup] [optional: >= grade OR place]
 	UCRP_PODIUMEMERALD, // Get to podium sequence with that cup's emerald
 	UCRP_PODIUMPRIZE, // Get to podium sequence with that cup's bonus (alternate string version of UCRP_PODIUMEMERALD
+	UCRP_PODIUMNOCONTINUES, // Get to podium sequence without any continues
 
 	UCRP_FINISHCOOL, // Finish in good standing
 	UCRP_FINISHPERFECT, // Finish a perfect race
