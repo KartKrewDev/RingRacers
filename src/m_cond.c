@@ -1619,7 +1619,7 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 				&& (cn->requirement == 1 || player->exiting || (player->pflags & PF_NOCONTEST))
 				&& (player->roundconditions.debt_rings == (cn->requirement == 1)));
 		case UCRP_FAULTED:
-			return ((cn->requirement == 1 || player->laps >= 1)
+			return ((cn->requirement == 1 || player->latestlap >= 1)
 				&& (player->roundconditions.faulted == (cn->requirement == 1)));
 
 		case UCRP_TRIPWIREHYUU:
@@ -1649,7 +1649,7 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			// condition can fire while that lap is active
 			// but if you need to NOT get hit on lap X,
 			// it only fires once the lap is complete
-			if (player->laps <= (requiredlap - cn->requirement))
+			if (player->latestlap <= (requiredlap - cn->requirement))
 				return false;
 
 			UINT8 requiredbit = 1<<(requiredlap & 7);
