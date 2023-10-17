@@ -1920,11 +1920,11 @@ static void P_3dMovement(player_t *player)
 	// Calculates player's speed based on distance-of-a-line formula
 	player->speed = R_PointToDist2(0, 0, player->rmomx, player->rmomy);
 
-	const fixed_t topspeed = K_GetKartSpeed(player, false, true);
+	const fixed_t topspeedometer = K_GetKartSpeed(player, false, true);
 
-	if (player->speed > topspeed)
+	if (player->speed > topspeedometer)
 	{
-		const fixed_t convSpeed = (player->speed * 100) / topspeed;
+		const fixed_t convSpeed = (player->speed * 100) / topspeedometer;
 
 		if (convSpeed > player->roundconditions.maxspeed)
 		{

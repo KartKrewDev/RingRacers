@@ -1618,6 +1618,9 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			return (!(gametyperules & GTR_SPHERES)
 				&& (cn->requirement == 1 || player->exiting || (player->pflags & PF_NOCONTEST))
 				&& (player->roundconditions.debt_rings == (cn->requirement == 1)));
+		case UCRP_FAULTED:
+			return ((cn->requirement == 1 || player->laps >= 1)
+				&& (player->roundconditions.faulted == (cn->requirement == 1)));
 
 		case UCRP_TRIPWIREHYUU:
 			return (player->roundconditions.tripwire_hyuu);
@@ -2395,6 +2398,8 @@ static const char *M_GetConditionString(condition_t *cn)
 			return (cn->requirement == 1) ? "touch a Sneaker Panel" : "don't touch any Sneaker Panels";
 		case UCRP_RINGDEBT:
 			return (cn->requirement == 1) ? "go into Ring debt" : "don't go into Ring debt";
+		case UCRP_FAULTED:
+			return (cn->requirement == 1) ? "FAULT during POSITION" : "don't FAULT during POSITION";
 
 		case UCRP_TRIPWIREHYUU:
 			return "go through Tripwire after getting snared by Hyudoro";

@@ -119,6 +119,7 @@ typedef enum
 	UCRP_TOUCHOFFROAD, // Touch offroad (or don't)
 	UCRP_TOUCHSNEAKERPANEL, // Either touch sneaker panel (or don't)
 	UCRP_RINGDEBT, // Go into debt (or don't)
+	UCRP_FAULTED, // FAULT
 
 	UCRP_TRIPWIREHYUU, // Go through tripwire with Hyudoro
 	UCRP_SPBNEUTER, // Kill an SPB with Lightning

@@ -111,6 +111,8 @@ void K_DoFault(player_t *player)
 		player->pflags |= PF_FAULT;
 		player->mo->renderflags |= RF_DONTDRAW;
 		player->mo->flags |= MF_NOCLIPTHING;
+
+		player->roundconditions.faulted = true;
 	}
 }
 
