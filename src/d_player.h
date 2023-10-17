@@ -410,6 +410,8 @@ struct roundconditions_t
 	boolean touched_offroad;
 	boolean touched_sneakerpanel;
 	boolean debt_rings;
+
+	// Basically the same, but it's a specific event where no is an easy default
 	boolean tripwire_hyuu;
 	boolean spb_neuter;
 	boolean landmine_dunk;

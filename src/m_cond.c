@@ -1606,13 +1606,18 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			return !!(player->roundconditions.unlocktriggers & (1 << cn->requirement));
 
 		case UCRP_FALLOFF:
-			return (player->roundconditions.fell_off == (cn->requirement == 1));
+			return ((cn->requirement == 1 || player->exiting || (player->pflags & PF_NOCONTEST))
+				&& player->roundconditions.fell_off == (cn->requirement == 1));
 		case UCRP_TOUCHOFFROAD:
-			return (player->roundconditions.touched_offroad == (cn->requirement == 1));
+			return ((cn->requirement == 1 || player->exiting || (player->pflags & PF_NOCONTEST))
+				&& player->roundconditions.touched_offroad == (cn->requirement == 1));
 		case UCRP_TOUCHSNEAKERPANEL:
-			return (player->roundconditions.touched_sneakerpanel == (cn->requirement == 1));
+			return ((cn->requirement == 1 || player->exiting || (player->pflags & PF_NOCONTEST))
+				&& player->roundconditions.touched_sneakerpanel == (cn->requirement == 1));
 		case UCRP_RINGDEBT:
-			return (!(gametyperules & GTR_SPHERES) && (player->roundconditions.debt_rings == (cn->requirement == 1)));
+			return (!(gametyperules & GTR_SPHERES)
+				&& (cn->requirement == 1 || player->exiting || (player->pflags & PF_NOCONTEST))
+				&& (player->roundconditions.debt_rings == (cn->requirement == 1)));
 
 		case UCRP_TRIPWIREHYUU:
 			return (player->roundconditions.tripwire_hyuu);
@@ -2383,13 +2388,13 @@ static const char *M_GetConditionString(condition_t *cn)
 			return "do something special";
 
 		case UCRP_FALLOFF:
-			return (cn->requirement == 1) ? "fall off the course" : "without falling off";
+			return (cn->requirement == 1) ? "fall off the course" : "don't fall off the course";
 		case UCRP_TOUCHOFFROAD:
-			return (cn->requirement == 1) ? "touch offroad" : "without touching any offroad";
+			return (cn->requirement == 1) ? "touch offroad" : "don't touch any offroad";
 		case UCRP_TOUCHSNEAKERPANEL:
-			return (cn->requirement == 1) ? "touch a Sneaker Panel" : "without touching any Sneaker Panels";
+			return (cn->requirement == 1) ? "touch a Sneaker Panel" : "don't touch any Sneaker Panels";
 		case UCRP_RINGDEBT:
-			return (cn->requirement == 1) ? "go into Ring debt" : "without going into Ring debt";
+			return (cn->requirement == 1) ? "go into Ring debt" : "don't go into Ring debt";
 
 		case UCRP_TRIPWIREHYUU:
 			return "go through Tripwire after getting snared by Hyudoro";
