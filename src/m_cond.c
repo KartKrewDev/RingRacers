@@ -1505,6 +1505,15 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 		case UCRP_NOCONTEST:
 			return (player->pflags & PF_NOCONTEST);
 
+		case UCRP_SMASHUFO:
+			return (
+				specialstageinfo.valid == true
+				&& (
+					P_MobjWasRemoved(specialstageinfo.ufo)
+					|| specialstageinfo.ufo->health <= 1
+				)
+			);
+
 		case UCRP_MAKERETIRE:
 		{
 			// You can't "make" someone retire in coop.
@@ -1683,15 +1692,8 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			return (!(player->roundconditions.hittrackhazard[requiredlap] & requiredbit) != (cn->requirement == 1));
 		}
 
-		case UCRP_UFOATTACKMETHOD:
-			return (
-				specialstageinfo.valid == true
-				&& (
-					P_MobjWasRemoved(specialstageinfo.ufo)
-					|| specialstageinfo.ufo->health <= 1
-				)
-				&& player->roundconditions.ufodamaging == (ufodamaging_t)(1<<cn->requirement)
-			);
+		case UCRP_TARGETATTACKMETHOD:
+			return (player->roundconditions.targetdamaging == (targetdamaging_t)cn->requirement);
 
 		case UCRP_WETPLAYER:
 			return (((player->roundconditions.wet_player & cn->requirement) == 0)
@@ -2314,9 +2316,14 @@ static const char *M_GetConditionString(condition_t *cn)
 		case UCRP_FINISHPERFECT:
 			return "finish a perfect round";
 		case UCRP_FINISHALLPRISONS:
-			return "break every prison";
+			return "break every Prison Egg";
 		case UCRP_NOCONTEST:
 			return "NO CONTEST";
+
+		case UCRP_SMASHUFO:
+			if (!gamedata->everseenspecial)
+				return NULL;
+			return "smash the UFO Catcher";
 
 		case UCRP_MAKERETIRE:
 		{
@@ -2387,7 +2394,7 @@ static const char *M_GetConditionString(condition_t *cn)
 			return va("%s on lap %u", work, cn->extrainfo1);
 		}
 
-		case UCRP_UFOATTACKMETHOD:
+		case UCRP_TARGETATTACKMETHOD:
 		{
 			if (!gamedata->everseenspecial)
 				return NULL;
@@ -2396,23 +2403,27 @@ static const char *M_GetConditionString(condition_t *cn)
 
 			switch (cn->requirement)
 			{
-				case 1:
+				// See targetdamaging_t
+				case UFOD_BOOST:
 					work = "boost power";
 					break;
-				case 2:
+				case UFOD_WHIP:
 					work = "Insta-Whip";
 					break;
-				case 3:
+				case UFOD_BANANA:
 					work = "Bananas";
 					break;
-				case 4:
+				case UFOD_ORBINAUT:
 					work = "Orbinauts";
 					break;
-				case 5:
+				case UFOD_JAWZ:
 					work = "Jawz";
 					break;
-				case 6:
+				case UFOD_SPB:
 					work = "Self Propelled Bombs";
+					break;
+				case UFOD_GACHABOM:
+					work = "Gachabom";
 					break;
 				default:
 					break;
@@ -2421,7 +2432,7 @@ static const char *M_GetConditionString(condition_t *cn)
 			if (work == NULL)
 				return va("INVALID ATTACK CONDITION \"%d:%d\"", cn->type, cn->requirement);
 
-			return va("smash the UFO Catcher using only %s", work);
+			return va("using only %s", work);
 		}
 
 		case UCRP_WETPLAYER:

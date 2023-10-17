@@ -977,10 +977,21 @@ void P_TouchCheatcheck(mobj_t *post, player_t *player, boolean snaptopost)
 	player->cheatchecknum = post->health;
 }
 
-static void P_AddBrokenPrison(mobj_t *target, mobj_t *source)
+void P_TrackRoundConditionTargetDamage(targetdamaging_t targetdamaging)
 {
-	(void)target;
+	UINT8 i;
+	for (i = 0; i <= splitscreen; i++)
+	{
+		if (!playeringame[g_localplayers[i]])
+			continue;
+		if (players[g_localplayers[i]].spectator)
+			continue;
+		players[i].roundconditions.targetdamaging |= targetdamaging;
+	}
+}
 
+static void P_AddBrokenPrison(mobj_t *target, mobj_t *inflictor, mobj_t *source)
+{
 	if (!battleprisons)
 		return;
 
@@ -1001,6 +1012,43 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *source)
 		P_AddPlayerScore(source->player, 1);
 		K_SpawnBattlePoints(source->player, NULL, 1);
 	}
+
+	targetdamaging_t targetdamaging = UFOD_GENERIC;
+	if (P_MobjWasRemoved(inflictor) == true)
+		;
+	else switch (inflictor->type)
+	{
+		case MT_GACHABOM:
+			targetdamaging = UFOD_GACHABOM;
+			break;
+		case MT_ORBINAUT:
+		case MT_ORBINAUT_SHIELD:
+			targetdamaging = UFOD_ORBINAUT;
+			break;
+		case MT_BANANA:
+			targetdamaging = UFOD_BANANA;
+			break;
+		case MT_INSTAWHIP:
+			targetdamaging = UFOD_WHIP;
+			break;
+		// This is only accessible for MT_CDUFO's touch!
+		case MT_PLAYER:
+			targetdamaging = UFOD_BOOST;
+			break;
+		// The following can't be accessed in standard play...
+		// but the cost of tracking them here is trivial :D
+		case MT_JAWZ:
+		case MT_JAWZ_SHIELD:
+			targetdamaging = UFOD_JAWZ;
+			break;
+		case MT_SPB:
+			targetdamaging = UFOD_SPB;
+			break;
+		default:
+			break;
+	}
+
+	P_TrackRoundConditionTargetDamage(targetdamaging);
 
 	if (gamedata->prisoneggstothispickup)
 	{
@@ -2008,7 +2056,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 				S_StartSound(target, sfx_mbs60);
 
-				P_AddBrokenPrison(target, source);
+				P_AddBrokenPrison(target, inflictor, source);
 			}
 			break;
 
@@ -2018,7 +2066,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			target->momz = -(3*mapobjectscale)/2;
 			target->fuse = 2*TICRATE;
 
-			P_AddBrokenPrison(target, source);
+			P_AddBrokenPrison(target, inflictor, source);
 			break;
 
 		case MT_BATTLEBUMPER:

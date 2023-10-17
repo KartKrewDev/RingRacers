@@ -764,7 +764,7 @@ static void UFOKillPieces(mobj_t *ufo)
 static UINT8 GetUFODamage(mobj_t *inflictor, UINT8 damageType)
 {
 	UINT8 ret = 0;
-	ufodamaging_t ufodamaging = UFOD_GENERIC;
+	targetdamaging_t targetdamaging = UFOD_GENERIC;
 
 	if (inflictor != NULL && P_MobjWasRemoved(inflictor) == false)
 	{
@@ -773,46 +773,52 @@ static UINT8 GetUFODamage(mobj_t *inflictor, UINT8 damageType)
 			// Shields deal chip damage.
 			case MT_JAWZ_SHIELD:
 			{
-				ufodamaging = UFOD_JAWZ;
+				targetdamaging = UFOD_JAWZ;
 				ret = 10;
 				break;
 			}
 			case MT_ORBINAUT_SHIELD:
 			{
-				ufodamaging = UFOD_ORBINAUT;
+				targetdamaging = UFOD_ORBINAUT;
 				ret = 10;
 				break;
 			}
 			case MT_INSTAWHIP:
 			{
-				ufodamaging = UFOD_WHIP;
+				targetdamaging = UFOD_WHIP;
 				ret = 10;
 				break;
 			}
 			case MT_JAWZ:
 			{
 				// Thrown Jawz deal a bit extra.
-				ufodamaging = UFOD_JAWZ;
+				targetdamaging = UFOD_JAWZ;
 				ret = 15;
 				break;
 			}
 			case MT_ORBINAUT:
 			{
 				// Thrown orbinauts deal double damage.
-				ufodamaging = UFOD_ORBINAUT;
+				targetdamaging = UFOD_ORBINAUT;
 				ret = 20;
+				break;
+			}
+			case MT_GACHABOM:
+			{
+				// Thrown gachabom need to be tracked, but have no special damage value as of yet.
+				targetdamaging = UFOD_GACHABOM;
 				break;
 			}
 			case MT_SPB:
 			{
 				// SPB deals triple damage.
-				ufodamaging |= UFOD_SPB;
+				targetdamaging |= UFOD_SPB;
 				ret = 30;
 				break;
 			}
 			case MT_BANANA:
 			{
-				ufodamaging = UFOD_BANANA;
+				targetdamaging = UFOD_BANANA;
 
 				// Banana snipes deal triple damage,
 				// laid down bananas deal regular damage.
@@ -828,7 +834,7 @@ static UINT8 GetUFODamage(mobj_t *inflictor, UINT8 damageType)
 			case MT_PLAYER:
 			{
 				// Players deal damage relative to how many sneakers they used.
-				ufodamaging = UFOD_BOOST;
+				targetdamaging = UFOD_BOOST;
 				ret = 15 * max(1, inflictor->player->numsneakers);
 				break;
 			}
@@ -845,20 +851,9 @@ static UINT8 GetUFODamage(mobj_t *inflictor, UINT8 damageType)
 		}
 	}
 
-	{
-		// We have to iterate over all players, otherwise a player who gets exactly one hit in will trick the Challenges system.
-		UINT8 i;
-		for (i = 0; i <= splitscreen; i++)
-		{
-			if (!playeringame[g_localplayers[i]])
-				continue;
-			if (players[g_localplayers[i]].spectator)
-				continue;
-			players[i].roundconditions.ufodamaging |= ufodamaging;
-		}
-	}
+	P_TrackRoundConditionTargetDamage(targetdamaging);
 
-	if (ret)
+	if (ret != 0)
 		return ret;
 
 	// Guess from damage type.

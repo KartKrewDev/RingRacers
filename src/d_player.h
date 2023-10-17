@@ -396,8 +396,9 @@ typedef enum
 	UFOD_ORBINAUT	= 1<<4,
 	UFOD_JAWZ		= 1<<5,
 	UFOD_SPB		= 1<<6,
+	UFOD_GACHABOM	= 1<<7,
 	// free up to and including 1<<31
-} ufodamaging_t;
+} targetdamaging_t;
 
 struct roundconditions_t
 {
@@ -416,7 +417,7 @@ struct roundconditions_t
 
 	UINT8 hittrackhazard[((MAX_LAPS+1)/8) + 1];
 
-	ufodamaging_t ufodamaging;
+	targetdamaging_t targetdamaging;
 
 	mobjeflag_t wet_player;
 

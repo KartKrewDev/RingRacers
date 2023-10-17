@@ -546,6 +546,8 @@ void P_UpdateLastPickup(player_t *player, UINT8 type);
 boolean P_CanPickupEmblem(player_t *player, INT32 emblemID);
 boolean P_EmblemWasCollected(INT32 emblemID);
 
+void P_TrackRoundConditionTargetDamage(targetdamaging_t targetdamaging);
+
 //
 // P_SPEC
 //
