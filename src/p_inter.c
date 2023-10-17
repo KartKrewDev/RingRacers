@@ -1042,12 +1042,15 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *source)
 			{
 				secretpickup->hitlag = target->hitlag;
 
+				secretpickup->z -= secretpickup->height/2;
+
 				P_SetScale(secretpickup, mapobjectscale/TICRATE);
 				// secretpickup->destscale = mapobjectscale; -- safe assumption it's already set?
 				secretpickup->scalespeed = (2*mapobjectscale)/(3*TICRATE);
 
-				// NOT from the target - just in case it's just been placed on the ceiling as a gimmick
-				K_FlipFromObject(secretpickup, source);
+				// flags are NOT from the target - just in case it's just been placed on the ceiling as a gimmick
+				secretpickup->flags2 |= (source->flags2 & MF2_OBJECTFLIP);
+				secretpickup->eflags |= (source->eflags & MFE_VERTICALFLIP);
 
 				// Okay these have to use M_Random because replays...
 				// The spawning of these won't be recorded back!
