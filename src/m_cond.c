@@ -2404,7 +2404,7 @@ static const char *M_GetConditionString(condition_t *cn)
 		case UCRP_TRIPWIREHYUU:
 			return "go through Tripwire after getting snared by Hyudoro";
 		case UCRP_SPBNEUTER:
-			return "shock a Self Propelled Bomb into submission";
+			return "shock a Self-Propelled Bomb into submission";
 		case UCRP_LANDMINEDUNK:
 			return "dunk a Landmine on another racer's head";
 		case UCRP_HITMIDAIR:
@@ -2450,7 +2450,7 @@ static const char *M_GetConditionString(condition_t *cn)
 					work = "Jawz";
 					break;
 				case UFOD_SPB:
-					work = "Self Propelled Bombs";
+					work = "Self-Propelled Bombs";
 					break;
 				case UFOD_GACHABOM:
 					work = "Gachabom";
