@@ -2377,6 +2377,8 @@ static boolean P_PlayerHitsPlayer(mobj_t *target, mobj_t *inflictor, mobj_t *sou
 
 static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, UINT8 type)
 {
+	const boolean beforeexit = !(player->exiting || (player->pflags & PF_NOCONTEST));
+
 	if (type == DMG_SPECTATOR && (G_GametypeHasTeams() || G_GametypeHasSpectators()))
 	{
 		P_SetPlayerSpectator(player-players);
@@ -2424,7 +2426,8 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 	{
 		case DMG_DEATHPIT:
 			// Fell off the stage
-			if (player->roundconditions.fell_off == false)
+			if (player->roundconditions.fell_off == false
+				&& beforeexit == false)
 			{
 				player->roundconditions.fell_off = true;
 				player->roundconditions.checkthisframe = true;

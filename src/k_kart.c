@@ -1149,6 +1149,7 @@ static void K_UpdateOffroad(player_t *player)
 			player->offroad = offroadstrength;
 
 		if (player->roundconditions.touched_offroad == false
+			&& !(player->exiting || (player->pflags & PF_NOCONTEST))
 			&& player->offroad > (2*offroadstrength) / TICRATE)
 		{
 			player->roundconditions.touched_offroad = true;
@@ -6089,6 +6090,7 @@ void K_DoSneaker(player_t *player, INT32 type)
 	const fixed_t intendedboost = FRACUNIT/2;
 
 	if (player->roundconditions.touched_sneakerpanel == false
+		&& !(player->exiting || (player->pflags & PF_NOCONTEST))
 		&& player->floorboost != 0)
 	{
 		player->roundconditions.touched_sneakerpanel = true;
