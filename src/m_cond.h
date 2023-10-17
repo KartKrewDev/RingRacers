@@ -122,6 +122,7 @@ typedef enum
 	UCRP_SPBNEUTER, // Kill an SPB with Lightning
 	UCRP_LANDMINEDUNK, // huh? you died? that's weird. all i did was try to hug you...
 	UCRP_HITMIDAIR, // Hit another player mid-air with a kartfielditem
+	UCRP_RETURNMARKTOSENDER, // Hit the player responsible for Eggman Marking you with that explosion
 
 	UCRP_TRACKHAZARD, // (Don't) get hit by a track hazard (maybe specific lap)
 

@@ -8410,6 +8410,10 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 				eggsexplode->height = 2 * player->mo->height;
 				K_FlipFromObject(eggsexplode, player->mo);
 
+				eggsexplode->threshold = KITEM_EGGMAN;
+
+				P_SetTarget(&eggsexplode->tracer, player->mo);
+
 				if (player->eggmanblame >= 0
 				&& player->eggmanblame < MAXPLAYERS
 				&& playeringame[player->eggmanblame]

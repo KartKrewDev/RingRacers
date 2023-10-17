@@ -1619,6 +1619,8 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			return (player->roundconditions.landmine_dunk);
 		case UCRP_HITMIDAIR:
 			return (player->roundconditions.hit_midair);
+		case UCRP_RETURNMARKTOSENDER:
+			return (player->roundconditions.returntosender_mark);
 
 		case UCRP_TRACKHAZARD:
 		{
@@ -2387,6 +2389,8 @@ static const char *M_GetConditionString(condition_t *cn)
 			return "dunk a Landmine on another racer's head";
 		case UCRP_HITMIDAIR:
 			return "hit another racer with a projectile while you're both in the air";
+		case UCRP_RETURNMARKTOSENDER:
+			return "when cursed with Eggmark, blow up the racer responsible";
 
 		case UCRP_TRACKHAZARD:
 		{

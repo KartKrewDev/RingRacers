@@ -2684,6 +2684,18 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				source->player->roundconditions.hit_midair = true;
 				source->player->roundconditions.checkthisframe = true;
 			}
+
+			if (source == target
+				&& !P_MobjWasRemoved(inflictor)
+				&& inflictor->type == MT_SPBEXPLOSION
+				&& inflictor->threshold == KITEM_EGGMAN
+				&& !P_MobjWasRemoved(inflictor->tracer)
+				&& inflictor->tracer != source
+				&& inflictor->tracer->player)
+			{
+				inflictor->tracer->player->roundconditions.returntosender_mark = true;
+				inflictor->tracer->player->roundconditions.checkthisframe = true;
+			}
 		}
 		else if (!(inflictor && inflictor->player)
 			&& player->laps <= numlaps

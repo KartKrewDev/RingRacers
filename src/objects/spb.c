@@ -1025,6 +1025,8 @@ void Obj_SPBExplode(mobj_t *spb)
 		P_SetTarget(&spbExplode->target, spb_owner(spb));
 	}
 
+	spbExplode->threshold = KITEM_SPB;
+
 	// Tell the explosion to use alternate knockback.
 	spbExplode->movefactor = ((SPB_CHASETIMESCALE - spb_chasetime(spb)) * SPB_CHASETIMEMUL) / SPB_CHASETIMESCALE;
 
