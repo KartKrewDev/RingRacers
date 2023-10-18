@@ -413,7 +413,7 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 		{
 			size_t nwp = K_NextRespawnWaypointIndex(player->respawn.wp);
 
-			if (nwp == SIZE_MAX || nextwaypoints[nwp]->mobj->movefactor) // movefactor: Block Lightsnake
+			if (nwp == SIZE_MAX || player->respawn.wp->nextwaypoints[nwp]->mobj->movefactor) // movefactor: Block Lightsnake
 			{
 				player->respawn.state = RESPAWNST_DROP;
 				return;
