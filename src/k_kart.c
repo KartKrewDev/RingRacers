@@ -1466,7 +1466,8 @@ static void K_UpdateDraft(player_t *player)
 
 			if (K_TryDraft(player, otherPlayer->mo, minDist, draftdistance, leniency) == true)
 			{
-				return; // Finished doing our draft.
+				//return;
+				goto draftdurationhandling; // Finished doing our draft.
 			}
 		}
 	}
@@ -1501,7 +1502,14 @@ static void K_UpdateDraft(player_t *player)
 	{
 		player->draftpower = 0;
 		player->lastdraft = -1;
+		player->roundconditions.continuousdraft = 0;
+		return;
 	}
+
+draftdurationhandling:
+	player->roundconditions.continuousdraft++;
+	if (player->roundconditions.continuousdraft > player->roundconditions.continuousdraft_best)
+		player->roundconditions.continuousdraft_best = player->roundconditions.continuousdraft;
 }
 
 void K_KartPainEnergyFling(player_t *player)

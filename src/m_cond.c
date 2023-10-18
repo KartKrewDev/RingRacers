@@ -1611,6 +1611,8 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 
 		case UCRP_SPEEDOMETER:
 			return (player->roundconditions.maxspeed >= cn->requirement);
+		case UCRP_DRAFTDURATION:
+			return (player->roundconditions.continuousdraft_best >= ((tic_t)cn->requirement)*TICRATE);
 
 		case UCRP_TRIGGER: // requires map trigger set
 			return !!(player->roundconditions.unlocktriggers & (1 << cn->requirement));
@@ -2359,6 +2361,8 @@ static const char *M_GetConditionString(condition_t *cn)
 			if (!gamedata->everseenspecial)
 				return NULL;
 			return "smash the UFO Catcher";
+		case UCRP_CHASEDBYSPB:
+			return "while chased by a Self-Propelled Bomb";
 
 		case UCRP_MAKERETIRE:
 		{
@@ -2402,9 +2406,8 @@ static const char *M_GetConditionString(condition_t *cn)
 					? "" : "at least",
 				cn->requirement
 			);
-
-		case UCRP_CHASEDBYSPB:
-			return "while chased by a Self-Propelled Bomb";
+		case UCRP_DRAFTDURATION:
+			return va("consistently draft off other racers for %u seconds", cn->requirement);
 
 		case UCRP_TRIGGER:
 			return "do something special";

@@ -429,6 +429,9 @@ struct roundconditions_t
 
 	fixed_t maxspeed;
 
+	tic_t continuousdraft;
+	tic_t continuousdraft_best;
+
 	mobjeflag_t wet_player;
 
 	// 32 triggers, one bit each, for map execution

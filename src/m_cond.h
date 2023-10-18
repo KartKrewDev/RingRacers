@@ -115,6 +115,7 @@ typedef enum
 	UCRP_RINGSEXACT, // == [rings]
 
 	UCRP_SPEEDOMETER, // >= [percentage]
+	UCRP_DRAFTDURATION, // >= [time, seconds]
 
 	UCRP_TRIGGER,	// Map execution trigger [id]
 
