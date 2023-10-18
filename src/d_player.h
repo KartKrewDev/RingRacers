@@ -852,6 +852,8 @@ struct player_t
 	UINT8 sliptideZipDelay; // How long since the last sliptide? Only boost once you've been straightened out for a bit.
 	UINT16 sliptideZipBoost; // The actual boost granted from sliptideZip.
 
+	UINT8 lastsafelap;
+
 	mobj_t *stumbleIndicator;
 	mobj_t *sliptideZipIndicator;
 	mobj_t *whip;

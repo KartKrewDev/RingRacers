@@ -539,6 +539,8 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].sliptideZipDelay);
 		WRITEUINT16(save->p, players[i].sliptideZipBoost);
 
+		WRITEUINT8(save->p, players[i].lastsafelap);
+
 		WRITEMEM(save->p, players[i].public_key, PUBKEYLENGTH);
 
 		WRITEUINT8(save->p, players[i].instaWhipCharge);
@@ -1051,6 +1053,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].sliptideZip = READUINT16(save->p);
 		players[i].sliptideZipDelay = READUINT8(save->p);
 		players[i].sliptideZipBoost = READUINT16(save->p);
+
+		players[i].lastsafelap = READUINT8(save->p);
 
 		READMEM(save->p, players[i].public_key, PUBKEYLENGTH);
 

@@ -8968,6 +8968,7 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 		(K_GetWaypointIsEnabled(bestwaypoint) == true))
 		{
 			player->respawn.wp = bestwaypoint;
+			player->lastsafelap = player->laps;
 		}
 	}
 

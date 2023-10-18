@@ -403,7 +403,12 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 		P_SetThingPosition(player->mo);
 
 		// We are no longer traveling from death location to 1st waypoint, so use standard timings
-		player->respawn.fast = false;
+		// (and reset their lap so they can't cross the finish the wrong way!)
+		if (player->respawn.fast)
+		{
+			player->respawn.fast = false;
+			player->laps = player->lastsafelap;
+		}
 
 		// At the first valid waypoint, permit extra player control options.
 		player->respawn.init = false;
