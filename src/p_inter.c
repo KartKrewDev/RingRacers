@@ -2705,7 +2705,8 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				&& inflictor->threshold == KITEM_EGGMAN
 				&& !P_MobjWasRemoved(inflictor->tracer)
 				&& inflictor->tracer != source
-				&& inflictor->tracer->player)
+				&& inflictor->tracer->player
+				&& inflictor->tracer->player->roundconditions.returntosender_mark == false)
 			{
 				inflictor->tracer->player->roundconditions.returntosender_mark = true;
 				inflictor->tracer->player->roundconditions.checkthisframe = true;
