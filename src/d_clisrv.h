@@ -620,6 +620,9 @@ void CL_TimeoutServerList(void);
 // Is there a game running
 boolean Playing(void);
 
+// Advance client-to-client pubkey verification flow
+void UpdateChallenges(void);
+
 // Broadcasts special packets to other players
 //  to notify of game exit
 void D_QuitNetGame(void);
