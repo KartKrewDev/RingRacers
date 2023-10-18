@@ -414,6 +414,7 @@ struct roundconditions_t
 
 	// Basically the same, but it's a specific event where no is an easy default
 	boolean tripwire_hyuu;
+	boolean whip_hyuu;
 	boolean spb_neuter;
 	boolean landmine_dunk;
 	boolean hit_midair;

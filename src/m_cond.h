@@ -125,6 +125,7 @@ typedef enum
 	UCRP_FAULTED, // FAULT
 
 	UCRP_TRIPWIREHYUU, // Go through tripwire with Hyudoro
+	UCRP_WHIPHYUU, // Use Insta-Whip with Hyudoro
 	UCRP_SPBNEUTER, // Kill an SPB with Lightning
 	UCRP_LANDMINEDUNK, // huh? you died? that's weird. all i did was try to hug you...
 	UCRP_HITMIDAIR, // Hit another player mid-air with a kartfielditem

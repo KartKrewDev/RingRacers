@@ -2993,6 +2993,7 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 			re = 0;
 	}
 	else if ((offset=0) || fastcmp(params[0], "TRIPWIREHYUU")
+	||        (++offset && fastcmp(params[0], "WHIPHYUU"))
 	||        (++offset && fastcmp(params[0], "SPBNEUTER"))
 	||        (++offset && fastcmp(params[0], "LANDMINEDUNK"))
 	||        (++offset && fastcmp(params[0], "HITMIDAIR"))
