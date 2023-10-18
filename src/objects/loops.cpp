@@ -356,13 +356,26 @@ Obj_LoopEndpointCollide
 	cam->enter_tic = leveltime;
 	cam->exit_tic = INFTICS;
 
-	cam->zoom_out_speed = center->thing_args[2];
-	cam->zoom_in_speed = center->thing_args[3];
-	cam->dist = center->thing_args[4] * FRACUNIT;
-	cam->pan = FixedAngle(center->thing_args[5] * FRACUNIT);
-	cam->pan_speed = center->thing_args[6] * FRACUNIT;
-	cam->pan_accel = center->thing_args[7];
-	cam->pan_back = center->thing_args[8];
+	if (center->thing_args[4]) // is camera distance set?
+	{
+		cam->zoom_out_speed = center->thing_args[2];
+		cam->zoom_in_speed = center->thing_args[3];
+		cam->dist = center->thing_args[4] * FRACUNIT;
+		cam->pan = FixedAngle(center->thing_args[5] * FRACUNIT);
+		cam->pan_speed = center->thing_args[6] * FRACUNIT;
+		cam->pan_accel = center->thing_args[7];
+		cam->pan_back = center->thing_args[8];
+	}
+	else
+	{
+		cam->zoom_out_speed = 20;
+		cam->zoom_in_speed = 60;
+		cam->dist = radius;
+		cam->pan = ANGLE_22h;
+		cam->pan_speed = 6*FRACUNIT;
+		cam->pan_accel = 10;
+		cam->pan_back = 40;
+	}
 
 	player->speed =
 		3 * (player->speed + toucher->momz) / 2;
