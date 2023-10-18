@@ -2699,6 +2699,16 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				source->player->roundconditions.checkthisframe = true;
 			}
 
+			if (source->player->roundconditions.hit_drafter_lookback == false
+				&& source != target
+				&& target->player->lastdraft == (source->player - players)
+				&& (K_GetKartButtons(source->player) & BT_LOOKBACK) == BT_LOOKBACK
+				/*&& (AngleDelta(K_MomentumAngle(source), R_PointToAngle2(source->x, source->y, target->x, target->y)) > ANGLE_90)*/)
+			{
+				source->player->roundconditions.hit_drafter_lookback = true;
+				source->player->roundconditions.checkthisframe = true;
+			}
+
 			if (source == target
 				&& !P_MobjWasRemoved(inflictor)
 				&& inflictor->type == MT_SPBEXPLOSION

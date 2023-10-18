@@ -2997,6 +2997,7 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 	||        (++offset && fastcmp(params[0], "SPBNEUTER"))
 	||        (++offset && fastcmp(params[0], "LANDMINEDUNK"))
 	||        (++offset && fastcmp(params[0], "HITMIDAIR"))
+	||        (++offset && fastcmp(params[0], "HITDRAFTERLOOKBACK"))
 	||        (++offset && fastcmp(params[0], "RETURNMARKTOSENDER")))
 	{
 		//PARAMCHECK(1);

@@ -418,6 +418,7 @@ struct roundconditions_t
 	boolean spb_neuter;
 	boolean landmine_dunk;
 	boolean hit_midair;
+	boolean hit_drafter_lookback;
 	boolean returntosender_mark;
 
 	UINT8 hittrackhazard[((MAX_LAPS+1)/8) + 1];
