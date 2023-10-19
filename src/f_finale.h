@@ -81,7 +81,6 @@ typedef enum
 {
 	TTMODE_NONE = 0,
 	TTMODE_RINGRACERS,
-	TTMODE_OLD,
 	TTMODE_USER
 } ttmode_enum;
 
