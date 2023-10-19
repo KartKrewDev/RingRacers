@@ -2066,6 +2066,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	INT32 kickstartaccel;
 	INT32 checkpointId;
 	boolean enteredGame;
+	UINT8 lastsafelap;
 
 	roundconditions_t roundconditions;
 	boolean saveroundconditions;
@@ -2133,6 +2134,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	xtralife = players[player].xtralife;
 
 	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_KICKSTARTACCEL|PF_SHRINKME|PF_SHRINKACTIVE|PF_AUTOROULETTE));
+
+	lastsafelap = players[player].lastsafelap;
 
 	// SRB2kart
 	memcpy(&itemRoulette, &players[player].itemRoulette, sizeof (itemRoulette));
@@ -2287,6 +2290,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->spectator = spectator;
 	p->steering = steering;
 	p->angleturn = playerangleturn;
+	p->lastsafelap = lastsafelap;
 
 	// save player config truth reborn
 	p->skincolor = skincolor;
