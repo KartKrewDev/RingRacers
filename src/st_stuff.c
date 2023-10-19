@@ -1351,7 +1351,7 @@ void ST_DrawServerSplash(boolean timelimited)
 			V_DrawFixedPatch(
 				gridX, gridY,
 				FRACUNIT,
-				(V_SNAPTOLEFT|V_SNAPTOBOTTOM) | V_SUBTRACT | V_VFLIP | gridOpacity,
+				(V_SNAPTOLEFT|V_SNAPTOTOP) | V_SUBTRACT | V_VFLIP | gridOpacity,
 				gridPatch,
 				NULL
 			);
@@ -1369,7 +1369,7 @@ void ST_DrawServerSplash(boolean timelimited)
 	V_DrawFixedPatch(
 		iconX, iconY,
 		FRACUNIT,
-		(V_SNAPTORIGHT|V_SNAPTOBOTTOM) | opacityFlag,
+		(V_SNAPTORIGHT|V_SNAPTOTOP) | opacityFlag,
 		iconPatch,
 		NULL
 	);
@@ -1379,7 +1379,7 @@ void ST_DrawServerSplash(boolean timelimited)
 
 	V_DrawRightAlignedStringAtFixed(
 		textX, textY,
-		(V_SNAPTORIGHT|V_SNAPTOBOTTOM) | opacityFlag,
+		(V_SNAPTORIGHT|V_SNAPTOTOP) | opacityFlag,
 		connectedservername
 	);
 

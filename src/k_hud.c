@@ -5106,7 +5106,7 @@ void K_drawKartFreePlay(void)
 	if (((leveltime-lt_endtime) % TICRATE) < TICRATE/2)
 		return;
 
-	INT32 h_snap = (r_splitscreen < 2 || R_GetViewNumber() & 1) ? V_SNAPTORIGHT : V_SNAPTOLEFT;
+	INT32 h_snap = r_splitscreen < 2 ? V_SNAPTORIGHT | V_SLIDEIN : V_HUDTRANS;
 	fixed_t x = ((r_splitscreen > 1 ? BASEVIDWIDTH/4 : BASEVIDWIDTH - (LAPS_X+6)) * FRACUNIT);
 	fixed_t y = ((r_splitscreen ? BASEVIDHEIGHT/2 : BASEVIDHEIGHT) - 20) * FRACUNIT;
 
@@ -5114,7 +5114,7 @@ void K_drawKartFreePlay(void)
 		FRACUNIT,
 		FRACUNIT,
 		FRACUNIT,
-		V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|h_snap|V_SPLITSCREEN,
+		V_SNAPTOBOTTOM|h_snap|V_SPLITSCREEN,
 		KART_FONT,
 		"FREE PLAY"
 	) / (r_splitscreen > 1 ? 2 : 1);
@@ -5125,7 +5125,7 @@ void K_drawKartFreePlay(void)
 		FRACUNIT,
 		FRACUNIT,
 		FRACUNIT,
-		V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|h_snap|V_SPLITSCREEN,
+		V_SNAPTOBOTTOM|h_snap|V_SPLITSCREEN,
 		NULL,
 		KART_FONT,
 		"FREE PLAY"
