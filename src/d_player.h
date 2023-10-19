@@ -433,6 +433,9 @@ struct roundconditions_t
 	tic_t continuousdraft;
 	tic_t continuousdraft_best;
 
+	UINT8 consecutive_grow_lasers;
+	UINT8 best_consecutive_grow_lasers;
+
 	mobjeflag_t wet_player;
 
 	// 32 triggers, one bit each, for map execution

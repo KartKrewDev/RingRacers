@@ -3015,6 +3015,18 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 			return;
 		}
 	}
+	else if (fastcmp(params[0], "GROWCONSECUTIVEBEAMS"))
+	{
+		PARAMCHECK(1);
+		ty = UCRP_GROWCONSECUTIVEBEAMS;
+		re = get_number(params[1]);
+
+		if (re < 2 || re > UINT8_MAX)
+		{
+			deh_warning("Touch count %d out of range (2 - %u) for condition ID %d", re, UINT8_MAX, id+1);
+			return;
+		}
+	}
 	else if (fastcmp(params[0], "TRIGGER"))
 	{
 		PARAMCHECK(1);

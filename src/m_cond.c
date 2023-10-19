@@ -1643,6 +1643,8 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			return (player->roundconditions.maxspeed >= cn->requirement);
 		case UCRP_DRAFTDURATION:
 			return (player->roundconditions.continuousdraft_best >= ((tic_t)cn->requirement)*TICRATE);
+		case UCRP_GROWCONSECUTIVEBEAMS:
+			return (player->roundconditions.best_consecutive_grow_lasers >= cn->requirement);
 
 		case UCRP_TRIGGER: // requires map trigger set
 			return !!(player->roundconditions.unlocktriggers & (1 << cn->requirement));
@@ -2457,6 +2459,8 @@ static const char *M_GetConditionString(condition_t *cn)
 			);
 		case UCRP_DRAFTDURATION:
 			return va("consistently draft off other racers for %u seconds", cn->requirement);
+		case UCRP_GROWCONSECUTIVEBEAMS:
+			return va("touch the blue beams from your own Shrink at least %u times before returning to normal size", cn->requirement);
 
 		case UCRP_TRIGGER:
 			return "do something special";

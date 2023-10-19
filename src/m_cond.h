@@ -118,6 +118,7 @@ typedef enum
 
 	UCRP_SPEEDOMETER, // >= [percentage]
 	UCRP_DRAFTDURATION, // >= [time, seconds]
+	UCRP_GROWCONSECUTIVEBEAMS, // touch more than n times consecutively
 
 	UCRP_TRIGGER,	// Map execution trigger [id]
 

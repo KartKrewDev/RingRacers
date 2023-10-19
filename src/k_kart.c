@@ -3842,6 +3842,7 @@ void K_RemoveGrowShrink(player_t *player)
 	}
 
 	player->growshrinktimer = 0;
+	player->roundconditions.consecutive_grow_lasers = 0;
 }
 
 boolean K_IsBigger(mobj_t *compare, mobj_t *other)
