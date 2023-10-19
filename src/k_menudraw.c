@@ -2467,7 +2467,8 @@ fixed_t M_DrawCupWinData(INT32 rankx, INT32 ranky, cupheader_t *cup, UINT8 diffi
 
 	if (statsmode)
 	{
-		patch_t *monPat = W_CachePatchName(va("CUPMON%c%c", '0' + cup->monitor, 'C'), PU_CACHE);
+		const char monitorletter = (cup->monitor < 10) ? ('0' + cup->monitor) : ('A' + (cup->monitor - 10));
+		patch_t *monPat = W_CachePatchName(va("CUPMON%c%c", monitorletter, 'C'), PU_CACHE);
 		UINT16 moncolor = SKINCOLOR_NONE;
 
 		switch (windata->best_placement)
