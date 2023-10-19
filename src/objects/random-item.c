@@ -125,6 +125,11 @@ void Obj_RandomItemVisuals(mobj_t *mobj)
 	{
 		mobj->extravalue1++;
 
+		// Don't transform stuff that isn't a Ring Box, idiot
+		statenum_t boxstate = mobj->state - states;
+		if (boxstate >= S_RANDOMITEM1 && boxstate <= S_RANDOMITEM12)
+			return;
+
 		if (mobj->extravalue1 == RINGBOX_TIME || specialstageinfo.valid)
 		{
 			// Sync the position in RINGBOX and RANDOMITEM animations.
