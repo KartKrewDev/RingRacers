@@ -2844,6 +2844,13 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 			return;
 		}
 	}
+	else if (fastcmp(params[0], "HASFOLLOWER"))
+	{
+		PARAMCHECK(1);
+		ty = UCRP_HASFOLLOWER;
+		stringvar = Z_StrDup(params[1]);
+		re = -1;
+	}
 	else if (fastcmp(params[0], "ISDIFFICULTY"))
 	{
 		//PARAMCHECK(1);

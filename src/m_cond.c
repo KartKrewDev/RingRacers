@@ -1103,7 +1103,7 @@ void M_FinaliseGameData(void)
 
 void M_UpdateConditionSetsPending(void)
 {
-	UINT32 i, j;
+	UINT32 i, j, k;
 	conditionset_t *c;
 	condition_t *cn;
 
@@ -1126,6 +1126,29 @@ void M_UpdateConditionSetsPending(void)
 				case UCRP_MAKERETIRE:
 				{
 					cn->requirement = R_SkinAvailable(cn->stringvar);
+
+					if (cn->requirement < 0)
+					{
+						CONS_Alert(CONS_WARNING, "UC TYPE %u: Invalid character %s for condition ID %d", cn->type, cn->stringvar, cn->id+1);
+						continue;
+					}
+
+					Z_Free(cn->stringvar);
+					cn->stringvar = NULL;
+
+					break;
+				}
+
+				case UCRP_HASFOLLOWER:
+				{
+					// match deh_soc readfollower()
+					for (k = 0; cn->stringvar[k]; k++)
+					{
+						if (cn->stringvar[k] == '_')
+							cn->stringvar[k] = ' ';
+					}
+
+					cn->requirement = K_FollowerAvailable(cn->stringvar);
 
 					if (cn->requirement < 0)
 					{
@@ -1460,6 +1483,8 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 					skins[player->skin].kartweight,
 					skins[player->skin].flags
 				) == (unsigned)cn->requirement);
+		case UCRP_HASFOLLOWER:
+			return (cn->requirement != -1 && player->followerskin == cn->requirement);
 		case UCRP_ISDIFFICULTY:
 			if (grandprixinfo.gp == false)
 				return (gamespeed >= cn->requirement);
@@ -2272,6 +2297,13 @@ static const char *M_GetConditionString(condition_t *cn)
 			return va("as %s", work);
 		case UCRP_ISENGINECLASS:
 			return va("with engine class %c", 'A' + cn->requirement);
+		case UCRP_HASFOLLOWER:
+			if (cn->requirement < 0 || !followers[cn->requirement].name[0])
+				return va("INVALID FOLLOWER CONDITION \"%d:%d\"", cn->type, cn->requirement);
+			work = (K_FollowerUsable(cn->requirement))
+				? followers[cn->requirement].name
+				: "???";
+			return va("with %s in tow", work);
 		case UCRP_ISDIFFICULTY:
 		{
 			const char *speedtext = "";
