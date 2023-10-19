@@ -2660,12 +2660,20 @@ void M_DrawCupSelect(void)
 
 					if (monitor == '2')
 					{
-						icony = 5;
+						icony = 5; // by default already 7px down, so this is really 2px further up
 					}
+					else if (monitor == '3')
+					{
+						icony = 6; 
+					}				
 				}
 				else
 				{
 					monitor = 'A' + (templevelsearch.cup->monitor - 10);
+					if (monitor == 'X')
+					{
+						icony = 11;
+					}		
 				}
 			}
 
