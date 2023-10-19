@@ -2513,9 +2513,6 @@ static const char *M_GetConditionString(condition_t *cn)
 
 		case UCRP_TARGETATTACKMETHOD:
 		{
-			if (!gamedata->everseenspecial)
-				return NULL;
-
 			work = NULL;
 
 			switch (cn->requirement)
