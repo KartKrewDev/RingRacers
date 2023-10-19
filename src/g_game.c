@@ -2135,7 +2135,10 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_KICKSTARTACCEL|PF_SHRINKME|PF_SHRINKACTIVE|PF_AUTOROULETTE));
 
-	lastsafelap = players[player].lastsafelap;
+	if (betweenmaps)
+		lastsafelap = 0;
+	else
+		lastsafelap = players[player].lastsafelap;
 
 	// SRB2kart
 	memcpy(&itemRoulette, &players[player].itemRoulette, sizeof (itemRoulette));
