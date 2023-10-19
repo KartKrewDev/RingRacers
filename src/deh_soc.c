@@ -1383,6 +1383,28 @@ void readlevelheader(MYFILE *f, char * name)
 			}
 			else if (fastcmp(word, "GRAVITY"))
 				mapheaderinfo[num]->gravity = FLOAT_TO_FIXED(atof(word2));
+			else if (fastcmp(word, "DESTROYOBJECTSFORCHALLENGES"))
+			{
+				if (fastcmp(word2, "NONE"))
+				{
+					mapheaderinfo[num]->destroyforchallenge_size = 0;
+				}
+				else
+				{
+					UINT8 j = 0; // i was declared elsewhere
+					tmp = strtok(word2, ",");
+					do {
+						if (j >= MAXDESTRUCTIBLES)
+							break;
+						mapheaderinfo[num]->destroyforchallenge[j] = get_mobjtype(word2);
+						j++;
+					} while ((tmp = strtok(NULL,",")) != NULL);
+
+					if (tmp != NULL)
+						deh_warning("Level header %d: additional destructibles past %d discarded", num, MAXDESTRUCTIBLES);
+					mapheaderinfo[num]->destroyforchallenge_size = j;
+				}
+			}
 			else
 				deh_warning("Level header %d: unknown word '%s'", num, word);
 		}
@@ -2500,7 +2522,6 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 		ty = UC_PASSWORD;
 
 		stringvar = Z_StrDup(spos);
-		re = -1;
 	}
 
 	if (ty != UC_NONE)
@@ -2530,6 +2551,15 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 
 		if (spos && *spos)
 			stringvar = Z_StrDup(spos);
+	}
+	else if (fastcmp(params[0], "MAPDESTROYOBJECTS"))
+	{
+		PARAMCHECK(1);
+		EXTENDEDPARAMCHECK(spos, 2);
+		ty = UCRP_MAPDESTROYOBJECTS;
+		re = G_MapNumber(params[1]);
+
+		stringvar = Z_StrDup(spos);
 	}
 
 	if (ty != UC_NONE)

@@ -222,6 +222,7 @@ UINT32 bluescore, redscore; // CTF and Team Match team scores
 INT32 nummaprings = 0;
 
 UINT8 nummapspraycans = 0;
+UINT16 numchallengedestructibles = 0;
 
 // Elminates unnecessary searching.
 boolean CheckForBustableBlocks;

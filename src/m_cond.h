@@ -101,6 +101,7 @@ typedef enum
 
 	UCRP_SMASHUFO, // Smash the UFO Catcher
 	UCRP_CHASEDBYSPB, // Chased by SPB
+	UCRP_MAPDESTROYOBJECTS, // LEVELNAME: Destroy all [object names] -- CAUTION: You have to add to the level's header too to get them successfully tracked!
 
 	UCRP_MAKERETIRE, // Make another player of [skin] No Contest
 

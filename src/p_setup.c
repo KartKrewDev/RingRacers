@@ -463,6 +463,8 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 	mapheaderinfo[num]->justPlayed = 0;
 	mapheaderinfo[num]->anger = 0;
 
+	mapheaderinfo[num]->destroyforchallenge_size = 0;
+
 	mapheaderinfo[num]->cache_spraycan = UINT16_MAX;
 
 	mapheaderinfo[num]->cache_maplock = MAXUNLOCKABLES;
@@ -7553,6 +7555,7 @@ static void P_InitLevelSettings(void)
 	battleprisons = false;
 
 	nummapspraycans = 0;
+	numchallengedestructibles = 0;
 
 	// circuit, race and competition stuff
 	numcheatchecks = 0;

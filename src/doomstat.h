@@ -440,6 +440,7 @@ struct staffbrief_t
 };
 
 #define MAXMUSNAMES 3 // maximum definable music tracks per level
+#define MAXDESTRUCTIBLES 3
 #define MAXHEADERFOLLOWERS 32
 
 struct mapheader_lighting_t
@@ -536,6 +537,9 @@ struct mapheader_t
 	// Cutscene information
 	UINT8 precutscenenum;				///< Cutscene number to play BEFORE a level starts.
 	UINT8 cutscenenum;					///< Cutscene number to use, 0 for none.
+
+	mobjtype_t destroyforchallenge[MAXDESTRUCTIBLES];	///< Assistive for UCRP_MAPDESTROYOBJECTS
+	UINT8 destroyforchallenge_size;						///< Number for above
 
 	UINT32 _saveid;						///< Purely assistive in gamedata save processes
 	UINT16 cache_spraycan;				///< Cached Spraycan ID
@@ -722,6 +726,7 @@ extern INT32 luabanks[NUM_LUABANKS];
 extern INT32 nummaprings; //keep track of spawned rings/coins
 
 extern UINT8 nummapspraycans;
+extern UINT16 numchallengedestructibles;
 
 extern UINT32 bluescore; ///< Blue Team Scores
 extern UINT32 redscore;  ///< Red Team Scores

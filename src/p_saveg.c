@@ -6064,6 +6064,8 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 	WRITEUINT32(save->p, darktimer);
 	WRITEFIXED(save->p, darkness);
 
+	WRITEUINT16(save->p, numchallengedestructibles);
+
 	// Is it paused?
 	if (paused)
 		WRITEUINT8(save->p, 0x2f);
@@ -6245,6 +6247,8 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 
 	darktimer = READUINT32(save->p);
 	darkness = READFIXED(save->p);
+
+	numchallengedestructibles = READUINT16(save->p);
 
 	// Is it paused?
 	if (READUINT8(save->p) == 0x2f)

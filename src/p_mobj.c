@@ -11606,18 +11606,40 @@ void P_RemoveMobj(mobj_t *mobj)
 	mobj->thinker.function.acp1 = (actionf_p1)P_MobjThinker; // needed for P_UnsetThingPosition, etc. to work.
 
 	// Rings only, please!
-	if (mobj->spawnpoint &&
-		(mobj->type == MT_RING
-		|| mobj->type == MT_BLUESPHERE)
-		&& !(mobj->flags2 & MF2_DONTRESPAWN))
+	if (mobj->spawnpoint == NULL)
+		;
+	else
 	{
-		//CONS_Printf("added to queue at tic %d\n", leveltime);
-		itemrespawnque[iquehead] = mobj->spawnpoint;
-		itemrespawntime[iquehead] = leveltime;
-		iquehead = (iquehead+1)&(ITEMQUESIZE-1);
-		// lose one off the end?
-		if (iquehead == iquetail)
-			iquetail = (iquetail+1)&(ITEMQUESIZE-1);
+		if ((mobj->type == MT_RING
+			|| mobj->type == MT_BLUESPHERE)
+			&& !(mobj->flags2 & MF2_DONTRESPAWN))
+		{
+			//CONS_Printf("added to queue at tic %d\n", leveltime);
+			itemrespawnque[iquehead] = mobj->spawnpoint;
+			itemrespawntime[iquehead] = leveltime;
+			iquehead = (iquehead+1)&(ITEMQUESIZE-1);
+			// lose one off the end?
+			if (iquehead == iquetail)
+				iquetail = (iquetail+1)&(ITEMQUESIZE-1);
+		}
+
+		if (numchallengedestructibles && numchallengedestructibles != UINT16_MAX)
+		{
+			UINT8 i;
+			for (i = 0; i < mapheaderinfo[gamemap-1]->destroyforchallenge_size; i++)
+			{
+				if (mobj->type != mapheaderinfo[gamemap-1]->destroyforchallenge[i])
+					continue;
+
+				if ((--numchallengedestructibles) == 0)
+				{
+					numchallengedestructibles = UINT16_MAX;
+					gamedata->deferredconditioncheck = true;
+				}
+
+				break;
+			}
+		}
 	}
 
 	if (P_IsTrackerType(mobj->type))
@@ -14148,12 +14170,12 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	return true;
 }
 
-static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y, fixed_t z, mobjtype_t i)
+static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 {
 	mobj_t *mobj = NULL;
 	size_t arg = SIZE_MAX;
 
-	mobj = P_SpawnMobj(x, y, z, i);
+	mobj = P_SpawnMobj(x, y, z, type);
 	mobj->spawnpoint = mthing;
 
 	mobj->angle = FixedAngle(mthing->angle << FRACBITS);
@@ -14235,6 +14257,19 @@ static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y,
 	{
 		mobj->eflags |= MFE_VERTICALFLIP;
 		mobj->flags2 |= MF2_OBJECTFLIP;
+	}
+
+	if (mapheaderinfo[gamemap-1]->destroyforchallenge_size && numchallengedestructibles != UINT16_MAX)
+	{
+		UINT8 i;
+		for (i = 0; i < mapheaderinfo[gamemap-1]->destroyforchallenge_size; i++)
+		{
+			if (type != mapheaderinfo[gamemap-1]->destroyforchallenge[i])
+				continue;
+
+			numchallengedestructibles++;
+			break;
+		}
 	}
 
 	return mobj;

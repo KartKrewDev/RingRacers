@@ -1523,6 +1523,11 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			// But the game already has this handy-dandy SPB signal for us...
 			// It's only MAYBE invalid in modded context. And mods can already cheat...
 			return ((player->pflags & PF_RINGLOCK) == PF_RINGLOCK);
+		case UCRP_MAPDESTROYOBJECTS:
+			return (
+				gamemap == cn->requirement+1
+				&& numchallengedestructibles == UINT16_MAX
+			);
 
 		case UCRP_MAKERETIRE:
 		{
@@ -2363,6 +2368,16 @@ static const char *M_GetConditionString(condition_t *cn)
 			return "smash the UFO Catcher";
 		case UCRP_CHASEDBYSPB:
 			return "while chased by a Self-Propelled Bomb";
+		case UCRP_MAPDESTROYOBJECTS:
+		{
+			if (cn->stringvar == NULL)
+				return va("INVALID DESTROY CONDITION \"%d\"", cn->type);
+
+			title = M_BuildConditionTitle(cn->requirement);
+			work = va("%s: destroy all the %s", title, cn->stringvar);
+			Z_Free(title);
+			return work;
+		}
 
 		case UCRP_MAKERETIRE:
 		{
