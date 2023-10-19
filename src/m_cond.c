@@ -1676,6 +1676,8 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			return (player->roundconditions.hit_midair);
 		case UCRP_HITDRAFTERLOOKBACK:
 			return (player->roundconditions.hit_drafter_lookback);
+		case UCRP_GIANTRACERSHRUNKENORBI:
+			return (player->roundconditions.giant_foe_shrunken_orbi);
 		case UCRP_RETURNMARKTOSENDER:
 			return (player->roundconditions.returntosender_mark);
 
@@ -2482,6 +2484,8 @@ static const char *M_GetConditionString(condition_t *cn)
 			return "hit another racer with a projectile while you're both in the air";
 		case UCRP_HITDRAFTERLOOKBACK:
 			return "hit a racer drafting off you while looking back at them";
+		case UCRP_GIANTRACERSHRUNKENORBI:
+			return "hit a giant racer with a shrunken Orbinaut";
 		case UCRP_RETURNMARKTOSENDER:
 			return "when cursed with Eggmark, blow up the racer responsible";
 

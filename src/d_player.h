@@ -419,6 +419,7 @@ struct roundconditions_t
 	boolean landmine_dunk;
 	boolean hit_midair;
 	boolean hit_drafter_lookback;
+	boolean giant_foe_shrunken_orbi;
 	boolean returntosender_mark;
 
 	UINT8 hittrackhazard[((MAX_LAPS+1)/8) + 1];

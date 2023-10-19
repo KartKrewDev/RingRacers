@@ -2713,6 +2713,17 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				source->player->roundconditions.checkthisframe = true;
 			}
 
+			if (source->player->roundconditions.giant_foe_shrunken_orbi == false
+				&& source != target
+				&& player->growshrinktimer > 0
+				&& !P_MobjWasRemoved(inflictor)
+				&& inflictor->type == MT_ORBINAUT
+				&& inflictor->scale < FixedMul((FRACUNIT + SHRINK_SCALE), mapobjectscale * 2)) // halfway between base scale and shrink scale, a little bit of leeway
+			{
+				source->player->roundconditions.giant_foe_shrunken_orbi = true;
+				source->player->roundconditions.checkthisframe = true;
+			}
+
 			if (source == target
 				&& !P_MobjWasRemoved(inflictor)
 				&& inflictor->type == MT_SPBEXPLOSION
