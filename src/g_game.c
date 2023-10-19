@@ -4426,7 +4426,7 @@ void G_LoadGameSettings(void)
 }
 
 #define GD_VERSIONCHECK 0xBA5ED123 // Change every major version, as usual
-#define GD_VERSIONMINOR 8 // Change every format update
+#define GD_VERSIONMINOR 9 // Change every format update
 
 // You can't rearrange these without a special format update
 typedef enum
@@ -4541,6 +4541,11 @@ void G_LoadGameData(void)
 	if (versionMinor > 1)
 	{
 		gamedata->totalrings = READUINT32(save.p);
+
+		if (versionMinor >= 9)
+		{
+			gamedata->totaltumbletime = READUINT32(save.p);
+		}
 
 		for (i = 0; i < GDGT_MAX; i++)
 		{
@@ -5094,7 +5099,7 @@ void G_SaveGameData(void)
 	}
 
 	length = (4+1+1+
-		4+4+
+		4+4+4+
 		(4*GDGT_MAX)+
 		4+1+2+2+
 		4+
@@ -5235,6 +5240,7 @@ void G_SaveGameData(void)
 
 	WRITEUINT32(save.p, gamedata->totalplaytime); // 4
 	WRITEUINT32(save.p, gamedata->totalrings); // 4
+	WRITEUINT32(save.p, gamedata->totaltumbletime); // 4
 
 	for (i = 0; i < GDGT_MAX; i++) // 4 * GDGT_MAX
 	{
