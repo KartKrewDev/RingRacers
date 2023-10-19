@@ -18,6 +18,7 @@
 #include "../k_objects.h"
 #include "../m_random.h"
 #include "../p_local.h"
+#include "../m_cond.h"
 #include "../r_main.h"
 #include "../s_sound.h"
 #include "../g_game.h"
@@ -923,17 +924,7 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 		// Destroy the UFO parts, and make the emerald collectible!
 		UFOKillPieces(ufo);
 
-		{
-			UINT8 i;
-			for (i = 0; i <= splitscreen; i++)
-			{
-				if (!playeringame[g_localplayers[i]])
-					continue;
-				if (players[g_localplayers[i]].spectator)
-					continue;
-				players[i].roundconditions.checkthisframe = true;
-			}
-		}
+		gamedata->deferredconditioncheck = true; // Check Challenges!
 
 		ufo->flags = (ufo->flags & ~MF_SHOOTABLE) | (MF_SPECIAL|MF_PICKUPFROMBELOW);
 		ufo->shadowscale = FRACUNIT/3;
