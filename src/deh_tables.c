@@ -5999,7 +5999,7 @@ const char *const MAPTHINGFLAG_LIST[4] = {
 const char *const PLAYERFLAG_LIST[] = {
 	"GODMODE",
 
-	"\x01", // free: 1<<1 (name un-matchable)
+	"UPDATEMYRESPAWN", // Scripted sequences / fastfall can set this to force a respawn waypoint update
 
 	"AUTOROULETTE", // Item box accessibility
 

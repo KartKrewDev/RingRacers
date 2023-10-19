@@ -67,7 +67,7 @@ typedef enum
 {
 	PF_GODMODE			= 1<<0, // Immortal. No lightsnake from pits either
 
-	// free: 1<<1
+	PF_UPDATEMYRESPAWN	= 1<<1, // Scripted sequences / fastfall can set this to force a respawn waypoint update
 
 	PF_AUTOROULETTE		= 1<<2, // Accessibility: Non-deterministic item box, no manual stop.
 
@@ -851,6 +851,8 @@ struct player_t
 	UINT16 sliptideZip; // How long is our chained sliptide? Grant a proportional boost when it's over.
 	UINT8 sliptideZipDelay; // How long since the last sliptide? Only boost once you've been straightened out for a bit.
 	UINT16 sliptideZipBoost; // The actual boost granted from sliptideZip.
+
+	UINT8 lastsafelap;
 
 	mobj_t *stumbleIndicator;
 	mobj_t *sliptideZipIndicator;

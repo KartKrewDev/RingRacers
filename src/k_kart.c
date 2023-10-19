@@ -8953,6 +8953,12 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 			updaterespawn = false;
 		}
 
+		if (player->pflags & PF_UPDATEMYRESPAWN)
+		{
+			updaterespawn = true;
+			player->pflags &= ~PF_UPDATEMYRESPAWN;
+		}
+
 		// Respawn point should only be updated when we're going to a nextwaypoint
 		if ((updaterespawn) &&
 		(player->respawn.state == RESPAWNST_NONE) &&
@@ -8962,6 +8968,7 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 		(K_GetWaypointIsEnabled(bestwaypoint) == true))
 		{
 			player->respawn.wp = bestwaypoint;
+			player->lastsafelap = player->laps;
 		}
 	}
 
@@ -10687,6 +10694,8 @@ boolean K_FastFallBounce(player_t *player)
 
 		if (player->mo->eflags & MFE_UNDERWATER)
 			bounce = (117 * bounce) / 200;
+
+		player->pflags |= PF_UPDATEMYRESPAWN;
 
 		player->mo->momz = bounce * P_MobjFlip(player->mo);
 
