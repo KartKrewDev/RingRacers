@@ -2577,8 +2577,8 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 	else if (fastcmp(params[0], "PLAYTIME"))
 	{
 		PARAMCHECK(1);
-		ty = UC_PLAYTIME + offset;
-		re = atoi(params[1]);
+		ty = UC_PLAYTIME;
+		re = get_number(params[1]);
 	}
 	else if (fastcmp(params[0], "ROUNDSPLAYED"))
 	{
@@ -2624,6 +2624,12 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 			return;
 		}
 	}
+	else if (fastcmp(params[0], "TOTALTUMBLETIME"))
+	{
+		PARAMCHECK(1);
+		ty = UC_TOTALTUMBLETIME;
+		re = get_number(params[1]);
+	}
 	else if (fastcmp(params[0], "GAMECLEAR"))
 	{
 		ty = UC_GAMECLEAR;
@@ -2633,7 +2639,7 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 	{
 		PARAMCHECK(1);
 		ty = UC_OVERALLTIME;
-		re = atoi(params[1]);
+		re = get_number(params[1]);
 	}
 	else if ((offset=0) || fastcmp(params[0], "MAPVISITED")
 	||        (++offset && fastcmp(params[0], "MAPBEATEN"))
@@ -2655,7 +2661,7 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 	{
 		PARAMCHECK(2);
 		ty = UC_MAPTIME;
-		re = atoi(params[2]);
+		re = get_number(params[2]);
 		x1 = G_MapNumber(params[1]);
 
 		if (x1 >= nummapheaders)

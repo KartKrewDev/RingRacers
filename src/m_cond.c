@@ -649,6 +649,7 @@ void M_ClearStats(void)
 	UINT8 i;
 	gamedata->totalplaytime = 0;
 	gamedata->totalrings = 0;
+	gamedata->totaltumbletime = 0;
 	for (i = 0; i < GDGT_MAX; ++i)
 		gamedata->roundsplayed[i] = 0;
 	gamedata->timesBeaten = 0;
@@ -1286,6 +1287,8 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 		}
 		case UC_TOTALRINGS: // Requires grabbing >= x rings
 			return (gamedata->totalrings >= (unsigned)cn->requirement);
+		case UC_TOTALTUMBLETIME: // Requires total tumbling time >= x
+			return (gamedata->totaltumbletime >= (unsigned)cn->requirement);
 		case UC_GAMECLEAR: // Requires game beaten >= x times
 			return (gamedata->timesBeaten >= (unsigned)cn->requirement);
 		case UC_OVERALLTIME: // Requires overall time <= x
@@ -1918,14 +1921,12 @@ static const char *M_GetConditionString(condition_t *cn)
 	switch (cn->type)
 	{
 		case UC_PLAYTIME: // Requires total playing time >= x
-
 			return va("play for %i:%02i:%02i",
 				G_TicsToHours(cn->requirement),
 				G_TicsToMinutes(cn->requirement, false),
 				G_TicsToSeconds(cn->requirement));
 
 		case UC_ROUNDSPLAYED: // Requires any level completed >= x times
-
 			if (cn->extrainfo1 == GDGT_MAX)
 				work = "";
 			else if (cn->extrainfo1 != GDGT_RACE && cn->extrainfo1 != GDGT_BATTLE // Base gametypes
@@ -1962,6 +1963,11 @@ static const char *M_GetConditionString(condition_t *cn)
 			if (cn->requirement >= 1000)
 				return va("collect %u,%03u Rings", (cn->requirement/1000), (cn->requirement%1000));
 			return va("collect %u Rings", cn->requirement);
+
+		case UC_TOTALTUMBLETIME:
+			return va("tumble through the air for %i:%02i",
+				G_TicsToMinutes(cn->requirement, true),
+				G_TicsToSeconds(cn->requirement));
 
 		case UC_GAMECLEAR: // Requires game beaten >= x times
 			if (cn->requirement > 1)
