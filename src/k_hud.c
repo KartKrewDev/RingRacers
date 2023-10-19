@@ -5244,11 +5244,12 @@ static void K_DrawWaypointDebugger(void)
 
 	if (netgame)
 	{
-		V_DrawString(8, 146, 0, va("Online griefing: [%u, %u]", stplyr->griefValue/TICRATE, stplyr->griefStrikes));
+		V_DrawString(8, 136, 0, va("Online griefing: [%u, %u]", stplyr->griefValue/TICRATE, stplyr->griefStrikes));
 	}
 
-	V_DrawString(8, 156, 0, va("Current Waypoint ID: %d", K_GetWaypointID(stplyr->currentwaypoint)));
-	V_DrawString(8, 166, 0, va("Next Waypoint ID: %d%s", K_GetWaypointID(stplyr->nextwaypoint), ((stplyr->pflags & PF_WRONGWAY) ? " (WRONG WAY)" : "")));
+	V_DrawString(8, 146, 0, va("Current Waypoint ID: %d", K_GetWaypointID(stplyr->currentwaypoint)));
+	V_DrawString(8, 156, 0, va("Next Waypoint ID: %d%s", K_GetWaypointID(stplyr->nextwaypoint), ((stplyr->pflags & PF_WRONGWAY) ? " (WRONG WAY)" : "")));
+	V_DrawString(8, 166, 0, va("Respawn Waypoint ID: %d", K_GetWaypointID(stplyr->respawn.wp)));
 	V_DrawString(8, 176, 0, va("Finishline Distance: %d", stplyr->distancetofinish));
 
 	if (numcheatchecks > 0)
