@@ -2142,6 +2142,8 @@ static void K_HandleLapDecrement(player_t *player)
 {
 	if (player)
 	{
+		if (player->respawn.state == RESPAWNST_MOVE)
+			return;
 		if ((player->cheatchecknum == 0) && (player->laps > 0))
 		{
 			player->cheatchecknum = numcheatchecks;

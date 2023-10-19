@@ -3338,7 +3338,7 @@ static void P_ProcessLinedefsAfterSidedefs(void)
 
 		if (ld->tripwire)
 		{
-			ld->blendmode = (subtractTripwire ? AST_SUBTRACT : AST_ADD);
+			ld->blendmode = (subtractTripwire ? AST_COPY : AST_ADD);
 			ld->alpha = FRACUNIT;
 		}
 

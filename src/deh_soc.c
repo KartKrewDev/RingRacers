@@ -3411,8 +3411,6 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 				}
 				else if (fastcmp(word2, "RINGRACERS"))
 					ttmode = TTMODE_RINGRACERS;
-				else if (fastcmp(word2, "OLD") || fastcmp(word2, "SSNTAILS"))
-					ttmode = TTMODE_OLD;
 				titlechanged = true;
 			}
 			else if (fastcmp(word, "TITLEPICSNAME"))

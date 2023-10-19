@@ -795,17 +795,7 @@ void M_Drawer(void)
 		// ... but only in the MAIN MENU.  I'm a picky bastard.
 		if (currentMenu == &MainDef)
 		{
-			if (customversionstring[0] != '\0')
-			{
-				V_DrawThinString(vid.dupx, vid.height - 20*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT, "Mod version:");
-				V_DrawThinString(vid.dupx, vid.height - 10*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT, customversionstring);
-			}
-			else
-			{
-				F_VersionDrawer();
-			}
-
-
+			F_VersionDrawer();
 		}
 
 		// Draw message overlay when needed
@@ -2680,12 +2670,20 @@ void M_DrawCupSelect(void)
 
 					if (monitor == '2')
 					{
-						icony = 5;
+						icony = 5; // by default already 7px down, so this is really 2px further up
 					}
+					else if (monitor == '3')
+					{
+						icony = 6; 
+					}				
 				}
 				else
 				{
 					monitor = 'A' + (templevelsearch.cup->monitor - 10);
+					if (monitor == 'X')
+					{
+						icony = 11;
+					}		
 				}
 			}
 

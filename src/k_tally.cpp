@@ -909,10 +909,13 @@ void level_tally_t::Draw(void)
 	{
 		fade = (5 * transition_f);
 	}
+
 	V_DrawFadeFill(
-		0, 0,
-		v_width, v_height,
-		V_SPLITSCREEN,
+		(vid.width / 2) * (r_splitscreen > 1 && R_GetViewNumber() & 1),
+		(vid.height / 2) * (R_GetViewNumber() > (r_splitscreen > 1)),
+		vid.width / (r_splitscreen > 1 ? 2 : 1),
+		vid.height / (r_splitscreen ? 2 : 1),
+		V_NOSCALESTART,
 		31, fade
 	);
 

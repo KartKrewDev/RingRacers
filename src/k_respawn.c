@@ -291,6 +291,7 @@ void K_DoIngameRespawn(player_t *player)
 	player->respawn.init = true;
 	player->respawn.fast = true;
 	player->respawn.returnspeed = 0;
+	player->laps = player->lastsafelap;
 
 	player->respawn.airtimer = player->airtime;
 	player->respawn.truedeath = !!(player->pflags & PF_FAULT);
@@ -405,7 +406,8 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 		P_SetThingPosition(player->mo);
 
 		// We are no longer traveling from death location to 1st waypoint, so use standard timings
-		player->respawn.fast = false;
+		if (player->respawn.fast)
+			player->respawn.fast = false;
 
 		// At the first valid waypoint, permit extra player control options.
 		player->respawn.init = false;
@@ -415,7 +417,7 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 		{
 			size_t nwp = K_NextRespawnWaypointIndex(player->respawn.wp);
 
-			if (nwp == SIZE_MAX)
+			if (nwp == SIZE_MAX || player->respawn.wp->nextwaypoints[nwp]->mobj->movefactor) // movefactor: Block Lightsnake
 			{
 				player->respawn.state = RESPAWNST_DROP;
 				return;

@@ -13717,6 +13717,14 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 		{
 			mobj->extravalue2 = 0;
 		}
+		if (mthing->thing_args[2] & TMWPF_BLOCKLIGHTSNAKE)
+		{
+			mobj->movefactor = 1; // If a lightsnaking player reaches here, drop instantly.
+		}
+		else
+		{
+			mobj->movefactor = 0;
+		}
 
 		// Sryder 2018-12-7: Grabbed this from the old MT_BOSS3WAYPOINT section so they'll be in the waypointcap instead
 		P_SetTarget(&mobj->tracer, waypointcap);

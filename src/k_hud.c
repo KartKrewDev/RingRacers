@@ -5106,7 +5106,7 @@ void K_drawKartFreePlay(void)
 	if (((leveltime-lt_endtime) % TICRATE) < TICRATE/2)
 		return;
 
-	INT32 h_snap = (r_splitscreen < 2 || R_GetViewNumber() & 1) ? V_SNAPTORIGHT : V_SNAPTOLEFT;
+	INT32 h_snap = r_splitscreen < 2 ? V_SNAPTORIGHT | V_SLIDEIN : V_HUDTRANS;
 	fixed_t x = ((r_splitscreen > 1 ? BASEVIDWIDTH/4 : BASEVIDWIDTH - (LAPS_X+6)) * FRACUNIT);
 	fixed_t y = ((r_splitscreen ? BASEVIDHEIGHT/2 : BASEVIDHEIGHT) - 20) * FRACUNIT;
 
@@ -5114,7 +5114,7 @@ void K_drawKartFreePlay(void)
 		FRACUNIT,
 		FRACUNIT,
 		FRACUNIT,
-		V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|h_snap|V_SPLITSCREEN,
+		V_SNAPTOBOTTOM|h_snap|V_SPLITSCREEN,
 		KART_FONT,
 		"FREE PLAY"
 	) / (r_splitscreen > 1 ? 2 : 1);
@@ -5125,7 +5125,7 @@ void K_drawKartFreePlay(void)
 		FRACUNIT,
 		FRACUNIT,
 		FRACUNIT,
-		V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|h_snap|V_SPLITSCREEN,
+		V_SNAPTOBOTTOM|h_snap|V_SPLITSCREEN,
 		NULL,
 		KART_FONT,
 		"FREE PLAY"
@@ -5244,11 +5244,12 @@ static void K_DrawWaypointDebugger(void)
 
 	if (netgame)
 	{
-		V_DrawString(8, 146, 0, va("Online griefing: [%u, %u]", stplyr->griefValue/TICRATE, stplyr->griefStrikes));
+		V_DrawString(8, 136, 0, va("Online griefing: [%u, %u]", stplyr->griefValue/TICRATE, stplyr->griefStrikes));
 	}
 
-	V_DrawString(8, 156, 0, va("Current Waypoint ID: %d", K_GetWaypointID(stplyr->currentwaypoint)));
-	V_DrawString(8, 166, 0, va("Next Waypoint ID: %d%s", K_GetWaypointID(stplyr->nextwaypoint), ((stplyr->pflags & PF_WRONGWAY) ? " (WRONG WAY)" : "")));
+	V_DrawString(8, 146, 0, va("Current Waypoint ID: %d", K_GetWaypointID(stplyr->currentwaypoint)));
+	V_DrawString(8, 156, 0, va("Next Waypoint ID: %d%s", K_GetWaypointID(stplyr->nextwaypoint), ((stplyr->pflags & PF_WRONGWAY) ? " (WRONG WAY)" : "")));
+	V_DrawString(8, 166, 0, va("Respawn Waypoint ID: %d", K_GetWaypointID(stplyr->respawn.wp)));
 	V_DrawString(8, 176, 0, va("Finishline Distance: %d", stplyr->distancetofinish));
 
 	if (numcheatchecks > 0)

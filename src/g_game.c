@@ -1201,8 +1201,11 @@ void G_StartTitleCard(void)
 		return;
 	}
 
+	// start the title card
+	WipeStageTitle = (gamestate == GS_LEVEL);
+
 	// play the sound
-	if (gamestate != GS_CEREMONY)
+	if (WipeStageTitle)
 	{
 		sfxenum_t kstart = sfx_kstart;
 		if (K_CheckBossIntro() == true)
@@ -1211,9 +1214,6 @@ void G_StartTitleCard(void)
 			kstart = sfx_ruby2;
 		S_StartSound(NULL, kstart);
 	}
-
-	// start the title card
-	WipeStageTitle = (gamestate == GS_LEVEL);
 }
 
 //
