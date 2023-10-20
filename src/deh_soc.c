@@ -2997,7 +2997,6 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 				case 'C': { re = GRADE_C; break; }
 				case 'B': { re = GRADE_B; break; }
 				case 'A': { re = GRADE_A; break; }
-				case 'S': { re = GRADE_S; break; }
 				default: { break; }
 			}
 		}

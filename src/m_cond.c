@@ -2465,11 +2465,10 @@ static const char *M_GetConditionString(condition_t *cn)
 				case GRADE_C: { gradeletter = 'C'; break; }
 				case GRADE_B: { gradeletter = 'B'; break; }
 				case GRADE_A: { gradeletter = 'A'; break; }
-				case GRADE_S: { gradeletter = 'S'; break; }
 				default: { break; }
 			}
 
-			if (cn->requirement < GRADE_S)
+			if (cn->requirement < GRADE_A)
 				orbetter = " or better";
 
 			return va("get grade %c%s",
