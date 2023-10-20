@@ -1977,9 +1977,10 @@ static const char *M_GetConditionString(condition_t *cn)
 			return va("collect %u Rings", cn->requirement);
 
 		case UC_TOTALTUMBLETIME:
-			return va("tumble through the air for %i:%02i",
+			return va("tumble through the air for %i:%02i.%02i",
 				G_TicsToMinutes(cn->requirement, true),
-				G_TicsToSeconds(cn->requirement));
+				G_TicsToSeconds(cn->requirement),
+				G_TicsToCentiseconds(cn->requirement));
 
 		case UC_GAMECLEAR: // Requires game beaten >= x times
 			if (cn->requirement > 1)
