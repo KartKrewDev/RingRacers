@@ -1047,6 +1047,68 @@ static void M_PrecacheLevelLocks(void)
 						}
 
 						mapheaderinfo[map]->cache_muslock[j - 1] = i;
+
+						const char *tempstr = NULL;
+						UINT8 positionid = 0;
+
+						if (mapheaderinfo[map]->cup)
+						{
+							for (positionid = 0; positionid < CUPCACHE_PODIUM; positionid++)
+							{
+								if (mapheaderinfo[map]->cup->cachedlevels[positionid] != map)
+									continue;
+								break;
+							}
+
+							if (positionid < CUPCACHE_PODIUM)
+							{
+								char prefix = 'R';
+								if (positionid >= CUPCACHE_BONUS)
+								{
+									positionid -= (CUPCACHE_BONUS);
+									prefix = 'B';
+								}
+
+								tempstr = va(
+									"Music: %s Cup %c%u #%u",
+									mapheaderinfo[map]->cup->realname,
+									prefix,
+									positionid + 1,
+									j
+								);
+							}
+						}
+
+						if (tempstr == NULL)
+						{
+							UINT16 mapcheck;
+							for (mapcheck = 0; mapcheck < map; mapcheck++)
+							{
+								if (!mapheaderinfo[mapcheck] || mapheaderinfo[mapcheck]->cup != NULL)
+									continue;
+								if (mapheaderinfo[mapcheck]->menuflags & (LF2_HIDEINSTATS|LF2_HIDEINMENU))
+									continue;
+								if (((mapheaderinfo[mapcheck]->typeoflevel & TOL_TUTORIAL) == TOL_TUTORIAL)
+									!= ((mapheaderinfo[map]->typeoflevel & TOL_TUTORIAL) == TOL_TUTORIAL))
+									continue;
+
+								// We don't check for locked, because the levels exist
+								positionid++;
+							}
+
+							tempstr = va(
+								"Music: %s #%u #%u",
+								(mapheaderinfo[map]->typeoflevel & TOL_TUTORIAL) ? "Tutorial" : "Lost and Found",
+								positionid + 1,
+								j
+							);
+						}
+
+						if (tempstr != NULL)
+						{
+							strlcpy(unlockables[i].name, tempstr, sizeof (unlockables[i].name));
+						}
+
 						break;
 					}
 					if (j == mapheaderinfo[map]->musname_size)
