@@ -112,7 +112,11 @@ void K_DoFault(player_t *player)
 		player->mo->renderflags |= RF_DONTDRAW;
 		player->mo->flags |= MF_NOCLIPTHING;
 
-		player->roundconditions.faulted = true;
+		if (player->roundconditions.faulted == false)
+		{
+			player->roundconditions.faulted = true;
+			player->roundconditions.checkthisframe = true;
+		}
 	}
 }
 
