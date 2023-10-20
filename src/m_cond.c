@@ -2695,13 +2695,20 @@ char *M_BuildConditionSetString(UINT16 unlockid)
 			break;
 		}
 
-		// If we didn't find a prefix, just start from the first character again.
-		if (!message[i])
-			i = 0;
-
-		// Okay, now make the first non-whitespace character after the prefix a capital.
+		// Okay, now make the first non-whitespace character after this a capital.
 		// Doesn't matter if !isalpha() - toupper is a no-op.
+		// (If the first loop hit the string's end, the message[i] check keeps us safe)
 		for (; message[i]; i++)
+		{
+			if ((message[i] & 0x80) || isspace(message[i]))
+				continue;
+			message[i] = toupper(message[i]);
+			break;
+		}
+
+		// Also do this for the prefix.
+		// This might seem redundant, but "the Controls Tutorial:" is a possible prefix!
+		for (i = 0; message[i]; i++)
 		{
 			if ((message[i] & 0x80) || isspace(message[i]))
 				continue;
