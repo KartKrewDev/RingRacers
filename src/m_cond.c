@@ -1499,9 +1499,13 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			if (grandprixinfo.gp == false || K_PodiumRanking() == false)
 				return false;
 			if (grandprixinfo.cup == NULL
-				|| grandprixinfo.cup->id != cn->requirement)
+				|| (
+					cn->requirement != -1 // Any
+					&& grandprixinfo.cup->id != cn->requirement
+				)
+			)
 				return false;
-			if (cn->extrainfo2)
+			if (cn->extrainfo2 != 0)
 				return (K_PodiumGrade() >= (unsigned)cn->requirement);
 			if (cn->extrainfo1 != 0)
 				return (player->position != 0
@@ -2371,6 +2375,13 @@ static const char *M_GetConditionString(condition_t *cn)
 				else if (cn->extrainfo1 == 3)
 					completetype = "get Bronze";
 				orbetter = " or better in";
+			}
+
+			if (cn->requirement == -1)
+			{
+				return va("%s%s any Cup",
+					completetype, orbetter
+				);
 			}
 
 			for (cup = kartcupheaders; cup; cup = cup->next)

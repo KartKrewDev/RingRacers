@@ -2881,6 +2881,9 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 	{
 		PARAMCHECK(1);
 		ty = UCRP_PODIUMCUP;
+	
+		re = -1;
+		if (!fastcmp(params[1], "ANY"))
 		{
 			cupheader_t *cup = kartcupheaders;
 			UINT32 hash = quickncasehash(params[1], MAXCUPNAME);
