@@ -2500,7 +2500,7 @@ static const char *M_GetConditionString(condition_t *cn)
 		case UCRP_SPEEDOMETER:
 			return va("reach %s%u%% on the speedometer",
 				(cn->requirement == 999)
-					? "" : "at least",
+					? "" : "at least ",
 				cn->requirement
 			);
 		case UCRP_DRAFTDURATION:
