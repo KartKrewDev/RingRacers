@@ -1036,6 +1036,8 @@ static void M_PrecacheLevelLocks(void)
 			case SECRET_ALTMUSIC:
 			{
 				UINT16 map = M_UnlockableMapNum(&unlockables[i]);
+				const char *tempstr = NULL;
+
 				if (map < nummapheaders
 					&& mapheaderinfo[map])
 				{
@@ -1048,7 +1050,6 @@ static void M_PrecacheLevelLocks(void)
 
 						mapheaderinfo[map]->cache_muslock[j - 1] = i;
 
-						const char *tempstr = NULL;
 						UINT8 positionid = 0;
 
 						if (mapheaderinfo[map]->cup)
@@ -1070,11 +1071,11 @@ static void M_PrecacheLevelLocks(void)
 								}
 
 								tempstr = va(
-									"Music: %s Cup %c%u #%u",
+									"Music: %s Cup %c%u %c",
 									mapheaderinfo[map]->cup->realname,
 									prefix,
 									positionid + 1,
-									j
+									'A' + j // :D ?
 								);
 							}
 						}
@@ -1097,16 +1098,11 @@ static void M_PrecacheLevelLocks(void)
 							}
 
 							tempstr = va(
-								"Music: %s #%u #%u",
+								"Music: %s #%u %c",
 								(mapheaderinfo[map]->typeoflevel & TOL_TUTORIAL) ? "Tutorial" : "Lost and Found",
 								positionid + 1,
-								j
+								'A' + j // :D ?
 							);
-						}
-
-						if (tempstr != NULL)
-						{
-							strlcpy(unlockables[i].name, tempstr, sizeof (unlockables[i].name));
 						}
 
 						break;
@@ -1114,6 +1110,12 @@ static void M_PrecacheLevelLocks(void)
 					if (j == mapheaderinfo[map]->musname_size)
 						CONS_Alert(CONS_ERROR, "Unlockable %u: Too many SECRET_ALTMUSICs associated with Level %s\n", i, mapheaderinfo[map]->lumpname);
 				}
+
+				if (tempstr == NULL)
+					tempstr = va("INVALID MUSIC UNLOCK %u", i);
+
+				strlcpy(unlockables[i].name, tempstr, sizeof (unlockables[i].name));
+
 				break;
 			}
 
