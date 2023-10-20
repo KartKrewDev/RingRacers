@@ -2973,6 +2973,32 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 			return;
 		}
 	}
+	else if (fastcmp(params[0], "FINISHGRADE"))
+	{
+		PARAMCHECK(1);
+		ty = UCRP_FINISHGRADE;
+
+		re = -1;
+		if (!params[1][1])
+		{
+			switch (params[1][0])
+			{
+				case 'E': { re = GRADE_E; break; }
+				case 'D': { re = GRADE_D; break; }
+				case 'C': { re = GRADE_C; break; }
+				case 'B': { re = GRADE_B; break; }
+				case 'A': { re = GRADE_A; break; }
+				case 'S': { re = GRADE_S; break; }
+				default: { break; }
+			}
+		}
+
+		if (re == -1)
+		{
+			deh_warning("Invalid grade %s for condition ID %d", params[1], id+1);
+				return;
+		}
+	}
 	else if ((offset=0) || fastcmp(params[0], "FINISHTIME")
 	||        (++offset && fastcmp(params[0], "FINISHTIMEEXACT"))
 	||        (++offset && fastcmp(params[0], "FINISHTIMELEFT")))

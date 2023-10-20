@@ -800,6 +800,9 @@ void level_tally_t::Tick(void)
 					transition = 0;
 					transitionTime = TICRATE/7;
 					delay = TICRATE/2;
+
+					// for UCRP_FINISHGRADE
+					owner->roundconditions.checkthisframe = true;
 				}
 				else
 				{

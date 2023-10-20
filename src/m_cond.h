@@ -110,6 +110,8 @@ typedef enum
 	UCRP_FINISHPLACE, // Finish at least [place]
 	UCRP_FINISHPLACEEXACT, // Finish at [place] exactly
 
+	UCRP_FINISHGRADE, // Finish with at least grade [grade]
+
 	UCRP_FINISHTIME, // Finish <= [time, tics]
 	UCRP_FINISHTIMEEXACT, // Finish == [time, tics]
 	UCRP_FINISHTIMELEFT, // Finish with at least [time, tics] to spare

@@ -1623,6 +1623,14 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 				&& !(player->pflags & PF_NOCONTEST)
 				&& M_NotFreePlay()
 				&& player->position == cn->requirement);
+		case UCRP_FINISHGRADE:
+			return (player->exiting
+				&& !(player->pflags & PF_NOCONTEST)
+				&& M_NotFreePlay()
+				&& (player->tally.active == true)
+				&& (player->tally.state >= TALLY_ST_GRADE_APPEAR)
+				&& (player->tally.state < TALLY_ST_DONE)
+				&& (player->tally.rank >= cn->requirement));
 		case UCRP_FINISHTIME:
 			return (player->exiting
 				&& !(player->pflags & PF_NOCONTEST)
@@ -2446,6 +2454,29 @@ static const char *M_GetConditionString(condition_t *cn)
 			return va("finish in %d%s%s", cn->requirement, M_GetNthType(cn->requirement),
 				((cn->type == UCRP_FINISHPLACE && cn->requirement > 1)
 					? " or better" : ""));
+		case UCRP_FINISHGRADE:
+		{
+			char gradeletter = '?';
+			const char *orbetter = "";
+
+			switch (cn->requirement)
+			{
+				case GRADE_E: { gradeletter = 'E'; break; }
+				case GRADE_D: { gradeletter = 'D'; break; }
+				case GRADE_C: { gradeletter = 'C'; break; }
+				case GRADE_B: { gradeletter = 'B'; break; }
+				case GRADE_A: { gradeletter = 'A'; break; }
+				case GRADE_S: { gradeletter = 'S'; break; }
+				default: { break; }
+			}
+
+			if (cn->requirement < GRADE_S)
+				orbetter = " or better";
+
+			return va("get grade %c%s",
+				gradeletter, orbetter
+			);
+		}
 		case UCRP_FINISHTIME:
 			return va("finish in %i:%02i.%02i",
 				G_TicsToMinutes(cn->requirement, true),
