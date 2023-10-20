@@ -1737,7 +1737,7 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 
 				// Check the highest relevant byte for all necessary bits.
 				// We only do this if an == 0xFF/0xFE check wouldn't satisfy.
-				if (requiredbit != 7)
+				if (requiredbit != (1<<7))
 				{
 					// Last bit MAYBE not needed, POSITION doesn't count.
 					const UINT8 finalbit = (requiredlap == 0) ? 1 : 0;
@@ -1765,7 +1765,7 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 				return (player->roundconditions.hittrackhazard[0] == 0xFE);
 			}
 
-			return (!(player->roundconditions.hittrackhazard[requiredlap] & requiredbit) != (cn->requirement == 1));
+			return (((player->roundconditions.hittrackhazard[requiredlap] & requiredbit) == requiredbit) == (cn->requirement == 1));
 		}
 
 		case UCRP_TARGETATTACKMETHOD:
