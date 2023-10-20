@@ -2377,7 +2377,7 @@ static const char *M_GetConditionString(condition_t *cn)
 			{
 				if (cup->id != cn->requirement)
 					continue;
-				return va("%s%s %s CUP",
+				return va("%s%s %s Cup",
 					completetype, orbetter,
 					(M_CupLocked(cup) ? "???" : cup->realname)
 				);
