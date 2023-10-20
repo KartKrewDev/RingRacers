@@ -208,7 +208,6 @@ void G_SetPlayerGamepadIndicatorToPlayerColor(INT32 player)
 {
 	INT32 device;
 	UINT16 skincolor;
-	UINT8 *colormap;
 	byteColor_t byte_color;
 
 	I_Assert(player >= 0 && player < MAXSPLITSCREENPLAYERS);
@@ -229,16 +228,7 @@ void G_SetPlayerGamepadIndicatorToPlayerColor(INT32 player)
 		skincolor = skins[skin].prefcolor;
 	}
 
-	// We use TC_DEFAULT here rather than player skin because...
-	colormap = R_GetTranslationColormap(TC_DEFAULT, skincolor, GTC_MENUCACHE);
-
-	if (colormap == NULL)
-	{
-		return;
-	}
-
-	// ...we're grabbing the same index as a reference point across remaps!
-	byte_color = V_GetColor(colormap[104]).s;
+	byte_color = V_GetColor(skincolors[skincolor].ramp[8]).s;
 
 	I_SetGamepadIndicatorColor(device, byte_color.red, byte_color.green, byte_color.blue);
 }
