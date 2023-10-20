@@ -167,7 +167,7 @@ static UINT8 cheatf_devmode(void)
 
 static cheatseq_t cheat_warp = {
 	NULL, cheatf_warp,
-	(UINT8[]){ SCRAMBLE('p'), SCRAMBLE('l'), SCRAMBLE('a'), SCRAMBLE('c'), SCRAMBLE('e'), SCRAMBLE('h'), SCRAMBLE('o'), SCRAMBLE('l'), SCRAMBLE('d'), SCRAMBLE('e'), SCRAMBLE('r'), 0xff }
+	(UINT8[]){ SCRAMBLE('c'), SCRAMBLE('h'), SCRAMBLE('a'), SCRAMBLE('o'), SCRAMBLE('s'), SCRAMBLE(' '), SCRAMBLE('z'), SCRAMBLE('e'), SCRAMBLE('r'), SCRAMBLE('o'), SCRAMBLE(' '), SCRAMBLE('6'), SCRAMBLE('4'), 0xff }
 };
 
 static cheatseq_t cheat_wrongwarp = {
@@ -263,7 +263,7 @@ boolean cht_Interpret(const char *password)
 		cheatseqid = 0;
 		while (cheatseqlist[cheatseqid])
 		{
-			ret += cht_CheckCheat(cheatseqlist[cheatseqid], *password, (password == endofpassword));
+			ret += cht_CheckCheat(cheatseqlist[cheatseqid], tolower(*password), (password == endofpassword));
 			cheatseqid++;
 		}
 
