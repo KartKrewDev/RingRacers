@@ -1351,7 +1351,7 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 
 		case UC_UNLOCKPERCENT:
 		{
-			UINT16 i, unlocked = 0, total = 0;
+			UINT16 i, unlocked = cn->extrainfo2, total = 0;
 
 			// Special case for maps
 			if (cn->extrainfo1 == SECRET_MAP)
@@ -1396,8 +1396,6 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 
 					unlocked++;
 				}
-
-				unlocked++; // Try to account for this one too
 			}
 			else
 			{

@@ -2765,7 +2765,16 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 				deh_warning("Condition challenge type \"%s\" invalid for condition ID %d", params[2], id+1);
 				return;
 			}
+
+			x2 = 0;
+			if (params[3])
+			{
+				// fudge value
+				x2 = atoi(params[3]);
+			}
 		}
+		else
+			x2 = 1; // guaranteed fudge for raw Unlockables count
 	}
 	else if ((offset=0) || fastcmp(params[0], "ADDON")
 	||        (++offset && fastcmp(params[0], "CREDITS"))
