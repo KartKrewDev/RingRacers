@@ -2430,7 +2430,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 		case DMG_DEATHPIT:
 			// Fell off the stage
 			if (player->roundconditions.fell_off == false
-				&& beforeexit == false)
+				&& beforeexit == true)
 			{
 				player->roundconditions.fell_off = true;
 				player->roundconditions.checkthisframe = true;
