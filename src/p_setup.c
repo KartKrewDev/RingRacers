@@ -947,6 +947,8 @@ static void P_InitializeSector(sector_t *ss)
 	ss->spawn_lightlevel = ss->lightlevel;
 
 	ss->spawn_extra_colormap = NULL;
+
+	memset(&ss->botController, 0, sizeof(ss->botController));
 }
 
 static void P_LoadSectors(UINT8 *data)
