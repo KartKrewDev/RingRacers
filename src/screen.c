@@ -577,6 +577,7 @@ void SCR_DisplayLocalPing(void)
 	}
 
 	UINT32 ping = playerpingtable[consoleplayer];
+	UINT32 pl = playerpacketlosstable[consoleplayer];
 
 	if (cv_showping.value == 2 && ping <= servermaxping) // only show 2 (warning) if our ping is at a bad level
 	{
@@ -586,7 +587,7 @@ void SCR_DisplayLocalPing(void)
 	INT32 dispy = cv_ticrate.value ? 170 : 181;
 	boolean offline = (consoleplayer == serverplayer);
 
-	HU_drawPing(307 * FRACUNIT, dispy * FRACUNIT, ping, V_SNAPTORIGHT | V_SNAPTOBOTTOM, offline, 0);
+	HU_drawPing(307 * FRACUNIT, dispy * FRACUNIT, ping, pl, V_SNAPTORIGHT | V_SNAPTOBOTTOM, offline, 0);
 }
 
 

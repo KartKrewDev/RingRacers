@@ -156,7 +156,7 @@ void HU_TickSongCredits(void);
 char HU_dequeueChatChar(void);
 void HU_Erase(void);
 void HU_clearChatChars(void);
-void HU_drawPing(fixed_t x, fixed_t y, UINT32 ping, INT32 flags, boolean offline, SINT8 toside); // Lat': Ping drawer for scoreboard.
+void HU_drawPing(fixed_t x, fixed_t y, UINT32 ping, UINT32 packetloss, INT32 flags, boolean offline, SINT8 toside); // Lat': Ping drawer for scoreboard.
 void HU_drawMiniPing(INT32 x, INT32 y, UINT32 ping, INT32 flags);
 
 // CECHO interface.

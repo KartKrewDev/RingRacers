@@ -22,6 +22,8 @@
 extern "C" {
 #endif
 
+#include "doomdef.h"
+
 // Max computers in a game
 // 127 is probably as high as this can go, because
 // SINT8 is used for nodes sometimes >:(
@@ -39,6 +41,9 @@ extern INT32 packetheaderlength;
 boolean Net_GetNetStat(void);
 extern INT32 getbytes;
 extern INT64 sendbytes; // Realtime updated
+
+#define PACKETMEASUREWINDOW (TICRATE*2)
+extern boolean packetloss[MAXPLAYERS][PACKETMEASUREWINDOW];
 
 extern SINT8 nodetoplayer[MAXNETNODES];
 extern SINT8 nodetoplayer2[MAXNETNODES]; // Say the numplayer for this node if any (splitscreen)
