@@ -2054,6 +2054,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	INT32 kickstartaccel;
 	INT32 checkpointId;
 	boolean enteredGame;
+	UINT8 lastsafelap;
 
 	roundconditions_t roundconditions;
 	boolean saveroundconditions;
@@ -2161,6 +2162,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		exiting = 0;
 		khudfinish = 0;
 		cheatchecknum = 0;
+		lastsafelap = 0;
 
 		saveroundconditions = false;
 		tallyactive = false;
@@ -2206,6 +2208,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 		memcpy(&roundconditions, &players[player].roundconditions, sizeof (roundconditions));
 		saveroundconditions = true;
+
+		lastsafelap = players[player].lastsafelap;
 
 		tallyactive = players[player].tally.active;
 		if (tallyactive)
@@ -2275,6 +2279,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->spectator = spectator;
 	p->steering = steering;
 	p->angleturn = playerangleturn;
+	p->lastsafelap = lastsafelap;
 
 	// save player config truth reborn
 	p->skincolor = skincolor;
