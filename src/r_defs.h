@@ -32,6 +32,8 @@
 
 #include "k_mapuser.h"
 
+#include "k_bot.h" // botcontroller_t
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -331,6 +333,14 @@ struct pslope_t
 #endif
 };
 
+// Per-sector bot controller override
+struct botcontroller_t
+{
+	UINT8 trick;
+	UINT32 flags;
+	angle_t forceAngle;
+};
+
 typedef enum
 {
 	// flipspecial - planes with effect
@@ -551,6 +561,9 @@ struct sector_t
 
 	// colormap structure
 	extracolormap_t *spawn_extra_colormap;
+
+	// Ring Racers bots
+	botcontroller_t botController;
 
 	// Action specials
 	INT16 action;

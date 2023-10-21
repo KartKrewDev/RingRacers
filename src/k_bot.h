@@ -13,6 +13,7 @@
 #ifndef __K_BOT__
 #define __K_BOT__
 
+#include "typedef.h"
 #include "k_waypoint.h"
 #include "d_player.h"
 #include "r_defs.h"
@@ -83,6 +84,22 @@ boolean K_PlayerUsesBotMovement(player_t *player);
 --------------------------------------------------*/
 
 boolean K_BotCanTakeCut(player_t *player);
+
+
+/*--------------------------------------------------
+	botcontroller_t *K_GetBotController(mobj_t *mobj)
+
+		Retrieves the current bot controller values from
+		the player's current sector.
+
+	Input Arguments:-
+		mobj - The player's object to get the bot controller for.
+
+	Return:-
+		Pointer to the sector's bot controller struct.
+--------------------------------------------------*/
+
+botcontroller_t *K_GetBotController(mobj_t *mobj);
 
 
 /*--------------------------------------------------

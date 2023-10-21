@@ -182,6 +182,7 @@ TYPEDEF (weakspot_t);
 
 // k_bot.h
 TYPEDEF (botprediction_t);
+TYPEDEF (botcontroller_t);
 
 // k_brightmap.h
 TYPEDEF (brightmapStorage_t);

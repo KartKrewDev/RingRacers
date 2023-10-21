@@ -1380,7 +1380,8 @@ boolean P_CanActivateSpecial(INT16 special)
 	{
 		case 2001: // Finish line
 		case 2003: // Respawn line
-		case 2005: // Dismount Flying Object	(always true here so that conditions are only kept on execution)
+		case 2004: // Bot controller
+		case 2005: // Dismount Flying Object
 		{
 			return true;
 		}
@@ -2471,6 +2472,20 @@ mobj_t* P_FindObjectTypeFromTag(mobjtype_t type, mtag_t tag)
 			return NULL;
 
 		return P_GetObjectTypeInSectorNum(type, secnum);
+	}
+}
+
+static void K_UpdateBotControllers(INT32 *args)
+{
+	INT32 secnum;
+
+	TAG_ITER_SECTORS(args[0], secnum)
+	{
+		sector_t *const sec = sectors + secnum;
+
+		sec->botController.trick = args[1];
+		sec->botController.flags = args[2];
+		sec->botController.forceAngle = FixedAngle(args[3] * FRACUNIT);
 	}
 }
 
@@ -4418,8 +4433,8 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 
 			if ((gametyperules & GTR_CIRCUIT) && (mo->player->exiting == 0) && !(mo->player->pflags & PF_HITFINISHLINE))
 			{
-				if (((line->args[0] & TMCFF_FLIP) && (side == 0))
-					|| (!(line->args[0] & TMCFF_FLIP) && (side == 1))) // crossed from behind to infront
+				if (((args[0] & TMCFF_FLIP) && (side == 0))
+					|| (!(args[0] & TMCFF_FLIP) && (side == 1))) // crossed from behind to infront
 				{
 					K_HandleLapIncrement(mo->player);
 
@@ -4446,13 +4461,19 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 			if
 				(
 						mo->player->respawn.state == RESPAWNST_NONE &&
-						(!(line->args[0] & TMCRF_FRONTONLY) || side == 0)
+						(!(args[0] & TMCRF_FRONTONLY) || side == 0)
 				)
 			{
 				P_DamageMobj(mo, NULL, NULL, 1, DMG_DEATHPIT);
 			}
 		}
 		break;
+
+		case 2004: // Bot Controller.
+		{
+			K_UpdateBotControllers(args);
+			break;
+		}
 
 		case 2005: // Dismount Flying object
 			// the rideroid is a bit complex so it's the one controlling the player rather than the player controlling it.
@@ -7639,6 +7660,10 @@ void P_SpawnSpecials(boolean fromnetsave)
 					}
 					sectors[s].extra_colormap = sectors[s].spawn_extra_colormap = exc;
 				}
+				break;
+
+			case 2004: // Bot Controller.
+				K_UpdateBotControllers(lines[i].args);
 				break;
 
 			default:
