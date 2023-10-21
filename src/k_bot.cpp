@@ -379,12 +379,14 @@ static fixed_t K_BotSpeedScaled(player_t *player, fixed_t speed)
 }
 
 /*--------------------------------------------------
-	botcontroller_t *K_GetBotController(mobj_t *mobj)
+	const botcontroller_t *K_GetBotController(mobj_t *mobj)
 
 		See header file for description.
 --------------------------------------------------*/
-botcontroller_t *K_GetBotController(mobj_t *mobj)
+const botcontroller_t *K_GetBotController(mobj_t *mobj)
 {
+	botcontroller_t *ret = nullptr;
+
 	if (P_MobjWasRemoved(mobj) == true)
 	{
 		return nullptr;
@@ -395,7 +397,32 @@ botcontroller_t *K_GetBotController(mobj_t *mobj)
 		return nullptr;
 	}
 
-	return &mobj->subsector->sector->botController;
+	ret = &mobj->subsector->sector->botController;
+
+	ffloor_t *rover = nullptr;
+	for (rover = mobj->subsector->sector->ffloors; rover; rover = rover->next)
+	{
+		if ((rover->fofflags & FOF_EXISTS) == 0)
+		{
+			continue;
+		}
+
+		fixed_t topheight = P_GetFOFTopZ(mobj, mobj->subsector->sector, rover, mobj->x, mobj->y, nullptr);
+		fixed_t bottomheight = P_GetFOFBottomZ(mobj, mobj->subsector->sector, rover, mobj->x, mobj->y, nullptr);
+
+		if (mobj->z > topheight || mobj->z + mobj->height < bottomheight)
+		{
+			continue;
+		}
+
+		botcontroller_t *roverController = &rover->master->frontsector->botController;
+		if (roverController->trick != 0 || roverController->flags != 0)
+		{
+			ret = roverController;
+		}
+	}
+
+	return ret;
 }
 
 /*--------------------------------------------------
@@ -1531,14 +1558,17 @@ static void K_BuildBotTiccmdNormal(player_t *player, ticcmd_t *cmd)
 
 	if (P_IsObjectOnGround(player->mo) == false)
 	{
-		if (botController != nullptr && (botController->flags & TMBOT_FASTFALL) == TMBOT_FASTFALL)
+		if (player->fastfall == 0)
 		{
-			// Fast fall!
-			cmd->buttons |= BT_EBRAKEMASK;
-			return;
+			if (botController != nullptr && (botController->flags & TMBOT_FASTFALL) == TMBOT_FASTFALL)
+			{
+				// Fast fall!
+				cmd->buttons |= BT_EBRAKEMASK;
+				return;
+			}
 		}
 
-		return;
+		//return; // Don't allow bots to turn in the air.
 	}
 
 	if (leveltime <= starttime && finishBeamLine != nullptr)
