@@ -1195,6 +1195,25 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	// Spray Can
 	"S_SPRAYCAN",
 
+	// Ancient Shrine
+	"S_ANCIENTSHRINE",
+
+	"S_MORB1",
+	"S_MORB2",
+	"S_MORB3",
+	"S_MORB4",
+	"S_MORB5",
+	"S_MORB6",
+	"S_MORB7",
+	"S_MORB8",
+	"S_MORB9",
+	"S_MORB10",
+	"S_MORB11",
+	"S_MORB12",
+	"S_MORB13",
+	"S_MORB14",
+	"S_MORB15",
+
 	// Chaos Emeralds
 	"S_CHAOSEMERALD1",
 	"S_CHAOSEMERALD2",
@@ -1215,10 +1234,8 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 
 	"S_EMERALDFLARE1",
 
-	// Emerald hunt shards
-	"S_SHRD1",
-	"S_SHRD2",
-	"S_SHRD3",
+	// Prison Egg Drops
+	"S_PRISONEGGDROP_CD",
 
 	// Bubble Source
 	"S_BUBBLES1",
@@ -4845,11 +4862,11 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_BLUEFLAG", // Blue CTF Flag
 	"MT_EMBLEM",
 	"MT_SPRAYCAN",
+	"MT_ANCIENTSHRINE",
 	"MT_EMERALD",
 	"MT_EMERALDSPARK",
 	"MT_EMERALDFLARE",
-	"MT_EMERHUNT", // Emerald Hunt
-	"MT_EMERALDSPAWN", // Emerald spawner w/ delay
+	"MT_PRISONEGGDROP",
 
 	// Springs and others
 	"MT_FAN",

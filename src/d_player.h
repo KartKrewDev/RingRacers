@@ -39,6 +39,10 @@
 extern "C" {
 #endif
 
+// Maximum laps per map.
+// (done here as p_local.h, the previous host, has this as a dependency - but we must use it here)
+#define MAX_LAPS 99
+
 // Extra abilities/settings for skins (combinable stuff)
 typedef enum
 {
@@ -383,6 +387,19 @@ struct botvars_t
 
 // player_t struct for round-specific condition tracking
 
+typedef enum
+{
+	UFOD_GENERIC	= 1, 
+	UFOD_BOOST		= 1<<1,
+	UFOD_WHIP		= 1<<2,
+	UFOD_BANANA		= 1<<3,
+	UFOD_ORBINAUT	= 1<<4,
+	UFOD_JAWZ		= 1<<5,
+	UFOD_SPB		= 1<<6,
+	UFOD_GACHABOM	= 1<<7,
+	// free up to and including 1<<31
+} targetdamaging_t;
+
 struct roundconditions_t
 {
 	// Reduce the number of checks by only updating when this is true
@@ -393,10 +410,31 @@ struct roundconditions_t
 	boolean touched_offroad;
 	boolean touched_sneakerpanel;
 	boolean debt_rings;
+	boolean faulted;
+
+	// Basically the same, but it's a specific event where no is an easy default
 	boolean tripwire_hyuu;
+	boolean whip_hyuu;
 	boolean spb_neuter;
 	boolean landmine_dunk;
 	boolean hit_midair;
+	boolean hit_drafter_lookback;
+	boolean giant_foe_shrunken_orbi;
+	boolean returntosender_mark;
+
+	UINT8 hittrackhazard[((MAX_LAPS+1)/8) + 1];
+
+	// Attack-based conditions
+	targetdamaging_t targetdamaging;
+	UINT8 gachabom_miser;
+
+	fixed_t maxspeed;
+
+	tic_t continuousdraft;
+	tic_t continuousdraft_best;
+
+	UINT8 consecutive_grow_lasers;
+	UINT8 best_consecutive_grow_lasers;
 
 	mobjeflag_t wet_player;
 

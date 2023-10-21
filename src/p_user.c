@@ -519,7 +519,9 @@ INT32 P_GivePlayerRings(player_t *player, INT32 num_rings)
 
 	player->rings += num_rings;
 
-	if (player->roundconditions.debt_rings == false && player->rings < 0)
+	if (player->roundconditions.debt_rings == false
+		&& !(player->exiting || (player->pflags & PF_NOCONTEST))
+		&& player->rings < 0)
 	{
 		player->roundconditions.debt_rings = true;
 		player->roundconditions.checkthisframe = true;
@@ -1919,6 +1921,19 @@ static void P_3dMovement(player_t *player)
 
 	// Calculates player's speed based on distance-of-a-line formula
 	player->speed = R_PointToDist2(0, 0, player->rmomx, player->rmomy);
+
+	const fixed_t topspeedometer = K_GetKartSpeed(player, false, true);
+
+	if (player->speed > topspeedometer)
+	{
+		const fixed_t convSpeed = (player->speed * 100) / topspeedometer;
+
+		if (convSpeed > player->roundconditions.maxspeed)
+		{
+			player->roundconditions.maxspeed = convSpeed;
+			//player->roundconditions.checkthisframe = true; -- no, safe to leave until lapchange at worst
+		}
+	}
 
 	// Monster Iestyn - 04-11-13
 	// Quadrants are stupid, excessive and broken, let's do this a much simpler way!

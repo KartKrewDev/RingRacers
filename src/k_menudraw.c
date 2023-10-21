@@ -231,6 +231,22 @@ void M_DrawMenuBackground(void)
 	}
 }
 
+UINT16 M_GetCvPlayerColor(UINT8 pnum)
+{
+	if (pnum >= MAXSPLITSCREENPLAYERS)
+		return SKINCOLOR_NONE;
+
+	UINT16 color = cv_playercolor[pnum].value;
+	if (color != SKINCOLOR_NONE)
+		return color;
+
+	INT32 skin = R_SkinAvailable(cv_skin[pnum].string);
+	if (skin == -1)
+		return SKINCOLOR_NONE;
+
+	return skins[skin].prefcolor;
+}
+
 static void M_DrawMenuParty(void)
 {
 	const INT32 PLATTER_WIDTH = 19;
@@ -253,6 +269,18 @@ static void M_DrawMenuParty(void)
 	x = 2;
 	y = BASEVIDHEIGHT - small->height - 2;
 
+	// Despite the work put into it, can't use M_GetCvPlayerColor directly - we need to reference skin always.
+	#define grab_skin_and_colormap(pnum) \
+	{ \
+		skin = R_SkinAvailable(cv_skin[pnum].string); \
+		color = cv_playercolor[pnum].value; \
+		if (skin == -1) \
+			skin = 0; \
+		if (color == SKINCOLOR_NONE) \
+			color = skins[skin].prefcolor; \
+		colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE); \
+	}
+
 	switch (setup_numplayers)
 	{
 		case 1:
@@ -260,9 +288,7 @@ static void M_DrawMenuParty(void)
 			x -= 8;
 			V_DrawScaledPatch(x, y, 0, small);
 
-			skin = R_SkinAvailable(cv_skin[0].string);
-			color = cv_playercolor[0].value;
-			colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+			grab_skin_and_colormap(0);
 
 			V_DrawMappedPatch(x + 22, y + 8, 0, faceprefix[skin][FACE_MINIMAP], colormap);
 			break;
@@ -273,15 +299,11 @@ static void M_DrawMenuParty(void)
 			V_DrawScaledPatch(x, y, 0, small);
 			V_DrawScaledPatch(x + PLATTER_OFFSET, y - PLATTER_STAGGER, 0, small);
 
-			skin = R_SkinAvailable(cv_skin[1].string);
-			color = cv_playercolor[1].value;
-			colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+			grab_skin_and_colormap(1);
 
 			V_DrawMappedPatch(x + PLATTER_OFFSET + 22, y - PLATTER_STAGGER + 8, 0, faceprefix[skin][FACE_MINIMAP], colormap);
 
-			skin = R_SkinAvailable(cv_skin[0].string);
-			color = cv_playercolor[0].value;
-			colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+			grab_skin_and_colormap(0);
 
 			V_DrawMappedPatch(x + 22, y + 8, 0, faceprefix[skin][FACE_MINIMAP], colormap);
 			break;
@@ -291,21 +313,15 @@ static void M_DrawMenuParty(void)
 			V_DrawScaledPatch(x, y, 0, large);
 			V_DrawScaledPatch(x + PLATTER_OFFSET, y - PLATTER_STAGGER, 0, small);
 
-			skin = R_SkinAvailable(cv_skin[1].string);
-			color = cv_playercolor[1].value;
-			colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+			grab_skin_and_colormap(1);
 
 			V_DrawMappedPatch(x + PLATTER_OFFSET + 22, y - PLATTER_STAGGER + 8, 0, faceprefix[skin][FACE_MINIMAP], colormap);
 
-			skin = R_SkinAvailable(cv_skin[0].string);
-			color = cv_playercolor[0].value;
-			colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+			grab_skin_and_colormap(0);
 
 			V_DrawMappedPatch(x + 12, y - 2, 0, faceprefix[skin][FACE_MINIMAP], colormap);
 
-			skin = R_SkinAvailable(cv_skin[2].string);
-			color = cv_playercolor[2].value;
-			colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+			grab_skin_and_colormap(2);
 
 			V_DrawMappedPatch(x + 22, y + 8, 0, faceprefix[skin][FACE_MINIMAP], colormap);
 			break;
@@ -315,27 +331,19 @@ static void M_DrawMenuParty(void)
 			V_DrawScaledPatch(x, y, 0, large);
 			V_DrawScaledPatch(x + PLATTER_OFFSET, y - PLATTER_STAGGER, 0, large);
 
-			skin = R_SkinAvailable(cv_skin[1].string);
-			color = cv_playercolor[1].value;
-			colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+			grab_skin_and_colormap(1);
 
 			V_DrawMappedPatch(x + PLATTER_OFFSET + 12, y - PLATTER_STAGGER - 2, 0, faceprefix[skin][FACE_MINIMAP], colormap);
 
-			skin = R_SkinAvailable(cv_skin[0].string);
-			color = cv_playercolor[0].value;
-			colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+			grab_skin_and_colormap(0);
 
 			V_DrawMappedPatch(x + 12, y - 2, 0, faceprefix[skin][FACE_MINIMAP], colormap);
 
-			skin = R_SkinAvailable(cv_skin[3].string);
-			color = cv_playercolor[3].value;
-			colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+			grab_skin_and_colormap(3);
 
 			V_DrawMappedPatch(x + PLATTER_OFFSET + 22, y - PLATTER_STAGGER + 8, 0, faceprefix[skin][FACE_MINIMAP], colormap);
 
-			skin = R_SkinAvailable(cv_skin[2].string);
-			color = cv_playercolor[2].value;
-			colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+			grab_skin_and_colormap(2);
 
 			V_DrawMappedPatch(x + 22, y + 8, 0, faceprefix[skin][FACE_MINIMAP], colormap);
 			break;
@@ -345,6 +353,8 @@ static void M_DrawMenuParty(void)
 			return;
 		}
 	}
+
+	#undef grab_skin_and_color
 
 	x += PLATTER_WIDTH;
 	y += small->height;
@@ -5261,7 +5271,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 
 	if (categoryside)
 	{
-		char categoryid = '8';
+		char categoryid = '0';
 		colormap = bgmap;
 		switch (ref->type)
 		{
@@ -5298,6 +5308,9 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 			case SECRET_SPECIALATTACK:
 			case SECRET_SPBATTACK:
 				categoryid = '7';
+				break;
+			case SECRET_ALTMUSIC:
+				categoryid = '9';
 				break;
 		}
 		pat = W_CachePatchName(va("UN_RR0%c%c",
@@ -5360,6 +5373,9 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 
 			case SECRET_MAP:
 				iconid = 14;
+				break;
+			case SECRET_ALTMUSIC:
+				iconid = 16;
 				break;
 
 			case SECRET_HARDSPEED:
@@ -5469,7 +5485,7 @@ drawborder:
 		buffer[7] = (skullAnimCounter/5) ? '2' : '1';
 		pat = W_CachePatchName(buffer, PU_CACHE);
 
-		colormap = R_GetTranslationColormap(TC_DEFAULT, cv_playercolor[0].value, GTC_MENUCACHE);
+		colormap = R_GetTranslationColormap(TC_DEFAULT, M_GetCvPlayerColor(0), GTC_MENUCACHE);
 
 		V_DrawFixedPatch(
 			x*FRACUNIT, y*FRACUNIT,
@@ -5555,7 +5571,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			addflags ^= V_FLIP; // This sprite is left/right flipped!
 		}
 
-		V_DrawFixedPatch(x*FRACUNIT, (y+6)*FRACUNIT, FRACUNIT, addflags, patch, NULL);
+		V_DrawFixedPatch(x*FRACUNIT, (y+2)*FRACUNIT, FRACUNIT, addflags, patch, NULL);
 		return;
 	}
 
@@ -5583,7 +5599,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 					break;
 				}
 
-				M_DrawCharacterIconAndEngine(4, BASEVIDHEIGHT-(4+16), i, colormap, (i == skin));
+				M_DrawCharacterIconAndEngine(4, BASEVIDHEIGHT-(4+16), i, colormap, (i != skin));
 			}
 			break;
 		}
@@ -5870,7 +5886,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 	}
 	else
 	{
-		colormap = R_GetTranslationColormap(TC_DEFAULT, cv_playercolor[0].value, GTC_MENUCACHE);
+		colormap = R_GetTranslationColormap(TC_DEFAULT, M_GetCvPlayerColor(0), GTC_MENUCACHE);
 		V_DrawFixedPatch((x+40)<<FRACBITS, ((y+25)<<FRACBITS),
 			FRACUNIT/2, 0,
 			W_CachePatchName("K_LAPE02", PU_CACHE),
@@ -5879,12 +5895,190 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 }
 
 #define challengesgridstep 22
-#define challengekeybarwidth 50
 
-void M_DrawChallenges(void)
+static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 {
 	const UINT8 pid = 0;
 
+	patch_t *key = W_CachePatchName("UN_CHA00", PU_CACHE);
+	INT32 offs = challengesmenu.unlockcount[CMC_CHAONOPE];
+	if (offs & 1)
+		offs = -offs;
+	offs /= 2;
+
+	fixed_t keyx = (8+offs)*FRACUNIT, keyy = 0;
+
+	// Button prompt
+	K_drawButton(
+		24 << FRACBITS,
+		16 << FRACBITS,
+		0, kp_button_c[1],
+		menumessage.active == false && M_MenuExtraHeld(pid) == true
+	);
+
+	// Metyr of rounds played that contribute to Chao Key generation
+	{
+		const INT32 keybarlen = 32, keybary = 28;
+
+		offs = keybarlen;
+		if (gamedata->chaokeys < GDMAX_CHAOKEYS)
+		{
+		#if (GDCONVERT_ROUNDSTOKEY != 32)
+			offs = ((gamedata->pendingkeyroundoffset * keybarlen)/GDCONVERT_ROUNDSTOKEY);
+		#else
+			offs = gamedata->pendingkeyroundoffset;
+		#endif
+		}
+
+		if (offs > 0)
+			V_DrawFill(1+2, keybary, offs, 1, 0);
+		if (offs < keybarlen)
+			V_DrawFadeFill(1+2+offs, keybary, keybarlen-offs, 1, 0, 31, challengetransparentstrength);
+	}
+
+	// Counter
+	{
+		INT32 textx = 4, texty = 20-challengesmenu.unlockcount[CMC_CHAOANIM];
+		UINT8 numbers[4];
+		numbers[0] = ((gamedata->chaokeys / 100) % 10);
+		numbers[1] = ((gamedata->chaokeys / 10) % 10);
+		numbers[2] = (gamedata->chaokeys % 10);
+
+		numbers[3] = ((gamedata->chaokeys / 1000) % 10);
+		if (numbers[3] != 0)
+		{
+			V_DrawScaledPatch(textx - 4, texty, 0, kp_facenum[numbers[3]]);
+			textx += 2;
+		}
+
+		UINT8 i = 0;
+		while (i < 3)
+		{
+			V_DrawScaledPatch(textx, texty, 0, kp_facenum[numbers[i]]);
+			textx += 6;
+			i++;
+		}
+	}
+
+	UINT8 keysbeingused = 0;
+
+	// The Chao Key swooping animation
+	if (challengesmenu.currentunlock < MAXUNLOCKABLES && challengesmenu.chaokeyhold)
+	{
+		fixed_t baseradius = challengesgridstep;
+
+		boolean major = false, ending = false;
+		if (unlockables[challengesmenu.currentunlock].majorunlock == true)
+		{
+			major = true;
+			tilex += challengesgridstep/2;
+			tiley += challengesgridstep/2;
+			baseradius = (7*baseradius)/4;
+		}
+
+		const INT32 chaohold_duration =
+			CHAOHOLD_PADDING
+			+ (major
+				? CHAOHOLD_MAJOR
+				: CHAOHOLD_STANDARD
+			);
+
+		if (challengesmenu.chaokeyhold >= chaohold_duration - CHAOHOLD_END)
+		{
+			ending = true;
+			baseradius = ((chaohold_duration - challengesmenu.chaokeyhold)*baseradius)*(FRACUNIT/CHAOHOLD_END);
+		}
+
+		INT16 specifickeyholdtime = challengesmenu.chaokeyhold;
+
+		for (; keysbeingused < (major ? 10 : 1); keysbeingused++, specifickeyholdtime -= (CHAOHOLD_STANDARD/10))
+		{
+			fixed_t radius = baseradius;
+			fixed_t thiskeyx, thiskeyy;
+			fixed_t keyholdrotation = 0;
+
+			if (specifickeyholdtime < CHAOHOLD_BEGIN)
+			{
+				if (specifickeyholdtime <= 0)
+				{
+					// Nothing following will be relevant
+					break;
+				}
+
+				radius = (specifickeyholdtime*radius)*(FRACUNIT/CHAOHOLD_BEGIN);
+				thiskeyx = keyx + specifickeyholdtime*((tilex*FRACUNIT) - keyx)/CHAOHOLD_BEGIN;
+				thiskeyy = keyy + specifickeyholdtime*((tiley*FRACUNIT) - keyy)/CHAOHOLD_BEGIN;
+			}
+			else
+			{
+				keyholdrotation = (-36 * keysbeingused) * FRACUNIT; // 360/10
+
+				if (ending == false)
+				{
+					radius <<= FRACBITS;
+
+					keyholdrotation += 360 * ((challengesmenu.chaokeyhold - CHAOHOLD_BEGIN))
+						* (FRACUNIT/(CHAOHOLD_STANDARD)); // intentionally not chaohold_duration
+
+					if (keysbeingused == 0)
+					{
+						INT32 time = (major ? 5 : 3) - (keyholdrotation - 1) / (90 * FRACUNIT);
+						if (time <= 5 && time >= 0)
+							V_DrawScaledPatch(tilex + 2, tiley - 2, 0, kp_eggnum[time]);
+					}
+				}
+
+				thiskeyx = tilex*FRACUNIT;
+				thiskeyy = tiley*FRACUNIT;
+			}
+
+			if (radius != 0)
+			{
+				angle_t ang = (FixedAngle(
+					keyholdrotation
+					) >> ANGLETOFINESHIFT) & FINEMASK;
+
+				thiskeyx += FixedMul(radius, FINESINE(ang));
+				thiskeyy -= FixedMul(radius, FINECOSINE(ang));
+			}
+
+			V_DrawFixedPatch(thiskeyx, thiskeyy, FRACUNIT, 0, key, NULL);
+		}
+	}
+
+	// The final Chao Key on the stack
+	{
+		UINT8 *lastkeycolormap = NULL;
+
+		if (gamedata->chaokeys <= keysbeingused)
+		{
+			// Greyed out if there's going to be none left
+			lastkeycolormap = R_GetTranslationColormap(TC_BLINK, SKINCOLOR_BLACK, GTC_MENUCACHE);
+		}
+
+		V_DrawFixedPatch(keyx, keyy, FRACUNIT, 0, key, lastkeycolormap);
+
+		// Extra glowverlay if you can use a Chao Key
+		if (keysbeingused == 0 && M_CanKeyHiliTile())
+		{
+			INT32 trans = (((challengesmenu.ticker/5) % 6) - 3);
+			if (trans)
+			{
+				trans = ((trans < 0)
+					? (10 + trans)
+					: (10 - trans)
+				) << V_ALPHASHIFT;
+
+				V_DrawFixedPatch(keyx, keyy, FRACUNIT, trans, key,
+					R_GetTranslationColormap(TC_ALLWHITE, 0, GTC_MENUCACHE)
+				);
+			}
+		}
+	}
+}
+
+void M_DrawChallenges(void)
+{
 	INT32 x = currentMenu->x, explodex, selectx = 0, selecty = 0;
 	INT32 y;
 	INT16 i, j;
@@ -5914,6 +6108,7 @@ void M_DrawChallenges(void)
 	}
 
 	// Do underlay for everything else early so the bottom of the reticule doesn't get shaded over.
+	if (challengesmenu.currentunlock < MAXUNLOCKABLES)
 	{
 		y = 120;
 
@@ -5932,7 +6127,7 @@ void M_DrawChallenges(void)
 
 	y = currentMenu->y;
 
-	V_DrawFadeFill(0, y-2, BASEVIDWIDTH, 90, 0, 31, challengetransparentstrength);
+	V_DrawFadeFill(0, y-2, BASEVIDWIDTH, (challengesgridstep * CHALLENGEGRIDHEIGHT) + 2, 0, 31, challengetransparentstrength);
 
 	x -= (challengesgridstep-1);
 
@@ -6017,107 +6212,84 @@ challengedesc:
 			{
 				str = "???"; //M_CreateSecretMenuOption(str);
 			}
-		}
-		else
-		{
-			str = "---";
-		}
 
-		offset = V_LSTitleLowStringWidth(str, 0) / 2;
-		V_DrawLSTitleLowString(BASEVIDWIDTH/2 - offset, y+6, 0, str);
+			offset = V_LSTitleLowStringWidth(str, 0) / 2;
+			V_DrawLSTitleLowString(BASEVIDWIDTH/2 - offset, y+6, 0, str);
+		}
 	}
 
-	// Tally
+	// Wings
 	{
-		str = va("%d/%d",
-			challengesmenu.unlockcount[CC_UNLOCKED] + challengesmenu.unlockcount[CC_TALLY],
-			challengesmenu.unlockcount[CC_TOTAL]
-			);
-		V_DrawRightAlignedTimerString(BASEVIDWIDTH-7, 9-challengesmenu.unlockcount[CC_ANIM], 0, str);
+		const INT32 endy = 18, endlen = 38;
+		patch_t *endwing = W_CachePatchName("K_BOSB01", PU_CACHE);
+
+		V_DrawFill(0, endy, endlen, 11, 24);
+		V_DrawFixedPatch(endlen*FRACUNIT, endy*FRACUNIT, FRACUNIT, V_FLIP, endwing, NULL);
+
+		V_DrawFill(BASEVIDWIDTH - endlen, endy, endlen, 11, 24);
+		V_DrawFixedPatch((BASEVIDWIDTH - endlen)*FRACUNIT, endy*FRACUNIT, FRACUNIT, 0, endwing, NULL);
 	}
 
-	// Chao Keys
+	// Percentage
 	{
-		patch_t *key = W_CachePatchName("UN_CHA00", PU_CACHE);
-		INT32 offs = challengesmenu.unlockcount[CC_CHAONOPE];
-		if (offs & 1)
-			offs = -offs;
-		offs /= 2;
-
-		if (gamedata->chaokeys > 9)
-		{
-			offs -= 6;
-			if (gamedata->chaokeys > 99)
-				offs -= 2; // as far as we can go
-		}
-
-		fixed_t keyx = (8+offs)*FRACUNIT, keyy = 5*FRACUNIT;
-
-		const char *timerstr = va("%u", gamedata->chaokeys);
-
-		V_DrawTimerString((27+offs), 9-challengesmenu.unlockcount[CC_CHAOANIM], 0, timerstr);
-
-		K_drawButton(
-			(27 + offs + V_TimerStringWidth(timerstr, 0) + 2) << FRACBITS,
-			11 << FRACBITS,
-			0, kp_button_c[1],
-			M_MenuExtraHeld(pid)
+		patch_t *medal = W_CachePatchName(
+			va("UN_MDL%c", '0' + challengesmenu.unlockcount[CMC_MEDALID]),
+			PU_CACHE
 		);
 
-		offs = challengekeybarwidth;
-		if (gamedata->chaokeys < GDMAX_CHAOKEYS)
-			offs = ((gamedata->pendingkeyroundoffset * challengekeybarwidth)/GDCONVERT_ROUNDSTOKEY);
+		fixed_t medalchopy = 1;
 
-		if (offs > 0)
-			V_DrawFill(1, 25, offs, 2, 0);
-		if (offs < challengekeybarwidth)
-			V_DrawFadeFill(1+offs, 25, challengekeybarwidth-offs, 2, 0, 31, challengetransparentstrength);
-
-		if (challengesmenu.chaokeyhold)
+		for (i = CMC_MEDALBLANK; i <= CMC_MEDALFILLED; i++)
 		{
-			fixed_t keyholdrotation = 0, radius = challengesgridstep;
+			if (challengesmenu.unlockcount[i] == 0)
+				continue;
 
-			if (challengesmenu.chaokeyhold < CHAOHOLD_BEGIN)
+			V_SetClipRect(
+				0,
+				medalchopy << FRACBITS,
+				BASEVIDWIDTH << FRACBITS,
+				(medalchopy + challengesmenu.unlockcount[i]) << FRACBITS,
+				0
+			);
+
+			UINT8 *medalcolormap = NULL;
+			if (i == CMC_MEDALBLANK)
 			{
-				radius = (challengesmenu.chaokeyhold*radius)*(FRACUNIT/CHAOHOLD_BEGIN);
-				keyx += challengesmenu.chaokeyhold*((selectx*FRACUNIT) - keyx)/CHAOHOLD_BEGIN;
-				keyy += challengesmenu.chaokeyhold*((selecty*FRACUNIT) - keyy)/CHAOHOLD_BEGIN;
+				medalcolormap = R_GetTranslationColormap(TC_BLINK, SKINCOLOR_BLACK, GTC_MENUCACHE);
 			}
-			else
+			else if (challengesmenu.unlockcount[CMC_MEDALID] == 0)
 			{
-				if (challengesmenu.chaokeyhold < CHAOHOLD_MAX - CHAOHOLD_END)
-				{
-					radius <<= FRACBITS;
-
-					keyholdrotation = 360 * ((challengesmenu.chaokeyhold - CHAOHOLD_BEGIN))
-						* (FRACUNIT/(CHAOHOLD_MAX - (CHAOHOLD_BEGIN + CHAOHOLD_END)));
-
-					INT32 time = 3 - (keyholdrotation - 1) / (90 * FRACUNIT);
-					if (time <= 5 && time >= 0)
-						V_DrawScaledPatch(selectx + 2, selecty - 2, 0, kp_eggnum[time]);
-				}
-				else
-				{
-					radius = ((CHAOHOLD_MAX - challengesmenu.chaokeyhold)*radius)*(FRACUNIT/CHAOHOLD_END);
-				}
-
-				keyx = selectx*FRACUNIT;
-				keyy = selecty*FRACUNIT;
+				medalcolormap = R_GetTranslationColormap(TC_DEFAULT, M_GetCvPlayerColor(0), GTC_MENUCACHE);
 			}
 
-			if (radius)
-			{
-				angle_t ang = (FixedAngle(
-					keyholdrotation
-					) >> ANGLETOFINESHIFT) & FINEMASK;
+			V_DrawFixedPatch((BASEVIDWIDTH - 31)*FRACUNIT, 1*FRACUNIT, FRACUNIT, 0, medal, medalcolormap);
 
-				keyx += FixedMul(radius, FINESINE(ang));
-				keyy -= FixedMul(radius, FINECOSINE(ang));
-			}
+			V_ClearClipRect();
+
+			medalchopy += challengesmenu.unlockcount[i];
 		}
 
-		V_DrawFixedPatch(keyx, keyy, FRACUNIT, 0, key, NULL);
+		INT32 textx = BASEVIDWIDTH - 21, texty = 20-challengesmenu.unlockcount[CMC_ANIM];
+		UINT8 numbers[3];
+		numbers[0] = ((challengesmenu.unlockcount[CMC_PERCENT] / 100) % 10);
+		numbers[1] = ((challengesmenu.unlockcount[CMC_PERCENT] / 10) % 10);
+		numbers[2] = (challengesmenu.unlockcount[CMC_PERCENT] % 10);
+
+		patch_t *percent = W_CachePatchName("K_SPDML1", PU_CACHE);
+
+		V_DrawScaledPatch(textx + 2, texty, 0, percent);
+
+		i = 3;
+		while (i)
+		{
+			i--;
+			textx -= 6;
+			V_DrawScaledPatch(textx, texty, 0, kp_facenum[numbers[i]]);
+		}
 	}
+
+	// Chao Key information
+	M_DrawChallengeKeys(selectx, selecty);
 
 	// Derived from M_DrawCharSelectPreview
 	x = 40;
@@ -6143,7 +6315,6 @@ challengedesc:
 
 #undef challengetransparentstrength
 #undef challengesgridstep
-#undef challengekeybarwidth
 
 // Statistics menu
 
@@ -6224,6 +6395,12 @@ static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y)
 				R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE));
 			//V_DrawRightAlignedThinString(x - 2, y, 0, skincolors[col].name);
 		}
+		x -= 8;
+	}
+
+	if (mapheaderinfo[mapnum]->records.mapvisited & MV_MYSTICMELODY)
+	{
+		V_DrawScaledPatch(x, y, 0, W_CachePatchName("GOTMEL", PU_CACHE));
 		x -= 8;
 	}
 }
@@ -6681,7 +6858,7 @@ void M_DrawStatistics(void)
 
 			case statisticspage_maps:
 			{
-				pagename = "LEVELS & MEDALS";
+				pagename = "COURSES & MEDALS";
 				M_DrawStatsMaps();
 				break;
 			}

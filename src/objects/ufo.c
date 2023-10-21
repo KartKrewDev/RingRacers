@@ -18,6 +18,7 @@
 #include "../k_objects.h"
 #include "../m_random.h"
 #include "../p_local.h"
+#include "../m_cond.h"
 #include "../r_main.h"
 #include "../s_sound.h"
 #include "../g_game.h"
@@ -763,52 +764,86 @@ static void UFOKillPieces(mobj_t *ufo)
 
 static UINT8 GetUFODamage(mobj_t *inflictor, UINT8 damageType)
 {
+	UINT8 ret = 0;
+	targetdamaging_t targetdamaging = UFOD_GENERIC;
+
 	if (inflictor != NULL && P_MobjWasRemoved(inflictor) == false)
 	{
 		switch (inflictor->type)
 		{
+			// Shields deal chip damage.
 			case MT_JAWZ_SHIELD:
+			{
+				targetdamaging = UFOD_JAWZ;
+				ret = 10;
+				break;
+			}
 			case MT_ORBINAUT_SHIELD:
+			{
+				targetdamaging = UFOD_ORBINAUT;
+				ret = 10;
+				break;
+			}
 			case MT_INSTAWHIP:
 			{
-				// Shields deal chip damage.
-				return 10;
+				targetdamaging = UFOD_WHIP;
+				ret = 10;
+				break;
 			}
 			case MT_JAWZ:
 			{
 				// Thrown Jawz deal a bit extra.
-				return 15;
+				targetdamaging = UFOD_JAWZ;
+				ret = 15;
+				break;
 			}
 			case MT_ORBINAUT:
 			{
 				// Thrown orbinauts deal double damage.
-				return 20;
+				targetdamaging = UFOD_ORBINAUT;
+				ret = 20;
+				break;
+			}
+			case MT_GACHABOM:
+			{
+				// Thrown gachabom need to be tracked, but have no special damage value as of yet.
+				targetdamaging = UFOD_GACHABOM;
+				break;
 			}
 			case MT_SPB:
 			{
 				// SPB deals triple damage.
-				return 30;
+				targetdamaging |= UFOD_SPB;
+				ret = 30;
+				break;
 			}
 			case MT_BANANA:
 			{
+				targetdamaging = UFOD_BANANA;
+
 				// Banana snipes deal triple damage,
 				// laid down bananas deal regular damage.
 				if (inflictor->health > 1)
 				{
-					return 30;
+					ret = 30;
+					break;
 				}
 
-				return 10;
+				ret = 10;
+				break;
 			}
 			case MT_PLAYER:
 			{
 				// Players deal damage relative to how many sneakers they used.
-				return 15 * max(1, inflictor->player->numsneakers);
+				targetdamaging = UFOD_BOOST;
+				ret = 15 * max(1, inflictor->player->numsneakers);
+				break;
 			}
 			case MT_SPECIAL_UFO:
 			{
 				// UFODebugSetHealth
-				return 1;
+				ret = 1;
+				break;
 			}
 			default:
 			{
@@ -816,6 +851,11 @@ static UINT8 GetUFODamage(mobj_t *inflictor, UINT8 damageType)
 			}
 		}
 	}
+
+	P_TrackRoundConditionTargetDamage(targetdamaging);
+
+	if (ret != 0)
+		return ret;
 
 	// Guess from damage type.
 	switch (damageType & DMG_TYPEMASK)
@@ -883,6 +923,8 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 	{
 		// Destroy the UFO parts, and make the emerald collectible!
 		UFOKillPieces(ufo);
+
+		gamedata->deferredconditioncheck = true; // Check Challenges!
 
 		ufo->flags = (ufo->flags & ~MF_SHOOTABLE) | (MF_SPECIAL|MF_PICKUPFROMBELOW);
 		ufo->shadowscale = FRACUNIT/3;

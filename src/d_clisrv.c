@@ -918,7 +918,7 @@ static boolean CL_SendJoin(void)
 	for (; i < MAXSPLITSCREENPLAYERS; i++)
 		strncpy(netbuffer->u.clientcfg.names[i], va("Player %c", 'A' + i), MAXPLAYERNAME);
 
-	memcpy(&netbuffer->u.clientcfg.availabilities, R_GetSkinAvailabilities(false, false), MAXAVAILABILITY*sizeof(UINT8));
+	memcpy(&netbuffer->u.clientcfg.availabilities, R_GetSkinAvailabilities(false, -1), MAXAVAILABILITY*sizeof(UINT8));
 
 	// Don't leak old signatures from prior sessions.
 	memset(&netbuffer->u.clientcfg.challengeResponse, 0, sizeof(((clientconfig_pak *)0)->challengeResponse));
@@ -3968,7 +3968,7 @@ boolean SV_SpawnServer(void)
 	// strictly speaking, i'm not convinced the following is necessary
 	// but I'm not confident enough to remove it entirely in case it breaks something
 	{
-		UINT8 *availabilitiesbuffer = R_GetSkinAvailabilities(false, false);
+		UINT8 *availabilitiesbuffer = R_GetSkinAvailabilities(false, -1);
 		SINT8 node = 0;
 		for (; node < MAXNETNODES; node++)
 			result |= SV_AddWaitingPlayers(node, availabilitiesbuffer,
@@ -5607,6 +5607,9 @@ static INT16 Consistancy(void)
 
 			mo = (mobj_t *)th;
 
+			if (TypeIsNetSynced(mo->type) == false)
+				continue;
+
 			if (mo->flags & (MF_SPECIAL | MF_SOLID | MF_PUSHABLE | MF_BOSS | MF_MISSILE | MF_SPRING | MF_MONITOR | MF_FIRE | MF_ENEMY | MF_PAIN | MF_STICKY))
 			{
 				ret -= mo->type;
@@ -5620,7 +5623,7 @@ static INT16 Consistancy(void)
 				ret -= mo->flags;
 				ret += mo->flags2;
 				ret -= mo->eflags;
-				if (mo->target)
+				if (mo->target && TypeIsNetSynced(mo->target->type))
 				{
 					ret += mo->target->type;
 					ret -= mo->target->x;
@@ -5636,11 +5639,11 @@ static INT16 Consistancy(void)
 					ret -= mo->target->state - states;
 					ret += mo->target->tics;
 					ret -= mo->target->sprite;
-					ret += mo->target->frame;
+					//ret += mo->target->frame;
 				}
 				else
 					ret ^= 0x3333;
-				if (mo->tracer && mo->tracer->type != MT_OVERLAY)
+				if (mo->tracer && TypeIsNetSynced(mo->tracer->type))
 				{
 					ret += mo->tracer->type;
 					ret -= mo->tracer->x;
@@ -5656,12 +5659,12 @@ static INT16 Consistancy(void)
 					ret -= mo->tracer->state - states;
 					ret += mo->tracer->tics;
 					ret -= mo->tracer->sprite;
-					ret += mo->tracer->frame;
+					//ret += mo->tracer->frame;
 				}
 				else
 					ret ^= 0xAAAA;
 				// SRB2Kart: We use hnext & hprev very extensively
-				if (mo->hnext && mo->hnext->type != MT_OVERLAY)
+				if (mo->hnext && TypeIsNetSynced(mo->hnext->type))
 				{
 					ret += mo->hnext->type;
 					ret -= mo->hnext->x;
@@ -5677,11 +5680,11 @@ static INT16 Consistancy(void)
 					ret -= mo->hnext->state - states;
 					ret += mo->hnext->tics;
 					ret -= mo->hnext->sprite;
-					ret += mo->hnext->frame;
+					//ret += mo->hnext->frame;
 				}
 				else
 					ret ^= 0x5555;
-				if (mo->hprev && mo->hprev->type != MT_OVERLAY)
+				if (mo->hprev && TypeIsNetSynced(mo->hprev->type))
 				{
 					ret += mo->hprev->type;
 					ret -= mo->hprev->x;
@@ -5697,14 +5700,14 @@ static INT16 Consistancy(void)
 					ret -= mo->hprev->state - states;
 					ret += mo->hprev->tics;
 					ret -= mo->hprev->sprite;
-					ret += mo->hprev->frame;
+					//ret += mo->hprev->frame;
 				}
 				else
 					ret ^= 0xCCCC;
 				ret -= mo->state - states;
 				ret += mo->tics;
 				ret -= mo->sprite;
-				ret += mo->frame;
+				//ret += mo->frame;
 			}
 		}
 	}

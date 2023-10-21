@@ -463,7 +463,11 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 	mapheaderinfo[num]->justPlayed = 0;
 	mapheaderinfo[num]->anger = 0;
 
+	mapheaderinfo[num]->destroyforchallenge_size = 0;
+
 	mapheaderinfo[num]->cache_spraycan = UINT16_MAX;
+
+	mapheaderinfo[num]->cache_maplock = MAXUNLOCKABLES;
 
 	mapheaderinfo[num]->customopts = NULL;
 	mapheaderinfo[num]->numCustomOptions = 0;
@@ -7551,9 +7555,7 @@ static void P_InitLevelSettings(void)
 	battleprisons = false;
 
 	nummapspraycans = 0;
-
-	// emerald hunt
-	hunt1 = hunt2 = hunt3 = NULL;
+	numchallengedestructibles = 0;
 
 	// circuit, race and competition stuff
 	numcheatchecks = 0;
@@ -8057,10 +8059,32 @@ static void P_InitMinimapInfo(void)
 
 void P_ResetLevelMusic(void)
 {
+	mapmusrng = 0;
+
 	if (mapheaderinfo[gamemap-1]->musname_size > 1)
-		mapmusrng = P_RandomKey(PR_MUSICSELECT, mapheaderinfo[gamemap-1]->musname_size);
-	else
-		mapmusrng = 0;
+	{
+		UINT8 tempmapmus[MAXMUSNAMES], tempmapmus_size = 1, i;
+
+		tempmapmus[0] = 0;
+
+		for (i = 1; i < mapheaderinfo[gamemap-1]->musname_size; i++)
+		{
+			if (mapheaderinfo[gamemap-1]->cache_muslock[i-1] < MAXUNLOCKABLES
+			&& !M_CheckNetUnlockByID(mapheaderinfo[gamemap-1]->cache_muslock[i-1]))
+				continue;
+
+			//CONS_Printf("TEST - %u\n", i);
+
+			tempmapmus[tempmapmus_size++] = i;
+		}
+
+		if (tempmapmus_size > 1)
+		{
+			mapmusrng = P_RandomKey(PR_MUSICSELECT, tempmapmus_size);
+			//CONS_Printf("Rolled position %u, maps to %u\n", mapmusrng, tempmapmus[mapmusrng]);
+			mapmusrng = tempmapmus[mapmusrng];
+		}
+	}
 }
 
 void P_LoadLevelMusic(void)

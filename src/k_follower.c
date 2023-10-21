@@ -710,25 +710,47 @@ void K_HandleFollower(player_t *player)
 }
 
 /*--------------------------------------------------
-	void K_FollowerHornTaunt(player_t *taunter, player_t *victim)
+	void K_FollowerHornTaunt(player_t *taunter, player_t *victim, boolean mysticmelodyspecial)
 
 		See header file for description.
 --------------------------------------------------*/
-void K_FollowerHornTaunt(player_t *taunter, player_t *victim)
+void K_FollowerHornTaunt(player_t *taunter, player_t *victim, boolean mysticmelodyspecial)
 {
+	// Basic checks
 	if (
-		(cv_karthorns.value == 0)
-		|| taunter == NULL
+		taunter == NULL
 		|| victim == NULL
 		|| taunter->followerskin < 0
 		|| taunter->followerskin >= numfollowers
+	)
+	{
+		return;
+	}
+
+	const follower_t *fl = &followers[taunter->followerskin];
+
+	// Restrict mystic melody special status
+	if (mysticmelodyspecial == true)
+	{
+		mysticmelodyspecial = (
+			(demo.playback == false) // No downloading somebody else's replay
+			&& (fl->hornsound == sfx_melody) // Must be the Mystic Melody
+			&& (taunter->bot == false) // No getting your puppies to do it for you
+			&& P_IsLocalPlayer(taunter) // Must be in your party
+			&& !(mapheaderinfo[gamemap-1]->records.mapvisited & MV_MYSTICMELODY) // Not already done
+		);
+	}
+
+	// More expensive checks
+	if (
+		(cv_karthorns.value == 0 && mysticmelodyspecial == false)
 		|| (P_IsDisplayPlayer(victim) == false && cv_karthorns.value != 2)
 		|| P_MobjWasRemoved(taunter->mo) == true
 		|| P_MobjWasRemoved(taunter->follower) == true
 	)
+	{
 		return;
-
-	const follower_t *fl = &followers[taunter->followerskin];
+	}
 
 	const boolean tasteful = (taunter->karthud[khud_taunthorns] == 0);
 
@@ -736,6 +758,40 @@ void K_FollowerHornTaunt(player_t *taunter, player_t *victim)
 	{
 		mobj_t *honk = taunter->follower->hprev;
 		const fixed_t desiredscale = (2*taunter->mo->scale)/3;
+
+		if (mysticmelodyspecial == true)
+		{
+			mobj_t *mobj = NULL, *next = NULL;
+
+			for (mobj = trackercap; mobj; mobj = next)
+			{
+				next = mobj->itnext;
+				if (mobj->type != MT_ANCIENTSHRINE)
+				{
+					// Not relevant
+					continue;
+				}
+
+				if (P_MobjWasRemoved(mobj->tracer) == false)
+				{
+					// Already initiated
+					continue;
+				}
+
+				// Cleverly a mobj type where TypeIsNetSynced is false
+				P_SetTarget(&mobj->tracer, P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_HORNCODE));
+
+				if (P_MobjWasRemoved(mobj->tracer) == true)
+				{
+					// Unrecoverable?!
+					continue;
+				}
+
+				// This is a helper non-netsynced countdown
+				mobj->tracer->renderflags |= RF_DONTDRAW;
+				mobj->tracer->fuse = 2*TICRATE;
+			}
+		}
 
 		if (P_MobjWasRemoved(honk) == true)
 		{
@@ -773,12 +829,21 @@ void K_FollowerHornTaunt(player_t *taunter, player_t *victim)
 			honk->fuse = TICRATE/2;
 			honk->renderflags |= RF_DONTDRAW;
 
-			if (P_IsDisplayPlayer(victim) || P_IsDisplayPlayer(taunter))
-				S_StartSound(NULL, fl->hornsound);
-
 			honk->flags2 |= MF2_AMBUSH;
 		}
 
-		honk->renderflags &= ~K_GetPlayerDontDrawFlag(victim);
+		UINT32 dontdrawflag = K_GetPlayerDontDrawFlag(victim);
+
+		// A display player is affected!
+		if (dontdrawflag != 0)
+		{
+			// Only play the sound for the first seen display player
+			if ((honk->renderflags & RF_DONTDRAW) == RF_DONTDRAW)
+			{
+				S_StartSound(NULL, fl->hornsound);
+			}
+
+			honk->renderflags &= ~dontdrawflag;
+		}
 	}
 }

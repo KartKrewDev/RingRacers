@@ -113,7 +113,7 @@ void R_PatchSkins(UINT16 wadnum, boolean mainfile);
 // Access
 INT32 R_SkinAvailable(const char *name);
 boolean R_SkinUsable(INT32 playernum, INT32 skinnum, boolean demoskins);
-UINT8 *R_GetSkinAvailabilities(boolean demolock, boolean forbots);
+UINT8 *R_GetSkinAvailabilities(boolean demolock, INT32 botforcecharacter);
 
 // Setting
 void SetPlayerSkin(INT32 playernum,const char *skinname);

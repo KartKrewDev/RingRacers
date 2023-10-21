@@ -28,9 +28,12 @@ extern "C" {
 // [required] <optional>
 typedef enum
 {
+	UC_NONE,
+
 	UC_PLAYTIME,		// PLAYTIME [tics]
 	UC_ROUNDSPLAYED,	// ROUNDSPLAYED [x played]
 	UC_TOTALRINGS,		// TOTALRINGS [x collected]
+	UC_TOTALTUMBLETIME,	// TOTALTUMBLETIME [tics]
 
 	UC_GAMECLEAR,		// GAMECLEAR <x times>
 	UC_OVERALLTIME,		// OVERALLTIME [time to beat, tics]
@@ -39,6 +42,7 @@ typedef enum
 	UC_MAPBEATEN,		// MAPBEATEN [map]
 	UC_MAPENCORE,		// MAPENCORE [map]
 	UC_MAPSPBATTACK,	// MAPSPBATTACK [map]
+	UC_MAPMYSTICMELODY,	// MAPMYSTICMELODY [map]
 	UC_MAPTIME,			// MAPTIME [map] [time to beat, tics]
 
 	UC_CHARACTERWINS,	// CHARACTERWINS [character] [x rounds]
@@ -53,6 +57,8 @@ typedef enum
 	UC_UNLOCKABLE,		// UNLOCKABLE [unlockable number]
 	UC_CONDITIONSET,	// CONDITIONSET [condition set number]
 
+	UC_UNLOCKPERCENT,	// Unlock <x percent> of [unlockable type]
+
 	UC_ADDON,			// Ever loaded a custom file?
 	UC_CREDITS,			// Finish watching the credits
 	UC_REPLAY,			// Save a replay
@@ -62,9 +68,12 @@ typedef enum
 
 	UC_SPRAYCAN,		// Grab a spraycan
 
+	UC_PRISONEGGCD,		// Grab a CD from a Prison Egg
+
 	 // Just for string building
 	UC_AND,
 	UC_COMMA,
+	UC_DESCRIPTIONOVERRIDE,
 
 	UCRP_REQUIRESPLAYING, // All conditions below this can only be checked if (Playing() && gamestate == GS_LEVEL).
 
@@ -79,22 +88,40 @@ typedef enum
 
 	UCRP_ISCHARACTER, // character == [skin]
 	UCRP_ISENGINECLASS, // engine class [class]
+	UCRP_HASFOLLOWER, // follower == [followerskin]
 	UCRP_ISDIFFICULTY, // difficulty >= [difficulty]
 
 	UCRP_PODIUMCUP, // cup == [cup] [optional: >= grade OR place]
 	UCRP_PODIUMEMERALD, // Get to podium sequence with that cup's emerald
 	UCRP_PODIUMPRIZE, // Get to podium sequence with that cup's bonus (alternate string version of UCRP_PODIUMEMERALD
+	UCRP_PODIUMNOCONTINUES, // Get to podium sequence without any continues
 
 	UCRP_FINISHCOOL, // Finish in good standing
+	UCRP_FINISHPERFECT, // Finish a perfect race
 	UCRP_FINISHALLPRISONS, // Break all prisons
 	UCRP_NOCONTEST, // No Contest
+
+	UCRP_SMASHUFO, // Smash the UFO Catcher
+	UCRP_CHASEDBYSPB, // Chased by SPB
+	UCRP_MAPDESTROYOBJECTS, // LEVELNAME: Destroy all [object names] -- CAUTION: You have to add to the level's header too to get them successfully tracked!
+
+	UCRP_MAKERETIRE, // Make another player of [skin] No Contest
 
 	UCRP_FINISHPLACE, // Finish at least [place]
 	UCRP_FINISHPLACEEXACT, // Finish at [place] exactly
 
+	UCRP_FINISHGRADE, // Finish with at least grade [grade]
+
 	UCRP_FINISHTIME, // Finish <= [time, tics]
 	UCRP_FINISHTIMEEXACT, // Finish == [time, tics]
 	UCRP_FINISHTIMELEFT, // Finish with at least [time, tics] to spare
+
+	UCRP_RINGS, // >= [rings]
+	UCRP_RINGSEXACT, // == [rings]
+
+	UCRP_SPEEDOMETER, // >= [percentage]
+	UCRP_DRAFTDURATION, // >= [time, seconds]
+	UCRP_GROWCONSECUTIVEBEAMS, // touch more than n times consecutively
 
 	UCRP_TRIGGER,	// Map execution trigger [id]
 
@@ -102,13 +129,23 @@ typedef enum
 	UCRP_TOUCHOFFROAD, // Touch offroad (or don't)
 	UCRP_TOUCHSNEAKERPANEL, // Either touch sneaker panel (or don't)
 	UCRP_RINGDEBT, // Go into debt (or don't)
+	UCRP_FAULTED, // FAULT
 
 	UCRP_TRIPWIREHYUU, // Go through tripwire with Hyudoro
+	UCRP_WHIPHYUU, // Use Insta-Whip with Hyudoro
 	UCRP_SPBNEUTER, // Kill an SPB with Lightning
 	UCRP_LANDMINEDUNK, // huh? you died? that's weird. all i did was try to hug you...
 	UCRP_HITMIDAIR, // Hit another player mid-air with a kartfielditem
+	UCRP_HITDRAFTERLOOKBACK, // Hit a player that's behind you, while looking back at them, and they're drafting off you
+	UCRP_GIANTRACERSHRUNKENORBI, // Hit a giant racer with a shrunken Orbinaut
+	UCRP_RETURNMARKTOSENDER, // Hit the player responsible for Eggman Marking you with that explosion
 
-	UCRP_WETPLAYER, // Don't touch [fluid]
+	UCRP_TRACKHAZARD, // (Don't) get hit by a track hazard (maybe specific lap)
+
+	UCRP_TARGETATTACKMETHOD, // Break targets/UFO using only one method
+	UCRP_GACHABOMMISER, // Break targets/UFO using exactly one Gachabom repeatedly
+
+	UCRP_WETPLAYER, // Don't touch [strictness] [fluid]
 } conditiontype_t;
 
 // Condition Set information
@@ -184,14 +221,18 @@ typedef enum
 	// Level restrictions
 	SECRET_CUP,					// Permit access to entire cup (overrides SECRET_MAP)
 	SECRET_MAP,					// Permit access to single map
+	SECRET_ALTMUSIC,			// Permit access to single map music track
 
 	// Player restrictions
 	SECRET_SKIN,				// Permit this character
 	SECRET_FOLLOWER,			// Permit this follower
 	SECRET_COLOR,				// Permit this color
 
+	// Everything below this line is supposed to be only one per Challenges list
+	SECRET_ONEPERBOARD,
+
 	// Difficulty restrictions
-	SECRET_HARDSPEED,			// Permit Hard gamespeed
+	SECRET_HARDSPEED = SECRET_ONEPERBOARD, // Permit Hard gamespeed
 	SECRET_MASTERMODE,			// Permit Master Mode bots in GP
 	SECRET_ENCORE,				// Permit Encore option
 
@@ -219,7 +260,7 @@ typedef enum
 #define MAXEMBLEMS       (MAXCONDITIONSETS*2)
 #define MAXUNLOCKABLES   MAXCONDITIONSETS
 
-#define CHALLENGEGRIDHEIGHT 4
+#define CHALLENGEGRIDHEIGHT 5
 #ifdef DEVELOP
 #define CHALLENGEGRIDLOOPWIDTH 3
 #else
@@ -240,11 +281,10 @@ typedef enum {
 #define GDMAX_RINGS 999999999
 #define GDMAX_CHAOKEYS 9999
 
-#ifdef DEVELOP
-#define GDCONVERT_ROUNDSTOKEY 20
-#else
-#define GDCONVERT_ROUNDSTOKEY 50
-#endif
+#define GDCONVERT_ROUNDSTOKEY 32
+
+#define GDINIT_CHAOKEYS 3 // Start with 3 Chao Keys !!
+#define GDINIT_PRISONSTOPRIZE 30 // 30 Prison Eggs to your [Wild Prize] !!
 
 typedef enum {
 	GDGT_RACE,
@@ -287,6 +327,15 @@ struct gamedata_t
 	UINT16 gotspraycans;
 	candata_t* spraycans;
 
+	// PRISON EGG PICKUPS
+	UINT16 numprisoneggpickups;
+	UINT16 gettableprisoneggpickups;
+	UINT16 thisprisoneggpickup;
+	condition_t *thisprisoneggpickup_cached;
+	boolean thisprisoneggpickupgrabbed;
+	UINT16 prisoneggstothispickup;
+	UINT16* prisoneggpickups;
+
 	// CHALLENGE GRID
 	UINT16 challengegridwidth;
 	UINT16 *challengegrid;
@@ -298,6 +347,7 @@ struct gamedata_t
 	UINT32 totalplaytime;
 	UINT32 roundsplayed[GDGT_MAX];
 	UINT32 totalrings;
+	UINT32 totaltumbletime;
 
 	// Chao Key condition bypass
 	UINT32 pendingkeyrounds;
@@ -311,6 +361,8 @@ struct gamedata_t
 	boolean eversavedreplay;
 	boolean everseenspecial;
 	boolean evercrashed;
+	boolean chaokeytutorial;
+	boolean majorkeyskipattempted;
 	gdmusic_t musicstate;
 
 	// BACKWARDS COMPAT ASSIST
@@ -347,6 +399,7 @@ void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata);
 #define CHE_CONNECTEDLEFT (1<<1)
 #define CHE_CONNECTEDUP   (1<<2)
 #define CHE_DONTDRAW (CHE_CONNECTEDLEFT|CHE_CONNECTEDUP)
+#define CHE_ALLCLEAR      (1<<3)
 
 char *M_BuildConditionSetString(UINT16 unlockid);
 #define DESCRIPTIONWIDTH 170
@@ -371,6 +424,8 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud, boolean doall);
 
 #define PENDING_CHAOKEYS (UINT16_MAX-1)
 UINT16 M_GetNextAchievedUnlock(boolean canskipchaokeys);
+
+void M_UpdateNextPrisonEggPickup(void);
 
 UINT16 M_CheckLevelEmblems(void);
 UINT16 M_CompletionEmblems(void);

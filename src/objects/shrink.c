@@ -547,6 +547,16 @@ boolean Obj_ShrinkLaserCollide(mobj_t *gun, mobj_t *victim)
 		victim->player->growshrinktimer += 6*TICRATE;
 		S_StartSound(victim, sfx_kc5a);
 
+		if (victim->player->roundconditions.consecutive_grow_lasers < UINT8_MAX)
+		{
+			victim->player->roundconditions.consecutive_grow_lasers++;
+			if (victim->player->roundconditions.consecutive_grow_lasers > victim->player->roundconditions.best_consecutive_grow_lasers)
+			{
+				victim->player->roundconditions.best_consecutive_grow_lasers
+					= victim->player->roundconditions.consecutive_grow_lasers;
+			}
+		}
+
 		if (prevTimer <= 0)
 		{
 			victim->scalespeed = mapobjectscale/TICRATE;

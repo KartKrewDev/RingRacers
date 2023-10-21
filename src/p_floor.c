@@ -980,7 +980,6 @@ static mobj_t *SearchMarioNode(msecnode_t *node)
 		case MT_THOK:
 		case MT_GHOST:
 		case MT_OVERLAY:
-		case MT_EMERALDSPAWN:
 		case MT_ELEMENTAL_ORB:
 		case MT_ATTRACT_ORB:
 		case MT_FORCE_ORB:

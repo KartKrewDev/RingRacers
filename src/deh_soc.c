@@ -73,6 +73,8 @@ fixed_t get_number(const char *word)
 
 #define PARAMCHECK(n) do { if (!params[n]) { deh_warning("Too few parameters, need %d", n); return; }} while (0)
 
+#define EXTENDEDPARAMCHECK(spos, n) do { if (!spos || !(*spos)) { deh_warning("Missing extended parameter, need at least %d", n); return; }} while (0)
+
 /* ======================================================================== */
 // Load a dehacked file format
 /* ======================================================================== */
@@ -1220,6 +1222,8 @@ void readlevelheader(MYFILE *f, char * name)
 							break;
 						deh_strlcpy(mapheaderinfo[num]->musname[j], tmp,
 							sizeof(mapheaderinfo[num]->musname[j]), va("Level header %d: music", num));
+						if (j)
+							mapheaderinfo[num]->cache_muslock[j - 1] = MAXUNLOCKABLES;
 						j++;
 					} while ((tmp = strtok(NULL,",")) != NULL);
 
@@ -1379,6 +1383,28 @@ void readlevelheader(MYFILE *f, char * name)
 			}
 			else if (fastcmp(word, "GRAVITY"))
 				mapheaderinfo[num]->gravity = FLOAT_TO_FIXED(atof(word2));
+			else if (fastcmp(word, "DESTROYOBJECTSFORCHALLENGES"))
+			{
+				if (fastcmp(word2, "NONE"))
+				{
+					mapheaderinfo[num]->destroyforchallenge_size = 0;
+				}
+				else
+				{
+					UINT8 j = 0; // i was declared elsewhere
+					tmp = strtok(word2, ",");
+					do {
+						if (j >= MAXDESTRUCTIBLES)
+							break;
+						mapheaderinfo[num]->destroyforchallenge[j] = get_mobjtype(word2);
+						j++;
+					} while ((tmp = strtok(NULL,",")) != NULL);
+
+					if (tmp != NULL)
+						deh_warning("Level header %d: additional destructibles past %d discarded", num, MAXDESTRUCTIBLES);
+					mapheaderinfo[num]->destroyforchallenge_size = j;
+				}
+			}
 			else
 				deh_warning("Level header %d: unknown word '%s'", num, word);
 		}
@@ -2295,6 +2321,55 @@ void reademblemdata(MYFILE *f, INT32 num)
 	Z_Free(s);
 }
 
+static INT16 parseunlockabletype(char *type)
+{
+	if (fastcmp(type, "EXTRAMEDAL"))
+		return SECRET_EXTRAMEDAL;
+	else if (fastcmp(type, "CUP"))
+		return SECRET_CUP;
+	else if (fastcmp(type, "MAP"))
+		return SECRET_MAP;
+	else if (fastcmp(type, "ALTMUSIC"))
+		return SECRET_ALTMUSIC;
+	else if (fastcmp(type, "SKIN"))
+		return SECRET_SKIN;
+	else if (fastcmp(type, "FOLLOWER"))
+		return SECRET_FOLLOWER;
+	else if (fastcmp(type, "COLOR"))
+		return SECRET_COLOR;
+
+	else if (fastcmp(type, "HARDSPEED"))
+		return SECRET_HARDSPEED;
+	else if (fastcmp(type, "MASTERMODE"))
+		return SECRET_MASTERMODE;
+	else if (fastcmp(type, "ENCORE"))
+		return SECRET_ENCORE;
+	else if (fastcmp(type, "TIMEATTACK"))
+		return SECRET_TIMEATTACK;
+	else if (fastcmp(type, "PRISONBREAK"))
+		return SECRET_PRISONBREAK;
+	else if (fastcmp(type, "SPECIALATTACK"))
+		return SECRET_SPECIALATTACK;
+	else if (fastcmp(type, "SPBATTACK"))
+		return SECRET_SPBATTACK;
+	else if (fastcmp(type, "ONLINE"))
+		return SECRET_ONLINE;
+	else if (fastcmp(type, "ADDONS"))
+		return SECRET_ADDONS;
+	else if (fastcmp(type, "EGGTV"))
+		return SECRET_EGGTV;
+	else if (fastcmp(type, "SOUNDTEST"))
+		return SECRET_SOUNDTEST;
+	else if (fastcmp(type, "ALTTITLE"))
+		return SECRET_ALTTITLE;
+	else if (fastcmp(type, "MEMETAUNTS"))
+		return SECRET_MEMETAUNTS;
+	else if (fastcmp(type, "ITEMFINDER"))
+		return SECRET_ITEMFINDER;
+
+	return SECRET_NONE;
+}
+
 void readunlockable(MYFILE *f, INT32 num)
 {
 	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
@@ -2349,50 +2424,7 @@ void readunlockable(MYFILE *f, INT32 num)
 					unlockables[num].majorunlock = (UINT8)(i != 0 || word2[0] == 'T' || word2[0] == 'Y');
 				else if (fastcmp(word, "TYPE"))
 				{
-					if (fastcmp(word2, "NONE"))
-						unlockables[num].type = SECRET_NONE;
-					else if (fastcmp(word2, "EXTRAMEDAL"))
-						unlockables[num].type = SECRET_EXTRAMEDAL;
-					else if (fastcmp(word2, "CUP"))
-						unlockables[num].type = SECRET_CUP;
-					else if (fastcmp(word2, "MAP"))
-						unlockables[num].type = SECRET_MAP;
-					else if (fastcmp(word2, "SKIN"))
-						unlockables[num].type = SECRET_SKIN;
-					else if (fastcmp(word2, "FOLLOWER"))
-						unlockables[num].type = SECRET_FOLLOWER;
-					else if (fastcmp(word2, "COLOR"))
-						unlockables[num].type = SECRET_COLOR;
-					else if (fastcmp(word2, "HARDSPEED"))
-						unlockables[num].type = SECRET_HARDSPEED;
-					else if (fastcmp(word2, "MASTERMODE"))
-						unlockables[num].type = SECRET_MASTERMODE;
-					else if (fastcmp(word2, "ENCORE"))
-						unlockables[num].type = SECRET_ENCORE;
-					else if (fastcmp(word2, "TIMEATTACK"))
-						unlockables[num].type = SECRET_TIMEATTACK;
-					else if (fastcmp(word2, "PRISONBREAK"))
-						unlockables[num].type = SECRET_PRISONBREAK;
-					else if (fastcmp(word2, "SPECIALATTACK"))
-						unlockables[num].type = SECRET_SPECIALATTACK;
-					else if (fastcmp(word2, "SPBATTACK"))
-						unlockables[num].type = SECRET_SPBATTACK;
-					else if (fastcmp(word2, "ONLINE"))
-						unlockables[num].type = SECRET_ONLINE;
-					else if (fastcmp(word2, "ADDONS"))
-						unlockables[num].type = SECRET_ADDONS;
-					else if (fastcmp(word2, "EGGTV"))
-						unlockables[num].type = SECRET_EGGTV;
-					else if (fastcmp(word2, "SOUNDTEST"))
-						unlockables[num].type = SECRET_SOUNDTEST;
-					else if (fastcmp(word2, "ALTTITLE"))
-						unlockables[num].type = SECRET_ALTTITLE;
-					else if (fastcmp(word2, "MEMETAUNTS"))
-						unlockables[num].type = SECRET_MEMETAUNTS;
-					else if (fastcmp(word2, "ITEMFINDER"))
-						unlockables[num].type = SECRET_ITEMFINDER;
-					else
-						unlockables[num].type = (INT16)i;
+					unlockables[num].type = parseunlockabletype(word2);
 					unlockables[num].stringVarCache = -1;
 				}
 				else if (fastcmp(word, "VAR"))
@@ -2420,35 +2452,54 @@ void readunlockable(MYFILE *f, INT32 num)
 	Z_Free(s);
 }
 
+// This is a home-grown strtok(" ") equivalent so we can isolate the first chunk without destroying the rest of the line.
+static void conditiongetparam(char **params, UINT8 paramid, char **spos)
+{
+	if (*spos == NULL || *(*spos) == '\0')
+	{
+		params[paramid] = NULL;
+		return;
+	}
+
+	params[paramid] = *spos;
+	while (*(*spos) != '\0' && *(*spos) != ' ')
+	{
+		*(*spos) = toupper(*(*spos));
+		(*spos)++;
+	}
+	if (*(*spos) == ' ')
+	{
+		*(*spos) = '\0';
+		(*spos)++;
+
+		while (*(*spos) == ' ')
+			(*spos)++;
+	}
+}
+
 static void readcondition(UINT16 set, UINT32 id, char *word2)
 {
 	INT32 i;
-	char *params[5]; // condition, requirement, extra info, extra info, stringvar
-	char *spos;
+	const UINT8 MAXCONDITIONPARAMS = 5;
+	char *params[MAXCONDITIONPARAMS]; // condition, requirement, extra info, extra info, stringvar
+	char *spos = NULL;
 	char *stringvar = NULL;
 
-	conditiontype_t ty;
+	conditiontype_t ty = UC_NONE;
 	INT32 re = 0;
 	INT16 x1 = 0, x2 = 0;
 
 	INT32 offset = 0;
 
-#if 0
-	char *endpos = word2 + strlen(word2);
-#endif
-
-	spos = strtok(word2, " ");
-
-	for (i = 0; i < 5; ++i)
+	// Lop the leading spaces off
+	if (word2 && *word2)
 	{
-		if (spos != NULL)
-		{
-			params[i] = spos;
-			spos = strtok(NULL, " ");
-		}
-		else
-			params[i] = NULL;
+		spos = word2;
+		while (*spos == ' ')
+			spos++;
 	}
+
+	conditiongetparam(params, 0, &spos);
 
 	if (!params[0])
 	{
@@ -2456,11 +2507,78 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 		return;
 	}
 
-	if (fastcmp(params[0], "PLAYTIME"))
+	// We do free descriptions first.
+
+	if (fastcmp(params[0], "DESCRIPTIONOVERRIDE"))
+	{
+		EXTENDEDPARAMCHECK(spos, 1);
+		ty = UC_DESCRIPTIONOVERRIDE;
+
+		stringvar = Z_StrDup(spos);
+	}
+	else if (fastcmp(params[0], "PASSWORD"))
+	{
+		EXTENDEDPARAMCHECK(spos, 1);
+		ty = UC_PASSWORD;
+
+		stringvar = Z_StrDup(spos);
+	}
+
+	if (ty != UC_NONE)
+		goto setcondition;
+
+	// Now conditions that take one standard param and one free description.
+
+	conditiongetparam(params, 1, &spos);
+
+	if (fastcmp(params[0], "WETPLAYER"))
 	{
 		PARAMCHECK(1);
-		ty = UC_PLAYTIME + offset;
-		re = atoi(params[1]);
+		//EXTENDEDPARAMCHECK(spos, 2);
+		ty = UCRP_WETPLAYER;
+		re = MFE_UNDERWATER;
+		x1 = 1;
+
+		if (fastcmp(params[1], "STRICT"))
+			re |= MFE_TOUCHWATER;
+		else if (fastcmp(params[1], "STANDARD"))
+			;
+		else
+		{
+			deh_warning("liquid strictness requirement \"%s\" invalid for condition ID %d", params[1], id+1);
+			return;
+		}
+
+		if (spos && *spos)
+			stringvar = Z_StrDup(spos);
+	}
+	else if (fastcmp(params[0], "MAPDESTROYOBJECTS"))
+	{
+		PARAMCHECK(1);
+		EXTENDEDPARAMCHECK(spos, 2);
+		ty = UCRP_MAPDESTROYOBJECTS;
+		re = G_MapNumber(params[1]);
+
+		stringvar = Z_StrDup(spos);
+	}
+
+	if (ty != UC_NONE)
+		goto setcondition;
+
+	// Now for all other conditions.
+
+	for (i = 2; i < MAXCONDITIONPARAMS; i++)
+	{
+		conditiongetparam(params, i, &spos);
+	}
+
+	if (ty != UC_NONE)
+		;
+	else if (fastcmp(params[0], "PLAYTIME"))
+	{
+		PARAMCHECK(1);
+		ty = UC_PLAYTIME;
+		re = get_number(params[1]);
 	}
 	else if (fastcmp(params[0], "ROUNDSPLAYED"))
 	{
@@ -2506,6 +2624,12 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 			return;
 		}
 	}
+	else if (fastcmp(params[0], "TOTALTUMBLETIME"))
+	{
+		PARAMCHECK(1);
+		ty = UC_TOTALTUMBLETIME;
+		re = get_number(params[1]);
+	}
 	else if (fastcmp(params[0], "GAMECLEAR"))
 	{
 		ty = UC_GAMECLEAR;
@@ -2515,12 +2639,13 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 	{
 		PARAMCHECK(1);
 		ty = UC_OVERALLTIME;
-		re = atoi(params[1]);
+		re = get_number(params[1]);
 	}
 	else if ((offset=0) || fastcmp(params[0], "MAPVISITED")
 	||        (++offset && fastcmp(params[0], "MAPBEATEN"))
 	||        (++offset && fastcmp(params[0], "MAPENCORE"))
-	||        (++offset && fastcmp(params[0], "MAPSPBATTACK")))
+	||        (++offset && fastcmp(params[0], "MAPSPBATTACK"))
+	||        (++offset && fastcmp(params[0], "MAPMYSTICMELODY")))
 	{
 		PARAMCHECK(1);
 		ty = UC_MAPVISITED + offset;
@@ -2536,7 +2661,7 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 	{
 		PARAMCHECK(2);
 		ty = UC_MAPTIME;
-		re = atoi(params[2]);
+		re = get_number(params[2]);
 		x1 = G_MapNumber(params[1]);
 
 		if (x1 >= nummapheaders)
@@ -2617,6 +2742,40 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 			return;
 		}
 	}
+	else if (fastcmp(params[0], "UNLOCKPERCENT"))
+	{
+		PARAMCHECK(1);
+		ty = UC_UNLOCKPERCENT;
+		re = atoi(params[1]);
+		x1 = SECRET_NONE;
+
+		// Valid percentages only!
+		if (re <= 0 || re > 100)
+		{
+			deh_warning("Condition percent %d out of range (1 - 100) for condition ID %d", re, id+1);
+			return;
+		}
+
+		if (params[2] && params[2][0])
+		{
+			x1 = parseunlockabletype(params[2]);
+
+			if (x1 <= SECRET_NONE || x1 >= SECRET_ONEPERBOARD)
+			{
+				deh_warning("Condition challenge type \"%s\" invalid for condition ID %d", params[2], id+1);
+				return;
+			}
+
+			x2 = 0;
+			if (params[3])
+			{
+				// fudge value
+				x2 = atoi(params[3]);
+			}
+		}
+		else
+			x2 = 1; // guaranteed fudge for raw Unlockables count
+	}
 	else if ((offset=0) || fastcmp(params[0], "ADDON")
 	||        (++offset && fastcmp(params[0], "CREDITS"))
 	||        (++offset && fastcmp(params[0], "REPLAY"))
@@ -2624,13 +2783,6 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 	{
 		//PARAMCHECK(1);
 		ty = UC_ADDON + offset;
-	}
-	else if (fastcmp(params[0], "PASSWORD"))
-	{
-		PARAMCHECK(1);
-		ty = UC_PASSWORD;
-		stringvar = Z_StrDup(params[1]);
-		re = -1;
 	}
 	else if (fastcmp(params[0], "SPRAYCAN"))
 	{
@@ -2640,6 +2792,22 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 
 		// Force at head of the list?
 		x1 = (params[2] && (params[2][0] == 'Y' || params[2][0] == 'T')) ? 1 : 0;
+	}
+	else if (fastcmp(params[0], "PRISONEGGCD"))
+	{
+		ty = UC_PRISONEGGCD;
+		re = NEXTMAP_INVALID;
+
+		if (params[1])
+		{
+			re = G_MapNumber(params[1]);
+
+			if (re >= nummapheaders)
+			{
+				deh_warning("Invalid level %s for condition ID %d", params[1], id+1);
+				return;
+			}
+		}
 	}
 	else if ((offset=0) || fastcmp(params[0], "AND")
 	||        (++offset && fastcmp(params[0], "COMMA")))
@@ -2691,6 +2859,13 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 			return;
 		}
 	}
+	else if (fastcmp(params[0], "HASFOLLOWER"))
+	{
+		PARAMCHECK(1);
+		ty = UCRP_HASFOLLOWER;
+		stringvar = Z_StrDup(params[1]);
+		re = -1;
+	}
 	else if (fastcmp(params[0], "ISDIFFICULTY"))
 	{
 		//PARAMCHECK(1);
@@ -2701,9 +2876,9 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 			if (fastcmp(params[1], "NORMAL"))
 				;
 			else if (fastcmp(params[1], "HARD"))
-				x1 = KARTSPEED_HARD;
+				re = KARTSPEED_HARD;
 			else if (fastcmp(params[1], "MASTER"))
-				x1 = KARTGP_MASTER;
+				re = KARTGP_MASTER;
 			else
 			{
 				deh_warning("gamespeed requirement \"%s\" invalid for condition ID %d", params[1], id+1);
@@ -2715,6 +2890,9 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 	{
 		PARAMCHECK(1);
 		ty = UCRP_PODIUMCUP;
+	
+		re = -1;
+		if (!fastcmp(params[1], "ANY"))
 		{
 			cupheader_t *cup = kartcupheaders;
 			UINT32 hash = quickncasehash(params[1], MAXCUPNAME);
@@ -2768,17 +2946,28 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 		}
 	}
 	else if ((offset=0) || fastcmp(params[0], "PODIUMEMERALD")
-	||        (++offset && fastcmp(params[0], "PODIUMPRIZE")))
+	||        (++offset && fastcmp(params[0], "PODIUMPRIZE"))
+	||        (++offset && fastcmp(params[0], "PODIUMNOCONTINUES")))
 	{
 		//PARAMCHECK(1);
 		ty = UCRP_PODIUMEMERALD + offset;
 	}
 	else if ((offset=0) || fastcmp(params[0], "FINISHCOOL")
+	||        (++offset && fastcmp(params[0], "FINISHPERFECT"))
 	||        (++offset && fastcmp(params[0], "FINISHALLPRISONS"))
-	||        (++offset && fastcmp(params[0], "NOCONTEST")))
+	||        (++offset && fastcmp(params[0], "NOCONTEST"))
+	||        (++offset && fastcmp(params[0], "SMASHUFO"))
+	||        (++offset && fastcmp(params[0], "CHASEDBYSPB")))
 	{
 		//PARAMCHECK(1);
 		ty = UCRP_FINISHCOOL + offset;
+	}
+	else if (fastcmp(params[0], "MAKERETIRE"))
+	{
+		PARAMCHECK(1);
+		ty = UCRP_MAKERETIRE;
+		stringvar = Z_StrDup(params[1]);
+		re = -1;
 	}
 	else if ((offset=0) || fastcmp(params[0], "FINISHPLACE")
 	||        (++offset && fastcmp(params[0], "FINISHPLACEEXACT")))
@@ -2791,6 +2980,31 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 		{
 			deh_warning("Invalid place %s for condition ID %d", params[1], id+1);
 			return;
+		}
+	}
+	else if (fastcmp(params[0], "FINISHGRADE"))
+	{
+		PARAMCHECK(1);
+		ty = UCRP_FINISHGRADE;
+
+		re = -1;
+		if (!params[1][1])
+		{
+			switch (params[1][0])
+			{
+				case 'E': { re = GRADE_E; break; }
+				case 'D': { re = GRADE_D; break; }
+				case 'C': { re = GRADE_C; break; }
+				case 'B': { re = GRADE_B; break; }
+				case 'A': { re = GRADE_A; break; }
+				default: { break; }
+			}
+		}
+
+		if (re == -1)
+		{
+			deh_warning("Invalid grade %s for condition ID %d", params[1], id+1);
+				return;
 		}
 	}
 	else if ((offset=0) || fastcmp(params[0], "FINISHTIME")
@@ -2807,6 +3021,55 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 			return;
 		}
 	}
+	else if ((offset=0) || fastcmp(params[0], "RINGS")
+	||        (++offset && fastcmp(params[0], "RINGSEXACT")))
+	{
+		PARAMCHECK(1);
+		ty = UCRP_RINGS + offset;
+		re = get_number(params[1]);
+
+		if (re < -20 || re > 20)
+		{
+			deh_warning("Invalid ring count %d for condition ID %d", re, id+1);
+			return;
+		}
+	}
+	else if (fastcmp(params[0], "SPEEDOMETER"))
+	{
+		PARAMCHECK(1);
+		ty = UCRP_SPEEDOMETER;
+		re = get_number(params[1]);
+
+		if (re < 100 || re > 999)
+		{
+			deh_warning("Speed percent %d out of range (100 - 999) for condition ID %d", re, id+1);
+			return;
+		}
+	}
+	else if (fastcmp(params[0], "DRAFTDURATION"))
+	{
+		PARAMCHECK(1);
+		ty = UCRP_DRAFTDURATION;
+		re = get_number(params[1]);
+
+		if (re < 5)
+		{
+			deh_warning("Duration %d seconds too low for condition ID %d", re, id+1);
+			return;
+		}
+	}
+	else if (fastcmp(params[0], "GROWCONSECUTIVEBEAMS"))
+	{
+		PARAMCHECK(1);
+		ty = UCRP_GROWCONSECUTIVEBEAMS;
+		re = get_number(params[1]);
+
+		if (re < 2 || re > UINT8_MAX)
+		{
+			deh_warning("Touch count %d out of range (2 - %u) for condition ID %d", re, UINT8_MAX, id+1);
+			return;
+		}
+	}
 	else if (fastcmp(params[0], "TRIGGER"))
 	{
 		PARAMCHECK(1);
@@ -2819,32 +3082,12 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 			deh_warning("Trigger ID %d out of range (0 - 31) for condition ID %d", re, id+1);
 			return;
 		}
-
-		// The following undid the effects of strtok.
-		// Unfortunately, there is no way it can reasonably undo the effects of strupr.
-		// If we want custom descriptions for map execution triggers, we're gonna need a different method.
-#if 0
-		// undo affect of strtok
-		i = 5;
-		// so spos will still be the strtok from earlier
-		while (i >= 2)
-		{
-			if (!spos)
-				continue;
-			while (*spos != '\0')
-				spos++;
-			if (spos < endpos)
-				*spos = ' ';
-			spos = params[--i];
-		}
-
-		stringvar = Z_StrDup(params[2]);
-#endif
 	}
 	else if ((offset=0) || fastcmp(params[0], "FALLOFF")
 	||        (++offset && fastcmp(params[0], "TOUCHOFFROAD"))
 	||        (++offset && fastcmp(params[0], "TOUCHSNEAKERPANEL"))
-	||        (++offset && fastcmp(params[0], "RINGDEBT")))
+	||        (++offset && fastcmp(params[0], "RINGDEBT"))
+	||        (++offset && fastcmp(params[0], "FAULTED")))
 	{
 		PARAMCHECK(1);
 		ty = UCRP_FALLOFF + offset;
@@ -2854,32 +3097,73 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 			re = 0;
 	}
 	else if ((offset=0) || fastcmp(params[0], "TRIPWIREHYUU")
+	||        (++offset && fastcmp(params[0], "WHIPHYUU"))
 	||        (++offset && fastcmp(params[0], "SPBNEUTER"))
 	||        (++offset && fastcmp(params[0], "LANDMINEDUNK"))
-	||        (++offset && fastcmp(params[0], "HITMIDAIR")))
+	||        (++offset && fastcmp(params[0], "HITMIDAIR"))
+	||        (++offset && fastcmp(params[0], "HITDRAFTERLOOKBACK"))
+	||        (++offset && fastcmp(params[0], "GIANTRACERSHRUNKENORBI"))
+	||        (++offset && fastcmp(params[0], "RETURNMARKTOSENDER")))
 	{
 		//PARAMCHECK(1);
 		ty = UCRP_TRIPWIREHYUU + offset;
 	}
-	else if (fastcmp(params[0], "WETPLAYER"))
+	else if (fastcmp(params[0], "TRACKHAZARD"))
 	{
 		PARAMCHECK(1);
-		ty = UCRP_WETPLAYER;
-		re = MFE_UNDERWATER;
-		x1 = 1;
+		ty = UCRP_TRACKHAZARD;
+		re = 1;
+		x1 = -1;
+
+		if (params[1][0] == 'F' || params[1][0] == 'N' || params[1][0] == '0')
+			re = 0;
 
 		if (params[2])
 		{
-			if (fastcmp(params[2], "STRICT"))
-				re |= MFE_TOUCHWATER;
+			if (fastcmp(params[2], "FINAL"))
+				x1 = -2;
 			else
 			{
-				deh_warning("liquid strictness requirement \"%s\" invalid for condition ID %d", params[2], id+1);
-				return;
+				x1 = atoi(params[2]);
+
+				if (re < 0 || re > MAX_LAPS)
+				{
+					deh_warning("Lap number %d out of range (0 - %u) for condition ID %d", x1, MAX_LAPS, id+1);
+					return;
+				}
 			}
 		}
+	}
+	else if (fastcmp(params[0], "TARGETATTACKMETHOD"))
+	{
+		PARAMCHECK(1);
+		ty = UCRP_TARGETATTACKMETHOD;
 
-		stringvar = Z_StrDup(params[1]);
+		// See targetdamaging_t
+		if (fastcmp(params[1], "BOOST"))
+			re = UFOD_BOOST;
+		else if (fastcmp(params[1], "WHIP"))
+			re = UFOD_WHIP;
+		else if (fastcmp(params[1], "BANANA"))
+			re = UFOD_BANANA;
+		else if (fastcmp(params[1], "ORBINAUT"))
+			re = UFOD_ORBINAUT;
+		else if (fastcmp(params[1], "JAWZ"))
+			re = UFOD_JAWZ;
+		else if (fastcmp(params[1], "SPB"))
+			re = UFOD_SPB;
+		else if (fastcmp(params[1], "GACHABOM"))
+			re = UFOD_GACHABOM;
+		else
+		{
+			deh_warning("Unknown attack method %s for condition ID %d", params[1], id+1);
+			return;
+		}
+	}
+	else if (fastcmp(params[0], "GACHABOMMISER"))
+	{
+		//PARAMCHECK(1);
+		ty = UCRP_GACHABOMMISER;
 	}
 	else
 	{
@@ -2887,6 +3171,7 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 		return;
 	}
 
+setcondition:
 	M_AddRawCondition(set, (UINT8)id, ty, re, x1, x2, stringvar);
 }
 
@@ -2929,7 +3214,7 @@ void readconditionset(MYFILE *f, UINT16 setnum)
 
 			// Now get the part after
 			word2 = tmp += 2;
-			strupr(word2);
+			//strupr(word2);
 
 			if (fastncmp(word, "CONDITION", 9))
 			{
@@ -3912,6 +4197,11 @@ if (!followers[numfollowers].field) \
 	NOSTATE(winstate, "WINSTATE");
 	NOSTATE(hitconfirmstate, "HITCONFIRMSTATE");
 #undef NOSTATE
+
+	if (!followers[numfollowers].hornsound)
+	{
+		followers[numfollowers].hornsound = sfx_horn00;
+	}
 
 	CONS_Printf("Added follower '%s'\n", testname);
 	if (followers[numfollowers].category < numfollowercategories)

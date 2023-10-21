@@ -267,6 +267,22 @@ void K_TimerInit(void)
 	{
 		K_SpawnDuelOnlyItems();
 	}
+
+	if (
+		battleprisons == true
+		&& grandprixinfo.gp == true
+		&& netgame == false
+		&& gamedata->thisprisoneggpickup_cached != NULL
+		&& gamedata->prisoneggstothispickup == 0
+		&& maptargets > 1
+	)
+	{
+		// This calculation is like this so...
+		// - You can't get a Prison Egg Drop on the last broken target
+		// - If it were 0 at minimum there'd be a slight bias towards the start of the round
+		//    - This is bad because it benefits CD farming like in Brawl :D
+		gamedata->prisoneggstothispickup = 1 + M_RandomKey(maptargets - 1);
+	}
 }
 
 UINT32 K_GetPlayerDontDrawFlag(player_t *player)
@@ -1133,6 +1149,7 @@ static void K_UpdateOffroad(player_t *player)
 			player->offroad = offroadstrength;
 
 		if (player->roundconditions.touched_offroad == false
+			&& !(player->exiting || (player->pflags & PF_NOCONTEST))
 			&& player->offroad > (2*offroadstrength) / TICRATE)
 		{
 			player->roundconditions.touched_offroad = true;
@@ -1449,7 +1466,8 @@ static void K_UpdateDraft(player_t *player)
 
 			if (K_TryDraft(player, otherPlayer->mo, minDist, draftdistance, leniency) == true)
 			{
-				return; // Finished doing our draft.
+				//return;
+				goto draftdurationhandling; // Finished doing our draft.
 			}
 		}
 	}
@@ -1484,7 +1502,14 @@ static void K_UpdateDraft(player_t *player)
 	{
 		player->draftpower = 0;
 		player->lastdraft = -1;
+		player->roundconditions.continuousdraft = 0;
+		return;
 	}
+
+draftdurationhandling:
+	player->roundconditions.continuousdraft++;
+	if (player->roundconditions.continuousdraft > player->roundconditions.continuousdraft_best)
+		player->roundconditions.continuousdraft_best = player->roundconditions.continuousdraft;
 }
 
 void K_KartPainEnergyFling(player_t *player)
@@ -2035,10 +2060,10 @@ static SINT8 K_GlanceAtPlayers(player_t *glancePlayer, boolean horn)
 {
 	const fixed_t maxdistance = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	const angle_t blindSpotSize = ANG10; // ANG5
-	UINT8 i;
 	SINT8 glanceDir = 0;
 	SINT8 lastValidGlance = 0;
-	boolean podiumspecial = (K_PodiumSequence() == true && glancePlayer->nextwaypoint == NULL && glancePlayer->speed == 0);
+	const boolean podiumspecial = (K_PodiumSequence() == true && glancePlayer->nextwaypoint == NULL && glancePlayer->speed == 0);
+	boolean mysticmelodyspecial = false;
 
 	if (podiumspecial)
 	{
@@ -2057,43 +2082,47 @@ static SINT8 K_GlanceAtPlayers(player_t *glancePlayer, boolean horn)
 
 	// See if there's any players coming up behind us.
 	// If so, your character will glance at 'em.
-	for (i = 0; i < MAXPLAYERS; i++)
+	mobj_t *victim = NULL, *victimnext = NULL;
+
+	for (victim = trackercap; victim; victim = victimnext)
 	{
-		player_t *p;
+		player_t *p = victim->player;
 		angle_t back;
 		angle_t diff;
 		fixed_t distance;
 		SINT8 dir = -1;
 
-		if (!playeringame[i])
+		victimnext = victim->itnext;
+
+		if (p != NULL)
 		{
-			// Invalid player
-			continue;
+			if (p == glancePlayer)
+			{
+				// FOOL! Don't glance at yerself!
+				continue;
+			}
+
+			if (p->spectator || p->hyudorotimer > 0)
+			{
+				// Not playing / invisible
+				continue;
+			}
+
+			if (podiumspecial && p->position >= glancePlayer->position)
+			{
+				// On the podium, only look with envy, not condesencion
+				continue;
+			}
 		}
-
-		p = &players[i];
-
-		if (p == glancePlayer)
+		else if (victim->type != MT_ANCIENTSHRINE)
 		{
-			// FOOL! Don't glance at yerself!
-			continue;
-		}
-
-		if (!p->mo || P_MobjWasRemoved(p->mo))
-		{
-			// Invalid mobj
-			continue;
-		}
-
-		if (p->spectator || p->hyudorotimer > 0)
-		{
-			// Not playing / invisible
+			// Ancient Shrines are a special exception to glance logic.
 			continue;
 		}
 
 		if (!podiumspecial)
 		{
-			distance = R_PointToDist2(glancePlayer->mo->x, glancePlayer->mo->y, p->mo->x, p->mo->y);
+			distance = R_PointToDist2(glancePlayer->mo->x, glancePlayer->mo->y, victim->x, victim->y);
 
 			if (distance > maxdistance)
 			{
@@ -2101,13 +2130,9 @@ static SINT8 K_GlanceAtPlayers(player_t *glancePlayer, boolean horn)
 				continue;
 			}
 		}
-		else if (p->position >= glancePlayer->position)
-		{
-			continue;
-		}
 
 		back = glancePlayer->mo->angle + ANGLE_180;
-		diff = R_PointToAngle2(glancePlayer->mo->x, glancePlayer->mo->y, p->mo->x, p->mo->y) - back;
+		diff = R_PointToAngle2(glancePlayer->mo->x, glancePlayer->mo->y, victim->x, victim->y) - back;
 
 		if (diff > ANGLE_180)
 		{
@@ -2127,7 +2152,7 @@ static SINT8 K_GlanceAtPlayers(player_t *glancePlayer, boolean horn)
 			continue;
 		}
 
-		if (!podiumspecial && P_CheckSight(glancePlayer->mo, p->mo) == false)
+		if (!podiumspecial && P_CheckSight(glancePlayer->mo, victim) == false)
 		{
 			// Blocked by a wall, we can't glance at 'em!
 			continue;
@@ -2142,7 +2167,14 @@ static SINT8 K_GlanceAtPlayers(player_t *glancePlayer, boolean horn)
 
 		if (horn == true)
 		{
-			K_FollowerHornTaunt(glancePlayer, p);
+			if (p != NULL)
+			{
+				K_FollowerHornTaunt(glancePlayer, p, false);
+			}
+			else if (victim->type == MT_ANCIENTSHRINE)
+			{
+				mysticmelodyspecial = true;
+			}
 		}
 	}
 
@@ -2150,7 +2182,7 @@ static SINT8 K_GlanceAtPlayers(player_t *glancePlayer, boolean horn)
 	{
 		const boolean tasteful = (glancePlayer->karthud[khud_taunthorns] == 0);
 
-		K_FollowerHornTaunt(glancePlayer, glancePlayer);
+		K_FollowerHornTaunt(glancePlayer, glancePlayer, mysticmelodyspecial);
 
 		if (tasteful && glancePlayer->karthud[khud_taunthorns] < 2*TICRATE)
 			glancePlayer->karthud[khud_taunthorns] = 2*TICRATE;
@@ -3810,6 +3842,7 @@ void K_RemoveGrowShrink(player_t *player)
 	}
 
 	player->growshrinktimer = 0;
+	player->roundconditions.consecutive_grow_lasers = 0;
 }
 
 boolean K_IsBigger(mobj_t *compare, mobj_t *other)
@@ -6066,6 +6099,7 @@ void K_DoSneaker(player_t *player, INT32 type)
 	const fixed_t intendedboost = FRACUNIT/2;
 
 	if (player->roundconditions.touched_sneakerpanel == false
+		&& !(player->exiting || (player->pflags & PF_NOCONTEST))
 		&& player->floorboost != 0)
 	{
 		player->roundconditions.touched_sneakerpanel = true;
@@ -7624,6 +7658,14 @@ void K_KartPlayerHUDUpdate(player_t *player)
 	}
 	else
 		player->karthud[khud_finish] = 0;
+
+	if (demo.playback == false && P_IsLocalPlayer(player) == true)
+	{
+		if (player->tumbleBounces != 0 && gamedata->totaltumbletime != UINT32_MAX)
+		{
+			gamedata->totaltumbletime++;
+		}
+	}
 }
 
 #undef RINGANIM_DELAYMAX
@@ -8407,7 +8449,11 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 				//player->flashing = 0;
 				eggsexplode = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_SPBEXPLOSION);
 				eggsexplode->height = 2 * player->mo->height;
-				eggsexplode->color = player->mo->color;
+				K_FlipFromObject(eggsexplode, player->mo);
+
+				eggsexplode->threshold = KITEM_EGGMAN;
+
+				P_SetTarget(&eggsexplode->tracer, player->mo);
 
 				if (player->eggmanblame >= 0
 				&& player->eggmanblame < MAXPLAYERS
@@ -11783,6 +11829,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								K_ThrowKartItem(player, true, MT_GACHABOM, 0, 0, 0);
 								K_PlayAttackTaunt(player->mo);
 								player->itemamount--;
+								player->roundconditions.gachabom_miser = (
+									(player->roundconditions.gachabom_miser == 0)
+										? 1 : 0xFF
+								);
 								K_UpdateHnextList(player, false);
 							}
 							break;
@@ -12361,6 +12411,7 @@ void K_EggmanTransfer(player_t *source, player_t *victim)
 	K_AddHitLag(victim->mo, 2, true);
 	K_DropItems(victim);
 	victim->eggmanexplode = 6*TICRATE;
+	victim->eggmanblame = (source - players);
 	K_StopRoulette(&victim->itemRoulette);
 
 	if (P_IsDisplayPlayer(victim))
@@ -12368,6 +12419,7 @@ void K_EggmanTransfer(player_t *source, player_t *victim)
 
 	K_AddHitLag(source->mo, 2, true);
 	source->eggmanexplode = 0;
+	source->eggmanblame = -1;
 	K_StopRoulette(&source->itemRoulette);
 	source->eggmanTransferDelay = 10;
 

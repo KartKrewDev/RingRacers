@@ -142,7 +142,8 @@ struct skinreference_t
 #define MV_BEATEN       	(1<<1)
 #define MV_ENCORE       	(1<<2)
 #define MV_SPBATTACK    	(1<<3)
-#define MV_MAX          	(MV_VISITED|MV_BEATEN|MV_ENCORE|MV_SPBATTACK)
+#define MV_MYSTICMELODY		(1<<4)
+#define MV_MAX          	(MV_VISITED|MV_BEATEN|MV_ENCORE|MV_SPBATTACK|MV_MYSTICMELODY)
 #define MV_FINISHNEEDED		(1<<7)
 #define MV_PERSISTUNLOADED	(MV_SPBATTACK|MV_FINISHNEEDED)
 
@@ -407,6 +408,8 @@ struct cupheader_t
 
 	boolean playcredits;					///< Play the credits?
 
+	UINT16 cache_cuplock;					///< Cached Unlockable ID
+
 	cupwindata_t windata[4];				///< Data for cup visitation
 	cupheader_t *next;						///< Next cup in linked list
 };
@@ -437,6 +440,7 @@ struct staffbrief_t
 };
 
 #define MAXMUSNAMES 3 // maximum definable music tracks per level
+#define MAXDESTRUCTIBLES 3
 #define MAXHEADERFOLLOWERS 32
 
 struct mapheader_lighting_t
@@ -492,13 +496,14 @@ struct mapheader_t
 	char relevantskin[SKINNAMESIZE+1];	///< Skin to use for tutorial (if not provided, uses Eggman.)
 
 	// Music information
-	char musname[MAXMUSNAMES][7];		///< Music tracks to play. First dimension is the track number, second is the music string. "" for no music.
-	char associatedmus[MAXMUSNAMES][7];	///< Associated music tracks for sound test unlock.
-	char positionmus[7];				///< Custom Position track. Doesn't play in Encore or other fun game-controlled contexts
-	UINT8 musname_size;					///< Number of music tracks defined
-	UINT8 associatedmus_size;			///< Number of associated music tracks defined
-	UINT16 mustrack;					///< Subsong to play. Only really relevant for music modules and specific formats supported by GME. 0 to ignore.
-	UINT32 muspos;						///< Music position to jump to.
+	char musname[MAXMUSNAMES][7];			///< Music tracks to play. First dimension is the track number, second is the music string. "" for no music.
+	UINT16 cache_muslock[MAXMUSNAMES-1];	///< Cached Alt Music IDs
+	char associatedmus[MAXMUSNAMES][7];		///< Associated music tracks for sound test unlock.
+	char positionmus[7];					///< Custom Position track. Doesn't play in Encore or other fun game-controlled contexts
+	UINT8 musname_size;						///< Number of music tracks defined
+	UINT8 associatedmus_size;				///< Number of associated music tracks defined
+	UINT16 mustrack;						///< Subsong to play. Only really relevant for music modules and specific formats supported by GME. 0 to ignore.
+	UINT32 muspos;							///< Music position to jump to.
 
 	// Sky information
 	UINT8 weather;						///< See preciptype_t
@@ -533,8 +538,12 @@ struct mapheader_t
 	UINT8 precutscenenum;				///< Cutscene number to play BEFORE a level starts.
 	UINT8 cutscenenum;					///< Cutscene number to use, 0 for none.
 
+	mobjtype_t destroyforchallenge[MAXDESTRUCTIBLES];	///< Assistive for UCRP_MAPDESTROYOBJECTS
+	UINT8 destroyforchallenge_size;						///< Number for above
+
 	UINT32 _saveid;						///< Purely assistive in gamedata save processes
 	UINT16 cache_spraycan;				///< Cached Spraycan ID
+	UINT16 cache_maplock;				///< Cached Unlockable ID
 
 	// Lua information
 	UINT8 numCustomOptions;				///< Internal. For Lua custom value support.
@@ -717,6 +726,7 @@ extern INT32 luabanks[NUM_LUABANKS];
 extern INT32 nummaprings; //keep track of spawned rings/coins
 
 extern UINT8 nummapspraycans;
+extern UINT16 numchallengedestructibles;
 
 extern UINT32 bluescore; ///< Blue Team Scores
 extern UINT32 redscore;  ///< Red Team Scores
@@ -764,8 +774,6 @@ extern UINT8 useSeal;
 
 extern UINT8 use1upSound;
 extern UINT8 maxXtraLife; // Max extra lives from rings
-
-extern mobj_t *hunt1, *hunt2, *hunt3; // Emerald hunt locations
 
 struct exitcondition_t
 {

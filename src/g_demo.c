@@ -2233,7 +2233,7 @@ static void G_SaveDemoSkins(UINT8 **pp)
 {
 	char skin[16];
 	UINT8 i;
-	UINT8 *availabilitiesbuffer = R_GetSkinAvailabilities(true, false);
+	UINT8 *availabilitiesbuffer = R_GetSkinAvailabilities(true, -1);
 
 	WRITEUINT8((*pp), numskins);
 	for (i = 0; i < numskins; i++)

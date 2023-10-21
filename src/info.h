@@ -698,10 +698,15 @@ typedef enum sprite
 	SPR_NCHP, // NiGHTS chip
 	SPR_NSTR, // NiGHTS star
 	SPR_EMBM, // Emblem
+	SPR_SPCN, // Spray Can
+	SPR_MMSH, // Ancient Shrine
+	SPR_MORB, // One Morbillion
 	SPR_EMRC, // Chaos Emeralds
 	SPR_SEMR, // Super Emeralds
 	SPR_ESPK,
-	SPR_SHRD, // Emerald Hunt
+
+	// Prison Egg Drops
+	SPR_ALTM,
 
 	// Interactive Objects
 	SPR_BBLS, // water bubble source
@@ -1190,7 +1195,6 @@ typedef enum sprite
 	SPR_POKE, // Pokey
 	SPR_AUDI, // Audience members
 	SPR_DECO, // Old 1.0 Kart Decoratives + New misc ones
-	SPR_SPCN, // Spray Can replaces all the old D00Dkart objects
 	SPR_SNES, // Sprites for SNES remake maps
 	SPR_GBAS, // Sprites for GBA remake maps
 	SPR_SPRS, // Sapphire Coast Spring Shell
@@ -2387,6 +2391,25 @@ typedef enum state
 	// Spray Can
 	S_SPRAYCAN,
 
+	// Ancient Shrine
+	S_ANCIENTSHRINE,
+
+	S_MORB1,
+	S_MORB2,
+	S_MORB3,
+	S_MORB4,
+	S_MORB5,
+	S_MORB6,
+	S_MORB7,
+	S_MORB8,
+	S_MORB9,
+	S_MORB10,
+	S_MORB11,
+	S_MORB12,
+	S_MORB13,
+	S_MORB14,
+	S_MORB15,
+
 	// Chaos Emeralds
 	S_CHAOSEMERALD1,
 	S_CHAOSEMERALD2,
@@ -2407,10 +2430,8 @@ typedef enum state
 
 	S_EMERALDFLARE1,
 
-	// Emerald hunt shards
-	S_SHRD1,
-	S_SHRD2,
-	S_SHRD3,
+	// Prison Egg Drops
+	S_PRISONEGGDROP_CD,
 
 	// Bubble Source
 	S_BUBBLES1,
@@ -6076,11 +6097,11 @@ typedef enum mobj_type
 	MT_BLUEFLAG, // Blue CTF Flag
 	MT_EMBLEM,
 	MT_SPRAYCAN,
+	MT_ANCIENTSHRINE,
 	MT_EMERALD,
 	MT_EMERALDSPARK,
 	MT_EMERALDFLARE,
-	MT_EMERHUNT, // Emerald Hunt
-	MT_EMERALDSPAWN, // Emerald spawner w/ delay
+	MT_PRISONEGGDROP,
 
 	// Springs and others
 	MT_FAN,

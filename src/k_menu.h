@@ -1142,6 +1142,9 @@ void M_HandleImageDef(INT32 choice);
 #define recommendedflags V_GREENMAP
 #define warningflags V_GRAYMAP
 
+// For some menu highlights
+UINT16 M_GetCvPlayerColor(UINT8 pnum);
+
 void M_UpdateMenuBGImage(boolean forceReset);
 void M_DrawMenuBackground(void);
 void M_DrawMenuForeground(void);
@@ -1201,19 +1204,34 @@ void M_DrawAddons(void);
 #define RIGHTUNLOCKSCROLL 3
 #define LEFTUNLOCKSCROLL (RIGHTUNLOCKSCROLL-1)
 
-#define CC_TOTAL 0
-#define CC_UNLOCKED 1
-#define CC_TALLY 2
-#define CC_ANIM 3
-#define CC_CHAOANIM 4
-#define CC_CHAONOPE 5
-#define CC_MAX 6
+typedef enum
+{
+	CMC_TOTAL = 0,
+	CMC_UNLOCKED,
+
+	CMC_KEYED,
+	CMC_MAJORSKIPPED,
+
+	CMC_PERCENT,
+
+	CMC_MEDALID,
+	CMC_MEDALBLANK,
+	CMC_MEDALFILLED,
+
+	CMC_ANIM,
+	CMC_CHAOANIM,
+	CMC_CHAONOPE,
+
+	CMC_MAX,
+} challengesmenucount_e;
 
 #define TILEFLIP_MAX 16
 
-#define CHAOHOLD_MAX (3*TICRATE/2)
-#define CHAOHOLD_BEGIN 7
-#define CHAOHOLD_END 3
+#define CHAOHOLD_STANDARD (40) // (Close to 3*TICRATE/2 after padding, but adjusted to evenly divide by 10)
+#define CHAOHOLD_MAJOR (60) //(3*CHAOHOLD_STANDARD/2)
+#define CHAOHOLD_BEGIN (7)
+#define CHAOHOLD_END (3)
+#define CHAOHOLD_PADDING (CHAOHOLD_BEGIN + CHAOHOLD_END)
 
 extern struct timeattackmenu_s {
 
@@ -1241,12 +1259,12 @@ extern struct challengesmenu_s {
 	boolean pending;
 	boolean requestnew;
 
-	boolean chaokeyadd;
+	boolean chaokeyadd, keywasadded;
 	UINT8 chaokeyhold;
 
 	boolean requestflip;
 
-	UINT16 unlockcount[CC_MAX];
+	UINT16 unlockcount[CMC_MAX];
 
 	UINT8 fade;
 } challengesmenu;
@@ -1256,6 +1274,7 @@ void M_Challenges(INT32 choice);
 void M_DrawChallenges(void);
 void M_ChallengesTick(void);
 boolean M_ChallengesInputs(INT32 ch);
+boolean M_CanKeyHiliTile(void);
 
 typedef enum
 {

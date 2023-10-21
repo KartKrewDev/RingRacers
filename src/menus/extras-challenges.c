@@ -21,7 +21,7 @@ menu_t MISC_ChallengesDef = {
 	&MainDef,
 	0,
 	MISC_ChallengesStatsDummyMenu,
-	BASEVIDWIDTH/2, 30,
+	BASEVIDWIDTH/2, 11,
 	0, 0,
 	0,
 	"UNLOCK",
@@ -53,6 +53,83 @@ menu_t MISC_StatisticsDef = {
 };
 
 struct challengesmenu_s challengesmenu;
+
+static void M_UpdateChallengeGridVisuals(void)
+{
+	UINT16 i;
+
+	challengesmenu.unlockcount[CMC_UNLOCKED] = 0;
+	challengesmenu.unlockcount[CMC_TOTAL] = 0;
+
+	for (i = 0; i < MAXUNLOCKABLES; i++)
+	{
+		if (!unlockables[i].conditionset)
+		{
+			continue;
+		}
+
+		challengesmenu.unlockcount[CMC_TOTAL]++;
+
+		if (!gamedata->unlocked[i])
+		{
+			continue;
+		}
+
+		challengesmenu.unlockcount[CMC_UNLOCKED]++;
+
+		if (M_Achieved(unlockables[i].conditionset - 1) == true)
+		{
+			continue;
+		}
+
+		challengesmenu.unlockcount[CMC_KEYED]++;
+
+		if (unlockables[i].majorunlock == false)
+		{
+			continue;
+		}
+
+		challengesmenu.unlockcount[CMC_MAJORSKIPPED]++;
+	}
+
+	challengesmenu.unlockcount[CMC_PERCENT] =
+		(100 * challengesmenu.unlockcount[CMC_UNLOCKED])
+			/challengesmenu.unlockcount[CMC_TOTAL];
+
+	#define medalheight (19)
+
+	challengesmenu.unlockcount[CMC_MEDALID] = 0;
+
+	challengesmenu.unlockcount[CMC_MEDALFILLED] =
+		(medalheight * (
+			challengesmenu.unlockcount[CMC_UNLOCKED]
+			- challengesmenu.unlockcount[CMC_MAJORSKIPPED]
+		)) / challengesmenu.unlockcount[CMC_TOTAL];
+
+	if (challengesmenu.unlockcount[CMC_PERCENT] == 100)
+	{
+		if (challengesmenu.unlockcount[CMC_KEYED] == 0)
+		{
+			challengesmenu.unlockcount[CMC_MEDALID] = 2;
+			challengesmenu.unlockcount[CMC_PERCENT]++; // 101%
+		}
+		else if (challengesmenu.unlockcount[CMC_MAJORSKIPPED] == 0)
+		{
+			challengesmenu.unlockcount[CMC_MEDALID] = 1;
+		}
+	}
+	else
+	{
+		if (challengesmenu.unlockcount[CMC_MEDALFILLED] == 0 && challengesmenu.unlockcount[CMC_UNLOCKED] != 0)
+		{
+			// Cheat to give you a sliver of pixel.
+			challengesmenu.unlockcount[CMC_MEDALFILLED] = 1;
+		}
+	}
+
+	challengesmenu.unlockcount[CMC_MEDALBLANK] =
+		medalheight - challengesmenu.unlockcount[CMC_MEDALFILLED];
+}
 
 static void M_ChallengesAutoFocus(UINT16 unlockid, boolean fresh)
 {
@@ -210,7 +287,7 @@ static void M_ChallengesAutoFocus(UINT16 unlockid, boolean fresh)
 
 menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 {
-	UINT16 i, newunlock;
+	UINT16 newunlock;
 
 	if (Playing())
 		return desiredmenu;
@@ -231,6 +308,7 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 		challengesmenu.requestflip = false;
 		challengesmenu.requestnew = false;
 		challengesmenu.chaokeyadd = false;
+		challengesmenu.keywasadded = false;
 		challengesmenu.chaokeyhold = 0;
 		challengesmenu.currentunlock = MAXUNLOCKABLES;
 		challengesmenu.unlockcondition = NULL;
@@ -246,22 +324,8 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 
 		memset(setup_explosions, 0, sizeof(setup_explosions));
 		memset(&challengesmenu.unlockcount, 0, sizeof(challengesmenu.unlockcount));
-		for (i = 0; i < MAXUNLOCKABLES; i++)
-		{
-			if (!unlockables[i].conditionset)
-			{
-				continue;
-			}
 
-			challengesmenu.unlockcount[CC_TOTAL]++;
-
-			if (!gamedata->unlocked[i])
-			{
-				continue;
-			}
-
-			challengesmenu.unlockcount[CC_UNLOCKED]++;
-		}
+		M_UpdateChallengeGridVisuals();
 
 		if (challengesmenu.pending)
 			M_ChallengesAutoFocus(newunlock, true);
@@ -290,10 +354,10 @@ void M_Challenges(INT32 choice)
 	M_SetupNextMenu(&MISC_ChallengesDef, false);
 }
 
-static boolean M_CanKeyHiliTile(boolean devskip)
+boolean M_CanKeyHiliTile(void)
 {
 	// No keys to do it with?
-	if (gamedata->chaokeys == 0 && !devskip)
+	if (gamedata->chaokeys == 0)
 		return false;
 
 	// No tile data?
@@ -308,20 +372,71 @@ static boolean M_CanKeyHiliTile(boolean devskip)
 	if (gamedata->unlocked[challengesmenu.currentunlock] == true)
 		return false;
 
-	// Marked as unskippable?
-	if (unlockables[challengesmenu.currentunlock].majorunlock == true && !devskip)
-		return false;
-
 	UINT16 i = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
 
 	// Not a hinted tile OR a fresh board.
 	if (!(challengesmenu.extradata[i].flags & CHE_HINT)
-	&& (challengesmenu.unlockcount[CC_UNLOCKED] + challengesmenu.unlockcount[CC_TALLY] > 0)
-	&& !devskip)
+	&& (challengesmenu.unlockcount[CMC_UNLOCKED] > 0))
 		return false;
+
+	// Marked as major?
+	if (unlockables[challengesmenu.currentunlock].majorunlock == true)
+	{
+		if (!(challengesmenu.extradata[i].flags & CHE_ALLCLEAR))
+			return false;
+
+		if (gamedata->chaokeys < 10)
+			return false;
+	}
 
 	// All good!
 	return true;
+}
+
+enum {
+	CCTUTORIAL_KEYGEN = 0,
+	CCTUTORIAL_MAJORSKIP,
+} cctutorial_e;
+
+static void M_ChallengesTutorial(UINT8 option)
+{
+	switch (option)
+	{
+		case CCTUTORIAL_KEYGEN:
+		{
+			M_StartMessage("Challenges & Chao Keys",
+				va(M_GetText(
+				"You just generated a Chao Key!\n"
+				"These can clear tough Challenges.\n"
+				"\n"
+				"Use them wisely - it'll take\n"
+				"%u rounds to pick up another!\n"
+				), GDCONVERT_ROUNDSTOKEY
+				), NULL, MM_NOTHING, NULL, NULL);
+			gamedata->chaokeytutorial = true;
+			break;
+		}
+		case CCTUTORIAL_MAJORSKIP:
+		{
+			M_StartMessage("Big Challenges & Chao Keys",
+				M_GetText(
+				"Watch out! You need 10 Chao Keys.\n"
+				"to break open Big Challenge tiles.\n"
+				"\n"
+				"You'll also need to unlock\n"
+				"the surrounding tiles first.\n"
+				), NULL, MM_NOTHING, NULL, NULL);
+			gamedata->majorkeyskipattempted = true;
+			break;
+		}
+		default:
+		{
+			M_StartMessage("M_ChallengesTutorial ERROR",
+				"Invalid argument!?\n",
+				NULL, MM_NOTHING, NULL, NULL);
+			break;
+		}
+	}
 }
 
 void M_ChallengesTick(void)
@@ -338,7 +453,7 @@ void M_ChallengesTick(void)
 		if (setup_explosions[i].tics > 0)
 			setup_explosions[i].tics--;
 	}
-	for (i = CC_ANIM; i < CC_MAX; i++)
+	for (i = CMC_ANIM; i < CMC_MAX; i++)
 	{
 		if (challengesmenu.unlockcount[i] > 0)
 			challengesmenu.unlockcount[i]--;
@@ -370,25 +485,28 @@ void M_ChallengesTick(void)
 
 	if (challengesmenu.chaokeyhold)
 	{
-		boolean devskip = false;
-#ifdef DEVELOP
-		devskip = M_MenuButtonHeld(pid, MBT_Z);
-#endif
-		// A little messy, but don't freak out, this is just so devs don't crash the game on non-tiles
-		if ((devskip || M_MenuExtraHeld(pid)) && M_CanKeyHiliTile(devskip))
+		if (M_MenuExtraHeld(pid) && M_CanKeyHiliTile())
 		{
 			// Not pressed just this frame?
 			if (!M_MenuExtraPressed(pid))
 			{
 				challengesmenu.chaokeyhold++;
 
-				if (challengesmenu.chaokeyhold > CHAOHOLD_MAX)
+				const UINT32 chaohold_duration =
+					CHAOHOLD_PADDING 
+					+ ((unlockables[challengesmenu.currentunlock].majorunlock == true)
+						? CHAOHOLD_MAJOR
+						: CHAOHOLD_STANDARD
+					);
+
+				if (challengesmenu.chaokeyhold > chaohold_duration)
 				{
 #ifndef CHAOKEYDEBUG
-					gamedata->chaokeys--;
+					gamedata->chaokeys -= (unlockables[challengesmenu.currentunlock].majorunlock == true)
+						? 10 : 1;
 #endif
 					challengesmenu.chaokeyhold = 0;
-					challengesmenu.unlockcount[CC_CHAOANIM]++;
+					challengesmenu.unlockcount[CMC_CHAOANIM]++;
 
 					S_StartSound(NULL, sfx_chchng);
 
@@ -401,7 +519,7 @@ void M_ChallengesTick(void)
 		else
 		{
 			challengesmenu.chaokeyhold = 0;
-			challengesmenu.unlockcount[CC_CHAONOPE] = 6;
+			challengesmenu.unlockcount[CMC_CHAONOPE] = 6;
 			S_StartSound(NULL, sfx_s3k7b); //sfx_s3kb2
 		}
 	}
@@ -461,10 +579,12 @@ void M_ChallengesTick(void)
 					S_StartSound(NULL, sfx_achiev);
 					gamedata->keyspending--;
 					gamedata->chaokeys++;
-					challengesmenu.unlockcount[CC_CHAOANIM]++;
+					challengesmenu.unlockcount[CMC_CHAOANIM]++;
 
 					if (gamedata->musicstate < GDMUSIC_KEYG)
 						gamedata->musicstate = GDMUSIC_KEYG;
+
+					challengesmenu.keywasadded = true;
 				}
 			}
 		}
@@ -511,9 +631,9 @@ void M_ChallengesTick(void)
 			if (challengesmenu.unlockcondition)
 				Z_Free(challengesmenu.unlockcondition);
 			challengesmenu.unlockcondition = M_BuildConditionSetString(challengesmenu.currentunlock);
+			M_UpdateChallengeGridVisuals();
 
-			challengesmenu.unlockcount[CC_TALLY]++;
-			challengesmenu.unlockcount[CC_ANIM]++;
+			challengesmenu.unlockcount[CMC_ANIM]++;
 
 			if (challengesmenu.extradata)
 			{
@@ -558,14 +678,7 @@ void M_ChallengesTick(void)
 
 				if (bombcolor == SKINCOLOR_NONE)
 				{
-					bombcolor = cv_playercolor[0].value;
-					if (bombcolor == SKINCOLOR_NONE)
-					{
-						INT32 psk = R_SkinAvailable(cv_skin[0].string);
-						if (psk == -1)
-							psk = 0;
-						bombcolor = skins[psk].prefcolor;
-					}
+					bombcolor = M_GetCvPlayerColor(0);
 				}
 
 				i = (ref->majorunlock && M_RandomChance(FRACUNIT/2)) ? 1 : 0;
@@ -581,15 +694,6 @@ void M_ChallengesTick(void)
 	}
 	else if (!challengesmenu.chaokeyhold)
 	{
-
-		// Tick down the tally. (currently not visible)
-		/*if ((challengesmenu.ticker & 1)
-			&& challengesmenu.unlockcount[CC_TALLY] > 0)
-		{
-			challengesmenu.unlockcount[CC_TALLY]--;
-			challengesmenu.unlockcount[CC_UNLOCKED]++;
-		}*/
-
 		if (challengesmenu.fade > 0)
 		{
 			// Fade decrease.
@@ -597,6 +701,12 @@ void M_ChallengesTick(void)
 			{
 				// Play music the moment control returns.
 				M_PlayMenuJam();
+
+				if (gamedata->chaokeytutorial == false
+				&& challengesmenu.keywasadded == true)
+				{
+					M_ChallengesTutorial(CCTUTORIAL_KEYGEN);
+				}
 			}
 		}
 	}
@@ -616,13 +726,21 @@ boolean M_ChallengesInputs(INT32 ch)
 	}
 	else if (M_MenuExtraPressed(pid))
 	{
-		if (M_CanKeyHiliTile(false))
+		if (gamedata->chaokeytutorial == true
+			&& gamedata->majorkeyskipattempted == false
+			&& challengesmenu.currentunlock < MAXUNLOCKABLES
+			&& gamedata->unlocked[challengesmenu.currentunlock] == false
+			&& unlockables[challengesmenu.currentunlock].majorunlock == true)
+		{
+			M_ChallengesTutorial(CCTUTORIAL_MAJORSKIP);
+		}
+		else if (M_CanKeyHiliTile())
 		{
 			challengesmenu.chaokeyhold = 1;
 		}
 		else
 		{
-			challengesmenu.unlockcount[CC_CHAONOPE] = 6;
+			challengesmenu.unlockcount[CMC_CHAONOPE] = 6;
 			S_StartSound(NULL, sfx_s3k7b); //sfx_s3kb2
 
 #ifdef CHAOKEYDEBUG
@@ -630,10 +748,7 @@ boolean M_ChallengesInputs(INT32 ch)
 			{
 				gamedata->unlocked[challengesmenu.currentunlock] = gamedata->unlockpending[challengesmenu.currentunlock] = false;
 
-				if (challengesmenu.unlockcount[CC_TALLY] > 0)
-					challengesmenu.unlockcount[CC_TALLY]--;
-				else
-					challengesmenu.unlockcount[CC_UNLOCKED]--;
+				M_UpdateChallengeGridVisuals();
 			}
 #endif
 		}
@@ -642,7 +757,15 @@ boolean M_ChallengesInputs(INT32 ch)
 #ifdef DEVELOP
 	else if (M_MenuButtonPressed(pid, MBT_Z))
 	{
-		challengesmenu.chaokeyhold = 1;
+		gamedata->chaokeys++;
+		challengesmenu.unlockcount[CMC_CHAOANIM]++;
+
+		if (gamedata->chaokeytutorial == false)
+		{
+			M_ChallengesTutorial(CCTUTORIAL_KEYGEN);
+		}
+
+		S_StartSound(NULL, sfx_dbgsal);
 		return true;
 	}
 #endif

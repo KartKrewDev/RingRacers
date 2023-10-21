@@ -92,6 +92,8 @@ boolean P_SaveBufferFromFile(savebuffer_t *save, char const *name);
 void P_SaveBufferFree(savebuffer_t *save);
 size_t P_SaveBufferRemaining(const savebuffer_t *save);
 
+boolean TypeIsNetSynced(mobjtype_t type);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

@@ -21,6 +21,7 @@
 #include "i_joy.h" // JOYAXISRANGE
 #include "r_draw.h" // GTC_ macros for assigning gamepad indicator colors
 #include "v_video.h" // V_GetColor for assigning gamepad indictaor colors
+#include "r_skins.h" // skins[].prefcolor for assigning gamepad indicator colors
 #include "z_zone.h"
 
 // current state of the keys
@@ -206,9 +207,7 @@ void G_SetDeviceForPlayer(INT32 player, INT32 device)
 void G_SetPlayerGamepadIndicatorToPlayerColor(INT32 player)
 {
 	INT32 device;
-	INT32 skin;
 	UINT16 skincolor;
-	UINT8 *colormap;
 	byteColor_t byte_color;
 
 	I_Assert(player >= 0 && player < MAXSPLITSCREENPLAYERS);
@@ -220,16 +219,16 @@ void G_SetPlayerGamepadIndicatorToPlayerColor(INT32 player)
 		return;
 	}
 
-	skin = cv_skin[player].value;
 	skincolor = cv_playercolor[player].value;
-	colormap = R_GetTranslationColormap(skin, skincolor, GTC_MENUCACHE);
-
-	if (colormap == NULL)
+	if (skincolor == SKINCOLOR_NONE)
 	{
-		return;
+		INT32 skin = cv_skin[player].value;
+		if (skin == -1)
+			skin = 0;
+		skincolor = skins[skin].prefcolor;
 	}
 
-	byte_color = V_GetColor(colormap[104]).s;
+	byte_color = V_GetColor(skincolors[skincolor].ramp[8]).s;
 
 	I_SetGamepadIndicatorColor(device, byte_color.red, byte_color.green, byte_color.blue);
 }

@@ -206,10 +206,19 @@ boolean P_CanPickupEmblem(player_t *player, INT32 emblemID)
 		return false;
 	}
 
-	if (player->bot)
+	if (player != NULL)
 	{
-		// Your nefarious opponent puppy can't grab these for you.
-		return false;
+		if (player->bot)
+		{
+			// Your nefarious opponent puppy can't grab these for you.
+			return false;
+		}
+
+		if (player->exiting)
+		{
+			// Yeah but YOU didn't actually do it now did you
+			return false;
+		}
 	}
 
 	return true;
@@ -714,6 +723,12 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 					return;
 				}
 
+				if (player->exiting)
+				{
+					// Yeah but YOU didn't actually do it now did you
+					return;
+				}
+
 				if (!P_IsLocalPlayer(player))
 				{
 					// Must be party.
@@ -797,6 +812,72 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				}
 
 				return;
+			}
+
+		case MT_PRISONEGGDROP:
+			{
+				if (demo.playback)
+				{
+					// Never collect emblems in replays.
+					return;
+				}
+
+				if (player->bot)
+				{
+					// Your nefarious opponent puppy can't grab these for you.
+					return;
+				}
+
+				if (!P_IsLocalPlayer(player))
+				{
+					// Must be party.
+					return;
+				}
+
+				if (special->hitlag || special->scale < mapobjectscale/2)
+				{
+					// Don't get during the initial activation
+					return;
+				}
+
+				if (special->extravalue1)
+				{
+					// Don't get during destruction
+					return;
+				}
+
+				if (
+					grandprixinfo.gp == true // Bonus Round
+					&& netgame == false // game design + makes it easier to implement
+					&& gamedata->thisprisoneggpickup_cached != NULL
+				)
+				{
+					gamedata->thisprisoneggpickupgrabbed = true;
+					if (gamedata->prisoneggstothispickup < GDINIT_PRISONSTOPRIZE)
+					{
+						// Just in case it's set absurdly low for testing.
+						gamedata->prisoneggstothispickup = GDINIT_PRISONSTOPRIZE;
+					}
+
+					if (!M_UpdateUnlockablesAndExtraEmblems(true, true))
+						S_StartSound(NULL, sfx_ncitem);
+					gamedata->deferredsave = true;
+				}
+
+				statenum_t teststate = (special->state-states);
+
+				if (teststate == S_PRISONEGGDROP_CD)
+				{
+					special->momz = P_MobjFlip(special) * 2 * mapobjectscale;
+					special->flags = (special->flags & ~MF_SPECIAL) | (MF_NOGRAVITY|MF_NOCLIPHEIGHT);
+					special->extravalue1 = 1;
+
+					special->renderflags = (special->renderflags & ~RF_BRIGHTMASK) | (RF_ADD | RF_FULLBRIGHT);
+
+					return;
+				}
+
+				break;
 			}
 
 		case MT_LSZ_BUNGEE:
@@ -910,10 +991,25 @@ void P_TouchCheatcheck(mobj_t *post, player_t *player, boolean snaptopost)
 	player->cheatchecknum = post->health;
 }
 
-static void P_AddBrokenPrison(mobj_t *target, mobj_t *source)
+void P_TrackRoundConditionTargetDamage(targetdamaging_t targetdamaging)
 {
-	(void)target;
+	UINT8 i;
+	for (i = 0; i <= splitscreen; i++)
+	{
+		if (!playeringame[g_localplayers[i]])
+			continue;
+		if (players[g_localplayers[i]].spectator)
+			continue;
+		players[g_localplayers[i]].roundconditions.targetdamaging |= targetdamaging;
+		/* -- the following isn't needed because we can just check for targetdamaging == UFOD_GACHABOM
+		if (targetdamaging != UFOD_GACHABOM)
+			players[g_localplayers[i]].roundconditions.gachabom_miser = 0xFF;
+		*/
+	}
+}
 
+static void P_AddBrokenPrison(mobj_t *target, mobj_t *inflictor, mobj_t *source)
+{
 	if (!battleprisons)
 		return;
 
@@ -935,6 +1031,48 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *source)
 		K_SpawnBattlePoints(source->player, NULL, 1);
 	}
 
+	targetdamaging_t targetdamaging = UFOD_GENERIC;
+	if (P_MobjWasRemoved(inflictor) == true)
+		;
+	else switch (inflictor->type)
+	{
+		case MT_GACHABOM:
+			targetdamaging = UFOD_GACHABOM;
+			break;
+		case MT_ORBINAUT:
+		case MT_ORBINAUT_SHIELD:
+			targetdamaging = UFOD_ORBINAUT;
+			break;
+		case MT_BANANA:
+			targetdamaging = UFOD_BANANA;
+			break;
+		case MT_INSTAWHIP:
+			targetdamaging = UFOD_WHIP;
+			break;
+		// This is only accessible for MT_CDUFO's touch!
+		case MT_PLAYER:
+			targetdamaging = UFOD_BOOST;
+			break;
+		// The following can't be accessed in standard play...
+		// but the cost of tracking them here is trivial :D
+		case MT_JAWZ:
+		case MT_JAWZ_SHIELD:
+			targetdamaging = UFOD_JAWZ;
+			break;
+		case MT_SPB:
+			targetdamaging = UFOD_SPB;
+			break;
+		default:
+			break;
+	}
+
+	P_TrackRoundConditionTargetDamage(targetdamaging);
+
+	if (gamedata->prisoneggstothispickup)
+	{
+		gamedata->prisoneggstothispickup--;
+	}
+
 	if (++numtargets >= maptargets)
 	{
 		P_DoAllPlayersExit(0, (grandprixinfo.gp == true));
@@ -946,6 +1084,55 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *source)
 		{
 			extratimeintics += 10*TICRATE;
 			secretextratime = TICRATE/2;
+		}
+
+		if (
+			grandprixinfo.gp == true // Bonus Round
+			&& demo.playback == false // Not playback
+			&& netgame == false // game design + makes it easier to implement
+			&& gamedata->thisprisoneggpickup_cached != NULL
+			&& gamedata->prisoneggstothispickup == 0
+			&& gamedata->thisprisoneggpickupgrabbed == false
+		)
+		{
+			// Will be 0 for the next level
+			gamedata->prisoneggstothispickup = (maptargets - numtargets);
+
+			mobj_t *secretpickup = P_SpawnMobj(
+				target->x, target->y,
+				target->z + target->height/2,
+				MT_PRISONEGGDROP
+			);
+
+			if (secretpickup)
+			{
+				secretpickup->hitlag = target->hitlag;
+
+				secretpickup->z -= secretpickup->height/2;
+
+				P_SetScale(secretpickup, mapobjectscale/TICRATE);
+				// secretpickup->destscale = mapobjectscale; -- safe assumption it's already set?
+				secretpickup->scalespeed = (2*mapobjectscale)/(3*TICRATE);
+
+				// flags are NOT from the target - just in case it's just been placed on the ceiling as a gimmick
+				secretpickup->flags2 |= (source->flags2 & MF2_OBJECTFLIP);
+				secretpickup->eflags |= (source->eflags & MFE_VERTICALFLIP);
+
+				// Okay these have to use M_Random because replays...
+				// The spawning of these won't be recorded back!
+				const angle_t launchangle = FixedAngle(M_RandomRange(60, 80) * FRACUNIT);
+				const fixed_t launchmomentum = 20 * mapobjectscale;
+
+				secretpickup->momz = P_MobjFlip(target) // THIS one uses target!
+					* P_ReturnThrustY(secretpickup, launchangle, launchmomentum);
+
+				secretpickup->angle = FixedAngle(M_RandomKey(360) * FRACUNIT);
+
+				P_InstaThrust(
+					secretpickup, secretpickup->angle,
+					P_ReturnThrustX(secretpickup, launchangle, launchmomentum)
+				);
+			}
 		}
 	}
 }
@@ -1887,7 +2074,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 				S_StartSound(target, sfx_mbs60);
 
-				P_AddBrokenPrison(target, source);
+				P_AddBrokenPrison(target, inflictor, source);
 			}
 			break;
 
@@ -1897,7 +2084,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			target->momz = -(3*mapobjectscale)/2;
 			target->fuse = 2*TICRATE;
 
-			P_AddBrokenPrison(target, source);
+			P_AddBrokenPrison(target, inflictor, source);
 			break;
 
 		case MT_BATTLEBUMPER:
@@ -2193,6 +2380,8 @@ static boolean P_PlayerHitsPlayer(mobj_t *target, mobj_t *inflictor, mobj_t *sou
 
 static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, UINT8 type)
 {
+	const boolean beforeexit = !(player->exiting || (player->pflags & PF_NOCONTEST));
+
 	if (type == DMG_SPECTATOR && (G_GametypeHasTeams() || G_GametypeHasSpectators()))
 	{
 		P_SetPlayerSpectator(player-players);
@@ -2240,7 +2429,8 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 	{
 		case DMG_DEATHPIT:
 			// Fell off the stage
-			if (player->roundconditions.fell_off == false)
+			if (player->roundconditions.fell_off == false
+				&& beforeexit == true)
 			{
 				player->roundconditions.fell_off = true;
 				player->roundconditions.checkthisframe = true;
@@ -2500,15 +2690,62 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			}
 		}
 
-		if (inflictor && source && source->player)
+		if (source && source->player)
 		{
 			if (source->player->roundconditions.hit_midair == false
-				&& K_IsMissileOrKartItem(source)
+				&& source != target
+				&& inflictor
+				&& K_IsMissileOrKartItem(inflictor)
 				&& target->player->airtime > TICRATE/2
 				&& source->player->airtime > TICRATE/2)
 			{
 				source->player->roundconditions.hit_midair = true;
 				source->player->roundconditions.checkthisframe = true;
+			}
+
+			if (source->player->roundconditions.hit_drafter_lookback == false
+				&& source != target
+				&& target->player->lastdraft == (source->player - players)
+				&& (K_GetKartButtons(source->player) & BT_LOOKBACK) == BT_LOOKBACK
+				/*&& (AngleDelta(K_MomentumAngle(source), R_PointToAngle2(source->x, source->y, target->x, target->y)) > ANGLE_90)*/)
+			{
+				source->player->roundconditions.hit_drafter_lookback = true;
+				source->player->roundconditions.checkthisframe = true;
+			}
+
+			if (source->player->roundconditions.giant_foe_shrunken_orbi == false
+				&& source != target
+				&& player->growshrinktimer > 0
+				&& !P_MobjWasRemoved(inflictor)
+				&& inflictor->type == MT_ORBINAUT
+				&& inflictor->scale < FixedMul((FRACUNIT + SHRINK_SCALE), mapobjectscale * 2)) // halfway between base scale and shrink scale, a little bit of leeway
+			{
+				source->player->roundconditions.giant_foe_shrunken_orbi = true;
+				source->player->roundconditions.checkthisframe = true;
+			}
+
+			if (source == target
+				&& !P_MobjWasRemoved(inflictor)
+				&& inflictor->type == MT_SPBEXPLOSION
+				&& inflictor->threshold == KITEM_EGGMAN
+				&& !P_MobjWasRemoved(inflictor->tracer)
+				&& inflictor->tracer != source
+				&& inflictor->tracer->player
+				&& inflictor->tracer->player->roundconditions.returntosender_mark == false)
+			{
+				inflictor->tracer->player->roundconditions.returntosender_mark = true;
+				inflictor->tracer->player->roundconditions.checkthisframe = true;
+			}
+		}
+		else if (!(inflictor && inflictor->player)
+			&& player->laps <= numlaps
+			&& damagetype != DMG_DEATHPIT)
+		{
+			const UINT8 requiredbit = 1<<(player->laps & 7);
+			if (!(player->roundconditions.hittrackhazard[player->laps/8] & requiredbit))
+			{
+				player->roundconditions.hittrackhazard[player->laps/8] |= requiredbit;
+				player->roundconditions.checkthisframe = true;
 			}
 		}
 

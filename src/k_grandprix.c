@@ -217,7 +217,7 @@ void K_InitGrandPrixBots(void)
 			for (j = 0; j < numplayers; j++)
 			{
 				player_t *p = &players[competitors[j]];
-				char *rivalname = skins[p->skin].rivals[i];
+				const char *rivalname = skins[p->skin].rivals[i];
 				INT32 rivalnum = R_SkinAvailable(rivalname);
 
 				// Intentionally referenced before (currently dummied out) unlock check. Such a tease!
@@ -714,10 +714,12 @@ void K_RetireBots(void)
 
 			if (usableskins > 0)
 			{
-				UINT8 index = P_RandomKey(PR_RULESCRAMBLE, usableskins);
+				UINT8 index = P_RandomKey(PR_BOTS, usableskins);
 				skinnum = grabskins[index];
 				grabskins[index] = grabskins[--usableskins];
 			}
+
+			memcpy(&bot->availabilities, R_GetSkinAvailabilities(false, skinnum), MAXAVAILABILITY*sizeof(UINT8));
 
 			bot->botvars.difficulty = newDifficulty;
 			bot->botvars.diffincrease = 0;
@@ -763,9 +765,15 @@ void K_FakeBotResults(player_t *bot)
 		}
 	}
 
-	if (besttime == UINT32_MAX // No one finished, so you don't finish either.
-	|| bot->distancetofinish >= worstdist) // Last place, you aren't going to finish.
+	if (besttime == UINT32_MAX) // No one finished, so you don't finish either.
 	{
+		// We don't apply PF_NOCONTEST in the exitlevel case - that's done for all players in G_DoCompleted.
+		return;
+	}
+
+	if (bot->distancetofinish >= worstdist) // Last place, you aren't going to finish.
+	{
+		// This was a successful murder!
 		bot->pflags |= PF_NOCONTEST;
 		return;
 	}

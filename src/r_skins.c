@@ -186,13 +186,13 @@ void R_InitSkins(void)
 	M_UpdateConditionSetsPending();
 }
 
-UINT8 *R_GetSkinAvailabilities(boolean demolock, boolean forbots)
+UINT8 *R_GetSkinAvailabilities(boolean demolock, INT32 botforcecharacter)
 {
 	UINT16 i;
 	UINT8 shif, byte;
 	INT32 skinid;
 	static UINT8 responsebuffer[MAXAVAILABILITY];
-	UINT8 defaultbotskin = R_BotDefaultSkin();
+	const boolean forbots = (botforcecharacter != -1);
 
 	memset(&responsebuffer, 0, sizeof(responsebuffer));
 
@@ -207,7 +207,7 @@ UINT8 *R_GetSkinAvailabilities(boolean demolock, boolean forbots)
 			continue;
 
 		if ((forbots
-			? (M_CheckNetUnlockByID(i) || skinid == defaultbotskin) // Assert the host's lock.
+			? (M_CheckNetUnlockByID(i) || skinid == botforcecharacter) // Assert the host's lock.
 			: gamedata->unlocked[i]) // Assert the local lock.
 				!= true && !demolock)
 			continue;
@@ -452,7 +452,7 @@ void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 
 	if (P_IsLocalPlayer(player))
 		CONS_Alert(CONS_WARNING, M_GetText("Requested skin %d not found\n"), skinnum);
-	else if(server || IsPlayerAdmin(consoleplayer))
+	else if (server || IsPlayerAdmin(consoleplayer))
 		CONS_Alert(CONS_WARNING, "Player %d (%s) skin %d not found\n", playernum, player_names[playernum], skinnum);
 
 	SetSkin(player, GetPlayerDefaultSkin(playernum)); // not found put the eggman skin

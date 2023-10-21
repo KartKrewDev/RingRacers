@@ -32,9 +32,6 @@ extern "C" {
 
 //#define VIEWHEIGHTS "41"
 
-// Maximum laps per map.
-#define MAX_LAPS 99
-
 // Maximum player score.
 #define MAXSCORE 99999990 // 999999990
 
@@ -260,7 +257,6 @@ void P_RecalcPrecipInSector(sector_t *sector);
 void P_PrecipitationEffects(void);
 
 void P_RemoveMobj(mobj_t *th);
-boolean P_MobjWasRemoved(const mobj_t *th);
 void P_RemoveSavegameMobj(mobj_t *th);
 boolean P_SetPlayerMobjState(mobj_t *mobj, statenum_t state);
 boolean P_SetMobjState(mobj_t *mobj, statenum_t state);
@@ -546,6 +542,8 @@ boolean P_IsPickupCheesy(player_t *player, UINT8 type);
 void P_UpdateLastPickup(player_t *player, UINT8 type);
 boolean P_CanPickupEmblem(player_t *player, INT32 emblemID);
 boolean P_EmblemWasCollected(INT32 emblemID);
+
+void P_TrackRoundConditionTargetDamage(targetdamaging_t targetdamaging);
 
 //
 // P_SPEC

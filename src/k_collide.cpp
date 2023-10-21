@@ -910,6 +910,14 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 			K_AddHitLag(victim, victimHitlag, true);
 			K_AddHitLag(attacker, attackerHitlag, false);
 			shield->hitlag = attacker->hitlag;
+
+			if (attackerPlayer->roundconditions.whip_hyuu == false
+				&& attackerPlayer->hyudorotimer > 0)
+			{
+				attackerPlayer->roundconditions.whip_hyuu = true;
+				attackerPlayer->roundconditions.checkthisframe = true;
+			}
+
 			return true;
 		}
 		return false;

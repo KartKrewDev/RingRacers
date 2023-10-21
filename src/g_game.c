@@ -222,6 +222,7 @@ UINT32 bluescore, redscore; // CTF and Team Match team scores
 INT32 nummaprings = 0;
 
 UINT8 nummapspraycans = 0;
+UINT16 numchallengedestructibles = 0;
 
 // Elminates unnecessary searching.
 boolean CheckForBustableBlocks;
@@ -269,11 +270,6 @@ UINT8 maxXtraLife = 2; // Max extra lives from rings
 UINT8 introtoplay;
 UINT8 creditscutscene;
 UINT8 useSeal = 1;
-
-// Emerald locations
-mobj_t *hunt1;
-mobj_t *hunt2;
-mobj_t *hunt3;
 
 tic_t racecountdown, exitcountdown, musiccountdown; // for racing
 exitcondition_t g_exit;
@@ -534,19 +530,11 @@ void G_UpdateRecords(void)
 		&& (time < UINT32_MAX)) // DNF
 			mapheaderinfo[gamemap-1]->records.time = time;
 	}
-	else
-	{
-		mapheaderinfo[gamemap-1]->records.time = 0;
-	}
 
 	if (modeattacking & ATTACKING_LAP)
 	{
 		if ((mapheaderinfo[gamemap-1]->records.lap == 0) || (bestlap < mapheaderinfo[gamemap-1]->records.lap))
 			mapheaderinfo[gamemap-1]->records.lap = bestlap;
-	}
-	else
-	{
-		mapheaderinfo[gamemap-1]->records.lap = 0;
 	}
 
 	// Check emblems when level data is updated
@@ -4038,48 +4026,21 @@ static void G_DoCompleted(void)
 {
 	INT32 i;
 
-	if (modeattacking && pausedelay)
-		pausedelay = 0;
-
 	// We do this here so Challenges-related sounds aren't insta-killed
 	S_StopSounds();
 
-	if (legitimateexit && !demo.playback && !mapreset) // (yes you're allowed to unlock stuff this way when the game is modified)
-	{
-		if (gametype != GT_TUTORIAL)
-		{
-			UINT8 roundtype = GDGT_CUSTOM;
-
-			if (gametype == GT_RACE)
-				roundtype = GDGT_RACE;
-			else if (gametype == GT_BATTLE)
-				roundtype = (battleprisons ? GDGT_PRISONS : GDGT_BATTLE);
-			else if (gametype == GT_SPECIAL || gametype == GT_VERSUS)
-				roundtype = GDGT_SPECIAL;
-
-			gamedata->roundsplayed[roundtype]++;
-		}
-		gamedata->pendingkeyrounds++;
-
-		// Done before forced addition of PF_NOCONTEST to make UCRP_NOCONTEST harder to achieve
-		M_UpdateUnlockablesAndExtraEmblems(true, true);
-		gamedata->deferredsave = true;
-	}
-
-	if (gamedata->deferredsave)
-		G_SaveGameData();
-
-	legitimateexit = false;
-
-	gameaction = ga_nothing;
-
-	if (metalplayback)
-		G_StopMetalDemo();
-	if (metalrecording)
-		G_StopMetalRecording(false);
-
-	G_SetGamestate(GS_NULL);
-	wipegamestate = GS_NULL;
+	// First, loop over all players to:
+	// - fake bot results
+	// - set client power add
+	// - grand prix updates (for those who have finished)
+	//    - for bots
+	//        - set up difficulty increase (if applicable)
+	//    - for humans
+	//        - update Rings
+	//        - award Lives
+	//        - update over-all GP rank
+	// - wipe some level-only player struct data
+	// (The common thread is it needs to be done before Challenges updates.)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -4090,8 +4051,7 @@ static void G_DoCompleted(void)
 
 		player_t *const player = &players[i];
 
-		// Exitlevel shouldn't get you the points
-		if (player->exiting == false && (player->pflags & PF_NOCONTEST) == 0)
+		if ((player->exiting == 0) && (player->pflags & PF_NOCONTEST) == 0)
 		{
 			clientPowerAdd[i] = 0;
 
@@ -4099,13 +4059,9 @@ static void G_DoCompleted(void)
 			{
 				K_FakeBotResults(player);
 			}
-			else
-			{
-				player->pflags |= PF_NOCONTEST;
-			}
 		}
 
-		if (grandprixinfo.gp == true && grandprixinfo.wonround == true && player->exiting == true)
+		if (grandprixinfo.gp == true && grandprixinfo.wonround == true && player->exiting)
 		{
 			if (player->bot == true)
 			{
@@ -4141,11 +4097,77 @@ static void G_DoCompleted(void)
 		G_PlayerFinishLevel(i); // take away cards and stuff
 	}
 
-	if (automapactive)
-		AM_Stop();
+	// Then, do gamedata-relevant material.
+	// This has to be done second because some Challenges
+	// are dependent on round standings.
+	if (legitimateexit && !demo.playback && !mapreset)
+	{
+		if (gametype != GT_TUTORIAL)
+		{
+			UINT8 roundtype = GDGT_CUSTOM;
 
-	prevmap = (INT16)(gamemap-1);
+			if (gametype == GT_RACE)
+				roundtype = GDGT_RACE;
+			else if (gametype == GT_BATTLE)
+				roundtype = (battleprisons ? GDGT_PRISONS : GDGT_BATTLE);
+			else if (gametype == GT_SPECIAL || gametype == GT_VERSUS)
+				roundtype = GDGT_SPECIAL;
 
+			gamedata->roundsplayed[roundtype]++;
+		}
+		gamedata->pendingkeyrounds++;
+
+		M_UpdateUnlockablesAndExtraEmblems(true, true);
+		gamedata->deferredsave = true;
+	}
+
+	// This isn't in the above block because other
+	// mechanisms can queue up a gamedata save.
+	if (gamedata->deferredsave)
+		G_SaveGameData();
+
+	// Then, update some important game state.
+	{
+		legitimateexit = false;
+
+		if (modeattacking && pausedelay)
+			pausedelay = 0;
+
+		gameaction = ga_nothing;
+
+		if (metalplayback)
+			G_StopMetalDemo();
+		if (metalrecording)
+			G_StopMetalRecording(false);
+
+		if (automapactive)
+			AM_Stop();
+
+		G_SetGamestate(GS_NULL);
+		wipegamestate = GS_NULL;
+
+		prevmap = (INT16)(gamemap-1);
+	}
+
+	// Finally, if you're not exiting, guarantee NO CONTEST.
+	// We do this seperately from the loop above Challenges,
+	// so NOCONTEST-related Challenges don't fire on exitlevel.
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i] == false)
+		{
+			continue;
+		}
+
+		if (players[i].exiting || (players[i].pflags & PF_NOCONTEST))
+		{
+			continue;
+		}
+
+		players[i].pflags |= PF_NOCONTEST;
+	}
+
+	// And lastly, everything in anticipation for Intermission/level change.
 	if (!demo.playback)
 	{
 		// Set up power level gametype scrambles
@@ -4404,14 +4426,17 @@ void G_LoadGameSettings(void)
 }
 
 #define GD_VERSIONCHECK 0xBA5ED123 // Change every major version, as usual
-#define GD_VERSIONMINOR 6 // Change every format update
+#define GD_VERSIONMINOR 9 // Change every format update
 
+// You can't rearrange these without a special format update
 typedef enum
 {
 	GDEVER_ADDON = 1,
 	GDEVER_CREDITS = 1<<1,
 	GDEVER_REPLAY = 1<<2,
 	GDEVER_SPECIAL = 1<<3,
+	GDEVER_KEYTUTORIAL = 1<<4,
+	GDEVER_KEYMAJORSKIP = 1<<5,
 } gdeverdone_t;
 
 static const char *G_GameDataFolder(void)
@@ -4497,7 +4522,7 @@ void G_LoadGameData(void)
 		FIL_WriteFile(va("%s" PATHSEP "%s.bak", srb2home, gamedatafilename), save.buffer, save.size);
 	}
 
-	if ((versionMinor == 0 || versionMinor == 1)
+	if ((versionMinor <= 6)
 #ifdef DEVELOP
 		|| M_CheckParm("-resetchallengegrid")
 #endif
@@ -4516,6 +4541,11 @@ void G_LoadGameData(void)
 	if (versionMinor > 1)
 	{
 		gamedata->totalrings = READUINT32(save.p);
+
+		if (versionMinor >= 9)
+		{
+			gamedata->totaltumbletime = READUINT32(save.p);
+		}
 
 		for (i = 0; i < GDGT_MAX; i++)
 		{
@@ -4544,6 +4574,8 @@ void G_LoadGameData(void)
 			gamedata->everfinishedcredits = !!(everflags & GDEVER_CREDITS);
 			gamedata->eversavedreplay = !!(everflags & GDEVER_REPLAY);
 			gamedata->everseenspecial = !!(everflags & GDEVER_SPECIAL);
+			gamedata->chaokeytutorial = !!(everflags & GDEVER_KEYTUTORIAL);
+			gamedata->majorkeyskipattempted = !!(everflags & GDEVER_KEYMAJORSKIP);
 		}
 		else
 		{
@@ -4555,6 +4587,13 @@ void G_LoadGameData(void)
 	else
 	{
 		save.p += 4; // no direct equivalent to matchesplayed
+	}
+
+	// Prison Egg Pickups
+	if (versionMinor >= 8)
+	{
+		gamedata->thisprisoneggpickup = READUINT16(save.p);
+		gamedata->prisoneggstothispickup = READUINT16(save.p);
 	}
 
 	{
@@ -4609,7 +4648,7 @@ void G_LoadGameData(void)
 	if (gridunusable)
 	{
 		UINT16 burn = READUINT16(save.p); // Previous challengegridwidth
-		UINT8 height = (versionMinor > 0) ? CHALLENGEGRIDHEIGHT : 5;
+		UINT8 height = (versionMinor && versionMinor <= 6) ? 4 : CHALLENGEGRIDHEIGHT;
 		save.p += (burn * height * unlockreadsize); // Step over previous grid data
 
 		gamedata->challengegridwidth = 0;
@@ -5060,10 +5099,11 @@ void G_SaveGameData(void)
 	}
 
 	length = (4+1+1+
-		4+4+
+		4+4+4+
 		(4*GDGT_MAX)+
 		4+1+2+2+
 		4+
+		2+2+
 		4+
 		(MAXEMBLEMS+(MAXUNLOCKABLES*2)+MAXCONDITIONSETS)+
 		4+2);
@@ -5200,6 +5240,7 @@ void G_SaveGameData(void)
 
 	WRITEUINT32(save.p, gamedata->totalplaytime); // 4
 	WRITEUINT32(save.p, gamedata->totalrings); // 4
+	WRITEUINT32(save.p, gamedata->totaltumbletime); // 4
 
 	for (i = 0; i < GDGT_MAX; i++) // 4 * GDGT_MAX
 	{
@@ -5222,9 +5263,17 @@ void G_SaveGameData(void)
 			everflags |= GDEVER_REPLAY;
 		if (gamedata->everseenspecial)
 			everflags |= GDEVER_SPECIAL;
+		if (gamedata->chaokeytutorial)
+			everflags |= GDEVER_KEYTUTORIAL;
+		if (gamedata->majorkeyskipattempted)
+			everflags |= GDEVER_KEYMAJORSKIP;
 
 		WRITEUINT32(save.p, everflags); // 4
 	}
+
+	// Prison Egg Pickups
+	WRITEUINT16(save.p, gamedata->thisprisoneggpickup); // 2
+	WRITEUINT16(save.p, gamedata->prisoneggstothispickup); // 2
 
 	WRITEUINT32(save.p, quickncasehash(timeattackfolder, 64)); // 4
 

@@ -5339,6 +5339,10 @@ static boolean P_IsTrackerType(INT32 type)
 		case MT_JAWZ:
 			return true;
 
+		// Players need to be able to glance at the Ancient Shrines
+		case MT_ANCIENTSHRINE:
+			return true;
+
 		// Primarily for minimap data, handle with care
 		case MT_SPB:
 		case MT_BATTLECAPSULE:
@@ -5349,6 +5353,7 @@ static boolean P_IsTrackerType(INT32 type)
 		case MT_PLAYER:
 			return true;
 
+		// HUD tracking
 		case MT_OVERTIME_CENTER:
 		case MT_MONITOR:
 		case MT_EMERALD:
@@ -7226,7 +7231,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		mobj->frame &= ~FF_TRANSMASK;
 		mobj->renderflags &= ~RF_TRANSMASK;
 
-		if (P_EmblemWasCollected(mobj->health - 1) || !P_CanPickupEmblem(&players[consoleplayer], mobj->health - 1))
+		if (P_EmblemWasCollected(mobj->health - 1) || !P_CanPickupEmblem(NULL, mobj->health - 1))
 		{
 			trans = tr_trans50;
 		}
@@ -7248,6 +7253,64 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 
 		mobj->renderflags |= (trans << RF_TRANSSHIFT);
+
+		break;
+	}
+	case MT_ANCIENTSHRINE:
+	{
+		boolean docolorized = false;
+
+		if (P_MobjWasRemoved(mobj->tracer) == false)
+		{
+			if (mobj->tracer->fuse == 1)
+			{
+				if (!(mapheaderinfo[gamemap-1]->records.mapvisited & MV_MYSTICMELODY))
+				{
+					mapheaderinfo[gamemap-1]->records.mapvisited |= MV_MYSTICMELODY;
+
+					if (!M_UpdateUnlockablesAndExtraEmblems(true, true))
+						S_StartSound(NULL, sfx_ncitem);
+					gamedata->deferredsave = true;
+				}
+			}
+
+			// Non-RNG-advancing equivalent of Obj_SpawnEmeraldSparks
+			if (leveltime % 3 == 0)
+			{
+				mobj_t *sparkle = P_SpawnMobjFromMobj(
+					mobj,
+					M_RandomRange(-48, 48) * FRACUNIT,
+					M_RandomRange(-48, 48) * FRACUNIT,
+					M_RandomRange(0, 64) * FRACUNIT,
+					MT_SPARK
+				);
+				P_SetMobjState(sparkle, S_MORB1);
+
+				sparkle->color = SKINCOLOR_PLAGUE;
+				sparkle->momz += 6 * mobj->scale * P_MobjFlip(mobj);
+				P_SetScale(sparkle, 2);
+			}
+
+			docolorized = !!(leveltime & 1);
+		}
+
+		if (mobj->colorized != docolorized)
+		{
+			if (docolorized)
+			{
+				mobj->colorized = true;
+				mobj->color = SKINCOLOR_PLAGUE;
+				mobj->spriteyoffset = 1;
+			}
+			else
+			{
+				mobj->colorized = false;
+				mobj->color = SKINCOLOR_NONE;
+				mobj->spriteyoffset = 0;
+			}
+		}
+
+		mobj->frame = (mapheaderinfo[gamemap-1]->records.mapvisited & MV_MYSTICMELODY) ? 1 : 0;
 
 		break;
 	}
@@ -7615,6 +7678,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		break;
 	}
 	case MT_EMERALD:
+	{
 		Obj_EmeraldThink(mobj);
 
 		if (P_MobjWasRemoved(mobj))
@@ -7622,6 +7686,94 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			return false;
 		}
 		break;
+	}
+	case MT_PRISONEGGDROP:
+	{
+		// If it gets any more complicated than this I'll make an objects/prisoneggdrop.c file, promise
+		// ~toast 121023
+
+		statenum_t teststate = S_NULL;
+
+		if (mobj->flags2 & MF2_AMBUSH)
+		{
+			if (mobj->extravalue1 == 0 && P_IsObjectOnGround(mobj))
+			{
+				if (P_CheckDeathPitCollide(mobj))
+				{
+					P_RemoveMobj(mobj);
+					return false;
+				}
+
+				mobj->momx = mobj->momy = 0;
+				mobj->flags2 |= MF2_STRONGBOX;
+			}
+
+			teststate = (mobj->state-states);
+		}
+		else if (!netgame)
+		{
+			if (gamedata->thisprisoneggpickup_cached->type == UC_PRISONEGGCD)
+			{
+				teststate = S_PRISONEGGDROP_CD;
+				mobj->renderflags |= RF_SEMIBRIGHT;
+			}
+
+			P_SetMobjStateNF(mobj, teststate);
+
+			if (P_MobjWasRemoved(mobj))
+			{
+				return false;
+			}
+
+			S_StartSound(NULL, sfx_cdsprk);
+
+			mobj->z += P_MobjFlip(mobj);
+			mobj->flags2 |= MF2_AMBUSH;
+		}
+
+		if (teststate == S_PRISONEGGDROP_CD)
+		{
+			if (mobj->extravalue1)
+			{
+				++mobj->extravalue1;
+
+				INT32 trans = (mobj->extravalue1 * NUMTRANSMAPS) / (TICRATE);
+				if (trans >= NUMTRANSMAPS)
+				{
+					P_RemoveMobj(mobj);
+					return false;
+				}
+
+				mobj->angle += ANGLE_MAX/(TICRATE/3);
+				mobj->renderflags = (mobj->renderflags & ~RF_TRANSMASK) | (trans << RF_TRANSSHIFT);
+			}
+			else
+			{
+				if (mobj->flags2 & MF2_STRONGBOX)
+					mobj->angle += ANGLE_MAX/TICRATE;
+				else
+					mobj->angle += ANGLE_MAX/(TICRATE/3);
+
+				// Non-RNG-advancing equivalent of Obj_SpawnEmeraldSparks
+				if (leveltime % 3 == 0)
+				{
+					mobj_t *sparkle = P_SpawnMobjFromMobj(
+						mobj,
+						M_RandomRange(-48, 48) * FRACUNIT,
+						M_RandomRange(-48, 48) * FRACUNIT,
+						M_RandomRange(0, 64) * FRACUNIT,
+						MT_SPARK
+					);
+					P_SetMobjStateNF(sparkle, mobjinfo[MT_EMERALDSPARK].spawnstate);
+
+					sparkle->color = M_RandomChance(FRACUNIT/2) ? SKINCOLOR_ULTRAMARINE : SKINCOLOR_MAGENTA;
+					sparkle->momz += 8 * mobj->scale * P_MobjFlip(mobj);
+				}
+			}
+		}
+
+		break;
+	}
 	case MT_EMERALDFLARE:
 		Obj_EmeraldFlareThink(mobj);
 
@@ -11454,18 +11606,40 @@ void P_RemoveMobj(mobj_t *mobj)
 	mobj->thinker.function.acp1 = (actionf_p1)P_MobjThinker; // needed for P_UnsetThingPosition, etc. to work.
 
 	// Rings only, please!
-	if (mobj->spawnpoint &&
-		(mobj->type == MT_RING
-		|| mobj->type == MT_BLUESPHERE)
-		&& !(mobj->flags2 & MF2_DONTRESPAWN))
+	if (mobj->spawnpoint == NULL)
+		;
+	else
 	{
-		//CONS_Printf("added to queue at tic %d\n", leveltime);
-		itemrespawnque[iquehead] = mobj->spawnpoint;
-		itemrespawntime[iquehead] = leveltime;
-		iquehead = (iquehead+1)&(ITEMQUESIZE-1);
-		// lose one off the end?
-		if (iquehead == iquetail)
-			iquetail = (iquetail+1)&(ITEMQUESIZE-1);
+		if ((mobj->type == MT_RING
+			|| mobj->type == MT_BLUESPHERE)
+			&& !(mobj->flags2 & MF2_DONTRESPAWN))
+		{
+			//CONS_Printf("added to queue at tic %d\n", leveltime);
+			itemrespawnque[iquehead] = mobj->spawnpoint;
+			itemrespawntime[iquehead] = leveltime;
+			iquehead = (iquehead+1)&(ITEMQUESIZE-1);
+			// lose one off the end?
+			if (iquehead == iquetail)
+				iquetail = (iquetail+1)&(ITEMQUESIZE-1);
+		}
+
+		if (numchallengedestructibles && numchallengedestructibles != UINT16_MAX)
+		{
+			UINT8 i;
+			for (i = 0; i < mapheaderinfo[gamemap-1]->destroyforchallenge_size; i++)
+			{
+				if (mobj->type != mapheaderinfo[gamemap-1]->destroyforchallenge[i])
+					continue;
+
+				if ((--numchallengedestructibles) == 0)
+				{
+					numchallengedestructibles = UINT16_MAX;
+					gamedata->deferredconditioncheck = true;
+				}
+
+				break;
+			}
+		}
 	}
 
 	if (P_IsTrackerType(mobj->type))
@@ -13209,6 +13383,22 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 		nummapspraycans++;
 		break;
 	}
+	case MT_ANCIENTSHRINE:
+	{
+		angle_t remainderangle = (mobj->angle % ANGLE_90);
+
+		if (remainderangle)
+		{
+			// Always lock to 90 degree grid.
+			if (remainderangle > ANGLE_45)
+				mobj->angle += ANGLE_90;
+			mobj->angle -= remainderangle;
+		}
+
+		P_SetScale(mobj, mobj->destscale = 2*mobj->scale);
+
+		break;
+	}
 	case MT_SKYBOX:
 	{
 		P_InitSkyboxPoint(mobj, mthing);
@@ -13988,12 +14178,12 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	return true;
 }
 
-static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y, fixed_t z, mobjtype_t i)
+static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 {
 	mobj_t *mobj = NULL;
 	size_t arg = SIZE_MAX;
 
-	mobj = P_SpawnMobj(x, y, z, i);
+	mobj = P_SpawnMobj(x, y, z, type);
 	mobj->spawnpoint = mthing;
 
 	mobj->angle = FixedAngle(mthing->angle << FRACBITS);
@@ -14075,6 +14265,19 @@ static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y,
 	{
 		mobj->eflags |= MFE_VERTICALFLIP;
 		mobj->flags2 |= MF2_OBJECTFLIP;
+	}
+
+	if (mapheaderinfo[gamemap-1]->destroyforchallenge_size && numchallengedestructibles != UINT16_MAX)
+	{
+		UINT8 i;
+		for (i = 0; i < mapheaderinfo[gamemap-1]->destroyforchallenge_size; i++)
+		{
+			if (type != mapheaderinfo[gamemap-1]->destroyforchallenge[i])
+				continue;
+
+			numchallengedestructibles++;
+			break;
+		}
 	}
 
 	return mobj;

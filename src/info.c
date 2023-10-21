@@ -143,10 +143,15 @@ char sprnames[NUMSPRITES + 1][5] =
 	"NCHP", // NiGHTS chip
 	"NSTR", // NiGHTS star
 	"EMBM", // Emblem
+	"SPCN", // Spray Can
+	"MMSH", // Ancient Shrine
+	"MORB", // One Morbillion
 	"EMRC", // Chaos Emeralds
 	"SEMR", // Super Emeralds
 	"ESPK",
-	"SHRD", // Emerald Hunt
+
+	// Prison Egg Drops
+	"ALTM",
 
 	// Interactive Objects
 	"BBLS", // water bubble source
@@ -635,7 +640,6 @@ char sprnames[NUMSPRITES + 1][5] =
 	"POKE", // Pokey
 	"AUDI", // Audience members
 	"DECO", // Old 1.0 Kart Decoratives + New misc ones
-	"SPCN", // Spray Can replaces all the old D00Dkart objects
 	"SNES", // Sprites for SNES remake maps
 	"GBAS", // Sprites for GBA remake maps
 	"SPRS", // Sapphire Coast Spring Shell
@@ -1907,6 +1911,25 @@ state_t states[NUMSTATES] =
 	// Spray Can
 	{SPR_SPCN, FF_ANIMATE|FF_SEMIBRIGHT, -1, {NULL}, 15, 2, S_NULL}, // S_SPRAYCAN
 
+	// Ancient Shrine
+	{SPR_MMSH, 0, -1, {NULL}, 0, 0, S_NULL}, // S_ANCIENTSHRINE
+
+	{SPR_MORB, 0|FF_ADD, 1, {A_FireShrink}, 2*FRACUNIT/3, 12, S_MORB2}, // S_MORB1
+	{SPR_MORB, 1|FF_ADD, 1, {NULL}, 0, 0, S_MORB3},  // S_MORB2
+	{SPR_MORB, 2|FF_ADD, 1, {NULL}, 0, 0, S_MORB4},  // S_MORB3
+	{SPR_MORB, 3|FF_ADD, 1, {NULL}, 0, 0, S_MORB5},  // S_MORB4
+	{SPR_MORB, 4|FF_ADD, 1, {NULL}, 0, 0, S_MORB6},  // S_MORB5
+	{SPR_MORB, 5|FF_ADD, 1, {NULL}, 0, 0, S_MORB7},  // S_MORB6
+	{SPR_MORB, 6|FF_ADD, 1, {NULL}, 0, 0, S_MORB8},  // S_MORB7
+	{SPR_MORB, 7|FF_ADD, 4, {NULL}, 0, 0, S_MORB9},  // S_MORB8
+	{SPR_MORB, 6|FF_ADD, 1, {A_FireShrink},            1, 12, S_MORB10}, // S_MORB9
+	{SPR_MORB, 5|FF_ADD, 1, {NULL}, 0, 0, S_MORB11}, // S_MORB10
+	{SPR_MORB, 4|FF_ADD, 1, {NULL}, 0, 0, S_MORB12}, // S_MORB11
+	{SPR_MORB, 3|FF_ADD, 1, {NULL}, 0, 0, S_MORB13}, // S_MORB12
+	{SPR_MORB, 2|FF_ADD, 1, {NULL}, 0, 0, S_MORB14}, // S_MORB13
+	{SPR_MORB, 1|FF_ADD, 1, {NULL}, 0, 0, S_MORB15}, // S_MORB14
+	{SPR_MORB, 0|FF_ADD, 1, {NULL}, 0, 0, S_NULL},   // S_MORB15
+
 	// Chaos Emeralds
 	{SPR_EMRC, FF_FULLBRIGHT,           1, {NULL}, 0, 0, S_CHAOSEMERALD2}, // S_CHAOSEMERALD1
 	{SPR_EMRC, FF_FULLBRIGHT|FF_ADD,    1, {NULL}, 0, 0, S_CHAOSEMERALD1}, // S_CHAOSEMERALD2
@@ -1927,10 +1950,8 @@ state_t states[NUMSTATES] =
 
 	{SPR_LENS, FF_FULLBRIGHT|FF_ADD|FF_TRANS10|FF_ANIMATE|11, 8, {NULL}, 7, 1, S_GAINAX_MID2}, // S_EMERALDFLARE1
 
-	// Emerald hunt shards
-	{SPR_SHRD, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SHRD1
-	{SPR_SHRD, 1, -1, {NULL}, 0, 0, S_NULL}, // S_SHRD2
-	{SPR_SHRD, 2, -1, {NULL}, 0, 0, S_NULL}, // S_SHRD3
+	// Prison Egg Drops
+	{SPR_ALTM, 0|FF_PAPERSPRITE|FF_SEMIBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_PRISONEGGDROP_CD
 
 	// Bubble Source
 	{SPR_BBLS, 0, 8, {A_BubbleSpawn}, 2048, 0, S_BUBBLES2}, // S_BUBBLES1
@@ -8392,6 +8413,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL          // raisestate
 	},
 
+	{           // MT_ANCIENTSHRINE
+		2256,           // doomednum
+		S_ANCIENTSHRINE,// spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		48*FRACUNIT,    // radius
+		80*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_SOLID|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
 	{           // MT_EMERALD
 		-1,             // doomednum
 		S_CHAOSEMERALD1, // spawnstate
@@ -8473,9 +8521,9 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL          // raisestate
 	},
 
-	{           // MT_EMERHUNT
-		320,            // doomednum
-		S_SHRD1,        // spawnstate
+	{           // MT_PRISONEGGDROP
+		-1,             // doomednum
+		S_INVISIBLE,    // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound
@@ -8486,44 +8534,17 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,       // painsound
 		S_NULL,         // meleestate
 		S_NULL,         // missilestate
-		S_SPRK1,        // deathstate
-		S_NULL,         // xdeathstate
-		sfx_cgot,       // deathsound
-		8,              // speed
-		12*FRACUNIT,    // radius
-		42*FRACUNIT,    // height
-		0,              // display offset
-		4,              // mass
-		0,              // damage
-		sfx_None,       // activesound
-		MF_SPECIAL|MF_NOGRAVITY, // flags
-		S_NULL          // raisestate
-	},
-
-	{           // MT_EMERALDSPAWN
-		321,            // doomednum
-		S_INVISIBLE,    // spawnstate
-		1000,           // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		0,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
 		S_NULL,         // deathstate
 		S_NULL,         // xdeathstate
-		sfx_None,       // deathsound
+		sfx_s3k9c,      // deathsound
 		0,              // speed
-		8,              // radius
-		8,              // height
+		65*FRACUNIT,    // radius
+		130*FRACUNIT,   // height
 		0,              // display offset
-		10,             // mass
+		16,             // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOSECTOR,  // flags
+		MF_SPECIAL|MF_PICKUPFROMBELOW|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 

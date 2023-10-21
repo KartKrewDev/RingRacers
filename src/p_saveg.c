@@ -2696,7 +2696,7 @@ static UINT32 SaveSlope(const pslope_t *slope)
 	return 0xFFFFFFFF;
 }
 
-static boolean TypeIsNetSynced(mobjtype_t type)
+boolean TypeIsNetSynced(mobjtype_t type)
 {
 	// Ignore stationary hoops - these will be respawned from mapthings.
 	if (type == MT_HOOP)
@@ -2716,6 +2716,10 @@ static boolean TypeIsNetSynced(mobjtype_t type)
 
 	// MT_HORNCODE: So it turns out hornmod is fundamentally incompatible with netsync
 	if (type == MT_HORNCODE)
+		return false;
+
+	// MT_PRISONEGGDROP: Yeah these are completely local
+	if (type == MT_PRISONEGGDROP)
 		return false;
 
 	return true;
@@ -5738,7 +5742,7 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 		WRITEUINT32(save->p, grandprixinfo.rank.laps);
 		WRITEUINT32(save->p, grandprixinfo.rank.totalLaps);
 
-		WRITEUINT32(save->p, grandprixinfo.rank.continuesUsed);
+		WRITEUINT32(save->p, (grandprixinfo.rank.continuesUsed + 1));
 
 		WRITEUINT32(save->p, grandprixinfo.rank.prisons);
 		WRITEUINT32(save->p, grandprixinfo.rank.totalPrisons);
@@ -6064,6 +6068,8 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 	WRITEUINT32(save->p, darktimer);
 	WRITEFIXED(save->p, darkness);
 
+	WRITEUINT16(save->p, numchallengedestructibles);
+
 	// Is it paused?
 	if (paused)
 		WRITEUINT8(save->p, 0x2f);
@@ -6245,6 +6251,8 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 
 	darktimer = READUINT32(save->p);
 	darkness = READFIXED(save->p);
+
+	numchallengedestructibles = READUINT16(save->p);
 
 	// Is it paused?
 	if (READUINT8(save->p) == 0x2f)
