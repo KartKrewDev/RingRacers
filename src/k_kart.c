@@ -9892,7 +9892,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 	{
 		if (!keepsliptide && K_IsLosingSliptideZip(player) && player->sliptideZip > 0)
 		{
-			if (!S_SoundPlaying(player->mo, sfx_waved2) && player->sliptideZip > HIDEWAVEDASHCHARGE)
+			if (player->sliptideZip > HIDEWAVEDASHCHARGE && !S_SoundPlaying(player->mo, sfx_waved2))
 				S_StartSoundAtVolume(player->mo, sfx_waved2, 255); // Losing combo time, going to boost
 			S_StopSoundByID(player->mo, sfx_waved1);
 			S_StopSoundByID(player->mo, sfx_waved4);
@@ -9954,7 +9954,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 		player->sliptideZipDelay = 0;
 		S_StopSoundByID(player->mo, sfx_waved2);
 		S_StopSoundByID(player->mo, sfx_waved4);
-		if (!S_SoundPlaying(player->mo, sfx_waved1) && player->sliptideZip > HIDEWAVEDASHCHARGE)
+		if (player->sliptideZip > HIDEWAVEDASHCHARGE && !S_SoundPlaying(player->mo, sfx_waved1))
 			S_StartSoundAtVolume(player->mo, sfx_waved1, 255); // Charging
 	}
 
