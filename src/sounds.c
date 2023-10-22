@@ -1113,6 +1113,11 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"slot04", false, 64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Seven"},
   {"slot05", false, 64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "JACKPOT!"},
 
+  // RR - Gachabom rebound
+  {"grbnd1", false, 64,  64, -1, NULL, 0,        -1,  -1, LUMPERROR, "Gachabom returning"},
+  {"grbnd2", false, 64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Gachabom orbiting"},
+  {"grbnd3", false, 64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Gachabom re-collected"},
+
   // SRB2Kart - Drop target sounds
   {"kdtrg1", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Low energy, SF_X8AWAYSOUND
   {"kdtrg2", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Medium energy, SF_X8AWAYSOUND
