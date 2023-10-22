@@ -1954,8 +1954,9 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 		INT32 ybar = 180;
 		INT32 widthbar = 120, xbar = 160 - widthbar/2, currentx;
 		INT32 barflags = V_SNAPTOBOTTOM|V_SLIDEIN;
+		INT32 transflags = ((6)<<FF_TRANSSHIFT);
 
-		V_DrawScaledPatch(xbar, ybar - 2, barflags, kp_wouldyoustillcatchmeifiwereaworm);
+		V_DrawScaledPatch(xbar, ybar - 2, barflags|transflags, kp_wouldyoustillcatchmeifiwereaworm);
 
 		V_DrawMappedPatch(160 + widthbar/2 - 7, ybar - 7, barflags, faceprefix[stplyr->skin][FACE_MINIMAP], colormap);
 
