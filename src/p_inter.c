@@ -3080,6 +3080,44 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			// Not a player, steal damage is intended to not do anything
 			return false;
 		}
+
+		if ((target->flags & MF_BOSS) == MF_BOSS)
+		{
+			targetdamaging_t targetdamaging = UFOD_GENERIC;
+			if (P_MobjWasRemoved(inflictor) == true)
+				;
+			else switch (inflictor->type)
+			{
+				case MT_GACHABOM:
+					targetdamaging = UFOD_GACHABOM;
+					break;
+				case MT_ORBINAUT:
+				case MT_ORBINAUT_SHIELD:
+					targetdamaging = UFOD_ORBINAUT;
+					break;
+				case MT_BANANA:
+					targetdamaging = UFOD_BANANA;
+					break;
+				case MT_INSTAWHIP:
+					inflictor->extravalue2 = 1; // Disable whip collision
+					targetdamaging = UFOD_WHIP;
+					break;
+				case MT_PLAYER:
+					targetdamaging = UFOD_BOOST;
+					break;
+				case MT_JAWZ:
+				case MT_JAWZ_SHIELD:
+					targetdamaging = UFOD_JAWZ;
+					break;
+				case MT_SPB:
+					targetdamaging = UFOD_SPB;
+					break;
+				default:
+					break;
+			}
+
+			P_TrackRoundConditionTargetDamage(targetdamaging);
+		}
 	}
 
 	// do the damage
