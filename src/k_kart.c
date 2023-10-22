@@ -8329,7 +8329,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->instaWhipChargeLockout--;
 	if (player->rings > 0 || player->itemamount || player->ringdelay || player->rocketsneakertimer)
 		player->instaWhipChargeLockout = INSTAWHIP_HOLD_DELAY;
-	if (!(player->cmd.buttons & BT_ATTACK)) // Deliberate Item button release, no need to protect you from lockout
+	else if (!(player->cmd.buttons & BT_ATTACK)) // Deliberate Item button release, no need to protect you from lockout
 		player->instaWhipChargeLockout = 0;
 
 	if (player->instaWhipCharge && player->instaWhipCharge < INSTAWHIP_CHARGETIME)
