@@ -54,6 +54,10 @@ Make sure this matches the actual number of states
 #define RINGVOLUMEUSEPENALTY 15
 #define RINGVOLUMEREGEN 3
 
+// Mispredicted turns can generate phantom sliptide inputs for a few tics.
+// Delay the wavedash visuals until we're reasonably sure that it's a deliberate turn.
+#define HIDEWAVEDASHCHARGE (60)
+
 angle_t K_ReflectAngle(angle_t angle, angle_t against, fixed_t maxspeed, fixed_t yourspeed);
 
 boolean K_IsDuelItem(mobjtype_t type);

@@ -4232,8 +4232,8 @@ void K_UpdateSliptideZipIndicator(player_t *player)
 	mobj->angle = momentumAngle + ANGLE_90;
 	P_SetScale(mobj, 3 * player->mo->scale / 2);
 
-	// No stored boost
-	if (player->sliptideZip == 0)
+	// No stored boost (or negligible enough that it might be a mistake)
+	if (player->sliptideZip <= HIDEWAVEDASHCHARGE)
 	{
 		mobj->renderflags |= RF_DONTDRAW;
 		mobj->frame = 7;
@@ -9892,7 +9892,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 	{
 		if (!keepsliptide && K_IsLosingSliptideZip(player) && player->sliptideZip > 0)
 		{
-			if (!S_SoundPlaying(player->mo, sfx_waved2))
+			if (!S_SoundPlaying(player->mo, sfx_waved2) && player->sliptideZip > HIDEWAVEDASHCHARGE)
 				S_StartSoundAtVolume(player->mo, sfx_waved2, 255); // Losing combo time, going to boost
 			S_StopSoundByID(player->mo, sfx_waved1);
 			S_StopSoundByID(player->mo, sfx_waved4);
@@ -9954,7 +9954,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 		player->sliptideZipDelay = 0;
 		S_StopSoundByID(player->mo, sfx_waved2);
 		S_StopSoundByID(player->mo, sfx_waved4);
-		if (!S_SoundPlaying(player->mo, sfx_waved1))
+		if (!S_SoundPlaying(player->mo, sfx_waved1) && player->sliptideZip > HIDEWAVEDASHCHARGE)
 			S_StartSoundAtVolume(player->mo, sfx_waved1, 255); // Charging
 	}
 
