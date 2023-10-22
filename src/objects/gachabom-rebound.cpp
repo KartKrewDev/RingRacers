@@ -234,6 +234,7 @@ void Obj_SpawnGachaBomRebound(mobj_t* source, mobj_t* target)
 
 		rebound_mode(x) = static_cast<int>(mode);
 		rebound_timer(x) = kReboundAcceptPause;
+		played_rebound_sound(x) = false;
 
 		P_SetTarget(&rebound_target(x), target);
 	};
