@@ -788,6 +788,7 @@ static UINT8 GetUFODamage(mobj_t *inflictor, UINT8 damageType)
 			{
 				targetdamaging = UFOD_WHIP;
 				ret = 10;
+				inflictor->extravalue2 = 1; // Disable whip collision
 				break;
 			}
 			case MT_JAWZ:
