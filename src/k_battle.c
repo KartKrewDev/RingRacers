@@ -40,7 +40,19 @@ UINT8 numtargets = 0; // Capsules busted
 INT32 K_StartingBumperCount(void)
 {
 	if (battleprisons)
-		return 0; // always 1 hit in Prison Break
+	{
+		if (grandprixinfo.gp == true && grandprixinfo.masterbots == true)
+			return 0;
+		switch (gamespeed)
+		{
+			case KARTSPEED_HARD:
+				return 1;
+			case KARTSPEED_NORMAL:
+				return 2;
+			case KARTSPEED_EASY:
+				return 3;
+		}
+	}
 
 	return cv_kartbumpers.value;
 }

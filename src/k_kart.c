@@ -12445,7 +12445,7 @@ tic_t K_TimeLimitForGametype(void)
 	{
 		if (battleprisons)
 		{
-			return 20*TICRATE;
+			return (gamespeed == KARTSPEED_EASY) ? 30*TICRATE : 20*TICRATE;
 		}
 
 		return gametypeDefault;

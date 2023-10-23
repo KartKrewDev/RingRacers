@@ -1082,7 +1082,7 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 		S_StartSound(NULL, sfx_s221);
 		if (timelimitintics)
 		{
-			extratimeintics += 10*TICRATE;
+			extratimeintics += (gamespeed == KARTSPEED_EASY) ? 15*TICRATE : 10*TICRATE;
 			secretextratime = TICRATE/2;
 		}
 
