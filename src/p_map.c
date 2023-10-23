@@ -689,7 +689,9 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			if (P_DamageMobj(tm.thing, thing, thing, 1, damagetype) && (damagetype = (thing->info->mass>>8)))
 				S_StartSound(thing, damagetype);
 		}
-		return BMIT_CONTINUE;
+
+		if (P_MobjWasRemoved(tm.thing) || P_MobjWasRemoved(thing))
+			return BMIT_CONTINUE;
 	}
 	else if (tm.thing->flags & MF_PAIN && thing->player)
 	{ // Painful thing splats player in the face
@@ -705,7 +707,9 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			if (P_DamageMobj(thing, tm.thing, tm.thing, 1, damagetype) && (damagetype = (tm.thing->info->mass>>8)))
 				S_StartSound(tm.thing, damagetype);
 		}
-		return BMIT_CONTINUE;
+
+		if (P_MobjWasRemoved(tm.thing) || P_MobjWasRemoved(thing))
+			return BMIT_CONTINUE;
 	}
 
 	// check for skulls slamming into things
