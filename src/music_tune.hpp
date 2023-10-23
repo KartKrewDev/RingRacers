@@ -16,6 +16,7 @@
 
 #include "doomdef.h"
 #include "doomtype.h"
+#include "k_boss.h"
 #include "music_detail.hpp"
 
 namespace srb2::music
@@ -78,12 +79,21 @@ public:
 	bool paused() const { return pause_.has_value(); }
 	bool can_end() const { return end_ != INFTICS; }
 
+	// Slow level music down a bit in Encore. (Values are vibe-based. WE GET IT YOU VAPE)
+	const float encoremul = 0.86471f;
+
 	float speed() const
 	{
-		// Slow level music down a bit in Encore. (Values are vibe-based. WE GET IT YOU VAPE)
-		if (encoremode && gamestate == GS_LEVEL)
+		// Sync is checked first because it's synced with the level context. Get it?
+		if (sync && encoremode && gamestate == GS_LEVEL)
 		{
-			return 0.86471f;
+			if (K_CheckBossIntro())
+			{
+				// In Versus, the vape makes you think you can start a nightcore YT channel
+				return (1.f/encoremul);
+			}
+
+			return encoremul;
 		}
 
 		return 1.f;
