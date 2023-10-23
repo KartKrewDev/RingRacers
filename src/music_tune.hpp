@@ -62,6 +62,10 @@ public:
 	// resumed).
 	bool credit = false;
 
+	// This tune will vape in encoremode contexts.
+	bool vapes = false;
+	bool nightcoreable = false;
+
 	// Start playing this number of tics into the tune.
 	tic_t seek = 0;
 
@@ -84,10 +88,10 @@ public:
 
 	float speed() const
 	{
-		// Sync is checked first because it's synced with the level context. Get it?
-		if (sync && encoremode && gamestate == GS_LEVEL)
+		// Apply to all tunes that support vape mode.
+		if (encoremode && vapes)
 		{
-			if (K_CheckBossIntro())
+			if (nightcoreable && K_CheckBossIntro())
 			{
 				// In Versus, the vape makes you think you can start a nightcore YT channel
 				return (1.f/encoremul);
