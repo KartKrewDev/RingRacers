@@ -2381,7 +2381,7 @@ void P_MovePlayer(player_t *player)
 	//////////////////////
 
 	P_UpdatePlayerAngle(player);
-
+	
 	ticruned++;
 	if (!(cmd->flags & TICCMD_RECEIVED))
 		ticmiss++;

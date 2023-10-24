@@ -117,6 +117,7 @@ static tic_t joindelay = 0;
 UINT16 pingmeasurecount = 1;
 UINT32 realpingtable[MAXPLAYERS]; //the base table of ping where an average will be sent to everyone.
 UINT32 playerpingtable[MAXPLAYERS]; //table of player latency values.
+UINT32 playerpacketlosstable[MAXPLAYERS];
 
 #define GENTLEMANSMOOTHING (TICRATE)
 static tic_t reference_lag;
@@ -5317,10 +5318,15 @@ static void HandlePacketFromPlayer(SINT8 node)
 			{
 				UINT8 i;
 				for (i = 0; i < MAXPLAYERS; i++)
+				{
 					if (playeringame[i])
-						playerpingtable[i] = (tic_t)netbuffer->u.pingtable[i];
+					{
+						playerpingtable[i] = (tic_t)netbuffer->u.netinfo.pingtable[i];
+						playerpacketlosstable[i] = netbuffer->u.netinfo.packetloss[i];
+					}
+				}
 
-				servermaxping = (tic_t)netbuffer->u.pingtable[MAXPLAYERS];
+				servermaxping = (tic_t)netbuffer->u.netinfo.pingtable[MAXPLAYERS];
 			}
 
 			break;
@@ -6024,6 +6030,8 @@ static void SV_Maketic(void)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
+		packetloss[i][maketic%PACKETMEASUREWINDOW] = false;
+		
 		if (!playeringame[i])
 			continue;
 
@@ -6051,6 +6059,9 @@ static void SV_Maketic(void)
 				*ticcmd = *prevticcmd;
 				ticcmd->flags &= ~TICCMD_RECEIVED;
 			}
+
+			// packetloss[i][leveltime%PACKETMEASUREWINDOW] = (cmd->flags & TICCMD_RECEIVED) ? false : true;
+			packetloss[i][maketic%PACKETMEASUREWINDOW] = true;
 		}
 	}
 
@@ -6193,7 +6204,7 @@ static INT32 pingtimeout[MAXPLAYERS];
 
 static inline void PingUpdate(void)
 {
-	INT32 i;
+	INT32 i, j;
 	boolean pingkick[MAXPLAYERS];
 	UINT8 nonlaggers = 0;
 	memset(pingkick, 0, sizeof(pingkick));
@@ -6253,20 +6264,29 @@ static inline void PingUpdate(void)
 	{
 		//CONS_Printf("player %d - total pings: %d\n", i, realpingtable[i]);
 
-		netbuffer->u.pingtable[i] = realpingtable[i] / pingmeasurecount;
+		netbuffer->u.netinfo.pingtable[i] = realpingtable[i] / pingmeasurecount;
 		//server takes a snapshot of the real ping for display.
 		//otherwise, pings fluctuate a lot and would be odd to look at.
 		playerpingtable[i] = realpingtable[i] / pingmeasurecount;
 		realpingtable[i] = 0; //Reset each as we go.
+
+		UINT32 lost = 0;
+		for (j = 0; j < PACKETMEASUREWINDOW; j++)
+		{
+			if (packetloss[i][j])
+				lost++;
+		}
+
+		netbuffer->u.netinfo.packetloss[i] = lost;
 	}
 
 	// send the server's maxping as last element of our ping table. This is useful to let us know when we're about to get kicked.
-	netbuffer->u.pingtable[MAXPLAYERS] = cv_maxping.value;
+	netbuffer->u.netinfo.pingtable[MAXPLAYERS] = cv_maxping.value;
 
 	//send out our ping packets
 	for (i = 0; i < MAXNETNODES; i++)
 		if (nodeingame[i])
-			HSendPacket(i, true, 0, sizeof(INT32) * (MAXPLAYERS+1));
+			HSendPacket(i, true, 0, sizeof(netinfo_pak));
 
 	pingmeasurecount = 0; //Reset count
 }

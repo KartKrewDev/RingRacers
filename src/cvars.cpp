@@ -810,7 +810,6 @@ consvar_t cv_timescale = OnlineCheat(cvlist_timer)("timescale", "1.0").floating_
 consvar_t cv_ufo_follow = OnlineCheat("ufo_follow", "0").min_max(0, MAXPLAYERS).description("Make UFO Catcher folow this player");
 consvar_t cv_ufo_health = OnlineCheat("ufo_health", "-1").min_max(-1, 100).description("Override UFO Catcher health -- applied at spawn or when value is changed");
 
-
 //
 // Server local cheats.
 // Not netsynced, not saved...
@@ -853,6 +852,7 @@ consvar_t cv_debugrender_portal = PlayerCheat("debugrender_portal", "Off").on_of
 consvar_t cv_debugrender_spriteclip = PlayerCheat("debugrender_spriteclip", "Off").on_off().description("Let sprites draw through walls");
 consvar_t cv_devmode_screen = PlayerCheat("devmode_screen", "1").min_max(1, 4).description("Choose which splitscreen player devmode applies to");
 consvar_t cv_drawpickups = PlayerCheat("drawpickups", "Yes").yes_no().description("Hide rings, spheres, item capsules, prison capsules (visual only)");
+consvar_t cv_drawinput = PlayerCheat("drawinput", "No").yes_no().description("Draw turn inputs outside of Record Attack (turn solver debugging)");
 
 void CV_palette_OnChange(void);
 consvar_t cv_palette = PlayerCheat("palette", "").onchange_noinit(CV_palette_OnChange).description("Force palette to a different lump");

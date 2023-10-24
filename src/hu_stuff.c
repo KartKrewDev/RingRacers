@@ -2201,16 +2201,33 @@ Ping_gfx_color (int lag)
 		return SKINCOLOR_MAGENTA;
 }
 
+static int
+PL_gfx_color (int pl)
+{
+	if (pl == 0)
+		return SKINCOLOR_JAWZ;
+	else if (pl <= 2)
+		return SKINCOLOR_MINT;
+	else if (pl <= 4)
+		return SKINCOLOR_GOLD;
+	else if (pl <= 6)
+		return SKINCOLOR_RASPBERRY;
+	else
+		return SKINCOLOR_MAGENTA;
+}
+
 //
 // HU_drawPing
 //
-void HU_drawPing(fixed_t x, fixed_t y, UINT32 lag, INT32 flags, boolean offline, SINT8 toside)
+void HU_drawPing(fixed_t x, fixed_t y, UINT32 lag, UINT32 pl, INT32 flags, boolean offline, SINT8 toside)
 {
 	UINT8 *colormap = NULL;
 	INT32 measureid = cv_pingmeasurement.value ? 1 : 0;
 	INT32 gfxnum; // gfx to draw
 	boolean drawlocal = (offline && cv_mindelay.value && lag <= (tic_t)cv_mindelay.value);
 	fixed_t x2, y2;
+
+	y = y - 10*FRACUNIT; // Making space for connection quality, sorry.
 
 	if (!server && lag <= (tic_t)cv_mindelay.value)
 	{
@@ -2275,6 +2292,9 @@ void HU_drawPing(fixed_t x, fixed_t y, UINT32 lag, INT32 flags, boolean offline,
 	}
 
 	colormap = R_GetTranslationColormap(TC_RAINBOW, Ping_gfx_color(lag), GTC_CACHE);
+
+	if (pl)
+		V_DrawPingNum(x2, y2 + 8*FRACUNIT, flags, 100*(PACKETMEASUREWINDOW - pl)/PACKETMEASUREWINDOW, R_GetTranslationColormap(TC_RAINBOW, PL_gfx_color(pl), GTC_CACHE));
 
 	if (servermaxping && lag > servermaxping && hu_tick < 4)
 	{

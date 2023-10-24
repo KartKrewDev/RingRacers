@@ -5539,7 +5539,7 @@ void K_drawKartHUD(void)
 				K_drawRingCounter(gametypeinfoshown);
 			}
 
-			if (modeattacking && !bossinfo.valid)
+			if ((modeattacking && !bossinfo.valid) || cv_drawinput.value)
 			{
 				// Draw the input UI
 				if (LUA_HudEnabled(hud_position))

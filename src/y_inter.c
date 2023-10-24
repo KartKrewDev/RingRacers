@@ -697,6 +697,7 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 					HU_drawPing(
 						(x2 - 2) * FRACUNIT, (y-2) * FRACUNIT,
 						playerpingtable[pnum],
+						playerpacketlosstable[pnum],
 						0,
 						false,
 						(datarightofcolumn ? 1 : -1)
