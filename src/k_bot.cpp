@@ -379,74 +379,50 @@ static fixed_t K_BotSpeedScaled(player_t *player, fixed_t speed)
 }
 
 /*--------------------------------------------------
-	static line_t *K_FindBotController(mobj_t *mo)
+	const botcontroller_t *K_GetBotController(mobj_t *mobj)
 
-		Finds if any bot controller linedefs are tagged to the bot's sector.
-
-	Input Arguments:-
-		mo - The bot player's mobj.
-
-	Return:-
-		Linedef of the bot controller. nullptr if it doesn't exist.
+		See header file for description.
 --------------------------------------------------*/
-static line_t *K_FindBotController(mobj_t *mo)
+const botcontroller_t *K_GetBotController(mobj_t *mobj)
 {
-	msecnode_t *node;
-	ffloor_t *rover;
-	INT16 lineNum = -1;
-	mtag_t tag;
+	botcontroller_t *ret = nullptr;
 
-	I_Assert(mo != nullptr);
-	I_Assert(!P_MobjWasRemoved(mo));
-
-	for (node = mo->touching_sectorlist; node; node = node->m_sectorlist_next)
+	if (P_MobjWasRemoved(mobj) == true)
 	{
-		if (!node->m_sector)
+		return nullptr;
+	}
+
+	if (mobj->subsector == nullptr || mobj->subsector->sector == nullptr)
+	{
+		return nullptr;
+	}
+
+	ret = &mobj->subsector->sector->botController;
+
+	ffloor_t *rover = nullptr;
+	for (rover = mobj->subsector->sector->ffloors; rover; rover = rover->next)
+	{
+		if ((rover->fofflags & FOF_EXISTS) == 0)
 		{
 			continue;
 		}
 
-		tag = Tag_FGet(&node->m_sector->tags);
-		lineNum = P_FindSpecialLineFromTag(2004, tag, -1); // todo: needs to not use P_FindSpecialLineFromTag
+		fixed_t topheight = P_GetFOFTopZ(mobj, mobj->subsector->sector, rover, mobj->x, mobj->y, nullptr);
+		fixed_t bottomheight = P_GetFOFBottomZ(mobj, mobj->subsector->sector, rover, mobj->x, mobj->y, nullptr);
 
-		if (lineNum != -1)
+		if (mobj->z > topheight || mobj->z + mobj->height < bottomheight)
 		{
-			break;
+			continue;
 		}
 
-		for (rover = node->m_sector->ffloors; rover; rover = rover->next)
+		botcontroller_t *roverController = &rover->master->frontsector->botController;
+		if (roverController->trick != 0 || roverController->flags != 0)
 		{
-			sector_t *rs = nullptr;
-
-			if (!(rover->fofflags & FOF_EXISTS))
-			{
-				continue;
-			}
-
-			if (mo->z > *rover->topheight || mo->z + mo->height < *rover->bottomheight)
-			{
-				continue;
-			}
-
-			rs = &sectors[rover->secnum];
-			tag = Tag_FGet(&rs->tags);
-			lineNum = P_FindSpecialLineFromTag(2004, tag, -1);
-
-			if (lineNum != -1)
-			{
-				break;
-			}
+			ret = roverController;
 		}
 	}
 
-	if (lineNum != -1)
-	{
-		return &lines[lineNum];
-	}
-	else
-	{
-		return nullptr;
-	}
+	return ret;
 }
 
 /*--------------------------------------------------
@@ -555,18 +531,10 @@ fixed_t K_BotRubberband(player_t *player)
 		return FRACUNIT;
 	}
 
-	if (player->botvars.controller != UINT16_MAX)
+	const botcontroller_t *botController = K_GetBotController(player->mo);
+	if (botController != nullptr && (botController->flags & TMBOT_NORUBBERBAND) == TMBOT_NORUBBERBAND) // Disable rubberbanding
 	{
-		const line_t *botController = &lines[player->botvars.controller];
-
-		if (botController != nullptr)
-		{
-			// Disable rubberbanding
-			if (botController->args[1] & TMBOT_NORUBBERBAND)
-			{
-				return FRACUNIT;
-			}
-		}
+		return FRACUNIT;
 	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -1121,19 +1089,19 @@ static void K_DrawPredictionDebug(botprediction_t *predict, player_t *player)
 }
 
 /*--------------------------------------------------
-	static void K_BotTrick(player_t *player, ticcmd_t *cmd, line_t *botController)
+	static void K_BotTrick(player_t *player, ticcmd_t *cmd, const botcontroller_t *botController)
 
 		Determines inputs for trick panels.
 
 	Input Arguments:-
 		player - Player to generate the ticcmd for.
 		cmd - The player's ticcmd to modify.
-		botController - Linedef for the bot controller. 
+		botController - Bot controller struct.
 
 	Return:-
 		None
 --------------------------------------------------*/
-static void K_BotTrick(player_t *player, ticcmd_t *cmd, const line_t *botController)
+static void K_BotTrick(player_t *player, ticcmd_t *cmd, const botcontroller_t *botController)
 {
 	// Trick panel state -- do nothing until a controller line is found, in which case do a trick.
 	if (botController == nullptr)
@@ -1143,21 +1111,18 @@ static void K_BotTrick(player_t *player, ticcmd_t *cmd, const line_t *botControl
 
 	if (player->trickpanel == 1)
 	{
-		INT32 type = botController->args[0];
-
-		// Y Offset: Trick type
-		switch (type)
+		switch (botController->trick)
 		{
-			case 1:
+			case TMBOTTR_LEFT:
 				cmd->turning = KART_FULLTURN;
 				break;
-			case 2:
+			case TMBOTTR_RIGHT:
 				cmd->turning = -KART_FULLTURN;
 				break;
-			case 3:
+			case TMBOTTR_UP:
 				cmd->throwdir = KART_FULLTURN;
 				break;
-			case 4:
+			case TMBOTTR_DOWN:
 				cmd->throwdir = -KART_FULLTURN;
 				break;
 		}
@@ -1531,7 +1496,6 @@ static void K_BuildBotTiccmdNormal(player_t *player, ticcmd_t *cmd)
 	angle_t destangle = 0;
 	UINT8 spindash = 0;
 	INT32 turnamt = 0;
-	const line_t *botController = player->botvars.controller != UINT16_MAX ? &lines[player->botvars.controller] : nullptr;
 
 	if (!(gametyperules & GTR_BOTS) // No bot behaviors
 		|| K_GetNumWaypoints() == 0 // No waypoints
@@ -1554,15 +1518,9 @@ static void K_BuildBotTiccmdNormal(player_t *player, ticcmd_t *cmd)
 		if (!cv_botcontrol.value)
 			return;
 	#endif
+
 	// Actual gameplay behaviors below this block!
-
-	if (K_TryRingShooter(player) == true)
-	{
-		// We want to respawn. Simply hold Y and stop here!
-		cmd->buttons |= (BT_RESPAWN | BT_EBRAKEMASK);
-		return;
-	}
-
+	const botcontroller_t *botController = K_GetBotController(player->mo);
 	if (player->trickpanel != 0)
 	{
 		K_BotTrick(player, cmd, botController);
@@ -1571,27 +1529,46 @@ static void K_BuildBotTiccmdNormal(player_t *player, ticcmd_t *cmd)
 		return;
 	}
 
-	if (botController != nullptr && (botController->args[1] & TMBOT_NOCONTROL))
+	if (botController != nullptr && (botController->flags & TMBOT_NOCONTROL) == TMBOT_NOCONTROL)
 	{
 		// Disable bot controls entirely.
 		return;
 	}
 
+	if (K_TryRingShooter(player) == true)
+	{
+		// We want to respawn. Simply hold Y and stop here!
+		cmd->buttons |= (BT_RESPAWN | BT_EBRAKEMASK);
+		return;
+	}
+
 	destangle = player->mo->angle;
 
-	if (botController != nullptr && (botController->args[1] & TMBOT_FORCEDIR))
+	if (botController != nullptr && (botController->flags & TMBOT_FORCEDIR) == TMBOT_FORCEDIR)
 	{
 		const fixed_t dist = DEFAULT_WAYPOINT_RADIUS * player->mo->scale;
-
-		// X Offset: Movement direction
-		destangle = FixedAngle(botController->args[2] * FRACUNIT);
 
 		// Overwritten prediction
 		predict = static_cast<botprediction_t *>(Z_Calloc(sizeof(botprediction_t), PU_STATIC, nullptr));
 
-		predict->x = player->mo->x + FixedMul(dist, FINECOSINE(destangle >> ANGLETOFINESHIFT));
-		predict->y = player->mo->y + FixedMul(dist, FINESINE(destangle >> ANGLETOFINESHIFT));
+		predict->x = player->mo->x + FixedMul(dist, FINECOSINE(botController->forceAngle >> ANGLETOFINESHIFT));
+		predict->y = player->mo->y + FixedMul(dist, FINESINE(botController->forceAngle >> ANGLETOFINESHIFT));
 		predict->radius = (DEFAULT_WAYPOINT_RADIUS / 4) * mapobjectscale;
+	}
+
+	if (P_IsObjectOnGround(player->mo) == false)
+	{
+		if (player->fastfall == 0)
+		{
+			if (botController != nullptr && (botController->flags & TMBOT_FASTFALL) == TMBOT_FASTFALL)
+			{
+				// Fast fall!
+				cmd->buttons |= BT_EBRAKEMASK;
+				return;
+			}
+		}
+
+		//return; // Don't allow bots to turn in the air.
 	}
 
 	if (leveltime <= starttime && finishBeamLine != nullptr)
@@ -1838,9 +1815,6 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 void K_UpdateBotGameplayVars(player_t *player)
 {
-	const line_t *botController;
-
-	player->botvars.controller = UINT16_MAX;
 	player->botvars.rubberband = FRACUNIT;
 
 	if (gamestate != GS_LEVEL || !player->mo)
@@ -1849,8 +1823,5 @@ void K_UpdateBotGameplayVars(player_t *player)
 		return;
 	}
 
-	botController = K_FindBotController(player->mo);
-
-	player->botvars.controller = botController ? (botController - lines) : UINT16_MAX;
 	player->botvars.rubberband = K_UpdateRubberband(player);
 }

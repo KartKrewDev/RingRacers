@@ -2326,7 +2326,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->ringvolume = 255;
 
 	p->botvars.rubberband = FRACUNIT;
-	p->botvars.controller = UINT16_MAX;
 
 	p->spectatorReentry = spectatorReentry;
 	p->griefValue = griefValue;
