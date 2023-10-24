@@ -1181,6 +1181,11 @@ typedef enum
 	sfx_slot04,
 	sfx_slot05,
 
+	// RR - Gachabom rebound
+	sfx_grbnd1,
+	sfx_grbnd2,
+	sfx_grbnd3,
+
 	// SRB2Kart - Drop target sounds
 	sfx_kdtrg1,
 	sfx_kdtrg2,

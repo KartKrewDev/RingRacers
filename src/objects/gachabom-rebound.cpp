@@ -7,6 +7,7 @@
 #include "../p_local.h"
 #include "../r_main.h"
 #include "../tables.h"
+#include "../s_sound.h"
 
 /* An object may not be visible on the same tic:
    1) that it spawned
@@ -16,6 +17,7 @@
 #define rebound_target(o) ((o)->target)
 #define rebound_mode(o) ((o)->threshold)
 #define rebound_timer(o) ((o)->reactiontime)
+#define played_rebound_sound(o) ((o)->movefactor)
 
 namespace
 {
@@ -65,7 +67,7 @@ bool award_target(mobj_t* mobj)
 		return true;
 	}
 
-	if ((player->itemtype == KITEM_GACHABOM || player->itemtype == KITEM_NONE) && !player->itemRoulette.active)
+	if ((player->itemtype == KITEM_GACHABOM || player->itemtype == KITEM_NONE) && !player->itemRoulette.active && !player->instaWhipCharge)
 	{
 		rebound_timer(mobj)--;
 
@@ -75,6 +77,9 @@ bool award_target(mobj_t* mobj)
 			player->itemamount++;
 			if (player->roundconditions.gachabom_miser == 1)
 				player->roundconditions.gachabom_miser = 0;
+			
+			//S_StartSoundAtVolume(target, sfx_grbnd3, 255/3);
+			S_StartSound(target, sfx_itpick);
 
 			return true;
 		}
@@ -93,6 +98,7 @@ void chase_rebound_target(mobj_t* mobj)
 	if (distance <= travelDistance)
 	{
 		rebound_mode(mobj) = static_cast<int>(Mode::kOrbit);
+		S_StartSoundAtVolume(mobj, sfx_grbnd2, 255/2);
 
 		// Freeze
 		mobj->momx = 0;
@@ -116,6 +122,10 @@ void chase_rebound_target(mobj_t* mobj)
 		{
 			mobj->scalespeed = newSpeed;
 		}
+
+		if (!played_rebound_sound(mobj))
+			S_StartSoundAtVolume(mobj, sfx_grbnd1, 255/2);
+		played_rebound_sound(mobj) = true;
 	}
 }
 
@@ -224,6 +234,7 @@ void Obj_SpawnGachaBomRebound(mobj_t* source, mobj_t* target)
 
 		rebound_mode(x) = static_cast<int>(mode);
 		rebound_timer(x) = kReboundAcceptPause;
+		played_rebound_sound(x) = false;
 
 		P_SetTarget(&rebound_target(x), target);
 	};
