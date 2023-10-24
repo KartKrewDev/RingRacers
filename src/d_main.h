@@ -59,6 +59,8 @@ const char *D_Home(void);
 //
 void D_ClearState(void);
 void D_StartTitle(void);
+void D_SetDeferredStartTitle(boolean deferred);
+boolean D_IsDeferredStartTitle(void);
 
 #ifdef __cplusplus
 } // extern "C"

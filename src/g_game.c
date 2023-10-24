@@ -1339,7 +1339,7 @@ boolean G_Responder(event_t *ev)
 	{
 		if (F_IntroResponder(ev))
 		{
-			D_StartTitle();
+			D_SetDeferredStartTitle(true);
 			return true;
 		}
 	}
@@ -5441,7 +5441,7 @@ void G_SaveGameData(void)
 			}
 		}
 	}
-	
+
 	WRITEUINT16(save.p, gamedata->numspraycans); // 2
 
 	// gamedata->numspraycans * (2 + 4)

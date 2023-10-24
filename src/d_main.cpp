@@ -1075,6 +1075,8 @@ void D_ClearState(void)
 	wipegamestate = GS_NULL;
 }
 
+static boolean g_deferredtitle = false;
+
 //
 // D_StartTitle
 //
@@ -1085,6 +1087,17 @@ void D_StartTitle(void)
 	D_ClearState();
 	F_StartTitleScreen();
 	M_ClearMenus(false);
+	g_deferredtitle = true;
+}
+
+void D_SetDeferredStartTitle(boolean deferred)
+{
+	g_deferredtitle = true;
+}
+
+boolean D_IsDeferredStartTitle(void)
+{
+	return g_deferredtitle;
 }
 
 //

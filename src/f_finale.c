@@ -39,6 +39,7 @@
 #include "p_setup.h"
 #include "st_stuff.h" // hud hiding
 #include "fastcmp.h"
+#include "r_fps.h"
 
 #include "lua_hud.h"
 #include "lua_hook.h"
@@ -384,6 +385,12 @@ void F_IntroTicker(void)
 	finalecount++;
 
 	timetonext--;
+
+	if (D_IsDeferredStartTitle())
+	{
+		D_StartTitle();
+		return;
+	}
 
 	if (intro_scenenum == 0)
 	{
