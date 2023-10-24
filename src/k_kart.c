@@ -263,7 +263,7 @@ void K_TimerInit(void)
 	timelimitintics = K_TimeLimitForGametype();
 	g_pointlimit = K_PointLimitForGametype();
 
-	if (inDuel == true)
+	if (inDuel == true || (grandprixinfo.gp && grandprixinfo.eventmode == GPEVENT_BONUS))
 	{
 		K_SpawnDuelOnlyItems();
 	}
