@@ -8327,9 +8327,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	// If the button stays held, delay charge a bit.
 	if (player->instaWhipChargeLockout)
 		player->instaWhipChargeLockout--;
-	if (player->rings > 0 || player->itemamount || player->ringdelay)
+	if (player->rings > 0 || player->itemamount || player->ringdelay || player->rocketsneakertimer)
 		player->instaWhipChargeLockout = INSTAWHIP_HOLD_DELAY;
-	if (!(player->cmd.buttons & BT_ATTACK)) // Deliberate Item button release, no need to protect you from lockout
+	else if (!(player->cmd.buttons & BT_ATTACK)) // Deliberate Item button release, no need to protect you from lockout
 		player->instaWhipChargeLockout = 0;
 
 	if (player->instaWhipCharge && player->instaWhipCharge < INSTAWHIP_CHARGETIME)
@@ -11088,7 +11088,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			player->instaWhipCooldown = 0;
 		}
 
-		if (leveltime < starttime || player->spindash || player->pflags & (PF_ITEMOUT|PF_EGGMANOUT) || player->rocketsneakertimer || player->instaWhipCooldown)
+		if (leveltime < starttime || player->pflags & (PF_ITEMOUT|PF_EGGMANOUT) || player->rocketsneakertimer || player->instaWhipCooldown)
 		{
 			chargingwhip = false;
 			player->instaWhipCharge = 0;
