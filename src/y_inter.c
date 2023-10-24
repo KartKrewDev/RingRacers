@@ -306,6 +306,14 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 							* (2 * TICRATE)
 						) / GRADE_A;
 
+					// G_NextMap will float you to rank-restricted stages on Master wins.
+					// Fudge the rank display.
+					if (grandprixinfo.masterbots && grandprixinfo.rank.position <= 1)
+					{
+						data.showrank = true;
+						data.linemeter = 2*TICRATE;
+					}
+
 					// A little extra time to take it all in
 					timer += TICRATE;
 				}

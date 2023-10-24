@@ -3802,6 +3802,11 @@ void G_GetNextMap(void)
 		{
 			// On A rank pace? Then you get a chance for S rank!
 			permitrank = (K_CalculateGPGrade(&grandprixinfo.rank) >= GRADE_A);
+
+			// If you're on Master, a win floats you to rank-restricted levels for free.
+			// (This is a different class of challenge!)
+			if (grandprixinfo.masterbots && grandprixinfo.rank.position <= 1)
+				permitrank = true;
 		}
 
 		while (roundqueue.position < roundqueue.size
