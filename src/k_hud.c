@@ -2406,7 +2406,7 @@ static void K_drawBossHealthBar(void)
 		{
 			rolrand = 10;
 		}
-		V_DrawRightAlignedThinString(startx, starty-rolrand, V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT, bossinfo.enemyname);
+		V_DrawRightAlignedThinString(startx, starty-rolrand, V_FORCEUPPERCASE|V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT, bossinfo.enemyname);
 		rolrand = 0;
 	}
 
