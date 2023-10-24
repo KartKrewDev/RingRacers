@@ -12147,6 +12147,8 @@ void P_RespawnBattleBoxes(void)
 	if (gametyperules & GTR_CIRCUIT)
 		return;
 
+	tic_t setduration = (nummapboxes > 1) ? TICRATE : (2*TICRATE);
+
 	for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
 	{
 		mobj_t *box;
@@ -12157,13 +12159,20 @@ void P_RespawnBattleBoxes(void)
 		box = (mobj_t *)th;
 
 		if (box->type != MT_RANDOMITEM
-			|| (box->flags2 & MF2_DONTRESPAWN)
+			|| ((box->flags2 & (MF2_DONTRESPAWN|MF2_BOSSFLEE)) != MF2_BOSSFLEE)
 			|| !(box->flags & MF_NOCLIPTHING)
 			|| box->fuse)
 			continue; // only popped items
 
-		box->fuse = TICRATE; // flicker back in
-		P_SetMobjState(box, box->info->raisestate);
+		box->fuse = setduration; // flicker back in
+		P_SetMobjState(
+			box,
+			(((gametyperules & GTR_SPHERES) == GTR_SPHERES)
+				? box->info->raisestate
+				: box->info->spawnstate
+			)
+		);
+		box->renderflags |= RF_DONTDRAW; // guarantee start invisible
 
 		if (numgotboxes > 0)
 			numgotboxes--; // you've restored a box, remove it from the count
@@ -13766,18 +13775,6 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	}
 	case MT_RANDOMITEM:
 	{
-		const boolean delayed = !(gametyperules & GTR_CIRCUIT);
-		if (leveltime == 0)
-		{
-			mobj->flags2 |= MF2_BOSSNOTRAP; // mark as here on map start
-			if (delayed)
-			{
-				P_UnsetThingPosition(mobj);
-				mobj->flags |= (MF_NOCLIPTHING|MF_NOBLOCKMAP);
-				mobj->renderflags |= RF_DONTDRAW;
-				P_SetThingPosition(mobj);
-			}
-		}
 		if (mthing->thing_args[0] == 1)
 			mobj->flags2 |= MF2_BOSSDEAD;
 		break;

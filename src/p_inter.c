@@ -253,8 +253,13 @@ static void P_ItemPop(mobj_t *actor)
 
 	Obj_SpawnItemDebrisEffects(actor, actor->target);
 
-	if (!specialstageinfo.valid) // In Special, you'll respawn as a Ring Box (random-item.c), don't confuse the player.
+	if (!specialstageinfo.valid
+	&& (gametyperules & GTR_SPHERES) != GTR_SPHERES)
+	{
+		// Doesn't apply to Special
 		P_SetMobjState(actor, S_RINGBOX1);
+	}
+
 	actor->extravalue1 = 0;
 
 	// de-solidify
@@ -281,7 +286,7 @@ static void P_ItemPop(mobj_t *actor)
 	*/
 
 	// Here at mapload in battle?
-	if (!(gametyperules & GTR_CIRCUIT) && (actor->flags2 & MF2_BOSSNOTRAP))
+	if (!(gametyperules & GTR_CIRCUIT) && (actor->flags2 & MF2_BOSSFLEE))
 	{
 		numgotboxes++;
 
