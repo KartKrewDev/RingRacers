@@ -1082,7 +1082,16 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 		S_StartSound(NULL, sfx_s221);
 		if (timelimitintics)
 		{
-			extratimeintics += (gamespeed == KARTSPEED_EASY) ? 15*TICRATE : 10*TICRATE;
+			extratimeintics = 10*TICRATE;
+			
+			if (grandprixinfo.gp)
+			{
+				if (grandprixinfo.masterbots)
+					extratimeintics = 8*TICRATE;
+				else if (grandprixinfo.gamespeed == KARTSPEED_EASY)
+					extratimeintics = 15*TICRATE;
+			}
+
 			secretextratime = TICRATE/2;
 		}
 

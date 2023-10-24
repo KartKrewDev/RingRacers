@@ -41,17 +41,21 @@ INT32 K_StartingBumperCount(void)
 {
 	if (battleprisons)
 	{
-		if (grandprixinfo.gp == true && grandprixinfo.masterbots == true)
-			return 0;
-		switch (gamespeed)
+		if (grandprixinfo.gp)
 		{
-			case KARTSPEED_HARD:
-				return 1;
-			case KARTSPEED_NORMAL:
-				return 2;
-			case KARTSPEED_EASY:
-				return 3;
+			switch (grandprixinfo.gamespeed)
+			{
+				case KARTSPEED_HARD:
+					return (grandprixinfo.masterbots == true) ? 0 : 1;
+				case KARTSPEED_NORMAL:
+					return 2;
+				case KARTSPEED_EASY:
+					return 3;
+			}
+
 		}
+
+		return 2; // Normal
 	}
 
 	return cv_kartbumpers.value;
