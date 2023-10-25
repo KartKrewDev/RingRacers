@@ -72,6 +72,7 @@ struct level_tally_t
 	// Stats
 	INT32 time;
 	UINT16 ringPool;
+	UINT8 livesAdded;
 	tally_stat_e stats[TALLY_WINDOW_SIZE];
 
 	// Possible grade metrics

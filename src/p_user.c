@@ -1364,6 +1364,12 @@ void P_DoAllPlayersExit(pflags_t flags, boolean trygivelife)
 	UINT8 i;
 	const boolean dofinishsound = (musiccountdown == 0);
 
+	if (grandprixinfo.gp == false
+		|| (flags & PF_NOCONTEST))
+	{
+		trygivelife = false;
+	}
+
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i] || players[i].spectator)
@@ -1382,7 +1388,7 @@ void P_DoAllPlayersExit(pflags_t flags, boolean trygivelife)
 			continue;
 		}
 
-		P_GivePlayerLives(&players[i], 1);
+		players[i].xtralife++;
 	}
 
 	if (!dofinishsound)

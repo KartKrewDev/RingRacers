@@ -295,6 +295,7 @@ void level_tally_t::Init(player_t *player)
 
 	time = std::min(static_cast<INT32>(player->realtime), (100 * 60 * TICRATE) - 1);
 	ringPool = player->totalring;
+	livesAdded = 0;
 
 	position = numPlayers = 0;
 	rings = 0;
@@ -567,7 +568,10 @@ boolean level_tally_t::IncrementLine(void)
 		}
 
 		value = &displayStat[i];
-		lives_check = (stats[i] == TALLY_STAT_TOTALRINGS);
+		lives_check = (
+			stats[i] == TALLY_STAT_TOTALRINGS // Rings also shows the Lives.
+			&& livesAdded < owner->xtralife // Don't check if we've maxxed out!
+		);
 
 		switch (stats[i])
 		{
@@ -649,14 +653,30 @@ boolean level_tally_t::IncrementLine(void)
 		return true;
 	}
 
+	const boolean playSounds = P_IsDisplayPlayer(owner);
+
 	if (*value == dest)
 	{
 		// We've reached our destination
+
+		if (lives_check == true)
+		{
+			// This is only true if Rings alone aren't responsible for our added lives.
+			// Generally for Prison Break, but could be earned in custom contexts too.
+			livesAdded = owner->xtralife;
+			xtraBlink = TICRATE;
+
+			if (playSounds == true)
+			{
+				S_StopSoundByNum(sfx_cdfm73);
+				S_StartSound(NULL, sfx_cdfm73);
+			}
+		}
+
 		return true;
 	}
 
 	const INT32 prevVal = *value;
-	const boolean playSounds = P_IsDisplayPlayer(owner);
 
 	if (playSounds == true && tickSound == 0)
 	{
@@ -693,6 +713,7 @@ boolean level_tally_t::IncrementLine(void)
 		// Handle extra life sound & blinking
 		if (extra > oldExtra)
 		{
+			livesAdded++;
 			xtraBlink = TICRATE;
 
 			if (playSounds == true)
@@ -1190,13 +1211,8 @@ void level_tally_t::Draw(void)
 								.colormap(owner->skin, color)
 								.patch(faceprefix[owner->skin][r_splitscreen ? FACE_MINIMAP : FACE_RANK]);
 
-							const UINT8 lifethreshold = 20;
-							const UINT8 oldExtra = ringPool / lifethreshold;
-							const UINT8 extra = displayStat[i] / lifethreshold;
-							const INT32 increase = (extra - oldExtra);
-
-							UINT8 lives_num = owner->lives + increase;
-							if (xtraBlink > 0 && (xtraBlink & 1) == 0 && increase > 0)
+							UINT8 lives_num = std::min(owner->lives + livesAdded, 10);
+							if (xtraBlink > 0 && (xtraBlink & 1) == 0 && livesAdded > 0)
 							{
 								lives_num = 0;
 							}
