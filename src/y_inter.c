@@ -833,11 +833,15 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 
 	// Progress markers
 	patch_t *level_dot[BPP_MAIN];
+	patch_t *bonus_dot[BPP_MAIN];
 	patch_t *capsu_dot[BPP_MAIN];
 	patch_t *prize_dot[BPP_MAIN];
 
 	level_dot[BPP_AHEAD] = W_CachePatchName("R_RRMRK2", PU_PATCH);
 	level_dot[BPP_DONE] = W_CachePatchName("R_RRMRK1", PU_PATCH);
+
+	bonus_dot[BPP_AHEAD] = W_CachePatchName("R_RRMRK7", PU_PATCH);
+	bonus_dot[BPP_DONE] = W_CachePatchName("R_RRMRK8", PU_PATCH);
 
 	capsu_dot[BPP_AHEAD] = W_CachePatchName("R_RRMRK3", PU_PATCH);
 	capsu_dot[BPP_DONE] = W_CachePatchName("R_RRMRK5", PU_PATCH);
@@ -1296,7 +1300,14 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 			&& roundqueue.entries[i].gametype != roundqueue.entries[0].gametype
 		)
 		{
-			chose_dot = capsu_dot;
+			if ((gametypes[roundqueue.entries[i].gametype]->rules & GTR_PRISONS) == GTR_PRISONS)
+			{
+				chose_dot = capsu_dot;
+			}
+			else
+			{
+				chose_dot = bonus_dot;
+			}
 		}
 		else
 		{
