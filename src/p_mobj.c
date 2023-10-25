@@ -5872,8 +5872,21 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			P_RemoveMobj(mobj);
 			return;
 		}
-		else
-			P_AddOverlay(mobj);
+
+		if (mobj->fuse)
+		{
+			mobj->fuse--;
+			if (!mobj->fuse)
+			{
+				if (!LUA_HookMobj(mobj, MOBJ_HOOK(MobjFuse)))
+				{
+					P_RemoveMobj(mobj);
+					return;
+				}
+			}
+		}
+
+		P_AddOverlay(mobj);
 		if (mobj->target->hitlag) // move to the correct position, update to the correct properties, but DON'T STATE-ANIMATE
 			return;
 		switch (mobj->target->type)
