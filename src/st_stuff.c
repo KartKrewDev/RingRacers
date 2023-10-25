@@ -966,7 +966,7 @@ void ST_drawTitleCard(void)
 					transp = HITIME-1; \
 				} \
 				\
-				transp = (((10*transp)/HITIME)<<V_ALPHASHIFT) | (encorehack ? V_REVERSESUBTRACT : V_ADD); \
+				transp = (((10*transp)/HITIME)<<V_ALPHASHIFT) | (encorehack ? V_SUBTRACT : V_ADD); \
 				\
 				while (bx > -pad) \
 					bx -= localwarn->width; \
