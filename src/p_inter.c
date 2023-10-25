@@ -1080,7 +1080,7 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 
 	if (++numtargets >= maptargets)
 	{
-		P_DoAllPlayersExit(0, (grandprixinfo.gp == true));
+		P_DoAllPlayersExit(0, true);
 	}
 	else
 	{

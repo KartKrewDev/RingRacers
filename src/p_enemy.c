@@ -9232,12 +9232,14 @@ void A_ForceStop(mobj_t *actor)
 //
 // Description: Makes all players win the level.
 //
-// var1 = unused
+// var1:
+//      if var1 == 1, give a life in GP contexts
 // var2 = unused
 //
 void A_ForceWin(mobj_t *actor)
 {
 	INT32 i;
+	INT32 locvar1 = var1;
 
 	if (LUA_CallAction(A_FORCEWIN, actor))
 		return;
@@ -9252,7 +9254,7 @@ void A_ForceWin(mobj_t *actor)
 	if (i == MAXPLAYERS)
 		return;
 
-	P_DoAllPlayersExit(0, false);
+	P_DoAllPlayersExit(0, (locvar1 == 1));
 }
 
 // Function: A_SpikeRetract
