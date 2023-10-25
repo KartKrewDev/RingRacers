@@ -658,21 +658,6 @@ boolean level_tally_t::IncrementLine(void)
 	if (*value == dest)
 	{
 		// We've reached our destination
-
-		if (lives_check == true)
-		{
-			// This is only true if Rings alone aren't responsible for our added lives.
-			// Generally for Prison Break, but could be earned in custom contexts too.
-			livesAdded = owner->xtralife;
-			xtraBlink = TICRATE;
-
-			if (playSounds == true)
-			{
-				S_StopSoundByNum(sfx_cdfm73);
-				S_StartSound(NULL, sfx_cdfm73);
-			}
-		}
-
 		return true;
 	}
 
@@ -796,7 +781,24 @@ void level_tally_t::Tick(void)
 		{
 			if (IncrementLine() == true)
 			{
-				if (playSounds)
+				if (grandprixinfo.gp == true // In GP
+					&& lines >= lineCount // Finished the bonuses
+					&& livesAdded < owner->xtralife // Didn't max out by other causes
+				)
+				{
+					// This is only true if Rings alone aren't responsible for our added lives.
+					// Generally for Prison Break, but could be earned in custom contexts too.
+					livesAdded = owner->xtralife;
+					xtraBlink = TICRATE;
+
+					if (playSounds == true)
+					{
+						S_StopSoundByNum(sfx_cdfm73);
+						S_StartSound(NULL, sfx_cdfm73);
+					}
+				}
+
+				if (playSounds == true)
 				{
 					S_StopSoundByNum(sfx_mbs5b);
 					S_StartSound(NULL, (lines >= lineCount) ? sfx_mbs70 : sfx_mbs5b);
