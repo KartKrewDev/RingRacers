@@ -5590,7 +5590,7 @@ static INT16 Consistancy(void)
 	// Coop desynching enemies is painful
 	if (gamestate == GS_LEVEL)
 	{
-		for (i = 0; i < PRNUMCLASS; i++)
+		for (i = 0; i < PRNUMSYNCED; i++)
 		{
 			if (i & 1)
 			{

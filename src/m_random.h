@@ -83,6 +83,10 @@ typedef enum
 
 	PR_FUZZ, // Stability testing
 
+	PRNUMSYNCED,
+
+	PR_INTERPHUDRANDOM = PRNUMSYNCED, // Interpolation-accomodating HUD randomisation
+
 	PRNUMCLASS
 } pr_class_t;
 
@@ -132,15 +136,18 @@ UINT32 P_RandomPeek(pr_class_t pr_class);
 #define P_GetInitSeed(pr) P_GetInitSeedD(__FILE__, __LINE__, pr)
 #define P_SetRandSeed(pr, s) P_SetRandSeedD(__FILE__, __LINE__, pr, s)
 #define P_SetRandSeedNet(pr, i, s) P_SetRandSeedD(__FILE__, __LINE__, pr, i, s)
+#define P_ResetInterpHudRandSeed(newframe) P_ResetInterpHudRandSeedD(__FILE__, __LINE__, newframe)
 UINT32 P_GetRandSeedD(const char *rfile, INT32 rline, pr_class_t pr_class);
 UINT32 P_GetInitSeedD(const char *rfile, INT32 rline, pr_class_t pr_class);
 void P_SetRandSeedD(const char *rfile, INT32 rline, pr_class_t pr_class, UINT32 seed);
 void P_SetRandSeedNetD(const char *rfile, INT32 rline, pr_class_t pr_class, UINT32 init, UINT32 seed);
+void P_ResetInterpHudRandSeedD(const char *rfile, INT32 rline, boolean newframe);
 #else
 UINT32 P_GetRandSeed(pr_class_t pr_class);
 UINT32 P_GetInitSeed(pr_class_t pr_class);
 void P_SetRandSeed(pr_class_t pr_class, UINT32 seed);
 void P_SetRandSeedNet(pr_class_t pr_class, UINT32 init, UINT32 seed);
+void P_ResetInterpHudRandSeed(boolean newframe);
 #endif
 
 void P_ClearRandom(UINT32 seed);

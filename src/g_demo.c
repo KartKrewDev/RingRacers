@@ -364,7 +364,7 @@ void G_ReadDemoExtraData(void)
 		switch (p)
 		{
 		case DW_RNG:
-			for (i = 0; i < PRNUMCLASS; i++)
+			for (i = 0; i < PRNUMSYNCED; i++)
 			{
 				rng = READUINT32(demobuf.p);
 
@@ -507,7 +507,7 @@ void G_WriteDemoExtraData(void)
 			timeout = 16;
 			WRITEUINT8(demobuf.p, DW_RNG);
 
-			for (i = 0; i < PRNUMCLASS; i++)
+			for (i = 0; i < PRNUMSYNCED; i++)
 			{
 				WRITEUINT32(demobuf.p, P_GetRandSeed(i));
 			}
@@ -1202,7 +1202,7 @@ void G_GhostTicker(void)
 			else if (ziptic == DW_RNG)
 			{
 				INT32 i;
-				for (i = 0; i < PRNUMCLASS; i++)
+				for (i = 0; i < PRNUMSYNCED; i++)
 				{
 					g->p += 4; // RNG seed
 				}
@@ -2435,7 +2435,7 @@ void G_BeginRecording(void)
 		demotime_p = NULL;
 	}
 
-	for (i = 0; i < PRNUMCLASS; i++)
+	for (i = 0; i < PRNUMSYNCED; i++)
 	{
 		WRITEUINT32(demobuf.p, P_GetInitSeed(i));
 	}
@@ -2899,7 +2899,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 		goto badreplay;
 	}
 
-	for (i = 0; i < PRNUMCLASS; i++)
+	for (i = 0; i < PRNUMSYNCED; i++)
 	{
 		info.p += 4; // RNG seed
 	}
@@ -3028,7 +3028,7 @@ void G_DoPlayDemo(const char *defdemoname)
 	char *pdemoname;
 	UINT8 availabilities[MAXPLAYERS][MAXAVAILABILITY];
 	UINT8 version,subversion;
-	UINT32 randseed[PRNUMCLASS];
+	UINT32 randseed[PRNUMSYNCED];
 	char msg[1024];
 
 	boolean spectator, bot;
@@ -3308,7 +3308,7 @@ void G_DoPlayDemo(const char *defdemoname)
 		hu_demolap = READUINT32(demobuf.p);
 
 	// Random seed
-	for (i = 0; i < PRNUMCLASS; i++)
+	for (i = 0; i < PRNUMSYNCED; i++)
 	{
 		randseed[i] = READUINT32(demobuf.p);
 	}
@@ -3530,7 +3530,7 @@ void G_DoPlayDemo(const char *defdemoname)
 
 	R_ExecuteSetViewSize();
 
-	for (i = 0; i < PRNUMCLASS; i++)
+	for (i = 0; i < PRNUMSYNCED; i++)
 	{
 		P_SetRandSeed(i, randseed[i]);
 	}
@@ -3667,7 +3667,7 @@ void G_AddGhost(savebuffer_t *buffer, char *defdemoname)
 	if (flags & ATTACKING_LAP)
 		p += 4;
 
-	for (i = 0; i < PRNUMCLASS; i++)
+	for (i = 0; i < PRNUMSYNCED; i++)
 	{
 		p += 4; // random seed
 	}
@@ -3876,7 +3876,7 @@ staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer)
 	if (flags & ATTACKING_LAP)
 		temp.lap = READUINT32(p);
 
-	for (i = 0; i < PRNUMCLASS; i++)
+	for (i = 0; i < PRNUMSYNCED; i++)
 	{
 		p += 4; // random seed
 	}
