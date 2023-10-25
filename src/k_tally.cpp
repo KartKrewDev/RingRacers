@@ -411,10 +411,16 @@ void level_tally_t::Init(player_t *player)
 				);
 			}
 
-			if (roundqueue.size > 0 && roundqueue.roundnum > 0
-				&& (grandprixinfo.gp == false || grandprixinfo.eventmode == GPEVENT_NONE))
+			if (roundqueue.size > 0 && roundqueue.roundnum > 0)
 			{
-				roundNum = roundqueue.roundnum;
+				if ((grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE))
+				{
+					roundNum = INTERMISSIONROUND_BONUS;
+				}
+				else
+				{
+					roundNum = roundqueue.roundnum;
+				}
 			}
 		}
 		else

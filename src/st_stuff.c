@@ -637,7 +637,7 @@ static void ST_cacheLevelTitle(void)
 		sprintf(buf, "TT_RND%d", i);
 		tcroundnum[i-1] = (patch_t *)W_CachePatchName(buf, PU_HUDGFX);
 	}
-	tcroundbonus =	(patch_t *)W_CachePatchName("TT_RNDB", PU_HUDGFX);
+	tcroundbonus =	(patch_t *)W_CachePatchName("TT_RNDX", PU_HUDGFX);
 
 	// Cache act #
 	for (i=0; i < 10; i++)
@@ -1089,17 +1089,10 @@ void ST_drawTitleCard(void)
 			; // TODO: Ruby
 		else if (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE)
 		{
-			switch (grandprixinfo.eventmode)
-			{
-				case GPEVENT_BONUS:
-					roundico = tcroundbonus; // TODO don't show capsule if we have other bonus types
-					break;
-				/*case GPEVENT_SPECIAL:
-					; // TODO: Emerald/mount
-					break;*/
-				default:
-					break;
-			}
+			if (gametypes[gametype]->gppic[0])
+				roundico = W_CachePatchName(gametypes[gametype]->gppic, PU_PATCH);
+			else
+				roundico = tcroundbonus; // Generic star
 		}
 		else if (roundqueue.size > 0)
 		{

@@ -378,13 +378,16 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 						skins[players[i].skin].realname);
 				}
 
-				if (roundqueue.size > 0
-					&& roundqueue.roundnum > 0
-					&& (grandprixinfo.gp == false
-						|| grandprixinfo.eventmode == GPEVENT_NONE)
-					)
+				if (roundqueue.size > 0 && roundqueue.roundnum > 0)
 				{
-					data.roundnum = roundqueue.roundnum;
+					if ((grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE))
+					{
+						data.roundnum = INTERMISSIONROUND_BONUS;
+					}
+					else
+					{
+						data.roundnum = roundqueue.roundnum;
+					}
 				}
 			}
 			else
@@ -1456,14 +1459,29 @@ void Y_DrawIntermissionHeader(fixed_t x, fixed_t y, boolean gotthrough, const ch
 	}
 
 	// Draw round numbers
-	if (roundnum > 0 && roundnum <= 10)
+	patch_t *roundpatch = NULL;
+
+	if (roundnum == INTERMISSIONROUND_BONUS)
 	{
-		patch_t *roundpatch =
-			W_CachePatchName(
-				va("TT_RN%s%d", (small ? "S" : "D"), roundnum),
+		const char *gppic = (small ? gametypes[gametype]->gppicmini : gametypes[gametype]->gppic);
+		if (gppic[0])
+			roundpatch = W_CachePatchName(gppic, PU_PATCH);
+		else
+			roundpatch = W_CachePatchName(
+				va("TT_RN%cX", (small ? 'S' : 'D')),
 				PU_PATCH
 			);
+	}
+	else if (roundnum > 0 && roundnum <= 10)
+	{
+		roundpatch = W_CachePatchName(
+			va("TT_RN%c%d", (small ? 'S' : 'D'), roundnum),
+			PU_PATCH
+		);
+	}
 
+	if (roundpatch)
+	{
 		fixed_t roundx = (v_width * 3 * FRACUNIT) / 4;
 
 		if (headerwidth != 0)

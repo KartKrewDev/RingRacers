@@ -2559,6 +2559,8 @@ static int lib_gAddGametype(lua_State *L)
 
 	const char *gtname = NULL;
 	const char *gtconst = NULL;
+	const char *gppic = NULL;
+	const char *gppicmini = NULL;
 	UINT32 newgtrules = 0;
 	UINT32 newgttol = 0;
 	INT32 newgtpointlimit = 0;
@@ -2621,6 +2623,14 @@ static int lib_gAddGametype(lua_State *L)
 			if (!lua_isnumber(L, 3))
 				TYPEERROR("defaulttimelimit", LUA_TNUMBER)
 			newgttimelimit = (INT32)lua_tointeger(L, 3);
+		} else if (i == 8 || (k && fasticmp(k, "gppic"))) {
+			if (!lua_isstring(L, 3))
+				TYPEERROR("gppic", LUA_TSTRING)
+			gppic = lua_tostring(L, 3);
+		} else if (i == 9 || (k && fasticmp(k, "gppicmini"))) {
+			if (!lua_isstring(L, 3))
+				TYPEERROR("gppicmini", LUA_TSTRING)
+			gppicmini = lua_tostring(L, 3);
 		}
 		lua_pop(L, 1);
 	}
@@ -2661,6 +2671,18 @@ static int lib_gAddGametype(lua_State *L)
 	newgametype->intermission = newgtinttype;
 	newgametype->pointlimit = newgtpointlimit;
 	newgametype->timelimit = newgttimelimit;
+
+	if (gppic != NULL)
+	{
+		// Calloc means only set if valid
+		strlcpy(newgametype->gppic, gppic, 9);
+	}
+
+	if (gppicmini != NULL)
+	{
+		// Calloc means only set if valid
+		strlcpy(newgametype->gppicmini, gppicmini, 9);
+	}
 
 	gametypes[numgametypes++] = newgametype;
 

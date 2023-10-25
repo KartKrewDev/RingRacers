@@ -3030,6 +3030,8 @@ static gametype_t defaultgametypes[] =
 		int_time,
 		0,
 		0,
+		"",
+		"",
 	},
 
 	// GT_BATTLE
@@ -3041,6 +3043,8 @@ static gametype_t defaultgametypes[] =
 		int_scoreortimeattack,
 		0,
 		3,
+		"TT_RNDB",
+		"TT_RNSB",
 	},
 
 	// GT_SPECIAL
@@ -3052,6 +3056,8 @@ static gametype_t defaultgametypes[] =
 		int_time,
 		0,
 		0,
+		"TT_RNDSS",
+		"TT_RNSSS",
 	},
 
 	// GT_VERSUS
@@ -3063,6 +3069,8 @@ static gametype_t defaultgametypes[] =
 		int_scoreortimeattack,
 		0,
 		0,
+		"",
+		"",
 	},
 
 	// GT_TUTORIAL
@@ -3074,6 +3082,8 @@ static gametype_t defaultgametypes[] =
 		int_none,
 		0,
 		0,
+		"",
+		"",
 	},
 };
 
