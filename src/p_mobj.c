@@ -2388,16 +2388,14 @@ boolean P_ZMovement(mobj_t *mo)
 			break;
 	}
 
-	if (!mo->player && P_CheckDeathPitCollide(mo))
+	if (!mo->player && P_CheckDeathPitCollide(mo) && mo->health)
 	{
-		if (mo->flags & MF_ENEMY || mo->flags & MF_BOSS || mo->type == MT_MINECART)
+		if ((mo->flags & (MF_ENEMY|MF_BOSS)) == MF_ENEMY)
 		{
-			// Kill enemies, bosses and minecarts that fall into death pits.
-			if (mo->health)
-			{
-				P_KillMobj(mo, NULL, NULL, DMG_NORMAL);
-			}
-			return false;
+			// Kill enemies that fall into death pits.
+			P_KillMobj(mo, NULL, NULL, DMG_NORMAL);
+			if (P_MobjWasRemoved(mo))
+				return false;
 		}
 	}
 
@@ -10544,13 +10542,6 @@ void P_MobjThinker(mobj_t *mobj)
 
 	P_SquishThink(mobj);
 	K_UpdateTerrainOverlay(mobj);
-
-	if (mobj->flags & (MF_ENEMY|MF_BOSS) && mobj->health
-		&& P_CheckDeathPitCollide(mobj)) // extra pit check in case these didn't have momz
-	{
-		P_KillMobj(mobj, NULL, NULL, DMG_DEATHPIT);
-		return;
-	}
 
 	// Crush enemies!
 	if (mobj->ceilingz - mobj->floorz < mobj->height)
