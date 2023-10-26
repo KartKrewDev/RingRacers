@@ -411,7 +411,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 
 				data.roundnum = roundqueue.roundnum;
 			}
-			else if (bossinfo.valid == true && bossinfo.enemyname)
+			else if (K_CheckBossIntro() == true && bossinfo.enemyname)
 			{
 				snprintf(data.headerstring,
 					sizeof data.headerstring,

@@ -443,7 +443,7 @@ void level_tally_t::Init(player_t *player)
 
 			roundNum = roundqueue.roundnum;
 		}
-		else if (bossinfo.valid == true && bossinfo.enemyname)
+		else if (K_CheckBossIntro() == true && bossinfo.enemyname)
 		{
 			snprintf(
 				header, sizeof header,
