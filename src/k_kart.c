@@ -3128,7 +3128,7 @@ mobj_t *K_GetGardenTop(player_t *player)
 static fixed_t K_FlameShieldDashVar(INT32 val)
 {
 	// 1 second = 75% + 50% top speed
-	return (3*FRACUNIT/4) + (((val * FRACUNIT) / TICRATE) / 2);
+	return (3*FRACUNIT/4) + (((val * FRACUNIT) / TICRATE));
 }
 
 INT16 K_GetSpindashChargeTime(player_t *player)
@@ -10193,7 +10193,7 @@ static INT32 K_FlameShieldMax(player_t *player)
 	UINT32 distv = 1024; // Pre no-scams: 2048
 	distv = distv * 16 / FLAMESHIELD_MAX; // Old distv was based on a 16-segment bar
 	UINT8 numplayers = 0;
-	UINT32 scamradius = 2000; // How close is close enough that we shouldn't be allowed to scam 1st?
+	UINT32 scamradius = 1500; // How close is close enough that we shouldn't be allowed to scam 1st?
 	UINT8 i;
 
 	if (gametyperules & GTR_CIRCUIT)
@@ -11709,29 +11709,31 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								if (player->flamelength < destlen)
 									player->flamelength = min(destlen, player->flamelength + 7); // Allows gauge to grow quickly when first acquired. 120/16 = ~7
 
-								flamemax = player->flamelength;
-								if (flamemax > 0)
-									flamemax += TICRATE; // leniency period
+								flamemax = player->flamelength + TICRATE; // TICRATE leniency period, but we block most effects at flamelength 0 down below
 
 								if ((cmd->buttons & BT_ATTACK) && (player->pflags & PF_HOLDREADY))
 								{
 									const INT32 incr = (gametyperules & GTR_CLOSERPLAYERS) ? 4 : 2;
-
-									if (player->flamedash == 0)
-									{
-										S_StartSound(player->mo, sfx_s3k43);
-										K_PlayBoostTaunt(player->mo);
-									}
-
-									player->flamedash += incr;
 									player->flamemeter += incr;
 
-									if (!onground)
+									if (player->flamelength)
 									{
-										P_Thrust(
-											player->mo, K_MomentumAngle(player->mo),
-											FixedMul(player->mo->scale, K_GetKartGameSpeedScalar(gamespeed))
-										);
+
+										if (player->flamedash == 0)
+										{
+											S_StartSound(player->mo, sfx_s3k43);
+											K_PlayBoostTaunt(player->mo);
+										}
+
+										player->flamedash += incr;
+
+										if (!onground)
+										{
+											P_Thrust(
+												player->mo, K_MomentumAngle(player->mo),
+												FixedMul(player->mo->scale, K_GetKartGameSpeedScalar(gamespeed))
+											);
+										}
 									}
 
 									if (player->flamemeter > flamemax)
