@@ -38,6 +38,7 @@
 
 // SRB2kart
 #include "k_kart.h"
+#include "k_boss.h"
 #include "k_battle.h"
 #include "k_color.h"
 #include "k_follower.h"
@@ -13415,6 +13416,15 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	case MT_SKYBOX:
 	{
 		P_InitSkyboxPoint(mobj, mthing);
+		break;
+	}
+	case MT_BOSSARENACENTER:
+	{
+		if (!VS_ArenaCenterInit(mobj, mthing))
+		{
+			P_RemoveMobj(mobj);
+			return false;
+		}
 		break;
 	}
 	case MT_EGGSTATUE:

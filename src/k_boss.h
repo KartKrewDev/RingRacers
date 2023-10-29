@@ -129,6 +129,13 @@ void K_DeclareWeakspot(mobj_t *spot, spottype_t spottype, UINT16 color, boolean 
 
 boolean K_CheckBossIntro(void);
 
+// Arena objects
+
+boolean VS_ArenaCenterInit(mobj_t *mobj, mapthing_t *mthing);
+mobj_t *VS_GetArena(INT32 bossindex);
+fixed_t *VS_PredictAroundArena(mobj_t *arena, mobj_t *movingobject, fixed_t magnitude, angle_t mompoint, fixed_t radiussubtract, boolean forcegoaround, fixed_t radiusdeltafactor);
+fixed_t *VS_RandomPointOnArena(mobj_t *arena, fixed_t radiussubtract);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
