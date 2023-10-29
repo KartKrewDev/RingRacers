@@ -1313,32 +1313,9 @@ void level_tally_t::Draw(void)
 		|| state == TALLY_ST_GRADE_VOICE
 		|| state == TALLY_ST_DONE)
 	{
-		const char *grade_letter = "X";
-		switch (rank)
-		{
-			case GRADE_E:
-				grade_letter = "E";
-				break;
-			case GRADE_D:
-				grade_letter = "D";
-				break;
-			case GRADE_C:
-				grade_letter = "C";
-				break;
-			case GRADE_B:
-				grade_letter = "B";
-				break;
-			case GRADE_A:
-				grade_letter = "A";
-				break;
-			case GRADE_S:
-				grade_letter = "S";
-				break;
-			default:
-				break;
-		}
+		char grade_letter = K_GetGradeChar( static_cast<gp_rank_e>(rank) );
 
-		patch_t *grade_img = static_cast<patch_t*>( W_CachePatchName(va("R_FINR%s%s", (r_splitscreen ? "S" : "N"), grade_letter), PU_CACHE) );
+		patch_t *grade_img = static_cast<patch_t*>( W_CachePatchName(va("R_FINR%c%c", (r_splitscreen ? 'S' : 'N'), grade_letter), PU_CACHE) );
 		srb2::Draw grade_drawer = drawer
 			.xy(v_width * 0.5, v_height - (2.0 * frac) - (grade_img->height * 0.5))
 			.colormap( static_cast<skincolornum_t>(K_GetGradeColor( static_cast<gp_rank_e>(rank) )) );

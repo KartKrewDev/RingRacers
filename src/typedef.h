@@ -229,6 +229,8 @@ TYPEDEF (t_floor_t);
 TYPEDEF (waypoint_t);
 
 // k_rank.h
+TYPEDEF (gpRank_level_perplayer_t);
+TYPEDEF (gpRank_level_t);
 TYPEDEF (gpRank_t);
 
 // k_tally.h

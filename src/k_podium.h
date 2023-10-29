@@ -80,6 +80,7 @@ gp_rank_e K_PodiumGrade(void);
 	Return:-
 		true if the Emerald/Prize was collected during the GP, otherwise false.
 --------------------------------------------------*/
+
 boolean K_PodiumHasEmerald(void);
 
 
