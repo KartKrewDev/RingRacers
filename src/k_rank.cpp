@@ -139,6 +139,7 @@ static void RankCapsules_LoadTextmap(void)
 	}
 }
 
+#if 0
 /*--------------------------------------------------
 	static void RankCapsules_LoadThingsLump(UINT8 *data)
 
@@ -175,6 +176,7 @@ static void RankCapsules_LoadThingsLump(UINT8 *data)
 		}
 	}
 }
+#endif
 
 /*--------------------------------------------------
 	static boolean RankCapsules_LoadMapData(const virtres_t *virt)
@@ -225,7 +227,11 @@ static boolean RankCapsules_LoadMapData(const virtres_t *virt)
 	}
 	else
 	{
+#if 0
 		RankCapsules_LoadThingsLump(virtthings->data);
+#else
+		CONS_Printf("binary maps SMELL!!!!!\n");
+#endif
 	}
 
 	return true;
@@ -263,15 +269,16 @@ static UINT32 RankCapsules_CountFromMap(const virtres_t *virt)
 
 		See header file for description.
 --------------------------------------------------*/
-void K_InitGrandPrixRank(gpRank_t *rankData)
+void gpRank_t::Init(void)
 {
 	UINT8 numHumans = 0;
 	UINT32 laps = 0;
 	INT32 i;
 
-	memset(rankData, 0, sizeof(gpRank_t));
+	memset(this, 0, sizeof(gpRank_t));
+	skin = MAXSKINS;
 
-	if (grandprixinfo.cup == NULL)
+	if (grandprixinfo.cup == nullptr)
 	{
 		return;
 	}
@@ -288,20 +295,20 @@ void K_InitGrandPrixRank(gpRank_t *rankData)
 	}
 
 	// Calculate players 
-	rankData->players = numHumans;
-	rankData->totalPlayers = K_GetGPPlayerCount(numHumans);
+	numPlayers = numHumans;
+	totalPlayers = K_GetGPPlayerCount(numHumans);
 
 	// Initialize to the neutral value.
-	rankData->position = RANK_NEUTRAL_POSITION;
+	position = RANK_NEUTRAL_POSITION;
 
 	// Calculate total of points
 	// (Should this account for all coop players?)
 	for (i = 0; i < numHumans; i++)
 	{
-		rankData->totalPoints += grandprixinfo.cup->numlevels * K_CalculateGPRankPoints(i + 1, rankData->totalPlayers);
+		totalPoints += grandprixinfo.cup->numlevels * K_CalculateGPRankPoints(i + 1, totalPlayers);
 	}
 
-	rankData->totalRings = grandprixinfo.cup->numlevels * numHumans * 20;
+	totalRings = grandprixinfo.cup->numlevels * numHumans * 20;
 
 	for (i = 0; i < grandprixinfo.cup->numlevels; i++)
 	{
@@ -315,7 +322,7 @@ void K_InitGrandPrixRank(gpRank_t *rankData)
 	// +1, since 1st place laps are worth 2 pts.
 	for (i = 0; i < numHumans+1; i++)
 	{
-		rankData->totalLaps += laps;
+		totalLaps += laps;
 	}
 
 	// Search through all of the cup's bonus levels
@@ -339,42 +346,97 @@ void K_InitGrandPrixRank(gpRank_t *rankData)
 				continue;
 			}
 
-			rankData->totalPrisons += RankCapsules_CountFromMap(virt);
+			totalPrisons += RankCapsules_CountFromMap(virt);
 			vres_Free(virt);
 		}
 	}
 }
 
+void K_InitGrandPrixRank(gpRank_t *rankData)
+{
+	rankData->Init();
+}
+
 /*--------------------------------------------------
-	void K_UpdateGPRank(void)
+	void K_UpdateGPRank(gpRank_t *rankData)
 
 		See header file for description.
 --------------------------------------------------*/
-void K_UpdateGPRank(void)
+void gpRank_t::Update(void)
 {
-	if (grandprixinfo.gp != true)
-		return;
+	gpRank_level_t *const lvl = &levels[numLevels];
+
+	prisons += numtargets;
+
+	position = MAXPLAYERS;
+	skin = MAXSKINS;
+
+	lvl->id = gamemap;
+
+	if (grandprixinfo.gp == true)
+	{
+		lvl->event = grandprixinfo.eventmode;
+	}
+	else
+	{
+		lvl->event = (gametype != GT_RACE) ? GPEVENT_BONUS : GPEVENT_NONE;
+	}
+
+	lvl->time = UINT32_MAX;
+	lvl->totalLapPoints = K_RaceLapCount(gamemap - 1) * 2;
+	lvl->totalPrisons = maptargets;
 
 	UINT8 i;
-
-	grandprixinfo.rank.prisons += numtargets;
-	grandprixinfo.rank.position = MAXPLAYERS;
-	grandprixinfo.rank.skin = MAXSKINS;
-
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (!playeringame[i]
-		|| players[i].spectator == true
-		|| players[i].bot == true)
+		if (playeringame[i] == false
+			|| players[i].spectator == true
+			|| players[i].bot == true)
+		{
 			continue;
+		}
 
-		UINT8 podiumposition = K_GetPodiumPosition(&players[i]);
-		if (podiumposition >= grandprixinfo.rank.position) // port priority
-			continue;
+		player_t *const player = &players[i];
 
-		grandprixinfo.rank.position = podiumposition;
-		grandprixinfo.rank.skin = players[i].skin;
+		UINT8 podiumPosition = K_GetPodiumPosition(player);
+		if (podiumPosition < position) // port priority
+		{
+			position = podiumPosition;
+			skin = player->skin;
+		}
 	}
+
+	for (i = 0; i < numPlayers; i++)
+	{
+		if (playeringame[displayplayers[i]] == false
+			|| players[displayplayers[i]].spectator == true
+			|| players[displayplayers[i]].bot == true)
+		{
+			continue;
+		}
+
+		const player_t *player = &players[displayplayers[i]]; // TODO: needs looked at for online GP
+		gpRank_level_perplayer_t *const dta = &lvl->perPlayer[i];
+
+		if (player->realtime < lvl->time)
+		{
+			lvl->time = player->realtime;
+		}
+
+		dta->position = player->tally.position;
+		dta->rings = player->tally.rings;
+		dta->lapPoints = player->tally.laps;
+		dta->prisons = player->tally.prisons;
+		dta->gotSpecialPrize = !!!(player->pflags & PF_NOCONTEST);
+		dta->grade = static_cast<gp_rank_e>(player->tally.rank);
+	}
+
+	numLevels++;
+}
+
+void K_UpdateGPRank(gpRank_t *rankData)
+{
+	rankData->Update();
 }
 
 /*--------------------------------------------------
@@ -389,7 +451,7 @@ gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 
 		if (cv_debugrank.value >= 2)
 		{
-			return GRADE_E + (cv_debugrank.value - 2);
+			return static_cast<gp_rank_e>(GRADE_E + (cv_debugrank.value - 2));
 		}
 	}
 
@@ -400,7 +462,7 @@ gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 		17*FRACUNIT/20		// A: 85% or higher
 	};
 
-	gp_rank_e retGrade = GRADE_E;
+	INT32 retGrade = GRADE_E;
 
 	const INT32 positionWeight = 150;
 	const INT32 pointsWeight = 100;
@@ -459,7 +521,7 @@ gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 		retGrade++;
 	}
 
-	return retGrade;
+	return static_cast<gp_rank_e>(retGrade);
 }
 
 /*--------------------------------------------------
@@ -489,3 +551,32 @@ UINT16 K_GetGradeColor(gp_rank_e grade)
 
 	return SKINCOLOR_NONE;
 }
+
+/*--------------------------------------------------
+	char K_GetGradeChar(gp_rank_e grade)
+
+		See header file for description.
+--------------------------------------------------*/
+char K_GetGradeChar(gp_rank_e grade)
+{
+	switch (grade)
+	{
+		case GRADE_E:
+			return 'E';
+		case GRADE_D:
+			return 'D';
+		case GRADE_C:
+			return 'C';
+		case GRADE_B:
+			return 'B';
+		case GRADE_A:
+			return 'A';
+		case GRADE_S:
+			return 'S';
+		default:
+			break;
+	}
+
+	return '?';
+}
+

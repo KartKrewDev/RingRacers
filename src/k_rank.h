@@ -16,14 +16,30 @@
 #include "doomdef.h"
 #include "doomstat.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 // Please also see P_ArchiveMisc
+struct gpRank_level_perplayer_t
+{
+	UINT8 position;
+	UINT8 rings;
+	UINT16 lapPoints;
+	UINT16 prisons;
+	boolean gotSpecialPrize;
+	gp_rank_e grade;
+};
+
+struct gpRank_level_t
+{
+	UINT16 id;
+	INT32 event;
+	UINT32 time;
+	UINT16 totalLapPoints;
+	UINT16 totalPrisons;
+	gpRank_level_perplayer_t perPlayer[MAXSPLITSCREENPLAYERS];
+};
+
 struct gpRank_t
 {
-	UINT8 players;
+	UINT8 numPlayers;
 	UINT8 totalPlayers;
 
 	UINT8 position;
@@ -44,7 +60,19 @@ struct gpRank_t
 	UINT32 totalRings;
 
 	boolean specialWon;
+
+	UINT8 numLevels;
+	gpRank_level_t levels[8];
+
+#ifdef __cplusplus
+	void Init(void);
+	void Update(void);
+#endif
 };
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // gp_rank_e was once defined here, but moved to doomstat.h to prevent circular dependency
 
@@ -68,18 +96,13 @@ void K_InitGrandPrixRank(gpRank_t *rankData);
 
 
 /*--------------------------------------------------
-	void K_UpdateGPRank(void)
+	void K_UpdateGPRank(gpRank_t *rankData)
 
 		Updates the best ranking across all human
 		players.
-
-	Input Arguments:-
-		N/A
-
-	Return:-
-		N/A
 --------------------------------------------------*/
-void K_UpdateGPRank(void);
+
+void K_UpdateGPRank(gpRank_t *rankData);
 
 
 /*--------------------------------------------------
@@ -109,7 +132,23 @@ gp_rank_e K_CalculateGPGrade(gpRank_t *rankData);
 	Return:-
 		skincolor ID representing the achieved grade.
 --------------------------------------------------*/
+
 UINT16 K_GetGradeColor(gp_rank_e grade);
+
+
+/*--------------------------------------------------
+	char K_GetGradeChar(gp_rank_e grade)
+
+		Maps grades to a letter for strings.
+
+	Input Arguments:-
+		grade - gp_rank_e representing an achieved ranking.
+
+	Return:-
+		ASCII character for the grade.
+--------------------------------------------------*/
+
+char K_GetGradeChar(gp_rank_e grade);
 
 
 #ifdef __cplusplus

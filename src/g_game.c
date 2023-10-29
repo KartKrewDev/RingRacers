@@ -4189,7 +4189,10 @@ static void G_DoCompleted(void)
 	if (intertype == int_none)
 	{
 		G_UpdateVisited();
-		K_UpdateGPRank();
+		if (grandprixinfo.gp == true)
+		{
+			K_UpdateGPRank(&grandprixinfo.rank);
+		}
 		G_AfterIntermission();
 	}
 	else
@@ -5850,7 +5853,13 @@ char *G_BuildMapTitle(INT32 mapnum)
 	char *title = NULL;
 
 	if (!mapnum || mapnum > nummapheaders || !mapheaderinfo[mapnum-1])
+	{
+#ifdef PARANOIA
 		I_Error("G_BuildMapTitle: Internal map ID %d not found (nummapheaders = %d)", mapnum-1, nummapheaders);
+#else
+		return NULL;
+#endif
+	}
 
 	if (strcmp(mapheaderinfo[mapnum-1]->lvlttl, ""))
 	{
