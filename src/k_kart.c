@@ -12445,6 +12445,13 @@ tic_t K_TimeLimitForGametype(void)
 	{
 		if (battleprisons)
 		{
+			if (grandprixinfo.gp)
+			{
+				if (grandprixinfo.masterbots)
+					return 15*TICRATE;
+				else if (grandprixinfo.gamespeed == KARTSPEED_EASY)
+					return 30*TICRATE;
+			}
 			return 20*TICRATE;
 		}
 
