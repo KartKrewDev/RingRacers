@@ -283,7 +283,10 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 	{
 		// Okay, player scores have been set now - we can calculate GP-relevant material.
 		{
-			K_UpdateGPRank();
+			if (grandprixinfo.gp == true)
+			{
+				K_UpdateGPRank(&grandprixinfo.rank);
+			}
 
 			// See also G_GetNextMap, M_DrawPause
 			data.showrank = false;

@@ -2601,11 +2601,98 @@ fixed_t M_DrawCupWinData(INT32 rankx, INT32 ranky, cupheader_t *cup, UINT8 diffi
 	return rankw;
 }
 
+void M_DrawCup(cupheader_t *cup, fixed_t x, fixed_t y, INT32 lockedTic, boolean isTrophy, UINT8 placement)
+{
+	patch_t *patch = NULL;
+	UINT8 *colormap = NULL;
+	INT16 icony = 7;
+	char status = 'A';
+	char monitor = '0';
+
+	if (isTrophy)
+	{
+		UINT16 col = SKINCOLOR_NONE;
+
+		switch (placement)
+		{
+			case 0:
+				break;
+			case 1:
+				col = SKINCOLOR_GOLD;
+				status = 'B';
+				break;
+			case 2:
+				col = SKINCOLOR_SILVER;
+				status = 'B';
+				break;
+			case 3:
+				col = SKINCOLOR_BRONZE;
+				status = 'B';
+				break;
+			default:
+				col = SKINCOLOR_BEIGE;
+				break;
+		}
+
+		if (col != SKINCOLOR_NONE)
+			colormap = R_GetTranslationColormap(TC_RAINBOW, col, GTC_MENUCACHE);
+		else
+			colormap = NULL;
+	}
+
+	if (cup == &dummy_lostandfound)
+	{
+		// No cup? Lost and found!
+		monitor = '0';
+	}
+	else
+	{
+		if (cup->monitor < 10)
+		{
+			monitor = '0' + cup->monitor;
+
+			if (monitor == '2')
+			{
+				icony = 5; // by default already 7px down, so this is really 2px further up
+			}
+			else if (monitor == '3')
+			{
+				icony = 6;
+			}
+		}
+		else
+		{
+			monitor = 'A' + (cup->monitor - 10);
+			if (monitor == 'X')
+			{
+				icony = 11;
+			}
+		}
+	}
+
+	patch = W_CachePatchName(va("CUPMON%c%c", monitor, status), PU_CACHE);
+	V_DrawFixedPatch(x, y, FRACUNIT, 0, patch, colormap);
+
+	if (cup == &dummy_lostandfound)
+	{
+		; // Only ever placed on the list if valid
+	}
+	else if (lockedTic != 0)
+	{
+		patch_t *st = W_CachePatchName(va("ICONST0%d", (lockedTic % 4) + 1), PU_CACHE);
+		V_DrawFixedPatch(x + (8 * FRACUNIT), y + (icony * FRACUNIT), FRACUNIT, 0, st, NULL);
+	}
+	else
+	{
+		V_DrawFixedPatch(x + (8 * FRACUNIT), y + (icony * FRACUNIT), FRACUNIT, 0, W_CachePatchName(cup->icon, PU_CACHE), NULL);
+		V_DrawFixedPatch(x + (8 * FRACUNIT), y + (icony * FRACUNIT), FRACUNIT, 0, W_CachePatchName("CUPBOX", PU_CACHE), NULL);
+	}
+}
+
 void M_DrawCupSelect(void)
 {
 	UINT8 i, j, temp = 0;
 	INT16 x, y;
-	UINT8 *colormap = NULL;
 	cupwindata_t *windata = NULL;
 	levelsearch_t templevelsearch = levellist.levelsearch; // full copy
 
@@ -2614,117 +2701,46 @@ void M_DrawCupSelect(void)
 		for (j = 0; j < CUPMENU_ROWS; j++)
 		{
 			size_t id = (i + (j * CUPMENU_COLUMNS)) + (cupgrid.pageno * (CUPMENU_COLUMNS * CUPMENU_ROWS));
-			patch_t *patch = NULL;
-			INT16 icony = 7;
-			char status =  'A';
-			char monitor;
 
 			if (!cupgrid.builtgrid[id])
 				break;
 
 			templevelsearch.cup = cupgrid.builtgrid[id];
 
-			if (cupgrid.grandprix
-				&& (cv_dummygpdifficulty.value >= 0 && cv_dummygpdifficulty.value < KARTGP_MAX))
-			{
-				UINT16 col = SKINCOLOR_NONE;
-
-				windata = &templevelsearch.cup->windata[cv_dummygpdifficulty.value];
-
-				switch (windata->best_placement)
-				{
-					case 0:
-						break;
-					case 1:
-						col = SKINCOLOR_GOLD;
-						status = 'B';
-						break;
-					case 2:
-						col = SKINCOLOR_SILVER;
-						status = 'B';
-						break;
-					case 3:
-						col = SKINCOLOR_BRONZE;
-						status = 'B';
-						break;
-					default:
-						col = SKINCOLOR_BEIGE;
-						break;
-				}
-
-				if (col != SKINCOLOR_NONE)
-					colormap = R_GetTranslationColormap(TC_RAINBOW, col, GTC_MENUCACHE);
-				else
-					colormap = NULL;
-			}
-
-			if (templevelsearch.cup == &dummy_lostandfound)
-			{
-				// No cup? Lost and found!
-				monitor = '0';
-			}
-			else
-			{
-				if (templevelsearch.cup->monitor < 10)
-				{
-					monitor = '0' + templevelsearch.cup->monitor;
-
-					if (monitor == '2')
-					{
-						icony = 5; // by default already 7px down, so this is really 2px further up
-					}
-					else if (monitor == '3')
-					{
-						icony = 6; 
-					}				
-				}
-				else
-				{
-					monitor = 'A' + (templevelsearch.cup->monitor - 10);
-					if (monitor == 'X')
-					{
-						icony = 11;
-					}		
-				}
-			}
-
-			patch = W_CachePatchName(va("CUPMON%c%c", monitor, status), PU_CACHE);
-
 			x = 14 + (i*42);
 			y = 20 + (j*44) - (30*menutransition.tics);
 
-			V_DrawFixedPatch((x)*FRACUNIT, (y)<<FRACBITS, FRACUNIT, 0, patch, colormap);
-
-			if (templevelsearch.cup == &dummy_lostandfound)
-				; // Only ever placed on the list if valid
-			else if (M_GetFirstLevelInList(&temp, &templevelsearch) == NEXTMAP_INVALID)
+			const boolean isGP = (cupgrid.grandprix && (cv_dummygpdifficulty.value >= 0 && cv_dummygpdifficulty.value < KARTGP_MAX));
+			if (isGP)
 			{
-				patch_t *st = W_CachePatchName(va("ICONST0%d", (cupgrid.previewanim % 4) + 1), PU_CACHE);
-				V_DrawScaledPatch(x + 8, y + icony, 0, st);
+				windata = &templevelsearch.cup->windata[cv_dummygpdifficulty.value];
 			}
-			else
-			{
-				V_DrawScaledPatch(x + 8, y + icony, 0, W_CachePatchName(templevelsearch.cup->icon, PU_CACHE));
-				V_DrawScaledPatch(x + 8, y + icony, 0, W_CachePatchName("CUPBOX", PU_CACHE));
 
-				if (cupgrid.grandprix == true
+			M_DrawCup(
+				templevelsearch.cup,
+				x * FRACUNIT, y * FRACUNIT,
+				(M_GetFirstLevelInList(&temp, &templevelsearch) == NEXTMAP_INVALID) ? ((cupgrid.previewanim % 4) + 1) : 0,
+				isGP,
+				windata ? windata->best_placement : 0
+			);
+
+			if (cupgrid.grandprix == true
 				&& templevelsearch.cup == cupsavedata.cup
 				&& id != CUPMENU_CURSORID)
-				{
-					V_DrawScaledPatch(x + 32, y + 32, 0, W_CachePatchName("CUPBKUP1", PU_CACHE));
-				}
+			{
+				V_DrawScaledPatch(x + 32, y + 32, 0, W_CachePatchName("CUPBKUP1", PU_CACHE));
+			}
 
-				if (windata && windata->best_placement != 0)
-				{
-					M_DrawCupWinData(
-						x,
-						8 + (j*100) - (30*menutransition.tics),
-						templevelsearch.cup,
-						cv_dummygpdifficulty.value,
-						(cupgrid.previewanim & 1),
-						false
-					);
-				}
+			if (windata && windata->best_placement != 0)
+			{
+				M_DrawCupWinData(
+					x,
+					8 + (j*100) - (30*menutransition.tics),
+					templevelsearch.cup,
+					cv_dummygpdifficulty.value,
+					(cupgrid.previewanim & 1),
+					false
+				);
 			}
 		}
 	}

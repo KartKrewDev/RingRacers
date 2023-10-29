@@ -5747,7 +5747,7 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 	// Rank information
 
 	{
-		WRITEUINT8(save->p, grandprixinfo.rank.players);
+		WRITEUINT8(save->p, grandprixinfo.rank.numPlayers);
 		WRITEUINT8(save->p, grandprixinfo.rank.totalPlayers);
 
 		WRITEUINT8(save->p, grandprixinfo.rank.position);
@@ -5768,6 +5768,19 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 		WRITEUINT32(save->p, grandprixinfo.rank.totalRings);
 
 		WRITEUINT8(save->p, (UINT8)grandprixinfo.rank.specialWon);
+
+		/*
+		WRITEUINT8(save->p, grandprixinfo.rank.numLevels);
+
+		for (i = 0; i < grandprixinfo.rank.stages; i++)
+		{
+			UINT8 j;
+			for (j = 0; j < grandprixinfo.rank.numPlayers; j++)
+			{
+				
+			}
+		}
+		*/
 	}
 
 	// Marathon information
@@ -5910,7 +5923,7 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 	// Rank information
 
 	{
-		grandprixinfo.rank.players = READUINT8(save->p);
+		grandprixinfo.rank.numPlayers = READUINT8(save->p);
 		grandprixinfo.rank.totalPlayers = READUINT8(save->p);
 
 		grandprixinfo.rank.position = READUINT8(save->p);

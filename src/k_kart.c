@@ -3128,7 +3128,7 @@ mobj_t *K_GetGardenTop(player_t *player)
 static fixed_t K_FlameShieldDashVar(INT32 val)
 {
 	// 1 second = 75% + 50% top speed
-	return (3*FRACUNIT/4) + (((val * FRACUNIT) / TICRATE) / 2);
+	return (3*FRACUNIT/4) + (((val * FRACUNIT) / TICRATE));
 }
 
 INT16 K_GetSpindashChargeTime(player_t *player)
@@ -4232,8 +4232,8 @@ void K_UpdateSliptideZipIndicator(player_t *player)
 	mobj->angle = momentumAngle + ANGLE_90;
 	P_SetScale(mobj, 3 * player->mo->scale / 2);
 
-	// No stored boost
-	if (player->sliptideZip == 0)
+	// No stored boost (or negligible enough that it might be a mistake)
+	if (player->sliptideZip <= HIDEWAVEDASHCHARGE)
 	{
 		mobj->renderflags |= RF_DONTDRAW;
 		mobj->frame = 7;
@@ -9892,7 +9892,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 	{
 		if (!keepsliptide && K_IsLosingSliptideZip(player) && player->sliptideZip > 0)
 		{
-			if (!S_SoundPlaying(player->mo, sfx_waved2))
+			if (player->sliptideZip > HIDEWAVEDASHCHARGE && !S_SoundPlaying(player->mo, sfx_waved2))
 				S_StartSoundAtVolume(player->mo, sfx_waved2, 255); // Losing combo time, going to boost
 			S_StopSoundByID(player->mo, sfx_waved1);
 			S_StopSoundByID(player->mo, sfx_waved4);
@@ -9954,7 +9954,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 		player->sliptideZipDelay = 0;
 		S_StopSoundByID(player->mo, sfx_waved2);
 		S_StopSoundByID(player->mo, sfx_waved4);
-		if (!S_SoundPlaying(player->mo, sfx_waved1))
+		if (player->sliptideZip > HIDEWAVEDASHCHARGE && !S_SoundPlaying(player->mo, sfx_waved1))
 			S_StartSoundAtVolume(player->mo, sfx_waved1, 255); // Charging
 	}
 
@@ -10193,7 +10193,7 @@ static INT32 K_FlameShieldMax(player_t *player)
 	UINT32 distv = 1024; // Pre no-scams: 2048
 	distv = distv * 16 / FLAMESHIELD_MAX; // Old distv was based on a 16-segment bar
 	UINT8 numplayers = 0;
-	UINT32 scamradius = 2000; // How close is close enough that we shouldn't be allowed to scam 1st?
+	UINT32 scamradius = 1500; // How close is close enough that we shouldn't be allowed to scam 1st?
 	UINT8 i;
 
 	if (gametyperules & GTR_CIRCUIT)
@@ -11709,29 +11709,31 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								if (player->flamelength < destlen)
 									player->flamelength = min(destlen, player->flamelength + 7); // Allows gauge to grow quickly when first acquired. 120/16 = ~7
 
-								flamemax = player->flamelength;
-								if (flamemax > 0)
-									flamemax += TICRATE; // leniency period
+								flamemax = player->flamelength + TICRATE; // TICRATE leniency period, but we block most effects at flamelength 0 down below
 
 								if ((cmd->buttons & BT_ATTACK) && (player->pflags & PF_HOLDREADY))
 								{
 									const INT32 incr = (gametyperules & GTR_CLOSERPLAYERS) ? 4 : 2;
-
-									if (player->flamedash == 0)
-									{
-										S_StartSound(player->mo, sfx_s3k43);
-										K_PlayBoostTaunt(player->mo);
-									}
-
-									player->flamedash += incr;
 									player->flamemeter += incr;
 
-									if (!onground)
+									if (player->flamelength)
 									{
-										P_Thrust(
-											player->mo, K_MomentumAngle(player->mo),
-											FixedMul(player->mo->scale, K_GetKartGameSpeedScalar(gamespeed))
-										);
+
+										if (player->flamedash == 0)
+										{
+											S_StartSound(player->mo, sfx_s3k43);
+											K_PlayBoostTaunt(player->mo);
+										}
+
+										player->flamedash += incr;
+
+										if (!onground)
+										{
+											P_Thrust(
+												player->mo, K_MomentumAngle(player->mo),
+												FixedMul(player->mo->scale, K_GetKartGameSpeedScalar(gamespeed))
+											);
+										}
 									}
 
 									if (player->flamemeter > flamemax)
@@ -12445,6 +12447,13 @@ tic_t K_TimeLimitForGametype(void)
 	{
 		if (battleprisons)
 		{
+			if (grandprixinfo.gp)
+			{
+				if (grandprixinfo.masterbots)
+					return 15*TICRATE;
+				else if (grandprixinfo.gamespeed == KARTSPEED_EASY)
+					return 30*TICRATE;
+			}
 			return 20*TICRATE;
 		}
 

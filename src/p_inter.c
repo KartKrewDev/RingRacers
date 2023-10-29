@@ -1087,7 +1087,17 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 		S_StartSound(NULL, sfx_s221);
 		if (timelimitintics)
 		{
-			extratimeintics += 10*TICRATE;
+			UINT16 bonustime = 10*TICRATE;
+			
+			if (grandprixinfo.gp)
+			{
+				if (grandprixinfo.masterbots)
+					bonustime = 8*TICRATE;
+				else if (grandprixinfo.gamespeed == KARTSPEED_EASY)
+					bonustime = 15*TICRATE;
+			}
+
+			extratimeintics += bonustime;
 			secretextratime = TICRATE/2;
 		}
 
@@ -2494,6 +2504,11 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 	P_ResetPlayer(player);
 
 	P_SetPlayerMobjState(player->mo, player->mo->info->deathstate);
+
+	if (player->sliptideZipIndicator && !P_MobjWasRemoved(player->sliptideZipIndicator))
+		P_RemoveMobj(player->sliptideZipIndicator);
+	if (player->stumbleIndicator && !P_MobjWasRemoved(player->stumbleIndicator))
+		P_RemoveMobj(player->stumbleIndicator);
 
 	if (type == DMG_TIMEOVER)
 	{

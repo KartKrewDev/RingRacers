@@ -142,8 +142,8 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	k_profiles.c
 	k_specialstage.c
 	k_roulette.c
-	k_podium.c
-	k_rank.c
+	k_podium.cpp
+	k_rank.cpp
 	k_vote.c
 	k_serverstats.c
 	k_zvote.c

@@ -54,6 +54,14 @@ void K_drawButton(fixed_t x, fixed_t y, INT32 flags, patch_t *button[2], boolean
 void K_drawButtonAnim(INT32 x, INT32 y, INT32 flags, patch_t *button[2], tic_t animtic);
 void K_DrawSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean isSmall);
 
+void K_DrawKartPositionNumXY(
+	UINT8 num,
+	UINT8 splitIndex,
+	fixed_t fx, fixed_t fy, fixed_t scale, INT32 fflags,
+	tic_t counter, boolean subtract,
+	boolean exit, boolean lastLap, boolean losing
+);
+
 extern patch_t *kp_capsuletarget_arrow[2][2];
 extern patch_t *kp_capsuletarget_icon[2];
 extern patch_t *kp_capsuletarget_far[2][2];

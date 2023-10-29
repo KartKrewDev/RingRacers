@@ -1976,9 +1976,8 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 	}
 }
 
-static fixed_t K_DrawKartPositionNumPatch(UINT8 num, UINT8 *color, fixed_t x, fixed_t y, fixed_t scale, INT32 flags)
+static fixed_t K_DrawKartPositionNumPatch(UINT8 num, UINT8 splitIndex, UINT8 *color, fixed_t x, fixed_t y, fixed_t scale, INT32 flags)
 {
-	const UINT8 splitIndex = (r_splitscreen > 0) ? 1 : 0;
 	fixed_t w = FRACUNIT;
 	fixed_t h = FRACUNIT;
 	INT32 overlayFlags[2];
@@ -2023,14 +2022,76 @@ static fixed_t K_DrawKartPositionNumPatch(UINT8 num, UINT8 *color, fixed_t x, fi
 	return x;
 }
 
+void K_DrawKartPositionNumXY(
+		UINT8 num,
+		UINT8 splitIndex,
+		fixed_t fx, fixed_t fy, fixed_t scale, INT32 fflags,
+		tic_t counter, boolean subtract,
+		boolean exit, boolean lastLap, boolean losing
+	)
+{
+	counter /= 3; // Alternate colors every three frames
+
+	UINT8 *color = NULL;
+	if (exit && num == 1)
+	{
+		// 1st place winner? You get rainbows!!
+		color = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_POSNUM_BEST1 + (counter % 6), GTC_CACHE);
+	}
+	else if (exit || lastLap)
+	{
+		// On the final lap, or already won.
+		boolean useRedNums = losing;
+
+		if (subtract)
+		{
+			// Subtracting RED will look BLUE, and vice versa.
+			useRedNums = !useRedNums;
+		}
+
+		if (useRedNums == true)
+		{
+			color = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_POSNUM_LOSE1 + (counter % 3), GTC_CACHE);
+		}
+		else
+		{
+			color = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_POSNUM_WIN1 + (counter % 3), GTC_CACHE);
+		}
+	}
+	else
+	{
+		color = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_POSNUM, GTC_CACHE);
+	}
+
+	if ((fflags & V_SNAPTORIGHT) == 0)
+	{
+		UINT8 adjustNum = num;
+		do
+		{
+			fixed_t w = SHORT(kp_positionnum[adjustNum % 10][0][splitIndex]->width) * scale;
+			fx += w;
+			adjustNum /= 10;
+		} while (adjustNum);
+	}
+
+	// Draw the number
+	do
+	{
+		fx = K_DrawKartPositionNumPatch(
+			(num % 10), splitIndex, color,
+			fx, fy, scale, V_SPLITSCREEN|fflags
+		);
+		num /= 10;
+	} while (num);
+}
+
 static void K_DrawKartPositionNum(UINT8 num)
 {
-	const tic_t counter = (leveltime / 3); // Alternate colors every three frames
+	UINT8 splitIndex = (r_splitscreen > 0) ? 1 : 0;
 	fixed_t scale = FRACUNIT;
 	fixed_t fx = 0, fy = 0;
 	transnum_t trans = 0;
 	INT32 fflags = 0;
-	UINT8 *color = NULL;
 
 	if (stplyr->lives <= 0 && stplyr->playerstate == PST_DEAD)
 	{
@@ -2110,57 +2171,16 @@ static void K_DrawKartPositionNum(UINT8 num)
 		fflags |= (trans << V_ALPHASHIFT);
 	}
 
-	if (stplyr->exiting && num == 1)
-	{
-		// 1st place winner? You get rainbows!!
-		color = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_POSNUM_BEST1 + (counter % 6), GTC_CACHE);
-	}
-	else if (stplyr->laps >= numlaps || stplyr->exiting)
-	{
-		// On the final lap, or already won.
-		boolean useRedNums = K_IsPlayerLosing(stplyr);
-
-		if ((mapheaderinfo[gamemap - 1]->levelflags & LF_SUBTRACTNUM) == LF_SUBTRACTNUM)
-		{
-			// Subtracting RED will look BLUE, and vice versa.
-			useRedNums = !useRedNums;
-		}
-
-		if (useRedNums == true)
-		{
-			color = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_POSNUM_LOSE1 + (counter % 3), GTC_CACHE);
-		}
-		else
-		{
-			color = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_POSNUM_WIN1 + (counter % 3), GTC_CACHE);
-		}
-	}
-	else
-	{
-		color = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_POSNUM, GTC_CACHE);
-	}
-
-	if ((fflags & V_SNAPTORIGHT) == 0)
-	{
-		const UINT8 splitIndex = (r_splitscreen > 0) ? 1 : 0;
-		UINT8 adjustNum = num;
-		do
-		{
-			fixed_t w = SHORT(kp_positionnum[adjustNum % 10][0][splitIndex]->width) * scale;
-			fx += w;
-			adjustNum /= 10;
-		} while (adjustNum);
-	}
-
-	// Draw the number
-	do
-	{
-		fx = K_DrawKartPositionNumPatch(
-			(num % 10), color,
-			fx, fy, scale, V_SPLITSCREEN|fflags
-		);
-		num /= 10;
-	} while (num);
+	K_DrawKartPositionNumXY(
+		num,
+		splitIndex,
+		fx, fy, scale, fflags,
+		leveltime,
+		((mapheaderinfo[gamemap - 1]->levelflags & LF_SUBTRACTNUM) == LF_SUBTRACTNUM),
+		stplyr->exiting,
+		(stplyr->laps >= numlaps),
+		K_IsPlayerLosing(stplyr)
+	);
 }
 
 static boolean K_drawKartPositionFaces(void)
