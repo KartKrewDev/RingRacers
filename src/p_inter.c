@@ -2500,6 +2500,11 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 
 	P_SetPlayerMobjState(player->mo, player->mo->info->deathstate);
 
+	if (player->sliptideZipIndicator && !P_MobjWasRemoved(player->sliptideZipIndicator))
+		P_RemoveMobj(player->sliptideZipIndicator);
+	if (player->stumbleIndicator && !P_MobjWasRemoved(player->stumbleIndicator))
+		P_RemoveMobj(player->stumbleIndicator);
+
 	if (type == DMG_TIMEOVER)
 	{
 		if (gametyperules & GTR_CIRCUIT)
