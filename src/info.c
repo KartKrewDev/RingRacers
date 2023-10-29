@@ -933,6 +933,23 @@ char sprnames[NUMSPRITES + 1][5] =
 
 	"SA2S", // SA2-style Ball Switch
 
+	"STRG", // Spiked Target
+
+	"BLEA", // m'A'in unit
+	"BLEB", // o'B'server
+	"BLEC", // 'C'lear glass
+	"BLED", // shiel'D'
+	"BLEE", // 'E'ggbeater
+	"BLEF", // 'F'lamejet
+	"BLEG", // 'G'enerator
+
+	// Puyo hazards
+	"PUYA",
+	"PUYB",
+	"PUYC",
+	"PUYD",
+	"PUYE",
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	"VIEW",
 };
@@ -5521,6 +5538,47 @@ state_t states[NUMSTATES] =
 	{SPR_SA2S, FF_FULLBRIGHT|FF_ANIMATE|FF_GLOBALANIM|4, -1, {NULL}, 1, 1, S_NULL}, // S_BALLSWITCH_BALL_ACTIVE
 	{SPR_SA2S, FF_FLOORSPRITE, -1, {NULL}, 0, 0, S_NULL}, // S_BALLSWITCH_PAD
 	{SPR_SA2S, FF_FLOORSPRITE|FF_ANIMATE|FF_GLOBALANIM|1, -1, {NULL}, 1, 1, S_NULL}, // S_BALLSWITCH_PAD_ACTIVE
+
+	{SPR_STRG, FF_ADD|FF_FLOORSPRITE, -1, {NULL}, 0, 0, S_NULL},	// S_SPIKEDTARGET,
+
+	{SPR_BLEA, 0, -1, {NULL}, 0, 0, S_NULL},	// S_BLENDEYE_MAIN,
+	{SPR_BLEA, 1, -1, {NULL}, 0, 0, S_NULL},	// S_BLENDEYE_MAIN_LAUNCHED,
+
+	{SPR_BLEB, FF_PAPERSPRITE|FF_FULLBRIGHT,            -1, {NULL}, 0, 0, S_NULL},			// S_BLENDEYE_EYE,
+	{SPR_BLEB, FF_PAPERSPRITE|FF_FULLBRIGHT|FF_ANIMATE, -1, {NULL}, 1, 1, S_BLENDEYE_EYE},	// S_BLENDEYE_EYE_FLASH,
+
+	{SPR_BLEC,   FF_PAPERSPRITE|FF_ADD,           -1, {NULL}, 0, 0, S_NULL},			// S_BLENDEYE_GLASS,
+	{SPR_BLEC, 1|FF_PAPERSPRITE|FF_ADD|FF_ANIMATE, 2, {NULL}, 1, 1, S_BLENDEYE_GLASS},	// S_BLENDEYE_GLASS_STRESS,
+
+	{SPR_BLED,   FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_NULL},	// S_BLENDEYE_SHIELD,
+	{SPR_BLED, 1|FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_NULL},	// S_BLENDEYE_SHIELD_L,
+	{SPR_BLED, 2|FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_NULL},	// S_BLENDEYE_SHIELD_R,
+	{SPR_BLED, 3|FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_NULL},	// S_BLENDEYE_SHIELD_BUSTED,
+	{SPR_BLED, 5|FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_NULL},	// S_BLENDEYE_SHIELD_BUSTED_L,
+	{SPR_BLED, 6|FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_NULL},	// S_BLENDEYE_SHIELD_BUSTED_R,
+
+	{SPR_BLEE, 0,             4, {NULL}, 0, 0, S_BLENDEYE_EGGBEATER_EXTEND_2},	// S_BLENDEYE_EGGBEATER_EXTEND_1,
+	{SPR_BLEE, 1|FF_ANIMATE,  8, {NULL}, 1, 2, S_BLENDEYE_EGGBEATER},			// S_BLENDEYE_EGGBEATER_EXTEND_2,
+	{SPR_BLEE, 2,            -1, {NULL}, 0, 0, S_NULL},	// S_BLENDEYE_EGGBEATER,
+	{SPR_BLEE, 2|FF_ANIMATE, -1, {NULL}, 1, 2, S_NULL},	// S_BLENDEYE_EGGBEATER_SPIN,
+
+	{SPR_BLEF, FF_ADD|FF_ANIMATE, -1, {NULL}, 1, 2, S_NULL},	// S_BLENDEYE_FLAME,
+
+	{SPR_BLEG,   FF_PAPERSPRITE|FF_ANIMATE, -1, {NULL}, 1, 1, S_NULL},	// S_BLENDEYE_GENERATOR,
+	{SPR_BLEG, 2|FF_PAPERSPRITE,            -1, {NULL}, 0, 0, S_NULL},	// S_BLENDEYE_GENERATOR_BUSTED_L,
+	{SPR_BLEG, 3|FF_PAPERSPRITE,            -1, {NULL}, 0, 0, S_NULL},	// S_BLENDEYE_GENERATOR_BUSTED_R,
+
+	{SPR_PUYA, 6,  2, {A_BlendEyePuyoHack}, 0, 0, S_BLENDEYE_PUYO_SPAWN_2},	// S_BLENDEYE_PUYO_SPAWN_1,
+	{SPR_PUYA, 5,  2, {A_BlendEyePuyoHack}, 0, 0, S_BLENDEYE_PUYO_SPAWN_3},	// S_BLENDEYE_PUYO_SPAWN_2,
+	{SPR_PUYA, 4,  2, {A_BlendEyePuyoHack}, 0, 0, S_BLENDEYE_PUYO},			// S_BLENDEYE_PUYO_SPAWN_3,
+	{SPR_PUYA, 0, -1, {A_BlendEyePuyoHack}, 0, 0, S_NULL},					// S_BLENDEYE_PUYO,
+	{SPR_PUYA, 2,  2, {A_BlendEyePuyoHack}, 0, 0, S_BLENDEYE_PUYO_LAND_2},	// S_BLENDEYE_PUYO_LAND_1,
+	{SPR_PUYA, 0,  2, {A_BlendEyePuyoHack}, 0, 0, S_BLENDEYE_PUYO_LAND_3},	// S_BLENDEYE_PUYO_LAND_2,
+	{SPR_PUYA, 1,  2, {A_BlendEyePuyoHack}, 0, 0, S_BLENDEYE_PUYO_LAND_4},	// S_BLENDEYE_PUYO_LAND_3,
+	{SPR_PUYA, 0,  2, {A_BlendEyePuyoHack}, 1, S_BLENDEYE_PUYO_LAND_1, S_BLENDEYE_PUYO},	// S_BLENDEYE_PUYO_LAND_4,
+	{SPR_PUYA, 3, -1, {A_BlendEyePuyoHack}, 0, 0, S_NULL},					// S_BLENDEYE_PUYO_SHOCK,
+	{SPR_PUYA, 4|FF_ANIMATE,  5, {A_BlendEyePuyoHack}, 2, 2, S_NULL},				// S_BLENDEYE_PUYO_DIE,
+	{SPR_PUYA, 5,             2, {A_BlendEyePuyoHack}, 0, 0, S_BLENDEYE_PUYO_DIE},	// S_BLENDEYE_PUYO_DUST,
 };
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] =
@@ -31104,6 +31162,303 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // damage
 		sfx_None,       // activesound
 		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_NOGRAVITY|MF_SCENERY, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_BOSSARENACENTER
+		2130,           // doomednum
+		S_INVISIBLE,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		FRACUNIT,       // radius
+		FRACUNIT,       // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_SCENERY, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_SPIKEDTARGET
+		-1,             // doomednum
+		S_SPIKEDTARGET, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		24*FRACUNIT,    // radius
+		48*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SCENERY|MF_NOCLIPTHING|MF_NOGRAVITY, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_BLENDEYE_MAIN
+		2131,           // doomednum
+		S_BLENDEYE_MAIN, // spawnstate
+		3,              // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_BLENDEYE_MAIN, // painstate
+		0,              // painchance
+		sfx_mbs60,      // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_BLENDEYE_MAIN, // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		42*FRACUNIT,    // radius
+		56*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_BOSS|MF_SPECIAL|MF_NOGRAVITY|MF_NOCLIPTHING|MF_SOLID, // flags
+		S_BLENDEYE_MAIN_LAUNCHED // raisestate
+	},
+
+	{           // MT_BLENDEYE_EYE
+		-1,             // doomednum
+		S_BLENDEYE_EYE, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		14*FRACUNIT,    // radius
+		28*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOCLIPTHING|MF_NOGRAVITY, // flags
+		S_BLENDEYE_EYE_FLASH // raisestate
+	},
+
+	{           // MT_BLENDEYE_GLASS
+		-1,             // doomednum
+		S_BLENDEYE_GLASS, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_BLENDEYE_GLASS_STRESS, // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		16*FRACUNIT,    // radius
+		96*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_PAPERCOLLISION|MF_PAIN, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_BLENDEYE_SHIELD
+		-1,             // doomednum
+		S_BLENDEYE_SHIELD, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		17*FRACUNIT,    // radius
+		42*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_PAPERCOLLISION|MF_PAIN, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_BLENDEYE_EGGBEATER
+		-1,             // doomednum
+		S_BLENDEYE_EGGBEATER_EXTEND_1, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		26*FRACUNIT,    // radius
+		56*FRACUNIT,    // height
+		-1,             // display offset
+		DMG_TUMBLE,     // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_PAIN, // flags
+		S_BLENDEYE_EGGBEATER_SPIN // raisestate
+	},
+
+	{           // MT_BLENDEYE_GENERATOR
+		-1,             // doomednum
+		S_BLENDEYE_GENERATOR, // spawnstate
+		1,              // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_BLENDEYE_GENERATOR_BUSTED_L, // deathstate
+		S_BLENDEYE_GENERATOR_BUSTED_R, // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		26*FRACUNIT,    // radius
+		42*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SHOOTABLE|MF_PAPERCOLLISION|MF_SOLID, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_BLENDEYE_PUYO
+		-1,             // doomednum
+		S_BLENDEYE_PUYO_SPAWN_1, // spawnstate
+		1,              // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_BLENDEYE_PUYO_DIE, // deathstate
+		S_NULL,         // xdeathstate
+		sfx_mbs4c,      // deathsound
+		0,              // speed
+		8*FRACUNIT,     // radius
+		12*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SPECIAL|MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_NOHITLAGFORME, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_BLENDEYE_PUYO_DUST
+		-1,             // doomednum
+		S_BLENDEYE_PUYO_DUST, // spawnstate
+		1,              // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		4*FRACUNIT,     // radius
+		4*FRACUNIT,     // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SCENERY|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_NOGRAVITY, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_BLENDEYE_PUYO_DUST_COFFEE
+		-1,             // doomednum
+		S_BLENDEYE_PUYO_DUST, // spawnstate
+		1,              // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		4*FRACUNIT,     // radius
+		4*FRACUNIT,     // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SCENERY|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_NOGRAVITY, // flags
 		S_NULL          // raisestate
 	},
 };

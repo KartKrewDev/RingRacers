@@ -328,6 +328,7 @@ void A_InvincSparkleRotate(mobj_t *actor);
 void A_SpawnItemDebrisCloud(mobj_t *actor);
 void A_RingShooterFace(mobj_t *actor);
 void A_SpawnSneakerPanel(mobj_t *actor);
+void A_BlendEyePuyoHack(mobj_t *actor);
 
 //for p_enemy.c
 
@@ -13755,4 +13756,43 @@ void A_SpawnSneakerPanel(mobj_t *actor)
 	mo = P_SpawnMobjFromMobj(actor, x << FRACBITS, y << FRACBITS, z << FRACBITS, MT_SNEAKERPANEL);
 	mo->angle = actor->angle;
 	Obj_SneakerPanelSpriteScale(mo);
+}
+
+// Function: A_BlendEyePuyoHack
+//
+// Description: Blend Eye Puyo hazards visual/repeat behaviour
+//
+// var1:
+// var2:
+//		See A_Repeat
+//
+void A_BlendEyePuyoHack(mobj_t *actor)
+{
+	INT32 locvar1 = var1;
+	INT32 locvar2 = var2;
+
+	if (LUA_CallAction(A_BLENDEYEPUYOHACK, actor))
+	{
+		return;
+	}
+
+	actor->sprite = actor->movedir;
+
+	if (locvar1 != 0 && !(actor->state->frame & FF_ANIMATE))
+	{
+		// See A_Repeat
+		if ((!actor->extravalue2 || actor->extravalue2 > locvar1))
+			actor->extravalue2 = locvar1;
+
+		if (--actor->extravalue2 > 0)
+			P_SetMobjState(actor, locvar2);
+	}
+
+	if (actor->movedir == SPR_PUYC
+	&& (actor->state-states) == S_BLENDEYE_PUYO_SHOCK
+	&& P_RandomChance(PR_DECORATION, FRACUNIT/50))
+	{
+		// Funny
+		actor->frame = 7;
+	}
 }

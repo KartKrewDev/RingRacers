@@ -1288,12 +1288,16 @@ typedef enum
 	sfx_rainbr,
 
 	sfx_rank,
-	
+
 	// rideroid
 	sfx_ridr1,
 	sfx_ridr2,
 	sfx_ridr3,
 	sfx_ridr4,
+
+	// Blend Eye
+	sfx_befan1,
+	sfx_befan2,
 
 	// Damage sounds
 	sfx_dmga1,

@@ -1226,6 +1226,9 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"ridr3",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Rideroid Loop
   {"ridr4",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Leaving Rideroid 
 
+  {"befan1",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Whisking"}, // Blend Eye whisk startup
+  {"befan2",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Whisking"}, // Blend Eye whisk
+
   // Damage sounds
   {"dmga1",  false, 255, 8, -1, NULL, 0,         -1,  -1, LUMPERROR, "Damaged"},
   {"dmga2",  false, 255, 8, -1, NULL, 0,         -1,  -1, LUMPERROR, "Damaged"},
