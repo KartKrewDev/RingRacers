@@ -12757,7 +12757,7 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 			break;
 	}
 
-	if (inDuel == false)
+	if (!K_ShouldSpawnDuelItems())
 	{
 		if (K_IsDuelItem(i) == true
 			&& K_DuelItemAlwaysSpawns(mthing) == false)
