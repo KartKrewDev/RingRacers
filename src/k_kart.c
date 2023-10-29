@@ -4222,7 +4222,7 @@ void K_UpdateSliptideZipIndicator(player_t *player)
 		return;
 	}
 
-	if (player->stumbleIndicator == NULL || P_MobjWasRemoved(player->stumbleIndicator) == true)
+	if (player->sliptideZipIndicator == NULL || P_MobjWasRemoved(player->sliptideZipIndicator) == true)
 	{
 		K_InitSliptideZipIndicator(player);
 		return;
