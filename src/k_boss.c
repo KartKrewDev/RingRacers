@@ -1,4 +1,4 @@
-// SONIC ROBO BLAST 2 KART
+// DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
 // Copyright (C) 2018-2023 by Vivian "toastergrl" Grannell
 // Copyright (C) 2018-2023 by Kart Krew

@@ -1,3 +1,15 @@
+// DR. ROBOTNIK'S RING RACERS
+//-----------------------------------------------------------------------------
+// Copyright (C) 2022-2023 by Vivian "toastergrl" Grannell
+// Copyright (C) 2022-2023 by Kart Krew
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+/// \file  arena.c
+/// \brief Boss battle arena logic
+
 #include "../../p_local.h"
 #include "../../p_setup.h"
 #include "../../m_random.h"
