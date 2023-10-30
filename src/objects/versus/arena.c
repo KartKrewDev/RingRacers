@@ -91,7 +91,7 @@ fixed_t *VS_PredictAroundArena(mobj_t *arena, mobj_t *movingobject, fixed_t magn
 		// Subtract the radius so it's usable as a delta!
 		radiusdelta -= radius;
 	
-		if (radiusdelta)
+		if (radiusdelta && radiusdeltafactor != FRACUNIT)
 			radiusdelta = FixedDiv(radiusdelta, radiusdeltafactor);
 	}
 
