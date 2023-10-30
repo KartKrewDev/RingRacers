@@ -951,6 +951,13 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			return;
 		}
 
+		case MT_BLENDEYE_PUYO:
+		{
+			if (!VS_PuyoTouched(special, toucher))
+				return;
+			break;
+		}
+
 		default: // SOC or script pickup
 			P_SetTarget(&special->target, toucher);
 			break;
@@ -2167,6 +2174,9 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			break;
 		case MT_BATTLEUFO:
 			Obj_BattleUFODeath(target);
+			break;
+		case MT_BLENDEYE_PUYO:
+			VS_PuyoDeath(target);
 			break;
 		default:
 			break;

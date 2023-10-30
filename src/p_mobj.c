@@ -6795,6 +6795,17 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 
 		break;
 	}
+	case MT_SPIKEDTARGET:
+	{
+		if (P_MobjWasRemoved(mobj->target) || (mobj->target->health <= 0) || (mobj->target->z == mobj->target->floorz))
+		{
+			P_RemoveMobj(mobj);
+			return;
+		}
+
+		mobj->angle += ANG2;
+		break;
+	}
 	case MT_VWREF:
 	case MT_VWREB:
 	{
@@ -11439,6 +11450,21 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			break;
 		case MT_BALLSWITCH_BALL:
 			Obj_BallSwitchInit(mobj);
+			break;
+		case MT_BLENDEYE_PUYO:
+			mobj->sprite = mobj->movedir = P_RandomRange(PR_DECORATION, SPR_PUYA, SPR_PUYE);
+			if (encoremode == false)
+			{
+				mobj->color = SKINCOLOR_LEATHER;
+				mobj->colorized = true;
+			}
+			break;
+		case MT_BLENDEYE_PUYO_DUST_COFFEE:
+			mobj->color = SKINCOLOR_LEATHER;
+			mobj->colorized = true;
+			// FALLTHRU
+		case MT_BLENDEYE_PUYO_DUST:
+			mobj->sprite = mobj->movedir = P_RandomRange(PR_DECORATION, SPR_PUYA, SPR_PUYE);
 			break;
 		default:
 			break;
