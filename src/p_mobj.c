@@ -4661,22 +4661,29 @@ boolean P_BossTargetPlayer(mobj_t *actor, boolean closest)
 // Finds the player no matter what they're hiding behind (even lead!)
 boolean P_SupermanLook4Players(mobj_t *actor)
 {
-	INT32 c, stop = 0;
-	player_t *playersinthegame[MAXPLAYERS];
+	UINT8 c, stop = 0;
+	UINT8 playersinthegame[MAXPLAYERS];
 
 	for (c = 0; c < MAXPLAYERS; c++)
 	{
-		if (playeringame[c] && !players[c].spectator)
-		{
-			if (!players[c].mo)
-				continue;
+		// Playing status
+		if (!playeringame[c])
+			continue;
+		if (players[c].spectator)
+			continue;
 
-			if (players[c].mo->health <= 0)
-				continue; // dead
+		// Mobj status
+		if (!players[c].mo)
+			continue;
+		if (players[c].mo->health <= 0)
+			continue; // dead
 
-			playersinthegame[stop] = &players[c];
-			stop++;
-		}
+		// Pain status
+		if (players[c].respawn.state != RESPAWNST_NONE)
+			continue; // don't wail on the respawning
+
+		playersinthegame[stop] = c;
+		stop++;
 	}
 
 	if (!stop)
