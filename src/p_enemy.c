@@ -9247,8 +9247,8 @@ void A_ForceWin(mobj_t *actor)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (playeringame[i] && ((players[i].mo && players[i].mo->health)
-		    && !(players[i].pflags & PF_NOCONTEST)))
+		if (playeringame[i]
+		    && !(players[i].pflags & PF_NOCONTEST))
 			break;
 	}
 
