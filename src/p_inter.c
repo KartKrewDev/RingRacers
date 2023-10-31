@@ -392,6 +392,9 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			P_InstaThrust(player->mo, player->mo->angle, 20<<FRACBITS);
 			return;
 		case MT_FLOATINGITEM: // SRB2Kart
+			// Avoid being picked up immediately
+			if (special->scale < special->destscale/2)
+				return;
 			if (special->threshold >= FIRSTPOWERUP)
 			{
 				if (P_PlayerInPain(player))
