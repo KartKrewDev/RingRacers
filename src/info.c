@@ -5540,6 +5540,7 @@ state_t states[NUMSTATES] =
 	{SPR_SA2S, FF_FLOORSPRITE|FF_ANIMATE|FF_GLOBALANIM|1, -1, {NULL}, 1, 1, S_NULL}, // S_BALLSWITCH_PAD_ACTIVE
 
 	{SPR_STRG, FF_ADD|FF_FLOORSPRITE, -1, {NULL}, 0, 0, S_NULL},	// S_SPIKEDTARGET,
+	{SPR_STRG, FF_ADD,                -1, {NULL}, 0, 0, S_NULL},	// S_SPIKEDLENS,
 
 	{SPR_BLEA, 0, -1, {NULL}, 0, 0, S_NULL},	// S_BLENDEYE_MAIN,
 	{SPR_BLEA, 1, -1, {NULL}, 0, 0, S_NULL},	// S_BLENDEYE_MAIN_LAUNCHED,
@@ -31239,7 +31240,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		42*FRACUNIT,    // radius
 		56*FRACUNIT,    // height
 		0,              // display offset
-		0,              // mass
+		DMG_NORMAL,     // mass
 		0,              // damage
 		sfx_None,       // activesound
 		MF_BOSS|MF_SPECIAL|MF_NOGRAVITY|MF_NOCLIPTHING|MF_SOLID, // flags

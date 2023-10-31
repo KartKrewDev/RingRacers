@@ -367,6 +367,12 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		/////ENEMIES & BOSSES!!/////////////////////////////////
 		////////////////////////////////////////////////////////
 
+		if (special->type == MT_BLENDEYE_MAIN)
+		{
+			if (!VS_BlendEye_Touched(special, toucher))
+				return;
+		}
+
 		P_DamageMobj(toucher, special, special, 1, DMG_NORMAL);
 		return;
 	}
@@ -2175,6 +2181,12 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		case MT_BATTLEUFO:
 			Obj_BattleUFODeath(target);
 			break;
+		case MT_BLENDEYE_MAIN:
+			VS_BlendEye_Death(target);
+			break;
+		case MT_BLENDEYE_GLASS:
+			VS_BlendEye_Glass_Death(target);
+			break;
 		case MT_BLENDEYE_PUYO:
 			VS_PuyoDeath(target);
 			break;
@@ -2221,7 +2233,6 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			P_InstaThrust(target, R_PointToAngle2(inflictor->x, inflictor->y, target->x, target->y)+ANGLE_90, 16<<FRACBITS);
 	}
 
-	// Final state setting - do something instead of P_SetMobjState;
 	// Final state setting - do something instead of P_SetMobjState;
 	if (target->type == MT_SPIKE && target->info->deathstate != S_NULL)
 	{
@@ -2363,6 +2374,27 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			target->momz *= -1;
 		if (!sprflip)
 			target->frame |= FF_VERTICALFLIP;
+	}
+	else if (target->type == MT_BLENDEYE_GENERATOR && !P_MobjWasRemoved(inflictor))
+	{
+		mobj_t *refobj = (inflictor->type == MT_INSTAWHIP) ? source : inflictor;
+		angle_t impactangle = R_PointToAngle2(target->x, target->y, refobj->x - refobj->momx, refobj->y - refobj->momy) - (target->angle + ANGLE_90);
+
+		if (P_MobjWasRemoved(target->tracer) == false)
+		{
+			target->tracer->flags2 &= ~MF2_FRET;
+			target->tracer->flags |= MF_SHOOTABLE;
+			P_DamageMobj(target->tracer, inflictor, source, 1, DMG_NORMAL);
+			target->tracer->flags &= ~MF_SHOOTABLE;
+		}
+
+		P_SetMobjState(
+			target,
+			((impactangle < ANGLE_180)
+				? target->info->deathstate
+				: target->info->xdeathstate
+			)
+		);
 	}
 	else if (target->player)
 	{
@@ -3103,6 +3135,10 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		if (target->type == MT_SPECIAL_UFO)
 		{
 			return Obj_SpecialUFODamage(target, inflictor, source, damagetype);
+		}
+		else if (target->type == MT_BLENDEYE_MAIN)
+		{
+			VS_BlendEye_Damage(target, inflictor, source, damage);
 		}
 
 		if (damagetype & DMG_STEAL)

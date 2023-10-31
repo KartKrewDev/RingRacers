@@ -138,7 +138,19 @@ fixed_t *VS_RandomPointOnArena(mobj_t *arena, fixed_t radiussubtract);
 
 // Blend Eye
 
+void VS_BlendEye_Init(mobj_t *mobj);
+void VS_BlendEye_Thinker(mobj_t *mobj);
+boolean VS_BlendEye_Touched(mobj_t *special, mobj_t *toucher);
+void VS_BlendEye_Damage(mobj_t *mobj, mobj_t *inflictor, mobj_t *source, INT32 damage);
+void VS_BlendEye_Death(mobj_t *mobj);
+
+boolean VS_BlendEye_Eye_Thinker(mobj_t *mobj);
+void VS_BlendEye_Glass_Death(mobj_t *mobj);
+void VS_BlendEye_Eggbeater_Touched(mobj_t *t1, mobj_t *t2);
+void VS_BlendEye_Generator_DeadThinker(mobj_t *mobj);
+
 boolean VS_PuyoTouched(mobj_t *special, mobj_t *toucher);
+void VS_PuyoThinker(mobj_t *mobj);
 void VS_PuyoDeath(mobj_t *mobj);
 
 #ifdef __cplusplus

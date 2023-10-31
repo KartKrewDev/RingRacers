@@ -4689,7 +4689,14 @@ boolean P_SupermanLook4Players(mobj_t *actor)
 	if (!stop)
 		return false;
 
-	P_SetTarget(&actor->target, playersinthegame[P_RandomKey(PR_UNDEFINED, stop)]->mo);
+	P_SetTarget(
+		&actor->target,
+		players[
+			playersinthegame[
+				P_RandomKey(PR_MOVINGTARGET, stop)
+			]
+		].mo
+	);
 	return true;
 }
 
@@ -6857,16 +6864,19 @@ static boolean P_MobjBossThink(mobj_t *mobj)
 	}
 	else if (P_MobjWasRemoved(mobj))
 		return false;
-	else
-		switch (mobj->type)
-		{
-		// No SRB2Kart bosses... yet :)
+	else switch (mobj->type)
+	{
+		case MT_BLENDEYE_MAIN:
+			VS_BlendEye_Thinker(mobj);
+			break;
 		default: // Generic SOC-made boss
 			if (mobj->flags2 & MF2_SKULLFLY)
 				P_SpawnGhostMobj(mobj);
 			P_GenericBossThinker(mobj);
 			break;
-		}
+	}
+	if (P_MobjWasRemoved(mobj))
+		return false;
 	if (mobj->flags2 & MF2_BOSSFLEE)
 	{
 		if (mobj->extravalue1)
@@ -7059,6 +7069,11 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 		{
 			mobj->fuse = TICRATE;
 		}
+		break;
+	}
+	case MT_BLENDEYE_GENERATOR:
+	{
+		VS_BlendEye_Generator_DeadThinker(mobj);
 		break;
 	}
 	default:
@@ -9976,6 +9991,24 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		break;
 	}
 
+	case MT_BLENDEYE_EYE:
+	{
+		if (!VS_BlendEye_Eye_Thinker(mobj))
+		{
+			return false;
+		}
+		break;
+	}
+	case MT_BLENDEYE_PUYO:
+	{
+		VS_PuyoThinker(mobj);
+		if (P_MobjWasRemoved(mobj))
+		{
+			return false;
+		}
+		break;
+	}
+
 	default:
 		// check mobj against possible water content, before movement code
 		P_MobjCheckWater(mobj);
@@ -10093,6 +10126,7 @@ static boolean P_CanFlickerFuse(mobj_t *mobj)
 		case MT_POGOSPRING:
 		case MT_KART_LEFTOVER:
 		case MT_EMERALD:
+		case MT_BLENDEYE_PUYO:
 			if (mobj->fuse <= TICRATE)
 			{
 				return true;
@@ -11457,6 +11491,9 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			break;
 		case MT_BALLSWITCH_BALL:
 			Obj_BallSwitchInit(mobj);
+			break;
+		case MT_BLENDEYE_MAIN:
+			VS_BlendEye_Init(mobj);
 			break;
 		case MT_BLENDEYE_PUYO:
 			mobj->sprite = mobj->movedir = P_RandomRange(PR_DECORATION, SPR_PUYA, SPR_PUYE);

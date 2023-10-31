@@ -4732,6 +4732,7 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_BALLSWITCH_PAD_ACTIVE",
 
 	"S_SPIKEDTARGET",
+	"S_SPIKEDLENS",
 
 	"S_BLENDEYE_MAIN",
 	"S_BLENDEYE_MAIN_LAUNCHED",

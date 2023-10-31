@@ -65,8 +65,17 @@ fixed_t *VS_PredictAroundArena(mobj_t *arena, mobj_t *movingobject, fixed_t magn
 {
 	static fixed_t dest[2] = {0, 0};
 
-	if (P_MobjWasRemoved(arena) || P_MobjWasRemoved(movingobject))
+	if (P_MobjWasRemoved(arena))
+	{
+		CONS_Alert(CONS_ERROR, "VS_PredictAroundArena: No Versus arena provided.");
 		return dest;
+	}
+
+	if (P_MobjWasRemoved(movingobject))
+	{
+		CONS_Alert(CONS_ERROR, "VS_PredictAroundArena: No moving object provided.");
+		return dest;
+	}
 
 	fixed_t radius = FixedHypot(movingobject->x - arena->x, movingobject->y - arena->y);
 	angle_t basedir = R_PointToAngle2(arena->x, arena->y, movingobject->x, movingobject->y);
