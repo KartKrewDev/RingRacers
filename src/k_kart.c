@@ -8304,13 +8304,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->hyudorotimer)
 		player->hyudorotimer--;
 
-	if (player->sliptideZip == 0)
-	{
-		S_StopSoundByID(player->mo, sfx_waved1);
-		S_StopSoundByID(player->mo, sfx_waved2);
-		S_StopSoundByID(player->mo, sfx_waved4);
-	}
-
 	if (player->ringvolume < MINRINGVOLUME)
 		player->ringvolume = MINRINGVOLUME;
 	else if (MAXRINGVOLUME - player->ringvolume < RINGVOLUMEREGEN)
