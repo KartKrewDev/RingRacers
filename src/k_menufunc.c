@@ -319,6 +319,13 @@ boolean M_Responder(event_t *ev)
 		}
 #endif
 
+		// Attack modes quick-restart
+		if (CON_Ready() == false && modeattacking && G_PlayerInputDown(0, gc_y, splitscreen + 1) == true)
+		{
+			M_TryAgain(0);
+			return true;
+		}
+
 		if (CON_Ready() == false && G_PlayerInputDown(0, gc_start, splitscreen + 1) == true)
 		{
 			if (!chat_on)
