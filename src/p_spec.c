@@ -1965,14 +1965,13 @@ static void K_HandleLapIncrement(player_t *player)
 				player->karthud[khud_lapanimation] = 80;
 			}
 
-			if (!linecrossed)
+			if (G_TimeAttackStart() && !linecrossed)
 			{
 				linecrossed = leveltime;
 				if (starttime > leveltime) // Overlong starts shouldn't reset time on cross
 					starttime = leveltime;
 				demo_extradata[player-players] |= DXD_START;
-				if (G_TimeAttackStart())
-					Music_Stop("position");
+				Music_Stop("position");
 			}
 
 			if (rainbowstartavailable == true && player->mo->hitlag == 0)
