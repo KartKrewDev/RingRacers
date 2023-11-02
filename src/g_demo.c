@@ -1474,11 +1474,11 @@ skippedghosttic:
 			continue;
 		}
 
-		p = g;
-#undef follow
-
 		if (linecrossed && !g->linecrossed)
 			goto readghosttic;
+
+		p = g;
+#undef follow
 	}
 }
 
