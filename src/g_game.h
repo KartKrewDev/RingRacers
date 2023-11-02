@@ -263,6 +263,8 @@ void G_LoadGameSettings(void);
 void G_SetGameModified(boolean silent, boolean major);
 void G_SetUsedCheats(void);
 
+boolean G_TimeAttackStart(void);
+
 // Gamedata record shit
 void G_ClearRecords(void);
 

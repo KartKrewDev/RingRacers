@@ -283,7 +283,7 @@ static void K_DrawFinishLineBeamForLine(fixed_t offset, angle_t aiming, line_t *
 		y = liney + FixedMul(FixedMul(FINISHLINEBEAM_SPACING, FINESINE(lineangle >> ANGLETOFINESHIFT)), FINECOSINE(aiming >> ANGLETOFINESHIFT));
 		z = FINISHLINEBEAM_SPACING + FixedMul(FINISHLINEBEAM_SPACING, FINESINE(aiming >> ANGLETOFINESHIFT));
 
-		if (leveltime >= starttime)
+		if (leveltime >= starttime || G_TimeAttackStart())
 		{
 			spriteframe = 4; // Weakest sprite when passable
 		}
