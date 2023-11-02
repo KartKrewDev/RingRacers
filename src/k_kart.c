@@ -8304,6 +8304,13 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->hyudorotimer)
 		player->hyudorotimer--;
 
+	if (player->sliptideZip == 0)
+	{
+		S_StopSoundByID(player->mo, sfx_waved1);
+		S_StopSoundByID(player->mo, sfx_waved2);
+		S_StopSoundByID(player->mo, sfx_waved4);
+	}
+
 	if (player->ringvolume < MINRINGVOLUME)
 		player->ringvolume = MINRINGVOLUME;
 	else if (MAXRINGVOLUME - player->ringvolume < RINGVOLUMEREGEN)
@@ -8455,6 +8462,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 				eggsexplode = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_SPBEXPLOSION);
 				eggsexplode->height = 2 * player->mo->height;
 				K_FlipFromObject(eggsexplode, player->mo);
+
+				S_StopSoundByID(player->mo, sfx_s3k53);
 
 				eggsexplode->threshold = KITEM_EGGMAN;
 
@@ -11478,12 +11487,26 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						case KITEM_BALLHOG:
 							if (!HOLDING_ITEM && NO_HYUDORO)
 							{
-								INT32 ballhogmax = ((player->itemamount-1) * BALLHOGINCREMENT) + 1;
+								INT32 ballhogmax = (player->itemamount) * BALLHOGINCREMENT;
 
 								if ((cmd->buttons & BT_ATTACK) && (player->pflags & PF_HOLDREADY)
 									&& (player->ballhogcharge < ballhogmax))
 								{
 									player->ballhogcharge++;
+									if (player->ballhogcharge % BALLHOGINCREMENT == 0)
+									{
+										sfxenum_t hogsound[] = 
+										{
+											sfx_bhog00,
+											sfx_bhog01,
+											sfx_bhog02,
+											sfx_bhog03,
+											sfx_bhog04,
+											sfx_bhog05
+										};
+										UINT8 chargesound = max(1, min(player->ballhogcharge / BALLHOGINCREMENT, 6));
+										S_StartSound(player->mo, hogsound[chargesound-1]);
+									}
 								}
 								else
 								{
@@ -11498,12 +11521,17 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 									if (player->ballhogcharge > 0)
 									{
-										INT32 numhogs = min((player->ballhogcharge / BALLHOGINCREMENT) + 1, player->itemamount);
+										INT32 numhogs = min((player->ballhogcharge / BALLHOGINCREMENT), player->itemamount);
 
-										if (numhogs <= 1)
+										if (numhogs <= 0)
+										{
+											// no tapfire scams
+										}
+										else if (numhogs == 1)
 										{
 											player->itemamount--;
 											K_ThrowKartItem(player, true, MT_BALLHOG, 1, 0, 0);
+											K_PlayAttackTaunt(player->mo);
 										}
 										else
 										{
@@ -11519,10 +11547,11 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 												K_ThrowKartItem(player, true, MT_BALLHOG, 1, 0, angleOffset);
 												angleOffset -= offsetAmt;
 											}
+
+											K_PlayAttackTaunt(player->mo);
 										}
 
 										player->ballhogcharge = 0;
-										K_PlayAttackTaunt(player->mo);
 										player->pflags &= ~PF_HOLDREADY;
 									}
 								}

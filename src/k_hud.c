@@ -1390,8 +1390,11 @@ static void K_drawKartItem(void)
 		}
 		else if (stplyr->ballhogcharge > 0)
 		{
-			itembar = stplyr->ballhogcharge;
-			maxl = (((stplyr->itemamount-1) * BALLHOGINCREMENT) + 1);
+			// itembar = stplyr->ballhogcharge;
+			// maxl = (((stplyr->itemamount-1) * BALLHOGINCREMENT) + 1);
+
+			itembar = stplyr->ballhogcharge % BALLHOGINCREMENT;
+			maxl = BALLHOGINCREMENT;
 
 			if (leveltime & 1)
 				localpatch[1] = kp_ballhog[offset];
@@ -1549,7 +1552,10 @@ static void K_drawKartItem(void)
 		// Draw the item above the box.
 		V_ClearClipRect();
 
-		if (stplyr->itemamount >= numberdisplaymin && stplyr->itemRoulette.active == false)
+		// A little goofy, but helps with ballhog charge conveyance—you're "loading" them.
+		UINT8 fakeitemamount = stplyr->itemamount - (stplyr->ballhogcharge / BALLHOGINCREMENT);
+
+		if (fakeitemamount >= numberdisplaymin && stplyr->itemRoulette.active == false)
 		{
 			// Then, the numbers:
 			V_DrawScaledPatch(
@@ -1567,14 +1573,14 @@ static void K_drawKartItem(void)
 			if (offset)
 			{
 				if (flipamount) // reminder that this is for 3/4p's right end of the screen.
-					V_DrawString(fx+2, fy+31, V_HUDTRANS|V_SLIDEIN|fflags, va("x%d", stplyr->itemamount));
+					V_DrawString(fx+2, fy+31, V_HUDTRANS|V_SLIDEIN|fflags, va("x%d", fakeitemamount));
 				else
-					V_DrawString(fx+24, fy+31, V_HUDTRANS|V_SLIDEIN|fflags, va("x%d", stplyr->itemamount));
+					V_DrawString(fx+24, fy+31, V_HUDTRANS|V_SLIDEIN|fflags, va("x%d", fakeitemamount));
 			}
 			else
 			{
 				V_DrawScaledPatch(fy+28, fy+41, V_HUDTRANS|V_SLIDEIN|fflags, kp_itemx);
-				V_DrawTimerString(fx+38, fy+36, V_HUDTRANS|V_SLIDEIN|fflags, va("%d", stplyr->itemamount));
+				V_DrawTimerString(fx+38, fy+36, V_HUDTRANS|V_SLIDEIN|fflags, va("%d", fakeitemamount));
 			}
 		}
 		else
