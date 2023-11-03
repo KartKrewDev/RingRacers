@@ -105,7 +105,7 @@ void K_KartPlayerAfterThink(player_t *player);
 angle_t K_MomentumAngleEx(const mobj_t *mo, const fixed_t threshold);
 angle_t K_MomentumAngleReal(const mobj_t *mo);
 #define K_MomentumAngle(mo) K_MomentumAngleEx(mo, 6 * mo->scale)
-void K_AwardPlayerRings(player_t *player, INT32 rings, boolean overload);
+void K_AwardPlayerRings(player_t *player, UINT16 rings, boolean overload);
 void K_DoInstashield(player_t *player);
 void K_DoPowerClash(mobj_t *t1, mobj_t *t2);
 void K_DoGuardBreak(mobj_t *t1, mobj_t *t2);

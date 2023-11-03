@@ -3657,7 +3657,7 @@ angle_t K_MomentumAngleReal(const mobj_t *mo)
 	}
 }
 
-void K_AwardPlayerRings(player_t *player, INT32 rings, boolean overload)
+void K_AwardPlayerRings(player_t *player, UINT16 rings, boolean overload)
 {
 	UINT16 superring;
 
@@ -3668,7 +3668,11 @@ void K_AwardPlayerRings(player_t *player, INT32 rings, boolean overload)
 
 		/* capped at 20 rings */
 		if ((totalrings + rings) > 20)
+		{
+			if (totalrings >= 20)
+				return; // woah dont let that go negative buster
 			rings = (20 - totalrings);
+		}
 	}
 
 	superring = player->superring + rings;
