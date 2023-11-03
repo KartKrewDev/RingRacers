@@ -1113,6 +1113,14 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"slot04", false, 64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Seven"},
   {"slot05", false, 64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "JACKPOT!"},
 
+  // RR - Ballhog Charge
+  {"bhog00", false, 64,  64, -1, NULL, 0,        -1,  -1, LUMPERROR, "Ballhog charging"},
+  {"bhog01", false, 64,  64, -1, NULL, 0,        -1,  -1, LUMPERROR, "Ballhog charging"},
+  {"bhog02", false, 64,  64, -1, NULL, 0,        -1,  -1, LUMPERROR, "Ballhog charging"},
+  {"bhog03", false, 64,  64, -1, NULL, 0,        -1,  -1, LUMPERROR, "Ballhog charging"},
+  {"bhog04", false, 64,  64, -1, NULL, 0,        -1,  -1, LUMPERROR, "Ballhog charging"},
+  {"bhog05", false, 64,  64, -1, NULL, 0,        -1,  -1, LUMPERROR, "Ballhog charging"},
+
   // RR - Gachabom rebound
   {"grbnd1", false, 64,  64, -1, NULL, 0,        -1,  -1, LUMPERROR, "Gachabom returning"},
   {"grbnd2", false, 64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Gachabom orbiting"},

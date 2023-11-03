@@ -1181,6 +1181,14 @@ typedef enum
 	sfx_slot04,
 	sfx_slot05,
 
+	// RR - Ballhog Charge
+	sfx_bhog00,
+	sfx_bhog01,
+	sfx_bhog02,
+	sfx_bhog03,
+	sfx_bhog04,
+	sfx_bhog05,
+
 	// RR - Gachabom rebound
 	sfx_grbnd1,
 	sfx_grbnd2,
