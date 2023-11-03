@@ -49,6 +49,7 @@
 #include "k_objects.h"
 #include "acs/interface.h"
 #include "m_easing.h"
+#include "music.h"
 
 // Not sure if this is necessary, but it was in w_wad.c, so I'm putting it here too -Shadow Hog
 #include <errno.h>
@@ -1909,7 +1910,7 @@ static void K_HandleLapIncrement(player_t *player)
 {
 	if (player)
 	{
-		if (leveltime < starttime && !(gametyperules & GTR_ROLLINGSTART))
+		if (!G_TimeAttackStart() && leveltime < starttime && !(gametyperules & GTR_ROLLINGSTART))
 		{
 			// freeze 'em until fault penalty is over
 			player->mo->hitlag = starttime - leveltime + TICRATE*3;
@@ -1962,6 +1963,15 @@ static void K_HandleLapIncrement(player_t *player)
 					player->karthud[khud_laphand] = 0; // No hands in FREE PLAY
 
 				player->karthud[khud_lapanimation] = 80;
+			}
+
+			if (G_TimeAttackStart() && !linecrossed)
+			{
+				linecrossed = leveltime;
+				if (starttime > leveltime) // Overlong starts shouldn't reset time on cross
+					starttime = leveltime;
+				demo_extradata[player-players] |= DXD_START;
+				Music_Stop("position");
 			}
 
 			if (rainbowstartavailable == true && player->mo->hitlag == 0)

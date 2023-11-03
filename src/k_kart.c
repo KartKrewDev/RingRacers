@@ -118,6 +118,7 @@ void K_TimerReset(void)
 	darkness = darktimer = 0;
 	numbulbs = 1;
 	inDuel = rainbowstartavailable = false;
+	linecrossed = 0;
 	timelimitintics = extratimeintics = secretextratime = 0;
 	g_pointlimit = 0;
 }
@@ -260,6 +261,12 @@ void K_TimerInit(void)
 	{
 		starttime = 0;
 		introtime = 0;
+	}
+
+	if (G_TimeAttackStart())
+	{
+		starttime = 15*TICRATE; // Longest permitted start. No half-laps in reverse.
+		// (Changed on finish line cross later, don't worry.)
 	}
 
 	K_SpawnItemCapsules();
@@ -8332,7 +8339,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	// If the button stays held, delay charge a bit.
 	if (player->instaWhipChargeLockout)
 		player->instaWhipChargeLockout--;
-	if (player->rings > 0 || player->itemamount || player->ringdelay || player->rocketsneakertimer)
+	if (player->rings > 0 || player->itemamount || player->ringdelay || player->rocketsneakertimer || player->ringboxdelay)
 		player->instaWhipChargeLockout = INSTAWHIP_HOLD_DELAY;
 	else if (!(player->cmd.buttons & BT_ATTACK)) // Deliberate Item button release, no need to protect you from lockout
 		player->instaWhipChargeLockout = 0;
@@ -8357,7 +8364,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		S_StopSoundByID(player->mo, sfx_wchrg2);
 	}
 
-	if (player->itemamount || player->respawn.state != RESPAWNST_NONE || player->pflags & (PF_ITEMOUT|PF_EGGMANOUT) || player->rocketsneakertimer)
+	if (player->itemamount || player->respawn.state != RESPAWNST_NONE || player->pflags & (PF_ITEMOUT|PF_EGGMANOUT) || player->rocketsneakertimer || player->ringboxdelay)
 		player->instaWhipCharge = 0;
 
 	if (player->tiregrease)

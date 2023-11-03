@@ -1171,9 +1171,18 @@ void G_GhostTicker(void)
 	demoghost *g,*p;
 	for(g = ghosts, p = NULL; g; g = g->next)
 	{
+		UINT16 ziptic;
+		UINT8 xziptic;
+
+		// Pause jhosts that cross until we cross ourself.
+		if (g->linecrossed && !linecrossed)
+			continue;
+
+readghosttic:
+
 		// Skip normal demo data.
-		UINT16 ziptic = READUINT8(g->p);
-		UINT8 xziptic = 0;
+		ziptic = READUINT8(g->p);
+		xziptic = 0;
 
 		while (ziptic != DW_END) // Get rid of extradata stuff
 		{
@@ -1198,6 +1207,8 @@ void G_GhostTicker(void)
 					g->p += 32; // ok (32 because there's both the skin and the colour)
 				if (ziptic & DXD_WEAPONPREF)
 					g->p++; // ditto
+				if (ziptic & DXD_START)
+					g->linecrossed = true;
 			}
 			else if (ziptic == DW_RNG)
 			{
@@ -1462,6 +1473,9 @@ skippedghosttic:
 			Z_Free(g);
 			continue;
 		}
+
+		if (linecrossed && !g->linecrossed)
+			goto readghosttic;
 
 		p = g;
 #undef follow

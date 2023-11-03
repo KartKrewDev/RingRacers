@@ -1330,7 +1330,7 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 
 	if (demo.playback == false)
 	{
-		if (modeattacking == true)
+		if (modeattacking)
 		{
 			G_UpdateRecords();
 		}
@@ -2832,28 +2832,6 @@ static void P_DeathThink(player_t *player)
 	if (G_IsPartyLocal(player - players) && playerGone == true && (gametyperules & GTR_BUMPERS) && player->deadtimer == 2*TICRATE)
 	{
 		K_ToggleDirector(G_PartyPosition(player - players), true);
-	}
-
-	// Keep time rolling
-	if (!(player->exiting || mapreset) && !(player->pflags & PF_NOCONTEST) && !stoppedclock)
-	{
-		if (leveltime >= starttime)
-		{
-			player->realtime = leveltime - starttime;
-			if (player == &players[consoleplayer])
-			{
-				if (player->spectator)
-					curlap = 0;
-				else if (curlap != UINT32_MAX)
-					curlap++; // This is too complicated to sync to realtime, just sorta hope for the best :V
-			}
-		}
-		else
-		{
-			player->realtime = 0;
-			if (player == &players[consoleplayer])
-				curlap = 0;
-		}
 	}
 
 	if (!player->mo)

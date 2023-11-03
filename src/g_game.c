@@ -310,6 +310,7 @@ boolean thwompsactive; // Thwomps activate on lap 2
 UINT8 lastLowestLap; // Last lowest lap, for activating race lap executors
 SINT8 spbplace; // SPB exists, give the person behind better items
 boolean rainbowstartavailable; // Boolean, keeps track of if the rainbow start was gotten
+tic_t linecrossed; // For Time Attack 
 boolean inDuel; // Boolean, keeps track of if it is a 1v1
 
 // Client-sided, unsynched variables (NEVER use in anything that needs to be synced with other players)
@@ -327,6 +328,11 @@ UINT16 prevmap, nextmap;
 // so that it doesn't have to be updated depending on the value of MAXPLAYERS
 char player_names[MAXPLAYERS][MAXPLAYERNAME+1];
 INT32 player_name_changes[MAXPLAYERS];
+
+boolean G_TimeAttackStart(void)
+{
+	return (modeattacking && (gametyperules & (GTR_CIRCUIT|GTR_CATCHER)) == GTR_CIRCUIT);
+}
 
 // MAKE SURE YOU SAVE DATA BEFORE CALLING THIS
 void G_ClearRecords(void)
