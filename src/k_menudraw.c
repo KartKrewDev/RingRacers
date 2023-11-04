@@ -2894,7 +2894,7 @@ static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
 		V_DrawLSTitleLowString(x2, y+28, 0, word2);
 }
 
-static void M_DrawLevelSelectBlock(INT16 x, INT16 y, INT16 map, boolean redblink, boolean greyscale)
+static void M_DrawLevelSelectBlock(INT16 x, INT16 y, UINT16 map, boolean redblink, boolean greyscale)
 {
 	UINT8 *colormap = NULL;
 
@@ -2913,6 +2913,20 @@ static void M_DrawLevelSelectBlock(INT16 x, INT16 y, INT16 map, boolean redblink
 		map,
 		colormap);
 	M_DrawHighLowLevelTitle(98+x, y+8, map);
+
+	if (levellist.levelsearch.tutorial && !(mapheaderinfo[map]->records.mapvisited & MV_BEATEN))
+	{
+		V_DrawScaledPatch(
+			x + 80 + 3, y + 50, 0,
+			W_CachePatchName(
+				va(
+					"CUPBKUP%c",
+					(greyscale ? '1' : '2')
+				),
+				PU_CACHE
+			)
+		);
+	}
 }
 
 void M_DrawLevelSelect(void)

@@ -80,7 +80,11 @@ static void M_StatisticsMaps(void)
 	headerexists = false;
 	for (i = 0; i < nummapheaders; i++)
 	{
-		M_StatisticsAddMap(i, NULL, &headerexists, true);
+		if (M_StatisticsAddMap(i, NULL, &headerexists, true))
+		{
+			if (!(mapheaderinfo[i]->records.mapvisited & MV_BEATEN))
+				break;
+		}
 	}
 
 	if ((i = statisticsmenu.numextramedals) != 0)
