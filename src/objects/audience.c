@@ -29,6 +29,7 @@ Obj_AudienceInit
 		mapthing_t *mthing,
 		INT32 followerpick)
 {
+	const boolean ourchoiceofvisuals = (followerpick < 0 || followerpick > numfollowers);
 	INT16 *reflist = NULL;
 	INT16 tempreflist[MAXHEADERFOLLOWERS];
 	UINT8 numref = 0;
@@ -36,9 +37,9 @@ Obj_AudienceInit
 	audience_mainstate(mobj) = S_NULL;
 
 	// Pick follower
-	if (mthing != NULL)
+	if (ourchoiceofvisuals == true)
 	{
-		if (mthing->thing_stringargs[0] != NULL)
+		if (mthing != NULL && mthing->thing_stringargs[0] != NULL)
 		{
 			// From mapthing
 			char *stringcopy = Z_StrDup(mthing->thing_stringargs[0]);
@@ -56,9 +57,21 @@ Obj_AudienceInit
 					*c = ' ';
 				}
 
-				if ((tempreflist[numref++] = K_FollowerAvailable(tok)) == -1)
+				if ((tempreflist[numref] = K_FollowerAvailable(tok)) == -1)
+				{
 					CONS_Alert(CONS_WARNING, "Mapthing %s: Follower \"%s\" is invalid!\n", sizeu1(mthing-mapthings), tok);
+				}
+				else
+					numref++;
+
 				tok = strtok(NULL, " ,");
+			}
+
+			if (!numref)
+			{
+				// This is the one thing a user should definitely be told about.
+				CONS_Alert(CONS_WARNING, "Mapthing %s: Follower audience has no valid followers to pick from!\n", sizeu1(mthing-mapthings));
+				// DO NOT RETURN HERE
 			}
 
 			Z_Free(stringcopy);
@@ -81,8 +94,8 @@ Obj_AudienceInit
 
 		if (!numref || !reflist)
 		{
-			// This is the one thing a user should definitely be told about.
-			CONS_Alert(CONS_WARNING, "Mapthing %s: Follower audience has no valid followers to pick from!\n", sizeu1(mthing-mapthings));
+			// Clean up after ourselves.
+			P_RemoveMobj(mobj);
 			return;
 		}
 
@@ -137,11 +150,11 @@ Obj_AudienceInit
 	}
 
 	// Handle colors
-	if (mthing != NULL)
+	if (ourchoiceofvisuals == true)
 	{
 		UINT16 colorpick = SKINCOLOR_NONE;
 
-		if (mthing->thing_stringargs[1] != NULL)
+		if (mthing != NULL && mthing->thing_stringargs[1] != NULL)
 		{
 			if (!stricmp("Random", mthing->thing_stringargs[1]))
 			{
