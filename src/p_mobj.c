@@ -12560,7 +12560,7 @@ void P_MovePlayerToSpawn(INT32 playernum, mapthing_t *mthing)
 	else if (mobj->z == mobj->floorz)
 		mobj->eflags |= MFE_ONGROUND;
 
-	mobj->angle = angle;
+	mobj->angle = p->drawangle = angle;
 
 	// FAULT
 	if (gamestate == GS_LEVEL && leveltime > introtime && !p->spectator)
@@ -12575,6 +12575,7 @@ void P_MovePlayerToSpawn(INT32 playernum, mapthing_t *mthing)
 		p->respawn.pointx = x;
 		p->respawn.pointy = y;
 		p->respawn.pointz = z;
+		p->respawn.pointangle = angle;
 	}
 
 	P_AfterPlayerSpawn(playernum);
@@ -12629,7 +12630,7 @@ void P_MovePlayerToCheatcheck(INT32 playernum)
 		}
 	}
 	else
-		p->drawangle = mobj->angle; // default to the camera angle
+		p->drawangle = mobj->angle = p->respawn.pointangle;
 
 	K_DoIngameRespawn(p);
 	p->respawn.truedeath = true;

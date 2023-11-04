@@ -2497,8 +2497,7 @@ void G_MovePlayerToSpawnOrCheatcheck(INT32 playernum)
 			rsp->pointx = pos.x;
 			rsp->pointy = pos.y;
 			rsp->pointz = pos.z;
-
-			players[playernum].mo->angle = Obj_GetCheckpointRespawnAngle(checkpoint);
+			rsp->pointangle = Obj_GetCheckpointRespawnAngle(checkpoint);
 
 			Obj_ActivateCheckpointInstantly(checkpoint);
 
