@@ -3615,7 +3615,7 @@ void G_UpdateVisited(void)
 		if (!P_IsLocalPlayer(&players[i])) // Not local.
 			continue;
 
-		if (players[i].spectator) // Not playing.
+		if (players[i].spectator == true) // Not playing.
 			continue;
 
 		if (players[i].pflags & PF_NOCONTEST) // Sonic after not surviving.
@@ -4167,7 +4167,13 @@ static void G_DoCompleted(void)
 	// Finally, if you're not exiting, guarantee NO CONTEST.
 	// We do this seperately from the loop above Challenges,
 	// so NOCONTEST-related Challenges don't fire on exitlevel.
-	for (i = 0; i < MAXPLAYERS; i++)
+	if (gametype == GT_TUTORIAL)
+	{
+		// Maybe one day there'll be another context in which
+		// there's no way to progress other than ACS, but for
+		// now, Tutorial is a hardcoded exception.
+	}
+	else for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (playeringame[i] == false)
 		{
