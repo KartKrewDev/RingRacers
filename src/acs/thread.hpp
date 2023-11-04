@@ -59,6 +59,7 @@ enum acs_tagType_e
 class ThreadInfo : public ACSVM::ThreadInfo
 {
 public:
+	UINT32 thread_era;			// If equal to thinker_era, mobj pointers are safe.
 	mobj_t *mo;					// Object that activated this thread.
 	line_t *line;				// Linedef that activated this thread.
 	UINT8 side;					// Front / back side of said linedef.
@@ -67,6 +68,7 @@ public:
 	bool fromLineSpecial;		// Called from P_ProcessLineSpecial.
 
 	ThreadInfo() :
+		thread_era { thinker_era },
 		mo{ nullptr },
 		line{ nullptr },
 		side{ 0 },
@@ -77,6 +79,7 @@ public:
 	}
 
 	ThreadInfo(const ThreadInfo &info) :
+		thread_era { thinker_era },
 		mo{ nullptr },
 		line{ info.line },
 		side{ info.side },
@@ -88,6 +91,7 @@ public:
 	}
 
 	ThreadInfo(const activator_t *activator) :
+		thread_era { thinker_era },
 		mo{ nullptr },
 		line{ activator->line },
 		side{ activator->side },
@@ -100,11 +104,15 @@ public:
 
 	~ThreadInfo()
 	{
-		P_SetTarget(&mo, nullptr);
+		if (thread_era == thinker_era)
+		{
+			P_SetTarget(&mo, nullptr);
+		}
 	}
 
 	ThreadInfo &operator = (const ThreadInfo &info)
 	{
+		thread_era = thinker_era;
 		P_SetTarget(&mo, info.mo);
 		line = info.line;
 		side = info.side;

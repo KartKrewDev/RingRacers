@@ -43,6 +43,8 @@ void P_PreTicker(INT32 frames);
 void P_DoTeamscrambling(void);
 void P_RemoveThinkerDelayed(thinker_t *thinker); //killed
 
+extern UINT32 thinker_era;
+
 mobj_t *P_SetTarget2(mobj_t **mo, mobj_t *target
 #ifdef PARANOIA
 		, const char *source_file, int source_line

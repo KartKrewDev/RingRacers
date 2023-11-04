@@ -350,10 +350,13 @@ ACSVM::Word Environment::callSpecImpl
 
 	activator_t *activator = static_cast<activator_t *>(Z_Calloc(sizeof(activator_t), PU_LEVEL, nullptr));
 	auto __ = srb2::finally(
-		[activator]()
+		[info, activator]()
 		{
-			P_SetTarget(&activator->mo, NULL);
-			Z_Free(activator);
+			if (info->thread_era == thinker_era)
+			{
+				P_SetTarget(&activator->mo, NULL);
+				Z_Free(activator);
+			}
 		}
 	);
 

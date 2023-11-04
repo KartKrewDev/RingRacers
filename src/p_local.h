@@ -79,6 +79,7 @@ typedef enum
 extern thinker_t thlist[];
 
 void P_InitThinkers(void);
+void P_InvalidateThinkersWithoutInit(void);
 void P_AddThinker(const thinklistnum_t n, thinker_t *thinker);
 void P_RemoveThinker(thinker_t *thinker);
 void P_UnlinkThinker(thinker_t *thinker);

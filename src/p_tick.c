@@ -53,6 +53,8 @@
 tic_t leveltime;
 boolean thinkersCompleted;
 
+UINT32 thinker_era = 0;
+
 static boolean g_freezeCheat;
 static boolean g_freezeLevel;
 
@@ -276,6 +278,8 @@ void P_InitThinkers(void)
 {
 	UINT8 i;
 
+	P_InvalidateThinkersWithoutInit();
+
 	for (i = 0; i < NUM_THINKERLISTS; i++)
 	{
 		thlist[i].prev = thlist[i].next = &thlist[i];
@@ -295,6 +299,15 @@ void P_InitThinkers(void)
 
 	Obj_ResetUFOSpawners();
 	Obj_ResetCheckpoints();
+}
+
+//
+// P_InvalidateThinkersWithoutInit
+//
+
+void P_InvalidateThinkersWithoutInit(void)
+{
+	thinker_era++;
 }
 
 // Adds a new thinker at the end of the list.
