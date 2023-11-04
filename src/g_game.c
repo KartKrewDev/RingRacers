@@ -5982,7 +5982,9 @@ INT32 G_FindMap(const char *mapname, char **foundmapnamep,
 		aprop = realmapname;
 
 		/* Now that we found a perfect match no need to fucking guess. */
-		if (strnicmp(realmapname, mapname, mapnamelen) == 0)
+		if (strnicmp(realmapname, mapname, mapnamelen) == 0
+		|| (mapheaderinfo[i]->menuttl[0]
+			&& strnicmp(mapheaderinfo[i]->menuttl, mapname, mapnamelen) == 0))
 		{
 			if (wanttable)
 			{
@@ -6016,15 +6018,42 @@ INT32 G_FindMap(const char *mapname, char **foundmapnamep,
 					realmapname = 0;
 				}
 			}
+			else
+			if (mapheaderinfo[i]->menuttl[0] && ( aprop = strcasestr(mapheaderinfo[i]->menuttl, mapname) ))
+			{
+				if (wanttable)
+				{
+					writesimplefreq(freq, &freqc,
+							mapnum, aprop - mapheaderinfo[i]->menuttl, mapnamelen);
+				}
+				if (apromapnum == 0)
+				{
+					apromapnum = mapnum;
+					apromapname = realmapname;
+					realmapname = 0;
+				}
+			}
 			else/* ...match individual keywords */
 			{
 				freq[freqc].mapnum = mapnum;
 				measurekeywords(&freq[freqc],
 						&freq[freqc].matchd, &freq[freqc].matchc,
 						realmapname, mapname, wanttable);
-				measurekeywords(&freq[freqc],
-						&freq[freqc].keywhd, &freq[freqc].keywhc,
-						mapheaderinfo[i]->keywords, mapname, wanttable);
+
+				if (mapheaderinfo[i]->menuttl[0])
+				{
+					measurekeywords(&freq[freqc],
+							&freq[freqc].keywhd, &freq[freqc].keywhc,
+							mapheaderinfo[i]->menuttl, mapname, wanttable);
+				}
+
+				if (mapheaderinfo[i]->keywords[0])
+				{
+					measurekeywords(&freq[freqc],
+							&freq[freqc].keywhd, &freq[freqc].keywhc,
+							mapheaderinfo[i]->keywords, mapname, wanttable);
+				}
+
 				if (freq[freqc].total)
 					freqc++;
 			}
