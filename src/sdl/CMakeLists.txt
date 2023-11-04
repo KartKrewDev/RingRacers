@@ -3,8 +3,8 @@
 target_sources(SRB2SDL2 PRIVATE
 	new_sound.cpp
 	ogl_sdl.c
-	rhi_gl3_core_platform.cpp
-	rhi_gl3_core_platform.hpp
+	rhi_gl2_platform.cpp
+	rhi_gl2_platform.hpp
 	i_threads.c
 	i_net.c
 	i_system.cpp

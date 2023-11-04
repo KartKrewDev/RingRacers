@@ -28,8 +28,8 @@
 #include <imgui.h>
 
 #include "../rhi/rhi.hpp"
-#include "../rhi/gl3_core/gl3_core_rhi.hpp"
-#include "rhi_gl3_core_platform.hpp"
+#include "../rhi/gl2/gl2_rhi.hpp"
+#include "rhi_gl2_platform.hpp"
 
 #ifdef _MSC_VER
 #pragma warning(disable : 4214 4244)
@@ -1413,14 +1413,13 @@ static SDL_bool Impl_CreateContext(void)
 	}
 #endif
 
-	// RHI always uses OpenGL 3.2 Core (for now)
+	// RHI always uses OpenGL 2.0 (for now)
 
 	if (!sdlglcontext)
 	{
 		SDL_GL_ResetAttributes();
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 		sdlglcontext = SDL_GL_CreateContext(window);
 	}
 	if (sdlglcontext == NULL)
@@ -1433,9 +1432,9 @@ static SDL_bool Impl_CreateContext(void)
 
 	if (!g_rhi)
 	{
-		std::unique_ptr<rhi::SdlGlCorePlatform> platform = std::make_unique<rhi::SdlGlCorePlatform>();
+		std::unique_ptr<rhi::SdlGl2Platform> platform = std::make_unique<rhi::SdlGl2Platform>();
 		platform->window = window;
-		g_rhi = std::make_unique<rhi::GlCoreRhi>(std::move(platform), reinterpret_cast<rhi::GlLoadFunc>(SDL_GL_GetProcAddress));
+		g_rhi = std::make_unique<rhi::Gl2Rhi>(std::move(platform), reinterpret_cast<rhi::GlLoadFunc>(SDL_GL_GetProcAddress));
 		g_rhi_generation += 1;
 	}
 

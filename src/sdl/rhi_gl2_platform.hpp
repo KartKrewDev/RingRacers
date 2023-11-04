@@ -7,10 +7,10 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_SDL_RHI_GLES2_PLATFORM_HPP__
-#define __SRB2_SDL_RHI_GLES2_PLATFORM_HPP__
+#ifndef __SRB2_SDL_RHI_GL2_PLATFORM_HPP__
+#define __SRB2_SDL_RHI_GL2_PLATFORM_HPP__
 
-#include "../rhi/gl3_core/gl3_core_rhi.hpp"
+#include "../rhi/gl2/gl2_rhi.hpp"
 #include "../rhi/rhi.hpp"
 
 #include <SDL.h>
@@ -18,11 +18,11 @@
 namespace srb2::rhi
 {
 
-struct SdlGlCorePlatform final : public GlCorePlatform
+struct SdlGl2Platform final : public Gl2Platform
 {
 	SDL_Window* window = nullptr;
 
-	virtual ~SdlGlCorePlatform();
+	virtual ~SdlGl2Platform();
 
 	virtual void present() override;
 	virtual std::tuple<std::vector<std::string>, std::vector<std::string>>
@@ -32,4 +32,4 @@ struct SdlGlCorePlatform final : public GlCorePlatform
 
 } // namespace srb2::rhi
 
-#endif // __SRB2_SDL_RHI_GLES2_PLATFORM_HPP__
+#endif // __SRB2_SDL_RHI_GL2_PLATFORM_HPP__
