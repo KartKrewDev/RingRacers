@@ -1132,7 +1132,9 @@ char *M_AddonsHeaderPath(void);
 extern consvar_t cv_dummyaddonsearch;
 extern consvar_t cv_dummyextraspassword;
 
+#ifdef TODONEWMANUAL
 void M_Manual(INT32 choice);
+#endif
 void M_HandleImageDef(INT32 choice);
 
 // K_MENUDRAW.C

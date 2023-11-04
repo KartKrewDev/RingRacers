@@ -31,8 +31,10 @@ menuitem_t OPTIONS_Main[] =
 	{IT_STRING | IT_SUBMENU, "Data Options", "Miscellaneous data options such as the screenshot format.",
 		NULL, {.submenu = &OPTIONS_DataDef}, 0, 0},
 
+#ifdef TODONEWMANUAL
 	{IT_STRING | IT_CALL, "Tricks & Secrets", "Those who bother reading a game manual always get the edge over those who don't!",
 		NULL, {.routine = M_Manual}, 0, 0},
+#endif
 };
 
 // For options menu, the 'extra1' field will determine the background colour to use for... the background! (What a concept!)

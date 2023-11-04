@@ -64,6 +64,7 @@ void M_HandleImageDef(INT32 choice)
 }
 
 // Opening manual
+#ifdef TODONEWMANUAL
 void M_Manual(INT32 choice)
 {
 	(void)choice;
@@ -71,3 +72,4 @@ void M_Manual(INT32 choice)
 	MISC_ManualDef.prevMenu = (choice == INT32_MAX ? NULL : currentMenu);
 	M_SetupNextMenu(&MISC_ManualDef, true);
 }
+#endif
