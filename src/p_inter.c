@@ -2103,6 +2103,62 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 					cur = cur->hnext;
 				}
 
+				// Spawn three Followers (if possible)
+				if (mapheaderinfo[gamemap-1]->numFollowers)
+				{
+					dir = FixedAngle(P_RandomKey(PR_RANDOMAUDIENCE, 360)*FRACUNIT);
+
+					const fixed_t launchmomentum = 11 * mapobjectscale;
+					const fixed_t jaggedness = 4;
+					angle_t launchangle;
+					UINT8 i;
+					for (i = 0; i < 3; i++, dir += ANGLE_120)
+					{
+						cur = P_SpawnMobj(
+							target->x, target->y,
+							target->z + target->height/2,
+							MT_RANDOMAUDIENCE
+						);
+
+						// We check if you have some horrible Lua
+						if (P_MobjWasRemoved(cur))
+							break;
+
+						Obj_AudienceInit(cur, NULL, -1);
+
+						// We check again if the list is invalid
+						if (P_MobjWasRemoved(cur))
+							break;
+
+						// For Followers, this makes them
+						// MF2_AMBUSH - try to always look at the nearest player
+						// MF2_DONTRESPAWN - Check for death pits
+						cur->flags2 |= (MF2_AMBUSH|MF2_DONTRESPAWN);
+
+						cur->hitlag = target->hitlag;
+
+						P_SetScale(cur, cur->destscale/TICRATE);
+						cur->scalespeed = cur->destscale/TICRATE;
+						cur->z -= cur->height/2;
+
+						// flags are NOT from the target - just in case it's just been placed on the ceiling as a gimmick
+						cur->flags2 |= (source->flags2 & MF2_OBJECTFLIP);
+						cur->eflags |= (source->eflags & MFE_VERTICALFLIP);
+
+						launchangle = FixedAngle(P_RandomRange(PR_RANDOMAUDIENCE, 60/jaggedness, 80/jaggedness) * jaggedness*FRACUNIT);
+
+						cur->momz = P_MobjFlip(target) // THIS one uses target!
+							* P_ReturnThrustY(cur, launchangle, launchmomentum);
+
+						cur->angle = dir;
+
+						P_InstaThrust(
+							cur, cur->angle,
+							P_ReturnThrustX(cur, launchangle, launchmomentum)
+						);
+					}
+				}
+
 				S_StartSound(target, sfx_mbs60);
 
 				P_AddBrokenPrison(target, inflictor, source);

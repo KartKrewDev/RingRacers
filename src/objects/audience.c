@@ -202,8 +202,11 @@ Obj_AudienceInit
 void
 Obj_AudienceThink
 (		mobj_t * mobj,
-		boolean focusonplayer)
+		boolean focusonplayer,
+		boolean checkdeathpit)
 {
+	boolean landed = false;
+
 	if (audience_mainstate(mobj) == S_NULL)
 	{
 		// Uninitialised, don't do anything funny.
@@ -328,15 +331,23 @@ Obj_AudienceThink
 	}
 	else if (mobj->flags2 & MF2_OBJECTFLIP)
 	{
-		if (mobj->z + mobj->height >= mobj->ceilingz)
-		{
-			mobj->momz = -audience_bobamp(mobj);
-			P_SetMobjState(mobj, audience_mainstate(mobj));
-		}
+		landed = (mobj->z + mobj->height >= mobj->ceilingz);
 	}
-	else if (mobj->z <= mobj->floorz)
+	else
 	{
-		mobj->momz = audience_bobamp(mobj);
+		landed = (mobj->z <= mobj->floorz);
+	}
+
+	if (landed == true)
+	{
+		if (checkdeathpit && P_CheckDeathPitCollide(mobj))
+		{
+			P_RemoveMobj(mobj);
+			return;
+		}
+
+		mobj->momx = mobj->momy = 0;
+		mobj->momz = P_MobjFlip(mobj)*audience_bobamp(mobj);
 		P_SetMobjState(mobj, audience_mainstate(mobj));
 	}
 }
