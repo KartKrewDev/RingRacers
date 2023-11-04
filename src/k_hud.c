@@ -2352,6 +2352,8 @@ static boolean K_drawKartPositionFaces(void)
 
 		if ((gametyperules & GTR_BUMPERS) && (players[rankplayer[i]].pflags & PF_ELIMINATED))
 			V_DrawScaledPatch(FACE_X-4, Y-3, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_ranknobumpers);
+		else if (K_Cooperative())
+			;
 		else if (gametyperules & GTR_CIRCUIT)
 		{
 			INT32 pos = players[rankplayer[i]].position;
@@ -2360,7 +2362,7 @@ static boolean K_drawKartPositionFaces(void)
 			// Draws the little number over the face
 			V_DrawScaledPatch(FACE_X-5, Y+10, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_facenum[pos]);
 		}
-		else
+		else if (gametyperules & GTR_POINTLIMIT)
 		{
 			INT32 flags = V_HUDTRANS | V_SLIDEIN | V_SNAPTOLEFT;
 
@@ -5526,7 +5528,7 @@ void K_drawKartHUD(void)
 					if (!battleprisons)
 						K_drawKartEmeralds();
 				}
-				else if (!islonesome)
+				else if (!islonesome && !K_Cooperative())
 					K_DrawKartPositionNum(stplyr->position);
 			}
 

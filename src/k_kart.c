@@ -12570,6 +12570,12 @@ boolean K_Cooperative(void)
 		return true;
 	}
 
+	if (gametype == GT_TUTORIAL)
+	{
+		// Maybe this should be a rule. Eventually?
+		return true;
+	}
+
 	return false;
 }
 
