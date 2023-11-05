@@ -7912,9 +7912,15 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			newScale = FixedMul(newScale, FixedDiv(newHeight / 2, mobj->target->height));
 		}
 
+		if (mobj->target->player->curshield == KSHIELD_FLAME)
+		{
+			newScale = 8 * newScale / 5;
+		}
+
 		mobj->angle = K_MomentumAngle(mobj->target);
 		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + (newHeight / 2));
 		mobj->destscale = newScale;
+
 		P_SetScale(mobj, newScale);
 
 		if (mobj->extravalue1)
@@ -8397,9 +8403,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			P_RemoveMobj(mobj);
 			return false;
 		}
-		P_SetScale(mobj, (mobj->destscale = (5*mobj->target->scale)>>2));
+		P_SetScale(mobj, (mobj->destscale = (7*mobj->target->scale)>>2));
 
-		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z);
+		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + mobj->target->height/2);
 		break;
 	}
 	case MT_BUBBLESHIELD:
@@ -8526,7 +8532,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		flamemax = mobj->target->player->flamelength;
 
-		P_SetScale(mobj, (mobj->destscale = (5*mobj->target->scale)>>2));
+		P_SetScale(mobj, (mobj->destscale = (8*mobj->target->scale)>>2));
 
 		curstate = ((mobj->tics == 1) ? (mobj->state->nextstate) : ((statenum_t)(mobj->state-states)));
 
@@ -8595,7 +8601,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 		}
 
-		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z);
+		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + mobj->target->height/2);
 		mobj->angle = K_MomentumAngle(mobj->target);
 
 		if (underlayst != S_NULL)

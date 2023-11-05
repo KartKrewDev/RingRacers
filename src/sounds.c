@@ -1113,6 +1113,12 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"slot04", false, 64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Seven"},
   {"slot05", false, 64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "JACKPOT!"},
 
+  // RR - Flame Shield
+  {"fshld0", false, 64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Flame Shield activate"},
+  {"fshld1", false, 64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Flame Shield hold"},
+  {"fshld2", false, 64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Flame Shield burst"},
+  {"fshld3", false, 64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Flame Shield cooldown"},
+
   // RR - Ballhog Charge
   {"bhog00", false, 64,  64, -1, NULL, 0,        -1,  -1, LUMPERROR, "Ballhog charging"},
   {"bhog01", false, 64,  64, -1, NULL, 0,        -1,  -1, LUMPERROR, "Ballhog charging"},

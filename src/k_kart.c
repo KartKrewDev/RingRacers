@@ -8185,7 +8185,14 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->trickboost--;
 
 	if (player->flamedash)
+	{
 		player->flamedash--;
+		
+		if (player->flamedash == 0)
+			S_StopSoundByID(player->mo, sfx_fshld1);
+		else if (player->flamedash == 3 && player->curshield == KSHIELD_FLAME) // "Why 3?" We can't blend sounds so this is the best shit I've got
+			S_StartSoundAtVolume(player->mo, sfx_fshld3, 255/3);
+	}
 
 	if (player->sneakertimer && player->wipeoutslow > 0 && player->wipeoutslow < wipeoutslowtime+1)
 		player->wipeoutslow = wipeoutslowtime+1;
@@ -11759,9 +11766,13 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 										if (player->flamedash == 0)
 										{
-											S_StartSound(player->mo, sfx_s3k43);
+											//S_StartSound(player->mo, sfx_s3k43);
 											K_PlayBoostTaunt(player->mo);
+											S_StartSoundAtVolume(player->mo, sfx_fshld0, 255/3);
+											S_StartSoundAtVolume(player->mo, sfx_fshld1, 255/3);
 										}
+
+										S_StopSoundByID(player->mo, sfx_fshld3);
 
 										player->flamedash += incr;
 
@@ -11781,6 +11792,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 											FixedMul((50*player->mo->scale), K_GetKartGameSpeedScalar(gamespeed))
 										);
 
+										S_StopSoundByID(player->mo, sfx_fshld1);
+										S_StopSoundByID(player->mo, sfx_fshld0);
+										S_StartSoundAtVolume(player->mo, sfx_fshld2, 255/3);
+
 										player->flamemeter = 0;
 										player->flamelength = 0;
 										player->pflags &= ~PF_HOLDREADY;
@@ -11794,7 +11809,12 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									if (!(gametyperules & GTR_CLOSERPLAYERS) || leveltime % 6 == 0)
 									{
 										if (player->flamemeter > 0)
+										{
 											player->flamemeter--;
+											if (!player->flamemeter)
+												S_StopSoundByID(player->mo, sfx_fshld3);
+										}
+									
 									}
 
 									if (player->flamelength > destlen)
