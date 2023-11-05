@@ -4231,6 +4231,8 @@ static void HandleConnect(SINT8 node)
 				// Players already here
 				for (j = 0; j < MAXPLAYERS; j++)
 				{
+					if (!playeringame[j])
+						continue;
 					if (memcmp(lastReceivedKey[node][i], players[j].public_key, PUBKEYLENGTH) == 0)
 					{
 						#ifdef DEVELOP
