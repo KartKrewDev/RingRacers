@@ -10786,7 +10786,9 @@ static void K_AirFailsafe(player_t *player)
 	if (leveltime < introtime)
 		return;
 
-	if ((K_GetKartButtons(player) & BT_ACCELERATE) || K_GetForwardMove(player) != 0)
+	UINT8 buttons = K_GetKartButtons(player);
+
+	if (((buttons & BT_ACCELERATE) && !(buttons & BT_BRAKE)) || K_GetForwardMove(player) != 0)
 	{
 		// Queue up later
 		player->pflags |= PF_AIRFAILSAFE;
