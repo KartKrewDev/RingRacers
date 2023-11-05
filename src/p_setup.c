@@ -8340,6 +8340,8 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	K_UnsetDialogue();
 
+	ACS_InvalidateMapScope();
+
 	LUA_InvalidateLevel();
 
 	for (ss = sectors; sectors+numsectors != ss; ss++)
