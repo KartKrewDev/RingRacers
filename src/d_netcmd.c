@@ -2499,7 +2499,7 @@ static void Command_Map_f(void)
 				SplitScreen_OnChange();
 			}
 
-			if (!newnetgame && option_match == 0)
+			if (!newnetgame && (newgametype != GT_TUTORIAL) && option_match == 0)
 			{
 				grandprixinfo.gp = true;
 				grandprixinfo.initalize = true;
