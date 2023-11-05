@@ -902,6 +902,8 @@ struct player_t
 	UINT8 instaWhipChargeLockout;
 	UINT8 guardCooldown;
 
+	UINT8 preventfailsafe; // Set when taking damage to prevent cheesing eggboxes
+
 	UINT8 handtimer;
 	angle_t besthanddirection;
 

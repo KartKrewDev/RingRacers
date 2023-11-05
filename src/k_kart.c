@@ -8250,6 +8250,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->invincibilitytimer && onground == true)
 		player->invincibilitytimer--;
 
+	if (player->preventfailsafe)
+		player->preventfailsafe--;
+
 	if ((player->respawn.state == RESPAWNST_NONE) && player->growshrinktimer != 0)
 	{
 		if (player->growshrinktimer > 0 && onground == true)
@@ -10783,7 +10786,8 @@ static void K_AirFailsafe(player_t *player)
 	const fixed_t thrustSpeed = 6*player->mo->scale; // 10*player->mo->scale
 
 	if (player->speed > maxSpeed // Above the max speed that you're allowed to use this technique.
-		|| player->respawn.state != RESPAWNST_NONE) // Respawning, you don't need this AND drop dash :V
+		|| player->respawn.state != RESPAWNST_NONE // Respawning, you don't need this AND drop dash :V
+		|| player->preventfailsafe) // You just got hit or interacted with something committal, no mashing for distance
 	{
 		player->pflags &= ~PF_AIRFAILSAFE;
 		return;
@@ -10793,9 +10797,12 @@ static void K_AirFailsafe(player_t *player)
 	if (leveltime < introtime)
 		return;
 
-	if ((K_GetKartButtons(player) & BT_ACCELERATE) || K_GetForwardMove(player) != 0)
+	UINT8 buttons = K_GetKartButtons(player);
+
+	// Accel inputs queue air-failsafe for when they're released,
+	// as long as they're not part of a fastfall attempt.
+	if ((buttons & (BT_ACCELERATE|BT_BRAKE)) == BT_ACCELERATE || K_GetForwardMove(player) != 0)
 	{
-		// Queue up later
 		player->pflags |= PF_AIRFAILSAFE;
 		return;
 	}

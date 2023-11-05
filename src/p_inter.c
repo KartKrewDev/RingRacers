@@ -3046,6 +3046,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			player->fastfall = 0;
 			player->ringboost = 0;
 			player->glanceDir = 0;
+			player->preventfailsafe = TICRATE*3;
 			player->pflags &= ~PF_GAINAX;
 
 			if (player->spectator == false && !(player->charflags & SF_IRONMAN))
