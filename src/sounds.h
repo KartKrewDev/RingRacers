@@ -1181,6 +1181,12 @@ typedef enum
 	sfx_slot04,
 	sfx_slot05,
 
+	// RR - Flame Shield
+	sfx_fshld0,
+	sfx_fshld1,
+	sfx_fshld2,
+	sfx_fshld3,
+
 	// RR - Ballhog Charge
 	sfx_bhog00,
 	sfx_bhog01,
