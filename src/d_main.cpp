@@ -973,20 +973,9 @@ void D_SRB2Loop(void)
 
 		// Fully completed frame made.
 		finishprecise = I_GetPreciseTime();
-		if (!singletics)
-		{
-			INT64 elapsed = (INT64)(finishprecise - enterprecise);
 
-			// in the case of "match refresh rate" + vsync, don't sleep at all
-			const boolean vsync_with_match_refresh = cv_vidwait.value && cv_fpscap.value == 0;
-
-			if (elapsed > 0 && (INT64)capbudget > elapsed && !vsync_with_match_refresh)
-			{
-				I_SleepDuration(capbudget - (finishprecise - enterprecise));
-			}
-		}
-		// Capture the time once more to get the real delta time.
-		finishprecise = I_GetPreciseTime();
+		// Use the time before sleep for frameskip calculations: 
+		// post-sleep time is literally being intentionally wasted
 		deltasecs = (double)((INT64)(finishprecise - enterprecise)) / I_GetPrecisePrecision();
 		deltatics = deltasecs * NEWTICRATE;
 
@@ -1006,6 +995,23 @@ void D_SRB2Loop(void)
 		{
 			frameskip = 0;
 		}
+
+		if (!singletics)
+		{
+			INT64 elapsed = (INT64)(finishprecise - enterprecise);
+
+			// in the case of "match refresh rate" + vsync, don't sleep at all
+			const boolean vsync_with_match_refresh = cv_vidwait.value && cv_fpscap.value == 0;
+
+			if (elapsed > 0 && (INT64)capbudget > elapsed && !vsync_with_match_refresh)
+			{
+				I_SleepDuration(capbudget - (finishprecise - enterprecise));
+			}
+		}
+		// Capture the time once more to get the real delta time.
+		finishprecise = I_GetPreciseTime();
+		deltasecs = (double)((INT64)(finishprecise - enterprecise)) / I_GetPrecisePrecision();
+		deltatics = deltasecs * NEWTICRATE;
 	}
 }
 
