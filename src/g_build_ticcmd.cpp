@@ -380,7 +380,7 @@ class TiccmdBuilder
 		// ugly with the current abstractions, though, and there's a fortunate trick here:
 		// if you can input full strength turns on both axes, either you're using a fucking
 		// square gate, or you're not on an analog device.
-		if (joystickvector.yaxis > 1020 && abs(cmd->turning) == KART_FULLTURN) // My keyboard hits 1024 but my keyboard only hits 1023, video games
+		if (joystickvector.yaxis >= JOYAXISRANGE && abs(cmd->turning) == KART_FULLTURN) // >= beacuse some analog devices can go past JOYAXISRANGE (?!)
 			cmd->turning /= 2;
 	}
 
