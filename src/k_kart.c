@@ -8243,6 +8243,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->invincibilitytimer && onground == true)
 		player->invincibilitytimer--;
 
+	if (player->preventfailsafe)
+		player->preventfailsafe--;
+
 	if ((player->respawn.state == RESPAWNST_NONE) && player->growshrinktimer != 0)
 	{
 		if (player->growshrinktimer > 0 && onground == true)
@@ -10776,7 +10779,8 @@ static void K_AirFailsafe(player_t *player)
 	const fixed_t thrustSpeed = 6*player->mo->scale; // 10*player->mo->scale
 
 	if (player->speed > maxSpeed // Above the max speed that you're allowed to use this technique.
-		|| player->respawn.state != RESPAWNST_NONE) // Respawning, you don't need this AND drop dash :V
+		|| player->respawn.state != RESPAWNST_NONE // Respawning, you don't need this AND drop dash :V
+		|| player->preventfailsafe) // You just got hit or interacted with something committal, no mashing for distance
 	{
 		player->pflags &= ~PF_AIRFAILSAFE;
 		return;
