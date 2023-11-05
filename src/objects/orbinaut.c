@@ -255,6 +255,12 @@ boolean Obj_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL);
 		damageitem = true;
 	}
+	else if (t2->flags & MF_PAIN)
+	{
+		// Hazard blocks
+		P_SpawnMobj(t2->x/2 + t1->x/2, t2->y/2 + t1->y/2, t2->z/2 + t1->z/2, MT_ITEMCLASH);
+		damageitem = true;
+	}
 
 	if (t1->type == MT_GARDENTOP)
 	{

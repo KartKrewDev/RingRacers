@@ -1475,6 +1475,8 @@ void F_StartTitleScreen(void)
 	INT32 titleMapNum;
 	setup_numplayers = 0;
 
+	encoremode = false;
+
 	if (gamestate != GS_TITLESCREEN && gamestate != GS_WAITINGPLAYERS)
 	{
 		ttuser_count = 0;
@@ -1494,9 +1496,6 @@ void F_StartTitleScreen(void)
 		gamestate_t prevwipegamestate = wipegamestate;
 		titlemapinaction = true;
 		gamemap = titleMapNum+1;
-
-		maptol = mapheaderinfo[titleMapNum]->typeoflevel;
-		globalweather = mapheaderinfo[titleMapNum]->weather;
 
 		G_DoLoadLevelEx(true, GS_TITLESCREEN);
 		if (!titlemap)

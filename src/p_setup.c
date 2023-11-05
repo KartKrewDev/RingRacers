@@ -7953,9 +7953,14 @@ static void P_InitGametype(void)
 		G_RecordDemo(buf);
 	}
 
-	// Started a game? Move on to the next jam when you go back to the title screen
-	CV_SetValue(&cv_menujam_update, 1);
-	gamedata->musicstate = GDMUSIC_NONE;
+	if (gamestate != GS_TITLESCREEN)
+	{
+		// Started a game? Move on to the next jam when you go back to the title screen
+		// this permits all but titlescreen, instead of only GS_LEVEL
+		// because that one's way too easy to activate again and again
+		CV_SetValue(&cv_menujam_update, 1);
+		gamedata->musicstate = GDMUSIC_NONE;
+	}
 }
 
 struct minimapinfo minimapinfo;

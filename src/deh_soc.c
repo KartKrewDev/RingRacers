@@ -785,9 +785,11 @@ void readgametype(MYFILE *f, char *gtname)
 	INT32 newgttimelimit = 0;
 	UINT8 newgtinttype = 0;
 	char gtconst[MAXLINELEN];
+	char gppic[9];
+	char gppicmini[9];
 
 	// Empty strings.
-	gtconst[0] = '\0';
+	gtconst[0] = gppic[0] = gppicmini[0] = '\0';
 
 	do
 	{
@@ -827,7 +829,15 @@ void readgametype(MYFILE *f, char *gtname)
 			else if (fastcmp(word, "IDENTIFIER"))
 			{
 				// GT_
-				strncpy(gtconst, word2, MAXLINELEN);
+				strlcpy(gtconst, word2, MAXLINELEN);
+			}
+			else if (fastcmp(word, "GPPIC"))
+			{
+				strlcpy(gppic, word2, 9);
+			}
+			else if (fastcmp(word, "GPPICMINI"))
+			{
+				strlcpy(gppicmini, word2, 9);
 			}
 			// Point and time limits
 			else if (fastcmp(word, "DEFAULTPOINTLIMIT"))
@@ -926,6 +936,8 @@ void readgametype(MYFILE *f, char *gtname)
 	newgametype->name = Z_StrDup((const char *)gtname);
 	newgametype->rules = newgtrules;
 	newgametype->constant = G_PrepareGametypeConstant((const char *)gtconst);
+	strlcpy(newgametype->gppic, gppic, 9);
+	strlcpy(newgametype->gppicmini, gppicmini, 9);
 	newgametype->tol = newgttol;
 	newgametype->intermission = newgtinttype;
 	newgametype->pointlimit = newgtpointlimit;

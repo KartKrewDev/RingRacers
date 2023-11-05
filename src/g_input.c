@@ -15,6 +15,7 @@
 #include "doomstat.h"
 #include "g_input.h"
 #include "keys.h"
+#include "k_menu.h"
 #include "hu_stuff.h" // need HUFONT start & end
 #include "d_net.h"
 #include "console.h"
@@ -219,14 +220,7 @@ void G_SetPlayerGamepadIndicatorToPlayerColor(INT32 player)
 		return;
 	}
 
-	skincolor = cv_playercolor[player].value;
-	if (skincolor == SKINCOLOR_NONE)
-	{
-		INT32 skin = cv_skin[player].value;
-		if (skin == -1)
-			skin = 0;
-		skincolor = skins[skin].prefcolor;
-	}
+	skincolor = M_GetCvPlayerColor(player);
 
 	byte_color = V_GetColor(skincolors[skincolor].ramp[8]).s;
 

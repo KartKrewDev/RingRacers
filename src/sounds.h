@@ -1181,6 +1181,12 @@ typedef enum
 	sfx_slot04,
 	sfx_slot05,
 
+	// RR - Flame Shield
+	sfx_fshld0,
+	sfx_fshld1,
+	sfx_fshld2,
+	sfx_fshld3,
+
 	// RR - Ballhog Charge
 	sfx_bhog00,
 	sfx_bhog01,
@@ -1296,12 +1302,16 @@ typedef enum
 	sfx_rainbr,
 
 	sfx_rank,
-	
+
 	// rideroid
 	sfx_ridr1,
 	sfx_ridr2,
 	sfx_ridr3,
 	sfx_ridr4,
+
+	// Blend Eye
+	sfx_befan1,
+	sfx_befan2,
 
 	// Damage sounds
 	sfx_dmga1,

@@ -2559,6 +2559,8 @@ static int lib_gAddGametype(lua_State *L)
 
 	const char *gtname = NULL;
 	const char *gtconst = NULL;
+	const char *gppic = NULL;
+	const char *gppicmini = NULL;
 	UINT32 newgtrules = 0;
 	UINT32 newgttol = 0;
 	INT32 newgtpointlimit = 0;
@@ -2621,6 +2623,14 @@ static int lib_gAddGametype(lua_State *L)
 			if (!lua_isnumber(L, 3))
 				TYPEERROR("defaulttimelimit", LUA_TNUMBER)
 			newgttimelimit = (INT32)lua_tointeger(L, 3);
+		} else if (i == 8 || (k && fasticmp(k, "gppic"))) {
+			if (!lua_isstring(L, 3))
+				TYPEERROR("gppic", LUA_TSTRING)
+			gppic = lua_tostring(L, 3);
+		} else if (i == 9 || (k && fasticmp(k, "gppicmini"))) {
+			if (!lua_isstring(L, 3))
+				TYPEERROR("gppicmini", LUA_TSTRING)
+			gppicmini = lua_tostring(L, 3);
 		}
 		lua_pop(L, 1);
 	}
@@ -2661,6 +2671,18 @@ static int lib_gAddGametype(lua_State *L)
 	newgametype->intermission = newgtinttype;
 	newgametype->pointlimit = newgtpointlimit;
 	newgametype->timelimit = newgttimelimit;
+
+	if (gppic != NULL)
+	{
+		// Calloc means only set if valid
+		strlcpy(newgametype->gppic, gppic, 9);
+	}
+
+	if (gppicmini != NULL)
+	{
+		// Calloc means only set if valid
+		strlcpy(newgametype->gppicmini, gppicmini, 9);
+	}
 
 	gametypes[numgametypes++] = newgametype;
 
@@ -3507,6 +3529,49 @@ static int lib_kDeclareWeakspot(lua_State *L)
 	return 0;
 }
 
+static int lib_vsGetArena(lua_State *L)
+{
+	INT32 bossindex = luaL_checkinteger(L, 1);
+	//HUDSAFE
+	LUA_PushUserdata(L, VS_GetArena(bossindex), META_MOBJ);
+	return 1;
+}
+
+static int lib_vsPredictAroundArena(lua_State *L)
+{
+	mobj_t *arena = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *movingobject = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	fixed_t magnitude = luaL_checkfixed(L, 3);
+	fixed_t mompoint = luaL_checkangle(L, 4);
+	fixed_t radiussubtract = luaL_checkfixed(L, 5);
+	boolean forcegoaround = lua_optboolean(L, 6);
+	fixed_t radiusdeltafactor = luaL_optinteger(L, 7, FRACUNIT); //optfixed?
+	NOHUD
+	if (!arena || !movingobject)
+		return LUA_ErrInvalid(L, "mobj_t");
+
+	fixed_t *result = VS_PredictAroundArena(arena, movingobject, magnitude, mompoint, radiussubtract, forcegoaround, radiusdeltafactor);
+
+	lua_pushfixed(L, result[0]);
+	lua_pushfixed(L, result[1]);
+	return 2;
+}
+
+static int lib_vsRandomPointOnArena(lua_State *L)
+{
+	mobj_t *arena = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	fixed_t radiussubtract = luaL_checkfixed(L, 2);
+	NOHUD
+	if (!arena)
+		return LUA_ErrInvalid(L, "mobj_t");
+
+	fixed_t *result = VS_RandomPointOnArena(arena, radiussubtract);
+
+	lua_pushfixed(L, result[0]);
+	lua_pushfixed(L, result[1]);
+	return 2;
+}
+
 static int lib_getTimeMicros(lua_State *L)
 {
 	lua_pushinteger(L, I_GetPreciseTime() / (I_GetPrecisePrecision() / 1000000));
@@ -3782,6 +3847,9 @@ static luaL_Reg lib[] = {
 	{"K_InitBossHealthBar", lib_kInitBossHealthBar},
 	{"K_UpdateBossHealthBar", lib_kUpdateBossHealthBar},
 	{"K_DeclareWeakspot", lib_kDeclareWeakspot},
+	{"VS_GetArena", lib_vsGetArena},
+	{"VS_PredictAroundArena", lib_vsPredictAroundArena},
+	{"VS_RandomPointOnArena", lib_vsRandomPointOnArena},
 	
 	// hu_stuff technically?
 	{"HU_DoTitlecardCEcho", lib_startTitlecardCecho},

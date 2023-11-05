@@ -39,7 +39,7 @@ UINT8 numtargets = 0; // Capsules busted
 
 INT32 K_StartingBumperCount(void)
 {
-	if (battleprisons)
+	if (battleprisons || K_CheckBossIntro())
 	{
 		if (grandprixinfo.gp)
 		{

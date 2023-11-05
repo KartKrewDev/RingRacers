@@ -1296,7 +1296,7 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 				player->hudrings = 20;
 
 			if (grandprixinfo.gp == true
-				&& grandprixinfo.eventmode == GPEVENT_NONE
+				&& grandprixinfo.eventmode != GPEVENT_SPECIAL
 				&& player->bot == false && losing == false)
 			{
 				const UINT8 lifethreshold = 20;
@@ -1364,6 +1364,13 @@ void P_DoAllPlayersExit(pflags_t flags, boolean trygivelife)
 	UINT8 i;
 	const boolean dofinishsound = (musiccountdown == 0);
 
+	if (grandprixinfo.gp == false
+		|| grandprixinfo.eventmode == GPEVENT_SPECIAL
+		|| (flags & PF_NOCONTEST))
+	{
+		trygivelife = false;
+	}
+
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i] || players[i].spectator)
@@ -1382,7 +1389,7 @@ void P_DoAllPlayersExit(pflags_t flags, boolean trygivelife)
 			continue;
 		}
 
-		P_GivePlayerLives(&players[i], 1);
+		players[i].xtralife++;
 	}
 
 	if (!dofinishsound)

@@ -853,8 +853,6 @@ void D_SRB2Loop(void)
 		realtics = entertic - oldentertics;
 		oldentertics = entertic;
 
-		refreshdirmenu = 0; // not sure where to put this, here as good as any?
-
 		if (demo.playback && gamestate == GS_LEVEL)
 		{
 			// Nicer place to put this.
@@ -870,8 +868,16 @@ void D_SRB2Loop(void)
 		interp = R_UsingFrameInterpolation() && !dedicated;
 		doDisplay = false;
 
-		if (realtics > 0 || singletics)
+		renderisnewtic = (realtics > 0 || singletics);
+
+		bool timeisprogressing = (!(paused || P_AutoPause()) && !hu_stopped);
+
+		if (renderisnewtic)
 		{
+			refreshdirmenu = 0;
+
+			P_ResetInterpHudRandSeed(timeisprogressing);
+
 			// don't skip more than 10 frames at a time
 			// (fadein / fadeout cause massive frame skip!)
 			if (realtics > 8)
@@ -906,19 +912,13 @@ void D_SRB2Loop(void)
 
 				doDisplay = true;
 			}
-
-			renderisnewtic = true;
-		}
-		else
-		{
-			renderisnewtic = false;
 		}
 
 		if (interp)
 		{
 			renderdeltatics = FLOAT_TO_FIXED(deltatics);
 
-			if (!(paused || P_AutoPause()) && !hu_stopped)
+			if (timeisprogressing)
 			{
 				rendertimefrac = g_time.timefrac;
 			}
@@ -938,6 +938,9 @@ void D_SRB2Loop(void)
 
 		if ((interp || doDisplay) && !frameskip)
 		{
+			if (!renderisnewtic)
+				P_ResetInterpHudRandSeed(false);
+
 			ranwipe = D_Display();
 		}
 

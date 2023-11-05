@@ -839,7 +839,7 @@ sfxinfo_t S_sfx[NUMSFX] =
 
   // Mean Bean Machine sounds
   {"mbs41",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
-  {"mbs42",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs42",  true,   64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"mbs43",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"mbs44",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"mbs45",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
@@ -849,7 +849,7 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"mbs49",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"mbs4a",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"mbs4b",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
-  {"mbs4c",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs4c",  true,   64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"mbs4d",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"mbs4e",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"mbs4f",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
@@ -1113,6 +1113,12 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"slot04", false, 64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Seven"},
   {"slot05", false, 64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "JACKPOT!"},
 
+  // RR - Flame Shield
+  {"fshld0", false, 64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Flame Shield activate"},
+  {"fshld1", false, 64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Flame Shield hold"},
+  {"fshld2", false, 64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Flame Shield burst"},
+  {"fshld3", false, 64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Flame Shield cooldown"},
+
   // RR - Ballhog Charge
   {"bhog00", false, 64,  64, -1, NULL, 0,        -1,  -1, LUMPERROR, "Ballhog charging"},
   {"bhog01", false, 64,  64, -1, NULL, 0,        -1,  -1, LUMPERROR, "Ballhog charging"},
@@ -1233,6 +1239,9 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"ridr2",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Rideroid Diveroll
   {"ridr3",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Rideroid Loop
   {"ridr4",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Leaving Rideroid 
+
+  {"befan1",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Whisking"}, // Blend Eye whisk startup
+  {"befan2",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Whisking"}, // Blend Eye whisk
 
   // Damage sounds
   {"dmga1",  false, 255, 8, -1, NULL, 0,         -1,  -1, LUMPERROR, "Damaged"},

@@ -127,7 +127,7 @@ void Obj_RandomItemVisuals(mobj_t *mobj)
 
 		// Don't transform stuff that isn't a Ring Box, idiot
 		statenum_t boxstate = mobj->state - states;
-		if (boxstate >= S_RANDOMITEM1 && boxstate <= S_RANDOMITEM12)
+		if (boxstate < S_RINGBOX1 || boxstate > S_RINGBOX12)
 			return;
 
 		if (mobj->extravalue1 == RINGBOX_TIME || specialstageinfo.valid)
@@ -141,7 +141,7 @@ void Obj_RandomItemVisuals(mobj_t *mobj)
 
 boolean Obj_RandomItemSpawnIn(mobj_t *mobj)
 {
-	if ((leveltime == starttime) && !(gametyperules & GTR_CIRCUIT) && (mobj->flags2 & MF2_BOSSNOTRAP)) // here on map start?
+	if ((leveltime == starttime) && !(gametyperules & GTR_CIRCUIT) && (mobj->flags2 & MF2_BOSSFLEE)) // here on map start?
 	{
 		if (gametyperules & GTR_PAPERITEMS)
 		{
@@ -190,6 +190,18 @@ void Obj_RandomItemSpawn(mobj_t *mobj)
 	{
 		mobj->extravalue1 = RINGBOX_TIME;
 		P_SetMobjState(mobj, S_RANDOMITEM1);
+	}
+
+	if (leveltime == 0)
+	{
+		mobj->flags2 |= MF2_BOSSFLEE; // mark as here on map start
+		if ((gametyperules & GTR_CIRCUIT) != GTR_CIRCUIT) // delayed
+		{
+			P_UnsetThingPosition(mobj);
+			mobj->flags |= (MF_NOCLIPTHING|MF_NOBLOCKMAP);
+			mobj->renderflags |= RF_DONTDRAW;
+			P_SetThingPosition(mobj);
+		}
 	}
 
 	mobj->destscale = Obj_RandomItemScale(mobj->destscale);

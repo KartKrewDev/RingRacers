@@ -607,6 +607,8 @@ struct gametype_t
 	UINT8 intermission;
 	INT32 pointlimit;
 	INT32 timelimit;
+	char gppic[9];
+	char gppicmini[9];
 };
 
 extern gametype_t *gametypes[MAXGAMETYPES+1];
