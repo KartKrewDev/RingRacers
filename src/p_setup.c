@@ -8281,7 +8281,14 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			}
 		}
 
-		if (K_PodiumHasEmerald())
+		// Default
+		levelfadecol = 31;
+
+		if (gamestate == GS_TITLESCREEN)
+		{
+			;
+		}
+		else if (K_PodiumHasEmerald())
 		{
 			// Special Stage out
 			if (ranspecialwipe != 2)
@@ -8310,11 +8317,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			// Encore
 			levelfadecol = 0;
 			wipetype = wipe_encore_towhite;
-		}
-		else
-		{
-			// Default
-			levelfadecol = 31;
 		}
 
 		if (rendermode != render_none)

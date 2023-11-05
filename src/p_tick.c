@@ -1045,7 +1045,7 @@ void P_Ticker(boolean run)
 				}
 
 				player_t *player = &players[i];
-				if (K_PlayerTallyActive(player) == true && player->tally.done == false)
+				if (player->spectator == false && K_PlayerTallyActive(player) == true && player->tally.done == false)
 				{
 					run_exit_countdown = false;
 					break;
