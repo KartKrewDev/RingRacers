@@ -2432,7 +2432,7 @@ static void K_drawBossHealthBar(void)
 		{
 			rolrand = 10;
 		}
-		V_DrawRightAlignedThinString(startx, starty-rolrand, V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT, bossinfo.enemyname);
+		V_DrawRightAlignedThinString(startx, starty-rolrand, V_FORCEUPPERCASE|V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT, bossinfo.enemyname);
 		rolrand = 0;
 	}
 
@@ -2448,8 +2448,8 @@ static void K_drawBossHealthBar(void)
 
 	randtemp = bossinfo.visualbar-(bossinfo.visualdiv/(2*FRACUNIT));
 	if (randtemp > 0)
-		randlen = M_RandomKey(randtemp)+1;
-	randsign = M_RandomChance(FRACUNIT/2);
+		randlen = P_RandomKey(PR_INTERPHUDRANDOM, randtemp)+1;
+	randsign = P_RandomChance(PR_INTERPHUDRANDOM, FRACUNIT/2);
 
 	// Right wing.
 	V_DrawScaledPatch(startx-1, starty, V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_FLIP, kp_bossbar[0]);
@@ -2465,10 +2465,10 @@ static void K_drawBossHealthBar(void)
 			{
 				randtemp = bossinfo.visualbar-(bossinfo.visualdiv/(2*FRACUNIT));
 				if (randtemp > 0)
-					randlen = M_RandomKey(randtemp)+1;
+					randlen = P_RandomKey(PR_INTERPHUDRANDOM, randtemp)+1;
 				if (barstatus > 1)
 				{
-					rolrand = M_RandomKey(barstatus)+1;
+					rolrand = P_RandomKey(PR_INTERPHUDRANDOM, barstatus)+1;
 				}
 				else
 				{

@@ -16,6 +16,8 @@
 extern "C" {
 #endif
 
+#define INTERMISSIONROUND_BONUS UINT8_MAX
+
 typedef struct
 {
 	boolean rankingsmode; // rankings mode

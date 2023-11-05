@@ -864,7 +864,7 @@ void Y_VoteDrawer(void)
 static void Y_FinalizeVote(const SINT8 level)
 {
 	nextmap = g_voteLevels[level][0];
-	deferencoremode = (g_voteLevels[level][1] & VOTE_MOD_ENCORE);
+	deferencoremode = ((g_voteLevels[level][1] & VOTE_MOD_ENCORE) ==  VOTE_MOD_ENCORE);
 }
 
 static void Y_VoteStops(SINT8 pick, SINT8 level)

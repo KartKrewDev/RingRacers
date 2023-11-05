@@ -38,6 +38,7 @@
 
 // SRB2kart
 #include "k_kart.h"
+#include "k_boss.h"
 #include "k_battle.h"
 #include "k_color.h"
 #include "k_follower.h"
@@ -2388,16 +2389,14 @@ boolean P_ZMovement(mobj_t *mo)
 			break;
 	}
 
-	if (!mo->player && P_CheckDeathPitCollide(mo))
+	if (!mo->player && P_CheckDeathPitCollide(mo) && mo->health)
 	{
-		if (mo->flags & MF_ENEMY || mo->flags & MF_BOSS || mo->type == MT_MINECART)
+		if ((mo->flags & (MF_ENEMY|MF_BOSS)) == MF_ENEMY)
 		{
-			// Kill enemies, bosses and minecarts that fall into death pits.
-			if (mo->health)
-			{
-				P_KillMobj(mo, NULL, NULL, DMG_NORMAL);
-			}
-			return false;
+			// Kill enemies that fall into death pits.
+			P_KillMobj(mo, NULL, NULL, DMG_NORMAL);
+			if (P_MobjWasRemoved(mo))
+				return false;
 		}
 	}
 
@@ -4662,28 +4661,42 @@ boolean P_BossTargetPlayer(mobj_t *actor, boolean closest)
 // Finds the player no matter what they're hiding behind (even lead!)
 boolean P_SupermanLook4Players(mobj_t *actor)
 {
-	INT32 c, stop = 0;
-	player_t *playersinthegame[MAXPLAYERS];
+	UINT8 c, stop = 0;
+	UINT8 playersinthegame[MAXPLAYERS];
 
 	for (c = 0; c < MAXPLAYERS; c++)
 	{
-		if (playeringame[c] && !players[c].spectator)
-		{
-			if (!players[c].mo)
-				continue;
+		// Playing status
+		if (!playeringame[c])
+			continue;
+		if (players[c].spectator)
+			continue;
 
-			if (players[c].mo->health <= 0)
-				continue; // dead
+		// Mobj status
+		if (!players[c].mo)
+			continue;
+		if (players[c].mo->health <= 0)
+			continue; // dead
 
-			playersinthegame[stop] = &players[c];
-			stop++;
-		}
+		// Pain status
+		if (players[c].respawn.state != RESPAWNST_NONE)
+			continue; // don't wail on the respawning
+
+		playersinthegame[stop] = c;
+		stop++;
 	}
 
 	if (!stop)
 		return false;
 
-	P_SetTarget(&actor->target, playersinthegame[P_RandomKey(PR_UNDEFINED, stop)]->mo);
+	P_SetTarget(
+		&actor->target,
+		players[
+			playersinthegame[
+				P_RandomKey(PR_MOVINGTARGET, stop)
+			]
+		].mo
+	);
 	return true;
 }
 
@@ -5872,8 +5885,21 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			P_RemoveMobj(mobj);
 			return;
 		}
-		else
-			P_AddOverlay(mobj);
+
+		if (mobj->fuse)
+		{
+			mobj->fuse--;
+			if (!mobj->fuse)
+			{
+				if (!LUA_HookMobj(mobj, MOBJ_HOOK(MobjFuse)))
+				{
+					P_RemoveMobj(mobj);
+					return;
+				}
+			}
+		}
+
+		P_AddOverlay(mobj);
 		if (mobj->target->hitlag) // move to the correct position, update to the correct properties, but DON'T STATE-ANIMATE
 			return;
 		switch (mobj->target->type)
@@ -6783,6 +6809,17 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 
 		break;
 	}
+	case MT_SPIKEDTARGET:
+	{
+		if (P_MobjWasRemoved(mobj->target) || (mobj->target->health <= 0) || (mobj->target->z == mobj->target->floorz))
+		{
+			P_RemoveMobj(mobj);
+			return;
+		}
+
+		mobj->angle += ANG2;
+		break;
+	}
 	case MT_VWREF:
 	case MT_VWREB:
 	{
@@ -6827,16 +6864,19 @@ static boolean P_MobjBossThink(mobj_t *mobj)
 	}
 	else if (P_MobjWasRemoved(mobj))
 		return false;
-	else
-		switch (mobj->type)
-		{
-		// No SRB2Kart bosses... yet :)
+	else switch (mobj->type)
+	{
+		case MT_BLENDEYE_MAIN:
+			VS_BlendEye_Thinker(mobj);
+			break;
 		default: // Generic SOC-made boss
 			if (mobj->flags2 & MF2_SKULLFLY)
 				P_SpawnGhostMobj(mobj);
 			P_GenericBossThinker(mobj);
 			break;
-		}
+	}
+	if (P_MobjWasRemoved(mobj))
+		return false;
 	if (mobj->flags2 & MF2_BOSSFLEE)
 	{
 		if (mobj->extravalue1)
@@ -7029,6 +7069,11 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 		{
 			mobj->fuse = TICRATE;
 		}
+		break;
+	}
+	case MT_BLENDEYE_GENERATOR:
+	{
+		VS_BlendEye_Generator_DeadThinker(mobj);
 		break;
 	}
 	default:
@@ -9952,6 +9997,24 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		break;
 	}
 
+	case MT_BLENDEYE_EYE:
+	{
+		if (!VS_BlendEye_Eye_Thinker(mobj))
+		{
+			return false;
+		}
+		break;
+	}
+	case MT_BLENDEYE_PUYO:
+	{
+		VS_PuyoThinker(mobj);
+		if (P_MobjWasRemoved(mobj))
+		{
+			return false;
+		}
+		break;
+	}
+
 	default:
 		// check mobj against possible water content, before movement code
 		P_MobjCheckWater(mobj);
@@ -10069,6 +10132,7 @@ static boolean P_CanFlickerFuse(mobj_t *mobj)
 		case MT_POGOSPRING:
 		case MT_KART_LEFTOVER:
 		case MT_EMERALD:
+		case MT_BLENDEYE_PUYO:
 			if (mobj->fuse <= TICRATE)
 			{
 				return true;
@@ -10537,13 +10601,6 @@ void P_MobjThinker(mobj_t *mobj)
 
 	P_SquishThink(mobj);
 	K_UpdateTerrainOverlay(mobj);
-
-	if (mobj->flags & (MF_ENEMY|MF_BOSS) && mobj->health
-		&& P_CheckDeathPitCollide(mobj)) // extra pit check in case these didn't have momz
-	{
-		P_KillMobj(mobj, NULL, NULL, DMG_DEATHPIT);
-		return;
-	}
 
 	// Crush enemies!
 	if (mobj->ceilingz - mobj->floorz < mobj->height)
@@ -11441,6 +11498,24 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		case MT_BALLSWITCH_BALL:
 			Obj_BallSwitchInit(mobj);
 			break;
+		case MT_BLENDEYE_MAIN:
+			VS_BlendEye_Init(mobj);
+			break;
+		case MT_BLENDEYE_PUYO:
+			mobj->sprite = mobj->movedir = P_RandomRange(PR_DECORATION, SPR_PUYA, SPR_PUYE);
+			if (encoremode == false)
+			{
+				mobj->color = SKINCOLOR_LEATHER;
+				mobj->colorized = true;
+			}
+			break;
+		case MT_BLENDEYE_PUYO_DUST_COFFEE:
+			mobj->color = SKINCOLOR_LEATHER;
+			mobj->colorized = true;
+			// FALLTHRU
+		case MT_BLENDEYE_PUYO_DUST:
+			mobj->sprite = mobj->movedir = P_RandomRange(PR_DECORATION, SPR_PUYA, SPR_PUYE);
+			break;
 		default:
 			break;
 	}
@@ -12153,6 +12228,8 @@ void P_RespawnBattleBoxes(void)
 	if (gametyperules & GTR_CIRCUIT)
 		return;
 
+	tic_t setduration = (nummapboxes > 1) ? TICRATE : (2*TICRATE);
+
 	for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
 	{
 		mobj_t *box;
@@ -12163,13 +12240,20 @@ void P_RespawnBattleBoxes(void)
 		box = (mobj_t *)th;
 
 		if (box->type != MT_RANDOMITEM
-			|| (box->flags2 & MF2_DONTRESPAWN)
+			|| ((box->flags2 & (MF2_DONTRESPAWN|MF2_BOSSFLEE)) != MF2_BOSSFLEE)
 			|| !(box->flags & MF_NOCLIPTHING)
 			|| box->fuse)
 			continue; // only popped items
 
-		box->fuse = TICRATE; // flicker back in
-		P_SetMobjState(box, box->info->raisestate);
+		box->fuse = setduration; // flicker back in
+		P_SetMobjState(
+			box,
+			(((gametyperules & GTR_SPHERES) == GTR_SPHERES)
+				? box->info->raisestate
+				: box->info->spawnstate
+			)
+		);
+		box->renderflags |= RF_DONTDRAW; // guarantee start invisible
 
 		if (numgotboxes > 0)
 			numgotboxes--; // you've restored a box, remove it from the count
@@ -13410,6 +13494,15 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 		P_InitSkyboxPoint(mobj, mthing);
 		break;
 	}
+	case MT_BOSSARENACENTER:
+	{
+		if (!VS_ArenaCenterInit(mobj, mthing))
+		{
+			P_RemoveMobj(mobj);
+			return false;
+		}
+		break;
+	}
 	case MT_EGGSTATUE:
 		if (mthing->thing_args[1])
 		{
@@ -13772,18 +13865,6 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	}
 	case MT_RANDOMITEM:
 	{
-		const boolean delayed = !(gametyperules & GTR_CIRCUIT);
-		if (leveltime == 0)
-		{
-			mobj->flags2 |= MF2_BOSSNOTRAP; // mark as here on map start
-			if (delayed)
-			{
-				P_UnsetThingPosition(mobj);
-				mobj->flags |= (MF_NOCLIPTHING|MF_NOBLOCKMAP);
-				mobj->renderflags |= RF_DONTDRAW;
-				P_SetThingPosition(mobj);
-			}
-		}
 		if (mthing->thing_args[0] == 1)
 			mobj->flags2 |= MF2_BOSSDEAD;
 		break;

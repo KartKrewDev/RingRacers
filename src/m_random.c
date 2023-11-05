@@ -342,6 +342,37 @@ void P_SetRandSeedNetD(const char *rfile, INT32 rline, pr_class_t pr_class, UINT
 	rng.seed[pr_class] = seed;
 }
 
+/** Change PR_INTERPHUDRANDOM state.
+  * Used for interp-safe HUD randomisation.
+  *
+  * \sa P_SetRandSeed
+  */
+#ifndef DEBUGRANDOM
+void P_ResetInterpHudRandSeed(boolean newframe)
+{
+#else
+void P_ResetInterpHudRandSeedD(const char *rfile, INT32 rline, boolean newframe)
+{
+	CONS_Printf("P_ResetInterpHudRandSeed(%c) at: %sp %d\n", (newframe ? 'T' : 'F'), rfile, rline);
+#endif
+
+	if (newframe == true)
+	{
+		// Advance the initialisation to the current seed.
+		rng.init[PR_INTERPHUDRANDOM] = rng.seed[PR_INTERPHUDRANDOM];
+	}
+	else
+	{
+		// Rewind the seed to the last initialisation.
+		rng.seed[PR_INTERPHUDRANDOM] = rng.init[PR_INTERPHUDRANDOM];
+	}
+
+	// xorshift requires a nonzero seed
+	// this should never happen, but just in case it DOES, we check
+	if (!rng.seed[PR_INTERPHUDRANDOM])
+		rng.seed[PR_INTERPHUDRANDOM] = rng.init[PR_INTERPHUDRANDOM] = DEFAULT_SEED;
+}
+
 /** Initializes random seeds for all classes.
   * Used at the beginning of a game.
   *
@@ -354,7 +385,7 @@ void P_ClearRandom(UINT32 seed)
 
 	if (!seed) seed = DEFAULT_SEED;
 
-	for (i = 0; i < PRNUMCLASS; i++)
+	for (i = 0; i < PRNUMSYNCED; i++)
 	{
 		P_SetRandSeed(i, seed);
 

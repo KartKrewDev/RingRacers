@@ -4767,42 +4767,21 @@ void M_DrawPause(void)
 
 		if (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE)
 		{
-			const char *append = NULL;
-
-			switch (grandprixinfo.eventmode)
-			{
-				case GPEVENT_SPECIAL:
-				{
-					append = "SS";
-					break;
-				}
-
-				case GPEVENT_BONUS:
-				{
-					append = "B";
-					break;
-				}
-
-				default:
-					break;
-			}
-
-			if (append)
+			if (gametypes[gametype]->gppicmini[0])
+				smallroundpatch = W_CachePatchName(gametypes[gametype]->gppicmini, PU_PATCH);
+			else
+				smallroundpatch = W_CachePatchName("TT_RNSX", PU_PATCH);
+		}
+		else if (roundqueue.size > 0)
+		{
+			if (roundqueue.roundnum > 0 && roundqueue.roundnum <= 10)
 			{
 				smallroundpatch =
 					W_CachePatchName(
-						va("TT_RNS%s", append),
+						va("TT_RNS%d", roundqueue.roundnum),
 						PU_PATCH
 					);
 			}
-		}
-		else if (roundqueue.roundnum > 0 && roundqueue.roundnum <= 10)
-		{
-			smallroundpatch =
-				W_CachePatchName(
-					va("TT_RNS%d", roundqueue.roundnum),
-					PU_PATCH
-				);
 		}
 
 		if (smallroundpatch != NULL)

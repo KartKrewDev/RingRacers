@@ -33,6 +33,7 @@
 #include "i_system.h" // SRB2kart
 #include "k_terrain.h"
 #include "k_objects.h"
+#include "k_boss.h"
 
 #include "r_splats.h"
 
@@ -658,6 +659,11 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			return BMIT_CONTINUE; // force no collide
 	}
 
+	// Blend-Eye internal noclip
+	if ((thing->type == MT_BLENDEYE_GLASS || thing->type == MT_BLENDEYE_SHIELD || thing->type == MT_BLENDEYE_EGGBEATER)
+	&& (tm.thing->type == MT_BLENDEYE_MAIN || tm.thing->type == MT_BLENDEYE_EYE || tm.thing->type == MT_BLENDEYE_PUYO))
+		return BMIT_CONTINUE;
+
 	// When solid spikes move, assume they just popped up and teleport things on top of them to hurt.
 	if (tm.thing->type == MT_SPIKE && tm.thing->flags & MF_SOLID)
 	{
@@ -689,7 +695,9 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			if (P_DamageMobj(tm.thing, thing, thing, 1, damagetype) && (damagetype = (thing->info->mass>>8)))
 				S_StartSound(thing, damagetype);
 		}
-		return BMIT_CONTINUE;
+
+		if (P_MobjWasRemoved(tm.thing) || P_MobjWasRemoved(thing))
+			return BMIT_CONTINUE;
 	}
 	else if (tm.thing->flags & MF_PAIN && thing->player)
 	{ // Painful thing splats player in the face
@@ -705,7 +713,9 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			if (P_DamageMobj(thing, tm.thing, tm.thing, 1, damagetype) && (damagetype = (tm.thing->info->mass>>8)))
 				S_StartSound(tm.thing, damagetype);
 		}
-		return BMIT_CONTINUE;
+
+		if (P_MobjWasRemoved(tm.thing) || P_MobjWasRemoved(thing))
+			return BMIT_CONTINUE;
 	}
 
 	// check for skulls slamming into things
@@ -777,6 +787,22 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 
 		P_SetObjectMomZ(tm.thing, FRACUNIT, true);
 		return BMIT_CONTINUE;
+	}
+
+	if (thing->type == MT_BLENDEYE_EGGBEATER
+		&& tm.thing->type == MT_PLAYER && tm.thing->player)
+	{
+		if (tm.thing->z > thing->z + thing->height)
+		{
+			return BMIT_CONTINUE; // overhead
+		}
+
+		if (tm.thing->z + tm.thing->height < thing->z)
+		{
+			return BMIT_CONTINUE; // underneath
+		}
+
+		VS_BlendEye_Eggbeater_Touched(thing, tm.thing);
 	}
 
 	if (thing->type == MT_SPB)

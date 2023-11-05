@@ -1761,7 +1761,7 @@ void G_Ticker(boolean run)
 				}
 			}
 
-			D_MapChange(gamemap, gametype, (cv_kartencore.value == 1), false, 1, false, false);
+			D_MapChange(gamemap, gametype, encoremode, false, 1, false, false);
 		}
 	}
 
@@ -3036,6 +3036,8 @@ static gametype_t defaultgametypes[] =
 		int_time,
 		0,
 		0,
+		"",
+		"",
 	},
 
 	// GT_BATTLE
@@ -3047,6 +3049,8 @@ static gametype_t defaultgametypes[] =
 		int_scoreortimeattack,
 		0,
 		3,
+		"TT_RNDB",
+		"TT_RNSB",
 	},
 
 	// GT_SPECIAL
@@ -3058,6 +3062,8 @@ static gametype_t defaultgametypes[] =
 		int_time,
 		0,
 		0,
+		"TT_RNDSS",
+		"TT_RNSSS",
 	},
 
 	// GT_VERSUS
@@ -3069,6 +3075,8 @@ static gametype_t defaultgametypes[] =
 		int_scoreortimeattack,
 		0,
 		0,
+		"",
+		"",
 	},
 
 	// GT_TUTORIAL
@@ -3080,6 +3088,8 @@ static gametype_t defaultgametypes[] =
 		int_none,
 		0,
 		0,
+		"",
+		"",
 	},
 };
 
@@ -5819,9 +5829,6 @@ void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skippr
 	}
 
 	gamemap = map;
-
-	maptol = mapheaderinfo[gamemap-1]->typeoflevel;
-	globalweather = mapheaderinfo[gamemap-1]->weather;
 
 	// Don't carry over custom music change to another map.
 	mapmusflags |= MUSIC_RELOADRESET;

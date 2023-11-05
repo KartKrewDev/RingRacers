@@ -16,6 +16,7 @@
 
 #include "doomdef.h"
 #include "doomtype.h"
+#include "k_boss.h"
 #include "music_detail.hpp"
 
 namespace srb2::music
@@ -61,6 +62,10 @@ public:
 	// resumed).
 	bool credit = false;
 
+	// This tune will vape in encoremode contexts.
+	bool vapes = false;
+	bool nightcoreable = false;
+
 	// Start playing this number of tics into the tune.
 	tic_t seek = 0;
 
@@ -78,12 +83,21 @@ public:
 	bool paused() const { return pause_.has_value(); }
 	bool can_end() const { return end_ != INFTICS; }
 
+	// Slow level music down a bit in Encore. (Values are vibe-based. WE GET IT YOU VAPE)
+	const float encoremul = 0.86471f;
+
 	float speed() const
 	{
-		// Slow level music down a bit in Encore. (Values are vibe-based. WE GET IT YOU VAPE)
-		if (encoremode && gamestate == GS_LEVEL)
+		// Apply to all tunes that support vape mode.
+		if (encoremode && vapes)
 		{
-			return 0.86471f;
+			if (nightcoreable && K_CheckBossIntro())
+			{
+				// In Versus, the vape makes you think you can start a nightcore YT channel
+				return (1.f/encoremul);
+			}
+
+			return encoremul;
 		}
 
 		return 1.f;

@@ -567,8 +567,8 @@ static patch_t *tcroundbonus;
 static patch_t *tcactnum[10];
 static patch_t *tcact;
 
-static patch_t *twarn;
-static patch_t *twarn2;
+static patch_t *twarn[2];
+static patch_t *ttext[2];
 
 // some coordinates define to make my life easier....
 #define FINAL_ROUNDX (24)
@@ -625,8 +625,11 @@ static void ST_cacheLevelTitle(void)
 
 	tcact =			(patch_t *)W_CachePatchName("TT_ACT", PU_HUDGFX);
 
-	twarn = 		(patch_t *)W_CachePatchName("K_BOSW01", PU_HUDGFX);
-	twarn2 = 		(patch_t *)W_CachePatchName("K_BOSW02", PU_HUDGFX);
+	twarn[0] =		(patch_t *)W_CachePatchName("K_BOSW01", PU_HUDGFX);
+	twarn[1] =		(patch_t *)W_CachePatchName("K_BOSW02", PU_HUDGFX);
+
+	ttext[0] =		(patch_t *)W_CachePatchName("K_BOST01", PU_HUDGFX);
+	ttext[1] =		(patch_t *)W_CachePatchName("K_BOST02", PU_HUDGFX);
 
 	// Cache round #
 	for (i=1; i < 11; i++)
@@ -634,7 +637,7 @@ static void ST_cacheLevelTitle(void)
 		sprintf(buf, "TT_RND%d", i);
 		tcroundnum[i-1] = (patch_t *)W_CachePatchName(buf, PU_HUDGFX);
 	}
-	tcroundbonus =	(patch_t *)W_CachePatchName("TT_RNDB", PU_HUDGFX);
+	tcroundbonus =	(patch_t *)W_CachePatchName("TT_RNDX", PU_HUDGFX);
 
 	// Cache act #
 	for (i=0; i < 10; i++)
@@ -747,7 +750,20 @@ void ST_runTitleCard(void)
 				}
 			}
 			// No matter the circumstances, scroll the WARN...
-			bannerx = -((lt_ticker*2)%((encoremode ? twarn2 : twarn)->width));
+			{
+				patch_t *localwarn = twarn[encoremode ? 1 : 0];
+				patch_t *localtext = ttext[encoremode ? 1 : 0];
+
+				if (localwarn->width)
+				{
+					bannerx = ((lt_ticker*2)%(localwarn->width));
+				}
+
+				if (localtext->width)
+				{
+					bannery = -((lt_ticker*4)%(localtext->width));
+				}
+			}
 
 			if (run && lt_ticker < PRELEVELTIME)
 			{
@@ -935,27 +951,40 @@ void ST_drawTitleCard(void)
 		{
 #define LOTIME 5
 #define HITIME 15
-			patch_t *localwarn = (encoremode ? twarn2 : twarn);
-			INT32 transp = (lt_ticker+HITIME) % (LOTIME+HITIME);
+
+			patch_t *localwarn;
+			INT32 transp;
 			boolean encorehack = ((levelfadecol == 0) && lt_ticker <= PRELEVELTIME+4);
 
-			if ((localwarn->width > 0) && (lt_ticker + (HITIME-transp) <= lt_endtime))
-			{
-				if (transp > HITIME-1)
-				{
-					transp = HITIME-1;
-				}
-
-				transp = (((10*transp)/HITIME)<<V_ALPHASHIFT) | (encorehack ? V_SUBTRACT : V_ADD);
-
-				while (bx > -pad)
-					bx -= localwarn->width;
-				while (bx < BASEVIDWIDTH+pad)
-				{
-					V_DrawFixedPatch(bx*FRACUNIT, 55*FRACUNIT, FRACUNIT, V_SNAPTOLEFT|transp, localwarn, NULL);
-					bx += localwarn->width;
-				}
+#define DRAWBOSSWARN(pat) \
+			localwarn = pat[encoremode ? 1 : 0];\
+			\
+			if ((localwarn->width > 0) && (lt_ticker + (HITIME-transp) <= lt_endtime)) \
+			{ \
+				if (transp > HITIME-1)\
+				{ \
+					transp = HITIME-1; \
+				} \
+				\
+				transp = (((10*transp)/HITIME)<<V_ALPHASHIFT) | (encorehack ? V_SUBTRACT : V_ADD); \
+				\
+				while (bx > -pad) \
+					bx -= localwarn->width; \
+				while (bx < BASEVIDWIDTH+pad) \
+				{ \
+					V_DrawFixedPatch(bx*FRACUNIT, 60*FRACUNIT, FRACUNIT, V_SNAPTOLEFT|transp, localwarn, NULL); \
+					bx += localwarn->width; \
+				} \
 			}
+
+			transp = (lt_ticker+HITIME) % (LOTIME+HITIME);
+			DRAWBOSSWARN(twarn);
+
+			transp = (lt_ticker+HITIME+3) % (LOTIME+HITIME);
+			bx = bannery;
+			DRAWBOSSWARN(ttext);
+
+#undef DRAWBOSSWARN
 #undef LOTIME
 #undef HITIME
 		}
@@ -966,7 +995,7 @@ void ST_drawTitleCard(void)
 			bx = V_TitleCardStringWidth(bossinfo.enemyname, false);
 
 			// Name.
-			V_DrawTitleCardString((BASEVIDWIDTH - bx)/2, 75, bossinfo.enemyname, 0, true, bossinfo.titleshow, lt_exitticker, false);
+			V_DrawTitleCardString((BASEVIDWIDTH - bx)/2, 80, bossinfo.enemyname, 0, true, bossinfo.titleshow, lt_exitticker, false);
 
 			// Under-bar.
 			{
@@ -994,7 +1023,7 @@ void ST_drawTitleCard(void)
 				// Handle subtitle.
 				else if (bossinfo.subtitle && lt_ticker >= TICRATE/2)
 				{
-					INT32 by = 75+32;
+					INT32 by = 80+32;
 					if (lt_ticker == TICRATE/2 || lt_exitticker == 1)
 					{
 						;
@@ -1008,15 +1037,15 @@ void ST_drawTitleCard(void)
 						by += 5;
 					}
 
-					V_DrawRightAlignedThinString((BASEVIDWIDTH+bx)/2, by, 0, bossinfo.subtitle);
+					V_DrawRightAlignedThinString((BASEVIDWIDTH+bx)/2, by, V_FORCEUPPERCASE, bossinfo.subtitle);
 				}
 
 				// Now draw the under-bar itself.
 				if (scalex > 0)
 				{
 					bx = FixedMul(bx, scalex);
-					V_DrawFill((BASEVIDWIDTH-(bx+2))/2, 75+32, bx+2, 3, 31);
-					V_DrawFill((BASEVIDWIDTH-(bx))/2, 75+32+1, bx, 1, 0);
+					V_DrawFill((BASEVIDWIDTH-(bx+2))/2, 80+32, bx+2, 3, 31);
+					V_DrawFill((BASEVIDWIDTH-(bx))/2, 80+32+1, bx, 1, 0);
 				}
 			}
 		}
@@ -1060,17 +1089,10 @@ void ST_drawTitleCard(void)
 			; // TODO: Ruby
 		else if (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE)
 		{
-			switch (grandprixinfo.eventmode)
-			{
-				case GPEVENT_BONUS:
-					roundico = tcroundbonus; // TODO don't show capsule if we have other bonus types
-					break;
-				/*case GPEVENT_SPECIAL:
-					; // TODO: Emerald/mount
-					break;*/
-				default:
-					break;
-			}
+			if (gametypes[gametype]->gppic[0])
+				roundico = W_CachePatchName(gametypes[gametype]->gppic, PU_PATCH);
+			else
+				roundico = tcroundbonus; // Generic star
 		}
 		else if (roundqueue.size > 0)
 		{

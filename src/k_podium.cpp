@@ -932,8 +932,7 @@ boolean K_StartCeremony(void)
 	{
 		gamemap = podiumMapNum+1;
 
-		maptol = mapheaderinfo[gamemap-1]->typeoflevel;
-		globalweather = static_cast<preciptype_t>(mapheaderinfo[gamemap-1]->weather);
+		encoremode = grandprixinfo.encore;
 
 		if (savedata.lives > 0)
 		{

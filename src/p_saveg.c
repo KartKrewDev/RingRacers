@@ -6367,7 +6367,7 @@ static void P_NetArchiveRNG(savebuffer_t *save)
 
 	WRITEUINT32(save->p, ARCHIVEBLOCK_RNG);
 
-	for (i = 0; i < PRNUMCLASS; i++)
+	for (i = 0; i < PRNUMSYNCED; i++)
 	{
 		WRITEUINT32(save->p, P_GetInitSeed(i));
 		WRITEUINT32(save->p, P_GetRandSeed(i));
@@ -6381,7 +6381,7 @@ static inline void P_NetUnArchiveRNG(savebuffer_t *save)
 	if (READUINT32(save->p) != ARCHIVEBLOCK_RNG)
 		I_Error("Bad $$$.sav at archive block RNG");
 
-	for (i = 0; i < PRNUMCLASS; i++)
+	for (i = 0; i < PRNUMSYNCED; i++)
 	{
 		UINT32 init = READUINT32(save->p);
 		UINT32 seed = READUINT32(save->p);

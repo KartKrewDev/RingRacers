@@ -31,6 +31,8 @@ void Music_Init(void)
 		tune.resume_fade_in = 750;
 		tune.sync = true;
 		tune.credit = true;
+		tune.vapes = true;
+		tune.nightcoreable = true;
 	}
 
 	{
@@ -75,6 +77,7 @@ void Music_Init(void)
 
 		tune.song = "racent";
 		tune.priority = 40;
+		tune.vapes = true;
 	}
 
 	{

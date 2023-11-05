@@ -12544,14 +12544,14 @@ UINT32 K_PointLimitForGametype(void)
 		return 0;
 	}
 
-	if (cv_pointlimit.value != -1)
-	{
-		return cv_pointlimit.value;
-	}
-
 	if (K_Cooperative())
 	{
 		return 0;
+	}
+
+	if (K_CanChangeRules(true) == true && cv_pointlimit.value != -1)
+	{
+		return cv_pointlimit.value;
 	}
 
 	if ((gametyperules & battleRules) == battleRules) // why isn't this just another GTR_??

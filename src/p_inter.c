@@ -253,8 +253,13 @@ static void P_ItemPop(mobj_t *actor)
 
 	Obj_SpawnItemDebrisEffects(actor, actor->target);
 
-	if (!specialstageinfo.valid) // In Special, you'll respawn as a Ring Box (random-item.c), don't confuse the player.
+	if (!specialstageinfo.valid
+	&& (gametyperules & GTR_SPHERES) != GTR_SPHERES)
+	{
+		// Doesn't apply to Special
 		P_SetMobjState(actor, S_RINGBOX1);
+	}
+
 	actor->extravalue1 = 0;
 
 	// de-solidify
@@ -281,7 +286,7 @@ static void P_ItemPop(mobj_t *actor)
 	*/
 
 	// Here at mapload in battle?
-	if (!(gametyperules & GTR_CIRCUIT) && (actor->flags2 & MF2_BOSSNOTRAP))
+	if (!(gametyperules & GTR_CIRCUIT) && (actor->flags2 & MF2_BOSSFLEE))
 	{
 		numgotboxes++;
 
@@ -362,6 +367,12 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		/////ENEMIES & BOSSES!!/////////////////////////////////
 		////////////////////////////////////////////////////////
 
+		if (special->type == MT_BLENDEYE_MAIN)
+		{
+			if (!VS_BlendEye_Touched(special, toucher))
+				return;
+		}
+
 		P_DamageMobj(toucher, special, special, 1, DMG_NORMAL);
 		return;
 	}
@@ -381,6 +392,9 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			P_InstaThrust(player->mo, player->mo->angle, 20<<FRACBITS);
 			return;
 		case MT_FLOATINGITEM: // SRB2Kart
+			// Avoid being picked up immediately
+			if (special->scale < special->destscale/2)
+				return;
 			if (special->threshold >= FIRSTPOWERUP)
 			{
 				if (P_PlayerInPain(player))
@@ -946,6 +960,13 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			return;
 		}
 
+		case MT_BLENDEYE_PUYO:
+		{
+			if (!VS_PuyoTouched(special, toucher))
+				return;
+			break;
+		}
+
 		default: // SOC or script pickup
 			P_SetTarget(&special->target, toucher);
 			break;
@@ -1075,7 +1096,7 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 
 	if (++numtargets >= maptargets)
 	{
-		P_DoAllPlayersExit(0, (grandprixinfo.gp == true));
+		P_DoAllPlayersExit(0, true);
 	}
 	else
 	{
@@ -2163,6 +2184,15 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		case MT_BATTLEUFO:
 			Obj_BattleUFODeath(target);
 			break;
+		case MT_BLENDEYE_MAIN:
+			VS_BlendEye_Death(target);
+			break;
+		case MT_BLENDEYE_GLASS:
+			VS_BlendEye_Glass_Death(target);
+			break;
+		case MT_BLENDEYE_PUYO:
+			VS_PuyoDeath(target);
+			break;
 		default:
 			break;
 	}
@@ -2206,7 +2236,6 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			P_InstaThrust(target, R_PointToAngle2(inflictor->x, inflictor->y, target->x, target->y)+ANGLE_90, 16<<FRACBITS);
 	}
 
-	// Final state setting - do something instead of P_SetMobjState;
 	// Final state setting - do something instead of P_SetMobjState;
 	if (target->type == MT_SPIKE && target->info->deathstate != S_NULL)
 	{
@@ -2348,6 +2377,27 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			target->momz *= -1;
 		if (!sprflip)
 			target->frame |= FF_VERTICALFLIP;
+	}
+	else if (target->type == MT_BLENDEYE_GENERATOR && !P_MobjWasRemoved(inflictor))
+	{
+		mobj_t *refobj = (inflictor->type == MT_INSTAWHIP) ? source : inflictor;
+		angle_t impactangle = R_PointToAngle2(target->x, target->y, refobj->x - refobj->momx, refobj->y - refobj->momy) - (target->angle + ANGLE_90);
+
+		if (P_MobjWasRemoved(target->tracer) == false)
+		{
+			target->tracer->flags2 &= ~MF2_FRET;
+			target->tracer->flags |= MF_SHOOTABLE;
+			P_DamageMobj(target->tracer, inflictor, source, 1, DMG_NORMAL);
+			target->tracer->flags &= ~MF_SHOOTABLE;
+		}
+
+		P_SetMobjState(
+			target,
+			((impactangle < ANGLE_180)
+				? target->info->deathstate
+				: target->info->xdeathstate
+			)
+		);
 	}
 	else if (target->player)
 	{
@@ -3089,11 +3139,53 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		{
 			return Obj_SpecialUFODamage(target, inflictor, source, damagetype);
 		}
+		else if (target->type == MT_BLENDEYE_MAIN)
+		{
+			VS_BlendEye_Damage(target, inflictor, source, damage);
+		}
 
 		if (damagetype & DMG_STEAL)
 		{
 			// Not a player, steal damage is intended to not do anything
 			return false;
+		}
+
+		if ((target->flags & MF_BOSS) == MF_BOSS)
+		{
+			targetdamaging_t targetdamaging = UFOD_GENERIC;
+			if (P_MobjWasRemoved(inflictor) == true)
+				;
+			else switch (inflictor->type)
+			{
+				case MT_GACHABOM:
+					targetdamaging = UFOD_GACHABOM;
+					break;
+				case MT_ORBINAUT:
+				case MT_ORBINAUT_SHIELD:
+					targetdamaging = UFOD_ORBINAUT;
+					break;
+				case MT_BANANA:
+					targetdamaging = UFOD_BANANA;
+					break;
+				case MT_INSTAWHIP:
+					inflictor->extravalue2 = 1; // Disable whip collision
+					targetdamaging = UFOD_WHIP;
+					break;
+				case MT_PLAYER:
+					targetdamaging = UFOD_BOOST;
+					break;
+				case MT_JAWZ:
+				case MT_JAWZ_SHIELD:
+					targetdamaging = UFOD_JAWZ;
+					break;
+				case MT_SPB:
+					targetdamaging = UFOD_SPB;
+					break;
+				default:
+					break;
+			}
+
+			P_TrackRoundConditionTargetDamage(targetdamaging);
 		}
 	}
 
