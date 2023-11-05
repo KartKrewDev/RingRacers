@@ -10792,9 +10792,10 @@ static void K_AirFailsafe(player_t *player)
 
 	UINT8 buttons = K_GetKartButtons(player);
 
-	if (((buttons & BT_ACCELERATE) && !(buttons & BT_BRAKE)) || K_GetForwardMove(player) != 0)
+	// Accel inputs queue air-failsafe for when they're released,
+	// as long as they're not part of a fastfall attempt.
+	if ((buttons & (BT_ACCELERATE|BT_BRAKE)) == BT_ACCELERATE || K_GetForwardMove(player) != 0)
 	{
-		// Queue up later
 		player->pflags |= PF_AIRFAILSAFE;
 		return;
 	}
