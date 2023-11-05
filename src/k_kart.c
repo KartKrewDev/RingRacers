@@ -9415,9 +9415,9 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 		return 0;
 	}
 
-	if (player->trickpanel != 0 && player->trickpanel < 4)
+	if (player->trickpanel == 1 || player->trickpanel == 5)
 	{
-		// No turning during trick panel unless you did the upwards trick (4)
+		// Forward trick or rising from trickpanel
 		return 0;
 	}
 
@@ -9512,6 +9512,12 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 
 	// Weight has a small effect on turning
 	turnfixed = FixedMul(turnfixed, weightadjust);
+
+	// Side trick
+	if (player->trickpanel == 2 || player->trickpanel == 3)
+	{
+		turnfixed /= 2;
+	}
 
 	return (turnfixed / FRACUNIT);
 }
@@ -12025,7 +12031,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						}
 
 						P_InstaThrust(player->mo, player->mo->angle, max(basespeed, speed*3));
-						player->trickpanel = 2;
+						player->trickpanel = 5;
 					}
 					else if (cmd->throwdir < 0)
 					{
