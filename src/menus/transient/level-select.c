@@ -435,12 +435,17 @@ boolean M_LevelListFromGametype(INT16 gt)
 
 	// Okay, just a list of maps then.
 
-	boolean invalidatedcursor = (
-		levellist.levelsearch.cup != NULL
-		|| levellist.levelsearch.tutorial != (gt == GT_TUTORIAL)
-	);
+	boolean invalidatedcursor = false;
+
+	if (gt != -1)
+	{
+		invalidatedcursor = (
+			levellist.levelsearch.cup != NULL
+			|| levellist.levelsearch.tutorial != (gt == GT_TUTORIAL)
+		);
+		levellist.levelsearch.tutorial = (gt == GT_TUTORIAL);
+	}
 	levellist.levelsearch.cup = NULL;
-	levellist.levelsearch.tutorial = (gt == GT_TUTORIAL);
 
 	UINT16 test = M_GetFirstLevelInList(&temp, &levellist.levelsearch);
 
