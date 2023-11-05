@@ -372,6 +372,16 @@ class TiccmdBuilder
 		}
 
 		kart_analog_input();
+
+		// Digital users can input diagonal-back for shallow turns.
+		// 
+		// There's probably some principled way of doing this in the gamepad handler itself,
+		// by only applying this filtering to inputs sourced from an axis. This is a little
+		// ugly with the current abstractions, though, and there's a fortunate trick here:
+		// if you can input full strength turns on both axes, either you're using a fucking
+		// square gate, or you're not on an analog device.
+		if (joystickvector.yaxis > 1020 && abs(cmd->turning) == KART_FULLTURN) // My keyboard hits 1024 but my keyboard only hits 1023, video games
+			cmd->turning /= 2;
 	}
 
 	void common_button_input()
