@@ -3990,7 +3990,9 @@ void SV_StopServer(void)
 		Y_EndIntermission();
 	if (gamestate == GS_VOTING)
 		Y_EndVote();
-	gamestate = wipegamestate = GS_NULL;
+
+	G_SetGamestate(GS_NULL);
+	wipegamestate = GS_NULL;
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 		((UINT16*)localtextcmd[i])[0] = 0;
