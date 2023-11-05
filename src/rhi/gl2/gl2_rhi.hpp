@@ -7,8 +7,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_RHI_GLES2_RHI_HPP__
-#define __SRB2_RHI_GLES2_RHI_HPP__
+#ifndef __SRB2_RHI_GL2_RHI_HPP__
+#define __SRB2_RHI_GL2_RHI_HPP__
 
 #include <functional>
 #include <memory>
@@ -23,28 +23,28 @@
 namespace srb2::rhi
 {
 
-struct GlCoreFramebufferKey
+struct Gl2FramebufferKey
 {
 	Handle<Texture> color;
 	std::optional<Handle<Renderbuffer>> depth_stencil;
 
-	bool operator==(const GlCoreFramebufferKey& rhs) const noexcept
+	bool operator==(const Gl2FramebufferKey& rhs) const noexcept
 	{
 		return color == rhs.color && depth_stencil == rhs.depth_stencil;
 	}
 
-	bool operator!=(const GlCoreFramebufferKey& rhs) const noexcept { return !(*this == rhs); }
+	bool operator!=(const Gl2FramebufferKey& rhs) const noexcept { return !(*this == rhs); }
 };
 
 } // namespace srb2::rhi
 
-// To make sure the compiler selects the struct specialization of std::hash for GlCoreFramebufferKey,
+// To make sure the compiler selects the struct specialization of std::hash for Gl2FramebufferKey,
 // we need to split the namespace declarations _before_ the instantiation of std::unordered_map.
 
 template <>
-struct std::hash<srb2::rhi::GlCoreFramebufferKey>
+struct std::hash<srb2::rhi::Gl2FramebufferKey>
 {
-	std::size_t operator()(const srb2::rhi::GlCoreFramebufferKey& key) const
+	std::size_t operator()(const srb2::rhi::Gl2FramebufferKey& key) const
 	{
 		std::size_t color_hash = std::hash<srb2::rhi::Handle<srb2::rhi::Texture>>()(key.color);
 		std::size_t depth_stencil_hash = 0;
@@ -64,51 +64,51 @@ namespace srb2::rhi
 typedef void (*GlProc)(void);
 typedef GlProc (*GlLoadFunc)(const char* name);
 
-/// @brief Platform-specific implementation details for the GLES2 backend.
-struct GlCorePlatform
+/// @brief Platform-specific implementation details for the GL2 backend.
+struct Gl2Platform
 {
-	virtual ~GlCorePlatform();
+	virtual ~Gl2Platform();
 
 	virtual void present() = 0;
 	virtual std::tuple<std::vector<std::string>, std::vector<std::string>> find_shader_sources(PipelineProgram program) = 0;
 	virtual Rect get_default_framebuffer_dimensions() = 0;
 };
 
-struct GlCoreTexture : public rhi::Texture
+struct Gl2Texture : public rhi::Texture
 {
 	uint32_t texture;
 	rhi::TextureDesc desc;
 };
 
-struct GlCoreBuffer : public rhi::Buffer
+struct Gl2Buffer : public rhi::Buffer
 {
 	uint32_t buffer;
 	rhi::BufferDesc desc;
 };
 
-struct GlCoreRenderPass : public rhi::RenderPass
+struct Gl2RenderPass : public rhi::RenderPass
 {
 	rhi::RenderPassDesc desc;
 };
 
-struct GlCoreRenderbuffer : public rhi::Renderbuffer
+struct Gl2Renderbuffer : public rhi::Renderbuffer
 {
 	uint32_t renderbuffer;
 	rhi::RenderbufferDesc desc;
 };
 
-struct GlCoreUniformSet : public rhi::UniformSet
+struct Gl2UniformSet : public rhi::UniformSet
 {
 	std::vector<rhi::UniformVariant> uniforms;
 };
 
-struct GlCoreBindingSet : public rhi::BindingSet
+struct Gl2BindingSet : public rhi::BindingSet
 {
-	uint32_t vao;
+	std::vector<rhi::VertexAttributeBufferBinding> vertex_buffer_bindings;
 	std::unordered_map<rhi::SamplerName, uint32_t> textures {4};
 };
 
-struct GlCorePipeline : public rhi::Pipeline
+struct Gl2Pipeline : public rhi::Pipeline
 {
 	uint32_t vertex_shader = 0;
 	uint32_t fragment_shader = 0;
@@ -119,33 +119,33 @@ struct GlCorePipeline : public rhi::Pipeline
 	rhi::PipelineDesc desc;
 };
 
-struct GlCoreGraphicsContext : public rhi::GraphicsContext
+struct Gl2GraphicsContext : public rhi::GraphicsContext
 {
 };
 
-struct GlCoreActiveUniform
+struct Gl2ActiveUniform
 {
 	uint32_t type;
 	uint32_t location;
 };
 
-class GlCoreRhi final : public Rhi
+class Gl2Rhi final : public Rhi
 {
-	std::unique_ptr<GlCorePlatform> platform_;
+	std::unique_ptr<Gl2Platform> platform_;
 
 	std::unique_ptr<GladGLContext> gl_;
 
-	Slab<GlCoreRenderPass> render_pass_slab_;
-	Slab<GlCoreTexture> texture_slab_;
-	Slab<GlCoreBuffer> buffer_slab_;
-	Slab<GlCoreRenderbuffer> renderbuffer_slab_;
-	Slab<GlCorePipeline> pipeline_slab_;
-	Slab<GlCoreUniformSet> uniform_set_slab_;
-	Slab<GlCoreBindingSet> binding_set_slab_;
+	Slab<Gl2RenderPass> render_pass_slab_;
+	Slab<Gl2Texture> texture_slab_;
+	Slab<Gl2Buffer> buffer_slab_;
+	Slab<Gl2Renderbuffer> renderbuffer_slab_;
+	Slab<Gl2Pipeline> pipeline_slab_;
+	Slab<Gl2UniformSet> uniform_set_slab_;
+	Slab<Gl2BindingSet> binding_set_slab_;
 
 	Handle<Buffer> current_index_buffer_;
 
-	std::unordered_map<GlCoreFramebufferKey, uint32_t> framebuffers_ {16};
+	std::unordered_map<Gl2FramebufferKey, uint32_t> framebuffers_ {16};
 
 	struct DefaultRenderPassState
 	{
@@ -166,8 +166,8 @@ class GlCoreRhi final : public Rhi
 	uint8_t stencil_back_write_mask_ = 0xFF;
 
 public:
-	GlCoreRhi(std::unique_ptr<GlCorePlatform>&& platform, GlLoadFunc load_func);
-	virtual ~GlCoreRhi();
+	Gl2Rhi(std::unique_ptr<Gl2Platform>&& platform, GlLoadFunc load_func);
+	virtual ~Gl2Rhi();
 
 	virtual Handle<RenderPass> create_render_pass(const RenderPassDesc& desc) override;
 	virtual void destroy_render_pass(Handle<RenderPass> handle) override;
@@ -238,4 +238,4 @@ public:
 
 } // namespace srb2::rhi
 
-#endif // __SRB2_RHI_GLES2_RHI_HPP__
+#endif // __SRB2_RHI_GL2_RHI_HPP__

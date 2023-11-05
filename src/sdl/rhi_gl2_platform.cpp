@@ -7,7 +7,7 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#include "rhi_gl3_core_platform.hpp"
+#include "rhi_gl2_platform.hpp"
 
 #include <array>
 #include <sstream>
@@ -22,9 +22,9 @@
 using namespace srb2;
 using namespace srb2::rhi;
 
-SdlGlCorePlatform::~SdlGlCorePlatform() = default;
+SdlGl2Platform::~SdlGl2Platform() = default;
 
-void SdlGlCorePlatform::present()
+void SdlGl2Platform::present()
 {
 	SRB2_ASSERT(window != nullptr);
 	SRB2_ASSERT(SDL_GetWindowID(window) != 0);
@@ -95,7 +95,7 @@ static std::vector<std::string> get_sources_from_glsllist_lump(const char* lumpn
 }
 
 std::tuple<std::vector<std::string>, std::vector<std::string>>
-SdlGlCorePlatform::find_shader_sources(rhi::PipelineProgram program)
+SdlGl2Platform::find_shader_sources(rhi::PipelineProgram program)
 {
 	std::array<std::string, 2> glsllist_names = glsllist_lump_names(program);
 
@@ -105,7 +105,7 @@ SdlGlCorePlatform::find_shader_sources(rhi::PipelineProgram program)
 	return std::make_tuple(std::move(vertex_sources), std::move(fragment_sources));
 }
 
-rhi::Rect SdlGlCorePlatform::get_default_framebuffer_dimensions()
+rhi::Rect SdlGl2Platform::get_default_framebuffer_dimensions()
 {
 	SRB2_ASSERT(window != nullptr);
 	int w;

@@ -890,7 +890,7 @@ static boolean UDP_Socket(void)
 	s = 0;
 
 	// setup broadcast adress to BROADCASTADDR entry
-	gaie = I_getaddrinfo("255.255.255.255", "0", &hints, &ai);
+	gaie = I_getaddrinfo("255.255.255.255", DEFAULTPORT, &hints, &ai);
 	if (gaie == 0)
 	{
 		runp = ai;
@@ -905,7 +905,7 @@ static boolean UDP_Socket(void)
 	else
 	{
 		broadcastaddress[s].any.sa_family = AF_INET;
-		broadcastaddress[s].ip4.sin_port = htons(0);
+		broadcastaddress[s].ip4.sin_port = htons(atoi(DEFAULTPORT));
 		broadcastaddress[s].ip4.sin_addr.s_addr = htonl(INADDR_BROADCAST);
 		s++;
 	}
@@ -913,7 +913,7 @@ static boolean UDP_Socket(void)
 	if (b_ipv6)
 	{
 		hints.ai_family = AF_INET6;
-		gaie = I_getaddrinfo("ff02::1", "0", &hints, &ai);
+		gaie = I_getaddrinfo("ff02::1", DEFAULTPORT, &hints, &ai);
 		if (gaie == 0)
 		{
 			runp = ai;
