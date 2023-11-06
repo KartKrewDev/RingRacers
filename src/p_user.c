@@ -1163,6 +1163,7 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->old_angle = (mobj->player ? mobj->player->old_drawangle2 : mobj->old_angle2);
 	ghost->old_pitch = mobj->old_pitch2;
 	ghost->old_roll = mobj->old_roll2;
+	ghost->old_scale = mobj->old_scale2;
 
 	K_ReduceVFX(ghost, mobj->player);
 
