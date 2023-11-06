@@ -12097,8 +12097,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			fixed_t basespeed = FixedMul(invertscale, K_GetKartSpeed(player, false, false));	// at WORSE, keep your normal speed when tricking.
 			fixed_t speed = FixedMul(invertscale, FixedMul(speedmult, P_AproxDistance(player->mo->momx, player->mo->momy)));
 
-			K_trickPanelTimingVisual(player, momz);
-
 			if (P_MobjWasRemoved(player->trickIndicator) == false)
 			{
 				player->trickIndicator->destscale = FixedMul(speedmult + FRACUNIT, mapobjectscale);
@@ -12148,7 +12146,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				player->pflags &= ~PF_TUMBLESOUND;
 				player->tumbleHeight = 30;	// Base tumble bounce height
 				player->trickpanel = 0;
-				K_trickPanelTimingVisual(player, momz);	// fail trick visual
 				P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 				if (player->pflags & (PF_ITEMOUT|PF_EGGMANOUT))
 				{
@@ -12236,8 +12233,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					player->mo->hitlag = TRICKLAG;
 					player->mo->eflags &= ~MFE_DAMAGEHITLAG;
 
-					K_trickPanelTimingVisual(player, momz);
-
 					if (abs(momz) < FRACUNIT*99)	// Let's use that as baseline for PERFECT trick.
 					{
 						player->karthud[khud_trickcool] = TICRATE;
@@ -12260,6 +12255,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					}
 				}
 			}
+
+			K_trickPanelTimingVisual(player, momz);
 		}
 		else if (player->trickpanel == 4 && P_IsObjectOnGround(player->mo))	// Upwards trick landed!
 		{
