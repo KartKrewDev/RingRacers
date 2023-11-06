@@ -12269,6 +12269,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					{
 						K_TrickCatholocismBlast(player->trickIndicator, player->trickIndicator->scale*10, 0);
 
+						player->trickIndicator->renderflags &= ~RF_TRANSMASK;
+
 						P_InstaScale(player->trickIndicator, 3*mapobjectscale/2);
 						player->trickIndicator->old_scale = player->trickIndicator->scale;
 
