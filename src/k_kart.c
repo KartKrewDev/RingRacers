@@ -6371,7 +6371,7 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 				trickIndicator->rollangle = 0;
 
 				static const skincolornum_t trick_colors[] = {
-					SKINCOLOR_GREY,        // trickPanel == 1
+					SKINCOLOR_WHITE,       // trickPanel == 1 -- was SKINCOLOR_GREY
 					SKINCOLOR_TAN,
 					SKINCOLOR_YELLOW,      // trickPanel == 2
 					SKINCOLOR_TANGERINE,
