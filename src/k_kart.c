@@ -6253,6 +6253,9 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 
 	if (mo->player)
 	{
+		mo->player->trickpanel = 1;
+		mo->player->pflags |= PF_TRICKDELAY;
+
 		if (mo->player->sneakertimer)
 		{
 			thrust = FixedMul(thrust, 5*FRACUNIT/4);

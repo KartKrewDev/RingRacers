@@ -199,8 +199,6 @@ static void RegularDashRingLaunch(player_t *player, mobj_t *ring)
 static void RainbowDashRingLaunch(player_t *player, mobj_t *ring)
 {
 	player->mo->eflags &= ~MFE_SPRUNG;
-	player->trickpanel = 1;
-	player->pflags |= PF_TRICKDELAY;
 	K_DoPogoSpring(player->mo, 0, 0);
 	DashRingLaunch(player, ring);
 }

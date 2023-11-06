@@ -512,12 +512,6 @@ static void P_DoFanAndGasJet(mobj_t *spring, mobj_t *object)
 
 			if (spring->thing_args[1])
 			{
-				if (object->player)
-				{
-					object->player->trickpanel = 1;
-					object->player->pflags |= PF_TRICKDELAY;
-				}
-
 				K_DoPogoSpring(object, 32<<FRACBITS, 0);
 			}
 			else

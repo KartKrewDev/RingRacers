@@ -485,8 +485,6 @@ void K_ProcessTerrainEffect(mobj_t *mo)
 		fixed_t speed = FixedHypot(mo->momx, mo->momy);
 		fixed_t upwards = 16 * terrain->trickPanel;
 
-		player->trickpanel = 1;
-		player->pflags |= PF_TRICKDELAY;
 		K_DoPogoSpring(mo, upwards, 1);
 
 		// Reduce speed
