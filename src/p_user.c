@@ -1109,6 +1109,7 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	P_SetTarget(&ghost->target, mobj);
 
 	P_SetScale(ghost, mobj->scale);
+	ghost->scalespeed = mobj->scalespeed;
 	ghost->destscale = mobj->scale;
 
 	if (mobj->eflags & MFE_VERTICALFLIP)
