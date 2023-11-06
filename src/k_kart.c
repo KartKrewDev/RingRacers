@@ -4123,17 +4123,21 @@ void K_InitTrickIndicator(player_t *player)
 		P_RemoveMobj(player->trickIndicator);
 	}
 
+	UINT32 invis = (RF_DONTDRAW & ~K_GetPlayerDontDrawFlag(player));
+
 	new = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_TRICKINDICATOR);
 
 	P_SetMobjState(new, S_INVISIBLE);
 	P_SetTarget(&player->trickIndicator, new);
 	P_SetTarget(&new->target, player->mo);
+	new->renderflags |= invis;
 
 	mobj_t *secondlayer = P_SpawnMobjFromMobj(new, 0, 0, 0, MT_OVERLAY);
 
 	P_SetMobjState(secondlayer, S_INVISIBLE);
 	P_SetTarget(&new->tracer, secondlayer);
 	P_SetTarget(&secondlayer->target, new);
+	secondlayer->renderflags |= invis;
 
 	secondlayer->dispoffset = 1;
 	secondlayer->flags |= MF_DONTENCOREMAP;
