@@ -8420,6 +8420,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			destx += FixedMul(mobj->radius*2, FINECOSINE((mobj->angle+ANGLE_90) >> ANGLETOFINESHIFT));
 			desty += FixedMul(mobj->radius*2, FINESINE((mobj->angle+ANGLE_90) >> ANGLETOFINESHIFT));
+
+			mobj->eflags = (mobj->eflags & ~MFE_VERTICALFLIP)|(mobj->target->eflags & MFE_VERTICALFLIP);
+			mobj->flags2 = (mobj->flags2 & ~MF2_OBJECTFLIP)|(mobj->target->flags2 & MF2_OBJECTFLIP);
+
+			if (mobj->eflags & MFE_VERTICALFLIP)
+				zoff += mobj->target->height - mobj->height;
 		}
 		else if (mobj->state == &states[S_MAGICIANBOX_TOP]) // top
 		{
