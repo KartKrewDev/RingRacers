@@ -4322,6 +4322,20 @@ void K_UpdateSliptideZipIndicator(player_t *player)
 	}
 }
 
+static mobj_t *K_TrickCatholocismBlast(mobj_t *trickIndicator, fixed_t destscale, angle_t rollangle)
+{
+	// It's my last minute visual effect and I get to choose the ridiculous function name - toast 061123
+
+	mobj_t *catholocismBlast = P_SpawnGhostMobj(trickIndicator); // HOLY?
+	catholocismBlast->height = 1;
+	catholocismBlast->destscale = destscale;
+	catholocismBlast->fuse = 12;
+	catholocismBlast->rollangle = rollangle;
+	catholocismBlast->dispoffset = -1;
+
+	return catholocismBlast;
+}
+
 void K_UpdateTrickIndicator(player_t *player)
 {
 	mobj_t *mobj = NULL;
@@ -4352,7 +4366,7 @@ void K_UpdateTrickIndicator(player_t *player)
 	if (test >= S_TRICKINDICATOR_UNDERLAY_ARROW)
 		return;
 
-	const fixed_t onidistance = 200*mapobjectscale;
+	const fixed_t onidistance = 150*mapobjectscale;
 
 	P_MoveOrigin(
 		mobj,
@@ -4364,6 +4378,8 @@ void K_UpdateTrickIndicator(player_t *player)
 	if (player->trickpanel == 0
 		&& test != S_INVISIBLE)
 	{
+		K_TrickCatholocismBlast(mobj, 1, ANGLE_22h);
+
 		P_SetMobjState(mobj, S_INVISIBLE);
 		P_SetMobjState(mobj->tracer, S_INVISIBLE);
 	}
@@ -12099,7 +12115,18 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 			if (P_MobjWasRemoved(player->trickIndicator) == false)
 			{
-				player->trickIndicator->destscale = FixedMul(speedmult + FRACUNIT, mapobjectscale);
+				const fixed_t indicatormult = 3*(mapobjectscale/5);
+				player->trickIndicator->destscale = FixedMul(speedmult + FRACUNIT, indicatormult);
+
+				fixed_t trans = ((player->trickIndicator->scale * 9)/indicatormult) - 9;
+				if (trans < 10) // it's fine if it stays barely visible imo
+				{
+					UINT32 renderflags = player->trickIndicator->renderflags & ~RF_TRANSMASK;
+					if (trans > 0)
+						renderflags |= (trans << RF_TRANSSHIFT);
+
+					player->trickIndicator->renderflags = renderflags;
+				}
 			}
 
 			// streaks:
@@ -12240,16 +12267,17 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 					if (P_MobjWasRemoved(player->trickIndicator) == false)
 					{
-						mobj_t *catholocismBlast = P_SpawnGhostMobj(player->trickIndicator);
-						catholocismBlast->height = 1;
-						catholocismBlast->destscale *= 2;
-						catholocismBlast->fuse = 12;
-						catholocismBlast->rollangle = 0;
-						catholocismBlast->dispoffset = -1;
+						K_TrickCatholocismBlast(player->trickIndicator, player->trickIndicator->scale*10, 0);
+
+						P_InstaScale(player->trickIndicator, 3*mapobjectscale/2);
+						player->trickIndicator->old_scale = player->trickIndicator->scale;
 
 						P_SetMobjState(player->trickIndicator, S_TRICKINDICATOR_UNDERLAY_ARROW);
 						if (P_MobjWasRemoved(player->trickIndicator->tracer) == false)
 						{
+							P_InstaScale(player->trickIndicator->tracer, player->trickIndicator->scale);
+							player->trickIndicator->tracer->old_scale = player->trickIndicator->tracer->scale;
+
 							P_SetMobjState(player->trickIndicator->tracer, S_TRICKINDICATOR_OVERLAY_ARROW);
 						}
 					}
