@@ -4125,11 +4125,13 @@ void K_InitTrickIndicator(player_t *player)
 
 	new = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_TRICKINDICATOR);
 
+	P_SetMobjState(new, S_INVISIBLE);
 	P_SetTarget(&player->trickIndicator, new);
 	P_SetTarget(&new->target, player->mo);
 
 	mobj_t *secondlayer = P_SpawnMobjFromMobj(new, 0, 0, 0, MT_OVERLAY);
 
+	P_SetMobjState(secondlayer, S_INVISIBLE);
 	P_SetTarget(&new->tracer, secondlayer);
 	P_SetTarget(&secondlayer->target, new);
 
@@ -4345,6 +4347,11 @@ void K_UpdateTrickIndicator(player_t *player)
 
 	mobj = player->trickIndicator;
 
+	statenum_t test = (mobj->state-states);
+
+	if (test >= S_TRICKINDICATOR_UNDERLAY_ARROW)
+		return;
+
 	const fixed_t onidistance = 200*mapobjectscale;
 
 	P_MoveOrigin(
@@ -4354,10 +4361,9 @@ void K_UpdateTrickIndicator(player_t *player)
 		player->mo->z + (player->mo->height / 2));
 	mobj->angle = player->mo->angle + ANGLE_90;
 
-	if (player->trickpanel == 0)
+	if (player->trickpanel == 0
+		&& test != S_INVISIBLE)
 	{
-		P_SetScale(mobj, mobj->destscale = player->mo->scale);
-
 		P_SetMobjState(mobj, S_INVISIBLE);
 		P_SetMobjState(mobj->tracer, S_INVISIBLE);
 	}
@@ -6322,15 +6328,13 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 
 	mo->eflags |= MFE_SPRUNG;
 
-	if (vertispeed == 0)
+	if (vertispeed <= 0)
 	{
-		thrust = P_AproxDistance(mo->momx, mo->momy) * P_MobjFlip(mo);
-		thrust = FixedMul(thrust, FINESINE(ANGLE_22h >> ANGLETOFINESHIFT));
+		vertispeed = P_AproxDistance(mo->momx, mo->momy);
+		vertispeed = FixedMul(vertispeed, FINESINE(ANGLE_22h >> ANGLETOFINESHIFT));
 	}
-	else
-	{
-		thrust = vertispeed * P_MobjFlip(mo);
-	}
+
+	thrust = vertispeed * P_MobjFlip(mo);
 
 	if (mo->player)
 	{
@@ -6339,11 +6343,46 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 
 		if (P_MobjWasRemoved(mo->player->trickIndicator) == false)
 		{
-			mo->player->trickIndicator->rollangle = 0;
-			P_SetMobjState(mo->player->trickIndicator, S_TRICKINDICATOR_UNDERLAY);
-			if (P_MobjWasRemoved(mo->player->trickIndicator->tracer) == false)
+			mobj_t *trickIndicator = mo->player->trickIndicator;
+
+			P_SetScale(trickIndicator,
+				trickIndicator->destscale
+				= trickIndicator->old_scale
+				= trickIndicator->old_scale2
+					= mo->scale/4);
+			trickIndicator->rollangle = 0;
+
+			static const skincolornum_t trick_colors[] = {
+				SKINCOLOR_GREY,        // trickPanel == 1
+				SKINCOLOR_TAN,
+				SKINCOLOR_YELLOW,      // trickPanel == 2
+				SKINCOLOR_TANGERINE,
+				SKINCOLOR_KETCHUP,     // trickPanel == 3
+				SKINCOLOR_MOONSET,
+				SKINCOLOR_ULTRAMARINE, // trickPanel == 4
+			};
+			static const UINT8 numColors = sizeof(trick_colors) / sizeof(skincolornum_t);
+
+			const fixed_t step = 8*FRACUNIT;
+			fixed_t trickcol = ((vertispeed - (step/2)) / step) - 1;
+			if (trickcol < 0)
+				trickcol = 0;
+			trickIndicator->color = trick_colors[min(trickcol, numColors - 1)];
+
+			P_SetMobjState(trickIndicator, S_TRICKINDICATOR_UNDERLAY);
+
+			if (P_MobjWasRemoved(trickIndicator->tracer) == false)
 			{
-				P_SetMobjState(mo->player->trickIndicator->tracer, S_TRICKINDICATOR_OVERLAY);
+				P_SetScale(trickIndicator->tracer,
+					trickIndicator->tracer->destscale
+					= trickIndicator->tracer->old_scale
+					= trickIndicator->tracer->old_scale2
+						= trickIndicator->destscale);
+				trickIndicator->tracer->rollangle = 0;
+
+				trickIndicator->tracer->color = mo->player->trickIndicator->color;
+
+				P_SetMobjState(trickIndicator->tracer, S_TRICKINDICATOR_OVERLAY);
 			}
 		}
 
@@ -12203,6 +12242,13 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 					if (P_MobjWasRemoved(player->trickIndicator) == false)
 					{
+						mobj_t *catholocismBlast = P_SpawnGhostMobj(player->trickIndicator);
+						catholocismBlast->height = 1;
+						catholocismBlast->destscale *= 2;
+						catholocismBlast->fuse = 12;
+						catholocismBlast->rollangle = 0;
+						catholocismBlast->dispoffset = -1;
+
 						P_SetMobjState(player->trickIndicator, S_TRICKINDICATOR_UNDERLAY_ARROW);
 						if (P_MobjWasRemoved(player->trickIndicator->tracer) == false)
 						{
