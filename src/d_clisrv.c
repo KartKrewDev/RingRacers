@@ -2540,7 +2540,7 @@ void CL_ClearPlayer(INT32 playernum)
 		}
 
 #define PlayerPointerRemove(field) \
-		if (field) \
+		if (P_MobjWasRemoved(field) == false) \
 		{ \
 			P_RemoveMobj(field); \
 			P_SetTarget(&field, NULL); \

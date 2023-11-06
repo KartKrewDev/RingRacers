@@ -2234,7 +2234,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		K_RemoveFollower(&players[player]);
 
 #define PlayerPointerRemove(field) \
-		if (field) \
+		if (P_MobjWasRemoved(field) == false) \
 		{ \
 			P_RemoveMobj(field); \
 			P_SetTarget(&field, NULL); \

@@ -2550,10 +2550,17 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 
 	P_SetPlayerMobjState(player->mo, player->mo->info->deathstate);
 
-	if (player->sliptideZipIndicator && !P_MobjWasRemoved(player->sliptideZipIndicator))
-		P_RemoveMobj(player->sliptideZipIndicator);
-	if (player->stumbleIndicator && !P_MobjWasRemoved(player->stumbleIndicator))
-		P_RemoveMobj(player->stumbleIndicator);
+#define PlayerPointerRemove(field) \
+	if (P_MobjWasRemoved(field) == false) \
+	{ \
+		P_RemoveMobj(field); \
+		P_SetTarget(&field, NULL); \
+	}
+
+	PlayerPointerRemove(player->stumbleIndicator);
+	PlayerPointerRemove(player->sliptideZipIndicator);
+
+#undef PlayerPointerRemove
 
 	if (type == DMG_TIMEOVER)
 	{

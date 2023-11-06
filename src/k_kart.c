@@ -4063,7 +4063,7 @@ void K_InitStumbleIndicator(player_t *player)
 		return;
 	}
 
-	if (player->stumbleIndicator != NULL && P_MobjWasRemoved(player->stumbleIndicator) == false)
+	if (P_MobjWasRemoved(player->stumbleIndicator) == false)
 	{
 		P_RemoveMobj(player->stumbleIndicator);
 	}
@@ -4088,7 +4088,7 @@ void K_InitSliptideZipIndicator(player_t *player)
 		return;
 	}
 
-	if (player->stumbleIndicator != NULL && P_MobjWasRemoved(player->sliptideZipIndicator) == false)
+	if (P_MobjWasRemoved(player->sliptideZipIndicator) == false)
 	{
 		P_RemoveMobj(player->sliptideZipIndicator);
 	}
