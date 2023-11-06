@@ -66,7 +66,7 @@ void Obj_RainbowDashRingSpawn(mobj_t *mobj)
 
 void Obj_DashRingSetup(mobj_t *mobj, mapthing_t *mthing)
 {
-	static const UINT8 numColors = sizeof(rainbow_colors) / sizeof(skincolornum_t);
+	static const UINT8 numColors = sizeof(ring_colors) / sizeof(skincolornum_t);
 	const UINT8 additionalThrust = mthing->thing_args[1];
 	statenum_t ringState, overlayState;
 
