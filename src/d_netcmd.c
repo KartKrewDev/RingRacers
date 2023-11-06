@@ -2422,13 +2422,15 @@ static void Command_Map_f(void)
 			// Let's just guess so we don't have to specify the gametype EVERY time...
 			newgametype = G_GuessGametypeByTOL(mapheaderinfo[newmapnum-1]->typeoflevel);
 
-			if (newgametype == -1)
+			if (!option_force && newgametype == -1)
 			{
 				CONS_Alert(CONS_WARNING, M_GetText("%s (%s) doesn't support any known gametype!\n"), realmapname, G_BuildMapName(newmapnum));
 				Z_Free(realmapname);
 				Z_Free(mapname);
 				return;
 			}
+
+			newgametype = GT_RACE; // sensible default
 		}
 	}
 
