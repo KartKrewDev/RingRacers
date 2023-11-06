@@ -2551,6 +2551,7 @@ void CL_ClearPlayer(INT32 playernum)
 		PlayerPointerRemove(players[playernum].followmobj);
 		PlayerPointerRemove(players[playernum].stumbleIndicator);
 		PlayerPointerRemove(players[playernum].sliptideZipIndicator);
+		PlayerPointerRemove(players[playernum].trickIndicator);
 
 #undef PlayerPointerRemove
 

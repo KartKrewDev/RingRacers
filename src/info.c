@@ -631,6 +631,12 @@ char sprnames[NUMSPRITES + 1][5] =
 	"TWBT", // Tripwire BLASTER
 	"SMLD", // Smooth landing
 
+	// Trick Indicator
+	"TRK1",
+	"TRK2",
+	"TRK3",
+	"TRK4",
+
 	"TIRG", // Tire grabbers
 	"RSHT", // DEZ Ring Shooter
 
@@ -4661,6 +4667,12 @@ state_t states[NUMSTATES] =
 	{SPR_TWBT, FF_FULLBRIGHT|FF_ADD|FF_ANIMATE|FF_VERTICALFLIP|FF_HORIZONTALFLIP, -1, {NULL}, 6, 2, S_NULL}, // S_TRIPWIREBOOST_BLAST_BOTTOM
 
 	{SPR_SMLD, FF_FULLBRIGHT|FF_ADD|FF_ANIMATE, -1, {NULL}, 7, 2, S_NULL}, // S_SMOOTHLANDING
+
+	{SPR_TRK1, FF_FULLBRIGHT|FF_ANIMATE|FF_PAPERSPRITE|FF_ADD, -1, {NULL},  3, 3, S_NULL},      // S_TRICKINDICATOR_OVERLAY,
+	{SPR_TRK2, FF_FULLBRIGHT|FF_ANIMATE|FF_PAPERSPRITE,        -1, {NULL},  3, 3, S_NULL},      // S_TRICKINDICATOR_UNDERLAY,
+	{SPR_TRK3, FF_FULLBRIGHT|FF_ANIMATE|FF_PAPERSPRITE|FF_ADD, 13, {NULL}, 12, 1, S_INVISIBLE}, // S_TRICKINDICATOR_OVERLAY_ARROW,
+	{SPR_NULL, 0, 1, {NULL}, 12, 1, S_TRICKINDICATOR_UNDERLAY_ARROW2}, // S_TRICKINDICATOR_UNDERLAY_ARROW,
+	{SPR_TRK4, FF_FULLBRIGHT|FF_ANIMATE|FF_PAPERSPRITE,        13, {NULL}, 12, 1, S_INVISIBLE}, // S_TRICKINDICATOR_UNDERLAY_ARROW2,
 
 	{SPR_TIRG, FF_ANIMATE, -1, {NULL}, 1, 1, S_NULL}, // S_TIREGRABBER
 	{SPR_RSHT,               FF_PAPERSPRITE|0,         -1,              {NULL}, 0, 0, S_NULL}, // S_RINGSHOOTER_SIDE
@@ -25321,6 +25333,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,               // speed
 		8*FRACUNIT,      // radius
 		16*FRACUNIT,     // height
+		-1,              // display offset
+		100,             // mass
+		0,               // damage
+		sfx_None,        // activesound
+		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_DONTENCOREMAP, // flags
+		S_NULL           // raisestate
+	},
+
+	{           // MT_TRICKINDICATOR
+		-1,              // doomednum
+		S_INVISIBLE,     // spawnstate
+		1000,            // spawnhealth
+		S_NULL,          // seestate
+		sfx_None,        // seesound
+		8,               // reactiontime
+		sfx_None,        // attacksound
+		S_NULL,          // painstate
+		0,               // painchance
+		sfx_None,        // painsound
+		S_NULL,          // meleestate
+		S_NULL,          // missilestate
+		S_NULL,          // deathstate
+		S_NULL,          // xdeathstate
+		sfx_None,        // deathsound
+		0,               // speed
+		128*FRACUNIT,    // radius
+		128*FRACUNIT,    // height
 		-1,              // display offset
 		100,             // mass
 		0,               // damage

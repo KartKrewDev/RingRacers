@@ -893,6 +893,7 @@ struct player_t
 
 	mobj_t *stumbleIndicator;
 	mobj_t *sliptideZipIndicator;
+	mobj_t *trickIndicator;
 	mobj_t *whip;
 	mobj_t *hand;
 	mobj_t *flickyAttacker;

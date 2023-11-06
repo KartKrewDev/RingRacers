@@ -3996,6 +3996,7 @@ void P_PlayerThink(player_t *player)
 		PlayerPointerErase(player->followmobj);
 		PlayerPointerErase(player->stumbleIndicator);
 		PlayerPointerErase(player->sliptideZipIndicator);
+		PlayerPointerErase(player->trickIndicator);
 		PlayerPointerErase(player->whip);
 		PlayerPointerErase(player->hand);
 		PlayerPointerErase(player->ringShooter);

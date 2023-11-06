@@ -65,7 +65,7 @@ savedata_cup_t cupsavedata;
 #define ARCHIVEBLOCK_RNG			0x7FAAB5BD
 
 // Note: This cannot be bigger
-// than an UINT16
+// than an UINT16 (for now)
 typedef enum
 {
 	AWAYVIEW   = 0x0001,
@@ -81,6 +81,7 @@ typedef enum
 	HAND = 0x0400,
 	FLICKYATTACKER = 0x0800,
 	FLICKYCONTROLLER = 0x1000,
+	TRICKINDICATOR = 0x2000,
 } player_saveflags;
 
 static inline void P_ArchivePlayer(savebuffer_t *save)
@@ -313,6 +314,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		if (players[i].sliptideZipIndicator)
 			flags |= SLIPTIDEZIP;
 
+		if (players[i].trickIndicator)
+			flags |= TRICKINDICATOR;
+
 		if (players[i].whip)
 			flags |= WHIP;
 
@@ -350,6 +354,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		if (flags & SLIPTIDEZIP)
 			WRITEUINT32(save->p, players[i].sliptideZipIndicator->mobjnum);
+
+		if (flags & TRICKINDICATOR)
+			WRITEUINT32(save->p, players[i].trickIndicator->mobjnum);
 
 		if (flags & WHIP)
 			WRITEUINT32(save->p, players[i].whip->mobjnum);
@@ -863,6 +870,9 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		if (flags & SLIPTIDEZIP)
 			players[i].sliptideZipIndicator = (mobj_t *)(size_t)READUINT32(save->p);
+
+		if (flags & TRICKINDICATOR)
+			players[i].trickIndicator = (mobj_t *)(size_t)READUINT32(save->p);
 
 		if (flags & WHIP)
 			players[i].whip = (mobj_t *)(size_t)READUINT32(save->p);
@@ -5594,6 +5604,13 @@ static void P_RelinkPointers(void)
 			players[i].sliptideZipIndicator = NULL;
 			if (!P_SetTarget(&players[i].sliptideZipIndicator, P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "sliptideZipIndicator not found on player %d\n", i);
+		}
+		if (players[i].trickIndicator)
+		{
+			temp = (UINT32)(size_t)players[i].trickIndicator;
+			players[i].trickIndicator = NULL;
+			if (!P_SetTarget(&players[i].trickIndicator, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "trickIndicator not found on player %d\n", i);
 		}
 		if (players[i].whip)
 		{

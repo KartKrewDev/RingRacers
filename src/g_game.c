@@ -2244,6 +2244,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		PlayerPointerRemove(players[player].followmobj);
 		PlayerPointerRemove(players[player].stumbleIndicator);
 		PlayerPointerRemove(players[player].sliptideZipIndicator);
+		PlayerPointerRemove(players[player].trickIndicator);
 
 #undef PlayerPointerRemove
 

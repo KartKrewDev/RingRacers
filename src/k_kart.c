@@ -4099,6 +4099,44 @@ void K_InitSliptideZipIndicator(player_t *player)
 	P_SetTarget(&new->target, player->mo);
 }
 
+void K_InitTrickIndicator(player_t *player)
+{
+	mobj_t *new = NULL;
+
+	if (player == NULL)
+	{
+		return;
+	}
+
+	if (player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
+	{
+		return;
+	}
+
+	if (P_MobjWasRemoved(player->trickIndicator) == false)
+	{
+		if (P_MobjWasRemoved(player->trickIndicator->tracer) == false)
+		{
+			P_RemoveMobj(player->trickIndicator->tracer);
+		}
+
+		P_RemoveMobj(player->trickIndicator);
+	}
+
+	new = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_TRICKINDICATOR);
+
+	P_SetTarget(&player->trickIndicator, new);
+	P_SetTarget(&new->target, player->mo);
+
+	mobj_t *secondlayer = P_SpawnMobjFromMobj(new, 0, 0, 0, MT_OVERLAY);
+
+	P_SetTarget(&new->tracer, secondlayer);
+	P_SetTarget(&secondlayer->target, new);
+
+	secondlayer->dispoffset = 1;
+	secondlayer->flags |= MF_DONTENCOREMAP;
+}
+
 void K_UpdateStumbleIndicator(player_t *player)
 {
 	const angle_t fudge = ANG15;
@@ -4279,6 +4317,49 @@ void K_UpdateSliptideZipIndicator(player_t *player)
 	{
 		// Storing boost
 		mobj->rollangle += 3*ANG15/4;
+	}
+}
+
+void K_UpdateTrickIndicator(player_t *player)
+{
+	mobj_t *mobj = NULL;
+
+	if (player == NULL)
+	{
+		return;
+	}
+
+	if (player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
+	{
+		return;
+	}
+
+	if (player->trickIndicator == NULL
+	|| P_MobjWasRemoved(player->trickIndicator) == true
+	|| player->trickIndicator->tracer == NULL
+	|| P_MobjWasRemoved(player->trickIndicator->tracer) == true)
+	{
+		K_InitTrickIndicator(player);
+		return;
+	}
+
+	mobj = player->trickIndicator;
+
+	const fixed_t onidistance = 200*mapobjectscale;
+
+	P_MoveOrigin(
+		mobj,
+		player->mo->x + P_ReturnThrustX(player->mo, player->mo->angle, onidistance),
+		player->mo->y + P_ReturnThrustY(player->mo, player->mo->angle, onidistance),
+		player->mo->z + (player->mo->height / 2));
+	mobj->angle = player->mo->angle + ANGLE_90;
+
+	if (player->trickpanel == 0)
+	{
+		P_SetScale(mobj, mobj->destscale = player->mo->scale);
+
+		P_SetMobjState(mobj, S_INVISIBLE);
+		P_SetMobjState(mobj->tracer, S_INVISIBLE);
 	}
 }
 
@@ -6255,6 +6336,16 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 	{
 		mo->player->trickpanel = 1;
 		mo->player->pflags |= PF_TRICKDELAY;
+
+		if (P_MobjWasRemoved(mo->player->trickIndicator) == false)
+		{
+			mo->player->trickIndicator->rollangle = 0;
+			P_SetMobjState(mo->player->trickIndicator, S_TRICKINDICATOR_UNDERLAY);
+			if (P_MobjWasRemoved(mo->player->trickIndicator->tracer) == false)
+			{
+				P_SetMobjState(mo->player->trickIndicator->tracer, S_TRICKINDICATOR_OVERLAY);
+			}
+		}
 
 		if (mo->player->sneakertimer)
 		{
@@ -8700,8 +8791,8 @@ void K_KartPlayerAfterThink(player_t *player)
 	K_KartResetPlayerColor(player);
 
 	K_UpdateStumbleIndicator(player);
-
 	K_UpdateSliptideZipIndicator(player);
+	K_UpdateTrickIndicator(player);
 
 	// Move held objects (Bananas, Orbinaut, etc)
 	K_MoveHeldObjects(player);
@@ -11966,6 +12057,11 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 			K_trickPanelTimingVisual(player, momz);
 
+			if (P_MobjWasRemoved(player->trickIndicator) == false)
+			{
+				player->trickIndicator->destscale = FixedMul(speedmult + FRACUNIT, mapobjectscale);
+			}
+
 			// streaks:
 			if (momz*P_MobjFlip(player->mo) > 0)	// only spawn those while you're going upwards relative to your current gravity
 			{
@@ -12031,11 +12127,21 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					{
 						P_InstaThrust(player->mo, player->mo->angle + lr, max(basespeed, speed*5/2));
 						player->trickpanel = 2;
+
+						if (P_MobjWasRemoved(player->trickIndicator) == false)
+						{
+							player->trickIndicator->rollangle = ANGLE_270;
+						}
 					}
 					else
 					{
 						P_InstaThrust(player->mo, player->mo->angle - lr, max(basespeed, speed*5/2));
 						player->trickpanel = 3;
+
+						if (P_MobjWasRemoved(player->trickIndicator) == false)
+						{
+							player->trickIndicator->rollangle = ANGLE_90;
+						}
 					}
 				}
 				else if (aimingcompare > TRICKTHRESHOLD) // forward/back trick
@@ -12049,6 +12155,11 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 						P_InstaThrust(player->mo, player->mo->angle, max(basespeed, speed*3));
 						player->trickpanel = 2;
+
+						if (P_MobjWasRemoved(player->trickIndicator) == false)
+						{
+							player->trickIndicator->rollangle = 0;
+						}
 					}
 					else if (cmd->throwdir < 0)
 					{
@@ -12068,6 +12179,11 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 						player->mo->momz += P_MobjFlip(player->mo)*48*mapobjectscale;
 						player->trickpanel = 4;
+
+						if (P_MobjWasRemoved(player->trickIndicator) == false)
+						{
+							player->trickIndicator->rollangle = ANGLE_180;
+						}
 					}
 				}
 #undef TRICKTHRESHOLD
@@ -12083,6 +12199,15 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					if (abs(momz) < FRACUNIT*99)	// Let's use that as baseline for PERFECT trick.
 					{
 						player->karthud[khud_trickcool] = TICRATE;
+					}
+
+					if (P_MobjWasRemoved(player->trickIndicator) == false)
+					{
+						P_SetMobjState(player->trickIndicator, S_TRICKINDICATOR_UNDERLAY_ARROW);
+						if (P_MobjWasRemoved(player->trickIndicator->tracer) == false)
+						{
+							P_SetMobjState(player->trickIndicator->tracer, S_TRICKINDICATOR_OVERLAY_ARROW);
+						}
 					}
 				}
 			}

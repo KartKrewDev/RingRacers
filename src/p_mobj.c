@@ -12448,8 +12448,8 @@ void P_SpawnPlayer(INT32 playernum)
 	p->griefValue = 0;
 
 	K_InitStumbleIndicator(p);
-
 	K_InitSliptideZipIndicator(p);
+	K_InitTrickIndicator(p);
 
 	if (gametyperules & GTR_ITEMARROWS)
 	{

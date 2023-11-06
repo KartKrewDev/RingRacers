@@ -3892,6 +3892,12 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 
 	"S_SMOOTHLANDING",
 
+	"S_TRICKINDICATOR_OVERLAY",
+	"S_TRICKINDICATOR_UNDERLAY",
+	"S_TRICKINDICATOR_OVERLAY_ARROW",
+	"S_TRICKINDICATOR_UNDERLAY_ARROW",
+	"S_TRICKINDICATOR_UNDERLAY_ARROW2",
+
 	// DEZ Ring Shooter
 	"S_TIREGRABBER",
 	"S_RINGSHOOTER_SIDE",
@@ -5649,6 +5655,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_TRIPWIREBOOST",
 
 	"MT_SMOOTHLANDING",
+	"MT_TRICKINDICATOR",
 
 	"MT_TIREGRABBER",
 	"MT_RINGSHOOTER",
