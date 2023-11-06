@@ -6338,51 +6338,54 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 
 	if (mo->player)
 	{
-		mo->player->trickpanel = 1;
-		mo->player->pflags |= PF_TRICKDELAY;
-
-		if (P_MobjWasRemoved(mo->player->trickIndicator) == false)
+		if (!P_PlayerInPain(mo->player))
 		{
-			mobj_t *trickIndicator = mo->player->trickIndicator;
+			mo->player->trickpanel = 1;
+			mo->player->pflags |= PF_TRICKDELAY;
 
-			P_SetScale(trickIndicator,
-				trickIndicator->destscale
-				= trickIndicator->old_scale
-				= trickIndicator->old_scale2
-					= mo->scale/4);
-			trickIndicator->rollangle = 0;
-
-			static const skincolornum_t trick_colors[] = {
-				SKINCOLOR_GREY,        // trickPanel == 1
-				SKINCOLOR_TAN,
-				SKINCOLOR_YELLOW,      // trickPanel == 2
-				SKINCOLOR_TANGERINE,
-				SKINCOLOR_KETCHUP,     // trickPanel == 3
-				SKINCOLOR_MOONSET,
-				SKINCOLOR_ULTRAMARINE, // trickPanel == 4
-			};
-			static const UINT8 numColors = sizeof(trick_colors) / sizeof(skincolornum_t);
-
-			const fixed_t step = 8*FRACUNIT;
-			fixed_t trickcol = ((vertispeed - (step/2)) / step) - 1;
-			if (trickcol < 0)
-				trickcol = 0;
-			trickIndicator->color = trick_colors[min(trickcol, numColors - 1)];
-
-			P_SetMobjState(trickIndicator, S_TRICKINDICATOR_UNDERLAY);
-
-			if (P_MobjWasRemoved(trickIndicator->tracer) == false)
+			if (P_MobjWasRemoved(mo->player->trickIndicator) == false)
 			{
-				P_SetScale(trickIndicator->tracer,
-					trickIndicator->tracer->destscale
-					= trickIndicator->tracer->old_scale
-					= trickIndicator->tracer->old_scale2
-						= trickIndicator->destscale);
-				trickIndicator->tracer->rollangle = 0;
+				mobj_t *trickIndicator = mo->player->trickIndicator;
 
-				trickIndicator->tracer->color = mo->player->trickIndicator->color;
+				P_SetScale(trickIndicator,
+					trickIndicator->destscale
+					= trickIndicator->old_scale
+					= trickIndicator->old_scale2
+						= mo->scale/4);
+				trickIndicator->rollangle = 0;
 
-				P_SetMobjState(trickIndicator->tracer, S_TRICKINDICATOR_OVERLAY);
+				static const skincolornum_t trick_colors[] = {
+					SKINCOLOR_GREY,        // trickPanel == 1
+					SKINCOLOR_TAN,
+					SKINCOLOR_YELLOW,      // trickPanel == 2
+					SKINCOLOR_TANGERINE,
+					SKINCOLOR_KETCHUP,     // trickPanel == 3
+					SKINCOLOR_MOONSET,
+					SKINCOLOR_ULTRAMARINE, // trickPanel == 4
+				};
+				static const UINT8 numColors = sizeof(trick_colors) / sizeof(skincolornum_t);
+
+				const fixed_t step = 8*FRACUNIT;
+				fixed_t trickcol = ((vertispeed - (step/2)) / step) - 1;
+				if (trickcol < 0)
+					trickcol = 0;
+				trickIndicator->color = trick_colors[min(trickcol, numColors - 1)];
+
+				P_SetMobjState(trickIndicator, S_TRICKINDICATOR_UNDERLAY);
+
+				if (P_MobjWasRemoved(trickIndicator->tracer) == false)
+				{
+					P_SetScale(trickIndicator->tracer,
+						trickIndicator->tracer->destscale
+						= trickIndicator->tracer->old_scale
+						= trickIndicator->tracer->old_scale2
+							= trickIndicator->destscale);
+					trickIndicator->tracer->rollangle = 0;
+
+					trickIndicator->tracer->color = mo->player->trickIndicator->color;
+
+					P_SetMobjState(trickIndicator->tracer, S_TRICKINDICATOR_OVERLAY);
+				}
 			}
 		}
 
