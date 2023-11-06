@@ -1188,11 +1188,12 @@ typedef enum sprite
 	SPR_TWBT, // Tripwire BLASTER
 	SPR_SMLD, // Smooth landing
 
-	// Trick Indicator
+	// Trick Effects
 	SPR_TRK1,
 	SPR_TRK2,
 	SPR_TRK3,
 	SPR_TRK4,
+	SPR_TRK5,
 
 	SPR_TIRG, // Tire grabbers
 	SPR_RSHT, // DEZ Ring Shooter
@@ -5118,6 +5119,8 @@ typedef enum state
 	S_TRICKINDICATOR_UNDERLAY_ARROW,
 	S_TRICKINDICATOR_UNDERLAY_ARROW2,
 
+	S_SIDETRICK,
+
 	// DEZ Ring Shooter
 	S_TIREGRABBER,
 	S_RINGSHOOTER_SIDE,
@@ -6915,6 +6918,7 @@ typedef enum mobj_type
 
 	MT_SMOOTHLANDING,
 	MT_TRICKINDICATOR,
+	MT_SIDETRICK,
 
 	MT_TIREGRABBER,
 	MT_RINGSHOOTER,

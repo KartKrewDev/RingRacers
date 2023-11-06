@@ -2467,8 +2467,6 @@ void P_MovePlayer(player_t *player)
 	}
 	else
 	{
-		K_KartMoveAnimation(player);
-
 		if (player->trickpanel == 2)
 		{
 			player->drawangle += ANGLE_22h;
@@ -2479,6 +2477,8 @@ void P_MovePlayer(player_t *player)
 		}
 		else
 		{
+			K_KartMoveAnimation(player);
+
 			player->drawangle = player->mo->angle;
 
 			if (player->aizdriftturn)

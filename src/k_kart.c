@@ -12189,6 +12189,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 #define TRICKTHRESHOLD (KART_FULLTURN/4)
 				if (aimingcompare < -TRICKTHRESHOLD) // side trick
 				{
+					angle_t sidetrickspeed = ANG30;
+					const angle_t angledelta = FixedAngle(36*FRACUNIT);
+					angle_t baseangle = player->mo->angle + angledelta/2;
+
 					if (cmd->turning > 0)
 					{
 						P_InstaThrust(player->mo, player->mo->angle + lr, max(basespeed, speed*5/2));
@@ -12198,6 +12202,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						{
 							player->trickIndicator->rollangle = ANGLE_270;
 						}
+
+						player->drawangle -= ANGLE_45;
+						P_SetPlayerMobjState(player->mo, S_KART_FAST_LOOK_L);
 					}
 					else
 					{
@@ -12208,6 +12215,32 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						{
 							player->trickIndicator->rollangle = ANGLE_90;
 						}
+
+						sidetrickspeed = InvAngle(sidetrickspeed);
+
+						player->drawangle += ANGLE_45;
+						P_SetPlayerMobjState(player->mo, S_KART_FAST_LOOK_R);
+					}
+
+					INT32 j;
+
+					for (j = 0; j < 8; j++, baseangle += angledelta)
+					{
+						mobj_t *swipe = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_SIDETRICK);
+						P_SetTarget(&swipe->target, player->mo);
+						swipe->hitlag = TRICKLAG;
+						swipe->color = player->trickIndicator->color;
+						swipe->angle = baseangle + ANGLE_90;
+						swipe->renderflags |= RF_DONTDRAW;
+						swipe->flags2 |= MF2_AMBUSH; // don't interp on first think
+						swipe->movedir = sidetrickspeed;
+						swipe->frame |= (j % 4);
+
+						// This is so they make a 10-sided shape with one-sprite gap
+						if (j != 3)
+							continue;
+
+						baseangle += angledelta;
 					}
 				}
 				else if (aimingcompare > TRICKTHRESHOLD) // forward/back trick
