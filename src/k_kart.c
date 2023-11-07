@@ -6411,7 +6411,7 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 
 		if (mo->player->sneakertimer || mo->player->invincibilitytimer)
 		{
-			thrust = FixedMul(thrust, 2*FRACUNIT);
+			thrust = FixedMul(thrust, (3*FRACUNIT)/2);
 		}
 
 		mo->player->tricktime = 0; // Reset post-hitlag timer
