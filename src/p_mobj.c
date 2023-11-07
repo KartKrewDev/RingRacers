@@ -8454,9 +8454,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		if (!mobj->target
 		|| !mobj->target->health
 		|| !mobj->target->player
-		|| (mobj->target->player->trickpanel != 2
-			&& mobj->target->player->trickpanel != 3)
-		)
+		|| mobj->target->player->trickpanel <= 1)
 		{
 			P_RemoveMobj(mobj);
 			return false;
@@ -8477,6 +8475,38 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		mobj->flags2 = ((mobj->flags2 & ~MF2_OBJECTFLIP)|(mobj->target->flags2 & MF2_OBJECTFLIP)) ^ MF2_BOSSDEAD;
 
 		fixed_t scale = mobj->target->scale;
+
+		// sweeping effect
+		if (mobj->target->player->trickpanel == 4)
+		{
+			const fixed_t saferange = (20*FRACUNIT)/21;
+			if (mobj->threshold < -saferange)
+			{
+				mobj->threshold = -saferange;
+				mobj->flags2 |= MF2_AMBUSH;
+			}
+			else while (mobj->threshold > saferange)
+			{
+				mobj->threshold -= 2*saferange;
+				mobj->flags2 |= MF2_AMBUSH;
+			}
+
+			scale = P_ReturnThrustX(mobj, FixedAngle(90*mobj->threshold), scale);
+
+			// This funny dealie is to make it so default
+			// scale is placed as standard,
+			// but variant threshold shifts upwards
+			fixed_t extraoffset = FixedMul(mobj->info->height, mobj->target->scale - scale);
+			if (mobj->threshold < 0)
+				extraoffset /= 2;
+
+			// And this makes it swooce across the object.
+			extraoffset += FixedMul(mobj->threshold, mobj->target->height);
+
+			zoff += P_MobjFlip(mobj) * extraoffset;
+
+			mobj->threshold += (saferange/8);
+		}
 
 		mobj->angle += mobj->movedir;
 		P_InstaScale(mobj, scale);

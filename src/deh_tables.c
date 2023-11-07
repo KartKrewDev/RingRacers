@@ -3899,6 +3899,7 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_TRICKINDICATOR_UNDERLAY_ARROW2",
 
 	"S_SIDETRICK",
+	"S_BACKTRICK",
 
 	// DEZ Ring Shooter
 	"S_TIREGRABBER",

@@ -12190,16 +12190,18 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 			else if (!(player->pflags & PF_TRICKDELAY))	// don't allow tricking at the same frame you tumble obv
 			{
+				// For tornado trick effects
+				angle_t tornadotrickspeed = ANG30;
+				const angle_t angledelta = FixedAngle(36*FRACUNIT);
+				angle_t baseangle = player->mo->angle + angledelta/2;
+				boolean fronttrick = false;
+
 				INT16 aimingcompare = abs(cmd->throwdir) - abs(cmd->turning);
 
 				// Uses cmd->turning over steering intentionally.
 #define TRICKTHRESHOLD (KART_FULLTURN/4)
 				if (aimingcompare < -TRICKTHRESHOLD) // side trick
 				{
-					angle_t sidetrickspeed = ANG30;
-					const angle_t angledelta = FixedAngle(36*FRACUNIT);
-					angle_t baseangle = player->mo->angle + angledelta/2;
-
 					S_StartSound(player->mo, sfx_trick0);
 					player->dotrickfx = true;
 
@@ -12226,31 +12228,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							player->trickIndicator->rollangle = ANGLE_90;
 						}
 
-						sidetrickspeed = InvAngle(sidetrickspeed);
+						tornadotrickspeed = InvAngle(tornadotrickspeed);
 
 						player->drawangle += ANGLE_45;
 						P_SetPlayerMobjState(player->mo, S_KART_FAST_LOOK_R);
-					}
-
-					INT32 j;
-
-					for (j = 0; j < 8; j++, baseangle += angledelta)
-					{
-						mobj_t *swipe = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_SIDETRICK);
-						P_SetTarget(&swipe->target, player->mo);
-						swipe->hitlag = TRICKLAG;
-						swipe->color = player->trickIndicator->color;
-						swipe->angle = baseangle + ANGLE_90;
-						swipe->renderflags |= RF_DONTDRAW;
-						swipe->flags2 |= MF2_AMBUSH; // don't interp on first think
-						swipe->movedir = sidetrickspeed;
-						swipe->frame |= (j % 4);
-
-						// This is so they make a 10-sided shape with one-sprite gap
-						if (j != 3)
-							continue;
-
-						baseangle += angledelta;
 					}
 				}
 				else if (aimingcompare > TRICKTHRESHOLD) // forward/back trick
@@ -12258,7 +12239,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					S_StartSound(player->mo, sfx_trick0);
 					player->dotrickfx = true;
 
-					if (cmd->throwdir > 0) // back trick
+					if (cmd->throwdir > 0) // forward trick
 					{
 						if (player->mo->momz * P_MobjFlip(player->mo) > 0)
 						{
@@ -12272,8 +12253,12 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						{
 							player->trickIndicator->rollangle = 0;
 						}
+
+						P_SetPlayerMobjState(player->mo, S_KART_FAST);
+
+						fronttrick = true;
 					}
-					else if (cmd->throwdir < 0)
+					else if (cmd->throwdir < 0) // back trick
 					{
 						player->mo->momx /= 3;
 						player->mo->momy /= 3;
@@ -12296,6 +12281,11 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						{
 							player->trickIndicator->rollangle = ANGLE_180;
 						}
+
+						//tornadotrickspeed = InvAngle(tornadotrickspeed);
+
+						//player->drawangle += ANGLE_45;
+						P_SetPlayerMobjState(player->mo, S_KART_FAST);
 					}
 				}
 #undef TRICKTHRESHOLD
@@ -12309,6 +12299,34 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					if (abs(momz) < FRACUNIT*99)	// Let's use that as baseline for PERFECT trick.
 					{
 						player->karthud[khud_trickcool] = TICRATE;
+					}
+
+					INT32 j;
+
+					if (fronttrick == true)
+						; // Not yet sprited
+					else for (j = 0; j < 8; j++, baseangle += angledelta)
+					{
+						mobj_t *swipe = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_SIDETRICK);
+
+						if (player->trickpanel == 4)
+							P_SetMobjState(swipe, S_BACKTRICK);
+
+						P_SetTarget(&swipe->target, player->mo);
+						swipe->hitlag = TRICKLAG;
+						swipe->color = player->trickIndicator->color;
+						swipe->angle = baseangle + ANGLE_90;
+						swipe->renderflags |= RF_DONTDRAW;
+						swipe->flags2 |= MF2_AMBUSH; // don't interp on first think
+						swipe->movedir = tornadotrickspeed;
+						swipe->frame |= (j % 4);
+						swipe->threshold = 0;
+
+						// This is so they make a 10-sided shape with one-sprite gap
+						if (j != 3)
+							continue;
+
+						baseangle += angledelta;
 					}
 
 					if (P_MobjWasRemoved(player->trickIndicator) == false)
