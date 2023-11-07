@@ -2430,7 +2430,8 @@ static void Command_Map_f(void)
 				return;
 			}
 
-			newgametype = GT_RACE; // sensible default
+			if (newgametype == -1)
+				newgametype = GT_RACE; // sensible default
 		}
 	}
 

@@ -8498,6 +8498,12 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->instaWhipCooldown--;
 	}
 
+	if (player->dotrickfx && !player->mo->hitlag)
+	{
+		S_StartSound(player->mo, sfx_trick1);
+		player->dotrickfx = false;
+	}
+
 	// Don't screw up chain ring pickup/usage with instawhip charge.
 	// If the button stays held, delay charge a bit.
 	if (player->instaWhipChargeLockout)
@@ -10920,9 +10926,10 @@ boolean K_FastFallBounce(player_t *player)
 
 		player->pflags |= PF_UPDATEMYRESPAWN;
 
+		player->fastfall = 0;
+
 		player->mo->momz = bounce * P_MobjFlip(player->mo);
 
-		player->fastfall = 0;
 		return true;
 	}
 
@@ -12193,6 +12200,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					const angle_t angledelta = FixedAngle(36*FRACUNIT);
 					angle_t baseangle = player->mo->angle + angledelta/2;
 
+					S_StartSound(player->mo, sfx_trick0);
+					player->dotrickfx = true;
+
 					if (cmd->turning > 0)
 					{
 						P_InstaThrust(player->mo, player->mo->angle + lr, max(basespeed, speed*5/2));
@@ -12245,6 +12255,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				}
 				else if (aimingcompare > TRICKTHRESHOLD) // forward/back trick
 				{
+					S_StartSound(player->mo, sfx_trick0);
+					player->dotrickfx = true;
+
 					if (cmd->throwdir > 0) // back trick
 					{
 						if (player->mo->momz * P_MobjFlip(player->mo) > 0)
@@ -12321,12 +12334,26 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 			K_trickPanelTimingVisual(player, momz);
 		}
-		else if (player->trickpanel == 4 && P_IsObjectOnGround(player->mo))	// Upwards trick landed!
+		else if (player->trickpanel && P_IsObjectOnGround(player->mo))	// Landed from trick
 		{
-			//CONS_Printf("apply boost\n");
-			S_StartSound(player->mo, sfx_s23c);
-			K_SpawnDashDustRelease(player);
-			player->trickboost = TICRATE - player->trickboostdecay;
+			if (player->fastfall)
+			{
+				player->mo->hitlag = 3;
+				K_SpawnDashDustRelease(player);
+				P_InstaThrust(player->mo, player->mo->angle, 30*FRACUNIT);
+				S_StartSound(player->mo, sfx_gshce);
+				player->fastfall = 0; // intentionally skip bounce
+			}
+
+			if (player->trickpanel == 4) // upward trick
+			{
+				S_StartSound(player->mo, sfx_s23c);
+				K_SpawnDashDustRelease(player);
+				player->trickboost = TICRATE - player->trickboostdecay;
+			}
+
+			player->sliptideZip += 300;
+			player->sliptideZipDelay = 0;
 
 			player->trickpanel = player->trickboostdecay = 0;
 		}
