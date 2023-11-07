@@ -6336,6 +6336,7 @@ static void K_DoShrink(player_t *user)
 void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 {
 	fixed_t thrust = 0;
+	boolean dontapplymomz = false;
 
 	if (mo->player && mo->player->spectator)
 		return;
@@ -6348,10 +6349,15 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 
 	mo->eflags |= MFE_SPRUNG;
 
-	if (vertispeed <= 0)
+	if (vertispeed == 0)
 	{
 		vertispeed = P_AproxDistance(mo->momx, mo->momy);
 		vertispeed = FixedMul(vertispeed, FINESINE(ANGLE_22h >> ANGLETOFINESHIFT));
+	}
+	else if (vertispeed < 0)
+	{
+		dontapplymomz = 0;
+		vertispeed = -vertispeed;
 	}
 
 	thrust = vertispeed * P_MobjFlip(mo);
@@ -6422,11 +6428,14 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 		mo->player->fastfall = 0;
 	}
 
-	mo->momz = FixedMul(thrust, mapobjectscale);
-
-	if (mo->eflags & MFE_UNDERWATER)
+	if (dontapplymomz == false)
 	{
-		mo->momz = FixedDiv(mo->momz, FixedSqrt(3*FRACUNIT));
+		mo->momz = FixedMul(thrust, mapobjectscale);
+
+		if (mo->eflags & MFE_UNDERWATER)
+		{
+			mo->momz = FixedDiv(mo->momz, FixedSqrt(3*FRACUNIT));
+		}
 	}
 
 	P_ResetPitchRoll(mo);
