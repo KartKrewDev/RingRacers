@@ -2467,11 +2467,11 @@ void P_MovePlayer(player_t *player)
 	}
 	else
 	{
-		if (player->trickpanel == 2)
+		if (player->trickpanel == 2 || player->trickpanel == 5) // right/forward
 		{
 			player->drawangle += ANGLE_22h;
 		}
-		else if (player->trickpanel >= 3)
+		else if (player->trickpanel == 3 || player->trickpanel == 4) // left/back
 		{
 			player->drawangle -= ANGLE_22h;
 		}

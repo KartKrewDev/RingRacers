@@ -9580,9 +9580,9 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 		return 0;
 	}
 
-	if (player->trickpanel != 0 && player->trickpanel < 4)
+	if (player->trickpanel == 1 || player->trickpanel == 5)
 	{
-		// No turning during trick panel unless you did the upwards trick (4)
+		// Forward trick or rising from trickpanel
 		return 0;
 	}
 
@@ -9677,6 +9677,12 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 
 	// Weight has a small effect on turning
 	turnfixed = FixedMul(turnfixed, weightadjust);
+
+	// Side trick
+	if (player->trickpanel == 2 || player->trickpanel == 3)
+	{
+		turnfixed /= 2;
+	}
 
 	return (turnfixed / FRACUNIT);
 }
@@ -12194,7 +12200,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				angle_t tornadotrickspeed = ANG30;
 				const angle_t angledelta = FixedAngle(36*FRACUNIT);
 				angle_t baseangle = player->mo->angle + angledelta/2;
-				boolean fronttrick = false;
 
 				INT16 aimingcompare = abs(cmd->throwdir) - abs(cmd->turning);
 
@@ -12247,7 +12252,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						}
 
 						P_InstaThrust(player->mo, player->mo->angle, max(basespeed, speed*3));
-						player->trickpanel = 2;
+						player->trickpanel = 5;
 
 						if (P_MobjWasRemoved(player->trickIndicator) == false)
 						{
@@ -12255,8 +12260,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						}
 
 						P_SetPlayerMobjState(player->mo, S_KART_FAST);
-
-						fronttrick = true;
 					}
 					else if (cmd->throwdir < 0) // back trick
 					{
@@ -12303,7 +12306,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 					INT32 j;
 
-					if (fronttrick == true)
+					if (player->trickpanel == 5)
 						; // Not yet sprited
 					else for (j = 0; j < 8; j++, baseangle += angledelta)
 					{
