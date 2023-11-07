@@ -478,7 +478,7 @@ void P_ResetPlayer(player_t *player)
 	player->onconveyor = 0;
 
 	//player->drift = player->driftcharge = 0;
-	player->trickpanel = 0;
+	player->trickpanel = TRICKSTATE_NONE;
 	player->glanceDir = 0;
 	player->fastfall = 0;
 
@@ -2467,13 +2467,16 @@ void P_MovePlayer(player_t *player)
 	}
 	else
 	{
-		if (player->trickpanel == 2 || player->trickpanel == 5) // right/forward
+		if (player->trickpanel > TRICKSTATE_READY)
 		{
-			player->drawangle += ANGLE_22h;
-		}
-		else if (player->trickpanel == 3 || player->trickpanel == 4) // left/back
-		{
-			player->drawangle -= ANGLE_22h;
+			if (player->trickpanel <= TRICKSTATE_RIGHT) // right/forward
+			{
+				player->drawangle += ANGLE_22h;
+			}
+			else //if (player->trickpanel >= TRICKSTATE_LEFT) // left/back
+			{
+				player->drawangle -= ANGLE_22h;
+			}
 		}
 		else
 		{

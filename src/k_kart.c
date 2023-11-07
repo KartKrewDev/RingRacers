@@ -4379,7 +4379,7 @@ void K_UpdateTrickIndicator(player_t *player)
 		player->mo->z + (player->mo->height / 2));
 	mobj->angle = player->mo->angle + ANGLE_90;
 
-	if (player->trickpanel == 0
+	if (player->trickpanel == TRICKSTATE_NONE
 		&& test != S_INVISIBLE)
 	{
 		K_TrickCatholocismBlast(mobj, 1, ANGLE_22h);
@@ -6366,7 +6366,7 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 	{
 		if (!P_PlayerInPain(mo->player))
 		{
-			mo->player->trickpanel = 1;
+			mo->player->trickpanel = TRICKSTATE_READY;
 			mo->player->pflags |= PF_TRICKDELAY;
 
 			if (P_MobjWasRemoved(mo->player->trickIndicator) == false)
@@ -8674,11 +8674,11 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			K_FlameDashLeftoverSmoke(player->mo);
 	}
 
-	if (P_IsObjectOnGround(player->mo) && player->trickpanel != 0)
+	if (P_IsObjectOnGround(player->mo) && player->trickpanel != TRICKSTATE_NONE)
 	{
 		if (P_MobjFlip(player->mo) * player->mo->momz <= 0)
 		{
-			player->trickpanel = 0;
+			player->trickpanel = TRICKSTATE_NONE;
 		}
 	}
 
@@ -9589,7 +9589,7 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 		return 0;
 	}
 
-	if (player->trickpanel == 1 || player->trickpanel == 5)
+	if (player->trickpanel == TRICKSTATE_READY || player->trickpanel == TRICKSTATE_FORWARD)
 	{
 		// Forward trick or rising from trickpanel
 		return 0;
@@ -9688,7 +9688,7 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 	turnfixed = FixedMul(turnfixed, weightadjust);
 
 	// Side trick
-	if (player->trickpanel == 2 || player->trickpanel == 3)
+	if (player->trickpanel == TRICKSTATE_LEFT || player->trickpanel == TRICKSTATE_RIGHT)
 	{
 		turnfixed /= 2;
 	}
@@ -11140,7 +11140,7 @@ static void K_trickPanelTimingVisual(player_t *player, fixed_t momz)
 		flame->sprite = SPR_TRCK;
 		flame->frame = i|FF_FULLBRIGHT;
 
-		if (player->trickpanel <= 1 && !player->tumbleBounces)
+		if (player->trickpanel <= TRICKSTATE_READY && !player->tumbleBounces)
 		{
 			flame->tics = 2;
 			flame->momx = player->mo->momx;
@@ -11151,7 +11151,7 @@ static void K_trickPanelTimingVisual(player_t *player, fixed_t momz)
 		{
 			flame->tics = TICRATE;
 
-			if (player->trickpanel > 1)	// we tricked
+			if (player->trickpanel > TRICKSTATE_READY)	// we tricked
 			{
 				// Send the thing outwards via ghetto maths which involves redoing the whole 3d sphere again, witht the "vertical" angle shifted by 90 degrees.
 				// There's probably a simplier way to do this the way I want to but this works.
@@ -12015,7 +12015,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							}
 							break;
 						case KITEM_POGOSPRING:
-							if (ATTACK_IS_DOWN && !HOLDING_ITEM && onground && NO_HYUDORO && player->trickpanel == 0)
+							if (ATTACK_IS_DOWN && !HOLDING_ITEM && onground && NO_HYUDORO && player->trickpanel == TRICKSTATE_NONE)
 							{
 								K_PlayBoostTaunt(player->mo);
 								//K_DoPogoSpring(player->mo, 32<<FRACBITS, 2);
@@ -12126,7 +12126,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			player->mo->renderflags &= ~RF_BLENDMASK;
 		}
 
-		if (player->trickpanel == 1)
+		if (player->trickpanel == TRICKSTATE_READY)
 		{
 			const angle_t lr = ANGLE_45;
 			fixed_t momz = FixedDiv(player->mo->momz, mapobjectscale);	// bring momz back to scale...
@@ -12194,7 +12194,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				player->tumbleBounces = 1;
 				player->pflags &= ~PF_TUMBLESOUND;
 				player->tumbleHeight = 30;	// Base tumble bounce height
-				player->trickpanel = 0;
+				player->trickpanel = TRICKSTATE_NONE;
 				P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 				if (player->pflags & (PF_ITEMOUT|PF_EGGMANOUT))
 				{
@@ -12222,7 +12222,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					if (cmd->turning > 0)
 					{
 						P_InstaThrust(player->mo, player->mo->angle + lr, max(basespeed, speed*5/2));
-						player->trickpanel = 2;
+						player->trickpanel = TRICKSTATE_RIGHT;
 
 						if (P_MobjWasRemoved(player->trickIndicator) == false)
 						{
@@ -12235,7 +12235,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					else
 					{
 						P_InstaThrust(player->mo, player->mo->angle - lr, max(basespeed, speed*5/2));
-						player->trickpanel = 3;
+						player->trickpanel = TRICKSTATE_LEFT;
 
 						if (P_MobjWasRemoved(player->trickIndicator) == false)
 						{
@@ -12261,7 +12261,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						}
 
 						P_InstaThrust(player->mo, player->mo->angle, max(basespeed, speed*3));
-						player->trickpanel = 5;
+						player->trickpanel = TRICKSTATE_FORWARD;
 
 						if (P_MobjWasRemoved(player->trickIndicator) == false)
 						{
@@ -12287,7 +12287,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						//CONS_Printf("decay: %d\n", player->trickboostdecay);
 
 						player->mo->momz += P_MobjFlip(player->mo)*48*mapobjectscale;
-						player->trickpanel = 4;
+						player->trickpanel = TRICKSTATE_BACK;
 
 						if (P_MobjWasRemoved(player->trickIndicator) == false)
 						{
@@ -12303,7 +12303,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 #undef TRICKTHRESHOLD
 
 				// Finalise everything.
-				if (player->trickpanel != 1) // just changed from 1?
+				if (player->trickpanel != TRICKSTATE_READY) // just changed from 1?
 				{
 					player->mo->hitlag = TRICKLAG;
 					player->mo->eflags &= ~MFE_DAMAGEHITLAG;
@@ -12315,13 +12315,13 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 					INT32 j;
 
-					if (player->trickpanel == 5)
+					if (player->trickpanel == TRICKSTATE_FORWARD)
 						; // Not yet sprited
 					else for (j = 0; j < 8; j++, baseangle += angledelta)
 					{
 						mobj_t *swipe = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_SIDETRICK);
 
-						if (player->trickpanel == 4)
+						if (player->trickpanel == TRICKSTATE_BACK)
 							P_SetMobjState(swipe, S_BACKTRICK);
 
 						P_SetTarget(&swipe->target, player->mo);
@@ -12364,7 +12364,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 			K_trickPanelTimingVisual(player, momz);
 		}
-		else if (player->trickpanel && P_IsObjectOnGround(player->mo))	// Landed from trick
+		else if ((player->trickpanel != TRICKSTATE_NONE) && P_IsObjectOnGround(player->mo))	// Landed from trick
 		{
 			if (player->fastfall)
 			{
@@ -12375,7 +12375,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				player->fastfall = 0; // intentionally skip bounce
 			}
 
-			if (player->trickpanel == 4) // upward trick
+			if (player->trickpanel == TRICKSTATE_BACK) // upward trick
 			{
 				S_StartSound(player->mo, sfx_s23c);
 				K_SpawnDashDustRelease(player);
@@ -12385,7 +12385,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			player->sliptideZip += 300;
 			player->sliptideZipDelay = 0;
 
-			player->trickpanel = player->trickboostdecay = 0;
+			player->trickpanel = TRICKSTATE_NONE;
+			player->trickboostdecay = 0;
 		}
 
 		// Wait until we let go off the control stick to remove the delay

@@ -1692,7 +1692,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				target->player->roundscore = 0;
 		}
 
-		target->player->trickpanel = 0;
+		target->player->trickpanel = TRICKSTATE_NONE;
 
 		ACS_RunPlayerDeathScript(target->player);
 	}

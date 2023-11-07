@@ -263,6 +263,16 @@ typedef enum
 
 typedef enum
 {
+	TRICKSTATE_NONE = 0,
+	TRICKSTATE_READY,
+	TRICKSTATE_FORWARD,
+	TRICKSTATE_RIGHT,
+	TRICKSTATE_LEFT,
+	TRICKSTATE_BACK,
+} trickstate_t;
+
+typedef enum
+{
 	// Unsynced, HUD or clientsided effects
 	// Item box
 	khud_itemblink,		// Item flashing after roulette, serves as a mashing indicator
@@ -740,7 +750,7 @@ struct player_t
 	UINT8 confirmVictim;		// Player ID that you dealt damage to
 	UINT8 confirmVictimDelay;	// Delay before playing the sound
 
-	UINT8 trickpanel; 	// Trick panel state
+	UINT8 trickpanel; 	// Trick panel state - see trickstate_t
 	UINT8 tricktime;	// Increases while you're tricking. You can't input any trick until it's reached a certain threshold
 	fixed_t trickboostpower;	// Save the rough speed multiplier. Used for upwards tricks.
 	UINT8 trickboostdecay;		// used to know how long you've waited

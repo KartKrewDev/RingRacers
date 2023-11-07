@@ -1147,7 +1147,7 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 			P_PlayerFlip(mo);
 		}
 
-		if (mo->player->trickpanel >= 2)
+		if (mo->player->trickpanel > TRICKSTATE_READY)
 		{
 			gravityadd = (5*gravityadd)/2;
 		}
@@ -8454,7 +8454,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		if (!mobj->target
 		|| !mobj->target->health
 		|| !mobj->target->player
-		|| mobj->target->player->trickpanel <= 1)
+		|| mobj->target->player->trickpanel <= TRICKSTATE_FORWARD)
 		{
 			P_RemoveMobj(mobj);
 			return false;
@@ -8477,7 +8477,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		fixed_t scale = mobj->target->scale;
 
 		// sweeping effect
-		if (mobj->target->player->trickpanel == 4)
+		if (mobj->target->player->trickpanel == TRICKSTATE_BACK)
 		{
 			const fixed_t saferange = (20*FRACUNIT)/21;
 			if (mobj->threshold < -saferange)

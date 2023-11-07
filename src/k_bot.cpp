@@ -1109,7 +1109,7 @@ static void K_BotTrick(player_t *player, ticcmd_t *cmd, const botcontroller_t *b
 		return;
 	}
 
-	if (player->trickpanel == 1)
+	if (player->trickpanel == TRICKSTATE_READY)
 	{
 		switch (botController->trick)
 		{
@@ -1521,7 +1521,7 @@ static void K_BuildBotTiccmdNormal(player_t *player, ticcmd_t *cmd)
 
 	// Actual gameplay behaviors below this block!
 	const botcontroller_t *botController = K_GetBotController(player->mo);
-	if (player->trickpanel != 0)
+	if (player->trickpanel != TRICKSTATE_NONE)
 	{
 		K_BotTrick(player, cmd, botController);
 

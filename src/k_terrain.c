@@ -549,7 +549,7 @@ void K_ProcessTerrainEffect(mobj_t *mo)
 			P_InstaThrust(player->mo, thrustAngle, max(thrustSpeed, 2*playerSpeed));
 
 			player->dashpadcooldown = TICRATE/3;
-			player->trickpanel = 0;
+			player->trickpanel = TRICKSTATE_NONE;
 			player->floorboost = 2;
 
 			S_StartSound(player->mo, sfx_cdfm62);
