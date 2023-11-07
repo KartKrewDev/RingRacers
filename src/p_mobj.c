@@ -8408,10 +8408,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			return true;
 		}
 
-		mobj->extravalue1 += 1;
-
 		mobj->angle += ANG1*mobj->extravalue1;
-		P_SetScale(mobj, mobj->target->scale);
+		mobj->extravalue1 += 1;
+		P_InstaScale(mobj, mobj->target->scale);
 
 		destx = mobj->target->x;
 		desty = mobj->target->y;
@@ -8438,6 +8437,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		if (mobj->flags2 & MF2_AMBUSH)
 		{
 			P_SetOrigin(mobj, destx, desty, mobj->target->z + zoff);
+			mobj->old_angle = mobj->angle;
 			mobj->flags2 &= ~MF2_AMBUSH;
 		}
 		else
@@ -8462,7 +8462,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			return false;
 		}
 
-		if (leveltime & 1)
+		// Flicker every other frame from first visibility
+		if (mobj->flags2 & MF2_BOSSDEAD)
 		{
 			mobj->renderflags |= RF_DONTDRAW;
 		}
@@ -8472,17 +8473,19 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			mobj->renderflags |= (mobj->target->renderflags & RF_DONTDRAW);
 		}
 
+		mobj->eflags = (mobj->eflags & ~MFE_VERTICALFLIP)|(mobj->target->eflags & MFE_VERTICALFLIP);
+		mobj->flags2 = ((mobj->flags2 & ~MF2_OBJECTFLIP)|(mobj->target->flags2 & MF2_OBJECTFLIP)) ^ MF2_BOSSDEAD;
+
+		fixed_t scale = mobj->target->scale;
+
 		mobj->angle += mobj->movedir;
-		P_SetScale(mobj, mobj->target->scale);
+		P_InstaScale(mobj, scale);
 
 		destx = mobj->target->x;
 		desty = mobj->target->y;
 
 		destx += P_ReturnThrustX(mobj, mobj->angle - ANGLE_90, mobj->radius*2);
 		desty += P_ReturnThrustY(mobj, mobj->angle - ANGLE_90, mobj->radius*2);
-
-		mobj->eflags = (mobj->eflags & ~MFE_VERTICALFLIP)|(mobj->target->eflags & MFE_VERTICALFLIP);
-		mobj->flags2 = (mobj->flags2 & ~MF2_OBJECTFLIP)|(mobj->target->flags2 & MF2_OBJECTFLIP);
 
 		if (mobj->eflags & MFE_VERTICALFLIP)
 			zoff += mobj->target->height - mobj->height;
@@ -8493,6 +8496,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		if (mobj->flags2 & MF2_AMBUSH)
 		{
 			P_SetOrigin(mobj, destx, desty, mobj->target->z + zoff);
+			mobj->old_angle = mobj->angle;
 			mobj->flags2 &= ~MF2_AMBUSH;
 		}
 		else
