@@ -1115,7 +1115,8 @@ typedef enum sprite
 	SPR_IMDB, // Item Monitor Small Shard (Debris)
 	SPR_MTWK, // Item Monitor Glass Twinkle
 
-	SPR_SLPT, // Sliptide zip indicator
+	SPR_SLPT, // Wavedash indicator
+	SPR_TRBS, // Trickdash indicator
 
 	SPR_IWHP, // Instawhip
 	SPR_WPRE, // Instawhip Recharge
@@ -4537,7 +4538,7 @@ typedef enum state
 	S_MAGICIANBOX_TOP,
 	S_MAGICIANBOX_BOTTOM,
 
-	S_SLIPTIDEZIP,
+	S_WAVEDASH,
 
 	S_INSTAWHIP,
 	S_INSTAWHIP_RECHARGE1,
@@ -6808,7 +6809,7 @@ typedef enum mobj_type
 	MT_MONITOR_PART,
 	MT_MONITOR_SHARD,
 	MT_MAGICIANBOX,
-	MT_SLIPTIDEZIP,
+	MT_WAVEDASH,
 
 	MT_INSTAWHIP,
 	MT_INSTAWHIP_RECHARGE,

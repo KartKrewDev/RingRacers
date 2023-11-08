@@ -1263,6 +1263,9 @@ static boolean K_HasInfiniteTether(player_t *player)
 	if (player->eggmanexplode > 0)
 		return true;
 
+	if (player->trickdash)
+		return true;
+
 	return false;
 }
 
@@ -1881,9 +1884,9 @@ static void K_SpawnGenericSpeedLines(player_t *player, boolean top)
 		fast->colorized = true;
 		fast->renderflags |= RF_ADD;
 	}
-	else if (player->sliptideZipBoost)
+	else if (player->wavedashboost || player->trickdashboost)
 	{
-		fast->color = SKINCOLOR_WHITE;
+		fast->color = (player->trickdashboost) ? K_RainbowColor(leveltime) : SKINCOLOR_WHITE;
 		fast->colorized = true;
 	}
 	else if (player->ringboost)
@@ -3231,10 +3234,15 @@ static void K_GetKartBoostPower(player_t *player)
 		);
 	}
 
-	if (player->sliptideZipBoost)
+	if (player->wavedashboost)
 	{
-		// NB: This is intentionally under the 25% threshold required to initiate a sliptide
+		// NB: This is intentionally under the 25% handleboost threshold required to initiate a sliptide
 		ADDBOOST(8*FRACUNIT/10, 4*FRACUNIT, 2*SLIPTIDEHANDLING/5);  // + 80% top speed, + 400% acceleration, +20% handling
+	}
+
+	if (player->trickdashboost)
+	{
+		ADDBOOST(8*FRACUNIT/10, 8*FRACUNIT, 3*SLIPTIDEHANDLING/5);  // + 80% top speed, + 800% acceleration, +30% handling
 	}
 
 	if (player->spindashboost) // Spindash boost
@@ -4074,7 +4082,7 @@ void K_InitStumbleIndicator(player_t *player)
 	P_SetTarget(&new->target, player->mo);
 }
 
-void K_InitSliptideZipIndicator(player_t *player)
+void K_InitWavedashIndicator(player_t *player)
 {
 	mobj_t *new = NULL;
 
@@ -4088,14 +4096,14 @@ void K_InitSliptideZipIndicator(player_t *player)
 		return;
 	}
 
-	if (P_MobjWasRemoved(player->sliptideZipIndicator) == false)
+	if (P_MobjWasRemoved(player->wavedashIndicator) == false)
 	{
-		P_RemoveMobj(player->sliptideZipIndicator);
+		P_RemoveMobj(player->wavedashIndicator);
 	}
 
-	new = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_SLIPTIDEZIP);
+	new = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_WAVEDASH);
 
-	P_SetTarget(&player->sliptideZipIndicator, new);
+	P_SetTarget(&player->wavedashIndicator, new);
 	P_SetTarget(&new->target, player->mo);
 }
 
@@ -4250,11 +4258,11 @@ void K_UpdateStumbleIndicator(player_t *player)
 
 #define MIN_WAVEDASH_CHARGE ((7*TICRATE/16)*9)
 
-static boolean K_IsLosingSliptideZip(player_t *player)
+static boolean K_IsLosingWavedash(player_t *player)
 {
 	if (player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
 		return true;
-	if (!K_Sliptiding(player) && player->sliptideZip < MIN_WAVEDASH_CHARGE)
+	if (!K_Sliptiding(player) && player->wavedash < MIN_WAVEDASH_CHARGE)
 		return true;
 	if (!K_Sliptiding(player) && player->drift == 0
 		&& P_IsObjectOnGround(player->mo) && player->sneakertimer == 0
@@ -4263,7 +4271,7 @@ static boolean K_IsLosingSliptideZip(player_t *player)
 	return false;
 }
 
-void K_UpdateSliptideZipIndicator(player_t *player)
+void K_UpdateWavedashIndicator(player_t *player)
 {
 	mobj_t *mobj = NULL;
 
@@ -4277,13 +4285,13 @@ void K_UpdateSliptideZipIndicator(player_t *player)
 		return;
 	}
 
-	if (player->sliptideZipIndicator == NULL || P_MobjWasRemoved(player->sliptideZipIndicator) == true)
+	if (player->wavedashIndicator == NULL || P_MobjWasRemoved(player->wavedashIndicator) == true)
 	{
-		K_InitSliptideZipIndicator(player);
+		K_InitWavedashIndicator(player);
 		return;
 	}
 
-	mobj = player->sliptideZipIndicator;
+	mobj = player->wavedashIndicator;
 	angle_t momentumAngle = K_MomentumAngle(player->mo);
 
 	P_MoveOrigin(mobj, player->mo->x - FixedMul(40*mapobjectscale, FINECOSINE(momentumAngle >> ANGLETOFINESHIFT)),
@@ -4293,7 +4301,7 @@ void K_UpdateSliptideZipIndicator(player_t *player)
 	P_SetScale(mobj, 3 * player->mo->scale / 2);
 
 	// No stored boost (or negligible enough that it might be a mistake)
-	if (player->sliptideZip <= HIDEWAVEDASHCHARGE)
+	if (player->wavedash <= HIDEWAVEDASHCHARGE)
 	{
 		mobj->renderflags |= RF_DONTDRAW;
 		mobj->frame = 7;
@@ -4302,8 +4310,8 @@ void K_UpdateSliptideZipIndicator(player_t *player)
 
 	mobj->renderflags &= ~RF_DONTDRAW;
 
-	UINT32 chargeFrame = 7 - min(7, player->sliptideZip / 100);
-	UINT32 decayFrame = min(7, player->sliptideZipDelay / 2);
+	UINT32 chargeFrame = 7 - min(7, player->wavedash / 100);
+	UINT32 decayFrame = min(7, player->wavedashdelay / 2);
 	if (max(chargeFrame, decayFrame) > mobj->frame)
 		mobj->frame++;
 	else if (max(chargeFrame, decayFrame) < mobj->frame)
@@ -4312,7 +4320,7 @@ void K_UpdateSliptideZipIndicator(player_t *player)
 	mobj->renderflags &= ~RF_TRANSMASK;
 	mobj->renderflags |= RF_PAPERSPRITE;
 
-	if (K_IsLosingSliptideZip(player))
+	if (K_IsLosingWavedash(player))
 	{
 		// Decay timer's ticking
 		mobj->rollangle += 3*ANG30/4;
@@ -4323,6 +4331,17 @@ void K_UpdateSliptideZipIndicator(player_t *player)
 	{
 		// Storing boost
 		mobj->rollangle += 3*ANG15/4;
+	}
+
+	if (player->trickdash)
+	{
+		mobj->sprite = SPR_TRBS;
+		mobj->renderflags |= RF_ADD;
+	}
+	else
+	{
+		mobj->sprite = SPR_SLPT;
+		mobj->renderflags &= ~RF_ADD;
 	}
 }
 
@@ -8107,7 +8126,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			if (player->sneakertimer || player->ringboost
 				|| player->driftboost || player->startboost
 				|| player->eggmanexplode || player->trickboost
-				|| player->gateBoost || player->sliptideZipBoost)
+				|| player->gateBoost || player->wavedashboost || player->trickdashboost)
 			{
 #if 0
 				if (player->invincibilitytimer)
@@ -8393,9 +8412,14 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->dropdashboost)
 		player->dropdashboost--;
 
-	if (player->sliptideZipBoost > 0 && onground == true)
+	if (player->wavedashboost > 0 && onground == true)
 	{
-		player->sliptideZipBoost--;
+		player->wavedashboost--;
+	}
+
+	if (player->trickdashboost > 0 && onground == true)
+	{
+		player->trickdashboost--;
 	}
 
 	if (player->spindashboost)
@@ -8864,7 +8888,7 @@ void K_KartPlayerAfterThink(player_t *player)
 	K_KartResetPlayerColor(player);
 
 	K_UpdateStumbleIndicator(player);
-	K_UpdateSliptideZipIndicator(player);
+	K_UpdateWavedashIndicator(player);
 	K_UpdateTrickIndicator(player);
 
 	// Move held objects (Bananas, Orbinaut, etc)
@@ -9925,8 +9949,9 @@ static void K_KartDrift(player_t *player, boolean onground)
 		player->drift = player->driftcharge = player->aizdriftstrat = 0;
 		player->pflags &= ~(PF_BRAKEDRIFT|PF_GETSPARKS);
 		// And take away wavedash properties: advanced cornering demands advanced finesse
-		player->sliptideZip = 0;
-		player->sliptideZipBoost = 0;
+		player->wavedash = 0;
+		player->wavedashboost = 0;
+		player->trickdashboost = 0;
 	}
 	else if ((player->pflags & PF_DRIFTINPUT) && player->drift != 0)
 	{
@@ -10028,11 +10053,11 @@ static void K_KartDrift(player_t *player, boolean onground)
 	|| (!player->aizdriftstrat)
 	|| (player->steering > 0) != (player->aizdriftstrat > 0))
 	{
-		if (!player->drift && player->steering && player->aizdriftstrat && player->sliptideZip // If we were sliptiding last tic,
+		if (!player->drift && player->steering && player->aizdriftstrat && player->wavedash // If we were sliptiding last tic,
 			&& (player->steering > 0) == (player->aizdriftstrat > 0) // we're steering in the right direction,
 			&& player->speed >= K_GetKartSpeed(player, false, true)) // and we're above the threshold to spawn dust...
 		{
-			keepsliptide = true; // Then keep your current sliptide, but note the behavior change for sliptidezip handling.
+			keepsliptide = true; // Then keep your current sliptide, but note the behavior change for wavedash handling.
 		}
 		else
 		{
@@ -10060,9 +10085,9 @@ static void K_KartDrift(player_t *player, boolean onground)
 			// This makes wavedash charge noticeably slower on even modest delay, despite the magnitude of the turn seeming the same.
 			// So we only require 90% of a turn to get full charge strength.
 
-			player->sliptideZip += addCharge;
+			player->wavedash += addCharge;
 
-			if (player->sliptideZip >= MIN_WAVEDASH_CHARGE && (player->sliptideZip - addCharge) < MIN_WAVEDASH_CHARGE)
+			if (player->wavedash >= MIN_WAVEDASH_CHARGE && (player->wavedash - addCharge) < MIN_WAVEDASH_CHARGE)
 				S_StartSound(player->mo, sfx_waved5);
 		}
 
@@ -10088,16 +10113,16 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 	if (!K_Sliptiding(player) || keepsliptide)
 	{
-		if (!keepsliptide && K_IsLosingSliptideZip(player) && player->sliptideZip > 0)
+		if (!keepsliptide && K_IsLosingWavedash(player) && player->wavedash > 0)
 		{
-			if (player->sliptideZip > HIDEWAVEDASHCHARGE && !S_SoundPlaying(player->mo, sfx_waved2))
+			if (player->wavedash > HIDEWAVEDASHCHARGE && !S_SoundPlaying(player->mo, sfx_waved2))
 				S_StartSoundAtVolume(player->mo, sfx_waved2, 255); // Losing combo time, going to boost
 			S_StopSoundByID(player->mo, sfx_waved1);
 			S_StopSoundByID(player->mo, sfx_waved4);
-			player->sliptideZipDelay++;
-			if (player->sliptideZipDelay > TICRATE/2)
+			player->wavedashdelay++;
+			if (player->wavedashdelay > TICRATE/2)
 			{
-				if (player->sliptideZip >= MIN_WAVEDASH_CHARGE)
+				if (player->wavedash >= MIN_WAVEDASH_CHARGE)
 				{
 					fixed_t maxZipPower = 2*FRACUNIT;
 					fixed_t minZipPower = 1*FRACUNIT;
@@ -10112,30 +10137,36 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 					fixed_t yourPowerReduction = FixedDiv(yourPenalty * FRACUNIT, penaltySpread * FRACUNIT);
 					fixed_t yourPower = maxZipPower - FixedMul(yourPowerReduction, powerSpread);
-					int yourBoost = FixedInt(FixedMul(yourPower, player->sliptideZip/10 * FRACUNIT));
+					int yourBoost = FixedInt(FixedMul(yourPower, player->wavedash/10 * FRACUNIT));
 
-					/*
-					CONS_Printf("SZ %d MZ %d mZ %d pwS %d mP %d MP %d peS %d yPe %d yPR %d yPw %d yB %d\n",
-						player->sliptideZip, maxZipPower, minZipPower, powerSpread, minPenalty, maxPenalty, penaltySpread, yourPenalty, yourPowerReduction, yourPower, yourBoost);
-					*/
+					if (player->trickdash)
+					{
+						player->trickdashboost += 3*yourBoost/2;
+						S_StartSoundAtVolume(player->mo, sfx_gshba, 255);
+					}
+					else
+					{
+						player->wavedashboost += yourBoost;
+					}
 
-					player->sliptideZipBoost += yourBoost;
+					S_StartSoundAtVolume(player->mo, sfx_waved3, 255); // Boost
+
+					player->trickdash = 0;
 
 					K_SpawnDriftBoostExplosion(player, 0);
-					S_StartSoundAtVolume(player->mo, sfx_waved3, 255); // Boost
 				}
 				S_StopSoundByID(player->mo, sfx_waved1);
 				S_StopSoundByID(player->mo, sfx_waved2);
 				S_StopSoundByID(player->mo, sfx_waved4);
-				player->sliptideZip = 0;
-				player->sliptideZipDelay = 0;
+				player->wavedash = 0;
+				player->wavedashdelay = 0;
 			}
 		}
 		else
 		{
 			S_StopSoundByID(player->mo, sfx_waved1);
 			S_StopSoundByID(player->mo, sfx_waved2);
-			if (player->sliptideZip > 0 && !S_SoundPlaying(player->mo, sfx_waved4))
+			if (player->wavedash > 0 && !S_SoundPlaying(player->mo, sfx_waved4))
 				S_StartSoundAtVolume(player->mo, sfx_waved4, 255); // Passive woosh
 		}
 
@@ -10149,10 +10180,10 @@ static void K_KartDrift(player_t *player, boolean onground)
 	}
 	else
 	{
-		player->sliptideZipDelay = 0;
+		player->wavedashdelay = 0;
 		S_StopSoundByID(player->mo, sfx_waved2);
 		S_StopSoundByID(player->mo, sfx_waved4);
-		if (player->sliptideZip > HIDEWAVEDASHCHARGE && !S_SoundPlaying(player->mo, sfx_waved1))
+		if (player->wavedash > HIDEWAVEDASHCHARGE && !S_SoundPlaying(player->mo, sfx_waved1))
 			S_StartSoundAtVolume(player->mo, sfx_waved1, 255); // Charging
 	}
 
@@ -10711,7 +10742,7 @@ static void K_KartSpindashWind(mobj_t *parent)
 
 	P_SetTarget(&wind->target, parent);
 
-	if (parent->player && parent->player->sliptideZipBoost)
+	if (parent->player && parent->player->wavedashboost)
 		P_SetScale(wind, wind->scale * 2);
 
 	if (parent->momx || parent->momy)
@@ -10775,7 +10806,7 @@ static void K_KartSpindash(player_t *player)
 		K_KartSpindashWind(player->mo);
 	}
 
-	if ((player->sliptideZipBoost > 0) && (spawnWind == true))
+	if ((player->wavedashboost > 0 || player->trickdashboost > 0) && (spawnWind == true))
 	{
 		K_KartSpindashWind(player->mo);
 	}
@@ -11885,7 +11916,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 										if (player->throwdir == -1)
 										{
 											P_InstaThrust(player->mo, player->mo->angle, player->speed + (80 * mapobjectscale));
-											player->sliptideZipBoost += TICRATE; // Just for keeping speed briefly vs. tripwire etc.
+											player->wavedashboost += TICRATE; // Just for keeping speed briefly vs. tripwire etc.
 											// If this doesn't turn out to be reliable, I'll change it to directly set leniency or something.
 										}
 										K_PlayAttackTaunt(player->mo);
@@ -12218,6 +12249,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				{
 					S_StartSound(player->mo, sfx_trick0);
 					player->dotrickfx = true;
+					player->trickboostdecay = min(TICRATE*3/4, abs(momz/FRACUNIT));
 
 					if (cmd->turning > 0)
 					{
@@ -12252,6 +12284,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				{
 					S_StartSound(player->mo, sfx_trick0);
 					player->dotrickfx = true;
+					player->trickboostdecay = min(TICRATE*3/4, abs(momz/FRACUNIT));
 
 					if (cmd->throwdir > 0) // forward trick
 					{
@@ -12366,24 +12399,31 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		}
 		else if ((player->trickpanel != TRICKSTATE_NONE) && P_IsObjectOnGround(player->mo))	// Landed from trick
 		{
+			K_SpawnDashDustRelease(player);
+
 			if (player->fastfall)
 			{
+				P_InstaThrust(player->mo, player->mo->angle, 2*abs(player->fastfall)/3 + 15*FRACUNIT);
 				player->mo->hitlag = 3;
-				K_SpawnDashDustRelease(player);
-				P_InstaThrust(player->mo, player->mo->angle, 30*FRACUNIT);
-				S_StartSound(player->mo, sfx_gshce);
+				S_StartSound(player->mo, sfx_gshac); // TODO
 				player->fastfall = 0; // intentionally skip bounce
 			}
-
-			if (player->trickpanel == TRICKSTATE_BACK) // upward trick
+			else
 			{
 				S_StartSound(player->mo, sfx_s23c);
 				K_SpawnDashDustRelease(player);
 				player->trickboost = TICRATE - player->trickboostdecay;
-			}
+				player->wavedash += 150; // bonus for the slow fall
+				//player->wavedashdelay = TICRATE/2 - 2;
+				player->wavedashdelay = 0;
 
-			player->sliptideZip += 300;
-			player->sliptideZipDelay = 0;
+				if (player->trickpanel == TRICKSTATE_FORWARD)
+					player->trickboostpower /= 18;
+				else if (player->trickpanel != TRICKSTATE_BACK)
+					player->trickboostpower /= 9;
+
+				player->trickdash = true;
+			}
 
 			player->trickpanel = TRICKSTATE_NONE;
 			player->trickboostdecay = 0;

@@ -2558,7 +2558,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 	}
 
 	PlayerPointerRemove(player->stumbleIndicator);
-	PlayerPointerRemove(player->sliptideZipIndicator);
+	PlayerPointerRemove(player->wavedashIndicator);
 	PlayerPointerRemove(player->trickIndicator);
 
 #undef PlayerPointerRemove

@@ -75,7 +75,7 @@ typedef enum
 	SKYBOXCENTER = 0x0010,
 	HOVERHYUDORO = 0x0020,
 	STUMBLE = 0x0040,
-	SLIPTIDEZIP = 0x0080,
+	WAVEDASH = 0x0080,
 	RINGSHOOTER = 0x0100,
 	WHIP = 0x0200,
 	HAND = 0x0400,
@@ -311,8 +311,8 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		if (players[i].stumbleIndicator)
 			flags |= STUMBLE;
 
-		if (players[i].sliptideZipIndicator)
-			flags |= SLIPTIDEZIP;
+		if (players[i].wavedashIndicator)
+			flags |= WAVEDASH;
 
 		if (players[i].trickIndicator)
 			flags |= TRICKINDICATOR;
@@ -352,8 +352,8 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		if (flags & STUMBLE)
 			WRITEUINT32(save->p, players[i].stumbleIndicator->mobjnum);
 
-		if (flags & SLIPTIDEZIP)
-			WRITEUINT32(save->p, players[i].sliptideZipIndicator->mobjnum);
+		if (flags & WAVEDASH)
+			WRITEUINT32(save->p, players[i].wavedashIndicator->mobjnum);
 
 		if (flags & TRICKINDICATOR)
 			WRITEUINT32(save->p, players[i].trickIndicator->mobjnum);
@@ -542,9 +542,11 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		WRITEUINT8(save->p, players[i].tripwireReboundDelay);
 
-		WRITEUINT16(save->p, players[i].sliptideZip);
-		WRITEUINT8(save->p, players[i].sliptideZipDelay);
-		WRITEUINT16(save->p, players[i].sliptideZipBoost);
+		WRITEUINT16(save->p, players[i].wavedash);
+		WRITEUINT8(save->p, players[i].wavedashdelay);
+		WRITEUINT16(save->p, players[i].wavedashboost);
+		WRITEUINT8(save->p, players[i].trickdash);
+		WRITEUINT16(save->p, players[i].trickdashboost);
 
 		WRITEUINT8(save->p, players[i].lastsafelap);
 
@@ -869,8 +871,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		if (flags & STUMBLE)
 			players[i].stumbleIndicator = (mobj_t *)(size_t)READUINT32(save->p);
 
-		if (flags & SLIPTIDEZIP)
-			players[i].sliptideZipIndicator = (mobj_t *)(size_t)READUINT32(save->p);
+		if (flags & WAVEDASH)
+			players[i].wavedashIndicator = (mobj_t *)(size_t)READUINT32(save->p);
 
 		if (flags & TRICKINDICATOR)
 			players[i].trickIndicator = (mobj_t *)(size_t)READUINT32(save->p);
@@ -1060,9 +1062,11 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		players[i].tripwireReboundDelay = READUINT8(save->p);
 
-		players[i].sliptideZip = READUINT16(save->p);
-		players[i].sliptideZipDelay = READUINT8(save->p);
-		players[i].sliptideZipBoost = READUINT16(save->p);
+		players[i].wavedash = READUINT16(save->p);
+		players[i].wavedashdelay = READUINT8(save->p);
+		players[i].wavedashboost = READUINT16(save->p);
+		players[i].trickdash = READUINT8(save->p);
+		players[i].trickdashboost = READUINT16(save->p);
 
 		players[i].lastsafelap = READUINT8(save->p);
 
@@ -5600,12 +5604,12 @@ static void P_RelinkPointers(void)
 			if (!P_SetTarget(&players[i].stumbleIndicator, P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "stumbleIndicator not found on player %d\n", i);
 		}
-		if (players[i].sliptideZipIndicator)
+		if (players[i].wavedashIndicator)
 		{
-			temp = (UINT32)(size_t)players[i].sliptideZipIndicator;
-			players[i].sliptideZipIndicator = NULL;
-			if (!P_SetTarget(&players[i].sliptideZipIndicator, P_FindNewPosition(temp)))
-				CONS_Debug(DBG_GAMELOGIC, "sliptideZipIndicator not found on player %d\n", i);
+			temp = (UINT32)(size_t)players[i].wavedashIndicator;
+			players[i].wavedashIndicator = NULL;
+			if (!P_SetTarget(&players[i].wavedashIndicator, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "wavedashIndicator not found on player %d\n", i);
 		}
 		if (players[i].trickIndicator)
 		{

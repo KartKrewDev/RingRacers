@@ -558,7 +558,8 @@ char sprnames[NUMSPRITES + 1][5] =
 	"IMDB", // Item Monitor Small Shard (Debris)
 	"MTWK", // Item Monitor Glass Twinkle
 
-	"SLPT", // Sliptide zip indicator
+	"SLPT", // Wavedash indicator
+	"TRBS", // Trickdash indicator
 
 	"IWHP", // Instawhip
 	"WPRE", // Instawhip Recharge
@@ -4126,7 +4127,7 @@ state_t states[NUMSTATES] =
 	{SPR_MGBT,                 FF_FLOORSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_MAGICIANBOX_TOP
 	{SPR_MGBB,                 FF_FLOORSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_MAGICIANBOX_BOTTOM
 
-	{SPR_SLPT,                 FF_PAPERSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_SLIPTIDEZIP
+	{SPR_SLPT,                 FF_PAPERSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_WAVEDASH
 
 	{SPR_IWHP,                 FF_FLOORSPRITE|FF_ANIMATE|0, -1, {NULL}, 6, 2, S_NULL}, // S_INSTAWHIP
 	{SPR_NULL,                 0, 1, {NULL}, 0, 0, S_INSTAWHIP_RECHARGE2}, // S_INSTAWHIP_RECHARGE1
@@ -23078,9 +23079,9 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL          // raisestate
 	},
 
-	{           // MT_SLIPTIDEZIP
+	{           // MT_WAVEDASH
 		-1,             // doomednum
-		S_SLIPTIDEZIP,    // spawnstate
+		S_WAVEDASH,    // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound
