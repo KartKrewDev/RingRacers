@@ -545,9 +545,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT16(save->p, players[i].wavedash);
 		WRITEUINT8(save->p, players[i].wavedashdelay);
 		WRITEUINT16(save->p, players[i].wavedashboost);
-		WRITEUINT8(save->p, players[i].trickdash);
-		WRITEUINT16(save->p, players[i].trickdashboost);
 		WRITEUINT16(save->p, players[i].trickcharge);
+
+		WRITEUINT16(save->p, players[i].infinitether);
 
 		WRITEUINT8(save->p, players[i].lastsafelap);
 
@@ -1066,9 +1066,9 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].wavedash = READUINT16(save->p);
 		players[i].wavedashdelay = READUINT8(save->p);
 		players[i].wavedashboost = READUINT16(save->p);
-		players[i].trickdash = READUINT8(save->p);
-		players[i].trickdashboost = READUINT16(save->p);
 		players[i].trickcharge = READUINT16(save->p);
+
+		players[i].infinitether = READUINT16(save->p);
 
 		players[i].lastsafelap = READUINT8(save->p);
 

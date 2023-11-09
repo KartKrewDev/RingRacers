@@ -333,10 +333,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->wavedashboost);
 	else if (fastcmp(field,"trickcharge"))
 		lua_pushinteger(L, plr->trickcharge);
-	//else if (fastcmp(field,"trickdashboost"))
-	//	lua_pushinteger(L, plr->trickdashboost);
-	//else if (fastcmp(field,"trickdash"))
-	//	lua_pushinteger(L, plr->trickdash);
+	else if (fastcmp(field,"infinitether"))
+		lua_pushinteger(L, plr->infinitether);
 	else if (fastcmp(field,"lastsafelap"))
 		lua_pushinteger(L, plr->lastsafelap);
 	else if (fastcmp(field,"instaWhipCharge"))
@@ -823,10 +821,8 @@ static int player_set(lua_State *L)
 		plr->wavedashboost = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"trickcharge"))
 		plr->trickcharge = luaL_checkinteger(L, 3);
-	//else if (fastcmp(field,"trickdashboost"))
-	//	plr->trickdashboost = luaL_checkinteger(L, 3);
-	//else if (fastcmp(field,"trickdash"))
-	//	plr->trickdash = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"infinitether"))
+		plr->infinitether = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"lastsafelap"))
 		plr->lastsafelap = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"instaWhipCharge"))

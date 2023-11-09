@@ -1263,10 +1263,10 @@ static boolean K_HasInfiniteTether(player_t *player)
 	if (player->eggmanexplode > 0)
 		return true;
 
-	if (player->trickdash)
+	if (player->trickcharge)
 		return true;
 
-	if (player->trickcharge)
+	if (player->infinitether)
 		return true;
 
 	return false;
@@ -1887,9 +1887,9 @@ static void K_SpawnGenericSpeedLines(player_t *player, boolean top)
 		fast->colorized = true;
 		fast->renderflags |= RF_ADD;
 	}
-	else if (player->wavedashboost || player->trickdashboost)
+	else if (player->wavedashboost)
 	{
-		fast->color = (player->trickdashboost) ? K_RainbowColor(leveltime) : SKINCOLOR_WHITE;
+		fast->color = SKINCOLOR_WHITE;
 		fast->colorized = true;
 	}
 	else if (player->ringboost)
@@ -3243,14 +3243,9 @@ static void K_GetKartBoostPower(player_t *player)
 		ADDBOOST(8*FRACUNIT/10, 4*FRACUNIT, 2*SLIPTIDEHANDLING/5);  // + 80% top speed, + 400% acceleration, +20% handling
 	}
 
-	if (player->trickdashboost)
-	{
-		ADDBOOST(8*FRACUNIT/10, 8*FRACUNIT, 3*SLIPTIDEHANDLING/5);  // + 80% top speed, + 800% acceleration, +30% handling
-	}
-
 	if (player->trickcharge)
 	{
-		ADDBOOST(0, 0, 2*SLIPTIDEHANDLING/10); // 0% speed 0% accel 20% handle
+		ADDBOOST(0, FRACUNIT, 2*SLIPTIDEHANDLING/10); // 0% speed 100% accel 20% handle
 	}
 
 	if (player->spindashboost) // Spindash boost
@@ -4339,17 +4334,6 @@ void K_UpdateWavedashIndicator(player_t *player)
 	{
 		// Storing boost
 		mobj->rollangle += 3*ANG15/4;
-	}
-
-	if (player->trickdash)
-	{
-		mobj->sprite = SPR_TRBS;
-		mobj->renderflags |= RF_ADD;
-	}
-	else
-	{
-		mobj->sprite = SPR_SLPT;
-		mobj->renderflags &= ~RF_ADD;
 	}
 }
 
@@ -8134,7 +8118,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			if (player->sneakertimer || player->ringboost
 				|| player->driftboost || player->startboost
 				|| player->eggmanexplode || player->trickboost
-				|| player->gateBoost || player->wavedashboost || player->trickdashboost)
+				|| player->gateBoost || player->wavedashboost)
 			{
 #if 0
 				if (player->invincibilitytimer)
@@ -8425,16 +8409,16 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->wavedashboost--;
 	}
 
-	if (player->trickdashboost > 0 && onground == true)
-	{
-		player->trickdashboost--;
-	}
-
 	if (player->trickcharge > 0 && onground == true)
 	{
 		player->trickcharge--;
 		if (player->drift)
 			player->trickcharge = max(player->trickcharge, 1);
+	}
+
+	if (player->infinitether > 0)
+	{
+		player->infinitether--;
 	}
 
 	if (player->spindashboost)
@@ -8549,6 +8533,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->dotrickfx && !player->mo->hitlag)
 	{
 		S_StartSound(player->mo, sfx_trick1);
+		player->trickcharge = 8*TICRATE;
 		player->dotrickfx = false;
 	}
 
@@ -9845,6 +9830,8 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 	const UINT16 buttons = K_GetKartButtons(player);
 
+	boolean dokicker = false;
+
 	// Drifting is actually straffing + automatic turning.
 	// Holding the Jump button will enable drifting.
 	// (This comment is extremely funny)
@@ -9907,6 +9894,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 				K_SpawnDriftBoostExplosion(player, 3);
 				K_SpawnDriftElectricSparks(player, K_DriftSparkColor(player, player->driftcharge), false);
+				dokicker = true;
 			}
 			else if (player->driftcharge >= dsfour)
 			{
@@ -9921,15 +9909,17 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 				K_SpawnDriftBoostExplosion(player, 4);
 				K_SpawnDriftElectricSparks(player, K_DriftSparkColor(player, player->driftcharge), false);
+				dokicker = true;
 			}
 
-			if (player->trickcharge)
+			if (player->trickcharge && dokicker)
 			{
 				player->driftboost += 20;
 				player->wavedashboost += 10;
 				P_Thrust(player->mo, pushdir, player->speed / 2);
 				S_StartSound(player->mo, sfx_gshba);
 				player->trickcharge = 0;
+				player->infinitether = TICRATE*2;
 			}
 		}
 
@@ -9983,7 +9973,6 @@ static void K_KartDrift(player_t *player, boolean onground)
 		// And take away wavedash properties: advanced cornering demands advanced finesse
 		player->wavedash = 0;
 		player->wavedashboost = 0;
-		player->trickdashboost = 0;
 	}
 	else if ((player->pflags & PF_DRIFTINPUT) && player->drift != 0)
 	{
@@ -10050,7 +10039,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 		}
 
 		if (player->trickcharge && driftadditive)
-			driftadditive += 24;
+			driftadditive += 16;
 
 		// This spawns the drift sparks
 		if ((player->driftcharge + driftadditive >= dsone)
@@ -10174,19 +10163,9 @@ static void K_KartDrift(player_t *player, boolean onground)
 					fixed_t yourPower = maxZipPower - FixedMul(yourPowerReduction, powerSpread);
 					int yourBoost = FixedInt(FixedMul(yourPower, player->wavedash/10 * FRACUNIT));
 
-					if (player->trickdash)
-					{
-						player->trickdashboost += 3*yourBoost/2;
-						S_StartSoundAtVolume(player->mo, sfx_gshba, 255);
-					}
-					else
-					{
-						player->wavedashboost += yourBoost;
-					}
+					player->wavedashboost += yourBoost;
 
 					S_StartSoundAtVolume(player->mo, sfx_waved3, 255); // Boost
-
-					player->trickdash = 0;
 
 					K_SpawnDriftBoostExplosion(player, 0);
 				}
@@ -10841,7 +10820,7 @@ static void K_KartSpindash(player_t *player)
 		K_KartSpindashWind(player->mo);
 	}
 
-	if ((player->wavedashboost > 0 || player->trickdashboost > 0) && (spawnWind == true))
+	if ((player->wavedashboost > 0) && (spawnWind == true))
 	{
 		K_KartSpindashWind(player->mo);
 	}
@@ -12284,6 +12263,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				{
 					S_StartSound(player->mo, sfx_trick0);
 					player->dotrickfx = true;
+
+					// Calculate speed boost decay:
+					// Base speed boost duration is 35 tics.
+					// At most, lose 3/4th of your boost.
 					player->trickboostdecay = min(TICRATE*3/4, abs(momz/FRACUNIT));
 
 					if (cmd->turning > 0)
@@ -12319,10 +12302,15 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				{
 					S_StartSound(player->mo, sfx_trick0);
 					player->dotrickfx = true;
+
+					// Calculate speed boost decay:
+					// Base speed boost duration is 35 tics.
+					// At most, lose 3/4th of your boost.
 					player->trickboostdecay = min(TICRATE*3/4, abs(momz/FRACUNIT));
 
 					if (cmd->throwdir > 0) // forward trick
 					{
+
 						if (player->mo->momz * P_MobjFlip(player->mo) > 0)
 						{
 							player->mo->momz = 0;
@@ -12347,12 +12335,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						{
 							player->mo->momz = 0; // relative = false;
 						}
-
-						// Calculate speed boost decay:
-						// Base speed boost duration is 35 tics.
-						// At most, lose 3/4th of your boost.
-						player->trickboostdecay = min(TICRATE*3/4, abs(momz/FRACUNIT));
-						//CONS_Printf("decay: %d\n", player->trickboostdecay);
 
 						player->mo->momz += P_MobjFlip(player->mo)*48*mapobjectscale;
 						player->trickpanel = TRICKSTATE_BACK;
@@ -12442,6 +12424,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				player->mo->hitlag = 3;
 				S_StartSound(player->mo, sfx_gshac); // TODO
 				player->fastfall = 0; // intentionally skip bounce
+				player->trickcharge = 0;
 			}
 			else
 			{
@@ -12450,9 +12433,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 				UINT8 award = TICRATE - player->trickboostdecay;
 
-				//player->trickboost = award;
-				player->trickcharge += award*4;
-				K_AwardPlayerRings(player, award/2, true);
+				player->trickboost = award;
+				K_AwardPlayerRings(player, award, true);
 
 				if (player->trickpanel == TRICKSTATE_FORWARD)
 					player->trickboostpower /= 18;

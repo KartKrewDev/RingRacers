@@ -156,9 +156,9 @@ void K_DoIngameRespawn(player_t *player)
 	player->ringboost = 0;
 	player->driftboost = player->strongdriftboost = 0;
 	player->gateBoost = 0;
-	player->trickdash = 0;
 	player->trickcharge = 0;
-	player->wavedash = player->wavedashboost = player->wavedashdelay = player->trickdashboost = 0;
+	player->infinitether = 0;
+	player->wavedash = player->wavedashboost = player->wavedashdelay = 0;
 
 	K_TumbleInterrupt(player);
 	P_ResetPlayer(player);
