@@ -11507,8 +11507,19 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							{
 								INT32 ballhogmax = (player->itemamount) * BALLHOGINCREMENT;
 
-								if ((cmd->buttons & BT_ATTACK) && (player->pflags & PF_HOLDREADY)
-									&& (player->ballhogcharge < ballhogmax))
+								// This construct looks a little goofy, but we're basically just
+								// trying to prevent rapid taps from restarting a charge, while
+								// still allowing quick tapfire.
+								// (The player still has to pace their shots like this, it's not
+								// semi-auto, but that's probably kind of okay.)
+								if (player->ballhogcharge && !(cmd->buttons & BT_ATTACK))
+									player->ballhogtap = true;
+
+								if (player->ballhogcharge == 0)
+									player->ballhogtap = false;
+
+								boolean realcharge = (cmd->buttons & BT_ATTACK) && (player->pflags & PF_HOLDREADY) && (player->ballhogcharge < ballhogmax);
+								if ((realcharge && !player->ballhogtap) || (player->ballhogtap && player->ballhogcharge < BALLHOGINCREMENT))
 								{
 									player->ballhogcharge++;
 									if (player->ballhogcharge % BALLHOGINCREMENT == 0)

@@ -716,6 +716,7 @@ struct player_t
 	UINT8 flamelength;	// Flame Shield dash meter, number of segments
 
 	UINT16 ballhogcharge;	// Ballhog charge up -- the higher this value, the more projectiles
+	boolean ballhogtap;		// Ballhog released during charge: used to allow semirapid tapfire
 
 	UINT16 hyudorotimer;	// Duration of the Hyudoro offroad effect itself
 	SINT8 stealingtimer;	// if >0 you are stealing, if <0 you are being stolen from
