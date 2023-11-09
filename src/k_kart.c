@@ -1266,6 +1266,9 @@ static boolean K_HasInfiniteTether(player_t *player)
 	if (player->trickdash)
 		return true;
 
+	if (player->trickcharge)
+		return true;
+
 	return false;
 }
 
@@ -3243,6 +3246,11 @@ static void K_GetKartBoostPower(player_t *player)
 	if (player->trickdashboost)
 	{
 		ADDBOOST(8*FRACUNIT/10, 8*FRACUNIT, 3*SLIPTIDEHANDLING/5);  // + 80% top speed, + 800% acceleration, +30% handling
+	}
+
+	if (player->trickcharge)
+	{
+		ADDBOOST(0, 0, 2*SLIPTIDEHANDLING/10); // 0% speed 0% accel 20% handle
 	}
 
 	if (player->spindashboost) // Spindash boost
@@ -8422,6 +8430,13 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->trickdashboost--;
 	}
 
+	if (player->trickcharge > 0 && onground == true)
+	{
+		player->trickcharge--;
+		if (player->drift)
+			player->trickcharge = max(player->trickcharge, 1);
+	}
+
 	if (player->spindashboost)
 	{
 		player->spindashboost--;
@@ -8851,6 +8866,14 @@ void K_KartResetPlayerColor(player_t *player)
 			fullbright = true;
 			goto finalise;
 		}
+	}
+
+	if (player->trickcharge && (leveltime & 1))
+	{
+		player->mo->colorized = true;
+		player->mo->color = SKINCOLOR_INVINCFLASH;
+		fullbright = true;
+		goto finalise;
 	}
 
 	if (player->ringboost && (leveltime & 1)) // ring boosting
@@ -9899,6 +9922,15 @@ static void K_KartDrift(player_t *player, boolean onground)
 				K_SpawnDriftBoostExplosion(player, 4);
 				K_SpawnDriftElectricSparks(player, K_DriftSparkColor(player, player->driftcharge), false);
 			}
+
+			if (player->trickcharge)
+			{
+				player->driftboost += 20;
+				player->wavedashboost += 10;
+				P_Thrust(player->mo, pushdir, player->speed / 2);
+				S_StartSound(player->mo, sfx_gshba);
+				player->trickcharge = 0;
+			}
 		}
 
 		// Remove charge
@@ -10016,6 +10048,9 @@ static void K_KartDrift(player_t *player, boolean onground)
 		{
 			driftadditive = 0;
 		}
+
+		if (player->trickcharge && driftadditive)
+			driftadditive += 24;
 
 		// This spawns the drift sparks
 		if ((player->driftcharge + driftadditive >= dsone)
@@ -12412,17 +12447,17 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			{
 				S_StartSound(player->mo, sfx_s23c);
 				K_SpawnDashDustRelease(player);
-				player->trickboost = TICRATE - player->trickboostdecay;
-				player->wavedash += 150; // bonus for the slow fall
-				//player->wavedashdelay = TICRATE/2 - 2;
-				player->wavedashdelay = 0;
+
+				UINT8 award = TICRATE - player->trickboostdecay;
+
+				//player->trickboost = award;
+				player->trickcharge += award*4;
+				K_AwardPlayerRings(player, award/2, true);
 
 				if (player->trickpanel == TRICKSTATE_FORWARD)
 					player->trickboostpower /= 18;
 				else if (player->trickpanel != TRICKSTATE_BACK)
 					player->trickboostpower /= 9;
-
-				player->trickdash = true;
 			}
 
 			player->trickpanel = TRICKSTATE_NONE;
