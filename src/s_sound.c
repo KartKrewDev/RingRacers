@@ -426,6 +426,7 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 	for (i = 0; i <= r_splitscreen; i++)
 	{
 		player_t *player = &players[displayplayers[i]];
+		boolean camaway = false;
 
 		memset(&listener[i], 0, sizeof (listener[i]));
 		listenmobj[i] = NULL;
@@ -442,9 +443,11 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 		else
 		{
 			listenmobj[i] = player->mo;
+			if (player->exiting)
+				camaway = true;
 		}
 
-		if (origin && origin == listenmobj[i] && !camera[i].freecam)
+		if (origin && origin == listenmobj[i] && !camera[i].freecam && !camaway)
 		{
 			itsUs = true;
 		}
