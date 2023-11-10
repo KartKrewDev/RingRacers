@@ -11518,7 +11518,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								if (player->ballhogcharge == 0)
 									player->ballhogtap = false;
 
-								boolean realcharge = (cmd->buttons & BT_ATTACK) && (player->itemflags & IT_HOLDREADY) && (player->ballhogcharge < ballhogmax);
+								boolean realcharge = (cmd->buttons & BT_ATTACK) && (player->itemflags & IF_HOLDREADY) && (player->ballhogcharge < ballhogmax);
 								if ((realcharge && !player->ballhogtap) || (player->ballhogtap && player->ballhogcharge < BALLHOGINCREMENT))
 								{
 									player->ballhogcharge++;
