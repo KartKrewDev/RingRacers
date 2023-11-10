@@ -64,6 +64,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	p_tick.c
 	p_user.c
 	p_slopes.c
+	p_sweep.cpp
 	tables.c
 	r_bsp.cpp
 	r_data.c
