@@ -718,6 +718,9 @@ static inline void P_DeviceRumbleTick(void)
 		if (player->mo == NULL)
 			continue;
 
+		if (player->exiting)
+			continue;
+
 		if ((player->mo->eflags & MFE_DAMAGEHITLAG) && player->mo->hitlag)
 		{
 			low = high = 65536 / 2;
