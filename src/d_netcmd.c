@@ -70,6 +70,7 @@
 #include "k_powerup.h"
 #include "k_roulette.h"
 #include "k_bans.h"
+#include "k_director.h"
 
 #ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 #include "m_avrecorder.h"
@@ -1461,12 +1462,60 @@ void D_SendPlayerConfig(UINT8 n)
 	WeaponPref_Send(n);
 }
 
+static camera_t *LocalMutableCamera(INT32 playernum)
+{
+	if (G_IsPartyLocal(playernum))
+	{
+		UINT8 viewnum = G_PartyPosition(playernum);
+		camera_t *cam = &camera[viewnum];
+
+		if (cam->freecam || (players[playernum].spectator && !K_DirectorIsAvailable(viewnum)))
+		{
+			return cam;
+		}
+	}
+
+	return NULL;
+}
+
 void D_Cheat(INT32 playernum, INT32 cheat, ...)
 {
 	va_list ap;
 
 	UINT8 buf[64];
 	UINT8 *p = buf;
+
+	camera_t *cam;
+	if ((cam = LocalMutableCamera(playernum)))
+	{
+		switch (cheat)
+		{
+			case CHEAT_RELATIVE_TELEPORT:
+				va_start(ap, cheat);
+				cam->x += va_arg(ap, fixed_t);
+				cam->y += va_arg(ap, fixed_t);
+				cam->z += va_arg(ap, fixed_t);
+				va_end(ap);
+				return;
+
+			case CHEAT_TELEPORT:
+				va_start(ap, cheat);
+				cam->x = va_arg(ap, fixed_t);
+				cam->y = va_arg(ap, fixed_t);
+				cam->z = va_arg(ap, fixed_t);
+				va_end(ap);
+				return;
+
+			case CHEAT_ANGLE:
+				va_start(ap, cheat);
+				cam->angle = va_arg(ap, angle_t);
+				va_end(ap);
+				return;
+
+			default:
+				break;
+		}
+	}
 
 	if (!CV_CheatsEnabled())
 	{
