@@ -4329,18 +4329,22 @@ void P_PlayerThink(player_t *player)
 		}
 	}
 
+	boolean deathcontrolled = (player->respawn.state != RESPAWNST_NONE && player->respawn.truedeath == true)
+		|| (player->pflags & PF_NOCONTEST) || (player->karmadelay);
+	boolean powercontrolled = (player->hyudorotimer) || (player->growshrinktimer > 0);
+
 	// Flash player after being hit.
-	if (!(player->hyudorotimer // SRB2kart - fixes Hyudoro not flashing when it should.
-		|| player->growshrinktimer > 0 // Grow doesn't flash either.
-		|| (player->respawn.state != RESPAWNST_NONE && player->respawn.truedeath == true) // Respawn timer (for drop dash effect)
-		|| (player->pflags & PF_NOCONTEST) // NO CONTEST explosion
-		|| player->karmadelay))
+	if (!deathcontrolled && !powercontrolled)
 	{
 		if (player->flashing > 1 && player->flashing < K_GetKartFlashing(player)
 			&& (leveltime & 1))
 			player->mo->renderflags |= RF_DONTDRAW;
 		else
 			player->mo->renderflags &= ~RF_DONTDRAW;
+	}
+	else if (!deathcontrolled)
+	{
+		player->mo->renderflags &= ~RF_DONTDRAW;
 	}
 
 	if (player->stairjank > 0)
