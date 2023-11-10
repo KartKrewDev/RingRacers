@@ -89,6 +89,7 @@ static void M_StartEditProfile(INT32 c)
 			CV_StealthSet(&cv_dummyprofileplayername, optionsmenu.profile->playername);
 			CV_StealthSetValue(&cv_dummyprofilekickstart, optionsmenu.profile->kickstartaccel);
 			CV_StealthSetValue(&cv_dummyprofileautoroulette, optionsmenu.profile->autoroulette);
+			CV_StealthSetValue(&cv_dummyprofilelitesteer, optionsmenu.profile->litesteer);
 			CV_StealthSetValue(&cv_dummyprofilerumble, optionsmenu.profile->rumble);
 		}
 		else
@@ -97,6 +98,7 @@ static void M_StartEditProfile(INT32 c)
 			CV_StealthSet(&cv_dummyprofileplayername, "");
 			CV_StealthSetValue(&cv_dummyprofilekickstart, 0);	// off
 			CV_StealthSetValue(&cv_dummyprofileautoroulette, 0); // off
+			CV_StealthSetValue(&cv_dummyprofilelitesteer, 1); // on
 			CV_StealthSetValue(&cv_dummyprofilerumble, 1);	// on
 		}
 

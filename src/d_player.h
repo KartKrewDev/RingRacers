@@ -64,6 +64,14 @@ typedef enum
 	PST_REBORN
 } playerstate_t;
 
+typedef enum
+{
+	IF_USERINGS		= 1,	// Have to be not holding the item button to change from using rings to using items (or vice versa) - prevents weirdness
+	IF_ITEMOUT		= 1<<1,	// Are you holding an item out?
+	IF_EGGMANOUT	= 1<<2,	// Eggman mark held, separate from IF_ITEMOUT so it doesn't stop you from getting items
+	IF_HOLDREADY	= 1<<3,	// Hold button-style item is ready to activate
+} itemflags_t;
+
 //
 // Player internal flags
 //
@@ -95,11 +103,9 @@ typedef enum
 
 	PF_RINGLOCK			= 1<<13, // Prevent picking up rings while SPB is locked on
 
-	// The following four flags are mutually exclusive, although they can also all be off at the same time. If we ever run out of pflags, eventually turn them into a seperate five(+) mode UINT8..?
-	PF_USERINGS			= 1<<14, // Have to be not holding the item button to change from using rings to using items (or vice versa) - prevents weirdness
-	PF_ITEMOUT			= 1<<15, // Are you holding an item out?
-	PF_EGGMANOUT		= 1<<16, // Eggman mark held, separate from PF_ITEMOUT so it doesn't stop you from getting items
-	PF_HOLDREADY		= 1<<17, // Hold button-style item is ready to activate
+	PF_LITESTEER		= 1<<14, // Hold Down to shallow turn (digital only)
+
+	//15-17 free, was previously itemflags stuff
 
 	PF_DRIFTINPUT		= 1<<18, // Drifting!
 	PF_GETSPARKS		= 1<<19, // Can get sparks
@@ -914,6 +920,8 @@ struct player_t
 
 	UINT8 ringboxdelay; // Delay until Ring Box auto-activates
 	UINT8 ringboxaward; // Where did we stop?
+
+	UINT8 itemflags; 	// holds IS_flags (see itemstate_t)
 
 	fixed_t outrun; // Milky Way road effect
 

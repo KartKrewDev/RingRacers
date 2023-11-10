@@ -6093,11 +6093,10 @@ const char *const PLAYERFLAG_LIST[] = {
 
 	"RINGLOCK", // Prevent picking up rings while SPB is locked on
 
-	// The following four flags are mutually exclusive, although they can also all be off at the same time. If we ever run out of pflags, eventually turn them into a seperate five(+) mode UINT8..?
-	"USERINGS", // Have to be not holding the item button to change from using rings to using items (or vice versa) - prevents weirdness
-	"ITEMOUT", // Are you holding an item out?
-	"EGGMANOUT", // Eggman mark held, separate from PF_ITEMOUT so it doesn't stop you from getting items
-	"HOLDREADY", // Hold button-style item is ready to activate
+	"LITESTEER", // Shallow digital turn with DOWN
+	"UNUSED",
+	"UNUSED",
+	"UNUSED",
 
 	"DRIFTINPUT", // Drifting!
 	"GETSPARKS", // Can get sparks

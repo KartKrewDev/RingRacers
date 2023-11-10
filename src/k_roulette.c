@@ -1622,7 +1622,7 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 	// If the roulette finishes or the player presses BT_ATTACK, stop the roulette and calculate the item.
 	// I'm returning via the exact opposite, however, to forgo having another bracket embed. Same result either way, I think.
 	// Finally, if you get past this check, now you can actually start calculating what item you get.
-	if (confirmItem == true && (player->pflags & (PF_ITEMOUT|PF_EGGMANOUT|PF_USERINGS)) == 0)
+	if (confirmItem == true && (player->itemflags & (IF_ITEMOUT|IF_EGGMANOUT|IF_USERINGS)) == 0)
 	{
 		if (roulette->eggman == true)
 		{
