@@ -6094,9 +6094,9 @@ const char *const PLAYERFLAG_LIST[] = {
 	"RINGLOCK", // Prevent picking up rings while SPB is locked on
 
 	"LITESTEER", // Shallow digital turn with DOWN
-	"UNUSED",
-	"UNUSED",
-	"UNUSED",
+	"\x01", // Free
+	"\x01", // Free
+	"\x01", // Free
 
 	"DRIFTINPUT", // Drifting!
 	"GETSPARKS", // Can get sparks
