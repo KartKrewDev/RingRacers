@@ -1464,6 +1464,17 @@ void D_SendPlayerConfig(UINT8 n)
 
 static camera_t *LocalMutableCamera(INT32 playernum)
 {
+	if (demo.playback)
+	{
+		// TODO: could have splitscreen support
+		if (!camera[0].freecam)
+		{
+			return NULL;
+		}
+
+		return &camera[0];
+	}
+
 	if (G_IsPartyLocal(playernum))
 	{
 		UINT8 viewnum = G_PartyPosition(playernum);
@@ -1520,6 +1531,24 @@ void D_Cheat(INT32 playernum, INT32 cheat, ...)
 	if (!CV_CheatsEnabled())
 	{
 		CONS_Printf("This cannot be used without cheats enabled.\n");
+		return;
+	}
+
+	if (demo.playback && cheat == CHEAT_DEVMODE)
+	{
+		// There is no networking in demos, but devmode is
+		// too useful to be inaccessible!
+		// TODO: maybe allow everything, even though it would
+		// desync replays? May be useful for debugging.
+		va_start(ap, cheat);
+		cht_debug = va_arg(ap, UINT32);
+		va_end(ap);
+		return;
+	}
+
+	// sanity check
+	if (demo.playback)
+	{
 		return;
 	}
 

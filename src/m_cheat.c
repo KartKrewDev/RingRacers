@@ -281,6 +281,9 @@ boolean cht_Interpret(const char *password)
 { CONS_Printf(M_GetText("OBJECTPLACE must be enabled.\n")); return; }
 
 #define REQUIRE_INLEVEL if (gamestate != GS_LEVEL || demo.playback)\
+{ CONS_Printf(M_GetText("You must be in a level (and not a replay) to use this.\n")); return; }
+
+#define REQUIRE_INLEVEL_OR_REPLAY if (gamestate != GS_LEVEL)\
 { CONS_Printf(M_GetText("You must be in a level to use this.\n")); return; }
 
 #define REQUIRE_SINGLEPLAYER if (netgame)\
@@ -357,7 +360,7 @@ void Command_RTeleport_f(void)
 	float z = atof(COM_Argv(3));
 
 	REQUIRE_CHEATS;
-	REQUIRE_INLEVEL;
+	REQUIRE_INLEVEL_OR_REPLAY;
 
 	if (COM_Argc() != 4)
 	{
@@ -376,7 +379,7 @@ void Command_Teleport_f(void)
 	float z = atof(COM_Argv(3));
 
 	REQUIRE_CHEATS;
-	REQUIRE_INLEVEL;
+	REQUIRE_INLEVEL_OR_REPLAY;
 
 	if (COM_Argc() != 4)
 	{
@@ -611,7 +614,7 @@ void Command_Goto_f(void)
 	const waypoint_t *wayp = K_GetWaypointFromID(id);
 
 	REQUIRE_CHEATS;
-	REQUIRE_INLEVEL;
+	REQUIRE_INLEVEL_OR_REPLAY;
 
 	if (COM_Argc() != 2)
 	{
@@ -635,7 +638,7 @@ void Command_Angle_f(void)
 	const angle_t angle = FixedAngle(FLOAT_TO_FIXED(anglef));
 
 	REQUIRE_CHEATS;
-	REQUIRE_INLEVEL;
+	REQUIRE_INLEVEL_OR_REPLAY;
 
 	D_Cheat(consoleplayer, CHEAT_ANGLE, angle);
 }
@@ -657,7 +660,7 @@ void Command_RespawnAt_f(void)
 void Command_GotoSkybox_f(void)
 {
 	REQUIRE_CHEATS;
-	REQUIRE_INLEVEL;
+	REQUIRE_INLEVEL_OR_REPLAY;
 
 	mobj_t *skybox = players[consoleplayer].skybox.viewpoint;
 
