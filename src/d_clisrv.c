@@ -6142,6 +6142,7 @@ boolean TryRunTics(tic_t realtics)
 
 			DEBFILE(va("============ Running tic %d (local %d)\n", gametic, localgametic));
 
+			ps_prevtictime = ps_tictime;
 			ps_tictime = I_GetPreciseTime();
 
 			dontRun = ExtraDataTicker();

@@ -46,6 +46,8 @@
 #include "music.h"
 #include "k_dialogue.h"
 
+#include "lua_profile.h"
+
 #ifdef PARANOIA
 #include "deh_tables.h" // MOBJTYPE_LIST
 #endif
@@ -830,6 +832,8 @@ void P_Ticker(boolean run)
 				if (playeringame[i])
 					G_ReadDemoTiccmd(&players[i].cmd, i);
 		}
+
+		LUA_ResetTicTimers();
 
 		ps_lua_mobjhooks = 0;
 		ps_checkposition_calls = 0;
