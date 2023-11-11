@@ -766,6 +766,9 @@ void S_UpdateSounds(void)
 						if (c->origin != listenmobj[i])
 							continue;
 
+						if (listenmobj[i]->player && listenmobj[i]->player->exiting)
+							continue;
+
 						itsUs = true;
 					}
 
