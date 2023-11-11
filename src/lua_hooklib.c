@@ -365,6 +365,16 @@ static boolean prepare_string_hook
 		return false;
 }
 
+static boolean prepare_hud_hook
+(
+		Hook_State * hook,
+		int hook_type
+){
+	return init_hook_type(hook, 0,
+			hook_type, 0, NULL,
+			hudHookIds[hook_type].numHooks);
+}
+
 static void init_hook_call
 (
 		Hook_State * hook,
@@ -625,13 +635,9 @@ int LUA_HookTiccmd(player_t *player, ticcmd_t *cmd, int hook_type)
 
 void LUA_HookHUD(huddrawlist_h list, int hook_type)
 {
-	const hook_t * map = &hudHookIds[hook_type];
 	Hook_State hook;
-	if (map->numHooks > 0)
+	if (prepare_hud_hook(&hook, hook_type))
 	{
-		start_hook_stack();
-		begin_hook_values(&hook);
-
 		LUA_SetHudHook(hook_type, list);
 
 		hud_running = true; // local hook
@@ -640,7 +646,7 @@ void LUA_HookHUD(huddrawlist_h list, int hook_type)
 		V_ClearClipRect();
 
 		init_hook_call(&hook, 0, res_none);
-		call_mapped(&hook, map);
+		call_mapped(&hook, &hudHookIds[hook_type]);
 
 		hud_running = false;
 	}
