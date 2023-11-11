@@ -19,6 +19,8 @@ menuitem_t OPTIONS_Video[] =
 	{IT_STRING | IT_CVAR, "Fullscreen", "Set whether you want to use fullscreen or windowed mode.",
 		NULL, {.cvar = &cv_fullscreen}, 0, 0},
 #endif
+	{IT_STRING | IT_CVAR, "Vertical Sync", "Works with your screen to reduce image tearing and judder.",
+		NULL, {.cvar = &cv_vidwait}, 0, 0},
 
 	{IT_NOTHING|IT_SPACE, NULL, "Kanade best waifu! I promise!",
 		NULL, {NULL}, 0, 0},
@@ -27,13 +29,13 @@ menuitem_t OPTIONS_Video[] =
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER, "Gamma", "Adjusts the overall brightness of the game.",
 		NULL, {.cvar = &cv_globalgamma}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "FPS Cap", "Handles the refresh rate of the game (does not affect gamelogic).",
+	{IT_STRING | IT_CVAR, "FPS Cap", "Handles the frame rate of the game (35 to match game logic)",
 		NULL, {.cvar = &cv_fpscap}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Enable Skyboxes", "Turning this off will improve performance at the detriment of visuals for many maps.",
 		NULL, {.cvar = &cv_skybox}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Draw Distance", "How far objects can be drawn. Lower values may improve performance at the cost of visibility.",
+	{IT_STRING | IT_CVAR, "Draw Distance", "How far objects can be drawn. A tradeoff between performance & visibility.",
 		NULL, {.cvar = &cv_drawdist}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Weather Draw Distance", "Affects how far weather visuals can be drawn. Lower values improve performance.",
