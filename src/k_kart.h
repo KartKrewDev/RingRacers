@@ -243,6 +243,8 @@ boolean K_isPlayerInSpecialState(player_t *p);
 
 void K_SetTireGrease(player_t *player, tic_t tics);
 
+boolean K_IsPlayingDisplayPlayer(player_t *player);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

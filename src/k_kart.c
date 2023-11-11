@@ -12630,4 +12630,10 @@ void K_SetTireGrease(player_t *player, tic_t tics)
 	player->tiregrease = tics;
 }
 
+// somewhat sensible check for HUD sounds in a post-bot-takeover world
+boolean K_IsPlayingDisplayPlayer(player_t *player)
+{
+	return P_IsDisplayPlayer(player) && (!player->exiting);
+}
+
 //}
