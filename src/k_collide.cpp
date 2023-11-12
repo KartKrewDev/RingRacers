@@ -190,7 +190,7 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 				if (t1->target->hnext == t1)
 				{
 					P_SetTarget(&t1->target->hnext, NULL);
-					t1->target->player->pflags &= ~PF_EGGMANOUT;
+					t1->target->player->itemflags &= ~IF_EGGMANOUT;
 				}
 			}
 

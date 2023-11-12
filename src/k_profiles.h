@@ -31,7 +31,7 @@ extern "C" {
 #define SKINNAMESIZE 16
 
 #define PROFILENAMELEN 6
-#define PROFILEVER 7
+#define PROFILEVER 8
 #define MAXPROFILES 16
 #define PROFILESFILE "ringprofiles.prf"
 #define PROFILE_GUEST 0
@@ -74,7 +74,8 @@ struct profile_t
 	// Player-specific consvars.
 	// @TODO: List all of those
 	boolean kickstartaccel;				// cv_kickstartaccel
-	boolean autoroulette;					// cv_autoroulette
+	boolean autoroulette;				// cv_autoroulette
+	boolean litesteer;					// cv_litesteer
 	boolean rumble;						// cv_rumble
 
 	// Finally, control data itself

@@ -6471,7 +6471,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 							break;
 					}
 
-					if (mobj->target->player->pflags & PF_ITEMOUT)
+					if (mobj->target->player->itemflags & IF_ITEMOUT)
 					{
 						if (leveltime & 1)
 							mobj->tracer->renderflags &= ~RF_DONTDRAW;

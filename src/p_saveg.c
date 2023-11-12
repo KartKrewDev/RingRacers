@@ -559,6 +559,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		WRITEUINT8(save->p, players[i].ringboxdelay);
 		WRITEUINT8(save->p, players[i].ringboxaward);
+
+		WRITEUINT8(save->p, players[i].itemflags);
+
 		WRITEFIXED(save->p, players[i].outrun);
 
 		WRITEUINT8(save->p, players[i].rideroid);
@@ -1087,6 +1090,9 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		players[i].ringboxdelay = READUINT8(save->p);
 		players[i].ringboxaward = READUINT8(save->p);
+
+		players[i].itemflags = READUINT8(save->p);
+
 		players[i].outrun = READFIXED(save->p);
 
 		players[i].rideroid = (boolean)READUINT8(save->p);

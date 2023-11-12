@@ -153,7 +153,7 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 			if (player->itemRoulette.active == true
 				|| player->ringboxdelay > 0
 				|| (weapon != 3 && player->itemamount)
-				|| (player->pflags & PF_ITEMOUT))
+				|| (player->itemflags & IF_ITEMOUT))
 				return false;
 
 			if (weapon == 3 && K_GetShieldFromItem(player->itemtype) != KSHIELD_NONE)
@@ -1577,10 +1577,10 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 	// I wish I knew a better way to do this
 	if (target->target && target->target->player && target->target->player->mo)
 	{
-		if ((target->target->player->pflags & PF_EGGMANOUT) && target->type == MT_EGGMANITEM_SHIELD)
-			target->target->player->pflags &= ~PF_EGGMANOUT;
+		if ((target->target->player->itemflags & IF_EGGMANOUT) && target->type == MT_EGGMANITEM_SHIELD)
+			target->target->player->itemflags &= ~IF_EGGMANOUT;
 
-		if (target->target->player->pflags & PF_ITEMOUT)
+		if (target->target->player->itemflags & IF_ITEMOUT)
 		{
 			if ((target->type == MT_BANANA_SHIELD && target->target->player->itemtype == KITEM_BANANA) // trail items
 				|| (target->type == MT_SSMINE_SHIELD && target->target->player->itemtype == KITEM_MINE)
@@ -1608,7 +1608,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			}
 
 			if (!target->target->player->itemamount)
-				target->target->player->pflags &= ~PF_ITEMOUT;
+				target->target->player->itemflags &= ~IF_ITEMOUT;
 
 			if (target->target->hnext == target)
 				P_SetTarget(&target->target->hnext, NULL);
