@@ -8532,8 +8532,23 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->dotrickfx && !player->mo->hitlag)
 	{
+		int i;
 		S_StartSound(player->mo, sfx_trick1);
+
+		if (!player->trickcharge)
+		{
+			for(i = 0;i < 5;i++)
+			{
+				mobj_t *aura = P_SpawnMobjFromMobj(player->mo, 0, 0, player->mo->height/2, MT_CHARGEAURA);
+				aura->angle = player->mo->angle + i*ANG15;
+				aura->target = player->mo;
+				if (i != 0)
+					aura->renderflags |= RF_TRANS50;
+			}
+		}
+
 		player->trickcharge = 8*TICRATE;
+
 		player->dotrickfx = false;
 	}
 

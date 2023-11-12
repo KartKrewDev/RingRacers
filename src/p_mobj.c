@@ -8781,6 +8781,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		Obj_BlockBodyThink(mobj);
 		break;
 	}
+	case MT_CHARGEAURA:
+	{
+		Obj_ChargeAuraThink(mobj);
+		break;
+	}
 	case MT_GUARDBREAK:
 	{
 		Obj_GuardBreakThink(mobj);

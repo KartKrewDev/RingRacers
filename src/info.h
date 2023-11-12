@@ -1124,6 +1124,8 @@ typedef enum sprite
 	SPR_GRNG, // Guard ring
 	SPR_GBDY, // Guard body
 
+	SPR_TRC1, // Charge aura
+
 	SPR_DHND, // Servant Hand
 
 	SPR_HORN, // Horncode
@@ -4549,6 +4551,8 @@ typedef enum state
 	S_BLOCKRING,
 	S_BLOCKBODY,
 
+	S_CHARGEAURA,
+
 	S_SERVANTHAND,
 
 	S_HORNCODE,
@@ -6816,6 +6820,8 @@ typedef enum mobj_type
 	MT_INSTAWHIP_REJECT,
 	MT_BLOCKRING,
 	MT_BLOCKBODY,
+
+	MT_CHARGEAURA,
 
 	MT_SERVANTHAND,
 
