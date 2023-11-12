@@ -77,6 +77,7 @@ typedef enum
 	NUM_THINKERLISTS
 } thinklistnum_t; /**< Thinker lists. */
 extern thinker_t thlist[];
+extern mobj_t *mobjcache;
 
 void P_InitThinkers(void);
 void P_AddThinker(const thinklistnum_t n, thinker_t *thinker);
@@ -386,9 +387,16 @@ struct tm_t
 	// so missiles don't explode against sky hack walls
 	line_t *ceilingline;
 
-	// set by PIT_CheckLine() for any line that stopped the PIT_CheckLine()
-	// that is, for any line which is 'solid'
-	line_t *blockingline;
+	// P_CheckPosition: this position blocks movement
+	boolean blocking;
+
+	// P_CheckPosition: set this before each call to
+	// P_CheckPosition to enable a line sweep on collided
+	// lines
+	boolean sweep;
+
+	// sweep: max step up at tm.x, tm.y
+	fixed_t maxstep;
 };
 
 extern tm_t tm;
@@ -414,12 +422,17 @@ struct TryMoveResult_t
 	boolean success;
 	line_t *line;
 	mobj_t *mo;
+	vector2_t normal;
 };
 
 boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y, TryMoveResult_t *result);
 boolean P_CheckMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff, TryMoveResult_t *result);
 boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff, TryMoveResult_t *result);
 boolean P_SceneryTryMove(mobj_t *thing, fixed_t x, fixed_t y, TryMoveResult_t *result);
+
+void P_TestLine(line_t *ld);
+void P_ClearTestLines(void);
+line_t *P_SweepTestLines(fixed_t ax, fixed_t ay, fixed_t bx, fixed_t by, fixed_t r, vector2_t *return_normal);
 
 boolean P_IsLineBlocking(const line_t *ld, const mobj_t *thing);
 boolean P_IsLineTripWire(const line_t *ld);
