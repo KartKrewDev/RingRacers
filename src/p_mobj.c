@@ -8570,7 +8570,10 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		mobj->threshold += FRACUNIT/(7*4);
 		if (mobj->threshold > FRACUNIT)
+		{
 			mobj->threshold -= FRACUNIT;
+			mobj->flags2 |= MF2_AMBUSH;
+		}
 
 		P_InstaScale(mobj, mobj->target->scale);
 
