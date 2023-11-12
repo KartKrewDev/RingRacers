@@ -1278,6 +1278,10 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 				}
 				break;
 			}
+			case MT_RANDOMAUDIENCE:
+				if (mo->fuse)
+					gravityadd /= 10;
+				break;
 			default:
 				break;
 		}

@@ -207,6 +207,12 @@ Obj_AudienceThink
 {
 	boolean landed = false;
 
+	if (mobj->fuse && mobj->fuse < (TICRATE/2))
+	{
+		mobj->renderflags ^= RF_DONTDRAW;
+		return; // no jumping when you hit the floor, your gravity is weird
+	}
+
 	if (audience_mainstate(mobj) == S_NULL)
 	{
 		// Uninitialised, don't do anything funny.
