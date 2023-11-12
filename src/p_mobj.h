@@ -149,8 +149,7 @@ typedef enum
 	MF_SCENERY          = 1<<21,
 	// Painful (shit hurts).
 	MF_PAIN             = 1<<22,
-	// This mobj will stick to any surface or solid object it touches.
-	MF_STICKY           = 1<<23,
+	// free: 1<<23
 	// Object uses terrain effects. (Overlays, footsteps, etc)
 	MF_APPLYTERRAIN     = 1<<24,
 	// for chase camera, don't be blocked by things (partial clipping)

@@ -1725,25 +1725,6 @@ void P_XYMovement(mobj_t *mo)
 			P_ExplodeMissile(mo);
 			return;
 		}
-		else if (mo->flags & MF_STICKY)
-		{
-			S_StartSound(mo, mo->info->activesound);
-			mo->momx = mo->momy = mo->momz = 0; //Full stop!
-			mo->flags |= MF_NOGRAVITY; //Stay there!
-			mo->flags &= ~MF_STICKY; //Don't check again!
-
-			// Check for hit against sky here
-			if (P_CheckSkyHit(mo))
-			{
-				// Hack to prevent missiles exploding
-				// against the sky.
-				// Does not handle sky floors.
-				// Check frontsector as well.
-
-				P_RemoveMobj(mo);
-				return;
-			}
-		}
 		else
 		{
 			boolean walltransferred = false;

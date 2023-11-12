@@ -240,7 +240,7 @@ static boolean is_tangible (mobj_t *thing)
 	// These objects probably do nothing! :D
 	if ((thing->flags & (MF_SPECIAL|MF_SOLID|MF_SHOOTABLE
 					|MF_PUSHABLE|MF_BOSS|MF_MISSILE|MF_SPRING
-					|MF_MONITOR|MF_ENEMY|MF_PAIN|MF_STICKY
+					|MF_MONITOR|MF_ENEMY|MF_PAIN
 					|MF_PICKUPFROMBELOW)) == 0U)
 	{
 		return false;

@@ -5993,7 +5993,7 @@ const char *const MOBJFLAG_LIST[] = {
 	"ENEMY",
 	"SCENERY",
 	"PAIN",
-	"STICKY",
+	"\x01", // free: 1<<23 (name un-matchable)
 	"APPLYTERRAIN",
 	"NOCLIPTHING",
 	"GRENADEBOUNCE",
