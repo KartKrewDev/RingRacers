@@ -8551,31 +8551,16 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			return false;
 		}
 
-		// Flicker every other frame from first visibility
-		if (mobj->flags2 & MF2_BOSSDEAD)
-		{
-			mobj->renderflags |= RF_DONTDRAW;
-		}
-		else
-		{
-			mobj->renderflags &= ~RF_DONTDRAW;
-			mobj->renderflags |= (mobj->target->renderflags & RF_DONTDRAW);
-		}
+		mobj->renderflags &= ~RF_DONTDRAW;
+		mobj->renderflags |= (mobj->target->renderflags & RF_DONTDRAW);
 
 		mobj->eflags = (mobj->eflags & ~MFE_VERTICALFLIP)|(mobj->target->eflags & MFE_VERTICALFLIP);
 		mobj->flags2 = ((mobj->flags2 & ~MF2_OBJECTFLIP)|(mobj->target->flags2 & MF2_OBJECTFLIP)) ^ MF2_BOSSDEAD;
 
 		// sweeping effect
+		P_InstaScale(mobj, (6*mobj->target->scale)/5);
+
 		const fixed_t sweep = FixedMul(FRACUNIT - (mobj->threshold * 2), mobj->radius);
-
-		mobj->threshold += FRACUNIT/(7*4);
-		if (mobj->threshold > FRACUNIT)
-		{
-			mobj->threshold -= FRACUNIT;
-			mobj->flags2 |= MF2_AMBUSH;
-		}
-
-		P_InstaScale(mobj, mobj->target->scale);
 
 		destx = mobj->target->x;
 		desty = mobj->target->y;
@@ -8588,9 +8573,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		desty += P_ReturnThrustY(mobj, mobj->movedir + ANGLE_90, sideways);
 
 		if (mobj->eflags & MFE_VERTICALFLIP)
-			zoff += mobj->target->height - (mobj->height + 18*mobj->scale);
+			zoff += mobj->target->height - (mobj->height + 18*mobj->target->scale);
 		else
-			zoff += 18*mobj->scale;
+			zoff += 18*mobj->target->scale;
 
 		// Necessary to "ride" on Garden Top
 		zoff += mobj->target->sprzoff;
@@ -8604,6 +8589,20 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			P_MoveOrigin(mobj, destx, desty, mobj->target->z + zoff);
 		}
+
+		mobj->threshold += FRACUNIT/6;
+		if (mobj->threshold > FRACUNIT)
+		{
+			mobj_t *puff = P_SpawnGhostMobj(mobj);
+			if (puff)
+			{
+				puff->renderflags = (puff->renderflags & ~RF_TRANSMASK)|RF_ADD;
+			}
+
+			mobj->threshold -= FRACUNIT;
+			mobj->flags2 |= MF2_AMBUSH;
+		}
+
 		break;
 	}
 	case MT_LIGHTNINGSHIELD:
