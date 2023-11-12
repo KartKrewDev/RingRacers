@@ -1244,6 +1244,7 @@ void R_SetupFrame(int s)
 		newview->x = r_viewmobj->x;
 		newview->y = r_viewmobj->y;
 		newview->z = r_viewmobj->z;
+		newview->zoom = 0;
 
 		R_SetupCommonFrame(player, r_viewmobj->subsector);
 	}
@@ -1252,9 +1253,13 @@ void R_SetupFrame(int s)
 	{
 		r_viewmobj = NULL;
 
-		newview->x = thiscam->x;
-		newview->y = thiscam->y;
+		fixed_t x = player->mo ? player->mo->x : thiscam->x;
+		fixed_t y = player->mo ? player->mo->y : thiscam->y;
+
+		newview->x = x;
+		newview->y = y;
 		newview->z = thiscam->z + (thiscam->height>>1);
+		newview->zoom = FixedHypot(thiscam->x  - x, thiscam->y - y);
 
 		R_SetupCommonFrame(player, thiscam->subsector);
 	}
@@ -1267,6 +1272,7 @@ void R_SetupFrame(int s)
 		newview->x = r_viewmobj->x;
 		newview->y = r_viewmobj->y;
 		newview->z = player->viewz;
+		newview->zoom = 0;
 
 		R_SetupCommonFrame(player, r_viewmobj->subsector);
 	}
@@ -1297,6 +1303,7 @@ void R_SkyboxFrame(int s)
 	newview->x = r_viewmobj->x;
 	newview->y = r_viewmobj->y;
 	newview->z = r_viewmobj->z; // 26/04/17: use actual Z position instead of spawnpoint angle!
+	newview->zoom = 0;
 
 	if (mapheaderinfo[gamemap-1])
 	{

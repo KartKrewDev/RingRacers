@@ -684,6 +684,17 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEFIXED(save->p, players[i].loop.shift.y);
 		WRITEUINT8(save->p, players[i].loop.flip);
 
+		// sonicloopcamvars_t
+		WRITEUINT32(save->p, players[i].loop.camera.enter_tic);
+		WRITEUINT32(save->p, players[i].loop.camera.exit_tic);
+		WRITEUINT32(save->p, players[i].loop.camera.zoom_in_speed);
+		WRITEUINT32(save->p, players[i].loop.camera.zoom_out_speed);
+		WRITEFIXED(save->p, players[i].loop.camera.dist);
+		WRITEANGLE(save->p, players[i].loop.camera.pan);
+		WRITEFIXED(save->p, players[i].loop.camera.pan_speed);
+		WRITEUINT32(save->p, players[i].loop.camera.pan_accel);
+		WRITEUINT32(save->p, players[i].loop.camera.pan_back);
+
 		// ACS has read access to this, so it has to be net-communicated.
 		// It is the ONLY roundcondition that is sent over the wire and I'd like it to stay that way.
 		WRITEUINT32(save->p, players[i].roundconditions.unlocktriggers);
@@ -1211,6 +1222,17 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].loop.shift.x = READFIXED(save->p);
 		players[i].loop.shift.y = READFIXED(save->p);
 		players[i].loop.flip = READUINT8(save->p);
+
+		// sonicloopcamvars_t
+		players[i].loop.camera.enter_tic = READUINT32(save->p);
+		players[i].loop.camera.exit_tic = READUINT32(save->p);
+		players[i].loop.camera.zoom_in_speed = READUINT32(save->p);
+		players[i].loop.camera.zoom_out_speed = READUINT32(save->p);
+		players[i].loop.camera.dist = READFIXED(save->p);
+		players[i].loop.camera.pan = READANGLE(save->p);
+		players[i].loop.camera.pan_speed = READFIXED(save->p);
+		players[i].loop.camera.pan_accel = READUINT32(save->p);
+		players[i].loop.camera.pan_back = READUINT32(save->p);
 
 		// ACS has read access to this, so it has to be net-communicated.
 		// It is the ONLY roundcondition that is sent over the wire and I'd like it to stay that way.

@@ -140,16 +140,18 @@ void R_InterpolateView(fixed_t frac)
 		prevview = newview;
 	}
 
-	viewx = R_LerpFixed(prevview->x, newview->x, frac);
-	viewy = R_LerpFixed(prevview->y, newview->y, frac);
-	viewz = R_LerpFixed(prevview->z, newview->z, frac);
-
 	viewangle = R_LerpAngle(prevview->angle, newview->angle, frac);
 	aimingangle = R_LerpAngle(prevview->aim, newview->aim, frac);
 	viewroll = R_LerpAngle(prevview->roll, newview->roll, frac);
 
 	viewsin = FINESINE(viewangle>>ANGLETOFINESHIFT);
 	viewcos = FINECOSINE(viewangle>>ANGLETOFINESHIFT);
+
+	fixed_t zoom = R_LerpFixed(prevview->zoom, newview->zoom, frac);
+
+	viewx = R_LerpFixed(prevview->x, newview->x, frac) - FixedMul(viewcos, zoom);
+	viewy = R_LerpFixed(prevview->y, newview->y, frac) - FixedMul(viewsin, zoom);
+	viewz = R_LerpFixed(prevview->z, newview->z, frac);
 
 	viewplayer = newview->player;
 	viewsector = R_PointInSubsector(viewx, viewy)->sector;

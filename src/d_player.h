@@ -502,6 +502,15 @@ typedef enum
 	BOT_ITEM_PR__MAX
 } botItemPriority_e;
 
+typedef struct {
+	tic_t enter_tic, exit_tic;
+	tic_t zoom_in_speed, zoom_out_speed;
+	fixed_t dist;
+	angle_t pan;
+	fixed_t pan_speed; // in degrees
+	tic_t pan_accel, pan_back;
+} sonicloopcamvars_t;
+
 // player_t struct for loop state
 typedef struct {
 	fixed_t radius;
@@ -511,6 +520,7 @@ typedef struct {
 	vector2_t origin_shift;
 	vector2_t shift;
 	boolean flip;
+	sonicloopcamvars_t camera;
 } sonicloopvars_t;
 
 // player_t struct for power-ups

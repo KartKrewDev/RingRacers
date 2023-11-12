@@ -37,6 +37,7 @@ void P_HaltPlayerOrbit(player_t *player)
 	player->mo->flags &= ~(MF_NOCLIPHEIGHT);
 
 	player->loop.radius = 0;
+	player->loop.camera.exit_tic = leveltime;
 }
 
 void P_ExitPlayerOrbit(player_t *player)

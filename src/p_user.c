@@ -3083,6 +3083,10 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	fixed_t scaleDiff;
 	fixed_t cameraScale = mapobjectscale;
 
+	sonicloopcamvars_t *loop = &player->loop.camera;
+	tic_t loop_out = leveltime - loop->enter_tic;
+	tic_t loop_in = max(leveltime, loop->exit_tic) - loop->exit_tic;
+
 	thiscam->old_x = thiscam->x;
 	thiscam->old_y = thiscam->y;
 	thiscam->old_z = thiscam->z;
@@ -3206,6 +3210,58 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	camrotate = cv_cam_rotate[num].value;
 	camdist = FixedMul(cv_cam_dist[num].value, cameraScale);
 	camheight = FixedMul(cv_cam_height[num].value, cameraScale);
+
+	if (loop_in < loop->zoom_in_speed)
+	{
+		fixed_t f = loop_out < loop->zoom_out_speed
+			? (loop_out * FRACUNIT) / loop->zoom_out_speed
+			: FRACUNIT - ((loop_in * FRACUNIT) / loop->zoom_in_speed);
+
+		camspeed -= FixedMul(f, camspeed - (FRACUNIT/10));
+		camdist += FixedMul(f, loop->dist);
+	}
+
+	if (loop_in < max(loop->pan_back, 1))
+	{
+		fixed_t f = (loop_in * FRACUNIT) / max(loop->pan_back, 1);
+
+		fixed_t dx = mo->x - thiscam->x;
+		fixed_t dy = mo->y - thiscam->y;
+
+		angle_t th = R_PointToAngle2(0, 0, dx, dy);
+		fixed_t d = AngleFixed(focusangle - th);
+
+		if (d > 180*FRACUNIT)
+		{
+			d -= (360*FRACUNIT);
+		}
+
+		focusangle = th + FixedAngle(FixedMul(f, d));
+
+		if (loop_in == 0)
+		{
+			focusaiming = R_PointToAngle2(0, thiscam->z, FixedHypot(dx, dy), mo->z);
+		}
+	}
+
+	if (loop_in == 0)
+	{
+		tic_t accel = max(loop->pan_accel, 1);
+		fixed_t f = (min(loop_out, accel) * FRACUNIT) / accel;
+
+		INT32 turn = AngleDeltaSigned(focusangle, player->loop.yaw - loop->pan);
+		INT32 turnspeed = FixedAngle(FixedMul(f, loop->pan_speed));
+
+		if (turn > turnspeed)
+		{
+			if (turn < ANGLE_90)
+			{
+				turnspeed = -(turnspeed);
+			}
+
+			focusangle += turnspeed;
+		}
+	}
 
 	if (timeover)
 	{
@@ -3888,6 +3944,11 @@ DoABarrelRoll (player_t *player)
 	angle_t delta;
 
 	fixed_t smoothing;
+
+	if (player->loop.radius)
+	{
+		return;
+	}
 
 	if (player->respawn.state != RESPAWNST_NONE)
 	{
