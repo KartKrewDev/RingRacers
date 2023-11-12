@@ -1198,6 +1198,7 @@ typedef enum sprite
 	SPR_TRK4,
 	SPR_TRK5,
 	SPR_TRK6,
+	SPR_TRK7,
 
 	SPR_TIRG, // Tire grabbers
 	SPR_RSHT, // DEZ Ring Shooter
@@ -5127,6 +5128,7 @@ typedef enum state
 
 	S_SIDETRICK,
 	S_BACKTRICK,
+	S_FORWARDTRICK,
 
 	// DEZ Ring Shooter
 	S_TIREGRABBER,
@@ -6928,6 +6930,7 @@ typedef enum mobj_type
 	MT_SMOOTHLANDING,
 	MT_TRICKINDICATOR,
 	MT_SIDETRICK,
+	MT_FORWARDTRICK,
 
 	MT_TIREGRABBER,
 	MT_RINGSHOOTER,

@@ -641,6 +641,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"TRK4",
 	"TRK5",
 	"TRK6",
+	"TRK7",
 
 	"TIRG", // Tire grabbers
 	"RSHT", // DEZ Ring Shooter
@@ -4681,8 +4682,9 @@ state_t states[NUMSTATES] =
 	{SPR_NULL, 0, 1, {NULL}, 12, 1, S_TRICKINDICATOR_UNDERLAY_ARROW2}, // S_TRICKINDICATOR_UNDERLAY_ARROW,
 	{SPR_TRK4, FF_FULLBRIGHT|FF_ANIMATE|FF_PAPERSPRITE,        13, {NULL}, 12, 1, S_INVISIBLE}, // S_TRICKINDICATOR_UNDERLAY_ARROW2,
 
-	{SPR_TRK5, FF_FULLBRIGHT|FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_NULL}, // S_SIDETRICK,
-	{SPR_TRK6, FF_FULLBRIGHT|FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_NULL}, // S_BACKTRICK,
+	{SPR_TRK5, FF_FULLBRIGHT|FF_PAPERSPRITE,            -1, {NULL}, 0, 0, S_NULL}, // S_SIDETRICK,
+	{SPR_TRK6, FF_FULLBRIGHT|FF_PAPERSPRITE,            -1, {NULL}, 0, 0, S_NULL}, // S_BACKTRICK,
+	{SPR_TRK7, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_ANIMATE, -1, {NULL}, 6, 4, S_NULL}, // S_FORWARDTRICK,
 
 	{SPR_TIRG, FF_ANIMATE, -1, {NULL}, 1, 1, S_NULL}, // S_TIREGRABBER
 	{SPR_RSHT,               FF_PAPERSPRITE|0,         -1,              {NULL}, 0, 0, S_NULL}, // S_RINGSHOOTER_SIDE
@@ -25424,6 +25426,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // speed
 		36*FRACUNIT,    // radius
 		40*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_FORWARDTRICK
+		-1,             // doomednum
+		S_FORWARDTRICK, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		60*FRACUNIT,    // radius
+		86*FRACUNIT,    // height
 		0,              // display offset
 		100,            // mass
 		0,              // damage

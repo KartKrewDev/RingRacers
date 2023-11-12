@@ -8537,6 +8537,72 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 		break;
 	}
+	case MT_FORWARDTRICK:
+	{
+		fixed_t destx, desty;
+		fixed_t zoff = 0;
+
+		if (!mobj->target
+		|| !mobj->target->health
+		|| !mobj->target->player
+		|| mobj->target->player->trickpanel != TRICKSTATE_FORWARD)
+		{
+			P_RemoveMobj(mobj);
+			return false;
+		}
+
+		// Flicker every other frame from first visibility
+		if (mobj->flags2 & MF2_BOSSDEAD)
+		{
+			mobj->renderflags |= RF_DONTDRAW;
+		}
+		else
+		{
+			mobj->renderflags &= ~RF_DONTDRAW;
+			mobj->renderflags |= (mobj->target->renderflags & RF_DONTDRAW);
+		}
+
+		mobj->eflags = (mobj->eflags & ~MFE_VERTICALFLIP)|(mobj->target->eflags & MFE_VERTICALFLIP);
+		mobj->flags2 = ((mobj->flags2 & ~MF2_OBJECTFLIP)|(mobj->target->flags2 & MF2_OBJECTFLIP)) ^ MF2_BOSSDEAD;
+
+		// sweeping effect
+		const fixed_t sweep = FixedMul(FRACUNIT - (mobj->threshold * 2), mobj->radius);
+
+		mobj->threshold += FRACUNIT/(7*4);
+		if (mobj->threshold > FRACUNIT)
+			mobj->threshold -= FRACUNIT;
+
+		P_InstaScale(mobj, mobj->target->scale);
+
+		destx = mobj->target->x;
+		desty = mobj->target->y;
+
+		destx += P_ReturnThrustX(mobj, mobj->movedir, sweep);
+		desty += P_ReturnThrustY(mobj, mobj->movedir, sweep);
+
+		const fixed_t sideways = P_ReturnThrustY(mobj, mobj->angle - mobj->movedir, mobj->radius);
+		destx += P_ReturnThrustX(mobj, mobj->movedir + ANGLE_90, sideways);
+		desty += P_ReturnThrustY(mobj, mobj->movedir + ANGLE_90, sideways);
+
+		if (mobj->eflags & MFE_VERTICALFLIP)
+			zoff += mobj->target->height - (mobj->height + 18*mobj->scale);
+		else
+			zoff += 18*mobj->scale;
+
+		// Necessary to "ride" on Garden Top
+		zoff += mobj->target->sprzoff;
+
+		if (mobj->flags2 & MF2_AMBUSH)
+		{
+			P_SetOrigin(mobj, destx, desty, mobj->target->z + zoff);
+			mobj->flags2 &= ~MF2_AMBUSH;
+		}
+		else
+		{
+			P_MoveOrigin(mobj, destx, desty, mobj->target->z + zoff);
+		}
+		break;
+	}
 	case MT_LIGHTNINGSHIELD:
 	{
 		if (!mobj->target || !mobj->target->health || !mobj->target->player

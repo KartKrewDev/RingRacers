@@ -12397,9 +12397,37 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					}
 
 					INT32 j;
+					skincolornum_t trickcolor = SKINCOLOR_NONE;
 
-					if (player->trickpanel == TRICKSTATE_FORWARD)
-						; // Not yet sprited
+					if (P_MobjWasRemoved(player->trickIndicator) == false)
+						trickcolor = player->trickIndicator->color;
+
+					if (player->trickpanel == TRICKSTATE_FORWARD)	
+					{
+						for (j = 0; j < 2; j++)
+						{
+							mobj_t *fwush = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_FORWARDTRICK);
+
+							P_SetTarget(&fwush->target, player->mo);
+							fwush->hitlag = TRICKLAG;
+							fwush->color = trickcolor;
+							fwush->renderflags |= RF_DONTDRAW;
+							fwush->flags2 |= MF2_AMBUSH; // don't interp on first think
+							fwush->threshold = 0;
+
+							fwush->movedir = player->mo->angle;
+							if (j == 0)
+							{
+								fwush->angle = fwush->old_angle = fwush->movedir + ANGLE_135;
+								fwush->movefactor = 1;
+							}
+							else
+							{
+								fwush->angle = fwush->old_angle = fwush->movedir - ANGLE_135;
+								fwush->movefactor = -1;
+							}
+						}
+					}
 					else for (j = 0; j < 8; j++, baseangle += angledelta)
 					{
 						mobj_t *swipe = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_SIDETRICK);
@@ -12409,7 +12437,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 						P_SetTarget(&swipe->target, player->mo);
 						swipe->hitlag = TRICKLAG;
-						swipe->color = player->trickIndicator->color;
+						swipe->color = trickcolor;
 						swipe->angle = baseangle + ANGLE_90;
 						swipe->renderflags |= RF_DONTDRAW;
 						swipe->flags2 |= MF2_AMBUSH; // don't interp on first think
