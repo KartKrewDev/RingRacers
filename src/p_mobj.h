@@ -437,6 +437,9 @@ struct mobj_t
 
 	boolean frozen;
 
+	tic_t reappear;
+	mobj_t *punt_ref;
+
 	// WARNING: New fields must be added separately to savegame and Lua.
 };
 
