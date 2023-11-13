@@ -10760,6 +10760,8 @@ fixed_t P_GetMobjDefaultScale(mobj_t *mobj)
 {
 	switch(mobj->type)
 	{
+		case MT_FLAMEJETFLAME:
+			return 3*FRACUNIT;
 		case MT_ITEMCLASH:
 			return 2*FRACUNIT;
 		case MT_SPECIALSTAGEARCH:

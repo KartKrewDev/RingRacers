@@ -14618,13 +14618,13 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,         // xdeathstate
 		sfx_None,       // deathsound
 		5*FRACUNIT,     // speed
-		8*FRACUNIT,     // radius
-		8*FRACUNIT,     // height
+		16*FRACUNIT,    // radius
+		32*FRACUNIT,    // height
 		0,              // display offset
 		DMG_NORMAL,       // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_NOGRAVITY|MF_MISSILE|MF_PAIN, // flags
+		MF_NOGRAVITY|MF_MISSILE|MF_PAIN|MF_NOSQUISH, // flags
 		S_NULL          // raisestate
 	},
 
