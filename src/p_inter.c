@@ -2103,6 +2103,67 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 					cur = cur->hnext;
 				}
 
+				// Spawn three Followers (if possible)
+				if (mapheaderinfo[gamemap-1]->numFollowers)
+				{
+					dir = FixedAngle(P_RandomKey(PR_RANDOMAUDIENCE, 360)*FRACUNIT);
+
+					const fixed_t launchmomentum = 7 * mapobjectscale;
+					const fixed_t jaggedness = 4;
+					angle_t launchangle;
+					UINT8 i;
+					for (i = 0; i < 6; i++, dir += ANG60)
+					{
+						cur = P_SpawnMobj(
+							target->x, target->y,
+							target->z + target->height/2,
+							MT_RANDOMAUDIENCE
+						);
+
+						// We check if you have some horrible Lua
+						if (P_MobjWasRemoved(cur))
+							break;
+
+						Obj_AudienceInit(cur, NULL, -1);
+
+						// We check again if the list is invalid
+						if (P_MobjWasRemoved(cur))
+							break;
+
+						cur->hitlag = target->hitlag;
+
+						cur->destscale /= 2;
+						P_SetScale(cur, cur->destscale/TICRATE);
+						cur->scalespeed = cur->destscale/TICRATE;
+						cur->z -= cur->height/2;
+
+						// flags are NOT from the target - just in case it's just been placed on the ceiling as a gimmick
+						cur->flags2 |= (source->flags2 & MF2_OBJECTFLIP);
+						cur->eflags |= (source->eflags & MFE_VERTICALFLIP);
+
+						launchangle = FixedAngle(
+							(
+								(
+									P_RandomRange(PR_RANDOMAUDIENCE, 12/jaggedness, 24/jaggedness) * jaggedness
+								) + (i & 1)*16
+							) * FRACUNIT
+						);
+
+						cur->momz = P_MobjFlip(target) // THIS one uses target!
+							* P_ReturnThrustY(cur, launchangle, launchmomentum);
+
+						cur->angle = dir;
+
+						P_InstaThrust(
+							cur, cur->angle,
+							P_ReturnThrustX(cur, launchangle, launchmomentum)
+						);
+
+						cur->fuse = (3*TICRATE)/2;
+						cur->flags |= MF_NOCLIPHEIGHT;
+					}
+				}
+
 				S_StartSound(target, sfx_mbs60);
 
 				P_AddBrokenPrison(target, inflictor, source);

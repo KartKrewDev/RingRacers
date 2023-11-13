@@ -1278,6 +1278,10 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 				}
 				break;
 			}
+			case MT_RANDOMAUDIENCE:
+				if (mo->fuse)
+					gravityadd /= 10;
+				break;
 			default:
 				break;
 		}
@@ -7270,7 +7274,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		if (mobj->flags2 & MF2_STRONGBOX)
 		{
-			Obj_AudienceThink(mobj, true);
+			Obj_AudienceThink(mobj, true, false);
 			if (P_MobjWasRemoved(mobj))
 				return false;
 		}
@@ -10808,7 +10812,9 @@ void P_SceneryThinker(mobj_t *mobj)
 
 	if (mobj->type == MT_RANDOMAUDIENCE)
 	{
-		Obj_AudienceThink(mobj, !!(mobj->flags2 & MF2_AMBUSH));
+		Obj_AudienceThink(mobj, !!(mobj->flags2 & MF2_AMBUSH), !!(mobj->flags2 & MF2_DONTRESPAWN));
+		if (P_MobjWasRemoved(mobj))
+			return;
 	}
 }
 

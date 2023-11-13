@@ -136,7 +136,7 @@ void Obj_UpdateRingShooterFace(mobj_t *part);
 
 /* Follower Audience */
 void Obj_AudienceInit(mobj_t * mobj, mapthing_t *mthing, INT32 followerpick);
-void Obj_AudienceThink(mobj_t * mobj, boolean focusonplayer);
+void Obj_AudienceThink(mobj_t * mobj, boolean focusonplayer, boolean checkdeathpit);
 
 /* Random Item Boxes */
 void Obj_RandomItemVisuals(mobj_t *mobj);
