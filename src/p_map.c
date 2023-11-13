@@ -538,6 +538,7 @@ static void P_DoFanAndGasJet(mobj_t *spring, mobj_t *object)
 static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 {
 	fixed_t blockdist;
+	boolean damage = false;
 
 	if (tm.thing == NULL || P_MobjWasRemoved(tm.thing) == true)
 		return BMIT_STOP; // func just popped our tm.thing, cannot continue.
@@ -694,10 +695,12 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 
 			if (P_DamageMobj(tm.thing, thing, thing, 1, damagetype) && (damagetype = (thing->info->mass>>8)))
 				S_StartSound(thing, damagetype);
-		}
 
-		if (P_MobjWasRemoved(tm.thing) || P_MobjWasRemoved(thing))
-			return BMIT_CONTINUE;
+			if (P_MobjWasRemoved(tm.thing) || P_MobjWasRemoved(thing))
+				return BMIT_CONTINUE;
+
+			damage = true;
+		}
 	}
 	else if (tm.thing->flags & MF_PAIN && thing->player)
 	{ // Painful thing splats player in the face
@@ -712,10 +715,12 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 
 			if (P_DamageMobj(thing, tm.thing, tm.thing, 1, damagetype) && (damagetype = (tm.thing->info->mass>>8)))
 				S_StartSound(tm.thing, damagetype);
-		}
 
-		if (P_MobjWasRemoved(tm.thing) || P_MobjWasRemoved(thing))
-			return BMIT_CONTINUE;
+			if (P_MobjWasRemoved(tm.thing) || P_MobjWasRemoved(thing))
+				return BMIT_CONTINUE;
+
+			damage = true;
+		}
 	}
 
 	// check for skulls slamming into things
@@ -1216,7 +1221,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	}
 
 	// missiles can hit other things
-	if (tm.thing->flags & MF_MISSILE)
+	if ((tm.thing->flags & MF_MISSILE) && !damage) // if something was already damaged, don't run this
 	{
 		UINT8 damagetype = (tm.thing->info->mass ^ DMG_WOMBO);
 
