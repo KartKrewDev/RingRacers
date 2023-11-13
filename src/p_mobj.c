@@ -8856,6 +8856,31 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		Obj_ChargeAuraThink(mobj);
 		break;
 	}
+	case MT_CHARGEFALL:
+	{
+		Obj_ChargeFallThink(mobj);
+		break;
+	}
+	case MT_CHARGEFLICKER:
+	{
+		Obj_ChargeFlickerThink(mobj);
+		break;
+	}
+	case MT_CHARGESPARK:
+	{
+		Obj_ChargeSparkThink(mobj);
+		break;
+	}
+	case MT_CHARGERELEASE:
+	{
+		Obj_ChargeReleaseThink(mobj);
+		break;
+	}
+	case MT_CHARGEEXTRA:
+	{
+		Obj_ChargeExtraThink(mobj);
+		break;
+	}
 	case MT_GUARDBREAK:
 	{
 		Obj_GuardBreakThink(mobj);

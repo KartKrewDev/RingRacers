@@ -1125,6 +1125,10 @@ typedef enum sprite
 	SPR_GBDY, // Guard body
 
 	SPR_TRC1, // Charge aura
+	SPR_TRC2, // Charge fall
+	SPR_TRC3, // Charge flicker/sparks
+	SPR_TRC4, // Charge release
+	SPR_TRC5, // Charge extra
 
 	SPR_DHND, // Servant Hand
 
@@ -4553,6 +4557,11 @@ typedef enum state
 	S_BLOCKBODY,
 
 	S_CHARGEAURA,
+	S_CHARGEFALL,
+	S_CHARGEFLICKER,
+	S_CHARGESPARK,
+	S_CHARGERELEASE,
+	S_CHARGEEXTRA,
 
 	S_SERVANTHAND,
 
@@ -6824,6 +6833,11 @@ typedef enum mobj_type
 	MT_BLOCKBODY,
 
 	MT_CHARGEAURA,
+	MT_CHARGEFALL,
+	MT_CHARGEFLICKER,
+	MT_CHARGESPARK,
+	MT_CHARGERELEASE,
+	MT_CHARGEEXTRA,
 
 	MT_SERVANTHAND,
 

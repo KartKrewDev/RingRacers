@@ -8545,7 +8545,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 				mobj_t *aura = P_SpawnMobjFromMobj(player->mo, 0, 0, player->mo->height/2, MT_CHARGEAURA);
 				aura->angle = player->mo->angle + i*ANG15;
 				P_SetTarget(&aura->target, player->mo);
-				if (i != 0)
+				if (i == 0)
+					aura->extravalue2 = 1;
+				else
 					aura->renderflags |= RF_TRANS50;
 			}
 		}
@@ -8869,14 +8871,6 @@ void K_KartResetPlayerColor(player_t *player)
 			fullbright = true;
 			goto finalise;
 		}
-	}
-
-	if (player->trickcharge && (leveltime & 1))
-	{
-		player->mo->colorized = true;
-		player->mo->color = SKINCOLOR_INVINCFLASH;
-		fullbright = true;
-		goto finalise;
 	}
 
 	if (player->ringboost && (leveltime & 1)) // ring boosting
@@ -12483,9 +12477,17 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			{
 				P_InstaThrust(player->mo, player->mo->angle, 2*abs(player->fastfall)/3 + 15*FRACUNIT);
 				player->mo->hitlag = 3;
-				S_StartSound(player->mo, sfx_gshac); // TODO
+				S_StartSound(player->mo, sfx_gshba); // TODO
 				player->fastfall = 0; // intentionally skip bounce
 				player->trickcharge = 0;
+
+				UINT8 i;
+				for (i = 0; i < 4; i++)
+				{
+					mobj_t *arc = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_CHARGEFALL);
+					P_SetTarget(&arc->target, player->mo);
+					arc->extravalue1 = i;
+				}
 			}
 			else
 			{
