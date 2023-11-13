@@ -5679,12 +5679,12 @@ static void P_FlameJetSceneryThink(mobj_t *mobj)
 	flame->angle = mobj->angle;
 
 	if (mobj->flags2 & MF2_AMBUSH) // Wave up and down instead of side-to-side
-		flame->momz = mobj->fuse << (FRACBITS - 2);
+		flame->momz = (mobj->fuse * mapobjectscale) / 4;
 	else
 		flame->angle += FixedAngle(mobj->fuse<<FRACBITS);
 
-	strength = 20*FRACUNIT;
-	strength -= ((20*FRACUNIT)/16)*mobj->movedir;
+	strength = 20*mapobjectscale;
+	strength -= ((20*mapobjectscale)/16)*mobj->movedir;
 
 	P_InstaThrust(flame, flame->angle, strength);
 	S_StartSound(flame, sfx_fire);
@@ -5714,8 +5714,8 @@ static void P_VerticalFlameJetSceneryThink(mobj_t *mobj)
 
 	flame = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_FLAMEJETFLAME);
 
-	strength = 20*FRACUNIT;
-	strength -= ((20*FRACUNIT)/16)*mobj->movedir;
+	strength = 20*mapobjectscale;
+	strength -= ((20*mapobjectscale)/16)*mobj->movedir;
 
 	// If deaf'd, the object spawns on the ceiling.
 	if (mobj->flags2 & MF2_AMBUSH)
@@ -5729,7 +5729,7 @@ static void P_VerticalFlameJetSceneryThink(mobj_t *mobj)
 		P_SetMobjState(flame, S_FLAMEJETFLAME7);
 	}
 
-	P_InstaThrust(flame, mobj->angle, FixedDiv(mobj->fuse*FRACUNIT, 3*FRACUNIT));
+	P_InstaThrust(flame, mobj->angle, (mobj->fuse * mapobjectscale) / 3);
 	S_StartSound(flame, sfx_fire);
 }
 
