@@ -11321,6 +11321,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 					mobj->y + FINESINE((ang>>ANGLETOFINESHIFT) & FINEMASK), mobj->z, MT_DAYTONAPINETREE_SIDE);
 				side->angle = ang;
 				P_SetTarget(&side->target, mobj);
+				P_SetTarget(&side->punt_ref, mobj);
 				side->threshold = i;
 			}
 			break;
