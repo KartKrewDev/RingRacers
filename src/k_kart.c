@@ -5218,6 +5218,18 @@ void K_SpawnDriftElectricSparks(player_t *player, int color, boolean shockwave)
 	fixed_t sparkspeed = mobjinfo[MT_DRIFTELECTRICSPARK].speed;
 	fixed_t sparkradius = 2 * shockscale * mobjinfo[MT_DRIFTELECTRICSPARK].radius;
 
+	if (player->trickcharge)
+	{
+		mobj_t *release = P_SpawnMobjFromMobj(mo, 0, 0, 0, MT_CHARGERELEASE);
+		release->momx = mo->momx/2;
+		release->momy = mo->momy/2;
+		release->momz = mo->momz/2;
+		release->angle = K_MomentumAngleReal(mo);
+		release->scale /= 5;
+		release->scalespeed = release->scale;
+		release->tics = 10;
+	}
+
 	for (hdir = -1; hdir <= 1; hdir += 2)
 	{
 		for (vdir = -1; vdir <= 1; vdir += 2)
@@ -5225,12 +5237,16 @@ void K_SpawnDriftElectricSparks(player_t *player, int color, boolean shockwave)
 			fixed_t hspeed = FixedMul(hdir * sparkspeed, mo->scale); // P_InstaThrust treats speed as absolute
 			fixed_t vspeed = vdir * sparkspeed; // P_SetObjectMomZ scales speed with object scale
 			angle_t sparkangle = mo->angle + ANGLE_45;
+			mobj_t *spark;
 
 			for (i = 0; i < 4; i++)
 			{
 				fixed_t xoff = P_ReturnThrustX(mo, sparkangle, sparkradius);
 				fixed_t yoff = P_ReturnThrustY(mo, sparkangle, sparkradius);
-				mobj_t *spark = P_SpawnMobjFromMobj(mo, x + xoff, y + yoff, z, MT_DRIFTELECTRICSPARK);
+				if (player->trickcharge && !shockwave)
+					spark = P_SpawnMobjFromMobj(mo, x + xoff, y + yoff, z, MT_CHARGEEXTRA);
+				else
+					spark = P_SpawnMobjFromMobj(mo, x + xoff, y + yoff, z, MT_DRIFTELECTRICSPARK);
 
 				spark->angle = sparkangle;
 				spark->color = color;
@@ -5244,6 +5260,8 @@ void K_SpawnDriftElectricSparks(player_t *player, int color, boolean shockwave)
 
 				if (shockwave)
 					spark->frame |= FF_ADD;
+				else if (player->trickcharge)
+					spark->tics = 10;
 
 				sparkangle += ANGLE_90;
 				K_ReduceVFX(spark, player);

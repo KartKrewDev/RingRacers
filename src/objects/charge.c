@@ -127,12 +127,18 @@ void Obj_ChargeSparkThink (mobj_t *spark)
     spark->renderflags |= RF_FULLBRIGHT|RF_ADD;
 }
 
-void Obj_ChargeReleaseThink (mobj_t *flicker)
+void Obj_ChargeReleaseThink (mobj_t *release)
 {
-    // xd
+    release->renderflags &= ~RF_TRANSMASK;
+    if (release->tics < 10)
+        release->renderflags |= (9 - release->tics)<<RF_TRANSSHIFT;
+    release->rollangle += ANG30;
 }
 
-void Obj_ChargeExtraThink (mobj_t *flicker)
+void Obj_ChargeExtraThink (mobj_t *extra)
 {
-    // xd
+    extra->renderflags &= ~RF_TRANSMASK;
+    if (extra->tics < 10)
+        extra->renderflags |= (9 - extra->tics)<<RF_TRANSSHIFT;
+    extra->rollangle += ANG30;
 }
