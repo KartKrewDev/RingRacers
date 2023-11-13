@@ -43,6 +43,7 @@
 #include "k_hitlag.h"
 #include "acs/interface.h"
 #include "k_powerup.h"
+#include "k_collide.h"
 
 // CTF player names
 #define CTFTEAMCODE(pl) pl->ctfteam ? (pl->ctfteam == 1 ? "\x85" : "\x84") : ""
@@ -2927,6 +2928,14 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				else
 				{
 					invincible = false;
+				}
+
+				// TODO: doing this from P_DamageMobj limits punting to objects that damage the player.
+				// And it may be kind of yucky.
+				// But this is easier than accounting for every condition in PIT_CheckThing!
+				if (inflictor && K_PuntCollide(inflictor, target))
+				{
+					return false;
 				}
 
 				if (invincible && type != DMG_STUMBLE && type != DMG_WHUMBLE)

@@ -1166,6 +1166,9 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 
 	K_ReduceVFX(ghost, mobj->player);
 
+	ghost->reappear = mobj->reappear;
+	P_SetTarget(&ghost->punt_ref, mobj->punt_ref);
+
 	return ghost;
 }
 

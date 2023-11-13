@@ -15381,3 +15381,9 @@ void P_DeleteMobjStringArgs(mobj_t *mobj)
 		mobj->script_stringargs[i] = NULL;
 	}
 }
+
+tic_t P_MobjIsReappearing(const mobj_t *mobj)
+{
+	tic_t t = (!P_MobjWasRemoved(mobj->punt_ref) ? mobj->punt_ref : mobj)->reappear;
+	return t - min(leveltime, t);
+}

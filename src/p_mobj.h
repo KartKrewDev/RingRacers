@@ -437,7 +437,12 @@ struct mobj_t
 
 	boolean frozen;
 
+	// Object was punted and is temporarily invisible and
+	// intangible. This is the leveltime that it will
+	// reappear.
 	tic_t reappear;
+
+	// If punt_ref, set punt_ref->reappear, treat as if this->reappear
 	mobj_t *punt_ref;
 
 	// WARNING: New fields must be added separately to savegame and Lua.

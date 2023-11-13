@@ -563,6 +563,10 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	if ((thing->flags & MF_NOCLIPTHING) || !(thing->flags & (MF_SOLID|MF_SPECIAL|MF_PAIN|MF_SHOOTABLE|MF_SPRING)))
 		return BMIT_CONTINUE;
 
+	// Thing is respawning
+	if (P_MobjIsReappearing(thing))
+		return BMIT_CONTINUE;
+
 	blockdist = thing->radius + tm.thing->radius;
 
 	if (abs(thing->x - tm.x) >= blockdist || abs(thing->y - tm.y) >= blockdist)
@@ -1631,7 +1635,10 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			if (tm.thing->z + tm.thing->height < thing->z)
 				return BMIT_CONTINUE; // underneath
 
-			K_KartSolidBounce(tm.thing, thing);
+			if (!K_PuntCollide(thing, tm.thing))
+			{
+				K_KartSolidBounce(tm.thing, thing);
+			}
 			return BMIT_CONTINUE;
 		}
 	}
@@ -2346,7 +2353,8 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y, TryMoveResult_t *re
 	// Check things first, possibly picking things up.
 
 	// MF_NOCLIPTHING: used by camera to not be blocked by things
-	if (!(thing->flags & MF_NOCLIPTHING))
+	// Respawning things should also be intangible to other things
+	if (!(thing->flags & MF_NOCLIPTHING) && !P_MobjIsReappearing(thing))
 	{
 		for (bx = xl; bx <= xh; bx++)
 		{
