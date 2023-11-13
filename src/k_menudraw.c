@@ -775,6 +775,7 @@ void M_Drawer(void)
 	if (menuwipe)
 		F_WipeStartScreen();
 
+	// background layer
 	if (menuactive)
 	{
 		if (gamestate == GS_MENU)
@@ -785,7 +786,17 @@ void M_Drawer(void)
 		{
 			V_DrawFadeScreen(122, 3);
 		}
+	}
 
+	// draw pause pic
+	if (paused && !demo.playback && (menuactive || cv_showhud.value))
+	{
+		M_DrawPausedText(0);
+	}
+
+	// foreground layer
+	if (menuactive)
+	{
 		if (currentMenu->drawroutine)
 			currentMenu->drawroutine(); // call current menu Draw routine
 
@@ -811,18 +822,6 @@ void M_Drawer(void)
 		F_WipeEndScreen();
 		F_RunWipe(wipe_menu_final, wipedefs[wipe_menu_final], false, "FADEMAP0", true, false);
 		menuwipe = false;
-	}
-
-	// draw pause pic
-	if (paused && !demo.playback && (menuactive || cv_showhud.value))
-	{
-		// Don't cover the Stereo player!
-		boolean stereo_open = menuactive && currentMenu == &MISC_SoundTestDef;
-
-		if (stereo_open == false)
-		{
-			M_DrawPausedText(0);
-		}
 	}
 
 	if (netgame && Playing())
