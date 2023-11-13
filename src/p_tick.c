@@ -1162,7 +1162,7 @@ void P_Ticker(boolean run)
 		P_RunChaseCameras();
 	}
 
-	if (run)
+	if (run && !levelloading && leveltime)
 	{
 		K_TickDialogue();
 	}
