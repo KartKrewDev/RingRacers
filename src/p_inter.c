@@ -2557,7 +2557,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 				player->roundconditions.checkthisframe = true;
 			}
 
-			if (gametyperules & GTR_BUMPERS)
+			if (gametyperules & (GTR_BUMPERS|GTR_CHECKPOINTS))
 			{
 				player->mo->health--;
 			}
