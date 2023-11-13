@@ -63,6 +63,8 @@ mobj_t *waypointcap = NULL;
 // general purpose.
 mobj_t *trackercap = NULL;
 
+mobj_t *mobjcache = NULL;
+
 void P_InitCachedActions(void)
 {
 	actioncachehead.prev = actioncachehead.next = &actioncachehead;
@@ -1276,6 +1278,10 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 				}
 				break;
 			}
+			case MT_RANDOMAUDIENCE:
+				if (mo->fuse)
+					gravityadd /= 10;
+				break;
 			default:
 				break;
 		}
@@ -1669,7 +1675,7 @@ void P_XYMovement(mobj_t *mo)
 		// blocked move
 		moved = false;
 
-		if (LUA_HookMobjMoveBlocked(mo, tm.hitthing, tm.blockingline))
+		if (LUA_HookMobjMoveBlocked(mo, tm.hitthing, result.line))
 		{
 			if (P_MobjWasRemoved(mo))
 				return;
@@ -1677,7 +1683,7 @@ void P_XYMovement(mobj_t *mo)
 		else if (P_MobjWasRemoved(mo))
 			return;
 
-		P_PushSpecialLine(tm.blockingline, mo);
+		P_PushSpecialLine(result.line, mo);
 
 		if (mo->flags & MF_MISSILE)
 		{
@@ -6469,7 +6475,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 							break;
 					}
 
-					if (mobj->target->player->pflags & PF_ITEMOUT)
+					if (mobj->target->player->itemflags & IF_ITEMOUT)
 					{
 						if (leveltime & 1)
 							mobj->tracer->renderflags &= ~RF_DONTDRAW;
@@ -7268,7 +7274,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		if (mobj->flags2 & MF2_STRONGBOX)
 		{
-			Obj_AudienceThink(mobj, true);
+			Obj_AudienceThink(mobj, true, false);
 			if (P_MobjWasRemoved(mobj))
 				return false;
 		}
@@ -10806,7 +10812,9 @@ void P_SceneryThinker(mobj_t *mobj)
 
 	if (mobj->type == MT_RANDOMAUDIENCE)
 	{
-		Obj_AudienceThink(mobj, !!(mobj->flags2 & MF2_AMBUSH));
+		Obj_AudienceThink(mobj, !!(mobj->flags2 & MF2_AMBUSH), !!(mobj->flags2 & MF2_DONTRESPAWN));
+		if (P_MobjWasRemoved(mobj))
+			return;
 	}
 }
 
@@ -10951,7 +10959,16 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		type = MT_RAY;
 	}
 
-	mobj = Z_Calloc(sizeof (*mobj), PU_LEVEL, NULL);
+	if (mobjcache != NULL)
+	{
+		mobj = mobjcache;
+		mobjcache = mobjcache->hnext;
+		memset(mobj, 0, sizeof(*mobj));
+	}
+	else
+	{
+		mobj = Z_Calloc(sizeof (*mobj), PU_LEVEL, NULL);
+	}
 
 	// this is officially a mobj, declared as soon as possible.
 	mobj->thinker.function.acp1 = (actionf_p1)P_MobjThinker;
@@ -11859,7 +11876,9 @@ void P_RemoveMobj(mobj_t *mobj)
 		INT32 prevreferences;
 		if (!mobj->thinker.references)
 		{
-			Z_Free(mobj); // No refrrences? Can be removed immediately! :D
+			// no references, dump it directly in the mobj cache
+			mobj->hnext = mobjcache;
+			mobjcache = mobj;
 			return;
 		}
 

@@ -94,6 +94,9 @@ menuitem_t OPTIONS_ProfileControls[] = {
 	{IT_CONTROL | IT_CVAR, "AUTO ROULETTE", "Item roulette auto-stops on a random result.",
 		NULL, {.cvar = &cv_dummyprofileautoroulette}, 0, 0},
 
+	{IT_CONTROL | IT_CVAR, "LITE STEER", "Hold DOWN on d-pad/keyboard for shallow turns.",
+		NULL, {.cvar = &cv_dummyprofilelitesteer}, 0, 0},
+
 	{IT_HEADER, "EXTRA", "",
 		NULL, {NULL}, 0, 0},
 
@@ -191,6 +194,7 @@ static void M_ProfileControlSaveResponse(INT32 choice)
 		// Save the profile
 		optionsmenu.profile->kickstartaccel = cv_dummyprofilekickstart.value;
 		optionsmenu.profile->autoroulette = cv_dummyprofileautoroulette.value;
+		optionsmenu.profile->litesteer = cv_dummyprofilelitesteer.value;
 		optionsmenu.profile->rumble = cv_dummyprofilerumble.value;
 		memcpy(&optionsmenu.profile->controls, optionsmenu.tempcontrols, sizeof(gamecontroldefault));
 
@@ -201,6 +205,7 @@ static void M_ProfileControlSaveResponse(INT32 choice)
 			memcpy(&gamecontrol[belongsto], optionsmenu.tempcontrols, sizeof(gamecontroldefault));
 			CV_SetValue(&cv_kickstartaccel[belongsto], cv_dummyprofilekickstart.value);
 			CV_SetValue(&cv_autoroulette[belongsto], cv_dummyprofileautoroulette.value);
+			CV_SetValue(&cv_litesteer[belongsto], cv_dummyprofilelitesteer.value);
 			CV_SetValue(&cv_rumble[belongsto], cv_dummyprofilerumble.value);
 		}
 

@@ -259,6 +259,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->ringboxdelay);
 	else if (fastcmp(field,"ringboxaward"))
 		lua_pushinteger(L, plr->ringboxaward);
+	else if (fastcmp(field,"itemflags"))
+		lua_pushinteger(L, plr->itemflags);
 	else if (fastcmp(field,"drift"))
 		lua_pushinteger(L, plr->drift);
 	else if (fastcmp(field,"driftcharge"))
@@ -337,6 +339,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->instaWhipCooldown);
 	else if (fastcmp(field,"guardCooldown"))
 		lua_pushinteger(L, plr->guardCooldown);
+	else if (fastcmp(field,"preventfailsafe"))
+		lua_pushinteger(L, plr->preventfailsafe);
 	/*
 	else if (fastcmp(field,"itemroulette"))
 		lua_pushinteger(L, plr->itemroulette);
@@ -381,6 +385,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->flamelength);
 	else if (fastcmp(field,"ballhogcharge"))
 		lua_pushinteger(L, plr->ballhogcharge);
+	else if (fastcmp(field,"ballhogtap"))
+		lua_pushinteger(L, plr->ballhogtap);
 	else if (fastcmp(field,"hyudorotimer"))
 		lua_pushinteger(L, plr->hyudorotimer);
 	else if (fastcmp(field,"stealingtimer"))
@@ -741,6 +747,8 @@ static int player_set(lua_State *L)
 		plr->ringboxdelay = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"ringboxaward"))
 		plr->ringboxaward = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"itemflags"))
+		plr->itemflags = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"drift"))
 		plr->drift = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"driftcharge"))
@@ -819,6 +827,8 @@ static int player_set(lua_State *L)
 		plr->instaWhipCharge = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"guardCooldown"))
 		plr->guardCooldown = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"preventfailsafe"))
+		plr->preventfailsafe = luaL_checkinteger(L, 3);
 	/*
 	else if (fastcmp(field,"itemroulette"))
 		plr->itemroulette = luaL_checkinteger(L, 3);
@@ -863,6 +873,8 @@ static int player_set(lua_State *L)
 		plr->flamelength = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"ballhogcharge"))
 		plr->ballhogcharge = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"ballhogtap"))
+		plr->ballhogtap = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"hyudorotimer"))
 		plr->hyudorotimer = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"stealingtimer"))

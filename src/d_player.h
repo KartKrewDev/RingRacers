@@ -64,6 +64,14 @@ typedef enum
 	PST_REBORN
 } playerstate_t;
 
+typedef enum
+{
+	IF_USERINGS		= 1,	// Have to be not holding the item button to change from using rings to using items (or vice versa) - prevents weirdness
+	IF_ITEMOUT		= 1<<1,	// Are you holding an item out?
+	IF_EGGMANOUT	= 1<<2,	// Eggman mark held, separate from IF_ITEMOUT so it doesn't stop you from getting items
+	IF_HOLDREADY	= 1<<3,	// Hold button-style item is ready to activate
+} itemflags_t;
+
 //
 // Player internal flags
 //
@@ -95,11 +103,9 @@ typedef enum
 
 	PF_RINGLOCK			= 1<<13, // Prevent picking up rings while SPB is locked on
 
-	// The following four flags are mutually exclusive, although they can also all be off at the same time. If we ever run out of pflags, eventually turn them into a seperate five(+) mode UINT8..?
-	PF_USERINGS			= 1<<14, // Have to be not holding the item button to change from using rings to using items (or vice versa) - prevents weirdness
-	PF_ITEMOUT			= 1<<15, // Are you holding an item out?
-	PF_EGGMANOUT		= 1<<16, // Eggman mark held, separate from PF_ITEMOUT so it doesn't stop you from getting items
-	PF_HOLDREADY		= 1<<17, // Hold button-style item is ready to activate
+	PF_LITESTEER		= 1<<14, // Hold Down to shallow turn (digital only)
+
+	//15-17 free, was previously itemflags stuff
 
 	PF_DRIFTINPUT		= 1<<18, // Drifting!
 	PF_GETSPARKS		= 1<<19, // Can get sparks
@@ -503,6 +509,15 @@ typedef enum
 	BOT_ITEM_PR__MAX
 } botItemPriority_e;
 
+typedef struct {
+	tic_t enter_tic, exit_tic;
+	tic_t zoom_in_speed, zoom_out_speed;
+	fixed_t dist;
+	angle_t pan;
+	fixed_t pan_speed; // in degrees
+	tic_t pan_accel, pan_back;
+} sonicloopcamvars_t;
+
 // player_t struct for loop state
 typedef struct {
 	fixed_t radius;
@@ -512,6 +527,7 @@ typedef struct {
 	vector2_t origin_shift;
 	vector2_t shift;
 	boolean flip;
+	sonicloopcamvars_t camera;
 } sonicloopvars_t;
 
 // player_t struct for power-ups
@@ -717,6 +733,7 @@ struct player_t
 	UINT8 flamelength;	// Flame Shield dash meter, number of segments
 
 	UINT16 ballhogcharge;	// Ballhog charge up -- the higher this value, the more projectiles
+	boolean ballhogtap;		// Ballhog released during charge: used to allow semirapid tapfire
 
 	UINT16 hyudorotimer;	// Duration of the Hyudoro offroad effect itself
 	SINT8 stealingtimer;	// if >0 you are stealing, if <0 you are being stolen from
@@ -903,6 +920,8 @@ struct player_t
 	UINT8 instaWhipChargeLockout;
 	UINT8 guardCooldown;
 
+	UINT8 preventfailsafe; // Set when taking damage to prevent cheesing eggboxes
+
 	UINT8 handtimer;
 	angle_t besthanddirection;
 
@@ -912,6 +931,8 @@ struct player_t
 
 	UINT8 ringboxdelay; // Delay until Ring Box auto-activates
 	UINT8 ringboxaward; // Where did we stop?
+
+	UINT8 itemflags; 	// holds IF_ flags (see itemflags_t)
 
 	fixed_t outrun; // Milky Way road effect
 
