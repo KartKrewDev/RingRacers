@@ -14624,7 +14624,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		DMG_NORMAL,       // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_NOGRAVITY|MF_MISSILE|MF_PAIN|MF_NOSQUISH, // flags
+		MF_NOGRAVITY|MF_MISSILE|MF_PAIN|MF_NOSQUISH|MF_NOHITLAGFORME, // flags
 		S_NULL          // raisestate
 	},
 
