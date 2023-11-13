@@ -128,8 +128,6 @@ void Obj_GuardBreakThink(mobj_t *fx);
 
 void Obj_ChargeAuraThink(mobj_t *aura);
 void Obj_ChargeFallThink(mobj_t *charge);
-void Obj_ChargeFlickerThink(mobj_t *flicker);
-void Obj_ChargeSparkThink(mobj_t *spawk);
 void Obj_ChargeReleaseThink(mobj_t *release);
 void Obj_ChargeExtraThink(mobj_t *extra);
 

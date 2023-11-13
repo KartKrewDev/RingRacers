@@ -648,6 +648,7 @@ struct player_t
 	respawnvars_t respawn;	// Respawn info
 	mobj_t *ringShooter;	// DEZ respawner object
 	tic_t airtime; 			// Used to track just air time, but has evolved over time into a general "karted" timer. Rename this variable?
+	tic_t lastairtime;
 	UINT8 startboost;		// (0 to 125) - Boost you get from start of race
 	UINT8 dropdashboost;	// Boost you get when holding A while respawning
 

@@ -11,6 +11,7 @@
 
 // xval1: destruction timer
 // xval2: master (spawns other visuals)
+// cvmem: spawn time (used to offset flash)
 void Obj_ChargeAuraThink (mobj_t *aura)
 {
     if (P_MobjWasRemoved(aura->target) || !aura->target->player || (aura->extravalue1 >= CHARGEAURA_BURSTTIME))
@@ -50,7 +51,7 @@ void Obj_ChargeAuraThink (mobj_t *aura)
         aura->renderflags |= RF_PAPERSPRITE|RF_ADD;
 
         // fuck
-        boolean forceinvisible = !!!(leveltime % 8);
+        boolean forceinvisible = !!!((leveltime - aura->cvmem) % 4);
         if (aura->extravalue1 || !(player->driftcharge > K_GetKartDriftSparkValueForStage(player, 3)))
             forceinvisible = false;
 
@@ -67,6 +68,7 @@ void Obj_ChargeAuraThink (mobj_t *aura)
                     mo->scale*P_RandomRange(PR_DECORATION, -1*CHARGEAURA_SPARKRADIUS, CHARGEAURA_SPARKRADIUS),
                     MT_CHARGESPARK);
                 spark->frame = P_RandomRange(PR_DECORATION, 1, 5);
+                spark->renderflags |= RF_FULLBRIGHT|RF_ADD;
                 P_SetTarget(&spark->target, aura);
                 P_SetScale(spark, 15*aura->scale/10);
             }
@@ -90,7 +92,6 @@ void Obj_ChargeFallThink (mobj_t *charge)
     else
     {
         mobj_t *mo = charge->target;
-        player_t *player = mo->player;
 
         // Follow player
         charge->flags &= ~(MF_NOCLIPTHING);
@@ -116,29 +117,31 @@ void Obj_ChargeFallThink (mobj_t *charge)
     }
 }
 
-void Obj_ChargeFlickerThink (mobj_t *flicker)
-{
-    // xd
-}
-
-void Obj_ChargeSparkThink (mobj_t *spark)
-{
-    // xd
-    spark->renderflags |= RF_FULLBRIGHT|RF_ADD;
-}
-
+// xval1: lifetime (used to offset from tracked player)
 void Obj_ChargeReleaseThink (mobj_t *release)
 {
     release->renderflags &= ~RF_TRANSMASK;
-    if (release->tics < 10)
-        release->renderflags |= (9 - release->tics)<<RF_TRANSSHIFT;
-    release->rollangle += ANG30;
+    if (release->tics < 36)
+        release->renderflags |= (9 - release->tics/4)<<RF_TRANSSHIFT;
+    release->rollangle += ANG15/2;
+
+    if (P_MobjWasRemoved(release->target) || !release->target->player)
+        return;
+
+    release->extravalue1++;
+
+    fixed_t off = 8 * release->extravalue1 * release->target->scale;
+    angle_t ang = K_MomentumAngle(release->target) + ANGLE_180;
+    fixed_t xoff = FixedMul(off, FINECOSINE(ang >> ANGLETOFINESHIFT));
+    fixed_t yoff = FixedMul(off, FINESINE(ang >> ANGLETOFINESHIFT));
+
+    P_MoveOrigin(release, release->target->x + xoff, release->target->y + yoff, release->target->z + release->target->height/2);
 }
 
 void Obj_ChargeExtraThink (mobj_t *extra)
 {
     extra->renderflags &= ~RF_TRANSMASK;
-    if (extra->tics < 10)
-        extra->renderflags |= (9 - extra->tics)<<RF_TRANSSHIFT;
+    if (extra->tics < 18)
+        extra->renderflags |= (9 - extra->tics/2)<<RF_TRANSSHIFT;
     extra->rollangle += ANG30;
 }

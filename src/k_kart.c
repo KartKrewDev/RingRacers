@@ -3243,11 +3243,6 @@ static void K_GetKartBoostPower(player_t *player)
 		ADDBOOST(8*FRACUNIT/10, 4*FRACUNIT, 2*SLIPTIDEHANDLING/5);  // + 80% top speed, + 400% acceleration, +20% handling
 	}
 
-	if (player->trickcharge)
-	{
-		ADDBOOST(0, FRACUNIT, 2*SLIPTIDEHANDLING/10); // 0% speed 100% accel 20% handle
-	}
-
 	if (player->spindashboost) // Spindash boost
 	{
 		const fixed_t MAXCHARGESPEED = K_GetSpindashChargeSpeed(player);
@@ -3311,6 +3306,13 @@ static void K_GetKartBoostPower(player_t *player)
 	if (player->eggmanexplode) // Ready-to-explode
 	{
 		ADDBOOST(6*FRACUNIT/20, FRACUNIT, 0); // + 30% top speed, + 100% acceleration, +0% handling
+	}
+
+	if (player->trickcharge)
+	{
+		// NB: This is an acceleration-only boost.
+		// If this is applied earlier in the chain, it will diminish real speed boosts.
+		ADDBOOST(0, FRACUNIT, 2*SLIPTIDEHANDLING/10); // 0% speed 100% accel 20% handle
 	}
 
 	if (player->draftpower > 0) // Drafting
@@ -5218,16 +5220,14 @@ void K_SpawnDriftElectricSparks(player_t *player, int color, boolean shockwave)
 	fixed_t sparkspeed = mobjinfo[MT_DRIFTELECTRICSPARK].speed;
 	fixed_t sparkradius = 2 * shockscale * mobjinfo[MT_DRIFTELECTRICSPARK].radius;
 
-	if (player->trickcharge)
+	if (player->trickcharge && !shockwave)
 	{
 		mobj_t *release = P_SpawnMobjFromMobj(mo, 0, 0, 0, MT_CHARGERELEASE);
-		release->momx = mo->momx/2;
-		release->momy = mo->momy/2;
-		release->momz = mo->momz/2;
-		release->angle = K_MomentumAngleReal(mo);
+		P_SetTarget(&release->target, mo);
+		release->tics = 40;
 		release->scale /= 5;
-		release->scalespeed = release->scale;
-		release->tics = 10;
+		release->destscale *= 2;
+		release->scalespeed = release->scale/2;
 	}
 
 	for (hdir = -1; hdir <= 1; hdir += 2)
@@ -5259,9 +5259,14 @@ void K_SpawnDriftElectricSparks(player_t *player, int color, boolean shockwave)
 				P_SetScale(spark, shockscale * spark->scale);
 
 				if (shockwave)
+				{
 					spark->frame |= FF_ADD;
+				}
 				else if (player->trickcharge)
-					spark->tics = 10;
+				{
+					spark->tics = 20;
+				}
+
 
 				sparkangle += ANGLE_90;
 				K_ReduceVFX(spark, player);
@@ -8554,7 +8559,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->dotrickfx && !player->mo->hitlag)
 	{
 		int i;
-		S_StartSound(player->mo, sfx_trick1);
+		S_StartSoundAtVolume(player->mo, sfx_trick1, 255/2);
 
 		if (!player->trickcharge)
 		{
@@ -8567,6 +8572,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 					aura->extravalue2 = 1;
 				else
 					aura->renderflags |= RF_TRANS50;
+				aura->cvmem = leveltime;
 			}
 		}
 
@@ -10003,6 +10009,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 		// And take away wavedash properties: advanced cornering demands advanced finesse
 		player->wavedash = 0;
 		player->wavedashboost = 0;
+		player->trickcharge = 0;
 	}
 	else if ((player->pflags & PF_DRIFTINPUT) && player->drift != 0)
 	{
@@ -12306,7 +12313,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 #define TRICKTHRESHOLD (KART_FULLTURN/4)
 				if (aimingcompare < -TRICKTHRESHOLD) // side trick
 				{
-					S_StartSound(player->mo, sfx_trick0);
+					S_StartSoundAtVolume(player->mo, sfx_trick0, 255/2);
 					player->dotrickfx = true;
 
 					// Calculate speed boost decay:
@@ -12345,7 +12352,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				}
 				else if (aimingcompare > TRICKTHRESHOLD) // forward/back trick
 				{
-					S_StartSound(player->mo, sfx_trick0);
+					S_StartSoundAtVolume(player->mo, sfx_trick0, 255/2);
 					player->dotrickfx = true;
 
 					// Calculate speed boost decay:
@@ -12495,7 +12502,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			{
 				P_InstaThrust(player->mo, player->mo->angle, 2*abs(player->fastfall)/3 + 15*FRACUNIT);
 				player->mo->hitlag = 3;
-				S_StartSound(player->mo, sfx_gshba); // TODO
+				S_StartSound(player->mo, sfx_gshba);
 				player->fastfall = 0; // intentionally skip bounce
 				player->trickcharge = 0;
 
@@ -12510,12 +12517,13 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			else
 			{
 				S_StartSound(player->mo, sfx_s23c);
-				K_SpawnDashDustRelease(player);
 
 				UINT8 award = TICRATE - player->trickboostdecay;
 
 				player->trickboost = award;
-				K_AwardPlayerRings(player, award, true);
+				K_AwardPlayerRings(player,
+					(TICRATE-player->trickboostdecay) * player->lastairtime/3 / TICRATE, // Scale ring award by same amount as trickboost
+				true);
 
 				if (player->trickpanel == TRICKSTATE_FORWARD)
 					player->trickboostpower /= 18;

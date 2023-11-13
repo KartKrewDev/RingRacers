@@ -8861,16 +8861,6 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		Obj_ChargeFallThink(mobj);
 		break;
 	}
-	case MT_CHARGEFLICKER:
-	{
-		Obj_ChargeFlickerThink(mobj);
-		break;
-	}
-	case MT_CHARGESPARK:
-	{
-		Obj_ChargeSparkThink(mobj);
-		break;
-	}
 	case MT_CHARGERELEASE:
 	{
 		Obj_ChargeReleaseThink(mobj);

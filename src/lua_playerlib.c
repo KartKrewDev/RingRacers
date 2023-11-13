@@ -233,6 +233,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->lastpickuptype);
 	else if (fastcmp(field,"airtime"))
 		lua_pushinteger(L, plr->airtime);
+	else if (fastcmp(field,"lastairtime"))
+		lua_pushinteger(L, plr->lastairtime);
 	else if (fastcmp(field,"flashing"))
 		lua_pushinteger(L, plr->flashing);
 	else if (fastcmp(field,"spinouttimer"))
@@ -725,6 +727,8 @@ static int player_set(lua_State *L)
 		plr->airtime = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"airtime"))
 		plr->airtime = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"lastairtime"))
+		plr->lastairtime = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"flashing"))
 		plr->flashing = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"spinouttimer"))

@@ -4084,6 +4084,7 @@ void P_PlayerThink(player_t *player)
 	if (P_IsObjectOnGround(player->mo)
 		&& !P_PlayerInPain(player)) // This isn't airtime, but it's control loss all the same.
 	{
+		player->lastairtime = player->airtime;
 		player->airtime = 0;
 	}
 	else
