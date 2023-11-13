@@ -148,7 +148,8 @@ typedef enum
 	MF_SCENERY          = 1<<21,
 	// Painful (shit hurts).
 	MF_PAIN             = 1<<22,
-	// free: 1<<23
+	// Object cannot be punted by invincible players. (Default CAN be punted, if it deals damage or is solid.)
+	MF_DONTPUNT         = 1<<23,
 	// Object uses terrain effects. (Overlays, footsteps, etc)
 	MF_APPLYTERRAIN     = 1<<24,
 	// for chase camera, don't be blocked by things (partial clipping)
