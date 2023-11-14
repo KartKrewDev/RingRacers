@@ -67,7 +67,7 @@ void K_TimerReset(void);
 void K_TimerInit(void);
 
 UINT32 K_GetPlayerDontDrawFlag(player_t *player);
-void K_ReduceVFX(mobj_t *mo, player_t *owner);
+void K_ReduceVFXForEveryone(mobj_t *mo);
 
 boolean K_IsPlayerLosing(player_t *player);
 fixed_t K_GetKartGameSpeedScalar(SINT8 value);

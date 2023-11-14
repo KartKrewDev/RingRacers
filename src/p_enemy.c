@@ -3828,7 +3828,8 @@ void A_AttractChase(mobj_t *actor)
 				P_SetTarget(&sparkle->target, actor->target);
 				sparkle->angle = (actor->target->angle + (offset>>1)) + (offset * actor->target->player->sparkleanim);
 				actor->target->player->sparkleanim = (actor->target->player->sparkleanim+1) % 20;
-				K_ReduceVFX(sparkle, actor->target->player);
+				P_SetTarget(&sparkle->owner, actor->target);
+				sparkle->renderflags |= RF_REDUCEVFX;
 
 				P_KillMobj(actor, actor->target, actor->target, DMG_NORMAL);
 				return;
