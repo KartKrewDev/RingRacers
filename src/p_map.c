@@ -4220,7 +4220,7 @@ static BlockItReturn_t PIT_RadiusAttack(mobj_t *thing)
 	if ((bombdamagetype & DMG_CANTHURTSELF) && bombsource && thing->type == bombsource->type) // ignore the type of guys who dropped the bomb (Jetty-Syn Bomber or Skim can bomb eachother, but not themselves.)
 		return BMIT_CONTINUE;
 
-	if ((thing->flags & (MF_MONITOR|MF_SHOOTABLE)) != MF_SHOOTABLE)
+	if ((thing->flags & MF_SHOOTABLE) != MF_SHOOTABLE)
 		return BMIT_CONTINUE;
 
 	dx = abs(thing->x - bombspot->x);

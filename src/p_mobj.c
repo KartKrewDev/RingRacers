@@ -10058,48 +10058,6 @@ static void K_MineExplodeThink(mobj_t *mobj)
 	}
 }
 
-static void P_MonitorFuseThink(mobj_t *mobj)
-{
-	mobj_t *newmobj;
-
-	// Special case for ALL monitors.
-	// If a box's speed is nonzero, it's allowed to respawn as a WRM/SRM.
-	if (mobj->info->speed != 0 && (mobj->flags2 & (MF2_AMBUSH|MF2_STRONGBOX)))
-	{
-		mobjtype_t spawnchance[64];
-		INT32 numchoices = 0, i = 0;
-
-		// This define should make it a lot easier to organize and change monitor weights
-#define SETMONITORCHANCES(type, strongboxamt, weakboxamt) \
-for (i = ((mobj->flags2 & MF2_STRONGBOX) ? strongboxamt : weakboxamt); i; --i) spawnchance[numchoices++] = type
-
-					//                Type             SRM WRM
-		SETMONITORCHANCES(MT_SNEAKERS_BOX, 0, 10); // Super Sneakers
-		SETMONITORCHANCES(MT_INVULN_BOX, 2, 0); // Invincibility
-		SETMONITORCHANCES(MT_WHIRLWIND_BOX, 3, 8); // Whirlwind Shield
-		SETMONITORCHANCES(MT_ELEMENTAL_BOX, 3, 8); // Elemental Shield
-		SETMONITORCHANCES(MT_ATTRACT_BOX, 2, 0); // Attraction Shield
-		SETMONITORCHANCES(MT_FORCE_BOX, 3, 3); // Force Shield
-		SETMONITORCHANCES(MT_ARMAGEDDON_BOX, 2, 0); // Armageddon Shield
-		SETMONITORCHANCES(MT_MIXUP_BOX, 0, 1); // Teleporters
-		SETMONITORCHANCES(MT_RECYCLER_BOX, 0, 1); // Recycler
-		SETMONITORCHANCES(MT_1UP_BOX, 1, 1); // 1-Up
-		// =======================================
-		//                Total             16  32
-
-#undef SETMONITORCHANCES
-
-		i = P_RandomKey(PR_UNDEFINED, numchoices); // Gotta love those random numbers!
-		newmobj = P_SpawnMobj(mobj->x, mobj->y, mobj->z, spawnchance[i]);
-	}
-	else
-		newmobj = P_SpawnMobj(mobj->x, mobj->y, mobj->z, mobj->type);
-
-	// Transfer flags2 (ambush, strongbox, objectflip)
-	newmobj->flags2 = mobj->flags2;
-	P_RemoveMobj(mobj); // make sure they disappear
-}
-
 static boolean P_CanFlickerFuse(mobj_t *mobj)
 {
 	switch (mobj->type)
@@ -10148,11 +10106,6 @@ static boolean P_FuseThink(mobj_t *mobj)
 
 	if (LUA_HookMobj(mobj, MOBJ_HOOK(MobjFuse)) || P_MobjWasRemoved(mobj))
 		;
-	else if (mobj->info->flags & MF_MONITOR)
-	{
-		P_MonitorFuseThink(mobj);
-		return false;
-	}
 	else switch (mobj->type)
 	{
 		// gargoyle and snowman handled in P_PushableThinker, not here

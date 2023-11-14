@@ -1537,7 +1537,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		target->momx = target->momy = target->momz = 0;
 
 	// SRB2kart
-	if (target->type != MT_PLAYER && !(target->flags & MF_MONITOR)
+	if (target->type != MT_PLAYER
 		 && !(target->type == MT_ORBINAUT || target->type == MT_ORBINAUT_SHIELD
 		 || target->type == MT_JAWZ || target->type == MT_JAWZ_SHIELD
 		 || target->type == MT_BANANA || target->type == MT_BANANA_SHIELD
@@ -1630,7 +1630,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 	// if killed by a player
 	if (source && source->player)
 	{
-		if (target->flags & MF_MONITOR || target->type == MT_RANDOMITEM)
+		if (target->type == MT_RANDOMITEM)
 		{
 			P_SetTarget(&target->target, source);
 

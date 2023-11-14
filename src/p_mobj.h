@@ -137,8 +137,7 @@ typedef enum
 	MF_MISSILE          = 1<<15,
 	// Item is a spring.
 	MF_SPRING           = 1<<16,
-	// Item box
-	MF_MONITOR          = 1<<17,
+	// free: 1<<17
 	// Don't run the thinker for this object.
 	MF_NOTHINK          = 1<<18,
 	// Don't adjust z if below or above floorz/ceilingz
