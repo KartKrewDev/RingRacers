@@ -137,7 +137,8 @@ typedef enum
 	MF_MISSILE          = 1<<15,
 	// Item is a spring.
 	MF_SPRING           = 1<<16,
-	// free: 1<<17
+	// Object is elemental. If it is punted, it will evaporate.
+	MF_ELEMENTAL        = 1<<17,
 	// Don't run the thinker for this object.
 	MF_NOTHINK          = 1<<18,
 	// Don't adjust z if below or above floorz/ceilingz
