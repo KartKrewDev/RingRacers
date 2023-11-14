@@ -1725,25 +1725,6 @@ void P_XYMovement(mobj_t *mo)
 			P_ExplodeMissile(mo);
 			return;
 		}
-		else if (mo->flags & MF_STICKY)
-		{
-			S_StartSound(mo, mo->info->activesound);
-			mo->momx = mo->momy = mo->momz = 0; //Full stop!
-			mo->flags |= MF_NOGRAVITY; //Stay there!
-			mo->flags &= ~MF_STICKY; //Don't check again!
-
-			// Check for hit against sky here
-			if (P_CheckSkyHit(mo))
-			{
-				// Hack to prevent missiles exploding
-				// against the sky.
-				// Does not handle sky floors.
-				// Check frontsector as well.
-
-				P_RemoveMobj(mo);
-				return;
-			}
-		}
 		else
 		{
 			boolean walltransferred = false;
@@ -5698,12 +5679,12 @@ static void P_FlameJetSceneryThink(mobj_t *mobj)
 	flame->angle = mobj->angle;
 
 	if (mobj->flags2 & MF2_AMBUSH) // Wave up and down instead of side-to-side
-		flame->momz = mobj->fuse << (FRACBITS - 2);
+		flame->momz = (mobj->fuse * mapobjectscale) / 4;
 	else
 		flame->angle += FixedAngle(mobj->fuse<<FRACBITS);
 
-	strength = 20*FRACUNIT;
-	strength -= ((20*FRACUNIT)/16)*mobj->movedir;
+	strength = 20*mapobjectscale;
+	strength -= ((20*mapobjectscale)/16)*mobj->movedir;
 
 	P_InstaThrust(flame, flame->angle, strength);
 	S_StartSound(flame, sfx_fire);
@@ -5733,8 +5714,8 @@ static void P_VerticalFlameJetSceneryThink(mobj_t *mobj)
 
 	flame = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_FLAMEJETFLAME);
 
-	strength = 20*FRACUNIT;
-	strength -= ((20*FRACUNIT)/16)*mobj->movedir;
+	strength = 20*mapobjectscale;
+	strength -= ((20*mapobjectscale)/16)*mobj->movedir;
 
 	// If deaf'd, the object spawns on the ceiling.
 	if (mobj->flags2 & MF2_AMBUSH)
@@ -5748,7 +5729,7 @@ static void P_VerticalFlameJetSceneryThink(mobj_t *mobj)
 		P_SetMobjState(flame, S_FLAMEJETFLAME7);
 	}
 
-	P_InstaThrust(flame, mobj->angle, FixedDiv(mobj->fuse*FRACUNIT, 3*FRACUNIT));
+	P_InstaThrust(flame, mobj->angle, (mobj->fuse * mapobjectscale) / 3);
 	S_StartSound(flame, sfx_fire);
 }
 
@@ -10077,48 +10058,6 @@ static void K_MineExplodeThink(mobj_t *mobj)
 	}
 }
 
-static void P_MonitorFuseThink(mobj_t *mobj)
-{
-	mobj_t *newmobj;
-
-	// Special case for ALL monitors.
-	// If a box's speed is nonzero, it's allowed to respawn as a WRM/SRM.
-	if (mobj->info->speed != 0 && (mobj->flags2 & (MF2_AMBUSH|MF2_STRONGBOX)))
-	{
-		mobjtype_t spawnchance[64];
-		INT32 numchoices = 0, i = 0;
-
-		// This define should make it a lot easier to organize and change monitor weights
-#define SETMONITORCHANCES(type, strongboxamt, weakboxamt) \
-for (i = ((mobj->flags2 & MF2_STRONGBOX) ? strongboxamt : weakboxamt); i; --i) spawnchance[numchoices++] = type
-
-					//                Type             SRM WRM
-		SETMONITORCHANCES(MT_SNEAKERS_BOX, 0, 10); // Super Sneakers
-		SETMONITORCHANCES(MT_INVULN_BOX, 2, 0); // Invincibility
-		SETMONITORCHANCES(MT_WHIRLWIND_BOX, 3, 8); // Whirlwind Shield
-		SETMONITORCHANCES(MT_ELEMENTAL_BOX, 3, 8); // Elemental Shield
-		SETMONITORCHANCES(MT_ATTRACT_BOX, 2, 0); // Attraction Shield
-		SETMONITORCHANCES(MT_FORCE_BOX, 3, 3); // Force Shield
-		SETMONITORCHANCES(MT_ARMAGEDDON_BOX, 2, 0); // Armageddon Shield
-		SETMONITORCHANCES(MT_MIXUP_BOX, 0, 1); // Teleporters
-		SETMONITORCHANCES(MT_RECYCLER_BOX, 0, 1); // Recycler
-		SETMONITORCHANCES(MT_1UP_BOX, 1, 1); // 1-Up
-		// =======================================
-		//                Total             16  32
-
-#undef SETMONITORCHANCES
-
-		i = P_RandomKey(PR_UNDEFINED, numchoices); // Gotta love those random numbers!
-		newmobj = P_SpawnMobj(mobj->x, mobj->y, mobj->z, spawnchance[i]);
-	}
-	else
-		newmobj = P_SpawnMobj(mobj->x, mobj->y, mobj->z, mobj->type);
-
-	// Transfer flags2 (ambush, strongbox, objectflip)
-	newmobj->flags2 = mobj->flags2;
-	P_RemoveMobj(mobj); // make sure they disappear
-}
-
 static boolean P_CanFlickerFuse(mobj_t *mobj)
 {
 	switch (mobj->type)
@@ -10167,11 +10106,6 @@ static boolean P_FuseThink(mobj_t *mobj)
 
 	if (LUA_HookMobj(mobj, MOBJ_HOOK(MobjFuse)) || P_MobjWasRemoved(mobj))
 		;
-	else if (mobj->info->flags & MF_MONITOR)
-	{
-		P_MonitorFuseThink(mobj);
-		return false;
-	}
 	else switch (mobj->type)
 	{
 		// gargoyle and snowman handled in P_PushableThinker, not here
@@ -10316,6 +10250,8 @@ void P_MobjThinker(mobj_t *mobj)
 		P_SetTarget(&mobj->hprev, NULL);
 	if (mobj->itnext && P_MobjWasRemoved(mobj->itnext))
 		P_SetTarget(&mobj->itnext, NULL);
+	if (mobj->punt_ref && P_MobjWasRemoved(mobj->punt_ref))
+		P_SetTarget(&mobj->punt_ref, NULL);
 
 	if (mobj->flags & MF_NOTHINK)
 		return;
@@ -10826,6 +10762,10 @@ fixed_t P_GetMobjDefaultScale(mobj_t *mobj)
 {
 	switch(mobj->type)
 	{
+		case MT_FLAMEJETFLAME:
+			return 3*FRACUNIT;
+		case MT_ITEMCLASH:
+			return 2*FRACUNIT;
 		case MT_SPECIALSTAGEARCH:
 			return 5*FRACUNIT;
 		case MT_SPECIALSTAGEBOMB:
@@ -11381,6 +11321,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 					mobj->y + FINESINE((ang>>ANGLETOFINESHIFT) & FINEMASK), mobj->z, MT_DAYTONAPINETREE_SIDE);
 				side->angle = ang;
 				P_SetTarget(&side->target, mobj);
+				P_SetTarget(&side->punt_ref, mobj);
 				side->threshold = i;
 			}
 			break;
@@ -11865,6 +11806,7 @@ void P_RemoveMobj(mobj_t *mobj)
 	}
 
 	P_SetTarget(&mobj->itnext, NULL);
+	P_SetTarget(&mobj->punt_ref, NULL);
 
 	P_RemoveThingTID(mobj);
 	P_DeleteMobjStringArgs(mobj);
@@ -15439,4 +15381,10 @@ void P_DeleteMobjStringArgs(mobj_t *mobj)
 		Z_Free(mobj->script_stringargs[i]);
 		mobj->script_stringargs[i] = NULL;
 	}
+}
+
+tic_t P_MobjIsReappearing(const mobj_t *mobj)
+{
+	tic_t t = (!P_MobjWasRemoved(mobj->punt_ref) ? mobj->punt_ref : mobj)->reappear;
+	return t - min(leveltime, t);
 }

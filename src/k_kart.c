@@ -12636,4 +12636,34 @@ boolean K_IsPlayingDisplayPlayer(player_t *player)
 	return P_IsDisplayPlayer(player) && (!player->exiting);
 }
 
+boolean K_PlayerCanPunt(player_t *player)
+{
+	if (player->invincibilitytimer > 0)
+	{
+		return true;
+	}
+
+	if (player->flamedash > 0 && player->itemtype == KITEM_FLAMESHIELD)
+	{
+		return true;
+	}
+
+	if (player->growshrinktimer > 0)
+	{
+		return true;
+	}
+
+	if (player->tripwirePass >= TRIPWIRE_BLASTER && player->speed >= 2 * K_GetKartSpeed(player, false, false))
+	{
+		return true;
+	}
+
+	return false;
+}
+
+void K_MakeObjectReappear(mobj_t *mo)
+{
+	(!P_MobjWasRemoved(mo->punt_ref) ? mo->punt_ref : mo)->reappear = leveltime + (30*TICRATE);
+}
+
 //}

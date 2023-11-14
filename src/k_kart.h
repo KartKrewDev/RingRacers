@@ -245,6 +245,9 @@ void K_SetTireGrease(player_t *player, tic_t tics);
 
 boolean K_IsPlayingDisplayPlayer(player_t *player);
 
+boolean K_PlayerCanPunt(player_t *player);
+void K_MakeObjectReappear(mobj_t *mo);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

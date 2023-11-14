@@ -1330,7 +1330,7 @@ readghosttic:
 					z = READFIXED(g->p);
 					angle = READANGLE(g->p);
 					if (!(mobjinfo[type].flags & MF_SHOOTABLE)
-					|| !(mobjinfo[type].flags & (MF_ENEMY|MF_MONITOR))
+					|| !(mobjinfo[type].flags & MF_ENEMY)
 					|| health != 0 || i >= 4) // only spawn for the first 4 hits per frame, to prevent ghosts from splode-spamming too bad.
 						continue;
 					poof = P_SpawnMobj(x, y, z, MT_GHOST);

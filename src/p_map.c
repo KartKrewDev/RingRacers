@@ -538,6 +538,7 @@ static void P_DoFanAndGasJet(mobj_t *spring, mobj_t *object)
 static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 {
 	fixed_t blockdist;
+	boolean damage = false;
 
 	if (tm.thing == NULL || P_MobjWasRemoved(tm.thing) == true)
 		return BMIT_STOP; // func just popped our tm.thing, cannot continue.
@@ -560,6 +561,10 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		return BMIT_CONTINUE;
 
 	if ((thing->flags & MF_NOCLIPTHING) || !(thing->flags & (MF_SOLID|MF_SPECIAL|MF_PAIN|MF_SHOOTABLE|MF_SPRING)))
+		return BMIT_CONTINUE;
+
+	// Thing is respawning
+	if (P_MobjIsReappearing(thing))
 		return BMIT_CONTINUE;
 
 	blockdist = thing->radius + tm.thing->radius;
@@ -694,10 +699,12 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 
 			if (P_DamageMobj(tm.thing, thing, thing, 1, damagetype) && (damagetype = (thing->info->mass>>8)))
 				S_StartSound(thing, damagetype);
-		}
 
-		if (P_MobjWasRemoved(tm.thing) || P_MobjWasRemoved(thing))
-			return BMIT_CONTINUE;
+			if (P_MobjWasRemoved(tm.thing) || P_MobjWasRemoved(thing))
+				return BMIT_CONTINUE;
+
+			damage = true;
+		}
 	}
 	else if (tm.thing->flags & MF_PAIN && thing->player)
 	{ // Painful thing splats player in the face
@@ -712,10 +719,12 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 
 			if (P_DamageMobj(thing, tm.thing, tm.thing, 1, damagetype) && (damagetype = (tm.thing->info->mass>>8)))
 				S_StartSound(tm.thing, damagetype);
-		}
 
-		if (P_MobjWasRemoved(tm.thing) || P_MobjWasRemoved(thing))
-			return BMIT_CONTINUE;
+			if (P_MobjWasRemoved(tm.thing) || P_MobjWasRemoved(thing))
+				return BMIT_CONTINUE;
+
+			damage = true;
+		}
 	}
 
 	// check for skulls slamming into things
@@ -1216,7 +1225,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	}
 
 	// missiles can hit other things
-	if (tm.thing->flags & MF_MISSILE)
+	if ((tm.thing->flags & MF_MISSILE) && !damage) // if something was already damaged, don't run this
 	{
 		UINT8 damagetype = (tm.thing->info->mass ^ DMG_WOMBO);
 
@@ -1626,7 +1635,10 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			if (tm.thing->z + tm.thing->height < thing->z)
 				return BMIT_CONTINUE; // underneath
 
-			K_KartSolidBounce(tm.thing, thing);
+			if (!K_PuntCollide(thing, tm.thing))
+			{
+				K_KartSolidBounce(tm.thing, thing);
+			}
 			return BMIT_CONTINUE;
 		}
 	}
@@ -2341,7 +2353,8 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y, TryMoveResult_t *re
 	// Check things first, possibly picking things up.
 
 	// MF_NOCLIPTHING: used by camera to not be blocked by things
-	if (!(thing->flags & MF_NOCLIPTHING))
+	// Respawning things should also be intangible to other things
+	if (!(thing->flags & MF_NOCLIPTHING) && !P_MobjIsReappearing(thing))
 	{
 		for (bx = xl; bx <= xh; bx++)
 		{
@@ -4220,7 +4233,7 @@ static BlockItReturn_t PIT_RadiusAttack(mobj_t *thing)
 	if ((bombdamagetype & DMG_CANTHURTSELF) && bombsource && thing->type == bombsource->type) // ignore the type of guys who dropped the bomb (Jetty-Syn Bomber or Skim can bomb eachother, but not themselves.)
 		return BMIT_CONTINUE;
 
-	if ((thing->flags & (MF_MONITOR|MF_SHOOTABLE)) != MF_SHOOTABLE)
+	if ((thing->flags & MF_SHOOTABLE) != MF_SHOOTABLE)
 		return BMIT_CONTINUE;
 
 	dx = abs(thing->x - bombspot->x);
