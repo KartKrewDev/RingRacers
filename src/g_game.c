@@ -2145,7 +2145,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		{
 			rings = 0;
 		}
-		else if (modeattacking & ATTACKING_SPB)
+		else if (G_TimeAttackStart())
 		{
 			rings = 20;
 		}
