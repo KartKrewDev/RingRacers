@@ -1622,7 +1622,7 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 	// If the roulette finishes or the player presses BT_ATTACK, stop the roulette and calculate the item.
 	// I'm returning via the exact opposite, however, to forgo having another bracket embed. Same result either way, I think.
 	// Finally, if you get past this check, now you can actually start calculating what item you get.
-	if (confirmItem == true && (player->pflags & (PF_ITEMOUT|PF_EGGMANOUT|PF_USERINGS)) == 0)
+	if (confirmItem == true && (player->itemflags & (IF_ITEMOUT|IF_EGGMANOUT|IF_USERINGS)) == 0)
 	{
 		if (roulette->eggman == true)
 		{
@@ -1633,7 +1633,7 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 			//player->karthud[khud_itemblinkmode] = 1;
 			//player->karthud[khud_rouletteoffset] = K_GetRouletteOffset(roulette, FRACUNIT);
 
-			if (P_IsDisplayPlayer(player))
+			if (K_IsPlayingDisplayPlayer(player))
 			{
 				S_StartSound(NULL, sfx_itrole);
 			}
@@ -1680,7 +1680,7 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 			player->karthud[khud_itemblinkmode] = 0;
 			player->karthud[khud_rouletteoffset] = K_GetRouletteOffset(roulette, FRACUNIT);
 
-			if (P_IsDisplayPlayer(player))
+			if (K_IsPlayingDisplayPlayer(player))
 			{
 				if (roulette->ringbox)
 				{
@@ -1714,7 +1714,7 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 		// This makes the roulette produce the random noises.
 		roulette->sound = (roulette->sound + 1) % 8;
 
-		if (P_IsDisplayPlayer(player))
+		if (K_IsPlayingDisplayPlayer(player))
 		{
 			if (roulette->ringbox)
 				S_StartSound(NULL, sfx_s240);

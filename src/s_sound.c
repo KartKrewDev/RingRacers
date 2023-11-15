@@ -426,6 +426,7 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 	for (i = 0; i <= r_splitscreen; i++)
 	{
 		player_t *player = &players[displayplayers[i]];
+		boolean camaway = false;
 
 		memset(&listener[i], 0, sizeof (listener[i]));
 		listenmobj[i] = NULL;
@@ -442,9 +443,11 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 		else
 		{
 			listenmobj[i] = player->mo;
+			if (player->exiting)
+				camaway = true;
 		}
 
-		if (origin && origin == listenmobj[i] && !camera[i].freecam)
+		if (origin && origin == listenmobj[i] && !camera[i].freecam && !camaway)
 		{
 			itsUs = true;
 		}
@@ -763,6 +766,9 @@ void S_UpdateSounds(void)
 						if (c->origin != listenmobj[i])
 							continue;
 
+						if (listenmobj[i]->player && listenmobj[i]->player->exiting)
+							continue;
+
 						itsUs = true;
 					}
 
@@ -940,6 +946,9 @@ boolean S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 
 	(void)pitch;
 
 	if (!listener)
+		return false;
+
+	if (source->thinker.function.acp1 == (actionf_p1)P_MobjThinker && P_MobjIsReappearing(source))
 		return false;
 
 	// Init listensource with default listener

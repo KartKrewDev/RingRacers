@@ -43,6 +43,7 @@
 #include "k_hitlag.h"
 #include "acs/interface.h"
 #include "k_powerup.h"
+#include "k_collide.h"
 
 // CTF player names
 #define CTFTEAMCODE(pl) pl->ctfteam ? (pl->ctfteam == 1 ? "\x85" : "\x84") : ""
@@ -153,7 +154,7 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 			if (player->itemRoulette.active == true
 				|| player->ringboxdelay > 0
 				|| (weapon != 3 && player->itemamount)
-				|| (player->pflags & PF_ITEMOUT))
+				|| (player->itemflags & IF_ITEMOUT))
 				return false;
 
 			if (weapon == 3 && K_GetShieldFromItem(player->itemtype) != KSHIELD_NONE)
@@ -1537,7 +1538,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		target->momx = target->momy = target->momz = 0;
 
 	// SRB2kart
-	if (target->type != MT_PLAYER && !(target->flags & MF_MONITOR)
+	if (target->type != MT_PLAYER
 		 && !(target->type == MT_ORBINAUT || target->type == MT_ORBINAUT_SHIELD
 		 || target->type == MT_JAWZ || target->type == MT_JAWZ_SHIELD
 		 || target->type == MT_BANANA || target->type == MT_BANANA_SHIELD
@@ -1577,10 +1578,10 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 	// I wish I knew a better way to do this
 	if (target->target && target->target->player && target->target->player->mo)
 	{
-		if ((target->target->player->pflags & PF_EGGMANOUT) && target->type == MT_EGGMANITEM_SHIELD)
-			target->target->player->pflags &= ~PF_EGGMANOUT;
+		if ((target->target->player->itemflags & IF_EGGMANOUT) && target->type == MT_EGGMANITEM_SHIELD)
+			target->target->player->itemflags &= ~IF_EGGMANOUT;
 
-		if (target->target->player->pflags & PF_ITEMOUT)
+		if (target->target->player->itemflags & IF_ITEMOUT)
 		{
 			if ((target->type == MT_BANANA_SHIELD && target->target->player->itemtype == KITEM_BANANA) // trail items
 				|| (target->type == MT_SSMINE_SHIELD && target->target->player->itemtype == KITEM_MINE)
@@ -1608,7 +1609,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			}
 
 			if (!target->target->player->itemamount)
-				target->target->player->pflags &= ~PF_ITEMOUT;
+				target->target->player->itemflags &= ~IF_ITEMOUT;
 
 			if (target->target->hnext == target)
 				P_SetTarget(&target->target->hnext, NULL);
@@ -1630,7 +1631,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 	// if killed by a player
 	if (source && source->player)
 	{
-		if (target->flags & MF_MONITOR || target->type == MT_RANDOMITEM)
+		if (target->type == MT_RANDOMITEM)
 		{
 			P_SetTarget(&target->target, source);
 
@@ -2101,6 +2102,67 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 					cur->eflags |= MFE_DAMAGEHITLAG;
 
 					cur = cur->hnext;
+				}
+
+				// Spawn three Followers (if possible)
+				if (mapheaderinfo[gamemap-1]->numFollowers)
+				{
+					dir = FixedAngle(P_RandomKey(PR_RANDOMAUDIENCE, 360)*FRACUNIT);
+
+					const fixed_t launchmomentum = 7 * mapobjectscale;
+					const fixed_t jaggedness = 4;
+					angle_t launchangle;
+					UINT8 i;
+					for (i = 0; i < 6; i++, dir += ANG60)
+					{
+						cur = P_SpawnMobj(
+							target->x, target->y,
+							target->z + target->height/2,
+							MT_RANDOMAUDIENCE
+						);
+
+						// We check if you have some horrible Lua
+						if (P_MobjWasRemoved(cur))
+							break;
+
+						Obj_AudienceInit(cur, NULL, -1);
+
+						// We check again if the list is invalid
+						if (P_MobjWasRemoved(cur))
+							break;
+
+						cur->hitlag = target->hitlag;
+
+						cur->destscale /= 2;
+						P_SetScale(cur, cur->destscale/TICRATE);
+						cur->scalespeed = cur->destscale/TICRATE;
+						cur->z -= cur->height/2;
+
+						// flags are NOT from the target - just in case it's just been placed on the ceiling as a gimmick
+						cur->flags2 |= (source->flags2 & MF2_OBJECTFLIP);
+						cur->eflags |= (source->eflags & MFE_VERTICALFLIP);
+
+						launchangle = FixedAngle(
+							(
+								(
+									P_RandomRange(PR_RANDOMAUDIENCE, 12/jaggedness, 24/jaggedness) * jaggedness
+								) + (i & 1)*16
+							) * FRACUNIT
+						);
+
+						cur->momz = P_MobjFlip(target) // THIS one uses target!
+							* P_ReturnThrustY(cur, launchangle, launchmomentum);
+
+						cur->angle = dir;
+
+						P_InstaThrust(
+							cur, cur->angle,
+							P_ReturnThrustX(cur, launchangle, launchmomentum)
+						);
+
+						cur->fuse = (3*TICRATE)/2;
+						cur->flags |= MF_NOCLIPHEIGHT;
+					}
 				}
 
 				S_StartSound(target, sfx_mbs60);
@@ -2874,6 +2936,14 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				else
 				{
 					invincible = false;
+				}
+
+				// TODO: doing this from P_DamageMobj limits punting to objects that damage the player.
+				// And it may be kind of yucky.
+				// But this is easier than accounting for every condition in PIT_CheckThing!
+				if (inflictor && K_PuntCollide(inflictor, target))
+				{
+					return false;
 				}
 
 				if (invincible && type != DMG_STUMBLE && type != DMG_WHUMBLE)

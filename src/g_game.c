@@ -2127,7 +2127,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	totalring = players[player].totalring;
 	xtralife = players[player].xtralife;
 
-	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_KICKSTARTACCEL|PF_SHRINKME|PF_SHRINKACTIVE|PF_AUTOROULETTE));
+	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_KICKSTARTACCEL|PF_SHRINKME|PF_SHRINKACTIVE|PF_AUTOROULETTE|PF_LITESTEER));
 
 	// SRB2kart
 	memcpy(&itemRoulette, &players[player].itemRoulette, sizeof (itemRoulette));
@@ -2145,7 +2145,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		{
 			rings = 0;
 		}
-		else if (modeattacking & ATTACKING_SPB)
+		else if (G_TimeAttackStart())
 		{
 			rings = 20;
 		}
@@ -2175,7 +2175,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	}
 	else
 	{
-		if (players[player].pflags & PF_ITEMOUT)
+		if (players[player].itemflags & IF_ITEMOUT)
 		{
 			itemtype = 0;
 			itemamount = 0;

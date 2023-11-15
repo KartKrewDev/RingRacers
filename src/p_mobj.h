@@ -137,8 +137,8 @@ typedef enum
 	MF_MISSILE          = 1<<15,
 	// Item is a spring.
 	MF_SPRING           = 1<<16,
-	// Item box
-	MF_MONITOR          = 1<<17,
+	// Object is elemental. If it is punted, it will evaporate.
+	MF_ELEMENTAL        = 1<<17,
 	// Don't run the thinker for this object.
 	MF_NOTHINK          = 1<<18,
 	// Don't adjust z if below or above floorz/ceilingz
@@ -149,8 +149,8 @@ typedef enum
 	MF_SCENERY          = 1<<21,
 	// Painful (shit hurts).
 	MF_PAIN             = 1<<22,
-	// This mobj will stick to any surface or solid object it touches.
-	MF_STICKY           = 1<<23,
+	// Object cannot be punted by invincible players. (Default CAN be punted, if it deals damage or is solid.)
+	MF_DONTPUNT         = 1<<23,
 	// Object uses terrain effects. (Overlays, footsteps, etc)
 	MF_APPLYTERRAIN     = 1<<24,
 	// for chase camera, don't be blocked by things (partial clipping)
@@ -436,6 +436,14 @@ struct mobj_t
 	char *script_stringargs[NUM_SCRIPT_STRINGARGS];
 
 	boolean frozen;
+
+	// Object was punted and is temporarily invisible and
+	// intangible. This is the leveltime that it will
+	// reappear.
+	tic_t reappear;
+
+	// If punt_ref, set punt_ref->reappear, treat as if this->reappear
+	mobj_t *punt_ref;
 
 	// WARNING: New fields must be added separately to savegame and Lua.
 };

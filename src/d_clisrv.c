@@ -5619,7 +5619,7 @@ static INT16 Consistancy(void)
 			if (TypeIsNetSynced(mo->type) == false)
 				continue;
 
-			if (mo->flags & (MF_SPECIAL | MF_SOLID | MF_PUSHABLE | MF_BOSS | MF_MISSILE | MF_SPRING | MF_MONITOR | MF_FIRE | MF_ENEMY | MF_PAIN | MF_STICKY))
+			if (mo->flags & (MF_SPECIAL | MF_SOLID | MF_PUSHABLE | MF_BOSS | MF_MISSILE | MF_SPRING | MF_ELEMENTAL | MF_FIRE | MF_ENEMY | MF_PAIN | MF_DONTPUNT))
 			{
 				ret -= mo->type;
 				ret += mo->x;

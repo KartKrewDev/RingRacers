@@ -1168,6 +1168,9 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 
 	K_ReduceVFX(ghost, mobj->player);
 
+	ghost->reappear = mobj->reappear;
+	P_SetTarget(&ghost->punt_ref, mobj->punt_ref);
+
 	return ghost;
 }
 
@@ -2713,9 +2716,6 @@ void P_NukeEnemies(mobj_t *inflictor, mobj_t *source, fixed_t radius)
 
 		if (!(mo->flags & MF_SHOOTABLE) && (mo->type != MT_SPB)) // Don't want to give SPB MF_SHOOTABLE, to ensure it's undamagable through other means
 			continue;
-
-		if (mo->flags & MF_MONITOR)
-			continue; // Monitors cannot be 'nuked'.
 
 		if (abs(inflictor->x - mo->x) > radius || abs(inflictor->y - mo->y) > radius || abs(inflictor->z - mo->z) > radius)
 			continue; // Workaround for possible integer overflow in the below -Red
@@ -4397,18 +4397,22 @@ void P_PlayerThink(player_t *player)
 		}
 	}
 
+	boolean deathcontrolled = (player->respawn.state != RESPAWNST_NONE && player->respawn.truedeath == true)
+		|| (player->pflags & PF_NOCONTEST) || (player->karmadelay);
+	boolean powercontrolled = (player->hyudorotimer) || (player->growshrinktimer > 0);
+
 	// Flash player after being hit.
-	if (!(player->hyudorotimer // SRB2kart - fixes Hyudoro not flashing when it should.
-		|| player->growshrinktimer > 0 // Grow doesn't flash either.
-		|| (player->respawn.state != RESPAWNST_NONE && player->respawn.truedeath == true) // Respawn timer (for drop dash effect)
-		|| (player->pflags & PF_NOCONTEST) // NO CONTEST explosion
-		|| player->karmadelay))
+	if (!deathcontrolled && !powercontrolled)
 	{
 		if (player->flashing > 1 && player->flashing < K_GetKartFlashing(player)
 			&& (leveltime & 1))
 			player->mo->renderflags |= RF_DONTDRAW;
 		else
 			player->mo->renderflags &= ~RF_DONTDRAW;
+	}
+	else if (!deathcontrolled)
+	{
+		player->mo->renderflags &= ~RF_DONTDRAW;
 	}
 
 	if (player->stairjank > 0)

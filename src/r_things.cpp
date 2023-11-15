@@ -3746,6 +3746,12 @@ boolean R_ThingVisible (mobj_t *thing)
 	if (r_viewmobj && (thing == r_viewmobj || (r_viewmobj->player && r_viewmobj->player->followmobj == thing)))
 		return false;
 
+	if (tic_t t = P_MobjIsReappearing(thing))
+	{
+		// Flicker back in
+		return t <= 2*TICRATE && (leveltime & 1);
+	}
+
 	if ((viewssnum == 0 && (thing->renderflags & RF_DONTDRAWP1))
 	|| (viewssnum == 1 && (thing->renderflags & RF_DONTDRAWP2))
 	|| (viewssnum == 2 && (thing->renderflags & RF_DONTDRAWP3))

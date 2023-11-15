@@ -48,7 +48,6 @@ struct viewvars_t {
 	fixed_t x;
 	fixed_t y;
 	fixed_t z;
-	fixed_t zoom;
 	boolean sky;
 	sector_t *sector;
 	player_t *player;
