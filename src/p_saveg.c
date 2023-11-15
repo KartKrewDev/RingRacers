@@ -2029,6 +2029,8 @@ static void ArchiveSectors(savebuffer_t *save)
 				WRITEUINT8(save->p, diff3);
 			if (diff3 & SD_DIFF4)
 				WRITEUINT8(save->p, diff4);
+			if (diff4 & SD_DIFF5)
+				WRITEUINT8(save->p, diff5);
 			if (diff & SD_FLOORHT)
 				WRITEFIXED(save->p, ss->floorheight);
 			if (diff & SD_CEILHT)
