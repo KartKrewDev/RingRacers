@@ -126,6 +126,11 @@ void Obj_BlockRingThink(mobj_t *ring);
 void Obj_BlockBodyThink(mobj_t *body);
 void Obj_GuardBreakThink(mobj_t *fx);
 
+void Obj_ChargeAuraThink(mobj_t *aura);
+void Obj_ChargeFallThink(mobj_t *charge);
+void Obj_ChargeReleaseThink(mobj_t *release);
+void Obj_ChargeExtraThink(mobj_t *extra);
+
 /* Ring Shooter */
 boolean Obj_RingShooterThinker(mobj_t *mo);
 boolean Obj_PlayerRingShooterFreeze(player_t *const player);

@@ -1187,6 +1187,10 @@ typedef enum
 	sfx_fshld2,
 	sfx_fshld3,
 
+	// RR - Trick panels
+	sfx_trick0,
+	sfx_trick1,
+
 	// RR - Ballhog Charge
 	sfx_bhog00,
 	sfx_bhog01,

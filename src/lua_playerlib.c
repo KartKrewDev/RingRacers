@@ -233,6 +233,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->lastpickuptype);
 	else if (fastcmp(field,"airtime"))
 		lua_pushinteger(L, plr->airtime);
+	else if (fastcmp(field,"lastairtime"))
+		lua_pushinteger(L, plr->lastairtime);
 	else if (fastcmp(field,"flashing"))
 		lua_pushinteger(L, plr->flashing);
 	else if (fastcmp(field,"spinouttimer"))
@@ -255,6 +257,8 @@ static int player_get(lua_State *L)
 		lua_pushboolean(L, plr->flipDI);
 	else if (fastcmp(field,"markedfordeath"))
 		lua_pushboolean(L, plr->markedfordeath);
+	else if (fastcmp(field,"dotrickfx"))
+		lua_pushboolean(L, plr->dotrickfx);
 	else if (fastcmp(field,"ringboxdelay"))
 		lua_pushinteger(L, plr->ringboxdelay);
 	else if (fastcmp(field,"ringboxaward"))
@@ -325,12 +329,16 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->tripwireLeniency);
 	else if (fastcmp(field,"tripwireReboundDelay"))
 		lua_pushinteger(L, plr->tripwireReboundDelay);
-	else if (fastcmp(field,"sliptideZip"))
-		lua_pushinteger(L, plr->sliptideZip);
-	else if (fastcmp(field,"sliptideZipDelay"))
-		lua_pushinteger(L, plr->sliptideZipDelay);
-	else if (fastcmp(field,"sliptideZipBoost"))
-		lua_pushinteger(L, plr->sliptideZipBoost);
+	else if (fastcmp(field,"wavedash"))
+		lua_pushinteger(L, plr->wavedash);
+	else if (fastcmp(field,"wavedashdelay"))
+		lua_pushinteger(L, plr->wavedashdelay);
+	else if (fastcmp(field,"wavedashboost"))
+		lua_pushinteger(L, plr->wavedashboost);
+	else if (fastcmp(field,"trickcharge"))
+		lua_pushinteger(L, plr->trickcharge);
+	else if (fastcmp(field,"infinitether"))
+		lua_pushinteger(L, plr->infinitether);
 	else if (fastcmp(field,"lastsafelap"))
 		lua_pushinteger(L, plr->lastsafelap);
 	else if (fastcmp(field,"instaWhipCharge"))
@@ -721,6 +729,8 @@ static int player_set(lua_State *L)
 		plr->airtime = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"airtime"))
 		plr->airtime = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"lastairtime"))
+		plr->lastairtime = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"flashing"))
 		plr->flashing = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"spinouttimer"))
@@ -743,6 +753,8 @@ static int player_set(lua_State *L)
 		plr->flipDI = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"markedfordeath"))
 		plr->markedfordeath = luaL_checkboolean(L, 3);
+	else if (fastcmp(field,"dotrickfx"))
+		plr->dotrickfx = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"ringboxdelay"))
 		plr->ringboxdelay = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"ringboxaward"))
@@ -813,12 +825,16 @@ static int player_set(lua_State *L)
 		plr->tripwireLeniency = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"tripwireReboundDelay"))
 		plr->tripwireReboundDelay = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"sliptideZip"))
-		plr->sliptideZip = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"sliptideZipDelay"))
-		plr->sliptideZipDelay = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"sliptideZipBoost"))
-		plr->sliptideZipBoost = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"wavedash"))
+		plr->wavedash = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"wavedashdelay"))
+		plr->wavedashdelay = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"wavedashboost"))
+		plr->wavedashboost = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"trickcharge"))
+		plr->trickcharge = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"infinitether"))
+		plr->infinitether = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"lastsafelap"))
 		plr->lastsafelap = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"instaWhipCharge"))

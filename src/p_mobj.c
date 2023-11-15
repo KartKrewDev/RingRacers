@@ -1149,7 +1149,7 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 			P_PlayerFlip(mo);
 		}
 
-		if (mo->player->trickpanel >= 2)
+		if (mo->player->trickpanel > TRICKSTATE_READY)
 		{
 			gravityadd = (5*gravityadd)/2;
 		}
@@ -8395,10 +8395,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			return true;
 		}
 
-		mobj->extravalue1 += 1;
-
 		mobj->angle += ANG1*mobj->extravalue1;
-		P_SetScale(mobj, mobj->target->scale);
+		mobj->extravalue1 += 1;
+		P_InstaScale(mobj, mobj->target->scale);
 
 		destx = mobj->target->x;
 		desty = mobj->target->y;
@@ -8407,11 +8406,161 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			destx += FixedMul(mobj->radius*2, FINECOSINE((mobj->angle+ANGLE_90) >> ANGLETOFINESHIFT));
 			desty += FixedMul(mobj->radius*2, FINESINE((mobj->angle+ANGLE_90) >> ANGLETOFINESHIFT));
+
+			mobj->eflags = (mobj->eflags & ~MFE_VERTICALFLIP)|(mobj->target->eflags & MFE_VERTICALFLIP);
+			mobj->flags2 = (mobj->flags2 & ~MF2_OBJECTFLIP)|(mobj->target->flags2 & MF2_OBJECTFLIP);
+
+			if (mobj->eflags & MFE_VERTICALFLIP)
+				zoff += mobj->target->height - mobj->height;
 		}
 		else if (mobj->state == &states[S_MAGICIANBOX_TOP]) // top
 		{
 			zoff = mobj->radius*4;
 		}
+
+		// Necessary to "ride" on Garden Top
+		zoff += mobj->target->sprzoff;
+
+		if (mobj->flags2 & MF2_AMBUSH)
+		{
+			P_SetOrigin(mobj, destx, desty, mobj->target->z + zoff);
+			mobj->old_angle = mobj->angle;
+			mobj->flags2 &= ~MF2_AMBUSH;
+		}
+		else
+		{
+			P_MoveOrigin(mobj, destx, desty, mobj->target->z + zoff);
+		}
+		break;
+	}
+	case MT_SIDETRICK:
+	{
+		fixed_t destx, desty;
+		fixed_t zoff = 0;
+
+		if (!mobj->target
+		|| !mobj->target->health
+		|| !mobj->target->player
+		|| mobj->target->player->trickpanel <= TRICKSTATE_FORWARD)
+		{
+			P_RemoveMobj(mobj);
+			return false;
+		}
+
+		// Flicker every other frame from first visibility
+		if (mobj->flags2 & MF2_BOSSDEAD)
+		{
+			mobj->renderflags |= RF_DONTDRAW;
+		}
+		else
+		{
+			mobj->renderflags &= ~RF_DONTDRAW;
+			mobj->renderflags |= (mobj->target->renderflags & RF_DONTDRAW);
+		}
+
+		mobj->eflags = (mobj->eflags & ~MFE_VERTICALFLIP)|(mobj->target->eflags & MFE_VERTICALFLIP);
+		mobj->flags2 = ((mobj->flags2 & ~MF2_OBJECTFLIP)|(mobj->target->flags2 & MF2_OBJECTFLIP)) ^ MF2_BOSSDEAD;
+
+		fixed_t scale = mobj->target->scale;
+
+		// sweeping effect
+		if (mobj->target->player->trickpanel == TRICKSTATE_BACK)
+		{
+			const fixed_t saferange = (20*FRACUNIT)/21;
+			if (mobj->threshold < -saferange)
+			{
+				mobj->threshold = -saferange;
+				mobj->flags2 |= MF2_AMBUSH;
+			}
+			else while (mobj->threshold > saferange)
+			{
+				mobj->threshold -= 2*saferange;
+				mobj->flags2 |= MF2_AMBUSH;
+			}
+
+			scale = P_ReturnThrustX(mobj, FixedAngle(90*mobj->threshold), scale);
+
+			// This funny dealie is to make it so default
+			// scale is placed as standard,
+			// but variant threshold shifts upwards
+			fixed_t extraoffset = FixedMul(mobj->info->height, mobj->target->scale - scale);
+			if (mobj->threshold < 0)
+				extraoffset /= 2;
+
+			// And this makes it swooce across the object.
+			extraoffset += FixedMul(mobj->threshold, mobj->target->height);
+
+			zoff += P_MobjFlip(mobj) * extraoffset;
+
+			mobj->threshold += (saferange/8);
+		}
+
+		mobj->angle += mobj->movedir;
+		P_InstaScale(mobj, scale);
+
+		destx = mobj->target->x;
+		desty = mobj->target->y;
+
+		destx += P_ReturnThrustX(mobj, mobj->angle - ANGLE_90, mobj->radius*2);
+		desty += P_ReturnThrustY(mobj, mobj->angle - ANGLE_90, mobj->radius*2);
+
+		if (mobj->eflags & MFE_VERTICALFLIP)
+			zoff += mobj->target->height - mobj->height;
+
+		// Necessary to "ride" on Garden Top
+		zoff += mobj->target->sprzoff;
+
+		if (mobj->flags2 & MF2_AMBUSH)
+		{
+			P_SetOrigin(mobj, destx, desty, mobj->target->z + zoff);
+			mobj->old_angle = mobj->angle;
+			mobj->flags2 &= ~MF2_AMBUSH;
+		}
+		else
+		{
+			P_MoveOrigin(mobj, destx, desty, mobj->target->z + zoff);
+		}
+		break;
+	}
+	case MT_FORWARDTRICK:
+	{
+		fixed_t destx, desty;
+		fixed_t zoff = 0;
+
+		if (!mobj->target
+		|| !mobj->target->health
+		|| !mobj->target->player
+		|| mobj->target->player->trickpanel != TRICKSTATE_FORWARD)
+		{
+			P_RemoveMobj(mobj);
+			return false;
+		}
+
+		mobj->renderflags &= ~RF_DONTDRAW;
+		mobj->renderflags |= (mobj->target->renderflags & RF_DONTDRAW);
+
+		mobj->eflags = (mobj->eflags & ~MFE_VERTICALFLIP)|(mobj->target->eflags & MFE_VERTICALFLIP);
+		mobj->flags2 = ((mobj->flags2 & ~MF2_OBJECTFLIP)|(mobj->target->flags2 & MF2_OBJECTFLIP)) ^ MF2_BOSSDEAD;
+
+		// sweeping effect
+		P_InstaScale(mobj, (6*mobj->target->scale)/5);
+
+		const fixed_t sweep = FixedMul(FRACUNIT - (mobj->threshold * 2), mobj->radius);
+
+		destx = mobj->target->x;
+		desty = mobj->target->y;
+
+		destx += P_ReturnThrustX(mobj, mobj->movedir, sweep);
+		desty += P_ReturnThrustY(mobj, mobj->movedir, sweep);
+
+		const fixed_t sideways = P_ReturnThrustY(mobj, mobj->angle - mobj->movedir, mobj->radius);
+		destx += P_ReturnThrustX(mobj, mobj->movedir + ANGLE_90, sideways);
+		desty += P_ReturnThrustY(mobj, mobj->movedir + ANGLE_90, sideways);
+
+		if (mobj->eflags & MFE_VERTICALFLIP)
+			zoff += mobj->target->height - (mobj->height + 18*mobj->target->scale);
+		else
+			zoff += 18*mobj->target->scale;
 
 		// Necessary to "ride" on Garden Top
 		zoff += mobj->target->sprzoff;
@@ -8425,6 +8574,20 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			P_MoveOrigin(mobj, destx, desty, mobj->target->z + zoff);
 		}
+
+		mobj->threshold += FRACUNIT/6;
+		if (mobj->threshold > FRACUNIT)
+		{
+			mobj_t *puff = P_SpawnGhostMobj(mobj);
+			if (puff)
+			{
+				puff->renderflags = (puff->renderflags & ~RF_TRANSMASK)|RF_ADD;
+			}
+
+			mobj->threshold -= FRACUNIT;
+			mobj->flags2 |= MF2_AMBUSH;
+		}
+
 		break;
 	}
 	case MT_LIGHTNINGSHIELD:
@@ -8671,6 +8834,26 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_BLOCKBODY:
 	{
 		Obj_BlockBodyThink(mobj);
+		break;
+	}
+	case MT_CHARGEAURA:
+	{
+		Obj_ChargeAuraThink(mobj);
+		break;
+	}
+	case MT_CHARGEFALL:
+	{
+		Obj_ChargeFallThink(mobj);
+		break;
+	}
+	case MT_CHARGERELEASE:
+	{
+		Obj_ChargeReleaseThink(mobj);
+		break;
+	}
+	case MT_CHARGEEXTRA:
+	{
+		Obj_ChargeExtraThink(mobj);
 		break;
 	}
 	case MT_GUARDBREAK:
@@ -12409,8 +12592,8 @@ void P_SpawnPlayer(INT32 playernum)
 	p->griefValue = 0;
 
 	K_InitStumbleIndicator(p);
-
-	K_InitSliptideZipIndicator(p);
+	K_InitWavedashIndicator(p);
+	K_InitTrickIndicator(p);
 
 	if (gametyperules & GTR_ITEMARROWS)
 	{

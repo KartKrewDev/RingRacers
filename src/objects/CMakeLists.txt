@@ -39,6 +39,7 @@ target_sources(SRB2SDL2 PRIVATE
 	wpzothers.c
 	shadow.cpp
 	ball-switch.cpp
+	charge.c
 )
 
 add_subdirectory(versus)

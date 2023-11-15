@@ -2540,7 +2540,7 @@ void CL_ClearPlayer(INT32 playernum)
 		}
 
 #define PlayerPointerRemove(field) \
-		if (field) \
+		if (P_MobjWasRemoved(field) == false) \
 		{ \
 			P_RemoveMobj(field); \
 			P_SetTarget(&field, NULL); \
@@ -2550,7 +2550,8 @@ void CL_ClearPlayer(INT32 playernum)
 		PlayerPointerRemove(players[playernum].mo);
 		PlayerPointerRemove(players[playernum].followmobj);
 		PlayerPointerRemove(players[playernum].stumbleIndicator);
-		PlayerPointerRemove(players[playernum].sliptideZipIndicator);
+		PlayerPointerRemove(players[playernum].wavedashIndicator);
+		PlayerPointerRemove(players[playernum].trickIndicator);
 
 #undef PlayerPointerRemove
 

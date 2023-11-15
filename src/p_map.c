@@ -427,12 +427,8 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 		{
 			if (spring->reactiontime == 0)
 			{
-				object->player->tricktime = 0; // Reset post-hitlag timer
-				// Setup the boost for potential upwards trick, at worse, make it your regular max speed. (boost = curr speed*1.25)
-				object->player->trickboostpower = max(FixedDiv(object->player->speed, K_GetKartSpeed(object->player, false, false)) - FRACUNIT, 0)*125/100;
-				//CONS_Printf("Got boost: %d%\n", mo->player->trickboostpower*100 / FRACUNIT);
-				object->player->trickpanel = 1;
-				object->player->pflags |= PF_TRICKDELAY;
+				object->eflags &= ~MFE_SPRUNG; // needed to permit the following
+				K_DoPogoSpring(object, -vertispeed, 0); // negative so momz isn't modified
 			}
 			else
 			{
@@ -512,12 +508,6 @@ static void P_DoFanAndGasJet(mobj_t *spring, mobj_t *object)
 
 			if (spring->thing_args[1])
 			{
-				if (object->player)
-				{
-					object->player->trickpanel = 1;
-					object->player->pflags |= PF_TRICKDELAY;
-				}
-
 				K_DoPogoSpring(object, 32<<FRACBITS, 0);
 			}
 			else
