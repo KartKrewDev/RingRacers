@@ -765,7 +765,7 @@ mobj_t *Obj_SuperFlickyOwner(const mobj_t* mobj)
 {
 	const Flicky* x = static_cast<const Flicky*>(mobj);
 
-	return x->source();
+	return x->valid() ? x->source() : nullptr;
 }
 
 boolean Obj_IsSuperFlickyWhippable(const mobj_t* mobj)
