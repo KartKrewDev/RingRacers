@@ -13867,7 +13867,16 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 		// Use per-thing collision for spikes unless the intangible flag is checked.
 		if (!(mthing->thing_args[2] & TMSF_INTANGIBLE) && !metalrecording)
 		{
+			const fixed_t kSpriteRadius = 16 * mobj->scale;
+			fixed_t x = FixedMul(mobj->radius - kSpriteRadius, FCOS(mobj->angle));
+			fixed_t y = FixedMul(mobj->radius - kSpriteRadius, FSIN(mobj->angle));
+
+			mobj->sprxoff -= x;
+			mobj->spryoff -= y;
+
 			P_UnsetThingPosition(mobj);
+			mobj->x += x;
+			mobj->y += y;
 			mobj->flags &= ~(MF_NOBLOCKMAP | MF_NOCLIPHEIGHT);
 			mobj->flags |= MF_SOLID;
 			P_SetThingPosition(mobj);
