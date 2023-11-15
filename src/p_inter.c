@@ -3173,6 +3173,12 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					break;
 			}
 
+			// Have a shield? You get hit, but don't lose your rings!
+			if (player->curshield != KSHIELD_NONE)
+			{
+				ringburst = 0;
+			}
+
 			if (type != DMG_STUMBLE && type != DMG_WHUMBLE)
 			{
 				if (type != DMG_STING)
