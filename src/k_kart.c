@@ -12500,18 +12500,21 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 			if (player->fastfall)
 			{
-				P_InstaThrust(player->mo, player->mo->angle, 2*abs(player->fastfall)/3 + 15*FRACUNIT);
-				player->mo->hitlag = 3;
-				S_StartSound(player->mo, sfx_gshba);
-				player->fastfall = 0; // intentionally skip bounce
-				player->trickcharge = 0;
-
-				UINT8 i;
-				for (i = 0; i < 4; i++)
+				if (player->curshield != KSHIELD_BUBBLE) // Allow bubblebounce (it's cute) but don't give standard trick rewards
 				{
-					mobj_t *arc = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_CHARGEFALL);
-					P_SetTarget(&arc->target, player->mo);
-					arc->extravalue1 = i;
+					P_InstaThrust(player->mo, player->mo->angle, 2*abs(player->fastfall)/3 + 15*FRACUNIT);
+					player->mo->hitlag = 3;
+					S_StartSound(player->mo, sfx_gshba);
+					player->fastfall = 0; // intentionally skip bounce
+					player->trickcharge = 0;
+
+					UINT8 i;
+					for (i = 0; i < 4; i++)
+					{
+						mobj_t *arc = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_CHARGEFALL);
+						P_SetTarget(&arc->target, player->mo);
+						arc->extravalue1 = i;
+					}
 				}
 			}
 			else
