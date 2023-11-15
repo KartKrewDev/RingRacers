@@ -925,7 +925,7 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 	}
 	else if (victim->type == MT_SUPER_FLICKY)
 	{
-		if (Obj_IsSuperFlickyWhippable(victim))
+		if (Obj_IsSuperFlickyWhippable(victim, attacker))
 		{
 			K_AddHitLag(victim, victimHitlag, true);
 			K_AddHitLag(attacker, attackerHitlag, false);

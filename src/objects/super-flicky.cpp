@@ -768,11 +768,11 @@ mobj_t *Obj_SuperFlickyOwner(const mobj_t* mobj)
 	return x->valid() ? x->source() : nullptr;
 }
 
-boolean Obj_IsSuperFlickyWhippable(const mobj_t* mobj)
+boolean Obj_IsSuperFlickyWhippable(const mobj_t* mobj, const mobj_t* target)
 {
 	const Flicky* x = static_cast<const Flicky*>(mobj);
 
-	return mobj == x->chasing() && !x->stunned();
+	return target == x->chasing() && !x->stunned();
 }
 
 boolean Obj_IsSuperFlickyTargettingYou(const mobj_t* mobj, mobj_t *player)
