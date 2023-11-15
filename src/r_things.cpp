@@ -1586,13 +1586,22 @@ static void R_ProjectBoundingBox(mobj_t *thing, vissprite_t *vis)
 		R_InterpolateMobjState(thing, FRACUNIT, &interp);
 	}
 
-	// 1--3
-	// |  |
-	// 0--2
-
-	// start in the (0) corner
-	gx = interp.x - thing->radius - viewx;
-	gy = interp.y - thing->radius - viewy;
+	if (thing->flags & MF_PAPERCOLLISION)
+	{
+		// 0--1
+		// start in the middle
+		gx = interp.x - viewx;
+		gy = interp.y - viewy;
+	}
+	else
+	{
+		// 1--3
+		// |  |
+		// 0--2
+		// start in the (0) corner
+		gx = interp.x - thing->radius - viewx;
+		gy = interp.y - thing->radius - viewy;
+	}
 
 	tz = FixedMul(gx, viewcos) + FixedMul(gy, viewsin);
 
@@ -1620,8 +1629,16 @@ static void R_ProjectBoundingBox(mobj_t *thing, vissprite_t *vis)
 	box->gx = tx;
 	box->gy = tz;
 
-	box->scale = 2 * FixedMul(thing->radius, viewsin);
-	box->xscale = 2 * FixedMul(thing->radius, viewcos);
+	if (thing->flags & MF_PAPERCOLLISION)
+	{
+		box->scale = FixedMul(thing->radius, FCOS(viewangle - interp.angle));
+		box->xscale = FixedMul(thing->radius, FSIN(viewangle - interp.angle));
+	}
+	else
+	{
+		box->scale = 2 * FixedMul(thing->radius, viewsin);
+		box->xscale = 2 * FixedMul(thing->radius, viewcos);
+	}
 
 	box->pz = interp.z;
 	box->pzt = box->pz + box->thingheight;

@@ -204,29 +204,40 @@ void R_DrawThingBoundingBox(vissprite_t *vis)
 		.color = R_GetBoundingBoxColor(vis->mobj),
 	};
 
-	// 1--3
-	// |  |
-	// 0--2
+	if (vis->mobjflags & MF_PAPERCOLLISION)
+	{
+		// 0--1
 
-	// left
+		draw_bbox_col(&bb, 0, tx - rc, ty - rs); // left
+		draw_bbox_col(&bb, 1, tx + rc, ty + rs); // right
+		draw_bbox_row(&bb, 0, 1); // connect both
+	}
+	else
+	{
+		// 1--3
+		// |  |
+		// 0--2
 
-	draw_bbox_col(&bb, 0, tx, ty); // bottom
-	draw_bbox_col(&bb, 1, tx - rc, ty + rs); // top
+		// left
 
-	// right
+		draw_bbox_col(&bb, 0, tx, ty); // bottom
+		draw_bbox_col(&bb, 1, tx - rc, ty + rs); // top
 
-	tx += rs;
-	ty += rc;
+		// right
 
-	draw_bbox_col(&bb, 2, tx, ty); // bottom
-	draw_bbox_col(&bb, 3, tx - rc, ty + rs); // top
+		tx += rs;
+		ty += rc;
 
-	// connect all four columns
+		draw_bbox_col(&bb, 2, tx, ty); // bottom
+		draw_bbox_col(&bb, 3, tx - rc, ty + rs); // top
 
-	draw_bbox_row(&bb, 0, 1);
-	draw_bbox_row(&bb, 1, 3);
-	draw_bbox_row(&bb, 3, 2);
-	draw_bbox_row(&bb, 2, 0);
+		// connect all four columns
+
+		draw_bbox_row(&bb, 0, 1);
+		draw_bbox_row(&bb, 1, 3);
+		draw_bbox_row(&bb, 3, 2);
+		draw_bbox_row(&bb, 2, 0);
+	}
 }
 
 static boolean is_tangible (mobj_t *thing)
