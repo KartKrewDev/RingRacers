@@ -6414,7 +6414,10 @@ void K_PopPlayerShield(player_t *player)
 			return;
 
 		case KSHIELD_TOP:
-			Obj_GardenTopDestroy(player);
+			if (player->curshield == KSHIELD_TOP)
+			{
+				Obj_GardenTopDestroy(player);
+			}
 			return; // everything is handled by Obj_GardenTopDestroy
 
 		case KSHIELD_LIGHTNING:
