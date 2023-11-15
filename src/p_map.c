@@ -659,23 +659,6 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	&& (tm.thing->type == MT_BLENDEYE_MAIN || tm.thing->type == MT_BLENDEYE_EYE || tm.thing->type == MT_BLENDEYE_PUYO))
 		return BMIT_CONTINUE;
 
-	// When solid spikes move, assume they just popped up and teleport things on top of them to hurt.
-	if (tm.thing->type == MT_SPIKE && tm.thing->flags & MF_SOLID)
-	{
-		if (thing->z > tm.thing->z + tm.thing->height)
-			return BMIT_CONTINUE; // overhead
-		if (thing->z + thing->height < tm.thing->z)
-			return BMIT_CONTINUE; // underneath
-
-		if (tm.thing->eflags & MFE_VERTICALFLIP)
-			P_SetOrigin(thing, thing->x, thing->y, tm.thing->z - thing->height - FixedMul(FRACUNIT, tm.thing->scale));
-		else
-			P_SetOrigin(thing, thing->x, thing->y, tm.thing->z + tm.thing->height + FixedMul(FRACUNIT, tm.thing->scale));
-		if (thing->flags & MF_SHOOTABLE)
-			P_DamageMobj(thing, tm.thing, tm.thing, 1, 0);
-		return BMIT_CONTINUE;
-	}
-
 	if (thing->flags & MF_PAIN)
 	{ // Player touches painful thing sitting on the floor
 		// see if it went over / under
@@ -1326,78 +1309,65 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	}
 
 	// Sprite Spikes!
-	// Do not return because solidity code comes below.
-	if (tm.thing->type == MT_SPIKE && tm.thing->flags & MF_SOLID && thing->player) // moving spike rams into player?!
+	if ((tm.thing->type == MT_SPIKE || tm.thing->type == MT_WALLSPIKE) && (tm.thing->flags & MF_SOLID)) // spike pops up
 	{
-		if (tm.thing->eflags & MFE_VERTICALFLIP)
+		// see if it went over / under
+		if (tm.thing->z > thing->z + thing->height)
+			return BMIT_CONTINUE; // overhead
+		if (tm.thing->z + tm.thing->height < thing->z)
+			return BMIT_CONTINUE; // underneath
+
+		if (thing->flags & MF_SHOOTABLE)
 		{
-			if (thing->z + thing->height <= tm.thing->z + FixedMul(FRACUNIT, tm.thing->scale)
-			&& thing->z + thing->height + thing->momz  >= tm.thing->z + FixedMul(FRACUNIT, tm.thing->scale) + tm.thing->momz)
-				P_DamageMobj(thing, tm.thing, tm.thing, 1, DMG_TUMBLE);
+			if (P_MobjFlip(thing) == P_MobjFlip(tm.thing))
+			{
+				if (P_DamageMobj(thing, tm.thing, tm.thing, 1, DMG_TUMBLE))
+				{
+					// FIXME: None of this is correct for wall spikes,
+					// but I don't feel like testing that right now.
+
+					// Increase vertical momentum for a strong effect
+					thing->momz += (tm.thing->height / 2) * P_MobjFlip(tm.thing);
+
+					// Teleport on top of the spikes
+					P_MoveOrigin(
+						thing,
+						thing->x,
+						thing->y,
+						tm.thing->z + (P_MobjFlip(thing) > 0 ? tm.thing->height : -thing->height)
+					);
+				}
+			}
+			else
+			{
+				P_DamageMobj(thing, tm.thing, tm.thing, 1, DMG_NORMAL);
+			}
 		}
-		else if (thing->z >= tm.thing->z + tm.thing->height - FixedMul(FRACUNIT, tm.thing->scale)
-		&& thing->z + thing->momz <= tm.thing->z + tm.thing->height - FixedMul(FRACUNIT, tm.thing->scale) + tm.thing->momz)
-			P_DamageMobj(thing, tm.thing, tm.thing, 1, DMG_TUMBLE);
+		return BMIT_CONTINUE;
 	}
-	else if (thing->type == MT_SPIKE && thing->flags & MF_SOLID && tm.thing->player) // unfortunate player falls into spike?!
+	else if ((thing->type == MT_SPIKE || thing->type == MT_WALLSPIKE) &&
+		(thing->flags & MF_SOLID) && (tm.thing->flags & MF_SHOOTABLE)) // stationary spike
 	{
-		if (thing->eflags & MFE_VERTICALFLIP)
+		// see if it went over / under
+		if (tm.thing->z > thing->z + thing->height)
+			return BMIT_CONTINUE; // overhead
+		if (tm.thing->z + tm.thing->height < thing->z)
+			return BMIT_CONTINUE; // underneath
+
+		if (tm.thing->player && tm.thing->player && tm.thing->player->tumbleBounces > 0)
 		{
-			if (tm.thing->z + tm.thing->height <= thing->z - FixedMul(FRACUNIT, thing->scale)
-			&& tm.thing->z + tm.thing->height + tm.thing->momz >= thing->z - FixedMul(FRACUNIT, thing->scale))
-				P_DamageMobj(tm.thing, thing, thing, 1, DMG_TUMBLE);
+			return BMIT_CONTINUE;
 		}
-		else if (tm.thing->z >= thing->z + thing->height + FixedMul(FRACUNIT, thing->scale)
-		&& tm.thing->z + tm.thing->momz <= thing->z + thing->height + FixedMul(FRACUNIT, thing->scale))
+
+		if (!P_IsObjectOnGround(tm.thing) && tm.thing->momz * P_MobjFlip(tm.thing) < 0) // fell into it
+		{
 			P_DamageMobj(tm.thing, thing, thing, 1, DMG_TUMBLE);
-	}
-
-	if (tm.thing->type == MT_WALLSPIKE && tm.thing->flags & MF_SOLID && thing->player) // wall spike impales player
-	{
-		fixed_t bottomz, topz;
-		bottomz = tm.thing->z;
-		topz = tm.thing->z + tm.thing->height;
-		if (tm.thing->eflags & MFE_VERTICALFLIP)
-			bottomz -= FixedMul(FRACUNIT, tm.thing->scale);
-		else
-			topz += FixedMul(FRACUNIT, tm.thing->scale);
-
-		if (thing->z + thing->height > bottomz // above bottom
-		&&  thing->z < topz) // below top
-		// don't check angle, the player was clearly in the way in this case
-			P_DamageMobj(thing, tm.thing, tm.thing, 1, DMG_NORMAL);
-	}
-	else if (thing->type == MT_WALLSPIKE && thing->flags & MF_SOLID && tm.thing->player)
-	{
-		fixed_t bottomz, topz;
-		angle_t touchangle = R_PointToAngle2(thing->tracer->x, thing->tracer->y, tm.thing->x, tm.thing->y);
-
-		if (P_PlayerInPain(tm.thing->player) && (tm.thing->momx || tm.thing->momy))
-		{
-			angle_t playerangle = R_PointToAngle2(0, 0, tm.thing->momx, tm.thing->momy) - touchangle;
-			if (playerangle > ANGLE_180)
-				playerangle = InvAngle(playerangle);
-			if (playerangle < ANGLE_90)
-				return BMIT_CONTINUE; // Yes, this is intentionally outside the z-height check. No standing on spikes whilst moving away from them.
+			return BMIT_CONTINUE;
 		}
-
-		bottomz = thing->z;
-		topz = thing->z + thing->height;
-
-		if (thing->eflags & MFE_VERTICALFLIP)
-			bottomz -= FixedMul(FRACUNIT, thing->scale);
 		else
-			topz += FixedMul(FRACUNIT, thing->scale);
-
-		if (tm.thing->z + tm.thing->height > bottomz // above bottom
-		&&  tm.thing->z < topz // below top
-		&& !P_MobjWasRemoved(thing->tracer)) // this probably wouldn't work if we didn't have a tracer
-		{ // use base as a reference point to determine what angle you touched the spike at
-			touchangle = thing->angle - touchangle;
-			if (touchangle > ANGLE_180)
-				touchangle = InvAngle(touchangle);
-			if (touchangle <= ANGLE_22h) // if you touched it at this close an angle, you get poked!
-				P_DamageMobj(tm.thing, thing, thing, 1, DMG_NORMAL);
+		{
+			// Do not return because solidity code comes below.
+			P_DamageMobj(tm.thing, thing, thing, 1, DMG_NORMAL);
 		}
 	}
 
