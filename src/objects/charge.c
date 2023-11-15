@@ -7,7 +7,7 @@
 #include "../m_random.h"
 
 #define CHARGEAURA_BURSTTIME (9)
-#define CHARGEAURA_SPARKRADIUS (160)
+#define CHARGEAURA_SPARKRADIUS (40)
 
 // xval1: destruction timer
 // xval2: master (spawns other visuals)
@@ -63,9 +63,9 @@ void Obj_ChargeAuraThink (mobj_t *aura)
             if (player->driftcharge)
             {
                 mobj_t *spark = P_SpawnMobjFromMobj(aura, 
-                    mo->scale*P_RandomRange(PR_DECORATION, -1*CHARGEAURA_SPARKRADIUS, CHARGEAURA_SPARKRADIUS),
-                    mo->scale*P_RandomRange(PR_DECORATION, -1*CHARGEAURA_SPARKRADIUS, CHARGEAURA_SPARKRADIUS),
-                    mo->scale*P_RandomRange(PR_DECORATION, -1*CHARGEAURA_SPARKRADIUS, CHARGEAURA_SPARKRADIUS),
+                    FRACUNIT*P_RandomRange(PR_DECORATION, -1*CHARGEAURA_SPARKRADIUS, CHARGEAURA_SPARKRADIUS),
+                    FRACUNIT*P_RandomRange(PR_DECORATION, -1*CHARGEAURA_SPARKRADIUS, CHARGEAURA_SPARKRADIUS),
+                    FRACUNIT*P_RandomRange(PR_DECORATION, -1*CHARGEAURA_SPARKRADIUS, CHARGEAURA_SPARKRADIUS),
                     MT_CHARGESPARK);
                 spark->frame = P_RandomRange(PR_DECORATION, 1, 5);
                 spark->renderflags |= RF_FULLBRIGHT|RF_ADD;
