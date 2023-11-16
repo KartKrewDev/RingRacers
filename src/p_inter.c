@@ -1889,17 +1889,21 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				}
 				else
 				{
-					flingAngle = target->angle + ANGLE_180;
+					flingAngle = target->angle;
 
 					if (P_RandomByte(PR_ITEM_RINGS) & 1)
 					{
-						flingAngle -= ANGLE_45;
+						flingAngle -= ANGLE_45/2;
 					}
 					else
 					{
-						flingAngle += ANGLE_45;
+						flingAngle += ANGLE_45/2;
 					}
 				}
+
+				// On -20 ring deaths, you're guaranteed to be hitting the ground from Tumble,
+				// so make sure that this draws at the correct angle.
+				target->rollangle = 0;
 
 				P_InstaThrust(target, flingAngle, 14 * target->scale);
 				P_SetObjectMomZ(target, 14*FRACUNIT, false);
