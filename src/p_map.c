@@ -962,6 +962,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		|| tm.thing->type == MT_SSMINE || tm.thing->type == MT_LANDMINE || tm.thing->type == MT_SINK
 		|| tm.thing->type == MT_GARDENTOP
 		|| tm.thing->type == MT_DROPTARGET
+		|| tm.thing->type == MT_KART_LEFTOVER
 		|| (tm.thing->type == MT_PLAYER && thing->target != tm.thing)))
 	{
 		// see if it went over / under
@@ -979,6 +980,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		|| thing->type == MT_SSMINE || thing->type == MT_LANDMINE || thing->type == MT_SINK
 		|| thing->type == MT_GARDENTOP
 		|| thing->type == MT_DROPTARGET
+		|| thing->type == MT_KART_LEFTOVER
 		|| (thing->type == MT_PLAYER && tm.thing->target != thing)))
 	{
 		// see if it went over / under
@@ -1002,6 +1004,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		|| tm.thing->type == MT_GARDENTOP
 		|| tm.thing->type == MT_MONITOR
 		|| tm.thing->type == MT_BATTLECAPSULE
+		|| tm.thing->type == MT_KART_LEFTOVER
 		|| (tm.thing->type == MT_PLAYER)))
 	{
 		// see if it went over / under
@@ -1019,6 +1022,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		|| thing->type == MT_GARDENTOP
 		|| thing->type == MT_MONITOR
 		|| thing->type == MT_BATTLECAPSULE
+		|| thing->type == MT_KART_LEFTOVER
 		|| (thing->type == MT_PLAYER)))
 	{
 		// see if it went over / under
@@ -1572,7 +1576,14 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			if (tm.thing->z + tm.thing->height < thing->z)
 				return BMIT_CONTINUE; // underneath
 
-			K_KartBouncing(tm.thing, thing);
+			if (K_PlayerCanPunt(tm.thing->player))
+			{
+				P_DamageMobj(thing, tm.thing, tm.thing, 1, DMG_NORMAL);
+			}
+			else
+			{
+				K_KartBouncing(tm.thing, thing);
+			}
 			return BMIT_CONTINUE;
 		}
 		else if (thing->type == MT_MONITOR)

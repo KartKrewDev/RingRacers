@@ -728,6 +728,11 @@ fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against)
 
 static void K_SpawnBumpForObjs(mobj_t *mobj1, mobj_t *mobj2)
 {
+	if (mobj1->type == MT_KART_LEFTOVER && mobj1->health == 0)
+	{
+		return;
+	}
+
 	mobj_t *fx = P_SpawnMobj(
 		mobj1->x/2 + mobj2->x/2,
 		mobj1->y/2 + mobj2->y/2,

@@ -1545,7 +1545,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		 || target->type == MT_DROPTARGET || target->type == MT_DROPTARGET_SHIELD
 		 || target->type == MT_EGGMANITEM || target->type == MT_EGGMANITEM_SHIELD
 		 || target->type == MT_BALLHOG || target->type == MT_SPB
-		 || target->type == MT_GACHABOM)) // kart dead items
+		 || target->type == MT_GACHABOM || target->type == MT_KART_LEFTOVER)) // kart dead items
 		target->flags |= MF_NOGRAVITY; // Don't drop Tails 03-08-2000
 	else
 		target->flags &= ~MF_NOGRAVITY; // lose it if you for whatever reason have it, I'm looking at you shields
@@ -1876,8 +1876,6 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 					if (target->player->pflags & PF_NOCONTEST)
 						P_SetTarget(&target->tracer, kart);
-
-					kart->fuse = 5*TICRATE;
 				}
 
 				if (source && !P_MobjWasRemoved(source))
@@ -1922,6 +1920,16 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				}
 			}
 			break;
+
+		case MT_KART_LEFTOVER:
+			if (!P_MobjWasRemoved(inflictor))
+			{
+				K_KartSolidBounce(target, inflictor);
+				target->momz = 20 * inflictor->scale * P_MobjFlip(inflictor);
+			}
+			target->z += P_MobjFlip(target);
+			target->tics = 175;
+			return;
 
 		case MT_METALSONIC_RACE:
 			target->fuse = TICRATE*3;

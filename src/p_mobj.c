@@ -6955,6 +6955,7 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 	//case MT_DROPTARGET:
 	case MT_SPB:
 	case MT_GACHABOM:
+	case MT_KART_LEFTOVER:
 		if (P_IsObjectOnGround(mobj))
 		{
 			P_RemoveMobj(mobj);
@@ -10260,7 +10261,6 @@ static boolean P_CanFlickerFuse(mobj_t *mobj)
 		case MT_FALLINGROCK:
 		case MT_FLOATINGITEM:
 		case MT_POGOSPRING:
-		case MT_KART_LEFTOVER:
 		case MT_EMERALD:
 		case MT_BLENDEYE_PUYO:
 			if (mobj->fuse <= TICRATE)
