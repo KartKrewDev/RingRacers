@@ -43,6 +43,7 @@
 #include "k_hitlag.h"
 #include "acs/interface.h"
 #include "k_powerup.h"
+#include "k_collide.h"
 
 // CTF player names
 #define CTFTEAMCODE(pl) pl->ctfteam ? (pl->ctfteam == 1 ? "\x85" : "\x84") : ""
@@ -1537,7 +1538,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		target->momx = target->momy = target->momz = 0;
 
 	// SRB2kart
-	if (target->type != MT_PLAYER && !(target->flags & MF_MONITOR)
+	if (target->type != MT_PLAYER
 		 && !(target->type == MT_ORBINAUT || target->type == MT_ORBINAUT_SHIELD
 		 || target->type == MT_JAWZ || target->type == MT_JAWZ_SHIELD
 		 || target->type == MT_BANANA || target->type == MT_BANANA_SHIELD
@@ -1630,7 +1631,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 	// if killed by a player
 	if (source && source->player)
 	{
-		if (target->flags & MF_MONITOR || target->type == MT_RANDOMITEM)
+		if (target->type == MT_RANDOMITEM)
 		{
 			P_SetTarget(&target->target, source);
 
@@ -1692,7 +1693,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				target->player->roundscore = 0;
 		}
 
-		target->player->trickpanel = 0;
+		target->player->trickpanel = TRICKSTATE_NONE;
 
 		ACS_RunPlayerDeathScript(target->player);
 	}
@@ -2611,10 +2612,18 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 
 	P_SetPlayerMobjState(player->mo, player->mo->info->deathstate);
 
-	if (player->sliptideZipIndicator && !P_MobjWasRemoved(player->sliptideZipIndicator))
-		P_RemoveMobj(player->sliptideZipIndicator);
-	if (player->stumbleIndicator && !P_MobjWasRemoved(player->stumbleIndicator))
-		P_RemoveMobj(player->stumbleIndicator);
+#define PlayerPointerRemove(field) \
+	if (P_MobjWasRemoved(field) == false) \
+	{ \
+		P_RemoveMobj(field); \
+		P_SetTarget(&field, NULL); \
+	}
+
+	PlayerPointerRemove(player->stumbleIndicator);
+	PlayerPointerRemove(player->wavedashIndicator);
+	PlayerPointerRemove(player->trickIndicator);
+
+#undef PlayerPointerRemove
 
 	if (type == DMG_TIMEOVER)
 	{
@@ -2929,6 +2938,14 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					invincible = false;
 				}
 
+				// TODO: doing this from P_DamageMobj limits punting to objects that damage the player.
+				// And it may be kind of yucky.
+				// But this is easier than accounting for every condition in PIT_CheckThing!
+				if (inflictor && K_PuntCollide(inflictor, target))
+				{
+					return false;
+				}
+
 				if (invincible && type != DMG_STUMBLE && type != DMG_WHUMBLE)
 				{
 					const INT32 oldHitlag = target->hitlag;
@@ -3164,6 +3181,12 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					break;
 			}
 
+			// Have a shield? You get hit, but don't lose your rings!
+			if (player->curshield != KSHIELD_NONE)
+			{
+				ringburst = 0;
+			}
+
 			if (type != DMG_STUMBLE && type != DMG_WHUMBLE)
 			{
 				if (type != DMG_STING)
@@ -3351,7 +3374,7 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 		return;
 
 	// Have a shield? You get hit, but don't lose your rings!
-	if (K_GetShieldFromItem(player->itemtype) != KSHIELD_NONE)
+	if (player->curshield != KSHIELD_NONE)
 		return;
 
 	// 20 is the maximum number of rings that can be taken from you at once - half the span of your counter

@@ -478,7 +478,7 @@ void P_ResetPlayer(player_t *player)
 	player->onconveyor = 0;
 
 	//player->drift = player->driftcharge = 0;
-	player->trickpanel = 0;
+	player->trickpanel = TRICKSTATE_NONE;
 	player->glanceDir = 0;
 	player->fastfall = 0;
 
@@ -1109,6 +1109,7 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	P_SetTarget(&ghost->target, mobj);
 
 	P_SetScale(ghost, mobj->scale);
+	ghost->scalespeed = mobj->scalespeed;
 	ghost->destscale = mobj->scale;
 
 	if (mobj->eflags & MFE_VERTICALFLIP)
@@ -1163,8 +1164,12 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->old_angle = (mobj->player ? mobj->player->old_drawangle2 : mobj->old_angle2);
 	ghost->old_pitch = mobj->old_pitch2;
 	ghost->old_roll = mobj->old_roll2;
+	ghost->old_scale = mobj->old_scale2;
 
 	K_ReduceVFX(ghost, mobj->player);
+
+	ghost->reappear = mobj->reappear;
+	P_SetTarget(&ghost->punt_ref, mobj->punt_ref);
 
 	return ghost;
 }
@@ -2465,18 +2470,21 @@ void P_MovePlayer(player_t *player)
 	}
 	else
 	{
-		K_KartMoveAnimation(player);
-
-		if (player->trickpanel == 2)
+		if (player->trickpanel > TRICKSTATE_READY)
 		{
-			player->drawangle += ANGLE_22h;
-		}
-		else if (player->trickpanel >= 3)
-		{
-			player->drawangle -= ANGLE_22h;
+			if (player->trickpanel <= TRICKSTATE_RIGHT) // right/forward
+			{
+				player->drawangle += ANGLE_22h;
+			}
+			else //if (player->trickpanel >= TRICKSTATE_LEFT) // left/back
+			{
+				player->drawangle -= ANGLE_22h;
+			}
 		}
 		else
 		{
+			K_KartMoveAnimation(player);
+
 			player->drawangle = player->mo->angle;
 
 			if (player->aizdriftturn)
@@ -2708,9 +2716,6 @@ void P_NukeEnemies(mobj_t *inflictor, mobj_t *source, fixed_t radius)
 
 		if (!(mo->flags & MF_SHOOTABLE) && (mo->type != MT_SPB)) // Don't want to give SPB MF_SHOOTABLE, to ensure it's undamagable through other means
 			continue;
-
-		if (mo->flags & MF_MONITOR)
-			continue; // Monitors cannot be 'nuked'.
 
 		if (abs(inflictor->x - mo->x) > radius || abs(inflictor->y - mo->y) > radius || abs(inflictor->z - mo->z) > radius)
 			continue; // Workaround for possible integer overflow in the below -Red
@@ -4056,7 +4061,8 @@ void P_PlayerThink(player_t *player)
 
 		PlayerPointerErase(player->followmobj);
 		PlayerPointerErase(player->stumbleIndicator);
-		PlayerPointerErase(player->sliptideZipIndicator);
+		PlayerPointerErase(player->wavedashIndicator);
+		PlayerPointerErase(player->trickIndicator);
 		PlayerPointerErase(player->whip);
 		PlayerPointerErase(player->hand);
 		PlayerPointerErase(player->ringShooter);
@@ -4078,6 +4084,7 @@ void P_PlayerThink(player_t *player)
 	if (P_IsObjectOnGround(player->mo)
 		&& !P_PlayerInPain(player)) // This isn't airtime, but it's control loss all the same.
 	{
+		player->lastairtime = player->airtime;
 		player->airtime = 0;
 	}
 	else

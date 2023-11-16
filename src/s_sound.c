@@ -948,6 +948,9 @@ boolean S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 
 	if (!listener)
 		return false;
 
+	if (source->thinker.function.acp1 == (actionf_p1)P_MobjThinker && P_MobjIsReappearing(source))
+		return false;
+
 	// Init listensource with default listener
 	listensource.x = listener->x;
 	listensource.y = listener->y;

@@ -558,13 +558,20 @@ char sprnames[NUMSPRITES + 1][5] =
 	"IMDB", // Item Monitor Small Shard (Debris)
 	"MTWK", // Item Monitor Glass Twinkle
 
-	"SLPT", // Sliptide zip indicator
+	"SLPT", // Wavedash indicator
+	"TRBS", // Trickdash indicator
 
 	"IWHP", // Instawhip
 	"WPRE", // Instawhip Recharge
 	"WPRJ", // Instawhip Reject
 	"GRNG", // Guard ring
 	"GBDY", // Guard body
+
+	"TRC1", // Charge aura
+	"TRC2", // Charge fall
+	"TRC3", // Charge flicker/sparks
+	"TRC4", // Charge release
+	"TRC5", // Charge extra
 
 	"DHND", // Servant Hand
 
@@ -630,6 +637,15 @@ char sprnames[NUMSPRITES + 1][5] =
 	"TWBS", // Tripwire Boost
 	"TWBT", // Tripwire BLASTER
 	"SMLD", // Smooth landing
+
+	// Trick Effects
+	"TRK1",
+	"TRK2",
+	"TRK3",
+	"TRK4",
+	"TRK5",
+	"TRK6",
+	"TRK7",
 
 	"TIRG", // Tire grabbers
 	"RSHT", // DEZ Ring Shooter
@@ -4118,7 +4134,7 @@ state_t states[NUMSTATES] =
 	{SPR_MGBT,                 FF_FLOORSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_MAGICIANBOX_TOP
 	{SPR_MGBB,                 FF_FLOORSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_MAGICIANBOX_BOTTOM
 
-	{SPR_SLPT,                 FF_PAPERSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_SLIPTIDEZIP
+	{SPR_SLPT,                 FF_PAPERSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_WAVEDASH
 
 	{SPR_IWHP,                 FF_FLOORSPRITE|FF_ANIMATE|0, -1, {NULL}, 6, 2, S_NULL}, // S_INSTAWHIP
 	{SPR_NULL,                 0, 1, {NULL}, 0, 0, S_INSTAWHIP_RECHARGE2}, // S_INSTAWHIP_RECHARGE1
@@ -4128,6 +4144,13 @@ state_t states[NUMSTATES] =
 	{SPR_WPRJ,                 FF_FULLBRIGHT|FF_ANIMATE, 9, {NULL}, 8, 1, S_INSTAWHIP_REJECT}, // S_INSTAWHIP_REJECT
 	{SPR_GRNG,                 FF_FULLBRIGHT|FF_PAPERSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_BLOCKRING
 	{SPR_GBDY,                 FF_FULLBRIGHT|FF_ANIMATE|0, -1, {NULL}, 4, 2, S_NULL}, // S_BLOCKBODY
+
+	{SPR_TRC1,                 FF_FULLBRIGHT|FF_ANIMATE|0, -1, {NULL}, 4, 2, S_NULL}, // S_CHARGEAURA
+	{SPR_TRC2,                 FF_FULLBRIGHT|FF_ANIMATE|0, 20, {NULL}, 19, 1, S_NULL}, // S_CHARGEFALL
+	{SPR_TRC3,                 FF_FULLBRIGHT|FF_ADD|0, 2, {NULL}, 0, 0, S_NULL}, // S_CHARGEFLICKER
+	{SPR_TRC3,                 FF_FULLBRIGHT|FF_ADD|1, 2, {NULL}, 0, 0, S_NULL}, // S_CHARGESPARK
+	{SPR_TRC4,                 FF_FULLBRIGHT|FF_ADD|FF_ANIMATE|0, -1, {NULL}, 4, 1, S_NULL}, // S_CHARGERELEASE
+	{SPR_TRC5,                 FF_FULLBRIGHT|FF_ADD|FF_ANIMATE|0, -1, {NULL}, 4, 1, S_NULL}, // S_CHARGEEXTRA
 
 	{SPR_DHND, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SERVANTHAND
 
@@ -4662,6 +4685,16 @@ state_t states[NUMSTATES] =
 
 	{SPR_SMLD, FF_FULLBRIGHT|FF_ADD|FF_ANIMATE, -1, {NULL}, 7, 2, S_NULL}, // S_SMOOTHLANDING
 
+	{SPR_TRK1, FF_FULLBRIGHT|FF_ANIMATE|FF_PAPERSPRITE|FF_ADD, -1, {NULL},  3, 3, S_NULL},      // S_TRICKINDICATOR_OVERLAY,
+	{SPR_TRK2, FF_FULLBRIGHT|FF_ANIMATE|FF_PAPERSPRITE,        -1, {NULL},  3, 3, S_NULL},      // S_TRICKINDICATOR_UNDERLAY,
+	{SPR_TRK3, FF_FULLBRIGHT|FF_ANIMATE|FF_PAPERSPRITE|FF_ADD, 13, {NULL}, 12, 1, S_INVISIBLE}, // S_TRICKINDICATOR_OVERLAY_ARROW,
+	{SPR_NULL, 0, 1, {NULL}, 12, 1, S_TRICKINDICATOR_UNDERLAY_ARROW2}, // S_TRICKINDICATOR_UNDERLAY_ARROW,
+	{SPR_TRK4, FF_FULLBRIGHT|FF_ANIMATE|FF_PAPERSPRITE,        13, {NULL}, 12, 1, S_INVISIBLE}, // S_TRICKINDICATOR_UNDERLAY_ARROW2,
+
+	{SPR_TRK5, FF_FULLBRIGHT|FF_PAPERSPRITE,            -1, {NULL}, 0, 0, S_NULL}, // S_SIDETRICK,
+	{SPR_TRK6, FF_FULLBRIGHT|FF_PAPERSPRITE,            -1, {NULL}, 0, 0, S_NULL}, // S_BACKTRICK,
+	{SPR_TRK7, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_ANIMATE, -1, {NULL}, 6, 1, S_NULL}, // S_FORWARDTRICK,
+
 	{SPR_TIRG, FF_ANIMATE, -1, {NULL}, 1, 1, S_NULL}, // S_TIREGRABBER
 	{SPR_RSHT,               FF_PAPERSPRITE|0,         -1,              {NULL}, 0, 0, S_NULL}, // S_RINGSHOOTER_SIDE
 	{SPR_RSHT, FF_SEMIBRIGHT|FF_PAPERSPRITE|2,         -1,              {NULL}, 0, 0, S_NULL}, // S_RINGSHOOTER_NIPPLES
@@ -4815,12 +4848,12 @@ state_t states[NUMSTATES] =
 	{SPR_FLEN, FF_FULLBRIGHT|1, 3, {NULL}, 0, 0, S_FLINGENERGY3}, // S_FLINGENERGY2,
 	{SPR_FLEN, FF_FULLBRIGHT|2, 3, {NULL}, 0, 0, S_NULL}, // S_FLINGENERGY3,
 
-	{SPR_CLAS, FF_FULLBRIGHT|FF_TRANS30, 2, {A_PlayActiveSound}, 0, 0, S_CLASH2}, // S_CLASH1
-	{SPR_CLAS, FF_FULLBRIGHT|FF_TRANS30|1, 2, {NULL}, 0, 0, S_CLASH3}, // S_CLASH2
-	{SPR_CLAS, FF_FULLBRIGHT|FF_TRANS30|2, 2, {NULL}, 0, 0, S_CLASH4}, // S_CLASH3
-	{SPR_CLAS, FF_FULLBRIGHT|FF_TRANS30|3, 2, {NULL}, 0, 0, S_CLASH5}, // S_CLASH4
-	{SPR_CLAS, FF_FULLBRIGHT|FF_TRANS30|4, 2, {NULL}, 0, 0, S_CLASH6}, // S_CLASH5
-	{SPR_CLAS, FF_FULLBRIGHT|FF_TRANS30|5, 2, {NULL}, 0, 0, S_NULL}, // S_CLASH6
+	{SPR_CLAS, FF_FULLBRIGHT|FF_ADD, 2, {A_PlayActiveSound}, 0, 0, S_CLASH2}, // S_CLASH1
+	{SPR_CLAS, FF_FULLBRIGHT|FF_ADD|1, 2, {NULL}, 0, 0, S_CLASH3}, // S_CLASH2
+	{SPR_CLAS, FF_FULLBRIGHT|FF_ADD|2, 2, {NULL}, 0, 0, S_CLASH4}, // S_CLASH3
+	{SPR_CLAS, FF_FULLBRIGHT|FF_ADD|3, 2, {NULL}, 0, 0, S_CLASH5}, // S_CLASH4
+	{SPR_CLAS, FF_FULLBRIGHT|FF_ADD|4, 2, {NULL}, 0, 0, S_CLASH6}, // S_CLASH5
+	{SPR_CLAS, FF_FULLBRIGHT|FF_ADD|5, 2, {NULL}, 0, 0, S_NULL}, // S_CLASH6
 
 	{SPR_PSHW, FF_FULLBRIGHT, 3, {NULL}, 0, 0, S_FIREDITEM2}, // S_FIREDITEM1
 	{SPR_PSHW, FF_FULLBRIGHT|1, 3, {NULL}, 0, 0, S_FIREDITEM3}, // S_FIREDITEM2
@@ -5742,7 +5775,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		1000,           // mass
 		MT_THOK,        // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE, // flags
+		MF_SOLID|MF_SHOOTABLE|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE|MF_DONTPUNT, // flags
 		(statenum_t)MT_THOK // raisestate
 	},
 
@@ -9327,7 +9360,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_mspogo,     // deathsound
 		2*TICRATE,      // speed
 		14*FRACUNIT,     // radius
-		64*FRACUNIT,    // height
+		90*FRACUNIT,    // height
 		0,              // display offset
 		4,              // mass
 		0,              // damage
@@ -9353,7 +9386,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_WALLSPIKED2,  // xdeathstate
 		sfx_mspogo,     // deathsound
 		2*TICRATE,      // speed
-		16*FRACUNIT,    // radius
+		48*FRACUNIT,    // radius
 		14*FRACUNIT,    // height
 		0,              // display offset
 		4,              // mass
@@ -9548,7 +9581,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_RING_ICON,   // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR, // flags
+		MF_SOLID|MF_SHOOTABLE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -9575,7 +9608,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_PITY_ICON,   // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR, // flags
+		MF_SOLID|MF_SHOOTABLE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -9602,7 +9635,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_ATTRACT_ICON,// damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR, // flags
+		MF_SOLID|MF_SHOOTABLE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -9629,7 +9662,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_FORCE_ICON,  // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR, // flags
+		MF_SOLID|MF_SHOOTABLE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -9656,7 +9689,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_ARMAGEDDON_ICON, // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR, // flags
+		MF_SOLID|MF_SHOOTABLE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -9683,7 +9716,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_WHIRLWIND_ICON, // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR, // flags
+		MF_SOLID|MF_SHOOTABLE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -9710,7 +9743,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_ELEMENTAL_ICON, // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR, // flags
+		MF_SOLID|MF_SHOOTABLE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -9737,7 +9770,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_SNEAKERS_ICON, // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR, // flags
+		MF_SOLID|MF_SHOOTABLE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -9764,7 +9797,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_INVULN_ICON, // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR, // flags
+		MF_SOLID|MF_SHOOTABLE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -9791,7 +9824,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_1UP_ICON,    // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR, // flags
+		MF_SOLID|MF_SHOOTABLE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -9818,7 +9851,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_EGGMAN_ICON, // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR, // flags
+		MF_SOLID|MF_SHOOTABLE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -9845,7 +9878,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_MIXUP_ICON,  // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR, // flags
+		MF_SOLID|MF_SHOOTABLE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -9872,7 +9905,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_UNKNOWN,     // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR, // flags
+		MF_SOLID|MF_SHOOTABLE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -9899,7 +9932,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_GRAVITY_ICON, // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR, // flags
+		MF_SOLID|MF_SHOOTABLE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -9926,7 +9959,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_RECYCLER_ICON, // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR, // flags
+		MF_SOLID|MF_SHOOTABLE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -9953,7 +9986,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_SCORE1K_ICON, // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR, // flags
+		MF_SOLID|MF_SHOOTABLE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -9980,7 +10013,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_SCORE10K_ICON, // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR, // flags
+		MF_SOLID|MF_SHOOTABLE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -10007,7 +10040,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_FLAMEAURA_ICON, // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR, // flags
+		MF_SOLID|MF_SHOOTABLE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -10034,7 +10067,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_BUBBLEWRAP_ICON, // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR, // flags
+		MF_SOLID|MF_SHOOTABLE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -10061,7 +10094,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_THUNDERCOIN_ICON, // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR, // flags
+		MF_SOLID|MF_SHOOTABLE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -10088,7 +10121,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_PITY_ICON,   // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR|MF_GRENADEBOUNCE, // flags
+		MF_SOLID|MF_SHOOTABLE|MF_GRENADEBOUNCE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -10115,7 +10148,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_ATTRACT_ICON,// damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR|MF_GRENADEBOUNCE, // flags
+		MF_SOLID|MF_SHOOTABLE|MF_GRENADEBOUNCE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -10142,7 +10175,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_FORCE_ICON,  // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR|MF_GRENADEBOUNCE, // flags
+		MF_SOLID|MF_SHOOTABLE|MF_GRENADEBOUNCE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -10169,7 +10202,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_ARMAGEDDON_ICON, // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR|MF_GRENADEBOUNCE, // flags
+		MF_SOLID|MF_SHOOTABLE|MF_GRENADEBOUNCE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -10196,7 +10229,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_WHIRLWIND_ICON, // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR|MF_GRENADEBOUNCE, // flags
+		MF_SOLID|MF_SHOOTABLE|MF_GRENADEBOUNCE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -10223,7 +10256,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_ELEMENTAL_ICON, // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR|MF_GRENADEBOUNCE, // flags
+		MF_SOLID|MF_SHOOTABLE|MF_GRENADEBOUNCE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -10250,7 +10283,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_SNEAKERS_ICON, // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR|MF_GRENADEBOUNCE, // flags
+		MF_SOLID|MF_SHOOTABLE|MF_GRENADEBOUNCE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -10277,7 +10310,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_INVULN_ICON, // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR|MF_GRENADEBOUNCE, // flags
+		MF_SOLID|MF_SHOOTABLE|MF_GRENADEBOUNCE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -10304,7 +10337,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_EGGMAN_ICON, // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR|MF_GRENADEBOUNCE, // flags
+		MF_SOLID|MF_SHOOTABLE|MF_GRENADEBOUNCE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -10331,7 +10364,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_GRAVITY_ICON, // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR|MF_GRENADEBOUNCE, // flags
+		MF_SOLID|MF_SHOOTABLE|MF_GRENADEBOUNCE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -10358,7 +10391,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_FLAMEAURA_ICON, // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR|MF_GRENADEBOUNCE, // flags
+		MF_SOLID|MF_SHOOTABLE|MF_GRENADEBOUNCE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -10385,7 +10418,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_BUBBLEWRAP_ICON, // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR|MF_GRENADEBOUNCE, // flags
+		MF_SOLID|MF_SHOOTABLE|MF_GRENADEBOUNCE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -10412,7 +10445,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_THUNDERCOIN_ICON, // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR|MF_GRENADEBOUNCE, // flags
+		MF_SOLID|MF_SHOOTABLE|MF_GRENADEBOUNCE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -10439,7 +10472,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_RING_ICON,   // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR, // flags
+		MF_SOLID|MF_SHOOTABLE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -10466,7 +10499,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		MT_RING_ICON,   // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_MONITOR, // flags
+		MF_SOLID|MF_SHOOTABLE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -14618,13 +14651,13 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,         // xdeathstate
 		sfx_None,       // deathsound
 		5*FRACUNIT,     // speed
-		8*FRACUNIT,     // radius
-		8*FRACUNIT,     // height
+		16*FRACUNIT,    // radius
+		32*FRACUNIT,    // height
 		0,              // display offset
 		DMG_NORMAL,       // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_NOGRAVITY|MF_MISSILE|MF_PAIN, // flags
+		MF_NOGRAVITY|MF_MISSILE|MF_PAIN|MF_NOSQUISH|MF_NOHITLAGFORME|MF_ELEMENTAL, // flags
 		S_NULL          // raisestate
 	},
 
@@ -23061,9 +23094,9 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL          // raisestate
 	},
 
-	{           // MT_SLIPTIDEZIP
+	{           // MT_WAVEDASH
 		-1,             // doomednum
-		S_SLIPTIDEZIP,    // spawnstate
+		S_WAVEDASH,    // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound
@@ -23111,7 +23144,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
+		MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP|MF_DONTPUNT, // flags
 		S_NULL          // raisestate
 	},
 
@@ -23199,6 +23232,168 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	{           // MT_BLOCKBODY
 		-1,             // doomednum
 		S_BLOCKBODY,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		67*FRACUNIT,    // radius
+		67*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_NOCLIPHEIGHT, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_CHARGEAURA
+		-1,             // doomednum
+		S_CHARGEAURA,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		67*FRACUNIT,    // radius
+		67*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_NOCLIPHEIGHT, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_CHARGEFALL
+		-1,             // doomednum
+		S_CHARGEFALL,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		67*FRACUNIT,    // radius
+		67*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_NOCLIPHEIGHT, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_CHARGEFLICKER
+		-1,             // doomednum
+		S_CHARGEFLICKER,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		67*FRACUNIT,    // radius
+		67*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_SCENERY, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_CHARGESPARK
+		-1,             // doomednum
+		S_CHARGESPARK,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		67*FRACUNIT,    // radius
+		67*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_SCENERY, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_CHARGERELEASE
+		-1,             // doomednum
+		S_CHARGERELEASE,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		67*FRACUNIT,    // radius
+		67*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_NOCLIPHEIGHT, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_CHARGEEXTRA
+		-1,             // doomednum
+		S_CHARGEEXTRA,    // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound
@@ -24002,7 +24197,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		1,              // damage
 		sfx_peel,       // activesound
-		MF_SHOOTABLE|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE, // flags
+		MF_SHOOTABLE|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE|MF_DONTPUNT, // flags
 		S_NULL          // raisestate
 	},
 
@@ -24029,7 +24224,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		1,              // damage
 		sfx_None,       // activesound
-		MF_SHOOTABLE|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE, // flags
+		MF_SHOOTABLE|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE|MF_DONTPUNT, // flags
 		S_NULL          // raisestate
 	},
 
@@ -24083,7 +24278,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		1,              // damage
 		sfx_s3k96,      // activesound
-		MF_SHOOTABLE|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE, // flags
+		MF_SHOOTABLE|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE|MF_DONTPUNT, // flags
 		S_NULL          // raisestate
 	},
 
@@ -24110,7 +24305,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		1,              // damage
 		sfx_None,       // activesound
-		MF_SHOOTABLE|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE, // flags
+		MF_SHOOTABLE|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE|MF_DONTPUNT, // flags
 		S_NULL          // raisestate
 	},
 
@@ -24137,7 +24332,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		1,              // damage
 		sfx_s3kc0s,     // activesound
-		MF_SHOOTABLE|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE,   // flags
+		MF_SHOOTABLE|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE|MF_DONTPUNT,   // flags
 		S_NULL          // raisestate
 	},
 
@@ -24164,7 +24359,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		1,              // damage
 		sfx_None,       // activesound
-		MF_SHOOTABLE|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE, // flags
+		MF_SHOOTABLE|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE|MF_DONTPUNT, // flags
 		S_NULL          // raisestate
 	},
 
@@ -24218,7 +24413,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,					// mass
 		1,						// damage
 		sfx_s3k5c,				// activesound
-		MF_SHOOTABLE|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE, // flags
+		MF_SHOOTABLE|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE|MF_DONTPUNT, // flags
 		S_NULL					// raisestate
 	},
 
@@ -24245,7 +24440,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		1,              // damage
 		sfx_None,       // activesound
-		MF_SHOOTABLE|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE, // flags
+		MF_SHOOTABLE|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE|MF_DONTPUNT, // flags
 		S_NULL          // raisestate
 	},
 
@@ -24353,7 +24548,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,						// mass
 		0,						// damage
 		sfx_s3k5c,				// activesound
-		MF_SHOOTABLE|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE, // flags
+		MF_SHOOTABLE|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE|MF_DONTPUNT, // flags
 		S_NULL					// raisestate
 	},
 
@@ -24380,7 +24575,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		1,              // damage
 		sfx_s3k96,      // activesound
-		MF_SPECIAL|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE, // flags
+		MF_SPECIAL|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE|MF_DONTPUNT, // flags
 		S_NULL          // raisestate
 	},
 
@@ -24407,7 +24602,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		1,              // damage
 		sfx_None,       // activesound
-		MF_SPECIAL|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE, // flags
+		MF_SPECIAL|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE|MF_DONTPUNT, // flags
 		S_NULL          // raisestate
 	},
 
@@ -24461,7 +24656,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		1,              // damage
 		sfx_None,       // activesound
-		MF_SHOOTABLE|MF_DONTENCOREMAP|MF_APPLYTERRAIN, // flags
+		MF_SHOOTABLE|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_DONTPUNT, // flags
 		S_NULL          // raisestate
 	},
 
@@ -24515,7 +24710,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		1,              // damage
 		sfx_kc64,       // activesound
-		MF_SOLID|MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
+		MF_SOLID|MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP|MF_DONTPUNT, // flags
 		S_NULL          // raisestate
 	},
 
@@ -24758,7 +24953,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_NOCLIPTHING|MF_DONTENCOREMAP, // flags
+		MF_NOCLIPTHING|MF_DONTENCOREMAP|MF_DONTPUNT, // flags
 		S_NULL          // raisestate
 	},
 
@@ -25055,7 +25250,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		1,              // damage
 		sfx_s3k5c,      // activesound
-		MF_SHOOTABLE|MF_DONTENCOREMAP|MF_APPLYTERRAIN, // flags
+		MF_SHOOTABLE|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_DONTPUNT, // flags
 		S_NULL          // raisestate
 	},
 
@@ -25082,7 +25277,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		1,              // damage
 		sfx_None,       // activesound
-		MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE, // flags
+		MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE|MF_DONTPUNT, // flags
 		S_NULL          // raisestate
 	},
 
@@ -25136,7 +25331,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		1,              // damage
 		sfx_s3k96,      // activesound
-		MF_SHOOTABLE|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE, // flags
+		MF_SHOOTABLE|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE|MF_DONTPUNT, // flags
 		S_NULL          // raisestate
 	},
 
@@ -25190,7 +25385,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_SPECIAL|MF_DONTENCOREMAP|MF_APPLYTERRAIN, // flags
+		MF_SPECIAL|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_DONTPUNT, // flags
 		S_NULL          // raisestate
 	},
 
@@ -25327,6 +25522,87 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,        // activesound
 		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_DONTENCOREMAP, // flags
 		S_NULL           // raisestate
+	},
+
+	{           // MT_TRICKINDICATOR
+		-1,              // doomednum
+		S_INVISIBLE,     // spawnstate
+		1000,            // spawnhealth
+		S_NULL,          // seestate
+		sfx_None,        // seesound
+		8,               // reactiontime
+		sfx_None,        // attacksound
+		S_NULL,          // painstate
+		0,               // painchance
+		sfx_None,        // painsound
+		S_NULL,          // meleestate
+		S_NULL,          // missilestate
+		S_NULL,          // deathstate
+		S_NULL,          // xdeathstate
+		sfx_None,        // deathsound
+		0,               // speed
+		128*FRACUNIT,    // radius
+		128*FRACUNIT,    // height
+		-1,              // display offset
+		100,             // mass
+		0,               // damage
+		sfx_None,        // activesound
+		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_DONTENCOREMAP, // flags
+		S_NULL           // raisestate
+	},
+
+	{           // MT_SIDETRICK
+		-1,             // doomednum
+		S_SIDETRICK,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		36*FRACUNIT,    // radius
+		40*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_FORWARDTRICK
+		-1,             // doomednum
+		S_FORWARDTRICK, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		60*FRACUNIT,    // radius
+		86*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
 	},
 
 	{           // MT_TIREGRABBER
@@ -30433,7 +30709,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_SPECIAL|MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPHEIGHT, // flags
+		MF_SPECIAL|MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_DONTPUNT, // flags
 		S_NULL          // raisestate
 	},
 

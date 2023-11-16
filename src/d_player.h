@@ -269,6 +269,16 @@ typedef enum
 
 typedef enum
 {
+	TRICKSTATE_NONE = 0,
+	TRICKSTATE_READY,
+	TRICKSTATE_FORWARD,
+	TRICKSTATE_RIGHT,
+	TRICKSTATE_LEFT,
+	TRICKSTATE_BACK,
+} trickstate_t;
+
+typedef enum
+{
 	// Unsynced, HUD or clientsided effects
 	// Item box
 	khud_itemblink,		// Item flashing after roulette, serves as a mashing indicator
@@ -645,6 +655,7 @@ struct player_t
 	respawnvars_t respawn;	// Respawn info
 	mobj_t *ringShooter;	// DEZ respawner object
 	tic_t airtime; 			// Used to track just air time, but has evolved over time into a general "karted" timer. Rename this variable?
+	tic_t lastairtime;
 	UINT8 startboost;		// (0 to 125) - Boost you get from start of race
 	UINT8 dropdashboost;	// Boost you get when holding A while respawning
 
@@ -758,7 +769,7 @@ struct player_t
 	UINT8 confirmVictim;		// Player ID that you dealt damage to
 	UINT8 confirmVictimDelay;	// Delay before playing the sound
 
-	UINT8 trickpanel; 	// Trick panel state
+	UINT8 trickpanel; 	// Trick panel state - see trickstate_t
 	UINT8 tricktime;	// Increases while you're tricking. You can't input any trick until it's reached a certain threshold
 	fixed_t trickboostpower;	// Save the rough speed multiplier. Used for upwards tricks.
 	UINT8 trickboostdecay;		// used to know how long you've waited
@@ -903,14 +914,19 @@ struct player_t
 
 	UINT8 tripwireReboundDelay; // When failing Tripwire, brieftly lock out speed-based tripwire pass (anti-cheese)
 
-	UINT16 sliptideZip; // How long is our chained sliptide? Grant a proportional boost when it's over.
-	UINT8 sliptideZipDelay; // How long since the last sliptide? Only boost once you've been straightened out for a bit.
-	UINT16 sliptideZipBoost; // The actual boost granted from sliptideZip.
+	UINT16 wavedash; // How long is our chained sliptide? Grant a proportional boost when it's over.
+	UINT8 wavedashdelay; // How long since the last sliptide? Only boost once you've been straightened out for a bit.
+	UINT16 wavedashboost; // The actual boost granted from wavedash.
+
+	UINT16 trickcharge; // Landed normally from a trick panel? Get the benefits package!
+
+	UINT16 infinitether; // Generic infinitether time, used for infinitether leniency.
 
 	UINT8 lastsafelap;
 
 	mobj_t *stumbleIndicator;
-	mobj_t *sliptideZipIndicator;
+	mobj_t *wavedashIndicator;
+	mobj_t *trickIndicator;
 	mobj_t *whip;
 	mobj_t *hand;
 	mobj_t *flickyAttacker;
@@ -928,6 +944,7 @@ struct player_t
 	INT16 incontrol; // -1 to -175 when spinning out or tumbling, 1 to 175 when not. Use to check for combo hits or emergency inputs.
 
 	boolean markedfordeath;
+	boolean dotrickfx;
 
 	UINT8 ringboxdelay; // Delay until Ring Box auto-activates
 	UINT8 ringboxaward; // Where did we stop?

@@ -1119,6 +1119,10 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"fshld2", false, 64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Flame Shield burst"},
   {"fshld3", false, 64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Flame Shield cooldown"},
 
+  // RR - Trick Panel
+  {"trick0", false, 64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Trick confirm"},
+  {"trick1", false, 64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Trick"},
+
   // RR - Ballhog Charge
   {"bhog00", false, 64,  64, -1, NULL, 0,        -1,  -1, LUMPERROR, "Ballhog charging"},
   {"bhog01", false, 64,  64, -1, NULL, 0,        -1,  -1, LUMPERROR, "Ballhog charging"},

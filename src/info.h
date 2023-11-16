@@ -1115,13 +1115,20 @@ typedef enum sprite
 	SPR_IMDB, // Item Monitor Small Shard (Debris)
 	SPR_MTWK, // Item Monitor Glass Twinkle
 
-	SPR_SLPT, // Sliptide zip indicator
+	SPR_SLPT, // Wavedash indicator
+	SPR_TRBS, // Trickdash indicator
 
 	SPR_IWHP, // Instawhip
 	SPR_WPRE, // Instawhip Recharge
 	SPR_WPRJ, // Instawhip Reject
 	SPR_GRNG, // Guard ring
 	SPR_GBDY, // Guard body
+
+	SPR_TRC1, // Charge aura
+	SPR_TRC2, // Charge fall
+	SPR_TRC3, // Charge flicker/sparks
+	SPR_TRC4, // Charge release
+	SPR_TRC5, // Charge extra
 
 	SPR_DHND, // Servant Hand
 
@@ -1187,6 +1194,15 @@ typedef enum sprite
 	SPR_TWBS, // Tripwire Boost
 	SPR_TWBT, // Tripwire BLASTER
 	SPR_SMLD, // Smooth landing
+
+	// Trick Effects
+	SPR_TRK1,
+	SPR_TRK2,
+	SPR_TRK3,
+	SPR_TRK4,
+	SPR_TRK5,
+	SPR_TRK6,
+	SPR_TRK7,
 
 	SPR_TIRG, // Tire grabbers
 	SPR_RSHT, // DEZ Ring Shooter
@@ -4529,7 +4545,7 @@ typedef enum state
 	S_MAGICIANBOX_TOP,
 	S_MAGICIANBOX_BOTTOM,
 
-	S_SLIPTIDEZIP,
+	S_WAVEDASH,
 
 	S_INSTAWHIP,
 	S_INSTAWHIP_RECHARGE1,
@@ -4539,6 +4555,13 @@ typedef enum state
 	S_INSTAWHIP_REJECT,
 	S_BLOCKRING,
 	S_BLOCKBODY,
+
+	S_CHARGEAURA,
+	S_CHARGEFALL,
+	S_CHARGEFLICKER,
+	S_CHARGESPARK,
+	S_CHARGERELEASE,
+	S_CHARGEEXTRA,
 
 	S_SERVANTHAND,
 
@@ -5105,6 +5128,16 @@ typedef enum state
 	S_TRIPWIREBOOST_BLAST_BOTTOM,
 
 	S_SMOOTHLANDING,
+
+	S_TRICKINDICATOR_OVERLAY,
+	S_TRICKINDICATOR_UNDERLAY,
+	S_TRICKINDICATOR_OVERLAY_ARROW,
+	S_TRICKINDICATOR_UNDERLAY_ARROW,
+	S_TRICKINDICATOR_UNDERLAY_ARROW2,
+
+	S_SIDETRICK,
+	S_BACKTRICK,
+	S_FORWARDTRICK,
 
 	// DEZ Ring Shooter
 	S_TIREGRABBER,
@@ -6791,13 +6824,20 @@ typedef enum mobj_type
 	MT_MONITOR_PART,
 	MT_MONITOR_SHARD,
 	MT_MAGICIANBOX,
-	MT_SLIPTIDEZIP,
+	MT_WAVEDASH,
 
 	MT_INSTAWHIP,
 	MT_INSTAWHIP_RECHARGE,
 	MT_INSTAWHIP_REJECT,
 	MT_BLOCKRING,
 	MT_BLOCKBODY,
+
+	MT_CHARGEAURA,
+	MT_CHARGEFALL,
+	MT_CHARGEFLICKER,
+	MT_CHARGESPARK,
+	MT_CHARGERELEASE,
+	MT_CHARGEEXTRA,
 
 	MT_SERVANTHAND,
 
@@ -6902,6 +6942,9 @@ typedef enum mobj_type
 	MT_TRIPWIREBOOST,
 
 	MT_SMOOTHLANDING,
+	MT_TRICKINDICATOR,
+	MT_SIDETRICK,
+	MT_FORWARDTRICK,
 
 	MT_TIREGRABBER,
 	MT_RINGSHOOTER,

@@ -221,7 +221,7 @@ private:
 
 	bool can_change() const
 	{
-		if (viewplayer()->trickpanel > 0)
+		if (viewplayer()->trickpanel != TRICKSTATE_NONE)
 		{
 			return false;
 		}

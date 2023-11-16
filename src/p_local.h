@@ -596,6 +596,8 @@ mobj_t *P_FindMobjFromTID(mtag_t tid, mobj_t *i, mobj_t *activator);
 
 void P_DeleteMobjStringArgs(mobj_t *mobj);
 
+tic_t P_MobjIsReappearing(const mobj_t *mobj);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

@@ -33,6 +33,9 @@ boolean K_SMKIceBlockCollide(mobj_t *t1, mobj_t *t2);
 
 boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2);
 
+void K_PuntHazard(mobj_t *t1, mobj_t *t2);
+boolean K_PuntCollide(mobj_t *t1, mobj_t *t2);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

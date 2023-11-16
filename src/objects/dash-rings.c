@@ -66,7 +66,7 @@ void Obj_RainbowDashRingSpawn(mobj_t *mobj)
 
 void Obj_DashRingSetup(mobj_t *mobj, mapthing_t *mthing)
 {
-	static const UINT8 numColors = sizeof(rainbow_colors) / sizeof(skincolornum_t);
+	static const UINT8 numColors = sizeof(ring_colors) / sizeof(skincolornum_t);
 	const UINT8 additionalThrust = mthing->thing_args[1];
 	statenum_t ringState, overlayState;
 
@@ -199,8 +199,6 @@ static void RegularDashRingLaunch(player_t *player, mobj_t *ring)
 static void RainbowDashRingLaunch(player_t *player, mobj_t *ring)
 {
 	player->mo->eflags &= ~MFE_SPRUNG;
-	player->trickpanel = 1;
-	player->pflags |= PF_TRICKDELAY;
 	K_DoPogoSpring(player->mo, 0, 0);
 	DashRingLaunch(player, ring);
 }
