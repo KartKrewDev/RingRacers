@@ -4216,6 +4216,8 @@ static void G_DoCompleted(void)
 			tutorialchallenge = TUTORIALSKIP_FAILED;
 			G_SetGametype(GT_TUTORIAL);
 			nextmapoverride = prevmap+1;
+
+			gamedata->failedtutorialchallenge = true;
 		}
 		else
 		{
@@ -4223,9 +4225,10 @@ static void G_DoCompleted(void)
 			nextmapoverride = NEXTMAP_TITLE+1;
 
 			gamedata->finishedtutorialchallenge = true;
-			M_UpdateUnlockablesAndExtraEmblems(true, true);
-			G_SaveGameData();
 		}
+
+		M_UpdateUnlockablesAndExtraEmblems(true, true);
+		G_SaveGameData();
 	}
 	else
 	{
@@ -4526,6 +4529,7 @@ typedef enum
 	GDEVER_KEYTUTORIAL = 1<<4,
 	GDEVER_KEYMAJORSKIP = 1<<5,
 	GDEVER_TUTORIALSKIP = 1<<6,
+	GDEVER_FAILEDTUTSKIP = 1<<7,
 } gdeverdone_t;
 
 static const char *G_GameDataFolder(void)
@@ -4666,6 +4670,7 @@ void G_LoadGameData(void)
 			gamedata->chaokeytutorial = !!(everflags & GDEVER_KEYTUTORIAL);
 			gamedata->majorkeyskipattempted = !!(everflags & GDEVER_KEYMAJORSKIP);
 			gamedata->finishedtutorialchallenge = !!(everflags & GDEVER_TUTORIALSKIP);
+			gamedata->failedtutorialchallenge = !!(everflags & GDEVER_FAILEDTUTSKIP);
 		}
 		else
 		{
@@ -5359,6 +5364,8 @@ void G_SaveGameData(void)
 			everflags |= GDEVER_KEYMAJORSKIP;
 		if (gamedata->finishedtutorialchallenge)
 			everflags |= GDEVER_TUTORIALSKIP;
+		if (gamedata->failedtutorialchallenge)
+			everflags |= GDEVER_FAILEDTUTSKIP;
 
 		WRITEUINT32(save.p, everflags); // 4
 	}
