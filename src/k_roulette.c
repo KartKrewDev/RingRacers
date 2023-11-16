@@ -192,7 +192,7 @@ static kartitems_t K_KartItemReelTimeAttack[] =
 
 static kartitems_t K_KartItemReelSPBAttack[] =
 {
-	KITEM_GACHABOM,
+	KITEM_DROPTARGET,
 	KITEM_SUPERRING,
 	KITEM_NONE
 };
@@ -1242,7 +1242,7 @@ static void K_CalculateRouletteSpeed(itemroulette_t *const roulette)
 		return;
 	}
 
-	if (K_TimeAttackRules() == true)
+	if (K_TimeAttackRules() == true && !(modeattacking & ATTACKING_SPB))
 	{
 		// Time Attack rules; use a consistent speed.
 		roulette->tics = roulette->speed = ROULETTE_SPEED_TIMEATTACK;

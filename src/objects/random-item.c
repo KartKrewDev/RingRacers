@@ -121,9 +121,13 @@ void Obj_RandomItemVisuals(mobj_t *mobj)
 	//
 	// Then extraval1 starts ticking up and triggers the transformation from Ringbox to Random Item.
 	if (mobj->fuse == 0 && !(mobj->flags & MF_NOCLIPTHING) && !(mobj->flags2 & MF2_BOSSDEAD) && !cv_thunderdome.value
-		&& (modeattacking == 0 || specialstageinfo.valid)) // Time Attacking in Special is a fucked-looking exception
+		&& (modeattacking == ATTACKING_NONE || !!(modeattacking & ATTACKING_SPB) || specialstageinfo.valid)) // Time Attacking in Special is a fucked-looking exception
 	{
 		mobj->extravalue1++;
+
+		// Dumb, but in Attack starts (or POSITION from hell) you can reach early boxes before they transform.
+		if (leveltime == 0)
+			mobj->extravalue1 = RINGBOX_TIME;
 
 		// Don't transform stuff that isn't a Ring Box, idiot
 		statenum_t boxstate = mobj->state - states;
