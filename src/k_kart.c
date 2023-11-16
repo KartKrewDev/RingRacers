@@ -9279,6 +9279,7 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 		{
 			updaterespawn = true;
 			player->pflags &= ~PF_UPDATEMYRESPAWN;
+			CONS_Printf("%d: Forced waypoint update\n", leveltime);
 		}
 
 		// Respawn point should only be updated when we're going to a nextwaypoint
@@ -10144,6 +10145,13 @@ static void K_KartDrift(player_t *player, boolean onground)
 				player->aizdriftstrat = ((player->drift > 0) ? 1 : -1);
 		}
 	}
+
+	if (player->airtime > 2) // Arbitrary number. Small discontinuities due to Super Jank shouldn't thrash your handling properties.
+	{
+		player->aizdriftstrat = 0;
+		keepsliptide = false;
+	}
+
 
 	if ((player->aizdriftstrat && !player->drift)
 		|| (keepsliptide))
