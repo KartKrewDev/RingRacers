@@ -268,6 +268,8 @@ void Obj_DLZSeasawThink(mobj_t *mo)
 				P_InstaThrust(t, mo->angle, mo->movefactor*3);	// send the player flying at triple the speed they came at us with.
 				S_StartSound(t, sfx_cdfm62);
 
+				K_SetTireGrease(p, 3*TICRATE);
+
 				p->seasawangleadd = 0;
 				p->seasawangle = 0;
 				p->seasawmoreangle = 0;
