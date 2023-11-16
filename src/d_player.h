@@ -64,6 +64,14 @@ typedef enum
 	PST_REBORN
 } playerstate_t;
 
+typedef enum
+{
+	IF_USERINGS		= 1,	// Have to be not holding the item button to change from using rings to using items (or vice versa) - prevents weirdness
+	IF_ITEMOUT		= 1<<1,	// Are you holding an item out?
+	IF_EGGMANOUT	= 1<<2,	// Eggman mark held, separate from IF_ITEMOUT so it doesn't stop you from getting items
+	IF_HOLDREADY	= 1<<3,	// Hold button-style item is ready to activate
+} itemflags_t;
+
 //
 // Player internal flags
 //
@@ -95,11 +103,9 @@ typedef enum
 
 	PF_RINGLOCK			= 1<<13, // Prevent picking up rings while SPB is locked on
 
-	// The following four flags are mutually exclusive, although they can also all be off at the same time. If we ever run out of pflags, eventually turn them into a seperate five(+) mode UINT8..?
-	PF_USERINGS			= 1<<14, // Have to be not holding the item button to change from using rings to using items (or vice versa) - prevents weirdness
-	PF_ITEMOUT			= 1<<15, // Are you holding an item out?
-	PF_EGGMANOUT		= 1<<16, // Eggman mark held, separate from PF_ITEMOUT so it doesn't stop you from getting items
-	PF_HOLDREADY		= 1<<17, // Hold button-style item is ready to activate
+	PF_LITESTEER		= 1<<14, // Hold Down to shallow turn (digital only)
+
+	//15-17 free, was previously itemflags stuff
 
 	PF_DRIFTINPUT		= 1<<18, // Drifting!
 	PF_GETSPARKS		= 1<<19, // Can get sparks
@@ -260,6 +266,16 @@ typedef enum
 	TRIPWIRE_BOOST,
 	TRIPWIRE_BLASTER,
 } tripwirepass_t;
+
+typedef enum
+{
+	TRICKSTATE_NONE = 0,
+	TRICKSTATE_READY,
+	TRICKSTATE_FORWARD,
+	TRICKSTATE_RIGHT,
+	TRICKSTATE_LEFT,
+	TRICKSTATE_BACK,
+} trickstate_t;
 
 typedef enum
 {
@@ -502,6 +518,15 @@ typedef enum
 	BOT_ITEM_PR__MAX
 } botItemPriority_e;
 
+typedef struct {
+	tic_t enter_tic, exit_tic;
+	tic_t zoom_in_speed, zoom_out_speed;
+	fixed_t dist;
+	angle_t pan;
+	fixed_t pan_speed; // in degrees
+	tic_t pan_accel, pan_back;
+} sonicloopcamvars_t;
+
 // player_t struct for loop state
 typedef struct {
 	fixed_t radius;
@@ -511,6 +536,7 @@ typedef struct {
 	vector2_t origin_shift;
 	vector2_t shift;
 	boolean flip;
+	sonicloopcamvars_t camera;
 } sonicloopvars_t;
 
 // player_t struct for power-ups
@@ -628,6 +654,7 @@ struct player_t
 	respawnvars_t respawn;	// Respawn info
 	mobj_t *ringShooter;	// DEZ respawner object
 	tic_t airtime; 			// Used to track just air time, but has evolved over time into a general "karted" timer. Rename this variable?
+	tic_t lastairtime;
 	UINT8 startboost;		// (0 to 125) - Boost you get from start of race
 	UINT8 dropdashboost;	// Boost you get when holding A while respawning
 
@@ -716,6 +743,7 @@ struct player_t
 	UINT8 flamelength;	// Flame Shield dash meter, number of segments
 
 	UINT16 ballhogcharge;	// Ballhog charge up -- the higher this value, the more projectiles
+	boolean ballhogtap;		// Ballhog released during charge: used to allow semirapid tapfire
 
 	UINT16 hyudorotimer;	// Duration of the Hyudoro offroad effect itself
 	SINT8 stealingtimer;	// if >0 you are stealing, if <0 you are being stolen from
@@ -740,7 +768,7 @@ struct player_t
 	UINT8 confirmVictim;		// Player ID that you dealt damage to
 	UINT8 confirmVictimDelay;	// Delay before playing the sound
 
-	UINT8 trickpanel; 	// Trick panel state
+	UINT8 trickpanel; 	// Trick panel state - see trickstate_t
 	UINT8 tricktime;	// Increases while you're tricking. You can't input any trick until it's reached a certain threshold
 	fixed_t trickboostpower;	// Save the rough speed multiplier. Used for upwards tricks.
 	UINT8 trickboostdecay;		// used to know how long you've waited
@@ -885,14 +913,19 @@ struct player_t
 
 	UINT8 tripwireReboundDelay; // When failing Tripwire, brieftly lock out speed-based tripwire pass (anti-cheese)
 
-	UINT16 sliptideZip; // How long is our chained sliptide? Grant a proportional boost when it's over.
-	UINT8 sliptideZipDelay; // How long since the last sliptide? Only boost once you've been straightened out for a bit.
-	UINT16 sliptideZipBoost; // The actual boost granted from sliptideZip.
+	UINT16 wavedash; // How long is our chained sliptide? Grant a proportional boost when it's over.
+	UINT8 wavedashdelay; // How long since the last sliptide? Only boost once you've been straightened out for a bit.
+	UINT16 wavedashboost; // The actual boost granted from wavedash.
+
+	UINT16 trickcharge; // Landed normally from a trick panel? Get the benefits package!
+
+	UINT16 infinitether; // Generic infinitether time, used for infinitether leniency.
 
 	UINT8 lastsafelap;
 
 	mobj_t *stumbleIndicator;
-	mobj_t *sliptideZipIndicator;
+	mobj_t *wavedashIndicator;
+	mobj_t *trickIndicator;
 	mobj_t *whip;
 	mobj_t *hand;
 	mobj_t *flickyAttacker;
@@ -910,9 +943,12 @@ struct player_t
 	INT16 incontrol; // -1 to -175 when spinning out or tumbling, 1 to 175 when not. Use to check for combo hits or emergency inputs.
 
 	boolean markedfordeath;
+	boolean dotrickfx;
 
 	UINT8 ringboxdelay; // Delay until Ring Box auto-activates
 	UINT8 ringboxaward; // Where did we stop?
+
+	UINT8 itemflags; 	// holds IF_ flags (see itemflags_t)
 
 	fixed_t outrun; // Milky Way road effect
 

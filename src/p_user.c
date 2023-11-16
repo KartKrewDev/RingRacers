@@ -478,7 +478,7 @@ void P_ResetPlayer(player_t *player)
 	player->onconveyor = 0;
 
 	//player->drift = player->driftcharge = 0;
-	player->trickpanel = 0;
+	player->trickpanel = TRICKSTATE_NONE;
 	player->glanceDir = 0;
 	player->fastfall = 0;
 
@@ -1109,6 +1109,7 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	P_SetTarget(&ghost->target, mobj);
 
 	P_SetScale(ghost, mobj->scale);
+	ghost->scalespeed = mobj->scalespeed;
 	ghost->destscale = mobj->scale;
 
 	if (mobj->eflags & MFE_VERTICALFLIP)
@@ -1163,8 +1164,12 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->old_angle = (mobj->player ? mobj->player->old_drawangle2 : mobj->old_angle2);
 	ghost->old_pitch = mobj->old_pitch2;
 	ghost->old_roll = mobj->old_roll2;
+	ghost->old_scale = mobj->old_scale2;
 
 	K_ReduceVFX(ghost, mobj->player);
+
+	ghost->reappear = mobj->reappear;
+	P_SetTarget(&ghost->punt_ref, mobj->punt_ref);
 
 	return ghost;
 }
@@ -2465,18 +2470,21 @@ void P_MovePlayer(player_t *player)
 	}
 	else
 	{
-		K_KartMoveAnimation(player);
-
-		if (player->trickpanel == 2)
+		if (player->trickpanel > TRICKSTATE_READY)
 		{
-			player->drawangle += ANGLE_22h;
-		}
-		else if (player->trickpanel >= 3)
-		{
-			player->drawangle -= ANGLE_22h;
+			if (player->trickpanel <= TRICKSTATE_RIGHT) // right/forward
+			{
+				player->drawangle += ANGLE_22h;
+			}
+			else //if (player->trickpanel >= TRICKSTATE_LEFT) // left/back
+			{
+				player->drawangle -= ANGLE_22h;
+			}
 		}
 		else
 		{
+			K_KartMoveAnimation(player);
+
 			player->drawangle = player->mo->angle;
 
 			if (player->aizdriftturn)
@@ -2708,9 +2716,6 @@ void P_NukeEnemies(mobj_t *inflictor, mobj_t *source, fixed_t radius)
 
 		if (!(mo->flags & MF_SHOOTABLE) && (mo->type != MT_SPB)) // Don't want to give SPB MF_SHOOTABLE, to ensure it's undamagable through other means
 			continue;
-
-		if (mo->flags & MF_MONITOR)
-			continue; // Monitors cannot be 'nuked'.
 
 		if (abs(inflictor->x - mo->x) > radius || abs(inflictor->y - mo->y) > radius || abs(inflictor->z - mo->z) > radius)
 			continue; // Workaround for possible integer overflow in the below -Red
@@ -3083,6 +3088,10 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	fixed_t scaleDiff;
 	fixed_t cameraScale = mapobjectscale;
 
+	sonicloopcamvars_t *loop = &player->loop.camera;
+	tic_t loop_out = leveltime - loop->enter_tic;
+	tic_t loop_in = max(leveltime, loop->exit_tic) - loop->exit_tic;
+
 	thiscam->old_x = thiscam->x;
 	thiscam->old_y = thiscam->y;
 	thiscam->old_z = thiscam->z;
@@ -3206,6 +3215,58 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	camrotate = cv_cam_rotate[num].value;
 	camdist = FixedMul(cv_cam_dist[num].value, cameraScale);
 	camheight = FixedMul(cv_cam_height[num].value, cameraScale);
+
+	if (loop_in < loop->zoom_in_speed)
+	{
+		fixed_t f = loop_out < loop->zoom_out_speed
+			? (loop_out * FRACUNIT) / loop->zoom_out_speed
+			: FRACUNIT - ((loop_in * FRACUNIT) / loop->zoom_in_speed);
+
+		camspeed -= FixedMul(f, camspeed - (FRACUNIT/10));
+		camdist += FixedMul(f, loop->dist);
+	}
+
+	if (loop_in < max(loop->pan_back, 1))
+	{
+		fixed_t f = (loop_in * FRACUNIT) / max(loop->pan_back, 1);
+
+		fixed_t dx = mo->x - thiscam->x;
+		fixed_t dy = mo->y - thiscam->y;
+
+		angle_t th = R_PointToAngle2(0, 0, dx, dy);
+		fixed_t d = AngleFixed(focusangle - th);
+
+		if (d > 180*FRACUNIT)
+		{
+			d -= (360*FRACUNIT);
+		}
+
+		focusangle = th + FixedAngle(FixedMul(f, d));
+
+		if (loop_in == 0)
+		{
+			focusaiming = R_PointToAngle2(0, thiscam->z, FixedHypot(dx, dy), mo->z);
+		}
+	}
+
+	if (loop_in == 0)
+	{
+		tic_t accel = max(loop->pan_accel, 1);
+		fixed_t f = (min(loop_out, accel) * FRACUNIT) / accel;
+
+		INT32 turn = AngleDeltaSigned(focusangle, player->loop.yaw - loop->pan);
+		INT32 turnspeed = FixedAngle(FixedMul(f, loop->pan_speed));
+
+		if (turn > turnspeed)
+		{
+			if (turn < ANGLE_90)
+			{
+				turnspeed = -(turnspeed);
+			}
+
+			focusangle += turnspeed;
+		}
+	}
 
 	if (timeover)
 	{
@@ -3889,6 +3950,11 @@ DoABarrelRoll (player_t *player)
 
 	fixed_t smoothing;
 
+	if (player->loop.radius)
+	{
+		return;
+	}
+
 	if (player->respawn.state != RESPAWNST_NONE)
 	{
 		player->tilt = 0;
@@ -3995,7 +4061,8 @@ void P_PlayerThink(player_t *player)
 
 		PlayerPointerErase(player->followmobj);
 		PlayerPointerErase(player->stumbleIndicator);
-		PlayerPointerErase(player->sliptideZipIndicator);
+		PlayerPointerErase(player->wavedashIndicator);
+		PlayerPointerErase(player->trickIndicator);
 		PlayerPointerErase(player->whip);
 		PlayerPointerErase(player->hand);
 		PlayerPointerErase(player->ringShooter);
@@ -4017,6 +4084,7 @@ void P_PlayerThink(player_t *player)
 	if (P_IsObjectOnGround(player->mo)
 		&& !P_PlayerInPain(player)) // This isn't airtime, but it's control loss all the same.
 	{
+		player->lastairtime = player->airtime;
 		player->airtime = 0;
 	}
 	else
@@ -4329,18 +4397,22 @@ void P_PlayerThink(player_t *player)
 		}
 	}
 
+	boolean deathcontrolled = (player->respawn.state != RESPAWNST_NONE && player->respawn.truedeath == true)
+		|| (player->pflags & PF_NOCONTEST) || (player->karmadelay);
+	boolean powercontrolled = (player->hyudorotimer) || (player->growshrinktimer > 0);
+
 	// Flash player after being hit.
-	if (!(player->hyudorotimer // SRB2kart - fixes Hyudoro not flashing when it should.
-		|| player->growshrinktimer > 0 // Grow doesn't flash either.
-		|| (player->respawn.state != RESPAWNST_NONE && player->respawn.truedeath == true) // Respawn timer (for drop dash effect)
-		|| (player->pflags & PF_NOCONTEST) // NO CONTEST explosion
-		|| player->karmadelay))
+	if (!deathcontrolled && !powercontrolled)
 	{
 		if (player->flashing > 1 && player->flashing < K_GetKartFlashing(player)
 			&& (leveltime & 1))
 			player->mo->renderflags |= RF_DONTDRAW;
 		else
 			player->mo->renderflags &= ~RF_DONTDRAW;
+	}
+	else if (!deathcontrolled)
+	{
+		player->mo->renderflags &= ~RF_DONTDRAW;
 	}
 
 	if (player->stairjank > 0)

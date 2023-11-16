@@ -3314,7 +3314,7 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_MAGICIANBOXTOP",
 	"S_MAGICIANBOXBOTTOM",
 
-	"S_SLIPTIDEZIP",
+	"S_WAVEDASH",
 
 	"S_INSTAWHIP",
 	"S_INSTAWHIP_RECHARGE1",
@@ -3324,6 +3324,13 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_INSTAWHIP_REJECT",
 	"S_BLOCKRING",
 	"S_BLOCKBODY",
+
+	"S_CHARGEAURA",
+	"S_CHARGEFALL",
+	"S_CHARGEFLICKER",
+	"S_CHARGESPARK",
+	"S_CHARGERELEASE",
+	"S_CHARGEEXTRA",
 
 	"S_SERVANTHAND",
 
@@ -3891,6 +3898,16 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_TRIPWIREBOOST_BLAST_BOTTOM",
 
 	"S_SMOOTHLANDING",
+
+	"S_TRICKINDICATOR_OVERLAY",
+	"S_TRICKINDICATOR_UNDERLAY",
+	"S_TRICKINDICATOR_OVERLAY_ARROW",
+	"S_TRICKINDICATOR_UNDERLAY_ARROW",
+	"S_TRICKINDICATOR_UNDERLAY_ARROW2",
+
+	"S_SIDETRICK",
+	"S_BACKTRICK",
+	"S_FORWARDTRICK",
 
 	// DEZ Ring Shooter
 	"S_TIREGRABBER",
@@ -5538,13 +5555,20 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_MONITOR_SHARD",
 	"MT_MAGICIANBOX",
 
-	"MT_SLIPTIDEZIP",
+	"MT_WAVEDASH",
 
 	"MT_INSTAWHIP",
 	"MT_INSTAWHIP_RECHARGE",
 	"MT_INSTAWHIP_REJECT",
 	"MT_BLOCKRING",
 	"MT_BLOCKBODY",
+
+	"MT_CHARGEAURA",
+	"MT_CHARGEFALL",
+	"MT_CHARGEFLICKER",
+	"MT_CHARGESPARK",
+	"MT_CHARGERELEASE",
+	"MT_CHARGEEXTRA",
 
 	"MT_SERVANTHAND",
 
@@ -5649,6 +5673,9 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_TRIPWIREBOOST",
 
 	"MT_SMOOTHLANDING",
+	"MT_TRICKINDICATOR",
+	"MT_SIDETRICK",
+	"MT_FORWARDTRICK",
 
 	"MT_TIREGRABBER",
 	"MT_RINGSHOOTER",
@@ -5987,13 +6014,13 @@ const char *const MOBJFLAG_LIST[] = {
 	"SLOPE",
 	"MISSILE",
 	"SPRING",
-	"MONITOR",
+	"ELEMENTAL",
 	"NOTHINK",
 	"NOCLIPHEIGHT",
 	"ENEMY",
 	"SCENERY",
 	"PAIN",
-	"STICKY",
+	"DONTPUNT",
 	"APPLYTERRAIN",
 	"NOCLIPTHING",
 	"GRENADEBOUNCE",
@@ -6093,11 +6120,10 @@ const char *const PLAYERFLAG_LIST[] = {
 
 	"RINGLOCK", // Prevent picking up rings while SPB is locked on
 
-	// The following four flags are mutually exclusive, although they can also all be off at the same time. If we ever run out of pflags, eventually turn them into a seperate five(+) mode UINT8..?
-	"USERINGS", // Have to be not holding the item button to change from using rings to using items (or vice versa) - prevents weirdness
-	"ITEMOUT", // Are you holding an item out?
-	"EGGMANOUT", // Eggman mark held, separate from PF_ITEMOUT so it doesn't stop you from getting items
-	"HOLDREADY", // Hold button-style item is ready to activate
+	"LITESTEER", // Shallow digital turn with DOWN
+	"\x01", // Free
+	"\x01", // Free
+	"\x01", // Free
 
 	"DRIFTINPUT", // Drifting!
 	"GETSPARKS", // Can get sparks

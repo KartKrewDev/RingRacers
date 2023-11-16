@@ -18,6 +18,7 @@
 #include "k_podium.h"
 #include "k_powerup.h"
 #include "k_hitlag.h"
+#include "m_random.h"
 
 angle_t K_GetCollideAngle(mobj_t *t1, mobj_t *t2)
 {
@@ -190,7 +191,7 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 				if (t1->target->hnext == t1)
 				{
 					P_SetTarget(&t1->target->hnext, NULL);
-					t1->target->player->pflags &= ~PF_EGGMANOUT;
+					t1->target->player->itemflags &= ~IF_EGGMANOUT;
 				}
 			}
 
@@ -924,7 +925,7 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 	}
 	else if (victim->type == MT_SUPER_FLICKY)
 	{
-		if (Obj_IsSuperFlickyWhippable(victim))
+		if (Obj_IsSuperFlickyWhippable(victim, attacker))
 		{
 			K_AddHitLag(victim, victimHitlag, true);
 			K_AddHitLag(attacker, attackerHitlag, false);
@@ -1169,4 +1170,115 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 	}
 
 	return false;
+}
+
+void K_PuntHazard(mobj_t *t1, mobj_t *t2)
+{
+	// TODO: spawn a unique mobjtype other than MT_GHOST
+	mobj_t *img = P_SpawnGhostMobj(t1);
+
+	K_MakeObjectReappear(t1);
+
+	img->flags &= ~MF_NOGRAVITY;
+	img->renderflags = t1->renderflags & ~RF_DONTDRAW;
+	img->extravalue1 = 1;
+	img->extravalue2 = 2;
+	img->fuse = 2*TICRATE;
+
+	struct Vector
+	{
+		fixed_t x_, y_, z_;
+		fixed_t h_ = FixedHypot(x_, y_);
+		fixed_t speed_ = std::max(60 * mapobjectscale, FixedHypot(h_, z_) * 2);
+
+		explicit Vector(fixed_t x, fixed_t y, fixed_t z) : x_(x), y_(y), z_(z) {}
+		explicit Vector(const mobj_t* mo) :
+			Vector(std::max(
+				Vector(mo->x - mo->old_x, mo->y - mo->old_y, mo->z - mo->old_z),
+				Vector(mo->momx, mo->momy, mo->momz)
+			))
+		{
+		}
+		explicit Vector(const Vector&) = default;
+
+		bool operator<(const Vector& b) const { return speed_ < b.speed_; }
+
+		void invert()
+		{
+			x_ = -x_;
+			y_ = -y_;
+			z_ = -z_;
+		}
+
+		void thrust(mobj_t* mo) const
+		{
+			angle_t yaw = R_PointToAngle2(0, 0, h_, z_);
+			yaw = std::max(AbsAngle(yaw), static_cast<angle_t>(ANGLE_11hh)) + (yaw & ANGLE_180);
+
+			P_InstaThrust(mo, R_PointToAngle2(0, 0, x_, y_), FixedMul(speed_, FCOS(yaw)));
+			mo->momz = FixedMul(speed_, FSIN(yaw));
+		}
+	};
+
+	Vector h_vector(t1);
+	Vector p_vector(t2);
+
+	h_vector.invert();
+
+	std::max(h_vector, p_vector).thrust(img);
+
+	K_DoPowerClash(img, t2); // applies hitlag
+	P_SpawnMobj(t2->x/2 + t1->x/2, t2->y/2 + t1->y/2, t2->z/2 + t1->z/2, MT_ITEMCLASH);
+}
+
+boolean K_PuntCollide(mobj_t *t1, mobj_t *t2)
+{
+	if (t1->flags & MF_DONTPUNT)
+	{
+		return false;
+	}
+
+	if (!t2->player)
+	{
+		return false;
+	}
+
+	if (!K_PlayerCanPunt(t2->player))
+	{
+		return false;
+	}
+
+	if (t1->flags & MF_ELEMENTAL)
+	{
+		K_MakeObjectReappear(t1);
+
+		// copied from MT_ITEMCAPSULE
+		UINT8 i;
+		INT16 spacing = (t1->radius >> 1) / t1->scale;
+		// dust effects
+		for (i = 0; i < 10; i++)
+		{
+			mobj_t *puff = P_SpawnMobjFromMobj(
+				t1,
+				P_RandomRange(PR_ITEM_DEBRIS, -spacing, spacing) * FRACUNIT,
+				P_RandomRange(PR_ITEM_DEBRIS, -spacing, spacing) * FRACUNIT,
+				P_RandomRange(PR_ITEM_DEBRIS, 0, 4*spacing) * FRACUNIT,
+				MT_SPINDASHDUST
+			);
+
+			puff->momz = puff->scale * P_MobjFlip(puff);
+
+			P_Thrust(puff, R_PointToAngle2(t2->x, t2->y, puff->x, puff->y), 3*puff->scale);
+
+			puff->momx += t2->momx / 2;
+			puff->momy += t2->momy / 2;
+			puff->momz += t2->momz / 2;
+		}
+	}
+	else
+	{
+		K_PuntHazard(t1, t2);
+	}
+
+	return true;
 }

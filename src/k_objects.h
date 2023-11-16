@@ -126,6 +126,11 @@ void Obj_BlockRingThink(mobj_t *ring);
 void Obj_BlockBodyThink(mobj_t *body);
 void Obj_GuardBreakThink(mobj_t *fx);
 
+void Obj_ChargeAuraThink(mobj_t *aura);
+void Obj_ChargeFallThink(mobj_t *charge);
+void Obj_ChargeReleaseThink(mobj_t *release);
+void Obj_ChargeExtraThink(mobj_t *extra);
+
 /* Ring Shooter */
 boolean Obj_RingShooterThinker(mobj_t *mo);
 boolean Obj_PlayerRingShooterFreeze(player_t *const player);
@@ -136,7 +141,7 @@ void Obj_UpdateRingShooterFace(mobj_t *part);
 
 /* Follower Audience */
 void Obj_AudienceInit(mobj_t * mobj, mapthing_t *mthing, INT32 followerpick);
-void Obj_AudienceThink(mobj_t * mobj, boolean focusonplayer);
+void Obj_AudienceThink(mobj_t * mobj, boolean focusonplayer, boolean checkdeathpit);
 
 /* Random Item Boxes */
 void Obj_RandomItemVisuals(mobj_t *mobj);
@@ -168,7 +173,7 @@ void Obj_BlockSuperFlicky(mobj_t *flicky);
 void Obj_SuperFlickyPlayerCollide(mobj_t *flicky, mobj_t *player);
 void Obj_SuperFlickyLanding(mobj_t *flicky);
 mobj_t *Obj_SuperFlickyOwner(const mobj_t *flicky);
-boolean Obj_IsSuperFlickyWhippable(const mobj_t *flicky);
+boolean Obj_IsSuperFlickyWhippable(const mobj_t *flicky, const mobj_t *target);
 boolean Obj_IsSuperFlickyTargettingYou(const mobj_t *flicky, mobj_t *player);
 
 /* Battle/Power-UP UFO */

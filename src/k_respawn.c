@@ -156,7 +156,9 @@ void K_DoIngameRespawn(player_t *player)
 	player->ringboost = 0;
 	player->driftboost = player->strongdriftboost = 0;
 	player->gateBoost = 0;
-	player->sliptideZip = player->sliptideZipBoost = player->sliptideZipDelay = 0;
+	player->trickcharge = 0;
+	player->infinitether = 0;
+	player->wavedash = player->wavedashboost = player->wavedashdelay = 0;
 
 	K_TumbleInterrupt(player);
 	P_ResetPlayer(player);
@@ -295,7 +297,7 @@ void K_DoIngameRespawn(player_t *player)
 	player->respawn.init = true;
 	player->respawn.fast = true;
 	player->respawn.returnspeed = 0;
-	player->laps = player->lastsafelap;
+	player->laps = min(player->laps, player->lastsafelap);
 
 	player->respawn.airtimer = player->airtime;
 	player->respawn.truedeath = !!(player->pflags & PF_FAULT);

@@ -310,6 +310,7 @@ void P_AddThinker(const thinklistnum_t n, thinker_t *thinker)
 	thlist[n].prev = thinker;
 
 	thinker->references = 0;    // killough 11/98: init reference counter to 0
+	thinker->cachable = n == THINK_MOBJ;
 
 #ifdef PARANOIA
 	thinker->debug_mobjtype = MT_NULL;
@@ -427,7 +428,16 @@ void P_UnlinkThinker(thinker_t *thinker)
 	I_Assert(thinker->references == 0);
 
 	(next->prev = thinker->prev)->next = next;
-	Z_Free(thinker);
+	if (thinker->cachable)
+	{
+		// put cachable thinkers in the mobj cache, so we can avoid allocations
+		((mobj_t *)thinker)->hnext = mobjcache;
+		mobjcache = (mobj_t *)thinker;
+	}
+	else
+	{
+		Z_Free(thinker);
+	}
 }
 
 //
@@ -706,6 +716,9 @@ static inline void P_DeviceRumbleTick(void)
 		UINT16 high = 0;
 
 		if (player->mo == NULL)
+			continue;
+
+		if (player->exiting)
 			continue;
 
 		if ((player->mo->eflags & MFE_DAMAGEHITLAG) && player->mo->hitlag)

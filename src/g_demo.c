@@ -127,6 +127,7 @@ demoghost *ghosts = NULL;
 #define DEMO_SHRINKME		0x04
 #define DEMO_BOT			0x08
 #define DEMO_AUTOROULETTE	0x10
+#define DEMO_LITESTEER		0x20
 
 // For demos
 #define ZT_FWD		0x0001
@@ -1329,7 +1330,7 @@ readghosttic:
 					z = READFIXED(g->p);
 					angle = READANGLE(g->p);
 					if (!(mobjinfo[type].flags & MF_SHOOTABLE)
-					|| !(mobjinfo[type].flags & (MF_ENEMY|MF_MONITOR))
+					|| !(mobjinfo[type].flags & MF_ENEMY)
 					|| health != 0 || i >= 4) // only spawn for the first 4 hits per frame, to prevent ghosts from splode-spamming too bad.
 						continue;
 					poof = P_SpawnMobj(x, y, z, MT_GHOST);
@@ -2480,6 +2481,8 @@ void G_BeginRecording(void)
 				i |= DEMO_KICKSTART;
 			if (player->pflags & PF_AUTOROULETTE)
 				i |= DEMO_AUTOROULETTE;
+			if (player->pflags & PF_LITESTEER)
+				i |= DEMO_LITESTEER;
 			if (player->pflags & PF_SHRINKME)
 				i |= DEMO_SHRINKME;
 			if (player->bot == true)
@@ -3446,6 +3449,11 @@ void G_DoPlayDemo(const char *defdemoname)
 			players[p].pflags |= PF_AUTOROULETTE;
 		else
 			players[p].pflags &= ~PF_AUTOROULETTE;
+
+		if (flags & DEMO_LITESTEER)
+			players[p].pflags |= PF_LITESTEER;
+		else
+			players[p].pflags &= ~PF_LITESTEER;
 
 		if (flags & DEMO_SHRINKME)
 			players[p].pflags |= PF_SHRINKME;

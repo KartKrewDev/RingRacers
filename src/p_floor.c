@@ -1017,7 +1017,6 @@ static mobj_t *SearchMarioNode(msecnode_t *node)
 		}
 		// Ignore popped monitors, too.
 		if (node->m_thing->health == 0 // this only really applies for monitors
-		|| (!(node->m_thing->flags & MF_MONITOR) && (mobjinfo[node->m_thing->type].flags & MF_MONITOR)) // gold monitor support
 		|| (node->m_thing->type == MT_RANDOMITEM))
 			continue;
 		// Okay, we found something valid.
@@ -2344,7 +2343,6 @@ void EV_MarioBlock(ffloor_t *rover, sector_t *sector, mobj_t *puncher)
 	fixed_t topheight = *rover->topheight;
 	mariothink_t *block;
 	mobj_t *thing;
-	fixed_t oldx = 0, oldy = 0, oldz = 0;
 
 	I_Assert(puncher != NULL);
 	I_Assert(puncher->player != NULL);
@@ -2362,7 +2360,6 @@ void EV_MarioBlock(ffloor_t *rover, sector_t *sector, mobj_t *puncher)
 		S_StartSound(puncher, sfx_mario1); // "Thunk!" sound - puncher is "close enough".
 	else // Found something!
 	{
-		const boolean itsamonitor = (thing->flags & MF_MONITOR) == MF_MONITOR;
 		// create and initialize new elevator thinker
 
 		block = Z_Calloc(sizeof (*block), PU_LEVSPEC, NULL);
@@ -2383,13 +2380,6 @@ void EV_MarioBlock(ffloor_t *rover, sector_t *sector, mobj_t *puncher)
 		R_CreateInterpolator_SectorPlane(&block->thinker, roversec, false);
 		R_CreateInterpolator_SectorPlane(&block->thinker, roversec, true);
 
-		if (itsamonitor)
-		{
-			oldx = thing->x;
-			oldy = thing->y;
-			oldz = thing->z;
-		}
-
 		P_UnsetThingPosition(thing);
 		thing->x = thing->old_x = sector->soundorg.x;
 		thing->y = thing->old_y = sector->soundorg.y;
@@ -2409,17 +2399,6 @@ void EV_MarioBlock(ffloor_t *rover, sector_t *sector, mobj_t *puncher)
 		{
 			// "Powerup rise" sound
 			S_StartSound(puncher, sfx_mario9); // Puncher is "close enough"
-		}
-
-		if (itsamonitor && thing)
-		{
-			P_UnsetThingPosition(thing);
-			thing->x = thing->old_x = oldx;
-			thing->y = thing->old_y = oldy;
-			thing->z = thing->old_z = oldz;
-			thing->momx = 1;
-			thing->momy = 1;
-			P_SetThingPosition(thing);
 		}
 	}
 }

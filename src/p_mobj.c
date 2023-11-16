@@ -63,6 +63,8 @@ mobj_t *waypointcap = NULL;
 // general purpose.
 mobj_t *trackercap = NULL;
 
+mobj_t *mobjcache = NULL;
+
 void P_InitCachedActions(void)
 {
 	actioncachehead.prev = actioncachehead.next = &actioncachehead;
@@ -1147,7 +1149,7 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 			P_PlayerFlip(mo);
 		}
 
-		if (mo->player->trickpanel >= 2)
+		if (mo->player->trickpanel > TRICKSTATE_READY)
 		{
 			gravityadd = (5*gravityadd)/2;
 		}
@@ -1276,6 +1278,10 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 				}
 				break;
 			}
+			case MT_RANDOMAUDIENCE:
+				if (mo->fuse)
+					gravityadd /= 10;
+				break;
 			default:
 				break;
 		}
@@ -1669,7 +1675,7 @@ void P_XYMovement(mobj_t *mo)
 		// blocked move
 		moved = false;
 
-		if (LUA_HookMobjMoveBlocked(mo, tm.hitthing, tm.blockingline))
+		if (LUA_HookMobjMoveBlocked(mo, tm.hitthing, result.line))
 		{
 			if (P_MobjWasRemoved(mo))
 				return;
@@ -1677,7 +1683,7 @@ void P_XYMovement(mobj_t *mo)
 		else if (P_MobjWasRemoved(mo))
 			return;
 
-		P_PushSpecialLine(tm.blockingline, mo);
+		P_PushSpecialLine(result.line, mo);
 
 		if (mo->flags & MF_MISSILE)
 		{
@@ -1718,25 +1724,6 @@ void P_XYMovement(mobj_t *mo)
 
 			P_ExplodeMissile(mo);
 			return;
-		}
-		else if (mo->flags & MF_STICKY)
-		{
-			S_StartSound(mo, mo->info->activesound);
-			mo->momx = mo->momy = mo->momz = 0; //Full stop!
-			mo->flags |= MF_NOGRAVITY; //Stay there!
-			mo->flags &= ~MF_STICKY; //Don't check again!
-
-			// Check for hit against sky here
-			if (P_CheckSkyHit(mo))
-			{
-				// Hack to prevent missiles exploding
-				// against the sky.
-				// Does not handle sky floors.
-				// Check frontsector as well.
-
-				P_RemoveMobj(mo);
-				return;
-			}
 		}
 		else
 		{
@@ -5692,12 +5679,12 @@ static void P_FlameJetSceneryThink(mobj_t *mobj)
 	flame->angle = mobj->angle;
 
 	if (mobj->flags2 & MF2_AMBUSH) // Wave up and down instead of side-to-side
-		flame->momz = mobj->fuse << (FRACBITS - 2);
+		flame->momz = (mobj->fuse * mapobjectscale) / 4;
 	else
 		flame->angle += FixedAngle(mobj->fuse<<FRACBITS);
 
-	strength = 20*FRACUNIT;
-	strength -= ((20*FRACUNIT)/16)*mobj->movedir;
+	strength = 20*mapobjectscale;
+	strength -= ((20*mapobjectscale)/16)*mobj->movedir;
 
 	P_InstaThrust(flame, flame->angle, strength);
 	S_StartSound(flame, sfx_fire);
@@ -5727,8 +5714,8 @@ static void P_VerticalFlameJetSceneryThink(mobj_t *mobj)
 
 	flame = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_FLAMEJETFLAME);
 
-	strength = 20*FRACUNIT;
-	strength -= ((20*FRACUNIT)/16)*mobj->movedir;
+	strength = 20*mapobjectscale;
+	strength -= ((20*mapobjectscale)/16)*mobj->movedir;
 
 	// If deaf'd, the object spawns on the ceiling.
 	if (mobj->flags2 & MF2_AMBUSH)
@@ -5742,7 +5729,7 @@ static void P_VerticalFlameJetSceneryThink(mobj_t *mobj)
 		P_SetMobjState(flame, S_FLAMEJETFLAME7);
 	}
 
-	P_InstaThrust(flame, mobj->angle, FixedDiv(mobj->fuse*FRACUNIT, 3*FRACUNIT));
+	P_InstaThrust(flame, mobj->angle, (mobj->fuse * mapobjectscale) / 3);
 	S_StartSound(flame, sfx_fire);
 }
 
@@ -6469,7 +6456,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 							break;
 					}
 
-					if (mobj->target->player->pflags & PF_ITEMOUT)
+					if (mobj->target->player->itemflags & IF_ITEMOUT)
 					{
 						if (leveltime & 1)
 							mobj->tracer->renderflags &= ~RF_DONTDRAW;
@@ -7268,7 +7255,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		if (mobj->flags2 & MF2_STRONGBOX)
 		{
-			Obj_AudienceThink(mobj, true);
+			Obj_AudienceThink(mobj, true, false);
 			if (P_MobjWasRemoved(mobj))
 				return false;
 		}
@@ -8408,10 +8395,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			return true;
 		}
 
-		mobj->extravalue1 += 1;
-
 		mobj->angle += ANG1*mobj->extravalue1;
-		P_SetScale(mobj, mobj->target->scale);
+		mobj->extravalue1 += 1;
+		P_InstaScale(mobj, mobj->target->scale);
 
 		destx = mobj->target->x;
 		desty = mobj->target->y;
@@ -8420,11 +8406,161 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			destx += FixedMul(mobj->radius*2, FINECOSINE((mobj->angle+ANGLE_90) >> ANGLETOFINESHIFT));
 			desty += FixedMul(mobj->radius*2, FINESINE((mobj->angle+ANGLE_90) >> ANGLETOFINESHIFT));
+
+			mobj->eflags = (mobj->eflags & ~MFE_VERTICALFLIP)|(mobj->target->eflags & MFE_VERTICALFLIP);
+			mobj->flags2 = (mobj->flags2 & ~MF2_OBJECTFLIP)|(mobj->target->flags2 & MF2_OBJECTFLIP);
+
+			if (mobj->eflags & MFE_VERTICALFLIP)
+				zoff += mobj->target->height - mobj->height;
 		}
 		else if (mobj->state == &states[S_MAGICIANBOX_TOP]) // top
 		{
 			zoff = mobj->radius*4;
 		}
+
+		// Necessary to "ride" on Garden Top
+		zoff += mobj->target->sprzoff;
+
+		if (mobj->flags2 & MF2_AMBUSH)
+		{
+			P_SetOrigin(mobj, destx, desty, mobj->target->z + zoff);
+			mobj->old_angle = mobj->angle;
+			mobj->flags2 &= ~MF2_AMBUSH;
+		}
+		else
+		{
+			P_MoveOrigin(mobj, destx, desty, mobj->target->z + zoff);
+		}
+		break;
+	}
+	case MT_SIDETRICK:
+	{
+		fixed_t destx, desty;
+		fixed_t zoff = 0;
+
+		if (!mobj->target
+		|| !mobj->target->health
+		|| !mobj->target->player
+		|| mobj->target->player->trickpanel <= TRICKSTATE_FORWARD)
+		{
+			P_RemoveMobj(mobj);
+			return false;
+		}
+
+		// Flicker every other frame from first visibility
+		if (mobj->flags2 & MF2_BOSSDEAD)
+		{
+			mobj->renderflags |= RF_DONTDRAW;
+		}
+		else
+		{
+			mobj->renderflags &= ~RF_DONTDRAW;
+			mobj->renderflags |= (mobj->target->renderflags & RF_DONTDRAW);
+		}
+
+		mobj->eflags = (mobj->eflags & ~MFE_VERTICALFLIP)|(mobj->target->eflags & MFE_VERTICALFLIP);
+		mobj->flags2 = ((mobj->flags2 & ~MF2_OBJECTFLIP)|(mobj->target->flags2 & MF2_OBJECTFLIP)) ^ MF2_BOSSDEAD;
+
+		fixed_t scale = mobj->target->scale;
+
+		// sweeping effect
+		if (mobj->target->player->trickpanel == TRICKSTATE_BACK)
+		{
+			const fixed_t saferange = (20*FRACUNIT)/21;
+			if (mobj->threshold < -saferange)
+			{
+				mobj->threshold = -saferange;
+				mobj->flags2 |= MF2_AMBUSH;
+			}
+			else while (mobj->threshold > saferange)
+			{
+				mobj->threshold -= 2*saferange;
+				mobj->flags2 |= MF2_AMBUSH;
+			}
+
+			scale = P_ReturnThrustX(mobj, FixedAngle(90*mobj->threshold), scale);
+
+			// This funny dealie is to make it so default
+			// scale is placed as standard,
+			// but variant threshold shifts upwards
+			fixed_t extraoffset = FixedMul(mobj->info->height, mobj->target->scale - scale);
+			if (mobj->threshold < 0)
+				extraoffset /= 2;
+
+			// And this makes it swooce across the object.
+			extraoffset += FixedMul(mobj->threshold, mobj->target->height);
+
+			zoff += P_MobjFlip(mobj) * extraoffset;
+
+			mobj->threshold += (saferange/8);
+		}
+
+		mobj->angle += mobj->movedir;
+		P_InstaScale(mobj, scale);
+
+		destx = mobj->target->x;
+		desty = mobj->target->y;
+
+		destx += P_ReturnThrustX(mobj, mobj->angle - ANGLE_90, mobj->radius*2);
+		desty += P_ReturnThrustY(mobj, mobj->angle - ANGLE_90, mobj->radius*2);
+
+		if (mobj->eflags & MFE_VERTICALFLIP)
+			zoff += mobj->target->height - mobj->height;
+
+		// Necessary to "ride" on Garden Top
+		zoff += mobj->target->sprzoff;
+
+		if (mobj->flags2 & MF2_AMBUSH)
+		{
+			P_SetOrigin(mobj, destx, desty, mobj->target->z + zoff);
+			mobj->old_angle = mobj->angle;
+			mobj->flags2 &= ~MF2_AMBUSH;
+		}
+		else
+		{
+			P_MoveOrigin(mobj, destx, desty, mobj->target->z + zoff);
+		}
+		break;
+	}
+	case MT_FORWARDTRICK:
+	{
+		fixed_t destx, desty;
+		fixed_t zoff = 0;
+
+		if (!mobj->target
+		|| !mobj->target->health
+		|| !mobj->target->player
+		|| mobj->target->player->trickpanel != TRICKSTATE_FORWARD)
+		{
+			P_RemoveMobj(mobj);
+			return false;
+		}
+
+		mobj->renderflags &= ~RF_DONTDRAW;
+		mobj->renderflags |= (mobj->target->renderflags & RF_DONTDRAW);
+
+		mobj->eflags = (mobj->eflags & ~MFE_VERTICALFLIP)|(mobj->target->eflags & MFE_VERTICALFLIP);
+		mobj->flags2 = ((mobj->flags2 & ~MF2_OBJECTFLIP)|(mobj->target->flags2 & MF2_OBJECTFLIP)) ^ MF2_BOSSDEAD;
+
+		// sweeping effect
+		P_InstaScale(mobj, (6*mobj->target->scale)/5);
+
+		const fixed_t sweep = FixedMul(FRACUNIT - (mobj->threshold * 2), mobj->radius);
+
+		destx = mobj->target->x;
+		desty = mobj->target->y;
+
+		destx += P_ReturnThrustX(mobj, mobj->movedir, sweep);
+		desty += P_ReturnThrustY(mobj, mobj->movedir, sweep);
+
+		const fixed_t sideways = P_ReturnThrustY(mobj, mobj->angle - mobj->movedir, mobj->radius);
+		destx += P_ReturnThrustX(mobj, mobj->movedir + ANGLE_90, sideways);
+		desty += P_ReturnThrustY(mobj, mobj->movedir + ANGLE_90, sideways);
+
+		if (mobj->eflags & MFE_VERTICALFLIP)
+			zoff += mobj->target->height - (mobj->height + 18*mobj->target->scale);
+		else
+			zoff += 18*mobj->target->scale;
 
 		// Necessary to "ride" on Garden Top
 		zoff += mobj->target->sprzoff;
@@ -8438,6 +8574,20 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			P_MoveOrigin(mobj, destx, desty, mobj->target->z + zoff);
 		}
+
+		mobj->threshold += FRACUNIT/6;
+		if (mobj->threshold > FRACUNIT)
+		{
+			mobj_t *puff = P_SpawnGhostMobj(mobj);
+			if (puff)
+			{
+				puff->renderflags = (puff->renderflags & ~RF_TRANSMASK)|RF_ADD;
+			}
+
+			mobj->threshold -= FRACUNIT;
+			mobj->flags2 |= MF2_AMBUSH;
+		}
+
 		break;
 	}
 	case MT_LIGHTNINGSHIELD:
@@ -8686,6 +8836,26 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_BLOCKBODY:
 	{
 		Obj_BlockBodyThink(mobj);
+		break;
+	}
+	case MT_CHARGEAURA:
+	{
+		Obj_ChargeAuraThink(mobj);
+		break;
+	}
+	case MT_CHARGEFALL:
+	{
+		Obj_ChargeFallThink(mobj);
+		break;
+	}
+	case MT_CHARGERELEASE:
+	{
+		Obj_ChargeReleaseThink(mobj);
+		break;
+	}
+	case MT_CHARGEEXTRA:
+	{
+		Obj_ChargeExtraThink(mobj);
 		break;
 	}
 	case MT_GUARDBREAK:
@@ -10073,48 +10243,6 @@ static void K_MineExplodeThink(mobj_t *mobj)
 	}
 }
 
-static void P_MonitorFuseThink(mobj_t *mobj)
-{
-	mobj_t *newmobj;
-
-	// Special case for ALL monitors.
-	// If a box's speed is nonzero, it's allowed to respawn as a WRM/SRM.
-	if (mobj->info->speed != 0 && (mobj->flags2 & (MF2_AMBUSH|MF2_STRONGBOX)))
-	{
-		mobjtype_t spawnchance[64];
-		INT32 numchoices = 0, i = 0;
-
-		// This define should make it a lot easier to organize and change monitor weights
-#define SETMONITORCHANCES(type, strongboxamt, weakboxamt) \
-for (i = ((mobj->flags2 & MF2_STRONGBOX) ? strongboxamt : weakboxamt); i; --i) spawnchance[numchoices++] = type
-
-					//                Type             SRM WRM
-		SETMONITORCHANCES(MT_SNEAKERS_BOX, 0, 10); // Super Sneakers
-		SETMONITORCHANCES(MT_INVULN_BOX, 2, 0); // Invincibility
-		SETMONITORCHANCES(MT_WHIRLWIND_BOX, 3, 8); // Whirlwind Shield
-		SETMONITORCHANCES(MT_ELEMENTAL_BOX, 3, 8); // Elemental Shield
-		SETMONITORCHANCES(MT_ATTRACT_BOX, 2, 0); // Attraction Shield
-		SETMONITORCHANCES(MT_FORCE_BOX, 3, 3); // Force Shield
-		SETMONITORCHANCES(MT_ARMAGEDDON_BOX, 2, 0); // Armageddon Shield
-		SETMONITORCHANCES(MT_MIXUP_BOX, 0, 1); // Teleporters
-		SETMONITORCHANCES(MT_RECYCLER_BOX, 0, 1); // Recycler
-		SETMONITORCHANCES(MT_1UP_BOX, 1, 1); // 1-Up
-		// =======================================
-		//                Total             16  32
-
-#undef SETMONITORCHANCES
-
-		i = P_RandomKey(PR_UNDEFINED, numchoices); // Gotta love those random numbers!
-		newmobj = P_SpawnMobj(mobj->x, mobj->y, mobj->z, spawnchance[i]);
-	}
-	else
-		newmobj = P_SpawnMobj(mobj->x, mobj->y, mobj->z, mobj->type);
-
-	// Transfer flags2 (ambush, strongbox, objectflip)
-	newmobj->flags2 = mobj->flags2;
-	P_RemoveMobj(mobj); // make sure they disappear
-}
-
 static boolean P_CanFlickerFuse(mobj_t *mobj)
 {
 	switch (mobj->type)
@@ -10163,11 +10291,6 @@ static boolean P_FuseThink(mobj_t *mobj)
 
 	if (LUA_HookMobj(mobj, MOBJ_HOOK(MobjFuse)) || P_MobjWasRemoved(mobj))
 		;
-	else if (mobj->info->flags & MF_MONITOR)
-	{
-		P_MonitorFuseThink(mobj);
-		return false;
-	}
 	else switch (mobj->type)
 	{
 		// gargoyle and snowman handled in P_PushableThinker, not here
@@ -10312,6 +10435,8 @@ void P_MobjThinker(mobj_t *mobj)
 		P_SetTarget(&mobj->hprev, NULL);
 	if (mobj->itnext && P_MobjWasRemoved(mobj->itnext))
 		P_SetTarget(&mobj->itnext, NULL);
+	if (mobj->punt_ref && P_MobjWasRemoved(mobj->punt_ref))
+		P_SetTarget(&mobj->punt_ref, NULL);
 
 	if (mobj->flags & MF_NOTHINK)
 		return;
@@ -10808,7 +10933,9 @@ void P_SceneryThinker(mobj_t *mobj)
 
 	if (mobj->type == MT_RANDOMAUDIENCE)
 	{
-		Obj_AudienceThink(mobj, !!(mobj->flags2 & MF2_AMBUSH));
+		Obj_AudienceThink(mobj, !!(mobj->flags2 & MF2_AMBUSH), !!(mobj->flags2 & MF2_DONTRESPAWN));
+		if (P_MobjWasRemoved(mobj))
+			return;
 	}
 }
 
@@ -10820,6 +10947,10 @@ fixed_t P_GetMobjDefaultScale(mobj_t *mobj)
 {
 	switch(mobj->type)
 	{
+		case MT_FLAMEJETFLAME:
+			return 3*FRACUNIT;
+		case MT_ITEMCLASH:
+			return 2*FRACUNIT;
 		case MT_SPECIALSTAGEARCH:
 			return 5*FRACUNIT;
 		case MT_SPECIALSTAGEBOMB:
@@ -10953,7 +11084,16 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		type = MT_RAY;
 	}
 
-	mobj = Z_Calloc(sizeof (*mobj), PU_LEVEL, NULL);
+	if (mobjcache != NULL)
+	{
+		mobj = mobjcache;
+		mobjcache = mobjcache->hnext;
+		memset(mobj, 0, sizeof(*mobj));
+	}
+	else
+	{
+		mobj = Z_Calloc(sizeof (*mobj), PU_LEVEL, NULL);
+	}
 
 	// this is officially a mobj, declared as soon as possible.
 	mobj->thinker.function.acp1 = (actionf_p1)P_MobjThinker;
@@ -11366,6 +11506,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 					mobj->y + FINESINE((ang>>ANGLETOFINESHIFT) & FINEMASK), mobj->z, MT_DAYTONAPINETREE_SIDE);
 				side->angle = ang;
 				P_SetTarget(&side->target, mobj);
+				P_SetTarget(&side->punt_ref, mobj);
 				side->threshold = i;
 			}
 			break;
@@ -11850,6 +11991,7 @@ void P_RemoveMobj(mobj_t *mobj)
 	}
 
 	P_SetTarget(&mobj->itnext, NULL);
+	P_SetTarget(&mobj->punt_ref, NULL);
 
 	P_RemoveThingTID(mobj);
 	P_DeleteMobjStringArgs(mobj);
@@ -11861,7 +12003,9 @@ void P_RemoveMobj(mobj_t *mobj)
 		INT32 prevreferences;
 		if (!mobj->thinker.references)
 		{
-			Z_Free(mobj); // No refrrences? Can be removed immediately! :D
+			// no references, dump it directly in the mobj cache
+			mobj->hnext = mobjcache;
+			mobjcache = mobj;
 			return;
 		}
 
@@ -12450,8 +12594,8 @@ void P_SpawnPlayer(INT32 playernum)
 	p->griefValue = 0;
 
 	K_InitStumbleIndicator(p);
-
-	K_InitSliptideZipIndicator(p);
+	K_InitWavedashIndicator(p);
+	K_InitTrickIndicator(p);
 
 	if (gametyperules & GTR_ITEMARROWS)
 	{
@@ -13725,7 +13869,16 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 		// Use per-thing collision for spikes unless the intangible flag is checked.
 		if (!(mthing->thing_args[2] & TMSF_INTANGIBLE) && !metalrecording)
 		{
+			const fixed_t kSpriteRadius = 16 * mobj->scale;
+			fixed_t x = FixedMul(mobj->radius - kSpriteRadius, FCOS(mobj->angle));
+			fixed_t y = FixedMul(mobj->radius - kSpriteRadius, FSIN(mobj->angle));
+
+			mobj->sprxoff -= x;
+			mobj->spryoff -= y;
+
 			P_UnsetThingPosition(mobj);
+			mobj->x += x;
+			mobj->y += y;
 			mobj->flags &= ~(MF_NOBLOCKMAP | MF_NOCLIPHEIGHT);
 			mobj->flags |= MF_SOLID;
 			P_SetThingPosition(mobj);
@@ -15422,4 +15575,10 @@ void P_DeleteMobjStringArgs(mobj_t *mobj)
 		Z_Free(mobj->script_stringargs[i]);
 		mobj->script_stringargs[i] = NULL;
 	}
+}
+
+tic_t P_MobjIsReappearing(const mobj_t *mobj)
+{
+	tic_t t = (!P_MobjWasRemoved(mobj->punt_ref) ? mobj->punt_ref : mobj)->reappear;
+	return t - min(leveltime, t);
 }

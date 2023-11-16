@@ -1229,6 +1229,7 @@ enum {
 	WP_KICKSTARTACCEL = 1<<0,
 	WP_SHRINKME = 1<<1,
 	WP_AUTOROULETTE = 1<<2,
+	WP_LITESTEER = 1<<3,
 };
 
 void WeaponPref_Send(UINT8 ssplayer)
@@ -1240,6 +1241,9 @@ void WeaponPref_Send(UINT8 ssplayer)
 
 	if (cv_autoroulette[ssplayer].value)
 		prefs |= WP_AUTOROULETTE;
+
+	if (cv_litesteer[ssplayer].value)
+		prefs |= WP_LITESTEER;
 
 	if (cv_shrinkme[ssplayer].value)
 		prefs |= WP_SHRINKME;
@@ -1258,6 +1262,9 @@ void WeaponPref_Save(UINT8 **cp, INT32 playernum)
 
 	if (player->pflags & PF_AUTOROULETTE)
 		prefs |= WP_AUTOROULETTE;
+
+	if (player->pflags & PF_LITESTEER)
+		prefs |= WP_LITESTEER;
 
 	if (player->pflags & PF_SHRINKME)
 		prefs |= WP_SHRINKME;
@@ -2422,13 +2429,16 @@ static void Command_Map_f(void)
 			// Let's just guess so we don't have to specify the gametype EVERY time...
 			newgametype = G_GuessGametypeByTOL(mapheaderinfo[newmapnum-1]->typeoflevel);
 
-			if (newgametype == -1)
+			if (!option_force && newgametype == -1)
 			{
 				CONS_Alert(CONS_WARNING, M_GetText("%s (%s) doesn't support any known gametype!\n"), realmapname, G_BuildMapName(newmapnum));
 				Z_Free(realmapname);
 				Z_Free(mapname);
 				return;
 			}
+
+			if (newgametype == -1)
+				newgametype = GT_RACE; // sensible default
 		}
 	}
 
