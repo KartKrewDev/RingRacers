@@ -56,6 +56,7 @@ void K_GivePowerUp(player_t* player, kartitems_t powerup, tic_t time)
 
 	case POWERUP_BARRIER:
 		player->powerup.barrierTimer += time;
+		Obj_SpawnMegaBarrier(player);
 		break;
 
 	case POWERUP_BUMPER:

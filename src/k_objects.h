@@ -293,6 +293,9 @@ void Obj_BallSwitchThink(mobj_t *mobj);
 void Obj_BallSwitchTouched(mobj_t *mobj, mobj_t *toucher);
 void Obj_BallSwitchDamaged(mobj_t *mobj, mobj_t *inflictor, mobj_t *source);
 
+/* Barrier Power-Up */
+void Obj_SpawnMegaBarrier(player_t *player);
+boolean Obj_MegaBarrierThink(mobj_t *mobj);
 
 #ifdef __cplusplus
 } // extern "C"

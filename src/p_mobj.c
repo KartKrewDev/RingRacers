@@ -6807,6 +6807,14 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		mobj->angle += ANG2;
 		break;
 	}
+	case MT_MEGABARRIER:
+	{
+		if (!Obj_MegaBarrierThink(mobj))
+		{
+			return;
+		}
+		break;
+	}
 	case MT_VWREF:
 	case MT_VWREB:
 	{

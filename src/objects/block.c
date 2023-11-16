@@ -5,11 +5,6 @@
 #include "../k_kart.h"
 #include "../k_powerup.h"
 
-static INT16 guard_upscale (player_t *player)
-{
-	return K_PowerUpRemaining(player, POWERUP_BARRIER) ? 40 : player->spheres;
-}
-
 void Obj_BlockRingThink (mobj_t *ring)
 {
     if (P_MobjWasRemoved(ring->target) || !ring->target->player)
@@ -28,7 +23,7 @@ void Obj_BlockRingThink (mobj_t *ring)
         ring->color = mo->color;
 
         fixed_t baseScale = mo->scale / 2;
-        baseScale += (mo->scale / 30) * guard_upscale(player);
+        baseScale += (mo->scale / 30) * player->spheres;
         P_SetScale(ring, baseScale);
 
         // Twirl
@@ -41,7 +36,7 @@ void Obj_BlockRingThink (mobj_t *ring)
         else
             ring->renderflags |= RF_DONTDRAW;
 
-        if (!K_PlayerGuard(player))
+        if (K_PowerUpRemaining(player, POWERUP_BARRIER) || !K_PlayerGuard(player))
             ring->renderflags |= RF_DONTDRAW;
     }
 }
@@ -61,7 +56,7 @@ void Obj_BlockBodyThink (mobj_t *body)
         body->flags &= ~(MF_NOCLIPTHING);
 
         fixed_t baseScale = mo->scale / 2;
-        baseScale += (mo->scale / 30) * guard_upscale(player);
+        baseScale += (mo->scale / 30) * player->spheres;
         P_SetScale(body, baseScale);
 
 		P_MoveOrigin(body, mo->x, mo->y, mo->z + mo->height/2);
@@ -76,7 +71,7 @@ void Obj_BlockBodyThink (mobj_t *body)
         else
             body->renderflags |= RF_DONTDRAW;
 
-        if (!K_PlayerGuard(player))
+        if (K_PowerUpRemaining(player, POWERUP_BARRIER) || !K_PlayerGuard(player))
             body->renderflags |= RF_DONTDRAW;
     }
 }
