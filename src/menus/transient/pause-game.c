@@ -40,6 +40,9 @@ menuitem_t PAUSE_Main[] =
 	{IT_STRING | IT_ARROWS, "CALL VOTE", "M_ICOVOT",
 		NULL, {.routine = M_HandlePauseMenuCallVote}, 0, 0},
 
+	{IT_STRING | IT_CALL, "GIVE UP", "M_ICOGUP",
+		NULL, {.routine = M_GiveUp}, 0, 0},
+
 	{IT_STRING | IT_CALL, "RESTART MAP", "M_ICORE",
 		NULL, {.routine = M_RestartMap}, 0, 0},
 
@@ -130,6 +133,8 @@ void M_OpenPauseMenu(void)
 #ifdef HAVE_DISCORDRPC
 	PAUSE_Main[mpause_discordrequests].status = IT_DISABLED;
 #endif
+
+	PAUSE_Main[mpause_giveup].status = IT_DISABLED;
 	PAUSE_Main[mpause_restartmap].status = IT_DISABLED;
 	PAUSE_Main[mpause_tryagain].status = IT_DISABLED;
 
@@ -172,25 +177,40 @@ void M_OpenPauseMenu(void)
 	}
 	else if (!netgame && !demo.playback)
 	{
-		boolean retryallowed = (modeattacking != ATTACKING_NONE || gametype == GT_TUTORIAL);
-		if (
-			retryallowed == false
-			&& gamestate == GS_LEVEL
-			&& G_GametypeUsesLives()
-		)
+		boolean retryallowed = (modeattacking != ATTACKING_NONE);
+		boolean giveup = (
+			grandprixinfo.gp == true
+			&& grandprixinfo.eventmode != GPEVENT_NONE
+			&& roundqueue.size != 0
+		);
+
 		{
-			for (i = 0; i <= splitscreen; i++)
+		if (gamestate == GS_LEVEL && !retryallowed)
+		{
+			if (gametype == GT_TUTORIAL)
 			{
-				if (players[g_localplayers[i]].lives <= 1)
-					continue;
 				retryallowed = true;
-				break;
+			}
+			else if (G_GametypeUsesLives())
+			{
+				for (i = 0; i <= splitscreen; i++)
+				{
+					if (players[g_localplayers[i]].lives <= 1)
+						continue;
+					retryallowed = true;
+					break;
+				}
 			}
 		}
 
 		if (retryallowed)
 		{
 			PAUSE_Main[mpause_tryagain].status = IT_STRING | IT_CALL;
+		}
+
+		if (giveup)
+		{
+			PAUSE_Main[mpause_giveup].status = IT_STRING | IT_CALL;
 		}
 	}
 
@@ -396,6 +416,35 @@ void M_TryAgain(INT32 choice)
 	{
 		G_SetRetryFlag();
 	}
+}
+
+static void M_GiveUpResponse(INT32 ch)
+{
+	if (ch != MA_YES)
+		return;
+
+	if (exitcountdown != 1)
+	{
+		G_BeginLevelExit();
+		exitcountdown = 1;
+
+		if (server)
+			SendNetXCmd(XD_EXITLEVEL, NULL, 0);
+	}
+
+	M_ClearMenus(false);
+}
+
+void M_GiveUp(INT32 choice)
+{
+	(void)choice;
+	if (demo.playback)
+		return;
+
+	if (!Playing())
+		return;
+
+	M_StartMessage("Give up", M_GetText("Are you sure you want to\ngive up on this challenge?\n"), &M_GiveUpResponse, MM_YESNO, NULL, NULL);
 }
 
 // Pause spectate / join functions
