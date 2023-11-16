@@ -71,8 +71,50 @@ void K_SetBot(UINT8 newplayernum, UINT8 skinnum, UINT8 difficulty, botStyle_e st
 	// For each subsequent round of GP, K_UpdateGrandPrixBots will handle this.
 	players[newplayernum].spectator = grandprixinfo.gp && grandprixinfo.initalize && K_BotDefaultSpectator();
 
-	players[newplayernum].skincolor = skins[skinnum].prefcolor;
-	sprintf(player_names[newplayernum], "%s", skins[skinnum].realname);
+	skincolornum_t color = static_cast<skincolornum_t>(skins[skinnum].prefcolor);
+	const char *realname = skins[skinnum].realname;
+	if (tutorialchallenge == TUTORIALSKIP_INPROGRESS)
+	{
+		// The ROYGBIV Rangers
+		switch (newplayernum)
+		{
+			case 1:
+				color = SKINCOLOR_RED;
+				realname = "Champ";
+				break;
+			case 2:
+				color = SKINCOLOR_ORANGE;
+				realname = "Pharaoh";
+				break;
+			case 3:
+				color = SKINCOLOR_YELLOW;
+				realname = "Caesar";
+				break;
+			case 4:
+				color = SKINCOLOR_GREEN;
+				realname = "General";
+				break;
+			case 5:
+				color = SKINCOLOR_CYAN; // blue (lighter than _BLUE)
+				realname = "Shogun";
+				break;
+			case 6:
+				color = SKINCOLOR_BLUEBERRY; // indigo
+				realname = "Emperor";
+				break;
+			case 7:
+				color = SKINCOLOR_VIOLET;
+				realname = "King";
+				break;
+			default:
+				color = SKINCOLOR_BLACK;
+				realname = "Vizier"; // working in the shadows
+				break;
+		}
+	}
+	players[newplayernum].skincolor = color;
+	sprintf(player_names[newplayernum], "%s", realname);
+
 	SetPlayerSkinByNum(newplayernum, skinnum);
 
 	playerconsole[newplayernum] = newplayernum;
