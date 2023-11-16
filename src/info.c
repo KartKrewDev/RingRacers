@@ -9360,7 +9360,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_mspogo,     // deathsound
 		2*TICRATE,      // speed
 		14*FRACUNIT,     // radius
-		64*FRACUNIT,    // height
+		90*FRACUNIT,    // height
 		0,              // display offset
 		4,              // mass
 		0,              // damage
@@ -9386,7 +9386,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_WALLSPIKED2,  // xdeathstate
 		sfx_mspogo,     // deathsound
 		2*TICRATE,      // speed
-		16*FRACUNIT,    // radius
+		48*FRACUNIT,    // radius
 		14*FRACUNIT,    // height
 		0,              // display offset
 		4,              // mass

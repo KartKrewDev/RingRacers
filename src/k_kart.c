@@ -998,7 +998,7 @@ boolean K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2)
 boolean K_KartSolidBounce(mobj_t *bounceMobj, mobj_t *solidMobj)
 {
 	const fixed_t minBump = 25*mapobjectscale;
-	fixed_t distx, disty, dist;
+	fixed_t distx, disty;
 	fixed_t force;
 
 	if ((!bounceMobj || P_MobjWasRemoved(bounceMobj))
@@ -1034,16 +1034,29 @@ boolean K_KartSolidBounce(mobj_t *bounceMobj, mobj_t *solidMobj)
 		return false;
 	}
 
-	// Multiply by force
-	distx = FixedMul(force, distx);
-	disty = FixedMul(force, disty);
-	dist = FixedHypot(distx, disty);
-
 	{
 		// Normalize to the desired push value.
-		fixed_t normalisedx = FixedDiv(distx, dist);
-		fixed_t normalisedy = FixedDiv(disty, dist);
+		fixed_t normalisedx;
+		fixed_t normalisedy;
 		fixed_t bounceSpeed;
+
+		// Multiply by force
+		distx = FixedMul(force, distx);
+		disty = FixedMul(force, disty);
+		fixed_t dist = FixedHypot(distx, disty);
+
+		normalisedx = FixedDiv(distx, dist);
+		normalisedy = FixedDiv(disty, dist);
+
+		if (solidMobj->type == MT_WALLSPIKE)
+		{
+			fixed_t co = FCOS(solidMobj->angle);
+			fixed_t si = FSIN(solidMobj->angle);
+
+			// Always thrust out toward the tip
+			normalisedx = FixedMul(normalisedx, abs(si)) - co;
+			normalisedy = FixedMul(normalisedy, abs(co)) - si;
+		}
 
 		bounceSpeed = FixedHypot(bounceMobj->momx, bounceMobj->momy);
 		bounceSpeed = FixedMul(bounceSpeed, (FRACUNIT - (FRACUNIT>>2) - (FRACUNIT>>3)));
