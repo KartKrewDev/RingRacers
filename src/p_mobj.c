@@ -2592,6 +2592,8 @@ boolean P_ZMovement(mobj_t *mo)
 						tireAngle += (aOffset * 2);
 					}
 				}
+
+				mom.z = 0;
 			}
 			else if (mo->type == MT_KART_TIRE)
 			{
