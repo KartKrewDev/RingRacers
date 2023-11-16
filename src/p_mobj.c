@@ -12655,12 +12655,12 @@ void P_SpawnPlayer(INT32 playernum)
 			camera[G_PartyPosition(playernum)].freecam = false;
 		}
 	}
-	else if (pcount == 1)
+	else if (pcount == 1 && !p->spectator)
 	{
 		// If the first player enters the game, view them.
 		for (i = 0; i <= r_splitscreen; ++i)
 		{
-			K_ToggleDirector(i, director);
+			K_ToggleDirector(i, true);
 		}
 	}
 }
