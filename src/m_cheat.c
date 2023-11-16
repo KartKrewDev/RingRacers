@@ -80,13 +80,17 @@ static UINT8 cheatf_warp(void)
 		}
 	}
 
+	// Goofy, but this call needs to be before M_ClearMenus because that path
+	// calls G_LoadLevel, which will trigger a gamedata save. Garbage factory
+	if (success)
+		G_SetUsedCheats();
+
 	M_ClearMenus(true);
 
 	const char *text;
 
 	if (success)
 	{
-		G_SetUsedCheats();
 		S_StartSound(0, sfx_kc42);
 
 		text = M_GetText(

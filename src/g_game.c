@@ -5546,6 +5546,10 @@ void G_SaveGameData(void)
 
 	// Also save profiles here.
 	PR_SaveProfiles();
+
+	#ifdef DEVELOP
+		CONS_Alert(CONS_NOTICE, M_GetText("Gamedata saved.\n"));
+	#endif
 }
 
 #define VERSIONSIZE 16
