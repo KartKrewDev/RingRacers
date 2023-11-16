@@ -150,33 +150,37 @@ static void K_SpawnItemCapsules(void)
 			continue;
 		}
 
-		modeFlags = mt->thing_args[3];
-		if (modeFlags == TMICM_DEFAULT)
+		if (gametype != GT_TUTORIAL) // Don't prevent capsule spawn via modeflags in Tutorial
 		{
-			if (isRingCapsule == true)
+			modeFlags = mt->thing_args[3];
+			if (modeFlags == TMICM_DEFAULT)
 			{
-				modeFlags = TMICM_MULTIPLAYER|TMICM_TIMEATTACK;
+				if (isRingCapsule == true)
+				{
+					modeFlags = TMICM_MULTIPLAYER|TMICM_TIMEATTACK;
+				}
+				else
+				{
+					modeFlags = TMICM_MULTIPLAYER;
+				}
+			}
+
+			if (K_CapsuleTimeAttackRules() == true)
+			{
+				if ((modeFlags & TMICM_TIMEATTACK) == 0)
+				{
+					continue;
+				}
 			}
 			else
 			{
-				modeFlags = TMICM_MULTIPLAYER;
+				if ((modeFlags & TMICM_MULTIPLAYER) == 0)
+				{
+					continue;
+				}
 			}
 		}
 
-		if (K_CapsuleTimeAttackRules() == true)
-		{
-			if ((modeFlags & TMICM_TIMEATTACK) == 0)
-			{
-				continue;
-			}
-		}
-		else
-		{
-			if ((modeFlags & TMICM_MULTIPLAYER) == 0)
-			{
-				continue;
-			}
-		}
 
 		P_SpawnMapThing(mt);
 	}
