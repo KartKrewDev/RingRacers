@@ -3181,6 +3181,12 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					break;
 			}
 
+			// Have a shield? You get hit, but don't lose your rings!
+			if (player->curshield != KSHIELD_NONE)
+			{
+				ringburst = 0;
+			}
+
 			if (type != DMG_STUMBLE && type != DMG_WHUMBLE)
 			{
 				if (type != DMG_STING)
@@ -3368,7 +3374,7 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 		return;
 
 	// Have a shield? You get hit, but don't lose your rings!
-	if (K_GetShieldFromItem(player->itemtype) != KSHIELD_NONE)
+	if (player->curshield != KSHIELD_NONE)
 		return;
 
 	// 20 is the maximum number of rings that can be taken from you at once - half the span of your counter
