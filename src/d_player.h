@@ -545,6 +545,7 @@ struct powerupvars_t {
 	UINT16 barrierTimer;
 	UINT16 rhythmBadgeTimer;
 	mobj_t *flickyController;
+	mobj_t *barrier;
 };
 
 // player_t struct for all alternative viewpoint variables
