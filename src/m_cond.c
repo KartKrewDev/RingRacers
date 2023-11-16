@@ -661,6 +661,7 @@ void M_ClearStats(void)
 	gamedata->evercrashed = false;
 	gamedata->chaokeytutorial = false;
 	gamedata->majorkeyskipattempted = false;
+	gamedata->finishedtutorialchallenge = false;
 	gamedata->musicstate = GDMUSIC_NONE;
 
 	gamedata->importprofilewins = false;
@@ -1499,6 +1500,8 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 				return true;
 			}
 			return false;
+		case UC_TUTORIALSKIP:
+			return (gamedata->finishedtutorialchallenge == true);
 		case UC_PASSWORD:
 			return (cn->stringvar == NULL);
 
@@ -2307,6 +2310,8 @@ static const char *M_GetConditionString(condition_t *cn)
 			if (gamedata->evercrashed)
 				return "launch \"Dr. Robotnik's Ring Racers\" again after a game crash";
 			return NULL;
+		case UC_TUTORIALSKIP:
+			return "successfully skip the Tutorial";
 		case UC_PASSWORD:
 			return "enter a secret password";
 

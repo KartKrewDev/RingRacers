@@ -1053,8 +1053,11 @@ void D_ClearState(void)
 	memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
 	memset(&roundqueue, 0, sizeof(struct roundqueue));
 
-	// empty maptol so mario/etc sounds don't play in sound test when they shouldn't
+	// empty some other semi-important state
 	maptol = 0;
+	nextmapoverride = 0;
+	skipstats = 0;
+	tutorialchallenge = TUTORIALSKIP_NONE;
 
 	gameaction = ga_nothing;
 	memset(displayplayers, 0, sizeof(displayplayers));

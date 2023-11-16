@@ -7609,7 +7609,10 @@ static void P_InitLevelSettings(void)
 			gamespeed = grandprixinfo.gamespeed;
 		}
 	}
-	else if (modeattacking)
+	else if (
+		modeattacking != ATTACKING_NONE
+		|| tutorialchallenge ==  TUTORIALSKIP_INPROGRESS
+	)
 	{
 		if (gametyperules & GTR_CIRCUIT)
 		{

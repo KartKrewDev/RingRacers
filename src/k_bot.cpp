@@ -128,8 +128,8 @@ boolean K_AddBot(UINT8 skin, UINT8 difficulty, botStyle_e style, UINT8 *p)
 void K_UpdateMatchRaceBots(void)
 {
 	const UINT8 defaultbotskin = R_BotDefaultSkin();
-	const UINT8 difficulty = cv_kartbot.value;
-	UINT8 pmax = std::min<UINT8>((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), static_cast<UINT8>(cv_maxconnections.value));
+	UINT8 difficulty;
+	UINT8 pmax = (dedicated ? MAXPLAYERS-1 : MAXPLAYERS);
 	UINT8 numplayers = 0;
 	UINT8 numbots = 0;
 	UINT8 numwaiting = 0;
@@ -145,9 +145,27 @@ void K_UpdateMatchRaceBots(void)
 	}
 	grabskins[usableskins] = MAXSKINS;
 
-	if (cv_maxplayers.value > 0)
+	if ((gametyperules & GTR_BOTS) == 0)
 	{
-		pmax = std::min<UINT8>(pmax, static_cast<UINT8>(cv_maxplayers.value));
+		difficulty = 0;
+	}
+	else if (tutorialchallenge == TUTORIALSKIP_INPROGRESS)
+	{
+		pmax = 8; // can you believe this is a nerf
+		difficulty = MAXBOTDIFFICULTY;
+	}
+	else if (K_CanChangeRules(true) == false)
+	{
+		difficulty = 0;
+	}
+	else
+	{
+		difficulty = cv_kartbot.value;
+		pmax = std::min<UINT8>(pmax, static_cast<UINT8>(cv_maxconnections.value));
+		if (cv_maxplayers.value > 0)
+		{
+			pmax = std::min<UINT8>(pmax, static_cast<UINT8>(cv_maxplayers.value));
+		}
 	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -180,9 +198,7 @@ void K_UpdateMatchRaceBots(void)
 		}
 	}
 
-	if (K_CanChangeRules(true) == false
-		|| (gametyperules & GTR_BOTS) == 0
-		|| difficulty == 0)
+	if (difficulty == 0)
 	{
 		// Remove bots if there are any.
 		wantedbots = 0;
@@ -209,7 +225,11 @@ void K_UpdateMatchRaceBots(void)
 		}
 
 		// Rearrange usable bot skins list to prevent gaps for randomised selection
-		for (i = 0; i < usableskins; i++)
+		if (tutorialchallenge == TUTORIALSKIP_INPROGRESS)
+		{
+			usableskins = 0; // force a crack team of Eggrobo
+		}
+		else for (i = 0; i < usableskins; i++)
 		{
 			if (!(grabskins[i] == MAXSKINS || !R_SkinUsable(-1, grabskins[i], true)))
 			{

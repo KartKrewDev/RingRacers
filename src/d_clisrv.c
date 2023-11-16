@@ -1443,6 +1443,7 @@ static void CL_LoadReceivedSavegame(boolean reloading)
 	demo.playback = false;
 	demo.title = false;
 	titlemapinaction = false;
+	tutorialchallenge = TUTORIALSKIP_NONE;
 	automapactive = false;
 
 	// load a base level

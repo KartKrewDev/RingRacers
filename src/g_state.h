@@ -58,7 +58,7 @@ typedef enum
 
 extern gamestate_t gamestate;
 extern boolean titlemapinaction;
-extern UINT8 ultimatemode; // was sk_insane
+extern boolean ultimatemode; // was sk_insane
 extern gameaction_t gameaction;
 
 void G_SetGamestate(gamestate_t newstate);

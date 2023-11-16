@@ -1905,7 +1905,8 @@ void Y_DetermineIntermissionType(void)
 	// or for failing in time attack mode
 	|| (modeattacking && (players[consoleplayer].pflags & PF_NOCONTEST))
 	// or for explicit requested skip (outside of modeattacking)
-	|| (modeattacking == ATTACKING_NONE && skipstats != 0))
+	|| (modeattacking == ATTACKING_NONE && skipstats != 0)
+	|| (tutorialchallenge != TUTORIALSKIP_NONE))
 	{
 		intertype = int_none;
 		return;

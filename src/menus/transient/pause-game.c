@@ -184,8 +184,12 @@ void M_OpenPauseMenu(void)
 			&& roundqueue.size != 0
 		);
 
+		if (tutorialchallenge == TUTORIALSKIP_INPROGRESS)
 		{
-		if (gamestate == GS_LEVEL && !retryallowed)
+			// NO RETRY, ONLY GIVE UP
+			giveup = true;
+		}
+		else if (gamestate == GS_LEVEL && !retryallowed)
 		{
 			if (gametype == GT_TUTORIAL)
 			{

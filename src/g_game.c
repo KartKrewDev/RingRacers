@@ -83,7 +83,7 @@
 
 gameaction_t gameaction;
 gamestate_t gamestate = GS_NULL;
-UINT8 ultimatemode = false;
+boolean ultimatemode = false;
 
 JoyType_t Joystick[MAXSPLITSCREENPLAYERS];
 
@@ -170,11 +170,13 @@ tic_t timeinmap; // Ticker for time spent in level (used for levelcard display)
 
 char * titlemap = NULL;
 boolean hidetitlepics = false;
-char * bootmap = NULL; //bootmap for loading a map on startup
+boolean looptitle = true;
 
+char * bootmap = NULL; //bootmap for loading a map on startup
 char * podiummap = NULL; // map to load for podium
 
-boolean looptitle = true;
+char * tutorialchallengemap = NULL; // map to load for tutorial skip
+UINT8 tutorialchallenge = TUTORIALSKIP_NONE;
 
 UINT16 skincolor_redteam = SKINCOLOR_RED;
 UINT16 skincolor_blueteam = SKINCOLOR_BLUE;
@@ -717,14 +719,18 @@ INT32 G_MapNumber(const char * name)
 
 	name += 8;
 
+	if (strcasecmp("TITLE", name) == 0)
+		return NEXTMAP_TITLE;
 	if (strcasecmp("EVALUATION", name) == 0)
 		return NEXTMAP_EVALUATION;
 	if (strcasecmp("CREDITS", name) == 0)
 		return NEXTMAP_CREDITS;
 	if (strcasecmp("CEREMONY", name) == 0)
 		return NEXTMAP_CEREMONY;
-	if (strcasecmp("TITLE", name) == 0)
-		return NEXTMAP_TITLE;
+	if (strcasecmp("VOTING", name) == 0)
+		return NEXTMAP_VOTING;
+	if (strcasecmp("TUTORIALCHALLENGE", name) == 0)
+		return NEXTMAP_TUTORIALCHALLENGE;
 
 	return NEXTMAP_INVALID;
 }
@@ -4170,8 +4176,6 @@ static void G_DoCompleted(void)
 
 		G_SetGamestate(GS_NULL);
 		wipegamestate = GS_NULL;
-
-		prevmap = (INT16)(gamemap-1);
 	}
 
 	// Finally, if you're not exiting, guarantee NO CONTEST.
@@ -4199,6 +4203,39 @@ static void G_DoCompleted(void)
 	}
 
 	// And lastly, everything in anticipation for Intermission/level change.
+
+	if (tutorialchallenge == TUTORIALSKIP_INPROGRESS)
+	{
+		if (
+			players[consoleplayer].position != 1
+			|| !players[consoleplayer].exiting
+			|| (players[consoleplayer].pflags & PF_NOCONTEST)
+		)
+		{
+			// Return to whence you came with your tail between your legs
+			tutorialchallenge = TUTORIALSKIP_FAILED;
+			G_SetGametype(GT_TUTORIAL);
+			nextmapoverride = prevmap+1;
+		}
+		else
+		{
+			// Proceed.
+			nextmapoverride = NEXTMAP_TITLE+1;
+
+			gamedata->finishedtutorialchallenge = true;
+			M_UpdateUnlockablesAndExtraEmblems(true, true);
+			G_SaveGameData();
+		}
+	}
+	else
+	{
+		// The "else" might not be strictly needed, but I don't
+		// want the "challenge" map to be considered visited before it's your time.
+		// ~toast 161123 (5 years of srb2kart, woooouuuu)
+		prevmap = gamemap-1;
+		tutorialchallenge = TUTORIALSKIP_NONE;
+	}
+
 	if (!demo.playback)
 	{
 		// Set up power level gametype scrambles
@@ -4269,6 +4306,23 @@ void G_AfterIntermission(void)
 //
 void G_NextLevel(void)
 {
+	if (
+		gametype == GT_TUTORIAL
+		&& nextmap == NEXTMAP_TUTORIALCHALLENGE
+	)
+	{
+		nextmap = G_MapNumber(tutorialchallengemap);
+		if (
+			nextmap < nummapheaders
+			&& mapheaderinfo[nextmap] != NULL
+			&& mapheaderinfo[nextmap]->typeoflevel != 0
+		)
+		{
+			tutorialchallenge = TUTORIALSKIP_INPROGRESS;
+			G_SetGametype(G_GuessGametypeByTOL(mapheaderinfo[nextmap]->typeoflevel));
+		}
+	}
+
 	if (nextmap >= NEXTMAP_SPECIAL)
 	{
 		G_EndGame();
@@ -4471,6 +4525,7 @@ typedef enum
 	GDEVER_SPECIAL = 1<<3,
 	GDEVER_KEYTUTORIAL = 1<<4,
 	GDEVER_KEYMAJORSKIP = 1<<5,
+	GDEVER_TUTORIALSKIP = 1<<6,
 } gdeverdone_t;
 
 static const char *G_GameDataFolder(void)
@@ -4610,6 +4665,7 @@ void G_LoadGameData(void)
 			gamedata->everseenspecial = !!(everflags & GDEVER_SPECIAL);
 			gamedata->chaokeytutorial = !!(everflags & GDEVER_KEYTUTORIAL);
 			gamedata->majorkeyskipattempted = !!(everflags & GDEVER_KEYMAJORSKIP);
+			gamedata->finishedtutorialchallenge = !!(everflags & GDEVER_TUTORIALSKIP);
 		}
 		else
 		{
@@ -5301,6 +5357,8 @@ void G_SaveGameData(void)
 			everflags |= GDEVER_KEYTUTORIAL;
 		if (gamedata->majorkeyskipattempted)
 			everflags |= GDEVER_KEYMAJORSKIP;
+		if (gamedata->finishedtutorialchallenge)
+			everflags |= GDEVER_TUTORIALSKIP;
 
 		WRITEUINT32(save.p, everflags); // 4
 	}

@@ -246,11 +246,16 @@ extern INT32 g_localplayers[MAXSPLITSCREENPLAYERS];
 
 extern char * titlemap;
 extern boolean hidetitlepics;
-extern char * bootmap; //bootmap for loading a map on startup
+extern boolean looptitle;
 
+extern char * bootmap; //bootmap for loading a map on startup
 extern char * podiummap; // map to load for podium
 
-extern boolean looptitle;
+extern char * tutorialchallengemap; // map to load for tutorial skip
+extern UINT8 tutorialchallenge;
+#define TUTORIALSKIP_NONE 0
+#define TUTORIALSKIP_FAILED 1
+#define TUTORIALSKIP_INPROGRESS 2
 
 // CTF colors.
 extern UINT16 skincolor_redteam, skincolor_blueteam, skincolor_redring, skincolor_bluering;

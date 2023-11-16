@@ -63,6 +63,7 @@ typedef enum
 	UC_CREDITS,			// Finish watching the credits
 	UC_REPLAY,			// Save a replay
 	UC_CRASH,			// Hee ho !
+	UC_TUTORIALSKIP,	// Complete the Tutorial Challenge
 
 	UC_PASSWORD,		// Type in something funny
 
@@ -363,6 +364,7 @@ struct gamedata_t
 	boolean evercrashed;
 	boolean chaokeytutorial;
 	boolean majorkeyskipattempted;
+	boolean finishedtutorialchallenge;
 	gdmusic_t musicstate;
 
 	// BACKWARDS COMPAT ASSIST

@@ -13038,6 +13038,9 @@ static boolean P_SetupEmblem(mapthing_t *mthing, mobj_t *mobj)
 	skincolornum_t emcolor;
 	INT16 tagnum = mthing->tid;
 
+	if (tutorialchallenge == TUTORIALSKIP_INPROGRESS)
+		return false; // No out-of-sequence goodies
+
 	while (emblem)
 	{
 		if (emblem->type == ET_GLOBAL && emblem->tag == tagnum)
@@ -13605,7 +13608,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	}
 	case MT_SPRAYCAN:
 	{
-		if (nummapspraycans == UINT8_MAX)
+		if (nummapspraycans == UINT8_MAX || tutorialchallenge == TUTORIALSKIP_INPROGRESS)
 		{
 			P_RemoveMobj(mobj);
 			return false;
