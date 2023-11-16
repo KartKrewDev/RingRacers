@@ -9279,7 +9279,6 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 		{
 			updaterespawn = true;
 			player->pflags &= ~PF_UPDATEMYRESPAWN;
-			CONS_Printf("%d: Forced waypoint update\n", leveltime);
 		}
 
 		// Respawn point should only be updated when we're going to a nextwaypoint
