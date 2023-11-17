@@ -46,6 +46,7 @@ struct perfstatrow {
 static precise_t ps_frametime = 0;
 
 precise_t ps_tictime = 0;
+precise_t ps_prevtictime = 0;
 
 precise_t ps_playerthink_time = 0;
 precise_t ps_botticcmd_time = 0;

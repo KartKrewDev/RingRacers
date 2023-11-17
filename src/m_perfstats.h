@@ -30,6 +30,7 @@ typedef enum
 } ps_types_t;
 
 extern precise_t ps_tictime;
+extern precise_t ps_prevtictime;
 
 extern precise_t ps_playerthink_time;
 extern precise_t ps_botticcmd_time;

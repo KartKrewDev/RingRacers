@@ -855,6 +855,9 @@ consvar_t cv_devmode_screen = PlayerCheat("devmode_screen", "1").min_max(1, 4).d
 consvar_t cv_drawpickups = PlayerCheat("drawpickups", "Yes").yes_no().description("Hide rings, spheres, item capsules, prison capsules (visual only)");
 consvar_t cv_drawinput = PlayerCheat("drawinput", "No").yes_no().description("Draw turn inputs outside of Record Attack (turn solver debugging)");
 
+void lua_profile_OnChange(void);
+consvar_t cv_lua_profile = PlayerCheat("lua_profile", "0").values(CV_Unsigned).onchange(lua_profile_OnChange).description("Show hook timings over an average of N tics");
+
 void CV_palette_OnChange(void);
 consvar_t cv_palette = PlayerCheat("palette", "").onchange_noinit(CV_palette_OnChange).description("Force palette to a different lump");
 consvar_t cv_palettenum = PlayerCheat("palettenum", "0").values(CV_Unsigned).onchange_noinit(CV_palette_OnChange).description("Use a different sub-palette by default");
