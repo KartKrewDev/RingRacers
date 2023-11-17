@@ -3622,6 +3622,10 @@ void G_UpdateVisited(void)
 	if (demo.playback)
 		return;
 
+	// For some reason, we don't want to update visitation flags.
+	if (prevmap != gamemap-1)
+		return;
+
 	// Check if every local player wiped out.
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -3662,7 +3666,7 @@ void G_UpdateVisited(void)
 		CONS_Printf(M_GetText("\x82" "Earned %hu emblem%s for level completion.\n"), (UINT16)earnedEmblems, earnedEmblems > 1 ? "s" : "");
 
 	M_UpdateUnlockablesAndExtraEmblems(true, true);
-	G_SaveGameData();
+	gamedata->deferredsave = true;
 }
 
 void G_HandleSaveLevel(boolean removecondition)
@@ -4152,11 +4156,6 @@ static void G_DoCompleted(void)
 		gamedata->deferredsave = true;
 	}
 
-	// This isn't in the above block because other
-	// mechanisms can queue up a gamedata save.
-	if (gamedata->deferredsave)
-		G_SaveGameData();
-
 	// Then, update some important game state.
 	{
 		legitimateexit = false;
@@ -4224,10 +4223,10 @@ static void G_DoCompleted(void)
 			nextmapoverride = NEXTMAP_TITLE+1;
 
 			gamedata->finishedtutorialchallenge = true;
-		}
 
-		M_UpdateUnlockablesAndExtraEmblems(true, true);
-		G_SaveGameData();
+			M_UpdateUnlockablesAndExtraEmblems(true, true);
+			gamedata->deferredsave = true;
+		}
 	}
 	else
 	{
@@ -4262,6 +4261,11 @@ static void G_DoCompleted(void)
 		Y_StartIntermission();
 		G_UpdateVisited();
 	}
+
+	// This isn't in the above blocks because many
+	// mechanisms can queue up a gamedata save.
+	if (gamedata->deferredsave)
+		G_SaveGameData();
 }
 
 // See also F_EndCutscene, the only other place which handles intra-map/ending transitions

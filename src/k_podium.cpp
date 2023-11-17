@@ -980,9 +980,11 @@ void K_FinishCeremony(void)
 
 	g_podiumData.ranking = true;
 
-	// Play the noise now (via G_UpdateVisited's concluding gamedata save)
+	// Play the noise now (via G_UpdateVisited's concluding challenge check)
 	prevmap = gamemap-1;
 	G_UpdateVisited();
+	if (gamedata->deferredsave)
+		G_SaveGameData();
 }
 
 /*--------------------------------------------------
