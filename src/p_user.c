@@ -66,6 +66,7 @@
 #include "k_profiles.h"
 #include "music.h"
 #include "k_tally.h"
+#include "k_objects.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_light.h"
@@ -481,6 +482,7 @@ void P_ResetPlayer(player_t *player)
 	player->trickpanel = TRICKSTATE_NONE;
 	player->glanceDir = 0;
 	player->fastfall = 0;
+	Obj_EndBungee(player);
 
 	if (player->mo != NULL && P_MobjWasRemoved(player->mo) == false)
 	{
