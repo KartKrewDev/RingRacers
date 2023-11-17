@@ -1286,7 +1286,7 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 
 	if (P_IsLocalPlayer(player) && !specialout && musiccountdown == 0)
 	{
-		Music_StopAll();
+		Music_Play("finish_silence");
 		musiccountdown = MUSIC_COUNTDOWN_MAX;
 	}
 
@@ -3789,7 +3789,7 @@ void P_DoTimeOver(player_t *player)
 
 	if (P_IsLocalPlayer(player) && musiccountdown == 0)
 	{
-		Music_StopAll();
+		Music_Play("finish_silence");
 		musiccountdown = MUSIC_COUNTDOWN_MAX;
 	}
 
