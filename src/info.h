@@ -1520,6 +1520,8 @@ typedef enum sprite
 	SPR_PUYD,
 	SPR_PUYE,
 
+	SPR_MGSH, // Mega Barrier
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	SPR_VIEW,
 
@@ -6038,6 +6040,10 @@ typedef enum state
 	S_BLENDEYE_PUYO_DIE,
 	S_BLENDEYE_PUYO_DUST,
 
+	S_MEGABARRIER1,
+	S_MEGABARRIER2,
+	S_MEGABARRIER3,
+
 	S_FIRSTFREESLOT,
 	S_LASTFREESLOT = S_FIRSTFREESLOT + NUMSTATEFREESLOTS - 1,
 	NUMSTATES
@@ -7263,6 +7269,8 @@ typedef enum mobj_type
 	MT_BLENDEYE_PUYO,
 	MT_BLENDEYE_PUYO_DUST,
 	MT_BLENDEYE_PUYO_DUST_COFFEE,
+
+	MT_MEGABARRIER,
 
 	MT_FIRSTFREESLOT,
 	MT_LASTFREESLOT = MT_FIRSTFREESLOT + NUMMOBJFREESLOTS - 1,

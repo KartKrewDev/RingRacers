@@ -40,6 +40,7 @@ target_sources(SRB2SDL2 PRIVATE
 	shadow.cpp
 	ball-switch.cpp
 	charge.c
+	mega-barrier.cpp
 )
 
 add_subdirectory(versus)

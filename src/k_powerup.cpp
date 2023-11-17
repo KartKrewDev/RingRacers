@@ -27,17 +27,19 @@ tic_t K_PowerUpRemaining(const player_t* player, kartitems_t powerup)
 	}
 }
 
-boolean K_AnyPowerUpRemaining(const player_t* player)
+UINT32 K_AnyPowerUpRemaining(const player_t* player)
 {
+	UINT32 mask = 0;
+
 	for (int k = FIRSTPOWERUP; k < ENDOFPOWERUPS; ++k)
 	{
 		if (K_PowerUpRemaining(player, static_cast<kartitems_t>(k)))
 		{
-			return true;
+			mask |= POWERUP_BIT(k);
 		}
 	}
 
-	return false;
+	return mask;
 }
 
 void K_GivePowerUp(player_t* player, kartitems_t powerup, tic_t time)
@@ -56,6 +58,7 @@ void K_GivePowerUp(player_t* player, kartitems_t powerup, tic_t time)
 
 	case POWERUP_BARRIER:
 		player->powerup.barrierTimer += time;
+		Obj_SpawnMegaBarrier(player);
 		break;
 
 	case POWERUP_BUMPER:

@@ -82,6 +82,7 @@ typedef enum
 	FLICKYATTACKER = 0x0800,
 	FLICKYCONTROLLER = 0x1000,
 	TRICKINDICATOR = 0x2000,
+	BARRIER = 0x4000,
 } player_saveflags;
 
 static inline void P_ArchivePlayer(savebuffer_t *save)
@@ -332,6 +333,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		if (players[i].powerup.flickyController)
 			flags |= FLICKYCONTROLLER;
 
+		if (players[i].powerup.barrier)
+			flags |= BARRIER;
+
 		WRITEUINT16(save->p, flags);
 
 		if (flags & SKYBOXVIEW)
@@ -372,6 +376,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		if (flags & FLICKYCONTROLLER)
 			WRITEUINT32(save->p, players[i].powerup.flickyController->mobjnum);
+
+		if (flags & BARRIER)
+			WRITEUINT32(save->p, players[i].powerup.barrier->mobjnum);
 
 		WRITEUINT32(save->p, (UINT32)players[i].followitem);
 
@@ -910,6 +917,9 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		if (flags & FLICKYCONTROLLER)
 			players[i].powerup.flickyController = (mobj_t *)(size_t)READUINT32(save->p);
+
+		if (flags & BARRIER)
+			players[i].powerup.barrier = (mobj_t *)(size_t)READUINT32(save->p);
 
 		players[i].followitem = (mobjtype_t)READUINT32(save->p);
 
@@ -5742,6 +5752,13 @@ static void P_RelinkPointers(void)
 			players[i].powerup.flickyController = NULL;
 			if (!P_SetTarget(&players[i].powerup.flickyController, P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "powerup.flickyController not found on player %d\n", i);
+		}
+		if (players[i].powerup.barrier)
+		{
+			temp = (UINT32)(size_t)players[i].powerup.barrier;
+			players[i].powerup.barrier = NULL;
+			if (!P_SetTarget(&players[i].powerup.barrier, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "powerup.barrier not found on player %d\n", i);
 		}
 	}
 }
