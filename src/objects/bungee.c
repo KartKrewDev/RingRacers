@@ -85,19 +85,13 @@ void Obj_playerBungeeThink(player_t *p)
 		if ((p->mo->eflags & MFE_VERTICALFLIP && p->mo->z < bungee->z)
 		|| (!(p->mo->eflags & MFE_VERTICALFLIP) && p->mo->z > bungee->z ))
 		{
-
-			p->mo->flags &= ~MF_NOGRAVITY;
-			p->mo->flags &= ~MF_NOCLIPTHING;
-			p->pflags &= ~PF_NOFASTFALL;
-			p->bungee = BUNGEE_NONE;
 			P_InstaThrust(p->mo, bungee->angle, p->mo->momz/8);
 			p->mo->momz = (p->mo->momz*3)/4;
 
 			p->springstars = TICRATE;	// these are used as a buffer not to latch to vines again.
 			p->springcolor = SKINCOLOR_EMERALD;
 
-			P_RemoveMobj(bungee);
-			P_SetTarget(&p->mo->tracer, NULL);
+			Obj_EndBungee(p);
 			return;
 		}
 	}
@@ -115,5 +109,28 @@ void Obj_playerBungeeThink(player_t *p)
 		seg->color = SKINCOLOR_EMERALD;
 		seg->frame = 0;
 		seg->fuse = 2;
+	}
+}
+
+void Obj_EndBungee(player_t *p)
+{
+	if (p->bungee == BUNGEE_NONE)
+	{
+		return;
+	}
+
+	p->pflags &= ~PF_NOFASTFALL;
+	p->bungee = BUNGEE_NONE;
+
+	if (!P_MobjWasRemoved(p->mo))
+	{
+		p->mo->flags &= ~MF_NOGRAVITY;
+		p->mo->flags &= ~MF_NOCLIPTHING;
+
+		if (!P_MobjWasRemoved(p->mo->tracer))
+		{
+			P_RemoveMobj(p->mo->tracer);
+		}
+		P_SetTarget(&p->mo->tracer, NULL);
 	}
 }
