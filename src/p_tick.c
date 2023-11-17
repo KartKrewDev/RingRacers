@@ -864,15 +864,22 @@ void P_Ticker(boolean run)
 
 		ps_playerthink_time = I_GetPreciseTime() - ps_playerthink_time;
 
-		// TODO would this be laggy with more conditions in play...
-		if (((!demo.playback && leveltime > introtime && M_UpdateUnlockablesAndExtraEmblems(true, false))
-			|| (gamedata && gamedata->deferredsave)))
-			G_SaveGameData();
-	}
+		if (gamedata && gamestate == GS_LEVEL && !demo.playback)
+		{
+			// Keep track of how long they've been playing!
+			gamedata->totalplaytime++;
 
-	// Keep track of how long they've been playing!
-	if (!demo.playback) // Don't increment if a demo is playing.
-		gamedata->totalplaytime++;
+			// TODO would this be laggy with more conditions in play...
+			if (
+				(leveltime > introtime
+					&& M_UpdateUnlockablesAndExtraEmblems(true, false))
+				|| gamedata->deferredsave
+			)
+			{
+				G_SaveGameData();
+			}
+		}
+	}
 
 	if (run)
 	{
