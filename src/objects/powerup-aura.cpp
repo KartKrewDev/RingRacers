@@ -1,3 +1,4 @@
+#include "../doomtype.h"
 #include "../info.h"
 #include "../g_game.h"
 #include "../m_fixed.h"
@@ -85,6 +86,15 @@ struct Aura : mobj_t
 		P_InstaScale(this, 11 * origin()->scale / 10);
 
 		translate();
+
+		if (K_AnyPowerUpRemaining(&players[seek()]) & ~POWERUP_BIT(POWERUP_BARRIER))
+		{
+			renderflags &= ~RF_DONTDRAW;
+		}
+		else
+		{
+			renderflags |= RF_DONTDRAW;
+		}
 	}
 
 	void translate()
