@@ -4102,6 +4102,7 @@ void K_InitStumbleIndicator(player_t *player)
 
 	P_SetTarget(&player->stumbleIndicator, new);
 	P_SetTarget(&new->target, player->mo);
+	new->renderflags |= RF_DONTDRAW;
 }
 
 void K_InitWavedashIndicator(player_t *player)
@@ -4127,6 +4128,7 @@ void K_InitWavedashIndicator(player_t *player)
 
 	P_SetTarget(&player->wavedashIndicator, new);
 	P_SetTarget(&new->target, player->mo);
+	new->renderflags |= RF_DONTDRAW;
 }
 
 void K_InitTrickIndicator(player_t *player)
