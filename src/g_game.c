@@ -4207,7 +4207,8 @@ static void G_DoCompleted(void)
 	if (tutorialchallenge == TUTORIALSKIP_INPROGRESS)
 	{
 		if (
-			players[consoleplayer].position != 1
+			!legitimateexit
+			|| players[consoleplayer].position != 1
 			|| !players[consoleplayer].exiting
 			|| (players[consoleplayer].pflags & PF_NOCONTEST)
 		)
@@ -4216,8 +4217,6 @@ static void G_DoCompleted(void)
 			tutorialchallenge = TUTORIALSKIP_FAILED;
 			G_SetGametype(GT_TUTORIAL);
 			nextmapoverride = prevmap+1;
-
-			gamedata->failedtutorialchallenge = true;
 		}
 		else
 		{
@@ -4312,6 +4311,7 @@ void G_NextLevel(void)
 	if (
 		gametype == GT_TUTORIAL
 		&& nextmap == NEXTMAP_TUTORIALCHALLENGE
+		&& !(gamedata && gamedata->enteredtutorialchallenge)
 	)
 	{
 		nextmap = G_MapNumber(tutorialchallengemap);
@@ -4323,6 +4323,9 @@ void G_NextLevel(void)
 		{
 			tutorialchallenge = TUTORIALSKIP_INPROGRESS;
 			G_SetGametype(G_GuessGametypeByTOL(mapheaderinfo[nextmap]->typeoflevel));
+
+			gamedata->enteredtutorialchallenge = true;
+			// A gamedata save will happen on successful level enter
 		}
 	}
 
@@ -4529,7 +4532,7 @@ typedef enum
 	GDEVER_KEYTUTORIAL = 1<<4,
 	GDEVER_KEYMAJORSKIP = 1<<5,
 	GDEVER_TUTORIALSKIP = 1<<6,
-	GDEVER_FAILEDTUTSKIP = 1<<7,
+	GDEVER_ENTERTUTSKIP = 1<<7,
 } gdeverdone_t;
 
 static const char *G_GameDataFolder(void)
@@ -4670,7 +4673,7 @@ void G_LoadGameData(void)
 			gamedata->chaokeytutorial = !!(everflags & GDEVER_KEYTUTORIAL);
 			gamedata->majorkeyskipattempted = !!(everflags & GDEVER_KEYMAJORSKIP);
 			gamedata->finishedtutorialchallenge = !!(everflags & GDEVER_TUTORIALSKIP);
-			gamedata->failedtutorialchallenge = !!(everflags & GDEVER_FAILEDTUTSKIP);
+			gamedata->enteredtutorialchallenge = !!(everflags & GDEVER_ENTERTUTSKIP);
 		}
 		else
 		{
@@ -5364,8 +5367,8 @@ void G_SaveGameData(void)
 			everflags |= GDEVER_KEYMAJORSKIP;
 		if (gamedata->finishedtutorialchallenge)
 			everflags |= GDEVER_TUTORIALSKIP;
-		if (gamedata->failedtutorialchallenge)
-			everflags |= GDEVER_FAILEDTUTSKIP;
+		if (gamedata->enteredtutorialchallenge)
+			everflags |= GDEVER_ENTERTUTSKIP;
 
 		WRITEUINT32(save.p, everflags); // 4
 	}

@@ -661,8 +661,8 @@ void M_ClearStats(void)
 	gamedata->evercrashed = false;
 	gamedata->chaokeytutorial = false;
 	gamedata->majorkeyskipattempted = false;
+	gamedata->enteredtutorialchallenge = false;
 	gamedata->finishedtutorialchallenge = false;
-	gamedata->failedtutorialchallenge = false;
 	gamedata->musicstate = GDMUSIC_NONE;
 
 	gamedata->importprofilewins = false;

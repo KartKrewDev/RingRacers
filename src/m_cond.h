@@ -364,8 +364,8 @@ struct gamedata_t
 	boolean evercrashed;
 	boolean chaokeytutorial;
 	boolean majorkeyskipattempted;
+	boolean enteredtutorialchallenge;
 	boolean finishedtutorialchallenge;
-	boolean failedtutorialchallenge;
 	gdmusic_t musicstate;
 
 	// BACKWARDS COMPAT ASSIST
