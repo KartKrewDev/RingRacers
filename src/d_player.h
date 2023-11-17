@@ -212,6 +212,8 @@ typedef enum
 	NUMPOWERUPS = ENDOFPOWERUPS - FIRSTPOWERUP,
 } kartitems_t;
 
+#define POWERUP_BIT(x) (1 << ((x) - FIRSTPOWERUP))
+
 typedef enum
 {
 	KSHIELD_NONE = 0,
