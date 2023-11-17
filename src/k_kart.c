@@ -10151,6 +10151,13 @@ static void K_KartDrift(player_t *player, boolean onground)
 		}
 	}
 
+	if (player->airtime > 2) // Arbitrary number. Small discontinuities due to Super Jank shouldn't thrash your handling properties.
+	{
+		player->aizdriftstrat = 0;
+		keepsliptide = false;
+	}
+
+
 	if ((player->aizdriftstrat && !player->drift)
 		|| (keepsliptide))
 	{
