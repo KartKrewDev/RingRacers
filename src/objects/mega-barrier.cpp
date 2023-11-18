@@ -39,7 +39,7 @@ struct Mobj : mobj_t
 		PosArg(const mobj_t* mobj) : x(mobj->x), y(mobj->y), z(mobj->z) {}
 	};
 
-	bool valid() const { return !P_MobjWasRemoved(this); }
+	static bool valid(const Mobj* mobj) { return !P_MobjWasRemoved(mobj); }
 
 	PosArg center() const { return {x, y, z + (height / 2)}; }
 
@@ -70,9 +70,8 @@ struct Player : player_t
 		void barrier(Barrier* n) { P_SetTarget(&this->powerupvars_t::barrier, reinterpret_cast<mobj_t*>(n)); }
 	};
 
+	static bool valid(std::size_t i) { return i < MAXPLAYERS && playeringame[i]; }
 	static Player* at(std::size_t i) { return static_cast<Player*>(&players[i]); }
-
-	bool valid() const { return this >= players && this < &players[MAXPLAYERS] && playeringame[num()]; }
 
 	std::size_t num() const { return this - Player::at(0); }
 	Mobj* mobj() const { return static_cast<Mobj*>(mo); }
@@ -112,7 +111,7 @@ struct Barrier : Mobj
 	Player* player() const { return Player::at(playernum()); }
 	void player(player_t* n) { barrier_player(this) = n - players; }
 
-	bool valid() const { return Mobj::valid() && player()->valid() && player()->mobj()->valid(); }
+	bool valid() const { return Mobj::valid(this) && Player::valid(playernum()) && Mobj::valid(player()->mobj()); }
 
 	bool think()
 	{
@@ -149,7 +148,7 @@ void Obj_SpawnMegaBarrier(player_t* p)
 {
 	Player* player = static_cast<Player*>(p);
 
-	if (!static_cast<Mobj*>(player->powerups().barrier())->valid())
+	if (!Mobj::valid(player->powerups().barrier()))
 	{
 		Barrier::spawn_chain(player);
 	}
