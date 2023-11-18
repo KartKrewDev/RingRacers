@@ -249,6 +249,7 @@ void Obj_getPlayerOffRideroid(mobj_t *mo);	// used in p_map.c to get off of em w
 /* LSZ Bungee */
 void Obj_BungeeSpecial(mobj_t *mo, player_t *p);	// used when the player touches the bungee, to be used in p_inter.c
 void Obj_playerBungeeThink(player_t *p);			// player interaction with the bungee. The bungee is to be stored in p->mo->tracer.
+void Obj_EndBungee(player_t *p);
 
 /* LSZ Balls */
 void Obj_EggBallSpawnerThink(mobj_t *mo);
@@ -293,6 +294,9 @@ void Obj_BallSwitchThink(mobj_t *mobj);
 void Obj_BallSwitchTouched(mobj_t *mobj, mobj_t *toucher);
 void Obj_BallSwitchDamaged(mobj_t *mobj, mobj_t *inflictor, mobj_t *source);
 
+/* Barrier Power-Up */
+void Obj_SpawnMegaBarrier(player_t *player);
+boolean Obj_MegaBarrierThink(mobj_t *mobj);
 
 #ifdef __cplusplus
 } // extern "C"

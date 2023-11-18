@@ -4787,6 +4787,10 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_BLENDEYE_PUYO_SHOCK",
 	"S_BLENDEYE_PUYO_DIE",
 	"S_BLENDEYE_PUYO_DUST",
+
+	"S_MEGABARRIER1",
+	"S_MEGABARRIER2",
+	"S_MEGABARRIER3",
 };
 
 // RegEx to generate this from info.h: ^\tMT_([^,]+), --> \t"MT_\1",
@@ -5994,6 +5998,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_BLENDEYE_PUYO",
 	"MT_BLENDEYE_PUYO_DUST",
 	"MT_BLENDEYE_PUYO_DUST_COFFEE",
+	"MT_MEGABARRIER",
 };
 
 const char *const MOBJFLAG_LIST[] = {
@@ -6653,6 +6658,7 @@ struct int_const_s const INT_CONST[] = {
 	{"RF_SHADOWEFFECTS",RF_SHADOWEFFECTS},
 	{"RF_DROPSHADOW",RF_DROPSHADOW},
 	{"RF_ABSOLUTELIGHTLEVEL",RF_ABSOLUTELIGHTLEVEL},
+	{"RF_REDUCEVFX",RF_REDUCEVFX},
 	{"RF_DONTDRAW",RF_DONTDRAW},
 	{"RF_DONTDRAWP1",RF_DONTDRAWP1},
 	{"RF_DONTDRAWP2",RF_DONTDRAWP2},

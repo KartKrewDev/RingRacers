@@ -212,6 +212,8 @@ typedef enum
 	NUMPOWERUPS = ENDOFPOWERUPS - FIRSTPOWERUP,
 } kartitems_t;
 
+#define POWERUP_BIT(x) (1 << ((x) - FIRSTPOWERUP))
+
 typedef enum
 {
 	KSHIELD_NONE = 0,
@@ -546,6 +548,7 @@ struct powerupvars_t {
 	UINT16 barrierTimer;
 	UINT16 rhythmBadgeTimer;
 	mobj_t *flickyController;
+	mobj_t *barrier;
 };
 
 // player_t struct for all alternative viewpoint variables

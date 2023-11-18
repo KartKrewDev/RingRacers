@@ -1545,7 +1545,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		 || target->type == MT_DROPTARGET || target->type == MT_DROPTARGET_SHIELD
 		 || target->type == MT_EGGMANITEM || target->type == MT_EGGMANITEM_SHIELD
 		 || target->type == MT_BALLHOG || target->type == MT_SPB
-		 || target->type == MT_GACHABOM)) // kart dead items
+		 || target->type == MT_GACHABOM || target->type == MT_KART_LEFTOVER)) // kart dead items
 		target->flags |= MF_NOGRAVITY; // Don't drop Tails 03-08-2000
 	else
 		target->flags &= ~MF_NOGRAVITY; // lose it if you for whatever reason have it, I'm looking at you shields
@@ -1876,8 +1876,6 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 					if (target->player->pflags & PF_NOCONTEST)
 						P_SetTarget(&target->tracer, kart);
-
-					kart->fuse = 5*TICRATE;
 				}
 
 				if (source && !P_MobjWasRemoved(source))
@@ -1889,17 +1887,21 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				}
 				else
 				{
-					flingAngle = target->angle + ANGLE_180;
+					flingAngle = target->angle;
 
 					if (P_RandomByte(PR_ITEM_RINGS) & 1)
 					{
-						flingAngle -= ANGLE_45;
+						flingAngle -= ANGLE_45/2;
 					}
 					else
 					{
-						flingAngle += ANGLE_45;
+						flingAngle += ANGLE_45/2;
 					}
 				}
+
+				// On -20 ring deaths, you're guaranteed to be hitting the ground from Tumble,
+				// so make sure that this draws at the correct angle.
+				target->rollangle = 0;
 
 				P_InstaThrust(target, flingAngle, 14 * target->scale);
 				P_SetObjectMomZ(target, 14*FRACUNIT, false);
@@ -1922,6 +1924,16 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				}
 			}
 			break;
+
+		case MT_KART_LEFTOVER:
+			if (!P_MobjWasRemoved(inflictor))
+			{
+				K_KartSolidBounce(target, inflictor);
+				target->momz = 20 * inflictor->scale * P_MobjFlip(inflictor);
+			}
+			target->z += P_MobjFlip(target);
+			target->tics = 175;
+			return;
 
 		case MT_METALSONIC_RACE:
 			target->fuse = TICRATE*3;
@@ -3126,6 +3138,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			player->glanceDir = 0;
 			player->preventfailsafe = TICRATE*3;
 			player->pflags &= ~PF_GAINAX;
+			Obj_EndBungee(player);
 
 			if (player->spectator == false && !(player->charflags & SF_IRONMAN))
 			{

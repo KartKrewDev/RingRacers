@@ -96,6 +96,10 @@
 
 #include "lua_script.h"
 
+#include "lua_profile.h"
+
+extern "C" consvar_t cv_lua_profile;
+
 /* Manually defined asset hashes
  * Last updated 2019 / 01 / 18 - Kart v1.0.2 - Main assets
  * Last updated 2020 / 08 / 30 - Kart v1.3 - patch.kart
@@ -763,6 +767,11 @@ static bool D_Display(void)
 		if (cv_perfstats.value)
 		{
 			M_DrawPerfStats();
+		}
+
+		if (cv_lua_profile.value > 0)
+		{
+			LUA_RenderTimers();
 		}
 
 		ps_swaptime = I_GetPreciseTime();

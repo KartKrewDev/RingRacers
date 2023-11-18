@@ -22,7 +22,9 @@
 #include "lua_libs.h"
 #include "lua_hook.h"
 #include "lua_hud.h" // hud_running errors
+#include "lua_profile.h"
 
+#include "command.h"
 #include "m_perfstats.h"
 #include "d_netcmd.h" // for cv_perfstats
 #include "i_system.h" // I_GetPreciseTime
@@ -365,6 +367,16 @@ static boolean prepare_string_hook
 		return false;
 }
 
+static boolean prepare_hud_hook
+(
+		Hook_State * hook,
+		int hook_type
+){
+	return init_hook_type(hook, 0,
+			hook_type, 0, NULL,
+			hudHookIds[hook_type].numHooks);
+}
+
 static void init_hook_call
 (
 		Hook_State * hook,
@@ -392,9 +404,52 @@ static void get_hook_from_table(Hook_State *hook, int n)
 	lua_getref(gL, hookRefs[hook->id]);
 }
 
+static int pcall(Hook_State *hook)
+{
+	return lua_pcall(gL, hook->values, hook->results, EINDEX);
+}
+
+static const char *hook_name(Hook_State *hook)
+{
+	if (hud_running)
+	{
+		return hudHookNames[hook->hook_type];
+	}
+	else if (hook->string)
+	{
+		return stringHookNames[hook->hook_type];
+	}
+	else if (hook->mobj_type > 0)
+	{
+		return mobjHookNames[hook->hook_type];
+	}
+	else
+	{
+		return hookNames[hook->hook_type];
+	}
+}
+
+static int pcall_timed_or_untimed(Hook_State *hook)
+{
+	extern consvar_t cv_lua_profile;
+
+	if (!hud_running && cv_lua_profile.value > 0)
+	{
+		lua_timer_t *timer = LUA_BeginFunctionTimer(gL, -1 - hook->values, hook_name(hook));
+		int k = pcall(hook);
+		LUA_EndFunctionTimer(timer);
+
+		return k;
+	}
+	else
+	{
+		return pcall(hook);
+	}
+}
+
 static int call_single_hook_no_copy(Hook_State *hook)
 {
-	if (lua_pcall(gL, hook->values, hook->results, EINDEX) == 0)
+	if (pcall_timed_or_untimed(hook) == 0)
 	{
 		if (hook->results > 0)
 		{
@@ -625,13 +680,9 @@ int LUA_HookTiccmd(player_t *player, ticcmd_t *cmd, int hook_type)
 
 void LUA_HookHUD(huddrawlist_h list, int hook_type)
 {
-	const hook_t * map = &hudHookIds[hook_type];
 	Hook_State hook;
-	if (map->numHooks > 0)
+	if (prepare_hud_hook(&hook, hook_type))
 	{
-		start_hook_stack();
-		begin_hook_values(&hook);
-
 		LUA_SetHudHook(hook_type, list);
 
 		hud_running = true; // local hook
@@ -640,7 +691,7 @@ void LUA_HookHUD(huddrawlist_h list, int hook_type)
 		V_ClearClipRect();
 
 		init_hook_call(&hook, 0, res_none);
-		call_mapped(&hook, map);
+		call_mapped(&hook, &hudHookIds[hook_type]);
 
 		hud_running = false;
 	}

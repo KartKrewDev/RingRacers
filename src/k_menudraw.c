@@ -2089,6 +2089,8 @@ static void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 
 void M_DrawCharacterSelect(void)
 {
+	const UINT8 pid = 0;
+
 	UINT8 i, j, k;
 	UINT8 priority = 0;
 	INT16 quadx, quady;
@@ -2099,6 +2101,19 @@ void M_DrawCharacterSelect(void)
 	if (setup_numplayers > 0)
 	{
 		priority = setup_animcounter % setup_numplayers;
+	}
+
+	{
+		const int kLeft = 80;
+		const int kTop = 6;
+		const int kButtonWidth = 16;
+		INT32 x = basex + kLeft;
+
+		K_drawButton((x += 18) * FRACUNIT, (kTop - 3) * FRACUNIT, 0, kp_button_r, M_MenuButtonPressed(pid, MBT_R));
+		V_DrawThinString((x += kButtonWidth), kTop, 0, "Info");
+
+		K_drawButton((x += 58) * FRACUNIT, (kTop - 1) * FRACUNIT, 0, kp_button_c[1], M_MenuButtonPressed(pid, MBT_C));
+		V_DrawThinString((x += kButtonWidth), kTop, 0, "Default");
 	}
 
 	// We have to loop twice -- first time to draw the drop shadows, a second time to draw the icons.

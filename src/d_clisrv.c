@@ -2565,6 +2565,7 @@ void CL_ClearPlayer(INT32 playernum)
 		// TODO: Any better handling in store?
 		P_SetTarget(&players[playernum].flickyAttacker, NULL);
 		P_SetTarget(&players[playernum].powerup.flickyController, NULL);
+		P_SetTarget(&players[playernum].powerup.barrier, NULL);
 
 		// These are camera items and possibly belong to multiple players.
 		P_SetTarget(&players[playernum].skybox.viewpoint, NULL);
@@ -6146,6 +6147,7 @@ boolean TryRunTics(tic_t realtics)
 
 			DEBFILE(va("============ Running tic %d (local %d)\n", gametic, localgametic));
 
+			ps_prevtictime = ps_tictime;
 			ps_tictime = I_GetPreciseTime();
 
 			dontRun = ExtraDataTicker();

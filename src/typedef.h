@@ -247,6 +247,9 @@ TYPEDEF (mapUserProperties_t);
 // lua_hudlib_drawlist.h
 typedef struct huddrawlist_s *huddrawlist_h;
 
+// lua_profile.h
+TYPEDEF (lua_timer_t);
+
 // m_aatree.h
 TYPEDEF (aatree_t);
 

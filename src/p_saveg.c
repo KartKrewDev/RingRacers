@@ -82,6 +82,7 @@ typedef enum
 	FLICKYATTACKER = 0x0800,
 	FLICKYCONTROLLER = 0x1000,
 	TRICKINDICATOR = 0x2000,
+	BARRIER = 0x4000,
 } player_saveflags;
 
 static inline void P_ArchivePlayer(savebuffer_t *save)
@@ -332,6 +333,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		if (players[i].powerup.flickyController)
 			flags |= FLICKYCONTROLLER;
 
+		if (players[i].powerup.barrier)
+			flags |= BARRIER;
+
 		WRITEUINT16(save->p, flags);
 
 		if (flags & SKYBOXVIEW)
@@ -372,6 +376,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		if (flags & FLICKYCONTROLLER)
 			WRITEUINT32(save->p, players[i].powerup.flickyController->mobjnum);
+
+		if (flags & BARRIER)
+			WRITEUINT32(save->p, players[i].powerup.barrier->mobjnum);
 
 		WRITEUINT32(save->p, (UINT32)players[i].followitem);
 
@@ -910,6 +917,9 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		if (flags & FLICKYCONTROLLER)
 			players[i].powerup.flickyController = (mobj_t *)(size_t)READUINT32(save->p);
+
+		if (flags & BARRIER)
+			players[i].powerup.barrier = (mobj_t *)(size_t)READUINT32(save->p);
 
 		players[i].followitem = (mobjtype_t)READUINT32(save->p);
 
@@ -2698,6 +2708,7 @@ typedef enum
 	MD3_LIGHTLEVEL		= 1,
 	MD3_REAPPEAR		= 1<<1,
 	MD3_PUNT_REF		= 1<<2,
+	MD3_OWNER			= 1<<3,
 } mobj_diff3_t;
 
 typedef enum
@@ -3022,6 +3033,8 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		diff3 |= MD3_REAPPEAR;
 	if (mobj->punt_ref)
 		diff3 |= MD3_PUNT_REF;
+	if (mobj->owner)
+		diff3 |= MD3_OWNER;
 
 	if (diff3 != 0)
 		diff2 |= MD2_MORE;
@@ -3309,6 +3322,10 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 	if (diff3 & MD3_PUNT_REF)
 	{
 		WRITEUINT32(save->p, mobj->punt_ref->mobjnum);
+	}
+	if (diff3 & MD3_OWNER)
+	{
+		WRITEUINT32(save->p, mobj->owner->mobjnum);
 	}
 
 	WRITEUINT32(save->p, mobj->mobjnum);
@@ -4564,6 +4581,10 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 	{
 		mobj->punt_ref = (mobj_t *)(size_t)READUINT32(save->p);
 	}
+	if (diff3 & MD3_OWNER)
+	{
+		mobj->owner = (mobj_t *)(size_t)READUINT32(save->p);
+	}
 
 	// set sprev, snext, bprev, bnext, subsector
 	P_SetThingPosition(mobj);
@@ -5611,6 +5632,13 @@ static void P_RelinkPointers(void)
 			if (!P_SetTarget(&mobj->punt_ref, P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "punt_ref not found on %d\n", mobj->type);
 		}
+		if (mobj->owner)
+		{
+			temp = (UINT32)(size_t)mobj->owner;
+			mobj->owner = NULL;
+			if (!P_SetTarget(&mobj->owner, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "owner not found on %d\n", mobj->type);
+		}
 	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -5742,6 +5770,13 @@ static void P_RelinkPointers(void)
 			players[i].powerup.flickyController = NULL;
 			if (!P_SetTarget(&players[i].powerup.flickyController, P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "powerup.flickyController not found on player %d\n", i);
+		}
+		if (players[i].powerup.barrier)
+		{
+			temp = (UINT32)(size_t)players[i].powerup.barrier;
+			players[i].powerup.barrier = NULL;
+			if (!P_SetTarget(&players[i].powerup.barrier, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "powerup.barrier not found on player %d\n", i);
 		}
 	}
 }

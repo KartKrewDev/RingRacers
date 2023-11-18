@@ -966,6 +966,8 @@ char sprnames[NUMSPRITES + 1][5] =
 	"PUYD",
 	"PUYE",
 
+	"MGSH", // Mega Barrier
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	"VIEW",
 };
@@ -2025,23 +2027,23 @@ state_t states[NUMSTATES] =
 	{SPR_TFLM, FF_FULLBRIGHT|5, 2, {NULL}, 0, 0, S_TEAM_SPINFIRE1}, // S_TEAM_SPINFIRE6
 
 	// Floor Spike
-	{SPR_USPK, 0,-1, {A_SpikeRetract}, 1, 0, S_SPIKE2}, // S_SPIKE1 -- Fully extended
-	{SPR_USPK, 1, 2, {A_Pain},         0, 0, S_SPIKE3}, // S_SPIKE2
-	{SPR_USPK, 2, 2, {NULL},           0, 0, S_SPIKE4}, // S_SPIKE3
-	{SPR_USPK, 3,-1, {A_SpikeRetract}, 0, 0, S_SPIKE5}, // S_SPIKE4 -- Fully retracted
-	{SPR_USPK, 2, 2, {A_Pain},         0, 0, S_SPIKE6}, // S_SPIKE5
-	{SPR_USPK, 1, 2, {NULL},           0, 0, S_SPIKE1}, // S_SPIKE6
-	{SPR_USPK, 4,-1, {NULL}, 0, 0, S_NULL}, // S_SPIKED1 -- Busted spike particles
-	{SPR_USPK, 5,-1, {NULL}, 0, 0, S_NULL}, // S_SPIKED2
+	{SPR_USPK, FF_SEMIBRIGHT|0,-1, {A_SpikeRetract}, 1, 0, S_SPIKE2}, // S_SPIKE1 -- Fully extended
+	{SPR_USPK, FF_SEMIBRIGHT|1, 2, {A_Pain},         0, 0, S_SPIKE3}, // S_SPIKE2
+	{SPR_USPK, FF_SEMIBRIGHT|0, 2, {NULL},           0, 0, S_SPIKE4}, // S_SPIKE3
+	{SPR_USPK, FF_SEMIBRIGHT|3,-1, {A_SpikeRetract}, 0, 0, S_SPIKE5}, // S_SPIKE4 -- Fully retracted
+	{SPR_USPK, FF_SEMIBRIGHT|2, 2, {A_Pain},         0, 0, S_SPIKE6}, // S_SPIKE5
+	{SPR_USPK, FF_SEMIBRIGHT|1, 2, {NULL},           0, 0, S_SPIKE1}, // S_SPIKE6
+	{SPR_USPK, FF_SEMIBRIGHT|4,-1, {NULL}, 0, 0, S_NULL}, // S_SPIKED1 -- Busted spike particles
+	{SPR_USPK, FF_SEMIBRIGHT|5,-1, {NULL}, 0, 0, S_NULL}, // S_SPIKED2
 
 	// Wall Spike
-	{SPR_WSPK, 0|FF_PAPERSPRITE,-1, {A_SpikeRetract}, 1, 0, S_WALLSPIKE2}, // S_WALLSPIKE1 -- Fully extended
-	{SPR_WSPK, 1|FF_PAPERSPRITE, 2, {A_Pain},         0, 0, S_WALLSPIKE3}, // S_WALLSPIKE2
-	{SPR_WSPK, 2|FF_PAPERSPRITE, 2, {NULL},           0, 0, S_WALLSPIKE4}, // S_WALLSPIKE3
-	{SPR_WSPK, 3|FF_PAPERSPRITE,-1, {A_SpikeRetract}, 0, 0, S_WALLSPIKE5}, // S_WALLSPIKE4 -- Fully retracted
-	{SPR_WSPK, 2|FF_PAPERSPRITE, 2, {A_Pain},         0, 0, S_WALLSPIKE6}, // S_WALLSPIKE5
-	{SPR_WSPK, 1|FF_PAPERSPRITE, 2, {NULL},           0, 0, S_WALLSPIKE1}, // S_WALLSPIKE6
-	{SPR_WSPB, 0|FF_PAPERSPRITE,-1, {NULL}, 0, 0, S_NULL}, // S_WALLSPIKEBASE -- Base
+	{SPR_WSPK, 0|FF_SEMIBRIGHT|FF_PAPERSPRITE,-1, {A_SpikeRetract}, 1, 0, S_WALLSPIKE2}, // S_WALLSPIKE1 -- Fully extended
+	{SPR_WSPK, 1|FF_SEMIBRIGHT|FF_PAPERSPRITE, 2, {A_Pain},         0, 0, S_WALLSPIKE3}, // S_WALLSPIKE2
+	{SPR_WSPK, 2|FF_SEMIBRIGHT|FF_PAPERSPRITE, 2, {NULL},           0, 0, S_WALLSPIKE4}, // S_WALLSPIKE3
+	{SPR_WSPK, 3|FF_SEMIBRIGHT|FF_PAPERSPRITE,-1, {A_SpikeRetract}, 0, 0, S_WALLSPIKE5}, // S_WALLSPIKE4 -- Fully retracted
+	{SPR_WSPK, 2|FF_SEMIBRIGHT|FF_PAPERSPRITE, 2, {A_Pain},         0, 0, S_WALLSPIKE6}, // S_WALLSPIKE5
+	{SPR_WSPK, 1|FF_SEMIBRIGHT|FF_PAPERSPRITE, 2, {NULL},           0, 0, S_WALLSPIKE1}, // S_WALLSPIKE6
+	{SPR_WSPB, 0|FF_SEMIBRIGHT|FF_PAPERSPRITE,-1, {NULL}, 0, 0, S_NULL}, // S_WALLSPIKEBASE -- Base
 	{SPR_WSPK, 4,-1, {NULL}, 0, 0, S_NULL}, // S_WALLSPIKED1 -- Busted spike particles
 	{SPR_WSPK, 5,-1, {NULL}, 0, 0, S_NULL}, // S_WALLSPIKED2
 
@@ -5613,6 +5615,10 @@ state_t states[NUMSTATES] =
 	{SPR_PUYA, 3, -1, {A_BlendEyePuyoHack}, 0, 0, S_NULL},					// S_BLENDEYE_PUYO_SHOCK,
 	{SPR_PUYA, 4|FF_ANIMATE,  5, {A_BlendEyePuyoHack}, 2, 2, S_NULL},				// S_BLENDEYE_PUYO_DIE,
 	{SPR_PUYA, 5,             2, {A_BlendEyePuyoHack}, 0, 0, S_BLENDEYE_PUYO_DIE},	// S_BLENDEYE_PUYO_DUST,
+
+	{SPR_MGSH, 2|FF_PAPERSPRITE|FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_MEGABARRIER1,
+	{SPR_MGSH, 1|FF_PAPERSPRITE|FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_MEGABARRIER2,
+	{SPR_MGSH, 0|FF_PAPERSPRITE|FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_MEGABARRIER3,
 };
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] =
@@ -5802,7 +5808,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		1000,           // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE, // flags
+		MF_SOLID|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE|MF_SHOOTABLE, // flags
 		S_NULL          // raisestate
 	},
 
@@ -9365,7 +9371,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		4,              // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_NOBLOCKMAP|MF_SCENERY|MF_NOCLIPHEIGHT|MF_NOHITLAGFORME,  // flags
+		MF_NOBLOCKMAP|MF_SCENERY|MF_NOCLIPHEIGHT|MF_NOHITLAGFORME|MF_DONTENCOREMAP,  // flags
 		S_NULL          // raisestate
 	},
 
@@ -9392,7 +9398,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		4,              // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_SCENERY|MF_NOCLIPHEIGHT|MF_PAPERCOLLISION|MF_NOHITLAGFORME,  // flags
+		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_SCENERY|MF_NOCLIPHEIGHT|MF_PAPERCOLLISION|MF_NOHITLAGFORME|MF_DONTENCOREMAP,  // flags
 		S_NULL          // raisestate
 	},
 
@@ -24786,7 +24792,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,       // deathsound
 		8,              // speed
 		28*FRACUNIT,    // radius
-		56*FRACUNIT,    // height
+		0*FRACUNIT,    // height
 		1,              // display offset
 		16,             // mass
 		0,              // damage
@@ -24840,7 +24846,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,       // deathsound
 		8,              // speed
 		28*FRACUNIT,    // radius
-		56*FRACUNIT,    // height
+		0*FRACUNIT,    // height
 		1,              // display offset
 		16,             // mass
 		0,              // damage
@@ -24867,7 +24873,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	    sfx_None,       // deathsound
 	    0,              // speed
 	    8<<FRACBITS,    // radius
-	    16<<FRACBITS,   // height
+	    0<<FRACBITS,   // height
 	    -1,             // display offset
 	    100,            // mass
 	    0,              // damage
@@ -24894,7 +24900,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	    sfx_None,       // deathsound
 	    0,              // speed
 	    8<<FRACBITS,    // radius
-	    16<<FRACBITS,   // height
+	    0<<FRACBITS,   // height
 	    1,              // display offset
 	    100,            // mass
 	    0,              // damage
@@ -31738,6 +31744,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		MF_SCENERY|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_NOGRAVITY, // flags
 		S_NULL          // raisestate
 	},
+
+	{           // MT_MEGABARRIER
+		-1,             // doomednum
+		S_MEGABARRIER1, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		0,              // radius
+		0,              // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_SCENERY|MF_NOSQUISH, // flags
+		S_NULL          // raisestate
+	}
 };
 
 

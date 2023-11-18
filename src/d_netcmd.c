@@ -70,6 +70,7 @@
 #include "k_powerup.h"
 #include "k_roulette.h"
 #include "k_bans.h"
+#include "k_director.h"
 
 #ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 #include "m_avrecorder.h"
@@ -1461,6 +1462,33 @@ void D_SendPlayerConfig(UINT8 n)
 	WeaponPref_Send(n);
 }
 
+static camera_t *LocalMutableCamera(INT32 playernum)
+{
+	if (demo.playback)
+	{
+		// TODO: could have splitscreen support
+		if (!camera[0].freecam)
+		{
+			return NULL;
+		}
+
+		return &camera[0];
+	}
+
+	if (G_IsPartyLocal(playernum))
+	{
+		UINT8 viewnum = G_PartyPosition(playernum);
+		camera_t *cam = &camera[viewnum];
+
+		if (cam->freecam || (players[playernum].spectator && !K_DirectorIsAvailable(viewnum)))
+		{
+			return cam;
+		}
+	}
+
+	return NULL;
+}
+
 void D_Cheat(INT32 playernum, INT32 cheat, ...)
 {
 	va_list ap;
@@ -1468,9 +1496,59 @@ void D_Cheat(INT32 playernum, INT32 cheat, ...)
 	UINT8 buf[64];
 	UINT8 *p = buf;
 
+	camera_t *cam;
+	if ((cam = LocalMutableCamera(playernum)))
+	{
+		switch (cheat)
+		{
+			case CHEAT_RELATIVE_TELEPORT:
+				va_start(ap, cheat);
+				cam->x += va_arg(ap, fixed_t);
+				cam->y += va_arg(ap, fixed_t);
+				cam->z += va_arg(ap, fixed_t);
+				va_end(ap);
+				return;
+
+			case CHEAT_TELEPORT:
+				va_start(ap, cheat);
+				cam->x = va_arg(ap, fixed_t);
+				cam->y = va_arg(ap, fixed_t);
+				cam->z = va_arg(ap, fixed_t);
+				va_end(ap);
+				return;
+
+			case CHEAT_ANGLE:
+				va_start(ap, cheat);
+				cam->angle = va_arg(ap, angle_t);
+				va_end(ap);
+				return;
+
+			default:
+				break;
+		}
+	}
+
 	if (!CV_CheatsEnabled())
 	{
 		CONS_Printf("This cannot be used without cheats enabled.\n");
+		return;
+	}
+
+	if (demo.playback && cheat == CHEAT_DEVMODE)
+	{
+		// There is no networking in demos, but devmode is
+		// too useful to be inaccessible!
+		// TODO: maybe allow everything, even though it would
+		// desync replays? May be useful for debugging.
+		va_start(ap, cheat);
+		cht_debug = va_arg(ap, UINT32);
+		va_end(ap);
+		return;
+	}
+
+	// sanity check
+	if (demo.playback)
+	{
 		return;
 	}
 

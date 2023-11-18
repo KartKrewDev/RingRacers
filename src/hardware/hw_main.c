@@ -3383,7 +3383,7 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 	}
 
 	if (R_ThingIsSemiBright(spr->mobj))
-		lightlevel = 128 + (lightlevel>>1);
+		lightlevel = 192 + (lightlevel>>1);
 
 	for (i = 0; i < sector->numlights; i++)
 	{
@@ -3398,7 +3398,7 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 				lightlevel = *list[i].lightlevel > 255 ? 255 : *list[i].lightlevel;
 
 				if (R_ThingIsSemiBright(spr->mobj))
-					lightlevel = 128 + (lightlevel>>1);
+					lightlevel = 192 + (lightlevel>>1);
 			}
 
 			if (!R_ThingIsFullBright(spr->mobj) && !(spr->mobj->renderflags & RF_NOCOLORMAPS))

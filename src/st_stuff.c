@@ -452,10 +452,10 @@ void ST_drawDebugInfo(void)
 {
 	INT32 height = 192;
 
-	const UINT8 screen = cv_devmode_screen.value - 1;
+	const UINT8 screen = min(r_splitscreen, cv_devmode_screen.value - 1);
 
 	// devmode_screen = 1..4
-	stplyr = &players[displayplayers[min(r_splitscreen, screen)]];
+	stplyr = &players[displayplayers[screen]];
 
 	if (!stplyr->mo)
 		return;
@@ -472,11 +472,23 @@ void ST_drawDebugInfo(void)
 
 	if (cht_debug & DBG_BASIC)
 	{
-		const fixed_t d = AngleFixed(stplyr->mo->angle);
-		V_DrawRightAlignedString(320, height - 24, V_MONOSPACE, va("X: %6d", stplyr->mo->x>>FRACBITS));
-		V_DrawRightAlignedString(320, height - 16, V_MONOSPACE, va("Y: %6d", stplyr->mo->y>>FRACBITS));
-		V_DrawRightAlignedString(320, height - 8, V_MONOSPACE, va("Z: %6d", stplyr->mo->z>>FRACBITS));
-		V_DrawRightAlignedString(320, height, V_MONOSPACE, va("A: %6d", FixedInt(d)));
+		camera_t *cam = &camera[screen];
+		if (stplyr->spectator || cam->freecam)
+		{
+			const fixed_t d = AngleFixed(cam->angle);
+			V_DrawRightAlignedString(320, height - 24, V_MONOSPACE, va("X: %6d", cam->x>>FRACBITS));
+			V_DrawRightAlignedString(320, height - 16, V_MONOSPACE, va("Y: %6d", cam->y>>FRACBITS));
+			V_DrawRightAlignedString(320, height - 8, V_MONOSPACE, va("Z: %6d", cam->z>>FRACBITS));
+			V_DrawRightAlignedString(320, height, V_MONOSPACE, va("A: %6d", FixedInt(d)));
+		}
+		else
+		{
+			const fixed_t d = AngleFixed(stplyr->mo->angle);
+			V_DrawRightAlignedString(320, height - 24, V_MONOSPACE, va("X: %6d", stplyr->mo->x>>FRACBITS));
+			V_DrawRightAlignedString(320, height - 16, V_MONOSPACE, va("Y: %6d", stplyr->mo->y>>FRACBITS));
+			V_DrawRightAlignedString(320, height - 8, V_MONOSPACE, va("Z: %6d", stplyr->mo->z>>FRACBITS));
+			V_DrawRightAlignedString(320, height, V_MONOSPACE, va("A: %6d", FixedInt(d)));
+		}
 
 		height -= 40;
 	}

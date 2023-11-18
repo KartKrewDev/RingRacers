@@ -58,6 +58,13 @@ void Music_Init(void)
 	}
 
 	{
+		Tune& tune = g_tunes.insert("finish_silence");
+
+		tune.song = "";
+		tune.priority = 30;
+	}
+
+	{
 		Tune& tune = g_tunes.insert("finish");
 
 		tune.priority = 30;

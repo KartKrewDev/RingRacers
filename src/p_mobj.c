@@ -2592,6 +2592,8 @@ boolean P_ZMovement(mobj_t *mo)
 						tireAngle += (aOffset * 2);
 					}
 				}
+
+				mom.z = 0;
 			}
 			else if (mo->type == MT_KART_TIRE)
 			{
@@ -6807,6 +6809,14 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		mobj->angle += ANG2;
 		break;
 	}
+	case MT_MEGABARRIER:
+	{
+		if (!Obj_MegaBarrierThink(mobj))
+		{
+			return;
+		}
+		break;
+	}
 	case MT_VWREF:
 	case MT_VWREB:
 	{
@@ -6953,6 +6963,7 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 	//case MT_DROPTARGET:
 	case MT_SPB:
 	case MT_GACHABOM:
+	case MT_KART_LEFTOVER:
 		if (P_IsObjectOnGround(mobj))
 		{
 			P_RemoveMobj(mobj);
@@ -8025,7 +8036,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 		}
 
-		K_ReduceVFX(mobj, mobj->target->player);
+		P_SetTarget(&mobj->owner, mobj->target);
+		mobj->renderflags |= RF_REDUCEVFX;
 		break;
 	}
 	case MT_BOOSTFLAME:
@@ -8114,7 +8126,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				S_StartSound(mobj, sfx_cdfm17);
 
 			K_MatchGenericExtraFlags(mobj, mobj->target);
-			K_ReduceVFX(mobj, mobj->target->player);
+			P_SetTarget(&mobj->owner, mobj->target);
+			mobj->renderflags |= RF_REDUCEVFX;
 			if (leveltime & 1)
 				mobj->renderflags |= RF_DONTDRAW;
 		}
@@ -8319,7 +8332,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				mobj->renderflags = (mobj->renderflags & ~RF_TRANSMASK)|(trans << RF_TRANSSHIFT);
 		}
 
-		K_ReduceVFX(mobj, mobj->target->player);
+		P_SetTarget(&mobj->owner, mobj->target);
+		mobj->renderflags |= RF_REDUCEVFX;
 		break;
 	case MT_MAGICIANBOX:
 	{
@@ -8796,8 +8810,10 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 		}
 
-		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + mobj->target->height/2);
+		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + (mobj->eflags & MFE_VERTICALFLIP ? 1 : 1) * mobj->target->height/2);
 		mobj->angle = K_MomentumAngle(mobj->target);
+
+		K_FlipFromObject(mobj, mobj->target);
 
 		if (underlayst != S_NULL)
 		{
@@ -10258,7 +10274,6 @@ static boolean P_CanFlickerFuse(mobj_t *mobj)
 		case MT_FALLINGROCK:
 		case MT_FLOATINGITEM:
 		case MT_POGOSPRING:
-		case MT_KART_LEFTOVER:
 		case MT_EMERALD:
 		case MT_BLENDEYE_PUYO:
 			if (mobj->fuse <= TICRATE)
@@ -10435,6 +10450,8 @@ void P_MobjThinker(mobj_t *mobj)
 		P_SetTarget(&mobj->itnext, NULL);
 	if (mobj->punt_ref && P_MobjWasRemoved(mobj->punt_ref))
 		P_SetTarget(&mobj->punt_ref, NULL);
+	if (mobj->owner && P_MobjWasRemoved(mobj->owner))
+		P_SetTarget(&mobj->owner, NULL);
 
 	if (mobj->flags & MF_NOTHINK)
 		return;
@@ -11990,6 +12007,7 @@ void P_RemoveMobj(mobj_t *mobj)
 
 	P_SetTarget(&mobj->itnext, NULL);
 	P_SetTarget(&mobj->punt_ref, NULL);
+	P_SetTarget(&mobj->owner, NULL);
 
 	P_RemoveThingTID(mobj);
 	P_DeleteMobjStringArgs(mobj);
@@ -12639,13 +12657,13 @@ void P_SpawnPlayer(INT32 playernum)
 		}
 	}
 
-	boolean director = p->spectator && pcount > 0;
-
 	if (G_IsPartyLocal(playernum))
 	{
-		// Spectating when there is literally any other
-		// player in the level enables director cam.
-		K_ToggleDirector(G_PartyPosition(playernum), director);
+		// Spectating always enables director cam. If there
+		// is no one to view, this will do nothing. If
+		// someone enters the game later, it will
+		// automatically switch to that player.
+		K_ToggleDirector(G_PartyPosition(playernum), p->spectator);
 
 		// Spectators can switch to freecam. This should be
 		// disabled when they enter the race, or when the level

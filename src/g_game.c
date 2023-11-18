@@ -2262,6 +2262,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		P_SetTarget(&players[player].awayview.mobj, NULL);
 		P_SetTarget(&players[player].flickyAttacker, NULL);
 		P_SetTarget(&players[player].powerup.flickyController, NULL);
+		P_SetTarget(&players[player].powerup.barrier, NULL);
 
 		// The following pointers are safe to set directly, because the end goal should be refcount consistency before and after remanifestation.
 		ringShooter = players[player].ringShooter;
@@ -5627,6 +5628,10 @@ void G_SaveGameData(void)
 
 	// Also save profiles here.
 	PR_SaveProfiles();
+
+	#ifdef DEVELOP
+		CONS_Alert(CONS_NOTICE, M_GetText("Gamedata saved.\n"));
+	#endif
 }
 
 #define VERSIONSIZE 16

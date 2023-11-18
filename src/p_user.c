@@ -66,6 +66,7 @@
 #include "k_profiles.h"
 #include "music.h"
 #include "k_tally.h"
+#include "k_objects.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_light.h"
@@ -481,6 +482,7 @@ void P_ResetPlayer(player_t *player)
 	player->trickpanel = TRICKSTATE_NONE;
 	player->glanceDir = 0;
 	player->fastfall = 0;
+	Obj_EndBungee(player);
 
 	if (player->mo != NULL && P_MobjWasRemoved(player->mo) == false)
 	{
@@ -1166,7 +1168,8 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->old_roll = mobj->old_roll2;
 	ghost->old_scale = mobj->old_scale2;
 
-	K_ReduceVFX(ghost, mobj->player);
+	P_SetTarget(&ghost->owner, mobj);
+	ghost->renderflags |= RF_REDUCEVFX;
 
 	ghost->reappear = mobj->reappear;
 	P_SetTarget(&ghost->punt_ref, mobj->punt_ref);
@@ -1284,7 +1287,7 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 
 	if (P_IsLocalPlayer(player) && !specialout && musiccountdown == 0)
 	{
-		Music_StopAll();
+		Music_Play("finish_silence");
 		musiccountdown = MUSIC_COUNTDOWN_MAX;
 	}
 
@@ -3787,7 +3790,7 @@ void P_DoTimeOver(player_t *player)
 
 	if (P_IsLocalPlayer(player) && musiccountdown == 0)
 	{
-		Music_StopAll();
+		Music_Play("finish_silence");
 		musiccountdown = MUSIC_COUNTDOWN_MAX;
 	}
 
@@ -4069,6 +4072,7 @@ void P_PlayerThink(player_t *player)
 		PlayerPointerErase(player->hoverhyudoro);
 		PlayerPointerErase(player->flickyAttacker);
 		PlayerPointerErase(player->powerup.flickyController);
+		PlayerPointerErase(player->powerup.barrier);
 
 #undef PlayerPointerErase
 	}

@@ -460,7 +460,14 @@ consvar_t cv_usemouse = Player("use_mouse", "Off").values({{0, "Off"}, {1, "On"}
 consvar_t cv_vhseffect = Player("vhspause", "On").on_off();
 
 // synchronize page flipping with screen refresh
-consvar_t cv_vidwait = GraphicsDriver("vid_wait", "Off").on_off();
+extern "C++"
+{
+namespace srb2::cvarhandler
+{
+void on_set_vid_wait();
+}
+}
+consvar_t cv_vidwait = GraphicsDriver("vid_wait", "Off").on_off().onchange(srb2::cvarhandler::on_set_vid_wait);
 
 // if true, all sounds are loaded at game startup
 consvar_t precachesound = Player("precachesound", "Off").on_off();
@@ -854,6 +861,9 @@ consvar_t cv_debugrender_spriteclip = PlayerCheat("debugrender_spriteclip", "Off
 consvar_t cv_devmode_screen = PlayerCheat("devmode_screen", "1").min_max(1, 4).description("Choose which splitscreen player devmode applies to");
 consvar_t cv_drawpickups = PlayerCheat("drawpickups", "Yes").yes_no().description("Hide rings, spheres, item capsules, prison capsules (visual only)");
 consvar_t cv_drawinput = PlayerCheat("drawinput", "No").yes_no().description("Draw turn inputs outside of Record Attack (turn solver debugging)");
+
+void lua_profile_OnChange(void);
+consvar_t cv_lua_profile = PlayerCheat("lua_profile", "0").values(CV_Unsigned).onchange(lua_profile_OnChange).description("Show hook timings over an average of N tics");
 
 void CV_palette_OnChange(void);
 consvar_t cv_palette = PlayerCheat("palette", "").onchange_noinit(CV_palette_OnChange).description("Force palette to a different lump");
