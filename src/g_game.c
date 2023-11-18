@@ -4212,9 +4212,8 @@ static void G_DoCompleted(void)
 	{
 		if (
 			!legitimateexit
-			|| players[consoleplayer].position != 1
 			|| !players[consoleplayer].exiting
-			|| (players[consoleplayer].pflags & PF_NOCONTEST)
+			|| K_IsPlayerLosing(&players[consoleplayer])
 		)
 		{
 			// Return to whence you came with your tail between your legs
