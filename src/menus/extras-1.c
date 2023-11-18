@@ -90,18 +90,7 @@ void M_InitExtras(INT32 choice)
 
 	// Tutorial
 	{
-		levelsearch_t templevelsearch;
-		UINT8 i = 0;
-		INT16 map;
-
-		templevelsearch.cup = NULL;
-		templevelsearch.typeoflevel = G_TOLFlag(GT_TUTORIAL);
-		templevelsearch.cupmode = false;
-		templevelsearch.timeattack = false;
-		templevelsearch.tutorial = true;
-		templevelsearch.checklocked = true;
-
-		map = M_GetFirstLevelInList(&i, &templevelsearch);
+		UINT16 map = G_GetFirstMapOfGametype(GT_TUTORIAL);
 
 		EXTRAS_Main[extras_tutorial].status = (IT_STRING | 
 			((map == NEXTMAP_INVALID) ? IT_TRANSTEXT : IT_CALL));

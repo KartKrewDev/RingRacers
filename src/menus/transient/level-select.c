@@ -238,6 +238,7 @@ boolean M_LevelListFromGametype(INT16 gt)
 {
 	static boolean first = true;
 	UINT8 temp = 0;
+	boolean invalidatedcursor = false;
 
 	if (gt != -1)
 	{
@@ -267,6 +268,15 @@ boolean M_LevelListFromGametype(INT16 gt)
 			}
 
 			levellist.levelsearch.cupmode = (!(gametypes[gt]->rules & GTR_NOCUPSELECT));
+			if (!levellist.levelsearch.cupmode)
+			{
+				invalidatedcursor = (
+					levellist.levelsearch.cup != NULL
+					|| levellist.levelsearch.tutorial != (gt == GT_TUTORIAL)
+				);
+			}
+
+			levellist.levelsearch.tutorial = (gt == GT_TUTORIAL);
 
 			CV_SetValue(&cv_dummyspbattack, 0);
 		}
@@ -435,16 +445,6 @@ boolean M_LevelListFromGametype(INT16 gt)
 
 	// Okay, just a list of maps then.
 
-	boolean invalidatedcursor = false;
-
-	if (gt != -1)
-	{
-		invalidatedcursor = (
-			levellist.levelsearch.cup != NULL
-			|| levellist.levelsearch.tutorial != (gt == GT_TUTORIAL)
-		);
-		levellist.levelsearch.tutorial = (gt == GT_TUTORIAL);
-	}
 	levellist.levelsearch.cup = NULL;
 
 	UINT16 test = M_GetFirstLevelInList(&temp, &levellist.levelsearch);

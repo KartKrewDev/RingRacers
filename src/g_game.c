@@ -3358,7 +3358,7 @@ UINT32 G_TOLFlag(INT32 pgametype)
 	return 0;
 }
 
-UINT16 G_GetFirstMapOfGametype(UINT8 pgametype)
+UINT16 G_GetFirstMapOfGametype(UINT16 pgametype)
 {
 	UINT8 i = 0;
 	UINT16 mapnum = NEXTMAP_INVALID;
@@ -3368,7 +3368,7 @@ UINT16 G_GetFirstMapOfGametype(UINT8 pgametype)
 	templevelsearch.typeoflevel = G_TOLFlag(pgametype);
 	templevelsearch.cupmode = (!(gametypes[pgametype]->rules & GTR_NOCUPSELECT));
 	templevelsearch.timeattack = false;
-	templevelsearch.tutorial = false;
+	templevelsearch.tutorial = (pgametype == GT_TUTORIAL);
 	templevelsearch.checklocked = true;
 
 	if (templevelsearch.cupmode)
