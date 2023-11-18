@@ -2027,23 +2027,23 @@ state_t states[NUMSTATES] =
 	{SPR_TFLM, FF_FULLBRIGHT|5, 2, {NULL}, 0, 0, S_TEAM_SPINFIRE1}, // S_TEAM_SPINFIRE6
 
 	// Floor Spike
-	{SPR_USPK, 0,-1, {A_SpikeRetract}, 1, 0, S_SPIKE2}, // S_SPIKE1 -- Fully extended
-	{SPR_USPK, 1, 2, {A_Pain},         0, 0, S_SPIKE3}, // S_SPIKE2
-	{SPR_USPK, 2, 2, {NULL},           0, 0, S_SPIKE4}, // S_SPIKE3
-	{SPR_USPK, 3,-1, {A_SpikeRetract}, 0, 0, S_SPIKE5}, // S_SPIKE4 -- Fully retracted
-	{SPR_USPK, 2, 2, {A_Pain},         0, 0, S_SPIKE6}, // S_SPIKE5
-	{SPR_USPK, 1, 2, {NULL},           0, 0, S_SPIKE1}, // S_SPIKE6
-	{SPR_USPK, 4,-1, {NULL}, 0, 0, S_NULL}, // S_SPIKED1 -- Busted spike particles
-	{SPR_USPK, 5,-1, {NULL}, 0, 0, S_NULL}, // S_SPIKED2
+	{SPR_USPK, FF_SEMIBRIGHT|0,-1, {A_SpikeRetract}, 1, 0, S_SPIKE2}, // S_SPIKE1 -- Fully extended
+	{SPR_USPK, FF_SEMIBRIGHT|1, 2, {A_Pain},         0, 0, S_SPIKE3}, // S_SPIKE2
+	{SPR_USPK, FF_SEMIBRIGHT|0, 2, {NULL},           0, 0, S_SPIKE4}, // S_SPIKE3
+	{SPR_USPK, FF_SEMIBRIGHT|3,-1, {A_SpikeRetract}, 0, 0, S_SPIKE5}, // S_SPIKE4 -- Fully retracted
+	{SPR_USPK, FF_SEMIBRIGHT|2, 2, {A_Pain},         0, 0, S_SPIKE6}, // S_SPIKE5
+	{SPR_USPK, FF_SEMIBRIGHT|1, 2, {NULL},           0, 0, S_SPIKE1}, // S_SPIKE6
+	{SPR_USPK, FF_SEMIBRIGHT|4,-1, {NULL}, 0, 0, S_NULL}, // S_SPIKED1 -- Busted spike particles
+	{SPR_USPK, FF_SEMIBRIGHT|5,-1, {NULL}, 0, 0, S_NULL}, // S_SPIKED2
 
 	// Wall Spike
-	{SPR_WSPK, 0|FF_PAPERSPRITE,-1, {A_SpikeRetract}, 1, 0, S_WALLSPIKE2}, // S_WALLSPIKE1 -- Fully extended
-	{SPR_WSPK, 1|FF_PAPERSPRITE, 2, {A_Pain},         0, 0, S_WALLSPIKE3}, // S_WALLSPIKE2
-	{SPR_WSPK, 2|FF_PAPERSPRITE, 2, {NULL},           0, 0, S_WALLSPIKE4}, // S_WALLSPIKE3
-	{SPR_WSPK, 3|FF_PAPERSPRITE,-1, {A_SpikeRetract}, 0, 0, S_WALLSPIKE5}, // S_WALLSPIKE4 -- Fully retracted
-	{SPR_WSPK, 2|FF_PAPERSPRITE, 2, {A_Pain},         0, 0, S_WALLSPIKE6}, // S_WALLSPIKE5
-	{SPR_WSPK, 1|FF_PAPERSPRITE, 2, {NULL},           0, 0, S_WALLSPIKE1}, // S_WALLSPIKE6
-	{SPR_WSPB, 0|FF_PAPERSPRITE,-1, {NULL}, 0, 0, S_NULL}, // S_WALLSPIKEBASE -- Base
+	{SPR_WSPK, 0|FF_SEMIBRIGHT|FF_PAPERSPRITE,-1, {A_SpikeRetract}, 1, 0, S_WALLSPIKE2}, // S_WALLSPIKE1 -- Fully extended
+	{SPR_WSPK, 1|FF_SEMIBRIGHT|FF_PAPERSPRITE, 2, {A_Pain},         0, 0, S_WALLSPIKE3}, // S_WALLSPIKE2
+	{SPR_WSPK, 2|FF_SEMIBRIGHT|FF_PAPERSPRITE, 2, {NULL},           0, 0, S_WALLSPIKE4}, // S_WALLSPIKE3
+	{SPR_WSPK, 3|FF_SEMIBRIGHT|FF_PAPERSPRITE,-1, {A_SpikeRetract}, 0, 0, S_WALLSPIKE5}, // S_WALLSPIKE4 -- Fully retracted
+	{SPR_WSPK, 2|FF_SEMIBRIGHT|FF_PAPERSPRITE, 2, {A_Pain},         0, 0, S_WALLSPIKE6}, // S_WALLSPIKE5
+	{SPR_WSPK, 1|FF_SEMIBRIGHT|FF_PAPERSPRITE, 2, {NULL},           0, 0, S_WALLSPIKE1}, // S_WALLSPIKE6
+	{SPR_WSPB, 0|FF_SEMIBRIGHT|FF_PAPERSPRITE,-1, {NULL}, 0, 0, S_NULL}, // S_WALLSPIKEBASE -- Base
 	{SPR_WSPK, 4,-1, {NULL}, 0, 0, S_NULL}, // S_WALLSPIKED1 -- Busted spike particles
 	{SPR_WSPK, 5,-1, {NULL}, 0, 0, S_NULL}, // S_WALLSPIKED2
 
@@ -9371,7 +9371,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		4,              // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_NOBLOCKMAP|MF_SCENERY|MF_NOCLIPHEIGHT|MF_NOHITLAGFORME,  // flags
+		MF_NOBLOCKMAP|MF_SCENERY|MF_NOCLIPHEIGHT|MF_NOHITLAGFORME|MF_DONTENCOREMAP,  // flags
 		S_NULL          // raisestate
 	},
 
@@ -9398,7 +9398,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		4,              // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_SCENERY|MF_NOCLIPHEIGHT|MF_PAPERCOLLISION|MF_NOHITLAGFORME,  // flags
+		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_SCENERY|MF_NOCLIPHEIGHT|MF_PAPERCOLLISION|MF_NOHITLAGFORME|MF_DONTENCOREMAP,  // flags
 		S_NULL          // raisestate
 	},
 
