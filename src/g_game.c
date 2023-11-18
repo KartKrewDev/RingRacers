@@ -3626,6 +3626,10 @@ void G_UpdateVisited(void)
 	if (prevmap != gamemap-1)
 		return;
 
+	// Neither for tutorial skip material
+	if (nextmapoverride == NEXTMAP_TUTORIALCHALLENGE+1 || tutorialchallenge != TUTORIALSKIP_NONE)
+		return;
+
 	// Check if every local player wiped out.
 	for (i = 0; i < MAXPLAYERS; i++)
 	{

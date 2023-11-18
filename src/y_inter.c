@@ -1906,7 +1906,8 @@ void Y_DetermineIntermissionType(void)
 	|| (modeattacking && (players[consoleplayer].pflags & PF_NOCONTEST))
 	// or for explicit requested skip (outside of modeattacking)
 	|| (modeattacking == ATTACKING_NONE && skipstats != 0)
-	|| (tutorialchallenge != TUTORIALSKIP_NONE))
+	// or tutorial skip material
+	|| (nextmapoverride == NEXTMAP_TUTORIALCHALLENGE || tutorialchallenge != TUTORIALSKIP_NONE))
 	{
 		intertype = int_none;
 		return;
