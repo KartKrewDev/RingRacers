@@ -585,6 +585,15 @@ boolean K_TimeAttackRules(void)
 		return true;
 	}
 
+	if (gametype == GT_TUTORIAL)
+	{
+		// Tutorials are special. By default only one
+		// player will be playing... but sometimes bots
+		// can be spawned! So we still guarantee the
+		// changed behaviour for consistency.
+		return true;
+	}
+
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (playeringame[i] == false || players[i].spectator == true)

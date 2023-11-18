@@ -183,7 +183,7 @@ static kartitems_t K_KartItemReelSpecialEnd[] =
 	KITEM_NONE
 };
 
-static kartitems_t K_KartItemReelTimeAttack[] =
+static kartitems_t K_KartItemReelRingSneaker[] =
 {
 	KITEM_SNEAKER,
 	KITEM_SUPERRING,
@@ -1228,7 +1228,7 @@ static void K_CalculateRouletteSpeed(itemroulette_t *const roulette)
 	fixed_t progress = 0;
 	fixed_t total = 0;
 
-	if (bossinfo.valid == true)
+	if (K_CheckBossIntro() == true)
 	{
 		// Boss in action, use a speed controlled by boss health
 		total = FixedDiv(bossinfo.healthbar, BOSSHEALTHBARLEN);
@@ -1345,7 +1345,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 			return;
 		}
 	}
-	else if (gametyperules & GTR_BOSS)
+	else if (K_CheckBossIntro() == true)
 	{
 		for (i = 0; K_KartItemReelBoss[i] != KITEM_NONE; i++)
 		{
@@ -1356,10 +1356,10 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	}
 	else if (K_TimeAttackRules() == true)
 	{
-		kartitems_t *presetlist = K_KartItemReelTimeAttack;
+		kartitems_t *presetlist = K_KartItemReelRingSneaker;
 
 		// If the objective is not to go fast, it's to cause serious damage.
-		if (gametyperules & GTR_PRISONS)
+		if (battleprisons == true)
 		{
 			presetlist = K_KartItemReelBreakTheCapsules;
 		}
