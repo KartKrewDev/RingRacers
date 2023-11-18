@@ -12651,13 +12651,13 @@ void P_SpawnPlayer(INT32 playernum)
 		}
 	}
 
-	boolean director = p->spectator && pcount > 0;
-
 	if (G_IsPartyLocal(playernum))
 	{
-		// Spectating when there is literally any other
-		// player in the level enables director cam.
-		K_ToggleDirector(G_PartyPosition(playernum), director);
+		// Spectating always enables director cam. If there
+		// is no one to view, this will do nothing. If
+		// someone enters the game later, it will
+		// automatically switch to that player.
+		K_ToggleDirector(G_PartyPosition(playernum), p->spectator);
 
 		// Spectators can switch to freecam. This should be
 		// disabled when they enter the race, or when the level
