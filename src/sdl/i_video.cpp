@@ -1810,3 +1810,38 @@ UINT32 I_GetRefreshRate(void)
 	// trouble querying mode over and over again.
 	return refresh_rate;
 }
+
+namespace srb2::cvarhandler
+{
+void on_set_vid_wait();
+}
+
+void srb2::cvarhandler::on_set_vid_wait()
+{
+	int interval = 0;
+	if (cv_vidwait.value > 0)
+	{
+		interval = 1;
+	}
+
+	switch (rendermode)
+	{
+	case render_soft:
+		if (sdlglcontext == nullptr || SDL_GL_GetCurrentContext() != sdlglcontext)
+		{
+			return;
+		}
+		SDL_GL_SetSwapInterval(interval);
+		break;
+#ifdef HWRENDER
+	case render_opengl:
+		if (g_legacy_gl_context == nullptr || SDL_GL_GetCurrentContext() != g_legacy_gl_context)
+		{
+			return;
+		}
+		SDL_GL_SetSwapInterval(interval);
+#endif
+	default:
+		break;
+	}
+}

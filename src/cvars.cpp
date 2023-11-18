@@ -460,7 +460,14 @@ consvar_t cv_usemouse = Player("use_mouse", "Off").values({{0, "Off"}, {1, "On"}
 consvar_t cv_vhseffect = Player("vhspause", "On").on_off();
 
 // synchronize page flipping with screen refresh
-consvar_t cv_vidwait = GraphicsDriver("vid_wait", "Off").on_off();
+extern "C++"
+{
+namespace srb2::cvarhandler
+{
+void on_set_vid_wait();
+}
+}
+consvar_t cv_vidwait = GraphicsDriver("vid_wait", "Off").on_off().onchange(srb2::cvarhandler::on_set_vid_wait);
 
 // if true, all sounds are loaded at game startup
 consvar_t precachesound = Player("precachesound", "Off").on_off();
