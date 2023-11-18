@@ -1519,6 +1519,21 @@ typedef enum sprite
 	SPR_PUYC,
 	SPR_PUYD,
 	SPR_PUYE,
+	
+	// Aerial Highlands
+	SPR_BCLD,
+	
+	// Avant Garden
+	SPR_AGTU,
+	SPR_AGTL,
+	SPR_AGTS,
+	SPR_AGTR,
+	SPR_AGFL,
+	SPR_AGFF,
+	SPR_AGCL,
+	
+	// Sky Sanctuary
+	SPR_SSCL,
 
 	SPR_MGSH, // Mega Barrier
 
@@ -6090,6 +6105,23 @@ typedef enum state
 	S_BLENDEYE_PUYO_SHOCK,
 	S_BLENDEYE_PUYO_DIE,
 	S_BLENDEYE_PUYO_DUST,
+	
+	// Aerial Highlands
+	S_AHZCLOUD,
+	
+	// Avant Garden
+	S_AGZBULB_BASE,
+	S_AHZBULB_NEUTRAL,
+	S_AHZBULB_ANIM1,
+	S_AHZBULB_ANIM2,
+	S_AHZBULB_ANIM3,
+	S_AGTR,
+	S_AGFL,
+	S_AGFF,
+	S_AGZCLOUD,
+	
+	// Sky Sanctuary
+	S_SSZCLOUD,
 
 	S_MEGABARRIER1,
 	S_MEGABARRIER2,
@@ -7457,6 +7489,23 @@ typedef enum mobj_type
 	MT_BLENDEYE_PUYO,
 	MT_BLENDEYE_PUYO_DUST,
 	MT_BLENDEYE_PUYO_DUST_COFFEE,
+	
+	// Aerial Highlands
+	MT_AHZ_CLOUD,
+	MT_AHZ_CLOUDCLUSTER,
+	
+	// Avant Garden
+	MT_AGZ_BULB,
+	MT_AGZ_BULB_PART,
+	MT_AGZ_TREE,
+	MT_AGZ_AGFL,
+	MT_AGZ_AGFF,
+	MT_AGZ_CLOUD,
+	MT_AGZ_CLOUDCLUSTER,
+	
+	// Sky Sanctuary
+	MT_SSZ_CLOUD,
+	MT_SSZ_CLOUDCLUSTER,
 
 	MT_MEGABARRIER,
 
