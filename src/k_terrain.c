@@ -628,7 +628,8 @@ void K_ProcessTerrainEffect(mobj_t *mo)
 			spark->fuse = 9;
 			spark->cusval = K_StairJankFlip(ANGLE_90);
 			P_SetTarget(&spark->target, mo);
-			K_ReduceVFX(spark, player);
+			P_SetTarget(&spark->owner, mo);
+			spark->renderflags |= RF_REDUCEVFX;
 		}
 
 		player->stairjank = 17;

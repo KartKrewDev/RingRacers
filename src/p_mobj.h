@@ -445,6 +445,8 @@ struct mobj_t
 	// If punt_ref, set punt_ref->reappear, treat as if this->reappear
 	mobj_t *punt_ref;
 
+	mobj_t *owner;
+
 	// WARNING: New fields must be added separately to savegame and Lua.
 };
 

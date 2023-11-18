@@ -109,6 +109,7 @@ enum mobj_e {
 	mobj_stringargs,
 	mobj_reappear,
 	mobj_punt_ref,
+	mobj_owner,
 };
 
 static const char *const mobj_opt[] = {
@@ -198,6 +199,7 @@ static const char *const mobj_opt[] = {
 	"stringargs",
 	"reappear",
 	"punt_ref",
+	"owner",
 	NULL};
 
 #define UNIMPLEMENTED luaL_error(L, LUA_QL("mobj_t") " field " LUA_QS " is not implemented for Lua and cannot be accessed.", mobj_opt[field])
@@ -507,6 +509,14 @@ static int mobj_get(lua_State *L)
 			return 0;
 		}
 		LUA_PushUserdata(L, mo->punt_ref, META_MOBJ);
+		break;
+	case mobj_owner:
+		if (mo->owner && P_MobjWasRemoved(mo->owner))
+		{ // don't put invalid mobj back into Lua.
+			P_SetTarget(&mo->owner, NULL);
+			return 0;
+		}
+		LUA_PushUserdata(L, mo->owner, META_MOBJ);
 		break;
 	default: // extra custom variables in Lua memory
 		lua_getfield(L, LUA_REGISTRYINDEX, LREG_EXTVARS);
@@ -908,6 +918,15 @@ static int mobj_set(lua_State *L)
 		{
 			mobj_t *punt_ref = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
 			P_SetTarget(&mo->punt_ref, punt_ref);
+		}
+		break;
+	case mobj_owner:
+		if (lua_isnil(L, 3))
+			P_SetTarget(&mo->owner, NULL);
+		else
+		{
+			mobj_t *owner = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
+			P_SetTarget(&mo->owner, owner);
 		}
 		break;
 	default:

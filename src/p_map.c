@@ -3148,7 +3148,8 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff, Try
 			spark->fuse = 9;
 			spark->cusval = K_StairJankFlip(ANGLE_90);
 			P_SetTarget(&spark->target, thing);
-			K_ReduceVFX(spark, thing->player);
+			P_SetTarget(&spark->owner, thing);
+			spark->renderflags |= RF_REDUCEVFX;
 		}
 
 		thing->player->stairjank = 17;

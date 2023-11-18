@@ -8036,7 +8036,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 		}
 
-		K_ReduceVFX(mobj, mobj->target->player);
+		P_SetTarget(&mobj->owner, mobj->target);
+		mobj->renderflags |= RF_REDUCEVFX;
 		break;
 	}
 	case MT_BOOSTFLAME:
@@ -8125,7 +8126,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				S_StartSound(mobj, sfx_cdfm17);
 
 			K_MatchGenericExtraFlags(mobj, mobj->target);
-			K_ReduceVFX(mobj, mobj->target->player);
+			P_SetTarget(&mobj->owner, mobj->target);
+			mobj->renderflags |= RF_REDUCEVFX;
 			if (leveltime & 1)
 				mobj->renderflags |= RF_DONTDRAW;
 		}
@@ -8330,7 +8332,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				mobj->renderflags = (mobj->renderflags & ~RF_TRANSMASK)|(trans << RF_TRANSSHIFT);
 		}
 
-		K_ReduceVFX(mobj, mobj->target->player);
+		P_SetTarget(&mobj->owner, mobj->target);
+		mobj->renderflags |= RF_REDUCEVFX;
 		break;
 	case MT_MAGICIANBOX:
 	{
@@ -10447,6 +10450,8 @@ void P_MobjThinker(mobj_t *mobj)
 		P_SetTarget(&mobj->itnext, NULL);
 	if (mobj->punt_ref && P_MobjWasRemoved(mobj->punt_ref))
 		P_SetTarget(&mobj->punt_ref, NULL);
+	if (mobj->owner && P_MobjWasRemoved(mobj->owner))
+		P_SetTarget(&mobj->owner, NULL);
 
 	if (mobj->flags & MF_NOTHINK)
 		return;
@@ -12002,6 +12007,7 @@ void P_RemoveMobj(mobj_t *mobj)
 
 	P_SetTarget(&mobj->itnext, NULL);
 	P_SetTarget(&mobj->punt_ref, NULL);
+	P_SetTarget(&mobj->owner, NULL);
 
 	P_RemoveThingTID(mobj);
 	P_DeleteMobjStringArgs(mobj);

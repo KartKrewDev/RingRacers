@@ -320,7 +320,7 @@ UINT32 K_GetPlayerDontDrawFlag(player_t *player)
 	return flag;
 }
 
-void K_ReduceVFX(mobj_t *mo, player_t *owner)
+void K_ReduceVFXForEveryone(mobj_t *mo)
 {
 	if (cv_reducevfx.value == 0)
 	{
@@ -329,11 +329,6 @@ void K_ReduceVFX(mobj_t *mo, player_t *owner)
 	}
 
 	mo->renderflags |= RF_DONTDRAW;
-
-	if (owner != NULL)
-	{
-		mo->renderflags &= ~K_GetPlayerDontDrawFlag(owner);
-	}
 }
 
 // Angle reflection used by springs & speed pads
@@ -1741,7 +1736,8 @@ spawn_brake_dust
 	P_SetScale(spark, (spark->destscale =
 				FixedMul(scale, spark->scale)));
 
-	K_ReduceVFX(spark, master->player);
+	P_SetTarget(&spark->owner, master);
+	spark->renderflags |= RF_REDUCEVFX;
 }
 
 static void K_SpawnBrakeVisuals(player_t *player)
@@ -1818,7 +1814,8 @@ void K_SpawnDriftBoostClip(player_t *player)
 			P_RandomFlip(P_RandomRange(PR_DECORATION, FRACUNIT/2, FRACUNIT)),
 			FixedMul(scale, player->speed));
 
-	K_ReduceVFX(clip, player);
+	P_SetTarget(&clip->owner, player->mo);
+	clip->renderflags |= RF_REDUCEVFX;
 }
 
 void K_SpawnDriftBoostClipSpark(mobj_t *clip)
@@ -1875,7 +1872,8 @@ static void K_SpawnGenericSpeedLines(player_t *player, boolean top)
 	}
 
 	K_MatchGenericExtraFlags(fast, player->mo);
-	K_ReduceVFX(fast, player);
+	P_SetTarget(&fast->owner, player->mo);
+	fast->renderflags |= RF_REDUCEVFX;
 
 	if (top)
 	{
@@ -1954,7 +1952,8 @@ void K_SpawnInvincibilitySpeedLines(mobj_t *mo)
 	fast->momz = 3*P_GetMobjZMovement(mo)/4;
 
 	K_MatchGenericExtraFlags(fast, mo);
-	K_ReduceVFX(fast, mo->player);
+	P_SetTarget(&fast->owner, mo);
+	fast->renderflags |= RF_REDUCEVFX;
 
 	fast->color = mo->color;
 	fast->colorized = true;
@@ -3068,7 +3067,8 @@ void K_SpawnWaterRunParticles(mobj_t *mobj)
 			water->momz = mobj->momz;
 			P_SetScale(water, trailScale);
 			P_SetMobjState(water, curUnderlayFrame);
-			K_ReduceVFX(water, mobj->player);
+			P_SetTarget(&water->owner, mobj);
+			water->renderflags |= RF_REDUCEVFX;
 
 			// overlay
 			water = P_SpawnMobj(x1, y1,
@@ -3080,7 +3080,8 @@ void K_SpawnWaterRunParticles(mobj_t *mobj)
 			water->momz = mobj->momz;
 			P_SetScale(water, trailScale);
 			P_SetMobjState(water, curOverlayFrame);
-			K_ReduceVFX(water, mobj->player);
+			P_SetTarget(&water->owner, mobj);
+			water->renderflags |= RF_REDUCEVFX;
 
 			// Right
 			// Underlay
@@ -3093,7 +3094,8 @@ void K_SpawnWaterRunParticles(mobj_t *mobj)
 			water->momz = mobj->momz;
 			P_SetScale(water, trailScale);
 			P_SetMobjState(water, curUnderlayFrame);
-			K_ReduceVFX(water, mobj->player);
+			P_SetTarget(&water->owner, mobj);
+			water->renderflags |= RF_REDUCEVFX;
 
 			// Overlay
 			water = P_SpawnMobj(x2, y2,
@@ -3105,7 +3107,8 @@ void K_SpawnWaterRunParticles(mobj_t *mobj)
 			water->momz = mobj->momz;
 			P_SetScale(water, trailScale);
 			P_SetMobjState(water, curOverlayFrame);
-			K_ReduceVFX(water, mobj->player);
+			P_SetTarget(&water->owner, mobj);
+			water->renderflags |= RF_REDUCEVFX;
 
 			if (!S_SoundPlaying(mobj, sfx_s3kdbs))
 			{
@@ -5222,7 +5225,8 @@ static void K_SpawnDriftElectricity(player_t *player)
 		spark->momz = mo->momz;
 		spark->color = color;
 		K_GenericExtraFlagsNoZAdjust(spark, mo);
-		K_ReduceVFX(spark, player);
+		P_SetTarget(&spark->owner, mo);
+		spark->renderflags |= RF_REDUCEVFX;
 
 		spark->spritexscale += scalefactor/3;
 		spark->spriteyscale += scalefactor/8;
@@ -5293,7 +5297,8 @@ void K_SpawnDriftElectricSparks(player_t *player, int color, boolean shockwave)
 
 
 				sparkangle += ANGLE_90;
-				K_ReduceVFX(spark, player);
+				P_SetTarget(&spark->owner, mo);
+				spark->renderflags |= RF_REDUCEVFX;
 			}
 		}
 	}
@@ -5444,7 +5449,8 @@ static void K_SpawnDriftSparks(player_t *player)
 			spark->tics += trail;
 
 		K_MatchGenericExtraFlags(spark, player->mo);
-		K_ReduceVFX(spark, player);
+		P_SetTarget(&spark->owner, player->mo);
+		spark->renderflags |= RF_REDUCEVFX;
 	}
 
 	if (player->driftcharge >= dsthree)
@@ -10641,7 +10647,8 @@ void K_KartEbrakeVisuals(player_t *p)
 			wave = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->floorz, MT_SOFTLANDING);
 			P_InstaScale(wave, p->mo->scale);
 			P_SetTarget(&wave->target, p->mo);
-			K_ReduceVFX(wave, p);
+			P_SetTarget(&wave->owner, p->mo);
+			wave->renderflags |= RF_REDUCEVFX;
 		}
 
 		// sound
@@ -10674,7 +10681,8 @@ void K_KartEbrakeVisuals(player_t *p)
 			p->mo->hprev->angle = p->mo->angle;
 			p->mo->hprev->fuse = TICRATE/2;		// When we leave spindash for any reason, make sure this bubble goes away soon after.
 			K_FlipFromObject(p->mo->hprev, p->mo);
-			K_ReduceVFX(p->mo->hprev, p);
+			P_SetTarget(&p->mo->hprev->owner, p->mo);
+			p->mo->hprev->renderflags |= RF_REDUCEVFX;
 			p->mo->hprev->sprzoff = p->mo->sprzoff;
 
 			p->mo->hprev->colorized = false;
@@ -10692,7 +10700,8 @@ void K_KartEbrakeVisuals(player_t *p)
 			spdl->colorized = true;
 			spdl->color = SKINCOLOR_WHITE;
 			K_MatchGenericExtraFlags(spdl, p->mo);
-			K_ReduceVFX(spdl, p);
+			P_SetTarget(&spdl->owner, p->mo);
+			spdl->renderflags |= RF_REDUCEVFX;
 			P_SetScale(spdl, p->mo->scale);
 
 			// squish the player a little bit.
@@ -10811,8 +10820,6 @@ static void K_KartSpindashDust(mobj_t *parent)
 		dust->momx = FixedMul(hmomentum, FINECOSINE(ang >> ANGLETOFINESHIFT));
 		dust->momy = FixedMul(hmomentum, FINESINE(ang >> ANGLETOFINESHIFT));
 		dust->momz = vmomentum * flip;
-
-		//K_ReduceVFX(dust, parent->player);
 	}
 }
 
@@ -10840,7 +10847,8 @@ static void K_KartSpindashWind(mobj_t *parent)
 	wind->momz = 3 * P_GetMobjZMovement(parent) / 4;
 
 	K_MatchGenericExtraFlags(wind, parent);
-	K_ReduceVFX(wind, parent->player);
+	P_SetTarget(&wind->owner, parent);
+	wind->renderflags |= RF_REDUCEVFX;
 }
 
 // Time after which you get a thrust for releasing spindash
@@ -13083,7 +13091,8 @@ void K_SetTireGrease(player_t *player, tic_t tics)
 			P_SetTarget(&grease->target, player->mo);
 			grease->angle = K_MomentumAngle(player->mo);
 			grease->extravalue1 = i;
-			K_ReduceVFX(grease, player);
+			P_SetTarget(&grease->owner, player->mo);
+			grease->renderflags |= RF_REDUCEVFX;
 		}
 	}
 

@@ -112,7 +112,8 @@ static void SpawnEmeraldSpeedLines(mobj_t *mo)
 	fast->momz = 3*P_GetMobjZMovement(mo)/4;
 
 	K_MatchGenericExtraFlags(fast, mo);
-	K_ReduceVFX(fast, mo->player);
+	P_SetTarget(&fast->owner, mo);
+	fast->renderflags |= RF_REDUCEVFX;
 
 	fast->color = mo->color;
 	fast->colorized = true;

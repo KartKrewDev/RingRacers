@@ -3775,6 +3775,9 @@ boolean R_ThingVisible (mobj_t *thing)
 	|| (viewssnum == 3 && (thing->renderflags & RF_DONTDRAWP4)))
 		return false;
 
+	if ((thing->renderflags & RF_REDUCEVFX) && cv_reducevfx.value && thing->owner != players[displayplayers[viewssnum]].mo)
+		return false;
+
 	return true;
 }
 

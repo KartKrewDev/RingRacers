@@ -2708,6 +2708,7 @@ typedef enum
 	MD3_LIGHTLEVEL		= 1,
 	MD3_REAPPEAR		= 1<<1,
 	MD3_PUNT_REF		= 1<<2,
+	MD3_OWNER			= 1<<3,
 } mobj_diff3_t;
 
 typedef enum
@@ -3032,6 +3033,8 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		diff3 |= MD3_REAPPEAR;
 	if (mobj->punt_ref)
 		diff3 |= MD3_PUNT_REF;
+	if (mobj->owner)
+		diff3 |= MD3_OWNER;
 
 	if (diff3 != 0)
 		diff2 |= MD2_MORE;
@@ -3319,6 +3322,10 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 	if (diff3 & MD3_PUNT_REF)
 	{
 		WRITEUINT32(save->p, mobj->punt_ref->mobjnum);
+	}
+	if (diff3 & MD3_OWNER)
+	{
+		WRITEUINT32(save->p, mobj->owner->mobjnum);
 	}
 
 	WRITEUINT32(save->p, mobj->mobjnum);
@@ -4574,6 +4581,10 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 	{
 		mobj->punt_ref = (mobj_t *)(size_t)READUINT32(save->p);
 	}
+	if (diff3 & MD3_OWNER)
+	{
+		mobj->owner = (mobj_t *)(size_t)READUINT32(save->p);
+	}
 
 	// set sprev, snext, bprev, bnext, subsector
 	P_SetThingPosition(mobj);
@@ -5620,6 +5631,13 @@ static void P_RelinkPointers(void)
 			mobj->punt_ref = NULL;
 			if (!P_SetTarget(&mobj->punt_ref, P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "punt_ref not found on %d\n", mobj->type);
+		}
+		if (mobj->owner)
+		{
+			temp = (UINT32)(size_t)mobj->owner;
+			mobj->owner = NULL;
+			if (!P_SetTarget(&mobj->owner, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "owner not found on %d\n", mobj->type);
 		}
 	}
 

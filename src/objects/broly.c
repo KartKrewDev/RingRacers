@@ -51,7 +51,7 @@ Obj_SpawnBrolyKi
 
 	x->tics = (duration + BUFFER_TICS);
 
-	K_ReduceVFX(x, NULL);
+	K_ReduceVFXForEveryone(x);
 
 	S_StartSound(x, sfx_cdfm74);
 
