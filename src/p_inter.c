@@ -2150,9 +2150,19 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 						cur->scalespeed = cur->destscale/TICRATE;
 						cur->z -= cur->height/2;
 
-						// flags are NOT from the target - just in case it's just been placed on the ceiling as a gimmick
-						cur->flags2 |= (source->flags2 & MF2_OBJECTFLIP);
-						cur->eflags |= (source->eflags & MFE_VERTICALFLIP);
+						if (source && !P_MobjWasRemoved(source))
+						{
+							// flags are NOT from the target - just in case it's just been placed on the ceiling as a gimmick
+							cur->flags2 |= (source->flags2 & MF2_OBJECTFLIP);
+							cur->eflags |= (source->eflags & MFE_VERTICALFLIP);
+						}
+						else
+						{
+							// Welp, nothing to be done here
+							cur->flags2 |= (target->flags2 & MF2_OBJECTFLIP);
+							cur->eflags |= (target->eflags & MFE_VERTICALFLIP);
+						}
+
 
 						launchangle = FixedAngle(
 							(
