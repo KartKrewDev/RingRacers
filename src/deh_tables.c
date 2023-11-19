@@ -5971,9 +5971,6 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_DLZ_HOVER",
 	"MT_DLZ_ROCKET",
-	"MT_DLZ_SEASAW_SPAWN",
-	"MT_DLZ_SEASAW_HITBOX",
-	"MT_DLZ_SEASAW_VISUAL",
 	"MT_DLZ_RINGVACCUM",
 	"MT_DLZ_SUCKEDRING",
 
@@ -5999,6 +5996,10 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_BLENDEYE_PUYO_DUST",
 	"MT_BLENDEYE_PUYO_DUST_COFFEE",
 	"MT_MEGABARRIER",
+
+	"MT_SEASAW_VISUAL",
+	"MT_DLZ_SEASAW_SPAWN",
+	"MT_DLZ_SEASAW_HITBOX",
 };
 
 const char *const MOBJFLAG_LIST[] = {
