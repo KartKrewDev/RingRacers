@@ -5895,40 +5895,61 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 	// Rank information
 
 	{
-		WRITEUINT8(save->p, grandprixinfo.rank.numPlayers);
-		WRITEUINT8(save->p, grandprixinfo.rank.totalPlayers);
+		const gpRank_t *rank = &grandprixinfo.rank;
 
-		WRITEUINT8(save->p, grandprixinfo.rank.position);
-		WRITEUINT8(save->p, grandprixinfo.rank.skin);
+		WRITEUINT8(save->p, rank->numPlayers);
+		WRITEUINT8(save->p, rank->totalPlayers);
 
-		WRITEUINT32(save->p, grandprixinfo.rank.winPoints);
-		WRITEUINT32(save->p, grandprixinfo.rank.totalPoints);
+		WRITEUINT8(save->p, rank->position);
+		WRITEUINT8(save->p, rank->skin);
 
-		WRITEUINT32(save->p, grandprixinfo.rank.laps);
-		WRITEUINT32(save->p, grandprixinfo.rank.totalLaps);
+		WRITEUINT32(save->p, rank->winPoints);
+		WRITEUINT32(save->p, rank->totalPoints);
 
-		WRITEUINT32(save->p, (grandprixinfo.rank.continuesUsed + 1));
+		WRITEUINT32(save->p, rank->laps);
+		WRITEUINT32(save->p, rank->totalLaps);
 
-		WRITEUINT32(save->p, grandprixinfo.rank.prisons);
-		WRITEUINT32(save->p, grandprixinfo.rank.totalPrisons);
+		WRITEUINT32(save->p, (rank->continuesUsed + 1));
 
-		WRITEUINT32(save->p, grandprixinfo.rank.rings);
-		WRITEUINT32(save->p, grandprixinfo.rank.totalRings);
+		WRITEUINT32(save->p, rank->prisons);
+		WRITEUINT32(save->p, rank->totalPrisons);
 
-		WRITEUINT8(save->p, (UINT8)grandprixinfo.rank.specialWon);
+		WRITEUINT32(save->p, rank->rings);
+		WRITEUINT32(save->p, rank->totalRings);
 
-		/*
-		WRITEUINT8(save->p, grandprixinfo.rank.numLevels);
+		WRITEUINT8(save->p, (UINT8)rank->specialWon);
 
-		for (i = 0; i < grandprixinfo.rank.stages; i++)
+		WRITEUINT8(save->p, rank->numLevels);
+
+		for (i = 0; i < rank->numLevels; i++)
 		{
-			UINT8 j;
-			for (j = 0; j < grandprixinfo.rank.numPlayers; j++)
+			const gpRank_level_t *lvl = &rank->levels[i];
+
+			UINT32 mapHash = 0; // no good default, will all-but-guarantee bad save
+			if (lvl->id < nummapheaders && mapheaderinfo[lvl->id] != NULL)
 			{
-				
+				mapHash = mapheaderinfo[lvl->id]->lumpnamehash;
+			}
+			WRITEUINT32(save->p, mapHash);
+
+			WRITEINT32(save->p, lvl->event);
+			WRITEUINT32(save->p, lvl->time);
+			WRITEUINT16(save->p, lvl->totalLapPoints);
+			WRITEUINT16(save->p, lvl->totalPrisons);
+
+			UINT8 j;
+			for (j = 0; j < rank->numPlayers; j++)
+			{
+				const gpRank_level_perplayer_t *plr = &lvl->perPlayer[j];
+
+				WRITEUINT8(save->p, plr->position);
+				WRITEUINT8(save->p, plr->rings);
+				WRITEUINT16(save->p, plr->lapPoints);
+				WRITEUINT16(save->p, plr->prisons);
+				WRITEUINT8(save->p, (UINT8)plr->gotSpecialPrize);
+				WRITESINT8(save->p, (SINT8)plr->grade);
 			}
 		}
-		*/
 	}
 
 	// Marathon information
@@ -6071,27 +6092,71 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 	// Rank information
 
 	{
-		grandprixinfo.rank.numPlayers = READUINT8(save->p);
-		grandprixinfo.rank.totalPlayers = READUINT8(save->p);
+		gpRank_t *const rank = &grandprixinfo.rank;
 
-		grandprixinfo.rank.position = READUINT8(save->p);
-		grandprixinfo.rank.skin = READUINT8(save->p);
+		rank->numPlayers = READUINT8(save->p);
+		rank->totalPlayers = READUINT8(save->p);
 
-		grandprixinfo.rank.winPoints = READUINT32(save->p);
-		grandprixinfo.rank.totalPoints = READUINT32(save->p);
+		rank->position = READUINT8(save->p);
+		rank->skin = READUINT8(save->p);
 
-		grandprixinfo.rank.laps = READUINT32(save->p);
-		grandprixinfo.rank.totalLaps = READUINT32(save->p);
+		rank->winPoints = READUINT32(save->p);
+		rank->totalPoints = READUINT32(save->p);
 
-		grandprixinfo.rank.continuesUsed = READUINT32(save->p);
+		rank->laps = READUINT32(save->p);
+		rank->totalLaps = READUINT32(save->p);
 
-		grandprixinfo.rank.prisons = READUINT32(save->p);
-		grandprixinfo.rank.totalPrisons = READUINT32(save->p);
+		rank->continuesUsed = READUINT32(save->p);
 
-		grandprixinfo.rank.rings = READUINT32(save->p);
-		grandprixinfo.rank.totalRings = READUINT32(save->p);
+		rank->prisons = READUINT32(save->p);
+		rank->totalPrisons = READUINT32(save->p);
 
-		grandprixinfo.rank.specialWon = (boolean)READUINT8(save->p);
+		rank->rings = READUINT32(save->p);
+		rank->totalRings = READUINT32(save->p);
+
+		rank->specialWon = (boolean)READUINT8(save->p);
+
+		rank->numLevels = READUINT8(save->p);
+		for (i = 0; i < rank->numLevels; i++)
+		{
+			gpRank_level_t *const lvl = &rank->levels[i];
+
+			UINT32 mapHash = READUINT32(save->p);
+
+			// Hidden Palace can adjust cup composition, and this level stuff is
+			// purely visual anyway, so don't be as strict as the earlier check.
+			UINT32 j;
+			for (j = 0; j < (unsigned)nummapheaders; j++)
+			{
+				if (mapheaderinfo[j]->lumpnamehash == mapHash)
+				{
+					break;
+				}
+			}
+
+			if (j == (unsigned)nummapheaders)
+			{
+				CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Cup \"%s\"'s level composition has changed between game launches (level %u does not exist).\n", cupname, i);
+				return false;
+			}
+
+			lvl->event = READINT32(save->p);
+			lvl->time = READUINT32(save->p);
+			lvl->totalLapPoints = READUINT16(save->p);
+			lvl->totalPrisons = READUINT16(save->p);
+
+			for (j = 0; j < rank->numPlayers; j++)
+			{
+				gpRank_level_perplayer_t *const plr = &lvl->perPlayer[j];
+
+				plr->position = READUINT8(save->p);
+				plr->rings = READUINT8(save->p);
+				plr->lapPoints = READUINT16(save->p);
+				plr->prisons = READUINT16(save->p);
+				plr->gotSpecialPrize = (boolean)READUINT8(save->p);
+				plr->grade = (gp_rank_e)READSINT8(save->p);
+			}
+		}
 	}
 
 	// Marathon information

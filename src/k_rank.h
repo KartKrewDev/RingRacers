@@ -62,7 +62,7 @@ struct gpRank_t
 	boolean specialWon;
 
 	UINT8 numLevels;
-	gpRank_level_t levels[8];
+	gpRank_level_t levels[CUPCACHE_PODIUM];
 
 #ifdef __cplusplus
 	void Init(void);
