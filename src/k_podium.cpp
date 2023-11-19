@@ -714,6 +714,15 @@ void podiumData_s::Draw(void)
 			true,
 			(rank.position > 3)
 		);
+
+		if (state == PODIUM_ST_DONE)
+		{
+			Y_DrawIntermissionButton(delay, 0);
+		}
+		else if (state == PODIUM_ST_EXIT)
+		{
+			Y_DrawIntermissionButton(-1, (2*TICRATE) - delay);
+		}
 	}
 }
 
@@ -1130,9 +1139,4 @@ void K_CeremonyDrawer(void)
 	}
 
 	g_podiumData.Draw();
-
-	if (g_podiumData.state >= PODIUM_ST_DONE)
-	{
-		Y_DrawIntermissionButton(0, 0);
-	}
 }
