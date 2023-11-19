@@ -93,6 +93,8 @@ static void Obj_WPZTurbineUpdate(mobj_t *mo)
 		}
 	}
 
+// Not my code, no clue why this doesn't work, John Fucking Madden
+#if 0
 	// bubbles if we're underwater
 	if (mo->z < mo->watertop && leveltime%10 == 0)
 	{
@@ -119,6 +121,7 @@ static void Obj_WPZTurbineUpdate(mobj_t *mo)
 		bubble->movecount = bubbleradius;
 		P_SetTarget(&bubble->tracer, mo);
 	}
+#endif
 }
 
 void Obj_WPZTurbineThinker(mobj_t *mo)
