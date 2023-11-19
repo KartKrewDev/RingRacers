@@ -1747,14 +1747,16 @@ void Y_Ticker(void)
 	}
 
 	// Animation sounds for roundqueue, see Y_RoundQueueDrawer
-	if (roundqueue.size != 0
+	if (roundqueue.size > 1
 		&& roundqueue.position != 0
 		&& (timer - 1) <= 2*TICRATE)
 	{
 		const INT32 through = ((2*TICRATE) - (timer - 1));
 
+		UINT8 workingqueuesize = roundqueue.size - 1;
+
 		if (data.showrank == true
-			&& roundqueue.position == roundqueue.size-1)
+			&& roundqueue.position == workingqueuesize)
 		{
 			// Handle special entry on the end
 			if (through == data.linemeter && timer > 2)
@@ -1767,11 +1769,20 @@ void Y_Ticker(void)
 				S_StartSound(NULL, sfx_gpmetr);
 			}
 		}
-		else if (through == 9
-			&& roundqueue.position < roundqueue.size)
+		else
 		{
-			// Impactful landing
-			S_StartSound(NULL, sfx_kc50);
+			if (data.showrank == false
+				&& roundqueue.entries[workingqueuesize].rankrestricted == true)
+			{
+				workingqueuesize--;
+			}
+
+			if (through == 9
+				&& roundqueue.position <= workingqueuesize)
+			{
+				// Impactful landing
+				S_StartSound(NULL, sfx_kc50);
+			}
 		}
 	}
 
