@@ -5651,7 +5651,7 @@ void G_SaveGameData(void)
 // Can be called by the startup code or the menu task.
 //
 
-#define SAV_VERSIONMINOR 2
+#define SAV_VERSIONMINOR 3
 
 void G_LoadGame(void)
 {
