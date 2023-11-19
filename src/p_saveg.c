@@ -6065,17 +6065,17 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 
 	if (roundqueue.size != size)
 	{
-		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Cup \"%s\"'s level composition has changed between game launches (differs in level count).\n", cupname);
+		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Cup \"%s\"'s level composition has changed between game launches (%u expected, got %u).\n", cupname, roundqueue.size, size);
 		return false;
 	}
 
 	if (roundqueue.position == 0 || roundqueue.position > size)
 	{
-		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Position in the round queue is invalid.\n");
+		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Position %u/%d in the round queue is invalid.\n", roundqueue.position, size);
 		return false;
 	}
 
-	UINT8 i;
+	UINT8 i, j;
 	for (i = 0; i < roundqueue.size; i++)
 	{
 		UINT32 val = READUINT32(save->p);
@@ -6087,7 +6087,7 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 				continue;
 		}
 
-		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Cup \"%s\"'s level composition has changed between game launches (differs at level %u).\n", cupname, i);
+		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Cup \"%s\"'s level composition has changed between game launches (differs at queue entry %u/%u).\n", cupname, i, roundqueue.size);
 		return false;
 	}
 
@@ -6119,6 +6119,16 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 		rank->specialWon = (boolean)READUINT8(save->p);
 
 		rank->numLevels = READUINT8(save->p);
+
+		if (rank->numLevels > roundqueue.size)
+		{
+			CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Cup \"%s\"'s level composition has changed between game launches (%u levels ranked VS %u).\n", cupname, rank->numLevels, roundqueue.size);
+			return false;
+		}
+
+		boolean seeninqueue[ROUNDQUEUE_MAX];
+		memset(seeninqueue, 0, sizeof (boolean) * roundqueue.size);
+
 		for (i = 0; i < rank->numLevels; i++)
 		{
 			gpRank_level_t *const lvl = &rank->levels[i];
@@ -6127,18 +6137,25 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 
 			// Hidden Palace can adjust cup composition, and this level stuff is
 			// purely visual anyway, so don't be as strict as the earlier check.
-			UINT32 j;
-			for (j = 0; j < (unsigned)nummapheaders; j++)
+			for (j = 0; j < roundqueue.size; j++)
 			{
-				if (mapheaderinfo[j]->lumpnamehash == mapHash)
-				{
-					break;
-				}
+				// Simple handling to accomodate collisions
+				if (seeninqueue[j] == true)
+					continue;
+
+				UINT16 id = roundqueue.entries[j].mapnum;
+
+				if (mapheaderinfo[id]->lumpnamehash != mapHash)
+					continue;
+
+				lvl->id = id;
+				seeninqueue[j] = true;
+				break;
 			}
 
-			if (j == (unsigned)nummapheaders)
+			if (j == roundqueue.size)
 			{
-				CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Cup \"%s\"'s level composition has changed between game launches (level %u does not exist).\n", cupname, i);
+				CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Cup \"%s\"'s level composition has changed between game launches (ranked level %u/%u not found in queue).\n", cupname, i, rank->numLevels);
 				return false;
 			}
 
