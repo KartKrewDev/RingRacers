@@ -1526,6 +1526,11 @@ typedef enum sprite
 	SPR_GPPS,
 	SPR_GPZS,
 
+	// Gust Planet Trees
+	SPR_GPTB,
+	SPR_GPTM,
+	SPR_GPTS,
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	SPR_VIEW,
 
@@ -6048,6 +6053,10 @@ typedef enum state
 	S_MEGABARRIER2,
 	S_MEGABARRIER3,
 
+	S_GPZ_TREETHING_B,
+	S_GPZ_TREETHING_M,
+	S_GPZ_TREETHING_S,
+
 	S_FIRSTFREESLOT,
 	S_LASTFREESLOT = S_FIRSTFREESLOT + NUMSTATEFREESLOTS - 1,
 	NUMSTATES
@@ -7278,6 +7287,10 @@ typedef enum mobj_type
 	MT_DLZ_SEASAW_HITBOX,
 	MT_GPZ_SEASAW_SPAWN,
 	MT_GPZ_SEASAW_HITBOX,
+
+	MT_GPZ_TREETHING_B,
+	MT_GPZ_TREETHING_M,
+	MT_GPZ_TREETHING_S,
 
 	MT_FIRSTFREESLOT,
 	MT_LASTFREESLOT = MT_FIRSTFREESLOT + NUMMOBJFREESLOTS - 1,

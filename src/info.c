@@ -972,6 +972,11 @@ char sprnames[NUMSPRITES + 1][5] =
 	"GPPS",
 	"GPZS",
 
+	// Gust Planet Trees
+	"GPTB",
+	"GPTM",
+	"GPTS",
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	"VIEW",
 };
@@ -5623,6 +5628,10 @@ state_t states[NUMSTATES] =
 	{SPR_MGSH, 2|FF_PAPERSPRITE|FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_MEGABARRIER1,
 	{SPR_MGSH, 1|FF_PAPERSPRITE|FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_MEGABARRIER2,
 	{SPR_MGSH, 0|FF_PAPERSPRITE|FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_MEGABARRIER3,
+
+	{SPR_GPTB, 0, -1, {A_SetScale}, 4*FRACUNIT, 0, S_NULL}, // S_GPZ_TREETHING_B,
+	{SPR_GPTM, 0, -1, {A_SetScale}, 4*FRACUNIT, 0, S_NULL}, // S_GPZ_TREETHING_M,
+	{SPR_GPTS, 0, -1, {A_SetScale}, 4*FRACUNIT, 0, S_NULL}, // S_GPZ_TREETHING_S,
 };
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] =
@@ -31827,6 +31836,87 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // damage
 		sfx_None,       // activesound
 		MF_SOLID, 		// flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_GPZ_TREETHING_B,
+		3436,           // doomednum
+		S_GPZ_TREETHING_B, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		64*FRACUNIT,    // radius
+		40*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_RUNSPAWNFUNC, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_GPZ_TREETHING_M,
+		3437,           // doomednum
+		S_GPZ_TREETHING_M, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		64*FRACUNIT,    // radius
+		40*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_RUNSPAWNFUNC, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_GPZ_TREETHING_S,
+		3438,           // doomednum
+		S_GPZ_TREETHING_M, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		64*FRACUNIT,    // radius
+		40*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_RUNSPAWNFUNC, // flags
 		S_NULL          // raisestate
 	},
 };
