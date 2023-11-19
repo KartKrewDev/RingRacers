@@ -25,8 +25,6 @@
 
 #include <thread>
 
-#include <fmt/format.h>
-
 #include <signal.h>
 
 #ifdef _WIN32
@@ -371,52 +369,61 @@ static void I_ShowErrorMessageBox(const char *messagefordevelopers, boolean dump
 static void I_ReportSignal(int num, int coredumped)
 {
 	//static char msg[] = "oh no! back to reality!\r\n";
-	auto report = [coredumped](std::string sigmsg)
-	{
-		if (coredumped)
-		{
-			sigmsg += " (core dumped)";
-		}
-
-		I_OutputMsg("\nProcess killed by signal: %s\n\n", sigmsg.c_str());
-
-		I_ShowErrorMessageBox(sigmsg.c_str(),
-#if defined (UNIXBACKTRACE)
-			true
-#elif defined (_WIN32)
-			!M_CheckParm("-noexchndl")
-#else
-			false
-#endif
-		);
-	};
+	const char *      sigmsg;
+	char msg[128];
 
 	switch (num)
 	{
 //	case SIGINT:
-//		report("SIGINT - interrupted");
+//		sigmsg = "SIGINT - interrupted";
 //		break;
 	case SIGILL:
-		report("SIGILL - illegal instruction - invalid function image");
+		sigmsg = "SIGILL - illegal instruction - invalid function image";
 		break;
 	case SIGFPE:
-		report("SIGFPE - mathematical exception");
+		sigmsg = "SIGFPE - mathematical exception";
 		break;
 	case SIGSEGV:
-		report("SIGSEGV - segment violation");
+		sigmsg = "SIGSEGV - segment violation";
 		break;
 //	case SIGTERM:
-//		report("SIGTERM - Software termination signal from kill");
+//		sigmsg = "SIGTERM - Software termination signal from kill";
 //		break;
 //	case SIGBREAK:
-//		report("SIGBREAK - Ctrl-Break sequence");
+//		sigmsg = "SIGBREAK - Ctrl-Break sequence";
 //		break;
 	case SIGABRT:
-		report("SIGABRT - abnormal termination triggered by abort call");
+		sigmsg = "SIGABRT - abnormal termination triggered by abort call";
 		break;
 	default:
-		report(fmt::format("signal number {}", num));
+		sprintf(msg,"signal number %d", num);
+		if (coredumped)
+			sigmsg = 0;
+		else
+			sigmsg = msg;
 	}
+
+	if (coredumped)
+	{
+		if (sigmsg)
+			sprintf(msg, "%s (core dumped)", sigmsg);
+		else
+			strcat(msg, " (core dumped)");
+
+		sigmsg = msg;
+	}
+
+	I_OutputMsg("\nProcess killed by signal: %s\n\n", sigmsg);
+
+	I_ShowErrorMessageBox(sigmsg,
+#if defined (UNIXBACKTRACE)
+		true
+#elif defined (_WIN32)
+		!M_CheckParm("-noexchndl")
+#else
+		false
+#endif
+	);
 }
 
 #ifndef NEWSIGNALHANDLER
