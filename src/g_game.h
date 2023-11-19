@@ -54,9 +54,6 @@ typedef enum
 	NEXTMAP_SPECIAL = NEXTMAP_INVALID
 } nextmapspecial_t;
 
-#define ROUNDQUEUE_MAX 10 // sane max? maybe make dynamically allocated later
-#define ROUNDQUEUE_CLEAR UINT16_MAX // lives in gametype field of packets
-
 struct roundentry_t
 {
 	UINT16 mapnum;				// Map number at this position

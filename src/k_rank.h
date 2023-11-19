@@ -62,7 +62,7 @@ struct gpRank_t
 	boolean specialWon;
 
 	UINT8 numLevels;
-	gpRank_level_t levels[CUPCACHE_PODIUM];
+	gpRank_level_t levels[ROUNDQUEUE_MAX];
 
 #ifdef __cplusplus
 	void Init(void);
