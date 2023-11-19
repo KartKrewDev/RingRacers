@@ -396,6 +396,9 @@ boolean K_IsPlayerLosing(player_t *player)
 	if (specialstageinfo.valid == true)
 		return false; // anything short of DNF is COOL
 
+	if (tutorialchallenge == TUTORIALSKIP_INPROGRESS)
+		return true; // anything short of perfect is SUCK
+
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i] || players[i].spectator)
@@ -579,6 +582,15 @@ boolean K_TimeAttackRules(void)
 		// Break the Capsules always uses Time Attack
 		// rules, since you can bring 2-4 players in
 		// via Grand Prix.
+		return true;
+	}
+
+	if (gametype == GT_TUTORIAL)
+	{
+		// Tutorials are special. By default only one
+		// player will be playing... but sometimes bots
+		// can be spawned! So we still guarantee the
+		// changed behaviour for consistency.
 		return true;
 	}
 
@@ -13073,6 +13085,12 @@ boolean K_Cooperative(void)
 
 	if (specialstageinfo.valid)
 	{
+		return true;
+	}
+
+	if (gametype == GT_TUTORIAL)
+	{
+		// Maybe this should be a rule. Eventually?
 		return true;
 	}
 

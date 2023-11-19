@@ -1913,7 +1913,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			// spectating. Because in Free Play, this player
 			// can enter the game again, and these flags would
 			// make them intangible.
-			if (K_Cooperative() && !target->player->spectator)
+			if (!(gametyperules & GTR_CHECKPOINTS) && K_Cooperative() && !target->player->spectator)
 			{
 				target->player->pflags |= PF_ELIMINATED;
 
@@ -2570,7 +2570,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 				player->roundconditions.checkthisframe = true;
 			}
 
-			if (gametyperules & GTR_BUMPERS)
+			if (gametyperules & (GTR_BUMPERS|GTR_CHECKPOINTS))
 			{
 				player->mo->health--;
 			}

@@ -2791,7 +2791,8 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 	else if ((offset=0) || fastcmp(params[0], "ADDON")
 	||        (++offset && fastcmp(params[0], "CREDITS"))
 	||        (++offset && fastcmp(params[0], "REPLAY"))
-	||        (++offset && fastcmp(params[0], "CRASH")))
+	||        (++offset && fastcmp(params[0], "CRASH"))
+	||        (++offset && fastcmp(params[0], "TUTORIALSKIP")))
 	{
 		//PARAMCHECK(1);
 		ty = UC_ADDON + offset;
@@ -3468,6 +3469,11 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 				Z_Free(titlemap);
 				titlemap = Z_StrDup(word2);
 				titlechanged = true;
+			}
+			else if (fastcmp(word, "TUTORIALCHALLENGEMAP"))
+			{
+				Z_Free(tutorialchallengemap);
+				tutorialchallengemap = Z_StrDup(word2);
 			}
 			else if (fastcmp(word, "HIDETITLEPICS") || fastcmp(word, "TITLEPICSHIDE"))
 			{

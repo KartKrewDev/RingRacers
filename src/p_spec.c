@@ -4132,14 +4132,17 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 					}
 					else
 					{
+						// args[2]: cap rings to -20 instead of 0
+						SINT8 baseline = (args[2] ? -20 : 0);
+
 						// Don't push you below baseline
-						if (mo->player->rings <= 0)
+						if (mo->player->rings <= baseline)
 							return false;
 
 						rings = -(rings);
 
-						if (rings > mo->player->rings)
-							rings = mo->player->rings;
+						if (rings > (mo->player->rings - baseline))
+							rings = (mo->player->rings - baseline);
 
 						mo->player->rings -= rings;
 						S_StartSound(mo, sfx_antiri);

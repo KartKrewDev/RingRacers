@@ -12812,7 +12812,7 @@ void P_MovePlayerToSpawn(INT32 playernum, mapthing_t *mthing)
 	else if (mobj->z == mobj->floorz)
 		mobj->eflags |= MFE_ONGROUND;
 
-	mobj->angle = angle;
+	mobj->angle = p->drawangle = angle;
 
 	// FAULT
 	if (gamestate == GS_LEVEL && leveltime > introtime && !p->spectator)
@@ -12827,6 +12827,7 @@ void P_MovePlayerToSpawn(INT32 playernum, mapthing_t *mthing)
 		p->respawn.pointx = x;
 		p->respawn.pointy = y;
 		p->respawn.pointz = z;
+		p->respawn.pointangle = angle;
 	}
 
 	P_AfterPlayerSpawn(playernum);
@@ -12881,7 +12882,7 @@ void P_MovePlayerToCheatcheck(INT32 playernum)
 		}
 	}
 	else
-		p->drawangle = mobj->angle; // default to the camera angle
+		p->drawangle = mobj->angle = p->respawn.pointangle;
 
 	K_DoIngameRespawn(p);
 	p->respawn.truedeath = true;
@@ -13054,6 +13055,9 @@ static boolean P_SetupEmblem(mapthing_t *mthing, mobj_t *mobj)
 	emblem_t* emblem = M_GetLevelEmblems(gamemap);
 	skincolornum_t emcolor;
 	INT16 tagnum = mthing->tid;
+
+	if (tutorialchallenge == TUTORIALSKIP_INPROGRESS)
+		return false; // No out-of-sequence goodies
 
 	while (emblem)
 	{
@@ -13622,7 +13626,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	}
 	case MT_SPRAYCAN:
 	{
-		if (nummapspraycans == UINT8_MAX)
+		if (nummapspraycans == UINT8_MAX || tutorialchallenge == TUTORIALSKIP_INPROGRESS)
 		{
 			P_RemoveMobj(mobj);
 			return false;

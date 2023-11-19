@@ -1250,8 +1250,6 @@ static void ST_overlayDrawer(void)
 	}
 
 	K_DrawMidVote();
-
-	K_DrawDialogue();
 }
 
 void ST_DrawDemoTitleEntry(void)
@@ -1557,6 +1555,8 @@ void ST_Drawer(void)
 
 	if (stagetitle)
 		ST_drawTitleCard();
+
+	K_DrawDialogue();
 
 	// Replay manual-save stuff
 	if (demo.recording && multiplayer && demo.savebutton && demo.savebutton + 3*TICRATE < leveltime)

@@ -451,6 +451,8 @@ typedef enum
 #endif
 	mpause_admin,
 	mpause_callvote,
+
+	mpause_giveup,
 	mpause_restartmap,
 	mpause_tryagain,
 
@@ -1104,6 +1106,7 @@ extern consvar_t cv_dummyspectator;
 // Bunch of funny functions for the pause menu...~
 void M_RestartMap(INT32 choice);				// Restart level (MP)
 void M_TryAgain(INT32 choice);					// Try again (SP)
+void M_GiveUp(INT32 choice);					// Give up (SP)
 void M_ConfirmSpectate(INT32 choice);			// Spectate confirm when you're alone
 void M_ConfirmEnterGame(INT32 choice);			// Enter game confirm when you're alone
 void M_ConfirmSpectateChange(INT32 choice);		// Splitscreen spectate/play menu func
@@ -1133,7 +1136,9 @@ char *M_AddonsHeaderPath(void);
 extern consvar_t cv_dummyaddonsearch;
 extern consvar_t cv_dummyextraspassword;
 
+#ifdef TODONEWMANUAL
 void M_Manual(INT32 choice);
+#endif
 void M_HandleImageDef(INT32 choice);
 
 // K_MENUDRAW.C

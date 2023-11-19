@@ -1110,7 +1110,7 @@ static void SV_SendServerInfo(INT32 node, tic_t servertime)
 
 	M_Memcpy(netbuffer->u.serverinfo.mapmd5, mapmd5, 16);
 
-	if (!(mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE) && !(mapheaderinfo[prevmap]->zonttl[0]))
+	if (!(mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE) && !(mapheaderinfo[gamemap-1]->zonttl[0]))
 		netbuffer->u.serverinfo.iszone = 1;
 	else
 		netbuffer->u.serverinfo.iszone = 0;
@@ -1443,6 +1443,7 @@ static void CL_LoadReceivedSavegame(boolean reloading)
 	demo.playback = false;
 	demo.title = false;
 	titlemapinaction = false;
+	tutorialchallenge = TUTORIALSKIP_NONE;
 	automapactive = false;
 
 	// load a base level
@@ -3992,7 +3993,9 @@ void SV_StopServer(void)
 		Y_EndIntermission();
 	if (gamestate == GS_VOTING)
 		Y_EndVote();
-	gamestate = wipegamestate = GS_NULL;
+
+	G_SetGamestate(GS_NULL);
+	wipegamestate = GS_NULL;
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 		((UINT16*)localtextcmd[i])[0] = 0;

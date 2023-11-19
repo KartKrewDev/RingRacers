@@ -71,6 +71,28 @@ void ACS_Shutdown(void)
 }
 
 /*--------------------------------------------------
+	void ACS_InvalidateMapScope(size_t mapID)
+
+		See header file for description.
+--------------------------------------------------*/
+void ACS_InvalidateMapScope(void)
+{
+	Environment *env = &ACSEnv;
+
+	ACSVM::GlobalScope *const global = env->getGlobalScope(0);
+	ACSVM::HubScope *hub = NULL;
+	ACSVM::MapScope *map = NULL;
+
+	// Conclude hub scope, even if we are not using it.
+	hub = global->getHubScope(0);
+	hub->reset();
+
+	// Conclude current map scope.
+	map = hub->getMapScope(0); // This is where you'd put in mapID if you add hub support.
+	map->reset();
+}
+
+/*--------------------------------------------------
 	void ACS_LoadLevelScripts(size_t mapID)
 
 		See header file for description.
@@ -103,14 +125,20 @@ void ACS_LoadLevelScripts(size_t mapID)
 	// hubs are to be implemented, this logic would need
 	// to be far more sophisticated.
 
-	// Reset hub scope, even if we are not using it.
+	// Extra note regarding the commented out ->reset()'s:
+	// This is too late! That needs to be done before
+	// PU_LEVEL is purged. Call ACS_InvalidateMapScope
+	// to take care of that. Those lines are left in
+	// only as a warning to future code spelunkers.
+
+	// Restart hub scope, even if we are not using it.
 	hub = global->getHubScope(0);
-	hub->reset();
+	//hub->reset();
 	hub->active = true;
 
 	// Start up new map scope.
 	map = hub->getMapScope(0); // This is where you'd put in mapID if you add hub support.
-	map->reset();
+	//map->reset();
 	map->active = true;
 
 	// Insert BEHAVIOR lump into the list.

@@ -83,7 +83,7 @@
 
 gameaction_t gameaction;
 gamestate_t gamestate = GS_NULL;
-UINT8 ultimatemode = false;
+boolean ultimatemode = false;
 
 JoyType_t Joystick[MAXSPLITSCREENPLAYERS];
 
@@ -170,11 +170,13 @@ tic_t timeinmap; // Ticker for time spent in level (used for levelcard display)
 
 char * titlemap = NULL;
 boolean hidetitlepics = false;
-char * bootmap = NULL; //bootmap for loading a map on startup
+boolean looptitle = true;
 
+char * bootmap = NULL; //bootmap for loading a map on startup
 char * podiummap = NULL; // map to load for podium
 
-boolean looptitle = true;
+char * tutorialchallengemap = NULL; // map to load for tutorial skip
+UINT8 tutorialchallenge = TUTORIALSKIP_NONE;
 
 UINT16 skincolor_redteam = SKINCOLOR_RED;
 UINT16 skincolor_blueteam = SKINCOLOR_BLUE;
@@ -717,14 +719,18 @@ INT32 G_MapNumber(const char * name)
 
 	name += 8;
 
+	if (strcasecmp("TITLE", name) == 0)
+		return NEXTMAP_TITLE;
 	if (strcasecmp("EVALUATION", name) == 0)
 		return NEXTMAP_EVALUATION;
 	if (strcasecmp("CREDITS", name) == 0)
 		return NEXTMAP_CREDITS;
 	if (strcasecmp("CEREMONY", name) == 0)
 		return NEXTMAP_CEREMONY;
-	if (strcasecmp("TITLE", name) == 0)
-		return NEXTMAP_TITLE;
+	if (strcasecmp("VOTING", name) == 0)
+		return NEXTMAP_VOTING;
+	if (strcasecmp("TUTORIALCHALLENGE", name) == 0)
+		return NEXTMAP_TUTORIALCHALLENGE;
 
 	return NEXTMAP_INVALID;
 }
@@ -2499,8 +2505,7 @@ void G_MovePlayerToSpawnOrCheatcheck(INT32 playernum)
 			rsp->pointx = pos.x;
 			rsp->pointy = pos.y;
 			rsp->pointz = pos.z;
-
-			players[playernum].mo->angle = Obj_GetCheckpointRespawnAngle(checkpoint);
+			rsp->pointangle = Obj_GetCheckpointRespawnAngle(checkpoint);
 
 			Obj_ActivateCheckpointInstantly(checkpoint);
 
@@ -3354,7 +3359,7 @@ UINT32 G_TOLFlag(INT32 pgametype)
 	return 0;
 }
 
-UINT16 G_GetFirstMapOfGametype(UINT8 pgametype)
+UINT16 G_GetFirstMapOfGametype(UINT16 pgametype)
 {
 	UINT8 i = 0;
 	UINT16 mapnum = NEXTMAP_INVALID;
@@ -3364,7 +3369,7 @@ UINT16 G_GetFirstMapOfGametype(UINT8 pgametype)
 	templevelsearch.typeoflevel = G_TOLFlag(pgametype);
 	templevelsearch.cupmode = (!(gametypes[pgametype]->rules & GTR_NOCUPSELECT));
 	templevelsearch.timeattack = false;
-	templevelsearch.tutorial = false;
+	templevelsearch.tutorial = (pgametype == GT_TUTORIAL);
 	templevelsearch.checklocked = true;
 
 	if (templevelsearch.cupmode)
@@ -3618,6 +3623,14 @@ void G_UpdateVisited(void)
 	if (demo.playback)
 		return;
 
+	// For some reason, we don't want to update visitation flags.
+	if (prevmap != gamemap-1)
+		return;
+
+	// Neither for tutorial skip material
+	if (nextmapoverride == NEXTMAP_TUTORIALCHALLENGE+1 || tutorialchallenge != TUTORIALSKIP_NONE)
+		return;
+
 	// Check if every local player wiped out.
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -3627,7 +3640,7 @@ void G_UpdateVisited(void)
 		if (!P_IsLocalPlayer(&players[i])) // Not local.
 			continue;
 
-		if (players[i].spectator) // Not playing.
+		if (players[i].spectator == true) // Not playing.
 			continue;
 
 		if (players[i].pflags & PF_NOCONTEST) // Sonic after not surviving.
@@ -3658,7 +3671,7 @@ void G_UpdateVisited(void)
 		CONS_Printf(M_GetText("\x82" "Earned %hu emblem%s for level completion.\n"), (UINT16)earnedEmblems, earnedEmblems > 1 ? "s" : "");
 
 	M_UpdateUnlockablesAndExtraEmblems(true, true);
-	G_SaveGameData();
+	gamedata->deferredsave = true;
 }
 
 void G_HandleSaveLevel(boolean removecondition)
@@ -4148,11 +4161,6 @@ static void G_DoCompleted(void)
 		gamedata->deferredsave = true;
 	}
 
-	// This isn't in the above block because other
-	// mechanisms can queue up a gamedata save.
-	if (gamedata->deferredsave)
-		G_SaveGameData();
-
 	// Then, update some important game state.
 	{
 		legitimateexit = false;
@@ -4172,14 +4180,18 @@ static void G_DoCompleted(void)
 
 		G_SetGamestate(GS_NULL);
 		wipegamestate = GS_NULL;
-
-		prevmap = (INT16)(gamemap-1);
 	}
 
 	// Finally, if you're not exiting, guarantee NO CONTEST.
 	// We do this seperately from the loop above Challenges,
 	// so NOCONTEST-related Challenges don't fire on exitlevel.
-	for (i = 0; i < MAXPLAYERS; i++)
+	if (gametype == GT_TUTORIAL)
+	{
+		// Maybe one day there'll be another context in which
+		// there's no way to progress other than ACS, but for
+		// now, Tutorial is a hardcoded exception.
+	}
+	else for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (playeringame[i] == false)
 		{
@@ -4195,6 +4207,40 @@ static void G_DoCompleted(void)
 	}
 
 	// And lastly, everything in anticipation for Intermission/level change.
+
+	if (tutorialchallenge == TUTORIALSKIP_INPROGRESS)
+	{
+		if (
+			!legitimateexit
+			|| !players[consoleplayer].exiting
+			|| K_IsPlayerLosing(&players[consoleplayer])
+		)
+		{
+			// Return to whence you came with your tail between your legs
+			tutorialchallenge = TUTORIALSKIP_FAILED;
+			G_SetGametype(GT_TUTORIAL);
+			nextmapoverride = prevmap+1;
+		}
+		else
+		{
+			// Proceed.
+			nextmapoverride = NEXTMAP_TITLE+1;
+
+			gamedata->finishedtutorialchallenge = true;
+
+			M_UpdateUnlockablesAndExtraEmblems(true, true);
+			gamedata->deferredsave = true;
+		}
+	}
+	else
+	{
+		// The "else" might not be strictly needed, but I don't
+		// want the "challenge" map to be considered visited before it's your time.
+		// ~toast 161123 (5 years of srb2kart, woooouuuu)
+		prevmap = gamemap-1;
+		tutorialchallenge = TUTORIALSKIP_NONE;
+	}
+
 	if (!demo.playback)
 	{
 		// Set up power level gametype scrambles
@@ -4219,6 +4265,11 @@ static void G_DoCompleted(void)
 		Y_StartIntermission();
 		G_UpdateVisited();
 	}
+
+	// This isn't in the above blocks because many
+	// mechanisms can queue up a gamedata save.
+	if (gamedata->deferredsave)
+		G_SaveGameData();
 }
 
 // See also F_EndCutscene, the only other place which handles intra-map/ending transitions
@@ -4265,6 +4316,27 @@ void G_AfterIntermission(void)
 //
 void G_NextLevel(void)
 {
+	if (
+		gametype == GT_TUTORIAL
+		&& nextmap == NEXTMAP_TUTORIALCHALLENGE
+		&& !(gamedata && gamedata->enteredtutorialchallenge)
+	)
+	{
+		nextmap = G_MapNumber(tutorialchallengemap);
+		if (
+			nextmap < nummapheaders
+			&& mapheaderinfo[nextmap] != NULL
+			&& mapheaderinfo[nextmap]->typeoflevel != 0
+		)
+		{
+			tutorialchallenge = TUTORIALSKIP_INPROGRESS;
+			G_SetGametype(G_GuessGametypeByTOL(mapheaderinfo[nextmap]->typeoflevel));
+
+			gamedata->enteredtutorialchallenge = true;
+			// A gamedata save will happen on successful level enter
+		}
+	}
+
 	if (nextmap >= NEXTMAP_SPECIAL)
 	{
 		G_EndGame();
@@ -4467,6 +4539,8 @@ typedef enum
 	GDEVER_SPECIAL = 1<<3,
 	GDEVER_KEYTUTORIAL = 1<<4,
 	GDEVER_KEYMAJORSKIP = 1<<5,
+	GDEVER_TUTORIALSKIP = 1<<6,
+	GDEVER_ENTERTUTSKIP = 1<<7,
 } gdeverdone_t;
 
 static const char *G_GameDataFolder(void)
@@ -4606,6 +4680,8 @@ void G_LoadGameData(void)
 			gamedata->everseenspecial = !!(everflags & GDEVER_SPECIAL);
 			gamedata->chaokeytutorial = !!(everflags & GDEVER_KEYTUTORIAL);
 			gamedata->majorkeyskipattempted = !!(everflags & GDEVER_KEYMAJORSKIP);
+			gamedata->finishedtutorialchallenge = !!(everflags & GDEVER_TUTORIALSKIP);
+			gamedata->enteredtutorialchallenge = !!(everflags & GDEVER_ENTERTUTSKIP);
 		}
 		else
 		{
@@ -5297,6 +5373,10 @@ void G_SaveGameData(void)
 			everflags |= GDEVER_KEYTUTORIAL;
 		if (gamedata->majorkeyskipattempted)
 			everflags |= GDEVER_KEYMAJORSKIP;
+		if (gamedata->finishedtutorialchallenge)
+			everflags |= GDEVER_TUTORIALSKIP;
+		if (gamedata->enteredtutorialchallenge)
+			everflags |= GDEVER_ENTERTUTSKIP;
 
 		WRITEUINT32(save.p, everflags); // 4
 	}
@@ -5990,7 +6070,9 @@ INT32 G_FindMap(const char *mapname, char **foundmapnamep,
 		aprop = realmapname;
 
 		/* Now that we found a perfect match no need to fucking guess. */
-		if (strnicmp(realmapname, mapname, mapnamelen) == 0)
+		if (strnicmp(realmapname, mapname, mapnamelen) == 0
+		|| (mapheaderinfo[i]->menuttl[0]
+			&& strnicmp(mapheaderinfo[i]->menuttl, mapname, mapnamelen) == 0))
 		{
 			if (wanttable)
 			{
@@ -6024,15 +6106,42 @@ INT32 G_FindMap(const char *mapname, char **foundmapnamep,
 					realmapname = 0;
 				}
 			}
+			else
+			if (mapheaderinfo[i]->menuttl[0] && ( aprop = strcasestr(mapheaderinfo[i]->menuttl, mapname) ))
+			{
+				if (wanttable)
+				{
+					writesimplefreq(freq, &freqc,
+							mapnum, aprop - mapheaderinfo[i]->menuttl, mapnamelen);
+				}
+				if (apromapnum == 0)
+				{
+					apromapnum = mapnum;
+					apromapname = realmapname;
+					realmapname = 0;
+				}
+			}
 			else/* ...match individual keywords */
 			{
 				freq[freqc].mapnum = mapnum;
 				measurekeywords(&freq[freqc],
 						&freq[freqc].matchd, &freq[freqc].matchc,
 						realmapname, mapname, wanttable);
-				measurekeywords(&freq[freqc],
-						&freq[freqc].keywhd, &freq[freqc].keywhc,
-						mapheaderinfo[i]->keywords, mapname, wanttable);
+
+				if (mapheaderinfo[i]->menuttl[0])
+				{
+					measurekeywords(&freq[freqc],
+							&freq[freqc].keywhd, &freq[freqc].keywhc,
+							mapheaderinfo[i]->menuttl, mapname, wanttable);
+				}
+
+				if (mapheaderinfo[i]->keywords[0])
+				{
+					measurekeywords(&freq[freqc],
+							&freq[freqc].keywhd, &freq[freqc].keywhc,
+							mapheaderinfo[i]->keywords, mapname, wanttable);
+				}
+
 				if (freq[freqc].total)
 					freqc++;
 			}

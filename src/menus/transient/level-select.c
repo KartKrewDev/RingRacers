@@ -125,8 +125,24 @@ UINT16 M_CountLevelsToShowInList(levelsearch_t *levelsearch)
 	}
 
 	for (i = 0; i < nummapheaders; i++)
+	{
 		if (M_CanShowLevelInList(i, levelsearch))
+		{
 			count++;
+
+			// Tutorial will only show what you've made your way to
+			if (!levelsearch->checklocked)
+				continue;
+			if (!levelsearch->tutorial)
+				continue;
+			if (i >= basenummapheaders)
+				continue;
+			if (mapheaderinfo[i]->records.mapvisited & MV_BEATEN)
+				continue;
+
+			break;
+		}
+	}
 
 	return count;
 }
@@ -188,6 +204,13 @@ UINT16 M_GetNextLevelInList(UINT16 mapnum, UINT8 *i, levelsearch_t *levelsearch)
 	}
 	else
 	{
+		// Tutorial will only show what you've made your way to
+		if (levelsearch->checklocked
+		&& levelsearch->tutorial
+		&& mapnum < basenummapheaders
+		&& !(mapheaderinfo[mapnum]->records.mapvisited & MV_BEATEN))
+			return NEXTMAP_INVALID;
+
 		mapnum++;
 		while (!M_CanShowLevelInList(mapnum, levelsearch) && mapnum < nummapheaders)
 			mapnum++;
@@ -215,6 +238,7 @@ boolean M_LevelListFromGametype(INT16 gt)
 {
 	static boolean first = true;
 	UINT8 temp = 0;
+	boolean invalidatedcursor = false;
 
 	if (gt != -1)
 	{
@@ -244,6 +268,15 @@ boolean M_LevelListFromGametype(INT16 gt)
 			}
 
 			levellist.levelsearch.cupmode = (!(gametypes[gt]->rules & GTR_NOCUPSELECT));
+			if (!levellist.levelsearch.cupmode)
+			{
+				invalidatedcursor = (
+					levellist.levelsearch.cup != NULL
+					|| levellist.levelsearch.tutorial != (gt == GT_TUTORIAL)
+				);
+			}
+
+			levellist.levelsearch.tutorial = (gt == GT_TUTORIAL);
 
 			CV_SetValue(&cv_dummyspbattack, 0);
 		}
@@ -412,19 +445,36 @@ boolean M_LevelListFromGametype(INT16 gt)
 
 	// Okay, just a list of maps then.
 
-	if (M_GetFirstLevelInList(&temp, &levellist.levelsearch) == NEXTMAP_INVALID)
+	levellist.levelsearch.cup = NULL;
+
+	UINT16 test = M_GetFirstLevelInList(&temp, &levellist.levelsearch);
+
+	if (test == NEXTMAP_INVALID)
 	{
 		return false;
 	}
 
 	// Reset position properly if you go back & forth between gametypes
-	if (levellist.levelsearch.cup)
+	levellist.mapcount = M_CountLevelsToShowInList(&levellist.levelsearch);
+
+	if (levellist.levelsearch.tutorial && levellist.levelsearch.checklocked)
+	{
+		// Find the first level we haven't played.
+		UINT16 possiblecursor = 0;
+		while (test < nummapheaders && (mapheaderinfo[test]->records.mapvisited & MV_BEATEN))
+		{
+			test = M_GetNextLevelInList(test, &temp, &levellist.levelsearch);
+			possiblecursor++;
+		}
+
+		if (test != NEXTMAP_INVALID)
+			levellist.cursor = possiblecursor;
+	}
+	else if (invalidatedcursor)
 	{
 		levellist.cursor = 0;
-		levellist.levelsearch.cup = NULL;
 	}
 
-	levellist.mapcount = M_CountLevelsToShowInList(&levellist.levelsearch);
 	M_LevelSelectScrollDest();
 	levellist.y = levellist.dest;
 
@@ -450,7 +500,6 @@ void M_LevelSelectInit(INT32 choice)
 	// Make sure this is reset as we'll only be using this function for offline games!
 	levellist.netgame = false;
 	levellist.levelsearch.checklocked = true;
-	levellist.levelsearch.tutorial = (gt == GT_TUTORIAL);
 
 	switch (currentMenu->menuitems[itemOn].mvar1)
 	{

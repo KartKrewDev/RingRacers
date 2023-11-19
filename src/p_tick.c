@@ -55,6 +55,8 @@
 tic_t leveltime;
 boolean thinkersCompleted;
 
+UINT32 thinker_era = 0;
+
 static boolean g_freezeCheat;
 static boolean g_freezeLevel;
 
@@ -278,6 +280,8 @@ void P_InitThinkers(void)
 {
 	UINT8 i;
 
+	P_InvalidateThinkersWithoutInit();
+
 	for (i = 0; i < NUM_THINKERLISTS; i++)
 	{
 		thlist[i].prev = thlist[i].next = &thlist[i];
@@ -297,6 +301,15 @@ void P_InitThinkers(void)
 
 	Obj_ResetUFOSpawners();
 	Obj_ResetCheckpoints();
+}
+
+//
+// P_InvalidateThinkersWithoutInit
+//
+
+void P_InvalidateThinkersWithoutInit(void)
+{
+	thinker_era++;
 }
 
 // Adds a new thinker at the end of the list.
@@ -855,15 +868,22 @@ void P_Ticker(boolean run)
 
 		ps_playerthink_time = I_GetPreciseTime() - ps_playerthink_time;
 
-		// TODO would this be laggy with more conditions in play...
-		if (((!demo.playback && leveltime > introtime && M_UpdateUnlockablesAndExtraEmblems(true, false))
-			|| (gamedata && gamedata->deferredsave)))
-			G_SaveGameData();
-	}
+		if (gamedata && gamestate == GS_LEVEL && !demo.playback)
+		{
+			// Keep track of how long they've been playing!
+			gamedata->totalplaytime++;
 
-	// Keep track of how long they've been playing!
-	if (!demo.playback) // Don't increment if a demo is playing.
-		gamedata->totalplaytime++;
+			// TODO would this be laggy with more conditions in play...
+			if (
+				(leveltime > introtime
+					&& M_UpdateUnlockablesAndExtraEmblems(true, false))
+				|| gamedata->deferredsave
+			)
+			{
+				G_SaveGameData();
+			}
+		}
+	}
 
 	if (run)
 	{
@@ -1049,7 +1069,7 @@ void P_Ticker(boolean run)
 				}
 
 				player_t *player = &players[i];
-				if (K_PlayerTallyActive(player) == true && player->tally.done == false)
+				if (player->spectator == false && K_PlayerTallyActive(player) == true && player->tally.done == false)
 				{
 					run_exit_countdown = false;
 					break;
@@ -1153,7 +1173,7 @@ void P_Ticker(boolean run)
 		P_RunChaseCameras();
 	}
 
-	if (run)
+	if (run && !levelloading && leveltime)
 	{
 		K_TickDialogue();
 	}

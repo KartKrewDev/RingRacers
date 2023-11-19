@@ -775,6 +775,7 @@ void M_Drawer(void)
 	if (menuwipe)
 		F_WipeStartScreen();
 
+	// background layer
 	if (menuactive)
 	{
 		if (gamestate == GS_MENU)
@@ -785,7 +786,17 @@ void M_Drawer(void)
 		{
 			V_DrawFadeScreen(122, 3);
 		}
+	}
 
+	// draw pause pic
+	if (paused && !demo.playback && (menuactive || cv_showhud.value))
+	{
+		M_DrawPausedText(0);
+	}
+
+	// foreground layer
+	if (menuactive)
+	{
 		if (currentMenu->drawroutine)
 			currentMenu->drawroutine(); // call current menu Draw routine
 
@@ -811,18 +822,6 @@ void M_Drawer(void)
 		F_WipeEndScreen();
 		F_RunWipe(wipe_menu_final, wipedefs[wipe_menu_final], false, "FADEMAP0", true, false);
 		menuwipe = false;
-	}
-
-	// draw pause pic
-	if (paused && !demo.playback && (menuactive || cv_showhud.value))
-	{
-		// Don't cover the Stereo player!
-		boolean stereo_open = menuactive && currentMenu == &MISC_SoundTestDef;
-
-		if (stereo_open == false)
-		{
-			M_DrawPausedText(0);
-		}
 	}
 
 	if (netgame && Playing())
@@ -2909,7 +2908,7 @@ static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
 		V_DrawLSTitleLowString(x2, y+28, 0, word2);
 }
 
-static void M_DrawLevelSelectBlock(INT16 x, INT16 y, INT16 map, boolean redblink, boolean greyscale)
+static void M_DrawLevelSelectBlock(INT16 x, INT16 y, UINT16 map, boolean redblink, boolean greyscale)
 {
 	UINT8 *colormap = NULL;
 
@@ -2928,6 +2927,20 @@ static void M_DrawLevelSelectBlock(INT16 x, INT16 y, INT16 map, boolean redblink
 		map,
 		colormap);
 	M_DrawHighLowLevelTitle(98+x, y+8, map);
+
+	if (levellist.levelsearch.tutorial && !(mapheaderinfo[map]->records.mapvisited & MV_BEATEN))
+	{
+		V_DrawScaledPatch(
+			x + 80 + 3, y + 50, 0,
+			W_CachePatchName(
+				va(
+					"CUPBKUP%c",
+					(greyscale ? '1' : '2')
+				),
+				PU_CACHE
+			)
+		);
+	}
 }
 
 void M_DrawLevelSelect(void)

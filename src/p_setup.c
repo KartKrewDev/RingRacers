@@ -7609,7 +7609,10 @@ static void P_InitLevelSettings(void)
 			gamespeed = grandprixinfo.gamespeed;
 		}
 	}
-	else if (modeattacking)
+	else if (
+		modeattacking != ATTACKING_NONE
+		|| tutorialchallenge ==  TUTORIALSKIP_INPROGRESS
+	)
 	{
 		if (gametyperules & GTR_CIRCUIT)
 		{
@@ -8286,7 +8289,14 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			}
 		}
 
-		if (K_PodiumHasEmerald())
+		// Default
+		levelfadecol = 31;
+
+		if (gamestate == GS_TITLESCREEN)
+		{
+			;
+		}
+		else if (K_PodiumHasEmerald())
 		{
 			// Special Stage out
 			if (ranspecialwipe != 2)
@@ -8316,11 +8326,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			levelfadecol = 0;
 			wipetype = wipe_encore_towhite;
 		}
-		else
-		{
-			// Default
-			levelfadecol = 31;
-		}
 
 		if (rendermode != render_none)
 		{
@@ -8342,6 +8347,8 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	F_EndTextPrompt(false, true);
 
 	K_UnsetDialogue();
+
+	ACS_InvalidateMapScope();
 
 	LUA_InvalidateLevel();
 

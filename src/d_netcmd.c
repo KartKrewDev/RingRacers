@@ -2587,7 +2587,7 @@ static void Command_Map_f(void)
 				SplitScreen_OnChange();
 			}
 
-			if (!newnetgame && option_match == 0)
+			if (!newnetgame && (newgametype != GT_TUTORIAL) && option_match == 0)
 			{
 				grandprixinfo.gp = true;
 				grandprixinfo.initalize = true;
@@ -3022,7 +3022,7 @@ static void Command_QueueMap_f(void)
 		return;
 	}
 
-	if ((/*newmapnum != 1 &&*/ M_MapLocked(newmapnum)))
+	if (/*newmapnum != 1 &&*/ M_MapLocked(newmapnum))
 	{
 		ischeating = true;
 	}

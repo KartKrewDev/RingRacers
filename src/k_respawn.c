@@ -14,6 +14,7 @@
 #include "d_player.h"
 #include "k_kart.h"
 #include "k_battle.h"
+#include "k_objects.h" // Obj_FindCheckpoint, etc
 #include "g_game.h"
 #include "p_local.h"
 #include "p_tick.h"
@@ -163,6 +164,9 @@ void K_DoIngameRespawn(player_t *player)
 	K_TumbleInterrupt(player);
 	P_ResetPlayer(player);
 
+	mobj_t *checkpoint;
+	vector3_t pos;
+
 	// Set up respawn position if invalid
 	if (player->respawn.manual == true)
 	{
@@ -193,6 +197,21 @@ void K_DoIngameRespawn(player_t *player)
 			player->respawn.distanceleft = (dist * mapobjectscale) / FRACUNIT;
 			K_RespawnAtWaypoint(player, player->respawn.wp);
 		}
+	}
+	else if ((gametyperules & GTR_CHECKPOINTS)
+		&& player->checkpointId
+		&& (checkpoint = Obj_FindCheckpoint(player->checkpointId))
+		&& Obj_GetCheckpointRespawnPosition(checkpoint, &pos))
+	{
+		player->respawn.wp = NULL;
+		player->respawn.flip = (checkpoint->flags2 & MF2_OBJECTFLIP) ? true : false; // K_RespawnOffset wants a boolean!
+		player->respawn.pointx = pos.x;
+		player->respawn.pointy = pos.y;
+		player->respawn.pointz = pos.z + K_RespawnOffset(player, player->respawn.flip);
+
+		player->respawn.pointangle = Obj_GetCheckpointRespawnAngle(checkpoint);
+
+		player->respawn.distanceleft = 0;
 	}
 	else
 	{
@@ -244,6 +263,7 @@ void K_DoIngameRespawn(player_t *player)
 			player->respawn.pointx = 0;
 			player->respawn.pointy = 0;
 			player->respawn.pointz = 0;
+			player->respawn.pointangle = 0;
 			player->respawn.flip = false;
 		}
 		else
@@ -254,7 +274,7 @@ void K_DoIngameRespawn(player_t *player)
 			player->respawn.pointx = beststart->x << FRACBITS;
 			player->respawn.pointy = beststart->y << FRACBITS;
 
-			player->mo->angle = ( beststart->angle * ANG1 );
+			player->respawn.pointangle = ( beststart->angle * ANG1 );
 
 			s = R_PointInSubsector(beststart->x << FRACBITS, beststart->y << FRACBITS)->sector;
 
@@ -476,6 +496,11 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 		else
 		{
 			// We can now drop!
+			if (gametyperules & GTR_CHECKPOINTS)
+			{
+				// Of course, in gametypes where there's a clear and intended progression, set our direction.
+				P_SetPlayerAngle(player, (player->drawangle = player->respawn.pointangle));
+			}
 			player->respawn.state = RESPAWNST_DROP;
 			return;
 		}

@@ -355,6 +355,7 @@ struct respawnvars_t
 	fixed_t pointx; // Respawn position coords to go towards
 	fixed_t pointy;
 	fixed_t pointz;
+	angle_t pointangle; // Only used when wp is NULL
 	boolean flip; // Flip upside down or not
 	tic_t timer; // Time left on respawn animation once you're there
 	tic_t airtimer; // Time spent in the air before respawning

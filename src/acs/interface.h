@@ -45,6 +45,23 @@ void ACS_Shutdown(void);
 
 
 /*--------------------------------------------------
+	void ACS_InvalidateMapScope(size_t mapID);
+
+		Resets the ACS hub and map scopes to remove
+		existing running scripts, without starting
+		any new scripts.
+
+	Input Arguments:-
+		None
+
+	Return:-
+		None
+--------------------------------------------------*/
+
+void ACS_InvalidateMapScope(void);
+
+
+/*--------------------------------------------------
 	void ACS_LoadLevelScripts(size_t mapID);
 
 		Resets the ACS hub and map scopes to remove

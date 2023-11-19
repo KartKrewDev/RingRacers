@@ -49,7 +49,8 @@ typedef enum
 	NEXTMAP_CREDITS = INT16_MAX-3,
 	NEXTMAP_CEREMONY = INT16_MAX-4,
 	NEXTMAP_VOTING = INT16_MAX-5,
-	NEXTMAP_INVALID = INT16_MAX-6, // Always last
+	NEXTMAP_TUTORIALCHALLENGE = INT16_MAX-6,
+	NEXTMAP_INVALID = INT16_MAX-7, // Always last
 	NEXTMAP_SPECIAL = NEXTMAP_INVALID
 } nextmapspecial_t;
 
@@ -279,7 +280,7 @@ FUNCMATH INT32 G_TicsToMilliseconds(tic_t tics);
 
 // Don't split up TOL handling
 UINT32 G_TOLFlag(INT32 pgametype);
-UINT16 G_GetFirstMapOfGametype(UINT8 pgametype);
+UINT16 G_GetFirstMapOfGametype(UINT16 pgametype);
 
 UINT16 G_RandMap(UINT32 tolflags, UINT16 pprevmap, boolean ignoreBuffers, boolean callAgainSoon, UINT16 *extBuffer);
 void G_AddMapToBuffer(UINT16 map);

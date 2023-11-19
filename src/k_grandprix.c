@@ -831,7 +831,7 @@ boolean K_CanChangeRules(boolean allowdemos)
 		return false;
 	}
 
-	if (gametype == GT_TUTORIAL)
+	if (gametype == GT_TUTORIAL || tutorialchallenge == TUTORIALSKIP_INPROGRESS)
 	{
 		// Tutorials are locked down.
 		return false;

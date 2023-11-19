@@ -291,7 +291,11 @@ void level_tally_t::Init(player_t *player)
 	owner = player;
 	gt = gametype;
 
-	const boolean game_over = ((player->pflags & PF_LOSTLIFE) == PF_LOSTLIFE);
+	const boolean game_over = (
+		G_GametypeUsesLives()
+		? ((player->pflags & PF_LOSTLIFE) == PF_LOSTLIFE)
+		: (tutorialchallenge == TUTORIALSKIP_INPROGRESS && K_IsPlayerLosing(player))
+	);
 
 	time = std::min(static_cast<INT32>(player->realtime), (100 * 60 * TICRATE) - 1);
 	ringPool = player->totalring;
@@ -384,7 +388,14 @@ void level_tally_t::Init(player_t *player)
 	{
 		if (game_over == true)
 		{
-			if (player->lives <= 0)
+			if (tutorialchallenge == TUTORIALSKIP_INPROGRESS)
+			{
+				snprintf(
+					header, sizeof header,
+					"NICE TRY"
+				);
+			}
+			else if (G_GametypeUsesLives() && player->lives <= 0)
 			{
 				snprintf(
 					header, sizeof header,
@@ -991,7 +1002,7 @@ void level_tally_t::Draw(void)
 		|| state == TALLY_ST_GAMEOVER_LIVES
 		|| state == TALLY_ST_GAMEOVER_DONE)
 	{
-		if (owner->lives > 0)
+		if (G_GametypeUsesLives() && owner->lives > 0)
 		{
 			srb2::Draw lives_drawer = drawer
 				.xy(
