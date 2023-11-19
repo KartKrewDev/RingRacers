@@ -5884,14 +5884,30 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 	WRITEUINT8(save->p, roundqueue.roundnum);
 
 	UINT8 i;
+	UINT16 mapnum;
 	for (i = 0; i < roundqueue.size; i++)
 	{
-		UINT16 mapnum = roundqueue.entries[i].mapnum;
-		UINT32 val = 0; // no good default, will all-but-guarantee bad save
-		if (mapnum < nummapheaders && mapheaderinfo[mapnum] != NULL)
-			val = mapheaderinfo[mapnum]->lumpnamehash;
+		mapnum = roundqueue.entries[i].mapnum;
 
-		WRITEUINT32(save->p, val);
+		if (mapnum < nummapheaders && mapheaderinfo[mapnum] != NULL)
+		{
+			WRITEUINT8(save->p, roundqueue.entries[i].overridden);
+			
+			if (roundqueue.entries[i].overridden == true)
+			{
+				WRITESTRINGL(save->p, mapheaderinfo[mapnum]->lumpname, MAXMAPLUMPNAME);
+			}
+			else
+			{
+				WRITEUINT32(save->p, mapheaderinfo[mapnum]->lumpnamehash);
+			}
+		}
+		else
+		{
+			// eh, not our problem. provide something that'll almost certainly fail on load
+			WRITEUINT8(save->p, false);
+			WRITEUINT32(save->p, 0);
+		}
 	}
 
 	// Rank information
@@ -6076,15 +6092,39 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 	}
 
 	UINT8 i, j;
+	UINT16 mapnum;
 	for (i = 0; i < roundqueue.size; i++)
 	{
-		UINT32 val = READUINT32(save->p);
-		UINT16 mapnum = roundqueue.entries[i].mapnum;
-
-		if (mapnum < nummapheaders && mapheaderinfo[mapnum] != NULL)
+		roundqueue.entries[i].overridden = (boolean)READUINT8(save->p);
+		if (roundqueue.entries[i].overridden == true)
 		{
-			if (mapheaderinfo[mapnum]->lumpnamehash == val)
+			if (i >= roundqueue.position)
+			{
+				CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Cup \"%s\"'s level composition is invalid (has been overridden at entry %u/%u, ahead of the queue head %u).\n", cupname, i, roundqueue.size, roundqueue.position-1);
+				return false;
+			}
+
+			char mapname[MAXMAPLUMPNAME];
+
+			READSTRINGL(save->p, mapname, MAXMAPLUMPNAME);
+			mapnum = G_MapNumber(mapname);
+
+			if (mapnum < nummapheaders)
+			{
+				roundqueue.entries[i].mapnum = mapnum;
 				continue;
+			}
+		}
+		else
+		{
+			UINT32 val = READUINT32(save->p);
+
+			mapnum = roundqueue.entries[i].mapnum;
+			if (mapnum < nummapheaders && mapheaderinfo[mapnum] != NULL)
+			{
+				if (mapheaderinfo[mapnum]->lumpnamehash == val)
+					continue;
+			}
 		}
 
 		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Cup \"%s\"'s level composition has changed between game launches (differs at queue entry %u/%u).\n", cupname, i, roundqueue.size);
