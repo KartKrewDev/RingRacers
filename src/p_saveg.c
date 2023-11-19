@@ -5944,9 +5944,11 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 			const gpRank_level_t *lvl = &rank->levels[i];
 
 			UINT32 mapHash = 0; // no good default, will all-but-guarantee bad save
-			if (lvl->id < nummapheaders && mapheaderinfo[lvl->id] != NULL)
+			UINT16 id = lvl->id-1; // GAMEMAP BASED AAAGH
+			if (id < nummapheaders && mapheaderinfo[id] != NULL)
 			{
-				mapHash = mapheaderinfo[lvl->id]->lumpnamehash;
+				mapHash = mapheaderinfo[id]->lumpnamehash;
+				//CONS_Printf("wrote map \"%s\" from rank in %u/%u\n", mapheaderinfo[id]->lumpname, i, rank->numLevels);
 			}
 			WRITEUINT32(save->p, mapHash);
 
@@ -6188,7 +6190,7 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 				if (mapheaderinfo[id]->lumpnamehash != mapHash)
 					continue;
 
-				lvl->id = id;
+				lvl->id = id+1;
 				seeninqueue[j] = true;
 				break;
 			}
