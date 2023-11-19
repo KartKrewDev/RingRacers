@@ -1944,27 +1944,6 @@ static void K_HandleLapIncrement(player_t *player)
 
 			player->laps++;
 
-			// Set up lap animation vars
-			if (player->laps > 1)
-			{
-				if (nump > 1)
-				{
-					if (K_IsPlayerLosing(player))
-						player->karthud[khud_laphand] = 3;
-					else
-					{
-						if (nump > 2 && player->position == 1) // 1st place in 1v1 uses thumbs up
-							player->karthud[khud_laphand] = 1;
-						else
-							player->karthud[khud_laphand] = 2;
-					}
-				}
-				else
-					player->karthud[khud_laphand] = 0; // No hands in FREE PLAY
-
-				player->karthud[khud_lapanimation] = 80;
-			}
-
 			if (G_TimeAttackStart() && !linecrossed)
 			{
 				linecrossed = leveltime;
@@ -2059,6 +2038,27 @@ static void K_HandleLapIncrement(player_t *player)
 				}
 
 				player->latestlap = player->laps;
+
+				// Set up lap animation vars
+				if (player->latestlap > 1)
+				{
+					if (nump > 1)
+					{
+						if (K_IsPlayerLosing(player))
+							player->karthud[khud_laphand] = 3;
+						else
+						{
+							if (nump > 2 && player->position == 1) // 1st place in 1v1 uses thumbs up
+								player->karthud[khud_laphand] = 1;
+							else
+								player->karthud[khud_laphand] = 2;
+						}
+					}
+					else
+						player->karthud[khud_laphand] = 0; // No hands in FREE PLAY
+
+					player->karthud[khud_lapanimation] = 80;
+				}
 			}
 
 			// finished race exit setup

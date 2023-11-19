@@ -5027,7 +5027,7 @@ static void K_drawLapStartAnim(void)
 			kp_lapanim_hand[stplyr->karthud[khud_laphand]-1], NULL);
 	}
 
-	if (stplyr->laps == (UINT8)(numlaps))
+	if (stplyr->latestlap == (UINT8)(numlaps))
 	{
 		newval = (62 - (32 * max(0, progress - 76))) * FRACUNIT;
 		oldval = (62 - (32 * max(0, progressOld - 76))) * FRACUNIT;
@@ -5074,7 +5074,7 @@ static void K_drawLapStartAnim(void)
 				interpx, // 194
 				30*FRACUNIT, // 24
 				FRACUNIT, V_SNAPTOTOP|V_HUDTRANS,
-				kp_lapanim_number[(((UINT32)stplyr->laps) / 10)][min(progress/2-8, 2)], NULL);
+				kp_lapanim_number[(((UINT32)stplyr->latestlap) / 10)][min(progress/2-8, 2)], NULL);
 
 			if (progress/2-10 >= 0)
 			{
@@ -5086,7 +5086,7 @@ static void K_drawLapStartAnim(void)
 					interpx, // 221
 					30*FRACUNIT, // 24
 					FRACUNIT, V_SNAPTOTOP|V_HUDTRANS,
-					kp_lapanim_number[(((UINT32)stplyr->laps) % 10)][min(progress/2-10, 2)], NULL);
+					kp_lapanim_number[(((UINT32)stplyr->latestlap) % 10)][min(progress/2-10, 2)], NULL);
 			}
 		}
 	}
