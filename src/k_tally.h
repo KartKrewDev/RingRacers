@@ -66,7 +66,7 @@ struct level_tally_t
 	UINT16 gt;
 	boolean gotThru;
 	char header[64];
-	UINT8 roundNum;
+	boolean showRoundNum;
 	sfxenum_t gradeVoice;
 
 	// Stats

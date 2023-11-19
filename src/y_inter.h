@@ -16,8 +16,6 @@
 extern "C" {
 #endif
 
-#define INTERMISSIONROUND_BONUS UINT8_MAX
-
 typedef struct
 {
 	boolean rankingsmode; // rankings mode
@@ -25,7 +23,7 @@ typedef struct
 	boolean showrank; // show rank-restricted queue entry at the end, if it exists
 	boolean encore; // encore mode
 	boolean isduel; // duel mode
-	UINT8 roundnum; // round number
+	boolean showroundnum; // round number
 
 	char headerstring[64]; // holds levelnames up to 64 characters
 
@@ -47,7 +45,7 @@ typedef struct
 	INT32 linemeter; // For GP only
 } y_data_t;
 
-void Y_DrawIntermissionHeader(INT32 x, INT32 y, boolean gotthrough, const char *headerstring, UINT8 roundnum, boolean small);
+void Y_DrawIntermissionHeader(INT32 x, INT32 y, boolean gotthrough, const char *headerstring, boolean showroundnum, boolean small);
 void Y_IntermissionDrawer(void);
 void Y_Ticker(void);
 

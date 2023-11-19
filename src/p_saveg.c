@@ -733,7 +733,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 			WRITEUINT16(save->p, players[i].tally.gt);
 			WRITEUINT8(save->p, players[i].tally.gotThru);
 			WRITESTRINGN(save->p, players[i].tally.header, 63);
-			WRITEUINT8(save->p, players[i].tally.roundNum);
+			WRITEUINT8(save->p, players[i].tally.showRoundNum);
 			WRITEINT32(save->p, players[i].tally.gradeVoice);
 
 			WRITEINT32(save->p, players[i].tally.time);
@@ -1290,7 +1290,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 			READSTRINGN(save->p, players[i].tally.header, 63);
 			players[i].tally.header[63] = '\0';
 
-			players[i].tally.roundNum = READUINT8(save->p);
+			players[i].tally.showRoundNum = (boolean)READUINT8(save->p);
 			players[i].tally.gradeVoice = READINT32(save->p);
 
 			players[i].tally.time = READINT32(save->p);
@@ -1405,6 +1405,7 @@ static void P_NetArchiveRoundQueue(savebuffer_t *save)
 		WRITEUINT8(save->p, roundqueue.entries[i].gametype);
 		WRITEUINT8(save->p, (UINT8)roundqueue.entries[i].encore);
 		WRITEUINT8(save->p, (UINT8)roundqueue.entries[i].rankrestricted);
+		WRITEUINT8(save->p, (UINT8)roundqueue.entries[i].overridden);
 	}
 }
 
@@ -1429,6 +1430,7 @@ static void P_NetUnArchiveRoundQueue(savebuffer_t *save)
 		roundqueue.entries[i].gametype = READUINT8(save->p);
 		roundqueue.entries[i].encore = (boolean)READUINT8(save->p);
 		roundqueue.entries[i].rankrestricted = (boolean)READUINT8(save->p);
+		roundqueue.entries[i].overridden = (boolean)READUINT8(save->p);
 	}
 }
 

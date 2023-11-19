@@ -60,6 +60,7 @@ struct roundentry_t
 	UINT16 gametype;			// Gametype we want to play this in
 	boolean encore;				// Whether this will be flipped
 	boolean rankrestricted;		// For grand prix progression
+	boolean overridden;			// For nextmapoverride
 };
 
 extern struct roundqueue

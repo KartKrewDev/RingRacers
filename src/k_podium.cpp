@@ -422,7 +422,7 @@ void podiumData_s::Draw(void)
 			Y_DrawIntermissionHeader(
 				(BASEVIDWIDTH * transition_i * FRACUNIT),
 				(header_centered + header_offset) * FRACUNIT,
-				false, header, 0, false
+				false, header, false, false
 			);
 			break;
 
@@ -430,7 +430,7 @@ void podiumData_s::Draw(void)
 			Y_DrawIntermissionHeader(
 				0,
 				((header_centered * transition_i) + header_offset) * FRACUNIT,
-				false, header, 0, false
+				false, header, false, false
 			);
 			break;
 
@@ -438,7 +438,7 @@ void podiumData_s::Draw(void)
 			Y_DrawIntermissionHeader(
 				0,
 				header_offset * FRACUNIT,
-				false, header, 0, false
+				false, header, false, false
 			);
 			break;
 	}
