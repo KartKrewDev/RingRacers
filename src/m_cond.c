@@ -3190,6 +3190,33 @@ boolean M_CupLocked(cupheader_t *cup)
 	return false;
 }
 
+boolean M_CupSecondRowLocked(void)
+{
+	// The following was pre-optimised for cached behaviour.
+	// It would need a refactor if the cache system were to
+	// change, maybe to iterate over unlockable_t instead.
+	cupheader_t *cup;
+	for (cup = kartcupheaders; cup; cup = cup->next)
+	{
+		// Only important for the second row.
+		if ((cup->id % (CUPMENU_COLUMNS * CUPMENU_ROWS)) < CUPMENU_COLUMNS)
+			continue;
+
+		// Only important for ones that can be locked.
+		if (cup->cache_cuplock == MAXUNLOCKABLES)
+			continue;
+
+		// If it's NOT unlocked, can't be used as proof of unlock.
+		if (!M_CheckNetUnlockByID(cup->cache_cuplock))
+			continue;
+
+		// Okay, at least one cup on the second row is unlocked!
+		return false;
+	}
+
+	return true;
+}
+
 boolean M_MapLocked(UINT16 mapnum)
 {
 	// Don't lock maps in dedicated servers.

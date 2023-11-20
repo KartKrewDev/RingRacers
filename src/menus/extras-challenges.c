@@ -58,6 +58,8 @@ static void M_UpdateChallengeGridVisuals(void)
 {
 	UINT16 i;
 
+	challengesmenu.cache_secondrowlocked = M_CupSecondRowLocked();
+
 	challengesmenu.unlockcount[CMC_UNLOCKED] = 0;
 	challengesmenu.unlockcount[CMC_TOTAL] = 0;
 

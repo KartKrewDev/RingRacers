@@ -752,8 +752,6 @@ void M_SetupPlayMenu(INT32 choice);
 void M_SetupGametypeMenu(INT32 choice);
 void M_SetupRaceMenu(INT32 choice);
 
-#define CUPMENU_COLUMNS 7
-#define CUPMENU_ROWS 2
 #define CUPMENU_CURSORID (cupgrid.x + (cupgrid.y * CUPMENU_COLUMNS) + (cupgrid.pageno * (CUPMENU_COLUMNS * CUPMENU_ROWS)))
 
 extern struct cupgrid_s {
@@ -764,6 +762,7 @@ extern struct cupgrid_s {
 	size_t cappages;
 	tic_t previewanim;
 	boolean grandprix; 	// Setup grand prix server after picking
+	boolean cache_secondrowlocked;
 } cupgrid;
 
 typedef struct levelsearch_s {
@@ -1274,6 +1273,8 @@ extern struct challengesmenu_s {
 	UINT16 unlockcount[CMC_MAX];
 
 	UINT8 fade;
+
+	boolean cache_secondrowlocked;
 } challengesmenu;
 
 menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu);

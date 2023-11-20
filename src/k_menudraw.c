@@ -2712,7 +2712,9 @@ void M_DrawCupSelect(void)
 
 	for (i = 0; i < CUPMENU_COLUMNS; i++)
 	{
-		for (j = 0; j < CUPMENU_ROWS; j++)
+		x = 14 + (i*42);
+
+		for (j = 0; j < (cupgrid.cache_secondrowlocked ? 1 : CUPMENU_ROWS); j++)
 		{
 			size_t id = (i + (j * CUPMENU_COLUMNS)) + (cupgrid.pageno * (CUPMENU_COLUMNS * CUPMENU_ROWS));
 
@@ -2721,8 +2723,9 @@ void M_DrawCupSelect(void)
 
 			templevelsearch.cup = cupgrid.builtgrid[id];
 
-			x = 14 + (i*42);
 			y = 20 + (j*44) - (30*menutransition.tics);
+			if (cupgrid.cache_secondrowlocked == true)
+				y += 28;
 
 			const boolean isGP = (cupgrid.grandprix && (cv_dummygpdifficulty.value >= 0 && cv_dummygpdifficulty.value < KARTGP_MAX));
 			if (isGP)
@@ -2745,11 +2748,23 @@ void M_DrawCupSelect(void)
 				V_DrawScaledPatch(x + 32, y + 32, 0, W_CachePatchName("CUPBKUP1", PU_CACHE));
 			}
 
+			// used to be 8 + (j*100) - (30*menutransition.tics)
+			// but one-row mode means y has to be changed
+			// this is the difference between y and that
+			if (j == 0)
+			{
+				y -= 12; // (8) - (20)
+			}
+			else
+			{
+				y += 44; //(8 + 100) - (20 + 44)
+			}
+
 			if (windata && windata->best_placement != 0)
 			{
 				M_DrawCupWinData(
 					x,
-					8 + (j*100) - (30*menutransition.tics),
+					y,
 					templevelsearch.cup,
 					cv_dummygpdifficulty.value,
 					(cupgrid.previewanim & 1),
@@ -2761,6 +2776,8 @@ void M_DrawCupSelect(void)
 
 	x = 14 + (cupgrid.x*42);
 	y = 20 + (cupgrid.y*44) - (30*menutransition.tics);
+	if (cupgrid.cache_secondrowlocked == true)
+		y += 28;
 
 	V_DrawScaledPatch(x - 4, y - 1, 0, W_CachePatchName("CUPCURS", PU_CACHE));
 
@@ -5686,40 +5703,56 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 
 			M_DrawCupPreview(146, &templevelsearch);
 
-			maxid = id = (temp->id % 14);
+			maxid = id = (temp->id % (CUPMENU_COLUMNS * CUPMENU_ROWS));
 			offset = (temp->id - id) * 2;
-			while (temp && maxid < 14)
+			while (temp && maxid < (CUPMENU_COLUMNS * CUPMENU_ROWS))
 			{
 				maxid++;
 				temp = temp->next;
 			}
 
-			V_DrawFadeFill(4, (BASEVIDHEIGHT-(4+16)), 28 + offset, 16, 0, 31, challengetransparentstrength);
+			y = (BASEVIDHEIGHT-(4+16));
+			if (challengesmenu.cache_secondrowlocked == true)
+				y += 8;
+
+			V_DrawFadeFill(
+				4,
+				y,
+				28 + offset,
+				(challengesmenu.cache_secondrowlocked ? 8 : 16),
+				0,
+				31,
+				challengetransparentstrength
+			);
 
 			for (i = 0; i < offset; i += 4)
 			{
-				V_DrawFill(4+1 + i, (BASEVIDHEIGHT-(4+16))+3,   2, 2, 15);
-				V_DrawFill(4+1 + i, (BASEVIDHEIGHT-(4+16))+8+3, 2, 2, 15);
+				V_DrawFill(4+1 + i, y+3,   2, 2, 15);
+
+				if (challengesmenu.cache_secondrowlocked == false)
+					V_DrawFill(4+1 + i, y+8+3, 2, 2, 15);
 			}
 
-			for (i = 0; i < 7; i++)
+			for (i = 0; i < CUPMENU_COLUMNS; i++)
 			{
 				if (templevelsearch.cup && id == i)
 				{
-					V_DrawFill(offset + 4   + (i*4), (BASEVIDHEIGHT-(4+16)),     4, 8, 0);
+					V_DrawFill(offset + 4   + (i*4), y,     4, 8, 0);
 				}
 				else if (i < maxid)
 				{
-					V_DrawFill(offset + 4+1 + (i*4), (BASEVIDHEIGHT-(4+16))+3, 2, 2, 0);
+					V_DrawFill(offset + 4+1 + (i*4), y+3, 2, 2, 0);
 				}
 
-				if (templevelsearch.cup && (templevelsearch.cup->id % 14) == i+7)
+				if (templevelsearch.cup && id == i+CUPMENU_COLUMNS)
 				{
-					V_DrawFill(offset + 4 + (i*4), (BASEVIDHEIGHT-(4+16))+8, 4, 8, 0);
+					V_DrawFill(offset + 4 + (i*4), y+8, 4, 8, 0);
 				}
-				else if (i+7 < maxid)
+				else if (challengesmenu.cache_secondrowlocked == true)
+					;
+				else if (i+CUPMENU_COLUMNS < maxid)
 				{
-					V_DrawFill(offset + 4+1 + (i*4), (BASEVIDHEIGHT-(4+16))+8+3, 2, 2, 0);
+					V_DrawFill(offset + 4+1 + (i*4), y+8+3, 2, 2, 0);
 				}
 			}
 

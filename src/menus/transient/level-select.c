@@ -299,10 +299,21 @@ boolean M_LevelListFromGametype(INT16 gt)
 
 	if (levellist.levelsearch.cupmode)
 	{
+		const boolean secondrowlocked = M_CupSecondRowLocked();
+		if (cupgrid.cache_secondrowlocked != secondrowlocked)
+		{
+			cupgrid.cache_secondrowlocked = secondrowlocked;
+			if (cupgrid.y || cupgrid.pageno)
+			{
+				// Prevent softlock, reset to start
+				cupgrid.x = cupgrid.y = cupgrid.pageno = 0;
+			}
+		}
+
 		levelsearch_t templevelsearch = levellist.levelsearch; // full copy
 		size_t currentid = 0, highestunlockedid = 0;
 		const size_t pagelen = sizeof(cupheader_t*) * (CUPMENU_COLUMNS * CUPMENU_ROWS);
-		boolean foundany = false, currentvalid = false;
+		boolean foundany = false, foundanythispage = false, currentvalid = false;
 
 		G_GetBackupCupData(
 			cupgrid.grandprix == true
@@ -374,6 +385,7 @@ boolean M_LevelListFromGametype(INT16 gt)
 			templevelsearch.checklocked = true;
 			if (M_GetFirstLevelInList(&temp, &templevelsearch) != NEXTMAP_INVALID)
 			{
+				foundanythispage = true;
 				highestunlockedid = currentid;
 
 				if (Playing()
@@ -386,6 +398,28 @@ boolean M_LevelListFromGametype(INT16 gt)
 			}
 
 			currentid++;
+
+			// If the second row is locked and you've reached it, skip onward.
+			if (secondrowlocked == true)
+			{
+				size_t deltaid = currentid % (CUPMENU_COLUMNS * CUPMENU_ROWS);
+				if (deltaid >= CUPMENU_COLUMNS)
+				{
+					currentid += (CUPMENU_COLUMNS * CUPMENU_ROWS) - deltaid;
+				}
+			}
+
+			// If you've gone a full page without anything valid, compress it down!
+			if ((currentid % (CUPMENU_COLUMNS * CUPMENU_ROWS)) == 0)
+			{
+				if (foundanythispage == false)
+				{
+					currentid -= (CUPMENU_COLUMNS * CUPMENU_ROWS);
+					memset(&cupgrid.builtgrid[currentid], 0, pagelen);
+				}
+				foundanythispage = false;
+			}
+
 			templevelsearch.cup = templevelsearch.cup->next;
 		}
 

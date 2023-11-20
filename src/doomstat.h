@@ -53,6 +53,9 @@ extern UINT32 maptol;
 extern INT32 cursaveslot;
 extern UINT8 gamecomplete;
 
+#define CUPMENU_COLUMNS 7
+#define CUPMENU_ROWS 2
+
 // Extra abilities/settings for skins (combinable stuff)
 typedef enum
 {
