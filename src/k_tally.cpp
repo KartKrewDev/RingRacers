@@ -197,7 +197,7 @@ INT32 level_tally_t::CalculateGrade(void)
 			}
 			case TALLY_BONUS_SCORE:
 			{
-				bonusWeights[i] = 100;
+				bonusWeights[i] = ((pointLimit != 0) ? 100 : 0);
 				break;
 			}
 			case TALLY_BONUS_LAP:
@@ -215,7 +215,7 @@ INT32 level_tally_t::CalculateGrade(void)
 		}
 	}
 
-	const INT32 positionWeight = (position > 0 && numPlayers > 2) ? 100 : 0;
+	const INT32 positionWeight = (position > 0 && numPlayers > 2) ? 50 : 0;
 	const INT32 total = positionWeight + bonusWeights[0] + bonusWeights[1];
 
 	INT32 ours = 0;
@@ -224,7 +224,7 @@ INT32 level_tally_t::CalculateGrade(void)
 	if (position > 0 && numPlayers > 2)
 	{
 		const INT32 sc = (position - 1);
-		const INT32 loser = ((numPlayers + 1) / 2) - 1; // number of winner positions
+		const INT32 loser = ((numPlayers + 1) / 2); // number of winner positions
 		ours += ((loser - sc) * positionWeight) / loser;
 	}
 
@@ -239,7 +239,11 @@ INT32 level_tally_t::CalculateGrade(void)
 			}
 			case TALLY_BONUS_LAP:
 			{
-				ours += (laps * bonusWeights[i]) / std::max(1, static_cast<int>(totalLaps));
+				// Use a special curve for this.
+				// The difference between 0 and 1 lap points is an important difference in skill,
+				// while the difference between 5 and 6 is not very notable.
+				const fixed_t frac = (laps * FRACUNIT) / std::max(1, static_cast<int>(totalLaps));
+				ours += Easing_OutSine(frac, 0, bonusWeights[i]);
 				break;
 			}
 			case TALLY_BONUS_PRISON:

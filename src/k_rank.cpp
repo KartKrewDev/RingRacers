@@ -408,14 +408,14 @@ void gpRank_t::Update(void)
 
 	for (i = 0; i < numPlayers; i++)
 	{
-		if (playeringame[displayplayers[i]] == false
-			|| players[displayplayers[i]].spectator == true
-			|| players[displayplayers[i]].bot == true)
+		if (playeringame[g_localplayers[i]] == false
+			|| players[g_localplayers[i]].spectator == true
+			|| players[g_localplayers[i]].bot == true)
 		{
 			continue;
 		}
 
-		const player_t *player = &players[displayplayers[i]]; // TODO: needs looked at for online GP
+		const player_t *player = &players[g_localplayers[i]];
 		gpRank_level_perplayer_t *const dta = &lvl->perPlayer[i];
 
 		if (player->realtime < lvl->time)
