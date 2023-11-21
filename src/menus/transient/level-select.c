@@ -313,14 +313,13 @@ boolean M_LevelListFromGametype(INT16 gt)
 		levelsearch_t templevelsearch = levellist.levelsearch; // full copy
 		size_t currentid = 0, highestunlockedid = 0;
 		const size_t pagelen = sizeof(cupheader_t*) * (CUPMENU_COLUMNS * CUPMENU_ROWS);
-		boolean foundany = false, foundanythispage = false, currentvalid = false;
+		boolean foundany = false, currentvalid = false;
+		size_t deltaid = 0;
 
 		G_GetBackupCupData(
 			cupgrid.grandprix == true
 			&& cv_splitplayers.value <= 1
 		);
-
-		templevelsearch.cup = kartcupheaders;
 
 #if 0
 		// Make sure there's valid cups before going to this menu. -- rip sweet prince
@@ -368,8 +367,89 @@ boolean M_LevelListFromGametype(INT16 gt)
 					cupgrid.pageno = currentid / (CUPMENU_COLUMNS * CUPMENU_ROWS); \
 					currentvalid = true;
 
-		while (templevelsearch.cup)
+#define GRID_TIDYLOCKED(rewind) \
+			currentid -= rewind; \
+			memset(&cupgrid.builtgrid[currentid], 0, pagelen); \
+			deltaid = 0;
+
+		boolean lostandfoundready = true;
+		// foundanythispage SHOULD start out as false... but if
+		// nothing is unlocked, the first page should never be wiped!
+		boolean foundanythispage = true;
+
+		templevelsearch.cup = kartcupheaders;
+		while (true)
 		{
+			// Handle reaching the end of the base-game cups.
+			if (lostandfoundready == true
+			&& (
+				templevelsearch.cup == NULL
+				|| templevelsearch.cup->id == basenumkartcupheaders
+				)
+			)
+			{
+				lostandfoundready = false;
+
+				if (deltaid != 0 && foundanythispage == false)
+				{
+					GRID_TIDYLOCKED(deltaid);
+				}
+
+				size_t olddelta = deltaid;
+				if (cupgrid.grandprix == false)
+				{
+					cupheader_t *restore = templevelsearch.cup;
+
+					templevelsearch.cup = &dummy_lostandfound;
+					templevelsearch.checklocked = true;
+
+					if (M_GetFirstLevelInList(&temp, &templevelsearch) != NEXTMAP_INVALID)
+					{
+						foundany = foundanythispage = true;
+						GRID_INSERTCUP;
+						highestunlockedid = currentid;
+
+						if (Playing()
+							? (mapheaderinfo[gamemap-1] && mapheaderinfo[gamemap-1]->cup == NULL)
+							: (gt == -1 && levellist.levelsearch.cup == templevelsearch.cup))
+						{
+							GRID_FOCUSCUP;
+						}
+
+						currentid++;
+						deltaid = currentid % (CUPMENU_COLUMNS * CUPMENU_ROWS);
+					}
+
+					templevelsearch.cup = restore;
+				}
+
+				// Lost and Found marks the transition point between base
+				// and custom cups. Always force a page break between these
+				// (unless LnF is the only "cup" on the page, for sanity).
+
+				if (
+					(deltaid == 0) // a new page already
+					|| (olddelta == 0 && deltaid == 1) // LnF is first and only entry
+				)
+					; // this page layout is fine
+				else
+				{
+					if (foundanythispage == false)
+					{
+						GRID_TIDYLOCKED(deltaid);
+					}
+					else
+					{
+						currentid += (CUPMENU_COLUMNS * CUPMENU_ROWS) - deltaid;
+						deltaid = 0;
+						foundanythispage = false;
+					}
+				}
+			}
+
+			if (templevelsearch.cup == NULL)
+				break;
+
 			templevelsearch.checklocked = false;
 			if (!M_CountLevelsToShowInList(&templevelsearch))
 			{
@@ -397,59 +477,34 @@ boolean M_LevelListFromGametype(INT16 gt)
 				}
 			}
 
-			currentid++;
+			templevelsearch.cup = templevelsearch.cup->next;
 
-			// If the second row is locked and you've reached it, skip onward.
+			currentid++;
+			deltaid = currentid % (CUPMENU_COLUMNS * CUPMENU_ROWS);
+
 			if (secondrowlocked == true)
 			{
-				size_t deltaid = currentid % (CUPMENU_COLUMNS * CUPMENU_ROWS);
+				// If the second row is locked and you've reached it, skip onward.
 				if (deltaid >= CUPMENU_COLUMNS)
 				{
 					currentid += (CUPMENU_COLUMNS * CUPMENU_ROWS) - deltaid;
+					deltaid = 0;
 				}
 			}
 
-			// If you've gone a full page without anything valid, compress it down!
-			if ((currentid % (CUPMENU_COLUMNS * CUPMENU_ROWS)) == 0)
+			if (deltaid == 0)
 			{
 				if (foundanythispage == false)
 				{
-					currentid -= (CUPMENU_COLUMNS * CUPMENU_ROWS);
-					memset(&cupgrid.builtgrid[currentid], 0, pagelen);
+					GRID_TIDYLOCKED((CUPMENU_COLUMNS * CUPMENU_ROWS));
 				}
 				foundanythispage = false;
 			}
-
-			templevelsearch.cup = templevelsearch.cup->next;
-		}
-
-		// Lost and found, a simplified version of the above loop.
-		if (cupgrid.grandprix == false)
-		{
-			templevelsearch.cup = &dummy_lostandfound;
-			templevelsearch.checklocked = true;
-
-			if (M_GetFirstLevelInList(&temp, &templevelsearch) != NEXTMAP_INVALID)
-			{
-				foundany = true;
-				GRID_INSERTCUP;
-				highestunlockedid = currentid;
-
-				if (Playing()
-					? (mapheaderinfo[gamemap-1] && mapheaderinfo[gamemap-1]->cup == NULL)
-					: (gt == -1 && levellist.levelsearch.cup == templevelsearch.cup))
-				{
-					GRID_FOCUSCUP;
-				}
-
-				currentid++;
-			}
-
-			templevelsearch.cup = NULL;
 		}
 
 #undef GRID_INSERTCUP
 #undef GRID_FOCUSCUP
+#undef GRID_TIDYLOCKED
 
 		if (foundany == false)
 		{

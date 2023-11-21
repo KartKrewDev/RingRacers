@@ -423,7 +423,7 @@ struct cupheader_t
 };
 
 extern cupheader_t *kartcupheaders; // Start of cup linked list
-extern UINT16 numkartcupheaders;
+extern UINT16 numkartcupheaders, basenumkartcupheaders;
 
 struct unloaded_cupheader_t
 {

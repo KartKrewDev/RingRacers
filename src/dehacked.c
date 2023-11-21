@@ -613,6 +613,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 	if (gamedataadded)
 	{
 		basenummapheaders = nummapheaders;
+		basenumkartcupheaders = numkartcupheaders;
 		G_LoadGameData();
 	}
 

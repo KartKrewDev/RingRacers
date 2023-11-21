@@ -204,6 +204,7 @@ unloaded_mapheader_t *unloadedmapheaders = NULL;
 // Kart cup definitions
 cupheader_t *kartcupheaders = NULL;
 UINT16 numkartcupheaders = 0;
+UINT16 basenumkartcupheaders = 0;
 
 unloaded_cupheader_t *unloadedcupheaders = NULL;
 
