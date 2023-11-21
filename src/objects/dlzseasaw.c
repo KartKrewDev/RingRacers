@@ -43,7 +43,7 @@ static void Obj_DLZSeasawUpdate(mobj_t *mo, boolean ghostme)
 		if (mo->eflags & MFE_VERTICALFLIP)
 		{
 			mo->tracer->eflags |= MFE_VERTICALFLIP;
-			mo->tracer->eflags |= MF2_OBJECTFLIP;
+			mo->tracer->flags2 |= MF2_OBJECTFLIP;
 		}
 
 	}
