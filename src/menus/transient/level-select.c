@@ -114,7 +114,7 @@ UINT16 M_CountLevelsToShowInList(levelsearch_t *levelsearch)
 		if (levelsearch->checklocked && M_CupLocked(levelsearch->cup))
 			return 0;
 
-		for (i = 0; i < CUPCACHE_MAX; i++)
+		for (i = 0; i < CUPCACHE_PODIUM; i++)
 		{
 			if (!M_CanShowLevelInList(levelsearch->cup->cachedlevels[i], levelsearch))
 				continue;
@@ -158,13 +158,13 @@ UINT16 M_GetFirstLevelInList(UINT8 *i, levelsearch_t *levelsearch)
 	{
 		if (levelsearch->checklocked && M_CupLocked(levelsearch->cup))
 		{
-			*i = CUPCACHE_MAX;
+			*i = CUPCACHE_PODIUM;
 			return NEXTMAP_INVALID;
 		}
 
 		*i = 0;
 		mapnum = NEXTMAP_INVALID;
-		for (; *i < CUPCACHE_MAX; (*i)++)
+		for (; *i < CUPCACHE_PODIUM; (*i)++)
 		{
 			if (!M_CanShowLevelInList(levelsearch->cup->cachedlevels[*i], levelsearch))
 				continue;
@@ -194,7 +194,7 @@ UINT16 M_GetNextLevelInList(UINT16 mapnum, UINT8 *i, levelsearch_t *levelsearch)
 	{
 		mapnum = NEXTMAP_INVALID;
 		(*i)++;
-		for (; *i < CUPCACHE_MAX; (*i)++)
+		for (; *i < CUPCACHE_PODIUM; (*i)++)
 		{
 			if (!M_CanShowLevelInList(levelsearch->cup->cachedlevels[*i], levelsearch))
 				continue;
