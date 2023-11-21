@@ -733,7 +733,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 			WRITEUINT16(save->p, players[i].tally.gt);
 			WRITEUINT8(save->p, players[i].tally.gotThru);
 			WRITESTRINGN(save->p, players[i].tally.header, 63);
-			WRITEUINT8(save->p, players[i].tally.roundNum);
+			WRITEUINT8(save->p, players[i].tally.showRoundNum);
 			WRITEINT32(save->p, players[i].tally.gradeVoice);
 
 			WRITEINT32(save->p, players[i].tally.time);
@@ -1290,7 +1290,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 			READSTRINGN(save->p, players[i].tally.header, 63);
 			players[i].tally.header[63] = '\0';
 
-			players[i].tally.roundNum = READUINT8(save->p);
+			players[i].tally.showRoundNum = (boolean)READUINT8(save->p);
 			players[i].tally.gradeVoice = READINT32(save->p);
 
 			players[i].tally.time = READINT32(save->p);
@@ -1405,6 +1405,7 @@ static void P_NetArchiveRoundQueue(savebuffer_t *save)
 		WRITEUINT8(save->p, roundqueue.entries[i].gametype);
 		WRITEUINT8(save->p, (UINT8)roundqueue.entries[i].encore);
 		WRITEUINT8(save->p, (UINT8)roundqueue.entries[i].rankrestricted);
+		WRITEUINT8(save->p, (UINT8)roundqueue.entries[i].overridden);
 	}
 }
 
@@ -1429,6 +1430,7 @@ static void P_NetUnArchiveRoundQueue(savebuffer_t *save)
 		roundqueue.entries[i].gametype = READUINT8(save->p);
 		roundqueue.entries[i].encore = (boolean)READUINT8(save->p);
 		roundqueue.entries[i].rankrestricted = (boolean)READUINT8(save->p);
+		roundqueue.entries[i].overridden = (boolean)READUINT8(save->p);
 	}
 }
 
@@ -5882,53 +5884,92 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 	WRITEUINT8(save->p, roundqueue.roundnum);
 
 	UINT8 i;
+	UINT16 mapnum;
 	for (i = 0; i < roundqueue.size; i++)
 	{
-		UINT16 mapnum = roundqueue.entries[i].mapnum;
-		UINT32 val = 0; // no good default, will all-but-guarantee bad save
-		if (mapnum < nummapheaders && mapheaderinfo[mapnum] != NULL)
-			val = mapheaderinfo[mapnum]->lumpnamehash;
+		mapnum = roundqueue.entries[i].mapnum;
 
-		WRITEUINT32(save->p, val);
+		if (mapnum < nummapheaders && mapheaderinfo[mapnum] != NULL)
+		{
+			WRITEUINT8(save->p, roundqueue.entries[i].overridden);
+			
+			if (roundqueue.entries[i].overridden == true)
+			{
+				WRITESTRINGL(save->p, mapheaderinfo[mapnum]->lumpname, MAXMAPLUMPNAME);
+			}
+			else
+			{
+				WRITEUINT32(save->p, mapheaderinfo[mapnum]->lumpnamehash);
+			}
+		}
+		else
+		{
+			// eh, not our problem. provide something that'll almost certainly fail on load
+			WRITEUINT8(save->p, false);
+			WRITEUINT32(save->p, 0);
+		}
 	}
 
 	// Rank information
 
 	{
-		WRITEUINT8(save->p, grandprixinfo.rank.numPlayers);
-		WRITEUINT8(save->p, grandprixinfo.rank.totalPlayers);
+		const gpRank_t *rank = &grandprixinfo.rank;
 
-		WRITEUINT8(save->p, grandprixinfo.rank.position);
-		WRITEUINT8(save->p, grandprixinfo.rank.skin);
+		WRITEUINT8(save->p, rank->numPlayers);
+		WRITEUINT8(save->p, rank->totalPlayers);
 
-		WRITEUINT32(save->p, grandprixinfo.rank.winPoints);
-		WRITEUINT32(save->p, grandprixinfo.rank.totalPoints);
+		WRITEUINT8(save->p, rank->position);
+		WRITEUINT8(save->p, rank->skin);
 
-		WRITEUINT32(save->p, grandprixinfo.rank.laps);
-		WRITEUINT32(save->p, grandprixinfo.rank.totalLaps);
+		WRITEUINT32(save->p, rank->winPoints);
+		WRITEUINT32(save->p, rank->totalPoints);
 
-		WRITEUINT32(save->p, (grandprixinfo.rank.continuesUsed + 1));
+		WRITEUINT32(save->p, rank->laps);
+		WRITEUINT32(save->p, rank->totalLaps);
 
-		WRITEUINT32(save->p, grandprixinfo.rank.prisons);
-		WRITEUINT32(save->p, grandprixinfo.rank.totalPrisons);
+		WRITEUINT32(save->p, (rank->continuesUsed + 1));
 
-		WRITEUINT32(save->p, grandprixinfo.rank.rings);
-		WRITEUINT32(save->p, grandprixinfo.rank.totalRings);
+		WRITEUINT32(save->p, rank->prisons);
+		WRITEUINT32(save->p, rank->totalPrisons);
 
-		WRITEUINT8(save->p, (UINT8)grandprixinfo.rank.specialWon);
+		WRITEUINT32(save->p, rank->rings);
+		WRITEUINT32(save->p, rank->totalRings);
 
-		/*
-		WRITEUINT8(save->p, grandprixinfo.rank.numLevels);
+		WRITEUINT8(save->p, (UINT8)rank->specialWon);
 
-		for (i = 0; i < grandprixinfo.rank.stages; i++)
+		WRITEUINT8(save->p, rank->numLevels);
+
+		for (i = 0; i < rank->numLevels; i++)
 		{
-			UINT8 j;
-			for (j = 0; j < grandprixinfo.rank.numPlayers; j++)
+			const gpRank_level_t *lvl = &rank->levels[i];
+
+			UINT32 mapHash = 0; // no good default, will all-but-guarantee bad save
+			UINT16 id = lvl->id-1; // GAMEMAP BASED AAAGH
+			if (id < nummapheaders && mapheaderinfo[id] != NULL)
 			{
-				
+				mapHash = mapheaderinfo[id]->lumpnamehash;
+				//CONS_Printf("wrote map \"%s\" from rank in %u/%u\n", mapheaderinfo[id]->lumpname, i, rank->numLevels);
+			}
+			WRITEUINT32(save->p, mapHash);
+
+			WRITEINT32(save->p, lvl->event);
+			WRITEUINT32(save->p, lvl->time);
+			WRITEUINT16(save->p, lvl->totalLapPoints);
+			WRITEUINT16(save->p, lvl->totalPrisons);
+
+			UINT8 j;
+			for (j = 0; j < rank->numPlayers; j++)
+			{
+				const gpRank_level_perplayer_t *plr = &lvl->perPlayer[j];
+
+				WRITEUINT8(save->p, plr->position);
+				WRITEUINT8(save->p, plr->rings);
+				WRITEUINT16(save->p, plr->lapPoints);
+				WRITEUINT16(save->p, plr->prisons);
+				WRITEUINT8(save->p, (UINT8)plr->gotSpecialPrize);
+				WRITESINT8(save->p, (SINT8)plr->grade);
 			}
 		}
-		*/
 	}
 
 	// Marathon information
@@ -6042,56 +6083,141 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 
 	if (roundqueue.size != size)
 	{
-		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Cup \"%s\"'s level composition has changed between game launches (differs in level count).\n", cupname);
+		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Cup \"%s\"'s level composition has changed between game launches (%u expected, got %u).\n", cupname, roundqueue.size, size);
 		return false;
 	}
 
 	if (roundqueue.position == 0 || roundqueue.position > size)
 	{
-		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Position in the round queue is invalid.\n");
+		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Position %u/%d in the round queue is invalid.\n", roundqueue.position, size);
 		return false;
 	}
 
-	UINT8 i;
+	UINT8 i, j;
+	UINT16 mapnum;
 	for (i = 0; i < roundqueue.size; i++)
 	{
-		UINT32 val = READUINT32(save->p);
-		UINT16 mapnum = roundqueue.entries[i].mapnum;
-
-		if (mapnum < nummapheaders && mapheaderinfo[mapnum] != NULL)
+		roundqueue.entries[i].overridden = (boolean)READUINT8(save->p);
+		if (roundqueue.entries[i].overridden == true)
 		{
-			if (mapheaderinfo[mapnum]->lumpnamehash == val)
+			if (i >= roundqueue.position)
+			{
+				CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Cup \"%s\"'s level composition is invalid (has been overridden at entry %u/%u, ahead of the queue head %u).\n", cupname, i, roundqueue.size, roundqueue.position-1);
+				return false;
+			}
+
+			char mapname[MAXMAPLUMPNAME];
+
+			READSTRINGL(save->p, mapname, MAXMAPLUMPNAME);
+			mapnum = G_MapNumber(mapname);
+
+			if (mapnum < nummapheaders)
+			{
+				roundqueue.entries[i].mapnum = mapnum;
 				continue;
+			}
+		}
+		else
+		{
+			UINT32 val = READUINT32(save->p);
+
+			mapnum = roundqueue.entries[i].mapnum;
+			if (mapnum < nummapheaders && mapheaderinfo[mapnum] != NULL)
+			{
+				if (mapheaderinfo[mapnum]->lumpnamehash == val)
+					continue;
+			}
 		}
 
-		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Cup \"%s\"'s level composition has changed between game launches (differs at level %u).\n", cupname, i);
+		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Cup \"%s\"'s level composition has changed between game launches (differs at queue entry %u/%u).\n", cupname, i, roundqueue.size);
 		return false;
 	}
 
 	// Rank information
 
 	{
-		grandprixinfo.rank.numPlayers = READUINT8(save->p);
-		grandprixinfo.rank.totalPlayers = READUINT8(save->p);
+		gpRank_t *const rank = &grandprixinfo.rank;
 
-		grandprixinfo.rank.position = READUINT8(save->p);
-		grandprixinfo.rank.skin = READUINT8(save->p);
+		rank->numPlayers = READUINT8(save->p);
+		rank->totalPlayers = READUINT8(save->p);
 
-		grandprixinfo.rank.winPoints = READUINT32(save->p);
-		grandprixinfo.rank.totalPoints = READUINT32(save->p);
+		rank->position = READUINT8(save->p);
+		rank->skin = READUINT8(save->p);
 
-		grandprixinfo.rank.laps = READUINT32(save->p);
-		grandprixinfo.rank.totalLaps = READUINT32(save->p);
+		rank->winPoints = READUINT32(save->p);
+		rank->totalPoints = READUINT32(save->p);
 
-		grandprixinfo.rank.continuesUsed = READUINT32(save->p);
+		rank->laps = READUINT32(save->p);
+		rank->totalLaps = READUINT32(save->p);
 
-		grandprixinfo.rank.prisons = READUINT32(save->p);
-		grandprixinfo.rank.totalPrisons = READUINT32(save->p);
+		rank->continuesUsed = READUINT32(save->p);
 
-		grandprixinfo.rank.rings = READUINT32(save->p);
-		grandprixinfo.rank.totalRings = READUINT32(save->p);
+		rank->prisons = READUINT32(save->p);
+		rank->totalPrisons = READUINT32(save->p);
 
-		grandprixinfo.rank.specialWon = (boolean)READUINT8(save->p);
+		rank->rings = READUINT32(save->p);
+		rank->totalRings = READUINT32(save->p);
+
+		rank->specialWon = (boolean)READUINT8(save->p);
+
+		rank->numLevels = READUINT8(save->p);
+
+		if (rank->numLevels > roundqueue.size)
+		{
+			CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Cup \"%s\"'s level composition has changed between game launches (%u levels ranked VS %u).\n", cupname, rank->numLevels, roundqueue.size);
+			return false;
+		}
+
+		boolean seeninqueue[ROUNDQUEUE_MAX];
+		memset(seeninqueue, 0, sizeof (boolean) * roundqueue.size);
+
+		for (i = 0; i < rank->numLevels; i++)
+		{
+			gpRank_level_t *const lvl = &rank->levels[i];
+
+			UINT32 mapHash = READUINT32(save->p);
+
+			// Hidden Palace can adjust cup composition, and this level stuff is
+			// purely visual anyway, so don't be as strict as the earlier check.
+			for (j = 0; j < roundqueue.size; j++)
+			{
+				// Simple handling to accomodate collisions
+				if (seeninqueue[j] == true)
+					continue;
+
+				UINT16 id = roundqueue.entries[j].mapnum;
+
+				if (mapheaderinfo[id]->lumpnamehash != mapHash)
+					continue;
+
+				lvl->id = id+1;
+				seeninqueue[j] = true;
+				break;
+			}
+
+			if (j == roundqueue.size)
+			{
+				CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Cup \"%s\"'s level composition has changed between game launches (ranked level %u/%u not found in queue).\n", cupname, i, rank->numLevels);
+				return false;
+			}
+
+			lvl->event = READINT32(save->p);
+			lvl->time = READUINT32(save->p);
+			lvl->totalLapPoints = READUINT16(save->p);
+			lvl->totalPrisons = READUINT16(save->p);
+
+			for (j = 0; j < rank->numPlayers; j++)
+			{
+				gpRank_level_perplayer_t *const plr = &lvl->perPlayer[j];
+
+				plr->position = READUINT8(save->p);
+				plr->rings = READUINT8(save->p);
+				plr->lapPoints = READUINT16(save->p);
+				plr->prisons = READUINT16(save->p);
+				plr->gotSpecialPrize = (boolean)READUINT8(save->p);
+				plr->grade = (gp_rank_e)READSINT8(save->p);
+			}
+		}
 	}
 
 	// Marathon information

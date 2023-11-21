@@ -573,8 +573,8 @@ static patch_t *tccirclebg;
 static patch_t *tcbanner;
 static patch_t *tcbanner2;
 
-static patch_t *tcroundnum[10];
-static patch_t *tcroundbonus;
+static patch_t *tcroundnum[10], *tsroundnum[10];
+static patch_t *tcroundbonus, *tsroundbonus;
 
 static patch_t *tcactnum[10];
 static patch_t *tcact;
@@ -644,12 +644,19 @@ static void ST_cacheLevelTitle(void)
 	ttext[1] =		(patch_t *)W_CachePatchName("K_BOST02", PU_HUDGFX);
 
 	// Cache round #
-	for (i=1; i < 11; i++)
+	for (i=1; i <= 10; i++)
 	{
 		sprintf(buf, "TT_RND%d", i);
 		tcroundnum[i-1] = (patch_t *)W_CachePatchName(buf, PU_HUDGFX);
 	}
 	tcroundbonus =	(patch_t *)W_CachePatchName("TT_RNDX", PU_HUDGFX);
+
+	for (i=1; i <= 10; i++)
+	{
+		sprintf(buf, "TT_RNS%d", i);
+		tsroundnum[i-1] = (patch_t *)W_CachePatchName(buf, PU_HUDGFX);
+	}
+	tsroundbonus =	(patch_t *)W_CachePatchName("TT_RNSX", PU_HUDGFX);
 
 	// Cache act #
 	for (i=0; i < 10; i++)
@@ -708,6 +715,34 @@ void ST_preDrawTitleCard(void)
 	// Kart: nothing
 }
 
+patch_t *ST_getRoundPicture(boolean small)
+{
+	patch_t *roundico = NULL;
+
+	if (roundqueue.position > 0 && roundqueue.position <= roundqueue.size)
+	{
+		if (roundqueue.entries[roundqueue.position-1].overridden == true)
+		{
+			roundico = small ? tsroundbonus : tcroundbonus;
+		}
+		else if (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE)
+		{
+			const char *gppic = (small ? gametypes[gametype]->gppicmini : gametypes[gametype]->gppic);
+			if (gppic[0])
+				roundico = W_CachePatchName(gppic, PU_PATCH);
+			else
+				roundico = tcroundbonus;
+		}
+		else if (roundqueue.roundnum > 0 && roundqueue.roundnum <= 10)
+		{
+			patch_t **source = small ? tsroundnum : tcroundnum;
+			roundico = source[roundqueue.roundnum-1];
+		}
+	}
+
+	return roundico;
+}
+
 //
 // Run the title card.
 // Called from ST_Ticker.
@@ -716,7 +751,7 @@ void ST_runTitleCard(void)
 {
 	boolean run = !(paused || P_AutoPause());
 	INT32 auxticker;
-	boolean doroundicon = (marathonmode || (roundqueue.size > 0 && roundqueue.position > 0));
+	boolean doroundicon = (ST_getRoundPicture(false) != NULL);
 
 	if (run && lt_fade < 16)
 	{
@@ -930,7 +965,6 @@ void ST_drawTitleCard(void)
 	char *lvlttl = mapheaderinfo[gamemap-1]->lvlttl;
 	char *zonttl = mapheaderinfo[gamemap-1]->zonttl; // SRB2kart
 	UINT8 actnum = mapheaderinfo[gamemap-1]->actnum;
-	boolean doroundicon = (marathonmode || (roundqueue.size > 0 && roundqueue.position > 0));
 
 	INT32 acttimer;
 	fixed_t actscale;
@@ -1069,14 +1103,17 @@ void ST_drawTitleCard(void)
 	V_DrawFixedPatch((chev1x)*FRACUNIT, (chev1y)*FRACUNIT, FRACUNIT, chevtflag, tcchev1, NULL);
 	V_DrawFixedPatch((chev2x)*FRACUNIT, (chev2y)*FRACUNIT, FRACUNIT, chevtflag, tcchev2, NULL);
 
+	patch_t *roundico = ST_getRoundPicture(false);
 
 	// Draw ROUND bar, scroll it downwards.
 	V_DrawFixedPatch(roundx*FRACUNIT, ((-32) + (lt_ticker%32))*FRACUNIT, FRACUNIT, V_SNAPTOTOP|V_SNAPTOLEFT, tcroundbar, NULL);
 	// Draw ROUND text
-	if (doroundicon)
+	if (roundico)
+	{
 		V_DrawFixedPatch((roundx+10)*FRACUNIT, roundy*FRACUNIT, FRACUNIT, V_SNAPTOTOP|V_SNAPTOLEFT,
 			((grandprixinfo.gp && grandprixinfo.eventmode != GPEVENT_NONE) ? tcbonus : tcround),
 			NULL);
+	}
 
 	// round num background
 	V_DrawFixedPatch(roundnumx*FRACUNIT, roundnumy*FRACUNIT, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTOLEFT, tccirclebg, NULL);
@@ -1094,26 +1131,9 @@ void ST_drawTitleCard(void)
 	}
 
 	// If possible, draw round number/icon
-	if (doroundicon)
+	if (roundico)
 	{
-		patch_t *roundico = NULL;
-		if (marathonmode)
-			; // TODO: Ruby
-		else if (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE)
-		{
-			if (gametypes[gametype]->gppic[0])
-				roundico = W_CachePatchName(gametypes[gametype]->gppic, PU_PATCH);
-			else
-				roundico = tcroundbonus; // Generic star
-		}
-		else if (roundqueue.size > 0)
-		{
-			if (roundqueue.roundnum > 0 && roundqueue.roundnum < 11) // We DEFINITELY need to check boundaries.
-				roundico = tcroundnum[roundqueue.roundnum-1];
-		}
-
-		if (roundico)
-			V_DrawFixedPatch(roundnumx*FRACUNIT, roundnumy*FRACUNIT, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTOLEFT, roundico, NULL);
+		V_DrawFixedPatch(roundnumx*FRACUNIT, roundnumy*FRACUNIT, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTOLEFT, roundico, NULL);
 	}
 
 	// Draw both halves of the egg

@@ -4791,34 +4791,18 @@ void M_DrawPause(void)
 			standings.showrank = true;
 		}
 
-		patch_t *smallroundpatch = NULL;
+		if (roundqueue.position > 0 && roundqueue.position <= roundqueue.size)
+		{
+			patch_t *smallroundpatch = ST_getRoundPicture(true);
 
-		if (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE)
-		{
-			if (gametypes[gametype]->gppicmini[0])
-				smallroundpatch = W_CachePatchName(gametypes[gametype]->gppicmini, PU_PATCH);
-			else
-				smallroundpatch = W_CachePatchName("TT_RNSX", PU_PATCH);
-		}
-		else if (roundqueue.size > 0)
-		{
-			if (roundqueue.roundnum > 0 && roundqueue.roundnum <= 10)
+			if (smallroundpatch != NULL)
 			{
-				smallroundpatch =
-					W_CachePatchName(
-						va("TT_RNS%d", roundqueue.roundnum),
-						PU_PATCH
-					);
+				V_DrawMappedPatch(
+					24, 152 + offset/2,
+					0,
+					smallroundpatch,
+					NULL);
 			}
-		}
-
-		if (smallroundpatch != NULL)
-		{
-			V_DrawMappedPatch(
-				24, 152 + offset/2,
-				0,
-				smallroundpatch,
-				NULL);
 		}
 
 		Y_RoundQueueDrawer(&standings, offset/2, false, false);

@@ -364,6 +364,18 @@ void K_InitGrandPrixRank(gpRank_t *rankData)
 --------------------------------------------------*/
 void gpRank_t::Update(void)
 {
+	if (nextmapoverride != 0)
+	{
+		// This level does not matter if the roundqueue entry will be overridden
+		return;
+	}
+
+	if (numLevels >= ROUNDQUEUE_MAX)
+	{
+		CONS_Alert(CONS_ERROR, "gpRank_t::Update(): Too many courses recorded in rank, discarding this round");
+		return;
+	}
+
 	gpRank_level_t *const lvl = &levels[numLevels];
 
 	prisons += numtargets;

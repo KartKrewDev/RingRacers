@@ -72,6 +72,8 @@ void ST_drawTitleCard(void);
 void ST_preDrawTitleCard(void);
 void ST_preLevelTitleCardDrawer(void);
 
+patch_t *ST_getRoundPicture(boolean small);
+
 extern tic_t lt_ticker, lt_lasttic;
 extern tic_t lt_exitticker, lt_endtime;
 extern tic_t lt_fade;

@@ -3710,6 +3710,7 @@ void G_MapSlipIntoRoundQueue(UINT8 position, UINT16 map, UINT8 setgametype, bool
 	roundqueue.entries[position].gametype = setgametype;
 	roundqueue.entries[position].encore = setencore;
 	roundqueue.entries[position].rankrestricted = rankrestricted;
+	roundqueue.entries[position].overridden = false;
 }
 
 void G_MapIntoRoundQueue(UINT16 map, UINT8 setgametype, boolean setencore, boolean rankrestricted)
@@ -3823,6 +3824,16 @@ void G_GetNextMap(void)
 	{
 		nextmap = (nextmapoverride-1);
 		setalready = true;
+
+		// Roundqueue integration: Override the current entry!
+		if (nextmap < nummapheaders
+		&& roundqueue.position > 0
+		&& roundqueue.position <= roundqueue.size)
+		{
+			UINT8 entry = roundqueue.position-1;
+			roundqueue.entries[entry].mapnum = nextmap;
+			roundqueue.entries[entry].overridden = true;
+		}
 	}
 	else if (roundqueue.size > 0)
 	{
@@ -5640,7 +5651,7 @@ void G_SaveGameData(void)
 // Can be called by the startup code or the menu task.
 //
 
-#define SAV_VERSIONMINOR 2
+#define SAV_VERSIONMINOR 3
 
 void G_LoadGame(void)
 {

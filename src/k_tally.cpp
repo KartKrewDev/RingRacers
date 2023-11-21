@@ -386,7 +386,7 @@ void level_tally_t::Init(player_t *player)
 	}
 
 	header[0] = '\0';
-	gotThru = false;
+	gotThru = showRoundNum = false;
 
 	if (player->spectator == false)
 	{
@@ -426,17 +426,7 @@ void level_tally_t::Init(player_t *player)
 				);
 			}
 
-			if (roundqueue.size > 0 && roundqueue.roundnum > 0)
-			{
-				if ((grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE))
-				{
-					roundNum = INTERMISSIONROUND_BONUS;
-				}
-				else
-				{
-					roundNum = roundqueue.roundnum;
-				}
-			}
+			showRoundNum = true;
 		}
 		else
 		{
@@ -448,15 +438,15 @@ void level_tally_t::Init(player_t *player)
 	}
 	else
 	{
-		if (roundqueue.size > 0 && roundqueue.roundnum > 0
+		if (roundqueue.position > 0 && roundqueue.position <= roundqueue.size
 			&& (grandprixinfo.gp == false || grandprixinfo.eventmode == GPEVENT_NONE))
 		{
 			snprintf(
 				header, sizeof header,
-				"%s", skins[player->skin].realname
+				"ROUND"
 			);
 
-			roundNum = roundqueue.roundnum;
+			showRoundNum = true;
 		}
 		else if (K_CheckBossIntro() == true && bossinfo.enemyname)
 		{
@@ -981,7 +971,7 @@ void level_tally_t::Draw(void)
 			Y_DrawIntermissionHeader(
 				(header_x * FRACUNIT) + (v_width * transition_i * FRACUNIT * h_transition_sign),
 				header_centered * FRACUNIT,
-				gotThru, header, roundNum, (r_splitscreen > 0)
+				gotThru, header, showRoundNum, (r_splitscreen > 0)
 			);
 			break;
 
@@ -989,7 +979,7 @@ void level_tally_t::Draw(void)
 			Y_DrawIntermissionHeader(
 				header_x * FRACUNIT,
 				header_centered * transition_i * FRACUNIT,
-				gotThru, header, roundNum, (r_splitscreen > 0)
+				gotThru, header, showRoundNum, (r_splitscreen > 0)
 			);
 			break;
 
@@ -997,7 +987,7 @@ void level_tally_t::Draw(void)
 			Y_DrawIntermissionHeader(
 				header_x * FRACUNIT,
 				0,
-				gotThru, header, roundNum, (r_splitscreen > 0)
+				gotThru, header, showRoundNum, (r_splitscreen > 0)
 			);
 			break;
 	}

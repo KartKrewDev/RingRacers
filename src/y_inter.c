@@ -188,7 +188,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 	memset(data.character, 0, sizeof (data.character));
 	memset(completed, 0, sizeof (completed));
 	data.numplayers = 0;
-	data.roundnum = 0;
+	data.showroundnum = false;
 
 	data.isduel = (numplayersingame <= 2);
 
@@ -381,17 +381,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 						skins[players[i].skin].realname);
 				}
 
-				if (roundqueue.size > 0 && roundqueue.roundnum > 0)
-				{
-					if ((grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE))
-					{
-						data.roundnum = INTERMISSIONROUND_BONUS;
-					}
-					else
-					{
-						data.roundnum = roundqueue.roundnum;
-					}
-				}
+				data.showroundnum = true;
 			}
 			else
 			{
@@ -402,17 +392,14 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 		}
 		else
 		{
-			if (roundqueue.size > 0
-				&& roundqueue.roundnum > 0
-				&& (grandprixinfo.gp == false
-					|| grandprixinfo.eventmode == GPEVENT_NONE)
-				)
+			if (roundqueue.position > 0 && roundqueue.position <= roundqueue.size
+				&& (grandprixinfo.gp == false || grandprixinfo.eventmode == GPEVENT_NONE))
 			{
 				snprintf(data.headerstring,
 					sizeof data.headerstring,
 					"ROUND");
 
-				data.roundnum = roundqueue.roundnum;
+				data.showroundnum = true;
 			}
 			else if (K_CheckBossIntro() == true && bossinfo.enemyname)
 			{
@@ -1036,7 +1023,8 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 				}
 
 				// 24 pixels when all is said and done
-				playerx += through * 3;
+				if (!nextmapoverride)
+					playerx += through * 3;
 
 				if (upwa == false)
 				{
@@ -1299,8 +1287,10 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 			// This shouldn't show up in regular play, but don't hide it entirely.
 			chose_dot = prize_dot;
 		}
-		else if (grandprixinfo.gp == true
-			&& roundqueue.entries[i].gametype != roundqueue.entries[0].gametype
+		else if (
+			roundqueue.entries[i].overridden == true
+			|| (grandprixinfo.gp == true
+				&& roundqueue.entries[i].gametype != roundqueue.entries[0].gametype)
 		)
 		{
 			if ((gametypes[roundqueue.entries[i].gametype]->rules & GTR_PRISONS) == GTR_PRISONS)
@@ -1436,7 +1426,7 @@ void Y_DrawIntermissionButton(INT32 startslide, INT32 through)
 	}
 }
 
-void Y_DrawIntermissionHeader(fixed_t x, fixed_t y, boolean gotthrough, const char *headerstring, UINT8 roundnum, boolean small)
+void Y_DrawIntermissionHeader(fixed_t x, fixed_t y, boolean gotthrough, const char *headerstring, boolean showroundnum, boolean small)
 {
 	const INT32 v_width = (small ? BASEVIDWIDTH/2 : BASEVIDWIDTH);
 	const fixed_t frac = (small ? FRACUNIT/2 : FRACUNIT);
@@ -1473,40 +1463,24 @@ void Y_DrawIntermissionHeader(fixed_t x, fixed_t y, boolean gotthrough, const ch
 	}
 
 	// Draw round numbers
-	patch_t *roundpatch = NULL;
-
-	if (roundnum == INTERMISSIONROUND_BONUS)
+	if (showroundnum == true)
 	{
-		const char *gppic = (small ? gametypes[gametype]->gppicmini : gametypes[gametype]->gppic);
-		if (gppic[0])
-			roundpatch = W_CachePatchName(gppic, PU_PATCH);
-		else
-			roundpatch = W_CachePatchName(
-				va("TT_RN%cX", (small ? 'S' : 'D')),
-				PU_PATCH
-			);
-	}
-	else if (roundnum > 0 && roundnum <= 10)
-	{
-		roundpatch = W_CachePatchName(
-			va("TT_RN%c%d", (small ? 'S' : 'D'), roundnum),
-			PU_PATCH
-		);
-	}
+		patch_t *roundpatch = ST_getRoundPicture(small);
 
-	if (roundpatch)
-	{
-		fixed_t roundx = (v_width * 3 * FRACUNIT) / 4;
-
-		if (headerwidth != 0)
+		if (roundpatch)
 		{
-			const fixed_t roundoffset = (8 * frac) + (roundpatch->width * FRACUNIT);
+			fixed_t roundx = (v_width * 3 * FRACUNIT) / 4;
 
-			roundx = headerx + roundoffset;
-			headerx -= roundoffset/2;
+			if (headerwidth != 0)
+			{
+				const fixed_t roundoffset = (8 * frac) + (roundpatch->width * FRACUNIT);
+
+				roundx = headerx + roundoffset;
+				headerx -= roundoffset/2;
+			}
+
+			V_DrawFixedPatch(x + roundx, (39 * frac) + y, FRACUNIT, small_flag, roundpatch, NULL);
 		}
-
-		V_DrawFixedPatch(x + roundx, (39 * frac) + y, FRACUNIT, small_flag, roundpatch, NULL);
 	}
 
 	V_DrawTitleCardStringFixed(x + headerx, y + headery, FRACUNIT, headerstring, small_flag, false, 0, 0, small);
@@ -1599,7 +1573,7 @@ void Y_IntermissionDrawer(void)
 	}
 
 	// Draw the header bar
-	Y_DrawIntermissionHeader(x << FRACBITS, 0, data.gotthrough, data.headerstring, data.roundnum, false);
+	Y_DrawIntermissionHeader(x << FRACBITS, 0, data.gotthrough, data.headerstring, data.showroundnum, false);
 
 	// Returns early if there's no players to draw
 	Y_PlayerStandingsDrawer(&data, x);
@@ -1773,14 +1747,16 @@ void Y_Ticker(void)
 	}
 
 	// Animation sounds for roundqueue, see Y_RoundQueueDrawer
-	if (roundqueue.size != 0
+	if (roundqueue.size > 1
 		&& roundqueue.position != 0
 		&& (timer - 1) <= 2*TICRATE)
 	{
 		const INT32 through = ((2*TICRATE) - (timer - 1));
 
+		UINT8 workingqueuesize = roundqueue.size - 1;
+
 		if (data.showrank == true
-			&& roundqueue.position == roundqueue.size-1)
+			&& roundqueue.position == workingqueuesize)
 		{
 			// Handle special entry on the end
 			if (through == data.linemeter && timer > 2)
@@ -1793,11 +1769,20 @@ void Y_Ticker(void)
 				S_StartSound(NULL, sfx_gpmetr);
 			}
 		}
-		else if (through == 9
-			&& roundqueue.position < roundqueue.size)
+		else
 		{
-			// Impactful landing
-			S_StartSound(NULL, sfx_kc50);
+			if (data.showrank == false
+				&& roundqueue.entries[workingqueuesize].rankrestricted == true)
+			{
+				workingqueuesize--;
+			}
+
+			if (through == 9
+				&& roundqueue.position <= workingqueuesize)
+			{
+				// Impactful landing
+				S_StartSound(NULL, sfx_kc50);
+			}
 		}
 	}
 

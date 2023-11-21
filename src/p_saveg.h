@@ -23,7 +23,8 @@ extern "C" {
 #endif
 
 // 1024 bytes is plenty for a savegame
-#define SAVEGAMESIZE (1024)
+// ...but we'll be accomodating of a heavily replaced Round Queue.
+#define SAVEGAMESIZE (2048)
 
 // For netgames
 #define NETSAVEGAMESIZE (768*1024)

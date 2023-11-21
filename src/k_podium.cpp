@@ -422,7 +422,7 @@ void podiumData_s::Draw(void)
 			Y_DrawIntermissionHeader(
 				(BASEVIDWIDTH * transition_i * FRACUNIT),
 				(header_centered + header_offset) * FRACUNIT,
-				false, header, 0, false
+				false, header, false, false
 			);
 			break;
 
@@ -430,7 +430,7 @@ void podiumData_s::Draw(void)
 			Y_DrawIntermissionHeader(
 				0,
 				((header_centered * transition_i) + header_offset) * FRACUNIT,
-				false, header, 0, false
+				false, header, false, false
 			);
 			break;
 
@@ -438,7 +438,7 @@ void podiumData_s::Draw(void)
 			Y_DrawIntermissionHeader(
 				0,
 				header_offset * FRACUNIT,
-				false, header, 0, false
+				false, header, false, false
 			);
 			break;
 	}
@@ -714,6 +714,15 @@ void podiumData_s::Draw(void)
 			true,
 			(rank.position > 3)
 		);
+
+		if (state == PODIUM_ST_DONE)
+		{
+			Y_DrawIntermissionButton(delay, 0);
+		}
+		else if (state == PODIUM_ST_EXIT)
+		{
+			Y_DrawIntermissionButton(-1, (2*TICRATE) - delay);
+		}
 	}
 }
 
@@ -1130,9 +1139,4 @@ void K_CeremonyDrawer(void)
 	}
 
 	g_podiumData.Draw();
-
-	if (g_podiumData.state >= PODIUM_ST_DONE)
-	{
-		Y_DrawIntermissionButton(0, 0);
-	}
 }
