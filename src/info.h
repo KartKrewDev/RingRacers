@@ -1522,6 +1522,10 @@ typedef enum sprite
 
 	SPR_MGSH, // Mega Barrier
 
+	// GPZ Seasaw
+	SPR_GPPS,
+	SPR_GPZS,
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	SPR_VIEW,
 
@@ -7272,6 +7276,8 @@ typedef enum mobj_type
 	MT_SEASAW_VISUAL,
 	MT_DLZ_SEASAW_SPAWN,
 	MT_DLZ_SEASAW_HITBOX,
+	MT_GPZ_SEASAW_SPAWN,
+	MT_GPZ_SEASAW_HITBOX,
 
 	MT_FIRSTFREESLOT,
 	MT_LASTFREESLOT = MT_FIRSTFREESLOT + NUMMOBJFREESLOTS - 1,

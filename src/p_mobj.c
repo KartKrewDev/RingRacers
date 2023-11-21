@@ -10137,10 +10137,6 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 		break;
 
-	case MT_DLZ_SEASAW_SPAWN:
-		Obj_DLZSeasawThink(mobj);
-		break;
-
 	case MT_DLZ_SUCKEDRING:
 		Obj_DLZSuckedRingThink(mobj);
 		if (P_MobjWasRemoved(mobj))
@@ -10175,6 +10171,14 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			return false;
 		}
+		break;
+
+	case MT_DLZ_SEASAW_SPAWN:
+		Obj_DLZSeasawThink(mobj);
+		break;
+
+	case MT_GPZ_SEASAW_SPAWN:
+		Obj_GPZSeasawThink(mobj);
 		break;
 
 	case MT_BALLSWITCH_BALL:
@@ -11635,9 +11639,6 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		case MT_RIDEROIDNODE:
 			Obj_RideroidNodeSpawn(mobj);
 			break;
-		case MT_DLZ_SEASAW_SPAWN:
-			Obj_DLZSeasawSpawn(mobj);
-			break;
 		case MT_DLZ_HOVER:
 			Obj_DLZHoverSpawn(mobj);
 			break;
@@ -11673,6 +11674,12 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			// FALLTHRU
 		case MT_BLENDEYE_PUYO_DUST:
 			mobj->sprite = mobj->movedir = P_RandomRange(PR_DECORATION, SPR_PUYA, SPR_PUYE);
+			break;
+		case MT_DLZ_SEASAW_SPAWN:
+			Obj_DLZSeasawSpawn(mobj);
+			break;
+		case MT_GPZ_SEASAW_SPAWN:
+			Obj_GPZSeasawSpawn(mobj);
 			break;
 		default:
 			break;

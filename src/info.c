@@ -968,6 +968,10 @@ char sprnames[NUMSPRITES + 1][5] =
 
 	"MGSH", // Mega Barrier
 
+	// GPZ Seasaw
+	"GPPS",
+	"GPZS",
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	"VIEW",
 };
@@ -31746,6 +31750,60 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_DLZ_SEASAW_HITBOX,
+		-1,          	// doomednum
+		S_INVISIBLE,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		8*FRACUNIT,    // radius
+		40*FRACUNIT,    // height
+		0,              // display offset
+		0,    	 		// mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SOLID, 		// flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_GPZ_SEASAW_SPAWN,
+		3435,           // doomednum
+		S_INVISIBLE,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		32*FRACUNIT,    // radius
+		32*FRACUNIT,    // height
+		0,              // display offset
+		0,     // mass
+		0,              // damage
+		sfx_None,       // activesound
+		0, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_GPZ_SEASAW_HITBOX,
 		-1,          	// doomednum
 		S_INVISIBLE,    // spawnstate
 		1000,           // spawnhealth

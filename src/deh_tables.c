@@ -6000,6 +6000,8 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_SEASAW_VISUAL",
 	"MT_DLZ_SEASAW_SPAWN",
 	"MT_DLZ_SEASAW_HITBOX",
+	"MT_GPZ_SEASAW_SPAWN",
+	"MT_GPZ_SEASAW_HITBOX",
 };
 
 const char *const MOBJFLAG_LIST[] = {

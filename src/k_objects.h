@@ -261,11 +261,6 @@ void Obj_DLZRocketSpecial(mobj_t *mo, player_t *p);	// touch activation
 void Obj_playerDLZRocket(player_t *p);				// player looping thinker
 void Obj_DLZRocketDismount(player_t *p);			// used in p_map.c to get off the rocket when we cross transfer lines.
 
-/* DLZ Seasaw */
-void Obj_DLZSeasawSpawn(mobj_t *mo);
-void Obj_DLZSeasawThink(mobj_t *mo);
-void Obj_DLZSeasawCollide(mobj_t *mo, mobj_t *mo2);
-
 /* DLZ Hover */
 void Obj_DLZHoverSpawn(mobj_t *mo);
 void Obj_DLZHoverCollide(mobj_t *mo, mobj_t *mo2);
@@ -297,6 +292,16 @@ void Obj_BallSwitchDamaged(mobj_t *mobj, mobj_t *inflictor, mobj_t *source);
 /* Barrier Power-Up */
 void Obj_SpawnMegaBarrier(player_t *player);
 boolean Obj_MegaBarrierThink(mobj_t *mobj);
+
+/* DLZ Seasaw */
+void Obj_DLZSeasawSpawn(mobj_t *mo);
+void Obj_DLZSeasawThink(mobj_t *mo);
+void Obj_DLZSeasawCollide(mobj_t *mo, mobj_t *mo2);
+
+/* GPZ Seasaw */
+void Obj_GPZSeasawSpawn(mobj_t *mo);
+void Obj_GPZSeasawThink(mobj_t *mo);
+void Obj_GPZSeasawCollide(mobj_t *mo, mobj_t *mo2);
 
 #ifdef __cplusplus
 } // extern "C"
