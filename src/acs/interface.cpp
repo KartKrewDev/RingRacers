@@ -102,8 +102,8 @@ void ACS_LoadLevelScripts(size_t mapID)
 	Environment *env = &ACSEnv;
 
 	ACSVM::GlobalScope *const global = env->getGlobalScope(0);
-	ACSVM::HubScope *hub = NULL;
-	ACSVM::MapScope *map = NULL;
+	ACSVM::HubScope *hub = nullptr;
+	ACSVM::MapScope *map = nullptr;
 
 	std::vector<ACSVM::Module *> modules;
 

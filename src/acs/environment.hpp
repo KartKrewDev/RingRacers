@@ -34,6 +34,8 @@ public:
 
 protected:
 	virtual void loadModule(ACSVM::Module *module);
+
+	virtual ACSVM::ModuleName getModuleName(char const *str, std::size_t len);
 };
 
 }

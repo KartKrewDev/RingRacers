@@ -177,6 +177,7 @@ lumpnum_t W_CheckNumForLongName(const char *name);
 lumpnum_t W_GetNumForName(const char *name); // like W_CheckNumForName but I_Error on LUMPERROR
 lumpnum_t W_GetNumForLongName(const char *name);
 lumpnum_t W_CheckNumForNameInBlock(const char *name, const char *blockstart, const char *blockend);
+lumpnum_t W_CheckNumForNameInFolder(const char *lump, const char *folder);
 UINT8 W_LumpExists(const char *name); // Lua uses this.
 
 size_t W_LumpLengthPwad(UINT16 wad, UINT16 lump);

@@ -1468,6 +1468,44 @@ lumpnum_t W_CheckNumForNameInBlock(const char *name, const char *blockstart, con
 	return LUMPERROR;
 }
 
+//
+// W_CheckNumForNameInFolder
+// Checks only in PK3s in the specified folder
+//
+lumpnum_t W_CheckNumForNameInFolder(const char *lump, const char *folder)
+{
+	INT32 i;
+	lumpnum_t fsid, feid;
+	lumpnum_t check = INT16_MAX;
+
+	// scan wad files backwards so patch lump files take precedence
+	for (i = numwadfiles - 1; i >= 0; i--)
+	{
+		if (wadfiles[i]->type == RET_PK3)
+		{
+			fsid = W_CheckNumForFolderStartPK3(folder, (UINT16)i, 0);
+			if (fsid == INT16_MAX)
+			{
+				continue; // Start doesn't exist?
+			}
+
+			feid = W_CheckNumForFolderEndPK3(folder, (UINT16)i, fsid);
+			if (feid == INT16_MAX)
+			{
+				continue; // End doesn't exist?
+			}
+
+			check = W_CheckNumForLongNamePwad(lump, (UINT16)i, fsid);
+			if (check < feid)
+			{
+				return (i<<16) + check; // found it, in our constraints
+			}
+		}
+	}
+
+	return LUMPERROR;
+}
+
 // Used by Lua. Case sensitive lump checking, quickly...
 #include "fastcmp.h"
 UINT8 W_LumpExists(const char *name)
