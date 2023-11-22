@@ -8402,14 +8402,18 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->ringdelay--;
 
 	if (P_PlayerInPain(player))
-		player->ringboost = 0;
+	{
+		player->ringboost = 0;		
+	}
 	else if (player->ringboost)
-		player->ringboost--;
-
-	// These values can get FUCKED ever since ring-stacking speed changes.
-	// If we're not activetly being awarded rings, roll off extreme ringboost durations.
-	if (player->superring == 0)
-		player->ringboost -= (player->ringboost / TICRATE / 2);
+	{	
+		// These values can get FUCKED ever since ring-stacking speed changes.
+		// If we're not actively being awarded rings, roll off extreme ringboost durations.
+		if (player->superring == 0)
+			player->ringboost -= max((player->ringboost / TICRATE / 2), 1);
+		else
+			player->ringboost--;
+	}
 
 	if (player->sneakertimer)
 	{
