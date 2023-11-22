@@ -489,12 +489,17 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 						if (!cup)
 						{
 							cup = Z_Calloc(sizeof (cupheader_t), PU_STATIC, NULL);
-							cup->id = numkartcupheaders;
-							cup->monitor = 1;
-							cup->cache_cuplock = MAXUNLOCKABLES;
+
 							deh_strlcpy(cup->name, word2,
 								sizeof(cup->name), va("Cup header %s: name", word2));
 							cup->namehash = hash;
+
+							// Handle some variable init.
+							cup->monitor = 1;
+							cup->id = numkartcupheaders;
+							cup->cache_cuplock = MAXUNLOCKABLES;
+							for (i = 0; i < CUPCACHE_MAX; i++)
+								cup->cachedlevels[i] = NEXTMAP_INVALID;
 
 							char *start = strchr(word2, '_');
 							if (start)
@@ -608,6 +613,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 	if (gamedataadded)
 	{
 		basenummapheaders = nummapheaders;
+		basenumkartcupheaders = numkartcupheaders;
 		G_LoadGameData();
 	}
 

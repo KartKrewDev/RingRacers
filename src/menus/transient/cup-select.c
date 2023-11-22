@@ -214,7 +214,9 @@ void M_CupSelectHandler(INT32 choice)
 		M_SetMenuDelay(pid);
 	}
 
-	if (menucmd[pid].dpad_ud > 0)
+	if (cupgrid.cache_secondrowlocked == true)
+		; // No up/down for you!
+	else if (menucmd[pid].dpad_ud > 0)
 	{
 		cupgrid.y++;
 		if (cupgrid.y >= CUPMENU_ROWS)

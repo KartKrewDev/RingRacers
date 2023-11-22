@@ -47,6 +47,8 @@ typedef enum
 
 	UC_CHARACTERWINS,	// CHARACTERWINS [character] [x rounds]
 
+	UC_ALLCUPRECORDS,	// ALLCUPRECORDS [cup to complete up to] [minimum position] [minimum difficulty]
+
 	UC_ALLCHAOS,		// ALLCHAOS [minimum difficulty]
 	UC_ALLSUPER,		// ALLSUPER [minimum difficulty]
 	UC_ALLEMERALDS,		// ALLEMERALDS [minimum difficulty]
@@ -437,6 +439,7 @@ UINT16 M_CompletionEmblems(void);
 boolean M_CheckNetUnlockByID(UINT16 unlockid);
 boolean M_SecretUnlocked(INT32 type, boolean local);
 boolean M_CupLocked(cupheader_t *cup);
+boolean M_CupSecondRowLocked(void);
 boolean M_MapLocked(UINT16 mapnum);
 INT32 M_CountMedals(boolean all, boolean extraonly);
 

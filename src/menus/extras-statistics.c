@@ -60,7 +60,7 @@ static void M_StatisticsMaps(void)
 		if (M_CupLocked(cup))
 			continue;
 
-		for (i = 0; i < CUPCACHE_MAX; i++)
+		for (i = 0; i < CUPCACHE_PODIUM; i++)
 		{
 			if (cup->cachedlevels[i] >= nummapheaders)
 				continue;

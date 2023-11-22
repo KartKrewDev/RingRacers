@@ -1609,6 +1609,7 @@ void D_SRB2Main(void)
 	//
 	P_InitMapData();
 	basenummapheaders = nummapheaders;
+	basenumkartcupheaders = numkartcupheaders;
 
 	CON_SetLoadingProgress(LOADED_IWAD);
 

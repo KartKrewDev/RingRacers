@@ -114,7 +114,7 @@ UINT16 M_CountLevelsToShowInList(levelsearch_t *levelsearch)
 		if (levelsearch->checklocked && M_CupLocked(levelsearch->cup))
 			return 0;
 
-		for (i = 0; i < CUPCACHE_MAX; i++)
+		for (i = 0; i < CUPCACHE_PODIUM; i++)
 		{
 			if (!M_CanShowLevelInList(levelsearch->cup->cachedlevels[i], levelsearch))
 				continue;
@@ -158,13 +158,13 @@ UINT16 M_GetFirstLevelInList(UINT8 *i, levelsearch_t *levelsearch)
 	{
 		if (levelsearch->checklocked && M_CupLocked(levelsearch->cup))
 		{
-			*i = CUPCACHE_MAX;
+			*i = CUPCACHE_PODIUM;
 			return NEXTMAP_INVALID;
 		}
 
 		*i = 0;
 		mapnum = NEXTMAP_INVALID;
-		for (; *i < CUPCACHE_MAX; (*i)++)
+		for (; *i < CUPCACHE_PODIUM; (*i)++)
 		{
 			if (!M_CanShowLevelInList(levelsearch->cup->cachedlevels[*i], levelsearch))
 				continue;
@@ -194,7 +194,7 @@ UINT16 M_GetNextLevelInList(UINT16 mapnum, UINT8 *i, levelsearch_t *levelsearch)
 	{
 		mapnum = NEXTMAP_INVALID;
 		(*i)++;
-		for (; *i < CUPCACHE_MAX; (*i)++)
+		for (; *i < CUPCACHE_PODIUM; (*i)++)
 		{
 			if (!M_CanShowLevelInList(levelsearch->cup->cachedlevels[*i], levelsearch))
 				continue;
@@ -299,17 +299,27 @@ boolean M_LevelListFromGametype(INT16 gt)
 
 	if (levellist.levelsearch.cupmode)
 	{
+		const boolean secondrowlocked = M_CupSecondRowLocked();
+		if (cupgrid.cache_secondrowlocked != secondrowlocked)
+		{
+			cupgrid.cache_secondrowlocked = secondrowlocked;
+			if (cupgrid.y || cupgrid.pageno)
+			{
+				// Prevent softlock, reset to start
+				cupgrid.x = cupgrid.y = cupgrid.pageno = 0;
+			}
+		}
+
 		levelsearch_t templevelsearch = levellist.levelsearch; // full copy
 		size_t currentid = 0, highestunlockedid = 0;
 		const size_t pagelen = sizeof(cupheader_t*) * (CUPMENU_COLUMNS * CUPMENU_ROWS);
 		boolean foundany = false, currentvalid = false;
+		size_t deltaid = 0;
 
 		G_GetBackupCupData(
 			cupgrid.grandprix == true
 			&& cv_splitplayers.value <= 1
 		);
-
-		templevelsearch.cup = kartcupheaders;
 
 #if 0
 		// Make sure there's valid cups before going to this menu. -- rip sweet prince
@@ -357,8 +367,89 @@ boolean M_LevelListFromGametype(INT16 gt)
 					cupgrid.pageno = currentid / (CUPMENU_COLUMNS * CUPMENU_ROWS); \
 					currentvalid = true;
 
-		while (templevelsearch.cup)
+#define GRID_TIDYLOCKED(rewind) \
+			currentid -= rewind; \
+			memset(&cupgrid.builtgrid[currentid], 0, pagelen); \
+			deltaid = 0;
+
+		boolean lostandfoundready = true;
+		// foundanythispage SHOULD start out as false... but if
+		// nothing is unlocked, the first page should never be wiped!
+		boolean foundanythispage = true;
+
+		templevelsearch.cup = kartcupheaders;
+		while (true)
 		{
+			// Handle reaching the end of the base-game cups.
+			if (lostandfoundready == true
+			&& (
+				templevelsearch.cup == NULL
+				|| templevelsearch.cup->id == basenumkartcupheaders
+				)
+			)
+			{
+				lostandfoundready = false;
+
+				if (deltaid != 0 && foundanythispage == false)
+				{
+					GRID_TIDYLOCKED(deltaid);
+				}
+
+				size_t olddelta = deltaid;
+				if (cupgrid.grandprix == false)
+				{
+					cupheader_t *restore = templevelsearch.cup;
+
+					templevelsearch.cup = &dummy_lostandfound;
+					templevelsearch.checklocked = true;
+
+					if (M_GetFirstLevelInList(&temp, &templevelsearch) != NEXTMAP_INVALID)
+					{
+						foundany = foundanythispage = true;
+						GRID_INSERTCUP;
+						highestunlockedid = currentid;
+
+						if (Playing()
+							? (mapheaderinfo[gamemap-1] && mapheaderinfo[gamemap-1]->cup == NULL)
+							: (gt == -1 && levellist.levelsearch.cup == templevelsearch.cup))
+						{
+							GRID_FOCUSCUP;
+						}
+
+						currentid++;
+						deltaid = currentid % (CUPMENU_COLUMNS * CUPMENU_ROWS);
+					}
+
+					templevelsearch.cup = restore;
+				}
+
+				// Lost and Found marks the transition point between base
+				// and custom cups. Always force a page break between these
+				// (unless LnF is the only "cup" on the page, for sanity).
+
+				if (
+					(deltaid == 0) // a new page already
+					|| (olddelta == 0 && deltaid == 1) // LnF is first and only entry
+				)
+					; // this page layout is fine
+				else
+				{
+					if (foundanythispage == false)
+					{
+						GRID_TIDYLOCKED(deltaid);
+					}
+					else
+					{
+						currentid += (CUPMENU_COLUMNS * CUPMENU_ROWS) - deltaid;
+						deltaid = 0;
+						foundanythispage = false;
+					}
+				}
+			}
+
+			if (templevelsearch.cup == NULL)
+				break;
+
 			templevelsearch.checklocked = false;
 			if (!M_CountLevelsToShowInList(&templevelsearch))
 			{
@@ -374,6 +465,7 @@ boolean M_LevelListFromGametype(INT16 gt)
 			templevelsearch.checklocked = true;
 			if (M_GetFirstLevelInList(&temp, &templevelsearch) != NEXTMAP_INVALID)
 			{
+				foundanythispage = true;
 				highestunlockedid = currentid;
 
 				if (Playing()
@@ -385,37 +477,34 @@ boolean M_LevelListFromGametype(INT16 gt)
 				}
 			}
 
-			currentid++;
 			templevelsearch.cup = templevelsearch.cup->next;
-		}
 
-		// Lost and found, a simplified version of the above loop.
-		if (cupgrid.grandprix == false)
-		{
-			templevelsearch.cup = &dummy_lostandfound;
-			templevelsearch.checklocked = true;
+			currentid++;
+			deltaid = currentid % (CUPMENU_COLUMNS * CUPMENU_ROWS);
 
-			if (M_GetFirstLevelInList(&temp, &templevelsearch) != NEXTMAP_INVALID)
+			if (secondrowlocked == true)
 			{
-				foundany = true;
-				GRID_INSERTCUP;
-				highestunlockedid = currentid;
-
-				if (Playing()
-					? (mapheaderinfo[gamemap-1] && mapheaderinfo[gamemap-1]->cup == NULL)
-					: (gt == -1 && levellist.levelsearch.cup == templevelsearch.cup))
+				// If the second row is locked and you've reached it, skip onward.
+				if (deltaid >= CUPMENU_COLUMNS)
 				{
-					GRID_FOCUSCUP;
+					currentid += (CUPMENU_COLUMNS * CUPMENU_ROWS) - deltaid;
+					deltaid = 0;
 				}
-
-				currentid++;
 			}
 
-			templevelsearch.cup = NULL;
+			if (deltaid == 0)
+			{
+				if (foundanythispage == false)
+				{
+					GRID_TIDYLOCKED((CUPMENU_COLUMNS * CUPMENU_ROWS));
+				}
+				foundanythispage = false;
+			}
 		}
 
 #undef GRID_INSERTCUP
 #undef GRID_FOCUSCUP
+#undef GRID_TIDYLOCKED
 
 		if (foundany == false)
 		{
