@@ -1317,6 +1317,9 @@ typedef enum
 	sfx_befan1,
 	sfx_befan2,
 
+	// Ice Cube
+	sfx_glgz1,
+
 	// Damage sounds
 	sfx_dmga1,
 	sfx_dmga2,
