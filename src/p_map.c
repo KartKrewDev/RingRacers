@@ -724,6 +724,14 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		return BMIT_CONTINUE;
 	}
 
+	if (thing->type == MT_GPZ_SEASAW_HITBOX)
+	{
+		if (tm.thing->type == MT_PLAYER)
+			Obj_GPZSeasawCollide(tm.thing, thing);	// all checks are performed in there.
+
+		return BMIT_CONTINUE;
+	}
+
 	if (thing->type == MT_DLZ_HOVER)
 	{
 		if (tm.thing->type == MT_PLAYER)

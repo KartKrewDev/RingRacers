@@ -34,6 +34,7 @@ target_sources(SRB2SDL2 PRIVATE
 	eggball.c
 	dlzrocket.c
 	dlzseasaw.c
+	gpzseasaw.c
 	dlzothers.c
 	wpzturbine.c
 	wpzothers.c

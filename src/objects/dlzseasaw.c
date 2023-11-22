@@ -43,7 +43,7 @@ static void Obj_DLZSeasawUpdate(mobj_t *mo, boolean ghostme)
 		if (mo->eflags & MFE_VERTICALFLIP)
 		{
 			mo->tracer->eflags |= MFE_VERTICALFLIP;
-			mo->tracer->eflags |= MF2_OBJECTFLIP;
+			mo->tracer->flags2 |= MF2_OBJECTFLIP;
 		}
 
 	}
@@ -151,7 +151,7 @@ void Obj_DLZSeasawSpawn(mobj_t *mo)
 		{
 			// right now we don't care if the objects are positionned properly.
 
-			mobj_t *vis = P_SpawnMobj(mo->x, mo->y, mo->z + 8*mapobjectscale*P_MobjFlip(mo), MT_DLZ_SEASAW_VISUAL);
+			mobj_t *vis = P_SpawnMobj(mo->x, mo->y, mo->z + 8*mapobjectscale*P_MobjFlip(mo), MT_SEASAW_VISUAL);
 			vis->sprite = SPR_DLZS;
 			vis->frame = (j+1)|FF_PAPERSPRITE;
 			vis->tics = -1;
