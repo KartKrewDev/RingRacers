@@ -3338,7 +3338,7 @@ static void K_GetKartBoostPower(player_t *player)
 	{
 		// This one's a little special: we add extra top speed per tic of ringboost stored up, to allow for Ring Box to really rocket away.
 		// (We compensate when decrementing ringboost to avoid runaway exponential scaling hell.)
-		ADDBOOST(FRACUNIT/4 + (FRACUNIT / 1750 * (player->ringboost)), 4*FRACUNIT, Easing_InCubic(min(FRACUNIT, player->ringboost * FRACUNIT / (TICRATE*10)), 0, FRACUNIT)); // + 20% + ???% top speed, + 400% acceleration, +???% handling
+		ADDBOOST(FRACUNIT/4 + (FRACUNIT / 1750 * (player->ringboost)), 4*FRACUNIT, Easing_InCubic(min(FRACUNIT, player->ringboost * FRACUNIT / (TICRATE*12)), 0, 2*SLIPTIDEHANDLING/5)); // + 20% + ???% top speed, + 400% acceleration, +???% handling
 	}
 
 	if (player->eggmanexplode) // Ready-to-explode
