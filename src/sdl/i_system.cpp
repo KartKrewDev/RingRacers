@@ -406,9 +406,8 @@ static void I_ReportSignal(int num, int coredumped)
 	if (coredumped)
 	{
 		if (sigmsg)
-			sprintf(msg, "%s (core dumped)", sigmsg);
-		else
-			strcat(msg, " (core dumped)");
+			strcpy(msg, sigmsg);
+		strcat(msg, " (core dumped)");
 
 		sigmsg = msg;
 	}
