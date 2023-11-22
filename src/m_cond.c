@@ -1302,6 +1302,10 @@ UINT16 M_CheckCupEmeralds(UINT8 difficulty)
 
 	for (cup = kartcupheaders; cup; cup = cup->next)
 	{
+		// Don't use custom material
+		if (cup->id >= basenumkartcupheaders)
+			break;
+
 		// Does it not *have* an emerald?
 		if (cup->emeraldnum == 0 || cup->emeraldnum > 14)
 			continue;
@@ -1390,22 +1394,25 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 
 		case UC_ALLCUPRECORDS:
 		{
-			cupheader_t *cup;
-			UINT8 difficulty = cn->extrainfo2;
-
 			if (gamestate == GS_LEVEL)
 				return false; // this one could be laggy with many cups available
 
+			INT32 requiredid = cn->requirement;
+			if (requiredid == -1) // stop at all basegame cup
+				requiredid = basenumkartcupheaders;
+
+			UINT8 difficulty = cn->extrainfo2;
 			if (difficulty > KARTGP_MASTER)
 				difficulty = KARTGP_MASTER;
-
+			
+			cupheader_t *cup;
 			for (cup = kartcupheaders; cup; cup = cup->next)
 			{
 				// Ok, achieved up to the desired cup.
-				if (cn->requirement == cup->id)
+				if (cup->id == requiredid)
 					return true;
 
-				cupwindata_t *windata = &cup->windata[cn->extrainfo2];
+				cupwindata_t *windata = &cup->windata[difficulty];
 
 				// Did you actually get it?
 				if (windata->best_placement == 0)
@@ -1417,7 +1424,7 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			}
 
 			// If we ended up here, check we were looking for all cups achieved.
-			return (cn->requirement == -1);
+			return (requiredid == basenumkartcupheaders);
 		}
 
 
