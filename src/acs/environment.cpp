@@ -195,6 +195,14 @@ ACSVM::Thread *Environment::allocThread()
 	return new Thread(this);
 }
 
+ACSVM::ModuleName Environment::getModuleName(char const *str, size_t len)
+{
+	ACSVM::String *name = getString(str, len);
+	lumpnum_t lump = W_CheckNumForNameInFolder(str, "ACS/");
+
+	return { name, nullptr, static_cast<size_t>(lump) };
+}
+
 void Environment::loadModule(ACSVM::Module *module)
 {
 	ACSVM::ModuleName *const name = &module->name;
@@ -205,43 +213,42 @@ void Environment::loadModule(ACSVM::Module *module)
 	if (name->i == (size_t)LUMPERROR)
 	{
 		// No lump given for module.
-		CONS_Alert(CONS_ERROR, "Bad lump for ACS module '%s'\n", name->s->str);
-		throw ACSVM::ReadError("file open failure");
+		CONS_Alert(CONS_WARNING, "Could not find ACS module \"%s\"; scripts will not function properly!\n", name->s->str);
+		return; //throw ACSVM::ReadError("file open failure");
 	}
 
 	lumpLen = W_LumpLength(name->i);
 
 	if (W_IsLumpWad(name->i) == true || lumpLen == 0)
 	{
+		CONS_Debug(DBG_SETUP, "Attempting to load ACS module from the BEHAVIOR lump of map '%s'...\n", name->s->str);
+
 		// The lump given is a virtual resource.
 		// Try to grab a BEHAVIOR lump from inside of it.
 		virtres_t *vRes = vres_GetMap(name->i);
+		auto _ = srb2::finally([vRes]() { vres_Free(vRes); });
+
 		virtlump_t *vLump = vres_Find(vRes, "BEHAVIOR");
-
-		CONS_Printf("Attempting to load ACS module from map's virtual resource...\n");
-
 		if (vLump != nullptr && vLump->size > 0)
 		{
 			data.insert(data.begin(), vLump->data, vLump->data + vLump->size);
-			CONS_Printf("Successfully found BEHAVIOR lump.\n");
+			CONS_Debug(DBG_SETUP, "Successfully found BEHAVIOR lump.\n");
 		}
 		else
 		{
-			CONS_Printf("No BEHAVIOR lump found.\n");
+			CONS_Debug(DBG_SETUP, "No BEHAVIOR lump found.\n");
 		}
-
-		vres_Free(vRes);
 	}
 	else
 	{
+		CONS_Debug(DBG_SETUP, "Loading ACS module directly from lump '%s'...\n", name->s->str);
+
 		// It's a real lump.
 		ACSVM::Byte *lump = static_cast<ACSVM::Byte *>(Z_Calloc(lumpLen, PU_STATIC, nullptr));
 		auto _ = srb2::finally([lump]() { Z_Free(lump); });
 
 		W_ReadLump(name->i, lump);
 		data.insert(data.begin(), lump, lump + lumpLen);
-
-		CONS_Printf("Loading ACS module directly from lump.\n");
 	}
 
 	if (data.empty() == false)
@@ -252,7 +259,7 @@ void Environment::loadModule(ACSVM::Module *module)
 		}
 		catch (const ACSVM::ReadError &e)
 		{
-			CONS_Printf("Failed to load ACS module '%s': %s\n", name->s->str, e.what());
+			CONS_Alert(CONS_ERROR, "Failed to load ACS module '%s': %s\n", name->s->str, e.what());
 			throw ACSVM::ReadError("failed import");
 		}
 	}
@@ -260,7 +267,7 @@ void Environment::loadModule(ACSVM::Module *module)
 	{
 		// Unlike Hexen, a BEHAVIOR lump is not required.
 		// Simply ignore in this instance.
-		CONS_Printf("No data received, ignoring...\n");
+		CONS_Debug(DBG_SETUP, "ACS module has no data, ignoring...\n");
 	}
 }
 
