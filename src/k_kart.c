@@ -11399,17 +11399,20 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		if (player->ringboxdelay == 0)
 		{
 			UINT32 behind = K_GetItemRouletteDistance(player, player->itemRoulette.playing);
-			UINT32 behindMulti = behind / 1000;
-			behindMulti = min(behindMulti, 20);
+			UINT32 behindMulti = behind / 500;
+			behindMulti = min(behindMulti, 40);
+				
 
 			UINT32 award = 5*player->ringboxaward + 10;
-			if (player->ringboxaward > 2) // not a BAR
+			// if (player->ringboxaward > 2) // not a BAR
 				award = 3 * award / 2;
 			award = award * (behindMulti + 10) / 10;
 
 			// SPB Attack is hard, but we're okay with that.
 			if (modeattacking & ATTACKING_SPB)
 				award = award / 2;
+
+			CONS_Printf("%dst: +%d (x%d)\n", player->position, award, behindMulti);
 
 			K_AwardPlayerRings(player, award, true);
 			player->ringboxaward = 0;
