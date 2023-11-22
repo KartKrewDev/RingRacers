@@ -11405,14 +11405,13 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				
 
 			UINT32 award = 5*player->ringboxaward + 10;
-			award = 3 * award / 2; // don't worry about it, something something old BAR
+			if (!cv_thunderdome.value)
+				award = 3 * award / 2;
 			award = award * (behindMulti + 10) / 10;
 
 			// SPB Attack is hard, but we're okay with that.
 			if (modeattacking & ATTACKING_SPB)
 				award = award / 2;
-
-			CONS_Printf("%dst: +%d (x%d)\n", player->position, award, behindMulti);
 
 			K_AwardPlayerRings(player, award, true);
 			player->ringboxaward = 0;
