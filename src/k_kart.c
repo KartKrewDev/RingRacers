@@ -49,6 +49,7 @@
 #include "k_hitlag.h"
 #include "k_tally.h"
 #include "music.h"
+#include "m_easing.h"
 
 // SOME IMPORTANT VARIABLES DEFINED IN DOOMDEF.H:
 // gamespeed is cc (0 for easy, 1 for normal, 2 for hard)
@@ -3337,7 +3338,7 @@ static void K_GetKartBoostPower(player_t *player)
 	{
 		// This one's a little special: we add extra top speed per tic of ringboost stored up, to allow for Ring Box to really rocket away.
 		// (We compensate when decrementing ringboost to avoid runaway exponential scaling hell.)
-		ADDBOOST(FRACUNIT/4 + (FRACUNIT / 1750 * (player->ringboost)), 4*FRACUNIT, 0); // + 20% top speed, + 400% acceleration, +0% handling
+		ADDBOOST(FRACUNIT/4 + (FRACUNIT / 1750 * (player->ringboost)), 4*FRACUNIT, Easing_InCubic(min(FRACUNIT, player->ringboost * FRACUNIT / (TICRATE*10)), 0, FRACUNIT)); // + 20% + ???% top speed, + 400% acceleration, +???% handling
 	}
 
 	if (player->eggmanexplode) // Ready-to-explode
@@ -11400,12 +11401,11 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		{
 			UINT32 behind = K_GetItemRouletteDistance(player, player->itemRoulette.playing);
 			UINT32 behindMulti = behind / 500;
-			behindMulti = min(behindMulti, 40);
+			behindMulti = min(behindMulti, 60);
 				
 
 			UINT32 award = 5*player->ringboxaward + 10;
-			// if (player->ringboxaward > 2) // not a BAR
-				award = 3 * award / 2;
+			award = 3 * award / 2; // don't worry about it, something something old BAR
 			award = award * (behindMulti + 10) / 10;
 
 			// SPB Attack is hard, but we're okay with that.
