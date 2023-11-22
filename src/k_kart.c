@@ -9547,7 +9547,12 @@ void K_UpdateDistanceFromFinishLine(player_t *const player)
 INT32 K_GetKartRingPower(player_t *player, boolean boosted)
 {
 	fixed_t ringPower = ((9 - player->kartspeed) + (9 - player->kartweight)) * (FRACUNIT/2);
+	fixed_t basePower = ringPower;
 
+	// FIXME: Bot ringboost adjustments can award negative ringboost per ring, which seems bad.
+	// Revisit these values if bot ringboost needs to respond to low-complexity maps better,
+	// but for now we're just lazily making sure that bots never have their ringboost "boosted"
+	// below the value that a player would have when playing the same stat combo.
 	if (boosted == true && K_PlayerUsesBotMovement(player))
 	{
 		// x2.0 for Lv. 9
@@ -9562,7 +9567,7 @@ INT32 K_GetKartRingPower(player_t *player, boolean boosted)
 		}
 	}
 
-	return ringPower / FRACUNIT;
+	return max(ringPower, basePower) / FRACUNIT;
 }
 
 // Returns false if this player being placed here causes them to collide with any other player
