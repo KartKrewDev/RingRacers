@@ -2464,6 +2464,20 @@ void readunlockable(MYFILE *f, INT32 num)
 	Z_Free(s);
 }
 
+// Todo: Own func
+static cupheader_t *SOChelper_cupbyname(char *name)
+{
+	cupheader_t *cup = kartcupheaders;
+	UINT32 hash = quickncasehash(name, MAXCUPNAME);
+	while (cup)
+	{
+		if (hash == cup->namehash && !strcmp(cup->name, name))
+			return cup;
+		cup = cup->next;
+	}
+	return NULL;
+}
+
 // This is a home-grown strtok(" ") equivalent so we can isolate the first chunk without destroying the rest of the line.
 static void conditiongetparam(char **params, UINT8 paramid, char **spos)
 {
@@ -2690,6 +2704,63 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 		re = -1;
 		x1 = atoi(params[2]);
 	}
+	else if (fastcmp(params[0], "ALLCUPRECORDS"))
+	{
+		ty = UC_ALLCUPRECORDS;
+
+		re = -1;
+		x1 = 0;
+		x2 = KARTSPEED_EASY;
+
+		if (params[1])
+		{
+			if (!fastcmp(params[1], "ALL"))
+			{
+				cupheader_t *cup = SOChelper_cupbyname(params[1]);
+
+				if (!cup)
+				{
+					deh_warning("Invalid cup %s for condition ID %d", params[1], id+1);
+					return;
+				}
+
+				re = cup->id;
+			}
+
+			if (params[2])
+			{
+				if (!fastcmp(params[1], "ANY"))
+				{
+					if ((offset=0) || fastcmp(params[2], "GOLD")
+					||    (++offset && fastcmp(params[2], "SILVER"))
+					||    (++offset && fastcmp(params[2], "BRONZE")))
+					{
+						x1 = offset + 1;
+					}
+					else
+					{
+						deh_warning("placement requirement \"%s\" invalid for condition ID %d", params[2], id+1);
+						return;
+					}
+				}
+
+				if (params[3])
+				{
+					if (fastcmp(params[3], "NORMAL"))
+						x2 = KARTSPEED_NORMAL;
+					else if (fastcmp(params[3], "HARD"))
+						x2 = KARTSPEED_HARD;
+					else if (fastcmp(params[3], "MASTER"))
+						x2 = KARTGP_MASTER;
+					else
+					{
+						deh_warning("gamespeed requirement \"%s\" invalid for condition ID %d", params[3], id+1);
+						return;
+					}
+				}
+			}
+		}
+	}
 	else if ((offset=0) || fastcmp(params[0], "ALLCHAOS")
 	||        (++offset && fastcmp(params[0], "ALLSUPER"))
 	||        (++offset && fastcmp(params[0], "ALLEMERALDS")))
@@ -2907,14 +2978,7 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 		re = -1;
 		if (!fastcmp(params[1], "ANY"))
 		{
-			cupheader_t *cup = kartcupheaders;
-			UINT32 hash = quickncasehash(params[1], MAXCUPNAME);
-			while (cup)
-			{
-				if (hash == cup->namehash && !strcmp(cup->name, params[1]))
-					break;
-				cup = cup->next;
-			}
+			cupheader_t *cup = SOChelper_cupbyname(params[1]);
 
 			if (!cup)
 			{

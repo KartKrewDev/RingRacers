@@ -1388,6 +1388,39 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 
 			return (skins[cn->requirement].records.wins >= (UINT32)cn->extrainfo1);
 
+		case UC_ALLCUPRECORDS:
+		{
+			cupheader_t *cup;
+			UINT8 difficulty = cn->extrainfo2;
+
+			if (gamestate == GS_LEVEL)
+				return false; // this one could be laggy with many cups available
+
+			if (difficulty > KARTGP_MASTER)
+				difficulty = KARTGP_MASTER;
+
+			for (cup = kartcupheaders; cup; cup = cup->next)
+			{
+				// Ok, achieved up to the desired cup.
+				if (cn->requirement == cup->id)
+					return true;
+
+				cupwindata_t *windata = &cup->windata[cn->extrainfo2];
+
+				// Did you actually get it?
+				if (windata->best_placement == 0)
+					return false;
+
+				// Sufficient placement?
+				if (cn->extrainfo1 && windata->best_placement > cn->extrainfo1)
+					return false;
+			}
+
+			// If we ended up here, check we were looking for all cups achieved.
+			return (cn->requirement == -1);
+		}
+
+
 		case UC_ALLCHAOS:
 		case UC_ALLSUPER:
 		case UC_ALLEMERALDS:
@@ -2120,6 +2153,50 @@ static const char *M_GetConditionString(condition_t *cn)
 				work);
 		}
 
+		case UC_ALLCUPRECORDS:
+		{
+			const char *completetype = "Complete", *orbetter = "", *specialtext = NULL, *speedtext = "";
+
+			if (cn->extrainfo1 == 0)
+				;
+			else if (cn->extrainfo1 == 1)
+				completetype = "get Gold over";
+			else
+			{
+				if (cn->extrainfo1 == 2)
+					completetype = "get Silver";
+				else if (cn->extrainfo1 == 3)
+					completetype = "get Bronze";
+				orbetter = " or better over";
+			}
+
+			if (cn->extrainfo2 == KARTSPEED_NORMAL)
+			{
+				speedtext = " on Normal";
+			}
+			else if (cn->extrainfo2 == KARTSPEED_HARD)
+			{
+				speedtext = " on Hard";
+			}
+			else if (cn->extrainfo2 == KARTGP_MASTER)
+			{
+				if (M_SecretUnlocked(SECRET_MASTERMODE, true))
+					speedtext = " on Master";
+				else
+					speedtext = " on ???";
+			}
+
+			if (cn->requirement == -1)
+				specialtext = "every Cup";
+			else if (M_CupSecondRowLocked() == true && cn->requirement+1 >= CUPMENU_COLUMNS)
+				specialtext = "the first ??? Cups";
+
+			if (specialtext != NULL)
+				return va("GRAND PRIX: %s%s %s%s", completetype, orbetter, specialtext, speedtext);
+
+			return va("GRAND PRIX: %s%s the first %d Cups%s", completetype, orbetter, cn->requirement, speedtext);
+		}
+
 		case UC_ALLCHAOS:
 		case UC_ALLSUPER:
 		case UC_ALLEMERALDS:
@@ -2138,17 +2215,17 @@ static const char *M_GetConditionString(condition_t *cn)
 
 			/*if (cn->requirement == KARTSPEED_NORMAL) -- Emeralds can not be collected on Easy
 			{
-				speedtext = " on Normal difficulty";
+				speedtext = " on Normal";
 			}
 			else*/
 			if (cn->requirement == KARTSPEED_HARD)
 			{
-				speedtext = " on Hard difficulty";
+				speedtext = " on Hard";
 			}
 			else if (cn->requirement == KARTGP_MASTER)
 			{
 				if (M_SecretUnlocked(SECRET_MASTERMODE, true))
-					speedtext = " on Master difficulty";
+					speedtext = " on Master";
 				else
 					speedtext = " on ???";
 			}
@@ -2401,16 +2478,16 @@ static const char *M_GetConditionString(condition_t *cn)
 
 			if (cn->requirement == KARTSPEED_NORMAL)
 			{
-				speedtext = "on Normal difficulty";
+				speedtext = "on Normal";
 			}
 			else if (cn->requirement == KARTSPEED_HARD)
 			{
-				speedtext = "on Hard difficulty";
+				speedtext = "on Hard";
 			}
 			else if (cn->requirement == KARTGP_MASTER)
 			{
 				if (M_SecretUnlocked(SECRET_MASTERMODE, true))
-					speedtext = "on Master difficulty";
+					speedtext = "on Master";
 				else
 					speedtext = "on ???";
 			}

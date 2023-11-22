@@ -47,6 +47,8 @@ typedef enum
 
 	UC_CHARACTERWINS,	// CHARACTERWINS [character] [x rounds]
 
+	UC_ALLCUPRECORDS,	// ALLCUPRECORDS [cup to complete up to] [minimum position] [minimum difficulty]
+
 	UC_ALLCHAOS,		// ALLCHAOS [minimum difficulty]
 	UC_ALLSUPER,		// ALLSUPER [minimum difficulty]
 	UC_ALLEMERALDS,		// ALLEMERALDS [minimum difficulty]
