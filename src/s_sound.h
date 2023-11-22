@@ -248,7 +248,7 @@ void S_SetMusicVolume(void);
 
 INT32 S_OriginPlaying(void *origin);
 INT32 S_IdPlaying(sfxenum_t id);
-INT32 S_SoundPlaying(void *origin, sfxenum_t id);
+INT32 S_SoundPlaying(const void *origin, sfxenum_t id);
 
 void S_StartSoundName(void *mo, const  char *soundname);
 
