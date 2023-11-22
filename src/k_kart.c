@@ -49,6 +49,7 @@
 #include "k_hitlag.h"
 #include "k_tally.h"
 #include "music.h"
+#include "m_easing.h"
 
 // SOME IMPORTANT VARIABLES DEFINED IN DOOMDEF.H:
 // gamespeed is cc (0 for easy, 1 for normal, 2 for hard)
@@ -3337,7 +3338,7 @@ static void K_GetKartBoostPower(player_t *player)
 	{
 		// This one's a little special: we add extra top speed per tic of ringboost stored up, to allow for Ring Box to really rocket away.
 		// (We compensate when decrementing ringboost to avoid runaway exponential scaling hell.)
-		ADDBOOST(FRACUNIT/4 + (FRACUNIT / 1750 * (player->ringboost)), 4*FRACUNIT, 0); // + 20% top speed, + 400% acceleration, +0% handling
+		ADDBOOST(FRACUNIT/4 + (FRACUNIT / 1750 * (player->ringboost)), 4*FRACUNIT, Easing_InCubic(min(FRACUNIT, player->ringboost * FRACUNIT / (TICRATE*12)), 0, 2*SLIPTIDEHANDLING/5)); // + 20% + ???% top speed, + 400% acceleration, +???% handling
 	}
 
 	if (player->eggmanexplode) // Ready-to-explode
@@ -8402,14 +8403,18 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->ringdelay--;
 
 	if (P_PlayerInPain(player))
-		player->ringboost = 0;
+	{
+		player->ringboost = 0;		
+	}
 	else if (player->ringboost)
-		player->ringboost--;
-
-	// These values can get FUCKED ever since ring-stacking speed changes.
-	// If we're not activetly being awarded rings, roll off extreme ringboost durations.
-	if (player->superring == 0)
-		player->ringboost -= (player->ringboost / TICRATE / 2);
+	{	
+		// These values can get FUCKED ever since ring-stacking speed changes.
+		// If we're not actively being awarded rings, roll off extreme ringboost durations.
+		if (player->superring == 0)
+			player->ringboost -= max((player->ringboost / TICRATE / 2), 1);
+		else
+			player->ringboost--;
+	}
 
 	if (player->sneakertimer)
 	{
@@ -11400,11 +11405,12 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		if (player->ringboxdelay == 0)
 		{
 			UINT32 behind = K_GetItemRouletteDistance(player, player->itemRoulette.playing);
-			UINT32 behindMulti = behind / 1000;
-			behindMulti = min(behindMulti, 20);
+			UINT32 behindMulti = behind / 500;
+			behindMulti = min(behindMulti, 60);
+				
 
 			UINT32 award = 5*player->ringboxaward + 10;
-			if (player->ringboxaward > 2) // not a BAR
+			if (!cv_thunderdome.value)
 				award = 3 * award / 2;
 			award = award * (behindMulti + 10) / 10;
 
