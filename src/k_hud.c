@@ -1716,8 +1716,12 @@ static void K_drawKartSlotMachine(void)
 	}
 	else
 	{
+		rouletteOffset = stplyr->karthud[khud_rouletteoffset];
+
 		if (!stplyr->ringboxdelay)
+		{
 			return;
+		}
 	}
 
 	if (stplyr->karthud[khud_itemblink] && (leveltime & 1))
