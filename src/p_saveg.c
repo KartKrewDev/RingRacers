@@ -771,6 +771,13 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 			WRITEUINT8(save->p, players[i].tally.showGrade);
 			WRITEUINT8(save->p, players[i].tally.done);
 		}
+
+		// icecubevars_t
+		WRITEUINT32(save->p, players[i].icecube.hitat);
+		WRITEUINT8(save->p, players[i].icecube.frozen);
+		WRITEUINT8(save->p, players[i].icecube.wiggle);
+		WRITEUINT32(save->p, players[i].icecube.frozenat);
+		WRITEUINT8(save->p, players[i].icecube.shaketimer);
 	}
 }
 
@@ -1328,6 +1335,13 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 			players[i].tally.showGrade = (boolean)READUINT8(save->p);
 			players[i].tally.done = (boolean)READUINT8(save->p);
 		}
+
+		// icecubevars_t
+		players[i].icecube.hitat = READUINT32(save->p);
+		players[i].icecube.frozen = READUINT8(save->p);
+		players[i].icecube.wiggle = READUINT8(save->p);
+		players[i].icecube.frozenat = READUINT32(save->p);
+		players[i].icecube.shaketimer = READUINT8(save->p);
 
 		//players[i].viewheight = P_GetPlayerViewHeight(players[i]); // scale cannot be factored in at this point
 	}

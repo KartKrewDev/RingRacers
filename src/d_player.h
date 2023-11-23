@@ -551,6 +551,16 @@ struct powerupvars_t {
 	mobj_t *barrier;
 };
 
+// player_t struct for Frozen Production ice cube state
+struct icecubevars_t {
+	tic_t hitat; // last tic player properly touched frost
+
+	boolean frozen; // frozen in an ice cube
+	UINT8 wiggle; // number of times player wiggled so far
+	tic_t frozenat; // tic that player was frozen
+	UINT8 shaketimer; // while it counts down, ice cube shakes
+};
+
 // player_t struct for all alternative viewpoint variables
 struct altview_t
 {
@@ -965,6 +975,7 @@ struct player_t
 	sonicloopvars_t loop;
 	roundconditions_t roundconditions;
 	powerupvars_t powerup;
+	icecubevars_t icecube;
 
 	level_tally_t tally;
 };
