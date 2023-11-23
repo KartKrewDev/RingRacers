@@ -1168,7 +1168,8 @@ static void K_UpdateOffroad(player_t *player)
 	fixed_t offroadstrength = 0;
 
 	// If tiregrease is active, don't
-	if (player->tiregrease == 0)
+	// If inside an ice cube, don't
+	if (player->tiregrease == 0 && player->icecube.frozen == false)
 	{
 		// TODO: Make this use actual special touch code.
 		if (terrain != NULL && terrain->offroad > 0)
@@ -3599,6 +3600,7 @@ SINT8 K_GetForwardMove(player_t *player)
 	}
 
 	if (player->spinouttimer != 0
+		|| player->icecube.frozen
 		|| K_PressingEBrake(player) == true
 		|| K_PlayerEBrake(player) == true)
 	{
@@ -8865,6 +8867,15 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	K_HandleDelayedHitByEm(player);
 
 	player->pflags &= ~PF_POINTME;
+
+	if (player->icecube.frozen && player->icecube.shaketimer)
+	{
+		player->mo->sprxoff += P_RandomRange(PR_DECORATION, -4, 4) * player->mo->scale;
+		player->mo->spryoff += P_RandomRange(PR_DECORATION, -4, 4) * player->mo->scale;
+		player->mo->sprzoff += P_RandomRange(PR_DECORATION, -4, 4) * player->mo->scale;
+
+		player->icecube.shaketimer--;
+	}
 }
 
 void K_KartResetPlayerColor(player_t *player)
@@ -8953,11 +8964,16 @@ void K_KartResetPlayerColor(player_t *player)
 		fullbright = true;
 		goto finalise;
 	}
-	else
+
+	if (player->icecube.frozen)
 	{
-		player->mo->colorized = (player->dye != 0);
-		player->mo->color = player->dye ? player->dye : player->skincolor;
+		player->mo->colorized = true;
+		player->mo->color = SKINCOLOR_CYAN;
+		goto finalise;
 	}
+
+	player->mo->colorized = (player->dye != 0);
+	player->mo->color = player->dye ? player->dye : player->skincolor;
 
 finalise:
 
@@ -11231,6 +11247,11 @@ void K_AdjustPlayerFriction(player_t *player)
 			player->mo->friction -= 4912;
 		if (player->wipeoutslow == 1)
 			player->mo->friction -= 9824;
+	}
+
+	if (player->icecube.frozen)
+	{
+		player->mo->friction = FRACUNIT;
 	}
 
 	// Cap between intended values
