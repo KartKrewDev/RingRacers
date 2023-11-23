@@ -301,12 +301,14 @@ static void Y_SortPile(void)
 
 			if (votesLeft > rowSize)
 			{
+				SINT8 topRowIndex = (rowSize - ((votesLeft - 1) % rowSize)) - 1;
+
 				if (odd == true)
 				{
 					rowSize--;
+					topRowIndex--;
 				}
 
-				const SINT8 topRowIndex = (rowSize - ((votesLeft - 1) % rowSize)) - 1;
 				xOffset = -(rowSize - 1) + (topRowIndex << 1);
 
 				pile->destY -= PILE_SPACING_H >> 1;
@@ -434,7 +436,7 @@ static void Y_DrawVoteThumbnail(fixed_t center_x, fixed_t center_y, fixed_t widt
 		x, y,
 		width, flags | ((encore == true) ? V_FLIP : 0),
 		g_voteLevels[v][0],
-		NULL
+		(dim == true ? R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_GREY, GTC_MENUCACHE) : NULL)
 	);
 
 	if (encore == true)
