@@ -12664,6 +12664,11 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		else
 			player->turbine--;	// acts as a cooldown
 	}
+
+	if (player->icecube.frozen)
+	{
+		Obj_IceCubeInput(player);
+	}
 }
 
 void K_CheckSpectateStatus(boolean considermapreset)

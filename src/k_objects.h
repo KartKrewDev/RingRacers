@@ -303,6 +303,16 @@ void Obj_GPZSeasawSpawn(mobj_t *mo);
 void Obj_GPZSeasawThink(mobj_t *mo);
 void Obj_GPZSeasawCollide(mobj_t *mo, mobj_t *mo2);
 
+/* Frozen Production Frost Thrower */
+void Obj_FreezeThrusterInit(mobj_t *mobj);
+void Obj_FreezeThrusterThink(mobj_t *mobj);
+void Obj_IceDustCollide(mobj_t *t1, mobj_t *t2);
+boolean Obj_IceCubeThink(mobj_t *mobj);
+void Obj_IceCubeInput(player_t *player);
+void Obj_IceCubeBurst(player_t *player);
+void Obj_SidewaysFreezeThrusterInit(mobj_t *mobj);
+void Obj_SidewaysFreezeThrusterThink(mobj_t *mobj);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

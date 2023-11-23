@@ -83,6 +83,8 @@ typedef enum
 
 	PR_FUZZ, // Stability testing
 
+	PR_FROSTTHROWERS,
+
 	PRNUMSYNCED,
 
 	PR_INTERPHUDRANDOM = PRNUMSYNCED, // Interpolation-accomodating HUD randomisation
