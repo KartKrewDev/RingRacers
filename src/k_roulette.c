@@ -1513,16 +1513,23 @@ void K_StopRoulette(itemroulette_t *const roulette)
 }
 
 /*--------------------------------------------------
-	fixed_t K_GetRouletteOffset(itemroulette_t *const roulette, fixed_t renderDelta)
+	fixed_t K_GetRouletteOffset(itemroulette_t *const roulette, fixed_t renderDelta, UINT8 fudge)
 
 		See header file for description.
 --------------------------------------------------*/
-fixed_t K_GetRouletteOffset(itemroulette_t *const roulette, fixed_t renderDelta)
+fixed_t K_GetRouletteOffset(itemroulette_t *const roulette, fixed_t renderDelta, UINT8 fudge)
 {
 	const fixed_t curTic = (roulette->tics << FRACBITS) - renderDelta;
 	const fixed_t midTic = roulette->speed * (FRACUNIT >> 1);
 
-	return FixedMul(FixedDiv(midTic - curTic, ((roulette->speed + 1) << FRACBITS)), ROULETTE_SPACING);
+	fixed_t result = FixedMul(FixedDiv(midTic - curTic, ((roulette->speed + 1) << FRACBITS)), ROULETTE_SPACING);
+
+	if (fudge > 0)
+	{
+		result += (roulette->speed + 1) * fudge;
+	}
+
+	return result;
 }
 
 /*--------------------------------------------------
@@ -1530,12 +1537,19 @@ fixed_t K_GetRouletteOffset(itemroulette_t *const roulette, fixed_t renderDelta)
 
 		See header file for description.
 --------------------------------------------------*/
-fixed_t K_GetSlotOffset(itemroulette_t *const roulette, fixed_t renderDelta)
+fixed_t K_GetSlotOffset(itemroulette_t *const roulette, fixed_t renderDelta, UINT8 fudge)
 {
 	const fixed_t curTic = (roulette->tics << FRACBITS) - renderDelta;
 	const fixed_t midTic = roulette->speed * (FRACUNIT >> 1);
 
-	return FixedMul(FixedDiv(midTic - curTic, ((roulette->speed + 1) << FRACBITS)), SLOT_SPACING);
+	fixed_t result = FixedMul(FixedDiv(midTic - curTic, ((roulette->speed + 1) << FRACBITS)), SLOT_SPACING);
+
+	if (fudge > 0)
+	{
+		result += (roulette->speed + 1) * fudge;
+	}
+
+	return result;
 }
 
 /*--------------------------------------------------
@@ -1631,7 +1645,7 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 
 			//player->karthud[khud_itemblink] = TICRATE;
 			//player->karthud[khud_itemblinkmode] = 1;
-			//player->karthud[khud_rouletteoffset] = K_GetRouletteOffset(roulette, FRACUNIT);
+			//player->karthud[khud_rouletteoffset] = K_GetRouletteOffset(roulette, FRACUNIT, 0);
 
 			if (K_IsPlayingDisplayPlayer(player))
 			{
@@ -1640,12 +1654,13 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 		}
 		else
 		{
-			// D2 fudge factor. Roulette was originally designed and tested with this delay.
-			UINT8 fudgedDelay = (player->cmd.latency <= 2) ? 0 : player->cmd.latency - 2;
-
+			UINT8 baseFudge = player->cmd.latency; // max(0, player->cmd.latency - 2);
 			if (roulette->autoroulette)
-				fudgedDelay = 0; // We didn't manually stop this, you jackwagon
+			{
+				baseFudge = 0; // We didn't manually stop this, you jackwagon
+			}
 
+			UINT8 fudgedDelay = baseFudge;
 			while (fudgedDelay > 0)
 			{
 				UINT8 gap = (roulette->speed - roulette->tics); // How long has the roulette been on this entry?
@@ -1670,15 +1685,16 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 			{
 				player->ringboxdelay = TICRATE;
 				player->ringboxaward = finalItem;
+				player->karthud[khud_rouletteoffset] = K_GetSlotOffset(roulette, FRACUNIT, baseFudge);
 			}
 			else
 			{
 				K_KartGetItemResult(player, finalItem);
+				player->karthud[khud_rouletteoffset] = K_GetRouletteOffset(roulette, FRACUNIT, baseFudge);
 			}
 
 			player->karthud[khud_itemblink] = TICRATE;
 			player->karthud[khud_itemblinkmode] = 0;
-			player->karthud[khud_rouletteoffset] = K_GetRouletteOffset(roulette, FRACUNIT);
 
 			if (K_IsPlayingDisplayPlayer(player))
 			{

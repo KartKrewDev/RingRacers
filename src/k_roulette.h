@@ -173,7 +173,7 @@ void K_StopRoulette(itemroulette_t *const roulette);
 
 
 /*--------------------------------------------------
-	fixed_t K_GetRouletteOffset(itemroulette_t *const roulette, fixed_t renderDelta);
+	fixed_t K_GetRouletteOffset(itemroulette_t *const roulette, fixed_t renderDelta, UINT8 fudge);
 
 		Gets the Y offset, for use in the roulette HUD.
 		A separate function since it is used both by the
@@ -182,15 +182,17 @@ void K_StopRoulette(itemroulette_t *const roulette);
 	Input Arguments:-
 		roulette - The roulette we are drawing for.
 		renderDelta - Fractional tic delta, when used for HUD.
+		fudge - Input latency fudge factor, when used for gameplay.
 
 	Return:-
 		The Y offset when drawing the item.
 --------------------------------------------------*/
 
-fixed_t K_GetRouletteOffset(itemroulette_t *const roulette, fixed_t renderDelta);
+fixed_t K_GetRouletteOffset(itemroulette_t *const roulette, fixed_t renderDelta, UINT8 fudge);
+
 
 /*--------------------------------------------------
-	fixed_t K_GetSlotOffset(itemroulette_t *const roulette, fixed_t renderDelta);
+	fixed_t K_GetSlotOffset(itemroulette_t *const roulette, fixed_t renderDelta, UINT8 fudge);
 
 		Gets the Y offset, for use in the slot HUD.
 		A separate function since it is used both by the
@@ -199,12 +201,13 @@ fixed_t K_GetRouletteOffset(itemroulette_t *const roulette, fixed_t renderDelta)
 	Input Arguments:-
 		roulette - The roulette we are drawing for.
 		renderDelta - Fractional tic delta, when used for HUD.
+		fudge - Input latency fudge factor, when used for gameplay.
 
 	Return:-
 		The Y offset when drawing the item.
 --------------------------------------------------*/
 
-fixed_t K_GetSlotOffset(itemroulette_t *const roulette, fixed_t renderDelta);
+fixed_t K_GetSlotOffset(itemroulette_t *const roulette, fixed_t renderDelta, UINT8 fudge);
 
 
 /*--------------------------------------------------

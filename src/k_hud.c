@@ -1358,7 +1358,7 @@ static void K_drawKartItem(void)
 
 	if (stplyr->itemRoulette.active == true)
 	{
-		rouletteOffset = K_GetRouletteOffset(&stplyr->itemRoulette, rendertimefrac);
+		rouletteOffset = K_GetRouletteOffset(&stplyr->itemRoulette, rendertimefrac, 0);
 	}
 	else
 	{
@@ -1712,12 +1712,16 @@ static void K_drawKartSlotMachine(void)
 
 	if (stplyr->itemRoulette.active == true)
 	{
-		rouletteOffset = K_GetSlotOffset(&stplyr->itemRoulette, rendertimefrac);
+		rouletteOffset = K_GetSlotOffset(&stplyr->itemRoulette, rendertimefrac, 0);
 	}
 	else
 	{
+		rouletteOffset = stplyr->karthud[khud_rouletteoffset];
+
 		if (!stplyr->ringboxdelay)
+		{
 			return;
+		}
 	}
 
 	if (stplyr->karthud[khud_itemblink] && (leveltime & 1))
