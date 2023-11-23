@@ -276,12 +276,20 @@ struct SidewaysFreezeThruster : Mobj
 		Vec2<Fixed> h_vector = angle_vector(an);
 
 		// spawn the pipes:
-		for (int i = 0; i < 4; ++i)
+		auto spawn_pipe = [&](int i)
 		{
 			angle_t v_an = ANGLE_45 + (ANGLE_90 * i);
 			Vec2<Fixed> v_vector = vector(v_an) * 32;
 			spawn_piece({h_vector * v_vector.y, v_vector.x}, angle, 2);
-		}
+		};
+
+		// This is unrolled because when it was a for loop,
+		// it ran infinitely, but only under MinGW.
+		// Tested: gcc.exe (Rev2, Built by MSYS2 project) 13.2.0 (32-bit version)
+		spawn_pipe(0);
+		spawn_pipe(1);
+		spawn_pipe(2);
+		spawn_pipe(3);
 
 		// spawn the icons:
 		Vec2<Fixed> v = vector(an) * 32;
