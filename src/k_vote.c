@@ -301,12 +301,14 @@ static void Y_SortPile(void)
 
 			if (votesLeft > rowSize)
 			{
+				SINT8 topRowIndex = (rowSize - ((votesLeft - 1) % rowSize)) - 1;
+
 				if (odd == true)
 				{
 					rowSize--;
+					topRowIndex--;
 				}
 
-				const SINT8 topRowIndex = (rowSize - ((votesLeft - 1) % rowSize)) - 1;
 				xOffset = -(rowSize - 1) + (topRowIndex << 1);
 
 				pile->destY -= PILE_SPACING_H >> 1;
