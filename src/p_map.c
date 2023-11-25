@@ -758,6 +758,18 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		return BMIT_CONTINUE;
 	}
 
+	if (tm.thing->type == MT_PATROLIVOBALL)
+	{
+		if (!thing->player)
+			return BMIT_CONTINUE;
+		if (tm.thing->z > thing->z + thing->height)
+			return BMIT_CONTINUE; // overhead
+		if (tm.thing->z + tm.thing->height < thing->z)
+			return BMIT_CONTINUE; // underneath
+		Obj_PatrolIvoBallTouch(tm.thing, thing);
+		return BMIT_CONTINUE;
+	}
+
 	if (thing->type == MT_BATTLEUFO)
 	{
 		if (tm.thing->type != MT_PLAYER)

@@ -43,6 +43,7 @@ target_sources(SRB2SDL2 PRIVATE
 	charge.c
 	mega-barrier.cpp
 	frost-thrower.cpp
+	ivoball.cpp
 )
 
 add_subdirectory(versus)
