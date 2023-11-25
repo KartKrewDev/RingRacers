@@ -179,8 +179,14 @@ struct Mobj : mobj_t
 	// Sound
 	//
 
-	void voice(sfxenum_t sfx, int volume = 255) const { S_StartSoundAtVolume(this, sfx, volume); }
 	bool voice_playing(sfxenum_t sfx) const { return S_SoundPlaying(this, sfx); }
+
+	void voice(sfxenum_t sfx, int volume = 255) const { S_StartSoundAtVolume(this, sfx, volume); }
+	void voice_reduced(sfxenum_t sfx, const player_t* player, int volume = 255) const
+	{
+		S_ReducedVFXSoundAtVolume(this, sfx, volume, player);
+	}
+
 	void voice_loop(sfxenum_t sfx, int volume = 255) const
 	{
 		if (!voice_playing(sfx))
