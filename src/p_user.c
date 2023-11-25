@@ -1026,7 +1026,7 @@ void P_SetObjectMomZ(mobj_t *mo, fixed_t value, boolean relative)
 // Returns true if player is
 // ACTUALLY on the local machine
 //
-boolean P_IsMachineLocalPlayer(player_t *player)
+boolean P_IsMachineLocalPlayer(const player_t *player)
 {
 	UINT8 i;
 
@@ -1051,7 +1051,7 @@ boolean P_IsMachineLocalPlayer(player_t *player)
 // on the local machine
 // (or simulated party)
 //
-boolean P_IsLocalPlayer(player_t *player)
+boolean P_IsLocalPlayer(const player_t *player)
 {
 	if (player == NULL)
 	{
@@ -1072,7 +1072,7 @@ boolean P_IsLocalPlayer(player_t *player)
 // Returns true if player is
 // currently being watched.
 //
-boolean P_IsDisplayPlayer(player_t *player)
+boolean P_IsDisplayPlayer(const player_t *player)
 {
 	UINT8 i;
 
