@@ -1320,6 +1320,9 @@ typedef enum
 	// Ice Cube
 	sfx_glgz1,
 
+	// Ivo Ball
+	sfx_ivobal,
+
 	// Damage sounds
 	sfx_dmga1,
 	sfx_dmga2,

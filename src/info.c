@@ -5674,6 +5674,9 @@ state_t states[NUMSTATES] =
 
 	// MT_THRUSTERPART
 	{SPR_SFTR, 0|FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_THRUSTERPART},                 // S_THRUSTERPART
+
+	// MT_IVOBALL
+	{SPR_BSPH, 2|FF_SEMIBRIGHT, -1, {NULL}, 0, 0, S_NULL},        // S_IVOBALL
 };
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] =
@@ -32117,6 +32120,85 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,    // activesound
 		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_SCENERY|MF_NOCLIPTHING, // flags
 		S_NULL       // raisestate
+	},
+
+	{           // MT_IVOBALL
+		3792,         // doomednum
+		S_IVOBALL,    // spawnstate
+		1000,         // spawnhealth
+		S_NULL,       // seestate
+		sfx_None,     // seesound
+		0,            // reactiontime
+		sfx_None,     // attacksound
+		S_NULL,       // painstate
+		0,            // painchance
+		sfx_None,     // painsound
+		S_NULL,       // meleestate
+		S_NULL,       // missilestate
+		S_NULL,       // deathstate
+		S_NULL,       // xdeathstate
+		sfx_None,     // deathsound
+		0,            // speed
+		40*FRACUNIT,  // radius
+		128*FRACUNIT, // height
+		0,            // dispoffset
+		0,            // mass
+		0,            // damage
+		sfx_None,     // activesound
+		MF_NOCLIP|MF_SCENERY|MF_SPECIAL|MF_NOGRAVITY, // flags
+		S_NULL        // raisestate
+	},
+	{           // MT_PATROLIVOBALL
+		3808,         // doomednum
+		S_IVOBALL,    // spawnstate
+		1000,         // spawnhealth
+		S_NULL,       // seestate
+		sfx_None,     // seesound
+		0,            // reactiontime
+		sfx_None,     // attacksound
+		S_NULL,       // painstate
+		0,            // painchance
+		sfx_None,     // painsound
+		S_NULL,       // meleestate
+		S_NULL,       // missilestate
+		S_NULL,       // deathstate
+		S_NULL,       // xdeathstate
+		sfx_None,     // deathsound
+		28*FRACUNIT,  // speed
+		40*FRACUNIT,  // radius
+		128*FRACUNIT, // height
+		0,            // dispoffset
+		0,            // mass
+		0,            // damage
+		sfx_None,     // activesound
+		MF_SCENERY|MF_ENEMY|MF_NOBLOCKMAP, // flags
+		S_NULL        // raisestate
+	},
+	{           // MT_AIRIVOBALL
+		3811,         // doomednum
+		S_IVOBALL,    // spawnstate
+		1000,         // spawnhealth
+		S_NULL,       // seestate
+		sfx_None,     // seesound
+		0,            // reactiontime
+		sfx_None,     // attacksound
+		S_NULL,       // painstate
+		0,            // painchance
+		sfx_None,     // painsound
+		S_NULL,       // meleestate
+		S_NULL,       // missilestate
+		S_NULL,       // deathstate
+		S_NULL,       // xdeathstate
+		sfx_None,     // deathsound
+		28*FRACUNIT,  // speed
+		50*FRACUNIT,  // radius
+		100*FRACUNIT, // height
+		0,            // dispoffset
+		0,            // mass
+		0,            // damage
+		sfx_None,     // activesound
+		MF_SCENERY|MF_SPECIAL|MF_NOGRAVITY, // flags
+		S_NULL        // raisestate
 	},
 };
 

@@ -1249,6 +1249,8 @@ sfxinfo_t S_sfx[NUMSFX] =
 
   {"glgz1",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Ice Cube shatters"},
 
+  {"ivobal",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Ivo Ball
+
   // Damage sounds
   {"dmga1",  false, 255, 8, -1, NULL, 0,         -1,  -1, LUMPERROR, "Damaged"},
   {"dmga2",  false, 255, 8, -1, NULL, 0,         -1,  -1, LUMPERROR, "Damaged"},
