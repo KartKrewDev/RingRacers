@@ -313,6 +313,14 @@ void Obj_IceCubeBurst(player_t *player);
 void Obj_SidewaysFreezeThrusterInit(mobj_t *mobj);
 void Obj_SidewaysFreezeThrusterThink(mobj_t *mobj);
 
+/* Ivo Balls */
+void Obj_IvoBallInit(mobj_t *mo);
+void Obj_IvoBallThink(mobj_t *mo);
+void Obj_IvoBallTouch(mobj_t *special, mobj_t *toucher);
+void Obj_PatrolIvoBallInit(mobj_t *mo);
+void Obj_PatrolIvoBallThink(mobj_t *mo);
+void Obj_PatrolIvoBallTouch(mobj_t *special, mobj_t *toucher);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

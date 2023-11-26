@@ -515,7 +515,7 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 
 	returny = y;
 
-	boolean (*_isHighlightedPlayer)(player_t *) =
+	boolean (*_isHighlightedPlayer)(const player_t *) =
 		(demo.playback
 			? P_IsDisplayPlayer
 			: P_IsLocalPlayer

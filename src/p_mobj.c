@@ -6825,6 +6825,17 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		}
 		break;
 	}
+	case MT_IVOBALL:
+	case MT_AIRIVOBALL:
+	{
+		Obj_IvoBallThink(mobj);
+		return;
+	}
+	case MT_PATROLIVOBALL:
+	{
+		Obj_PatrolIvoBallThink(mobj);
+		return;
+	}
 	case MT_VWREF:
 	case MT_VWREB:
 	{
@@ -11088,6 +11099,11 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_KURAGEN:
 			thing->shadowscale = FRACUNIT/4;
 			break;
+		case MT_IVOBALL:
+		case MT_PATROLIVOBALL:
+		case MT_AIRIVOBALL:
+			thing->shadowscale = FRACUNIT/2;
+			break;
 		default:
 			if (thing->flags & (MF_ENEMY|MF_BOSS))
 				thing->shadowscale = FRACUNIT;
@@ -14447,6 +14463,17 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	case MT_SIDEWAYSFREEZETHRUSTER:
 	{
 		Obj_SidewaysFreezeThrusterInit(mobj);
+		break;
+	}
+	case MT_IVOBALL:
+	case MT_AIRIVOBALL:
+	{
+		Obj_IvoBallInit(mobj);
+		break;
+	}
+	case MT_PATROLIVOBALL:
+	{
+		Obj_PatrolIvoBallInit(mobj);
 		break;
 	}
 	default:

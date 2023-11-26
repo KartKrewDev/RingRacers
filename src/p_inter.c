@@ -974,6 +974,18 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			return;
 		}
 
+		case MT_IVOBALL:
+		case MT_AIRIVOBALL:
+		{
+			Obj_IvoBallTouch(special, toucher);
+			return;
+		}
+		case MT_PATROLIVOBALL:
+		{
+			Obj_PatrolIvoBallTouch(special, toucher);
+			return;
+		}
+
 		default: // SOC or script pickup
 			P_SetTarget(&special->target, toucher);
 			break;

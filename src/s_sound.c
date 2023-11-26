@@ -613,7 +613,7 @@ void S_StartSound(const void *origin, sfxenum_t sfx_id)
 	S_StartSoundAtVolume(origin, sfx_id, 255);
 }
 
-void S_ReducedVFXSoundAtVolume(const void *origin, sfxenum_t sfx_id, INT32 volume, player_t *owner)
+void S_ReducedVFXSoundAtVolume(const void *origin, sfxenum_t sfx_id, INT32 volume, const player_t *owner)
 {
 	if (S_SoundDisabled())
 		return;
