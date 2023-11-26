@@ -44,6 +44,8 @@
 #include "acs/interface.h"
 #include "k_powerup.h"
 #include "k_collide.h"
+#include "m_easing.h"
+
 
 // CTF player names
 #define CTFTEAMCODE(pl) pl->ctfteam ? (pl->ctfteam == 1 ? "\x85" : "\x84") : ""
@@ -1123,14 +1125,34 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 		if (timelimitintics)
 		{
 			UINT16 bonustime = 10*TICRATE;
+			INT16 clamptime = 0; // Don't allow reserve time past this value (by much)...
+			INT16 mintime = 2*TICRATE; // But give SOME reward for every hit.
 			
 			if (grandprixinfo.gp)
 			{
 				if (grandprixinfo.masterbots)
-					bonustime = 8*TICRATE;
+				{
+					clamptime = 8*TICRATE;
+					mintime = 1*TICRATE;
+				}
+				else if (grandprixinfo.gamespeed == KARTSPEED_HARD)
+				{
+					clamptime = 12*TICRATE;
+				}
+				else if (grandprixinfo.gamespeed == KARTSPEED_NORMAL)
+				{
+					clamptime = 15*TICRATE;
+				}
 				else if (grandprixinfo.gamespeed == KARTSPEED_EASY)
-					bonustime = 15*TICRATE;
+				{
+					// "I think Easy Mode should be about Trying Not To Kill Your Self" -VelocitOni
+					clamptime = 45*TICRATE;
+					mintime = 20*TICRATE;
+				}
 			}
+
+			if (clamptime) // Lower bonus if you have more reserve, keep it tense.
+				bonustime = Easing_InOutSine(min(FRACUNIT, (timelimitintics - leveltime + starttime) * FRACUNIT / clamptime), clamptime, mintime);
 
 			extratimeintics += bonustime;
 			secretextratime = TICRATE/2;
