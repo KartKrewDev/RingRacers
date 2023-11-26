@@ -968,6 +968,12 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			break;
 		}
 
+		case MT_GGZICEDUST:
+		{
+			Obj_IceDustCollide(special, toucher);
+			return;
+		}
+
 		default: // SOC or script pickup
 			P_SetTarget(&special->target, toucher);
 			break;

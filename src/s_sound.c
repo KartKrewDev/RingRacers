@@ -1090,7 +1090,7 @@ INT32 S_IdPlaying(sfxenum_t id)
 
 // Searches through the channels and checks for
 // origin x playing sound id y.
-INT32 S_SoundPlaying(void *origin, sfxenum_t id)
+INT32 S_SoundPlaying(const void *origin, sfxenum_t id)
 {
 	INT32 cnum;
 	if (!origin)

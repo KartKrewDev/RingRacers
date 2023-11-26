@@ -9,6 +9,8 @@
 
 #include <cstddef>
 
+#include "../mobj.hpp"
+
 #include "../doomdef.h"
 #include "../d_player.h"
 #include "../g_game.h"
@@ -23,44 +25,12 @@
 
 #define barrier_player(o) ((o)->extravalue1)
 
+using srb2::Mobj;
+
 namespace
 {
 
 struct Barrier;
-
-// TODO: header
-struct Mobj : mobj_t
-{
-	struct PosArg
-	{
-		fixed_t x, y, z;
-
-		PosArg(fixed_t x_, fixed_t y_, fixed_t z_) : x(x_), y(y_), z(z_) {}
-		PosArg(const mobj_t* mobj) : x(mobj->x), y(mobj->y), z(mobj->z) {}
-	};
-
-	static bool valid(const Mobj* mobj) { return !P_MobjWasRemoved(mobj); }
-
-	PosArg center() const { return {x, y, z + (height / 2)}; }
-
-	template <typename T>
-	T* spawn_offset(mobjtype_t type) { return static_cast<T*>(P_SpawnMobjFromMobj(this, 0, 0, 0, type)); }
-
-	void state(statenum_t state) { P_SetMobjState(this, state); }
-	statenum_t statenum() const { return static_cast<statenum_t>(mobj_t::state - states); }
-
-	fixed_t scale() const { return mobj_t::scale; }
-
-	void scale(fixed_t n)
-	{
-		mobj_t::scale = n;
-		mobj_t::destscale = n;
-	}
-
-	void move_origin(const PosArg& p) { P_MoveOrigin(this, p.x, p.y, p.z); }
-
-	void remove() { P_RemoveMobj(this); }
-};
 
 struct Player : player_t
 {
@@ -87,7 +57,7 @@ struct Barrier : Mobj
 
 	static Barrier* spawn(Player* player, statenum_t state, int idx)
 	{
-		Barrier* child = player->mobj()->spawn_offset<Barrier>(MT_MEGABARRIER);
+		Barrier* child = player->mobj()->spawn_from<Barrier>(MT_MEGABARRIER);
 
 		child->angle = player->mobj()->angle + (idx * kSpinGap);
 		child->player(player);

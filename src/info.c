@@ -977,6 +977,15 @@ char sprnames[NUMSPRITES + 1][5] =
 	"GPTM",
 	"GPTS",
 
+	"GGZ1",
+	"GGZ2",
+	"GGZ3",
+	"GGZ6",
+	"GGZ7",
+	"GGZ8",
+	"FBTN",
+	"SFTR",
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	"VIEW",
 };
@@ -5632,6 +5641,39 @@ state_t states[NUMSTATES] =
 	{SPR_GPTB, 0, -1, {A_SetScale}, 4*FRACUNIT, 0, S_NULL}, // S_GPZ_TREETHING_B,
 	{SPR_GPTM, 0, -1, {A_SetScale}, 4*FRACUNIT, 0, S_NULL}, // S_GPZ_TREETHING_M,
 	{SPR_GPTS, 0, -1, {A_SetScale}, 4*FRACUNIT, 0, S_NULL}, // S_GPZ_TREETHING_S,
+
+	// MT_GGZFREEZETHRUSTER
+	{SPR_GGZ6, 0, -1, {NULL}, 0, 0, S_GGZFREEZETHRUSTER},           // S_GGZFREEZETHRUSTER
+
+	// MT_GGZICEDUST
+	{SPR_GGZ7, 0|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_GGZICEDUST2},    // S_GGZICEDUST1
+	{SPR_GGZ7, 1|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_GGZICEDUST3},    // S_GGZICEDUST2
+	{SPR_GGZ7, 2|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_GGZICEDUST4},    // S_GGZICEDUST3
+	{SPR_GGZ7, 3|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_GGZICEDUST5},    // S_GGZICEDUST4
+	{SPR_GGZ7, 4|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_GGZICEDUST6},    // S_GGZICEDUST5
+	{SPR_GGZ7, 5|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_GGZICEDUST7},    // S_GGZICEDUST6
+	{SPR_GGZ7, 6|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_GGZICEDUST8},    // S_GGZICEDUST7
+	{SPR_GGZ7, 7|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_GGZICEDUST9},    // S_GGZICEDUST8
+	{SPR_GGZ7, 8|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_GGZICEDUST10},   // S_GGZICEDUST9
+	{SPR_GGZ7, 9|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_GGZICEDUST11},   // S_GGZICEDUST10
+	{SPR_GGZ7, 10|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_NULL},          // S_GGZICEDUST11
+	{SPR_GGZ1, 0|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_GGZPARTICLE12},  // S_GGZPARTICLE11
+	{SPR_GGZ1, 1|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_GGZPARTICLE13},  // S_GGZPARTICLE12
+	{SPR_GGZ1, 2|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_GGZPARTICLE14},  // S_GGZPARTICLE13
+	{SPR_GGZ1, 3|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_GGZPARTICLE15},  // S_GGZPARTICLE14
+	{SPR_GGZ1, 4|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_GGZPARTICLE16},  // S_GGZPARTICLE15
+	{SPR_GGZ1, 5|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_GGZPARTICLE17},  // S_GGZPARTICLE16
+	{SPR_GGZ1, 6|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_GGZPARTICLE18},  // S_GGZPARTICLE17
+	{SPR_GGZ1, 7|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_GGZPARTICLE11},  // S_GGZPARTICLE18
+	{SPR_GGZ2, 0|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_GGZPARTICLE22},  // S_GGZPARTICLE21
+	{SPR_GGZ2, 1|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_GGZPARTICLE23},  // S_GGZPARTICLE22
+	{SPR_GGZ2, 2|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_GGZPARTICLE24},  // S_GGZPARTICLE23
+	{SPR_GGZ2, 3|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_GGZPARTICLE21},  // S_GGZPARTICLE24
+
+	{SPR_GGZ8, FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_NULL},  // S_GGZICECUBE
+
+	// MT_THRUSTERPART
+	{SPR_SFTR, 0|FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_THRUSTERPART},                 // S_THRUSTERPART
 };
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] =
@@ -31918,6 +31960,163 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,       // activesound
 		MF_NOGRAVITY|MF_RUNSPAWNFUNC, // flags
 		S_NULL          // raisestate
+	},
+
+	{           // MT_GGZFREEZETHRUSTER
+		691,         // doomednum
+		S_GGZFREEZETHRUSTER, // spawnstate
+		1000,        // spawnhealth
+		S_NULL,      // seestate
+		sfx_None,    // seesound
+		0,           // reactiontime
+		sfx_None,    // attacksound
+		S_NULL,      // painstate
+		0,           // painchance
+		sfx_None,    // painsound
+		S_NULL,      // meleestate
+		S_NULL,      // missilestate
+		S_NULL,      // deathstate
+		S_NULL,      // xdeathstate
+		sfx_None,    // deathsound
+		0,           // speed
+		32*FRACUNIT, // radius
+		48*FRACUNIT, // height
+		0,           // dispoffset
+		0,           // mass
+		0,           // damage
+		sfx_None,    // activesound
+		MF_NOCLIPTHING|MF_NOGRAVITY, // flags
+		S_NULL       // raisestate
+	},
+	{           // MT_GGZICEDUST
+		-1,          // doomednum
+		S_GGZICEDUST1, // spawnstate
+		2,           // spawnhealth
+		S_NULL,      // seestate
+		sfx_None,    // seesound
+		0,           // reactiontime
+		sfx_None,    // attacksound
+		S_NULL,      // painstate
+		0,           // painchance
+		sfx_None,    // painsound
+		S_NULL,      // meleestate
+		S_NULL,      // missilestate
+		S_NULL,      // deathstate
+		S_NULL,      // xdeathstate
+		sfx_None,    // deathsound
+		0,           // speed
+		32*FRACUNIT, // radius
+		16*FRACUNIT, // height
+		0,           // dispoffset
+		0,           // mass
+		0,           // damage
+		sfx_None,    // activesound
+		MF_SPECIAL|MF_NOSQUISH|MF_NOGRAVITY, // flags
+		S_NULL       // raisestate
+	},
+	{           // MT_GGZICECUBE
+		-1,          // doomednum
+		S_GGZICECUBE, // spawnstate
+		1000,        // spawnhealth
+		S_NULL,      // seestate
+		sfx_None,    // seesound
+		0,           // reactiontime
+		sfx_None,    // attacksound
+		S_NULL,      // painstate
+		0,           // painchance
+		sfx_None,    // painsound
+		S_NULL,      // meleestate
+		S_NULL,      // missilestate
+		S_NULL,      // deathstate
+		S_NULL,      // xdeathstate
+		sfx_None,    // deathsound
+		0,           // speed
+		16*FRACUNIT, // radius
+		16*FRACUNIT, // height
+		0,           // dispoffset
+		0,           // mass
+		0,           // damage
+		sfx_None,    // activesound
+		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_SCENERY|MF_NOSQUISH, // flags
+		S_NULL       // raisestate
+	},
+	{           // MT_GGZICESHATTER
+		-1,          // doomednum
+		S_INVISIBLE, // spawnstate
+		1000,        // spawnhealth
+		S_NULL,      // seestate
+		sfx_None,    // seesound
+		0,           // reactiontime
+		sfx_None,    // attacksound
+		S_NULL,      // painstate
+		0,           // painchance
+		sfx_None,    // painsound
+		S_NULL,      // meleestate
+		S_NULL,      // missilestate
+		S_NULL,      // deathstate
+		S_NULL,      // xdeathstate
+		sfx_None,    // deathsound
+		0,           // speed
+		32*FRACUNIT, // radius
+		64*FRACUNIT, // height
+		0,           // dispoffset
+		0,           // mass
+		0,           // damage
+		sfx_None,    // activesound
+		MF_NOCLIPHEIGHT|MF_NOSQUISH, // flags
+		S_NULL       // raisestate
+	},
+	{           // MT_SIDEWAYSFREEZETHRUSTER
+		693,         // doomednum
+		S_INVISIBLE, // spawnstate
+		1,           // spawnhealth
+		S_NULL,      // seestate
+		sfx_None,    // seesound
+		0,           // reactiontime
+		sfx_None,    // attacksound
+		S_NULL,      // painstate
+		0,           // painchance
+		sfx_None,    // painsound
+		S_NULL,      // meleestate
+		S_NULL,      // missilestate
+		S_NULL,      // deathstate
+		S_NULL,      // xdeathstate
+		sfx_None,    // deathsound
+		0,           // speed
+		16*FRACUNIT, // radius
+		32*FRACUNIT, // height
+		0,           // dispoffset
+		0,           // mass
+		0,           // damage
+		sfx_None,    // activesound
+		MF_NOGRAVITY, // flags
+		S_NULL       // raisestate
+	},
+	{           // MT_THRUSTERPART
+		-1,          // doomednum
+		S_THRUSTERPART, // spawnstate
+		1,           // spawnhealth
+		S_NULL,      // seestate
+		sfx_None,    // seesound
+		0,           // reactiontime
+		sfx_None,    // attacksound
+		S_NULL,      // painstate
+		0,           // painchance
+		sfx_None,    // painsound
+		S_NULL,      // meleestate
+		S_NULL,      // missilestate
+		S_NULL,      // deathstate
+		S_NULL,      // xdeathstate
+		sfx_None,    // deathsound
+		0,           // speed
+		16*FRACUNIT, // radius
+		32*FRACUNIT, // height
+		0,           // dispoffset
+		0,           // mass
+		0,           // damage
+		sfx_None,    // activesound
+		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_SCENERY|MF_NOCLIPTHING, // flags
+		S_NULL       // raisestate
 	},
 };
 

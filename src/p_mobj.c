@@ -6817,6 +6817,14 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		}
 		break;
 	}
+	case MT_GGZICECUBE:
+	{
+		if (!Obj_IceCubeThink(mobj))
+		{
+			return;
+		}
+		break;
+	}
 	case MT_VWREF:
 	case MT_VWREB:
 	{
@@ -10202,6 +10210,16 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			return false;
 		}
+		break;
+	}
+	case MT_GGZFREEZETHRUSTER:
+	{
+		Obj_FreezeThrusterThink(mobj);
+		break;
+	}
+	case MT_SIDEWAYSFREEZETHRUSTER:
+	{
+		Obj_SidewaysFreezeThrusterThink(mobj);
 		break;
 	}
 
@@ -14419,6 +14437,16 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	case MT_CHECKPOINT_END:
 	{
 		Obj_LinkCheckpoint(mobj);
+		break;
+	}
+	case MT_GGZFREEZETHRUSTER:
+	{
+		Obj_FreezeThrusterInit(mobj);
+		break;
+	}
+	case MT_SIDEWAYSFREEZETHRUSTER:
+	{
+		Obj_SidewaysFreezeThrusterInit(mobj);
 		break;
 	}
 	default:

@@ -461,7 +461,7 @@ UINT8 P_FindHighestLap(void)
 //
 boolean P_PlayerInPain(player_t *player)
 {
-	if (player->spinouttimer || (player->tumbleBounces > 0) || (player->pflags & PF_FAULT))
+	if (player->spinouttimer || (player->tumbleBounces > 0) || (player->pflags & PF_FAULT) || player->icecube.frozen)
 		return true;
 
 	return false;
@@ -2420,7 +2420,14 @@ void P_MovePlayer(player_t *player)
 	}
 
 	// Kart frames
-	if (player->tumbleBounces > 0)
+	if (player->icecube.frozen)
+	{
+		INT32 spd = FixedMul(player->mo->scale, FixedHypot(player->mo->momx, player->mo->momy)) / FRACUNIT;
+		P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
+		player->drawangle -= max(2, spd / 6) * ANG1;
+		P_ResetPitchRoll(player->mo);
+	}
+	else if (player->tumbleBounces > 0)
 	{
 		fixed_t playerSpeed = P_AproxDistance(player->mo->momx, player->mo->momy); // maybe momz too?
 
