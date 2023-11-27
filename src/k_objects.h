@@ -321,7 +321,7 @@ void Obj_PatrolIvoBallInit(mobj_t *mo);
 void Obj_PatrolIvoBallThink(mobj_t *mo);
 void Obj_PatrolIvoBallTouch(mobj_t *special, mobj_t *toucher);
 
-/* SA2 Crates */
+/* SA2 Crates / Ice Cap Blocks */
 void Obj_BoxSideThink(mobj_t *mo);
 void Obj_TryCrateInit(mobj_t *mo);
 boolean Obj_TryCrateThink(mobj_t *mo);

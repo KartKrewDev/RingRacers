@@ -1635,6 +1635,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	switch (tm.thing->type)
 	{
 		case MT_SA2_CRATE:
+		case MT_ICECAPBLOCK:
 			// Let crates stack on top of solid objects (this
 			// includes other crates).
 			if (thing->flags & MF_SOLID)

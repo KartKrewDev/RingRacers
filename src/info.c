@@ -987,6 +987,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"SFTR",
 
 	"SABX",
+	"ICBL",
 
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	"VIEW",
@@ -5686,6 +5687,12 @@ state_t states[NUMSTATES] =
 	{SPR_SABX, 6, 70, {NULL}, 0, 0, S_NULL},        // S_SA2_CRATE_DEBRIS_G
 	{SPR_SABX, 7, 70, {NULL}, 0, 0, S_NULL},        // S_SA2_CRATE_DEBRIS_H
 	{SPR_SABX, 12, 70, {NULL}, 0, 0, S_NULL},       // S_SA2_CRATE_DEBRIS_METAL
+
+	{SPR_UNKN, FF_FULLBRIGHT, -1, {A_RandomStateRange}, S_ICECAPBLOCK_DEBRIS_C, S_ICECAPBLOCK_DEBRIS_F, S_NULL}, // S_ICECAPBLOCK_DEBRIS
+	{SPR_ICBL, 2, 70, {NULL}, 0, 0, S_NULL},        // S_ICECAPBLOCK_DEBRIS_C
+	{SPR_ICBL, 3, 70, {NULL}, 0, 0, S_NULL},        // S_ICECAPBLOCK_DEBRIS_D
+	{SPR_ICBL, 4, 70, {NULL}, 0, 0, S_NULL},        // S_ICECAPBLOCK_DEBRIS_E
+	{SPR_ICBL, 5, 70, {NULL}, 0, 0, S_NULL},        // S_ICECAPBLOCK_DEBRIS_F
 };
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] =
@@ -32263,6 +32270,32 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 	{           // MT_SA2_CRATE
 		2529,         // doomednum
+		S_INVISIBLE,  // spawnstate
+		1,            // spawnhealth
+		S_NULL,       // seestate
+		sfx_None,     // seesound
+		0,            // reactiontime
+		sfx_None,     // attacksound
+		S_NULL,       // painstate
+		0,            // painchance
+		sfx_None,     // painsound
+		S_NULL,       // meleestate
+		S_NULL,       // missilestate
+		S_NULL,       // deathstate
+		S_NULL,       // xdeathstate
+		sfx_None,     // deathsound
+		0,            // speed
+		40*FRACUNIT,  // radius
+		80*FRACUNIT,  // height
+		0,            // dispoffset
+		0,            // mass
+		0,            // damage
+		sfx_None,     // activesound
+		MF_SPECIAL|MF_SOLID|MF_SHOOTABLE|MF_SCENERY|MF_DONTPUNT, // flags
+		S_NULL        // raisestate
+	},
+	{           // MT_ICECAPBLOCK
+		3750,         // doomednum
 		S_INVISIBLE,  // spawnstate
 		1,            // spawnhealth
 		S_NULL,       // seestate

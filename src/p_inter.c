@@ -989,6 +989,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		}
 
 		case MT_SA2_CRATE:
+		case MT_ICECAPBLOCK:
 		{
 			Obj_TryCrateTouch(special, toucher);
 			return;
@@ -2855,6 +2856,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			return false;
 
 		case MT_SA2_CRATE:
+		case MT_ICECAPBLOCK:
 			Obj_TryCrateDamage(target, inflictor);
 			return true;
 

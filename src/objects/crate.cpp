@@ -49,6 +49,13 @@ struct SA2CrateConfig
 	static constexpr statenum_t kDefaultDebris = S_SA2_CRATE_DEBRIS;
 };
 
+struct IceCapBlockConfig
+{
+	static constexpr spritenum_t kSprite = SPR_ICBL;
+	static constexpr frame_layout kFrames = {6, 6, 0, 0, 0, 0};
+	static constexpr statenum_t kDefaultDebris = S_ICECAPBLOCK_DEBRIS;
+};
+
 struct Graphic : Mobj
 {
 	void hnext() = delete;
@@ -330,6 +337,10 @@ struct Crate : Box<SA2CrateConfig>
 	}
 };
 
+struct Ice : Box<IceCapBlockConfig>
+{
+};
+
 template <typename F>
 bool AnyBox::visit(F&& visitor)
 {
@@ -337,6 +348,10 @@ bool AnyBox::visit(F&& visitor)
 	{
 	case MT_SA2_CRATE:
 		visitor(static_cast<Crate*>(this));
+		break;
+
+	case MT_ICECAPBLOCK:
+		visitor(static_cast<Ice*>(this));
 		break;
 
 	default:

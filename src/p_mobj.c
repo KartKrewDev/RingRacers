@@ -6837,6 +6837,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		return;
 	}
 	case MT_SA2_CRATE:
+	case MT_ICECAPBLOCK:
 	{
 		if (!Obj_TryCrateThink(mobj))
 		{
@@ -14490,6 +14491,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 		break;
 	}
 	case MT_SA2_CRATE:
+	case MT_ICECAPBLOCK:
 	{
 		Obj_TryCrateInit(mobj);
 		break;
