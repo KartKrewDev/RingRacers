@@ -3539,6 +3539,14 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 				Z_Free(tutorialchallengemap);
 				tutorialchallengemap = Z_StrDup(word2);
 			}
+			else if (fastcmp(word, "GAMESTARTCHALLENGE"))
+			{
+				INT32 val = get_number(word2) - 1;
+				if (val < 0 || val >= MAXUNLOCKABLES)
+					gamestartchallenge = MAXUNLOCKABLES;
+				else
+					gamestartchallenge = (UINT16)val;
+			}
 			else if (fastcmp(word, "HIDETITLEPICS") || fastcmp(word, "TITLEPICSHIDE"))
 			{
 				hidetitlepics = (boolean)(value != 0 || word2[0] == 'T' || word2[0] == 'Y');

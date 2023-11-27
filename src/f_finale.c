@@ -1470,6 +1470,8 @@ static void F_CacheTitleScreen(void)
 	}
 }
 
+static boolean cache_gametrulystarted = false;
+
 void F_StartTitleScreen(void)
 {
 	INT32 titleMapNum;
@@ -1486,7 +1488,10 @@ void F_StartTitleScreen(void)
 	else
 		wipegamestate = GS_TITLESCREEN;
 
-	if (titlemap
+	cache_gametrulystarted = M_GameTrulyStarted();
+
+	if (cache_gametrulystarted == true
+		&& titlemap
 		&& ((titleMapNum = G_MapNumber(titlemap)) < nummapheaders)
 		&& mapheaderinfo[titleMapNum]
 		&& mapheaderinfo[titleMapNum]->lumpnum != LUMPERROR)
@@ -1598,16 +1603,19 @@ void F_TitleScreenDrawer(void)
 {
 	boolean hidepics = false;
 
-#if 0
-	if (modeattacking)
-		return; // We likely came here from retrying. Don't do a damn thing.
-#endif
-
 	// Draw that sky!
-	if (curbgcolor >= 0)
+	if (cache_gametrulystarted == false)
+	{
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+	}
+	else if (curbgcolor >= 0)
+	{
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, curbgcolor);
+	}
 	else if (!curbghide || !titlemapinaction || gamestate == GS_WAITINGPLAYERS)
+	{
 		F_SkyScroll(curbgxspeed, curbgyspeed, curbgname);
+	}
 
 	// Don't draw outside of the title screen, or if the patch isn't there.
 	if (gamestate != GS_TITLESCREEN && gamestate != GS_WAITINGPLAYERS)
@@ -1629,35 +1637,42 @@ void F_TitleScreenDrawer(void)
 
 		case TTMODE_RINGRACERS:
 		{
-			const char *eggName = "eggman";
-			INT32 eggSkin = R_SkinAvailable(eggName);
-			skincolornum_t eggColor = SKINCOLOR_RED;
-			UINT8 *eggColormap = NULL;
-
-			const char *tailsName = "tails";
-			INT32 tailsSkin = R_SkinAvailable(tailsName);
-			skincolornum_t tailsColor = SKINCOLOR_ORANGE;
-			UINT8 *tailsColormap = NULL;
-
-			if (eggSkin != -1)
+			if (cache_gametrulystarted == true)
 			{
-				eggColor = skins[eggSkin].prefcolor;
-			}
-			eggColormap = R_GetTranslationColormap(TC_DEFAULT, eggColor, GTC_MENUCACHE);
+				const char *eggName = "eggman";
+				INT32 eggSkin = R_SkinAvailable(eggName);
+				skincolornum_t eggColor = SKINCOLOR_RED;
+				UINT8 *eggColormap = NULL;
 
-			if (tailsSkin != -1)
+				const char *tailsName = "tails";
+				INT32 tailsSkin = R_SkinAvailable(tailsName);
+				skincolornum_t tailsColor = SKINCOLOR_ORANGE;
+				UINT8 *tailsColormap = NULL;
+
+				if (eggSkin != -1)
+				{
+					eggColor = skins[eggSkin].prefcolor;
+				}
+				eggColormap = R_GetTranslationColormap(TC_DEFAULT, eggColor, GTC_MENUCACHE);
+
+				if (tailsSkin != -1)
+				{
+					tailsColor = skins[tailsSkin].prefcolor;
+				}
+				tailsColormap = R_GetTranslationColormap(TC_DEFAULT, tailsColor, GTC_MENUCACHE);
+
+				V_DrawFixedPatch(0, 0, FRACUNIT, 0, kts_tails_tails, tailsColormap);
+				V_DrawFixedPatch(0, 0, FRACUNIT, V_ADD, kts_electricity[finalecount % 6], NULL);
+
+				V_DrawFixedPatch(0, 0, FRACUNIT, 0, kts_eggman, eggColormap);
+				V_DrawFixedPatch(0, 0, FRACUNIT, 0, kts_tails, tailsColormap);
+
+				V_DrawFixedPatch(0, 0, FRACUNIT, 0, kts_bumper, NULL);
+			}
+			else
 			{
-				tailsColor = skins[tailsSkin].prefcolor;
+				V_DrawCenteredString(BASEVIDWIDTH/2, (BASEVIDHEIGHT/2) - 4, 0, "Press any button/key to continue");
 			}
-			tailsColormap = R_GetTranslationColormap(TC_DEFAULT, tailsColor, GTC_MENUCACHE);
-
-			V_DrawFixedPatch(0, 0, FRACUNIT, 0, kts_tails_tails, tailsColormap);
-			V_DrawFixedPatch(0, 0, FRACUNIT, V_ADD, kts_electricity[finalecount % 6], NULL);
-
-			V_DrawFixedPatch(0, 0, FRACUNIT, 0, kts_eggman, eggColormap);
-			V_DrawFixedPatch(0, 0, FRACUNIT, 0, kts_tails, tailsColormap);
-
-			V_DrawFixedPatch(0, 0, FRACUNIT, 0, kts_bumper, NULL);
 
 			V_DrawFixedPatch(0, 0, FRACUNIT, 0, kts_copyright, NULL);
 			break;
@@ -1796,7 +1811,7 @@ void F_TitleScreenTicker(boolean run)
 	}
 
 	// no demos to play? or, are they disabled?
-	if (!cv_rollingdemos.value)
+	if (!cv_rollingdemos.value || cache_gametrulystarted == false)
 		return;
 
 	#if defined (TESTERS)

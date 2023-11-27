@@ -291,7 +291,8 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 {
 	UINT16 newunlock;
 
-	if (Playing())
+	if (Playing() == true
+	|| M_GameTrulyStarted() == false)
 		return desiredmenu;
 
 	M_UpdateUnlockablesAndExtraEmblems(false, true);
@@ -376,9 +377,8 @@ boolean M_CanKeyHiliTile(void)
 
 	UINT16 i = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
 
-	// Not a hinted tile OR a fresh board.
-	if (!(challengesmenu.extradata[i].flags & CHE_HINT)
-	&& (challengesmenu.unlockcount[CMC_UNLOCKED] > 0))
+	// Not a hinted tile.
+	if (!(challengesmenu.extradata[i].flags & CHE_HINT))
 		return false;
 
 	// Marked as major?

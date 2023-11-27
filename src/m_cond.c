@@ -48,6 +48,9 @@ unlockable_t unlockables[MAXUNLOCKABLES];
 // Number of emblems
 INT32 numemblems = 0;
 
+// The challenge that will truly let the games begin.
+UINT16 gamestartchallenge = 600; // 601
+
 // Create a new gamedata_t, for start-up
 void M_NewGameDataStruct(void)
 {
@@ -3199,6 +3202,27 @@ UINT16 M_CompletionEmblems(void) // Bah! Duplication sucks, but it's for a separ
 // -------------------
 // Quick unlock checks
 // -------------------
+
+boolean M_GameTrulyStarted(void)
+{
+	// Fail safe
+	if (gamedata == NULL)
+		return false;
+
+	// Not set
+	if (gamestartchallenge >= MAXUNLOCKABLES)
+		return true;
+
+	// An unfortunate sidestep, but sync is important.
+	if (netgame)
+		return true;
+
+	// Okay, we can check to see if this challenge has been achieved.
+	return (
+		gamedata->unlockpending[gamestartchallenge]
+		|| gamedata->unlocked[gamestartchallenge]
+	);
+}
 
 boolean M_CheckNetUnlockByID(UINT16 unlockid)
 {

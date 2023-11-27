@@ -435,9 +435,12 @@ void M_UpdateNextPrisonEggPickup(void);
 UINT16 M_CheckLevelEmblems(void);
 UINT16 M_CompletionEmblems(void);
 
+extern UINT16 gamestartchallenge;
+
 // Checking unlockable status
 boolean M_CheckNetUnlockByID(UINT16 unlockid);
 boolean M_SecretUnlocked(INT32 type, boolean local);
+boolean M_GameTrulyStarted(void);
 boolean M_CupLocked(cupheader_t *cup);
 boolean M_CupSecondRowLocked(void);
 boolean M_MapLocked(UINT16 mapnum);
