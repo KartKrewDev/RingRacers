@@ -13,6 +13,7 @@
 #include <optional>
 
 #include "math/fixed.hpp"
+#include "math/line_segment.hpp"
 #include "math/vec.hpp"
 
 #include "doomtype.h"
@@ -31,6 +32,7 @@ namespace srb2
 struct Mobj : mobj_t
 {
 	using fixed = math::Fixed;
+	using line_segment = math::LineSegment<fixed>;
 	using vec2 = math::Vec2<fixed>;
 
 	// TODO: Vec3 would be nice
@@ -119,6 +121,10 @@ struct Mobj : mobj_t
 
 	static void bounce(Mobj* t1, Mobj* t2) { K_KartBouncing(t1, t2); }
 	void solid_bounce(Mobj* solid) { K_KartSolidBounce(this, solid); }
+
+	// A = bottom left corner
+	// this->aabb; the standard bounding box. This is inapproporiate for paper collision!
+	line_segment aabb() const { return {{x - radius, y - radius}, {x + radius, y + radius}}; }
 
 
 	//
