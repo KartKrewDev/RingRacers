@@ -157,7 +157,7 @@ struct Mobj : mobj_t
 
 	void scale(fixed n)
 	{
-		mobj_t::scale = n;
+		P_SetScale(this, n);
 		mobj_t::destscale = n;
 	}
 
@@ -173,7 +173,7 @@ struct Mobj : mobj_t
 
 	void scale_between(fixed start, fixed stop, std::optional<fixed> speed = {})
 	{
-		mobj_t::scale = start;
+		P_SetScale(this, start);
 		scale_to(stop, speed);
 	}
 
