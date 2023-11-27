@@ -17,6 +17,7 @@
 
 #include "doomtype.h"
 #include "k_hitlag.h"
+#include "k_kart.h"
 #include "info.h"
 #include "p_local.h"
 #include "p_mobj.h"
@@ -115,6 +116,9 @@ struct Mobj : mobj_t
 	void set_origin(const PosArg& p) { P_SetOrigin(this, p.x, p.y, p.z); }
 	void instathrust(angle_t angle, fixed speed) { P_InstaThrust(this, angle, speed); }
 	void thrust(angle_t angle, fixed speed) { P_Thrust(this, angle, speed); }
+
+	static void bounce(Mobj* t1, Mobj* t2) { K_KartBouncing(t1, t2); }
+	void solid_bounce(Mobj* solid) { K_KartSolidBounce(this, solid); }
 
 
 	//
