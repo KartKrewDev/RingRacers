@@ -185,6 +185,46 @@ struct Mobj : mobj_t
 
 
 	//
+	// Sprite offsets
+	//
+
+#define FIXED_METHOD(member) \
+	fixed member() const { return mobj_t::member; } \
+	void member(fixed n) { mobj_t::member = n; }
+
+	FIXED_METHOD(spritexscale)
+	FIXED_METHOD(spriteyscale)
+	FIXED_METHOD(spritexoffset)
+	FIXED_METHOD(spriteyoffset)
+	FIXED_METHOD(sprxoff)
+	FIXED_METHOD(spryoff)
+	FIXED_METHOD(sprzoff)
+
+	vec2 spritescale() const { return {spritexscale(), spriteyscale()}; }
+	void spritescale(const vec2& v)
+	{
+		spritexscale(v.x);
+		spriteyscale(v.y);
+	}
+
+	vec2 spriteoffset() const { return {spritexoffset(), spriteyoffset()}; }
+	void spriteoffset(const vec2& v)
+	{
+		spritexoffset(v.x);
+		spriteyoffset(v.y);
+	}
+
+	vec2 sproff2d() const { return {sprxoff(), spryoff()}; }
+	void sproff2d(const vec2& v)
+	{
+		sprxoff(v.x);
+		spryoff(v.y);
+	}
+
+	// TODO: Vec3
+
+
+	//
 	// Sound
 	//
 
