@@ -940,6 +940,7 @@ boolean K_StartCeremony(void)
 		&& mapheaderinfo[podiumMapNum]->lumpnum != LUMPERROR)
 	{
 		gamemap = podiumMapNum+1;
+		g_reloadingMap = false;
 
 		encoremode = grandprixinfo.encore;
 

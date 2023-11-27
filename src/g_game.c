@@ -109,7 +109,8 @@ UINT32 mapmusposition; // Position to jump to
 UINT32 mapmusresume;
 UINT8 mapmusrng; // Random selection result
 
-INT16 gamemap = 1;
+INT16 gamemap = 0;
+boolean g_reloadingMap;
 UINT32 maptol;
 
 preciptype_t globalweather = PRECIP_NONE;
@@ -5925,6 +5926,7 @@ void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skippr
 		}
 	}
 
+	g_reloadingMap = (map == gamemap);
 	gamemap = map;
 
 	automapactive = false;
