@@ -321,6 +321,13 @@ void Obj_PatrolIvoBallInit(mobj_t *mo);
 void Obj_PatrolIvoBallThink(mobj_t *mo);
 void Obj_PatrolIvoBallTouch(mobj_t *special, mobj_t *toucher);
 
+/* SA2 Crates */
+void Obj_BoxSideThink(mobj_t *mo);
+void Obj_TryCrateInit(mobj_t *mo);
+boolean Obj_TryCrateThink(mobj_t *mo);
+void Obj_TryCrateTouch(mobj_t *special, mobj_t *toucher);
+void Obj_TryCrateDamage(mobj_t *target, mobj_t *inflictor);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

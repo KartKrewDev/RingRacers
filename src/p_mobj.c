@@ -6836,6 +6836,19 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		Obj_PatrolIvoBallThink(mobj);
 		return;
 	}
+	case MT_SA2_CRATE:
+	{
+		if (!Obj_TryCrateThink(mobj))
+		{
+			return;
+		}
+		break;
+	}
+	case MT_BOX_SIDE:
+	{
+		Obj_BoxSideThink(mobj);
+		return;
+	}
 	case MT_VWREF:
 	case MT_VWREB:
 	{
@@ -14474,6 +14487,11 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	case MT_PATROLIVOBALL:
 	{
 		Obj_PatrolIvoBallInit(mobj);
+		break;
+	}
+	case MT_SA2_CRATE:
+	{
+		Obj_TryCrateInit(mobj);
 		break;
 	}
 	default:
