@@ -9002,8 +9002,10 @@ void A_SetCustomValue(mobj_t *actor)
 	if (LUA_CallAction(A_SETCUSTOMVALUE, actor))
 		return;
 
+	/*
 	if (cht_debug)
 		CONS_Printf("Init custom value is %d\n", actor->cusval);
+	*/
 
 	if (locvar1 == 0 && locvar2 == 4)
 		return; // DON'T DIVIDE BY ZERO
@@ -9022,8 +9024,10 @@ void A_SetCustomValue(mobj_t *actor)
 	else // replace
 		actor->cusval = locvar1;
 
+	/*
 	if(cht_debug)
 		CONS_Printf("New custom value is %d\n", actor->cusval);
+	*/
 }
 
 // Function: A_UseCusValMemo
