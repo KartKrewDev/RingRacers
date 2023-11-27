@@ -1126,22 +1126,24 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 		{
 			UINT16 bonustime = 10*TICRATE;
 			INT16 clamptime = 0; // Don't allow reserve time past this value (by much)...
-			INT16 mintime = 2*TICRATE; // But give SOME reward for every hit.
+			INT16 mintime = 5*TICRATE; // But give SOME reward for every hit. (This value used for Normal)
 			
 			if (grandprixinfo.gp)
 			{
 				if (grandprixinfo.masterbots)
 				{
-					clamptime = 8*TICRATE;
+					clamptime = 10*TICRATE;
 					mintime = 1*TICRATE;
 				}
 				else if (grandprixinfo.gamespeed == KARTSPEED_HARD)
 				{
-					clamptime = 12*TICRATE;
+					clamptime = 15*TICRATE;
+					mintime = 2*TICRATE;
 				}
 				else if (grandprixinfo.gamespeed == KARTSPEED_NORMAL)
 				{
-					clamptime = 15*TICRATE;
+					clamptime = 20*TICRATE;
+					mintime = 5*TICRATE;
 				}
 				else if (grandprixinfo.gamespeed == KARTSPEED_EASY)
 				{
@@ -1151,8 +1153,16 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 				}
 			}
 
+			UINT16 effectivetime = timelimitintics + extratimeintics - leveltime + starttime;
+
 			if (clamptime) // Lower bonus if you have more reserve, keep it tense.
-				bonustime = Easing_InOutSine(min(FRACUNIT, (timelimitintics - leveltime + starttime) * FRACUNIT / clamptime), clamptime, mintime);
+			{
+				bonustime = Easing_InOutSine(min(FRACUNIT, (effectivetime) * FRACUNIT / clamptime), bonustime, mintime);
+
+				// Quicker rolloff if you're stacking time substantially past clamptime
+				if ((effectivetime + bonustime) > clamptime)
+					bonustime = Easing_InSine(min(FRACUNIT, (effectivetime + bonustime - clamptime) * FRACUNIT / clamptime), bonustime, 1);
+			}
 
 			extratimeintics += bonustime;
 			secretextratime = TICRATE/2;
