@@ -105,7 +105,6 @@ static void G_DoWorldDone(void);
 static void G_DoStartVote(void);
 
 char   mapmusname[7]; // Music name
-UINT16 mapmusflags; // Track and reset bit
 UINT32 mapmusposition; // Position to jump to
 UINT32 mapmusresume;
 UINT8 mapmusrng; // Random selection result
@@ -5927,9 +5926,6 @@ void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skippr
 	}
 
 	gamemap = map;
-
-	// Don't carry over custom music change to another map.
-	mapmusflags |= MUSIC_RELOADRESET;
 
 	automapactive = false;
 	imcontinuing = false;

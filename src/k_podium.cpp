@@ -1034,8 +1034,6 @@ void K_ResetCeremony(void)
 		{
 			mapmusrng--;
 		}
-
-		mapmusflags |= MUSIC_RELOADRESET;
 	}
 
 	if (!grandprixinfo.cup)
