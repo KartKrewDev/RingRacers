@@ -27,16 +27,19 @@ namespace srb2
 
 struct Mobj : mobj_t
 {
+	using fixed = math::Fixed;
+	using vec2 = math::Vec2<fixed>;
+
 	// TODO: Vec3 would be nice
 	struct PosArg
 	{
-		math::Fixed x, y, z;
+		fixed x, y, z;
 
 		PosArg() : PosArg(0, 0, 0) {}
-		PosArg(fixed_t x_, fixed_t y_, fixed_t z_) : x(x_), y(y_), z(z_) {}
+		PosArg(fixed x_, fixed y_, fixed z_) : x(x_), y(y_), z(z_) {}
 
 		template <typename T>
-		PosArg(math::Vec2<T> p, fixed_t z) : PosArg(p.x, p.y, z) {}
+		PosArg(math::Vec2<T> p, fixed z) : PosArg(p.x, p.y, z) {}
 
 		PosArg(const mobj_t* mobj) : PosArg(mobj->x, mobj->y, mobj->z) {}
 	};
@@ -97,19 +100,19 @@ struct Mobj : mobj_t
 
 	PosArg center() const { return {x, y, z + (height / 2)}; }
 	PosArg pos() const { return {x, y, z}; }
-	math::Vec2<math::Fixed> pos2d() const { return {x, y}; }
-	math::Fixed top() const { return z + height; }
+	vec2 pos2d() const { return {x, y}; }
+	fixed top() const { return z + height; }
 
 	bool is_flipped() const { return eflags & MFE_VERTICALFLIP; }
-	math::Fixed flip(fixed_t x) const { return x * P_MobjFlip(this); }
+	fixed flip(fixed x) const { return x * P_MobjFlip(this); }
 
 	// Collision helper
 	bool z_overlaps(const Mobj* b) const { return z < b->top() && b->z < top(); }
 
 	void move_origin(const PosArg& p) { P_MoveOrigin(this, p.x, p.y, p.z); }
 	void set_origin(const PosArg& p) { P_SetOrigin(this, p.x, p.y, p.z); }
-	void instathrust(angle_t angle, fixed_t speed) { P_InstaThrust(this, angle, speed); }
-	void thrust(angle_t angle, fixed_t speed) { P_Thrust(this, angle, speed); }
+	void instathrust(angle_t angle, fixed speed) { P_InstaThrust(this, angle, speed); }
+	void thrust(angle_t angle, fixed speed) { P_Thrust(this, angle, speed); }
 
 
 	//
@@ -150,15 +153,15 @@ struct Mobj : mobj_t
 	// Scale
 	//
 
-	math::Fixed scale() const { return mobj_t::scale; }
+	fixed scale() const { return mobj_t::scale; }
 
-	void scale(fixed_t n)
+	void scale(fixed n)
 	{
 		mobj_t::scale = n;
 		mobj_t::destscale = n;
 	}
 
-	void scale_to(fixed_t stop, std::optional<fixed_t> speed = {})
+	void scale_to(fixed stop, std::optional<fixed> speed = {})
 	{
 		mobj_t::destscale = stop;
 
@@ -168,7 +171,7 @@ struct Mobj : mobj_t
 		}
 	}
 
-	void scale_between(fixed_t start, fixed_t stop, std::optional<fixed_t> speed = {})
+	void scale_between(fixed start, fixed stop, std::optional<fixed> speed = {})
 	{
 		mobj_t::scale = start;
 		scale_to(stop, speed);
