@@ -15,6 +15,8 @@
 #include "math/fixed.hpp"
 #include "math/vec.hpp"
 
+#include "doomtype.h"
+#include "k_hitlag.h"
 #include "info.h"
 #include "p_local.h"
 #include "p_mobj.h"
@@ -196,6 +198,18 @@ struct Mobj : mobj_t
 		{
 			voice(sfx, volume);
 		}
+	}
+
+
+	//
+	// Hitlag
+	//
+
+	INT32 hitlag() const { return mobj_t::hitlag; }
+	void hitlag(INT32 tics, bool damage = false) { K_AddHitLag(this, tics, damage); }
+	void hitlag(Mobj* inflictor, Mobj* source, INT32 tics, bool damage)
+	{
+		K_SetHitLagForObjects(this, inflictor, source, tics, damage);
 	}
 };
 
