@@ -2842,10 +2842,14 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			return false;
 	}
 
-	if (target->type == MT_BALLSWITCH_BALL)
+	switch (target->type)
 	{
-		Obj_BallSwitchDamaged(target, inflictor, source);
-		return false;
+		case MT_BALLSWITCH_BALL:
+			Obj_BallSwitchDamaged(target, inflictor, source);
+			return false;
+
+		default:
+			break;
 	}
 
 	if (!force)
