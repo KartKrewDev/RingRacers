@@ -44,6 +44,8 @@
 #include "acs/interface.h"
 #include "k_powerup.h"
 #include "k_collide.h"
+#include "m_easing.h"
+
 
 // CTF player names
 #define CTFTEAMCODE(pl) pl->ctfteam ? (pl->ctfteam == 1 ? "\x85" : "\x84") : ""
@@ -1123,13 +1125,43 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 		if (timelimitintics)
 		{
 			UINT16 bonustime = 10*TICRATE;
+			INT16 clamptime = 0; // Don't allow reserve time past this value (by much)...
+			INT16 mintime = 5*TICRATE; // But give SOME reward for every hit. (This value used for Normal)
 			
 			if (grandprixinfo.gp)
 			{
 				if (grandprixinfo.masterbots)
-					bonustime = 8*TICRATE;
+				{
+					clamptime = 10*TICRATE;
+					mintime = 1*TICRATE;
+				}
+				else if (grandprixinfo.gamespeed == KARTSPEED_HARD)
+				{
+					clamptime = 15*TICRATE;
+					mintime = 2*TICRATE;
+				}
+				else if (grandprixinfo.gamespeed == KARTSPEED_NORMAL)
+				{
+					clamptime = 20*TICRATE;
+					mintime = 5*TICRATE;
+				}
 				else if (grandprixinfo.gamespeed == KARTSPEED_EASY)
-					bonustime = 15*TICRATE;
+				{
+					// "I think Easy Mode should be about Trying Not To Kill Your Self" -VelocitOni
+					clamptime = 45*TICRATE;
+					mintime = 20*TICRATE;
+				}
+			}
+
+			UINT16 effectivetime = timelimitintics + extratimeintics - leveltime + starttime;
+
+			if (clamptime) // Lower bonus if you have more reserve, keep it tense.
+			{
+				bonustime = Easing_InOutSine(min(FRACUNIT, (effectivetime) * FRACUNIT / clamptime), bonustime, mintime);
+
+				// Quicker rolloff if you're stacking time substantially past clamptime
+				if ((effectivetime + bonustime) > clamptime)
+					bonustime = Easing_InSine(min(FRACUNIT, (effectivetime + bonustime - clamptime) * FRACUNIT / clamptime), bonustime, 1);
 			}
 
 			extratimeintics += bonustime;
