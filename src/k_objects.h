@@ -328,6 +328,10 @@ boolean Obj_TryCrateThink(mobj_t *mo);
 void Obj_TryCrateTouch(mobj_t *special, mobj_t *toucher);
 void Obj_TryCrateDamage(mobj_t *target, mobj_t *inflictor);
 
+/* Lavender Shrine Spears */
+void Obj_SpearInit(mobj_t *mo);
+void Obj_SpearThink(mobj_t *mo);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

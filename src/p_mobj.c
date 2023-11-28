@@ -6850,6 +6850,15 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		Obj_BoxSideThink(mobj);
 		return;
 	}
+	case MT_SPEAR:
+	{
+		Obj_SpearThink(mobj);
+		return;
+	}
+	case MT_SPEARVISUAL:
+	{
+		return;
+	}
 	case MT_VWREF:
 	case MT_VWREB:
 	{
@@ -11020,6 +11029,8 @@ fixed_t P_GetMobjDefaultScale(mobj_t *mobj)
 		case MT_HANAGUMIHALL_STEAM:
 		case MT_HANAGUMIHALL_NPC:
 			return 2*FRACUNIT;
+		case MT_SPEAR:
+			return 2*FRACUNIT;
 		default:
 			break;
 	}
@@ -14494,6 +14505,11 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	case MT_ICECAPBLOCK:
 	{
 		Obj_TryCrateInit(mobj);
+		break;
+	}
+	case MT_SPEAR:
+	{
+		Obj_SpearInit(mobj);
 		break;
 	}
 	default:
