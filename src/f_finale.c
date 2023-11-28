@@ -284,7 +284,8 @@ static void F_TitleBGScroll(INT32 scrollspeed)
 // =============
 //  INTRO SCENE
 // =============
-#define NUMINTROSCENES 1
+#define NUMINTROSCENES 5
+#define INTROSCENE_KREW 2 // first scene with Kart Krew Dev
 INT32 intro_scenenum = 0;
 INT32 intro_curtime = 0;
 
@@ -292,7 +293,11 @@ const char *introtext[NUMINTROSCENES];
 
 static tic_t introscenetime[NUMINTROSCENES] =
 {
-	 4*TICRATE,	// KART KR(eW
+	2*TICRATE,				// OUR SRB2 ASSOCIATES
+	TICRATE,				// Listen to Funtown USA by tv room
+	(3*TICRATE)/2,			// KKD
+	(2*TICRATE)/3,			// S&K
+	TICRATE + (TICRATE/3),	// Get ready !!
 };
 
 // custom intros
@@ -306,9 +311,15 @@ void F_StartIntro(void)
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 		F_WipeEndScreen();
 		F_RunWipe(wipe_intro_toblack, wipedefs[wipe_intro_toblack], false, "FADEMAP0", false, false);
+
+		D_ClearState();
 	}
 
+	M_ClearMenus(false);
+	D_SetDeferredStartTitle(false);
+
 	Music_StopAll();
+	Music_Stop("title");
 	S_StopSounds();
 
 	if (introtoplay)
@@ -323,16 +334,15 @@ void F_StartIntro(void)
 	introtext[0] = " #";
 
 	G_SetGamestate(GS_INTRO);
+	wipegamestate = gamestate;
 	gameaction = ga_nothing;
 	paused = false;
 	CON_ToggleOff();
-	F_NewCutscene(introtext[0]);
+	//F_NewCutscene(introtext[0]);
 
 	intro_scenenum = 0;
 	finalecount = animtimer = skullAnimCounter = stoptimer = 0;
 	timetonext = introscenetime[intro_scenenum];
-
-	Music_StopAll();
 }
 
 //
@@ -340,31 +350,80 @@ void F_StartIntro(void)
 //
 static void F_IntroDrawScene(void)
 {
-	boolean highres = true;
-	INT32 cx = 8, cy = 128;
-	patch_t *background = NULL;
+	INT32 cx = 68*FRACUNIT, cy = 20*FRACUNIT;
+	INT32 jitterx = 0, jittery = 0;
 	INT32 bgxoffs = 0;
+	patch_t *logoparts[5];
+	UINT8 bgcol = 31;
 
-	// DRAW A FULL PIC INSTEAD OF FLAT!
-	if (intro_scenenum == 0)
+	if (intro_scenenum < INTROSCENE_KREW)
 	{
-		background = W_CachePatchName("KARTKREW", PU_CACHE);
-		highres = true;
+		logoparts[0] = NULL;
 	}
-
-	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
-
-	if (background)
+	else if (intro_scenenum == INTROSCENE_KREW)
 	{
-		if (highres)
-			V_DrawSmallScaledPatch(bgxoffs, 0, 0, background);
+		logoparts[0] = W_CachePatchName("KKLOGO_C", PU_CACHE);
+		logoparts[1] = W_CachePatchName("KKTEXT_C", PU_CACHE);
+		logoparts[2] = NULL;
+
+		bgcol = 0;
+	}
+	else
+	{
+		logoparts[0] = W_CachePatchName("KKLOGO_A", PU_CACHE);
+		logoparts[1] = W_CachePatchName("KKLOGO_B", PU_CACHE);
+		logoparts[2] = W_CachePatchName("KKTEXT_A", PU_CACHE);
+		logoparts[3] = W_CachePatchName("KKTEXT_B", PU_CACHE);
+		logoparts[4] = NULL;
+
+		if (intro_scenenum == INTROSCENE_KREW+1)
+		{
+			bgxoffs = 1 + P_RandomKey(PR_INTERPHUDRANDOM, 8);
+
+			bgcol -= (timetonext * 31) / introscenetime[intro_scenenum];
+
+			const angle_t fa = (FixedAngle(intro_curtime*FRACUNIT) >> ANGLETOFINESHIFT) & FINEMASK;
+
+			jitterx = FINECOSINE(fa);
+			jittery = FINESINE(fa);
+
+			if (finalecount & 1)
+			{
+				jitterx = -jitterx;
+				jittery = -jittery;
+				bgxoffs = -bgxoffs;
+			}
+		}
 		else
-			V_DrawScaledPatch(bgxoffs, 0, 0, background);
+		{
+			bgxoffs = (1 + 8) + ((1 + intro_curtime) * 24);
+		}
 	}
 
-	W_UnlockCachedPatch(background);
+	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, bgcol);
 
-	V_DrawString(cx, cy, 0, cutscene_disptext);
+	UINT8 i;
+	for (i = 0; logoparts[i]; i++)
+	{
+		V_DrawFixedPatch(
+			cx + jitterx + (bgxoffs * FRACUNIT),
+			cy + jittery,
+			FRACUNIT,
+			0,
+			logoparts[i],
+			NULL
+		);
+
+		bgxoffs = -bgxoffs;
+
+		if (i == 1)
+		{
+			jitterx = -jitterx;
+			jittery = -jittery;
+		}
+	}
+
+	//V_DrawString(cx, cy, 0, cutscene_disptext);
 }
 
 //
@@ -372,7 +431,21 @@ static void F_IntroDrawScene(void)
 //
 void F_IntroDrawer(void)
 {
-	// Used to be this whole thing, but now...
+	if (intro_scenenum == 0)
+	{
+		if (intro_curtime <= 5)
+		{
+			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 157);
+			return;
+		}
+
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
+		V_DrawScaledPatch(0, 0, 0,
+			W_CachePatchName("STARTUP", PU_CACHE));
+
+		return;
+	}
+
 	F_IntroDrawScene();
 }
 
@@ -392,66 +465,28 @@ void F_IntroTicker(void)
 		return;
 	}
 
-	if (intro_scenenum == 0)
+	if (timetonext <= 0)
 	{
-		if (timetonext <= 0)
+		intro_scenenum++;
+		if (intro_scenenum == NUMINTROSCENES)
 		{
-#if 0 // The necessary apparatus for constructing more elaborate intros...
-			intro_scenenum++;
-			F_NewCutscene(introtext[intro_scenenum]);
-			timetonext = introscenetime[intro_scenenum];
-			wipegamestate = -1;
-			animtimer = stoptimer = 0;
-#endif
-			if (rendermode != render_none)
-			{
-				F_WipeStartScreen();
-				F_WipeColorFill(31);
-				F_WipeEndScreen();
-				F_RunWipe(wipe_intro_toblack, 99, true, "FADEMAP0", false, false);
-			}
-
-			// Stay on black for a bit. =)
-			{
-				tic_t nowtime, quittime, lasttime;
-				nowtime = lasttime = I_GetTime();
-				quittime = nowtime + NEWTICRATE*2; // Shortened the quit time, used to be 2 seconds
-				while (quittime > nowtime)
-				{
-					while (!((nowtime = I_GetTime()) - lasttime))
-					{
-						I_Sleep(cv_sleep.value);
-						I_UpdateTime(cv_timescale.value);
-					}
-					lasttime = nowtime;
-
-					I_OsPolling();
-					I_UpdateNoBlit();
-#ifdef HAVE_THREADS
-					I_lock_mutex(&k_menu_mutex);
-#endif
-					M_Drawer(); // menu is drawn even on top of wipes
-#ifdef HAVE_THREADS
-					I_unlock_mutex(k_menu_mutex);
-#endif
-					I_FinishUpdate(); // Update the screen with the image Tails 06-19-2001
-
-#ifdef HWRENDER
-					if (moviemode && rendermode == render_opengl) // make sure we save frames for the white hold too
-						M_LegacySaveFrame();
-					else
-#endif
-					if (moviemode && rendermode != render_none)
-						I_CaptureVideoFrame();
-				}
-			}
-
 			D_StartTitle();
+			// Custom built fade to skip the to-black
+			//wipetypepre = INT16_MAX; -- however, this breaks the title screen cacheing and I don't know why and I'm tired of fighting it.
 			return;
 		}
-		if (finalecount == 8)
+		//F_NewCutscene(introtext[intro_scenenum]);
+		timetonext = introscenetime[intro_scenenum];
+		animtimer = stoptimer = 0;
+		if (intro_scenenum == INTROSCENE_KREW)
+			wipegamestate = -1;
+	}
+
+	if (intro_scenenum == INTROSCENE_KREW)
+	{
+		if (timetonext == 5)
 			S_StartSound(NULL, sfx_vroom);
-		else if (finalecount == 47)
+		else if (timetonext == 24)
 		{
 			// Need to use M_Random otherwise it always uses the same sound
 			UINT32 rskin = R_GetLocalRandomSkin();
@@ -1553,6 +1588,9 @@ void F_StartTitleScreen(void)
 
 	F_InitMenuPresValues();
 	F_CacheTitleScreen();
+
+	if (menumessage.active && !menumessage.closing)
+		menumessage.fadetimer = 1;
 }
 
 void F_VersionDrawer(void)

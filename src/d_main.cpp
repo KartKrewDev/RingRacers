@@ -396,13 +396,16 @@ static bool D_Display(void)
 
 	// save the current screen if about to wipe
 	wipe = (gamestate != wipegamestate);
-	if (wipe && wipetypepre != INT16_MAX)
+	if (wipe)
 	{
-		// set for all later
+		// MUST be set for all later
 		wipedefindex = gamestate; // wipe_xxx_toblack
 		if (gamestate == GS_TITLESCREEN && wipegamestate != GS_INTRO)
 			wipedefindex = wipe_titlescreen_toblack;
+	}
 
+	if (wipe && wipetypepre != INT16_MAX)
+	{
 		if (wipetypepre < 0 || !F_WipeExists(wipetypepre))
 			wipetypepre = wipedefs[wipedefindex];
 
@@ -1113,7 +1116,7 @@ void D_StartTitle(void)
 
 void D_SetDeferredStartTitle(boolean deferred)
 {
-	g_deferredtitle = true;
+	g_deferredtitle = deferred;
 }
 
 boolean D_IsDeferredStartTitle(void)
