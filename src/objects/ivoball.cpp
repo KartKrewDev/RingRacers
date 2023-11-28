@@ -64,7 +64,7 @@ struct IvoBall : Mobj
 		Fixed wave{(x / mapobjectscale) + (y / mapobjectscale)};
 		offset(wave / kRippleFactor);
 		color = SKINCOLOR_TANGERINE;
-		sprzoff = kFloat * mapobjectscale;
+		sprzoff(kFloat * mapobjectscale);
 	}
 
 	void think()
@@ -81,7 +81,7 @@ struct IvoBall : Mobj
 
 		fixed_t ballTimer = leveltime + offset();
 		Fixed bob = kBobHeight * Fixed {FSIN((M_TAU_FIXED * kBobTime) * ballTimer)};
-		spriteyoffset = bob;
+		spriteyoffset(bob);
 
 		colorized = !((ballTimer / kFlashTime) & 1);
 	}
