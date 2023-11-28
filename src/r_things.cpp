@@ -1656,8 +1656,6 @@ static void R_ProjectBoundingBox(mobj_t *thing, vissprite_t *vis)
 
 		box->sortscale = vis->sortscale; // link sorting to sprite
 		box->dispoffset = vis->dispoffset + 5;
-
-		box->cut = static_cast<spritecut_e>(box->cut | SC_LINKDRAW);
 	}
 	else
 	{
