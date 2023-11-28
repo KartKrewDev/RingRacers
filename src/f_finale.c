@@ -439,7 +439,7 @@ void F_IntroDrawer(void)
 			return;
 		}
 
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 		V_DrawScaledPatch(0, 0, 0,
 			W_CachePatchName("STARTUP", PU_CACHE));
 
