@@ -118,7 +118,7 @@ struct AnyBox : Graphic
 
 	void update()
 	{
-		visit([](auto box) { box->mobj_t::z++; });
+		visit([](auto box) { box->mobj_t::eflags &= ~MFE_ONGROUND; });
 	}
 };
 
