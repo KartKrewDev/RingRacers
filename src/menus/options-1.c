@@ -135,16 +135,22 @@ boolean M_OptionsQuit(void)
 
 void M_OptionsTick(void)
 {
-	optionsmenu.offset /= 2;
+	boolean instanttransmission = optionsmenu.ticker == 0 && menuwipe;
+
 	optionsmenu.ticker++;
 
-	optionsmenu.optx += (optionsmenu.toptx - optionsmenu.optx)/2;
-	optionsmenu.opty += (optionsmenu.topty - optionsmenu.opty)/2;
-
-	if (abs(optionsmenu.optx - optionsmenu.opty) < 2)
+	if (!instanttransmission)
 	{
-		optionsmenu.optx = optionsmenu.toptx;
-		optionsmenu.opty = optionsmenu.topty;	// Avoid awkward 1 px errors.
+		optionsmenu.offset /= 2;
+	
+		optionsmenu.optx += (optionsmenu.toptx - optionsmenu.optx)/2;
+		optionsmenu.opty += (optionsmenu.topty - optionsmenu.opty)/2;
+
+		if (abs(optionsmenu.optx - optionsmenu.opty) < 2)
+		{
+			optionsmenu.optx = optionsmenu.toptx;
+			optionsmenu.opty = optionsmenu.topty;	// Avoid awkward 1 px errors.
+		}
 	}
 
 	// Move the button for cool animations
@@ -177,8 +183,21 @@ void M_OptionsTick(void)
 		optionsmenu.fade--;
 
 	// change the colour if we aren't matching the current menu colour
-	if (optionsmenu.currcolour != currentMenu->extra1)
-		M_OptionsChangeBGColour(currentMenu->extra1);
+	if (instanttransmission)
+	{
+		optionsmenu.currcolour = currentMenu->extra1;
+		optionsmenu.offset = optionsmenu.fade = 0;
+
+		optionsmenu.optx = optionsmenu.toptx;
+		optionsmenu.opty = optionsmenu.topty;
+	}
+	else
+	{
+		if (optionsmenu.fade)
+			optionsmenu.fade--;
+		if (optionsmenu.currcolour != currentMenu->extra1)
+			M_OptionsChangeBGColour(currentMenu->extra1);
+	}
 
 	// And one last giggle...
 	if (shitsfree)
