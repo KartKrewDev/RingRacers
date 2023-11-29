@@ -1001,6 +1001,15 @@ char sprnames[NUMSPRITES + 1][5] =
 
 	"LCLA",
 
+	"AIZ1",
+	"AIZ2",
+	"AIZ3",
+	"AIZ4",
+	"AIZ5",
+	"AIZ6",
+	"AZR1",
+	"AZR2",
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	"VIEW",
 };
@@ -5725,6 +5734,21 @@ state_t states[NUMSTATES] =
 	{SPR_LCLA, 0|FF_FULLBRIGHT|FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_NULL},           // S_BETA_PARTICLE_WHEEL
 	{SPR_LCLA, 1|FF_FULLBRIGHT|FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_NULL},           // S_BETA_PARTICLE_ICON
 	{SPR_LCLA, 2|FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL},           // S_BETA_PARTICLE_EXPLOSION
+
+	// MT_AIZ_REDFERN
+	{SPR_AIZ1, 0, 1, {NULL}, 0, 0, S_AIZFL1},       // S_AIZFL1
+	{SPR_AIZ2, 0, 1, {NULL}, 0, 0, S_AIZFR1},       // S_AIZFR1
+	{SPR_AIZ3, 0, 1, {NULL}, 0, 0, S_AIZFR2},       // S_AIZFR2
+	{SPR_AIZ4, 0, 1, {NULL}, 0, 0, S_AIZTRE},       // S_AIZTRE
+	{SPR_AIZ5, 0, 1, {NULL}, 0, 0, S_AIZFR3},       // S_AIZFR3
+	{SPR_AIZ6, 0, 10, {NULL}, 0, 0, S_AIZDB2},      // S_AIZDB1
+	{SPR_AIZ6, 1, 8, {NULL}, 0, 0, S_AIZDB3},       // S_AIZDB2
+	{SPR_AIZ6, 2, 6, {NULL}, 0, 0, S_AIZDB4},       // S_AIZDB3
+	{SPR_AIZ6, 3, 6, {NULL}, 0, 0, S_AIZDB5},       // S_AIZDB4
+	{SPR_AIZ6, 4, 6, {NULL}, 0, 0, S_AIZDB6},       // S_AIZDB5
+	{SPR_AIZ6, 5, 8, {NULL}, 0, 0, S_AIZDB7},       // S_AIZDB6
+	{SPR_AIZ6, 6, 8, {NULL}, 0, 0, S_AIZDB8},       // S_AIZDB7
+	{SPR_AIZ6, 7, 10, {NULL}, 0, 0, S_AIZDB1},      // S_AIZDB8
 };
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] =
@@ -32638,6 +32662,162 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,       // activesound
 		MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP|MF_NOHITLAGFORME|MF_SPECIAL|MF_DONTPUNT, // flags
 		S_NULL          // raisestate
+	},
+	{           // MT_AIZ_REDFERN
+		2910,         // doomednum
+		S_AIZFL1,     // spawnstate
+		1000,         // spawnhealth
+		S_NULL,       // seestate
+		sfx_None,     // seesound
+		0,            // reactiontime
+		sfx_None,     // attacksound
+		S_NULL,       // painstate
+		0,            // painchance
+		sfx_None,     // painsound
+		S_NULL,       // meleestate
+		S_NULL,       // missilestate
+		S_NULL,       // deathstate
+		S_NULL,       // xdeathstate
+		sfx_None,     // deathsound
+		0,            // speed
+		12*FRACUNIT,  // radius
+		64*FRACUNIT,  // height
+		0,            // dispoffset
+		0,            // mass
+		0,            // damage
+		sfx_None,     // activesound
+		MF_SCENERY,   // flags
+		S_NULL        // raisestate
+	},
+	{           // MT_AIZ_FERN1
+		2911,         // doomednum
+		S_AIZFR1,     // spawnstate
+		1000,         // spawnhealth
+		S_NULL,       // seestate
+		sfx_None,     // seesound
+		0,            // reactiontime
+		sfx_None,     // attacksound
+		S_NULL,       // painstate
+		0,            // painchance
+		sfx_None,     // painsound
+		S_NULL,       // meleestate
+		S_NULL,       // missilestate
+		S_NULL,       // deathstate
+		S_NULL,       // xdeathstate
+		sfx_None,     // deathsound
+		0,            // speed
+		16*FRACUNIT,  // radius
+		72*FRACUNIT,  // height
+		0,            // dispoffset
+		0,            // mass
+		0,            // damage
+		sfx_None,     // activesound
+		MF_SCENERY,   // flags
+		S_NULL        // raisestate
+	},
+	{           // MT_AIZ_FERN2
+		2912,         // doomednum
+		S_AIZFR2,     // spawnstate
+		1000,         // spawnhealth
+		S_NULL,       // seestate
+		sfx_None,     // seesound
+		0,            // reactiontime
+		sfx_None,     // attacksound
+		S_NULL,       // painstate
+		0,            // painchance
+		sfx_None,     // painsound
+		S_NULL,       // meleestate
+		S_NULL,       // missilestate
+		S_NULL,       // deathstate
+		S_NULL,       // xdeathstate
+		sfx_None,     // deathsound
+		0,            // speed
+		16*FRACUNIT,  // radius
+		64*FRACUNIT,  // height
+		0,            // dispoffset
+		0,            // mass
+		0,            // damage
+		sfx_None,     // activesound
+		MF_SCENERY,   // flags
+		S_NULL        // raisestate
+	},
+	{           // MT_AIZ_TREE
+		2913,         // doomednum
+		S_AIZTRE,     // spawnstate
+		1000,         // spawnhealth
+		S_NULL,       // seestate
+		sfx_None,     // seesound
+		0,            // reactiontime
+		sfx_None,     // attacksound
+		S_NULL,       // painstate
+		0,            // painchance
+		sfx_None,     // painsound
+		S_NULL,       // meleestate
+		S_NULL,       // missilestate
+		S_NULL,       // deathstate
+		S_NULL,       // xdeathstate
+		sfx_None,     // deathsound
+		0,            // speed
+		9*FRACUNIT,   // radius
+		115*FRACUNIT, // height
+		0,            // dispoffset
+		100,          // mass
+		0,            // damage
+		sfx_None,     // activesound
+		MF_SCENERY|MF_SOLID, // flags
+		S_NULL        // raisestate
+	},
+	{           // MT_AIZ_FERN3
+		2914,         // doomednum
+		S_AIZFR3,     // spawnstate
+		1000,         // spawnhealth
+		S_NULL,       // seestate
+		sfx_None,     // seesound
+		0,            // reactiontime
+		sfx_None,     // attacksound
+		S_NULL,       // painstate
+		0,            // painchance
+		sfx_None,     // painsound
+		S_NULL,       // meleestate
+		S_NULL,       // missilestate
+		S_NULL,       // deathstate
+		S_NULL,       // xdeathstate
+		sfx_None,     // deathsound
+		0,            // speed
+		16*FRACUNIT,  // radius
+		24*FRACUNIT,  // height
+		0,            // dispoffset
+		0,            // mass
+		0,            // damage
+		sfx_None,     // activesound
+		MF_SCENERY,   // flags
+		S_NULL        // raisestate
+	},
+	{           // MT_AIZ_DDB
+		2915,         // doomednum
+		S_AIZDB1,     // spawnstate
+		1000,         // spawnhealth
+		S_NULL,       // seestate
+		sfx_None,     // seesound
+		0,            // reactiontime
+		sfx_None,     // attacksound
+		S_NULL,       // painstate
+		0,            // painchance
+		sfx_None,     // painsound
+		S_NULL,       // meleestate
+		S_NULL,       // missilestate
+		S_NULL,       // deathstate
+		S_NULL,       // xdeathstate
+		sfx_None,     // deathsound
+		0,            // speed
+		8*FRACUNIT,   // radius
+		20*FRACUNIT,  // height
+		0,            // dispoffset
+		0,            // mass
+		0,            // damage
+		sfx_None,     // activesound
+		MF_SCENERY,   // flags
+		S_NULL        // raisestate
 	},
 };
 

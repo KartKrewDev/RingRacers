@@ -4864,6 +4864,21 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_BETA_PARTICLE_WHEEL",
 	"S_BETA_PARTICLE_ICON",
 	"S_BETA_PARTICLE_EXPLOSION",
+
+	// MT_AIZ_REDFERN
+	"S_AIZFL1",
+	"S_AIZFR1",
+	"S_AIZFR2",
+	"S_AIZTRE",
+	"S_AIZFR3",
+	"S_AIZDB1",
+	"S_AIZDB2",
+	"S_AIZDB3",
+	"S_AIZDB4",
+	"S_AIZDB5",
+	"S_AIZDB6",
+	"S_AIZDB7",
+	"S_AIZDB8",
 };
 
 // RegEx to generate this from info.h: ^\tMT_([^,]+), --> \t"MT_\1",
@@ -6108,6 +6123,13 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_BETA_PARTICLE_PHYSICAL",
 	"MT_BETA_PARTICLE_VISUAL",
 	"MT_BETA_PARTICLE_EXPLOSION",
+
+	"MT_AIZ_REDFERN",
+	"MT_AIZ_FERN1",
+	"MT_AIZ_FERN2",
+	"MT_AIZ_TREE",
+	"MT_AIZ_FERN3",
+	"MT_AIZ_DDB",
 };
 
 const char *const MOBJFLAG_LIST[] = {

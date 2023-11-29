@@ -11070,6 +11070,13 @@ fixed_t P_GetMobjDefaultScale(mobj_t *mobj)
 			return 2*FRACUNIT;
 		case MT_BETA_EMITTER:
 			return 4*FRACUNIT;
+		case MT_AIZ_REDFERN:
+		case MT_AIZ_FERN1:
+		case MT_AIZ_FERN2:
+		case MT_AIZ_FERN3:
+		case MT_AIZ_TREE:
+		case MT_AIZ_DDB:
+			return 4*FRACUNIT;
 		default:
 			break;
 	}
