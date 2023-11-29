@@ -61,7 +61,7 @@ void M_FirstPickProfile(INT32 c)
 }
 
 // Start menu edition. Call this with MA_YES if not used with a textbox.
-static void M_StartEditProfile(INT32 c)
+void M_StartEditProfile(INT32 c)
 {
 
 	const INT32 maxp = PR_GetNumProfiles();
@@ -114,6 +114,7 @@ static void M_StartEditProfile(INT32 c)
 			OPTIONS_EditProfile[popt_char].status |= IT_TRANSTEXT;
 		}
 
+		OPTIONS_EditProfileDef.prevMenu = currentMenu;
 		M_SetupNextMenu(&OPTIONS_EditProfileDef, false);
 		return;
 	}

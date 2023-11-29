@@ -200,6 +200,13 @@ typedef enum
 	quitkart
 } main_e;
 
+extern menuitem_t MAIN_Goner[];
+extern menu_t MAIN_GonerDef;
+
+void M_GonerTick(void);
+void M_GonerProfile(INT32 choice);
+void M_GonerTutorial(INT32 choice);
+
 extern menuitem_t PLAY_CharSelect[];
 extern menu_t PLAY_CharSelectDef;
 
@@ -330,6 +337,8 @@ typedef enum
 
 extern menuitem_t OPTIONS_EditProfile[];
 extern menu_t OPTIONS_EditProfileDef;
+
+void M_StartEditProfile(INT32 c);
 
 extern menuitem_t OPTIONS_ProfileControls[];
 extern menu_t OPTIONS_ProfileControlsDef;
@@ -989,6 +998,9 @@ void M_OptionsTick(void);
 boolean M_OptionsInputs(INT32 ch);
 boolean M_OptionsQuit(void);	// resets buttons when you quit the options.
 void M_OptionsChangeBGColour(INT16 newcolour);	// changes the background colour for options
+
+void M_VideoOptions(INT32 choice);
+void M_SoundOptions(INT32 choice);
 
 void M_HandleItemToggles(INT32 choice);	// For item toggling
 void M_EraseData(INT32 choice);	// For data erasing

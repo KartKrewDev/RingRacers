@@ -3,6 +3,7 @@
 
 #include "../k_menu.h"
 #include "../s_sound.h"
+#include "../m_cond.h"
 
 menuitem_t OPTIONS_EditProfile[] = {
 	{IT_STRING | IT_CVAR | IT_CV_STRING, "Profile Name", "6-character long name to identify this Profile.",
@@ -76,9 +77,17 @@ static boolean M_ProfileEditEnd(const UINT8 pid)
 
 static void M_ProfileEditExit(void)
 {
-	optionsmenu.toptx = 160;
-	optionsmenu.topty = 35;
-	optionsmenu.resetprofile = true;	// Reset profile after the transition is done.
+	if (M_GameTrulyStarted() == true)
+	{
+		optionsmenu.toptx = 160;
+		optionsmenu.topty = 35;
+		optionsmenu.resetprofile = true;	// Reset profile after the transition is done.
+	}
+	else
+	{
+		M_ResetOptions();			// Reset all options variables otherwise things are gonna go reaaal bad lol.
+		optionsmenu.profile = NULL;	// Make sure to get rid of that, too.
+	}
 
 	PR_SaveProfiles();					// save profiles after we do that.
 }

@@ -357,6 +357,11 @@ void M_PlayMenuJam(void)
 	menu_t *refMenu = (menuactive ? currentMenu : restoreMenu);
 	static boolean musicstatepermitted = false;
 
+	if (M_GameTrulyStarted() == false)
+	{
+		return;
+	}
+
 	if (challengesmenu.pending)
 	{
 		Music_StopAll();
@@ -558,7 +563,16 @@ void M_StartControlPanel(void)
 
 		Music_Stop("title");
 
-		if (cv_currprofile.value == -1) // Only ask once per session.
+		if (M_GameTrulyStarted() == false)
+		{
+			// Are you ready for the First Boot Experience?
+			M_ResetOptions();
+			currentMenu = &MAIN_GonerDef;
+			currentMenu->lastOn = 0;
+			Music_Remap("menu_nocred", "_GONER");
+			Music_Play("menu_nocred");
+		}
+		else if (cv_currprofile.value == -1) // Only ask once per session.
 		{
 			// Make sure the profile data is ready now since we need to select a profile.
 			M_ResetOptions();
@@ -570,8 +584,9 @@ void M_StartControlPanel(void)
 			// options don't need initializing here.
 
 			// make sure we don't overstep that.
-			if (optionsmenu.profilen > PR_GetNumProfiles())
-				optionsmenu.profilen = PR_GetNumProfiles();
+			const INT32 maxp = PR_GetNumProfiles();
+			if (optionsmenu.profilen > maxp)
+				optionsmenu.profilen = maxp;
 			else if (optionsmenu.profilen < 0)
 				optionsmenu.profilen = 0;
 

@@ -13,11 +13,11 @@ menuitem_t OPTIONS_Main[] =
 	{IT_STRING | IT_CALL, "Profile Setup", "Remap keys & buttons to your likings.",
 		NULL, {.routine = M_ProfileSelectInit}, 0, 0},
 
-	{IT_STRING | IT_SUBMENU, "Video Options", "Change video settings such as the resolution.",
-		NULL, {.submenu = &OPTIONS_VideoDef}, 0, 0},
+	{IT_STRING | IT_CALL, "Video Options", "Change video settings such as the resolution.",
+		NULL, {.routine = M_VideoOptions}, 0, 0},
 
 	{IT_STRING | IT_SUBMENU, "Sound Options", "Adjust various sound settings such as the volume.",
-		NULL, {.submenu = &OPTIONS_SoundDef}, 0, 0},
+		NULL, {.routine = M_SoundOptions}, 0, 0},
 
 	{IT_STRING | IT_SUBMENU, "HUD Options", "Options related to the Heads-Up Display.",
 		NULL, {.submenu = &OPTIONS_HUDDef}, 0, 0},
@@ -202,6 +202,23 @@ void M_OptionsTick(void)
 	// And one last giggle...
 	if (shitsfree)
 		shitsfree--;
+}
+static void M_OptionsMenuGoto(menu_t *assignment)
+{
+	assignment->prevMenu = currentMenu;
+	M_SetupNextMenu(assignment, false);
+}
+
+void M_VideoOptions(INT32 choice)
+{
+	(void)choice;
+	M_OptionsMenuGoto(&OPTIONS_VideoDef);
+}
+
+void M_SoundOptions(INT32 choice)
+{
+	(void)choice;
+	M_OptionsMenuGoto(&OPTIONS_SoundDef);
 }
 
 boolean M_OptionsInputs(INT32 ch)
