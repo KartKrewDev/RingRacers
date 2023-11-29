@@ -4354,12 +4354,14 @@ void M_DrawVideoModes(void)
 				(SCR_IsAspectCorrect(cv_scr_width.value, cv_scr_height.value)) ? 0x83 : 0x80,
 				cv_scr_width.value, cv_scr_height.value));
 
-		V_DrawCenteredString(BASEVIDWIDTH/2 + menutransition.tics*64, currentMenu->y + 75+16,
-			recommendedflags, "Marked modes are recommended.");
 		V_DrawCenteredString(BASEVIDWIDTH/2 + menutransition.tics*64, currentMenu->y + 75+24,
-			highlightflags, "Other modes may have visual errors.");
-		V_DrawCenteredString(BASEVIDWIDTH/2 + menutransition.tics*64, currentMenu->y + 75+32,
-			highlightflags, "Larger modes may have performance issues.");
+			recommendedflags, "Modes marked in GREEN are recommended.");
+		/*
+		V_DrawCenteredString(BASEVIDWIDTH/2 + menutransition.tics*64, currentMenu->y + 75+16,
+			highlightflags, "High resolutions stress your PC more, but will");
+		V_DrawCenteredString(BASEVIDWIDTH/2 + menutransition.tics*64, currentMenu->y + 75+24,
+			highlightflags, "look sharper. Balance visual quality and FPS!");
+		*/
 	}
 
 	// Draw the cursor for the VidMode menu
