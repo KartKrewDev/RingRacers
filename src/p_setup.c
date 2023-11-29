@@ -8069,7 +8069,7 @@ static void P_InitMinimapInfo(void)
 
 void P_ResetLevelMusic(void)
 {
-	mapmusrng = 0;
+	UINT8 idx = 0;
 
 	if (mapheaderinfo[gamemap-1]->musname_size > 1)
 	{
@@ -8090,11 +8090,22 @@ void P_ResetLevelMusic(void)
 
 		if (tempmapmus_size > 1)
 		{
-			mapmusrng = P_RandomKey(PR_MUSICSELECT, tempmapmus_size);
+			if (g_reloadingMap)
+			{
+				// If restarting the map, simply cycle
+				// through available alt music.
+				idx = (mapmusrng + 1) % tempmapmus_size;
+			}
+			else
+			{
+				idx = P_RandomKey(PR_MUSICSELECT, tempmapmus_size);
+			}
 			//CONS_Printf("Rolled position %u, maps to %u\n", mapmusrng, tempmapmus[mapmusrng]);
-			mapmusrng = tempmapmus[mapmusrng];
+			idx = tempmapmus[idx];
 		}
 	}
+
+	mapmusrng = idx;
 }
 
 void P_LoadLevelMusic(void)

@@ -299,9 +299,6 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 	} else if (fastcmp(word,"mapmusname")) {
 		lua_pushstring(L, mapmusname);
 		return 1;
-	} else if (fastcmp(word,"mapmusflags")) {
-		lua_pushinteger(L, mapmusflags);
-		return 1;
 	} else if (fastcmp(word,"mapmusposition")) {
 		lua_pushinteger(L, mapmusposition);
 		return 1;
@@ -424,8 +421,6 @@ int LUA_WriteGlobals(lua_State *L, const char *word)
 
 		strncpy(mapmusname, str, strlength);
 	}
-	else if (fastcmp(word, "mapmusflags"))
-		mapmusflags = (UINT16)luaL_checkinteger(L, 2);
 	else if (fastcmp(word, "mapmusrng"))
 		mapmusrng = (UINT8)luaL_checkinteger(L, 2);
 	// SRB2Kart

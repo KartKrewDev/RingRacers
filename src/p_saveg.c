@@ -6422,16 +6422,12 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 		gametic = READUINT32(save->p);
 
 	gamemap = READINT16(save->p);
+	g_reloadingMap = false;
 
 	// gamemap changed; we assume that its map header is always valid,
 	// so make it so
 	if (!gamemap || gamemap > nummapheaders || !mapheaderinfo[gamemap-1])
 		I_Error("P_NetUnArchiveMisc: Internal map ID %d not found (nummapheaders = %d)", gamemap-1, nummapheaders);
-
-	// tell the sound code to reset the music since we're skipping what
-	// normally sets this flag
-	if (!reloading)
-		mapmusflags |= MUSIC_RELOADRESET;
 
 	G_SetGamestate(READINT16(save->p));
 
