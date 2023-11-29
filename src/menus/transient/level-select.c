@@ -569,8 +569,15 @@ boolean M_LevelListFromGametype(INT16 gt)
 
 	if (gt != -1)
 	{
-		PLAY_LevelSelectDef.prevMenu = currentMenu;
-		M_SetupNextMenu(&PLAY_LevelSelectDef, false);
+		if (levellist.levelsearch.tutorial && levellist.mapcount == 1)
+		{
+			M_LevelSelected(0); // Skip the list!
+		}
+		else
+		{
+			PLAY_LevelSelectDef.prevMenu = currentMenu;
+			M_SetupNextMenu(&PLAY_LevelSelectDef, false);
+		}
 	}
 
 	return true;
