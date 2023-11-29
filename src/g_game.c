@@ -4331,7 +4331,11 @@ void G_NextLevel(void)
 	if (
 		gametype == GT_TUTORIAL
 		&& nextmap == NEXTMAP_TUTORIALCHALLENGE
-		&& !(gamedata && gamedata->enteredtutorialchallenge)
+		&& (
+			!gamedata
+			|| gamedata->enteredtutorialchallenge == false
+			|| M_GameTrulyStarted() == true
+		)
 	)
 	{
 		nextmap = G_MapNumber(tutorialchallengemap);
