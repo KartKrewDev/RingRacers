@@ -7956,7 +7956,7 @@ static void P_InitGametype(void)
 		G_RecordDemo(buf);
 	}
 
-	if (gamestate != GS_TITLESCREEN)
+	if (gamestate != GS_TITLESCREEN && M_GameTrulyStarted())
 	{
 		// Started a game? Move on to the next jam when you go back to the title screen
 		// this permits all but titlescreen, instead of only GS_LEVEL
