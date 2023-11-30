@@ -27,6 +27,8 @@ menuitem_t MAIN_Goner[] =
 		{.routine = M_GonerTutorial}, 0, 0},
 };
 
+static boolean M_GonerInputs(INT32 ch);
+
 menu_t MAIN_GonerDef = {
 	sizeof (MAIN_Goner) / sizeof (menuitem_t),
 	NULL,
@@ -41,7 +43,7 @@ menu_t MAIN_GonerDef = {
 	M_GonerTick,
 	NULL,
 	NULL,
-	NULL,
+	M_GonerInputs,
 };
 
 void M_GonerTick(void)
@@ -108,4 +110,19 @@ void M_GonerTutorial(INT32 choice)
 			"YOU ACCEPT EVERYTHING THAT WILL HAPPEN FROM NOW ON.",
 			&M_QuitResponse, MM_YESNO, "I agree", "Cancel");
 	}
+}
+
+static boolean M_GonerInputs(INT32 ch)
+{
+	const UINT8 pid = 0;
+	(void)ch;
+
+	if (M_MenuBackPressed(pid))
+	{
+		// No returning to the title screen.
+		M_QuitSRB2(-1);
+		return true;
+	}
+
+	return false;
 }
