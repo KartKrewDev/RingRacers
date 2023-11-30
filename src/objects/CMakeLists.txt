@@ -45,6 +45,7 @@ target_sources(SRB2SDL2 PRIVATE
 	frost-thrower.cpp
 	ivoball.cpp
 	crate.cpp
+	spear.cpp
 )
 
 add_subdirectory(versus)

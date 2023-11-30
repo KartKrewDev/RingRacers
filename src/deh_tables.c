@@ -4844,6 +4844,22 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_ICECAPBLOCK_DEBRIS_D",
 	"S_ICECAPBLOCK_DEBRIS_E",
 	"S_ICECAPBLOCK_DEBRIS_F",
+
+	// MT_SPEAR
+	"S_SPEAR_ROD",
+	"S_SPEAR_TIP",
+	"S_SPEAR_HILT_FRONT",
+	"S_SPEAR_HILT_BACK",
+	"S_SPEAR_WALL",
+
+	// MT_BSZLAMP_S
+	"S_BLMS",
+	"S_BLMM",
+	"S_BLML",
+
+	// MT_BSZSLAMP
+	"S_BSWL",
+	"S_BSWC",
 };
 
 // RegEx to generate this from info.h: ^\tMT_([^,]+), --> \t"MT_\1",
@@ -6075,6 +6091,14 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_BOX_DEBRIS",
 	"MT_SA2_CRATE",
 	"MT_ICECAPBLOCK",
+
+	"MT_SPEAR",
+	"MT_SPEARVISUAL",
+	"MT_BSZLAMP_S",
+	"MT_BSZLAMP_M",
+	"MT_BSZLAMP_L",
+	"MT_BSZSLAMP",
+	"MT_BSZSLCHA",
 };
 
 const char *const MOBJFLAG_LIST[] = {

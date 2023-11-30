@@ -227,6 +227,21 @@ struct Mobj : mobj_t
 		spryoff(v.y);
 	}
 
+	void linkdraw(bool n) { flags2 = n ? flags2 | MF2_LINKDRAW : flags2 & ~MF2_LINKDRAW; }
+
+	// WARNING: sets tracer!
+	void linkdraw(Mobj* parent)
+	{
+		tracer(parent);
+		linkdraw(true);
+	}
+
+	void linkdraw(Mobj* parent, INT32 offset)
+	{
+		linkdraw(parent);
+		dispoffset = offset;
+	}
+
 	// TODO: Vec3
 
 
