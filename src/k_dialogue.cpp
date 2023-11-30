@@ -70,14 +70,19 @@ void Dialogue::SetSpeaker(std::string skinName, int portraitID)
 		if (sprdef->numframes > 0)
 		{
 			portraitID %= sprdef->numframes;
+
+			const spriteframe_t *sprframe = &sprdef->spriteframes[portraitID];
+
+			portrait = static_cast<patch_t *>( W_CachePatchNum(sprframe->lumppat[0], PU_CACHE) );
+			portraitColormap = R_GetTranslationColormap(skinID, static_cast<skincolornum_t>(skin->prefcolor), GTC_CACHE);
+		}
+		else
+		{
+			portrait = nullptr;
+			portraitColormap = nullptr;
 		}
 
-		const spriteframe_t *sprframe = &sprdef->spriteframes[portraitID];
-
 		speaker = skin->realname;
-
-		portrait = static_cast<patch_t *>( W_CachePatchNum(sprframe->lumppat[0], PU_CACHE) );
-		portraitColormap = R_GetTranslationColormap(skinID, static_cast<skincolornum_t>(skin->prefcolor), GTC_CACHE);
 
 		voiceSfx = skin->soundsid[ S_sfx[sfx_ktalk].skinsound ];
 	}
@@ -333,6 +338,7 @@ void Dialogue::Unset(void)
 {
 	Dismiss();
 	SetSpeaker();
+	slide = 0;
 }
 
 /*
