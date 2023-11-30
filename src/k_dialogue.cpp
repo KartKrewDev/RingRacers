@@ -27,6 +27,7 @@
 #include "s_sound.h"
 #include "z_zone.h"
 #include "k_hud.h"
+#include "p_tick.h" // P_LevelIsFrozen
 
 #include "v_draw.hpp"
 
@@ -284,25 +285,119 @@ void Dialogue::Draw(void)
 		return;
 	}
 
+	const UINT8 bgcol = 1, darkcol = 235;
+
+	INT32 speakernameedge = 6;
+
 	srb2::Draw drawer = 
 		srb2::Draw(
 			0, FixedToFloat(Easing_OutCubic(slide, -78 * FRACUNIT, 0))
 		).flags(V_SNAPTOTOP);
 
-	drawer.patch("TUTDIAG1");
+	// TODO -- hack, change when dialogue is made per-player/netsynced
+	UINT32 speakerbgflags = (players[consoleplayer].nocontrol == 0 && P_LevelIsFrozen() == false)
+		? (V_ADD|V_30TRANS)
+		: 0;
+
+	drawer
+		.flags(speakerbgflags)
+		.patch("TUTDIAGA");
+
+	drawer.patch("TUTDIAGB");
 
 	if (portrait != nullptr)
 	{
+		drawer.patch("TUTDIAGC");
+
 		drawer
 			.xy(10, 41)
 			.colormap(portraitColormap)
 			.patch(portrait);
+
+		speakernameedge += 39; // 45
+	}
+
+	const char *speakername = speaker.c_str();
+
+	INT32 rightmostedge = 142;
+	const INT32 arrowstep = 8; // width of TUTDIAGD
+
+	if (speakername && speaker[0])
+	{
+		INT32 speakernamewidth = V_StringWidth(speakername, 0);
+		INT32 existingborder = (portrait == nullptr ? -4 : 3);
+
+		const INT32 speakernamewidthoffset = (speakernamewidth + (arrowstep - existingborder) - 1) % arrowstep;
+		if (speakernamewidthoffset)
+		{
+			speakernamewidth += (arrowstep - speakernamewidthoffset);
+		}
+
+		if (portrait == nullptr)
+		{
+			speakernameedge += 3;
+			speakernamewidth += 3;
+			existingborder += 2;
+			drawer
+				.xy(speakernameedge - 2, 36)
+				.width(2)
+				.height(3+11)
+				.fill(bgcol);
+		}
+
+		if (speakernamewidth > existingborder)
+		{
+			drawer
+				.x(speakernameedge + existingborder)
+				.width(speakernamewidth - existingborder)
+				.y(36)
+				.height(3)
+				.fill(bgcol);
+
+			drawer
+				.x(speakernameedge + existingborder)
+				.width(speakernamewidth - existingborder)
+				.y(38)
+				.height(11)
+				.fill(darkcol);
+		}
+
+		drawer
+			.xy(speakernameedge, 39)
+			.font(srb2::Draw::Font::kConsole)
+			.text(speakername);
+
+		speakernameedge += speakernamewidth;
+
+		drawer
+			.xy(speakernameedge + 5, 36)
+			.patch("TUTDIAGD");
+
+		drawer
+			.xy(speakernameedge, 36)
+			.width(5)
+			.height(3+11)
+			.fill(bgcol);
+
+		drawer
+			.xy(speakernameedge, 36)
+			.patch("TUTDIAGF");
+
+		speakernameedge += (5+arrowstep);
+	}
+
+	while (speakernameedge < rightmostedge)
+	{
+		drawer
+			.xy(speakernameedge, 36)
+			.patch("TUTDIAGD");
+
+		speakernameedge += arrowstep;
 	}
 
 	drawer
-		.xy(45, 39)
-		.font(srb2::Draw::Font::kConsole)
-		.text( speaker.c_str() );
+		.xy(speakernameedge, 36)
+		.patch("TUTDIAGE");
 
 	drawer
 		.xy(10, 3)
