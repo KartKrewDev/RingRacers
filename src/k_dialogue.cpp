@@ -278,6 +278,15 @@ void Dialogue::Tick(void)
 	}
 }
 
+INT32 Dialogue::SlideAmount(fixed_t multiplier)
+{
+	if (slide == 0)
+		return 0;
+	if (slide == FRACUNIT)
+		return multiplier;
+	return Easing_OutCubic(slide, 0, multiplier);
+}
+
 void Dialogue::Draw(void)
 {
 	if (slide == 0)
@@ -287,12 +296,14 @@ void Dialogue::Draw(void)
 
 	const UINT8 bgcol = 1, darkcol = 235;
 
-	INT32 speakernameedge = 6;
+	const fixed_t height = 78 * FRACUNIT;
+
+	INT32 speakernameedge = -6;
 
 	srb2::Draw drawer = 
 		srb2::Draw(
-			0, FixedToFloat(Easing_OutCubic(slide, -78 * FRACUNIT, 0))
-		).flags(V_SNAPTOTOP);
+			BASEVIDWIDTH, BASEVIDHEIGHT - FixedToFloat(SlideAmount(height) - height)
+		).flags(V_SNAPTOBOTTOM);
 
 	// TODO -- hack, change when dialogue is made per-player/netsynced
 	UINT32 speakerbgflags = (players[consoleplayer].nocontrol == 0 && P_LevelIsFrozen() == false)
@@ -300,26 +311,29 @@ void Dialogue::Draw(void)
 		: 0;
 
 	drawer
-		.flags(speakerbgflags)
+		.flags(speakerbgflags|V_VFLIP|V_FLIP)
 		.patch("TUTDIAGA");
 
-	drawer.patch("TUTDIAGB");
+	drawer
+		.flags(V_VFLIP|V_FLIP)
+		.patch("TUTDIAGB");
 
 	if (portrait != nullptr)
 	{
-		drawer.patch("TUTDIAGC");
+		drawer
+			.flags(V_VFLIP|V_FLIP)
+			.patch("TUTDIAGC");
 
 		drawer
-			.xy(10, 41)
+			.xy(-10-32, -41-32)
 			.colormap(portraitColormap)
 			.patch(portrait);
 
-		speakernameedge += 39; // 45
+		speakernameedge -= 39; // -45
 	}
 
 	const char *speakername = speaker.c_str();
 
-	INT32 rightmostedge = 142;
 	const INT32 arrowstep = 8; // width of TUTDIAGD
 
 	if (speakername && speaker[0])
@@ -327,19 +341,20 @@ void Dialogue::Draw(void)
 		INT32 speakernamewidth = V_StringWidth(speakername, 0);
 		INT32 existingborder = (portrait == nullptr ? -4 : 3);
 
-		const INT32 speakernamewidthoffset = (speakernamewidth + (arrowstep - existingborder) - 1) % arrowstep;
+		INT32 speakernamewidthoffset = (speakernamewidth + (arrowstep - existingborder) - 1) % arrowstep;
 		if (speakernamewidthoffset)
 		{
-			speakernamewidth += (arrowstep - speakernamewidthoffset);
+			speakernamewidthoffset = (arrowstep - speakernamewidthoffset);
+			speakernamewidth += speakernamewidthoffset;
 		}
 
 		if (portrait == nullptr)
 		{
-			speakernameedge += 3;
+			speakernameedge -= 3;
 			speakernamewidth += 3;
 			existingborder += 2;
 			drawer
-				.xy(speakernameedge - 2, 36)
+				.xy(speakernameedge, -36)
 				.width(2)
 				.height(3+11)
 				.fill(bgcol);
@@ -348,59 +363,63 @@ void Dialogue::Draw(void)
 		if (speakernamewidth > existingborder)
 		{
 			drawer
-				.x(speakernameedge + existingborder)
+				.x(speakernameedge - speakernamewidth)
 				.width(speakernamewidth - existingborder)
-				.y(36)
+				.y(-36-3)
 				.height(3)
 				.fill(bgcol);
 
 			drawer
-				.x(speakernameedge + existingborder)
+				.x(speakernameedge - speakernamewidth)
 				.width(speakernamewidth - existingborder)
-				.y(38)
+				.y(-38-11)
 				.height(11)
 				.fill(darkcol);
 		}
 
+		speakernameedge -= speakernamewidth;
+
 		drawer
-			.xy(speakernameedge, 39)
+			.xy(speakernamewidthoffset + speakernameedge, -39-9)
 			.font(srb2::Draw::Font::kConsole)
 			.text(speakername);
 
-		speakernameedge += speakernamewidth;
+		speakernameedge -= 5;
 
 		drawer
-			.xy(speakernameedge + 5, 36)
+			.xy(speakernameedge, -36)
+			.flags(V_VFLIP|V_FLIP)
 			.patch("TUTDIAGD");
 
 		drawer
-			.xy(speakernameedge, 36)
+			.xy(speakernameedge, -36-3-11)
 			.width(5)
 			.height(3+11)
 			.fill(bgcol);
 
 		drawer
-			.xy(speakernameedge, 36)
+			.xy(speakernameedge + 5, -36)
+			.flags(V_VFLIP|V_FLIP)
 			.patch("TUTDIAGF");
-
-		speakernameedge += (5+arrowstep);
 	}
 
-	while (speakernameedge < rightmostedge)
+	while (speakernameedge > -142) // the left-most edge
 	{
-		drawer
-			.xy(speakernameedge, 36)
-			.patch("TUTDIAGD");
+		speakernameedge -= arrowstep;
 
-		speakernameedge += arrowstep;
+		drawer
+			.xy(speakernameedge, -36)
+			.flags(V_VFLIP|V_FLIP)
+			.patch("TUTDIAGD");
 	}
 
 	drawer
-		.xy(speakernameedge, 36)
+		.xy(speakernameedge - arrowstep, -36)
+		.flags(V_VFLIP|V_FLIP)
 		.patch("TUTDIAGE");
 
 	drawer
-		.xy(10, 3)
+		.xy(10 - BASEVIDWIDTH, -3-32)
 		.font(srb2::Draw::Font::kConsole)
 		.text( text.c_str() );
 
@@ -409,16 +428,13 @@ void Dialogue::Draw(void)
 		if (TextDone())
 		{
 			drawer
-				.xy(304, 7)
+				.xy(-14, -7-5)
 				.patch("TUTDIAG2");
 		}
 
-		K_drawButton(
-			FloatToFixed(drawer.x() + 303),
-			FloatToFixed(drawer.y() + 39),
-			V_SNAPTOTOP,
-			kp_button_z[0], Held()
-		);
+		drawer
+			.xy(17-14 - BASEVIDWIDTH, -39-16)
+			.button(srb2::Draw::Button::z, Held());
 	}
 }
 
@@ -458,4 +474,9 @@ void K_DrawDialogue(void)
 void K_TickDialogue(void)
 {
 	g_dialogue.Tick();
+}
+
+INT32 K_GetDialogueSlide(fixed_t multiplier)
+{
+	return g_dialogue.SlideAmount(multiplier);
 }

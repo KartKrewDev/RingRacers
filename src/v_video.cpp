@@ -28,6 +28,7 @@
 #include "r_draw.h"
 #include "console.h"
 #include "r_fps.h"
+#include "k_dialogue.h" // K_GetDialogueSlide
 
 #include "i_video.h" // rendermode
 #include "z_zone.h"
@@ -516,18 +517,26 @@ void V_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 	INT32 baseheight = BASEVIDHEIGHT * dupy;
 	SINT8 player = R_GetViewNumber();
 
-	if (options & V_SPLITSCREEN)
+	if (r_splitscreen > 0)
 	{
-		if (r_splitscreen > 0)
+		if (options & V_SPLITSCREEN)
 		{
 			screenheight /= 2;
 			baseheight /= 2;
-		}
 
-		if (r_splitscreen > 1)
+			if (r_splitscreen > 1)
+			{
+				screenwidth /= 2;
+				basewidth /= 2;
+			}
+		}
+	}
+	else if ((options & (V_SLIDEIN|V_SNAPTOBOTTOM)) == (V_SLIDEIN|V_SNAPTOBOTTOM))
+	{
+		INT32 slide = K_GetDialogueSlide(51 * FRACUNIT);
+		if (slide)
 		{
-			screenwidth /= 2;
-			basewidth /= 2;
+			*y -= FixedMul(slide, dupy);
 		}
 	}
 

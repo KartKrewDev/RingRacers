@@ -78,6 +78,8 @@ public:
 	void Tick(void);
 	void Draw(void);
 
+	INT32 SlideAmount(fixed_t multiplier);
+
 	void Dismiss(void);
 	void Unset(void);
 };
