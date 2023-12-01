@@ -1168,6 +1168,7 @@ void M_DrawMenuForeground(void);
 void M_Drawer(void);
 void M_DrawGenericMenu(void);
 void M_DrawKartGamemodeMenu(void);
+void M_DrawHorizontalMenu(void);
 void M_DrawTextBox(INT32 x, INT32 y, INT32 width, INT32 boxlines);
 void M_DrawMessageMenu(void);
 void M_DrawImageDef(void);

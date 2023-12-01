@@ -1116,6 +1116,60 @@ void M_DrawKartGamemodeMenu(void)
 	}
 }
 
+void M_DrawHorizontalMenu(void)
+{
+	INT32 x = BASEVIDWIDTH/2, y = currentMenu->y, i;
+
+	const INT32 width = 80;
+
+	i = itemOn;
+
+	do
+	{
+		if (i == 0)
+			break;
+		i--;
+		x -= width;
+	}
+	while (x > -width/2);
+
+	while (x < BASEVIDWIDTH + (width/2))
+	{
+		V_DrawCenteredThinString(
+			x, y,
+			(i == itemOn) ? highlightflags : 0,
+			currentMenu->menuitems[i].text
+		);
+
+		if (++i == currentMenu->numitems)
+			break;
+		x += width;
+	}
+
+	y++; // thin string means better to bottom-align these
+
+	if (itemOn != 0)
+		V_DrawCharacter((BASEVIDWIDTH - width)/2 + 3 - (skullAnimCounter/5), y,
+			'\x1C' | highlightflags, false); // left arrow
+
+	if (itemOn != currentMenu->numitems-1)
+		V_DrawCharacter((BASEVIDWIDTH + width)/2 - 10 + (skullAnimCounter/5), y,
+			'\x1D' | highlightflags, false); // right arrow
+
+	x = (BASEVIDWIDTH - 8*(currentMenu->numitems-1))/2;
+	for (i = 0; i < currentMenu->numitems; i++, x += 8)
+	{
+		if (i == itemOn)
+		{
+			V_DrawFill(x-2, y + 15, 4, 4, 0);
+		}
+		else
+		{
+			V_DrawFill(x-1, y + 16, 2, 2, 16);
+		}
+	}
+}
+
 #define MAXMSGLINELEN 256
 
 //

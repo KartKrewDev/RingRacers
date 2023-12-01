@@ -5,18 +5,21 @@
 
 menuitem_t MAIN_Goner[] =
 {
+	{IT_STRING | IT_CVAR | IT_CV_STRING, "Password",
+		"ATTEMPT ADMINISTRATOR ACCESS.", NULL,
+		{.cvar = &cv_dummyextraspassword}, 0, 0},
+
 	{IT_STRING | IT_CALL, "Quit",
 		"CONCLUDE OBSERVATIONS NOW.", NULL,
 		{.routine = M_QuitSRB2}, 0, 0},
 
-	{IT_STRING | IT_CVAR | IT_CV_STRING, "Password", "ATTEMPT ADMINISTRATOR ACCESS.",
-		NULL, {.cvar = &cv_dummyextraspassword}, 0, 0},
+	{IT_STRING | IT_CALL, "Video Options",
+		"CONFIGURE OCULAR PATHWAYS.", NULL,
+		={.routine = M_VideoOptions}, 0, 0},
 
-	{IT_STRING | IT_CALL, "Video Options", "CONFIGURE OCULAR PATHWAYS.",
-		NULL, {.routine = M_VideoOptions}, 0, 0},
-
-	{IT_STRING | IT_CALL, "Sound Options", "CALIBRATE AURAL DATASTREAM.",
-		NULL, {.routine = M_SoundOptions}, 0, 0},
+	{IT_STRING | IT_CALL, "Sound Options",
+		"CALIBRATE AURAL DATASTREAM.", NULL, 
+		{.routine = M_SoundOptions}, 0, 0},
 
 	{IT_STRING | IT_CALL, "Profile Setup",
 		"ASSIGN VEHICLE INPUTS.", NULL,
@@ -34,12 +37,12 @@ menu_t MAIN_GonerDef = {
 	NULL,
 	0,
 	MAIN_Goner,
-	32, 80,
+	32, 160,
 	0, 0,
-	0,
-	"_OCEAN",
+	MBF_UD_LR_FLIPPED,
+	"_GONER",
 	0, 0,
-	M_DrawGenericMenu,
+	M_DrawHorizontalMenu,
 	M_GonerTick,
 	NULL,
 	NULL,
