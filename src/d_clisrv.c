@@ -1751,10 +1751,7 @@ static boolean CL_FinishedFileList(void)
 	}
 	else if (i == 3) // too many files
 	{
-		D_QuitNetGame();
-		CL_Reset();
-		D_ClearState();
-		M_StartControlPanel();
+		Command_ExitGame_f();
 		M_StartMessage("Server Connection Failure",
 			M_GetText(
 			"You have too many WAD files loaded\n"
@@ -1765,10 +1762,7 @@ static boolean CL_FinishedFileList(void)
 	}
 	else if (i == 2) // cannot join for some reason
 	{
-		D_QuitNetGame();
-		CL_Reset();
-		D_ClearState();
-		M_StartControlPanel();
+		Command_ExitGame_f();
 		M_StartMessage("Server Connection Failure",
 			M_GetText(
 			"You have the wrong addons loaded.\n\n"
@@ -1804,10 +1798,7 @@ static boolean CL_FinishedFileList(void)
 		{
 			if (!CL_CheckDownloadable()) // nope!
 			{
-				D_QuitNetGame();
-				CL_Reset();
-				D_ClearState();
-				M_StartControlPanel();
+				Command_ExitGame_f();
 				M_StartMessage("Server Connection Failure",
 					M_GetText(
 					"An error occured when trying to\n"
@@ -1931,10 +1922,7 @@ static boolean CL_ServerConnectionSearchTicker(tic_t *asksent)
 							serverlist[i].info.commit[n]);
 				}
 
-				D_QuitNetGame();
-				CL_Reset();
-				D_ClearState();
-				M_StartControlPanel();
+				Command_ExitGame_f();
 
 				M_StartMessage("Server Connection Failure",
 							va(
@@ -2084,10 +2072,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 			{
 				CONS_Printf(M_GetText("Legacy downloader request packet failed.\n"));
 				CONS_Printf(M_GetText("Network game synchronization aborted.\n"));
-				D_QuitNetGame();
-				CL_Reset();
-				D_ClearState();
-				M_StartControlPanel();
+				Command_ExitGame_f();
 				M_StartMessage("Server Connection Failure",
 					M_GetText(
 					"The direct download encountered an error.\n"
@@ -2113,10 +2098,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 			{
 				CONS_Printf(M_GetText("5 minute wait time exceeded.\n"));
 				CONS_Printf(M_GetText("Network game synchronization aborted.\n"));
-				D_QuitNetGame();
-				CL_Reset();
-				D_ClearState();
-				M_StartControlPanel();
+				Command_ExitGame_f();
 				M_StartMessage("Server Connection Failure",
 					M_GetText(
 					"5 minute wait time exceeded.\n"
@@ -2226,10 +2208,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 			CONS_Printf(M_GetText("Network game synchronization aborted.\n"));
 //				M_StartMessage("Server Connection", M_GetText("Network game synchronization aborted.\n"), NULL, MM_NOTHING, NULL, "Back to Menu");
 
-			D_QuitNetGame();
-			CL_Reset();
-			D_ClearState();
-			M_StartControlPanel();
+			Command_ExitGame_f();
 			return false;
 		}
 
@@ -3125,10 +3104,7 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 #endif
 		LUA_HookBool(false, HOOK(GameQuit)); //Lua hooks handled differently now
 
-		D_QuitNetGame();
-		CL_Reset();
-		D_ClearState();
-		M_StartControlPanel();
+		Command_ExitGame_f();
 
 		if (msg == KICK_MSG_CON_FAIL)
 			M_StartMessage("Server Disconnected", M_GetText("Server closed connection\n(Synch failure)\n"), NULL, MM_NOTHING, NULL, "Back to Menu");
@@ -4326,10 +4302,7 @@ static void HandleShutdown(SINT8 node)
 {
 	(void)node;
 	LUA_HookBool(false, HOOK(GameQuit));
-	D_QuitNetGame();
-	CL_Reset();
-	D_ClearState();
-	M_StartControlPanel();
+	Command_ExitGame_f();
 	M_StartMessage("Server Disconnected", M_GetText("Server has shutdown\n"), NULL, MM_NOTHING, NULL, "Back to Menu");
 }
 
@@ -4342,10 +4315,7 @@ static void HandleTimeout(SINT8 node)
 {
 	(void)node;
 	LUA_HookBool(false, HOOK(GameQuit));
-	D_QuitNetGame();
-	CL_Reset();
-	D_ClearState();
-	M_StartControlPanel();
+	Command_ExitGame_f();
 	M_StartMessage("Server Disconnected", M_GetText("Server Timeout\n"), NULL, MM_NOTHING, NULL, "Back to Menu");
 }
 
@@ -4359,10 +4329,7 @@ void HandleSigfail(const char *string)
 	}
 
 	LUA_HookBool(false, HOOK(GameQuit));
-	D_QuitNetGame();
-	CL_Reset();
-	D_ClearState();
-	M_StartControlPanel();
+	Command_ExitGame_f();
 	M_StartMessage("Server Disconnected", va(M_GetText("Signature check failed.\n(%s)\n"), string), NULL, MM_NOTHING, NULL, "Back to Menu");
 }
 
@@ -4561,10 +4528,7 @@ static void HandlePacketFromAwayNode(SINT8 node)
 					break;
 				}
 
-				D_QuitNetGame();
-				CL_Reset();
-				D_ClearState();
-				M_StartControlPanel();
+				Command_ExitGame_f();
 
 				if (reason[1] == '|')
 				{

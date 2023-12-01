@@ -3000,10 +3000,7 @@ void G_FinishExitLevel(void)
 			{
 				// Back to the menu with you.
 				G_HandleSaveLevel(true);
-				D_QuitNetGame();
-				CL_Reset();
-				D_ClearState();
-				M_StartControlPanel();
+				Command_ExitGame_f();
 				return;
 			}
 		}
@@ -4511,8 +4508,7 @@ void G_EndGame(void)
 	}
 
 	// Time to return to the menu.
-	D_ClearState();
-	M_StartControlPanel();
+	Command_ExitGame_f();
 }
 
 //
