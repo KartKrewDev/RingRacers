@@ -552,6 +552,22 @@ static int player_get(lua_State *L)
 	else if (fastcmp(field,"turbinespd"))
 		lua_pushinteger(L, plr->turbinespd);
 
+	//clouds
+	else if (fastcmp(field,"cloud"))
+		lua_pushinteger(L, plr->cloud);
+	else if (fastcmp(field,"cloudlaunch"))
+		lua_pushinteger(L, plr->cloudlaunch);
+	else if (fastcmp(field,"cloudbuf"))
+		lua_pushinteger(L, plr->cloudbuf);
+
+	//tulips
+	else if (fastcmp(field,"tulip"))
+		lua_pushinteger(L, plr->tulip);
+	else if (fastcmp(field,"tuliplaunch"))
+		lua_pushinteger(L, plr->tuliplaunch);
+	else if (fastcmp(field,"tulipbuf"))
+		lua_pushinteger(L, plr->tulipbuf);
+
 	else if (fastcmp(field,"charflags"))
 		lua_pushinteger(L, plr->charflags);
 	else if (fastcmp(field,"followitem"))
@@ -1034,6 +1050,14 @@ static int player_set(lua_State *L)
 		plr->turbineheight = luaL_checkfixed(L, 3);
 	else if (fastcmp(field,"turbinespd"))
 		plr->turbinespd = luaL_checkinteger(L, 3);
+
+	// clouds
+	else if (fastcmp(field,"cloud"))
+		plr->cloud = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"cloudlaunch"))
+		plr->cloudlaunch = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"cloudbuf"))
+		plr->cloudbuf = luaL_checkinteger(L, 3);
 
 	//
 	else if (fastcmp(field,"charflags"))
