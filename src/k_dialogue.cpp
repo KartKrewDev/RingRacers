@@ -53,6 +53,7 @@ void Dialogue::Typewriter::NewText(std::string newText)
 	textTimer = kTextPunctPause;
 	textSpeed = kTextSpeedDefault;
 	textDone = false;
+	textLines = 1;
 
 	syllable = true;
 }
@@ -78,6 +79,9 @@ void Dialogue::Typewriter::WriteText(void)
 			// Color code support
 			continue;
 		}
+
+		if (c == '\n')
+			textLines++;
 
 		if (!textDest.empty())
 			nextc = textDest.back();
@@ -115,7 +119,12 @@ void Dialogue::Typewriter::CompleteText(void)
 {
 	while (!textDest.empty())
 	{
-		text.push_back( textDest.back() );
+		char c = textDest.back();
+
+		if (c == '\n')
+			textLines++;
+
+		text.push_back( c );
 		textDest.pop_back();
 	}
 

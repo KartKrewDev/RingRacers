@@ -61,6 +61,7 @@ public:
 		fixed_t textTimer;
 		fixed_t textSpeed;
 		bool textDone;
+		int textLines;
 
 		sfxenum_t voiceSfx;
 		bool syllable;
