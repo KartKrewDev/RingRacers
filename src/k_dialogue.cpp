@@ -35,96 +35,16 @@
 
 using srb2::Dialogue;
 
-void Dialogue::Init(void)
+// Dialogue::Typewriter
+
+void Dialogue::Typewriter::ClearText(void)
 {
-	active = true;
-	syllable = true;
+	text.clear();
+	textDest.clear();
 }
 
-void Dialogue::SetSpeaker(void)
+void Dialogue::Typewriter::NewText(std::string newText)
 {
-	// Unset speaker
-	speaker.clear();
-
-	portrait = nullptr;
-	portraitColormap = nullptr;
-
-	voiceSfx = sfx_ktalk;
-}
-
-void Dialogue::SetSpeaker(std::string skinName, int portraitID)
-{
-	Init();
-
-	// Set speaker based on a skin
-	int skinID = -1;
-	if (!skinName.empty())
-	{
-		skinID = R_SkinAvailable(skinName.c_str());
-	}
-
-	if (skinID >= 0 && skinID < numskins)
-	{
-		const skin_t *skin = &skins[skinID];
-		const spritedef_t *sprdef = &skin->sprites[SPR2_TALK];
-
-		if (sprdef->numframes > 0)
-		{
-			portraitID %= sprdef->numframes;
-
-			const spriteframe_t *sprframe = &sprdef->spriteframes[portraitID];
-
-			portrait = static_cast<patch_t *>( W_CachePatchNum(sprframe->lumppat[0], PU_CACHE) );
-			portraitColormap = R_GetTranslationColormap(skinID, static_cast<skincolornum_t>(skin->prefcolor), GTC_CACHE);
-		}
-		else
-		{
-			portrait = nullptr;
-			portraitColormap = nullptr;
-		}
-
-		speaker = skin->realname;
-
-		voiceSfx = skin->soundsid[ S_sfx[sfx_ktalk].skinsound ];
-	}
-	else
-	{
-		SetSpeaker();
-	}
-}
-
-void Dialogue::SetSpeaker(std::string name, patch_t *patch, UINT8 *colormap, sfxenum_t voice)
-{
-	Init();
-
-	// Set custom speaker
-	speaker = name;
-
-	if (speaker.empty())
-	{
-		portrait = nullptr;
-		portraitColormap = nullptr;
-		voiceSfx = sfx_ktalk;
-		return;
-	}
-
-	portrait = patch;
-	portraitColormap = colormap;
-
-	voiceSfx = voice;
-}
-
-void Dialogue::NewText(std::string newText)
-{
-	Init();
-
-	newText = V_ScaledWordWrap(
-		290 << FRACBITS,
-		FRACUNIT, FRACUNIT, FRACUNIT,
-		0, HU_FONT,
-		newText.c_str()
-	);
-
 	text.clear();
 
 	textDest = newText;
@@ -133,30 +53,15 @@ void Dialogue::NewText(std::string newText)
 	textTimer = kTextPunctPause;
 	textSpeed = kTextSpeedDefault;
 	textDone = false;
+
+	syllable = true;
 }
 
-bool Dialogue::Active(void)
+void Dialogue::Typewriter::WriteText(void)
 {
-	return active;
-}
+	if (textDone)
+		return;
 
-bool Dialogue::TextDone(void)
-{
-	return textDone;
-}
-
-bool Dialogue::Dismissable(void)
-{
-	return dismissable;
-}
-
-void Dialogue::SetDismissable(bool value)
-{
-	dismissable = value;
-}
-
-void Dialogue::WriteText(void)
-{
 	bool voicePlayed = false;
 
 	textTimer -= textSpeed;
@@ -206,6 +111,132 @@ void Dialogue::WriteText(void)
 	textDone = (textTimer <= 0 && textDest.empty());
 }
 
+void Dialogue::Typewriter::CompleteText(void)
+{
+	while (!textDest.empty())
+	{
+		text.push_back( textDest.back() );
+		textDest.pop_back();
+	}
+
+	textTimer = 0;
+	textDone = true;
+}
+
+// Dialogue
+
+void Dialogue::Init(void)
+{
+	active = true;
+}
+
+void Dialogue::SetSpeaker(void)
+{
+	// Unset speaker
+	speaker.clear();
+
+	portrait = nullptr;
+	portraitColormap = nullptr;
+
+	typewriter.voiceSfx = sfx_ktalk;
+}
+
+void Dialogue::SetSpeaker(std::string skinName, int portraitID)
+{
+	Init();
+
+	// Set speaker based on a skin
+	int skinID = -1;
+	if (!skinName.empty())
+	{
+		skinID = R_SkinAvailable(skinName.c_str());
+	}
+
+	if (skinID >= 0 && skinID < numskins)
+	{
+		const skin_t *skin = &skins[skinID];
+		const spritedef_t *sprdef = &skin->sprites[SPR2_TALK];
+
+		if (sprdef->numframes > 0)
+		{
+			portraitID %= sprdef->numframes;
+
+			const spriteframe_t *sprframe = &sprdef->spriteframes[portraitID];
+
+			portrait = static_cast<patch_t *>( W_CachePatchNum(sprframe->lumppat[0], PU_CACHE) );
+			portraitColormap = R_GetTranslationColormap(skinID, static_cast<skincolornum_t>(skin->prefcolor), GTC_CACHE);
+		}
+		else
+		{
+			portrait = nullptr;
+			portraitColormap = nullptr;
+		}
+
+		speaker = skin->realname;
+
+		typewriter.voiceSfx = skin->soundsid[ S_sfx[sfx_ktalk].skinsound ];
+	}
+	else
+	{
+		SetSpeaker();
+	}
+}
+
+void Dialogue::SetSpeaker(std::string name, patch_t *patch, UINT8 *colormap, sfxenum_t voice)
+{
+	Init();
+
+	// Set custom speaker
+	speaker = name;
+
+	if (speaker.empty())
+	{
+		portrait = nullptr;
+		portraitColormap = nullptr;
+		typewriter.voiceSfx = sfx_ktalk;
+		return;
+	}
+
+	portrait = patch;
+	portraitColormap = colormap;
+
+	typewriter.voiceSfx = voice;
+}
+
+void Dialogue::NewText(std::string newText)
+{
+	Init();
+
+	newText = V_ScaledWordWrap(
+		290 << FRACBITS,
+		FRACUNIT, FRACUNIT, FRACUNIT,
+		0, HU_FONT,
+		newText.c_str()
+	);
+
+	typewriter.NewText(newText);
+}
+
+bool Dialogue::Active(void)
+{
+	return active;
+}
+
+bool Dialogue::TextDone(void)
+{
+	return typewriter.textDone;
+}
+
+bool Dialogue::Dismissable(void)
+{
+	return dismissable;
+}
+
+void Dialogue::SetDismissable(bool value)
+{
+	dismissable = value;
+}
+
 bool Dialogue::Held(void)
 {
 	return ((players[serverplayer].cmd.buttons & BT_VOTE) == BT_VOTE);
@@ -217,18 +248,6 @@ bool Dialogue::Pressed(void)
 		((players[serverplayer].cmd.buttons & BT_VOTE) == BT_VOTE) &&
 		((players[serverplayer].oldcmd.buttons & BT_VOTE) == 0)
 	);
-}
-
-void Dialogue::CompleteText(void)
-{
-	while (!textDest.empty())
-	{
-		text.push_back( textDest.back() );
-		textDest.pop_back();
-	}
-
-	textTimer = 0;
-	textDone = true;
 }
 
 void Dialogue::Tick(void)
@@ -260,7 +279,7 @@ void Dialogue::Tick(void)
 		return;
 	}
 
-	WriteText();
+	typewriter.WriteText();
 
 	if (Dismissable() == true)
 	{
@@ -272,7 +291,7 @@ void Dialogue::Tick(void)
 			}
 			else
 			{
-				CompleteText();
+				typewriter.CompleteText();
 			}
 		}
 	}
@@ -421,7 +440,7 @@ void Dialogue::Draw(void)
 	drawer
 		.xy(10 - BASEVIDWIDTH, -3-32)
 		.font(srb2::Draw::Font::kConsole)
-		.text( text.c_str() );
+		.text( typewriter.text.c_str() );
 
 	if (Dismissable())
 	{
@@ -441,8 +460,7 @@ void Dialogue::Draw(void)
 void Dialogue::Dismiss(void)
 {
 	active = false;
-	text.clear();
-	textDest.clear();
+	typewriter.ClearText();
 }
 
 void Dialogue::Unset(void)

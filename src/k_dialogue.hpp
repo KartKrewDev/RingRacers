@@ -27,41 +27,7 @@ namespace srb2
 
 class Dialogue
 {
-private:
-	patch_t *bgPatch;
-	patch_t *confirmPatch;
-
-	std::string speaker;
-	patch_t *portrait;
-	UINT8 *portraitColormap;
-	sfxenum_t voiceSfx;
-
-	std::string text;
-	std::string textDest;
-
-	bool active;
-	fixed_t slide;
-
-	fixed_t textTimer;
-	fixed_t textSpeed;
-	bool textDone;
-	bool syllable;
-
-	bool dismissable;
-	bool freeze;
-
-	void Init(void);
-	//void Unset(void);
-
-	void WriteText(void);
-	void CompleteText(void);
-
-	bool Pressed(void);
-	bool Held(void);
-
 public:
-	static constexpr fixed_t kTextSpeedDefault = FRACUNIT;
-	static constexpr fixed_t kTextPunctPause = (FRACUNIT * TICRATE * 2) / 5;
 	static constexpr fixed_t kSlideSpeed = FRACUNIT / (TICRATE / 5);
 
 	void SetSpeaker(void);
@@ -82,6 +48,52 @@ public:
 
 	void Dismiss(void);
 	void Unset(void);
+
+	class Typewriter
+	{
+	public:
+		static constexpr fixed_t kTextSpeedDefault = FRACUNIT;
+		static constexpr fixed_t kTextPunctPause = (FRACUNIT * TICRATE * 2) / 5;
+
+		std::string text;
+		std::string textDest;
+
+		fixed_t textTimer;
+		fixed_t textSpeed;
+		bool textDone;
+
+		sfxenum_t voiceSfx;
+		bool syllable;
+
+		void NewText(std::string newText);
+		void ClearText(void);
+
+		void WriteText(void);
+		void CompleteText(void);
+	};
+
+private:
+	Typewriter typewriter;
+
+	patch_t *bgPatch;
+	patch_t *confirmPatch;
+
+	std::string speaker;
+	patch_t *portrait;
+	UINT8 *portraitColormap;
+
+	bool active;
+	fixed_t slide;
+
+	bool dismissable;
+	bool freeze;
+
+	void Init(void);
+	//void Unset(void);
+
+	bool Pressed(void);
+	bool Held(void);
+
 };
 
 }; // namespace srb2
