@@ -1059,6 +1059,14 @@ static int player_set(lua_State *L)
 	else if (fastcmp(field,"cloudbuf"))
 		plr->cloudbuf = luaL_checkinteger(L, 3);
 
+	// tulips
+	else if (fastcmp(field,"tulip"))
+		plr->tulip = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"tuliplaunch"))
+		plr->tuliplaunch = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"tulipbuf"))
+		plr->tulipbuf = luaL_checkinteger(L, 3);
+
 	//
 	else if (fastcmp(field,"charflags"))
 		plr->charflags = (UINT32)luaL_checkinteger(L, 3);
