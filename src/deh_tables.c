@@ -4788,6 +4788,20 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_BLENDEYE_PUYO_DIE",
 	"S_BLENDEYE_PUYO_DUST",
 
+	"S_AHZCLOUD",
+
+	"S_AGZBULB_BASE",
+	"S_AGZBULB_NEUTRAL",
+	"S_AGZBULB_ANIM1",
+	"S_AGZBULB_ANIM2",
+	"S_AGZBULB_ANIM3",
+	"S_AGTR",
+	"S_AGFL",
+	"S_AGFF",
+	"S_AGZCLOUD",
+
+	"S_SSZCLOUD",
+
 	"S_MEGABARRIER1",
 	"S_MEGABARRIER2",
 	"S_MEGABARRIER3",
@@ -6135,6 +6149,21 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_BLENDEYE_PUYO",
 	"MT_BLENDEYE_PUYO_DUST",
 	"MT_BLENDEYE_PUYO_DUST_COFFEE",
+
+	"MT_AHZ_CLOUD",
+	"MT_AHZ_CLOUDCLUSTER",
+
+	"MT_AGZ_BULB",
+	"MT_AGZ_BULB_PART",
+	"MT_AGZ_TREE",
+	"MT_AGZ_AGFL",
+	"MT_AGZ_AGFF",
+	"MT_AGZ_CLOUD",
+	"MT_AGZ_CLOUDCLUSTER",
+	
+	"MT_SSZ_CLOUD",
+	"MT_SSZ_CLOUDCLUSTER",
+
 	"MT_MEGABARRIER",
 
 	"MT_SEASAW_VISUAL",
