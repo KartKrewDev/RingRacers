@@ -1,4 +1,4 @@
-/// \file  menus/main-goner.c
+/// \file  menus/main-goner.cpp
 /// \brief The Goner Setup.
 
 #include "../k_menu.h"
@@ -15,7 +15,7 @@ menuitem_t MAIN_Goner[] =
 
 	{IT_STRING | IT_CALL, "Video Options",
 		"CONFIGURE OCULAR PATHWAYS.", NULL,
-		={.routine = M_VideoOptions}, 0, 0},
+		{.routine = M_VideoOptions}, 0, 0},
 
 	{IT_STRING | IT_CALL, "Sound Options",
 		"CALIBRATE AURAL DATASTREAM.", NULL, 
