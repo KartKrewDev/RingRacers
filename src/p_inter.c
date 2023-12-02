@@ -959,6 +959,16 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			Obj_DLZRocketSpecial(special, player);
 			return;
 
+		case MT_AHZ_CLOUD:
+		case MT_AGZ_CLOUD:
+		case MT_SSZ_CLOUD:
+			Obj_CloudTouched(special, player);
+			return;
+
+		case MT_AGZ_BULB:
+			Obj_BulbTouched(special, player);
+			return;
+
 		case MT_BALLSWITCH_BALL:
 		{
 			Obj_BallSwitchTouched(special, toucher);

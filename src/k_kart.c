@@ -12864,6 +12864,11 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	{
 		Obj_IceCubeInput(player);
 	}
+
+	Obj_PlayerCloudThink(player);
+
+	Obj_PlayerBulbThink(player);
+
 }
 
 void K_CheckSpectateStatus(boolean considermapreset)

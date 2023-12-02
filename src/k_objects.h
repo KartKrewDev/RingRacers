@@ -358,6 +358,15 @@ void Obj_EMZRainGenerator(mobj_t *mo);
 void Obj_TrickBalloonMobjSpawn(mobj_t* mobj);
 void Obj_TrickBalloonTouchSpecial(mobj_t* special, mobj_t* toucher);
 
+/* AHZ/AGZ/SSZ Clouds */
+void Obj_CloudSpawn(mobj_t *mobj);
+void Obj_CloudClusterThink(mobj_t *mobj, mobjtype_t cloudtype);
+void Obj_TulipSpawnerThink(mobj_t *mobj);
+void Obj_PlayerCloudThink(player_t *player);
+void Obj_PlayerBulbThink(player_t *player);
+void Obj_CloudTouched(mobj_t *special, mobj_t *toucher);
+void Obj_BulbTouched(mobj_t *special, mobj_t *toucher);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
