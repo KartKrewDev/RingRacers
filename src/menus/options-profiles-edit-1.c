@@ -125,10 +125,10 @@ boolean M_ProfileEditInputs(INT32 ch)
 void M_HandleProfileEdit(void)
 {
 	// Always copy the profile name and player name in the profile.
-	if (optionsmenu.profile)
+	if (optionsmenu.profile && !menutyping.active)
 	{
 		// Copy the first 6 chars for profile name
-		if (strlen(cv_dummyprofilename.string))
+		if (cv_dummyprofilename.string[0])
 		{
 			char *s;
 			// convert dummyprofilename to uppercase
@@ -141,8 +141,10 @@ void M_HandleProfileEdit(void)
 			}
 		}
 
-		if (strlen(cv_dummyprofileplayername.string))
+		if (cv_dummyprofileplayername.string[0])
+		{
 			strncpy(optionsmenu.profile->playername, cv_dummyprofileplayername.string, MAXPLAYERNAME);
+		}
 	}
 
 	M_OptionsTick();	//  Has to be afterwards because this can unset optionsmenu.profile
