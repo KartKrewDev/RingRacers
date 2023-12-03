@@ -14538,23 +14538,9 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	return true;
 }
 
-static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
+void P_CopyMapThingSpecialFieldsToMobj(const mapthing_t *mthing, mobj_t *mobj)
 {
-	mobj_t *mobj = NULL;
 	size_t arg = SIZE_MAX;
-
-	mobj = P_SpawnMobj(x, y, z, type);
-	mobj->spawnpoint = mthing;
-
-	mobj->angle = FixedAngle(mthing->angle << FRACBITS);
-	mobj->pitch = FixedAngle(mthing->pitch << FRACBITS);
-	mobj->roll = FixedAngle(mthing->roll << FRACBITS);
-
-	P_SetScale(mobj, FixedMul(mobj->scale, mthing->scale));
-	mobj->destscale = FixedMul(mobj->destscale, mthing->scale);
-
-	mobj->spritexscale = mthing->spritexscale;
-	mobj->spriteyscale = mthing->spriteyscale;
 
 	P_SetThingTID(mobj, mthing->tid);
 
@@ -14609,6 +14595,26 @@ static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y,
 		mobj->script_stringargs[arg] = Z_Realloc(mobj->script_stringargs[arg], len + 1, PU_LEVEL, NULL);
 		M_Memcpy(mobj->script_stringargs[arg], mthing->script_stringargs[arg], len + 1);
 	}
+}
+
+static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
+{
+	mobj_t *mobj = NULL;
+
+	mobj = P_SpawnMobj(x, y, z, type);
+	mobj->spawnpoint = mthing;
+
+	mobj->angle = FixedAngle(mthing->angle << FRACBITS);
+	mobj->pitch = FixedAngle(mthing->pitch << FRACBITS);
+	mobj->roll = FixedAngle(mthing->roll << FRACBITS);
+
+	P_SetScale(mobj, FixedMul(mobj->scale, mthing->scale));
+	mobj->destscale = FixedMul(mobj->destscale, mthing->scale);
+
+	mobj->spritexscale = mthing->spritexscale;
+	mobj->spriteyscale = mthing->spriteyscale;
+
+	P_CopyMapThingSpecialFieldsToMobj(mthing, mobj);
 
 	if (!P_SetupSpawnedMapThing(mthing, mobj))
 	{

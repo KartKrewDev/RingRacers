@@ -4538,6 +4538,10 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 			mobj->script_stringargs[j][len] = '\0';
 		}
 	}
+	else if (mobj->spawnpoint)
+	{
+		P_CopyMapThingSpecialFieldsToMobj(mobj->spawnpoint, mobj);
+	}
 	if (diff2 & MD2_FLOORSPRITESLOPE)
 	{
 		pslope_t *slope = (pslope_t *)P_CreateFloorSpriteSlope(mobj);
