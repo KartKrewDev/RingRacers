@@ -56,7 +56,8 @@ menu_t MAIN_GonerDef = {
 	M_GonerInputs,
 };
 
-// ---
+namespace
+{
 
 typedef enum
 {
@@ -68,7 +69,7 @@ typedef enum
 class GonerSpeaker
 {
 public:
-	float offset;
+	float offset = 0;
 
 	GonerSpeaker(std::string skinName, float offset)
 	{
@@ -79,6 +80,8 @@ public:
 
 		this->offset = offset;
 	};
+
+	GonerSpeaker() {};
 
 	sfxenum_t TalkSound(void)
 	{
@@ -105,7 +108,7 @@ private:
 	};
 };
 
-std::array<std::optional<GonerSpeaker>, MAXGONERSPEAKERS> goner_speakers = {};
+std::array<GonerSpeaker, MAXGONERSPEAKERS> goner_speakers = {};
 
 srb2::Dialogue::Typewriter goner_typewriter;
 
@@ -136,11 +139,7 @@ public:
 		if (speaker >= MAXGONERSPEAKERS)
 			return false;
 
-		goner_typewriter.voiceSfx = sfx_ktalk;
-		if (goner_speakers[speaker])
-		{
-			goner_typewriter.voiceSfx = (*goner_speakers[speaker]).TalkSound();
-		}
+		goner_typewriter.voiceSfx = goner_speakers[speaker].TalkSound();
 
 		goner_typewriter.NewText(dialogue);
 
@@ -155,7 +154,7 @@ public:
 std::forward_list<GonerChatLine> LinesToDigest;
 std::forward_list<GonerChatLine> LinesOutput;
 
-// ---
+}; // namespace
 
 void M_GonerTick(void)
 {
@@ -262,10 +261,7 @@ static void M_GonerDrawer(void)
 
 		//if (newy > BASEVIDHEIGHT) continue; -- not needed yet
 
-		if (!goner_speakers[element.speaker])
-			continue;
-
-		auto speaker = *goner_speakers[element.speaker];
+		auto speaker = goner_speakers[element.speaker];
 
 		srb2::Draw line = drawer
 			.xy(speaker.offset, newy)
