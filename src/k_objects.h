@@ -360,7 +360,7 @@ void Obj_TrickBalloonTouchSpecial(mobj_t* special, mobj_t* toucher);
 
 /* AHZ/AGZ/SSZ Clouds */
 void Obj_CloudSpawn(mobj_t *mobj);
-void Obj_CloudClusterThink(mobj_t *mobj, mobjtype_t cloudtype);
+void Obj_CloudClusterThink(mobj_t *mobj);
 void Obj_TulipSpawnerThink(mobj_t *mobj);
 void Obj_PlayerCloudThink(player_t *player);
 void Obj_PlayerBulbThink(player_t *player);

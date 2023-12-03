@@ -29,11 +29,12 @@ void Obj_CloudSpawn(mobj_t *mobj)
 	P_SetScale(mobj, mobj->destscale);
 }
 
-void Obj_CloudClusterThink(mobj_t *mobj, mobjtype_t cloudtype)
+void Obj_CloudClusterThink(mobj_t *mobj)
 {
 	if (mobj->extravalue1)
 		return;
 
+	mobjtype_t cloudtype = mobj->type;
 	mobj_t *cloud = P_SpawnMobj(mobj->x, mobj->y, mobj->z, cloudtype);
 	angle_t ang = mobj->angle;
 	UINT8 dist = 128;
@@ -96,7 +97,7 @@ void Obj_TulipSpawnerThink(mobj_t *mobj)
 	b->eflags = mobj->eflags;
 	b->color = SKINCOLOR_MAGENTA;
 
-	if (b->state == S_AGZBULB_ANIM2)
+	if (b->state == &states[S_AGZBULB_ANIM2])
 	{
 		if (leveltime & 1)
 			b->colorized = true;

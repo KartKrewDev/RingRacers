@@ -10275,7 +10275,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_AHZ_CLOUDCLUSTER:
 	case MT_AGZ_CLOUDCLUSTER:
 	case MT_SSZ_CLOUDCLUSTER:
-		Obj_CloudClusterThink(mobj, mobj->type);
+		Obj_CloudClusterThink(mobj);
 		break;
 
 	case MT_AGZ_BULB:
