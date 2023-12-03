@@ -2,6 +2,9 @@
 #include <iterator>
 #include <set>
 
+#include "../math/fixed.hpp"
+#include "../mobj.hpp"
+
 #include "../doomdef.h"
 #include "../m_random.h"
 #include "../p_local.h"
@@ -9,35 +12,44 @@
 #include "../k_objects.h"
 #include "../k_kart.h"
 
+using srb2::math::Fixed;
+using srb2::Mobj;
+
 #define BATTLEUFO_LEG_ZOFFS (3*FRACUNIT) // Spawn height offset from the body
 #define BATTLEUFO_LEGS (3) // Number of UFO legs to spawn
 #define BATTLEUFO_BOB_AMP (4) // UFO bob strength
 #define BATTLEUFO_BOB_SPEED (TICRATE*2) // UFO bob speed
 
-#define spawner_id(o) ((o)->thing_args[0])
-
-#define ufo_spawner(o) ((o)->target)
-
 namespace
 {
 
-struct Spawner : mobj_t
+struct Spawner : Mobj
 {
-	INT32 id() const { return spawner_id(this); }
+	void thing_args() = delete;
+	INT32 id() const { return this->mobj_t::thing_args[0]; }
 };
 
-struct UFO : mobj_t
+struct UFO : Mobj
 {
-	Spawner* spawner() const { return static_cast<Spawner*>(ufo_spawner(this)); }
-	void spawner(Spawner* n) { P_SetTarget(&ufo_spawner(this), n); }
+	void target() = delete;
+	Spawner* spawner() const { return Mobj::target<Spawner>(); }
+	void spawner(Spawner* n) { Mobj::target(n); }
+
 	void spawn_beam()
 	{
-		mobj_t *x;
+		Mobj *x = spawn_from<Mobj>({0, 0, height / 4}, MT_BATTLEUFO_BEAM);
 
-		x = P_SpawnMobjFromMobj(this, 0, 0, FixedDiv(this->height / 4, this->scale), MT_BATTLEUFO_BEAM);
 		x->renderflags |= RF_FLOORSPRITE|RF_NOSPLATBILLBOARD|RF_SLOPESPLAT|RF_NOSPLATROLLANGLE;
 		x->colorized = true;
 		x->color = SKINCOLOR_SAPPHIRE;
+	}
+
+	void bob()
+	{
+		// Copied and slightly modified from k_kart.c
+		Fixed sine = (BATTLEUFO_BOB_AMP * Fixed {FSIN(M_TAU_FIXED * BATTLEUFO_BOB_SPEED * leveltime)}) / 4;
+
+		momz = flip(sine * scale());
 	}
 };
 
@@ -123,10 +135,7 @@ void Obj_BattleUFOThink(mobj_t *mobj)
 {
 	UFO* ufo = static_cast<UFO*>(mobj);
 
-	// Copied and slightly modified from k_kart.c
-	fixed_t sine = (BATTLEUFO_BOB_AMP * FINESINE((((M_TAU_FIXED * BATTLEUFO_BOB_SPEED) * leveltime) >> ANGLETOFINESHIFT) & FINEMASK)) / 4;
-	fixed_t targz = FixedMul(ufo->scale, sine) * P_MobjFlip(ufo);
-	ufo->momz = targz;
+	ufo->bob();
 
 	if ((leveltime/2) & 1)
 	{
