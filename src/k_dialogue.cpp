@@ -64,15 +64,17 @@ void Dialogue::Typewriter::WriteText(void)
 		return;
 
 	bool voicePlayed = false;
+	bool empty = textDest.empty();
 
 	textTimer -= textSpeed;
 
-	while (textTimer <= 0 && !textDest.empty())
+	while (textTimer <= 0 && !empty)
 	{
 		char c = textDest.back(), nextc = '\n';
 		text.push_back(c);
 
 		textDest.pop_back();
+		empty = textDest.empty();
 
 		if (c & 0x80)
 		{
@@ -83,7 +85,7 @@ void Dialogue::Typewriter::WriteText(void)
 		if (c == '\n')
 			textLines++;
 
-		if (!textDest.empty())
+		if (!empty)
 			nextc = textDest.back();
 
 		if (voicePlayed == false
@@ -100,7 +102,11 @@ void Dialogue::Typewriter::WriteText(void)
 			voicePlayed = true;
 		}
 
-		if (std::ispunct(c)
+		if (c == '-' && empty)
+		{
+			textTimer += textSpeed;
+		}
+		else if (std::ispunct(c)
 			&& std::isspace(nextc))
 		{
 			// slow down for punctuation
@@ -112,7 +118,7 @@ void Dialogue::Typewriter::WriteText(void)
 		}
 	}
 
-	textDone = (textTimer <= 0 && textDest.empty());
+	textDone = (textTimer <= 0 && empty);
 }
 
 void Dialogue::Typewriter::CompleteText(void)
