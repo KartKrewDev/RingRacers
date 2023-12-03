@@ -34,6 +34,14 @@ struct MobjListView
 		using reference = value_type;
 
 		Iterator(pointer ptr, F adv) : ptr_(deref(ptr)), adv_(adv) {}
+		Iterator& operator=(const Iterator& b)
+		{
+			// adv_ may be a lambda. However, lambdas are not
+			// copy assignable. Therefore, perform copy
+			// construction instead!
+			this->~Iterator();
+			return *new(this) Iterator {b};
+		}
 
 		bool operator==(const Iterator& b) const { return ptr_ == b.ptr_; };
 		bool operator!=(const Iterator& b) const { return ptr_ != b.ptr_; };
