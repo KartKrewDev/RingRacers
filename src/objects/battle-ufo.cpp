@@ -124,7 +124,7 @@ void Obj_BattleUFOThink(mobj_t *mobj)
 	UFO* ufo = static_cast<UFO*>(mobj);
 
 	// Copied and slightly modified from k_kart.c
-	fixed_t sine = FixedMul(ufo->scale, BATTLEUFO_BOB_AMP * FINESINE((((M_TAU_FIXED * BATTLEUFO_BOB_SPEED) * leveltime) >> ANGLETOFINESHIFT) & FINEMASK));
+	fixed_t sine = (BATTLEUFO_BOB_AMP * FINESINE((((M_TAU_FIXED * BATTLEUFO_BOB_SPEED) * leveltime) >> ANGLETOFINESHIFT) & FINEMASK)) / 4;
 	fixed_t targz = FixedMul(ufo->scale, sine) * P_MobjFlip(ufo);
 	ufo->momz = targz;
 
