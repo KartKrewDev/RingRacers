@@ -730,6 +730,8 @@ void M_ClearSecrets(void)
 
 	gamedata->chaokeys = GDINIT_CHAOKEYS;
 	gamedata->prisoneggstothispickup = GDINIT_PRISONSTOPRIZE;
+
+	gamedata->gonerlevel = GDGONER_INIT;
 }
 
 // For lack of a better idea on where to put this

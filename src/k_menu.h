@@ -206,6 +206,9 @@ extern menu_t MAIN_GonerDef;
 void M_GonerTick(void);
 void M_GonerProfile(INT32 choice);
 void M_GonerTutorial(INT32 choice);
+void M_GonerResetLooking(int type);
+void M_GonerCheckLooking(void);
+void M_GonerGDQ(boolean opinion);
 
 extern menuitem_t PLAY_CharSelect[];
 extern menu_t PLAY_CharSelectDef;

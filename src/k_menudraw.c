@@ -1156,8 +1156,8 @@ void M_DrawHorizontalMenu(void)
 		V_DrawCharacter((BASEVIDWIDTH + width)/2 - 10 + (skullAnimCounter/5), y,
 			'\x1D' | highlightflags, false); // right arrow
 
-	x = (BASEVIDWIDTH - 8*(currentMenu->numitems-1))/2;
-	for (i = 0; i < currentMenu->numitems; i++, x += 8)
+	x = (BASEVIDWIDTH - 8*(currentMenu->extra2-1))/2;
+	for (i = 0; i < currentMenu->extra2; i++, x += 8)
 	{
 		if (i == itemOn)
 		{
@@ -1165,7 +1165,9 @@ void M_DrawHorizontalMenu(void)
 		}
 		else
 		{
-			V_DrawFill(x-1, y + 16, 2, 2, 16);
+			V_DrawFill(x-1, y + 16, 2, 2,
+				(i >= currentMenu->numitems) ? 20 : 10
+			);
 		}
 	}
 }

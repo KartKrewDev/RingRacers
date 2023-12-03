@@ -290,6 +290,16 @@ typedef enum {
 #define GDINIT_PRISONSTOPRIZE 30 // 30 Prison Eggs to your [Wild Prize] !!
 
 typedef enum {
+	GDGONER_INIT = 0,
+	GDGONER_INTRO,
+	GDGONER_VIDEO,
+	GDGONER_SOUND,
+	GDGONER_PROFILE,
+	GDGONER_TUTORIAL,
+	GDGONER_DONE,
+} gdgoner_t;
+
+typedef enum {
 	GDGT_RACE,
 	GDGT_BATTLE,
 	GDGT_PRISONS,
@@ -369,6 +379,8 @@ struct gamedata_t
 	boolean enteredtutorialchallenge;
 	boolean finishedtutorialchallenge;
 	gdmusic_t musicstate;
+
+	UINT8 gonerlevel;
 
 	// BACKWARDS COMPAT ASSIST
 	boolean importprofilewins;

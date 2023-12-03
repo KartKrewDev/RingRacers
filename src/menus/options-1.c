@@ -197,6 +197,8 @@ void M_OptionsTick(void)
 			optionsmenu.fade--;
 		if (optionsmenu.currcolour != currentMenu->extra1)
 			M_OptionsChangeBGColour(currentMenu->extra1);
+
+		M_GonerCheckLooking();
 	}
 
 	// And one last giggle...
@@ -213,12 +215,14 @@ void M_VideoOptions(INT32 choice)
 {
 	(void)choice;
 	M_OptionsMenuGoto(&OPTIONS_VideoDef);
+	M_GonerResetLooking(GDGONER_VIDEO);
 }
 
 void M_SoundOptions(INT32 choice)
 {
 	(void)choice;
 	M_OptionsMenuGoto(&OPTIONS_SoundDef);
+	M_GonerResetLooking(GDGONER_SOUND);
 }
 
 boolean M_OptionsInputs(INT32 ch)

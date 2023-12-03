@@ -741,8 +741,10 @@ void M_GoBack(INT32 choice)
 
 		M_SetupNextMenu(currentMenu->prevMenu, false);
 	}
-	else
+	else if (M_GameTrulyStarted())
 		M_ClearMenus(true);
+	else // No returning to the title screen.
+		M_QuitSRB2(-1);
 
 	S_StartSound(NULL, sfx_s3k5b);
 }

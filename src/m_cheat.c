@@ -134,6 +134,20 @@ static UINT8 cheatf_wrongwarp(void)
 	return 1;
 }
 
+static UINT8 cheatf_savetheanimals(void)
+{
+	M_GonerGDQ(true);
+
+	return 1;
+}
+
+static UINT8 cheatf_savetheframes(void)
+{
+	M_GonerGDQ(false);
+
+	return 1;
+}
+
 #ifdef DEVELOP
 static UINT8 cheatf_devmode(void)
 {
@@ -179,6 +193,16 @@ static cheatseq_t cheat_wrongwarp = {
 	(UINT8[]){ SCRAMBLE('b'), SCRAMBLE('a'), SCRAMBLE('n'), SCRAMBLE('a'), SCRAMBLE('n'), SCRAMBLE('a'), 0xff }
 };
 
+static cheatseq_t cheat_savetheanimals = {
+	NULL, cheatf_savetheanimals,
+	(UINT8[]){ SCRAMBLE('s'), SCRAMBLE('a'), SCRAMBLE('v'), SCRAMBLE('e'), SCRAMBLE('t'), SCRAMBLE('h'), SCRAMBLE('e'), SCRAMBLE('a'), SCRAMBLE('n'), SCRAMBLE('i'), SCRAMBLE('m'), SCRAMBLE('a'), SCRAMBLE('l'), SCRAMBLE('s'), 0xff }
+};
+
+static cheatseq_t cheat_savetheframes = {
+	NULL, cheatf_savetheframes,
+	(UINT8[]){ SCRAMBLE('s'), SCRAMBLE('a'), SCRAMBLE('v'), SCRAMBLE('e'), SCRAMBLE('t'), SCRAMBLE('h'), SCRAMBLE('e'), SCRAMBLE('f'), SCRAMBLE('r'), SCRAMBLE('a'), SCRAMBLE('m'), SCRAMBLE('e'), SCRAMBLE('s'), 0xff }
+};
+
 #ifdef DEVELOP
 static cheatseq_t cheat_devmode = {
 	NULL, cheatf_devmode,
@@ -190,6 +214,8 @@ cheatseq_t *cheatseqlist[] =
 {
 	&cheat_warp,
 	&cheat_wrongwarp,
+	&cheat_savetheanimals,
+	&cheat_savetheframes,
 #ifdef DEVELOP
 	&cheat_devmode,
 #endif
