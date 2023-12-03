@@ -1,9 +1,10 @@
 #include <algorithm>
+#include <cstddef>
 #include <iterator>
-#include <set>
 
 #include "../math/fixed.hpp"
 #include "../mobj.hpp"
+#include "../mobj_list.hpp"
 
 #include "../doomdef.h"
 #include "../m_random.h"
@@ -14,6 +15,9 @@
 
 using srb2::math::Fixed;
 using srb2::Mobj;
+using srb2::MobjList;
+
+extern mobj_t* svg_battleUfoSpawners;
 
 #define BATTLEUFO_LEG_ZOFFS (3*FRACUNIT) // Spawn height offset from the body
 #define BATTLEUFO_LEGS (3) // Number of UFO legs to spawn
@@ -27,6 +31,10 @@ struct Spawner : Mobj
 {
 	void thing_args() = delete;
 	INT32 id() const { return this->mobj_t::thing_args[0]; }
+
+	void hnext() = delete;
+	Spawner* next() const { return Mobj::hnext<Spawner>(); }
+	void next(Spawner* n) { Mobj::hnext(n); }
 };
 
 struct UFO : Mobj
@@ -53,69 +61,43 @@ struct UFO : Mobj
 	}
 };
 
-struct SpawnerCompare
-{
-	bool operator()(const Spawner* a, const Spawner* b) const
-	{
-		return a->id() < b->id();
-	}
-};
-
 class SpawnerList
 {
 private:
-	std::set<Spawner*, SpawnerCompare> set_;
+	MobjList<Spawner, svg_battleUfoSpawners> list_;
 
 public:
-	void insert(Spawner* spawner)
-	{
-		auto [it, inserted] = set_.insert(spawner);
-
-		if (inserted)
-		{
-			mobj_t* dummy = nullptr;
-			P_SetTarget(&dummy, spawner);
-		}
-	}
-
-	void erase(Spawner* spawner)
-	{
-		if (set_.erase(spawner))
-		{
-			mobj_t* dummy = spawner;
-			P_SetTarget(&dummy, nullptr);
-		}
-	}
+	void insert(Spawner* spawner) { list_.push_front(spawner); }
+	void erase(Spawner* spawner) { list_.erase(spawner); }
 
 	Spawner* next(INT32 order) const
 	{
-		auto it = std::upper_bound(
-			set_.begin(),
-			set_.end(),
-			order,
-			[](INT32 a, const Spawner* b) { return a < b->id(); }
-		);
+		using T = const Spawner*;
 
-		return it != set_.end() ? *it : *set_.begin();
+		auto it = std::find_if(list_.begin(), list_.end(), [order](T p) { return order < p->id(); });
+		auto min = [&](auto cmp) { return std::min_element(list_.begin(), list_.end(), cmp); };
+
+		return *(it != list_.end()
+			? min([order](T a, T b) { return order < a->id() && a->id() < b->id(); })
+			: min([](T a, T b) { return a->id() < b->id(); }));
 	}
 
 	INT32 random_id() const
 	{
-		if (set_.empty())
+		if (list_.empty())
 		{
 			return 0;
 		}
 
-		auto it = set_.begin();
+		auto it = list_.begin();
+		std::size_t count = std::distance(it, list_.end());
 
-		std::advance(it, P_RandomKey(PR_BATTLEUFO, set_.size()));
-
-		return (*std::prev(it == set_.begin() ? set_.end() : it))->id();
+		return std::next(it, P_RandomKey(PR_BATTLEUFO, count - 1u))->id();
 	}
 
 	void spawn_ufo() const
 	{
-		if (set_.empty())
+		if (list_.empty())
 		{
 			return;
 		}
@@ -236,14 +218,9 @@ void Obj_SpawnBattleUFOFromSpawner(void)
 	g_spawners.spawn_ufo();
 }
 
-INT32 Obj_GetFirstBattleUFOSpawnerID(void)
+INT32 Obj_RandomBattleUFOSpawnerID(void)
 {
 	return g_spawners.random_id();
-}
-
-void Obj_ResetUFOSpawners(void)
-{
-	g_spawners = {};
 }
 
 void Obj_BattleUFOBeamThink(mobj_t *beam)

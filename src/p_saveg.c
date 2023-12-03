@@ -36,6 +36,7 @@
 #include "lua_script.h"
 #include "p_slopes.h"
 #include "m_cond.h" // netUnlocked
+#include "p_link.h"
 
 // SRB2Kart
 #include "k_grandprix.h"
@@ -49,6 +50,8 @@
 
 savedata_t savedata;
 savedata_cup_t cupsavedata;
+
+static savebuffer_t *current_savebuffer;
 
 // Block UINT32s to attempt to ensure that the correct data is
 // being sent and received
@@ -3839,12 +3842,19 @@ static void SavePolyfadeThinker(savebuffer_t *save, const thinker_t *th, const U
 	WRITEINT32(save->p, ht->timer);
 }
 
+static void WriteMobjPointer(mobj_t *mobj)
+{
+	WRITEUINT32(current_savebuffer->p, SaveMobjnum(mobj));
+}
+
 static void P_NetArchiveThinkers(savebuffer_t *save)
 {
 	const thinker_t *th;
 	UINT32 i;
 
 	WRITEUINT32(save->p, ARCHIVEBLOCK_THINKERS);
+
+	P_SaveMobjPointers(WriteMobjPointer);
 
 	for (i = 0; i < NUM_THINKERLISTS; i++)
 	{
@@ -5238,6 +5248,11 @@ static thinker_t* LoadPolyfadeThinker(savebuffer_t *save, actionf_p1 thinker)
 	return &ht->thinker;
 }
 
+static void ReadMobjPointer(mobj_t **mobj_p)
+{
+	*mobj_p = LoadMobj(READUINT32(current_savebuffer->p));
+}
+
 static void P_NetUnArchiveThinkers(savebuffer_t *save)
 {
 	thinker_t *currentthinker;
@@ -5272,6 +5287,8 @@ static void P_NetUnArchiveThinkers(savebuffer_t *save)
 
 	// we don't want the removed mobjs to come back
 	P_InitThinkers();
+
+	P_LoadMobjPointers(ReadMobjPointer);
 
 	// clear sector thinker pointers so they don't point to non-existant thinkers for all of eternity
 	for (i = 0; i < numsectors; i++)
@@ -5583,11 +5600,18 @@ static mobj_t *RelinkMobj(mobj_t **ptr)
 	return P_SetTarget(ptr, P_FindNewPosition(temp));
 }
 
+static void RelinkMobjVoid(mobj_t **ptr)
+{
+	RelinkMobj(ptr);
+}
+
 static void P_RelinkPointers(void)
 {
 	thinker_t *currentthinker;
 	mobj_t *mobj;
 	UINT32 temp, i;
+
+	P_LoadMobjPointers(RelinkMobjVoid);
 
 	// use info field (value = oldposition) to relink mobjs
 	for (currentthinker = thlist[THINK_MOBJ].next; currentthinker != &thlist[THINK_MOBJ];
@@ -6648,6 +6672,8 @@ void P_SaveGame(savebuffer_t *save)
 
 void P_SaveNetGame(savebuffer_t *save, boolean resending)
 {
+	current_savebuffer = save;
+
 	thinker_t *th;
 	mobj_t *mobj;
 	UINT32 i = 1; // don't start from 0, it'd be confused with a blank pointer otherwise
@@ -6724,6 +6750,8 @@ badloadgame:
 
 boolean P_LoadNetGame(savebuffer_t *save, boolean reloading)
 {
+    current_savebuffer = save;
+
 	CV_LoadNetVars(&save->p);
 
 	if (!P_NetUnArchiveMisc(save, reloading))
