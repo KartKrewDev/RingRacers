@@ -25,16 +25,26 @@
 
 void Obj_CloudSpawn(mobj_t *mobj)
 {
+	mobjtype_t cloudtype;
+
+	switch (mobj->type)
+	{
+		case MT_AHZ_CLOUDCLUSTER:
+			cloudtype = MT_AHZ_CLOUD;
+			break;
+		case MT_AGZ_CLOUDCLUSTER:
+			cloudtype = MT_AGZ_CLOUD;
+			break;
+		case MT_SSZ_CLOUDCLUSTER:
+			cloudtype = MT_SSZ_CLOUD;
+			break;
+		default:
+			return;
+	}
+
 	mobj->destscale = mapobjectscale * 4;
 	P_SetScale(mobj, mobj->destscale);
-}
 
-void Obj_CloudClusterThink(mobj_t *mobj)
-{
-	if (mobj->extravalue1)
-		return;
-
-	mobjtype_t cloudtype = mobj->type;
 	mobj_t *cloud = P_SpawnMobj(mobj->x, mobj->y, mobj->z, cloudtype);
 	angle_t ang = mobj->angle;
 	UINT8 dist = 128;
@@ -57,8 +67,6 @@ void Obj_CloudClusterThink(mobj_t *mobj)
 
 		ang += ANGLE_90;
 	}
-
-	mobj->extravalue1 = 1;
 }
 
 void Obj_TulipSpawnerThink(mobj_t *mobj)
