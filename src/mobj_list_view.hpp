@@ -14,15 +14,17 @@
 #include <iterator>
 #include <type_traits>
 
-#include "mobj.hpp"
+#include "p_mobj.h"
 
 namespace srb2
 {
 
 // for (T* ptr : MobjList(hnext(), [](T* ptr) { return ptr->hnext(); }))
-template <typename T, typename F, std::enable_if_t<std::is_convertible_v<T, Mobj>, bool> = true>
+template <typename T, typename F>
 struct MobjListView
 {
+	static_assert(std::is_convertible_v<T, mobj_t>);
+
 	struct Iterator
 	{
 		using iterator_category = std::forward_iterator_tag;
