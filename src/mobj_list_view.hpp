@@ -66,7 +66,7 @@ struct MobjListView
 		pointer ptr_;
 		F adv_;
 
-		static T* deref(T* ptr) { return ptr && ptr->valid() ? ptr : nullptr; }
+		static T* deref(T* ptr) { return !P_MobjWasRemoved(ptr) ? ptr : nullptr; }
 	};
 
 	MobjListView(T* ptr, F adv) : ptr_(ptr), adv_(adv) {}
