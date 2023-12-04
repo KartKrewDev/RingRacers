@@ -13160,6 +13160,11 @@ boolean K_IsPlayingDisplayPlayer(player_t *player)
 
 boolean K_PlayerCanPunt(player_t *player)
 {
+	if (player->trickpanel > TRICKSTATE_READY)
+	{
+		return true;
+	}
+
 	if (player->invincibilitytimer > 0)
 	{
 		return true;
