@@ -73,12 +73,23 @@ static UINT8 cheatf_warp(void)
 	{
 		if (!unlockables[i].conditionset)
 			continue;
-		if (!gamedata->unlocked[i])
-		{
-			gamedata->unlocked[i] = true;
-			success = true;
-		}
+		if (gamedata->unlocked[i])
+			continue;
+
+		gamedata->unlocked[i] = true;
+		success = true;
 	}
+
+	// Unlock all hidden levels.
+#define GD_MV_SET (MV_VISITED|MV_BEATEN)
+	for (i = 0; i < nummapheaders; i++)
+	{
+		if ((mapheaderinfo[i]->records.mapvisited & GD_MV_SET) == GD_MV_SET)
+			continue;
+		mapheaderinfo[i]->records.mapvisited |= GD_MV_SET;
+		success = true;
+	}
+#undef GD_MV_SET
 
 	// Goofy, but this call needs to be before M_ClearMenus because that path
 	// calls G_LoadLevel, which will trigger a gamedata save. Garbage factory
@@ -169,6 +180,8 @@ static UINT8 cheatf_devmode(void)
 	{
 		mapheaderinfo[i]->records.mapvisited = MV_MAX;
 	}
+
+	M_ClearMenus(true);
 
 	// This is a developer feature, you know how to delete ringdata
 	// G_SetUsedCheats();
