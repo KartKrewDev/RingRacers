@@ -332,9 +332,9 @@ extern menu_t MAIN_ProfilesDef;
 typedef enum
 {
 	popt_profilename = 0,
-	popt_profilepname,
-	popt_char,
 	popt_controls,
+	popt_char,
+	popt_profilepname,
 	popt_confirm,
 } popt_e;
 

@@ -4026,7 +4026,7 @@ void M_DrawEditProfile(void)
 {
 
 	INT32 y = 34;
-	INT32 x = 145;
+	INT32 x = (145 + (menutransition.tics*32));
 	INT32 i;
 
 	M_DrawOptionsCogs();
@@ -4046,33 +4046,34 @@ void M_DrawEditProfile(void)
 		UINT8 *colormap = NULL;
 		INT32 tflag = (currentMenu->menuitems[i].status & IT_TRANSTEXT) ? V_TRANSLUCENT : 0;
 
+		y = currentMenu->menuitems[i].mvar2;
+
+		// Background -- 169 is the plague colourization
+		V_DrawFill(0, y, 400 - (menutransition.tics*64), 10, itemOn == i ? 169 : 30);
+
 		if (i == itemOn)
+		{
 			colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
 
-		// Background
-		V_DrawFill(0, y, 400 - (menutransition.tics*64), 24, itemOn == i ? 169 : 30);	// 169 is the plague colourization
+			V_DrawCharacter(x - 10 - (skullAnimCounter/5), y+1,
+			'\x1C' | highlightflags, false); // left arrow
+		}
+
 		// Text
-		V_DrawGamemodeString(x + (menutransition.tics*32), y - 6, tflag, colormap, currentMenu->menuitems[i].text);
+		//V_DrawGamemodeString(x, y - 6, tflag, colormap, currentMenu->menuitems[i].text);
+		V_DrawStringScaled(
+			x * FRACUNIT,
+			(y - 3) * FRACUNIT,
+			FRACUNIT,
+			FRACUNIT,
+			FRACUNIT,
+			tflag,
+			colormap,
+			KART_FONT,
+			currentMenu->menuitems[i].text
+		);
 
-		// Cvar specific handling
-		/*switch (currentMenu->menuitems[i].status & IT_TYPE)
-		{
-			case IT_CVAR:
-			{
-				consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
-				switch (currentMenu->menuitems[i].status & IT_CVARTYPE)
-				{
-					case IT_CV_STRING:
-						V_DrawFill(0, y+24, 400 - (menutransition.tics*64), 16, itemOn == i ? 169 : 30);	// 169 is the plague colourization
-						V_DrawString(x + 8, y + 29, 0, cv->string);
-						if (skullAnimCounter < 4 && i == itemOn)
-						V_DrawCharacter(x + 8 + V_StringWidth(cv->string, 0), y + 29, '_', false);
-						y += 16;
-					}
-				}
-			}*/
-
-		y += 34;
+		//y += 32 + 2;
 	}
 
 	// Finally, draw the card ontop

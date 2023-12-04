@@ -5,21 +5,23 @@
 #include "../s_sound.h"
 #include "../m_cond.h"
 
+// These are placed in descending order next to the things they modify, for clarity.
+// Try to keep the mvar2 in order, if you add new profile info!!
 menuitem_t OPTIONS_EditProfile[] = {
-	{IT_STRING | IT_CVAR | IT_CV_STRING, "Profile Name", "6-character long name to identify this Profile.",
-		NULL, {.cvar = &cv_dummyprofilename}, 0, 0},
-
-	{IT_STRING | IT_CVAR | IT_CV_STRING, "Player Name", "Name displayed online when using this Profile.",
-	NULL, {.cvar = &cv_dummyprofileplayername}, 0, 0},
-
-	{IT_STRING | IT_CALL, "Character", "Default character and color for this Profile.",
-		NULL, {.routine = M_CharacterSelect}, 0, 0},
+	{IT_STRING | IT_CVAR | IT_CV_STRING, "Profile ID", "6-character long name to identify this Profile.",
+		NULL, {.cvar = &cv_dummyprofilename}, 0, 41},
 
 	{IT_STRING | IT_CALL, "Controls", "Select the button mappings for this Profile.",
-	NULL, {.routine = M_ProfileDeviceSelect}, 0, 0},
+	NULL, {.routine = M_ProfileDeviceSelect}, 0, 81},
+
+	{IT_STRING | IT_CALL, "Character", "Default character and color for this Profile.",
+		NULL, {.routine = M_CharacterSelect}, 0, 101},
+
+	{IT_STRING | IT_CVAR | IT_CV_STRING, "Player Tag", "Name displayed online when using this Profile.",
+	NULL, {.cvar = &cv_dummyprofileplayername}, 0, 141},
 
 	{IT_STRING | IT_CALL, "Confirm", "Confirm changes.",
-	NULL, {.routine = M_ConfirmProfile}, 0, 0},
+	NULL, {.routine = M_ConfirmProfile}, 0, 171},
 
 };
 
