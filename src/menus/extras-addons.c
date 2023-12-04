@@ -27,6 +27,7 @@ menu_t MISC_AddonsDef = {
 	"EXTRAS",
 	0, 0,
 	M_DrawAddons,
+	M_DrawExtrasBack,
 	M_AddonsRefresh,
 	NULL,
 	NULL,

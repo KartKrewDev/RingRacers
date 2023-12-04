@@ -44,6 +44,7 @@ menu_t PLAY_MP_JoinIPDef = {
 	"NETMD2",
 	-1, 1,	// 1 frame transition.... This is really just because I don't want the black fade when we press esc, hehe
 	M_DrawMPJoinIP,
+	M_DrawEggaChannel,
 	M_MPOptSelectTick,	// This handles the unfolding options
 	NULL,
 	M_MPResetOpts,

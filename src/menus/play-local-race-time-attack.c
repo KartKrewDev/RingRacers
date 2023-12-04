@@ -76,6 +76,7 @@ menu_t PLAY_TimeAttackDef = {
 	NULL,
 	2, 5,
 	M_DrawTimeAttack,
+	NULL,
 	M_TimeAttackTick,
 	NULL,
 	NULL,
@@ -119,6 +120,7 @@ menu_t PLAY_TAReplayDef = {
 	NULL,
 	2, 5,
 	M_DrawTimeAttack,
+	NULL,
 	NULL,
 	NULL,
 	NULL,
@@ -167,6 +169,7 @@ menu_t PLAY_TAReplayGuestDef = {
 	NULL,
 	NULL,
 	NULL,
+	NULL,
 	NULL
 };
 
@@ -204,6 +207,7 @@ menu_t PLAY_TAGhostsDef = {
 	NULL,
 	2, 5,
 	M_DrawTimeAttack,
+	NULL,
 	NULL,
 	NULL,
 	NULL,

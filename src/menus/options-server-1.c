@@ -55,10 +55,11 @@ menu_t OPTIONS_ServerDef = {
 	OPTIONS_Server,
 	48, 70,	// This menu here is slightly higher because there's a lot of options...
 	SKINCOLOR_VIOLET, 0,
-	0,
+	MBF_DRAWBGWHILEPLAYING,
 	NULL,
 	2, 5,
 	M_DrawGenericOptions,
+	M_DrawOptionsCogs,
 	M_OptionsTick,
 	NULL,
 	NULL,

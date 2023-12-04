@@ -33,6 +33,7 @@ menuitem_t MAIN_Goner[] =
 		{.routine = M_GonerTutorial}, 0, 0},
 };
 
+static void M_DrawGonerBack(void);
 static void M_GonerDrawer(void);
 
 menu_t MAIN_GonerDef = {
@@ -46,6 +47,7 @@ menu_t MAIN_GonerDef = {
 	"_GONER",
 	0, 0,
 	M_GonerDrawer,
+	M_DrawGonerBack,
 	M_GonerTick,
 	NULL,
 	NULL,
@@ -495,7 +497,7 @@ void M_GonerTick(void)
 	}
 }
 
-static void M_GonerDrawer(void)
+static void M_DrawGonerBack(void)
 {
 	srb2::Draw drawer = srb2::Draw();
 
@@ -503,8 +505,11 @@ static void M_GonerDrawer(void)
 		.width(BASEVIDWIDTH)
 		.height(BASEVIDHEIGHT)
 		.fill(31);
+}
 
-	drawer = drawer.x(BASEVIDWIDTH/4);
+static void M_GonerDrawer(void)
+{
+	srb2::Draw drawer = srb2::Draw().x(BASEVIDWIDTH/4);
 
 	float newy = BASEVIDHEIGHT/2 + (3*12);
 	boolean first = true;

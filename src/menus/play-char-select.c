@@ -16,6 +16,18 @@ menuitem_t PLAY_CharSelect[] =
 	{IT_NOTHING, NULL, NULL, NULL, {NULL}, 0, 0},
 };
 
+static void M_DrawCharacterBack(void)
+{
+	if (!optionsmenu.profile)
+	{
+		if (gamestate == GS_MENU)
+			M_DrawMenuBackground();
+		return;
+	}
+
+	M_DrawOptionsCogs();
+}
+
 menu_t PLAY_CharSelectDef = {
 	sizeof (PLAY_CharSelect) / sizeof (menuitem_t),
 	&MainDef,
@@ -27,6 +39,7 @@ menu_t PLAY_CharSelectDef = {
 	NULL,
 	2, 5, // matches OPTIONS_EditProfileDef
 	M_DrawCharacterSelect,
+	M_DrawCharacterBack,
 	M_CharacterSelectTick,
 	M_CharacterSelectInit,
 	M_CharacterSelectQuit,

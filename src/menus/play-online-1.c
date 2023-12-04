@@ -103,6 +103,7 @@ menu_t PLAY_MP_OptSelectDef = {
 	"NETMD2",
 	-1, 1,
 	M_DrawMPOptSelect,
+	M_DrawEggaChannel,
 	M_MPOptSelectTick,
 	NULL,
 	NULL,

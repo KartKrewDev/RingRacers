@@ -58,6 +58,7 @@ menu_t EXTRAS_MainDef = {
 	"EXTRAS",
 	28, 5,
 	M_DrawExtras,
+	M_DrawExtrasBack,
 	M_ExtrasTick,
 	NULL,
 	NULL,

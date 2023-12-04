@@ -136,6 +136,7 @@ typedef enum
 	MBF_UD_LR_FLIPPED		= 1,    // flip up-down and left-right axes
 	MBF_SOUNDLESS		 	= 1<<1, // do not play base menu sounds
 	MBF_NOLOOPENTRIES		= 1<<2, // do not loop M_NextOpt/M_PrevOpt
+	MBF_DRAWBGWHILEPLAYING	= 1<<3, // run backroutine() outside of GS_MENU
 } menubehaviourflags_t;
 
 struct menuitem_t
@@ -170,6 +171,7 @@ struct menu_t
 	INT16          transitionTics;     // tics for transitions out
 
 	void         (*drawroutine)(void); // draw routine
+	void           (*bgroutine)(void); // draw routine, but, like, for the background
 	void         (*tickroutine)(void); // ticker routine
 	void         (*initroutine)(void); // called when starting a new menu
 	boolean      (*quitroutine)(void); // called before quit a menu return true if we can
@@ -1214,6 +1216,7 @@ void M_DrawProfileErase(void);
 extern tic_t shitsfree;
 
 // Extras menu:
+void M_DrawExtrasBack(void);
 void M_DrawExtrasMovingButton(void);
 void M_DrawExtras(void);
 
@@ -1392,6 +1395,7 @@ const char *M_GetDiscordName(discordRequest_t *r);
 	NULL,\
 	NULL,\
 	NULL,\
+	NULL,\
 	NULL\
 }
 
@@ -1411,6 +1415,7 @@ const char *M_GetDiscordName(discordRequest_t *r);
 	NULL,\
 	NULL,\
 	NULL,\
+	NULL,\
 	NULL\
 }
 
@@ -1426,6 +1431,7 @@ const char *M_GetDiscordName(discordRequest_t *r);
 	"EXTRAS",\
 	1, 5,\
 	M_DrawImageDef,\
+	NULL,\
 	NULL,\
 	NULL,\
 	NULL,\

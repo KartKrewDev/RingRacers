@@ -27,6 +27,7 @@ menu_t PLAY_CupSelectDef = {
 	NULL,
 	2, 5,
 	M_DrawCupSelect,
+	NULL,
 	M_CupSelectTick,
 	NULL,
 	NULL,

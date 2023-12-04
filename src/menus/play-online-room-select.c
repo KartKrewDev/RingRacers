@@ -21,6 +21,7 @@ menu_t PLAY_MP_RoomSelectDef = {
 	"NETMD2",
 	0, 0,
 	M_DrawMPRoomSelect,
+	M_DrawEggaChannel,
 	M_MPRoomSelectTick,
 	NULL,
 	NULL,

@@ -43,6 +43,7 @@ menu_t PAUSE_PlaybackMenuDef = {
 	NULL,
 	0, 0,
 	M_DrawPlaybackMenu,
+	NULL,
 	M_PlaybackTick,
 	NULL,
 	NULL,

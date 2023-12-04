@@ -18,6 +18,17 @@ menuitem_t PLAY_LevelSelect[] =
 	{IT_NOTHING | IT_KEYHANDLER, NULL, NULL, NULL, {.routine = M_LevelSelectHandler}, 0, 0},
 };
 
+static void M_DrawLevelSelectBack(void)
+{
+	if (!levellist.levelsearch.tutorial)
+	{
+		M_DrawMenuBackground();
+		return;
+	}
+
+	M_DrawExtrasBack();
+}
+
 menu_t PLAY_LevelSelectDef = {
 	sizeof(PLAY_LevelSelect) / sizeof(menuitem_t),
 	&PLAY_CupSelectDef,
@@ -29,6 +40,7 @@ menu_t PLAY_LevelSelectDef = {
 	NULL,
 	2, 5,
 	M_DrawLevelSelect,
+	M_DrawLevelSelectBack,
 	M_LevelSelectTick,
 	NULL,
 	NULL,

@@ -46,6 +46,7 @@ menu_t PLAY_RaceDifficultyDef = {
 	NULL,
 	NULL,
 	NULL,
+	NULL,
 	NULL
 };
 

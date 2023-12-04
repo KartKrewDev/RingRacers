@@ -43,6 +43,7 @@ menu_t PLAY_MP_ServerBrowserDef = {
 	"NETMD2",
 	0, 0,
 	M_DrawMPServerBrowser,
+	NULL,
 	M_MPServerBrowserTick,
 	NULL,
 	M_ServerBrowserQuit,

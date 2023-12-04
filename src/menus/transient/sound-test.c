@@ -208,6 +208,7 @@ menu_t MISC_SoundTestDef = {
 	".",
 	98, 0,
 	M_DrawSoundTest,
+	M_DrawExtrasBack,
 	M_SoundTestTick,
 	NULL,
 	NULL,
