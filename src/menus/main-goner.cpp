@@ -14,9 +14,7 @@
 
 menuitem_t MAIN_Goner[] =
 {
-	{IT_STRING | IT_CVAR | IT_CV_STRING, ". . .",
-		"ATTEMPT ADMINISTRATOR ACCESS.", NULL,
-		{.cvar = &cv_dummyextraspassword}, 0, 0},
+	{IT_STRING | IT_CALL, NULL, NULL, NULL, {.routine = M_QuitSRB2}, 0, 0}, // will be replaced
 
 	{IT_STRING | IT_CALL, "VIDEO OPTIONS",
 		"CONFIGURE OCULAR PATHWAYS.", NULL,
@@ -153,7 +151,6 @@ std::forward_list<GonerChatLine> LinesToDigest;
 std::forward_list<GonerChatLine> LinesOutput;
 
 int goner_levelworking = GDGONER_INIT;
-bool goner_nicetry = false;
 bool goner_gdq = false;
 
 void M_AddGonerLines(void)
@@ -169,7 +166,7 @@ void M_AddGonerLines(void)
 	// This one always plays, so it checks the levelworking instead of gamedata.
 	if (goner_levelworking == GDGONER_INTRO)
 	{
-		if (!goner_nicetry)
+		if (!currentMenu->menuitems[0].mvar2)
 		{
 			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
 				"Metal Sonic. Are you online?");
@@ -261,12 +258,12 @@ void M_AddGonerLines(void)
 			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/4,
 				"We made a machine together, Tails and I. "\
 				"It's called a \"""\x82""Ring Racer""\x80""\".");
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/2,
+			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE,
 				"At its core, it is designed to utilise the boundless potential "\
 				"of the ""\x83""High Voltage Ring""\x80"".");
 
 			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE,
-				"We made this special Ring by combining the power of tens of "\
+				"We made this special ""\x83""Ring""\x80"" by combining the power of tens of "\
 				"thousands of ordinary ""\x82""Rings""\x80"".");
 			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/2,
 				"We recorded some of our testing for you, MS-1. Maybe your neural "\
@@ -293,11 +290,11 @@ void M_AddGonerLines(void)
 				"Bragging rights. My idea!");
 
 			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/2,
-				"You can make the name on there anything you want.");
+				"You can make the ID and player tag on there anything you want.");
 			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/2,
 				"Mine says \"Nine Tails\". That's the name of my original character! "\
-				"He's like me if I never met my ""\x84""brother""\x80"". He'd have to become stronger "\
-				"with robotics, and kind of mean and cool to protect himself...");
+				"He's like me if I never met my ""\x84""brother""\x80"". He'd use cool "\
+				"robotics, but be kind of mean to protect himself...");
 
 			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/5,
 				"Mine says \"Robotnik\". You can't beat a classic.");
@@ -356,7 +353,7 @@ void M_GonerRailroad(bool set)
 		return;
 
 	itemOn = destsize-1;
-	S_StartSound(NULL, sfx_s3k5b);
+	S_StartSound(NULL, sfx_s3k63);
 }
 
 void M_GonerHidePassword(void)
@@ -368,6 +365,8 @@ void M_GonerHidePassword(void)
 		{IT_STRING | IT_CALL, "EXIT PROGRAM",
 			"CONCLUDE OBSERVATIONS NOW.", NULL,
 			{.routine = M_QuitSRB2}, 0, 1};
+
+	S_StartSound(NULL, sfx_s3k5b);
 }
 
 }; // namespace
@@ -385,6 +384,12 @@ void M_GonerResetLooking(int type)
 
 	goner_lasttypelooking = static_cast<gdgoner_t>(type);
 	goner_youactuallylooked = 0;
+	if (type == GDGONER_VIDEO)
+		OPTIONS_MainDef.lastOn = mopt_video;
+	else if (type == GDGONER_SOUND)
+		OPTIONS_MainDef.lastOn = mopt_sound;
+	else
+		OPTIONS_MainDef.lastOn = mopt_profiles;
 }
 
 void M_GonerCheckLooking(void)
@@ -422,7 +427,12 @@ void M_GonerTick(void)
 
 	if (first)
 	{
-		first = false;
+		first = goner_gdq = false;
+
+		currentMenu->menuitems[0] =
+			{IT_STRING | IT_CVAR | IT_CV_STRING, ". . .",
+				"ATTEMPT ADMINISTRATOR ACCESS.", NULL,
+				{.cvar = &cv_dummyextraspassword}, 0, 0};
 
 		if (gamedata->gonerlevel < GDGONER_INTRO)
 			gamedata->gonerlevel = GDGONER_INTRO;
@@ -446,7 +456,6 @@ void M_GonerTick(void)
 			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE,
 				"Aha! Nice try. You're tricky enough WITHOUT admin access, thank you.");
 			M_GonerHidePassword();
-			goner_nicetry = true;
 		}
 
 		CV_StealthSet(&cv_dummyextraspassword, "");
@@ -612,7 +621,7 @@ void M_GonerTutorial(INT32 choice)
 			&M_QuitResponse, MM_YESNO, "I agree", "Cancel");
 	}
 
-	gamedata->gonerlevel = GDGONER_DONE;
+	goner_levelworking = gamedata->gonerlevel = GDGONER_DONE;
 }
 
 void M_GonerGDQ(boolean opinion)
