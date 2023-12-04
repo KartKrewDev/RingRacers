@@ -1616,6 +1616,17 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			K_KartBouncing(tm.thing, thing);
 			return BMIT_CONTINUE;
 		}
+		else if ((thing->flags & MF_SHOOTABLE) && K_PlayerCanPunt(tm.thing->player))
+		{
+			// see if it went over / under
+			if (tm.thing->z > thing->z + thing->height)
+				return BMIT_CONTINUE; // overhead
+			if (tm.thing->z + tm.thing->height < thing->z)
+				return BMIT_CONTINUE; // underneath
+
+			P_DamageMobj(thing, tm.thing, tm.thing, 1, DMG_NORMAL);
+			return BMIT_CONTINUE;
+		}
 		else if (thing->flags & MF_SOLID)
 		{
 			// see if it went over / under
