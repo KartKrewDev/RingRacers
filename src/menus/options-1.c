@@ -16,7 +16,7 @@ menuitem_t OPTIONS_Main[] =
 	{IT_STRING | IT_CALL, "Video Options", "Change video settings such as the resolution.",
 		NULL, {.routine = M_VideoOptions}, 0, 0},
 
-	{IT_STRING | IT_SUBMENU, "Sound Options", "Adjust various sound settings such as the volume.",
+	{IT_STRING | IT_CALL, "Sound Options", "Adjust various sound settings such as the volume.",
 		NULL, {.routine = M_SoundOptions}, 0, 0},
 
 	{IT_STRING | IT_SUBMENU, "HUD Options", "Options related to the Heads-Up Display.",

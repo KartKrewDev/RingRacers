@@ -375,7 +375,13 @@ void M_GonerHidePassword(void)
 
 void M_GonerResetLooking(int type)
 {
-	if (goner_youactuallylooked > 2*TICRATE
+	if (type == GDGONER_VIDEO)
+		OPTIONS_MainDef.lastOn = mopt_video;
+	else if (type == GDGONER_SOUND)
+		OPTIONS_MainDef.lastOn = mopt_sound;
+	else if (type == GDGONER_PROFILE)
+		OPTIONS_MainDef.lastOn = mopt_profiles;
+	else if (goner_youactuallylooked > 2*TICRATE
 	&& goner_lasttypelooking == gamedata->gonerlevel)
 	{
 		if (goner_levelworking > gamedata->gonerlevel)
@@ -386,12 +392,6 @@ void M_GonerResetLooking(int type)
 
 	goner_lasttypelooking = static_cast<gdgoner_t>(type);
 	goner_youactuallylooked = 0;
-	if (type == GDGONER_VIDEO)
-		OPTIONS_MainDef.lastOn = mopt_video;
-	else if (type == GDGONER_SOUND)
-		OPTIONS_MainDef.lastOn = mopt_sound;
-	else
-		OPTIONS_MainDef.lastOn = mopt_profiles;
 }
 
 void M_GonerCheckLooking(void)
