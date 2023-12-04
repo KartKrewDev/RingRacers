@@ -1201,6 +1201,7 @@ void M_DrawKickHandler(void);
 void M_DrawPlaybackMenu(void);
 
 // Options menus:
+void M_DrawOptionsCogs(void);
 void M_DrawOptionsMovingButton(void);	// for sick transitions...
 void M_DrawOptions(void);
 void M_DrawGenericOptions(void);

@@ -2151,8 +2151,14 @@ void M_DrawCharacterSelect(void)
 	UINT8 priority = 0;
 	INT16 quadx, quady;
 	INT16 skin;
-	INT32 basex = optionsmenu.profile != NULL ? 64 : 0;
+	INT32 basex = 0;
 	boolean forceskin = (Playing() && K_CanChangeRules(true) == true) && (cv_forceskin.value != -1);
+
+	if (optionsmenu.profile)
+	{
+		basex = (64 + (menutransition.tics*32));
+		M_DrawOptionsCogs();
+	}
 
 	if (setup_numplayers > 0)
 	{
@@ -2160,13 +2166,16 @@ void M_DrawCharacterSelect(void)
 	}
 
 	{
-		const int kLeft = 80;
+		const int kLeft = 76;
 		const int kTop = 6;
 		const int kButtonWidth = 16;
 		INT32 x = basex + kLeft;
 
-		K_drawButton((x += 18) * FRACUNIT, (kTop - 3) * FRACUNIT, 0, kp_button_r, M_MenuButtonPressed(pid, MBT_R));
-		V_DrawThinString((x += kButtonWidth), kTop, 0, "Info");
+		if (!optionsmenu.profile) // Does nothing on this screen
+		{
+			K_drawButton((x += 22) * FRACUNIT, (kTop - 3) * FRACUNIT, 0, kp_button_r, M_MenuButtonPressed(pid, MBT_R));
+			V_DrawThinString((x += kButtonWidth), kTop, 0, "Info");
+		}
 
 		K_drawButton((x += 58) * FRACUNIT, (kTop - 1) * FRACUNIT, 0, kp_button_c[1], M_MenuButtonPressed(pid, MBT_C));
 		V_DrawThinString((x += kButtonWidth), kTop, 0, "Default");
@@ -3730,7 +3739,7 @@ void M_DrawMPServerBrowser(void)
 // OPTIONS MENU
 
 // Draws the cogs and also the options background!
-static void M_DrawOptionsCogs(void)
+void M_DrawOptionsCogs(void)
 {
 	// the background isn't drawn outside of being in the main menu state.
 	if (gamestate == GS_MENU)

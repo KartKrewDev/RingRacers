@@ -22,10 +22,10 @@ menu_t PLAY_CharSelectDef = {
 	0,
 	PLAY_CharSelect,
 	0, 0,
-	0, 0,
+	SKINCOLOR_ULTRAMARINE, 0,
 	0,
 	NULL,
-	0, 0,
+	2, 5, // matches OPTIONS_EditProfileDef
 	M_DrawCharacterSelect,
 	M_CharacterSelectTick,
 	M_CharacterSelectInit,
@@ -1409,6 +1409,9 @@ void M_CharacterSelectTick(void)
 			M_MPConfirmCharacterSelection();
 		}
 	}
+
+	if (optionsmenu.profile)
+		M_OptionsTick();
 }
 
 boolean M_CharacterSelectQuit(void)
