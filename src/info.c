@@ -30299,7 +30299,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	    100,            // mass
 	    0,              // damage
 	    sfx_None,       // activesound
-	    MF_SOLID|MF_SHOOTABLE|MF_DONTENCOREMAP, // flags
+	    MF_SOLID|MF_SHOOTABLE|MF_DONTENCOREMAP|MF_DONTPUNT, // flags
 	    S_NULL          // raisestate
 	},
 
