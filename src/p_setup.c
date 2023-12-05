@@ -8110,11 +8110,27 @@ void P_ResetLevelMusic(void)
 
 void P_LoadLevelMusic(void)
 {
-	tic_t level_music_start = starttime + (TICRATE/2);
+	const char *music = mapheaderinfo[gamemap-1]->musname[mapmusrng];
 
 	Music_StopAll();
-	Music_Remap("level", mapheaderinfo[gamemap-1]->musname[mapmusrng]);
-	Music_Seek("level", max(leveltime, level_music_start) - level_music_start);
+
+	if (gametyperules & GTR_NOPOSITION)
+	{
+		if (stricmp(Music_Song("level_nosync"), music))
+		{
+			Music_Stop("level_nosync"); // reset when music changes
+		}
+		Music_Remap("level_nosync", music);
+	}
+	else
+	{
+		Music_Stop("level_nosync");
+		Music_Remap("level_nosync", ""); // signal that this should not play
+		Music_Remap("level", music);
+
+		tic_t level_music_start = starttime + (TICRATE/2);
+		Music_Seek("level", max(leveltime, level_music_start) - level_music_start);
+	}
 }
 
 /** Loads a level from a lump or external wad.
