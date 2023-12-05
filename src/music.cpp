@@ -133,9 +133,9 @@ void Music_Init(void)
 	}
 
 	{
-		Tune& tune = g_tunes.insert("menu_nocred");
+		Tune& tune = g_tunes.insert("menu_nocred", g_tunes.find("menu"));
 
-		tune.priority = 100;
+		tune.credit = false;
 	}
 
 	{
@@ -165,14 +165,10 @@ void Music_Init(void)
 	}
 
 	{
-		Tune& tune = g_tunes.insert("stereo_fade");
+		Tune& tune = g_tunes.insert("stereo_fade", g_tunes.find("stereo"));
 
-		tune.priority = 1000;
 		tune.fade_out = 5000;
 		tune.fade_out_inclusive = false;
-		tune.resist = true;
-		tune.keep_open = true;
-		tune.credit = true;
 	}
 }
 
