@@ -57,6 +57,7 @@ public:
 	// from TuneManager::stop_all etc. It must be
 	// stopped/paused individually.
 	bool resist = false;
+	bool resist_once = false; // set at runtime
 
 	// This tune shows a credit when first played (not
 	// resumed).

@@ -353,3 +353,13 @@ const char* Music_CurrentId(void)
 {
 	return g_tunes.current_id();
 }
+
+void Music_BatchExempt(const char* id)
+{
+	Tune* tune = g_tunes.find(id);
+
+	if (tune)
+	{
+		tune->resist_once = true;
+	}
+}

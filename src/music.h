@@ -92,6 +92,10 @@ void Music_Remap(const char *id, const char *song);
 // Set whether a tune should loop.
 void Music_Loop(const char *id, boolean loop);
 
+// Temporarily exemplify a tune from batch operations, such
+// as Music_StopAll.
+void Music_BatchExempt(const char *id);
+
 
 //
 // Query properties.

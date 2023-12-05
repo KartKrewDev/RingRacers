@@ -73,6 +73,12 @@ public:
 	{
 		for (auto& [_, tune] : map_)
 		{
+			if (tune.resist_once)
+			{
+				tune.resist_once = false;
+				continue;
+			}
+
 			if (!tune.resist)
 			{
 				f(tune);
