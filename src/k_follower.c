@@ -419,6 +419,7 @@ void K_HandleFollower(player_t *player)
 		K_UpdateFollowerState(player->follower, fl->idlestate, FOLLOWERSTATE_IDLE);
 
 		P_SetTarget(&player->follower->target, player->mo); // we need that to know when we need to disappear
+		P_SetTarget(&player->follower->punt_ref, player->mo);
 		player->follower->angle = player->follower->old_angle = player->mo->angle;
 
 		// This is safe to only spawn it here, the follower is removed then respawned when switched.
@@ -427,10 +428,12 @@ void K_HandleFollower(player_t *player)
 			bmobj = P_SpawnMobj(player->follower->x, player->follower->y, player->follower->z, MT_FOLLOWERBUBBLE_FRONT);
 			P_SetTarget(&player->follower->hnext, bmobj);
 			P_SetTarget(&bmobj->target, player->follower); // Used to know if we have to despawn at some point.
+			P_SetTarget(&bmobj->punt_ref, player->mo);
 
 			bmobj = P_SpawnMobj(player->follower->x, player->follower->y, player->follower->z, MT_FOLLOWERBUBBLE_BACK);
 			P_SetTarget(&player->follower->hnext->hnext, bmobj); // this seems absolutely stupid, I know, but this will make updating the momentums/flags of these a bit easier.
 			P_SetTarget(&bmobj->target, player->follower); // Ditto
+			P_SetTarget(&bmobj->punt_ref, player->mo);
 		}
 	}
 	else // follower exists, woo!
