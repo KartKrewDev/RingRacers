@@ -296,11 +296,6 @@ boolean M_LevelListFromGametype(INT16 gt)
 			{
 				music = currentMenu->music;
 				bgroutine = currentMenu->bgroutine;
-
-				// Not for the time attack ones
-				PLAY_CupSelectDef.menuitems[0].patch = \
-				PLAY_LevelSelectDef.menuitems[0].patch = \
-					currentMenu->menuitems[itemOn].patch;
 			}
 
 			menu_t *remap_menus[] = {
@@ -319,6 +314,11 @@ boolean M_LevelListFromGametype(INT16 gt)
 				remap_menus[i]->music = music;
 				remap_menus[i]->bgroutine = bgroutine;
 			}
+
+			// Not for the time attack ones
+			PLAY_CupSelectDef.menuitems[0].patch = \
+			PLAY_LevelSelectDef.menuitems[0].patch = \
+				currentMenu->menuitems[itemOn].patch;
 		}
 	}
 
