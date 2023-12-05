@@ -1472,11 +1472,11 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			// The bump has to happen last
 			if (P_IsObjectOnGround(thing) && tm.thing->momz < 0 && tm.thing->player->trickpanel)
 			{
-				P_DamageMobj(thing, tm.thing, tm.thing, 1, DMG_WIPEOUT|DMG_STEAL);
+				P_DamageMobj(thing, tm.thing, tm.thing, 1, DMG_TUMBLE);
 			}
 			else if (P_IsObjectOnGround(tm.thing) && thing->momz < 0 && thing->player->trickpanel)
 			{
-				P_DamageMobj(tm.thing, thing, thing, 1, DMG_WIPEOUT|DMG_STEAL);
+				P_DamageMobj(tm.thing, thing, thing, 1, DMG_TUMBLE);
 			}
 
 			if (K_KartBouncing(tm.thing, thing) == true)
