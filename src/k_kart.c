@@ -8057,6 +8057,9 @@ static void K_UpdateTripwire(player_t *player)
 			P_SetTarget(&front->target, player->mo);
 			P_SetTarget(&back->target, player->mo);
 
+			P_SetTarget(&front->punt_ref, player->mo);
+			P_SetTarget(&back->punt_ref, player->mo);
+
 			front->dispoffset = 1;
 			front->old_angle = back->old_angle = K_MomentumAngle(player->mo);
 			back->dispoffset = -1;
