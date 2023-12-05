@@ -3080,6 +3080,47 @@ void M_DrawLevelSelect(void)
 	M_DrawCupTitle(tay, &levellist.levelsearch);
 }
 
+static boolean M_LevelSelectToTimeAttackTransitionHelper(void)
+{
+	if (menutransition.tics == 0)
+		return false;
+
+	return \
+	(
+		menutransition.startmenu == &PLAY_LevelSelectDef
+		&& menutransition.endmenu == &PLAY_TimeAttackDef
+	) || (
+		menutransition.endmenu == &PLAY_LevelSelectDef
+		&& menutransition.startmenu == &PLAY_TimeAttackDef
+	);
+}
+
+void M_DrawSealedBack(void)
+{
+	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+
+	if (currentMenu != &PLAY_LevelSelectDef
+	&& currentMenu != &PLAY_CupSelectDef)
+		return;
+
+	INT32 translucencylevel = 7;
+	if (M_LevelSelectToTimeAttackTransitionHelper())
+	{
+		translucencylevel += menutransition.tics/3;
+
+		if (translucencylevel >= 10)
+			return;
+	}
+
+	V_DrawFixedPatch(
+		0, 0,
+		FRACUNIT,
+		translucencylevel << V_ALPHASHIFT,
+		W_CachePatchName("MENUI008", PU_CACHE),
+		R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_BLACK, GTC_CACHE)
+	);
+}
+
 void M_DrawTimeAttack(void)
 {
 	UINT16 map = levellist.choosemap;
@@ -3088,26 +3129,94 @@ void M_DrawTimeAttack(void)
 	INT16 rightedge = 149+t+155;
 	INT16 opty = 140;
 	INT32 w;
-	patch_t *minimap = NULL;
 	UINT8 i;
-
-	M_DrawLevelSelectBlock(0, 2, map, true, false);
-
-	//V_DrawFill(24-t, 82, 100, 100, 36); // size test
 
 	V_DrawScaledPatch(149+t, 70, 0, W_CachePatchName("BESTTIME", PU_CACHE));
 
-	if (currentMenu == &PLAY_TimeAttackDef && mapheaderinfo[map])
+	if (!mapheaderinfo[map])
 	{
-		tic_t timerec = 0;
-		tic_t laprec = 0;
+		V_DrawRightAlignedString(rightedge-12, opty, 0, "No map!?");
+		return;
+	}
+
+	{
+		patch_t *minimap = NULL;
+		INT32 minimapx = 76, minimapy = 130;
+
+		if (M_LevelSelectToTimeAttackTransitionHelper())
+			minimapx -= t;
+
+		if (levellist.newgametype == GT_SPECIAL)
+		{
+			// Star Within The Seal
+
+#define SEAL_PULSELEN ((6*TICRATE)/5) // The rate of O_SSTAR3
+			INT32 crossfade = (timeattackmenu.ticker % (2*SEAL_PULSELEN)) - SEAL_PULSELEN;
+			if (crossfade < 0)
+				crossfade = -crossfade;
+			crossfade = (crossfade * 10)/SEAL_PULSELEN;
+#undef SEAL_PULSELEN
+
+			if (crossfade != 10)
+			{
+				minimap = W_CachePatchName(
+					"K_FINB05",
+					PU_CACHE
+				);
+
+				V_DrawScaledPatch(
+					minimapx, minimapy,
+					0, minimap
+				);
+			}
+
+			if (crossfade != 0)
+			{
+				minimap = W_CachePatchName(
+					"K_FINB04",
+					PU_CACHE
+				);
+
+				V_DrawScaledPatch(
+					minimapx, minimapy,
+					(10-crossfade)<<V_ALPHASHIFT,
+					minimap
+				);
+			}
+		}
+		else if (levellist.newgametype == GT_VERSUS)
+		{
+			const INT32 teaserh = 56;
+			minimapy -= 1; // tiny adjustment
+
+			V_DrawScaledPatch(
+				minimapx, minimapy - teaserh,
+				V_TRANSLUCENT, W_CachePatchName("K_TEASR2", PU_CACHE)
+			);
+			V_DrawScaledPatch(
+				minimapx, minimapy + teaserh,
+				V_TRANSLUCENT, W_CachePatchName("K_TEASR4", PU_CACHE)
+			);
+			V_DrawScaledPatch(
+				minimapx, minimapy,
+				0, W_CachePatchName("K_TEASR3", PU_CACHE)
+			);
+		}
+		else if ((minimap = mapheaderinfo[map]->minimapPic))
+		{
+			V_DrawScaledPatch(
+				minimapx - (SHORT(minimap->width)/2),
+				minimapy - (SHORT(minimap->height)/2),
+				0, minimap
+			);
+		}
+	}
+
+	if (currentMenu == &PLAY_TimeAttackDef)
+	{
+		tic_t timerec = mapheaderinfo[map]->records.time;
+		tic_t laprec = mapheaderinfo[map]->records.lap;
 		UINT32 timeheight = 82;
-
-		if ((minimap = mapheaderinfo[map]->minimapPic))
-			V_DrawScaledPatch(24-t, 82, 0, minimap);
-
-		timerec = mapheaderinfo[map]->records.time;
-		laprec = mapheaderinfo[map]->records.lap;
 
 		if ((gametypes[levellist.newgametype]->rules & GTR_CIRCUIT)
 			&& (mapheaderinfo[map]->numlaps != 1))
@@ -3141,6 +3250,9 @@ void M_DrawTimeAttack(void)
 	}
 	else
 		opty = 80;
+
+	// Done after to overlay material
+	M_DrawLevelSelectBlock(0, 2, map, true, false);
 
 	for (i = 0; i < currentMenu->numitems; i++)
 	{

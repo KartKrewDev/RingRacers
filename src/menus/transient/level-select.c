@@ -18,17 +18,6 @@ menuitem_t PLAY_LevelSelect[] =
 	{IT_NOTHING | IT_KEYHANDLER, NULL, NULL, NULL, {.routine = M_LevelSelectHandler}, 0, 0},
 };
 
-static void M_DrawLevelSelectBack(void)
-{
-	if (!levellist.levelsearch.tutorial)
-	{
-		M_DrawMenuBackground();
-		return;
-	}
-
-	M_DrawExtrasBack();
-}
-
 menu_t PLAY_LevelSelectDef = {
 	sizeof(PLAY_LevelSelect) / sizeof(menuitem_t),
 	&PLAY_CupSelectDef,
@@ -40,7 +29,7 @@ menu_t PLAY_LevelSelectDef = {
 	NULL,
 	2, 5,
 	M_DrawLevelSelect,
-	M_DrawLevelSelectBack,
+	NULL,
 	M_LevelSelectTick,
 	NULL,
 	NULL,
@@ -293,16 +282,43 @@ boolean M_LevelListFromGametype(INT16 gt)
 			CV_SetValue(&cv_dummyspbattack, 0);
 		}
 
-		PLAY_CupSelectDef.music = \
-		PLAY_LevelSelectDef.music = \
-		PLAY_TimeAttackDef.music = \
-			currentMenu->music;
-
 		if (gamestate == GS_MENU)
 		{
-			PLAY_CupSelectDef.menuitems[0].patch = \
-			PLAY_LevelSelectDef.menuitems[0].patch = \
-				currentMenu->menuitems[itemOn].patch;
+			const char *music;
+			void (*bgroutine)(void);
+
+			if (gt == GT_SPECIAL)
+			{
+				music = "SSTAR3";
+				bgroutine = M_DrawSealedBack;
+			}
+			else
+			{
+				music = currentMenu->music;
+				bgroutine = currentMenu->bgroutine;
+
+				// Not for the time attack ones
+				PLAY_CupSelectDef.menuitems[0].patch = \
+				PLAY_LevelSelectDef.menuitems[0].patch = \
+					currentMenu->menuitems[itemOn].patch;
+			}
+
+			menu_t *remap_menus[] = {
+				&PLAY_CupSelectDef,
+				&PLAY_LevelSelectDef,
+				&PLAY_TimeAttackDef,
+				&PLAY_TAReplayDef,
+				&PLAY_TAReplayGuestDef,
+				&PLAY_TAGhostsDef,
+				NULL
+			};
+
+			size_t i;
+			for (i = 0; remap_menus[i]; i++)
+			{
+				remap_menus[i]->music = music;
+				remap_menus[i]->bgroutine = bgroutine;
+			}
 		}
 	}
 
@@ -311,6 +327,8 @@ boolean M_LevelListFromGametype(INT16 gt)
 
 	if (levellist.levelsearch.cupmode)
 	{
+		PLAY_CupSelectDef.transitionID = PLAY_LevelSelectDef.transitionID;
+
 		const boolean secondrowlocked = M_CupSecondRowLocked();
 		if (cupgrid.cache_secondrowlocked != secondrowlocked)
 		{
@@ -786,8 +804,6 @@ void M_LevelSelectHandler(INT32 choice)
 	if (M_MenuConfirmPressed(pid) /*|| M_MenuButtonPressed(pid, MBT_START)*/)
 	{
 		M_SetMenuDelay(pid);
-
-		PLAY_TimeAttackDef.transitionID = currentMenu->transitionID;
 		M_LevelSelected(levellist.cursor);
 	}
 	else if (M_MenuBackPressed(pid))

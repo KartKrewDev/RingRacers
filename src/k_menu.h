@@ -259,6 +259,8 @@ typedef enum
 	ta_start,
 } ta_e;
 
+// If you add another Time Attach submenu, remember to catch level-select.c's music/bgroutine update
+
 extern menuitem_t PLAY_TAReplay[];
 extern menu_t PLAY_TAReplayDef;
 
@@ -1184,6 +1186,7 @@ boolean M_DrawCharacterSprite(INT16 x, INT16 y, INT16 skin, UINT8 spr2, UINT8 ro
 void M_DrawCup(cupheader_t *cup, fixed_t x, fixed_t y, INT32 lockedTic, boolean isTrophy, UINT8 placement);
 void M_DrawCupSelect(void);
 void M_DrawLevelSelect(void);
+void M_DrawSealedBack(void);
 void M_DrawTimeAttack(void);
 
 void M_DrawRaceDifficulty(void);
