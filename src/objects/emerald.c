@@ -276,6 +276,7 @@ static void spawn_lens_flare(mobj_t *emerald)
 void Obj_BeginEmeraldOrbit(mobj_t *emerald, mobj_t *target, fixed_t radius, INT32 revolution_time, tic_t fuse)
 {
 	P_SetTarget(&emerald_orbit(emerald), target);
+	P_SetTarget(&emerald->punt_ref, target);
 
 	if (P_MobjWasRemoved(emerald_award(emerald)))
 	{
