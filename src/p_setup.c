@@ -8112,20 +8112,19 @@ void P_LoadLevelMusic(void)
 {
 	const char *music = mapheaderinfo[gamemap-1]->musname[mapmusrng];
 
-	Music_StopAll();
-
 	if (gametyperules & GTR_NOPOSITION)
 	{
-		if (stricmp(Music_Song("level_nosync"), music))
+		if (!stricmp(Music_Song("level_nosync"), music))
 		{
-			Music_Stop("level_nosync"); // reset when music changes
+			//  Do not reset music if it is the same
+			Music_BatchExempt("level_nosync");
 		}
+		Music_StopAll();
 		Music_Remap("level_nosync", music);
 	}
 	else
 	{
-		Music_Stop("level_nosync");
-		Music_Remap("level_nosync", ""); // signal that this should not play
+		Music_StopAll();
 		Music_Remap("level", music);
 
 		tic_t level_music_start = starttime + (TICRATE/2);

@@ -39,7 +39,6 @@ void Music_Init(void)
 		Tune& tune = g_tunes.insert("level_nosync", g_tunes.find("level"));
 
 		tune.sync = false;
-		tune.resist = true;
 	}
 
 	{
