@@ -2190,9 +2190,9 @@ void D_MapChange(UINT16 mapnum, INT32 newgametype, boolean pencoremode, boolean 
 	}
 }
 
-void D_SetupVote(void)
+void D_SetupVote(INT16 newgametype)
 {
-	UINT8 buf[(VOTE_NUM_LEVELS * 2) + 2]; // four UINT16 maps (at twice the width of a UINT8), and two gametypes
+	UINT8 buf[(VOTE_NUM_LEVELS * 2) + 4];
 	UINT8 *p = buf;
 
 	INT32 i;
@@ -2200,13 +2200,14 @@ void D_SetupVote(void)
 	UINT16 votebuffer[VOTE_NUM_LEVELS + 1];
 	memset(votebuffer, UINT16_MAX, sizeof(votebuffer));
 
+	WRITEINT16(p, newgametype);
 	WRITEUINT8(p, ((cv_kartencore.value == 1) && (gametyperules & GTR_ENCORE)));
 	WRITEUINT8(p, G_SometimesGetDifferentEncore());
 
 	for (i = 0; i < VOTE_NUM_LEVELS; i++)
 	{
 		UINT16 m = G_RandMap(
-			G_TOLFlag(gametype),
+			G_TOLFlag(newgametype),
 			prevmap, false,
 			(i < VOTE_NUM_LEVELS-1),
 			votebuffer
@@ -5305,6 +5306,7 @@ static void Got_ExitLevelcmd(UINT8 **cp, INT32 playernum)
 
 static void Got_SetupVotecmd(UINT8 **cp, INT32 playernum)
 {
+	INT16 newGametype = 0;
 	boolean baseEncore = false;
 	boolean optionalEncore = false;
 	INT16 tempVoteLevels[VOTE_NUM_LEVELS][2];
@@ -5320,6 +5322,7 @@ static void Got_SetupVotecmd(UINT8 **cp, INT32 playernum)
 		return;
 	}
 
+	newGametype = READINT16(*cp);
 	baseEncore = (boolean)READUINT8(*cp);
 	optionalEncore = (boolean)READUINT8(*cp);
 
@@ -5327,6 +5330,17 @@ static void Got_SetupVotecmd(UINT8 **cp, INT32 playernum)
 	{
 		// Strip illegal Encore flags.
 		baseEncore = optionalEncore = false;
+	}
+
+	if (newGametype < 0 || newGametype >= numgametypes)
+	{
+		if (server)
+		{
+			I_Error("Got_SetupVotecmd: Gametype %d out of range (numgametypes = %d)", newGametype, numgametypes);
+		}
+
+		CONS_Alert(CONS_WARNING, M_GetText("Vote setup with bad gametype %d received from %s\n"), newGametype, player_names[playernum]);
+		return;
 	}
 
 	for (i = 0; i < VOTE_NUM_LEVELS; i++)
@@ -5346,6 +5360,12 @@ static void Got_SetupVotecmd(UINT8 **cp, INT32 playernum)
 
 		CONS_Alert(CONS_WARNING, M_GetText("Vote setup with bad map ID %d received from %s\n"), tempVoteLevels[i][0], player_names[playernum]);
 		return;
+	}
+
+	{
+		INT16 oldGametype = gametype;
+		G_SetGametype(newGametype);
+		D_GameTypeChanged(oldGametype);
 	}
 
 	if (optionalEncore == true)
