@@ -214,7 +214,12 @@ optional<SoundChunk> try_load_gme(tcb::span<std::byte> data)
 
 optional<SoundChunk> srb2::audio::try_load_chunk(tcb::span<std::byte> data)
 {
-	optional<SoundChunk> ret;
+	optional<SoundChunk> ret = nullopt;
+
+	if (data.size() == 0)
+	{
+		return ret;
+	}
 
 	ret = try_load_dmx(data);
 	if (ret)
@@ -232,5 +237,5 @@ optional<SoundChunk> srb2::audio::try_load_chunk(tcb::span<std::byte> data)
 	if (ret)
 		return ret;
 
-	return nullopt;
+	return ret;
 }
