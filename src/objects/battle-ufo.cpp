@@ -92,7 +92,12 @@ public:
 		auto it = list_.begin();
 		std::size_t count = std::distance(it, list_.end());
 
-		return std::next(it, P_RandomKey(PR_BATTLEUFO, count - 1u))->id();
+		if (count > 1u)
+		{
+			std::advance(it, P_RandomKey(PR_BATTLEUFO, count - 1u));
+		}
+
+		return it->id();
 	}
 
 	void spawn_ufo() const
