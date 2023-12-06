@@ -431,10 +431,10 @@ public:
 			head = offset;
 			break;
 		case SeekFrom::kEnd:
-			if (-offset >= static_cast<StreamOffset>(span_.size())) {
+			if (static_cast<StreamOffset>(span_.size()) + offset < 0) {
 				throw std::logic_error("end offset is out of bounds");
 			}
-			head = span_.size() - offset;
+			head = span_.size() + offset;
 			break;
 		case SeekFrom::kCurrent:
 			if (head_ + offset < 0) {
@@ -526,10 +526,10 @@ public:
 			head = offset;
 			break;
 		case SeekFrom::kEnd:
-			if (-offset >= static_cast<StreamOffset>(vec_.size())) {
+			if (static_cast<StreamOffset>(vec_.size()) + offset < 0) {
 				throw std::logic_error("end offset is out of bounds");
 			}
-			head = vec_.size() - offset;
+			head = vec_.size() + offset;
 			break;
 		case SeekFrom::kCurrent:
 			if (head_ + offset < 0) {
