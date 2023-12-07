@@ -64,7 +64,7 @@ struct Broly : Mobj
 		x->target(source);
 
 		// Shrink into center of source object.
-		x->z = (source->z + source->height / 2);
+		x->z = source->center().z - (x->height / 2);
 
 		x->colorized = true;
 		x->color = source->color;
@@ -90,9 +90,11 @@ struct Broly : Mobj
 			return false;
 		}
 
+		const Fixed center = z + (height / 2);
 		const Vec2<Fixed> v = size();
 
 		scale(Easing_OutSine(linear(), v.y, v.x));
+		z = center - (height / 2);
 
 		return true;
 	}
