@@ -1010,6 +1010,10 @@ char sprnames[NUMSPRITES + 1][5] =
 	"AZR1",
 	"AZR2",
 
+	"EMR1",
+	"EMR2",
+	"EMR3",
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	"VIEW",
 };
@@ -5749,6 +5753,17 @@ state_t states[NUMSTATES] =
 	{SPR_AIZ6, 5, 8, {NULL}, 0, 0, S_AIZDB7},       // S_AIZDB6
 	{SPR_AIZ6, 6, 8, {NULL}, 0, 0, S_AIZDB8},       // S_AIZDB7
 	{SPR_AIZ6, 7, 10, {NULL}, 0, 0, S_AIZDB1},      // S_AIZDB8
+
+	// MT_AZROCKS
+	{SPR_AZR1, 0, -1, {NULL}, 0, 0, S_AZROCKS},     // S_AZROCKS
+	{SPR_NULL, 0, -1, {NULL}, 0, 0, S_AZROCKS},     // S_AZROCKS_RESPAWN
+	{SPR_AZR2, 0, 5*TICRATE, {NULL}, 0, 0, S_NULL},                 // S_AZROCKS_PARTICLE1
+
+	// MT_EMROCKS
+	{SPR_EMR1, 0, -1, {NULL}, 0, 0, S_EMROCKS},     // S_EMROCKS
+	{SPR_NULL, 0, -1, {NULL}, 0, 0, S_EMROCKS},     // S_EMROCKS_RESPAWN
+	{SPR_EMR2, 0, 5*TICRATE, {NULL}, 0, 0, S_NULL},                 // S_EMROCKS_PARTICLE1
+	{SPR_EMR3, 0, 5*TICRATE, {NULL}, 0, 0, S_NULL},                 // S_EMROCKS_PARTICLE2
 };
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] =
@@ -32817,6 +32832,110 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,            // damage
 		sfx_None,     // activesound
 		MF_SCENERY,   // flags
+		S_NULL        // raisestate
+	},
+	{           // MT_AZROCKS
+		470,          // doomednum
+		S_AZROCKS,    // spawnstate
+		1,            // spawnhealth
+		S_NULL,       // seestate
+		sfx_None,     // seesound
+		0,            // reactiontime
+		sfx_None,     // attacksound
+		S_NULL,       // painstate
+		0,            // painchance
+		sfx_None,     // painsound
+		S_NULL,       // meleestate
+		S_NULL,       // missilestate
+		S_NULL,       // deathstate
+		S_NULL,       // xdeathstate
+		sfx_s3k59,    // deathsound
+		0,            // speed
+		48*FRACUNIT,  // radius
+		96*FRACUNIT,  // height
+		0,            // dispoffset
+		0,            // mass
+		0,            // damage
+		sfx_None,     // activesound
+		MF_SPECIAL|MF_NOGRAVITY, // flags
+		S_NULL        // raisestate
+	},
+	{           // MT_AZROCKS_PARTICLE
+		-1,           // doomednum
+		S_AZROCKS_PARTICLE1, // spawnstate
+		1,            // spawnhealth
+		S_NULL,       // seestate
+		sfx_None,     // seesound
+		0,            // reactiontime
+		sfx_None,     // attacksound
+		S_NULL,       // painstate
+		0,            // painchance
+		sfx_None,     // painsound
+		S_NULL,       // meleestate
+		S_NULL,       // missilestate
+		S_NULL,       // deathstate
+		S_NULL,       // xdeathstate
+		sfx_None,     // deathsound
+		0,            // speed
+		16*FRACUNIT,  // radius
+		32*FRACUNIT,  // height
+		0,            // dispoffset
+		0,            // mass
+		0,            // damage
+		sfx_None,     // activesound
+		MF_NOCLIPHEIGHT|MF_SCENERY|MF_NOBLOCKMAP, // flags
+		S_NULL        // raisestate
+	},
+	{           // MT_EMROCKS
+		467,          // doomednum
+		S_EMROCKS,    // spawnstate
+		1,            // spawnhealth
+		S_NULL,       // seestate
+		sfx_None,     // seesound
+		0,            // reactiontime
+		sfx_None,     // attacksound
+		S_NULL,       // painstate
+		0,            // painchance
+		sfx_None,     // painsound
+		S_NULL,       // meleestate
+		S_NULL,       // missilestate
+		S_NULL,       // deathstate
+		S_NULL,       // xdeathstate
+		sfx_s3k59,    // deathsound
+		0,            // speed
+		48*FRACUNIT,  // radius
+		96*FRACUNIT,  // height
+		0,            // dispoffset
+		0,            // mass
+		0,            // damage
+		sfx_None,     // activesound
+		MF_SPECIAL|MF_NOGRAVITY, // flags
+		S_NULL        // raisestate
+	},
+	{           // MT_EMROCKS_PARTICLE
+		-1,           // doomednum
+		S_EMROCKS_PARTICLE1, // spawnstate
+		1,            // spawnhealth
+		S_NULL,       // seestate
+		sfx_None,     // seesound
+		0,            // reactiontime
+		sfx_None,     // attacksound
+		S_NULL,       // painstate
+		0,            // painchance
+		sfx_None,     // painsound
+		S_NULL,       // meleestate
+		S_NULL,       // missilestate
+		S_NULL,       // deathstate
+		S_NULL,       // xdeathstate
+		sfx_None,     // deathsound
+		0,            // speed
+		16*FRACUNIT,  // radius
+		32*FRACUNIT,  // height
+		0,            // dispoffset
+		0,            // mass
+		0,            // damage
+		sfx_None,     // activesound
+		MF_NOCLIPHEIGHT|MF_SCENERY|MF_NOBLOCKMAP, // flags
 		S_NULL        // raisestate
 	},
 };

@@ -3156,6 +3156,15 @@ boolean P_SceneryZMovement(mobj_t *mo)
 				return false;
 			}
 			break;
+		case MT_EMROCKS_PARTICLE:
+			// Hits the ground
+			if (mo->momz <= 0 && mo->z + mo->momz <= mo->floorz - mo->height)
+			{
+				P_KillMobj(mo, NULL, NULL, DMG_NORMAL);
+				if (P_MobjWasRemoved(mo))
+					return false;
+			}
+			break;
 		default:
 			break;
 	}
@@ -6880,6 +6889,11 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		}
 		break;
 	}
+	case MT_EMROCKS_PARTICLE:
+	{
+		Obj_AnimateEndlessMineRocks(mobj);
+		break;
+	}
 	case MT_VWREF:
 	case MT_VWREB:
 	{
@@ -10285,6 +10299,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 		break;
 	}
+	case MT_EMROCKS:
+	{
+		Obj_AnimateEndlessMineRocks(mobj);
+		break;
+	}
 
 	case MT_BALLOON:
 	{
@@ -11793,6 +11812,10 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		case MT_GPZ_SEASAW_SPAWN:
 			Obj_GPZSeasawSpawn(mobj);
 			break;
+		case MT_AZROCKS:
+		case MT_EMROCKS:
+			Obj_LinkRocks(mobj);
+			break;
 		default:
 			break;
 	}
@@ -12065,6 +12088,12 @@ void P_RemoveMobj(mobj_t *mobj)
 		case MT_CHECKPOINT_END:
 		{
 			Obj_UnlinkCheckpoint(mobj);
+			break;
+		}
+		case MT_AZROCKS:
+		case MT_EMROCKS:
+		{
+			Obj_UnlinkRocks(mobj);
 			break;
 		}
 		default:

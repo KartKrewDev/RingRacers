@@ -16,7 +16,8 @@
 
 #define LINK_PACK \
 	svg_battleUfoSpawners,\
-    svg_checkpoints
+    svg_checkpoints,\
+    svg_rocks
 
 
 using link = mobj_t*;
