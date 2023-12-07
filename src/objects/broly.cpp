@@ -8,6 +8,7 @@
 //-----------------------------------------------------------------------------
 
 #include "../math/fixed.hpp"
+#include "../math/vec.hpp"
 #include "../mobj.hpp"
 
 #include "../doomdef.h"
@@ -20,6 +21,7 @@
 
 using srb2::Mobj;
 using srb2::math::Fixed;
+using srb2::math::Vec2;
 
 namespace
 {
@@ -35,9 +37,14 @@ struct Broly : Mobj
 	tic_t duration() const { return mobj_t::extravalue1; }
 	void duration(tic_t n) { mobj_t::extravalue1 = n; }
 
+	void threshold() = delete;
 	void extravalue2() = delete;
-	Fixed max_scale() const { return mobj_t::extravalue2; }
-	void max_scale(Fixed n) { mobj_t::extravalue2 = n; }
+	Vec2<Fixed> size() const { return {mobj_t::threshold, mobj_t::extravalue2}; }
+	void size(const Vec2<Fixed>& n)
+	{
+		mobj_t::threshold = n.x;
+		mobj_t::extravalue2 = n.y;
+	}
 
 	bool valid() const { return duration(); }
 
@@ -45,7 +52,7 @@ struct Broly : Mobj
 
 	Fixed linear() const { return (remaining() * FRACUNIT) / duration(); }
 
-	static Broly* spawn(Mobj* source, tic_t duration)
+	static Broly* spawn(Mobj* source, tic_t duration, const Vec2<Fixed>& size)
 	{
 		if (duration == 0)
 		{
@@ -63,7 +70,7 @@ struct Broly : Mobj
 		x->color = source->color;
 		x->mobj_t::hitlag = 0; // do not copy source hitlag
 
-		x->max_scale(64 * mapobjectscale);
+		x->size(size);
 		x->duration(duration);
 
 		x->tics = (duration + kBufferTics);
@@ -83,7 +90,9 @@ struct Broly : Mobj
 			return false;
 		}
 
-		scale(Easing_OutSine(linear(), 0, max_scale()));
+		const Vec2<Fixed> v = size();
+
+		scale(Easing_OutSine(linear(), v.y, v.x));
 
 		return true;
 	}
@@ -96,7 +105,7 @@ Obj_SpawnBrolyKi
 (		mobj_t * source,
 		tic_t duration)
 {
-	return Broly::spawn(static_cast<Mobj*>(source), duration);
+	return Broly::spawn(static_cast<Mobj*>(source), duration, {64 * mapobjectscale, 0});
 }
 
 boolean
