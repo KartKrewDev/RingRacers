@@ -94,7 +94,10 @@ static UINT8 cheatf_warp(void)
 	// Goofy, but this call needs to be before M_ClearMenus because that path
 	// calls G_LoadLevel, which will trigger a gamedata save. Garbage factory
 	if (success)
+	{
+		gamedata->gonerlevel = GDGONER_DONE;
 		G_SetUsedCheats();
+	}
 
 	M_ClearMenus(true);
 
@@ -180,6 +183,8 @@ static UINT8 cheatf_devmode(void)
 	{
 		mapheaderinfo[i]->records.mapvisited = MV_MAX;
 	}
+
+	gamedata->gonerlevel = GDGONER_DONE;
 
 	M_ClearMenus(true);
 

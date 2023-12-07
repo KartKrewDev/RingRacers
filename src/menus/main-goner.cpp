@@ -370,6 +370,13 @@ void M_GonerHidePassword(void)
 	S_StartSound(NULL, sfx_s3k5b);
 }
 
+void M_GonerResetText(void)
+{
+	goner_typewriter.ClearText();
+	LinesToDigest.clear();
+	LinesOutput.clear();
+}
+
 }; // namespace
 
 void M_GonerResetLooking(int type)
@@ -383,8 +390,6 @@ void M_GonerResetLooking(int type)
 	else if (goner_youactuallylooked > 2*TICRATE
 	&& goner_lasttypelooking == gamedata->gonerlevel)
 	{
-		if (goner_levelworking > gamedata->gonerlevel)
-			goner_levelworking--;
 		gamedata->gonerlevel++;
 		LinesToDigest.clear();
 	}
@@ -403,6 +408,7 @@ void M_GonerCheckLooking(void)
 void M_GonerTick(void)
 {
 	static bool first = true;
+	static int lastseenlevel = GDGONER_INIT;
 
 	if (goner_levelworking == GDGONER_INIT)
 	{
@@ -417,14 +423,22 @@ void M_GonerTick(void)
 		first = true; // a lie, but only slightly...
 
 		// Handle rewinding if you clear your gamedata.
-		goner_typewriter.ClearText();
-		LinesToDigest.clear();
-		LinesOutput.clear();
+		M_GonerResetText();
 
 		goner_levelworking = GDGONER_INIT;
 	}
 
 	M_GonerResetLooking(GDGONER_INIT);
+
+	if (gamedata->gonerlevel != lastseenlevel)
+	{
+		if (goner_levelworking >= gamedata->gonerlevel)
+		{
+			// If the valid range has changed, try the current one again
+			goner_levelworking--;
+		}
+		lastseenlevel = gamedata->gonerlevel;
+	}
 
 	if (first)
 	{
@@ -671,6 +685,8 @@ void M_GonerGDQ(boolean opinion)
 	}
 	LinesToDigest.reverse();
 
-	goner_levelworking = GDGONER_TUTORIAL;
-	gamedata->gonerlevel = GDGONER_DONE;
+	if (gamedata->gonerlevel <= GDGONER_TUTORIAL)
+	{
+		goner_levelworking = gamedata->gonerlevel = GDGONER_TUTORIAL;
+	}
 }
