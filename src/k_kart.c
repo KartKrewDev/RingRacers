@@ -3914,14 +3914,39 @@ void K_RemoveGrowShrink(player_t *player)
 	player->roundconditions.consecutive_grow_lasers = 0;
 }
 
+// Should this object actually scale check?
+// Scale-to-scale comparisons only make sense for objects that expect to have dynamic scale.
+static boolean K_IsScaledItem(mobj_t *mobj)
+{
+	return mobj && !P_MobjWasRemoved(mobj) &&
+		(mobj->type == MT_ORBINAUT || mobj->type == MT_JAWZ || mobj->type == MT_GACHABOM
+		|| mobj->type == MT_BANANA || mobj->type == MT_EGGMANITEM || mobj->type == MT_BALLHOG
+		|| mobj->type == MT_SSMINE || mobj->type == MT_LANDMINE || mobj->type == MT_SINK
+		|| mobj->type == MT_GARDENTOP || mobj->type == MT_DROPTARGET || mobj->type == MT_PLAYER);
+}
+
+
 boolean K_IsBigger(mobj_t *compare, mobj_t *other)
 {
 	fixed_t compareScale, otherScale;
+	const fixed_t requiredDifference = (mapobjectscale/4);
 
 	if ((compare == NULL || P_MobjWasRemoved(compare) == true)
 		|| (other == NULL || P_MobjWasRemoved(other) == true))
 	{
 		return false;
+	}
+
+	// If a player is colliding with a non-kartitem object, we don't care about what scale that object is:
+	// mappers are liable to fuck with the scale for their own reasons, and we need to compare against the
+	// player's base scale instead to match expectations.
+	if (K_IsScaledItem(compare) != K_IsScaledItem(other))
+	{
+		if (compare->type == MT_PLAYER)
+			return (compare->scale > requiredDifference + FixedMul(mapobjectscale, P_GetMobjDefaultScale(compare)));
+		else if (other->type == MT_PLAYER)
+			return false; // Haha what the fuck are you doing
+		// fallthrough
 	}
 
 	if ((compareScale = P_GetMobjDefaultScale(compare)) != FRACUNIT)
@@ -3942,7 +3967,7 @@ boolean K_IsBigger(mobj_t *compare, mobj_t *other)
 		otherScale = other->scale;
 	}
 
-	return (compareScale > otherScale + (mapobjectscale / 4));
+	return (compareScale > otherScale + requiredDifference);
 }
 
 static fixed_t K_TumbleZ(mobj_t *mo, fixed_t input)
