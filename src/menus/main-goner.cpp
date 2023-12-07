@@ -33,7 +33,6 @@ menuitem_t MAIN_Goner[] =
 		{.routine = M_GonerTutorial}, 0, 0},
 };
 
-static void M_DrawGonerBack(void);
 static void M_GonerDrawer(void);
 
 menu_t MAIN_GonerDef = {
@@ -497,9 +496,24 @@ void M_GonerTick(void)
 	}
 }
 
-static void M_DrawGonerBack(void)
+void M_DrawGonerBack(void)
 {
 	srb2::Draw drawer = srb2::Draw();
+
+	if (gamedata->gonerlevel <= GDGONER_VIDEO)
+	{
+		drawer
+			.width(BASEVIDWIDTH)
+			.height(BASEVIDHEIGHT)
+			.fill(157);
+
+		drawer
+			.xy(10, 10)
+			.font(srb2::Draw::Font::kConsole)
+			.flags(V_ADD|V_10TRANS)
+			.text("NO SIGNAL");
+		return;
+	}
 
 	drawer
 		.width(BASEVIDWIDTH)

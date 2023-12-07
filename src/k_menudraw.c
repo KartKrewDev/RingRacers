@@ -785,7 +785,9 @@ void M_Drawer(void)
 	if (menuactive)
 	{
 		boolean drawbgroutine = false;
-		if (gamestate == GS_MENU)
+		boolean trulystarted = M_GameTrulyStarted();
+
+		if (gamestate == GS_MENU && trulystarted)
 		{
 			if (currentMenu->bgroutine)
 				drawbgroutine = true;
@@ -798,7 +800,11 @@ void M_Drawer(void)
 			&& (currentMenu->behaviourflags & MBF_DRAWBGWHILEPLAYING))
 				drawbgroutine = true;
 
-			if (!WipeInAction && currentMenu != &PAUSE_PlaybackMenuDef)
+			if (!Playing() && !trulystarted)
+			{
+				M_DrawGonerBack();
+			}
+			else if (!WipeInAction && currentMenu != &PAUSE_PlaybackMenuDef)
 			{
 				V_DrawFadeScreen(122, 3);
 			}
@@ -3861,7 +3867,7 @@ void M_DrawMPServerBrowser(void)
 void M_DrawOptionsCogs(void)
 {
 	// the background isn't drawn outside of being in the main menu state.
-	if (gamestate == GS_MENU)
+	if (gamestate == GS_MENU && M_GameTrulyStarted())
 	{
 		patch_t *back[3] = {W_CachePatchName("OPT_BG1", PU_CACHE), W_CachePatchName("OPT_BG2", PU_CACHE), W_CachePatchName("OPT_BG3", PU_CACHE)};
 		INT32 tflag = 0;
