@@ -3220,10 +3220,13 @@ boolean M_GameTrulyStarted(void)
 		return true;
 
 	// Okay, we can check to see if this challenge has been achieved.
-	return (
+	/*return (
 		gamedata->unlockpending[gamestartchallenge]
 		|| gamedata->unlocked[gamestartchallenge]
-	);
+	);*/
+	// Actually, on second thought, let's let the Goner Setup play one last time
+	// The above is used in M_StartControlPanel instead
+	return (gamedata->gonerlevel == GDGONER_DONE);
 }
 
 boolean M_CheckNetUnlockByID(UINT16 unlockid)

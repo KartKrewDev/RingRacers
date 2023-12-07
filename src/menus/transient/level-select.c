@@ -744,11 +744,8 @@ void M_LevelSelected(INT16 add)
 
 			D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_kartencore.value == 1), 1, 1, false, false);
 
-			if (M_GameTrulyStarted() == false)
-			{
-				// No restoreMenu set.
-			}
-			else if (levellist.levelsearch.tutorial)
+			if (!M_GameTrulyStarted() ||
+				levellist.levelsearch.tutorial)
 			{
 				restoreMenu = currentMenu;
 			}

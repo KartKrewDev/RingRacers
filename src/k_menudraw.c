@@ -1144,11 +1144,29 @@ void M_DrawKartGamemodeMenu(void)
 
 void M_DrawHorizontalMenu(void)
 {
-	INT32 x = BASEVIDWIDTH/2, y = currentMenu->y, i;
+	INT32 x, y, i, final = currentMenu->extra2-1, showflags;
 
 	const INT32 width = 80;
 
+	y = currentMenu->y;
+
+	x = (BASEVIDWIDTH - 8*final)/2;
+	for (i = 0; i < currentMenu->extra2; i++, x += 8)
+	{
+		if (i == itemOn)
+		{
+			V_DrawFill(x-2, y + 16, 4, 4, 0);
+		}
+		else
+		{
+			V_DrawFill(x-1, y + 17, 2, 2,
+				(i >= currentMenu->numitems) ? 20 : 10
+			);
+		}
+	}
+
 	i = itemOn;
+	x = BASEVIDWIDTH/2;
 
 	do
 	{
@@ -1161,9 +1179,21 @@ void M_DrawHorizontalMenu(void)
 
 	while (x < BASEVIDWIDTH + (width/2))
 	{
+		showflags = 0;
+		if (i == final)
+		{
+			showflags |= V_STRINGDANCE;
+			if (itemOn == i)
+				showflags |= V_YELLOWMAP;
+		}
+		else if (i == itemOn)
+		{
+			showflags |= highlightflags;
+		}
+
 		V_DrawCenteredThinString(
 			x, y,
-			(i == itemOn) ? highlightflags : 0,
+			showflags,
 			currentMenu->menuitems[i].text
 		);
 
@@ -1172,30 +1202,13 @@ void M_DrawHorizontalMenu(void)
 		x += width;
 	}
 
-	y++; // thin string means better to bottom-align these
-
 	if (itemOn != 0)
-		V_DrawCharacter((BASEVIDWIDTH - width)/2 + 3 - (skullAnimCounter/5), y,
+		V_DrawCharacter((BASEVIDWIDTH - width)/2 + 3 - (skullAnimCounter/5), y + 1,
 			'\x1C' | highlightflags, false); // left arrow
 
 	if (itemOn != currentMenu->numitems-1)
-		V_DrawCharacter((BASEVIDWIDTH + width)/2 - 10 + (skullAnimCounter/5), y,
+		V_DrawCharacter((BASEVIDWIDTH + width)/2 - 10 + (skullAnimCounter/5), y + 1,
 			'\x1D' | highlightflags, false); // right arrow
-
-	x = (BASEVIDWIDTH - 8*(currentMenu->extra2-1))/2;
-	for (i = 0; i < currentMenu->extra2; i++, x += 8)
-	{
-		if (i == itemOn)
-		{
-			V_DrawFill(x-2, y + 15, 4, 4, 0);
-		}
-		else
-		{
-			V_DrawFill(x-1, y + 16, 2, 2,
-				(i >= currentMenu->numitems) ? 20 : 10
-			);
-		}
-	}
 }
 
 #define MAXMSGLINELEN 256

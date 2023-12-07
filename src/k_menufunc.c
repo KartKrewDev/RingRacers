@@ -563,6 +563,20 @@ void M_StartControlPanel(void)
 
 		Music_Stop("title");
 
+		if (gamedata != NULL
+		&& gamedata->gonerlevel < GDGONER_OUTRO
+		&& gamestartchallenge < MAXUNLOCKABLES)
+		{
+			// See M_GameTrulyStarted
+			if (
+				gamedata->unlockpending[gamestartchallenge]
+				|| gamedata->unlocked[gamestartchallenge]
+			)
+			{
+				gamedata->gonerlevel = GDGONER_OUTRO;
+			}
+		}
+
 		if (M_GameTrulyStarted() == false)
 		{
 			// Are you ready for the First Boot Experience?
@@ -600,7 +614,7 @@ void M_StartControlPanel(void)
 		}
 		else
 		{
-			if (restoreMenu == NULL)
+			if (restoreMenu == NULL || restoreMenu == &MAIN_GonerDef)
 				restoreMenu = &MainDef;
 			currentMenu = M_SpecificMenuRestore(M_InterruptMenuWithChallenges(restoreMenu));
 			restoreMenu = NULL;

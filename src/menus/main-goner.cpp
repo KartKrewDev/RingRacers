@@ -12,6 +12,9 @@
 
 #include <forward_list>
 
+static void M_GonerDrawer(void);
+static void M_GonerConclude(INT32 choice);
+
 menuitem_t MAIN_Goner[] =
 {
 	{IT_STRING | IT_CALL, NULL, NULL, NULL, {.routine = M_QuitSRB2}, 0, 0}, // will be replaced
@@ -31,9 +34,11 @@ menuitem_t MAIN_Goner[] =
 	{IT_STRING | IT_CALL, "BEGIN TUTORIAL",
 		"PREPARE FOR INTEGRATION.", NULL,
 		{.routine = M_GonerTutorial}, 0, 0},
-};
 
-static void M_GonerDrawer(void);
+	{IT_STRING | IT_CALL, "START GAME",
+		"I WILL SUCCEED.", NULL,
+		{.routine = M_GonerConclude}, 0, 0},
+};
 
 menu_t MAIN_GonerDef = {
 	1, // Intentionally not the sizeof calc
@@ -305,7 +310,6 @@ void M_AddGonerLines(void)
 			break;
 		}
 		case GDGONER_TUTORIAL:
-		case GDGONER_DONE: // maybe we could do something different for this eventually
 		{
 			if (!leftoff)
 			{
@@ -329,6 +333,36 @@ void M_AddGonerLines(void)
 
 			break;
 		}
+		case GDGONER_OUTRO:
+		{
+			if (!leftoff)
+			{
+				LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/3,
+					"And... the training data is completed.");
+			}
+			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/2,
+				"It's kind of funny, actually.");
+			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/3,
+				"Oh? Care to elucidate, Prower?");
+			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/2,
+				"No matter how much time we took getting here, a machine like Metal can play it back in minutes.");
+			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/2,
+				"It could have been five days or five years of development on our ""\x82""Ring Racers""\x80"", and that barely matters.");
+			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/4,
+				"Ha! As if. I'd like to think our partnership hasn't felt that long.");
+			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/2,
+				"But yes. Perhaps now you have a better appreciation of what we're building here, Metal.");
+			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/2,
+				"Now, I'm willing to let bygones be bygones.");
+			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/2,
+				"As long as you keep your violence to the track, I'll be giving you your autonomy back in a moment.");
+			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
+				"We've kept the keys from you long enough!");
+			break;
+		}
+		case GDGONER_DONE:
+			break;
+
 		default:
 			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
 				"I am error");
@@ -624,6 +658,15 @@ void M_GonerProfile(INT32 choice)
 	M_GonerResetLooking(GDGONER_PROFILE);
 }
 
+static boolean M_GonerSurveyResponse(INT32 ch)
+{
+	if (ch != CH_YES)
+		return;
+
+	if (gamedata->gonerlevel < GDGONER_OUTRO)
+		gamedata->gonerlevel = GDGONER_OUTRO;
+}
+
 void M_GonerTutorial(INT32 choice)
 {
 	(void)choice;
@@ -646,15 +689,23 @@ void M_GonerTutorial(INT32 choice)
 	cupgrid.grandprix = false;
 	levellist.levelsearch.timeattack = false;
 
-	if (!M_LevelListFromGametype(GT_TUTORIAL))
+	if (!M_LevelListFromGametype(GT_TUTORIAL) && gamedata->gonerlevel < GDGONER_OUTRO)
 	{
 		// The game is incapable of progression, but I can't bring myself to put an I_Error here.
-		M_StartMessage("SURVEY_PROGRAM",
+		M_StartMessage("Agreement",
 			"YOU ACCEPT EVERYTHING THAT WILL HAPPEN FROM NOW ON.",
-			&M_QuitResponse, MM_YESNO, "I agree", "Cancel");
+			&M_GonerSurveyResponse, MM_YESNO, "I agree", "Cancel");
 	}
+}
 
-	goner_levelworking = gamedata->gonerlevel = GDGONER_DONE;
+static void M_GonerConclude(INT32 choice)
+{
+	(void)choice;
+
+	gamedata->gonerlevel = GDGONER_DONE;
+
+	M_ClearMenus(true);
+	M_GonerResetText();
 }
 
 void M_GonerGDQ(boolean opinion)
