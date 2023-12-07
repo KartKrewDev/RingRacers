@@ -3157,6 +3157,8 @@ boolean P_SceneryZMovement(mobj_t *mo)
 			}
 			break;
 		case MT_EMROCKS_PARTICLE:
+		case MT_EMFAUCET_DRIP:
+		case MT_EMFAUCET_PARTICLE:
 			// Hits the ground
 			if (mo->momz <= 0 && mo->z + mo->momz <= mo->floorz - mo->height)
 			{
@@ -6893,6 +6895,16 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 	{
 		Obj_AnimateEndlessMineRocks(mobj);
 		break;
+	}
+	case MT_EMFAUCET:
+	{
+		Obj_EMZFaucetThink(mobj);
+		return;
+	}
+	case MT_EMRAINGEN:
+	{
+		Obj_EMZRainGenerator(mobj);
+		return;
 	}
 	case MT_VWREF:
 	case MT_VWREB:

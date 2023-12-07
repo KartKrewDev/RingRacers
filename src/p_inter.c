@@ -2353,6 +2353,9 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		case MT_BLENDEYE_PUYO:
 			VS_PuyoDeath(target);
 			break;
+		case MT_EMFAUCET_DRIP:
+			Obj_EMZDripDeath(target);
+			break;
 		default:
 			break;
 	}
