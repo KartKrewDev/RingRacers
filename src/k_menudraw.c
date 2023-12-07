@@ -3080,27 +3080,29 @@ void M_DrawLevelSelect(void)
 	M_DrawCupTitle(tay, &levellist.levelsearch);
 }
 
+static boolean M_LevelSelectHasBG(menu_t *check)
+{
+	if (check == NULL)
+		check = currentMenu;
+
+	return (check == &PLAY_LevelSelectDef
+	|| check == &PLAY_CupSelectDef);
+}
+
 static boolean M_LevelSelectToTimeAttackTransitionHelper(void)
 {
 	if (menutransition.tics == 0)
 		return false;
 
-	return \
-	(
-		menutransition.startmenu == &PLAY_LevelSelectDef
-		&& menutransition.endmenu == &PLAY_TimeAttackDef
-	) || (
-		menutransition.endmenu == &PLAY_LevelSelectDef
-		&& menutransition.startmenu == &PLAY_TimeAttackDef
-	);
+	return (M_LevelSelectHasBG(menutransition.startmenu))
+		!= M_LevelSelectHasBG(menutransition.endmenu);
 }
 
 void M_DrawSealedBack(void)
 {
 	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 
-	if (currentMenu != &PLAY_LevelSelectDef
-	&& currentMenu != &PLAY_CupSelectDef)
+	if (M_LevelSelectHasBG(currentMenu) == false)
 		return;
 
 	INT32 translucencylevel = 7;
