@@ -5060,7 +5060,7 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 			Obj_JawzThrown(th, finalspeed, dir);
 			break;
 		case MT_SPB:
-			th->movefactor = finalspeed;
+			Obj_SPBThrown(th, finalspeed);
 			break;
 		case MT_BUBBLESHIELDTRAP:
 			P_SetScale(th, ((5*th->destscale)>>2)*4);
