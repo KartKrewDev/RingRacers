@@ -10,6 +10,8 @@
 #include "broly.hpp"
 
 #include "../doomstat.h"
+#include "../k_kart.h"
+#include "../sounds.h"
 
 using namespace srb2::objects;
 
@@ -18,7 +20,15 @@ Obj_SpawnBrolyKi
 (		mobj_t * source,
 		tic_t duration)
 {
-	return Broly::spawn(static_cast<Mobj*>(source), duration, {64 * mapobjectscale, 0});
+	Broly* x = Broly::spawn<Broly>(static_cast<Mobj*>(source), duration, {64 * mapobjectscale, 0});
+
+	x->colorized = true;
+	x->color = source->color;
+
+	K_ReduceVFXForEveryone(x);
+	x->voice(sfx_cdfm74);
+
+	return x;
 }
 
 boolean

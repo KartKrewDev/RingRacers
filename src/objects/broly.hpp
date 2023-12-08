@@ -10,10 +10,11 @@
 #ifndef objects_broly_hpp
 #define objects_broly_hpp
 
+#include <type_traits>
+
 #include "objects.hpp"
 
 #include "../info.h"
-#include "../k_kart.h"
 #include "../m_easing.h"
 
 namespace srb2::objects
@@ -21,6 +22,8 @@ namespace srb2::objects
 
 struct Broly : Mobj
 {
+	static constexpr mobjtype_t kMobjType = MT_BROLY;
+
 	/* An object may not be visible on the same tic:
 	   1) that it spawned
 	   2) that it cycles to the next state */
@@ -45,32 +48,27 @@ struct Broly : Mobj
 
 	Fixed linear() const { return (remaining() * FRACUNIT) / duration(); }
 
-	static Broly* spawn(Mobj* source, tic_t duration, const Vec2<Fixed>& size)
+	template <typename T>
+	static T* spawn(Mobj* source, tic_t duration, const Vec2<Fixed>& size)
 	{
+		static_assert(std::is_base_of_v<Broly, T>);
+
 		if (duration == 0)
 		{
 			return nullptr;
 		}
 
-		Broly* x = source->spawn_from<Broly>({}, MT_BROLY);
+		T* x = Mobj::spawn<T>(source->center(), T::kMobjType);
 
 		x->target(source);
 
 		// Shrink into center of source object.
-		x->z = source->center().z - (x->height / 2);
-
-		x->colorized = true;
-		x->color = source->color;
-		x->mobj_t::hitlag = 0; // do not copy source hitlag
+		x->z -= x->height / 2;
 
 		x->size(size);
 		x->duration(duration);
 
 		x->tics = (duration + kBufferTics);
-
-		K_ReduceVFXForEveryone(x);
-
-		x->voice(sfx_cdfm74);
 
 		return x;
 	}
