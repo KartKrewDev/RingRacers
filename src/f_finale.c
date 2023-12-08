@@ -1770,7 +1770,7 @@ void F_TitleScreenTicker(boolean run)
 	{
 		if (finalecount == 0)
 		{
-			if (!Music_Playing("title"))
+			if (cache_gametrulystarted && !Music_Playing("title"))
 			{
 				// Now start the music
 				Music_Loop("title", looptitle);

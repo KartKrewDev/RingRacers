@@ -5,6 +5,7 @@
 #include "../m_cond.h"
 #include "../r_skins.h"
 #include "../s_sound.h"
+#include "../music.h"
 #include "../p_local.h" // P_AutoPause
 #include "../st_stuff.h" // faceprefix
 #include "../v_draw.hpp"
@@ -391,6 +392,15 @@ void M_GonerRailroad(bool set)
 	S_StartSound(NULL, sfx_s3k63);
 }
 
+void M_GonerPlayMusic(void)
+{
+	if (gamedata->gonerlevel <= GDGONER_SOUND || Music_Playing("menu"))
+		return;
+
+	Music_Remap("menu", "_OCEAN"); //"_GONER");
+	Music_Play("menu");
+}
+
 void M_GonerHidePassword(void)
 {
 	if (currentMenu->menuitems[0].mvar2)
@@ -402,6 +412,8 @@ void M_GonerHidePassword(void)
 			{.routine = M_QuitSRB2}, 0, 1};
 
 	S_StartSound(NULL, sfx_s3k5b);
+
+	M_GonerPlayMusic();
 }
 
 void M_GonerResetText(void)
@@ -487,6 +499,8 @@ void M_GonerTick(void)
 			// If the valid range has changed, try the current one again
 			goner_levelworking--;
 		}
+
+		M_GonerPlayMusic();
 
 		lastseenlevel = gamedata->gonerlevel;
 	}

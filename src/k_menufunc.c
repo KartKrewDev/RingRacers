@@ -582,9 +582,6 @@ void M_StartControlPanel(void)
 			// Are you ready for the First Boot Experience?
 			M_ResetOptions();
 			currentMenu = &MAIN_GonerDef;
-			currentMenu->lastOn = 0;
-			Music_Remap("menu_nocred", "_GONER");
-			Music_Play("menu_nocred");
 		}
 		else if (cv_currprofile.value == -1) // Only ask once per session.
 		{
