@@ -14,15 +14,17 @@
 #include <iterator>
 #include <type_traits>
 
-#include "mobj.hpp"
+#include "p_mobj.h"
 
 namespace srb2
 {
 
 // for (T* ptr : MobjList(hnext(), [](T* ptr) { return ptr->hnext(); }))
-template <typename T, typename F, std::enable_if_t<std::is_convertible_v<T, Mobj>, bool> = true>
+template <typename T, typename F>
 struct MobjListView
 {
+	static_assert(std::is_convertible_v<T, mobj_t>);
+
 	struct Iterator
 	{
 		using iterator_category = std::forward_iterator_tag;
@@ -32,12 +34,20 @@ struct MobjListView
 		using reference = value_type;
 
 		Iterator(pointer ptr, F adv) : ptr_(deref(ptr)), adv_(adv) {}
+		Iterator& operator=(const Iterator& b)
+		{
+			// adv_ may be a lambda. However, lambdas are not
+			// copy assignable. Therefore, perform copy
+			// construction instead!
+			this->~Iterator();
+			return *new(this) Iterator {b};
+		}
 
 		bool operator==(const Iterator& b) const { return ptr_ == b.ptr_; };
 		bool operator!=(const Iterator& b) const { return ptr_ != b.ptr_; };
 
 		reference operator*() const { return ptr_; }
-		pointer operator->() { return &ptr_; }
+		pointer operator->() { return ptr_; }
 
 		Iterator& operator++()
 		{
@@ -56,7 +66,7 @@ struct MobjListView
 		pointer ptr_;
 		F adv_;
 
-		static T* deref(T* ptr) { return ptr && ptr->valid() ? ptr : nullptr; }
+		static T* deref(T* ptr) { return !P_MobjWasRemoved(ptr) ? ptr : nullptr; }
 	};
 
 	MobjListView(T* ptr, F adv) : ptr_(ptr), adv_(adv) {}

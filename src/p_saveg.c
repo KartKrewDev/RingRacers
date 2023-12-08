@@ -36,6 +36,7 @@
 #include "lua_script.h"
 #include "p_slopes.h"
 #include "m_cond.h" // netUnlocked
+#include "p_link.h"
 
 // SRB2Kart
 #include "k_grandprix.h"
@@ -49,6 +50,8 @@
 
 savedata_t savedata;
 savedata_cup_t cupsavedata;
+
+static savebuffer_t *current_savebuffer;
 
 // Block UINT32s to attempt to ensure that the correct data is
 // being sent and received
@@ -3839,12 +3842,19 @@ static void SavePolyfadeThinker(savebuffer_t *save, const thinker_t *th, const U
 	WRITEINT32(save->p, ht->timer);
 }
 
+static void WriteMobjPointer(mobj_t *mobj)
+{
+	WRITEUINT32(current_savebuffer->p, SaveMobjnum(mobj));
+}
+
 static void P_NetArchiveThinkers(savebuffer_t *save)
 {
 	const thinker_t *th;
 	UINT32 i;
 
 	WRITEUINT32(save->p, ARCHIVEBLOCK_THINKERS);
+
+	P_SaveMobjPointers(WriteMobjPointer);
 
 	for (i = 0; i < NUM_THINKERLISTS; i++)
 	{
@@ -4537,6 +4547,10 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 				mobj->script_stringargs[j][k] = READCHAR(save->p);
 			mobj->script_stringargs[j][len] = '\0';
 		}
+	}
+	else if (mobj->spawnpoint)
+	{
+		P_CopyMapThingSpecialFieldsToMobj(mobj->spawnpoint, mobj);
 	}
 	if (diff2 & MD2_FLOORSPRITESLOPE)
 	{
@@ -5234,6 +5248,11 @@ static thinker_t* LoadPolyfadeThinker(savebuffer_t *save, actionf_p1 thinker)
 	return &ht->thinker;
 }
 
+static void ReadMobjPointer(mobj_t **mobj_p)
+{
+	*mobj_p = LoadMobj(READUINT32(current_savebuffer->p));
+}
+
 static void P_NetUnArchiveThinkers(savebuffer_t *save)
 {
 	thinker_t *currentthinker;
@@ -5268,6 +5287,8 @@ static void P_NetUnArchiveThinkers(savebuffer_t *save)
 
 	// we don't want the removed mobjs to come back
 	P_InitThinkers();
+
+	P_LoadMobjPointers(ReadMobjPointer);
 
 	// clear sector thinker pointers so they don't point to non-existant thinkers for all of eternity
 	for (i = 0; i < numsectors; i++)
@@ -5572,11 +5593,25 @@ static inline void P_UnArchivePolyObjects(savebuffer_t *save)
 		P_UnArchivePolyObj(save, &PolyObjects[i]);
 }
 
+static mobj_t *RelinkMobj(mobj_t **ptr)
+{
+	UINT32 temp = (UINT32)(size_t)*ptr;
+	*ptr = NULL;
+	return P_SetTarget(ptr, P_FindNewPosition(temp));
+}
+
+static void RelinkMobjVoid(mobj_t **ptr)
+{
+	RelinkMobj(ptr);
+}
+
 static void P_RelinkPointers(void)
 {
 	thinker_t *currentthinker;
 	mobj_t *mobj;
 	UINT32 temp, i;
+
+	P_LoadMobjPointers(RelinkMobjVoid);
 
 	// use info field (value = oldposition) to relink mobjs
 	for (currentthinker = thlist[THINK_MOBJ].next; currentthinker != &thlist[THINK_MOBJ];
@@ -5592,37 +5627,27 @@ static void P_RelinkPointers(void)
 
 		if (mobj->tracer)
 		{
-			temp = (UINT32)(size_t)mobj->tracer;
-			mobj->tracer = NULL;
-			if (!P_SetTarget(&mobj->tracer, P_FindNewPosition(temp)))
+			if (!RelinkMobj(&mobj->tracer))
 				CONS_Debug(DBG_GAMELOGIC, "tracer not found on %d\n", mobj->type);
 		}
 		if (mobj->target)
 		{
-			temp = (UINT32)(size_t)mobj->target;
-			mobj->target = NULL;
-			if (!P_SetTarget(&mobj->target, P_FindNewPosition(temp)))
+			if (!RelinkMobj(&mobj->target))
 				CONS_Debug(DBG_GAMELOGIC, "target not found on %d\n", mobj->type);
 		}
 		if (mobj->hnext)
 		{
-			temp = (UINT32)(size_t)mobj->hnext;
-			mobj->hnext = NULL;
-			if (!P_SetTarget(&mobj->hnext, P_FindNewPosition(temp)))
+			if (!RelinkMobj(&mobj->hnext))
 				CONS_Debug(DBG_GAMELOGIC, "hnext not found on %d\n", mobj->type);
 		}
 		if (mobj->hprev)
 		{
-			temp = (UINT32)(size_t)mobj->hprev;
-			mobj->hprev = NULL;
-			if (!P_SetTarget(&mobj->hprev, P_FindNewPosition(temp)))
+			if (!RelinkMobj(&mobj->hprev))
 				CONS_Debug(DBG_GAMELOGIC, "hprev not found on %d\n", mobj->type);
 		}
 		if (mobj->itnext)
 		{
-			temp = (UINT32)(size_t)mobj->itnext;
-			mobj->itnext = NULL;
-			if (!P_SetTarget(&mobj->itnext, P_FindNewPosition(temp)))
+			if (!RelinkMobj(&mobj->itnext))
 				CONS_Debug(DBG_GAMELOGIC, "itnext not found on %d\n", mobj->type);
 		}
 		if (mobj->terrain)
@@ -5636,23 +5661,17 @@ static void P_RelinkPointers(void)
 		}
 		if (mobj->terrainOverlay)
 		{
-			temp = (UINT32)(size_t)mobj->terrainOverlay;
-			mobj->terrainOverlay = NULL;
-			if (!P_SetTarget(&mobj->terrainOverlay, P_FindNewPosition(temp)))
+			if (!RelinkMobj(&mobj->terrainOverlay))
 				CONS_Debug(DBG_GAMELOGIC, "terrainOverlay not found on %d\n", mobj->type);
 		}
 		if (mobj->punt_ref)
 		{
-			temp = (UINT32)(size_t)mobj->punt_ref;
-			mobj->punt_ref = NULL;
-			if (!P_SetTarget(&mobj->punt_ref, P_FindNewPosition(temp)))
+			if (!RelinkMobj(&mobj->punt_ref))
 				CONS_Debug(DBG_GAMELOGIC, "punt_ref not found on %d\n", mobj->type);
 		}
 		if (mobj->owner)
 		{
-			temp = (UINT32)(size_t)mobj->owner;
-			mobj->owner = NULL;
-			if (!P_SetTarget(&mobj->owner, P_FindNewPosition(temp)))
+			if (!RelinkMobj(&mobj->owner))
 				CONS_Debug(DBG_GAMELOGIC, "owner not found on %d\n", mobj->type);
 		}
 	}
@@ -5664,37 +5683,27 @@ static void P_RelinkPointers(void)
 
 		if (players[i].skybox.viewpoint)
 		{
-			temp = (UINT32)(size_t)players[i].skybox.viewpoint;
-			players[i].skybox.viewpoint = NULL;
-			if (!P_SetTarget(&players[i].skybox.viewpoint, P_FindNewPosition(temp)))
+			if (!RelinkMobj(&players[i].skybox.viewpoint))
 				CONS_Debug(DBG_GAMELOGIC, "skybox.viewpoint not found on player %d\n", i);
 		}
 		if (players[i].skybox.centerpoint)
 		{
-			temp = (UINT32)(size_t)players[i].skybox.centerpoint;
-			players[i].skybox.centerpoint = NULL;
-			if (!P_SetTarget(&players[i].skybox.centerpoint, P_FindNewPosition(temp)))
+			if (!RelinkMobj(&players[i].skybox.centerpoint))
 				CONS_Debug(DBG_GAMELOGIC, "skybox.centerpoint not found on player %d\n", i);
 		}
 		if (players[i].awayview.mobj)
 		{
-			temp = (UINT32)(size_t)players[i].awayview.mobj;
-			players[i].awayview.mobj = NULL;
-			if (!P_SetTarget(&players[i].awayview.mobj, P_FindNewPosition(temp)))
+			if (!RelinkMobj(&players[i].awayview.mobj))
 				CONS_Debug(DBG_GAMELOGIC, "awayview.mobj not found on player %d\n", i);
 		}
 		if (players[i].followmobj)
 		{
-			temp = (UINT32)(size_t)players[i].followmobj;
-			players[i].followmobj = NULL;
-			if (!P_SetTarget(&players[i].followmobj, P_FindNewPosition(temp)))
+			if (!RelinkMobj(&players[i].followmobj))
 				CONS_Debug(DBG_GAMELOGIC, "followmobj not found on player %d\n", i);
 		}
 		if (players[i].follower)
 		{
-			temp = (UINT32)(size_t)players[i].follower;
-			players[i].follower = NULL;
-			if (!P_SetTarget(&players[i].follower, P_FindNewPosition(temp)))
+			if (!RelinkMobj(&players[i].follower))
 				CONS_Debug(DBG_GAMELOGIC, "follower not found on player %d\n", i);
 		}
 		if (players[i].currentwaypoint)
@@ -5726,72 +5735,52 @@ static void P_RelinkPointers(void)
 		}
 		if (players[i].hoverhyudoro)
 		{
-			temp = (UINT32)(size_t)players[i].hoverhyudoro;
-			players[i].hoverhyudoro = NULL;
-			if (!P_SetTarget(&players[i].hoverhyudoro, P_FindNewPosition(temp)))
+			if (!RelinkMobj(&players[i].hoverhyudoro))
 				CONS_Debug(DBG_GAMELOGIC, "hoverhyudoro not found on player %d\n", i);
 		}
 		if (players[i].stumbleIndicator)
 		{
-			temp = (UINT32)(size_t)players[i].stumbleIndicator;
-			players[i].stumbleIndicator = NULL;
-			if (!P_SetTarget(&players[i].stumbleIndicator, P_FindNewPosition(temp)))
+			if (!RelinkMobj(&players[i].stumbleIndicator))
 				CONS_Debug(DBG_GAMELOGIC, "stumbleIndicator not found on player %d\n", i);
 		}
 		if (players[i].wavedashIndicator)
 		{
-			temp = (UINT32)(size_t)players[i].wavedashIndicator;
-			players[i].wavedashIndicator = NULL;
-			if (!P_SetTarget(&players[i].wavedashIndicator, P_FindNewPosition(temp)))
+			if (!RelinkMobj(&players[i].wavedashIndicator))
 				CONS_Debug(DBG_GAMELOGIC, "wavedashIndicator not found on player %d\n", i);
 		}
 		if (players[i].trickIndicator)
 		{
-			temp = (UINT32)(size_t)players[i].trickIndicator;
-			players[i].trickIndicator = NULL;
-			if (!P_SetTarget(&players[i].trickIndicator, P_FindNewPosition(temp)))
+			if (!RelinkMobj(&players[i].trickIndicator))
 				CONS_Debug(DBG_GAMELOGIC, "trickIndicator not found on player %d\n", i);
 		}
 		if (players[i].whip)
 		{
-			temp = (UINT32)(size_t)players[i].whip;
-			players[i].whip = NULL;
-			if (!P_SetTarget(&players[i].whip, P_FindNewPosition(temp)))
+			if (!RelinkMobj(&players[i].whip))
 				CONS_Debug(DBG_GAMELOGIC, "whip not found on player %d\n", i);
 		}
 		if (players[i].hand)
 		{
-			temp = (UINT32)(size_t)players[i].hand;
-			players[i].hand = NULL;
-			if (!P_SetTarget(&players[i].hand, P_FindNewPosition(temp)))
+			if (!RelinkMobj(&players[i].hand))
 				CONS_Debug(DBG_GAMELOGIC, "hand not found on player %d\n", i);
 		}
 		if (players[i].ringShooter)
 		{
-			temp = (UINT32)(size_t)players[i].ringShooter;
-			players[i].ringShooter = NULL;
-			if (!P_SetTarget(&players[i].ringShooter, P_FindNewPosition(temp)))
+			if (!RelinkMobj(&players[i].ringShooter))
 				CONS_Debug(DBG_GAMELOGIC, "ringShooter not found on player %d\n", i);
 		}
 		if (players[i].flickyAttacker)
 		{
-			temp = (UINT32)(size_t)players[i].flickyAttacker;
-			players[i].flickyAttacker = NULL;
-			if (!P_SetTarget(&players[i].flickyAttacker, P_FindNewPosition(temp)))
+			if (!RelinkMobj(&players[i].flickyAttacker))
 				CONS_Debug(DBG_GAMELOGIC, "flickyAttacker not found on player %d\n", i);
 		}
 		if (players[i].powerup.flickyController)
 		{
-			temp = (UINT32)(size_t)players[i].powerup.flickyController;
-			players[i].powerup.flickyController = NULL;
-			if (!P_SetTarget(&players[i].powerup.flickyController, P_FindNewPosition(temp)))
+			if (!RelinkMobj(&players[i].powerup.flickyController))
 				CONS_Debug(DBG_GAMELOGIC, "powerup.flickyController not found on player %d\n", i);
 		}
 		if (players[i].powerup.barrier)
 		{
-			temp = (UINT32)(size_t)players[i].powerup.barrier;
-			players[i].powerup.barrier = NULL;
-			if (!P_SetTarget(&players[i].powerup.barrier, P_FindNewPosition(temp)))
+			if (!RelinkMobj(&players[i].powerup.barrier))
 				CONS_Debug(DBG_GAMELOGIC, "powerup.barrier not found on player %d\n", i);
 		}
 	}
@@ -6683,6 +6672,8 @@ void P_SaveGame(savebuffer_t *save)
 
 void P_SaveNetGame(savebuffer_t *save, boolean resending)
 {
+	current_savebuffer = save;
+
 	thinker_t *th;
 	mobj_t *mobj;
 	UINT32 i = 1; // don't start from 0, it'd be confused with a blank pointer otherwise
@@ -6759,6 +6750,8 @@ badloadgame:
 
 boolean P_LoadNetGame(savebuffer_t *save, boolean reloading)
 {
+    current_savebuffer = save;
+
 	CV_LoadNetVars(&save->p);
 
 	if (!P_NetUnArchiveMisc(save, reloading))

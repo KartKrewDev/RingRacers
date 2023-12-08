@@ -557,6 +557,7 @@ fixed_t P_GetMobjSpawnHeight(const mobjtype_t mobjtype, const fixed_t x, const f
 fixed_t P_GetMapThingSpawnHeight(const mobjtype_t mobjtype, const mapthing_t* mthing, const fixed_t x, const fixed_t y);
 
 mobj_t *P_SpawnMapThing(mapthing_t *mthing);
+void P_CopyMapThingSpecialFieldsToMobj(const mapthing_t *mthing, mobj_t *mobj);
 void P_SpawnHoop(mapthing_t *mthing);
 void P_SpawnItemPattern(mapthing_t *mthing);
 void P_SpawnItemLine(mapthing_t *mt1, mapthing_t *mt2);

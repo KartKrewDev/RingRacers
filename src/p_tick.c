@@ -29,6 +29,7 @@
 #include "r_main.h"
 #include "r_fps.h"
 #include "d_clisrv.h" // UpdateChallenges
+#include "p_link.h"
 
 // Object place
 #include "m_cheat.h"
@@ -299,8 +300,7 @@ void P_InitThinkers(void)
 		skyboxcenterpnts[i] = skyboxviewpnts[i] = NULL;
 	}
 
-	Obj_ResetUFOSpawners();
-	Obj_ResetCheckpoints();
+	P_InitMobjPointers();
 }
 
 //

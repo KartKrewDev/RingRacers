@@ -184,8 +184,7 @@ void Obj_BattleUFODeath(mobj_t *ufo);
 void Obj_LinkBattleUFOSpawner(mobj_t *spawner);
 void Obj_UnlinkBattleUFOSpawner(mobj_t *spawner);
 void Obj_SpawnBattleUFOFromSpawner(void);
-INT32 Obj_GetFirstBattleUFOSpawnerID(void);
-void Obj_ResetUFOSpawners(void);
+INT32 Obj_RandomBattleUFOSpawnerID(void);
 void Obj_BattleUFOBeamThink(mobj_t *beam);
 
 /* Power-Up Aura */
@@ -230,7 +229,6 @@ void Obj_FakeShadowThink(mobj_t *shadow);
 boolean Obj_FakeShadowZ(const mobj_t *shadow, fixed_t *return_z, pslope_t **return_slope);
 
 /* Checkpoints */
-void Obj_ResetCheckpoints(void);
 void Obj_LinkCheckpoint(mobj_t *end);
 void Obj_UnlinkCheckpoint(mobj_t *end);
 void Obj_CheckpointThink(mobj_t *end);
