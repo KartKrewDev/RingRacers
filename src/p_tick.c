@@ -975,7 +975,11 @@ void P_Ticker(boolean run)
 			if (leveltime == (starttime + (TICRATE/2)))
 			{
 				// Plays the music after the starting countdown.
-				Music_Play("level");
+				if (!Music_Playing("level_nosync"))
+				{
+					// Do not stop level_nosync
+					Music_Play(Music_Song("level_nosync")[0] ? "level_nosync" : "level");
+				}
 			}
 			else if (starttime != introtime)
 			{
