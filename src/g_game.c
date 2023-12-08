@@ -3155,7 +3155,7 @@ INT32 G_GuessGametypeByTOL(UINT32 tol)
 //
 void G_SetGametype(INT16 gtype)
 {
-	if (gtype < 0 || gtype > numgametypes)
+	if (gtype < 0 || gtype >= numgametypes)
 	{
 		I_Error("G_SetGametype: Bad gametype change %d (was %d/\"%s\")", gtype, gametype, gametypes[gametype]->name);
 	}
@@ -4384,7 +4384,7 @@ static void G_DoStartVote(void)
 	{
 		if (gamestate == GS_VOTING)
 			I_Error("G_DoStartVote: NEXTMAP_VOTING causes recursive vote!");
-		D_SetupVote();
+		D_SetupVote(gametype);
 	}
 	gameaction = ga_nothing;
 }

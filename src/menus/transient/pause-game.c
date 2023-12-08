@@ -1,6 +1,7 @@
 /// \file  menus/transient/pause-game.c
 /// \brief In-game/pause menus
 
+#include "../../d_netcmd.h"
 #include "../../k_menu.h"
 #include "../../k_grandprix.h" // K_CanChangeRules
 #include "../../m_cond.h"
@@ -331,7 +332,10 @@ void M_HandlePauseMenuGametype(INT32 choice)
 		if (menugametype != gametype)
 		{
 			M_ClearMenus(true);
-			COM_ImmedExecute(va("randommap -gt %s", gametypes[menugametype]->name));
+			if (server || IsPlayerAdmin(consoleplayer))
+			{
+				D_SetupVote(menugametype);
+			}
 			return;
 		}
 
