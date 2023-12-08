@@ -11031,6 +11031,8 @@ fixed_t P_GetMobjDefaultScale(mobj_t *mobj)
 			return 2*FRACUNIT;
 		case MT_SPEAR:
 			return 2*FRACUNIT;
+		case MT_BETA_EMITTER:
+			return 4*FRACUNIT;
 		default:
 			break;
 	}
