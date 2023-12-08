@@ -2086,7 +2086,7 @@ void S_ShowMusicCredit(void)
 	char credittext[128] = "";
 	char *work = NULL;
 	size_t len = 128, worklen;
-	INT32 widthused = BASEVIDWIDTH, workwidth;
+	INT32 widthused = (3*BASEVIDWIDTH/4) - 7, workwidth;
 
 	if (!cv_songcredits.value)
 		return;
