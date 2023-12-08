@@ -12864,14 +12864,12 @@ UINT8 K_GetOrbinautItemFrame(UINT8 count)
 
 boolean K_IsSPBInGame(void)
 {
-	UINT8 i;
-	thinker_t *think;
-
 	// is there an SPB chasing anyone?
 	if (spbplace != -1)
 		return true;
 
 	// do any players have an SPB in their item slot?
+	UINT8 i;
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i] || players[i].spectator)
@@ -12881,14 +12879,15 @@ boolean K_IsSPBInGame(void)
 			return true;
 	}
 
+
 	// spbplace is still -1 until a fired SPB finds a target, so look for an in-map SPB just in case
-	for (think = thlist[THINK_MOBJ].next; think != &thlist[THINK_MOBJ]; think = think->next)
+	mobj_t *mobj;
+	for (mobj = trackercap; mobj; mobj = mobj->itnext)
 	{
-		if (think->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
+		if (mobj->type != MT_SPB)
 			continue;
 
-		if (((mobj_t *)think)->type == MT_SPB)
-			return true;
+		return true;
 	}
 
 	return false;
