@@ -489,6 +489,7 @@ void M_GonerTick(void)
 			gamedata->gonerlevel = GDGONER_INTRO;
 
 		M_GonerRailroad(false);
+		itemOn = 0;
 
 		lastseenlevel = gamedata->gonerlevel;
 	}
