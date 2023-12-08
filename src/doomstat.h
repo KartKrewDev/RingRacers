@@ -42,8 +42,8 @@ extern "C" {
 
 // Selected by user.
 extern INT16 gamemap;
+extern boolean g_reloadingMap;
 extern char mapmusname[7];
-extern UINT16 mapmusflags;
 extern UINT32 mapmusposition;
 extern UINT32 mapmusresume;
 extern UINT8 mapmusrng;

@@ -105,12 +105,12 @@ static void G_DoWorldDone(void);
 static void G_DoStartVote(void);
 
 char   mapmusname[7]; // Music name
-UINT16 mapmusflags; // Track and reset bit
 UINT32 mapmusposition; // Position to jump to
 UINT32 mapmusresume;
 UINT8 mapmusrng; // Random selection result
 
-INT16 gamemap = 1;
+INT16 gamemap = 0;
+boolean g_reloadingMap;
 UINT32 maptol;
 
 preciptype_t globalweather = PRECIP_NONE;
@@ -3062,7 +3062,7 @@ static gametype_t defaultgametypes[] =
 	{
 		"Special",
 		"GT_SPECIAL",
-		GTR_CATCHER|GTR_SPECIALSTART|GTR_ROLLINGSTART|GTR_CIRCUIT,
+		GTR_CATCHER|GTR_SPECIALSTART|GTR_ROLLINGSTART|GTR_CIRCUIT|GTR_NOPOSITION,
 		TOL_SPECIAL,
 		int_time,
 		0,
@@ -3152,7 +3152,7 @@ INT32 G_GuessGametypeByTOL(UINT32 tol)
 //
 void G_SetGametype(INT16 gtype)
 {
-	if (gtype < 0 || gtype > numgametypes)
+	if (gtype < 0 || gtype >= numgametypes)
 	{
 		I_Error("G_SetGametype: Bad gametype change %d (was %d/\"%s\")", gtype, gametype, gametypes[gametype]->name);
 	}
@@ -4385,7 +4385,7 @@ static void G_DoStartVote(void)
 	{
 		if (gamestate == GS_VOTING)
 			I_Error("G_DoStartVote: NEXTMAP_VOTING causes recursive vote!");
-		D_SetupVote();
+		D_SetupVote(gametype);
 	}
 	gameaction = ga_nothing;
 }
@@ -5930,10 +5930,8 @@ void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skippr
 		}
 	}
 
+	g_reloadingMap = (map == gamemap);
 	gamemap = map;
-
-	// Don't carry over custom music change to another map.
-	mapmusflags |= MUSIC_RELOADRESET;
 
 	automapactive = false;
 	imcontinuing = false;

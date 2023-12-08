@@ -563,6 +563,11 @@ void Controller::search()
 			continue;
 		}
 
+		if (player->spectator)
+		{
+			continue;
+		}
+
 		// Do not retarget existing target or owner.
 		if (mobj == chasing() || mobj == source())
 		{

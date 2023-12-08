@@ -4831,6 +4831,39 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 
 	// MT_IVOBALL
 	"S_IVOBALL",
+
+	"S_SA2_CRATE_DEBRIS",
+	"S_SA2_CRATE_DEBRIS_E",
+	"S_SA2_CRATE_DEBRIS_F",
+	"S_SA2_CRATE_DEBRIS_G",
+	"S_SA2_CRATE_DEBRIS_H",
+	"S_SA2_CRATE_DEBRIS_METAL",
+
+	"S_ICECAPBLOCK_DEBRIS",
+	"S_ICECAPBLOCK_DEBRIS_C",
+	"S_ICECAPBLOCK_DEBRIS_D",
+	"S_ICECAPBLOCK_DEBRIS_E",
+	"S_ICECAPBLOCK_DEBRIS_F",
+
+	// MT_SPEAR
+	"S_SPEAR_ROD",
+	"S_SPEAR_TIP",
+	"S_SPEAR_HILT_FRONT",
+	"S_SPEAR_HILT_BACK",
+	"S_SPEAR_WALL",
+
+	// MT_BSZLAMP_S
+	"S_BLMS",
+	"S_BLMM",
+	"S_BLML",
+
+	// MT_BSZSLAMP
+	"S_BSWL",
+	"S_BSWC",
+
+	"S_BETA_PARTICLE_WHEEL",
+	"S_BETA_PARTICLE_ICON",
+	"S_BETA_PARTICLE_EXPLOSION",
 };
 
 // RegEx to generate this from info.h: ^\tMT_([^,]+), --> \t"MT_\1",
@@ -6057,6 +6090,24 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_IVOBALL",
 	"MT_PATROLIVOBALL",
 	"MT_AIRIVOBALL",
+
+	"MT_BOX_SIDE",
+	"MT_BOX_DEBRIS",
+	"MT_SA2_CRATE",
+	"MT_ICECAPBLOCK",
+
+	"MT_SPEAR",
+	"MT_SPEARVISUAL",
+	"MT_BSZLAMP_S",
+	"MT_BSZLAMP_M",
+	"MT_BSZLAMP_L",
+	"MT_BSZSLAMP",
+	"MT_BSZSLCHA",
+
+	"MT_BETA_EMITTER",
+	"MT_BETA_PARTICLE_PHYSICAL",
+	"MT_BETA_PARTICLE_VISUAL",
+	"MT_BETA_PARTICLE_EXPLOSION",
 };
 
 const char *const MOBJFLAG_LIST[] = {

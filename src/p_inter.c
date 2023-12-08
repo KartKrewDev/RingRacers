@@ -988,6 +988,25 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			return;
 		}
 
+		case MT_SA2_CRATE:
+		case MT_ICECAPBLOCK:
+		{
+			Obj_TryCrateTouch(special, toucher);
+			return;
+		}
+
+		case MT_BETA_PARTICLE_PHYSICAL:
+		{
+			Obj_FuelCanisterTouch(special, toucher);
+			break;
+		}
+
+		case MT_BETA_PARTICLE_EXPLOSION:
+		{
+			Obj_FuelCanisterExplosionTouch(special, toucher);
+			return;
+		}
+
 		default: // SOC or script pickup
 			P_SetTarget(&special->target, toucher);
 			break;
@@ -2842,10 +2861,19 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			return false;
 	}
 
-	if (target->type == MT_BALLSWITCH_BALL)
+	switch (target->type)
 	{
-		Obj_BallSwitchDamaged(target, inflictor, source);
-		return false;
+		case MT_BALLSWITCH_BALL:
+			Obj_BallSwitchDamaged(target, inflictor, source);
+			return false;
+
+		case MT_SA2_CRATE:
+		case MT_ICECAPBLOCK:
+			Obj_TryCrateDamage(target, inflictor);
+			return true;
+
+		default:
+			break;
 	}
 
 	if (!force)

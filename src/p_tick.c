@@ -29,6 +29,7 @@
 #include "r_main.h"
 #include "r_fps.h"
 #include "d_clisrv.h" // UpdateChallenges
+#include "p_link.h"
 
 // Object place
 #include "m_cheat.h"
@@ -299,8 +300,7 @@ void P_InitThinkers(void)
 		skyboxcenterpnts[i] = skyboxviewpnts[i] = NULL;
 	}
 
-	Obj_ResetUFOSpawners();
-	Obj_ResetCheckpoints();
+	P_InitMobjPointers();
 }
 
 //
@@ -975,7 +975,11 @@ void P_Ticker(boolean run)
 			if (leveltime == (starttime + (TICRATE/2)))
 			{
 				// Plays the music after the starting countdown.
-				Music_Play("level");
+				if (!Music_Playing("level_nosync"))
+				{
+					// Do not stop level_nosync
+					Music_Play(Music_Song("level_nosync")[0] ? "level_nosync" : "level");
+				}
 			}
 			else if (starttime != introtime)
 			{

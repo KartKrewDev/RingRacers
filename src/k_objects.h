@@ -184,8 +184,7 @@ void Obj_BattleUFODeath(mobj_t *ufo);
 void Obj_LinkBattleUFOSpawner(mobj_t *spawner);
 void Obj_UnlinkBattleUFOSpawner(mobj_t *spawner);
 void Obj_SpawnBattleUFOFromSpawner(void);
-INT32 Obj_GetFirstBattleUFOSpawnerID(void);
-void Obj_ResetUFOSpawners(void);
+INT32 Obj_RandomBattleUFOSpawnerID(void);
 void Obj_BattleUFOBeamThink(mobj_t *beam);
 
 /* Power-Up Aura */
@@ -230,7 +229,6 @@ void Obj_FakeShadowThink(mobj_t *shadow);
 boolean Obj_FakeShadowZ(const mobj_t *shadow, fixed_t *return_z, pslope_t **return_slope);
 
 /* Checkpoints */
-void Obj_ResetCheckpoints(void);
 void Obj_LinkCheckpoint(mobj_t *end);
 void Obj_UnlinkCheckpoint(mobj_t *end);
 void Obj_CheckpointThink(mobj_t *end);
@@ -320,6 +318,26 @@ void Obj_IvoBallTouch(mobj_t *special, mobj_t *toucher);
 void Obj_PatrolIvoBallInit(mobj_t *mo);
 void Obj_PatrolIvoBallThink(mobj_t *mo);
 void Obj_PatrolIvoBallTouch(mobj_t *special, mobj_t *toucher);
+
+/* SA2 Crates / Ice Cap Blocks */
+void Obj_BoxSideThink(mobj_t *mo);
+void Obj_TryCrateInit(mobj_t *mo);
+boolean Obj_TryCrateThink(mobj_t *mo);
+void Obj_TryCrateTouch(mobj_t *special, mobj_t *toucher);
+void Obj_TryCrateDamage(mobj_t *target, mobj_t *inflictor);
+
+/* Lavender Shrine Spears */
+void Obj_SpearInit(mobj_t *mo);
+void Obj_SpearThink(mobj_t *mo);
+
+/* Lost Colony Fuel Canister */
+void Obj_FuelCanisterEmitterInit(mobj_t *mo);
+boolean Obj_FuelCanisterVisualThink(mobj_t *mo);
+boolean Obj_FuelCanisterEmitterThink(mobj_t *mo);
+boolean Obj_FuelCanisterThink(mobj_t *mo);
+void Obj_FuelCanisterTouch(mobj_t *special, mobj_t *toucher);
+void Obj_FuelCanisterExplosionTouch(mobj_t *special, mobj_t *toucher);
+boolean Obj_FuelCanisterExplosionThink(mobj_t *mo);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -1233,7 +1233,8 @@ void K_PuntHazard(mobj_t *t1, mobj_t *t2)
 
 boolean K_PuntCollide(mobj_t *t1, mobj_t *t2)
 {
-	if (t1->flags & MF_DONTPUNT)
+	// MF_SHOOTABLE will get damaged directly, instead
+	if (t1->flags & (MF_DONTPUNT | MF_SHOOTABLE))
 	{
 		return false;
 	}

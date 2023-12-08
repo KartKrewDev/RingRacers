@@ -50,6 +50,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	p_floor.c
 	p_inter.c
 	p_lights.c
+	p_link.cpp
 	p_loop.c
 	p_map.c
 	p_mapthing.cpp
@@ -600,7 +601,8 @@ if((CMAKE_COMPILER_IS_GNUCC) AND NOT ("${CMAKE_SYSTEM_NAME}" MATCHES Darwin))
 		message(STATUS "Will make separate debug symbols in *.debug")
 		add_custom_command(TARGET SRB2SDL2 POST_BUILD
 			COMMAND ${OBJCOPY} ${OBJCOPY_ONLY_KEEP_DEBUG} $<TARGET_FILE:SRB2SDL2> $<TARGET_FILE:SRB2SDL2>.debug
-			COMMAND ${OBJCOPY} --strip-debug $<TARGET_FILE:SRB2SDL2>
+			# mold linker: .gnu_debuglink is present by default, so --add-gnu-debuglink would fail
+			COMMAND ${OBJCOPY} --strip-debug --remove-section=.gnu_debuglink $<TARGET_FILE:SRB2SDL2>
 			COMMAND ${OBJCOPY} --add-gnu-debuglink=$<TARGET_FILE:SRB2SDL2>.debug $<TARGET_FILE:SRB2SDL2>
 		)
 	endif()

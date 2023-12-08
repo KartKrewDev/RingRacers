@@ -1200,8 +1200,6 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		return BMIT_CONTINUE;
 	}
 
-	//}
-
 	if ((thing->type == MT_SPRINGSHELL || thing->type == MT_YELLOWSHELL) && thing->health > 0
 	 && (tm.thing->player || (tm.thing->flags & MF_PUSHABLE)) && tm.thing->health > 0)
 	{
@@ -1474,11 +1472,11 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			// The bump has to happen last
 			if (P_IsObjectOnGround(thing) && tm.thing->momz < 0 && tm.thing->player->trickpanel)
 			{
-				P_DamageMobj(thing, tm.thing, tm.thing, 1, DMG_WIPEOUT|DMG_STEAL);
+				P_DamageMobj(thing, tm.thing, tm.thing, 1, DMG_TUMBLE);
 			}
 			else if (P_IsObjectOnGround(tm.thing) && thing->momz < 0 && thing->player->trickpanel)
 			{
-				P_DamageMobj(tm.thing, thing, thing, 1, DMG_WIPEOUT|DMG_STEAL);
+				P_DamageMobj(tm.thing, thing, thing, 1, DMG_TUMBLE);
 			}
 
 			if (K_KartBouncing(tm.thing, thing) == true)
@@ -1618,6 +1616,17 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			K_KartBouncing(tm.thing, thing);
 			return BMIT_CONTINUE;
 		}
+		else if ((thing->flags & MF_SHOOTABLE) && K_PlayerCanPunt(tm.thing->player))
+		{
+			// see if it went over / under
+			if (tm.thing->z > thing->z + thing->height)
+				return BMIT_CONTINUE; // overhead
+			if (tm.thing->z + tm.thing->height < thing->z)
+				return BMIT_CONTINUE; // underneath
+
+			P_DamageMobj(thing, tm.thing, tm.thing, 1, DMG_NORMAL);
+			return BMIT_CONTINUE;
+		}
 		else if (thing->flags & MF_SOLID)
 		{
 			// see if it went over / under
@@ -1632,6 +1641,31 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			}
 			return BMIT_CONTINUE;
 		}
+	}
+
+	switch (tm.thing->type)
+	{
+		case MT_SA2_CRATE:
+		case MT_ICECAPBLOCK:
+			// Let crates stack on top of solid objects (this
+			// includes other crates).
+			if (thing->flags & MF_SOLID)
+			{
+				fixed_t thingtop = thing->z + thing->height;
+				if (tm.thing->z > thing->z && thingtop > tm.floorz)
+				{
+					tm.floorz = thingtop;
+					tm.floorrover = NULL;
+					tm.floorslope = NULL;
+					tm.floorpic = -1;
+					tm.floorstep = 0;
+					return BMIT_CONTINUE;
+				}
+			}
+			break;
+
+		default:
+			break;
 	}
 
 	// This code is causing conflicts for Ring Racers,

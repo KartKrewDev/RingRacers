@@ -1251,6 +1251,8 @@ sfxinfo_t S_sfx[NUMSFX] =
 
   {"ivobal",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Ivo Ball
 
+  {"lcfuel",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Fuel Capsule explodes"},
+
   // Damage sounds
   {"dmga1",  false, 255, 8, -1, NULL, 0,         -1,  -1, LUMPERROR, "Damaged"},
   {"dmga2",  false, 255, 8, -1, NULL, 0,         -1,  -1, LUMPERROR, "Damaged"},

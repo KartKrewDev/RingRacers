@@ -821,7 +821,7 @@ void K_BattleInit(boolean singleplayercontext)
 	}
 
 	g_battleufo.due = starttime;
-	g_battleufo.previousId = Obj_GetFirstBattleUFOSpawnerID();
+	g_battleufo.previousId = Obj_RandomBattleUFOSpawnerID() - 1;
 }
 
 UINT8 K_Bumpers(player_t *player)

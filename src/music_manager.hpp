@@ -44,9 +44,9 @@ public:
 		return it != map_.end() ? const_cast<Tune*>(&it->second) : nullptr;
 	}
 
-	Tune& insert(const char* id)
+	Tune& insert(const char* id, const Tune* original = nullptr)
 	{
-		auto res = map_.emplace(id, Tune{});
+		auto res = map_.emplace(id, original ? *original : Tune{});
 
 		SRB2_ASSERT(res.second);
 
@@ -73,6 +73,12 @@ public:
 	{
 		for (auto& [_, tune] : map_)
 		{
+			if (tune.resist_once)
+			{
+				tune.resist_once = false;
+				continue;
+			}
+
 			if (!tune.resist)
 			{
 				f(tune);

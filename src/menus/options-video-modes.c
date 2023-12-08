@@ -7,7 +7,7 @@
 
 menuitem_t OPTIONS_VideoModes[] = {
 
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Select a resolution.",
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Select a resolution. Higher = sharper game, lower = higher FPS.",
 		NULL, {.routine = M_HandleVideoModes}, 0, 0},     // dummy menuitem for the control func
 
 };

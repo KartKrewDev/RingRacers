@@ -33,7 +33,7 @@ menuitem_t OPTIONS_Gameplay[] =
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 	
-	{IT_STRING | IT_CVAR, "Minimum Input Delay", "Practice for online play! Higher = more delay.",
+	{IT_STRING | IT_CVAR, "Minimum Input Delay", "Practice for online play! Higher = more delay, 0 = instant response.",
 		NULL, {.cvar = &cv_mindelay}, 0, 0},
 
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,

@@ -8,9 +8,10 @@
 //-----------------------------------------------------------------------------
 
 #include <algorithm>
-#include <vector>
 
 #include <fmt/format.h>
+
+#include "../mobj_list.hpp"
 
 #include "../doomdef.h"
 #include "../doomtype.h"
@@ -32,10 +33,13 @@
 #include "../sounds.h"
 #include "../tables.h"
 
+extern mobj_t* svg_checkpoints;
+
 #define checkpoint_id(o) ((o)->thing_args[0])
 #define checkpoint_other(o) ((o)->target)
 #define checkpoint_orb(o) ((o)->tracer)
 #define checkpoint_arm(o) ((o)->hnext)
+#define checkpoint_next(o) ((o)->hprev)
 #define checkpoint_var(o) ((o)->movedir)
 #define checkpoint_speed(o) ((o)->movecount)
 #define checkpoint_speed_multiplier(o) ((o)->movefactor)
@@ -119,6 +123,9 @@ struct Checkpoint : mobj_t
 
 	Arm* arm() const { return static_cast<Arm*>(checkpoint_arm(this)); }
 	void arm(Arm* n) { P_SetTarget(&checkpoint_arm(this), n); }
+
+	Checkpoint* next() const { return static_cast<Checkpoint*>(checkpoint_next(this)); }
+	void next(Checkpoint* n) { P_SetTarget(&checkpoint_next(this), n); }
 
 	fixed_t var() const { return checkpoint_var(this); }
 	void var(fixed_t n) { checkpoint_var(this) = n; }
@@ -391,33 +398,22 @@ private:
 
 struct CheckpointManager
 {
-	auto begin() { return vec_.begin(); }
-	auto end() { return vec_.end(); }
+	auto begin() { return list_.begin(); }
+	auto end() { return list_.end(); }
 
 	auto find(INT32 id) { return std::find_if(begin(), end(), [id](Checkpoint* chk) { return chk->id() == id; }); }
 
-	void push_back(Checkpoint* chk) { vec_.push_back(chk); }
+	void push_front(Checkpoint* chk) { list_.push_front(chk); }
 
-	void erase(const Checkpoint* chk)
-	{
-		if (auto it = std::find(vec_.begin(), vec_.end(), chk); it != end())
-		{
-			vec_.erase(it);
-		}
-	}
+	void erase(Checkpoint* chk) { list_.erase(chk); }
 
 private:
-	std::vector<Checkpoint*> vec_;
+	srb2::MobjList<Checkpoint, svg_checkpoints> list_;
 };
 
 CheckpointManager g_checkpoints;
 
 }; // namespace
-
-void Obj_ResetCheckpoints(void)
-{
-	g_checkpoints = {};
-}
 
 void Obj_LinkCheckpoint(mobj_t* end)
 {
@@ -456,7 +452,7 @@ void Obj_LinkCheckpoint(mobj_t* end)
 	}
 	else
 	{
-		g_checkpoints.push_back(chk);
+		g_checkpoints.push_front(chk);
 	}
 
 	chk->gingerbread();
@@ -464,7 +460,7 @@ void Obj_LinkCheckpoint(mobj_t* end)
 
 void Obj_UnlinkCheckpoint(mobj_t* end)
 {
-	auto chk = static_cast<const Checkpoint*>(end);
+	auto chk = static_cast<Checkpoint*>(end);
 
 	g_checkpoints.erase(chk);
 

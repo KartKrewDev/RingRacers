@@ -36,6 +36,12 @@ void Music_Init(void)
 	}
 
 	{
+		Tune& tune = g_tunes.insert("level_nosync", g_tunes.find("level"));
+
+		tune.sync = false;
+	}
+
+	{
 		Tune& tune = g_tunes.insert("position");
 
 		tune.priority = 10;
@@ -133,9 +139,9 @@ void Music_Init(void)
 	}
 
 	{
-		Tune& tune = g_tunes.insert("menu_nocred");
+		Tune& tune = g_tunes.insert("menu_nocred", g_tunes.find("menu"));
 
-		tune.priority = 100;
+		tune.credit = false;
 	}
 
 	{
@@ -165,14 +171,10 @@ void Music_Init(void)
 	}
 
 	{
-		Tune& tune = g_tunes.insert("stereo_fade");
+		Tune& tune = g_tunes.insert("stereo_fade", g_tunes.find("stereo"));
 
-		tune.priority = 1000;
 		tune.fade_out = 5000;
 		tune.fade_out_inclusive = false;
-		tune.resist = true;
-		tune.keep_open = true;
-		tune.credit = true;
 	}
 }
 
@@ -349,4 +351,14 @@ const char* Music_CurrentSong(void)
 const char* Music_CurrentId(void)
 {
 	return g_tunes.current_id();
+}
+
+void Music_BatchExempt(const char* id)
+{
+	Tune* tune = g_tunes.find(id);
+
+	if (tune)
+	{
+		tune->resist_once = true;
+	}
 }
