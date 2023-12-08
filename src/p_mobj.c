@@ -6859,6 +6859,24 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 	{
 		return;
 	}
+	case MT_BETA_PARTICLE_VISUAL:
+	{
+		Obj_FuelCanisterVisualThink(mobj);
+		return;
+	}
+	case MT_BETA_EMITTER:
+	{
+		Obj_FuelCanisterEmitterThink(mobj);
+		return;
+	}
+	case MT_BETA_PARTICLE_EXPLOSION:
+	{
+		if (Obj_FuelCanisterExplosionThink(mobj) == false)
+		{
+			return;
+		}
+		break;
+	}
 	case MT_VWREF:
 	case MT_VWREB:
 	{
@@ -10254,6 +10272,14 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_SIDEWAYSFREEZETHRUSTER:
 	{
 		Obj_SidewaysFreezeThrusterThink(mobj);
+		break;
+	}
+	case MT_BETA_PARTICLE_PHYSICAL:
+	{
+		if (!Obj_FuelCanisterThink(mobj))
+		{
+			return false;
+		}
 		break;
 	}
 
@@ -14512,6 +14538,11 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	case MT_SPEAR:
 	{
 		Obj_SpearInit(mobj);
+		break;
+	}
+	case MT_BETA_EMITTER:
+	{
+		Obj_FuelCanisterEmitterInit(mobj);
 		break;
 	}
 	default:

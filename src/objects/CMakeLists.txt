@@ -46,6 +46,7 @@ target_sources(SRB2SDL2 PRIVATE
 	ivoball.cpp
 	crate.cpp
 	spear.cpp
+	fuel.cpp
 )
 
 add_subdirectory(versus)
