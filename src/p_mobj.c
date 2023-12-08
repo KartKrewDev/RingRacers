@@ -5434,6 +5434,9 @@ void P_RunOverlays(void)
 		mo->scale = mo->destscale = FixedMul(mo->target->scale, mo->movefactor);
 		mo->angle = (mo->target->player ? mo->target->player->drawangle : mo->target->angle) + mo->movedir;
 
+		P_SetTarget(&mo->punt_ref, mo->target->punt_ref);
+		mo->reappear = mo->target->reappear;
+
 		if (!(mo->threshold & OV_DONTSCREENOFFSET))
 		{
 			mo->spritexoffset = mo->target->spritexoffset;

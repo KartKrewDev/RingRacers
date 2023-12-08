@@ -1332,6 +1332,11 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 		{
 			G_BeginLevelExit();
 		}
+
+		if (specialstageinfo.valid == true && losing == false && P_MobjWasRemoved(player->mo) == false)
+		{
+			K_MakeObjectReappear(player->mo);
+		}
 	}
 
 	K_InitPlayerTally(player);
