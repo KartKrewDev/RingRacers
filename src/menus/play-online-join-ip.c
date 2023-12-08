@@ -19,7 +19,7 @@ menuitem_t PLAY_MP_JoinIP[] =
 	{IT_STRING, "CONNECT ", "Attempt to connect to the server you entered the IP for.",
 		NULL, {NULL}, 0, 0},
 
-	{IT_STRING | IT_SPACE, "LAST IPs JOINED:", "Kanade best waifu :)",
+	{IT_STRING | IT_SPACE, "LAST IPs JOINED:", NULL,
 		NULL, {NULL}, 0, 0},
 
 	{IT_STRING, "servip1", "The last 3 IPs you've succesfully joined are displayed here.",
