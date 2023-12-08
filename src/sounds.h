@@ -1323,6 +1323,9 @@ typedef enum
 	// Ivo Ball
 	sfx_ivobal,
 
+	// Fuel Capsule
+	sfx_lcfuel,
+
 	// Damage sounds
 	sfx_dmga1,
 	sfx_dmga2,

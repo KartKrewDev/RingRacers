@@ -995,6 +995,18 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			return;
 		}
 
+		case MT_BETA_PARTICLE_PHYSICAL:
+		{
+			Obj_FuelCanisterTouch(special, toucher);
+			break;
+		}
+
+		case MT_BETA_PARTICLE_EXPLOSION:
+		{
+			Obj_FuelCanisterExplosionTouch(special, toucher);
+			return;
+		}
+
 		default: // SOC or script pickup
 			P_SetTarget(&special->target, toucher);
 			break;

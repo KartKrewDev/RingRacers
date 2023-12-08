@@ -8,7 +8,7 @@ target_sources(SRB2SDL2 PRIVATE
 	orbinaut.c
 	jawz.c
 	duel-bomb.c
-	broly.c
+	broly.cpp
 	ufo.c
 	monitor.c
 	item-spot.c
@@ -46,6 +46,7 @@ target_sources(SRB2SDL2 PRIVATE
 	ivoball.cpp
 	crate.cpp
 	spear.cpp
+	fuel.cpp
 )
 
 add_subdirectory(versus)

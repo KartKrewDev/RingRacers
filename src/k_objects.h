@@ -330,6 +330,15 @@ void Obj_TryCrateDamage(mobj_t *target, mobj_t *inflictor);
 void Obj_SpearInit(mobj_t *mo);
 void Obj_SpearThink(mobj_t *mo);
 
+/* Lost Colony Fuel Canister */
+void Obj_FuelCanisterEmitterInit(mobj_t *mo);
+boolean Obj_FuelCanisterVisualThink(mobj_t *mo);
+boolean Obj_FuelCanisterEmitterThink(mobj_t *mo);
+boolean Obj_FuelCanisterThink(mobj_t *mo);
+void Obj_FuelCanisterTouch(mobj_t *special, mobj_t *toucher);
+void Obj_FuelCanisterExplosionTouch(mobj_t *special, mobj_t *toucher);
+boolean Obj_FuelCanisterExplosionThink(mobj_t *mo);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

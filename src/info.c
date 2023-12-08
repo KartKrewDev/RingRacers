@@ -999,6 +999,8 @@ char sprnames[NUMSPRITES + 1][5] =
 	"BSWL",
 	"BSWC",
 
+	"LCLA",
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	"VIEW",
 };
@@ -5719,6 +5721,10 @@ state_t states[NUMSTATES] =
 	// MT_BSZSLAMP
 	{SPR_BSWL, 0|FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL},          // S_BSWL
 	{SPR_BSWC, 0|FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL},          // S_BSWC
+
+	{SPR_LCLA, 0|FF_FULLBRIGHT|FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_NULL},           // S_BETA_PARTICLE_WHEEL
+	{SPR_LCLA, 1|FF_FULLBRIGHT|FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_NULL},           // S_BETA_PARTICLE_ICON
+	{SPR_LCLA, 2|FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL},           // S_BETA_PARTICLE_EXPLOSION
 };
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] =
@@ -30674,8 +30680,8 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,         // xdeathstate
 		sfx_None,       // deathsound
 		0,              // speed
-		0,              // radius
-		0,              // height
+		40*FRACUNIT,    // radius
+		80*FRACUNIT,    // height
 		0,              // display offset
 		100,            // mass
 		1,              // damage
@@ -32528,6 +32534,110 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,     // activesound
 		0,            // flags
 		S_NULL        // raisestate
+	},
+	{           // MT_BETA_EMITTER
+		2699,         // doomednum
+		S_INVISIBLE,  // spawnstate
+		1,            // spawnhealth
+		S_NULL,       // seestate
+		sfx_None,     // seesound
+		0,            // reactiontime
+		sfx_None,     // attacksound
+		S_NULL,       // painstate
+		0,            // painchance
+		sfx_None,     // painsound
+		S_NULL,       // meleestate
+		S_NULL,       // missilestate
+		S_NULL,       // deathstate
+		S_NULL,       // xdeathstate
+		sfx_None,     // deathsound
+		0,            // speed
+		0,            // radius
+		0,            // height
+		0,            // dispoffset
+		0,            // mass
+		0,            // damage
+		sfx_None,     // activesound
+		MF_NOGRAVITY|MF_NOBLOCKMAP|MF_NOSECTOR|MF_SCENERY, // flags
+		S_NULL        // raisestate
+	},
+	{           // MT_BETA_PARTICLE_PHYSICAL
+		-1,           // doomednum
+		S_INVISIBLE,  // spawnstate
+		1,            // spawnhealth
+		S_NULL,       // seestate
+		sfx_None,     // seesound
+		0,            // reactiontime
+		sfx_None,     // attacksound
+		S_NULL,       // painstate
+		0,            // painchance
+		sfx_None,     // painsound
+		S_NULL,       // meleestate
+		S_NULL,       // missilestate
+		S_NULL,       // deathstate
+		S_NULL,       // xdeathstate
+		sfx_None,     // deathsound
+		0,            // speed
+		24*FRACUNIT,  // radius
+		128*FRACUNIT, // height
+		0,            // dispoffset
+		0,            // mass
+		0,            // damage
+		sfx_None,     // activesound
+		MF_SPECIAL|MF_NOGRAVITY, // flags
+		S_NULL        // raisestate
+	},
+	{           // MT_BETA_PARTICLE_VISUAL
+		-1,           // doomednum
+		S_NULL,       // spawnstate
+		1,            // spawnhealth
+		S_NULL,       // seestate
+		sfx_None,     // seesound
+		0,            // reactiontime
+		sfx_None,     // attacksound
+		S_NULL,       // painstate
+		0,            // painchance
+		sfx_None,     // painsound
+		S_NULL,       // meleestate
+		S_NULL,       // missilestate
+		S_NULL,       // deathstate
+		S_NULL,       // xdeathstate
+		sfx_None,     // deathsound
+		0,            // speed
+		0,            // radius
+		0,            // height
+		0,            // dispoffset
+		0,            // mass
+		0,            // damage
+		sfx_None,     // activesound
+		MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_NOCLIP|MF_SCENERY|MF_NOGRAVITY, // flags
+		S_NULL        // raisestate
+	},
+	{           // MT_BETA_PARTICLE_EXPLOSION
+		-1,             // doomednum
+		S_BETA_PARTICLE_EXPLOSION, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		40*FRACUNIT,    // radius
+		80*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		1,              // damage
+		sfx_None,       // activesound
+		MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP|MF_NOHITLAGFORME|MF_SPECIAL|MF_DONTPUNT, // flags
+		S_NULL          // raisestate
 	},
 };
 
