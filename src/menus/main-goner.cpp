@@ -464,16 +464,6 @@ void M_GonerTick(void)
 
 	M_GonerResetLooking(GDGONER_INIT);
 
-	if (gamedata->gonerlevel != lastseenlevel)
-	{
-		if (goner_levelworking >= gamedata->gonerlevel)
-		{
-			// If the valid range has changed, try the current one again
-			goner_levelworking--;
-		}
-		lastseenlevel = gamedata->gonerlevel;
-	}
-
 	if (first)
 	{
 		first = goner_gdq = false;
@@ -487,6 +477,18 @@ void M_GonerTick(void)
 			gamedata->gonerlevel = GDGONER_INTRO;
 
 		M_GonerRailroad(false);
+
+		lastseenlevel = gamedata->gonerlevel;
+	}
+	else if (gamedata->gonerlevel != lastseenlevel)
+	{
+		if (goner_levelworking >= gamedata->gonerlevel)
+		{
+			// If the valid range has changed, try the current one again
+			goner_levelworking--;
+		}
+
+		lastseenlevel = gamedata->gonerlevel;
 	}
 
 	goner_typewriter.WriteText();
@@ -529,7 +531,7 @@ void M_GonerTick(void)
 		else if (goner_levelworking <= gamedata->gonerlevel)
 		{
 			if (goner_levelworking == GDGONER_INTRO && gamedata->gonerlevel < GDGONER_VIDEO)
-				gamedata->gonerlevel = GDGONER_VIDEO;
+				gamedata->gonerlevel = lastseenlevel = GDGONER_VIDEO;
 
 			if (++goner_levelworking > gamedata->gonerlevel)
 			{
@@ -658,9 +660,9 @@ void M_GonerProfile(INT32 choice)
 	M_GonerResetLooking(GDGONER_PROFILE);
 }
 
-static boolean M_GonerSurveyResponse(INT32 ch)
+static void M_GonerSurveyResponse(INT32 ch)
 {
-	if (ch != CH_YES)
+	if (ch != MA_YES)
 		return;
 
 	if (gamedata->gonerlevel < GDGONER_OUTRO)
