@@ -11109,6 +11109,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_SPB:
 		case MT_DUELBOMB:
 		case MT_GACHABOM:
+		case MT_BALLOON:
 			thing->shadowscale = 3*FRACUNIT/2;
 			break;
 		case MT_BANANA_SHIELD:
@@ -11159,6 +11160,9 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_PATROLIVOBALL:
 		case MT_AIRIVOBALL:
 			thing->shadowscale = FRACUNIT/2;
+			break;
+		case MT_BUMPER:
+			thing->shadowscale = 7*FRACUNIT/4;
 			break;
 		default:
 			if (thing->flags & (MF_ENEMY|MF_BOSS))
