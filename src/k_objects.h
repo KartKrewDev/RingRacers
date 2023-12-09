@@ -341,6 +341,18 @@ void Obj_FuelCanisterTouch(mobj_t *special, mobj_t *toucher);
 void Obj_FuelCanisterExplosionTouch(mobj_t *special, mobj_t *toucher);
 boolean Obj_FuelCanisterExplosionThink(mobj_t *mo);
 
+/* Bustable Rocks */
+void Obj_LinkRocks(mobj_t *mo);
+void Obj_UnlinkRocks(mobj_t *mo);
+void Obj_TouchRocks(mobj_t *special, mobj_t *toucher);
+void Obj_UpdateRocks(void);
+void Obj_AnimateEndlessMineRocks(mobj_t *mo);
+
+/* Enldess Mine Faucet */
+void Obj_EMZFaucetThink(mobj_t *mo);
+void Obj_EMZDripDeath(mobj_t *mo);
+void Obj_EMZRainGenerator(mobj_t *mo);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

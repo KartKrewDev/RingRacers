@@ -1007,6 +1007,13 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			return;
 		}
 
+		case MT_AZROCKS:
+		case MT_EMROCKS:
+		{
+			Obj_TouchRocks(special, toucher);
+			return;
+		}
+
 		default: // SOC or script pickup
 			P_SetTarget(&special->target, toucher);
 			break;
@@ -2349,6 +2356,9 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			break;
 		case MT_BLENDEYE_PUYO:
 			VS_PuyoDeath(target);
+			break;
+		case MT_EMFAUCET_DRIP:
+			Obj_EMZDripDeath(target);
 			break;
 		default:
 			break;

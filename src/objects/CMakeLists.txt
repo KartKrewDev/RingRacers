@@ -47,6 +47,8 @@ target_sources(SRB2SDL2 PRIVATE
 	crate.cpp
 	spear.cpp
 	fuel.cpp
+	rocks.cpp
+	emz-faucet.cpp
 )
 
 add_subdirectory(versus)
