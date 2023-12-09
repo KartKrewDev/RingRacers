@@ -15,6 +15,7 @@
 
 static void M_GonerDrawer(void);
 static void M_GonerConclude(INT32 choice);
+static boolean M_GonerInputs(INT32 ch);
 
 menuitem_t MAIN_Goner[] =
 {
@@ -56,7 +57,7 @@ menu_t MAIN_GonerDef = {
 	M_GonerTick,
 	NULL,
 	NULL,
-	NULL,
+	M_GonerInputs,
 };
 
 namespace
@@ -159,6 +160,19 @@ std::forward_list<GonerChatLine> LinesOutput;
 
 int goner_levelworking = GDGONER_INIT;
 bool goner_gdq = false;
+
+int goner_scroll = 0;
+int goner_scrollend = 0;
+
+void M_GonerResetText(void)
+{
+	goner_typewriter.ClearText();
+	LinesToDigest.clear();
+	LinesOutput.clear();
+
+	goner_scroll = 0;
+	goner_scrollend = 0;
+}
 
 void M_AddGonerLines(void)
 {
@@ -416,13 +430,6 @@ void M_GonerHidePassword(void)
 	M_GonerPlayMusic();
 }
 
-void M_GonerResetText(void)
-{
-	goner_typewriter.ClearText();
-	LinesToDigest.clear();
-	LinesOutput.clear();
-}
-
 }; // namespace
 
 void M_GonerResetLooking(int type)
@@ -535,13 +542,20 @@ void M_GonerTick(void)
 			goner_delay--;
 		else if (!LinesToDigest.empty())
 		{
-			if (!LinesOutput.empty())
-				LinesOutput.front().value = goner_typewriter.textLines;
+			// Only add new lines if the scroll is invalid
+			if (!goner_scroll)
+			{
+				if (!LinesOutput.empty())
+				{
+					LinesOutput.front().value = goner_typewriter.textLines;
+					goner_scrollend++;
+				}
 
-			auto line = LinesToDigest.front();
-			if (line.Handle())
-				LinesOutput.push_front(line);
-			LinesToDigest.pop_front();
+				auto line = LinesToDigest.front();
+				if (line.Handle())
+					LinesOutput.push_front(line);
+				LinesToDigest.pop_front();
+			}
 		}
 		else if (goner_levelworking <= gamedata->gonerlevel)
 		{
@@ -588,17 +602,51 @@ void M_DrawGonerBack(void)
 
 static void M_GonerDrawer(void)
 {
-	srb2::Draw drawer = srb2::Draw().x(BASEVIDWIDTH/4);
+	srb2::Draw drawer = srb2::Draw();
 
 	float newy = BASEVIDHEIGHT/2 + (3*12);
-	boolean first = true;
 
+	boolean first = true;
 	int lastspeaker = MAXGONERSPEAKERS;
+	int workscroll = goner_scroll;
+
+	if (workscroll)
+	{
+		float scrollamount = -72; // a bit more than BASEVIDHEIGHT/3
+
+		for (auto & element : LinesOutput)
+		{
+			if (first)
+			{
+				scrollamount += goner_typewriter.textLines*12;
+				first = false;
+			}
+			else
+			{
+				scrollamount += element.value*12;
+
+				if (lastspeaker != element.speaker)
+					scrollamount += 2;
+			}
+
+			if (!workscroll) break;
+			workscroll--;
+
+			lastspeaker = element.speaker;
+		}
+
+		if (scrollamount > 0)
+			newy += scrollamount;
+
+		first = true;
+		lastspeaker = MAXGONERSPEAKERS;
+		workscroll = goner_scroll;
+	}
 
 	for (auto & element : LinesOutput)
 	{
-		INT32 flags = V_TRANSLUCENT;
 		std::string text;
+		INT32 flags;
 
 		if (newy < 0) break;
 
@@ -606,7 +654,6 @@ static void M_GonerDrawer(void)
 		{
 			text = goner_typewriter.text;
 			newy -= goner_typewriter.textLines*12;
-			flags = 0;
 			first = false;
 		}
 		else
@@ -620,12 +667,17 @@ static void M_GonerDrawer(void)
 
 		lastspeaker = element.speaker;
 
-		//if (newy > BASEVIDHEIGHT) continue; -- not needed yet
+		flags = (workscroll == 0)
+			? 0
+			: V_TRANSLUCENT;
+		workscroll--;
+
+		if (newy > BASEVIDHEIGHT) continue;
 
 		auto speaker = goner_speakers[element.speaker];
 
 		srb2::Draw line = drawer
-			.xy(speaker.offset, newy)
+			.xy(BASEVIDWIDTH/4 + speaker.offset, newy)
 			.flags(flags);
 
 		line
@@ -643,6 +695,25 @@ static void M_GonerDrawer(void)
 			else
 				line.patch("HUHMAP");
 		}
+	}
+
+	if (goner_scroll)
+	{
+		const char *scrolltext = "SCROLL DOWN TO CONTINUE";
+		const int width = V_StringWidth(scrolltext, 0) + 2;
+
+		srb2::Draw popup = drawer.xy(BASEVIDWIDTH/2, currentMenu->y - 4 - 9);
+
+		popup
+			.xy(-width/2, -1)
+			.width(width)
+			.height(10)
+			.fill(20);
+		popup
+			.align(srb2::Draw::Align::kCenter)
+			.font(srb2::Draw::Font::kConsole)
+			.flags(V_GRAYMAP)
+			.text(scrolltext);
 	}
 
 	M_DrawHorizontalMenu();
@@ -757,4 +828,40 @@ void M_GonerGDQ(boolean opinion)
 	{
 		goner_levelworking = gamedata->gonerlevel = GDGONER_TUTORIAL;
 	}
+}
+
+static boolean M_GonerInputs(INT32 ch)
+{
+	const UINT8 pid = 0;
+	static int holdtime = 0;
+	const int magicscroll = 4; // hehe
+
+	(void)ch;
+
+	if (menucmd[pid].dpad_ud != 0)
+	{
+		if (((++holdtime) % magicscroll) == 1) // Instantly responsive
+		{
+			if (menucmd[pid].dpad_ud < 0)
+			{
+				if (goner_scroll < goner_scrollend)
+					goner_scroll++;
+			}
+			else
+			{
+				if (goner_scroll > 0)
+				{
+					goner_scroll--;
+					if (goner_delay < magicscroll)
+						goner_delay = magicscroll;
+				}
+			}
+
+			return true;
+		}
+	}
+
+	holdtime = 0;
+
+	return false;
 }

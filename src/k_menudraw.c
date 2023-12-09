@@ -1150,6 +1150,8 @@ void M_DrawHorizontalMenu(void)
 
 	y = currentMenu->y;
 
+	V_DrawFadeFill(0, y-2, BASEVIDWIDTH, 24, 0, 31, 5);
+
 	x = (BASEVIDWIDTH - 8*final)/2;
 	for (i = 0; i < currentMenu->extra2; i++, x += 8)
 	{
