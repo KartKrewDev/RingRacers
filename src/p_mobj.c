@@ -10286,6 +10286,14 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		break;
 	}
 
+	case MT_BALLOON:
+	{
+		fixed_t sine = FixedMul(16 * FSIN((M_TAU_FIXED * (4*TICRATE)) * (leveltime + mobj->extravalue2)), mobj->scale);
+
+		mobj->z = (mobj->extravalue1 - (16 * mobj->scale)) + sine;
+		break;
+	}
+
 	default:
 		// check mobj against possible water content, before movement code
 		P_MobjCheckWater(mobj);
@@ -11109,6 +11117,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_SPB:
 		case MT_DUELBOMB:
 		case MT_GACHABOM:
+		case MT_BALLOON:
 			thing->shadowscale = 3*FRACUNIT/2;
 			break;
 		case MT_BANANA_SHIELD:
@@ -11159,6 +11168,9 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_PATROLIVOBALL:
 		case MT_AIRIVOBALL:
 			thing->shadowscale = FRACUNIT/2;
+			break;
+		case MT_BUMPER:
+			thing->shadowscale = 7*FRACUNIT/4;
 			break;
 		default:
 			if (thing->flags & (MF_ENEMY|MF_BOSS))
@@ -11431,6 +11443,9 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 				};
 
 				mobj->color = BALLOONCOLORS[P_RandomKey(PR_DECORATION, sizeof(BALLOONCOLORS))];
+
+				mobj->extravalue1 = mobj->z;
+				mobj->extravalue2 = P_RandomRange(PR_DECORATION, 0, 4*TICRATE);
 			}
 			break;
 		case MT_POGOSPRING:
