@@ -1933,12 +1933,14 @@ static void K_HandleLapIncrement(player_t *player)
 		{
 			size_t i = 0;
 			UINT8 nump = 0;
-			UINT8 lowestLap;
+			UINT8 lowestLap = UINT8_MAX;
 
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
 				if (!playeringame[i] || players[i].spectator)
 					continue;
+				if (players[i].laps < lowestLap)
+					lowestLap = players[i].laps;
 				nump++;
 			}
 
@@ -2090,7 +2092,17 @@ static void K_HandleLapIncrement(player_t *player)
 			}
 
 			thwompsactive = true; // Lap 2 effects
-			lowestLap = P_FindLowestLap();
+
+			{
+				UINT8 prevLowest = lowestLap;
+
+				lowestLap = P_FindLowestLap();
+
+				if (lowestLap > prevLowest) // last place finished the lap
+				{
+					Obj_UpdateRocks();
+				}
+			}
 
 			for (i = 0; i < numlines; i++)
 			{
