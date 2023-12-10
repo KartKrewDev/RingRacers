@@ -586,10 +586,14 @@ boolean M_LevelListFromGametype(INT16 gt)
 			possiblecursor++;
 		}
 
-		if (test != NEXTMAP_INVALID)
+		if (test < nummapheaders)
+		{
 			levellist.cursor = possiblecursor;
+			invalidatedcursor = false;
+		}
 	}
-	else if (invalidatedcursor)
+
+	if (invalidatedcursor)
 	{
 		levellist.cursor = 0;
 	}
