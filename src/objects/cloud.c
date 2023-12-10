@@ -73,13 +73,18 @@ void Obj_TulipSpawnerThink(mobj_t *mobj)
 {
 	if (!mobj->tracer)
 	{
-		mobj->hnext = P_SpawnMobj(0, 0, 0, MT_AGZ_BULB_PART);
-		mobj->hnext->hnext = P_SpawnMobj(0, 0, 0, MT_AGZ_BULB_PART);
+		// I have no idea if doing it this way is correct
+		mobj_t *part1 = P_SpawnMobj(0, 0, 0, MT_AGZ_BULB_PART);
+		mobj_t *part2 = P_SpawnMobj(0, 0, 0, MT_AGZ_BULB_PART);
+		mobj_t *tracer = P_SpawnMobj(0, 0, 0, MT_AGZ_BULB_PART);
+
+		P_SetTarget(&mobj->hnext, part1);
+		P_SetTarget(&mobj->hnext->hnext, part2);
 
 		P_SetMobjState(mobj->hnext, S_AGZBULB_BASE);
 		P_SetMobjState(mobj->hnext->hnext, S_AGZBULB_BASE);
 
-		mobj->tracer = P_SpawnMobj(0, 0, 0, MT_AGZ_BULB_PART);
+		P_SetTarget(&mobj->tracer, tracer);
 		P_SetMobjState(mobj->tracer, S_AGZBULB_NEUTRAL);
 	}
 
@@ -139,7 +144,7 @@ void Obj_PlayerCloudThink(player_t *player)
 
 		if (!player->cloud)
 		{
-			if (!mo->tracer)
+			if (P_MobjWasRemoved(mo->tracer))
 				return;
 
 			switch(mo->tracer->type)
@@ -209,8 +214,8 @@ void Obj_PlayerBulbThink(player_t *player)
 		player->tuliplaunch = TICRATE;
 		player->tulipbuf = 8;
 		player->tulip = 0;
-		mo->tracer->target = NULL;
-		mo->tracer = NULL;
+		P_SetTarget(&mo->tracer->target, NULL);
+		P_SetTarget(&mo->tracer, NULL);
 	}
 }
 
@@ -241,8 +246,8 @@ void Obj_CloudTouched(mobj_t *special, mobj_t *toucher)
 	if (toucher->cvmem < mapobjectscale*8)
 		toucher->cvmem = mapobjectscale*8;
 
-	toucher->tracer = special;
-	S_StartSound(toucher, sfx_s3k8a);
+	P_SetTarget(&toucher->tracer, special);
+	S_StartSound(&toucher, sfx_s3k8a);
 
 }
 
@@ -265,10 +270,10 @@ void Obj_BulbTouched(mobj_t *special, mobj_t *toucher)
 	P_InstaThrust(toucher, 0, 0);
 	P_MoveOrigin(toucher, special->x, special->y, special->z);
 	toucher->player->nocontrol = 1;
-	toucher->tracer = special;
+	P_SetTarget(&toucher->tracer, special);
 	toucher->flags &= ~MF_SHOOTABLE;
 	toucher->renderflags |= RF_DONTDRAW;
-	special->target = toucher;
+	P_SetTarget(&special->target, toucher);
 	special->extravalue1 = spd;
 	special->extravalue2 = ang;
 
