@@ -49,6 +49,9 @@ public:
 	void Dismiss(void);
 	void Unset(void);
 
+	UINT32 GetNewEra(void);
+	bool EraIsValid(INT32 comparison);
+
 	class Typewriter
 	{
 	public:
@@ -75,6 +78,8 @@ public:
 
 private:
 	Typewriter typewriter;
+
+	INT32 current_era;
 
 	patch_t *bgPatch;
 	patch_t *confirmPatch;

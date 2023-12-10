@@ -478,11 +478,22 @@ void Dialogue::Dismiss(void)
 	typewriter.ClearText();
 }
 
+UINT32 Dialogue::GetNewEra(void)
+{
+	return (++current_era);
+}
+
+bool Dialogue::EraIsValid(INT32 comparison)
+{
+	return (current_era == comparison);
+}
+
 void Dialogue::Unset(void)
 {
 	Dismiss();
 	SetSpeaker();
 	slide = 0;
+	current_era = 0;
 }
 
 /*

@@ -312,12 +312,13 @@ bool Environment::checkTag(ACSVM::Word type, ACSVM::Word tag)
 		case ACS_TAGTYPE_DIALOGUE:
 		{
 			// TODO when we move away from g_dialogue
-			if (netgame)
+			//  See also call-funcs.cpp Dialogue_ValidCheck
+			if (netgame || !g_dialogue.EraIsValid(tag)) // cheeky reuse
 			{
 				return true;
 			}
 
-			if (tag == 0) // cheeky reuse
+			if (g_dialogue.Dismissable())
 			{
 				// wait for dismissal
 				return (!g_dialogue.Active());

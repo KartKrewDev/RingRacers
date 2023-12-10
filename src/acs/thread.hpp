@@ -66,6 +66,7 @@ public:
 	sector_t *sector;			// Sector that activated this thread.
 	polyobj_t *po;				// Polyobject that activated this thread.
 	bool fromLineSpecial;		// Called from P_ProcessLineSpecial.
+	UINT32 dialogue_era;		// Prevents overlapping dialogue scripts.
 
 	ThreadInfo() :
 		thread_era { thinker_era },
@@ -74,7 +75,8 @@ public:
 		side{ 0 },
 		sector{ nullptr },
 		po{ nullptr },
-		fromLineSpecial{ false }
+		fromLineSpecial{ false },
+		dialogue_era { 0 }
 	{
 	}
 
@@ -85,7 +87,8 @@ public:
 		side{ info.side },
 		sector{ info.sector },
 		po{ info.po },
-		fromLineSpecial{ info.fromLineSpecial }
+		fromLineSpecial{ info.fromLineSpecial },
+		dialogue_era { info.dialogue_era }
 	{
 		P_SetTarget(&mo, info.mo);
 	}
@@ -97,7 +100,8 @@ public:
 		side{ activator->side },
 		sector{ activator->sector },
 		po{ activator->po },
-		fromLineSpecial{ static_cast<bool>(activator->fromLineSpecial) }
+		fromLineSpecial{ static_cast<bool>(activator->fromLineSpecial) },
+		dialogue_era { 0 }
 	{
 		P_SetTarget(&mo, activator->mo);
 	}
@@ -118,6 +122,7 @@ public:
 		side = info.side;
 		sector = info.sector;
 		po = info.po;
+		dialogue_era = info.dialogue_era;
 
 		return *this;
 	}

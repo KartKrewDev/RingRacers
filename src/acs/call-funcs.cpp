@@ -668,6 +668,27 @@ bool CallFunc_CameraWait(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::
 }
 
 /*--------------------------------------------------
+	bool Dialogue_ValidCheck(ACSVM::Thread *thread)
+
+		Helper to check if the thread's dialogue
+		context is valid, initialising if not set.
+--------------------------------------------------*/
+static bool Dialogue_ValidCheck(ACSVM::Thread *thread)
+{
+	// TODO when we move away from g_dialogue
+	if (netgame)
+	{
+		return false;
+	}
+
+	auto info = &static_cast<Thread *>(thread)->info;
+	if (!info->dialogue_era)
+		info->dialogue_era = g_dialogue.GetNewEra();
+
+	return g_dialogue.EraIsValid(info->dialogue_era);
+}
+
+/*--------------------------------------------------
 	bool CallFunc_DialogueWaitDismiss(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Pauses the thread until the current
@@ -678,17 +699,18 @@ bool CallFunc_DialogueWaitDismiss(ACSVM::Thread *thread, const ACSVM::Word *argV
 	(void)argV;
 	(void)argC;
 
-	// TODO when we move away from g_dialogue
-	if (netgame)
+	if (Dialogue_ValidCheck(thread) == false)
 	{
 		return false;
 	}
 
 	g_dialogue.SetDismissable(true);
 
+	auto info = &static_cast<Thread *>(thread)->info;
+
 	thread->state = {
 		ACSVM::ThreadState::WaitTag,
-		0,
+		info->dialogue_era,
 		ACS_TAGTYPE_DIALOGUE
 	};
 
@@ -706,17 +728,18 @@ bool CallFunc_DialogueWaitText(ACSVM::Thread *thread, const ACSVM::Word *argV, A
 	(void)argV;
 	(void)argC;
 
-	// TODO when we move away from g_dialogue
-	if (netgame)
+	if (Dialogue_ValidCheck(thread) == false)
 	{
 		return false;
 	}
 
 	g_dialogue.SetDismissable(false);
 
+	auto info = &static_cast<Thread *>(thread)->info;
+
 	thread->state = {
 		ACSVM::ThreadState::WaitTag,
-		1,
+		info->dialogue_era,
 		ACS_TAGTYPE_DIALOGUE
 	};
 
@@ -2025,8 +2048,7 @@ bool CallFunc_DialogueSetSpeaker(ACSVM::Thread *thread, const ACSVM::Word *argV,
 
 	(void)argC;
 
-	// TODO when we move away from g_dialogue
-	if (netgame)
+	if (Dialogue_ValidCheck(thread) == false)
 	{
 		return false;
 	}
@@ -2069,8 +2091,7 @@ bool CallFunc_DialogueSetCustomSpeaker(ACSVM::Thread *thread, const ACSVM::Word 
 
 	(void)argC;
 
-	// TODO when we move away from g_dialogue
-	if (netgame)
+	if (Dialogue_ValidCheck(thread) == false)
 	{
 		return false;
 	}
@@ -2161,8 +2182,7 @@ bool CallFunc_DialogueNewText(ACSVM::Thread *thread, const ACSVM::Word *argV, AC
 
 	(void)argC;
 
-	// TODO when we move away from g_dialogue
-	if (netgame)
+	if (Dialogue_ValidCheck(thread) == false)
 	{
 		return false;
 	}
