@@ -2721,7 +2721,7 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 				SendKick(playernum, KICK_MSG_CON_FAIL);
 			return;
 		}
-		
+
 		roundqueue.position = position;
 		if (size < roundqueue.size)
 		{
@@ -4997,7 +4997,7 @@ void D_GameTypeChanged(INT32 lastgametype)
 		if (gametype >= 0 && gametype < numgametypes)
 			newgt = gametypes[gametype]->name;
 
-		if (oldgt && newgt)
+		if (oldgt && newgt && (lastgametype != gametype))
 			CONS_Printf(M_GetText("Gametype was changed from %s to %s\n"), oldgt, newgt);
 	}
 
