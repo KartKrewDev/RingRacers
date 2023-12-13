@@ -170,6 +170,7 @@ struct recorddata_t
 
 typedef enum
 {
+	GRADE_INVALID = -1,
 	GRADE_E,
 	GRADE_D,
 	GRADE_C,
