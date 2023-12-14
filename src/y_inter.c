@@ -171,6 +171,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		data.val[i] = UINT32_MAX;
+		data.grade[i] = GRADE_INVALID;
 
 		if (!playeringame[i] || players[i].spectator)
 		{
@@ -205,6 +206,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 		i = data.num[data.numplayers];
 
 		completed[i] = true;
+		data.grade[i] = players[i].tally.rank;
 
 		data.color[data.numplayers] = players[i].skincolor;
 		data.character[data.numplayers] = players[i].skin;
@@ -736,7 +738,33 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 						);
 					}
 				}
+			}
+			else if (standings->grade[pnum] != GRADE_INVALID)
+			{
+				patch_t *gradePtc = W_CachePatchName(va("R_INRNK%c", K_GetGradeChar(standings->grade[pnum])), PU_PATCH);
+				patch_t *gradeBG = NULL;
 
+				UINT16 gradeColor = SKINCOLOR_NONE;
+				UINT8 *gradeClm = NULL;
+
+				gradeColor = K_GetGradeColor(standings->grade[pnum]);
+				if (gradeColor != SKINCOLOR_NONE)
+				{
+					gradeClm = R_GetTranslationColormap(TC_DEFAULT, gradeColor, GTC_CACHE);
+				}
+
+				if (datarightofcolumn)
+				{
+					gradeBG = W_CachePatchName("R_INRNKR", PU_PATCH);
+					V_DrawMappedPatch(x + 118, y, 0, gradeBG, gradeClm);
+					V_DrawMappedPatch(x + 118 + 4, y - 1, 0, gradePtc, gradeClm);
+				}
+				else
+				{
+					gradeBG = W_CachePatchName("R_INRNKL", PU_PATCH);
+					V_DrawMappedPatch(x - 12, y, 0, gradeBG, gradeClm);
+					V_DrawMappedPatch(x - 12 + 3, y - 1, 0, gradePtc, gradeClm);
+				}
 			}
 
 			// Reverse the jitter offset

@@ -311,7 +311,7 @@ void level_tally_t::Init(player_t *player)
 	points = pointLimit = 0;
 	powerStones = 0;
 
-	rank = GRADE_E;
+	rank = GRADE_INVALID;
 
 	if (player->spectator == false && player->bot == false && game_over == false)
 	{
@@ -475,17 +475,25 @@ void level_tally_t::Init(player_t *player)
 	header[sizeof header - 1] = '\0';
 
 	// Only show grade if there were any bonuses
-	showGrade = (position > 0);
-	if (showGrade == false)
+	if (rank != GRADE_INVALID)
 	{
-		for (int i = 0;	i < TALLY_WINDOW_SIZE; i++)
+		showGrade = (position > 0);
+		if (showGrade == false)
 		{
-			if (bonuses[i] != TALLY_BONUS_NA)
+			for (int i = 0;	i < TALLY_WINDOW_SIZE; i++)
 			{
-				showGrade = true;
-				break;
+				if (bonuses[i] != TALLY_BONUS_NA)
+				{
+					showGrade = true;
+					break;
+				}
 			}
 		}
+	}
+
+	if (showGrade == false)
+	{
+		rank = GRADE_INVALID;
 	}
 
 	lineCount = 0;

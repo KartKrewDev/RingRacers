@@ -41,6 +41,8 @@ typedef struct
 	INT16 increase[MAXPLAYERS]; // how much did the score increase by?
 	UINT8 jitter[MAXPLAYERS]; // wiggle
 
+	SINT8 grade[MAXPLAYERS]; // grade, if not a bot
+
 	UINT8 mainplayer; // Most successful local player
 	INT32 linemeter; // For GP only
 } y_data_t;
