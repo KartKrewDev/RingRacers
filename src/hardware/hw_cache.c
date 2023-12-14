@@ -895,7 +895,7 @@ void HWR_GetRawFlat(lumpnum_t flatlumpnum, boolean noencoremap)
 	patch = HWR_GetCachedGLPatch(flatlumpnum);
 	grmip = ((GLPatch_t *)Patch_AllocateHardwarePatch(patch))->mipmap;
 
-	if (!grmip->downloaded && !grmip->data)
+	if (!grmip->colormap)
 	{
 		if (!noencoremap && encoremap)
 			colormap += COLORMAP_REMAPOFFSET;
@@ -903,7 +903,10 @@ void HWR_GetRawFlat(lumpnum_t flatlumpnum, boolean noencoremap)
 		grmip->colormap = Z_Calloc(sizeof(*grmip->colormap), PU_HWRPATCHCOLMIPMAP, NULL);
 		grmip->colormap->source = colormap;
 		M_Memcpy(grmip->colormap->data, colormap, 256 * sizeof(UINT8));
+	}
 
+	if (!grmip->downloaded && !grmip->data)
+	{
 		HWR_CacheFlat(grmip, flatlumpnum);
 	}
 
@@ -942,7 +945,16 @@ void HWR_GetLevelFlat(levelflat_t *levelflat, boolean noencoremap)
 
 		// Generate flat if missing from the cache
 		if (!grtex->mipmap.data && !grtex->mipmap.downloaded)
+		{
 			HWR_CacheTextureAsFlat(&grtex->mipmap, texturenum);
+
+			if (!noencoremap && encoremap)
+			{
+				grtex->mipmap.colormap = Z_Calloc(sizeof(*grtex->mipmap.colormap), PU_HWRPATCHCOLMIPMAP, NULL);
+				grtex->mipmap.colormap->source = colormaps + COLORMAP_REMAPOFFSET;
+				M_Memcpy(grtex->mipmap.colormap->data, colormaps + COLORMAP_REMAPOFFSET, 256);
+			}
+		}
 
 		// If hardware does not have the texture, then call pfnSetTexture to upload it
 		if (!grtex->mipmap.downloaded)
