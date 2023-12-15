@@ -428,6 +428,7 @@ target_compile_options(SRB2SDL2 PRIVATE
 		-Wno-trigraphs
 		-W # Was controlled by RELAXWARNINGS
 		-pedantic
+		-Wpedantic
 		-Wfloat-equal
 		-Wundef
 		-Wpointer-arith
@@ -527,7 +528,7 @@ target_compile_options(SRB2SDL2 PRIVATE
 	>
 
 	# C++, MSVC
-	$<$<AND:$<COMPILE_LANGUAGE:C>,$<C_COMPILER_ID:MSVC>>:
+	$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<C_COMPILER_ID:MSVC>>:
 		/Wv:19.20.27004.0
 	>
 
