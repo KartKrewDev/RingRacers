@@ -578,7 +578,7 @@ void readskincolor(MYFILE *f, INT32 num)
 			if (fastcmp(word, "NAME"))
 			{
 				size_t namesize = sizeof(skincolors[num].name);
-				char truncword[namesize];
+				char *truncword = Z_Malloc(sizeof(char) * namesize, PU_STATIC, NULL);
 				UINT16 dupecheck;
 
 				deh_strlcpy(truncword, word2, namesize, va("Skincolor %d: name", num)); // truncate here to check for dupes
@@ -586,7 +586,7 @@ void readskincolor(MYFILE *f, INT32 num)
 				if (truncword[0] != '\0' && (!stricmp(truncword, skincolors[SKINCOLOR_NONE].name) || (dupecheck && dupecheck != num)))
 				{
 					size_t lastchar = strlen(truncword);
-					char oldword[lastchar+1];
+					char *oldword = Z_Calloc(sizeof(char) * (lastchar + 1), PU_STATIC, NULL);
 					char dupenum = '1';
 
 					strlcpy(oldword, truncword, lastchar+1);
@@ -611,9 +611,11 @@ void readskincolor(MYFILE *f, INT32 num)
 					}
 
 					deh_warning("Skincolor %d: name %s is a duplicate of another skincolor's name - renamed to %s", num, oldword, truncword);
+					Z_Free(oldword);
 				}
 
 				strlcpy(skincolors[num].name, truncword, namesize); // already truncated
+				Z_Free(truncword);
 			}
 			else if (fastcmp(word, "RAMP"))
 			{
@@ -2506,7 +2508,7 @@ static void conditiongetparam(char **params, UINT8 paramid, char **spos)
 static void readcondition(UINT16 set, UINT32 id, char *word2)
 {
 	INT32 i;
-	const UINT8 MAXCONDITIONPARAMS = 5;
+#define MAXCONDITIONPARAMS 5
 	char *params[MAXCONDITIONPARAMS]; // condition, requirement, extra info, extra info, stringvar
 	char *spos = NULL;
 	char *stringvar = NULL;
@@ -2974,7 +2976,7 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 	{
 		PARAMCHECK(1);
 		ty = UCRP_PODIUMCUP;
-	
+
 		re = -1;
 		if (!fastcmp(params[1], "ANY"))
 		{
@@ -3250,6 +3252,8 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 
 setcondition:
 	M_AddRawCondition(set, (UINT8)id, ty, re, x1, x2, stringvar);
+
+#undef MAXCONDITIONPARAMS
 }
 
 void readconditionset(MYFILE *f, UINT16 setnum)

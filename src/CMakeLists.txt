@@ -201,6 +201,9 @@ endif()
 
 target_compile_features(SRB2SDL2 PRIVATE c_std_11 cxx_std_17)
 set_target_properties(SRB2SDL2 PROPERTIES
+	C_STANDARD 11
+	C_STANDARD_REQUIRED ON
+	C_STANDARD_EXTENSIONS OFF
 	CXX_STANDARD 17
 	CXX_STANDARD_REQUIRED ON
 	CXX_EXTENSIONS OFF
@@ -468,6 +471,7 @@ target_compile_options(SRB2SDL2 PRIVATE
 		$<$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,4.6.0>:
 			-Wno-suggest-attribute=noreturn
 			-Wno-error=suggest-attribute=noreturn
+			-Werror=vla
 		>
 
 		$<$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,5.4.0>:
