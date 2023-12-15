@@ -200,6 +200,11 @@ if("${CMAKE_COMPILER_IS_GNUCC}" AND "${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
 endif()
 
 target_compile_features(SRB2SDL2 PRIVATE c_std_11 cxx_std_17)
+set_target_properties(SRB2SDL2 PROPERTIES
+	CXX_STANDARD 17
+	CXX_STANDARD_REQUIRED ON
+	CXX_EXTENSIONS OFF
+)
 
 set(SRB2_ASM_SOURCES vid_copy.s)
 

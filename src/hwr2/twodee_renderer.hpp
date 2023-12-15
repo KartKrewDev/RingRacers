@@ -63,9 +63,10 @@ struct MergedTwodeeCommandFlatTexture
 
 struct MergedTwodeeCommand
 {
+	using Texture = std::variant<rhi::Handle<rhi::Texture>, MergedTwodeeCommandFlatTexture>;
 	TwodeePipelineKey pipeline_key = {};
 	rhi::Handle<rhi::BindingSet> binding_set = {};
-	std::optional<std::variant<rhi::Handle<rhi::Texture>, MergedTwodeeCommandFlatTexture>> texture;
+	std::optional<Texture> texture;
 	const uint8_t* colormap;
 	uint32_t index_offset = 0;
 	uint32_t elements = 0;
