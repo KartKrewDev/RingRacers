@@ -1083,7 +1083,7 @@ void HWR_GetMappedPatch(patch_t *patch, const UINT8 *colormap)
 	grPatch = patch->hardware;
 
 	// Blatant hack for encore colormapping aside...
-	if (colormap == colormaps || colormap == NULL || colormap == COLORMAP_REMAPOFFSET)
+	if (colormap == colormaps || colormap == NULL || colormap == (const UINT8*)(COLORMAP_REMAPOFFSET))
 	{
 		// Load the default (green) color in hardware cache
 		HWR_GetPatch(patch);
