@@ -1,26 +1,28 @@
 include(LibFindMacros)
 
-libfind_pkg_check_modules(GME_PKGCONF GME)
+libfind_pkg_check_modules(GME_PKGCONF QUIET gme libgme)
 
 find_path(GME_INCLUDE_DIR
 	NAMES gme.h
 	PATHS
 		${GME_PKGCONF_INCLUDE_DIRS}
-		"/usr/include/gme"
-		"/usr/local/include/gme"
+		/usr/include
+		/usr/local/include
+	PATH_SUFFIXES
+		gme
 )
 
 find_library(GME_LIBRARY
 	NAMES gme
 	PATHS
 		${GME_PKGCONF_LIBRARY_DIRS}
-		"/usr/lib"
-		"/usr/local/lib"
+		/usr/lib
+		/usr/local/lib
 )
 
-set(GME_PROCESS_INCLUDES GME_INCLUDE_DIR)
-set(GME_PROCESS_LIBS GME_LIBRARY)
-libfind_process(GME)
+include(FindPackageHandleStandardArgs)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(GME
+    REQUIRED_VARS GME_LIBRARY GME_INCLUDE_DIR)
 
 if(GME_FOUND AND NOT TARGET gme)
 	add_library(gme UNKNOWN IMPORTED)
@@ -30,4 +32,7 @@ if(GME_FOUND AND NOT TARGET gme)
 		IMPORTED_LOCATION "${GME_LIBRARY}"
 		INTERFACE_INCLUDE_DIRECTORIES "${GME_INCLUDE_DIR}"
 	)
+	add_library(gme::gme ALIAS gme)
 endif()
+
+mark_as_advanced(GME_LIBRARY GME_INCLUDE_DIR)
