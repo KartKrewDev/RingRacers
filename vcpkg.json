@@ -1,0 +1,18 @@
+{
+    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+    "name": "ringracers",
+    "version": "1.0.0",
+    "dependencies": [
+        "curl",
+        "fmt",
+        "sdl2",
+        "libgme",
+        "libpng",
+        "libogg",
+        "libvpx",
+        "libvorbis",
+        "libyuv",
+        "zlib"
+    ],
+    "builtin-baseline": "000d1bda1ffa95a73e0b40334fa4103d6f4d3d48"
+}

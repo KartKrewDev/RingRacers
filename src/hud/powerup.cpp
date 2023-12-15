@@ -53,11 +53,11 @@ srb2::StaticVec<Icon, NUMPOWERUPS> get_powerup_list(bool ascending)
 
 	if (ascending)
 	{
-		std::sort(v.begin(), v.end(), std::less<Icon>());
+		std::stable_sort(v.begin(), v.end(), std::less<Icon>());
 	}
 	else
 	{
-		std::sort(v.begin(), v.end(), std::greater<Icon>());
+		std::stable_sort(v.begin(), v.end(), std::greater<Icon>());
 	}
 
 	return v;
@@ -122,7 +122,8 @@ void K_drawKartPowerUps(void)
 
 	Offsets i = make_offsets();
 
-	for (const Icon& ico : get_powerup_list(i.dir == -1))
+	srb2::StaticVec<Icon, NUMPOWERUPS> powerup_list = get_powerup_list(i.dir == -1);
+	for (const Icon& ico : powerup_list)
 	{
 		i.row.xy(i.spr_x, i.spr_y)
 			.colormap(static_cast<skincolornum_t>(stplyr->skincolor))

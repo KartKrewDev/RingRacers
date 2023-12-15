@@ -426,7 +426,7 @@ void Obj_LinkCheckpoint(mobj_t* end)
 			chk->spawnpoint - mapthings,
 			chk->spawnpoint->type
 		);
-		CONS_Alert(CONS_WARNING, msg.c_str());
+		CONS_Alert(CONS_WARNING, "%s", msg.c_str());
 		return;
 	}
 
@@ -443,7 +443,7 @@ void Obj_LinkCheckpoint(mobj_t* end)
 				other->spawnpoint - mapthings,
 				chk->spawnpoint->type
 			);
-			CONS_Alert(CONS_WARNING, msg.c_str());
+			CONS_Alert(CONS_WARNING, "%s", msg.c_str());
 			return;
 		}
 
