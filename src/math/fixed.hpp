@@ -66,7 +66,7 @@ struct Fixed
 	Fixed operator-() const { return -val_; }
 
 #define X(op) \
-	template <typename T> \
+	template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>> \
 	Fixed operator op(const T& b) const { return val_ op b; } \
 	Fixed operator op(const Fixed& b) const \
 	{ \
