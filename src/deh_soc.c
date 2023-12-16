@@ -577,8 +577,8 @@ void readskincolor(MYFILE *f, INT32 num)
 
 			if (fastcmp(word, "NAME"))
 			{
-				size_t namesize = sizeof(skincolors[num].name);
-				char *truncword = Z_Malloc(sizeof(char) * namesize, PU_STATIC, NULL);
+				char truncword[sizeof(skincolors[num].name)];
+				size_t namesize = sizeof(truncword);
 				UINT16 dupecheck;
 
 				deh_strlcpy(truncword, word2, namesize, va("Skincolor %d: name", num)); // truncate here to check for dupes
@@ -586,7 +586,7 @@ void readskincolor(MYFILE *f, INT32 num)
 				if (truncword[0] != '\0' && (!stricmp(truncword, skincolors[SKINCOLOR_NONE].name) || (dupecheck && dupecheck != num)))
 				{
 					size_t lastchar = strlen(truncword);
-					char *oldword = Z_Calloc(sizeof(char) * (lastchar + 1), PU_STATIC, NULL);
+					char oldword[sizeof(truncword)];
 					char dupenum = '1';
 
 					strlcpy(oldword, truncword, lastchar+1);
@@ -611,11 +611,9 @@ void readskincolor(MYFILE *f, INT32 num)
 					}
 
 					deh_warning("Skincolor %d: name %s is a duplicate of another skincolor's name - renamed to %s", num, oldword, truncword);
-					Z_Free(oldword);
 				}
 
 				strlcpy(skincolors[num].name, truncword, namesize); // already truncated
-				Z_Free(truncword);
 			}
 			else if (fastcmp(word, "RAMP"))
 			{
