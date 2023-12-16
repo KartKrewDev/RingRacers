@@ -4314,15 +4314,14 @@ static void Command_Addfile(void)
 	size_t argc = COM_Argc(); // amount of arguments total
 	size_t curarg; // current argument index
 
-	const char **addedfiles = Z_Calloc(sizeof(const char*) * argc, PU_STATIC, NULL);
-	size_t numfilesadded = 0; // the amount of filenames processed
-
 	if (argc < 2)
 	{
 		CONS_Printf(M_GetText("addfile <filename.pk3/wad/lua/soc> [filename2...] [...]: Load add-ons\n"));
-		Z_Free(addedfiles);
 		return;
 	}
+
+	const char **addedfiles = Z_Calloc(sizeof(const char*) * argc, PU_STATIC, NULL);
+	size_t numfilesadded = 0; // the amount of filenames processed
 
 	// start at one to skip command name
 	for (curarg = 1; curarg < argc; curarg++)
