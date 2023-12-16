@@ -3743,7 +3743,7 @@ static void K_drawKartNameTags(void)
 
 	if (sortlen > 0)
 	{
-		UINT8 *sortedplayers = Z_Malloc(sizeof(UINT8) * sortlen, PU_STATIC, NULL);
+		UINT8 sortedplayers[MAXPLAYERS];
 
 		for (i = 0; i < sortlen; i++)
 		{
@@ -3822,8 +3822,6 @@ static void K_drawKartNameTags(void)
 				}
 			}
 		}
-
-		Z_Free(sortedplayers);
 	}
 
 	V_ClearClipRect();
