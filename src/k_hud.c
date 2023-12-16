@@ -792,7 +792,7 @@ void K_LoadKartHUDGraphics(void)
 	{
 		buffer[7] = '0'+i;
 		HU_UpdatePatch(&kp_superflickytarget[0][i], "%s", buffer);
-	}	
+	}
 
 	sprintf(buffer, "H4PFLKAx");
 	for (i = 0; i < 4; i++)
@@ -2860,17 +2860,17 @@ static void K_drawKartAccessibilityIcons(boolean gametypeinfoshown, INT32 fx)
 {
     INT32 fy = LAPS_Y-14;
     INT32 splitflags = V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_SPLITSCREEN;
- 
+
     boolean mirror = false;
- 
+
     fx += LAPS_X;
- 
+
     if (r_splitscreen < 2) // adjust to speedometer height
     {
         if (gametypeinfoshown)
         {
             fy -= 11;
- 
+
             if ((gametyperules & (GTR_BUMPERS|GTR_CIRCUIT)) == GTR_BUMPERS)
                 fy -= 4;
         }
@@ -2890,21 +2890,21 @@ static void K_drawKartAccessibilityIcons(boolean gametypeinfoshown, INT32 fx)
             mirror = true;
         }
     }
- 
+
     // Kickstart Accel
     if (stplyr->pflags & PF_KICKSTARTACCEL)
     {
         if (mirror)
             fx -= 10;
- 
+
         SINT8 col = 0, wid, fil, ofs;
         UINT8 i = 7;
         ofs = (stplyr->kickstartaccel == ACCEL_KICKSTART) ? 1 : 0;
         fil = i-(stplyr->kickstartaccel*i)/ACCEL_KICKSTART;
- 
+
         V_DrawFill(fx+4, fy+ofs-1, 2, 1, 31|V_SLIDEIN|splitflags);
         V_DrawFill(fx, (fy+ofs-1)+8, 10, 1, 31|V_SLIDEIN|splitflags);
- 
+
         while (i--)
         {
             wid = (i/2)+1;
@@ -2924,21 +2924,21 @@ static void K_drawKartAccessibilityIcons(boolean gametypeinfoshown, INT32 fx)
                 col = 3;
             V_DrawFill(fx+5-wid, fy+ofs+i, (wid*2), 1, col|V_SLIDEIN|splitflags);
         }
- 
+
         if (mirror)
             fx--;
         else
             fx += 10 + 1;
     }
- 
+
     // Auto Roulette
     if (stplyr->pflags & PF_AUTOROULETTE)
     {
         if (mirror)
             fx -= 12;
- 
+
         V_DrawScaledPatch(fx, fy-1, V_SLIDEIN|splitflags, kp_autoroulette);
- 
+
         if (mirror)
             fx--;
         else
@@ -3743,7 +3743,7 @@ static void K_drawKartNameTags(void)
 
 	if (sortlen > 0)
 	{
-		UINT8 sortedplayers[sortlen];
+		UINT8 sortedplayers[MAXPLAYERS];
 
 		for (i = 0; i < sortlen; i++)
 		{

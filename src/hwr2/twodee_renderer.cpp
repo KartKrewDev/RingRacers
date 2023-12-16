@@ -397,7 +397,7 @@ void TwodeeRenderer::flush(Rhi& rhi, Handle<GraphicsContext> ctx, Twodee& twodee
 					else
 					{
 						srb2::NotNull<const PatchAtlas*> atlas = patch_atlas_cache_->find_patch(cmd.patch);
-						typeof(merged_cmd.texture) atlas_index_texture = atlas->texture();
+						std::optional<MergedTwodeeCommand::Texture> atlas_index_texture = atlas->texture();
 						new_cmd_needed = new_cmd_needed || (merged_cmd.texture != atlas_index_texture);
 					}
 
@@ -411,7 +411,7 @@ void TwodeeRenderer::flush(Rhi& rhi, Handle<GraphicsContext> ctx, Twodee& twodee
 					}
 					else
 					{
-						typeof(merged_cmd.texture) flat_tex = MergedTwodeeCommandFlatTexture {cmd.flat_lump};
+						std::optional<MergedTwodeeCommand::Texture> flat_tex = MergedTwodeeCommandFlatTexture {cmd.flat_lump};
 						new_cmd_needed |= (merged_cmd.texture != flat_tex);
 					}
 
@@ -444,7 +444,7 @@ void TwodeeRenderer::flush(Rhi& rhi, Handle<GraphicsContext> ctx, Twodee& twodee
 						if (cmd.flat_lump != LUMPERROR)
 						{
 							flat_manager_->find_or_create_indexed(rhi, ctx, cmd.flat_lump);
-							typeof(the_new_one.texture) t = MergedTwodeeCommandFlatTexture {cmd.flat_lump};
+							std::optional<MergedTwodeeCommand::Texture> t = MergedTwodeeCommandFlatTexture {cmd.flat_lump};
 							the_new_one.texture = t;
 						}
 						else

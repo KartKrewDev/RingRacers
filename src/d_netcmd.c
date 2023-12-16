@@ -4314,14 +4314,14 @@ static void Command_Addfile(void)
 	size_t argc = COM_Argc(); // amount of arguments total
 	size_t curarg; // current argument index
 
-	const char *addedfiles[argc]; // list of filenames already processed
-	size_t numfilesadded = 0; // the amount of filenames processed
-
 	if (argc < 2)
 	{
 		CONS_Printf(M_GetText("addfile <filename.pk3/wad/lua/soc> [filename2...] [...]: Load add-ons\n"));
 		return;
 	}
+
+	const char **addedfiles = Z_Calloc(sizeof(const char*) * argc, PU_STATIC, NULL);
+	size_t numfilesadded = 0; // the amount of filenames processed
 
 	// start at one to skip command name
 	for (curarg = 1; curarg < argc; curarg++)
@@ -4357,7 +4357,10 @@ static void Command_Addfile(void)
 		// Disallow non-printing characters and semicolons.
 		for (i = 0; fn[i] != '\0'; i++)
 			if (!isprint(fn[i]) || fn[i] == ';')
+			{
+				Z_Free(addedfiles);
 				return;
+			}
 
 		musiconly = W_VerifyNMUSlumps(fn, false);
 
@@ -4397,6 +4400,7 @@ static void Command_Addfile(void)
 		if (numwadfiles >= MAX_WADFILES)
 		{
 			CONS_Alert(CONS_ERROR, M_GetText("Too many files loaded to add %s\n"), fn);
+			Z_Free(addedfiles);
 			return;
 		}
 
@@ -4447,6 +4451,8 @@ static void Command_Addfile(void)
 		else
 			SendNetXCmd(XD_ADDFILE, buf, buf_p - buf);
 	}
+
+	Z_Free(addedfiles);
 #endif/*TESTERS*/
 }
 

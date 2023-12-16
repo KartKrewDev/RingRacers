@@ -150,13 +150,13 @@ void M_PopulateChallengeGrid(void)
 		UINT16 numspots = (gamedata->challengegridwidth - (challengegridloops ? 0 : majorcompact))
 				* ((CHALLENGEGRIDHEIGHT-1) / majorcompact);
 		// 0 is row, 1 is column
-		INT16 quickcheck[numspots][2];
+		INT16 *quickcheck = Z_Calloc(sizeof(INT16) * 2 * numspots, PU_STATIC, NULL);
 
 		// Prepare the easy-grab spots.
 		for (i = 0; i < numspots; i++)
 		{
-			quickcheck[i][0] = i%(CHALLENGEGRIDHEIGHT-1);
-			quickcheck[i][1] = majorcompact * i/(CHALLENGEGRIDHEIGHT-1);
+			quickcheck[i * 2 + 0] = i%(CHALLENGEGRIDHEIGHT-1);
+			quickcheck[i * 2 + 1] = majorcompact * i/(CHALLENGEGRIDHEIGHT-1);
 		}
 
 		// Place in random valid locations.
@@ -164,8 +164,8 @@ void M_PopulateChallengeGrid(void)
 		{
 			INT16 row, col;
 			j = M_RandomKey(numspots);
-			row = quickcheck[j][0];
-			col =  quickcheck[j][1];
+			row = quickcheck[j * 2 + 0];
+			col =  quickcheck[j * 2 + 1];
 
 			// We always take from selection[1][] in order, but the PLACEMENT is still random.
 			nummajorunlocks--;
@@ -183,7 +183,7 @@ void M_PopulateChallengeGrid(void)
 				i += CHALLENGEGRIDHEIGHT;
 			}
 			gamedata->challengegrid[i] = gamedata->challengegrid[i+1] = selection[1][nummajorunlocks];
-	
+
 			if (nummajorunlocks == 0)
 			{
 				break;
@@ -192,17 +192,17 @@ void M_PopulateChallengeGrid(void)
 			for (i = 0; i < numspots; i++)
 			{
 quickcheckagain:
-				if (abs((quickcheck[i][0]) - (row)) <= 1 // Row distance
-					&& (abs((quickcheck[i][1]) - (col)) <= 1 // Column distance
-					|| (quickcheck[i][1] == 0 && col == gamedata->challengegridwidth-1) // Wraparounds l->r
-					|| (quickcheck[i][1] == gamedata->challengegridwidth-1 && col == 0))) // Wraparounds r->l
+				if (abs((quickcheck[i * 2 + 0]) - (row)) <= 1 // Row distance
+					&& (abs((quickcheck[i * 2 + 1]) - (col)) <= 1 // Column distance
+					|| (quickcheck[i * 2 + 1] == 0 && col == gamedata->challengegridwidth-1) // Wraparounds l->r
+					|| (quickcheck[i * 2 + 1] == gamedata->challengegridwidth-1 && col == 0))) // Wraparounds r->l
 				{
 					numspots--;  // Remove from possible indicies
 					if (i == numspots)
 						break;
 					// Shuffle remaining so we can keep on using M_RandomKey
-					quickcheck[i][0] = quickcheck[numspots][0];
-					quickcheck[i][1] = quickcheck[numspots][1];
+					quickcheck[i * 2 + 0] = quickcheck[numspots * 2 + 0];
+					quickcheck[i * 2 + 1] = quickcheck[numspots * 2 + 1];
 					// Woah there - we've gotta check the one that just got put in our place.
 					goto quickcheckagain;
 				}
@@ -972,7 +972,7 @@ cacheprisoneggpickup:
 						// Okay, this should be available.
 						// Bring to the front!
 						swap = gamedata->prisoneggpickups[gamedata->gettableprisoneggpickups];
-						gamedata->prisoneggpickups[gamedata->gettableprisoneggpickups] = 
+						gamedata->prisoneggpickups[gamedata->gettableprisoneggpickups] =
 							gamedata->prisoneggpickups[i];
 						gamedata->prisoneggpickups[i] = swap;
 
@@ -990,7 +990,7 @@ cacheprisoneggpickup:
 			// Push this all the way to the back, and lop it off!
 
 			swap = gamedata->prisoneggpickups[gamedata->numprisoneggpickups];
-			gamedata->prisoneggpickups[gamedata->numprisoneggpickups] = 
+			gamedata->prisoneggpickups[gamedata->numprisoneggpickups] =
 				gamedata->prisoneggpickups[i];
 			gamedata->prisoneggpickups[i] = swap;
 
@@ -1250,7 +1250,7 @@ void M_UpdateConditionSetsPending(void)
 			}
 		}
 
-		
+
 	}
 }
 
@@ -1404,7 +1404,7 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			UINT8 difficulty = cn->extrainfo2;
 			if (difficulty > KARTGP_MASTER)
 				difficulty = KARTGP_MASTER;
-			
+
 			cupheader_t *cup;
 			for (cup = kartcupheaders; cup; cup = cup->next)
 			{
@@ -1725,7 +1725,7 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 				&& player->position != 0
 				&& player->position <= cn->requirement);
 		case UCRP_FINISHPLACEEXACT:
-			return (player->exiting 
+			return (player->exiting
 				&& !(player->pflags & PF_NOCONTEST)
 				&& M_NotFreePlay()
 				&& player->position == cn->requirement);
@@ -3314,7 +3314,7 @@ boolean M_MapLocked(UINT16 mapnum)
 
 	if (mapnum == 0 || mapnum > nummapheaders)
 		return false;
-	
+
 	if (!mapheaderinfo[mapnum-1])
 		return false;
 

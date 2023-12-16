@@ -200,6 +200,14 @@ if("${CMAKE_COMPILER_IS_GNUCC}" AND "${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
 endif()
 
 target_compile_features(SRB2SDL2 PRIVATE c_std_11 cxx_std_17)
+set_target_properties(SRB2SDL2 PROPERTIES
+	C_STANDARD 11
+	C_STANDARD_REQUIRED ON
+	C_STANDARD_EXTENSIONS OFF
+	CXX_STANDARD 17
+	CXX_STANDARD_REQUIRED ON
+	CXX_EXTENSIONS OFF
+)
 
 set(SRB2_ASM_SOURCES vid_copy.s)
 
@@ -409,6 +417,11 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	target_compile_options(SRB2SDL2 PRIVATE -mno-ms-bitfields)
 endif()
 
+# Yes we know we use insecure CRT functions...
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+	target_compile_definitions(SRB2SDL2 PRIVATE -D_CRT_SECURE_NO_WARNINGS)
+endif()
+
 # Compiler warnings configuration
 target_compile_options(SRB2SDL2 PRIVATE
 	# Using generator expressions to handle per-language compile options
@@ -420,6 +433,7 @@ target_compile_options(SRB2SDL2 PRIVATE
 		-Wno-trigraphs
 		-W # Was controlled by RELAXWARNINGS
 		-pedantic
+		-Wpedantic
 		-Wfloat-equal
 		-Wundef
 		-Wpointer-arith
@@ -463,6 +477,7 @@ target_compile_options(SRB2SDL2 PRIVATE
 		$<$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,4.6.0>:
 			-Wno-suggest-attribute=noreturn
 			-Wno-error=suggest-attribute=noreturn
+			-Werror=vla
 		>
 
 		$<$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,5.4.0>:
@@ -518,7 +533,7 @@ target_compile_options(SRB2SDL2 PRIVATE
 	>
 
 	# C++, MSVC
-	$<$<AND:$<COMPILE_LANGUAGE:C>,$<C_COMPILER_ID:MSVC>>:
+	$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<C_COMPILER_ID:MSVC>>:
 		/Wv:19.20.27004.0
 	>
 
