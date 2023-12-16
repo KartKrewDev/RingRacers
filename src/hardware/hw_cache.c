@@ -861,11 +861,18 @@ static void HWR_CacheFlat(GLMipmap_t *grMipmap, lumpnum_t flatlumpnum)
 			flat[steppy] = grMipmap->colormap->source[flat[steppy]];
 }
 
-static void HWR_CacheTextureAsFlat(GLMipmap_t *grMipmap, INT32 texturenum)
+static void HWR_CacheTextureAsFlat(GLMipmap_t *grMipmap, INT32 texturenum, boolean noencoremap)
 {
 	UINT8 *flat;
 	UINT8 *converted;
 	size_t size;
+	size_t i;
+	UINT8 *colormap = colormaps;
+
+	if (!noencoremap && encoremap)
+	{
+		colormap += COLORMAP_REMAPOFFSET;
+	}
 
 	// setup the texture info
 	grMipmap->format = GL_TEXFMT_P_8;
@@ -878,6 +885,11 @@ static void HWR_CacheTextureAsFlat(GLMipmap_t *grMipmap, INT32 texturenum)
 	flat = Z_Malloc(size, PU_HWRCACHE, &grMipmap->data);
 	converted = (UINT8 *)Picture_TextureToFlat(texturenum);
 	M_Memcpy(flat, converted, size);
+
+	for (i = 0; i < size; i++)
+	{
+		flat[i] = colormap[flat[i]];
+	}
 	Z_Free(converted);
 }
 
@@ -946,14 +958,7 @@ void HWR_GetLevelFlat(levelflat_t *levelflat, boolean noencoremap)
 		// Generate flat if missing from the cache
 		if (!grtex->mipmap.data && !grtex->mipmap.downloaded)
 		{
-			HWR_CacheTextureAsFlat(&grtex->mipmap, texturenum);
-
-			if (!noencoremap && encoremap)
-			{
-				grtex->mipmap.colormap = Z_Calloc(sizeof(*grtex->mipmap.colormap), PU_HWRPATCHCOLMIPMAP, NULL);
-				grtex->mipmap.colormap->source = colormaps + COLORMAP_REMAPOFFSET;
-				M_Memcpy(grtex->mipmap.colormap->data, colormaps + COLORMAP_REMAPOFFSET, 256);
-			}
+			HWR_CacheTextureAsFlat(&grtex->mipmap, texturenum, noencoremap);
 		}
 
 		// If hardware does not have the texture, then call pfnSetTexture to upload it
