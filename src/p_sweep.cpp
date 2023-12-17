@@ -21,7 +21,7 @@ Result SlopeAABBvsLine::vs_slope(const line_segment& l) const
 	LineEquation<unit> ql{l};
 	unit ls = copysign(kUnit, ql.m());
 
-	auto hit = [&](const vec2& k, unit xr, unit x, const vec2& n) -> Contact
+	auto hit = [&, &a = a, &b = b](const vec2& k, unit xr, unit x, const vec2& n) -> Contact
 	{
 		std::optional<vec2> k2;
 
@@ -92,7 +92,7 @@ Result SlopeAABBvsLine::vs_slope(const line_segment& l) const
 
 	// xrs.x = x radius
 	// xrs.y = x sign
-	auto bind = [&](const vec2& k, const vec2& xrs, unit ns) -> std::optional<Contact>
+	auto bind = [&, &a = a, &b = b](const vec2& k, const vec2& xrs, unit ns) -> std::optional<Contact>
 	{
 		if (k.x < a.x)
 		{
@@ -206,7 +206,7 @@ Result VerticalAABBvsLine::vs_slope(const line_segment& l) const
 	auto [a, b] = l.by_x(); // left, right
 	LineEquation<unit> ql{l};
 
-	auto hit = [&](const vec2& k, unit xr, unit y, const vec2& n) -> Contact
+	auto hit = [&, &a = a, &b = b](const vec2& k, unit xr, unit y, const vec2& n) -> Contact
 	{
 		std::optional<vec2> k2;
 

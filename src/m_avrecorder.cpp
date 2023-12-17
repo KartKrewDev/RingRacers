@@ -91,14 +91,10 @@ static AVRecorder::Config configure()
 
 	if (sound_started && cv_movie_sound.value)
 	{
-		cfg.audio = {
-			.sample_rate = 44100,
-		};
+		cfg.audio = { 44100 };
 	}
 
-	cfg.video = {
-		.frame_rate = cv_movie_fps.value,
-	};
+	cfg.video = { cv_movie_fps.value };
 
 	AVRecorder::Config::Video& v = *cfg.video;
 

@@ -193,13 +193,21 @@ add_dependencies(SRB2SDL2 _SRB2_reconf)
 
 if("${CMAKE_COMPILER_IS_GNUCC}" AND "${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
 	target_link_options(SRB2SDL2 PRIVATE "-Wl,--disable-dynamicbase")
-	if(NOT "${SRB2_CONFIG_SYSTEM_LIBRARIES}" AND NOT "${SRB2_CONFIG_SHARED_INTERNAL_LIBRARIES}")
+	if("${SRB2_CONFIG_STATIC_STDLIB}")
 		# On MinGW with internal libraries, link the standard library statically
 		target_link_options(SRB2SDL2 PRIVATE "-static")
 	endif()
 endif()
 
 target_compile_features(SRB2SDL2 PRIVATE c_std_11 cxx_std_17)
+set_target_properties(SRB2SDL2 PROPERTIES
+	C_STANDARD 11
+	C_STANDARD_REQUIRED ON
+	C_STANDARD_EXTENSIONS OFF
+	CXX_STANDARD 17
+	CXX_STANDARD_REQUIRED ON
+	CXX_EXTENSIONS OFF
+)
 
 set(SRB2_ASM_SOURCES vid_copy.s)
 
@@ -233,14 +241,12 @@ if("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
 	target_compile_definitions(SRB2SDL2 PRIVATE -DMACOSX)
 endif()
 
-target_link_libraries(SRB2SDL2 PRIVATE gme)
+target_link_libraries(SRB2SDL2 PRIVATE gme::gme)
 target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_GME)
-if(NOT "${SRB2_CONFIG_SYSTEM_LIBRARIES}")
-	# this sucks but gme doesn't use modern cmake to delineate public headers
-	target_include_directories(SRB2SDL2 PRIVATE "${libgme_SOURCE_DIR}")
-endif()
 
-target_link_libraries(SRB2SDL2 PRIVATE ZLIB::ZLIB PNG::PNG CURL::libcurl)
+target_link_libraries(SRB2SDL2 PRIVATE ZLIB::ZLIB)
+target_link_libraries(SRB2SDL2 PRIVATE PNG::PNG)
+target_link_libraries(SRB2SDL2 PRIVATE CURL::libcurl)
 target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_ZLIB -DHAVE_PNG -DHAVE_CURL -D_LARGEFILE64_SOURCE)
 target_sources(SRB2SDL2 PRIVATE apng.c)
 
@@ -249,18 +255,23 @@ target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_DISCORDRPC -DUSE_STUN)
 target_sources(SRB2SDL2 PRIVATE discord.c stun.cpp)
 
 target_link_libraries(SRB2SDL2 PRIVATE tcbrindle::span)
-target_link_libraries(SRB2SDL2 PRIVATE glm)
-target_link_libraries(SRB2SDL2 PRIVATE stb_rect_pack)
-target_link_libraries(SRB2SDL2 PRIVATE stb_vorbis)
+target_link_libraries(SRB2SDL2 PRIVATE glm::glm)
+target_link_libraries(SRB2SDL2 PRIVATE Stb)
 target_link_libraries(SRB2SDL2 PRIVATE xmp-lite::xmp-lite)
 target_link_libraries(SRB2SDL2 PRIVATE glad::glad)
-target_link_libraries(SRB2SDL2 PRIVATE fmt)
+target_link_libraries(SRB2SDL2 PRIVATE fmt::fmt)
 target_link_libraries(SRB2SDL2 PRIVATE imgui::imgui)
 target_link_libraries(SRB2SDL2 PRIVATE Tracy::TracyClient)
 if(SRB2_CONFIG_ENABLE_WEBM_MOVIES)
-	target_link_libraries(SRB2SDL2 PRIVATE webm::libwebm webm::libvpx)
+	target_link_libraries(SRB2SDL2 PRIVATE webm::libwebm_mkvmuxer)
 	target_link_libraries(SRB2SDL2 PRIVATE libyuv::libyuv)
 	target_link_libraries(SRB2SDL2 PRIVATE Vorbis::vorbis Vorbis::vorbisenc)
+	target_link_libraries(SRB2SDL2 PRIVATE Ogg::ogg)
+	if(unofficial-libvpx_FOUND)
+		target_link_libraries(SRB2SDL2 PRIVATE unofficial::libvpx::libvpx)
+	else()
+		target_link_libraries(SRB2SDL2 PRIVATE libvpx::libvpx)
+	endif()
 	target_compile_definitions(SRB2SDL2 PRIVATE -DSRB2_CONFIG_ENABLE_WEBM_MOVIES)
 endif()
 
@@ -406,6 +417,11 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	target_compile_options(SRB2SDL2 PRIVATE -mno-ms-bitfields)
 endif()
 
+# Yes we know we use insecure CRT functions...
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+	target_compile_definitions(SRB2SDL2 PRIVATE -D_CRT_SECURE_NO_WARNINGS)
+endif()
+
 # Compiler warnings configuration
 target_compile_options(SRB2SDL2 PRIVATE
 	# Using generator expressions to handle per-language compile options
@@ -417,6 +433,7 @@ target_compile_options(SRB2SDL2 PRIVATE
 		-Wno-trigraphs
 		-W # Was controlled by RELAXWARNINGS
 		-pedantic
+		-Wpedantic
 		-Wfloat-equal
 		-Wundef
 		-Wpointer-arith
@@ -460,6 +477,7 @@ target_compile_options(SRB2SDL2 PRIVATE
 		$<$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,4.6.0>:
 			-Wno-suggest-attribute=noreturn
 			-Wno-error=suggest-attribute=noreturn
+			-Werror=vla
 		>
 
 		$<$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,5.4.0>:
@@ -515,7 +533,7 @@ target_compile_options(SRB2SDL2 PRIVATE
 	>
 
 	# C++, MSVC
-	$<$<AND:$<COMPILE_LANGUAGE:C>,$<C_COMPILER_ID:MSVC>>:
+	$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<C_COMPILER_ID:MSVC>>:
 		/Wv:19.20.27004.0
 	>
 
@@ -582,9 +600,6 @@ add_subdirectory(objects)
 add_subdirectory(acs)
 add_subdirectory(rhi)
 add_subdirectory(monocypher)
-if(SRB2_CONFIG_ENABLE_TESTS)
-	add_subdirectory(tests)
-endif()
 add_subdirectory(menus)
 if(SRB2_CONFIG_ENABLE_WEBM_MOVIES)
 	add_subdirectory(media)

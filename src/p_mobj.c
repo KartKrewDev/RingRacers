@@ -11116,6 +11116,8 @@ fixed_t P_GetMobjDefaultScale(mobj_t *mobj)
 		case MT_AIZ_TREE:
 		case MT_AIZ_DDB:
 			return 4*FRACUNIT;
+		case MT_WALLSPIKE:
+			return 2*FRACUNIT;
 		default:
 			break;
 	}
