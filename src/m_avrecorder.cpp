@@ -91,12 +91,12 @@ static AVRecorder::Config configure()
 
 	if (sound_started && cv_movie_sound.value)
 	{
-		cfg.audio = { 44100 };
+		cfg.audio = AVRecorder::Config::Audio { 44100 };
 	}
 
-	cfg.video = { cv_movie_fps.value };
-
+	cfg.video = AVRecorder::Config::Video { };
 	AVRecorder::Config::Video& v = *cfg.video;
+	v.frame_rate = cv_movie_fps.value;
 
 	auto basex = [&v](int scale)
 	{
