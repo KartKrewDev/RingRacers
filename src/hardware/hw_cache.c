@@ -884,11 +884,9 @@ static void HWR_CacheTextureAsFlat(GLMipmap_t *grMipmap, INT32 texturenum, boole
 
 	flat = Z_Malloc(size, PU_HWRCACHE, &grMipmap->data);
 	converted = (UINT8 *)Picture_TextureToFlat(texturenum);
-	M_Memcpy(flat, converted, size);
-
 	for (i = 0; i < size; i++)
 	{
-		flat[i] = colormap[flat[i]];
+		flat[i] = colormap[converted[i]];
 	}
 	Z_Free(converted);
 }
