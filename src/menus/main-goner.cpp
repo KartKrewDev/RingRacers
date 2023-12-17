@@ -303,7 +303,7 @@ void M_AddGonerLines(void)
 				"Every racer carries one, to contain their personal settings.");
 			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
 				"It helps get your ""\x87""controls""\x80"" set up nice and quickly, "\
-				"when starting your vehicle.");
+				"when starting your vehicle and navigating the menu.");
 			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
 				"And it helps track your wins, too.");
 
@@ -322,14 +322,18 @@ void M_AddGonerLines(void)
 
 			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
 				"Go on, do your ""\x87""Profile Setup""\x80""!");
+
 			break;
 		}
 		case GDGONER_TUTORIAL:
 		{
 			if (!leftoff)
 			{
+				LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/2,
+					"Now that that's been set up, you can use your ""\x87""Profile controls""\x80"" on menus from here on out, too.");
+
 				LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/5,
-					"...right, now that that's sorted. How's the upload going?");
+					"Miles. How's the upload going?");
 
 				LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
 					"Just finished.");
@@ -344,7 +348,8 @@ void M_AddGonerLines(void)
 				"It's time to ""\x87""begin your Tutorial""\x80""!");
 
 			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
-				"That's a lot to get through. Good luck, MS-1!");
+				"Remember, MS-1. Even when you move on from this setup, you "\
+				"can always change your Options at any time from the menu.");
 
 			break;
 		}
