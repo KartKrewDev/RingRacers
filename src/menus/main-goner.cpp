@@ -10,6 +10,7 @@
 #include "../st_stuff.h" // faceprefix
 #include "../v_draw.hpp"
 #include "../k_dialogue.hpp"
+#include "../m_random.h"
 
 #include <forward_list>
 
@@ -117,6 +118,8 @@ std::array<GonerSpeaker, MAXGONERSPEAKERS> goner_speakers = {};
 srb2::Dialogue::Typewriter goner_typewriter;
 
 int goner_delay;
+int goner_scroll = 0;
+int goner_scrollend = -1;
 
 class GonerChatLine
 {
@@ -124,6 +127,7 @@ public:
 	gonerspeakers_t speaker;
 	std::string dialogue;
 	int value; // Mutlipurpose.
+	void (*routine)(void);
 
 	GonerChatLine(gonerspeakers_t speaker, int delay, std::string dialogue)
 	{
@@ -135,21 +139,37 @@ public:
 			dialogue.c_str()
 		);
 		this->value = delay;
+
+		this->routine = nullptr;
 	};
+
+	GonerChatLine(int delay, void (*routine)(void))
+	{
+		this->value = delay;
+		this->routine = routine;
+
+		this->speaker = MAXGONERSPEAKERS;
+		this->dialogue = "";
+	}
 
 	// Returns true if line is text
 	bool Handle(void)
 	{
-		if (speaker >= MAXGONERSPEAKERS)
+		goner_delay = value;
+
+		if (routine != nullptr)
+			routine();
+
+		if (speaker >= MAXGONERSPEAKERS || dialogue.empty())
 			return false;
 
 		goner_typewriter.voiceSfx = goner_speakers[speaker].TalkSound();
 
 		goner_typewriter.NewText(dialogue);
 
-		goner_delay = value;
-
 		value = 1; // this is now repurposed as the number of lines visible
+
+		goner_scrollend++;
 
 		return true;
 	};
@@ -158,11 +178,130 @@ public:
 std::forward_list<GonerChatLine> LinesToDigest;
 std::forward_list<GonerChatLine> LinesOutput;
 
+class GonerBGData
+{
+public:
+	int miles_mouth;
+	bool miles_electric, miles_prev_electric;
+	bool miles_cameralook;
+	int miles_timetoblink, miles_prev_timetoblink;
+
+	GonerBGData()
+	{
+		miles_mouth = 1;
+		miles_electric = miles_prev_electric = true;
+		miles_cameralook = false;
+		miles_timetoblink = miles_prev_timetoblink = M_RandomRange(2*TICRATE, 4*TICRATE);
+	};
+
+	bool NeutralMouthCheck(gonerspeakers_t speaker)
+	{
+		return (LinesOutput.empty()
+			|| LinesOutput.front().speaker != speaker
+			|| goner_typewriter.textDone
+			|| goner_typewriter.text.empty());
+	}
+
+	void Tick()
+	{
+		if (miles_timetoblink == 0)
+		{
+			if (miles_prev_timetoblink)
+			{
+				miles_timetoblink = 4*TICRATE - miles_prev_timetoblink;
+				miles_prev_timetoblink = 0;
+			}
+			else
+			{
+				miles_timetoblink = miles_prev_timetoblink = M_RandomRange(2*TICRATE, 4*TICRATE);
+			}
+		}
+		miles_timetoblink--;
+
+		miles_prev_electric = miles_electric;
+
+		if (NeutralMouthCheck(GONERSPEAKER_TAILS))
+			miles_mouth = 1;
+		else
+		{
+			char c = tolower(goner_typewriter.text.back());
+			char incomingc = goner_typewriter.textDest.empty()
+				? '\0'
+				: tolower(goner_typewriter.textDest.back());
+			switch (c)
+			{
+				// Close mouth
+				case 'm':
+				case 'w':
+				case 'p':
+				case 'b':
+				case '.':
+				case ',':
+				case ':':
+				case ';':
+					miles_mouth = 1;
+					break;
+
+				// Vowels
+				case 'a': miles_mouth = 2; break;
+				case 'e': miles_mouth = 3; break;
+				case 'i': miles_mouth = 4; break;
+				case 'o': miles_mouth = 5; break;
+				case 'u': miles_mouth = 6; break;
+
+				// VOWELBIGUOUS
+				case 'y': miles_mouth = 7; break;
+
+				// Hissth
+				case 't':
+				case 's':
+				case 'r':
+				case 'n':
+					miles_mouth = 7; break;
+
+				// Approximation, since MS-1 is said a LOT by Tails.
+				case '-':
+					if (incomingc != '1')
+						break;
+					miles_mouth = 5; break;
+				case '1': miles_mouth = 7; break;
+
+				// No update for you!
+				default:
+					break;
+			}
+		}
+	}
+};
+
+GonerBGData goner_background;
+
+void Miles_Look_Camera()
+{
+	if (goner_background.miles_cameralook)
+		return;
+	goner_background.miles_cameralook = true;
+	goner_background.miles_timetoblink = goner_background.miles_prev_timetoblink = 0;
+}
+
+void Miles_Look_Electric()
+{
+	goner_background.miles_electric = true;
+
+	if (!goner_background.miles_cameralook)
+		return;
+	goner_background.miles_cameralook = false;
+	goner_background.miles_timetoblink = goner_background.miles_prev_timetoblink = 0;
+}
+
+void Miles_Electric_Lower()
+{
+	goner_background.miles_electric = false;
+	Miles_Look_Camera();
+}
+
 int goner_levelworking = GDGONER_INIT;
 bool goner_gdq = false;
-
-int goner_scroll = 0;
-int goner_scrollend = 0;
 
 void M_GonerResetText(void)
 {
@@ -171,7 +310,7 @@ void M_GonerResetText(void)
 	LinesOutput.clear();
 
 	goner_scroll = 0;
-	goner_scrollend = 0;
+	goner_scrollend = -1;
 }
 
 void M_AddGonerLines(void)
@@ -197,6 +336,7 @@ void M_AddGonerLines(void)
 
 		if (leftoff)
 		{
+			LinesToDigest.emplace_front(0, Miles_Look_Camera);
 			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
 				"It must have run into some sort of error...");
 			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
@@ -218,25 +358,31 @@ void M_AddGonerLines(void)
 				"Take a close look, Miles. Moments ago he was at my throat! "\
 				"Now he's docile as can be on that operating table.");
 
+			LinesToDigest.emplace_front(0, Miles_Look_Camera);
 			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
 				"I don't feel very safe!");
+			LinesToDigest.emplace_front(0, Miles_Electric_Lower);
 			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/4,
 				"But its programming is definitely locked down...");
 
+			LinesToDigest.emplace_front(0, Miles_Look_Electric);
 			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
 				"You've given me quite the headache, Metal. "\
 				"Thankfully, Tails caught you in the act.");
 
 			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/5,
 				"Wait, I'm getting weird readings over the network.");
+			LinesToDigest.emplace_front(0, Miles_Look_Camera);
 			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
 				"Metal Sonic is the unit labeled \"MS-1\", right?");
+			LinesToDigest.emplace_front(0, Miles_Look_Electric);
 			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE,
 				"The ""\x87""viewport""\x80"" and ""\x87""audio""\x80"" "\
 				"config looks like it got messed up.");
 
 			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
 				"So you're right. I wonder if it has anything to do with that outburst.");
+			LinesToDigest.emplace_front(0, Miles_Look_Camera);
 			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
 				"Alright, Metal! I don't remember your specifications offhand. "\
 				"First things first, go ahead and set up your "\
@@ -253,26 +399,32 @@ void M_AddGonerLines(void)
 			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
 				"Now, calibrate your ""\x87""Sound Options""\x80"".");
 
+			LinesToDigest.emplace_front(0, Miles_Electric_Lower);
 			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
 				"You always make your stuff so loud by default, Eggman. It might need a moment.");
 
 			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
 				"Not Metal! He always needed to be stealthy. But go on, set your sliders.");
+			LinesToDigest.emplace_front(0, Miles_Look_Electric);
 			break;
 		}
 		case GDGONER_PROFILE:
 		{
 			if (!leftoff)
 			{
+				LinesToDigest.emplace_front(0, Miles_Look_Electric);
+				LinesToDigest.emplace_front(0, Miles_Look_Camera);
 				LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/2,
 					"Oh! Let's tell Metal about our project!");
 
 				LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
 					"Of course. I and my lab assista-");
 
+				LinesToDigest.emplace_front(0, Miles_Electric_Lower);
 				LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
 					"Lab PARTNER.");
 
+				LinesToDigest.emplace_front(0, Miles_Look_Electric);
 				LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
 					"Irrelevant!");
 			}
@@ -283,16 +435,20 @@ void M_AddGonerLines(void)
 				"At its core, it is designed to utilise the boundless potential "\
 				"of the ""\x83""High Voltage Ring""\x80"".");
 
+			LinesToDigest.emplace_front(0, Miles_Look_Camera);
 			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE,
 				"We made this special ""\x83""Ring""\x80"" by combining the power of tens of "\
 				"thousands of ordinary ""\x82""Rings""\x80"".");
+			LinesToDigest.emplace_front(0, Miles_Electric_Lower);
 			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/2,
 				"We recorded some of our testing for you, MS-1. Maybe your neural "\
 				"network could train on some less violent data for once.");
 
+			LinesToDigest.emplace_front(0, Miles_Look_Electric);
 			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/4,
 				"While that's uploading, why don't you set up your ""\x87""Profile Card""\x80""?");
 
+			LinesToDigest.emplace_front(0, Miles_Electric_Lower);
 			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
 				"Yes! That's one of my contributions.");
 
@@ -301,17 +457,22 @@ void M_AddGonerLines(void)
 
 			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
 				"Every racer carries one, to contain their personal settings.");
+			LinesToDigest.emplace_front(0, Miles_Look_Electric);
 			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
 				"It helps get your ""\x87""controls""\x80"" set up nice and quickly, "\
 				"when starting your vehicle and navigating the menu.");
+			LinesToDigest.emplace_front(0, Miles_Look_Camera);
 			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
 				"And it helps track your wins, too.");
+			LinesToDigest.emplace_front(0, Miles_Look_Electric);
 
 			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/5,
 				"Bragging rights. My idea!");
 
+			LinesToDigest.emplace_front(0, Miles_Look_Camera);
 			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/2,
 				"You can make the ID and player tag on there anything you want.");
+			LinesToDigest.emplace_front(0, Miles_Electric_Lower);
 			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/2,
 				"Mine says \"Nine Tails\". That's the name of my original character! "\
 				"He's like me if I never met my ""\x84""brother""\x80"". He'd use cool "\
@@ -332,9 +493,11 @@ void M_AddGonerLines(void)
 				LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/2,
 					"Now that that's been set up, you can use your ""\x87""Profile controls""\x80"" on menus from here on out, too.");
 
+				LinesToDigest.emplace_front(0, Miles_Look_Electric);
 				LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/5,
 					"Miles. How's the upload going?");
 
+				LinesToDigest.emplace_front(0, Miles_Look_Camera);
 				LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
 					"Just finished.");
 
@@ -342,6 +505,7 @@ void M_AddGonerLines(void)
 					"Perfect.");
 			}
 
+			LinesToDigest.emplace_front(0, Miles_Electric_Lower);
 			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
 				"Now, Metal... it's important you pay attention.");
 			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/5,
@@ -487,6 +651,7 @@ void M_GonerTick(void)
 
 		// Handle rewinding if you clear your gamedata.
 		M_GonerResetText();
+		goner_background = GonerBGData();
 
 		goner_levelworking = GDGONER_INIT;
 	}
@@ -522,6 +687,7 @@ void M_GonerTick(void)
 	}
 
 	goner_typewriter.WriteText();
+	goner_background.Tick();
 
 	if (menutyping.active || menumessage.active || P_AutoPause())
 		return;
@@ -556,7 +722,6 @@ void M_GonerTick(void)
 				if (!LinesOutput.empty())
 				{
 					LinesOutput.front().value = goner_typewriter.textLines;
-					goner_scrollend++;
 				}
 
 				auto line = LinesToDigest.front();
@@ -606,6 +771,83 @@ void M_DrawGonerBack(void)
 		.width(BASEVIDWIDTH)
 		.height(BASEVIDHEIGHT)
 		.fill(31);
+
+	{
+		srb2::Draw eggman = drawer.xy(-70, 20);
+
+		// body
+		eggman.patch("GON_EB");
+
+		// head
+		{
+			if (goner_typewriter.syllable
+			&& !goner_background.NeutralMouthCheck(GONERSPEAKER_EGGMAN))
+				eggman = eggman.y(1);
+
+			eggman.patch("GON_E1H1");
+		}
+	}
+
+	{
+		srb2::Draw miles = drawer.xy(205, 45);
+
+		// body
+		miles.patch("GON_T_B");
+
+		// head/eyes
+		miles.patch(
+			va("GON_T1H%u",
+			goner_background.miles_cameralook
+				? 1
+				: 2
+			)
+		);
+		if (goner_background.miles_timetoblink == 0)
+		{
+			// eyelids
+			miles.patch("GON_T1E3");
+		}
+
+		// mouth
+		miles.patch(
+			va("GON_T1M%u",
+			goner_background.miles_mouth)
+		);
+
+		// miles electric and hands (and arms..?)
+		{
+			int y = 0;
+			if (!goner_background.miles_electric)
+			{
+				y = 20;
+			}
+			if (goner_background.miles_prev_electric != goner_background.miles_electric)
+			{
+				y--;
+			}
+			if (y != 0)
+			{
+				miles = miles.y(y);
+			}
+
+			bool drawarms = (
+				goner_background.miles_electric
+				&& !goner_background.NeutralMouthCheck(GONERSPEAKER_TAILS)
+			);
+			if (drawarms)
+			{
+				miles.patch("GON_TA1");
+				miles
+					.flags(V_TRANSLUCENT)
+					.patch("GON_TME1");
+			}
+			else
+			{
+				miles.patch("GON_TME1");
+			}
+			miles.patch("GON_THA1");
+		}
+	}
 }
 
 static void M_GonerDrawer(void)
