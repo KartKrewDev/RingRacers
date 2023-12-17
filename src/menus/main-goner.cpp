@@ -187,7 +187,7 @@ void M_AddGonerLines(void)
 	// This one always plays, so it checks the levelworking instead of gamedata.
 	if (goner_levelworking == GDGONER_INTRO)
 	{
-		if (!currentMenu->menuitems[0].mvar2)
+		if (!MAIN_Goner[0].mvar2)
 		{
 			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
 				"Metal Sonic. Are you online?");
@@ -406,28 +406,19 @@ void M_GonerRailroad(bool set)
 	S_StartSound(NULL, sfx_s3k63);
 }
 
-void M_GonerPlayMusic(void)
-{
-	if (gamedata->gonerlevel <= GDGONER_SOUND || Music_Playing("menu"))
-		return;
-
-	Music_Remap("menu", "_OCEAN"); //"_GONER");
-	Music_Play("menu");
-}
-
 void M_GonerHidePassword(void)
 {
-	if (currentMenu->menuitems[0].mvar2)
+	if (MAIN_Goner[0].mvar2)
 		return;
 
-	currentMenu->menuitems[0] =
+	MAIN_Goner[0] =
 		{IT_STRING | IT_CALL, "EXIT PROGRAM",
 			"CONCLUDE OBSERVATIONS NOW.", NULL,
 			{.routine = M_QuitSRB2}, 0, 1};
 
 	S_StartSound(NULL, sfx_s3k5b);
 
-	M_GonerPlayMusic();
+	M_PlayMenuJam();
 }
 
 }; // namespace
@@ -449,6 +440,20 @@ void M_GonerResetLooking(int type)
 
 	goner_lasttypelooking = static_cast<gdgoner_t>(type);
 	goner_youactuallylooked = 0;
+}
+
+boolean M_GonerMusicPlayable(void)
+{
+	if (!MAIN_Goner[0].mvar2)
+		return false;
+
+	if (currentMenu == &OPTIONS_SoundDef)
+		return true;
+
+	if (gamedata->gonerlevel <= GDGONER_SOUND)
+		return false;
+
+	return true;
 }
 
 void M_GonerCheckLooking(void)
@@ -487,7 +492,7 @@ void M_GonerTick(void)
 	{
 		first = goner_gdq = false;
 
-		currentMenu->menuitems[0] =
+		MAIN_Goner[0] =
 			{IT_STRING | IT_CVAR | IT_CV_STRING, ". . .",
 				"ATTEMPT ADMINISTRATOR ACCESS.", NULL,
 				{.cvar = &cv_dummyextraspassword}, 0, 0};
@@ -507,8 +512,6 @@ void M_GonerTick(void)
 			// If the valid range has changed, try the current one again
 			goner_levelworking--;
 		}
-
-		M_GonerPlayMusic();
 
 		lastseenlevel = gamedata->gonerlevel;
 	}

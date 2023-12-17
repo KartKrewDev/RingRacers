@@ -212,6 +212,7 @@ void M_GonerTutorial(INT32 choice);
 void M_GonerResetLooking(int type);
 void M_GonerCheckLooking(void);
 void M_GonerGDQ(boolean opinion);
+boolean M_GonerMusicPlayable(void);
 
 extern menuitem_t PLAY_CharSelect[];
 extern menu_t PLAY_CharSelectDef;

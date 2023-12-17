@@ -357,11 +357,6 @@ void M_PlayMenuJam(void)
 	menu_t *refMenu = (menuactive ? currentMenu : restoreMenu);
 	static boolean musicstatepermitted = false;
 
-	if (M_GameTrulyStarted() == false)
-	{
-		return;
-	}
-
 	if (challengesmenu.pending)
 	{
 		Music_StopAll();
@@ -374,6 +369,17 @@ void M_PlayMenuJam(void)
 
 	if (Playing() || soundtest.playing)
 		return;
+
+	if (M_GameTrulyStarted() == false)
+	{
+		if (M_GonerMusicPlayable() && NotCurrentlyPlaying("_GONER"))
+		{
+			Music_Remap("menu", "_GONER");
+			Music_Play("menu");
+		}
+
+		return;
+	}
 
 	if (refMenu != NULL && refMenu->music != NULL)
 	{
@@ -582,6 +588,7 @@ void M_StartControlPanel(void)
 			// Are you ready for the First Boot Experience?
 			M_ResetOptions();
 			currentMenu = &MAIN_GonerDef;
+			M_PlayMenuJam();
 		}
 		else if (cv_currprofile.value == -1) // Only ask once per session.
 		{
