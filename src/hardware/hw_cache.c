@@ -452,9 +452,7 @@ static void HWR_GenerateTexture(INT32 texnum, GLMapTexture_t *grtex)
 	UINT8 *pdata;
 	INT32 blockwidth, blockheight, blocksize;
 
-#ifdef GLENCORE
 	UINT8 *colormap = colormaps;
-#endif
 
 	INT32 i;
 	boolean skyspecial = false; //poor hack for Legacy large skies..
@@ -479,14 +477,12 @@ static void HWR_GenerateTexture(INT32 texnum, GLMapTexture_t *grtex)
 	grtex->mipmap.height = (UINT16)texture->height;
 	grtex->mipmap.format = textureformat;
 
-#ifdef GLENCORE
 	if (encoremap)
 		colormap += COLORMAP_REMAPOFFSET;
 
 	grtex->mipmap.colormap = Z_Calloc(sizeof(*grtex->mipmap.colormap), PU_HWRPATCHCOLMIPMAP, NULL);
 	grtex->mipmap.colormap->source = colormap;
 	M_Memcpy(grtex->mipmap.colormap->data, colormap, 256 * sizeof(UINT8));
-#endif
 
 	blockwidth = texture->width;
 	blockheight = texture->height;
@@ -816,10 +812,8 @@ GLMapTexture_t *HWR_GetTexture(INT32 tex)
 
 static void HWR_CacheFlat(GLMipmap_t *grMipmap, lumpnum_t flatlumpnum)
 {
-#ifdef GLENCORE
 	UINT8 *flat;
 	size_t steppy;
-#endif
 	size_t size, pflatsize;
 
 
@@ -861,19 +855,24 @@ static void HWR_CacheFlat(GLMipmap_t *grMipmap, lumpnum_t flatlumpnum)
 	W_ReadLump(flatlumpnum, Z_Malloc(W_LumpLength(flatlumpnum),
 		PU_HWRCACHE, &grMipmap->data));
 
-#ifdef GLENCORE
 	flat = grMipmap->data;
 	for (steppy = 0; steppy < size; steppy++)
 		if (flat[steppy] != HWR_PATCHES_CHROMAKEY_COLORINDEX)
 			flat[steppy] = grMipmap->colormap->source[flat[steppy]];
-#endif
 }
 
-static void HWR_CacheTextureAsFlat(GLMipmap_t *grMipmap, INT32 texturenum)
+static void HWR_CacheTextureAsFlat(GLMipmap_t *grMipmap, INT32 texturenum, boolean noencoremap)
 {
 	UINT8 *flat;
 	UINT8 *converted;
 	size_t size;
+	size_t i;
+	UINT8 *colormap = colormaps;
+
+	if (!noencoremap && encoremap)
+	{
+		colormap += COLORMAP_REMAPOFFSET;
+	}
 
 	// setup the texture info
 	grMipmap->format = GL_TEXFMT_P_8;
@@ -885,7 +884,10 @@ static void HWR_CacheTextureAsFlat(GLMipmap_t *grMipmap, INT32 texturenum)
 
 	flat = Z_Malloc(size, PU_HWRCACHE, &grMipmap->data);
 	converted = (UINT8 *)Picture_TextureToFlat(texturenum);
-	M_Memcpy(flat, converted, size);
+	for (i = 0; i < size; i++)
+	{
+		flat[i] = colormap[converted[i]];
+	}
 	Z_Free(converted);
 }
 
@@ -895,9 +897,7 @@ void HWR_GetRawFlat(lumpnum_t flatlumpnum, boolean noencoremap)
 	GLMipmap_t *grmip;
 	patch_t *patch;
 
-#ifdef GLENCORE
 	UINT8 *colormap = colormaps;
-#endif
 
 	if (flatlumpnum == LUMPERROR)
 		return;
@@ -905,19 +905,20 @@ void HWR_GetRawFlat(lumpnum_t flatlumpnum, boolean noencoremap)
 	patch = HWR_GetCachedGLPatch(flatlumpnum);
 	grmip = ((GLPatch_t *)Patch_AllocateHardwarePatch(patch))->mipmap;
 
-#ifdef GLENCORE
-	if (!noencoremap && encoremap)
-		colormap += COLORMAP_REMAPOFFSET;
+	if (!grmip->colormap)
+	{
+		if (!noencoremap && encoremap)
+			colormap += COLORMAP_REMAPOFFSET;
 
-	grmip->colormap = Z_Calloc(sizeof(*grmip->colormap), PU_HWRPATCHCOLMIPMAP, NULL);
-	grmip->colormap->source = colormap;
-	M_Memcpy(grmip->colormap->data, colormap, 256 * sizeof(UINT8));
-#else
-	(void)noencoremap;
-#endif
+		grmip->colormap = Z_Calloc(sizeof(*grmip->colormap), PU_HWRPATCHCOLMIPMAP, NULL);
+		grmip->colormap->source = colormap;
+		M_Memcpy(grmip->colormap->data, colormap, 256 * sizeof(UINT8));
+	}
 
 	if (!grmip->downloaded && !grmip->data)
+	{
 		HWR_CacheFlat(grmip, flatlumpnum);
+	}
 
 	// If hardware does not have the texture, then call pfnSetTexture to upload it
 	if (!grmip->downloaded)
@@ -954,7 +955,9 @@ void HWR_GetLevelFlat(levelflat_t *levelflat, boolean noencoremap)
 
 		// Generate flat if missing from the cache
 		if (!grtex->mipmap.data && !grtex->mipmap.downloaded)
-			HWR_CacheTextureAsFlat(&grtex->mipmap, texturenum);
+		{
+			HWR_CacheTextureAsFlat(&grtex->mipmap, texturenum, noencoremap);
+		}
 
 		// If hardware does not have the texture, then call pfnSetTexture to upload it
 		if (!grtex->mipmap.downloaded)
@@ -1082,7 +1085,8 @@ void HWR_GetMappedPatch(patch_t *patch, const UINT8 *colormap)
 		Patch_CreateGL(patch);
 	grPatch = patch->hardware;
 
-	if (colormap == colormaps || colormap == NULL)
+	// Blatant hack for encore colormapping aside...
+	if (colormap == colormaps || colormap == NULL || colormap == (const UINT8*)(COLORMAP_REMAPOFFSET))
 	{
 		// Load the default (green) color in hardware cache
 		HWR_GetPatch(patch);

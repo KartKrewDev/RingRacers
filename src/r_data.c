@@ -897,16 +897,14 @@ extracolormap_t *R_CreateColormapFromLinedef(char *p1, char *p2, char *p3)
 #undef ALPHA2INT
 #undef HEX2INT
 
-#ifdef GLENCORE
 	if (encoremap)
 	{
-		j = encoremap[NearestColor((UINT8)cr, (UINT8)cg, (UINT8)cb)];
+		UINT8 j = encoremap[NearestColor((UINT8)cr, (UINT8)cg, (UINT8)cb)];
 		//CONS_Printf("R_CreateColormap: encoremap[%d] = %d\n", j, encoremap[j]);
 		cr = pLocalPalette[j].s.red;
 		cg = pLocalPalette[j].s.green;
 		cb = pLocalPalette[j].s.blue;
 	}
-#endif
 
 	// Pack rgba values into combined var
 	// OpenGL also uses this instead of lighttables for rendering

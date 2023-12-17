@@ -4828,7 +4828,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 		{
 			interpmobjstate_t casterinterp = {0};
 			fixed_t groundz;
-			fixed_t floordiff; 
+			fixed_t floordiff;
 
 			if (R_UsingFrameInterpolation() && !paused)
 			{
@@ -4838,7 +4838,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 			{
 				R_InterpolateMobjState(caster, FRACUNIT, &casterinterp);
 			}
-			
+
 			groundz = R_GetShadowZ(thing, NULL);
 			floordiff = abs(((thing->eflags & MFE_VERTICALFLIP) ? caster->height : 0) + casterinterp.z - groundz);
 
@@ -5038,10 +5038,8 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	{
 		vis->colormap = colormaps;
 
-#ifdef GLENCORE
 		if (encoremap && (thing->flags & (MF_SCENERY|MF_NOTHINK)) && !(thing->flags & MF_DONTENCOREMAP))
 			vis->colormap += COLORMAP_REMAPOFFSET;
-#endif
 	}
 
 	// set top/bottom coords
@@ -5176,10 +5174,8 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 
 	vis->colormap = NULL;
 
-#ifdef GLENCORE
 	if (encoremap && !(thing->flags & MF_DONTENCOREMAP))
 		vis->colormap += COLORMAP_REMAPOFFSET;
-#endif
 
 	// set top/bottom coords
 	vis->gzt = FIXED_TO_FLOAT(interp.z) + (FIXED_TO_FLOAT(spritecachedinfo[lumpoff].topoffset) * this_scale);

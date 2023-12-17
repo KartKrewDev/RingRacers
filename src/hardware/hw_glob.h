@@ -30,7 +30,6 @@ extern "C" {
 //#define HWR_LOADING_SCREEN
 
 // SRB2Kart
-//#define GLENCORE
 
 // -----------
 // structures
