@@ -207,6 +207,7 @@ extern menu_t MAIN_GonerDef;
 
 void M_GonerTick(void);
 void M_GonerBGTick(void);
+void M_GonerBGImplyPassageOfTime(void);
 void M_DrawGonerBack(void);
 void M_GonerProfile(INT32 choice);
 void M_GonerTutorial(INT32 choice);

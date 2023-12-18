@@ -3930,10 +3930,13 @@ void M_DrawMPServerBrowser(void)
 // Draws the cogs and also the options background!
 void M_DrawOptionsCogs(void)
 {
+	boolean trulystarted = M_GameTrulyStarted();
+	UINT32 tick = ((optionsmenu.ticker/10) % 3) + 1;
+
 	// the background isn't drawn outside of being in the main menu state.
-	if (gamestate == GS_MENU && M_GameTrulyStarted())
+	if (gamestate == GS_MENU && trulystarted)
 	{
-		patch_t *back[3] = {W_CachePatchName("OPT_BG1", PU_CACHE), W_CachePatchName("OPT_BG2", PU_CACHE), W_CachePatchName("OPT_BG3", PU_CACHE)};
+		patch_t *back = W_CachePatchName(va("OPT_BG%u", tick), PU_CACHE);
 		INT32 tflag = 0;
 		UINT8 *c;
 		UINT8 *c2;	// colormap for the one we're changing
@@ -3941,19 +3944,24 @@ void M_DrawOptionsCogs(void)
 		if (optionsmenu.fade)
 		{
 			c2 = R_GetTranslationColormap(TC_DEFAULT, optionsmenu.lastcolour, GTC_CACHE);
-			V_DrawFixedPatch(0, 0, FRACUNIT, 0, back[(optionsmenu.ticker/10) %3], c2);
+			V_DrawFixedPatch(0, 0, FRACUNIT, 0, back, c2);
 
 			// prepare fade flag:
 			tflag = min(V_90TRANS, (optionsmenu.fade)<<V_ALPHASHIFT);
 
 		}
 		c = R_GetTranslationColormap(TC_DEFAULT, optionsmenu.currcolour, GTC_CACHE);
-		V_DrawFixedPatch(0, 0, FRACUNIT, tflag, back[(optionsmenu.ticker/10) %3], c);
+		V_DrawFixedPatch(0, 0, FRACUNIT, tflag, back, c);
 	}
 	else
 	{
-		patch_t *back_pause[3] = {W_CachePatchName("OPT_BAK1", PU_CACHE), W_CachePatchName("OPT_BAK2", PU_CACHE), W_CachePatchName("OPT_BAK3", PU_CACHE)};
-		V_DrawFixedPatch(0, 0, FRACUNIT, V_MODULATE, back_pause[(optionsmenu.ticker/10) %3], NULL);
+		patch_t *back_pause = W_CachePatchName(va("OPT_BAK%u", tick), PU_CACHE);
+		V_DrawFixedPatch(0, 0, FRACUNIT, V_MODULATE, back_pause, NULL);
+
+		if (!trulystarted)
+		{
+			V_DrawFixedPatch(0, 0, FRACUNIT, (V_ADD|V_70TRANS), back_pause, NULL);
+		}
 	}
 }
 

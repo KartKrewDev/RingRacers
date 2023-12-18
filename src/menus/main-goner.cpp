@@ -203,7 +203,7 @@ public:
 	GonerBGData()
 	{
 		x = focusx = 0;
-		y = focusy = 0;
+		y = focusy = 20*FRACUNIT;
 
 		darkframes = 0;
 
@@ -228,39 +228,46 @@ public:
 
 	void Tick()
 	{
-		gonerspeakers_t focuscurrent = MAXGONERSPEAKERS;
-		if (currentMenu == &MAIN_GonerDef && !LinesOutput.empty())
-		{
-			focuscurrent = LinesOutput.front().speaker;
-		}
-
-		if (focuslast != focuscurrent)
-		{
-			focusdelta = FRACUNIT;
-			x = focusx;
-			y = focusy;
-
-			switch (focuscurrent)
-			{
-				case GONERSPEAKER_TAILS:
-					focusx = -10*FRACUNIT;
-					focusy = 0;
-					break;
-				case GONERSPEAKER_EGGMAN:
-					focusx = 10*FRACUNIT;
-					focusy = 0;
-					break;
-				default:
-					focusx = 0;
-					focusy = 20*FRACUNIT;
-					break;
-			}
-
-			focuslast = focuscurrent;
-		}
-
+		// This is the visual feed sputtering in and out.
 		if (darkframes)
 			darkframes--;
+		else if (gamedata->gonerlevel > GDGONER_VIDEO)
+		{
+			// Everything in here is Metal Sonic's response to stimulus.
+
+			gonerspeakers_t focuscurrent = MAXGONERSPEAKERS;
+			if (currentMenu == &MAIN_GonerDef && !LinesOutput.empty())
+			{
+				focuscurrent = LinesOutput.front().speaker;
+			}
+
+			if (focuslast != focuscurrent)
+			{
+				focusdelta = FRACUNIT;
+				x = focusx;
+				y = focusy;
+
+				switch (focuscurrent)
+				{
+					case GONERSPEAKER_TAILS:
+						focusx = -10*FRACUNIT;
+						focusy = 0;
+						break;
+					case GONERSPEAKER_EGGMAN:
+						focusx = 10*FRACUNIT;
+						focusy = 0;
+						break;
+					default:
+						focusx = 0;
+						focusy = 20*FRACUNIT;
+						break;
+				}
+
+				focuslast = focuscurrent;
+			}
+		}
+
+		// Everything below this is the real world.
 
 		if (miles_timetoblink == 0)
 		{
@@ -630,6 +637,7 @@ void M_AddGonerLines(void)
 			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
 				"Remember, MS-1. Even when you move on from this setup, you "\
 				"can always change your ""\x87""Options""\x80"" at any time from the menu.");
+			LinesToDigest.emplace_front(0, Miles_Look_Electric);
 
 			break;
 		}
@@ -637,7 +645,6 @@ void M_AddGonerLines(void)
 		{
 			if (!leftoff)
 			{
-				LinesToDigest.emplace_front(0, Miles_Look_Electric);
 				LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/3,
 					"And... the training data is completed.");
 			}
@@ -762,6 +769,11 @@ void M_GonerBGTick(void)
 {
 	// Laundering CPP code through C-callable funcs ~toast 171223
 	goner_background.Tick();
+}
+
+void M_GonerBGImplyPassageOfTime(void)
+{
+	goner_background = GonerBGData();
 }
 
 void M_GonerTick(void)
@@ -1010,17 +1022,19 @@ void M_DrawGonerBack(void)
 					)));
 			}
 
-			if (goner_background.miles_electric_delta < FRACUNIT)
+			bool drawarms = false;
+
+			if (goner_background.miles_electric_delta == FRACUNIT)
+			{
+				drawarms = (milesfocus && goner_background.miles_electric);
+			}
+			else
 			{
 				goner_background.miles_electric_delta += renderdeltatics/(TICRATE/3);
 				if (goner_background.miles_electric_delta > FRACUNIT)
 					goner_background.miles_electric_delta = FRACUNIT;
 			}
 
-			bool drawarms = (
-				goner_background.miles_electric
-				&& milesfocus
-			);
 			if (drawarms)
 			{
 				miles.patch("GON_TA1");

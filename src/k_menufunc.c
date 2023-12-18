@@ -586,6 +586,7 @@ void M_StartControlPanel(void)
 			)
 			{
 				gamedata->gonerlevel = GDGONER_OUTRO;
+				M_GonerBGImplyPassageOfTime();
 			}
 		}
 
