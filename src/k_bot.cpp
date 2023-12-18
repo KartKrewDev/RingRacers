@@ -500,7 +500,7 @@ fixed_t K_BotMapModifier(void)
 	const fixed_t complexity_value = std::clamp<fixed_t>(
 		FixedDiv(K_GetTrackComplexity(), complexity_scale),
 		-modifier_max,
-		modifier_max * 2
+		modifier_max
 	);
 
 	return FRACUNIT + complexity_value;
