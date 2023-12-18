@@ -7847,8 +7847,7 @@ static void P_InitCamera(void)
 
 static void P_InitPlayers(void)
 {
-	UINT8 i;
-	INT32 skin = -1;
+	INT32 i, skin = -1, follower = -1;
 
 	// Make sure objectplace is OFF when you first start the level!
 	OP_ResetObjectplace();
@@ -7871,6 +7870,18 @@ static void P_InitPlayers(void)
 		{
 			skin = 0;
 		}
+
+		if (netgame)
+			; // shouldn't happen but at least attempt to sync if it does
+		else for (i = 0; i < numfollowers; i++)
+		{
+			if (followers[i].hornsound != sfx_melody)
+				continue;
+
+			if (K_FollowerUsable(i))
+				follower = i;
+			break;
+		}
 	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -7885,8 +7896,10 @@ static void P_InitPlayers(void)
 		{
 			players[i].skin = skin;
 			players[i].skincolor = skins[skin].prefcolor;
-			players[i].followerskin = -1;
-			// followercolor can be left alone for hopefully obvious reasons
+
+			players[i].followerskin = follower;
+			if (follower != -1)
+				players[i].followercolor = followers[follower].defaultcolor;
 		}
 
 		G_SpawnPlayer(i);
