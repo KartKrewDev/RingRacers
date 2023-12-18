@@ -197,10 +197,14 @@ public:
 	fixed_t x, focusx;
 	fixed_t y, focusy;
 
+	int darkframes;
+
 	GonerBGData()
 	{
 		x = focusx = 0;
 		y = focusy = 0;
+
+		darkframes = 0;
 
 		focuslast = MAXGONERSPEAKERS;
 		focusdelta = 0;
@@ -253,6 +257,9 @@ public:
 
 			focuslast = focuscurrent;
 		}
+
+		if (darkframes)
+			darkframes--;
 
 		if (miles_timetoblink == 0)
 		{
@@ -461,7 +468,6 @@ void M_AddGonerLines(void)
 
 			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
 				"So you're right. I wonder if it has anything to do with that outburst.");
-			LinesToDigest.emplace_front(0, Miles_Look_Camera);
 			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
 				"Alright, Metal! I don't remember your specifications offhand. "\
 				"First things first, go ahead and set up your "\
@@ -475,6 +481,7 @@ void M_AddGonerLines(void)
 				LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
 					"Ah, you can see us now. Good.");
 			}
+			LinesToDigest.emplace_front(0, Miles_Look_Camera);
 			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
 				"Now, calibrate your ""\x87""Sound Options""\x80"".");
 
@@ -600,6 +607,7 @@ void M_AddGonerLines(void)
 		{
 			if (!leftoff)
 			{
+				LinesToDigest.emplace_front(0, Miles_Look_Electric);
 				LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/3,
 					"And... the training data is completed.");
 			}
@@ -607,18 +615,27 @@ void M_AddGonerLines(void)
 				"It's kind of funny, actually.");
 			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/3,
 				"Oh? Care to elucidate, Prower?");
+			LinesToDigest.emplace_front(0, Miles_Look_Camera);
 			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/2,
-				"No matter how much time we took getting here, a machine like Metal can play it back in minutes.");
+				"No matter how much time we took getting here, a machine like "\
+				"Metal can play it back in minutes.");
+			LinesToDigest.emplace_front(0, Miles_Electric_Lower);
 			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/2,
-				"It could have been five days or five years of development on our ""\x82""Ring Racers""\x80"", and that barely matters.");
+				"It could have been five days or five years of development on "\
+				"our ""\x82""Ring Racers""\x80"", and that would barely matter to it.");
 			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/4,
-				"Ha! As if. I'd like to think our partnership hasn't felt that long.");
+				"Ha! As if. I'd like to think our partnership hasn't felt "\
+				"particularly protracted.");
+			LinesToDigest.emplace_front(0, Miles_Look_Electric);
 			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/2,
-				"But yes. Perhaps now you have a better appreciation of what we're building here, Metal.");
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/2,
+				"But yes. Perhaps now you have a better appreciation of what "\
+				"we're building here, Metal.");
+			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/5,
 				"Now, I'm willing to let bygones be bygones.");
 			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/2,
-				"As long as you keep your violence to the track, I'll be giving you your autonomy back in a moment.");
+				"As long as you keep your violence to the track, I'll be "\
+				"giving you your autonomy back in a moment.");
+			LinesToDigest.emplace_front(0, Miles_Electric_Lower);
 			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
 				"We've kept the keys from you long enough!");
 			break;
@@ -855,6 +872,9 @@ void M_DrawGonerBack(void)
 		.width(BASEVIDWIDTH)
 		.height(BASEVIDHEIGHT)
 		.fill(31);
+
+	if (goner_background.darkframes)
+		return;
 
 	drawer = drawer.xy(
 		FixedToFloat(Easing_InOutCubic(
@@ -1200,13 +1220,18 @@ void M_GonerGDQ(boolean opinion)
 	{
 		LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/2,
 			"Why wouldn't you save the frames..?");
+
+		LinesToDigest.emplace_front(0, Miles_Look_Camera);
 		LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
 			"Don't mind him. Good luck on the run!");
+		LinesToDigest.emplace_front(0, Miles_Look_Electric);
 	}
 	else // Save The Frames
 	{
+		LinesToDigest.emplace_front(0, Miles_Electric_Lower);
 		LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/2,
 			"But what about all the little animals...");
+
 		LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
 			"It's just logical. I know you'll conquer this run.");
 	}
@@ -1214,6 +1239,9 @@ void M_GonerGDQ(boolean opinion)
 
 	if (gamedata->gonerlevel <= GDGONER_TUTORIAL)
 	{
+		if (gamedata->gonerlevel <= GDGONER_VIDEO)
+			goner_background.darkframes = 5; // handle abrupt transition
+
 		goner_levelworking = gamedata->gonerlevel = GDGONER_TUTORIAL;
 	}
 }
