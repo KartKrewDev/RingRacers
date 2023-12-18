@@ -14,6 +14,7 @@
 #include "../m_random.h"
 #include "../r_main.h"
 #include "../m_easing.h"
+#include "../g_input.h"
 
 #include <forward_list>
 
@@ -399,6 +400,32 @@ void M_GonerResetText(void)
 	goner_scrollend = -1;
 }
 
+static void Initial_Control_Info(void)
+{
+	if (cv_currprofile.value != -1)
+		return;
+
+	auto line = GonerChatLine(GONERSPEAKER_TAILS, 0,
+		va("You should be able to use ""\x86""%s""\x80"" to operate this menu.",
+			(!G_GetNumAvailableGamepads()
+				? "Enter, ESC, and the Arrow Keys"
+				: "your Gamepad"
+			)
+		)
+	);
+
+	if (LinesToDigest.empty())
+	{
+		LinesToDigest.emplace_front(line);
+		return;
+	}
+
+	LinesToDigest.emplace_after(
+		LinesToDigest.begin(),
+		line
+	);
+}
+
 void M_AddGonerLines(void)
 {
 	SRB2_ASSERT(LinesToDigest.empty());
@@ -472,6 +499,9 @@ void M_AddGonerLines(void)
 				"Alright, Metal! I don't remember your specifications offhand. "\
 				"First things first, go ahead and set up your "\
 				"\x87""Video Options""\x80"" yourself.");
+
+			LinesToDigest.emplace_front(0, Initial_Control_Info);
+
 			break;
 		}
 		case GDGONER_SOUND:

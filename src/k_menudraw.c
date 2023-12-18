@@ -632,6 +632,31 @@ static void M_DrawMenuTyping(void)
 
 }
 
+static void M_DrawMediocreKeyboardKey(const char *text, INT32 *workx, INT32 worky, boolean push, boolean rightaligned)
+{
+	INT32 buttonwidth = V_StringWidth(text, 0) + 2;
+
+	if (rightaligned)
+	{
+		(*workx) -= buttonwidth;
+	}
+
+	if (push)
+	{
+		worky += 2;
+	}
+	else
+	{
+		V_DrawFill((*workx)-1, worky+10, buttonwidth, 2, 24);
+	}
+
+	V_DrawFill((*workx)-1, worky, buttonwidth, 10, 16);
+	V_DrawString(
+		(*workx), worky + 1,
+		0, text
+	);
+}
+
 // Draw the message popup submenu
 void M_DrawMenuMessage(void)
 {
@@ -658,6 +683,10 @@ void M_DrawMenuMessage(void)
 		INT32 workx = x + menumessage.x;
 		INT32 worky = y + menumessage.y;
 
+		boolean standardbuttons = (
+			cv_currprofile.value != -1 || G_GetNumAvailableGamepads()
+		);
+
 		boolean push;
 
 		if (menumessage.closing)
@@ -678,19 +707,26 @@ void M_DrawMenuMessage(void)
 
 		workx -= 2;
 
-		workx -= SHORT(kp_button_x[1][0]->width);
-		K_drawButton(
-			workx * FRACUNIT, worky * FRACUNIT,
-			0, kp_button_x[1],
-			push
-		);
+		if (standardbuttons)
+		{
+			workx -= SHORT(kp_button_x[1][0]->width);
+			K_drawButton(
+				workx * FRACUNIT, worky * FRACUNIT,
+				0, kp_button_x[1],
+				push
+			);
 
-		workx -= SHORT(kp_button_b[1][0]->width);
-		K_drawButton(
-			workx * FRACUNIT, worky * FRACUNIT,
-			0, kp_button_b[1],
-			push
-		);
+			workx -= SHORT(kp_button_b[1][0]->width);
+			K_drawButton(
+				workx * FRACUNIT, worky * FRACUNIT,
+				0, kp_button_b[1],
+				push
+			);
+		}
+		else
+		{
+			M_DrawMediocreKeyboardKey("ESC", &workx, worky, push, true);
+		}
 
 		if (menumessage.confirmstr)
 		{
@@ -710,12 +746,19 @@ void M_DrawMenuMessage(void)
 			workx -= 2;
 		}
 
-		workx -= SHORT(kp_button_a[1][0]->width);
-		K_drawButton(
-			workx * FRACUNIT, worky * FRACUNIT,
-			0, kp_button_a[1],
-			push
-		);
+		if (standardbuttons)
+		{
+			workx -= SHORT(kp_button_a[1][0]->width);
+			K_drawButton(
+				workx * FRACUNIT, worky * FRACUNIT,
+				0, kp_button_a[1],
+				push
+			);
+		}
+		else
+		{
+			M_DrawMediocreKeyboardKey("ENTER", &workx, worky, push, true);
+		}
 	}
 
 	x -= 4;
