@@ -289,7 +289,7 @@ static void P_ItemPop(mobj_t *actor)
 	*/
 
 	// Here at mapload in battle?
-	if (!(gametyperules & GTR_CIRCUIT) && (actor->flags2 & MF2_BOSSFLEE))
+	if (gametype != GT_TUTORIAL && !(gametyperules & GTR_CIRCUIT) && (actor->flags2 & MF2_BOSSFLEE))
 	{
 		numgotboxes++;
 

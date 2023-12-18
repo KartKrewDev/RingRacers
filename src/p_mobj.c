@@ -12557,8 +12557,8 @@ void P_RespawnBattleBoxes(void)
 {
 	thinker_t *th;
 
-	if (gametyperules & GTR_CIRCUIT)
-		return;
+	/*if (gametyperules & GTR_CIRCUIT) -- already guarding the call
+		return;*/
 
 	tic_t setduration = (nummapboxes > 1) ? TICRATE : (2*TICRATE);
 
