@@ -648,6 +648,7 @@ boolean M_MenuExtraPressed(UINT8 pid);
 boolean M_MenuExtraHeld(UINT8 pid);
 
 void M_StartControlPanel(void);
+void M_ValidateRestoreMenu(void);
 menu_t *M_SpecificMenuRestore(menu_t *torestore);
 void M_ClearMenus(boolean callexitmenufunc);
 void M_SelectableClearMenus(INT32 choice);

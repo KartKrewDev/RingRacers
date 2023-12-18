@@ -434,6 +434,12 @@ void M_PlayMenuJam(void)
 
 #undef IsCurrentlyPlaying
 
+void M_ValidateRestoreMenu(void)
+{
+	if (restoreMenu == NULL || restoreMenu == &MAIN_GonerDef)
+		restoreMenu = &MainDef;
+}
+
 //
 // M_SpecificMenuRestore
 //
@@ -587,7 +593,10 @@ void M_StartControlPanel(void)
 		{
 			// Are you ready for the First Boot Experience?
 			M_ResetOptions();
+
 			currentMenu = &MAIN_GonerDef;
+			restoreMenu = NULL;
+
 			M_PlayMenuJam();
 		}
 		else if (cv_currprofile.value == -1) // Only ask once per session.
@@ -618,8 +627,7 @@ void M_StartControlPanel(void)
 		}
 		else
 		{
-			if (restoreMenu == NULL || restoreMenu == &MAIN_GonerDef)
-				restoreMenu = &MainDef;
+			M_ValidateRestoreMenu();
 			currentMenu = M_SpecificMenuRestore(M_InterruptMenuWithChallenges(restoreMenu));
 			restoreMenu = NULL;
 

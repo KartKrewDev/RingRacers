@@ -47,8 +47,7 @@ void M_FirstPickProfile(INT32 c)
 
 		PR_ApplyProfile(optionsmenu.profilen, 0);
 
-		if (restoreMenu == NULL)
-			restoreMenu = &MainDef;
+		M_ValidateRestoreMenu();
 		M_SetupNextMenu(M_SpecificMenuRestore(M_InterruptMenuWithChallenges(restoreMenu)), false);
 		restoreMenu = NULL;
 
