@@ -365,12 +365,25 @@ void M_PlayMenuJam(void)
 		return;
 	}
 
-	gdmusic_t override = musicstatepermitted ? gamedata->musicstate : 0;
-
-	if (Playing() || soundtest.playing)
+	if (soundtest.playing)
 		return;
 
-	if (M_GameTrulyStarted() == false)
+	const boolean trulystarted = M_GameTrulyStarted();
+	const boolean profilemode = (
+		trulystarted 
+		&& optionsmenu.profilemenu 
+		&& !optionsmenu.resetprofilemenu
+	);
+
+	if (!profilemode && Playing())
+	{
+		if (optionsmenu.resetprofilemenu)
+			Music_Stop("menu");
+
+		return;
+	}
+
+	if (!trulystarted)
 	{
 		if (M_GonerMusicPlayable() && NotCurrentlyPlaying("_GONER"))
 		{
@@ -380,6 +393,8 @@ void M_PlayMenuJam(void)
 
 		return;
 	}
+
+	gdmusic_t override = musicstatepermitted ? gamedata->musicstate : 0;
 
 	if (refMenu != NULL && refMenu->music != NULL)
 	{
@@ -419,7 +434,7 @@ void M_PlayMenuJam(void)
 		return;
 	}
 
-	if (cv_menujam_update.value)
+	if (!profilemode && cv_menujam_update.value)
 	{
 		CV_AddValue(&cv_menujam, 1);
 		CV_SetValue(&cv_menujam_update, 0);
