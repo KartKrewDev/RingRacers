@@ -6,6 +6,8 @@
 #include "../m_random.h"
 #include "../music.h"
 #include "../r_skins.h"
+#include "../v_video.h"
+#include "../z_zone.h"
 
 struct wrongwarp_s wrongwarp;
 
@@ -137,6 +139,87 @@ static boolean M_WrongWarpInputs(INT32 ch)
 	return false;
 }
 
+static INT32 M_WrongWarpFallingHelper(INT32 y, INT32 falltime)
+{
+	if (wrongwarp.ticker < falltime)
+	{
+		return y;
+	}
+
+	if (wrongwarp.ticker > falltime + 2*TICRATE)
+	{
+		return INT32_MAX;
+	}
+
+	if (wrongwarp.ticker < falltime + TICRATE)
+	{
+		y += + ((wrongwarp.ticker - falltime) & 1 ? 1 : -1);
+		return y;
+	}
+
+	y += floor(pow(1.5, (double)(wrongwarp.ticker - (falltime + TICRATE))));
+	return y;
+}
+
+static void M_DrawWrongWarpBack(void)
+{
+	INT32 x, y;
+
+	if (gamestate == GS_MENU)
+	{
+		patch_t *pat, *pat2;
+		INT32 animtimer, anim2 = 0;
+
+		pat = W_CachePatchName("TITLEBG1", PU_CACHE);
+		pat2 = W_CachePatchName("TITLEBG2", PU_CACHE);
+
+		animtimer = ((wrongwarp.ticker*5)/16) % SHORT(pat->width);
+		anim2 = SHORT(pat2->width) - (((wrongwarp.ticker*5)/16) % SHORT(pat2->width));
+
+		// SRB2Kart: F_DrawPatchCol is over-engineered; recoded to be less shitty and error-prone
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
+
+		x = -((INT32)animtimer);
+		y = 0;
+		while (x < BASEVIDWIDTH)
+		{
+			V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, pat, NULL);
+			x += SHORT(pat->width);
+		}
+
+		x = -anim2;
+		y = BASEVIDHEIGHT - SHORT(pat2->height);
+		while (x < BASEVIDWIDTH)
+		{
+			V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, pat2, NULL);
+			x += SHORT(pat2->width);
+		}
+	}
+
+	{
+		patch_t *ttcheckers = W_CachePatchName("TTCHECK", PU_CACHE);
+
+		y = FixedMul(40<<FRACBITS, FixedDiv(wrongwarp.ticker%70, 70));
+
+		V_DrawSciencePatch(0, -y, 0, ttcheckers, FRACUNIT);
+		V_DrawSciencePatch(280<<FRACBITS, -(40<<FRACBITS) + y, 0, ttcheckers, FRACUNIT);
+
+		y = M_WrongWarpFallingHelper(36, 7*TICRATE/4);
+		if (y != INT32_MAX)
+		{
+			patch_t *ttbanner = W_CachePatchName("TTKBANNR", PU_CACHE);
+			V_DrawSmallScaledPatch(84, y, 0, ttbanner);
+		}
+
+		y = M_WrongWarpFallingHelper(87, 4*TICRATE/3);
+		if (y != INT32_MAX)
+		{
+			patch_t *ttkart = W_CachePatchName("TTKART", PU_CACHE);
+			V_DrawSmallScaledPatch(84, y, 0, ttkart);
+		}
+	}
+}
+
 menu_t MISC_WrongWarpDef = {
 	sizeof (MISC_WrongWarpMenu)/sizeof (menuitem_t),
 	NULL,
@@ -144,10 +227,11 @@ menu_t MISC_WrongWarpDef = {
 	MISC_WrongWarpMenu,
 	0, 0,
 	0, 0,
-	MBF_SOUNDLESS,
+	MBF_SOUNDLESS|MBF_DRAWBGWHILEPLAYING,
 	".",
 	98, 0,
 	M_DrawWrongWarp,
+	M_DrawWrongWarpBack,
 	M_WrongWarpTick,
 	NULL,
 	NULL,

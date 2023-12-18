@@ -17,10 +17,11 @@ menu_t OPTIONS_ProfilesDef = {
 	OPTIONS_Profiles,
 	32, 80,
 	SKINCOLOR_ULTRAMARINE, 0,
-	0,
+	MBF_DRAWBGWHILEPLAYING,
 	"FILE",
 	2, 5,
 	M_DrawProfileSelect,
+	M_DrawOptionsCogs,
 	M_OptionsTick,
 	NULL,
 	NULL,
@@ -46,8 +47,7 @@ void M_FirstPickProfile(INT32 c)
 
 		PR_ApplyProfile(optionsmenu.profilen, 0);
 
-		if (restoreMenu == NULL)
-			restoreMenu = &MainDef;
+		M_ValidateRestoreMenu();
 		M_SetupNextMenu(M_SpecificMenuRestore(M_InterruptMenuWithChallenges(restoreMenu)), false);
 		restoreMenu = NULL;
 
@@ -61,7 +61,7 @@ void M_FirstPickProfile(INT32 c)
 }
 
 // Start menu edition. Call this with MA_YES if not used with a textbox.
-static void M_StartEditProfile(INT32 c)
+void M_StartEditProfile(INT32 c)
 {
 
 	const INT32 maxp = PR_GetNumProfiles();
@@ -114,6 +114,7 @@ static void M_StartEditProfile(INT32 c)
 			OPTIONS_EditProfile[popt_char].status |= IT_TRANSTEXT;
 		}
 
+		OPTIONS_EditProfileDef.prevMenu = currentMenu;
 		M_SetupNextMenu(&OPTIONS_EditProfileDef, false);
 		return;
 	}

@@ -27,6 +27,7 @@ menu_t PLAY_CupSelectDef = {
 	NULL,
 	2, 5,
 	M_DrawCupSelect,
+	NULL,
 	M_CupSelectTick,
 	NULL,
 	NULL,
@@ -275,11 +276,13 @@ void M_CupSelectHandler(INT32 choice)
 		}
 		else if (count == 1 && levellist.levelsearch.timeattack == true)
 		{
-			PLAY_TimeAttackDef.transitionID = currentMenu->transitionID+1;
+			currentMenu->transitionID = PLAY_TimeAttackDef.transitionID+1;
 			M_LevelSelected(0);
 		}
 		else
 		{
+			currentMenu->transitionID = PLAY_LevelSelectDef.transitionID;
+
 			// Keep cursor position if you select the same cup again, reset if it's a different cup
 			if (oldcup != newcup || levellist.cursor >= count)
 			{

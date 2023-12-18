@@ -73,17 +73,31 @@ static UINT8 cheatf_warp(void)
 	{
 		if (!unlockables[i].conditionset)
 			continue;
-		if (!gamedata->unlocked[i])
-		{
-			gamedata->unlocked[i] = true;
-			success = true;
-		}
+		if (gamedata->unlocked[i])
+			continue;
+
+		gamedata->unlocked[i] = true;
+		success = true;
 	}
+
+	// Unlock all hidden levels.
+#define GD_MV_SET (MV_VISITED|MV_BEATEN)
+	for (i = 0; i < nummapheaders; i++)
+	{
+		if ((mapheaderinfo[i]->records.mapvisited & GD_MV_SET) == GD_MV_SET)
+			continue;
+		mapheaderinfo[i]->records.mapvisited |= GD_MV_SET;
+		success = true;
+	}
+#undef GD_MV_SET
 
 	// Goofy, but this call needs to be before M_ClearMenus because that path
 	// calls G_LoadLevel, which will trigger a gamedata save. Garbage factory
 	if (success)
+	{
+		gamedata->gonerlevel = GDGONER_DONE;
 		G_SetUsedCheats();
+	}
 
 	M_ClearMenus(true);
 
@@ -134,6 +148,20 @@ static UINT8 cheatf_wrongwarp(void)
 	return 1;
 }
 
+static UINT8 cheatf_savetheanimals(void)
+{
+	M_GonerGDQ(true);
+
+	return 1;
+}
+
+static UINT8 cheatf_savetheframes(void)
+{
+	M_GonerGDQ(false);
+
+	return 1;
+}
+
 #ifdef DEVELOP
 static UINT8 cheatf_devmode(void)
 {
@@ -155,6 +183,10 @@ static UINT8 cheatf_devmode(void)
 	{
 		mapheaderinfo[i]->records.mapvisited = MV_MAX;
 	}
+
+	gamedata->gonerlevel = GDGONER_DONE;
+
+	M_ClearMenus(true);
 
 	// This is a developer feature, you know how to delete ringdata
 	// G_SetUsedCheats();
@@ -179,6 +211,16 @@ static cheatseq_t cheat_wrongwarp = {
 	(UINT8[]){ SCRAMBLE('b'), SCRAMBLE('a'), SCRAMBLE('n'), SCRAMBLE('a'), SCRAMBLE('n'), SCRAMBLE('a'), 0xff }
 };
 
+static cheatseq_t cheat_savetheanimals = {
+	NULL, cheatf_savetheanimals,
+	(UINT8[]){ SCRAMBLE('s'), SCRAMBLE('a'), SCRAMBLE('v'), SCRAMBLE('e'), SCRAMBLE('t'), SCRAMBLE('h'), SCRAMBLE('e'), SCRAMBLE('a'), SCRAMBLE('n'), SCRAMBLE('i'), SCRAMBLE('m'), SCRAMBLE('a'), SCRAMBLE('l'), SCRAMBLE('s'), 0xff }
+};
+
+static cheatseq_t cheat_savetheframes = {
+	NULL, cheatf_savetheframes,
+	(UINT8[]){ SCRAMBLE('s'), SCRAMBLE('a'), SCRAMBLE('v'), SCRAMBLE('e'), SCRAMBLE('t'), SCRAMBLE('h'), SCRAMBLE('e'), SCRAMBLE('f'), SCRAMBLE('r'), SCRAMBLE('a'), SCRAMBLE('m'), SCRAMBLE('e'), SCRAMBLE('s'), 0xff }
+};
+
 #ifdef DEVELOP
 static cheatseq_t cheat_devmode = {
 	NULL, cheatf_devmode,
@@ -190,6 +232,8 @@ cheatseq_t *cheatseqlist[] =
 {
 	&cheat_warp,
 	&cheat_wrongwarp,
+	&cheat_savetheanimals,
+	&cheat_savetheframes,
 #ifdef DEVELOP
 	&cheat_devmode,
 #endif

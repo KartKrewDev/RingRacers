@@ -163,8 +163,8 @@ public:
 
 		void fill(UINT8 color) const;
 
-		void button(Button type, std::optional<bool> press = {}) const { button(type, 0, press); }
-		void small_button(Button type, std::optional<bool> press = {}) const { button(type, 1, press); }
+		void button(Button type, std::optional<bool> press = {}) const { button_(type, 0, press); }
+		void small_button(Button type, std::optional<bool> press = {}) const { button_(type, 1, press); }
 
 	private:
 		constexpr Chain() {}
@@ -198,7 +198,7 @@ public:
 		const UINT8* colormap_ = nullptr;
 
 		void string(const char* str, INT32 flags, Font font) const;
-		void button(Button type, int ver, std::optional<bool> press = {}) const;
+		void button_(Button type, int ver, std::optional<bool> press = {}) const;
 
 		friend Draw;
 	};

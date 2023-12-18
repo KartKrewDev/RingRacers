@@ -5462,6 +5462,10 @@ void K_drawKartHUD(void)
 
 	if (demo.title)
 		;
+	else if (gametype == GT_TUTORIAL)
+	{
+		islonesome = true;
+	}
 	else if (!r_splitscreen)
 	{
 		// Draw the timestamp

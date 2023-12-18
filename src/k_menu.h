@@ -136,6 +136,7 @@ typedef enum
 	MBF_UD_LR_FLIPPED		= 1,    // flip up-down and left-right axes
 	MBF_SOUNDLESS		 	= 1<<1, // do not play base menu sounds
 	MBF_NOLOOPENTRIES		= 1<<2, // do not loop M_NextOpt/M_PrevOpt
+	MBF_DRAWBGWHILEPLAYING	= 1<<3, // run backroutine() outside of GS_MENU
 } menubehaviourflags_t;
 
 struct menuitem_t
@@ -170,6 +171,7 @@ struct menu_t
 	INT16          transitionTics;     // tics for transitions out
 
 	void         (*drawroutine)(void); // draw routine
+	void           (*bgroutine)(void); // draw routine, but, like, for the background
 	void         (*tickroutine)(void); // ticker routine
 	void         (*initroutine)(void); // called when starting a new menu
 	boolean      (*quitroutine)(void); // called before quit a menu return true if we can
@@ -199,6 +201,20 @@ typedef enum
 	options,
 	quitkart
 } main_e;
+
+extern menuitem_t MAIN_Goner[];
+extern menu_t MAIN_GonerDef;
+
+void M_GonerTick(void);
+void M_GonerBGTick(void);
+void M_GonerBGImplyPassageOfTime(void);
+void M_DrawGonerBack(void);
+void M_GonerProfile(INT32 choice);
+void M_GonerTutorial(INT32 choice);
+void M_GonerResetLooking(int type);
+void M_GonerCheckLooking(void);
+void M_GonerGDQ(boolean opinion);
+boolean M_GonerMusicPlayable(void);
 
 extern menuitem_t PLAY_CharSelect[];
 extern menu_t PLAY_CharSelectDef;
@@ -246,6 +262,8 @@ typedef enum
 	ta_spacer,
 	ta_start,
 } ta_e;
+
+// If you add another Time Attach submenu, remember to catch level-select.c's music/bgroutine update
 
 extern menuitem_t PLAY_TAReplay[];
 extern menu_t PLAY_TAReplayDef;
@@ -322,14 +340,16 @@ extern menu_t MAIN_ProfilesDef;
 typedef enum
 {
 	popt_profilename = 0,
-	popt_profilepname,
-	popt_char,
 	popt_controls,
+	popt_char,
+	popt_profilepname,
 	popt_confirm,
 } popt_e;
 
 extern menuitem_t OPTIONS_EditProfile[];
 extern menu_t OPTIONS_EditProfileDef;
+
+void M_StartEditProfile(INT32 c);
 
 extern menuitem_t OPTIONS_ProfileControls[];
 extern menu_t OPTIONS_ProfileControlsDef;
@@ -629,6 +649,7 @@ boolean M_MenuExtraPressed(UINT8 pid);
 boolean M_MenuExtraHeld(UINT8 pid);
 
 void M_StartControlPanel(void);
+void M_ValidateRestoreMenu(void);
 menu_t *M_SpecificMenuRestore(menu_t *torestore);
 void M_ClearMenus(boolean callexitmenufunc);
 void M_SelectableClearMenus(INT32 choice);
@@ -990,6 +1011,9 @@ boolean M_OptionsInputs(INT32 ch);
 boolean M_OptionsQuit(void);	// resets buttons when you quit the options.
 void M_OptionsChangeBGColour(INT16 newcolour);	// changes the background colour for options
 
+void M_VideoOptions(INT32 choice);
+void M_SoundOptions(INT32 choice);
+
 void M_HandleItemToggles(INT32 choice);	// For item toggling
 void M_EraseData(INT32 choice);	// For data erasing
 void M_CheckProfileData(INT32 choice);	// check if we have profiles.
@@ -1156,6 +1180,7 @@ void M_DrawMenuForeground(void);
 void M_Drawer(void);
 void M_DrawGenericMenu(void);
 void M_DrawKartGamemodeMenu(void);
+void M_DrawHorizontalMenu(void);
 void M_DrawTextBox(INT32 x, INT32 y, INT32 width, INT32 boxlines);
 void M_DrawMessageMenu(void);
 void M_DrawImageDef(void);
@@ -1166,6 +1191,7 @@ boolean M_DrawCharacterSprite(INT16 x, INT16 y, INT16 skin, UINT8 spr2, UINT8 ro
 void M_DrawCup(cupheader_t *cup, fixed_t x, fixed_t y, INT32 lockedTic, boolean isTrophy, UINT8 placement);
 void M_DrawCupSelect(void);
 void M_DrawLevelSelect(void);
+void M_DrawSealedBack(void);
 void M_DrawTimeAttack(void);
 
 void M_DrawRaceDifficulty(void);
@@ -1185,6 +1211,7 @@ void M_DrawKickHandler(void);
 void M_DrawPlaybackMenu(void);
 
 // Options menus:
+void M_DrawOptionsCogs(void);
 void M_DrawOptionsMovingButton(void);	// for sick transitions...
 void M_DrawOptions(void);
 void M_DrawGenericOptions(void);
@@ -1197,6 +1224,7 @@ void M_DrawProfileErase(void);
 extern tic_t shitsfree;
 
 // Extras menu:
+void M_DrawExtrasBack(void);
 void M_DrawExtrasMovingButton(void);
 void M_DrawExtras(void);
 
@@ -1375,6 +1403,7 @@ const char *M_GetDiscordName(discordRequest_t *r);
 	NULL,\
 	NULL,\
 	NULL,\
+	NULL,\
 	NULL\
 }
 
@@ -1394,6 +1423,7 @@ const char *M_GetDiscordName(discordRequest_t *r);
 	NULL,\
 	NULL,\
 	NULL,\
+	NULL,\
 	NULL\
 }
 
@@ -1409,6 +1439,7 @@ const char *M_GetDiscordName(discordRequest_t *r);
 	"EXTRAS",\
 	1, 5,\
 	M_DrawImageDef,\
+	NULL,\
 	NULL,\
 	NULL,\
 	NULL,\

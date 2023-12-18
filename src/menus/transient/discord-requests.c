@@ -84,6 +84,7 @@ menu_t MISC_DiscordRequestsDef = {
 	NULL,
 	0, 0,
 	M_DrawDiscordRequests,
+	NULL,
 	M_DiscordRequestTick,
 	NULL,
 	NULL,

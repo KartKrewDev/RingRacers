@@ -4795,9 +4795,6 @@ static void Command_Playintro_f(void)
 	if (netgame)
 		return;
 
-	if (dirmenu)
-		closefilemenu(true);
-
 	F_StartIntro();
 }
 

@@ -27,6 +27,7 @@
 #include "s_sound.h"
 #include "z_zone.h"
 #include "k_hud.h"
+#include "p_tick.h" // P_LevelIsFrozen
 
 #include "v_draw.hpp"
 
@@ -34,10 +35,114 @@
 
 using srb2::Dialogue;
 
+// Dialogue::Typewriter
+
+void Dialogue::Typewriter::ClearText(void)
+{
+	text.clear();
+	textDest.clear();
+}
+
+void Dialogue::Typewriter::NewText(std::string newText)
+{
+	text.clear();
+
+	textDest = newText;
+	std::reverse(textDest.begin(), textDest.end());
+
+	textTimer = kTextPunctPause;
+	textSpeed = kTextSpeedDefault;
+	textDone = false;
+	textLines = 1;
+
+	syllable = true;
+}
+
+void Dialogue::Typewriter::WriteText(void)
+{
+	if (textDone)
+		return;
+
+	bool voicePlayed = false;
+	bool empty = textDest.empty();
+
+	textTimer -= textSpeed;
+
+	while (textTimer <= 0 && !empty)
+	{
+		char c = textDest.back(), nextc = '\n';
+		text.push_back(c);
+
+		textDest.pop_back();
+		empty = textDest.empty();
+
+		if (c & 0x80)
+		{
+			// Color code support
+			continue;
+		}
+
+		if (c == '\n')
+			textLines++;
+
+		if (!empty)
+			nextc = textDest.back();
+
+		if (voicePlayed == false
+			&& std::isprint(c)
+			&& c != ' ')
+		{
+			if (syllable)
+			{
+				S_StopSoundByNum(voiceSfx);
+				S_StartSound(nullptr, voiceSfx);
+			}
+
+			syllable = !syllable;
+			voicePlayed = true;
+		}
+
+		if (c == '-' && empty)
+		{
+			textTimer += textSpeed;
+		}
+		else if (std::ispunct(c)
+			&& std::isspace(nextc))
+		{
+			// slow down for punctuation
+			textTimer += kTextPunctPause;
+		}
+		else
+		{
+			textTimer += FRACUNIT;
+		}
+	}
+
+	textDone = (textTimer <= 0 && empty);
+}
+
+void Dialogue::Typewriter::CompleteText(void)
+{
+	while (!textDest.empty())
+	{
+		char c = textDest.back();
+
+		if (c == '\n')
+			textLines++;
+
+		text.push_back( c );
+		textDest.pop_back();
+	}
+
+	textTimer = 0;
+	textDone = true;
+}
+
+// Dialogue
+
 void Dialogue::Init(void)
 {
 	active = true;
-	syllable = true;
 }
 
 void Dialogue::SetSpeaker(void)
@@ -48,7 +153,7 @@ void Dialogue::SetSpeaker(void)
 	portrait = nullptr;
 	portraitColormap = nullptr;
 
-	voiceSfx = sfx_ktalk;
+	typewriter.voiceSfx = sfx_ktalk;
 }
 
 void Dialogue::SetSpeaker(std::string skinName, int portraitID)
@@ -70,16 +175,21 @@ void Dialogue::SetSpeaker(std::string skinName, int portraitID)
 		if (sprdef->numframes > 0)
 		{
 			portraitID %= sprdef->numframes;
-		}
 
-		const spriteframe_t *sprframe = &sprdef->spriteframes[portraitID];
+			const spriteframe_t *sprframe = &sprdef->spriteframes[portraitID];
+
+			portrait = static_cast<patch_t *>( W_CachePatchNum(sprframe->lumppat[0], PU_CACHE) );
+			portraitColormap = R_GetTranslationColormap(skinID, static_cast<skincolornum_t>(skin->prefcolor), GTC_CACHE);
+		}
+		else
+		{
+			portrait = nullptr;
+			portraitColormap = nullptr;
+		}
 
 		speaker = skin->realname;
 
-		portrait = static_cast<patch_t *>( W_CachePatchNum(sprframe->lumppat[0], PU_CACHE) );
-		portraitColormap = R_GetTranslationColormap(skinID, static_cast<skincolornum_t>(skin->prefcolor), GTC_CACHE);
-
-		voiceSfx = skin->soundsid[ S_sfx[sfx_ktalk].skinsound ];
+		typewriter.voiceSfx = skin->soundsid[ S_sfx[sfx_ktalk].skinsound ];
 	}
 	else
 	{
@@ -98,14 +208,14 @@ void Dialogue::SetSpeaker(std::string name, patch_t *patch, UINT8 *colormap, sfx
 	{
 		portrait = nullptr;
 		portraitColormap = nullptr;
-		voiceSfx = sfx_ktalk;
+		typewriter.voiceSfx = sfx_ktalk;
 		return;
 	}
 
 	portrait = patch;
 	portraitColormap = colormap;
 
-	voiceSfx = voice;
+	typewriter.voiceSfx = voice;
 }
 
 void Dialogue::NewText(std::string newText)
@@ -119,14 +229,7 @@ void Dialogue::NewText(std::string newText)
 		newText.c_str()
 	);
 
-	text.clear();
-
-	textDest = newText;
-	std::reverse(textDest.begin(), textDest.end());
-
-	textTimer = kTextPunctPause;
-	textSpeed = kTextSpeedDefault;
-	textDone = false;
+	typewriter.NewText(newText);
 }
 
 bool Dialogue::Active(void)
@@ -136,7 +239,7 @@ bool Dialogue::Active(void)
 
 bool Dialogue::TextDone(void)
 {
-	return textDone;
+	return typewriter.textDone;
 }
 
 bool Dialogue::Dismissable(void)
@@ -147,57 +250,6 @@ bool Dialogue::Dismissable(void)
 void Dialogue::SetDismissable(bool value)
 {
 	dismissable = value;
-}
-
-void Dialogue::WriteText(void)
-{
-	bool voicePlayed = false;
-
-	textTimer -= textSpeed;
-
-	while (textTimer <= 0 && !textDest.empty())
-	{
-		char c = textDest.back(), nextc = '\n';
-		text.push_back(c);
-
-		textDest.pop_back();
-
-		if (c & 0x80)
-		{
-			// Color code support
-			continue;
-		}
-
-		if (!textDest.empty())
-			nextc = textDest.back();
-
-		if (voicePlayed == false
-			&& std::isprint(c)
-			&& c != ' ')
-		{
-			if (syllable)
-			{
-				S_StopSoundByNum(voiceSfx);
-				S_StartSound(nullptr, voiceSfx);
-			}
-
-			syllable = !syllable;
-			voicePlayed = true;
-		}
-
-		if (std::ispunct(c)
-			&& std::isspace(nextc))
-		{
-			// slow down for punctuation
-			textTimer += kTextPunctPause;
-		}
-		else
-		{
-			textTimer += FRACUNIT;
-		}
-	}
-
-	textDone = (textTimer <= 0 && textDest.empty());
 }
 
 bool Dialogue::Held(void)
@@ -211,18 +263,6 @@ bool Dialogue::Pressed(void)
 		((players[serverplayer].cmd.buttons & BT_VOTE) == BT_VOTE) &&
 		((players[serverplayer].oldcmd.buttons & BT_VOTE) == 0)
 	);
-}
-
-void Dialogue::CompleteText(void)
-{
-	while (!textDest.empty())
-	{
-		text.push_back( textDest.back() );
-		textDest.pop_back();
-	}
-
-	textTimer = 0;
-	textDone = true;
 }
 
 void Dialogue::Tick(void)
@@ -254,7 +294,7 @@ void Dialogue::Tick(void)
 		return;
 	}
 
-	WriteText();
+	typewriter.WriteText();
 
 	if (Dismissable() == true)
 	{
@@ -266,10 +306,19 @@ void Dialogue::Tick(void)
 			}
 			else
 			{
-				CompleteText();
+				typewriter.CompleteText();
 			}
 		}
 	}
+}
+
+INT32 Dialogue::SlideAmount(fixed_t multiplier)
+{
+	if (slide == 0)
+		return 0;
+	if (slide == FRACUNIT)
+		return multiplier;
+	return Easing_OutCubic(slide, 0, multiplier);
 }
 
 void Dialogue::Draw(void)
@@ -279,60 +328,172 @@ void Dialogue::Draw(void)
 		return;
 	}
 
+	const UINT8 bgcol = 1, darkcol = 235;
+
+	const fixed_t height = 78 * FRACUNIT;
+
+	INT32 speakernameedge = -6;
+
 	srb2::Draw drawer = 
 		srb2::Draw(
-			0, FixedToFloat(Easing_OutCubic(slide, -78 * FRACUNIT, 0))
-		).flags(V_SNAPTOTOP);
+			BASEVIDWIDTH, BASEVIDHEIGHT - FixedToFloat(SlideAmount(height) - height)
+		).flags(V_SNAPTOBOTTOM);
 
-	drawer.patch("TUTDIAG1");
+	// TODO -- hack, change when dialogue is made per-player/netsynced
+	UINT32 speakerbgflags = (players[consoleplayer].nocontrol == 0 && P_LevelIsFrozen() == false)
+		? (V_ADD|V_30TRANS)
+		: 0;
+
+	drawer
+		.flags(speakerbgflags|V_VFLIP|V_FLIP)
+		.patch("TUTDIAGA");
+
+	drawer
+		.flags(V_VFLIP|V_FLIP)
+		.patch("TUTDIAGB");
 
 	if (portrait != nullptr)
 	{
 		drawer
-			.xy(10, 41)
+			.flags(V_VFLIP|V_FLIP)
+			.patch("TUTDIAGC");
+
+		drawer
+			.xy(-10-32, -41-32)
 			.colormap(portraitColormap)
 			.patch(portrait);
+
+		speakernameedge -= 39; // -45
+	}
+
+	const char *speakername = speaker.c_str();
+
+	const INT32 arrowstep = 8; // width of TUTDIAGD
+
+	if (speakername && speaker[0])
+	{
+		INT32 speakernamewidth = V_StringWidth(speakername, 0);
+		INT32 existingborder = (portrait == nullptr ? -4 : 3);
+
+		INT32 speakernamewidthoffset = (speakernamewidth + (arrowstep - existingborder) - 1) % arrowstep;
+		if (speakernamewidthoffset)
+		{
+			speakernamewidthoffset = (arrowstep - speakernamewidthoffset);
+			speakernamewidth += speakernamewidthoffset;
+		}
+
+		if (portrait == nullptr)
+		{
+			speakernameedge -= 3;
+			speakernamewidth += 3;
+			existingborder += 2;
+			drawer
+				.xy(speakernameedge, -36)
+				.width(2)
+				.height(3+11)
+				.fill(bgcol);
+		}
+
+		if (speakernamewidth > existingborder)
+		{
+			drawer
+				.x(speakernameedge - speakernamewidth)
+				.width(speakernamewidth - existingborder)
+				.y(-36-3)
+				.height(3)
+				.fill(bgcol);
+
+			drawer
+				.x(speakernameedge - speakernamewidth)
+				.width(speakernamewidth - existingborder)
+				.y(-38-11)
+				.height(11)
+				.fill(darkcol);
+		}
+
+		speakernameedge -= speakernamewidth;
+
+		drawer
+			.xy(speakernamewidthoffset + speakernameedge, -39-9)
+			.font(srb2::Draw::Font::kConsole)
+			.text(speakername);
+
+		speakernameedge -= 5;
+
+		drawer
+			.xy(speakernameedge, -36)
+			.flags(V_VFLIP|V_FLIP)
+			.patch("TUTDIAGD");
+
+		drawer
+			.xy(speakernameedge, -36-3-11)
+			.width(5)
+			.height(3+11)
+			.fill(bgcol);
+
+		drawer
+			.xy(speakernameedge + 5, -36)
+			.flags(V_VFLIP|V_FLIP)
+			.patch("TUTDIAGF");
+	}
+
+	while (speakernameedge > -142) // the left-most edge
+	{
+		speakernameedge -= arrowstep;
+
+		drawer
+			.xy(speakernameedge, -36)
+			.flags(V_VFLIP|V_FLIP)
+			.patch("TUTDIAGD");
 	}
 
 	drawer
-		.xy(45, 39)
-		.font(srb2::Draw::Font::kConsole)
-		.text( speaker.c_str() );
+		.xy(speakernameedge - arrowstep, -36)
+		.flags(V_VFLIP|V_FLIP)
+		.patch("TUTDIAGE");
 
 	drawer
-		.xy(10, 3)
+		.xy(10 - BASEVIDWIDTH, -3-32)
 		.font(srb2::Draw::Font::kConsole)
-		.text( text.c_str() );
+		.text( typewriter.text.c_str() );
 
 	if (Dismissable())
 	{
 		if (TextDone())
 		{
 			drawer
-				.xy(304, 7)
+				.xy(-14, -7-5)
 				.patch("TUTDIAG2");
 		}
 
-		K_drawButton(
-			FloatToFixed(drawer.x() + 303),
-			FloatToFixed(drawer.y() + 39),
-			V_SNAPTOTOP,
-			kp_button_z[0], Held()
-		);
+		drawer
+			.xy(17-14 - BASEVIDWIDTH, -39-16)
+			.button(srb2::Draw::Button::z, Held());
 	}
 }
 
 void Dialogue::Dismiss(void)
 {
 	active = false;
-	text.clear();
-	textDest.clear();
+	typewriter.ClearText();
+}
+
+UINT32 Dialogue::GetNewEra(void)
+{
+	return (++current_era);
+}
+
+bool Dialogue::EraIsValid(INT32 comparison)
+{
+	return (current_era == comparison);
 }
 
 void Dialogue::Unset(void)
 {
 	Dismiss();
 	SetSpeaker();
+	slide = 0;
+	current_era = 0;
 }
 
 /*
@@ -357,4 +518,9 @@ void K_DrawDialogue(void)
 void K_TickDialogue(void)
 {
 	g_dialogue.Tick();
+}
+
+INT32 K_GetDialogueSlide(fixed_t multiplier)
+{
+	return g_dialogue.SlideAmount(multiplier);
 }

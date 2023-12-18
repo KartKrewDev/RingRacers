@@ -40,10 +40,11 @@ menu_t OPTIONS_DataEraseDef = {
 	OPTIONS_DataErase,
 	48, 80,
 	SKINCOLOR_BLACK, 0,
-	0,
+	MBF_DRAWBGWHILEPLAYING,
 	"SHWDN2", // Danger.
 	2, 5,
 	M_DrawGenericOptions,
+	M_DrawOptionsCogs,
 	M_OptionsTick,
 	NULL,
 	NULL,

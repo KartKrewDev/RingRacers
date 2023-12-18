@@ -1577,6 +1577,9 @@ static void K_KartGetItemResult(player_t *const player, kartitems_t getitem)
 
 	player->itemtype = K_ItemResultToType(getitem);
 	player->itemamount = K_ItemResultToAmount(getitem);
+
+	if (player->itemtype == KITEM_SPB)
+		Obj_SPBEradicateCapsules();
 }
 
 /*--------------------------------------------------

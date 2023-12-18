@@ -3,22 +3,25 @@
 
 #include "../k_menu.h"
 #include "../s_sound.h"
+#include "../m_cond.h"
 
+// These are placed in descending order next to the things they modify, for clarity.
+// Try to keep the mvar2 in order, if you add new profile info!!
 menuitem_t OPTIONS_EditProfile[] = {
-	{IT_STRING | IT_CVAR | IT_CV_STRING, "Profile Name", "6-character long name to identify this Profile.",
-		NULL, {.cvar = &cv_dummyprofilename}, 0, 0},
-
-	{IT_STRING | IT_CVAR | IT_CV_STRING, "Player Name", "Name displayed online when using this Profile.",
-	NULL, {.cvar = &cv_dummyprofileplayername}, 0, 0},
-
-	{IT_STRING | IT_CALL, "Character", "Default character and color for this Profile.",
-		NULL, {.routine = M_CharacterSelect}, 0, 0},
+	{IT_STRING | IT_CVAR | IT_CV_STRING, "Profile ID", "6-character long name to identify this Profile.",
+		NULL, {.cvar = &cv_dummyprofilename}, 0, 41},
 
 	{IT_STRING | IT_CALL, "Controls", "Select the button mappings for this Profile.",
-	NULL, {.routine = M_ProfileDeviceSelect}, 0, 0},
+	NULL, {.routine = M_ProfileDeviceSelect}, 0, 81},
+
+	{IT_STRING | IT_CALL, "Character", "Default character and color for this Profile.",
+		NULL, {.routine = M_CharacterSelect}, 0, 101},
+
+	{IT_STRING | IT_CVAR | IT_CV_STRING, "Player Tag", "Name displayed online when using this Profile.",
+	NULL, {.cvar = &cv_dummyprofileplayername}, 0, 141},
 
 	{IT_STRING | IT_CALL, "Confirm", "Confirm changes.",
-	NULL, {.routine = M_ConfirmProfile}, 0, 0},
+	NULL, {.routine = M_ConfirmProfile}, 0, 171},
 
 };
 
@@ -29,10 +32,11 @@ menu_t OPTIONS_EditProfileDef = {
 	OPTIONS_EditProfile,
 	32, 80,
 	SKINCOLOR_ULTRAMARINE, 0,
-	0,
+	MBF_DRAWBGWHILEPLAYING,
 	"FILE",
 	2, 5,
 	M_DrawEditProfile,
+	M_DrawOptionsCogs,
 	M_HandleProfileEdit,
 	NULL,
 	NULL,
@@ -76,9 +80,17 @@ static boolean M_ProfileEditEnd(const UINT8 pid)
 
 static void M_ProfileEditExit(void)
 {
-	optionsmenu.toptx = 160;
-	optionsmenu.topty = 35;
-	optionsmenu.resetprofile = true;	// Reset profile after the transition is done.
+	if (M_GameTrulyStarted() == true)
+	{
+		optionsmenu.toptx = 160;
+		optionsmenu.topty = 35;
+		optionsmenu.resetprofile = true;	// Reset profile after the transition is done.
+	}
+	else
+	{
+		M_ResetOptions();			// Reset all options variables otherwise things are gonna go reaaal bad lol.
+		optionsmenu.profile = NULL;	// Make sure to get rid of that, too.
+	}
 
 	PR_SaveProfiles();					// save profiles after we do that.
 }
@@ -116,10 +128,10 @@ boolean M_ProfileEditInputs(INT32 ch)
 void M_HandleProfileEdit(void)
 {
 	// Always copy the profile name and player name in the profile.
-	if (optionsmenu.profile)
+	if (optionsmenu.profile && !menutyping.active)
 	{
 		// Copy the first 6 chars for profile name
-		if (strlen(cv_dummyprofilename.string))
+		if (cv_dummyprofilename.string[0])
 		{
 			char *s;
 			// convert dummyprofilename to uppercase
@@ -132,8 +144,10 @@ void M_HandleProfileEdit(void)
 			}
 		}
 
-		if (strlen(cv_dummyprofileplayername.string))
+		if (cv_dummyprofileplayername.string[0])
+		{
 			strncpy(optionsmenu.profile->playername, cv_dummyprofileplayername.string, MAXPLAYERNAME);
+		}
 	}
 
 	M_OptionsTick();	//  Has to be afterwards because this can unset optionsmenu.profile

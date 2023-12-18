@@ -120,6 +120,7 @@ menu_t PAUSE_KickHandlerDef = {
 	NULL,
 	0, 0,
 	M_DrawKickHandler,
+	NULL,
 	M_KickHandlerTick,
 	NULL,
 	NULL,

@@ -668,6 +668,27 @@ bool CallFunc_CameraWait(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::
 }
 
 /*--------------------------------------------------
+	bool Dialogue_ValidCheck(ACSVM::Thread *thread)
+
+		Helper to check if the thread's dialogue
+		context is valid, initialising if not set.
+--------------------------------------------------*/
+static bool Dialogue_ValidCheck(ACSVM::Thread *thread)
+{
+	// TODO when we move away from g_dialogue
+	if (netgame)
+	{
+		return false;
+	}
+
+	auto info = &static_cast<Thread *>(thread)->info;
+	if (!info->dialogue_era)
+		info->dialogue_era = g_dialogue.GetNewEra();
+
+	return g_dialogue.EraIsValid(info->dialogue_era);
+}
+
+/*--------------------------------------------------
 	bool CallFunc_DialogueWaitDismiss(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Pauses the thread until the current
@@ -678,17 +699,18 @@ bool CallFunc_DialogueWaitDismiss(ACSVM::Thread *thread, const ACSVM::Word *argV
 	(void)argV;
 	(void)argC;
 
-	// TODO when we move away from g_dialogue
-	if (netgame)
+	if (Dialogue_ValidCheck(thread) == false)
 	{
 		return false;
 	}
 
 	g_dialogue.SetDismissable(true);
 
+	auto info = &static_cast<Thread *>(thread)->info;
+
 	thread->state = {
 		ACSVM::ThreadState::WaitTag,
-		0,
+		info->dialogue_era,
 		ACS_TAGTYPE_DIALOGUE
 	};
 
@@ -706,17 +728,18 @@ bool CallFunc_DialogueWaitText(ACSVM::Thread *thread, const ACSVM::Word *argV, A
 	(void)argV;
 	(void)argC;
 
-	// TODO when we move away from g_dialogue
-	if (netgame)
+	if (Dialogue_ValidCheck(thread) == false)
 	{
 		return false;
 	}
 
 	g_dialogue.SetDismissable(false);
 
+	auto info = &static_cast<Thread *>(thread)->info;
+
 	thread->state = {
 		ACSVM::ThreadState::WaitTag,
-		1,
+		info->dialogue_era,
 		ACS_TAGTYPE_DIALOGUE
 	};
 
@@ -1278,7 +1301,9 @@ bool CallFunc_PlayerRings(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM:
 		&& (info->mo != NULL && P_MobjWasRemoved(info->mo) == false)
 		&& (info->mo->player != NULL))
 	{
-		rings = info->mo->player->rings;
+		rings = (gametyperules & GTR_SPHERES)
+			? info->mo->player->spheres
+			: info->mo->player->rings;
 	}
 
 	thread->dataStk.push(rings);
@@ -1749,6 +1774,20 @@ bool CallFunc_TimeAttack(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::
 }
 
 /*--------------------------------------------------
+	bool CallFunc_FreePlay(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Returns if the map is in Free Play.
+--------------------------------------------------*/
+bool CallFunc_FreePlay(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	(void)argV;
+	(void)argC;
+
+	thread->dataStk.push((M_NotFreePlay() == false));
+	return false;
+}
+
+/*--------------------------------------------------
 	bool CallFunc_GrandPrix(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Returns if a Grand Prix is active.
@@ -1759,6 +1798,20 @@ bool CallFunc_GrandPrix(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::W
 	(void)argC;
 
 	thread->dataStk.push(grandprixinfo.gp);
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_PositionStart(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Returns if the map is in POSITION!!
+--------------------------------------------------*/
+bool CallFunc_PositionStart(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	(void)argV;
+	(void)argC;
+
+	thread->dataStk.push((starttime != 0 && leveltime < starttime));
 	return false;
 }
 
@@ -1791,6 +1844,45 @@ bool CallFunc_GetGrabbedSprayCan(ACSVM::Thread *thread, const ACSVM::Word *argV,
 		if (gamedata->gotspraycans >= gamedata->numspraycans)
 		{
 			thread->dataStk.push(~env->getString( "_Completed" )->idx);
+			return false;
+		}
+	}
+
+	thread->dataStk.push(0);
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_CheckTutorialChallenge(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Returns the Tutorial Challenge status, if possible.
+--------------------------------------------------*/
+bool CallFunc_CheckTutorialChallenge(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	Environment *env = &ACSEnv;
+
+	(void)argV;
+	(void)argC;
+
+	if (netgame == false) // behaviour is not particularly sync-friendly
+	{
+		if (tutorialchallenge == TUTORIALSKIP_INPROGRESS)
+		{
+			thread->dataStk.push(~env->getString( "Active" )->idx);
+			return false;
+		}
+
+		if (tutorialchallenge == TUTORIALSKIP_FAILED)
+		{
+			thread->dataStk.push(~env->getString( "Failed" )->idx);
+			return false;
+		}
+
+		if (gamedata != nullptr
+		&& gamedata->enteredtutorialchallenge == true
+		&& M_GameTrulyStarted() == false)
+		{
+			thread->dataStk.push(~env->getString( "Locked" )->idx);
 			return false;
 		}
 	}
@@ -2025,8 +2117,7 @@ bool CallFunc_DialogueSetSpeaker(ACSVM::Thread *thread, const ACSVM::Word *argV,
 
 	(void)argC;
 
-	// TODO when we move away from g_dialogue
-	if (netgame)
+	if (Dialogue_ValidCheck(thread) == false)
 	{
 		return false;
 	}
@@ -2069,8 +2160,7 @@ bool CallFunc_DialogueSetCustomSpeaker(ACSVM::Thread *thread, const ACSVM::Word 
 
 	(void)argC;
 
-	// TODO when we move away from g_dialogue
-	if (netgame)
+	if (Dialogue_ValidCheck(thread) == false)
 	{
 		return false;
 	}
@@ -2082,13 +2172,18 @@ bool CallFunc_DialogueSetCustomSpeaker(ACSVM::Thread *thread, const ACSVM::Word 
 
 	patchStr = map->getString(argV[1]);
 	patchName = patchStr->str;
-	patch = static_cast<patch_t *>( W_CachePatchName(patchName, PU_CACHE) );
 
 	colorStr = map->getString(argV[2]);
 	colorName = colorStr->str;
-	if (ACS_GetColorFromString(colorName, &colorID) == true)
+
+	if (patchName && patchName[0])
 	{
-		colormap = R_GetTranslationColormap(TC_DEFAULT, colorID, GTC_CACHE);
+		patch = static_cast<patch_t *>( W_CachePatchName(patchName, PU_CACHE) );
+
+		if (ACS_GetColorFromString(colorName, &colorID) == true)
+		{
+			colormap = R_GetTranslationColormap(TC_DEFAULT, colorID, GTC_CACHE);
+		}
 	}
 
 	voiceStr = map->getString(argV[3]);
@@ -2156,8 +2251,7 @@ bool CallFunc_DialogueNewText(ACSVM::Thread *thread, const ACSVM::Word *argV, AC
 
 	(void)argC;
 
-	// TODO when we move away from g_dialogue
-	if (netgame)
+	if (Dialogue_ValidCheck(thread) == false)
 	{
 		return false;
 	}
@@ -2168,6 +2262,25 @@ bool CallFunc_DialogueNewText(ACSVM::Thread *thread, const ACSVM::Word *argV, AC
 	text = textStr->str;
 
 	g_dialogue.NewText(text);
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_DialogueAutoDismiss(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Dismiss the current dialogue text.
+--------------------------------------------------*/
+bool CallFunc_DialogueAutoDismiss(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	(void)argV;
+	(void)argC;
+
+	if (Dialogue_ValidCheck(thread) == false)
+	{
+		return false;
+	}
+
+	g_dialogue.Dismiss();
 	return false;
 }
 

@@ -3000,10 +3000,7 @@ void G_FinishExitLevel(void)
 			{
 				// Back to the menu with you.
 				G_HandleSaveLevel(true);
-				D_QuitNetGame();
-				CL_Reset();
-				D_ClearState();
-				M_StartControlPanel();
+				Command_ExitGame_f();
 				return;
 			}
 		}
@@ -4331,7 +4328,11 @@ void G_NextLevel(void)
 	if (
 		gametype == GT_TUTORIAL
 		&& nextmap == NEXTMAP_TUTORIALCHALLENGE
-		&& !(gamedata && gamedata->enteredtutorialchallenge)
+		&& (
+			!gamedata
+			|| gamedata->enteredtutorialchallenge == false
+			|| M_GameTrulyStarted() == true
+		)
 	)
 	{
 		nextmap = G_MapNumber(tutorialchallengemap);
@@ -4507,8 +4508,7 @@ void G_EndGame(void)
 	}
 
 	// Time to return to the menu.
-	D_ClearState();
-	M_StartControlPanel();
+	Command_ExitGame_f();
 }
 
 //
@@ -4553,6 +4553,8 @@ typedef enum
 	GDEVER_KEYMAJORSKIP = 1<<5,
 	GDEVER_TUTORIALSKIP = 1<<6,
 	GDEVER_ENTERTUTSKIP = 1<<7,
+	// --- Free up to 1<<23 --- //
+	GDEVER_GONERSHIFT = 24, // nothing above this
 } gdeverdone_t;
 
 static const char *G_GameDataFolder(void)
@@ -4694,6 +4696,8 @@ void G_LoadGameData(void)
 			gamedata->majorkeyskipattempted = !!(everflags & GDEVER_KEYMAJORSKIP);
 			gamedata->finishedtutorialchallenge = !!(everflags & GDEVER_TUTORIALSKIP);
 			gamedata->enteredtutorialchallenge = !!(everflags & GDEVER_ENTERTUTSKIP);
+
+			gamedata->gonerlevel = everflags>>GDEVER_GONERSHIFT;
 		}
 		else
 		{
@@ -5371,7 +5375,7 @@ void G_SaveGameData(void)
 	WRITEUINT16(save.p, gamedata->chaokeys); // 2
 
 	{
-		UINT32 everflags = 0;
+		UINT32 everflags = (gamedata->gonerlevel<<GDEVER_GONERSHIFT);
 
 		if (gamedata->everloadedaddon)
 			everflags |= GDEVER_ADDON;

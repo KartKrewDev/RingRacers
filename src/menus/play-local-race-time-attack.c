@@ -76,6 +76,7 @@ menu_t PLAY_TimeAttackDef = {
 	NULL,
 	2, 5,
 	M_DrawTimeAttack,
+	NULL,
 	M_TimeAttackTick,
 	NULL,
 	NULL,
@@ -120,6 +121,7 @@ menu_t PLAY_TAReplayDef = {
 	2, 5,
 	M_DrawTimeAttack,
 	NULL,
+	M_TimeAttackTick,
 	NULL,
 	NULL,
 	NULL
@@ -165,6 +167,7 @@ menu_t PLAY_TAReplayGuestDef = {
 	2, 5,
 	M_DrawTimeAttack,
 	NULL,
+	M_TimeAttackTick,
 	NULL,
 	NULL,
 	NULL
@@ -205,6 +208,7 @@ menu_t PLAY_TAGhostsDef = {
 	2, 5,
 	M_DrawTimeAttack,
 	NULL,
+	M_TimeAttackTick,
 	NULL,
 	NULL,
 	NULL
@@ -214,6 +218,8 @@ menu_t PLAY_TAGhostsDef = {
 void M_PrepareTimeAttack(INT32 choice)
 {
 	(void) choice;
+
+	timeattackmenu.ticker = 0;
 
 	// Gametype guess
 	if (levellist.guessgt != MAXGAMETYPES)

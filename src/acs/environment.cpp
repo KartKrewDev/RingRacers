@@ -169,6 +169,9 @@ Environment::Environment()
 	addFuncDataACS0( 313, addCallFunc(CallFunc_GrandPrix));
 	addFuncDataACS0( 314, addCallFunc(CallFunc_GetGrabbedSprayCan));
 	addFuncDataACS0( 315, addCallFunc(CallFunc_PlayerBot));
+	addFuncDataACS0( 316, addCallFunc(CallFunc_PositionStart));
+	addFuncDataACS0( 317, addCallFunc(CallFunc_FreePlay));
+	addFuncDataACS0( 318, addCallFunc(CallFunc_CheckTutorialChallenge));
 
 	addFuncDataACS0( 500, addCallFunc(CallFunc_CameraWait));
 	addFuncDataACS0( 501, addCallFunc(CallFunc_PodiumPosition));
@@ -188,6 +191,7 @@ Environment::Environment()
 	addFuncDataACS0( 602, addCallFunc(CallFunc_DialogueNewText));
 	addFuncDataACS0( 603, addCallFunc(CallFunc_DialogueWaitDismiss));
 	addFuncDataACS0( 604, addCallFunc(CallFunc_DialogueWaitText));
+	addFuncDataACS0( 605, addCallFunc(CallFunc_DialogueAutoDismiss));
 }
 
 ACSVM::Thread *Environment::allocThread()
@@ -312,12 +316,13 @@ bool Environment::checkTag(ACSVM::Word type, ACSVM::Word tag)
 		case ACS_TAGTYPE_DIALOGUE:
 		{
 			// TODO when we move away from g_dialogue
-			if (netgame)
+			//  See also call-funcs.cpp Dialogue_ValidCheck
+			if (netgame || !g_dialogue.EraIsValid(tag)) // cheeky reuse
 			{
 				return true;
 			}
 
-			if (tag == 0) // cheeky reuse
+			if (g_dialogue.Dismissable())
 			{
 				// wait for dismissal
 				return (!g_dialogue.Active());

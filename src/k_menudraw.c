@@ -231,6 +231,12 @@ void M_DrawMenuBackground(void)
 	}
 }
 
+void M_DrawExtrasBack(void)
+{
+	patch_t *bg = W_CachePatchName("M_XTRABG", PU_CACHE);
+	V_DrawFixedPatch(0, 0, FRACUNIT, 0, bg, NULL);
+}
+
 UINT16 M_GetCvPlayerColor(UINT8 pnum)
 {
 	if (pnum >= MAXSPLITSCREENPLAYERS)
@@ -601,7 +607,7 @@ static void M_DrawMenuTyping(void)
 
 #undef BUTTONHEIGHT
 
-	y = 175;
+	y = 187;
 
 	if (menutyping.menutypingfade < 9)
 	{
@@ -611,13 +617,44 @@ static void M_DrawMenuTyping(void)
 	// Some contextual stuff
 	if (menutyping.keyboardtyping)
 	{
-		V_DrawThinString(returnx, y, V_GRAYMAP, "Type using your keyboard. Press Enter to confirm & exit.\nUse your controller or any directional input to use the Virtual Keyboard.\n");
+		V_DrawThinString(returnx, y, V_GRAYMAP,
+			"Type using your keyboard. Press Enter to confirm & exit."
+			//"\nPress any button on your controller to use the Virtual Keyboard."
+		);
 	}
 	else
 	{
-		V_DrawThinString(returnx, y, V_GRAYMAP, "Type using the Virtual Keyboard. Use the \'OK\' button to confirm & exit.\nPress any keyboard key not bound to a control to use it.");
+		V_DrawThinString(returnx, y, V_GRAYMAP,
+			"Type using the Virtual Keyboard. Use the \'OK\' button to confirm & exit."
+			//"\nPress any keyboard key to type normally."
+		);
 	}
 
+}
+
+static void M_DrawMediocreKeyboardKey(const char *text, INT32 *workx, INT32 worky, boolean push, boolean rightaligned)
+{
+	INT32 buttonwidth = V_StringWidth(text, 0) + 2;
+
+	if (rightaligned)
+	{
+		(*workx) -= buttonwidth;
+	}
+
+	if (push)
+	{
+		worky += 2;
+	}
+	else
+	{
+		V_DrawFill((*workx)-1, worky+10, buttonwidth, 2, 24);
+	}
+
+	V_DrawFill((*workx)-1, worky, buttonwidth, 10, 16);
+	V_DrawString(
+		(*workx), worky + 1,
+		0, text
+	);
 }
 
 // Draw the message popup submenu
@@ -646,6 +683,10 @@ void M_DrawMenuMessage(void)
 		INT32 workx = x + menumessage.x;
 		INT32 worky = y + menumessage.y;
 
+		boolean standardbuttons = (
+			cv_currprofile.value != -1 || G_GetNumAvailableGamepads()
+		);
+
 		boolean push;
 
 		if (menumessage.closing)
@@ -666,19 +707,26 @@ void M_DrawMenuMessage(void)
 
 		workx -= 2;
 
-		workx -= SHORT(kp_button_x[1][0]->width);
-		K_drawButton(
-			workx * FRACUNIT, worky * FRACUNIT,
-			0, kp_button_x[1],
-			push
-		);
+		if (standardbuttons)
+		{
+			workx -= SHORT(kp_button_x[1][0]->width);
+			K_drawButton(
+				workx * FRACUNIT, worky * FRACUNIT,
+				0, kp_button_x[1],
+				push
+			);
 
-		workx -= SHORT(kp_button_b[1][0]->width);
-		K_drawButton(
-			workx * FRACUNIT, worky * FRACUNIT,
-			0, kp_button_b[1],
-			push
-		);
+			workx -= SHORT(kp_button_b[1][0]->width);
+			K_drawButton(
+				workx * FRACUNIT, worky * FRACUNIT,
+				0, kp_button_b[1],
+				push
+			);
+		}
+		else
+		{
+			M_DrawMediocreKeyboardKey("ESC", &workx, worky, push, true);
+		}
 
 		if (menumessage.confirmstr)
 		{
@@ -698,12 +746,19 @@ void M_DrawMenuMessage(void)
 			workx -= 2;
 		}
 
-		workx -= SHORT(kp_button_a[1][0]->width);
-		K_drawButton(
-			workx * FRACUNIT, worky * FRACUNIT,
-			0, kp_button_a[1],
-			push
-		);
+		if (standardbuttons)
+		{
+			workx -= SHORT(kp_button_a[1][0]->width);
+			K_drawButton(
+				workx * FRACUNIT, worky * FRACUNIT,
+				0, kp_button_a[1],
+				push
+			);
+		}
+		else
+		{
+			M_DrawMediocreKeyboardKey("ENTER", &workx, worky, push, true);
+		}
 	}
 
 	x -= 4;
@@ -778,14 +833,34 @@ void M_Drawer(void)
 	// background layer
 	if (menuactive)
 	{
-		if (gamestate == GS_MENU)
+		boolean drawbgroutine = false;
+		boolean trulystarted = M_GameTrulyStarted();
+
+		if (gamestate == GS_MENU && trulystarted)
 		{
-			M_DrawMenuBackground();
+			if (currentMenu->bgroutine)
+				drawbgroutine = true;
+			else
+				M_DrawMenuBackground();
 		}
-		else if (!WipeInAction && currentMenu != &PAUSE_PlaybackMenuDef)
+		else
 		{
-			V_DrawFadeScreen(122, 3);
+			if (currentMenu->bgroutine
+			&& (currentMenu->behaviourflags & MBF_DRAWBGWHILEPLAYING))
+				drawbgroutine = true;
+
+			if (!Playing() && !trulystarted)
+			{
+				M_DrawGonerBack();
+			}
+			else if (!WipeInAction && currentMenu != &PAUSE_PlaybackMenuDef)
+			{
+				V_DrawFadeScreen(122, 3);
+			}
 		}
+
+		if (drawbgroutine)
+			currentMenu->bgroutine();
 	}
 
 	// draw pause pic
@@ -1114,6 +1189,81 @@ void M_DrawKartGamemodeMenu(void)
 		x += GM_XOFFSET;
 		y += GM_YOFFSET;
 	}
+}
+
+void M_DrawHorizontalMenu(void)
+{
+	INT32 x, y, i, final = currentMenu->extra2-1, showflags;
+
+	const INT32 width = 80;
+
+	y = currentMenu->y;
+
+	V_DrawFadeFill(0, y-2, BASEVIDWIDTH, 24, 0, 31, 5);
+
+	x = (BASEVIDWIDTH - 8*final)/2;
+	for (i = 0; i < currentMenu->extra2; i++, x += 8)
+	{
+		if (i == itemOn)
+		{
+			V_DrawFill(x-2, y + 16, 4, 4, 0);
+		}
+		else if (i >= currentMenu->numitems)
+		{
+			V_DrawFill(x-1, y + 17, 2, 2, 20);
+		}
+		else
+		{
+			V_DrawFill(x-1, y + 17, 2, 2,
+				(i == final && skullAnimCounter/5) ? 73 : 10
+			);
+		}
+	}
+
+	i = itemOn;
+	x = BASEVIDWIDTH/2;
+
+	do
+	{
+		if (i == 0)
+			break;
+		i--;
+		x -= width;
+	}
+	while (x > -width/2);
+
+	while (x < BASEVIDWIDTH + (width/2))
+	{
+		showflags = 0;
+		if (i == final)
+		{
+			showflags |= V_STRINGDANCE;
+			if (itemOn == i)
+				showflags |= V_YELLOWMAP;
+		}
+		else if (i == itemOn)
+		{
+			showflags |= highlightflags;
+		}
+
+		V_DrawCenteredThinString(
+			x, y,
+			showflags,
+			currentMenu->menuitems[i].text
+		);
+
+		if (++i == currentMenu->numitems)
+			break;
+		x += width;
+	}
+
+	if (itemOn != 0)
+		V_DrawCharacter((BASEVIDWIDTH - width)/2 + 3 - (skullAnimCounter/5), y + 1,
+			'\x1C' | highlightflags, false); // left arrow
+
+	if (itemOn != currentMenu->numitems-1)
+		V_DrawCharacter((BASEVIDWIDTH + width)/2 - 10 + (skullAnimCounter/5), y + 1,
+			'\x1D' | highlightflags, false); // right arrow
 }
 
 #define MAXMSGLINELEN 256
@@ -2095,7 +2245,7 @@ void M_DrawCharacterSelect(void)
 	UINT8 priority = 0;
 	INT16 quadx, quady;
 	INT16 skin;
-	INT32 basex = optionsmenu.profile != NULL ? 64 : 0;
+	INT32 basex = optionsmenu.profile ? (64 + (menutransition.tics*32)) : 0;
 	boolean forceskin = (Playing() && K_CanChangeRules(true) == true) && (cv_forceskin.value != -1);
 
 	if (setup_numplayers > 0)
@@ -2104,13 +2254,16 @@ void M_DrawCharacterSelect(void)
 	}
 
 	{
-		const int kLeft = 80;
+		const int kLeft = 76;
 		const int kTop = 6;
 		const int kButtonWidth = 16;
 		INT32 x = basex + kLeft;
 
-		K_drawButton((x += 18) * FRACUNIT, (kTop - 3) * FRACUNIT, 0, kp_button_r, M_MenuButtonPressed(pid, MBT_R));
-		V_DrawThinString((x += kButtonWidth), kTop, 0, "Info");
+		if (!optionsmenu.profile) // Does nothing on this screen
+		{
+			K_drawButton((x += 22) * FRACUNIT, (kTop - 3) * FRACUNIT, 0, kp_button_r, M_MenuButtonPressed(pid, MBT_R));
+			V_DrawThinString((x += kButtonWidth), kTop, 0, "Info");
+		}
 
 		K_drawButton((x += 58) * FRACUNIT, (kTop - 1) * FRACUNIT, 0, kp_button_c[1], M_MenuButtonPressed(pid, MBT_C));
 		V_DrawThinString((x += kButtonWidth), kTop, 0, "Default");
@@ -2969,12 +3122,6 @@ void M_DrawLevelSelect(void)
 	INT16 y = 80 - (12 * levellist.y);
 	boolean tatransition = ((menutransition.startmenu == &PLAY_TimeAttackDef || menutransition.endmenu == &PLAY_TimeAttackDef) && menutransition.tics);
 
-	if (levellist.levelsearch.tutorial)
-	{
-		patch_t *bg = W_CachePatchName("M_XTRABG", PU_CACHE);
-		V_DrawFixedPatch(0, 0, FRACUNIT, 0, bg, NULL);
-	}
-
 	if (tatransition)
 	{
 		t = -t;
@@ -3007,6 +3154,49 @@ void M_DrawLevelSelect(void)
 	M_DrawCupTitle(tay, &levellist.levelsearch);
 }
 
+static boolean M_LevelSelectHasBG(menu_t *check)
+{
+	if (check == NULL)
+		check = currentMenu;
+
+	return (check == &PLAY_LevelSelectDef
+	|| check == &PLAY_CupSelectDef);
+}
+
+static boolean M_LevelSelectToTimeAttackTransitionHelper(void)
+{
+	if (menutransition.tics == 0)
+		return false;
+
+	return (M_LevelSelectHasBG(menutransition.startmenu))
+		!= M_LevelSelectHasBG(menutransition.endmenu);
+}
+
+void M_DrawSealedBack(void)
+{
+	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+
+	if (M_LevelSelectHasBG(currentMenu) == false)
+		return;
+
+	INT32 translucencylevel = 7;
+	if (M_LevelSelectToTimeAttackTransitionHelper())
+	{
+		translucencylevel += menutransition.tics/3;
+
+		if (translucencylevel >= 10)
+			return;
+	}
+
+	V_DrawFixedPatch(
+		0, 0,
+		FRACUNIT,
+		translucencylevel << V_ALPHASHIFT,
+		W_CachePatchName("MENUI008", PU_CACHE),
+		R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_BLACK, GTC_CACHE)
+	);
+}
+
 void M_DrawTimeAttack(void)
 {
 	UINT16 map = levellist.choosemap;
@@ -3015,26 +3205,94 @@ void M_DrawTimeAttack(void)
 	INT16 rightedge = 149+t+155;
 	INT16 opty = 140;
 	INT32 w;
-	patch_t *minimap = NULL;
 	UINT8 i;
-
-	M_DrawLevelSelectBlock(0, 2, map, true, false);
-
-	//V_DrawFill(24-t, 82, 100, 100, 36); // size test
 
 	V_DrawScaledPatch(149+t, 70, 0, W_CachePatchName("BESTTIME", PU_CACHE));
 
-	if (currentMenu == &PLAY_TimeAttackDef && mapheaderinfo[map])
+	if (!mapheaderinfo[map])
 	{
-		tic_t timerec = 0;
-		tic_t laprec = 0;
+		V_DrawRightAlignedString(rightedge-12, opty, 0, "No map!?");
+		return;
+	}
+
+	{
+		patch_t *minimap = NULL;
+		INT32 minimapx = 76, minimapy = 130;
+
+		if (M_LevelSelectToTimeAttackTransitionHelper())
+			minimapx -= t;
+
+		if (levellist.newgametype == GT_SPECIAL)
+		{
+			// Star Within The Seal
+
+#define SEAL_PULSELEN ((6*TICRATE)/5) // The rate of O_SSTAR3
+			INT32 crossfade = (timeattackmenu.ticker % (2*SEAL_PULSELEN)) - SEAL_PULSELEN;
+			if (crossfade < 0)
+				crossfade = -crossfade;
+			crossfade = (crossfade * 10)/SEAL_PULSELEN;
+#undef SEAL_PULSELEN
+
+			if (crossfade != 10)
+			{
+				minimap = W_CachePatchName(
+					"K_FINB05",
+					PU_CACHE
+				);
+
+				V_DrawScaledPatch(
+					minimapx, minimapy,
+					0, minimap
+				);
+			}
+
+			if (crossfade != 0)
+			{
+				minimap = W_CachePatchName(
+					"K_FINB04",
+					PU_CACHE
+				);
+
+				V_DrawScaledPatch(
+					minimapx, minimapy,
+					(10-crossfade)<<V_ALPHASHIFT,
+					minimap
+				);
+			}
+		}
+		else if (levellist.newgametype == GT_VERSUS)
+		{
+			const INT32 teaserh = 56;
+			minimapy -= 1; // tiny adjustment
+
+			V_DrawScaledPatch(
+				minimapx, minimapy - teaserh,
+				V_TRANSLUCENT, W_CachePatchName("K_TEASR2", PU_CACHE)
+			);
+			V_DrawScaledPatch(
+				minimapx, minimapy + teaserh,
+				V_TRANSLUCENT, W_CachePatchName("K_TEASR4", PU_CACHE)
+			);
+			V_DrawScaledPatch(
+				minimapx, minimapy,
+				0, W_CachePatchName("K_TEASR3", PU_CACHE)
+			);
+		}
+		else if ((minimap = mapheaderinfo[map]->minimapPic))
+		{
+			V_DrawScaledPatch(
+				minimapx - (SHORT(minimap->width)/2),
+				minimapy - (SHORT(minimap->height)/2),
+				0, minimap
+			);
+		}
+	}
+
+	if (currentMenu == &PLAY_TimeAttackDef)
+	{
+		tic_t timerec = mapheaderinfo[map]->records.time;
+		tic_t laprec = mapheaderinfo[map]->records.lap;
 		UINT32 timeheight = 82;
-
-		if ((minimap = mapheaderinfo[map]->minimapPic))
-			V_DrawScaledPatch(24-t, 82, 0, minimap);
-
-		timerec = mapheaderinfo[map]->records.time;
-		laprec = mapheaderinfo[map]->records.lap;
 
 		if ((gametypes[levellist.newgametype]->rules & GTR_CIRCUIT)
 			&& (mapheaderinfo[map]->numlaps != 1))
@@ -3068,6 +3326,9 @@ void M_DrawTimeAttack(void)
 	}
 	else
 		opty = 80;
+
+	// Done after to overlay material
+	M_DrawLevelSelectBlock(0, 2, map, true, false);
 
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
@@ -3233,7 +3494,6 @@ void M_DrawEggaChannel(void)
 // Multiplayer mode option select
 void M_DrawMPOptSelect(void)
 {
-	M_DrawEggaChannel();
 	M_DrawMenuTooltips();
 	M_MPOptDrawer(&PLAY_MP_OptSelectDef, mpmenu.modewinextend);
 	M_DrawMasterServerReminder();
@@ -3243,7 +3503,6 @@ void M_DrawMPOptSelect(void)
 // A rehash of the generic menu drawer adapted to fit into that cramped space. ...A small sacrifice for utility
 void M_DrawMPHost(void)
 {
-
 	patch_t *gobutt = W_CachePatchName("M_BUTTGO", PU_CACHE);	// I'm very mature
 	INT32 xp = 40, yp = 64, i = 0, w = 0;	// Starting position for the text drawing.
 
@@ -3348,7 +3607,6 @@ void M_DrawMPHost(void)
 // (I don't like duplicating code but I rather this than some horrible all-in-one function with too many options...)
 void M_DrawMPJoinIP(void)
 {
-
 	//patch_t *minibutt = W_CachePatchName("M_SBUTT", PU_CACHE);
 	// There is no such things as mini butts, only thick thighs to rest your head on.
 	//patch_t *minigo = W_CachePatchName("M_SGO", PU_CACHE);
@@ -3674,12 +3932,15 @@ void M_DrawMPServerBrowser(void)
 // OPTIONS MENU
 
 // Draws the cogs and also the options background!
-static void M_DrawOptionsCogs(void)
+void M_DrawOptionsCogs(void)
 {
+	boolean trulystarted = M_GameTrulyStarted();
+	UINT32 tick = ((optionsmenu.ticker/10) % 3) + 1;
+
 	// the background isn't drawn outside of being in the main menu state.
-	if (gamestate == GS_MENU)
+	if (gamestate == GS_MENU && trulystarted)
 	{
-		patch_t *back[3] = {W_CachePatchName("OPT_BG1", PU_CACHE), W_CachePatchName("OPT_BG2", PU_CACHE), W_CachePatchName("OPT_BG3", PU_CACHE)};
+		patch_t *back = W_CachePatchName(va("OPT_BG%u", tick), PU_CACHE);
 		INT32 tflag = 0;
 		UINT8 *c;
 		UINT8 *c2;	// colormap for the one we're changing
@@ -3687,19 +3948,24 @@ static void M_DrawOptionsCogs(void)
 		if (optionsmenu.fade)
 		{
 			c2 = R_GetTranslationColormap(TC_DEFAULT, optionsmenu.lastcolour, GTC_CACHE);
-			V_DrawFixedPatch(0, 0, FRACUNIT, 0, back[(optionsmenu.ticker/10) %3], c2);
+			V_DrawFixedPatch(0, 0, FRACUNIT, 0, back, c2);
 
 			// prepare fade flag:
 			tflag = min(V_90TRANS, (optionsmenu.fade)<<V_ALPHASHIFT);
 
 		}
 		c = R_GetTranslationColormap(TC_DEFAULT, optionsmenu.currcolour, GTC_CACHE);
-		V_DrawFixedPatch(0, 0, FRACUNIT, tflag, back[(optionsmenu.ticker/10) %3], c);
+		V_DrawFixedPatch(0, 0, FRACUNIT, tflag, back, c);
 	}
 	else
 	{
-		patch_t *back_pause[3] = {W_CachePatchName("OPT_BAK1", PU_CACHE), W_CachePatchName("OPT_BAK2", PU_CACHE), W_CachePatchName("OPT_BAK3", PU_CACHE)};
-		V_DrawFixedPatch(0, 0, FRACUNIT, V_MODULATE, back_pause[(optionsmenu.ticker/10) %3], NULL);
+		patch_t *back_pause = W_CachePatchName(va("OPT_BAK%u", tick), PU_CACHE);
+		V_DrawFixedPatch(0, 0, FRACUNIT, V_MODULATE, back_pause, NULL);
+
+		if (!trulystarted)
+		{
+			V_DrawFixedPatch(0, 0, FRACUNIT, (V_ADD|V_70TRANS), back_pause, NULL);
+		}
 	}
 }
 
@@ -3720,8 +3986,6 @@ void M_DrawOptions(void)
 	patch_t *buttback = W_CachePatchName("OPT_BUTT", PU_CACHE);
 
 	UINT8 *c = NULL;
-
-	M_DrawOptionsCogs();
 
 	for (i=0; i < currentMenu->numitems; i++)
 	{
@@ -3758,7 +4022,6 @@ void M_DrawGenericOptions(void)
 {
 	INT32 x = currentMenu->x - menutransition.tics*48, y = currentMenu->y, w, i, cursory = 0;
 
-	M_DrawOptionsCogs();
 	M_DrawMenuTooltips();
 	M_DrawOptionsMovingButton();
 
@@ -3908,7 +4171,6 @@ void M_DrawProfileErase(void)
 	INT32 x = currentMenu->x - menutransition.tics*48, y = currentMenu->y-SMALLLINEHEIGHT, i, cursory = 0;
 	UINT8 np = PR_GetNumProfiles();
 
-	M_DrawOptionsCogs();
 	M_DrawMenuTooltips();
 	M_DrawOptionsMovingButton();
 
@@ -3940,7 +4202,6 @@ void M_DrawProfileSelect(void)
 	INT32 x = 160 - optionsmenu.profilen*(128 + 128/8) + optionsmenu.offset;
 	INT32 y = 35 + menutransition.tics*32;
 
-	M_DrawOptionsCogs();
 	M_DrawMenuTooltips();
 
 	// This shouldn't be drawn when a profile is selected as optx/opty are used to move the card.
@@ -3970,10 +4231,8 @@ void M_DrawEditProfile(void)
 {
 
 	INT32 y = 34;
-	INT32 x = 145;
+	INT32 x = (145 + (menutransition.tics*32));
 	INT32 i;
-
-	M_DrawOptionsCogs();
 
 	// Tooltip
 	// The text is slightly shifted hence why we don't just use M_DrawMenuTooltips()
@@ -3990,33 +4249,34 @@ void M_DrawEditProfile(void)
 		UINT8 *colormap = NULL;
 		INT32 tflag = (currentMenu->menuitems[i].status & IT_TRANSTEXT) ? V_TRANSLUCENT : 0;
 
+		y = currentMenu->menuitems[i].mvar2;
+
+		// Background -- 169 is the plague colourization
+		V_DrawFill(0, y, 400 - (menutransition.tics*64), 10, itemOn == i ? 169 : 30);
+
 		if (i == itemOn)
+		{
 			colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
 
-		// Background
-		V_DrawFill(0, y, 400 - (menutransition.tics*64), 24, itemOn == i ? 169 : 30);	// 169 is the plague colourization
+			V_DrawCharacter(x - 10 - (skullAnimCounter/5), y+1,
+			'\x1C' | highlightflags, false); // left arrow
+		}
+
 		// Text
-		V_DrawGamemodeString(x + (menutransition.tics*32), y - 6, tflag, colormap, currentMenu->menuitems[i].text);
+		//V_DrawGamemodeString(x, y - 6, tflag, colormap, currentMenu->menuitems[i].text);
+		V_DrawStringScaled(
+			x * FRACUNIT,
+			(y - 3) * FRACUNIT,
+			FRACUNIT,
+			FRACUNIT,
+			FRACUNIT,
+			tflag,
+			colormap,
+			KART_FONT,
+			currentMenu->menuitems[i].text
+		);
 
-		// Cvar specific handling
-		/*switch (currentMenu->menuitems[i].status & IT_TYPE)
-		{
-			case IT_CVAR:
-			{
-				consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
-				switch (currentMenu->menuitems[i].status & IT_CVARTYPE)
-				{
-					case IT_CV_STRING:
-						V_DrawFill(0, y+24, 400 - (menutransition.tics*64), 16, itemOn == i ? 169 : 30);	// 169 is the plague colourization
-						V_DrawString(x + 8, y + 29, 0, cv->string);
-						if (skullAnimCounter < 4 && i == itemOn)
-						V_DrawCharacter(x + 8 + V_StringWidth(cv->string, 0), y + 29, '_', false);
-						y += 16;
-					}
-				}
-			}*/
-
-		y += 34;
+		//y += 32 + 2;
 	}
 
 	// Finally, draw the card ontop
@@ -4071,8 +4331,6 @@ void M_DrawProfileControls(void)
 	INT32 x = 8;
 	INT32 i, j, k;
 	const UINT8 pid = 0;
-
-	M_DrawOptionsCogs();
 
 	V_DrawScaledPatch(BASEVIDWIDTH*2/3 - optionsmenu.contx, BASEVIDHEIGHT/2 -optionsmenu.conty, 0, W_CachePatchName("PR_CONT", PU_CACHE));
 
@@ -4302,7 +4560,6 @@ void M_DrawVideoModes(void)
 {
 	INT32 i, j, row, col;
 
-	M_DrawOptionsCogs();
 	M_DrawMenuTooltips();
 	M_DrawOptionsMovingButton();
 
@@ -4388,7 +4645,6 @@ void M_DrawItemToggles(void)
 	consvar_t *cv;
 	INT32 i, translucent, drawnum;
 
-	M_DrawOptionsCogs();
 	M_DrawMenuTooltips();
 	M_DrawOptionsMovingButton();
 
@@ -4531,11 +4787,8 @@ void M_DrawExtras(void)
 	INT32 x = 140 - (48*itemOn) + extrasmenu.offset;
 	INT32 y = 70 + extrasmenu.offset;
 	patch_t *buttback = W_CachePatchName("OPT_BUTT", PU_CACHE);
-	patch_t *bg = W_CachePatchName("M_XTRABG", PU_CACHE);
 
 	UINT8 *c = NULL;
-
-	V_DrawFixedPatch(0, 0, FRACUNIT, 0, bg, NULL);
 
 	for (i=0; i < currentMenu->numitems; i++)
 	{
@@ -5050,14 +5303,6 @@ void M_DrawAddons(void)
 	UINT8 hilicol;
 
 	M_CacheAddonPatches();
-
-	// hack: If we're calling this from GS_MENU, that means we're in the extras menu!
-	// so draw the apropriate background
-	if (gamestate == GS_MENU)
-	{
-		patch_t *bg = W_CachePatchName("M_XTRABG", PU_CACHE);
-		V_DrawFixedPatch(0, 0, FRACUNIT, 0, bg, NULL);
-	}
 
 	if (Playing())
 		V_DrawCenteredString(BASEVIDWIDTH/2, 4, warningflags, "Adding files mid-game may cause problems.");
@@ -6876,11 +7121,6 @@ void M_DrawStatistics(void)
 	tic_t besttime = 0;
 
 	{
-		patch_t *bg = W_CachePatchName("M_XTRABG", PU_CACHE);
-		V_DrawFixedPatch(0, 0, FRACUNIT, 0, bg, NULL);
-	}
-
-	{
 		const char *pagename = NULL;
 		INT32 pagenamewidth = 0;
 
@@ -6996,28 +7236,6 @@ void M_DrawStatistics(void)
 	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 50, 0, beststr);
 }
 
-static INT32 M_WrongWarpFallingHelper(INT32 y, INT32 falltime)
-{
-	if (wrongwarp.ticker < falltime)
-	{
-		return y;
-	}
-
-	if (wrongwarp.ticker > falltime + 2*TICRATE)
-	{
-		return INT32_MAX;
-	}
-
-	if (wrongwarp.ticker < falltime + TICRATE)
-	{
-		y += + ((wrongwarp.ticker - falltime) & 1 ? 1 : -1);
-		return y;
-	}
-
-	y += floor(pow(1.5, (double)(wrongwarp.ticker - (falltime + TICRATE))));
-	return y;
-}
-
 static void M_DrawWrongPlayer(UINT8 i)
 {
 #define wrongpl wrongwarp.wrongplayers[i]
@@ -7042,60 +7260,6 @@ void M_DrawWrongWarp(void)
 {
 	INT32 titleoffset = 0, titlewidth, x, y;
 	const char *titletext = "WRONG GAME? WRONG GAME! ";
-
-	if (gamestate == GS_MENU)
-	{
-		patch_t *pat, *pat2;
-		INT32 animtimer, anim2 = 0;
-
-		pat = W_CachePatchName("TITLEBG1", PU_CACHE);
-		pat2 = W_CachePatchName("TITLEBG2", PU_CACHE);
-
-		animtimer = ((wrongwarp.ticker*5)/16) % SHORT(pat->width);
-		anim2 = SHORT(pat2->width) - (((wrongwarp.ticker*5)/16) % SHORT(pat2->width));
-
-		// SRB2Kart: F_DrawPatchCol is over-engineered; recoded to be less shitty and error-prone
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
-
-		x = -((INT32)animtimer);
-		y = 0;
-		while (x < BASEVIDWIDTH)
-		{
-			V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, pat, NULL);
-			x += SHORT(pat->width);
-		}
-
-		x = -anim2;
-		y = BASEVIDHEIGHT - SHORT(pat2->height);
-		while (x < BASEVIDWIDTH)
-		{
-			V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, pat2, NULL);
-			x += SHORT(pat2->width);
-		}
-	}
-
-	{
-		patch_t *ttcheckers = W_CachePatchName("TTCHECK", PU_CACHE);
-
-		y = FixedMul(40<<FRACBITS, FixedDiv(wrongwarp.ticker%70, 70));
-
-		V_DrawSciencePatch(0, -y, 0, ttcheckers, FRACUNIT);
-		V_DrawSciencePatch(280<<FRACBITS, -(40<<FRACBITS) + y, 0, ttcheckers, FRACUNIT);
-
-		y = M_WrongWarpFallingHelper(36, 7*TICRATE/4);
-		if (y != INT32_MAX)
-		{
-			patch_t *ttbanner = W_CachePatchName("TTKBANNR", PU_CACHE);
-			V_DrawSmallScaledPatch(84, y, 0, ttbanner);
-		}
-
-		y = M_WrongWarpFallingHelper(87, 4*TICRATE/3);
-		if (y != INT32_MAX)
-		{
-			patch_t *ttkart = W_CachePatchName("TTKART", PU_CACHE);
-			V_DrawSmallScaledPatch(84, y, 0, ttkart);
-		}
-	}
 
 	if (wrongwarp.ticker < 2*TICRATE/3)
 		return;
@@ -7146,12 +7310,6 @@ void M_DrawSoundTest(void)
 	const char *titletext;
 
 	patch_t *btn = W_CachePatchName("STER_BTN", PU_CACHE);
-
-	if (gamestate == GS_MENU)
-	{
-		patch_t *bg = W_CachePatchName("M_XTRABG", PU_CACHE);
-		V_DrawFixedPatch(0, 0, FRACUNIT, 0, bg, NULL);
-	}
 
 	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("STER_BG", PU_CACHE), NULL);
 

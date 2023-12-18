@@ -118,7 +118,7 @@ patch_t** get_button_patch(Draw::Button type, int ver)
 
 }; // namespace
 
-void Chain::button(Button type, int ver, std::optional<bool> press) const
+void Chain::button_(Button type, int ver, std::optional<bool> press) const
 {
 	const auto _ = Clipper(*this);
 

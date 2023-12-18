@@ -231,6 +231,7 @@ menu_t PAUSE_CheatsDef = {
 	0, 0,
 	draw_menu,
 	nullptr,
+	nullptr,
 	menu_open,
 	menu_close,
 	menu_input,

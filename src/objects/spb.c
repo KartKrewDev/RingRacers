@@ -74,6 +74,36 @@ enum
 #define spb_owner(o) ((o)->target)
 #define spb_chase(o) ((o)->tracer)
 
+void Obj_SPBEradicateCapsules(void)
+{
+	thinker_t *think;
+	mobj_t *mo;
+
+	// Expensive operation :D?
+	for (think = thlist[THINK_MOBJ].next; think != &thlist[THINK_MOBJ]; think = think->next)
+	{
+		if (think->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
+			continue;
+
+		mo = (mobj_t *)think;
+
+		if (mo->type != MT_ITEMCAPSULE)
+			continue;
+
+		if (!mo->health || mo->fuse)
+			continue;
+
+		P_KillMobj(mo, NULL, NULL, DMG_NORMAL);
+	}
+}
+
+void Obj_SPBThrown(mobj_t *spb, fixed_t finalspeed)
+{
+	spb_speed(spb) = finalspeed;
+
+	Obj_SPBEradicateCapsules();
+}
+
 static void SPBMantaRings(mobj_t *spb)
 {
 	fixed_t vScale = INT32_MAX;

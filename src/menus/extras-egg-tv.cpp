@@ -112,6 +112,7 @@ menu_t EXTRAS_EggTVDef =
 	M_DrawEggTV,
 	NULL,
 	NULL,
+	NULL,
 	M_QuitEggTV,
 	M_HandleEggTV
 };

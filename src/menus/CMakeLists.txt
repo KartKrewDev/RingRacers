@@ -6,6 +6,7 @@ target_sources(SRB2SDL2 PRIVATE
 	extras-statistics.c
 	extras-wrong.c
 	main-1.c
+	main-goner.cpp
 	main-profile-select.c
 	options-1.c
 	options-data-1.c

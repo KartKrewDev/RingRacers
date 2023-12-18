@@ -13,11 +13,11 @@ menuitem_t OPTIONS_Main[] =
 	{IT_STRING | IT_CALL, "Profile Setup", "Remap keys & buttons to your likings.",
 		NULL, {.routine = M_ProfileSelectInit}, 0, 0},
 
-	{IT_STRING | IT_SUBMENU, "Video Options", "Change video settings such as the resolution.",
-		NULL, {.submenu = &OPTIONS_VideoDef}, 0, 0},
+	{IT_STRING | IT_CALL, "Video Options", "Change video settings such as the resolution.",
+		NULL, {.routine = M_VideoOptions}, 0, 0},
 
-	{IT_STRING | IT_SUBMENU, "Sound Options", "Adjust various sound settings such as the volume.",
-		NULL, {.submenu = &OPTIONS_SoundDef}, 0, 0},
+	{IT_STRING | IT_CALL, "Sound Options", "Adjust various sound settings such as the volume.",
+		NULL, {.routine = M_SoundOptions}, 0, 0},
 
 	{IT_STRING | IT_SUBMENU, "HUD Options", "Options related to the Heads-Up Display.",
 		NULL, {.submenu = &OPTIONS_HUDDef}, 0, 0},
@@ -45,10 +45,11 @@ menu_t OPTIONS_MainDef = {
 	OPTIONS_Main,
 	0, 0,
 	SKINCOLOR_SLATE, 0,
-	0,
+	MBF_DRAWBGWHILEPLAYING,
 	NULL,
 	2, 5,
 	M_DrawOptions,
+	M_DrawOptionsCogs,
 	M_OptionsTick,
 	NULL,
 	NULL,
@@ -135,16 +136,22 @@ boolean M_OptionsQuit(void)
 
 void M_OptionsTick(void)
 {
-	optionsmenu.offset /= 2;
+	boolean instanttransmission = optionsmenu.ticker == 0 && menuwipe;
+
 	optionsmenu.ticker++;
 
-	optionsmenu.optx += (optionsmenu.toptx - optionsmenu.optx)/2;
-	optionsmenu.opty += (optionsmenu.topty - optionsmenu.opty)/2;
-
-	if (abs(optionsmenu.optx - optionsmenu.opty) < 2)
+	if (!instanttransmission)
 	{
-		optionsmenu.optx = optionsmenu.toptx;
-		optionsmenu.opty = optionsmenu.topty;	// Avoid awkward 1 px errors.
+		optionsmenu.offset /= 2;
+	
+		optionsmenu.optx += (optionsmenu.toptx - optionsmenu.optx)/2;
+		optionsmenu.opty += (optionsmenu.topty - optionsmenu.opty)/2;
+
+		if (abs(optionsmenu.optx - optionsmenu.opty) < 2)
+		{
+			optionsmenu.optx = optionsmenu.toptx;
+			optionsmenu.opty = optionsmenu.topty;	// Avoid awkward 1 px errors.
+		}
 	}
 
 	// Move the button for cool animations
@@ -177,12 +184,46 @@ void M_OptionsTick(void)
 		optionsmenu.fade--;
 
 	// change the colour if we aren't matching the current menu colour
-	if (optionsmenu.currcolour != currentMenu->extra1)
-		M_OptionsChangeBGColour(currentMenu->extra1);
+	if (instanttransmission)
+	{
+		optionsmenu.currcolour = currentMenu->extra1;
+		optionsmenu.offset = optionsmenu.fade = 0;
+
+		optionsmenu.optx = optionsmenu.toptx;
+		optionsmenu.opty = optionsmenu.topty;
+	}
+	else
+	{
+		if (optionsmenu.fade)
+			optionsmenu.fade--;
+		if (optionsmenu.currcolour != currentMenu->extra1)
+			M_OptionsChangeBGColour(currentMenu->extra1);
+
+		M_GonerCheckLooking();
+	}
 
 	// And one last giggle...
 	if (shitsfree)
 		shitsfree--;
+}
+static void M_OptionsMenuGoto(menu_t *assignment)
+{
+	assignment->prevMenu = currentMenu;
+	M_SetupNextMenu(assignment, false);
+}
+
+void M_VideoOptions(INT32 choice)
+{
+	(void)choice;
+	M_OptionsMenuGoto(&OPTIONS_VideoDef);
+	M_GonerResetLooking(GDGONER_VIDEO);
+}
+
+void M_SoundOptions(INT32 choice)
+{
+	(void)choice;
+	M_OptionsMenuGoto(&OPTIONS_SoundDef);
+	M_GonerResetLooking(GDGONER_SOUND);
 }
 
 boolean M_OptionsInputs(INT32 ch)

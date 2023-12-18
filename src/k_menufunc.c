@@ -365,10 +365,36 @@ void M_PlayMenuJam(void)
 		return;
 	}
 
-	gdmusic_t override = musicstatepermitted ? gamedata->musicstate : 0;
-
-	if (Playing() || soundtest.playing)
+	if (soundtest.playing)
 		return;
+
+	const boolean trulystarted = M_GameTrulyStarted();
+	const boolean profilemode = (
+		trulystarted 
+		&& optionsmenu.profilemenu 
+		&& !optionsmenu.resetprofilemenu
+	);
+
+	if (!profilemode && Playing())
+	{
+		if (optionsmenu.resetprofilemenu)
+			Music_Stop("menu");
+
+		return;
+	}
+
+	if (!trulystarted)
+	{
+		if (M_GonerMusicPlayable() && NotCurrentlyPlaying("_GONER"))
+		{
+			Music_Remap("menu", "_GONER");
+			Music_Play("menu");
+		}
+
+		return;
+	}
+
+	gdmusic_t override = musicstatepermitted ? gamedata->musicstate : 0;
 
 	if (refMenu != NULL && refMenu->music != NULL)
 	{
@@ -408,7 +434,7 @@ void M_PlayMenuJam(void)
 		return;
 	}
 
-	if (cv_menujam_update.value)
+	if (!profilemode && cv_menujam_update.value)
 	{
 		CV_AddValue(&cv_menujam, 1);
 		CV_SetValue(&cv_menujam_update, 0);
@@ -422,6 +448,12 @@ void M_PlayMenuJam(void)
 }
 
 #undef IsCurrentlyPlaying
+
+void M_ValidateRestoreMenu(void)
+{
+	if (restoreMenu == NULL || restoreMenu == &MAIN_GonerDef)
+		restoreMenu = &MainDef;
+}
 
 //
 // M_SpecificMenuRestore
@@ -558,7 +590,32 @@ void M_StartControlPanel(void)
 
 		Music_Stop("title");
 
-		if (cv_currprofile.value == -1) // Only ask once per session.
+		if (gamedata != NULL
+		&& gamedata->gonerlevel < GDGONER_OUTRO
+		&& gamestartchallenge < MAXUNLOCKABLES)
+		{
+			// See M_GameTrulyStarted
+			if (
+				gamedata->unlockpending[gamestartchallenge]
+				|| gamedata->unlocked[gamestartchallenge]
+			)
+			{
+				gamedata->gonerlevel = GDGONER_OUTRO;
+				M_GonerBGImplyPassageOfTime();
+			}
+		}
+
+		if (M_GameTrulyStarted() == false)
+		{
+			// Are you ready for the First Boot Experience?
+			M_ResetOptions();
+
+			currentMenu = &MAIN_GonerDef;
+			restoreMenu = NULL;
+
+			M_PlayMenuJam();
+		}
+		else if (cv_currprofile.value == -1) // Only ask once per session.
 		{
 			// Make sure the profile data is ready now since we need to select a profile.
 			M_ResetOptions();
@@ -570,8 +627,9 @@ void M_StartControlPanel(void)
 			// options don't need initializing here.
 
 			// make sure we don't overstep that.
-			if (optionsmenu.profilen > PR_GetNumProfiles())
-				optionsmenu.profilen = PR_GetNumProfiles();
+			const INT32 maxp = PR_GetNumProfiles();
+			if (optionsmenu.profilen > maxp)
+				optionsmenu.profilen = maxp;
 			else if (optionsmenu.profilen < 0)
 				optionsmenu.profilen = 0;
 
@@ -585,8 +643,7 @@ void M_StartControlPanel(void)
 		}
 		else
 		{
-			if (restoreMenu == NULL)
-				restoreMenu = &MainDef;
+			M_ValidateRestoreMenu();
 			currentMenu = M_SpecificMenuRestore(M_InterruptMenuWithChallenges(restoreMenu));
 			restoreMenu = NULL;
 
@@ -726,8 +783,10 @@ void M_GoBack(INT32 choice)
 
 		M_SetupNextMenu(currentMenu->prevMenu, false);
 	}
-	else
+	else if (Playing() || M_GameTrulyStarted())
 		M_ClearMenus(true);
+	else // No returning to the title screen.
+		M_QuitSRB2(-1);
 
 	S_StartSound(NULL, sfx_s3k5b);
 }
@@ -1144,7 +1203,14 @@ void M_Ticker(void)
 	}
 
 	if (--skullAnimCounter <= 0)
+	{
 		skullAnimCounter = 8;
+	}
+
+	if (!Playing() && !M_GameTrulyStarted())
+	{
+		M_GonerBGTick();
+	}
 
 #if 0
 	if (currentMenu == &PAUSE_PlaybackMenuDef)

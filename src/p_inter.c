@@ -289,7 +289,7 @@ static void P_ItemPop(mobj_t *actor)
 	*/
 
 	// Here at mapload in battle?
-	if (!(gametyperules & GTR_CIRCUIT) && (actor->flags2 & MF2_BOSSFLEE))
+	if (gametype != GT_TUTORIAL && !(gametyperules & GTR_CIRCUIT) && (actor->flags2 & MF2_BOSSFLEE))
 	{
 		numgotboxes++;
 
@@ -2041,8 +2041,12 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			INT16 spacing = (target->radius >> 1) / target->scale;
 
 			// set respawn fuse
-			if (damagetype == DMG_INSTAKILL || K_CapsuleTimeAttackRules() == true) // no respawns
-				;
+			if (damagetype == DMG_INSTAKILL)
+				; // Don't respawn (external)
+			else if (gametype == GT_TUTORIAL)
+				target->fuse = 5*TICRATE;
+			else if (K_CapsuleTimeAttackRules() == true)
+				; // Don't respawn (internal)
 			else if (target->threshold == KITEM_SUPERRING)
 				target->fuse = 20*TICRATE;
 			else

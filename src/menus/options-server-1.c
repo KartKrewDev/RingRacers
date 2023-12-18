@@ -40,6 +40,9 @@ menuitem_t OPTIONS_Server[] =
 	{IT_STRING | IT_CVAR, "Mute Chat", "Prevents non-admins from sending chat messages.",
 		NULL, {.cvar = &cv_mute}, 0, 0},
 
+	{IT_STRING | IT_CVAR, "Chat Spam Protection", "Prevents too many message from a single player.",
+		NULL, {.cvar = &cv_chatspamprotection}, 0, 0},
+
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 
@@ -55,10 +58,11 @@ menu_t OPTIONS_ServerDef = {
 	OPTIONS_Server,
 	48, 70,	// This menu here is slightly higher because there's a lot of options...
 	SKINCOLOR_VIOLET, 0,
-	0,
+	MBF_DRAWBGWHILEPLAYING,
 	NULL,
 	2, 5,
 	M_DrawGenericOptions,
+	M_DrawOptionsCogs,
 	M_OptionsTick,
 	NULL,
 	NULL,

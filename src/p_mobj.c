@@ -10474,6 +10474,14 @@ static boolean P_FuseThink(mobj_t *mobj)
 
 		return false;
 	case MT_ITEMCAPSULE:
+
+		if (mobj->threshold == KITEM_SPB && K_IsSPBInGame())
+		{
+			// SPB is in play. Try again in a short bit.
+			mobj->fuse += TICRATE/2;
+			return true;
+		}
+
 		if (mobj->spawnpoint)
 			P_SpawnMapThing(mobj->spawnpoint);
 		else
@@ -12549,8 +12557,8 @@ void P_RespawnBattleBoxes(void)
 {
 	thinker_t *th;
 
-	if (gametyperules & GTR_CIRCUIT)
-		return;
+	/*if (gametyperules & GTR_CIRCUIT) -- already guarding the call
+		return;*/
 
 	tic_t setduration = (nummapboxes > 1) ? TICRATE : (2*TICRATE);
 

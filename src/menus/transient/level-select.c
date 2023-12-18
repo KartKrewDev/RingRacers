@@ -29,6 +29,7 @@ menu_t PLAY_LevelSelectDef = {
 	NULL,
 	2, 5,
 	M_DrawLevelSelect,
+	NULL,
 	M_LevelSelectTick,
 	NULL,
 	NULL,
@@ -281,13 +282,40 @@ boolean M_LevelListFromGametype(INT16 gt)
 			CV_SetValue(&cv_dummyspbattack, 0);
 		}
 
-		PLAY_CupSelectDef.music = \
-		PLAY_LevelSelectDef.music = \
-		PLAY_TimeAttackDef.music = \
-			currentMenu->music;
-
 		if (gamestate == GS_MENU)
 		{
+			const char *music;
+			void (*bgroutine)(void);
+
+			if (gt == GT_SPECIAL)
+			{
+				music = "SSTAR3";
+				bgroutine = M_DrawSealedBack;
+			}
+			else
+			{
+				music = currentMenu->music;
+				bgroutine = currentMenu->bgroutine;
+			}
+
+			menu_t *remap_menus[] = {
+				&PLAY_CupSelectDef,
+				&PLAY_LevelSelectDef,
+				&PLAY_TimeAttackDef,
+				&PLAY_TAReplayDef,
+				&PLAY_TAReplayGuestDef,
+				&PLAY_TAGhostsDef,
+				NULL
+			};
+
+			size_t i;
+			for (i = 0; remap_menus[i]; i++)
+			{
+				remap_menus[i]->music = music;
+				remap_menus[i]->bgroutine = bgroutine;
+			}
+
+			// Not for the time attack ones
 			PLAY_CupSelectDef.menuitems[0].patch = \
 			PLAY_LevelSelectDef.menuitems[0].patch = \
 				currentMenu->menuitems[itemOn].patch;
@@ -299,6 +327,8 @@ boolean M_LevelListFromGametype(INT16 gt)
 
 	if (levellist.levelsearch.cupmode)
 	{
+		PLAY_CupSelectDef.transitionID = PLAY_LevelSelectDef.transitionID;
+
 		const boolean secondrowlocked = M_CupSecondRowLocked();
 		if (cupgrid.cache_secondrowlocked != secondrowlocked)
 		{
@@ -556,10 +586,14 @@ boolean M_LevelListFromGametype(INT16 gt)
 			possiblecursor++;
 		}
 
-		if (test != NEXTMAP_INVALID)
+		if (test < nummapheaders)
+		{
 			levellist.cursor = possiblecursor;
+			invalidatedcursor = false;
+		}
 	}
-	else if (invalidatedcursor)
+
+	if (invalidatedcursor)
 	{
 		levellist.cursor = 0;
 	}
@@ -569,8 +603,15 @@ boolean M_LevelListFromGametype(INT16 gt)
 
 	if (gt != -1)
 	{
-		PLAY_LevelSelectDef.prevMenu = currentMenu;
-		M_SetupNextMenu(&PLAY_LevelSelectDef, false);
+		if (levellist.levelsearch.tutorial && levellist.mapcount == 1)
+		{
+			M_LevelSelected(0); // Skip the list!
+		}
+		else
+		{
+			PLAY_LevelSelectDef.prevMenu = currentMenu;
+			M_SetupNextMenu(&PLAY_LevelSelectDef, false);
+		}
 	}
 
 	return true;
@@ -707,7 +748,8 @@ void M_LevelSelected(INT16 add)
 
 			D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_kartencore.value == 1), 1, 1, false, false);
 
-			if (levellist.levelsearch.tutorial)
+			if (!M_GameTrulyStarted() ||
+				levellist.levelsearch.tutorial)
 			{
 				restoreMenu = currentMenu;
 			}
@@ -763,8 +805,6 @@ void M_LevelSelectHandler(INT32 choice)
 	if (M_MenuConfirmPressed(pid) /*|| M_MenuButtonPressed(pid, MBT_START)*/)
 	{
 		M_SetMenuDelay(pid);
-
-		PLAY_TimeAttackDef.transitionID = currentMenu->transitionID;
 		M_LevelSelected(levellist.cursor);
 	}
 	else if (M_MenuBackPressed(pid))
