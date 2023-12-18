@@ -1208,10 +1208,14 @@ void M_DrawHorizontalMenu(void)
 		{
 			V_DrawFill(x-2, y + 16, 4, 4, 0);
 		}
+		else if (i >= currentMenu->numitems)
+		{
+			V_DrawFill(x-1, y + 17, 2, 2, 20);
+		}
 		else
 		{
 			V_DrawFill(x-1, y + 17, 2, 2,
-				(i >= currentMenu->numitems) ? 20 : 10
+				(i == final && skullAnimCounter/5) ? 73 : 10
 			);
 		}
 	}
