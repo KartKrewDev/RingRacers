@@ -11,6 +11,8 @@
 #include "../v_draw.hpp"
 #include "../k_dialogue.hpp"
 #include "../m_random.h"
+#include "../r_main.h"
+#include "../m_easing.h"
 
 #include <forward_list>
 
@@ -133,7 +135,7 @@ public:
 	{
 		this->speaker = speaker;
 		this->dialogue = V_ScaledWordWrap(
-			(BASEVIDWIDTH/2 + 12) << FRACBITS,
+			(BASEVIDWIDTH/2 + 6) << FRACBITS,
 			FRACUNIT, FRACUNIT, FRACUNIT,
 			0, TINY_FONT,
 			dialogue.c_str()
@@ -181,49 +183,102 @@ std::forward_list<GonerChatLine> LinesOutput;
 class GonerBGData
 {
 public:
-	int miles_mouth;
-	bool miles_electric, miles_prev_electric;
-	bool miles_cameralook;
-	int miles_timetoblink, miles_prev_timetoblink;
+	bool miles_electric;
+	fixed_t miles_electric_delta;
+	bool miles_cameralook, miles_pendinglook;
+	int miles_timetoblink, miles_next_timetoblink;
+
+	gonerspeakers_t focuslast;
+	fixed_t focusdelta;
+
+	int focusmouth;
+
+	fixed_t x, focusx;
+	fixed_t y, focusy;
 
 	GonerBGData()
 	{
-		miles_mouth = 1;
-		miles_electric = miles_prev_electric = true;
+		x = focusx = 0;
+		y = focusy = 0;
+
+		focuslast = MAXGONERSPEAKERS;
+		focusdelta = 0;
+
+		focusmouth = 1;
+
+		miles_electric = true;
+		miles_electric_delta = FRACUNIT;
 		miles_cameralook = false;
-		miles_timetoblink = miles_prev_timetoblink = M_RandomRange(2*TICRATE, 4*TICRATE);
+		miles_timetoblink = M_RandomRange(2*TICRATE, 4*TICRATE);
+		miles_next_timetoblink = (4*TICRATE + 10) - miles_timetoblink;
 	};
 
-	bool NeutralMouthCheck(gonerspeakers_t speaker)
+	bool NeutralMouthCheck()
 	{
 		return (LinesOutput.empty()
-			|| LinesOutput.front().speaker != speaker
 			|| goner_typewriter.textDone
 			|| goner_typewriter.text.empty());
 	}
 
 	void Tick()
 	{
+		gonerspeakers_t focuscurrent = MAXGONERSPEAKERS;
+		if (currentMenu == &MAIN_GonerDef && !LinesOutput.empty())
+		{
+			focuscurrent = LinesOutput.front().speaker;
+		}
+
+		if (focuslast != focuscurrent)
+		{
+			focusdelta = FRACUNIT;
+			x = focusx;
+			y = focusy;
+
+			switch (focuscurrent)
+			{
+				case GONERSPEAKER_TAILS:
+					focusx = -10*FRACUNIT;
+					focusy = 0;
+					break;
+				case GONERSPEAKER_EGGMAN:
+					focusx = 10*FRACUNIT;
+					focusy = 0;
+					break;
+				default:
+					focusx = 0;
+					focusy = 20*FRACUNIT;
+					break;
+			}
+
+			focuslast = focuscurrent;
+		}
+
 		if (miles_timetoblink == 0)
 		{
-			if (miles_prev_timetoblink)
+			if (miles_next_timetoblink)
 			{
-				miles_timetoblink = 4*TICRATE - miles_prev_timetoblink;
-				miles_prev_timetoblink = 0;
+				miles_timetoblink = miles_next_timetoblink;
+				miles_next_timetoblink = 0;
 			}
 			else
 			{
-				miles_timetoblink = miles_prev_timetoblink = M_RandomRange(2*TICRATE, 4*TICRATE);
+				miles_timetoblink = M_RandomRange(2*TICRATE, 4*TICRATE);
+				miles_next_timetoblink = (4*TICRATE + 10) - miles_timetoblink;
 			}
+		}
+		else if (miles_timetoblink == 5)
+		{
+			miles_cameralook = miles_pendinglook;
 		}
 		miles_timetoblink--;
 
-		miles_prev_electric = miles_electric;
-
-		if (NeutralMouthCheck(GONERSPEAKER_TAILS))
-			miles_mouth = 1;
+		if (NeutralMouthCheck())
+			focusmouth = 1;
 		else
 		{
+			// The following is loosely based on code by Tyron,
+			// generously donated from an unreleased SRB2Kart mod.
+
 			char c = tolower(goner_typewriter.text.back());
 			char incomingc = goner_typewriter.textDest.empty()
 				? '\0'
@@ -235,36 +290,40 @@ public:
 				case 'w':
 				case 'p':
 				case 'b':
-				case '.':
-				case ',':
-				case ':':
-				case ';':
-					miles_mouth = 1;
+					focusmouth = 1;
 					break;
 
 				// Vowels
-				case 'a': miles_mouth = 2; break;
-				case 'e': miles_mouth = 3; break;
-				case 'i': miles_mouth = 4; break;
-				case 'o': miles_mouth = 5; break;
-				case 'u': miles_mouth = 6; break;
+				case 'a': focusmouth = 2; break;
+				case 'e': focusmouth = 3; break;
+				case 'i': focusmouth = 4; break;
+				case 'o': focusmouth = 5; break;
+				case 'u': focusmouth = 6; break;
 
 				// VOWELBIGUOUS
-				case 'y': miles_mouth = 7; break;
+				case 'y': focusmouth = 7; break;
 
 				// Hissth
 				case 't':
 				case 's':
 				case 'r':
 				case 'n':
-					miles_mouth = 7; break;
+					focusmouth = 7; break;
 
 				// Approximation, since MS-1 is said a LOT by Tails.
 				case '-':
 					if (incomingc != '1')
 						break;
-					miles_mouth = 5; break;
-				case '1': miles_mouth = 7; break;
+					focusmouth = 5; break;
+				case '1': focusmouth = 7; break;
+
+				// Conclude dialogue
+				case '.':
+				case '!':
+				case ',':
+				case ':':
+				case ';':
+					focusmouth = 0; break;
 
 				// No update for you!
 				default:
@@ -276,27 +335,46 @@ public:
 
 GonerBGData goner_background;
 
+void Miles_SetPendingLook(bool set)
+{
+	if (goner_background.miles_pendinglook == set)
+		return;
+
+	goner_background.miles_pendinglook = set;
+
+	if (goner_background.miles_timetoblink > 10)
+	{
+		goner_background.miles_timetoblink = 10;
+		goner_background.miles_next_timetoblink = 0;
+	}
+	else if (goner_background.miles_timetoblink < 5)
+		goner_background.miles_next_timetoblink = 10;
+}
+
+void Miles_SetElectric(bool set)
+{
+	if (goner_background.miles_electric == set)
+		return;
+
+	goner_background.miles_electric = set;
+	goner_background.miles_electric_delta =
+		FRACUNIT - goner_background.miles_electric_delta;
+}
+
 void Miles_Look_Camera()
 {
-	if (goner_background.miles_cameralook)
-		return;
-	goner_background.miles_cameralook = true;
-	goner_background.miles_timetoblink = goner_background.miles_prev_timetoblink = 0;
+	Miles_SetPendingLook(true);
 }
 
 void Miles_Look_Electric()
 {
-	goner_background.miles_electric = true;
-
-	if (!goner_background.miles_cameralook)
-		return;
-	goner_background.miles_cameralook = false;
-	goner_background.miles_timetoblink = goner_background.miles_prev_timetoblink = 0;
+	Miles_SetElectric(true);
+	Miles_SetPendingLook(false);
 }
 
 void Miles_Electric_Lower()
 {
-	goner_background.miles_electric = false;
+	Miles_SetElectric(false);
 	Miles_Look_Camera();
 }
 
@@ -513,7 +591,7 @@ void M_AddGonerLines(void)
 
 			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
 				"Remember, MS-1. Even when you move on from this setup, you "\
-				"can always change your Options at any time from the menu.");
+				"can always change your ""\x87""Options""\x80"" at any time from the menu.");
 
 			break;
 		}
@@ -632,6 +710,12 @@ void M_GonerCheckLooking(void)
 	goner_youactuallylooked++;
 }
 
+void M_GonerBGTick(void)
+{
+	// Laundering CPP code through C-callable funcs ~toast 171223
+	goner_background.Tick();
+}
+
 void M_GonerTick(void)
 {
 	static bool first = true;
@@ -643,7 +727,7 @@ void M_GonerTick(void)
 
 		// Init.
 		goner_speakers[GONERSPEAKER_EGGMAN] = GonerSpeaker("eggman", 0);
-		goner_speakers[GONERSPEAKER_TAILS] = GonerSpeaker("tails", 12);
+		goner_speakers[GONERSPEAKER_TAILS] = GonerSpeaker("tails", 6);
 	}
 	else if (gamedata->gonerlevel == GDGONER_INIT)
 	{
@@ -687,7 +771,6 @@ void M_GonerTick(void)
 	}
 
 	goner_typewriter.WriteText();
-	goner_background.Tick();
 
 	if (menutyping.active || menumessage.active || P_AutoPause())
 		return;
@@ -772,24 +855,48 @@ void M_DrawGonerBack(void)
 		.height(BASEVIDHEIGHT)
 		.fill(31);
 
+	drawer = drawer.xy(
+		FixedToFloat(Easing_InOutCubic(
+				goner_background.focusdelta,
+				goner_background.focusx,
+				goner_background.x
+		)),
+		FixedToFloat(Easing_InOutCubic(
+				goner_background.focusdelta,
+				goner_background.focusy,
+				goner_background.y
+		))
+	);
+
+	if (goner_background.focusdelta && renderdeltatics <= 2*FRACUNIT)
 	{
-		srb2::Draw eggman = drawer.xy(-70, 20);
+		goner_background.focusdelta -= renderdeltatics/TICRATE;
+		if (goner_background.focusdelta < 0)
+			goner_background.focusdelta = 0;
+	}
+
+	{
+		srb2::Draw eggman = drawer.xy(-60, 20);
+		bool eggfocus = (!goner_background.NeutralMouthCheck()
+			&& LinesOutput.front().speaker == GONERSPEAKER_EGGMAN);
 
 		// body
 		eggman.patch("GON_EB");
 
 		// head
 		{
-			if (goner_typewriter.syllable
-			&& !goner_background.NeutralMouthCheck(GONERSPEAKER_EGGMAN))
-				eggman = eggman.y(1);
+			int mouth = 7; // eggman grins by default
+			if (eggfocus && goner_background.focusmouth)
+				mouth = goner_background.focusmouth;
 
-			eggman.patch("GON_E1H1");
+			eggman.patch(va("GON_E1H%u", mouth));
 		}
 	}
 
 	{
 		srb2::Draw miles = drawer.xy(205, 45);
+		bool milesfocus = (!goner_background.NeutralMouthCheck()
+			&& LinesOutput.front().speaker == GONERSPEAKER_TAILS);
 
 		// body
 		miles.patch("GON_T_B");
@@ -802,37 +909,66 @@ void M_DrawGonerBack(void)
 				: 2
 			)
 		);
-		if (goner_background.miles_timetoblink == 0)
+		if (goner_background.miles_timetoblink < 10)
 		{
-			// eyelids
-			miles.patch("GON_T1E3");
+			// eyelids 1-01 2-23 3-45 2-67 1-89
+			int blink = ((goner_background.miles_timetoblink > 4)
+				? 3 - (goner_background.miles_timetoblink - 4)/2
+				: 1 + goner_background.miles_timetoblink/2
+			);
+			miles.patch(va("GON_T1E%u", blink));
 		}
 
 		// mouth
-		miles.patch(
-			va("GON_T1M%u",
-			goner_background.miles_mouth)
-		);
+		{
+			int mouth = 1;
+			if (milesfocus && goner_background.focusmouth)
+				mouth = goner_background.focusmouth;
+
+			miles.patch(va("GON_T1M%u", mouth));
+		}
 
 		// miles electric and hands (and arms..?)
 		{
-			int y = 0;
-			if (!goner_background.miles_electric)
+			if (goner_background.miles_electric)
 			{
-				y = 20;
+				miles = miles
+					.y(FixedToFloat(Easing_InOutBack( // raising requires a little effort
+						goner_background.miles_electric_delta,
+						20*FRACUNIT,
+						0
+					)))
+					.x(FixedToFloat(Easing_InOutBack(
+						goner_background.miles_electric_delta,
+						3*FRACUNIT,
+						0
+					)));
 			}
-			if (goner_background.miles_prev_electric != goner_background.miles_electric)
+			else
 			{
-				y--;
+				miles = miles
+					.y(FixedToFloat(Easing_OutBack( // dropping requires little effort
+						goner_background.miles_electric_delta,
+						0,
+						20*FRACUNIT
+					)))
+					.x(FixedToFloat(Easing_OutBack(
+						goner_background.miles_electric_delta,
+						0,
+						3*FRACUNIT
+					)));
 			}
-			if (y != 0)
+
+			if (goner_background.miles_electric_delta < FRACUNIT)
 			{
-				miles = miles.y(y);
+				goner_background.miles_electric_delta += renderdeltatics/(TICRATE/3);
+				if (goner_background.miles_electric_delta > FRACUNIT)
+					goner_background.miles_electric_delta = FRACUNIT;
 			}
 
 			bool drawarms = (
 				goner_background.miles_electric
-				&& !goner_background.NeutralMouthCheck(GONERSPEAKER_TAILS)
+				&& milesfocus
 			);
 			if (drawarms)
 			{
@@ -854,7 +990,7 @@ static void M_GonerDrawer(void)
 {
 	srb2::Draw drawer = srb2::Draw();
 
-	float newy = BASEVIDHEIGHT/2 + (3*12);
+	float newy = currentMenu->y - 12;
 
 	boolean first = true;
 	int lastspeaker = MAXGONERSPEAKERS;
@@ -927,7 +1063,7 @@ static void M_GonerDrawer(void)
 		auto speaker = goner_speakers[element.speaker];
 
 		srb2::Draw line = drawer
-			.xy(BASEVIDWIDTH/4 + speaker.offset, newy)
+			.xy(BASEVIDWIDTH/4 + speaker.offset + 3, newy)
 			.flags(flags);
 
 		line

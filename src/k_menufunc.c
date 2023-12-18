@@ -1179,7 +1179,14 @@ void M_Ticker(void)
 	}
 
 	if (--skullAnimCounter <= 0)
+	{
 		skullAnimCounter = 8;
+	}
+
+	if (!Playing() && !M_GameTrulyStarted())
+	{
+		M_GonerBGTick();
+	}
 
 #if 0
 	if (currentMenu == &PAUSE_PlaybackMenuDef)
