@@ -607,7 +607,7 @@ static void M_DrawMenuTyping(void)
 
 #undef BUTTONHEIGHT
 
-	y = 175;
+	y = 187;
 
 	if (menutyping.menutypingfade < 9)
 	{
