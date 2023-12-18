@@ -18,6 +18,7 @@
 #include "../z_zone.h"
 #include "../i_video.h" // I_FinishUpdate
 #include "../i_system.h" // I_Sleep
+#include "../m_cond.h" // M_GameTrulyStarted
 
 menuitem_t MainMenu[] =
 {
@@ -79,8 +80,37 @@ void M_QuitSRB2(INT32 choice)
 {
 	// We pick index 0 which is language sensitive, or one at random,
 	// between 1 and maximum number.
+	// ------------------------------------------------------------//
+	// ...no we don't! We haven't for ages!
+	// But I'm leaving that comment in, unmodified, because it dates
+	// ALL the way back to the original 1993 Doom source publication.
+	// One act of kindness has far-reaching consequences for so many
+	// people. It's a week until christmas as I'm writing this --
+	// for those who read this, what act of kindness can you bring
+	// to others? ~toast 181223
+
 	(void)choice;
-	M_StartMessage("Quit Game", "Are you sure you want to quit playing?\n", &M_QuitResponse, MM_YESNO, "Leave the game", "No, I want to go back!");
+
+	if (M_GameTrulyStarted())
+	{
+		M_StartMessage(
+			"Quit Game",
+			"Are you sure you want to quit playing?\n",
+			&M_QuitResponse, MM_YESNO,
+			"Leave the game",
+			"No, I want to go back!"
+		);
+
+		return;
+	}
+
+	M_StartMessage(
+		"Exit Program",
+		"Are you sure you want to quit?\n",
+		&M_QuitResponse, MM_YESNO,
+		"Yes",
+		"Cancel"
+	);
 }
 
 void M_QuitResponse(INT32 ch)

@@ -759,7 +759,7 @@ void M_GoBack(INT32 choice)
 
 		M_SetupNextMenu(currentMenu->prevMenu, false);
 	}
-	else if (M_GameTrulyStarted())
+	else if (Playing() || M_GameTrulyStarted())
 		M_ClearMenus(true);
 	else // No returning to the title screen.
 		M_QuitSRB2(-1);
