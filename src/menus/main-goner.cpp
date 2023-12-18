@@ -221,9 +221,20 @@ public:
 
 	bool NeutralMouthCheck()
 	{
-		return (LinesOutput.empty()
+		return (currentMenu != &MAIN_GonerDef
+			|| LinesOutput.empty()
 			|| goner_typewriter.textDone
 			|| goner_typewriter.text.empty());
+	}
+
+	fixed_t GetX()
+	{
+		return Easing_InOutCubic(focusdelta, focusx, x);
+	}
+
+	fixed_t GetY()
+	{
+		return Easing_InOutCubic(focusdelta, focusy, y);
 	}
 
 	void Tick()
@@ -243,9 +254,9 @@ public:
 
 			if (focuslast != focuscurrent)
 			{
+				x = GetX();
+				y = GetY();
 				focusdelta = FRACUNIT;
-				x = focusx;
-				y = focusy;
 
 				switch (focuscurrent)
 				{
@@ -919,16 +930,8 @@ void M_DrawGonerBack(void)
 		return;
 
 	drawer = drawer.xy(
-		FixedToFloat(Easing_InOutCubic(
-				goner_background.focusdelta,
-				goner_background.focusx,
-				goner_background.x
-		)),
-		FixedToFloat(Easing_InOutCubic(
-				goner_background.focusdelta,
-				goner_background.focusy,
-				goner_background.y
-		))
+		FixedToFloat(goner_background.GetX()),
+		FixedToFloat(goner_background.GetY())
 	);
 
 	if (goner_background.focusdelta && renderdeltatics <= 2*FRACUNIT)
