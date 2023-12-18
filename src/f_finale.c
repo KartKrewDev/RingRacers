@@ -303,6 +303,8 @@ static tic_t introscenetime[NUMINTROSCENES] =
 // custom intros
 void F_StartCustomCutscene(INT32 cutscenenum, boolean precutscene, boolean resetplayer);
 
+static boolean skippableallowed = true;
+
 void F_StartIntro(void)
 {
 	if (gamestate)
@@ -314,6 +316,11 @@ void F_StartIntro(void)
 
 		D_ClearState();
 	}
+
+	skippableallowed = (
+		gamestartchallenge >= MAXUNLOCKABLES
+		|| (gamedata && gamedata->unlocked[gamestartchallenge])
+	);
 
 	M_ClearMenus(false);
 	D_SetDeferredStartTitle(false);
@@ -459,7 +466,7 @@ void F_IntroTicker(void)
 
 	timetonext--;
 
-	if (D_IsDeferredStartTitle())
+	if (skippableallowed && D_IsDeferredStartTitle())
 	{
 		D_StartTitle();
 		return;
@@ -468,7 +475,10 @@ void F_IntroTicker(void)
 	if (timetonext <= 0)
 	{
 		intro_scenenum++;
-		if (intro_scenenum == NUMINTROSCENES)
+		if (intro_scenenum == (M_GameTrulyStarted()
+				? NUMINTROSCENES
+				: INTROSCENE_KREW)
+		)
 		{
 			D_StartTitle();
 			// Custom built fade to skip the to-black

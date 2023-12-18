@@ -5,6 +5,7 @@
 #include "../m_cond.h"
 #include "../r_skins.h"
 #include "../s_sound.h"
+#include "../f_finale.h"
 #include "../music.h"
 #include "../p_local.h" // P_AutoPause
 #include "../st_stuff.h" // faceprefix
@@ -1178,6 +1179,7 @@ static void M_GonerConclude(INT32 choice)
 
 	gamedata->gonerlevel = GDGONER_DONE;
 
+	F_StartIntro();
 	M_ClearMenus(true);
 	M_GonerResetText();
 }
