@@ -617,11 +617,17 @@ static void M_DrawMenuTyping(void)
 	// Some contextual stuff
 	if (menutyping.keyboardtyping)
 	{
-		V_DrawThinString(returnx, y, V_GRAYMAP, "Type using your keyboard. Press Enter to confirm & exit.\nUse your controller or any directional input to use the Virtual Keyboard.\n");
+		V_DrawThinString(returnx, y, V_GRAYMAP,
+			"Type using your keyboard. Press Enter to confirm & exit."
+			//"\nPress any button on your controller to use the Virtual Keyboard."
+		);
 	}
 	else
 	{
-		V_DrawThinString(returnx, y, V_GRAYMAP, "Type using the Virtual Keyboard. Use the \'OK\' button to confirm & exit.\nPress any keyboard key not bound to a control to use it.");
+		V_DrawThinString(returnx, y, V_GRAYMAP,
+			"Type using the Virtual Keyboard. Use the \'OK\' button to confirm & exit."
+			//"\nPress any keyboard key to type normally."
+		);
 	}
 
 }
