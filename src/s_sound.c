@@ -533,7 +533,7 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 					{
 						continue;
 					}
-				
+
 					recdist = thisdist;
 					i = j;
 				}
@@ -1036,12 +1036,6 @@ boolean S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 
 		if (reverse)
 			angle = InvAngle(angle);
 
-#ifdef SURROUND
-		// Produce a surround sound for angle from 105 till 255
-		if (surround.value == 1 && (angle > ANG105 && angle < ANG255 ))
-			*sep = SURROUND_SEP;
-		else
-#endif
 		{
 			angle >>= ANGLETOFINESHIFT;
 
