@@ -11191,23 +11191,26 @@ fixed_t K_PlayerBaseFriction(player_t *player, fixed_t original)
 	);
 	fixed_t frict = original;
 
-	if (K_PodiumSequence() == true)
+	if (player->dashpadcooldown == 0) // attempt to fix Hot Shelter
 	{
-		frict -= FixedMul(FRACUNIT >> 4, factor);
-	}
-	else if (K_PlayerUsesBotMovement(player) == true)
-	{
-		// A bit extra friction to help them without drifting.
-		// Remove this line once they can drift.
-		frict -= FixedMul(FRACUNIT >> 5, factor);
-
-		// Bots gain more traction as they rubberband.
-		fixed_t traction_value = FixedMul(player->botvars.rubberband, max(FRACUNIT, K_BotMapModifier()));
-		if (traction_value > FRACUNIT)
+		if (K_PodiumSequence() == true)
 		{
-			const fixed_t extraFriction = FixedMul(FRACUNIT >> 5, factor);
-			const fixed_t mul = traction_value - FRACUNIT;
-			frict -= FixedMul(extraFriction, mul);
+			frict -= FixedMul(FRACUNIT >> 4, factor);
+		}
+		else if (K_PlayerUsesBotMovement(player) == true)
+		{
+			// A bit extra friction to help them without drifting.
+			// Remove this line once they can drift.
+			frict -= FixedMul(FRACUNIT >> 5, factor);
+
+			// Bots gain more traction as they rubberband.
+			fixed_t traction_value = FixedMul(player->botvars.rubberband, max(FRACUNIT, K_BotMapModifier()));
+			if (traction_value > FRACUNIT)
+			{
+				const fixed_t extraFriction = FixedMul(FRACUNIT >> 5, factor);
+				const fixed_t mul = traction_value - FRACUNIT;
+				frict -= FixedMul(extraFriction, mul);
+			}
 		}
 	}
 
