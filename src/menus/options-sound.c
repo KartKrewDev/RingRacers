@@ -26,9 +26,6 @@ menuitem_t OPTIONS_Sound[] =
 	{IT_STRING | IT_CVAR, "Reverse L/R Channels", "Reverse left & right channels for Stereo playback.",
 		NULL, {.cvar = &stereoreverse}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Surround", "Enables or disable Surround sound playback.",
-		NULL, {.cvar = &surround}, 0, 0},
-
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 
