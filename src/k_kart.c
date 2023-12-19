@@ -9233,8 +9233,8 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 							// Bots that aren't able to take a shortcut will ignore shortcut waypoints.
 							// (However, if they're already on a shortcut, then we want them to keep going.)
 
-							if (player->nextwaypoint == NULL
-							|| K_GetWaypointIsShortcut(player->nextwaypoint) == false)
+							if (player->nextwaypoint != NULL
+							&& K_GetWaypointIsShortcut(player->nextwaypoint) == false)
 							{
 								continue;
 							}
