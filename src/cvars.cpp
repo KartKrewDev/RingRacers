@@ -475,7 +475,6 @@ consvar_t precachesound = Player("precachesound", "Off").on_off();
 // stereo reverse
 consvar_t stereoreverse = Player("stereoreverse", "Off").on_off();
 
-consvar_t surround = Player("surround", "Off").on_off();
 
 
 //
