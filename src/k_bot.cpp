@@ -1640,6 +1640,7 @@ static void K_BuildBotTiccmdNormal(player_t *player, ticcmd_t *cmd)
 	{
 		destangle = R_PointToAngle2(player->mo->x, player->mo->y, predict->x, predict->y);
 		turnamt = K_HandleBotTrack(player, cmd, predict, destangle);
+		trySpindash = false;
 	}
 	else if (leveltime <= starttime && finishBeamLine != nullptr)
 	{
