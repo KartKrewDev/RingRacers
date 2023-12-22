@@ -841,6 +841,12 @@ boolean R_TextureHasBrightmap(INT32 texnum)
 	return R_GetTextureBrightmap(texnum) != 0;
 }
 
+boolean R_TextureCanRemap(INT32 texnum)
+{
+	const terrain_t *t = K_GetTerrainForTextureNum(texnum);
+	return !t || t->flags & TRF_REMAP;
+}
+
 //
 // R_CheckTextureCache
 //

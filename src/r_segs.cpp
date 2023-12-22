@@ -32,6 +32,7 @@
 #include "r_draw.h"
 #include "core/memory.h"
 #include "core/thread_pool.h"
+#include "k_terrain.h"
 
 extern "C" consvar_t cv_debugfinishline;
 
@@ -48,6 +49,7 @@ static boolean markceiling;
 static boolean maskedtexture;
 static INT32 toptexture, bottomtexture, midtexture;
 static bool topbrightmapped, bottombrightmapped, midbrightmapped;
+static bool topremap, bottomremap, midremap;
 static INT32 numthicksides, numbackffloors;
 
 angle_t rw_normalangle;
@@ -187,6 +189,7 @@ static void R_RenderMaskedSegLoop(drawcolumndata_t* dc, drawseg_t *drawseg, INT3
 	INT32 times, repeats;
 	boolean tripwire;
 	boolean brightmapped = R_TextureHasBrightmap(texnum);
+	boolean remap = encoremap && R_TextureCanRemap(texnum);
 
 	ldef = curline->linedef;
 	tripwire = P_IsLineTripWire(ldef);
@@ -408,7 +411,7 @@ static void R_RenderMaskedSegLoop(drawcolumndata_t* dc, drawseg_t *drawseg, INT3
 							dc->colormap = rlight->rcolormap;
 							dc->lightmap = xwalllights[pindex];
 							dc->fullbright = colormaps;
-							if (encoremap && !(ldef->flags & ML_TFERLINE))
+							if (remap && !(ldef->flags & ML_TFERLINE))
 							{
 								dc->colormap += COLORMAP_REMAPOFFSET;
 								dc->fullbright += COLORMAP_REMAPOFFSET;
@@ -434,7 +437,7 @@ static void R_RenderMaskedSegLoop(drawcolumndata_t* dc, drawseg_t *drawseg, INT3
 						dc->colormap = rlight->rcolormap;
 						dc->lightmap = xwalllights[pindex];
 						dc->fullbright = colormaps;
-						if (encoremap && !(ldef->flags & ML_TFERLINE))
+						if (remap && !(ldef->flags & ML_TFERLINE))
 						{
 							dc->colormap += COLORMAP_REMAPOFFSET;
 							dc->fullbright += COLORMAP_REMAPOFFSET;
@@ -457,7 +460,7 @@ static void R_RenderMaskedSegLoop(drawcolumndata_t* dc, drawseg_t *drawseg, INT3
 				dc->colormap = walllights[pindex];
 				dc->lightmap = walllights[pindex];
 				dc->fullbright = colormaps;
-				if (encoremap && !(ldef->flags & ML_TFERLINE))
+				if (remap && !(ldef->flags & ML_TFERLINE))
 				{
 					dc->colormap += COLORMAP_REMAPOFFSET;
 					dc->fullbright += COLORMAP_REMAPOFFSET;
@@ -788,6 +791,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 	}
 
 	boolean brightmapped = R_TextureHasBrightmap(texnum);
+	boolean remap = encoremap && R_TextureCanRemap(texnum);
 
 	R_SetColumnFunc(BASEDRAWFUNC, brightmapped);
 
@@ -1182,7 +1186,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 							dc->colormap = rlight->rcolormap;
 							dc->lightmap = xwalllights[pindex];
 							dc->fullbright = colormaps;
-							if (encoremap && !(curline->linedef->flags & ML_TFERLINE))
+							if (remap && !(curline->linedef->flags & ML_TFERLINE))
 							{
 								dc->colormap += COLORMAP_REMAPOFFSET;
 								dc->fullbright += COLORMAP_REMAPOFFSET;
@@ -1219,7 +1223,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 						dc->colormap = rlight->rcolormap;
 						dc->lightmap = xwalllights[pindex];
 						dc->fullbright = colormaps;
-						if (encoremap && !(curline->linedef->flags & ML_TFERLINE))
+						if (remap && !(curline->linedef->flags & ML_TFERLINE))
 						{
 							dc->colormap += COLORMAP_REMAPOFFSET;
 							dc->fullbright += COLORMAP_REMAPOFFSET;
@@ -1245,7 +1249,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 			dc->lightmap = walllights[pindex];
 			dc->fullbright = colormaps;
 
-			if (encoremap && !(curline->linedef->flags & ML_TFERLINE))
+			if (remap && !(curline->linedef->flags & ML_TFERLINE))
 			{
 				dc->colormap += COLORMAP_REMAPOFFSET;
 				dc->fullbright += COLORMAP_REMAPOFFSET;
@@ -1309,7 +1313,7 @@ UINT32 nombre = 100000;
 #endif
 //profile stuff ---------------------------------------------------------
 
-static void R_DrawWallColumn(drawcolumndata_t* dc, INT32 yl, INT32 yh, fixed_t mid, fixed_t texturecolumn, INT32 texture, boolean brightmapped)
+static void R_DrawWallColumn(drawcolumndata_t* dc, INT32 yl, INT32 yh, fixed_t mid, fixed_t texturecolumn, INT32 texture, boolean brightmapped, boolean remap)
 {
 	dc->yl = yl;
 	dc->yh = yh;
@@ -1320,6 +1324,11 @@ static void R_DrawWallColumn(drawcolumndata_t* dc, INT32 yl, INT32 yh, fixed_t m
 	R_SetColumnFunc(colfunctype, dc->brightmap != NULL);
 	coldrawfunc_t* colfunccopy = colfunc;
 	drawcolumndata_t dc_copy = *dc;
+	if (remap)
+	{
+		dc_copy.colormap += COLORMAP_REMAPOFFSET;
+		dc_copy.fullbright += COLORMAP_REMAPOFFSET;
+	}
 	colfunccopy(const_cast<drawcolumndata_t*>(&dc_copy));
 }
 
@@ -1524,11 +1533,6 @@ static void R_RenderSegLoop (drawcolumndata_t* dc)
 			dc->colormap = walllights[pindex];
 			dc->lightmap = walllights[pindex];
 			dc->fullbright = colormaps;
-			if (encoremap && !(curline->linedef->flags & ML_TFERLINE))
-			{
-				dc->colormap += COLORMAP_REMAPOFFSET;
-				dc->fullbright += COLORMAP_REMAPOFFSET;
-			}
 			dc->x = rw_x;
 			dc->iscale = 0xffffffffu / (unsigned)rw_scale;
 
@@ -1595,7 +1599,7 @@ static void R_RenderSegLoop (drawcolumndata_t* dc)
 			// single sided line
 			if (yl <= yh && yh >= 0 && yl < viewheight)
 			{
-				R_DrawWallColumn(dc, yl, yh, rw_midtexturemid, texturecolumn, midtexture, midbrightmapped);
+				R_DrawWallColumn(dc, yl, yh, rw_midtexturemid, texturecolumn, midtexture, midbrightmapped, midremap);
 
 				// dont draw anything more for this column, since
 				// a midtexture blocks the view
@@ -1634,7 +1638,7 @@ static void R_RenderSegLoop (drawcolumndata_t* dc)
 					}
 					else if (mid >= 0) // safe to draw top texture
 					{
-						R_DrawWallColumn(dc, yl, mid, rw_toptexturemid, texturecolumn, toptexture, topbrightmapped);
+						R_DrawWallColumn(dc, yl, mid, rw_toptexturemid, texturecolumn, toptexture, topbrightmapped, topremap);
 						ceilingclip[rw_x] = (INT16)mid;
 					}
 					else if (!rw_ceilingmarked) // entirely off top of screen
@@ -1665,7 +1669,7 @@ static void R_RenderSegLoop (drawcolumndata_t* dc)
 					}
 					else if (mid < viewheight) // safe to draw bottom texture
 					{
-						R_DrawWallColumn(dc, mid, yh, rw_bottomtexturemid, texturecolumn, bottomtexture, bottombrightmapped);
+						R_DrawWallColumn(dc, mid, yh, rw_bottomtexturemid, texturecolumn, bottomtexture, bottombrightmapped, bottomremap);
 						floorclip[rw_x] = (INT16)mid;
 					}
 					else if (!rw_floormarked)  // entirely off bottom of screen
@@ -1761,6 +1765,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 	fixed_t ceilingfrontslide, floorfrontslide, ceilingbackslide, floorbackslide;
 	static size_t maxdrawsegs = 0;
 	const INT32 twosidedmidtexture = R_GetTwoSidedMidTexture(curline);
+	const bool wantremap = encoremap && !(curline->linedef->flags & ML_TFERLINE);
 	drawcolumndata_t dc {0};
 
 	ZoneScoped;
@@ -1955,6 +1960,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 
 	midtexture = toptexture = bottomtexture = maskedtexture = 0;
 	midbrightmapped = topbrightmapped = bottombrightmapped = false;
+	midremap = topremap = bottomremap = false;
 	ds_p->maskedtexturecol = NULL;
 	ds_p->numthicksides = numthicksides = 0;
 	ds_p->thicksidecol = NULL;
@@ -2003,6 +2009,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 		// single sided line
 		midtexture = R_GetTextureNum(sidedef->midtexture);
 		midbrightmapped = R_TextureHasBrightmap(midtexture);
+		midremap = wantremap && R_TextureCanRemap(midtexture);
 		texheight = textureheight[midtexture];
 		// a single sided line is terminal, so it must mark ends
 		markfloor = markceiling = true;
@@ -2195,6 +2202,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 			// top texture
 			toptexture = R_GetTextureNum(sidedef->toptexture);
 			topbrightmapped = R_TextureHasBrightmap(toptexture);
+			topremap = wantremap && R_TextureCanRemap(toptexture);
 			texheight = textureheight[toptexture];
 
 			if (!(linedef->flags & ML_SKEWTD))
@@ -2224,6 +2232,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 			// bottom texture
 			bottomtexture = R_GetTextureNum(sidedef->bottomtexture);
 			bottombrightmapped = R_TextureHasBrightmap(bottomtexture);
+			bottomremap = wantremap && R_TextureCanRemap(bottomtexture);
 
 			if (!(linedef->flags & ML_SKEWTD))
 			{

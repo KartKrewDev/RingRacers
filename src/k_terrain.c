@@ -1568,7 +1568,7 @@ static void K_TerrainDefaults(terrain_t *terrain)
 	terrain->speedPadAngle = 0;
 	terrain->springStrength = 0;
 	terrain->springStarColor = SKINCOLOR_NONE;
-	terrain->flags = 0;
+	terrain->flags = TRF_REMAP;
 }
 
 /*--------------------------------------------------
@@ -1714,6 +1714,10 @@ static void K_ParseTerrainParameter(size_t i, char *param, char *val)
 	else if (stricmp(param, "tripwire") == 0)
 	{
 		K_FlagBoolean(&terrain->flags, TRF_TRIPWIRE, val);
+	}
+	else if (stricmp(param, "remap") == 0)
+	{
+		K_FlagBoolean(&terrain->flags, TRF_REMAP, val);
 	}
 }
 
