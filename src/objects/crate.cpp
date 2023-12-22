@@ -389,3 +389,8 @@ void Obj_TryCrateDamage(mobj_t* target, mobj_t* inflictor)
 {
 	static_cast<AnyBox*>(target)->visit([&](auto box) { box->damage(static_cast<Toucher*>(inflictor)); });
 }
+
+boolean Obj_SA2CrateIsMetal(mobj_t* mobj)
+{
+	return static_cast<Crate*>(mobj)->metal();
+}

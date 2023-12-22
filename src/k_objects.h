@@ -327,6 +327,7 @@ void Obj_TryCrateInit(mobj_t *mo);
 boolean Obj_TryCrateThink(mobj_t *mo);
 void Obj_TryCrateTouch(mobj_t *special, mobj_t *toucher);
 void Obj_TryCrateDamage(mobj_t *target, mobj_t *inflictor);
+boolean Obj_SA2CrateIsMetal(mobj_t *mo);
 
 /* Lavender Shrine Spears */
 void Obj_SpearInit(mobj_t *mo);
