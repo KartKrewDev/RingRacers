@@ -150,7 +150,7 @@ struct Box : AnyBox
 			return dress(side, ff);
 		};
 
-		dress(this, FF_FLOORSPRITE); // bottom (me)
+		dress(this, FF_FLOORSPRITE)->turn(0); // bottom (me)
 		side(FF_FLOORSPRITE)->z(height); // top
 
 		// sides
