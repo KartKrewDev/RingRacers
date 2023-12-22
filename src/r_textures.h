@@ -66,6 +66,7 @@ struct texture_t
 	boolean holes;
 	UINT8 flip; // 1 = flipx, 2 = flipy, 3 = both
 	void *flat; // The texture, as a flat.
+	terrain_t *terrain;
 
 	// All the patches[patchcount] are drawn back to front into the cached texture.
 	INT16 patchcount;

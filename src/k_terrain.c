@@ -370,7 +370,7 @@ terrain_t *K_GetTerrainForTextureNum(INT32 textureNum)
 	if (textureNum >= 0 && textureNum < numtextures)
 	{
 		texture_t *tex = textures[textureNum];
-		return K_GetTerrainForTextureName(tex->name);
+		return tex->terrain;
 	}
 
 	// This texture doesn't have a terrain directly applied to it,
@@ -2036,6 +2036,12 @@ static boolean K_TERRAINLumpParser(char *data, size_t size)
 						{
 							f->terrainID = K_GetTerrainHeapIndex(t);
 							CONS_Printf("Texture '%s' set to Terrain '%s'\n", f->textureName, tkn);
+
+							INT32 tex = R_CheckTextureNumForName(f->textureName);
+							if (tex != -1)
+							{
+								textures[tex]->terrain = t;
+							}
 						}
 					}
 					else
@@ -2211,4 +2217,6 @@ void K_InitTerrain(UINT16 wadNum)
 			free(name);
 		}
 	}
+
+	R_ClearTextureNumCache(false);
 }

@@ -27,6 +27,7 @@
 #include "p_setup.h" // levelflats
 #include "byteptr.h"
 #include "dehacked.h"
+#include "k_terrain.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_glob.h" // HWR_LoadMapTextures
@@ -1191,6 +1192,7 @@ Rloadflats (INT32 i, INT32 w)
 			texture->patchcount = 1;
 			texture->holes = false;
 			texture->flip = 0;
+			texture->terrain = K_GetTerrainForTextureName(texture->name);
 
 			// Allocate information for the texture's patches.
 			patch = &texture->patches[0];
@@ -1293,6 +1295,7 @@ Rloadtextures (INT32 i, INT32 w)
 			texture->patchcount = 1;
 			texture->holes = false;
 			texture->flip = 0;
+			texture->terrain = K_GetTerrainForTextureName(texture->name);
 
 			// Allocate information for the texture's patches.
 			patch = &texture->patches[0];
@@ -1830,6 +1833,7 @@ static texture_t *R_ParseTexture(boolean actuallyLoadTexture)
 			resultTexture->width = newTextureWidth;
 			resultTexture->height = newTextureHeight;
 			resultTexture->type = TEXTURETYPE_COMPOSITE;
+			resultTexture->terrain = K_GetTerrainForTextureName(newTextureName);
 		}
 		Z_Free(texturesToken);
 		texturesToken = M_GetToken(NULL);
