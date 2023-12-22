@@ -1318,6 +1318,12 @@ static boolean M_GonerInputs(INT32 ch)
 					if (goner_delay < magicscroll)
 						goner_delay = magicscroll;
 				}
+				else if (!menucmd[pid].prev_dpad_ud // taps only
+				&& !goner_typewriter.textDone)
+				{
+					goner_typewriter.CompleteText();
+					goner_delay = magicscroll;
+				}
 			}
 
 			return true;
