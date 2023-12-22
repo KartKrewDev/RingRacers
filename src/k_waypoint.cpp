@@ -409,7 +409,49 @@ waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj, waypoint_t *const hint)
 			checkdist = P_AproxDistance(
 				(mobj->x / FRACUNIT) - (checkwaypoint->mobj->x / FRACUNIT),
 				(mobj->y / FRACUNIT) - (checkwaypoint->mobj->y / FRACUNIT));
-			checkdist = P_AproxDistance(checkdist, ((mobj->z / FRACUNIT) - (checkwaypoint->mobj->z / FRACUNIT)) * 4);
+
+			UINT8 zMultiplier = 4; // Heavily weight z distance, for the sake of overlapping paths
+
+			if (hint != NULL)
+			{
+				boolean connectedToHint = (checkwaypoint == hint);
+
+				if (connectedToHint == false && hint->numnextwaypoints > 0)
+				{
+					for (size_t i = 0U; i < hint->numnextwaypoints; i++)
+					{
+						if (hint->nextwaypoints[i] == checkwaypoint)
+						{
+							connectedToHint = true;
+							break;
+						}
+					}
+				}
+
+				if (connectedToHint == false && hint->numprevwaypoints > 0)
+				{
+					for (size_t i = 0U; i < hint->numprevwaypoints; i++)
+					{
+						if (hint->prevwaypoints[i] == checkwaypoint)
+						{
+							connectedToHint = true;
+							break;
+						}
+					}
+				}
+
+				// Do not consider z height for next/prev waypoints of current waypoint.
+				// This helps the current waypoint not be behind you when you're taking a jump.
+				if (connectedToHint == true)
+				{
+					zMultiplier = 0;
+				}
+			}
+
+			if (zMultiplier > 0)
+			{
+				checkdist = P_AproxDistance(checkdist, ((mobj->z / FRACUNIT) - (checkwaypoint->mobj->z / FRACUNIT)) * zMultiplier);
+			}
 
 			fixed_t rad = (checkwaypoint->mobj->radius / FRACUNIT);
 
@@ -2432,6 +2474,15 @@ static INT32 K_CalculateTrackComplexity(void)
 			waypoint_t *const mid = (waypoint_t *)path.array[ i ].nodedata;
 			waypoint_t *const end = (waypoint_t *)path.array[ i + 1 ].nodedata;
 
+			// would it be better to just check mid?
+			if (K_GetWaypointIsSpawnpoint(start) == false
+				|| K_GetWaypointIsSpawnpoint(mid) == false
+				|| K_GetWaypointIsSpawnpoint(end) == false)
+			{
+				CONS_Debug(DBG_SETUP, "%s", fmt::format("TURN [{}]: skipped\n", i).c_str());
+				continue;
+			}
+
 			const fixed_t start_mid_dist = R_PointToDist2(
 				start->mobj->x, start->mobj->y,
 				mid->mobj->x, mid->mobj->y
@@ -2585,7 +2636,7 @@ static INT32 K_CalculateTrackComplexity(void)
 				FixedToFloat(FixedMul(FixedMul(dist_factor, radius_factor), wall_factor)),
 				(delta / FRACUNIT)
 			);
-			CONS_Printf("%s", msg.c_str());
+			CONS_Debug(DBG_SETUP, "%s", msg.c_str());
 			trackcomplexity += (delta / FRACUNIT);
 		}
 
@@ -2666,10 +2717,10 @@ static INT32 K_CalculateTrackComplexity(void)
 			}
 		}
 
-		CONS_Printf("%s", fmt::format("Num sneaker panel sets: {}\n", sneaker_panels.size()).c_str());
+		CONS_Debug(DBG_SETUP, "%s", fmt::format("Num sneaker panel sets: {}\n", sneaker_panels.size()).c_str());
 		trackcomplexity -= sneaker_panels.size() * 1250;
 
-		CONS_Printf(" ** COMPLEXITY: %d\n", trackcomplexity);
+		CONS_Debug(DBG_SETUP, " ** MAP COMPLEXITY: %d\n", trackcomplexity);
 	}
 
 	return trackcomplexity;

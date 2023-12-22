@@ -500,7 +500,7 @@ fixed_t K_BotMapModifier(void)
 	const fixed_t complexity_value = std::clamp<fixed_t>(
 		FixedDiv(K_GetTrackComplexity(), complexity_scale),
 		-modifier_max,
-		modifier_max * 2
+		modifier_max
 	);
 
 	return FRACUNIT + complexity_value;
@@ -1606,6 +1606,7 @@ static void K_BuildBotTiccmdNormal(player_t *player, ticcmd_t *cmd)
 
 	destangle = player->mo->angle;
 
+	boolean forcedDir = false;
 	if (botController != nullptr && (botController->flags & TMBOT_FORCEDIR) == TMBOT_FORCEDIR)
 	{
 		const fixed_t dist = DEFAULT_WAYPOINT_RADIUS * player->mo->scale;
@@ -1616,6 +1617,8 @@ static void K_BuildBotTiccmdNormal(player_t *player, ticcmd_t *cmd)
 		predict->x = player->mo->x + FixedMul(dist, FINECOSINE(botController->forceAngle >> ANGLETOFINESHIFT));
 		predict->y = player->mo->y + FixedMul(dist, FINESINE(botController->forceAngle >> ANGLETOFINESHIFT));
 		predict->radius = (DEFAULT_WAYPOINT_RADIUS / 4) * mapobjectscale;
+
+		forcedDir = true;
 	}
 
 	if (P_IsObjectOnGround(player->mo) == false)
@@ -1633,7 +1636,13 @@ static void K_BuildBotTiccmdNormal(player_t *player, ticcmd_t *cmd)
 		//return; // Don't allow bots to turn in the air.
 	}
 
-	if (leveltime <= starttime && finishBeamLine != nullptr)
+	if (forcedDir == true)
+	{
+		destangle = R_PointToAngle2(player->mo->x, player->mo->y, predict->x, predict->y);
+		turnamt = K_HandleBotTrack(player, cmd, predict, destangle);
+		trySpindash = false;
+	}
+	else if (leveltime <= starttime && finishBeamLine != nullptr)
 	{
 		// Handle POSITION!!
 		const fixed_t distBase = 480*mapobjectscale;

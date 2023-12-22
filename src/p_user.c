@@ -2115,7 +2115,7 @@ static void P_3dMovement(player_t *player)
 			fixed_t newspeed;
 
 			// Make rubberbanding bots slow down faster
-			if (K_PlayerUsesBotMovement(player))
+			if (K_PlayerUsesBotMovement(player) && player->dashpadcooldown == 0)
 			{
 				fixed_t rubberband = player->botvars.rubberband - FRACUNIT;
 
