@@ -90,7 +90,7 @@ void Obj_SPBEradicateCapsules(void)
 		if (mo->type != MT_ITEMCAPSULE)
 			continue;
 
-		if (!mo->health || mo->fuse)
+		if (!mo->health || mo->fuse || mo->threshold != KITEM_SPB)
 			continue;
 
 		P_KillMobj(mo, NULL, NULL, DMG_NORMAL);
