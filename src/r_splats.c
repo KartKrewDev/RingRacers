@@ -328,7 +328,6 @@ static void R_RasterizeFloorSplat(floorsplat_t *pSplat, vector2_t *verts, visspr
 	fixed_t offsetx = 0, offsety = 0;
 	fixed_t planeheight = 0;
 	fixed_t step;
-	drawcolumndata_t dc = {0};
 	drawspandata_t ds = {0};
 
 	int spanfunctype = SPANDRAWFUNC_SPRITE;
@@ -445,8 +444,8 @@ static void R_RasterizeFloorSplat(floorsplat_t *pSplat, vector2_t *verts, visspr
 
 	if (encoremap && !vis->mobj->color && !(vis->mobj->flags & MF_DONTENCOREMAP))
 	{
-		dc.colormap += COLORMAP_REMAPOFFSET;
-		dc.fullbright += COLORMAP_REMAPOFFSET;
+		ds.colormap += COLORMAP_REMAPOFFSET;
+		ds.fullbright += COLORMAP_REMAPOFFSET;
 	}
 
 	if (vis->transmap)
