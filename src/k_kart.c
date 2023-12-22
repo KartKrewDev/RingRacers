@@ -822,6 +822,20 @@ static void K_PlayerJustBumped(player_t *player)
 	}
 }
 
+static boolean K_JustBumpedException(mobj_t *mobj)
+{
+	switch (mobj->type)
+	{
+		case MT_SA2_CRATE:
+			return Obj_SA2CrateIsMetal(mobj);
+
+		default:
+			break;
+	}
+
+	return false;
+}
+
 static fixed_t K_GetBounceForce(mobj_t *mobj1, mobj_t *mobj2, fixed_t distx, fixed_t disty)
 {
 	const fixed_t forceMul = (4 * FRACUNIT) / 10; // Multiply by this value to make it feel like old bumps.
@@ -918,13 +932,13 @@ boolean K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2)
 	}
 
 	// Don't bump if you've recently bumped
-	if (mobj1->player && mobj1->player->justbumped)
+	if (mobj1->player && mobj1->player->justbumped && !K_JustBumpedException(mobj2))
 	{
 		mobj1->player->justbumped = bumptime;
 		return false;
 	}
 
-	if (mobj2->player && mobj2->player->justbumped)
+	if (mobj2->player && mobj2->player->justbumped && !K_JustBumpedException(mobj1))
 	{
 		mobj2->player->justbumped = bumptime;
 		return false;
@@ -1032,7 +1046,7 @@ boolean K_KartSolidBounce(mobj_t *bounceMobj, mobj_t *solidMobj)
 		return false;
 
 	// Don't bump if you've recently bumped
-	if (bounceMobj->player && bounceMobj->player->justbumped)
+	if (bounceMobj->player && bounceMobj->player->justbumped && !K_JustBumpedException(solidMobj))
 	{
 		bounceMobj->player->justbumped = bumptime;
 		return false;
