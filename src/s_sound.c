@@ -2524,9 +2524,24 @@ void GameDigiMusic_OnChange(void)
 void MasterVolume_OnChange(void);
 void MasterVolume_OnChange(void)
 {
-	INT32 vol = cv_mastervolume.value;
-	CV_SetValue(&cv_digmusicvolume, vol);
-	CV_SetValue(&cv_soundvolume, vol);
+	INT32 adj = cv_mastervolume.value - max(cv_digmusicvolume.value, cv_soundvolume.value);
+
+	if (adj < 0)
+	{
+		INT32 under = min(cv_digmusicvolume.value, cv_soundvolume.value) + adj;
+
+		if (under < 0)
+		{
+			// Ensure balance between music/sound volume does
+			// not change at lower bound. (This is already
+			// guaranteed at upper bound.)
+			adj -= under;
+			CV_StealthSetValue(&cv_mastervolume, cv_mastervolume.value - under);
+		}
+	}
+
+	CV_SetValue(&cv_digmusicvolume, cv_digmusicvolume.value + adj);
+	CV_SetValue(&cv_soundvolume, cv_soundvolume.value + adj);
 }
 
 void DigMusicVolume_OnChange(void);
