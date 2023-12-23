@@ -6,8 +6,10 @@
 
 #include "../v_draw.hpp"
 
+#include "../doomstat.h"
 #include "../console.h"
 #include "../k_menu.h"
+#include "../m_cond.h"
 #include "../s_sound.h"	// sounds consvars
 #include "../g_game.h" // cv_chatnotifications
 
@@ -17,6 +19,12 @@ using srb2::Draw;
 
 namespace
 {
+
+bool basic_options()
+{
+	// M_GameTrulyStarted
+	return gamedata && gamestartchallenge < MAXUNLOCKABLES && !netgame && gamedata->gonerlevel <= GDGONER_PROFILE;
+}
 
 int flip_delay = 0;
 
@@ -51,7 +59,10 @@ struct Slider
 			arrows.x(-10 - ofs).text("\x1C");
 			arrows.x(kWidth + 2 + ofs).text("\x1D");
 
-			h.xy(kWidth + 9, -3).small_button(Draw::Button::z, false);
+			if (!basic_options())
+			{
+				h.xy(kWidth + 9, -3).small_button(Draw::Button::z, false);
+			}
 		}
 
 		h = h.y(1);
@@ -197,7 +208,7 @@ boolean input_routine(INT32)
 
 	const menuitem_t& it = currentMenu->menuitems[itemOn];
 
-	if (M_MenuButtonPressed(pid, MBT_Z) && (it.status & IT_TYPE) == IT_ARROWS)
+	if (M_MenuButtonPressed(pid, MBT_Z) && (it.status & IT_TYPE) == IT_ARROWS && !basic_options())
 	{
 		sliders.at(it.mvar2).toggle_(true);
 		return true;
