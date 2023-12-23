@@ -10,6 +10,7 @@
 /// \brief HUD drawing functions exclusive to Kart
 
 #include <algorithm>
+#include <vector>
 
 #include "k_hud.h"
 #include "k_kart.h"
@@ -3917,27 +3918,47 @@ static void K_drawKartMinimapDot(fixed_t objx, fixed_t objy, INT32 hudx, INT32 h
 	V_DrawFill((amxpos + hudx) - (size / 2), (amypos + hudy) - (size / 2), size, size, flags | color);
 }
 
-static void K_drawKartMinimapWaypoint(waypoint_t *wp, INT32 hudx, INT32 hudy, INT32 flags)
+static UINT8 K_RankMinimapWaypoint(waypoint_t *wp)
 {
-	UINT8 pal = 0x95; // blue
-	UINT8 size = 3;
-
 	if (wp == stplyr->nextwaypoint)
 	{
-		pal = 0x70; // green
-		size = 6;
-	}
-	else if (K_GetWaypointIsShortcut(wp)) // shortcut
-	{
-		pal = 0x20; // pink
-	}
-	else if (!K_GetWaypointIsEnabled(wp)) // disabled
-	{
-		pal = 0x10; // gray
+		return 4;
 	}
 	else if (wp->numnextwaypoints == 0 || wp->numprevwaypoints == 0)
 	{
-		pal = 0x40; // yellow
+		return 3;
+	}
+	else if (!K_GetWaypointIsEnabled(wp)) // disabled
+	{
+		return 2;
+	}
+	else if (K_GetWaypointIsShortcut(wp)) // shortcut
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+static void K_drawKartMinimapWaypoint(waypoint_t *wp, UINT8 rank, INT32 hudx, INT32 hudy, INT32 flags)
+{
+	static UINT8 colors[] =
+	{
+		0x95, // blue (0 - default)
+		0x20, // pink (1 - shortcut)
+		0x10, // gray (2 - disabled)
+		0x40, // yellow (3 - error)
+		0x70, // green (4 - player)
+	};
+
+	UINT8 pal = colors[rank]; // blue
+	UINT8 size = 3;
+
+	if (rank == 4)
+	{
+		size = 6;
 	}
 
 	if (!(flags & V_NOSCALESTART))
@@ -4445,7 +4466,20 @@ static void K_drawKartMinimap(void)
 
 	if (doprogressionbar == false && cv_kartdebugwaypoints.value != 0)
 	{
+		struct MiniWaypoint
+		{
+			waypoint_t* waypoint;
+			UINT8 rank;
+
+			MiniWaypoint(waypoint_t* wp) : waypoint(wp), rank(K_RankMinimapWaypoint(wp)) {}
+
+			bool operator<(const MiniWaypoint& b) { return rank < b.rank; }
+		};
+
+		std::vector<MiniWaypoint> waypoints;
 		size_t idx;
+
+		waypoints.reserve(K_GetNumWaypoints());
 
 		for (idx = 0; idx < K_GetNumWaypoints(); ++idx)
 		{
@@ -4453,13 +4487,14 @@ static void K_drawKartMinimap(void)
 
 			I_Assert(wp != NULL);
 
-			K_drawKartMinimapWaypoint(wp, x, y, splitflags);
+			waypoints.push_back(wp);
 		}
 
-		if (stplyr->nextwaypoint != NULL)
+		std::sort(waypoints.begin(), waypoints.end());
+
+		for (MiniWaypoint& wp : waypoints)
 		{
-			// should be drawn on top of the others
-			K_drawKartMinimapWaypoint(stplyr->nextwaypoint, x, y, splitflags);
+			K_drawKartMinimapWaypoint(wp.waypoint, wp.rank, x, y, splitflags);
 		}
 	}
 }
