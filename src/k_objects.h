@@ -26,7 +26,7 @@ mobj_t *Obj_GardenTopDestroy(player_t *player);
 void Obj_GardenTopThink(mobj_t *top);
 void Obj_GardenTopSparkThink(mobj_t *spark);
 void Obj_GardenTopArrowThink(mobj_t *arrow);
-boolean Obj_GardenTopPlayerIsGrinding(player_t *player);
+boolean Obj_GardenTopPlayerIsGrinding(const player_t *player);
 
 /* Shrink */
 void Obj_PohbeeThinker(mobj_t *pohbee);
@@ -135,7 +135,7 @@ void Obj_ChargeExtraThink(mobj_t *extra);
 
 /* Ring Shooter */
 boolean Obj_RingShooterThinker(mobj_t *mo);
-boolean Obj_PlayerRingShooterFreeze(player_t *const player);
+boolean Obj_PlayerRingShooterFreeze(const player_t *player);
 void Obj_RingShooterInput(player_t *player);
 void Obj_PlayerUsedRingShooter(mobj_t *base, player_t *player);
 void Obj_RingShooterDelete(mobj_t *mo);

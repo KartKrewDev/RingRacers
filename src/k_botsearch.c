@@ -117,7 +117,7 @@ UINT8 K_EggboxStealth(fixed_t x, fixed_t y)
 }
 
 /*--------------------------------------------------
-	static boolean K_BotHatesThisSectorsSpecial(player_t *player, sector_t *sec)
+	static boolean K_BotHatesThisSectorsSpecial(const player_t *player, sector_t *sec)
 
 		Tells us if a bot will play more careful around
 		this sector's special type.
@@ -129,7 +129,7 @@ UINT8 K_EggboxStealth(fixed_t x, fixed_t y)
 	Return:-
 		true if avoiding this sector special, false otherwise.
 --------------------------------------------------*/
-static boolean K_BotHatesThisSectorsSpecial(player_t *player, sector_t *sec, const boolean flip)
+static boolean K_BotHatesThisSectorsSpecial(const player_t *player, sector_t *sec, const boolean flip)
 {
 	terrain_t *terrain = K_GetTerrainForFlatNum(flip ? sec->ceilingpic : sec->floorpic);
 
@@ -162,11 +162,11 @@ static boolean K_BotHatesThisSectorsSpecial(player_t *player, sector_t *sec, con
 }
 
 /*--------------------------------------------------
-	boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t y)
+	boolean K_BotHatesThisSector(const player_t *player, sector_t *sec, fixed_t x, fixed_t y)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t y)
+boolean K_BotHatesThisSector(const player_t *player, sector_t *sec, fixed_t x, fixed_t y)
 {
 	const boolean flip = (player->mo->eflags & MFE_VERTICALFLIP);
 	fixed_t highestfloor = INT32_MAX;
@@ -664,11 +664,11 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 }
 
 /*--------------------------------------------------
-	void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
+	void K_NudgePredictionTowardsObjects(botprediction_t *predict, const player_t *player)
 
 		See header file for description.
 --------------------------------------------------*/
-void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
+void K_NudgePredictionTowardsObjects(botprediction_t *predict, const player_t *player)
 {
 	const precise_t time = I_GetPreciseTime();
 
@@ -948,11 +948,11 @@ static BlockItReturn_t K_FindPlayersToBully(mobj_t *thing)
 }
 
 /*--------------------------------------------------
-	INT32 K_PositionBully(player_t *player)
+	INT32 K_PositionBully(const player_t *player)
 
 		See header file for description.
 --------------------------------------------------*/
-INT32 K_PositionBully(player_t *player)
+INT32 K_PositionBully(const player_t *player)
 {
 	INT32 xl, xh, yl, yh, bx, by;
 
