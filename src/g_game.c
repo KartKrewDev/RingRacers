@@ -1754,13 +1754,15 @@ void G_Ticker(boolean run)
 				{
 					if (players[i].bot == true && grandprixinfo.gp == true && grandprixinfo.masterbots == false)
 					{
-						if (players[i].botvars.difficulty <= BOT_LEVEL_DECREASE)
+						const UINT8 bot_level_decrease = (grandprixinfo.gamespeed <= KARTSPEED_NORMAL) ? 3 : 2;
+
+						if (players[i].botvars.difficulty <= bot_level_decrease)
 						{
 							players[i].botvars.difficulty = 1;
 						}
 						else
 						{
-							players[i].botvars.difficulty -= BOT_LEVEL_DECREASE;
+							players[i].botvars.difficulty -= bot_level_decrease;
 						}
 					}
 					else

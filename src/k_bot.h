@@ -32,9 +32,6 @@ extern "C" {
 // Level of a "difficult" bot. The max bot level was increased, but this keeps all of the same calculations.
 #define DIFFICULTBOT (9)
 
-// How much all bots reduce in difficulty when the match needs to be restarted.
-#define BOT_LEVEL_DECREASE (2)
-
 // How many tics in a row do you need to turn in this direction before we'll let you turn.
 // Made it as small as possible without making it look like the bots are twitching constantly.
 #define BOTTURNCONFIRM 4
