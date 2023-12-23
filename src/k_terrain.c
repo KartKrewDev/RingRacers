@@ -348,7 +348,7 @@ terrain_t *K_GetTerrainForTextureName(const char *checkName)
 		{
 			t_floor_t *f = &terrainFloorDefs[i];
 
-			if (checkHash == f->textureHash && !strncmp(checkName, f->textureName, 8))
+			if (checkHash == f->textureHash && !strncasecmp(checkName, f->textureName, 8))
 			{
 				return K_GetTerrainByIndex(f->terrainID);
 			}
