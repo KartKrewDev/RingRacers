@@ -443,7 +443,7 @@ static UINT8 *MakeBlock(GLMipmap_t *grMipmap)
 // Create a composite texture from patches, adapt the texture size to a power of 2
 // height and width for the hardware texture cache.
 //
-static void HWR_GenerateTexture(INT32 texnum, GLMapTexture_t *grtex)
+static void HWR_GenerateTexture(INT32 texnum, INT32 basetexnum, GLMapTexture_t *grtex)
 {
 	UINT8 *block;
 	texture_t *texture;
@@ -477,7 +477,7 @@ static void HWR_GenerateTexture(INT32 texnum, GLMapTexture_t *grtex)
 	grtex->mipmap.height = (UINT16)texture->height;
 	grtex->mipmap.format = textureformat;
 
-	if (encoremap)
+	if (encoremap && R_TextureCanRemap(basetexnum))
 		colormap += COLORMAP_REMAPOFFSET;
 
 	grtex->mipmap.colormap = Z_Calloc(sizeof(*grtex->mipmap.colormap), PU_HWRPATCHCOLMIPMAP, NULL);
@@ -783,7 +783,7 @@ void HWR_SetPalette(RGBA_t *palette)
 // --------------------------------------------------------------------------
 // Make sure texture is downloaded and set it as the source
 // --------------------------------------------------------------------------
-GLMapTexture_t *HWR_GetTexture(INT32 tex)
+GLMapTexture_t *HWR_GetTexture(INT32 tex, INT32 basetex)
 {
 	GLMapTexture_t *grtex;
 #ifdef PARANOIA
@@ -797,7 +797,7 @@ GLMapTexture_t *HWR_GetTexture(INT32 tex)
 
 	// Generate texture if missing from the cache
 	if (!grtex->mipmap.data && !grtex->mipmap.downloaded)
-		HWR_GenerateTexture(tex, grtex);
+		HWR_GenerateTexture(tex, basetex, grtex);
 
 	// If hardware does not have the texture, then call pfnSetTexture to upload it
 	if (!grtex->mipmap.downloaded)

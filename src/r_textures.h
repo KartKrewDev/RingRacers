@@ -66,6 +66,7 @@ struct texture_t
 	boolean holes;
 	UINT8 flip; // 1 = flipx, 2 = flipy, 3 = both
 	void *flat; // The texture, as a flat.
+	terrain_t *terrain;
 
 	// All the patches[patchcount] are drawn back to front into the cached texture.
 	INT16 patchcount;
@@ -94,6 +95,7 @@ UINT8 *R_GenerateTextureBrightmap(size_t texnum);
 INT32 R_GetTextureNum(INT32 texnum);
 INT32 R_GetTextureBrightmap(INT32 texnum);
 boolean R_TextureHasBrightmap(INT32 texnum);
+boolean R_TextureCanRemap(INT32 texnum);
 void R_CheckTextureCache(INT32 tex);
 void R_ClearTextureNumCache(boolean btell);
 

@@ -348,7 +348,7 @@ terrain_t *K_GetTerrainForTextureName(const char *checkName)
 		{
 			t_floor_t *f = &terrainFloorDefs[i];
 
-			if (checkHash == f->textureHash && !strncmp(checkName, f->textureName, 8))
+			if (checkHash == f->textureHash && !strncasecmp(checkName, f->textureName, 8))
 			{
 				return K_GetTerrainByIndex(f->terrainID);
 			}
@@ -370,7 +370,7 @@ terrain_t *K_GetTerrainForTextureNum(INT32 textureNum)
 	if (textureNum >= 0 && textureNum < numtextures)
 	{
 		texture_t *tex = textures[textureNum];
-		return K_GetTerrainForTextureName(tex->name);
+		return tex->terrain;
 	}
 
 	// This texture doesn't have a terrain directly applied to it,
@@ -1568,7 +1568,7 @@ static void K_TerrainDefaults(terrain_t *terrain)
 	terrain->speedPadAngle = 0;
 	terrain->springStrength = 0;
 	terrain->springStarColor = SKINCOLOR_NONE;
-	terrain->flags = 0;
+	terrain->flags = TRF_REMAP;
 }
 
 /*--------------------------------------------------
@@ -1714,6 +1714,10 @@ static void K_ParseTerrainParameter(size_t i, char *param, char *val)
 	else if (stricmp(param, "tripwire") == 0)
 	{
 		K_FlagBoolean(&terrain->flags, TRF_TRIPWIRE, val);
+	}
+	else if (stricmp(param, "remap") == 0)
+	{
+		K_FlagBoolean(&terrain->flags, TRF_REMAP, val);
 	}
 }
 
@@ -2036,6 +2040,12 @@ static boolean K_TERRAINLumpParser(char *data, size_t size)
 						{
 							f->terrainID = K_GetTerrainHeapIndex(t);
 							CONS_Printf("Texture '%s' set to Terrain '%s'\n", f->textureName, tkn);
+
+							INT32 tex = R_CheckTextureNumForName(f->textureName);
+							if (tex != -1)
+							{
+								textures[tex]->terrain = t;
+							}
 						}
 					}
 					else
@@ -2211,4 +2221,6 @@ void K_InitTerrain(UINT16 wadNum)
 			free(name);
 		}
 	}
+
+	R_ClearTextureNumCache(false);
 }
