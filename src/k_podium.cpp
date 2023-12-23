@@ -864,7 +864,11 @@ void K_InitializePodiumWaypoint(player_t *const player)
 {
 	if ((player != NULL) && (player->mo != NULL))
 	{
-		player->position = K_GetPodiumPosition(player);
+		if (player->position == 0)
+		{
+			// Just in case a netgame scenario with a late joiner ocurrs.
+			player->position = K_GetPodiumPosition(player);
+		}
 
 		if (player->position > 0 && player->position <= MAXPLAYERS)
 		{
@@ -989,12 +993,6 @@ void K_FinishCeremony(void)
 	}
 
 	g_podiumData.ranking = true;
-
-	// Play the noise now (via G_UpdateVisited's concluding challenge check)
-	prevmap = gamemap-1;
-	G_UpdateVisited();
-	if (gamedata->deferredsave)
-		G_SaveGameData();
 }
 
 /*--------------------------------------------------
@@ -1084,8 +1082,11 @@ void K_ResetCeremony(void)
 		}
 	}
 
-	// Save before playing the noise
-	G_SaveGameData();
+	// Update visitation.
+	prevmap = gamemap-1;
+	G_UpdateVisited();
+
+	// will subsequently save in P_LoadLevel
 }
 
 /*--------------------------------------------------

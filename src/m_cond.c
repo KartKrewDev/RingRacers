@@ -1607,7 +1607,7 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			return (grandprixinfo.gamespeed >= cn->requirement);
 
 		case UCRP_PODIUMCUP:
-			if (grandprixinfo.gp == false || K_PodiumRanking() == false)
+			if (grandprixinfo.gp == false || K_PodiumSequence() == false)
 				return false;
 			if (grandprixinfo.cup == NULL
 				|| (
@@ -1625,11 +1625,11 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 		case UCRP_PODIUMEMERALD:
 		case UCRP_PODIUMPRIZE:
 			return (grandprixinfo.gp == true
-				&& K_PodiumRanking() == true
+				&& K_PodiumSequence() == true
 				&& grandprixinfo.rank.specialWon == true);
 		case UCRP_PODIUMNOCONTINUES:
 			return (grandprixinfo.gp == true
-				&& K_PodiumRanking() == true
+				&& K_PodiumSequence() == true
 				&& grandprixinfo.rank.continuesUsed == 0);
 
 		case UCRP_FINISHCOOL:
@@ -2989,7 +2989,7 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud, boolean doall)
 		}
 	}
 
-	if (!demo.playback && Playing() && (gamestate == GS_LEVEL || K_PodiumRanking() == true))
+	if (!demo.playback && Playing() && (gamestate == GS_LEVEL || K_PodiumSequence() == true))
 	{
 		for (i = 0; i <= splitscreen; i++)
 		{
