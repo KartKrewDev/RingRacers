@@ -11,6 +11,8 @@
 #include "../s_sound.h"	// sounds consvars
 #include "../g_game.h" // cv_chatnotifications
 
+extern "C" consvar_t cv_mastervolume;
+
 using srb2::Draw;
 
 namespace
@@ -22,6 +24,7 @@ struct Slider
 {
 	enum Id
 	{
+		kMasterVolume,
 		kMusicVolume,
 		kSfxVolume,
 		kNumSliders
@@ -34,7 +37,7 @@ struct Slider
 
 	int shake_ = 0;
 
-	void draw(int x, int y, bool selected)
+	void draw(int x, int y, bool shaded, bool selected)
 	{
 		constexpr int kWidth = 111;
 
@@ -54,7 +57,7 @@ struct Slider
 		h = h.y(1);
 		h.size(kWidth, 7).fill(31);
 
-		Draw s = h.xy(1, 2).size(10, 4);
+		Draw s = shaded ? h.xy(1, 5).size(10, 1) : h.xy(1, 2).size(10, 4);
 		int color = toggle_(false) ? aquamap[0] : 15;
 
 		int n = volume_.value / 10;
@@ -82,7 +85,20 @@ struct Slider
 
 	void input(INT32 c)
 	{
-		M_ChangeCvarDirect(c, &volume_);
+		if (c == -1 && &volume_ == &cv_mastervolume)
+		{
+			// Master volume does not necessarily change when
+			// music or sound volumes change separately. So
+			// cv_mastervolume could still have its default
+			// value, and M_ChangeCvarDirect would do
+			// nothing.
+			CV_Set(&cv_digmusicvolume, cv_mastervolume.defaultvalue);
+			CV_Set(&cv_soundvolume, cv_mastervolume.defaultvalue);
+		}
+		else
+		{
+			M_ChangeCvarDirect(c, &volume_);
+		}
 
 		shake_ = !shake_;
 		flip_delay = 2;
@@ -90,6 +106,22 @@ struct Slider
 };
 
 std::array<Slider, Slider::kNumSliders> sliders{{
+	{
+		[](bool toggle) -> bool
+		{
+			bool n = !S_MusicDisabled() || !S_SoundDisabled();
+
+			if (toggle)
+			{
+				n = !n;
+				CV_SetValue(&cv_gamedigimusic, n);
+				CV_SetValue(&cv_gamesounds, n);
+			}
+
+			return n;
+		},
+		cv_mastervolume,
+	},
 	{
 		[](bool toggle) -> bool
 		{
@@ -134,7 +166,12 @@ void draw_routine()
 
 		if ((it.status & IT_TYPE) == IT_ARROWS)
 		{
-			sliders.at(it.mvar2).draw(x, y, i == itemOn);
+			sliders.at(it.mvar2).draw(
+				x,
+				y,
+				it.mvar2 == Slider::kMasterVolume,
+				i == itemOn
+			);
 		}
 
 		y += 8;
@@ -174,6 +211,8 @@ boolean input_routine(INT32)
 menuitem_t OPTIONS_Sound[] =
 {
 
+	{IT_STRING | IT_ARROWS | IT_CV_SLIDER, "Volume", "Adjust the volume of game audio.",
+		NULL, {.routine = slider_routine}, 0, Slider::kMasterVolume},
 
 	{IT_STRING | IT_ARROWS | IT_CV_SLIDER, "SFX Volume", "Adjust the volume of sound effects.",
 		NULL, {.routine = slider_routine}, 0, Slider::kSfxVolume},

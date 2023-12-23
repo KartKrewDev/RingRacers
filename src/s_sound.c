@@ -37,6 +37,8 @@
 #include "v_video.h" // V_ThinStringWidth
 #include "music.h"
 
+extern consvar_t cv_mastervolume;
+
 static boolean S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 *vol, INT32 *sep, INT32 *pitch, sfxinfo_t *sfxinfo);
 
 static void Command_Tunes_f(void);
@@ -2541,6 +2543,14 @@ void PlaySoundIfUnfocused_OnChange(void)
 		S_StopSounds();
 }
 
+void MasterVolume_OnChange(void);
+void MasterVolume_OnChange(void)
+{
+	INT32 vol = cv_mastervolume.value;
+	CV_SetValue(&cv_digmusicvolume, vol);
+	CV_SetValue(&cv_soundvolume, vol);
+}
+
 void DigMusicVolume_OnChange(void);
 void DigMusicVolume_OnChange(void)
 {
@@ -2548,6 +2558,7 @@ void DigMusicVolume_OnChange(void)
 	{
 		CV_SetValue(&cv_gamedigimusic, 1);
 	}
+	CV_StealthSetValue(&cv_mastervolume, max(cv_digmusicvolume.value, cv_soundvolume.value));
 }
 
 void SoundVolume_OnChange(void);
@@ -2557,4 +2568,5 @@ void SoundVolume_OnChange(void)
 	{
 		CV_SetValue(&cv_gamesounds, 1);
 	}
+	CV_StealthSetValue(&cv_mastervolume, max(cv_digmusicvolume.value, cv_soundvolume.value));
 }
