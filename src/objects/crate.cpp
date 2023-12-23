@@ -197,11 +197,11 @@ struct Box : AnyBox
 
 	bool damage_valid(const Mobj* inflictor) const { return !fuse && Mobj::valid(inflictor); }
 
-	void damage(Mobj* inflictor)
+	bool damage(Mobj* inflictor)
 	{
 		if (!damage_valid(inflictor))
 		{
-			return;
+			return false;
 		}
 
 		inflictor->hitlag(3);
@@ -230,6 +230,8 @@ struct Box : AnyBox
 
 		debris(inflictor);
 		update_nearby();
+
+		return true;
 	}
 
 private:
@@ -321,19 +323,19 @@ struct Crate : Box<SA2CrateConfig>
 		}
 	}
 
-	void damage(Toucher* inflictor)
+	bool damage(Toucher* inflictor)
 	{
 		if (!Box::damage_valid(inflictor))
 		{
-			return;
+			return false;
 		}
 
 		if (metal() && !inflictor->boosting())
 		{
-			return;
+			return false;
 		}
 
-		Box::damage(inflictor);
+		return Box::damage(inflictor);
 	}
 };
 
@@ -385,9 +387,11 @@ void Obj_TryCrateTouch(mobj_t* special, mobj_t* toucher)
 	static_cast<AnyBox*>(special)->visit([&](auto box) { box->touch(static_cast<Toucher*>(toucher)); });
 }
 
-void Obj_TryCrateDamage(mobj_t* target, mobj_t* inflictor)
+boolean Obj_TryCrateDamage(mobj_t* target, mobj_t* inflictor)
 {
-	static_cast<AnyBox*>(target)->visit([&](auto box) { box->damage(static_cast<Toucher*>(inflictor)); });
+	bool c = false;
+	static_cast<AnyBox*>(target)->visit([&](auto box) { c = box->damage(static_cast<Toucher*>(inflictor)); });
+	return c;
 }
 
 boolean Obj_SA2CrateIsMetal(mobj_t* mobj)
