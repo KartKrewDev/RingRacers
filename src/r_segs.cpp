@@ -175,7 +175,7 @@ static inline boolean R_OverflowTest(drawcolumndata_t* dc)
 	return false;
 }
 
-static void R_RenderMaskedSegLoop(drawcolumndata_t* dc, drawseg_t *drawseg, INT32 x1, INT32 x2, INT32 texnum, void (*colfunc_2s)(drawcolumndata_t*, column_t *, column_t *, INT32))
+static void R_RenderMaskedSegLoop(drawcolumndata_t* dc, drawseg_t *drawseg, INT32 x1, INT32 x2, INT32 texnum, INT32 basetexnum, void (*colfunc_2s)(drawcolumndata_t*, column_t *, column_t *, INT32))
 {
 	size_t pindex;
 	column_t *col, *bmCol = NULL;
@@ -189,7 +189,7 @@ static void R_RenderMaskedSegLoop(drawcolumndata_t* dc, drawseg_t *drawseg, INT3
 	INT32 times, repeats;
 	boolean tripwire;
 	boolean brightmapped = R_TextureHasBrightmap(texnum);
-	boolean remap = encoremap && R_TextureCanRemap(texnum);
+	boolean remap = encoremap && R_TextureCanRemap(basetexnum);
 
 	ldef = curline->linedef;
 	tripwire = P_IsLineTripWire(ldef);
@@ -572,18 +572,12 @@ static void R_RenderMaskedSegLoopDebug(drawcolumndata_t* dc, drawseg_t *ds, INT3
 
 static INT32 R_GetTwoSidedMidTexture(seg_t *line)
 {
-	INT32 texture;
-
 	if (R_IsDebugLine(line))
 	{
-		texture = g_texturenum_dbgline;
-	}
-	else
-	{
-		texture = line->sidedef->midtexture;
+		return g_texturenum_dbgline;
 	}
 
-	return R_GetTextureNum(texture);
+	return line->sidedef->midtexture;
 }
 
 static boolean R_CheckBlendMode(drawcolumndata_t* dc, const line_t *ldef, boolean brightmapped)
@@ -635,7 +629,7 @@ static boolean R_CheckBlendMode(drawcolumndata_t* dc, const line_t *ldef, boolea
 
 void R_RenderMaskedSegRange(drawseg_t *drawseg, INT32 x1, INT32 x2)
 {
-	INT32 texnum;
+	INT32 texnum, basetexnum;
 	void (*colfunc_2s)(drawcolumndata_t*, column_t *, column_t *, INT32);
 	line_t *ldef;
 	const boolean debug = R_IsDebugLine(drawseg->curline);
@@ -649,7 +643,8 @@ void R_RenderMaskedSegRange(drawseg_t *drawseg, INT32 x1, INT32 x2)
 
 	frontsector = curline->frontsector;
 	backsector = curline->backsector;
-	texnum = R_GetTwoSidedMidTexture(curline);
+	basetexnum = R_GetTwoSidedMidTexture(curline);
+	texnum = R_GetTextureNum(basetexnum);
 	windowbottom = windowtop = sprbotscreen = INT32_MAX;
 
 	ldef = curline->linedef;
@@ -699,7 +694,7 @@ void R_RenderMaskedSegRange(drawseg_t *drawseg, INT32 x1, INT32 x2)
 	}
 	else
 	{
-		R_RenderMaskedSegLoop(dc, drawseg, x1, x2, texnum, colfunc_2s);
+		R_RenderMaskedSegLoop(dc, drawseg, x1, x2, texnum, basetexnum, colfunc_2s);
 	}
 
 	R_SetColumnFunc(BASEDRAWFUNC, false);
@@ -747,7 +742,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 	size_t          pindex = 0;
 	column_t *      col, *bmCol = NULL;
 	INT32             lightnum;
-	INT32            texnum;
+	INT32            texnum, basetexnum;
 	sector_t        tempsec;
 	INT32             templight;
 	INT32             i, p;
@@ -779,7 +774,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 	curline = ds->curline;
 	backsector = pfloor->target;
 	frontsector = curline->frontsector == pfloor->target ? curline->backsector : curline->frontsector;
-	texnum = R_GetTextureNum(sides[pfloor->master->sidenum[0]].midtexture);
+	basetexnum = sides[pfloor->master->sidenum[0]].midtexture;
 
 	R_CheckDebugHighlight(SW_HI_FOFSIDES);
 
@@ -787,11 +782,13 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 	{
 		size_t linenum = curline->linedef-backsector->lines[0];
 		newline = pfloor->master->frontsector->lines[0] + linenum;
-		texnum = R_GetTextureNum(sides[newline->sidenum[0]].midtexture);
+		basetexnum = sides[newline->sidenum[0]].midtexture;
 	}
 
+	texnum = R_GetTextureNum(basetexnum);
+
 	boolean brightmapped = R_TextureHasBrightmap(texnum);
-	boolean remap = encoremap && R_TextureCanRemap(texnum);
+	boolean remap = encoremap && R_TextureCanRemap(basetexnum);
 
 	R_SetColumnFunc(BASEDRAWFUNC, brightmapped);
 
@@ -1764,7 +1761,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 	vertex_t segleft, segright;
 	fixed_t ceilingfrontslide, floorfrontslide, ceilingbackslide, floorbackslide;
 	static size_t maxdrawsegs = 0;
-	const INT32 twosidedmidtexture = R_GetTwoSidedMidTexture(curline);
+	const INT32 twosidedmidtexture = R_GetTextureNum(R_GetTwoSidedMidTexture(curline));
 	const bool wantremap = encoremap && !(curline->linedef->flags & ML_TFERLINE);
 	drawcolumndata_t dc {0};
 
@@ -2009,7 +2006,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 		// single sided line
 		midtexture = R_GetTextureNum(sidedef->midtexture);
 		midbrightmapped = R_TextureHasBrightmap(midtexture);
-		midremap = wantremap && R_TextureCanRemap(midtexture);
+		midremap = wantremap && R_TextureCanRemap(sidedef->midtexture);
 		texheight = textureheight[midtexture];
 		// a single sided line is terminal, so it must mark ends
 		markfloor = markceiling = true;
@@ -2202,7 +2199,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 			// top texture
 			toptexture = R_GetTextureNum(sidedef->toptexture);
 			topbrightmapped = R_TextureHasBrightmap(toptexture);
-			topremap = wantremap && R_TextureCanRemap(toptexture);
+			topremap = wantremap && R_TextureCanRemap(sidedef->toptexture);
 			texheight = textureheight[toptexture];
 
 			if (!(linedef->flags & ML_SKEWTD))
@@ -2232,7 +2229,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 			// bottom texture
 			bottomtexture = R_GetTextureNum(sidedef->bottomtexture);
 			bottombrightmapped = R_TextureHasBrightmap(bottomtexture);
-			bottomremap = wantremap && R_TextureCanRemap(bottomtexture);
+			bottomremap = wantremap && R_TextureCanRemap(sidedef->bottomtexture);
 
 			if (!(linedef->flags & ML_SKEWTD))
 			{
