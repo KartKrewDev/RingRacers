@@ -2540,3 +2540,21 @@ void PlaySoundIfUnfocused_OnChange(void)
 	if (window_notinfocus && !cv_playsoundifunfocused.value)
 		S_StopSounds();
 }
+
+void DigMusicVolume_OnChange(void);
+void DigMusicVolume_OnChange(void)
+{
+	if (!cv_gamedigimusic.value)
+	{
+		CV_SetValue(&cv_gamedigimusic, 1);
+	}
+}
+
+void SoundVolume_OnChange(void);
+void SoundVolume_OnChange(void)
+{
+	if (!cv_gamesounds.value)
+	{
+		CV_SetValue(&cv_gamesounds, 1);
+	}
+}
