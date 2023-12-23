@@ -2474,12 +2474,14 @@ static INT32 K_CalculateTrackComplexity(void)
 			waypoint_t *const mid = (waypoint_t *)path.array[ i ].nodedata;
 			waypoint_t *const end = (waypoint_t *)path.array[ i + 1 ].nodedata;
 
+			const INT32 turn_id = K_GetWaypointID(mid);
+
 			// would it be better to just check mid?
 			if (K_GetWaypointIsSpawnpoint(start) == false
 				|| K_GetWaypointIsSpawnpoint(mid) == false
 				|| K_GetWaypointIsSpawnpoint(end) == false)
 			{
-				CONS_Debug(DBG_SETUP, "%s", fmt::format("TURN [{}]: skipped\n", i).c_str());
+				CONS_Debug(DBG_SETUP, "%s", fmt::format("TURN [{}]: skipped\n", turn_id).c_str());
 				continue;
 			}
 
@@ -2618,18 +2620,20 @@ static INT32 K_CalculateTrackComplexity(void)
 				)
 			);
 
-			constexpr fixed_t minimum_drop = 45 * FRACUNIT; // If the delta is lower than this, it's probably just a slope.
+			constexpr fixed_t minimum_drop = 30 * FRACUNIT; // If the delta is lower than this, it's probably just a slope.
 			if (pitch_delta > minimum_drop)
 			{
 				// bonus complexity for drop-off / ramp
-				delta += FixedMul(pitch_delta, FRACUNIT + (pitch_delta - minimum_drop));
+				constexpr fixed_t drop_factor = 10 * FRACUNIT;
+				const fixed_t drop_off_mul = FRACUNIT + FixedDiv(pitch_delta - minimum_drop, drop_factor);
+				delta += FixedMul(pitch_delta, drop_off_mul);
 			}
 
 			delta = FixedMul(delta, FixedMul(FixedMul(dist_factor, radius_factor), wall_factor));
 
 			std::string msg = fmt::format(
 				"TURN [{}]: r: {:.2f}, d: {:.2f}, w: {:.2f}, r*d*w: {:.2f}, DELTA: {}\n",
-				i,
+				turn_id,
 				FixedToFloat(radius_factor),
 				FixedToFloat(dist_factor),
 				FixedToFloat(wall_factor),
@@ -2771,8 +2775,7 @@ boolean K_SetupWaypointList(void)
 					finishline = firstwaypoint;
 				}
 
-				if (K_SetupCircuitLength() == 0
-					&& ((mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE) != LF_SECTIONRACE))
+				if (K_SetupCircuitLength() == 0)
 				{
 					CONS_Alert(CONS_ERROR, "Circuit track waypoints do not form a circuit.\n");
 				}
