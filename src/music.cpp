@@ -183,6 +183,11 @@ void Music_Tick(void)
 	g_tunes.tick();
 }
 
+void Music_Flip(void)
+{
+	g_tunes.flip();
+}
+
 void Music_Play(const char* id)
 {
 	Tune* tune = g_tunes.find(id);
