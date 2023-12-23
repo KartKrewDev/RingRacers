@@ -633,7 +633,7 @@ boolean P_InsideANonSolidFFloor(mobj_t *mobj, ffloor_t *rover)
 // Supply boundsec ONLY when checking for specials! It should be the "in-level" sector, and sector the control sector (if separate).
 // If set, then this function will iterate through boundsec's linedefs to find the highest contact point on the slope. Non-special-checking
 // usage will handle that later.
-static fixed_t HighestOnLine(fixed_t radius, fixed_t x, fixed_t y, line_t *line, pslope_t *slope, boolean actuallylowest)
+static fixed_t HighestOnLine(fixed_t radius, fixed_t x, fixed_t y, const line_t *line, const pslope_t *slope, boolean actuallylowest)
 {
 	// Alright, so we're sitting on a line that contains our slope sector, and need to figure out the highest point we're touching...
 	// The solution is simple! Get the line's vertices, and pull each one in along its line until it touches the object's bounding box
@@ -731,7 +731,7 @@ static fixed_t HighestOnLine(fixed_t radius, fixed_t x, fixed_t y, line_t *line,
 		);
 }
 
-fixed_t P_MobjFloorZ(mobj_t *mobj, sector_t *sector, sector_t *boundsec, fixed_t x, fixed_t y, line_t *line, boolean lowest, boolean perfect)
+fixed_t P_MobjFloorZ(const mobj_t *mobj, const sector_t *sector, const sector_t *boundsec, fixed_t x, fixed_t y, const line_t *line, boolean lowest, boolean perfect)
 {
 	I_Assert(mobj != NULL);
 	I_Assert(sector != NULL);
@@ -808,7 +808,7 @@ fixed_t P_MobjFloorZ(mobj_t *mobj, sector_t *sector, sector_t *boundsec, fixed_t
 		return sector->floorheight;
 }
 
-fixed_t P_MobjCeilingZ(mobj_t *mobj, sector_t *sector, sector_t *boundsec, fixed_t x, fixed_t y, line_t *line, boolean lowest, boolean perfect)
+fixed_t P_MobjCeilingZ(const mobj_t *mobj, const sector_t *sector, const sector_t *boundsec, fixed_t x, fixed_t y, const line_t *line, boolean lowest, boolean perfect)
 {
 	I_Assert(mobj != NULL);
 	I_Assert(sector != NULL);

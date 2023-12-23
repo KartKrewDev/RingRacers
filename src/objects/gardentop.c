@@ -681,7 +681,7 @@ Obj_GardenTopArrowThink (mobj_t *arrow)
 }
 
 boolean
-Obj_GardenTopPlayerIsGrinding (player_t *player)
+Obj_GardenTopPlayerIsGrinding (const player_t *player)
 {
 	mobj_t *top = K_GetGardenTop(player);
 

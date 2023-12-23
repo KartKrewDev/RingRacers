@@ -331,11 +331,11 @@ void K_UpdateMatchRaceBots(void)
 }
 
 /*--------------------------------------------------
-	boolean K_PlayerUsesBotMovement(player_t *player)
+	boolean K_PlayerUsesBotMovement(const player_t *player)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_PlayerUsesBotMovement(player_t *player)
+boolean K_PlayerUsesBotMovement(const player_t *player)
 {
 	if (K_PodiumSequence() == true)
 		return true;
@@ -354,7 +354,7 @@ boolean K_PlayerUsesBotMovement(player_t *player)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_BotCanTakeCut(player_t *player)
+boolean K_BotCanTakeCut(const player_t *player)
 {
 	if (
 #if 1
@@ -374,7 +374,7 @@ boolean K_BotCanTakeCut(player_t *player)
 }
 
 /*--------------------------------------------------
-	static fixed_t K_BotSpeedScaled(player_t *player, fixed_t speed)
+	static fixed_t K_BotSpeedScaled(const player_t *player, fixed_t speed)
 
 		What the bot "thinks" their speed is, for predictions.
 		Mainly to make bots brake earlier when on friction sectors.
@@ -386,7 +386,7 @@ boolean K_BotCanTakeCut(player_t *player)
 	Return:-
 		The bot's speed value for calculations.
 --------------------------------------------------*/
-static fixed_t K_BotSpeedScaled(player_t *player, fixed_t speed)
+static fixed_t K_BotSpeedScaled(const player_t *player, fixed_t speed)
 {
 	fixed_t result = speed;
 
@@ -441,11 +441,11 @@ static fixed_t K_BotSpeedScaled(player_t *player, fixed_t speed)
 }
 
 /*--------------------------------------------------
-	const botcontroller_t *K_GetBotController(mobj_t *mobj)
+	const botcontroller_t *K_GetBotController(const mobj_t *mobj)
 
 		See header file for description.
 --------------------------------------------------*/
-const botcontroller_t *K_GetBotController(mobj_t *mobj)
+const botcontroller_t *K_GetBotController(const mobj_t *mobj)
 {
 	botcontroller_t *ret = nullptr;
 
@@ -507,7 +507,7 @@ fixed_t K_BotMapModifier(void)
 }
 
 /*--------------------------------------------------
-	static UINT32 K_BotRubberbandDistance(player_t *player)
+	static UINT32 K_BotRubberbandDistance(const player_t *player)
 
 		Calculates the distance away from 1st place that the
 		bot should rubberband to.
@@ -518,7 +518,7 @@ fixed_t K_BotMapModifier(void)
 	Return:-
 		Distance to add, as an integer.
 --------------------------------------------------*/
-static UINT32 K_BotRubberbandDistance(player_t *player)
+static UINT32 K_BotRubberbandDistance(const player_t *player)
 {
 	const UINT32 spacing = FixedDiv(640 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
 	const UINT8 portpriority = player - players;
@@ -560,11 +560,11 @@ static UINT32 K_BotRubberbandDistance(player_t *player)
 }
 
 /*--------------------------------------------------
-	fixed_t K_BotRubberband(player_t *player)
+	fixed_t K_BotRubberband(const player_t *player)
 
 		See header file for description.
 --------------------------------------------------*/
-fixed_t K_BotRubberband(player_t *player)
+fixed_t K_BotRubberband(const player_t *player)
 {
 	constexpr fixed_t rubberdeltabase = FRACUNIT / 4; // +/- x0.25
 
@@ -784,7 +784,7 @@ static fixed_t K_ScaleWPDistWithSlope(fixed_t disttonext, angle_t angletonext, c
 }
 
 /*--------------------------------------------------
-	static botprediction_t *K_CreateBotPrediction(player_t *player)
+	static botprediction_t *K_CreateBotPrediction(const player_t *player)
 
 		Calculates a point further along the track to attempt to drive towards.
 
@@ -794,7 +794,7 @@ static fixed_t K_ScaleWPDistWithSlope(fixed_t disttonext, angle_t angletonext, c
 	Return:-
 		Bot prediction struct.
 --------------------------------------------------*/
-static botprediction_t *K_CreateBotPrediction(player_t *player)
+static botprediction_t *K_CreateBotPrediction(const player_t *player)
 {
 	const precise_t time = I_GetPreciseTime();
 
@@ -915,7 +915,7 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 }
 
 /*--------------------------------------------------
-	static UINT8 K_TrySpindash(player_t *player)
+	static UINT8 K_TrySpindash(const player_t *player, ticcmd_t *cmd)
 
 		Determines conditions where the bot should attempt to spindash.
 
@@ -926,7 +926,7 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 		0 to make the bot drive normally, 1 to e-brake, 2 to e-brake & charge spindash.
 		(TODO: make this an enum)
 --------------------------------------------------*/
-static UINT8 K_TrySpindash(player_t *player)
+static UINT8 K_TrySpindash(const player_t *player, ticcmd_t *cmd)
 {
 	const tic_t difficultyModifier = (TICRATE/6);
 
@@ -939,7 +939,7 @@ static UINT8 K_TrySpindash(player_t *player)
 	if (player->spindashboost || player->tiregrease // You just released a spindash, you don't need to try again yet, jeez.
 		|| P_IsObjectOnGround(player->mo) == false) // Not in a state where we want 'em to spindash.
 	{
-		player->botvars.spindashconfirm = 0;
+		cmd->bot.spindashconfirm = 0;
 		return 0;
 	}
 
@@ -997,7 +997,7 @@ static UINT8 K_TrySpindash(player_t *player)
 		anyCondition = true;\
 		if (player->botvars.spindashconfirm < BOTSPINDASHCONFIRM) \
 		{ \
-			player->botvars.spindashconfirm++; \
+			cmd->bot.spindashconfirm++; \
 		} \
 	}
 
@@ -1039,7 +1039,7 @@ static UINT8 K_TrySpindash(player_t *player)
 		{
 			if (player->botvars.spindashconfirm > 0)
 			{
-				player->botvars.spindashconfirm--;
+				cmd->bot.spindashconfirm--;
 			}
 		}
 	}
@@ -1049,7 +1049,7 @@ static UINT8 K_TrySpindash(player_t *player)
 }
 
 /*--------------------------------------------------
-	static boolean K_TryRingShooter(player_t *player)
+	static boolean K_TryRingShooter(const player_t *player)
 
 		Determines conditions where the bot should attempt to respawn.
 
@@ -1059,7 +1059,7 @@ static UINT8 K_TrySpindash(player_t *player)
 	Return:-
 		true if we want to hold the respawn button, otherwise false.
 --------------------------------------------------*/
-static boolean K_TryRingShooter(player_t *player)
+static boolean K_TryRingShooter(const player_t *player)
 {
 	if (player->respawn.state != RESPAWNST_NONE)
 	{
@@ -1079,15 +1079,11 @@ static boolean K_TryRingShooter(player_t *player)
 		return false;
 	}
 
-	// Our anti-grief system is already a perfect system
-	// for determining if we're not making progress, so
-	// lets reuse it for bot respawning!
-	P_IncrementGriefValue(player, &player->botvars.respawnconfirm, BOTRESPAWNCONFIRM);
-	return (player->botvars.respawnconfirm >= BOTRESPAWNCONFIRM);
+	return true;
 }
 
 /*--------------------------------------------------
-	static void K_DrawPredictionDebug(botprediction_t *predict, player_t *player)
+	static void K_DrawPredictionDebug(botprediction_t *predict, const player_t *player)
 
 		Draws objects to show where the viewpoint bot is trying to go.
 
@@ -1098,7 +1094,7 @@ static boolean K_TryRingShooter(player_t *player)
 	Return:-
 		None
 --------------------------------------------------*/
-static void K_DrawPredictionDebug(botprediction_t *predict, player_t *player)
+static void K_DrawPredictionDebug(botprediction_t *predict, const player_t *player)
 {
 	mobj_t *debugMobj = nullptr;
 	angle_t sideAngle = ANGLE_MAX;
@@ -1151,7 +1147,7 @@ static void K_DrawPredictionDebug(botprediction_t *predict, player_t *player)
 }
 
 /*--------------------------------------------------
-	static void K_BotTrick(player_t *player, ticcmd_t *cmd, const botcontroller_t *botController)
+	static void K_BotTrick(const player_t *player, ticcmd_t *cmd, const botcontroller_t *botController)
 
 		Determines inputs for trick panels.
 
@@ -1163,7 +1159,7 @@ static void K_DrawPredictionDebug(botprediction_t *predict, player_t *player)
 	Return:-
 		None
 --------------------------------------------------*/
-static void K_BotTrick(player_t *player, ticcmd_t *cmd, const botcontroller_t *botController)
+static void K_BotTrick(const player_t *player, ticcmd_t *cmd, const botcontroller_t *botController)
 {
 	// Trick panel state -- do nothing until a controller line is found, in which case do a trick.
 	if (botController == nullptr)
@@ -1192,7 +1188,7 @@ static void K_BotTrick(player_t *player, ticcmd_t *cmd, const botcontroller_t *b
 }
 
 /*--------------------------------------------------
-	static angle_t K_BotSmoothLanding(player_t *player, angle_t destangle)
+	static angle_t K_BotSmoothLanding(const player_t *player, angle_t destangle)
 
 		Calculates a new destination angle while in the air,
 		to be able to successfully smooth land.
@@ -1204,7 +1200,7 @@ static void K_BotTrick(player_t *player, ticcmd_t *cmd, const botcontroller_t *b
 	Return:-
 		New destination angle.
 --------------------------------------------------*/
-static angle_t K_BotSmoothLanding(player_t *player, angle_t destangle)
+static angle_t K_BotSmoothLanding(const player_t *player, angle_t destangle)
 {
 	angle_t newAngle = destangle;
 	boolean air = !P_IsObjectOnGround(player->mo);
@@ -1241,7 +1237,7 @@ static angle_t K_BotSmoothLanding(player_t *player, angle_t destangle)
 }
 
 /*--------------------------------------------------
-	static INT32 K_HandleBotTrack(player_t *player, ticcmd_t *cmd, botprediction_t *predict)
+	static INT32 K_HandleBotTrack(const player_t *player, ticcmd_t *cmd, botprediction_t *predict)
 
 		Determines inputs for standard track driving.
 
@@ -1253,7 +1249,7 @@ static angle_t K_BotSmoothLanding(player_t *player, angle_t destangle)
 	Return:-
 		New value for turn amount.
 --------------------------------------------------*/
-static INT32 K_HandleBotTrack(player_t *player, ticcmd_t *cmd, botprediction_t *predict, angle_t destangle)
+static INT32 K_HandleBotTrack(const player_t *player, ticcmd_t *cmd, botprediction_t *predict, angle_t destangle)
 {
 	// Handle steering towards waypoints!
 	INT32 turnamt = 0;
@@ -1341,7 +1337,7 @@ static INT32 K_HandleBotTrack(player_t *player, ticcmd_t *cmd, botprediction_t *
 }
 
 /*--------------------------------------------------
-	static INT32 K_HandleBotReverse(player_t *player, ticcmd_t *cmd, botprediction_t *predict)
+	static INT32 K_HandleBotReverse(const player_t *player, ticcmd_t *cmd, botprediction_t *predict)
 
 		Determines inputs for reversing.
 
@@ -1353,7 +1349,7 @@ static INT32 K_HandleBotTrack(player_t *player, ticcmd_t *cmd, botprediction_t *
 	Return:-
 		New value for turn amount.
 --------------------------------------------------*/
-static INT32 K_HandleBotReverse(player_t *player, ticcmd_t *cmd, botprediction_t *predict, angle_t destangle)
+static INT32 K_HandleBotReverse(const player_t *player, ticcmd_t *cmd, botprediction_t *predict, angle_t destangle)
 {
 	// Handle steering towards waypoints!
 	INT32 turnamt = 0;
@@ -1486,11 +1482,11 @@ static INT32 K_HandleBotReverse(player_t *player, ticcmd_t *cmd, botprediction_t
 }
 
 /*--------------------------------------------------
-	static void K_BotPodiumTurning(player_t *player, ticcmd_t *cmd)
+	static void K_BotPodiumTurning(const player_t *player, ticcmd_t *cmd)
 
 		Calculates bot turning for the podium cutscene.
 --------------------------------------------------*/
-static void K_BotPodiumTurning(player_t *player, ticcmd_t *cmd)
+static void K_BotPodiumTurning(const player_t *player, ticcmd_t *cmd)
 {
 	const angle_t destAngle = R_PointToAngle2(
 		player->mo->x, player->mo->y,
@@ -1514,11 +1510,11 @@ static void K_BotPodiumTurning(player_t *player, ticcmd_t *cmd)
 }
 
 /*--------------------------------------------------
-	static void K_BuildBotPodiumTiccmd(player_t *player, ticcmd_t *cmd)
+	static void K_BuildBotPodiumTiccmd(const player_t *player, ticcmd_t *cmd)
 
 		Calculates all bot movement for the podium cutscene.
 --------------------------------------------------*/
-static void K_BuildBotPodiumTiccmd(player_t *player, ticcmd_t *cmd)
+static void K_BuildBotPodiumTiccmd(const player_t *player, ticcmd_t *cmd)
 {
 	if (player->currentwaypoint == nullptr)
 	{
@@ -1543,11 +1539,11 @@ static void K_BuildBotPodiumTiccmd(player_t *player, ticcmd_t *cmd)
 }
 
 /*--------------------------------------------------
-	static void K_BuildBotTiccmdNormal(player_t *player, ticcmd_t *cmd)
+	static void K_BuildBotTiccmdNormal(const player_t *player, ticcmd_t *cmd)
 
 		Build ticcmd for bots with a style of BOT_STYLE_NORMAL
 --------------------------------------------------*/
-static void K_BuildBotTiccmdNormal(player_t *player, ticcmd_t *cmd)
+static void K_BuildBotTiccmdNormal(const player_t *player, ticcmd_t *cmd)
 {
 	precise_t t = 0;
 
@@ -1597,7 +1593,7 @@ static void K_BuildBotTiccmdNormal(player_t *player, ticcmd_t *cmd)
 		return;
 	}
 
-	if (K_TryRingShooter(player) == true)
+	if (K_TryRingShooter(player) == true && player->botvars.respawnconfirm >= BOTRESPAWNCONFIRM)
 	{
 		// We want to respawn. Simply hold Y and stop here!
 		cmd->buttons |= (BT_RESPAWN | BT_EBRAKEMASK);
@@ -1751,7 +1747,7 @@ static void K_BuildBotTiccmdNormal(player_t *player, ticcmd_t *cmd)
 	if (trySpindash == true)
 	{
 		// Spindashing
-		spindash = K_TrySpindash(player);
+		spindash = K_TrySpindash(player, cmd);
 
 		if (spindash > 0)
 		{
@@ -1790,7 +1786,7 @@ static void K_BuildBotTiccmdNormal(player_t *player, ticcmd_t *cmd)
 			// Count up
 			if (player->botvars.turnconfirm < BOTTURNCONFIRM)
 			{
-				player->botvars.turnconfirm++;
+				cmd->bot.turnconfirm++;
 			}
 		}
 		else if (turnamt < 0)
@@ -1798,7 +1794,7 @@ static void K_BuildBotTiccmdNormal(player_t *player, ticcmd_t *cmd)
 			// Count down
 			if (player->botvars.turnconfirm > -BOTTURNCONFIRM)
 			{
-				player->botvars.turnconfirm--;
+				cmd->bot.turnconfirm--;
 			}
 		}
 		else
@@ -1806,11 +1802,11 @@ static void K_BuildBotTiccmdNormal(player_t *player, ticcmd_t *cmd)
 			// Back to neutral
 			if (player->botvars.turnconfirm < 0)
 			{
-				player->botvars.turnconfirm++;
+				cmd->bot.turnconfirm++;
 			}
 			else if (player->botvars.turnconfirm > 0)
 			{
-				player->botvars.turnconfirm--;
+				cmd->bot.turnconfirm--;
 			}
 		}
 
@@ -1836,7 +1832,9 @@ static void K_BuildBotTiccmdNormal(player_t *player, ticcmd_t *cmd)
 
 		See header file for description.
 --------------------------------------------------*/
-void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
+void K_BuildBotTiccmd(
+	player_t *player, // annoyingly NOT const because of LUA_HookTiccmd... grumble grumble
+	ticcmd_t *cmd)
 {
 	// Remove any existing controls
 	memset(cmd, 0, sizeof(ticcmd_t));
@@ -1855,8 +1853,11 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	// their own :)
 	if (LUA_HookTiccmd(player, cmd, HOOK(BotTiccmd)) == true)
 	{
+		cmd->flags |= TICCMD_BOT;
 		return;
 	}
+
+	cmd->flags |= TICCMD_BOT;
 
 	if (K_PodiumSequence() == true)
 	{
@@ -1895,4 +1896,17 @@ void K_UpdateBotGameplayVars(player_t *player)
 	}
 
 	player->botvars.rubberband = K_UpdateRubberband(player);
+
+	player->botvars.turnconfirm += player->cmd.bot.turnconfirm;
+	player->botvars.spindashconfirm += player->cmd.bot.spindashconfirm;
+
+	if (K_TryRingShooter(player) == true)
+	{
+		// Our anti-grief system is already a perfect system
+		// for determining if we're not making progress, so
+		// lets reuse it for bot respawning!
+		P_IncrementGriefValue(player, &player->botvars.respawnconfirm, BOTRESPAWNCONFIRM);
+	}
+
+	K_UpdateBotGameplayVarsItemUsage(player);
 }

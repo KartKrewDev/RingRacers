@@ -154,7 +154,7 @@ void P_DemoCameraMovement(camera_t *cam, UINT8 num);
 boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcalled);
 void P_ToggleDemoCamera(UINT8 viewnum);
 
-boolean P_PlayerInPain(player_t *player);
+boolean P_PlayerInPain(const player_t *player);
 void P_ResetPlayer(player_t *player);
 boolean P_PlayerCanDamage(player_t *player, mobj_t *thing);
 
@@ -166,12 +166,12 @@ void P_SetPlayerAngle(player_t *player, angle_t angle);
 void P_ForceLocalAngle(player_t *player, angle_t angle);
 boolean P_PlayerFullbright(player_t *player);
 
-boolean P_IsObjectInGoop(mobj_t *mo);
-boolean P_IsObjectOnGround(mobj_t *mo);
-boolean P_IsObjectOnGroundIn(mobj_t *mo, sector_t *sec);
-boolean P_IsObjectOnRealGround(mobj_t *mo, sector_t *sec); // SRB2Kart
+boolean P_IsObjectInGoop(const mobj_t *mo);
+boolean P_IsObjectOnGround(const mobj_t *mo);
+boolean P_IsObjectOnGroundIn(const mobj_t *mo, const sector_t *sec);
+boolean P_IsObjectOnRealGround(const mobj_t *mo, const sector_t *sec); // SRB2Kart
 #define P_IsObjectFlipped(o) (((o)->eflags & MFE_VERTICALFLIP) == MFE_VERTICALFLIP)
-boolean P_InQuicksand(mobj_t *mo);
+boolean P_InQuicksand(const mobj_t *mo);
 boolean P_PlayerHitFloor(player_t *player, boolean fromAir, angle_t oldPitch, angle_t oldRoll);
 
 void P_SetObjectMomZ(mobj_t *mo, fixed_t value, boolean relative);
@@ -276,8 +276,8 @@ void P_PushableThinker(mobj_t *mobj);
 void P_SceneryThinker(mobj_t *mobj);
 
 
-fixed_t P_MobjFloorZ(mobj_t *mobj, sector_t *sector, sector_t *boundsec, fixed_t x, fixed_t y, line_t *line, boolean lowest, boolean perfect);
-fixed_t P_MobjCeilingZ(mobj_t *mobj, sector_t *sector, sector_t *boundsec, fixed_t x, fixed_t y, line_t *line, boolean lowest, boolean perfect);
+fixed_t P_MobjFloorZ(const mobj_t *mobj, const sector_t *sector, const sector_t *boundsec, fixed_t x, fixed_t y, const line_t *line, boolean lowest, boolean perfect);
+fixed_t P_MobjCeilingZ(const mobj_t *mobj, const sector_t *sector, const sector_t *boundsec, fixed_t x, fixed_t y, const line_t *line, boolean lowest, boolean perfect);
 #define P_GetFloorZ(mobj, sector, x, y, line) P_MobjFloorZ(mobj, sector, NULL, x, y, line, false, false)
 #define P_GetCeilingZ(mobj, sector, x, y, line) P_MobjCeilingZ(mobj, sector, NULL, x, y, line, true, false)
 #define P_GetFOFTopZ(mobj, sector, fof, x, y, line) P_MobjCeilingZ(mobj, sectors + fof->secnum, sector, x, y, line, false, false)

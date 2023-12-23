@@ -139,7 +139,12 @@ demoghost *ghosts = NULL;
 #define ZT_AIMING	0x0040
 #define ZT_LATENCY	0x0080
 #define ZT_FLAGS	0x0100
+#define ZT_BOT		0x8000
 // Ziptics are UINT16 now, go nuts
+
+#define ZT_BOT_TURN			0x0001
+#define ZT_BOT_SPINDASH		0x0002
+#define ZT_BOT_ITEM			0x0004
 
 #define DEMOMARKER 0x80 // demobuf.end
 
@@ -544,6 +549,18 @@ void G_ReadDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 	if (ziptic & ZT_FLAGS)
 		oldcmd[playernum].flags = READUINT8(demobuf.p);
 
+	if (ziptic & ZT_BOT)
+	{
+		UINT16 botziptic = READUINT16(demobuf.p);
+
+		if (botziptic & ZT_BOT_TURN)
+			oldcmd[playernum].bot.turnconfirm = READSINT8(demobuf.p);
+		if (botziptic & ZT_BOT_SPINDASH)
+			oldcmd[playernum].bot.spindashconfirm = READSINT8(demobuf.p);
+		if (botziptic & ZT_BOT_ITEM)
+			oldcmd[playernum].bot.itemconfirm = READSINT8(demobuf.p);
+	}
+
 	G_CopyTiccmd(cmd, &oldcmd[playernum], 1);
 
 	if (!(demoflags & DF_GHOST) && *demobuf.p == DEMOMARKER)
@@ -558,10 +575,12 @@ void G_WriteDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 {
 	UINT16 ziptic = 0;
 	UINT8 *ziptic_p;
-	(void)playernum;
+
+	//(void)playernum;
 
 	if (!demobuf.p)
 		return;
+
 	ziptic_p = demobuf.p; // the ziptic, written at the end of this function
 	demobuf.p += 2;
 
@@ -621,7 +640,44 @@ void G_WriteDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 		ziptic |= ZT_FLAGS;
 	}
 
+	if (cmd->flags & TICCMD_BOT)
+	{
+		ziptic |= ZT_BOT;
+	}
+
 	WRITEUINT16(ziptic_p, ziptic);
+
+	if (ziptic & ZT_BOT)
+	{
+		UINT16 botziptic = 0;
+		UINT8 *botziptic_p;
+
+		botziptic_p = demobuf.p; // the ziptic, written at the end of this function
+		demobuf.p += 2;
+
+		if (cmd->bot.turnconfirm != oldcmd[playernum].bot.turnconfirm)
+		{
+			WRITESINT8(demobuf.p, cmd->bot.turnconfirm);
+			oldcmd[playernum].bot.turnconfirm = cmd->bot.turnconfirm;
+			botziptic |= ZT_BOT_TURN;
+		}
+
+		if (cmd->bot.spindashconfirm != oldcmd[playernum].bot.spindashconfirm)
+		{
+			WRITESINT8(demobuf.p, cmd->bot.spindashconfirm);
+			oldcmd[playernum].bot.spindashconfirm = cmd->bot.spindashconfirm;
+			botziptic |= ZT_BOT_SPINDASH;
+		}
+
+		if (cmd->bot.itemconfirm != oldcmd[playernum].bot.itemconfirm)
+		{
+			WRITESINT8(demobuf.p, cmd->bot.itemconfirm);
+			oldcmd[playernum].bot.itemconfirm = cmd->bot.itemconfirm;
+			botziptic |= ZT_BOT_ITEM;
+		}
+
+		WRITEUINT16(botziptic_p, botziptic);
+	}
 
 	// attention here for the ticcmd size!
 	// latest demos with mouse aiming byte in ticcmd
@@ -1243,6 +1299,16 @@ readghosttic:
 			g->p++;
 		if (ziptic & ZT_FLAGS)
 			g->p++;
+		if (ziptic & ZT_BOT)
+		{
+			UINT16 botziptic = READUINT16(g->p);
+			if (botziptic & ZT_BOT_TURN)
+				g->p++;
+			if (botziptic & ZT_BOT_SPINDASH)
+				g->p++;
+			if (botziptic & ZT_BOT_ITEM)
+				g->p++;
+		}
 
 		// Grab ghost data.
 		ziptic = READUINT8(g->p);

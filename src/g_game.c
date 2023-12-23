@@ -997,6 +997,11 @@ ticcmd_t *G_MoveTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n)
 		dest[i].buttons = (UINT16)SHORT(src[i].buttons);
 		dest[i].latency = src[i].latency;
 		dest[i].flags = src[i].flags;
+
+		if (dest[i].flags & TICCMD_BOT)
+		{
+			dest[i].bot.itemconfirm = src[i].bot.itemconfirm;
+		}
 	}
 	return dest;
 }
