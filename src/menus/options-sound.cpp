@@ -1,9 +1,158 @@
 /// \file  menus/options-sound.c
 /// \brief Sound Options
 
+#include <array>
+#include <cstdlib>
+
+#include "../v_draw.hpp"
+
+#include "../console.h"
 #include "../k_menu.h"
 #include "../s_sound.h"	// sounds consvars
 #include "../g_game.h" // cv_chatnotifications
+
+using srb2::Draw;
+
+namespace
+{
+
+int flip_delay = 0;
+
+struct Slider
+{
+	enum Id
+	{
+		kMusicVolume,
+		kSfxVolume,
+		kNumSliders
+	};
+
+	Slider(bool(*toggle)(bool), consvar_t& volume) : toggle_(toggle), volume_(volume) {}
+
+	bool(*toggle_)(bool);
+	consvar_t& volume_;
+
+	int shake_ = 0;
+
+	void draw(int x, int y, bool selected)
+	{
+		constexpr int kWidth = 111;
+
+		Draw h(320 - x - kWidth, y);
+
+		if (selected)
+		{
+			int ofs = skullAnimCounter / 5;
+			Draw arrows = h.font(Draw::Font::kConsole).align(Draw::Align::kLeft).flags(highlightflags);
+
+			arrows.x(-10 - ofs).text("\x1C");
+			arrows.x(kWidth + 2 + ofs).text("\x1D");
+		}
+
+		h = h.y(1);
+		h.size(kWidth, 7).fill(31);
+
+		Draw s = h.xy(1, 2).size(10, 4);
+		int color = toggle_(false) ? aquamap[0] : 15;
+
+		int n = volume_.value / 10;
+		for (int i = 0; i < n; ++i)
+		{
+			s.fill(color);
+			s = s.x(11);
+		}
+
+		s.width(volume_.value % 10).fill(color);
+
+		n = std::atoi(volume_.defaultvalue);
+		h.x(1 + shake_ + n + (n / 10)).size(1, 7).fill(35);
+
+		if (!toggle_(false))
+		{
+			h
+				.x(kWidth / 2)
+				.font(Draw::Font::kConsole)
+				.align(Draw::Align::kCenter)
+				.flags(V_40TRANS)
+				.text("S I L E N T");
+		}
+	}
+
+	void input(INT32 c)
+	{
+		M_ChangeCvarDirect(c, &volume_);
+
+		shake_ = !shake_;
+		flip_delay = 2;
+	}
+};
+
+std::array<Slider, Slider::kNumSliders> sliders{{
+	{
+		[](bool toggle) -> bool
+		{
+			if (toggle)
+			{
+				CV_AddValue(&cv_gamedigimusic, 1);
+			}
+
+			return !S_MusicDisabled();
+		},
+		cv_digmusicvolume,
+	},
+	{
+		[](bool toggle) -> bool
+		{
+			if (toggle)
+			{
+				CV_AddValue(&cv_gamesounds, 1);
+			}
+
+			return !S_SoundDisabled();
+		},
+		cv_soundvolume,
+	},
+}};
+
+void slider_routine(INT32 c)
+{
+	sliders.at(currentMenu->menuitems[itemOn].mvar2).input(c);
+}
+
+void draw_routine()
+{
+	int x = currentMenu->x - (menutransition.tics * 48);
+	int y = currentMenu->y;
+
+	M_DrawGenericOptions();
+
+	for (int i = 0;  i < currentMenu->numitems; ++i)
+	{
+		const menuitem_t& it = currentMenu->menuitems[i];
+
+		if ((it.status & IT_TYPE) == IT_ARROWS)
+		{
+			sliders.at(it.mvar2).draw(x, y, i == itemOn);
+		}
+
+		y += 8;
+	}
+}
+
+void tick_routine(void)
+{
+	M_OptionsTick();
+
+	if (flip_delay && !--flip_delay)
+	{
+		for (Slider& slider : sliders)
+		{
+			slider.shake_ = 0;
+		}
+	}
+}
+
+}; // namespace
 
 menuitem_t OPTIONS_Sound[] =
 {
@@ -11,14 +160,14 @@ menuitem_t OPTIONS_Sound[] =
 	{IT_STRING | IT_CVAR, "SFX", "Enable or disable sound effect playback.",
 		NULL, {.cvar = &cv_gamesounds}, 0, 0},
 
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER, "SFX Volume", "Adjust the volume of sound effects.",
-		NULL, {.cvar = &cv_soundvolume}, 0, 0},
+	{IT_STRING | IT_ARROWS | IT_CV_SLIDER, "SFX Volume", "Adjust the volume of sound effects.",
+		NULL, {.routine = slider_routine}, 0, Slider::kSfxVolume},
 
 	{IT_STRING | IT_CVAR, "Music", "Enable or disable music playback.",
 		NULL, {.cvar = &cv_gamedigimusic}, 0, 0},
 
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER, "Music Volume", "Adjust the volume of music playback.",
-		NULL, {.cvar = &cv_digmusicvolume}, 0, 0},
+	{IT_STRING | IT_ARROWS | IT_CV_SLIDER, "Music Volume", "Adjust the volume of music playback.",
+		NULL, {.routine = slider_routine}, 0, Slider::kMusicVolume},
 
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
@@ -57,9 +206,9 @@ menu_t OPTIONS_SoundDef = {
 	MBF_DRAWBGWHILEPLAYING,
 	NULL,
 	2, 5,
-	M_DrawGenericOptions,
+	draw_routine,
 	M_DrawOptionsCogs,
-	M_OptionsTick,
+	tick_routine,
 	NULL,
 	NULL,
 	NULL,
