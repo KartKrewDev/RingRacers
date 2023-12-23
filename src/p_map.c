@@ -670,8 +670,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		{
 			UINT32 damagetype = (thing->info->mass & 0xFF);
 
-			if (P_DamageMobj(tm.thing, thing, thing, 1, damagetype) && (damagetype = (thing->info->mass>>8)))
-				S_StartSound(thing, damagetype);
+			P_DamageMobj(tm.thing, thing, thing, 1, damagetype);
 
 			if (P_MobjWasRemoved(tm.thing) || P_MobjWasRemoved(thing))
 				return BMIT_CONTINUE;
@@ -690,8 +689,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		{
 			UINT32 damagetype = (tm.thing->info->mass & 0xFF);
 
-			if (P_DamageMobj(thing, tm.thing, tm.thing, 1, damagetype) && (damagetype = (tm.thing->info->mass>>8)))
-				S_StartSound(tm.thing, damagetype);
+			P_DamageMobj(thing, tm.thing, tm.thing, 1, damagetype);
 
 			if (P_MobjWasRemoved(tm.thing) || P_MobjWasRemoved(thing))
 				return BMIT_CONTINUE;
