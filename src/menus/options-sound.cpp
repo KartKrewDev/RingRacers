@@ -223,12 +223,6 @@ menuitem_t OPTIONS_Sound[] =
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Reverse L/R Channels", "Reverse left & right channels for Stereo playback.",
-		NULL, {.cvar = &stereoreverse}, 0, 0},
-
-	{IT_SPACE | IT_NOTHING, NULL,  NULL,
-		NULL, {NULL}, 0, 0},
-
 	{IT_STRING | IT_CVAR, "Chat Notifications", "Set when to play notification sounds when chat messages are received.",
 		NULL, {.cvar = &cv_chatnotifications}, 0, 0},
 
@@ -238,10 +232,11 @@ menuitem_t OPTIONS_Sound[] =
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 
+	{IT_STRING | IT_CVAR, "Reverse L/R Channels", "Reverse left & right channels for Stereo playback.",
+		NULL, {.cvar = &stereoreverse}, 0, 0},
+
 	{IT_STRING | IT_CVAR, "Hear Tabbed-out", "Keep playing game audio when the window is out of focus (FOCUS LOST).",
 		NULL, {.cvar = &cv_bgaudio}, 0, 0},
-
-	// @TODO: Sound test (there's currently no space on this menu, might be better to throw it in extras?)
 };
 
 menu_t OPTIONS_SoundDef = {
