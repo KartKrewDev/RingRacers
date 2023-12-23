@@ -164,6 +164,11 @@ void slider_routine(INT32 c)
 	sliders.at(currentMenu->menuitems[itemOn].mvar2).input(c);
 }
 
+void restartaudio_routine(INT32)
+{
+	COM_ImmedExecute("restartaudio");
+}
+
 void draw_routine()
 {
 	int x = currentMenu->x - (menutransition.tics * 48);
@@ -248,6 +253,12 @@ menuitem_t OPTIONS_Sound[] =
 
 	{IT_STRING | IT_CVAR, "Hear Tabbed-out", "Keep playing game audio when the window is out of focus (FOCUS LOST).",
 		NULL, {.cvar = &cv_bgaudio}, 0, 0},
+
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, {NULL}, 0, 0},
+
+	{IT_STRING | IT_CALL, "\x85" "Restart Audio", "Reboot the game's audio system.",
+		NULL, {.routine = restartaudio_routine}, 0, 0},
 };
 
 menu_t OPTIONS_SoundDef = {
