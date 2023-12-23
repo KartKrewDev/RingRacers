@@ -1034,7 +1034,7 @@ static void M_PrecacheLevelLocks(void)
 					&& mapheaderinfo[map])
 				{
 					if (mapheaderinfo[map]->cache_maplock != MAXUNLOCKABLES)
-						CONS_Alert(CONS_ERROR, "Unlockable %u: Too many SECRET_MAPs associated with Level %s\n", i, mapheaderinfo[map]->lumpname);
+						CONS_Alert(CONS_ERROR, "Unlockable %u: Too many SECRET_MAPs associated with Level %s\n", i+1, mapheaderinfo[map]->lumpname);
 					mapheaderinfo[map]->cache_maplock = i;
 				}
 				break;
@@ -1115,11 +1115,17 @@ static void M_PrecacheLevelLocks(void)
 						break;
 					}
 					if (j == mapheaderinfo[map]->musname_size)
-						CONS_Alert(CONS_ERROR, "Unlockable %u: Too many SECRET_ALTMUSICs associated with Level %s\n", i, mapheaderinfo[map]->lumpname);
+						CONS_Alert(CONS_ERROR, "Unlockable %u: Too many SECRET_ALTMUSICs associated with Level %s\n", i+1, mapheaderinfo[map]->lumpname);
+				}
+				else
+				{
+					CONS_Alert(CONS_ERROR, "Unlockable %u: Invalid levelname %s for SECRET_ALTMUSIC\n", i+1, unlockables[i].stringVar);
 				}
 
 				if (tempstr == NULL)
-					tempstr = va("INVALID MUSIC UNLOCK %u", i);
+				{
+					tempstr = va("INVALID MUSIC UNLOCK %u", i+1);
+				}
 
 				strlcpy(unlockables[i].name, tempstr, sizeof (unlockables[i].name));
 
@@ -1132,7 +1138,7 @@ static void M_PrecacheLevelLocks(void)
 				if (cup)
 				{
 					if (cup->cache_cuplock != MAXUNLOCKABLES)
-						CONS_Alert(CONS_ERROR, "Unlockable %u: Too many SECRET_CUPs associated with Cup %s\n", i, cup->name);
+						CONS_Alert(CONS_ERROR, "Unlockable %u: Too many SECRET_CUPs associated with Cup %s\n", i+1, cup->name);
 					cup->cache_cuplock = i;
 					break;
 				}
