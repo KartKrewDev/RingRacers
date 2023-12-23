@@ -47,6 +47,8 @@ struct Slider
 
 			arrows.x(-10 - ofs).text("\x1C");
 			arrows.x(kWidth + 2 + ofs).text("\x1D");
+
+			h.xy(kWidth + 9, -3).small_button(Draw::Button::z, false);
 		}
 
 		h = h.y(1);
@@ -152,19 +154,29 @@ void tick_routine(void)
 	}
 }
 
+boolean input_routine(INT32)
+{
+	UINT8 pid = 0; // todo: Add ability for any splitscreen player to bring up the menu.
+
+	const menuitem_t& it = currentMenu->menuitems[itemOn];
+
+	if (M_MenuButtonPressed(pid, MBT_Z) && (it.status & IT_TYPE) == IT_ARROWS)
+	{
+		sliders.at(it.mvar2).toggle_(true);
+		return true;
+	}
+
+	return false;
+}
+
 }; // namespace
 
 menuitem_t OPTIONS_Sound[] =
 {
 
-	{IT_STRING | IT_CVAR, "SFX", "Enable or disable sound effect playback.",
-		NULL, {.cvar = &cv_gamesounds}, 0, 0},
 
 	{IT_STRING | IT_ARROWS | IT_CV_SLIDER, "SFX Volume", "Adjust the volume of sound effects.",
 		NULL, {.routine = slider_routine}, 0, Slider::kSfxVolume},
-
-	{IT_STRING | IT_CVAR, "Music", "Enable or disable music playback.",
-		NULL, {.cvar = &cv_gamedigimusic}, 0, 0},
 
 	{IT_STRING | IT_ARROWS | IT_CV_SLIDER, "Music Volume", "Adjust the volume of music playback.",
 		NULL, {.routine = slider_routine}, 0, Slider::kMusicVolume},
@@ -211,5 +223,5 @@ menu_t OPTIONS_SoundDef = {
 	tick_routine,
 	NULL,
 	NULL,
-	NULL,
+	input_routine,
 };
