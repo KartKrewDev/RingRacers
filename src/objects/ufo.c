@@ -813,9 +813,13 @@ static UINT8 GetUFODamage(mobj_t *inflictor, UINT8 damageType)
 				break;
 			}
 			case MT_SPB:
+			case MT_SPBEXPLOSION:
 			{
+				if (inflictor->type != MT_SPBEXPLOSION || inflictor->threshold == KITEM_SPB)
+				{
+					targetdamaging |= UFOD_SPB;
+				}
 				// SPB deals triple damage.
-				targetdamaging |= UFOD_SPB;
 				ret = 30;
 				break;
 			}
