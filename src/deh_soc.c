@@ -2773,9 +2773,9 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 			if (fastcmp(params[1], "NORMAL"))
 				;
 			else if (fastcmp(params[1], "HARD"))
-				x1 = KARTSPEED_HARD;
+				re = KARTSPEED_HARD;
 			else if (fastcmp(params[1], "MASTER"))
-				x1 = KARTGP_MASTER;
+				re = KARTGP_MASTER;
 			else
 			{
 				deh_warning("gamespeed requirement \"%s\" invalid for condition ID %d", params[1], id+1);
