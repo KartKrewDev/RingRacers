@@ -9,6 +9,8 @@
 /// \file  k_hud.c
 /// \brief HUD drawing functions exclusive to Kart
 
+#include <algorithm>
+
 #include "k_hud.h"
 #include "k_kart.h"
 #include "k_battle.h"
@@ -955,7 +957,7 @@ static patch_t *K_GetSmallStaticCachedItemPatch(kartitems_t item)
 {
 	UINT8 offset;
 
-	item = K_ItemResultToType(item);
+	item = static_cast<kartitems_t>(K_ItemResultToType(item));
 
 	switch (item)
 	{
@@ -1281,7 +1283,7 @@ void K_DrawMapThumbnail(fixed_t x, fixed_t y, fixed_t width, UINT32 flags, UINT1
 	}
 	else
 	{
-		PictureOfLevel = mapheaderinfo[map]->thumbnailPic;
+		PictureOfLevel = static_cast<patch_t*>(mapheaderinfo[map]->thumbnailPic);
 	}
 
 	K_DrawLikeMapThumbnail(x, y, width, flags, PictureOfLevel, colormap);
@@ -1318,7 +1320,7 @@ static void K_drawKartItem(void)
 	INT32 itembar = 0;
 	INT32 maxl = 0; // itembar's normal highest value
 	const INT32 barlength = (offset ? 12 : 26);
-	UINT16 localcolor[3] = { stplyr->skincolor };
+	skincolornum_t localcolor[3] = { static_cast<skincolornum_t>(stplyr->skincolor) };
 	SINT8 colormode[3] = { TC_RAINBOW };
 	boolean flipamount = false;	// Used for 3P/4P splitscreen to flip item amount stuff
 
@@ -1346,7 +1348,7 @@ static void K_drawKartItem(void)
 					break;
 
 				case KITEM_ORBINAUT:
-					localpatch[i] = kp_orbinaut[(offset ? 4 : min(amt-1, 3))];
+					localpatch[i] = kp_orbinaut[(offset ? 4 : std::min(amt-1, 3))];
 					break;
 
 				default:
@@ -1435,7 +1437,7 @@ static void K_drawKartItem(void)
 					break;
 
 				case KITEM_ORBINAUT:
-					localpatch[1] = kp_orbinaut[(offset ? 4 : min(stplyr->itemamount-1, 3))];
+					localpatch[1] = kp_orbinaut[(offset ? 4 : std::min(stplyr->itemamount-1, 3))];
 					break;
 
 				case KITEM_SPB:
@@ -1464,7 +1466,7 @@ static void K_drawKartItem(void)
 			switch (stplyr->karthud[khud_itemblinkmode])
 			{
 				case 2:
-					localcolor[1] = K_RainbowColor(leveltime);
+					localcolor[1] = static_cast<skincolornum_t>(K_RainbowColor(leveltime));
 					break;
 				case 1:
 					localcolor[1] = SKINCOLOR_RED;
@@ -1597,7 +1599,7 @@ static void K_drawKartItem(void)
 	if (itembar)
 	{
 		const INT32 fill = ((itembar*barlength)/maxl);
-		const INT32 length = min(barlength, fill);
+		const INT32 length = std::min(barlength, fill);
 		const INT32 height = (offset ? 1 : 2);
 		const INT32 x = (offset ? 17 : 11), y = (offset ? 27 : 35);
 
@@ -1616,14 +1618,14 @@ static void K_drawKartItem(void)
 
 	// Quick Eggman numbers
 	if (stplyr->eggmanexplode > 1)
-		V_DrawScaledPatch(fx+17, fy+13-offset, V_HUDTRANS|V_SLIDEIN|fflags, kp_eggnum[min(5, G_TicsToSeconds(stplyr->eggmanexplode))]);
+		V_DrawScaledPatch(fx+17, fy+13-offset, V_HUDTRANS|V_SLIDEIN|fflags, kp_eggnum[std::min(5, G_TicsToSeconds(stplyr->eggmanexplode))]);
 
 	if (stplyr->itemtype == KITEM_FLAMESHIELD && stplyr->flamelength > 0)
 	{
 		INT32 numframes = FLAMESHIELD_MAX;
 		INT32 absolutemax = numframes;
 		INT32 flamemax = stplyr->flamelength;
-		INT32 flamemeter = min(stplyr->flamemeter, flamemax);
+		INT32 flamemeter = std::min(static_cast<INT32>(stplyr->flamemeter), flamemax);
 
 		INT32 bf = numframes - stplyr->flamelength;
 		INT32 ff = numframes - ((flamemeter * numframes) / absolutemax);
@@ -1688,7 +1690,7 @@ static void K_drawKartSlotMachine(void)
 	INT32 vstretch = 0;
 	INT32 hstretch = 3;
 	INT32 splitbsx = 0, splitbsy = 0;
-	UINT16 localcolor[3] = { stplyr->skincolor };
+	skincolornum_t localcolor[3] = { static_cast<skincolornum_t>(stplyr->skincolor) };
 	SINT8 colormode[3] = { TC_RAINBOW };
 
 	fixed_t rouletteOffset = 0;
@@ -1942,14 +1944,14 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 			if (gamedata->collected[(stickermedalinfo.emblems[i]-emblemlocations)])
 			{
 				V_DrawSmallMappedPatch(workx, worky, splitflags,
-					W_CachePatchName(M_GetEmblemPatch(stickermedalinfo.emblems[i], false), PU_CACHE),
+					static_cast<patch_t*>(W_CachePatchName(M_GetEmblemPatch(stickermedalinfo.emblems[i], false), PU_CACHE)),
 					R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(stickermedalinfo.emblems[i]), GTC_CACHE)
 				);
 			}
 			else
 			{
 				V_DrawSmallMappedPatch(workx, worky, splitflags,
-					W_CachePatchName("NEEDIT", PU_CACHE),
+					static_cast<patch_t*>(W_CachePatchName("NEEDIT", PU_CACHE)),
 					NULL
 				);
 			}
@@ -1960,7 +1962,7 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 
 	if (modeattacking & ATTACKING_SPB && stplyr->SPBdistance > 0)
 	{
-		UINT8 *colormap = R_GetTranslationColormap(stplyr->skin, stplyr->skincolor, GTC_CACHE);
+		UINT8 *colormap = R_GetTranslationColormap(stplyr->skin, static_cast<skincolornum_t>(stplyr->skincolor), GTC_CACHE);
 		INT32 ybar = 180;
 		INT32 widthbar = 120, xbar = 160 - widthbar/2, currentx;
 		INT32 barflags = V_SNAPTOBOTTOM|V_SLIDEIN;
@@ -2046,7 +2048,7 @@ void K_DrawKartPositionNumXY(
 	if (exit && num == 1)
 	{
 		// 1st place winner? You get rainbows!!
-		color = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_POSNUM_BEST1 + (counter % 6), GTC_CACHE);
+		color = R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(SKINCOLOR_POSNUM_BEST1 + (counter % 6)), GTC_CACHE);
 	}
 	else if (exit || lastLap)
 	{
@@ -2061,11 +2063,11 @@ void K_DrawKartPositionNumXY(
 
 		if (useRedNums == true)
 		{
-			color = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_POSNUM_LOSE1 + (counter % 3), GTC_CACHE);
+			color = R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(SKINCOLOR_POSNUM_LOSE1 + (counter % 3)), GTC_CACHE);
 		}
 		else
 		{
-			color = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_POSNUM_WIN1 + (counter % 3), GTC_CACHE);
+			color = R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(SKINCOLOR_POSNUM_WIN1 + (counter % 3)), GTC_CACHE);
 		}
 	}
 	else
@@ -2100,7 +2102,7 @@ static void K_DrawKartPositionNum(UINT8 num)
 	UINT8 splitIndex = (r_splitscreen > 0) ? 1 : 0;
 	fixed_t scale = FRACUNIT;
 	fixed_t fx = 0, fy = 0;
-	transnum_t trans = 0;
+	transnum_t trans = static_cast<transnum_t>(0);
 	INT32 fflags = 0;
 
 	if (stplyr->lives <= 0 && stplyr->playerstate == PST_DEAD)
@@ -2110,7 +2112,7 @@ static void K_DrawKartPositionNum(UINT8 num)
 
 	if (leveltime < (starttime + NUMTRANSMAPS))
 	{
-		trans = (starttime + NUMTRANSMAPS) - leveltime;
+		trans = static_cast<transnum_t>((starttime + NUMTRANSMAPS) - leveltime);
 	}
 
 	if (trans >= NUMTRANSMAPS)
@@ -2122,7 +2124,7 @@ static void K_DrawKartPositionNum(UINT8 num)
 	{
 		const UINT8 delay = (stplyr->exiting) ? POS_DELAY_TIME : stplyr->positiondelay;
 		const fixed_t add = (scale * 3) >> ((r_splitscreen == 1) ? 1 : 2);
-		scale += min((add * (delay * delay)) / (POS_DELAY_TIME * POS_DELAY_TIME), add);
+		scale += std::min((add * (delay * delay)) / (POS_DELAY_TIME * POS_DELAY_TIME), add);
 	}
 
 	// pain and suffering defined below
@@ -2314,11 +2316,11 @@ static boolean K_drawKartPositionFaces(void)
 			else
 				workingskin = players[rankplayer[i]].skin;
 
-			colormap = R_GetTranslationColormap(workingskin, players[rankplayer[i]].mo->color, GTC_CACHE);
+			colormap = R_GetTranslationColormap(workingskin, static_cast<skincolornum_t>(players[rankplayer[i]].mo->color), GTC_CACHE);
 			if (players[rankplayer[i]].mo->colorized)
-				colormap = R_GetTranslationColormap(TC_RAINBOW, players[rankplayer[i]].mo->color, GTC_CACHE);
+				colormap = R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(players[rankplayer[i]].mo->color), GTC_CACHE);
 			else
-				colormap = R_GetTranslationColormap(workingskin, players[rankplayer[i]].mo->color, GTC_CACHE);
+				colormap = R_GetTranslationColormap(workingskin, static_cast<skincolornum_t>(players[rankplayer[i]].mo->color), GTC_CACHE);
 
 			V_DrawMappedPatch(FACE_X + xoff, Y + yoff, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT|flipflag, faceprefix[workingskin][FACE_RANK], colormap);
 
@@ -2341,7 +2343,7 @@ static boolean K_drawKartPositionFaces(void)
 		for (j = 0; j < 7; j++)
 		{
 			UINT32 emeraldFlag = (1 << j);
-			UINT16 emeraldColor = SKINCOLOR_CHAOSEMERALD1 + j;
+			skincolornum_t emeraldColor = static_cast<skincolornum_t>(SKINCOLOR_CHAOSEMERALD1 + j);
 
 			if (players[rankplayer[i]].emeralds & emeraldFlag)
 			{
@@ -2417,7 +2419,7 @@ static void K_drawBossHealthBar(void)
 		;
 	else if (bossinfo.visualbarimpact)
 	{
-		INT32 mag = min((bossinfo.visualbarimpact/4) + 1, 8);
+		INT32 mag = std::min((bossinfo.visualbarimpact/4) + 1, 8u);
 		if (bossinfo.visualbarimpact & 1)
 			starty -= mag;
 		else
@@ -2582,7 +2584,7 @@ static void K_drawKartEmeralds(void)
 	for (i = 0; i < 7; i++)
 	{
 		UINT32 emeraldFlag = (1 << i);
-		UINT16 emeraldColor = SKINCOLOR_CHAOSEMERALD1 + i;
+		skincolornum_t emeraldColor = static_cast<skincolornum_t>(SKINCOLOR_CHAOSEMERALD1 + i);
 
 		if (stplyr->emeralds & emeraldFlag)
 		{
@@ -2676,7 +2678,7 @@ static void K_drawKartLaps(void)
 	{
 		// Laps
 		V_DrawScaledPatch(LAPS_X, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_lapsticker);
-		V_DrawTimerString(LAPS_X+33, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", min(stplyr->laps, numlaps), numlaps));
+		V_DrawTimerString(LAPS_X+33, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", std::min(stplyr->laps, numlaps), numlaps));
 	}
 }
 
@@ -2790,7 +2792,7 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 		// Lives
 		if (uselives)
 		{
-			UINT8 *colormap = R_GetTranslationColormap(stplyr->skin, stplyr->skincolor, GTC_CACHE);
+			UINT8 *colormap = R_GetTranslationColormap(stplyr->skin, static_cast<skincolornum_t>(stplyr->skincolor), GTC_CACHE);
 			V_DrawMappedPatch(fr+21, fy-3, V_HUDTRANS|V_SLIDEIN|splitflags, faceprefix[stplyr->skin][FACE_MINIMAP], colormap);
 			if (stplyr->lives >= 0)
 				K_DrawLivesDigits(fr+34, fy, 4, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font);
@@ -2839,7 +2841,7 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 		// Lives
 		if (uselives)
 		{
-			UINT8 *colormap = R_GetTranslationColormap(stplyr->skin, stplyr->skincolor, GTC_CACHE);
+			UINT8 *colormap = R_GetTranslationColormap(stplyr->skin, static_cast<skincolornum_t>(stplyr->skincolor), GTC_CACHE);
 			V_DrawMappedPatch(LAPS_X+46, fy-5, V_HUDTRANS|V_SLIDEIN|splitflags, faceprefix[stplyr->skin][FACE_RANK], colormap);
 			SINT8 livescount = 0;
 			if (stplyr->lives > 0)
@@ -3017,9 +3019,9 @@ static void K_drawBlueSphereMeter(boolean gametypeinfoshown)
 {
 	const UINT8 maxBars = 4;
 	const UINT8 segColors[] = {73, 64, 52, 54, 55, 35, 34, 33, 202, 180, 181, 182, 164, 165, 166, 153, 152};
-	const UINT8 sphere = max(min(stplyr->spheres, 40), 0);
+	const UINT8 sphere = std::clamp(static_cast<int>(stplyr->spheres), 0, 40);
 
-	UINT8 numBars = min((sphere / 10), maxBars);
+	UINT8 numBars = std::min((sphere / 10), +maxBars);
 	UINT8 colorIndex = (sphere * sizeof(segColors)) / (40 + 1);
 	INT32 fx, fy;
 	UINT8 i;
@@ -3120,14 +3122,14 @@ static void K_drawBlueSphereMeter(boolean gametypeinfoshown)
 
 		if (r_splitscreen < 2)
 		{
-			V_DrawFill(fx, fy + 6, segLen, 3, segColors[max(colorIndex-1, 0)] | splitflags);
-			V_DrawFill(fx, fy + 7, segLen, 1, segColors[max(colorIndex-2, 0)] | splitflags);
+			V_DrawFill(fx, fy + 6, segLen, 3, segColors[std::max(colorIndex-1, 0)] | splitflags);
+			V_DrawFill(fx, fy + 7, segLen, 1, segColors[std::max(colorIndex-2, 0)] | splitflags);
 			V_DrawFill(fx, fy + 9, segLen, 3, segColors[colorIndex] | splitflags);
 		}
 		else
 		{
-			V_DrawFill(fx, fy + 5, segLen, 1, segColors[max(colorIndex-1, 0)] | splitflags);
-			V_DrawFill(fx, fy + 6, segLen, 1, segColors[max(colorIndex-2, 0)] | splitflags);
+			V_DrawFill(fx, fy + 5, segLen, 1, segColors[std::max(colorIndex-1, 0)] | splitflags);
+			V_DrawFill(fx, fy + 6, segLen, 1, segColors[std::max(colorIndex-2, 0)] | splitflags);
 			V_DrawFill(fx, fy + 7, segLen, 2, segColors[colorIndex] | splitflags);
 		}
 
@@ -3137,7 +3139,7 @@ static void K_drawBlueSphereMeter(boolean gametypeinfoshown)
 
 static void K_drawKartBumpersOrKarma(void)
 {
-	UINT8 *colormap = R_GetTranslationColormap(TC_DEFAULT, stplyr->skincolor, GTC_CACHE);
+	UINT8 *colormap = R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(stplyr->skincolor), GTC_CACHE);
 	INT32 splitflags = V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN;
 
 	if (r_splitscreen > 1)
@@ -3401,7 +3403,7 @@ static void K_drawKartPlayerCheck(void)
 
 		if (result.onScreen == true)
 		{
-			colormap = R_GetTranslationColormap(TC_DEFAULT, checkplayer->mo->color, GTC_CACHE);
+			colormap = R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(checkplayer->mo->color), GTC_CACHE);
 			V_DrawFixedPatch(result.x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN|splitflags, kp_check[pnum], colormap);
 		}
 	}
@@ -3441,7 +3443,7 @@ static boolean K_ShowPlayerNametag(player_t *p)
 static void K_DrawLocalTagForPlayer(fixed_t x, fixed_t y, player_t *p, UINT8 id)
 {
 	UINT8 blink = ((leveltime / 7) & 1);
-	UINT8 *colormap = R_GetTranslationColormap(TC_RAINBOW, p->skincolor, GTC_CACHE);
+	UINT8 *colormap = R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(p->skincolor), GTC_CACHE);
 	V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN, kp_localtag[id][blink], colormap);
 }
 
@@ -3551,9 +3553,9 @@ static void K_DrawWeakSpot(weakspotdraw_t *ws)
 		flashtime = WEAKSPOTANIMTIME - bossinfo.weakspots[ws->i].time;
 
 	if (flashtime & 1)
-		colormap = R_GetTranslationColormap(TC_ALLWHITE, 0, GTC_CACHE);
+		colormap = R_GetTranslationColormap(TC_ALLWHITE, SKINCOLOR_NONE, GTC_CACHE);
 	else
-		colormap = R_GetTranslationColormap(TC_RAINBOW, bossinfo.weakspots[ws->i].color, GTC_CACHE);
+		colormap = R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(bossinfo.weakspots[ws->i].color), GTC_CACHE);
 
 	V_DrawFixedPatch(ws->x, ws->y, FRACUNIT, 0, kp_bossret[j], colormap);
 
@@ -4085,7 +4087,7 @@ static void K_drawKartMinimap(void)
 			const INT32 prevsplitflags = splitflags;
 			splitflags &= ~V_HUDTRANSHALF;
 			splitflags |= V_HUDTRANS;
-			colormap = R_GetTranslationColormap(TC_RAINBOW, K_RainbowColor(leveltime), GTC_CACHE);
+			colormap = R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(K_RainbowColor(leveltime)), GTC_CACHE);
 			K_drawKartMinimapIcon(battleovertime.x, battleovertime.y, x, y, splitflags, kp_itemminimap, colormap);
 			splitflags = prevsplitflags;
 		}
@@ -4108,9 +4110,9 @@ static void K_drawKartMinimap(void)
 			if (g->mo->color)
 			{
 				if (g->mo->colorized)
-					colormap = R_GetTranslationColormap(TC_RAINBOW, g->mo->color, GTC_CACHE);
+					colormap = R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(g->mo->color), GTC_CACHE);
 				else
-					colormap = R_GetTranslationColormap(skin, g->mo->color, GTC_CACHE);
+					colormap = R_GetTranslationColormap(skin, static_cast<skincolornum_t>(g->mo->color), GTC_CACHE);
 			}
 			else
 				colormap = NULL;
@@ -4168,7 +4170,7 @@ static void K_drawKartMinimap(void)
 				}
 
 				workingPic = kp_nocontestminimap;
-				colormap = R_GetTranslationColormap(TC_DEFAULT, mobj->color, GTC_CACHE);
+				colormap = R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(mobj->color), GTC_CACHE);
 
 				mobj = mobj->tracer;
 
@@ -4183,9 +4185,9 @@ static void K_drawKartMinimap(void)
 				if (mobj->color)
 				{
 					if (mobj->colorized)
-						colormap = R_GetTranslationColormap(TC_RAINBOW, mobj->color, GTC_CACHE);
+						colormap = R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(mobj->color), GTC_CACHE);
 					else
-						colormap = R_GetTranslationColormap(skin, mobj->color, GTC_CACHE);
+						colormap = R_GetTranslationColormap(skin, static_cast<skincolornum_t>(mobj->color), GTC_CACHE);
 				}
 				else
 					colormap = NULL;
@@ -4257,7 +4259,7 @@ static void K_drawKartMinimap(void)
 #endif
 				if (mobj->color)
 				{
-					colormap = R_GetTranslationColormap(TC_RAINBOW, mobj->color, GTC_CACHE);
+					colormap = R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(mobj->color), GTC_CACHE);
 				}
 
 				break;
@@ -4275,7 +4277,7 @@ static void K_drawKartMinimap(void)
 				workingPic = kp_superflickyminimap;
 				if (Obj_SuperFlickyOwner(mobj)->color)
 				{
-					colormap = R_GetTranslationColormap(TC_RAINBOW, (Obj_SuperFlickyOwner(mobj)->color), GTC_CACHE);
+					colormap = R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(Obj_SuperFlickyOwner(mobj)->color), GTC_CACHE);
 				}
 				break;
 			default:
@@ -4319,7 +4321,7 @@ static void K_drawKartMinimap(void)
 
 					if (specialstageinfo.ufo->color)
 					{
-						colormap = R_GetTranslationColormap(TC_DEFAULT, specialstageinfo.ufo->color, GTC_CACHE);
+						colormap = R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(specialstageinfo.ufo->color), GTC_CACHE);
 					}
 				}
 
@@ -4346,7 +4348,7 @@ static void K_drawKartMinimap(void)
 			colormap = NULL;
 
 			if (bossinfo.weakspots[i].color)
-				colormap = R_GetTranslationColormap(TC_RAINBOW, bossinfo.weakspots[i].color, GTC_CACHE);
+				colormap = R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(bossinfo.weakspots[i].color), GTC_CACHE);
 
 			interpx = R_InterpolateFixed(bossinfo.weakspots[i].spot->old_x, bossinfo.weakspots[i].spot->x);
 			interpy = R_InterpolateFixed(bossinfo.weakspots[i].spot->old_y, bossinfo.weakspots[i].spot->y);
@@ -4381,7 +4383,7 @@ static void K_drawKartMinimap(void)
 			}
 
 			workingPic = kp_nocontestminimap;
-			colormap = R_GetTranslationColormap(TC_DEFAULT, mobj->color, GTC_CACHE);
+			colormap = R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(mobj->color), GTC_CACHE);
 
 			mobj = mobj->tracer;
 
@@ -4396,9 +4398,9 @@ static void K_drawKartMinimap(void)
 			if (mobj->color)
 			{
 				if (mobj->colorized)
-					colormap = R_GetTranslationColormap(TC_RAINBOW, mobj->color, GTC_CACHE);
+					colormap = R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(mobj->color), GTC_CACHE);
 				else
-					colormap = R_GetTranslationColormap(skin, mobj->color, GTC_CACHE);
+					colormap = R_GetTranslationColormap(skin, static_cast<skincolornum_t>(mobj->color), GTC_CACHE);
 			}
 			else
 				colormap = NULL;
@@ -4507,7 +4509,7 @@ static void K_drawKartFinish(boolean finish)
 		x = ((vid.width<<FRACBITS)/vid.dupx);
 		xval = (SHORT(kptodraw[pnum]->width)<<FRACBITS);
 
-		pwidth = max(xval, x);
+		pwidth = std::max(xval, x);
 
 		x = ((TICRATE - timer) * pwidth) / TICRATE;
 		ox = ((TICRATE - (timer - 1)) * pwidth) / TICRATE;
@@ -4879,9 +4881,9 @@ static void K_drawKartFirstPerson(void)
 
 
 		if ((leveltime & 1) && (driftcolor != SKINCOLOR_NONE)) // drift sparks!
-			colmap = R_GetTranslationColormap(TC_RAINBOW, driftcolor, GTC_CACHE);
+			colmap = R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(driftcolor), GTC_CACHE);
 		else if (stplyr->mo->colorized && stplyr->mo->color) // invincibility/grow/shrink!
-			colmap = R_GetTranslationColormap(TC_RAINBOW, stplyr->mo->color, GTC_CACHE);
+			colmap = R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(stplyr->mo->color), GTC_CACHE);
 	}
 
 	V_DrawFixedPatch(x, y, scale, splitflags, kp_fpview[target], colmap);
@@ -4970,7 +4972,7 @@ static void K_drawInput(void)
 	else
 	{
 		UINT8 *colormap;
-		colormap = R_GetTranslationColormap(TC_DEFAULT, stplyr->skincolor, GTC_CACHE);
+		colormap = R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(stplyr->skincolor), GTC_CACHE);
 		V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, FRACUNIT, splitflags, kp_inputwheel[target], colormap);
 	}
 }
@@ -4985,7 +4987,7 @@ static void K_drawChallengerScreen(void)
 		19,20,19,20,19,20,19,20,19,20, // frame 20-21, 1 tic, 5 alternating: all text vibrates from impact
 		21,22,23,24 // frame 22-25, 1 tic: CHALLENGER turns gold
 	};
-	const UINT8 offset = min(52-1, (3*TICRATE)-mapreset);
+	const UINT8 offset = std::min(52-1u, (3*TICRATE)-mapreset);
 
 	V_DrawFadeScreen(0xFF00, 16); // Fade out
 	V_DrawScaledPatch(0, 0, 0, kp_challenger[anim[offset]]);
@@ -5002,16 +5004,16 @@ static void K_drawLapStartAnim(void)
 
 	const tic_t leveltimeOld = leveltime - 1;
 
-	UINT8 *colormap = R_GetTranslationColormap(TC_DEFAULT, stplyr->skincolor, GTC_CACHE);
+	UINT8 *colormap = R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(stplyr->skincolor), GTC_CACHE);
 
 	fixed_t interpx, interpy, newval, oldval;
 
-	newval = (BASEVIDWIDTH/2 + (32 * max(0, t - 76))) * FRACUNIT;
-	oldval = (BASEVIDWIDTH/2 + (32 * max(0, tOld - 76))) * FRACUNIT;
+	newval = (BASEVIDWIDTH/2 + (32 * std::max(0, t - 76))) * FRACUNIT;
+	oldval = (BASEVIDWIDTH/2 + (32 * std::max(0, tOld - 76))) * FRACUNIT;
 	interpx = R_InterpolateFixed(oldval, newval);
 
-	newval = (48 - (32 * max(0, progress - 76))) * FRACUNIT;
-	oldval = (48 - (32 * max(0, progressOld - 76))) * FRACUNIT;
+	newval = (48 - (32 * std::max(0, progress - 76))) * FRACUNIT;
+	oldval = (48 - (32 * std::max(0, progressOld - 76))) * FRACUNIT;
 	interpy = R_InterpolateFixed(oldval, newval);
 
 	V_DrawFixedPatch(
@@ -5033,64 +5035,64 @@ static void K_drawLapStartAnim(void)
 
 	if (stplyr->latestlap == (UINT8)(numlaps))
 	{
-		newval = (62 - (32 * max(0, progress - 76))) * FRACUNIT;
-		oldval = (62 - (32 * max(0, progressOld - 76))) * FRACUNIT;
+		newval = (62 - (32 * std::max(0, progress - 76))) * FRACUNIT;
+		oldval = (62 - (32 * std::max(0, progressOld - 76))) * FRACUNIT;
 		interpx = R_InterpolateFixed(oldval, newval);
 
 		V_DrawFixedPatch(
 			interpx, // 27
 			30*FRACUNIT, // 24
 			FRACUNIT, V_SNAPTOTOP|V_HUDTRANS,
-			kp_lapanim_final[min(progress/2, 10)], NULL);
+			kp_lapanim_final[std::min(progress/2, 10)], NULL);
 
 		if (progress/2-12 >= 0)
 		{
-			newval = (188 + (32 * max(0, progress - 76))) * FRACUNIT;
-			oldval = (188 + (32 * max(0, progressOld - 76))) * FRACUNIT;
+			newval = (188 + (32 * std::max(0, progress - 76))) * FRACUNIT;
+			oldval = (188 + (32 * std::max(0, progressOld - 76))) * FRACUNIT;
 			interpx = R_InterpolateFixed(oldval, newval);
 
 			V_DrawFixedPatch(
 				interpx, // 194
 				30*FRACUNIT, // 24
 				FRACUNIT, V_SNAPTOTOP|V_HUDTRANS,
-				kp_lapanim_lap[min(progress/2-12, 6)], NULL);
+				kp_lapanim_lap[std::min(progress/2-12, 6)], NULL);
 		}
 	}
 	else
 	{
-		newval = (82 - (32 * max(0, progress - 76))) * FRACUNIT;
-		oldval = (82 - (32 * max(0, progressOld - 76))) * FRACUNIT;
+		newval = (82 - (32 * std::max(0, progress - 76))) * FRACUNIT;
+		oldval = (82 - (32 * std::max(0, progressOld - 76))) * FRACUNIT;
 		interpx = R_InterpolateFixed(oldval, newval);
 
 		V_DrawFixedPatch(
 			interpx, // 61
 			30*FRACUNIT, // 24
 			FRACUNIT, V_SNAPTOTOP|V_HUDTRANS,
-			kp_lapanim_lap[min(progress/2, 6)], NULL);
+			kp_lapanim_lap[std::min(progress/2, 6)], NULL);
 
 		if (progress/2-8 >= 0)
 		{
-			newval = (188 + (32 * max(0, progress - 76))) * FRACUNIT;
-			oldval = (188 + (32 * max(0, progressOld - 76))) * FRACUNIT;
+			newval = (188 + (32 * std::max(0, progress - 76))) * FRACUNIT;
+			oldval = (188 + (32 * std::max(0, progressOld - 76))) * FRACUNIT;
 			interpx = R_InterpolateFixed(oldval, newval);
 
 			V_DrawFixedPatch(
 				interpx, // 194
 				30*FRACUNIT, // 24
 				FRACUNIT, V_SNAPTOTOP|V_HUDTRANS,
-				kp_lapanim_number[(((UINT32)stplyr->latestlap) / 10)][min(progress/2-8, 2)], NULL);
+				kp_lapanim_number[(((UINT32)stplyr->latestlap) / 10)][std::min(progress/2-8, 2)], NULL);
 
 			if (progress/2-10 >= 0)
 			{
-				newval = (208 + (32 * max(0, progress - 76))) * FRACUNIT;
-				oldval = (208 + (32 * max(0, progressOld - 76))) * FRACUNIT;
+				newval = (208 + (32 * std::max(0, progress - 76))) * FRACUNIT;
+				oldval = (208 + (32 * std::max(0, progressOld - 76))) * FRACUNIT;
 				interpx = R_InterpolateFixed(oldval, newval);
 
 				V_DrawFixedPatch(
 					interpx, // 221
 					30*FRACUNIT, // 24
 					FRACUNIT, V_SNAPTOTOP|V_HUDTRANS,
-					kp_lapanim_number[(((UINT32)stplyr->latestlap) % 10)][min(progress/2-10, 2)], NULL);
+					kp_lapanim_number[(((UINT32)stplyr->latestlap) % 10)][std::min(progress/2-10, 2)], NULL);
 			}
 		}
 	}
@@ -5223,7 +5225,7 @@ static void K_drawDistributionDebugger(void)
 
 	for (i = 0; i < rouletteData.itemListLen; i++)
 	{
-		const kartitems_t item = rouletteData.itemList[i];
+		const kartitems_t item = static_cast<kartitems_t>(rouletteData.itemList[i]);
 		UINT8 amount = 1;
 
 		if (y > (BASEVIDHEIGHT << FRACBITS) - space - pad)
@@ -5503,7 +5505,7 @@ void K_drawKartHUD(void)
 		if (demo.title) // Draw title logo instead in demo.titles
 		{
 			INT32 x = BASEVIDWIDTH - 8, y = BASEVIDHEIGHT-8, snapflags = V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SLIDEIN;
-			patch_t *pat = W_CachePatchName((cv_alttitle.value ? "MTSJUMPR1" : "MTSBUMPR1"), PU_CACHE);
+			patch_t *pat = static_cast<patch_t*>(W_CachePatchName((cv_alttitle.value ? "MTSJUMPR1" : "MTSBUMPR1"), PU_CACHE));
 
 			if (r_splitscreen == 3)
 			{
@@ -5678,7 +5680,7 @@ void K_drawKartHUD(void)
 		{
 			if (skincolors[c].accessible)
 			{
-				UINT8 *cm = R_GetTranslationColormap(TC_RAINBOW, c, GTC_CACHE);
+				UINT8 *cm = R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(c), GTC_CACHE);
 				V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, FRACUNIT>>1, 0, faceprefix[stplyr->skin][FACE_WANTED], cm);
 
 				x += 16;
@@ -5704,12 +5706,12 @@ void K_DrawSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean isSmall)
 
 	if (isSmall == true)
 	{
-		stickerEnd = W_CachePatchName("K_STIKE2", PU_CACHE);
+		stickerEnd = static_cast<patch_t*>(W_CachePatchName("K_STIKE2", PU_CACHE));
 		height = 6;
 	}
 	else
 	{
-		stickerEnd = W_CachePatchName("K_STIKEN", PU_CACHE);
+		stickerEnd = static_cast<patch_t*>(W_CachePatchName("K_STIKEN", PU_CACHE));
 		height = 11;
 	}
 
