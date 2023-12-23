@@ -2515,6 +2515,7 @@ void GameDigiMusic_OnChange(void)
 	{
 		digital_disabled = true;
 		I_UnloadSong();
+		Music_Flip();
 	}
 }
 
