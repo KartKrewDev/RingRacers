@@ -134,6 +134,7 @@ static void Command_LeaveParty_f(void);
 static void Command_Addfile(void);
 static void Command_ListWADS_f(void);
 static void Command_ListDoomednums_f(void);
+static void Command_cxdiag_f(void);
 static void Command_RunSOC(void);
 static void Command_Pause(void);
 
@@ -396,6 +397,7 @@ void D_RegisterServerCommands(void)
 	COM_AddCommand("addfile", Command_Addfile);
 	COM_AddDebugCommand("listwad", Command_ListWADS_f);
 	COM_AddDebugCommand("listmapthings", Command_ListDoomednums_f);
+	COM_AddDebugCommand("cxdiag", Command_cxdiag_f);
 
 	COM_AddCommand("runsoc", Command_RunSOC);
 	COM_AddCommand("pause", Command_Pause);
@@ -4703,6 +4705,94 @@ static void Command_ListDoomednums_f(void)
 }
 
 #undef MAXDOOMEDNUM
+
+static void Command_cxdiag_f(void)
+{
+	UINT16 i, j, errors = 0;
+
+	CONS_Printf("\x82""Welcome to the Challenge eXception Diagnostic.\n");
+
+	{
+		conditionset_t *c;
+		condition_t *cn;
+
+		CONS_Printf("\x82""Evaluating ConditionSets...\n");
+
+		for (i = 0; i < MAXCONDITIONSETS; i++)
+		{
+			c = &conditionSets[i];
+			if (!c->numconditions)
+				continue;
+
+			UINT32 lastID = 0;
+			boolean validSoFar = true;
+			boolean requiresPlaying = false;
+			boolean lastRequiresPlaying = false;
+			boolean lastrequiredplayingvalid = false;
+			for (j = 0; j < c->numconditions; ++j)
+			{
+				cn = &c->condition[j];
+
+				if (lastID)
+				{
+					//if (lastID != cn->id && validSoFar)
+						//CONS_Printf("\x87""Condition%d good\n", lastID);
+					if (lastID != cn->id)
+					{
+						lastrequiredplayingvalid = false;
+						validSoFar = true;
+					}
+					else if (!validSoFar)
+						continue;
+				}
+
+				if (cn->type == UC_AND || cn->type == UC_COMMA || cn->type == UC_DESCRIPTIONOVERRIDE)
+					continue;
+
+				lastID = cn->id;
+
+				lastRequiresPlaying = requiresPlaying;
+				requiresPlaying = (cn->type >= UCRP_REQUIRESPLAYING);
+
+				if (lastrequiredplayingvalid)
+				{
+					if (lastRequiresPlaying != requiresPlaying)
+					{
+						CONS_Printf("\x87""	ConditionSet %u entry %u (Condition%u) combines Playing condition and Statistics condition - will never be achieved\n", i+1, j+1, lastID);
+						validSoFar = false;
+						errors++;
+					}
+				}
+				lastrequiredplayingvalid = true;
+			}
+		}
+	}
+
+	{
+		unlockable_t *un;
+
+		CONS_Printf("\x82""Evaluating Challenges...\n");
+
+		for (i = 0; i < MAXUNLOCKABLES; i++)
+		{
+			un = &unlockables[i];
+			j = un->conditionset;
+			if (!j)
+				continue;
+
+			if (!conditionSets[j-1].numconditions)
+			{
+				CONS_Printf("\x87""	Unlockable %u has ConditionSet %u, which has no Conditions successfully set - will never be unlocked?\n", i+1, j);
+				errors++;
+			}
+		}
+	}
+
+	if (errors)
+		CONS_Printf("\x85""%u errors detected.\n", i+1, j);
+	else
+		CONS_Printf("\x83""No errors detected! Good job\n", i+1, j);
+}
 
 // =========================================================================
 //                            MISC. COMMANDS
