@@ -144,6 +144,11 @@ void Music_Init(void);
 // Call this every tic to update the music.
 void Music_Tick(void);
 
+// Flips the internal state so music is reloaded next tick.
+// This is required when disabling music during runtime so
+// the music plays again when re-enabled.
+void Music_Flip(void);
+
 
 #ifdef __cplusplus
 } // extern "C"
