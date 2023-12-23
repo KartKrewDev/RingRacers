@@ -41,8 +41,7 @@ extern consvar_t cv_numChannels;
 extern consvar_t cv_gamedigimusic;
 
 extern consvar_t cv_gamesounds;
-extern consvar_t cv_playmusicifunfocused;
-extern consvar_t cv_playsoundifunfocused;
+extern consvar_t cv_bgaudio;
 
 typedef enum
 {

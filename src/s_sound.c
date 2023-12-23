@@ -248,7 +248,7 @@ boolean S_SoundDisabled(void)
 {
 	return (
 			sound_disabled ||
-			( window_notinfocus && ! cv_playsoundifunfocused.value )
+			( window_notinfocus && ! (cv_bgaudio.value & 2) )
 	);
 }
 
@@ -2168,7 +2168,7 @@ boolean S_MusicDisabled(void)
 boolean S_MusicNotInFocus(void)
 {
 	return (
-			( window_notinfocus && ! cv_playmusicifunfocused.value )
+			( window_notinfocus && ! (cv_bgaudio.value & 1) )
 	);
 }
 
@@ -2521,28 +2521,6 @@ void GameDigiMusic_OnChange(void)
 	}
 }
 
-void PlayMusicIfUnfocused_OnChange(void);
-void PlayMusicIfUnfocused_OnChange(void)
-{
-	if (window_notinfocus)
-	{
-		if (cv_playmusicifunfocused.value)
-			I_SetMusicVolume(0);
-		else
-			S_SetMusicVolume();
-	}
-}
-
-void PlaySoundIfUnfocused_OnChange(void);
-void PlaySoundIfUnfocused_OnChange(void)
-{
-	if (!cv_gamesounds.value)
-		return;
-
-	if (window_notinfocus && !cv_playsoundifunfocused.value)
-		S_StopSounds();
-}
-
 void MasterVolume_OnChange(void);
 void MasterVolume_OnChange(void)
 {
@@ -2569,4 +2547,22 @@ void SoundVolume_OnChange(void)
 		CV_SetValue(&cv_gamesounds, 1);
 	}
 	CV_StealthSetValue(&cv_mastervolume, max(cv_digmusicvolume.value, cv_soundvolume.value));
+}
+
+void BGAudio_OnChange(void);
+void BGAudio_OnChange(void)
+{
+	if (window_notinfocus)
+	{
+		if (cv_bgaudio.value & 1)
+			I_SetMusicVolume(0);
+		else
+			S_SetMusicVolume();
+	}
+
+	if (!cv_gamesounds.value)
+		return;
+
+	if (window_notinfocus && !(cv_bgaudio.value & 2))
+		S_StopSounds();
 }

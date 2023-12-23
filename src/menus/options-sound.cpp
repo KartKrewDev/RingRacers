@@ -238,11 +238,8 @@ menuitem_t OPTIONS_Sound[] =
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Play Music While Unfocused", "Keeps playing music even if the game is not the active window.",
-		NULL, {.cvar = &cv_playmusicifunfocused}, 0, 0},
-
-	{IT_STRING | IT_CVAR, "Play SFX While Unfocused", "Keeps playing sound effects even if the game is not the active window.",
-		NULL, {.cvar = &cv_playsoundifunfocused}, 0, 0},
+	{IT_STRING | IT_CVAR, "Hear Tabbed-out", "Keep playing game audio when the window is out of focus (FOCUS LOST).",
+		NULL, {.cvar = &cv_bgaudio}, 0, 0},
 
 	// @TODO: Sound test (there's currently no space on this menu, might be better to throw it in extras?)
 };
