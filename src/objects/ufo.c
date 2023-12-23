@@ -911,7 +911,7 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 			SetRandomFakePlayerSkin(source->player, true);
 	}
 
-	ufo_intangible(ufo) = 30;
+	ufo_intangible(ufo) = 60;
 
 	// Speed up on damage!
 	ufo_speed(ufo) += addSpeed;
