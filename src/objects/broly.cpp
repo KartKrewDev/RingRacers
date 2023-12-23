@@ -22,6 +22,11 @@ Obj_SpawnBrolyKi
 {
 	Broly* x = Broly::spawn<Broly>(static_cast<Mobj*>(source), duration, {64 * mapobjectscale, 0});
 
+	if (!x)
+	{
+		return nullptr;
+	}
+
 	x->colorized = true;
 	x->color = source->color;
 

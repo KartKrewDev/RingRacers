@@ -875,8 +875,10 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 				attackerPlayer->flashing = 0;
 
 				// Localized broly for a local event.
-				mobj_t *broly = Obj_SpawnBrolyKi(victim, victimHitlag);
-				broly->extravalue2 = 16*mapobjectscale;
+				if (mobj_t *broly = Obj_SpawnBrolyKi(victim, victimHitlag))
+				{
+					broly->extravalue2 = 16*mapobjectscale;
+				}
 
 				P_PlayVictorySound(victim);
 
