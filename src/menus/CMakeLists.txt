@@ -25,7 +25,7 @@ target_sources(SRB2SDL2 PRIVATE
 	options-profiles-edit-controls.c
 	options-server-1.c
 	options-server-advanced.c
-	options-sound.c
+	options-sound.cpp
 	options-video-1.c
 	options-video-gl.c
 	options-video-modes.c

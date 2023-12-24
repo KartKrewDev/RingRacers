@@ -538,9 +538,9 @@ static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 	{
 		// Tell game we lost focus, pause music
 		window_notinfocus = true;
-		if (!cv_playmusicifunfocused.value)
+		if (!(cv_bgaudio.value & 1))
 			I_SetMusicVolume(0);
-		if (!cv_playsoundifunfocused.value)
+		if (!(cv_bgaudio.value & 2))
 			S_StopSounds();
 
 		if (!disable_mouse)
