@@ -813,9 +813,13 @@ static UINT8 GetUFODamage(mobj_t *inflictor, UINT8 damageType)
 				break;
 			}
 			case MT_SPB:
+			case MT_SPBEXPLOSION:
 			{
+				if (inflictor->type != MT_SPBEXPLOSION || inflictor->threshold == KITEM_SPB)
+				{
+					targetdamaging |= UFOD_SPB;
+				}
 				// SPB deals triple damage.
-				targetdamaging |= UFOD_SPB;
 				ret = 30;
 				break;
 			}
@@ -834,6 +838,14 @@ static UINT8 GetUFODamage(mobj_t *inflictor, UINT8 damageType)
 				ret = 10;
 				break;
 			}
+			case MT_GARDENTOP:
+			{
+				// Garden Top is not classified as a "field
+				// item" because the player can ride it. So
+				// an explicit case is necessary.
+				ret = 10;
+				break;
+			}
 			case MT_PLAYER:
 			{
 				// Players deal damage relative to how many sneakers they used.
@@ -849,6 +861,11 @@ static UINT8 GetUFODamage(mobj_t *inflictor, UINT8 damageType)
 			}
 			default:
 			{
+				// General hazards cannot damage the UFO
+				if (P_IsKartFieldItem(inflictor->type) == false)
+				{
+					return 0;
+				}
 				break;
 			}
 		}
