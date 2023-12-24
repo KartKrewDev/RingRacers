@@ -939,7 +939,6 @@ static UINT8 K_TrySpindash(const player_t *player, ticcmd_t *cmd)
 	if (player->spindashboost || player->tiregrease // You just released a spindash, you don't need to try again yet, jeez.
 		|| P_IsObjectOnGround(player->mo) == false) // Not in a state where we want 'em to spindash.
 	{
-		cmd->bot.spindashconfirm = 0;
 		return 0;
 	}
 
@@ -1898,7 +1897,16 @@ void K_UpdateBotGameplayVars(player_t *player)
 	player->botvars.rubberband = K_UpdateRubberband(player);
 
 	player->botvars.turnconfirm += player->cmd.bot.turnconfirm;
-	player->botvars.spindashconfirm += player->cmd.bot.spindashconfirm;
+
+	if (player->spindashboost || player->tiregrease // You just released a spindash, you don't need to try again yet, jeez.
+		|| P_IsObjectOnGround(player->mo) == false) // Not in a state where we want 'em to spindash.
+	{
+		player->botvars.spindashconfirm = 0;
+	}
+	else
+	{
+		player->botvars.spindashconfirm += player->cmd.bot.spindashconfirm;
+	}
 
 	if (K_TryRingShooter(player) == true)
 	{
