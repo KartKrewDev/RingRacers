@@ -42,8 +42,11 @@ void Obj_CloudSpawn(mobj_t *mobj)
 			return;
 	}
 
-	mobj->destscale = mapobjectscale * 4;
-	P_SetScale(mobj, mobj->destscale);
+	if (mobj->type != MT_AGZ_CLOUDCLUSTER)
+	{
+		mobj->destscale = mapobjectscale * 4;
+		P_SetScale(mobj, mobj->destscale);
+	}
 
 	mobj_t *cloud = P_SpawnMobj(mobj->x, mobj->y, mobj->z, cloudtype);
 	angle_t ang = mobj->angle;
@@ -173,9 +176,6 @@ void Obj_PlayerBulbThink(player_t *player)
 {
 	mobj_t *mo = player->mo;
 
-	if (player->tulipbuf)
-		player->tulipbuf--;
-
 	if (player->tuliplaunch)
 	{
 		player->tuliplaunch--;
@@ -184,9 +184,12 @@ void Obj_PlayerBulbThink(player_t *player)
 			P_SpawnMobj(mo->x + P_RandomRange(PR_DECORATION, -8, 8)*mapobjectscale, mo->y + P_RandomRange(PR_DECORATION, -8, 8)*mapobjectscale, mo->z, MT_DRIFTDUST);
 	}
 
+	if (player->tulipbuf)
+		player->tulipbuf--;
+
 	if (player->tulip)
 	{
-		player->tulip -= 1;
+		player->tulip--;
 		P_MoveOrigin(mo, mo->tracer->x, mo->tracer->y, mo->tracer->z);
 		mo->flags &= ~MF_SHOOTABLE;
 		mo->renderflags |= RF_DONTDRAW;
@@ -247,7 +250,7 @@ void Obj_CloudTouched(mobj_t *special, mobj_t *toucher)
 		toucher->cvmem = mapobjectscale*8;
 
 	P_SetTarget(&toucher->tracer, special);
-	S_StartSound(&toucher, sfx_s3k8a);
+	S_StartSound(toucher, sfx_s3k8a);
 
 }
 
