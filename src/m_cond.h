@@ -284,7 +284,7 @@ typedef enum {
 #define GDMAX_RINGS 999999999
 #define GDMAX_CHAOKEYS 9999
 
-#define GDCONVERT_ROUNDSTOKEY 32
+#define GDCONVERT_ROUNDSTOKEY 14
 
 #define GDINIT_CHAOKEYS 3 // Start with 3 Chao Keys !!
 #define GDINIT_PRISONSTOPRIZE 30 // 30 Prison Eggs to your [Wild Prize] !!
