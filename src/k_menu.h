@@ -347,6 +347,7 @@ typedef enum
 {
 	popt_profilename = 0,
 	popt_controls,
+	popt_accessibility,
 	popt_char,
 	popt_profilepname,
 	popt_confirm,
@@ -359,6 +360,9 @@ void M_StartEditProfile(INT32 c);
 
 extern menuitem_t OPTIONS_ProfileControls[];
 extern menu_t OPTIONS_ProfileControlsDef;
+
+extern menuitem_t OPTIONS_ProfileAccessibility[];
+extern menu_t OPTIONS_ProfileAccessibilityDef;
 
 extern menuitem_t OPTIONS_Video[];
 extern menu_t OPTIONS_VideoDef;
@@ -1226,7 +1230,9 @@ void M_DrawOptionsCogs(void);
 void M_DrawOptionsMovingButton(void);	// for sick transitions...
 void M_DrawOptions(void);
 void M_DrawGenericOptions(void);
+void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p);
 void M_DrawProfileSelect(void);
+void M_DrawEditProfileTooltips(void);
 void M_DrawEditProfile(void);
 void M_DrawProfileControls(void);
 void M_DrawVideoModes(void);
