@@ -1886,8 +1886,6 @@ void K_BuildBotTiccmd(
 --------------------------------------------------*/
 void K_UpdateBotGameplayVars(player_t *player)
 {
-	player->botvars.rubberband = FRACUNIT;
-
 	if (gamestate != GS_LEVEL || !player->mo)
 	{
 		// Not in the level.
