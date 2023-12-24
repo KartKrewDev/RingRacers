@@ -2520,7 +2520,7 @@ static const char *M_GetConditionString(condition_t *cn)
 
 			if (cn->extrainfo2)
 			{
-				switch (cn->requirement)
+				switch (cn->extrainfo1)
 				{
 					case GRADE_E: { completetype = "get grade E"; break; }
 					case GRADE_D: { completetype = "get grade D"; break; }
