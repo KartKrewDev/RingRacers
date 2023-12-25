@@ -495,11 +495,11 @@ const botcontroller_t *K_GetBotController(const mobj_t *mobj)
 fixed_t K_BotMapModifier(void)
 {
 	constexpr INT32 complexity_scale = 10000;
-	constexpr INT32 modifier_max = FRACUNIT * 2;
+	constexpr fixed_t modifier_max = FRACUNIT * 2;
 	
 	const fixed_t complexity_value = std::clamp<fixed_t>(
 		FixedDiv(K_GetTrackComplexity(), complexity_scale),
-		-modifier_max,
+		-FixedDiv(FRACUNIT, modifier_max),
 		modifier_max
 	);
 
@@ -566,22 +566,34 @@ static UINT32 K_BotRubberbandDistance(const player_t *player)
 --------------------------------------------------*/
 fixed_t K_BotRubberband(const player_t *player)
 {
-	constexpr fixed_t rubberdeltabase = FRACUNIT / 4; // +/- x0.25
+	const fixed_t difficultyEase = ((player->botvars.difficulty - 1) * FRACUNIT) / (MAXBOTDIFFICULTY - 1);
 
-	// Lv.   1: x0.50 avg
-	// Lv.   9: x1.50 avg
-	const fixed_t difficultyEase = ((player->botvars.difficulty - 1) * FRACUNIT) / (DIFFICULTBOT - 1);
-	const fixed_t rubberavg = Easing_Linear(difficultyEase, FRACUNIT / 2, FRACUNIT * 3 / 2);
+	// Lv.   1: x0.65 avg
+	// Lv. MAX: x1.1 avg
+	const fixed_t rubberBase = Easing_OutSine(
+		difficultyEase,
+		FRACUNIT * 65 / 100,
+		FRACUNIT * 11 / 10
+	);
 
-	// Lv.   1: x0.35 min
-	// Lv.   9: x1.35 min
-	const fixed_t rubberdeltamin = FixedMul(rubberdeltabase, K_BotMapModifier());
-	const fixed_t rubbermin = std::max<fixed_t>(rubberavg - rubberdeltamin, FRACUNIT/3);
+	// +/- x0.25
+	const fixed_t rubberStretchiness = FixedMul(
+		FixedDiv(
+			FRACUNIT / 4,
+			K_GetKartGameSpeedScalar(gamespeed)
+		),
+		K_BotMapModifier()
+	);
 
-	// Lv.   1: x0.65 max
-	// Lv.   9: x1.65 max
-	const fixed_t rubberdeltamax = FixedMul(rubberdeltabase, K_BotMapModifier());
-	const fixed_t rubbermax = std::min<fixed_t>(rubberavg - rubberdeltamax, FRACUNIT*3);
+	// Lv.   1: x0.4 min
+	// Lv. MAX: x0.85 min
+	constexpr fixed_t rubberSlowMin = FRACUNIT / 2;
+	const fixed_t rubberSlow = std::max<fixed_t>( rubberBase - rubberStretchiness, rubberSlowMin );
+
+	// Lv.   1: x0.9 max
+	// Lv. MAX: x1.35 max
+	constexpr fixed_t rubberFastMax = FRACUNIT * 3 / 2;
+	const fixed_t rubberFast = std::min<fixed_t>( rubberBase + rubberStretchiness, rubberFastMax );
 
 	fixed_t rubberband = FRACUNIT >> 1;
 	player_t *firstplace = nullptr;
@@ -628,7 +640,7 @@ fixed_t K_BotRubberband(const player_t *player)
 
 	if (firstplace != nullptr)
 	{
-		const fixed_t spacing = FixedDiv(2560 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
+		const UINT32 spacing = FixedDiv(10240 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
 		const UINT32 wanteddist = firstplace->distancetofinish + K_BotRubberbandDistance(player);
 		const INT32 distdiff = player->distancetofinish - wanteddist;
 
@@ -644,7 +656,7 @@ fixed_t K_BotRubberband(const player_t *player)
 		}
 	}
 
-	return Easing_Linear(rubberband, rubbermin, rubbermax);
+	return Easing_Linear(rubberband, rubberSlow, rubberFast);
 }
 
 /*--------------------------------------------------
