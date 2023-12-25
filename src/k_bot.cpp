@@ -495,11 +495,11 @@ const botcontroller_t *K_GetBotController(const mobj_t *mobj)
 fixed_t K_BotMapModifier(void)
 {
 	constexpr INT32 complexity_scale = 10000;
-	constexpr INT32 modifier_max = FRACUNIT * 2;
+	constexpr fixed_t modifier_max = FRACUNIT * 2;
 	
 	const fixed_t complexity_value = std::clamp<fixed_t>(
 		FixedDiv(K_GetTrackComplexity(), complexity_scale),
-		-modifier_max,
+		-FixedDiv(FRACUNIT, modifier_max),
 		modifier_max
 	);
 
@@ -566,22 +566,34 @@ static UINT32 K_BotRubberbandDistance(const player_t *player)
 --------------------------------------------------*/
 fixed_t K_BotRubberband(const player_t *player)
 {
-	constexpr fixed_t rubberdeltabase = FRACUNIT / 4; // +/- x0.25
+	const fixed_t difficultyEase = ((player->botvars.difficulty - 1) * FRACUNIT) / (MAXBOTDIFFICULTY - 1);
 
-	// Lv.   1: x0.50 avg
-	// Lv.   9: x1.50 avg
-	const fixed_t difficultyEase = ((player->botvars.difficulty - 1) * FRACUNIT) / (DIFFICULTBOT - 1);
-	const fixed_t rubberavg = Easing_Linear(difficultyEase, FRACUNIT / 2, FRACUNIT * 3 / 2);
+	// Lv.   1: x0.65 avg
+	// Lv. MAX: x1.1 avg
+	const fixed_t rubberBase = Easing_OutSine(
+		difficultyEase,
+		FRACUNIT * 65 / 100,
+		FRACUNIT * 11 / 10
+	);
 
-	// Lv.   1: x0.35 min
-	// Lv.   9: x1.35 min
-	const fixed_t rubberdeltamin = FixedMul(rubberdeltabase, K_BotMapModifier());
-	const fixed_t rubbermin = std::max<fixed_t>(rubberavg - rubberdeltamin, FRACUNIT/3);
+	// +/- x0.25
+	const fixed_t rubberStretchiness = FixedMul(
+		FixedDiv(
+			FRACUNIT / 4,
+			K_GetKartGameSpeedScalar(gamespeed)
+		),
+		K_BotMapModifier()
+	);
 
-	// Lv.   1: x0.65 max
-	// Lv.   9: x1.65 max
-	const fixed_t rubberdeltamax = FixedMul(rubberdeltabase, K_BotMapModifier());
-	const fixed_t rubbermax = std::min<fixed_t>(rubberavg - rubberdeltamax, FRACUNIT*3);
+	// Lv.   1: x0.4 min
+	// Lv. MAX: x0.85 min
+	constexpr fixed_t rubberSlowMin = FRACUNIT / 2;
+	const fixed_t rubberSlow = std::max<fixed_t>( rubberBase - rubberStretchiness, rubberSlowMin );
+
+	// Lv.   1: x0.9 max
+	// Lv. MAX: x1.35 max
+	constexpr fixed_t rubberFastMax = FRACUNIT * 3 / 2;
+	const fixed_t rubberFast = std::min<fixed_t>( rubberBase + rubberStretchiness, rubberFastMax );
 
 	fixed_t rubberband = FRACUNIT >> 1;
 	player_t *firstplace = nullptr;
@@ -628,7 +640,7 @@ fixed_t K_BotRubberband(const player_t *player)
 
 	if (firstplace != nullptr)
 	{
-		const fixed_t spacing = FixedDiv(2560 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
+		const UINT32 spacing = FixedDiv(10240 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
 		const UINT32 wanteddist = firstplace->distancetofinish + K_BotRubberbandDistance(player);
 		const INT32 distdiff = player->distancetofinish - wanteddist;
 
@@ -644,7 +656,7 @@ fixed_t K_BotRubberband(const player_t *player)
 		}
 	}
 
-	return Easing_Linear(rubberband, rubbermin, rubbermax);
+	return Easing_Linear(rubberband, rubberSlow, rubberFast);
 }
 
 /*--------------------------------------------------
@@ -939,7 +951,6 @@ static UINT8 K_TrySpindash(const player_t *player, ticcmd_t *cmd)
 	if (player->spindashboost || player->tiregrease // You just released a spindash, you don't need to try again yet, jeez.
 		|| P_IsObjectOnGround(player->mo) == false) // Not in a state where we want 'em to spindash.
 	{
-		cmd->bot.spindashconfirm = 0;
 		return 0;
 	}
 
@@ -1261,7 +1272,7 @@ static INT32 K_HandleBotTrack(const player_t *player, ticcmd_t *cmd, botpredicti
 
 	destangle = K_BotSmoothLanding(player, destangle);
 
-	moveangle = player->mo->angle;
+	moveangle = player->mo->angle + K_GetUnderwaterTurnAdjust(player);
 	anglediff = AngleDeltaSigned(moveangle, destangle);
 
 	if (anglediff < 0)
@@ -1394,7 +1405,7 @@ static INT32 K_HandleBotReverse(const player_t *player, ticcmd_t *cmd, botpredic
 	destangle = K_BotSmoothLanding(player, destangle);
 
 	// Calculate turn direction first.
-	moveangle = player->mo->angle;
+	moveangle = player->mo->angle + K_GetUnderwaterTurnAdjust(player);
 	angle = (moveangle - destangle);
 
 	if (angle < ANGLE_180)
@@ -1887,8 +1898,6 @@ void K_BuildBotTiccmd(
 --------------------------------------------------*/
 void K_UpdateBotGameplayVars(player_t *player)
 {
-	player->botvars.rubberband = FRACUNIT;
-
 	if (gamestate != GS_LEVEL || !player->mo)
 	{
 		// Not in the level.
@@ -1898,7 +1907,16 @@ void K_UpdateBotGameplayVars(player_t *player)
 	player->botvars.rubberband = K_UpdateRubberband(player);
 
 	player->botvars.turnconfirm += player->cmd.bot.turnconfirm;
-	player->botvars.spindashconfirm += player->cmd.bot.spindashconfirm;
+
+	if (player->spindashboost || player->tiregrease // You just released a spindash, you don't need to try again yet, jeez.
+		|| P_IsObjectOnGround(player->mo) == false) // Not in a state where we want 'em to spindash.
+	{
+		player->botvars.spindashconfirm = 0;
+	}
+	else
+	{
+		player->botvars.spindashconfirm += player->cmd.bot.spindashconfirm;
+	}
 
 	if (K_TryRingShooter(player) == true)
 	{
