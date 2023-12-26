@@ -4691,6 +4691,16 @@ void G_LoadGameData(void)
 			gamedata->keyspending = READUINT16(save.p);
 		}
 
+		// Sanity check.
+		if (gamedata->pendingkeyroundoffset >= GDCONVERT_ROUNDSTOKEY)
+		{
+			gamedata->pendingkeyrounds +=
+				(gamedata->pendingkeyroundoffset
+				- (GDCONVERT_ROUNDSTOKEY-1));
+			gamedata->pendingkeyroundoffset = (GDCONVERT_ROUNDSTOKEY-1);
+			gamedata->keyspending = 0; // safe to nuke - will be recalc'd if the offset still permits
+		}
+
 		gamedata->chaokeys = READUINT16(save.p);
 
 		if (versionMinor >= 4)
