@@ -688,7 +688,7 @@ void R_RenderMaskedSegRange(drawseg_t *drawseg, INT32 x1, INT32 x2)
 
 	if (debug)
 	{
-		colfunc = R_DrawColumn_Flat_8;
+		colfunc = R_DrawColumn_Flat;
 		dc->r8_flatcolor = R_DebugLineColor(ldef);
 		R_RenderMaskedSegLoopDebug(dc, drawseg, x1, x2, colfunc_2s);
 	}

@@ -962,7 +962,7 @@ void R_DrawSinglePlane(drawspandata_t *ds, visplane_t *pl, boolean allow_paralle
 			{
 				dc.yl = pl->top[dc.x];
 				dc.yh = pl->bottom[dc.x];
-				R_DrawColumn_Flat_8(&dc);
+				R_DrawColumn_Flat(&dc);
 			}
 		}
 		else
@@ -1202,6 +1202,9 @@ void R_DrawSinglePlane(drawspandata_t *ds, visplane_t *pl, boolean allow_paralle
 			case SPANDRAWFUNC_SPLAT:
 				spanfunctype = SPANDRAWFUNC_TILTEDSPLAT;
 				break;
+			case SPANDRAWFUNC_FOG:
+				spanfunctype = SPANDRAWFUNC_TILTEDFOG;
+				break;
 			default:
 				spanfunctype = SPANDRAWFUNC_TILTED;
 				break;
@@ -1240,77 +1243,6 @@ void R_DrawSinglePlane(drawspandata_t *ds, visplane_t *pl, boolean allow_paralle
 
 	for (x = pl->minx; x <= stop; x++)
 		R_MakeSpans(mapfunc, spanfunc, ds, x, pl->top[x-1], pl->bottom[x-1], pl->top[x], pl->bottom[x], allow_parallel);
-
-/*
-QUINCUNX anti-aliasing technique (sort of)
-
-Normally, Quincunx antialiasing staggers pixels
-in a 5-die pattern like so:
-
-o   o
-  o
-o   o
-
-To simulate this, we offset the plane by
-FRACUNIT/4 in each direction, and draw
-at 50% translucency. The result is
-a 'smoothing' of the texture while
-using the palette colors.
-*/
-#ifdef QUINCUNX
-	if (spanfunc == spanfuncs[BASEDRAWFUNC])
-	{
-		INT32 i;
-		ds_transmap = R_GetTranslucencyTable(tr_trans50);
-		spanfunc = spanfuncs[SPANDRAWFUNC_TRANS];
-		for (i=0; i<4; i++)
-		{
-			xoffs = pl->xoffs;
-			yoffs = pl->yoffs;
-
-			switch(i)
-			{
-				case 0:
-					xoffs -= FRACUNIT/4;
-					yoffs -= FRACUNIT/4;
-					break;
-				case 1:
-					xoffs -= FRACUNIT/4;
-					yoffs += FRACUNIT/4;
-					break;
-				case 2:
-					xoffs += FRACUNIT/4;
-					yoffs -= FRACUNIT/4;
-					break;
-				case 3:
-					xoffs += FRACUNIT/4;
-					yoffs += FRACUNIT/4;
-					break;
-			}
-			ds->planeheight = abs(pl->height - pl->viewz);
-
-			if (light >= LIGHTLEVELS)
-				light = LIGHTLEVELS-1;
-
-			if (light < 0)
-				light = 0;
-
-			planezlight = zlight[light];
-
-			// set the maximum value for unsigned
-			pl->top[pl->maxx+1] = 0xffff;
-			pl->top[pl->minx-1] = 0xffff;
-			pl->bottom[pl->maxx+1] = 0x0000;
-			pl->bottom[pl->minx-1] = 0x0000;
-
-			stop = pl->maxx + 1;
-
-			for (x = pl->minx; x <= stop; x++)
-				R_MakeSpans(mapfunc, x, pl->top[x-1], pl->bottom[x-1],
-					pl->top[x], pl->bottom[x]);
-		}
-	}
-#endif
 }
 
 void R_PlaneBounds(visplane_t *plane)

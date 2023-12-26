@@ -64,22 +64,20 @@ extern float zeroheight;
 
 extern lumpnum_t viewborderlump[8];
 
-
-
 // ---------------------------------------------
 // color mode dependent drawer function pointers
 // ---------------------------------------------
 
-#define USE_COL_SPAN_ASM 0
-
 #define BASEDRAWFUNC 0
+
+typedef void (coldrawfunc_t)(drawcolumndata_t*);
+typedef void (spandrawfunc_t)(drawspandata_t*);
 
 enum
 {
 	COLDRAWFUNC_BASE = BASEDRAWFUNC,
 	COLDRAWFUNC_FUZZY,
 	COLDRAWFUNC_TRANS,
-	COLDRAWFUNC_SHADE,
 	COLDRAWFUNC_SHADOWED,
 	COLDRAWFUNC_TRANSTRANS,
 	COLDRAWFUNC_TWOSMULTIPATCH,
@@ -90,15 +88,11 @@ enum
 	COLDRAWFUNC_MAX
 };
 
-typedef void (coldrawfunc_t)(drawcolumndata_t*);
-typedef void (spandrawfunc_t)(drawspandata_t*);
-
-extern coldrawfunc_t *colfunc;
-extern coldrawfunc_t *colfuncs[COLDRAWFUNC_MAX];
-#ifdef USE_COL_SPAN_ASM
-extern coldrawfunc_t *colfuncs_asm[COLDRAWFUNC_MAX];
-#endif
 extern int colfunctype;
+extern coldrawfunc_t *colfunc;
+
+extern coldrawfunc_t *colfuncs[COLDRAWFUNC_MAX];
+extern coldrawfunc_t *colfuncs_bm[COLDRAWFUNC_MAX];
 
 enum
 {
@@ -120,16 +114,17 @@ enum
 	SPANDRAWFUNC_TILTEDWATER,
 
 	SPANDRAWFUNC_FOG,
+	SPANDRAWFUNC_TILTEDFOG,
 
 	SPANDRAWFUNC_MAX
 };
 
 extern spandrawfunc_t *spanfunc;
+
 extern spandrawfunc_t *spanfuncs[SPANDRAWFUNC_MAX];
+extern spandrawfunc_t *spanfuncs_bm[SPANDRAWFUNC_MAX];
 extern spandrawfunc_t *spanfuncs_npo2[SPANDRAWFUNC_MAX];
-#ifdef USE_COL_SPAN_ASM
-extern spandrawfunc_t *spanfuncs_asm[SPANDRAWFUNC_MAX];
-#endif
+extern spandrawfunc_t *spanfuncs_bm_npo2[SPANDRAWFUNC_MAX];
 extern spandrawfunc_t *spanfuncs_flat[SPANDRAWFUNC_MAX];
 
 // ------------------------------------------------
@@ -202,90 +197,98 @@ void R_DrawViewBorder(void);
 // 8bpp DRAWING CODE
 // -----------------
 
-void R_DrawColumn_8(drawcolumndata_t* dc);
-void R_DrawShadeColumn_8(drawcolumndata_t* dc);
-void R_DrawTranslucentColumn_8(drawcolumndata_t* dc);
-void R_DrawDropShadowColumn_8(drawcolumndata_t* dc);
-void R_DrawTranslatedColumn_8(drawcolumndata_t* dc);
-void R_DrawTranslatedTranslucentColumn_8(drawcolumndata_t* dc);
-void R_Draw2sMultiPatchColumn_8(drawcolumndata_t* dc);
-void R_Draw2sMultiPatchTranslucentColumn_8(drawcolumndata_t* dc);
-void R_DrawFogColumn_8(drawcolumndata_t* dc);
-void R_DrawColumnShadowed_8(drawcolumndata_t* dc);
+void R_DrawColumn(drawcolumndata_t* dc);
+void R_DrawTranslucentColumn(drawcolumndata_t* dc);
+void R_DrawDropShadowColumn(drawcolumndata_t* dc);
+void R_DrawTranslatedColumn(drawcolumndata_t* dc);
+void R_DrawTranslatedTranslucentColumn(drawcolumndata_t* dc);
+void R_Draw2sMultiPatchColumn(drawcolumndata_t* dc);
+void R_Draw2sMultiPatchTranslucentColumn(drawcolumndata_t* dc);
+void R_DrawFogColumn(drawcolumndata_t* dc);
+void R_DrawColumnShadowed(drawcolumndata_t* dc);
 
-#define PLANELIGHTFLOAT (BASEVIDWIDTH * BASEVIDWIDTH / vid.width / ds->zeroheight / 21.0f * FIXED_TO_FLOAT(fovtan[viewssnum]))
+void R_DrawColumn_Brightmap(drawcolumndata_t* dc);
+void R_DrawTranslucentColumn_Brightmap(drawcolumndata_t* dc);
+void R_DrawTranslatedColumn_Brightmap(drawcolumndata_t* dc);
+void R_DrawTranslatedTranslucentColumn_Brightmap(drawcolumndata_t* dc);
+void R_Draw2sMultiPatchColumn_Brightmap(drawcolumndata_t* dc);
+void R_Draw2sMultiPatchTranslucentColumn_Brightmap(drawcolumndata_t* dc);
+void R_DrawColumnShadowed_Brightmap(drawcolumndata_t* dc);
 
-void R_DrawSpan_8(drawspandata_t* ds);
-void R_DrawTranslucentSpan_8(drawspandata_t* ds);
-void R_DrawTiltedSpan_8(drawspandata_t* ds);
-void R_DrawTiltedTranslucentSpan_8(drawspandata_t* ds);
+void R_DrawSpan(drawspandata_t* ds);
+void R_DrawTranslucentSpan(drawspandata_t* ds);
+void R_DrawSplat(drawspandata_t* ds);
+void R_DrawTranslucentSplat(drawspandata_t* ds);
+void R_DrawFloorSprite(drawspandata_t* ds);
+void R_DrawTranslucentFloorSprite(drawspandata_t* ds);
+void R_DrawTranslucentWaterSpan(drawspandata_t* ds);
+void R_DrawFogSpan(drawspandata_t* ds);
 
-void R_DrawSplat_8(drawspandata_t* ds);
-void R_DrawTranslucentSplat_8(drawspandata_t* ds);
-void R_DrawTiltedSplat_8(drawspandata_t* ds);
+void R_DrawSpan_Tilted(drawspandata_t* ds);
+void R_DrawTranslucentSpan_Tilted(drawspandata_t* ds);
+void R_DrawSplat_Tilted(drawspandata_t* ds);
+void R_DrawTranslucentSplat_Tilted(drawspandata_t* ds);
+void R_DrawFloorSprite_Tilted(drawspandata_t* ds);
+void R_DrawTranslucentFloorSprite_Tilted(drawspandata_t* ds);
+void R_DrawTranslucentWaterSpan_Tilted(drawspandata_t* ds);
+void R_DrawFogSpan_Tilted(drawspandata_t* ds);
 
-void R_DrawFloorSprite_8(drawspandata_t* ds);
-void R_DrawTranslucentFloorSprite_8(drawspandata_t* ds);
-void R_DrawTiltedFloorSprite_8(drawspandata_t* ds);
-void R_DrawTiltedTranslucentFloorSprite_8(drawspandata_t* ds);
+void R_DrawSpan_NPO2(drawspandata_t* ds);
+void R_DrawTranslucentSpan_NPO2(drawspandata_t* ds);
+void R_DrawSplat_NPO2(drawspandata_t* ds);
+void R_DrawTranslucentSplat_NPO2(drawspandata_t* ds);
+void R_DrawFloorSprite_NPO2(drawspandata_t* ds);
+void R_DrawTranslucentFloorSprite_NPO2(drawspandata_t* ds);
+void R_DrawTranslucentWaterSpan_NPO2(drawspandata_t* ds);
 
-void R_CalcTiltedLighting(INT32 *lightbuffer, INT32 x1, INT32 x2, fixed_t start, fixed_t end);
+void R_DrawSpan_Tilted_NPO2(drawspandata_t* ds);
+void R_DrawTranslucentSpan_Tilted_NPO2(drawspandata_t* ds);
+void R_DrawSplat_Tilted_NPO2(drawspandata_t* ds);
+void R_DrawTranslucentSplat_Tilted_NPO2(drawspandata_t* ds);
+void R_DrawFloorSprite_Tilted_NPO2(drawspandata_t* ds);
+void R_DrawTranslucentFloorSprite_Tilted_NPO2(drawspandata_t* ds);
+void R_DrawTranslucentWaterSpan_Tilted_NPO2(drawspandata_t* ds);
 
-void R_DrawTranslucentWaterSpan_8(drawspandata_t* ds);
-void R_DrawTiltedTranslucentWaterSpan_8(drawspandata_t* ds);
+void R_DrawSpan_Brightmap(drawspandata_t* ds);
+void R_DrawTranslucentSpan_Brightmap(drawspandata_t* ds);
+void R_DrawSplat_Brightmap(drawspandata_t* ds);
+void R_DrawTranslucentSplat_Brightmap(drawspandata_t* ds);
+void R_DrawFloorSprite_Brightmap(drawspandata_t* ds);
+void R_DrawTranslucentFloorSprite_Brightmap(drawspandata_t* ds);
+void R_DrawTranslucentWaterSpan_Brightmap(drawspandata_t* ds);
 
-void R_DrawFogSpan_8(drawspandata_t* ds);
+void R_DrawSpan_Tilted_Brightmap(drawspandata_t* ds);
+void R_DrawTranslucentSpan_Tilted_Brightmap(drawspandata_t* ds);
+void R_DrawSplat_Tilted_Brightmap(drawspandata_t* ds);
+void R_DrawTranslucentSplat_Tilted_Brightmap(drawspandata_t* ds);
+void R_DrawFloorSprite_Tilted_Brightmap(drawspandata_t* ds);
+void R_DrawTranslucentFloorSprite_Tilted_Brightmap(drawspandata_t* ds);
+void R_DrawTranslucentWaterSpan_Tilted_Brightmap(drawspandata_t* ds);
 
-// Lactozilla: Non-powers-of-two
-void R_DrawSpan_NPO2_8(drawspandata_t* ds);
-void R_DrawTranslucentSpan_NPO2_8(drawspandata_t* ds);
-void R_DrawTiltedSpan_NPO2_8(drawspandata_t* ds);
-void R_DrawTiltedTranslucentSpan_NPO2_8(drawspandata_t* ds);
+void R_DrawSpan_Brightmap_NPO2(drawspandata_t* ds);
+void R_DrawTranslucentSpan_Brightmap_NPO2(drawspandata_t* ds);
+void R_DrawSplat_Brightmap_NPO2(drawspandata_t* ds);
+void R_DrawTranslucentSplat_Brightmap_NPO2(drawspandata_t* ds);
+void R_DrawFloorSprite_Brightmap_NPO2(drawspandata_t* ds);
+void R_DrawTranslucentFloorSprite_Brightmap_NPO2(drawspandata_t* ds);
+void R_DrawTranslucentWaterSpan_Brightmap_NPO2(drawspandata_t* ds);
 
-void R_DrawSplat_NPO2_8(drawspandata_t* ds);
-void R_DrawTranslucentSplat_NPO2_8(drawspandata_t* ds);
-void R_DrawTiltedSplat_NPO2_8(drawspandata_t* ds);
-
-void R_DrawFloorSprite_NPO2_8(drawspandata_t* ds);
-void R_DrawTranslucentFloorSprite_NPO2_8(drawspandata_t* ds);
-void R_DrawTiltedFloorSprite_NPO2_8(drawspandata_t* ds);
-void R_DrawTiltedTranslucentFloorSprite_NPO2_8(drawspandata_t* ds);
-
-void R_DrawTranslucentWaterSpan_NPO2_8(drawspandata_t* ds);
-void R_DrawTiltedTranslucentWaterSpan_NPO2_8(drawspandata_t* ds);
+void R_DrawSpan_Tilted_Brightmap_NPO2(drawspandata_t* ds);
+void R_DrawTranslucentSpan_Tilted_Brightmap_NPO2(drawspandata_t* ds);
+void R_DrawSplat_Tilted_Brightmap_NPO2(drawspandata_t* ds);
+void R_DrawTranslucentSplat_Tilted_Brightmap_NPO2(drawspandata_t* ds);
+void R_DrawFloorSprite_Tilted_Brightmap_NPO2(drawspandata_t* ds);
+void R_DrawTranslucentFloorSprite_Tilted_Brightmap_NPO2(drawspandata_t* ds);
+void R_DrawTranslucentWaterSpan_Tilted_Brightmap_NPO2(drawspandata_t* ds);
 
 // Debugging - highlight surfaces in flat colors
-void R_DrawColumn_Flat_8(drawcolumndata_t* dc);
-void R_DrawSpan_Flat_8(drawspandata_t* ds);
-void R_DrawTiltedSpan_Flat_8(drawspandata_t* ds);
-
-#ifdef USEASM
-void ASMCALL R_DrawColumn_8_ASM(void);
-void ASMCALL R_DrawShadeColumn_8_ASM(void);
-void ASMCALL R_DrawTranslucentColumn_8_ASM(void);
-void ASMCALL R_Draw2sMultiPatchColumn_8_ASM(void);
-
-void ASMCALL R_DrawColumn_8_MMX(void);
-
-void ASMCALL R_Draw2sMultiPatchColumn_8_MMX(void);
-void ASMCALL R_DrawSpan_8_MMX(void);
-#endif
-
-// ------------------
-// 16bpp DRAWING CODE
-// ------------------
-
-#ifdef HIGHCOLOR
-void R_DrawColumn_16(void);
-void R_DrawWallColumn_16(void);
-void R_DrawTranslucentColumn_16(void);
-void R_DrawTranslatedColumn_16(void);
-void R_DrawSpan_16(void);
-#endif
+void R_DrawColumn_Flat(drawcolumndata_t* dc);
+void R_DrawSpan_Flat(drawspandata_t* ds);
+void R_DrawTiltedSpan_Flat(drawspandata_t* ds);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif
+#endif // __cplusplus
 
 // =========================================================================
 #endif  // __R_DRAW__
