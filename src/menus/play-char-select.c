@@ -630,9 +630,17 @@ static boolean M_HandleCSelectProfile(setup_player_t *p, UINT8 num)
 }
 
 
+static void M_HandlePlayerFinalise(setup_player_t *p)
+{
+	p->mdepth = CSSTEP_READY;
+	p->delay = TICRATE;
+	M_SetupReadyExplosions(true, p->gridx, p->gridy, p->color);
+	S_StartSound(NULL, sfx_s3k4e);
+}
+
+
 static void M_HandleCharAskChange(setup_player_t *p, UINT8 num)
 {
-
 	if (cv_splitdevice.value)
 		num = 0;
 
@@ -658,11 +666,7 @@ static void M_HandleCharAskChange(setup_player_t *p, UINT8 num)
 		{
 			// no changes
 			M_GetFollowerState(p);
-			p->mdepth = CSSTEP_READY;
-			p->delay = TICRATE;
-
-			S_StartSound(NULL, sfx_s3k4e);
-			M_SetupReadyExplosions(true, p->gridx, p->gridy, p->color);
+			M_HandlePlayerFinalise(p);
 		}
 		else
 		{
@@ -675,11 +679,70 @@ static void M_HandleCharAskChange(setup_player_t *p, UINT8 num)
 	}
 }
 
+boolean M_CharacterSelectForceInAction(void)
+{
+	if (!Playing())
+		return false;
+
+	if (K_CanChangeRules(true) == false)
+		return false;
+
+	return (cv_forceskin.value != -1);
+}
+
+static void M_HandleBackToChars(setup_player_t *p)
+{
+	boolean forceskin = M_CharacterSelectForceInAction();
+
+	if (forceskin
+	|| setup_chargrid[p->gridx][p->gridy].numskins == 1)
+	{
+		p->mdepth = CSSTEP_CHARS; // Skip clones menu
+	}
+	else
+	{
+		p->mdepth = CSSTEP_ALTS;
+	}
+}
+
+static boolean M_HandleBeginningColors(setup_player_t *p)
+{
+	p->mdepth = CSSTEP_COLORS;
+	M_NewPlayerColors(p);
+	if (p->colors.listLen != 1)
+		return true;
+
+	p->color = p->colors.list[0];
+	return false;
+}
+
+static void M_HandleBeginningFollowers(setup_player_t *p)
+{
+	if (setup_numfollowercategories == 0)
+	{
+		p->followern = -1;
+		M_HandlePlayerFinalise(p);
+	}
+	else
+	{
+		p->mdepth = CSSTEP_FOLLOWERCATEGORY;
+		S_StartSound(NULL, sfx_s3k63);
+	}
+}
+
+static void M_HandleBeginningColorsOrFollowers(setup_player_t *p)
+{
+	if (M_HandleBeginningColors(p))
+		S_StartSound(NULL, sfx_s3k63);
+	else
+		M_HandleBeginningFollowers(p);
+}
+
 static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 {
 	UINT8 numclones;
 	INT32 skin;
-	boolean forceskin = (Playing() && K_CanChangeRules(true) == true) && (cv_forceskin.value != -1);
+	boolean forceskin = M_CharacterSelectForceInAction();
 
 	if (cv_splitdevice.value)
 		num = 0;
@@ -748,9 +811,7 @@ static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 			}
 			else
 			{
-				p->mdepth = CSSTEP_COLORS;
-				M_NewPlayerColors(p);
-				S_StartSound(NULL, sfx_s3k63);
+				M_HandleBeginningColorsOrFollowers(p);
 			}
 		}
 		else
@@ -764,15 +825,13 @@ static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 			{
 				if (setup_page+1 == setup_chargrid[p->gridx][p->gridy].numskins)
 				{
-					p->mdepth = CSSTEP_COLORS; // Skip clones menu if there are none on this page.
-					M_NewPlayerColors(p);
+					M_HandleBeginningColorsOrFollowers(p);
 				}
 				else
 				{
 					p->mdepth = CSSTEP_ALTS;
+					S_StartSound(NULL, sfx_s3k63);
 				}
-
-				S_StartSound(NULL, sfx_s3k63);
 			}
 		}
 
@@ -840,33 +899,10 @@ static void M_HandleCharRotate(setup_player_t *p, UINT8 num)
 		S_StartSound(NULL, sfx_s3kc3s);
 	}
 
-	 if (M_MenuConfirmPressed(num) /*|| M_MenuButtonPressed(num, MBT_START)*/)
+	if (M_MenuConfirmPressed(num) /*|| M_MenuButtonPressed(num, MBT_START)*/)
 	{
-		p->mdepth = CSSTEP_COLORS;
-		M_NewPlayerColors(p);
-		if (p->colors.listLen == 1)
-		{
-			p->color = p->colors.list[0];
-			if (setup_numfollowercategories == 0)
-			{
-				p->followern = -1;
-				p->mdepth = CSSTEP_READY;
-				p->delay = TICRATE;
-				M_SetupReadyExplosions(true, p->gridx, p->gridy, p->color);
-				S_StartSound(NULL, sfx_s3k4e);
-			}
-			else
-			{
-				p->mdepth = CSSTEP_FOLLOWERCATEGORY;
-				S_StartSound(NULL, sfx_s3k63);
-				M_SetMenuDelay(num);
-			}
-		}
-		else
-		{
-			S_StartSound(NULL, sfx_s3k63);
-			M_SetMenuDelay(num);
-		}
+		M_HandleBeginningColorsOrFollowers(p);
+		M_SetMenuDelay(num);
 	}
 	else if (M_MenuBackPressed(num))
 	{
@@ -886,8 +922,6 @@ static void M_HandleCharRotate(setup_player_t *p, UINT8 num)
 
 static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 {
-	boolean forceskin = (Playing() && K_CanChangeRules(true) == true) && (cv_forceskin.value != -1);
-
 	if (cv_splitdevice.value)
 		num = 0;
 
@@ -908,32 +942,13 @@ static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 
 	 if (M_MenuConfirmPressed(num) /*|| M_MenuButtonPressed(num, MBT_START)*/)
 	{
-		if (setup_numfollowercategories == 0)
-		{
-			p->followern = -1;
-			p->mdepth = CSSTEP_READY;
-			p->delay = TICRATE;
-			M_SetupReadyExplosions(true, p->gridx, p->gridy, p->color);
-			S_StartSound(NULL, sfx_s3k4e);
-		}
-		else
-		{
-			p->mdepth = CSSTEP_FOLLOWERCATEGORY;
-			S_StartSound(NULL, sfx_s3k63);
-			M_SetMenuDelay(num);
-		}
+		M_HandleBeginningFollowers(p);
+		M_SetMenuDelay(num);
 	}
 	else if (M_MenuBackPressed(num))
 	{
-		if (forceskin
-			|| setup_chargrid[p->gridx][p->gridy].numskins == 1)
-		{
-			p->mdepth = CSSTEP_CHARS; // Skip clones menu
-		}
-		else
-		{
-			p->mdepth = CSSTEP_ALTS;
-		}
+		M_HandleBackToChars(p);
+
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(num);
 	}
@@ -1009,10 +1024,7 @@ static void M_HandleFollowerCategoryRotate(setup_player_t *p, UINT8 num)
 		if (p->followercategory < 0)
 		{
 			p->followern = -1;
-			p->mdepth = CSSTEP_READY;
-			p->delay = TICRATE;
-			M_SetupReadyExplosions(true, p->gridx, p->gridy, p->color);
-			S_StartSound(NULL, sfx_s3k4e);
+			M_HandlePlayerFinalise(p);
 		}
 		else
 		{
@@ -1046,8 +1058,9 @@ static void M_HandleFollowerCategoryRotate(setup_player_t *p, UINT8 num)
 	}
 	else if (M_MenuBackPressed(num))
 	{
-		p->mdepth = CSSTEP_COLORS;
-		M_NewPlayerColors(p);
+		if (!M_HandleBeginningColors(p))
+			M_HandleBackToChars(p);
+
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(num);
 	}
@@ -1133,10 +1146,7 @@ static void M_HandleFollowerRotate(setup_player_t *p, UINT8 num)
 		}
 		else
 		{
-			p->mdepth = CSSTEP_READY;
-			p->delay = TICRATE;
-			M_SetupReadyExplosions(true, p->gridx, p->gridy, p->color);
-			S_StartSound(NULL, sfx_s3k4e);
+			M_HandlePlayerFinalise(p);
 		}
 
 		M_SetMenuDelay(num);
@@ -1182,10 +1192,7 @@ static void M_HandleFollowerColorRotate(setup_player_t *p, UINT8 num)
 
 	if (M_MenuConfirmPressed(num) /*|| M_MenuButtonPressed(num, MBT_START)*/)
 	{
-		p->mdepth = CSSTEP_READY;
-		p->delay = TICRATE;
-		M_SetupReadyExplosions(true, p->gridx, p->gridy, p->color);
-		S_StartSound(NULL, sfx_s3k4e);
+		M_HandlePlayerFinalise(p);
 		M_SetMenuDelay(num);
 	}
 	else if (M_MenuBackPressed(num))
@@ -1213,7 +1220,7 @@ static void M_HandleFollowerColorRotate(setup_player_t *p, UINT8 num)
 boolean M_CharacterSelectHandler(INT32 choice)
 {
 	INT32 i;
-	boolean forceskin = (Playing() && K_CanChangeRules(true) == true) && (cv_forceskin.value != -1);
+	boolean forceskin = M_CharacterSelectForceInAction();
 
 	(void)choice;
 
@@ -1275,8 +1282,9 @@ boolean M_CharacterSelectHandler(INT32 choice)
 				default: // Unready
 					if (M_MenuBackPressed(i))
 					{
-						p->mdepth = CSSTEP_COLORS;
-						M_NewPlayerColors(p);
+						if (!M_HandleBeginningColors(p))
+							M_HandleBackToChars(p);
+
 						S_StartSound(NULL, sfx_s3k5b);
 						M_SetMenuDelay(i);
 					}

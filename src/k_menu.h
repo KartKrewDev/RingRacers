@@ -765,6 +765,7 @@ extern consvar_t *setup_playercvars[MAXSPLITSCREENPLAYERS][SPLITCV_MAX];
 void M_CharacterSelectInit(void);
 void M_CharacterSelect(INT32 choice);
 void M_SetupReadyExplosions(boolean charsel, UINT16 basex, UINT16 basey, UINT16 color);
+boolean M_CharacterSelectForceInAction(void);
 boolean M_CharacterSelectHandler(INT32 choice);
 void M_CharacterSelectTick(void);
 boolean M_CharacterSelectQuit(void);
