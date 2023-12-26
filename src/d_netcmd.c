@@ -4729,6 +4729,7 @@ static void Command_cxdiag_f(void)
 			boolean requiresPlaying = false;
 			boolean lastRequiresPlaying = false;
 			boolean lastrequiredplayingvalid = false;
+			boolean immediatelyprefix = false;
 			for (j = 0; j < c->numconditions; ++j)
 			{
 				cn = &c->condition[j];
@@ -4746,8 +4747,27 @@ static void Command_cxdiag_f(void)
 						continue;
 				}
 
-				if (cn->type == UC_AND || cn->type == UC_COMMA || cn->type == UC_DESCRIPTIONOVERRIDE)
+				if (cn->type == UC_DESCRIPTIONOVERRIDE)
+				{
+					if (!cn->stringvar)
+					{
+						CONS_Printf("\x87""	ConditionSet %u entry %u (Condition%u) - Description override has no description!?\n", i+1, j+1, cn->id);
+					}
+					else if (cn->stringvar[0] != tolower(cn->stringvar[0]))
+					{
+						CONS_Printf("\x87""	ConditionSet %u entry %u (Condition%u) - Description override begins with capital letter, which isn't necessary and can sometimes look weird in generated descriptions\n", i+1, j+1, cn->id);
+					}
 					continue;
+				}
+
+				if (cn->type == UC_AND || cn->type == UC_COMMA)
+				{
+					if (immediatelyprefix || lastID != cn->id)
+					{
+						CONS_Printf("\x87""	ConditionSet %u entry %u (Condition%u) - Conjunction immediately follows %s - this just looks plain weird!\n", i+1, j+1, cn->id, immediatelyprefix ? "Prefix type" : "start");
+					}
+					continue;
+				}
 
 				lastID = cn->id;
 
@@ -4764,6 +4784,8 @@ static void Command_cxdiag_f(void)
 					}
 				}
 				lastrequiredplayingvalid = true;
+
+				immediatelyprefix = (cn->type >= UCRP_PREFIX_GRANDPRIX && cn->type <= UCRP_PREFIX_ISMAP);
 			}
 		}
 	}
