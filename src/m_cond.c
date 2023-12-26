@@ -2886,7 +2886,7 @@ char *M_BuildConditionSetString(UINT16 unlockid)
 		DESCRIPTIONWIDTH << FRACBITS,
 		FRACUNIT, FRACUNIT, FRACUNIT,
 		0,
-		HU_FONT,
+		TINY_FONT,
 		message
 	);
 }

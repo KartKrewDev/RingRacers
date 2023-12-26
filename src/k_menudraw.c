@@ -6596,7 +6596,7 @@ challengedesc:
 		)
 	)
 	{
-		V_DrawCenteredString(BASEVIDWIDTH/2, 120 + 32, 0, challengesmenu.unlockcondition);
+		V_DrawCenteredThinString(BASEVIDWIDTH/2, 120 + 32, 0, challengesmenu.unlockcondition);
 	}
 }
 
