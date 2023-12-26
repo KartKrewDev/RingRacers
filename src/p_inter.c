@@ -2883,8 +2883,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 		case MT_SA2_CRATE:
 		case MT_ICECAPBLOCK:
-			Obj_TryCrateDamage(target, inflictor);
-			return true;
+			return Obj_TryCrateDamage(target, inflictor);
 
 		default:
 			break;

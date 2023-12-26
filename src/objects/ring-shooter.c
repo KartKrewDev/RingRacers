@@ -638,7 +638,7 @@ static void SpawnRingShooter(player_t *player)
 	rs_base_playerface(base) = (player - players);
 }
 
-static boolean AllowRingShooter(player_t *player)
+static boolean AllowRingShooter(const player_t *player)
 {
 	const fixed_t minSpeed = 6 * player->mo->scale;
 
@@ -667,9 +667,9 @@ static boolean AllowRingShooter(player_t *player)
 	return false;
 }
 
-boolean Obj_PlayerRingShooterFreeze(player_t *const player)
+boolean Obj_PlayerRingShooterFreeze(const player_t *player)
 {
-	mobj_t *const base = player->ringShooter;
+	const mobj_t *base = player->ringShooter;
 
 	if (AllowRingShooter(player) == true
 		&& (player->cmd.buttons & BT_RESPAWN) == BT_RESPAWN

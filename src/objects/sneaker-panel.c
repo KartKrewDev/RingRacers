@@ -44,7 +44,21 @@ void Obj_SneakerPanelSetup(mobj_t *mobj, mapthing_t *mthing)
 		mobj->eflags |= MFE_VERTICALFLIP;
 		mobj->flags2 |= MF2_OBJECTFLIP;
 	}
-	P_TryMove(mobj, mobj->x, mobj->y, true, NULL); // sets standingslope
+
+	if (P_CheckPosition(mobj, mobj->x, mobj->y, NULL))
+	{
+		if (P_IsObjectFlipped(mobj))
+		{
+			if (tm.ceilingz <= mobj->z + mobj->height)
+				mobj->standingslope = tm.ceilingslope;
+		}
+		else
+		{
+			if (mobj->z <= tm.floorz)
+				mobj->standingslope = tm.floorslope;
+		}
+	}
+
 	Obj_SneakerPanelSpriteScale(mobj);
 }
 

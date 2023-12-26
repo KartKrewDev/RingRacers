@@ -32,9 +32,6 @@ extern "C" {
 // Level of a "difficult" bot. The max bot level was increased, but this keeps all of the same calculations.
 #define DIFFICULTBOT (9)
 
-// How much all bots reduce in difficulty when the match needs to be restarted.
-#define BOT_LEVEL_DECREASE (2)
-
 // How many tics in a row do you need to turn in this direction before we'll let you turn.
 // Made it as small as possible without making it look like the bots are twitching constantly.
 #define BOTTURNCONFIRM 4
@@ -59,7 +56,7 @@ struct botprediction_t
 
 
 /*--------------------------------------------------
-	boolean K_PlayerUsesBotMovement(player_t *player);
+	boolean K_PlayerUsesBotMovement(const player_t *player);
 
 		Tells if this player is being controlled via bot movement code (is a bot, or is exiting).
 
@@ -70,11 +67,11 @@ struct botprediction_t
 		true if using bot movement code, otherwise false.
 --------------------------------------------------*/
 
-boolean K_PlayerUsesBotMovement(player_t *player);
+boolean K_PlayerUsesBotMovement(const player_t *player);
 
 
 /*--------------------------------------------------
-	boolean K_BotCanTakeCut(player_t *player);
+	boolean K_BotCanTakeCut(const player_t *player);
 
 		Tells if this bot is able to take shortcuts (currently unaffected by offroad,
 		or has certain items ready).
@@ -86,11 +83,11 @@ boolean K_PlayerUsesBotMovement(player_t *player);
 		true if able to take shortcuts, otherwise false.
 --------------------------------------------------*/
 
-boolean K_BotCanTakeCut(player_t *player);
+boolean K_BotCanTakeCut(const player_t *player);
 
 
 /*--------------------------------------------------
-	const botcontroller_t *K_GetBotController(mobj_t *mobj);
+	const botcontroller_t *K_GetBotController(const mobj_t *mobj);
 
 		Retrieves the current bot controller values from
 		the player's current sector.
@@ -102,7 +99,7 @@ boolean K_BotCanTakeCut(player_t *player);
 		Pointer to the sector's bot controller struct.
 --------------------------------------------------*/
 
-const botcontroller_t *K_GetBotController(mobj_t *mobj);
+const botcontroller_t *K_GetBotController(const mobj_t *mobj);
 
 
 /*--------------------------------------------------
@@ -126,7 +123,7 @@ fixed_t K_BotMapModifier(void);
 
 
 /*--------------------------------------------------
-	fixed_t K_BotRubberband(player_t *player);
+	fixed_t K_BotRubberband(const player_t *player);
 
 		Gives a multiplier for a bot's rubberbanding.
 		Meant to be used for acceleration and handling.
@@ -138,7 +135,7 @@ fixed_t K_BotMapModifier(void);
 		A multiplier in fixed point scale.
 --------------------------------------------------*/
 
-fixed_t K_BotRubberband(player_t *player);
+fixed_t K_BotRubberband(const player_t *player);
 
 
 /*--------------------------------------------------
@@ -262,7 +259,7 @@ UINT8 K_EggboxStealth(fixed_t x, fixed_t y);
 		true if avoiding this sector, false otherwise.
 --------------------------------------------------*/
 
-boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t y);
+boolean K_BotHatesThisSector(const player_t *player, sector_t *sec, fixed_t x, fixed_t y);
 
 
 /*--------------------------------------------------
@@ -278,11 +275,11 @@ boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t
 		None
 --------------------------------------------------*/
 
-void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player);
+void K_NudgePredictionTowardsObjects(botprediction_t *predict, const player_t *player);
 
 
 /*--------------------------------------------------
-	INT32 K_PositionBully(player_t *player)
+	INT32 K_PositionBully(const player_t *player)
 
 		Calculates a turn value to reach a player that can be bullied.
 
@@ -293,7 +290,7 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 		INT32_MAX if couldn't find anything, otherwise a steering value.
 --------------------------------------------------*/
 
-INT32 K_PositionBully(player_t *player);
+INT32 K_PositionBully(const player_t *player);
 
 
 /*--------------------------------------------------
@@ -314,6 +311,23 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd);
 
 
 /*--------------------------------------------------
+	void K_UpdateBotGameplayVarsItemUsage(player_t *player)
+
+		Updates gamestate affecting botvars, relating to
+		item usage. This must be called for both client
+		and server.
+
+	Input Arguments:-
+		player - Player to whom to update the botvars.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
+
+void K_UpdateBotGameplayVarsItemUsage(player_t *player);
+
+
+/*--------------------------------------------------
 	void K_UpdateBotGameplayVars(player_t *player);
 
 		Updates gamestate affecting botvars. This must be
@@ -330,7 +344,7 @@ void K_UpdateBotGameplayVars(player_t *player);
 
 
 /*--------------------------------------------------
-	void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt);
+	void K_BotItemUsage(const player_t *player, ticcmd_t *cmd, INT16 turnamt);
 
 		Item usage part of ticcmd generation.
 
@@ -343,7 +357,7 @@ void K_UpdateBotGameplayVars(player_t *player);
 		None
 --------------------------------------------------*/
 
-void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt);
+void K_BotItemUsage(const player_t *player, ticcmd_t *cmd, INT16 turnamt);
 
 
 /*--------------------------------------------------

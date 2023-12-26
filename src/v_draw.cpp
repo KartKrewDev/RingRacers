@@ -56,7 +56,7 @@ void Chain::fill(UINT8 color) const
 {
 	const auto _ = Clipper(*this);
 
-	V_DrawFill(x_, y_, width_, height_, color);
+	V_DrawFill(x_, y_, width_, height_, color|(flags_ & ~0xFF));
 }
 
 void Chain::string(const char* str, INT32 flags, Font font) const

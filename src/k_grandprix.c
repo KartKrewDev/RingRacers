@@ -604,6 +604,7 @@ void K_IncreaseBotDifficulty(player_t *bot)
 	disruptDelta = abs(statusQuo - bot->position);
 
 	increase = (beatenDelta + winnerDelta + disruptDelta - 2) / 3;
+	increase++; // At least +1 level up.
 	if (increase <= 0)
 	{
 		// No increase...

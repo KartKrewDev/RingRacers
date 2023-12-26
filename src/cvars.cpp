@@ -318,8 +318,12 @@ consvar_t cv_controlperkey = Player("controlperkey", "One").values({{1, "One"}, 
 // actual general (maximum) sound & music volume, saved into the config
 // Volume scale is 0-100 in new mixer. 100 is treated as -0dB or 100% gain. No more weirdness to work around SDL_mixer
 // problems
-consvar_t cv_digmusicvolume = Player("musicvolume", "80").min_max(0, 100);
-consvar_t cv_soundvolume = Player("soundvolume", "80").min_max(0, 100);
+void MasterVolume_OnChange(void);
+void DigMusicVolume_OnChange(void);
+void SoundVolume_OnChange(void);
+consvar_t cv_mastervolume = Player("volume", "80").min_max(0, 100).onchange_noinit(MasterVolume_OnChange);
+consvar_t cv_digmusicvolume = Player("musicvolume", "80").min_max(0, 100).onchange_noinit(DigMusicVolume_OnChange);
+consvar_t cv_soundvolume = Player("soundvolume", "80").min_max(0, 100).onchange_noinit(SoundVolume_OnChange);
 
 #ifdef HAVE_DISCORDRPC
 	void DRPC_UpdatePresence(void);
@@ -402,10 +406,14 @@ extern CV_PossibleValue_t perfstats_cons_t[];
 consvar_t cv_perfstats = Player("perfstats", "Off").dont_save().values(perfstats_cons_t);
 
 // Window focus sound sytem toggles
-void PlayMusicIfUnfocused_OnChange(void);
-void PlaySoundIfUnfocused_OnChange(void);
-consvar_t cv_playmusicifunfocused = Player("playmusicifunfocused", "No").yes_no().onchange_noinit(PlayMusicIfUnfocused_OnChange);
-consvar_t cv_playsoundifunfocused = Player("playsoundsifunfocused", "No").yes_no().onchange_noinit(PlaySoundIfUnfocused_OnChange);
+void BGAudio_OnChange(void);
+void BGAudio_OnChange(void);
+consvar_t cv_bgaudio = Player("bgaudio", "Nothing").onchange_noinit(BGAudio_OnChange).values({
+	{0, "Nothing"},
+	{1, "Music"},
+	{2, "Sounds"},
+	{3, "Music&Sounds"},
+});
 
 // Pause game upon window losing focus
 consvar_t cv_pauseifunfocused = Player("pauseifunfocused", "Yes").yes_no();

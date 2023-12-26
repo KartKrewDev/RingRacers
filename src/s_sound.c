@@ -37,6 +37,8 @@
 #include "v_video.h" // V_ThinStringWidth
 #include "music.h"
 
+extern consvar_t cv_mastervolume;
+
 static boolean S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 *vol, INT32 *sep, INT32 *pitch, sfxinfo_t *sfxinfo);
 
 static void Command_Tunes_f(void);
@@ -246,7 +248,7 @@ boolean S_SoundDisabled(void)
 {
 	return (
 			sound_disabled ||
-			( window_notinfocus && ! cv_playsoundifunfocused.value )
+			( window_notinfocus && ! (cv_bgaudio.value & 2) )
 	);
 }
 
@@ -2166,7 +2168,7 @@ boolean S_MusicDisabled(void)
 boolean S_MusicNotInFocus(void)
 {
 	return (
-			( window_notinfocus && ! cv_playmusicifunfocused.value )
+			( window_notinfocus && ! (cv_bgaudio.value & 1) )
 	);
 }
 
@@ -2515,27 +2517,67 @@ void GameDigiMusic_OnChange(void)
 	{
 		digital_disabled = true;
 		I_UnloadSong();
+		Music_Flip();
 	}
 }
 
-void PlayMusicIfUnfocused_OnChange(void);
-void PlayMusicIfUnfocused_OnChange(void)
+void MasterVolume_OnChange(void);
+void MasterVolume_OnChange(void)
+{
+	INT32 adj = cv_mastervolume.value - max(cv_digmusicvolume.value, cv_soundvolume.value);
+
+	if (adj < 0)
+	{
+		INT32 under = min(cv_digmusicvolume.value, cv_soundvolume.value) + adj;
+
+		if (under < 0)
+		{
+			// Ensure balance between music/sound volume does
+			// not change at lower bound. (This is already
+			// guaranteed at upper bound.)
+			adj -= under;
+			CV_StealthSetValue(&cv_mastervolume, cv_mastervolume.value - under);
+		}
+	}
+
+	CV_SetValue(&cv_digmusicvolume, cv_digmusicvolume.value + adj);
+	CV_SetValue(&cv_soundvolume, cv_soundvolume.value + adj);
+}
+
+void DigMusicVolume_OnChange(void);
+void DigMusicVolume_OnChange(void)
+{
+	if (!cv_gamedigimusic.value)
+	{
+		CV_SetValue(&cv_gamedigimusic, 1);
+	}
+	CV_StealthSetValue(&cv_mastervolume, max(cv_digmusicvolume.value, cv_soundvolume.value));
+}
+
+void SoundVolume_OnChange(void);
+void SoundVolume_OnChange(void)
+{
+	if (!cv_gamesounds.value)
+	{
+		CV_SetValue(&cv_gamesounds, 1);
+	}
+	CV_StealthSetValue(&cv_mastervolume, max(cv_digmusicvolume.value, cv_soundvolume.value));
+}
+
+void BGAudio_OnChange(void);
+void BGAudio_OnChange(void)
 {
 	if (window_notinfocus)
 	{
-		if (cv_playmusicifunfocused.value)
+		if (cv_bgaudio.value & 1)
 			I_SetMusicVolume(0);
 		else
 			S_SetMusicVolume();
 	}
-}
 
-void PlaySoundIfUnfocused_OnChange(void);
-void PlaySoundIfUnfocused_OnChange(void)
-{
 	if (!cv_gamesounds.value)
 		return;
 
-	if (window_notinfocus && !cv_playsoundifunfocused.value)
+	if (window_notinfocus && !(cv_bgaudio.value & 2))
 		S_StopSounds();
 }

@@ -53,6 +53,8 @@ public:
 		return res.first->second;
 	}
 
+	void flip() { current_song_ = {}; }
+
 	void tick();
 	void pause_unpause() const;
 

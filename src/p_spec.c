@@ -5710,8 +5710,8 @@ static void P_CheckMobj3DFloorAction(mobj_t *mo, sector_t *sec, boolean continuo
 			continue;
 		}
 
-		top = P_GetSpecialTopZ(mo, roversec, roversec);
-		bottom = P_GetSpecialBottomZ(mo, roversec, roversec);
+		top = P_GetSpecialTopZ(mo, roversec, sec);
+		bottom = P_GetSpecialBottomZ(mo, roversec, sec);
 		mid = bottom + ((top - bottom) / 2);
 
 		if (mo->z > top || mo->z + mo->height < bottom)
