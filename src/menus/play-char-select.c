@@ -1016,25 +1016,29 @@ static void M_HandleFollowerCategoryRotate(setup_player_t *p, UINT8 num)
 		}
 		else
 		{
-			if (p->followern < 0 || followers[p->followern].category != p->followercategory)
+			if (p->followern < 0
+			|| followers[p->followern].category != setup_followercategories[p->followercategory][1])
 			{
 				p->followern = 0;
-				while (p->followern < numfollowers
-					&& (followers[p->followern].category != setup_followercategories[p->followercategory][1]
-					|| !K_FollowerUsable(p->followern)))
+				while (p->followern < numfollowers)
+				{
+					if (followers[p->followern].category == setup_followercategories[p->followercategory][1]
+						&& K_FollowerUsable(p->followern))
+						break;
 					p->followern++;
+				}
 			}
 
-			if (p->followern >= numfollowers)
-			{
-				p->followern = -1;
-				S_StartSound(NULL, sfx_s3kb2);
-			}
-			else
+			if (p->followern < numfollowers)
 			{
 				M_GetFollowerState(p);
 				p->mdepth = CSSTEP_FOLLOWER;
 				S_StartSound(NULL, sfx_s3k63);
+			}
+			else
+			{
+				p->followern = -1;
+				S_StartSound(NULL, sfx_s3kb2);
 			}
 		}
 
@@ -1049,10 +1053,25 @@ static void M_HandleFollowerCategoryRotate(setup_player_t *p, UINT8 num)
 	}
 	else if (M_MenuExtraPressed(num))
 	{
-		if (p->followercategory >= 0 || p->followern < 0 || p->followern >= numfollowers || followers[p->followern].category >= numfollowercategories)
-			p->followercategory = -1;
-		else
-			p->followercategory = followers[p->followern].category;
+		INT16 i = -1;
+		if (p->followercategory < 0
+		&& p->followern >= 0
+		&& p->followern < numfollowers
+		&& followers[p->followern].category < numfollowercategories)
+		{
+			for (i = 0; i < setup_numfollowercategories; i++)
+			{
+				if (followers[p->followern].category != setup_followercategories[i][1])
+					continue;
+
+				break;
+			}
+
+			if (i >= setup_numfollowercategories)
+				i = -1;
+		}
+
+		p->followercategory = i;
 		p->rotate = CSROTATETICS;
 		p->hitlag = true;
 		S_StartSound(NULL, sfx_s3k7b); //sfx_s3kc3s
