@@ -4789,9 +4789,9 @@ static void Command_cxdiag_f(void)
 	}
 
 	if (errors)
-		CONS_Printf("\x85""%u errors detected.\n", i+1, j);
+		CONS_Printf("\x85""%u errors detected.\n", errors);
 	else
-		CONS_Printf("\x83""No errors detected! Good job\n", i+1, j);
+		CONS_Printf("\x83""No errors detected! Good job\n");
 }
 
 // =========================================================================
