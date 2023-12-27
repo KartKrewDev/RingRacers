@@ -148,6 +148,7 @@ boolean M_NextOpt(void)
 	} while (oldItemOn != itemOn && (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_SPACE);
 
 	M_UpdateMenuBGImage(false);
+	M_FlipKartGamemodeMenu(true);
 
 	return true;
 }
@@ -176,6 +177,7 @@ boolean M_PrevOpt(void)
 	} while (oldItemOn != itemOn && (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_SPACE);
 
 	M_UpdateMenuBGImage(false);
+	M_FlipKartGamemodeMenu(true);
 
 	return true;
 }
@@ -715,6 +717,7 @@ void M_SetupNextMenu(menu_t *menudef, boolean notransition)
 		else if (gamestate == GS_MENU)
 		{
 			menuwipe = true;
+			M_FlipKartGamemodeMenu(false);
 			F_WipeStartScreen();
 			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 			F_WipeEndScreen();
@@ -1139,30 +1142,36 @@ void M_Ticker(void)
 
 		// If dest is non-zero, we've started transition and want to switch menus
 		// If dest is zero, we're mid-transition and want to end it
-		if (menutransition.tics == menutransition.dest
-			&& menutransition.endmenu != NULL
-			&& currentMenu != menutransition.endmenu
-		)
+		if (menutransition.tics == menutransition.dest)
 		{
-			if (menutransition.startmenu->transitionID == menutransition.endmenu->transitionID
-				&& menutransition.endmenu->transitionTics)
+			if (menutransition.endmenu != NULL
+				&& currentMenu != menutransition.endmenu)
 			{
-				menutransition.tics = menutransition.endmenu->transitionTics;
-				menutransition.dest = 0;
-				menutransition.in = true;
+				if (menutransition.startmenu->transitionID == menutransition.endmenu->transitionID
+					&& menutransition.endmenu->transitionTics)
+				{
+					menutransition.tics = menutransition.endmenu->transitionTics;
+					menutransition.dest = 0;
+					menutransition.in = true;
+				}
+				else if (gamestate == GS_MENU)
+				{
+					memset(&menutransition, 0, sizeof(menutransition));
+
+					menuwipe = true;
+					F_WipeStartScreen();
+					V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+					F_WipeEndScreen();
+					F_RunWipe(wipe_menu_toblack, wipedefs[wipe_menu_toblack], false, "FADEMAP0", false, false);
+				}
+
+				M_SetupNextMenu(menutransition.endmenu, true);
 			}
-			else if (gamestate == GS_MENU)
+			else
 			{
-				memset(&menutransition, 0, sizeof(menutransition));
-
-				menuwipe = true;
-				F_WipeStartScreen();
-				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
-				F_WipeEndScreen();
-				F_RunWipe(wipe_menu_toblack, wipedefs[wipe_menu_toblack], false, "FADEMAP0", false, false);
+				// Menu is done transitioning in
+				M_FlipKartGamemodeMenu(true);
 			}
-
-			M_SetupNextMenu(menutransition.endmenu, true);
 		}
 	}
 	else

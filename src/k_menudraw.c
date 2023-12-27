@@ -1130,6 +1130,9 @@ void M_DrawGenericMenu(void)
 #define GM_STARTY 80
 #define GM_XOFFSET 17
 #define GM_YOFFSET 34
+#define GM_FLIPTIME 5
+
+static tic_t gm_flipStart;
 
 //
 // M_DrawKartGamemodeMenu
@@ -1182,6 +1185,13 @@ void M_DrawKartGamemodeMenu(void)
 			}
 		}
 
+		INT32 cx = x;
+
+		if (i == itemOn && menutransition.tics == menutransition.dest)
+		{
+			cx -= Easing_OutSine(M_DueFrac(gm_flipStart, GM_FLIPTIME), 0, GM_XOFFSET / 2);
+		}
+
 		type = (currentMenu->menuitems[i].status & IT_DISPLAY);
 
 		switch (type)
@@ -1191,7 +1201,7 @@ void M_DrawKartGamemodeMenu(void)
 				{
 					UINT8 *colormap = NULL;
 
-					if (i == itemOn)
+					if (i == itemOn && menutransition.tics == menutransition.dest)
 					{
 						colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
 					}
@@ -1200,8 +1210,8 @@ void M_DrawKartGamemodeMenu(void)
 						colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_MOSS, GTC_CACHE);
 					}
 
-					V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, W_CachePatchName("MENUPLTR", PU_CACHE), colormap);
-					V_DrawGamemodeString(x + 16, y - 3,
+					V_DrawFixedPatch(cx*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, W_CachePatchName("MENUPLTR", PU_CACHE), colormap);
+					V_DrawGamemodeString(cx + 16, y - 3,
 						(type == IT_TRANSTEXT2
 							? V_TRANSLUCENT
 							: 0
@@ -1215,6 +1225,11 @@ void M_DrawKartGamemodeMenu(void)
 		x += GM_XOFFSET;
 		y += GM_YOFFSET;
 	}
+}
+
+void M_FlipKartGamemodeMenu(boolean slide)
+{
+	gm_flipStart = slide ? I_GetTime() : 0;
 }
 
 void M_DrawHorizontalMenu(void)
@@ -2489,11 +2504,17 @@ void M_DrawRaceDifficulty(void)
 			case IT_STRING:
 			{
 
+				INT32 cx = x;
 				UINT8 *colormap = NULL;
 
 				if (i == itemOn)
 				{
 					colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
+
+					if (i >= drace_boxend)
+					{
+						cx -= Easing_OutSine(M_DueFrac(gm_flipStart, GM_FLIPTIME), 0, GM_XOFFSET / 2);
+					}
 				}
 				else
 				{
@@ -2504,13 +2525,13 @@ void M_DrawRaceDifficulty(void)
 				if (currentMenu->menuitems[i].status & IT_CVAR)
 				{
 
-					INT32 fx = (x - 48*menutransition.tics);
+					INT32 fx = (cx - 48*menutransition.tics);
 					INT32 centx = fx + (320-fx)/2 + (menutransition.tics*48);	// undo the menutransition movement to redo it here otherwise the text won't move at the same speed lole.
 
 					// implicitely we'll only take care of normal consvars
 					consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
 
-					V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, W_CachePatchName("MENUSHRT", PU_CACHE), colormap);
+					V_DrawFixedPatch(cx*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, W_CachePatchName("MENUSHRT", PU_CACHE), colormap);
 					V_DrawCenteredGamemodeString(centx, y - 3, 0, colormap, cv->string);
 
 					if (i == itemOn)
@@ -2525,8 +2546,8 @@ void M_DrawRaceDifficulty(void)
 				}
 				else	// not a cvar
 				{
-					V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, W_CachePatchName("MENUPLTR", PU_CACHE), colormap);
-					V_DrawGamemodeString(x + 16, y - 3, 0, colormap, currentMenu->menuitems[i].text);
+					V_DrawFixedPatch(cx*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, W_CachePatchName("MENUPLTR", PU_CACHE), colormap);
+					V_DrawGamemodeString(cx + 16, y - 3, 0, colormap, currentMenu->menuitems[i].text);
 				}
 				x += GM_XOFFSET;
 				y += GM_YOFFSET;
