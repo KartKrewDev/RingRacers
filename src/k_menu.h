@@ -1065,10 +1065,12 @@ void M_DrawEggaChannel(void);
 // Extras menu:
 #define DF_ENCORE       0x40
 
+#define M_EXTRAS_OFSTIME 4
+
 extern struct extrasmenu_s {
 
-	tic_t ticker;		// How long the menu's been open for
-	INT16 offset;		// To make the icons move smoothly when we transition!
+	tic_t ticker;			// How long the menu's been open for
+	menu_anim_t offset;		// To make the icons move smoothly when we transition!
 
 	// For moving the button when we get into a submenu. it's smooth and cool! (normal x/y and target x/y.)
 	// this is only used during menu transitions. (and will probably remain unused until we get the statistics menu

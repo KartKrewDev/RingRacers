@@ -4942,8 +4942,9 @@ void M_DrawExtrasMovingButton(void)
 void M_DrawExtras(void)
 {
 	UINT8 i;
-	INT32 x = 140 - (48*itemOn) + extrasmenu.offset;
-	INT32 y = 70 + extrasmenu.offset;
+	INT32 t = Easing_OutSine(M_DueFrac(extrasmenu.offset.start, M_EXTRAS_OFSTIME), extrasmenu.offset.dist, 0);
+	INT32 x = 140 - (48*itemOn) + t;
+	INT32 y = 70 + t;
 	patch_t *buttback = W_CachePatchName("OPT_BUTT", PU_CACHE);
 
 	UINT8 *c = NULL;
