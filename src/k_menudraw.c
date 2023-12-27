@@ -4089,7 +4089,7 @@ void M_DrawGenericOptions(void)
 					cursory = y;
 
 				if ((currentMenu->menuitems[i].status & IT_DISPLAY)==IT_STRING)
-					V_DrawString(x, y, 0, currentMenu->menuitems[i].text);
+					V_DrawString(x + (i == itemOn ? 1 : 0), y, 0, currentMenu->menuitems[i].text);
 				else
 					V_DrawString(x, y, highlightflags, currentMenu->menuitems[i].text);
 
@@ -4187,7 +4187,7 @@ void M_DrawGenericOptions(void)
 	{
 		V_DrawScaledPatch(x - 24, cursory, 0,
 			W_CachePatchName("M_CURSOR", PU_CACHE));
-		V_DrawString(x, cursory, highlightflags, currentMenu->menuitems[itemOn].text);
+		V_DrawString(x + 1, cursory, highlightflags, currentMenu->menuitems[itemOn].text);
 	}
 }
 
