@@ -784,6 +784,7 @@ void readgametype(MYFILE *f, char *gtname)
 	INT32 newgtpointlimit = 0;
 	INT32 newgttimelimit = 0;
 	UINT8 newgtinttype = 0;
+	SINT8 newgtspeed = KARTSPEED_AUTO; // KARTSPEED_EASY
 	char gtconst[MAXLINELEN];
 	char gppic[9];
 	char gppicmini[9];
@@ -849,6 +850,29 @@ void readgametype(MYFILE *f, char *gtname)
 			{
 				// Case sensitive
 				newgtinttype = (int)get_number(word2lwr);
+			}
+			else if (fastcmp(word, "GAMESPEED"))
+			{
+				if (fasticmp(word2, "EASY"))
+				{
+					newgtspeed = KARTSPEED_EASY;
+				}
+				else if (fasticmp(word2, "NORMAL"))
+				{
+					newgtspeed = KARTSPEED_NORMAL;
+				}
+				else if (fasticmp(word2, "HARD"))
+				{
+					newgtspeed = KARTSPEED_HARD;
+				}
+				else if (fasticmp(word2, "ANY"))
+				{
+					newgtspeed = KARTSPEED_AUTO;
+				}
+				else
+				{
+					deh_warning("readgametype %s: unknown gamespeed name %s\n", gtname, word2);
+				}
 			}
 			// Type of level
 			else if (fastcmp(word, "TYPEOFLEVEL"))
@@ -942,6 +966,7 @@ void readgametype(MYFILE *f, char *gtname)
 	newgametype->intermission = newgtinttype;
 	newgametype->pointlimit = newgtpointlimit;
 	newgametype->timelimit = newgttimelimit;
+	newgametype->speed = newgtspeed;
 
 	gametypes[numgametypes++] = newgametype;
 

@@ -2516,7 +2516,7 @@ static void HU_DrawRankings(void)
 		V_DrawCenteredString(256, 8, 0, "POINT LIMIT");
 		V_DrawCenteredString(256, 16, hilicol, va("%d", g_pointlimit));
 	}
-	else if (gametyperules & GTR_CIRCUIT)
+	else if (gametypes[gametype]->speed == KARTSPEED_AUTO)
 	{
 		V_DrawCenteredString(256, 8, 0, "GAME SPEED");
 		V_DrawCenteredString(256, 16, hilicol, (cv_4thgear.value) ? va("4th Gear") : kartspeed_cons_t[1+gamespeed].strvalue);

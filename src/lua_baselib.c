@@ -2567,6 +2567,7 @@ static int lib_gAddGametype(lua_State *L)
 	INT32 newgtpointlimit = 0;
 	INT32 newgttimelimit = 0;
 	UINT8 newgtinttype = 0;
+	SINT8 newgtspeed = KARTSPEED_AUTO;
 	INT16 j;
 
 	luaL_checktype(L, 1, LUA_TTABLE);
@@ -2632,6 +2633,14 @@ static int lib_gAddGametype(lua_State *L)
 			if (!lua_isstring(L, 3))
 				TYPEERROR("gppicmini", LUA_TSTRING)
 			gppicmini = lua_tostring(L, 3);
+		} else if (i == 10 || (k && fasticmp(k, "speed"))) {
+			if (!lua_isnumber(L, 3))
+				TYPEERROR("speed", LUA_TNUMBER)
+			newgtspeed = (UINT32)lua_tointeger(L, 3);
+			if (newgtspeed < KARTSPEED_AUTO || newgtspeed > KARTSPEED_HARD)
+			{
+				newgtspeed = KARTSPEED_AUTO;
+			}
 		}
 		lua_pop(L, 1);
 	}
@@ -2672,6 +2681,7 @@ static int lib_gAddGametype(lua_State *L)
 	newgametype->intermission = newgtinttype;
 	newgametype->pointlimit = newgtpointlimit;
 	newgametype->timelimit = newgttimelimit;
+	newgametype->speed = newgtspeed;
 
 	if (gppic != NULL)
 	{
