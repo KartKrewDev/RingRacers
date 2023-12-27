@@ -1408,7 +1408,7 @@ void readlevelheader(MYFILE *f, char * name)
 					do {
 						if (j >= MAXDESTRUCTIBLES)
 							break;
-						mapheaderinfo[num]->destroyforchallenge[j] = get_mobjtype(word2);
+						mapheaderinfo[num]->destroyforchallenge[j] = get_mobjtype(tmp);
 						j++;
 					} while ((tmp = strtok(NULL,",")) != NULL);
 
