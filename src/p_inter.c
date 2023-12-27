@@ -2986,10 +2986,12 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			}
 		}
 		else if (!(inflictor && inflictor->player)
-			&& player->laps <= numlaps
+			&& !(player->exiting || player->laps > numlaps)
 			&& damagetype != DMG_DEATHPIT)
 		{
+			// laps will never increment outside of GTR_CIRCUIT, so this is still fine
 			const UINT8 requiredbit = 1<<(player->laps & 7);
+
 			if (!(player->roundconditions.hittrackhazard[player->laps/8] & requiredbit))
 			{
 				player->roundconditions.hittrackhazard[player->laps/8] |= requiredbit;

@@ -1817,6 +1817,16 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 
 		case UCRP_TRACKHAZARD:
 		{
+			if (!(gametyperules & GTR_CIRCUIT))
+			{
+				// Prison Break/Versus
+
+				if (!player->exiting && cn->requirement == 0)
+					return false;
+
+				return (((player->roundconditions.hittrackhazard[0] & 1) == 1) == (cn->requirement == 1));
+			}
+
 			INT16 requiredlap = cn->extrainfo1;
 
 			if (requiredlap < 0)
@@ -2706,7 +2716,7 @@ static const char *M_GetConditionString(condition_t *cn)
 
 		case UCRP_TRACKHAZARD:
 		{
-			work = (cn->requirement == 1) ? "touch a track hazard" : "don't touch any track hazards";
+			work = (cn->requirement == 1) ? "touch a course hazard" : "don't touch any course hazards";
 			if (cn->extrainfo1 == -1)
 				return va("%s%s", work, (cn->requirement == 1) ? " on every lap" : "");
 			if (cn->extrainfo1 == -2)
