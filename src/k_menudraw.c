@@ -1986,7 +1986,28 @@ static void M_DrawCharSelectPreview(UINT8 num)
 
 				if (i != p->profilen || ((setup_animcounter/10) & 1))
 				{
-					V_DrawCenteredFileString(px+26, py, notSelectable, pr->version ? pr->profilename : "NEW");
+					const char *txt = pr->version ? pr->profilename : "NEW";
+
+					fixed_t w = V_StringScaledWidth(
+						FRACUNIT,
+						FRACUNIT,
+						FRACUNIT,
+						notSelectable,
+						FILE_FONT,
+						txt
+					);
+
+					V_DrawStringScaled(
+						((px+26) * FRACUNIT) - (w/2),
+						py * FRACUNIT,
+						FRACUNIT,
+						FRACUNIT,
+						FRACUNIT,
+						notSelectable,
+						i == p->profilen ? R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_SAPPHIRE, GTC_CACHE) : NULL,
+						FILE_FONT,
+						txt
+					);
 				}
 			}
 			py += 12;
