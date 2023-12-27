@@ -1179,7 +1179,7 @@ void M_HandleImageDef(INT32 choice);
 // flags for text highlights
 #define highlightflags V_AQUAMAP
 #define recommendedflags V_GREENMAP
-#define warningflags V_GRAYMAP
+#define warningflags V_ORANGEMAP
 
 // For some menu highlights
 UINT16 M_GetCvPlayerColor(UINT8 pnum);
