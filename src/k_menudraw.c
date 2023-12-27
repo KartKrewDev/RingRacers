@@ -1212,6 +1212,7 @@ void M_DrawKartGamemodeMenu(void)
 {
 	UINT8 n = 0;
 	INT32 i, x, y;
+	INT32 tx = M_EaseWithTransition(Easing_Linear, 5 * 48);
 
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
@@ -1224,15 +1225,10 @@ void M_DrawKartGamemodeMenu(void)
 	}
 
 	n--;
-	x = GM_STARTX - ((GM_XOFFSET / 2) * (n-1));
+	x = GM_STARTX - ((GM_XOFFSET / 2) * (n-1)) + tx;
 	y = GM_STARTY - ((GM_YOFFSET / 2) * (n-1));
 
 	M_DrawMenuTooltips();
-
-	if (menutransition.tics)
-	{
-		x += 48 * menutransition.tics;
-	}
 
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
@@ -1245,13 +1241,9 @@ void M_DrawKartGamemodeMenu(void)
 
 		if (i >= currentMenu->numitems-1)
 		{
-			x = GM_STARTX + (GM_XOFFSET * 5 / 2);
+			x = GM_STARTX + (GM_XOFFSET * 5 / 2) + tx;
 			y = GM_STARTY + (GM_YOFFSET * 5 / 2);
 
-			if (menutransition.tics)
-			{
-				x += 48 * menutransition.tics;
-			}
 		}
 
 		INT32 cx = x;
