@@ -3073,8 +3073,14 @@ void M_DrawCupSelect(void)
 		}
 	}
 
-	x = 14 + (cupgrid.x*42);
-	y = 20 + (cupgrid.y*44) - (30*menutransition.tics);
+	{
+		fixed_t tx = Easing_Linear(M_DueFrac(cupgrid.xslide.start, CUPMENU_SLIDETIME), cupgrid.xslide.dist * FRACUNIT, 0);
+		fixed_t ty = Easing_Linear(M_DueFrac(cupgrid.yslide.start, CUPMENU_SLIDETIME), cupgrid.yslide.dist * FRACUNIT, 0);
+
+		x = 14 + (cupgrid.x*42*FRACUNIT - tx) / FRACUNIT;
+		y = 20 + (cupgrid.y*44*FRACUNIT - ty) / FRACUNIT - cy;
+	}
+
 	if (cupgrid.cache_secondrowlocked == true)
 		y += 28;
 

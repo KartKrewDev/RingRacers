@@ -1,6 +1,7 @@
 /// \file  menus/transient/cup-select.c
 /// \brief Cup Select
 
+#include "../../i_time.h"
 #include "../../k_menu.h"
 #include "../../s_sound.h"
 #include "../../f_finale.h" // F_WipeStartScreen
@@ -197,6 +198,8 @@ void M_CupSelectHandler(INT32 choice)
 			if (cupgrid.pageno >= cupgrid.numpages)
 				cupgrid.pageno = 0;
 		}
+		cupgrid.xslide.start = I_GetTime();
+		cupgrid.xslide.dist = 42;
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(pid);
 	}
@@ -211,6 +214,8 @@ void M_CupSelectHandler(INT32 choice)
 			else
 				cupgrid.pageno--;
 		}
+		cupgrid.xslide.start = I_GetTime();
+		cupgrid.xslide.dist = -42;
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(pid);
 	}
@@ -221,7 +226,13 @@ void M_CupSelectHandler(INT32 choice)
 	{
 		cupgrid.y++;
 		if (cupgrid.y >= CUPMENU_ROWS)
+		{
 			cupgrid.y = 0;
+			cupgrid.yslide.dist = 8;
+		}
+		else
+			cupgrid.yslide.dist = 44;
+		cupgrid.yslide.start = I_GetTime();
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(pid);
 	}
@@ -229,7 +240,13 @@ void M_CupSelectHandler(INT32 choice)
 	{
 		cupgrid.y--;
 		if (cupgrid.y < 0)
+		{
 			cupgrid.y = CUPMENU_ROWS-1;
+			cupgrid.yslide.dist = -8;
+		}
+		else
+			cupgrid.yslide.dist = -44;
+		cupgrid.yslide.start = I_GetTime();
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(pid);
 	}

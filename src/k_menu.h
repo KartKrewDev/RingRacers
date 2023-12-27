@@ -785,9 +785,11 @@ void M_SetupGametypeMenu(INT32 choice);
 void M_SetupRaceMenu(INT32 choice);
 
 #define CUPMENU_CURSORID (cupgrid.x + (cupgrid.y * CUPMENU_COLUMNS) + (cupgrid.pageno * (CUPMENU_COLUMNS * CUPMENU_ROWS)))
+#define CUPMENU_SLIDETIME 3
 
 extern struct cupgrid_s {
 	SINT8 x, y;
+	menu_anim_t xslide, yslide;
 	size_t pageno;
 	cupheader_t **builtgrid;
 	size_t numpages;
