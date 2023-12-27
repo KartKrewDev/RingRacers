@@ -1,6 +1,7 @@
 /// \file  menus/options-profiles-1.c
 /// \brief Profiles Menu
 
+#include "../i_time.h"
 #include "../k_menu.h"
 #include "../s_sound.h"
 
@@ -141,13 +142,15 @@ void M_HandleProfileSelect(INT32 ch)
 	if (menucmd[pid].dpad_lr > 0)
 	{
 		optionsmenu.profilen++;
-		optionsmenu.offset += (128 + 128/8);
+		optionsmenu.offset.dist = (128 + 128/8);
 
 		if (optionsmenu.profilen > maxp)
 		{
 			optionsmenu.profilen = 0;
-			optionsmenu.offset -= (128 + 128/8)*(maxp+1);
+			optionsmenu.offset.dist -= (128 + 128/8)*(maxp+1);
 		}
+
+		optionsmenu.offset.start = I_GetTime();
 
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(pid);
@@ -156,13 +159,15 @@ void M_HandleProfileSelect(INT32 ch)
 	else if (menucmd[pid].dpad_lr < 0)
 	{
 		optionsmenu.profilen--;
-		optionsmenu.offset -= (128 + 128/8);
+		optionsmenu.offset.dist = (128 + 128/8);
 
 		if (optionsmenu.profilen < 0)
 		{
 			optionsmenu.profilen = maxp;
-			optionsmenu.offset += (128 + 128/8)*(maxp+1);
+			optionsmenu.offset.dist += (128 + 128/8)*(maxp+1);
 		}
+
+		optionsmenu.offset.start = I_GetTime();
 
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(pid);

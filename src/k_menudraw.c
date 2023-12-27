@@ -4131,16 +4131,41 @@ void M_DrawOptionsMovingButton(void)
 {
 	patch_t *butt = W_CachePatchName("OPT_BUTT", PU_CACHE);
 	UINT8 *c = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
+	fixed_t t = M_DueFrac(optionsmenu.topt_start, M_OPTIONS_OFSTIME);
+	fixed_t tx = Easing_OutQuad(t, optionsmenu.optx * FRACUNIT, optionsmenu.toptx * FRACUNIT);
+	fixed_t ty = Easing_OutQuad(t, optionsmenu.opty * FRACUNIT, optionsmenu.topty * FRACUNIT);
 
-	V_DrawFixedPatch((optionsmenu.optx)*FRACUNIT, (optionsmenu.opty)*FRACUNIT, FRACUNIT, 0, butt, c);
-	V_DrawCenteredGamemodeString((optionsmenu.optx)-3, (optionsmenu.opty) - 16, 0, c, OPTIONS_MainDef.menuitems[OPTIONS_MainDef.lastOn].text);
+	V_DrawFixedPatch(tx, ty, FRACUNIT, 0, butt, c);
+
+	const char *s = OPTIONS_MainDef.menuitems[OPTIONS_MainDef.lastOn].text;
+	fixed_t w = V_StringScaledWidth(
+		FRACUNIT,
+		FRACUNIT,
+		FRACUNIT,
+		0,
+		GM_FONT,
+		s
+	);
+	V_DrawStringScaled(
+		tx - 3*FRACUNIT - (w/2),
+		ty - 16*FRACUNIT,
+		FRACUNIT,
+		FRACUNIT,
+		FRACUNIT,
+		0,
+		c,
+		GM_FONT,
+		s
+	);
 }
 
 void M_DrawOptions(void)
 {
 	UINT8 i;
-	INT32 x = 140 - (48*itemOn) + optionsmenu.offset;
-	INT32 y = 70 + optionsmenu.offset;
+	INT32 t = Easing_OutSine(M_DueFrac(optionsmenu.offset.start, M_OPTIONS_OFSTIME), optionsmenu.offset.dist, 0);
+	INT32 x = 140 - (48*itemOn) + t;
+	INT32 y = 70 + t;
+	INT32 tx = M_EaseWithTransition(Easing_Linear, 5 * 64);
 	patch_t *buttback = W_CachePatchName("OPT_BUTT", PU_CACHE);
 
 	UINT8 *c = NULL;
@@ -4148,7 +4173,7 @@ void M_DrawOptions(void)
 	for (i=0; i < currentMenu->numitems; i++)
 	{
 		INT32 py = y - (itemOn*48);
-		INT32 px = x - menutransition.tics*64;
+		INT32 px = x - tx;
 		INT32 tflag = 0;
 
 		if (i == itemOn)
@@ -4159,7 +4184,7 @@ void M_DrawOptions(void)
 		if (currentMenu->menuitems[i].status & IT_TRANSTEXT)
 			tflag = V_TRANSLUCENT;
 
-		if (!(menutransition.tics && i == itemOn))
+		if (!(menutransition.tics != menutransition.dest && i == itemOn))
 		{
 			V_DrawFixedPatch(px*FRACUNIT, py*FRACUNIT, FRACUNIT, 0, buttback, c);
 			V_DrawCenteredGamemodeString(px-3, py - 16, tflag, (i == itemOn ? c : NULL), currentMenu->menuitems[i].text);
@@ -4171,7 +4196,7 @@ void M_DrawOptions(void)
 
 	M_DrawMenuTooltips();
 
-	if (menutransition.tics)
+	if (menutransition.tics != menutransition.dest)
 		M_DrawOptionsMovingButton();
 
 }
@@ -4357,7 +4382,7 @@ void M_DrawProfileSelect(void)
 {
 	INT32 i;
 	const INT32 maxp = PR_GetNumProfiles();
-	INT32 x = 160 - optionsmenu.profilen*(128 + 128/8) + optionsmenu.offset;
+	INT32 x = 160 - optionsmenu.profilen*(128 + 128/8) + Easing_OutSine(M_DueFrac(optionsmenu.offset.start, M_OPTIONS_OFSTIME), optionsmenu.offset.dist, 0);
 	INT32 y = 35 + menutransition.tics*32;
 
 	M_DrawMenuTooltips();

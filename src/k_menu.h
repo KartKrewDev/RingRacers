@@ -945,13 +945,12 @@ struct modedesc_t
 
 #define MAXCOLUMNMODES   12     //max modes displayed in one column
 #define MAXMODEDESCS     (MAXCOLUMNMODES*3)
+#define M_OPTIONS_OFSTIME 4
 // Keep track of some options properties
 extern struct optionsmenu_s {
 
-	tic_t ticker;		// How long the menu's been open for
-	INT16 offset;		// To make the icons move smoothly when we transition!
-
-	tic_t buttflash;	// Button flashing before transitionning to the new submenu.
+	tic_t ticker;			// How long the menu's been open for
+	menu_anim_t offset;		// To make the icons move smoothly when we transition!
 
 	// For moving the button when we get into a submenu. it's smooth and cool! (normal x/y and target x/y.)
 	// this is only used during menu transitions.
@@ -961,6 +960,7 @@ extern struct optionsmenu_s {
 	INT16 opty;
 	INT16 toptx;
 	INT16 topty;
+	tic_t topt_start;
 
 	// profile garbage
 	boolean profilemenu;		// In profile menu. (Used to know when to get the "PROFILE SETUP" button away....
