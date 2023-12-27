@@ -2656,7 +2656,7 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *levelsearch)
 {
 	UINT8 i = 0;
 	INT16 maxlevels = M_CountLevelsToShowInList(levelsearch);
-	INT16 x = -(cupgrid.previewanim % 82);
+	fixed_t x = -((cupgrid.previewanim % 82 * FRACUNIT + rendertimefrac) % (82 * FRACUNIT));
 	INT16 add;
 	INT16 map, start = M_GetFirstLevelInList(&i, levelsearch);
 	UINT8 starti = i;
@@ -2676,7 +2676,7 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *levelsearch)
 
 			add--;
 		}
-		while (x < BASEVIDWIDTH)
+		while (x < BASEVIDWIDTH * FRACUNIT)
 		{
 			if (map >= nummapheaders)
 			{
@@ -2685,13 +2685,13 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *levelsearch)
 			}
 
 			K_DrawMapThumbnail(
-				(x+1)<<FRACBITS, (y+2)<<FRACBITS,
+				x + FRACUNIT, (y+2)<<FRACBITS,
 				80<<FRACBITS,
 				0,
 				map,
 				NULL);
 
-			x += 82;
+			x += 82 * FRACUNIT;
 
 			map = M_GetNextLevelInList(map, &i, levelsearch);
 		}
@@ -2699,10 +2699,10 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *levelsearch)
 	else
 	{
 		patch_t *st = W_CachePatchName(va("PREVST0%d", (cupgrid.previewanim % 4) + 1), PU_CACHE);
-		while (x < BASEVIDWIDTH)
+		while (x < BASEVIDWIDTH * FRACUNIT)
 		{
-			V_DrawScaledPatch(x+1, y+2, 0, st);
-			x += 82;
+			V_DrawFixedPatch(x + FRACUNIT, (y+2) * FRACUNIT, FRACUNIT, 0, st, NULL);
+			x += 82 * FRACUNIT;
 		}
 	}
 }
