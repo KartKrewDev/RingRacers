@@ -4730,8 +4730,22 @@ static void Command_cxdiag_f(void)
 			boolean lastRequiresPlaying = false;
 			boolean lastrequiredplayingvalid = false;
 			boolean immediatelyprefix = false;
-			for (j = 0; j < c->numconditions; ++j)
+			INT32 relevantlevelgt = -1;
+			UINT8 lastj = j = 0;
+			while (true) //for (j = 0; j < c->numconditions; ++j)
 			{
+				if (j >= c->numconditions)
+				{
+					if (j == lastj)
+						break;
+					UINT8 swap = j;
+					j = lastj;
+					lastj = swap;
+
+					lastrequiredplayingvalid = false;
+					validSoFar = true;
+				}
+
 				cn = &c->condition[j];
 
 				if (lastID)
@@ -4742,30 +4756,54 @@ static void Command_cxdiag_f(void)
 					{
 						lastrequiredplayingvalid = false;
 						validSoFar = true;
+						if (j != lastj)
+						{
+							UINT8 swap = j;
+							j = lastj;
+							lastj = swap;
+							continue;
+						}
+						relevantlevelgt = -1;
 					}
 					else if (!validSoFar)
+					{
+						j++;
 						continue;
+					}
 				}
+
+				const boolean firstpass = (lastj <= j);
 
 				if (cn->type == UC_DESCRIPTIONOVERRIDE)
 				{
-					if (!cn->stringvar)
+					if (firstpass)
+						;
+					else if (!cn->stringvar)
 					{
 						CONS_Printf("\x87""	ConditionSet %u entry %u (Condition%u) - Description override has no description!?\n", i+1, j+1, cn->id);
+						errors++;
 					}
 					else if (cn->stringvar[0] != tolower(cn->stringvar[0]))
 					{
 						CONS_Printf("\x87""	ConditionSet %u entry %u (Condition%u) - Description override begins with capital letter, which isn't necessary and can sometimes look weird in generated descriptions\n", i+1, j+1, cn->id);
+						errors++;
 					}
+					lastID = cn->id;
+					j++;
 					continue;
 				}
 
 				if (cn->type == UC_AND || cn->type == UC_COMMA)
 				{
-					if (immediatelyprefix || lastID != cn->id)
+					if (firstpass)
+						;
+					else if (immediatelyprefix || lastID != cn->id)
 					{
 						CONS_Printf("\x87""	ConditionSet %u entry %u (Condition%u) - Conjunction immediately follows %s - this just looks plain weird!\n", i+1, j+1, cn->id, immediatelyprefix ? "Prefix type" : "start");
+						errors++;
 					}
+					lastID = cn->id;
+					j++;
 					continue;
 				}
 
@@ -4774,7 +4812,7 @@ static void Command_cxdiag_f(void)
 				lastRequiresPlaying = requiresPlaying;
 				requiresPlaying = (cn->type >= UCRP_REQUIRESPLAYING);
 
-				if (lastrequiredplayingvalid)
+				if (!firstpass && lastrequiredplayingvalid)
 				{
 					if (lastRequiresPlaying != requiresPlaying)
 					{
@@ -4786,6 +4824,78 @@ static void Command_cxdiag_f(void)
 				lastrequiredplayingvalid = true;
 
 				immediatelyprefix = (cn->type >= UCRP_PREFIX_GRANDPRIX && cn->type <= UCRP_PREFIX_ISMAP);
+
+				if (cn->type == UCRP_PREFIX_ISMAP || cn->type == UCRP_ISMAP)
+				{
+					if (firstpass && relevantlevelgt != -1)
+					{
+						CONS_Printf("\x87""	ConditionSet %u entry %u (Condition%u) has multiple courses specified\n", i+1, j+1, lastID);
+						validSoFar = false;
+						errors++;
+					}
+					if (cn->requirement == 0)
+						relevantlevelgt = 0;
+					else if (cn->requirement > 0 && cn->requirement < basenummapheaders)
+						relevantlevelgt = G_GuessGametypeByTOL(mapheaderinfo[cn->requirement]->typeoflevel);
+					else
+						relevantlevelgt = -1;
+				}
+				else if (firstpass || relevantlevelgt == -1)
+					;
+				else if (cn->type >= UCRP_PODIUMCUP && cn->type <= UCRP_PODIUMNOCONTINUES)
+				{
+					CONS_Printf("\x87""	ConditionSet %u entry %u (Condition%u) is Podium state when specific course in Cup already requested\n", i+1, j+1, lastID);
+					validSoFar = false;
+					errors++;
+				}
+				else if (cn->type == UCRP_FINISHALLPRISONS || cn->type == UCRP_PREFIX_PRISONBREAK)
+				{
+					if (!(gametypes[relevantlevelgt]->rules & GTR_PRISONS))
+					{
+						CONS_Printf("\x87""	ConditionSet %u entry %u (Condition%u) is Prison Break-based, but with %s course\n", i+1, j+1, lastID, gametypes[relevantlevelgt]->name);
+						validSoFar = false;
+						errors++;
+					}
+				}
+				else if (cn->type == UCRP_SMASHUFO || cn->type == UCRP_PREFIX_SEALEDSTAR)
+				{
+					if (!(gametypes[relevantlevelgt]->rules & GTR_CATCHER))
+					{
+						CONS_Printf("\x87""	ConditionSet %u entry %u (Condition%u) is Sealed Star-based, but with %s course\n", i+1, j+1, lastID, gametypes[relevantlevelgt]->name);
+						validSoFar = false;
+						errors++;
+					}
+				}
+				else if (cn->type == UCRP_RINGS || cn->type == UCRP_RINGSEXACT || cn->type == UCRP_RINGDEBT)
+				{
+					if ((gametypes[relevantlevelgt]->rules & GTR_SPHERES))
+					{
+						CONS_Printf("\x87""	ConditionSet %u entry %u (Condition%u) is Rings-based, but with %s course\n", i+1, j+1, lastID, gametypes[relevantlevelgt]->name);
+						validSoFar = false;
+						errors++;
+					}
+				}
+				else if (cn->type == UCRP_GROWCONSECUTIVEBEAMS || cn->type == UCRP_FAULTED || cn->type == UCRP_FINISHPERFECT)
+				{
+					if (!(gametypes[relevantlevelgt]->rules & GTR_CIRCUIT))
+					{
+						CONS_Printf("\x87""	ConditionSet %u entry %u (Condition%u) is circuit-based, but with %s course\n", i+1, j+1, lastID, gametypes[relevantlevelgt]->name);
+						validSoFar = false;
+						errors++;
+					}
+				}
+				else if (cn->type == UCRP_FINISHTIMELEFT)
+				{
+					if (!(gametypes[relevantlevelgt]->rules & GTR_TIMELIMIT))
+					{
+						CONS_Printf("\x87""	ConditionSet %u entry %u (Condition%u) is timelimit-based, but with %s course\n", i+1, j+1, lastID, gametypes[relevantlevelgt]->name);
+						validSoFar = false;
+						errors++;
+					}
+				}
+
+
+				j++;
 			}
 		}
 	}
