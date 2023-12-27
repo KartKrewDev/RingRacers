@@ -3005,6 +3005,7 @@ void M_DrawCupSelect(void)
 {
 	UINT8 i, j, temp = 0;
 	INT16 x, y;
+	INT16 cy = M_EaseWithTransition(Easing_Linear, 5 * 30);
 	cupwindata_t *windata = NULL;
 	levelsearch_t templevelsearch = levellist.levelsearch; // full copy
 
@@ -3021,7 +3022,7 @@ void M_DrawCupSelect(void)
 
 			templevelsearch.cup = cupgrid.builtgrid[id];
 
-			y = 20 + (j*44) - (30*menutransition.tics);
+			y = 20 + (j*44) - cy;
 			if (cupgrid.cache_secondrowlocked == true)
 				y += 28;
 
@@ -3088,15 +3089,16 @@ void M_DrawCupSelect(void)
 		V_DrawScaledPatch(x + 32, y + 32, 0, W_CachePatchName("CUPBKUP2", PU_CACHE));
 	}
 
-	V_DrawFill(0, 146 + (24*menutransition.tics), BASEVIDWIDTH, 54, 31);
-	M_DrawCupPreview(146 + (24*menutransition.tics), &templevelsearch);
+	INT16 ty = M_EaseWithTransition(Easing_Linear, 5 * 24);
+	V_DrawFill(0, 146 + ty, BASEVIDWIDTH, 54, 31);
+	M_DrawCupPreview(146 + ty, &templevelsearch);
 
-	M_DrawCupTitle(120 - (24*menutransition.tics), &templevelsearch);
+	M_DrawCupTitle(120 - ty, &templevelsearch);
 
 	if (cupgrid.numpages > 1)
 	{
 		x = 3 - (skullAnimCounter/5);
-		y = 20 + (44 - 1) - (30*menutransition.tics);
+		y = 20 + (44 - 1) - cy;
 
 		patch_t *cuparrow = W_CachePatchName("CUPARROW", PU_CACHE);
 
