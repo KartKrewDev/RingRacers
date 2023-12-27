@@ -2455,7 +2455,7 @@ void M_DrawRaceDifficulty(void)
 
 				INT32 f = (i == itemOn) ? highlightflags : 0;
 
-				V_DrawString(140 + 48*menutransition.tics, y, f, currentMenu->menuitems[i].text);
+				V_DrawString(140 + 48*menutransition.tics + (i == itemOn ? 1 : 0), y, f, currentMenu->menuitems[i].text);
 
 				if (currentMenu->menuitems[i].status & IT_CVAR)
 				{
@@ -2473,6 +2473,12 @@ void M_DrawRaceDifficulty(void)
 						V_DrawCharacter(cx - 10 - w - (skullAnimCounter/5), y, '\x1C' | highlightflags, false); // left arrow
 						V_DrawCharacter(cx + w + 2 + (skullAnimCounter/5), y, '\x1D' | highlightflags, false); // right arrow
 					}
+				}
+
+				if (i == itemOn)
+				{
+					V_DrawScaledPatch(140 + 48*menutransition.tics - 24, y, 0,
+						W_CachePatchName("M_CURSOR", PU_CACHE));
 				}
 
 				y += 10;
