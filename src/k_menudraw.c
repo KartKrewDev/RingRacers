@@ -4203,7 +4203,7 @@ void M_DrawOptions(void)
 
 void M_DrawGenericOptions(void)
 {
-	INT32 x = currentMenu->x - menutransition.tics*48, y = currentMenu->y, w, i, cursory = 0;
+	INT32 x = currentMenu->x - M_EaseWithTransition(Easing_Linear, 5 * 48), y = currentMenu->y, w, i, cursory = 0;
 
 	M_DrawMenuTooltips();
 	M_DrawOptionsMovingButton();
