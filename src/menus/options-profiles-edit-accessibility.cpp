@@ -3,7 +3,10 @@
 
 #include "../v_draw.hpp"
 
+#include "../command.h"
 #include "../k_menu.h"
+
+extern "C" consvar_t cv_mindelay;
 
 using srb2::Draw;
 
@@ -57,14 +60,23 @@ menuitem_t OPTIONS_ProfileAccessibility[] = {
 	{IT_STRING | IT_CVAR, "Rumble", "For gamepad users - should your device rumble?",
 		NULL, {.cvar = &cv_dummyprofilerumble}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Kickstart Accel", "Hold A to auto-accel. Tap it to cancel.",
-		NULL, {.cvar = &cv_dummyprofilekickstart}, 0, 0},
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Auto Roulette", "Item roulette auto-stops on a random result.",
 		NULL, {.cvar = &cv_dummyprofileautoroulette}, 0, 0},
 
+	{IT_STRING | IT_CVAR, "Kickstart Accel", "Hold A to auto-accel. Tap it to cancel.",
+		NULL, {.cvar = &cv_dummyprofilekickstart}, 0, 0},
+
 	{IT_STRING | IT_CVAR, "Lite Steer", "Hold DOWN on d-pad/keyboard for shallow turns.",
 		NULL, {.cvar = &cv_dummyprofilelitesteer}, 0, 0},
+
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, {NULL}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Minimum Input Delay", "Practice for online play! 0 = instant response.",
+		NULL, {.cvar = &cv_mindelay}, 0, 0},
 };
 
 menu_t OPTIONS_ProfileAccessibilityDef = {
@@ -72,7 +84,7 @@ menu_t OPTIONS_ProfileAccessibilityDef = {
 	&OPTIONS_EditProfileDef,
 	0,
 	OPTIONS_ProfileAccessibility,
-	145, 80,
+	145, 72,
 	SKINCOLOR_ULTRAMARINE, 0,
 	MBF_DRAWBGWHILEPLAYING,
 	"FILE",

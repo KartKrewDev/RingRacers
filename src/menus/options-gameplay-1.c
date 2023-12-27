@@ -32,12 +32,6 @@ menuitem_t OPTIONS_Gameplay[] =
 
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
-	
-	{IT_STRING | IT_CVAR, "Minimum Input Delay", "Practice for online play! Higher = more delay, 0 = instant response.",
-		NULL, {.cvar = &cv_mindelay}, 0, 0},
-
-	{IT_SPACE | IT_NOTHING, NULL,  NULL,
-		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_SUBMENU, "Random Item Toggles...", "Change which items to enable for your games.",
 		NULL, {.submenu = &OPTIONS_GameplayItemsDef}, 0, 0},
