@@ -4351,7 +4351,7 @@ void M_DrawGenericOptions(void)
 // *Heavily* simplified version of the generic options menu, cattered only towards erasing profiles.
 void M_DrawProfileErase(void)
 {
-	INT32 x = currentMenu->x - menutransition.tics*48, y = currentMenu->y-SMALLLINEHEIGHT, i, cursory = 0;
+	INT32 x = currentMenu->x - M_EaseWithTransition(Easing_Linear, 5 * 48), y = currentMenu->y-SMALLLINEHEIGHT, i, cursory = 0;
 	UINT8 np = PR_GetNumProfiles();
 
 	M_DrawMenuTooltips();
