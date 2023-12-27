@@ -308,7 +308,7 @@ void M_CupSelectHandler(INT32 choice)
 
 			levellist.mapcount = count;
 			M_LevelSelectScrollDest();
-			levellist.y = levellist.dest;
+			levellist.slide.start = 0;
 
 			M_SetupNextMenu(&PLAY_LevelSelectDef, false);
 			S_StartSound(NULL, sfx_s3k63);

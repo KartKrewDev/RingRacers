@@ -808,10 +808,12 @@ typedef struct levelsearch_s {
 	boolean checklocked;
 } levelsearch_t;
 
+#define M_LEVELLIST_SLIDETIME 4
+
 extern struct levellist_s {
 	SINT8 cursor;
+	menu_anim_t slide;
 	UINT16 y;
-	UINT16 dest;
 	UINT16 choosemap;
 	UINT16 mapcount;
 	UINT8 newgametype;

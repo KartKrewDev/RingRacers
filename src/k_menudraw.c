@@ -3271,8 +3271,13 @@ void M_DrawLevelSelect(void)
 	INT16 i = 0;
 	UINT8 j = 0;
 	INT16 map = M_GetFirstLevelInList(&j, &levellist.levelsearch);
-	INT16 t = (64*menutransition.tics), tay = 0;
-	INT16 y = 80 - (12 * levellist.y);
+	INT16 t = M_EaseWithTransition(Easing_Linear, 5 * 64), tay = 0;
+	INT16 y = 80 - levellist.y +
+		Easing_OutSine(
+			M_DueFrac(levellist.slide.start, 4),
+			levellist.slide.dist,
+			0
+		);
 	boolean tatransition = ((menutransition.startmenu == &PLAY_TimeAttackDef || menutransition.endmenu == &PLAY_TimeAttackDef) && menutransition.tics);
 
 	if (tatransition)
