@@ -4742,14 +4742,15 @@ void M_DrawProfileControls(void)
 void M_DrawVideoModes(void)
 {
 	INT32 i, j, row, col;
+	INT32 t = M_EaseWithTransition(Easing_Linear, 5 * 64);
 
 	M_DrawMenuTooltips();
 	M_DrawOptionsMovingButton();
 
-	V_DrawCenteredString(BASEVIDWIDTH/2 + menutransition.tics*64, currentMenu->y,
+	V_DrawCenteredString(BASEVIDWIDTH/2 + t, currentMenu->y,
 		highlightflags, "Choose mode, reselect to change default");
 
-	row = 41 + menutransition.tics*64;
+	row = 41 + t;
 	col = currentMenu->y + 14;
 	for (i = 0; i < optionsmenu.vidm_nummodes; i++)
 	{
@@ -4771,41 +4772,41 @@ void M_DrawVideoModes(void)
 	{
 		INT32 testtime = (optionsmenu.vidm_testingmode/TICRATE) + 1;
 
-		M_CentreText(menutransition.tics*64, currentMenu->y + 75,
+		M_CentreText(t, currentMenu->y + 75,
 			va("Previewing mode %c%dx%d",
 				(SCR_IsAspectCorrect(vid.width, vid.height)) ? 0x83 : 0x80,
 				vid.width, vid.height));
-		M_CentreText(menutransition.tics*64, currentMenu->y + 75+8,
+		M_CentreText(t, currentMenu->y + 75+8,
 			"Press ENTER again to keep this mode");
-		M_CentreText(menutransition.tics*64, currentMenu->y + 75+16,
+		M_CentreText(t, currentMenu->y + 75+16,
 			va("Wait %d second%s", testtime, (testtime > 1) ? "s" : ""));
-		M_CentreText(menutransition.tics*64, currentMenu->y + 75+24,
+		M_CentreText(t, currentMenu->y + 75+24,
 			"or press ESC to return");
 
 	}
 	else
 	{
-		M_CentreText(menutransition.tics*64, currentMenu->y + 75,
+		M_CentreText(t, currentMenu->y + 75,
 			va("Current mode is %c%dx%d",
 				(SCR_IsAspectCorrect(vid.width, vid.height)) ? 0x83 : 0x80,
 				vid.width, vid.height));
-		M_CentreText(menutransition.tics*64, currentMenu->y + 75+8,
+		M_CentreText(t, currentMenu->y + 75+8,
 			va("Default mode is %c%dx%d",
 				(SCR_IsAspectCorrect(cv_scr_width.value, cv_scr_height.value)) ? 0x83 : 0x80,
 				cv_scr_width.value, cv_scr_height.value));
 
-		V_DrawCenteredString(BASEVIDWIDTH/2 + menutransition.tics*64, currentMenu->y + 75+24,
+		V_DrawCenteredString(BASEVIDWIDTH/2 + t, currentMenu->y + 75+24,
 			recommendedflags, "Modes marked in GREEN are recommended.");
 		/*
-		V_DrawCenteredString(BASEVIDWIDTH/2 + menutransition.tics*64, currentMenu->y + 75+16,
+		V_DrawCenteredString(BASEVIDWIDTH/2 + t, currentMenu->y + 75+16,
 			highlightflags, "High resolutions stress your PC more, but will");
-		V_DrawCenteredString(BASEVIDWIDTH/2 + menutransition.tics*64, currentMenu->y + 75+24,
+		V_DrawCenteredString(BASEVIDWIDTH/2 + t, currentMenu->y + 75+24,
 			highlightflags, "look sharper. Balance visual quality and FPS!");
 		*/
 	}
 
 	// Draw the cursor for the VidMode menu
-	i = 41 - 10 + ((optionsmenu.vidm_selected / optionsmenu.vidm_column_size)*7*13) + menutransition.tics*64;
+	i = 41 - 10 + ((optionsmenu.vidm_selected / optionsmenu.vidm_column_size)*7*13) + t;
 	j = currentMenu->y + 14 + ((optionsmenu.vidm_selected % optionsmenu.vidm_column_size)*8);
 
 	V_DrawScaledPatch(i - 8, j, 0,
