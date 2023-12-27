@@ -715,6 +715,7 @@ struct setup_player_t
 {
 	SINT8 gridx, gridy;
 	UINT8 profilen;
+	menu_anim_t profilen_slide;
 	INT16 skin;
 	SINT8 clonenum;
 	SINT8 rotate;

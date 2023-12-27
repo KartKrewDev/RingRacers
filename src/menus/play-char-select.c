@@ -1,6 +1,7 @@
 /// \file  menus/play-char-select.c
 /// \brief Character Select
 
+#include "../i_time.h"
 #include "../k_menu.h"
 #include "../r_skins.h"
 #include "../s_sound.h"
@@ -278,6 +279,9 @@ void M_CharacterSelectInit(void)
 		setup_player[i].followercategory = -1;
 		setup_player[i].followercolor = SKINCOLOR_NONE;
 
+		setup_player[i].profilen_slide.start = 0;
+		setup_player[i].profilen_slide.dist = 0;
+
 		// If we're on prpfile select, skip straight to CSSTEP_CHARS
 		// do the same if we're midgame, but make sure to consider splitscreen properly.
 		if (optionsmenu.profile && i == 0)
@@ -525,19 +529,25 @@ static boolean M_HandleCSelectProfile(setup_player_t *p, UINT8 num)
 
 	if (menucmd[num].dpad_ud > 0)
 	{
+		UINT8 oldn = p->profilen;
 		p->profilen++;
 		if (p->profilen > maxp)
 			p->profilen = 0;
+		p->profilen_slide.dist = p->profilen - oldn;
+		p->profilen_slide.start = I_GetTime();
 
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(num);
 	}
 	else if (menucmd[num].dpad_ud < 0)
 	{
+		UINT8 oldn = p->profilen;
 		if (p->profilen == 0)
 			p->profilen = maxp;
 		else
 			p->profilen--;
+		p->profilen_slide.dist = p->profilen - oldn;
+		p->profilen_slide.start = I_GetTime();
 
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(num);
@@ -616,11 +626,14 @@ static boolean M_HandleCSelectProfile(setup_player_t *p, UINT8 num)
 	}
 	else if (M_MenuExtraPressed(num))
 	{
+		UINT8 oldn = p->profilen;
 		UINT8 yourprofile = min(cv_lastprofile[realnum].value, PR_GetNumProfiles());
 		if (p->profilen == yourprofile)
 			p->profilen = PROFILE_GUEST;
 		else
 			p->profilen = yourprofile;
+		p->profilen_slide.dist = p->profilen - oldn;
+		p->profilen_slide.start = I_GetTime();
 		S_StartSound(NULL, sfx_s3k7b); //sfx_s3kc3s
 		M_SetMenuDelay(num);
 	}

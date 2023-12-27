@@ -1930,11 +1930,19 @@ static void M_DrawCharSelectPreview(UINT8 num)
 	if (p->mdepth == CSSTEP_PROFILE)
 	{
 		INT16 px = x+12;
-		INT16 py = y+48 - p->profilen*12;
+		INT16 py = y+48 - p->profilen*12 +
+			Easing_OutSine(
+				M_DueFrac(p->profilen_slide.start, 5),
+				p->profilen_slide.dist*12,
+				0
+			);
 		UINT8 maxp = PR_GetNumProfiles();
 
 		UINT8 i = 0;
 		UINT8 j;
+
+		V_SetClipRect(0, (y+25)*FRACUNIT, BASEVIDWIDTH*FRACUNIT, (5*12)*FRACUNIT, 0);
+
 
 		for (i = 0; i < maxp; i++)
 		{
@@ -1961,13 +1969,13 @@ static void M_DrawCharSelectPreview(UINT8 num)
 				notSelectable |= V_TRANSLUCENT;
 			}
 
-			if (dist > 2)
+			if (dist > 3)
 			{
 				py += 12;
 				continue;
 			}
 
-			if (dist == 2)
+			if (dist > 1)
 			{
 				V_DrawCenteredFileString(px+26, py, notSelectable, pr->version ? pr->profilename : "NEW");
 				V_DrawScaledPatch(px, py, V_TRANSLUCENT, W_CachePatchName("FILEBACK", PU_CACHE));
@@ -1984,6 +1992,7 @@ static void M_DrawCharSelectPreview(UINT8 num)
 			py += 12;
 		}
 
+		V_ClearClipRect();
 	}
 	// "Changes?"
 	else if (p->mdepth == CSSTEP_ASKCHANGES)
