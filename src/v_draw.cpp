@@ -172,6 +172,9 @@ int Draw::font_to_fontno(Font font)
 
 	case Font::kTimer:
 		return TIMER_FONT;
+
+	case Font::kMenu:
+		return MENU_FONT;
 	}
 
 	return TINY_FONT;
