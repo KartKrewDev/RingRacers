@@ -80,6 +80,8 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 #include "discord.h"
 #endif
 
+#if 0
+
 static fixed_t M_TimeFrac(tic_t tics, tic_t duration)
 {
 	return tics < duration ? (tics * FRACUNIT + rendertimefrac) / duration : FRACUNIT;
@@ -102,6 +104,8 @@ static fixed_t M_DueFrac(tic_t start, tic_t duration)
 	(menutransition.tics != menutransition.dest ? EasingFunc(menutransition.in ?\
 		M_ReverseTimeFrac(menutransition.tics, menutransition.endmenu->transitionTics) :\
 		M_TimeFrac(menutransition.tics, menutransition.startmenu->transitionTics), 0, N) : 0)
+
+#endif //#if 0
 
 #define SKULLXOFF -32
 #define LINEHEIGHT 16
