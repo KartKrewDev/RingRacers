@@ -43,7 +43,10 @@
 		{
 			"name": "__ninja",
 			"hidden": true,
-			"generator": "Ninja"
+			"generator": "Ninja",
+			"cacheVariables": {
+				"CMAKE_COLOR_DIAGNOSTICS": "ON"
+			}
 		},
 		{
 			"name": "__vcpkg-toolchain",
