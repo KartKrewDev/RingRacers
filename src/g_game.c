@@ -4158,7 +4158,10 @@ static void G_DoCompleted(void)
 	// Then, do gamedata-relevant material.
 	// This has to be done second because some Challenges
 	// are dependent on round standings.
-	if (legitimateexit && !demo.playback && !mapreset)
+	if (legitimateexit && !demo.playback && !mapreset
+		&& ((modeattacking == ATTACKING_NONE)
+		|| !(players[consoleplayer].pflags & PF_NOCONTEST))
+	)
 	{
 		if (gametype != GT_TUTORIAL)
 		{
@@ -4174,10 +4177,11 @@ static void G_DoCompleted(void)
 			gamedata->roundsplayed[roundtype]++;
 		}
 		gamedata->pendingkeyrounds++;
-
-		M_UpdateUnlockablesAndExtraEmblems(true, true);
-		gamedata->deferredsave = true;
 	}
+
+	M_UpdateUnlockablesAndExtraEmblems(true, true);
+	// eh, why not always save? makes sure playtime is never lost
+	gamedata->deferredsave = true;
 
 	// Then, update some important game state.
 	{
