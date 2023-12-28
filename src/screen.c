@@ -105,6 +105,7 @@ void SCR_SetDrawFuncs(void)
 	spanfuncs[SPANDRAWFUNC_SPLAT] = R_DrawSplat;
 	spanfuncs[SPANDRAWFUNC_TRANSSPLAT] = R_DrawTranslucentSplat;
 	spanfuncs[SPANDRAWFUNC_TILTEDSPLAT] = R_DrawSplat_Tilted;
+	spanfuncs[SPANDRAWFUNC_TILTEDTRANSSPLAT] = R_DrawTranslucentSplat_Tilted;
 	spanfuncs[SPANDRAWFUNC_SPRITE] = R_DrawFloorSprite;
 	spanfuncs[SPANDRAWFUNC_TRANSSPRITE] = R_DrawTranslucentFloorSprite;
 	spanfuncs[SPANDRAWFUNC_TILTEDSPRITE] = R_DrawFloorSprite_Tilted;
@@ -121,6 +122,7 @@ void SCR_SetDrawFuncs(void)
 	spanfuncs_bm[SPANDRAWFUNC_SPLAT] = R_DrawSplat_Brightmap;
 	spanfuncs_bm[SPANDRAWFUNC_TRANSSPLAT] = R_DrawTranslucentSplat_Brightmap;
 	spanfuncs_bm[SPANDRAWFUNC_TILTEDSPLAT] = R_DrawSplat_Tilted_Brightmap;
+	spanfuncs_bm[SPANDRAWFUNC_TILTEDTRANSSPLAT] = R_DrawTranslucentSplat_Tilted_Brightmap;
 	spanfuncs_bm[SPANDRAWFUNC_SPRITE] = R_DrawFloorSprite_Brightmap;
 	spanfuncs_bm[SPANDRAWFUNC_TRANSSPRITE] = R_DrawTranslucentFloorSprite_Brightmap;
 	spanfuncs_bm[SPANDRAWFUNC_TILTEDSPRITE] = R_DrawFloorSprite_Tilted_Brightmap;
@@ -138,6 +140,7 @@ void SCR_SetDrawFuncs(void)
 	spanfuncs_npo2[SPANDRAWFUNC_SPLAT] = R_DrawSplat_NPO2;
 	spanfuncs_npo2[SPANDRAWFUNC_TRANSSPLAT] = R_DrawTranslucentSplat_NPO2;
 	spanfuncs_npo2[SPANDRAWFUNC_TILTEDSPLAT] = R_DrawSplat_Tilted_NPO2;
+	spanfuncs_npo2[SPANDRAWFUNC_TILTEDTRANSSPLAT] = R_DrawTranslucentSplat_Tilted_NPO2;
 	spanfuncs_npo2[SPANDRAWFUNC_SPRITE] = R_DrawFloorSprite_NPO2;
 	spanfuncs_npo2[SPANDRAWFUNC_TRANSSPRITE] = R_DrawTranslucentFloorSprite_NPO2;
 	spanfuncs_npo2[SPANDRAWFUNC_TILTEDSPRITE] = R_DrawFloorSprite_Tilted_NPO2;
@@ -154,6 +157,7 @@ void SCR_SetDrawFuncs(void)
 	spanfuncs_bm_npo2[SPANDRAWFUNC_SPLAT] = R_DrawSplat_Brightmap_NPO2;
 	spanfuncs_bm_npo2[SPANDRAWFUNC_TRANSSPLAT] = R_DrawTranslucentSplat_Brightmap_NPO2;
 	spanfuncs_bm_npo2[SPANDRAWFUNC_TILTEDSPLAT] = R_DrawSplat_Tilted_Brightmap_NPO2;
+	spanfuncs_bm_npo2[SPANDRAWFUNC_TILTEDTRANSSPLAT] = R_DrawTranslucentSplat_Tilted_Brightmap_NPO2;
 	spanfuncs_bm_npo2[SPANDRAWFUNC_SPRITE] = R_DrawFloorSprite_Brightmap_NPO2;
 	spanfuncs_bm_npo2[SPANDRAWFUNC_TRANSSPRITE] = R_DrawTranslucentFloorSprite_Brightmap_NPO2;
 	spanfuncs_bm_npo2[SPANDRAWFUNC_TILTEDSPRITE] = R_DrawFloorSprite_Tilted_Brightmap_NPO2;
@@ -171,6 +175,7 @@ void SCR_SetDrawFuncs(void)
 	spanfuncs_flat[SPANDRAWFUNC_SPLAT] = R_DrawSpan_Flat;
 	spanfuncs_flat[SPANDRAWFUNC_TRANSSPLAT] = R_DrawSpan_Flat;
 	spanfuncs_flat[SPANDRAWFUNC_TILTEDSPLAT] = R_DrawTiltedSpan_Flat;
+	spanfuncs_flat[SPANDRAWFUNC_TILTEDTRANSSPLAT] = R_DrawTiltedSpan_Flat;
 	spanfuncs_flat[SPANDRAWFUNC_SPRITE] = R_DrawSpan_Flat;
 	spanfuncs_flat[SPANDRAWFUNC_TRANSSPRITE] = R_DrawSpan_Flat;
 	spanfuncs_flat[SPANDRAWFUNC_TILTEDSPRITE] = R_DrawTiltedSpan_Flat;
