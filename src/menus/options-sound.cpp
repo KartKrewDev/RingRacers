@@ -55,7 +55,7 @@ struct Slider
 		if (selected)
 		{
 			int ofs = skullAnimCounter / 5;
-			Draw arrows = h.font(Draw::Font::kConsole).align(Draw::Align::kLeft).flags(highlightflags);
+			Draw arrows = h.font(Draw::Font::kMenu).align(Draw::Align::kLeft).flags(highlightflags);
 
 			arrows.x(-10 - ofs).text("\x1C");
 			arrows.x(kWidth + 2 + ofs).text("\x1D");
@@ -88,7 +88,7 @@ struct Slider
 		{
 			h
 				.x(kWidth / 2)
-				.font(Draw::Font::kConsole)
+				.font(Draw::Font::kMenu)
 				.align(Draw::Align::kCenter)
 				.flags(V_40TRANS)
 				.text("S I L E N T");
@@ -191,7 +191,7 @@ void draw_routine()
 			);
 		}
 
-		y += 8;
+		y += 9;
 	}
 }
 

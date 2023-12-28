@@ -99,9 +99,9 @@ fixed_t M_DueFrac(tic_t start, tic_t duration)
 
 #define SKULLXOFF -32
 #define LINEHEIGHT 16
-#define STRINGHEIGHT 8
+#define STRINGHEIGHT 9
 #define FONTBHEIGHT 20
-#define SMALLLINEHEIGHT 8
+#define SMALLLINEHEIGHT 9
 #define SLIDER_RANGE 10
 #define SLIDER_WIDTH (8*SLIDER_RANGE+6)
 #define SERVERS_PER_PAGE 11
@@ -112,8 +112,8 @@ static void M_CentreText(INT32 xoffs, INT32 y, const char *string)
 {
 	INT32 x;
 	//added : 02-02-98 : centre on 320, because V_DrawString centers on vid.width...
-	x = ((BASEVIDWIDTH - V_StringWidth(string, V_OLDSPACING))>>1) + xoffs;
-	V_DrawString(x,y,V_OLDSPACING,string);
+	x = ((BASEVIDWIDTH - V_MenuStringWidth(string, 0))>>1) + xoffs;
+	V_DrawMenuString(x,y,0,string);
 }
 
 
@@ -130,10 +130,10 @@ static void M_DrawSlider(INT32 x, INT32 y, const consvar_t *cv, boolean ontop)
 
 	if (ontop)
 	{
-		V_DrawCharacter(x - 16 - (skullAnimCounter/5), y,
-			'\x1C' | highlightflags, false); // left arrow
-		V_DrawCharacter(x+(SLIDER_RANGE*8) + 8 + (skullAnimCounter/5), y,
-			'\x1D' | highlightflags, false); // right arrow
+		V_DrawMenuString(x - 16 - (skullAnimCounter/5), y,
+			highlightflags, "\x1C"); // left arrow
+		V_DrawMenuString(x+(SLIDER_RANGE*8) + 8 + (skullAnimCounter/5), y,
+			highlightflags, "\x1D"); // right arrow
 	}
 
 	if ((range = atoi(cv->defaultvalue)) != cv->value)
@@ -894,7 +894,7 @@ void M_DrawMenuMessage(void)
 		}
 
 		V_DrawString((BASEVIDWIDTH - V_StringWidth(string, 0))/2, y, 0, string);
-		y += 8;
+		y += 9;
 	}
 }
 
@@ -1083,9 +1083,9 @@ void M_DrawGenericMenu(void)
 					cursory = y;
 
 				if ((currentMenu->menuitems[i].status & IT_DISPLAY)==IT_STRING)
-					V_DrawString(x, y, 0, currentMenu->menuitems[i].text);
+					V_DrawMenuString(x, y, 0, currentMenu->menuitems[i].text);
 				else
-					V_DrawString(x, y, highlightflags, currentMenu->menuitems[i].text);
+					V_DrawMenuString(x, y, highlightflags, currentMenu->menuitems[i].text);
 
 				// Cvar specific handling
 				switch (currentMenu->menuitems[i].status & IT_TYPE)
@@ -1109,7 +1109,7 @@ void M_DrawGenericMenu(void)
 									if (itemOn == i)
 									{
 										xoffs += 8;
-										V_DrawString(x + (skullAnimCounter/5) + 6, y + 12, highlightflags, "\x1D");
+										V_DrawMenuString(x + (skullAnimCounter/5) + 6, y + 12, highlightflags, "\x1D");
 									}
 
 									V_DrawString(x + xoffs + 8, y + 12, 0, cv->string);
@@ -1118,15 +1118,15 @@ void M_DrawGenericMenu(void)
 								}
 								break;
 							default:
-								w = V_StringWidth(cv->string, 0);
-								V_DrawString(BASEVIDWIDTH - x - w, y,
+								w = V_MenuStringWidth(cv->string, 0);
+								V_DrawMenuString(BASEVIDWIDTH - x - w, y,
 									((cv->flags & CV_CHEAT) && !CV_IsSetToDefault(cv) ? warningflags : highlightflags), cv->string);
 								if (i == itemOn)
 								{
-									V_DrawCharacter(BASEVIDWIDTH - x - 10 - w - (skullAnimCounter/5), y,
-											'\x1C' | highlightflags, false); // left arrow
-									V_DrawCharacter(BASEVIDWIDTH - x + 2 + (skullAnimCounter/5), y,
-											'\x1D' | highlightflags, false); // right arrow
+									V_DrawMenuString(BASEVIDWIDTH - x - 10 - w - (skullAnimCounter/5), y,
+											highlightflags, "\x1C"); // left arrow
+									V_DrawMenuString(BASEVIDWIDTH - x + 2 + (skullAnimCounter/5), y,
+											highlightflags, "\x1D"); // right arrow
 								}
 								break;
 						}
@@ -1135,7 +1135,7 @@ void M_DrawGenericMenu(void)
 					y += STRINGHEIGHT;
 					break;
 			case IT_STRING2:
-				V_DrawString(x, y, 0, currentMenu->menuitems[i].text);
+				V_DrawMenuString(x, y, 0, currentMenu->menuitems[i].text);
 				/* FALLTHRU */
 			case IT_DYLITLSPACE:
 				y += SMALLLINEHEIGHT;
@@ -1151,21 +1151,21 @@ void M_DrawGenericMenu(void)
 					y = currentMenu->y+currentMenu->menuitems[i].mvar1;
 				/* FALLTHRU */
 			case IT_TRANSTEXT2:
-				V_DrawString(x, y, V_TRANSLUCENT, currentMenu->menuitems[i].text);
+				V_DrawMenuString(x, y, V_TRANSLUCENT, currentMenu->menuitems[i].text);
 				y += SMALLLINEHEIGHT;
 				break;
 			case IT_QUESTIONMARKS:
 				if (currentMenu->menuitems[i].mvar1)
 					y = currentMenu->y+currentMenu->menuitems[i].mvar1;
 
-				V_DrawString(x, y, V_TRANSLUCENT|V_OLDSPACING, M_CreateSecretMenuOption(currentMenu->menuitems[i].text));
+				V_DrawMenuString(x, y, V_TRANSLUCENT|V_OLDSPACING, M_CreateSecretMenuOption(currentMenu->menuitems[i].text));
 				y += SMALLLINEHEIGHT;
 				break;
 			case IT_HEADERTEXT: // draws 16 pixels to the left, in yellow text
 				if (currentMenu->menuitems[i].mvar1)
 					y = currentMenu->y+currentMenu->menuitems[i].mvar1;
 
-				V_DrawString(x-16, y, highlightflags, currentMenu->menuitems[i].text);
+				V_DrawMenuString(x-16, y, highlightflags, currentMenu->menuitems[i].text);
 				y += SMALLLINEHEIGHT;
 				break;
 		}
@@ -1185,7 +1185,7 @@ void M_DrawGenericMenu(void)
 	{
 		V_DrawScaledPatch(currentMenu->x - 24, cursory, 0,
 			W_CachePatchName("M_CURSOR", PU_CACHE));
-		V_DrawString(currentMenu->x, cursory, highlightflags, currentMenu->menuitems[itemOn].text);
+		V_DrawMenuString(currentMenu->x, cursory, highlightflags, currentMenu->menuitems[itemOn].text);
 	}
 }
 
@@ -1354,12 +1354,12 @@ void M_DrawHorizontalMenu(void)
 	}
 
 	if (itemOn != 0)
-		V_DrawCharacter((BASEVIDWIDTH - width)/2 + 3 - (skullAnimCounter/5), y + 1,
-			'\x1C' | highlightflags, false); // left arrow
+		V_DrawMenuString((BASEVIDWIDTH - width)/2 + 3 - (skullAnimCounter/5), y + 1,
+			highlightflags, "\x1C"); // left arrow
 
 	if (itemOn != currentMenu->numitems-1)
-		V_DrawCharacter((BASEVIDWIDTH + width)/2 - 10 + (skullAnimCounter/5), y + 1,
-			'\x1D' | highlightflags, false); // right arrow
+		V_DrawMenuString((BASEVIDWIDTH + width)/2 - 10 + (skullAnimCounter/5), y + 1,
+			highlightflags, "\x1D"); // right arrow
 }
 
 #define MAXMSGLINELEN 256
@@ -1434,7 +1434,7 @@ void M_DrawMessageMenu(void)
 			}
 		}
 
-		V_DrawString((BASEVIDWIDTH - V_StringWidth(string, 0))/2,y,0,string);
+		V_DrawMenuString((BASEVIDWIDTH - V_MenuStringWidth(string, 0))/2,y,0,string);
 		y += 8; //SHORT(hu_font[0]->height);
 	}
 }
@@ -2548,7 +2548,7 @@ void M_DrawRaceDifficulty(void)
 
 				INT32 f = (i == itemOn) ? highlightflags : 0;
 
-				V_DrawString(140 + tx + (i == itemOn ? 1 : 0), y, f, currentMenu->menuitems[i].text);
+				V_DrawMenuString(140 + tx + (i == itemOn ? 1 : 0), y, f, currentMenu->menuitems[i].text);
 
 				if (currentMenu->menuitems[i].status & IT_CVAR)
 				{
@@ -2556,15 +2556,15 @@ void M_DrawRaceDifficulty(void)
 					INT32 cx = 260 + tx;
 					consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
 
-					V_DrawCenteredString(cx, y, f, cv->string);
+					V_DrawCenteredMenuString(cx, y, f, cv->string);
 
 					if (i == itemOn)
 					{
 
-						INT32 w = V_StringWidth(cv->string, 0)/2;
+						INT32 w = V_MenuStringWidth(cv->string, 0)/2;
 
-						V_DrawCharacter(cx - 10 - w - (skullAnimCounter/5), y, '\x1C' | highlightflags, false); // left arrow
-						V_DrawCharacter(cx + w + 2 + (skullAnimCounter/5), y, '\x1D' | highlightflags, false); // right arrow
+						V_DrawMenuString(cx - 10 - w - (skullAnimCounter/5), y, highlightflags, "\x1C"); // left arrow
+						V_DrawMenuString(cx + w + 2 + (skullAnimCounter/5), y, highlightflags, "\x1D"); // right arrow
 					}
 				}
 
@@ -3352,7 +3352,7 @@ void M_DrawTimeAttack(void)
 
 	if (!mapheaderinfo[map])
 	{
-		V_DrawRightAlignedString(rightedge-12, opty, 0, "No map!?");
+		V_DrawRightAlignedMenuString(rightedge-12, opty, 0, "No map!?");
 		return;
 	}
 
@@ -3438,7 +3438,7 @@ void M_DrawTimeAttack(void)
 		if ((gametypes[levellist.newgametype]->rules & GTR_CIRCUIT)
 			&& (mapheaderinfo[map]->numlaps != 1))
 		{
-			V_DrawRightAlignedString(rightedge-12, timeheight, highlightflags, "BEST LAP:");
+			V_DrawRightAlignedMenuString(rightedge-12, timeheight, highlightflags, "BEST LAP:");
 			K_drawKartTimestamp(laprec, 162+t, timeheight+6, 0, 2);
 			timeheight += 30;
 		}
@@ -3447,7 +3447,7 @@ void M_DrawTimeAttack(void)
 			timeheight += 15;
 		}
 
-		V_DrawRightAlignedString(rightedge-12, timeheight, highlightflags, "BEST TIME:");
+		V_DrawRightAlignedMenuString(rightedge-12, timeheight, highlightflags, "BEST TIME:");
 		K_drawKartTimestamp(timerec, 162+t, timeheight+6, 0, 1);
 
 		// SPB Attack control hint + menu overlay
@@ -3480,16 +3480,16 @@ void M_DrawTimeAttack(void)
 
 			case IT_HEADERTEXT:
 
-				V_DrawString(leftedge, opty, highlightflags, currentMenu->menuitems[i].text);
+				V_DrawMenuString(leftedge, opty, highlightflags, currentMenu->menuitems[i].text);
 				opty += 10;
 				break;
 
 			case IT_STRING:
 
 				if (i >= currentMenu->numitems-1)
-					V_DrawRightAlignedString(rightedge, opty, f, currentMenu->menuitems[i].text);
+					V_DrawRightAlignedMenuString(rightedge, opty, f, currentMenu->menuitems[i].text);
 				else
-					V_DrawString(leftedge, opty, f, currentMenu->menuitems[i].text);
+					V_DrawMenuString(leftedge, opty, f, currentMenu->menuitems[i].text);
 				opty += 10;
 
 				// Cvar specific handling
@@ -3533,12 +3533,12 @@ void M_DrawTimeAttack(void)
 
 					if (str)
 					{
-						w = V_StringWidth(str, optflags);
-						V_DrawString(leftedge+12, opty, optflags, str);
+						w = V_MenuStringWidth(str, optflags);
+						V_DrawMenuString(leftedge+12, opty, optflags, str);
 						if (drawarrows)
 						{
-							V_DrawCharacter(leftedge+12 - 10 - (skullAnimCounter/5), opty, '\x1C' | f, false); // left arrow
-							V_DrawCharacter(leftedge+12 + w + 2+ (skullAnimCounter/5), opty, '\x1D' | f, false); // right arrow
+							V_DrawMenuString(leftedge+12 - 10 - (skullAnimCounter/5), opty, f, "\x1C"); // left arrow
+							V_DrawMenuString(leftedge+12 + w + 2+ (skullAnimCounter/5), opty, f, "\x1D"); // right arrow
 						}
 						opty += 10;
 					}
@@ -4250,9 +4250,9 @@ void M_DrawGenericOptions(void)
 					cursory = y;
 
 				if ((currentMenu->menuitems[i].status & IT_DISPLAY)==IT_STRING)
-					V_DrawString(x + (i == itemOn ? 1 : 0), y, 0, currentMenu->menuitems[i].text);
+					V_DrawMenuString(x + (i == itemOn ? 1 : 0), y, 0, currentMenu->menuitems[i].text);
 				else
-					V_DrawString(x, y, highlightflags, currentMenu->menuitems[i].text);
+					V_DrawMenuString(x, y, highlightflags, currentMenu->menuitems[i].text);
 
 				// Cvar specific handling
 				switch (currentMenu->menuitems[i].status & IT_TYPE)
@@ -4274,7 +4274,7 @@ void M_DrawGenericOptions(void)
 									if (itemOn == i)
 									{
 										xoffs += 8;
-										V_DrawString(x + (skullAnimCounter/5) + 6, y + 12, highlightflags, "\x1D");
+										V_DrawMenuString(x + (skullAnimCounter/5) + 6, y + 11, highlightflags, "\x1D");
 									}
 
 									V_DrawString(x + xoffs + 8, y + 12, 0, cv->string);
@@ -4284,19 +4284,19 @@ void M_DrawGenericOptions(void)
 								break;
 							default: {
 								boolean isDefault = CV_IsSetToDefault(cv);
-								w = V_StringWidth(cv->string, 0);
-								V_DrawString(BASEVIDWIDTH - x - w, y,
+								w = V_MenuStringWidth(cv->string, 0);
+								V_DrawMenuString(BASEVIDWIDTH - x - w, y,
 									(!isDefault ? warningflags : highlightflags), cv->string);
 								if (i == itemOn)
 								{
-									V_DrawCharacter(BASEVIDWIDTH - x - 10 - w - (skullAnimCounter/5), y,
-											'\x1C' | highlightflags, false); // left arrow
-									V_DrawCharacter(BASEVIDWIDTH - x + 2 + (skullAnimCounter/5), y,
-											'\x1D' | highlightflags, false); // right arrow
+									V_DrawMenuString(BASEVIDWIDTH - x - 10 - w - (skullAnimCounter/5), y - 1,
+											highlightflags, "\x1C"); // left arrow
+									V_DrawMenuString(BASEVIDWIDTH - x + 2 + (skullAnimCounter/5), y - 1,
+											highlightflags, "\x1D"); // right arrow
 								}
 								if (!isDefault)
 								{
-									V_DrawCharacter(BASEVIDWIDTH - x + (i == itemOn ? 13 : 5), y - 2, '.' | warningflags, false);
+									V_DrawMenuString(BASEVIDWIDTH - x + (i == itemOn ? 13 : 5), y - 2, warningflags, ".");
 								}
 								break;
 							}
@@ -4306,7 +4306,7 @@ void M_DrawGenericOptions(void)
 					y += STRINGHEIGHT;
 					break;
 			case IT_STRING2:
-				V_DrawString(x, y, 0, currentMenu->menuitems[i].text);
+				V_DrawMenuString(x, y, 0, currentMenu->menuitems[i].text);
 				/* FALLTHRU */
 			case IT_DYLITLSPACE:
 			case IT_SPACE:
@@ -4323,21 +4323,21 @@ void M_DrawGenericOptions(void)
 					y = currentMenu->y+currentMenu->menuitems[i].mvar1;
 				/* FALLTHRU */
 			case IT_TRANSTEXT2:
-				V_DrawString(x, y, V_TRANSLUCENT, currentMenu->menuitems[i].text);
+				V_DrawMenuString(x, y, V_TRANSLUCENT, currentMenu->menuitems[i].text);
 				y += SMALLLINEHEIGHT;
 				break;
 			case IT_QUESTIONMARKS:
 				if (currentMenu->menuitems[i].mvar1)
 					y = currentMenu->y+currentMenu->menuitems[i].mvar1;
 
-				V_DrawString(x, y, V_TRANSLUCENT|V_OLDSPACING, M_CreateSecretMenuOption(currentMenu->menuitems[i].text));
+				V_DrawMenuString(x, y, V_TRANSLUCENT|V_OLDSPACING, M_CreateSecretMenuOption(currentMenu->menuitems[i].text));
 				y += SMALLLINEHEIGHT;
 				break;
 			case IT_HEADERTEXT: // draws 16 pixels to the left, in yellow text
 				if (currentMenu->menuitems[i].mvar1)
 					y = currentMenu->y+currentMenu->menuitems[i].mvar1;
 
-				V_DrawString(x-16, y, highlightflags, currentMenu->menuitems[i].text);
+				V_DrawMenuString(x-16, y, highlightflags, currentMenu->menuitems[i].text);
 				y += SMALLLINEHEIGHT;
 				break;
 		}
@@ -4354,7 +4354,7 @@ void M_DrawGenericOptions(void)
 	{
 		V_DrawScaledPatch(x - 24, cursory, 0,
 			W_CachePatchName("M_CURSOR", PU_CACHE));
-		V_DrawString(x + 1, cursory, highlightflags, currentMenu->menuitems[itemOn].text);
+		V_DrawMenuString(x + 1, cursory, highlightflags, currentMenu->menuitems[itemOn].text);
 	}
 }
 
@@ -4378,7 +4378,7 @@ void M_DrawProfileErase(void)
 			V_DrawScaledPatch(x - 24, cursory, 0, W_CachePatchName("M_CURSOR", PU_CACHE));
 		}
 
-		V_DrawString(x, y,
+		V_DrawMenuString(x, y,
 			(i == optionsmenu.eraseprofilen ? highlightflags : 0),
 			va("%sPRF%03d - %s (%s)",
 			(cv_currprofile.value == i) ? "[In use] " : "",
@@ -4462,8 +4462,7 @@ void M_DrawEditProfile(void)
 		{
 			colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
 
-			V_DrawCharacter(x - 10 - (skullAnimCounter/5), y+1,
-			'\x1C' | highlightflags, false); // left arrow
+			V_DrawMenuString(x - 10 - (skullAnimCounter/5), y+1, highlightflags, "\x1C"); // left arrow
 		}
 
 		// Text
@@ -4597,13 +4596,13 @@ void M_DrawProfileControls(void)
 		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
 		{
 			case IT_HEADERTEXT:
-				V_DrawFill(0, y+17, 124, 1, 0);	// underline
-				V_DrawString(x, y+8, 0, currentMenu->menuitems[i].text);
+				V_DrawFill(0, y+18, 124, 1, 0);	// underline
+				V_DrawMenuString(x, y+8, 0, currentMenu->menuitems[i].text);
 				y += spacing;
 				break;
 
 			case IT_STRING:
-				V_DrawString(x, y+1, (i == itemOn ? highlightflags : 0), currentMenu->menuitems[i].text);
+				V_DrawMenuString(x, y+2, (i == itemOn ? highlightflags : 0), currentMenu->menuitems[i].text);
 				y += spacing;
 				break;
 
@@ -4617,19 +4616,19 @@ void M_DrawProfileControls(void)
 					drawnpatch = true;
 				}
 				else
-					V_DrawString(x, y+1, (i == itemOn ? highlightflags : 0), currentMenu->menuitems[i].text);
+					V_DrawMenuString(x, y+2, (i == itemOn ? highlightflags : 0), currentMenu->menuitems[i].text);
 
 				if (currentMenu->menuitems[i].status & IT_CVAR)	// not the proper way to check but this menu only has normal onoff cvars.
 				{
 					INT32 w;
 					consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
 
-					w = V_StringWidth(cv->string, 0);
-					V_DrawString(x + 12, y + 12, ((cv->flags & CV_CHEAT) && !CV_IsSetToDefault(cv) ? warningflags : highlightflags), cv->string);
+					w = V_MenuStringWidth(cv->string, 0);
+					V_DrawMenuString(x + 12, y + 13, ((cv->flags & CV_CHEAT) && !CV_IsSetToDefault(cv) ? warningflags : highlightflags), cv->string);
 					if (i == itemOn)
 					{
-						V_DrawCharacter(x - (skullAnimCounter/5), y+12, '\x1C' | highlightflags, false); // left arrow
-						V_DrawCharacter(x + 12 + w + 2 + (skullAnimCounter/5) , y+12, '\x1D' | highlightflags, false); // right arrow
+						V_DrawMenuString(x - (skullAnimCounter/5), y+12, highlightflags, "\x1C"); // left arrow
+						V_DrawMenuString(x + 12 + w + 2 + (skullAnimCounter/5) , y+13, highlightflags, "\x1D"); // right arrow
 					}
 				}
 				else if (currentMenu->menuitems[i].status & IT_CONTROL)
@@ -4774,7 +4773,7 @@ void M_DrawVideoModes(void)
 	M_DrawMenuTooltips();
 	M_DrawOptionsMovingButton();
 
-	V_DrawCenteredString(BASEVIDWIDTH/2 + t, currentMenu->y,
+	V_DrawCenteredMenuString(BASEVIDWIDTH/2 + t, currentMenu->y,
 		highlightflags, "Choose mode, reselect to change default");
 
 	row = 41 + t;
@@ -4782,12 +4781,12 @@ void M_DrawVideoModes(void)
 	for (i = 0; i < optionsmenu.vidm_nummodes; i++)
 	{
 		if (i == optionsmenu.vidm_selected)
-			V_DrawString(row, col, highlightflags, optionsmenu.modedescs[i].desc);
+			V_DrawMenuString(row, col, highlightflags, optionsmenu.modedescs[i].desc);
 		// Show multiples of 320x200 as green.
 		else
-			V_DrawString(row, col, (optionsmenu.modedescs[i].goodratio) ? recommendedflags : 0, optionsmenu.modedescs[i].desc);
+			V_DrawMenuString(row, col, (optionsmenu.modedescs[i].goodratio) ? recommendedflags : 0, optionsmenu.modedescs[i].desc);
 
-		col += 8;
+		col += 9;
 		if ((i % optionsmenu.vidm_column_size) == (optionsmenu.vidm_column_size-1))
 		{
 			row += 7*13;
@@ -4803,11 +4802,11 @@ void M_DrawVideoModes(void)
 			va("Previewing mode %c%dx%d",
 				(SCR_IsAspectCorrect(vid.width, vid.height)) ? 0x83 : 0x80,
 				vid.width, vid.height));
-		M_CentreText(t, currentMenu->y + 75+8,
+		M_CentreText(t, currentMenu->y + 75+9,
 			"Press ENTER again to keep this mode");
-		M_CentreText(t, currentMenu->y + 75+16,
+		M_CentreText(t, currentMenu->y + 75+18,
 			va("Wait %d second%s", testtime, (testtime > 1) ? "s" : ""));
-		M_CentreText(t, currentMenu->y + 75+24,
+		M_CentreText(t, currentMenu->y + 75+27,
 			"or press ESC to return");
 
 	}
@@ -4817,12 +4816,12 @@ void M_DrawVideoModes(void)
 			va("Current mode is %c%dx%d",
 				(SCR_IsAspectCorrect(vid.width, vid.height)) ? 0x83 : 0x80,
 				vid.width, vid.height));
-		M_CentreText(t, currentMenu->y + 75+8,
+		M_CentreText(t, currentMenu->y + 75+9,
 			va("Default mode is %c%dx%d",
 				(SCR_IsAspectCorrect(cv_scr_width.value, cv_scr_height.value)) ? 0x83 : 0x80,
 				cv_scr_width.value, cv_scr_height.value));
 
-		V_DrawCenteredString(BASEVIDWIDTH/2 + t, currentMenu->y + 75+24,
+		V_DrawCenteredMenuString(BASEVIDWIDTH/2 + t, currentMenu->y + 75+24,
 			recommendedflags, "Modes marked in GREEN are recommended.");
 		/*
 		V_DrawCenteredString(BASEVIDWIDTH/2 + t, currentMenu->y + 75+16,
@@ -4834,7 +4833,7 @@ void M_DrawVideoModes(void)
 
 	// Draw the cursor for the VidMode menu
 	i = 41 - 10 + ((optionsmenu.vidm_selected / optionsmenu.vidm_column_size)*7*13) + t;
-	j = currentMenu->y + 14 + ((optionsmenu.vidm_selected % optionsmenu.vidm_column_size)*8);
+	j = currentMenu->y + 14 + ((optionsmenu.vidm_selected % optionsmenu.vidm_column_size)*9);
 
 	V_DrawScaledPatch(i - 8, j, 0,
 		W_CachePatchName("M_CURSOR", PU_CACHE));
@@ -5203,8 +5202,8 @@ void M_DrawPause(void)
 		INT32 w = V_LSTitleLowStringWidth(selectabletext, selectableflags)/2;
 		V_DrawLSTitleLowString(220-w + offset*2, 103, selectableflags, selectabletext);
 
-		V_DrawCharacter(220-w + offset*2 - 8 - (skullAnimCounter/5), 103+6, '\x1C' | selectableflags, false); // left arrow
-		V_DrawCharacter(220+w + offset*2 + (skullAnimCounter/5), 103+6, '\x1D' | selectableflags, false); // right arrow
+		V_DrawMenuString(220-w + offset*2 - 8 - (skullAnimCounter/5), 103+6, selectableflags, "\1C"); // left arrow
+		V_DrawMenuString(220+w + offset*2 + (skullAnimCounter/5), 103+6, selectableflags, "\1D"); // right arrow
 	}
 
 	if (maintext != NULL)
@@ -5517,9 +5516,9 @@ void M_DrawAddons(void)
 	M_CacheAddonPatches();
 
 	if (Playing())
-		V_DrawCenteredString(BASEVIDWIDTH/2, 4, warningflags, "Adding files mid-game may cause problems.");
+		V_DrawCenteredMenuString(BASEVIDWIDTH/2, 4, warningflags, "Adding files mid-game may cause problems.");
 	else
-		V_DrawCenteredString(BASEVIDWIDTH/2, 4, 0,
+		V_DrawCenteredMenuString(BASEVIDWIDTH/2, 4, 0,
 		LOCATIONSTRING1);
 
 	// DRAW MENU
@@ -5544,7 +5543,7 @@ void M_DrawAddons(void)
 		if (itemOn == 0)
 		{
 			xoffs += 8;
-			V_DrawString(x + (skullAnimCounter/5) - 20, y+8, highlightflags, "\x1D");
+			V_DrawMenuString(x + (skullAnimCounter/5) - 20, y+8, highlightflags, "\x1D");
 		}
 		V_DrawString(x + xoffs - 18, y+8, tflag, str);
 	}
@@ -5588,7 +5587,7 @@ void M_DrawAddons(void)
 		i = m - (2*numaddonsshown + 1);
 
 	if (i != 0)
-		V_DrawString(19, y+4 - (skullAnimCounter/5), highlightflags, "\x1A");
+		V_DrawMenuString(19, y+4 - (skullAnimCounter/5), highlightflags, "\x1A");
 
 	if (skullAnimCounter < 4)
 		flashcol = V_GetStringColormap(highlightflags);
@@ -5629,7 +5628,7 @@ void M_DrawAddons(void)
 	}
 
 	if (m != (ssize_t)sizedirmenu)
-		V_DrawString(19, y-12 + (skullAnimCounter/5), highlightflags, "\x1B");
+		V_DrawMenuString(19, y-12 + (skullAnimCounter/5), highlightflags, "\x1B");
 
 	if (m < (2*numaddonsshown + 1))
 	{
@@ -5644,7 +5643,7 @@ void M_DrawAddons(void)
 
 	m = numwadfiles-(mainwads+musicwads+1);
 
-	V_DrawCenteredString(BASEVIDWIDTH/2, y+4, (majormods ? highlightflags : V_TRANSLUCENT), va("%ld ADD-ON%s LOADED", (long)m, (m == 1) ? "" : "S")); //+2 for music, sounds, +1 for bios.pk3
+	V_DrawCenteredMenuString(BASEVIDWIDTH/2, y+4, (majormods ? highlightflags : V_TRANSLUCENT), va("%ld ADD-ON%s LOADED", (long)m, (m == 1) ? "" : "S")); //+2 for music, sounds, +1 for bios.pk3
 }
 
 #undef addonsseperation
@@ -6620,7 +6619,7 @@ void M_DrawChallenges(void)
 
 	if (gamedata->challengegrid == NULL || challengesmenu.extradata == NULL)
 	{
-		V_DrawCenteredString(x, y, V_REDMAP, "No challenges available!?");
+		V_DrawCenteredMenuString(x, y, V_REDMAP, "No challenges available!?");
 		goto challengedesc;
 	}
 
@@ -6969,8 +6968,8 @@ static void M_DrawStatsMaps(void)
 	}
 
 	if (location)
-		V_DrawCharacter(10, 80-(skullAnimCounter/5),
-			'\x1A' | highlightflags, false); // up arrow
+		V_DrawMenuString(10, 80-(skullAnimCounter/5),
+			highlightflags, "\x1A"); // up arrow
 
 	i = -1;
 
@@ -7136,8 +7135,8 @@ static void M_DrawStatsMaps(void)
 	}
 bottomarrow:
 	if (dobottomarrow)
-		V_DrawCharacter(10, BASEVIDHEIGHT-20 + (skullAnimCounter/5),
-			'\x1B' | highlightflags, false); // down arrow
+		V_DrawMenuString(10, BASEVIDHEIGHT-20 + (skullAnimCounter/5),
+			highlightflags, "\x1B"); // down arrow
 }
 
 #undef STATSSTEP
@@ -7157,8 +7156,8 @@ static void M_DrawStatsChars(void)
 	}
 
 	if (location)
-		V_DrawCharacter(10, y-(skullAnimCounter/5),
-			'\x1A' | highlightflags, false); // up arrow
+		V_DrawMenuString(10, y-(skullAnimCounter/5),
+			highlightflags, "\x1A"); // up arrow
 
 	i = -1;
 
@@ -7191,8 +7190,8 @@ static void M_DrawStatsChars(void)
 
 bottomarrow:
 	if (dobottomarrow)
-		V_DrawCharacter(10, BASEVIDHEIGHT-20 + (skullAnimCounter/5),
-			'\x1B' | highlightflags, false); // down arrow
+		V_DrawMenuString(10, BASEVIDHEIGHT-20 + (skullAnimCounter/5),
+			highlightflags, "\x1B"); // down arrow
 
 	UINT32 x = BASEVIDWIDTH - 20 - 90;
 	y = 88;
@@ -7244,8 +7243,8 @@ static void M_DrawStatsGP(void)
 	}
 
 	if (location)
-		V_DrawCharacter(10, y-(skullAnimCounter/5),
-			'\x1A' | highlightflags, false); // up arrow
+		V_DrawMenuString(10, y-(skullAnimCounter/5),
+			highlightflags, "\x1A"); // up arrow
 
 	const INT32 width = 53;
 
@@ -7321,8 +7320,8 @@ static void M_DrawStatsGP(void)
 
 bottomarrow:
 	if (dobottomarrow)
-		V_DrawCharacter(10, BASEVIDHEIGHT-20 + (skullAnimCounter/5),
-			'\x1B' | highlightflags, false); // down arrow
+		V_DrawMenuString(10, BASEVIDHEIGHT-20 + (skullAnimCounter/5),
+			highlightflags, "\x1B"); // down arrow
 }
 
 #undef STATSSTEP
@@ -7374,11 +7373,11 @@ void M_DrawStatistics(void)
 			V_DrawThinString((BASEVIDWIDTH - pagenamewidth)/2, 12, 0, pagename);
 		}
 
-		V_DrawCharacter((BASEVIDWIDTH - pagenamewidth)/2 - 10 - (skullAnimCounter/5), 12,
-			'\x1C', false); // left arrow
+		V_DrawMenuString((BASEVIDWIDTH - pagenamewidth)/2 - 10 - (skullAnimCounter/5), 12,
+			0, "\x1C"); // left arrow
 
-		V_DrawCharacter((BASEVIDWIDTH + pagenamewidth)/2 + 2 + (skullAnimCounter/5), 12,
-			'\x1D', false); // right arrow
+		V_DrawMenuString((BASEVIDWIDTH + pagenamewidth)/2 + 2 + (skullAnimCounter/5), 12,
+			0, "\x1D"); // right arrow
 	}
 
 	beststr[0] = 0;
@@ -7600,7 +7599,7 @@ void M_DrawSoundTest(void)
 	{
 		UINT32 currenttime = min(Music_Elapsed(tune), Music_TotalDuration(tune));
 
-		V_DrawRightAlignedString(x + 272-1, 18+32, 0,
+		V_DrawRightAlignedMenuString(x + 272-1, 18+32, 0,
 			va("%02u:%02u",
 				G_TicsToMinutes(currenttime, true),
 				G_TicsToSeconds(currenttime)
@@ -7614,7 +7613,7 @@ void M_DrawSoundTest(void)
 	{
 		UINT32 exittime = Music_TotalDuration(tune);
 
-		V_DrawRightAlignedString(x + 272-1, 18+32+10, 0,
+		V_DrawRightAlignedMenuString(x + 272-1, 18+32+10, 0,
 			va("%02u:%02u",
 				G_TicsToMinutes(exittime, true),
 				G_TicsToSeconds(exittime)
@@ -7797,8 +7796,8 @@ void M_DrawSoundTest(void)
 		x += 25;
 	}
 
-	V_DrawCharacter(cursorx - 4, currentMenu->y - 8 - (skullAnimCounter/5),
-		'\x1B' | V_SNAPTOTOP|highlightflags, false); // up arrow
+	V_DrawMenuString(cursorx - 4, currentMenu->y - 8 - (skullAnimCounter/5),
+		V_SNAPTOTOP|highlightflags, "\x1B"); // up arrow
 }
 
 #ifdef HAVE_DISCORDRPC
