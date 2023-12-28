@@ -620,6 +620,7 @@ static boolean M_HandleCSelectProfile(setup_player_t *p, UINT8 num)
 		else
 		{
 			p->mdepth = CSSTEP_ASKCHANGES;
+			M_GetFollowerState(p);
 		}
 
 		S_StartSound(NULL, sfx_s3k63);
@@ -678,7 +679,6 @@ static void M_HandleCharAskChange(setup_player_t *p, UINT8 num)
 		if (!p->changeselect)
 		{
 			// no changes
-			M_GetFollowerState(p);
 			M_HandlePlayerFinalise(p);
 		}
 		else

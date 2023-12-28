@@ -1829,7 +1829,7 @@ static boolean M_DrawFollowerSprite(INT16 x, INT16 y, INT32 num, boolean charfli
 	if (p != NULL)
 	{
 		UINT16 color = K_GetEffectiveFollowerColor(
-			(p->mdepth < CSSTEP_FOLLOWERCOLORS) ? fl->defaultcolor : p->followercolor,
+			(p->mdepth < CSSTEP_FOLLOWERCOLORS && p->mdepth != CSSTEP_ASKCHANGES) ? fl->defaultcolor : p->followercolor,
 			fl,
 			p->color,
 			&skins[p->skin]
@@ -1854,7 +1854,7 @@ static void M_DrawCharSelectSprite(UINT8 num, INT16 x, INT16 y, boolean charflip
 		return;
 	}
 
-	if (p->mdepth < CSSTEP_COLORS)
+	if (p->mdepth < CSSTEP_COLORS && p->mdepth != CSSTEP_ASKCHANGES)
 	{
 		color = skins[p->skin].prefcolor;
 	}
@@ -1870,7 +1870,8 @@ static void M_DrawCharSelectSprite(UINT8 num, INT16 x, INT16 y, boolean charflip
 
 	colormap = R_GetTranslationColormap(p->skin, color, GTC_MENUCACHE);
 
-	M_DrawCharacterSprite(x, y, p->skin, SPR2_STIN, (charflip ? 1 : 7), ((p->mdepth == CSSTEP_READY) ? setup_animcounter : 0), 0, colormap);
+	M_DrawCharacterSprite(x, y, p->skin, SPR2_STIN, (charflip ? 1 : 7), ((p->mdepth == CSSTEP_READY) ? setup_animcounter : 0),
+		p->mdepth == CSSTEP_ASKCHANGES ? V_TRANSLUCENT : 0, colormap);
 }
 
 static void M_DrawCharSelectPreview(UINT8 num)
@@ -1888,7 +1889,7 @@ static void M_DrawCharSelectPreview(UINT8 num)
 
 	V_DrawScaledPatch(x, y+6, V_TRANSLUCENT, W_CachePatchName("PREVBACK", PU_CACHE));
 
-	if (p->mdepth >= CSSTEP_CHARS)
+	if (p->mdepth >= CSSTEP_CHARS || p->mdepth == CSSTEP_ASKCHANGES)
 	{
 		M_DrawCharSelectSprite(num, x+32, y+75, charflip);
 		M_DrawCharSelectCircle(p, x+32, y+64);
@@ -1909,9 +1910,9 @@ static void M_DrawCharSelectPreview(UINT8 num)
 		V_DrawCenteredFileString(backx+26, y+2, 0, pr ? pr->profilename : "PLAYER");
 	}
 
-	if (p->mdepth >= CSSTEP_FOLLOWER)
+	if (p->mdepth >= CSSTEP_FOLLOWER || p->mdepth == CSSTEP_ASKCHANGES)
 	{
-		M_DrawFollowerSprite(x+32+((charflip ? 1 : -1)*16), y+75, -1, charflip, 0, 0, p);
+		M_DrawFollowerSprite(x+32+((charflip ? 1 : -1)*16), y+75, -1, charflip, p->mdepth == CSSTEP_ASKCHANGES ? V_TRANSLUCENT : 0, NULL, p);
 	}
 
 	if ((setup_animcounter/10) & 1)
