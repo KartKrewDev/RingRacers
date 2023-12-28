@@ -178,6 +178,12 @@ struct menu_t
 	boolean		 (*inputroutine)(INT32); // if set, called every frame in the input handler. Returning true overwrites normal input handling.
 };
 
+struct menu_anim_t
+{
+	tic_t start;
+	INT16 dist;
+};
+
 typedef enum
 {
 	MM_NOTHING = 0, // is just displayed until the user do someting
