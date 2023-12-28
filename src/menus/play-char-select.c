@@ -1242,6 +1242,11 @@ boolean M_CharacterSelectHandler(INT32 choice)
 		setup_player_t *p = &setup_player[i];
 		boolean playersChanged = false;
 
+		if (p->mdepth == CSSTEP_READY)
+		{
+			M_AnimateFollower(p);
+		}
+
 		if (p->delay == 0 && menucmd[i].delay == 0)
 		{
 			if (!optionsmenu.profile)
