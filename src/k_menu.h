@@ -542,6 +542,8 @@ extern struct menutyping_s
 	boolean keyboardcapslock;
 	boolean keyboardshift;
 
+	char cache[MAXSTRINGLENGTH]; // cached string
+
 } menutyping;
 // While typing, we'll have a fade strongly darken the screen to overlay the typing menu instead
 
@@ -666,6 +668,7 @@ void M_Init(void);
 
 void M_PlayMenuJam(void);
 
+void M_OpenVirtualKeyboard(boolean gamepad);
 void M_MenuTypingInput(INT32 key);
 
 void M_QuitResponse(INT32 ch);

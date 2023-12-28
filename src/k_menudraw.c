@@ -430,8 +430,6 @@ static void M_DrawMenuTyping(void)
 
 	INT32 x, y;
 
-	consvar_t *cv = currentMenu->menuitems[itemOn].itemaction.cvar;
-
 	char buf[8];	// We write there to use drawstring for convenience.
 
 	V_DrawFadeScreen(31, (menutyping.menutypingfade+1)/2);
@@ -462,12 +460,12 @@ static void M_DrawMenuTyping(void)
 	V_DrawFill(x + 4, y + 4 + 5, 1, 8+6, 121);
 	V_DrawFill(x + 5 + boxwidth - 8, y + 4 + 5, 1, 8+6, 121);
 
-	V_DrawString(x + 8, y + 12, 0, cv->string);
+	V_DrawString(x + 8, y + 12, 0, menutyping.cache);
 	if (skullAnimCounter < 4
 		&& menutyping.menutypingclose == false
 		&& menutyping.menutypingfade == (menutyping.keyboardtyping ? 9 : 18))
 	{
-		V_DrawCharacter(x + 8 + V_StringWidth(cv->string, 0), y + 12 + 1, '_', false);
+		V_DrawCharacter(x + 8 + V_StringWidth(menutyping.cache, 0), y + 12 + 1, '_', false);
 	}
 
 	const INT32 buttonwidth = ((boxwidth + 1)/NUMVIRTUALKEYSINROW);

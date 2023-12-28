@@ -38,8 +38,6 @@ typedef enum
 
 boolean M_ChangeStringCvar(INT32 choice)
 {
-	consvar_t *cv = currentMenu->menuitems[itemOn].itemaction.cvar;
-	char buf[MAXSTRINGLENGTH];
 	size_t len;
 	cvarcopypastemode_t copypastemode = CVCPM_NONE;
 
@@ -86,7 +84,7 @@ boolean M_ChangeStringCvar(INT32 choice)
 
 		if (copypastemode != CVCPM_NONE)
 		{
-			len = strlen(cv->string);
+			len = strlen(menutyping.cache);
 
 			if (copypastemode == CVCPM_PASTE)
 			{
@@ -95,12 +93,7 @@ boolean M_ChangeStringCvar(INT32 choice)
 					;
 				else if (len < MAXSTRINGLENGTH - 1)
 				{
-					M_Memcpy(buf, cv->string, len);
-					buf[len] = 0;
-
-					strncat(buf, paste, (MAXSTRINGLENGTH - 1) - len);
-
-					CV_Set(cv, buf);
+					strlcat(menutyping.cache, paste, MAXSTRINGLENGTH);
 
 					S_StartSound(NULL, sfx_s3k5b); // Tails
 				}
@@ -109,12 +102,12 @@ boolean M_ChangeStringCvar(INT32 choice)
 				|| copypastemode == CVCPM_CUT)*/
 				)
 			{
-				I_ClipboardCopy(cv->string, len);
+				I_ClipboardCopy(menutyping.cache, len);
 
 				if (copypastemode == CVCPM_CUT)
 				{
 					// A cut should wipe.
-					CV_Set(cv, "");
+					strcpy(menutyping.cache, "");
 				}
 
 				S_StartSound(NULL, sfx_s3k5b); // Tails
@@ -130,22 +123,18 @@ boolean M_ChangeStringCvar(INT32 choice)
 	switch (choice)
 	{
 		case KEY_BACKSPACE:
-			if (cv->string[0])
+			if (menutyping.cache[0])
 			{
-				len = strlen(cv->string);
-
-				M_Memcpy(buf, cv->string, len);
-				buf[len-1] = 0;
-
-				CV_Set(cv, buf);
+				len = strlen(menutyping.cache);
+				menutyping.cache[len - 1] = 0;
 
 				S_StartSound(NULL, sfx_s3k5b); // Tails
 			}
 			return true;
 		case KEY_DEL:
-			if (cv->string[0])
+			if (menutyping.cache[0])
 			{
-				CV_Set(cv, "");
+				strcpy(menutyping.cache, "");
 
 				S_StartSound(NULL, sfx_s3k5b); // Tails
 			}
@@ -153,15 +142,11 @@ boolean M_ChangeStringCvar(INT32 choice)
 		default:
 			if (choice >= 32 && choice <= 127)
 			{
-				len = strlen(cv->string);
+				len = strlen(menutyping.cache);
 				if (len < MAXSTRINGLENGTH - 1)
 				{
-					M_Memcpy(buf, cv->string, len);
-
-					buf[len++] = (char)choice;
-					buf[len] = 0;
-
-					CV_Set(cv, buf);
+					menutyping.cache[len++] = (char)choice;
+					menutyping.cache[len] = 0;
 
 					S_StartSound(NULL, sfx_s3k5b); // Tails
 				}
@@ -187,6 +172,12 @@ static void M_ToggleVirtualShift(void)
 			menutyping.keyboardcapslock = true;
 		}
 	}
+}
+
+static void M_CloseVirtualKeyboard(void)
+{
+	menutyping.menutypingclose = true;	// close menu.
+	CV_Set(currentMenu->menuitems[itemOn].itemaction.cvar, menutyping.cache);
 }
 
 static boolean M_IsTypingKey(INT32 key)
@@ -286,7 +277,7 @@ void M_MenuTypingInput(INT32 key)
 		// OTHERWISE, process keyboard inputs for typing!
 		if (key == KEY_ENTER || key == KEY_ESCAPE)
 		{
-			menutyping.menutypingclose = true;	// close menu.
+			M_CloseVirtualKeyboard();
 
 			M_SetMenuDelay(pid);
 			S_StartSound(NULL, sfx_s3k5b);
@@ -355,7 +346,7 @@ void M_MenuTypingInput(INT32 key)
 		else if (M_MenuButtonPressed(pid, MBT_START))
 		{
 			// Shortcut for close menu.
-			menutyping.menutypingclose = true;
+			M_CloseVirtualKeyboard();
 
 			M_SetMenuDelay(pid);
 			S_StartSound(NULL, sfx_s3k5b);
@@ -396,7 +387,7 @@ void M_MenuTypingInput(INT32 key)
 				}
 				else if (c == KEY_ENTER)
 				{
-					menutyping.menutypingclose = true;	// close menu.
+					M_CloseVirtualKeyboard();
 				}
 				else
 				{
@@ -409,4 +400,13 @@ void M_MenuTypingInput(INT32 key)
 			}
 		}
 	}
+}
+
+void M_OpenVirtualKeyboard(boolean gamepad)
+{
+	menutyping.keyboardtyping = !gamepad;
+	menutyping.active = true;
+	menutyping.menutypingclose = false;
+
+	strlcpy(menutyping.cache, currentMenu->menuitems[itemOn].itemaction.cvar->string, MAXSTRINGLENGTH);
 }
