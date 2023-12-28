@@ -1242,11 +1242,6 @@ static void Got_NameAndColor(const UINT8 **cp, INT32 playernum)
 
 	// set follower
 	K_SetFollowerByNum(playernum, follower);
-
-#ifdef HAVE_DISCORDRPC
-	if (playernum == consoleplayer)
-		DRPC_UpdatePresence();
-#endif
 }
 
 enum {

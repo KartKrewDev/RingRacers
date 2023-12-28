@@ -35,6 +35,7 @@
 #include "k_kart.h" // K_KartResetPlayerColor
 #endif
 #include "k_grandprix.h" // K_CanChangeRules
+#include "discord.h"
 #ifdef HWRENDER
 #include "hardware/hw_md2.h"
 #endif
@@ -184,6 +185,13 @@ void R_InitSkins(void)
 		R_AddSkins((UINT16)i, true);
 		R_PatchSkins((UINT16)i, true);
 		R_LoadSpriteInfoLumps(i, wadfiles[i]->numlumps);
+
+#ifdef HAVE_DISCORDRPC
+		if (i == mainwads)
+		{
+			g_discord_skins = numskins;
+		}
+#endif
 	}
 	ST_ReloadSkinFaceGraphics();
 	M_UpdateConditionSetsPending();
@@ -430,6 +438,11 @@ static void SetSkin(player_t *player, INT32 skinnum)
 
 	// for replays: We have changed our skin mid-game; let the game know so it can do the same in the replay!
 	demo_extradata[(player-players)] |= DXD_SKIN;
+
+#ifdef HAVE_DISCORDRPC
+	if (player - players == consoleplayer)
+		DRPC_UpdatePresence();
+#endif
 }
 
 // Gets the player to the first usuable skin in the game.

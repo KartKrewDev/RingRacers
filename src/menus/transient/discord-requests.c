@@ -107,9 +107,9 @@ const char *M_GetDiscordName(discordRequest_t *r)
 		return "";
 
 	if (cv_discordstreamer.value)
-		return r->username;
+		return DRPC_HideUsername(r->username);
 
-	return va("%s#%s", r->username, r->discriminator);
+	return r->username;
 }
 
 #endif // HAVE_DISCORDRPC

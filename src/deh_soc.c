@@ -52,6 +52,7 @@
 #include "filesrch.h" // refreshdirmenu
 #include "k_follower.h"
 #include "doomstat.h" // MAXMUSNAMES
+#include "discord.h"
 
 // Loops through every constant and operation in word and performs its calculations, returning the final value.
 fixed_t get_number(const char *word)
