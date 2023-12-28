@@ -3002,7 +3002,23 @@ void P_DemoCameraMovement(camera_t *cam, UINT8 num)
 		}
 	}
 
-	G_FinalClipAimingPitch((INT32 *)&cam->aiming, NULL, false);
+	if (rendermode == render_soft
+#ifdef HWRENDER
+		|| (rendermode == render_opengl && (cv_glshearing.value == 1))
+#endif
+		)
+	{
+		// Extra restriction on this so it's not possible to
+		// distort the view too much.
+		if ((INT32)cam->aiming > ANGLE_45)
+			cam->aiming = ANGLE_45;
+		else if ((INT32)cam->aiming < -ANGLE_45)
+			cam->aiming = -ANGLE_45;
+	}
+	else
+	{
+		G_ClipAimingPitch((INT32 *)&cam->aiming);
+	}
 
 	cam->momx = cam->momy = cam->momz = 0;
 
