@@ -7600,7 +7600,13 @@ static void P_InitLevelSettings(void)
 
 	if (K_PodiumSequence() == true)
 	{
-		; // NOP
+		// Okay, now that everything preceding is handled, set the position.
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			players[i].position = K_GetPodiumPosition(&players[i]);
+		}
+
+		// We don't touch the gamespeed, though!
 	}
 	else if (grandprixinfo.gp == true)
 	{

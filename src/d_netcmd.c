@@ -134,6 +134,7 @@ static void Command_LeaveParty_f(void);
 static void Command_Addfile(void);
 static void Command_ListWADS_f(void);
 static void Command_ListDoomednums_f(void);
+static void Command_cxdiag_f(void);
 static void Command_RunSOC(void);
 static void Command_Pause(void);
 
@@ -396,6 +397,7 @@ void D_RegisterServerCommands(void)
 	COM_AddCommand("addfile", Command_Addfile);
 	COM_AddDebugCommand("listwad", Command_ListWADS_f);
 	COM_AddDebugCommand("listmapthings", Command_ListDoomednums_f);
+	COM_AddDebugCommand("cxdiag", Command_cxdiag_f);
 
 	COM_AddCommand("runsoc", Command_RunSOC);
 	COM_AddCommand("pause", Command_Pause);
@@ -4703,6 +4705,226 @@ static void Command_ListDoomednums_f(void)
 }
 
 #undef MAXDOOMEDNUM
+
+static void Command_cxdiag_f(void)
+{
+	UINT16 i, j, errors = 0;
+
+	CONS_Printf("\x82""Welcome to the Challenge eXception Diagnostic.\n");
+
+	{
+		conditionset_t *c;
+		condition_t *cn;
+
+		CONS_Printf("\x82""Evaluating ConditionSets...\n");
+
+		for (i = 0; i < MAXCONDITIONSETS; i++)
+		{
+			c = &conditionSets[i];
+			if (!c->numconditions)
+				continue;
+
+			UINT32 lastID = 0;
+			boolean validSoFar = true;
+			boolean requiresPlaying = false;
+			boolean lastRequiresPlaying = false;
+			boolean lastrequiredplayingvalid = false;
+			boolean immediatelyprefix = false;
+			INT32 relevantlevelgt = -1;
+			UINT8 lastj = j = 0;
+			while (true) //for (j = 0; j < c->numconditions; ++j)
+			{
+				if (j >= c->numconditions)
+				{
+					if (j == lastj)
+						break;
+					UINT8 swap = j;
+					j = lastj;
+					lastj = swap;
+
+					lastrequiredplayingvalid = false;
+					validSoFar = true;
+				}
+
+				cn = &c->condition[j];
+
+				if (lastID)
+				{
+					//if (lastID != cn->id && validSoFar)
+						//CONS_Printf("\x87""Condition%d good\n", lastID);
+					if (lastID != cn->id)
+					{
+						lastrequiredplayingvalid = false;
+						validSoFar = true;
+						if (j != lastj)
+						{
+							UINT8 swap = j;
+							j = lastj;
+							lastj = swap;
+							continue;
+						}
+						relevantlevelgt = -1;
+					}
+					else if (!validSoFar)
+					{
+						j++;
+						continue;
+					}
+				}
+
+				const boolean firstpass = (lastj <= j);
+
+				if (cn->type == UC_DESCRIPTIONOVERRIDE)
+				{
+					if (firstpass)
+						;
+					else if (!cn->stringvar)
+					{
+						CONS_Printf("\x87""	ConditionSet %u entry %u (Condition%u) - Description override has no description!?\n", i+1, j+1, cn->id);
+						errors++;
+					}
+					else if (cn->stringvar[0] != tolower(cn->stringvar[0]))
+					{
+						CONS_Printf("\x87""	ConditionSet %u entry %u (Condition%u) - Description override begins with capital letter, which isn't necessary and can sometimes look weird in generated descriptions\n", i+1, j+1, cn->id);
+						errors++;
+					}
+					lastID = cn->id;
+					j++;
+					continue;
+				}
+
+				if (cn->type == UC_AND || cn->type == UC_COMMA)
+				{
+					if (firstpass)
+						;
+					else if (immediatelyprefix || lastID != cn->id)
+					{
+						CONS_Printf("\x87""	ConditionSet %u entry %u (Condition%u) - Conjunction immediately follows %s - this just looks plain weird!\n", i+1, j+1, cn->id, immediatelyprefix ? "Prefix type" : "start");
+						errors++;
+					}
+					lastID = cn->id;
+					j++;
+					continue;
+				}
+
+				lastID = cn->id;
+
+				lastRequiresPlaying = requiresPlaying;
+				requiresPlaying = (cn->type >= UCRP_REQUIRESPLAYING);
+
+				if (!firstpass && lastrequiredplayingvalid)
+				{
+					if (lastRequiresPlaying != requiresPlaying)
+					{
+						CONS_Printf("\x87""	ConditionSet %u entry %u (Condition%u) combines Playing condition and Statistics condition - will never be achieved\n", i+1, j+1, lastID);
+						validSoFar = false;
+						errors++;
+					}
+				}
+				lastrequiredplayingvalid = true;
+
+				immediatelyprefix = (cn->type >= UCRP_PREFIX_GRANDPRIX && cn->type <= UCRP_PREFIX_ISMAP);
+
+				if (cn->type == UCRP_PREFIX_ISMAP || cn->type == UCRP_ISMAP)
+				{
+					if (firstpass && relevantlevelgt != -1)
+					{
+						CONS_Printf("\x87""	ConditionSet %u entry %u (Condition%u) has multiple courses specified\n", i+1, j+1, lastID);
+						validSoFar = false;
+						errors++;
+					}
+					if (cn->requirement == 0)
+						relevantlevelgt = 0;
+					else if (cn->requirement > 0 && cn->requirement < basenummapheaders)
+						relevantlevelgt = G_GuessGametypeByTOL(mapheaderinfo[cn->requirement]->typeoflevel);
+					else
+						relevantlevelgt = -1;
+				}
+				else if (firstpass || relevantlevelgt == -1)
+					;
+				else if (cn->type >= UCRP_PODIUMCUP && cn->type <= UCRP_PODIUMNOCONTINUES)
+				{
+					CONS_Printf("\x87""	ConditionSet %u entry %u (Condition%u) is Podium state when specific course in Cup already requested\n", i+1, j+1, lastID);
+					validSoFar = false;
+					errors++;
+				}
+				else if (cn->type == UCRP_FINISHALLPRISONS || cn->type == UCRP_PREFIX_PRISONBREAK)
+				{
+					if (!(gametypes[relevantlevelgt]->rules & GTR_PRISONS))
+					{
+						CONS_Printf("\x87""	ConditionSet %u entry %u (Condition%u) is Prison Break-based, but with %s course\n", i+1, j+1, lastID, gametypes[relevantlevelgt]->name);
+						validSoFar = false;
+						errors++;
+					}
+				}
+				else if (cn->type == UCRP_SMASHUFO || cn->type == UCRP_PREFIX_SEALEDSTAR)
+				{
+					if (!(gametypes[relevantlevelgt]->rules & GTR_CATCHER))
+					{
+						CONS_Printf("\x87""	ConditionSet %u entry %u (Condition%u) is Sealed Star-based, but with %s course\n", i+1, j+1, lastID, gametypes[relevantlevelgt]->name);
+						validSoFar = false;
+						errors++;
+					}
+				}
+				else if (cn->type == UCRP_RINGS || cn->type == UCRP_RINGSEXACT || cn->type == UCRP_RINGDEBT)
+				{
+					if ((gametypes[relevantlevelgt]->rules & GTR_SPHERES))
+					{
+						CONS_Printf("\x87""	ConditionSet %u entry %u (Condition%u) is Rings-based, but with %s course\n", i+1, j+1, lastID, gametypes[relevantlevelgt]->name);
+						validSoFar = false;
+						errors++;
+					}
+				}
+				else if (cn->type == UCRP_GROWCONSECUTIVEBEAMS || cn->type == UCRP_FAULTED || cn->type == UCRP_FINISHPERFECT)
+				{
+					if (!(gametypes[relevantlevelgt]->rules & GTR_CIRCUIT))
+					{
+						CONS_Printf("\x87""	ConditionSet %u entry %u (Condition%u) is circuit-based, but with %s course\n", i+1, j+1, lastID, gametypes[relevantlevelgt]->name);
+						validSoFar = false;
+						errors++;
+					}
+				}
+				else if (cn->type == UCRP_FINISHTIMELEFT)
+				{
+					if (!(gametypes[relevantlevelgt]->rules & GTR_TIMELIMIT))
+					{
+						CONS_Printf("\x87""	ConditionSet %u entry %u (Condition%u) is timelimit-based, but with %s course\n", i+1, j+1, lastID, gametypes[relevantlevelgt]->name);
+						validSoFar = false;
+						errors++;
+					}
+				}
+
+
+				j++;
+			}
+		}
+	}
+
+	{
+		unlockable_t *un;
+
+		CONS_Printf("\x82""Evaluating Challenges...\n");
+
+		for (i = 0; i < MAXUNLOCKABLES; i++)
+		{
+			un = &unlockables[i];
+			j = un->conditionset;
+			if (!j)
+				continue;
+
+			if (!conditionSets[j-1].numconditions)
+			{
+				CONS_Printf("\x87""	Unlockable %u has ConditionSet %u, which has no Conditions successfully set - will never be unlocked?\n", i+1, j);
+				errors++;
+			}
+		}
+	}
+
+	if (errors)
+		CONS_Printf("\x85""%u errors detected.\n", errors);
+	else
+		CONS_Printf("\x83""No errors detected! Good job\n");
+}
 
 // =========================================================================
 //                            MISC. COMMANDS

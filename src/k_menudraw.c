@@ -2272,7 +2272,7 @@ void M_DrawCharacterSelect(void)
 	INT16 quadx, quady;
 	INT16 skin;
 	INT32 basex = optionsmenu.profile ? (64 + (menutransition.tics*32)) : 0;
-	boolean forceskin = (Playing() && K_CanChangeRules(true) == true) && (cv_forceskin.value != -1);
+	boolean forceskin = M_CharacterSelectForceInAction();
 
 	if (setup_numplayers > 0)
 	{
@@ -6622,7 +6622,7 @@ challengedesc:
 		)
 	)
 	{
-		V_DrawCenteredString(BASEVIDWIDTH/2, 120 + 32, 0, challengesmenu.unlockcondition);
+		V_DrawCenteredThinString(BASEVIDWIDTH/2, 120 + 32, 0, challengesmenu.unlockcondition);
 	}
 }
 

@@ -1034,7 +1034,7 @@ static void M_PrecacheLevelLocks(void)
 					&& mapheaderinfo[map])
 				{
 					if (mapheaderinfo[map]->cache_maplock != MAXUNLOCKABLES)
-						CONS_Alert(CONS_ERROR, "Unlockable %u: Too many SECRET_MAPs associated with Level %s\n", i, mapheaderinfo[map]->lumpname);
+						CONS_Alert(CONS_ERROR, "Unlockable %u: Too many SECRET_MAPs associated with Level %s\n", i+1, mapheaderinfo[map]->lumpname);
 					mapheaderinfo[map]->cache_maplock = i;
 				}
 				break;
@@ -1115,11 +1115,17 @@ static void M_PrecacheLevelLocks(void)
 						break;
 					}
 					if (j == mapheaderinfo[map]->musname_size)
-						CONS_Alert(CONS_ERROR, "Unlockable %u: Too many SECRET_ALTMUSICs associated with Level %s\n", i, mapheaderinfo[map]->lumpname);
+						CONS_Alert(CONS_ERROR, "Unlockable %u: Too many SECRET_ALTMUSICs associated with Level %s\n", i+1, mapheaderinfo[map]->lumpname);
+				}
+				else
+				{
+					CONS_Alert(CONS_ERROR, "Unlockable %u: Invalid levelname %s for SECRET_ALTMUSIC\n", i+1, unlockables[i].stringVar);
 				}
 
 				if (tempstr == NULL)
-					tempstr = va("INVALID MUSIC UNLOCK %u", i);
+				{
+					tempstr = va("INVALID MUSIC UNLOCK %u", i+1);
+				}
 
 				strlcpy(unlockables[i].name, tempstr, sizeof (unlockables[i].name));
 
@@ -1132,7 +1138,7 @@ static void M_PrecacheLevelLocks(void)
 				if (cup)
 				{
 					if (cup->cache_cuplock != MAXUNLOCKABLES)
-						CONS_Alert(CONS_ERROR, "Unlockable %u: Too many SECRET_CUPs associated with Cup %s\n", i, cup->name);
+						CONS_Alert(CONS_ERROR, "Unlockable %u: Too many SECRET_CUPs associated with Cup %s\n", i+1, cup->name);
 					cup->cache_cuplock = i;
 					break;
 				}
@@ -1607,7 +1613,7 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			return (grandprixinfo.gamespeed >= cn->requirement);
 
 		case UCRP_PODIUMCUP:
-			if (grandprixinfo.gp == false || K_PodiumRanking() == false)
+			if (grandprixinfo.gp == false || K_PodiumSequence() == false)
 				return false;
 			if (grandprixinfo.cup == NULL
 				|| (
@@ -1625,11 +1631,11 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 		case UCRP_PODIUMEMERALD:
 		case UCRP_PODIUMPRIZE:
 			return (grandprixinfo.gp == true
-				&& K_PodiumRanking() == true
+				&& K_PodiumSequence() == true
 				&& grandprixinfo.rank.specialWon == true);
 		case UCRP_PODIUMNOCONTINUES:
 			return (grandprixinfo.gp == true
-				&& K_PodiumRanking() == true
+				&& K_PodiumSequence() == true
 				&& grandprixinfo.rank.continuesUsed == 0);
 
 		case UCRP_FINISHCOOL:
@@ -1811,6 +1817,16 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 
 		case UCRP_TRACKHAZARD:
 		{
+			if (!(gametyperules & GTR_CIRCUIT))
+			{
+				// Prison Break/Versus
+
+				if (!player->exiting && cn->requirement == 0)
+					return false;
+
+				return (((player->roundconditions.hittrackhazard[0] & 1) == 1) == (cn->requirement == 1));
+			}
+
 			INT16 requiredlap = cn->extrainfo1;
 
 			if (requiredlap < 0)
@@ -2514,7 +2530,7 @@ static const char *M_GetConditionString(condition_t *cn)
 
 			if (cn->extrainfo2)
 			{
-				switch (cn->requirement)
+				switch (cn->extrainfo1)
 				{
 					case GRADE_E: { completetype = "get grade E"; break; }
 					case GRADE_D: { completetype = "get grade D"; break; }
@@ -2700,7 +2716,7 @@ static const char *M_GetConditionString(condition_t *cn)
 
 		case UCRP_TRACKHAZARD:
 		{
-			work = (cn->requirement == 1) ? "touch a track hazard" : "don't touch any track hazards";
+			work = (cn->requirement == 1) ? "touch a course hazard" : "don't touch any course hazards";
 			if (cn->extrainfo1 == -1)
 				return va("%s%s", work, (cn->requirement == 1) ? " on every lap" : "");
 			if (cn->extrainfo1 == -2)
@@ -2880,7 +2896,7 @@ char *M_BuildConditionSetString(UINT16 unlockid)
 		DESCRIPTIONWIDTH << FRACBITS,
 		FRACUNIT, FRACUNIT, FRACUNIT,
 		0,
-		HU_FONT,
+		TINY_FONT,
 		message
 	);
 }
@@ -2989,7 +3005,7 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud, boolean doall)
 		}
 	}
 
-	if (!demo.playback && Playing() && (gamestate == GS_LEVEL || K_PodiumRanking() == true))
+	if (!demo.playback && Playing() && (gamestate == GS_LEVEL || K_PodiumSequence() == true))
 	{
 		for (i = 0; i <= splitscreen; i++)
 		{

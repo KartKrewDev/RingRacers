@@ -1926,6 +1926,13 @@ static void K_HandleLapIncrement(player_t *player)
 			ClearFakePlayerSkin(player);
 			S_StartSound(player->mo, sfx_s3k8a);
 			P_MoveOrigin(player->mo, player->mo->old_x, player->mo->old_y, player->mo->z);
+
+			if (player->roundconditions.faulted == false)
+			{
+				player->roundconditions.faulted = true;
+				player->roundconditions.checkthisframe = true;
+			}
+
 			return;
 		}
 
