@@ -137,6 +137,10 @@ tic_t Music_DurationLeft(const char *id);
 // Returns the total duration of the tune, in tics.
 tic_t Music_TotalDuration(const char *id);
 
+// Returns the number of milliseconds a tune is configured to
+// fade for.
+unsigned int Music_FadeOutDuration(const char *id);
+
 // Returns the song name mapped to a tune.
 const char *Music_Song(const char *id);
 

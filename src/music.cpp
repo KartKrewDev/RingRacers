@@ -347,6 +347,12 @@ tic_t Music_TotalDuration(const char* id)
 	return tune ? tune->duration() : 0u;
 }
 
+unsigned int Music_FadeOutDuration(const char* id)
+{
+	const Tune* tune = g_tunes.find(id);
+	return tune ? tune->fade_out : 0;
+}
+
 void Music_Loop(const char* id, boolean loop)
 {
 	Tune* tune = g_tunes.find(id);
