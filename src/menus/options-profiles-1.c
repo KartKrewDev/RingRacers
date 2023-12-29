@@ -159,7 +159,7 @@ void M_HandleProfileSelect(INT32 ch)
 	else if (menucmd[pid].dpad_lr < 0)
 	{
 		optionsmenu.profilen--;
-		optionsmenu.offset.dist = (128 + 128/8);
+		optionsmenu.offset.dist = -(128 + 128/8);
 
 		if (optionsmenu.profilen < 0)
 		{
