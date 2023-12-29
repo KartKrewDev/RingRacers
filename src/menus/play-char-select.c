@@ -1192,8 +1192,6 @@ static void M_HandleFollowerColorRotate(setup_player_t *p, UINT8 num)
 	if (cv_splitdevice.value)
 		num = 0;
 
-	M_AnimateFollower(p);
-
 	if (menucmd[num].dpad_lr > 0)
 	{
 		p->followercolor = M_GetColorAfter(&p->colors, p->followercolor, 1);
@@ -1248,7 +1246,7 @@ boolean M_CharacterSelectHandler(INT32 choice)
 		setup_player_t *p = &setup_player[i];
 		boolean playersChanged = false;
 
-		if (p->mdepth == CSSTEP_READY)
+		if (p->mdepth > CSSTEP_FOLLOWER)
 		{
 			M_AnimateFollower(p);
 		}
