@@ -75,6 +75,7 @@ public:
 	bool needs_seek = false;
 	bool resume = false;
 	bool ending = false;
+	bool suspend = false;
 
 	tic_t elapsed() const { return std::max(pause_.value_or(detail::tic_time()), begin_) - begin_; }
 	tic_t time_remaining() const { return end_ - std::min(pause_.value_or(detail::tic_time()), end_); }
@@ -108,14 +109,14 @@ public:
 	{
 		// If this song is not playing, it has lowest
 		// priority.
-		if (!playing())
+		if (!playing() || suspend)
 		{
 			return true;
 		}
 
 		// If the other song is not playing, we automatically
 		// have higher priority.
-		if (!b.playing())
+		if (!b.playing() || b.suspend)
 		{
 			return false;
 		}
@@ -142,6 +143,7 @@ public:
 		needs_seek = true;
 		resume = false;
 		ending = false;
+		suspend = false;
 
 		begin_ = detail::tic_time();
 		end_ = INFTICS;
@@ -162,6 +164,8 @@ public:
 			can_fade_out = true;
 			ending = false;
 		}
+
+		suspend = false;
 	}
 
 	void stop()
