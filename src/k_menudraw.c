@@ -3278,7 +3278,7 @@ void M_DrawLevelSelect(void)
 			levellist.slide.dist,
 			0
 		);
-	boolean tatransition = ((menutransition.startmenu == &PLAY_TimeAttackDef || menutransition.endmenu == &PLAY_TimeAttackDef) && menutransition.tics);
+	boolean tatransition = ((menutransition.startmenu == &PLAY_TimeAttackDef || menutransition.endmenu == &PLAY_TimeAttackDef) && menutransition.tics != menutransition.dest);
 
 	if (tatransition)
 	{
