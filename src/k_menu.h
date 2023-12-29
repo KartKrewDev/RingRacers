@@ -945,7 +945,7 @@ struct modedesc_t
 
 #define MAXCOLUMNMODES   12     //max modes displayed in one column
 #define MAXMODEDESCS     (MAXCOLUMNMODES*3)
-#define M_OPTIONS_OFSTIME 4
+#define M_OPTIONS_OFSTIME 5
 // Keep track of some options properties
 extern struct optionsmenu_s {
 
