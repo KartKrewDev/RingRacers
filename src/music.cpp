@@ -261,6 +261,28 @@ void Music_UnPause(const char* id)
 	}
 }
 
+void Music_Suspend(const char* id)
+{
+	Tune* tune = g_tunes.find(id);
+
+	if (tune)
+	{
+		tune->suspend = true;
+		g_tunes.tick();
+	}
+}
+
+void Music_UnSuspend(const char* id)
+{
+	Tune* tune = g_tunes.find(id);
+
+	if (tune)
+	{
+		tune->suspend = false;
+		g_tunes.tick();
+	}
+}
+
 void Music_PauseAll(void)
 {
 	g_tunes.for_each([](Tune& tune) { tune.pause(); });
@@ -301,6 +323,12 @@ boolean Music_Paused(const char* id)
 	return tune && tune->paused();
 }
 
+boolean Music_Suspended(const char* id)
+{
+	const Tune* tune = g_tunes.find(id);
+	return tune && tune->suspend;
+}
+
 tic_t Music_Elapsed(const char* id)
 {
 	const Tune* tune = g_tunes.find(id);
@@ -317,6 +345,12 @@ tic_t Music_TotalDuration(const char* id)
 {
 	const Tune* tune = g_tunes.find(id);
 	return tune ? tune->duration() : 0u;
+}
+
+unsigned int Music_FadeOutDuration(const char* id)
+{
+	const Tune* tune = g_tunes.find(id);
+	return tune ? tune->fade_out : 0;
 }
 
 void Music_Loop(const char* id, boolean loop)

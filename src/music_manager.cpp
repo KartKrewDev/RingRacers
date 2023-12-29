@@ -49,7 +49,7 @@ void TuneManager::tick()
 	Tune* tune = current_tune();
 
 	std::string old_song = current_song_;
-	current_song_ = tune && tune->playing() ? tune->song : std::string{};
+	current_song_ = tune && tune->playing() && !tune->suspend ? tune->song : std::string{};
 
 	bool changed = current_song_ != old_song;
 

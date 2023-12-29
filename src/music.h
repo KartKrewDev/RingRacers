@@ -75,6 +75,13 @@ void Music_UnPause(const char *id);
 void Music_PauseAll(void);
 void Music_UnPauseAll(void);
 
+// Suspend a tune. The manager will switch to a tune that is
+// not suspended. Upon unsuspending, the tune resumes from
+// the position it would have reached normally (so the
+// duration is not extended like with pausing).
+void Music_Suspend(const char *id);
+void Music_UnSuspend(const char *id);
+
 
 //
 // Change properties. May be called before calling Music_Play.
@@ -117,6 +124,9 @@ boolean Music_Playing(const char *id);
 // Returns true if the tune is paused.
 boolean Music_Paused(const char *id);
 
+// Returns true if the tune is suspended.
+boolean Music_Suspended(const char *id);
+
 // Returns the number of tics elapsed since the start of the
 // tune.
 tic_t Music_Elapsed(const char *id);
@@ -126,6 +136,10 @@ tic_t Music_DurationLeft(const char *id);
 
 // Returns the total duration of the tune, in tics.
 tic_t Music_TotalDuration(const char *id);
+
+// Returns the number of milliseconds a tune is configured to
+// fade for.
+unsigned int Music_FadeOutDuration(const char *id);
 
 // Returns the song name mapped to a tune.
 const char *Music_Song(const char *id);

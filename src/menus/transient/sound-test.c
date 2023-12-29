@@ -37,11 +37,11 @@ static void M_SoundTestMainControl(INT32 choice)
 
 	if (currentMenu->menuitems[itemOn].mvar1 == 1) // Play
 	{
-		if (Music_Paused(soundtest.tune) == true)
+		if (Music_Paused(S_SoundTestTune(0)) == true)
 		{
 			S_SoundTestTogglePause();
 		}
-		else if (Music_Paused(soundtest.tune) == false)
+		else
 		{
 			S_SoundTestPlay();
 		}
@@ -50,7 +50,7 @@ static void M_SoundTestMainControl(INT32 choice)
 	{
 		if (currentMenu->menuitems[itemOn].mvar1 == 2) // Pause
 		{
-			if (Music_Paused(soundtest.tune) == false)
+			if (Music_Paused(S_SoundTestTune(0)) == false)
 			{
 				S_SoundTestTogglePause();
 			}
@@ -80,6 +80,26 @@ static void M_SoundTestSeq(INT32 choice)
 	(void)choice;
 
 	soundtest.autosequence ^= true;
+
+	if (soundtest.playing && S_SoundTestCanSequenceFade())
+	{
+		// 1) You cannot cancel a fade once it has started
+		// 2) However, if the fade wasn't heard, switching
+		//    over just skips to the next song
+		if (Music_DurationLeft("stereo_fade") <= Music_FadeOutDuration("stereo_fade") * TICRATE / 1000)
+		{
+			if (Music_Suspended("stereo_fade"))
+			{
+				S_UpdateSoundTestDef((currentMenu->menuitems[itemOn].mvar1 < 0), true, false);
+			}
+		}
+		else
+		{
+			soundtest.tune ^= 1;
+			Music_UnSuspend(S_SoundTestTune(0));
+			Music_Suspend(S_SoundTestTune(1));
+		}
+	}
 }
 
 static void M_SoundTestShf(INT32 choice)

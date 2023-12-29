@@ -7475,6 +7475,8 @@ void M_DrawSoundTest(void)
 
 	patch_t *btn = W_CachePatchName("STER_BTN", PU_CACHE);
 
+	const char *tune = S_SoundTestTune(0);
+
 	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("STER_BG", PU_CACHE), NULL);
 
 	x = 24;
@@ -7548,7 +7550,7 @@ void M_DrawSoundTest(void)
 	}
 
 	{
-		UINT32 currenttime = min(Music_Elapsed(soundtest.tune), Music_TotalDuration(soundtest.tune));
+		UINT32 currenttime = min(Music_Elapsed(tune), Music_TotalDuration(tune));
 
 		V_DrawRightAlignedString(x + 272-1, 18+32, 0,
 			va("%02u:%02u",
@@ -7562,7 +7564,7 @@ void M_DrawSoundTest(void)
 		&& (soundtest.current->basenoloop[soundtest.currenttrack] == true
 		|| soundtest.autosequence == true))
 	{
-		UINT32 exittime = Music_TotalDuration(soundtest.tune);
+		UINT32 exittime = Music_TotalDuration(tune);
 
 		V_DrawRightAlignedString(x + 272-1, 18+32+10, 0,
 			va("%02u:%02u",
@@ -7616,12 +7618,12 @@ void M_DrawSoundTest(void)
 			// The following are springlocks.
 			else if (currentMenu->menuitems[i].mvar2 == stereospecial_pause) // pause
 			{
-				if (Music_Paused(soundtest.tune) == true)
+				if (Music_Paused(tune) == true)
 					y = currentMenu->y + 6;
 			}
 			else if (currentMenu->menuitems[i].mvar2 == stereospecial_play) // play
 			{
-				if (soundtest.playing == true && Music_Paused(soundtest.tune) == false)
+				if (soundtest.playing == true && Music_Paused(tune) == false)
 					y = currentMenu->y + 6;
 			}
 			else if (currentMenu->menuitems[i].mvar2 == stereospecial_seq) // seq
