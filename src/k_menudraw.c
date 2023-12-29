@@ -173,6 +173,11 @@ static void M_DrawSlider(INT32 x, INT32 y, const consvar_t *cv, boolean ontop)
 	V_DrawScaledPatch(x - 4 + (((SLIDER_RANGE)*8 + 4)*range)/100, y, 0, p);
 }
 
+static void M_DrawCursorHand(INT32 x, INT32 y)
+{
+	V_DrawScaledPatch(x - 24, y, 0, W_CachePatchName("M_CURSOR", PU_CACHE));
+}
+
 static patch_t *addonsp[NUM_EXT+5];
 
 static patch_t *bgMapImage;
@@ -3487,9 +3492,19 @@ void M_DrawTimeAttack(void)
 			case IT_STRING:
 
 				if (i >= currentMenu->numitems-1)
+				{
 					V_DrawRightAlignedMenuString(rightedge, opty, f, currentMenu->menuitems[i].text);
+
+					if (i == itemOn)
+						M_DrawCursorHand(rightedge - V_MenuStringWidth(currentMenu->menuitems[i].text, 0), opty);
+				}
 				else
+				{
 					V_DrawMenuString(leftedge, opty, f, currentMenu->menuitems[i].text);
+
+					if (i == itemOn)
+						M_DrawCursorHand(leftedge, opty);
+				}
 				opty += 10;
 
 				// Cvar specific handling
