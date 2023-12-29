@@ -80,28 +80,22 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 #include "discord.h"
 #endif
 
-static ATTRUNUSED fixed_t M_TimeFrac(tic_t tics, tic_t duration)
+fixed_t M_TimeFrac(tic_t tics, tic_t duration)
 {
 	return tics < duration ? (tics * FRACUNIT + rendertimefrac) / duration : FRACUNIT;
 }
 
-static ATTRUNUSED fixed_t M_ReverseTimeFrac(tic_t tics, tic_t duration)
+fixed_t M_ReverseTimeFrac(tic_t tics, tic_t duration)
 {
 	return FRACUNIT - M_TimeFrac(duration - tics, duration);
 }
 
-static ATTRUNUSED fixed_t M_DueFrac(tic_t start, tic_t duration)
+fixed_t M_DueFrac(tic_t start, tic_t duration)
 {
 	tic_t t = I_GetTime();
 	tic_t n = t - start;
 	return M_TimeFrac(min(n, duration), duration);
 }
-
-// FIXME: C++ template
-#define M_EaseWithTransition(EasingFunc, N) \
-	(menutransition.tics != menutransition.dest ? EasingFunc(menutransition.in ?\
-		M_ReverseTimeFrac(menutransition.tics, menutransition.endmenu->transitionTics) :\
-		M_TimeFrac(menutransition.tics, menutransition.startmenu->transitionTics), 0, N) : 0)
 
 #define SKULLXOFF -32
 #define LINEHEIGHT 16
@@ -1212,6 +1206,7 @@ void M_DrawKartGamemodeMenu(void)
 {
 	UINT8 n = 0;
 	INT32 i, x, y;
+	INT32 tx = M_EaseWithTransition(Easing_Linear, 5 * 48);
 
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
@@ -1224,15 +1219,10 @@ void M_DrawKartGamemodeMenu(void)
 	}
 
 	n--;
-	x = GM_STARTX - ((GM_XOFFSET / 2) * (n-1));
+	x = GM_STARTX - ((GM_XOFFSET / 2) * (n-1)) + tx;
 	y = GM_STARTY - ((GM_YOFFSET / 2) * (n-1));
 
 	M_DrawMenuTooltips();
-
-	if (menutransition.tics)
-	{
-		x += 48 * menutransition.tics;
-	}
 
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
@@ -1245,13 +1235,9 @@ void M_DrawKartGamemodeMenu(void)
 
 		if (i >= currentMenu->numitems-1)
 		{
-			x = GM_STARTX + (GM_XOFFSET * 5 / 2);
+			x = GM_STARTX + (GM_XOFFSET * 5 / 2) + tx;
 			y = GM_STARTY + (GM_YOFFSET * 5 / 2);
 
-			if (menutransition.tics)
-			{
-				x += 48 * menutransition.tics;
-			}
 		}
 
 		INT32 cx = x;
@@ -2386,7 +2372,7 @@ void M_DrawCharacterSelect(void)
 	UINT8 priority = 0;
 	INT16 quadx, quady;
 	INT16 skin;
-	INT32 basex = optionsmenu.profile ? (64 + (menutransition.tics*32)) : 0;
+	INT32 basex = optionsmenu.profile ? (64 + M_EaseWithTransition(Easing_Linear, 5 * 32)) : 0;
 	boolean forceskin = M_CharacterSelectForceInAction();
 
 	if (setup_numplayers > 0)
@@ -2528,18 +2514,14 @@ void M_DrawRaceDifficulty(void)
 	patch_t *box = W_CachePatchName("M_DBOX", PU_CACHE);
 
 	INT32 i;
-	INT32 x = 120;
+	INT32 tx = M_EaseWithTransition(Easing_Linear, 5 * 48);
+	INT32 x = 120 + tx;
 	INT32 y = 48;
 
 	M_DrawMenuTooltips();
 
 	// Draw the box for difficulty...
-	V_DrawFixedPatch((111 + 48*menutransition.tics)*FRACUNIT, 33*FRACUNIT, FRACUNIT, 0, box, NULL);
-
-	if (menutransition.tics)
-	{
-		x += 48 * menutransition.tics;
-	}
+	V_DrawFixedPatch((111 + tx)*FRACUNIT, 33*FRACUNIT, FRACUNIT, 0, box, NULL);
 
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
@@ -2554,11 +2536,7 @@ void M_DrawRaceDifficulty(void)
 				y -= GM_YOFFSET;
 			}
 
-
-			if (menutransition.tics)
-			{
-				x += 48 * menutransition.tics;
-			}
+			x += tx;
 		}
 
 		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
@@ -2570,12 +2548,12 @@ void M_DrawRaceDifficulty(void)
 
 				INT32 f = (i == itemOn) ? highlightflags : 0;
 
-				V_DrawString(140 + 48*menutransition.tics + (i == itemOn ? 1 : 0), y, f, currentMenu->menuitems[i].text);
+				V_DrawString(140 + tx + (i == itemOn ? 1 : 0), y, f, currentMenu->menuitems[i].text);
 
 				if (currentMenu->menuitems[i].status & IT_CVAR)
 				{
 					// implicitely we'll only take care of normal cvars
-					INT32 cx = 260 + 48*menutransition.tics;
+					INT32 cx = 260 + tx;
 					consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
 
 					V_DrawCenteredString(cx, y, f, cv->string);
@@ -2592,7 +2570,7 @@ void M_DrawRaceDifficulty(void)
 
 				if (i == itemOn)
 				{
-					V_DrawScaledPatch(140 + 48*menutransition.tics - 24, y, 0,
+					V_DrawScaledPatch(140 + tx - 24, y, 0,
 						W_CachePatchName("M_CURSOR", PU_CACHE));
 				}
 
@@ -2625,8 +2603,8 @@ void M_DrawRaceDifficulty(void)
 				if (currentMenu->menuitems[i].status & IT_CVAR)
 				{
 
-					INT32 fx = (cx - 48*menutransition.tics);
-					INT32 centx = fx + (320-fx)/2 + (menutransition.tics*48);	// undo the menutransition movement to redo it here otherwise the text won't move at the same speed lole.
+					INT32 fx = (cx - tx);
+					INT32 centx = fx + (320-fx)/2 + (tx);	// undo the menutransition movement to redo it here otherwise the text won't move at the same speed lole.
 
 					// implicitely we'll only take care of normal consvars
 					consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
@@ -2664,7 +2642,7 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *levelsearch)
 {
 	UINT8 i = 0;
 	INT16 maxlevels = M_CountLevelsToShowInList(levelsearch);
-	INT16 x = -(cupgrid.previewanim % 82);
+	fixed_t x = -((cupgrid.previewanim % 82 * FRACUNIT + rendertimefrac) % (82 * FRACUNIT));
 	INT16 add;
 	INT16 map, start = M_GetFirstLevelInList(&i, levelsearch);
 	UINT8 starti = i;
@@ -2684,7 +2662,7 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *levelsearch)
 
 			add--;
 		}
-		while (x < BASEVIDWIDTH)
+		while (x < BASEVIDWIDTH * FRACUNIT)
 		{
 			if (map >= nummapheaders)
 			{
@@ -2693,13 +2671,13 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *levelsearch)
 			}
 
 			K_DrawMapThumbnail(
-				(x+1)<<FRACBITS, (y+2)<<FRACBITS,
+				x + FRACUNIT, (y+2)<<FRACBITS,
 				80<<FRACBITS,
 				0,
 				map,
 				NULL);
 
-			x += 82;
+			x += 82 * FRACUNIT;
 
 			map = M_GetNextLevelInList(map, &i, levelsearch);
 		}
@@ -2707,10 +2685,10 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *levelsearch)
 	else
 	{
 		patch_t *st = W_CachePatchName(va("PREVST0%d", (cupgrid.previewanim % 4) + 1), PU_CACHE);
-		while (x < BASEVIDWIDTH)
+		while (x < BASEVIDWIDTH * FRACUNIT)
 		{
-			V_DrawScaledPatch(x+1, y+2, 0, st);
-			x += 82;
+			V_DrawFixedPatch(x + FRACUNIT, (y+2) * FRACUNIT, FRACUNIT, 0, st, NULL);
+			x += 82 * FRACUNIT;
 		}
 	}
 }
@@ -3013,6 +2991,7 @@ void M_DrawCupSelect(void)
 {
 	UINT8 i, j, temp = 0;
 	INT16 x, y;
+	INT16 cy = M_EaseWithTransition(Easing_Linear, 5 * 30);
 	cupwindata_t *windata = NULL;
 	levelsearch_t templevelsearch = levellist.levelsearch; // full copy
 
@@ -3029,7 +3008,7 @@ void M_DrawCupSelect(void)
 
 			templevelsearch.cup = cupgrid.builtgrid[id];
 
-			y = 20 + (j*44) - (30*menutransition.tics);
+			y = 20 + (j*44) - cy;
 			if (cupgrid.cache_secondrowlocked == true)
 				y += 28;
 
@@ -3080,8 +3059,14 @@ void M_DrawCupSelect(void)
 		}
 	}
 
-	x = 14 + (cupgrid.x*42);
-	y = 20 + (cupgrid.y*44) - (30*menutransition.tics);
+	{
+		fixed_t tx = Easing_Linear(M_DueFrac(cupgrid.xslide.start, CUPMENU_SLIDETIME), cupgrid.xslide.dist * FRACUNIT, 0);
+		fixed_t ty = Easing_Linear(M_DueFrac(cupgrid.yslide.start, CUPMENU_SLIDETIME), cupgrid.yslide.dist * FRACUNIT, 0);
+
+		x = 14 + (cupgrid.x*42*FRACUNIT - tx) / FRACUNIT;
+		y = 20 + (cupgrid.y*44*FRACUNIT - ty) / FRACUNIT - cy;
+	}
+
 	if (cupgrid.cache_secondrowlocked == true)
 		y += 28;
 
@@ -3096,15 +3081,16 @@ void M_DrawCupSelect(void)
 		V_DrawScaledPatch(x + 32, y + 32, 0, W_CachePatchName("CUPBKUP2", PU_CACHE));
 	}
 
-	V_DrawFill(0, 146 + (24*menutransition.tics), BASEVIDWIDTH, 54, 31);
-	M_DrawCupPreview(146 + (24*menutransition.tics), &templevelsearch);
+	INT16 ty = M_EaseWithTransition(Easing_Linear, 5 * 24);
+	V_DrawFill(0, 146 + ty, BASEVIDWIDTH, 54, 31);
+	M_DrawCupPreview(146 + ty, &templevelsearch);
 
-	M_DrawCupTitle(120 - (24*menutransition.tics), &templevelsearch);
+	M_DrawCupTitle(120 - ty, &templevelsearch);
 
 	if (cupgrid.numpages > 1)
 	{
 		x = 3 - (skullAnimCounter/5);
-		y = 20 + (44 - 1) - (30*menutransition.tics);
+		y = 20 + (44 - 1) - cy;
 
 		patch_t *cuparrow = W_CachePatchName("CUPARROW", PU_CACHE);
 
@@ -3271,9 +3257,14 @@ void M_DrawLevelSelect(void)
 	INT16 i = 0;
 	UINT8 j = 0;
 	INT16 map = M_GetFirstLevelInList(&j, &levellist.levelsearch);
-	INT16 t = (64*menutransition.tics), tay = 0;
-	INT16 y = 80 - (12 * levellist.y);
-	boolean tatransition = ((menutransition.startmenu == &PLAY_TimeAttackDef || menutransition.endmenu == &PLAY_TimeAttackDef) && menutransition.tics);
+	INT16 t = M_EaseWithTransition(Easing_Linear, 5 * 64), tay = 0;
+	INT16 y = 80 - levellist.y +
+		Easing_OutSine(
+			M_DueFrac(levellist.slide.start, 4),
+			levellist.slide.dist,
+			0
+		);
+	boolean tatransition = ((menutransition.startmenu == &PLAY_TimeAttackDef || menutransition.endmenu == &PLAY_TimeAttackDef) && menutransition.tics != menutransition.dest);
 
 	if (tatransition)
 	{
@@ -3318,9 +3309,6 @@ static boolean M_LevelSelectHasBG(menu_t *check)
 
 static boolean M_LevelSelectToTimeAttackTransitionHelper(void)
 {
-	if (menutransition.tics == 0)
-		return false;
-
 	return (M_LevelSelectHasBG(menutransition.startmenu))
 		!= M_LevelSelectHasBG(menutransition.endmenu);
 }
@@ -3353,7 +3341,7 @@ void M_DrawSealedBack(void)
 void M_DrawTimeAttack(void)
 {
 	UINT16 map = levellist.choosemap;
-	INT16 t = (48*menutransition.tics);
+	INT16 t = M_EaseWithTransition(Easing_Linear, 5 * 48);
 	INT16 leftedge = 149+t+16;
 	INT16 rightedge = 149+t+155;
 	INT16 opty = 140;
@@ -4126,24 +4114,50 @@ void M_DrawOptionsMovingButton(void)
 {
 	patch_t *butt = W_CachePatchName("OPT_BUTT", PU_CACHE);
 	UINT8 *c = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
+	fixed_t t = M_DueFrac(optionsmenu.topt_start, M_OPTIONS_OFSTIME);
+	fixed_t z = Easing_OutSine(M_DueFrac(optionsmenu.offset.start, M_OPTIONS_OFSTIME), optionsmenu.offset.dist * FRACUNIT, 0);
+	fixed_t tx = Easing_OutQuad(t, optionsmenu.optx * FRACUNIT, optionsmenu.toptx * FRACUNIT) + z;
+	fixed_t ty = Easing_OutQuad(t, optionsmenu.opty * FRACUNIT, optionsmenu.topty * FRACUNIT) + z;
 
-	V_DrawFixedPatch((optionsmenu.optx)*FRACUNIT, (optionsmenu.opty)*FRACUNIT, FRACUNIT, 0, butt, c);
-	V_DrawCenteredGamemodeString((optionsmenu.optx)-3, (optionsmenu.opty) - 16, 0, c, OPTIONS_MainDef.menuitems[OPTIONS_MainDef.lastOn].text);
+	V_DrawFixedPatch(tx, ty, FRACUNIT, 0, butt, c);
+
+	const char *s = OPTIONS_MainDef.menuitems[OPTIONS_MainDef.lastOn].text;
+	fixed_t w = V_StringScaledWidth(
+		FRACUNIT,
+		FRACUNIT,
+		FRACUNIT,
+		0,
+		GM_FONT,
+		s
+	);
+	V_DrawStringScaled(
+		tx - 3*FRACUNIT - (w/2),
+		ty - 16*FRACUNIT,
+		FRACUNIT,
+		FRACUNIT,
+		FRACUNIT,
+		0,
+		c,
+		GM_FONT,
+		s
+	);
 }
 
 void M_DrawOptions(void)
 {
 	UINT8 i;
-	INT32 x = 140 - (48*itemOn) + optionsmenu.offset;
-	INT32 y = 70 + optionsmenu.offset;
+	fixed_t t = Easing_OutSine(M_DueFrac(optionsmenu.offset.start, M_OPTIONS_OFSTIME), optionsmenu.offset.dist * FRACUNIT, 0);
+	fixed_t x = (140 - (48*itemOn))*FRACUNIT + t;
+	fixed_t y = 70*FRACUNIT + t;
+	fixed_t tx = M_EaseWithTransition(Easing_InQuart, 5 * 64 * FRACUNIT);
 	patch_t *buttback = W_CachePatchName("OPT_BUTT", PU_CACHE);
 
 	UINT8 *c = NULL;
 
 	for (i=0; i < currentMenu->numitems; i++)
 	{
-		INT32 py = y - (itemOn*48);
-		INT32 px = x - menutransition.tics*64;
+		fixed_t py = y - (itemOn*48)*FRACUNIT;
+		fixed_t px = x - tx;
 		INT32 tflag = 0;
 
 		if (i == itemOn)
@@ -4154,26 +4168,46 @@ void M_DrawOptions(void)
 		if (currentMenu->menuitems[i].status & IT_TRANSTEXT)
 			tflag = V_TRANSLUCENT;
 
-		if (!(menutransition.tics && i == itemOn))
+		if (!(menutransition.tics != menutransition.dest && i == itemOn))
 		{
-			V_DrawFixedPatch(px*FRACUNIT, py*FRACUNIT, FRACUNIT, 0, buttback, c);
-			V_DrawCenteredGamemodeString(px-3, py - 16, tflag, (i == itemOn ? c : NULL), currentMenu->menuitems[i].text);
+			V_DrawFixedPatch(px, py, FRACUNIT, 0, buttback, c);
+
+			const char *s = currentMenu->menuitems[i].text;
+			fixed_t w = V_StringScaledWidth(
+				FRACUNIT,
+				FRACUNIT,
+				FRACUNIT,
+				0,
+				GM_FONT,
+				s
+			);
+			V_DrawStringScaled(
+				px - 3*FRACUNIT - (w/2),
+				py - 16*FRACUNIT,
+				FRACUNIT,
+				FRACUNIT,
+				FRACUNIT,
+				tflag,
+				(i == itemOn ? c : NULL),
+				GM_FONT,
+				s
+			);
 		}
 
-		y += 48;
-		x += 48;
+		y += 48*FRACUNIT;
+		x += 48*FRACUNIT;
 	}
 
 	M_DrawMenuTooltips();
 
-	if (menutransition.tics)
+	if (menutransition.tics != menutransition.dest)
 		M_DrawOptionsMovingButton();
 
 }
 
 void M_DrawGenericOptions(void)
 {
-	INT32 x = currentMenu->x - menutransition.tics*48, y = currentMenu->y, w, i, cursory = 0;
+	INT32 x = currentMenu->x - M_EaseWithTransition(Easing_Linear, 5 * 48), y = currentMenu->y, w, i, cursory = 0;
 
 	M_DrawMenuTooltips();
 	M_DrawOptionsMovingButton();
@@ -4327,7 +4361,7 @@ void M_DrawGenericOptions(void)
 // *Heavily* simplified version of the generic options menu, cattered only towards erasing profiles.
 void M_DrawProfileErase(void)
 {
-	INT32 x = currentMenu->x - menutransition.tics*48, y = currentMenu->y-SMALLLINEHEIGHT, i, cursory = 0;
+	INT32 x = currentMenu->x - M_EaseWithTransition(Easing_Linear, 5 * 48), y = currentMenu->y-SMALLLINEHEIGHT, i, cursory = 0;
 	UINT8 np = PR_GetNumProfiles();
 
 	M_DrawMenuTooltips();
@@ -4358,8 +4392,8 @@ void M_DrawProfileSelect(void)
 {
 	INT32 i;
 	const INT32 maxp = PR_GetNumProfiles();
-	INT32 x = 160 - optionsmenu.profilen*(128 + 128/8) + optionsmenu.offset;
-	INT32 y = 35 + menutransition.tics*32;
+	INT32 x = 160 - optionsmenu.profilen*(128 + 128/8) + Easing_OutSine(M_DueFrac(optionsmenu.offset.start, M_OPTIONS_OFSTIME), optionsmenu.offset.dist, 0);
+	INT32 y = 35 + M_EaseWithTransition(Easing_Linear, 5 * 32);
 
 	M_DrawMenuTooltips();
 
@@ -4372,7 +4406,7 @@ void M_DrawProfileSelect(void)
 		profile_t *p = PR_GetProfile(i);
 
 		// don't draw the card in this specific scenario
-		if (!(menutransition.tics && optionsmenu.profile != NULL && optionsmenu.profilen == i))
+		if (!(optionsmenu.profile != NULL && optionsmenu.profilen == i))
 			M_DrawProfileCard(x, y, i > maxp, p);
 
 		x += 128 + 128/8;
@@ -4380,9 +4414,15 @@ void M_DrawProfileSelect(void)
 
 	// needs to be drawn since it happens on the transition
 	if (optionsmenu.profile != NULL)
-		M_DrawProfileCard(optionsmenu.optx, optionsmenu.opty, false, optionsmenu.profile);
-
-
+	{
+		fixed_t t = M_DueFrac(optionsmenu.topt_start, M_OPTIONS_OFSTIME);
+		M_DrawProfileCard(
+			Easing_OutQuad(t, optionsmenu.optx, optionsmenu.toptx),
+			Easing_OutQuad(t, optionsmenu.opty, optionsmenu.topty),
+			false,
+			optionsmenu.profile
+		);
+	}
 }
 
 void M_DrawEditProfileTooltips(void)
@@ -4401,7 +4441,7 @@ void M_DrawEditProfile(void)
 {
 
 	INT32 y = 34;
-	INT32 x = (145 + (menutransition.tics*32));
+	INT32 x = (145 + M_EaseWithTransition(Easing_InSine, 5 * 48));
 	INT32 i;
 
 	M_DrawEditProfileTooltips();
@@ -4416,7 +4456,7 @@ void M_DrawEditProfile(void)
 		y = currentMenu->menuitems[i].mvar2;
 
 		// Background -- 169 is the plague colourization
-		V_DrawFill(0, y, 400 - (menutransition.tics*64), 10, itemOn == i ? 169 : 30);
+		V_DrawFill(0, y, 400 - M_EaseWithTransition(Easing_InQuad, 5 * 128), 10, itemOn == i ? 169 : 30);
 
 		if (i == itemOn)
 		{
@@ -4446,7 +4486,13 @@ void M_DrawEditProfile(void)
 	// Finally, draw the card ontop
 	if (optionsmenu.profile != NULL)
 	{
-		M_DrawProfileCard(optionsmenu.optx, optionsmenu.opty, false, optionsmenu.profile);
+		fixed_t t = M_DueFrac(optionsmenu.topt_start, M_OPTIONS_OFSTIME);
+		M_DrawProfileCard(
+			Easing_OutQuad(t, optionsmenu.optx, optionsmenu.toptx),
+			Easing_OutQuad(t, optionsmenu.opty, optionsmenu.topty),
+			false,
+			optionsmenu.profile
+		);
 	}
 }
 
@@ -4723,14 +4769,15 @@ void M_DrawProfileControls(void)
 void M_DrawVideoModes(void)
 {
 	INT32 i, j, row, col;
+	INT32 t = M_EaseWithTransition(Easing_Linear, 5 * 64);
 
 	M_DrawMenuTooltips();
 	M_DrawOptionsMovingButton();
 
-	V_DrawCenteredString(BASEVIDWIDTH/2 + menutransition.tics*64, currentMenu->y,
+	V_DrawCenteredString(BASEVIDWIDTH/2 + t, currentMenu->y,
 		highlightflags, "Choose mode, reselect to change default");
 
-	row = 41 + menutransition.tics*64;
+	row = 41 + t;
 	col = currentMenu->y + 14;
 	for (i = 0; i < optionsmenu.vidm_nummodes; i++)
 	{
@@ -4752,41 +4799,41 @@ void M_DrawVideoModes(void)
 	{
 		INT32 testtime = (optionsmenu.vidm_testingmode/TICRATE) + 1;
 
-		M_CentreText(menutransition.tics*64, currentMenu->y + 75,
+		M_CentreText(t, currentMenu->y + 75,
 			va("Previewing mode %c%dx%d",
 				(SCR_IsAspectCorrect(vid.width, vid.height)) ? 0x83 : 0x80,
 				vid.width, vid.height));
-		M_CentreText(menutransition.tics*64, currentMenu->y + 75+8,
+		M_CentreText(t, currentMenu->y + 75+8,
 			"Press ENTER again to keep this mode");
-		M_CentreText(menutransition.tics*64, currentMenu->y + 75+16,
+		M_CentreText(t, currentMenu->y + 75+16,
 			va("Wait %d second%s", testtime, (testtime > 1) ? "s" : ""));
-		M_CentreText(menutransition.tics*64, currentMenu->y + 75+24,
+		M_CentreText(t, currentMenu->y + 75+24,
 			"or press ESC to return");
 
 	}
 	else
 	{
-		M_CentreText(menutransition.tics*64, currentMenu->y + 75,
+		M_CentreText(t, currentMenu->y + 75,
 			va("Current mode is %c%dx%d",
 				(SCR_IsAspectCorrect(vid.width, vid.height)) ? 0x83 : 0x80,
 				vid.width, vid.height));
-		M_CentreText(menutransition.tics*64, currentMenu->y + 75+8,
+		M_CentreText(t, currentMenu->y + 75+8,
 			va("Default mode is %c%dx%d",
 				(SCR_IsAspectCorrect(cv_scr_width.value, cv_scr_height.value)) ? 0x83 : 0x80,
 				cv_scr_width.value, cv_scr_height.value));
 
-		V_DrawCenteredString(BASEVIDWIDTH/2 + menutransition.tics*64, currentMenu->y + 75+24,
+		V_DrawCenteredString(BASEVIDWIDTH/2 + t, currentMenu->y + 75+24,
 			recommendedflags, "Modes marked in GREEN are recommended.");
 		/*
-		V_DrawCenteredString(BASEVIDWIDTH/2 + menutransition.tics*64, currentMenu->y + 75+16,
+		V_DrawCenteredString(BASEVIDWIDTH/2 + t, currentMenu->y + 75+16,
 			highlightflags, "High resolutions stress your PC more, but will");
-		V_DrawCenteredString(BASEVIDWIDTH/2 + menutransition.tics*64, currentMenu->y + 75+24,
+		V_DrawCenteredString(BASEVIDWIDTH/2 + t, currentMenu->y + 75+24,
 			highlightflags, "look sharper. Balance visual quality and FPS!");
 		*/
 	}
 
 	// Draw the cursor for the VidMode menu
-	i = 41 - 10 + ((optionsmenu.vidm_selected / optionsmenu.vidm_column_size)*7*13) + menutransition.tics*64;
+	i = 41 - 10 + ((optionsmenu.vidm_selected / optionsmenu.vidm_column_size)*7*13) + t;
 	j = currentMenu->y + 14 + ((optionsmenu.vidm_selected % optionsmenu.vidm_column_size)*8);
 
 	V_DrawScaledPatch(i - 8, j, 0,
@@ -4948,8 +4995,9 @@ void M_DrawExtrasMovingButton(void)
 void M_DrawExtras(void)
 {
 	UINT8 i;
-	INT32 x = 140 - (48*itemOn) + extrasmenu.offset;
-	INT32 y = 70 + extrasmenu.offset;
+	INT32 t = Easing_OutSine(M_DueFrac(extrasmenu.offset.start, M_EXTRAS_OFSTIME), extrasmenu.offset.dist, 0);
+	INT32 x = 140 - (48*itemOn) + t;
+	INT32 y = 70 + t;
 	patch_t *buttback = W_CachePatchName("OPT_BUTT", PU_CACHE);
 
 	UINT8 *c = NULL;

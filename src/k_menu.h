@@ -184,6 +184,16 @@ struct menu_anim_t
 	INT16 dist;
 };
 
+fixed_t M_TimeFrac(tic_t tics, tic_t duration);
+fixed_t M_ReverseTimeFrac(tic_t tics, tic_t duration);
+fixed_t M_DueFrac(tic_t start, tic_t duration);
+
+// FIXME: C++ template
+#define M_EaseWithTransition(EasingFunc, N) \
+	(menutransition.tics != menutransition.dest ? EasingFunc(menutransition.in ?\
+		M_ReverseTimeFrac(menutransition.tics, menutransition.endmenu->transitionTics) :\
+		M_TimeFrac(menutransition.tics, menutransition.startmenu->transitionTics), 0, N) : 0)
+
 typedef enum
 {
 	MM_NOTHING = 0, // is just displayed until the user do someting
@@ -789,9 +799,11 @@ void M_SetupGametypeMenu(INT32 choice);
 void M_SetupRaceMenu(INT32 choice);
 
 #define CUPMENU_CURSORID (cupgrid.x + (cupgrid.y * CUPMENU_COLUMNS) + (cupgrid.pageno * (CUPMENU_COLUMNS * CUPMENU_ROWS)))
+#define CUPMENU_SLIDETIME 3
 
 extern struct cupgrid_s {
 	SINT8 x, y;
+	menu_anim_t xslide, yslide;
 	size_t pageno;
 	cupheader_t **builtgrid;
 	size_t numpages;
@@ -810,10 +822,12 @@ typedef struct levelsearch_s {
 	boolean checklocked;
 } levelsearch_t;
 
+#define M_LEVELLIST_SLIDETIME 4
+
 extern struct levellist_s {
 	SINT8 cursor;
+	menu_anim_t slide;
 	UINT16 y;
-	UINT16 dest;
 	UINT16 choosemap;
 	UINT16 mapcount;
 	UINT8 newgametype;
@@ -945,13 +959,12 @@ struct modedesc_t
 
 #define MAXCOLUMNMODES   12     //max modes displayed in one column
 #define MAXMODEDESCS     (MAXCOLUMNMODES*3)
+#define M_OPTIONS_OFSTIME 5
 // Keep track of some options properties
 extern struct optionsmenu_s {
 
-	tic_t ticker;		// How long the menu's been open for
-	INT16 offset;		// To make the icons move smoothly when we transition!
-
-	tic_t buttflash;	// Button flashing before transitionning to the new submenu.
+	tic_t ticker;			// How long the menu's been open for
+	menu_anim_t offset;		// To make the icons move smoothly when we transition!
 
 	// For moving the button when we get into a submenu. it's smooth and cool! (normal x/y and target x/y.)
 	// this is only used during menu transitions.
@@ -961,6 +974,7 @@ extern struct optionsmenu_s {
 	INT16 opty;
 	INT16 toptx;
 	INT16 topty;
+	tic_t topt_start;
 
 	// profile garbage
 	boolean profilemenu;		// In profile menu. (Used to know when to get the "PROFILE SETUP" button away....
@@ -1065,10 +1079,12 @@ void M_DrawEggaChannel(void);
 // Extras menu:
 #define DF_ENCORE       0x40
 
+#define M_EXTRAS_OFSTIME 4
+
 extern struct extrasmenu_s {
 
-	tic_t ticker;		// How long the menu's been open for
-	INT16 offset;		// To make the icons move smoothly when we transition!
+	tic_t ticker;			// How long the menu's been open for
+	menu_anim_t offset;		// To make the icons move smoothly when we transition!
 
 	// For moving the button when we get into a submenu. it's smooth and cool! (normal x/y and target x/y.)
 	// this is only used during menu transitions. (and will probably remain unused until we get the statistics menu

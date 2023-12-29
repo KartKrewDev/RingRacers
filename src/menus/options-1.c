@@ -1,6 +1,7 @@
 /// \file  menus/options-1.c
 /// \brief Options Menu
 
+#include "../i_time.h"
 #include "../k_menu.h"
 #include "../k_grandprix.h" // K_CanChangeRules
 #include "../m_cond.h" // Condition Sets
@@ -61,7 +62,7 @@ struct optionsmenu_s optionsmenu;
 void M_ResetOptions(void)
 {
 	optionsmenu.ticker = 0;
-	optionsmenu.offset = 0;
+	optionsmenu.offset.start = 0;
 
 	optionsmenu.optx = 0;
 	optionsmenu.opty = 0;
@@ -120,8 +121,8 @@ void M_OptionsChangeBGColour(INT16 newcolour)
 
 boolean M_OptionsQuit(void)
 {
-	optionsmenu.toptx = 140-1;
-	optionsmenu.topty = 70+1;
+	optionsmenu.toptx = 140;
+	optionsmenu.topty = 70;
 
 	// Reset button behaviour because profile menu is different, since of course it is.
 	if (optionsmenu.resetprofilemenu)
@@ -140,20 +141,6 @@ void M_OptionsTick(void)
 
 	optionsmenu.ticker++;
 
-	if (!instanttransmission)
-	{
-		optionsmenu.offset /= 2;
-	
-		optionsmenu.optx += (optionsmenu.toptx - optionsmenu.optx)/2;
-		optionsmenu.opty += (optionsmenu.topty - optionsmenu.opty)/2;
-
-		if (abs(optionsmenu.optx - optionsmenu.opty) < 2)
-		{
-			optionsmenu.optx = optionsmenu.toptx;
-			optionsmenu.opty = optionsmenu.topty;	// Avoid awkward 1 px errors.
-		}
-	}
-
 	// Move the button for cool animations
 	if (currentMenu == &OPTIONS_MainDef)
 	{
@@ -164,7 +151,7 @@ void M_OptionsTick(void)
 		// I don't like this, it looks like shit but it needs to be done..........
 		if (optionsmenu.profilemenu)
 		{
-			optionsmenu.toptx = 420;
+			optionsmenu.toptx = 440;
 			optionsmenu.topty = 70+1;
 		}
 		else if (currentMenu == &OPTIONS_GameplayItemsDef)
@@ -187,7 +174,7 @@ void M_OptionsTick(void)
 	if (instanttransmission)
 	{
 		optionsmenu.currcolour = currentMenu->extra1;
-		optionsmenu.offset = optionsmenu.fade = 0;
+		optionsmenu.offset.start = optionsmenu.fade = 0;
 
 		optionsmenu.optx = optionsmenu.toptx;
 		optionsmenu.opty = optionsmenu.topty;
@@ -198,6 +185,21 @@ void M_OptionsTick(void)
 			optionsmenu.fade--;
 		if (optionsmenu.currcolour != currentMenu->extra1)
 			M_OptionsChangeBGColour(currentMenu->extra1);
+
+		if (optionsmenu.optx != optionsmenu.toptx || optionsmenu.opty != optionsmenu.topty)
+		{
+			tic_t t = I_GetTime();
+			tic_t n = t - optionsmenu.topt_start;
+			if (n == M_OPTIONS_OFSTIME)
+			{
+				optionsmenu.optx = optionsmenu.toptx;
+				optionsmenu.opty = optionsmenu.topty;
+			}
+			else if (n > M_OPTIONS_OFSTIME)
+			{
+				optionsmenu.topt_start = I_GetTime();
+			}
+		}
 
 		M_GonerCheckLooking();
 	}
@@ -235,26 +237,28 @@ boolean M_OptionsInputs(INT32 ch)
 	if (menucmd[pid].dpad_ud > 0)
 	{
 		M_SetMenuDelay(pid);
-		optionsmenu.offset += 48;
+		optionsmenu.offset.dist = 48;
 		M_NextOpt();
 		S_StartSound(NULL, sfx_s3k5b);
 
 		if (itemOn == 0)
-			optionsmenu.offset -= currentMenu->numitems*48;
+			optionsmenu.offset.dist -= currentMenu->numitems*48;
 
+		optionsmenu.offset.start = I_GetTime();
 
 		return true;
 	}
 	else if (menucmd[pid].dpad_ud < 0)
 	{
 		M_SetMenuDelay(pid);
-		optionsmenu.offset -= 48;
+		optionsmenu.offset.dist = -48;
 		M_PrevOpt();
 		S_StartSound(NULL, sfx_s3k5b);
 
 		if (itemOn == currentMenu->numitems-1)
-			optionsmenu.offset += currentMenu->numitems*48;
+			optionsmenu.offset.dist += currentMenu->numitems*48;
 
+		optionsmenu.offset.start = I_GetTime();
 
 		return true;
 	}

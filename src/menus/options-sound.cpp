@@ -10,6 +10,7 @@
 #include "../console.h"
 #include "../k_menu.h"
 #include "../m_cond.h"
+#include "../m_easing.h"
 #include "../s_sound.h"	// sounds consvars
 #include "../g_game.h" // cv_chatnotifications
 
@@ -171,7 +172,7 @@ void restartaudio_routine(INT32)
 
 void draw_routine()
 {
-	int x = currentMenu->x - (menutransition.tics * 48);
+	int x = currentMenu->x - M_EaseWithTransition(Easing_Linear, 5 * 48);
 	int y = currentMenu->y;
 
 	M_DrawGenericOptions();

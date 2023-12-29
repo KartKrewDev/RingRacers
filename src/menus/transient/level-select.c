@@ -1,6 +1,7 @@
 /// \file  menus/transient/level-select.c
 /// \brief Level Select
 
+#include "../../i_time.h"
 #include "../../k_menu.h"
 #include "../../m_cond.h" // Condition Sets
 #include "../../z_zone.h"
@@ -223,14 +224,23 @@ UINT16 M_GetNextLevelInList(UINT16 mapnum, UINT8 *i, levelsearch_t *levelsearch)
 void M_LevelSelectScrollDest(void)
 {
 	UINT16 m = levellist.mapcount-1;
+	UINT16 dest = (6*levellist.cursor);
 
-	levellist.dest = (6*levellist.cursor);
+	if (dest < 3)
+		dest = 3;
 
-	if (levellist.dest < 3)
-		levellist.dest = 3;
+	if (m && dest > (6*m)-3)
+		dest = (6*m)-3;
 
-	if (m && levellist.dest > (6*m)-3)
-		levellist.dest = (6*m)-3;
+	dest *= 12;
+
+	if (levellist.y != dest)
+	{
+		levellist.slide.start = I_GetTime();
+		levellist.slide.dist = dest - levellist.y;
+	}
+
+	levellist.y = dest;
 }
 
 // Builds the level list we'll be using from the gametype we're choosing and send us to the apropriate menu.
@@ -599,7 +609,7 @@ boolean M_LevelListFromGametype(INT16 gt)
 	}
 
 	M_LevelSelectScrollDest();
-	levellist.y = levellist.dest;
+	levellist.slide.start = 0;
 
 	if (gt != -1)
 	{
@@ -778,7 +788,7 @@ void M_LevelSelectHandler(INT32 choice)
 
 	(void)choice;
 
-	if (levellist.y != levellist.dest)
+	if (I_GetTime() - levellist.slide.start < M_LEVELLIST_SLIDETIME)
 	{
 		return;
 	}
@@ -820,11 +830,4 @@ void M_LevelSelectHandler(INT32 choice)
 
 void M_LevelSelectTick(void)
 {
-
-	INT16 dist = levellist.dest - levellist.y;
-
-	if (abs(dist) == 1)	// cheating to avoid off by 1 errors with divisions.
-		levellist.y = levellist.dest;
-	else
-		levellist.y += dist/2;
 }

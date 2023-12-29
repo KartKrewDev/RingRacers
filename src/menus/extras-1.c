@@ -1,6 +1,7 @@
 /// \file  menus/extras-1.c
 /// \brief Extras Menu
 
+#include "../i_time.h"
 #include "../k_menu.h"
 #include "../m_cond.h"
 #include "../m_cheat.h"
@@ -127,7 +128,7 @@ void M_InitExtras(INT32 choice)
 		return;
 
 	extrasmenu.ticker = 0;
-	extrasmenu.offset = 0;
+	extrasmenu.offset.start = 0;
 
 	extrasmenu.extx = 0;
 	extrasmenu.exty = 0;
@@ -148,7 +149,6 @@ boolean M_ExtrasQuit(void)
 
 void M_ExtrasTick(void)
 {
-	extrasmenu.offset /= 2;
 	extrasmenu.ticker++;
 
 	extrasmenu.extx += (extrasmenu.textx - extrasmenu.extx)/2;
@@ -197,12 +197,14 @@ boolean M_ExtrasInputs(INT32 ch)
 
 	if (menucmd[pid].dpad_ud > 0)
 	{
-		extrasmenu.offset += 48;
+		extrasmenu.offset.dist = 48;
 		M_NextOpt();
 		S_StartSound(NULL, sfx_s3k5b);
 
 		if (itemOn == 0)
-			extrasmenu.offset -= currentMenu->numitems*48;
+			extrasmenu.offset.dist -= currentMenu->numitems*48;
+
+		extrasmenu.offset.start = I_GetTime();
 
 		M_SetMenuDelay(pid);
 		return true;
@@ -210,12 +212,14 @@ boolean M_ExtrasInputs(INT32 ch)
 
 	else if (menucmd[pid].dpad_ud < 0)
 	{
-		extrasmenu.offset -= 48;
+		extrasmenu.offset.dist = -48;
 		M_PrevOpt();
 		S_StartSound(NULL, sfx_s3k5b);
 
 		if (itemOn == currentMenu->numitems-1)
-			extrasmenu.offset += currentMenu->numitems*48;
+			extrasmenu.offset.dist += currentMenu->numitems*48;
+
+		extrasmenu.offset.start = I_GetTime();
 
 		M_SetMenuDelay(pid);
 		return true;
