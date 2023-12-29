@@ -3323,9 +3323,6 @@ static boolean M_LevelSelectHasBG(menu_t *check)
 
 static boolean M_LevelSelectToTimeAttackTransitionHelper(void)
 {
-	if (menutransition.tics == 0)
-		return false;
-
 	return (M_LevelSelectHasBG(menutransition.startmenu))
 		!= M_LevelSelectHasBG(menutransition.endmenu);
 }
@@ -3358,7 +3355,7 @@ void M_DrawSealedBack(void)
 void M_DrawTimeAttack(void)
 {
 	UINT16 map = levellist.choosemap;
-	INT16 t = (48*menutransition.tics);
+	INT16 t = M_EaseWithTransition(Easing_Linear, 5 * 48);
 	INT16 leftedge = 149+t+16;
 	INT16 rightedge = 149+t+155;
 	INT16 opty = 140;
