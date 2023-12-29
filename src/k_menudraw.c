@@ -2378,7 +2378,7 @@ void M_DrawCharacterSelect(void)
 	UINT8 priority = 0;
 	INT16 quadx, quady;
 	INT16 skin;
-	INT32 basex = optionsmenu.profile ? (64 + (menutransition.tics*32)) : 0;
+	INT32 basex = optionsmenu.profile ? (64 + M_EaseWithTransition(Easing_Linear, 5 * 32)) : 0;
 	boolean forceskin = M_CharacterSelectForceInAction();
 
 	if (setup_numplayers > 0)
@@ -4401,7 +4401,7 @@ void M_DrawProfileSelect(void)
 	INT32 i;
 	const INT32 maxp = PR_GetNumProfiles();
 	INT32 x = 160 - optionsmenu.profilen*(128 + 128/8) + Easing_OutSine(M_DueFrac(optionsmenu.offset.start, M_OPTIONS_OFSTIME), optionsmenu.offset.dist, 0);
-	INT32 y = 35 + menutransition.tics*32;
+	INT32 y = 35 + M_EaseWithTransition(Easing_Linear, 5 * 32);
 
 	M_DrawMenuTooltips();
 
@@ -4414,7 +4414,7 @@ void M_DrawProfileSelect(void)
 		profile_t *p = PR_GetProfile(i);
 
 		// don't draw the card in this specific scenario
-		if (!(menutransition.tics && optionsmenu.profile != NULL && optionsmenu.profilen == i))
+		if (!(optionsmenu.profile != NULL && optionsmenu.profilen == i))
 			M_DrawProfileCard(x, y, i > maxp, p);
 
 		x += 128 + 128/8;
@@ -4422,9 +4422,15 @@ void M_DrawProfileSelect(void)
 
 	// needs to be drawn since it happens on the transition
 	if (optionsmenu.profile != NULL)
-		M_DrawProfileCard(optionsmenu.optx, optionsmenu.opty, false, optionsmenu.profile);
-
-
+	{
+		fixed_t t = M_DueFrac(optionsmenu.topt_start, M_OPTIONS_OFSTIME);
+		M_DrawProfileCard(
+			Easing_OutQuad(t, optionsmenu.optx, optionsmenu.toptx),
+			Easing_OutQuad(t, optionsmenu.opty, optionsmenu.topty),
+			false,
+			optionsmenu.profile
+		);
+	}
 }
 
 // Profile edition menu
@@ -4432,7 +4438,7 @@ void M_DrawEditProfile(void)
 {
 
 	INT32 y = 34;
-	INT32 x = (145 + (menutransition.tics*32));
+	INT32 x = (145 + M_EaseWithTransition(Easing_InSine, 5 * 48));
 	INT32 i;
 
 	// Tooltip
@@ -4453,7 +4459,7 @@ void M_DrawEditProfile(void)
 		y = currentMenu->menuitems[i].mvar2;
 
 		// Background -- 169 is the plague colourization
-		V_DrawFill(0, y, 400 - (menutransition.tics*64), 10, itemOn == i ? 169 : 30);
+		V_DrawFill(0, y, 400 - M_EaseWithTransition(Easing_InQuad, 5 * 128), 10, itemOn == i ? 169 : 30);
 
 		if (i == itemOn)
 		{
@@ -4483,7 +4489,13 @@ void M_DrawEditProfile(void)
 	// Finally, draw the card ontop
 	if (optionsmenu.profile != NULL)
 	{
-		M_DrawProfileCard(optionsmenu.optx, optionsmenu.opty, false, optionsmenu.profile);
+		fixed_t t = M_DueFrac(optionsmenu.topt_start, M_OPTIONS_OFSTIME);
+		M_DrawProfileCard(
+			Easing_OutQuad(t, optionsmenu.optx, optionsmenu.toptx),
+			Easing_OutQuad(t, optionsmenu.opty, optionsmenu.topty),
+			false,
+			optionsmenu.profile
+		);
 	}
 }
 

@@ -82,6 +82,7 @@ void M_StartEditProfile(INT32 c)
 		optionsmenu.opty = 35;
 		optionsmenu.toptx = 130/2;
 		optionsmenu.topty = 0;
+		optionsmenu.topt_start = I_GetTime();
 
 		// setup cvars
 		if (optionsmenu.profile->version)
