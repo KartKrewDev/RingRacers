@@ -4163,7 +4163,7 @@ void M_DrawOptions(void)
 	fixed_t t = Easing_OutSine(M_DueFrac(optionsmenu.offset.start, M_OPTIONS_OFSTIME), optionsmenu.offset.dist * FRACUNIT, 0);
 	fixed_t x = (140 - (48*itemOn))*FRACUNIT + t;
 	fixed_t y = 70*FRACUNIT + t;
-	fixed_t tx = M_EaseWithTransition(Easing_Linear, 5 * 64 * FRACUNIT);
+	fixed_t tx = M_EaseWithTransition(Easing_InQuart, 5 * 64 * FRACUNIT);
 	patch_t *buttback = W_CachePatchName("OPT_BUTT", PU_CACHE);
 
 	UINT8 *c = NULL;
