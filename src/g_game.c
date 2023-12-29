@@ -5892,7 +5892,18 @@ void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skippr
 	comebackshowninfo = false;
 
 	if (!demo.playback && !netgame) // Netgame sets random seed elsewhere, demo playback sets seed just before us!
-		P_ClearRandom(M_RandomizedSeed()); // Use a more "Random" random seed
+	{
+		if (modeattacking != ATTACKING_NONE && mapheaderinfo[map-1]->lumpnum != LUMPERROR)
+		{
+			// Use deterministic starting RNG for Time Attack
+			P_ClearRandom(mapheaderinfo[map-1]->lumpnamehash);
+		}
+		else
+		{
+			// Use a more "Random" random seed
+			P_ClearRandom(M_RandomizedSeed());
+		}
+	}
 
 	// Clear a bunch of variables
 	redscore = bluescore = lastmap = 0;
