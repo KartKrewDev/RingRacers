@@ -178,6 +178,12 @@ static void M_DrawCursorHand(INT32 x, INT32 y)
 	V_DrawScaledPatch(x - 24, y, 0, W_CachePatchName("M_CURSOR", PU_CACHE));
 }
 
+static void M_DrawUnderline(INT32 left, INT32 right, INT32 y)
+{
+	if (menutransition.tics == menutransition.dest)
+		V_DrawFill(left - 1, y + 5, (right - left) + 11, 2, 31);
+}
+
 static patch_t *addonsp[NUM_EXT+5];
 
 static patch_t *bgMapImage;
@@ -2553,25 +2559,27 @@ void M_DrawRaceDifficulty(void)
 
 				INT32 f = (i == itemOn) ? highlightflags : 0;
 
-				V_DrawMenuString(140 + tx + (i == itemOn ? 1 : 0), y, f, currentMenu->menuitems[i].text);
-
 				if (currentMenu->menuitems[i].status & IT_CVAR)
 				{
 					// implicitely we'll only take care of normal cvars
 					INT32 cx = 260 + tx;
 					consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
 
-					V_DrawCenteredMenuString(cx, y, f, cv->string);
-
 					if (i == itemOn)
 					{
 
 						INT32 w = V_MenuStringWidth(cv->string, 0)/2;
 
+						M_DrawUnderline(140, 260 + w, y);
+
 						V_DrawMenuString(cx - 10 - w - (skullAnimCounter/5), y, highlightflags, "\x1C"); // left arrow
 						V_DrawMenuString(cx + w + 2 + (skullAnimCounter/5), y, highlightflags, "\x1D"); // right arrow
 					}
+
+					V_DrawCenteredMenuString(cx, y, f, cv->string);
 				}
+
+				V_DrawMenuString(140 + tx + (i == itemOn ? 1 : 0), y, f, currentMenu->menuitems[i].text);
 
 				if (i == itemOn)
 				{
@@ -4230,7 +4238,10 @@ void M_DrawGenericOptions(void)
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
 		if (i == itemOn)
+		{
 			cursory = y;
+			M_DrawUnderline(x, BASEVIDWIDTH - x, y);
+		}
 		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
 		{
 			case IT_PATCH:
