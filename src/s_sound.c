@@ -1764,12 +1764,6 @@ void S_TickSoundTest(void)
 		goto handlenextsong;
 	}
 
-	if (soundtest.autosequence == false)
-	{
-		// There's nothing else for us here.
-		return;
-	}
-
 	if (Music_DurationLeft(S_SoundTestTune(0)) == 0)
 	{
 		goto handlenextsong;
