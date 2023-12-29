@@ -614,7 +614,7 @@ void K_ProcessTerrainEffect(mobj_t *mo)
 	}
 
 	// Bumpy floor
-	if (terrain->flags & TRF_STAIRJANK)
+	if (terrain->flags & TRF_STAIRJANK && player->speed != 0)
 	{
 		/* use a shorter sound if not two tics have passed
 		 * since the last step */
