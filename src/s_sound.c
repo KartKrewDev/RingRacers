@@ -1657,6 +1657,12 @@ boolean S_SoundTestCanSequenceFade(void)
 		soundtest.currenttrack == soundtest.current->numtracks-1;
 }
 
+static void S_SoundTestReconfigure(const char *tune)
+{
+	Music_Remap(tune, soundtest.current->name[soundtest.currenttrack]);
+	Music_Play(tune);
+}
+
 void S_SoundTestPlay(void)
 {
 	UINT32 sequencemaxtime = 0;
@@ -1670,9 +1676,8 @@ void S_SoundTestPlay(void)
 	soundtest.playing = true;
 	soundtest.tune = (soundtest.autosequence == true && S_SoundTestCanSequenceFade() == true);
 
-	Music_Remap(soundtest.tune, soundtest.current->name[soundtest.currenttrack]);
-	Music_Loop(soundtest.tune, !soundtest.current->basenoloop[soundtest.currenttrack]);
-	Music_Play(soundtest.tune);
+	S_SoundTestReconfigure("stereo");
+	S_SoundTestReconfigure("stereo_fade");
 
 	// Assuming this song is now actually playing
 	sequencemaxtime = I_GetSongLength();
@@ -1701,8 +1706,12 @@ void S_SoundTestPlay(void)
 		}
 	}
 
-	// ms to TICRATE conversion
-	Music_DelayEnd(S_SoundTestTune(0), (TICRATE*sequencemaxtime)/1000);
+	Music_DelayEnd(
+		S_SoundTestCanSequenceFade() ? "stereo_fade" : "stereo",
+		(TICRATE*sequencemaxtime)/1000 // ms to TICRATE conversion
+	);
+
+	Music_Suspend(S_SoundTestTune(1));
 }
 
 void S_SoundTestStop(void)

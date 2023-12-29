@@ -80,6 +80,27 @@ static void M_SoundTestSeq(INT32 choice)
 	(void)choice;
 
 	soundtest.autosequence ^= true;
+
+	if (soundtest.playing && S_SoundTestCanSequenceFade())
+	{
+		boolean unfaded = Music_DurationLeft("stereo_fade") > Music_FadeOutDuration("stereo_fade") * TICRATE / 1000;
+
+		// 1) You cannot cancel a fade once it has started
+		// 2) However, if the fade wasn't heard, switching
+		//    over restarts the fade
+		if (!unfaded && Music_Suspended("stereo_fade"))
+		{
+			Music_DelayEnd("stereo_fade", 0);
+			unfaded = true;
+		}
+
+		if (unfaded)
+		{
+			soundtest.tune ^= 1;
+			Music_UnSuspend(S_SoundTestTune(0));
+			Music_Suspend(S_SoundTestTune(1));
+		}
+	}
 }
 
 static void M_SoundTestShf(INT32 choice)
