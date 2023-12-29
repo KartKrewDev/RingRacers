@@ -4248,10 +4248,11 @@ void M_DrawGenericOptions(void)
 									y += 16;
 								}
 								break;
-							default:
+							default: {
+								boolean isDefault = CV_IsSetToDefault(cv);
 								w = V_StringWidth(cv->string, 0);
 								V_DrawString(BASEVIDWIDTH - x - w, y,
-									((cv->flags & CV_CHEAT) && !CV_IsSetToDefault(cv) ? warningflags : highlightflags), cv->string);
+									(!isDefault ? warningflags : highlightflags), cv->string);
 								if (i == itemOn)
 								{
 									V_DrawCharacter(BASEVIDWIDTH - x - 10 - w - (skullAnimCounter/5), y,
@@ -4259,7 +4260,12 @@ void M_DrawGenericOptions(void)
 									V_DrawCharacter(BASEVIDWIDTH - x + 2 + (skullAnimCounter/5), y,
 											'\x1D' | highlightflags, false); // right arrow
 								}
+								if (!isDefault)
+								{
+									V_DrawCharacter(BASEVIDWIDTH - x + (i == itemOn ? 13 : 5), y - 2, '.' | warningflags, false);
+								}
 								break;
+							}
 						}
 						break;
 					}
