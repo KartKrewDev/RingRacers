@@ -745,7 +745,7 @@ static inline void P_DeviceRumbleTick(void)
 			low = high = 65536 / (3+player->numsneakers);
 		}
 		else if (((player->boostpower < FRACUNIT) || (player->stairjank > 8))
-			&& P_IsObjectOnGround(player->mo))
+			&& P_IsObjectOnGround(player->mo) && player->speed != 0)
 		{
 			low = high = 65536 / 32;
 		}
