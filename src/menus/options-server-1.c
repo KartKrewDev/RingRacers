@@ -6,8 +6,15 @@
 menuitem_t OPTIONS_Server[] =
 {
 
+	{IT_HEADER, "Advertising...", NULL,
+		NULL, {NULL}, 0, 0},
+
 	{IT_STRING | IT_CVAR | IT_CV_STRING, "Server Name", "Change the name of your server.",
 		NULL, {.cvar = &cv_servername}, 0, 0},
+
+
+	{IT_HEADER, "Progression...", NULL,
+		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Intermission", "Set how long to stay on the result screen.",
 		NULL, {.cvar = &cv_inttime}, 0, 0},
@@ -19,7 +26,7 @@ menuitem_t OPTIONS_Server[] =
 		NULL, {.cvar = &cv_votetime}, 0, 0},
 
 
-	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+	{IT_HEADER, "Joining...", NULL,
 		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Maximum Players", "How many players can play at once.",
@@ -37,13 +44,18 @@ menuitem_t OPTIONS_Server[] =
 	{IT_STRING | IT_CVAR, "Pause Permissions", "Sets who can pause the game.",
 		NULL, {.cvar = &cv_pause}, 0, 0},
 
+
+	{IT_HEADER, "Chat...", NULL,
+		NULL, {NULL}, 0, 0},
+
 	{IT_STRING | IT_CVAR, "Mute Chat", "Prevents non-admins from sending chat messages.",
 		NULL, {.cvar = &cv_mute}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Chat Spam Protection", "Prevents too many message from a single player.",
 		NULL, {.cvar = &cv_chatspamprotection}, 0, 0},
 
-	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+
+	{IT_SPACE | IT_DYBIGSPACE, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_SUBMENU, "Advanced...", "Advanced options. Be careful when messing with these!",
