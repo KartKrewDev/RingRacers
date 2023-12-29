@@ -2514,18 +2514,14 @@ void M_DrawRaceDifficulty(void)
 	patch_t *box = W_CachePatchName("M_DBOX", PU_CACHE);
 
 	INT32 i;
-	INT32 x = 120;
+	INT32 tx = M_EaseWithTransition(Easing_Linear, 5 * 48);
+	INT32 x = 120 + tx;
 	INT32 y = 48;
 
 	M_DrawMenuTooltips();
 
 	// Draw the box for difficulty...
-	V_DrawFixedPatch((111 + 48*menutransition.tics)*FRACUNIT, 33*FRACUNIT, FRACUNIT, 0, box, NULL);
-
-	if (menutransition.tics)
-	{
-		x += 48 * menutransition.tics;
-	}
+	V_DrawFixedPatch((111 + tx)*FRACUNIT, 33*FRACUNIT, FRACUNIT, 0, box, NULL);
 
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
@@ -2540,11 +2536,7 @@ void M_DrawRaceDifficulty(void)
 				y -= GM_YOFFSET;
 			}
 
-
-			if (menutransition.tics)
-			{
-				x += 48 * menutransition.tics;
-			}
+			x += tx;
 		}
 
 		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
@@ -2556,12 +2548,12 @@ void M_DrawRaceDifficulty(void)
 
 				INT32 f = (i == itemOn) ? highlightflags : 0;
 
-				V_DrawString(140 + 48*menutransition.tics + (i == itemOn ? 1 : 0), y, f, currentMenu->menuitems[i].text);
+				V_DrawString(140 + tx + (i == itemOn ? 1 : 0), y, f, currentMenu->menuitems[i].text);
 
 				if (currentMenu->menuitems[i].status & IT_CVAR)
 				{
 					// implicitely we'll only take care of normal cvars
-					INT32 cx = 260 + 48*menutransition.tics;
+					INT32 cx = 260 + tx;
 					consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
 
 					V_DrawCenteredString(cx, y, f, cv->string);
@@ -2578,7 +2570,7 @@ void M_DrawRaceDifficulty(void)
 
 				if (i == itemOn)
 				{
-					V_DrawScaledPatch(140 + 48*menutransition.tics - 24, y, 0,
+					V_DrawScaledPatch(140 + tx - 24, y, 0,
 						W_CachePatchName("M_CURSOR", PU_CACHE));
 				}
 
@@ -2611,8 +2603,8 @@ void M_DrawRaceDifficulty(void)
 				if (currentMenu->menuitems[i].status & IT_CVAR)
 				{
 
-					INT32 fx = (cx - 48*menutransition.tics);
-					INT32 centx = fx + (320-fx)/2 + (menutransition.tics*48);	// undo the menutransition movement to redo it here otherwise the text won't move at the same speed lole.
+					INT32 fx = (cx - tx);
+					INT32 centx = fx + (320-fx)/2 + (tx);	// undo the menutransition movement to redo it here otherwise the text won't move at the same speed lole.
 
 					// implicitely we'll only take care of normal consvars
 					consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
