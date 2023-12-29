@@ -4211,20 +4211,94 @@ void M_DrawOptions(void)
 
 }
 
+static void M_DrawOptionsBoxTerm(INT32 x, INT32 top, INT32 bottom)
+{
+	INT32 px = x - 20;
+
+	V_DrawFill(px, top + 4, 2, bottom - top, orangemap[0]);
+	V_DrawFill(px + 1, top + 5, 2, bottom - top, 31);
+
+	V_DrawFill(BASEVIDWIDTH - px - 2, top + 4, 2, bottom - top, orangemap[0]);
+	V_DrawFill(BASEVIDWIDTH - px, top + 5, 1, bottom - top, 31);
+
+	V_DrawFill(px, bottom + 2, BASEVIDWIDTH - (2 * px), 2, orangemap[0]);
+	V_DrawFill(px, bottom + 3, BASEVIDWIDTH - (2 * px), 2, 31);
+}
+
 void M_DrawGenericOptions(void)
 {
 	INT32 x = currentMenu->x - M_EaseWithTransition(Easing_Linear, 5 * 48), y = currentMenu->y, w, i, cursory = 0;
+	INT32 expand = -1;
+	INT32 boxy = 0;
+	boolean collapse = false;
 
 	M_DrawMenuTooltips();
 	M_DrawOptionsMovingButton();
 
+	for (i = itemOn; i >= 0; --i)
+	{
+		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
+		{
+			case IT_DYBIGSPACE:
+				goto box_found;
+
+			case IT_HEADERTEXT:
+				expand = i;
+				goto box_found;
+		}
+	}
+box_found:
+
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
+		boolean term = false;
+
+		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
+		{
+			case IT_DYBIGSPACE:
+				collapse = false;
+				term = (boxy != 0);
+				break;
+
+			case IT_HEADERTEXT:
+				collapse = (i != expand);
+
+				if (collapse)
+				{
+					term = (boxy != 0);
+				}
+				else
+				{
+					if (menutransition.tics == menutransition.dest)
+					{
+						INT32 px = x - 20;
+						V_DrawFill(px, y + 6, BASEVIDWIDTH - (2 * px), 2, orangemap[0]);
+						V_DrawFill(px + 1, y + 7, BASEVIDWIDTH - (2 * px), 2, 31);
+					}
+
+					y += 2;
+					boxy = y;
+				}
+				break;
+
+			default:
+				if (collapse)
+					continue;
+		}
+
+		if (term)
+		{
+			M_DrawOptionsBoxTerm(x, boxy, y);
+			y += SMALLLINEHEIGHT;
+			boxy = 0;
+		}
+
 		if (i == itemOn)
 		{
 			cursory = y;
 			M_DrawUnderline(x, BASEVIDWIDTH - x, y);
 		}
+
 		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
 		{
 			case IT_PATCH:
@@ -4346,11 +4420,14 @@ void M_DrawGenericOptions(void)
 				if (currentMenu->menuitems[i].mvar1)
 					y = currentMenu->y+currentMenu->menuitems[i].mvar1;
 
-				V_DrawMenuString(x-16, y, M_ALTCOLOR, currentMenu->menuitems[i].text);
-				y += SMALLLINEHEIGHT;
+				V_DrawMenuString(x - (collapse ? 0 : 16), y, M_ALTCOLOR, currentMenu->menuitems[i].text);
+				y += SMALLLINEHEIGHT + 1;
 				break;
 		}
 	}
+
+	if (boxy)
+		M_DrawOptionsBoxTerm(x, boxy, y);
 
 	// DRAW THE SKULL CURSOR
 	if (((currentMenu->menuitems[itemOn].status & IT_DISPLAY) == IT_PATCH)
