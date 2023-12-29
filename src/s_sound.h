@@ -186,7 +186,7 @@ extern struct cursongcredit
 
 extern struct soundtest
 {
-	const char *tune;					// Tune used for music system
+	UINT8 tune;							// Tune used for music system
 
 	boolean playing; 					// Music is playing?
 	boolean justopened;					// Menu visual assist
@@ -208,6 +208,8 @@ void S_SoundTestPlay(void);
 void S_SoundTestStop(void);
 void S_SoundTestTogglePause(void);
 void S_TickSoundTest(void);
+const char *S_SoundTestTune(UINT8 invert);
+boolean S_SoundTestCanSequenceFade(void);
 
 extern musicdef_t *musicdefstart;
 

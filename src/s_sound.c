@@ -1227,7 +1227,7 @@ void S_AttemptToRestoreMusic(void)
 
 musicdef_t *musicdefstart = NULL;
 struct cursongcredit cursongcredit; // Currently displayed song credit info
-struct soundtest soundtest = {.tune = ""}; // Sound Test (sound test)
+struct soundtest soundtest; // Sound Test (sound test)
 
 static void S_InsertMusicAtSoundTestSequenceTail(const char *musname, UINT16 map, UINT8 altref, musicdef_t ***tail)
 {
@@ -1644,10 +1644,22 @@ updatetrackonly:
 	}
 }
 
+const char *S_SoundTestTune(UINT8 invert)
+{
+	return soundtest.tune ^ invert ? "stereo_fade" : "stereo";
+}
+
+boolean S_SoundTestCanSequenceFade(void)
+{
+	return
+		soundtest.current->basenoloop[soundtest.currenttrack] == false &&
+		// Only fade out if we're the last track for this song.
+		soundtest.currenttrack == soundtest.current->numtracks-1;
+}
+
 void S_SoundTestPlay(void)
 {
 	UINT32 sequencemaxtime = 0;
-	boolean dosequencefadeout = false;
 
 	if (soundtest.current == NULL)
 	{
@@ -1656,19 +1668,7 @@ void S_SoundTestPlay(void)
 	}
 
 	soundtest.playing = true;
-
-	soundtest.tune = "stereo";
-
-	if (soundtest.current->basenoloop[soundtest.currenttrack] == false)
-	{
-		// Only fade out if we're the last track for this song.
-		dosequencefadeout = (soundtest.currenttrack == soundtest.current->numtracks-1);
-
-		if (dosequencefadeout)
-		{
-			soundtest.tune = "stereo_fade";
-		}
-	}
+	soundtest.tune = (soundtest.autosequence == true && S_SoundTestCanSequenceFade() == true);
 
 	Music_Remap(soundtest.tune, soundtest.current->name[soundtest.currenttrack]);
 	Music_Loop(soundtest.tune, !soundtest.current->basenoloop[soundtest.currenttrack]);
@@ -1702,7 +1702,7 @@ void S_SoundTestPlay(void)
 	}
 
 	// ms to TICRATE conversion
-	Music_DelayEnd(soundtest.tune, (TICRATE*sequencemaxtime)/1000);
+	Music_DelayEnd(S_SoundTestTune(0), (TICRATE*sequencemaxtime)/1000);
 }
 
 void S_SoundTestStop(void)
@@ -1712,7 +1712,7 @@ void S_SoundTestStop(void)
 		return;
 	}
 
-	soundtest.tune = "";
+	soundtest.tune = 0;
 
 	soundtest.playing = false;
 	soundtest.autosequence = false;
@@ -1730,13 +1730,14 @@ void S_SoundTestTogglePause(void)
 		return;
 	}
 
-	if (Music_Paused(soundtest.tune))
+	const char *tune = S_SoundTestTune(0);
+	if (Music_Paused(tune))
 	{
-		Music_UnPause(soundtest.tune);
+		Music_UnPause(tune);
 	}
 	else
 	{
-		Music_Pause(soundtest.tune);
+		Music_Pause(tune);
 	}
 }
 
@@ -1760,7 +1761,7 @@ void S_TickSoundTest(void)
 		return;
 	}
 
-	if (Music_DurationLeft(soundtest.tune) == 0)
+	if (Music_DurationLeft(S_SoundTestTune(0)) == 0)
 	{
 		goto handlenextsong;
 	}

@@ -37,11 +37,11 @@ static void M_SoundTestMainControl(INT32 choice)
 
 	if (currentMenu->menuitems[itemOn].mvar1 == 1) // Play
 	{
-		if (Music_Paused(soundtest.tune) == true)
+		if (Music_Paused(S_SoundTestTune(0)) == true)
 		{
 			S_SoundTestTogglePause();
 		}
-		else if (Music_Paused(soundtest.tune) == false)
+		else
 		{
 			S_SoundTestPlay();
 		}
@@ -50,7 +50,7 @@ static void M_SoundTestMainControl(INT32 choice)
 	{
 		if (currentMenu->menuitems[itemOn].mvar1 == 2) // Pause
 		{
-			if (Music_Paused(soundtest.tune) == false)
+			if (Music_Paused(S_SoundTestTune(0)) == false)
 			{
 				S_SoundTestTogglePause();
 			}
