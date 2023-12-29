@@ -1202,6 +1202,8 @@ void M_HandleImageDef(INT32 choice);
 #define recommendedflags V_GREENMAP
 #define warningflags V_ORANGEMAP
 
+#define M_ALTCOLOR V_ORANGEMAP
+
 // For some menu highlights
 UINT16 M_GetCvPlayerColor(UINT8 pnum);
 

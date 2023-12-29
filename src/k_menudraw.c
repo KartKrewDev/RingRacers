@@ -3438,7 +3438,7 @@ void M_DrawTimeAttack(void)
 		if ((gametypes[levellist.newgametype]->rules & GTR_CIRCUIT)
 			&& (mapheaderinfo[map]->numlaps != 1))
 		{
-			V_DrawRightAlignedMenuString(rightedge-12, timeheight, highlightflags, "BEST LAP:");
+			V_DrawRightAlignedMenuString(rightedge-12, timeheight, M_ALTCOLOR, "BEST LAP:");
 			K_drawKartTimestamp(laprec, 162+t, timeheight+6, 0, 2);
 			timeheight += 30;
 		}
@@ -3447,7 +3447,7 @@ void M_DrawTimeAttack(void)
 			timeheight += 15;
 		}
 
-		V_DrawRightAlignedMenuString(rightedge-12, timeheight, highlightflags, "BEST TIME:");
+		V_DrawRightAlignedMenuString(rightedge-12, timeheight, M_ALTCOLOR, "BEST TIME:");
 		K_drawKartTimestamp(timerec, 162+t, timeheight+6, 0, 1);
 
 		// SPB Attack control hint + menu overlay
@@ -3480,7 +3480,7 @@ void M_DrawTimeAttack(void)
 
 			case IT_HEADERTEXT:
 
-				V_DrawMenuString(leftedge, opty, highlightflags, currentMenu->menuitems[i].text);
+				V_DrawMenuString(leftedge, opty, M_ALTCOLOR, currentMenu->menuitems[i].text);
 				opty += 10;
 				break;
 
@@ -4337,7 +4337,7 @@ void M_DrawGenericOptions(void)
 				if (currentMenu->menuitems[i].mvar1)
 					y = currentMenu->y+currentMenu->menuitems[i].mvar1;
 
-				V_DrawMenuString(x-16, y, highlightflags, currentMenu->menuitems[i].text);
+				V_DrawMenuString(x-16, y, M_ALTCOLOR, currentMenu->menuitems[i].text);
 				y += SMALLLINEHEIGHT;
 				break;
 		}
