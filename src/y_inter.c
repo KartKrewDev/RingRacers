@@ -2086,8 +2086,6 @@ void Y_StartIntermission(void)
 	Automate_Run(AEV_INTERMISSIONSTART);
 	bgpatch = W_CachePatchName("MENUBG", PU_STATIC);
 	widebgpatch = W_CachePatchName("WEIRDRES", PU_STATIC);
-
-	M_UpdateMenuBGImage(true);
 }
 
 // ======

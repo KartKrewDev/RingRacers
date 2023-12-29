@@ -183,8 +183,67 @@ static void M_DrawSlider(INT32 x, INT32 y, const consvar_t *cv, boolean ontop)
 	V_DrawScaledPatch(x - 4 + (((SLIDER_RANGE)*8 + 4)*range)/100, y, 0, p);
 }
 
-
 static patch_t *addonsp[NUM_EXT+5];
+
+static patch_t *bgMapImage;
+void M_PickMenuBGMap(void)
+{
+	UINT16 *allowedMaps;
+	size_t allowedMapsCount = 0;
+	UINT16 ret = 0;
+	INT32 i;
+
+	allowedMaps = Z_Malloc(nummapheaders * sizeof(UINT16), PU_STATIC, NULL);
+
+	for (i = 0; i < nummapheaders; i++)
+	{
+		if (mapheaderinfo[i] == NULL || mapheaderinfo[i]->lumpnum == LUMPERROR)
+		{
+			// Doesn't exist?
+			continue;
+		}
+
+		if (mapheaderinfo[i]->thumbnailPic == NULL)
+		{
+			// No image...
+			continue;
+		}
+
+		if ((mapheaderinfo[i]->typeoflevel & (TOL_SPECIAL|TOL_VERSUS)) != 0)
+		{
+			// Don't spoil Special Stages or bosses.
+			continue;
+		}
+
+		if ((mapheaderinfo[i]->menuflags & LF2_HIDEINMENU) == LF2_HIDEINMENU)
+		{
+			// "Hide in menu"... geddit?!
+			continue;
+		}
+
+		if (M_MapLocked(i + 1) == true)
+		{
+			// We haven't earned this one.
+			continue;
+		}
+
+		// Got past the gauntlet, so we can allow this one.
+		allowedMaps[ allowedMapsCount++ ] = i;
+	}
+
+	if (allowedMapsCount > 0)
+	{
+		ret = allowedMaps[ M_RandomKey(allowedMapsCount) ];
+	}
+	Z_Free(allowedMaps);
+
+	bgMapImage = mapheaderinfo[ret]->thumbnailPic;
+
+	if (bgMapImage == NULL)
+	{
+		bgMapImage = W_CachePatchName("MENUBG4", PU_CACHE);
+	}
+}
 
 static fixed_t bgText1Scroll = 0;
 static fixed_t bgText2Scroll = 0;
@@ -213,6 +272,11 @@ void M_UpdateMenuBGImage(boolean forceReset)
 	{
 		bgImageScroll = (3 * BASEVIDWIDTH) * (FRACUNIT / 4);
 	}
+
+	if (forceReset == true)
+	{
+		M_PickMenuBGMap();
+	}
 }
 
 void M_DrawMenuBackground(void)
@@ -223,7 +287,14 @@ void M_DrawMenuBackground(void)
 	fixed_t text1loop = SHORT(text1->height)*FRACUNIT;
 	fixed_t text2loop = SHORT(text2->width)*FRACUNIT;
 
-	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUBG4", PU_CACHE), NULL);
+	if (bgMapImage == NULL)
+	{
+		M_PickMenuBGMap();
+	}
+
+	V_DrawFixedPatch(0, 0, FRACUNIT, 0, bgMapImage, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_SLATE, GTC_MENUCACHE));
+	V_DrawFixedPatch(0, 0, FRACUNIT, V_ADD, W_CachePatchName("MENUCUTD", PU_CACHE), NULL);
+	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUCUT", PU_CACHE), NULL);
 
 	V_DrawFixedPatch(-bgImageScroll, 0, FRACUNIT, 0, W_CachePatchName("MENUBG1", PU_CACHE), NULL);
 	V_DrawFixedPatch(-bgImageScroll, 0, FRACUNIT, 0, W_CachePatchName(bgImageName, PU_CACHE), NULL);

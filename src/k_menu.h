@@ -1181,6 +1181,7 @@ void M_HandleImageDef(INT32 choice);
 // For some menu highlights
 UINT16 M_GetCvPlayerColor(UINT8 pnum);
 
+void M_PickMenuBGMap(void);
 void M_UpdateMenuBGImage(boolean forceReset);
 void M_DrawMenuBackground(void);
 void M_DrawMenuForeground(void);
