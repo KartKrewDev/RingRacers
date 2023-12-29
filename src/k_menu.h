@@ -184,6 +184,16 @@ struct menu_anim_t
 	INT16 dist;
 };
 
+fixed_t M_TimeFrac(tic_t tics, tic_t duration);
+fixed_t M_ReverseTimeFrac(tic_t tics, tic_t duration);
+fixed_t M_DueFrac(tic_t start, tic_t duration);
+
+// FIXME: C++ template
+#define M_EaseWithTransition(EasingFunc, N) \
+	(menutransition.tics != menutransition.dest ? EasingFunc(menutransition.in ?\
+		M_ReverseTimeFrac(menutransition.tics, menutransition.endmenu->transitionTics) :\
+		M_TimeFrac(menutransition.tics, menutransition.startmenu->transitionTics), 0, N) : 0)
+
 typedef enum
 {
 	MM_NOTHING = 0, // is just displayed until the user do someting

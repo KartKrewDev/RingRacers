@@ -80,28 +80,22 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 #include "discord.h"
 #endif
 
-static ATTRUNUSED fixed_t M_TimeFrac(tic_t tics, tic_t duration)
+fixed_t M_TimeFrac(tic_t tics, tic_t duration)
 {
 	return tics < duration ? (tics * FRACUNIT + rendertimefrac) / duration : FRACUNIT;
 }
 
-static ATTRUNUSED fixed_t M_ReverseTimeFrac(tic_t tics, tic_t duration)
+fixed_t M_ReverseTimeFrac(tic_t tics, tic_t duration)
 {
 	return FRACUNIT - M_TimeFrac(duration - tics, duration);
 }
 
-static ATTRUNUSED fixed_t M_DueFrac(tic_t start, tic_t duration)
+fixed_t M_DueFrac(tic_t start, tic_t duration)
 {
 	tic_t t = I_GetTime();
 	tic_t n = t - start;
 	return M_TimeFrac(min(n, duration), duration);
 }
-
-// FIXME: C++ template
-#define M_EaseWithTransition(EasingFunc, N) \
-	(menutransition.tics != menutransition.dest ? EasingFunc(menutransition.in ?\
-		M_ReverseTimeFrac(menutransition.tics, menutransition.endmenu->transitionTics) :\
-		M_TimeFrac(menutransition.tics, menutransition.startmenu->transitionTics), 0, N) : 0)
 
 #define SKULLXOFF -32
 #define LINEHEIGHT 16
