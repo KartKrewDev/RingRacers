@@ -116,17 +116,22 @@ static void M_CentreText(INT32 xoffs, INT32 y, const char *string)
 	V_DrawMenuString(x,y,0,string);
 }
 
+static INT32 M_SliderX(INT32 range)
+{
+	if (range < 0)
+		range = 0;
+	if (range > 100)
+		range = 100;
+
+	return -4 + (((SLIDER_RANGE)*8 + 4)*range)/100;
+}
 
 //  A smaller 'Thermo', with range given as percents (0-100)
 static void M_DrawSlider(INT32 x, INT32 y, const consvar_t *cv, boolean ontop)
 {
-	INT32 i;
-	INT32 range;
-	patch_t *p;
-
-	for (i = 0; cv->PossibleValue[i+1].strvalue; i++);
-
 	x = BASEVIDWIDTH - x - SLIDER_WIDTH;
+	V_DrawFill(x - 5, y + 3, SLIDER_WIDTH + 3, 5, 31);
+	V_DrawFill(x - 4, y + 4, SLIDER_WIDTH, 2, orangemap[0]);
 
 	if (ontop)
 	{
@@ -136,41 +141,19 @@ static void M_DrawSlider(INT32 x, INT32 y, const consvar_t *cv, boolean ontop)
 			highlightflags, "\x1D"); // right arrow
 	}
 
-	if ((range = atoi(cv->defaultvalue)) != cv->value)
-	{
-		range = ((range - cv->PossibleValue[0].value) * 100 /
-		(cv->PossibleValue[1].value - cv->PossibleValue[0].value));
+	INT32 range = cv->PossibleValue[1].value - cv->PossibleValue[0].value;
+	INT32 val = atoi(cv->defaultvalue);
 
-		if (range < 0)
-			range = 0;
-		if (range > 100)
-			range = 100;
+	val = (val - cv->PossibleValue[0].value) * 100 / range;
+	// draw the default tick
+	V_DrawFill(x + M_SliderX(val), y + 2, 3, 4, 31);
 
-		// draw the default
-		p = W_CachePatchName("M_SLIDEC", PU_CACHE);
-		V_DrawScaledPatch(x - 4 + (((SLIDER_RANGE)*8 + 4)*range)/100, y, 0, p);
-	}
-
-	V_DrawScaledPatch(x - 8, y, 0, W_CachePatchName("M_SLIDEL", PU_CACHE));
-
-	p =  W_CachePatchName("M_SLIDEM", PU_CACHE);
-	for (i = 0; i < SLIDER_RANGE; i++)
-		V_DrawScaledPatch (x+i*8, y, 0,p);
-
-	p = W_CachePatchName("M_SLIDER", PU_CACHE);
-	V_DrawScaledPatch(x+SLIDER_RANGE*8, y, 0, p);
-
-	range = ((cv->value - cv->PossibleValue[0].value) * 100 /
-	 (cv->PossibleValue[1].value - cv->PossibleValue[0].value));
-
-	if (range < 0)
-		range = 0;
-	if (range > 100)
-		range = 100;
+	val = (cv->value - cv->PossibleValue[0].value) * 100 / range;
+	INT32 px = x + M_SliderX(val);
 
 	// draw the slider cursor
-	p = W_CachePatchName("M_SLIDEC", PU_CACHE);
-	V_DrawScaledPatch(x - 4 + (((SLIDER_RANGE)*8 + 4)*range)/100, y, 0, p);
+	V_DrawFill(px - 1, y - 1, 5, 11, 31);
+	V_DrawFill(px, y, 2, 8, aquamap[0]);
 }
 
 static void M_DrawCursorHand(INT32 x, INT32 y)
