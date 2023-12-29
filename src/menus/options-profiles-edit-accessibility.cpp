@@ -5,6 +5,7 @@
 
 #include "../command.h"
 #include "../k_menu.h"
+#include "../p_local.h" // cv_tilting
 
 extern "C" consvar_t cv_mindelay;
 
@@ -23,27 +24,43 @@ void draw_routine()
 	{
 		const menuitem_t& it = currentMenu->menuitems[i];
 
-		bool selected = i == itemOn;
-		Draw h = row.flags(selected ? highlightflags : 0);
-
-		if ((it.status & IT_TYPE) == IT_CVAR)
+		if (it.status & IT_DISPLAY)
 		{
-			auto val = Draw::TextElement(it.itemaction.cvar->string).font(Draw::Font::kConsole);
+			bool selected = i == itemOn;
 
-			h.x(currentMenu->x).text(it.text);
+			Draw h = row.x(currentMenu->x);
 
-			h = h.x(BASEVIDWIDTH - 16);
-			h.align(Draw::Align::kRight).text(val);
-
-			if (selected)
+			if ((it.status & IT_HEADERTEXT) == IT_HEADERTEXT)
 			{
-				int ofs = skullAnimCounter / 5;
-				h.x(-val.width() - 10 - ofs).text("\x1C");
-				h.x(2 + ofs).text("\x1D");
+				h
+					.x(-4)
+					.flags(V_GRAYMAP)
+					.text(it.text);
+			}
+			else
+			{
+				h
+					.flags(selected ? highlightflags : 0)
+					.text(it.text);
+			}
+
+			if ((it.status & IT_TYPE) == IT_CVAR)
+			{
+				auto val = Draw::TextElement(it.itemaction.cvar->string).font(Draw::Font::kConsole);
+
+				h = row.x(BASEVIDWIDTH - 16).flags(highlightflags);
+				h.align(Draw::Align::kRight).text(val);
+
+				if (selected)
+				{
+					int ofs = skullAnimCounter / 5;
+					h.x(-val.width() - 10 - ofs).text("\x1C");
+					h.x(2 + ofs).text("\x1D");
+				}
 			}
 		}
 
-		row = row.y(12);
+		row = row.y(11);
 	}
 
 	// Finally, draw the card ontop
@@ -57,11 +74,11 @@ void draw_routine()
 
 menuitem_t OPTIONS_ProfileAccessibility[] = {
 
+	{IT_HEADER, "This Profile only:", NULL,
+		NULL, {NULL}, 0, 0},
+
 	{IT_STRING | IT_CVAR, "Rumble", "For gamepad users - should your device rumble?",
 		NULL, {.cvar = &cv_dummyprofilerumble}, 0, 0},
-
-	{IT_SPACE | IT_NOTHING, NULL,  NULL,
-		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Auto Roulette", "Item roulette auto-stops on a random result.",
 		NULL, {.cvar = &cv_dummyprofileautoroulette}, 0, 0},
@@ -75,8 +92,17 @@ menuitem_t OPTIONS_ProfileAccessibility[] = {
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 
+	{IT_HEADER, "For all Profiles:", NULL,
+		NULL, {NULL}, 0, 0},
+
 	{IT_STRING | IT_CVAR, "Minimum Input Delay", "Practice for online play! 0 = instant response.",
 		NULL, {.cvar = &cv_mindelay}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Screen Tilting", "View rotation on inclines.",
+		NULL, {.cvar = &cv_tilting}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Reduce Effects", "If overwhelmed, hide less-important particle cues.",
+		NULL, {.cvar = &cv_reducevfx}, 0, 0},
 };
 
 menu_t OPTIONS_ProfileAccessibilityDef = {
@@ -84,7 +110,7 @@ menu_t OPTIONS_ProfileAccessibilityDef = {
 	&OPTIONS_EditProfileDef,
 	0,
 	OPTIONS_ProfileAccessibility,
-	145, 72,
+	145, 52,
 	SKINCOLOR_ULTRAMARINE, 0,
 	MBF_DRAWBGWHILEPLAYING,
 	"FILE",
