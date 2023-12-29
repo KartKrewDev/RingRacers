@@ -4328,19 +4328,39 @@ box_found:
 				break;
 #endif
 			case IT_STRING:
-			case IT_WHITESTRING:
+			case IT_WHITESTRING: {
+				INT32 px = x + ((currentMenu->menuitems[i].status & IT_TYPE) == IT_SUBMENU ? 8 : 0);
+
 				if (i == itemOn)
 					cursory = y;
 
 				if ((currentMenu->menuitems[i].status & IT_DISPLAY)==IT_STRING)
-					V_DrawMenuString(x + (i == itemOn ? 1 : 0), y, 0, currentMenu->menuitems[i].text);
+				{
+					if (i == itemOn)
+						V_DrawMenuString(px + 1, y, highlightflags, currentMenu->menuitems[i].text);
+					else
+						V_DrawMenuString(px, y, 0, currentMenu->menuitems[i].text);
+				}
 				else
-					V_DrawMenuString(x, y, highlightflags, currentMenu->menuitems[i].text);
+					V_DrawMenuString(px, y, highlightflags, currentMenu->menuitems[i].text);
 
 				// Cvar specific handling
 				switch (currentMenu->menuitems[i].status & IT_TYPE)
-					case IT_CVAR:
-					{
+				{
+					case IT_SUBMENU: {
+						UINT8 ch = currentMenu->menuitems[i].text[0];
+
+						V_DrawMenuString(
+							x + (i == itemOn ? 1 + skullAnimCounter/5 : 0),
+							y - 1,
+							// Use color of first character in text label
+							i == itemOn ? highlightflags : (((max(ch, 0x80) - 0x80) & 15) << V_CHARCOLORSHIFT),
+							"\x1D"
+						);
+						break;
+					}
+
+					case IT_CVAR: {
 						consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
 						switch (currentMenu->menuitems[i].status & IT_CVARTYPE)
 						{
@@ -4386,8 +4406,11 @@ box_found:
 						}
 						break;
 					}
-					y += STRINGHEIGHT;
-					break;
+				}
+
+				y += STRINGHEIGHT;
+				break;
+			}
 			case IT_STRING2:
 				V_DrawMenuString(x, y, 0, currentMenu->menuitems[i].text);
 				/* FALLTHRU */
@@ -4440,7 +4463,6 @@ box_found:
 	{
 		V_DrawScaledPatch(x - 24, cursory, 0,
 			W_CachePatchName("M_CURSOR", PU_CACHE));
-		V_DrawMenuString(x + 1, cursory, highlightflags, currentMenu->menuitems[itemOn].text);
 	}
 }
 
