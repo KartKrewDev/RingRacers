@@ -83,18 +83,17 @@ static void M_SoundTestSeq(INT32 choice)
 
 	if (soundtest.playing && S_SoundTestCanSequenceFade())
 	{
-		boolean unfaded = Music_DurationLeft("stereo_fade") > Music_FadeOutDuration("stereo_fade") * TICRATE / 1000;
-
 		// 1) You cannot cancel a fade once it has started
 		// 2) However, if the fade wasn't heard, switching
-		//    over restarts the fade
-		if (!unfaded && Music_Suspended("stereo_fade"))
+		//    over just skips to the next song
+		if (Music_DurationLeft("stereo_fade") <= Music_FadeOutDuration("stereo_fade") * TICRATE / 1000)
 		{
-			Music_DelayEnd("stereo_fade", 0);
-			unfaded = true;
+			if (Music_Suspended("stereo_fade"))
+			{
+				S_UpdateSoundTestDef((currentMenu->menuitems[itemOn].mvar1 < 0), true, false);
+			}
 		}
-
-		if (unfaded)
+		else
 		{
 			soundtest.tune ^= 1;
 			Music_UnSuspend(S_SoundTestTune(0));
