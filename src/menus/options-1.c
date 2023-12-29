@@ -151,7 +151,7 @@ void M_OptionsTick(void)
 		// I don't like this, it looks like shit but it needs to be done..........
 		if (optionsmenu.profilemenu)
 		{
-			optionsmenu.toptx = 420;
+			optionsmenu.toptx = 440;
 			optionsmenu.topty = 70+1;
 		}
 		else if (currentMenu == &OPTIONS_GameplayItemsDef)
