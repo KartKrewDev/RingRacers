@@ -267,6 +267,7 @@ typedef enum
 	TRIPWIRE_IGNORE,
 	TRIPWIRE_BOOST,
 	TRIPWIRE_BLASTER,
+	TRIPWIRE_CONSUME,
 } tripwirepass_t;
 
 typedef enum

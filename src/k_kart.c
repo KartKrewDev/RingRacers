@@ -2868,6 +2868,12 @@ tripwirepass_t K_TripwirePassConditions(const player_t *player)
 		)
 		return TRIPWIRE_IGNORE;
 
+	// TRIPWIRE_CONSUME should always be checked last; this category should be
+	// used for tripwire states that are partially detrimental, and check
+	// leniency from OTHER states, not themselves.
+	if (player->curshield == KSHIELD_TOP)
+		return TRIPWIRE_CONSUME;
+
 	return TRIPWIRE_NONE;
 }
 
@@ -4592,11 +4598,21 @@ void K_ApplyTripWire(player_t *player, tripwirestate_t state)
 	if (state == TRIPSTATE_PASSED)
 	{
 		S_StartSound(player->mo, sfx_ssa015);
+
 		if (player->roundconditions.tripwire_hyuu == false
 			&& player->hyudorotimer > 0)
 		{
 			player->roundconditions.tripwire_hyuu = true;
 			player->roundconditions.checkthisframe = true;
+		}
+
+		if (player->tripwirePass == TRIPWIRE_CONSUME && player->tripwireLeniency == 0)
+		{
+			if (player->curshield == KSHIELD_TOP)
+			{
+				S_StartSound(player->mo, sfx_kc65); // Player's handling is about to change, alert them!
+				Obj_GardenTopDestroy(player);
+			}
 		}
 	}
 	else if (state == TRIPSTATE_BLOCKED)
@@ -8107,9 +8123,15 @@ static void K_UpdateTripwire(player_t *player)
 		}
 
 		player->tripwirePass = triplevel;
-		player->tripwireLeniency = max(player->tripwireLeniency, TRIPWIRETIME);
+
+		if (triplevel != TRIPWIRE_CONSUME)
+			player->tripwireLeniency = max(player->tripwireLeniency, TRIPWIRETIME);
 	}
-	else
+	
+	// TRIPWIRE_CONSUME is only applied in very specific cases (currently, riding Garden Top)
+	// and doesn't need leniency; however, it should track leniency from other pass conditions,
+	// so that stripping Garden Top feels consistent.
+	if (triplevel == TRIPWIRE_NONE || triplevel == TRIPWIRE_CONSUME)
 	{
 		if (boostExists)
 		{
@@ -8121,7 +8143,7 @@ static void K_UpdateTripwire(player_t *player)
 			}
 		}
 
-		if (player->tripwireLeniency <= 0)
+		if (player->tripwireLeniency <= 0 && triplevel == TRIPWIRE_NONE)
 		{
 			player->tripwirePass = TRIPWIRE_NONE;
 		}
