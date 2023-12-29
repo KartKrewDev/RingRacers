@@ -1844,7 +1844,7 @@ static boolean M_DrawFollowerSprite(INT16 x, INT16 y, INT32 num, boolean charfli
 	if (p != NULL)
 	{
 		UINT16 color = K_GetEffectiveFollowerColor(
-			(p->mdepth < CSSTEP_FOLLOWERCOLORS) ? fl->defaultcolor : p->followercolor,
+			(p->mdepth < CSSTEP_FOLLOWERCOLORS && p->mdepth != CSSTEP_ASKCHANGES) ? fl->defaultcolor : p->followercolor,
 			fl,
 			p->color,
 			&skins[p->skin]
@@ -1869,7 +1869,7 @@ static void M_DrawCharSelectSprite(UINT8 num, INT16 x, INT16 y, boolean charflip
 		return;
 	}
 
-	if (p->mdepth < CSSTEP_COLORS)
+	if (p->mdepth < CSSTEP_COLORS && p->mdepth != CSSTEP_ASKCHANGES)
 	{
 		color = skins[p->skin].prefcolor;
 	}
@@ -1885,7 +1885,8 @@ static void M_DrawCharSelectSprite(UINT8 num, INT16 x, INT16 y, boolean charflip
 
 	colormap = R_GetTranslationColormap(p->skin, color, GTC_MENUCACHE);
 
-	M_DrawCharacterSprite(x, y, p->skin, SPR2_STIN, (charflip ? 1 : 7), ((p->mdepth == CSSTEP_READY) ? setup_animcounter : 0), 0, colormap);
+	M_DrawCharacterSprite(x, y, p->skin, SPR2_STIN, (charflip ? 1 : 7), ((p->mdepth == CSSTEP_READY) ? setup_animcounter : 0),
+		p->mdepth == CSSTEP_ASKCHANGES ? V_TRANSLUCENT : 0, colormap);
 }
 
 static void M_DrawCharSelectPreview(UINT8 num)
@@ -1903,7 +1904,7 @@ static void M_DrawCharSelectPreview(UINT8 num)
 
 	V_DrawScaledPatch(x, y+6, V_TRANSLUCENT, W_CachePatchName("PREVBACK", PU_CACHE));
 
-	if (p->mdepth >= CSSTEP_CHARS)
+	if (p->mdepth >= CSSTEP_CHARS || p->mdepth == CSSTEP_ASKCHANGES)
 	{
 		M_DrawCharSelectSprite(num, x+32, y+75, charflip);
 		M_DrawCharSelectCircle(p, x+32, y+64);
@@ -1924,9 +1925,9 @@ static void M_DrawCharSelectPreview(UINT8 num)
 		V_DrawCenteredFileString(backx+26, y+2, 0, pr ? pr->profilename : "PLAYER");
 	}
 
-	if (p->mdepth >= CSSTEP_FOLLOWER)
+	if (p->mdepth >= CSSTEP_FOLLOWER || p->mdepth == CSSTEP_ASKCHANGES)
 	{
-		M_DrawFollowerSprite(x+32+((charflip ? 1 : -1)*16), y+75, -1, charflip, 0, 0, p);
+		M_DrawFollowerSprite(x+32+((charflip ? 1 : -1)*16), y+75, -1, charflip, p->mdepth == CSSTEP_ASKCHANGES ? V_TRANSLUCENT : 0, NULL, p);
 	}
 
 	if ((setup_animcounter/10) & 1)
@@ -1945,11 +1946,19 @@ static void M_DrawCharSelectPreview(UINT8 num)
 	if (p->mdepth == CSSTEP_PROFILE)
 	{
 		INT16 px = x+12;
-		INT16 py = y+48 - p->profilen*12;
+		INT16 py = y+48 - p->profilen*12 +
+			Easing_OutSine(
+				M_DueFrac(p->profilen_slide.start, 5),
+				p->profilen_slide.dist*12,
+				0
+			);
 		UINT8 maxp = PR_GetNumProfiles();
 
 		UINT8 i = 0;
 		UINT8 j;
+
+		V_SetClipRect(0, (y+25)*FRACUNIT, BASEVIDWIDTH*FRACUNIT, (5*12)*FRACUNIT, 0);
+
 
 		for (i = 0; i < maxp; i++)
 		{
@@ -1976,13 +1985,13 @@ static void M_DrawCharSelectPreview(UINT8 num)
 				notSelectable |= V_TRANSLUCENT;
 			}
 
-			if (dist > 2)
+			if (dist > 3)
 			{
 				py += 12;
 				continue;
 			}
 
-			if (dist == 2)
+			if (dist > 1)
 			{
 				V_DrawCenteredFileString(px+26, py, notSelectable, pr->version ? pr->profilename : "NEW");
 				V_DrawScaledPatch(px, py, V_TRANSLUCENT, W_CachePatchName("FILEBACK", PU_CACHE));
@@ -1993,12 +2002,34 @@ static void M_DrawCharSelectPreview(UINT8 num)
 
 				if (i != p->profilen || ((setup_animcounter/10) & 1))
 				{
-					V_DrawCenteredFileString(px+26, py, notSelectable, pr->version ? pr->profilename : "NEW");
+					const char *txt = pr->version ? pr->profilename : "NEW";
+
+					fixed_t w = V_StringScaledWidth(
+						FRACUNIT,
+						FRACUNIT,
+						FRACUNIT,
+						notSelectable,
+						FILE_FONT,
+						txt
+					);
+
+					V_DrawStringScaled(
+						((px+26) * FRACUNIT) - (w/2),
+						py * FRACUNIT,
+						FRACUNIT,
+						FRACUNIT,
+						FRACUNIT,
+						notSelectable,
+						i == p->profilen ? R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_SAPPHIRE, GTC_CACHE) : NULL,
+						FILE_FONT,
+						txt
+					);
 				}
 			}
 			py += 12;
 		}
 
+		V_ClearClipRect();
 	}
 	// "Changes?"
 	else if (p->mdepth == CSSTEP_ASKCHANGES)

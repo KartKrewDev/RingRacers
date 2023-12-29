@@ -1,6 +1,7 @@
 /// \file  menus/play-char-select.c
 /// \brief Character Select
 
+#include "../i_time.h"
 #include "../k_menu.h"
 #include "../r_skins.h"
 #include "../s_sound.h"
@@ -175,6 +176,29 @@ static void M_NewPlayerColors(setup_player_t *p)
 	}
 }
 
+static INT16 M_GetMenuCategoryFromFollower(setup_player_t *p)
+{
+	if (p->followern < 0
+	|| p->followern >= numfollowers
+	|| !K_FollowerUsable(p->followern))
+		return -1;
+
+	INT16 i;
+
+	for (i = 0; i < setup_numfollowercategories; i++)
+	{
+		if (followers[p->followern].category != setup_followercategories[i][1])
+			continue;
+
+		break;
+	}
+
+	if (i >= setup_numfollowercategories)
+		return -1;
+
+	return i;
+}
+
 // sets up the grid pos for the skin used by the profile.
 static void M_SetupProfileGridPos(setup_player_t *p)
 {
@@ -188,10 +212,9 @@ static void M_SetupProfileGridPos(setup_player_t *p)
 	// While we're here, read follower values.
 	p->followern = K_FollowerAvailable(pr->follower);
 
-	if (p->followern < 0 || p->followern >= numfollowers || followers[p->followern].category >= numfollowercategories || !K_FollowerUsable(p->followern))
-		p->followercategory = p->followern = -1;
-	else
-		p->followercategory = followers[p->followern].category;
+	p->followercategory = M_GetMenuCategoryFromFollower(p);
+	if (p->followercategory == -1) // unlock gate failed?
+		p->followern = -1;
 
 	p->followercolor = pr->followercolor;
 	if (K_ColorUsable(p->followercolor, true, true) == false)
@@ -234,10 +257,9 @@ static void M_SetupMidGameGridPos(setup_player_t *p, UINT8 num)
 	p->followern = cv_follower[num].value;
 	p->followercolor = cv_followercolor[num].value;
 
-	if (p->followern < 0 || p->followern >= numfollowers || followers[p->followern].category >= numfollowercategories || !K_FollowerUsable(p->followern))
-		p->followercategory = p->followern = -1;
-	else
-		p->followercategory = followers[p->followern].category;
+	p->followercategory = M_GetMenuCategoryFromFollower(p);
+	if (p->followercategory == -1) // unlock gate failed?
+		p->followern = -1;
 
 	// Now position the grid for skin
 	p->gridx = skins[i].kartspeed-1;
@@ -277,6 +299,9 @@ void M_CharacterSelectInit(void)
 		setup_player[i].followern = -1;
 		setup_player[i].followercategory = -1;
 		setup_player[i].followercolor = SKINCOLOR_NONE;
+
+		setup_player[i].profilen_slide.start = 0;
+		setup_player[i].profilen_slide.dist = 0;
 
 		// If we're on prpfile select, skip straight to CSSTEP_CHARS
 		// do the same if we're midgame, but make sure to consider splitscreen properly.
@@ -525,19 +550,25 @@ static boolean M_HandleCSelectProfile(setup_player_t *p, UINT8 num)
 
 	if (menucmd[num].dpad_ud > 0)
 	{
+		UINT8 oldn = p->profilen;
 		p->profilen++;
 		if (p->profilen > maxp)
 			p->profilen = 0;
+		p->profilen_slide.dist = p->profilen - oldn;
+		p->profilen_slide.start = I_GetTime();
 
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(num);
 	}
 	else if (menucmd[num].dpad_ud < 0)
 	{
+		UINT8 oldn = p->profilen;
 		if (p->profilen == 0)
 			p->profilen = maxp;
 		else
 			p->profilen--;
+		p->profilen_slide.dist = p->profilen - oldn;
+		p->profilen_slide.start = I_GetTime();
 
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(num);
@@ -610,17 +641,21 @@ static boolean M_HandleCSelectProfile(setup_player_t *p, UINT8 num)
 		else
 		{
 			p->mdepth = CSSTEP_ASKCHANGES;
+			M_GetFollowerState(p);
 		}
 
 		S_StartSound(NULL, sfx_s3k63);
 	}
 	else if (M_MenuExtraPressed(num))
 	{
+		UINT8 oldn = p->profilen;
 		UINT8 yourprofile = min(cv_lastprofile[realnum].value, PR_GetNumProfiles());
 		if (p->profilen == yourprofile)
 			p->profilen = PROFILE_GUEST;
 		else
 			p->profilen = yourprofile;
+		p->profilen_slide.dist = p->profilen - oldn;
+		p->profilen_slide.start = I_GetTime();
 		S_StartSound(NULL, sfx_s3k7b); //sfx_s3kc3s
 		M_SetMenuDelay(num);
 	}
@@ -665,7 +700,6 @@ static void M_HandleCharAskChange(setup_player_t *p, UINT8 num)
 		if (!p->changeselect)
 		{
 			// no changes
-			M_GetFollowerState(p);
 			M_HandlePlayerFinalise(p);
 		}
 		else
@@ -1066,25 +1100,10 @@ static void M_HandleFollowerCategoryRotate(setup_player_t *p, UINT8 num)
 	}
 	else if (M_MenuExtraPressed(num))
 	{
-		INT16 i = -1;
-		if (p->followercategory < 0
-		&& p->followern >= 0
-		&& p->followern < numfollowers
-		&& followers[p->followern].category < numfollowercategories)
-		{
-			for (i = 0; i < setup_numfollowercategories; i++)
-			{
-				if (followers[p->followern].category != setup_followercategories[i][1])
-					continue;
+		p->followercategory = (p->followercategory == -1)
+			? M_GetMenuCategoryFromFollower(p)
+			: -1;
 
-				break;
-			}
-
-			if (i >= setup_numfollowercategories)
-				i = -1;
-		}
-
-		p->followercategory = i;
 		p->rotate = CSROTATETICS;
 		p->hitlag = true;
 		S_StartSound(NULL, sfx_s3k7b); //sfx_s3kc3s
@@ -1173,8 +1192,6 @@ static void M_HandleFollowerColorRotate(setup_player_t *p, UINT8 num)
 	if (cv_splitdevice.value)
 		num = 0;
 
-	M_AnimateFollower(p);
-
 	if (menucmd[num].dpad_lr > 0)
 	{
 		p->followercolor = M_GetColorAfter(&p->colors, p->followercolor, 1);
@@ -1228,6 +1245,11 @@ boolean M_CharacterSelectHandler(INT32 choice)
 	{
 		setup_player_t *p = &setup_player[i];
 		boolean playersChanged = false;
+
+		if (p->mdepth > CSSTEP_FOLLOWER)
+		{
+			M_AnimateFollower(p);
+		}
 
 		if (p->delay == 0 && menucmd[i].delay == 0)
 		{
