@@ -833,6 +833,9 @@ static boolean K_JustBumpedException(mobj_t *mobj)
 			break;
 	}
 
+	if (mobj->flags & MF_PUSHABLE)
+		return true;
+
 	return false;
 }
 
