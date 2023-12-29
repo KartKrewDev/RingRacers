@@ -63,6 +63,10 @@ public:
 	~Gme();
 
 private:
+	struct AsyncOp;
+
+	std::unique_ptr<AsyncOp> seeking_;
+
 	void _init_with_data();
 };
 
