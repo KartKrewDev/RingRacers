@@ -27,11 +27,13 @@ menuitem_t OPTIONS_Video[] =
 	{IT_NOTHING|IT_SPACE, NULL, NULL,
 		NULL, {NULL}, 0, 0},
 
+#if 0 // See Profiles/Accessibility
 	{IT_STRING | IT_CVAR, "Screen Tilting", "The view rotatation on inclines can be disabled to reduce motion sickness.",
 		NULL, {.cvar = &cv_tilting}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Reduce Visual Effects", "If on, some less-important particle cues will be hidden.",
 		NULL, {.cvar = &cv_reducevfx}, 0, 0},
+#endif
 
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER, "Gamma", "Adjusts the overall brightness of the game.",
 		NULL, {.cvar = &cv_globalgamma}, 0, 0},

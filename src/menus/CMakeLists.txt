@@ -22,6 +22,7 @@ target_sources(SRB2SDL2 PRIVATE
 	options-hud-online.c
 	options-profiles-1.c
 	options-profiles-edit-1.c
+	options-profiles-edit-accessibility.cpp
 	options-profiles-edit-controls.c
 	options-server-1.c
 	options-server-advanced.c

@@ -82,21 +82,6 @@ menuitem_t OPTIONS_ProfileControls[] = {
 	{IT_CONTROL, "LUA/C", "May be used by add-ons.",
 		NULL, {.routine = M_ProfileSetControl}, gc_luac, 0},
 
-	{IT_HEADER, "TOGGLES", "For per-player commands",
-		NULL, {NULL}, 0, 0},
-
-	{IT_CONTROL | IT_CVAR, "RUMBLE", "For gamepad users - should your device rumble?",
-		NULL, {.cvar = &cv_dummyprofilerumble}, 0, 0},
-
-	{IT_CONTROL | IT_CVAR, "KICKSTART ACCEL", "Hold A to auto-accel. Tap it to cancel.",
-		NULL, {.cvar = &cv_dummyprofilekickstart}, 0, 0},
-
-	{IT_CONTROL | IT_CVAR, "AUTO ROULETTE", "Item roulette auto-stops on a random result.",
-		NULL, {.cvar = &cv_dummyprofileautoroulette}, 0, 0},
-
-	{IT_CONTROL | IT_CVAR, "LITE STEER", "Hold DOWN on d-pad/keyboard for shallow turns.",
-		NULL, {.cvar = &cv_dummyprofilelitesteer}, 0, 0},
-
 	{IT_HEADER, "EXTRA", "",
 		NULL, {NULL}, 0, 0},
 

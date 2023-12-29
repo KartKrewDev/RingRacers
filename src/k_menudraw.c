@@ -2251,7 +2251,7 @@ static void M_DrawCharSelectCursor(UINT8 num)
 
 // Draw character profile card.
 // Moved here because in the case of profile edition this is drawn in the charsel menu.
-static void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
+void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 {
 	setup_player_t *sp = &setup_player[0];	// When editing profile character, we'll always be checking for what P1 is doing.
 	patch_t *card = W_CachePatchName("PR_CARD", PU_CACHE);
@@ -4379,6 +4379,17 @@ void M_DrawProfileSelect(void)
 
 }
 
+void M_DrawEditProfileTooltips(void)
+{
+	// Tooltip
+	// The text is slightly shifted hence why we don't just use M_DrawMenuTooltips()
+	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
+	if (currentMenu->menuitems[itemOn].tooltip != NULL)
+	{
+		V_DrawCenteredThinString(224, 12, 0, currentMenu->menuitems[itemOn].tooltip);
+	}
+}
+
 // Profile edition menu
 void M_DrawEditProfile(void)
 {
@@ -4387,13 +4398,7 @@ void M_DrawEditProfile(void)
 	INT32 x = (145 + (menutransition.tics*32));
 	INT32 i;
 
-	// Tooltip
-	// The text is slightly shifted hence why we don't just use M_DrawMenuTooltips()
-	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
-	if (currentMenu->menuitems[itemOn].tooltip != NULL)
-	{
-		V_DrawCenteredThinString(224, 12, 0, currentMenu->menuitems[itemOn].tooltip);
-	}
+	M_DrawEditProfileTooltips();
 
 	// Draw the menu options...
 	for (i = 0; i < currentMenu->numitems; i++)
