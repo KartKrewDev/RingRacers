@@ -4159,18 +4159,18 @@ void M_DrawOptionsMovingButton(void)
 void M_DrawOptions(void)
 {
 	UINT8 i;
-	INT32 t = Easing_OutSine(M_DueFrac(optionsmenu.offset.start, M_OPTIONS_OFSTIME), optionsmenu.offset.dist, 0);
-	INT32 x = 140 - (48*itemOn) + t;
-	INT32 y = 70 + t;
-	INT32 tx = M_EaseWithTransition(Easing_Linear, 5 * 64);
+	fixed_t t = Easing_OutSine(M_DueFrac(optionsmenu.offset.start, M_OPTIONS_OFSTIME), optionsmenu.offset.dist * FRACUNIT, 0);
+	fixed_t x = (140 - (48*itemOn))*FRACUNIT + t;
+	fixed_t y = 70*FRACUNIT + t;
+	fixed_t tx = M_EaseWithTransition(Easing_Linear, 5 * 64 * FRACUNIT);
 	patch_t *buttback = W_CachePatchName("OPT_BUTT", PU_CACHE);
 
 	UINT8 *c = NULL;
 
 	for (i=0; i < currentMenu->numitems; i++)
 	{
-		INT32 py = y - (itemOn*48);
-		INT32 px = x - tx;
+		fixed_t py = y - (itemOn*48)*FRACUNIT;
+		fixed_t px = x - tx;
 		INT32 tflag = 0;
 
 		if (i == itemOn)
@@ -4183,12 +4183,32 @@ void M_DrawOptions(void)
 
 		if (!(menutransition.tics != menutransition.dest && i == itemOn))
 		{
-			V_DrawFixedPatch(px*FRACUNIT, py*FRACUNIT, FRACUNIT, 0, buttback, c);
-			V_DrawCenteredGamemodeString(px-3, py - 16, tflag, (i == itemOn ? c : NULL), currentMenu->menuitems[i].text);
+			V_DrawFixedPatch(px, py, FRACUNIT, 0, buttback, c);
+
+			const char *s = currentMenu->menuitems[i].text;
+			fixed_t w = V_StringScaledWidth(
+				FRACUNIT,
+				FRACUNIT,
+				FRACUNIT,
+				0,
+				GM_FONT,
+				s
+			);
+			V_DrawStringScaled(
+				px - 3*FRACUNIT - (w/2),
+				py - 16*FRACUNIT,
+				FRACUNIT,
+				FRACUNIT,
+				FRACUNIT,
+				tflag,
+				(i == itemOn ? c : NULL),
+				GM_FONT,
+				s
+			);
 		}
 
-		y += 48;
-		x += 48;
+		y += 48*FRACUNIT;
+		x += 48*FRACUNIT;
 	}
 
 	M_DrawMenuTooltips();
