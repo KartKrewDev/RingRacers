@@ -605,6 +605,8 @@ void M_StartControlPanel(void)
 			}
 		}
 
+		M_PickMenuBGMap();
+
 		if (M_GameTrulyStarted() == false)
 		{
 			// Are you ready for the First Boot Experience?
