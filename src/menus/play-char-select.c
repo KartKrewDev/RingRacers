@@ -176,6 +176,29 @@ static void M_NewPlayerColors(setup_player_t *p)
 	}
 }
 
+static INT16 M_GetMenuCategoryFromFollower(setup_player_t *p)
+{
+	if (p->followern < 0
+	|| p->followern >= numfollowers
+	|| !K_FollowerUsable(p->followern))
+		return -1;
+
+	INT16 i;
+
+	for (i = 0; i < setup_numfollowercategories; i++)
+	{
+		if (followers[p->followern].category != setup_followercategories[i][1])
+			continue;
+
+		break;
+	}
+
+	if (i >= setup_numfollowercategories)
+		return -1;
+
+	return i;
+}
+
 // sets up the grid pos for the skin used by the profile.
 static void M_SetupProfileGridPos(setup_player_t *p)
 {
@@ -189,10 +212,9 @@ static void M_SetupProfileGridPos(setup_player_t *p)
 	// While we're here, read follower values.
 	p->followern = K_FollowerAvailable(pr->follower);
 
-	if (p->followern < 0 || p->followern >= numfollowers || followers[p->followern].category >= numfollowercategories || !K_FollowerUsable(p->followern))
-		p->followercategory = p->followern = -1;
-	else
-		p->followercategory = followers[p->followern].category;
+	p->followercategory = M_GetMenuCategoryFromFollower(p);
+	if (p->followercategory == -1) // unlock gate failed?
+		p->followern = -1;
 
 	p->followercolor = pr->followercolor;
 	if (K_ColorUsable(p->followercolor, true, true) == false)
@@ -235,10 +257,9 @@ static void M_SetupMidGameGridPos(setup_player_t *p, UINT8 num)
 	p->followern = cv_follower[num].value;
 	p->followercolor = cv_followercolor[num].value;
 
-	if (p->followern < 0 || p->followern >= numfollowers || followers[p->followern].category >= numfollowercategories || !K_FollowerUsable(p->followern))
-		p->followercategory = p->followern = -1;
-	else
-		p->followercategory = followers[p->followern].category;
+	p->followercategory = M_GetMenuCategoryFromFollower(p);
+	if (p->followercategory == -1) // unlock gate failed?
+		p->followern = -1;
 
 	// Now position the grid for skin
 	p->gridx = skins[i].kartspeed-1;
@@ -1079,25 +1100,10 @@ static void M_HandleFollowerCategoryRotate(setup_player_t *p, UINT8 num)
 	}
 	else if (M_MenuExtraPressed(num))
 	{
-		INT16 i = -1;
-		if (p->followercategory < 0
-		&& p->followern >= 0
-		&& p->followern < numfollowers
-		&& followers[p->followern].category < numfollowercategories)
-		{
-			for (i = 0; i < setup_numfollowercategories; i++)
-			{
-				if (followers[p->followern].category != setup_followercategories[i][1])
-					continue;
+		p->followercategory = (p->followercategory == -1)
+			? M_GetMenuCategoryFromFollower(p)
+			: -1;
 
-				break;
-			}
-
-			if (i >= setup_numfollowercategories)
-				i = -1;
-		}
-
-		p->followercategory = i;
 		p->rotate = CSROTATETICS;
 		p->hitlag = true;
 		S_StartSound(NULL, sfx_s3k7b); //sfx_s3kc3s
