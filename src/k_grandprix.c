@@ -608,7 +608,7 @@ void K_IncreaseBotDifficulty(player_t *bot)
 	INT8 rankNudge = 1; // Generally, we want bots to rank up at least once, but...
 
 	// If humans are struggling, we want to back off, or even derank if it's dire.
-	// 
+	// Average human ranks to determine general bot "rank inertia".
 	INT8 totalRank = 0;
 	INT8 humanPlayers = 0;
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -656,6 +656,7 @@ void K_IncreaseBotDifficulty(player_t *bot)
 	if (increase <= 0)
 	{
 		// TYRON: We want to allow SMALL bot rank downs if a player gets rolled but still squeaks by.
+		// (Think, like, dire E rank in 4th.)
 		// This is a deviation from SalCode™ and should be reexamined if bots get drowsy.
 	}
 
