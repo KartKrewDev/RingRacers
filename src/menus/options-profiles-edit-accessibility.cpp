@@ -16,9 +16,14 @@ namespace
 
 void draw_routine()
 {
-	Draw row = Draw(0, currentMenu->y).font(Draw::Font::kConsole);
+	Draw row = Draw(0, currentMenu->y).font(Draw::Font::kMenu);
 
 	M_DrawEditProfileTooltips();
+
+	if (optionsmenu.profile != NULL)
+	{
+		M_DrawProfileCard(optionsmenu.optx, optionsmenu.opty, false, optionsmenu.profile);
+	}
 
 	for (int i = 0; i < currentMenu->numitems; ++i)
 	{
@@ -29,6 +34,12 @@ void draw_routine()
 			bool selected = i == itemOn;
 
 			Draw h = row.x(currentMenu->x);
+
+			if (selected)
+			{
+				M_DrawUnderline(h.x(), BASEVIDWIDTH - 18, h.y());
+				M_DrawCursorHand(h.x(), h.y());
+			}
 
 			if ((it.status & IT_HEADERTEXT) == IT_HEADERTEXT)
 			{
@@ -46,27 +57,28 @@ void draw_routine()
 
 			if ((it.status & IT_TYPE) == IT_CVAR)
 			{
-				auto val = Draw::TextElement(it.itemaction.cvar->string).font(Draw::Font::kConsole);
+				bool isDefault = CV_IsSetToDefault(it.itemaction.cvar);
+				auto val = Draw::TextElement(it.itemaction.cvar->string).font(Draw::Font::kMenu);
 
-				h = row.x(BASEVIDWIDTH - 16).flags(highlightflags);
-				h.align(Draw::Align::kRight).text(val);
+				h = row.x(BASEVIDWIDTH - 18);
+				h.align(Draw::Align::kRight).flags(isDefault ? highlightflags : warningflags).text(val);
 
 				if (selected)
 				{
+					Draw ar = h.flags(highlightflags);
 					int ofs = skullAnimCounter / 5;
-					h.x(-val.width() - 10 - ofs).text("\x1C");
-					h.x(2 + ofs).text("\x1D");
+					ar.x(-val.width() - 10 - ofs).text("\x1C");
+					ar.x(2 + ofs).text("\x1D");
+				}
+
+				if (!isDefault)
+				{
+					h.x(selected ? 12 : 5).y(-1).flags(warningflags).text(".");
 				}
 			}
 		}
 
 		row = row.y(11);
-	}
-
-	// Finally, draw the card ontop
-	if (optionsmenu.profile != NULL)
-	{
-		M_DrawProfileCard(optionsmenu.optx, optionsmenu.opty, false, optionsmenu.profile);
 	}
 }
 

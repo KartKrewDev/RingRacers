@@ -2175,6 +2175,20 @@ static inline fixed_t BunchedCharacterDim(
 	return 0;
 }
 
+static inline fixed_t MenuCharacterDim(
+		fixed_t  scale,
+		fixed_t   chw,
+		INT32    hchw,
+		INT32    dupx,
+		fixed_t *  cwp)
+{
+	(void)chw;
+	(void)hchw;
+	(void)dupx;
+	(*cwp) = FixedMul(std::max(1, (*cwp) - 2) << FRACBITS, scale);
+	return 0;
+}
+
 static inline fixed_t GamemodeCharacterDim(
 		fixed_t  scale,
 		fixed_t   chw,
@@ -2351,6 +2365,12 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 				result->dim_fn = CenteredCharacterDim;
 			else
 				result->dim_fn = BunchedCharacterDim;
+			break;
+		case MENU_FONT:
+			if (result->chw)
+				result->dim_fn = CenteredCharacterDim;
+			else
+				result->dim_fn = MenuCharacterDim;
 			break;
 		case KART_FONT:
 			if (result->chw)

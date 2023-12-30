@@ -65,7 +65,7 @@ menu_t OPTIONS_VideoDef = {
 	&OPTIONS_MainDef,
 	0,
 	OPTIONS_Video,
-	32, 80-8,
+	48, 80-8,
 	SKINCOLOR_PLAGUE, 0,
 	MBF_DRAWBGWHILEPLAYING,
 	NULL,

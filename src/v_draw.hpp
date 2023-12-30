@@ -37,6 +37,7 @@ public:
 		kZVote,
 		kPing,
 		kTimer,
+		kMenu,
 	};
 
 	enum class Align

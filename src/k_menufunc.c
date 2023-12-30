@@ -980,6 +980,15 @@ static void M_HandleMenuInput(void)
 				M_OpenVirtualKeyboard(thisMenuKey == -1);	// If we entered this menu by pressing a menu Key, default to keyboard typing, otherwise use controller.
 				return;
 			}
+			else if (M_MenuExtraPressed(pid))
+			{
+				if (!(currentMenu->behaviourflags & MBF_SOUNDLESS))
+					S_StartSound(NULL, sfx_s3k5b);
+
+				M_ChangeCvar(-1);
+				M_SetMenuDelay(pid);
+				return;
+			}
 
 		}
 		else

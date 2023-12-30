@@ -983,14 +983,14 @@ void EggTV::draw_replay(const Replay& replay) const
 	{
 		Draw row = box.xy(39, 104).align(Draw::Align::kLeft);
 
-		auto pair = [&row](int x, auto label, auto text)
+		auto pair = [&row](int x, int y, auto label, auto text)
 		{
 			row = row.y(10);
-			row.y(-1).flags(V_AQUAMAP).font(Draw::Font::kThin).text(label);
-			row.x(x).font(Draw::Font::kConsole).text(text);
+			row.flags(V_AQUAMAP).font(Draw::Font::kThin).text(label);
+			row.xy(x, y).font(Draw::Font::kMenu).text(text);
 		};
 
-		Draw gametype = row.font(Draw::Font::kConsole);
+		Draw gametype = row.font(Draw::Font::kMenu);
 
 		if (race)
 		{
@@ -1003,15 +1003,15 @@ void EggTV::draw_replay(const Replay& replay) const
 
 		if (winner)
 		{
-			pair(38, "WINNER", winner->name);
+			pair(38, 1, "WINNER", winner->name);
 
 			if (replay.gametype().ranks_time())
 			{
-				pair(32, "TIME", player_time_string(*winner));
+				pair(32, 0, "TIME", player_time_string(*winner));
 			}
 			else if (replay.gametype().ranks_points())
 			{
-				pair(32, "SCORE", player_points_string(*winner));
+				pair(32, 0, "SCORE", player_points_string(*winner));
 			}
 		}
 	}
@@ -1115,7 +1115,7 @@ void EggTV::draw_standings(const Replay& replay) const
 	);
 
 	Draw row = Draw(StandingsOffsets::kLeft - x, StandingsOffsets::kTop + y)
-		.clipx(StandingsOffsets::kLeft, StandingsOffsets::kRight).font(Draw::Font::kConsole).align(Draw::Align::kRight);
+		.clipx(StandingsOffsets::kLeft, StandingsOffsets::kRight).font(Draw::Font::kMenu).align(Draw::Align::kRight);
 
 	std::size_t start = standingsRow_.pos();
 

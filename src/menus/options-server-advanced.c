@@ -6,8 +6,15 @@
 menuitem_t OPTIONS_ServerAdvanced[] =
 {
 
+	{IT_HEADER, "Master Server", NULL,
+		NULL, {NULL}, 0, 0},
+
 	{IT_STRING | IT_CVAR | IT_CV_STRING, "Server Browser Address", "Default is \'https://ms.kartkrew.org/ms/api\'",
 		NULL, {.cvar = &cv_masterserver}, 0, 0},
+
+
+	{IT_HEADER, "Network Connection", NULL,
+		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Resynch. Attempts", "How many times to attempt sending data to desynchronized players.",
 		NULL, {.cvar = &cv_resynchattempts}, 0, 0},
@@ -24,7 +31,8 @@ menuitem_t OPTIONS_ServerAdvanced[] =
 	{IT_STRING | IT_CVAR, "Join Timeout (tics)", "Players taking too long to join are kicked.",
 		NULL, {.cvar = &cv_jointimeout}, 0, 0},
 
-	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+
+	{IT_HEADER, "Addon Downloading", NULL,
 		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Max File Transfer", "Maximum size of the files that can be downloaded from joining clients. (KB)",
@@ -33,7 +41,8 @@ menuitem_t OPTIONS_ServerAdvanced[] =
 	{IT_STRING | IT_CVAR, "File Transfer Speed", "File transfer packet rate. Larger values send more data.",
 		NULL, {.cvar = &cv_downloadspeed}, 0, 0},
 
-	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+
+	{IT_HEADER, "Logging", NULL,
 		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Log Joiner IPs", "Shows the IP of connecting players.",
