@@ -98,7 +98,7 @@ fixed_t M_DueFrac(tic_t start, tic_t duration)
 }
 
 #define SKULLXOFF -32
-#define LINEHEIGHT 16
+#define LINEHEIGHT 17
 #define STRINGHEIGHT 9
 #define FONTBHEIGHT 20
 #define SMALLLINEHEIGHT 9
@@ -1365,7 +1365,7 @@ void M_DrawHorizontalMenu(void)
 void M_DrawTextBox(INT32 x, INT32 y, INT32 width, INT32 boxlines)
 {
 	// Solid color textbox.
-	V_DrawFill(x+5, y+5, width*8+6, boxlines*8+6, 159);
+	V_DrawFill(x+5, y+5, width*7+6, boxlines*9+6, 159);
 	//V_DrawFill(x+8, y+8, width*8, boxlines*8, 31);
 }
 
@@ -4346,7 +4346,7 @@ box_found:
 					if ((currentMenu->menuitems[i].status & IT_TYPE) == IT_CVAR &&
 						(currentMenu->menuitems[i].status & IT_CVARTYPE) == IT_CV_STRING)
 					{
-						y += 16;
+						y += LINEHEIGHT;
 					}
 					y += STRINGHEIGHT;
 					break;
@@ -4400,12 +4400,12 @@ box_found:
 									if (itemOn == i)
 									{
 										xoffs += 8;
-										V_DrawMenuString(x + (skullAnimCounter/5) + 6, y + 11, highlightflags, "\x1D");
+										V_DrawMenuString(x + (skullAnimCounter/5) + 7, y + 11, highlightflags, "\x1D");
 									}
 
 									V_DrawString(x + xoffs + 8, y + 12, 0, cv->string);
 
-									y += 16;
+									y += LINEHEIGHT;
 								}
 								break;
 							default: {
