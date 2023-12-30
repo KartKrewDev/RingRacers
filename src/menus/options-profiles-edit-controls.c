@@ -178,10 +178,6 @@ static void M_ProfileControlSaveResponse(INT32 choice)
 	{
 		SINT8 belongsto = PR_ProfileUsedBy(optionsmenu.profile);
 		// Save the profile
-		optionsmenu.profile->kickstartaccel = cv_dummyprofilekickstart.value;
-		optionsmenu.profile->autoroulette = cv_dummyprofileautoroulette.value;
-		optionsmenu.profile->litesteer = cv_dummyprofilelitesteer.value;
-		optionsmenu.profile->rumble = cv_dummyprofilerumble.value;
 		memcpy(&optionsmenu.profile->controls, optionsmenu.tempcontrols, sizeof(gamecontroldefault));
 
 		// If this profile is in-use by anyone, apply the changes immediately upon exiting.
@@ -189,10 +185,6 @@ static void M_ProfileControlSaveResponse(INT32 choice)
 		if (belongsto > -1 && belongsto < MAXSPLITSCREENPLAYERS)
 		{
 			memcpy(&gamecontrol[belongsto], optionsmenu.tempcontrols, sizeof(gamecontroldefault));
-			CV_SetValue(&cv_kickstartaccel[belongsto], cv_dummyprofilekickstart.value);
-			CV_SetValue(&cv_autoroulette[belongsto], cv_dummyprofileautoroulette.value);
-			CV_SetValue(&cv_litesteer[belongsto], cv_dummyprofilelitesteer.value);
-			CV_SetValue(&cv_rumble[belongsto], cv_dummyprofilerumble.value);
 		}
 
 		M_GoBack(0);
@@ -207,10 +199,6 @@ void M_ProfileControlsConfirm(INT32 choice)
 	// TODO: Add a graphic for controls saving, instead of obnoxious prompt.
 
 	M_ProfileControlSaveResponse(MA_YES);
-
-	optionsmenu.profile->kickstartaccel = cv_dummyprofilekickstart.value;		// Make sure to save kickstart accel.
-	optionsmenu.profile->autoroulette = cv_dummyprofileautoroulette.value; // We should really just rip this entire construct out at some point
-	optionsmenu.profile->rumble = cv_dummyprofilerumble.value;		// And rumble too!
 
 	// Reapply player 1's real profile.
 	if (cv_currprofile.value > -1)
