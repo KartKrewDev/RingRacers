@@ -130,8 +130,8 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	k_pathfind.c
 	k_bheap.c
 	k_bot.cpp
-	k_botitem.c
-	k_botsearch.c
+	k_botitem.cpp
+	k_botsearch.cpp
 	k_grandprix.c
 	k_boss.c
 	k_hud.cpp

@@ -10,6 +10,8 @@
 /// \file  k_botsearch.c
 /// \brief Bot blockmap search functions
 
+#include <tracy/tracy/Tracy.hpp>
+
 #include "doomdef.h"
 #include "d_player.h"
 #include "g_game.h"
@@ -90,6 +92,8 @@ static BlockItReturn_t K_FindEggboxes(mobj_t *thing)
 --------------------------------------------------*/
 UINT8 K_EggboxStealth(fixed_t x, fixed_t y)
 {
+	ZoneScoped;
+
 	INT32 xl, xh, yl, yh, bx, by;
 
 	g_eggboxSearch.eggboxx = x;
@@ -392,8 +396,9 @@ static boolean K_PlayerAttackSteer(mobj_t *thing, UINT8 side, UINT8 weight, bool
 --------------------------------------------------*/
 static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 {
+	ZoneScoped;
+
 	INT16 angledelta, anglediff;
-	fixed_t fulldist;
 	angle_t destangle, angle;
 	UINT8 side = 0;
 
@@ -412,17 +417,22 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 		return BMIT_CONTINUE;
 	}
 
-	fulldist = R_PointToDist2(g_nudgeSearch.botmo->x, g_nudgeSearch.botmo->y, thing->x, thing->y) - thing->radius;
+	const fixed_t xDelta = abs(g_nudgeSearch.botmo->x - thing->x);
+	const fixed_t yDelta = abs(g_nudgeSearch.botmo->y - thing->y);
+	const fixed_t fullDist = (FixedMul(xDelta, xDelta) + FixedMul(yDelta, yDelta)) - FixedMul(thing->radius, thing->radius);
 
-	if (fulldist > g_nudgeSearch.distancetocheck)
+	if (fullDist > g_nudgeSearch.distancetocheck)
 	{
 		return BMIT_CONTINUE;
 	}
 
+#if 0
+	// this is very expensive to do, and probably not worth it.
 	if (P_CheckSight(g_nudgeSearch.botmo, thing) == false)
 	{
 		return BMIT_CONTINUE;
 	}
+#endif
 
 	destangle = R_PointToAngle2(g_nudgeSearch.botmo->x, g_nudgeSearch.botmo->y, thing->x, thing->y);
 	angle = (g_nudgeSearch.angle - destangle);
@@ -670,6 +680,8 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 --------------------------------------------------*/
 void K_NudgePredictionTowardsObjects(botprediction_t *predict, const player_t *player)
 {
+	ZoneScoped;
+
 	const precise_t time = I_GetPreciseTime();
 
 	INT32 xl, xh, yl, yh, bx, by;
@@ -696,10 +708,10 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, const player_t *p
 	}
 
 	distToPredict = R_PointToDist2(player->mo->x, player->mo->y, predict->x, predict->y);
-	radToPredict = distToPredict >> 1;
 	angleToPredict = R_PointToAngle2(player->mo->x, player->mo->y, predict->x, predict->y);
 
-	g_nudgeSearch.distancetocheck = distToPredict;
+	radToPredict = distToPredict >> 1;
+	g_nudgeSearch.distancetocheck = FixedMul(radToPredict, radToPredict);
 
 	baseNudge = predict->baseRadius >> 3;
 	maxNudge = predict->baseRadius - baseNudge;
@@ -720,10 +732,10 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, const player_t *p
 		g_nudgeSearch.avoidObjs[i] = 0;
 	}
 
-	xl = (unsigned)(avgX - (distToPredict + MAXRADIUS) - bmaporgx)>>MAPBLOCKSHIFT;
-	xh = (unsigned)(avgX + (distToPredict + MAXRADIUS) - bmaporgx)>>MAPBLOCKSHIFT;
-	yl = (unsigned)(avgY - (distToPredict + MAXRADIUS) - bmaporgy)>>MAPBLOCKSHIFT;
-	yh = (unsigned)(avgY + (distToPredict + MAXRADIUS) - bmaporgy)>>MAPBLOCKSHIFT;
+	xl = (unsigned)(avgX - (radToPredict + MAXRADIUS) - bmaporgx)>>MAPBLOCKSHIFT;
+	xh = (unsigned)(avgX + (radToPredict + MAXRADIUS) - bmaporgx)>>MAPBLOCKSHIFT;
+	yl = (unsigned)(avgY - (radToPredict + MAXRADIUS) - bmaporgy)>>MAPBLOCKSHIFT;
+	yh = (unsigned)(avgY + (radToPredict + MAXRADIUS) - bmaporgy)>>MAPBLOCKSHIFT;
 
 	BMBOUNDFIX(xl, xh, yl, yh);
 
@@ -770,7 +782,7 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, const player_t *p
 
 		predict->x += FixedMul(nudgeDist, FINECOSINE(nudgeDir >> ANGLETOFINESHIFT));
 		predict->y += FixedMul(nudgeDist, FINESINE(nudgeDir >> ANGLETOFINESHIFT));
-		predict->radius = max(predict->radius - nudgeDist, baseNudge);
+		predict->radius = std::max(predict->radius - nudgeDist, baseNudge);
 
 		distToPredict = R_PointToDist2(player->mo->x, player->mo->y, predict->x, predict->y);
 
@@ -841,7 +853,7 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, const player_t *p
 
 			predict->x += FixedMul(nudgeDist, FINECOSINE(nudgeDir >> ANGLETOFINESHIFT));
 			predict->y += FixedMul(nudgeDist, FINESINE(nudgeDir >> ANGLETOFINESHIFT));
-			predict->radius = max(predict->radius - nudgeDist, baseNudge);
+			predict->radius = std::max(predict->radius - nudgeDist, baseNudge);
 
 			//distToPredict = R_PointToDist2(player->mo->x, player->mo->y, predict->x, predict->y);
 		}
@@ -954,6 +966,8 @@ static BlockItReturn_t K_FindPlayersToBully(mobj_t *thing)
 --------------------------------------------------*/
 INT32 K_PositionBully(const player_t *player)
 {
+	ZoneScoped;
+
 	INT32 xl, xh, yl, yh, bx, by;
 
 	angle_t ourangle, destangle, angle;
