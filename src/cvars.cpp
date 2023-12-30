@@ -549,6 +549,7 @@ consvar_t cv_playbackspeed = Server("playbackspeed", "1").min_max(1, 10).dont_sa
 #endif
 
 consvar_t cv_reducevfx = Server("reducevfx", "No").yes_no();
+consvar_t cv_screenshake = Server("screenshake", "Full").values({{0, "Off"}, {1, "Half"}, {2, "Full"}});
 
 consvar_t cv_rendezvousserver = Server("holepunchserver", "relay.kartkrew.org");
 

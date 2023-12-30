@@ -115,6 +115,9 @@ menuitem_t OPTIONS_ProfileAccessibility[] = {
 
 	{IT_STRING | IT_CVAR, "Reduce Effects", "If overwhelmed, hide less-important particle cues.",
 		NULL, {.cvar = &cv_reducevfx}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Screenshake Strength", "Adjust shake intensity from damage, hazards, and offroad.",
+		NULL, {.cvar = &cv_screenshake}, 0, 0},
 };
 
 menu_t OPTIONS_ProfileAccessibilityDef = {

@@ -9454,7 +9454,7 @@ void P_DoQuakeOffset(UINT8 view, mappoint_t *viewPos, mappoint_t *offset)
 	fixed_t ir = 0;
 	fixed_t addZ = 0;
 
-	if (cv_reducevfx.value == 1)
+	if (cv_screenshake.value == 0)
 	{
 		return;
 	}
@@ -9515,6 +9515,11 @@ void P_DoQuakeOffset(UINT8 view, mappoint_t *viewPos, mappoint_t *offset)
 	if ((leveltime + view) & 1)
 	{
 		addZ = -addZ;
+	}
+
+	if (cv_screenshake.value == 1) // Half
+	{
+		addZ /= 2;
 	}
 
 	// Finalize the effects.
