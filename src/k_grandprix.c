@@ -605,12 +605,12 @@ void K_IncreaseBotDifficulty(player_t *bot)
 
 	increase = (beatenDelta + winnerDelta + disruptDelta - 2) / 3;
 
-	INT8 rankNudge = 1; // Generally, we want bots to rank up at least once, but...
+	SINT8 rankNudge = 1; // Generally, we want bots to rank up at least once, but...
 
 	// If humans are struggling, we want to back off, or even derank if it's dire.
 	// Average human ranks to determine general bot "rank inertia".
-	INT8 totalRank = 0;
-	INT8 humanPlayers = 0;
+	SINT8 totalRank = 0;
+	SINT8 humanPlayers = 0;
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		player_t *human = NULL;
@@ -631,7 +631,7 @@ void K_IncreaseBotDifficulty(player_t *bot)
 		totalRank += human->tally.rank;
 	}
 
-	INT8 averageRank = totalRank / humanPlayers;
+	SINT8 averageRank = totalRank / humanPlayers;
 
 	switch(averageRank)
 	{
