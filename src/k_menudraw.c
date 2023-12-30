@@ -158,7 +158,7 @@ static void M_DrawSlider(INT32 x, INT32 y, const consvar_t *cv, boolean ontop)
 
 static void M_DrawCursorHand(INT32 x, INT32 y)
 {
-	V_DrawScaledPatch(x - 24, y, 0, W_CachePatchName("M_CURSOR", PU_CACHE));
+	V_DrawScaledPatch(x - 24 - (I_GetTime() % 16 < 8), y, 0, W_CachePatchName("M_CURSOR", PU_CACHE));
 }
 
 static void M_DrawUnderline(INT32 left, INT32 right, INT32 y)
@@ -2026,7 +2026,7 @@ static void M_DrawCharSelectPreview(UINT8 num)
 			UINT8 cy = ypos+16 + (i*10);
 
 			if (p->changeselect == i)
-				V_DrawScaledPatch(xpos, cy, 0, W_CachePatchName("M_CURSOR", PU_CACHE));
+				M_DrawCursorHand(xpos + 20, cy);
 
 			V_DrawThinString(xpos+16, cy, (p->changeselect == i ? highlightflags : 0), choices[i]);
 		}
@@ -2566,8 +2566,7 @@ void M_DrawRaceDifficulty(void)
 
 				if (i == itemOn)
 				{
-					V_DrawScaledPatch(140 + tx - 24, y, 0,
-						W_CachePatchName("M_CURSOR", PU_CACHE));
+					M_DrawCursorHand(140 + tx, y);
 				}
 
 				y += 10;
@@ -4485,8 +4484,7 @@ box_found:
 	}
 	else
 	{
-		V_DrawScaledPatch(x - 24, cursory, 0,
-			W_CachePatchName("M_CURSOR", PU_CACHE));
+		M_DrawCursorHand(x, cursory);
 	}
 }
 
@@ -4507,7 +4505,7 @@ void M_DrawProfileErase(void)
 		if (i == optionsmenu.eraseprofilen)
 		{
 			cursory = y;
-			V_DrawScaledPatch(x - 24, cursory, 0, W_CachePatchName("M_CURSOR", PU_CACHE));
+			M_DrawCursorHand(x, cursory);
 		}
 
 		V_DrawMenuString(x, y,
@@ -4967,8 +4965,7 @@ void M_DrawVideoModes(void)
 	i = 41 - 10 + ((optionsmenu.vidm_selected / optionsmenu.vidm_column_size)*7*13) + t;
 	j = currentMenu->y + 14 + ((optionsmenu.vidm_selected % optionsmenu.vidm_column_size)*9);
 
-	V_DrawScaledPatch(i - 8, j, 0,
-		W_CachePatchName("M_CURSOR", PU_CACHE));
+	M_DrawCursorHand(i + 14, j);
 }
 
 // Gameplay Item Tggles:
