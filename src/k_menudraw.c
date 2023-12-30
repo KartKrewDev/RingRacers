@@ -156,12 +156,12 @@ static void M_DrawSlider(INT32 x, INT32 y, const consvar_t *cv, boolean ontop)
 	V_DrawFill(px, y, 2, 8, aquamap[0]);
 }
 
-static void M_DrawCursorHand(INT32 x, INT32 y)
+void M_DrawCursorHand(INT32 x, INT32 y)
 {
 	V_DrawScaledPatch(x - 24 - (I_GetTime() % 16 < 8), y, 0, W_CachePatchName("M_CURSOR", PU_CACHE));
 }
 
-static void M_DrawUnderline(INT32 left, INT32 right, INT32 y)
+void M_DrawUnderline(INT32 left, INT32 right, INT32 y)
 {
 	if (menutransition.tics == menutransition.dest)
 		V_DrawFill(left - 1, y + 5, (right - left) + 11, 2, 31);

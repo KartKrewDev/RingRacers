@@ -1205,6 +1205,9 @@ void M_HandleImageDef(INT32 choice);
 
 #define M_ALTCOLOR V_ORANGEMAP
 
+void M_DrawCursorHand(INT32 x, INT32 y);
+void M_DrawUnderline(INT32 left, INT32 right, INT32 y);
+
 // For some menu highlights
 UINT16 M_GetCvPlayerColor(UINT8 pnum);
 
