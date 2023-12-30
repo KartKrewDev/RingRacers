@@ -53,7 +53,10 @@ void Obj_CloudSpawn(mobj_t *mobj)
 	UINT8 dist = 128;
 
 	if (cloudtype == MT_AGZ_CLOUD)
-		cloud->scale *= 2;
+	{
+		cloud->destscale = cloud->scale * 2;
+		P_SetScale(cloud, cloud->destscale);
+	}
 
 	for (UINT8 i = 0; i < 4; i++)
 	{
@@ -64,7 +67,8 @@ void Obj_CloudSpawn(mobj_t *mobj)
 
 		if (cloudtype == MT_AGZ_CLOUD)
 		{
-			cloud->scale *= 2;
+			cloud->destscale = cloud->scale * 2;
+			P_SetScale(cloud, cloud->destscale);
 			cloud->frame = P_RandomRange(PR_DECORATION, 0, 3);
 		}
 
@@ -98,7 +102,8 @@ void Obj_TulipSpawnerThink(mobj_t *mobj)
 	{
 		P_MoveOrigin(part, mobj->x, mobj->y, mobj->z);
 		part->angle = a;
-		part->scale = mobj->scale;
+		part->destscale = mobj->scale;
+		P_SetScale(part, part->destscale);
 		part->flags2 = mobj->flags2;
 		part->eflags = mobj->eflags;
 		a += ANG1*90;
@@ -108,7 +113,8 @@ void Obj_TulipSpawnerThink(mobj_t *mobj)
 	mobj_t *b = mobj->tracer;
 
 	P_MoveOrigin(b, mobj->x, mobj->y, mobj->z);
-	b->scale = mobj->scale;
+	b->destscale = mobj->scale;
+	P_SetScale(b, b->destscale);
 	b->flags2 = mobj->flags2;
 	b->eflags = mobj->eflags;
 	b->color = SKINCOLOR_MAGENTA;
@@ -153,18 +159,17 @@ void Obj_PlayerCloudThink(player_t *player)
 			switch(mo->tracer->type)
 			{
 				case MT_AHZ_CLOUD:
-					P_SetObjectMomZ(mo, CLOUD_ZTHRUST, false);
+					P_SetObjectMomZ(mo, CLOUDB_ZTHRUST, false);
 					break;
 				case MT_AGZ_CLOUD:
 					mo->momz = FixedMul(mapobjectscale, CLOUD_ZTHRUST * P_MobjFlip(mo->tracer));
 					break;
 				case MT_SSZ_CLOUD:
-					P_SetObjectMomZ(mo, CLOUDB_ZTHRUST, false);
+					P_SetObjectMomZ(mo, CLOUD_ZTHRUST, false);
 					break;
 				default:
 					break;
 			}
-			P_SetObjectMomZ(mo, CLOUD_ZTHRUST, false);
 			player->cloudlaunch = TICRATE;
 
 			P_InstaThrust(mo, mo->cusval, mo->cvmem);
