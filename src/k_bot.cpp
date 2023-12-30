@@ -12,6 +12,8 @@
 
 #include <algorithm>
 
+#include <tracy/tracy/Tracy.hpp>
+
 #include "cxxutil.hpp"
 
 #include "doomdef.h"
@@ -808,6 +810,8 @@ static fixed_t K_ScaleWPDistWithSlope(fixed_t disttonext, angle_t angletonext, c
 --------------------------------------------------*/
 static botprediction_t *K_CreateBotPrediction(const player_t *player)
 {
+	ZoneScoped;
+
 	const precise_t time = I_GetPreciseTime();
 
 	// Stair janking makes it harder to steer, so attempt to steer harder.
@@ -940,6 +944,8 @@ static botprediction_t *K_CreateBotPrediction(const player_t *player)
 --------------------------------------------------*/
 static UINT8 K_TrySpindash(const player_t *player, ticcmd_t *cmd)
 {
+	ZoneScoped;
+
 	const tic_t difficultyModifier = (TICRATE/6);
 
 	const fixed_t oldSpeed = R_PointToDist2(0, 0, player->rmomx, player->rmomy);
@@ -1072,6 +1078,8 @@ static UINT8 K_TrySpindash(const player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static boolean K_TryRingShooter(const player_t *player)
 {
+	ZoneScoped;
+
 	if (player->respawn.state != RESPAWNST_NONE)
 	{
 		// We're already respawning!
@@ -1213,6 +1221,8 @@ static void K_BotTrick(const player_t *player, ticcmd_t *cmd, const botcontrolle
 --------------------------------------------------*/
 static angle_t K_BotSmoothLanding(const player_t *player, angle_t destangle)
 {
+	ZoneScoped;
+
 	angle_t newAngle = destangle;
 	boolean air = !P_IsObjectOnGround(player->mo);
 	angle_t steepVal = air ? STUMBLE_STEEP_VAL_AIR : STUMBLE_STEEP_VAL;
@@ -1262,6 +1272,8 @@ static angle_t K_BotSmoothLanding(const player_t *player, angle_t destangle)
 --------------------------------------------------*/
 static INT32 K_HandleBotTrack(const player_t *player, ticcmd_t *cmd, botprediction_t *predict, angle_t destangle)
 {
+	ZoneScoped;
+
 	// Handle steering towards waypoints!
 	INT32 turnamt = 0;
 	SINT8 turnsign = 0;
@@ -1362,6 +1374,8 @@ static INT32 K_HandleBotTrack(const player_t *player, ticcmd_t *cmd, botpredicti
 --------------------------------------------------*/
 static INT32 K_HandleBotReverse(const player_t *player, ticcmd_t *cmd, botprediction_t *predict, angle_t destangle)
 {
+	ZoneScoped;
+
 	// Handle steering towards waypoints!
 	INT32 turnamt = 0;
 	SINT8 turnsign = 0;
@@ -1847,6 +1861,8 @@ void K_BuildBotTiccmd(
 	player_t *player, // annoyingly NOT const because of LUA_HookTiccmd... grumble grumble
 	ticcmd_t *cmd)
 {
+	ZoneScoped;
+
 	// Remove any existing controls
 	memset(cmd, 0, sizeof(ticcmd_t));
 

@@ -10,6 +10,8 @@
 /// \file  k_botitem.c
 /// \brief Bot item usage logic
 
+#include <tracy/tracy/Tracy.hpp>
+
 #include "doomdef.h"
 #include "d_player.h"
 #include "g_game.h"
@@ -61,6 +63,8 @@ static inline boolean K_ItemButtonWasDown(const player_t *player)
 --------------------------------------------------*/
 static boolean K_BotUseItemNearPlayer(const player_t *player, ticcmd_t *cmd, fixed_t radius)
 {
+	ZoneScoped;
+
 	UINT8 i;
 
 	if (K_ItemButtonWasDown(player) == true)
@@ -119,6 +123,8 @@ static boolean K_BotUseItemNearPlayer(const player_t *player, ticcmd_t *cmd, fix
 --------------------------------------------------*/
 static player_t *K_PlayerNearSpot(const player_t *player, fixed_t x, fixed_t y, fixed_t radius)
 {
+	ZoneScoped;
+
 	UINT8 i;
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -168,11 +174,14 @@ static player_t *K_PlayerNearSpot(const player_t *player, fixed_t x, fixed_t y, 
 --------------------------------------------------*/
 static player_t *K_PlayerPredictThrow(const player_t *player, UINT8 extra)
 {
+	ZoneScoped;
+
 	const fixed_t dist = (30 + (extra * 10)) * player->mo->scale;
 	const UINT32 airtime = FixedDiv(dist + player->mo->momz, gravity);
 	const fixed_t throwspeed = FixedMul(82 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	const fixed_t estx = player->mo->x + P_ReturnThrustX(NULL, player->mo->angle, (throwspeed + player->speed) * airtime);
 	const fixed_t esty = player->mo->y + P_ReturnThrustY(NULL, player->mo->angle, (throwspeed + player->speed) * airtime);
+
 	return K_PlayerNearSpot(player, estx, esty, player->mo->radius * 2);
 }
 
@@ -192,6 +201,8 @@ static player_t *K_PlayerPredictThrow(const player_t *player, UINT8 extra)
 --------------------------------------------------*/
 static player_t *K_PlayerInCone(const player_t *player, fixed_t radius, UINT16 cone, boolean flip)
 {
+	ZoneScoped;
+
 	UINT8 i;
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -346,6 +357,8 @@ static void K_ItemConfirmForTarget(const player_t *bot, ticcmd_t *cmd, const pla
 --------------------------------------------------*/
 static boolean K_BotGenericPressItem(const player_t *player, ticcmd_t *cmd, SINT8 dir)
 {
+	ZoneScoped;
+
 	if (K_ItemButtonWasDown(player) == true)
 	{
 		return false;
@@ -371,6 +384,8 @@ static boolean K_BotGenericPressItem(const player_t *player, ticcmd_t *cmd, SINT
 --------------------------------------------------*/
 static void K_BotItemGenericTap(const player_t *player, ticcmd_t *cmd)
 {
+	ZoneScoped;
+
 	if (K_ItemButtonWasDown(player) == false)
 	{
 		cmd->buttons |= BT_ATTACK;
@@ -393,6 +408,8 @@ static void K_BotItemGenericTap(const player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static boolean K_BotRevealsGenericTrap(const player_t *player, INT16 turnamt, boolean mine)
 {
+	ZoneScoped;
+
 	const fixed_t coneDist = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 
 	if (abs(turnamt) >= KART_FULLTURN/2)
@@ -441,6 +458,8 @@ static boolean K_BotRevealsGenericTrap(const player_t *player, INT16 turnamt, bo
 --------------------------------------------------*/
 static void K_BotItemGenericTrapShield(const player_t *player, ticcmd_t *cmd, INT16 turnamt, boolean mine)
 {
+	ZoneScoped;
+
 	if (player->itemflags & IF_ITEMOUT)
 	{
 		return;
@@ -468,6 +487,8 @@ static void K_BotItemGenericTrapShield(const player_t *player, ticcmd_t *cmd, IN
 --------------------------------------------------*/
 static void K_BotItemGenericOrbitShield(const player_t *player, ticcmd_t *cmd)
 {
+	ZoneScoped;
+
 	if (player->itemflags & IF_ITEMOUT)
 	{
 		return;
@@ -490,6 +511,8 @@ static void K_BotItemGenericOrbitShield(const player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static void K_BotItemSneaker(const player_t *player, ticcmd_t *cmd)
 {
+	ZoneScoped;
+
 	if (P_IsObjectOnGround(player->mo) == false)
 	{
 		// Don't use while mid-air.
@@ -528,6 +551,8 @@ static void K_BotItemSneaker(const player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static void K_BotItemRocketSneaker(const player_t *player, ticcmd_t *cmd)
 {
+	ZoneScoped;
+
 	if (P_IsObjectOnGround(player->mo) == false)
 	{
 		// Don't use while mid-air.
@@ -563,6 +588,8 @@ static void K_BotItemRocketSneaker(const player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static void K_BotItemBanana(const player_t *player, ticcmd_t *cmd, INT16 turnamt)
 {
+	ZoneScoped;
+
 	const fixed_t coneDist = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	SINT8 throwdir = -1;
 	boolean tryLookback = false;
@@ -620,6 +647,8 @@ static void K_BotItemBanana(const player_t *player, ticcmd_t *cmd, INT16 turnamt
 --------------------------------------------------*/
 static void K_BotItemMine(const player_t *player, ticcmd_t *cmd, INT16 turnamt)
 {
+	ZoneScoped;
+
 	const fixed_t coneDist = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	SINT8 throwdir = 0;
 	boolean tryLookback = false;
@@ -683,6 +712,8 @@ static void K_BotItemMine(const player_t *player, ticcmd_t *cmd, INT16 turnamt)
 --------------------------------------------------*/
 static void K_BotItemLandmine(const player_t *player, ticcmd_t *cmd, INT16 turnamt)
 {
+	ZoneScoped;
+
 	const fixed_t coneDist = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	player_t *target = NULL;
 
@@ -720,6 +751,8 @@ static void K_BotItemLandmine(const player_t *player, ticcmd_t *cmd, INT16 turna
 --------------------------------------------------*/
 static void K_BotItemEggman(const player_t *player, ticcmd_t *cmd)
 {
+	ZoneScoped;
+
 	const fixed_t coneDist = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	const UINT8 stealth = K_EggboxStealth(player->mo->x, player->mo->y);
 	SINT8 throwdir = -1;
@@ -773,6 +806,8 @@ static void K_BotItemEggman(const player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static boolean K_BotRevealsEggbox(const player_t *player)
 {
+	ZoneScoped;
+
 	const fixed_t coneDist = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	const UINT8 stealth = K_EggboxStealth(player->mo->x, player->mo->y);
 	player_t *target = NULL;
@@ -814,6 +849,8 @@ static boolean K_BotRevealsEggbox(const player_t *player)
 --------------------------------------------------*/
 static void K_BotItemEggmanShield(const player_t *player, ticcmd_t *cmd)
 {
+	ZoneScoped;
+
 	if (player->itemflags & IF_EGGMANOUT)
 	{
 		return;
@@ -841,6 +878,8 @@ static void K_BotItemEggmanShield(const player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static void K_BotItemEggmanExplosion(const player_t *player, ticcmd_t *cmd)
 {
+	ZoneScoped;
+
 	if (player->position == 1)
 	{
 		// Hey, we aren't gonna find anyone up here...
@@ -865,6 +904,8 @@ static void K_BotItemEggmanExplosion(const player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static void K_BotItemOrbinaut(const player_t *player, ticcmd_t *cmd)
 {
+	ZoneScoped;
+
 	const fixed_t topspeed = K_GetKartSpeed(player, false, true);
 	fixed_t radius = FixedMul(2560 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	SINT8 throwdir = -1;
@@ -923,6 +964,8 @@ static void K_BotItemOrbinaut(const player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static void K_BotItemBallhog(const player_t *player, ticcmd_t *cmd)
 {
+	ZoneScoped;
+
 	const fixed_t topspeed = K_GetKartSpeed(player, false, true);
 	fixed_t radius = FixedMul(2560 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	SINT8 throwdir = -1;
@@ -998,6 +1041,8 @@ static void K_BotItemBallhog(const player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static void K_BotItemDropTarget(const player_t *player, ticcmd_t *cmd, INT16 turnamt)
 {
+	ZoneScoped;
+
 	const fixed_t topspeed = K_GetKartSpeed(player, false, true);
 	fixed_t radius = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	SINT8 throwdir = -1;
@@ -1062,6 +1107,8 @@ static void K_BotItemDropTarget(const player_t *player, ticcmd_t *cmd, INT16 tur
 --------------------------------------------------*/
 static void K_BotItemJawz(const player_t *player, ticcmd_t *cmd)
 {
+	ZoneScoped;
+
 	const fixed_t topspeed = K_GetKartSpeed(player, false, true);
 	fixed_t radius = FixedMul(2560 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	SINT8 throwdir = 1;
@@ -1142,6 +1189,8 @@ static void K_BotItemJawz(const player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static void K_BotItemLightning(const player_t *player, ticcmd_t *cmd)
 {
+	ZoneScoped;
+
 	if (K_BotUseItemNearPlayer(player, cmd, 192*player->mo->scale) == false)
 	{
 		if (player->botvars.itemconfirm > 10*TICRATE)
@@ -1169,6 +1218,8 @@ static void K_BotItemLightning(const player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static void K_BotItemBubble(const player_t *player, ticcmd_t *cmd)
 {
+	ZoneScoped;
+
 	boolean hold = false;
 
 	if (player->bubbleblowup <= 0)
@@ -1246,6 +1297,8 @@ static void K_BotItemBubble(const player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static void K_BotItemFlame(const player_t *player, ticcmd_t *cmd)
 {
+	ZoneScoped;
+
 	if (player->botvars.itemconfirm > 0)
 	{
 		cmd->bot.itemconfirm--;
@@ -1279,6 +1332,8 @@ static void K_BotItemFlame(const player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static void K_BotItemGardenTopDeploy(const player_t *player, ticcmd_t *cmd)
 {
+	ZoneScoped;
+
 	cmd->bot.itemconfirm++;
 
 	//if (player->curshield != KSHIELD_TOP)
@@ -1303,6 +1358,8 @@ static void K_BotItemGardenTopDeploy(const player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static void K_BotItemGardenTop(const player_t *player, ticcmd_t *cmd, INT16 turnamt)
 {
+	ZoneScoped;
+
 	const fixed_t topspeed = K_GetKartSpeed(player, false, true);
 	fixed_t radius = FixedMul(2560 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	SINT8 throwdir = -1;
@@ -1367,6 +1424,8 @@ static void K_BotItemGardenTop(const player_t *player, ticcmd_t *cmd, INT16 turn
 --------------------------------------------------*/
 static void K_BotItemRings(const player_t *player, ticcmd_t *cmd)
 {
+	ZoneScoped;
+
 	INT32 saferingsval = 16 - K_GetKartRingPower(player, false);
 
 	if (leveltime < starttime)
@@ -1413,6 +1472,8 @@ static void K_BotItemRings(const player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static void K_BotItemInstashield(const player_t *player, ticcmd_t *cmd)
 {
+	ZoneScoped;
+
 	const fixed_t radius = FixedMul(mobjinfo[MT_INSTAWHIP].radius, player->mo->scale);
 	size_t i = SIZE_MAX;
 
@@ -1500,6 +1561,8 @@ static tic_t K_BotItemRouletteMashConfirm(const player_t *player)
 --------------------------------------------------*/
 static void K_BotItemRouletteMash(const player_t *player, ticcmd_t *cmd)
 {
+	ZoneScoped;
+
 	const tic_t confirmTime = K_BotItemRouletteMashConfirm(player);
 
 	if (K_ItemButtonWasDown(player) == true)
@@ -1521,6 +1584,8 @@ static void K_BotItemRouletteMash(const player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 void K_BotItemUsage(const player_t *player, ticcmd_t *cmd, INT16 turnamt)
 {
+	ZoneScoped;
+
 	if (player->itemflags & IF_USERINGS)
 	{
 		if (player->rings > 0)
@@ -1703,7 +1768,7 @@ static void K_UpdateBotGameplayVarsItemUsageMash(player_t *player)
 	else
 	{
 		botItemPriority_e currentPriority = K_GetBotItemPriority(
-			player->itemRoulette.itemList[ player->itemRoulette.index ]
+			static_cast<kartitems_t>( player->itemRoulette.itemList[ player->itemRoulette.index ] )
 		);
 
 		if (player->botvars.roulettePriority == currentPriority)
@@ -1762,6 +1827,8 @@ void K_UpdateBotGameplayVarsItemUsage(player_t *player)
 --------------------------------------------------*/
 void K_BotPickItemPriority(player_t *player)
 {
+	ZoneScoped;
+
 	const fixed_t closeDistance = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	size_t i;
 
@@ -1777,7 +1844,7 @@ void K_BotPickItemPriority(player_t *player)
 	// Check for items that are extremely high priority.
 	for (i = 0; i < player->itemRoulette.itemListLen; i++)
 	{
-		botItemPriority_e priority = K_GetBotItemPriority( player->itemRoulette.itemList[i] );
+		botItemPriority_e priority = K_GetBotItemPriority( static_cast<kartitems_t>( player->itemRoulette.itemList[i] ) );
 
 		if (priority < BOT_ITEM_PR__OVERRIDES)
 		{
@@ -1794,7 +1861,7 @@ void K_BotPickItemPriority(player_t *player)
 			}
 		}
 
-		player->botvars.roulettePriority = max( player->botvars.roulettePriority, priority );
+		player->botvars.roulettePriority = std::max( static_cast<botItemPriority_e>( player->botvars.roulettePriority ), priority );
 	}
 
 	if (player->botvars.roulettePriority >= BOT_ITEM_PR__OVERRIDES)
