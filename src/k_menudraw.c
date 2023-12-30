@@ -4227,10 +4227,12 @@ static void M_DrawOptionsBoxTerm(INT32 x, INT32 top, INT32 bottom)
 
 void M_DrawGenericOptions(void)
 {
-	INT32 x = currentMenu->x - M_EaseWithTransition(Easing_Linear, 5 * 48), y = currentMenu->y, w, i, cursory = 0;
+	INT32 x = currentMenu->x - M_EaseWithTransition(Easing_Linear, 5 * 48), y = currentMenu->y, w, i, cursory = -100;
 	INT32 expand = -1;
 	INT32 boxy = 0;
 	boolean collapse = false;
+	boolean opening = false;
+	fixed_t boxt = 0;
 
 	M_DrawMenuTooltips();
 	M_DrawOptionsMovingButton();
@@ -4248,6 +4250,11 @@ void M_DrawGenericOptions(void)
 		}
 	}
 box_found:
+	if (optionsmenu.box.dist != expand)
+	{
+		optionsmenu.box.dist = expand;
+		optionsmenu.box.start = I_GetTime();
+	}
 
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
@@ -4278,6 +4285,9 @@ box_found:
 
 					y += 2;
 					boxy = y;
+
+					boxt = optionsmenu.box.dist == expand ? M_DueFrac(optionsmenu.box.start, 5) : FRACUNIT;
+					opening = boxt < FRACUNIT;
 				}
 				break;
 
@@ -4288,12 +4298,15 @@ box_found:
 
 		if (term)
 		{
-			M_DrawOptionsBoxTerm(x, boxy, y);
+			if (menutransition.tics == menutransition.dest)
+				M_DrawOptionsBoxTerm(x, boxy, Easing_Linear(boxt, boxy, y));
+
 			y += SMALLLINEHEIGHT;
 			boxy = 0;
+			opening = false;
 		}
 
-		if (i == itemOn)
+		if (i == itemOn && !opening)
 		{
 			cursory = y;
 			M_DrawUnderline(x, BASEVIDWIDTH - x, y);
@@ -4329,6 +4342,17 @@ box_found:
 #endif
 			case IT_STRING:
 			case IT_WHITESTRING: {
+				if (opening)
+				{
+					if ((currentMenu->menuitems[i].status & IT_TYPE) == IT_CVAR &&
+						(currentMenu->menuitems[i].status & IT_CVARTYPE) == IT_CV_STRING)
+					{
+						y += 16;
+					}
+					y += STRINGHEIGHT;
+					break;
+				}
+
 				INT32 px = x + ((currentMenu->menuitems[i].status & IT_TYPE) == IT_SUBMENU ? 8 : 0);
 
 				if (i == itemOn)
@@ -4449,8 +4473,8 @@ box_found:
 		}
 	}
 
-	if (boxy)
-		M_DrawOptionsBoxTerm(x, boxy, y);
+	if (boxy && menutransition.tics == menutransition.dest)
+		M_DrawOptionsBoxTerm(x, boxy, Easing_Linear(boxt, boxy, y));
 
 	// DRAW THE SKULL CURSOR
 	if (((currentMenu->menuitems[itemOn].status & IT_DISPLAY) == IT_PATCH)

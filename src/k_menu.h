@@ -965,6 +965,7 @@ extern struct optionsmenu_s {
 
 	tic_t ticker;			// How long the menu's been open for
 	menu_anim_t offset;		// To make the icons move smoothly when we transition!
+	menu_anim_t box;
 
 	// For moving the button when we get into a submenu. it's smooth and cool! (normal x/y and target x/y.)
 	// this is only used during menu transitions.
