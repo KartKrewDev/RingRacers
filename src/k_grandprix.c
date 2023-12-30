@@ -604,11 +604,59 @@ void K_IncreaseBotDifficulty(player_t *bot)
 	disruptDelta = abs(statusQuo - bot->position);
 
 	increase = (beatenDelta + winnerDelta + disruptDelta - 2) / 3;
-	increase++; // At least +1 level up.
+
+	INT8 rankNudge = 1; // Generally, we want bots to rank up at least once, but...
+
+	// If humans are struggling, we want to back off, or even derank if it's dire.
+	// 
+	INT8 totalRank = 0;
+	INT8 humanPlayers = 0;
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		player_t *human = NULL;
+
+		if (playeringame[i] == false)
+			continue;
+
+		human = &players[i];
+
+		if (human->spectator == true)
+			continue;
+
+		if (human->bot == true)
+			continue;
+
+		humanPlayers++;
+
+		totalRank += human->tally.rank;
+	}
+
+	INT8 averageRank = totalRank / humanPlayers;
+
+	switch(averageRank)
+	{
+		case GRADE_E:
+			rankNudge = -2;
+			break;
+		case GRADE_D:
+			rankNudge = -1;
+			break;
+		case GRADE_C:
+		case GRADE_B:
+			rankNudge = 0;
+			break;
+		case GRADE_A:
+			rankNudge = 1;
+	}
+
+	increase += rankNudge;
+
+	CONS_Printf("BD %d WD %d DD %d NUDGE %d (AR %d), for final increase of %d\n", beatenDelta, winnerDelta, disruptDelta, rankNudge, averageRank, increase);
+
 	if (increase <= 0)
 	{
-		// No increase...
-		return;
+		// TYRON: We want to allow SMALL bot rank downs if a player gets rolled but still squeaks by.
+		// This is a deviation from SalCode™ and should be reexamined if bots get drowsy.
 	}
 
 	bot->botvars.diffincrease = increase;
