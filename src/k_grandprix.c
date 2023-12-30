@@ -651,8 +651,6 @@ void K_IncreaseBotDifficulty(player_t *bot)
 
 	increase += rankNudge;
 
-	CONS_Printf("BD %d WD %d DD %d NUDGE %d (AR %d), for final increase of %d\n", beatenDelta, winnerDelta, disruptDelta, rankNudge, averageRank, increase);
-
 	if (increase <= 0)
 	{
 		// TYRON: We want to allow SMALL bot rank downs if a player gets rolled but still squeaks by.
