@@ -1759,7 +1759,7 @@ void G_Ticker(boolean run)
 				{
 					if (players[i].bot == true && grandprixinfo.gp == true && grandprixinfo.masterbots == false)
 					{
-						const UINT8 bot_level_decrease = (grandprixinfo.gamespeed <= KARTSPEED_NORMAL) ? 3 : 2;
+						const UINT8 bot_level_decrease = (grandprixinfo.gamespeed == KARTSPEED_EASY) ? 3 : 2;
 
 						if (players[i].botvars.difficulty <= bot_level_decrease)
 						{
