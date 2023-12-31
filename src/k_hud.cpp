@@ -5400,7 +5400,7 @@ static void K_DrawBotDebugger(void)
 	V_DrawSmallString(8, 60, 0, va("Item timeout: %d", bot->botvars.rouletteTimeout));
 
 	V_DrawSmallString(8, 66, 0, va("Complexity: %d", K_GetTrackComplexity()));
-	V_DrawSmallString(8, 70, 0, va("Bot modifier: %d", K_BotMapModifier() - FRACUNIT));
+	V_DrawSmallString(8, 70, 0, va("Bot modifier: %.2f", FixedToFloat(K_BotMapModifier())));
 }
 
 static void K_DrawGPRankDebugger(void)
