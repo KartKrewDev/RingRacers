@@ -129,7 +129,6 @@ void Music_Init(void)
 		tune.song = "_title";
 		tune.priority = 100;
 		tune.resist = true;
-		tune.credit = true;
 	}
 
 	{
