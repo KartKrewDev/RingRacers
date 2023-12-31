@@ -82,7 +82,7 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 
 fixed_t M_TimeFrac(tic_t tics, tic_t duration)
 {
-	return tics < duration ? (tics * FRACUNIT + rendertimefrac) / duration : FRACUNIT;
+	return tics < duration ? (tics * FRACUNIT + rendertimefrac_unpaused) / duration : FRACUNIT;
 }
 
 fixed_t M_ReverseTimeFrac(tic_t tics, tic_t duration)
