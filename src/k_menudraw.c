@@ -5066,6 +5066,11 @@ void M_DrawItemToggles(void)
 		}
 	}
 
+	patch_t *isbg = W_CachePatchName("K_ISBG", PU_CACHE);
+	patch_t *isbgd = W_CachePatchName("K_ISBGD", PU_CACHE);
+	patch_t *ismul = W_CachePatchName("K_ISMUL", PU_CACHE);
+	patch_t *isstrk = W_CachePatchName("K_ISSTRK", PU_CACHE);
+
 	for (i = leftdraw; i <= rightdraw; i++)
 	{
 		INT32 j;
@@ -5087,7 +5092,7 @@ void M_DrawItemToggles(void)
 
 			if (currentMenu->menuitems[thisitem].mvar1 == 0)
 			{
-				V_DrawScaledPatch(x, y, 0, W_CachePatchName("K_ISBG", PU_CACHE));
+				V_DrawScaledPatch(x, y, 0, isbg);
 				V_DrawScaledPatch(x, y, 0, W_CachePatchName("K_ISTOGL", PU_CACHE));
 				y += spacing;
 				continue;
@@ -5095,7 +5100,7 @@ void M_DrawItemToggles(void)
 
 			if (currentMenu->menuitems[thisitem].mvar1 == 255)
 			{
-				V_DrawScaledPatch(x, y, 0, W_CachePatchName("K_ISBGD", PU_CACHE));
+				V_DrawScaledPatch(x, y, 0, isbgd);
 				y += spacing;
 				continue;
 			}
@@ -5104,13 +5109,10 @@ void M_DrawItemToggles(void)
 
 			drawnum = K_ItemResultToAmount(currentMenu->menuitems[thisitem].mvar1);
 
-			if (cv->value)
-				V_DrawScaledPatch(x, y, 0, W_CachePatchName("K_ISBG", PU_CACHE));
-			else
-				V_DrawScaledPatch(x, y, 0, W_CachePatchName("K_ISBGD", PU_CACHE));
+			V_DrawScaledPatch(x, y, 0, cv->value ? isbg : isbgd);
 
 			if (drawnum > 1)
-				V_DrawScaledPatch(x, y, 0, W_CachePatchName("K_ISMUL", PU_CACHE));
+				V_DrawScaledPatch(x, y, 0, ismul);
 
 			pat = W_CachePatchName(K_GetItemPatch(currentMenu->menuitems[thisitem].mvar1, true), PU_CACHE);
 
@@ -5128,7 +5130,7 @@ void M_DrawItemToggles(void)
 			}
 
 			if (!cv->value)
-				V_DrawScaledPatch(x, y, 0, W_CachePatchName("K_ISSTRK", PU_CACHE));
+				V_DrawScaledPatch(x, y, 0, isstrk);
 
 			y += spacing;
 		}
