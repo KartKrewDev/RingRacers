@@ -5127,6 +5127,9 @@ void M_DrawItemToggles(void)
 					DrawMappedString(x+24, y+31, V_MODULATE, HU_FONT, va("x%d", drawnum), black);
 			}
 
+			if (!cv->value)
+				V_DrawScaledPatch(x, y, 0, W_CachePatchName("K_ISSTRK", PU_CACHE));
+
 			y += spacing;
 		}
 
@@ -5184,6 +5187,11 @@ void M_DrawItemToggles(void)
 					V_DrawMappedPatch(onx+27, ony+39, V_MODULATE, W_CachePatchName("K_ITX", PU_CACHE), black);
 					DrawMappedString(onx+37, ony+34, V_MODULATE, TIMER_FONT, va("%d", drawnum), black);
 				}
+			}
+
+			if (!cv->value)
+			{
+				V_DrawScaledPatch(onx-1, ony-2, 0, W_CachePatchName("K_ITSTRK", PU_CACHE));
 			}
 		}
 	}
