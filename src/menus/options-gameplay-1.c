@@ -6,6 +6,9 @@
 menuitem_t OPTIONS_Gameplay[] =
 {
 
+	{IT_HEADER, "Race...", NULL,
+		NULL, {NULL}, 0, 0},
+
 	{IT_STRING | IT_CVAR, "Game Speed", "Change Game Speed for the next map.",
 		NULL, {.cvar = &cv_kartspeed}, 0, 0},
 
@@ -21,7 +24,8 @@ menuitem_t OPTIONS_Gameplay[] =
 	{IT_STRING | IT_CVAR, "Exit Countdown", "How long players have to finish after 1st place finishes.",
 		NULL, {.cvar = &cv_countdowntime}, 0, 0},
 
-	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+
+	{IT_HEADER, "Battle...", NULL,
 		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Time Limit", "Change the time limit for Battle rounds.",
@@ -30,7 +34,8 @@ menuitem_t OPTIONS_Gameplay[] =
 	{IT_STRING | IT_CVAR, "Starting Bumpers", "Change how many bumpers player start with in Battle.",
 		NULL, {.cvar = &cv_kartbumpers}, 0, 0},
 
-	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+
+	{IT_SPACE | IT_DYBIGSPACE, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_SUBMENU, "Random Item Toggles...", "Change which items to enable for your games.",
