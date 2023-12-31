@@ -739,7 +739,7 @@ consvar_t cv_overtime = UnsavedNetVar("overtime", "Yes").yes_no();
 
 extern CV_PossibleValue_t pointlimit_cons_t[];
 void PointLimit_OnChange(void);
-consvar_t cv_pointlimit = UnsavedNetVar("pointlimit", "Default").values(pointlimit_cons_t).onchange_noinit(PointLimit_OnChange);
+consvar_t cv_pointlimit = UnsavedNetVar("pointlimit", "Auto").values(pointlimit_cons_t).onchange_noinit(PointLimit_OnChange);
 
 void Schedule_OnChange(void);
 consvar_t cv_schedule = UnsavedNetVar("schedule", "On").on_off().onchange(Schedule_OnChange);
