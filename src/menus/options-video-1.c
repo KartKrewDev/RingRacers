@@ -41,6 +41,9 @@ menuitem_t OPTIONS_Video[] =
 	{IT_NOTHING|IT_SPACE, NULL, NULL,
 		NULL, {NULL}, 0, 0},
 
+	{IT_HEADER, "Advanced...", NULL,
+		NULL, {NULL}, 0, 0},
+
 	{IT_STRING | IT_CVAR, "Draw Distance", "How far objects can be drawn. A tradeoff between performance & visibility.",
 		NULL, {.cvar = &cv_drawdist}, 0, 0},
 
