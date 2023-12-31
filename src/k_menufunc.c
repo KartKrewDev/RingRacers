@@ -808,10 +808,10 @@ void M_SetMenuDelay(UINT8 i)
 		menucmd[i].delayCount = 1;
 	}
 
-	menucmd[i].delay = (MENUDELAYTIME / menucmd[i].delayCount);
-	if (menucmd[i].delay < 1)
+	menucmd[i].delay = (MENUDELAYTIME - min(MENUDELAYTIME - 1, menucmd[i].delayCount));
+	if (menucmd[i].delay < MENUMINDELAY)
 	{
-		menucmd[i].delay = 1;
+		menucmd[i].delay = MENUMINDELAY;
 	}
 }
 
