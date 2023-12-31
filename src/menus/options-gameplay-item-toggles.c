@@ -48,6 +48,13 @@ menuitem_t OPTIONS_GameplayItems[] =
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Kitchen Sink",			NULL, {.routine = M_HandleItemToggles}, KITEM_KITCHENSINK, 0}
 };
 
+static void init_routine(void)
+{
+	// Since this menu can be accessed from different
+	// locations. (currentMenu has not changed yet.)
+	OPTIONS_GameplayItemsDef.prevMenu = currentMenu;
+}
+
 menu_t OPTIONS_GameplayItemsDef = {
 	sizeof (OPTIONS_GameplayItems) / sizeof (menuitem_t),
 	&OPTIONS_GameplayDef,
@@ -61,10 +68,26 @@ menu_t OPTIONS_GameplayItemsDef = {
 	M_DrawItemToggles,
 	M_DrawOptionsCogs,
 	M_OptionsTick,
-	NULL,
+	init_routine,
 	NULL,
 	NULL,
 };
+
+static boolean M_AnyItemsEnabled(void)
+{
+	INT32 i;
+	for (i = 0; i < NUMKARTRESULTS-1; i++)
+	{
+		if (cv_items[i].value)
+			return true;
+	}
+	return false;
+}
+
+static void M_ToggleThunderdome(void)
+{
+	CV_SetValue(&cv_thunderdome, !M_AnyItemsEnabled());
+}
 
 void M_HandleItemToggles(INT32 choice)
 {
@@ -148,13 +171,13 @@ void M_HandleItemToggles(INT32 choice)
 		else
 		if (currentMenu->menuitems[itemOn].mvar1 == 0)
 		{
-			INT32 v = cv_items[0].value;
+			INT32 v = !M_AnyItemsEnabled();
 			S_StartSound(NULL, sfx_s1b4);
 			for (i = 0; i < NUMKARTRESULTS-1; i++)
 			{
-				if (cv_items[i].value == v)
-					CV_AddValue(&cv_items[i], 1);
+				CV_SetValue(&cv_items[i], v);
 			}
+			M_ToggleThunderdome();
 		}
 		else
 		{
@@ -167,6 +190,7 @@ void M_HandleItemToggles(INT32 choice)
 				S_StartSound(NULL, sfx_s1ba);
 			}
 			CV_AddValue(&cv_items[currentMenu->menuitems[itemOn].mvar1-1], 1);
+			M_ToggleThunderdome();
 		}
 	}
 

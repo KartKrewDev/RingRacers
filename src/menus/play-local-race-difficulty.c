@@ -1,6 +1,7 @@
 /// \file  menus/play-local-race-difficulty.c
 /// \brief difficulty selection -- see drace_e
 
+#include "../i_time.h"
 #include "../k_menu.h"
 #include "../m_cond.h" // Condition Sets
 
@@ -20,8 +21,10 @@ menuitem_t PLAY_RaceDifficulty[] =
 	{IT_STRING2 | IT_CVAR, "Racers", "Sets the number of racers, including players and CPU.",
 		"MENUI005", {.cvar = &cv_maxplayers}, 0, 0},
 
-	{IT_STRING2 | IT_CVAR, "Encore", "Enable or disable Encore mode",
-		"MENUI005", {.cvar = &cv_dummygpencore}, 0, 0},
+	{IT_PATCH | IT_SPACE, NULL, NULL,
+		"ITEMTOGG", {NULL}, 222, MBT_Y},
+	{IT_PATCH | IT_SPACE, NULL, NULL,
+		"ENCRTOGG", {.cvar = &cv_dummygpencore}, 264, MBT_Z},
 
 	// For GP
 	{IT_STRING | IT_CALL, "Cup Select", "Go on and select a cup!", "MENUI004", {.routine = M_LevelSelectInit}, 2, GT_RACE},
@@ -31,6 +34,54 @@ menuitem_t PLAY_RaceDifficulty[] =
 
 	{IT_STRING | IT_CALL, "Back", NULL, NULL, {.routine = M_GoBack}, 0, 0},
 };
+
+menu_anim_t g_drace_timer = {0, -1};
+
+static void tick_routine(void)
+{
+	if (g_drace_timer.dist == -1 || I_GetTime() - g_drace_timer.start < 4)
+	{
+		return;
+	}
+
+	switch (g_drace_timer.dist)
+	{
+		case drace_mritems:
+			M_SetupNextMenu(&OPTIONS_GameplayItemsDef, false);
+			break;
+
+		case drace_encore:
+			CV_AddValue(&cv_dummygpencore, 1);
+			break;
+	}
+
+	g_drace_timer.dist = -1;
+}
+
+static boolean input_routine(INT32 ch)
+{
+	if (g_drace_timer.dist != -1)
+	{
+		return true;
+	}
+
+	UINT8 pid = 0;
+	(void)ch;
+
+	int i;
+	for (i = 0; i < currentMenu->numitems; ++i)
+	{
+		const menuitem_t *it = &currentMenu->menuitems[i];
+		if ((it->status & IT_DISPLAY) == IT_PATCH && M_MenuButtonPressed(pid, it->mvar2))
+		{
+			g_drace_timer.start = I_GetTime();
+			g_drace_timer.dist = i;
+			return true;
+		}
+	}
+
+	return false;
+}
 
 menu_t PLAY_RaceDifficultyDef = {
 	sizeof(PLAY_RaceDifficulty) / sizeof(menuitem_t),
@@ -44,10 +95,10 @@ menu_t PLAY_RaceDifficultyDef = {
 	1, 5,
 	M_DrawRaceDifficulty,
 	NULL,
+	tick_routine,
 	NULL,
 	NULL,
-	NULL,
-	NULL
+	input_routine
 };
 
 void M_SetupDifficultyOptions(INT32 choice)
@@ -56,6 +107,7 @@ void M_SetupDifficultyOptions(INT32 choice)
 	PLAY_RaceDifficulty[drace_mrkartspeed].status = IT_DISABLED;
 	PLAY_RaceDifficulty[drace_mrcpu].status = IT_DISABLED;
 	PLAY_RaceDifficulty[drace_mrracers].status = IT_DISABLED;
+	PLAY_RaceDifficulty[drace_mritems].status = IT_DISABLED;
 	PLAY_RaceDifficulty[drace_encore].status = IT_DISABLED;
 	PLAY_RaceDifficulty[drace_cupselect].status = IT_DISABLED;
 	PLAY_RaceDifficulty[drace_mapselect].status = IT_DISABLED;
@@ -68,9 +120,11 @@ void M_SetupDifficultyOptions(INT32 choice)
 		PLAY_RaceDifficulty[drace_mapselect].status = IT_STRING|IT_CALL;	// Level Select (Match Race)
 		PLAY_RaceDifficultyDef.lastOn = drace_mapselect;	// Select map select by default.
 
+		PLAY_RaceDifficulty[drace_mritems].status = IT_PATCH|IT_SPACE;	// Item Toggles
+
 		if (M_SecretUnlocked(SECRET_ENCORE, true))
 		{
-			PLAY_RaceDifficulty[drace_encore].status = IT_STRING2|IT_CVAR;	// Encore on/off
+			PLAY_RaceDifficulty[drace_encore].status = IT_PATCH|IT_SPACE;	// Encore on/off
 		}
 	}
 	else			// GP

@@ -2545,7 +2545,7 @@ void M_DrawRaceDifficulty(void)
 				if (currentMenu->menuitems[i].status & IT_CVAR)
 				{
 					// implicitely we'll only take care of normal cvars
-					INT32 cx = 260 + tx;
+					INT32 cx = 190 + tx;
 					consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
 
 					if (i == itemOn)
@@ -2553,7 +2553,7 @@ void M_DrawRaceDifficulty(void)
 
 						INT32 w = V_MenuStringWidth(cv->string, 0)/2;
 
-						M_DrawUnderline(140, 260 + w, y);
+						M_DrawUnderline(124, 190 + w, y);
 
 						V_DrawMenuString(cx - 10 - w - (skullAnimCounter/5), y, highlightflags, "\x1C"); // left arrow
 						V_DrawMenuString(cx + w + 2 + (skullAnimCounter/5), y, highlightflags, "\x1D"); // right arrow
@@ -2562,14 +2562,14 @@ void M_DrawRaceDifficulty(void)
 					V_DrawCenteredMenuString(cx, y, f, cv->string);
 				}
 
-				V_DrawMenuString(140 + tx + (i == itemOn ? 1 : 0), y, f, currentMenu->menuitems[i].text);
+				V_DrawMenuString(124 + tx + (i == itemOn ? 1 : 0), y, f, currentMenu->menuitems[i].text);
 
 				if (i == itemOn)
 				{
-					M_DrawCursorHand(140 + tx, y);
+					M_DrawCursorHand(124 + tx, y);
 				}
 
-				y += 10;
+				y += 14;
 
 				break;
 			}
@@ -2625,6 +2625,49 @@ void M_DrawRaceDifficulty(void)
 				x += GM_XOFFSET;
 				y += GM_YOFFSET;
 
+				if (i < drace_boxend)
+				{
+					y += 2; // extra spacing for Match Race options
+				}
+
+				break;
+			}
+
+			case IT_PATCH:
+			{
+				extern menu_anim_t g_drace_timer;
+				const menuitem_t *it = &currentMenu->menuitems[i];
+				boolean activated = g_drace_timer.dist == i;
+				boolean flicker = activated && (I_GetTime() - g_drace_timer.start) % 2 < 1;
+
+				INT32 cx = it->mvar1 + tx;
+				INT32 cy = 79;
+
+				const char *pat = i == drace_mritems && cv_thunderdome.value ? "RBOXTOGG" : it->patch;
+
+				V_DrawMappedPatch(cx, cy, 0, W_CachePatchName(pat, PU_CACHE),
+					flicker ? R_GetTranslationColormap(TC_HITLAG, 0, GTC_MENUCACHE) : NULL);
+
+				if (it->itemaction.cvar && !it->itemaction.cvar->value)
+				{
+					V_DrawMappedPatch(cx, cy, 0, W_CachePatchName("OFF_TOGG", PU_CACHE), NULL);
+				}
+
+				patch_t **bt = NULL;
+				switch (it->mvar2)
+				{
+					case MBT_Y:
+						bt = kp_button_y[1];
+						break;
+
+					case MBT_Z:
+						bt = kp_button_z[1];
+						break;
+				}
+				if (bt)
+				{
+					K_drawButton((cx + 24) * FRACUNIT, (cy + 22) * FRACUNIT, 0, bt, activated);
+				}
 				break;
 			}
 		}
@@ -4971,18 +5014,37 @@ void M_DrawVideoModes(void)
 // Gameplay Item Tggles:
 tic_t shitsfree = 0;
 
+static void DrawMappedString(INT32 x, INT32 y, INT32 option, int font, const char *text, const UINT8 *colormap)
+{
+	V_DrawStringScaled(
+		x * FRACUNIT,
+		y * FRACUNIT,
+		FRACUNIT,
+		FRACUNIT,
+		FRACUNIT,
+		option,
+		colormap,
+		font,
+		text
+	);
+}
+
 void M_DrawItemToggles(void)
 {
+	static UINT8 black[256];
+	memset(black, 16, 256);
+
 	const INT32 edges = 8;
 	const INT32 height = 4;
 	const INT32 spacing = 35;
 	const INT32 column = itemOn/height;
 	//const INT32 row = itemOn%height;
 	INT32 leftdraw, rightdraw, totaldraw;
-	INT32 x = currentMenu->x + menutransition.tics*64, y = currentMenu->y;
+	INT32 x = currentMenu->x + M_EaseWithTransition(Easing_Linear, 5 * 64), y = currentMenu->y;
 	INT32 onx = 0, ony = 0;
 	consvar_t *cv;
-	INT32 i, translucent, drawnum;
+	INT32 i, drawnum;
+	patch_t *pat;
 
 	M_DrawMenuTooltips();
 	M_DrawOptionsMovingButton();
@@ -5003,6 +5065,11 @@ void M_DrawItemToggles(void)
 			totaldraw++;
 		}
 	}
+
+	patch_t *isbg = W_CachePatchName("K_ISBG", PU_CACHE);
+	patch_t *isbgd = W_CachePatchName("K_ISBGD", PU_CACHE);
+	patch_t *ismul = W_CachePatchName("K_ISMUL", PU_CACHE);
+	patch_t *isstrk = W_CachePatchName("K_ISSTRK", PU_CACHE);
 
 	for (i = leftdraw; i <= rightdraw; i++)
 	{
@@ -5025,7 +5092,7 @@ void M_DrawItemToggles(void)
 
 			if (currentMenu->menuitems[thisitem].mvar1 == 0)
 			{
-				V_DrawScaledPatch(x, y, 0, W_CachePatchName("K_ISBG", PU_CACHE));
+				V_DrawScaledPatch(x, y, 0, isbg);
 				V_DrawScaledPatch(x, y, 0, W_CachePatchName("K_ISTOGL", PU_CACHE));
 				y += spacing;
 				continue;
@@ -5033,29 +5100,37 @@ void M_DrawItemToggles(void)
 
 			if (currentMenu->menuitems[thisitem].mvar1 == 255)
 			{
-				V_DrawScaledPatch(x, y, 0, W_CachePatchName("K_ISBGD", PU_CACHE));
+				V_DrawScaledPatch(x, y, 0, isbgd);
 				y += spacing;
 				continue;
 			}
 
 			cv = &cv_items[currentMenu->menuitems[thisitem].mvar1-1];
-			translucent = (cv->value ? 0 : V_TRANSLUCENT);
 
 			drawnum = K_ItemResultToAmount(currentMenu->menuitems[thisitem].mvar1);
 
-			if (cv->value)
-				V_DrawScaledPatch(x, y, 0, W_CachePatchName("K_ISBG", PU_CACHE));
-			else
-				V_DrawScaledPatch(x, y, 0, W_CachePatchName("K_ISBGD", PU_CACHE));
+			V_DrawScaledPatch(x, y, 0, cv->value ? isbg : isbgd);
+
+			if (drawnum > 1)
+				V_DrawScaledPatch(x, y, 0, ismul);
+
+			pat = W_CachePatchName(K_GetItemPatch(currentMenu->menuitems[thisitem].mvar1, true), PU_CACHE);
+
+			V_DrawScaledPatch(x, y, 0, pat);
+
+			if (!cv->value)
+				V_DrawMappedPatch(x, y, V_MODULATE, pat, black);
 
 			if (drawnum > 1)
 			{
-				V_DrawScaledPatch(x, y, 0, W_CachePatchName("K_ISMUL", PU_CACHE));
-				V_DrawScaledPatch(x, y, translucent, W_CachePatchName(K_GetItemPatch(currentMenu->menuitems[thisitem].mvar1, true), PU_CACHE));
-				V_DrawString(x+24, y+31, translucent, va("x%d", drawnum));
+				V_DrawString(x+24, y+31, 0, va("x%d", drawnum));
+
+				if (!cv->value)
+					DrawMappedString(x+24, y+31, V_MODULATE, HU_FONT, va("x%d", drawnum), black);
 			}
-			else
-				V_DrawScaledPatch(x, y, translucent, W_CachePatchName(K_GetItemPatch(currentMenu->menuitems[thisitem].mvar1, true), PU_CACHE));
+
+			if (!cv->value)
+				V_DrawScaledPatch(x, y, 0, isstrk);
 
 			y += spacing;
 		}
@@ -5086,7 +5161,6 @@ void M_DrawItemToggles(void)
 		else
 		{
 			cv = &cv_items[currentMenu->menuitems[itemOn].mvar1-1];
-			translucent = (cv->value ? 0 : V_TRANSLUCENT);
 
 			drawnum = K_ItemResultToAmount(currentMenu->menuitems[itemOn].mvar1);
 
@@ -5096,14 +5170,31 @@ void M_DrawItemToggles(void)
 				V_DrawScaledPatch(onx-1, ony-2, 0, W_CachePatchName("K_ITBGD", PU_CACHE));
 
 			if (drawnum > 1)
-			{
 				V_DrawScaledPatch(onx-1, ony-2, 0, W_CachePatchName("K_ITMUL", PU_CACHE));
-				V_DrawScaledPatch(onx-1, ony-2, translucent, W_CachePatchName(K_GetItemPatch(currentMenu->menuitems[itemOn].mvar1, false), PU_CACHE));
-				V_DrawScaledPatch(onx+27, ony+39, translucent, W_CachePatchName("K_ITX", PU_CACHE));
-				V_DrawTimerString(onx+37, ony+34, translucent, va("%d", drawnum));
+
+			pat = W_CachePatchName(K_GetItemPatch(currentMenu->menuitems[itemOn].mvar1, false), PU_CACHE);
+
+			V_DrawScaledPatch(onx-1, ony-2, 0, pat);
+
+			if (!cv->value)
+				V_DrawMappedPatch(onx-1, ony-2, V_MODULATE, pat, black);
+
+			if (drawnum > 1)
+			{
+				V_DrawScaledPatch(onx+27, ony+39, 0, W_CachePatchName("K_ITX", PU_CACHE));
+				V_DrawTimerString(onx+37, ony+34, 0, va("%d", drawnum));
+
+				if (!cv->value)
+				{
+					V_DrawMappedPatch(onx+27, ony+39, V_MODULATE, W_CachePatchName("K_ITX", PU_CACHE), black);
+					DrawMappedString(onx+37, ony+34, V_MODULATE, TIMER_FONT, va("%d", drawnum), black);
+				}
 			}
-			else
-				V_DrawScaledPatch(onx-1, ony-2, translucent, W_CachePatchName(K_GetItemPatch(currentMenu->menuitems[itemOn].mvar1, false), PU_CACHE));
+
+			if (!cv->value)
+			{
+				V_DrawScaledPatch(onx-1, ony-2, 0, W_CachePatchName("K_ITSTRK", PU_CACHE));
+			}
 		}
 	}
 }
