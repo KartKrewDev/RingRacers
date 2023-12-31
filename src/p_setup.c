@@ -7923,7 +7923,7 @@ static void P_InitPlayers(void)
 		// If we're forcing a character, do it now.
 		if (skin != -1)
 		{
-			players[i].skin = skin;
+			SetPlayerSkinByNum(i, skin);
 			players[i].skincolor = skins[skin].prefcolor;
 
 			players[i].followerskin = follower;
