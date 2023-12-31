@@ -9,13 +9,38 @@
 
 #include "gme.hpp"
 
+#include <atomic>
 #include <limits>
 #include <stdexcept>
+#include <thread>
 
 #include "../cxxutil.hpp"
 
 using namespace srb2;
 using namespace srb2::audio;
+
+struct Gme::AsyncOp
+{
+	std::thread thread_;
+	std::atomic_bool flag_ = false;
+
+	template <typename F>
+	AsyncOp(F&& f) : thread_(
+		[this, f]
+		{
+			f();
+			flag_ = true;
+		}
+	)
+	{
+	}
+
+	~AsyncOp()
+	{
+		if (thread_.joinable())
+			thread_.join();
+	}
+};
 
 Gme::Gme() : memory_data_(), instance_(nullptr)
 {
@@ -25,6 +50,7 @@ Gme::Gme(Gme&& rhs) noexcept : memory_data_(), instance_(nullptr)
 {
 	std::swap(memory_data_, rhs.memory_data_);
 	std::swap(instance_, rhs.instance_);
+	std::swap(seeking_, rhs.seeking_);
 }
 
 Gme::Gme(std::vector<std::byte>&& data) : memory_data_(std::move(data)), instance_(nullptr)
@@ -41,6 +67,7 @@ Gme& Gme::operator=(Gme&& rhs) noexcept
 {
 	std::swap(memory_data_, rhs.memory_data_);
 	std::swap(instance_, rhs.instance_);
+	std::swap(seeking_, rhs.seeking_);
 
 	return *this;
 }
@@ -49,6 +76,7 @@ Gme::~Gme()
 {
 	if (instance_)
 	{
+		seeking_.reset();
 		gme_delete(instance_);
 		instance_ = nullptr;
 	}
@@ -56,6 +84,25 @@ Gme::~Gme()
 
 std::size_t Gme::get_samples(tcb::span<short> buffer)
 {
+	if (seeking_)
+	{
+		if (seeking_->flag_)
+		{
+			seeking_.reset();
+		}
+		else
+		{
+			if (buffer.size() < 2u)
+			{
+				return 0u;
+			}
+
+			buffer[0] = 0;
+			buffer[1] = 0;
+			return 2u; // send some bytes back so the music player doesn't shut down
+		}
+	}
+
 	SRB2_ASSERT(instance_ != nullptr);
 
 	gme_err_t err = gme_play(instance_, buffer.size(), buffer.data());
@@ -69,7 +116,9 @@ void Gme::seek(int position_ms)
 {
 	SRB2_ASSERT(instance_ != nullptr);
 
-	gme_seek(instance_, position_ms);
+	seeking_.reset();
+	// Send to background because gme_seek can take a long while
+	seeking_ = std::make_unique<AsyncOp>([=] { gme_seek(instance_, position_ms); });
 }
 
 float Gme::duration_seconds() const
