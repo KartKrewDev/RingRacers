@@ -1134,11 +1134,11 @@ void M_EggTV_RefreshButtonLabels(void);
 // Keep track of some pause menu data for visual goodness.
 extern struct pausemenu_s {
 
-	tic_t ticker;		// How long the menu's been open for
-	INT16 offset;		// To make the icons move smoothly when we transition!
+	tic_t ticker;			// How long the menu's been open for
+	menu_anim_t offset;		// To make the icons move smoothly when we transition!
 
-	INT16 openoffset;	// Used when you open / close the menu to slide everything in.
-	boolean closing;	// When this is set, the open offset goes backwards to close the menu smoothly.
+	menu_anim_t openoffset;	// Used when you open / close the menu to slide everything in.
+	boolean closing;		// When this is set, the open offset goes backwards to close the menu smoothly.
 } pausemenu;
 
 void M_OpenPauseMenu(void);

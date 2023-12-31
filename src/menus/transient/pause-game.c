@@ -2,6 +2,7 @@
 /// \brief In-game/pause menus
 
 #include "../../d_netcmd.h"
+#include "../../i_time.h"
 #include "../../k_menu.h"
 #include "../../k_grandprix.h" // K_CanChangeRules
 #include "../../m_cond.h"
@@ -117,8 +118,9 @@ void M_OpenPauseMenu(void)
 	// Ready the variables
 	pausemenu.ticker = 0;
 
-	pausemenu.offset = 0;
-	pausemenu.openoffset = 256;
+	pausemenu.offset.dist = 0;
+	pausemenu.openoffset.start = I_GetTime();
+	pausemenu.openoffset.dist = 0;
 	pausemenu.closing = false;
 
 	currentMenu->lastOn = mpause_continue;	// Make sure we select "RESUME GAME" by default
@@ -260,23 +262,20 @@ void M_QuitPauseMenu(INT32 choice)
 	(void)choice;
 	// M_PauseTick actually handles the quitting when it's been long enough.
 	pausemenu.closing = true;
-	pausemenu.openoffset = 4;
+	pausemenu.openoffset.start = I_GetTime();
+	pausemenu.openoffset.dist = 1;
 }
 
 void M_PauseTick(void)
 {
-	pausemenu.offset /= 2;
 	pausemenu.ticker++;
 
 	if (pausemenu.closing)
 	{
-		pausemenu.openoffset *= 2;
-		if (pausemenu.openoffset > 255)
+		if (I_GetTime() - pausemenu.openoffset.start > 6)
 			M_ClearMenus(true);
 
 	}
-	else
-		pausemenu.openoffset /= 2;
 
 #ifdef HAVE_DISCORDRPC
 	// Show discord requests menu option if any requests are pending
@@ -299,7 +298,8 @@ boolean M_PauseInputs(INT32 ch)
 	if (menucmd[pid].dpad_ud < 0)
 	{
 		M_SetMenuDelay(pid);
-		pausemenu.offset -= 50; // Each item is spaced by 50 px
+		pausemenu.offset.start = I_GetTime();
+		pausemenu.offset.dist = -50; // Each item is spaced by 50 px
 		S_StartSound(NULL, sfx_s3k5b);
 		M_PrevOpt();
 		return true;
@@ -307,7 +307,8 @@ boolean M_PauseInputs(INT32 ch)
 
 	else if (menucmd[pid].dpad_ud > 0)
 	{
-		pausemenu.offset += 50;	// Each item is spaced by 50 px
+		pausemenu.offset.start = I_GetTime();
+		pausemenu.offset.dist = 50;	// Each item is spaced by 50 px
 		S_StartSound(NULL, sfx_s3k5b);
 		M_NextOpt();
 		M_SetMenuDelay(pid);

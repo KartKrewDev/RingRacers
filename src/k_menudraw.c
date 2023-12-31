@@ -5175,7 +5175,9 @@ void M_DrawPause(void)
 	INT16 ypos = -50;	// Draw 3 items from selected item (y=100 - 3 items spaced by 50 px each... you get the idea.)
 	INT16 dypos;
 
-	INT16 offset = menutransition.tics ? floor(pow(2, (double)menutransition.tics)) : pausemenu.openoffset;
+	fixed_t t = M_DueFrac(pausemenu.openoffset.start, 6);
+	INT16 offset = menutransition.tics ? floor(pow(2, (double)menutransition.tics)) :
+		(pausemenu.openoffset.dist ? Easing_InQuad(t, 0, 256) : Easing_OutQuad(t, 256, 0));
 	INT16 arrxpos = 150 + 2*offset;	// To draw the background arrow.
 
 	INT16 j = 0;
@@ -5183,6 +5185,8 @@ void M_DrawPause(void)
 	patch_t *vertbg = W_CachePatchName("M_STRIPV", PU_CACHE);
 	patch_t *arrstart = W_CachePatchName("M_PTIP", PU_CACHE);
 	patch_t *arrfill = W_CachePatchName("M_PFILL", PU_CACHE);
+
+	t = M_DueFrac(pausemenu.offset.start, 3);
 
 	//V_DrawFadeScreen(0xFF00, 16);
 
@@ -5255,8 +5259,9 @@ void M_DrawPause(void)
 				// Multiply by -1 or 1 depending on whether we're below or above 100 px.
 				// This double ternary is awful, yes.
 
-				dypos = ypos + pausemenu.offset;
-				V_DrawFixedPatch( ((i == itemOn ? (294 - pausemenu.offset*2/3 * (dypos > 100 ? 1 : -1)) : 261) + offset) << FRACBITS, (dypos)*FRACUNIT, FRACUNIT, 0, pp, colormap);
+				INT32 yofs = Easing_InQuad(t, pausemenu.offset.dist, 0);
+				dypos = ypos + yofs;
+				V_DrawFixedPatch( ((i == itemOn ? (294 - yofs*2/3 * (dypos > 100 ? 1 : -1)) : 261) + offset) << FRACBITS, (dypos)*FRACUNIT, FRACUNIT, 0, pp, colormap);
 
 				ypos += 50;
 				itemsdrawn++;	// We drew that!
