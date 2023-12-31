@@ -250,6 +250,7 @@ typedef enum
 	drace_mrkartspeed,
 	drace_mrcpu,
 	drace_mrracers,
+	drace_mritems,
 	drace_encore,
 	drace_boxend,
 	drace_cupselect = drace_boxend,

@@ -48,6 +48,13 @@ menuitem_t OPTIONS_GameplayItems[] =
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Kitchen Sink",			NULL, {.routine = M_HandleItemToggles}, KITEM_KITCHENSINK, 0}
 };
 
+static void init_routine(void)
+{
+	// Since this menu can be accessed from different
+	// locations. (currentMenu has not changed yet.)
+	OPTIONS_GameplayItemsDef.prevMenu = currentMenu;
+}
+
 menu_t OPTIONS_GameplayItemsDef = {
 	sizeof (OPTIONS_GameplayItems) / sizeof (menuitem_t),
 	&OPTIONS_GameplayDef,
@@ -61,7 +68,7 @@ menu_t OPTIONS_GameplayItemsDef = {
 	M_DrawItemToggles,
 	M_DrawOptionsCogs,
 	M_OptionsTick,
-	NULL,
+	init_routine,
 	NULL,
 	NULL,
 };

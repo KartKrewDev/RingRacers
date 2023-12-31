@@ -2545,7 +2545,7 @@ void M_DrawRaceDifficulty(void)
 				if (currentMenu->menuitems[i].status & IT_CVAR)
 				{
 					// implicitely we'll only take care of normal cvars
-					INT32 cx = 260 + tx;
+					INT32 cx = 190 + tx;
 					consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
 
 					if (i == itemOn)
@@ -2553,7 +2553,7 @@ void M_DrawRaceDifficulty(void)
 
 						INT32 w = V_MenuStringWidth(cv->string, 0)/2;
 
-						M_DrawUnderline(140, 260 + w, y);
+						M_DrawUnderline(124, 190 + w, y);
 
 						V_DrawMenuString(cx - 10 - w - (skullAnimCounter/5), y, highlightflags, "\x1C"); // left arrow
 						V_DrawMenuString(cx + w + 2 + (skullAnimCounter/5), y, highlightflags, "\x1D"); // right arrow
@@ -2562,14 +2562,14 @@ void M_DrawRaceDifficulty(void)
 					V_DrawCenteredMenuString(cx, y, f, cv->string);
 				}
 
-				V_DrawMenuString(140 + tx + (i == itemOn ? 1 : 0), y, f, currentMenu->menuitems[i].text);
+				V_DrawMenuString(124 + tx + (i == itemOn ? 1 : 0), y, f, currentMenu->menuitems[i].text);
 
 				if (i == itemOn)
 				{
-					M_DrawCursorHand(140 + tx, y);
+					M_DrawCursorHand(124 + tx, y);
 				}
 
-				y += 10;
+				y += 14;
 
 				break;
 			}
@@ -2625,6 +2625,47 @@ void M_DrawRaceDifficulty(void)
 				x += GM_XOFFSET;
 				y += GM_YOFFSET;
 
+				if (i < drace_boxend)
+				{
+					y += 2; // extra spacing for Match Race options
+				}
+
+				break;
+			}
+
+			case IT_PATCH:
+			{
+				extern menu_anim_t g_drace_timer;
+				const menuitem_t *it = &currentMenu->menuitems[i];
+				boolean activated = g_drace_timer.dist == i;
+				boolean flicker = activated && (I_GetTime() - g_drace_timer.start) % 2 < 1;
+
+				INT32 cx = it->mvar1 + tx;
+				INT32 cy = 79;
+
+				V_DrawMappedPatch(cx, cy, 0, W_CachePatchName(it->patch, PU_CACHE),
+					flicker ? R_GetTranslationColormap(TC_HITLAG, 0, GTC_MENUCACHE) : NULL);
+
+				if (it->itemaction.cvar && !it->itemaction.cvar->value)
+				{
+					V_DrawMappedPatch(cx, cy, 0, W_CachePatchName("OFF_TOGG", PU_CACHE), NULL);
+				}
+
+				patch_t **bt = NULL;
+				switch (it->mvar2)
+				{
+					case MBT_Y:
+						bt = kp_button_y[1];
+						break;
+
+					case MBT_Z:
+						bt = kp_button_z[1];
+						break;
+				}
+				if (bt)
+				{
+					K_drawButton((cx + 24) * FRACUNIT, (cy + 22) * FRACUNIT, 0, bt, activated);
+				}
 				break;
 			}
 		}
