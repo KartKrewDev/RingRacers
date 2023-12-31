@@ -2643,7 +2643,9 @@ void M_DrawRaceDifficulty(void)
 				INT32 cx = it->mvar1 + tx;
 				INT32 cy = 79;
 
-				V_DrawMappedPatch(cx, cy, 0, W_CachePatchName(it->patch, PU_CACHE),
+				const char *pat = i == drace_mritems && cv_thunderdome.value ? "RBOXTOGG" : it->patch;
+
+				V_DrawMappedPatch(cx, cy, 0, W_CachePatchName(pat, PU_CACHE),
 					flicker ? R_GetTranslationColormap(TC_HITLAG, 0, GTC_MENUCACHE) : NULL);
 
 				if (it->itemaction.cvar && !it->itemaction.cvar->value)
