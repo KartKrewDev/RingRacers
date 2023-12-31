@@ -12985,7 +12985,6 @@ void K_HandleDirectionalInfluence(player_t *player)
 
 	fixed_t diX, diY;
 	fixed_t diLen;
-	fixed_t diMul;
 
 	fixed_t dot, invDot;
 
@@ -13027,6 +13026,9 @@ void K_HandleDirectionalInfluence(player_t *player)
 		inputLen = KART_FULLTURN;
 	}
 
+	// Shallow inputs = less angle change.
+	strength = FixedMul(strength, (inputLen * FRACUNIT) / KART_FULLTURN);
+
 	if (player->tumbleBounces > 0)
 	{
 		// Very strong DI for tumble.
@@ -13040,11 +13042,10 @@ void K_HandleDirectionalInfluence(player_t *player)
 	diLen = FixedHypot(diX, diY);
 
 	// Normalize
-	diMul = (KART_FULLTURN * FRACUNIT) / inputLen;
 	if (diLen > 0)
 	{
-		diX = FixedMul(diMul, FixedDiv(diX, diLen));
-		diY = FixedMul(diMul, FixedDiv(diY, diLen));
+		diX = FixedDiv(diX, diLen);
+		diY = FixedDiv(diY, diLen);
 	}
 
 	// Now that we got the DI direction, we can
