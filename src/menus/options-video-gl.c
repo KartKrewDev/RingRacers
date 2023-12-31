@@ -13,7 +13,7 @@ menuitem_t OPTIONS_VideoOGL[] =
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 
-	{IT_HEADER, "OPTIONS BELOW ARE OPENGL ONLY!", "Watch people get confused anyway!!",
+	{IT_HEADER, "OpenGL Options...", "Watch people get confused anyway!!",
 		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "3D Models", "Use 3D models instead of sprites when applicable.",
