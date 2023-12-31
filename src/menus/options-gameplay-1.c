@@ -2,6 +2,7 @@
 /// \brief Gameplay Options -- see gopt_e
 
 #include "../k_menu.h"
+#include "../m_cond.h"
 
 menuitem_t OPTIONS_Gameplay[] =
 {
@@ -46,6 +47,11 @@ menuitem_t OPTIONS_Gameplay[] =
 
 };
 
+static void init_routine(void)
+{
+	OPTIONS_Gameplay[gopt_encore].status = M_SecretUnlocked(SECRET_ENCORE, true) ? IT_STRING | IT_CVAR : IT_DISABLED;
+}
+
 menu_t OPTIONS_GameplayDef = {
 	sizeof (OPTIONS_Gameplay) / sizeof (menuitem_t),
 	&OPTIONS_MainDef,
@@ -59,7 +65,7 @@ menu_t OPTIONS_GameplayDef = {
 	M_DrawGenericOptions,
 	M_DrawOptionsCogs,
 	M_OptionsTick,
-	NULL,
+	init_routine,
 	NULL,
 	NULL,
 };
