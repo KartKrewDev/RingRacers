@@ -73,6 +73,22 @@ menu_t OPTIONS_GameplayItemsDef = {
 	NULL,
 };
 
+static boolean M_AnyItemsEnabled(void)
+{
+	INT32 i;
+	for (i = 0; i < NUMKARTRESULTS-1; i++)
+	{
+		if (cv_items[i].value)
+			return true;
+	}
+	return false;
+}
+
+static void M_ToggleThunderdome(void)
+{
+	CV_SetValue(&cv_thunderdome, !M_AnyItemsEnabled());
+}
+
 void M_HandleItemToggles(INT32 choice)
 {
 	const INT32 width = 8, height = 4;
@@ -155,13 +171,13 @@ void M_HandleItemToggles(INT32 choice)
 		else
 		if (currentMenu->menuitems[itemOn].mvar1 == 0)
 		{
-			INT32 v = cv_items[0].value;
+			INT32 v = !M_AnyItemsEnabled();
 			S_StartSound(NULL, sfx_s1b4);
 			for (i = 0; i < NUMKARTRESULTS-1; i++)
 			{
-				if (cv_items[i].value == v)
-					CV_AddValue(&cv_items[i], 1);
+				CV_SetValue(&cv_items[i], v);
 			}
+			M_ToggleThunderdome();
 		}
 		else
 		{
@@ -174,6 +190,7 @@ void M_HandleItemToggles(INT32 choice)
 				S_StartSound(NULL, sfx_s1ba);
 			}
 			CV_AddValue(&cv_items[currentMenu->menuitems[itemOn].mvar1-1], 1);
+			M_ToggleThunderdome();
 		}
 	}
 
