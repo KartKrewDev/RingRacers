@@ -586,10 +586,9 @@ void K_HandleFollower(player_t *player)
 		while (bmobj != NULL && P_MobjWasRemoved(bmobj) == false)
 		{
 			// match follower's momentums and (e)flags(2).
-			bmobj->momx = player->follower->momx;
-			bmobj->momy = player->follower->momy;
-			bmobj->z += FixedDiv(deltaz, fl->vertlag);
-			bmobj->momz = player->follower->momz;
+
+			// mom-set approach didn't play nice with hitlag, let's just warp it.
+			P_MoveOrigin(bmobj, player->follower->x, player->follower->y, player->follower->z);
 
 			P_SetScale(bmobj, FixedMul(bubble, player->mo->scale));
 			K_GenericExtraFlagsNoZAdjust(bmobj, player->follower);
