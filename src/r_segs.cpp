@@ -136,13 +136,29 @@ static void R_Render2sidedMultiPatchColumn(drawcolumndata_t* dc, column_t *colum
 
 		drawcolumndata_t dc_copy = *dc;
 		coldrawfunc_t* colfunccopy = colfunc;
+
+		// FIXME: do something better to look these up WITHOUT affecting global state...
 		if (R_CheckColumnFunc(BASEDRAWFUNC) == true)
 		{
-			colfunccopy = colfuncs[COLDRAWFUNC_TWOSMULTIPATCH];
+			if (brightmap != NULL)
+			{
+				colfunccopy = colfuncs_bm[COLDRAWFUNC_TWOSMULTIPATCH];
+			}
+			else
+			{
+				colfunccopy = colfuncs[COLDRAWFUNC_TWOSMULTIPATCH];
+			}
 		}
 		else if (R_CheckColumnFunc(COLDRAWFUNC_FUZZY) == true)
 		{
-			colfunccopy = colfuncs[COLDRAWFUNC_TWOSMULTIPATCHTRANS];
+			if (brightmap != NULL)
+			{
+				colfunccopy = colfuncs_bm[COLDRAWFUNC_TWOSMULTIPATCHTRANS];
+			}
+			else
+			{
+				colfunccopy = colfuncs[COLDRAWFUNC_TWOSMULTIPATCHTRANS];
+			}
 		}
 
 		colfunccopy(const_cast<drawcolumndata_t*>(&dc_copy));

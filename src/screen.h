@@ -118,17 +118,6 @@ struct vmode_t
 #define NUMSPECIALMODES  4
 extern vmode_t specialmodes[NUMSPECIALMODES];
 
-// -----
-// CPUID
-// -----
-extern boolean R_ASM;
-extern boolean R_486;
-extern boolean R_586;
-extern boolean R_MMX;
-extern boolean R_3DNow;
-extern boolean R_MMXExt;
-extern boolean R_SSE2;
-
 // ----------------
 // screen variables
 // ----------------
