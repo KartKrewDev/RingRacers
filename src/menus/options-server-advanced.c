@@ -12,6 +12,9 @@ menuitem_t OPTIONS_ServerAdvanced[] =
 	{IT_STRING | IT_CVAR | IT_CV_STRING, "Server Browser Address", "Default is \'https://ms.kartkrew.org/ms/api\'",
 		NULL, {.cvar = &cv_masterserver}, 0, 0},
 
+	{IT_STRING | IT_CVAR, "Debug Log", "Save technical info about communication with the Master Server.",
+		NULL, {.cvar = &cv_noticedownload}, 0, 0},
+
 
 	{IT_HEADER, "Network Connection", NULL,
 		NULL, {NULL}, 0, 0},
