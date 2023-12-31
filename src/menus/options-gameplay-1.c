@@ -31,6 +31,9 @@ menuitem_t OPTIONS_Gameplay[] =
 	{IT_STRING | IT_CVAR, "Time Limit", "Change the time limit for Battle rounds.",
 		NULL, {.cvar = &cv_timelimit}, 0, 0},
 
+	{IT_STRING | IT_CVAR, "Point Limit", "How many strikes it takes to win a Battle.",
+		NULL, {.cvar = &cv_pointlimit}, 0, 0},
+
 	{IT_STRING | IT_CVAR, "Starting Bumpers", "Change how many bumpers player start with in Battle.",
 		NULL, {.cvar = &cv_kartbumpers}, 0, 0},
 

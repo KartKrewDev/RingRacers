@@ -404,8 +404,8 @@ typedef enum
 	gopt_exitcountdown,
 	gopt_spacer1,
 	gopt_timelimit,
+	gopt_pointlimit,
 	gopt_startingbumpers,
-	gopt_karmacomeback,
 	gopt_spacer2,
 	gopt_itemtoggles
 } gopt_e;
