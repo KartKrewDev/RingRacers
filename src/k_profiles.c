@@ -493,6 +493,7 @@ static void PR_ApplyProfile_Settings(profile_t *p, UINT8 playernum)
 	CV_StealthSetValue(&cv_kickstartaccel[playernum], p->kickstartaccel);
 	CV_StealthSetValue(&cv_autoroulette[playernum], p->autoroulette);
 	CV_StealthSetValue(&cv_litesteer[playernum], p->litesteer);
+	CV_StealthSetValue(&cv_rumble[playernum], p->rumble);
 
 	// set controls...
 	memcpy(&gamecontrol[playernum], p->controls, sizeof(gamecontroldefault));
