@@ -5331,8 +5331,8 @@ void M_DrawPause(void)
 		INT32 w = V_LSTitleLowStringWidth(selectabletext, selectableflags)/2;
 		V_DrawLSTitleLowString(220-w + offset*2, 103, selectableflags, selectabletext);
 
-		V_DrawMenuString(220-w + offset*2 - 8 - (skullAnimCounter/5), 103+6, selectableflags, "\1C"); // left arrow
-		V_DrawMenuString(220+w + offset*2 + (skullAnimCounter/5), 103+6, selectableflags, "\1D"); // right arrow
+		V_DrawMenuString(220-w + offset*2 - 8 - (skullAnimCounter/5), 103+6, selectableflags, "\x1C"); // left arrow
+		V_DrawMenuString(220+w + offset*2 + (skullAnimCounter/5), 103+6, selectableflags, "\x1D"); // right arrow
 	}
 
 	if (maintext != NULL)
