@@ -5014,8 +5014,26 @@ void M_DrawVideoModes(void)
 // Gameplay Item Tggles:
 tic_t shitsfree = 0;
 
+static void DrawMappedString(INT32 x, INT32 y, INT32 option, int font, const char *text, const UINT8 *colormap)
+{
+	V_DrawStringScaled(
+		x * FRACUNIT,
+		y * FRACUNIT,
+		FRACUNIT,
+		FRACUNIT,
+		FRACUNIT,
+		option,
+		colormap,
+		font,
+		text
+	);
+}
+
 void M_DrawItemToggles(void)
 {
+	static UINT8 black[256];
+	memset(black, 16, 256);
+
 	const INT32 edges = 8;
 	const INT32 height = 4;
 	const INT32 spacing = 35;
@@ -5025,7 +5043,8 @@ void M_DrawItemToggles(void)
 	INT32 x = currentMenu->x + menutransition.tics*64, y = currentMenu->y;
 	INT32 onx = 0, ony = 0;
 	consvar_t *cv;
-	INT32 i, translucent, drawnum;
+	INT32 i, drawnum;
+	patch_t *pat;
 
 	M_DrawMenuTooltips();
 	M_DrawOptionsMovingButton();
@@ -5082,7 +5101,6 @@ void M_DrawItemToggles(void)
 			}
 
 			cv = &cv_items[currentMenu->menuitems[thisitem].mvar1-1];
-			translucent = (cv->value ? 0 : V_TRANSLUCENT);
 
 			drawnum = K_ItemResultToAmount(currentMenu->menuitems[thisitem].mvar1);
 
@@ -5092,13 +5110,22 @@ void M_DrawItemToggles(void)
 				V_DrawScaledPatch(x, y, 0, W_CachePatchName("K_ISBGD", PU_CACHE));
 
 			if (drawnum > 1)
-			{
 				V_DrawScaledPatch(x, y, 0, W_CachePatchName("K_ISMUL", PU_CACHE));
-				V_DrawScaledPatch(x, y, translucent, W_CachePatchName(K_GetItemPatch(currentMenu->menuitems[thisitem].mvar1, true), PU_CACHE));
-				V_DrawString(x+24, y+31, translucent, va("x%d", drawnum));
+
+			pat = W_CachePatchName(K_GetItemPatch(currentMenu->menuitems[thisitem].mvar1, true), PU_CACHE);
+
+			V_DrawScaledPatch(x, y, 0, pat);
+
+			if (!cv->value)
+				V_DrawMappedPatch(x, y, V_MODULATE, pat, black);
+
+			if (drawnum > 1)
+			{
+				V_DrawString(x+24, y+31, 0, va("x%d", drawnum));
+
+				if (!cv->value)
+					DrawMappedString(x+24, y+31, V_MODULATE, HU_FONT, va("x%d", drawnum), black);
 			}
-			else
-				V_DrawScaledPatch(x, y, translucent, W_CachePatchName(K_GetItemPatch(currentMenu->menuitems[thisitem].mvar1, true), PU_CACHE));
 
 			y += spacing;
 		}
@@ -5129,7 +5156,6 @@ void M_DrawItemToggles(void)
 		else
 		{
 			cv = &cv_items[currentMenu->menuitems[itemOn].mvar1-1];
-			translucent = (cv->value ? 0 : V_TRANSLUCENT);
 
 			drawnum = K_ItemResultToAmount(currentMenu->menuitems[itemOn].mvar1);
 
@@ -5139,14 +5165,26 @@ void M_DrawItemToggles(void)
 				V_DrawScaledPatch(onx-1, ony-2, 0, W_CachePatchName("K_ITBGD", PU_CACHE));
 
 			if (drawnum > 1)
-			{
 				V_DrawScaledPatch(onx-1, ony-2, 0, W_CachePatchName("K_ITMUL", PU_CACHE));
-				V_DrawScaledPatch(onx-1, ony-2, translucent, W_CachePatchName(K_GetItemPatch(currentMenu->menuitems[itemOn].mvar1, false), PU_CACHE));
-				V_DrawScaledPatch(onx+27, ony+39, translucent, W_CachePatchName("K_ITX", PU_CACHE));
-				V_DrawTimerString(onx+37, ony+34, translucent, va("%d", drawnum));
+
+			pat = W_CachePatchName(K_GetItemPatch(currentMenu->menuitems[itemOn].mvar1, false), PU_CACHE);
+
+			V_DrawScaledPatch(onx-1, ony-2, 0, pat);
+
+			if (!cv->value)
+				V_DrawMappedPatch(onx-1, ony-2, V_MODULATE, pat, black);
+
+			if (drawnum > 1)
+			{
+				V_DrawScaledPatch(onx+27, ony+39, 0, W_CachePatchName("K_ITX", PU_CACHE));
+				V_DrawTimerString(onx+37, ony+34, 0, va("%d", drawnum));
+
+				if (!cv->value)
+				{
+					V_DrawMappedPatch(onx+27, ony+39, V_MODULATE, W_CachePatchName("K_ITX", PU_CACHE), black);
+					DrawMappedString(onx+37, ony+34, V_MODULATE, TIMER_FONT, va("%d", drawnum), black);
+				}
 			}
-			else
-				V_DrawScaledPatch(onx-1, ony-2, translucent, W_CachePatchName(K_GetItemPatch(currentMenu->menuitems[itemOn].mvar1, false), PU_CACHE));
 		}
 	}
 }
