@@ -4310,22 +4310,25 @@ box_found:
 				break;
 
 			case IT_HEADERTEXT:
-				collapse = (i != expand);
-
-				if (collapse)
+				if (i != expand)
 				{
+					collapse = true;
 					term = (boxy != 0);
 				}
 				else
 				{
+					if (collapse)
+						y += 2;
+
+					collapse = false;
+
 					if (menutransition.tics == menutransition.dest)
 					{
 						INT32 px = x - 20;
-						V_DrawFill(px, y + 6, BASEVIDWIDTH - (2 * px), 2, orangemap[0]);
-						V_DrawFill(px + 1, y + 7, BASEVIDWIDTH - (2 * px), 2, 31);
+						V_DrawFill(px, y + 4, BASEVIDWIDTH - (2 * px), 2, orangemap[0]);
+						V_DrawFill(px + 1, y + 5, BASEVIDWIDTH - (2 * px), 2, 31);
 					}
 
-					y += 2;
 					boxy = y;
 
 					boxt = optionsmenu.box.dist == expand ? M_DueFrac(optionsmenu.box.start, 5) : FRACUNIT;
