@@ -5040,7 +5040,7 @@ void M_DrawItemToggles(void)
 	const INT32 column = itemOn/height;
 	//const INT32 row = itemOn%height;
 	INT32 leftdraw, rightdraw, totaldraw;
-	INT32 x = currentMenu->x + menutransition.tics*64, y = currentMenu->y;
+	INT32 x = currentMenu->x + M_EaseWithTransition(Easing_Linear, 5 * 64), y = currentMenu->y;
 	INT32 onx = 0, ony = 0;
 	consvar_t *cv;
 	INT32 i, drawnum;
