@@ -932,6 +932,8 @@ struct player_t
 	UINT8 wavedashdelay; // How long since the last sliptide? Only boost once you've been straightened out for a bit.
 	UINT16 wavedashboost; // The actual boost granted from wavedash.
 
+	UINT16 speedpunt;
+
 	UINT16 trickcharge; // Landed normally from a trick panel? Get the benefits package!
 
 	UINT16 infinitether; // Generic infinitether time, used for infinitether leniency.

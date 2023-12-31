@@ -3784,16 +3784,27 @@ void K_DoInstashield(player_t *player)
 
 void K_DoPowerClash(mobj_t *t1, mobj_t *t2) {
 	mobj_t *clash;
+	UINT8 lag1 = 5;
+	UINT8 lag2 = 5;
 
 	// short-circuit instashield for vfx visibility
 	if (t1->player)
+	{
 		t1->player->instashield = 1;
+		t1->player->speedpunt += 20;
+		lag1 -= min(lag1, t1->player->speedpunt/10); 
+	}
+
 	if (t2->player)
+	{
 		t2->player->instashield = 1;
+		t2->player->speedpunt += 20;
+		lag2 -= min(lag1, t2->player->speedpunt/10); 
+	}
 
 	S_StartSound(t1, sfx_parry);
-	K_AddHitLag(t1, 6, false);
-	K_AddHitLag(t2, 6, false);
+	K_AddHitLag(t1, lag1+1, false);
+	K_AddHitLag(t2, lag2+1, false);
 
 	clash = P_SpawnMobj((t1->x/2) + (t2->x/2), (t1->y/2) + (t2->y/2), (t1->z/2) + (t2->z/2), MT_POWERCLASH);
 
@@ -8550,6 +8561,13 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	{
 		player->wavedashboost--;
 	}
+
+	if (player->speedpunt)
+		player->speedpunt--;
+
+	// This timer can get out of control fast, clamp to match player expectations about "new" hazards
+	if (player->speedpunt > TICRATE*4)
+		player->speedpunt = TICRATE*4;
 
 	if (player->trickcharge > 0 && onground == true)
 	{
