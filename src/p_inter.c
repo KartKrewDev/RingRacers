@@ -3197,7 +3197,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 							kinvextend = 3*TICRATE;
 
 						// Reduce the value of subsequent invinc extensions
-						kinvextend = 3 * kinvextend / (3 + source->player->invincibilityextensions); // 75%, 60%, 50%[...]
+						kinvextend = kinvextend / (1 + source->player->invincibilityextensions); // 50%, 33%, 25%[...]
 						kinvextend = max(kinvextend, TICRATE);
 						
 						source->player->invincibilityextensions++;
