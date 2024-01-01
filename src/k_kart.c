@@ -3281,7 +3281,7 @@ static void K_GetKartBoostPower(player_t *player)
 
 	if (player->invincibilitytimer) // Invincibility
 	{
-		ADDBOOST(3*FRACUNIT/8 + (FRACUNIT / 1750 * (player->invincibilitytimer)), 3*FRACUNIT, SLIPTIDEHANDLING/2); // + 37.5 + ?% top speed, + 300% acceleration, +25% handling
+		ADDBOOST(3*FRACUNIT/8 + (FRACUNIT / 1400 * (player->invincibilitytimer)), 3*FRACUNIT, SLIPTIDEHANDLING/2); // + 37.5 + ?% top speed, + 300% acceleration, +25% handling
 	}
 
 	if (player->growshrinktimer > 0) // Grow
@@ -11733,7 +11733,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO) // Doesn't hold your item slot hostage normally, so you're free to waste it if you have multiple
 							{
 								UINT32 behind = K_GetItemRouletteDistance(player, player->itemRoulette.playing);
-								UINT32 behindScaled = behind * TICRATE / 2000;
+								UINT32 behindScaled = behind * TICRATE / 4000;
 								behindScaled = min(behindScaled, 10*TICRATE);
 
 								K_DoInvincibility(player, 10 * TICRATE + behindScaled);
