@@ -5516,8 +5516,8 @@ void M_DrawKickHandler(void)
 {
 	// fake round queue drawer simply to make release
 	INT32 x = 29 + 4, y = 70, returny = y;
-	INT32 pokeamount = (playerkickmenu.poke & 1) ? -playerkickmenu.poke/2 : playerkickmenu.poke/2;
-	INT32 x2 = x + pokeamount - 9 - 8;
+	INT32 pokeamount = playerkickmenu.poke ? ((playerkickmenu.poke & 1) ? -playerkickmenu.poke/2 : playerkickmenu.poke/2) : (I_GetTime() % 16 < 8);
+	INT32 x2 = x + pokeamount - 9 - 8 - 2;
 
 	boolean datarightofcolumn = false;
 
@@ -5592,11 +5592,11 @@ void M_DrawKickHandler(void)
 
 		if (i == (MAXPLAYERS-1)/2)
 		{
-			x = 169 - 4;
+			x = 169 - 6;
 			y = returny;
 
 			datarightofcolumn = true;
-			x2 = x + 118 + 9 + 8 + 4 - pokeamount;
+			x2 = x + 118 + 9 + 8 + 8 - pokeamount;
 		}
 	}
 
