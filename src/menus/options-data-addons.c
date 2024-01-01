@@ -7,7 +7,7 @@
 menuitem_t OPTIONS_DataAddon[] =
 {
 
-	{IT_HEADER, "MENU", NULL,
+	{IT_HEADER, "Addon List", NULL,
 		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Identify Addons via", "Set whether to consider the extension or contents of a file.",
@@ -16,10 +16,7 @@ menuitem_t OPTIONS_DataAddon[] =
 	{IT_STRING | IT_CVAR, "Show Unsupported Files", "Sets whether non-addon files should be shown.",
 		NULL, {.cvar = &cv_addons_showall}, 0, 0},
 
-	{IT_SPACE | IT_NOTHING, NULL,  NULL,
-		NULL, {NULL}, 0, 0},
-
-	{IT_HEADER, "SEARCH", NULL,
+	{IT_HEADER, "Addon Search", NULL,
 		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Matching", "Set where to check for the text pattern when looking up addons via name.",
