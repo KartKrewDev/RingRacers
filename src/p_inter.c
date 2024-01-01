@@ -3194,7 +3194,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 						if (gametyperules & GTR_CLOSERPLAYERS)
 							kinvextend = 2*TICRATE;
 						else
-							kinvextend = 5*TICRATE;
+							kinvextend = 3*TICRATE;
 
 						// Reduce the value of subsequent invinc extensions
 						kinvextend = 3 * kinvextend / (3 + source->player->invincibilityextensions); // 75%, 60%, 50%[...]
