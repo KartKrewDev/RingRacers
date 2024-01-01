@@ -156,6 +156,7 @@ struct consvar_t //NULL, NULL, 0, NULL, NULL |, 0, NULL, NULL, 0, 0, NULL
 	INT32 flags;            // flags see cvflags_t above
 	CV_PossibleValue_t *PossibleValue; // table of possible values
 	void (*func)(void);   // called on change, if CV_CALL set
+	INT32 step_amount;
 	const char *description;
 	INT32 value;            // for INT32 and fixed_t
 	const char *string;   // value in string
@@ -217,7 +218,7 @@ struct CVarList;
 #define CVAR_INIT consvar_t
 #else
 #define CVAR_INIT( ... ) \
-{ __VA_ARGS__, NULL, 0, NULL, NULL, {0, {NULL}}, 0U, (char)0, NULL }
+{ __VA_ARGS__, 0, NULL, 0, NULL, NULL, {0, {NULL}}, 0U, (char)0, NULL }
 #endif
 
 extern consvar_t *consvar_vars; // list of registered console variables

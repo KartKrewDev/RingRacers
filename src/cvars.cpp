@@ -92,6 +92,12 @@ struct consvar_t::Builder
 		return *this;
 	}
 
+	Builder& step_amount(INT32 step_amount)
+	{
+		var_.step_amount = step_amount;
+		return *this;
+	}
+
 	Builder& save()
 	{
 		var_.flags |= CV_SAVE;

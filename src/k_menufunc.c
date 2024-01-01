@@ -168,7 +168,7 @@ void M_ChangeCvarDirect(INT32 choice, consvar_t *cv)
 	}
 	else if (cv->flags & CV_FLOAT)
 	{
-		M_AddFloatVar(cv, (FRACUNIT/16) * choice);
+		M_AddFloatVar(cv, (cv->step_amount ? cv->step_amount : FRACUNIT/16) * choice);
 	}
 	else
 	{
