@@ -413,6 +413,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->rocketsneakertimer);
 	else if (fastcmp(field,"invincibilitytimer"))
 		lua_pushinteger(L, plr->invincibilitytimer);
+	else if (fastcmp(field,"invincibilityextensions"))
+		lua_pushinteger(L, plr->invincibilityextensions);
 	else if (fastcmp(field,"eggmanexplode"))
 		lua_pushinteger(L, plr->eggmanexplode);
 	else if (fastcmp(field,"eggmanblame"))
@@ -911,6 +913,8 @@ static int player_set(lua_State *L)
 		plr->rocketsneakertimer = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"invincibilitytimer"))
 		plr->invincibilitytimer = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"invincibilityextensions"))
+		plr->invincibilityextensions = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"eggmanexplode"))
 		plr->eggmanexplode = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"eggmanblame"))

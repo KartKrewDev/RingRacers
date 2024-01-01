@@ -3281,7 +3281,7 @@ static void K_GetKartBoostPower(player_t *player)
 
 	if (player->invincibilitytimer) // Invincibility
 	{
-		ADDBOOST(3*FRACUNIT/8, 3*FRACUNIT, SLIPTIDEHANDLING/2); // + 37.5% top speed, + 300% acceleration, +25% handling
+		ADDBOOST(3*FRACUNIT/8 + (FRACUNIT / 1750 * (player->invincibilitytimer)), 3*FRACUNIT, SLIPTIDEHANDLING/2); // + 37.5 + ?% top speed, + 300% acceleration, +25% handling
 	}
 
 	if (player->growshrinktimer > 0) // Grow
@@ -8594,6 +8594,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->invincibilitytimer && onground == true)
 		player->invincibilitytimer--;
 
+	if (!player->invincibilitytimer)
+		player->invincibilityextensions = 0;
+
 	if (player->preventfailsafe)
 		player->preventfailsafe--;
 
@@ -11729,7 +11732,13 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						case KITEM_INVINCIBILITY:
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO) // Doesn't hold your item slot hostage normally, so you're free to waste it if you have multiple
 							{
-								K_DoInvincibility(player, 10 * TICRATE);
+								UINT32 behind = K_GetItemRouletteDistance(player, player->itemRoulette.playing);
+								UINT32 behindScaled = behind * TICRATE / 2000;
+								behindScaled = min(behindScaled, 10*TICRATE);
+
+								CONS_Printf("awarding %d from %d distance\n", behindScaled, K_GetItemRouletteDistance(player, player->itemRoulette.playing));
+
+								K_DoInvincibility(player, 10 * TICRATE + behindScaled);
 								K_PlayPowerGloatSound(player->mo);
 								player->itemamount--;
 								player->botvars.itemconfirm = 0;

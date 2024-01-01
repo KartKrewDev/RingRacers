@@ -3196,7 +3196,15 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 						else
 							kinvextend = 5*TICRATE;
 
+						// Reduce the value of subsequent invinc extensions
+						kinvextend = 3 * kinvextend / (3 + source->player->invincibilityextensions); // 75%, 60%, 50%[...]
+						kinvextend = max(kinvextend, TICRATE);
+						
+						source->player->invincibilityextensions++;
+
 						source->player->invincibilitytimer += kinvextend;
+						// This has a scaling boost type now, don't let it get too crazy
+						source->player->invincibilitytimer = max(source->player->invincibilitytimer, 20*TICRATE);
 					}
 
 					K_TryHurtSoundExchange(target, source);
