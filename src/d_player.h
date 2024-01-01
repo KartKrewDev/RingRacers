@@ -771,6 +771,7 @@ struct player_t
 	INT16 growshrinktimer;		// > 0 = Big, < 0 = small
 	UINT16 rocketsneakertimer;	// Rocket Sneaker duration timer
 	UINT16 invincibilitytimer;	// Invincibility timer
+	UINT16 invincibilityextensions;	// Used to control invinc time gains when it's already been extended.
 
 	UINT8 eggmanexplode;	// Fake item recieved, explode in a few seconds
 	SINT8 eggmanblame;		// (-1 to 15) - Fake item recieved, who set this fake
