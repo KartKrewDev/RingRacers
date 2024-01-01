@@ -339,11 +339,18 @@ typedef enum
 {
 	dopt_screenshot = 0,
 	dopt_addon,
+	dopt_spacer1,
 	dopt_replay,
+	dopt_rprecord,
+	dopt_rpsync,
 #ifdef HAVE_DISCORDRPC
 	dopt_discord,
+	dopt_drp,
+	dopt_drpstreamer,
+	dopt_drpjoins,
+	dopt_drpinvites,
 #endif
-	dopt_spacer,
+	dopt_spacer2,
 	dopt_erase,
 } dopt_e;
 
@@ -430,14 +437,6 @@ extern menu_t OPTIONS_DataScreenshotDef;
 
 extern menuitem_t OPTIONS_DataAddon[];
 extern menu_t OPTIONS_DataAddonDef;
-
-extern menuitem_t OPTIONS_DataReplay[];
-extern menu_t OPTIONS_DataReplayDef;
-
-#ifdef HAVE_DISCORDRPC
-extern menuitem_t OPTIONS_DataDiscord[];
-extern menu_t OPTIONS_DataDiscordDef;
-#endif
 
 extern menuitem_t OPTIONS_DataErase[];
 extern menu_t OPTIONS_DataEraseDef;
