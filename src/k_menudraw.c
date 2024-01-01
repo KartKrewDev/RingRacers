@@ -1070,7 +1070,6 @@ void M_DrawGenericMenu(void)
 				break;
 #endif
 			case IT_STRING:
-			case IT_WHITESTRING:
 				if (currentMenu->menuitems[i].mvar1)
 					y = currentMenu->y+currentMenu->menuitems[i].mvar1;
 				if (i == itemOn)
@@ -4267,6 +4266,19 @@ static void M_DrawOptionsBoxTerm(INT32 x, INT32 top, INT32 bottom)
 	V_DrawFill(px, bottom + 3, BASEVIDWIDTH - (2 * px), 2, 31);
 }
 
+static void M_DrawLinkArrow(INT32 x, INT32 y, INT32 i)
+{
+	UINT8 ch = currentMenu->menuitems[i].text[0];
+
+	V_DrawMenuString(
+		x + (i == itemOn ? 1 + skullAnimCounter/5 : 0),
+		y - 1,
+		// Use color of first character in text label
+		i == itemOn ? highlightflags : (((max(ch, 0x80) - 0x80) & 15) << V_CHARCOLORSHIFT),
+		"\x1D"
+	);
+}
+
 void M_DrawGenericOptions(void)
 {
 	INT32 x = currentMenu->x - M_EaseWithTransition(Easing_Linear, 5 * 48), y = currentMenu->y, w, i, cursory = -100;
@@ -4386,7 +4398,7 @@ box_found:
 				break;
 #endif
 			case IT_STRING:
-			case IT_WHITESTRING: {
+			case IT_LINKTEXT: {
 				if (opening)
 				{
 					if ((currentMenu->menuitems[i].status & IT_TYPE) == IT_CVAR &&
@@ -4398,34 +4410,26 @@ box_found:
 					break;
 				}
 
-				INT32 px = x + ((currentMenu->menuitems[i].status & IT_TYPE) == IT_SUBMENU ? 8 : 0);
+				INT32 px = x + ((currentMenu->menuitems[i].status & IT_TYPE) == IT_SUBMENU
+					|| (currentMenu->menuitems[i].status & IT_DISPLAY) == IT_LINKTEXT ? 8 : 0);
 
 				if (i == itemOn)
 					cursory = y;
 
-				if ((currentMenu->menuitems[i].status & IT_DISPLAY)==IT_STRING)
-				{
-					if (i == itemOn)
-						V_DrawMenuString(px + 1, y, highlightflags, currentMenu->menuitems[i].text);
-					else
-						V_DrawMenuString(px, y, 0, currentMenu->menuitems[i].text);
-				}
+				if (i == itemOn)
+					V_DrawMenuString(px + 1, y, highlightflags, currentMenu->menuitems[i].text);
 				else
-					V_DrawMenuString(px, y, highlightflags, currentMenu->menuitems[i].text);
+					V_DrawMenuString(px, y, 0, currentMenu->menuitems[i].text);
+
+				if ((currentMenu->menuitems[i].status & IT_DISPLAY) == IT_LINKTEXT)
+					M_DrawLinkArrow(x, y, i);
 
 				// Cvar specific handling
 				switch (currentMenu->menuitems[i].status & IT_TYPE)
 				{
 					case IT_SUBMENU: {
-						UINT8 ch = currentMenu->menuitems[i].text[0];
-
-						V_DrawMenuString(
-							x + (i == itemOn ? 1 + skullAnimCounter/5 : 0),
-							y - 1,
-							// Use color of first character in text label
-							i == itemOn ? highlightflags : (((max(ch, 0x80) - 0x80) & 15) << V_CHARCOLORSHIFT),
-							"\x1D"
-						);
+						if ((currentMenu->menuitems[i].status & IT_DISPLAY) != IT_LINKTEXT)
+							M_DrawLinkArrow(x, y, i);
 						break;
 					}
 

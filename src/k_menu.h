@@ -44,7 +44,7 @@ extern "C" {
 #define IT_NOTHING            0     // space
 #define IT_PATCH             16     // a patch or a string with big font
 #define IT_STRING            32     // little string (spaced with 10)
-#define IT_WHITESTRING       48     // little string in white
+#define IT_LINKTEXT          48     // draw an arrow beside, like IT_SUBMENU
 #define IT_DYBIGSPACE        64     // same as noting
 #define IT_DYLITLSPACE   (16+64)    // little space
 #define IT_STRING2       (32+64)    // a simple string
