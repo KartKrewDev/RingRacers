@@ -10,17 +10,35 @@
 menuitem_t OPTIONS_DataScreenshot[] =
 {
 #ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
-	{IT_HEADER, "MOVIE RECORDING (F9)", NULL,
+	{IT_HEADER, "Movie Recording (F9)", NULL,
+		NULL, {NULL}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Max. Duration (s)", "Automatically stop recording after this much time.",
+		NULL, {.cvar = &cv_movie_duration}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Max. File Size (MB)", "Automatically stop recording when the video file reaches this size.",
+		NULL, {.cvar = &cv_movie_size}, 0, 0},
+
+	{IT_SPACE | IT_NOTHING, NULL, NULL,
 		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Real-Time Data", "If enabled, shows fps, duration and filesize of recording in real-time.",
 		NULL, {.cvar = &cv_movie_showfps}, 0, 0},
-#endif
 
-	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+	{IT_SPACE | IT_NOTHING, NULL, NULL,
 		NULL, {NULL}, 0, 0},
 
-	{IT_HEADER, "LOSSLESS RECORDING (F10)", NULL,
+	{IT_STRING | IT_CVAR, "Resolution", "Video resolution",
+		NULL, {.cvar = &cv_movie_resolution}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Max. FPS", "Video framerate",
+		NULL, {.cvar = &cv_movie_fps}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Record Audio", "Record audio.",
+		NULL, {.cvar = &cv_movie_sound}, 0, 0},
+#endif
+
+	{IT_HEADER, "Lossless Recording (F10)", NULL,
 		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Recording Format", "What file format will lossless recordings use?",

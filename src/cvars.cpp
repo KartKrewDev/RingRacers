@@ -991,8 +991,8 @@ consvar_t cv_lossless_recorder = Player("lossless_recorder", "GIF").values(lossl
 	consvar_t cv_movie_resolution = Player("movie_resolution", "Medium").values(movie_resolution_cons_t);
 
 	static CV_PossibleValue_t movie_limit_cons_t[] = {{1, "MIN"}, {INT32_MAX, "MAX"}, {0, "Unlimited"}, {0, NULL}};
-	consvar_t cv_movie_duration = Player("movie_duration", "Unlimited").floating_point().values(movie_limit_cons_t);
-	consvar_t cv_movie_size = Player("movie_size", "25.0").floating_point().values(movie_limit_cons_t);
+	consvar_t cv_movie_duration = Player("movie_duration", "Unlimited").floating_point().values(movie_limit_cons_t).step_amount(FRACUNIT);
+	consvar_t cv_movie_size = Player("movie_size", "25.0").floating_point().values(movie_limit_cons_t).step_amount(FRACUNIT);
 
 	consvar_t cv_movie_fps = Player("movie_fps", "60").values(CV_Natural);
 	consvar_t cv_movie_showfps = Player("movie_showfps", "Yes").yes_no();
