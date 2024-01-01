@@ -3205,6 +3205,9 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 						source->player->invincibilitytimer += kinvextend;
 						// This has a scaling boost type now, don't let it get too crazy
 						source->player->invincibilitytimer = max(source->player->invincibilitytimer, 20*TICRATE);
+
+						if (P_IsDisplayPlayer(source->player))
+							S_StartSound(NULL, sfx_gsha7);
 					}
 
 					K_TryHurtSoundExchange(target, source);
