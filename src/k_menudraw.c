@@ -98,7 +98,7 @@ fixed_t M_DueFrac(tic_t start, tic_t duration)
 }
 
 #define SKULLXOFF -32
-#define LINEHEIGHT 17
+#define LINEHEIGHT 13
 #define STRINGHEIGHT 9
 #define FONTBHEIGHT 20
 #define SMALLLINEHEIGHT 9
@@ -4399,13 +4399,19 @@ box_found:
 #endif
 			case IT_STRING:
 			case IT_LINKTEXT: {
+				boolean textBox = (currentMenu->menuitems[i].status & IT_TYPE) == IT_CVAR &&
+					(currentMenu->menuitems[i].status & IT_CVARTYPE) == IT_CV_STRING;
+
+				if (textBox)
+				{
+					if (opening)
+						y += LINEHEIGHT;
+					else
+						M_DrawTextBox(x, y, MAXSTRINGLENGTH, 1);
+				}
+
 				if (opening)
 				{
-					if ((currentMenu->menuitems[i].status & IT_TYPE) == IT_CVAR &&
-						(currentMenu->menuitems[i].status & IT_CVARTYPE) == IT_CV_STRING)
-					{
-						y += LINEHEIGHT;
-					}
 					y += STRINGHEIGHT;
 					break;
 				}
@@ -4419,7 +4425,7 @@ box_found:
 				if (i == itemOn)
 					V_DrawMenuString(px + 1, y, highlightflags, currentMenu->menuitems[i].text);
 				else
-					V_DrawMenuString(px, y, 0, currentMenu->menuitems[i].text);
+					V_DrawMenuString(px, y, textBox ? V_GRAYMAP : 0, currentMenu->menuitems[i].text);
 
 				if ((currentMenu->menuitems[i].status & IT_DISPLAY) == IT_LINKTEXT)
 					M_DrawLinkArrow(x, y, i);
@@ -4444,16 +4450,14 @@ box_found:
 								break;
 							case IT_CV_STRING:
 								{
-									M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
-
-									INT32 xoffs = 0;
+									INT32 xoffs = 6;
 									if (itemOn == i)
 									{
-										xoffs += 8;
-										V_DrawMenuString(x + (skullAnimCounter/5) + 7, y + 11, highlightflags, "\x1D");
+										xoffs = 8;
+										V_DrawMenuString(x + (skullAnimCounter/5) + 7, y + 9, highlightflags, "\x1D");
 									}
 
-									V_DrawString(x + xoffs + 8, y + 12, 0, cv->string);
+									V_DrawString(x + xoffs + 8, y + 9, 0, cv->string);
 
 									y += LINEHEIGHT;
 								}
