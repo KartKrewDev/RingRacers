@@ -11736,8 +11736,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								UINT32 behindScaled = behind * TICRATE / 2000;
 								behindScaled = min(behindScaled, 10*TICRATE);
 
-								CONS_Printf("awarding %d from %d distance\n", behindScaled, K_GetItemRouletteDistance(player, player->itemRoulette.playing));
-
 								K_DoInvincibility(player, 10 * TICRATE + behindScaled);
 								K_PlayPowerGloatSound(player->mo);
 								player->itemamount--;
