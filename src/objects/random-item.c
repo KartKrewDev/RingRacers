@@ -31,6 +31,8 @@
 
 #define item_vfxtimer(o) ((o)->cvmem)
 
+#define PREVIEWFLAGS (RF_ADD|RF_TRANS30)
+
 static player_t *GetItemBoxPlayer(mobj_t *mobj)
 {
 	fixed_t closest = INT32_MAX;
@@ -151,7 +153,7 @@ boolean Obj_RandomItemSpawnIn(mobj_t *mobj)
 		{
 			if (battleprisons == true)
 			{
-				;
+				mobj->renderflags &= ~PREVIEWFLAGS; // Set in Obj_RandomItemSpawn, unset now that we're playing proper.
 			}
 			else
 			{
@@ -203,7 +205,7 @@ void Obj_RandomItemSpawn(mobj_t *mobj)
 		{
 			P_UnsetThingPosition(mobj);
 			mobj->flags |= (MF_NOCLIPTHING|MF_NOBLOCKMAP);
-			mobj->renderflags |= RF_DONTDRAW;
+			mobj->renderflags |= PREVIEWFLAGS;
 			P_SetThingPosition(mobj);
 		}
 	}
