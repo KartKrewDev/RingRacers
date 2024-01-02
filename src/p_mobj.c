@@ -13813,6 +13813,12 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	{
 		angle_t remainderangle = (mobj->angle % ANGLE_90);
 
+		if (netgame)
+		{
+			P_RemoveMobj(mobj);
+			return false;
+		}
+
 		if (remainderangle)
 		{
 			// Always lock to 90 degree grid.
