@@ -332,10 +332,45 @@ struct Crate : Box<SA2CrateConfig>
 
 		if (metal() && !inflictor->boosting())
 		{
+			crush(inflictor);
+
 			return false;
 		}
 
 		return Box::damage(inflictor);
+	}
+
+private:
+	bool clip2d(const Toucher* inflictor) const
+	{
+		LineSegment a = aabb();
+		LineSegment b = inflictor->aabb();
+
+		return a.a.x < b.b.x && b.a.x < a.b.x && a.a.y < b.b.y && b.a.y < a.b.y;
+	}
+
+	void crush(Toucher* inflictor)
+	{
+		if (!momz)
+		{
+			return;
+		}
+
+		if ((momz < 0 ? mobj_t::z - inflictor->floorz : inflictor->ceilingz - top()) > inflictor->height)
+		{
+			return;
+		}
+
+		if (!clip2d(inflictor))
+		{
+			// Bumping the side of a falling crate should not
+			// kill you.
+			// Note: this check is imperfect. That's why
+			// everything is guarded by momz anyway.
+			return;
+		}
+
+		P_DamageMobj(inflictor, this, nullptr, 1, DMG_CRUSHED);
 	}
 };
 
