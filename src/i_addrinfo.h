@@ -16,10 +16,6 @@
 extern "C" {
 #endif
 
-#ifdef __GNUG__
-#pragma interface
-#endif
-
 #ifndef AI_PASSIVE
 #define AI_PASSIVE     0x01
 #endif

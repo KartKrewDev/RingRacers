@@ -23,10 +23,6 @@
 extern "C" {
 #endif
 
-#ifdef __GNUG__
-#pragma interface
-#endif
-
 #define MISSING_TEXTURE "AASMELLY" // Replacement for invalid textures
 
 // A single patch from a texture definition,

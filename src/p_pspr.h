@@ -35,10 +35,6 @@
 extern "C" {
 #endif
 
-#ifdef __GNUG__
-#pragma interface
-#endif
-
 /// \brief Frame flags: only the frame number - 0 to 256 (Frames from 0 to 63, Sprite2 number uses 0 to 127 plus FF_SPR2SUPER)
 #define FF_FRAMEMASK 0xff
 
