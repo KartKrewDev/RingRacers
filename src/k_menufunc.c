@@ -372,8 +372,8 @@ void M_PlayMenuJam(void)
 
 	const boolean trulystarted = M_GameTrulyStarted();
 	const boolean profilemode = (
-		trulystarted 
-		&& optionsmenu.profilemenu 
+		trulystarted
+		&& optionsmenu.profilemenu
 		&& !optionsmenu.resetprofilemenu
 	);
 
@@ -423,7 +423,7 @@ void M_PlayMenuJam(void)
 			"KEYGEN",
 			"LOSERC",
 		};
-		
+
 		if (refMenu != NULL && NotCurrentlyPlaying(overridetotrack[override - 1]))
 		{
 			Music_Remap("menu", overridetotrack[override - 1]);
@@ -682,7 +682,14 @@ void M_ClearMenus(boolean callexitmenufunc)
 #endif //Alam: But not on the Dreamcast's VMUs
 
 	if (gamestate == GS_MENU) // Back to title screen
+	{
+		int i;
+		for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+		{
+			G_SetDeviceForPlayer(i, -1);
+		}
 		D_StartTitle();
+	}
 
 	menutyping.active = false;
 	menumessage.active = false;

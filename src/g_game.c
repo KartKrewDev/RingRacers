@@ -313,7 +313,7 @@ boolean thwompsactive; // Thwomps activate on lap 2
 UINT8 lastLowestLap; // Last lowest lap, for activating race lap executors
 SINT8 spbplace; // SPB exists, give the person behind better items
 boolean rainbowstartavailable; // Boolean, keeps track of if the rainbow start was gotten
-tic_t linecrossed; // For Time Attack 
+tic_t linecrossed; // For Time Attack
 boolean inDuel; // Boolean, keeps track of if it is a 1v1
 
 // Client-sided, unsynched variables (NEVER use in anything that needs to be synced with other players)
@@ -1319,6 +1319,10 @@ boolean G_Responder(event_t *ev)
 			|| abs(ev->data3) > JOYAXISRANGE/2))
 		))
 		{
+			if (ev->device > 0)
+			{
+				G_SetDeviceForPlayer(0, ev->device);
+			}
 			M_StartControlPanel();
 			return true;
 		}
