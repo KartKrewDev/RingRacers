@@ -20,10 +20,6 @@
 extern "C" {
 #endif
 
-#ifdef __GNUG__
-#pragma interface
-#endif
-
 /// \brief SKY, store the number for name.
 #define SKYFLATNAME "F_SKY1"
 

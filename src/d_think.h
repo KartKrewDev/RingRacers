@@ -23,10 +23,6 @@
 extern "C" {
 #endif
 
-#ifdef __GNUG__
-#pragma interface
-#endif
-
 //
 // Experimental stuff.
 // To compile this as "ANSI C with classes" we will need to handle the various

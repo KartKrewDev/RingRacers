@@ -35,10 +35,6 @@ hwr2::HardwareState* main_hardware_state();
 extern "C" {
 #endif
 
-#ifdef __GNUG__
-#pragma interface
-#endif
-
 typedef enum
 {
 	/// Software

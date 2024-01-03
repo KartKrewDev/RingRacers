@@ -21,10 +21,6 @@
 extern "C" {
 #endif
 
-#ifdef __GNUG__
-#pragma interface
-#endif
-
 #define MAXPREDICTTICS 12
 
 // Button/action code definitions.

@@ -22,10 +22,6 @@
 extern "C" {
 #endif
 
-#ifdef __GNUG__
-#pragma interface
-#endif
-
 // Store lists of lumps for F_START/F_END etc.
 struct lumplist_t
 {

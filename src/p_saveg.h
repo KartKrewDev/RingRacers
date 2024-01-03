@@ -18,10 +18,6 @@
 extern "C" {
 #endif
 
-#ifdef __GNUG__
-#pragma interface
-#endif
-
 // 1024 bytes is plenty for a savegame
 // ...but we'll be accomodating of a heavily replaced Round Queue.
 #define SAVEGAMESIZE (2048)

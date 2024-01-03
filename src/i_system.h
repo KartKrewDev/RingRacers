@@ -21,10 +21,6 @@
 extern "C" {
 #endif
 
-#ifdef __GNUG__
-#pragma interface
-#endif
-
 /**	\brief max quit functions
 */
 #define MAX_QUIT_FUNCS     16
