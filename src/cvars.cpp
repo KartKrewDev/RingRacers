@@ -856,6 +856,7 @@ consvar_t cv_kartdebugnodes = ServerCheat("debugnodes", "Off").on_off().descript
 consvar_t cv_1pswap = PlayerCheat("1pswap", "1").min_max(1, MAXSPLITSCREENPLAYERS).description("Let P1's Profile control a different splitscreen player");
 
 consvar_t cv_debugfinishline = PlayerCheat("debugfinishline", "Off").on_off().description("Highlight finish lines, respawn lines, death pits and instakill planes with high contrast colors");
+consvar_t cv_debughudtracker = PlayerCheat("debughudtracker", "Off").on_off().description("Highlight overlapping HUD tracker blocks");
 
 consvar_t cv_debugrank = PlayerCheat("debugrank", "Off").description("Show GP rank state on the HUD; optionally force a rank grade").values({
 	{0, "Off"},

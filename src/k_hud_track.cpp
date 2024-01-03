@@ -26,6 +26,8 @@
 
 using namespace srb2;
 
+extern "C" consvar_t cv_debughudtracker;
+
 namespace
 {
 
@@ -56,6 +58,7 @@ struct TargetTracking
 	mobj_t* mobj;
 	trackingResult_t result;
 	fixed_t camDist;
+	bool foreground;
 
 	skincolornum_t color() const
 	{
@@ -467,6 +470,7 @@ void K_DrawTargetTracking(const TargetTracking& target)
 	{
 		// Draw simple overlay.
 		vector2_t targetPos = {result.x, result.y};
+		INT32 trans = target.foreground ? 0 : V_80TRANS;
 
 		TargetTracking::Animation anim = target.animation();
 
@@ -478,12 +482,74 @@ void K_DrawTargetTracking(const TargetTracking& target)
 				targetPos.x - ((patch->width << FRACBITS) >> 1),
 				targetPos.y - ((patch->height << FRACBITS) >> 1),
 				FRACUNIT,
-				V_SPLITSCREEN | anim.video_flags,
+				V_SPLITSCREEN | anim.video_flags | trans,
 				patch,
 				colormap
 			);
 		};
 	}
+}
+
+void K_CullTargetList(std::vector<TargetTracking>& targetList)
+{
+	constexpr int kBlockSize = 20;
+	constexpr int kXBlocks = BASEVIDWIDTH / kBlockSize;
+	constexpr int kYBlocks = BASEVIDHEIGHT / kBlockSize;
+	bool map[kXBlocks][kYBlocks] = {};
+
+	constexpr fixed_t kTrackerRadius = 30*FRACUNIT/2; // just an approximation of common HUD tracker
+
+	int debugColorCycle = 0;
+
+	std::for_each(
+		targetList.rbegin(),
+		targetList.rend(),
+		[&](TargetTracking& tr)
+		{
+			if (tr.result.onScreen == false)
+			{
+				return;
+			}
+
+			fixed_t x1 = std::max(((tr.result.x - kTrackerRadius) / kBlockSize) / FRACUNIT, 0);
+			fixed_t x2 = std::min(((tr.result.x + kTrackerRadius) / kBlockSize) / FRACUNIT, kXBlocks - 1);
+			fixed_t y1 = std::max(((tr.result.y - kTrackerRadius) / kBlockSize) / FRACUNIT, 0);
+			fixed_t y2 = std::min(((tr.result.y + kTrackerRadius) / kBlockSize) / FRACUNIT, kYBlocks - 1);
+
+			bool allMine = true;
+
+			for (fixed_t x = x1; x <= x2; ++x)
+			{
+				for (fixed_t y = y1; y <= y2; ++y)
+				{
+					if (map[x][y])
+					{
+						allMine = false;
+					}
+					else
+					{
+						map[x][y] = true;
+
+						if (cv_debughudtracker.value)
+						{
+							V_DrawFill(x * kBlockSize, y * kBlockSize, kBlockSize, kBlockSize, 39 + debugColorCycle);
+						}
+					}
+				}
+			}
+
+			if (allMine)
+			{
+				// This tracker claims every square
+				tr.foreground = true;
+			}
+
+			if (++debugColorCycle > 8)
+			{
+				debugColorCycle = 0;
+			}
+		}
+	);
 }
 
 }; // namespace
@@ -519,6 +585,7 @@ void K_drawTargetHUD(const vector3_t* origin, player_t* player)
 
 		tr.mobj = mobj;
 		tr.camDist = R_PointToDist2(origin->x, origin->y, pos.x, pos.y);
+		tr.foreground = false;
 
 		K_ObjectTracking(&tr.result, &pos, false);
 
@@ -528,6 +595,8 @@ void K_drawTargetHUD(const vector3_t* origin, player_t* player)
 	// Sort by distance from camera. Further trackers get
 	// drawn first so nearer ones draw over them.
 	std::sort(targetList.begin(), targetList.end(), [](const auto& a, const auto& b) { return a.camDist > b.camDist; });
+
+	K_CullTargetList(targetList);
 
 	std::for_each(targetList.cbegin(), targetList.cend(), K_DrawTargetTracking);
 }
