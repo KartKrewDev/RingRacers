@@ -92,6 +92,12 @@ struct consvar_t::Builder
 		return *this;
 	}
 
+	Builder& step_amount(INT32 step_amount)
+	{
+		var_.step_amount = step_amount;
+		return *this;
+	}
+
 	Builder& save()
 	{
 		var_.flags |= CV_SAVE;
@@ -739,7 +745,7 @@ consvar_t cv_overtime = UnsavedNetVar("overtime", "Yes").yes_no();
 
 extern CV_PossibleValue_t pointlimit_cons_t[];
 void PointLimit_OnChange(void);
-consvar_t cv_pointlimit = UnsavedNetVar("pointlimit", "Default").values(pointlimit_cons_t).onchange_noinit(PointLimit_OnChange);
+consvar_t cv_pointlimit = UnsavedNetVar("pointlimit", "Auto").values(pointlimit_cons_t).onchange_noinit(PointLimit_OnChange);
 
 void Schedule_OnChange(void);
 consvar_t cv_schedule = UnsavedNetVar("schedule", "On").on_off().onchange(Schedule_OnChange);
@@ -985,8 +991,8 @@ consvar_t cv_lossless_recorder = Player("lossless_recorder", "GIF").values(lossl
 	consvar_t cv_movie_resolution = Player("movie_resolution", "Medium").values(movie_resolution_cons_t);
 
 	static CV_PossibleValue_t movie_limit_cons_t[] = {{1, "MIN"}, {INT32_MAX, "MAX"}, {0, "Unlimited"}, {0, NULL}};
-	consvar_t cv_movie_duration = Player("movie_duration", "Unlimited").floating_point().values(movie_limit_cons_t);
-	consvar_t cv_movie_size = Player("movie_size", "25.0").floating_point().values(movie_limit_cons_t);
+	consvar_t cv_movie_duration = Player("movie_duration", "Unlimited").floating_point().values(movie_limit_cons_t).step_amount(FRACUNIT);
+	consvar_t cv_movie_size = Player("movie_size", "25.0").floating_point().values(movie_limit_cons_t).step_amount(FRACUNIT);
 
 	consvar_t cv_movie_fps = Player("movie_fps", "60").values(CV_Natural);
 	consvar_t cv_movie_showfps = Player("movie_showfps", "Yes").yes_no();

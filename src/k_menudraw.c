@@ -98,7 +98,7 @@ fixed_t M_DueFrac(tic_t start, tic_t duration)
 }
 
 #define SKULLXOFF -32
-#define LINEHEIGHT 17
+#define LINEHEIGHT 13
 #define STRINGHEIGHT 9
 #define FONTBHEIGHT 20
 #define SMALLLINEHEIGHT 9
@@ -1070,7 +1070,6 @@ void M_DrawGenericMenu(void)
 				break;
 #endif
 			case IT_STRING:
-			case IT_WHITESTRING:
 				if (currentMenu->menuitems[i].mvar1)
 					y = currentMenu->y+currentMenu->menuitems[i].mvar1;
 				if (i == itemOn)
@@ -4267,6 +4266,19 @@ static void M_DrawOptionsBoxTerm(INT32 x, INT32 top, INT32 bottom)
 	V_DrawFill(px, bottom + 3, BASEVIDWIDTH - (2 * px), 2, 31);
 }
 
+static void M_DrawLinkArrow(INT32 x, INT32 y, INT32 i)
+{
+	UINT8 ch = currentMenu->menuitems[i].text[0];
+
+	V_DrawMenuString(
+		x + (i == itemOn ? 1 + skullAnimCounter/5 : 0),
+		y - 1,
+		// Use color of first character in text label
+		i == itemOn ? highlightflags : (((max(ch, 0x80) - 0x80) & 15) << V_CHARCOLORSHIFT),
+		"\x1D"
+	);
+}
+
 void M_DrawGenericOptions(void)
 {
 	INT32 x = currentMenu->x - M_EaseWithTransition(Easing_Linear, 5 * 48), y = currentMenu->y, w, i, cursory = -100;
@@ -4310,22 +4322,25 @@ box_found:
 				break;
 
 			case IT_HEADERTEXT:
-				collapse = (i != expand);
-
-				if (collapse)
+				if (i != expand)
 				{
+					collapse = true;
 					term = (boxy != 0);
 				}
 				else
 				{
+					if (collapse)
+						y += 2;
+
+					collapse = false;
+
 					if (menutransition.tics == menutransition.dest)
 					{
 						INT32 px = x - 20;
-						V_DrawFill(px, y + 6, BASEVIDWIDTH - (2 * px), 2, orangemap[0]);
-						V_DrawFill(px + 1, y + 7, BASEVIDWIDTH - (2 * px), 2, 31);
+						V_DrawFill(px, y + 4, BASEVIDWIDTH - (2 * px), 2, orangemap[0]);
+						V_DrawFill(px + 1, y + 5, BASEVIDWIDTH - (2 * px), 2, 31);
 					}
 
-					y += 2;
 					boxy = y;
 
 					boxt = optionsmenu.box.dist == expand ? M_DueFrac(optionsmenu.box.start, 5) : FRACUNIT;
@@ -4383,46 +4398,44 @@ box_found:
 				break;
 #endif
 			case IT_STRING:
-			case IT_WHITESTRING: {
+			case IT_LINKTEXT: {
+				boolean textBox = (currentMenu->menuitems[i].status & IT_TYPE) == IT_CVAR &&
+					(currentMenu->menuitems[i].status & IT_CVARTYPE) == IT_CV_STRING;
+
+				if (textBox)
+				{
+					if (opening)
+						y += LINEHEIGHT;
+					else
+						M_DrawTextBox(x, y, MAXSTRINGLENGTH, 1);
+				}
+
 				if (opening)
 				{
-					if ((currentMenu->menuitems[i].status & IT_TYPE) == IT_CVAR &&
-						(currentMenu->menuitems[i].status & IT_CVARTYPE) == IT_CV_STRING)
-					{
-						y += LINEHEIGHT;
-					}
 					y += STRINGHEIGHT;
 					break;
 				}
 
-				INT32 px = x + ((currentMenu->menuitems[i].status & IT_TYPE) == IT_SUBMENU ? 8 : 0);
+				INT32 px = x + ((currentMenu->menuitems[i].status & IT_TYPE) == IT_SUBMENU
+					|| (currentMenu->menuitems[i].status & IT_DISPLAY) == IT_LINKTEXT ? 8 : 0);
 
 				if (i == itemOn)
 					cursory = y;
 
-				if ((currentMenu->menuitems[i].status & IT_DISPLAY)==IT_STRING)
-				{
-					if (i == itemOn)
-						V_DrawMenuString(px + 1, y, highlightflags, currentMenu->menuitems[i].text);
-					else
-						V_DrawMenuString(px, y, 0, currentMenu->menuitems[i].text);
-				}
+				if (i == itemOn)
+					V_DrawMenuString(px + 1, y, highlightflags, currentMenu->menuitems[i].text);
 				else
-					V_DrawMenuString(px, y, highlightflags, currentMenu->menuitems[i].text);
+					V_DrawMenuString(px, y, textBox ? V_GRAYMAP : 0, currentMenu->menuitems[i].text);
+
+				if ((currentMenu->menuitems[i].status & IT_DISPLAY) == IT_LINKTEXT)
+					M_DrawLinkArrow(x, y, i);
 
 				// Cvar specific handling
 				switch (currentMenu->menuitems[i].status & IT_TYPE)
 				{
 					case IT_SUBMENU: {
-						UINT8 ch = currentMenu->menuitems[i].text[0];
-
-						V_DrawMenuString(
-							x + (i == itemOn ? 1 + skullAnimCounter/5 : 0),
-							y - 1,
-							// Use color of first character in text label
-							i == itemOn ? highlightflags : (((max(ch, 0x80) - 0x80) & 15) << V_CHARCOLORSHIFT),
-							"\x1D"
-						);
+						if ((currentMenu->menuitems[i].status & IT_DISPLAY) != IT_LINKTEXT)
+							M_DrawLinkArrow(x, y, i);
 						break;
 					}
 
@@ -4437,16 +4450,14 @@ box_found:
 								break;
 							case IT_CV_STRING:
 								{
-									M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
-
-									INT32 xoffs = 0;
+									INT32 xoffs = 6;
 									if (itemOn == i)
 									{
-										xoffs += 8;
-										V_DrawMenuString(x + (skullAnimCounter/5) + 7, y + 11, highlightflags, "\x1D");
+										xoffs = 8;
+										V_DrawMenuString(x + (skullAnimCounter/5) + 7, y + 9, highlightflags, "\x1D");
 									}
 
-									V_DrawString(x + xoffs + 8, y + 12, 0, cv->string);
+									V_DrawString(x + xoffs + 8, y + 9, 0, cv->string);
 
 									y += LINEHEIGHT;
 								}

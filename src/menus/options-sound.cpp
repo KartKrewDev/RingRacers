@@ -249,6 +249,9 @@ menuitem_t OPTIONS_Sound[] =
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 
+	{IT_HEADER, "Advanced...",  NULL,
+		NULL, {NULL}, 0, 0},
+
 	{IT_STRING | IT_CVAR, "Reverse L/R Channels", "Reverse left & right channels for Stereo playback.",
 		NULL, {.cvar = &stereoreverse}, 0, 0},
 

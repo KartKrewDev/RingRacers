@@ -44,7 +44,7 @@ extern "C" {
 #define IT_NOTHING            0     // space
 #define IT_PATCH             16     // a patch or a string with big font
 #define IT_STRING            32     // little string (spaced with 10)
-#define IT_WHITESTRING       48     // little string in white
+#define IT_LINKTEXT          48     // draw an arrow beside, like IT_SUBMENU
 #define IT_DYBIGSPACE        64     // same as noting
 #define IT_DYLITLSPACE   (16+64)    // little space
 #define IT_STRING2       (32+64)    // a simple string
@@ -339,11 +339,18 @@ typedef enum
 {
 	dopt_screenshot = 0,
 	dopt_addon,
+	dopt_spacer1,
 	dopt_replay,
+	dopt_rprecord,
+	dopt_rpsync,
 #ifdef HAVE_DISCORDRPC
 	dopt_discord,
+	dopt_drp,
+	dopt_drpstreamer,
+	dopt_drpjoins,
+	dopt_drpinvites,
 #endif
-	dopt_spacer,
+	dopt_spacer2,
 	dopt_erase,
 } dopt_e;
 
@@ -404,8 +411,8 @@ typedef enum
 	gopt_exitcountdown,
 	gopt_spacer1,
 	gopt_timelimit,
+	gopt_pointlimit,
 	gopt_startingbumpers,
-	gopt_karmacomeback,
 	gopt_spacer2,
 	gopt_itemtoggles
 } gopt_e;
@@ -430,14 +437,6 @@ extern menu_t OPTIONS_DataScreenshotDef;
 
 extern menuitem_t OPTIONS_DataAddon[];
 extern menu_t OPTIONS_DataAddonDef;
-
-extern menuitem_t OPTIONS_DataReplay[];
-extern menu_t OPTIONS_DataReplayDef;
-
-#ifdef HAVE_DISCORDRPC
-extern menuitem_t OPTIONS_DataDiscord[];
-extern menu_t OPTIONS_DataDiscordDef;
-#endif
 
 extern menuitem_t OPTIONS_DataErase[];
 extern menu_t OPTIONS_DataEraseDef;

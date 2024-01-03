@@ -224,7 +224,7 @@ void CapsuleTest_OnChange(void)
 		CONS_Printf("Level must be restarted for capsuletest to have effect.\n");
 }
 
-CV_PossibleValue_t pointlimit_cons_t[] = {{1, "MIN"}, {MAXSCORE, "MAX"}, {0, "None"}, {-1, "Default"}, {0, NULL}};
+CV_PossibleValue_t pointlimit_cons_t[] = {{1, "MIN"}, {MAXSCORE, "MAX"}, {0, "None"}, {-1, "Auto"}, {0, NULL}};
 CV_PossibleValue_t numlaps_cons_t[] = {{0, "MIN"}, {MAX_LAPS, "MAX"}, {-1, "Map default"}, {0, NULL}};
 
 CV_PossibleValue_t perfstats_cons_t[] = {

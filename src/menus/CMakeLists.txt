@@ -11,10 +11,8 @@ target_sources(SRB2SDL2 PRIVATE
 	options-1.c
 	options-data-1.c
 	options-data-addons.c
-	options-data-discord.c
 	options-data-erase-1.c
 	options-data-erase-profile.c
-	options-data-replays.c
 	options-data-screenshots.c
 	options-gameplay-1.c
 	options-gameplay-item-toggles.c

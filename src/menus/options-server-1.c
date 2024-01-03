@@ -12,6 +12,12 @@ menuitem_t OPTIONS_Server[] =
 	{IT_STRING | IT_CVAR | IT_CV_STRING, "Server Name", "Change the name of your server.",
 		NULL, {.cvar = &cv_servername}, 0, 0},
 
+	{IT_STRING | IT_CVAR | IT_CV_STRING, "Server Contact", "Where you should be contacted for Master Server moderation.",
+		NULL, {.cvar = &cv_server_contact}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Advertise", "Display your game in the Server Browser for other players.",
+		NULL, {.cvar = &cv_advertise}, 0, 0},
+
 
 	{IT_HEADER, "Progression...", NULL,
 		NULL, {NULL}, 0, 0},

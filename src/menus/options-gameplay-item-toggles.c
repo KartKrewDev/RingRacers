@@ -10,7 +10,7 @@ menuitem_t OPTIONS_GameplayItems[] =
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Super Ring",			NULL, {.routine = M_HandleItemToggles}, KITEM_SUPERRING, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Self-Propelled Bomb",	NULL, {.routine = M_HandleItemToggles}, KITEM_SPB, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, NULL, NULL, {.routine = M_HandleItemToggles}, 255, 0}, // maybe KITEM_PUYO eventually?
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Toggle All",			NULL, {.routine = M_HandleItemToggles}, 0, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Toggle All / Ring Box Only", NULL, {.routine = M_HandleItemToggles}, 0, 0},
 
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Sneaker",				NULL, {.routine = M_HandleItemToggles}, KITEM_SNEAKER, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Sneaker x2",			NULL, {.routine = M_HandleItemToggles}, KRITEM_DUALSNEAKER, 0},

@@ -28,7 +28,7 @@ menuitem_t OPTIONS_DataErase[] =
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 
-	{IT_STRING | IT_CALL, "Erase a Profile...", "Select a Profile to erase.",
+	{IT_LINKTEXT | IT_CALL, "Erase a Profile...", "Select a Profile to erase.",
 		NULL, {.routine = M_CheckProfileData}, 0, 0},
 
 };

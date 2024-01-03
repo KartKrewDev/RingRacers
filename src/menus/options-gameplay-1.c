@@ -2,9 +2,13 @@
 /// \brief Gameplay Options -- see gopt_e
 
 #include "../k_menu.h"
+#include "../m_cond.h"
 
 menuitem_t OPTIONS_Gameplay[] =
 {
+
+	{IT_HEADER, "Race...", NULL,
+		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Game Speed", "Change Game Speed for the next map.",
 		NULL, {.cvar = &cv_kartspeed}, 0, 0},
@@ -21,22 +25,32 @@ menuitem_t OPTIONS_Gameplay[] =
 	{IT_STRING | IT_CVAR, "Exit Countdown", "How long players have to finish after 1st place finishes.",
 		NULL, {.cvar = &cv_countdowntime}, 0, 0},
 
-	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+
+	{IT_HEADER, "Battle...", NULL,
 		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Time Limit", "Change the time limit for Battle rounds.",
 		NULL, {.cvar = &cv_timelimit}, 0, 0},
 
+	{IT_STRING | IT_CVAR, "Point Limit", "How many strikes it takes to win a Battle.",
+		NULL, {.cvar = &cv_pointlimit}, 0, 0},
+
 	{IT_STRING | IT_CVAR, "Starting Bumpers", "Change how many bumpers player start with in Battle.",
 		NULL, {.cvar = &cv_kartbumpers}, 0, 0},
 
-	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+
+	{IT_SPACE | IT_DYBIGSPACE, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_SUBMENU, "Random Item Toggles...", "Change which items to enable for your games.",
 		NULL, {.submenu = &OPTIONS_GameplayItemsDef}, 0, 0},
 
 };
+
+static void init_routine(void)
+{
+	OPTIONS_Gameplay[gopt_encore].status = M_SecretUnlocked(SECRET_ENCORE, true) ? IT_STRING | IT_CVAR : IT_DISABLED;
+}
 
 menu_t OPTIONS_GameplayDef = {
 	sizeof (OPTIONS_Gameplay) / sizeof (menuitem_t),
@@ -51,7 +65,7 @@ menu_t OPTIONS_GameplayDef = {
 	M_DrawGenericOptions,
 	M_DrawOptionsCogs,
 	M_OptionsTick,
-	NULL,
+	init_routine,
 	NULL,
 	NULL,
 };

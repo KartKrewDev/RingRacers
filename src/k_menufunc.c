@@ -83,6 +83,72 @@ void Dummystaff_OnChange(void)
 // BASIC MENU HANDLING
 // =========================================================================
 
+static void M_AddFloatVar(consvar_t *cv, fixed_t step)
+{
+	int minopt = 0;
+	int maxopt = 0;
+	int curopt = -1;
+
+	int i;
+
+	const CV_PossibleValue_t *values = cv->PossibleValue;
+
+	for (i = 0; values[i].strvalue; ++i)
+	{
+		if (cv->value == values[i].value)
+		{
+			curopt = i;
+
+			if (i > 1)
+				break;
+		}
+		else if (i > 1)
+		{
+			if (!minopt || values[minopt].value > values[i].value)
+				minopt = i;
+
+			if (!maxopt || values[maxopt].value < values[i].value)
+				maxopt = i;
+		}
+	}
+
+	if (curopt > 1 || curopt == (step > 0))
+	{
+		CV_Set(cv, step < 0 ? (maxopt ? values[maxopt].strvalue : "MAX") : (minopt ? values[minopt].strvalue : "MIN"));
+		return;
+	}
+
+	fixed_t n = cv->value;
+
+	if (step > 0)
+	{
+		if (values[1].value - n <= step)
+		{
+			CV_Set(cv, "MAX");
+			return;
+		}
+		n = n + step;
+		n -= n % step;
+	}
+	else
+	{
+		if (n - values[0].value <= -step)
+		{
+			CV_Set(cv, "MIN");
+			return;
+		}
+		fixed_t p = n % -step;
+		n -= p ? p : -step;
+	}
+
+	char s[20];
+	double f = FIXED_TO_FLOAT(n);
+	const char *d = M_Ftrim(f);
+	sprintf(s, "%ld%s", (long)f, *d ? d : ".0");
+
+	CV_Set(cv, s);
+}
+
 void M_ChangeCvarDirect(INT32 choice, consvar_t *cv)
 {
 	// Backspace sets values to default value
@@ -102,9 +168,7 @@ void M_ChangeCvarDirect(INT32 choice, consvar_t *cv)
 	}
 	else if (cv->flags & CV_FLOAT)
 	{
-		char s[20];
-		sprintf(s, "%f", FIXED_TO_FLOAT(cv->value) + (choice) * (1.0f / 16.0f));
-		CV_Set(cv, s);
+		M_AddFloatVar(cv, (cv->step_amount ? cv->step_amount : FRACUNIT/16) * choice);
 	}
 	else
 	{
