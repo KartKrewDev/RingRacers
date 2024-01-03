@@ -592,13 +592,13 @@ INT32 CL_CheckFiles(void)
 	{
 		if (fileneeded[i].status == FS_NOTFOUND || fileneeded[i].status == FS_MD5SUMBAD || fileneeded[i].status == FS_FALLBACK)
 			downloadrequired = true;
-		
+
 		if (fileneeded[i].status != FS_OPEN)
 			filestoload++;
 
 		if (fileneeded[i].status != FS_NOTCHECKED) //since we're running this over multiple tics now, its possible for us to come across files checked in previous tics
 			continue;
-		
+
 		CONS_Debug(DBG_NETPLAY, "searching for '%s' ", fileneeded[i].filename);
 
 		// Check in already loaded files
@@ -1438,6 +1438,7 @@ void PT_FileFragment(void)
 		|| !strcmp(filename, "scripts.pk3")
 		|| !strcmp(filename, "sounds.pk3")
 		|| !strcmp(filename, "music.pk3")
+		|| !strcmp(filename, "staffghosts.pk3")
 		)
 	{
 		I_Error("Tried to download \"%s\"", filename);

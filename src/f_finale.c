@@ -1890,6 +1890,8 @@ void F_TitleScreenTicker(boolean run)
 		UINT16 mapnum;
 		UINT8 numstaff;
 		static boolean use_netreplay = false;
+		const char *lumpname;
+		staffbrief_t *brief;
 
 		if ((use_netreplay = !use_netreplay))
 		{
@@ -1915,10 +1917,12 @@ void F_TitleScreenTicker(boolean run)
 			return;
 		}
 
-		numstaff = M_RandomKey(mapheaderinfo[mapnum]->ghostCount)+1;
+		numstaff = M_RandomKey(mapheaderinfo[mapnum]->ghostCount);
 
 		// Setup demo name
-		sprintf(dname, "%s/GHOST_%u", mapheaderinfo[mapnum]->lumpname, numstaff);
+		brief = mapheaderinfo[mapnum]->ghostBrief[numstaff];
+		lumpname = W_CheckNameForNumPwad(brief->wad, brief->lump);
+		strcpy_s(dname, sizeof(dname), lumpname);
 
 loadreplay:
 		demo.title = true;

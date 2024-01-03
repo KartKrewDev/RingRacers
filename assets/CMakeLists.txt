@@ -27,13 +27,19 @@ list(TRANSFORM SRB2_ASSETS_DOCS PREPEND "${SRB2_ASSET_DIRECTORY_ABSOLUTE}")
 ####################
 
 set(SRB2_ASSETS_GAME
-	"main.kart"
+	"bios.pk3"
 	"gfx.pk3"
-	"textures.pk3"
+	"textures_General.pk3"
+	"textures_OriginalZones.pk3"
+	"textures_SEGAZones.pk3"
 	"chars.pk3"
 	"maps.pk3"
 	"followers.pk3"
 	"patch.pk3"
+	"scripts.pk3"
+	"staffghosts.pk3"
+	"unlocks.pk3"
+	"shaders.pk3"
 )
 list(TRANSFORM SRB2_ASSETS_GAME PREPEND "/")
 list(TRANSFORM SRB2_ASSETS_GAME PREPEND "${SRB2_ASSET_DIRECTORY_ABSOLUTE}")

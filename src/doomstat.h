@@ -443,10 +443,11 @@ struct unloaded_cupheader_t
 extern unloaded_cupheader_t *unloadedcupheaders;
 
 #define MAXMAPLUMPNAME 64 // includes \0, for cleaner savedata
-#define MAXSTAFF 3
 
 struct staffbrief_t
 {
+	UINT16 wad;
+	UINT16 lump;
 	char name[16];
 	tic_t time;
 	tic_t lap;
@@ -480,7 +481,8 @@ struct mapheader_t
 
 	// Staff Ghost information
 	UINT8 ghostCount;					///< Count of valid staff ghosts
-	staffbrief_t *ghostBrief[MAXSTAFF];	///< Mallocated array of names for each staff ghost
+	UINT32 ghostBriefSize;              ///< Size of ghostBrief vector allocation
+	staffbrief_t **ghostBrief;			///< Valid staff ghosts, pointers are owned
 
 	recorddata_t records;				///< Stores completion/record attack data
 
