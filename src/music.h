@@ -89,8 +89,8 @@ void Music_UnSuspend(const char *id);
 //
 
 
-// Seek to a specific time in the tune.
-void Music_Seek(const char *id, tic_t set);
+// Seek to a specific time in milliseconds in the tune.
+void Music_Seek(const char *id, UINT32 set);
 
 // Remap a tune to another song. Use the lump name, with the
 // 'O_' at the beginning removed. song is case insensitive.

@@ -216,7 +216,7 @@ void Music_DelayEnd(const char* id, tic_t duration)
 	}
 }
 
-void Music_Seek(const char* id, tic_t set)
+void Music_Seek(const char* id, UINT32 set)
 {
 	Tune* tune = g_tunes.find(id);
 

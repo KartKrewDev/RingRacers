@@ -8202,7 +8202,7 @@ void P_LoadLevelMusic(void)
 		Music_Remap("level", music);
 
 		tic_t level_music_start = starttime + (TICRATE/2);
-		Music_Seek("level", std::max(leveltime, level_music_start) - level_music_start);
+		Music_Seek("level", (std::max(leveltime, level_music_start) - level_music_start) * 1000UL / TICRATE);
 	}
 }
 

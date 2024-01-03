@@ -200,7 +200,7 @@ void TuneManager::seek(Tune* tune)
 	uint32_t end = I_GetSongLength();
 	uint32_t loop = I_GetSongLoopPoint();
 
-	uint32_t pos = detail::tics_to_msec(tune->seek + tune->elapsed()) * tune->speed();
+	uint32_t pos = (tune->seek + detail::tics_to_msec(tune->elapsed())) * tune->speed();
 
 	if (pos > end && (end - loop) > 0u)
 	{
