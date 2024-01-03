@@ -1066,17 +1066,18 @@ static UINT8 K_TrySpindash(const player_t *player, ticcmd_t *cmd)
 }
 
 /*--------------------------------------------------
-	static boolean K_TryRingShooter(const player_t *player)
+	static boolean K_TryRingShooter(const player_t *player, const botcontroller_t *botController)
 
 		Determines conditions where the bot should attempt to respawn.
 
 	Input Arguments:-
 		player - Bot player to check.
+		botController - Bot controller struct, if it exists.
 
 	Return:-
 		true if we want to hold the respawn button, otherwise false.
 --------------------------------------------------*/
-static boolean K_TryRingShooter(const player_t *player)
+static boolean K_TryRingShooter(const player_t *player, const botcontroller_t *botController)
 {
 	ZoneScoped;
 
@@ -1095,6 +1096,12 @@ static boolean K_TryRingShooter(const player_t *player)
 	if ((gametyperules & GTR_CIRCUIT) == 0 || (leveltime <= starttime))
 	{
 		// Only do this during a Race that has started.
+		return false;
+	}
+
+	if (botController != nullptr && (botController->flags & TMBOT_NOCONTROL) == TMBOT_NOCONTROL)
+	{
+		// Bot controls are disabled, so WANT to sit still.
 		return false;
 	}
 
@@ -1618,7 +1625,7 @@ static void K_BuildBotTiccmdNormal(const player_t *player, ticcmd_t *cmd)
 		return;
 	}
 
-	if (K_TryRingShooter(player) == true && player->botvars.respawnconfirm >= BOTRESPAWNCONFIRM)
+	if (K_TryRingShooter(player, botController) == true && player->botvars.respawnconfirm >= BOTRESPAWNCONFIRM)
 	{
 		// We want to respawn. Simply hold Y and stop here!
 		cmd->buttons |= (BT_RESPAWN | BT_EBRAKEMASK);
@@ -1934,7 +1941,8 @@ void K_UpdateBotGameplayVars(player_t *player)
 		player->botvars.spindashconfirm += player->cmd.bot.spindashconfirm;
 	}
 
-	if (K_TryRingShooter(player) == true)
+	const botcontroller_t *botController = K_GetBotController(player->mo);
+	if (K_TryRingShooter(player, botController) == true)
 	{
 		// Our anti-grief system is already a perfect system
 		// for determining if we're not making progress, so
