@@ -1922,7 +1922,7 @@ void F_TitleScreenTicker(boolean run)
 		// Setup demo name
 		brief = mapheaderinfo[mapnum]->ghostBrief[numstaff];
 		lumpname = W_CheckNameForNumPwad(brief->wad, brief->lump);
-		strcpy_s(dname, sizeof(dname), lumpname);
+		strlcpy(dname, lumpname, sizeof(dname));
 
 loadreplay:
 		demo.title = true;
