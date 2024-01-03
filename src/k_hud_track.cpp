@@ -54,7 +54,7 @@ struct TargetTracking
 	};
 
 	mobj_t* mobj;
-	vector3_t point;
+	trackingResult_t result;
 	fixed_t camDist;
 
 	skincolornum_t color() const
@@ -194,14 +194,118 @@ private:
 	}
 };
 
+bool is_player_tracking_target(player_t *player = stplyr)
+{
+	if ((gametyperules & (GTR_BUMPERS|GTR_CLOSERPLAYERS)) != (GTR_BUMPERS|GTR_CLOSERPLAYERS))
+	{
+		return false;
+	}
+
+	if (K_Cooperative())
+	{
+		return false;
+	}
+
+	if (player == nullptr)
+	{
+		return false;
+	}
+
+	if (inDuel)
+	{
+		// Always draw targets in 1v1 but don't draw player's
+		// own target on their own viewport.
+		return player != stplyr;
+	}
+
+	// Except for DUEL mode, Overtime hides all TARGETs except
+	// the kiosk.
+	if (battleovertime.enabled)
+	{
+		return false;
+	}
+
+	if (player->emeralds != 0 && K_IsPlayerWanted(stplyr))
+	{
+		// The player who is about to win because of emeralds
+		// gets a TARGET on them
+		if (K_NumEmeralds(player) == 6) // 6 out of 7
+		{
+			return true;
+		}
+
+		// WANTED player sees TARGETs on players holding
+		// emeralds
+		if (K_IsPlayerWanted(stplyr))
+		{
+			return true;
+		}
+	}
+
+	return K_IsPlayerWanted(player);
+}
+
+bool is_object_tracking_target(const mobj_t* mobj)
+{
+	switch (mobj->type)
+	{
+	case MT_BATTLECAPSULE:
+	case MT_CDUFO:
+		return battleprisons;
+
+	case MT_PLAYER:
+		return is_player_tracking_target(mobj->player);
+
+	case MT_OVERTIME_CENTER:
+		return inDuel == false && battleovertime.enabled;
+
+	case MT_EMERALD:
+		return Obj_EmeraldCanHUDTrack(mobj) &&
+			((specialstageinfo.valid && specialstageinfo.ufo) || is_player_tracking_target());
+
+	case MT_MONITOR:
+		return is_player_tracking_target() && Obj_MonitorGetEmerald(mobj) != 0;
+
+	case MT_SUPER_FLICKY:
+		return Obj_IsSuperFlickyTargettingYou(mobj, stplyr->mo);
+
+	case MT_SPRAYCAN:
+		return !(mobj->renderflags & (RF_TRANSMASK | RF_DONTDRAW)); // the spraycan wasn't collected yet
+
+	default:
+		return false;
+	}
+}
+
+bool is_object_visible(mobj_t* mobj)
+{
+	switch (mobj->type)
+	{
+	case MT_SUPER_FLICKY:
+		// Always flickers.
+		return (leveltime & 1);
+
+	case MT_SPRAYCAN:
+		// Flickers, but only when visible.
+		return P_CheckSight(stplyr->mo, mobj) && (leveltime & 1);
+
+	default:
+		// Flicker when not visible.
+		return P_CheckSight(stplyr->mo, mobj) || (leveltime & 1);
+	}
+}
+
 void K_DrawTargetTracking(const TargetTracking& target)
 {
+	if (is_object_visible(target.mobj) == false)
+	{
+		return;
+	}
+
 	const uint8_t* colormap = target.colormap();
 
-	trackingResult_t result = {};
+	const trackingResult_t& result = target.result;
 	int32_t timer = 0;
-
-	K_ObjectTracking(&result, &target.point, false);
 
 	if (result.onScreen == false)
 	{
@@ -382,107 +486,6 @@ void K_DrawTargetTracking(const TargetTracking& target)
 	}
 }
 
-bool is_player_tracking_target(player_t *player = stplyr)
-{
-	if ((gametyperules & (GTR_BUMPERS|GTR_CLOSERPLAYERS)) != (GTR_BUMPERS|GTR_CLOSERPLAYERS))
-	{
-		return false;
-	}
-
-	if (K_Cooperative())
-	{
-		return false;
-	}
-
-	if (player == nullptr)
-	{
-		return false;
-	}
-
-	if (inDuel)
-	{
-		// Always draw targets in 1v1 but don't draw player's
-		// own target on their own viewport.
-		return player != stplyr;
-	}
-
-	// Except for DUEL mode, Overtime hides all TARGETs except
-	// the kiosk.
-	if (battleovertime.enabled)
-	{
-		return false;
-	}
-
-	if (player->emeralds != 0 && K_IsPlayerWanted(stplyr))
-	{
-		// The player who is about to win because of emeralds
-		// gets a TARGET on them
-		if (K_NumEmeralds(player) == 6) // 6 out of 7
-		{
-			return true;
-		}
-
-		// WANTED player sees TARGETs on players holding
-		// emeralds
-		if (K_IsPlayerWanted(stplyr))
-		{
-			return true;
-		}
-	}
-
-	return K_IsPlayerWanted(player);
-}
-
-bool is_object_tracking_target(const mobj_t* mobj)
-{
-	switch (mobj->type)
-	{
-	case MT_BATTLECAPSULE:
-	case MT_CDUFO:
-		return battleprisons;
-
-	case MT_PLAYER:
-		return is_player_tracking_target(mobj->player);
-
-	case MT_OVERTIME_CENTER:
-		return inDuel == false && battleovertime.enabled;
-
-	case MT_EMERALD:
-		return Obj_EmeraldCanHUDTrack(mobj) &&
-			((specialstageinfo.valid && specialstageinfo.ufo) || is_player_tracking_target());
-
-	case MT_MONITOR:
-		return is_player_tracking_target() && Obj_MonitorGetEmerald(mobj) != 0;
-
-	case MT_SUPER_FLICKY:
-		return Obj_IsSuperFlickyTargettingYou(mobj, stplyr->mo);
-
-	case MT_SPRAYCAN:
-		return !(mobj->renderflags & (RF_TRANSMASK | RF_DONTDRAW)); // the spraycan wasn't collected yet
-
-	default:
-		return false;
-	}
-}
-
-bool is_object_visible(mobj_t* mobj)
-{
-	switch (mobj->type)
-	{
-	case MT_SUPER_FLICKY:
-		// Always flickers.
-		return (leveltime & 1);
-
-	case MT_SPRAYCAN:
-		// Flickers, but only when visible.
-		return P_CheckSight(stplyr->mo, mobj) && (leveltime & 1);
-
-	default:
-		// Flicker when not visible.
-		return P_CheckSight(stplyr->mo, mobj) || (leveltime & 1);
-	}
-}
-
 }; // namespace
 
 void K_drawTargetHUD(const vector3_t* origin, player_t* player)
@@ -506,18 +509,20 @@ void K_drawTargetHUD(const vector3_t* origin, player_t* player)
 			continue;
 		}
 
-		if (is_object_visible(mobj) == false)
-		{
-			continue;
-		}
-
 		vector3_t pos = {
 			R_InterpolateFixed(mobj->old_x, mobj->x) + mobj->sprxoff,
 			R_InterpolateFixed(mobj->old_y, mobj->y) + mobj->spryoff,
 			R_InterpolateFixed(mobj->old_z, mobj->z) + mobj->sprzoff + (mobj->height >> 1),
 		};
 
-		targetList.push_back({mobj, pos, R_PointToDist2(origin->x, origin->y, pos.x, pos.y)});
+		TargetTracking tr;
+
+		tr.mobj = mobj;
+		tr.camDist = R_PointToDist2(origin->x, origin->y, pos.x, pos.y);
+
+		K_ObjectTracking(&tr.result, &pos, false);
+
+		targetList.push_back(tr);
 	}
 
 	// Sort by distance from camera. Further trackers get
