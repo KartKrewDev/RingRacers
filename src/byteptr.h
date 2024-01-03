@@ -52,15 +52,15 @@ extern "C" {
 
 // what is this?
 #if defined (__GNUC__) && defined (DEALIGNED)
-#define READUINT8(p)        ({   UINT8 *p_tmp = (UINT8   *)p;   UINT8 b; memcpy(&b, p, sizeof(  UINT8)); p_tmp++; p = (void *)p_tmp; b; })
-#define READSINT8(p)        ({   SINT8 *p_tmp = (SINT8   *)p;   SINT8 b; memcpy(&b, p, sizeof(  SINT8)); p_tmp++; p = (void *)p_tmp; b; })
-#define READINT16(p)        ({   INT16 *p_tmp = (INT16   *)p;   INT16 b; memcpy(&b, p, sizeof(  INT16)); p_tmp++; p = (void *)p_tmp; b; })
-#define READUINT16(p)       ({  UINT16 *p_tmp = (UINT16  *)p;  UINT16 b; memcpy(&b, p, sizeof( UINT16)); p_tmp++; p = (void *)p_tmp; b; })
-#define READINT32(p)        ({   INT32 *p_tmp = (INT32   *)p;   INT32 b; memcpy(&b, p, sizeof(  INT32)); p_tmp++; p = (void *)p_tmp; b; })
-#define READUINT32(p)       ({  UINT32 *p_tmp = (UINT32  *)p;  UINT32 b; memcpy(&b, p, sizeof( UINT32)); p_tmp++; p = (void *)p_tmp; b; })
-#define READCHAR(p)         ({    char *p_tmp = (char    *)p;    char b; memcpy(&b, p, sizeof(   char)); p_tmp++; p = (void *)p_tmp; b; })
-#define READFIXED(p)        ({ fixed_t *p_tmp = (fixed_t *)p; fixed_t b; memcpy(&b, p, sizeof(fixed_t)); p_tmp++; p = (void *)p_tmp; b; })
-#define READANGLE(p)        ({ angle_t *p_tmp = (angle_t *)p; angle_t b; memcpy(&b, p, sizeof(angle_t)); p_tmp++; p = (void *)p_tmp; b; })
+#define READUINT8(p)        ({   UINT8 *p_tmp = (UINT8   *)p;   UINT8 b; memcpy(&b, p, sizeof(  UINT8)); p_tmp++; *(void**)(&(p)) = (void *)p_tmp; b; })
+#define READSINT8(p)        ({   SINT8 *p_tmp = (SINT8   *)p;   SINT8 b; memcpy(&b, p, sizeof(  SINT8)); p_tmp++; *(void**)(&(p)) = (void *)p_tmp; b; })
+#define READINT16(p)        ({   INT16 *p_tmp = (INT16   *)p;   INT16 b; memcpy(&b, p, sizeof(  INT16)); p_tmp++; *(void**)(&(p)) = (void *)p_tmp; b; })
+#define READUINT16(p)       ({  UINT16 *p_tmp = (UINT16  *)p;  UINT16 b; memcpy(&b, p, sizeof( UINT16)); p_tmp++; *(void**)(&(p)) = (void *)p_tmp; b; })
+#define READINT32(p)        ({   INT32 *p_tmp = (INT32   *)p;   INT32 b; memcpy(&b, p, sizeof(  INT32)); p_tmp++; *(void**)(&(p)) = (void *)p_tmp; b; })
+#define READUINT32(p)       ({  UINT32 *p_tmp = (UINT32  *)p;  UINT32 b; memcpy(&b, p, sizeof( UINT32)); p_tmp++; *(void**)(&(p)) = (void *)p_tmp; b; })
+#define READCHAR(p)         ({    char *p_tmp = (char    *)p;    char b; memcpy(&b, p, sizeof(   char)); p_tmp++; *(void**)(&(p)) = (void *)p_tmp; b; })
+#define READFIXED(p)        ({ fixed_t *p_tmp = (fixed_t *)p; fixed_t b; memcpy(&b, p, sizeof(fixed_t)); p_tmp++; *(void**)(&(p)) = (void *)p_tmp; b; })
+#define READANGLE(p)        ({ angle_t *p_tmp = (angle_t *)p; angle_t b; memcpy(&b, p, sizeof(angle_t)); p_tmp++; *(void**)(&(p)) = (void *)p_tmp; b; })
 #else
 #define READUINT8(p)        ((UINT8*)(*(void**)(&(p)) = (void*)&((UINT8*)(p))[1]))[-1]
 #define READSINT8(p)        ((SINT8*)(*(void**)(&(p)) = (void*)&((SINT8*)(p))[1]))[-1]
