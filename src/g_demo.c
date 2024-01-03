@@ -3653,6 +3653,8 @@ void G_DoPlayDemo(const char *defdemoname)
 	}
 
 	demo.deferstart = true;
+
+	CV_StealthSetValue(&cv_playbackspeed, 1);
 }
 
 void G_AddGhost(savebuffer_t *buffer, char *defdemoname)
