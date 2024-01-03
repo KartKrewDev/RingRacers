@@ -7,8 +7,10 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  k_botsearch.c
+/// \file  k_botsearch.cpp
 /// \brief Bot blockmap search functions
+
+#include <algorithm>
 
 #include <tracy/tracy/Tracy.hpp>
 
@@ -441,7 +443,7 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 	{
 		angledelta = AngleFixed(angle)>>FRACBITS;
 	}
-	else 
+	else
 	{
 		angledelta = 360-(AngleFixed(angle)>>FRACBITS);
 		side = 1;
@@ -930,7 +932,7 @@ static BlockItReturn_t K_FindPlayersToBully(mobj_t *thing)
 	{
 		anglediff = AngleFixed(angle)>>FRACBITS;
 	}
-	else 
+	else
 	{
 		anglediff = 360-(AngleFixed(angle)>>FRACBITS);
 	}
@@ -1007,7 +1009,7 @@ INT32 K_PositionBully(const player_t *player)
 	{
 		anglediff = AngleFixed(angle)>>FRACBITS;
 	}
-	else 
+	else
 	{
 		anglediff = 360-(AngleFixed(angle)>>FRACBITS);
 	}

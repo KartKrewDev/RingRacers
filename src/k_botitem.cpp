@@ -7,8 +7,10 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  k_botitem.c
+/// \file  k_botitem.cpp
 /// \brief Bot item usage logic
+
+#include <algorithm>
 
 #include <tracy/tracy/Tracy.hpp>
 
@@ -240,7 +242,7 @@ static player_t *K_PlayerInCone(const player_t *player, fixed_t radius, UINT16 c
 			{
 				ad = AngleFixed(a)>>FRACBITS;
 			}
-			else 
+			else
 			{
 				ad = 360-(AngleFixed(a)>>FRACBITS);
 			}

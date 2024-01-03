@@ -4473,7 +4473,7 @@ static void K_drawKartMinimap(void)
 
 			MiniWaypoint(waypoint_t* wp) : waypoint(wp), rank(K_RankMinimapWaypoint(wp)) {}
 
-			bool operator<(const MiniWaypoint& b) { return rank < b.rank; }
+			bool operator<(const MiniWaypoint& b) const noexcept { return rank < b.rank; }
 		};
 
 		std::vector<MiniWaypoint> waypoints;
