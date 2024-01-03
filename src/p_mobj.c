@@ -13176,6 +13176,10 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 			if (!(gametyperules & GTR_CHECKPOINTS))
 				return false;
 			break;
+		case MT_ANCIENTSHRINE:
+			if (netgame)
+				return false;
+			break;
 		default:
 			break;
 	}
@@ -13812,12 +13816,6 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	case MT_ANCIENTSHRINE:
 	{
 		angle_t remainderangle = (mobj->angle % ANGLE_90);
-
-		if (netgame)
-		{
-			P_RemoveMobj(mobj);
-			return false;
-		}
 
 		if (remainderangle)
 		{
