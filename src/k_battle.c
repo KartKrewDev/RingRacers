@@ -690,6 +690,7 @@ void K_RunBattleOvertime(void)
 		if (battleovertime.enabled == TICRATE)
 		{
 			S_StartSound(NULL, sfx_bhurry);
+			HU_DoTitlecardCEchoForDuration(NULL, "HURRY UP!!", true, 2*TICRATE);
 			Music_DelayEnd("level", 0);
 		}
 		else if (battleovertime.enabled == 10*TICRATE)
