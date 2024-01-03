@@ -8796,18 +8796,38 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	K_UpdateTripwire(player);
 
-	if ((battleovertime.enabled >= 10*TICRATE) && !(player->pflags & PF_ELIMINATED) && !player->exiting)
+	if (battleovertime.enabled)
 	{
-		fixed_t distanceToBarrier = 0;
+		fixed_t distanceToCenter = 0;
 
 		if (battleovertime.radius > 0)
 		{
-			distanceToBarrier = R_PointToDist2(player->mo->x, player->mo->y, battleovertime.x, battleovertime.y) - (player->mo->radius * 2);
+			distanceToCenter = R_PointToDist2(player->mo->x, player->mo->y, battleovertime.x, battleovertime.y);
 		}
 
-		if (distanceToBarrier > battleovertime.radius)
+		if (distanceToCenter + player->mo->radius > battleovertime.radius)
 		{
-			P_DamageMobj(player->mo, NULL, NULL, 1, DMG_TIMEOVER);
+			if (distanceToCenter - (player->mo->radius * 2) > battleovertime.radius &&
+				(battleovertime.enabled >= 10*TICRATE) &&
+				!(player->pflags & PF_ELIMINATED) &&
+				!player->exiting)
+			{
+				P_DamageMobj(player->mo, NULL, NULL, 1, DMG_TIMEOVER);
+			}
+
+			if (leveltime < player->darkness_end)
+			{
+				if (leveltime > player->darkness_end - DARKNESS_FADE_TIME)
+				{
+					player->darkness_start = leveltime - (player->darkness_end - leveltime);
+				}
+			}
+			else
+			{
+				player->darkness_start = leveltime;
+			}
+
+			player->darkness_end = leveltime + (2 * DARKNESS_FADE_TIME);
 		}
 	}
 
