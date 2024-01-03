@@ -185,6 +185,12 @@ struct conditionset_t
 #define ME_ENCORE		1	// Achieve in Encore
 #define ME_SPBATTACK	2	// Achieve in SPB Attack
 
+// Automedal SOC tags
+#define AUTOMEDAL_BRONZE    -4
+#define AUTOMEDAL_SILVER    -3
+#define AUTOMEDAL_GOLD      -2
+#define AUTOMEDAL_PLATINUM  -1
+
 struct emblem_t
 {
 	UINT8 type;			///< Emblem type

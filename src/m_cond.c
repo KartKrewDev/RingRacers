@@ -3160,6 +3160,14 @@ UINT16 M_CheckLevelEmblems(void)
 
 					res = (G_GetBestTime(levelnum) <= mapheaderinfo[checkLevel]->ghostBrief[tag-1]->time);
 				}
+				else if (tag < 0 && tag >= -4)
+				{
+					// Use auto medal times for emblem tags from -4 to -1
+					int index = -tag - 1; // 0 is Platinum, 3 is Bronze
+					tic_t time = mapheaderinfo[checkLevel]->automedaltime[index];
+
+					res = (G_GetBestTime(levelnum) <= time);
+				}
 				else
 				{
 					res = (G_GetBestTime(levelnum) <= (unsigned)valToReach);

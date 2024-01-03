@@ -313,7 +313,7 @@ boolean thwompsactive; // Thwomps activate on lap 2
 UINT8 lastLowestLap; // Last lowest lap, for activating race lap executors
 SINT8 spbplace; // SPB exists, give the person behind better items
 boolean rainbowstartavailable; // Boolean, keeps track of if the rainbow start was gotten
-tic_t linecrossed; // For Time Attack 
+tic_t linecrossed; // For Time Attack
 boolean inDuel; // Boolean, keeps track of if it is a 1v1
 
 // Client-sided, unsynched variables (NEVER use in anything that needs to be synced with other players)
@@ -482,8 +482,16 @@ bademblem:
 				else
 					stickermedalinfo.timetoreach = mapheaderinfo[map]->ghostBrief[emblem->tag-1]->time;
 			}
+			else if (emblem->tag < 0 && emblem->tag >= -4)
+			{
+				// Use auto medal times for emblem tags from -4 to -1
+				int index = -emblem->tag - 1; // 0 is Platinum, 3 is Bronze
+				stickermedalinfo.timetoreach = mapheaderinfo[map]->automedaltime[index];
+			}
 			else
+			{
 				stickermedalinfo.timetoreach = emblem->var;
+			}
 		}
 	}
 
