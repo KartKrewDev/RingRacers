@@ -694,7 +694,10 @@ void K_RunBattleOvertime(void)
 			Music_DelayEnd("level", 0);
 		}
 		else if (battleovertime.enabled == 10*TICRATE)
+		{
 			S_StartSound(NULL, sfx_kc40);
+			P_StartQuake(5, 64 * mapobjectscale, 0, NULL);
+		}
 
 		if (!Music_Playing("level") && !Music_Playing("battle_overtime"))
 		{
@@ -718,6 +721,8 @@ void K_RunBattleOvertime(void)
 		{
 			battleovertime.radius = minradius;
 			K_CheckBumpers();
+			S_StartSound(NULL, sfx_kc40);
+			P_StartQuake(5, 64 * mapobjectscale, 0, NULL);
 		}
 
 		// Subtract the 10 second grace period of the barrier
