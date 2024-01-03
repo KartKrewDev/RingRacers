@@ -1931,7 +1931,14 @@ void K_UpdateBotGameplayVars(player_t *player)
 	}
 	else
 	{
-		player->botvars.spindashconfirm += player->cmd.bot.spindashconfirm;
+		if (player->cmd.bot.spindashconfirm < 0 && abs(player->cmd.bot.spindashconfirm) > player->botvars.spindashconfirm)
+		{
+			player->botvars.spindashconfirm = 0;
+		}
+		else
+		{
+			player->botvars.spindashconfirm += player->cmd.bot.spindashconfirm;
+		}
 	}
 
 	if (K_TryRingShooter(player) == true)

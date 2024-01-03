@@ -1810,13 +1810,71 @@ void K_UpdateBotGameplayVarsItemUsage(player_t *player)
 		return;
 	}
 
-	player->botvars.itemconfirm += player->cmd.bot.itemconfirm;
-
-	if (player->itemRoulette.active == true)
+	if (player->cmd.bot.itemconfirm < 0 && abs(player->cmd.bot.itemconfirm) > player->botvars.itemconfirm)
 	{
-		// Mashing behaviors
-		K_UpdateBotGameplayVarsItemUsageMash(player);
-		return;
+		player->botvars.itemconfirm = 0;
+	}
+	else
+	{
+		player->botvars.itemconfirm += player->cmd.bot.itemconfirm;
+	}
+
+	if (player->itemflags & IF_USERINGS)
+	{
+		;
+	}
+	else
+	{
+		if (player->itemRoulette.active == true)
+		{
+			// Mashing behaviors
+			K_UpdateBotGameplayVarsItemUsageMash(player);
+			return;
+		}
+
+		if (player->stealingtimer == 0)
+		{
+			if (player->eggmanexplode)
+			{
+				;
+			}
+			else if (player->itemflags & IF_EGGMANOUT)
+			{
+				;
+			}
+			else if (player->rocketsneakertimer > 0)
+			{
+				;
+			}
+			else
+			{
+				switch (player->itemtype)
+				{
+					default:
+					{
+						break;
+					}
+					case KITEM_FLAMESHIELD:
+					{
+						if (player->botvars.itemconfirm == 0
+							&& (player->itemflags & IF_HOLDREADY) == IF_HOLDREADY)
+						{
+							INT32 flamemax = player->flamelength;
+
+							if (player->flamemeter < flamemax || flamemax == 0)
+							{
+								;
+							}
+							else
+							{
+								player->botvars.itemconfirm = (3 * flamemax / 4) + (TICRATE / 2);
+							}
+						}
+						break;
+					}
+				}
+			}
+		}
 	}
 }
 
