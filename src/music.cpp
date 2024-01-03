@@ -28,6 +28,8 @@ void Music_Init(void)
 		Tune& tune = g_tunes.insert("level");
 
 		tune.priority = 1;
+		tune.fade_out = 1500;
+		tune.fade_out_inclusive = false;
 		tune.resume_fade_in = 750;
 		tune.sync = true;
 		tune.credit = true;
@@ -46,6 +48,20 @@ void Music_Init(void)
 
 		tune.priority = 10;
 		tune.fade_out = 3500;
+	}
+
+	{
+		Tune& tune = g_tunes.insert("battle_overtime", g_tunes.find("level"));
+
+		tune.song = "shwdwn";
+		tune.priority = 11;
+	}
+
+	{
+		Tune& tune = g_tunes.insert("battle_overtime_stress", g_tunes.find("battle_overtime"));
+
+		tune.song = "shwdn2";
+		tune.priority = 10;
 	}
 
 	{

@@ -21,6 +21,10 @@
 #include "p_spec.h"
 #include "k_objects.h"
 #include "k_rank.h"
+#include "music.h"
+#include "hu_stuff.h"
+
+#define BARRIER_MIN_RADIUS (768 * mapobjectscale)
 
 // Battle overtime info
 struct battleovertime battleovertime;
@@ -140,6 +144,12 @@ void K_CheckBumpers(void)
 		{
 			eliminated++;
 		}
+	}
+
+	if (numingame <= 2 && battleovertime.enabled && battleovertime.radius <= BARRIER_MIN_RADIUS)
+	{
+		Music_Stop("battle_overtime");
+		S_StartSound(NULL, sfx_kc4b); // Loud noise helps mask transition
 	}
 
 	if (K_Cooperative())
@@ -678,19 +688,36 @@ void K_RunBattleOvertime(void)
 	{
 		battleovertime.enabled++;
 		if (battleovertime.enabled == TICRATE)
+		{
 			S_StartSound(NULL, sfx_bhurry);
-		if (battleovertime.enabled == 10*TICRATE)
+			Music_DelayEnd("level", 0);
+		}
+		else if (battleovertime.enabled == 10*TICRATE)
 			S_StartSound(NULL, sfx_kc40);
+
+		if (!Music_Playing("level") && !Music_Playing("battle_overtime"))
+		{
+			Music_Play("battle_overtime");
+			Music_Play("battle_overtime_stress");
+
+			// Sync approximately with looping section of
+			// battle_overtime. (This is file dependant.)
+			Music_Seek("battle_overtime_stress", 1756);
+		}
 	}
 	else if (battleovertime.radius > 0)
 	{
-		const fixed_t minradius = 768 * mapobjectscale;
+		const fixed_t minradius = BARRIER_MIN_RADIUS;
+		const fixed_t oldradius = battleovertime.radius;
 
 		if (battleovertime.radius > minradius)
 			battleovertime.radius -= (battleovertime.initial_radius / (30*TICRATE));
 
-		if (battleovertime.radius < minradius)
+		if (battleovertime.radius <= minradius && oldradius > minradius)
+		{
 			battleovertime.radius = minradius;
+			K_CheckBumpers();
+		}
 
 		// Subtract the 10 second grace period of the barrier
 		if (battleovertime.enabled < 25*TICRATE)
