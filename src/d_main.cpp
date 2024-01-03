@@ -116,6 +116,8 @@ extern "C" consvar_t cv_lua_profile;
 #ifdef USE_PATCH_FILE
 #define ASSET_HASH_PATCH_PK3				"00000000000000000000000000000000"
 #endif
+#define ASSET_HASH_STAFFGHOSTS_PK3			"00000000000000000000000000000000"
+#define ASSET_HASH_SHADERS_PK3				"00000000000000000000000000000000"
 
 // Version numbers for netplay :upside_down_face:
 int    VERSION;
@@ -989,7 +991,7 @@ void D_SRB2Loop(void)
 		// Fully completed frame made.
 		finishprecise = I_GetPreciseTime();
 
-		// Use the time before sleep for frameskip calculations: 
+		// Use the time before sleep for frameskip calculations:
 		// post-sleep time is literally being intentionally wasted
 		deltasecs = (double)((INT64)(finishprecise - enterprecise)) / I_GetPrecisePrecision();
 		deltatics = deltasecs * NEWTICRATE;
@@ -1258,6 +1260,7 @@ static void IdentifyVersion(void)
 #if defined(DEVELOP) && defined(UNLOCKTESTING)
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"unlocks.pk3"));
 #endif
+	D_AddFile(startupiwads, va(pandf,srb2waddir,"staffghosts.pk3"));
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"shaders.pk3"));
 
 #if !defined (HAVE_SDL) || defined (HAVE_MIXER)
@@ -1585,6 +1588,9 @@ void D_SRB2Main(void)
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_CHARS_PK3);				// chars.pk3
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_FOLLOWERS_PK3);			// followers.pk3
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_MAPS_PK3);					// maps.pk3
+	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_UNLOCKS_PK3);				// unlocks.pk3
+	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_STAFFGHOSTS_PK3);			// staffghosts.pk3
+	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_SHADERS_PK3);				// shaders.pk3
 #else
 #ifdef USE_PATCH_FILE
 	mainwads++;	// scripts.pk3
@@ -1599,6 +1605,7 @@ void D_SRB2Main(void)
 #ifdef UNLOCKTESTING
 	mainwads++; // unlocks.pk3
 #endif
+	mainwads++; // staffghosts.pk3
 
 #endif //ifndef DEVELOP
 	mainwads++; // shaders.pk3

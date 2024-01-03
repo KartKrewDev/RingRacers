@@ -3908,7 +3908,7 @@ staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer)
 	UINT16 ghostversion;
 	UINT8 flags;
 	INT32 i;
-	staffbrief_t temp;
+	staffbrief_t temp = {0};
 	staffbrief_t *ret = NULL;
 
 	temp.name[0] = '\0';

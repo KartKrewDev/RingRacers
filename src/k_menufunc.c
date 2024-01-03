@@ -57,7 +57,7 @@ static boolean noFurtherInput = false;
 // CONSOLE VARIABLES AND THEIR POSSIBLE VALUES GO HERE.
 // ==========================================================================
 
-CV_PossibleValue_t dummystaff_cons_t[] = {{0, "MIN"}, {MAXSTAFF-1, "MAX"}, {0, NULL}};
+CV_PossibleValue_t dummystaff_cons_t[] = {{0, "MIN"}, {999, "MAX"}, {0, NULL}};
 
 // ==========================================================================
 // CVAR ONCHANGE EVENTS GO HERE
@@ -436,8 +436,8 @@ void M_PlayMenuJam(void)
 
 	const boolean trulystarted = M_GameTrulyStarted();
 	const boolean profilemode = (
-		trulystarted 
-		&& optionsmenu.profilemenu 
+		trulystarted
+		&& optionsmenu.profilemenu
 		&& !optionsmenu.resetprofilemenu
 	);
 
@@ -487,7 +487,7 @@ void M_PlayMenuJam(void)
 			"KEYGEN",
 			"LOSERC",
 		};
-		
+
 		if (refMenu != NULL && NotCurrentlyPlaying(overridetotrack[override - 1]))
 		{
 			Music_Remap("menu", overridetotrack[override - 1]);

@@ -12,6 +12,11 @@
 /// \brief Do all the WAD I/O, get map description, set up initial state and misc. LUTs
 
 #include <algorithm>
+#include <string>
+
+#include <fmt/format.h>
+
+#include "cxxutil.hpp"
 
 #include "doomdef.h"
 #include "d_main.h"
@@ -475,6 +480,18 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 
 	mapheaderinfo[num]->customopts = NULL;
 	mapheaderinfo[num]->numCustomOptions = 0;
+
+	if (mapheaderinfo[num]->ghostBrief != NULL)
+	{
+		for (int i = 0; i < mapheaderinfo[num]->ghostCount; i++)
+		{
+			Z_Free(mapheaderinfo[num]->ghostBrief[i]);
+		}
+		Z_Free(mapheaderinfo[num]->ghostBrief);
+	}
+	mapheaderinfo[num]->ghostBrief = NULL;
+	mapheaderinfo[num]->ghostCount = 0;
+	mapheaderinfo[num]->ghostBriefSize = 0;
 }
 
 /** Allocates a new map-header structure.
@@ -525,6 +542,8 @@ void P_AllocMapHeader(INT16 i)
 		mapheaderinfo[i]->thumbnailPic = NULL;
 		mapheaderinfo[i]->minimapPic = NULL;
 		mapheaderinfo[i]->ghostCount = 0;
+		mapheaderinfo[i]->ghostBriefSize = 0;
+		mapheaderinfo[i]->ghostBrief = NULL;
 		mapheaderinfo[i]->cup = NULL;
 		mapheaderinfo[i]->followers = NULL;
 		nummapheaders++;
@@ -7806,24 +7825,30 @@ static void P_LoadRecordGhosts(void)
 	// Staff Attack ghosts
 	if (cv_ghost_staff.value)
 	{
-		char *defdemoname;
-		virtlump_t *vLump;
-
 		for (i = mapheaderinfo[gamemap-1]->ghostCount; i > 0; i--)
 		{
 			savebuffer_t buf = {0};
 
-			defdemoname = va("GHOST_%u", i);
-			vLump = vres_Find(curmapvirt, defdemoname);
-			if (vLump == NULL)
+			staffbrief_t* ghostbrief = mapheaderinfo[gamemap-1]->ghostBrief[i - 1];
+			const char* lumpname = W_CheckNameForNumPwad(ghostbrief->wad, ghostbrief->lump);
+			size_t lumplength = W_LumpLengthPwad(ghostbrief->wad, ghostbrief->lump);
+			if (lumplength == 0)
 			{
-				CONS_Alert(CONS_ERROR, M_GetText("Failed to read virtlump '%s'.\n"), defdemoname);
+				if (lumpname)
+				{
+					CONS_Alert(CONS_ERROR, M_GetText("Failed to read staff ghost lump '%s'.\n"), lumpname);
+				}
+				else
+				{
+					CONS_Alert(CONS_ERROR, M_GetText("Failed to read staff ghost lump for map '%s'.\n"), mapheaderinfo[gamemap-1]->lumpname);
+				}
+
 				continue;
 			}
 
-			P_SaveBufferZAlloc(&buf, vLump->size, PU_LEVEL, NULL);
-			memcpy(buf.buffer, vLump->data, vLump->size);
-			G_AddGhost(&buf, defdemoname);
+			P_SaveBufferZAlloc(&buf, lumplength, PU_LEVEL, NULL);
+			W_ReadLumpPwad(ghostbrief->wad, ghostbrief->lump, buf.buffer);
+			G_AddGhost(&buf, (char*)lumpname);
 		}
 	}
 
@@ -8833,10 +8858,8 @@ UINT8 P_InitMapData(void)
 	INT32 i, j;
 	lumpnum_t maplump;
 	virtres_t *virtmap;
-	virtlump_t *minimap, *thumbnailPic, *ghost;
+	virtlump_t *minimap, *thumbnailPic;
 	char *name;
-	char buffer[9];
-	sprintf(buffer, "GHOST_x");
 
 	for (i = 0; i < nummapheaders; ++i)
 	{
@@ -8950,23 +8973,55 @@ UINT8 P_InitMapData(void)
 				mapheaderinfo[i]->ghostBrief[mapheaderinfo[i]->ghostCount] = NULL;
 			}
 
-			while (mapheaderinfo[i]->ghostCount < MAXSTAFF)
+			for (INT32 wadindex = 0; wadindex < numwadfiles; wadindex++)
 			{
-				buffer[6] = '1' + mapheaderinfo[i]->ghostCount;
+				if (wadfiles[wadindex]->type != RET_PK3)
+				{
+					continue;
+				}
+				std::string ghostdirname = fmt::format("staffghosts/{}/", mapheaderinfo[i]->lumpname);
 
-				ghost = vres_Find(virtmap, buffer);
-				if (ghost == NULL)
-					break;
+				UINT16 lumpstart = W_CheckNumForFolderStartPK3(ghostdirname.c_str(), wadindex, 0);
+				if (lumpstart == INT16_MAX)
+				{
+					continue;
+				}
+				UINT16 lumpend = W_CheckNumForFolderEndPK3(ghostdirname.c_str(), wadindex, lumpstart);
+				if (lumpend == INT16_MAX)
+				{
+					continue;
+				}
 
-				mapheaderinfo[i]->ghostBrief[mapheaderinfo[i]->ghostCount] = G_GetStaffGhostBrief(ghost->data);
-				if (mapheaderinfo[i]->ghostBrief[mapheaderinfo[i]->ghostCount] == NULL)
-					break;
-				/*CONS_Printf("name is %s, time is %d, lap is %d\n",
-					mapheaderinfo[i]->ghostBrief[mapheaderinfo[i]->ghostCount]->name,
-					mapheaderinfo[i]->ghostBrief[mapheaderinfo[i]->ghostCount]->time/TICRATE,
-					mapheaderinfo[i]->ghostBrief[mapheaderinfo[i]->ghostCount]->lap/TICRATE);*/
+				for (UINT16 lumpnum = lumpstart; lumpnum < lumpend; lumpnum++)
+				{
+					if (W_IsLumpFolder(wadindex, lumpnum))
+					{
+						continue;
+					}
 
-				mapheaderinfo[i]->ghostCount++;
+					size_t lumplength = W_LumpLengthPwad(wadindex, lumpnum);
+					UINT8* ghostdata = static_cast<UINT8*>(Z_Malloc(lumplength, PU_STATIC, nullptr));
+					auto ghostdata_finalizer = srb2::finally([=]() { Z_Free(ghostdata); });
+
+					W_ReadLumpPwad(wadindex, lumpnum, ghostdata);
+					staffbrief_t* briefghost = G_GetStaffGhostBrief(ghostdata);
+					if (briefghost == nullptr)
+					{
+						continue;
+					}
+					briefghost->wad = wadindex;
+					briefghost->lump = lumpnum;
+
+					// Resize ghostBrief if needed
+					if (mapheaderinfo[i]->ghostBriefSize < static_cast<UINT32>(mapheaderinfo[i]->ghostCount + 1))
+					{
+						UINT32 newsize = mapheaderinfo[i]->ghostBriefSize + 4;
+						mapheaderinfo[i]->ghostBrief = static_cast<staffbrief_t**>(Z_Realloc(mapheaderinfo[i]->ghostBrief, sizeof(staffbrief_t*) * newsize, PU_STATIC, NULL));
+						mapheaderinfo[i]->ghostBriefSize = newsize;
+					}
+					mapheaderinfo[i]->ghostBrief[mapheaderinfo[i]->ghostCount] = briefghost;
+					mapheaderinfo[i]->ghostCount++;
+				}
 			}
 
 			vres_Free(virtmap);

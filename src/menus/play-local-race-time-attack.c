@@ -335,13 +335,21 @@ void M_HandleStaffReplay(INT32 choice)
 {
 	if (choice == 2)
 	{
+		mapheader_t *mapheader;
+		staffbrief_t *staffbrief;
+		const char* lumpname = NULL;
 		restoreMenu = &PLAY_TimeAttackDef;
 
 		M_ClearMenus(true);
 		demo.loadfiles = false;
 		demo.ignorefiles = true; // Just assume that record attack replays have the files needed
 
-		G_DoPlayDemo(va("%s/GHOST_%u", mapheaderinfo[levellist.choosemap]->lumpname, cv_dummystaff.value+1));
+		mapheader = mapheaderinfo[levellist.choosemap];
+		staffbrief = mapheader->ghostBrief[cv_dummystaff.value];
+
+		lumpname = W_CheckNameForNumPwad(staffbrief->wad, staffbrief->lump);
+
+		G_DoPlayDemo(lumpname);
 		return;
 	}
 
