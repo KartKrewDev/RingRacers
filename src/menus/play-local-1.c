@@ -10,7 +10,7 @@ menuitem_t PLAY_GamemodesMenu[] =
 		"MENUI003", {.routine = M_SetupRaceMenu}, 0, 0},
 
 	{IT_STRING | IT_CALL, "Battle", "It's last kart standing in this free-for-all!",
-		"MENIMG00", {.routine = M_LevelSelectInit}, 0, GT_BATTLE},
+		"MENUI011", {.routine = M_LevelSelectInit}, 0, GT_BATTLE},
 
 	{IT_STRING | IT_CALL, "Prisons", "Bust up all of the Prison Eggs in record time!",
 		"MENUI007", {.routine = M_LevelSelectInit}, 1, GT_BATTLE},
