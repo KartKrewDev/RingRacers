@@ -1364,7 +1364,7 @@ void M_DrawHorizontalMenu(void)
 void M_DrawTextBox(INT32 x, INT32 y, INT32 width, INT32 boxlines)
 {
 	// Solid color textbox.
-	V_DrawFill(x+5, y+5, width*7+6, boxlines*9+6, 159);
+	V_DrawFill(x+5, y+5, width*8+6, boxlines*8+6, 159);
 	//V_DrawFill(x+8, y+8, width*8, boxlines*8, 31);
 }
 
@@ -4407,7 +4407,7 @@ box_found:
 					if (opening)
 						y += LINEHEIGHT;
 					else
-						M_DrawTextBox(x, y, MAXSTRINGLENGTH, 1);
+						V_DrawFill(x+5, y+5, MAXSTRINGLENGTH*7+6, 9+6, 159);
 				}
 
 				if (opening)
