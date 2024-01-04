@@ -1320,6 +1320,7 @@ extern struct challengesmenu_s {
 
 	tic_t ticker;		// How long the menu's been open for
 	INT16 offset;		// To make the icons move smoothly when we transition!
+	menu_anim_t move;
 
 	UINT16 currentunlock;
 	char *unlockcondition;
