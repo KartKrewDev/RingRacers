@@ -1344,6 +1344,8 @@ extern struct challengesmenu_s {
 	UINT8 fade;
 
 	boolean cache_secondrowlocked;
+
+	patch_t *tile_category[10][2];
 } challengesmenu;
 
 menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu);
