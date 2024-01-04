@@ -47,6 +47,7 @@ void K_drawSpectatorHUD(boolean director);
 void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, UINT8 mode);
 void K_drawKart2PTimestamp(void);
 void K_drawKart4PTimestamp(void);
+void K_drawEmeraldWin(void);
 void K_DrawMapThumbnail(fixed_t x, fixed_t y, fixed_t width, UINT32 flags, UINT16 map, const UINT8 *colormap);
 void K_DrawLikeMapThumbnail(fixed_t x, fixed_t y, fixed_t width, UINT32 flags, patch_t *patch, const UINT8 *colormap);
 void K_drawTargetHUD(const vector3_t *origin, player_t *player);

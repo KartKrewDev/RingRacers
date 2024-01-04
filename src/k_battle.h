@@ -32,6 +32,7 @@ extern struct battleufo
 extern boolean battleprisons;
 extern INT32 nummapboxes, numgotboxes; // keep track of spawned battle mode items
 extern UINT8 maptargets, numtargets;
+extern boolean g_emeraldWin;
 
 INT32 K_StartingBumperCount(void);
 boolean K_IsPlayerWanted(player_t *player);

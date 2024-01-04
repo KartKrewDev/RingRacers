@@ -41,6 +41,9 @@ INT32 numgotboxes = 0;
 UINT8 maptargets = 0; // Capsules in map
 UINT8 numtargets = 0; // Capsules busted
 
+// Battle: someone won by collecting all 7 Chaos Emeralds
+boolean g_emeraldWin = false;
+
 INT32 K_StartingBumperCount(void)
 {
 	if (tutorialchallenge == TUTORIALSKIP_INPROGRESS)
@@ -194,6 +197,7 @@ void K_CheckEmeralds(player_t *player)
 	player->roundscore = 100; // lmao
 
 	P_DoAllPlayersExit(0, false);
+	g_emeraldWin = true;
 }
 
 UINT16 K_GetChaosEmeraldColor(UINT32 emeraldType)
@@ -855,6 +859,8 @@ void K_BattleInit(boolean singleplayercontext)
 
 	g_battleufo.due = starttime;
 	g_battleufo.previousId = Obj_RandomBattleUFOSpawnerID() - 1;
+
+	g_emeraldWin = false;
 }
 
 UINT8 K_Bumpers(player_t *player)
