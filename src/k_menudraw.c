@@ -6871,6 +6871,8 @@ void M_DrawChallenges(void)
 
 	x += challengesmenu.offset;
 
+	x += Easing_OutQuad(M_DueFrac(challengesmenu.move.start, 4), challengesgridstep * challengesmenu.move.dist, 0);
+
 	if (challengegridloops)
 	{
 		if (!challengesmenu.col && challengesmenu.hilix)

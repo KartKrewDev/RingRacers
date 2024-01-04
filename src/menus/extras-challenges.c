@@ -1,6 +1,7 @@
 /// \file  menus/extras-challenges.c
 /// \brief Challenges.
 
+#include "../i_time.h"
 #include "../k_menu.h"
 #include "../m_cond.h" // Condition Sets
 #include "../m_random.h" // And just some randomness for the exits.
@@ -862,6 +863,11 @@ boolean M_ChallengesInputs(INT32 ch)
 					{
 						challengesmenu.focusx--;
 					}
+					else
+					{
+						challengesmenu.move.dist = 1;
+						challengesmenu.move.start = I_GetTime();
+					}
 
 					// Step the actual column right.
 					if (challengesmenu.col < gamedata->challengegridwidth-1)
@@ -898,6 +904,11 @@ boolean M_ChallengesInputs(INT32 ch)
 					if (challengesmenu.focusx < LEFTUNLOCKSCROLL)
 					{
 						challengesmenu.focusx++;
+					}
+					else
+					{
+						challengesmenu.move.dist = -1;
+						challengesmenu.move.start = I_GetTime();
 					}
 
 					// Step the actual column left.
