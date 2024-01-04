@@ -289,6 +289,24 @@ static void M_ChallengesAutoFocus(UINT16 unlockid, boolean fresh)
 	}
 }
 
+static void M_CacheChallengeTiles(void)
+{
+	char name[9] = "UN_RR0xy";
+
+	int i;
+
+	for (i = 0; i < 10; ++i)
+	{
+		name[6] = '0' + i;
+
+		name[7] = 'A';
+		challengesmenu.tile_category[i][0] = W_CachePatchName(name, PU_CACHE);
+
+		name[7] = 'B';
+		challengesmenu.tile_category[i][1] = W_CachePatchName(name, PU_CACHE);
+	}
+}
+
 menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 {
 	UINT16 newunlock;
@@ -337,6 +355,8 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 		else if (newunlock >= MAXUNLOCKABLES && gamedata->pendingkeyrounds > 0
 			&& (gamedata->chaokeys < GDMAX_CHAOKEYS))
 			challengesmenu.chaokeyadd = true;
+
+		M_CacheChallengeTiles();
 
 		return &MISC_ChallengesDef;
 	}

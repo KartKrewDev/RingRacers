@@ -6031,16 +6031,10 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 				categoryid = '9';
 				break;
 		}
-		pat = W_CachePatchName(va("UN_RR0%c%c",
-			categoryid,
-			(ref->majorunlock) ? 'B' : 'A'),
-			PU_CACHE);
+		pat = challengesmenu.tile_category[categoryid - '0'][ref->majorunlock ? 1 : 0];
 		if (pat == missingpat)
 		{
-			pat = W_CachePatchName(va("UN_RR0%c%c",
-				categoryid,
-				(ref->majorunlock) ? 'A' : 'B'),
-				PU_CACHE);
+			pat = challengesmenu.tile_category[categoryid - '0'][ref->majorunlock ? 0 : 1];
 		}
 	}
 	else if (ref->icon != NULL && ref->icon[0])
