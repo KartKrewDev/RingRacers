@@ -5962,7 +5962,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 	if (challengesmenu.extradata[id].flip != 0
 		&& challengesmenu.extradata[id].flip != (TILEFLIP_MAX/2))
 	{
-		angle_t bad = (FixedAngle((fixed_t)(challengesmenu.extradata[id].flip) * (360*FRACUNIT/TILEFLIP_MAX)) >> ANGLETOFINESHIFT) & FINEMASK;
+		angle_t bad = (FixedAngle(FixedMul(challengesmenu.extradata[id].flip * FRACUNIT + rendertimefrac, 360*FRACUNIT/TILEFLIP_MAX)) >> ANGLETOFINESHIFT) & FINEMASK;
 		accordion = FINECOSINE(bad);
 		if (accordion < 0)
 			accordion = -accordion;
@@ -6567,7 +6567,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			K_drawButtonAnim(x, y, 0, kp_button_a[1], challengesmenu.ticker);
 			x += SHORT(kp_button_a[1][0]->width);
 			V_DrawThinString(x, y + 1, highlightflags, "Toggle");
-			
+
 
 			break;
 		}
@@ -6822,9 +6822,13 @@ void M_DrawChallenges(void)
 	{
 #define questionslow 4 // slows down the scroll by this factor
 #define questionloop (questionslow*100) // modulo
-		INT32 questionoffset = (challengesmenu.ticker % questionloop);
+		INT32 questionoffset;
+		double questionoffset_f;
 		patch_t *bg = W_CachePatchName("BGUNLCKG", PU_CACHE);
 		patch_t *qm = W_CachePatchName("BGUNLSC", PU_CACHE);
+
+		questionoffset_f = fmod(challengesmenu.ticker + FixedToFloat(rendertimefrac), questionloop);
+		questionoffset = floor(questionoffset_f);
 
 		// Background gradient
 		V_DrawFixedPatch(0, 0, FRACUNIT, 0, bg, NULL);
