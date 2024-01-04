@@ -12288,7 +12288,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								else
 								{
 									player->itemflags |= IF_HOLDREADY;
-									player->botvars.itemconfirm = 3*flamemax/4;
 
 									if (!(gametyperules & GTR_CLOSERPLAYERS) || leveltime % 6 == 0)
 									{
