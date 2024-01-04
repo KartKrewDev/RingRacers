@@ -153,7 +153,7 @@ boolean Obj_RandomItemSpawnIn(mobj_t *mobj)
 		{
 			if (battleprisons == true)
 			{
-				mobj->renderflags &= ~PREVIEWFLAGS; // Set in Obj_RandomItemSpawn, unset now that we're playing proper.
+				;
 			}
 			else
 			{
@@ -165,6 +165,10 @@ boolean Obj_RandomItemSpawnIn(mobj_t *mobj)
 				return false;
 			}
 		}
+
+		// Clear "hologram" appearance if it was set in RandomItemSpawn.
+		if ((gametyperules & GTR_CIRCUIT) != GTR_CIRCUIT)
+			mobj->renderflags &= ~PREVIEWFLAGS;
 
 		// poof into existance
 		P_UnsetThingPosition(mobj);
