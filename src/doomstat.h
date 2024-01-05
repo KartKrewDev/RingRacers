@@ -483,6 +483,7 @@ struct mapheader_t
 	UINT8 ghostCount;					///< Count of valid staff ghosts
 	UINT32 ghostBriefSize;              ///< Size of ghostBrief vector allocation
 	staffbrief_t **ghostBrief;			///< Valid staff ghosts, pointers are owned
+	tic_t automedaltime[4];             ///< Auto Medal times derived from ghost times, best to worst
 
 	recorddata_t records;				///< Stores completion/record attack data
 

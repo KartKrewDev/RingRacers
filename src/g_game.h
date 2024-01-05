@@ -212,7 +212,7 @@ void G_UseContinue(void);
 void G_AfterIntermission(void);
 void G_EndGame(void); // moved from y_inter.c/h and renamed
 
-#define MAXMEDALVISIBLECOUNT 3
+#define MAXMEDALVISIBLECOUNT 4
 extern struct stickermedalinfo
 {
 	UINT8 visiblecount;

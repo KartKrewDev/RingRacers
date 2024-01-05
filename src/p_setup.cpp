@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <string>
+#include <vector>
 
 #include <fmt/format.h>
 
@@ -492,6 +493,10 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 	mapheaderinfo[num]->ghostBrief = NULL;
 	mapheaderinfo[num]->ghostCount = 0;
 	mapheaderinfo[num]->ghostBriefSize = 0;
+	mapheaderinfo[num]->automedaltime[0] = 1;
+	mapheaderinfo[num]->automedaltime[1] = 2;
+	mapheaderinfo[num]->automedaltime[2] = 3;
+	mapheaderinfo[num]->automedaltime[3] = 4;
 }
 
 /** Allocates a new map-header structure.
@@ -8848,6 +8853,60 @@ static lumpinfo_t* FindFolder(const char *folName, UINT16 *start, UINT16 *end, l
 	return lumpinfo;
 }
 
+static void P_DeriveAutoMedalTimes(mapheader_t& map)
+{
+	// Gather staff ghost times
+	std::vector<tic_t> stafftimes;
+	for (int i = 0; i < map.ghostCount; i++)
+	{
+		tic_t time = map.ghostBrief[i]->time;
+		if (time <= 0)
+		{
+			continue;
+		}
+
+		stafftimes.push_back(map.ghostBrief[i]->time);
+	}
+
+	if (stafftimes.empty())
+	{
+		// Use fallback times
+		map.automedaltime[0] = 1;
+		map.automedaltime[1] = 2;
+		map.automedaltime[2] = 3;
+		map.automedaltime[3] = 4;
+		return;
+	}
+
+	std::sort(stafftimes.begin(), stafftimes.end());
+
+	// Auto Platinum is the best staff ghost time
+	// Auto Gold is the median staff ghost time
+	// Silver and Bronze are 10% longer successively
+
+	tic_t best = stafftimes.at(0);
+	tic_t gold = stafftimes.at(stafftimes.size() / 2);
+	if (gold == best)
+	{
+		gold += 1;
+	}
+	tic_t silver = static_cast<tic_t>(std::ceil(gold * 1.1f));
+	if (silver == gold)
+	{
+		silver += 1;
+	}
+	tic_t bronze = static_cast<tic_t>(std::ceil(silver * 1.1f));
+	if (bronze == silver)
+	{
+		bronze += 1;
+	}
+
+	map.automedaltime[0] = best;
+	map.automedaltime[1] = gold;
+	map.automedaltime[2] = silver;
+	map.automedaltime[3] = bronze;
+}
+
 lumpnum_t wadnamelump = LUMPERROR;
 INT16 wadnamemap = 0; // gamemap based
 
@@ -9023,6 +9082,8 @@ UINT8 P_InitMapData(void)
 					mapheaderinfo[i]->ghostCount++;
 				}
 			}
+
+			P_DeriveAutoMedalTimes(*mapheaderinfo[i]);
 
 			vres_Free(virtmap);
 		}

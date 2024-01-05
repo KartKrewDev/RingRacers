@@ -45,7 +45,7 @@ emblem_t emblemlocations[MAXEMBLEMS];
 // Unlockables
 unlockable_t unlockables[MAXUNLOCKABLES];
 
-// Number of emblems
+// Highest used emblem ID
 INT32 numemblems = 0;
 
 // The challenge that will truly let the games begin.
@@ -2271,7 +2271,7 @@ static const char *M_GetConditionString(condition_t *cn)
 			i = cn->requirement-1;
 			checkLevel = M_EmblemMapNum(&emblemlocations[i]);
 
-			if (checkLevel >= nummapheaders || !mapheaderinfo[checkLevel])
+			if (checkLevel >= nummapheaders || !mapheaderinfo[checkLevel] || emblemlocations[i].type == ET_NONE)
 				return va("INVALID MEDAL MAP \"%d:%d\"", cn->requirement, checkLevel);
 
 			title = M_BuildConditionTitle(checkLevel);
@@ -3160,6 +3160,14 @@ UINT16 M_CheckLevelEmblems(void)
 
 					res = (G_GetBestTime(levelnum) <= mapheaderinfo[checkLevel]->ghostBrief[tag-1]->time);
 				}
+				else if (tag < 0 && tag > AUTOMEDAL_MAX)
+				{
+					// Use auto medal times for emblem tags, see AUTOMEDAL_ in m_cond.h
+					int index = -tag - 1; // 0 is Platinum, 3 is Bronze
+					tic_t time = mapheaderinfo[checkLevel]->automedaltime[index];
+
+					res = (G_GetBestTime(levelnum) <= time);
+				}
 				else
 				{
 					res = (G_GetBestTime(levelnum) <= (unsigned)valToReach);
@@ -3394,6 +3402,8 @@ INT32 M_CountMedals(boolean all, boolean extraonly)
 	{
 		for (i = 0; i < numemblems; ++i)
 		{
+			if (emblemlocations[i].type == ET_NONE)
+				continue;
 			if ((emblemlocations[i].type == ET_GLOBAL)
 				&& (emblemlocations[i].flags & GE_NOTMEDAL))
 				continue;
@@ -3424,6 +3434,8 @@ boolean M_GotEnoughMedals(INT32 number)
 	INT32 i, gottenmedals = 0;
 	for (i = 0; i < numemblems; ++i)
 	{
+		if (emblemlocations[i].type == ET_NONE)
+			continue;
 		if (!gamedata->collected[i])
 			continue;
 		if (++gottenmedals < number)
@@ -3693,6 +3705,9 @@ emblem_t *M_GetLevelEmblems(INT32 mapnum)
 
 	while (--i >= 0)
 	{
+		if (emblemlocations[i].type == ET_NONE)
+			continue;
+
 		INT32 checkLevel = M_EmblemMapNum(&emblemlocations[i]);
 
 		if (checkLevel >= nummapheaders || !mapheaderinfo[checkLevel])

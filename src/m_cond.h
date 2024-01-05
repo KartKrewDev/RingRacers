@@ -171,10 +171,10 @@ struct conditionset_t
 };
 
 // Emblem information
-#define ET_GLOBAL		0	// Emblem with a position in space
-#define ET_MAP			1	// Beat the map
-#define ET_TIME			2	// Get the time
-//#define ET_DEVTIME 3 // Time, but the value is tied to a Time Trial demo, not pre-defined
+#define ET_NONE			0	// Empty slot
+#define ET_GLOBAL		1	// Emblem with a position in space
+#define ET_MAP			2	// Beat the map
+#define ET_TIME			3	// Get the time
 
 // Global emblem flags
 #define GE_NOTMEDAL		1	// Doesn't count towards number of medals
@@ -184,6 +184,13 @@ struct conditionset_t
 // Map emblem flags
 #define ME_ENCORE		1	// Achieve in Encore
 #define ME_SPBATTACK	2	// Achieve in SPB Attack
+
+// Automedal SOC tags
+#define AUTOMEDAL_MAX       -5 // just in case any more are ever added
+#define AUTOMEDAL_BRONZE    -4
+#define AUTOMEDAL_SILVER    -3
+#define AUTOMEDAL_GOLD      -2
+#define AUTOMEDAL_PLATINUM  -1
 
 struct emblem_t
 {
@@ -260,7 +267,7 @@ typedef enum
 // If you have more secrets than these variables allow in your game,
 // you seriously need to get a life.
 #define MAXCONDITIONSETS 1024
-#define MAXEMBLEMS       (MAXCONDITIONSETS*2)
+#define MAXEMBLEMS       (MAXCONDITIONSETS*4)
 #define MAXUNLOCKABLES   MAXCONDITIONSETS
 
 #define CHALLENGEGRIDHEIGHT 5

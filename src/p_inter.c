@@ -229,7 +229,8 @@ boolean P_CanPickupEmblem(player_t *player, INT32 emblemID)
 
 boolean P_EmblemWasCollected(INT32 emblemID)
 {
-	if (emblemID < 0 || emblemID >= numemblems)
+	if (emblemID < 0 || emblemID >= numemblems
+	|| emblemlocations[emblemID].type == ET_NONE)
 	{
 		// Invalid emblem ID, can't pickup.
 		return true;
