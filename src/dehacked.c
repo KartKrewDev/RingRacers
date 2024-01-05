@@ -252,32 +252,6 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 			else
 				i = 0;
 
-			if (fastcmp(word, "EMBLEM"))
-			{
-				if (!mainfile && !gamedataadded)
-				{
-					deh_warning("You must define a custom gamedata to use \"%s\"", word);
-					ignorelines(f);
-				}
-				else
-				{
-					if (!word2)
-						i = numemblems + 1;
-
-					if (i > 0 && i <= MAXEMBLEMS)
-					{
-						if (numemblems < i)
-							numemblems = i;
-						reademblemdata(f, i);
-					}
-					else
-					{
-						deh_warning("Emblem number %d out of range (1 - %d)", i, MAXEMBLEMS);
-						ignorelines(f);
-					}
-				}
-				continue;
-			}
 			if (word2)
 			{
 				if (fastcmp(word, "THING") || fastcmp(word, "MOBJ") || fastcmp(word, "OBJECT"))
@@ -427,6 +401,28 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 					else
 					{
 						deh_warning("Sound %d out of range (1 - %d)", i, NUMSFX-1);
+						ignorelines(f);
+					}
+				}
+				else if (fastcmp(word, "EMBLEM"))
+				{
+					if (!mainfile && !gamedataadded)
+					{
+						deh_warning("You must define a custom gamedata to use \"%s\"", word);
+						ignorelines(f);
+					}
+					else if (i > 0 && i <= MAXEMBLEMS)
+					{
+						if (numemblems < i)
+						{
+							// This is no longer strictly necessary... but I've left it in as an optimisation, because the datatype is now immensohuge, heh.
+							numemblems = i;
+						}
+						reademblemdata(f, i);
+					}
+					else
+					{
+						deh_warning("Emblem number %d out of range (1 - %d)", i, MAXEMBLEMS);
 						ignorelines(f);
 					}
 				}
