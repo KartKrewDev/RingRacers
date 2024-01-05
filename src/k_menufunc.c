@@ -746,7 +746,14 @@ void M_ClearMenus(boolean callexitmenufunc)
 #endif //Alam: But not on the Dreamcast's VMUs
 
 	if (gamestate == GS_MENU) // Back to title screen
+	{
+		int i;
+		for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+		{
+			G_SetDeviceForPlayer(i, -1);
+		}
 		D_StartTitle();
+	}
 
 	menutyping.active = false;
 	menumessage.active = false;
