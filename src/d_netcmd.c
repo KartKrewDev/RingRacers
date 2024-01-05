@@ -4920,6 +4920,72 @@ static void Command_cxdiag_f(void)
 		}
 	}
 
+	{
+		CONS_Printf("\x82""Evaluating Time Medals...\n");
+
+		for (i = 0; i < numemblems; i++)
+		{
+			if (emblemlocations[i].type != ET_TIME)
+				continue;
+
+			INT32 checkLevel = M_EmblemMapNum(&emblemlocations[i]);
+
+			if (checkLevel >= nummapheaders || !mapheaderinfo[checkLevel])
+				continue;
+
+			if (emblemlocations[i].tag > 0)
+			{
+				if (emblemlocations[i].tag > mapheaderinfo[checkLevel]->ghostCount)
+				{
+					CONS_Printf("\x87""	Time Medal %u (level %s) has tag %d, which is greater than the number of associated Staff Ghosts (%u)\n", i+1, mapheaderinfo[checkLevel]->lumpname, emblemlocations[i].tag, mapheaderinfo[checkLevel]->ghostCount);
+					errors++;
+				}
+			}
+			else switch (emblemlocations[i].tag)
+			{
+				case 0:
+				{
+					if (emblemlocations[i].var < TICRATE)
+					{
+						CONS_Printf("\x87""	Time Medal %u (level %s) is set to %d (less than a second??)\n", i+1, mapheaderinfo[checkLevel]->lumpname, emblemlocations[i].var);
+						errors++;
+					}
+					break;
+				}
+
+				case AUTOMEDAL_PLATINUM:
+				{
+					if (mapheaderinfo[checkLevel]->ghostCount == 0)
+					{
+						CONS_Printf("\x87""	Time Medal %u (level %s) is AUTOMEDAL_PLATINUM, but there are no associated Staff Ghosts\n", i+1, mapheaderinfo[checkLevel]->lumpname);
+						errors++;
+					}
+					break;
+				}
+
+				case AUTOMEDAL_GOLD:
+				case AUTOMEDAL_SILVER:
+				case AUTOMEDAL_BRONZE:
+				{
+					if (mapheaderinfo[checkLevel]->ghostCount < 2)
+					{
+						CONS_Printf("\x87""	Time Medal %u (level %s) is an Auto Medal, but there are %u associated Staff Ghosts, which is less than the 2 recommended minimum\n", i+1, mapheaderinfo[checkLevel]->lumpname, mapheaderinfo[checkLevel]->ghostCount);
+						errors++;
+					}
+					break;
+				}
+
+				default:
+				{
+					CONS_Printf("\x87""	Time Medal %u (level %s) has invalid tag (%d)\n", i+1, mapheaderinfo[checkLevel]->lumpname, emblemlocations[i].tag);
+					errors++;
+
+					break;
+				}
+			}
+		}
+	}
+
 	if (errors)
 		CONS_Printf("\x85""%u errors detected.\n", errors);
 	else
