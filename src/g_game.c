@@ -482,9 +482,9 @@ bademblem:
 				else
 					stickermedalinfo.timetoreach = mapheaderinfo[map]->ghostBrief[emblem->tag-1]->time;
 			}
-			else if (emblem->tag < 0 && emblem->tag >= -4)
+			else if (emblem->tag < 0 && emblem->tag > AUTOMEDAL_MAX)
 			{
-				// Use auto medal times for emblem tags from -4 to -1
+				// Use auto medal times for emblem tags, see AUTOMEDAL_ in m_cond.h
 				int index = -emblem->tag - 1; // 0 is Platinum, 3 is Bronze
 				stickermedalinfo.timetoreach = mapheaderinfo[map]->automedaltime[index];
 			}

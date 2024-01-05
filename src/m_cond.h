@@ -186,6 +186,7 @@ struct conditionset_t
 #define ME_SPBATTACK	2	// Achieve in SPB Attack
 
 // Automedal SOC tags
+#define AUTOMEDAL_MAX       -5 // just in case any more are ever added
 #define AUTOMEDAL_BRONZE    -4
 #define AUTOMEDAL_SILVER    -3
 #define AUTOMEDAL_GOLD      -2

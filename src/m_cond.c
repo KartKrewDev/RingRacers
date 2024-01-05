@@ -3160,9 +3160,9 @@ UINT16 M_CheckLevelEmblems(void)
 
 					res = (G_GetBestTime(levelnum) <= mapheaderinfo[checkLevel]->ghostBrief[tag-1]->time);
 				}
-				else if (tag < 0 && tag >= -4)
+				else if (tag < 0 && tag > AUTOMEDAL_MAX)
 				{
-					// Use auto medal times for emblem tags from -4 to -1
+					// Use auto medal times for emblem tags, see AUTOMEDAL_ in m_cond.h
 					int index = -tag - 1; // 0 is Platinum, 3 is Bronze
 					tic_t time = mapheaderinfo[checkLevel]->automedaltime[index];
 
