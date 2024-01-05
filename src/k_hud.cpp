@@ -4149,8 +4149,6 @@ static void K_drawKartMinimap(void)
 	{
 		for (i = MAXPLAYERS-1; i >= 0; i--)
 		{
-			boolean nocontest = false;
-
 			if (!playeringame[i])
 				continue;
 			if (!players[i].mo || players[i].spectator || !players[i].mo->skin
@@ -4194,8 +4192,6 @@ static void K_drawKartMinimap(void)
 				colormap = R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(mobj->color), GTC_CACHE);
 
 				mobj = mobj->tracer;
-
-				nocontest = true;
 			}
 			else
 			{
@@ -4226,23 +4222,6 @@ static void K_drawKartMinimap(void)
 					|| ((gametyperules & (GTR_BOSS|GTR_POINTLIMIT)) == GTR_POINTLIMIT && K_IsPlayerWanted(&players[i])))
 				{
 					K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, kp_wantedreticle, NULL);
-				}
-
-				if (!nocontest)
-				{
-					angle_t ang = R_InterpolateAngle(mobj->old_angle, mobj->angle);
-					if (encoremode)
-						ang = ANGLE_180 - ang;
-
-					K_drawKartMinimapIcon(
-							interpx,
-							interpy,
-							x + FixedMul(FCOS(ang), ICON_DOT_RADIUS),
-							y - FixedMul(FSIN(ang), ICON_DOT_RADIUS),
-							splitflags,
-							kp_minimapdot,
-							colormap
-					);
 				}
 			}
 			else
