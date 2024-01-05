@@ -267,7 +267,7 @@ typedef enum
 // If you have more secrets than these variables allow in your game,
 // you seriously need to get a life.
 #define MAXCONDITIONSETS 1024
-#define MAXEMBLEMS       (MAXCONDITIONSETS*2)
+#define MAXEMBLEMS       (MAXCONDITIONSETS*4)
 #define MAXUNLOCKABLES   MAXCONDITIONSETS
 
 #define CHALLENGEGRIDHEIGHT 5
