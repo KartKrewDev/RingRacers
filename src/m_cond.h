@@ -171,10 +171,10 @@ struct conditionset_t
 };
 
 // Emblem information
-#define ET_GLOBAL		0	// Emblem with a position in space
-#define ET_MAP			1	// Beat the map
-#define ET_TIME			2	// Get the time
-//#define ET_DEVTIME 3 // Time, but the value is tied to a Time Trial demo, not pre-defined
+#define ET_NONE			0	// Empty slot
+#define ET_GLOBAL		1	// Emblem with a position in space
+#define ET_MAP			2	// Beat the map
+#define ET_TIME			3	// Get the time
 
 // Global emblem flags
 #define GE_NOTMEDAL		1	// Doesn't count towards number of medals
