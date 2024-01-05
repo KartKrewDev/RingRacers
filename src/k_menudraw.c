@@ -2679,14 +2679,16 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *levelsearch)
 {
 	UINT8 i = 0;
 	INT16 maxlevels = M_CountLevelsToShowInList(levelsearch);
-	fixed_t x = -((cupgrid.previewanim % 82 * FRACUNIT + rendertimefrac) % (82 * FRACUNIT));
+	const fixed_t step = (82 * FRACUNIT);
+	fixed_t previewanimwork = (cupgrid.previewanim * FRACUNIT) + rendertimefrac_unpaused;
+	fixed_t x = -(previewanimwork % step);
 	INT16 add;
 	INT16 map, start = M_GetFirstLevelInList(&i, levelsearch);
 	UINT8 starti = i;
 
 	if (levelsearch->cup && maxlevels > 0)
 	{
-		add = (cupgrid.previewanim / 82) % maxlevels;
+		add = (previewanimwork / step) % maxlevels;
 		map = start;
 		while (add > 0)
 		{
@@ -2714,7 +2716,7 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *levelsearch)
 				map,
 				NULL);
 
-			x += 82 * FRACUNIT;
+			x += step;
 
 			map = M_GetNextLevelInList(map, &i, levelsearch);
 		}
@@ -2725,7 +2727,7 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *levelsearch)
 		while (x < BASEVIDWIDTH * FRACUNIT)
 		{
 			V_DrawFixedPatch(x + FRACUNIT, (y+2) * FRACUNIT, FRACUNIT, 0, st, NULL);
-			x += 82 * FRACUNIT;
+			x += step;
 		}
 	}
 }
