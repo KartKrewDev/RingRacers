@@ -31,6 +31,13 @@ extern "C" consvar_t cv_debughudtracker;
 namespace
 {
 
+enum class Visibility
+{
+	kHidden,
+	kVisible,
+	kTransparent,
+};
+
 struct TargetTracking
 {
 	static constexpr int kMaxLayers = 2;
@@ -280,27 +287,29 @@ bool is_object_tracking_target(const mobj_t* mobj)
 	}
 }
 
-bool is_object_visible(mobj_t* mobj)
+Visibility is_object_visible(mobj_t* mobj)
 {
 	switch (mobj->type)
 	{
 	case MT_SUPER_FLICKY:
 		// Always flickers.
-		return (leveltime & 1);
+		return (leveltime & 1) ? Visibility::kVisible : Visibility::kHidden;
 
 	case MT_SPRAYCAN:
 		// Flickers, but only when visible.
-		return P_CheckSight(stplyr->mo, mobj) && (leveltime & 1);
+		return P_CheckSight(stplyr->mo, mobj) && (leveltime & 1) ? Visibility::kVisible : Visibility::kHidden;
 
 	default:
-		// Flicker when not visible.
-		return P_CheckSight(stplyr->mo, mobj) || (leveltime & 1);
+		// Transparent when not visible.
+		return P_CheckSight(stplyr->mo, mobj) ? Visibility::kVisible : Visibility::kTransparent;
 	}
 }
 
 void K_DrawTargetTracking(const TargetTracking& target)
 {
-	if (is_object_visible(target.mobj) == false)
+	Visibility visibility = is_object_visible(target.mobj);
+
+	if (visibility == Visibility::kHidden)
 	{
 		return;
 	}
@@ -470,7 +479,17 @@ void K_DrawTargetTracking(const TargetTracking& target)
 	{
 		// Draw simple overlay.
 		vector2_t targetPos = {result.x, result.y};
-		INT32 trans = target.foreground ? 0 : V_80TRANS;
+		INT32 trans = [&]
+		{
+			switch (visibility)
+			{
+			case Visibility::kTransparent:
+				return V_30TRANS;
+
+			default:
+				return target.foreground ? 0 : V_80TRANS;
+			}
+		}();
 
 		TargetTracking::Animation anim = target.animation();
 
