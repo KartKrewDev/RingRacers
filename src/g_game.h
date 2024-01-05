@@ -85,9 +85,6 @@ extern boolean pausebreakkey;
 
 extern boolean promptactive;
 
-extern tic_t darktimer;
-extern fixed_t darkness;
-
 extern consvar_t cv_tutorialprompt;
 
 extern consvar_t cv_chatwidth, cv_chatnotifications, cv_chatheight, cv_chattime, cv_consolechat, cv_chatbacktint, cv_chatspamprotection;

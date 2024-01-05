@@ -46,6 +46,7 @@
 #include "k_objects.h"
 #include "music.h"
 #include "k_dialogue.h"
+#include "m_easing.h"
 
 #include "lua_profile.h"
 
@@ -1045,21 +1046,26 @@ void P_Ticker(boolean run)
 		if (racecountdown > 1)
 			racecountdown--;
 
-		const fixed_t darkdelta = FRACUNIT/50;
-		const fixed_t maxdark = FRACUNIT/7;
-		if (darktimer) // dark or darkening
+		if (leveltime <= g_darkness.end)
 		{
-			darktimer--;
-			darkness += darkdelta;
-			darkness = min(darkness, maxdark);
-		}
-		else if (darkness >= darkdelta) // lightening
-		{
-			darkness -= darkdelta;
+			tic_t fade = g_darkness.end - DARKNESS_FADE_TIME;
+			tic_t t;
+
+			if (leveltime < fade) // dark or darkening
+			{
+				t = leveltime - g_darkness.start;
+				t = min(t, DARKNESS_FADE_TIME);
+			}
+			else // lightening
+			{
+				t = g_darkness.end - leveltime;
+			}
+
+			g_darkness.value = Easing_Linear((t * FRACUNIT) / DARKNESS_FADE_TIME, 0, FRACUNIT/7);
 		}
 		else // light
 		{
-			darkness = 0;
+			g_darkness.value = 0;
 		}
 
 		if (exitcountdown >= 1)

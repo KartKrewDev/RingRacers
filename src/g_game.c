@@ -277,8 +277,7 @@ UINT8 useSeal = 1;
 tic_t racecountdown, exitcountdown, musiccountdown; // for racing
 exitcondition_t g_exit;
 
-tic_t darktimer;
-fixed_t darkness;
+darkness_t g_darkness;
 
 fixed_t gravity;
 fixed_t mapobjectscale;

@@ -6477,8 +6477,8 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 
 	WRITEUINT32(save->p, g_pointlimit);
 
-	WRITEUINT32(save->p, darktimer);
-	WRITEFIXED(save->p, darkness);
+	WRITEUINT32(save->p, g_darkness.start);
+	WRITEUINT32(save->p, g_darkness.end);
 
 	WRITEUINT16(save->p, numchallengedestructibles);
 
@@ -6662,8 +6662,8 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 
 	g_pointlimit = READUINT32(save->p);
 
-	darktimer = READUINT32(save->p);
-	darkness = READFIXED(save->p);
+	g_darkness.start = READUINT32(save->p);
+	g_darkness.end = READUINT32(save->p);
 
 	numchallengedestructibles = READUINT16(save->p);
 

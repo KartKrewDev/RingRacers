@@ -749,7 +749,8 @@ void Obj_CreateShrinkPohbees(player_t *owner)
 
 	ownerPos = owner->position;
 
-	darktimer = POHBEE_TIME;
+	g_darkness.start = leveltime;
+	g_darkness.end = leveltime + POHBEE_TIME + DARKNESS_FADE_TIME;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{

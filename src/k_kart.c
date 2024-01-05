@@ -116,7 +116,7 @@ static void K_SpawnDuelOnlyItems(void)
 void K_TimerReset(void)
 {
 	starttime = introtime = 0;
-	darkness = darktimer = 0;
+	memset(&g_darkness, 0, sizeof g_darkness);
 	numbulbs = 1;
 	inDuel = rainbowstartavailable = false;
 	linecrossed = 0;

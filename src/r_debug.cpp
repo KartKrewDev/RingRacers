@@ -43,7 +43,7 @@ INT32 R_AdjustLightLevel(INT32 light)
 
 	if (!debugrender_highlight && cv_debugrender_contrast.value == 0)
 	{
-		const fixed_t darken = FixedMul(FixedMul(darkness, mapheaderinfo[gamemap-1]->darkness), kRange);
+		const fixed_t darken = FixedMul(FixedMul(g_darkness.value, mapheaderinfo[gamemap-1]->darkness), kRange);
 		return std::clamp((light * FRACUNIT) - darken, 0, kRange) / FRACUNIT;
 	}
 
