@@ -13176,10 +13176,6 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 			if (!(gametyperules & GTR_CHECKPOINTS))
 				return false;
 			break;
-		case MT_ANCIENTSHRINE:
-			if (netgame)
-				return false;
-			break;
 		default:
 			break;
 	}
