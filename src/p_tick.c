@@ -768,6 +768,43 @@ void P_RunChaseCameras(void)
 	}
 }
 
+static fixed_t P_GetDarkness(tic_t start, tic_t end)
+{
+	if (leveltime <= end)
+	{
+		tic_t fade = end - DARKNESS_FADE_TIME;
+		tic_t t;
+
+		if (leveltime < fade) // dark or darkening
+		{
+			t = leveltime - start;
+			t = min(t, DARKNESS_FADE_TIME);
+		}
+		else // lightening
+		{
+			t = end - leveltime;
+		}
+
+		return Easing_Linear((t * FRACUNIT) / DARKNESS_FADE_TIME, 0, FRACUNIT/7);
+	}
+
+	return 0;
+}
+
+static void P_TickDarkness(void)
+{
+	const fixed_t globalValue = P_GetDarkness(g_darkness.start, g_darkness.end);
+	UINT8 i;
+
+	for (i = 0; i <= r_splitscreen; ++i)
+	{
+		const player_t *p = &players[displayplayers[i]];
+		fixed_t value = P_GetDarkness(p->darkness_start, p->darkness_end);
+
+		g_darkness.value[i] = value ? value : globalValue;
+	}
+}
+
 //
 // P_Ticker
 //
@@ -1046,27 +1083,7 @@ void P_Ticker(boolean run)
 		if (racecountdown > 1)
 			racecountdown--;
 
-		if (leveltime <= g_darkness.end)
-		{
-			tic_t fade = g_darkness.end - DARKNESS_FADE_TIME;
-			tic_t t;
-
-			if (leveltime < fade) // dark or darkening
-			{
-				t = leveltime - g_darkness.start;
-				t = min(t, DARKNESS_FADE_TIME);
-			}
-			else // lightening
-			{
-				t = g_darkness.end - leveltime;
-			}
-
-			g_darkness.value = Easing_Linear((t * FRACUNIT) / DARKNESS_FADE_TIME, 0, FRACUNIT/7);
-		}
-		else // light
-		{
-			g_darkness.value = 0;
-		}
+		P_TickDarkness();
 
 		if (exitcountdown >= 1)
 		{

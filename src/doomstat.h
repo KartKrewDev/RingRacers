@@ -807,7 +807,7 @@ extern exitcondition_t g_exit;
 extern struct darkness_t
 {
 	tic_t start, end;
-	fixed_t value;
+	fixed_t value[MAXSPLITSCREENPLAYERS];
 } g_darkness;
 
 #define DEFAULT_GRAVITY (4*FRACUNIT/5)

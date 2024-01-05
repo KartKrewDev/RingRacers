@@ -787,6 +787,10 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].icecube.wiggle);
 		WRITEUINT32(save->p, players[i].icecube.frozenat);
 		WRITEUINT8(save->p, players[i].icecube.shaketimer);
+
+		// darkness
+		WRITEUINT32(save->p, players[i].darkness_start);
+		WRITEUINT32(save->p, players[i].darkness_end);
 	}
 
 	TracyCZoneEnd(__zone);
@@ -1357,6 +1361,10 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].icecube.wiggle = READUINT8(save->p);
 		players[i].icecube.frozenat = READUINT32(save->p);
 		players[i].icecube.shaketimer = READUINT8(save->p);
+
+		// darkness
+		players[i].darkness_start = READUINT32(save->p);
+		players[i].darkness_end = READUINT32(save->p);
 
 		//players[i].viewheight = P_GetPlayerViewHeight(players[i]); // scale cannot be factored in at this point
 	}

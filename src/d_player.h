@@ -982,6 +982,9 @@ struct player_t
 	icecubevars_t icecube;
 
 	level_tally_t tally;
+
+	tic_t darkness_start;
+	tic_t darkness_end;
 };
 
 // WARNING FOR ANYONE ABOUT TO ADD SOMETHING TO THE PLAYER STRUCT, G_PlayerReborn WANTS YOU TO SUFFER
