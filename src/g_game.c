@@ -4563,7 +4563,7 @@ void G_LoadGameSettings(void)
 }
 
 #define GD_VERSIONCHECK 0xBA5ED123 // Change every major version, as usual
-#define GD_VERSIONMINOR 9 // Change every format update
+#define GD_VERSIONMINOR 10 // Change every format update
 
 // You can't rearrange these without a special format update
 typedef enum
@@ -4768,6 +4768,10 @@ void G_LoadGameData(void)
 		emblemreadcount = 512;
 		unlockreadcount = conditionreadcount = UINT8_MAX;
 		unlockreadsize = sizeof(UINT8);
+	}
+	else if (versionMinor < 10)
+	{
+		emblemreadcount = 1024*2;
 	}
 
 	// To save space, use one bit per collected/achieved/unlocked flag
