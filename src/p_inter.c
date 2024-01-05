@@ -1015,6 +1015,11 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			return;
 		}
 
+		case MT_TRICKBALLOON_RED:
+		case MT_TRICKBALLOON_YELLOW:
+			Obj_TrickBalloonTouchSpecial(special, toucher);
+			return;
+
 		default: // SOC or script pickup
 			P_SetTarget(&special->target, toucher);
 			break;
@@ -1154,7 +1159,7 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 			UINT16 bonustime = 10*TICRATE;
 			INT16 clamptime = 0; // Don't allow reserve time past this value (by much)...
 			INT16 mintime = 5*TICRATE; // But give SOME reward for every hit. (This value used for Normal)
-			
+
 			if (grandprixinfo.gp)
 			{
 				if (grandprixinfo.masterbots)
@@ -3200,7 +3205,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 						// Reduce the value of subsequent invinc extensions
 						kinvextend = kinvextend / (1 + source->player->invincibilityextensions); // 50%, 33%, 25%[...]
 						kinvextend = max(kinvextend, TICRATE);
-						
+
 						source->player->invincibilityextensions++;
 
 						source->player->invincibilitytimer += kinvextend;

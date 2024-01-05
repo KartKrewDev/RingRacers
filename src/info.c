@@ -1015,6 +1015,10 @@ char sprnames[NUMSPRITES + 1][5] =
 	"EMR3",
 	"EMFC",
 
+	// Joypolis Trick Balloons
+	"TKBR",
+	"TKBY",
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	"VIEW",
 };
@@ -5774,6 +5778,38 @@ state_t states[NUMSTATES] =
 
 	// MT_EMFAUCET_PARTICLE
 	{SPR_EMFC, 2, -1, {NULL}, 0, 0, S_EMFAUCET_PARTICLE},           // S_EMFAUCET_PARTICLE
+
+	// MT_TRICKBALLOON_RED
+	{SPR_TKBR, 0, 2, {NULL}, 0, 0, S_TRICKBALLOON_RED2},			// S_TRICKBALLOON_RED1
+	{SPR_TKBR, 1, 2, {NULL}, 0, 0, S_TRICKBALLOON_RED1},
+	{SPR_TKBR, 2, 2, {NULL}, 0, 0, S_TRICKBALLOON_RED_POP2},		// S_TRICKBALLOON_RED_POP1
+	{SPR_TKBR, 3, 2, {NULL}, 0, 0, S_TRICKBALLOON_RED_POP3},
+	{SPR_TKBR, 4, 2, {NULL}, 0, 0, S_TRICKBALLOON_RED_GONE},
+	{SPR_NULL, 0, 2, {NULL}, 0, 0, S_TRICKBALLOON_RED_INFLATE1},	// S_TRICKBALLOON_RED_GONE
+	{SPR_NULL, 0, 2, {NULL}, 0, 0, S_TRICKBALLOON_RED_INFLATE2},	// S_TRICKBALLOON_RED_INFLATE1
+	{SPR_NULL, 0, 2, {NULL}, 0, 0, S_TRICKBALLOON_RED_INFLATE3},
+	{SPR_NULL, 0, 2, {NULL}, 0, 0, S_TRICKBALLOON_RED_INFLATE4},
+	{SPR_NULL, 0, 2, {NULL}, 0, 0, S_TRICKBALLOON_RED_INFLATE5},
+	{SPR_NULL, 0, 2, {NULL}, 0, 0, S_TRICKBALLOON_RED1},
+
+	// MT_TRICKBALLOON_RED_POINT
+	{SPR_NULL, 0, 1, {NULL}, 0, 0, S_TRICKBALLOON_RED_POINT1},		// S_TRICKBALLOON_RED_POINT1
+
+	// MT_TRICKBALLOON_YELLOW
+	{SPR_TKBY, 0, 2, {NULL}, 0, 0, S_TRICKBALLOON_YELLOW2},			// S_TRICKBALLOON_YELLOW1
+	{SPR_TKBY, 1, 2, {NULL}, 0, 0, S_TRICKBALLOON_YELLOW1},
+	{SPR_TKBY, 2, 2, {NULL}, 0, 0, S_TRICKBALLOON_YELLOW_POP2},		// S_TRICKBALLOON_YELLOW_POP1
+	{SPR_TKBY, 3, 2, {NULL}, 0, 0, S_TRICKBALLOON_YELLOW_POP3},
+	{SPR_TKBY, 4, 2, {NULL}, 0, 0, S_TRICKBALLOON_YELLOW_GONE},
+	{SPR_NULL, 0, 2, {NULL}, 0, 0, S_TRICKBALLOON_YELLOW_INFLATE1},	// S_TRICKBALLOON_YELLOW_GONE
+	{SPR_NULL, 0, 2, {NULL}, 0, 0, S_TRICKBALLOON_YELLOW_INFLATE2},	// S_TRICKBALLOON_YELLOW_INFLATE1
+	{SPR_NULL, 0, 2, {NULL}, 0, 0, S_TRICKBALLOON_YELLOW_INFLATE3},
+	{SPR_NULL, 0, 2, {NULL}, 0, 0, S_TRICKBALLOON_YELLOW_INFLATE4},
+	{SPR_NULL, 0, 2, {NULL}, 0, 0, S_TRICKBALLOON_YELLOW_INFLATE5},
+	{SPR_NULL, 0, 2, {NULL}, 0, 0, S_TRICKBALLOON_YELLOW1},
+
+	// MT_TRICKBALLOON_YELLOW_POINT
+	{SPR_NULL, 0, 1, {NULL}, 0, 0, S_TRICKBALLOON_YELLOW_POINT1},		// S_TRICKBALLOON_YELLOW_POINT1
 };
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] =
@@ -33050,6 +33086,110 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,            // damage
 		sfx_None,     // activesound
 		MF_NOGRAVITY|MF_NOBLOCKMAP|MF_SCENERY, // flags
+		S_NULL        // raisestate
+	},
+	{           // MT_TRICKBALLOON_RED
+		2764,                 // doomednum
+		S_TRICKBALLOON_RED1,  // spawnstate
+		1,            // spawnhealth
+		S_NULL,       // seestate
+		sfx_None,     // seesound
+		0,            // reactiontime
+		sfx_None,     // attacksound
+		S_NULL,       // painstate
+		0,            // painchance
+		sfx_None,     // painsound
+		S_NULL,       // meleestate
+		S_NULL,       // missilestate
+		S_NULL,       // deathstate
+		S_NULL,       // xdeathstate
+		sfx_s3k77,    // deathsound
+		0,            // speed
+		96*FRACUNIT,  // radius
+		128*FRACUNIT, // height
+		0,            // dispoffset
+		0,            // mass
+		0,            // damage
+		sfx_None,     // activesound
+		MF_SPECIAL|MF_NOGRAVITY, // flags
+		S_NULL        // raisestate
+	},
+	{           // MT_TRICKBALLOON_RED_POINT
+		-1,           // doomednum
+		S_TRICKBALLOON_RED_POINT1,  // spawnstate
+		1,            // spawnhealth
+		S_NULL,       // seestate
+		sfx_None,     // seesound
+		0,            // reactiontime
+		sfx_None,     // attacksound
+		S_NULL,       // painstate
+		0,            // painchance
+		sfx_None,     // painsound
+		S_NULL,       // meleestate
+		S_NULL,       // missilestate
+		S_NULL,       // deathstate
+		S_NULL,       // xdeathstate
+		sfx_None,     // deathsound
+		0,            // speed
+		32*FRACUNIT,  // radius
+		64*FRACUNIT,  // height
+		0,            // dispoffset
+		0,            // mass
+		0,            // damage
+		sfx_None,     // activesound
+		MF_NOGRAVITY, // flags
+		S_NULL        // raisestate
+	},
+	{           // MT_TRICKBALLOON_YELLOW
+		2765,                 // doomednum
+		S_TRICKBALLOON_YELLOW1,  // spawnstate
+		1,            // spawnhealth
+		S_NULL,       // seestate
+		sfx_None,     // seesound
+		0,            // reactiontime
+		sfx_None,     // attacksound
+		S_NULL,       // painstate
+		0,            // painchance
+		sfx_None,     // painsound
+		S_NULL,       // meleestate
+		S_NULL,       // missilestate
+		S_NULL,       // deathstate
+		S_NULL,       // xdeathstate
+		sfx_s3k77,    // deathsound
+		0,            // speed
+		96*FRACUNIT,  // radius
+		128*FRACUNIT, // height
+		0,            // dispoffset
+		0,            // mass
+		0,            // damage
+		sfx_None,     // activesound
+		MF_SPECIAL|MF_NOGRAVITY, // flags
+		S_NULL        // raisestate
+	},
+	{           // MT_TRICKBALLOON_YELLOW_POINT
+		-1,           // doomednum
+		S_TRICKBALLOON_YELLOW_POINT1,  // spawnstate
+		1,            // spawnhealth
+		S_NULL,       // seestate
+		sfx_None,     // seesound
+		0,            // reactiontime
+		sfx_None,     // attacksound
+		S_NULL,       // painstate
+		0,            // painchance
+		sfx_None,     // painsound
+		S_NULL,       // meleestate
+		S_NULL,       // missilestate
+		S_NULL,       // deathstate
+		S_NULL,       // xdeathstate
+		sfx_None,     // deathsound
+		0,            // speed
+		32*FRACUNIT,  // radius
+		64*FRACUNIT,  // height
+		0,            // dispoffset
+		0,            // mass
+		0,            // damage
+		sfx_None,     // activesound
+		MF_NOGRAVITY, // flags
 		S_NULL        // raisestate
 	},
 };

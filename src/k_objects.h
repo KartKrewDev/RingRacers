@@ -354,6 +354,10 @@ void Obj_EMZFaucetThink(mobj_t *mo);
 void Obj_EMZDripDeath(mobj_t *mo);
 void Obj_EMZRainGenerator(mobj_t *mo);
 
+/* Joypolis Trick Balloons */
+void Obj_TrickBalloonMobjSpawn(mobj_t* mobj);
+void Obj_TrickBalloonTouchSpecial(mobj_t* special, mobj_t* toucher);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
