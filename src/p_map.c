@@ -785,7 +785,11 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			return BMIT_CONTINUE; // overhead
 		}
 
-		P_SetObjectMomZ(tm.thing, FRACUNIT, true);
+		if (!tm.thing->player || !tm.thing->player->fastfall)
+		{
+			P_SetObjectMomZ(tm.thing, FRACUNIT, true);
+		}
+
 		fixed_t friction = 33*FRACUNIT/35;
 		tm.thing->momx = FixedMul(tm.thing->momx, friction);
 		tm.thing->momy = FixedMul(tm.thing->momy, friction);
