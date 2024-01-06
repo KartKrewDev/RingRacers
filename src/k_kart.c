@@ -8458,7 +8458,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			if (K_PlayerGuard(player) && !K_PowerUpRemaining(player, POWERUP_BARRIER) && (player->ebrakefor%6 == 0))
 				player->spheres--;
 
-			if (players->instaWhipCharge && !K_PowerUpRemaining(players, POWERUP_BADGE) && leveltime%6 == 0)
+			if (player->instaWhipCharge && !K_PowerUpRemaining(players, POWERUP_BADGE) && leveltime%6 == 0)
 				player->spheres--;
 		}
 		else
