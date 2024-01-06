@@ -3098,7 +3098,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 					if (clash)
 					{
-						player->spheres = max(player->spheres - 10, 0);
+						player->spheres = max(player->spheres - 5, 0);
 
 						if (inflictor)
 						{
