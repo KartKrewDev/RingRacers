@@ -3552,7 +3552,7 @@ UINT16 K_GetKartFlashing(const player_t *player)
 
 	if (gametyperules & GTR_BUMPERS)
 	{
-		return 1;
+		return 0;
 	}
 
 	if (player == NULL)
