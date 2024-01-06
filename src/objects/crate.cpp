@@ -47,6 +47,7 @@ struct SA2CrateConfig
 	static constexpr spritenum_t kSprite = SPR_SABX;
 	static constexpr frame_layout kFrames = {3, 2, 0, 0, 0, 0};
 	static constexpr statenum_t kDefaultDebris = S_SA2_CRATE_DEBRIS;
+	static constexpr sfxenum_t kDefaultSound = sfx_cratew;
 };
 
 struct IceCapBlockConfig
@@ -54,6 +55,7 @@ struct IceCapBlockConfig
 	static constexpr spritenum_t kSprite = SPR_ICBL;
 	static constexpr frame_layout kFrames = {6, 6, 0, 0, 0, 0};
 	static constexpr statenum_t kDefaultDebris = S_ICECAPBLOCK_DEBRIS;
+	static constexpr sfxenum_t kDefaultSound = sfx_s3k82;
 };
 
 struct Graphic : Mobj
@@ -132,6 +134,10 @@ struct Box : AnyBox
 	statenum_t debris_state() const { return static_cast<statenum_t>(mobj_t::extravalue1); }
 	void debris_state(statenum_t n) { mobj_t::extravalue1 = n; }
 
+	void extravalue2() = delete;
+	sfxenum_t debris_sound() const {return static_cast<sfxenum_t>(mobj_t::extravalue2); }
+	void debris_sound(sfxenum_t n) {mobj_t::extravalue2 = n; }
+
 	auto gfx() { return MobjListView(static_cast<Graphic*>(this), [](Graphic* g) { return g->next(); }); }
 
 	void init()
@@ -160,6 +166,7 @@ struct Box : AnyBox
 		side(FF_PAPERSPRITE)->xy(0, +radius)->turn(ANGLE_180);
 
 		debris_state(Config::kDefaultDebris);
+		debris_sound(Config::kDefaultSound);
 	}
 
 	bool think()
@@ -245,7 +252,7 @@ private:
 		auto rng = [&](int x, int y) { return P_RandomRange(PR_DECORATION, x, y) * scale(); };
 		auto rng_xyz = [&](int x) { return std::tuple(rng(-x, x), rng(-x, x), rng(0, x)); };
 
-		auto spawn = [&]
+		auto spawn = [&](bool playsound)
 		{
 			auto [x, y, z] = rng_xyz(info->height / FRACUNIT);
 			Mobj* p = spawn_from<Mobj>({x, y, z}, MT_BOX_DEBRIS);
@@ -258,14 +265,19 @@ private:
 			p->momx = (inflictor->momx / 8) + x;
 			p->momy = (inflictor->momy / 8) + y;
 			p->momz = (Fixed::hypot(inflictor->momx, inflictor->momy) / 4) + z;
+
+			if (playsound && debris_sound())
+			{
+				p->voice(debris_sound());
+			}
 		};
 
-		spawn();
-		spawn();
-		spawn();
-		spawn();
-		spawn();
-		spawn();
+		spawn(true);
+		spawn(false);
+		spawn(false);
+		spawn(false);
+		spawn(false);
+		spawn(false);
 	}
 
 	void update_nearby() const
@@ -320,6 +332,7 @@ struct Crate : Box<SA2CrateConfig>
 			}
 
 			debris_state(S_SA2_CRATE_DEBRIS_METAL);
+			debris_sound(sfx_cratem);
 		}
 	}
 

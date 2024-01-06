@@ -1320,6 +1320,10 @@ typedef enum
 	// Ice Cube
 	sfx_glgz1,
 
+	// Crate
+	sfx_cratew,
+	sfx_cratem,
+
 	// Ivo Ball
 	sfx_ivobal,
 

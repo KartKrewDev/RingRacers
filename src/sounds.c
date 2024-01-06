@@ -1249,6 +1249,9 @@ sfxinfo_t S_sfx[NUMSFX] =
 
   {"glgz1",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Ice Cube shatters"},
 
+  {"cratew",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Crate shatters"},
+  {"cratem",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Crate shatters"},
+
   {"ivobal",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Ivo Ball
 
   {"lcfuel",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Fuel Capsule explodes"},
