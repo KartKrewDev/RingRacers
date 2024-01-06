@@ -45,7 +45,7 @@ struct UFO : Mobj
 
 	void spawn_beam()
 	{
-		Mobj *x = spawn_from<Mobj>({0, 0, height / 4}, MT_BATTLEUFO_BEAM);
+		Mobj *x = spawn_from<Mobj>({0, 0, sprzoff() + 26}, MT_BATTLEUFO_BEAM);
 
 		x->renderflags |= RF_FLOORSPRITE|RF_NOSPLATBILLBOARD|RF_SLOPESPLAT|RF_NOSPLATROLLANGLE;
 		x->colorized = true;
@@ -107,8 +107,12 @@ public:
 			return;
 		}
 
+		Fixed ofs = mobjinfo[MT_BATTLEUFO].height / 4;
+
 		Spawner* spawner = next(g_battleufo.previousId);
-		UFO* ufo = static_cast<UFO*>(P_SpawnMobjFromMobj(spawner, 0, 0, 250*FRACUNIT, MT_BATTLEUFO));
+		UFO* ufo = static_cast<UFO*>(P_SpawnMobjFromMobj(spawner, 0, 0, 250*FRACUNIT - ofs, MT_BATTLEUFO));
+
+		ufo->sprzoff(ofs * spawner->scale());
 
 		ufo->spawner(spawner);
 	}
@@ -204,6 +208,7 @@ void Obj_BattleUFOLegThink(mobj_t *leg)
 
 		// TODO: Take gravflip into account
 		P_MoveOrigin(leg, x, y, leg->z);
+		leg->sprzoff = leg->target->sprzoff;
 	}
 
 	leg->momz = leg->target->momz;
