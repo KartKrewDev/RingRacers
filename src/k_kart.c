@@ -8701,7 +8701,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->justbumped > 0)
 		player->justbumped--;
 
-	if (K_PlayerGuard(player) || K_PlayerEBrake(player))
+	if (K_PressingEBrake(player) == true)
 	{
 		player->instaWhipCooldown = INSTAWHIP_DROPGUARD;
 	}
