@@ -858,7 +858,9 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 
 				angle_t thrangle = R_PointToAngle2(victim->x, victim->y, shield->x, shield->y);
 				attacker->momx = attacker->momy = 0;
-				P_Thrust(attacker, thrangle, FRACUNIT*7);
+				P_Thrust(attacker, thrangle, mapobjectscale*7);
+
+				P_DamageMobj(attacker, victim, victim, 1, DMG_TUMBLE);
 
 				// A little extra juice, so successful reads are usually positive or zero on spheres.
 				victimPlayer->spheres = std::min(victimPlayer->spheres + 10, 40);
@@ -875,23 +877,20 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 				attackerPlayer->flashing = 0;
 
 				// Localized broly for a local event.
-				if (mobj_t *broly = Obj_SpawnBrolyKi(victim, victimHitlag))
+				if (mobj_t *broly = Obj_SpawnBrolyKi(victim, victimHitlag/2))
 				{
 					broly->extravalue2 = 16*mapobjectscale;
 				}
 
 				P_PlayVictorySound(victim);
 
-				P_DamageMobj(attacker, victim, victim, 1, DMG_STING);
+				P_DamageMobj(attacker, victim, victim, 1, DMG_TUMBLE);
 
 				S_StartSound(victim, sfx_mbv92);
 				K_AddHitLag(attacker, victimHitlag, true);
 				K_AddHitLag(victim, attackerHitlag, false);
 
 				K_DoPowerClash(shield, victim); // REJECTED
-
-				attacker->hitlag = victimHitlag; // No, seriously, we do not care about K_AddHitLag's idea of a normal maximum
-				shield->hitlag = attacker->hitlag;
 
 				shield->extravalue2 = 1;
 
