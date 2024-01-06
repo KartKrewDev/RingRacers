@@ -8702,7 +8702,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->justbumped > 0)
 		player->justbumped--;
 
-	if (K_PressingEBrake(player) == true)
+	if (K_PressingEBrake(player) == true && onground)
 	{
 		if (gametyperules & GTR_BUMPERS)
 			player->instaWhipCooldown = INSTAWHIP_DROPGUARD; // Delay whip out of spindash and guard.
