@@ -153,7 +153,7 @@ void Obj_WPZTurbineThinker(mobj_t *mo)
 
 		if (R_PointToDist2(pmo->x, pmo->y, mo->x, mo->y) < range
 		&& !p->turbine
-		&& !p->respawn.timer)
+		&& p->respawn.state == RESPAWNST_NONE)
 		{
 			P_SetTarget(&pmo->tracer, mo);
 			p->turbine = turbinetime;
@@ -206,7 +206,7 @@ void Obj_playerWPZTurbine(player_t *p)
 	fixed_t momz;
 
 
-	if (!t || P_MobjWasRemoved(t))
+	if (!t || P_MobjWasRemoved(t) || p->respawn.state != RESPAWNST_NONE)
 	{
 		p->turbine = false;
 		P_SetTarget(&pmo->tracer, NULL);
