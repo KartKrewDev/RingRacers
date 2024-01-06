@@ -170,6 +170,7 @@ struct demoghost {
 	UINT16 version;
 	UINT8 numskins;
 	boolean linecrossed;
+	boolean done;
 	democharlist_t *skinlist;
 	mobj_t oldmo, *mo;
 	struct demoghost *next;
