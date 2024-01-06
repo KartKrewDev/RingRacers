@@ -11838,6 +11838,10 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		case MT_EMROCKS:
 			Obj_LinkRocks(mobj);
 			break;
+		case MT_TRICKBALLOON_RED:
+		case MT_TRICKBALLOON_YELLOW:
+			Obj_TrickBalloonMobjSpawn(mobj);
+			break;
 		default:
 			break;
 	}

@@ -49,6 +49,7 @@ target_sources(SRB2SDL2 PRIVATE
 	fuel.cpp
 	rocks.cpp
 	emz-faucet.cpp
+	trick-balloon.c
 )
 
 add_subdirectory(versus)
