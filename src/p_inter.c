@@ -396,9 +396,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			P_InstaThrust(player->mo, player->mo->angle, 20<<FRACBITS);
 			return;
 		case MT_FLOATINGITEM: // SRB2Kart
-			// Avoid being picked up immediately
-			if (special->scale < special->destscale/2)
-				return;
 			if (special->threshold >= FIRSTPOWERUP)
 			{
 				if (P_PlayerInPain(player))
@@ -408,6 +405,10 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			}
 			else
 			{
+				// Avoid being picked up immediately
+				if (special->scale < special->destscale/2)
+					return;
+
 				if (!P_CanPickupItem(player, 3) || (player->itemamount && player->itemtype != special->threshold))
 					return;
 
@@ -2347,7 +2348,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			Obj_MonitorOnDeath(target);
 			break;
 		case MT_BATTLEUFO:
-			Obj_BattleUFODeath(target);
+			Obj_BattleUFODeath(target, inflictor);
 			break;
 		case MT_BLENDEYE_MAIN:
 			VS_BlendEye_Death(target);

@@ -7044,7 +7044,11 @@ mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 
 		drop->movecount = amount;
 	}
 
-	drop->flags |= MF_NOCLIPTHING;
+	if (type < FIRSTPOWERUP)
+	{
+		// Pick up power-ups immediately
+		drop->flags |= MF_NOCLIPTHING;
+	}
 
 	if (gametyperules & GTR_CLOSERPLAYERS)
 	{

@@ -137,14 +137,14 @@ void Obj_BattleUFOThink(mobj_t *mobj)
 	K_BattleOvertimeKiller(mobj);
 }
 
-void Obj_BattleUFODeath(mobj_t *mobj)
+void Obj_BattleUFODeath(mobj_t *mobj, mobj_t *inflictor)
 {
 	UFO* ufo = static_cast<UFO*>(mobj);
 	const SINT8 flip = P_MobjFlip(ufo);
 
 	ufo->momz = -(8*mapobjectscale)/2;
 
-	K_CreatePaperItem(
+	mobj_t* drop = K_CreatePaperItem(
 		ufo->x,
 		ufo->y,
 		ufo->z + (flip),
@@ -153,6 +153,14 @@ void Obj_BattleUFODeath(mobj_t *mobj)
 		P_RandomRange(PR_BATTLEUFO, FIRSTPOWERUP, LASTPOWERUP),
 		BATTLE_POWERUP_TIME
 	);
+
+	if (!P_MobjWasRemoved(inflictor) && inflictor->type == MT_INSTAWHIP)
+	{
+		// Take momentum of player who whips
+		inflictor = inflictor->target;
+	}
+
+	drop->momz = !P_MobjWasRemoved(inflictor) ? inflictor->momz : 0;
 
 	if (ufo->spawner())
 	{

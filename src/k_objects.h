@@ -182,7 +182,7 @@ boolean Obj_IsSuperFlickyTargettingYou(const mobj_t *flicky, mobj_t *player);
 void Obj_BattleUFOLegThink(mobj_t *leg);
 void Obj_BattleUFOThink(mobj_t *ufo);
 void Obj_SpawnBattleUFOLegs(mobj_t *ufo);
-void Obj_BattleUFODeath(mobj_t *ufo);
+void Obj_BattleUFODeath(mobj_t *ufo, mobj_t *inflictor);
 void Obj_LinkBattleUFOSpawner(mobj_t *spawner);
 void Obj_UnlinkBattleUFOSpawner(mobj_t *spawner);
 void Obj_SpawnBattleUFOFromSpawner(void);

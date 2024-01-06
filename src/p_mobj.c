@@ -7451,7 +7451,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_FLOATINGITEM:
 	{
 		P_ResetPitchRoll(mobj);
-		if (mobj->flags & MF_NOCLIPTHING)
+		if (!(mobj->flags & MF_NOGRAVITY))
 		{
 			if (P_CheckDeathPitCollide(mobj))
 			{
