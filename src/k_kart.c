@@ -8450,7 +8450,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 			if (player->spheredigestion == 0)
 			{
-				player->spheres--;
+				if (player->spheres > 5)
+					player->spheres--;
 				player->spheredigestion = spheredigestion;
 			}
 
