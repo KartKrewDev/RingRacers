@@ -50,6 +50,7 @@
 #include "acs/interface.h"
 #include "m_easing.h"
 #include "music.h"
+#include "k_battle.h" // battleprisons
 
 // Not sure if this is necessary, but it was in w_wad.c, so I'm putting it here too -Shadow Hog
 #include <errno.h>
@@ -9515,6 +9516,11 @@ void P_DoQuakeOffset(UINT8 view, mappoint_t *viewPos, mappoint_t *offset)
 	if ((leveltime + view) & 1)
 	{
 		addZ = -addZ;
+	}
+
+	if ((gametyperules & GTR_PRISONS) && !battleprisons)
+	{
+		addZ /= 2;
 	}
 
 	if (cv_screenshake.value == 1) // Half
