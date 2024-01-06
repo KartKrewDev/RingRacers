@@ -150,7 +150,7 @@ void K_CheckBumpers(void)
 		}
 	}
 
-	if (numingame <= 2 && battleovertime.enabled && battleovertime.radius <= BARRIER_MIN_RADIUS)
+	if (numingame - eliminated <= 2 && battleovertime.enabled && battleovertime.radius <= BARRIER_MIN_RADIUS)
 	{
 		Music_Stop("battle_overtime");
 		S_StartSound(NULL, sfx_kc4b); // Loud noise helps mask transition
