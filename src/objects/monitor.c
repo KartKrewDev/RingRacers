@@ -8,6 +8,7 @@
 #include "../k_battle.h"
 #include "../m_random.h"
 #include "../r_main.h"
+#include "../s_sound.h"
 
 #define FINE90 (FINEANGLES/4)
 #define FINE180 (FINEANGLES/2)
@@ -665,6 +666,7 @@ Obj_MonitorOnDamage
 		? FixedDiv(FixedHypot(inflictor->momx, inflictor->momy), 4 * inflictor->radius) : 0;
 	monitor->hitlag =
 		3 * get_damage_multiplier(monitor) / FRACUNIT;
+	S_StartSound(monitor, sfx_kc40);
 }
 
 void
@@ -706,6 +708,8 @@ Obj_MonitorOnDeath (mobj_t *monitor)
 	}
 
 	spawn_monitor_explosion(monitor);
+
+	S_StartSound(monitor, sfx_gshcc);
 
 	// There is hitlag from being damaged, so remove
 	// tangibility RIGHT NOW.
