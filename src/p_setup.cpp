@@ -1750,23 +1750,23 @@ static void ParseTextmapSectorParameter(UINT32 i, const char *param, const char 
 	else if (fastcmp(param, "forcedirectionallighting") && fastcmp("true", val))
 		sectors[i].flags = static_cast<sectorflags_t>(sectors[i].flags | MSF_DIRECTIONLIGHTING);
 	else if (fastcmp(param, "nostepup") && fastcmp("true", val))
-		sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].flags | SSF_NOSTEPUP);
+		sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].specialflags | SSF_NOSTEPUP);
 	else if (fastcmp(param, "doublestepup") && fastcmp("true", val))
-		sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].flags | SSF_DOUBLESTEPUP);
+		sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].specialflags | SSF_DOUBLESTEPUP);
 	else if (fastcmp(param, "nostepdown") && fastcmp("true", val))
-		sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].flags | SSF_NOSTEPDOWN);
+		sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].specialflags | SSF_NOSTEPDOWN);
 	else if ((fastcmp(param, "cheatcheckactivator") || fastcmp(param, "starpostactivator")) && fastcmp("true", val))
-		sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].flags | SSF_CHEATCHECKACTIVATOR);
+		sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].specialflags | SSF_CHEATCHECKACTIVATOR);
 	else if (fastcmp(param, "exit") && fastcmp("true", val))
-		sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].flags | SSF_EXIT);
+		sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].specialflags | SSF_EXIT);
 	else if (fastcmp(param, "deleteitems") && fastcmp("true", val))
-		sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].flags | SSF_DELETEITEMS);
+		sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].specialflags | SSF_DELETEITEMS);
 	else if (fastcmp(param, "fan") && fastcmp("true", val))
-		sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].flags | SSF_FAN);
+		sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].specialflags | SSF_FAN);
 	else if (fastcmp(param, "zoomtubestart") && fastcmp("true", val))
-		sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].flags | SSF_ZOOMTUBESTART);
+		sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].specialflags | SSF_ZOOMTUBESTART);
 	else if (fastcmp(param, "zoomtubeend") && fastcmp("true", val))
-		sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].flags | SSF_ZOOMTUBEEND);
+		sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].specialflags | SSF_ZOOMTUBEEND);
 	else if (fastcmp(param, "friction"))
 		sectors[i].friction = FLOAT_TO_FIXED(atof(val));
 	else if (fastcmp(param, "gravity"))
