@@ -2603,11 +2603,21 @@ mapthing_t *G_FindBattleStart(INT32 playernum)
 
 	if (numdmstarts)
 	{
-		for (j = 0; j < 64; j++)
+		extern consvar_t cv_battlespawn;
+		if (cv_battlespawn.value)
 		{
-			i = P_RandomKey(PR_PLAYERSTARTS, numdmstarts);
-			if (G_CheckSpot(playernum, deathmatchstarts[i]))
+			i = cv_battlespawn.value - 1;
+			if (i < numdmstarts)
 				return deathmatchstarts[i];
+		}
+		else
+		{
+			for (j = 0; j < 64; j++)
+			{
+				i = P_RandomKey(PR_PLAYERSTARTS, numdmstarts);
+				if (G_CheckSpot(playernum, deathmatchstarts[i]))
+					return deathmatchstarts[i];
+			}
 		}
 		if (doprints)
 			CONS_Alert(CONS_WARNING, M_GetText("Could not spawn at any Deathmatch starts!\n"));
