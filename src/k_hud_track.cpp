@@ -280,7 +280,7 @@ bool is_object_tracking_target(const mobj_t* mobj)
 		return is_player_tracking_target() && Obj_MonitorGetEmerald(mobj) != 0;
 
 	case MT_SUPER_FLICKY:
-		return Obj_IsSuperFlickyTargettingYou(mobj, stplyr->mo);
+		return Obj_IsSuperFlickyWhippable(mobj, stplyr->mo);
 
 	case MT_SPRAYCAN:
 		return !(mobj->renderflags & (RF_TRANSMASK | RF_DONTDRAW)) && // the spraycan wasn't collected yet
