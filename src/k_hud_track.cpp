@@ -33,9 +33,9 @@ namespace
 
 enum class Visibility
 {
-	kHidden,
 	kVisible,
 	kTransparent,
+	kFlicker,
 };
 
 struct TargetTracking
@@ -283,28 +283,26 @@ bool is_object_tracking_target(const mobj_t* mobj)
 		return Obj_IsSuperFlickyTargettingYou(mobj, stplyr->mo);
 
 	case MT_SPRAYCAN:
-		return !(mobj->renderflags & (RF_TRANSMASK | RF_DONTDRAW)); // the spraycan wasn't collected yet
+		return !(mobj->renderflags & (RF_TRANSMASK | RF_DONTDRAW)) && // the spraycan wasn't collected yet
+			P_CheckSight(stplyr->mo, const_cast<mobj_t*>(mobj));
 
 	default:
 		return false;
 	}
 }
 
-Visibility is_object_visible(mobj_t* mobj)
+Visibility is_object_visible(const mobj_t* mobj)
 {
 	switch (mobj->type)
 	{
+	case MT_SPRAYCAN:
 	case MT_SUPER_FLICKY:
 		// Always flickers.
-		return (leveltime & 1) ? Visibility::kVisible : Visibility::kHidden;
-
-	case MT_SPRAYCAN:
-		// Flickers, but only when visible.
-		return P_CheckSight(stplyr->mo, mobj) && (leveltime & 1) ? Visibility::kVisible : Visibility::kHidden;
+		return Visibility::kFlicker;
 
 	default:
 		// Transparent when not visible.
-		return P_CheckSight(stplyr->mo, mobj) ? Visibility::kVisible : Visibility::kTransparent;
+		return P_CheckSight(stplyr->mo, const_cast<mobj_t*>(mobj)) ? Visibility::kVisible : Visibility::kTransparent;
 	}
 }
 
@@ -312,7 +310,7 @@ void K_DrawTargetTracking(const TargetTracking& target)
 {
 	Visibility visibility = is_object_visible(target.mobj);
 
-	if (visibility == Visibility::kHidden)
+	if (visibility == Visibility::kFlicker && (leveltime & 1))
 	{
 		return;
 	}
