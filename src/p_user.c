@@ -482,6 +482,7 @@ void P_ResetPlayer(player_t *player)
 	player->trickpanel = TRICKSTATE_NONE;
 	player->glanceDir = 0;
 	player->fastfall = 0;
+	player->turbine = 0;
 	Obj_EndBungee(player);
 
 	if (player->mo != NULL && P_MobjWasRemoved(player->mo) == false)
