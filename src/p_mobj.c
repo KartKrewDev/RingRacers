@@ -6400,7 +6400,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 
 			if (!(mobj->renderflags & RF_DONTDRAW))
 			{
-				const INT32 numberdisplaymin = ((mobj->target->player->itemtype == KITEM_ORBINAUT) ? 5 : 2);
+				//const INT32 numberdisplaymin = ((mobj->target->player->itemtype == KITEM_ORBINAUT) ? 5 : 2);
 
 				// Set it to use the correct states for its condition
 				if (mobj->target->player->itemRoulette.active)
@@ -6490,6 +6490,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 
 				mobj->tracer->destscale = scale;
 
+#if 0
 				if (mobj->target->player->itemamount >= numberdisplaymin
 					&& mobj->target->player->itemamount <= 10) // Meh, too difficult to support greater than this; convert this to a decent HUD object and then maybe :V
 				{
@@ -6507,6 +6508,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 					P_SetScale(numx, mobj->scale);
 					numx->destscale = scale;
 				}
+#endif
 
 #if 0
 				if (K_IsPlayerWanted(mobj->target->player) && mobj->movecount != 1)
