@@ -8704,7 +8704,10 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (K_PressingEBrake(player) == true)
 	{
-		player->instaWhipCooldown = INSTAWHIP_DROPGUARD;
+		if (gametyperules & GTR_BUMPERS)
+			player->instaWhipCooldown = INSTAWHIP_DROPGUARD; // Delay whip out of spindash and guard.
+		else
+			player->instaWhipCharge = 0; // Not that important in race, avoid black flash.
 	}
 
 	if (player->instaWhipCooldown)
