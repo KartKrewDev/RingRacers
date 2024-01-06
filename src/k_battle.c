@@ -722,8 +722,9 @@ void K_RunBattleOvertime(void)
 
 		if (battleovertime.radius > minradius)
 		{
+			extern consvar_t cv_barriertime;
 			tic_t t = leveltime - battleovertime.start;
-			const tic_t duration = 30*TICRATE;
+			const tic_t duration = cv_barriertime.value * TICRATE;
 			battleovertime.radius = Easing_OutSine(min(t, duration) * FRACUNIT / duration, battleovertime.initial_radius, minradius);
 		}
 
