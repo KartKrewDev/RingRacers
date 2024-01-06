@@ -169,7 +169,7 @@ void M_DrawUnderline(INT32 left, INT32 right, INT32 y)
 
 static patch_t *addonsp[NUM_EXT+5];
 
-static patch_t *bgMapImage;
+static INT16 bgMapID = NEXTMAP_INVALID;
 void M_PickMenuBGMap(void)
 {
 	UINT16 *allowedMaps;
@@ -195,7 +195,7 @@ void M_PickMenuBGMap(void)
 
 		if ((mapheaderinfo[i]->typeoflevel & (TOL_SPECIAL|TOL_VERSUS)) != 0)
 		{
-			// Don't spoil Special Stages or bosses.
+			// Don't spoil Special or Versus.
 			continue;
 		}
 
@@ -221,12 +221,7 @@ void M_PickMenuBGMap(void)
 	}
 	Z_Free(allowedMaps);
 
-	bgMapImage = mapheaderinfo[ret]->thumbnailPic;
-
-	if (bgMapImage == NULL)
-	{
-		bgMapImage = W_CachePatchName("MENUBG4", PU_CACHE);
-	}
+	bgMapID = ret;
 }
 
 static fixed_t bgText1Scroll = 0;
@@ -271,9 +266,15 @@ void M_DrawMenuBackground(void)
 	fixed_t text1loop = SHORT(text1->height)*FRACUNIT;
 	fixed_t text2loop = SHORT(text2->width)*FRACUNIT;
 
-	if (bgMapImage == NULL)
+	if (bgMapID >= nummapheaders)
 	{
 		M_PickMenuBGMap();
+	}
+
+	patch_t *bgMapImage = mapheaderinfo[bgMapID]->thumbnailPic;
+	if (bgMapImage == NULL)
+	{
+		bgMapImage = W_CachePatchName("MENUBG4", PU_CACHE);
 	}
 
 	V_DrawFixedPatch(0, 0, FRACUNIT, 0, bgMapImage, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_SLATE, GTC_MENUCACHE));
