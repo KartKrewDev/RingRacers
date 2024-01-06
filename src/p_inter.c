@@ -1031,6 +1031,10 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			Obj_TrickBalloonTouchSpecial(special, toucher);
 			return;
 
+		case MT_SEALEDSTAR_BUMPER:
+			Obj_SSBumperTouchSpecial(special, toucher);
+			return;
+
 		default: // SOC or script pickup
 			P_SetTarget(&special->target, toucher);
 			break;
