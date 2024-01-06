@@ -383,7 +383,7 @@ void K_RunPaperItemSpawners(void)
 		return;
 	}
 
-	if (leveltime == g_battleufo.due)
+	if (leveltime == g_battleufo.due && overtime == false)
 	{
 		Obj_SpawnBattleUFOFromSpawner();
 	}
