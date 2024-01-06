@@ -2724,9 +2724,9 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *levelsearch)
 	}
 	else
 	{
-		patch_t *st = W_CachePatchName(va("PREVST0%d", (cupgrid.previewanim % 4) + 1), PU_CACHE);
 		while (x < BASEVIDWIDTH * FRACUNIT)
 		{
+			patch_t *st = unvisitedlvl[cupgrid.previewanim % 4];
 			V_DrawFixedPatch(x + FRACUNIT, (y+2) * FRACUNIT, FRACUNIT, 0, st, NULL);
 			x += step;
 		}

@@ -900,6 +900,7 @@ struct patch_t
 
 extern patch_t *missingpat;
 extern patch_t *blanklvl, *nolvl;
+extern patch_t *unvisitedlvl[4];
 
 #if defined(_MSC_VER)
 #pragma pack(1)

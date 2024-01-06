@@ -97,6 +97,7 @@ static char hu_tick;
 
 patch_t *missingpat;
 patch_t *blanklvl, *nolvl;
+patch_t *unvisitedlvl[4];
 
 // song credits
 static patch_t *songcreditbg;
@@ -195,6 +196,11 @@ void HU_LoadGraphics(void)
 
 	HU_UpdatePatch(&blanklvl, "BLANKLVL");
 	HU_UpdatePatch(&nolvl, "M_NOLVL");
+
+	for (i = 0; i < 4; i++)
+	{
+		HU_UpdatePatch(&unvisitedlvl[i], "PREVST0%d", i+1);
+	}
 
 	HU_UpdatePatch(&songcreditbg, "K_SONGCR");
 
