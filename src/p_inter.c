@@ -3329,7 +3329,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			}
 
 			if (gametyperules & GTR_BUMPERS)
-				player->spheres = min(player->spheres + 5, 40);
+				player->spheres = min(player->spheres + 10, 40);
 
 			if ((hardhit == true) || cv_kartdebughuddrop.value)
 			{
