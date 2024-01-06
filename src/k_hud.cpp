@@ -5663,6 +5663,9 @@ void K_drawKartHUD(void)
 	if ((gametyperules & GTR_KARMA) && !r_splitscreen && (stplyr->karthud[khud_yougotem] % 2)) // * YOU GOT EM *
 		V_DrawScaledPatch(BASEVIDWIDTH/2 - (SHORT(kp_yougotem->width)/2), 32, V_HUDTRANS, kp_yougotem);
 
+	if (g_emeraldWin)
+		K_drawEmeraldWin();
+
 	// Draw FREE PLAY.
 	K_drawKartFreePlay();
 

@@ -18,6 +18,7 @@
 #include "i_time.h"
 #include "m_fixed.h"
 #include "r_draw.h"
+#include "r_fps.h"
 #include "r_main.h"
 #include "g_game.h"
 
@@ -43,7 +44,7 @@ INT32 R_AdjustLightLevel(INT32 light)
 
 	if (!debugrender_highlight && cv_debugrender_contrast.value == 0)
 	{
-		const fixed_t darken = FixedMul(FixedMul(darkness, mapheaderinfo[gamemap-1]->darkness), kRange);
+		const fixed_t darken = FixedMul(FixedMul(g_darkness.value[R_GetViewNumber()], mapheaderinfo[gamemap-1]->darkness), kRange);
 		return std::clamp((light * FRACUNIT) - darken, 0, kRange) / FRACUNIT;
 	}
 

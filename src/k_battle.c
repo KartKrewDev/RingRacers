@@ -21,6 +21,11 @@
 #include "p_spec.h"
 #include "k_objects.h"
 #include "k_rank.h"
+#include "music.h"
+#include "hu_stuff.h"
+#include "m_easing.h"
+
+#define BARRIER_MIN_RADIUS (768 * mapobjectscale)
 
 // Battle overtime info
 struct battleovertime battleovertime;
@@ -36,6 +41,9 @@ INT32 numgotboxes = 0;
 // Capsule counters
 UINT8 maptargets = 0; // Capsules in map
 UINT8 numtargets = 0; // Capsules busted
+
+// Battle: someone won by collecting all 7 Chaos Emeralds
+boolean g_emeraldWin = false;
 
 INT32 K_StartingBumperCount(void)
 {
@@ -142,6 +150,12 @@ void K_CheckBumpers(void)
 		}
 	}
 
+	if (numingame <= 2 && battleovertime.enabled && battleovertime.radius <= BARRIER_MIN_RADIUS)
+	{
+		Music_Stop("battle_overtime");
+		S_StartSound(NULL, sfx_kc4b); // Loud noise helps mask transition
+	}
+
 	if (K_Cooperative())
 	{
 		if (nobumpers > 0 && nobumpers >= numingame)
@@ -184,6 +198,7 @@ void K_CheckEmeralds(player_t *player)
 	player->roundscore = 100; // lmao
 
 	P_DoAllPlayersExit(0, false);
+	g_emeraldWin = true;
 }
 
 UINT16 K_GetChaosEmeraldColor(UINT32 emeraldType)
@@ -678,19 +693,47 @@ void K_RunBattleOvertime(void)
 	{
 		battleovertime.enabled++;
 		if (battleovertime.enabled == TICRATE)
+		{
 			S_StartSound(NULL, sfx_bhurry);
-		if (battleovertime.enabled == 10*TICRATE)
+			HU_DoTitlecardCEchoForDuration(NULL, "HURRY UP!!", true, 2*TICRATE);
+			Music_DelayEnd("level", 0);
+		}
+		else if (battleovertime.enabled == 10*TICRATE)
+		{
 			S_StartSound(NULL, sfx_kc40);
+			P_StartQuake(5, 64 * mapobjectscale, 0, NULL);
+			battleovertime.start = leveltime;
+		}
+
+		if (!Music_Playing("level") && !Music_Playing("battle_overtime"))
+		{
+			Music_Play("battle_overtime");
+			Music_Play("battle_overtime_stress");
+
+			// Sync approximately with looping section of
+			// battle_overtime. (This is file dependant.)
+			Music_Seek("battle_overtime_stress", 1756);
+		}
 	}
 	else if (battleovertime.radius > 0)
 	{
-		const fixed_t minradius = 768 * mapobjectscale;
+		const fixed_t minradius = BARRIER_MIN_RADIUS;
+		const fixed_t oldradius = battleovertime.radius;
 
 		if (battleovertime.radius > minradius)
-			battleovertime.radius -= (battleovertime.initial_radius / (30*TICRATE));
+		{
+			tic_t t = leveltime - battleovertime.start;
+			const tic_t duration = 30*TICRATE;
+			battleovertime.radius = Easing_OutSine(min(t, duration) * FRACUNIT / duration, battleovertime.initial_radius, minradius);
+		}
 
-		if (battleovertime.radius < minradius)
+		if (battleovertime.radius <= minradius && oldradius > minradius)
+		{
 			battleovertime.radius = minradius;
+			K_CheckBumpers();
+			S_StartSound(NULL, sfx_kc40);
+			P_StartQuake(5, 64 * mapobjectscale, 0, NULL);
+		}
 
 		// Subtract the 10 second grace period of the barrier
 		if (battleovertime.enabled < 25*TICRATE)
@@ -822,6 +865,8 @@ void K_BattleInit(boolean singleplayercontext)
 
 	g_battleufo.due = starttime;
 	g_battleufo.previousId = Obj_RandomBattleUFOSpawnerID() - 1;
+
+	g_emeraldWin = false;
 }
 
 UINT8 K_Bumpers(player_t *player)

@@ -56,14 +56,15 @@ constexpr int kSearchRadius = 1920;
 constexpr int kFlightRadius = 1280;
 constexpr int kPeckingRadius = 256;
 
-constexpr int kFlightSpeed = 2;
-constexpr int kPeckingSpeed = 8;
+constexpr fixed_t kFlightSpeed = 2*FRACUNIT;
+constexpr fixed_t kPeckingSpeed = FRACUNIT/2;
+constexpr fixed_t kWeakSpeed = FRACUNIT/2;
 
 constexpr fixed_t kRebound = 8*FRACUNIT/9;
 
 constexpr tic_t kDelay = 8;
-constexpr tic_t kStunTime = 5*TICRATE;
-constexpr tic_t kBlockTime = 1*TICRATE;
+constexpr tic_t kStunTime = 10*TICRATE;
+constexpr tic_t kBlockTime = 5*TICRATE;
 
 constexpr int kRiseTime = 1*TICRATE;
 constexpr int kRiseSpeed = 4;
@@ -394,15 +395,20 @@ struct Flicky : mobj_t
 
 		const Fly oldFly = fly();
 
-		if (d < ANGLE_11hh && dist < kPeckingRadius * mapobjectscale)
+		if (mode() == Mode::kWeak)
+		{
+			P_Thrust(this, th, FixedMul(kWeakSpeed, mapobjectscale));
+			fly(Fly::kNormal);
+		}
+		else if (d < ANGLE_11hh && dist < kPeckingRadius * mapobjectscale)
 		{
 			// Drastically speed up when about to intersect
-			P_Thrust(this, th, kPeckingSpeed * mapobjectscale);
+			P_Thrust(this, th, FixedMul(kPeckingSpeed, mapobjectscale));
 			fly(Fly::kZoom);
 		}
 		else
 		{
-			P_Thrust(this, th, kFlightSpeed * mapobjectscale);
+			P_Thrust(this, th, FixedMul(kFlightSpeed, mapobjectscale));
 			fly(Fly::kNormal);
 		}
 
@@ -493,6 +499,7 @@ struct Flicky : mobj_t
 	{
 		momx = -(momx);
 		momy = -(momy);
+		P_SetObjectMomZ(this, 8*FRACUNIT, false);
 	}
 
 	void nerf()
@@ -505,7 +512,6 @@ struct Flicky : mobj_t
 	void whip()
 	{
 		reflect();
-		P_SetObjectMomZ(this, 8*FRACUNIT, false);
 
 		nerf();
 

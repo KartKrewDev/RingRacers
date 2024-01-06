@@ -1861,6 +1861,7 @@ static void HU_DrawTitlecardCEcho(size_t num)
 		INT32 y = BASEVIDHEIGHT/2;
 		INT32 pnumlines = 0;
 		INT32 timeroffset = 0;
+		INT32 fadeout = state->duration * 2 / 3;
 
 		char *line;
 		char *echoptr;
@@ -1916,7 +1917,7 @@ static void HU_DrawTitlecardCEcho(size_t num)
 			*line = '\0';
 			
 			ofs = V_CenteredTitleCardStringOffset(echoptr, p4);
-			V_DrawTitleCardString(x - ofs, y, echoptr, 0, false, timer, TICRATE*4, p4);
+			V_DrawTitleCardString(x - ofs, y, echoptr, 0, false, timer, fadeout, p4);
 
 			y += p4 ? 18 : 32;
 			
@@ -2660,7 +2661,7 @@ void HU_ClearTitlecardCEcho(void)
 }
 
 // Similar but for titlecard CEcho and also way less convoluted because I have no clue whatever the fuck they were trying above.
-void HU_DoTitlecardCEcho(player_t *player, const char *msg, boolean interrupt)
+void HU_DoTitlecardCEchoForDuration(player_t *player, const char *msg, boolean interrupt, tic_t duration)
 {
 	if (player && !P_IsDisplayPlayer(player))
 	{
@@ -2687,5 +2688,10 @@ void HU_DoTitlecardCEcho(player_t *player, const char *msg, boolean interrupt)
 	strncat(state->text, "\\", sizeof(state->text) - strlen(state->text) - 1);
 	state->text[sizeof(state->text) - 1] = '\0';
 	state->start = gametic;
-	state->duration = TICRATE*6 + strlen(state->text);
+	state->duration = duration ? duration : TICRATE*6 + strlen(state->text);
+}
+
+void HU_DoTitlecardCEcho(player_t *player, const char *msg, boolean interrupt)
+{
+	HU_DoTitlecardCEchoForDuration(player, msg, interrupt, 0u);
 }

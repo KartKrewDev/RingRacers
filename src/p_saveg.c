@@ -787,6 +787,10 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].icecube.wiggle);
 		WRITEUINT32(save->p, players[i].icecube.frozenat);
 		WRITEUINT8(save->p, players[i].icecube.shaketimer);
+
+		// darkness
+		WRITEUINT32(save->p, players[i].darkness_start);
+		WRITEUINT32(save->p, players[i].darkness_end);
 	}
 
 	TracyCZoneEnd(__zone);
@@ -1357,6 +1361,10 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].icecube.wiggle = READUINT8(save->p);
 		players[i].icecube.frozenat = READUINT32(save->p);
 		players[i].icecube.shaketimer = READUINT8(save->p);
+
+		// darkness
+		players[i].darkness_start = READUINT32(save->p);
+		players[i].darkness_end = READUINT32(save->p);
 
 		//players[i].viewheight = P_GetPlayerViewHeight(players[i]); // scale cannot be factored in at this point
 	}
@@ -6433,6 +6441,7 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 	WRITEINT32(save->p, numgotboxes);
 	WRITEUINT8(save->p, numtargets);
 	WRITEUINT8(save->p, battleprisons);
+	WRITEUINT8(save->p, g_emeraldWin);
 
 	WRITEUINT8(save->p, gamespeed);
 	WRITEUINT8(save->p, numlaps);
@@ -6445,6 +6454,7 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 	WRITEUINT16(save->p, battleovertime.enabled);
 	WRITEFIXED(save->p, battleovertime.radius);
 	WRITEFIXED(save->p, battleovertime.initial_radius);
+	WRITEUINT32(save->p, battleovertime.start);
 	WRITEFIXED(save->p, battleovertime.x);
 	WRITEFIXED(save->p, battleovertime.y);
 	WRITEFIXED(save->p, battleovertime.z);
@@ -6476,8 +6486,8 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 
 	WRITEUINT32(save->p, g_pointlimit);
 
-	WRITEUINT32(save->p, darktimer);
-	WRITEFIXED(save->p, darkness);
+	WRITEUINT32(save->p, g_darkness.start);
+	WRITEUINT32(save->p, g_darkness.end);
 
 	WRITEUINT16(save->p, numchallengedestructibles);
 
@@ -6617,6 +6627,7 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 	numgotboxes = READINT32(save->p);
 	numtargets = READUINT8(save->p);
 	battleprisons = (boolean)READUINT8(save->p);
+	g_emeraldWin = (boolean)READUINT8(save->p);
 
 	gamespeed = READUINT8(save->p);
 	numlaps = READUINT8(save->p);
@@ -6629,6 +6640,7 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 	battleovertime.enabled = READUINT16(save->p);
 	battleovertime.radius = READFIXED(save->p);
 	battleovertime.initial_radius = READFIXED(save->p);
+	battleovertime.start = READUINT32(save->p);
 	battleovertime.x = READFIXED(save->p);
 	battleovertime.y = READFIXED(save->p);
 	battleovertime.z = READFIXED(save->p);
@@ -6660,8 +6672,8 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 
 	g_pointlimit = READUINT32(save->p);
 
-	darktimer = READUINT32(save->p);
-	darkness = READFIXED(save->p);
+	g_darkness.start = READUINT32(save->p);
+	g_darkness.end = READUINT32(save->p);
 
 	numchallengedestructibles = READUINT16(save->p);
 

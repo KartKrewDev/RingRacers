@@ -11,6 +11,7 @@
 #define MUSIC_TUNE_HPP
 
 #include <algorithm>
+#include <cstdint>
 #include <optional>
 #include <string>
 
@@ -68,7 +69,7 @@ public:
 	bool nightcoreable = false;
 
 	// Start playing this number of tics into the tune.
-	tic_t seek = 0;
+	std::uint32_t seek = 0;
 
 	// these track state
 	bool can_fade_out = true;

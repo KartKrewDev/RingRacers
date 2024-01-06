@@ -20,6 +20,7 @@ extern struct battleovertime
 	UINT16 enabled; ///< Has this been initalized yet?
 	fixed_t radius; ///< Radius of kill field
 	fixed_t initial_radius; ///< Starting radius of kill field
+	tic_t start; ///< Leveltime to decrease kill field radius from
 	fixed_t x, y, z; ///< Position to center on
 } battleovertime;
 
@@ -32,6 +33,7 @@ extern struct battleufo
 extern boolean battleprisons;
 extern INT32 nummapboxes, numgotboxes; // keep track of spawned battle mode items
 extern UINT8 maptargets, numtargets;
+extern boolean g_emeraldWin;
 
 INT32 K_StartingBumperCount(void);
 boolean K_IsPlayerWanted(player_t *player);

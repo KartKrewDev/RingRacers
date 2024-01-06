@@ -46,6 +46,7 @@
 #include "k_objects.h"
 #include "music.h"
 #include "k_dialogue.h"
+#include "m_easing.h"
 
 #include "lua_profile.h"
 
@@ -767,6 +768,43 @@ void P_RunChaseCameras(void)
 	}
 }
 
+static fixed_t P_GetDarkness(tic_t start, tic_t end)
+{
+	if (leveltime <= end)
+	{
+		tic_t fade = end - DARKNESS_FADE_TIME;
+		tic_t t;
+
+		if (leveltime < fade) // dark or darkening
+		{
+			t = leveltime - start;
+			t = min(t, DARKNESS_FADE_TIME);
+		}
+		else // lightening
+		{
+			t = end - leveltime;
+		}
+
+		return Easing_Linear((t * FRACUNIT) / DARKNESS_FADE_TIME, 0, FRACUNIT/7);
+	}
+
+	return 0;
+}
+
+static void P_TickDarkness(void)
+{
+	const fixed_t globalValue = P_GetDarkness(g_darkness.start, g_darkness.end);
+	UINT8 i;
+
+	for (i = 0; i <= r_splitscreen; ++i)
+	{
+		const player_t *p = &players[displayplayers[i]];
+		fixed_t value = P_GetDarkness(p->darkness_start, p->darkness_end);
+
+		g_darkness.value[i] = value ? value : globalValue;
+	}
+}
+
 //
 // P_Ticker
 //
@@ -1045,22 +1083,7 @@ void P_Ticker(boolean run)
 		if (racecountdown > 1)
 			racecountdown--;
 
-		const fixed_t darkdelta = FRACUNIT/50;
-		const fixed_t maxdark = FRACUNIT/7;
-		if (darktimer) // dark or darkening
-		{
-			darktimer--;
-			darkness += darkdelta;
-			darkness = min(darkness, maxdark);
-		}
-		else if (darkness >= darkdelta) // lightening
-		{
-			darkness -= darkdelta;
-		}
-		else // light
-		{
-			darkness = 0;
-		}
+		P_TickDarkness();
 
 		if (exitcountdown >= 1)
 		{

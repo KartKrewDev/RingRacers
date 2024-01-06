@@ -2296,7 +2296,7 @@ static void Command_Tunes_f(void)
 	Music_Play("stereo");
 
 	if (argc > 3)
-		Music_Seek("stereo", (atoi(COM_Argv(3)) * TICRATE) / 1000);
+		Music_Seek("stereo", atoi(COM_Argv(3)));
 
 	if (argc > 2)
 	{
