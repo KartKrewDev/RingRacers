@@ -167,6 +167,7 @@ struct TargetTracking
 private:
 	Graphics graphics() const
 	{
+		using layers = decltype(Animation::layers);
 		switch (mobj->type)
 		{
 		case MT_SUPER_FLICKY:
@@ -196,7 +197,9 @@ private:
 					{{8, 2, {kp_capsuletarget_near[1]}}}, // 4P
 				},
 				{{ // Far
-					{2, 3, {kp_capsuletarget_far[0], kp_capsuletarget_far_text}}, // 1P
+					{2, 3, foreground ?
+						layers {kp_capsuletarget_far[0], kp_capsuletarget_far_text} :
+						layers {kp_capsuletarget_far[0]}}, // 1P
 					{{2, 3, {kp_capsuletarget_far[1]}}}, // 4P
 				}},
 			};
