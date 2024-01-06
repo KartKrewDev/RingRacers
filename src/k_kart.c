@@ -3831,7 +3831,11 @@ void K_DoGuardBreak(mobj_t *t1, mobj_t *t2) {
 
 	S_StartSound(t1, sfx_gbrk);
 	K_AddHitLag(t1, 24, true);
-	P_DamageMobj(t1, t2, t2, 1, DMG_STING);
+
+	angle_t thrangle = R_PointToAngle2(t1->x, t1->y, t2->x, t2->y);
+	P_Thrust(t1, thrangle, 7*mapobjectscale);
+
+	P_DamageMobj(t1, t2, t2, 1, DMG_TUMBLE);
 
 	clash = P_SpawnMobj((t1->x/2) + (t2->x/2), (t1->y/2) + (t2->y/2), (t1->z/2) + (t2->z/2), MT_GUARDBREAK);
 
