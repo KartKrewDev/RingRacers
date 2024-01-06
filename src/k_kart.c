@@ -3471,7 +3471,7 @@ fixed_t K_GetKartSpeed(const player_t *player, boolean doboostpower, boolean dor
 
 		if (player->spheres > 0)
 		{
-			fixed_t sphereAdd = (FRACUNIT/40); // 100% at max
+			fixed_t sphereAdd = (FRACUNIT/60); // 66% at max
 			finalspeed = FixedMul(finalspeed, FRACUNIT + (sphereAdd * player->spheres));
 		}
 
