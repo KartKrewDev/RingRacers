@@ -3411,6 +3411,9 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	if (source && source->player && target)
 		G_GhostAddHit((INT32) (source->player - players), target);
 
+	if ((gametyperules & GTR_BUMPERS) && !battleprisons)
+		laglength /= 2;
+
 	K_SetHitLagForObjects(target, inflictor, source, laglength, true);
 
 	target->flags2 |= MF2_ALREADYHIT;

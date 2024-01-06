@@ -664,7 +664,7 @@ Obj_MonitorOnDamage
 	monitor_rammingspeed(monitor) = inflictor
 		? FixedDiv(FixedHypot(inflictor->momx, inflictor->momy), 4 * inflictor->radius) : 0;
 	monitor->hitlag =
-		6 * get_damage_multiplier(monitor) / FRACUNIT;
+		3 * get_damage_multiplier(monitor) / FRACUNIT;
 }
 
 void
