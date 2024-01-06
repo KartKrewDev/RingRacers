@@ -6454,6 +6454,7 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 	WRITEUINT16(save->p, battleovertime.enabled);
 	WRITEFIXED(save->p, battleovertime.radius);
 	WRITEFIXED(save->p, battleovertime.initial_radius);
+	WRITEUINT32(save->p, battleovertime.start);
 	WRITEFIXED(save->p, battleovertime.x);
 	WRITEFIXED(save->p, battleovertime.y);
 	WRITEFIXED(save->p, battleovertime.z);
@@ -6639,6 +6640,7 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 	battleovertime.enabled = READUINT16(save->p);
 	battleovertime.radius = READFIXED(save->p);
 	battleovertime.initial_radius = READFIXED(save->p);
+	battleovertime.start = READUINT32(save->p);
 	battleovertime.x = READFIXED(save->p);
 	battleovertime.y = READFIXED(save->p);
 	battleovertime.z = READFIXED(save->p);

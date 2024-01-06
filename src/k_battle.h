@@ -20,6 +20,7 @@ extern struct battleovertime
 	UINT16 enabled; ///< Has this been initalized yet?
 	fixed_t radius; ///< Radius of kill field
 	fixed_t initial_radius; ///< Starting radius of kill field
+	tic_t start; ///< Leveltime to decrease kill field radius from
 	fixed_t x, y, z; ///< Position to center on
 } battleovertime;
 

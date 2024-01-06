@@ -23,6 +23,7 @@
 #include "k_rank.h"
 #include "music.h"
 #include "hu_stuff.h"
+#include "m_easing.h"
 
 #define BARRIER_MIN_RADIUS (768 * mapobjectscale)
 
@@ -701,6 +702,7 @@ void K_RunBattleOvertime(void)
 		{
 			S_StartSound(NULL, sfx_kc40);
 			P_StartQuake(5, 64 * mapobjectscale, 0, NULL);
+			battleovertime.start = leveltime;
 		}
 
 		if (!Music_Playing("level") && !Music_Playing("battle_overtime"))
@@ -719,7 +721,11 @@ void K_RunBattleOvertime(void)
 		const fixed_t oldradius = battleovertime.radius;
 
 		if (battleovertime.radius > minradius)
-			battleovertime.radius -= (battleovertime.initial_radius / (30*TICRATE));
+		{
+			tic_t t = leveltime - battleovertime.start;
+			const tic_t duration = 30*TICRATE;
+			battleovertime.radius = Easing_OutSine(min(t, duration) * FRACUNIT / duration, battleovertime.initial_radius, minradius);
+		}
 
 		if (battleovertime.radius <= minradius && oldradius > minradius)
 		{
