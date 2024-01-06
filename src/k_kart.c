@@ -11581,7 +11581,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		if (K_PowerUpRemaining(player, POWERUP_BADGE))
 		{
 			chargingwhip = false;
-			releasedwhip = (ATTACK_IS_DOWN && player->rings <= 0);
+			releasedwhip = (ATTACK_IS_DOWN && player->rings <= 0 && player->itemflags & IF_USERINGS);
 			player->instaWhipCharge = INSTAWHIP_CHARGETIME;
 			player->instaWhipCooldown = 0;
 		}
