@@ -4951,8 +4951,7 @@ void G_LoadGameData(void)
 				M_Memcpy(&mapheaderinfo[mapnum]->records, &dummyrecord, sizeof(recorddata_t));
 			}
 			else if (
-				((dummyrecord.mapvisited & MV_PERSISTUNLOADED) != 0
-					&& (dummyrecord.mapvisited & MV_BEATEN) != 0)
+				(dummyrecord.mapvisited & MV_BEATEN)
 				|| dummyrecord.time != 0
 				|| dummyrecord.lap != 0
 			)
@@ -5553,11 +5552,6 @@ void G_SaveGameData(void)
 			WRITESTRINGL(save.p, mapheaderinfo[i]->lumpname, MAXMAPLUMPNAME);
 
 			UINT8 mapvisitedtemp = (mapheaderinfo[i]->records.mapvisited & MV_MAX);
-
-			if ((mapheaderinfo[i]->menuflags & (LF2_FINISHNEEDED|LF2_HIDEINMENU)))
-			{
-				mapvisitedtemp |= MV_FINISHNEEDED;
-			}
 
 			WRITEUINT8(save.p, mapvisitedtemp);
 
