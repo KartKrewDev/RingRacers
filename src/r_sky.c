@@ -37,9 +37,13 @@ INT32 skyflatnum;
 */
 INT32 skytexture;
 
-/**	\brief the horizon line in a 256x128 sky texture
+/**	\brief the horizon line of the sky texture
 */
 INT32 skytexturemid;
+
+/**	\brief the x offset of the sky texture
+*/
+INT32 skytextureoffset;
 
 /**	\brief the scale of the sky
 */
@@ -61,12 +65,19 @@ char globallevelskytexture[9];
 */
 void R_SetupSkyDraw(void)
 {
-	// the horizon line in a 256x128 sky texture
-	skytexturemid = (textures[skytexture]->height/2)<<FRACBITS;
+	// the horizon line in the sky texture
+	skytexturemid = (textures[skytexture]->height / 2) << FRACBITS;
+	skytextureoffset = 0;
 
-	// Sal: Add arbritrary offset that makes it
-	// line up with the horizon line special
-	skytexturemid += (16 << FRACBITS);
+	if (textures[skytexture]->type == TEXTURETYPE_SINGLEPATCH)
+	{
+		// Sal: Allow for sky offsets
+		texpatch_t *const tex_patch = &textures[skytexture]->patches[0];
+		patch_t *patch = W_CachePatchNumPwad(tex_patch->wad, tex_patch->lump, PU_CACHE);
+
+		skytexturemid += (patch->topoffset << FRACBITS);
+		skytextureoffset += (patch->leftoffset << FRACBITS);
+	}
 
 	R_SetSkyScale();
 }

@@ -734,6 +734,8 @@ static void R_DrawSkyPlane(visplane_t *pl, void(*colfunc)(drawcolumndata_t*), bo
 				}
 
 				INT32 angle = (pl->viewangle + xtoviewangle[viewssnum][x + i])>>ANGLETOSKYSHIFT;
+				angle -= (skytextureoffset >> FRACBITS);
+
 				dc.iscale = FixedMul(skyscale[viewssnum], FINECOSINE(xtoviewangle[viewssnum][x + i]>>ANGLETOFINESHIFT));
 				dc.x = x + i;
 				dc.source =
