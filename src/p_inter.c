@@ -3211,7 +3211,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 						source->player->invincibilitytimer += kinvextend;
 						// This has a scaling boost type now, don't let it get too crazy
-						source->player->invincibilitytimer = max(source->player->invincibilitytimer, 20*TICRATE);
+						source->player->invincibilitytimer = min(source->player->invincibilitytimer, 20*TICRATE);
 
 						if (P_IsDisplayPlayer(source->player))
 							S_StartSound(NULL, sfx_gsha7);
@@ -3329,7 +3329,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			}
 
 			if (gametyperules & GTR_BUMPERS)
-				player->spheres = min(player->spheres + 5, 40);
+				player->spheres = min(player->spheres + 10, 40);
 
 			if ((hardhit == true) || cv_kartdebughuddrop.value)
 			{
@@ -3410,6 +3410,9 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 	if (source && source->player && target)
 		G_GhostAddHit((INT32) (source->player - players), target);
+
+	if ((gametyperules & GTR_BUMPERS) && !battleprisons)
+		laglength /= 2;
 
 	K_SetHitLagForObjects(target, inflictor, source, laglength, true);
 

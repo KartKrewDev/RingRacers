@@ -3471,7 +3471,7 @@ fixed_t K_GetKartSpeed(const player_t *player, boolean doboostpower, boolean dor
 
 		if (player->spheres > 0)
 		{
-			fixed_t sphereAdd = (FRACUNIT/40); // 100% at max
+			fixed_t sphereAdd = (FRACUNIT/60); // 66% at max
 			finalspeed = FixedMul(finalspeed, FRACUNIT + (sphereAdd * player->spheres));
 		}
 
@@ -3552,7 +3552,7 @@ UINT16 K_GetKartFlashing(const player_t *player)
 
 	if (gametyperules & GTR_BUMPERS)
 	{
-		return 1;
+		return 0;
 	}
 
 	if (player == NULL)
@@ -3831,7 +3831,11 @@ void K_DoGuardBreak(mobj_t *t1, mobj_t *t2) {
 
 	S_StartSound(t1, sfx_gbrk);
 	K_AddHitLag(t1, 24, true);
-	P_DamageMobj(t1, t2, t2, 1, DMG_STING);
+
+	angle_t thrangle = R_PointToAngle2(t1->x, t1->y, t2->x, t2->y);
+	P_Thrust(t1, thrangle, 7*mapobjectscale);
+
+	P_DamageMobj(t1, t2, t2, 1, DMG_TUMBLE);
 
 	clash = P_SpawnMobj((t1->x/2) + (t2->x/2), (t1->y/2) + (t2->y/2), (t1->z/2) + (t2->z/2), MT_GUARDBREAK);
 
@@ -8446,11 +8450,15 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 			if (player->spheredigestion == 0)
 			{
-				player->spheres--;
+				if (player->spheres > 5)
+					player->spheres--;
 				player->spheredigestion = spheredigestion;
 			}
 
 			if (K_PlayerGuard(player) && !K_PowerUpRemaining(player, POWERUP_BARRIER) && (player->ebrakefor%6 == 0))
+				player->spheres--;
+
+			if (player->instaWhipCharge && !K_PowerUpRemaining(players, POWERUP_BADGE) && leveltime%6 == 0)
 				player->spheres--;
 		}
 		else
@@ -8693,6 +8701,14 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->justbumped > 0)
 		player->justbumped--;
+
+	if (K_PressingEBrake(player) == true && onground)
+	{
+		if (gametyperules & GTR_BUMPERS)
+			player->instaWhipCooldown = INSTAWHIP_DROPGUARD; // Delay whip out of spindash and guard.
+		else
+			player->instaWhipCharge = 0; // Not that important in race, avoid black flash.
+	}
 
 	if (player->instaWhipCooldown)
 	{
@@ -11568,9 +11584,18 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 		if (K_PowerUpRemaining(player, POWERUP_BADGE))
 		{
+			if (P_PlayerInPain(player))
+			{
+				releasedwhip = false;
+				player->instaWhipCharge = 0;
+			}
+			else
+			{
+				releasedwhip = (ATTACK_IS_DOWN && player->rings <= 0 && player->itemflags & IF_USERINGS);
+				player->instaWhipCharge = INSTAWHIP_CHARGETIME;
+			}
+
 			chargingwhip = false;
-			releasedwhip = (ATTACK_IS_DOWN && player->rings <= 0);
-			player->instaWhipCharge = INSTAWHIP_CHARGETIME;
 			player->instaWhipCooldown = 0;
 		}
 

@@ -150,7 +150,7 @@ void K_CheckBumpers(void)
 		}
 	}
 
-	if (numingame <= 2 && battleovertime.enabled && battleovertime.radius <= BARRIER_MIN_RADIUS)
+	if (numingame - eliminated <= 2 && battleovertime.enabled && battleovertime.radius <= BARRIER_MIN_RADIUS)
 	{
 		Music_Stop("battle_overtime");
 		S_StartSound(NULL, sfx_kc4b); // Loud noise helps mask transition
@@ -383,7 +383,7 @@ void K_RunPaperItemSpawners(void)
 		return;
 	}
 
-	if (leveltime == g_battleufo.due)
+	if (leveltime == g_battleufo.due && overtime == false)
 	{
 		Obj_SpawnBattleUFOFromSpawner();
 	}
@@ -722,8 +722,9 @@ void K_RunBattleOvertime(void)
 
 		if (battleovertime.radius > minradius)
 		{
+			extern consvar_t cv_barriertime;
 			tic_t t = leveltime - battleovertime.start;
-			const tic_t duration = 30*TICRATE;
+			const tic_t duration = cv_barriertime.value * TICRATE;
 			battleovertime.radius = Easing_OutSine(min(t, duration) * FRACUNIT / duration, battleovertime.initial_radius, minradius);
 		}
 
