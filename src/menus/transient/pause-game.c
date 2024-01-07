@@ -336,7 +336,14 @@ void M_HandlePauseMenuGametype(INT32 choice)
 			M_ClearMenus(true);
 			if (server || IsPlayerAdmin(consoleplayer))
 			{
-				D_SetupVote(menugametype);
+				if (cv_advancemap.value == 3) // Voting screen.
+				{
+					D_SetupVote(menugametype);
+				}
+				else // ideally for "random" only, but no sane fallback for "same" and "next"
+				{
+					COM_ImmedExecute(va("randommap -gt %s", gametypes[menugametype]->name));
+				}
 			}
 			return;
 		}
