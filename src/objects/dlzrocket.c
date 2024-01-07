@@ -77,7 +77,7 @@ void Obj_DLZRocketSpecial(mobj_t *mo, player_t *p)
 
 	p->mo->z = mo->z + 16*P_MobjFlip(p->mo)*mapobjectscale;
 	P_SetPlayerAngle(p->mo->player, mo->angle);
-	p->dlzrocket = true;
+	p->dlzrocket = 1;
 	p->dlzrocketangle = mo->angle;
 	p->dlzrocketanglev = 0;
 	p->dlzrocketspd = DLZROCKETSPEED;
@@ -119,7 +119,7 @@ void Obj_playerDLZRocket(player_t *p)
 	if (p->dlzrocketspd < maxspd)
 		p->dlzrocketspd++;
 	else if (p->dlzrocketspd > maxspd)
-		p->dlzrocket--;
+		p->dlzrocketspd--;
 
 	// so long as PF_STASIS is applied, let the angle be overwritten freely.
 	// this is used by seasaws but can be used for misc modding purposes too.
