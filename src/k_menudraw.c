@@ -6406,7 +6406,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			templevelsearch.cupmode = true;
 			templevelsearch.timeattack = false;
 			templevelsearch.tutorial = false;
-			templevelsearch.checklocked = false;
+			templevelsearch.checklocked = true;
 
 			M_DrawCupPreview(146, &templevelsearch);
 
