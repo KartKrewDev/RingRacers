@@ -138,6 +138,7 @@ void Obj_DashRingTouch(mobj_t *ring, player_t *player)
 	player->carry = CR_DASHRING;
 	player->dashRingPullTics = DASHRING_PULL_TICS;
 	player->dashRingPushTics = 0;
+	player->turbine = 0;
 }
 
 static fixed_t GetPlayerDashRingZ(player_t *player, mobj_t *ring)
