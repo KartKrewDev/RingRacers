@@ -3144,7 +3144,13 @@ void M_DrawCupSelect(void)
 	&& templevelsearch.cup != NULL
 	&& templevelsearch.cup == cupsavedata.cup)
 	{
-		V_DrawScaledPatch(x + 32, y + 32, 0, W_CachePatchName("CUPBKUP2", PU_CACHE));
+		V_DrawScaledPatch(
+			14 + (cupgrid.x*42) + 32,
+			20 + (cupgrid.y*44) + 32
+				+ ((cupgrid.cache_secondrowlocked == true) ? 28 : 0),
+			0,
+			W_CachePatchName("CUPBKUP2", PU_CACHE)
+		);
 	}
 
 	INT16 ty = M_EaseWithTransition(Easing_Linear, 5 * 24);
