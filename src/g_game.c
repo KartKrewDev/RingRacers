@@ -4374,26 +4374,27 @@ static void G_DoCompleted(void)
 	// If the current gametype has no intermission screen set, then don't start it.
 	Y_DetermineIntermissionType();
 
-	if (intertype == int_none)
+	if (intertype != int_none)
 	{
-		G_UpdateVisited();
-		if (grandprixinfo.gp == true)
-		{
-			K_UpdateGPRank(&grandprixinfo.rank);
-		}
-		G_AfterIntermission();
-	}
-	else
-	{
-		G_SetGamestate(GS_INTERMISSION);
 		Y_StartIntermission();
-		G_UpdateVisited();
 	}
+	else if (grandprixinfo.gp == true)
+	{
+		K_UpdateGPRank(&grandprixinfo.rank);
+	}
+
+	G_UpdateVisited();
 
 	// This isn't in the above blocks because many
 	// mechanisms can queue up a gamedata save.
 	if (gamedata->deferredsave)
 		G_SaveGameData();
+
+	// Seperate from the above, as Y_StartIntermission can no-sell.
+	if (intertype == int_none)
+	{
+		G_AfterIntermission();
+	}
 }
 
 // See also F_EndCutscene, the only other place which handles intra-map/ending transitions

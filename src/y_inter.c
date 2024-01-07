@@ -1982,10 +1982,7 @@ void Y_StartIntermission(void)
 	// determine the tic everybody's scores/PWR starts getting sorted
 	sorttic = -1;
 	if (!timer)
-	{
-		// Prevent a weird bug
-		timer = 1;
-	}
+		;
 	else if (
 		( // Match Race or Time Attack
 			netgame == false
@@ -2033,11 +2030,6 @@ void Y_StartIntermission(void)
 	if (prevmap >= nummapheaders || !mapheaderinfo[prevmap])
 		I_Error("Y_StartIntermission: Internal map ID %d not found (nummapheaders = %d)", prevmap, nummapheaders);
 
-	if (timer > 1 && musiccountdown == 0)
-		Music_Play("intermission");
-
-	S_ShowMusicCredit(); // Always call
-
 	switch (intertype)
 	{
 		case int_score:
@@ -2058,9 +2050,6 @@ void Y_StartIntermission(void)
 			break;
 	}
 
-	LUA_HUD_DestroyDrawList(luahuddrawlist_intermission);
-	luahuddrawlist_intermission = LUA_HUD_CreateDrawList();
-
 	if (powertype != PWRLV_DISABLED)
 	{
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -2077,6 +2066,22 @@ void Y_StartIntermission(void)
 		K_CashInPowerLevels();
 		SV_BumpMatchStats();
 	}
+
+	if (!timer)
+	{
+		Y_EndIntermission();
+		return;
+	}
+
+	G_SetGamestate(GS_INTERMISSION);
+
+	if (musiccountdown == 0)
+		Music_Play("intermission");
+
+	S_ShowMusicCredit(); // Always call
+
+	LUA_HUD_DestroyDrawList(luahuddrawlist_intermission);
+	luahuddrawlist_intermission = LUA_HUD_CreateDrawList();
 
 	if (roundqueue.size > 0 && roundqueue.position == roundqueue.size)
 	{
