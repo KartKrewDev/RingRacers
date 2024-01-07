@@ -939,6 +939,8 @@ struct player_t
 
 	UINT16 infinitether; // Generic infinitether time, used for infinitether leniency.
 
+	UINT8 finalfailsafe; // When you can't Ringshooter, force respawn as a last ditch effort!
+
 	UINT8 lastsafelap;
 
 	mobj_t *stumbleIndicator;

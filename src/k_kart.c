@@ -8624,6 +8624,20 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			K_RemoveGrowShrink(player);
 	}
 
+	if (player->respawn.state == RESPAWNST_NONE && (player->cmd.buttons & BT_RESPAWN) == BT_RESPAWN)
+	{
+		player->finalfailsafe++; // Decremented by ringshooter to "freeze" this timer
+		if (player->finalfailsafe >= 4*TICRATE)
+		{
+			K_DoIngameRespawn(player);
+			player->finalfailsafe = 0;
+		}
+	}
+	else
+	{
+		player->finalfailsafe = 0;
+	}
+
 	if (player->superring)
 	{
 		player->nextringaward++;

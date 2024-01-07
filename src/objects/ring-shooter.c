@@ -688,6 +688,10 @@ void Obj_RingShooterInput(player_t *player)
 	if (AllowRingShooter(player) == true
 		&& (player->cmd.buttons & BT_RESPAWN) == BT_RESPAWN)
 	{
+		// "Freeze" final-failsafe timer if we're eligible to ringshooter, but don't reset it.
+		if (player->finalfailsafe)
+			player->finalfailsafe--;
+
 		if (P_MobjWasRemoved(base) == true)
 		{
 			SpawnRingShooter(player);
