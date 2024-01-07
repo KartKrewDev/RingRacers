@@ -1468,6 +1468,11 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 
 		case UC_UNLOCKPERCENT:
 		{
+			// Don't let netgame sessions intefere
+			// (or have this give a performance hit)
+			if (Playing())
+				return false;
+
 			UINT16 i, unlocked = cn->extrainfo2, total = 0;
 
 			// Special case for maps
