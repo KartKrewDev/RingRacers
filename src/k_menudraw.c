@@ -2687,24 +2687,28 @@ void M_DrawRaceDifficulty(void)
 
 // LEVEL SELECT
 
-static void M_DrawCupPreview(INT16 y, levelsearch_t *levelsearch)
+static void M_DrawCupPreview(INT16 y, levelsearch_t *baselevelsearch)
 {
+	levelsearch_t locklesslevelsearch = *baselevelsearch; // full copy
+	locklesslevelsearch.checklocked = false;
+
 	UINT8 i = 0;
-	INT16 maxlevels = M_CountLevelsToShowInList(levelsearch);
+	INT16 maxlevels = M_CountLevelsToShowInList(&locklesslevelsearch);
 	const fixed_t step = (82 * FRACUNIT);
 	fixed_t previewanimwork = (cupgrid.previewanim * FRACUNIT) + rendertimefrac_unpaused;
 	fixed_t x = -(previewanimwork % step);
-	INT16 add;
-	INT16 map, start = M_GetFirstLevelInList(&i, levelsearch);
+	INT16 map, start = M_GetFirstLevelInList(&i, &locklesslevelsearch);
 	UINT8 starti = i;
 
-	if (levelsearch->cup && maxlevels > 0)
+	patch_t *staticpat = unvisitedlvl[cupgrid.previewanim % 4];
+
+	if (baselevelsearch->cup && maxlevels > 0)
 	{
-		add = (previewanimwork / step) % maxlevels;
+		INT16 add = (previewanimwork / step) % maxlevels;
 		map = start;
 		while (add > 0)
 		{
-			map = M_GetNextLevelInList(map, &i, levelsearch);
+			map = M_GetNextLevelInList(map, &i, &locklesslevelsearch);
 
 			if (map >= nummapheaders)
 			{
@@ -2721,24 +2725,35 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *levelsearch)
 				i = starti;
 			}
 
-			K_DrawMapThumbnail(
-				x + FRACUNIT, (y+2)<<FRACBITS,
-				80<<FRACBITS,
-				0,
-				map,
-				NULL);
+			if (M_CanShowLevelInList(map, baselevelsearch))
+			{
+				K_DrawMapThumbnail(
+					x + FRACUNIT, (y+2)<<FRACBITS,
+					80<<FRACBITS,
+					0,
+					map,
+					NULL);
+			}
+			else
+			{
+				V_DrawFixedPatch(
+					x + FRACUNIT, (y+2) * FRACUNIT,
+					FRACUNIT,
+					0,
+					staticpat,
+					NULL);
+			}
 
 			x += step;
 
-			map = M_GetNextLevelInList(map, &i, levelsearch);
+			map = M_GetNextLevelInList(map, &i, &locklesslevelsearch);
 		}
 	}
 	else
 	{
 		while (x < BASEVIDWIDTH * FRACUNIT)
 		{
-			patch_t *st = unvisitedlvl[cupgrid.previewanim % 4];
-			V_DrawFixedPatch(x + FRACUNIT, (y+2) * FRACUNIT, FRACUNIT, 0, st, NULL);
+			V_DrawFixedPatch(x + FRACUNIT, (y+2) * FRACUNIT, FRACUNIT, 0, staticpat, NULL);
 			x += step;
 		}
 	}
