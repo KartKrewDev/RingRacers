@@ -572,8 +572,8 @@ struct mapheader_t
 #define LF_SUBTRACTNUM        (1<<3) ///< Use subtractive position number (for bright levels)
 
 #define LF2_HIDEINMENU		(1<<0) ///< Hide in the multiplayer menu
-#define LF2_HIDEINSTATS		(1<<1) ///< Hide in the statistics screen
-#define LF2_NOTIMEATTACK	(1<<2) ///< Hide this map in Time Attack modes
+#define LF2_NOTIMEATTACK	(1<<1) ///< Hide this map in Time Attack modes
+#define LF2_NOVISITNEEDED	(1<<2) ///< Map does not require visitation to be selectable
 #define LF2_FINISHNEEDED	(1<<3) ///< Not available in Time Attack modes until you beat the level
 
 extern mapheader_t** mapheaderinfo;

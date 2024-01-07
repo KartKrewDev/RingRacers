@@ -1372,13 +1372,6 @@ void readlevelheader(MYFILE *f, char * name)
 				else
 					mapheaderinfo[num]->menuflags &= ~LF2_HIDEINMENU;
 			}
-			else if (fastcmp(word, "HIDEINSTATS"))
-			{
-				if (i || word2[0] == 'T' || word2[0] == 'Y')
-					mapheaderinfo[num]->menuflags |= LF2_HIDEINSTATS;
-				else
-					mapheaderinfo[num]->menuflags &= ~LF2_HIDEINSTATS;
-			}
 			else if (fastcmp(word, "NOTIMEATTACK") || fastcmp(word, "NORECORDATTACK"))
 			{ // RECORDATTACK is an accepted alias
 				if (i || word2[0] == 'T' || word2[0] == 'Y')
@@ -1392,6 +1385,13 @@ void readlevelheader(MYFILE *f, char * name)
 					mapheaderinfo[num]->menuflags |= LF2_FINISHNEEDED;
 				else
 					mapheaderinfo[num]->menuflags &= ~LF2_FINISHNEEDED;
+			}
+			else if (fastcmp(word, "NOVISITNEEDED"))
+			{
+				if (i || word2[0] == 'T' || word2[0] == 'Y')
+					mapheaderinfo[num]->menuflags |= LF2_NOVISITNEEDED;
+				else
+					mapheaderinfo[num]->menuflags &= ~LF2_NOVISITNEEDED;
 			}
 			else if (fastcmp(word, "GRAVITY"))
 				mapheaderinfo[num]->gravity = FLOAT_TO_FIXED(atof(word2));

@@ -21,13 +21,22 @@ static boolean M_StatisticsAddMap(UINT16 map, cupheader_t *cup, boolean *headere
 		return false;
 
 	// Check for no visibility
-	if (mapheaderinfo[map]->menuflags & (LF2_HIDEINSTATS|LF2_HIDEINMENU))
+	if (mapheaderinfo[map]->menuflags & LF2_HIDEINMENU)
 		return false;
 
+	// Check for visitation
+	// (M_CanShowLevelInList also checks being the first map in a cup,
+	// but we don't need to do this here because it'd just muddy stats!)
+	if (!(mapheaderinfo[map]->menuflags & LF2_NOVISITNEEDED)
+	&& !(mapheaderinfo[map]->records.mapvisited & MV_VISITED))
+		return false;
+
+#if 0
 	// Check for completion
 	if ((mapheaderinfo[map]->menuflags & LF2_FINISHNEEDED)
 	&& !(mapheaderinfo[map]->records.mapvisited & MV_BEATEN))
 		return false;
+#endif
 
 	// Check for unlock
 	if (M_MapLocked(map+1))
@@ -80,11 +89,7 @@ static void M_StatisticsMaps(void)
 	headerexists = false;
 	for (i = 0; i < nummapheaders; i++)
 	{
-		if (M_StatisticsAddMap(i, NULL, &headerexists, true))
-		{
-			if (!(mapheaderinfo[i]->records.mapvisited & MV_BEATEN))
-				break;
-		}
+		M_StatisticsAddMap(i, NULL, &headerexists, true);
 	}
 
 	if ((i = statisticsmenu.numextramedals) != 0)

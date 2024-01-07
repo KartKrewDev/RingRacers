@@ -205,6 +205,17 @@ void M_PickMenuBGMap(void)
 			continue;
 		}
 
+		if (!(mapheaderinfo[i]->menuflags & LF2_NOVISITNEEDED)
+		&& !(mapheaderinfo[i]->records.mapvisited & MV_VISITED)
+		&& !(
+			mapheaderinfo[i]->cup
+			&& mapheaderinfo[i]->cup->cachedlevels[0] == i
+		))
+		{
+			// Not visited OR head of cup
+			continue;
+		}
+
 		if (M_MapLocked(i + 1) == true)
 		{
 			// We haven't earned this one.
@@ -7177,7 +7188,7 @@ static void M_DrawStatsMaps(void)
 		for (i = 0; i < nummapheaders; i++)
 		{
 			// Check for no visibility
-			if (!mapheaderinfo[i] || (mapheaderinfo[i]->menuflags & (LF2_NOTIMEATTACK|LF2_HIDEINSTATS|LF2_HIDEINMENU)))
+			if (!mapheaderinfo[i] || (mapheaderinfo[i]->menuflags & (LF2_NOTIMEATTACK|LF2_HIDEINMENU)))
 				continue;
 
 			// Has to be accessible via time attack
