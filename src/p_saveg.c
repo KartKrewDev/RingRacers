@@ -567,6 +567,8 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		WRITEUINT16(save->p, players[i].infinitether);
 
+		WRITEUINT8(save->p, players[i].finalfailsafe);
+
 		WRITEUINT8(save->p, players[i].lastsafelap);
 
 		WRITEMEM(save->p, players[i].public_key, PUBKEYLENGTH);
@@ -1125,6 +1127,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].trickcharge = READUINT16(save->p);
 
 		players[i].infinitether = READUINT16(save->p);
+
+		players[i].finalfailsafe = READUINT8(save->p);
 
 		players[i].lastsafelap = READUINT8(save->p);
 
