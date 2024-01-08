@@ -38,6 +38,7 @@
 #define controller_mode(o) ((o)->movecount)
 #define controller_zofs(o) ((o)->sprzoff)
 #define controller_expiry(o) ((o)->fuse)
+#define controller_intangible(o) ((o)->threshold)
 
 namespace
 {
@@ -63,6 +64,7 @@ constexpr fixed_t kWeakSpeed = FRACUNIT/2;
 constexpr fixed_t kRebound = 8*FRACUNIT/9;
 
 constexpr tic_t kDelay = 8;
+constexpr tic_t kDamageCooldown = TICRATE;
 constexpr tic_t kStunTime = 10*TICRATE;
 constexpr tic_t kBlockTime = 5*TICRATE;
 
@@ -128,6 +130,9 @@ struct Controller : mobj_t
 
 	tic_t expiry() const { return controller_expiry(this); }
 	void expiry(tic_t n) { controller_expiry(this) = n; }
+
+	tic_t intangible() const { return controller_intangible(this); }
+	void intangible(tic_t n) { controller_intangible(this) = n; }
 
 	static Controller* spawn(player_t* player, tic_t time)
 	{
@@ -480,6 +485,11 @@ struct Flicky : mobj_t
 			return;
 		}
 
+		if (leveltime < controller()->intangible())
+		{
+			return;
+		}
+
 		if (P_DamageMobj(mobj, this, source(), 1, DMG_NORMAL))
 		{
 			P_InstaThrust(mobj, K_MomentumAngleReal(this), FixedHypot(momx, momy));
@@ -490,6 +500,7 @@ struct Flicky : mobj_t
 			P_SetTarget(&mobj->player->flickyAttacker, this);
 
 			controller()->mode(Controller::Mode::kAttached);
+			controller()->intangible(leveltime + mobj->hitlag + kDamageCooldown);
 		}
 
 		S_StartSound(this, sfx_supflk);
