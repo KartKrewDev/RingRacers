@@ -54,6 +54,7 @@ constexpr int kDescendHeight = 256;
 constexpr int kDescendSmoothing = 16;
 
 constexpr int kSearchRadius = 1920;
+constexpr int kScaredRadius = 2048;
 constexpr int kFlightRadius = 1280;
 constexpr int kPeckingRadius = 256;
 
@@ -199,6 +200,8 @@ struct Controller : mobj_t
 	}
 
 	void search();
+	void range_check();
+	void collect();
 };
 
 struct Flicky : mobj_t
@@ -438,6 +441,7 @@ struct Flicky : mobj_t
 			if (AngleDelta(th, R_PointToAngle2(x + momx, y + momy, pos.x, pos.y)) > ANG1)
 			{
 				mode(Mode::kReserved);
+				controller()->collect();
 			}
 			else
 			{
@@ -616,6 +620,8 @@ void Controller::search()
 		if (chasing() && flicky())
 		{
 			// Detach flicky from swarm. This one keeps its previous target.
+			// FIXME: when this one's target dies, it will
+			// become dormant and not return to controller.
 			flicky(flicky()->next());
 		}
 
@@ -629,6 +635,51 @@ void Controller::search()
 			x->delay(x->phase() * kDelay);
 		}
 	}
+}
+
+void Controller::range_check()
+{
+	if (!chasing())
+	{
+		return;
+	}
+
+	if (FixedHypot(source()->x - chasing()->x, source()->y - chasing()->y) < kScaredRadius * mapobjectscale)
+	{
+		return;
+	}
+
+	if (chasing()->player)
+	{
+		P_SetTarget(&chasing()->player->flickyAttacker, nullptr);
+	}
+
+	chasing(nullptr);
+	mode(Mode::kReturning);
+
+	for (Flicky* x = flicky(); x; x = x->next())
+	{
+		x->next_target(nullptr);
+	}
+}
+
+void Controller::collect()
+{
+	if (mode() != Mode::kReturning)
+	{
+		return;
+	}
+
+	// Resume searching once all Flickys return
+	for (Flicky* x = flicky(); x; x = x->next())
+	{
+		if (x->mode() != Flicky::Mode::kReserved)
+		{
+			return;
+		}
+	}
+
+	mode(Mode::kOrbit);
 }
 
 }; // namespace
@@ -707,9 +758,11 @@ void Obj_SuperFlickyControllerThink(mobj_t* mobj)
 		break;
 
 	case Controller::Mode::kEnRoute:
+		x->range_check();
 		break;
 
 	case Controller::Mode::kAttached:
+		x->range_check();
 		x->search();
 		break;
 
