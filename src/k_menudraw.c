@@ -169,7 +169,7 @@ void M_DrawUnderline(INT32 left, INT32 right, INT32 y)
 
 static patch_t *addonsp[NUM_EXT+5];
 
-static patch_t *bgMapImage;
+static INT16 bgMapID = NEXTMAP_INVALID;
 void M_PickMenuBGMap(void)
 {
 	UINT16 *allowedMaps;
@@ -195,7 +195,7 @@ void M_PickMenuBGMap(void)
 
 		if ((mapheaderinfo[i]->typeoflevel & (TOL_SPECIAL|TOL_VERSUS)) != 0)
 		{
-			// Don't spoil Special Stages or bosses.
+			// Don't spoil Special or Versus.
 			continue;
 		}
 
@@ -221,12 +221,7 @@ void M_PickMenuBGMap(void)
 	}
 	Z_Free(allowedMaps);
 
-	bgMapImage = mapheaderinfo[ret]->thumbnailPic;
-
-	if (bgMapImage == NULL)
-	{
-		bgMapImage = W_CachePatchName("MENUBG4", PU_CACHE);
-	}
+	bgMapID = ret;
 }
 
 static fixed_t bgText1Scroll = 0;
@@ -271,9 +266,15 @@ void M_DrawMenuBackground(void)
 	fixed_t text1loop = SHORT(text1->height)*FRACUNIT;
 	fixed_t text2loop = SHORT(text2->width)*FRACUNIT;
 
-	if (bgMapImage == NULL)
+	if (bgMapID >= nummapheaders)
 	{
 		M_PickMenuBGMap();
+	}
+
+	patch_t *bgMapImage = mapheaderinfo[bgMapID]->thumbnailPic;
+	if (bgMapImage == NULL)
+	{
+		bgMapImage = W_CachePatchName("MENUBG4", PU_CACHE);
 	}
 
 	V_DrawFixedPatch(0, 0, FRACUNIT, 0, bgMapImage, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_SLATE, GTC_MENUCACHE));
@@ -2679,14 +2680,16 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *levelsearch)
 {
 	UINT8 i = 0;
 	INT16 maxlevels = M_CountLevelsToShowInList(levelsearch);
-	fixed_t x = -((cupgrid.previewanim % 82 * FRACUNIT + rendertimefrac) % (82 * FRACUNIT));
+	const fixed_t step = (82 * FRACUNIT);
+	fixed_t previewanimwork = (cupgrid.previewanim * FRACUNIT) + rendertimefrac_unpaused;
+	fixed_t x = -(previewanimwork % step);
 	INT16 add;
 	INT16 map, start = M_GetFirstLevelInList(&i, levelsearch);
 	UINT8 starti = i;
 
 	if (levelsearch->cup && maxlevels > 0)
 	{
-		add = (cupgrid.previewanim / 82) % maxlevels;
+		add = (previewanimwork / step) % maxlevels;
 		map = start;
 		while (add > 0)
 		{
@@ -2714,7 +2717,7 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *levelsearch)
 				map,
 				NULL);
 
-			x += 82 * FRACUNIT;
+			x += step;
 
 			map = M_GetNextLevelInList(map, &i, levelsearch);
 		}
@@ -2725,7 +2728,7 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *levelsearch)
 		while (x < BASEVIDWIDTH * FRACUNIT)
 		{
 			V_DrawFixedPatch(x + FRACUNIT, (y+2) * FRACUNIT, FRACUNIT, 0, st, NULL);
-			x += 82 * FRACUNIT;
+			x += step;
 		}
 	}
 }
