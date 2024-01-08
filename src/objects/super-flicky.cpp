@@ -473,6 +473,8 @@ struct Flicky : mobj_t
 				break;
 			}
 		}
+
+		noclip(chasing() && dist > kFlightRadius * mapobjectscale);
 	}
 
 	void rise()
@@ -523,6 +525,12 @@ struct Flicky : mobj_t
 		momx = -(momx);
 		momy = -(momy);
 		P_SetObjectMomZ(this, 8*FRACUNIT, false);
+	}
+
+	void noclip(bool n)
+	{
+		constexpr UINT32 kNoClipFlags = MF_NOCLIP | MF_NOCLIPHEIGHT;
+		flags = (flags & ~kNoClipFlags) | (kNoClipFlags * n);
 	}
 
 	void nerf()
