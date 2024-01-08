@@ -420,19 +420,27 @@ struct Flicky : mobj_t
 			fly(Fly::kNormal);
 		}
 
+		auto speed_lines = [&](angle_t dir)
+		{
+			if (dist > kPeckingRadius * mapobjectscale)
+			{
+				spawn_speed_lines(dir);
+			}
+		};
+
 		if (d > ANGLE_45 && dist > kFlightRadius * mapobjectscale)
 		{
 			// Cut momentum when too far outside of intended trajectory
 			momx = FixedMul(momx, kRebound);
 			momy = FixedMul(momy, kRebound);
 
-			spawn_speed_lines(th);
+			speed_lines(th);
 
 			fly(Fly::kSlow);
 		}
 		else
 		{
-			spawn_speed_lines(angle);
+			speed_lines(angle);
 		}
 
 		// Returning to owner
