@@ -200,7 +200,6 @@ struct Controller : mobj_t
 	}
 
 	void search();
-	void range_check();
 	void collect();
 };
 
@@ -385,12 +384,49 @@ struct Flicky : mobj_t
 		K_MatchGenericExtraFlags(fast, this);
 	}
 
+	void range_check()
+	{
+		if (!chasing())
+		{
+			return;
+		}
+
+		if (FixedHypot(source()->x - chasing()->x, source()->y - chasing()->y) < kScaredRadius * mapobjectscale)
+		{
+			return;
+		}
+
+		if (chasing()->player)
+		{
+			P_SetTarget(&chasing()->player->flickyAttacker, nullptr);
+		}
+
+		next_target(nullptr);
+		chasing(nullptr);
+
+		if (controller()->mode() != Controller::Mode::kReturning)
+		{
+			for (Flicky* x = controller()->flicky(); x; x = x->next())
+			{
+				if (x != this)
+				{
+					continue;
+				}
+
+				controller()->chasing(nullptr);
+				controller()->mode(Controller::Mode::kReturning);
+			}
+		}
+	}
+
 	void chase()
 	{
 		if (controller()->ending())
 		{
 			return;
 		}
+
+		range_check();
 
 		vector3_t pos = chasing() ? vector3_t{chasing()->x, chasing()->y, P_GetMobjFeet(chasing())} : orbit_position();
 		angle_t th = R_PointToAngle2(x, y, pos.x, pos.y);
@@ -653,32 +689,6 @@ void Controller::search()
 	}
 }
 
-void Controller::range_check()
-{
-	if (!chasing())
-	{
-		return;
-	}
-
-	if (FixedHypot(source()->x - chasing()->x, source()->y - chasing()->y) < kScaredRadius * mapobjectscale)
-	{
-		return;
-	}
-
-	if (chasing()->player)
-	{
-		P_SetTarget(&chasing()->player->flickyAttacker, nullptr);
-	}
-
-	chasing(nullptr);
-	mode(Mode::kReturning);
-
-	for (Flicky* x = flicky(); x; x = x->next())
-	{
-		x->next_target(nullptr);
-	}
-}
-
 void Controller::collect()
 {
 	if (mode() != Mode::kReturning)
@@ -774,11 +784,9 @@ void Obj_SuperFlickyControllerThink(mobj_t* mobj)
 		break;
 
 	case Controller::Mode::kEnRoute:
-		x->range_check();
 		break;
 
 	case Controller::Mode::kAttached:
-		x->range_check();
 		x->search();
 		break;
 
