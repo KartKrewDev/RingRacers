@@ -540,21 +540,28 @@ static UINT32 K_BotRubberbandDistance(const player_t *player)
 			continue;
 		}
 
-		if (playeringame[i] && players[i].bot)
+		if (!playeringame[i] || players[i].spectator)
 		{
-			// First check difficulty levels, then score, then settle it with port priority!
-			if (player->botvars.difficulty < players[i].botvars.difficulty)
-			{
-				pos += 3;
-			}
-			else if (player->score < players[i].score)
-			{
-				pos += 2;
-			}
-			else if (i < portpriority)
-			{
-				pos += 1;
-			}
+			continue;
+		}
+
+		if (!players[i].bot)
+		{
+			continue;
+		}
+
+		// First check difficulty levels, then score, then settle it with port priority!
+		if (player->botvars.difficulty < players[i].botvars.difficulty)
+		{
+			pos += 3;
+		}
+		else if (player->score < players[i].score)
+		{
+			pos += 2;
+		}
+		else if (i < portpriority)
+		{
+			pos += 1;
 		}
 	}
 
