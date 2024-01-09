@@ -1094,7 +1094,7 @@ static void M_PrecacheLevelLocks(void)
 							{
 								if (!mapheaderinfo[mapcheck] || mapheaderinfo[mapcheck]->cup != NULL)
 									continue;
-								if (mapheaderinfo[mapcheck]->menuflags & (LF2_HIDEINSTATS|LF2_HIDEINMENU))
+								if (mapheaderinfo[mapcheck]->menuflags & LF2_HIDEINMENU)
 									continue;
 								if (((mapheaderinfo[mapcheck]->typeoflevel & TOL_TUTORIAL) == TOL_TUTORIAL)
 									!= ((mapheaderinfo[map]->typeoflevel & TOL_TUTORIAL) == TOL_TUTORIAL))
@@ -1468,6 +1468,11 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 
 		case UC_UNLOCKPERCENT:
 		{
+			// Don't let netgame sessions intefere
+			// (or have this give a performance hit)
+			if (Playing())
+				return false;
+
 			UINT16 i, unlocked = cn->extrainfo2, total = 0;
 
 			// Special case for maps
@@ -1475,7 +1480,7 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			{
 				for (i = 0; i < basenummapheaders; i++)
 				{
-					if (!mapheaderinfo[i] || mapheaderinfo[i]->menuflags & (LF2_HIDEINSTATS|LF2_HIDEINMENU))
+					if (!mapheaderinfo[i] || mapheaderinfo[i]->menuflags & (LF2_HIDEINMENU))
 						continue;
 
 					total++;
@@ -1957,7 +1962,7 @@ static char *M_BuildConditionTitle(UINT16 map)
 {
 	char *title, *ref;
 
-	if (((mapheaderinfo[map]->menuflags & LF2_FINISHNEEDED)
+	if ((!(mapheaderinfo[map]->menuflags & LF2_NOVISITNEEDED)
 	// the following is intentionally not MV_BEATEN, just in case the title is for "Finish a round on X"
 	&& !(mapheaderinfo[map]->records.mapvisited & MV_VISITED))
 	|| M_MapLocked(map+1))

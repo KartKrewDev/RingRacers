@@ -205,6 +205,17 @@ void M_PickMenuBGMap(void)
 			continue;
 		}
 
+		if (!(mapheaderinfo[i]->menuflags & LF2_NOVISITNEEDED)
+		&& !(mapheaderinfo[i]->records.mapvisited & MV_VISITED)
+		&& !(
+			mapheaderinfo[i]->cup
+			&& mapheaderinfo[i]->cup->cachedlevels[0] == i
+		))
+		{
+			// Not visited OR head of cup
+			continue;
+		}
+
 		if (M_MapLocked(i + 1) == true)
 		{
 			// We haven't earned this one.
@@ -2676,24 +2687,28 @@ void M_DrawRaceDifficulty(void)
 
 // LEVEL SELECT
 
-static void M_DrawCupPreview(INT16 y, levelsearch_t *levelsearch)
+static void M_DrawCupPreview(INT16 y, levelsearch_t *baselevelsearch)
 {
+	levelsearch_t locklesslevelsearch = *baselevelsearch; // full copy
+	locklesslevelsearch.checklocked = false;
+
 	UINT8 i = 0;
-	INT16 maxlevels = M_CountLevelsToShowInList(levelsearch);
+	INT16 maxlevels = M_CountLevelsToShowInList(&locklesslevelsearch);
 	const fixed_t step = (82 * FRACUNIT);
 	fixed_t previewanimwork = (cupgrid.previewanim * FRACUNIT) + rendertimefrac_unpaused;
 	fixed_t x = -(previewanimwork % step);
-	INT16 add;
-	INT16 map, start = M_GetFirstLevelInList(&i, levelsearch);
+	INT16 map, start = M_GetFirstLevelInList(&i, &locklesslevelsearch);
 	UINT8 starti = i;
 
-	if (levelsearch->cup && maxlevels > 0)
+	patch_t *staticpat = unvisitedlvl[cupgrid.previewanim % 4];
+
+	if (baselevelsearch->cup && maxlevels > 0)
 	{
-		add = (previewanimwork / step) % maxlevels;
+		INT16 add = (previewanimwork / step) % maxlevels;
 		map = start;
 		while (add > 0)
 		{
-			map = M_GetNextLevelInList(map, &i, levelsearch);
+			map = M_GetNextLevelInList(map, &i, &locklesslevelsearch);
 
 			if (map >= nummapheaders)
 			{
@@ -2710,24 +2725,35 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *levelsearch)
 				i = starti;
 			}
 
-			K_DrawMapThumbnail(
-				x + FRACUNIT, (y+2)<<FRACBITS,
-				80<<FRACBITS,
-				0,
-				map,
-				NULL);
+			if (M_CanShowLevelInList(map, baselevelsearch))
+			{
+				K_DrawMapThumbnail(
+					x + FRACUNIT, (y+2)<<FRACBITS,
+					80<<FRACBITS,
+					0,
+					map,
+					NULL);
+			}
+			else
+			{
+				V_DrawFixedPatch(
+					x + FRACUNIT, (y+2) * FRACUNIT,
+					FRACUNIT,
+					0,
+					staticpat,
+					NULL);
+			}
 
 			x += step;
 
-			map = M_GetNextLevelInList(map, &i, levelsearch);
+			map = M_GetNextLevelInList(map, &i, &locklesslevelsearch);
 		}
 	}
 	else
 	{
-		patch_t *st = W_CachePatchName(va("PREVST0%d", (cupgrid.previewanim % 4) + 1), PU_CACHE);
 		while (x < BASEVIDWIDTH * FRACUNIT)
 		{
-			V_DrawFixedPatch(x + FRACUNIT, (y+2) * FRACUNIT, FRACUNIT, 0, st, NULL);
+			V_DrawFixedPatch(x + FRACUNIT, (y+2) * FRACUNIT, FRACUNIT, 0, staticpat, NULL);
 			x += step;
 		}
 	}
@@ -3118,7 +3144,13 @@ void M_DrawCupSelect(void)
 	&& templevelsearch.cup != NULL
 	&& templevelsearch.cup == cupsavedata.cup)
 	{
-		V_DrawScaledPatch(x + 32, y + 32, 0, W_CachePatchName("CUPBKUP2", PU_CACHE));
+		V_DrawScaledPatch(
+			14 + (cupgrid.x*42) + 32,
+			20 + (cupgrid.y*44) + 32
+				+ ((cupgrid.cache_secondrowlocked == true) ? 28 : 0),
+			0,
+			W_CachePatchName("CUPBKUP2", PU_CACHE)
+		);
 	}
 
 	INT16 ty = M_EaseWithTransition(Easing_Linear, 5 * 24);
@@ -6374,7 +6406,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			templevelsearch.cupmode = true;
 			templevelsearch.timeattack = false;
 			templevelsearch.tutorial = false;
-			templevelsearch.checklocked = false;
+			templevelsearch.checklocked = true;
 
 			M_DrawCupPreview(146, &templevelsearch);
 
@@ -7177,7 +7209,7 @@ static void M_DrawStatsMaps(void)
 		for (i = 0; i < nummapheaders; i++)
 		{
 			// Check for no visibility
-			if (!mapheaderinfo[i] || (mapheaderinfo[i]->menuflags & (LF2_NOTIMEATTACK|LF2_HIDEINSTATS|LF2_HIDEINMENU)))
+			if (!mapheaderinfo[i] || (mapheaderinfo[i]->menuflags & (LF2_NOTIMEATTACK|LF2_HIDEINMENU)))
 				continue;
 
 			// Has to be accessible via time attack

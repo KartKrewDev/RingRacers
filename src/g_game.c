@@ -3451,10 +3451,32 @@ static INT32 TOLMaps(UINT8 pgametype)
 			continue;
 		}
 
-		if (M_MapLocked(i + 1))
+		// Only care about restrictions if the host is a listen server.
+		if (!dedicated)
 		{
-			// Don't include locked
-			continue;
+			if (!(mapheaderinfo[i]->menuflags & LF2_NOVISITNEEDED)
+			&& !(mapheaderinfo[i]->records.mapvisited & MV_VISITED)
+			&& !(
+				mapheaderinfo[i]->cup
+				&& mapheaderinfo[i]->cup->cachedlevels[0] == i
+			))
+			{
+				// Not visited OR head of cup
+				continue;
+			}
+
+			if ((mapheaderinfo[i]->menuflags & LF2_FINISHNEEDED)
+			&& !(mapheaderinfo[i]->records.mapvisited & MV_BEATEN))
+			{
+				// Not completed
+				continue;
+			}
+
+			if (M_MapLocked(i + 1) == true)
+			{
+				// We haven't earned this one.
+				continue;
+			}
 		}
 
 		num++;
@@ -3536,10 +3558,32 @@ tryAgain:
 			continue;
 		}
 
-		if (M_MapLocked(i + 1) == true)
+		// Only care about restrictions if the host is a listen server.
+		if (!dedicated)
 		{
-			// We haven't earned this one.
-			continue;
+			if (!(mapheaderinfo[i]->menuflags & LF2_NOVISITNEEDED)
+			&& !(mapheaderinfo[i]->records.mapvisited & MV_VISITED)
+			&& !(
+				mapheaderinfo[i]->cup
+				&& mapheaderinfo[i]->cup->cachedlevels[0] == i
+			))
+			{
+				// Not visited OR head of cup
+				continue;
+			}
+
+			if ((mapheaderinfo[i]->menuflags & LF2_FINISHNEEDED)
+			&& !(mapheaderinfo[i]->records.mapvisited & MV_BEATEN))
+			{
+				// Not completed
+				continue;
+			}
+
+			if (M_MapLocked(i + 1) == true)
+			{
+				// We haven't earned this one.
+				continue;
+			}
 		}
 
 		if (ignoreBuffers == false)
@@ -3974,7 +4018,7 @@ void G_GetNextMap(void)
 					continue;
 				}
 
-				for (i = 0; i < cup->numlevels; i++)
+				for (i = 0; i < CUPCACHE_PODIUM; i++)
 				{
 					cm = cup->cachedlevels[i];
 
@@ -3982,9 +4026,35 @@ void G_GetNextMap(void)
 					if (cm >= nummapheaders
 						|| !mapheaderinfo[cm]
 						|| mapheaderinfo[cm]->lumpnum == LUMPERROR
-						|| !(mapheaderinfo[cm]->typeoflevel & tolflag)
-						|| (!marathonmode && M_MapLocked(cm+1)))
+						|| !(mapheaderinfo[cm]->typeoflevel & tolflag))
+					{
 						continue;
+					}
+
+					// Only care about restrictions if the host is a listen server.
+					if (!dedicated && !marathonmode)
+					{
+						if (!(mapheaderinfo[cm]->menuflags & LF2_NOVISITNEEDED)
+						&& !(mapheaderinfo[cm]->records.mapvisited & MV_VISITED)
+						&& i != 0)
+						{
+							// Not visited OR head of cup
+							continue;
+						}
+
+						if ((mapheaderinfo[cm]->menuflags & LF2_FINISHNEEDED)
+						&& !(mapheaderinfo[cm]->records.mapvisited & MV_BEATEN))
+						{
+							// Not completed
+							continue;
+						}
+
+						if (M_MapLocked(cm + 1) == true)
+						{
+							// We haven't earned this one.
+							continue;
+						}
+					}
 
 					// If the map is in multiple cups, only consider the first one valid.
 					if (mapheaderinfo[cm]->cup != cup)
@@ -4029,24 +4099,50 @@ void G_GetNextMap(void)
 		else
 		{
 			cm = prevmap;
-			if (++cm >= nummapheaders)
-				cm = 0;
 
-			while (cm != prevmap)
+			do
 			{
+				if (++cm >= nummapheaders)
+					cm = 0;
+
 				if (!mapheaderinfo[cm]
 					|| mapheaderinfo[cm]->lumpnum == LUMPERROR
 					|| !(mapheaderinfo[cm]->typeoflevel & tolflag)
-					|| (mapheaderinfo[cm]->menuflags & LF2_HIDEINMENU)
-					|| M_MapLocked(cm+1))
+					|| (mapheaderinfo[cm]->menuflags & LF2_HIDEINMENU))
 				{
-					if (++cm >= nummapheaders)
-						cm = 0;
 					continue;
 				}
 
+				// Only care about restrictions if the host is a listen server.
+				if (!dedicated && !marathonmode)
+				{
+					if (!(mapheaderinfo[cm]->menuflags & LF2_NOVISITNEEDED)
+					&& !(mapheaderinfo[cm]->records.mapvisited & MV_VISITED)
+					&& !(
+						mapheaderinfo[cm]->cup
+						&& mapheaderinfo[cm]->cup->cachedlevels[0] == cm
+					))
+					{
+						// Not visited OR head of cup
+						continue;
+					}
+
+					if ((mapheaderinfo[cm]->menuflags & LF2_FINISHNEEDED)
+					&& !(mapheaderinfo[cm]->records.mapvisited & MV_BEATEN))
+					{
+						// Not completed
+						continue;
+					}
+
+					if (M_MapLocked(cm + 1) == true)
+					{
+						// We haven't earned this one.
+						continue;
+					}
+				}
+
 				break;
-			}
+			} while (cm != prevmap);
 
 			nextmap = cm;
 		}
@@ -4295,26 +4391,27 @@ static void G_DoCompleted(void)
 	// If the current gametype has no intermission screen set, then don't start it.
 	Y_DetermineIntermissionType();
 
-	if (intertype == int_none)
+	if (intertype != int_none)
 	{
-		G_UpdateVisited();
-		if (grandprixinfo.gp == true)
-		{
-			K_UpdateGPRank(&grandprixinfo.rank);
-		}
-		G_AfterIntermission();
-	}
-	else
-	{
-		G_SetGamestate(GS_INTERMISSION);
 		Y_StartIntermission();
-		G_UpdateVisited();
 	}
+	else if (grandprixinfo.gp == true)
+	{
+		K_UpdateGPRank(&grandprixinfo.rank);
+	}
+
+	G_UpdateVisited();
 
 	// This isn't in the above blocks because many
 	// mechanisms can queue up a gamedata save.
 	if (gamedata->deferredsave)
 		G_SaveGameData();
+
+	// Seperate from the above, as Y_StartIntermission can no-sell.
+	if (intertype == int_none)
+	{
+		G_AfterIntermission();
+	}
 }
 
 // See also F_EndCutscene, the only other place which handles intra-map/ending transitions
@@ -4972,8 +5069,7 @@ void G_LoadGameData(void)
 				M_Memcpy(&mapheaderinfo[mapnum]->records, &dummyrecord, sizeof(recorddata_t));
 			}
 			else if (
-				((dummyrecord.mapvisited & MV_PERSISTUNLOADED) != 0
-					&& (dummyrecord.mapvisited & MV_BEATEN) != 0)
+				(dummyrecord.mapvisited & MV_BEATEN)
 				|| dummyrecord.time != 0
 				|| dummyrecord.lap != 0
 			)
@@ -5574,11 +5670,6 @@ void G_SaveGameData(void)
 			WRITESTRINGL(save.p, mapheaderinfo[i]->lumpname, MAXMAPLUMPNAME);
 
 			UINT8 mapvisitedtemp = (mapheaderinfo[i]->records.mapvisited & MV_MAX);
-
-			if ((mapheaderinfo[i]->menuflags & (LF2_FINISHNEEDED|LF2_HIDEINMENU)))
-			{
-				mapvisitedtemp |= MV_FINISHNEEDED;
-			}
 
 			WRITEUINT8(save.p, mapvisitedtemp);
 

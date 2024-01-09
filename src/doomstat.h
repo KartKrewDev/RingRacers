@@ -151,8 +151,6 @@ struct skinreference_t
 #define MV_SPBATTACK    	(1<<3)
 #define MV_MYSTICMELODY		(1<<4)
 #define MV_MAX          	(MV_VISITED|MV_BEATEN|MV_ENCORE|MV_SPBATTACK|MV_MYSTICMELODY)
-#define MV_FINISHNEEDED		(1<<7)
-#define MV_PERSISTUNLOADED	(MV_SPBATTACK|MV_FINISHNEEDED)
 
 struct recorddata_t
 {
@@ -573,8 +571,8 @@ struct mapheader_t
 #define LF_SUBTRACTNUM        (1<<3) ///< Use subtractive position number (for bright levels)
 
 #define LF2_HIDEINMENU		(1<<0) ///< Hide in the multiplayer menu
-#define LF2_HIDEINSTATS		(1<<1) ///< Hide in the statistics screen
-#define LF2_NOTIMEATTACK	(1<<2) ///< Hide this map in Time Attack modes
+#define LF2_NOTIMEATTACK	(1<<1) ///< Hide this map in Time Attack modes
+#define LF2_NOVISITNEEDED	(1<<2) ///< Map does not require visitation to be selectable
 #define LF2_FINISHNEEDED	(1<<3) ///< Not available in Time Attack modes until you beat the level
 
 extern mapheader_t** mapheaderinfo;

@@ -77,11 +77,11 @@ boolean M_CanShowLevelInList(INT16 mapnum, levelsearch_t *levelsearch)
 	if (levelsearch->timeattack && (mapheaderinfo[mapnum]->menuflags & LF2_NOTIMEATTACK))
 		return false;
 
+	cupheader_t *cup = (levelsearch->cup == &dummy_lostandfound) ? NULL : levelsearch->cup;
+
 	// Don't permit cup when no cup requested (also no dupes in time attack)
 	if (levelsearch->cupmode)
 	{
-		cupheader_t *cup = (levelsearch->cup == &dummy_lostandfound) ? NULL : levelsearch->cup;
-
 		if ((!cup || levelsearch->timeattack)
 			&& mapheaderinfo[mapnum]->cup != cup)
 			return false;
@@ -90,6 +90,12 @@ boolean M_CanShowLevelInList(INT16 mapnum, levelsearch_t *levelsearch)
 	// Finally, the most complex check: does the map have lock conditions?
 	if (levelsearch->checklocked)
 	{
+		// Check for visitation
+		if (!(mapheaderinfo[mapnum]->menuflags & LF2_NOVISITNEEDED)
+		&& !(mapheaderinfo[mapnum]->records.mapvisited & MV_VISITED)
+		&& !(cup && cup->cachedlevels[0] == mapnum))
+			return false;
+
 		// Check for completion
 		if ((mapheaderinfo[mapnum]->menuflags & LF2_FINISHNEEDED)
 		&& !(mapheaderinfo[mapnum]->records.mapvisited & MV_BEATEN))
@@ -128,22 +134,9 @@ UINT16 M_CountLevelsToShowInList(levelsearch_t *levelsearch)
 
 	for (i = 0; i < nummapheaders; i++)
 	{
-		if (M_CanShowLevelInList(i, levelsearch))
-		{
-			count++;
-
-			// Tutorial will only show what you've made your way to
-			if (!levelsearch->checklocked)
-				continue;
-			if (!levelsearch->tutorial)
-				continue;
-			if (i >= basenummapheaders)
-				continue;
-			if (mapheaderinfo[i]->records.mapvisited & MV_BEATEN)
-				continue;
-
-			break;
-		}
+		if (!M_CanShowLevelInList(i, levelsearch))
+			continue;
+		count++;
 	}
 
 	return count;
@@ -206,13 +199,6 @@ UINT16 M_GetNextLevelInList(UINT16 mapnum, UINT8 *i, levelsearch_t *levelsearch)
 	}
 	else
 	{
-		// Tutorial will only show what you've made your way to
-		if (levelsearch->checklocked
-		&& levelsearch->tutorial
-		&& mapnum < basenummapheaders
-		&& !(mapheaderinfo[mapnum]->records.mapvisited & MV_BEATEN))
-			return NEXTMAP_INVALID;
-
 		mapnum++;
 		while (!M_CanShowLevelInList(mapnum, levelsearch) && mapnum < nummapheaders)
 			mapnum++;
