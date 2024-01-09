@@ -9,6 +9,8 @@
 //-----------------------------------------------------------------------------
 /// \brief Super Flicky power-up, hunts other players
 
+#include <algorithm>
+
 #include "../d_player.h"
 #include "../doomdef.h"
 #include "../g_game.h"
@@ -71,6 +73,8 @@ constexpr tic_t kBlockTime = 5*TICRATE;
 
 constexpr int kRiseTime = 1*TICRATE;
 constexpr int kRiseSpeed = 4;
+
+constexpr int kMinKnockback = 50;
 
 // TODO: skincolor must be updated to 2.2 palette
 constexpr skincolornum_t kSuperStart = SKINCOLOR_SUPERGOLD1;
@@ -540,7 +544,7 @@ struct Flicky : mobj_t
 
 		if (P_DamageMobj(mobj, this, source(), 1, DMG_NORMAL))
 		{
-			P_InstaThrust(mobj, K_MomentumAngleReal(this), FixedHypot(momx, momy));
+			P_InstaThrust(mobj, K_MomentumAngleReal(this), std::max(FixedHypot(momx, momy), kMinKnockback * mapobjectscale));
 			K_StumblePlayer(mobj->player);
 
 			mobj->player->spinouttimer = 1; // need invulnerability for one tic
