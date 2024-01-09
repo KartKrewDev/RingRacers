@@ -8603,7 +8603,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
-	if (player->invincibilitytimer && onground == true)
+	if (player->invincibilitytimer && (onground == true || K_PowerUpRemaining(player, POWERUP_SMONITOR)))
 		player->invincibilitytimer--;
 
 	if (!player->invincibilitytimer)
