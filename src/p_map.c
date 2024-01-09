@@ -787,7 +787,9 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 
 		if (!tm.thing->player || !tm.thing->player->fastfall)
 		{
-			P_SetObjectMomZ(tm.thing, FRACUNIT, true);
+			fixed_t tractorHeight = 211*mapobjectscale;
+			fixed_t zRange = FixedDiv(thing->z - tm.thing->z, tractorHeight);
+			P_SetObjectMomZ(tm.thing, max(zRange, FRACUNIT/16), true);
 		}
 
 		fixed_t friction = 33*FRACUNIT/35;

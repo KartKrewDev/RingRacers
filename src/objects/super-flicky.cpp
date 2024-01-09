@@ -38,6 +38,7 @@
 #define controller_mode(o) ((o)->movecount)
 #define controller_zofs(o) ((o)->sprzoff)
 #define controller_expiry(o) ((o)->fuse)
+#define controller_intangible(o) ((o)->threshold)
 
 namespace
 {
@@ -53,6 +54,7 @@ constexpr int kDescendHeight = 256;
 constexpr int kDescendSmoothing = 16;
 
 constexpr int kSearchRadius = 1920;
+constexpr int kScaredRadius = 2048;
 constexpr int kFlightRadius = 1280;
 constexpr int kPeckingRadius = 256;
 
@@ -63,6 +65,7 @@ constexpr fixed_t kWeakSpeed = FRACUNIT/2;
 constexpr fixed_t kRebound = 8*FRACUNIT/9;
 
 constexpr tic_t kDelay = 8;
+constexpr tic_t kDamageCooldown = TICRATE;
 constexpr tic_t kStunTime = 10*TICRATE;
 constexpr tic_t kBlockTime = 5*TICRATE;
 
@@ -129,6 +132,9 @@ struct Controller : mobj_t
 	tic_t expiry() const { return controller_expiry(this); }
 	void expiry(tic_t n) { controller_expiry(this) = n; }
 
+	tic_t intangible() const { return controller_intangible(this); }
+	void intangible(tic_t n) { controller_intangible(this) = n; }
+
 	static Controller* spawn(player_t* player, tic_t time)
 	{
 		Controller* x = static_cast<Controller*>(P_SpawnMobjFromMobjUnscaled(
@@ -194,6 +200,8 @@ struct Controller : mobj_t
 	}
 
 	void search();
+	void range_check();
+	void collect();
 };
 
 struct Flicky : mobj_t
@@ -412,19 +420,27 @@ struct Flicky : mobj_t
 			fly(Fly::kNormal);
 		}
 
+		auto speed_lines = [&](angle_t dir)
+		{
+			if (dist > kPeckingRadius * mapobjectscale)
+			{
+				spawn_speed_lines(dir);
+			}
+		};
+
 		if (d > ANGLE_45 && dist > kFlightRadius * mapobjectscale)
 		{
 			// Cut momentum when too far outside of intended trajectory
 			momx = FixedMul(momx, kRebound);
 			momy = FixedMul(momy, kRebound);
 
-			spawn_speed_lines(th);
+			speed_lines(th);
 
 			fly(Fly::kSlow);
 		}
 		else
 		{
-			spawn_speed_lines(angle);
+			speed_lines(angle);
 		}
 
 		// Returning to owner
@@ -433,6 +449,7 @@ struct Flicky : mobj_t
 			if (AngleDelta(th, R_PointToAngle2(x + momx, y + momy, pos.x, pos.y)) > ANG1)
 			{
 				mode(Mode::kReserved);
+				controller()->collect();
 			}
 			else
 			{
@@ -456,6 +473,8 @@ struct Flicky : mobj_t
 				break;
 			}
 		}
+
+		noclip(chasing() && dist > kFlightRadius * mapobjectscale);
 	}
 
 	void rise()
@@ -480,6 +499,11 @@ struct Flicky : mobj_t
 			return;
 		}
 
+		if (leveltime < controller()->intangible())
+		{
+			return;
+		}
+
 		if (P_DamageMobj(mobj, this, source(), 1, DMG_NORMAL))
 		{
 			P_InstaThrust(mobj, K_MomentumAngleReal(this), FixedHypot(momx, momy));
@@ -490,6 +514,7 @@ struct Flicky : mobj_t
 			P_SetTarget(&mobj->player->flickyAttacker, this);
 
 			controller()->mode(Controller::Mode::kAttached);
+			controller()->intangible(leveltime + mobj->hitlag + kDamageCooldown);
 		}
 
 		S_StartSound(this, sfx_supflk);
@@ -500,6 +525,12 @@ struct Flicky : mobj_t
 		momx = -(momx);
 		momy = -(momy);
 		P_SetObjectMomZ(this, 8*FRACUNIT, false);
+	}
+
+	void noclip(bool n)
+	{
+		constexpr UINT32 kNoClipFlags = MF_NOCLIP | MF_NOCLIPHEIGHT;
+		flags = (flags & ~kNoClipFlags) | (kNoClipFlags * n);
 	}
 
 	void nerf()
@@ -605,6 +636,8 @@ void Controller::search()
 		if (chasing() && flicky())
 		{
 			// Detach flicky from swarm. This one keeps its previous target.
+			// FIXME: when this one's target dies, it will
+			// become dormant and not return to controller.
 			flicky(flicky()->next());
 		}
 
@@ -618,6 +651,51 @@ void Controller::search()
 			x->delay(x->phase() * kDelay);
 		}
 	}
+}
+
+void Controller::range_check()
+{
+	if (!chasing())
+	{
+		return;
+	}
+
+	if (FixedHypot(source()->x - chasing()->x, source()->y - chasing()->y) < kScaredRadius * mapobjectscale)
+	{
+		return;
+	}
+
+	if (chasing()->player)
+	{
+		P_SetTarget(&chasing()->player->flickyAttacker, nullptr);
+	}
+
+	chasing(nullptr);
+	mode(Mode::kReturning);
+
+	for (Flicky* x = flicky(); x; x = x->next())
+	{
+		x->next_target(nullptr);
+	}
+}
+
+void Controller::collect()
+{
+	if (mode() != Mode::kReturning)
+	{
+		return;
+	}
+
+	// Resume searching once all Flickys return
+	for (Flicky* x = flicky(); x; x = x->next())
+	{
+		if (x->mode() != Flicky::Mode::kReserved)
+		{
+			return;
+		}
+	}
+
+	mode(Mode::kOrbit);
 }
 
 }; // namespace
@@ -696,9 +774,11 @@ void Obj_SuperFlickyControllerThink(mobj_t* mobj)
 		break;
 
 	case Controller::Mode::kEnRoute:
+		x->range_check();
 		break;
 
 	case Controller::Mode::kAttached:
+		x->range_check();
 		x->search();
 		break;
 
