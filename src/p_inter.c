@@ -3327,6 +3327,10 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 				K_PlayPainSound(target, source);
 			}
+			else if (inflictor && inflictor->type == MT_INSTAWHIP)
+			{
+				K_PopPlayerShield(player);
+			}
 
 			if (gametyperules & GTR_BUMPERS)
 				player->spheres = min(player->spheres + 10, 40);
