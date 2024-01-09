@@ -314,21 +314,18 @@ struct Flicky : mobj_t
 		}
 		else
 		{
+			if (stunned())
+			{
+				unnerf();
+				mode(Mode::kHunting);
+			}
+
 			if (chasing() != next_target())
 			{
 				chasing(next_target());
 				mode(Mode::kHunting);
 
 				S_StartSound(this, sfx_fhurt2);
-			}
-
-			if (stunned())
-			{
-				light_up(true);
-				flags = info->flags;
-				mode(Mode::kHunting);
-
-				S_StartSound(this, sfx_s3k9f);
 			}
 		}
 	}
@@ -484,6 +481,7 @@ struct Flicky : mobj_t
 		{
 			if (AngleDelta(th, R_PointToAngle2(x + momx, y + momy, pos.x, pos.y)) > ANG1)
 			{
+				unnerf();
 				mode(Mode::kReserved);
 				controller()->collect();
 			}
@@ -574,6 +572,14 @@ struct Flicky : mobj_t
 		light_up(false);
 
 		flags &= ~(MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPHEIGHT);
+	}
+
+	void unnerf()
+	{
+		light_up(true);
+		flags = info->flags;
+
+		S_StartSound(this, sfx_s3k9f);
 	}
 
 	void whip()
