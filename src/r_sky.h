@@ -26,7 +26,7 @@ extern "C" {
 /// \brief The sky map is 256*128*4 maps.
 #define ANGLETOSKYSHIFT 22
 
-extern INT32 skytexture, skytexturemid;
+extern INT32 skytexture, skytexturemid, skytextureoffset;
 extern fixed_t skyscale[MAXSPLITSCREENPLAYERS];
 
 extern INT32 skyflatnum;
