@@ -5040,8 +5040,14 @@ void M_DrawVideoModes(void)
 				(SCR_IsAspectCorrect(cv_scr_width.value, cv_scr_height.value)) ? 0x83 : 0x80,
 				cv_scr_width.value, cv_scr_height.value));
 
-		V_DrawCenteredMenuString(BASEVIDWIDTH/2 + t, currentMenu->y + 75+24,
-			recommendedflags, "Modes marked in GREEN are recommended.");
+		
+
+		if (vid.width > 1280 || vid.height > 800)
+			V_DrawCenteredMenuString(BASEVIDWIDTH/2 + t, currentMenu->y + 75+24,
+				(I_GetTime() % 20 >= 10) ? V_REDMAP : V_YELLOWMAP, va("High resolutions will impact performance. Careful!"));
+		else
+			V_DrawCenteredMenuString(BASEVIDWIDTH/2 + t, currentMenu->y + 75+24,
+				recommendedflags, "Modes marked in GREEN are recommended.");
 		/*
 		V_DrawCenteredString(BASEVIDWIDTH/2 + t, currentMenu->y + 75+16,
 			highlightflags, "High resolutions stress your PC more, but will");
