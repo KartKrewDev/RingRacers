@@ -4999,11 +4999,20 @@ void M_DrawVideoModes(void)
 	col = currentMenu->y + 14;
 	for (i = 0; i < optionsmenu.vidm_nummodes; i++)
 	{
+		INT32 colorflag = 0;
+		boolean isdefault = !strcmp(optionsmenu.modedescs[i].desc, va("%dx%d", cv_scr_width.value, cv_scr_height.value));
+
 		if (i == optionsmenu.vidm_selected)
-			V_DrawMenuString(row, col, highlightflags, optionsmenu.modedescs[i].desc);
-		// Show multiples of 320x200 as green.
-		else
-			V_DrawMenuString(row, col, (optionsmenu.modedescs[i].goodratio) ? recommendedflags : 0, optionsmenu.modedescs[i].desc);
+			colorflag = highlightflags;
+		else if (isdefault)
+			colorflag = V_ORANGEMAP;
+		else if (optionsmenu.modedescs[i].goodratio)
+			colorflag = recommendedflags; // Show multiples of 320x200 as green.
+
+		if (isdefault)
+			V_DrawScaledPatch(row + 2 + V_MenuStringWidth(optionsmenu.modedescs[i].desc, colorflag), col - 2, 0, W_CachePatchName("RHFAV", PU_CACHE));
+
+		V_DrawMenuString(row, col, colorflag, optionsmenu.modedescs[i].desc);
 
 		col += 9;
 		if ((i % optionsmenu.vidm_column_size) == (optionsmenu.vidm_column_size-1))
@@ -5036,8 +5045,7 @@ void M_DrawVideoModes(void)
 				(SCR_IsAspectCorrect(vid.width, vid.height)) ? 0x83 : 0x80,
 				vid.width, vid.height));
 		M_CentreText(t, currentMenu->y + 75+9,
-			va("Default mode is %c%dx%d",
-				(SCR_IsAspectCorrect(cv_scr_width.value, cv_scr_height.value)) ? 0x83 : 0x80,
+			va("\x87" "Default mode is %dx%d",
 				cv_scr_width.value, cv_scr_height.value));
 
 		
