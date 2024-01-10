@@ -8319,7 +8319,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			K_SpawnGrowShrinkParticles(player->mo, player->growshrinktimer);
 		}
 
-		if (!(gametyperules & GTR_SPHERES) && player->rings <= 0) // spawn ring debt indicator
+		// Race: spawn ring debt indicator
+		// Battle: spawn zero-bumpers indicator
+		if ((gametyperules & GTR_SPHERES) ? player->mo->health <= 1 : player->rings <= 0)
 		{
 			mobj_t *debtflag = P_SpawnMobj(player->mo->x + player->mo->momx, player->mo->y + player->mo->momy,
 				player->mo->z + P_GetMobjZMovement(player->mo) + player->mo->height + (24*player->mo->scale), MT_THOK);
