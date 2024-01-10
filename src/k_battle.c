@@ -642,7 +642,7 @@ static void K_SpawnOvertimeLaser(fixed_t x, fixed_t y, fixed_t scale)
 			}
 
 			mo->angle = R_PointToAngle2(mo->x, mo->y, battleovertime.x, battleovertime.y) + ANGLE_90;
-			mo->renderflags |= (RF_DONTDRAW & ~(K_GetPlayerDontDrawFlag(player)));
+			mo->renderflags |= (RF_DONTDRAW & ~(K_GetPlayerDontDrawFlag(player))) | RF_HIDEINSKYBOX;
 
 			P_SetScale(mo, scale);
 
