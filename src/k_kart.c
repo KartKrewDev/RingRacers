@@ -8568,7 +8568,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	}
 	else if (player->oldGuard)
 	{
-		CONS_Printf("DL set from oldGuard\n");
 		player->defenseLockout = PUNISHWINDOW;
 		player->oldGuard = false;
 	}
@@ -11660,8 +11659,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			}
 			else
 			{
-				CONS_Printf("DL set from whip release\n");
-
 				player->instaWhipCharge = 0;
 				player->defenseLockout = PUNISHWINDOW;
 				if (!K_PowerUpRemaining(player, POWERUP_BARRIER))
