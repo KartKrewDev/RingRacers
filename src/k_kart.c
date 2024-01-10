@@ -4644,7 +4644,6 @@ void K_ApplyTripWire(player_t *player, tripwirestate_t state)
 	if (player->hyudorotimer <= 0)
 	{
 		K_AddHitLag(player->mo, 10, false);
-		CONS_Printf("unstuck %d\n", player->tripwireUnstuck);
 		player->mo->hitlag -= min(player->mo->hitlag, player->tripwireUnstuck/4);
 	}
 
