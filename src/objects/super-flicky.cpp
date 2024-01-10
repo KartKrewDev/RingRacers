@@ -420,6 +420,32 @@ struct Flicky : mobj_t
 		}
 	}
 
+	void relink()
+	{
+		Flicky* prev = nullptr;
+
+		for (Flicky* x = controller()->flicky(); x; x = x->next())
+		{
+			if (x == this)
+			{
+				return;
+			}
+
+			prev = x;
+		}
+
+		if (prev)
+		{
+			prev->next(this);
+		}
+		else
+		{
+			controller()->flicky(this);
+		}
+
+		next(nullptr);
+	}
+
 	void chase()
 	{
 		if (controller()->ending())
@@ -487,6 +513,7 @@ struct Flicky : mobj_t
 			{
 				unnerf();
 				mode(Mode::kReserved);
+				relink();
 				controller()->collect();
 			}
 			else
@@ -687,7 +714,7 @@ void Controller::search()
 			flicky(flicky()->next());
 		}
 
-		chasing(nearestMobj);
+		chasing(flicky() ? nearestMobj : nullptr);
 		mode(Mode::kEnRoute);
 
 		// Update entire swarm
@@ -701,11 +728,6 @@ void Controller::search()
 
 void Controller::collect()
 {
-	if (mode() != Mode::kReturning)
-	{
-		return;
-	}
-
 	// Resume searching once all Flickys return
 	for (Flicky* x = flicky(); x; x = x->next())
 	{
