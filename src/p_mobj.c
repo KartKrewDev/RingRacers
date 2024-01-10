@@ -1048,6 +1048,20 @@ static void P_PlayerFlip(mobj_t *mo)
 	// Flip aiming to match!
 }
 
+static boolean P_UseUnderwaterGravity(mobj_t *mo)
+{
+	switch (mo->type)
+	{
+		case MT_BANANA:
+			return false;
+
+		default:
+			break;
+	}
+
+	return true;
+}
+
 //
 // P_GetMobjGravity
 //
@@ -1106,7 +1120,7 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 	}
 
 	// Less gravity underwater.
-	if ((mo->eflags & MFE_UNDERWATER) && !goopgravity)
+	if ((mo->eflags & MFE_UNDERWATER) && !goopgravity && P_UseUnderwaterGravity(mo))
 	{
 		if (mo->momz * P_MobjFlip(mo) <= 0)
 		{
@@ -7600,6 +7614,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			mobj->angle += spin;
 			mobj->rollangle -= spin;
 		}
+
+		P_MobjCheckWater(mobj);
 
 		if (mobj->threshold > 0)
 			mobj->threshold--;
