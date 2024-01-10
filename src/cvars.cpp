@@ -791,6 +791,7 @@ consvar_t cv_votetime = UnsavedNetVar("votetime", "20").min_max(10, 3600);
 consvar_t cv_barriertime = OnlineCheat("barriertime", "30").values(CV_Natural).description("How long it takes for the Barrier to shrink in Battle Overtime");
 consvar_t cv_battlespawn = OnlineCheat("battlespawn", "0").values(CV_Unsigned).description("Spawn every player at the same spawnpoint in Battle (0 = random spawns)");
 consvar_t cv_battletest = OnlineCheat("battletest", "Off").on_off().description("Free Play goes to Battle instead of Prisons");
+consvar_t cv_battleufotest = OnlineCheat("battleufotest", "Off").on_off().description("Respawn Battle UFOs instantly after being destroyed");
 
 #ifdef DEVELOP
 	consvar_t cv_botcontrol = OnlineCheat("botcontrol", "On").on_off().description("Toggle bot AI movement");

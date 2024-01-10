@@ -6,6 +6,7 @@
 #include "../mobj.hpp"
 #include "../mobj_list.hpp"
 
+#include "../command.h"
 #include "../doomdef.h"
 #include "../m_random.h"
 #include "../p_local.h"
@@ -16,6 +17,8 @@
 using srb2::math::Fixed;
 using srb2::Mobj;
 using srb2::MobjList;
+
+extern consvar_t cv_battleufotest;
 
 extern mobj_t* svg_battleUfoSpawners;
 
@@ -169,7 +172,7 @@ void Obj_BattleUFODeath(mobj_t *mobj, mobj_t *inflictor)
 	if (ufo->spawner())
 	{
 		g_battleufo.previousId = ufo->spawner()->id();
-		g_battleufo.due = leveltime + BATTLE_UFO_TIME;
+		g_battleufo.due = leveltime + (cv_battleufotest.value ? 1 : BATTLE_UFO_TIME);
 	}
 }
 
