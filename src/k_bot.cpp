@@ -498,7 +498,7 @@ fixed_t K_BotMapModifier(void)
 {
 	constexpr INT32 complexity_scale = 10000;
 	constexpr fixed_t modifier_max = FRACUNIT * 2;
-	
+
 	const fixed_t complexity_value = std::clamp<fixed_t>(
 		FixedDiv(K_GetTrackComplexity(), complexity_scale),
 		-FixedDiv(FRACUNIT, modifier_max),
@@ -1204,10 +1204,10 @@ static void K_BotTrick(const player_t *player, ticcmd_t *cmd, const botcontrolle
 				cmd->turning = -KART_FULLTURN;
 				break;
 			case TMBOTTR_UP:
-				cmd->throwdir = KART_FULLTURN;
+				cmd->throwdir = 1;
 				break;
 			case TMBOTTR_DOWN:
-				cmd->throwdir = -KART_FULLTURN;
+				cmd->throwdir = -1;
 				break;
 		}
 	}
@@ -1298,7 +1298,7 @@ static INT32 K_HandleBotTrack(const player_t *player, ticcmd_t *cmd, botpredicti
 	{
 		turnsign = 1;
 	}
-	else 
+	else
 	{
 		turnsign = -1;
 	}
@@ -1434,7 +1434,7 @@ static INT32 K_HandleBotReverse(const player_t *player, ticcmd_t *cmd, botpredic
 		turnsign = -1; // Turn right
 		anglediff = AngleFixed(angle)>>FRACBITS;
 	}
-	else 
+	else
 	{
 		turnsign = 1; // Turn left
 		anglediff = 360-(AngleFixed(angle)>>FRACBITS);
@@ -1455,7 +1455,7 @@ static INT32 K_HandleBotReverse(const player_t *player, ticcmd_t *cmd, botpredic
 		{
 			momdiff = AngleFixed(angle)>>FRACBITS;
 		}
-		else 
+		else
 		{
 			momdiff = 360-(AngleFixed(angle)>>FRACBITS);
 		}
