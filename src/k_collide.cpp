@@ -873,7 +873,6 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 				attackerPlayer->spindashboost = 0;
 				attackerPlayer->sneakertimer = 0;
 				attackerPlayer->instaWhipCharge = 0;
-				attackerPlayer->guardCooldown = GUARDBREAK_COOLDOWN;
 				attackerPlayer->flashing = 0;
 
 				// Localized broly for a local event.
