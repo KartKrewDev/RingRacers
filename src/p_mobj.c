@@ -1055,6 +1055,13 @@ static boolean P_UseUnderwaterGravity(mobj_t *mo)
 		case MT_BANANA:
 			return false;
 
+		case MT_GACHABOM:
+			if (Obj_GachaBomWasTossed(mo))
+			{
+				return false;
+			}
+			break;
+
 		default:
 			break;
 	}
@@ -1248,12 +1255,8 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 				gravityadd /= 2;
 				break;
 			case MT_GACHABOM:
-				// Use normal gravity, unless if it was tossed.
-				if (!Obj_GachaBomWasTossed(mo))
-				{
-					break;
-				}
-				/*FALLTHRU*/
+				gravityadd = (5*gravityadd)/2;
+				break;
 			case MT_BANANA:
 			case MT_EGGMANITEM:
 			case MT_SSMINE:
