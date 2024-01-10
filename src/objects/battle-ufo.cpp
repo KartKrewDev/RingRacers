@@ -247,9 +247,4 @@ INT32 Obj_RandomBattleUFOSpawnerID(void)
 void Obj_BattleUFOBeamThink(mobj_t *beam)
 {
 	P_SetObjectMomZ(beam, beam->info->speed, true);
-
-	if (P_IsObjectOnGround(beam))
-	{
-		P_RemoveMobj(beam);
-	}
 }

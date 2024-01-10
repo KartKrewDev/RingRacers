@@ -3167,6 +3167,14 @@ boolean P_SceneryZMovement(mobj_t *mo)
 					return false;
 			}
 			break;
+		case MT_BATTLEUFO_BEAM:
+			Obj_BattleUFOBeamThink(mo);
+			if (mo->momz <= 0 && mo->z + mo->momz <= mo->floorz)
+			{
+				P_RemoveMobj(mo);
+				return false;
+			}
+			break;
 		default:
 			break;
 	}
@@ -9011,11 +9019,6 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_BATTLEUFO_LEG:
 	{
 		Obj_BattleUFOLegThink(mobj);
-		break;
-	}
-	case MT_BATTLEUFO_BEAM:
-	{
-		Obj_BattleUFOBeamThink(mobj);
 		break;
 	}
 	case MT_ROCKETSNEAKER:

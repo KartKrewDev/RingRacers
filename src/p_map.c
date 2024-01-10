@@ -785,6 +785,11 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			return BMIT_CONTINUE; // overhead
 		}
 
+		if (tm.thing->z + tm.thing->height < thing->floorz)
+		{
+			return BMIT_CONTINUE; // underneath
+		}
+
 		if (!tm.thing->player || !tm.thing->player->fastfall)
 		{
 			fixed_t tractorHeight = 211*mapobjectscale;
