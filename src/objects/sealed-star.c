@@ -60,7 +60,7 @@ void Obj_SSHologramRotatorMapThingSpawn(mobj_t* mo, mapthing_t* mt)
 	}
 
 	memset(stringarg, 0, sizeof(stringarg));
-	strcpy(stringarg, mt->thing_stringargs[0]);
+	strlcpy(stringarg, mt->thing_stringargs[0], sizeof(stringarg));
 	for (i = 0; i < (int)(sizeof(stringarg)); i++)
 	{
 		if (stringarg[i] == ' ' || stringarg[i] == ',')
@@ -74,22 +74,22 @@ void Obj_SSHologramRotatorMapThingSpawn(mobj_t* mo, mapthing_t* mt)
 	{
 		char *next = token + strlen(token) + 1;
 
-		if (strcmp(token, "bird") == 0)
+		if (stricmp(token, "bird") == 0)
 		{
 			mystates[numStates] = S_HOLOGRAM_BIRD;
 			numStates += 1;
 		}
-		else if (strcmp(token, "fish") == 0)
+		else if (stricmp(token, "fish") == 0)
 		{
 			mystates[numStates] = S_HOLOGRAM_FISH;
 			numStates += 1;
 		}
-		else if (strcmp(token, "crab") == 0)
+		else if (stricmp(token, "crab") == 0)
 		{
 			mystates[numStates] = S_HOLOGRAM_CRAB;
 			numStates += 1;
 		}
-		else if (strcmp(token, "squid") == 0)
+		else if (stricmp(token, "squid") == 0)
 		{
 			mystates[numStates] = S_HOLOGRAM_SQUID;
 			numStates += 1;
@@ -193,19 +193,19 @@ void Obj_SSHologramMapThingSpawn(mobj_t* mo, mapthing_t* mt)
 	{
 		P_SetMobjState(mo, S_HOLOGRAM_CRAB);
 	}
-	else if (strcmp(stringarg0, "bird"))
+	else if (stricmp(stringarg0, "bird"))
 	{
 		P_SetMobjState(mo, S_HOLOGRAM_BIRD);
 	}
-	else if (strcmp(stringarg0, "crab") == 0)
+	else if (stricmp(stringarg0, "crab") == 0)
 	{
 		P_SetMobjState(mo, S_HOLOGRAM_CRAB);
 	}
-	else if (strcmp(stringarg0, "fish") == 0)
+	else if (stricmp(stringarg0, "fish") == 0)
 	{
 		P_SetMobjState(mo, S_HOLOGRAM_FISH);
 	}
-	else if (strcmp(stringarg0, "squid") == 0)
+	else if (stricmp(stringarg0, "squid") == 0)
 	{
 		P_SetMobjState(mo, S_HOLOGRAM_SQUID);
 	}
