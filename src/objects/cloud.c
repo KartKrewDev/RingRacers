@@ -157,20 +157,8 @@ void Obj_PlayerCloudThink(player_t *player)
 			if (P_MobjWasRemoved(mo->tracer))
 				return;
 
-			switch(mo->tracer->type)
-			{
-				case MT_AHZ_CLOUD:
-					P_SetObjectMomZ(mo, CLOUDB_ZTHRUST, false);
-					break;
-				case MT_AGZ_CLOUD:
-					mo->momz = FixedMul(mapobjectscale, CLOUD_ZTHRUST * P_MobjFlip(mo->tracer));
-					break;
-				case MT_SSZ_CLOUD:
-					P_SetObjectMomZ(mo, CLOUD_ZTHRUST, false);
-					break;
-				default:
-					break;
-			}
+			mo->momz = FixedMul(mapobjectscale,
+				(mo->tracer->type == MT_AHZ_CLOUD ? CLOUDB_ZTHRUST : CLOUD_ZTHRUST) * P_MobjFlip(mo->tracer));
 			player->cloudlaunch = TICRATE;
 
 			P_InstaThrust(mo, mo->cusval, mo->cvmem);
