@@ -1034,6 +1034,9 @@ char sprnames[NUMSPRITES + 1][5] =
 	"TKBR",
 	"TKBY",
 
+	// Waterfall particles
+	"WTRP",
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	"VIEW",
 };
@@ -5842,6 +5845,9 @@ state_t states[NUMSTATES] =
 
 	// MT_TRICKBALLOON_YELLOW_POINT
 	{SPR_NULL, 0, 1, {NULL}, 0, 0, S_TRICKBALLOON_YELLOW_POINT1},		// S_TRICKBALLOON_YELLOW_POINT1
+
+	// MT_WATERFALLPARTICLESPAWNER
+	{SPR_WTRP, FF_ANIMATE, 32, {NULL}, 31, 1, S_NULL},
 };
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] =
@@ -33514,6 +33520,32 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,            // speed
 		32*FRACUNIT,  // radius
 		64*FRACUNIT,  // height
+		0,            // dispoffset
+		0,            // mass
+		0,            // damage
+		sfx_None,     // activesound
+		MF_NOGRAVITY, // flags
+		S_NULL        // raisestate
+	},
+	{           // MT_WATERFALLPARTICLESPAWNER
+		3422,           // doomednum
+		S_INVISIBLE, // spawnstate
+		1,            // spawnhealth
+		S_NULL,       // seestate
+		sfx_None,     // seesound
+		0,            // reactiontime
+		sfx_None,     // attacksound
+		S_NULL,       // painstate
+		0,            // painchance
+		sfx_None,     // painsound
+		S_NULL,       // meleestate
+		S_NULL,       // missilestate
+		S_NULL,       // deathstate
+		S_NULL,       // xdeathstate
+		sfx_None,     // deathsound
+		0,            // speed
+		1*FRACUNIT,   // radius
+		1*FRACUNIT,   // height
 		0,            // dispoffset
 		0,            // mass
 		0,            // damage

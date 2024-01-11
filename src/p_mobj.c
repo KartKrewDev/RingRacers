@@ -10330,6 +10330,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		mobj->z = (mobj->extravalue1 - (16 * mobj->scale)) + sine;
 		break;
 	}
+	case MT_WATERFALLPARTICLESPAWNER:
+	{
+		Obj_WaterfallParticleThink(mobj);
+		break;
+	}
 
 	default:
 		// check mobj against possible water content, before movement code

@@ -366,6 +366,9 @@ void Obj_PlayerBulbThink(player_t *player);
 void Obj_CloudTouched(mobj_t *special, mobj_t *toucher);
 void Obj_BulbTouched(mobj_t *special, mobj_t *toucher);
 
+/* Waterfall Particles Spawner */
+void Obj_WaterfallParticleThink(mobj_t *mo);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
