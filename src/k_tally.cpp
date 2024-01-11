@@ -34,7 +34,6 @@
 #include "s_sound.h"
 #include "st_stuff.h"
 #include "r_fps.h"
-#include "g_party.h"
 
 boolean level_tally_t::UseBonuses(void)
 {
@@ -1384,8 +1383,7 @@ void K_TickPlayerTally(player_t *player)
 
 void K_DrawPlayerTally(void)
 {
-	// Draw the observer player's tally, not whoever they may be spectating
-	players[G_PartyMember(consoleplayer, R_GetViewNumber())].tally.Draw();
+	stplyr->tally.Draw();
 }
 
 boolean K_PlayerTallyActive(player_t *player)
