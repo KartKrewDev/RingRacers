@@ -3419,11 +3419,6 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 			}
 			break;
 
-		case 440: // Play race countdown and start Metal Sonic
-			if (!metalrecording && !metalplayback)
-				G_DoPlayMetal();
-			break;
-
 		case 441: // Trigger unlockable
 			{
 				INT32 trigid = args[0];
@@ -5288,10 +5283,10 @@ static void P_EvaluateSpecialFlags(player_t *player, sector_t *sector, sector_t 
 		P_ProcessExitSector(player, sectag);
 	if (sector->specialflags & SSF_FAN)
 	{
-		player->mo->momz += mobjinfo[MT_FAN].mass/4;
+		player->mo->momz += (5*FRACUNIT)/4;
 
-		if (player->mo->momz > mobjinfo[MT_FAN].mass)
-			player->mo->momz = mobjinfo[MT_FAN].mass;
+		if (player->mo->momz > (5*FRACUNIT))
+			player->mo->momz = (5*FRACUNIT);
 
 		P_ResetPlayer(player);
 		/*
@@ -6645,8 +6640,6 @@ void T_LaserFlash(laserthink_t *flash)
 
 				if (thing->flags & MF_SHOOTABLE)
 					P_DamageMobj(thing, NULL, NULL, 1, DMG_NORMAL);
-				else if (thing->type == MT_EGGSHIELD)
-					P_KillMobj(thing, NULL, NULL, DMG_NORMAL);
 			}
 
 			break;

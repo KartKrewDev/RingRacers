@@ -709,8 +709,6 @@ void M_LevelSelected(INT16 add)
 
 			if (demo.playback)
 				G_StopDemo();
-			if (metalrecording)
-				G_StopMetalDemo();
 
 				/*if (levellist.choosemap == 0)
 					levellist.choosemap = G_RandMap(G_TOLFlag(levellist.newgametype), -1, 0, 0, false, NULL);*/

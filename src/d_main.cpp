@@ -1850,12 +1850,7 @@ void D_SRB2Main(void)
 
 	// check for a driver that wants intermission stats
 	// start the apropriate game based on parms
-	if (M_CheckParm("-metal"))
-	{
-		G_RecordMetal();
-		autostart = true;
-	}
-	else if (M_CheckParm("-record") && M_IsNextParm())
+	if (M_CheckParm("-record") && M_IsNextParm())
 	{
 		G_RecordDemo(M_GetNextParm());
 		autostart = true;

@@ -486,18 +486,6 @@ static void P_DoFanAndGasJet(mobj_t *spring, mobj_t *object)
 
 	switch (spring->type)
 	{
-		case MT_FAN: // fan
-			if (zdist > (spring->health << FRACBITS)) // max z distance determined by health (set by map thing args[0])
-				break;
-			if (flipval*object->momz >= FixedMul(speed, spring->scale)) // if object's already moving faster than your best, don't bother
-				break;
-
-			object->momz += flipval*FixedMul(speed/4, spring->scale);
-
-			// limit the speed if too high
-			if (flipval*object->momz > FixedMul(speed, spring->scale))
-				object->momz = flipval*FixedMul(speed, spring->scale);
-			break;
 		case MT_STEAM: // Steam
 			if (zdist > FixedMul(16*FRACUNIT, spring->scale))
 				break;
@@ -1207,25 +1195,6 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		return BMIT_CONTINUE;
 	}
 
-	if ((thing->type == MT_SPRINGSHELL || thing->type == MT_YELLOWSHELL) && thing->health > 0
-	 && (tm.thing->player || (tm.thing->flags & MF_PUSHABLE)) && tm.thing->health > 0)
-	{
-		// Multiplying by -1 inherently flips "less than" and "greater than"
-		fixed_t tmz     = ((thing->eflags & MFE_VERTICALFLIP) ? -(tm.thing->z + tm.thing->height) : tm.thing->z);
-		fixed_t tmznext = ((thing->eflags & MFE_VERTICALFLIP) ? -tm.thing->momz : tm.thing->momz) + tmz;
-		fixed_t thzh    = ((thing->eflags & MFE_VERTICALFLIP) ? -thing->z : thing->z + thing->height);
-		//fixed_t sprarea = FixedMul(8*FRACUNIT, thing->scale) * P_MobjFlip(thing);
-
-		//if ((tmznext <= thzh && tmz > thzh) || (tmznext > thzh - sprarea && tmznext < thzh))
-		if (tmznext <= thzh)
-		{
-			P_DoSpring(thing, tm.thing);
-		//	return BMIT_CONTINUE;
-		}
-		//else if (tmz > thzh - sprarea && tmz < thzh) // Don't damage people springing up / down
-			return BMIT_CONTINUE;
-	}
-
 	// missiles can hit other things
 	if ((tm.thing->flags & MF_MISSILE) && !damage) // if something was already damaged, don't run this
 	{
@@ -1402,13 +1371,13 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 
 	if (thing->flags & MF_PUSHABLE)
 	{
-		if (tm.thing->type == MT_FAN || tm.thing->type == MT_STEAM)
+		if (tm.thing->type == MT_STEAM)
 			P_DoFanAndGasJet(tm.thing, thing);
 	}
 
 	if (tm.thing->flags & MF_PUSHABLE)
 	{
-		if (thing->type == MT_FAN || thing->type == MT_STEAM)
+		if (thing->type == MT_STEAM)
 		{
 			P_DoFanAndGasJet(thing, tm.thing);
 			return BMIT_CONTINUE;
@@ -1433,7 +1402,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 
 	if (thing->player)
 	{
-		if (tm.thing->type == MT_FAN || tm.thing->type == MT_STEAM)
+		if (tm.thing->type == MT_STEAM)
 			P_DoFanAndGasJet(tm.thing, thing);
 	}
 
@@ -1442,7 +1411,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		if (!tm.thing->health)
 			return BMIT_CONTINUE;
 
-		if (thing->type == MT_FAN || thing->type == MT_STEAM)
+		if (thing->type == MT_STEAM)
 			P_DoFanAndGasJet(thing, tm.thing);
 		else if (thing->flags & MF_SPRING)
 		{
@@ -2235,8 +2204,6 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y, TryMoveResult_t *re
 
 			if (P_CheckSolidFFloorSurface(thing, rover))
 				;
-			else if (thing->type == MT_SKIM && (rover->fofflags & FOF_SWIMMABLE))
-				;
 			else if (!((rover->fofflags & FOF_BLOCKPLAYER && thing->player)
 			    || (rover->fofflags & FOF_BLOCKOTHERS && !thing->player)
 				|| rover->fofflags & FOF_QUICKSAND))
@@ -2273,8 +2240,7 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y, TryMoveResult_t *re
 			}
 
 			if (bottomheight < tm.ceilingz && abs(delta1) >= abs(delta2)
-				&& !(rover->fofflags & FOF_PLATFORM)
-				&& !(thing->type == MT_SKIM && (rover->fofflags & FOF_SWIMMABLE)))
+				&& !(rover->fofflags & FOF_PLATFORM))
 			{
 				tm.ceilingz = tm.drpoffceilz = bottomheight;
 				tm.ceilingrover = rover;
@@ -3039,7 +3005,7 @@ increment_move
 				}
 			}
 
-			if (!allowdropoff && !(thing->flags & MF_FLOAT) && thing->type != MT_SKIM && !tm.floorthing)
+			if (!allowdropoff && !(thing->flags & MF_FLOAT) && !tm.floorthing)
 			{
 				if (thing->eflags & MFE_VERTICALFLIP)
 				{
@@ -4202,27 +4168,8 @@ void P_BounceMove(mobj_t *mo, TryMoveResult_t *result)
 	if (bestslideline == NULL)
 		return;
 
-	if (mo->type == MT_SHELL)
-	{
-		tmxmove = mmomx;
-		tmymove = mmomy;
-	}
-	else if (mo->type == MT_THROWNBOUNCE)
-	{
-		tmxmove = FixedMul(mmomx, (FRACUNIT - (FRACUNIT>>6) - (FRACUNIT>>5)));
-		tmymove = FixedMul(mmomy, (FRACUNIT - (FRACUNIT>>6) - (FRACUNIT>>5)));
-	}
-	else if (mo->type == MT_THROWNGRENADE)
-	{
-		// Quickly decay speed as it bounces
-		tmxmove = FixedDiv(mmomx, 2*FRACUNIT);
-		tmymove = FixedDiv(mmomy, 2*FRACUNIT);
-	}
-	else
-	{
-		tmxmove = FixedMul(mmomx, (FRACUNIT - (FRACUNIT>>2) - (FRACUNIT>>3)));
-		tmymove = FixedMul(mmomy, (FRACUNIT - (FRACUNIT>>2) - (FRACUNIT>>3)));
-	}
+	tmxmove = FixedMul(mmomx, (FRACUNIT - (FRACUNIT>>2) - (FRACUNIT>>3)));
+	tmymove = FixedMul(mmomy, (FRACUNIT - (FRACUNIT>>2) - (FRACUNIT>>3)));
 
 	P_HitBounceLine(bestslideline); // clip the moves
 

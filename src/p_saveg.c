@@ -5925,14 +5925,6 @@ static inline void P_NetArchiveSpecials(savebuffer_t *save)
 	// Current global weather type
 	WRITEUINT8(save->p, globalweather);
 
-	if (metalplayback) // Is metal sonic running?
-	{
-		WRITEUINT8(save->p, 0x01);
-		G_SaveMetal(&save->p);
-	}
-	else
-		WRITEUINT8(save->p, 0x00);
-
 	TracyCZoneEnd(__zone);
 }
 
@@ -5972,9 +5964,6 @@ static void P_NetUnArchiveSpecials(savebuffer_t *save)
 		if (curWeather != PRECIP_NONE)
 			P_SwitchWeather(globalweather);
 	}
-
-	if (READUINT8(save->p) == 0x01) // metal sonic
-		G_LoadMetal(&save->p);
 
 	TracyCZoneEnd(__zone);
 }

@@ -2020,8 +2020,6 @@ static void Command_Playdemo_f(void)
 	// disconnect from server here?
 	if (demo.playback)
 		G_StopDemo();
-	if (metalplayback)
-		G_StopMetalDemo();
 
 	// open the demo file
 	strcpy(name, COM_Argv(1));
@@ -2059,8 +2057,6 @@ static void Command_Timedemo_f(void)
 	// disconnect from server here?
 	if (demo.playback)
 		G_StopDemo();
-	if (metalplayback)
-		G_StopMetalDemo();
 
 	// open the demo file
 	strcpy (timedemo_name, COM_Argv(1));
