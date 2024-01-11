@@ -1048,6 +1048,27 @@ static void P_PlayerFlip(mobj_t *mo)
 	// Flip aiming to match!
 }
 
+static boolean P_UseUnderwaterGravity(mobj_t *mo)
+{
+	switch (mo->type)
+	{
+		case MT_BANANA:
+			return false;
+
+		case MT_GACHABOM:
+			if (Obj_GachaBomWasTossed(mo))
+			{
+				return false;
+			}
+			break;
+
+		default:
+			break;
+	}
+
+	return true;
+}
+
 //
 // P_GetMobjGravity
 //
@@ -1106,7 +1127,7 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 	}
 
 	// Less gravity underwater.
-	if ((mo->eflags & MFE_UNDERWATER) && !goopgravity)
+	if ((mo->eflags & MFE_UNDERWATER) && !goopgravity && P_UseUnderwaterGravity(mo))
 	{
 		if (mo->momz * P_MobjFlip(mo) <= 0)
 		{
@@ -1234,12 +1255,8 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 				gravityadd /= 2;
 				break;
 			case MT_GACHABOM:
-				// Use normal gravity, unless if it was tossed.
-				if (!Obj_GachaBomWasTossed(mo))
-				{
-					break;
-				}
-				/*FALLTHRU*/
+				gravityadd = (5*gravityadd)/2;
+				break;
 			case MT_BANANA:
 			case MT_EGGMANITEM:
 			case MT_SSMINE:
@@ -7600,6 +7617,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			mobj->angle += spin;
 			mobj->rollangle -= spin;
 		}
+
+		P_MobjCheckWater(mobj);
 
 		if (mobj->threshold > 0)
 			mobj->threshold--;

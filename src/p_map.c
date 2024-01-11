@@ -789,7 +789,14 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		{
 			fixed_t tractorHeight = 211*mapobjectscale;
 			fixed_t zRange = FixedDiv(thing->z - tm.thing->z, tractorHeight);
-			P_SetObjectMomZ(tm.thing, max(zRange, FRACUNIT/16), true);
+			fixed_t momZ = max(zRange, FRACUNIT/16);
+
+			if (tm.thing->eflags & MFE_UNDERWATER)
+			{
+				momZ = (117 * momZ) / 200;
+			}
+
+			P_SetObjectMomZ(tm.thing, momZ, true);
 		}
 
 		fixed_t friction = 33*FRACUNIT/35;
