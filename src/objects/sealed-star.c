@@ -530,7 +530,9 @@ void Obj_SLSTMaceMobjThink(mobj_t* mo)
 {
 	if (leveltime % 2 == 0)
 	{
-		A_GhostMe(mo, 9, 0);
+		var1 = 9;
+		var2 = 0;
+		A_GhostMe(mo);
 	}
 }
 
@@ -648,6 +650,8 @@ void Obj_SSCabotronStarMobjThink(mobj_t* mo)
 	if (mo->target)
 	{
 		// "but ang just call the action in the soc :))))"
+		var1 = 0;
+		var2 = 0;
 		A_UnidusBall(mo);
 		// how about no because for some reason it will call the func ONCE and never again in its pitiful aimless life
 
