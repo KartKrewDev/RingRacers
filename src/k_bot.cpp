@@ -1854,7 +1854,7 @@ static void K_BuildBotTiccmdNormal(const player_t *player, ticcmd_t *cmd)
 	// Free the prediction we made earlier
 	if (predict != nullptr)
 	{
-		if (cv_kartdebugbots.value != 0 && player - players == displayplayers[0])
+		if (cv_kartdebugbots.value != 0 && player - players == displayplayers[0] && !(paused || P_AutoPause()))
 		{
 			K_DrawPredictionDebug(predict, player);
 		}
