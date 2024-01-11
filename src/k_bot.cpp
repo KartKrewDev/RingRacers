@@ -44,6 +44,8 @@
 #include "discord.h" // DRPC_UpdatePresence
 #include "i_net.h" // doomcom
 
+extern "C" consvar_t cv_forcebots;
+
 /*--------------------------------------------------
 	void K_SetBot(UINT8 playerNum, UINT8 skinnum, UINT8 difficulty, botStyle_e style)
 
@@ -189,7 +191,7 @@ void K_UpdateMatchRaceBots(void)
 	}
 	grabskins[usableskins] = MAXSKINS;
 
-	if ((gametyperules & GTR_BOTS) == 0)
+	if ((gametyperules & GTR_BOTS) == 0 && !cv_forcebots.value)
 	{
 		difficulty = 0;
 	}

@@ -388,7 +388,7 @@ void K_UpdateGrandPrixBots(void)
 			continue;
 		}
 
-		players[i].spectator = !(gametyperules & GTR_BOTS) || (grandprixinfo.eventmode != GPEVENT_NONE);
+		players[i].spectator = K_BotDefaultSpectator();
 	}
 
 	if (grandprixinfo.wonround == false)
@@ -901,6 +901,13 @@ boolean K_CanChangeRules(boolean allowdemos)
 --------------------------------------------------*/
 boolean K_BotDefaultSpectator(void)
 {
+	extern consvar_t cv_forcebots;
+
+	if (cv_forcebots.value)
+	{
+		return false;
+	}
+
 	if (!(gametyperules & GTR_BOTS))
 	{
 		// This gametype does not support bots.

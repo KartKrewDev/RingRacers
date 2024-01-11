@@ -224,6 +224,11 @@ bool is_player_tracking_target(player_t *player = stplyr)
 		return false;
 	}
 
+	if (player->spectator)
+	{
+		return false;
+	}
+
 	if (inDuel)
 	{
 		// Always draw targets in 1v1 but don't draw player's
