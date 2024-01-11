@@ -14,6 +14,7 @@
 #include "doomdef.h"
 #include "doomstat.h"
 #include "command.h"
+#include "console.h" // con_startup
 #include "g_game.h"
 #include "m_argv.h"
 #include "r_main.h" // R_PointToAngle2() used to calc stereo sep.
@@ -2553,7 +2554,7 @@ void MasterVolume_OnChange(void)
 void DigMusicVolume_OnChange(void);
 void DigMusicVolume_OnChange(void)
 {
-	if (!cv_gamedigimusic.value)
+	if (!cv_gamedigimusic.value && !con_startup)
 	{
 		CV_SetValue(&cv_gamedigimusic, 1);
 	}
@@ -2563,7 +2564,7 @@ void DigMusicVolume_OnChange(void)
 void SoundVolume_OnChange(void);
 void SoundVolume_OnChange(void)
 {
-	if (!cv_gamesounds.value)
+	if (!cv_gamesounds.value && !con_startup)
 	{
 		CV_SetValue(&cv_gamesounds, 1);
 	}
