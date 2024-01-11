@@ -6807,7 +6807,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		UINT8 i;
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if (playeringame[i] == false)
+			if (playeringame[i] == false || players[i].spectator == true)
 			{
 				continue;
 			}
