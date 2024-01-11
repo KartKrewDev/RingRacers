@@ -208,7 +208,7 @@ void Obj_PlayerBulbThink(player_t *player)
 		for (UINT8 i = 1; i < 16; i++)
 		{
 			mobj_t *d = P_SpawnMobj(mo->x, mo->y, mo->z, MT_DRIFTDUST);
-			d->angle = (ANG1*360)/16 * i;
+			d->angle = ANGLE_MAX/16 * i;
 			P_InstaThrust(d, d->angle, mapobjectscale*23);
 			d->momz = mapobjectscale*8*P_MobjFlip(mo->tracer);
 		}
