@@ -98,6 +98,12 @@ void Obj_SSHologramRotatorMapThingSpawn(mobj_t* mo, mapthing_t* mt)
 		token = next;
 	}
 
+	if (numStates == 0)
+	{
+		CONS_Alert(CONS_WARNING, "MT_HOLOGRAM_ROTATOR %d: stringarg 0 consists exclusively of unrecognised creatures\n", mt->tid);
+		return;
+	}
+
 	if (mt->thing_args[0])
 	{
 		speed = mt->thing_args[0];
