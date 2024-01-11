@@ -5898,7 +5898,10 @@ void G_GetBackupCupData(boolean actuallygetdata)
 	P_GetBackupCupData(&save);
 
 	if (cv_dummygpdifficulty.value != cupsavedata.difficulty
-	|| !!cv_dummygpencore.value != cupsavedata.encore)
+#if 0 // TODO: encore GP
+	|| !!cv_dummygpencore.value != cupsavedata.encore
+#endif
+	)
 	{
 		// Still not compatible.
 		cupsavedata.cup = NULL;
