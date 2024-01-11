@@ -981,7 +981,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 	}
 
 	dc.texturemid = vis->texturemid;
-	dc.texheight = 0;
+	dc.texheight = patch->height;
 
 	frac = vis->startfrac;
 	windowtop = windowbottom = sprbotscreen = INT32_MAX;
@@ -1172,7 +1172,7 @@ static void R_DrawPrecipitationVisSprite(vissprite_t *vis)
 
 	dc.iscale = FixedDiv(FRACUNIT, vis->scale);
 	dc.texturemid = FixedDiv(vis->texturemid, this_scale);
-	dc.texheight = 0;
+	dc.texheight = patch->height;
 
 	frac = vis->startfrac;
 	spryscale = vis->scale;
