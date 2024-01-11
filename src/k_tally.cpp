@@ -34,6 +34,7 @@
 #include "s_sound.h"
 #include "st_stuff.h"
 #include "r_fps.h"
+#include "g_party.h"
 
 boolean level_tally_t::UseBonuses(void)
 {
@@ -549,6 +550,16 @@ void level_tally_t::Init(player_t *player)
 		// No tally when losing special stages
 		state = TALLY_ST_IGNORE;
 		delay = 0;
+	}
+
+	if (UINT8 pnum = player - players; G_IsPartyLocal(pnum))
+	{
+		UINT8 view = G_PartyPosition(pnum);
+		// Battle: if this player's viewpoint has changed
+		// since being eliminated, set it back so they see
+		// their own Tally and not someone else's.
+		displayplayers[view] = pnum;
+		G_FixCamera(1 + view);
 	}
 }
 
