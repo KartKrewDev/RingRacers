@@ -10272,6 +10272,10 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		Obj_GPZSeasawThink(mobj);
 		break;
 
+	case MT_AGZ_BULB:
+		Obj_TulipSpawnerThink(mobj);
+		break;
+
 	case MT_BALLSWITCH_BALL:
 	{
 		Obj_BallSwitchThink(mobj);
@@ -11802,6 +11806,11 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			break;
 		case MT_WATERPALACETURBINE:
 			Obj_WPZTurbineSpawn(mobj);
+			break;
+		case MT_AHZ_CLOUDCLUSTER:
+		case MT_AGZ_CLOUDCLUSTER:
+		case MT_SSZ_CLOUDCLUSTER:
+			Obj_CloudSpawn(mobj);
 			break;
 		case MT_SNEAKERPANEL:
 			Obj_SneakerPanelSpawn(mobj);

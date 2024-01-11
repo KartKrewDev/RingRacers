@@ -625,6 +625,14 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEFIXED(save->p, players[i].turbineheight);
 		WRITEUINT8(save->p, players[i].turbinespd);
 
+		WRITEUINT32(save->p, players[i].cloud);
+		WRITEUINT32(save->p, players[i].cloudlaunch);
+		WRITEUINT32(save->p, players[i].cloudbuf);
+
+		WRITEUINT32(save->p, players[i].tulip);
+		WRITEUINT32(save->p, players[i].tuliplaunch);
+		WRITEUINT32(save->p, players[i].tulipbuf);
+
 		// respawnvars_t
 		WRITEUINT8(save->p, players[i].respawn.state);
 		WRITEUINT32(save->p, K_GetWaypointHeapIndex(players[i].respawn.wp));
@@ -1185,6 +1193,14 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].turbineangle = READINT32(save->p);
 		players[i].turbineheight = READFIXED(save->p);
 		players[i].turbinespd = (boolean)READUINT8(save->p);
+
+		players[i].cloud = (tic_t)READUINT32(save->p);
+		players[i].cloudlaunch = (tic_t)READUINT32(save->p);
+		players[i].cloudbuf = (tic_t)READUINT32(save->p);
+
+		players[i].tulip = (tic_t)READUINT32(save->p);
+		players[i].tuliplaunch = (tic_t)READUINT32(save->p);
+		players[i].tulipbuf = (tic_t)READUINT32(save->p);
 
 		// respawnvars_t
 		players[i].respawn.state = READUINT8(save->p);
