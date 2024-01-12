@@ -2802,9 +2802,9 @@ mapthing_t *G_FindMapStart(INT32 playernum)
 	if (K_PodiumSequence() == true)
 		spawnpoint = G_FindPodiumStart(playernum);
 
-	// -- Time Attack --
+	// -- Time Attack / Battle duels --
 	// Order: Race->DM->CTF
-	else if (K_TimeAttackRules() == true)
+	else if (K_TimeAttackRules() == true || ((gametyperules & GTR_BATTLESTARTS) && inDuel))
 		spawnpoint = G_FindRaceStartOrFallback(playernum);
 
 	// -- CTF --
