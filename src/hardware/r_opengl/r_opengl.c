@@ -845,6 +845,17 @@ static GLRGBAFloat shader_defaultcolor = {1.0f, 1.0f, 1.0f, 1.0f};
 		"gl_FragColor = final_color;\n" \
 	"}\0"
 
+// Sprite clipping makes me want to McFucking Die
+
+#define GLSL_SPRITECLIP_HACK_VERTEX_SHADER \
+	"void main(void) {\n" \
+		"gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;\n" \
+		"gl_FrontColor = gl_Color;\n" \
+		"gl_TexCoord[0].xy = gl_MultiTexCoord0.xy;\n" \
+		"gl_ClipVertex = gl_ModelViewMatrix * gl_Vertex;\n" \
+		"gl_Position.z -= 80 / gl_Position.z;\n" \
+	"}\0"
+
 //
 // Sky fragment shader
 // Modulates poly_color with gl_Color
@@ -874,7 +885,7 @@ static struct {
 	{GLSL_DEFAULT_VERTEX_SHADER, GLSL_SOFTWARE_FRAGMENT_SHADER},
 
 	// Sprite shader
-	{GLSL_DEFAULT_VERTEX_SHADER, GLSL_SOFTWARE_FRAGMENT_SHADER},
+	{GLSL_SPRITECLIP_HACK_VERTEX_SHADER, GLSL_SOFTWARE_FRAGMENT_SHADER},
 
 	// Model shader
 	{GLSL_DEFAULT_VERTEX_SHADER, GLSL_SOFTWARE_FRAGMENT_SHADER},
