@@ -73,6 +73,7 @@ profile_t* PR_MakeProfile(
 	new->kickstartaccel = false;
 	new->autoroulette = false;
 	new->litesteer = true;
+	new->rumble = true;
 
 	// Copy from gamecontrol directly as we'll be setting controls up directly in the profile.
 	memcpy(new->controls, controlarray, sizeof(new->controls));
