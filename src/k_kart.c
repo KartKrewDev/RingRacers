@@ -4643,6 +4643,7 @@ void K_ApplyTripWire(player_t *player, tripwirestate_t state)
 	if (player->hyudorotimer <= 0)
 	{
 		K_AddHitLag(player->mo, 10, false);
+		player->mo->hitlag -= min(player->mo->hitlag, player->tripwireUnstuck/4);
 	}
 
 	if (state == TRIPSTATE_PASSED && player->spinouttimer &&
@@ -4650,6 +4651,8 @@ void K_ApplyTripWire(player_t *player, tripwirestate_t state)
 	{
 		K_TumblePlayer(player, NULL, NULL);
 	}
+
+	player->tripwireUnstuck += 10;
 }
 
 INT32 K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source) // A bit of a hack, we just throw the player up higher here and extend their spinout timer
@@ -8623,6 +8626,15 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->preventfailsafe)
 		player->preventfailsafe--;
+
+	if (player->tripwireUnstuck > 150)
+	{
+		player->tripwireUnstuck = 0;
+		K_DoIngameRespawn(player);
+	}
+
+	if (player->tripwireUnstuck && !player->mo->hitlag)
+		player->tripwireUnstuck--;
 
 	if ((player->respawn.state == RESPAWNST_NONE) && player->growshrinktimer != 0)
 	{

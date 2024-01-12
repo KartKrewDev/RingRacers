@@ -353,6 +353,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->oldGuard);
 	else if (fastcmp(field,"preventfailsafe"))
 		lua_pushinteger(L, plr->preventfailsafe);
+	else if (fastcmp(field,"tripwireUnstuck"))
+		lua_pushinteger(L, plr->tripwireUnstuck);
 	/*
 	else if (fastcmp(field,"itemroulette"))
 		lua_pushinteger(L, plr->itemroulette);
@@ -871,6 +873,8 @@ static int player_set(lua_State *L)
 		plr->oldGuard = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"preventfailsafe"))
 		plr->preventfailsafe = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"tripwireUnstuck"))
+		plr->tripwireUnstuck = luaL_checkinteger(L, 3);
 	/*
 	else if (fastcmp(field,"itemroulette"))
 		plr->itemroulette = luaL_checkinteger(L, 3);

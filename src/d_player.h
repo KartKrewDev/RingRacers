@@ -967,6 +967,8 @@ struct player_t
 
 	UINT8 preventfailsafe; // Set when taking damage to prevent cheesing eggboxes
 
+	UINT8 tripwireUnstuck;
+
 	UINT8 handtimer;
 	angle_t besthanddirection;
 
