@@ -49,7 +49,7 @@ profile_t* PR_MakeProfile(
 	INT32 controlarray[num_gamecontrols][MAXINPUTMAPPING],
 	boolean guest)
 {
-	profile_t *new = Z_Malloc(sizeof(profile_t), PU_STATIC, NULL);
+	profile_t *new = Z_Calloc(sizeof(profile_t), PU_STATIC, NULL);
 
 	new->version = PROFILEVER;
 
@@ -351,7 +351,7 @@ void PR_LoadProfiles(void)
 
 	for (i = 1; i < numprofiles; i++)
 	{
-		profilesList[i] = Z_Malloc(sizeof(profile_t), PU_STATIC, NULL);
+		profilesList[i] = Z_Calloc(sizeof(profile_t), PU_STATIC, NULL);
 
 		// Version. (We always update this on successful forward step)
 		profilesList[i]->version = PROFILEVER;
