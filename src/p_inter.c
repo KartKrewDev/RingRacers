@@ -2637,7 +2637,8 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 	}
 	else
 	{
-		if (player->respawn.state != RESPAWNST_NONE)
+		// DMG_TIMEOVER: player explosion
+		if (player->respawn.state != RESPAWNST_NONE && type != DMG_TIMEOVER)
 		{
 			K_DoInstashield(player);
 			return false;
