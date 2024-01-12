@@ -13,6 +13,9 @@ menuitem_t OPTIONS_Video[] =
 	{IT_STRING | IT_CALL, "Set Resolution...", "Change the screen resolution for the game.",
 		NULL, {.routine = M_VideoModeMenu}, 0, 0},
 
+	{IT_NOTHING|IT_SPACE, NULL, NULL,
+		NULL, {NULL}, 0, 0},
+
 #if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
 	{IT_STRING | IT_CVAR, "Fullscreen", "Set whether you want to use fullscreen or windowed mode.",
 		NULL, {.cvar = &cv_fullscreen}, 0, 0},
@@ -35,11 +38,14 @@ menuitem_t OPTIONS_Video[] =
 		NULL, {.cvar = &cv_reducevfx}, 0, 0},
 #endif
 
+	/*
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER, "Gamma", "Adjusts the overall brightness of the game.",
 		NULL, {.cvar = &cv_globalgamma}, 0, 0},
 
 	{IT_NOTHING|IT_SPACE, NULL, NULL,
 		NULL, {NULL}, 0, 0},
+
+	*/
 
 	{IT_HEADER, "Advanced...", NULL,
 		NULL, {NULL}, 0, 0},
