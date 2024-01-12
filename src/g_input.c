@@ -249,6 +249,19 @@ INT32* G_GetDeviceGameKeyDownArray(INT32 device)
 	return NULL;
 }
 
+void G_ResetAllDeviceGameKeyDown(void)
+{
+	int i;
+
+	memset(gamekeydown, 0, sizeof(gamekeydown));
+	memset(g_gamekeydown_device0, 0, sizeof(g_gamekeydown_device0));
+
+	for (i = 0; i < g_available_gamepad_devices; i++)
+	{
+		memset(g_gamepad_gamekeydown[i], 0, sizeof(INT32) * NUMINPUTS);
+	}
+}
+
 boolean G_IsDeviceResponding(INT32 device)
 {
 	int i;

@@ -598,7 +598,7 @@ void M_StartControlPanel(void)
 {
 	INT32 i;
 
-	memset(gamekeydown, 0, sizeof (gamekeydown));
+	G_ResetAllDeviceGameKeyDown();
 	memset(menucmd, 0, sizeof (menucmd));
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{

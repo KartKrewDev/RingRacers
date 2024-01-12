@@ -167,6 +167,7 @@ void G_ResetAllDeviceRumbles(void);
 
 /// Get the gamekeydown array (NUMINPUTS values) for the given device, or NULL if the device id is invalid.
 INT32* G_GetDeviceGameKeyDownArray(INT32 device);
+void G_ResetAllDeviceGameKeyDown(void);
 
 boolean G_IsDeviceResponding(INT32 device);
 void G_SetDeviceResponding(INT32 device, boolean responding);
