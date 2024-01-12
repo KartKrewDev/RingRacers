@@ -548,7 +548,7 @@ consvar_t cv_pause = NetVar("pausepermission", "Server").values({{0, "Server"}, 
 consvar_t cv_pingmeasurement = Server("pingmeasurement", "Frames").values({{0, "Frames"}, {1, "Milliseconds"}});
 consvar_t cv_playbackspeed = Server("playbackspeed", "1").min_max(1, 10).dont_save();
 
-#ifdef TESTERS
+#ifdef DEVELOP
 	consvar_t cv_recordmultiplayerdemos = Server("netdemo_record", "Auto Save").values({{2, "Auto Save"}});
 #else
 	consvar_t cv_recordmultiplayerdemos = Server("netdemo_record", "Manual Save").values({{0, "Disabled"}, {1, "Manual Save"}, {2, "Auto Save"}});
