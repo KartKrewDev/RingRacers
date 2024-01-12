@@ -12,6 +12,8 @@
 #include <algorithm>
 #include <vector>
 
+#include "v_draw.hpp"
+
 #include "k_hud.h"
 #include "k_kart.h"
 #include "k_battle.h"
@@ -2272,7 +2274,9 @@ static boolean K_drawKartPositionFaces(void)
 		ranklines++;
 	}
 
-	if (ranklines < 5)
+	if (gametyperules & GTR_POINTLIMIT) // playing battle
+		Y += (9*5) - 5; // <-- arbitrary calculation
+	else if (ranklines < 5)
 		Y += (9*ranklines);
 	else
 		Y += (9*5);
@@ -2280,7 +2284,46 @@ static boolean K_drawKartPositionFaces(void)
 	ranklines--;
 	i = ranklines;
 
-	if ((gametyperules & GTR_POINTLIMIT) || strank <= 2) // too close to the top, or playing battle, or a spectator? would have had (strank == -1) called out, but already caught by (strank <= 2)
+	if (gametyperules & GTR_POINTLIMIT) // playing battle
+	{
+		// 3 lines max in Battle
+		if (i > 2)
+			i = 2;
+		ranklines = 0;
+
+		// You must appear on the leaderboard, even if you don't rank top 3
+		if (strank > i)
+		{
+			strank = i;
+			rankplayer[strank] = stplyr - players;
+		}
+
+		// Draw GOAL
+		UINT8 skull = g_pointlimit <= stplyr->roundscore;
+		INT32 height = i*18;
+		INT32 GOAL_Y = Y-height;
+		V_DrawScaledPatch(FACE_X-5, GOAL_Y-32, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_goal[skull][0]);
+
+		// Flashing KO
+		if (skull)
+		{
+			if (leveltime % 12 < 6)
+				V_DrawScaledPatch(FACE_X-5, GOAL_Y-32, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_goaltext1p);
+		}
+		else
+		{
+			using srb2::Draw;
+			Draw(FACE_X+8.5, GOAL_Y-15)
+				.font(Draw::Font::kZVote)
+				.align(Draw::Align::kCenter)
+				.flags(V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT)
+				.text("{:02}", g_pointlimit);
+		}
+
+		// Line cutting behind rank faces
+		V_DrawScaledPatch(FACE_X+6, GOAL_Y, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_goalrod[0]);
+	}
+	else if (strank <= 2) // too close to the top, or a spectator? would have had (strank == -1) called out, but already caught by (strank <= 2)
 	{
 		if (i > 4) // could be both...
 			i = 4;
