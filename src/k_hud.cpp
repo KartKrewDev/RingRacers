@@ -1244,6 +1244,7 @@ static void K_initKartHUD(void)
 
 		STCD_Y = BASEVIDHEIGHT/4;
 
+		MINI_X -= 16;
 		MINI_Y = (BASEVIDHEIGHT/2);
 
 		if (r_splitscreen > 1)	// 3P/4P Small Splitscreen
@@ -2221,7 +2222,7 @@ struct PositionFacesInfo
 
 	PositionFacesInfo();
 	void draw_1p();
-	void draw_4p_battle(int y, INT32 flags);
+	void draw_4p_battle(int x, int y, INT32 flags);
 
 	UINT32 top_score() const { return players[rankplayer[0]].roundscore; }
 	bool near_goal() const { return g_pointlimit - 5 <= top_score(); }
@@ -2498,10 +2499,10 @@ void PositionFacesInfo::draw_1p()
 	}
 }
 
-void PositionFacesInfo::draw_4p_battle(int y, INT32 flags)
+void PositionFacesInfo::draw_4p_battle(int x, int y, INT32 flags)
 {
 	using srb2::Draw;
-	Draw row = Draw(152, y).flags(V_HUDTRANS | V_SLIDEIN | flags).font(Draw::Font::kPing);
+	Draw row = Draw(x, y).flags(V_HUDTRANS | V_SLIDEIN | flags).font(Draw::Font::kPing);
 
 	UINT8 skull = []
 	{
@@ -2562,10 +2563,14 @@ static boolean K_drawKartPositionFaces(void)
 		state.draw_1p();
 		break;
 
+	case 1:
+		state.draw_4p_battle(292, 78, V_SNAPTORIGHT);
+		break;
+
 	case 2:
 	case 3:
-		state.draw_4p_battle(9, V_SNAPTOTOP);
-		state.draw_4p_battle(147, V_SNAPTOBOTTOM);
+		state.draw_4p_battle(152, 9, V_SNAPTOTOP);
+		state.draw_4p_battle(152, 147, V_SNAPTOBOTTOM);
 		break;
 	}
 
@@ -5674,6 +5679,11 @@ void K_drawKartHUD(void)
 			if (LUA_HudEnabled(hud_time))
 			{
 				K_drawKart2PTimestamp();
+			}
+
+			if (viewnum == r_splitscreen && gametyperules & GTR_POINTLIMIT)
+			{
+				K_drawKartPositionFaces();
 			}
 		}
 		else if (viewnum == r_splitscreen)
