@@ -1181,7 +1181,7 @@ void G_DoLoadLevelEx(boolean resetplayer, gamestate_t newstate)
 	}
 
 	// clear cmd building stuff
-	memset(gamekeydown, 0, sizeof (gamekeydown));
+	G_ResetAllDeviceGameKeyDown();
 	G_ResetAllDeviceResponding();
 
 	// clear hud messages remains (usually from game startup)
