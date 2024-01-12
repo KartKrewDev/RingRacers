@@ -1171,6 +1171,28 @@ void P_ButteredSlope(mobj_t *mo)
 		// Make relative to game speed
 		mult = FixedMul(mult, gameSpeed);
 
+		// Easy / Battle: SUPER NERF slope climbs, so that they're usually possible without resources.
+		// (New players suck at budgeting, and may not remember they have spindash / rings at all!)
+		if (gamespeed == KARTSPEED_EASY)
+		{
+			// Same as above, but use facing angle:
+			angle_t easyangle = mo->angle - mo->standingslope->xydirection;
+			if (P_MobjFlip(mo) * mo->standingslope->zdelta < 0)
+			{
+				easyangle ^= ANGLE_180;
+			}
+			fixed_t mult2 = FINECOSINE(easyangle >> ANGLETOFINESHIFT);
+			mult2 = FixedMul(mult2, gameSpeed);
+
+			// Prefer the modifier that helps us go where we're going.
+			if (mult2 < mult)
+				mult = mult2;
+
+			// And if we're staring down a slope, believe in ourself really hard and climb it anyway.
+			if (mult < 0)
+				mult = 8 * mult / 5;
+		}
+
 		mult = FRACUNIT + (FRACUNIT + mult)*4/3;
 		thrust = FixedMul(thrust, mult);
 	}
