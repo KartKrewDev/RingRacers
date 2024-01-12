@@ -52,6 +52,7 @@ target_sources(SRB2SDL2 PRIVATE
 	trick-balloon.c
 	cloud.c
 	waterfall-particle.c
+	sealed-star.c
 )
 
 add_subdirectory(versus)

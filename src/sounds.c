@@ -1242,7 +1242,7 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"ridr1",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Boarding Rideroid"}, // Rideroid Activation
   {"ridr2",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Rideroid Diveroll
   {"ridr3",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Rideroid Loop
-  {"ridr4",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Leaving Rideroid 
+  {"ridr4",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Leaving Rideroid
 
   {"befan1",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Whisking"}, // Blend Eye whisk startup
   {"befan2",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Whisking"}, // Blend Eye whisk
@@ -1255,6 +1255,13 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"ivobal",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Ivo Ball
 
   {"lcfuel",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Fuel Capsule explodes"},
+
+  {"ssthnk",  false,  64,  16, -1, NULL, 0,        -1,  -1, LUMPERROR, "Chain rattles"}, // SF_X8AWAYSOUND
+  {"powerd",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "UNDESCRIBED POWERD"},
+  {"vault",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "UNDESCRIBED VAULT"},
+  {"revcym",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "UNDESCRIBED REVCYM"},
+  {"ssbmpr",  false,  64,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, "UNDESCRIBED SSBMPR"}, // SF_X4AWAYSOUND
+  {"chcrun",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "UNDESCRIBED CHCRUN"},
 
   // Damage sounds
   {"dmga1",  false, 255, 8, -1, NULL, 0,         -1,  -1, LUMPERROR, "Damaged"},

@@ -1330,6 +1330,14 @@ typedef enum
 	// Fuel Capsule
 	sfx_lcfuel,
 
+	// Sealed Star Chain
+	sfx_ssthnk,
+	sfx_powerd,
+	sfx_vault,
+	sfx_revcym,
+	sfx_ssbmpr,
+	sfx_chcrun,
+
 	// Damage sounds
 	sfx_dmga1,
 	sfx_dmga2,

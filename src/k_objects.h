@@ -369,6 +369,28 @@ void Obj_BulbTouched(mobj_t *special, mobj_t *toucher);
 /* Waterfall Particles Spawner */
 void Obj_WaterfallParticleThink(mobj_t *mo);
 
+/* Sealed Star objects */
+void Obj_SSCandleMobjThink(mobj_t* mo);
+void Obj_SSHologramRotatorMapThingSpawn(mobj_t* mo, mapthing_t* mt);
+void Obj_SSHologramRotatorMobjThink(mobj_t* mo);
+void Obj_SSHologramMobjSpawn(mobj_t* mo);
+void Obj_SSHologramMobjFuse(mobj_t* mo);
+void Obj_SSHologramMapThingSpawn(mobj_t* mo, mapthing_t* mt);
+void Obj_SSCoinCloudMapThingSpawn(mobj_t* mo, mapthing_t* mt);
+void Obj_SSCoinMobjThink(mobj_t* mo);
+void Obj_SSGobletCloudMapThingSpawn(mobj_t* mo, mapthing_t* mt);
+void Obj_SSGobletMobjThink(mobj_t* mo);
+void Obj_SSLampMapThingSpawn(mobj_t* mo, mapthing_t* mt);
+void Obj_SSWindowMapThingSpawn(mobj_t* mo, mapthing_t* mt);
+void Obj_SLSTMaceMobjThink(mobj_t* mo);
+void Obj_SSBumperTouchSpecial(mobj_t* special, mobj_t* toucher);
+void Obj_SSBumperMobjSpawn(mobj_t* mo);
+void Obj_SSChainMobjThink(mobj_t* mo);
+void Obj_SSGachaTargetMobjSpawn(mobj_t* mo);
+void Obj_SSCabotronMobjSpawn(mobj_t* mo);
+void Obj_SSCabotronMobjThink(mobj_t* mo);
+void Obj_SSCabotronStarMobjThink(mobj_t* mo);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

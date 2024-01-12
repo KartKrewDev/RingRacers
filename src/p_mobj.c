@@ -6933,6 +6933,38 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		Obj_EMZRainGenerator(mobj);
 		return;
 	}
+	case MT_SSCANDLE:
+	{
+		Obj_SSCandleMobjThink(mobj);
+		return;
+	}
+	case MT_SS_HOLOGRAM_ROTATOR:
+	{
+		Obj_SSHologramRotatorMobjThink(mobj);
+		return;
+	}
+	case MT_SS_HOLOGRAM:
+	{
+		if (mobj->fuse)
+		{
+			mobj->fuse--;
+		}
+		if (!mobj->fuse)
+		{
+			Obj_SSHologramMobjFuse(mobj);
+		}
+		return;
+	}
+	case MT_SS_COIN:
+	{
+		Obj_SSCoinMobjThink(mobj);
+		return;
+	}
+	case MT_SS_GOBLET:
+	{
+		Obj_SSGobletMobjThink(mobj);
+		return;
+	}
 	case MT_VWREF:
 	case MT_VWREB:
 	{
@@ -10358,6 +10390,30 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		break;
 	}
 
+	case MT_SLSTMACE:
+	{
+		Obj_SLSTMaceMobjThink(mobj);
+		break;
+	}
+
+	case MT_SSCHAIN:
+	{
+		Obj_SSChainMobjThink(mobj);
+		break;
+	}
+
+	case MT_CABOTRON:
+	{
+		Obj_SSCabotronMobjThink(mobj);
+		break;
+	}
+
+	case MT_CABOTRONSTAR:
+	{
+		Obj_SSCabotronStarMobjThink(mobj);
+		break;
+	}
+
 	default:
 		// check mobj against possible water content, before movement code
 		P_MobjCheckWater(mobj);
@@ -11879,6 +11935,18 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		case MT_TRICKBALLOON_RED:
 		case MT_TRICKBALLOON_YELLOW:
 			Obj_TrickBalloonMobjSpawn(mobj);
+			break;
+		case MT_SS_HOLOGRAM:
+			Obj_SSHologramMobjSpawn(mobj);
+			break;
+		case MT_SEALEDSTAR_BUMPER:
+			Obj_SSBumperMobjSpawn(mobj);
+			break;
+		case MT_GACHATARGET:
+			Obj_SSGachaTargetMobjSpawn(mobj);
+			break;
+		case MT_CABOTRON:
+			Obj_SSCabotronMobjSpawn(mobj);
 			break;
 		default:
 			break;
@@ -14665,6 +14733,36 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	case MT_BETA_EMITTER:
 	{
 		Obj_FuelCanisterEmitterInit(mobj);
+		break;
+	}
+	case MT_SS_HOLOGRAM_ROTATOR:
+	{
+		Obj_SSHologramRotatorMapThingSpawn(mobj, mthing);
+		break;
+	}
+	case MT_SS_HOLOGRAM:
+	{
+		Obj_SSHologramMapThingSpawn(mobj, mthing);
+		break;
+	}
+	case MT_SS_COIN_CLOUD:
+	{
+		Obj_SSCoinCloudMapThingSpawn(mobj, mthing);
+		break;
+	}
+	case MT_SS_GOBLET_CLOUD:
+	{
+		Obj_SSGobletCloudMapThingSpawn(mobj, mthing);
+		break;
+	}
+	case MT_SS_LAMP:
+	{
+		Obj_SSLampMapThingSpawn(mobj, mthing);
+		break;
+	}
+	case MT_SSWINDOW:
+	{
+		Obj_SSWindowMapThingSpawn(mobj, mthing);
 		break;
 	}
 	default:
