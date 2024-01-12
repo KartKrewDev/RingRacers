@@ -396,9 +396,9 @@ static boolean AutomaticControllerReassignmentIsAllowed(INT32 device)
 {
 	boolean device_is_gamepad = device > 0;
 	boolean device_is_unassigned = G_GetPlayerForDevice(device) == -1;
-	boolean gamestate_is_in_level = gamestate == GS_LEVEL;
+	boolean gamestate_is_in_active_play = (gamestate == GS_LEVEL || gamestate == GS_VOTING);
 
-	return device_is_gamepad && device_is_unassigned && gamestate_is_in_level;
+	return device_is_gamepad && device_is_unassigned && gamestate_is_in_active_play;
 }
 
 static INT32 AssignDeviceToFirstUnassignedPlayer(INT32 device)
@@ -564,6 +564,18 @@ void G_MapEventsToControls(event_t *ev)
 			}
 			else
 			{
+				// We used to only allow this assignment for triggers, but it caused some confusion in vote screen.
+				// In case of misebhaving devices, break glass.
+				if (AutomaticControllerReassignmentIsAllowed(ev->device)
+					&& (abs(ev->data2) > JOYAXISRANGE/2 || abs(ev->data3) > JOYAXISRANGE/2))
+				{
+					INT32 assigned = AssignDeviceToFirstUnassignedPlayer(ev->device);
+					if (assigned >= 0)
+					{
+						CONS_Alert(CONS_NOTICE, "Player %d device was reassigned\n", assigned + 1);
+					}
+				}
+
 				// Actual analog sticks
 				if (ev->data2 != INT32_MAX)
 				{
