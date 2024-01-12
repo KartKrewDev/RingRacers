@@ -1230,6 +1230,7 @@ void level_tally_t::Draw(void)
 
 							const skincolornum_t color = static_cast<skincolornum_t>(owner->skincolor);
 							lives_drawer
+								.x(r_splitscreen ? -7.0 : 0.0)
 								.colormap(owner->skin, color)
 								.patch(faceprefix[owner->skin][r_splitscreen ? FACE_MINIMAP : FACE_RANK]);
 
