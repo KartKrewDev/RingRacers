@@ -10,6 +10,7 @@
 /// \brief HUD drawing functions exclusive to Kart
 
 #include <algorithm>
+#include <array>
 #include <vector>
 
 #include "v_draw.hpp"
@@ -2221,6 +2222,27 @@ struct PositionFacesInfo
 	PositionFacesInfo();
 	void draw_1p();
 	void draw_4p_battle(int y, INT32 flags);
+
+	UINT32 top_score() const { return players[rankplayer[0]].roundscore; }
+	bool near_goal() const { return g_pointlimit - 5 <= top_score(); }
+	skincolornum_t vomit_color() const
+	{
+		if (!near_goal())
+		{
+			return SKINCOLOR_NONE;
+		}
+
+		constexpr int kCycleSpeed = 4;
+		constexpr std::array<skincolornum_t, 6> kColors = {
+			SKINCOLOR_RED,
+			SKINCOLOR_VOMIT,
+			SKINCOLOR_YELLOW,
+			SKINCOLOR_GREEN,
+			SKINCOLOR_JET,
+			SKINCOLOR_MOONSET,
+		};
+		return kColors[leveltime / kCycleSpeed % kColors.size()];
+	}
 };
 
 PositionFacesInfo::PositionFacesInfo()
@@ -2312,12 +2334,20 @@ void PositionFacesInfo::draw_1p()
 		UINT8 skull = g_pointlimit <= stplyr->roundscore;
 		INT32 height = i*18;
 		INT32 GOAL_Y = Y-height;
-		V_DrawScaledPatch(FACE_X-5, GOAL_Y-32, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_goal[skull][0]);
+
+		colormap = nullptr;
+
+		if (skincolornum_t vomit = vomit_color())
+		{
+			colormap = R_GetTranslationColormap(TC_DEFAULT, vomit, GTC_CACHE);
+		}
+
+		V_DrawMappedPatch(FACE_X-5, GOAL_Y-32, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_goal[skull][0], colormap);
 
 		// Flashing KO
 		if (skull)
 		{
-			if (leveltime % 12 < 6)
+			if (leveltime % 16 < 8)
 				V_DrawScaledPatch(FACE_X-5, GOAL_Y-32, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_goaltext1p);
 		}
 		else
@@ -2487,7 +2517,8 @@ void PositionFacesInfo::draw_4p_battle(int y, INT32 flags)
 		return 0;
 	}();
 
-	row.patch(kp_goal[skull][1]);
+	skincolornum_t vomit = vomit_color();
+	(vomit ? row.colormap(vomit) : row).patch(kp_goal[skull][1]);
 
 	if (!skull)
 	{
