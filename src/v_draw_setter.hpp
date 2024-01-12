@@ -12,6 +12,9 @@
 
 #include "r_draw.h" // R_GetTranslationColormap
 
+namespace srb2
+{
+
 inline Draw::Chain& Draw::Chain::x(float x)
 {
 	x_ += x;
@@ -114,5 +117,7 @@ inline Draw::Chain& Draw::Chain::colorize(skincolornum_t color)
 {
 	return colormap(R_GetTranslationColormap(TC_RAINBOW, color, GTC_CACHE));
 }
+
+}; // namespace srb2
 
 #endif // __V_DRAW_SETTER_HPP__
