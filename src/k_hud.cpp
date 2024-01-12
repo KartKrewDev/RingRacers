@@ -111,6 +111,10 @@ static patch_t *kp_rankemerald;
 static patch_t *kp_rankemeraldflash;
 static patch_t *kp_rankemeraldback;
 
+static patch_t *kp_goal[2][2]; // [skull][4p]
+static patch_t *kp_goalrod[2]; // [4p]
+static patch_t *kp_goaltext1p;
+
 static patch_t *kp_battlewin;
 static patch_t *kp_battlecool;
 static patch_t *kp_battlelose;
@@ -451,6 +455,15 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_rankemerald, "K_EMERC");
 	HU_UpdatePatch(&kp_rankemeraldflash, "K_EMERW");
 	HU_UpdatePatch(&kp_rankemeraldback, "K_EMERBK");
+
+	// Battle goal
+	HU_UpdatePatch(&kp_goal[0][0], "K_ST1GLA");
+	HU_UpdatePatch(&kp_goal[1][0], "K_ST1GLB");
+	HU_UpdatePatch(&kp_goal[0][1], "K_ST4GLA");
+	HU_UpdatePatch(&kp_goal[1][1], "K_ST4GLB");
+	HU_UpdatePatch(&kp_goalrod[0], "K_ST1GLD");
+	HU_UpdatePatch(&kp_goalrod[1], "K_ST4GLD");
+	HU_UpdatePatch(&kp_goaltext1p, "K_ST1GLC");
 
 	// Battle graphics
 	HU_UpdatePatch(&kp_battlewin, "K_BWIN");
