@@ -8601,6 +8601,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->trickcharge--;
 		if (player->drift)
 			player->trickcharge = max(player->trickcharge, 1);
+		if (gametyperules & GTR_SPHERES && (leveltime % 10 == 0))
+			player->spheres++;
 	}
 
 	if (player->infinitether > 0)
@@ -12823,9 +12825,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				UINT8 award = TICRATE - player->trickboostdecay;
 
 				player->trickboost = award;
-				K_AwardPlayerRings(player,
-					(TICRATE-player->trickboostdecay) * player->lastairtime/3 / TICRATE, // Scale ring award by same amount as trickboost
-				true);
+				if (!(gametyperules & GTR_SPHERES))
+					K_AwardPlayerRings(player,
+						(TICRATE-player->trickboostdecay) * player->lastairtime/3 / TICRATE, // Scale ring award by same amount as trickboost
+					true);
 
 				if (player->trickpanel == TRICKSTATE_FORWARD)
 					player->trickboostpower /= 18;
