@@ -551,6 +551,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			{
 				const tic_t orbit = 2*TICRATE;
 				Obj_BeginEmeraldOrbit(special, toucher, toucher->radius, orbit, orbit * 20);
+				Obj_SetEmeraldAwardee(special, toucher);
 			}
 
 			return;
