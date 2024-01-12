@@ -43,16 +43,15 @@ void K_drawKart2PTimestamp(void)
 
 void K_drawKart4PTimestamp(void)
 {
-	Draw row = Draw(154, 0).flags(kHudFlags).font(Draw::Font::kZVote).align(Draw::Align::kCenter);
+	Draw row = Draw(159, 0).flags(kHudFlags).font(Draw::Font::kZVote).align(Draw::Align::kCenter);
 
 	auto draw = [](const Draw& row, tic_t time)
 	{
-		row.patch("K_STTIMS");
-		row.xy(5, 12).text("{:03}", time / TICRATE);
+		row.text("{:03}", time / TICRATE);
 	};
 
 	auto time_of = [](int k) -> tic_t { return k <= r_splitscreen ? player_timer(&players[displayplayers[k]]) : 0u; };
 
 	draw(row.y(1).flags(V_SNAPTOTOP), std::max(time_of(0), time_of(1)));
-	draw(row.y(178).flags(V_SNAPTOBOTTOM), std::max(time_of(2), time_of(3)));
+	draw(row.y(191).flags(V_SNAPTOBOTTOM), std::max(time_of(2), time_of(3)));
 }

@@ -2220,6 +2220,7 @@ struct PositionFacesInfo
 
 	PositionFacesInfo();
 	void draw_1p();
+	void draw_4p_battle(int y, INT32 flags);
 };
 
 PositionFacesInfo::PositionFacesInfo()
@@ -2467,6 +2468,53 @@ void PositionFacesInfo::draw_1p()
 	}
 }
 
+void PositionFacesInfo::draw_4p_battle(int y, INT32 flags)
+{
+	using srb2::Draw;
+	Draw row = Draw(152, y).flags(V_HUDTRANS | V_SLIDEIN | flags).font(Draw::Font::kPing);
+
+	UINT8 skull = []
+	{
+		int party = G_PartySize(consoleplayer);
+		for (int i = 0; i < party; ++i)
+		{
+			// Is any party member about to win?
+			if (g_pointlimit <= players[G_PartyMember(consoleplayer, i)].roundscore)
+			{
+				return 1;
+			}
+		}
+		return 0;
+	}();
+
+	row.patch(kp_goal[skull][1]);
+
+	if (!skull)
+	{
+		row.xy(8.5, 5).align(Draw::Align::kCenter).text("{:02}", g_pointlimit);
+	}
+
+	row.xy(7, 18).patch(kp_goalrod[1]);
+
+	auto head = [&](Draw col, int i)
+	{
+		const player_t& p = players[rankplayer[i]];
+		col.colormap(p.skin, static_cast<skincolornum_t>(p.skincolor)).patch(faceprefix[p.skin][FACE_MINIMAP]);
+
+		bool dance = g_pointlimit <= p.roundscore;
+		bool flash = dance && leveltime % 8 < 4;
+		(
+			flash ?
+			col.xy(8, 6).colorize(SKINCOLOR_TANGERINE).flags(V_STRINGDANCE) :
+			col.xy(8, 6).flags(dance ? V_STRINGDANCE : 0)
+		).text("{:02}", p.roundscore);
+	};
+
+	// Draw top 2 players
+	head(row.xy(2, 31), 1);
+	head(row.xy(2, 18), 0);
+}
+
 static boolean K_drawKartPositionFaces(void)
 {
 	PositionFacesInfo state{};
@@ -2477,7 +2525,18 @@ static boolean K_drawKartPositionFaces(void)
 	if (!LUA_HudEnabled(hud_minirankings))
 		return false;	// Don't proceed but still return true for free play above if HUD is disabled.
 
-	state.draw_1p();
+	switch (r_splitscreen)
+	{
+	case 0:
+		state.draw_1p();
+		break;
+
+	case 2:
+	case 3:
+		state.draw_4p_battle(9, V_SNAPTOTOP);
+		state.draw_4p_battle(147, V_SNAPTOBOTTOM);
+		break;
+	}
 
 	return false;
 }
@@ -5591,6 +5650,11 @@ void K_drawKartHUD(void)
 			if (LUA_HudEnabled(hud_time))
 			{
 				K_drawKart4PTimestamp();
+			}
+
+			if (gametyperules & GTR_POINTLIMIT)
+			{
+				K_drawKartPositionFaces();
 			}
 		}
 	}
