@@ -2211,24 +2211,20 @@ static void K_DrawKartPositionNum(UINT8 num)
 	);
 }
 
-static boolean K_drawKartPositionFaces(void)
+struct PositionFacesInfo
 {
-	// FACE_X = 15;				//  15
-	// FACE_Y = 72;				//  72
+	INT32 ranklines = 0;
+	INT32 strank = -1;
+	INT32 numplayersingame = 0;
+	INT32 rankplayer[MAXPLAYERS] = {};
 
-	INT32 Y = FACE_Y-9; // -9 to offset where it's being drawn if there are more than one
-	INT32 i, j, ranklines, strank = -1;
-	boolean completed[MAXPLAYERS];
-	INT32 rankplayer[MAXPLAYERS];
-	INT32 bumperx, emeraldx, numplayersingame = 0;
-	INT32 xoff, yoff, flipflag = 0;
-	UINT8 workingskin;
-	UINT8 *colormap;
-	UINT32 skinflags;
+	PositionFacesInfo();
+	void draw_1p();
+};
 
-	ranklines = 0;
-	memset(completed, 0, sizeof (completed));
-	memset(rankplayer, 0, sizeof (rankplayer));
+PositionFacesInfo::PositionFacesInfo()
+{
+	INT32 i, j;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -2241,10 +2237,9 @@ static boolean K_drawKartPositionFaces(void)
 	}
 
 	if (numplayersingame <= 1)
-		return true;
+		return;
 
-	if (!LUA_HudEnabled(hud_minirankings))
-		return false;	// Don't proceed but still return true for free play above if HUD is disabled.
+	boolean completed[MAXPLAYERS] = {};
 
 	for (j = 0; j < numplayersingame; j++)
 	{
@@ -2273,6 +2268,20 @@ static boolean K_drawKartPositionFaces(void)
 
 		ranklines++;
 	}
+}
+
+void PositionFacesInfo::draw_1p()
+{
+	// FACE_X = 15;				//  15
+	// FACE_Y = 72;				//  72
+
+	INT32 Y = FACE_Y-9; // -9 to offset where it's being drawn if there are more than one
+	INT32 i, j;
+	INT32 bumperx, emeraldx;
+	INT32 xoff, yoff, flipflag = 0;
+	UINT8 workingskin;
+	UINT8 *colormap;
+	UINT32 skinflags;
 
 	if (gametyperules & GTR_POINTLIMIT) // playing battle
 		Y += (9*5) - 5; // <-- arbitrary calculation
@@ -2456,6 +2465,19 @@ static boolean K_drawKartPositionFaces(void)
 
 		Y -= 18;
 	}
+}
+
+static boolean K_drawKartPositionFaces(void)
+{
+	PositionFacesInfo state{};
+
+	if (state.numplayersingame <= 1)
+		return true;
+
+	if (!LUA_HudEnabled(hud_minirankings))
+		return false;	// Don't proceed but still return true for free play above if HUD is disabled.
+
+	state.draw_1p();
 
 	return false;
 }
