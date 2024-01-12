@@ -3076,6 +3076,12 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					invincible = false;
 				}
 
+				// Hack for instawhip-guard counter, lets invincible players lose to guard
+				if (inflictor == target)
+				{
+					invincible = false;
+				}
+
 				// TODO: doing this from P_DamageMobj limits punting to objects that damage the player.
 				// And it may be kind of yucky.
 				// But this is easier than accounting for every condition in PIT_CheckThing!
