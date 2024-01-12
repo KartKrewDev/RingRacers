@@ -1493,7 +1493,7 @@ static void K_UpdateDraft(player_t *player)
 	}
 
 	// Want to berserk attack? Get your speed FIRST.
-	if (player->instaWhipCharge >= INSTAWHIP_TETHERBLOCK || player->instaWhipCooldown)
+	if (player->instaWhipCharge >= INSTAWHIP_TETHERBLOCK || player->defenseLockout)
 		return;
 
 	// Not enough speed to draft.
@@ -3827,7 +3827,6 @@ void K_DoGuardBreak(mobj_t *t1, mobj_t *t2) {
 		return;
 
 	t1->player->instaWhipCharge = 0;
-	t1->player->guardCooldown = GUARDBREAK_COOLDOWN;
 
 	S_StartSound(t1, sfx_gbrk);
 	K_AddHitLag(t1, 24, true);
@@ -8561,8 +8560,19 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->powerup.superTimer--;
 	}
 
-	if (player->guardCooldown)
-		player->guardCooldown--;
+	if (K_PlayerGuard(player))
+	{
+		if (!player->oldGuard)
+			S_StartSound(player->mo, sfx_s1af);
+
+		player->oldGuard = true;
+		player->instaWhipCharge = 0;
+	}
+	else if (player->oldGuard)
+	{
+		player->defenseLockout = PUNISHWINDOW;
+		player->oldGuard = false;
+	}
 
 	if (player->startboost > 0 && onground == true)
 	{
@@ -8718,18 +8728,10 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->justbumped > 0)
 		player->justbumped--;
 
-	if (K_PressingEBrake(player) == true && onground)
-	{
-		if (gametyperules & GTR_BUMPERS)
-			player->instaWhipCooldown = INSTAWHIP_DROPGUARD; // Delay whip out of spindash and guard.
-		else
-			player->instaWhipCharge = 0; // Not that important in race, avoid black flash.
-	}
-
-	if (player->instaWhipCooldown)
+	if (player->defenseLockout)
 	{
 		player->instaWhipCharge = 0;
-		player->instaWhipCooldown--;
+		player->defenseLockout--;
 	}
 
 	if (player->dotrickfx && !player->mo->hitlag)
@@ -8821,7 +8823,11 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	player->incontrol = max(player->incontrol, -5*TICRATE);
 
 	if (P_PlayerInPain(player) || player->respawn.state != RESPAWNST_NONE)
+	{
 		player->lastpickuptype = -1; // got your ass beat, go grab anything
+		player->defenseLockout = 0;	// and reenable defensive tools just in case
+	}
+
 
 	if (player->tumbleBounces > 0)
 	{
@@ -10760,7 +10766,7 @@ boolean K_PlayerEBrake(const player_t *player)
 
 boolean K_PlayerGuard(const player_t *player)
 {
-	if (player->guardCooldown != 0)
+	if (player->defenseLockout != 0)
 	{
 		return false;
 	}
@@ -11612,10 +11618,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			}
 
 			chargingwhip = false;
-			player->instaWhipCooldown = 0;
 		}
 
-		if (leveltime < starttime || player->itemflags & (IF_ITEMOUT|IF_EGGMANOUT) || player->rocketsneakertimer || player->instaWhipCooldown)
+		if (leveltime < starttime || player->itemflags & (IF_ITEMOUT|IF_EGGMANOUT) || player->rocketsneakertimer || (player->defenseLockout && !K_PowerUpRemaining(player, POWERUP_BADGE)))
 		{
 			chargingwhip = false;
 			player->instaWhipCharge = 0;
@@ -11657,11 +11662,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			else
 			{
 				player->instaWhipCharge = 0;
-				player->instaWhipCooldown = INSTAWHIP_COOLDOWN;
-				player->guardCooldown = INSTAWHIP_DROPGUARD;
+				player->defenseLockout = PUNISHWINDOW;
 				if (!K_PowerUpRemaining(player, POWERUP_BARRIER))
 				{
-					player->guardCooldown = INSTAWHIP_CHARGETIME;
+					player->defenseLockout = INSTAWHIP_CHARGETIME;
 				}
 
 				S_StartSound(player->mo, sfx_iwhp);

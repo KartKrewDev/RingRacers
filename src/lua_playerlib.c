@@ -347,10 +347,10 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->lastsafelap);
 	else if (fastcmp(field,"instaWhipCharge"))
 		lua_pushinteger(L, plr->instaWhipCharge);
-	else if (fastcmp(field,"instaWhipCooldown"))
-		lua_pushinteger(L, plr->instaWhipCooldown);
-	else if (fastcmp(field,"guardCooldown"))
-		lua_pushinteger(L, plr->guardCooldown);
+	else if (fastcmp(field,"defenseLockout"))
+		lua_pushinteger(L, plr->defenseLockout);
+	else if (fastcmp(field,"oldGuard"))
+		lua_pushinteger(L, plr->oldGuard);
 	else if (fastcmp(field,"preventfailsafe"))
 		lua_pushinteger(L, plr->preventfailsafe);
 	/*
@@ -865,10 +865,10 @@ static int player_set(lua_State *L)
 		plr->lastsafelap = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"instaWhipCharge"))
 		plr->instaWhipCharge = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"instaWhipCooldown"))
-		plr->instaWhipCharge = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"guardCooldown"))
-		plr->guardCooldown = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"defenseLockout"))
+		plr->defenseLockout = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"oldGuard"))
+		plr->oldGuard = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"preventfailsafe"))
 		plr->preventfailsafe = luaL_checkinteger(L, 3);
 	/*
