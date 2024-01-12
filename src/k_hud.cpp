@@ -5550,7 +5550,7 @@ void K_drawKartHUD(void)
 				}
 				else if (freecam)
 					;
-				else if ((gametyperules & GTR_POWERSTONES))
+				else if ((gametyperules & GTR_POWERSTONES) && !K_PlayerTallyActive(stplyr))
 				{
 					if (!battleprisons)
 						K_drawKartEmeralds();
