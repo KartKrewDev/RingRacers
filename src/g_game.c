@@ -1526,7 +1526,8 @@ boolean G_CouldView(INT32 playernum)
 //
 boolean G_CanView(INT32 playernum, UINT8 viewnum, boolean onlyactive)
 {
-	if (!playeringame[playernum] || players[playernum].spectator)
+	// PF_ELIMINATED: Battle Overtime Barrier killed this player
+	if (!playeringame[playernum] || players[playernum].spectator || (players[playernum].pflags & PF_ELIMINATED))
 	{
 		return false;
 	}

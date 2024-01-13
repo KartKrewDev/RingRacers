@@ -112,7 +112,9 @@ struct DirectorInfo
 			}
 
 			// pair finished? try the next one
-			if (players[playerstat[targetposition].sorted].exiting)
+			if (players[playerstat[targetposition].sorted].exiting ||
+				// Battle: player was killed by Overtime Barrier
+				(players[playerstat[targetposition].sorted].pflags & PF_ELIMINATED))
 			{
 				continue;
 			}
