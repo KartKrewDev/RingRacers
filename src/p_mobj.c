@@ -12972,19 +12972,20 @@ void P_SpawnPlayer(INT32 playernum)
 
 	if (G_IsPartyLocal(playernum))
 	{
-		// Spectating always enables director cam. If there
-		// is no one to view, this will do nothing. If
-		// someone enters the game later, it will
-		// automatically switch to that player.
-		K_ToggleDirector(G_PartyPosition(playernum), p->spectator);
-
 		// Spectators can switch to freecam. This should be
 		// disabled when they enter the race, or when the level
 		// changes.
 		if (!demo.playback)
 		{
 			camera[G_PartyPosition(playernum)].freecam = false;
+			displayplayers[G_PartyPosition(playernum)] = playernum;
 		}
+
+		// Spectating always enables director cam. If there
+		// is no one to view, this will do nothing. If
+		// someone enters the game later, it will
+		// automatically switch to that player.
+		K_ToggleDirector(G_PartyPosition(playernum), p->spectator);
 	}
 	else if (pcount == 1 && !p->spectator)
 	{
