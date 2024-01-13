@@ -50,7 +50,7 @@ Make sure this matches the actual number of states
 #define MINRINGVOLUME 100
 #define RINGVOLUMECOLLECTPENALTY 3
 #define RINGVOLUMEUSEPENALTY 15
-#define RINGVOLUMEREGEN 3
+#define RINGVOLUMEREGEN 1
 
 // Mispredicted turns can generate phantom sliptide inputs for a few tics.
 // Delay the wavedash visuals until we're reasonably sure that it's a deliberate turn.
