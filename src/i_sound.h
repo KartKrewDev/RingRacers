@@ -232,6 +232,8 @@ void I_SetCurrentSongVolume(int volume);
 
 boolean I_SetSongTrack(INT32 track);
 
+void I_SetMasterVolume(int volume);
+
 /// ------------------------
 /// MUSIC FADING
 /// ------------------------
