@@ -8574,7 +8574,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			S_StartSound(player->mo, sfx_s1af);
 
 		player->oldGuard = true;
-		player->instaWhipCharge = 0;
+
+		if (!K_PowerUpRemaining(player, POWERUP_BARRIER))
+			player->instaWhipCharge = 0;
 	}
 	else if (player->oldGuard)
 	{
@@ -11679,10 +11681,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			else
 			{
 				player->instaWhipCharge = 0;
-				player->defenseLockout = PUNISHWINDOW;
 				if (!K_PowerUpRemaining(player, POWERUP_BARRIER))
 				{
-					player->defenseLockout = INSTAWHIP_CHARGETIME;
+					player->defenseLockout = PUNISHWINDOW;
 				}
 
 				S_StartSound(player->mo, sfx_iwhp);
