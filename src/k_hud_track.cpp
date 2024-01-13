@@ -82,7 +82,7 @@ struct TargetTracking
 			return player_emeralds_color();
 
 		case MT_SUPER_FLICKY:
-			return static_cast<skincolornum_t>(Obj_SuperFlickyOwner(mobj)->color);
+			return Obj_SuperFlickyOwner(mobj) ? static_cast<skincolornum_t>(Obj_SuperFlickyOwner(mobj)->color) : SKINCOLOR_NONE;
 
 		default:
 			return SKINCOLOR_NONE;
