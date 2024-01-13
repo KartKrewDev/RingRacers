@@ -3499,7 +3499,7 @@ static UINT16 *g_allowedMaps = NULL;
 static size_t g_randMapStack = 0;
 #endif
 
-UINT16 G_RandMap(UINT32 tolflags, UINT16 pprevmap, boolean ignoreBuffers, boolean callAgainSoon, UINT16 *extBuffer)
+UINT16 G_RandMapPerPlayerCount(UINT32 tolflags, UINT16 pprevmap, boolean ignoreBuffers, boolean callAgainSoon, UINT16 *extBuffer, UINT8 numPlayers)
 {
 	INT32 allowedMapsCount = 0;
 	INT32 extBufferCount = 0;
@@ -3555,6 +3555,12 @@ tryAgain:
 		if ((mapheaderinfo[i]->menuflags & LF2_HIDEINMENU) == LF2_HIDEINMENU)
 		{
 			// Not intended to be accessed in multiplayer.
+			continue;
+		}
+
+		if (numPlayers > mapheaderinfo[i]->playerLimit)
+		{
+			// Too many players for this map.
 			continue;
 		}
 
@@ -3663,6 +3669,11 @@ tryAgain:
 #endif
 
 	return ret;
+}
+
+UINT16 G_RandMap(UINT32 tolflags, UINT16 pprevmap, boolean ignoreBuffers, boolean callAgainSoon, UINT16 *extBuffer)
+{
+	return G_RandMapPerPlayerCount(tolflags, pprevmap, ignoreBuffers, callAgainSoon, extBuffer, 0);
 }
 
 void G_AddMapToBuffer(UINT16 map)

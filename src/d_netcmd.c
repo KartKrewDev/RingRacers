@@ -2208,13 +2208,34 @@ void D_SetupVote(INT16 newgametype)
 	WRITEUINT8(p, ((cv_kartencore.value == 1) && (rules & GTR_ENCORE)));
 	WRITEUINT8(p, G_SometimesGetDifferentEncore());
 
+	UINT8 numPlayers = 0;
+
+	for (i = 0; i < MAXPLAYERS; ++i)
+	{
+		if (!playeringame[i] || players[i].spectator)
+		{
+			continue;
+		}
+
+		extern consvar_t cv_forcebots; // debug
+
+		if (!(rules & GTR_BOTS) && players[i].bot && !cv_forcebots.value)
+		{
+			// Gametype doesn't support bots
+			continue;
+		}
+
+		numPlayers++;
+	}
+
 	for (i = 0; i < VOTE_NUM_LEVELS; i++)
 	{
-		UINT16 m = G_RandMap(
+		UINT16 m = G_RandMapPerPlayerCount(
 			G_TOLFlag(newgametype),
 			prevmap, false,
 			(i < VOTE_NUM_LEVELS-1),
-			votebuffer
+			votebuffer,
+			numPlayers
 		);
 		votebuffer[i] = m;
 		WRITEUINT16(p, m);

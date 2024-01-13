@@ -501,6 +501,7 @@ struct mapheader_t
 
 	UINT8 levelselect;					///< Is this map available in the level select? If so, which map list is it available in?
 	UINT16 menuflags;					///< LF2_flags: options that affect record attack menus
+	UINT8 playerLimit;					///< This map does not appear in multiplayer vote if there are too many players
 
 	// Operational metadata
 	UINT16 levelflags;					///< LF_flags:  merged booleans into one UINT16 for space, see below
