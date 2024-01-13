@@ -139,12 +139,6 @@ struct DirectorInfo
 				break;
 			}
 
-			// if this is a splitscreen player, try next pair
-			if (P_IsDisplayPlayer(&players[target]))
-			{
-				continue;
-			}
-
 			// if we're certain the back half of the pair is actually in this position, try to switch
 			if (!players[target].positiondelay)
 			{
