@@ -2503,6 +2503,9 @@ void GameSounds_OnChange(void)
 	if (M_CheckParm("-nosound") || M_CheckParm("-noaudio"))
 		return;
 
+	if (cv_gamesounds.value != sound_disabled)
+		return;
+
 	if (sound_disabled)
 	{
 		sound_disabled = false;
@@ -2523,6 +2526,9 @@ void GameDigiMusic_OnChange(void)
 	if (M_CheckParm("-nomusic") || M_CheckParm("-noaudio"))
 		return;
 	else if (M_CheckParm("-nodigmusic"))
+		return;
+
+	if (cv_gamedigimusic.value != digital_disabled)
 		return;
 
 	if (digital_disabled)
