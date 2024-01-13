@@ -1181,7 +1181,7 @@ void G_DoLoadLevelEx(boolean resetplayer, gamestate_t newstate)
 	}
 
 	// clear cmd building stuff
-	memset(gamekeydown, 0, sizeof (gamekeydown));
+	G_ResetAllDeviceGameKeyDown();
 	G_ResetAllDeviceResponding();
 
 	// clear hud messages remains (usually from game startup)
@@ -2802,9 +2802,9 @@ mapthing_t *G_FindMapStart(INT32 playernum)
 	if (K_PodiumSequence() == true)
 		spawnpoint = G_FindPodiumStart(playernum);
 
-	// -- Time Attack --
+	// -- Time Attack / Battle duels --
 	// Order: Race->DM->CTF
-	else if (K_TimeAttackRules() == true)
+	else if (K_TimeAttackRules() == true || ((gametyperules & GTR_BATTLESTARTS) && inDuel))
 		spawnpoint = G_FindRaceStartOrFallback(playernum);
 
 	// -- CTF --

@@ -1493,7 +1493,7 @@ static void K_UpdateDraft(player_t *player)
 	}
 
 	// Want to berserk attack? Get your speed FIRST.
-	if (player->instaWhipCharge >= INSTAWHIP_TETHERBLOCK || player->instaWhipCooldown)
+	if (player->instaWhipCharge >= INSTAWHIP_TETHERBLOCK || player->defenseLockout)
 		return;
 
 	// Not enough speed to draft.
@@ -3550,11 +3550,6 @@ UINT16 K_GetKartFlashing(const player_t *player)
 {
 	UINT16 tics = flashingtics;
 
-	if (gametyperules & GTR_BUMPERS)
-	{
-		return 0;
-	}
-
 	if (player == NULL)
 	{
 		return tics;
@@ -3562,6 +3557,16 @@ UINT16 K_GetKartFlashing(const player_t *player)
 
 	tics += (tics/8) * (player->kartspeed);
 	return tics;
+}
+
+void K_UpdateDamageFlashing(player_t *player, UINT16 tics)
+{
+	if (gametyperules & GTR_BUMPERS)
+	{
+		return;
+	}
+
+	player->flashing = tics;
 }
 
 boolean K_PlayerShrinkCheat(const player_t *player)
@@ -3792,14 +3797,14 @@ void K_DoPowerClash(mobj_t *t1, mobj_t *t2) {
 	{
 		t1->player->instashield = 1;
 		t1->player->speedpunt += 20;
-		lag1 -= min(lag1, t1->player->speedpunt/10); 
+		lag1 -= min(lag1, t1->player->speedpunt/10);
 	}
 
 	if (t2->player)
 	{
 		t2->player->instashield = 1;
 		t2->player->speedpunt += 20;
-		lag2 -= min(lag1, t2->player->speedpunt/10); 
+		lag2 -= min(lag1, t2->player->speedpunt/10);
 	}
 
 	S_StartSound(t1, sfx_parry);
@@ -3826,8 +3831,7 @@ void K_DoGuardBreak(mobj_t *t1, mobj_t *t2) {
 	if (P_PlayerInPain(t2->player))
 		return;
 
-	t1->player->instaWhipCharge = 0;
-	t1->player->guardCooldown = GUARDBREAK_COOLDOWN;
+	t1->player->defenseLockout = 1;
 
 	S_StartSound(t1, sfx_gbrk);
 	K_AddHitLag(t1, 24, true);
@@ -4644,6 +4648,7 @@ void K_ApplyTripWire(player_t *player, tripwirestate_t state)
 	if (player->hyudorotimer <= 0)
 	{
 		K_AddHitLag(player->mo, 10, false);
+		player->mo->hitlag -= min(player->mo->hitlag, player->tripwireUnstuck/4);
 	}
 
 	if (state == TRIPSTATE_PASSED && player->spinouttimer &&
@@ -4651,6 +4656,8 @@ void K_ApplyTripWire(player_t *player, tripwirestate_t state)
 	{
 		K_TumblePlayer(player, NULL, NULL);
 	}
+
+	player->tripwireUnstuck += 10;
 }
 
 INT32 K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source) // A bit of a hack, we just throw the player up higher here and extend their spinout timer
@@ -8149,7 +8156,7 @@ static void K_UpdateTripwire(player_t *player)
 		if (triplevel != TRIPWIRE_CONSUME)
 			player->tripwireLeniency = max(player->tripwireLeniency, TRIPWIRETIME);
 	}
-	
+
 	// TRIPWIRE_CONSUME is only applied in very specific cases (currently, riding Garden Top)
 	// and doesn't need leniency; however, it should track leniency from other pass conditions,
 	// so that stripping Garden Top feels consistent.
@@ -8319,7 +8326,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			K_SpawnGrowShrinkParticles(player->mo, player->growshrinktimer);
 		}
 
-		if (!(gametyperules & GTR_SPHERES) && player->rings <= 0) // spawn ring debt indicator
+		// Race: spawn ring debt indicator
+		// Battle: spawn zero-bumpers indicator
+		if ((gametyperules & GTR_SPHERES) ? player->mo->health <= 1 : player->rings <= 0)
 		{
 			mobj_t *debtflag = P_SpawnMobj(player->mo->x + player->mo->momx, player->mo->y + player->mo->momy,
 				player->mo->z + P_GetMobjZMovement(player->mo) + player->mo->height + (24*player->mo->scale), MT_THOK);
@@ -8387,9 +8396,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->spinouttimer != 0)
 	{
 		if (( player->spinouttype & KSPIN_IFRAMES ) == 0)
-			player->flashing = 0;
+			K_UpdateDamageFlashing(player, 0);
 		else
-			player->flashing = K_GetKartFlashing(player);
+			K_UpdateDamageFlashing(player, K_GetKartFlashing(player));
 	}
 
 	if (player->spinouttimer)
@@ -8496,10 +8505,10 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (P_PlayerInPain(player))
 	{
-		player->ringboost = 0;		
+		player->ringboost = 0;
 	}
 	else if (player->ringboost)
-	{	
+	{
 		// These values can get FUCKED ever since ring-stacking speed changes.
 		// If we're not actively being awarded rings, roll off extreme ringboost durations.
 		if (player->superring == 0)
@@ -8524,7 +8533,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->flamedash)
 	{
 		player->flamedash--;
-		
+
 		if (player->flamedash == 0)
 			S_StopSoundByID(player->mo, sfx_fshld1);
 		else if (player->flamedash == 3 && player->curshield == KSHIELD_FLAME) // "Why 3?" We can't blend sounds so this is the best shit I've got
@@ -8559,8 +8568,21 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->powerup.superTimer--;
 	}
 
-	if (player->guardCooldown)
-		player->guardCooldown--;
+	if (K_PlayerGuard(player))
+	{
+		if (!player->oldGuard)
+			S_StartSound(player->mo, sfx_s1af);
+
+		player->oldGuard = true;
+
+		if (!K_PowerUpRemaining(player, POWERUP_BARRIER))
+			player->instaWhipCharge = 0;
+	}
+	else if (player->oldGuard)
+	{
+		player->defenseLockout = PUNISHWINDOW;
+		player->oldGuard = false;
+	}
 
 	if (player->startboost > 0 && onground == true)
 	{
@@ -8586,6 +8608,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->trickcharge--;
 		if (player->drift)
 			player->trickcharge = max(player->trickcharge, 1);
+		if (gametyperules & GTR_SPHERES && (leveltime % 10 == 0))
+			player->spheres++;
 	}
 
 	if (player->infinitether > 0)
@@ -8603,7 +8627,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
-	if (player->invincibilitytimer && onground == true)
+	if (player->invincibilitytimer && (onground == true || K_PowerUpRemaining(player, POWERUP_SMONITOR)))
 		player->invincibilitytimer--;
 
 	if (!player->invincibilitytimer)
@@ -8611,6 +8635,15 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->preventfailsafe)
 		player->preventfailsafe--;
+
+	if (player->tripwireUnstuck > 150)
+	{
+		player->tripwireUnstuck = 0;
+		K_DoIngameRespawn(player);
+	}
+
+	if (player->tripwireUnstuck && !player->mo->hitlag)
+		player->tripwireUnstuck--;
 
 	if ((player->respawn.state == RESPAWNST_NONE) && player->growshrinktimer != 0)
 	{
@@ -8716,18 +8749,10 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->justbumped > 0)
 		player->justbumped--;
 
-	if (K_PressingEBrake(player) == true && onground)
-	{
-		if (gametyperules & GTR_BUMPERS)
-			player->instaWhipCooldown = INSTAWHIP_DROPGUARD; // Delay whip out of spindash and guard.
-		else
-			player->instaWhipCharge = 0; // Not that important in race, avoid black flash.
-	}
-
-	if (player->instaWhipCooldown)
+	if (player->defenseLockout)
 	{
 		player->instaWhipCharge = 0;
-		player->instaWhipCooldown--;
+		player->defenseLockout--;
 	}
 
 	if (player->dotrickfx && !player->mo->hitlag)
@@ -8819,7 +8844,11 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	player->incontrol = max(player->incontrol, -5*TICRATE);
 
 	if (P_PlayerInPain(player) || player->respawn.state != RESPAWNST_NONE)
+	{
 		player->lastpickuptype = -1; // got your ass beat, go grab anything
+		player->defenseLockout = 0;	// and reenable defensive tools just in case
+	}
+
 
 	if (player->tumbleBounces > 0)
 	{
@@ -10758,7 +10787,12 @@ boolean K_PlayerEBrake(const player_t *player)
 
 boolean K_PlayerGuard(const player_t *player)
 {
-	if (player->guardCooldown != 0)
+	if (player->defenseLockout != 0)
+	{
+		return false;
+	}
+
+	if (P_PlayerInPain(player) == true)
 	{
 		return false;
 	}
@@ -10787,7 +10821,6 @@ boolean K_PlayerGuard(const player_t *player)
 
 	if (K_PressingEBrake(player) == true
 		&& (player->drift == 0 || P_IsObjectOnGround(player->mo) == false)
-		&& P_PlayerInPain(player) == false
 		&& player->spindashboost == 0
 		&& player->nocontrol == 0)
 	{
@@ -11573,7 +11606,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			UINT32 behind = K_GetItemRouletteDistance(player, player->itemRoulette.playing);
 			UINT32 behindMulti = behind / 500;
 			behindMulti = min(behindMulti, 60);
-				
+
 
 			UINT32 award = 5*player->ringboxaward + 10;
 			if (!cv_thunderdome.value)
@@ -11610,10 +11643,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			}
 
 			chargingwhip = false;
-			player->instaWhipCooldown = 0;
 		}
 
-		if (leveltime < starttime || player->itemflags & (IF_ITEMOUT|IF_EGGMANOUT) || player->rocketsneakertimer || player->instaWhipCooldown)
+		if (leveltime < starttime || player->itemflags & (IF_ITEMOUT|IF_EGGMANOUT) || player->rocketsneakertimer || (player->defenseLockout && !K_PowerUpRemaining(player, POWERUP_BADGE)))
 		{
 			chargingwhip = false;
 			player->instaWhipCharge = 0;
@@ -11655,11 +11687,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			else
 			{
 				player->instaWhipCharge = 0;
-				player->instaWhipCooldown = INSTAWHIP_COOLDOWN;
-				player->guardCooldown = INSTAWHIP_DROPGUARD;
 				if (!K_PowerUpRemaining(player, POWERUP_BARRIER))
 				{
-					player->guardCooldown = INSTAWHIP_CHARGETIME;
+					player->defenseLockout = PUNISHWINDOW;
 				}
 
 				S_StartSound(player->mo, sfx_iwhp);
@@ -12043,7 +12073,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									player->ballhogcharge++;
 									if (player->ballhogcharge % BALLHOGINCREMENT == 0)
 									{
-										sfxenum_t hogsound[] = 
+										sfxenum_t hogsound[] =
 										{
 											sfx_bhog00,
 											sfx_bhog01,
@@ -12588,11 +12618,12 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				const angle_t angledelta = FixedAngle(36*FRACUNIT);
 				angle_t baseangle = player->mo->angle + angledelta/2;
 
-				INT16 aimingcompare = abs(cmd->throwdir) - abs(cmd->turning);
+				boolean throwing = cmd->throwdir != 0;
+				INT16 turnmagnitude = abs(cmd->turning);
 
 				// Uses cmd->turning over steering intentionally.
 #define TRICKTHRESHOLD (KART_FULLTURN/4)
-				if (aimingcompare < -TRICKTHRESHOLD) // side trick
+				if (abs(turnmagnitude) > TRICKTHRESHOLD && !throwing) // side trick
 				{
 					S_StartSoundAtVolume(player->mo, sfx_trick0, 255/2);
 					player->dotrickfx = true;
@@ -12631,7 +12662,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						P_SetPlayerMobjState(player->mo, S_KART_FAST_LOOK_R);
 					}
 				}
-				else if (aimingcompare > TRICKTHRESHOLD) // forward/back trick
+				else if (abs(turnmagnitude) <= TRICKTHRESHOLD && throwing) // forward/back trick
 				{
 					S_StartSoundAtVolume(player->mo, sfx_trick0, 255/2);
 					player->dotrickfx = true;
@@ -12702,7 +12733,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					if (P_MobjWasRemoved(player->trickIndicator) == false)
 						trickcolor = player->trickIndicator->color;
 
-					if (player->trickpanel == TRICKSTATE_FORWARD)	
+					if (player->trickpanel == TRICKSTATE_FORWARD)
 					{
 						for (j = 0; j < 2; j++)
 						{
@@ -12805,9 +12836,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				UINT8 award = TICRATE - player->trickboostdecay;
 
 				player->trickboost = award;
-				K_AwardPlayerRings(player,
-					(TICRATE-player->trickboostdecay) * player->lastairtime/3 / TICRATE, // Scale ring award by same amount as trickboost
-				true);
+				if (!(gametyperules & GTR_SPHERES))
+					K_AwardPlayerRings(player,
+						(TICRATE-player->trickboostdecay) * player->lastairtime/3 / TICRATE, // Scale ring award by same amount as trickboost
+					true);
 
 				if (player->trickpanel == TRICKSTATE_FORWARD)
 					player->trickboostpower /= 18;
@@ -12864,6 +12896,11 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	{
 		Obj_IceCubeInput(player);
 	}
+
+	Obj_PlayerCloudThink(player);
+
+	Obj_PlayerBulbThink(player);
+
 }
 
 void K_CheckSpectateStatus(boolean considermapreset)

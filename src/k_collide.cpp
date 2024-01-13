@@ -860,7 +860,8 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 				attacker->momx = attacker->momy = 0;
 				P_Thrust(attacker, thrangle, mapobjectscale*7);
 
-				P_DamageMobj(attacker, victim, victim, 1, DMG_TUMBLE);
+				// target is inflictor: hack to let invincible players lose to guard
+				P_DamageMobj(attacker, attacker, victim, 1, DMG_TUMBLE);
 
 				// A little extra juice, so successful reads are usually positive or zero on spheres.
 				victimPlayer->spheres = std::min(victimPlayer->spheres + 10, 40);
@@ -873,7 +874,6 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 				attackerPlayer->spindashboost = 0;
 				attackerPlayer->sneakertimer = 0;
 				attackerPlayer->instaWhipCharge = 0;
-				attackerPlayer->guardCooldown = GUARDBREAK_COOLDOWN;
 				attackerPlayer->flashing = 0;
 
 				// Localized broly for a local event.
@@ -884,7 +884,7 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 
 				P_PlayVictorySound(victim);
 
-				P_DamageMobj(attacker, victim, victim, 1, DMG_TUMBLE);
+				P_DamageMobj(attacker, attacker, victim, 1, DMG_TUMBLE);
 
 				S_StartSound(victim, sfx_mbv92);
 				K_AddHitLag(attacker, victimHitlag, true);

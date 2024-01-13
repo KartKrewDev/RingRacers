@@ -1082,7 +1082,7 @@ void D_ClearState(void)
 	paused = false;
 
 	// clear cmd building stuff
-	memset(gamekeydown, 0, sizeof (gamekeydown));
+	G_ResetAllDeviceGameKeyDown();
 	G_ResetAllDeviceResponding();
 
 	// Reset the palette

@@ -547,7 +547,7 @@ static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 		{
 			SDLforceUngrabMouse();
 		}
-		memset(gamekeydown, 0, sizeof(gamekeydown)); // TODO this is a scary memset
+		G_ResetAllDeviceGameKeyDown();
 		G_ResetAllDeviceResponding();
 
 		if (MOUSE_MENU)

@@ -392,6 +392,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 					return;
 
 				K_GivePowerUp(player, special->threshold, special->movecount);
+				player->flashing = 2*TICRATE;
 			}
 			else
 			{
@@ -541,6 +542,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			{
 				const tic_t orbit = 2*TICRATE;
 				Obj_BeginEmeraldOrbit(special, toucher, toucher->radius, orbit, orbit * 20);
+				Obj_SetEmeraldAwardee(special, toucher);
 			}
 
 			return;
@@ -944,6 +946,16 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			Obj_DLZRocketSpecial(special, player);
 			return;
 
+		case MT_AHZ_CLOUD:
+		case MT_AGZ_CLOUD:
+		case MT_SSZ_CLOUD:
+			Obj_CloudTouched(special, toucher);
+			return;
+
+		case MT_AGZ_BULB:
+			Obj_BulbTouched(special, toucher);
+			return;
+
 		case MT_BALLSWITCH_BALL:
 		{
 			Obj_BallSwitchTouched(special, toucher);
@@ -1004,6 +1016,10 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		case MT_TRICKBALLOON_RED:
 		case MT_TRICKBALLOON_YELLOW:
 			Obj_TrickBalloonTouchSpecial(special, toucher);
+			return;
+
+		case MT_SEALEDSTAR_BUMPER:
+			Obj_SSBumperTouchSpecial(special, toucher);
 			return;
 
 		default: // SOC or script pickup
@@ -2461,7 +2477,8 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 	}
 	else
 	{
-		if (player->respawn.state != RESPAWNST_NONE)
+		// DMG_TIMEOVER: player explosion
+		if (player->respawn.state != RESPAWNST_NONE && type != DMG_TIMEOVER)
 		{
 			K_DoInstashield(player);
 			return false;
@@ -2898,6 +2915,12 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					invincible = false;
 				}
 
+				// Hack for instawhip-guard counter, lets invincible players lose to guard
+				if (inflictor == target)
+				{
+					invincible = false;
+				}
+
 				// TODO: doing this from P_DamageMobj limits punting to objects that damage the player.
 				// And it may be kind of yucky.
 				// But this is easier than accounting for every condition in PIT_CheckThing!
@@ -3156,7 +3179,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			if (type != DMG_STUMBLE && type != DMG_WHUMBLE)
 			{
 				if (type != DMG_STING)
-					player->flashing = K_GetKartFlashing(player);
+					K_UpdateDamageFlashing(player, K_GetKartFlashing(player));
 
 				player->ringburst += ringburst;
 
@@ -3164,6 +3187,10 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				player->instashield = 15;
 
 				K_PlayPainSound(target, source);
+			}
+			else if (inflictor && inflictor->type == MT_INSTAWHIP)
+			{
+				K_PopPlayerShield(player);
 			}
 
 			if (gametyperules & GTR_BUMPERS)

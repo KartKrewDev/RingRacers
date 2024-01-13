@@ -249,6 +249,19 @@ INT32* G_GetDeviceGameKeyDownArray(INT32 device)
 	return NULL;
 }
 
+void G_ResetAllDeviceGameKeyDown(void)
+{
+	int i;
+
+	memset(gamekeydown, 0, sizeof(gamekeydown));
+	memset(g_gamekeydown_device0, 0, sizeof(g_gamekeydown_device0));
+
+	for (i = 0; i < g_available_gamepad_devices; i++)
+	{
+		memset(g_gamepad_gamekeydown[i], 0, sizeof(INT32) * NUMINPUTS);
+	}
+}
+
 boolean G_IsDeviceResponding(INT32 device)
 {
 	int i;
@@ -889,14 +902,14 @@ void G_DefineDefaultControls(void)
 	gamecontroldefault[gc_down         ][0] = KEY_DOWNARROW;
 	gamecontroldefault[gc_left         ][0] = KEY_LEFTARROW;
 	gamecontroldefault[gc_right        ][0] = KEY_RIGHTARROW;
-	gamecontroldefault[gc_a            ][0] = 'f';
-	gamecontroldefault[gc_b            ][0] = 'a';
-	gamecontroldefault[gc_c            ][0] = 'v';
-	gamecontroldefault[gc_x            ][0] = 's';
-	gamecontroldefault[gc_y            ][0] = 'x';
-	gamecontroldefault[gc_z            ][0] = 'c';
+	gamecontroldefault[gc_a            ][0] = 'a';
+	gamecontroldefault[gc_b            ][0] = KEY_LSHIFT;
+	gamecontroldefault[gc_c            ][0] = 'q';
+	gamecontroldefault[gc_x            ][0] = 'd';
+	gamecontroldefault[gc_y            ][0] = 'v';
+	gamecontroldefault[gc_z            ][0] = 'z';
 	gamecontroldefault[gc_l            ][0] = KEY_SPACE;
-	gamecontroldefault[gc_r            ][0] = 'd';
+	gamecontroldefault[gc_r            ][0] = 's';
 	gamecontroldefault[gc_start        ][0] = KEY_ESCAPE;
 	gamecontroldefault[gc_rankings     ][0] = KEY_TAB;
 	gamecontroldefault[gc_screenshot   ][0] = KEY_F8;

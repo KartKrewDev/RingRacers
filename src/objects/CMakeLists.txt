@@ -50,6 +50,9 @@ target_sources(SRB2SDL2 PRIVATE
 	rocks.cpp
 	emz-faucet.cpp
 	trick-balloon.c
+	cloud.c
+	waterfall-particle.c
+	sealed-star.c
 )
 
 add_subdirectory(versus)

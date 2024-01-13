@@ -347,12 +347,14 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->lastsafelap);
 	else if (fastcmp(field,"instaWhipCharge"))
 		lua_pushinteger(L, plr->instaWhipCharge);
-	else if (fastcmp(field,"instaWhipCooldown"))
-		lua_pushinteger(L, plr->instaWhipCooldown);
-	else if (fastcmp(field,"guardCooldown"))
-		lua_pushinteger(L, plr->guardCooldown);
+	else if (fastcmp(field,"defenseLockout"))
+		lua_pushinteger(L, plr->defenseLockout);
+	else if (fastcmp(field,"oldGuard"))
+		lua_pushinteger(L, plr->oldGuard);
 	else if (fastcmp(field,"preventfailsafe"))
 		lua_pushinteger(L, plr->preventfailsafe);
+	else if (fastcmp(field,"tripwireUnstuck"))
+		lua_pushinteger(L, plr->tripwireUnstuck);
 	/*
 	else if (fastcmp(field,"itemroulette"))
 		lua_pushinteger(L, plr->itemroulette);
@@ -551,6 +553,22 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->turbineheight);
 	else if (fastcmp(field,"turbinespd"))
 		lua_pushinteger(L, plr->turbinespd);
+
+	//clouds
+	else if (fastcmp(field,"cloud"))
+		lua_pushinteger(L, plr->cloud);
+	else if (fastcmp(field,"cloudlaunch"))
+		lua_pushinteger(L, plr->cloudlaunch);
+	else if (fastcmp(field,"cloudbuf"))
+		lua_pushinteger(L, plr->cloudbuf);
+
+	//tulips
+	else if (fastcmp(field,"tulip"))
+		lua_pushinteger(L, plr->tulip);
+	else if (fastcmp(field,"tuliplaunch"))
+		lua_pushinteger(L, plr->tuliplaunch);
+	else if (fastcmp(field,"tulipbuf"))
+		lua_pushinteger(L, plr->tulipbuf);
 
 	else if (fastcmp(field,"charflags"))
 		lua_pushinteger(L, plr->charflags);
@@ -849,12 +867,14 @@ static int player_set(lua_State *L)
 		plr->lastsafelap = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"instaWhipCharge"))
 		plr->instaWhipCharge = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"instaWhipCooldown"))
-		plr->instaWhipCharge = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"guardCooldown"))
-		plr->guardCooldown = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"defenseLockout"))
+		plr->defenseLockout = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"oldGuard"))
+		plr->oldGuard = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"preventfailsafe"))
 		plr->preventfailsafe = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"tripwireUnstuck"))
+		plr->tripwireUnstuck = luaL_checkinteger(L, 3);
 	/*
 	else if (fastcmp(field,"itemroulette"))
 		plr->itemroulette = luaL_checkinteger(L, 3);
@@ -1034,6 +1054,22 @@ static int player_set(lua_State *L)
 		plr->turbineheight = luaL_checkfixed(L, 3);
 	else if (fastcmp(field,"turbinespd"))
 		plr->turbinespd = luaL_checkinteger(L, 3);
+
+	// clouds
+	else if (fastcmp(field,"cloud"))
+		plr->cloud = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"cloudlaunch"))
+		plr->cloudlaunch = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"cloudbuf"))
+		plr->cloudbuf = luaL_checkinteger(L, 3);
+
+	// tulips
+	else if (fastcmp(field,"tulip"))
+		plr->tulip = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"tuliplaunch"))
+		plr->tuliplaunch = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"tulipbuf"))
+		plr->tulipbuf = luaL_checkinteger(L, 3);
 
 	//
 	else if (fastcmp(field,"charflags"))

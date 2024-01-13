@@ -34,6 +34,7 @@
 #include "s_sound.h"
 #include "st_stuff.h"
 #include "r_fps.h"
+#include "g_party.h"
 
 boolean level_tally_t::UseBonuses(void)
 {
@@ -1229,6 +1230,7 @@ void level_tally_t::Draw(void)
 
 							const skincolornum_t color = static_cast<skincolornum_t>(owner->skincolor);
 							lives_drawer
+								.x(r_splitscreen ? -7.0 : 0.0)
 								.colormap(owner->skin, color)
 								.patch(faceprefix[owner->skin][r_splitscreen ? FACE_MINIMAP : FACE_RANK]);
 
@@ -1382,7 +1384,8 @@ void K_TickPlayerTally(player_t *player)
 
 void K_DrawPlayerTally(void)
 {
-	stplyr->tally.Draw();
+	// Draw the observer player's tally, not whoever they may be spectating
+	players[G_PartyMember(consoleplayer, R_GetViewNumber())].tally.Draw();
 }
 
 boolean K_PlayerTallyActive(player_t *player)

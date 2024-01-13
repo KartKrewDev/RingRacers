@@ -574,10 +574,12 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEMEM(save->p, players[i].public_key, PUBKEYLENGTH);
 
 		WRITEUINT8(save->p, players[i].instaWhipCharge);
-		WRITEUINT8(save->p, players[i].instaWhipCooldown);
-		WRITEUINT8(save->p, players[i].guardCooldown);
+		WRITEUINT8(save->p, players[i].defenseLockout);
+		WRITEUINT8(save->p, players[i].oldGuard);
 
 		WRITEUINT8(save->p, players[i].preventfailsafe);
+
+		WRITEUINT8(save->p, players[i].tripwireUnstuck);
 
 		WRITEUINT8(save->p, players[i].handtimer);
 		WRITEANGLE(save->p, players[i].besthanddirection);
@@ -624,6 +626,14 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEINT32(save->p, players[i].turbineangle);
 		WRITEFIXED(save->p, players[i].turbineheight);
 		WRITEUINT8(save->p, players[i].turbinespd);
+
+		WRITEUINT32(save->p, players[i].cloud);
+		WRITEUINT32(save->p, players[i].cloudlaunch);
+		WRITEUINT32(save->p, players[i].cloudbuf);
+
+		WRITEUINT32(save->p, players[i].tulip);
+		WRITEUINT32(save->p, players[i].tuliplaunch);
+		WRITEUINT32(save->p, players[i].tulipbuf);
 
 		// respawnvars_t
 		WRITEUINT8(save->p, players[i].respawn.state);
@@ -1135,10 +1145,12 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		READMEM(save->p, players[i].public_key, PUBKEYLENGTH);
 
 		players[i].instaWhipCharge = READUINT8(save->p);
-		players[i].instaWhipCooldown = READUINT8(save->p);
-		players[i].guardCooldown = READUINT8(save->p);
+		players[i].defenseLockout = READUINT8(save->p);
+		players[i].oldGuard = READUINT8(save->p);
 
 		players[i].preventfailsafe = READUINT8(save->p);
+
+		players[i].tripwireUnstuck = READUINT8(save->p);
 
 		players[i].handtimer = READUINT8(save->p);
 		players[i].besthanddirection = READANGLE(save->p);
@@ -1185,6 +1197,14 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].turbineangle = READINT32(save->p);
 		players[i].turbineheight = READFIXED(save->p);
 		players[i].turbinespd = (boolean)READUINT8(save->p);
+
+		players[i].cloud = (tic_t)READUINT32(save->p);
+		players[i].cloudlaunch = (tic_t)READUINT32(save->p);
+		players[i].cloudbuf = (tic_t)READUINT32(save->p);
+
+		players[i].tulip = (tic_t)READUINT32(save->p);
+		players[i].tuliplaunch = (tic_t)READUINT32(save->p);
+		players[i].tulipbuf = (tic_t)READUINT32(save->p);
 
 		// respawnvars_t
 		players[i].respawn.state = READUINT8(save->p);

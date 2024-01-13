@@ -324,12 +324,9 @@ consvar_t cv_controlperkey = Player("controlperkey", "One").values({{1, "One"}, 
 // actual general (maximum) sound & music volume, saved into the config
 // Volume scale is 0-100 in new mixer. 100 is treated as -0dB or 100% gain. No more weirdness to work around SDL_mixer
 // problems
-void MasterVolume_OnChange(void);
-void DigMusicVolume_OnChange(void);
-void SoundVolume_OnChange(void);
-consvar_t cv_mastervolume = Player("volume", "80").min_max(0, 100).onchange_noinit(MasterVolume_OnChange);
-consvar_t cv_digmusicvolume = Player("musicvolume", "80").min_max(0, 100).onchange_noinit(DigMusicVolume_OnChange);
-consvar_t cv_soundvolume = Player("soundvolume", "80").min_max(0, 100).onchange_noinit(SoundVolume_OnChange);
+consvar_t cv_mastervolume = Player("volume", "80").min_max(0, 100);
+consvar_t cv_digmusicvolume = Player("musicvolume", "80").min_max(0, 100);
+consvar_t cv_soundvolume = Player("soundvolume", "80").min_max(0, 100);
 
 #ifdef HAVE_DISCORDRPC
 	void DRPC_UpdatePresence(void);
@@ -548,7 +545,7 @@ consvar_t cv_pause = NetVar("pausepermission", "Server").values({{0, "Server"}, 
 consvar_t cv_pingmeasurement = Server("pingmeasurement", "Frames").values({{0, "Frames"}, {1, "Milliseconds"}});
 consvar_t cv_playbackspeed = Server("playbackspeed", "1").min_max(1, 10).dont_save();
 
-#ifdef TESTERS
+#ifdef DEVELOP
 	consvar_t cv_recordmultiplayerdemos = Server("netdemo_record", "Auto Save").values({{2, "Auto Save"}});
 #else
 	consvar_t cv_recordmultiplayerdemos = Server("netdemo_record", "Manual Save").values({{0, "Disabled"}, {1, "Manual Save"}, {2, "Auto Save"}});
@@ -791,6 +788,7 @@ consvar_t cv_votetime = UnsavedNetVar("votetime", "20").min_max(10, 3600);
 consvar_t cv_barriertime = OnlineCheat("barriertime", "30").values(CV_Natural).description("How long it takes for the Barrier to shrink in Battle Overtime");
 consvar_t cv_battlespawn = OnlineCheat("battlespawn", "0").values(CV_Unsigned).description("Spawn every player at the same spawnpoint in Battle (0 = random spawns)");
 consvar_t cv_battletest = OnlineCheat("battletest", "Off").on_off().description("Free Play goes to Battle instead of Prisons");
+consvar_t cv_battleufotest = OnlineCheat("battleufotest", "Off").on_off().description("Respawn Battle UFOs instantly after being destroyed");
 
 #ifdef DEVELOP
 	consvar_t cv_botcontrol = OnlineCheat("botcontrol", "On").on_off().description("Toggle bot AI movement");
@@ -802,6 +800,7 @@ consvar_t cv_capsuletest = OnlineCheat("capsuletest", "Off").values(capsuletest_
 
 consvar_t cv_debugcheese = OnlineCheat("debugcheese", "Off").on_off().description("Disable checks that prevent farming item boxes");
 consvar_t cv_debugencorevote = OnlineCheat("debugencorevote", "Off").on_off().description("Force encore choice to appear on vote screen");
+consvar_t cv_forcebots = OnlineCheat("forcebots", "No").yes_no().description("Force bots to appear, even in wrong game modes");
 
 void ForceSkin_OnChange(void);
 consvar_t cv_forceskin = OnlineCheat("forcecharacter", "None").onchange(ForceSkin_OnChange).description("Force all players to use one character");

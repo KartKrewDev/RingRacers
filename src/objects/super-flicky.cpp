@@ -9,6 +9,8 @@
 //-----------------------------------------------------------------------------
 /// \brief Super Flicky power-up, hunts other players
 
+#include <algorithm>
+
 #include "../d_player.h"
 #include "../doomdef.h"
 #include "../g_game.h"
@@ -71,6 +73,8 @@ constexpr tic_t kBlockTime = 5*TICRATE;
 
 constexpr int kRiseTime = 1*TICRATE;
 constexpr int kRiseSpeed = 4;
+
+constexpr int kMinKnockback = 50;
 
 // TODO: skincolor must be updated to 2.2 palette
 constexpr skincolornum_t kSuperStart = SKINCOLOR_SUPERGOLD1;
@@ -200,7 +204,6 @@ struct Controller : mobj_t
 	}
 
 	void search();
-	void range_check();
 	void collect();
 };
 
@@ -270,6 +273,8 @@ struct Flicky : mobj_t
 
 	bool stunned() const { return mode() == Mode::kStunned || mode() == Mode::kWeak; }
 
+	bool owner_in_pain() const { return source()->player && P_PlayerInPain(source()->player); }
+
 	void light_up(bool n)
 	{
 		if (n)
@@ -315,21 +320,18 @@ struct Flicky : mobj_t
 		}
 		else
 		{
+			if (stunned())
+			{
+				unnerf();
+				mode(Mode::kHunting);
+			}
+
 			if (chasing() != next_target())
 			{
 				chasing(next_target());
 				mode(Mode::kHunting);
 
 				S_StartSound(this, sfx_fhurt2);
-			}
-
-			if (stunned())
-			{
-				light_up(true);
-				flags = info->flags;
-				mode(Mode::kHunting);
-
-				S_StartSound(this, sfx_s3k9f);
 			}
 		}
 	}
@@ -385,12 +387,75 @@ struct Flicky : mobj_t
 		K_MatchGenericExtraFlags(fast, this);
 	}
 
+	void range_check()
+	{
+		if (!chasing())
+		{
+			return;
+		}
+
+		if (FixedHypot(source()->x - chasing()->x, source()->y - chasing()->y) < kScaredRadius * mapobjectscale)
+		{
+			return;
+		}
+
+		if (chasing()->player)
+		{
+			P_SetTarget(&chasing()->player->flickyAttacker, nullptr);
+		}
+
+		next_target(nullptr);
+		chasing(nullptr);
+
+		if (controller()->mode() != Controller::Mode::kReturning)
+		{
+			for (Flicky* x = controller()->flicky(); x; x = x->next())
+			{
+				if (x != this)
+				{
+					continue;
+				}
+
+				controller()->chasing(nullptr);
+				controller()->mode(Controller::Mode::kReturning);
+			}
+		}
+	}
+
+	void relink()
+	{
+		Flicky* prev = nullptr;
+
+		for (Flicky* x = controller()->flicky(); x; x = x->next())
+		{
+			if (x == this)
+			{
+				return;
+			}
+
+			prev = x;
+		}
+
+		if (prev)
+		{
+			prev->next(this);
+		}
+		else
+		{
+			controller()->flicky(this);
+		}
+
+		next(nullptr);
+	}
+
 	void chase()
 	{
 		if (controller()->ending())
 		{
 			return;
 		}
+
+		range_check();
 
 		vector3_t pos = chasing() ? vector3_t{chasing()->x, chasing()->y, P_GetMobjFeet(chasing())} : orbit_position();
 		angle_t th = R_PointToAngle2(x, y, pos.x, pos.y);
@@ -448,7 +513,9 @@ struct Flicky : mobj_t
 		{
 			if (AngleDelta(th, R_PointToAngle2(x + momx, y + momy, pos.x, pos.y)) > ANG1)
 			{
+				unnerf();
 				mode(Mode::kReserved);
+				relink();
 				controller()->collect();
 			}
 			else
@@ -506,7 +573,7 @@ struct Flicky : mobj_t
 
 		if (P_DamageMobj(mobj, this, source(), 1, DMG_NORMAL))
 		{
-			P_InstaThrust(mobj, K_MomentumAngleReal(this), FixedHypot(momx, momy));
+			P_InstaThrust(mobj, K_MomentumAngleReal(this), std::max(FixedHypot(momx, momy), kMinKnockback * mapobjectscale));
 			K_StumblePlayer(mobj->player);
 
 			mobj->player->spinouttimer = 1; // need invulnerability for one tic
@@ -538,6 +605,33 @@ struct Flicky : mobj_t
 		light_up(false);
 
 		flags &= ~(MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPHEIGHT);
+	}
+
+	void unnerf()
+	{
+		light_up(true);
+		flags = info->flags;
+
+		S_StartSound(this, sfx_s3k9f);
+	}
+
+	void try_nerf()
+	{
+		if (owner_in_pain())
+		{
+			mode(Mode::kWeak);
+			delay(2);
+			nerf();
+			flags |= MF_NOGRAVITY;
+		}
+	}
+
+	void preserve_nerf()
+	{
+		if (owner_in_pain())
+		{
+			delay(1);
+		}
 	}
 
 	void whip()
@@ -641,7 +735,7 @@ void Controller::search()
 			flicky(flicky()->next());
 		}
 
-		chasing(nearestMobj);
+		chasing(flicky() ? nearestMobj : nullptr);
 		mode(Mode::kEnRoute);
 
 		// Update entire swarm
@@ -653,39 +747,8 @@ void Controller::search()
 	}
 }
 
-void Controller::range_check()
-{
-	if (!chasing())
-	{
-		return;
-	}
-
-	if (FixedHypot(source()->x - chasing()->x, source()->y - chasing()->y) < kScaredRadius * mapobjectscale)
-	{
-		return;
-	}
-
-	if (chasing()->player)
-	{
-		P_SetTarget(&chasing()->player->flickyAttacker, nullptr);
-	}
-
-	chasing(nullptr);
-	mode(Mode::kReturning);
-
-	for (Flicky* x = flicky(); x; x = x->next())
-	{
-		x->next_target(nullptr);
-	}
-}
-
 void Controller::collect()
 {
-	if (mode() != Mode::kReturning)
-	{
-		return;
-	}
-
 	// Resume searching once all Flickys return
 	for (Flicky* x = flicky(); x; x = x->next())
 	{
@@ -730,6 +793,7 @@ void Obj_SuperFlickyThink(mobj_t* mobj)
 		break;
 
 	case Flicky::Mode::kHunting:
+		x->try_nerf();
 		x->chase();
 		break;
 
@@ -737,6 +801,7 @@ void Obj_SuperFlickyThink(mobj_t* mobj)
 		break;
 
 	case Flicky::Mode::kWeak:
+		x->preserve_nerf();
 		x->chase();
 		break;
 	}
@@ -774,11 +839,9 @@ void Obj_SuperFlickyControllerThink(mobj_t* mobj)
 		break;
 
 	case Controller::Mode::kEnRoute:
-		x->range_check();
 		break;
 
 	case Controller::Mode::kAttached:
-		x->range_check();
 		x->search();
 		break;
 

@@ -2,7 +2,6 @@
 #include "../info.h"
 #include "../k_objects.h"
 #include "../p_local.h"
-#include "../k_kart.h" // INSTAWHIP_COOLDOWN
 
 #define recharge_target(o) ((o)->target)
 #define recharge_offset(o) ((o)->movedir)

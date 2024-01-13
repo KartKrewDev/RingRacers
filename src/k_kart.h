@@ -31,13 +31,11 @@ Make sure this matches the actual number of states
 
 #define INSTAWHIP_DURATION (12)
 #define INSTAWHIP_CHARGETIME (3*TICRATE/4)
-#define INSTAWHIP_COOLDOWN (5*TICRATE/4)
-#define INSTAWHIP_DROPGUARD (12)
 #define INSTAWHIP_RINGDRAINEVERY (TICRATE/2)
 #define INSTAWHIP_HOLD_DELAY (TICRATE*2)
 // MUST be longer or equal to INSTAWHIP_CHARGETIME.
 #define INSTAWHIP_TETHERBLOCK (TICRATE*4)
-#define GUARDBREAK_COOLDOWN (TICRATE*4)
+#define PUNISHWINDOW (7*TICRATE/10)
 
 #define FLAMESHIELD_MAX (120)
 
@@ -52,7 +50,7 @@ Make sure this matches the actual number of states
 #define MINRINGVOLUME 100
 #define RINGVOLUMECOLLECTPENALTY 3
 #define RINGVOLUMEUSEPENALTY 15
-#define RINGVOLUMEREGEN 3
+#define RINGVOLUMEREGEN 1
 
 // Mispredicted turns can generate phantom sliptide inputs for a few tics.
 // Delay the wavedash visuals until we're reasonably sure that it's a deliberate turn.
@@ -194,6 +192,7 @@ fixed_t K_GetKartSpeedFromStat(UINT8 kartspeed);
 fixed_t K_GetKartSpeed(const player_t *player, boolean doboostpower, boolean dorubberbanding);
 fixed_t K_GetKartAccel(const player_t *player);
 UINT16 K_GetKartFlashing(const player_t *player);
+void K_UpdateDamageFlashing(player_t *player, UINT16 tics);
 boolean K_PlayerShrinkCheat(const player_t *player);
 void K_UpdateShrinkCheat(player_t *player);
 boolean K_KartKickstart(const player_t *player);

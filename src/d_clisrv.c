@@ -732,7 +732,13 @@ static inline void CL_DrawConnectionStatus(void)
 				break;
 #endif
 			default:
-				cltext = M_GetText("Connecting to server...");
+				cltext = M_GetText("Attempting to connect...");
+				if (I_GetTime() - firstconnectattempttime > 15*TICRATE)
+				{
+					V_DrawCenteredString(BASEVIDWIDTH/2, 16, V_YELLOWMAP, "This is taking much longer than usual.");
+					V_DrawCenteredString(BASEVIDWIDTH/2, 16+8, V_YELLOWMAP, "Are you sure you've got the right IP?");
+					V_DrawCenteredString(BASEVIDWIDTH/2, 16+16, V_YELLOWMAP, "The host may need to forward port 5029 UDP.");
+				}
 				break;
 		}
 		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-24, V_YELLOWMAP, cltext);
@@ -4793,7 +4799,7 @@ static void FuzzTiccmd(ticcmd_t* target)
 	{
 		target->forwardmove = P_RandomRange(PR_FUZZ, -MAXPLMOVE, MAXPLMOVE);
 		target->turning = P_RandomRange(PR_FUZZ, -KART_FULLTURN, KART_FULLTURN);
-		target->throwdir = P_RandomRange(PR_FUZZ, -KART_FULLTURN, KART_FULLTURN);
+		target->throwdir = P_RandomRange(PR_FUZZ, -1, 1);
 		target->buttons = P_RandomRange(PR_FUZZ, 0, 255);
 
 		// Make fuzzed players more likely to do impactful things
@@ -5996,7 +6002,7 @@ static void SV_Maketic(void)
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		packetloss[i][maketic%PACKETMEASUREWINDOW] = false;
-		
+
 		if (!playeringame[i])
 			continue;
 

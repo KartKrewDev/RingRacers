@@ -849,6 +849,16 @@ struct player_t
 	fixed_t turbineheight;	// height around the turbine
 	boolean turbinespd;		// if true, we used a sneaker and get the altpath.
 
+	// clouds (AGZ, AHZ, SSZ)
+	tic_t cloud;       // timer while on cloud before launch
+	tic_t cloudlaunch; // timer set after launch for visuals
+	tic_t cloudbuf;    // make sure we can't bounce off another cloud straight away
+
+	// tulips (AGZ)
+	tic_t tulip;       // timer before you get launched
+	tic_t tuliplaunch; // timer set after launch for visuals
+	tic_t tulipbuf;    // make sure we can't enter another tulip straight away
+
 	//
 
 	SINT8 lives;
@@ -951,11 +961,13 @@ struct player_t
 	mobj_t *flickyAttacker;
 
 	UINT8 instaWhipCharge;
-	UINT8 instaWhipCooldown;
-	UINT8 instaWhipChargeLockout;
-	UINT8 guardCooldown;
+	UINT8 defenseLockout; // Committed to universal attack/defense, make 'em vulnerable! No whip/guard.
+	UINT8 instaWhipChargeLockout; // Input safety
+	boolean oldGuard;
 
 	UINT8 preventfailsafe; // Set when taking damage to prevent cheesing eggboxes
+
+	UINT8 tripwireUnstuck;
 
 	UINT8 handtimer;
 	angle_t besthanddirection;

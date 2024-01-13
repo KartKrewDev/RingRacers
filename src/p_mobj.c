@@ -1048,6 +1048,27 @@ static void P_PlayerFlip(mobj_t *mo)
 	// Flip aiming to match!
 }
 
+static boolean P_UseUnderwaterGravity(mobj_t *mo)
+{
+	switch (mo->type)
+	{
+		case MT_BANANA:
+			return false;
+
+		case MT_GACHABOM:
+			if (Obj_GachaBomWasTossed(mo))
+			{
+				return false;
+			}
+			break;
+
+		default:
+			break;
+	}
+
+	return true;
+}
+
 //
 // P_GetMobjGravity
 //
@@ -1106,7 +1127,7 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 	}
 
 	// Less gravity underwater.
-	if ((mo->eflags & MFE_UNDERWATER) && !goopgravity)
+	if ((mo->eflags & MFE_UNDERWATER) && !goopgravity && P_UseUnderwaterGravity(mo))
 	{
 		if (mo->momz * P_MobjFlip(mo) <= 0)
 		{
@@ -1217,12 +1238,8 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 				gravityadd /= 2;
 				break;
 			case MT_GACHABOM:
-				// Use normal gravity, unless if it was tossed.
-				if (!Obj_GachaBomWasTossed(mo))
-				{
-					break;
-				}
-				/*FALLTHRU*/
+				gravityadd = (5*gravityadd)/2;
+				break;
 			case MT_BANANA:
 			case MT_EGGMANITEM:
 			case MT_SSMINE:
@@ -3065,6 +3082,14 @@ boolean P_SceneryZMovement(mobj_t *mo)
 				P_KillMobj(mo, NULL, NULL, DMG_NORMAL);
 				if (P_MobjWasRemoved(mo))
 					return false;
+			}
+			break;
+		case MT_BATTLEUFO_BEAM:
+			Obj_BattleUFOBeamThink(mo);
+			if (mo->momz <= 0 && mo->z + mo->momz <= mo->floorz)
+			{
+				P_RemoveMobj(mo);
+				return false;
 			}
 			break;
 		default:
@@ -6603,7 +6628,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		UINT8 i;
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if (playeringame[i] == false)
+			if (playeringame[i] == false || players[i].spectator == true)
 			{
 				continue;
 			}
@@ -6727,6 +6752,38 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 	case MT_EMRAINGEN:
 	{
 		Obj_EMZRainGenerator(mobj);
+		return;
+	}
+	case MT_SSCANDLE:
+	{
+		Obj_SSCandleMobjThink(mobj);
+		return;
+	}
+	case MT_SS_HOLOGRAM_ROTATOR:
+	{
+		Obj_SSHologramRotatorMobjThink(mobj);
+		return;
+	}
+	case MT_SS_HOLOGRAM:
+	{
+		if (mobj->fuse)
+		{
+			mobj->fuse--;
+		}
+		if (!mobj->fuse)
+		{
+			Obj_SSHologramMobjFuse(mobj);
+		}
+		return;
+	}
+	case MT_SS_COIN:
+	{
+		Obj_SSCoinMobjThink(mobj);
+		return;
+	}
+	case MT_SS_GOBLET:
+	{
+		Obj_SSGobletMobjThink(mobj);
 		return;
 	}
 	default:
@@ -7395,6 +7452,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			mobj->angle += spin;
 			mobj->rollangle -= spin;
 		}
+
+		P_MobjCheckWater(mobj);
 
 		if (mobj->threshold > 0)
 			mobj->threshold--;
@@ -8808,11 +8867,6 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		Obj_BattleUFOLegThink(mobj);
 		break;
 	}
-	case MT_BATTLEUFO_BEAM:
-	{
-		Obj_BattleUFOBeamThink(mobj);
-		break;
-	}
 	case MT_ROCKETSNEAKER:
 		if (!mobj->target || !mobj->target->health)
 		{
@@ -10067,6 +10121,10 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		Obj_GPZSeasawThink(mobj);
 		break;
 
+	case MT_AGZ_BULB:
+		Obj_TulipSpawnerThink(mobj);
+		break;
+
 	case MT_BALLSWITCH_BALL:
 	{
 		Obj_BallSwitchThink(mobj);
@@ -10119,6 +10177,35 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		fixed_t sine = FixedMul(16 * FSIN((M_TAU_FIXED * (4*TICRATE)) * (leveltime + mobj->extravalue2)), mobj->scale);
 
 		mobj->z = (mobj->extravalue1 - (16 * mobj->scale)) + sine;
+		break;
+	}
+	case MT_WATERFALLPARTICLESPAWNER:
+	{
+		Obj_WaterfallParticleThink(mobj);
+		break;
+	}
+
+	case MT_SLSTMACE:
+	{
+		Obj_SLSTMaceMobjThink(mobj);
+		break;
+	}
+
+	case MT_SSCHAIN:
+	{
+		Obj_SSChainMobjThink(mobj);
+		break;
+	}
+
+	case MT_CABOTRON:
+	{
+		Obj_SSCabotronMobjThink(mobj);
+		break;
+	}
+
+	case MT_CABOTRONSTAR:
+	{
+		Obj_SSCabotronStarMobjThink(mobj);
 		break;
 	}
 
@@ -11400,6 +11487,11 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		case MT_WATERPALACETURBINE:
 			Obj_WPZTurbineSpawn(mobj);
 			break;
+		case MT_AHZ_CLOUDCLUSTER:
+		case MT_AGZ_CLOUDCLUSTER:
+		case MT_SSZ_CLOUDCLUSTER:
+			Obj_CloudSpawn(mobj);
+			break;
 		case MT_SNEAKERPANEL:
 			Obj_SneakerPanelSpawn(mobj);
 			break;
@@ -11440,6 +11532,18 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		case MT_TRICKBALLOON_RED:
 		case MT_TRICKBALLOON_YELLOW:
 			Obj_TrickBalloonMobjSpawn(mobj);
+			break;
+		case MT_SS_HOLOGRAM:
+			Obj_SSHologramMobjSpawn(mobj);
+			break;
+		case MT_SEALEDSTAR_BUMPER:
+			Obj_SSBumperMobjSpawn(mobj);
+			break;
+		case MT_GACHATARGET:
+			Obj_SSGachaTargetMobjSpawn(mobj);
+			break;
+		case MT_CABOTRON:
+			Obj_SSCabotronMobjSpawn(mobj);
 			break;
 		default:
 			break;
@@ -14141,6 +14245,36 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	case MT_BETA_EMITTER:
 	{
 		Obj_FuelCanisterEmitterInit(mobj);
+		break;
+	}
+	case MT_SS_HOLOGRAM_ROTATOR:
+	{
+		Obj_SSHologramRotatorMapThingSpawn(mobj, mthing);
+		break;
+	}
+	case MT_SS_HOLOGRAM:
+	{
+		Obj_SSHologramMapThingSpawn(mobj, mthing);
+		break;
+	}
+	case MT_SS_COIN_CLOUD:
+	{
+		Obj_SSCoinCloudMapThingSpawn(mobj, mthing);
+		break;
+	}
+	case MT_SS_GOBLET_CLOUD:
+	{
+		Obj_SSGobletCloudMapThingSpawn(mobj, mthing);
+		break;
+	}
+	case MT_SS_LAMP:
+	{
+		Obj_SSLampMapThingSpawn(mobj, mthing);
+		break;
+	}
+	case MT_SSWINDOW:
+	{
+		Obj_SSWindowMapThingSpawn(mobj, mthing);
 		break;
 	}
 	default:

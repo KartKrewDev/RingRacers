@@ -317,6 +317,9 @@ void A_SpawnItemDebrisCloud(mobj_t *actor);
 void A_RingShooterFace(mobj_t *actor);
 void A_SpawnSneakerPanel(mobj_t *actor);
 void A_BlendEyePuyoHack(mobj_t *actor);
+void A_MakeSSCandle(mobj_t *actor);
+void A_HologramRandomTranslucency(mobj_t *actor);
+void A_SSChainShatter(mobj_t *actor);
 
 //for p_enemy.c
 
@@ -3516,7 +3519,7 @@ void A_AttractChase(mobj_t *actor)
 
 				// Base add is 3 tics for 9,9, adds 1 tic for each point closer to the 1,1 end
 				actor->target->player->ringboost += K_GetKartRingPower(actor->target->player, true) + 3;
-				
+
 				S_ReducedVFXSoundAtVolume(actor->target, sfx_s1b5, actor->target->player->ringvolume, NULL);
 
 				actor->target->player->ringvolume -= RINGVOLUMEUSEPENALTY;
@@ -12589,4 +12592,57 @@ void A_BlendEyePuyoHack(mobj_t *actor)
 		// Funny
 		actor->frame = 7;
 	}
+}
+
+void A_MakeSSCandle(mobj_t* actor)
+{
+	int i;
+
+	fixed_t dist = ((4 * actor->scale * 6) * 4) + (7 * FRACUNIT) / 2;
+
+	// Flame
+	mobj_t* fire = P_SpawnMobjFromMobj(actor, 0, 0, (256 * FRACUNIT) * 4, MT_SSCANDLE_FLAME);
+	fire->scale = fire->destscale = FRACUNIT;
+	P_SetTarget(&actor->tracer, fire);
+
+	// Sides
+	for (i = 0; i < 5; i++)
+	{
+		fixed_t a = FixedAngle(60 * FRACUNIT) * i;
+		fixed_t offsetx = actor->x + FixedMul(dist, FCOS(a));
+		fixed_t offsety = actor->y + FixedMul(dist, FSIN(a));
+
+		mobj_t* side = P_SpawnMobj(offsetx, offsety, actor->z, MT_SSCANDLE_SIDE);
+		side->angle = a + FixedAngle(90 * FRACUNIT);
+		side->scale = side->destscale = FRACUNIT;
+	}
+}
+
+void A_HologramRandomTranslucency(mobj_t* actor)
+{
+	actor->frame = (actor->frame & ~FF_TRANSMASK) | (P_RandomRange(PR_UNDEFINED, 0, 10) << FF_TRANSSHIFT);
+}
+
+static void A_SSChainShatter_link(mobj_t* actor, angle_t angle)
+{
+	mobj_t *x;
+
+	x = P_SpawnMobjFromMobj(actor, 0, 0, 0, MT_SSCHAIN);
+
+	P_InstaThrust(x, angle, 20 * mapobjectscale);
+	x->momx = 10 * mapobjectscale * P_MobjFlip(x);
+}
+
+void A_SSChainShatter(mobj_t* actor)
+{
+	angle_t angle = P_RandomKey(PR_UNDEFINED, 360) * ANG1;
+
+	actor->scale *= 4;
+
+	A_SSChainShatter_link(actor, angle);
+	A_SSChainShatter_link(actor, angle + ANGLE_180);
+
+	S_StartSound(NULL, sfx_chcrun);
+
+	actor->fuse = 1;
 }

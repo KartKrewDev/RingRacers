@@ -199,6 +199,20 @@ static UINT8 cheatf_devmode(void)
 
 	return 1;
 }
+
+static UINT8 cheatf_skipgoner(void)
+{
+	gamedata->gonerlevel = GDGONER_DONE;
+	gamedata->finishedtutorialchallenge = true;
+	M_UpdateUnlockablesAndExtraEmblems(true, true);
+
+	M_ClearMenus(true);
+	S_StartSound(0, sfx_kc42);
+
+	G_SaveGameData();
+
+	return 1;
+}
 #endif
 
 static cheatseq_t cheat_warp = {
@@ -226,6 +240,11 @@ static cheatseq_t cheat_devmode = {
 	NULL, cheatf_devmode,
 	(UINT8[]){ SCRAMBLE('d'), SCRAMBLE('e'), SCRAMBLE('v'), SCRAMBLE('m'), SCRAMBLE('o'), SCRAMBLE('d'), SCRAMBLE('e'), 0xff }
 };
+
+static cheatseq_t cheat_skipgoner = {
+	NULL, cheatf_skipgoner,
+	(UINT8[]){ SCRAMBLE('g'), SCRAMBLE('a'), SCRAMBLE('s'), SCRAMBLE('t'), SCRAMBLE('e'), SCRAMBLE('r'), 0xff }
+};
 #endif
 
 cheatseq_t *cheatseqlist[] =
@@ -236,6 +255,7 @@ cheatseq_t *cheatseqlist[] =
 	&cheat_savetheframes,
 #ifdef DEVELOP
 	&cheat_devmode,
+	&cheat_skipgoner,
 #endif
 	NULL
 };

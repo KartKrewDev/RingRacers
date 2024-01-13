@@ -10,7 +10,10 @@
 /// \brief HUD drawing functions exclusive to Kart
 
 #include <algorithm>
+#include <array>
 #include <vector>
+
+#include "v_draw.hpp"
 
 #include "k_hud.h"
 #include "k_kart.h"
@@ -110,6 +113,10 @@ static patch_t *kp_rankcapsule;
 static patch_t *kp_rankemerald;
 static patch_t *kp_rankemeraldflash;
 static patch_t *kp_rankemeraldback;
+
+static patch_t *kp_goal[2][2]; // [skull][4p]
+static patch_t *kp_goalrod[2]; // [4p]
+static patch_t *kp_goaltext1p;
 
 static patch_t *kp_battlewin;
 static patch_t *kp_battlecool;
@@ -451,6 +458,15 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_rankemerald, "K_EMERC");
 	HU_UpdatePatch(&kp_rankemeraldflash, "K_EMERW");
 	HU_UpdatePatch(&kp_rankemeraldback, "K_EMERBK");
+
+	// Battle goal
+	HU_UpdatePatch(&kp_goal[0][0], "K_ST1GLA");
+	HU_UpdatePatch(&kp_goal[1][0], "K_ST1GLB");
+	HU_UpdatePatch(&kp_goal[0][1], "K_ST4GLA");
+	HU_UpdatePatch(&kp_goal[1][1], "K_ST4GLB");
+	HU_UpdatePatch(&kp_goalrod[0], "K_ST1GLD");
+	HU_UpdatePatch(&kp_goalrod[1], "K_ST4GLD");
+	HU_UpdatePatch(&kp_goaltext1p, "K_ST1GLC");
 
 	// Battle graphics
 	HU_UpdatePatch(&kp_battlewin, "K_BWIN");
@@ -1228,6 +1244,7 @@ static void K_initKartHUD(void)
 
 		STCD_Y = BASEVIDHEIGHT/4;
 
+		MINI_X -= 16;
 		MINI_Y = (BASEVIDHEIGHT/2);
 
 		if (r_splitscreen > 1)	// 3P/4P Small Splitscreen
@@ -2196,24 +2213,42 @@ static void K_DrawKartPositionNum(UINT8 num)
 	);
 }
 
-static boolean K_drawKartPositionFaces(void)
+struct PositionFacesInfo
 {
-	// FACE_X = 15;				//  15
-	// FACE_Y = 72;				//  72
+	INT32 ranklines = 0;
+	INT32 strank = -1;
+	INT32 numplayersingame = 0;
+	INT32 rankplayer[MAXPLAYERS] = {};
 
-	INT32 Y = FACE_Y-9; // -9 to offset where it's being drawn if there are more than one
-	INT32 i, j, ranklines, strank = -1;
-	boolean completed[MAXPLAYERS];
-	INT32 rankplayer[MAXPLAYERS];
-	INT32 bumperx, emeraldx, numplayersingame = 0;
-	INT32 xoff, yoff, flipflag = 0;
-	UINT8 workingskin;
-	UINT8 *colormap;
-	UINT32 skinflags;
+	PositionFacesInfo();
+	void draw_1p();
+	void draw_4p_battle(int x, int y, INT32 flags);
 
-	ranklines = 0;
-	memset(completed, 0, sizeof (completed));
-	memset(rankplayer, 0, sizeof (rankplayer));
+	UINT32 top_score() const { return players[rankplayer[0]].roundscore; }
+	bool near_goal() const { return g_pointlimit - 5 <= top_score(); }
+	skincolornum_t vomit_color() const
+	{
+		if (!near_goal())
+		{
+			return SKINCOLOR_NONE;
+		}
+
+		constexpr int kCycleSpeed = 4;
+		constexpr std::array<skincolornum_t, 6> kColors = {
+			SKINCOLOR_RED,
+			SKINCOLOR_VOMIT,
+			SKINCOLOR_YELLOW,
+			SKINCOLOR_GREEN,
+			SKINCOLOR_JET,
+			SKINCOLOR_MOONSET,
+		};
+		return kColors[leveltime / kCycleSpeed % kColors.size()];
+	}
+};
+
+PositionFacesInfo::PositionFacesInfo()
+{
+	INT32 i, j;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -2226,10 +2261,9 @@ static boolean K_drawKartPositionFaces(void)
 	}
 
 	if (numplayersingame <= 1)
-		return true;
+		return;
 
-	if (!LUA_HudEnabled(hud_minirankings))
-		return false;	// Don't proceed but still return true for free play above if HUD is disabled.
+	boolean completed[MAXPLAYERS] = {};
 
 	for (j = 0; j < numplayersingame; j++)
 	{
@@ -2258,8 +2292,24 @@ static boolean K_drawKartPositionFaces(void)
 
 		ranklines++;
 	}
+}
 
-	if (ranklines < 5)
+void PositionFacesInfo::draw_1p()
+{
+	// FACE_X = 15;				//  15
+	// FACE_Y = 72;				//  72
+
+	INT32 Y = FACE_Y-9; // -9 to offset where it's being drawn if there are more than one
+	INT32 i, j;
+	INT32 bumperx, emeraldx;
+	INT32 xoff, yoff, flipflag = 0;
+	UINT8 workingskin;
+	UINT8 *colormap;
+	UINT32 skinflags;
+
+	if (gametyperules & GTR_POINTLIMIT) // playing battle
+		Y += (9*5) - 5; // <-- arbitrary calculation
+	else if (ranklines < 5)
 		Y += (9*ranklines);
 	else
 		Y += (9*5);
@@ -2267,7 +2317,54 @@ static boolean K_drawKartPositionFaces(void)
 	ranklines--;
 	i = ranklines;
 
-	if ((gametyperules & GTR_POINTLIMIT) || strank <= 2) // too close to the top, or playing battle, or a spectator? would have had (strank == -1) called out, but already caught by (strank <= 2)
+	if (gametyperules & GTR_POINTLIMIT) // playing battle
+	{
+		// 3 lines max in Battle
+		if (i > 2)
+			i = 2;
+		ranklines = 0;
+
+		// You must appear on the leaderboard, even if you don't rank top 3
+		if (strank > i)
+		{
+			strank = i;
+			rankplayer[strank] = stplyr - players;
+		}
+
+		// Draw GOAL
+		UINT8 skull = g_pointlimit <= stplyr->roundscore;
+		INT32 height = i*18;
+		INT32 GOAL_Y = Y-height;
+
+		colormap = nullptr;
+
+		if (skincolornum_t vomit = vomit_color())
+		{
+			colormap = R_GetTranslationColormap(TC_DEFAULT, vomit, GTC_CACHE);
+		}
+
+		V_DrawMappedPatch(FACE_X-5, GOAL_Y-32, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_goal[skull][0], colormap);
+
+		// Flashing KO
+		if (skull)
+		{
+			if (leveltime % 16 < 8)
+				V_DrawScaledPatch(FACE_X-5, GOAL_Y-32, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_goaltext1p);
+		}
+		else
+		{
+			using srb2::Draw;
+			Draw(FACE_X+8.5, GOAL_Y-15)
+				.font(Draw::Font::kZVote)
+				.align(Draw::Align::kCenter)
+				.flags(V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT)
+				.text("{:02}", g_pointlimit);
+		}
+
+		// Line cutting behind rank faces
+		V_DrawScaledPatch(FACE_X+6, GOAL_Y, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_goalrod[0]);
+	}
+	else if (strank <= 2) // too close to the top, or a spectator? would have had (strank == -1) called out, but already caught by (strank <= 2)
 	{
 		if (i > 4) // could be both...
 			i = 4;
@@ -2399,6 +2496,82 @@ static boolean K_drawKartPositionFaces(void)
 		}
 
 		Y -= 18;
+	}
+}
+
+void PositionFacesInfo::draw_4p_battle(int x, int y, INT32 flags)
+{
+	using srb2::Draw;
+	Draw row = Draw(x, y).flags(V_HUDTRANS | V_SLIDEIN | flags).font(Draw::Font::kPing);
+
+	UINT8 skull = []
+	{
+		int party = G_PartySize(consoleplayer);
+		for (int i = 0; i < party; ++i)
+		{
+			// Is any party member about to win?
+			if (g_pointlimit <= players[G_PartyMember(consoleplayer, i)].roundscore)
+			{
+				return 1;
+			}
+		}
+		return 0;
+	}();
+
+	skincolornum_t vomit = vomit_color();
+	(vomit ? row.colormap(vomit) : row).patch(kp_goal[skull][1]);
+
+	if (!skull)
+	{
+		row.xy(8.5, 5).align(Draw::Align::kCenter).text("{:02}", g_pointlimit);
+	}
+
+	row.xy(7, 18).patch(kp_goalrod[1]);
+
+	auto head = [&](Draw col, int i)
+	{
+		const player_t& p = players[rankplayer[i]];
+		col.colormap(p.skin, static_cast<skincolornum_t>(p.skincolor)).patch(faceprefix[p.skin][FACE_MINIMAP]);
+
+		bool dance = g_pointlimit <= p.roundscore;
+		bool flash = dance && leveltime % 8 < 4;
+		(
+			flash ?
+			col.xy(8, 6).colorize(SKINCOLOR_TANGERINE).flags(V_STRINGDANCE) :
+			col.xy(8, 6).flags(dance ? V_STRINGDANCE : 0)
+		).text("{:02}", p.roundscore);
+	};
+
+	// Draw top 2 players
+	head(row.xy(2, 31), 1);
+	head(row.xy(2, 18), 0);
+}
+
+static boolean K_drawKartPositionFaces(void)
+{
+	PositionFacesInfo state{};
+
+	if (state.numplayersingame <= 1)
+		return true;
+
+	if (!LUA_HudEnabled(hud_minirankings))
+		return false;	// Don't proceed but still return true for free play above if HUD is disabled.
+
+	switch (r_splitscreen)
+	{
+	case 0:
+		state.draw_1p();
+		break;
+
+	case 1:
+		state.draw_4p_battle(292, 78, V_SNAPTORIGHT);
+		break;
+
+	case 2:
+	case 3:
+		state.draw_4p_battle(152, 9, V_SNAPTOTOP);
+		state.draw_4p_battle(152, 147, V_SNAPTOBOTTOM);
+		break;
 	}
 
 	return false;
@@ -5507,12 +5680,22 @@ void K_drawKartHUD(void)
 			{
 				K_drawKart2PTimestamp();
 			}
+
+			if (viewnum == r_splitscreen && gametyperules & GTR_POINTLIMIT)
+			{
+				K_drawKartPositionFaces();
+			}
 		}
 		else if (viewnum == r_splitscreen)
 		{
 			if (LUA_HudEnabled(hud_time))
 			{
 				K_drawKart4PTimestamp();
+			}
+
+			if (gametyperules & GTR_POINTLIMIT)
+			{
+				K_drawKartPositionFaces();
 			}
 		}
 	}
@@ -5550,7 +5733,7 @@ void K_drawKartHUD(void)
 				}
 				else if (freecam)
 					;
-				else if ((gametyperules & GTR_POWERSTONES))
+				else if ((gametyperules & GTR_POWERSTONES) && !K_PlayerTallyActive(stplyr))
 				{
 					if (!battleprisons)
 						K_drawKartEmeralds();

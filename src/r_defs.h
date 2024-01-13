@@ -1091,6 +1091,7 @@ typedef struct
 
 	//Fix TUTIFRUTI
 	INT32 texheight;
+	INT32 sourcelength;
 
 	UINT8 r8_flatcolor;
 } drawcolumndata_t;
