@@ -186,7 +186,7 @@ void draw_routine()
 			sliders.at(it.mvar2).draw(
 				x,
 				y,
-				it.mvar2 == Slider::kMasterVolume,
+				false,
 				i == itemOn
 			);
 		}
