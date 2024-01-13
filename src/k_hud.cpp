@@ -2224,13 +2224,14 @@ struct PositionFacesInfo
 	void draw_1p();
 	void draw_4p_battle(int x, int y, INT32 flags);
 
-	UINT32 top_score() const { return players[rankplayer[0]].roundscore; }
+	player_t* top() const { return &players[rankplayer[0]]; }
+	UINT32 top_score() const { return top()->roundscore; }
 	bool near_goal() const { return g_pointlimit - 5 <= top_score(); }
 	skincolornum_t vomit_color() const
 	{
 		if (!near_goal())
 		{
-			return SKINCOLOR_NONE;
+			return static_cast<skincolornum_t>(top()->skincolor);
 		}
 
 		constexpr int kCycleSpeed = 4;
