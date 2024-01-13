@@ -2792,6 +2792,12 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 	limit_dist = (fixed_t)(cv_drawdist.value) * mapobjectscale;
 	for (thing = sec->thinglist; thing; thing = thing->snext)
 	{
+		// do not render in skybox
+		if ((thing->renderflags & RF_HIDEINSKYBOX) && portalskipprecipmobjs)
+		{
+			continue;
+		}
+
 		if (R_ThingWithinDist(thing, limit_dist))
 		{
 			const INT32 oldobjectsdrawn = objectsdrawn;
