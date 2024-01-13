@@ -2812,6 +2812,34 @@ static void AddNullHitlag(player_t *player, tic_t oldHitlag)
 	}
 }
 
+static boolean P_FlashingException(const player_t *player, const mobj_t *inflictor)
+{
+	if (!inflictor)
+	{
+		// Sector damage always behaves the same.
+		return false;
+	}
+
+	if (!P_IsKartItem(inflictor->type) && inflictor->type != MT_PLAYER)
+	{
+		// Exception only applies to player items.
+		// Also applies to players because of PvP collision.
+		// Lightning Shield also uses the player object as inflictor.
+		return false;
+	}
+
+	if (!P_PlayerInPain(player))
+	{
+		// Flashing tics is sometimes used in a way unrelated to damage.
+		// E.g. picking up a power-up gives you flashing tics.
+		// Respect this usage of flashing tics.
+		return false;
+	}
+
+	// Flashing tics are ignored.
+	return true;
+}
+
 /** Damages an object, which may or may not be a player.
   * For melee attacks, source and inflictor are the same.
   *
@@ -3176,7 +3204,12 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					}
 
 					// DMG_EXPLODE excluded from flashtic checks to prevent dodging eggbox/SPB with weak spinout
-					if ((target->hitlag == 0 || allowcombo == false) && player->flashing > 0 && type != DMG_EXPLODE && type != DMG_STUMBLE && type != DMG_WHUMBLE)
+					if ((target->hitlag == 0 || allowcombo == false) &&
+						player->flashing > 0 &&
+						type != DMG_EXPLODE &&
+						type != DMG_STUMBLE &&
+						type != DMG_WHUMBLE &&
+						P_FlashingException(player, inflictor) == false)
 					{
 						// Post-hit invincibility
 						K_DoInstashield(player);
