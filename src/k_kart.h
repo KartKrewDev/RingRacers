@@ -192,6 +192,7 @@ fixed_t K_GetKartSpeedFromStat(UINT8 kartspeed);
 fixed_t K_GetKartSpeed(const player_t *player, boolean doboostpower, boolean dorubberbanding);
 fixed_t K_GetKartAccel(const player_t *player);
 UINT16 K_GetKartFlashing(const player_t *player);
+void K_UpdateDamageFlashing(player_t *player, UINT16 tics);
 boolean K_PlayerShrinkCheat(const player_t *player);
 void K_UpdateShrinkCheat(player_t *player);
 boolean K_KartKickstart(const player_t *player);

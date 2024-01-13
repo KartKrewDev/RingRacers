@@ -3550,11 +3550,6 @@ UINT16 K_GetKartFlashing(const player_t *player)
 {
 	UINT16 tics = flashingtics;
 
-	if (gametyperules & GTR_BUMPERS)
-	{
-		return 0;
-	}
-
 	if (player == NULL)
 	{
 		return tics;
@@ -3562,6 +3557,16 @@ UINT16 K_GetKartFlashing(const player_t *player)
 
 	tics += (tics/8) * (player->kartspeed);
 	return tics;
+}
+
+void K_UpdateDamageFlashing(player_t *player, UINT16 tics)
+{
+	if (gametyperules & GTR_BUMPERS)
+	{
+		return;
+	}
+
+	player->flashing = tics;
 }
 
 boolean K_PlayerShrinkCheat(const player_t *player)
@@ -3826,7 +3831,7 @@ void K_DoGuardBreak(mobj_t *t1, mobj_t *t2) {
 	if (P_PlayerInPain(t2->player))
 		return;
 
-	t1->player->instaWhipCharge = 0;
+	t1->player->defenseLockout = 1;
 
 	S_StartSound(t1, sfx_gbrk);
 	K_AddHitLag(t1, 24, true);
@@ -8391,9 +8396,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->spinouttimer != 0)
 	{
 		if (( player->spinouttype & KSPIN_IFRAMES ) == 0)
-			player->flashing = 0;
+			K_UpdateDamageFlashing(player, 0);
 		else
-			player->flashing = K_GetKartFlashing(player);
+			K_UpdateDamageFlashing(player, K_GetKartFlashing(player));
 	}
 
 	if (player->spinouttimer)
@@ -8569,7 +8574,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			S_StartSound(player->mo, sfx_s1af);
 
 		player->oldGuard = true;
-		player->instaWhipCharge = 0;
+
+		if (!K_PowerUpRemaining(player, POWERUP_BARRIER))
+			player->instaWhipCharge = 0;
 	}
 	else if (player->oldGuard)
 	{
@@ -10785,6 +10792,11 @@ boolean K_PlayerGuard(const player_t *player)
 		return false;
 	}
 
+	if (P_PlayerInPain(player) == true)
+	{
+		return false;
+	}
+
 	if (K_PowerUpRemaining(player, POWERUP_BARRIER))
 	{
 		return true;
@@ -10809,7 +10821,6 @@ boolean K_PlayerGuard(const player_t *player)
 
 	if (K_PressingEBrake(player) == true
 		&& (player->drift == 0 || P_IsObjectOnGround(player->mo) == false)
-		&& P_PlayerInPain(player) == false
 		&& player->spindashboost == 0
 		&& player->nocontrol == 0)
 	{
@@ -11676,10 +11687,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			else
 			{
 				player->instaWhipCharge = 0;
-				player->defenseLockout = PUNISHWINDOW;
 				if (!K_PowerUpRemaining(player, POWERUP_BARRIER))
 				{
-					player->defenseLockout = INSTAWHIP_CHARGETIME;
+					player->defenseLockout = PUNISHWINDOW;
 				}
 
 				S_StartSound(player->mo, sfx_iwhp);

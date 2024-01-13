@@ -256,8 +256,8 @@ private:
 	static fixed_t font_width(Font font, INT32 flags, const char* string);
 };
 
-#include "v_draw_setter.hpp"
-
 }; // namespace srb2
+
+#include "v_draw_setter.hpp"
 
 #endif // __V_DRAW_HPP__

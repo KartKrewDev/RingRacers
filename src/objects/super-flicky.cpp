@@ -273,6 +273,8 @@ struct Flicky : mobj_t
 
 	bool stunned() const { return mode() == Mode::kStunned || mode() == Mode::kWeak; }
 
+	bool owner_in_pain() const { return source()->player && P_PlayerInPain(source()->player); }
+
 	void light_up(bool n)
 	{
 		if (n)
@@ -613,6 +615,25 @@ struct Flicky : mobj_t
 		S_StartSound(this, sfx_s3k9f);
 	}
 
+	void try_nerf()
+	{
+		if (owner_in_pain())
+		{
+			mode(Mode::kWeak);
+			delay(2);
+			nerf();
+			flags |= MF_NOGRAVITY;
+		}
+	}
+
+	void preserve_nerf()
+	{
+		if (owner_in_pain())
+		{
+			delay(1);
+		}
+	}
+
 	void whip()
 	{
 		reflect();
@@ -772,6 +793,7 @@ void Obj_SuperFlickyThink(mobj_t* mobj)
 		break;
 
 	case Flicky::Mode::kHunting:
+		x->try_nerf();
 		x->chase();
 		break;
 
@@ -779,6 +801,7 @@ void Obj_SuperFlickyThink(mobj_t* mobj)
 		break;
 
 	case Flicky::Mode::kWeak:
+		x->preserve_nerf();
 		x->chase();
 		break;
 	}

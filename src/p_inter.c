@@ -402,6 +402,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 					return;
 
 				K_GivePowerUp(player, special->threshold, special->movecount);
+				player->flashing = 2*TICRATE;
 			}
 			else
 			{
@@ -3076,6 +3077,12 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					invincible = false;
 				}
 
+				// Hack for instawhip-guard counter, lets invincible players lose to guard
+				if (inflictor == target)
+				{
+					invincible = false;
+				}
+
 				// TODO: doing this from P_DamageMobj limits punting to objects that damage the player.
 				// And it may be kind of yucky.
 				// But this is easier than accounting for every condition in PIT_CheckThing!
@@ -3334,7 +3341,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			if (type != DMG_STUMBLE && type != DMG_WHUMBLE)
 			{
 				if (type != DMG_STING)
-					player->flashing = K_GetKartFlashing(player);
+					K_UpdateDamageFlashing(player, K_GetKartFlashing(player));
 
 				player->ringburst += ringburst;
 
