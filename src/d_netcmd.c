@@ -2194,6 +2194,8 @@ void D_MapChange(UINT16 mapnum, INT32 newgametype, boolean pencoremode, boolean 
 
 void D_SetupVote(INT16 newgametype)
 {
+	const UINT32 rules = gametypes[newgametype]->rules;
+
 	UINT8 buf[(VOTE_NUM_LEVELS * 2) + 4];
 	UINT8 *p = buf;
 
@@ -2203,7 +2205,7 @@ void D_SetupVote(INT16 newgametype)
 	memset(votebuffer, UINT16_MAX, sizeof(votebuffer));
 
 	WRITEINT16(p, newgametype);
-	WRITEUINT8(p, ((cv_kartencore.value == 1) && (gametyperules & GTR_ENCORE)));
+	WRITEUINT8(p, ((cv_kartencore.value == 1) && (rules & GTR_ENCORE)));
 	WRITEUINT8(p, G_SometimesGetDifferentEncore());
 
 	for (i = 0; i < VOTE_NUM_LEVELS; i++)
