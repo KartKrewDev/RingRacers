@@ -3831,7 +3831,7 @@ void K_DoGuardBreak(mobj_t *t1, mobj_t *t2) {
 	if (P_PlayerInPain(t2->player))
 		return;
 
-	t1->player->instaWhipCharge = 0;
+	t1->player->defenseLockout = 1;
 
 	S_StartSound(t1, sfx_gbrk);
 	K_AddHitLag(t1, 24, true);
