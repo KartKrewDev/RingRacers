@@ -10790,6 +10790,11 @@ boolean K_PlayerGuard(const player_t *player)
 		return false;
 	}
 
+	if (P_PlayerInPain(player) == true)
+	{
+		return false;
+	}
+
 	if (K_PowerUpRemaining(player, POWERUP_BARRIER))
 	{
 		return true;
@@ -10814,7 +10819,6 @@ boolean K_PlayerGuard(const player_t *player)
 
 	if (K_PressingEBrake(player) == true
 		&& (player->drift == 0 || P_IsObjectOnGround(player->mo) == false)
-		&& P_PlayerInPain(player) == false
 		&& player->spindashboost == 0
 		&& player->nocontrol == 0)
 	{
