@@ -121,16 +121,16 @@ static void R_DrawColumnTemplate(drawcolumndata_t *dc)
 		realyh = dc_copy.yh;
 
 		// This runs through the lightlist from top to bottom and cuts up the column accordingly.
-		for (i = 0; i < dc->numlights; i++)
+		for (i = 0; i < dc_copy.numlights; i++)
 		{
 			// If the height of the light is above the column, get the colormap
 			// anyway because the lighting of the top should be affected.
-			solid = dc->lightlist[i].flags & FOF_CUTSOLIDS;
-			height = dc->lightlist[i].height >> LIGHTSCALESHIFT;
+			solid = dc_copy.lightlist[i].flags & FOF_CUTSOLIDS;
+			height = dc_copy.lightlist[i].height >> LIGHTSCALESHIFT;
 
 			if (solid)
 			{
-				bheight = dc->lightlist[i].botheight >> LIGHTSCALESHIFT;
+				bheight = dc_copy.lightlist[i].botheight >> LIGHTSCALESHIFT;
 
 				if (bheight < height)
 				{
@@ -146,7 +146,7 @@ static void R_DrawColumnTemplate(drawcolumndata_t *dc)
 
 			if (height <= dc_copy.yl)
 			{
-				dc_copy.colormap = dc->lightlist[i].rcolormap;
+				dc_copy.colormap = dc_copy.lightlist[i].rcolormap;
 				dc_copy.fullbright = colormaps;
 
 				if (encoremap)
@@ -202,6 +202,8 @@ static void R_DrawColumnTemplate(drawcolumndata_t *dc)
 		fixed_t fracstep;
 		fixed_t frac;
 		INT32 heightmask;
+		INT32 npow2min;
+		INT32 npow2max;
 
 		// Framebuffer destination address.
 		// Use ylookup LUT to avoid multiply with ScreenWidth.
@@ -220,6 +222,18 @@ static void R_DrawColumnTemplate(drawcolumndata_t *dc)
 		// Inner loop that does the actual texture mapping, e.g. a DDA-like scaling.
 		// This is as fast as it gets.
 		heightmask = dc->texheight-1;
+		if (dc->sourcelength <= 0)
+		{
+			// Note: we need to unconditionally clamp in npow2 draw loop to avoid a CPU branch
+			// This is to just render it effectively the identity function.
+			npow2min = INT32_MIN;
+			npow2max = INT32_MAX;
+		}
+		else
+		{
+			npow2min = -1;
+			npow2max = dc->sourcelength;
+		}
 
 		if (dc->texheight & heightmask)   // not a power of 2 -- killough
 		{
@@ -246,7 +260,10 @@ static void R_DrawColumnTemplate(drawcolumndata_t *dc)
 				// Re-map color indices from wall texture column
 				//  using a lighting/special effects LUT.
 				// heightmask is the Tutti-Frutti fix
-				*dest = R_DrawColumnPixel<Type>(dc, dest, frac >> FRACBITS);
+
+				// -1 is the lower clamp bound because column posts have a "safe" byte before the real data
+				// and a few bytes after as well
+				*dest = R_DrawColumnPixel<Type>(dc, dest, std::clamp(frac >> FRACBITS, npow2min, npow2max));
 
 				dest += vid.width;
 

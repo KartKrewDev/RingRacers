@@ -129,6 +129,7 @@ static void R_Render2sidedMultiPatchColumn(drawcolumndata_t* dc, column_t *colum
 	if (dc->yl <= dc->yh && dc->yh < vid.height && dc->yh > 0)
 	{
 		dc->source = (UINT8 *)column + 3;
+		dc->sourcelength = 0;
 		if (brightmap != NULL)
 		{
 			dc->brightmap = (UINT8 *)brightmap + 3;
@@ -1334,6 +1335,7 @@ static void R_DrawWallColumn(drawcolumndata_t* dc, INT32 yl, INT32 yh, fixed_t m
 	dc->source = R_GetColumn(texture, texturecolumn);
 	dc->brightmap = (brightmapped ? R_GetBrightmapColumn(texture, texturecolumn) : NULL);
 	dc->texheight = textureheight[texture] >> FRACBITS;
+	dc->sourcelength = 0;
 	R_SetColumnFunc(colfunctype, dc->brightmap != NULL);
 	coldrawfunc_t* colfunccopy = colfunc;
 	drawcolumndata_t dc_copy = *dc;

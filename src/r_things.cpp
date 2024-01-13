@@ -688,6 +688,7 @@ void R_DrawMaskedColumn(drawcolumndata_t* dc, column_t *column, column_t *bright
 		if (dc->yl <= dc->yh && dc->yh > 0)
 		{
 			dc->source = (UINT8 *)column + 3;
+			dc->sourcelength = column->length;
 			if (brightmap != NULL)
 			{
 				dc->brightmap = (UINT8 *)brightmap + 3;
@@ -773,6 +774,7 @@ void R_DrawFlippedMaskedColumn(drawcolumndata_t* dc, column_t *column, column_t 
 		if (dc->yl <= dc->yh && dc->yh > 0)
 		{
 			dc->source = static_cast<UINT8*>(ZZ_Alloc(column->length));
+			dc->sourcelength = column->length;
 			for (s = (UINT8 *)column+2+column->length, d = dc->source; d < dc->source+column->length; --s)
 				*d++ = *s;
 
