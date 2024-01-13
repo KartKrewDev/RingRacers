@@ -97,19 +97,11 @@ struct Slider
 
 	void input(INT32 c)
 	{
-		if (c == -1 && &volume_ == &cv_mastervolume)
+		M_ChangeCvarDirect(c, &volume_);
+
+		if (!toggle_(false))
 		{
-			// Master volume does not necessarily change when
-			// music or sound volumes change separately. So
-			// cv_mastervolume could still have its default
-			// value, and M_ChangeCvarDirect would do
-			// nothing.
-			CV_Set(&cv_digmusicvolume, cv_mastervolume.defaultvalue);
-			CV_Set(&cv_soundvolume, cv_mastervolume.defaultvalue);
-		}
-		else
-		{
-			M_ChangeCvarDirect(c, &volume_);
+			toggle_(true);
 		}
 
 		shake_ = !shake_;
