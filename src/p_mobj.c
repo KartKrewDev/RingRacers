@@ -5317,6 +5317,39 @@ cont:
 
 // Kartitem stuff.
 
+// These are held/thrown by players.
+boolean P_IsKartItem(INT32 type)
+{
+	switch (type)
+	{
+		case MT_POGOSPRING:
+		case MT_EGGMANITEM:
+		case MT_EGGMANITEM_SHIELD:
+		case MT_BANANA:
+		case MT_BANANA_SHIELD:
+		case MT_ORBINAUT:
+		case MT_ORBINAUT_SHIELD:
+		case MT_JAWZ:
+		case MT_JAWZ_SHIELD:
+		case MT_SSMINE:
+		case MT_SSMINE_SHIELD:
+		case MT_LANDMINE:
+		case MT_DROPTARGET:
+		case MT_DROPTARGET_SHIELD:
+		case MT_BALLHOG:
+		case MT_SPB:
+		case MT_BUBBLESHIELDTRAP:
+		case MT_GARDENTOP:
+		case MT_HYUDORO:
+		case MT_SINK:
+		case MT_GACHABOM:
+			return true;
+
+		default:
+			return false;
+	}
+}
+
 // This item is never attached to a player -- it can DIE
 // unconditionally in death sectors.
 boolean P_IsKartFieldItem(INT32 type)
