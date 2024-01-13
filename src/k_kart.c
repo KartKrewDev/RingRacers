@@ -3792,14 +3792,14 @@ void K_DoPowerClash(mobj_t *t1, mobj_t *t2) {
 	{
 		t1->player->instashield = 1;
 		t1->player->speedpunt += 20;
-		lag1 -= min(lag1, t1->player->speedpunt/10); 
+		lag1 -= min(lag1, t1->player->speedpunt/10);
 	}
 
 	if (t2->player)
 	{
 		t2->player->instashield = 1;
 		t2->player->speedpunt += 20;
-		lag2 -= min(lag1, t2->player->speedpunt/10); 
+		lag2 -= min(lag1, t2->player->speedpunt/10);
 	}
 
 	S_StartSound(t1, sfx_parry);
@@ -8151,7 +8151,7 @@ static void K_UpdateTripwire(player_t *player)
 		if (triplevel != TRIPWIRE_CONSUME)
 			player->tripwireLeniency = max(player->tripwireLeniency, TRIPWIRETIME);
 	}
-	
+
 	// TRIPWIRE_CONSUME is only applied in very specific cases (currently, riding Garden Top)
 	// and doesn't need leniency; however, it should track leniency from other pass conditions,
 	// so that stripping Garden Top feels consistent.
@@ -8500,10 +8500,10 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (P_PlayerInPain(player))
 	{
-		player->ringboost = 0;		
+		player->ringboost = 0;
 	}
 	else if (player->ringboost)
-	{	
+	{
 		// These values can get FUCKED ever since ring-stacking speed changes.
 		// If we're not actively being awarded rings, roll off extreme ringboost durations.
 		if (player->superring == 0)
@@ -8528,7 +8528,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->flamedash)
 	{
 		player->flamedash--;
-		
+
 		if (player->flamedash == 0)
 			S_StopSoundByID(player->mo, sfx_fshld1);
 		else if (player->flamedash == 3 && player->curshield == KSHIELD_FLAME) // "Why 3?" We can't blend sounds so this is the best shit I've got
@@ -11595,7 +11595,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			UINT32 behind = K_GetItemRouletteDistance(player, player->itemRoulette.playing);
 			UINT32 behindMulti = behind / 500;
 			behindMulti = min(behindMulti, 60);
-				
+
 
 			UINT32 award = 5*player->ringboxaward + 10;
 			if (!cv_thunderdome.value)
@@ -12063,7 +12063,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									player->ballhogcharge++;
 									if (player->ballhogcharge % BALLHOGINCREMENT == 0)
 									{
-										sfxenum_t hogsound[] = 
+										sfxenum_t hogsound[] =
 										{
 											sfx_bhog00,
 											sfx_bhog01,
@@ -12608,11 +12608,12 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				const angle_t angledelta = FixedAngle(36*FRACUNIT);
 				angle_t baseangle = player->mo->angle + angledelta/2;
 
-				INT16 aimingcompare = abs(cmd->throwdir) - abs(cmd->turning);
+				boolean throwing = cmd->throwdir != 0;
+				INT16 turnmagnitude = abs(cmd->turning);
 
 				// Uses cmd->turning over steering intentionally.
 #define TRICKTHRESHOLD (KART_FULLTURN/4)
-				if (aimingcompare < -TRICKTHRESHOLD) // side trick
+				if (abs(turnmagnitude) > TRICKTHRESHOLD && !throwing) // side trick
 				{
 					S_StartSoundAtVolume(player->mo, sfx_trick0, 255/2);
 					player->dotrickfx = true;
@@ -12651,7 +12652,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						P_SetPlayerMobjState(player->mo, S_KART_FAST_LOOK_R);
 					}
 				}
-				else if (aimingcompare > TRICKTHRESHOLD) // forward/back trick
+				else if (abs(turnmagnitude) <= TRICKTHRESHOLD && throwing) // forward/back trick
 				{
 					S_StartSoundAtVolume(player->mo, sfx_trick0, 255/2);
 					player->dotrickfx = true;
@@ -12722,7 +12723,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					if (P_MobjWasRemoved(player->trickIndicator) == false)
 						trickcolor = player->trickIndicator->color;
 
-					if (player->trickpanel == TRICKSTATE_FORWARD)	
+					if (player->trickpanel == TRICKSTATE_FORWARD)
 					{
 						for (j = 0; j < 2; j++)
 						{
