@@ -55,7 +55,8 @@ using namespace srb2::io;
 // extern in i_sound.h
 UINT8 sound_started = false;
 
-static unique_ptr<Mixer<2>> master;
+static unique_ptr<Gain<2>> master_gain;
+static shared_ptr<Mixer<2>> master;
 static shared_ptr<Mixer<2>> mixer_sound_effects;
 static shared_ptr<Mixer<2>> mixer_music;
 static shared_ptr<MusicPlayer> music_player;
@@ -144,10 +145,10 @@ void audio_callback(void* userdata, Uint8* buffer, int len)
 			float_buffer[i] = Sample<2> {0.f, 0.f};
 		}
 
-		if (!master)
+		if (!master_gain)
 			return;
 
-		master->generate(tcb::span {float_buffer, float_len});
+		master_gain->generate(tcb::span {float_buffer, float_len});
 
 		for (size_t i = 0; i < float_len; i++)
 		{
@@ -197,7 +198,9 @@ void initialize_sound()
 	{
 		SdlAudioLockHandle _;
 
-		master = make_unique<Mixer<2>>();
+		master_gain = make_unique<Gain<2>>();
+		master = make_shared<Mixer<2>>();
+		master_gain->bind(master);
 		mixer_sound_effects = make_shared<Mixer<2>>();
 		mixer_music = make_shared<Mixer<2>>();
 		music_player = make_shared<MusicPlayer>();
@@ -375,6 +378,17 @@ void I_SetSfxVolume(int volume)
 	if (gain_sound_effects)
 	{
 		gain_sound_effects->gain(std::clamp(vol * vol * vol, 0.f, 1.f));
+	}
+}
+
+void I_SetMasterVolume(int volume)
+{
+	SdlAudioLockHandle _;
+	float vol = static_cast<float>(volume) / 100.f;
+
+	if (master_gain)
+	{
+		master_gain->gain(std::clamp(vol * vol * vol, 0.f, 1.f));
 	}
 }
 

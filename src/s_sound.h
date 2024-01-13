@@ -33,7 +33,7 @@ extern "C" {
 #define DEFAULT_MUSICDEF_VOLUME 100
 
 extern consvar_t stereoreverse;
-extern consvar_t cv_soundvolume, cv_closedcaptioning, cv_digmusicvolume; 
+extern consvar_t cv_soundvolume, cv_closedcaptioning, cv_digmusicvolume;
 
 extern consvar_t surround;
 extern consvar_t cv_numChannels;
@@ -246,6 +246,7 @@ INT32 S_GetSoundVolume(sfxinfo_t *sfx, INT32 volume);
 
 void S_SetSfxVolume(void);
 void S_SetMusicVolume(void);
+void S_SetMasterVolume(void);
 
 INT32 S_OriginPlaying(void *origin);
 INT32 S_IdPlaying(sfxenum_t id);

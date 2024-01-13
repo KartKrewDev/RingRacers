@@ -660,6 +660,7 @@ void S_StopSound(void *origin)
 //
 static INT32 actualsfxvolume; // check for change through console
 static INT32 actualdigmusicvolume;
+static INT32 actualmastervolume;
 
 void S_UpdateSounds(void)
 {
@@ -676,6 +677,8 @@ void S_UpdateSounds(void)
 		S_SetSfxVolume();
 	if (actualdigmusicvolume != cv_digmusicvolume.value)
 		S_SetMusicVolume();
+	if (actualmastervolume != cv_mastervolume.value)
+		S_SetMasterVolume();
 
 	// We're done now, if we're not in a level.
 	if (gamestate != GS_LEVEL)
@@ -867,6 +870,13 @@ void S_SetSfxVolume(void)
 
 	// now hardware volume
 	I_SetSfxVolume(actualsfxvolume);
+}
+
+void S_SetMasterVolume(void)
+{
+	actualmastervolume = cv_mastervolume.value;
+
+	I_SetMasterVolume(actualmastervolume);
 }
 
 void S_ClearSfx(void)
@@ -2325,6 +2335,7 @@ static void Command_RestartAudio_f(void)
 
 	S_SetSfxVolume();
 	S_SetMusicVolume();
+	S_SetMasterVolume();
 
 	S_StartSound(NULL, sfx_strpst);
 
@@ -2526,49 +2537,6 @@ void GameDigiMusic_OnChange(void)
 		I_UnloadSong();
 		Music_Flip();
 	}
-}
-
-void MasterVolume_OnChange(void);
-void MasterVolume_OnChange(void)
-{
-	INT32 adj = cv_mastervolume.value - max(cv_digmusicvolume.value, cv_soundvolume.value);
-
-	if (adj < 0)
-	{
-		INT32 under = min(cv_digmusicvolume.value, cv_soundvolume.value) + adj;
-
-		if (under < 0)
-		{
-			// Ensure balance between music/sound volume does
-			// not change at lower bound. (This is already
-			// guaranteed at upper bound.)
-			adj -= under;
-			CV_StealthSetValue(&cv_mastervolume, cv_mastervolume.value - under);
-		}
-	}
-
-	CV_SetValue(&cv_digmusicvolume, cv_digmusicvolume.value + adj);
-	CV_SetValue(&cv_soundvolume, cv_soundvolume.value + adj);
-}
-
-void DigMusicVolume_OnChange(void);
-void DigMusicVolume_OnChange(void)
-{
-	if (!cv_gamedigimusic.value && !con_startup)
-	{
-		CV_SetValue(&cv_gamedigimusic, 1);
-	}
-	CV_StealthSetValue(&cv_mastervolume, max(cv_digmusicvolume.value, cv_soundvolume.value));
-}
-
-void SoundVolume_OnChange(void);
-void SoundVolume_OnChange(void)
-{
-	if (!cv_gamesounds.value && !con_startup)
-	{
-		CV_SetValue(&cv_gamesounds, 1);
-	}
-	CV_StealthSetValue(&cv_mastervolume, max(cv_digmusicvolume.value, cv_soundvolume.value));
 }
 
 void BGAudio_OnChange(void);
