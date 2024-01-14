@@ -2315,7 +2315,11 @@ void PositionFacesInfo::draw_1p()
 	UINT32 skinflags;
 
 	if (gametyperules & GTR_POINTLIMIT) // playing battle
-		Y += (9*5) - 5; // <-- arbitrary calculation
+	{
+		Y += 40;
+		if (ranklines < 3)
+			Y -= 18;
+	}
 	else if (ranklines < 5)
 		Y += (9*ranklines);
 	else
