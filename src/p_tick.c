@@ -47,6 +47,7 @@
 #include "music.h"
 #include "k_dialogue.h"
 #include "m_easing.h"
+#include "k_hud.h" // messagetimer
 
 #include "lua_profile.h"
 
@@ -1203,6 +1204,7 @@ void P_Ticker(boolean run)
 	if (run && !levelloading && leveltime)
 	{
 		K_TickDialogue();
+		K_TickMessages();
 	}
 
 	LUA_HOOK(PostThinkFrame);

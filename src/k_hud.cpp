@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <array>
 #include <vector>
+#include <deque>
 
 #include "v_draw.hpp"
 
@@ -5607,6 +5608,104 @@ static void K_DrawGPRankDebugger(void)
 		va(" ** FINAL GRADE: %c", gradeChar));
 }
 
+typedef enum
+{
+	MM_IN,
+	MM_HOLD,
+	MM_OUT,
+} messagemode_t;
+
+typedef struct
+{
+	std::string text;
+	sfxenum_t sound;
+} message_t;
+
+static std::deque<std::string> messages = {"Reflected!", "Get the UFO!", "Worm Bagged", "GOTTEM", "Spectator to die why?", ":ubiktune:", "Barrier closing!"};
+static tic_t messagetimer = 0;
+static messagemode_t messagemode = MM_IN;
+
+static tic_t speedyswitch = 2*TICRATE;
+static tic_t lazyswitch = 4*TICRATE;
+
+void K_AddMessage(char *msg, boolean interrupt)
+{
+	messages.push_back(msg);
+}
+
+void K_TickMessages()
+{
+	if (messages.size() == 0)
+		return;
+
+	if (messagetimer == 0 && messagemode == MM_IN)
+		S_StartSound(NULL, sfx_cdfm15);
+
+	messagetimer++;
+
+	switch (messagemode)
+	{
+		case MM_IN:
+			if (messagetimer > messages[0].length())
+			{
+				messagemode = MM_HOLD;
+				messagetimer = 0;
+			}
+			break;
+		case MM_HOLD:
+			if (messages.size() > 1 && messagetimer > speedyswitch) // Waiting message, switch to it right away!
+			{
+				messagemode = MM_IN;
+				messagetimer = 0;
+				messages.pop_front();
+			}
+			else if (messagetimer > lazyswitch) // If there's no pending message, we can chill for a bit.
+			{
+				messagemode = MM_OUT;
+				messagetimer = 0;
+			}
+			break;
+		case MM_OUT:
+			if (messagetimer > messages[0].length())
+			{
+				messagemode = MM_IN;
+				messagetimer = 0;
+				messages.pop_front();
+			}
+			break;
+	}
+}
+
+static void K_DrawMessageFeed(void)
+{
+	if (messages.size() == 0)
+		return;
+
+	std::string msg = messages[0];
+
+	UINT8 sublen = messagetimer;
+	if (messagemode == MM_IN)
+		sublen = messagetimer;
+	else if (messagemode == MM_HOLD)
+		sublen = msg.length();
+	else if (messagemode == MM_OUT)
+		sublen = msg.length() - messagetimer;
+
+	std::string submsg = msg.substr(0, sublen);
+
+	using srb2::Draw;
+
+	Draw::TextElement text(submsg);
+	text.font(Draw::Font::kMenu);
+
+	UINT8 x = 160;
+	UINT8 y = 10;
+	UINT8 sw = text.width();
+
+	K_DrawSticker(x - sw/2, y, sw, 0, true);
+	Draw(x, y).align(Draw::Align::kCenter).text(text);
+}
+
 void K_drawKartHUD(void)
 {
 	boolean islonesome = false;
@@ -5900,6 +5999,7 @@ void K_drawKartHUD(void)
 	K_DrawBotDebugger();
 	K_DrawDirectorDebugger();
 	K_DrawGPRankDebugger();
+	K_DrawMessageFeed();
 }
 
 void K_DrawSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean isSmall)

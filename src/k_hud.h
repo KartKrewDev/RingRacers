@@ -93,6 +93,9 @@ extern patch_t *kp_button_left[2];
 extern patch_t *kp_eggnum[6];
 extern patch_t *kp_facenum[MAXPLAYERS+1];
 
+void K_AddMessage(char *msg, boolean interrupt);
+void K_TickMessages(void);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
