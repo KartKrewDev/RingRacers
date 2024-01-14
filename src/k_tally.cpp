@@ -551,6 +551,16 @@ void level_tally_t::Init(player_t *player)
 		state = TALLY_ST_IGNORE;
 		delay = 0;
 	}
+
+	if (UINT8 pnum = player - players; G_IsPartyLocal(pnum))
+	{
+		UINT8 view = G_PartyPosition(pnum);
+		// Battle: if this player's viewpoint has changed
+		// since being eliminated, set it back so they see
+		// their own Tally and not someone else's.
+		displayplayers[view] = pnum;
+		G_FixCamera(1 + view);
+	}
 }
 
 void level_tally_t::NewLine(void)
@@ -1384,8 +1394,7 @@ void K_TickPlayerTally(player_t *player)
 
 void K_DrawPlayerTally(void)
 {
-	// Draw the observer player's tally, not whoever they may be spectating
-	players[G_PartyMember(consoleplayer, R_GetViewNumber())].tally.Draw();
+	stplyr->tally.Draw();
 }
 
 boolean K_PlayerTallyActive(player_t *player)
