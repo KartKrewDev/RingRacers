@@ -2226,7 +2226,13 @@ struct PositionFacesInfo
 
 	player_t* top() const { return &players[rankplayer[0]]; }
 	UINT32 top_score() const { return top()->roundscore; }
-	bool near_goal() const { return g_pointlimit - 5 <= top_score(); }
+
+	bool near_goal() const
+	{
+		constexpr tic_t kThreshold = 5;
+		return std::max(kThreshold, g_pointlimit) - kThreshold <= top_score();
+	}
+
 	skincolornum_t vomit_color() const
 	{
 		if (!near_goal())
