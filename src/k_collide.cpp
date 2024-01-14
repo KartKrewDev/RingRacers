@@ -822,8 +822,7 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 	{
 		player_t *victimPlayer = victim->player;
 
-		//if (victim != attacker && !P_PlayerInPain(victimPlayer) && victimPlayer->flashing == 0)
-		if (victim != attacker && victim->hitlag == 0)
+		if (victim != attacker && (P_PlayerInPain(victimPlayer) ? victim->hitlag == 0 : victimPlayer->flashing == 0))
 		{
 			// If both players have a whip, hits are order-of-execution dependent and that sucks.
 			// Player expectation is a clash here.
