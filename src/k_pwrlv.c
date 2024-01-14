@@ -131,7 +131,7 @@ INT16 K_PowerLevelPlacementScore(player_t *player)
 	}
 	else
 	{
-		return player->score;
+		return player->roundscore;
 	}
 }
 

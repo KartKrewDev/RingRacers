@@ -14,6 +14,7 @@
 
 #include "doomdef.h"
 #include "doomstat.h"
+#include "k_battle.h"
 #include "k_kart.h"
 #include "m_random.h"
 #include "p_local.h"
@@ -193,6 +194,11 @@ static void K_SpawnHitLagEFX(mobj_t *victim, mobj_t *inflictor, mobj_t *source, 
 	{
 		offset.z = victim->height;
 		newScale = 3 * victim->destscale;
+	}
+
+	if ((gametyperules & GTR_BUMPERS) && battleprisons == false)
+	{
+		newScale = 3 * newScale / 4;
 	}
 
 	if (P_MobjWasRemoved(source) == false)

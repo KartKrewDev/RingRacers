@@ -3550,6 +3550,11 @@ UINT16 K_GetKartFlashing(const player_t *player)
 {
 	UINT16 tics = flashingtics;
 
+	if (gametyperules & GTR_BUMPERS)
+	{
+		return 1;
+	}
+
 	if (player == NULL)
 	{
 		return tics;
@@ -3557,16 +3562,6 @@ UINT16 K_GetKartFlashing(const player_t *player)
 
 	tics += (tics/8) * (player->kartspeed);
 	return tics;
-}
-
-void K_UpdateDamageFlashing(player_t *player, UINT16 tics)
-{
-	if (gametyperules & GTR_BUMPERS)
-	{
-		return;
-	}
-
-	player->flashing = tics;
 }
 
 boolean K_PlayerShrinkCheat(const player_t *player)
@@ -8396,9 +8391,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->spinouttimer != 0)
 	{
 		if (( player->spinouttype & KSPIN_IFRAMES ) == 0)
-			K_UpdateDamageFlashing(player, 0);
+			player->flashing = 0;
 		else
-			K_UpdateDamageFlashing(player, K_GetKartFlashing(player));
+			player->flashing = K_GetKartFlashing(player);
 	}
 
 	if (player->spinouttimer)
@@ -13332,6 +13327,11 @@ UINT32 K_PointLimitForGametype(void)
 			{
 				ptsCap += 4;
 			}
+		}
+
+		if (ptsCap > 20)
+		{
+			ptsCap = 20;
 		}
 	}
 

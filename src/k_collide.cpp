@@ -745,17 +745,6 @@ void K_LightningShieldAttack(mobj_t *actor, fixed_t size)
 
 boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 {
-	if (t1->type == MT_PLAYER)
-	{
-		// Bubble Shield already has a hitbox, and it gets
-		// teleported every tic so the Bubble itself will
-		// always make contact with other objects.
-		//
-		// Therefore, we don't need a second, smaller hitbox
-		// on the player. It'll just cause unwanted hitlag.
-		return true;
-	}
-
 	if (t2->type == MT_PLAYER)
 	{
 		// Counter desyncs
@@ -780,21 +769,29 @@ boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 	}
 	else
 	{
-		if (!t2->threshold || t2->type == MT_DROPTARGET)
+		mobj_t *owner = t1->player ? t1 : t1->target;
+
+		if (t2->target != owner || !t2->threshold || t2->type == MT_DROPTARGET)
 		{
+			if (t1->player && K_PlayerGuard(t1->player))
+			{
+				K_KartSolidBounce(t1, t2);
+				K_DoPowerClash(t1, t2);
+			}
 			if (!t2->momx && !t2->momy)
 			{
 				t2->momz += (24*t2->scale) * P_MobjFlip(t2);
 			}
 			else
 			{
-				t2->momx = -4*t2->momx;
-				t2->momy = -4*t2->momy;
-				t2->momz = -4*t2->momz;
+				t2->momx = -6*t2->momx;
+				t2->momy = -6*t2->momy;
+				t2->momz = -6*t2->momz;
 				t2->angle += ANGLE_180;
 			}
 			if (t2->type == MT_JAWZ)
 				P_SetTarget(&t2->tracer, t2->target); // Back to the source!
+			P_SetTarget(&t2->target, owner); // Let the source reflect it back again!
 			t2->threshold = 10;
 			S_StartSound(t1, sfx_s3k44);
 		}
@@ -825,8 +822,7 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 	{
 		player_t *victimPlayer = victim->player;
 
-		//if (victim != attacker && !P_PlayerInPain(victimPlayer) && victimPlayer->flashing == 0)
-		if (victim != attacker && victim->hitlag == 0)
+		if (victim != attacker && (P_PlayerInPain(victimPlayer) ? victim->hitlag == 0 : victimPlayer->flashing == 0))
 		{
 			// If both players have a whip, hits are order-of-execution dependent and that sucks.
 			// Player expectation is a clash here.
