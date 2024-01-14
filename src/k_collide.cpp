@@ -769,7 +769,9 @@ boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 	}
 	else
 	{
-		if (!t2->threshold || t2->type == MT_DROPTARGET)
+		mobj_t *owner = t1->player ? t1 : t1->target;
+
+		if (t2->target != owner || !t2->threshold || t2->type == MT_DROPTARGET)
 		{
 			if (t1->player && K_PlayerGuard(t1->player))
 			{
@@ -789,6 +791,7 @@ boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 			}
 			if (t2->type == MT_JAWZ)
 				P_SetTarget(&t2->tracer, t2->target); // Back to the source!
+			P_SetTarget(&t2->target, owner); // Let the source reflect it back again!
 			t2->threshold = 10;
 			S_StartSound(t1, sfx_s3k44);
 		}
