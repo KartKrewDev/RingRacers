@@ -571,6 +571,8 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		WRITEUINT8(save->p, players[i].lastsafelap);
 
+		WRITEFIXED(save->p, players[i].topAccel);
+
 		WRITEMEM(save->p, players[i].public_key, PUBKEYLENGTH);
 
 		WRITEUINT8(save->p, players[i].instaWhipCharge);
@@ -1141,6 +1143,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].finalfailsafe = READUINT8(save->p);
 
 		players[i].lastsafelap = READUINT8(save->p);
+
+		players[i].topAccel = READFIXED(save->p);
 
 		READMEM(save->p, players[i].public_key, PUBKEYLENGTH);
 

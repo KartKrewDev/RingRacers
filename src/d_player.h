@@ -953,6 +953,8 @@ struct player_t
 
 	UINT8 lastsafelap;
 
+	fixed_t topAccel; // Reduced on straight wall collisions to give players extra recovery time
+
 	mobj_t *stumbleIndicator;
 	mobj_t *wavedashIndicator;
 	mobj_t *trickIndicator;
