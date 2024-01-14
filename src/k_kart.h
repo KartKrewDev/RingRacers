@@ -52,6 +52,9 @@ Make sure this matches the actual number of states
 #define RINGVOLUMEUSEPENALTY 15
 #define RINGVOLUMEREGEN 1
 
+#define MAXTOPACCEL (12*FRACUNIT)
+#define TOPACCELREGEN (FRACUNIT/16)
+
 // Mispredicted turns can generate phantom sliptide inputs for a few tics.
 // Delay the wavedash visuals until we're reasonably sure that it's a deliberate turn.
 #define HIDEWAVEDASHCHARGE (60)

@@ -3531,7 +3531,7 @@ fixed_t K_GetKartAccel(const player_t *player)
 	// Marble Garden Top gets 1200% accel
 	if (player->curshield == KSHIELD_TOP)
 	{
-		k_accel *= 12;
+		k_accel = FixedMul(k_accel, player->topAccel);
 	}
 
 	if (K_PodiumSequence() == true)
@@ -3651,7 +3651,17 @@ SINT8 K_GetForwardMove(const player_t *player)
 		}
 		else
 		{
-			forwardmove = MAXPLMOVE;
+			// forwardmove = MAXPLMOVE;
+
+			UINT8 minmove = MAXPLMOVE/10;
+			fixed_t assistmove = (MAXPLMOVE - minmove) * FRACUNIT;
+
+			angle_t topdelta = player->mo->angle - K_MomentumAngle(player->mo);
+			fixed_t topmult = FINECOSINE(topdelta >> ANGLETOFINESHIFT);
+			topmult = (topmult/2) + (FRACUNIT/2);
+			assistmove = FixedMul(topmult, assistmove);
+
+			forwardmove = minmove + FixedInt(assistmove);
 		}
 	}
 
@@ -8722,6 +8732,17 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			player->mo->flags |= MF_NOCLIPTHING;
 		}
 	}
+
+	// Players that bounce far off walls get reduced Top accel, to give them some time to get their bearings.
+	if ((player->mo->eflags & MFE_JUSTBOUNCEDWALL) && player->curshield == KSHIELD_TOP)
+	{
+		angle_t topdelta = player->mo->angle - K_MomentumAngle(player->mo);
+		fixed_t topmult = FINECOSINE(topdelta >> ANGLETOFINESHIFT);
+		topmult = (topmult/2) + (FRACUNIT/2); // 0 to original
+		player->topAccel = FixedMul(topmult, player->topAccel);
+	}
+
+	player->topAccel = min(player->topAccel + TOPACCELREGEN, MAXTOPACCEL);
 
 	if (player->stealingtimer == 0
 		&& player->rocketsneakertimer

@@ -2362,6 +2362,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	p->ringvolume = 255;
 
+	p->topAccel = MAXTOPACCEL;
+
 	p->botvars.rubberband = FRACUNIT;
 
 	p->spectatorReentry = spectatorReentry;
