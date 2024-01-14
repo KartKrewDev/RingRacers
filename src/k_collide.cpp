@@ -782,9 +782,9 @@ boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 			}
 			else
 			{
-				t2->momx = -4*t2->momx;
-				t2->momy = -4*t2->momy;
-				t2->momz = -4*t2->momz;
+				t2->momx = -6*t2->momx;
+				t2->momy = -6*t2->momy;
+				t2->momz = -6*t2->momz;
 				t2->angle += ANGLE_180;
 			}
 			if (t2->type == MT_JAWZ)
