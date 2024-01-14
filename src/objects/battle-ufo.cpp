@@ -13,6 +13,7 @@
 #include "../k_battle.h"
 #include "../k_objects.h"
 #include "../k_kart.h"
+#include "../k_hud.h" // K_AddMessage
 
 using srb2::math::Fixed;
 using srb2::Mobj;
@@ -114,6 +115,7 @@ public:
 
 		Spawner* spawner = next(g_battleufo.previousId);
 		UFO* ufo = static_cast<UFO*>(P_SpawnMobjFromMobj(spawner, 0, 0, 250*FRACUNIT - ofs, MT_BATTLEUFO));
+		K_AddMessage(va("Get the UFO!"), true);
 
 		ufo->sprzoff(ofs * spawner->scale());
 

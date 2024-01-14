@@ -5621,7 +5621,7 @@ typedef struct
 	sfxenum_t sound;
 } message_t;
 
-static std::deque<std::string> messages = {"Reflected!", "Get the UFO!", "Worm Bagged", "GOTTEM", "Spectator to die why?", ":ubiktune:", "Barrier closing!"};
+static std::deque<std::string> messages;
 static tic_t messagetimer = 0;
 static messagemode_t messagemode = MM_IN;
 
@@ -5630,7 +5630,29 @@ static tic_t lazyswitch = 4*TICRATE;
 
 void K_AddMessage(char *msg, boolean interrupt)
 {
+	if (interrupt)
+		messages.clear();
 	messages.push_back(msg);
+}
+
+void K_AddMessageForPlayer(player_t *player, char *msg, boolean interrupt)
+{
+	if (!P_IsDisplayPlayer(player))
+		return;
+	K_AddMessage(msg, interrupt);
+}
+
+static void K_SwitchMessageMode(messagemode_t mode)
+{
+	messagemode = mode;
+	messagetimer = 0;
+}
+
+static void K_NextMessage()
+{
+	K_SwitchMessageMode(MM_IN);
+	if (messages.size() > 0)
+		messages.pop_front();
 }
 
 void K_TickMessages()
@@ -5647,31 +5669,17 @@ void K_TickMessages()
 	{
 		case MM_IN:
 			if (messagetimer > messages[0].length())
-			{
-				messagemode = MM_HOLD;
-				messagetimer = 0;
-			}
+				K_SwitchMessageMode(MM_HOLD);
 			break;
 		case MM_HOLD:
 			if (messages.size() > 1 && messagetimer > speedyswitch) // Waiting message, switch to it right away!
-			{
-				messagemode = MM_IN;
-				messagetimer = 0;
-				messages.pop_front();
-			}
+				K_NextMessage();
 			else if (messagetimer > lazyswitch) // If there's no pending message, we can chill for a bit.
-			{
-				messagemode = MM_OUT;
-				messagetimer = 0;
-			}
+				K_SwitchMessageMode(MM_OUT);
 			break;
 		case MM_OUT:
 			if (messagetimer > messages[0].length())
-			{
-				messagemode = MM_IN;
-				messagetimer = 0;
-				messages.pop_front();
-			}
+				K_NextMessage();
 			break;
 	}
 }

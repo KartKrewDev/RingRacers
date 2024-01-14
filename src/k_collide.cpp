@@ -19,6 +19,7 @@
 #include "k_powerup.h"
 #include "k_hitlag.h"
 #include "m_random.h"
+#include "k_hud.h" // K_AddMessage
 
 angle_t K_GetCollideAngle(mobj_t *t1, mobj_t *t2)
 {
@@ -875,6 +876,9 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 				attackerPlayer->sneakertimer = 0;
 				attackerPlayer->instaWhipCharge = 0;
 				attackerPlayer->flashing = 0;
+
+				K_AddMessageForPlayer(victimPlayer, va("Reflect Counter!"), false);
+				K_AddMessageForPlayer(attackerPlayer, va("Reflected..."), false);
 
 				// Localized broly for a local event.
 				if (mobj_t *broly = Obj_SpawnBrolyKi(victim, victimHitlag/2))
