@@ -1004,6 +1004,27 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	if (tm.thing->type == MT_RANDOMITEM)
 		return BMIT_CONTINUE;
 
+	if (tm.thing->type != MT_PLAYER && thing->player && K_PlayerGuard(thing->player) && P_BubbleCanReflect(thing, tm.thing))
+	{
+		// see if it went over / under
+		if (tm.thing->z > thing->z + thing->height)
+			return BMIT_CONTINUE; // overhead
+		if (tm.thing->z + tm.thing->height < thing->z)
+			return BMIT_CONTINUE; // underneath
+
+		return K_BubbleShieldCollide(thing, tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
+	}
+	else if (thing->type != MT_PLAYER && tm.thing->player && K_PlayerGuard(tm.thing->player) && P_BubbleCanReflect(tm.thing, thing))
+	{
+		// see if it went over / under
+		if (tm.thing->z > thing->z + thing->height)
+			return BMIT_CONTINUE; // overhead
+		if (tm.thing->z + tm.thing->height < thing->z)
+			return BMIT_CONTINUE; // underneath
+
+		return K_BubbleShieldCollide(tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
+	}
+
 	// Bubble Shield reflect
 	if ((thing->type == MT_BUBBLESHIELD && thing->target->player && thing->target->player->bubbleblowup)
 		|| (thing->player && thing->player->bubbleblowup))

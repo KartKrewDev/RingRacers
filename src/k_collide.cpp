@@ -771,6 +771,11 @@ boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 	{
 		if (!t2->threshold || t2->type == MT_DROPTARGET)
 		{
+			if (t1->player && K_PlayerGuard(t1->player))
+			{
+				K_KartSolidBounce(t1, t2);
+				K_DoPowerClash(t1, t2);
+			}
 			if (!t2->momx && !t2->momy)
 			{
 				t2->momz += (24*t2->scale) * P_MobjFlip(t2);
