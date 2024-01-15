@@ -212,8 +212,20 @@ boolean Obj_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		else
 		{
 			// Player Damage
-			P_DamageMobj(t2, t1, t1->target, 1, DMG_WOMBO |
+			if (t1->type == MT_ORBINAUT_SHIELD || t1->type == MT_JAWZ_SHIELD)
+			{
+				// Same hack as Instawhip!
+				// If you do this a third time, please make it a part of the damage system.
+				//                                    ^ remove all of P_DamageMobj and start over
+				P_PlayRinglossSound(t2);
+				P_PlayerRingBurst(t2->player, 5);
+				P_DamageMobj(t2, t1, t1->target, 1, DMG_WOMBO | DMG_WHUMBLE);	
+			}
+			else
+			{
+				P_DamageMobj(t2, t1, t1->target, 1, DMG_WOMBO |
 					(tumbleitem ? DMG_TUMBLE : DMG_WIPEOUT));
+			}
 			K_KartBouncing(t2, t1);
 			S_StartSound(t2, sfx_s3k7b);
 		}
