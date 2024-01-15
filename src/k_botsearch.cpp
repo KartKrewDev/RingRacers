@@ -543,6 +543,7 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 			break;
 		case MT_PLAYER:
 			if (thing->player
+				&& !thing->player->spectator
 				&& !thing->player->hyudorotimer
 				&& !g_nudgeSearch.botmo->player->hyudorotimer)
 			{
@@ -902,7 +903,7 @@ static BlockItReturn_t K_FindPlayersToBully(mobj_t *thing)
 		return BMIT_CONTINUE;
 	}
 
-	if (!thing->player)
+	if (!thing->player || thing->player->spectator)
 	{
 		return BMIT_CONTINUE;
 	}

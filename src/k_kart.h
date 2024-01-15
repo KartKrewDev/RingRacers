@@ -52,6 +52,9 @@ Make sure this matches the actual number of states
 #define RINGVOLUMEUSEPENALTY 15
 #define RINGVOLUMEREGEN 1
 
+#define MAXTOPACCEL (12*FRACUNIT)
+#define TOPACCELREGEN (FRACUNIT/16)
+
 // Mispredicted turns can generate phantom sliptide inputs for a few tics.
 // Delay the wavedash visuals until we're reasonably sure that it's a deliberate turn.
 #define HIDEWAVEDASHCHARGE (60)
@@ -192,7 +195,6 @@ fixed_t K_GetKartSpeedFromStat(UINT8 kartspeed);
 fixed_t K_GetKartSpeed(const player_t *player, boolean doboostpower, boolean dorubberbanding);
 fixed_t K_GetKartAccel(const player_t *player);
 UINT16 K_GetKartFlashing(const player_t *player);
-void K_UpdateDamageFlashing(player_t *player, UINT16 tics);
 boolean K_PlayerShrinkCheat(const player_t *player);
 void K_UpdateShrinkCheat(player_t *player);
 boolean K_KartKickstart(const player_t *player);

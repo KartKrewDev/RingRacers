@@ -712,7 +712,7 @@ consvar_t cv_kartbot = UnsavedNetVar("bots", "Off").values({
 	{13,"Lv.MAX"},
 });
 
-consvar_t cv_kartbumpers = UnsavedNetVar("battlebumpers", "3").min_max(1, 12);
+consvar_t cv_kartbumpers = UnsavedNetVar("battlebumpers", "3").min_max(0, 12);
 
 void KartEliminateLast_OnChange(void);
 consvar_t cv_karteliminatelast = UnsavedNetVar("eliminatelast", "Yes").yes_no().onchange(KartEliminateLast_OnChange);

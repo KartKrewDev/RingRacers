@@ -3531,7 +3531,7 @@ fixed_t K_GetKartAccel(const player_t *player)
 	// Marble Garden Top gets 1200% accel
 	if (player->curshield == KSHIELD_TOP)
 	{
-		k_accel *= 12;
+		k_accel = FixedMul(k_accel, player->topAccel);
 	}
 
 	if (K_PodiumSequence() == true)
@@ -3550,6 +3550,11 @@ UINT16 K_GetKartFlashing(const player_t *player)
 {
 	UINT16 tics = flashingtics;
 
+	if (gametyperules & GTR_BUMPERS)
+	{
+		return 1;
+	}
+
 	if (player == NULL)
 	{
 		return tics;
@@ -3557,16 +3562,6 @@ UINT16 K_GetKartFlashing(const player_t *player)
 
 	tics += (tics/8) * (player->kartspeed);
 	return tics;
-}
-
-void K_UpdateDamageFlashing(player_t *player, UINT16 tics)
-{
-	if (gametyperules & GTR_BUMPERS)
-	{
-		return;
-	}
-
-	player->flashing = tics;
 }
 
 boolean K_PlayerShrinkCheat(const player_t *player)
@@ -3651,7 +3646,17 @@ SINT8 K_GetForwardMove(const player_t *player)
 		}
 		else
 		{
-			forwardmove = MAXPLMOVE;
+			// forwardmove = MAXPLMOVE;
+
+			UINT8 minmove = MAXPLMOVE/10;
+			fixed_t assistmove = (MAXPLMOVE - minmove) * FRACUNIT;
+
+			angle_t topdelta = player->mo->angle - K_MomentumAngle(player->mo);
+			fixed_t topmult = FINECOSINE(topdelta >> ANGLETOFINESHIFT);
+			topmult = (topmult/2) + (FRACUNIT/2);
+			assistmove = FixedMul(topmult, assistmove);
+
+			forwardmove = minmove + FixedInt(assistmove);
 		}
 	}
 
@@ -8399,9 +8404,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->spinouttimer != 0)
 	{
 		if (( player->spinouttype & KSPIN_IFRAMES ) == 0)
-			K_UpdateDamageFlashing(player, 0);
+			player->flashing = 0;
 		else
-			K_UpdateDamageFlashing(player, K_GetKartFlashing(player));
+			player->flashing = K_GetKartFlashing(player);
 	}
 
 	if (player->spinouttimer)
@@ -8725,6 +8730,17 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			player->mo->flags |= MF_NOCLIPTHING;
 		}
 	}
+
+	// Players that bounce far off walls get reduced Top accel, to give them some time to get their bearings.
+	if ((player->mo->eflags & MFE_JUSTBOUNCEDWALL) && player->curshield == KSHIELD_TOP)
+	{
+		angle_t topdelta = player->mo->angle - K_MomentumAngle(player->mo);
+		fixed_t topmult = FINECOSINE(topdelta >> ANGLETOFINESHIFT);
+		topmult = (topmult/2) + (FRACUNIT/2); // 0 to original
+		player->topAccel = FixedMul(topmult, player->topAccel);
+	}
+
+	player->topAccel = min(player->topAccel + TOPACCELREGEN, MAXTOPACCEL);
 
 	if (player->stealingtimer == 0
 		&& player->rocketsneakertimer
@@ -13335,6 +13351,11 @@ UINT32 K_PointLimitForGametype(void)
 			{
 				ptsCap += 4;
 			}
+		}
+
+		if (ptsCap > 20)
+		{
+			ptsCap = 20;
 		}
 	}
 

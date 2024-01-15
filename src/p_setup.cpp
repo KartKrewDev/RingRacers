@@ -457,6 +457,7 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 	mapheaderinfo[num]->levelselect = 0;
 	mapheaderinfo[num]->levelflags = 0;
 	mapheaderinfo[num]->menuflags = 0;
+	mapheaderinfo[num]->playerLimit = MAXPLAYERS;
 	mapheaderinfo[num]->mobj_scale = FRACUNIT;
 	mapheaderinfo[num]->default_waypoint_radius = 0;
 	P_ClearMapHeaderLighting(&mapheaderinfo[num]->lighting);
