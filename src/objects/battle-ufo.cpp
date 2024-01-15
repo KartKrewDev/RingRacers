@@ -115,7 +115,7 @@ public:
 
 		Spawner* spawner = next(g_battleufo.previousId);
 		UFO* ufo = static_cast<UFO*>(P_SpawnMobjFromMobj(spawner, 0, 0, 250*FRACUNIT - ofs, MT_BATTLEUFO));
-		K_AddMessage(va("Get the UFO!"), true);
+		K_AddMessage(va("Crack the Combat UFO!"), true);
 
 		ufo->sprzoff(ofs * spawner->scale());
 
