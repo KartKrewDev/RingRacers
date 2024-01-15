@@ -213,7 +213,7 @@ boolean Obj_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		{
 			// Player Damage
 			if ((t1->type == MT_ORBINAUT_SHIELD || t1->type == MT_JAWZ_SHIELD)
-				&& !t2->player->invincibilitytimer && !K_IsBigger(t1, t2)) // UGH. Stumble ignores invinc. Fix this damage type someday.
+				&& !t2->player->invincibilitytimer && !K_IsBigger(t2, t1)) // UGH. Stumble ignores invinc. Fix this damage type someday.
 			{
 				// Same hack as Instawhip!
 				// If you do this a third time, please make it a part of the damage system.
