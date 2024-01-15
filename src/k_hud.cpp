@@ -5637,6 +5637,7 @@ typedef struct
 	void clear()
 	{
 		messages.clear();
+		switch_mode(MM_IN);
 	}
 
 	void switch_mode(messagemode_t nextmode)
@@ -5651,7 +5652,7 @@ typedef struct
 			return;
 
 		if (timer == 0 && mode == MM_IN)
-			S_StartSound(NULL, sfx_cdfm15);
+			S_StartSound(NULL, sfx_s3k47);
 
 		timer++;
 
