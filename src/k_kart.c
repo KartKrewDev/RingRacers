@@ -3836,8 +3836,8 @@ void K_DoGuardBreak(mobj_t *t1, mobj_t *t2) {
 	S_StartSound(t1, sfx_gbrk);
 	K_AddHitLag(t1, 24, true);
 
-	K_AddMessageForPlayer(t1->player, va("Barrier Break..."), false);
 	K_AddMessageForPlayer(t2->player, va("Smashed 'em!"), false);
+	K_AddMessageForPlayer(t1->player, va("Barrier Break..."), false);
 
 	angle_t thrangle = R_PointToAngle2(t1->x, t1->y, t2->x, t2->y);
 	P_Thrust(t1, thrangle, 7*mapobjectscale);
