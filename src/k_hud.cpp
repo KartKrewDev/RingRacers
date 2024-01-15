@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <array>
 #include <vector>
+#include <deque>
 
 #include "v_draw.hpp"
 
@@ -5618,6 +5619,178 @@ static void K_DrawGPRankDebugger(void)
 		va(" ** FINAL GRADE: %c", gradeChar));
 }
 
+typedef enum
+{
+	MM_IN,
+	MM_HOLD,
+	MM_OUT,
+} messagemode_t;
+
+typedef struct
+{
+	std::string text;
+	sfxenum_t sound;
+} message_t;
+
+typedef struct
+{
+	std::deque<std::string> messages;
+	tic_t timer = 0;
+	messagemode_t mode = MM_IN;
+	const tic_t speedyswitch = 2*TICRATE;
+	const tic_t lazyswitch = 4*TICRATE;
+
+	void add(std::string msg)
+	{
+		messages.push_back(msg);
+	}
+
+	void clear()
+	{
+		messages.clear();
+		switch_mode(MM_IN);
+	}
+
+	void switch_mode(messagemode_t nextmode)
+	{
+		mode = nextmode;
+		timer = 0;
+	}
+
+	void tick()
+	{		
+		if (messages.size() == 0)
+			return;
+
+		if (timer == 0 && mode == MM_IN)
+			S_StartSound(NULL, sfx_s3k47);
+
+		timer++;
+
+		switch (mode)
+		{
+			case MM_IN:
+				if (timer > messages[0].length())
+					switch_mode(MM_HOLD);
+				break;
+			case MM_HOLD:
+				if (messages.size() > 1 && timer > speedyswitch) // Waiting message, switch to it right away!
+					next();
+				else if (timer > lazyswitch) // If there's no pending message, we can chill for a bit.
+					switch_mode(MM_OUT);
+				break;
+			case MM_OUT:
+				if (timer > messages[0].length())
+					next();
+				break;
+		}
+	}
+
+	void next()
+	{
+		switch_mode(MM_IN);
+		if (messages.size() > 0)
+			messages.pop_front();
+	}
+
+} messagestate_t;
+
+static std::vector<messagestate_t> messagestates{MAXSPLITSCREENPLAYERS};
+
+void K_AddMessage(char *msg, boolean interrupt)
+{
+	for (auto &state : messagestates)
+	{
+		if (interrupt)
+			state.clear();
+		state.add(msg);
+	}
+}
+
+// Return value can be used for "paired" splitscreen messages, true = was displayed
+void K_AddMessageForPlayer(player_t *player, char *msg, boolean interrupt)
+{
+	if (!player)
+		return;
+
+	if (player && !P_IsDisplayPlayer(player))
+		return;
+
+	messagestate_t *state = &messagestates[G_PartyPosition(player - players)];
+
+	if (interrupt)
+		state->clear();
+
+	state->add(msg);
+}
+
+void K_TickMessages()
+{
+	for (auto &state : messagestates)
+	{
+		state.tick();
+	}
+}
+
+static void K_DrawMessageFeed(void)
+{
+	int i;
+	for (i = 0; i <= splitscreen; i++)
+	{
+		messagestate_t state = messagestates[i];
+
+		if (state.messages.size() == 0)
+			continue;
+
+		std::string msg = state.messages[0];
+
+		UINT8 sublen = state.timer;
+		if (state.mode == MM_IN)
+			sublen = state.timer;
+		else if (state.mode == MM_HOLD)
+			sublen = msg.length();
+		else if (state.mode == MM_OUT)
+			sublen = msg.length() - state.timer;
+
+		std::string submsg = msg.substr(0, sublen);
+
+		using srb2::Draw;
+
+		Draw::TextElement text(submsg);
+
+		text.font(Draw::Font::kMenu);
+
+		UINT8 x = 160;
+		UINT8 y = 10;
+		SINT8 shift = 0;
+		if (splitscreen >= 2)
+		{
+			text.font(Draw::Font::kThin);
+			shift = -2;
+
+			x = BASEVIDWIDTH/4;
+			y = 5;
+
+			if (i % 2)
+				x += BASEVIDWIDTH/2;
+
+			if (i >= 2)
+				y += BASEVIDHEIGHT / 2;
+		}
+		else if (splitscreen >= 1)
+		{
+			y = 5;
+
+			if (i >= 1)
+				y += BASEVIDHEIGHT / 2;
+		}
+		UINT8 sw = text.width();
+
+		K_DrawSticker(x - sw/2, y, sw, 0, true);
+		Draw(x, y+shift).align(Draw::Align::kCenter).text(text);
+	}
+}
+
 void K_drawKartHUD(void)
 {
 	boolean islonesome = false;
@@ -5911,6 +6084,7 @@ void K_drawKartHUD(void)
 	K_DrawBotDebugger();
 	K_DrawDirectorDebugger();
 	K_DrawGPRankDebugger();
+	K_DrawMessageFeed();
 }
 
 void K_DrawSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean isSmall)

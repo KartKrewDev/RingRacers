@@ -5,6 +5,7 @@
 #include "k_kart.h"
 #include "k_objects.h"
 #include "k_powerup.h"
+#include "k_hud.h" // K_AddMessage
 
 tic_t K_PowerUpRemaining(const player_t* player, kartitems_t powerup)
 {
@@ -52,24 +53,29 @@ void K_GivePowerUp(player_t* player, kartitems_t powerup, tic_t time)
 	switch (powerup)
 	{
 	case POWERUP_SMONITOR:
+		K_AddMessageForPlayer(player, va("Got S MONITOR!"), true);
 		K_DoInvincibility(player, time);
 		player->powerup.superTimer += time;
 		break;
 
 	case POWERUP_BARRIER:
+		K_AddMessageForPlayer(player, va("Got MEGA BARRIER!"), true);
 		player->powerup.barrierTimer += time;
 		Obj_SpawnMegaBarrier(player);
 		break;
 
 	case POWERUP_BUMPER:
+		K_AddMessageForPlayer(player, va("Got BUMPER RESTOCK!"), true);
 		K_GiveBumpersToPlayer(player, nullptr, 5);
 		break;
 
 	case POWERUP_BADGE:
+		K_AddMessageForPlayer(player, va("Got RHYTHM BADGE!"), true);
 		player->powerup.rhythmBadgeTimer += time;
 		break;
 
 	case POWERUP_SUPERFLICKY:
+		K_AddMessageForPlayer(player, va("Got SUPER FLICKY!"), true);
 		if (K_PowerUpRemaining(player, POWERUP_SUPERFLICKY))
 		{
 			Obj_ExtendSuperFlickySwarm(player->powerup.flickyController, time);
