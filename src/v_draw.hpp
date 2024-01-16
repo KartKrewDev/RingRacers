@@ -245,6 +245,7 @@ public:
 	VOID_METHOD(thumbnail);
 	VOID_METHOD(fill);
 	VOID_METHOD(button);
+	VOID_METHOD(small_button);
 
 #undef VOID_METHOD
 
