@@ -218,18 +218,20 @@ void Dialogue::SetSpeaker(std::string name, patch_t *patch, UINT8 *colormap, sfx
 	typewriter.voiceSfx = voice;
 }
 
-void Dialogue::NewText(std::string newText)
+void Dialogue::NewText(std::string rawText)
 {
 	Init();
 
-	newText = V_ScaledWordWrap(
+	char* newText = V_ScaledWordWrap(
 		290 << FRACBITS,
 		FRACUNIT, FRACUNIT, FRACUNIT,
 		0, HU_FONT,
-		newText.c_str()
+		rawText.c_str()
 	);
 
 	typewriter.NewText(newText);
+
+	Z_Free(newText);
 }
 
 bool Dialogue::Active(void)
