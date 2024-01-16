@@ -8582,9 +8582,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			S_StartSound(player->mo, sfx_s1af);
 
 		player->oldGuard = true;
-
-		if (!K_PowerUpRemaining(player, POWERUP_BARRIER))
-			player->instaWhipCharge = 0;
 	}
 	else if (player->oldGuard)
 	{
@@ -10827,6 +10824,11 @@ boolean K_PlayerGuard(const player_t *player)
 		return true;
 	}
 
+	if (player->instaWhipCharge != 0)
+	{
+		return false;
+	}
+
 	if (player->spheres == 0)
 		return false;
 
@@ -11676,7 +11678,19 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			player->instaWhipCharge = 0;
 		}
 
-		if (chargingwhip)
+		if (chargingwhip && K_PressingEBrake(player))
+		{
+			// 1) E-braking on the ground: cancels Insta-Whip.
+			//    Still lets you keep your Whip while fast-falling.
+			// 2) Do not interrupt Guard.
+			if (P_IsObjectOnGround(player->mo) || K_PlayerGuard(player))
+			{
+				if (player->instaWhipCharge)
+					player->defenseLockout = PUNISHWINDOW;
+				player->instaWhipCharge = 0;
+			}
+		}
+		else if (chargingwhip)
 		{
 			player->instaWhipCharge = min(player->instaWhipCharge + 1, INSTAWHIP_TETHERBLOCK + 1);
 
