@@ -44,6 +44,9 @@ public:
 	// resumes.
 	int resume_fade_in = 0;
 
+	// Adjust volume based on level context.
+	bool use_level_volume = false;
+
 	// Sync this tune to game logic.
 	bool sync = false;
 

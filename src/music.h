@@ -103,6 +103,14 @@ void Music_Loop(const char *id, boolean loop);
 // as Music_StopAll.
 void Music_BatchExempt(const char *id);
 
+// Set the volume for level context. TODO: this should be
+// done on a more selective basis, rather than globally.
+void Music_LevelVolume(int volume);
+
+// Reset volume back to normal. This will fade it as if the
+// music is resuming after another tune ended.
+void Music_ResetLevelVolume(void);
+
 
 //
 // Query properties.
