@@ -14,6 +14,7 @@
 ///        Functions to blit a block to the screen.
 
 #include <cmath>
+#include <optional>
 
 #include <tracy/tracy/Tracy.hpp>
 
@@ -45,6 +46,7 @@
 #include "k_hud.h"
 #include "k_boss.h"
 #include "i_time.h"
+#include "v_draw.hpp"
 
 using namespace srb2;
 
@@ -2413,6 +2415,41 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 	}
 }
 
+static UINT8 V_GetButtonCodeWidth(UINT8 c)
+{
+	UINT8 x = 0;
+
+	switch (c & 0x0F)
+	{
+	case 0x00:
+	case 0x01:
+	case 0x02:
+	case 0x03:
+		// arrows
+		x = 12;
+		break;
+
+	case 0x07:
+	case 0x08:
+	case 0x09:
+		// shoulders, start
+		x = 14;
+		break;
+
+	case 0x0A:
+	case 0x0B:
+	case 0x0C:
+	case 0x0D:
+	case 0x0E:
+	case 0x0F:
+		// faces
+		x = 10;
+		break;
+	}
+
+	return x + 2;
+}
+
 void V_DrawStringScaled(
 		fixed_t    x,
 		fixed_t    y,
@@ -2427,6 +2464,7 @@ void V_DrawStringScaled(
 	INT32     hchw;/* half-width for centering */
 
 	INT32     dupx;
+	INT32     dupy;
 
 	fixed_t  right;
 	fixed_t    bot;
@@ -2491,18 +2529,20 @@ void V_DrawStringScaled(
 	if (( flags & V_NOSCALESTART ))
 	{
 		dupx      = vid.dupx;
+		dupy      = vid.dupy;
 
 		hchw     *=     dupx;
 
 		fontspec.chw      *=     dupx;
 		fontspec.spacew   *=     dupx;
-		fontspec.lfh      *= vid.dupy;
+		fontspec.lfh      *=     dupy;
 
 		right     = vid.width;
 	}
 	else
 	{
 		dupx      = 1;
+		dupy      = 1;
 
 		right     = ( vid.width / vid.dupx );
 		if (!( flags & V_SNAPTOLEFT ))
@@ -2570,6 +2610,68 @@ void V_DrawStringScaled(
 					if (dance)
 					{
 						cyoff = V_DanceYOffset(dancecounter) * FRACUNIT;
+					}
+
+					if (( c & 0xB0 ) & 0x80) // button prompts
+					{
+						using srb2::Draw;
+
+						struct BtConf
+						{
+							UINT8 x, y;
+							Draw::Button type;
+						};
+
+						auto bt_inst = [c]() -> std::optional<BtConf>
+						{
+							switch (c & 0x0F)
+							{
+							case 0x00: return {{0, 3, Draw::Button::up}};
+							case 0x01: return {{0, 3, Draw::Button::down}};
+							case 0x02: return {{0, 3, Draw::Button::right}};
+							case 0x03: return {{0, 3, Draw::Button::left}};
+
+							case 0x07: return {{0, 1, Draw::Button::r}};
+							case 0x08: return {{0, 1, Draw::Button::l}};
+
+							case 0x09: return {{0, 1, Draw::Button::start}};
+
+							case 0x0A: return {{2, 1, Draw::Button::a}};
+							case 0x0B: return {{2, 1, Draw::Button::b}};
+							case 0x0C: return {{2, 1, Draw::Button::c}};
+
+							case 0x0D: return {{2, 1, Draw::Button::x}};
+							case 0x0E: return {{2, 1, Draw::Button::y}};
+							case 0x0F: return {{2, 1, Draw::Button::z}};
+
+							default: return {};
+							}
+						}();
+
+						if (bt_inst)
+						{
+							auto bt_translate_press = [c]() -> std::optional<bool>
+							{
+								switch (c & 0xB0)
+								{
+								default:
+								case 0x90: return true;
+								case 0xA0: return {};
+								case 0xB0: return false;
+								}
+							};
+
+							Draw(
+								FixedToFloat(cx) - (bt_inst->x * dupx),
+								FixedToFloat(cy + cyoff) - (bt_inst->y * dupy))
+								.flags(flags)
+								.small_button(bt_inst->type, bt_translate_press());
+						}
+
+						cw = V_GetButtonCodeWidth(c) * dupx;
+						cx += cw * scale;
+
+						break;
 					}
 
 					c -= font->start;
@@ -2664,6 +2766,14 @@ fixed_t V_StringScaledWidth(
 			default:
 				if (( c & 0xF0 ) == 0x80 || c == V_STRINGDANCE)
 					continue;
+
+				if (( c & 0xB0 ) & 0x80)
+				{
+					cw = V_GetButtonCodeWidth(c) * dupx;
+					cx += cw * scale;
+					right = cx;
+					break;
+				}
 
 				if (uppercase)
 				{
@@ -2796,6 +2906,12 @@ char * V_ScaledWordWrap(
 			default:
 				if (( c & 0xF0 ) == 0x80 || c == V_STRINGDANCE)
 					;
+				else if (( c & 0xB0 ) & 0x80) // button prompts
+				{
+					cw = V_GetButtonCodeWidth(c) * dupx;
+					cx += cw * scale;
+					right = cx;
+				}
 				else
 				{
 					if (uppercase)
