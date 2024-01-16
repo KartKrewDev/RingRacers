@@ -75,6 +75,8 @@ public:
 	class TextElement
 	{
 	public:
+		explicit TextElement() {}
+
 		explicit TextElement(std::string string) : string_(string) {}
 
 		template <class... Args>
@@ -157,6 +159,8 @@ public:
 		template <class... Args>
 		void text(fmt::format_string<Args...> format, Args&&... args) const { text(fmt::format(format, args...)); }
 
+		TextElement text() const { return TextElement().font(font_).flags(flags_); }
+
 		void patch(patch_t* patch) const;
 		void patch(const char* name) const;
 
@@ -238,7 +242,7 @@ public:
 
 #define VOID_METHOD(Name) \
 	template <typename... Args>\
-	void Name (Args&&... args) const { return chain_.Name(std::forward<Args>(args)...); }
+	auto Name (Args&&... args) const { return chain_.Name(std::forward<Args>(args)...); }
 
 	VOID_METHOD(text);
 	VOID_METHOD(patch);
