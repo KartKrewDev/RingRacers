@@ -4460,9 +4460,9 @@ static void K_drawKartMinimap(void)
 				break;
 			case MT_SUPER_FLICKY:
 				workingPic = kp_superflickyminimap;
-				if (Obj_SuperFlickyOwner(mobj)->color)
+				if (mobj_t* owner = Obj_SuperFlickyOwner(mobj); owner && owner->color)
 				{
-					colormap = R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(Obj_SuperFlickyOwner(mobj)->color), GTC_CACHE);
+					colormap = R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(owner->color), GTC_CACHE);
 				}
 				break;
 			default:
