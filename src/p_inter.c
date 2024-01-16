@@ -3471,7 +3471,9 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	if (source && source->player && target)
 		G_GhostAddHit((INT32) (source->player - players), target);
 
-	if ((gametyperules & GTR_BUMPERS) && !battleprisons)
+	// Insta-Whip (DMG_WHUMBLE): do not reduce hitlag because
+	// this can leave room for double-damage.
+	if ((damagetype & DMG_TYPEMASK) != DMG_WHUMBLE && (gametyperules & GTR_BUMPERS) && !battleprisons)
 		laglength /= 2;
 
 	K_SetHitLagForObjects(target, inflictor, source, laglength, true);
