@@ -53,29 +53,29 @@ void K_GivePowerUp(player_t* player, kartitems_t powerup, tic_t time)
 	switch (powerup)
 	{
 	case POWERUP_SMONITOR:
-		K_AddMessageForPlayer(player, va("Got S MONITOR!"), true);
+		K_AddMessageForPlayer(player, "Got S MONITOR!", true, false);
 		K_DoInvincibility(player, time);
 		player->powerup.superTimer += time;
 		break;
 
 	case POWERUP_BARRIER:
-		K_AddMessageForPlayer(player, va("Got MEGA BARRIER!"), true);
+		K_AddMessageForPlayer(player, "Got MEGA BARRIER!", true, false);
 		player->powerup.barrierTimer += time;
 		Obj_SpawnMegaBarrier(player);
 		break;
 
 	case POWERUP_BUMPER:
-		K_AddMessageForPlayer(player, va("Got BUMPER RESTOCK!"), true);
+		K_AddMessageForPlayer(player, "Got BUMPER RESTOCK!", true, false);
 		K_GiveBumpersToPlayer(player, nullptr, 5);
 		break;
 
 	case POWERUP_BADGE:
-		K_AddMessageForPlayer(player, va("Got RHYTHM BADGE!"), true);
+		K_AddMessageForPlayer(player, "Got RHYTHM BADGE!", true, false);
 		player->powerup.rhythmBadgeTimer += time;
 		break;
 
 	case POWERUP_SUPERFLICKY:
-		K_AddMessageForPlayer(player, va("Got SUPER FLICKY!"), true);
+		K_AddMessageForPlayer(player, "Got SUPER FLICKY!", true, false);
 		if (K_PowerUpRemaining(player, POWERUP_SUPERFLICKY))
 		{
 			Obj_ExtendSuperFlickySwarm(player->powerup.flickyController, time);

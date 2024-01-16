@@ -123,4 +123,9 @@ bool CallFunc_GetSideUserProperty(ACSVM::Thread *thread, const ACSVM::Word *argV
 bool CallFunc_GetSectorUserProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC);
 bool CallFunc_GetThingUserProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC);
 
+bool CallFunc_AddMessage(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC);
+bool CallFunc_AddMessageForPlayer(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC);
+bool CallFunc_ClearPersistentMessages(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC);
+bool CallFunc_ClearPersistentMessageForPlayer(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC);
+
 #endif // __SRB2_ACS_CALL_FUNCS_HPP__

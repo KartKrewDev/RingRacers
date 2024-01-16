@@ -5635,7 +5635,9 @@ typedef struct
 typedef struct
 {
 	std::deque<std::string> messages;
+	std::string objective = "";
 	tic_t timer = 0;
+	boolean persist = false;
 	messagemode_t mode = MM_IN;
 	const tic_t speedyswitch = 2*TICRATE;
 	const tic_t lazyswitch = 4*TICRATE;
@@ -5660,7 +5662,13 @@ typedef struct
 	void tick()
 	{		
 		if (messages.size() == 0)
-			return;
+		{
+			if (!objective.empty())
+				restore();
+			else
+				return;
+		}
+
 
 		if (timer == 0 && mode == MM_IN)
 			S_StartSound(NULL, sfx_s3k47);
@@ -5676,7 +5684,7 @@ typedef struct
 			case MM_HOLD:
 				if (messages.size() > 1 && timer > speedyswitch) // Waiting message, switch to it right away!
 					next();
-				else if (timer > lazyswitch) // If there's no pending message, we can chill for a bit.
+				else if (timer > lazyswitch && !persist) // If there's no pending message, we can chill for a bit.
 					switch_mode(MM_OUT);
 				break;
 			case MM_OUT:
@@ -5686,9 +5694,18 @@ typedef struct
 		}
 	}
 
+	void restore()
+	{
+		switch_mode(MM_IN);
+		persist = true;
+		messages.clear();
+		messages.push_front(objective);
+	}
+
 	void next()
 	{
 		switch_mode(MM_IN);
+		persist = false;
 		if (messages.size() > 0)
 			messages.pop_front();
 	}
@@ -5697,18 +5714,31 @@ typedef struct
 
 static std::vector<messagestate_t> messagestates{MAXSPLITSCREENPLAYERS};
 
-void K_AddMessage(char *msg, boolean interrupt)
+void K_AddMessage(const char *msg, boolean interrupt, boolean persist)
 {
 	for (auto &state : messagestates)
 	{
 		if (interrupt)
 			state.clear();
-		state.add(msg);
+
+		if (persist)
+			state.objective = msg;
+		else
+			state.add(msg);
+	}
+}
+
+void K_ClearPersistentMessages()
+{
+	for (auto &state : messagestates)
+	{
+		state.objective = "";
+		state.clear();
 	}
 }
 
 // Return value can be used for "paired" splitscreen messages, true = was displayed
-void K_AddMessageForPlayer(player_t *player, char *msg, boolean interrupt)
+void K_AddMessageForPlayer(player_t *player, const char *msg, boolean interrupt, boolean persist)
 {
 	if (!player)
 		return;
@@ -5721,7 +5751,22 @@ void K_AddMessageForPlayer(player_t *player, char *msg, boolean interrupt)
 	if (interrupt)
 		state->clear();
 
-	state->add(msg);
+	if (persist)
+		state->objective = msg;
+	else
+		state->add(msg);
+}
+
+void K_ClearPersistentMessageForPlayer(player_t *player)
+{
+	if (!player)
+		return;
+
+	if (player && !P_IsDisplayPlayer(player))
+		return;
+
+	messagestate_t *state = &messagestates[G_PartyPosition(player - players)];
+	state->objective = "";
 }
 
 void K_TickMessages()
