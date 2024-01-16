@@ -15,6 +15,7 @@
 #define __K_DIALOGUE_HPP__
 
 #include <string>
+#include <string_view>
 
 #include "doomdef.h"
 #include "doomtype.h"
@@ -34,7 +35,7 @@ public:
 	void SetSpeaker(std::string skinName, int portraitID);
 	void SetSpeaker(std::string name, patch_t *patch, UINT8 *colormap, sfxenum_t voice);
 
-	void NewText(std::string newText);
+	void NewText(std::string_view newText);
 
 	bool Active(void);
 	bool TextDone(void);
