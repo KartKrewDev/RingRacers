@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "core/static_vec.hpp"
+#include "v_draw.hpp"
 
 #include "k_battle.h"
 #include "k_hud.h"
@@ -26,7 +27,7 @@
 
 using namespace srb2;
 
-extern "C" consvar_t cv_debughudtracker;
+extern "C" consvar_t cv_debughudtracker, cv_battleufotest;
 
 namespace
 {
@@ -190,6 +191,9 @@ private:
 				}},
 			};
 
+		case MT_BATTLEUFO_SPAWNER:
+			return {};
+
 		default:
 			return {
 				{ // Near
@@ -290,6 +294,9 @@ bool is_object_tracking_target(const mobj_t* mobj)
 	case MT_SPRAYCAN:
 		return !(mobj->renderflags & (RF_TRANSMASK | RF_DONTDRAW)) && // the spraycan wasn't collected yet
 			P_CheckSight(stplyr->mo, const_cast<mobj_t*>(mobj));
+
+	case MT_BATTLEUFO_SPAWNER:
+		return cv_battleufotest.value;
 
 	default:
 		return false;
@@ -512,6 +519,15 @@ void K_DrawTargetTracking(const TargetTracking& target)
 				colormap
 			);
 		};
+
+		if (target.mobj->type == MT_BATTLEUFO_SPAWNER) // debug
+		{
+			using srb2::Draw;
+			Draw(FixedToFloat(result.x), FixedToFloat(result.y))
+				.font(Draw::Font::kThin)
+				.align(Draw::Align::kCenter)
+				.text("BUFO ID: {}", Obj_BattleUFOSpawnerID(target.mobj));
+		}
 	}
 }
 

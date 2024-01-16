@@ -251,3 +251,8 @@ void Obj_BattleUFOBeamThink(mobj_t *beam)
 {
 	P_SetObjectMomZ(beam, beam->info->speed, true);
 }
+
+INT32 Obj_BattleUFOSpawnerID(const mobj_t *spawner)
+{
+	return static_cast<const Spawner*>(spawner)->id();
+}
