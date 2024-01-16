@@ -2662,7 +2662,7 @@ fixed_t V_StringScaledWidth(
 				cx  =   0;
 				break;
 			default:
-				if (( c & 0xF0 ) == 0x80)
+				if (( c & 0xF0 ) == 0x80 || c == V_STRINGDANCE)
 					continue;
 
 				if (uppercase)
@@ -2794,7 +2794,7 @@ char * V_ScaledWordWrap(
 				startwriter = 0;
 				break;
 			default:
-				if (( c & 0xF0 ) == 0x80)
+				if (( c & 0xF0 ) == 0x80 || c == V_STRINGDANCE)
 					;
 				else
 				{
