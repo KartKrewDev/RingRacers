@@ -10663,6 +10663,12 @@ void K_KartUpdatePosition(player_t *player)
 		player->topinfirst = 0;
 	}
 
+	// Special stages: fade out music near the finish line
+	if (P_IsLocalPlayer(player))
+	{
+		K_FadeOutSpecialMusic(player->distancetofinish);
+	}
+
 	player->position = position;
 }
 
