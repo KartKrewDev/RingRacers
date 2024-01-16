@@ -1149,7 +1149,7 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 
 		bool stung = false;
 
-		if (t2->player->rings <= 0 && t2->player->spheres <= 0)
+		if (t2->player->rings <= 0 && t2->health == 1) // no bumpers
 		{
 			P_DamageMobj(t2, t1, t1, 1, DMG_STING|DMG_WOMBO);
 			stung = true;
