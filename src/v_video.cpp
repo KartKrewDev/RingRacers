@@ -1796,7 +1796,7 @@ void V_DrawCharacterScaled(
 
 	if (notColored == true)
 	{
-		if (( c & 0x80 ))
+		if (( c & 0xF0 ) == 0x80)
 		{
 			colormap = V_GetStringColormap(
 				( ( c & 0x7f ) << V_CHARCOLORSHIFT ) & V_CHARCOLORMASK
@@ -2530,7 +2530,7 @@ void V_DrawStringScaled(
 				cx  =   x;
 				break;
 			default:
-				if (( c & 0x80 ))
+				if (( c & 0xF0 ) == 0x80)
 				{
 					if (notcolored)
 					{
@@ -2662,7 +2662,7 @@ fixed_t V_StringScaledWidth(
 				cx  =   0;
 				break;
 			default:
-				if (( c & 0x80 ))
+				if (( c & 0xF0 ) == 0x80)
 					continue;
 
 				if (uppercase)
@@ -2794,7 +2794,7 @@ char * V_ScaledWordWrap(
 				startwriter = 0;
 				break;
 			default:
-				if (( c & 0x80 ))
+				if (( c & 0xF0 ) == 0x80)
 					;
 				else
 				{
