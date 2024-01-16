@@ -82,7 +82,7 @@ public:
 		auto min = [&](auto cmp) { return std::min_element(list_.begin(), list_.end(), cmp); };
 
 		return *(it != list_.end()
-			? min([order](T a, T b) { return order < a->id() && a->id() < b->id(); })
+			? min([order](T a, T b) { return order < a->id() && (b->id() <= order || a->id() < b->id()); })
 			: min([](T a, T b) { return a->id() < b->id(); }));
 	}
 
