@@ -402,7 +402,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 					return;
 
 				K_GivePowerUp(player, special->threshold, special->movecount);
-				player->flashing = 2*TICRATE;
 			}
 			else
 			{

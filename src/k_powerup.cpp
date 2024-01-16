@@ -50,6 +50,8 @@ void K_GivePowerUp(player_t* player, kartitems_t powerup, tic_t time)
 		Obj_SpawnPowerUpAura(player);
 	}
 
+	player->flashing = 2*TICRATE;
+
 	switch (powerup)
 	{
 	case POWERUP_SMONITOR:
