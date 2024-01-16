@@ -1016,9 +1016,14 @@ boolean K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2)
 
 	if (mobj1->type == MT_PLAYER && mobj2->type == MT_PLAYER)
 	{
-		if (K_PlayerGuard(mobj1->player))
+		boolean guard1 = K_PlayerGuard(mobj1->player);
+		boolean guard2 = K_PlayerGuard(mobj2->player);
+
+		if (guard1 && guard2)
+			K_DoPowerClash(mobj1, mobj2);
+		else if (guard1)
 			K_DoGuardBreak(mobj1, mobj2);
-		if (K_PlayerGuard(mobj2->player))
+		else if (guard2)
 			K_DoGuardBreak(mobj2, mobj1);
 	}
 
