@@ -20,6 +20,18 @@
 
 using namespace srb2::media;
 
+YUV420pFrame::YUV420pFrame(int pts, Buffer y, Buffer u, Buffer v, const BufferRGBA& rgba)
+	: VideoFrame(pts)
+	, y_(y)
+	, u_(u)
+	, v_(v)
+	, rgba_(&rgba)
+{
+
+}
+
+YUV420pFrame::~YUV420pFrame() = default;
+
 bool YUV420pFrame::BufferRGBA::resize(int width, int height)
 {
 	if (width == width_ && height == height_)

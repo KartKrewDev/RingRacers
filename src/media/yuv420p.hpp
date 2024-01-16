@@ -41,12 +41,9 @@ public:
 		std::vector<uint8_t> vec_;
 	};
 
-	YUV420pFrame(int pts, Buffer y, Buffer u, Buffer v, const BufferRGBA& rgba) :
-		VideoFrame(pts), y_(y), u_(u), v_(v), rgba_(&rgba)
-	{
-	}
+	YUV420pFrame(int pts, Buffer y, Buffer u, Buffer v, const BufferRGBA& rgba);
 
-	~YUV420pFrame() = default;
+	virtual ~YUV420pFrame();
 
 	// Simply resets PTS and RGBA buffer while keeping YUV
 	// buffers intact.

@@ -1574,7 +1574,7 @@ bool CallFunc_HaveUnlockableTrigger(ACSVM::Thread *thread, const ACSVM::Word *ar
 --------------------------------------------------*/
 bool CallFunc_HaveUnlockable(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
-	UINT8 id = 0;
+	UINT32 id = 0;
 	bool unlocked = false;
 
 	(void)argC;
@@ -1636,7 +1636,7 @@ bool CallFunc_PlayerBot(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::W
 		&& (info->mo != NULL && P_MobjWasRemoved(info->mo) == false)
 		&& (info->mo->player != NULL))
 	{
-		
+
 		thread->dataStk.push(info->mo->player->bot);
 		return false;
 	}

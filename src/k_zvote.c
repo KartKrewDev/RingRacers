@@ -900,7 +900,7 @@ static patch_t *g_exclamation = NULL;
 static patch_t *g_exclamationLoop[ZVOTE_PATCH_EXC_LOOP] = {NULL};
 
 static patch_t *g_zBar[2] = {NULL};
-static patch_t *g_zBarEnds[2][2][2] = {NULL};
+static patch_t *g_zBarEnds[2][2][2] = {{{NULL}}};
 
 void K_UpdateMidVotePatches(void)
 {
