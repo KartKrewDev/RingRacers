@@ -3286,7 +3286,9 @@ static void K_GetKartBoostPower(player_t *player)
 
 	if (player->invincibilitytimer) // Invincibility
 	{
-		ADDBOOST(3*FRACUNIT/8 + (FRACUNIT / 1400 * (player->invincibilitytimer)), 3*FRACUNIT, SLIPTIDEHANDLING/2); // + 37.5 + ?% top speed, + 300% acceleration, +25% handling
+		// S-Monitor: no extra %
+		fixed_t extra = FRACUNIT / 1400 * (player->invincibilitytimer - K_PowerUpRemaining(player, POWERUP_SMONITOR));
+		ADDBOOST(3*FRACUNIT/8 + extra, 3*FRACUNIT, SLIPTIDEHANDLING/2); // + 37.5 + ?% top speed, + 300% acceleration, +25% handling
 	}
 
 	if (player->growshrinktimer > 0) // Grow
