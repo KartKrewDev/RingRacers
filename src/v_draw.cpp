@@ -7,6 +7,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
+#include <unordered_map>
+
 #include "doomdef.h" // skincolornum_t
 #include "doomtype.h"
 #include "hu_stuff.h"
@@ -25,6 +27,79 @@ using Chain = Draw::Chain;
 int Draw::TextElement::width() const
 {
 	return font_ ? font_width(*font_, default_font_flags(*font_) | flags_.value_or(0), string_.c_str()) / FRACUNIT : 0;
+}
+
+Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
+{
+	static const std::unordered_map<std::string_view, char> translation = {
+#define BUTTON(str, lower_bits) \
+		{str,             0xB0 | lower_bits},\
+		{str "_animated", 0xA0 | lower_bits},\
+		{str "_pressed",  0x90 | lower_bits}
+
+		BUTTON("up", 0x00),
+		BUTTON("down", 0x01),
+		BUTTON("right", 0x02),
+		BUTTON("left", 0x03),
+
+		BUTTON("r", 0x07),
+		BUTTON("l", 0x08),
+		BUTTON("start", 0x09),
+
+		BUTTON("a", 0x0A),
+		BUTTON("b", 0x0B),
+		BUTTON("c", 0x0C),
+
+		BUTTON("x", 0x0D),
+		BUTTON("y", 0x0E),
+		BUTTON("z", 0x0F),
+
+#undef BUTTON
+	};
+
+	string_.clear();
+	string_.reserve(raw.size());
+
+	using std::size_t;
+	using std::string_view;
+
+	for (;;)
+	{
+		size_t p = raw.find('<');
+
+		// Copy characters until the start tag
+		string_.append(raw.substr(0, p));
+
+		if (p == raw.npos)
+		{
+			break; // end of string
+		}
+
+		raw.remove_prefix(p);
+
+		// Find end tag
+		p = raw.find('>');
+
+		if (p == raw.npos)
+		{
+			break; // no end tag
+		}
+
+		string_view code = raw.substr(1, p - 1);
+
+		if (auto it = translation.find(code); it != translation.end())
+		{
+			string_.push_back(it->second); // replace with character code
+		}
+		else
+		{
+			string_.append(raw.substr(0, p + 1)); // code not found, leave text verbatim
+		}
+
+		raw.remove_prefix(p + 1); // past end of tag
+	}
+
+	return *this;
 }
 
 void Chain::patch(patch_t* patch) const

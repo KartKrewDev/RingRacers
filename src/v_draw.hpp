@@ -11,6 +11,7 @@
 #define __V_DRAW_HPP__
 
 #include <string>
+#include <string_view>
 #include <optional>
 #include <utility>
 
@@ -95,6 +96,14 @@ public:
 		{
 			string_ = string;
 			return *this;
+		}
+
+		TextElement& parse(std::string_view string);
+
+		template <class... Args>
+		TextElement& parse(fmt::format_string<Args...> format, Args&&... args)
+		{
+			return parse(fmt::format(format, args...));
 		}
 
 		TextElement& font(Font font)
