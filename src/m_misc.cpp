@@ -1052,14 +1052,14 @@ static inline boolean M_PNGLib(void)
 	if (!pnglib)
 		return false;
 #ifdef HAVE_SDL
-	aPNG_set_acTL = hwSym("png_set_acTL", pnglib);
-	aPNG_write_frame_head = hwSym("png_write_frame_head", pnglib);
-	aPNG_write_frame_tail = hwSym("png_write_frame_tail", pnglib);
+	aPNG_set_acTL = (P_png_set_acTL) hwSym("png_set_acTL", pnglib);
+	aPNG_write_frame_head = (P_png_write_frame_head) hwSym("png_write_frame_head", pnglib);
+	aPNG_write_frame_tail = (P_png_write_frame_tail) hwSym("png_write_frame_tail", pnglib);
 #endif
 #ifdef _WIN32
-	aPNG_set_acTL = GetProcAddress("png_set_acTL", pnglib);
-	aPNG_write_frame_head = GetProcAddress("png_write_frame_head", pnglib);
-	aPNG_write_frame_tail = GetProcAddress("png_write_frame_tail", pnglib);
+	aPNG_set_acTL = (P_png_set_acTL) GetProcAddress("png_set_acTL", pnglib);
+	aPNG_write_frame_head = (P_png_write_frame_head) GetProcAddress("png_write_frame_head", pnglib);
+	aPNG_write_frame_tail = (P_png_write_frame_tail) GetProcAddress("png_write_frame_tail", pnglib);
 #endif
 	return (aPNG_set_acTL && aPNG_write_frame_head && aPNG_write_frame_tail);
 #endif
@@ -1072,7 +1072,7 @@ static void M_PNGFrame(png_structp png_ptr, png_infop png_info_ptr, png_bytep pn
 	png_uint_32 pitch = png_get_rowbytes(png_ptr, png_info_ptr);
 	PNG_CONST png_uint_32 width = vid.width / downscale;
 	PNG_CONST png_uint_32 height = vid.height / downscale;
-	png_bytepp row_pointers = png_malloc(png_ptr, height * sizeof (png_bytep));
+	png_bytepp row_pointers = (png_bytepp) png_malloc(png_ptr, height * sizeof (png_bytep));
 	png_uint_32 x, y;
 	png_uint_16 framedelay = (png_uint_16)cv_apng_delay.value;
 
@@ -1080,7 +1080,7 @@ static void M_PNGFrame(png_structp png_ptr, png_infop png_info_ptr, png_bytep pn
 
 	for (y = 0; y < height; y++)
 	{
-		row_pointers[y] = malloc(pitch * sizeof(png_byte));
+		row_pointers[y] = (png_bytep) malloc(pitch * sizeof(png_byte));
 		for (x = 0; x < width; x++)
 			row_pointers[y][x] = png_buf[x * downscale];
 		png_buf += pitch * (downscale * downscale);

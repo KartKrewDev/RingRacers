@@ -57,7 +57,7 @@ consvar_t Options::values(const char* default_value, const Range<T> range, std::
 	const std::size_t min_max_size = (range.min || range.max) ? 2 : 0;
 	auto* arr = new CV_PossibleValue_t[list.size() + min_max_size + 1];
 
-	auto cast = [is_float](T n)
+	auto cast = [](T n)
 	{
 		if constexpr (is_float)
 		{

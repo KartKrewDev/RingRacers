@@ -137,7 +137,7 @@ public:
 	Draw2dQuadBuilder(const Draw2dQuadBuilder&) = delete;
 	Draw2dQuadBuilder(Draw2dQuadBuilder&&) = default;
 	Draw2dQuadBuilder& operator=(const Draw2dQuadBuilder&) = delete;
-	Draw2dQuadBuilder& operator=(Draw2dQuadBuilder&&) = default;
+	Draw2dQuadBuilder& operator=(Draw2dQuadBuilder&&) = delete;
 
 	Draw2dQuadBuilder& rect(float x, float y, float w, float h)
 	{
@@ -218,7 +218,7 @@ public:
 	Draw2dVerticesBuilder(const Draw2dVerticesBuilder&) = delete;
 	Draw2dVerticesBuilder(Draw2dVerticesBuilder&&) = default;
 	Draw2dVerticesBuilder& operator=(const Draw2dVerticesBuilder&) = delete;
-	Draw2dVerticesBuilder& operator=(Draw2dVerticesBuilder&&) = default;
+	Draw2dVerticesBuilder& operator=(Draw2dVerticesBuilder&&) = delete;
 
 	Draw2dVerticesBuilder& vert(float x, float y, float u = 0, float v = 0)
 	{

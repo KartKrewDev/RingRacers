@@ -41,7 +41,7 @@ static const uint16_t kIndices[] = {0, 1, 2, 1, 3, 2};
 static const PipelineDesc kUnshadedPipelineDescription = {
 	PipelineProgram::kUnshaded,
 	{{{sizeof(BlitVertex)}}, {{VertexAttributeName::kPosition, 0, 0}, {VertexAttributeName::kTexCoord0, 0, 12}}},
-	{{{{UniformName::kProjection}}, {{UniformName::kModelView, UniformName::kTexCoord0Transform}}}},
+	{{{UniformName::kProjection}, {{UniformName::kModelView, UniformName::kTexCoord0Transform}}}},
 	{{// RGB/A texture
 	  SamplerName::kSampler0}},
 	std::nullopt,

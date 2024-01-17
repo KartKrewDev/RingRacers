@@ -5632,7 +5632,7 @@ typedef struct
 	sfxenum_t sound;
 } message_t;
 
-typedef struct
+struct messagestate_t
 {
 	std::deque<std::string> messages;
 	tic_t timer = 0;
@@ -5658,7 +5658,7 @@ typedef struct
 	}
 
 	void tick()
-	{		
+	{
 		if (messages.size() == 0)
 			return;
 
@@ -5693,7 +5693,7 @@ typedef struct
 			messages.pop_front();
 	}
 
-} messagestate_t;
+};
 
 static std::vector<messagestate_t> messagestates{MAXSPLITSCREENPLAYERS};
 

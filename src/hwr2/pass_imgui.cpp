@@ -23,7 +23,7 @@ static const PipelineDesc kPipelineDesc = {
 	 {{VertexAttributeName::kPosition, 0, 0},
 	  {VertexAttributeName::kTexCoord0, 0, 12},
 	  {VertexAttributeName::kColor, 0, 24}}},
-	{{{{UniformName::kProjection}}, {{UniformName::kModelView, UniformName::kTexCoord0Transform}}}},
+	{{{UniformName::kProjection}, {{UniformName::kModelView, UniformName::kTexCoord0Transform}}}},
 	{{SamplerName::kSampler0}},
 	PipelineDepthStencilStateDesc {true, true, CompareFunc::kAlways, false, {}, {}},
 	{BlendDesc {
@@ -200,7 +200,7 @@ void ImguiPass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 		for (auto& draw_cmd : draw_list.cmds)
 		{
 			// Binding set
-			std::array<rhi::VertexAttributeBufferBinding, 1> vbos = {{0, vbo}};
+			std::array<rhi::VertexAttributeBufferBinding, 1> vbos = {{{0, vbo}}};
 			std::array<rhi::TextureBinding, 1> tbs = {{{rhi::SamplerName::kSampler0, draw_cmd.tex}}};
 			rhi::Handle<rhi::BindingSet> binding_set = rhi.create_binding_set(ctx, pipeline_, {vbos, tbs});
 			draw_cmd.binding_set = binding_set;

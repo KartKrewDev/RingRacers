@@ -104,7 +104,7 @@ static PipelineDesc make_pipeline_desc(TwodeePipelineKey key)
 	return {
 		PipelineProgram::kUnshadedPaletted,
 		kTwodeeVertexInput,
-		{{{{UniformName::kProjection}},
+		{{{UniformName::kProjection},
 		  {{UniformName::kModelView, UniformName::kTexCoord0Transform, UniformName::kSampler0IsIndexedAlpha}}}},
 		{{SamplerName::kSampler0, SamplerName::kSampler1, SamplerName::kSampler2}},
 		std::nullopt,
