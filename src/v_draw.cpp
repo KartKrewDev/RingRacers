@@ -55,6 +55,23 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 		BUTTON("z", 0x0F),
 
 #undef BUTTON
+
+		{"white", 0x80},
+		{"purple", 0x81},
+		{"yellow", 0x82},
+		{"green", 0x83},
+		{"blue", 0x84},
+		{"red", 0x85},
+		{"gray", 0x86},
+		{"orange", 0x87},
+		{"sky", 0x88},
+		{"lavender", 0x89},
+		{"gold", 0x8A},
+		{"aqua", 0x8B},
+		{"magenta", 0x8C},
+		{"pink", 0x8D},
+		{"brown", 0x8E},
+		{"tan", 0x8F},
 	};
 
 	string_.clear();
