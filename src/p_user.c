@@ -1270,15 +1270,36 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 
 	player->pflags |= flags;
 
-	const boolean losing = K_IsPlayerLosing(player);
-	const boolean specialout = (specialstageinfo.valid == true && losing == true);
-
 	if (P_IsLocalPlayer(player) && (!player->spectator && !demo.playback))
 	{
 		legitimateexit = true;
 		player->roundconditions.checkthisframe = true;
 		gamedata->deferredconditioncheck = true;
 	}
+
+	player->exiting = 1;
+
+	if (!player->spectator)
+	{
+		ClearFakePlayerSkin(player);
+
+		if ((gametyperules & GTR_CIRCUIT)) // Special Race-like handling
+		{
+			K_UpdateAllPlayerPositions();
+
+			if (P_CheckRacers() && !exitcountdown)
+			{
+				G_BeginLevelExit();
+			}
+		}
+		else if (!exitcountdown) // All other gametypes
+		{
+			G_BeginLevelExit();
+		}
+	}
+
+	const boolean losing = K_IsPlayerLosing(player); // HEY!!!! Set it AFTER K_UpdateAllPlayerPositions!!!!
+	const boolean specialout = (specialstageinfo.valid == true && losing == true);
 
 	if (G_GametypeUsesLives() && losing)
 	{
@@ -1292,12 +1313,8 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 		musiccountdown = MUSIC_COUNTDOWN_MAX;
 	}
 
-	player->exiting = 1;
-
 	if (!player->spectator)
 	{
-		ClearFakePlayerSkin(player);
-
 		if (!(gametyperules & GTR_SPHERES))
 		{
 			player->hudrings = RINGTOTAL(player);
@@ -1318,20 +1335,6 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 					player->xtralife = (extra - oldExtra);
 				}
 			}
-		}
-
-		if ((gametyperules & GTR_CIRCUIT)) // Special Race-like handling
-		{
-			K_UpdateAllPlayerPositions();
-
-			if (P_CheckRacers() && !exitcountdown)
-			{
-				G_BeginLevelExit();
-			}
-		}
-		else if (!exitcountdown) // All other gametypes
-		{
-			G_BeginLevelExit();
 		}
 
 		if (specialstageinfo.valid == true && losing == false && P_MobjWasRemoved(player->mo) == false)
