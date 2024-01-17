@@ -122,6 +122,7 @@ void K_CheckBumpers(void)
 	UINT8 numingame = 0;
 	UINT8 nobumpers = 0;
 	UINT8 eliminated = 0;
+	SINT8 kingofthehill = -1;
 
 	if (!(gametyperules & GTR_BUMPERS))
 		return;
@@ -148,6 +149,10 @@ void K_CheckBumpers(void)
 		{
 			eliminated++;
 		}
+		else
+		{
+			kingofthehill = i;
+		}
 	}
 
 	if (numingame - eliminated == 2 && battleovertime.enabled && battleovertime.radius <= BARRIER_MIN_RADIUS)
@@ -166,6 +171,13 @@ void K_CheckBumpers(void)
 	}
 	else if (eliminated >= numingame - 1)
 	{
+		if (kingofthehill != -1)
+		{
+			// If every other player is eliminated, the
+			// last player standing wins by default.
+			players[kingofthehill].roundscore = 100;
+		}
+
 		P_DoAllPlayersExit(0, false);
 		return;
 	}
