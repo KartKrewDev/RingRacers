@@ -13359,9 +13359,9 @@ UINT32 K_PointLimitForGametype(void)
 			}
 		}
 
-		if (ptsCap > 20)
+		if (ptsCap > 16)
 		{
-			ptsCap = 20;
+			ptsCap = 16;
 		}
 	}
 
