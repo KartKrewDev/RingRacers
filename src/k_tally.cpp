@@ -558,8 +558,11 @@ void level_tally_t::Init(player_t *player)
 		// Battle: if this player's viewpoint has changed
 		// since being eliminated, set it back so they see
 		// their own Tally and not someone else's.
-		displayplayers[view] = pnum;
-		G_FixCamera(1 + view);
+		if (displayplayers[view] != pnum)
+		{
+			displayplayers[view] = pnum;
+			G_FixCamera(1 + view);
+		}
 	}
 }
 
