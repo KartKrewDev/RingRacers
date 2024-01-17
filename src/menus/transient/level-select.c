@@ -37,7 +37,8 @@ menu_t PLAY_LevelSelectDef = {
 	NULL
 };
 
-struct levellist_s levellist;
+levellist_t levellist;
+levellist_t restorelevellist;
 
 //
 // M_CanShowLevelInList
@@ -278,6 +279,8 @@ boolean M_LevelListFromGametype(INT16 gt)
 			CV_SetValue(&cv_dummyspbattack, 0);
 		}
 
+		levellist.backMenu = currentMenu;
+
 		if (gamestate == GS_MENU)
 		{
 			const char *music;
@@ -290,8 +293,8 @@ boolean M_LevelListFromGametype(INT16 gt)
 			}
 			else
 			{
-				music = currentMenu->music;
-				bgroutine = currentMenu->bgroutine;
+				music = levellist.backMenu->music;
+				bgroutine = levellist.backMenu->bgroutine;
 			}
 
 			menu_t *remap_menus[] = {
@@ -548,10 +551,11 @@ boolean M_LevelListFromGametype(INT16 gt)
 			cupgrid.pageno = 0;
 		}
 
+		PLAY_CupSelectDef.prevMenu = levellist.backMenu;
+		PLAY_LevelSelectDef.prevMenu = &PLAY_CupSelectDef;
+
 		if (gt != -1)
 		{
-			PLAY_CupSelectDef.prevMenu = currentMenu;
-			PLAY_LevelSelectDef.prevMenu = &PLAY_CupSelectDef;
 			M_SetupNextMenu(&PLAY_CupSelectDef, false);
 		}
 
@@ -597,6 +601,8 @@ boolean M_LevelListFromGametype(INT16 gt)
 	M_LevelSelectScrollDest();
 	levellist.slide.start = 0;
 
+	PLAY_LevelSelectDef.prevMenu = levellist.backMenu;
+
 	if (gt != -1)
 	{
 		if (levellist.levelsearch.tutorial && levellist.mapcount == 1)
@@ -605,7 +611,6 @@ boolean M_LevelListFromGametype(INT16 gt)
 		}
 		else
 		{
-			PLAY_LevelSelectDef.prevMenu = currentMenu;
 			M_SetupNextMenu(&PLAY_LevelSelectDef, false);
 		}
 	}
@@ -687,6 +692,8 @@ void M_LevelSelected(INT16 add)
 	{
 		S_StartSound(NULL, sfx_s3k63);
 
+		restorelevellist = levellist;
+
 		M_PrepareTimeAttack(0);
 
 		PLAY_TimeAttackDef.lastOn = ta_start;
@@ -744,19 +751,17 @@ void M_LevelSelected(INT16 add)
 
 			D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_kartencore.value == 1), 1, 1, false, false);
 
-			if (!M_GameTrulyStarted() ||
-				levellist.levelsearch.tutorial)
-			{
-				restoreMenu = currentMenu;
-			}
-			else if (levellist.netgame == true)
+			if (levellist.netgame == true)
 			{
 				restoreMenu = &PLAY_MP_OptSelectDef;
 			}
-			else
+			else /*if (!M_GameTrulyStarted() ||
+				levellist.levelsearch.tutorial)*/
 			{
-				restoreMenu = &PLAY_RaceDifficultyDef;
+				restoreMenu = currentMenu;
 			}
+
+			restorelevellist = levellist;
 		}
 		else
 		{

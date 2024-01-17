@@ -533,26 +533,29 @@ menu_t *M_SpecificMenuRestore(menu_t *torestore)
 	|| torestore == &PLAY_TimeAttackDef)
 	{
 		// Handle unlock restrictions
+
+		levellist = restorelevellist;
+
 		cupheader_t *currentcup = levellist.levelsearch.cup;
 
-		M_SetupGametypeMenu(-1);
-
-		if (levellist.newgametype == GT_RACE)
+		if (levellist.levelsearch.tutorial)
 		{
-			M_SetupRaceMenu(-1);
-			M_SetupDifficultyOptions((cupgrid.grandprix == false));
+			M_InitExtras(-1);
+		}
+		else
+		{
+			M_SetupGametypeMenu(-1);
+
+			if (levellist.newgametype == GT_RACE)
+			{
+				M_SetupRaceMenu(-1);
+				M_SetupDifficultyOptions((cupgrid.grandprix == false));
+			}
 		}
 
 		if (!M_LevelListFromGametype(-1))
 		{
-			if (PLAY_LevelSelectDef.prevMenu == &PLAY_CupSelectDef)
-			{
-				torestore = PLAY_CupSelectDef.prevMenu;
-			}
-			else
-			{
-				torestore = PLAY_LevelSelectDef.prevMenu;
-			}
+			torestore = levellist.backMenu;
 		}
 		else
 		{
@@ -560,18 +563,11 @@ menu_t *M_SpecificMenuRestore(menu_t *torestore)
 			{
 				torestore = &PLAY_CupSelectDef;
 			}
-			else if (torestore == &PLAY_TimeAttackDef)
+			else if (levellist.levelsearch.timeattack)
 			{
 				M_PrepareTimeAttack(0);
 			}
 		}
-	}
-	else if (torestore == &PLAY_RaceDifficultyDef)
-	{
-		// Handle a much smaller subset of unlock restrictions
-		M_SetupGametypeMenu(-1);
-		M_SetupRaceMenu(-1);
-		M_SetupDifficultyOptions((cupgrid.grandprix == false));
 	}
 	else if (torestore == &PLAY_MP_OptSelectDef)
 	{

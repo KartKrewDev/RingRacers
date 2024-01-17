@@ -824,7 +824,7 @@ typedef struct levelsearch_s {
 
 #define M_LEVELLIST_SLIDETIME 4
 
-extern struct levellist_s {
+typedef struct levellist_s {
 	SINT8 cursor;
 	menu_anim_t slide;
 	UINT16 y;
@@ -834,7 +834,11 @@ extern struct levellist_s {
 	UINT8 guessgt;
 	levelsearch_t levelsearch;
 	boolean netgame;	// Start the game in an actual server
-} levellist;
+	menu_t *backMenu;
+} levellist_t;
+
+extern levellist_t levellist;
+extern levellist_t restorelevellist;
 
 extern cupheader_t dummy_lostandfound;
 
