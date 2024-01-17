@@ -356,10 +356,18 @@ INT16 K_FinalPowerIncrement(player_t *player, INT16 yourPower, INT16 baseInc)
 		return 0;
 	}
 
+	SINT8 powerType = K_UsingPowerLevels();
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i] || players[i].spectator)
 		{
+			continue;
+		}
+
+		INT16 theirPower = clientpowerlevels[i][powerType];
+		if (theirPower == 0)
+		{
+			// Don't count guests or bots.
 			continue;
 		}
 
