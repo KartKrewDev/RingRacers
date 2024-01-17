@@ -8854,6 +8854,11 @@ static lumpinfo_t* FindFolder(const char *folName, UINT16 *start, UINT16 *end, l
 	return lumpinfo;
 }
 
+static tic_t round_to_next_second(tic_t time)
+{
+	return static_cast<tic_t>(std::ceil(time / static_cast<float>(TICRATE)) * TICRATE);
+}
+
 static void P_DeriveAutoMedalTimes(mapheader_t& map)
 {
 	// Gather staff ghost times
@@ -8882,21 +8887,25 @@ static void P_DeriveAutoMedalTimes(mapheader_t& map)
 	std::sort(stafftimes.begin(), stafftimes.end());
 
 	// Auto Platinum is the best staff ghost time
-	// Auto Gold is the median staff ghost time
-	// Silver and Bronze are 10% longer successively
+	// Auto Gold is the median staff ghost time or 10% longer than Platinum, whichever is higher
+	// Silver and Bronze are 10% longer and 10% longer successively
+	// Gold, Silver and Bronze are rounded up to the next second
 
 	tic_t best = stafftimes.at(0);
-	tic_t gold = stafftimes.at(stafftimes.size() / 2);
+	tic_t gold = std::max(
+		round_to_next_second(stafftimes.at(stafftimes.size() / 2)),
+		round_to_next_second(static_cast<tic_t>(std::ceil(best * 1.1f)))
+	);
 	if (gold == best)
 	{
 		gold += 1;
 	}
-	tic_t silver = static_cast<tic_t>(std::ceil(gold * 1.1f));
+	tic_t silver = round_to_next_second(static_cast<tic_t>(std::ceil(gold * 1.1f)));
 	if (silver == gold)
 	{
 		silver += 1;
 	}
-	tic_t bronze = static_cast<tic_t>(std::ceil(silver * 1.1f));
+	tic_t bronze = round_to_next_second(static_cast<tic_t>(std::ceil(silver * 1.1f)));
 	if (bronze == silver)
 	{
 		bronze += 1;
