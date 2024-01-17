@@ -654,6 +654,18 @@ fixed_t K_BotRubberband(const player_t *player)
 
 		rubberband = FixedDiv(distdiff + spacing, spacing * 2);
 
+		if (player->boostpower < FRACUNIT)
+		{
+			// Do not let bots cheese offroad as much.
+			rubberband = FixedMul(rubberband, player->boostpower);
+		}
+
+		if (P_MobjWasRemoved(player->mo) == false && player->mo->movefactor < FRACUNIT)
+		{
+			// Do not let bots speed up on ice too much.
+			rubberband = FixedMul(rubberband, player->mo->movefactor);
+		}
+
 		if (rubberband > FRACUNIT)
 		{
 			rubberband = FRACUNIT;
