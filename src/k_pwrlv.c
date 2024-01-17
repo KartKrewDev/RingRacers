@@ -368,7 +368,7 @@ INT16 K_FinalPowerIncrement(player_t *player, INT16 yourPower, INT16 baseInc)
 
 	if (inc <= 0)
 	{
-		if (player->position == 1)
+		if (player->position == 1 && numPlayers > 1)
 		{
 			// Won the whole match?
 			// Get at least one point.
