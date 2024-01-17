@@ -1790,6 +1790,11 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 		if (gametyperules & GTR_BUMPERS)
 		{
+			if (battleovertime.enabled >= 10*TICRATE) // Overtime Barrier is armed
+			{
+				target->player->pflags |= PF_ELIMINATED;
+			}
+
 			K_CheckBumpers();
 
 			if (target->player->roundscore > 1)
