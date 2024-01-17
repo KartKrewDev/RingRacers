@@ -68,6 +68,18 @@ void K_TickSpecialStage(void);
 
 mobj_t *K_GetPossibleSpecialTarget(void);
 
+/*--------------------------------------------------
+	void K_FadeOutSpecialMusic(UINT32 distance)
+
+		Fade level music out at the end of a special stage.
+
+	Input Arguments:-
+		distance - Distance from the finish line.
+
+--------------------------------------------------*/
+
+void K_FadeOutSpecialMusic(UINT32 distance);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

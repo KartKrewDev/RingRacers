@@ -88,6 +88,15 @@ public:
 		}
 	}
 
+	void level_volume(int vol, bool fade)
+	{
+		if (vol != old_level_volume_)
+		{
+			level_volume_ = vol;
+			volume_fade_ = fade;
+		}
+	}
+
 private:
 	std::unordered_map<std::string, Tune> map_;
 	std::string current_song_;
@@ -98,6 +107,10 @@ private:
 	bool stop_credit_ = false;
 
 	bool gme_; // hack
+
+	int level_volume_ = 100;
+	int old_level_volume_ = 100;
+	bool volume_fade_ = false;
 
 	decltype(map_)::const_iterator current_iterator() const
 	{
