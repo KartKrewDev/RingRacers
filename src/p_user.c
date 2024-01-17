@@ -1301,6 +1301,8 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 	const boolean losing = K_IsPlayerLosing(player); // HEY!!!! Set it AFTER K_UpdateAllPlayerPositions!!!!
 	const boolean specialout = (specialstageinfo.valid == true && losing == true);
 
+	K_UpdatePowerLevelsFinalize(player, false);
+
 	if (G_GametypeUsesLives() && losing)
 	{
 		// Remove a life from the losing player
@@ -1394,6 +1396,7 @@ void P_DoAllPlayersExit(pflags_t flags, boolean trygivelife)
 		{
 			continue;
 		}
+
 		if (players[i].exiting)
 		{
 			continue;
@@ -3807,7 +3810,7 @@ void P_DoTimeOver(player_t *player)
 	}
 
 	player->pflags |= PF_NOCONTEST;
-	K_UpdatePowerLevelsOnFailure(player);
+	K_UpdatePowerLevelsFinalize(player, false);
 
 	if (G_GametypeUsesLives())
 	{

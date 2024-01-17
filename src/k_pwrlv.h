@@ -48,7 +48,7 @@ INT16 K_CalculatePowerLevelInc(INT16 diff);
 INT16 K_PowerLevelPlacementScore(player_t *player);
 INT16 K_CalculatePowerLevelAvg(void);
 void K_UpdatePowerLevels(player_t *player, UINT8 lap, boolean forfeit);
-void K_UpdatePowerLevelsOnFailure(player_t *player);
+void K_UpdatePowerLevelsFinalize(player_t *player, boolean onForfeit);
 INT16 K_FinalPowerIncrement(player_t *player, INT16 yourPower, INT16 increment);
 void K_CashInPowerLevels(void);
 void K_SetPowerLevelScrambles(SINT8 powertype);
