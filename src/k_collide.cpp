@@ -1046,8 +1046,7 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 			|| (t1->player->invincibilitytimer > 0)
 			|| (t1->player->flamedash > 0 && t1->player->itemtype == KITEM_FLAMESHIELD)
 			|| (t1->player->curshield == KSHIELD_TOP && !K_IsHoldingDownTop(t1->player))
-			|| (t1->player->bubbleblowup > 0)
-			|| (t1->player->spheres > 0 && K_PlayerEBrake(t1->player));
+			|| (t1->player->bubbleblowup > 0);
 	};
 
 	if (canClash(t1, t2) && canClash(t2, t1))
@@ -1150,7 +1149,7 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 
 		bool stung = false;
 
-		if (t2->player->rings <= 0 && t2->player->spheres <= 0)
+		if (t2->player->rings <= 0 && t2->health == 1) // no bumpers
 		{
 			P_DamageMobj(t2, t1, t1, 1, DMG_STING|DMG_WOMBO);
 			stung = true;

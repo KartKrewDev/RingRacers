@@ -781,7 +781,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 
 	if (thing->type == MT_BATTLEUFO)
 	{
-		if (tm.thing->type != MT_PLAYER)
+		if (!tm.thing->player)
 		{
 			return BMIT_CONTINUE; // not a player
 		}
@@ -801,7 +801,12 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			return BMIT_CONTINUE; // underneath
 		}
 
-		if (!tm.thing->player || !tm.thing->player->fastfall)
+		if (P_PlayerInPain(tm.thing->player))
+		{
+			return BMIT_CONTINUE; // spinout would cause a softlock
+		}
+
+		if (!tm.thing->player->fastfall)
 		{
 			fixed_t tractorHeight = 211*mapobjectscale;
 			fixed_t zRange = FixedDiv(thing->z - tm.thing->z, tractorHeight);

@@ -609,6 +609,7 @@ static void K_SpawnOvertimeLaser(fixed_t x, fixed_t y, fixed_t scale)
 
 	for (i = 0; i <= r_splitscreen; i++)
 	{
+		camera_t *cam = &camera[i];
 		player_t *player = &players[displayplayers[i]];
 		fixed_t zpos;
 		SINT8 flip;
@@ -620,13 +621,13 @@ static void K_SpawnOvertimeLaser(fixed_t x, fixed_t y, fixed_t scale)
 
 		if (player->mo->eflags & MFE_VERTICALFLIP)
 		{
-			zpos = player->mo->z + player->mo->height;
-			zpos = min(zpos + heightPadding, player->mo->ceilingz);
+			zpos = cam->z + player->mo->height;
+			zpos = min(zpos + heightPadding, cam->ceilingz);
 		}
 		else
 		{
-			zpos = player->mo->z;
-			zpos = max(zpos - heightPadding, player->mo->floorz);
+			zpos = cam->z;
+			zpos = max(zpos - heightPadding, cam->floorz);
 		}
 
 		flip = P_MobjFlip(player->mo);

@@ -1016,9 +1016,14 @@ boolean K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2)
 
 	if (mobj1->type == MT_PLAYER && mobj2->type == MT_PLAYER)
 	{
-		if (K_PlayerGuard(mobj1->player))
+		boolean guard1 = K_PlayerGuard(mobj1->player);
+		boolean guard2 = K_PlayerGuard(mobj2->player);
+
+		if (guard1 && guard2)
+			K_DoPowerClash(mobj1, mobj2);
+		else if (guard1)
 			K_DoGuardBreak(mobj1, mobj2);
-		if (K_PlayerGuard(mobj2->player))
+		else if (guard2)
 			K_DoGuardBreak(mobj2, mobj1);
 	}
 
@@ -3281,7 +3286,9 @@ static void K_GetKartBoostPower(player_t *player)
 
 	if (player->invincibilitytimer) // Invincibility
 	{
-		ADDBOOST(3*FRACUNIT/8 + (FRACUNIT / 1400 * (player->invincibilitytimer)), 3*FRACUNIT, SLIPTIDEHANDLING/2); // + 37.5 + ?% top speed, + 300% acceleration, +25% handling
+		// S-Monitor: no extra %
+		fixed_t extra = FRACUNIT / 1400 * (player->invincibilitytimer - K_PowerUpRemaining(player, POWERUP_SMONITOR));
+		ADDBOOST(3*FRACUNIT/8 + extra, 3*FRACUNIT, SLIPTIDEHANDLING/2); // + 37.5 + ?% top speed, + 300% acceleration, +25% handling
 	}
 
 	if (player->growshrinktimer > 0) // Grow
@@ -8475,7 +8482,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			if (K_PlayerGuard(player) && !K_PowerUpRemaining(player, POWERUP_BARRIER) && (player->ebrakefor%6 == 0))
 				player->spheres--;
 
-			if (player->instaWhipCharge && !K_PowerUpRemaining(players, POWERUP_BADGE) && leveltime%6 == 0)
+			if (player->instaWhipCharge && !K_PowerUpRemaining(players, POWERUP_BADGE) && leveltime%6 == 0 && !P_PlayerInPain(player))
 				player->spheres--;
 		}
 		else
@@ -8582,9 +8589,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			S_StartSound(player->mo, sfx_s1af);
 
 		player->oldGuard = true;
-
-		if (!K_PowerUpRemaining(player, POWERUP_BARRIER))
-			player->instaWhipCharge = 0;
 	}
 	else if (player->oldGuard)
 	{
@@ -10827,6 +10831,11 @@ boolean K_PlayerGuard(const player_t *player)
 		return true;
 	}
 
+	if (player->instaWhipCharge != 0)
+	{
+		return false;
+	}
+
 	if (player->spheres == 0)
 		return false;
 
@@ -11676,7 +11685,19 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			player->instaWhipCharge = 0;
 		}
 
-		if (chargingwhip)
+		if (chargingwhip && K_PressingEBrake(player))
+		{
+			// 1) E-braking on the ground: cancels Insta-Whip.
+			//    Still lets you keep your Whip while fast-falling.
+			// 2) Do not interrupt Guard.
+			if (P_IsObjectOnGround(player->mo) || K_PlayerGuard(player))
+			{
+				if (player->instaWhipCharge)
+					player->defenseLockout = PUNISHWINDOW;
+				player->instaWhipCharge = 0;
+			}
+		}
+		else if (chargingwhip)
 		{
 			player->instaWhipCharge = min(player->instaWhipCharge + 1, INSTAWHIP_TETHERBLOCK + 1);
 
