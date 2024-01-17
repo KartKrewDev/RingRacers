@@ -307,17 +307,18 @@ boolean M_LevelListFromGametype(INT16 gt)
 				NULL
 			};
 
-			size_t i;
+			INT16 i, j;
 			for (i = 0; remap_menus[i]; i++)
 			{
 				remap_menus[i]->music = music;
 				remap_menus[i]->bgroutine = bgroutine;
-			}
 
-			// Not for the time attack ones
-			PLAY_CupSelectDef.menuitems[0].patch = \
-			PLAY_LevelSelectDef.menuitems[0].patch = \
-				currentMenu->menuitems[itemOn].patch;
+				for (j = 0; j < remap_menus[i]->numitems; j++)
+				{
+					remap_menus[i]->menuitems[j].patch = \
+						currentMenu->menuitems[itemOn].patch;
+				}
+			}
 		}
 	}
 
