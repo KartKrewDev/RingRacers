@@ -396,6 +396,12 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			P_InstaThrust(player->mo, player->mo->angle, 20<<FRACBITS);
 			return;
 		case MT_FLOATINGITEM: // SRB2Kart
+			if (special->extravalue1 > 0 && toucher != special->tracer)
+			{
+				player->pflags |= PF_CASTSHADOW;
+				return;
+			}
+
 			if (special->threshold >= FIRSTPOWERUP)
 			{
 				if (P_PlayerInPain(player))
@@ -2366,7 +2372,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		}
 
 		case MT_MONITOR:
-			Obj_MonitorOnDeath(target);
+			Obj_MonitorOnDeath(target, source);
 			break;
 		case MT_BATTLEUFO:
 			Obj_BattleUFODeath(target, inflictor);

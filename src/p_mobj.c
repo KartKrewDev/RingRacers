@@ -7587,6 +7587,15 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 
 		K_UpdateMobjItemOverlay(mobj, mobj->threshold, mobj->movecount);
+
+		if (mobj->extravalue1 > 0)
+		{
+			mobj->extravalue1--;
+			if (mobj->extravalue1 < TICRATE)
+			{
+				mobj->colorized = mobj->extravalue1 & 1;
+			}
+		}
 		break;
 	}
 	case MT_ITEMCAPSULE:
