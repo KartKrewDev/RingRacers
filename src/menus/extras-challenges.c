@@ -10,7 +10,9 @@
 #include "../r_skins.h"
 #include "../s_sound.h"
 
-//#define CHAOKEYDEBUG
+#ifdef DEVELOP
+extern consvar_t cv_debugchallenges;
+#endif
 
 menuitem_t MISC_ChallengesStatsDummyMenu[] =
 {
@@ -382,10 +384,6 @@ void M_Challenges(INT32 choice)
 
 boolean M_CanKeyHiliTile(void)
 {
-	// No keys to do it with?
-	if (gamedata->chaokeys == 0)
-		return false;
-
 	// No tile data?
 	if (challengesmenu.extradata == NULL)
 		return false;
@@ -396,6 +394,16 @@ boolean M_CanKeyHiliTile(void)
 
 	// Already unlocked?
 	if (gamedata->unlocked[challengesmenu.currentunlock] == true)
+		return false;
+
+#ifdef DEVELOP
+	// Ignore game design?
+	if (cv_debugchallenges.value)
+		return true;
+#endif
+
+	// No keys to do it with?
+	if (gamedata->chaokeys == 0)
 		return false;
 
 	UINT16 i = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
@@ -517,19 +525,26 @@ void M_ChallengesTick(void)
 			{
 				challengesmenu.chaokeyhold++;
 
-				const UINT32 chaohold_duration =
+				UINT32 chaohold_duration =
 					CHAOHOLD_PADDING 
 					+ ((unlockables[challengesmenu.currentunlock].majorunlock == true)
 						? CHAOHOLD_MAJOR
 						: CHAOHOLD_STANDARD
 					);
 
+#ifdef DEVELOP
+				if (cv_debugchallenges.value)
+					chaohold_duration = 0;
+#endif
+
 				if (challengesmenu.chaokeyhold > chaohold_duration)
 				{
-#ifndef CHAOKEYDEBUG
-					gamedata->chaokeys -= (unlockables[challengesmenu.currentunlock].majorunlock == true)
-						? 10 : 1;
+#ifdef DEVELOP
+					if (!cv_debugchallenges.value)
 #endif
+						gamedata->chaokeys -= (unlockables[challengesmenu.currentunlock].majorunlock == true)
+							? 10 : 1;
+
 					challengesmenu.chaokeyhold = 0;
 					challengesmenu.unlockcount[CMC_CHAOANIM]++;
 
@@ -639,6 +654,11 @@ void M_ChallengesTick(void)
 	else if (challengesmenu.pending)
 	{
 		tic_t nexttime = M_MenuExtraHeld(pid) ? (UNLOCKTIME*2) : MAXUNLOCKTIME;
+
+#ifdef DEVELOP
+		if (cv_debugchallenges.value)
+			nexttime = UNLOCKTIME;
+#endif
 
 		if (++challengesmenu.unlockanim >= nexttime)
 		{
@@ -768,8 +788,8 @@ boolean M_ChallengesInputs(INT32 ch)
 			challengesmenu.unlockcount[CMC_CHAONOPE] = 6;
 			S_StartSound(NULL, sfx_s3k7b); //sfx_s3kb2
 
-#ifdef CHAOKEYDEBUG
-			if (challengesmenu.currentunlock < MAXUNLOCKABLES && challengesmenu.unlockanim >= UNLOCKTIME && gamedata->unlocked[challengesmenu.currentunlock] == true)
+#ifdef DEVELOP
+			if (cv_debugchallenges.value && challengesmenu.currentunlock < MAXUNLOCKABLES && challengesmenu.unlockanim >= UNLOCKTIME && gamedata->unlocked[challengesmenu.currentunlock] == true)
 			{
 				gamedata->unlocked[challengesmenu.currentunlock] = gamedata->unlockpending[challengesmenu.currentunlock] = false;
 
