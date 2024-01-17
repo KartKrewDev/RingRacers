@@ -263,7 +263,19 @@ static void R_DrawColumnTemplate(drawcolumndata_t *dc)
 
 				// -1 is the lower clamp bound because column posts have a "safe" byte before the real data
 				// and a few bytes after as well
-				*dest = R_DrawColumnPixel<Type>(dc, dest, std::clamp(frac >> FRACBITS, npow2min, npow2max));
+				//*dest = R_DrawColumnPixel<Type>(dc, dest, std::clamp(frac >> FRACBITS, npow2min, npow2max));
+				{
+					// jartha: faster on my AMD FX-6300 CPU.
+					// Faster than ternaries, faster than std::min/std::max. Don't ask me why.
+					// I tested by viewing a non-PO2 texture from a consistent distance so it covered the entire screen.
+					// The framerate difference was about 50 frames at 640x400.
+					INT32 n = frac >> FRACBITS;
+					if (n < npow2min)
+						n = npow2min;
+					if (n > npow2max)
+						n = npow2max;
+					*dest = R_DrawColumnPixel<Type>(dc, dest, n);
+				}
 
 				dest += vid.width;
 
