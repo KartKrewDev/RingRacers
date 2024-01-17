@@ -192,6 +192,11 @@ Environment::Environment()
 	addFuncDataACS0( 603, addCallFunc(CallFunc_DialogueWaitDismiss));
 	addFuncDataACS0( 604, addCallFunc(CallFunc_DialogueWaitText));
 	addFuncDataACS0( 605, addCallFunc(CallFunc_DialogueAutoDismiss));
+
+	addFuncDataACS0( 700, addCallFunc(CallFunc_AddMessage));
+	addFuncDataACS0( 701, addCallFunc(CallFunc_AddMessageForPlayer));
+	addFuncDataACS0( 702, addCallFunc(CallFunc_ClearPersistentMessages));
+	addFuncDataACS0( 703, addCallFunc(CallFunc_ClearPersistentMessageForPlayer));
 }
 
 ACSVM::Thread *Environment::allocThread()
