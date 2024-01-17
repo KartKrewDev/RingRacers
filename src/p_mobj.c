@@ -5428,6 +5428,7 @@ static boolean P_IsTrackerType(INT32 type)
 		case MT_OVERTIME_CENTER:
 		case MT_MONITOR:
 		case MT_EMERALD:
+		case MT_BATTLEUFO_SPAWNER: // debug
 		case MT_BATTLEUFO:
 		case MT_SUPER_FLICKY:
 		case MT_SPRAYCAN:
