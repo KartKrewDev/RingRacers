@@ -4005,7 +4005,7 @@ bool CallFunc_AddMessage(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::
 
 	K_AddMessage(map->getString(argV[0])->str, argV[1], argV[2]);
 
-	return true;
+	return false;
 }
 
 bool CallFunc_AddMessageForPlayer(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
@@ -4021,14 +4021,14 @@ bool CallFunc_AddMessageForPlayer(ACSVM::Thread *thread, const ACSVM::Word *argV
 		K_AddMessageForPlayer(info->mo->player, map->getString(argV[0])->str, argV[1], argV[2]);
 	}
 
-	return true;
+	return false;
 }
 
 bool CallFunc_ClearPersistentMessages(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
 	K_ClearPersistentMessages();
 
-	return true;
+	return false;
 }
 
 bool CallFunc_ClearPersistentMessageForPlayer(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
@@ -4042,5 +4042,5 @@ bool CallFunc_ClearPersistentMessageForPlayer(ACSVM::Thread *thread, const ACSVM
 		K_ClearPersistentMessageForPlayer(info->mo->player);
 	}
 
-	return true;
+	return false;
 }
