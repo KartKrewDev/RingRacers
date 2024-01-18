@@ -171,7 +171,7 @@ public:
 		TextElement text() const { return TextElement().font(font_).flags(flags_); }
 
 		void patch(patch_t* patch) const;
-		void patch(const char* name) const;
+		void patch(const char* name) const { patch(Draw::cache_patch(name)); }
 
 		void thumbnail(UINT16 mapnum) const;
 
@@ -216,6 +216,8 @@ public:
 
 		friend Draw;
 	};
+
+	static patch_t* cache_patch(const char* name);
 
 	constexpr Draw() {}
 	explicit Draw(float x, float y) : chain_(x, y) {}

@@ -132,11 +132,6 @@ void Chain::patch(patch_t* patch) const
 	V_DrawStretchyFixedPatch(FloatToFixed(x_), FloatToFixed(y_), h * scale_, v * scale_, flags_, patch, colormap_);
 }
 
-void Chain::patch(const char* name) const
-{
-	patch(static_cast<patch_t*>(W_CachePatchName(name, PU_CACHE)));
-}
-
 void Chain::thumbnail(UINT16 mapnum) const
 {
 	const auto _ = Clipper(*this);
@@ -238,6 +233,11 @@ Chain::Clipper::Clipper(const Chain& chain)
 Chain::Clipper::~Clipper()
 {
 	V_ClearClipRect();
+}
+
+patch_t* Draw::cache_patch(const char* name)
+{
+	return static_cast<patch_t*>(W_CachePatchName(name, PU_CACHE));
 }
 
 int Draw::font_to_fontno(Font font)
