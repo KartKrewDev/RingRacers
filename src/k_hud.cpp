@@ -3356,7 +3356,15 @@ static void K_drawKartBumpersOrKarma(void)
 			}
 		}
 
-		V_DrawScaledPatch(fx-2 + (flipflag ? (SHORT(kp_ringstickersplit[1]->width) - 3) : 0), fy, V_HUDTRANS|V_SLIDEIN|splitflags|flipflag, kp_ringstickersplit[0]);
+		{
+			using srb2::Draw;
+			int width = 39;
+			Draw(fx-1 + (flipflag ? width + 3 : 0), fy+1)
+				.flags(V_HUDTRANS|V_SLIDEIN|splitflags)
+				.align(flipflag ? Draw::Align::kRight : Draw::Align::kLeft)
+				.width(width)
+				.small_sticker();
+		}
 
 		fx += 2;
 
