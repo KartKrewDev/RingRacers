@@ -3851,7 +3851,7 @@ void K_DoGuardBreak(mobj_t *t1, mobj_t *t2) {
 	K_AddMessageForPlayer(t2->player, "Smashed 'em!", false, false);
 	K_AddMessageForPlayer(t1->player, "BARRIER BREAK!!", false, false);
 
-	angle_t thrangle = R_PointToAngle2(t1->x, t1->y, t2->x, t2->y);
+	angle_t thrangle = R_PointToAngle2(t2->x, t2->y, t1->x, t1->y);
 	P_Thrust(t1, thrangle, 7*mapobjectscale);
 
 	P_DamageMobj(t1, t2, t2, 1, DMG_TUMBLE);
