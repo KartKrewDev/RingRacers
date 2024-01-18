@@ -876,6 +876,7 @@ consvar_t cv_debugrank = PlayerCheat("debugrank", "Off").description("Show GP ra
 });
 
 consvar_t cv_debugrender_contrast = PlayerCheat("debugrender_contrast", "0.0").floating_point().min_max(-FRACUNIT, FRACUNIT).description("Change level lighting");
+consvar_t cv_debugrender_freezebsp = PlayerCheat("debugrender_freezebsp", "Off").on_off().description("Freeze level culling so you can observe how much of the level is being rendered");
 consvar_t cv_debugrender_portal = PlayerCheat("debugrender_portal", "Off").on_off().description("Highlight visual portals in red");
 consvar_t cv_debugrender_spriteclip = PlayerCheat("debugrender_spriteclip", "Off").on_off().description("Let sprites draw through walls");
 consvar_t cv_debugrender_visplanes = PlayerCheat("debugrender_visplanes", "Off").on_off().description("Highlight the number of visplanes");
