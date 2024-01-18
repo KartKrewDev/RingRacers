@@ -768,13 +768,8 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		return BMIT_CONTINUE;
 	}
 
-	if (thing->type == MT_BATTLEUFO)
+	if (thing->type == MT_BATTLEUFO && tm.thing->player)
 	{
-		if (!tm.thing->player)
-		{
-			return BMIT_CONTINUE; // not a player
-		}
-
 		if (thing->health <= 0)
 		{
 			return BMIT_CONTINUE; // dead
