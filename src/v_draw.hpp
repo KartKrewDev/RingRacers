@@ -180,6 +180,10 @@ public:
 		void button(Button type, std::optional<bool> press = {}) const { button_(type, 0, press); }
 		void small_button(Button type, std::optional<bool> press = {}) const { button_(type, 1, press); }
 
+		void sticker(patch_t* end_graphic, UINT8 color) const;
+		void sticker() const { sticker(Draw::cache_patch("K_STIKEN"), 24); }
+		void small_sticker() const { sticker(Draw::cache_patch("K_STIKE2"), 24); }
+
 	private:
 		constexpr Chain() {}
 		explicit Chain(float x, float y) : x_(x), y_(y) {}
@@ -261,6 +265,8 @@ public:
 	VOID_METHOD(fill);
 	VOID_METHOD(button);
 	VOID_METHOD(small_button);
+	VOID_METHOD(sticker);
+	VOID_METHOD(small_sticker);
 
 #undef VOID_METHOD
 

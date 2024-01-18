@@ -219,6 +219,36 @@ void Chain::button_(Button type, int ver, std::optional<bool> press) const
 	}
 }
 
+void Chain::sticker(patch_t* end_graphic, UINT8 color) const
+{
+	const auto _ = Clipper(*this);
+
+	INT32 x = x_;
+	INT32 y = y_;
+	INT32 width = width_;
+	INT32 flags = flags_ | V_FLIP;
+
+	auto fill = [&](int x, int width) { V_DrawFill(x, y, width, SHORT(end_graphic->height), color | (flags_ & ~0xFF)); };
+
+	if (align_ == Align::kRight)
+	{
+		width = -(width);
+		flags ^= V_FLIP;
+		fill(x + width, -(width));
+	}
+	else
+	{
+		fill(x, width);
+	}
+
+	V_DrawScaledPatch(x + width, y, flags, end_graphic);
+
+	if (align_ == Align::kCenter)
+	{
+		V_DrawScaledPatch(x, y, flags ^ V_FLIP, end_graphic);
+	}
+}
+
 Chain::Clipper::Clipper(const Chain& chain)
 {
 	V_SetClipRect(
