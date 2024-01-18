@@ -13,8 +13,6 @@ extern "C" {
 #define BATTLE_POWERUP_TIME (30*TICRATE)
 #define BATTLE_UFO_TIME (20*TICRATE)
 
-#define BATTLE_MONITOR_SPAWN_LIMIT (3)
-
 extern struct battleovertime
 {
 	UINT16 enabled; ///< Has this been initalized yet?

@@ -540,7 +540,11 @@ void K_RunPaperItemSpawners(void)
 
 			//CONS_Printf("leveltime = %d ", leveltime);
 
-			if (spotAvailable > 0 && monitorsSpawned < BATTLE_MONITOR_SPAWN_LIMIT)
+			// Duel   =  2 + 1 =  3 / 2 = 1
+			// Small  =  5 + 1 =  6 / 2 = 3
+			// Medium = 10 + 1 = 11 / 2 = 5
+			// Large  = 16 + 1 = 17 / 2 = 8
+			if (spotAvailable > 0 && monitorsSpawned < (mapheaderinfo[gamemap - 1]->playerLimit + 1) / 2)
 			{
 				const UINT8 r = spotMap[P_RandomKey(PR_ITEM_ROULETTE, spotAvailable)];
 
