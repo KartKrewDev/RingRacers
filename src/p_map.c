@@ -1031,7 +1031,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	}
 
 	// Bubble Shield reflect
-	if ((thing->type == MT_BUBBLESHIELD && thing->target->player && thing->target->player->bubbleblowup)
+	if ((thing->type == MT_BUBBLESHIELD && !P_MobjWasRemoved(thing->target) && thing->target->player && thing->target->player->bubbleblowup)
 		|| (thing->player && thing->player->bubbleblowup))
 	{
 		// see if it went over / under
@@ -1053,7 +1053,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			return BMIT_CONTINUE;
 		}
 	}
-	else if ((tm.thing->type == MT_BUBBLESHIELD && tm.thing->target->player && tm.thing->target->player->bubbleblowup)
+	else if ((tm.thing->type == MT_BUBBLESHIELD && !P_MobjWasRemoved(tm.thing->target) && tm.thing->target->player && tm.thing->target->player->bubbleblowup)
 		|| (tm.thing->player && tm.thing->player->bubbleblowup))
 	{
 		// see if it went over / under
