@@ -11,6 +11,7 @@
 #define __V_DRAW_HPP__
 
 #include <string>
+#include <string_view>
 #include <optional>
 #include <utility>
 
@@ -75,6 +76,8 @@ public:
 	class TextElement
 	{
 	public:
+		explicit TextElement() {}
+
 		explicit TextElement(std::string string) : string_(string) {}
 
 		template <class... Args>
@@ -93,6 +96,14 @@ public:
 		{
 			string_ = string;
 			return *this;
+		}
+
+		TextElement& parse(std::string_view string);
+
+		template <class... Args>
+		TextElement& parse(fmt::format_string<Args...> format, Args&&... args)
+		{
+			return parse(fmt::format(format, args...));
 		}
 
 		TextElement& font(Font font)
@@ -156,6 +167,8 @@ public:
 
 		template <class... Args>
 		void text(fmt::format_string<Args...> format, Args&&... args) const { text(fmt::format(format, args...)); }
+
+		TextElement text() const { return TextElement().font(font_).flags(flags_); }
 
 		void patch(patch_t* patch) const;
 		void patch(const char* name) const;
@@ -238,13 +251,14 @@ public:
 
 #define VOID_METHOD(Name) \
 	template <typename... Args>\
-	void Name (Args&&... args) const { return chain_.Name(std::forward<Args>(args)...); }
+	auto Name (Args&&... args) const { return chain_.Name(std::forward<Args>(args)...); }
 
 	VOID_METHOD(text);
 	VOID_METHOD(patch);
 	VOID_METHOD(thumbnail);
 	VOID_METHOD(fill);
 	VOID_METHOD(button);
+	VOID_METHOD(small_button);
 
 #undef VOID_METHOD
 
