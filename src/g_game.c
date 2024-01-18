@@ -2607,21 +2607,11 @@ mapthing_t *G_FindBattleStart(INT32 playernum)
 
 	if (numdmstarts)
 	{
-		extern consvar_t cv_battlespawn;
-		if (cv_battlespawn.value)
+		for (j = 0; j < 64; j++)
 		{
-			i = cv_battlespawn.value - 1;
-			if (i < numdmstarts)
+			i = P_RandomKey(PR_PLAYERSTARTS, numdmstarts);
+			if (G_CheckSpot(playernum, deathmatchstarts[i]))
 				return deathmatchstarts[i];
-		}
-		else
-		{
-			for (j = 0; j < 64; j++)
-			{
-				i = P_RandomKey(PR_PLAYERSTARTS, numdmstarts);
-				if (G_CheckSpot(playernum, deathmatchstarts[i]))
-					return deathmatchstarts[i];
-			}
 		}
 		if (doprints)
 			CONS_Alert(CONS_WARNING, M_GetText("Could not spawn at any Deathmatch starts!\n"));
@@ -2796,14 +2786,20 @@ static inline mapthing_t *G_FindTeamStartOrFallback(INT32 playernum)
 
 mapthing_t *G_FindMapStart(INT32 playernum)
 {
+	extern consvar_t cv_battlespawn;
 	mapthing_t *spawnpoint;
 
 	if (!playeringame[playernum])
 		return NULL;
 
+	// -- battlespawn cheat --
+	// Everyone spawns at the same spot
+	if ((gametyperules & GTR_BATTLESTARTS) && cv_battlespawn.value > 0 && cv_battlespawn.value <= numdmstarts)
+		spawnpoint = deathmatchstarts[cv_battlespawn.value - 1];
+
 	// -- Podium --
 	// Single special behavior
-	if (K_PodiumSequence() == true)
+	else if (K_PodiumSequence() == true)
 		spawnpoint = G_FindPodiumStart(playernum);
 
 	// -- Time Attack / Battle duels --
