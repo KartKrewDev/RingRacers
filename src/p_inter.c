@@ -2830,6 +2830,15 @@ static boolean P_FlashingException(const player_t *player, const mobj_t *inflict
 		return false;
 	}
 
+	if (inflictor->type == MT_SSMINE)
+	{
+		// Mine's first hit is DMG_EXPLODE.
+		// Afterward, it leaves a spinout hitbox which remains for a short period.
+		// If the spinout hitbox ignored flashing tics, you would be combod every tic and die instantly.
+		// DMG_EXPLODE already ignores flashing tics (correct behavior).
+		return false;
+	}
+
 	if (!P_IsKartItem(inflictor->type) && inflictor->type != MT_PLAYER)
 	{
 		// Exception only applies to player items.
