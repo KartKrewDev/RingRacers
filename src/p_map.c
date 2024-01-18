@@ -522,17 +522,6 @@ static void P_DoFanAndGasJet(mobj_t *spring, mobj_t *object)
 	}
 }
 
-static boolean P_BubbleCanReflect(mobj_t *t1, mobj_t *t2)
-{
-	return (t2->type == MT_ORBINAUT || t2->type == MT_JAWZ || t2->type == MT_GACHABOM
-		|| t2->type == MT_BANANA || t2->type == MT_EGGMANITEM || t2->type == MT_BALLHOG
-		|| t2->type == MT_SSMINE || t2->type == MT_LANDMINE || t2->type == MT_SINK
-		|| t2->type == MT_GARDENTOP
-		|| t2->type == MT_DROPTARGET
-		|| t2->type == MT_KART_LEFTOVER
-		|| (t2->type == MT_PLAYER && t1->target != t2));
-}
-
 //
 // PIT_CheckThing
 //
@@ -1009,7 +998,29 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	if (tm.thing->type == MT_RANDOMITEM)
 		return BMIT_CONTINUE;
 
-	if (tm.thing->type != MT_PLAYER && thing->player && K_PlayerGuard(thing->player) && P_BubbleCanReflect(thing, tm.thing))
+	if (tm.thing->type != MT_PLAYER && thing->player && K_PlayerGuard(thing->player) && K_BubbleShieldCanReflect(thing, tm.thing))
+	{
+		// see if it went over / under
+		if (tm.thing->z > thing->z + thing->height)
+			return BMIT_CONTINUE; // overhead
+		if (tm.thing->z + tm.thing->height < thing->z)
+			return BMIT_CONTINUE; // underneath
+
+		return K_BubbleShieldReflect(thing, tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
+	}
+	else if (thing->type != MT_PLAYER && tm.thing->player && K_PlayerGuard(tm.thing->player) && K_BubbleShieldCanReflect(tm.thing, thing))
+	{
+		// see if it went over / under
+		if (tm.thing->z > thing->z + thing->height)
+			return BMIT_CONTINUE; // overhead
+		if (tm.thing->z + tm.thing->height < thing->z)
+			return BMIT_CONTINUE; // underneath
+
+		return K_BubbleShieldReflect(tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
+	}
+
+	// Bubble Shield reflect
+	if (thing->type == MT_BUBBLESHIELD && !P_MobjWasRemoved(thing->target) && thing->target->player && thing->target->player->bubbleblowup)
 	{
 		// see if it went over / under
 		if (tm.thing->z > thing->z + thing->height)
@@ -1019,7 +1030,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 
 		return K_BubbleShieldCollide(thing, tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
-	else if (thing->type != MT_PLAYER && tm.thing->player && K_PlayerGuard(tm.thing->player) && P_BubbleCanReflect(tm.thing, thing))
+	else if (tm.thing->type == MT_BUBBLESHIELD && !P_MobjWasRemoved(tm.thing->target) && tm.thing->target->player && tm.thing->target->player->bubbleblowup)
 	{
 		// see if it went over / under
 		if (tm.thing->z > thing->z + thing->height)
@@ -1028,52 +1039,6 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			return BMIT_CONTINUE; // underneath
 
 		return K_BubbleShieldCollide(tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
-	}
-
-	// Bubble Shield reflect
-	if ((thing->type == MT_BUBBLESHIELD && !P_MobjWasRemoved(thing->target) && thing->target->player && thing->target->player->bubbleblowup)
-		|| (thing->player && thing->player->bubbleblowup))
-	{
-		// see if it went over / under
-		if (tm.thing->z > thing->z + thing->height)
-			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
-			return BMIT_CONTINUE; // underneath
-
-		if (P_BubbleCanReflect(thing, tm.thing))
-		{
-			// don't let player hitbox touch it too
-			if (thing->player)
-				return BMIT_CONTINUE;
-			return K_BubbleShieldCollide(thing, tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
-		}
-		else if ((tm.thing->flags & MF_SHOOTABLE) && !thing->player)
-		{
-			P_DamageMobj(tm.thing, thing, thing->target, 1, DMG_NORMAL);
-			return BMIT_CONTINUE;
-		}
-	}
-	else if ((tm.thing->type == MT_BUBBLESHIELD && !P_MobjWasRemoved(tm.thing->target) && tm.thing->target->player && tm.thing->target->player->bubbleblowup)
-		|| (tm.thing->player && tm.thing->player->bubbleblowup))
-	{
-		// see if it went over / under
-		if (tm.thing->z > thing->z + thing->height)
-			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
-			return BMIT_CONTINUE; // underneath
-
-		if (P_BubbleCanReflect(tm.thing, thing))
-		{
-			// don't let player hitbox touch it too
-			if (tm.thing->player)
-				return BMIT_CONTINUE;
-			return K_BubbleShieldCollide(tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
-		}
-		else if ((thing->flags & MF_SHOOTABLE) && !tm.thing->player)
-		{
-			P_DamageMobj(thing, tm.thing, tm.thing->target, 1, DMG_NORMAL);
-			return BMIT_CONTINUE;
-		}
 	}
 
 	// double make sure bubbles won't collide with anything else
