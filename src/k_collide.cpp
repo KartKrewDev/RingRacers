@@ -863,8 +863,8 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 				attacker->renderflags &= ~RF_DONTDRAW;
 
 				angle_t thrangle = R_PointToAngle2(attacker->x, attacker->y, victim->x, victim->y);
-				P_Thrust(victim, thrangle, FRACUNIT*7);
-				P_Thrust(attacker, ANGLE_180 + thrangle, FRACUNIT*7);
+				P_Thrust(victim, thrangle, mapobjectscale*28);
+				P_Thrust(attacker, ANGLE_180 + thrangle, mapobjectscale*28);
 
 				return false;
 			}
@@ -932,7 +932,7 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 			K_DropPowerUps(victimPlayer);
 
 			angle_t thrangle = ANGLE_180 + R_PointToAngle2(victim->x, victim->y, shield->x, shield->y);
-			P_Thrust(victim, thrangle, FRACUNIT*10);
+			P_Thrust(victim, thrangle, mapobjectscale*40);
 
 			K_AddHitLag(victim, victimHitlag, true);
 			K_AddHitLag(attacker, attackerHitlag, false);
