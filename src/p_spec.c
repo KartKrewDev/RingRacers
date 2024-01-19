@@ -1920,8 +1920,9 @@ static void K_HandleLapIncrement(player_t *player)
 			player->mo->renderflags |= RF_DONTDRAW;
 			player->mo->flags |= MF_NOCLIPTHING;
 			player->nocontrol = UINT16_MAX;
-			player->hyudorotimer = UINT16_MAX;
-			player->speed = 0;
+			player->mo->momx = 0;
+			player->mo->momy = 0;
+			player->mo->momz = 0;
 			K_StripItems(player);
 			player->faultflash = TICRATE/3;
 			ClearFakePlayerSkin(player);
