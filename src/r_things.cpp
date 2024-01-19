@@ -1679,7 +1679,7 @@ static void R_ProjectBoundingBox(mobj_t *thing, vissprite_t *vis)
 	box->x2test = 0;
 }
 
-static fixed_t R_GetSpriteDirectionalLighting(angle_t angle)
+fixed_t R_GetSpriteDirectionalLighting(angle_t angle)
 {
 	// Copied from P_UpdateSegLightOffset
 	const UINT8 contrast = std::min(std::max(0, maplighting.contrast - maplighting.backlight), UINT8_MAX);

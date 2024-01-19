@@ -64,6 +64,7 @@ extern INT16 negonearray[MAXVIDWIDTH];
 extern INT16 screenheightarray[MAXVIDWIDTH];
 
 fixed_t R_GetShadowZ(mobj_t *thing, pslope_t **shadowslope);
+fixed_t R_GetSpriteDirectionalLighting(angle_t angle);
 
 //SoM: 6/5/2000: Light sprites correctly!
 void R_AddSprites(sector_t *sec, INT32 lightlevel);

@@ -3658,23 +3658,26 @@ void P_UpdateSegLightOffset(seg_t *li)
 
 boolean P_SectorUsesDirectionalLighting(const sector_t *sector)
 {
-	// explicitly turned on
-	if (sector->flags & MSF_DIRECTIONLIGHTING)
+	if (sector != NULL)
 	{
-		return true;
-	}
+		// explicitly turned on
+		if (sector->flags & MSF_DIRECTIONLIGHTING)
+		{
+			return true;
+		}
 
-	// explicitly turned off
-	if (sector->flags & MSF_FLATLIGHTING)
-	{
-		return false;
-	}
+		// explicitly turned off
+		if (sector->flags & MSF_FLATLIGHTING)
+		{
+			return false;
+		}
 
-	// automatically turned on
-	if (sector->ceilingpic == skyflatnum)
-	{
-		// sky is visible
-		return true;
+		// automatically turned on
+		if (sector->ceilingpic == skyflatnum)
+		{
+			// sky is visible
+			return true;
+		}
 	}
 
 	// default is off, for indoors
