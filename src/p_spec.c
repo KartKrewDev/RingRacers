@@ -1925,6 +1925,7 @@ static void K_HandleLapIncrement(player_t *player)
 			player->mo->momz = 0;
 			K_StripItems(player);
 			player->faultflash = TICRATE/3;
+			player->karthud[khud_fault] = 1;
 			ClearFakePlayerSkin(player);
 			S_StartSound(player->mo, sfx_s3k8a);
 			P_MoveOrigin(player->mo, player->mo->old_x, player->mo->old_y, player->mo->z);

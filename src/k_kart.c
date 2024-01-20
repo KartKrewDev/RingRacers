@@ -7921,7 +7921,7 @@ void K_KartPlayerHUDUpdate(player_t *player)
 	if (player->positiondelay)
 		player->positiondelay--;
 
-	if (!(player->pflags & PF_FAULT))
+	if (!(player->pflags & PF_FAULT || player->pflags & PF_VOID))
 		player->karthud[khud_fault] = 0;
 	else if (player->karthud[khud_fault] > 0 && player->karthud[khud_fault] <= 2*TICRATE)
 		player->karthud[khud_fault]++;
