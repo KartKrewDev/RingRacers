@@ -5780,7 +5780,7 @@ void K_TickMessages()
 static void K_DrawMessageFeed(void)
 {
 	int i;
-	for (i = 0; i <= splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
 		messagestate_t state = messagestates[i];
 
@@ -5808,7 +5808,7 @@ static void K_DrawMessageFeed(void)
 		UINT8 x = 160;
 		UINT8 y = 10;
 		SINT8 shift = 0;
-		if (splitscreen >= 2)
+		if (r_splitscreen >= 2)
 		{
 			text.font(Draw::Font::kThin);
 			shift = -2;
@@ -5822,7 +5822,7 @@ static void K_DrawMessageFeed(void)
 			if (i >= 2)
 				y += BASEVIDHEIGHT / 2;
 		}
-		else if (splitscreen >= 1)
+		else if (r_splitscreen >= 1)
 		{
 			y = 5;
 
