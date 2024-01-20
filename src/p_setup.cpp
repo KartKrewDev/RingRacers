@@ -114,6 +114,7 @@
 #include "k_mapuser.h"
 #include "music.h"
 #include "k_dialogue.h"
+#include "k_hud.h" // K_ClearPersistentMessages
 
 // Replay names have time
 #if !defined (UNDER_CE)
@@ -8486,6 +8487,8 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	P_InitTIDHash();
 	R_InitMobjInterpolators();
 	P_InitCachedActions();
+
+	K_ClearPersistentMessages();
 
 	// internal game map
 	maplumpname = mapheaderinfo[gamemap-1]->lumpname;

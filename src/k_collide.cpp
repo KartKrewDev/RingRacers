@@ -873,8 +873,8 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 				attackerPlayer->instaWhipCharge = 0;
 				attackerPlayer->flashing = 0;
 
-				K_AddMessageForPlayer(victimPlayer, va("Whip Reflected!"), false);
-				K_AddMessageForPlayer(attackerPlayer, va("COUNTERED!!"), false);
+				K_AddMessageForPlayer(victimPlayer, "Whip Reflected!", false, false);
+				K_AddMessageForPlayer(attackerPlayer, "COUNTERED!!", false, false);
 
 				// Localized broly for a local event.
 				if (mobj_t *broly = Obj_SpawnBrolyKi(victim, victimHitlag/2))
