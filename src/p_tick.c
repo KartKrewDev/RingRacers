@@ -732,24 +732,21 @@ static inline void P_DeviceRumbleTick(void)
 		UINT16 low = 0;
 		UINT16 high = 0;
 
-		if (player->mo == NULL)
-			continue;
-
-		if (player->exiting)
-			continue;
-
-		if ((player->mo->eflags & MFE_DAMAGEHITLAG) && player->mo->hitlag)
+		if (player->mo != NULL && !player->exiting)
 		{
-			low = high = 65536 / 2;
-		}
-		else if (player->sneakertimer > (sneakertime-(TICRATE/2)))
-		{
-			low = high = 65536 / (3+player->numsneakers);
-		}
-		else if (((player->boostpower < FRACUNIT) || (player->stairjank > 8))
-			&& P_IsObjectOnGround(player->mo) && player->speed != 0)
-		{
-			low = high = 65536 / 32;
+			if ((player->mo->eflags & MFE_DAMAGEHITLAG) && player->mo->hitlag)
+			{
+				low = high = 65536 / 2;
+			}
+			else if (player->sneakertimer > (sneakertime-(TICRATE/2)))
+			{
+				low = high = 65536 / (3+player->numsneakers);
+			}
+			else if (((player->boostpower < FRACUNIT) || (player->stairjank > 8))
+				&& P_IsObjectOnGround(player->mo) && player->speed != 0)
+			{
+				low = high = 65536 / 32;
+			}
 		}
 
 		G_PlayerDeviceRumble(i, low, high);
