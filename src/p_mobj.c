@@ -3358,6 +3358,16 @@ boolean P_CanRunOnWater(mobj_t *mobj, ffloor_t *rover)
 			}
 		}
 
+		// E-brake during water-run forces a fastfall.
+		// We disable the ebrake input safety to do this, so we've gotta check it as late as
+		// possible: otherwise, this would cause misinput fastfall or underwater twerking.
+		if (mobj->player != NULL && K_PlayerEBrake(mobj->player))
+		{
+			if (P_IsObjectOnGround(mobj) && !mobj->player->fastfall)
+				mobj->player->pflags &= ~PF_NOFASTFALL;
+			return false;
+		}
+
 		return true;
 	}
 
