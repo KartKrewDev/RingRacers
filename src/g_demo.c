@@ -858,7 +858,7 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 	if (ghost->player && (
 			ghostext[playernum].itemtype != ghost->player->itemtype ||
 			ghostext[playernum].itemamount != ghost->player->itemamount ||
-			ghostext[playernum].health < ghost->health
+			ghostext[playernum].health != ghost->health
 		))
 	{
 		ghostext[playernum].flags |= EZT_ITEMDATA;
@@ -1179,7 +1179,7 @@ void G_ConsGhostTic(INT32 playernum)
 
 		if (players[playernum].itemtype != ghostext[playernum].itemtype
 			|| players[playernum].itemamount != ghostext[playernum].itemamount
-			|| testmo->health < ghostext[playernum].health)
+			|| testmo->health != ghostext[playernum].health)
 		{
 			if (demosynced)
 				CONS_Alert(CONS_WARNING, M_GetText("Demo playback has desynced (item/bumpers)!\n"));
