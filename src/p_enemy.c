@@ -3862,6 +3862,7 @@ void A_AttractChase(mobj_t *actor)
 					S_StartSoundAtVolume(actor->target, sfx_s227, actor->target->player->ringvolume);
 
 				actor->target->player->ringvolume -= RINGVOLUMECOLLECTPENALTY;
+				actor->target->player->ringtransparency -= RINGTRANSPARENCYCOLLECTPENALTY;
 
 				actor->target->player->pickuprings--;
 				P_RemoveMobj(actor);

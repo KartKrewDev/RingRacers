@@ -490,6 +490,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT16(save->p, players[i].superring);
 		WRITEUINT8(save->p, players[i].nextringaward);
 		WRITEUINT8(save->p, players[i].ringvolume);
+		WRITEUINT8(save->p, players[i].ringtransparency);
 		WRITEUINT16(save->p, players[i].ringburst);
 
 		WRITEUINT8(save->p, players[i].curshield);
@@ -1063,6 +1064,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].superring = READUINT16(save->p);
 		players[i].nextringaward = READUINT8(save->p);
 		players[i].ringvolume = READUINT8(save->p);
+		players[i].ringtransparency = READUINT8(save->p);
 		players[i].ringburst = READUINT16(save->p);
 
 		players[i].curshield = READUINT8(save->p);

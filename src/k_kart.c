@@ -8762,6 +8762,14 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	else
 		player->ringvolume += RINGVOLUMEREGEN;
 
+	// :D
+	if (player->ringtransparency < MINRINGTRANSPARENCY)
+		player->ringtransparency = MINRINGTRANSPARENCY;
+	else if (MAXRINGTRANSPARENCY - player->ringtransparency < RINGTRANSPARENCYREGEN)
+		player->ringtransparency = MAXRINGTRANSPARENCY;
+	else
+		player->ringtransparency += RINGTRANSPARENCYREGEN;
+
 	if (player->sadtimer)
 		player->sadtimer--;
 
@@ -11772,6 +11780,20 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				{
 					mobj_t *ring = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_RING);
 					P_SetMobjState(ring, S_FASTRING1);
+
+					if (P_IsDisplayPlayer(player))
+					{
+						UINT8 startfade = 220;
+						UINT8 transfactor = 10 * (min(startfade, player->ringtransparency)) / startfade;
+						if (transfactor < 10)
+						{
+							transfactor = max(transfactor, 4);
+							ring->renderflags |= ((10-transfactor) << RF_TRANSSHIFT);
+							ring->renderflags |= RF_ADD;
+						}
+					}
+					player->ringtransparency -= RINGTRANSPARENCYUSEPENALTY;
+
 					ring->extravalue1 = 1; // Ring use animation timer
 					ring->extravalue2 = 1; // Ring use animation flag
 					ring->shadowscale = 0;
