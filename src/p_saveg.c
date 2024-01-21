@@ -47,6 +47,7 @@
 #include "g_party.h"
 #include "k_vote.h"
 #include "k_zvote.h"
+#include "k_endcam.h"
 
 #include <tracy/tracy/TracyC.h>
 
@@ -5745,6 +5746,12 @@ static void P_RelinkPointers(void)
 
 	P_LoadMobjPointers(RelinkMobjVoid);
 
+	if (g_endcam.panMobj)
+	{
+		if (!RelinkMobj(&g_endcam.panMobj))
+			CONS_Debug(DBG_GAMELOGIC, "g_endcam.panMobj not found\n");
+	}
+
 	// use info field (value = oldposition) to relink mobjs
 	for (currentthinker = thlist[THINK_MOBJ].next; currentthinker != &thlist[THINK_MOBJ];
 		currentthinker = currentthinker->next)
@@ -6868,6 +6875,9 @@ void P_SaveNetGame(savebuffer_t *save, boolean resending)
 		}
 	}
 
+	K_SaveEndCamera(save);
+	WriteMobjPointer(g_endcam.panMobj);
+
 	P_NetArchivePlayers(save);
 	P_NetArchiveParties(save);
 	P_NetArchiveRoundQueue(save);
@@ -6932,6 +6942,9 @@ boolean P_LoadNetGame(savebuffer_t *save, boolean reloading)
 
 	if (!P_NetUnArchiveMisc(save, reloading))
 		return false;
+
+	K_LoadEndCamera(save);
+	ReadMobjPointer(&g_endcam.panMobj);
 
 	P_NetUnArchivePlayers(save);
 	P_NetUnArchiveParties(save);

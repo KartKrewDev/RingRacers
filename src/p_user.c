@@ -67,6 +67,7 @@
 #include "music.h"
 #include "k_tally.h"
 #include "k_objects.h"
+#include "k_endcam.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_light.h"
@@ -3062,6 +3063,11 @@ void P_ToggleDemoCamera(UINT8 viewnum)
 
 void P_ResetCamera(player_t *player, camera_t *thiscam)
 {
+	if (g_endcam.active)
+	{
+		return;
+	}
+
 	tic_t tries = 0;
 	fixed_t x, y, z;
 
@@ -3155,7 +3161,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		num = 0;
 	}
 
-	if (thiscam->freecam || player->spectator)
+	if ((thiscam->freecam || player->spectator) && !g_endcam.active)
 	{
 		P_DemoCameraMovement(thiscam, num);
 		return true;
@@ -3163,6 +3169,12 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 	if (paused || P_AutoPause())
 		return true;
+
+	if (g_endcam.active)
+	{
+		K_MoveEndCamera(thiscam);
+		return true;
+	}
 
 	playerScale = FixedDiv(player->mo->scale, mapobjectscale);
 	scaleDiff = playerScale - FRACUNIT;
