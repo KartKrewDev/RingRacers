@@ -1975,7 +1975,7 @@ void G_Ticker(boolean run)
 				{
 					Music_Play("intermission");
 				}
-				else if (musiccountdown == MUSIC_COUNTDOWN_MAX - TALLY_TIME)
+				else if (musiccountdown == MUSIC_COUNTDOWN_MAX - K_TallyDelay())
 				{
 					P_EndingMusic();
 				}
