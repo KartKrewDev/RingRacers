@@ -560,6 +560,13 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				Obj_SetEmeraldAwardee(special, toucher);
 			}
 
+			// You have 6 emeralds and you touch the 7th: win instantly!
+			if (ALLCHAOSEMERALDS((player->emeralds | special->extravalue1)))
+			{
+				player->emeralds |= special->extravalue1;
+				K_CheckEmeralds(player);
+			}
+
 			return;
 		case MT_SPECIAL_UFO:
 			if (Obj_UFOEmeraldCollect(special, toucher) == false)

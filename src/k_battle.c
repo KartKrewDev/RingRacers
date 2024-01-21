@@ -207,6 +207,11 @@ void K_CheckEmeralds(player_t *player)
 		return;
 	}
 
+	if (player->exiting)
+	{
+		return;
+	}
+
 	player->roundscore = 100; // lmao
 
 	P_DoAllPlayersExit(0, false);
