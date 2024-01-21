@@ -43,7 +43,7 @@ UINT8 maptargets = 0; // Capsules in map
 UINT8 numtargets = 0; // Capsules busted
 
 // Battle: someone won by collecting all 7 Chaos Emeralds
-boolean g_emeraldWin = false;
+tic_t g_emeraldWin = 0;
 
 INT32 K_StartingBumperCount(void)
 {
@@ -210,7 +210,11 @@ void K_CheckEmeralds(player_t *player)
 	player->roundscore = 100; // lmao
 
 	P_DoAllPlayersExit(0, false);
-	g_emeraldWin = true;
+
+	// TODO: this would be better if the timing lived in
+	// Tally code. But I didn't do it that, so this just
+	// shittily approximates syncing up with Tally.
+	g_emeraldWin = leveltime + (3*TICRATE);
 }
 
 UINT16 K_GetChaosEmeraldColor(UINT32 emeraldType)
@@ -884,7 +888,7 @@ void K_BattleInit(boolean singleplayercontext)
 	g_battleufo.due = starttime;
 	g_battleufo.previousId = Obj_RandomBattleUFOSpawnerID() - 1;
 
-	g_emeraldWin = false;
+	g_emeraldWin = 0;
 }
 
 UINT8 K_Bumpers(player_t *player)

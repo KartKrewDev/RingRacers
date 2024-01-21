@@ -6471,7 +6471,7 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 	WRITEINT32(save->p, numgotboxes);
 	WRITEUINT8(save->p, numtargets);
 	WRITEUINT8(save->p, battleprisons);
-	WRITEUINT8(save->p, g_emeraldWin);
+	WRITEUINT32(save->p, g_emeraldWin);
 
 	WRITEUINT8(save->p, gamespeed);
 	WRITEUINT8(save->p, numlaps);
@@ -6657,7 +6657,7 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 	numgotboxes = READINT32(save->p);
 	numtargets = READUINT8(save->p);
 	battleprisons = (boolean)READUINT8(save->p);
-	g_emeraldWin = (boolean)READUINT8(save->p);
+	g_emeraldWin = (tic_t)READUINT32(save->p);
 
 	gamespeed = READUINT8(save->p);
 	numlaps = READUINT8(save->p);
