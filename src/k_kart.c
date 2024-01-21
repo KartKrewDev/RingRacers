@@ -50,6 +50,7 @@
 #include "k_tally.h"
 #include "music.h"
 #include "m_easing.h"
+#include "k_endcam.h"
 
 // SOME IMPORTANT VARIABLES DEFINED IN DOOMDEF.H:
 // gamespeed is cc (0 for easy, 1 for normal, 2 for hard)
@@ -3918,6 +3919,16 @@ void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UIN
 	{
 		player->roundscore = 100; // Make sure you win!
 		P_DoAllPlayersExit(0, false);
+
+		mobj_t *source = !P_MobjWasRemoved(inflictor) ? inflictor : player->mo;
+
+		K_StartRoundWinCamera(
+			victim->mo,
+			R_PointToAngle2(source->x, source->y, victim->mo->x, victim->mo->y) + ANGLE_135,
+			200*mapobjectscale,
+			8*TICRATE,
+			FRACUNIT/512
+		);
 	}
 
 	P_AddPlayerScore(player, points);

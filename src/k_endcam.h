@@ -58,6 +58,9 @@ extern endcam_t g_endcam;
 // function, so the camera can cut away cleanly.
 void K_CommitEndCamera(void);
 
+// Automatically set up a cool camera in one-shot.
+void K_StartRoundWinCamera(mobj_t *origin, angle_t focusAngle, fixed_t finalRadius, tic_t panDuration, fixed_t panSpeed);
+
 /// ...
 
 // Low-level functions

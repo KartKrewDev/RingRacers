@@ -195,3 +195,22 @@ void K_LoadEndCamera(savebuffer_t *save)
 {
 	endcam_cast().Archive(srb2::UnArchiveWrapper(save));
 }
+
+void K_StartRoundWinCamera(mobj_t *origin, angle_t focusAngle, fixed_t finalRadius, tic_t panDuration, fixed_t panSpeed)
+{
+	const fixed_t angF = AngleFixed(focusAngle);
+
+	g_endcam.origin = {origin->x, origin->y, P_GetMobjHead(origin)};
+	g_endcam.startRadius = {2400*mapobjectscale, 800*mapobjectscale};
+	g_endcam.endRadius = {finalRadius, finalRadius / 2};
+
+	g_endcam.swirlDuration = 3*TICRATE;
+	g_endcam.startAngle = angF + (90*FRACUNIT);
+	g_endcam.endAngle = angF + (720*FRACUNIT);
+
+	P_SetTarget(&g_endcam.panMobj, origin);
+	g_endcam.panDuration = panDuration;
+	g_endcam.panSpeed = panSpeed;
+
+	K_CommitEndCamera();
+}
