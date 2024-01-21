@@ -2362,6 +2362,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->checkpointId = checkpointId;
 
 	p->ringvolume = 255;
+	p->ringtransparency = 255;
 
 	p->topAccel = MAXTOPACCEL;
 
