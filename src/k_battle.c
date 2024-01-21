@@ -24,6 +24,7 @@
 #include "music.h"
 #include "hu_stuff.h"
 #include "m_easing.h"
+#include "k_endcam.h"
 
 #define BARRIER_MIN_RADIUS (768 * mapobjectscale)
 
@@ -220,6 +221,19 @@ void K_CheckEmeralds(player_t *player)
 	// Tally code. But I didn't do it that, so this just
 	// shittily approximates syncing up with Tally.
 	g_emeraldWin = leveltime + (3*TICRATE);
+
+	if (!P_MobjWasRemoved(player->mo))
+	{
+		K_StartRoundWinCamera(
+			player->mo,
+			player->angleturn + ANGLE_180,
+			400*mapobjectscale,
+			6*TICRATE,
+			FRACUNIT/16
+		);
+
+		g_emeraldWin += g_endcam.swirlDuration;
+	}
 }
 
 UINT16 K_GetChaosEmeraldColor(UINT32 emeraldType)
