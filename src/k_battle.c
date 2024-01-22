@@ -25,6 +25,7 @@
 #include "hu_stuff.h"
 #include "m_easing.h"
 #include "k_endcam.h"
+#include "p_tick.h"
 
 #define BARRIER_MIN_RADIUS (768 * mapobjectscale)
 
@@ -727,6 +728,36 @@ static void K_SpawnOvertimeLaser(fixed_t x, fixed_t y, fixed_t scale)
 	}
 }
 
+void K_SpawnOvertimeBarrier(void)
+{
+	if (battleovertime.radius <= 0)
+	{
+		return;
+	}
+
+	const INT32 orbs = 32;
+	const angle_t angoff = ANGLE_MAX / orbs;
+	const UINT8 spriteSpacing = 128;
+
+	fixed_t circumference = FixedMul(M_PI_FIXED, battleovertime.radius * 2);
+	fixed_t scale = max(circumference / spriteSpacing / orbs, mapobjectscale);
+
+	fixed_t size = FixedMul(mobjinfo[MT_OVERTIME_PARTICLE].radius, scale);
+	fixed_t posOffset = max(battleovertime.radius - size, 0);
+
+	INT32 i;
+
+	for (i = 0; i < orbs; i++)
+	{
+		angle_t ang = (i * angoff) + FixedAngle((leveltime * FRACUNIT) / 4);
+
+		fixed_t x = battleovertime.x + P_ReturnThrustX(NULL, ang, posOffset);
+		fixed_t y = battleovertime.y + P_ReturnThrustY(NULL, ang, posOffset);
+
+		K_SpawnOvertimeLaser(x, y, scale);
+	}
+}
+
 void K_RunBattleOvertime(void)
 {
 	if (battleovertime.enabled < 10*TICRATE)
@@ -784,29 +815,9 @@ void K_RunBattleOvertime(void)
 		}
 	}
 
-	if (battleovertime.radius > 0)
+	if (!P_LevelIsFrozen())
 	{
-		const INT32 orbs = 32;
-		const angle_t angoff = ANGLE_MAX / orbs;
-		const UINT8 spriteSpacing = 128;
-
-		fixed_t circumference = FixedMul(M_PI_FIXED, battleovertime.radius * 2);
-		fixed_t scale = max(circumference / spriteSpacing / orbs, mapobjectscale);
-
-		fixed_t size = FixedMul(mobjinfo[MT_OVERTIME_PARTICLE].radius, scale);
-		fixed_t posOffset = max(battleovertime.radius - size, 0);
-
-		INT32 i;
-
-		for (i = 0; i < orbs; i++)
-		{
-			angle_t ang = (i * angoff) + FixedAngle((leveltime * FRACUNIT) / 4);
-
-			fixed_t x = battleovertime.x + P_ReturnThrustX(NULL, ang, posOffset);
-			fixed_t y = battleovertime.y + P_ReturnThrustY(NULL, ang, posOffset);
-
-			K_SpawnOvertimeLaser(x, y, scale);
-		}
+		K_SpawnOvertimeBarrier();
 	}
 }
 

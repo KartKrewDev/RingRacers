@@ -45,6 +45,7 @@ mobj_t *K_SpawnSphereBox(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 f
 void K_DropEmeraldsFromPlayer(player_t *player, UINT32 emeraldType);
 UINT8 K_NumEmeralds(player_t *player);
 void K_RunPaperItemSpawners(void);
+void K_SpawnOvertimeBarrier(void);
 void K_RunBattleOvertime(void);
 void K_SetupMovingCapsule(mapthing_t *mt, mobj_t *mobj);
 void K_SpawnPlayerBattleBumpers(player_t *p);

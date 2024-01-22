@@ -15,6 +15,7 @@
 #include "doomdef.h"
 #include "doomtype.h"
 #include "g_game.h"
+#include "k_battle.h"
 #include "k_endcam.h"
 #include "m_easing.h"
 #include "p_local.h"
@@ -168,6 +169,10 @@ EndCam& endcam_cast()
 
 void K_CommitEndCamera(void)
 {
+	// Level will be frozen, so make sure the lasers are
+	// spawned before that happens.
+	K_SpawnOvertimeBarrier();
+
 	endcam_cast().Start();
 }
 
