@@ -789,7 +789,8 @@ static fixed_t P_GetDarkness(tic_t start, tic_t end)
 			t = end - leveltime;
 		}
 
-		return Easing_Linear((t * FRACUNIT) / DARKNESS_FADE_TIME, 0, FRACUNIT/7);
+		return Easing_Linear((t * FRACUNIT) / DARKNESS_FADE_TIME, 0,
+			(gametyperules & GTR_BUMPERS) ? FRACUNIT/3 : FRACUNIT/7);
 	}
 
 	return 0;
