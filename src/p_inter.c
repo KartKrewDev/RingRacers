@@ -2338,7 +2338,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 					P_Thrust(target, R_PointToAngle2(owner->x, owner->y, target->x, target->y), 4 * target->scale);
 				}
 
-				target->momz += (24 * target->scale) * P_MobjFlip(target);
+				target->momz += (18 * target->scale) * P_MobjFlip(target);
 				target->fuse = 8;
 
 				overlay = P_SpawnMobjFromMobj(target, 0, 0, 0, MT_OVERLAY);
