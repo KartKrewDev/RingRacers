@@ -13,6 +13,7 @@
 
 #include "byteptr.h"
 #include "doomdef.h"
+#include "doomstat.h"
 #include "doomtype.h"
 #include "g_game.h"
 #include "k_battle.h"
@@ -218,4 +219,7 @@ void K_StartRoundWinCamera(mobj_t *origin, angle_t focusAngle, fixed_t finalRadi
 	g_endcam.panSpeed = panSpeed;
 
 	K_CommitEndCamera();
+
+	g_darkness.start = leveltime;
+	g_darkness.end = leveltime + g_endcam.swirlDuration + DARKNESS_FADE_TIME;
 }
