@@ -76,6 +76,8 @@
 #define ARM_FRAMES (4)
 #define BULB_FRAMES (4)
 
+#define SELECTOR_FRAMES (2)
+
 #define CATCHER_SPEED (8*FRACUNIT)
 #define CATCHER_Y_OFFSET (48*FRACUNIT)
 #define CATCHER_OFFSCREEN (-CATCHER_Y_OFFSET * 2)
@@ -90,6 +92,8 @@
 #define SELECTION_SPACING_W (SELECTION_WIDTH + SELECTION_SPACE)
 #define SELECTION_SPACING_H (SELECTION_HEIGHT + SELECTION_SPACE)
 #define SELECTION_HOP (10*FRACUNIT)
+
+#define SELECTOR_Y ((SELECTION_HEIGHT / 2) + (4*FRACUNIT))
 
 #define PILE_WIDTH (46*FRACUNIT)
 #define PILE_HEIGHT ((PILE_WIDTH * BASEVIDHEIGHT) / BASEVIDWIDTH)
@@ -146,6 +150,7 @@ typedef struct
 	SINT8 selection;
 	UINT8 delay;
 	boolean sentTimeOutVote;
+	fixed_t x, destX;
 } y_vote_player;
 
 // Vote "pile" data. Objects for each vote scattered about.
@@ -188,6 +193,13 @@ typedef struct
 	fixed_t hop;
 } y_vote_draw_level;
 
+// Voting selector drawing
+typedef struct
+{
+	fixed_t x;
+	fixed_t destX;
+} y_vote_draw_selector;
+
 // General vote drawing
 typedef struct
 {
@@ -206,6 +218,9 @@ typedef struct
 
 	fixed_t selectTransition;
 	y_vote_draw_level levels[VOTE_NUM_LEVELS];
+
+	patch_t *selector_patch[MAXSPLITSCREENPLAYERS][2];
+	y_vote_draw_selector selectors[MAXSPLITSCREENPLAYERS];
 } y_vote_draw;
 
 static y_vote_data vote = {0};
@@ -239,6 +254,28 @@ boolean Y_PlayerIDCanVote(const UINT8 playerId)
 	}
 
 	return true;
+}
+
+static boolean Y_PlayerCanSelect(const UINT8 localId)
+{
+	const UINT8 p = g_localplayers[localId];
+
+	if (g_pickedVote != VOTE_NOT_PICKED)
+	{
+		return false;
+	}
+
+	if (g_votes[p] != VOTE_NOT_PICKED)
+	{
+		return false;
+	}
+
+	if (vote.players[localId].catcher.action != CATCHER_NA)
+	{
+		return false;
+	}
+
+	return Y_PlayerIDCanVote(p);
 }
 
 static void Y_SortPile(void)
@@ -697,6 +734,30 @@ static void Y_DrawVoteBackground(void)
 	bgTimer += renderdeltatics;
 }
 
+static void Y_DrawVoteSelector(const fixed_t y, const UINT8 localPlayer)
+{
+	const fixed_t destX = SELECTION_X + (vote.players[localPlayer].selection * SELECTION_SPACING_W);
+	vote_draw.selectors[localPlayer].x += FixedMul(
+		(destX - vote_draw.selectors[localPlayer].x) * 3 / 4,
+		renderdeltatics
+	);
+
+	if (Y_PlayerCanSelect(localPlayer) == false)
+	{
+		return;
+	}
+
+	UINT8 blink = ((vote.tic / 7) & 1);
+	UINT8 *colormap = R_GetTranslationColormap(TC_RAINBOW, players[g_localplayers[localPlayer]].skincolor, GTC_CACHE);
+
+	V_DrawFixedPatch(
+		vote_draw.selectors[localPlayer].x, y - SELECTOR_Y,
+		FRACUNIT, 0,
+		vote_draw.selector_patch[localPlayer][blink],
+		colormap
+	);
+}
+
 static void Y_DrawVoteSelection(fixed_t offset)
 {
 	fixed_t x = SELECTION_X;
@@ -709,7 +770,6 @@ static void Y_DrawVoteSelection(fixed_t offset)
 	for (i = 0; i < VOTE_NUM_LEVELS; i++)
 	{
 		boolean selected = false;
-		INT32 flags = 0;
 		fixed_t destHop = 0;
 		INT32 j;
 
@@ -743,7 +803,7 @@ static void Y_DrawVoteSelection(fixed_t offset)
 
 		Y_DrawVoteThumbnail(
 			x, y - vote_draw.levels[i].hop,
-			SELECTION_WIDTH, flags,
+			SELECTION_WIDTH, 0,
 			i, (selected == false),
 			-1
 		);
@@ -757,6 +817,26 @@ static void Y_DrawVoteSelection(fixed_t offset)
 	for (i = 0; i <= splitscreen; i++)
 	{
 		Y_DrawCatcher(&vote.players[i].catcher);
+	}
+
+	//
+	// Draw splitscreen selectors
+	//
+	//if (splitscreen > 0)
+	{
+		const UINT8 priority = vote.tic % (splitscreen + 1);
+
+		for (i = 0; i <= splitscreen; i++)
+		{
+			if (i == priority)
+			{
+				continue;
+			}
+
+			Y_DrawVoteSelector(y, i);
+		}
+
+		Y_DrawVoteSelector(y, priority);
 	}
 }
 
@@ -1191,28 +1271,6 @@ static void Y_TickVoteRoulette(void)
 	}
 }
 
-static boolean Y_PlayerCanSelect(const UINT8 localId)
-{
-	const UINT8 p = g_localplayers[localId];
-
-	if (g_pickedVote != VOTE_NOT_PICKED)
-	{
-		return false;
-	}
-
-	if (g_votes[p] != VOTE_NOT_PICKED)
-	{
-		return false;
-	}
-
-	if (vote.players[localId].catcher.action != CATCHER_NA)
-	{
-		return false;
-	}
-
-	return Y_PlayerIDCanVote(p);
-}
-
 static void Y_TryMapAngerVote(void)
 {
 	SINT8 angryMaps[VOTE_NUM_LEVELS] = { -1 };
@@ -1491,7 +1549,7 @@ void Y_VoteTicker(void)
 //
 static void Y_InitVoteDrawing(void)
 {
-	INT32 i = 0;
+	INT32 i = 0, j = 0;
 
 	vote_draw.ruby_icon = W_CachePatchName("RUBYICON", PU_STATIC);
 
@@ -1555,6 +1613,18 @@ static void Y_InitVoteDrawing(void)
 		vote_draw.levels[i].str[sizeof vote_draw.levels[i].str - 1] = '\0';
 	}
 
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		y_vote_player *const player = &vote.players[i];
+
+		vote_draw.selectors[i].x = vote_draw.selectors[i].destX = SELECTION_X + (player->selection * SELECTION_SPACING_W);
+
+		for (j = 0; j < SELECTOR_FRAMES; j++)
+		{
+			vote_draw.selector_patch[i][j] = W_CachePatchName(va("K_SSPL%c%d", 'A' + i, j + 1), PU_STATIC);
+		}
+	}
+
 	vote_draw.selectTransition = FRACUNIT;
 }
 
@@ -1580,6 +1650,8 @@ void Y_StartVote(void)
 	{
 		y_vote_player *const player = &vote.players[i];
 		y_vote_catcher *const catcher = &player->catcher;
+
+		player->selection = (i % VOTE_NUM_LEVELS);
 
 		catcher->action = CATCHER_NA;
 		catcher->small = false;
@@ -1639,6 +1711,14 @@ static void Y_UnloadVoteData(void)
 		for (i = 0; i < BULB_FRAMES; i++)
 		{
 			UNLOAD(vote_draw.catcher_bulb[j][i]);
+		}
+	}
+
+	for (j = 0; j < MAXSPLITSCREENPLAYERS; j++)
+	{
+		for (i = 0; i < SELECTOR_FRAMES; i++)
+		{
+			UNLOAD(vote_draw.selector_patch[j][i]);
 		}
 	}
 }
