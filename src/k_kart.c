@@ -8921,19 +8921,22 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 				P_DamageMobj(player->mo, NULL, NULL, 1, DMG_TIMEOVER);
 			}
 
-			if (leveltime < player->darkness_end)
+			if (!player->exiting && !(player->pflags & PF_ELIMINATED))
 			{
-				if (leveltime > player->darkness_end - DARKNESS_FADE_TIME)
+				if (leveltime < player->darkness_end)
 				{
-					player->darkness_start = leveltime - (player->darkness_end - leveltime);
+					if (leveltime > player->darkness_end - DARKNESS_FADE_TIME)
+					{
+						player->darkness_start = leveltime - (player->darkness_end - leveltime);
+					}
 				}
-			}
-			else
-			{
-				player->darkness_start = leveltime;
-			}
+				else
+				{
+					player->darkness_start = leveltime;
+				}
 
-			player->darkness_end = leveltime + (2 * DARKNESS_FADE_TIME);
+				player->darkness_end = leveltime + (2 * DARKNESS_FADE_TIME);
+			}
 		}
 	}
 

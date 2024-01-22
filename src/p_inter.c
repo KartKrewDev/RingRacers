@@ -1799,6 +1799,11 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			if (battleovertime.enabled >= 10*TICRATE) // Overtime Barrier is armed
 			{
 				target->player->pflags |= PF_ELIMINATED;
+				if (target->player->darkness_end < leveltime)
+				{
+					target->player->darkness_start = leveltime;
+				}
+				target->player->darkness_end = INFTICS;
 			}
 
 			K_CheckBumpers();
