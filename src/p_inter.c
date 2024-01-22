@@ -1764,7 +1764,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 		target->flags &= ~(MF_SOLID|MF_SHOOTABLE); // does not block
 		P_UnsetThingPosition(target);
-		target->flags |= MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY;
+		target->flags |= MF_NOBLOCKMAP|MF_NOCLIPTHING|MF_NOGRAVITY;
 		P_SetThingPosition(target);
 		target->standingslope = NULL;
 		target->terrain = NULL;
@@ -1967,6 +1967,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		case MT_PLAYER:
 			if (damagetype != DMG_SPECTATOR)
 			{
+				fixed_t flingSpeed = FixedHypot(target->momx, target->momy);
 				angle_t flingAngle;
 				mobj_t *kart;
 
@@ -2019,8 +2020,18 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				// so make sure that this draws at the correct angle.
 				target->rollangle = 0;
 
-				P_InstaThrust(target, flingAngle, 14 * target->scale);
-				P_SetObjectMomZ(target, 14*FRACUNIT, false);
+				fixed_t inflictorSpeed = 0;
+				if (!P_MobjWasRemoved(inflictor))
+				{
+					inflictorSpeed = FixedHypot(inflictor->momx, inflictor->momy);
+					if (inflictorSpeed > flingSpeed)
+					{
+						flingSpeed = inflictorSpeed;
+					}
+				}
+
+				P_InstaThrust(target, flingAngle, max(flingSpeed, 14 * target->scale));
+				P_SetObjectMomZ(target, 20*FRACUNIT, false);
 
 				P_PlayDeathSound(target);
 			}

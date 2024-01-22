@@ -1969,7 +1969,7 @@ void P_XYMovement(mobj_t *mo)
 		return;
 	//}
 
-	if (((!(mo->eflags & MFE_VERTICALFLIP) && mo->z > mo->floorz) || (mo->eflags & MFE_VERTICALFLIP && mo->z+mo->height < mo->ceilingz))
+	if (((!(mo->eflags & MFE_VERTICALFLIP) && (mo->momz > 0 || mo->z > mo->floorz)) || (mo->eflags & MFE_VERTICALFLIP && (mo->momz < 0 || mo->z+mo->height < mo->ceilingz)))
 		&& !(player && player->carry == CR_SLIDING))
 		return; // no friction when airborne
 
@@ -2500,6 +2500,11 @@ boolean P_ZMovement(mobj_t *mo)
 		{
 			mom.x = mom.y = 0;
 			mom.z = -mom.z/2;
+		}
+		else if (mo->type == MT_PLAYER) // only DEAD players
+		{
+			mom.z = -mom.z;
+			mo->flags |= MF_NOCLIP | MF_NOCLIPHEIGHT; // fall through floor next time
 		}
 		else if (mo->flags & MF_MISSILE)
 		{

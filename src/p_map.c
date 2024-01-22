@@ -4140,7 +4140,12 @@ static void P_BouncePlayerMove(mobj_t *mo, TryMoveResult_t *result)
 		);
 	}
 
-	if (mo->eflags & MFE_JUSTBOUNCEDWALL) // Stronger push-out
+	if (mo->health <= 0)
+	{
+		tmxmove = mo->momx;
+		tmymove = mo->momy;
+	}
+	else if (mo->eflags & MFE_JUSTBOUNCEDWALL) // Stronger push-out
 	{
 		tmxmove = mmomx;
 		tmymove = mmomy;
@@ -4176,6 +4181,11 @@ static void P_BouncePlayerMove(mobj_t *mo, TryMoveResult_t *result)
 	mo->momy = tmymove;
 	mo->player->cmomx = tmxmove;
 	mo->player->cmomy = tmymove;
+
+	if (mo->health <= 0)
+	{
+		mo->momz = 16 * mapobjectscale;
+	}
 
 	if (!bestslideline || !P_IsLineTripWire(bestslideline))
 	{
