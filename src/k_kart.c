@@ -3897,6 +3897,12 @@ void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UIN
 		return;
 	}
 
+	if (player->exiting)
+	{
+		// The round has already ended, don't mess with points
+		return;
+	}
+
 	if ((inflictor && !P_MobjWasRemoved(inflictor)) && (inflictor->type == MT_BANANA && inflictor->health > 1))
 	{
 		trapItem = true;
