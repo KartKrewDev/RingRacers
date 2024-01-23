@@ -1189,6 +1189,10 @@ static boolean HWR_AllowModel(mobj_t *mobj)
 	if (mobj->state-states == S_KART_SIGN)
 		return false;
 
+	// Ring Shooter face overlay, don't allow.
+	if (mobj->sprite2 == SPR2_XTRA)
+		return false;
+
 	// Otherwise, render the model.
 	return true;
 }
