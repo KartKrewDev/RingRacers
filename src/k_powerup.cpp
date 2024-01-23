@@ -88,6 +88,11 @@ void K_GivePowerUp(player_t* player, kartitems_t powerup, tic_t time)
 		}
 		break;
 
+	case POWERUP_POINTS:
+		K_AddMessageForPlayer(player, "Got 6 POINTS!", true, false);
+		K_GivePointsToPlayer(player, nullptr, 6);
+		break;
+
 	default:
 		break;
 	}
