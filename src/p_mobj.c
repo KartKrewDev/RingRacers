@@ -5989,6 +5989,29 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 					P_SpawnGhostMobj(mobj);
 					P_SpawnGhostMobj(mobj->target);
 				}
+
+				// And because this needs to inherit player-lock renderflags,
+				// may as well do that logic in here too. Groooooooooss
+				boolean locked = true;
+				UINT32 lockflag = RF_TRANS40;
+				if (!mobj->target->extravalue1)
+					locked = false;
+				else if (mobj->target->extravalue1 < TICRATE && (mobj->target->extravalue1 % 2))
+					locked = false;
+
+				mobj->target->colorized = false;
+				mobj->target->renderflags &= ~lockflag;
+				mobj->renderflags &= ~lockflag;
+				if (locked)
+				{
+					mobj->target->colorized = true;
+					if ((r_splitscreen == 0) && !P_MobjWasRemoved(mobj->target->tracer)
+						&& mobj->target->tracer->player && !P_IsDisplayPlayer(mobj->target->tracer->player))
+					{
+						mobj->target->renderflags |= lockflag;
+						mobj->renderflags |= lockflag;
+					}
+				}
 				break;
 
 			default:
@@ -7603,14 +7626,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		K_UpdateMobjItemOverlay(mobj, mobj->threshold, mobj->movecount);
 
+		// ACHTUNG HACK - this is the player-lock timer used when breaking monitors,
+		// but the visual side-effects of this are in the MT_OVERLAY thinker so that
+		// the backdrop can also go transparent. EUUUAUUAUUAAAUUUUGGGHGHHHHHHHGSSS
 		if (mobj->extravalue1 > 0)
-		{
 			mobj->extravalue1--;
-			if (mobj->extravalue1 < TICRATE)
-			{
-				mobj->colorized = mobj->extravalue1 & 1;
-			}
-		}
+			
 		break;
 	}
 	case MT_ITEMCAPSULE:
