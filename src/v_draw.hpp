@@ -38,6 +38,7 @@ public:
 		kZVote,
 		kPing,
 		kTimer,
+		kThinTimer,
 		kMenu,
 	};
 
@@ -171,7 +172,7 @@ public:
 		TextElement text() const { return TextElement().font(font_).flags(flags_); }
 
 		void patch(patch_t* patch) const;
-		void patch(const char* name) const;
+		void patch(const char* name) const { patch(Draw::cache_patch(name)); }
 
 		void thumbnail(UINT16 mapnum) const;
 
@@ -179,6 +180,10 @@ public:
 
 		void button(Button type, std::optional<bool> press = {}) const { button_(type, 0, press); }
 		void small_button(Button type, std::optional<bool> press = {}) const { button_(type, 1, press); }
+
+		void sticker(patch_t* end_graphic, UINT8 color) const;
+		void sticker() const { sticker(Draw::cache_patch("K_STIKEN"), 24); }
+		void small_sticker() const { sticker(Draw::cache_patch("K_STIKE2"), 24); }
 
 	private:
 		constexpr Chain() {}
@@ -216,6 +221,8 @@ public:
 
 		friend Draw;
 	};
+
+	static patch_t* cache_patch(const char* name);
 
 	constexpr Draw() {}
 	explicit Draw(float x, float y) : chain_(x, y) {}
@@ -259,6 +266,8 @@ public:
 	VOID_METHOD(fill);
 	VOID_METHOD(button);
 	VOID_METHOD(small_button);
+	VOID_METHOD(sticker);
+	VOID_METHOD(small_sticker);
 
 #undef VOID_METHOD
 

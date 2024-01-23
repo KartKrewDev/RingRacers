@@ -560,6 +560,13 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				Obj_SetEmeraldAwardee(special, toucher);
 			}
 
+			// You have 6 emeralds and you touch the 7th: win instantly!
+			if (ALLCHAOSEMERALDS((player->emeralds | special->extravalue1)))
+			{
+				player->emeralds |= special->extravalue1;
+				K_CheckEmeralds(player);
+			}
+
 			return;
 		case MT_SPECIAL_UFO:
 			if (Obj_UFOEmeraldCollect(special, toucher) == false)
@@ -1757,7 +1764,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 		target->flags &= ~(MF_SOLID|MF_SHOOTABLE); // does not block
 		P_UnsetThingPosition(target);
-		target->flags |= MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY;
+		target->flags |= MF_NOBLOCKMAP|MF_NOCLIPTHING|MF_NOGRAVITY;
 		P_SetThingPosition(target);
 		target->standingslope = NULL;
 		target->terrain = NULL;
@@ -1792,6 +1799,11 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			if (battleovertime.enabled >= 10*TICRATE) // Overtime Barrier is armed
 			{
 				target->player->pflags |= PF_ELIMINATED;
+				if (target->player->darkness_end < leveltime)
+				{
+					target->player->darkness_start = leveltime;
+				}
+				target->player->darkness_end = INFTICS;
 			}
 
 			K_CheckBumpers();
@@ -1960,6 +1972,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		case MT_PLAYER:
 			if (damagetype != DMG_SPECTATOR)
 			{
+				fixed_t flingSpeed = FixedHypot(target->momx, target->momy);
 				angle_t flingAngle;
 				mobj_t *kart;
 
@@ -2012,8 +2025,18 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				// so make sure that this draws at the correct angle.
 				target->rollangle = 0;
 
-				P_InstaThrust(target, flingAngle, 14 * target->scale);
-				P_SetObjectMomZ(target, 14*FRACUNIT, false);
+				fixed_t inflictorSpeed = 0;
+				if (!P_MobjWasRemoved(inflictor))
+				{
+					inflictorSpeed = FixedHypot(inflictor->momx, inflictor->momy);
+					if (inflictorSpeed > flingSpeed)
+					{
+						flingSpeed = inflictorSpeed;
+					}
+				}
+
+				P_InstaThrust(target, flingAngle, max(flingSpeed, 14 * target->scale));
+				P_SetObjectMomZ(target, 20*FRACUNIT, false);
 
 				P_PlayDeathSound(target);
 			}
@@ -2331,7 +2354,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 					P_Thrust(target, R_PointToAngle2(owner->x, owner->y, target->x, target->y), 4 * target->scale);
 				}
 
-				target->momz += (24 * target->scale) * P_MobjFlip(target);
+				target->momz += (18 * target->scale) * P_MobjFlip(target);
 				target->fuse = 8;
 
 				overlay = P_SpawnMobjFromMobj(target, 0, 0, 0, MT_OVERLAY);
@@ -2827,6 +2850,15 @@ static boolean P_FlashingException(const player_t *player, const mobj_t *inflict
 	if (!inflictor)
 	{
 		// Sector damage always behaves the same.
+		return false;
+	}
+
+	if (inflictor->type == MT_SSMINE)
+	{
+		// Mine's first hit is DMG_EXPLODE.
+		// Afterward, it leaves a spinout hitbox which remains for a short period.
+		// If the spinout hitbox ignored flashing tics, you would be combod every tic and die instantly.
+		// DMG_EXPLODE already ignores flashing tics (correct behavior).
 		return false;
 	}
 

@@ -115,6 +115,7 @@
 #include "music.h"
 #include "k_dialogue.h"
 #include "k_hud.h" // K_ClearPersistentMessages
+#include "k_endcam.h"
 
 // Replay names have time
 #if !defined (UNDER_CE)
@@ -7696,6 +7697,8 @@ static void P_InitLevelSettings(void)
 
 	K_ResetSpecialStage();
 	K_ResetBossInfo();
+
+	memset(&g_endcam, 0, sizeof g_endcam);
 }
 
 #if 0

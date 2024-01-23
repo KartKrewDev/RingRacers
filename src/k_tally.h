@@ -20,8 +20,7 @@
 
 #define TALLY_WINDOW_SIZE (2)
 
-#define TALLY_TIME (3*TICRATE)
-#define MUSIC_COUNTDOWN_MAX (TALLY_TIME + 8*TICRATE)
+#define MUSIC_COUNTDOWN_MAX (K_TallyDelay() + 8*TICRATE)
 
 typedef enum
 {
@@ -119,6 +118,7 @@ void K_InitPlayerTally(player_t *player);
 void K_TickPlayerTally(player_t *player);
 void K_DrawPlayerTally(void);
 boolean K_PlayerTallyActive(player_t *player);
+tic_t K_TallyDelay(void);
 
 #ifdef __cplusplus
 } // extern "C"

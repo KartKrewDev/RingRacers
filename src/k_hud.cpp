@@ -114,6 +114,7 @@ static patch_t *kp_rankcapsule;
 static patch_t *kp_rankemerald;
 static patch_t *kp_rankemeraldflash;
 static patch_t *kp_rankemeraldback;
+static patch_t *kp_pts[2];
 
 static patch_t *kp_goal[2][2]; // [skull][4p]
 static patch_t *kp_goalrod[2]; // [4p]
@@ -451,7 +452,7 @@ void K_LoadKartHUDGraphics(void)
 
 	// Extra ranking icons
 	HU_UpdatePatch(&kp_rankbumper, "K_BLNICO");
-	HU_UpdatePatch(&kp_bigbumper, "K_BLNBIG");
+	HU_UpdatePatch(&kp_bigbumper, "K_BLNREG");
 	HU_UpdatePatch(&kp_tinybumper[0], "K_BLNA");
 	HU_UpdatePatch(&kp_tinybumper[1], "K_BLNB");
 	HU_UpdatePatch(&kp_ranknobumpers, "K_NOBLNS");
@@ -459,6 +460,8 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_rankemerald, "K_EMERC");
 	HU_UpdatePatch(&kp_rankemeraldflash, "K_EMERW");
 	HU_UpdatePatch(&kp_rankemeraldback, "K_EMERBK");
+	HU_UpdatePatch(&kp_pts[0], "K_POINTS");
+	HU_UpdatePatch(&kp_pts[1], "K_POINT4");
 
 	// Battle goal
 	HU_UpdatePatch(&kp_goal[0][0], "K_ST1GLA");
@@ -3356,7 +3359,22 @@ static void K_drawKartBumpersOrKarma(void)
 			}
 		}
 
-		V_DrawScaledPatch(fx-2 + (flipflag ? (SHORT(kp_ringstickersplit[1]->width) - 3) : 0), fy, V_HUDTRANS|V_SLIDEIN|splitflags|flipflag, kp_ringstickersplit[0]);
+		{
+			using srb2::Draw;
+			int width = 39;
+			if (!battleprisons)
+			{
+				constexpr int kPad = 16;
+				if (flipflag)
+					fx -= kPad;
+				width += kPad;
+			}
+			Draw(fx-1 + (flipflag ? width + 3 : 0), fy+1)
+				.flags(V_HUDTRANS|V_SLIDEIN|splitflags)
+				.align(flipflag ? Draw::Align::kRight : Draw::Align::kLeft)
+				.width(width)
+				.small_sticker();
+		}
 
 		fx += 2;
 
@@ -3392,12 +3410,18 @@ static void K_drawKartBumpersOrKarma(void)
 
 			V_DrawMappedPatch(fx-1, fy-2, V_HUDTRANS|V_SLIDEIN|splitflags, kp_rankbumper, colormap);
 
-			UINT8 ln[2];
-			ln[0] = (bumpers / 10 % 10);
-			ln[1] = (bumpers % 10);
-
-			V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[ln[0]]);
-			V_DrawScaledPatch(fx+19, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[ln[1]]);
+			using srb2::Draw;
+			Draw row = Draw(fx+12, fy).flags(V_HUDTRANS|V_SLIDEIN|splitflags).font(Draw::Font::kPing);
+			row.text("{:02}", bumpers);
+			if (g_pointlimit <= stplyr->roundscore && leveltime % 8 < 4)
+			{
+				row = row.colorize(SKINCOLOR_TANGERINE);
+			}
+			row.xy(10, -2).patch(kp_pts[1]);
+			row
+				.x(31)
+				.flags(g_pointlimit <= stplyr->roundscore ? V_STRINGDANCE : 0)
+				.text("{:02}", stplyr->roundscore);
 		}
 	}
 	else
@@ -3421,9 +3445,21 @@ static void K_drawKartBumpersOrKarma(void)
 				fy += 2;
 			}
 
-			K_DrawSticker(LAPS_X+12, fy+5, bumpers > 9 ? 64 : 52, V_HUDTRANS|V_SLIDEIN|splitflags, false);
-			V_DrawMappedPatch(LAPS_X+15, fy-5, V_HUDTRANS|V_SLIDEIN|splitflags, kp_bigbumper, colormap);
-			V_DrawTimerString(LAPS_X+47, fy+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d", bumpers));
+			K_DrawSticker(LAPS_X+12, fy+5, 75, V_HUDTRANS|V_SLIDEIN|splitflags, false);
+			V_DrawMappedPatch(LAPS_X+12, fy-2, V_HUDTRANS|V_SLIDEIN|splitflags, kp_bigbumper, colormap);
+
+			using srb2::Draw;
+			Draw row = Draw(LAPS_X+12+23+1, fy+3).flags(V_HUDTRANS|V_SLIDEIN|splitflags).font(Draw::Font::kThinTimer);
+			row.text("{:02}", bumpers);
+			if (g_pointlimit <= stplyr->roundscore && leveltime % 8 < 4)
+			{
+				row = row.colorize(SKINCOLOR_TANGERINE);
+			}
+			row.xy(12, -2).patch(kp_pts[0]);
+			row
+				.x(12+27)
+				.flags(g_pointlimit <= stplyr->roundscore ? V_STRINGDANCE : 0)
+				.text("{:02}", stplyr->roundscore);
 		}
 	}
 }
@@ -5851,10 +5887,16 @@ void K_drawKartHUD(void)
 		K_drawKartFirstPerson();
 
 	// Draw full screen stuff that turns off the rest of the HUD
-	if (mapreset && R_GetViewNumber() == 0)
+	if (R_GetViewNumber() == 0)
 	{
-		K_drawChallengerScreen();
-		return;
+		if (mapreset)
+		{
+			K_drawChallengerScreen();
+			return;
+		}
+
+		if (g_emeraldWin)
+			K_drawEmeraldWin(false);
 	}
 
 	if (!demo.title)
@@ -6069,14 +6111,14 @@ void K_drawKartHUD(void)
 		K_drawSpectatorHUD(false);
 	}
 
+	if (R_GetViewNumber() == 0 && g_emeraldWin)
+		K_drawEmeraldWin(true);
+
 	if (modeattacking || freecam) // everything after here is MP and debug only
 		return;
 
 	if ((gametyperules & GTR_KARMA) && !r_splitscreen && (stplyr->karthud[khud_yougotem] % 2)) // * YOU GOT EM *
 		V_DrawScaledPatch(BASEVIDWIDTH/2 - (SHORT(kp_yougotem->width)/2), 32, V_HUDTRANS, kp_yougotem);
-
-	if (g_emeraldWin)
-		K_drawEmeraldWin();
 
 	// Draw FREE PLAY.
 	K_drawKartFreePlay();

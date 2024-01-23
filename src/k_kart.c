@@ -50,6 +50,7 @@
 #include "k_tally.h"
 #include "music.h"
 #include "m_easing.h"
+#include "k_endcam.h"
 
 // SOME IMPORTANT VARIABLES DEFINED IN DOOMDEF.H:
 // gamespeed is cc (0 for easy, 1 for normal, 2 for hard)
@@ -3851,7 +3852,7 @@ void K_DoGuardBreak(mobj_t *t1, mobj_t *t2) {
 	K_AddMessageForPlayer(t2->player, "Smashed 'em!", false, false);
 	K_AddMessageForPlayer(t1->player, "BARRIER BREAK!!", false, false);
 
-	angle_t thrangle = R_PointToAngle2(t1->x, t1->y, t2->x, t2->y);
+	angle_t thrangle = R_PointToAngle2(t2->x, t2->y, t1->x, t1->y);
 	P_Thrust(t1, thrangle, 7*mapobjectscale);
 
 	P_DamageMobj(t1, t2, t2, 1, DMG_TUMBLE);
@@ -3918,6 +3919,16 @@ void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UIN
 	{
 		player->roundscore = 100; // Make sure you win!
 		P_DoAllPlayersExit(0, false);
+
+		mobj_t *source = !P_MobjWasRemoved(inflictor) ? inflictor : player->mo;
+
+		K_StartRoundWinCamera(
+			victim->mo,
+			R_PointToAngle2(source->x, source->y, victim->mo->x, victim->mo->y) + ANGLE_135,
+			200*mapobjectscale,
+			8*TICRATE,
+			FRACUNIT/512
+		);
 	}
 
 	P_AddPlayerScore(player, points);
@@ -8910,19 +8921,22 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 				P_DamageMobj(player->mo, NULL, NULL, 1, DMG_TIMEOVER);
 			}
 
-			if (leveltime < player->darkness_end)
+			if (!player->exiting && !(player->pflags & PF_ELIMINATED))
 			{
-				if (leveltime > player->darkness_end - DARKNESS_FADE_TIME)
+				if (leveltime < player->darkness_end)
 				{
-					player->darkness_start = leveltime - (player->darkness_end - leveltime);
+					if (leveltime > player->darkness_end - DARKNESS_FADE_TIME)
+					{
+						player->darkness_start = leveltime - (player->darkness_end - leveltime);
+					}
 				}
-			}
-			else
-			{
-				player->darkness_start = leveltime;
-			}
+				else
+				{
+					player->darkness_start = leveltime;
+				}
 
-			player->darkness_end = leveltime + (2 * DARKNESS_FADE_TIME);
+				player->darkness_end = leveltime + (2 * DARKNESS_FADE_TIME);
+			}
 		}
 	}
 

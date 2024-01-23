@@ -525,7 +525,7 @@ void level_tally_t::Init(player_t *player)
 		}
 	}
 
-	delay = TALLY_TIME; // sync up with musiccountdown
+	delay = K_TallyDelay(); // sync up with musiccountdown
 
 	if (game_over == true)
 	{
@@ -1403,4 +1403,9 @@ void K_DrawPlayerTally(void)
 boolean K_PlayerTallyActive(player_t *player)
 {
 	return player->tally.active; //(player->exiting || (player->pflags & PF_NOCONTEST));
+}
+
+tic_t K_TallyDelay(void)
+{
+	return ((gametyperules & GTR_BUMPERS) ? 4 : 3) * TICRATE;
 }

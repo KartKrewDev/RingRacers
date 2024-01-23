@@ -2273,6 +2273,7 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 			}
 			break;
 		case TINY_FONT:
+		case TINYTIMER_FONT:
 			result->spacew = 2;
 			switch (spacing)
 			{
@@ -2331,6 +2332,7 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 		case HU_FONT:
 		case MENU_FONT:
 		case TINY_FONT:
+		case TINYTIMER_FONT:
 		case KART_FONT:
 			result->lfh = 12;
 			break;
@@ -2381,6 +2383,7 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 				result->dim_fn = BunchedCharacterDim;
 			break;
 		case TINY_FONT:
+		case TINYTIMER_FONT:
 			if (result->chw)
 				result->dim_fn = FixedCharacterDim;
 			else

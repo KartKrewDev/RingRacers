@@ -260,6 +260,12 @@ void K_SetHitLagForObjects(mobj_t *victim, mobj_t *inflictor, mobj_t *source, IN
 		return;
 	}
 
+	if (P_MobjWasRemoved(inflictor) == false && inflictor->type == MT_BUBBLESHIELD)
+	{
+		// Bubble blow-up: hitlag is based on player's speed
+		inflictor = source;
+	}
+
 	if (P_MobjWasRemoved(victim) == false && P_MobjWasRemoved(inflictor) == false)
 	{
 		const fixed_t speedTicFactor = (mapobjectscale * 8);

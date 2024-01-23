@@ -132,11 +132,6 @@ void Chain::patch(patch_t* patch) const
 	V_DrawStretchyFixedPatch(FloatToFixed(x_), FloatToFixed(y_), h * scale_, v * scale_, flags_, patch, colormap_);
 }
 
-void Chain::patch(const char* name) const
-{
-	patch(static_cast<patch_t*>(W_CachePatchName(name, PU_CACHE)));
-}
-
 void Chain::thumbnail(UINT16 mapnum) const
 {
 	const auto _ = Clipper(*this);
@@ -224,6 +219,36 @@ void Chain::button_(Button type, int ver, std::optional<bool> press) const
 	}
 }
 
+void Chain::sticker(patch_t* end_graphic, UINT8 color) const
+{
+	const auto _ = Clipper(*this);
+
+	INT32 x = x_;
+	INT32 y = y_;
+	INT32 width = width_;
+	INT32 flags = flags_ | V_FLIP;
+
+	auto fill = [&](int x, int width) { V_DrawFill(x, y, width, SHORT(end_graphic->height), color | (flags_ & ~0xFF)); };
+
+	if (align_ == Align::kRight)
+	{
+		width = -(width);
+		flags ^= V_FLIP;
+		fill(x + width, -(width));
+	}
+	else
+	{
+		fill(x, width);
+	}
+
+	V_DrawScaledPatch(x + width, y, flags, end_graphic);
+
+	if (align_ == Align::kCenter)
+	{
+		V_DrawScaledPatch(x, y, flags ^ V_FLIP, end_graphic);
+	}
+}
+
 Chain::Clipper::Clipper(const Chain& chain)
 {
 	V_SetClipRect(
@@ -238,6 +263,11 @@ Chain::Clipper::Clipper(const Chain& chain)
 Chain::Clipper::~Clipper()
 {
 	V_ClearClipRect();
+}
+
+patch_t* Draw::cache_patch(const char* name)
+{
+	return static_cast<patch_t*>(W_CachePatchName(name, PU_CACHE));
 }
 
 int Draw::font_to_fontno(Font font)
@@ -264,6 +294,9 @@ int Draw::font_to_fontno(Font font)
 
 	case Font::kTimer:
 		return TIMER_FONT;
+
+	case Font::kThinTimer:
+		return TINYTIMER_FONT;
 
 	case Font::kMenu:
 		return MENU_FONT;

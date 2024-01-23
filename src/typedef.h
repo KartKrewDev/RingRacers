@@ -190,6 +190,9 @@ TYPEDEF (botcontroller_t);
 // k_brightmap.h
 TYPEDEF (brightmapStorage_t);
 
+// k_endcam.h
+TYPEDEF (endcam_t);
+
 // k_follower.h
 TYPEDEF (follower_t);
 TYPEDEF (followercategory_t);
