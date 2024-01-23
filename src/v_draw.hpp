@@ -38,6 +38,7 @@ public:
 		kZVote,
 		kPing,
 		kTimer,
+		kThinTimer,
 		kMenu,
 	};
 
