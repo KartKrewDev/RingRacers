@@ -4107,13 +4107,6 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_PLAYERARROW_ITEM",
 	"S_PLAYERARROW_NUMBER",
 	"S_PLAYERARROW_X",
-	"S_PLAYERARROW_WANTED1",
-	"S_PLAYERARROW_WANTED2",
-	"S_PLAYERARROW_WANTED3",
-	"S_PLAYERARROW_WANTED4",
-	"S_PLAYERARROW_WANTED5",
-	"S_PLAYERARROW_WANTED6",
-	"S_PLAYERARROW_WANTED7",
 
 	"S_PLAYERBOMB1", // Player bomb overlay
 	"S_PLAYERBOMB2",
@@ -5975,7 +5968,6 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_GUARDBREAK", // Guard break
 
 	"MT_PLAYERARROW",
-	"MT_PLAYERWANTED",
 
 	"MT_KARMAHITBOX",
 	"MT_KARMAWHEEL",

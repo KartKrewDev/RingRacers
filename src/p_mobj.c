@@ -6630,57 +6630,6 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			return;
 		}
 		break;
-	case MT_PLAYERWANTED:
-		if (mobj->target && mobj->target->health && mobj->tracer
-			&& mobj->target->player && !mobj->target->player->spectator
-			&& mobj->target->health && mobj->target->player->playerstate != PST_DEAD
-			&& players[g_localplayers[0]].mo && !players[g_localplayers[0]].spectator)
-		{
-			fixed_t scale = 3*mobj->target->scale;
-
-			if (!K_IsPlayerWanted(mobj->target->player))
-			{
-				mobj->tracer->movecount = 0;
-				P_RemoveMobj(mobj);
-				return;
-			}
-
-			if (mobj->tracer->renderflags & RF_DONTDRAW)
-				mobj->renderflags |= RF_DONTDRAW;
-			else
-				mobj->renderflags &= ~RF_DONTDRAW;
-
-			P_UnsetThingPosition(mobj);
-			mobj->x = mobj->target->x;
-			mobj->y = mobj->target->y;
-
-			if (!r_splitscreen && players[displayplayers[0]].mo)
-			{
-				scale = mobj->target->scale + FixedMul(FixedDiv(abs(P_AproxDistance(players[displayplayers[0]].mo->x-mobj->target->x,
-					players[displayplayers[0]].mo->y-mobj->target->y)), RING_DIST), mobj->target->scale);
-				if (scale > 16*mobj->target->scale)
-					scale = 16*mobj->target->scale;
-			}
-			mobj->destscale = scale;
-
-			if (!(mobj->target->eflags & MFE_VERTICALFLIP))
-			{
-				mobj->z = mobj->target->z + mobj->target->height + (16*mobj->target->scale) + (64*scale);
-				mobj->eflags &= ~MFE_VERTICALFLIP;
-			}
-			else
-			{
-				mobj->z = mobj->target->z - mobj->target->height - (16*mobj->target->scale) - (64*scale);
-				mobj->eflags |= MFE_VERTICALFLIP;
-			}
-			P_SetThingPosition(mobj);
-		}
-		else if (mobj->health > 0)
-		{
-			P_KillMobj(mobj, NULL, NULL, DMG_NORMAL);
-			return;
-		}
-		break;
 	case MT_PETSMOKER:
 		if (!(leveltime % 10))
 		{
