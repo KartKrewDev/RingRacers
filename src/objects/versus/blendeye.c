@@ -1017,8 +1017,7 @@ void VS_BlendEye_Damage(mobj_t *mobj, mobj_t *inflictor, mobj_t *source, INT32 d
 
 	if (source && source->player)
 	{
-		P_AddPlayerScore(source->player, 1);
-		K_SpawnBattlePoints(source->player, NULL, 1);
+		K_GivePointsToPlayer(source->player, NULL, 1);
 	}
 }
 

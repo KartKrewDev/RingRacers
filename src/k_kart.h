@@ -134,6 +134,7 @@ INT32 K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source);
 void K_DebtStingPlayer(player_t *player, mobj_t *source);
 void K_GiveBumpersToPlayer(player_t *player, player_t *victim, UINT8 amount);
 void K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount);
+void K_GivePointsToPlayer(player_t *player, player_t *victim, UINT8 amount);
 void K_MineFlashScreen(mobj_t *source);
 void K_SpawnMineExplosion(mobj_t *source, skincolornum_t color, tic_t delay);
 void K_SpawnLandMineExplosion(mobj_t *source, skincolornum_t color, tic_t delay);

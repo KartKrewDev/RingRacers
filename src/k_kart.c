@@ -3942,8 +3942,7 @@ void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UIN
 		);
 	}
 
-	P_AddPlayerScore(player, points);
-	K_SpawnBattlePoints(player, victim, points);
+	K_GivePointsToPlayer(player, victim, points);
 }
 
 void K_SpinPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 type)
@@ -4850,6 +4849,12 @@ void K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount)
 
 	// Play steal sound
 	S_StartSound(player->mo, sfx_3db06);
+}
+
+void K_GivePointsToPlayer(player_t *player, player_t *victim, UINT8 amount)
+{
+	P_AddPlayerScore(player, amount);
+	K_SpawnBattlePoints(player, victim, amount);
 }
 
 #define MINEQUAKEDIST 4096
