@@ -1283,7 +1283,6 @@ typedef enum sprite
 	SPR_PWCL, // Invinc/grow clash VFX
 	SPR_GBRK, // Guard break
 
-	SPR_ARRO, // player arrows
 	SPR_ITEM,
 	SPR_ITMO,
 	SPR_ITMI,
@@ -5424,12 +5423,6 @@ typedef enum state
 	S_POWERCLASH, // Grow/Invinc clash VFX
 	S_GUARDBREAK,
 
-	S_PLAYERARROW, // Above player arrow
-	S_PLAYERARROW_BOX,
-	S_PLAYERARROW_ITEM,
-	S_PLAYERARROW_NUMBER,
-	S_PLAYERARROW_X,
-
 	S_PLAYERBOMB1, // Karma player overlays
 	S_PLAYERBOMB2,
 	S_PLAYERBOMB3,
@@ -7330,8 +7323,6 @@ typedef enum mobj_type
 
 	MT_POWERCLASH, // Grow/Invinc clash VFX
 	MT_GUARDBREAK,
-
-	MT_PLAYERARROW,
 
 	MT_KARMAHITBOX,
 	MT_KARMAWHEEL,

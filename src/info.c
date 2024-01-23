@@ -719,7 +719,6 @@ char sprnames[NUMSPRITES + 1][5] =
 	"PWCL", // Invinc/grow clash VFX
 	"GBRK", // Guard break
 
-	"ARRO", // player arrows
 	"ITEM",
 	"ITMO",
 	"ITMI",
@@ -4967,13 +4966,6 @@ state_t states[NUMSTATES] =
 
 	{SPR_PWCL, FF_FULLBRIGHT|FF_ANIMATE|FF_PAPERSPRITE, 10, {NULL}, 9, 1, S_NULL}, // S_POWERCLASH
 	{SPR_GBRK, FF_ADD|FF_FULLBRIGHT|FF_ANIMATE|FF_PAPERSPRITE, 24, {NULL}, 5, 4, S_NULL}, // S_GUARDBREAK
-
-	// Above player arrow
-	{SPR_ARRO, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_PLAYERARROW
-	{SPR_ARRO, FF_FULLBRIGHT|1, -1, {NULL}, 0, 0, S_NULL}, // S_PLAYERARROW_BOX
-	{SPR_NULL, FF_FULLBRIGHT, -1, {NULL}, 0, 11, S_NULL}, // S_PLAYERARROW_ITEM
-	{SPR_ITMN, FF_FULLBRIGHT, 2, {NULL}, 0, 11, S_NULL}, // S_PLAYERARROW_NUMBER
-	{SPR_ITMN, FF_FULLBRIGHT|11, 2, {NULL}, 0, 11, S_NULL}, // S_PLAYERARROW_X
 
 	{SPR_SPBM, 0, 1, {NULL}, 0, 0,  S_PLAYERBOMB2}, // S_PLAYERBOMB1
 	{SPR_SPBM, 1, 1, {NULL}, 0, 0,  S_PLAYERBOMB3}, // S_PLAYERBOMB2
@@ -27262,33 +27254,6 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,				// activesound
 		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
 		S_NULL					// raisestate
-	},
-
-	{           // MT_PLAYERARROW
-		-1,             // doomednum
-		S_PLAYERARROW,  // spawnstate
-		1000,           // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_NULL,         // deathstate
-		S_NULL,         // xdeathstate
-		sfx_None,       // deathsound
-		8,              // speed
-		36*FRACUNIT,    // radius
-		37*FRACUNIT,    // height
-		-2,             // display offset
-		16,             // mass
-		0,              // damage
-		sfx_None,       // activesound
-		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP, // flags
-		S_NULL          // raisestate
 	},
 
 	{           // MT_KARMAHITBOX
