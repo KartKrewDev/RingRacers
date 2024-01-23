@@ -3929,8 +3929,7 @@ void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UIN
 	// Check this before adding to player score
 	if ((gametyperules & GTR_BUMPERS) && finishOff && g_pointlimit <= player->roundscore)
 	{
-		player->roundscore = 100; // Make sure you win!
-		P_DoAllPlayersExit(0, false);
+		K_EndBattleRound(player);
 
 		mobj_t *source = !P_MobjWasRemoved(inflictor) ? inflictor : player->mo;
 
