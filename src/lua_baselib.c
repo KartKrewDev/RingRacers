@@ -1097,7 +1097,7 @@ static int lib_pPlayerZMovement(lua_State *L)
 static int lib_pAddPlayerScore(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	UINT32 amount = (UINT32)luaL_checkinteger(L, 2);
+	INT32 amount = (UINT32)luaL_checkinteger(L, 2);
 	NOHUD
 	INLEVEL
 	if (!player)
