@@ -155,9 +155,9 @@ public:
 		Chain& clipy() { return clipy(y_, y_ + height_); }
 
 		Chain& colormap(const UINT8* colormap);
-		Chain& colormap(skincolornum_t color);
-		Chain& colormap(INT32 skin, skincolornum_t color);
-		Chain& colorize(skincolornum_t color);
+		Chain& colormap(UINT16 color);
+		Chain& colormap(INT32 skin, UINT16 color);
+		Chain& colorize(UINT16 color);
 
 		void text(const char* str) const { string(str, flags_, font_); }
 		void text(const std::string& str) const { text(str.c_str()); }
