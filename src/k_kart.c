@@ -5984,7 +5984,7 @@ void K_Squish(mobj_t *mo)
 	mo->spriteyscale =
 		FixedDiv(FRACUNIT, mo->spritexscale);
 
-	if (cv_mentalsonic.value && mo->type == MT_PLAYER)
+	if (cv_mentalsonic.value && (mo->type == MT_PLAYER || (!P_MobjWasRemoved(mo->target) && mo->target->type == MT_PLAYER)))
 		mo->spriteyscale *= 2;
 }
 
