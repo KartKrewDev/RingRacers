@@ -1669,7 +1669,7 @@ static void K_BuildBotTiccmdNormal(const player_t *player, ticcmd_t *cmd)
 
 	if (P_IsObjectOnGround(player->mo) == false)
 	{
-		if (player->fastfall == 0)
+		if (player->fastfall == 0 && player->respawn.state == RESPAWNST_NONE)
 		{
 			if (botController != nullptr && (botController->flags & TMBOT_FASTFALL) == TMBOT_FASTFALL)
 			{
