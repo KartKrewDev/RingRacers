@@ -37,6 +37,9 @@ Make sure this matches the actual number of states
 #define INSTAWHIP_TETHERBLOCK (TICRATE*4)
 #define PUNISHWINDOW (7*TICRATE/10)
 
+#define BUMPER_FLOAT (4*mapobjectscale)
+#define BUMPER_THRUST (10*mapobjectscale)
+
 #define FLAMESHIELD_MAX (120)
 
 #define RR_PROJECTILE_FUSE (8*TICRATE)
@@ -255,6 +258,8 @@ boolean K_IsPlayingDisplayPlayer(player_t *player);
 
 boolean K_PlayerCanPunt(player_t *player);
 void K_MakeObjectReappear(mobj_t *mo);
+
+void K_BumperInflate(player_t *player);
 
 #ifdef __cplusplus
 } // extern "C"

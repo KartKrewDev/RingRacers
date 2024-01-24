@@ -4177,6 +4177,12 @@ static void P_BouncePlayerMove(mobj_t *mo, TryMoveResult_t *result)
 	P_PlayerHitBounceLine(bestslideline, &result->normal);
 	mo->eflags |= MFE_JUSTBOUNCEDWALL;
 
+	if (mo->player && P_PlayerInPain(mo->player) && gametyperules & GTR_BUMPERS && mo->health > 1)
+	{
+		CONS_Printf("get me outta here\n");
+		P_DamageMobj(mo, NULL, NULL, 1, DMG_STUMBLE);
+	}
+
 	mo->momx = tmxmove;
 	mo->momy = tmymove;
 	mo->player->cmomx = tmxmove;

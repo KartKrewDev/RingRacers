@@ -6364,6 +6364,11 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			// Shrink your items if the player shrunk too.
 			P_SetScale(mobj, mobj->target->scale);
 
+			if (mobj->target->player->bumperinflate)
+			{
+				P_SetScale(mobj, mobj->target->scale + (mobj->target->scale * mobj->target->player->bumperinflate / 2));
+			}
+
 			P_UnsetThingPosition(mobj);
 			{
 				const angle_t fa = ang >> ANGLETOFINESHIFT;

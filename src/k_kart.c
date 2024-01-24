@@ -4543,6 +4543,19 @@ static boolean K_LastTumbleBounceCondition(player_t *player)
 	return (player->tumbleBounces > TUMBLEBOUNCES && player->tumbleHeight < 60);
 }
 
+// Bumpers give you bonus launch height and speed, strengthening your DI to help evade combos.
+// bumperinflate visuals are handled by MT_BATTLEBUMPER, but the effects are in K_KartPlayerThink.
+void K_BumperInflate(player_t *player)
+{
+	if (!player || P_MobjWasRemoved(player->mo))
+		return;
+
+	if (!(player->mo->health > 1 && gametyperules & GTR_BUMPERS))
+		return;
+
+	player->bumperinflate = 3;
+}
+
 static void K_HandleTumbleBounce(player_t *player)
 {
 	player->tumbleBounces++;
@@ -4589,6 +4602,8 @@ static void K_HandleTumbleBounce(player_t *player)
 			P_ResetPitchRoll(player->mo); // Prevent Kodachrome Void infinite
 		}
 	}
+
+	K_BumperInflate(player);
 
 	// A bit of damage hitlag.
 	// This gives a window for DI!!
@@ -8765,6 +8780,14 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->hyudorotimer)
 		player->hyudorotimer--;
+
+	if (player->bumperinflate && player->mo->health > 1 && player->mo->hitlag == 0)
+	{
+		P_Thrust(player->mo, K_MomentumAngle(player->mo), BUMPER_THRUST);
+		if (player->tumbleBounces)
+			player->mo->momz += BUMPER_FLOAT;
+		player->bumperinflate--;
+	}
 
 	if (player->ringvolume < MINRINGVOLUME)
 		player->ringvolume = MINRINGVOLUME;
