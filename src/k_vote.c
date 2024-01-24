@@ -93,7 +93,9 @@
 #define SELECTION_SPACING_H (SELECTION_HEIGHT + SELECTION_SPACE)
 #define SELECTION_HOP (10*FRACUNIT)
 
-#define SELECTOR_Y ((SELECTION_HEIGHT / 2) + (4*FRACUNIT))
+#define SELECTOR_SPACE (8*FRACUNIT)
+#define SELECTOR_Y ((SELECTION_HEIGHT / 2) + SELECTOR_SPACE)
+#define SELECTOR_HEIGHT ((30*FRACUNIT) + SELECTOR_SPACE)
 
 #define PILE_WIDTH (46*FRACUNIT)
 #define PILE_HEIGHT ((PILE_WIDTH * BASEVIDHEIGHT) / BASEVIDWIDTH)
@@ -219,7 +221,8 @@ typedef struct
 	fixed_t selectTransition;
 	y_vote_draw_level levels[VOTE_NUM_LEVELS];
 
-	patch_t *selector_patch[MAXSPLITSCREENPLAYERS][2];
+	patch_t *selector_arrow;
+	patch_t *selector_letter[MAXSPLITSCREENPLAYERS][2];
 	y_vote_draw_selector selectors[MAXSPLITSCREENPLAYERS];
 } y_vote_draw;
 
@@ -270,7 +273,8 @@ static boolean Y_PlayerCanSelect(const UINT8 localId)
 		return false;
 	}
 
-	if (vote.players[localId].catcher.action != CATCHER_NA)
+	if (vote.players[localId].catcher.action != CATCHER_NA
+		|| vote.players[localId].catcher.delay > 0)
 	{
 		return false;
 	}
@@ -734,9 +738,10 @@ static void Y_DrawVoteBackground(void)
 	bgTimer += renderdeltatics;
 }
 
-static void Y_DrawVoteSelector(const fixed_t y, const UINT8 localPlayer)
+static void Y_DrawVoteSelector(const fixed_t y, const fixed_t time, const UINT8 localPlayer)
 {
 	const fixed_t destX = SELECTION_X + (vote.players[localPlayer].selection * SELECTION_SPACING_W);
+
 	vote_draw.selectors[localPlayer].x += FixedMul(
 		(destX - vote_draw.selectors[localPlayer].x) * 3 / 4,
 		renderdeltatics
@@ -747,21 +752,47 @@ static void Y_DrawVoteSelector(const fixed_t y, const UINT8 localPlayer)
 		return;
 	}
 
-	UINT8 blink = ((vote.tic / 7) & 1);
-	UINT8 *colormap = R_GetTranslationColormap(TC_RAINBOW, players[g_localplayers[localPlayer]].skincolor, GTC_CACHE);
+	static const UINT8 freq = 7;
+	UINT8 *colormap = NULL;
+
+	if (splitscreen > 0)
+	{
+		const UINT8 blink = ((time / freq / FRACUNIT) & 1);
+
+		colormap = R_GetTranslationColormap(TC_RAINBOW, players[ g_localplayers[localPlayer] ].skincolor, GTC_CACHE);
+
+		V_DrawFixedPatch(
+			vote_draw.selectors[localPlayer].x, y - SELECTOR_Y - (9*FRACUNIT),
+			FRACUNIT, 0,
+			vote_draw.selector_letter[localPlayer][blink],
+			colormap
+		);
+	}
+
+	fixed_t bob = FixedMul((time / freq * 2) + (FRACUNIT / 2), ANGLE_90);
+	if (localPlayer & 1)
+	{
+		bob = FCOS(bob);
+	}
+	else
+	{
+		bob = FSIN(bob);
+	}
 
 	V_DrawFixedPatch(
-		vote_draw.selectors[localPlayer].x, y - SELECTOR_Y,
+		vote_draw.selectors[localPlayer].x, y - SELECTOR_Y + bob,
 		FRACUNIT, 0,
-		vote_draw.selector_patch[localPlayer][blink],
+		vote_draw.selector_arrow,
 		colormap
 	);
 }
 
 static void Y_DrawVoteSelection(fixed_t offset)
 {
+	static fixed_t selectorTimer = 0;
+
 	fixed_t x = SELECTION_X;
-	fixed_t y = SELECTION_Y + FixedMul(offset, SELECTION_HEIGHT * 2);
+	fixed_t y = SELECTION_Y + FixedMul(offset, (SELECTION_HEIGHT + SELECTOR_HEIGHT) * 2);
 	INT32 i;
 
 	//
@@ -819,24 +850,29 @@ static void Y_DrawVoteSelection(fixed_t offset)
 		Y_DrawCatcher(&vote.players[i].catcher);
 	}
 
-	//
-	// Draw splitscreen selectors
-	//
-	//if (splitscreen > 0)
+	if (offset != FRACUNIT)
 	{
-		const UINT8 priority = vote.tic % (splitscreen + 1);
+		//
+		// Draw splitscreen selectors
+		//
+		selectorTimer += renderdeltatics;
 
-		for (i = 0; i <= splitscreen; i++)
+		//if (splitscreen > 0)
 		{
-			if (i == priority)
+			const UINT8 priority = vote.tic % (splitscreen + 1);
+
+			for (i = 0; i <= splitscreen; i++)
 			{
-				continue;
+				if (i == priority)
+				{
+					continue;
+				}
+
+				Y_DrawVoteSelector(y, selectorTimer, i);
 			}
 
-			Y_DrawVoteSelector(y, i);
+			Y_DrawVoteSelector(y, selectorTimer, priority);
 		}
-
-		Y_DrawVoteSelector(y, priority);
 	}
 }
 
@@ -1093,6 +1129,7 @@ static void Y_TickPlayerCatcher(const UINT8 localPlayer)
 			{
 				D_ModifyClientVote(g_localplayers[localPlayer], vote.players[localPlayer].selection);
 				catcher->action = CATCHER_NA;
+				catcher->delay = 5;
 				S_StopSoundByNum(sfx_kc37);
 			}
 			break;
@@ -1621,9 +1658,11 @@ static void Y_InitVoteDrawing(void)
 
 		for (j = 0; j < SELECTOR_FRAMES; j++)
 		{
-			vote_draw.selector_patch[i][j] = W_CachePatchName(va("K_SSPL%c%d", 'A' + i, j + 1), PU_STATIC);
+			vote_draw.selector_letter[i][j] = W_CachePatchName(va("VSSPTR%c%d", 'A' + i, j + 1), PU_STATIC);
 		}
 	}
+
+	vote_draw.selector_arrow = W_CachePatchName("VSSPTR1", PU_STATIC);
 
 	vote_draw.selectTransition = FRACUNIT;
 }
@@ -1718,9 +1757,11 @@ static void Y_UnloadVoteData(void)
 	{
 		for (i = 0; i < SELECTOR_FRAMES; i++)
 		{
-			UNLOAD(vote_draw.selector_patch[j][i]);
+			UNLOAD(vote_draw.selector_letter[j][i]);
 		}
 	}
+
+	UNLOAD(vote_draw.selector_arrow);
 }
 
 //
