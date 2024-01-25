@@ -847,9 +847,10 @@ boolean M_LevelSelectCupSwitch(boolean next, boolean skipones)
 
 		levellist.levelsearch = templevelsearch;
 
-		levellist.cursor = 0;
-
 		levellist.mapcount = count;
+		if (levellist.cursor >= count)
+			levellist.cursor = count-1;
+
 		M_LevelSelectScrollDest();
 		levellist.slide.start = 0;
 
