@@ -2984,6 +2984,12 @@ boolean K_WaterSkip(mobj_t *mobj)
 				// Don't allow
 				return false;
 			}
+
+			if (K_PlayerEBrake(mobj->player))
+			{
+				return false;
+			}
+			
 			// Allow
 			break;
 		}
