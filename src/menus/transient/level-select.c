@@ -608,7 +608,7 @@ boolean M_LevelListFromGametype(INT16 gt)
 	{
 		if (levellist.levelsearch.tutorial && levellist.mapcount == 1)
 		{
-			M_LevelSelected(0); // Skip the list!
+			M_LevelSelected(0, true); // Skip the list!
 		}
 		else
 		{
@@ -664,7 +664,7 @@ void M_LevelSelectInit(INT32 choice)
 	}
 }
 
-void M_LevelSelected(INT16 add)
+void M_LevelSelected(INT16 add, boolean menuupdate)
 {
 	UINT8 i = 0;
 	INT16 map = M_GetFirstLevelInList(&i, &levellist.levelsearch);
@@ -691,15 +691,18 @@ void M_LevelSelected(INT16 add)
 
 	if (levellist.levelsearch.timeattack)
 	{
-		S_StartSound(NULL, sfx_s3k63);
-
 		restorelevellist = levellist;
 
-		M_PrepareTimeAttack(0);
+		M_PrepareTimeAttack(menuupdate);
 
-		PLAY_TimeAttackDef.lastOn = ta_start;
-		PLAY_TimeAttackDef.prevMenu = currentMenu;
-		M_SetupNextMenu(&PLAY_TimeAttackDef, false);
+		if (menuupdate)
+		{
+			S_StartSound(NULL, sfx_s3k63);
+
+			PLAY_TimeAttackDef.lastOn = ta_start;
+			PLAY_TimeAttackDef.prevMenu = currentMenu;
+			M_SetupNextMenu(&PLAY_TimeAttackDef, false);
+		}
 	}
 	else
 	{
@@ -774,6 +777,86 @@ void M_LevelSelected(INT16 add)
 	}
 }
 
+boolean M_LevelSelectCupSwitch(boolean next, boolean skipones)
+{
+	levelsearch_t templevelsearch = levellist.levelsearch;
+
+	while (1)
+	{
+		if (next)
+		{
+			// Next
+			if (++cupgrid.x >= CUPMENU_COLUMNS)
+			{
+				cupgrid.x = 0;
+				if (++cupgrid.y >= CUPMENU_ROWS)
+				{
+					cupgrid.y = 0;
+					if (++cupgrid.pageno >= cupgrid.numpages)
+					{
+						cupgrid.pageno = 0;
+					}
+				}
+			}
+		}
+		else
+		{
+			// Prev
+			if (cupgrid.x == 0)
+			{
+				cupgrid.x = CUPMENU_COLUMNS;
+				if (cupgrid.y == 0)
+				{
+					cupgrid.y = CUPMENU_ROWS;
+					if (cupgrid.pageno == 0)
+					{
+						cupgrid.pageno = cupgrid.numpages;
+					}
+					cupgrid.pageno--;
+				}
+				cupgrid.y--;
+			}
+			cupgrid.x--;
+		}
+
+		templevelsearch.cup = cupgrid.builtgrid[CUPMENU_CURSORID];
+
+		if (templevelsearch.cup == levellist.levelsearch.cup)
+		{
+			return false;
+		}
+
+		if (!templevelsearch.cup)
+		{
+			continue;
+		}
+
+		UINT16 count = M_CountLevelsToShowInList(&templevelsearch);
+
+		if (count == 0
+		// The following isn't ideal, but in addition to the
+		// necessary programming work being extremely annoying,
+		// I also just think being forced to switch between
+		// Time Attack single-course views and multi-course
+		// selections would just plain kind of look bad.
+		// ~toast 250124 (ON A PLANE BACK FROM MAGFEST WOOOOOOOO)
+		|| (skipones && count == 1))
+		{
+			continue;
+		}
+
+		levellist.levelsearch = templevelsearch;
+
+		levellist.cursor = 0;
+
+		levellist.mapcount = count;
+		M_LevelSelectScrollDest();
+		levellist.slide.start = 0;
+
+		return true;
+	}
+}
+
 void M_LevelSelectHandler(INT32 choice)
 {
 	const UINT8 pid = 0;
@@ -805,84 +888,13 @@ void M_LevelSelectHandler(INT32 choice)
 		; // Mode with no cup? No left/right input for you!
 	else if (menucmd[pid].dpad_lr != 0)
 	{
-		levelsearch_t templevelsearch = levellist.levelsearch;
-
-		while (1)
+		if (M_LevelSelectCupSwitch(
+			(menucmd[pid].dpad_lr > 0),
+			levellist.levelsearch.timeattack)
+		)
 		{
-			if (menucmd[pid].dpad_lr > 0)
-			{
-				// Next
-				if (++cupgrid.x >= CUPMENU_COLUMNS)
-				{
-					cupgrid.x = 0;
-					if (++cupgrid.y >= CUPMENU_ROWS)
-					{
-						cupgrid.y = 0;
-						if (++cupgrid.pageno >= cupgrid.numpages)
-						{
-							cupgrid.pageno = 0;
-						}
-					}
-				}
-			}
-			else
-			{
-				// Prev
-				if (cupgrid.x == 0)
-				{
-					cupgrid.x = CUPMENU_COLUMNS;
-					if (cupgrid.y == 0)
-					{
-						cupgrid.y = CUPMENU_ROWS;
-						if (cupgrid.pageno == 0)
-						{
-							cupgrid.pageno = cupgrid.numpages;
-						}
-						cupgrid.pageno--;
-					}
-					cupgrid.y--;
-				}
-				cupgrid.x--;
-			}
-
-			templevelsearch.cup = cupgrid.builtgrid[CUPMENU_CURSORID];
-
-			if (templevelsearch.cup == levellist.levelsearch.cup)
-			{
-				break;
-			}
-
-			if (!templevelsearch.cup)
-			{
-				continue;
-			}
-
-			UINT16 count = M_CountLevelsToShowInList(&templevelsearch);
-
-			if (count == 0
-			// The following isn't ideal, but in addition to the
-			// necessary programming work being extremely annoying,
-			// I also just think being forced to switch between
-			// Time Attack single-course views and multi-course
-			// selections would just plain kind of look bad.
-			// ~toast 250124 (ON A PLANE BACK FROM MAGFEST WOOOOOOOO)
-			|| (count == 1 && templevelsearch.timeattack == true))
-			{
-				continue;
-			}
-
-			levellist.levelsearch = templevelsearch;
-
-			levellist.cursor = 0;
-
-			levellist.mapcount = count;
-			M_LevelSelectScrollDest();
-			levellist.slide.start = 0;
-	
 			S_StartSound(NULL, sfx_s3k5b);
 			M_SetMenuDelay(pid);
-
-			break;
 		}
 	}
 
@@ -891,7 +903,7 @@ void M_LevelSelectHandler(INT32 choice)
 	if (M_MenuConfirmPressed(pid) /*|| M_MenuButtonPressed(pid, MBT_START)*/)
 	{
 		M_SetMenuDelay(pid);
-		M_LevelSelected(levellist.cursor);
+		M_LevelSelected(levellist.cursor, true);
 	}
 	else if (M_MenuBackPressed(pid))
 	{

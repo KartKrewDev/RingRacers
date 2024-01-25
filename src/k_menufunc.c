@@ -565,7 +565,7 @@ menu_t *M_SpecificMenuRestore(menu_t *torestore)
 			}
 			else if (levellist.levelsearch.timeattack)
 			{
-				M_PrepareTimeAttack(0);
+				M_PrepareTimeAttack(true);
 			}
 		}
 	}

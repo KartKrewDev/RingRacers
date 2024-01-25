@@ -309,7 +309,7 @@ void M_CupSelectHandler(INT32 choice)
 		else if (count == 1 && levellist.levelsearch.timeattack == true)
 		{
 			currentMenu->transitionID = PLAY_TimeAttackDef.transitionID+1;
-			M_LevelSelected(0);
+			M_LevelSelected(0, true);
 		}
 		else
 		{

@@ -854,7 +854,8 @@ void M_CupSelectTick(void);
 void M_LevelSelectHandler(INT32 choice);
 void M_LevelSelectTick(void);
 
-void M_LevelSelected(INT16 add);
+void M_LevelSelected(INT16 add, boolean menuupdate);
+boolean M_LevelSelectCupSwitch(boolean next, boolean skipones);
 
 // dummy consvars for GP & match race setup
 extern consvar_t cv_dummygpdifficulty;
@@ -897,7 +898,7 @@ void M_PleaseWait(void);
 void M_PopupMasterServerRules(void);
 
 // Time Attack
-void M_PrepareTimeAttack(INT32 choice);
+void M_PrepareTimeAttack(boolean menuupdate);
 void M_StartTimeAttack(INT32 choice);
 void M_ReplayTimeAttack(INT32 choice);
 void M_HandleStaffReplay(INT32 choice);
