@@ -8783,8 +8783,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->bumperinflate && player->mo->health > 1 && player->mo->hitlag == 0)
 	{
-		P_Thrust(player->mo, K_MomentumAngle(player->mo), BUMPER_THRUST);
-		if (player->tumbleBounces)
+		if (player->speed < K_GetKartSpeed(player, false, false)/2)
+			P_Thrust(player->mo, K_MomentumAngle(player->mo), BUMPER_THRUST);
+		if (player->tumbleBounces && player->tumbleBounces <= TUMBLEBOUNCES)
 			player->mo->momz += BUMPER_FLOAT;
 		player->bumperinflate--;
 	}

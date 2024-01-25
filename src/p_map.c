@@ -4181,6 +4181,7 @@ static void P_BouncePlayerMove(mobj_t *mo, TryMoveResult_t *result)
 	if (mo->player && P_PlayerInPain(mo->player) && gametyperules & GTR_BUMPERS && mo->health > 1)
 	{
 		P_DamageMobj(mo, NULL, NULL, 1, DMG_STUMBLE);
+		mo->player->tumbleBounces = TUMBLEBOUNCES;
 	}
 
 	mo->momx = tmxmove;
