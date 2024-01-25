@@ -801,6 +801,90 @@ void M_LevelSelectHandler(INT32 choice)
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(pid);
 	}
+	else if (levellist.levelsearch.cup == NULL)
+		; // Mode with no cup? No left/right input for you!
+	else if (menucmd[pid].dpad_lr != 0)
+	{
+		levelsearch_t templevelsearch = levellist.levelsearch;
+
+		while (1)
+		{
+			if (menucmd[pid].dpad_lr > 0)
+			{
+				// Next
+				if (++cupgrid.x >= CUPMENU_COLUMNS)
+				{
+					cupgrid.x = 0;
+					if (++cupgrid.y >= CUPMENU_ROWS)
+					{
+						cupgrid.y = 0;
+						if (++cupgrid.pageno >= cupgrid.numpages)
+						{
+							cupgrid.pageno = 0;
+						}
+					}
+				}
+			}
+			else
+			{
+				// Prev
+				if (cupgrid.x == 0)
+				{
+					cupgrid.x = CUPMENU_COLUMNS;
+					if (cupgrid.y == 0)
+					{
+						cupgrid.y = CUPMENU_ROWS;
+						if (cupgrid.pageno == 0)
+						{
+							cupgrid.pageno = cupgrid.numpages;
+						}
+						cupgrid.pageno--;
+					}
+					cupgrid.y--;
+				}
+				cupgrid.x--;
+			}
+
+			templevelsearch.cup = cupgrid.builtgrid[CUPMENU_CURSORID];
+
+			if (templevelsearch.cup == levellist.levelsearch.cup)
+			{
+				break;
+			}
+
+			if (!templevelsearch.cup)
+			{
+				continue;
+			}
+
+			UINT16 count = M_CountLevelsToShowInList(&templevelsearch);
+
+			if (count == 0
+			// The following isn't ideal, but in addition to the
+			// necessary programming work being extremely annoying,
+			// I also just think being forced to switch between
+			// Time Attack single-course views and multi-course
+			// selections would just plain kind of look bad.
+			// ~toast 250124 (ON A PLANE BACK FROM MAGFEST WOOOOOOOO)
+			|| (count == 1 && templevelsearch.timeattack == true))
+			{
+				continue;
+			}
+
+			levellist.levelsearch = templevelsearch;
+
+			levellist.cursor = 0;
+
+			levellist.mapcount = count;
+			M_LevelSelectScrollDest();
+			levellist.slide.start = 0;
+	
+			S_StartSound(NULL, sfx_s3k5b);
+			M_SetMenuDelay(pid);
+
+			break;
+		}
+	}
 
 	M_LevelSelectScrollDest();
 
