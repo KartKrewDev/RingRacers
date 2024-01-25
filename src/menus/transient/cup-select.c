@@ -129,7 +129,9 @@ static void M_StartCup(UINT8 entry)
 	SV_StartSinglePlayerServer(levellist.newgametype, levellist.netgame);
 
 	M_ClearMenus(true);
+
 	restoreMenu = &PLAY_CupSelectDef;
+	restorelevellist = levellist;
 
 	if (entry < roundqueue.size)
 	{
