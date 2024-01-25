@@ -275,7 +275,6 @@ typedef enum
 	ta_replay = 0,
 	ta_guest,
 	ta_ghosts,
-	ta_spb,
 	ta_spacer,
 	ta_start,
 } ta_e;
