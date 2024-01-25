@@ -6366,7 +6366,12 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 
 			if (mobj->target->player->bumperinflate)
 			{
-				P_SetScale(mobj, mobj->target->scale + (mobj->target->scale * mobj->target->player->bumperinflate / 2));
+				mobj->frame |= FF_INVERT;
+				P_SetScale(mobj, mobj->target->scale + (mobj->target->scale * 3 * mobj->target->player->bumperinflate / 4));
+			}
+			else
+			{
+				mobj->frame &= ~FF_INVERT;
 			}
 
 			P_UnsetThingPosition(mobj);

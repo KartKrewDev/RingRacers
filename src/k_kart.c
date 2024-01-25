@@ -4554,6 +4554,7 @@ void K_BumperInflate(player_t *player)
 		return;
 
 	player->bumperinflate = 3;
+	S_StartSound(player->mo, sfx_cdpcm9);
 }
 
 static void K_HandleTumbleBounce(player_t *player)
@@ -8783,10 +8784,14 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->bumperinflate && player->mo->health > 1 && player->mo->hitlag == 0)
 	{
-		if (player->speed < K_GetKartSpeed(player, false, false)/2)
-			P_Thrust(player->mo, K_MomentumAngle(player->mo), BUMPER_THRUST);
 		if (player->tumbleBounces && player->tumbleBounces <= TUMBLEBOUNCES)
+		{
 			player->mo->momz += BUMPER_FLOAT;
+		}
+		else if (player->speed < K_GetKartSpeed(player, false, false)/2)
+		{
+			P_Thrust(player->mo, K_MomentumAngle(player->mo), BUMPER_THRUST);
+		}
 		player->bumperinflate--;
 	}
 

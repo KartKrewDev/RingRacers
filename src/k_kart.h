@@ -37,7 +37,7 @@ Make sure this matches the actual number of states
 #define INSTAWHIP_TETHERBLOCK (TICRATE*4)
 #define PUNISHWINDOW (7*TICRATE/10)
 
-#define BUMPER_FLOAT (4*mapobjectscale)
+#define BUMPER_FLOAT (8*mapobjectscale)
 #define BUMPER_THRUST (10*mapobjectscale)
 
 #define FLAMESHIELD_MAX (120)
