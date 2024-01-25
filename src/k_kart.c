@@ -7941,7 +7941,7 @@ void K_KartPlayerHUDUpdate(player_t *player)
 	if (player->positiondelay)
 		player->positiondelay--;
 
-	if (!(player->pflags & PF_FAULT))
+	if (!(player->pflags & PF_FAULT || player->pflags & PF_VOID))
 		player->karthud[khud_fault] = 0;
 	else if (player->karthud[khud_fault] > 0 && player->karthud[khud_fault] <= 2*TICRATE)
 		player->karthud[khud_fault]++;
@@ -8726,7 +8726,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->nextringaward = 99; // Next time we need to award superring, spawn the first one instantly.
 	}
 
-	if (player->pflags & PF_VOID) // Returning from FAULT VOID
+	if (player->pflags & PF_VOID && player->mo->hitlag == 0) // Returning from FAULT VOID
 	{
 		player->pflags &= ~PF_VOID;
 		player->mo->renderflags &= ~RF_DONTDRAW;
