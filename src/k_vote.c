@@ -190,7 +190,8 @@ typedef struct
 // Voting level drawing
 typedef struct
 {
-	char str[62];
+	char str[128];
+	size_t str_len;
 	boolean encore;
 	fixed_t hop;
 } y_vote_draw_level;
@@ -789,7 +790,10 @@ static void Y_DrawVoteSelector(const fixed_t y, const fixed_t time, const UINT8 
 
 static void Y_DrawVoteSelection(fixed_t offset)
 {
-	static fixed_t selectorTimer = 0;
+	static fixed_t animTimer = 0;
+	animTimer += renderdeltatics;
+
+	const size_t charAnim = animTimer / FRACUNIT / 4;
 
 	fixed_t x = SELECTION_X;
 	fixed_t y = SELECTION_Y + FixedMul(offset, (SELECTION_HEIGHT + SELECTOR_HEIGHT) * 2);
@@ -832,6 +836,51 @@ static void Y_DrawVoteSelection(fixed_t offset)
 			renderdeltatics
 		);
 
+		if (vote_draw.levels[i].hop > FRACUNIT >> 2)
+		{
+			const fixed_t height = (SELECTION_WIDTH * BASEVIDHEIGHT) / BASEVIDWIDTH;
+			const fixed_t tx = x - (SELECTION_WIDTH >> 1);
+			const fixed_t ty = y + (height >> 1);
+
+			INT32 fx, fy, fw, fh;
+			INT32 dupx, dupy;
+
+			dupx = vid.dupx;
+			dupy = vid.dupy;
+
+			// only use one dup, to avoid stretching (har har)
+			dupx = dupy = (dupx < dupy ? dupx : dupy);
+
+			fx = FixedMul(tx, dupx << FRACBITS) >> FRACBITS;
+			fy = FixedMul(ty, dupy << FRACBITS) >> FRACBITS;
+			fw = FixedMul(SELECTION_WIDTH - 1, dupx << FRACBITS) >> FRACBITS; // Why does only this need -1 to match up? IDFK
+			fh = FixedMul(SELECTION_HOP, dupy << FRACBITS) >> FRACBITS;
+
+			V_AdjustXYWithSnap(&fx, &fy, 0, dupx, dupy);
+
+			V_DrawFill(
+				fx - dupx, fy - fh + dupy,
+				fw + (dupx << 1), fh,
+				31|V_NOSCALESTART
+			);
+
+			size_t ci;
+			for (ci = 0; ci < 10; ci++)
+			{
+				const size_t c = (ci + charAnim) % vote_draw.levels[i].str_len;
+
+				V_DrawCharacterScaled(
+					(fx + (7 * dupx * ci)) << FRACBITS,
+					(fy - fh + (2 * dupy)) << FRACBITS,
+					FRACUNIT,
+					V_ORANGEMAP | V_NOSCALESTART,
+					HU_FONT,
+					vote_draw.levels[i].str[c],
+					NULL
+				);
+			}
+		}
+
 		Y_DrawVoteThumbnail(
 			x, y - vote_draw.levels[i].hop,
 			SELECTION_WIDTH, 0,
@@ -855,7 +904,6 @@ static void Y_DrawVoteSelection(fixed_t offset)
 		//
 		// Draw splitscreen selectors
 		//
-		selectorTimer += renderdeltatics;
 
 		//if (splitscreen > 0)
 		{
@@ -868,10 +916,10 @@ static void Y_DrawVoteSelection(fixed_t offset)
 					continue;
 				}
 
-				Y_DrawVoteSelector(y, selectorTimer, i);
+				Y_DrawVoteSelector(y, animTimer, i);
 			}
 
-			Y_DrawVoteSelector(y, selectorTimer, priority);
+			Y_DrawVoteSelector(y, animTimer, priority);
 		}
 	}
 }
@@ -1616,38 +1664,47 @@ static void Y_InitVoteDrawing(void)
 
 	for (i = 0; i < VOTE_NUM_LEVELS; i++)
 	{
+		const mapheader_t *header = mapheaderinfo[g_voteLevels[i][0]];
+
 		// set up the encore
 		vote_draw.levels[i].encore = (g_voteLevels[i][1] & VOTE_MOD_ENCORE);
 
-		// set up the levelstring
-		if (mapheaderinfo[g_voteLevels[i][0]]->levelflags & LF_NOZONE || !mapheaderinfo[g_voteLevels[i][0]]->zonttl[0])
+		// set up the level title string
+		memset(vote_draw.levels[i].str, 0, sizeof(vote_draw.levels[i].str));
+		vote_draw.levels[i].str_len = 0;
+
+		vote_draw.levels[i].str_len += snprintf(
+			vote_draw.levels[i].str + vote_draw.levels[i].str_len,
+			sizeof(vote_draw.levels[i].str) - vote_draw.levels[i].str_len,
+			"%s",
+			header->lvlttl
+		);
+
+		if (header->zonttl[0])
 		{
-			if (mapheaderinfo[g_voteLevels[i][0]]->actnum > 0)
-				snprintf(vote_draw.levels[i].str,
-					sizeof vote_draw.levels[i].str,
-					"%s %d",
-					mapheaderinfo[g_voteLevels[i][0]]->lvlttl, mapheaderinfo[g_voteLevels[i][0]]->actnum);
-			else
-				snprintf(vote_draw.levels[i].str,
-					sizeof vote_draw.levels[i].str,
-					"%s",
-					mapheaderinfo[g_voteLevels[i][0]]->lvlttl);
-		}
-		else
-		{
-			if (mapheaderinfo[g_voteLevels[i][0]]->actnum > 0)
-				snprintf(vote_draw.levels[i].str,
-					sizeof vote_draw.levels[i].str,
-					"%s %s %d",
-					mapheaderinfo[g_voteLevels[i][0]]->lvlttl, mapheaderinfo[g_voteLevels[i][0]]->zonttl, mapheaderinfo[g_voteLevels[i][0]]->actnum);
-			else
-				snprintf(vote_draw.levels[i].str,
-					sizeof vote_draw.levels[i].str,
-					"%s %s",
-					mapheaderinfo[g_voteLevels[i][0]]->lvlttl, mapheaderinfo[g_voteLevels[i][0]]->zonttl);
+			vote_draw.levels[i].str_len += snprintf(
+				vote_draw.levels[i].str + vote_draw.levels[i].str_len,
+				sizeof(vote_draw.levels[i].str) - vote_draw.levels[i].str_len,
+				" %s",
+				header->zonttl
+			);
 		}
 
-		vote_draw.levels[i].str[sizeof vote_draw.levels[i].str - 1] = '\0';
+		if (header->actnum > 0)
+		{
+			vote_draw.levels[i].str_len += snprintf(
+				vote_draw.levels[i].str + vote_draw.levels[i].str_len,
+				sizeof(vote_draw.levels[i].str) - vote_draw.levels[i].str_len,
+				" %d",
+				header->actnum
+			);
+		}
+
+		vote_draw.levels[i].str_len += snprintf(
+			vote_draw.levels[i].str + vote_draw.levels[i].str_len,
+			sizeof(vote_draw.levels[i].str) - vote_draw.levels[i].str_len,
+			"    "
+		);
 	}
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
