@@ -265,12 +265,21 @@ void M_CupSelectHandler(INT32 choice)
 
 		M_SetMenuDelay(pid);
 
+		if (!newcup)
+		{
+			S_StartSound(NULL, sfx_s3kb2);
+			return;
+		}
+
 		levellist.levelsearch.cup = newcup;
 		count = M_CountLevelsToShowInList(&levellist.levelsearch);
 
-		if ((!newcup)
-			|| (count == 0)
-			|| (cupgrid.grandprix == true && newcup->cachedlevels[0] == NEXTMAP_INVALID))
+		if (count == 0
+			|| (
+				cupgrid.grandprix == true
+				&& newcup->cachedlevels[0] == NEXTMAP_INVALID
+			)
+		)
 		{
 			S_StartSound(NULL, sfx_s3kb2);
 			return;
