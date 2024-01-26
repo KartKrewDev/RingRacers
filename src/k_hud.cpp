@@ -130,36 +130,36 @@ static patch_t *kp_wantedsplit;
 static patch_t *kp_wantedreticle;
 static patch_t *kp_minimapdot;
 
-static patch_t *kp_itembg[4];
+static patch_t *kp_itembg[6];
 static patch_t *kp_ringbg[4];
 static patch_t *kp_itemtimer[2];
 static patch_t *kp_itemmulsticker[2];
 static patch_t *kp_itemx;
 
-static patch_t *kp_sadface[2];
-static patch_t *kp_sneaker[2];
-static patch_t *kp_rocketsneaker[2];
-static patch_t *kp_invincibility[13];
-static patch_t *kp_banana[2];
-static patch_t *kp_eggman[2];
-static patch_t *kp_orbinaut[5];
-static patch_t *kp_jawz[2];
-static patch_t *kp_mine[2];
-static patch_t *kp_landmine[2];
-static patch_t *kp_ballhog[2];
-static patch_t *kp_selfpropelledbomb[2];
-static patch_t *kp_grow[2];
-static patch_t *kp_shrink[2];
-static patch_t *kp_lightningshield[2];
-static patch_t *kp_bubbleshield[2];
-static patch_t *kp_flameshield[2];
-static patch_t *kp_hyudoro[2];
-static patch_t *kp_pogospring[2];
-static patch_t *kp_superring[2];
-static patch_t *kp_kitchensink[2];
-static patch_t *kp_droptarget[2];
-static patch_t *kp_gardentop[2];
-static patch_t *kp_gachabom[2];
+static patch_t *kp_sadface[3];
+static patch_t *kp_sneaker[3];
+static patch_t *kp_rocketsneaker[3];
+static patch_t *kp_invincibility[19];
+static patch_t *kp_banana[3];
+static patch_t *kp_eggman[3];
+static patch_t *kp_orbinaut[6];
+static patch_t *kp_jawz[3];
+static patch_t *kp_mine[3];
+static patch_t *kp_landmine[3];
+static patch_t *kp_ballhog[3];
+static patch_t *kp_selfpropelledbomb[3];
+static patch_t *kp_grow[3];
+static patch_t *kp_shrink[3];
+static patch_t *kp_lightningshield[3];
+static patch_t *kp_bubbleshield[3];
+static patch_t *kp_flameshield[3];
+static patch_t *kp_hyudoro[3];
+static patch_t *kp_pogospring[3];
+static patch_t *kp_superring[3];
+static patch_t *kp_kitchensink[3];
+static patch_t *kp_droptarget[3];
+static patch_t *kp_gardentop[3];
+static patch_t *kp_gachabom[3];
 static patch_t *kp_bar[2];
 static patch_t *kp_doublebar[2];
 static patch_t *kp_triplebar[2];
@@ -612,6 +612,40 @@ void K_LoadKartHUDGraphics(void)
 		buffer[7] = '0'+((i+1)%10);
 		HU_UpdatePatch(&kp_flameshieldmeter_bg[i][1], "%s", buffer);
 	}
+
+	// 4P item spy
+	HU_UpdatePatch(&kp_itembg[4], "ISPYBG");
+	HU_UpdatePatch(&kp_itembg[5], "ISPYBGD");
+
+	//HU_UpdatePatch(&kp_sadface[2], "ISPYSAD");
+	HU_UpdatePatch(&kp_sneaker[2], "ISPYSHOE");
+	HU_UpdatePatch(&kp_rocketsneaker[2], "ISPYRSHE");
+	sprintf(buffer, "ISPYINVx");
+	for (i = 0; i < 6; i++)
+	{
+		buffer[7] = '1'+i;
+		HU_UpdatePatch(&kp_invincibility[i+13], "%s", buffer);
+	}
+	HU_UpdatePatch(&kp_banana[2], "ISPYBANA");
+	HU_UpdatePatch(&kp_eggman[2], "ISPYEGGM");
+	HU_UpdatePatch(&kp_orbinaut[5], "ISPYORBN");
+	HU_UpdatePatch(&kp_jawz[2], "ISPYJAWZ");
+	HU_UpdatePatch(&kp_mine[2], "ISPYMINE");
+	HU_UpdatePatch(&kp_landmine[2], "ISPYLNDM");
+	HU_UpdatePatch(&kp_ballhog[2], "ISPYBHOG");
+	HU_UpdatePatch(&kp_selfpropelledbomb[2], "ISPYSPB");
+	HU_UpdatePatch(&kp_grow[2], "ISPYGROW");
+	HU_UpdatePatch(&kp_shrink[2], "ISPYSHRK");
+	HU_UpdatePatch(&kp_lightningshield[2], "ISPYTHNS");
+	HU_UpdatePatch(&kp_bubbleshield[2], "ISPYBUBS");
+	HU_UpdatePatch(&kp_flameshield[2], "ISPYFLMS");
+	HU_UpdatePatch(&kp_hyudoro[2], "ISPYHYUD");
+	HU_UpdatePatch(&kp_pogospring[2], "ISPYPOGO");
+	HU_UpdatePatch(&kp_superring[2], "ISPYRING");
+	HU_UpdatePatch(&kp_kitchensink[2], "ISPYSINK");
+	HU_UpdatePatch(&kp_droptarget[2], "ISPYDTRG");
+	HU_UpdatePatch(&kp_gardentop[2], "ISPYGTOP");
+	HU_UpdatePatch(&kp_gachabom[2], "ISPYGBOM");
 
 	// CHECK indicators
 	sprintf(buffer, "K_CHECKx");
