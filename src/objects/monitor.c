@@ -695,10 +695,12 @@ Obj_MonitorOnDeath
 					K_ItemResultToType(result),
 					K_ItemResultToAmount(result)));
 
+		drop->momz /= 2; // This is player-locked, so no need to throw it high
+
 		if (!P_MobjWasRemoved(source) && source->player)
 		{
 			P_SetTarget(&drop->tracer, source);
-			drop->extravalue1 = 6*TICRATE;
+			drop->extravalue1 = 5*TICRATE;
 			drop->colorized = true;
 			drop->color = source->player->skincolor;
 		}

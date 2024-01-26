@@ -99,6 +99,18 @@ void K_ClearPersistentMessages(void);
 void K_ClearPersistentMessageForPlayer(player_t *player);
 void K_TickMessages(void);
 
+typedef enum
+{
+	PLAYERTAG_NONE,
+	PLAYERTAG_LOCAL,
+	PLAYERTAG_RIVAL,
+	PLAYERTAG_NAME,
+}
+playertagtype_t;
+
+playertagtype_t K_WhichPlayerTag(player_t *p);
+void K_DrawPlayerTag(fixed_t x, fixed_t y, player_t *p, playertagtype_t type, INT32 flags);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

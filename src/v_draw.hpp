@@ -154,10 +154,16 @@ public:
 		Chain& clipx() { return clipx(x_, x_ + width_); }
 		Chain& clipy() { return clipy(y_, y_ + height_); }
 
+		// True to use internal clipping state
+		// False to use global state (default)
+		// Changing the clipping dimensions implicitly sets
+		// this to true
+		Chain& clip(bool yes);
+
 		Chain& colormap(const UINT8* colormap);
-		Chain& colormap(skincolornum_t color);
-		Chain& colormap(INT32 skin, skincolornum_t color);
-		Chain& colorize(skincolornum_t color);
+		Chain& colormap(UINT16 color);
+		Chain& colormap(INT32 skin, UINT16 color);
+		Chain& colorize(UINT16 color);
 
 		void text(const char* str) const { string(str, flags_, font_); }
 		void text(const std::string& str) const { text(str.c_str()); }
@@ -195,6 +201,9 @@ public:
 		{
 			explicit Clipper(const Chain& chain);
 			~Clipper();
+
+		private:
+			cliprect_t save_;
 		};
 
 		float x_ = 0.f;
@@ -207,6 +216,7 @@ public:
 		float clipx2_ = BASEVIDWIDTH;
 		float clipy1_ = 0.f;
 		float clipy2_ = BASEVIDHEIGHT;
+		bool clip_ = false;
 
 		INT32 flags_ = 0;
 
@@ -251,6 +261,7 @@ public:
 	METHOD(stretch);
 	METHOD(clipx);
 	METHOD(clipy);
+	METHOD(clip);
 	METHOD(colormap);
 	METHOD(colorize);
 

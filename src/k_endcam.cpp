@@ -60,7 +60,7 @@ struct Camera : camera_t
 struct EndCam : endcam_t
 {
 	tic_t Time() const { return leveltime - begin; }
-	bool Freezing() const { return Time() <= swirlDuration; }
+	bool Freezing() const { return active && Time() <= swirlDuration; }
 
 	void GC()
 	{

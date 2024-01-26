@@ -1808,10 +1808,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 			K_CheckBumpers();
 
-			if (target->player->roundscore > 1)
-				target->player->roundscore -= 2;
-			else
-				target->player->roundscore = 0;
+			P_AddPlayerScore(target->player, -2);
 		}
 
 		target->player->trickpanel = TRICKSTATE_NONE;
