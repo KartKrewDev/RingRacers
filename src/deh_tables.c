@@ -2177,11 +2177,6 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_BIGRING11",
 	"S_BIGRING12",
 
-	// SNES Objects
-	"S_SNES_DONUTBUSH1",
-	"S_SNES_DONUTBUSH2",
-	"S_SNES_DONUTBUSH3",
-
 	// Ark Arrows
 	"S_ARKARROW_0",
 	"S_ARKARROW_1",
@@ -2528,17 +2523,6 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_KOHRAN",
 	"S_KANNA",
 	"S_OGAMI",
-
-	// SMK ports
-	"S_SMK_PIPE1", // Generic pipes
-	"S_SMK_PIPE2",
-	"S_SMK_MOLE", // Donut Plains Monty Moles
-	"S_SMK_THWOMP", // Bowser Castle Thwomps
-	"S_SMK_SNOWBALL", // Vanilla Lake snowballs
-	"S_SMK_ICEBLOCK", // Vanilla Lake breakable ice blocks
-	"S_SMK_ICEBLOCK2",
-	"S_SMK_ICEBLOCK_DEBRIS",
-	"S_SMK_ICEBLOCK_DEBRIS2",
 
 	"S_SUNBEAMPALM_STEM",
 	"S_SUNBEAMPALM_LEAF",
@@ -3615,10 +3599,6 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_BIGRING",
 
-	"MT_SNES_DONUTBUSH1",
-	"MT_SNES_DONUTBUSH2",
-	"MT_SNES_DONUTBUSH3",
-
 	"MT_ARKARROW", // Ark Arrows
 
 	"MT_BUMP",
@@ -3708,16 +3688,6 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	// Hanagumi Hall
 	"MT_HANAGUMIHALL_STEAM",
 	"MT_HANAGUMIHALL_NPC",
-
-	// SMK ports
-	"MT_SMK_PIPE",
-	"MT_SMK_MOLESPAWNER",
-	"MT_SMK_MOLE",
-	"MT_SMK_THWOMP",
-	"MT_SMK_SNOWBALL",
-	"MT_SMK_ICEBLOCK",
-	"MT_SMK_ICEBLOCK_SIDE",
-	"MT_SMK_ICEBLOCK_DEBRIS",
 
 	"MT_SUNBEAMPALM_STEM",
 	"MT_SUNBEAMPALM_LEAF",

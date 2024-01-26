@@ -416,7 +416,6 @@ char sprnames[NUMSPRITES + 1][5] =
 	// Additional Kart Objects
 	"AUDI", // Audience members
 	"BUZB", // Sapphire Coast Buzz Mk3
-	"SNES",
 	"BRNG", // Chaotix Big Ring
 
 	// Ark Arrows
@@ -550,13 +549,6 @@ char sprnames[NUMSPRITES + 1][5] =
 	"HGCE",
 	"HGCF",
 	"HGCG",
-
-	// SMK ports
-	"SMKP",
-	"MTYM",
-	"THWP",
-	"SNOB",
-	"ICEB",
 
 	"TUST",
 	"TULE",
@@ -2669,10 +2661,6 @@ state_t states[NUMSTATES] =
 	{SPR_BRNG, 10, 2, {NULL}, 0, 0, S_BIGRING12}, // S_BIGRING11
 	{SPR_BRNG, 11, 2, {NULL}, 0, 0, S_BIGRING01}, // S_BIGRING12
 
-	{SPR_SNES, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SNES_DONUTBUSH1
-	{SPR_SNES, 1, -1, {NULL}, 0, 0, S_NULL}, // S_SNES_DONUTBUSH2
-	{SPR_SNES, 2, -1, {NULL}, 0, 0, S_NULL}, // S_SNES_DONUTBUSH3
-
 	// Ark Arrows
 	{SPR_SYM0, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_ARKARROW_0
 	{SPR_SYM1, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_ARKARROW_1
@@ -3028,17 +3016,6 @@ state_t states[NUMSTATES] =
 	{SPR_HGCE, 0, -1, {NULL}, 0, 0, S_NULL}, // S_KOHRAN
 	{SPR_HGCF, 0, -1, {NULL}, 0, 0, S_NULL}, // S_KANNA
 	{SPR_HGCG, 0, -1, {NULL}, 0, 0, S_NULL}, // S_OGAMI
-
-	// SMK ports
-	{SPR_SMKP, 0, -1, {NULL}, 0, 0, S_SMK_PIPE1}, // S_SMK_PIPE1
-	{SPR_SMKP, 1, -1, {NULL}, 0, 0, S_SMK_PIPE2}, // S_SMK_PIPE2
-	{SPR_MTYM, 0, -1, {NULL}, 0, 0, S_SMK_MOLE}, // S_SMK_MOLE
-	{SPR_THWP, 0, -1, {NULL}, 0, 0, S_SMK_THWOMP}, // S_SMK_THWOMP
-	{SPR_SNOB, 0, -1, {NULL}, 0, 0, S_SMK_SNOWBALL}, // S_SMK_SNOWBALL
-	{SPR_ICEB, FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_NULL}, // S_SMK_ICEBLOCK
-	{SPR_ICEB, FF_PAPERSPRITE|1, -1, {NULL}, 0, 0, S_NULL}, // S_SMK_ICEBLOCK2
-	{SPR_ICEB, 2, 10, {NULL}, 0, 0, S_SMK_ICEBLOCK_DEBRIS2}, // S_SMK_ICEBLOCK_DEBRIS
-	{SPR_ICEB, 3, 10, {NULL}, 0, 0, S_NULL}, // S_SMK_ICEBLOCK_DEBRIS2
 
 	{SPR_TUST, FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_NULL}, // S_SUNBEAMPALM_STEM
 	{SPR_TULE, FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_NULL}, // S_SUNBEAMPALM_LEAF
@@ -16202,87 +16179,6 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL          // raisestate
 	},
 
-	{           // MT_SNES_DONUTBUSH1
-		2301,           // doomednum
-		S_SNES_DONUTBUSH1, // spawnstate
-		1000,           // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_NULL,         // deathstate
-		S_NULL,         // xdeathstate
-		sfx_None,       // deathsound
-		0,              // speed
-		14*FRACUNIT,    // radius
-		15*FRACUNIT,    // height
-		0,              // display offset
-		100,            // mass
-		0,              // damage
-		sfx_None,       // activesound
-		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOTHINK, // flags
-		S_NULL          // raisestate
-	},
-
-	{           // MT_SNES_DONUTBUSH2
-		2302,           // doomednum
-		S_SNES_DONUTBUSH2, // spawnstate
-		1000,           // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_NULL,         // deathstate
-		S_NULL,         // xdeathstate
-		sfx_None,       // deathsound
-		0,              // speed
-		13*FRACUNIT,    // radius
-		13*FRACUNIT,    // height
-		0,              // display offset
-		100,            // mass
-		0,              // damage
-		sfx_None,       // activesound
-		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOTHINK, // flags
-		S_NULL          // raisestate
-	},
-
-	{           // MT_SNES_DONUTBUSH3
-		2303,           // doomednum
-		S_SNES_DONUTBUSH3, // spawnstate
-		1000,           // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_NULL,         // deathstate
-		S_NULL,         // xdeathstate
-		sfx_None,       // deathsound
-		0,              // speed
-		7*FRACUNIT,     // radius
-		7*FRACUNIT,     // height
-		0,              // display offset
-		100,            // mass
-		0,              // damage
-		sfx_None,       // activesound
-		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOTHINK, // flags
-		S_NULL          // raisestate
-	},
-
 	{           // MT_ARKARROW
 		4094,           // doomednum
 		S_ARKARROW_0,   // spawnstate
@@ -17685,222 +17581,6 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,    // activesound
 		MF_DONTENCOREMAP|MF_NOCLIP|MF_SCENERY|MF_NOGRAVITY, // flags
 		S_NULL       // raisestate
-	},
-
-	{           // MT_SMK_PIPE
-		3970,           // doomednum
-		S_SMK_PIPE1,    // spawnstate
-		1000,           // spawnhealth
-		S_SMK_PIPE2,    // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_SMK_PIPE1,    // deathstate
-		S_NULL,         // xdeathstate
-		sfx_s1ac,       // deathsound
-		0,              // speed
-		20<<FRACBITS,   // radius
-		52<<FRACBITS,   // height
-		0,              // display offset
-		0,              // mass
-		0,              // damage
-		sfx_None,       // activesound
-		MF_SOLID,       // flags
-		S_NULL          // raisestate
-	},
-
-	{           // MT_SMK_MOLESPAWNER
-		3971,           // doomednum
-		S_INVISIBLE,    // spawnstate
-		1000,           // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_NULL,         // deathstate
-		S_NULL,         // xdeathstate
-		sfx_None,       // deathsound
-		0,              // speed
-		28<<FRACBITS,   // radius
-		32<<FRACBITS,   // height
-		0,              // display offset
-		0,              // mass
-		0,              // damage
-		sfx_None,       // activesound
-		MF_NOBLOCKMAP|MF_NOGRAVITY, // flags
-		S_NULL          // raisestate
-	},
-
-	{           // MT_SMK_MOLE
-		-1,             // doomednum
-		S_SMK_MOLE,     // spawnstate
-		1000,           // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		TICRATE,        // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_SMK_MOLE,     // deathstate
-		S_NULL,         // xdeathstate
-		sfx_s1ac,       // deathsound
-		16<<FRACBITS,   // speed
-		28<<FRACBITS,   // radius
-		32<<FRACBITS,   // height
-		0,              // display offset
-		0,              // mass
-		0,              // damage
-		sfx_None,       // activesound
-		MF_SPECIAL, // flags
-		S_NULL          // raisestate
-	},
-
-	{           // MT_SMK_THWOMP
-		3972,           // doomednum
-		S_SMK_THWOMP,   // spawnstate
-		1000,           // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		TICRATE,        // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_SMK_THWOMP,   // deathstate
-		S_NULL,         // xdeathstate
-		sfx_s1ac,       // deathsound
-		32<<FRACBITS,   // speed
-		22<<FRACBITS,   // radius
-		52<<FRACBITS,   // height
-		0,              // display offset
-		0,              // mass
-		0,              // damage
-		sfx_None,       // activesound
-		MF_SOLID|MF_NOGRAVITY, // flags
-		S_NULL          // raisestate
-	},
-
-	{           // MT_SMK_SNOWBALL
-		3745,           // doomednum
-		S_SMK_SNOWBALL, // spawnstate
-		1000,           // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_NULL,         // deathstate
-		S_NULL,         // xdeathstate
-		sfx_None,       // deathsound
-		0,              // speed
-		16<<FRACBITS,   // radius
-		32<<FRACBITS,   // height
-		0,              // display offset
-		0,              // mass
-		0,              // damage
-		sfx_None,       // activesound
-		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOTHINK, // flags
-		S_NULL          // raisestate
-	},
-
-	{           // MT_SMK_ICEBLOCK
-		3203,           // doomednum
-		S_INVISIBLE,    // spawnstate
-		1,              // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_INVISIBLE,    // deathstate
-		S_NULL,         // xdeathstate
-		sfx_None,       // deathsound
-		0,              // speed
-		32<<FRACBITS,   // radius
-		32<<FRACBITS,   // height
-		0,              // display offset
-		0,              // mass
-		0,              // damage
-		sfx_None,       // activesound
-		MF_SOLID|MF_SHOOTABLE|MF_NOGRAVITY, // flags
-		S_NULL          // raisestate
-	},
-
-	{           // MT_SMK_ICEBLOCK_SIDE
-		-1,             // doomednum
-		S_SMK_ICEBLOCK, // spawnstate
-		1000,           // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_NULL,         // deathstate
-		S_NULL,         // xdeathstate
-		sfx_None,       // deathsound
-		0,              // speed
-		32<<FRACBITS,   // radius
-		32<<FRACBITS,   // height
-		0,              // display offset
-		0,              // mass
-		0,              // damage
-		sfx_None,       // activesound
-		MF_NOTHINK|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY, // flags
-		S_NULL          // raisestate
-	},
-
-	{           // MT_SMK_ICEBLOCK_DEBRIS
-		-1,             // doomednum
-		S_SMK_ICEBLOCK_DEBRIS, // spawnstate
-		1000,           // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_NULL,         // deathstate
-		S_NULL,         // xdeathstate
-		sfx_None,       // deathsound
-		0,              // speed
-		8<<FRACBITS,    // radius
-		8<<FRACBITS,    // height
-		0,              // display offset
-		0,              // mass
-		0,              // damage
-		sfx_None,       // activesound
-		MF_SCENERY|MF_NOCLIP|MF_NOCLIPHEIGHT, // flags
-		S_NULL          // raisestate
 	},
 
 	{           // MT_SUNBEAMPALM_STEM

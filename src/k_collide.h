@@ -32,7 +32,6 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim);
 boolean K_KitchenSinkCollide(mobj_t *t1, mobj_t *t2);
 
 boolean K_FallingRockCollide(mobj_t *t1, mobj_t *t2);
-boolean K_SMKIceBlockCollide(mobj_t *t1, mobj_t *t2);
 
 boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2);
 

@@ -936,27 +936,6 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		return Obj_ShrinkLaserCollide(tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
 
-	if (tm.thing->type == MT_SMK_ICEBLOCK)
-	{
-		// see if it went over / under
-		if (tm.thing->z > thing->z + thing->height)
-			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
-			return BMIT_CONTINUE; // underneath
-
-		return K_SMKIceBlockCollide(tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
-	}
-	else if (thing->type == MT_SMK_ICEBLOCK)
-	{
-		// see if it went over / under
-		if (tm.thing->z > thing->z + thing->height)
-			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
-			return BMIT_CONTINUE; // underneath
-
-		return K_SMKIceBlockCollide(thing, tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
-	}
-
 	if (tm.thing->type == MT_EGGMANITEM || tm.thing->type == MT_EGGMANITEM_SHIELD)
 	{
 		// see if it went over / under
@@ -1512,72 +1491,6 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 				K_KartSolidBounce(tm.thing, thing);
 				return BMIT_CONTINUE;
 			}
-		}
-		else if (thing->type == MT_SMK_PIPE)
-		{
-			// see if it went over / under
-			if (tm.thing->z > thing->z + thing->height)
-				return BMIT_CONTINUE; // overhead
-			if (tm.thing->z + tm.thing->height < thing->z)
-				return BMIT_CONTINUE; // underneath
-
-			if (!thing->health)
-				return BMIT_CONTINUE; // dead
-
-			if (tm.thing->player->invincibilitytimer > 0
-				|| K_IsBigger(tm.thing, thing) == true)
-			{
-				P_KillMobj(thing, tm.thing, tm.thing, DMG_NORMAL);
-				return BMIT_CONTINUE; // kill
-			}
-
-			K_KartSolidBounce(tm.thing, thing);
-			return BMIT_CONTINUE;
-		}
-		else if (thing->type == MT_SMK_THWOMP)
-		{
-			if (!thing->health)
-				return BMIT_CONTINUE; // dead
-
-			if (!thwompsactive)
-				return BMIT_CONTINUE; // not active yet
-
-			if ((tm.thing->z < thing->z) && (thing->z >= thing->movefactor-(256<<FRACBITS)))
-			{
-				thing->extravalue1 = 1; // purposely try to stomp on players early
-				//S_StartSound(thing, sfx_s1bb);
-			}
-
-			// see if it went over / under
-			if (tm.thing->z > thing->z + thing->height)
-				return BMIT_CONTINUE; // overhead
-			if (tm.thing->z + tm.thing->height < thing->z)
-				return BMIT_CONTINUE; // underneath
-
-			// kill
-			if (tm.thing->player->invincibilitytimer > 0
-				|| K_IsBigger(tm.thing, thing) == true)
-			{
-				P_KillMobj(thing, tm.thing, tm.thing, DMG_NORMAL);
-				return BMIT_CONTINUE;
-			}
-
-			// no interaction
-			if (tm.thing->player->flashing > 0 || tm.thing->player->hyudorotimer > 0 || tm.thing->player->spinouttimer > 0)
-				return BMIT_CONTINUE;
-
-			// collide
-			if (tm.thing->z < thing->z && thing->momz < 0)
-				P_DamageMobj(tm.thing, thing, thing, 1, DMG_TUMBLE);
-			else
-			{
-				if ((K_KartSolidBounce(tm.thing, thing) == true) && (thing->flags2 & MF2_AMBUSH))
-				{
-					P_DamageMobj(tm.thing, thing, thing, 1, DMG_WIPEOUT);
-				}
-			}
-
-			return BMIT_CONTINUE;
 		}
 		else if (thing->type == MT_KART_LEFTOVER)
 		{

@@ -1028,34 +1028,6 @@ boolean K_FallingRockCollide(mobj_t *t1, mobj_t *t2)
 	return true;
 }
 
-boolean K_SMKIceBlockCollide(mobj_t *t1, mobj_t *t2)
-{
-	if (!(t2->flags & MF_SOLID || t2->flags & MF_SHOOTABLE))
-		return true;
-
-	if (!(t2->health))
-		return true;
-
-	if (t2->type == MT_BANANA || t2->type == MT_BANANA_SHIELD
-		|| t2->type == MT_EGGMANITEM || t2->type == MT_EGGMANITEM_SHIELD
-		|| t2->type == MT_SSMINE || t2->type == MT_SSMINE_SHIELD
-		|| t2->type == MT_DROPTARGET_SHIELD
-		|| t2->type == MT_ORBINAUT_SHIELD || t2->type == MT_JAWZ_SHIELD)
-		return false;
-
-	if (t1->health)
-		P_KillMobj(t1, t2, t2, DMG_NORMAL);
-
-	/*
-	if (t2->player && (t2->player->invincibilitytimer > 0
-		|| K_IsBigger(t2, t1) == true))
-		return true;
-	*/
-
-	K_KartSolidBounce(t1, t2);
-	return true;
-}
-
 boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 {
 	if (K_PodiumSequence() == true)

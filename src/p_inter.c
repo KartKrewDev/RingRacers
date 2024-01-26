@@ -571,33 +571,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			special->frame |= FF_TRANS90;
 			return;
 		*/
-		case MT_SMK_MOLE:
-			if (special->target && !P_MobjWasRemoved(special->target))
-				return;
-
-			if (special->health <= 0 || toucher->health <= 0)
-				return;
-
-			if (!player->mo || player->spectator)
-				return;
-
-			// kill
-			if (player->invincibilitytimer > 0
-				|| K_IsBigger(toucher, special) == true
-				|| player->flamedash > 0)
-			{
-				P_KillMobj(special, toucher, toucher, DMG_NORMAL);
-				return;
-			}
-
-			// no interaction
-			if (player->flashing > 0 || player->hyudorotimer > 0 || P_PlayerInPain(player))
-				return;
-
-			// attach to player!
-			P_SetTarget(&special->target, toucher);
-			S_StartSound(special, sfx_s1a2);
-			return;
 
 		case MT_SPECIALSTAGEBOMB:
 			// only attempt to damage the player if they're not invincible
@@ -1914,18 +1887,6 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			return;
 
 		// SRB2Kart:
-		case MT_SMK_ICEBLOCK:
-			{
-				mobj_t *cur = target->hnext;
-				while (cur && !P_MobjWasRemoved(cur))
-				{
-					P_SetMobjState(cur, S_SMK_ICEBLOCK2);
-					cur = cur->hnext;
-				}
-				target->fuse = 10;
-				S_StartSound(target, sfx_s3k80);
-			}
-			break;
 
 		case MT_ITEMCAPSULE:
 		{
@@ -2279,23 +2240,6 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			P_KillMobj(cur, inflictor, source, DMG_NORMAL);
 			cur = cur->hnext;
 		}
-	}
-
-	// Bounce up on death
-	if (target->type == MT_SMK_PIPE || target->type == MT_SMK_MOLE || target->type == MT_SMK_THWOMP)
-	{
-		target->flags &= (~MF_NOGRAVITY);
-
-		if (target->eflags & MFE_VERTICALFLIP)
-			target->z -= target->height;
-		else
-			target->z += target->height;
-
-		S_StartSound(target, target->info->deathsound);
-
-		P_SetObjectMomZ(target, 8<<FRACBITS, false);
-		if (inflictor)
-			P_InstaThrust(target, R_PointToAngle2(inflictor->x, inflictor->y, target->x, target->y)+ANGLE_90, 16<<FRACBITS);
 	}
 
 	// Final state setting - do something instead of P_SetMobjState;
