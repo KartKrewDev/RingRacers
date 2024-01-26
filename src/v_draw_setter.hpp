@@ -87,6 +87,7 @@ inline Draw::Chain& Draw::Chain::clipx(float left, float right)
 {
 	clipx1_ = left;
 	clipx2_ = right;
+	clip_ = true;
 	return *this;
 }
 
@@ -94,6 +95,7 @@ inline Draw::Chain& Draw::Chain::clipy(float top, float bottom)
 {
 	clipy1_ = top;
 	clipy2_ = bottom;
+	clip_ = true;
 	return *this;
 }
 

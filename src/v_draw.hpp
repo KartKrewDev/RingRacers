@@ -195,6 +195,9 @@ public:
 		{
 			explicit Clipper(const Chain& chain);
 			~Clipper();
+
+		private:
+			cliprect_t save_;
 		};
 
 		float x_ = 0.f;
@@ -207,6 +210,7 @@ public:
 		float clipx2_ = BASEVIDWIDTH;
 		float clipy1_ = 0.f;
 		float clipy2_ = BASEVIDHEIGHT;
+		bool clip_ = false;
 
 		INT32 flags_ = 0;
 
