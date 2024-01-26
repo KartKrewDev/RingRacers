@@ -578,9 +578,10 @@ void K_DrawTargetTracking(const TargetTracking& target)
 
 void K_CullTargetList(std::vector<TargetTracking>& targetList)
 {
-	constexpr int kBlockSize = 20;
-	constexpr int kXBlocks = BASEVIDWIDTH / kBlockSize;
-	constexpr int kYBlocks = BASEVIDHEIGHT / kBlockSize;
+	constexpr int kBlockWidth = 20;
+	constexpr int kBlockHeight = 10;
+	constexpr int kXBlocks = BASEVIDWIDTH / kBlockWidth;
+	constexpr int kYBlocks = BASEVIDHEIGHT / kBlockHeight;
 	bool map[kXBlocks][kYBlocks] = {};
 
 	constexpr fixed_t kTrackerRadius = 30*FRACUNIT/2; // just an approximation of common HUD tracker
@@ -602,10 +603,10 @@ void K_CullTargetList(std::vector<TargetTracking>& targetList)
 				return;
 			}
 
-			fixed_t x1 = std::max(((tr.result.x - kTrackerRadius) / kBlockSize) / FRACUNIT, 0);
-			fixed_t x2 = std::min(((tr.result.x + kTrackerRadius) / kBlockSize) / FRACUNIT, kXBlocks - 1);
-			fixed_t y1 = std::max(((tr.result.y - kTrackerRadius) / kBlockSize) / FRACUNIT, 0);
-			fixed_t y2 = std::min(((tr.result.y + kTrackerRadius) / kBlockSize) / FRACUNIT, kYBlocks - 1);
+			fixed_t x1 = std::max(((tr.result.x - kTrackerRadius) / kBlockWidth) / FRACUNIT, 0);
+			fixed_t x2 = std::min(((tr.result.x + kTrackerRadius) / kBlockWidth) / FRACUNIT, kXBlocks - 1);
+			fixed_t y1 = std::max(((tr.result.y - kTrackerRadius) / kBlockHeight) / FRACUNIT, 0);
+			fixed_t y2 = std::min(((tr.result.y + kTrackerRadius) / kBlockHeight) / FRACUNIT, kYBlocks - 1);
 
 			bool allMine = true;
 
@@ -624,10 +625,10 @@ void K_CullTargetList(std::vector<TargetTracking>& targetList)
 						if (cv_debughudtracker.value)
 						{
 							V_DrawFill(
-								x * kBlockSize,
-								y * kBlockSize,
-								kBlockSize,
-								kBlockSize,
+								x * kBlockWidth,
+								y * kBlockHeight,
+								kBlockWidth,
+								kBlockHeight,
 								(39 + debugColorCycle) | V_SPLITSCREEN
 							);
 						}
