@@ -3241,6 +3241,7 @@ static void K_drawKartSpeedometer(boolean gametypeinfoshown)
 static void K_drawBlueSphereMeter(boolean gametypeinfoshown)
 {
 	const UINT8 maxBars = 4;
+	// see also K_DrawNameTagSphereMeter
 	const UINT8 segColors[] = {73, 64, 52, 54, 55, 35, 34, 33, 202, 180, 181, 182, 164, 165, 166, 153, 152};
 	const UINT8 sphere = std::clamp(static_cast<int>(stplyr->spheres), 0, 40);
 
@@ -3771,6 +3772,38 @@ static void K_DrawNameTagItemSpy(INT32 x, INT32 y, player_t *p, INT32 flags)
 	}
 }
 
+static void K_DrawNameTagSphereMeter(INT32 x, INT32 y, INT32 width, INT32 spheres, INT32 flags)
+{
+	using srb2::Draw;
+	Draw bar = Draw(x + vid.dupx, y).flags(V_NOSCALESTART).height(vid.dupy);
+
+	// see also K_drawBlueSphereMeter
+	const UINT8 segColors[] = {73, 64, 52, 54, 55, 35, 34, 33, 202, 180, 181, 182, 164, 165, 166, 153, 152};
+
+	spheres = std::clamp(spheres, 0, 40);
+	int colorIndex = (spheres * sizeof segColors) / (40 + 1);
+
+	int px = r_splitscreen > 1 ? 1 : 2;
+	int b = 10 * px;
+	int m = spheres * px;
+
+	while (m > 0)
+	{
+		if (b > m)
+			b = m;
+
+		Draw seg = bar.width(b);
+
+		seg.fill(segColors[std::max(colorIndex - 1, 0)]);
+		seg.y(vid.dupy).fill(segColors[std::max(colorIndex - 2, 0)]);
+		seg.y(2 * vid.dupy).height(2 * vid.dupy).fill(segColors[colorIndex]);
+		seg.y(4 * vid.dupy).fill(31);
+
+		bar = bar.x(b + vid.dupx);
+		m -= b;
+	}
+}
+
 static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p, INT32 flags)
 {
 	const INT32 clr = skincolors[p->skincolor].chatcolor;
@@ -3817,6 +3850,11 @@ static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p, INT32 flag
 	if ((gametyperules & GTR_ITEMARROWS) && p->itemtype != KITEM_NONE && p->itemamount != 0)
 	{
 		K_DrawNameTagItemSpy(barx, bary, p, flags);
+	}
+
+	if (gametyperules & GTR_SPHERES)
+	{
+		K_DrawNameTagSphereMeter(barx, bary + (4 * vid.dupy), barw, p->spheres, flags);
 	}
 
 	// Lat: 10/06/2020: colormap can be NULL on the frame you join a game, just arbitrarily use palette indexes 31 and 0 instead of whatever the colormap would give us instead to avoid crashes.
