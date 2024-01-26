@@ -99,6 +99,12 @@ inline Draw::Chain& Draw::Chain::clipy(float top, float bottom)
 	return *this;
 }
 
+inline Draw::Chain& Draw::Chain::clip(bool yes)
+{
+	clip_ = yes;
+	return *this;
+}
+
 inline Draw::Chain& Draw::Chain::colormap(const UINT8* colormap)
 {
 	colormap_ = colormap;

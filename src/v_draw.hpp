@@ -154,6 +154,12 @@ public:
 		Chain& clipx() { return clipx(x_, x_ + width_); }
 		Chain& clipy() { return clipy(y_, y_ + height_); }
 
+		// True to use internal clipping state
+		// False to use global state (default)
+		// Changing the clipping dimensions implicitly sets
+		// this to true
+		Chain& clip(bool yes);
+
 		Chain& colormap(const UINT8* colormap);
 		Chain& colormap(UINT16 color);
 		Chain& colormap(INT32 skin, UINT16 color);
@@ -255,6 +261,7 @@ public:
 	METHOD(stretch);
 	METHOD(clipx);
 	METHOD(clipy);
+	METHOD(clip);
 	METHOD(colormap);
 	METHOD(colorize);
 
