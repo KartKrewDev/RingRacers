@@ -524,6 +524,7 @@ void K_DrawTargetTracking(const TargetTracking& target)
 		{
 			using srb2::Draw;
 			Draw(FixedToFloat(result.x), FixedToFloat(result.y))
+				.flags(V_SPLITSCREEN)
 				.font(Draw::Font::kThin)
 				.align(Draw::Align::kCenter)
 				.text("BUFO ID: {}", Obj_BattleUFOSpawnerID(target.mobj));
