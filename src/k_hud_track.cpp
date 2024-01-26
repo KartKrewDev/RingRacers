@@ -360,7 +360,7 @@ void K_DrawTargetTracking(const TargetTracking& target)
 {
 	if (target.nametag != PLAYERTAG_NONE)
 	{
-		K_DrawPlayerTag(target.result.x, target.result.y, target.mobj->player, target.nametag);
+		K_DrawPlayerTag(target.result.x, target.result.y, target.mobj->player, target.nametag, target.foreground ? 0 : V_60TRANS);
 		return;
 	}
 
@@ -582,7 +582,7 @@ void K_CullTargetList(std::vector<TargetTracking>& targetList)
 	constexpr int kBlockHeight = 10;
 	constexpr int kXBlocks = BASEVIDWIDTH / kBlockWidth;
 	constexpr int kYBlocks = BASEVIDHEIGHT / kBlockHeight;
-	bool map[kXBlocks][kYBlocks] = {};
+	UINT8 map[kXBlocks][kYBlocks] = {};
 
 	constexpr fixed_t kTrackerRadius = 30*FRACUNIT/2; // just an approximation of common HUD tracker
 
@@ -598,15 +598,37 @@ void K_CullTargetList(std::vector<TargetTracking>& targetList)
 				return;
 			}
 
-			if (tr.nametag != PLAYERTAG_NONE)
+			fixed_t x1, x2, y1, y2;
+			UINT8 bit = 1;
+
+			// TODO: there should be some generic system
+			// instead of this special case.
+			if (tr.nametag == PLAYERTAG_NAME)
+			{
+				const player_t* p = tr.mobj->player;
+
+				x1 = tr.result.x;
+				x2 = tr.result.x + ((6 + V_ThinStringWidth(player_names[p - players], 0)) * FRACUNIT);
+				y1 = tr.result.y - (30 * FRACUNIT);
+				y2 = tr.result.y - (4 * FRACUNIT);
+				bit = 2; // nametags will cull on a separate plane
+			}
+			else if (tr.nametag != PLAYERTAG_NONE)
 			{
 				return;
 			}
+			else
+			{
+				x1 = tr.result.x - kTrackerRadius;
+				x2 = tr.result.x + kTrackerRadius;
+				y1 = tr.result.y - kTrackerRadius;
+				y2 = tr.result.y + kTrackerRadius;
+			}
 
-			fixed_t x1 = std::max(((tr.result.x - kTrackerRadius) / kBlockWidth) / FRACUNIT, 0);
-			fixed_t x2 = std::min(((tr.result.x + kTrackerRadius) / kBlockWidth) / FRACUNIT, kXBlocks - 1);
-			fixed_t y1 = std::max(((tr.result.y - kTrackerRadius) / kBlockHeight) / FRACUNIT, 0);
-			fixed_t y2 = std::min(((tr.result.y + kTrackerRadius) / kBlockHeight) / FRACUNIT, kYBlocks - 1);
+			x1 = std::max(x1 / kBlockWidth / FRACUNIT, 0);
+			x2 = std::min(x2 / kBlockWidth / FRACUNIT, kXBlocks - 1);
+			y1 = std::max(y1 / kBlockHeight / FRACUNIT, 0);
+			y2 = std::min(y2 / kBlockHeight / FRACUNIT, kYBlocks - 1);
 
 			bool allMine = true;
 
@@ -614,13 +636,13 @@ void K_CullTargetList(std::vector<TargetTracking>& targetList)
 			{
 				for (fixed_t y = y1; y <= y2; ++y)
 				{
-					if (map[x][y])
+					if (map[x][y] & bit)
 					{
 						allMine = false;
 					}
 					else
 					{
-						map[x][y] = true;
+						map[x][y] |= bit;
 
 						if (cv_debughudtracker.value)
 						{

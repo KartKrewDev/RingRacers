@@ -3674,28 +3674,28 @@ static void K_DrawRivalTagForPlayer(fixed_t x, fixed_t y)
 	V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN, kp_rival[blink], NULL);
 }
 
-static void K_DrawTypingDot(fixed_t x, fixed_t y, UINT8 duration, player_t *p)
+static void K_DrawTypingDot(fixed_t x, fixed_t y, UINT8 duration, player_t *p, INT32 flags)
 {
 	if (p->typing_duration > duration)
 	{
-		V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN, kp_typdot, NULL);
+		V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN|flags, kp_typdot, NULL);
 	}
 }
 
-static void K_DrawTypingNotifier(fixed_t x, fixed_t y, player_t *p)
+static void K_DrawTypingNotifier(fixed_t x, fixed_t y, player_t *p, INT32 flags)
 {
 	if (p->cmd.flags & TICCMD_TYPING)
 	{
-		V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN, kp_talk, NULL);
+		V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN|flags, kp_talk, NULL);
 
 		/* spacing closer with the last two looks a better most of the time */
-		K_DrawTypingDot(x + 3*FRACUNIT,              y, 15, p);
-		K_DrawTypingDot(x + 6*FRACUNIT - FRACUNIT/3, y, 31, p);
-		K_DrawTypingDot(x + 9*FRACUNIT - FRACUNIT/3, y, 47, p);
+		K_DrawTypingDot(x + 3*FRACUNIT,              y, 15, p, flags);
+		K_DrawTypingDot(x + 6*FRACUNIT - FRACUNIT/3, y, 31, p, flags);
+		K_DrawTypingDot(x + 9*FRACUNIT - FRACUNIT/3, y, 47, p, flags);
 	}
 }
 
-static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p)
+static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p, INT32 flags)
 {
 	const INT32 clr = skincolors[p->skincolor].chatcolor;
 	const INT32 namelen = V_ThinStringWidth(player_names[p - players], 0);
@@ -3738,15 +3738,15 @@ static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p)
 	}
 
 	// Lat: 10/06/2020: colormap can be NULL on the frame you join a game, just arbitrarily use palette indexes 31 and 0 instead of whatever the colormap would give us instead to avoid crashes.
-	V_DrawFill(barx, bary, barw, (3 * vid.dupy), (colormap ? colormap[31] : 31)|V_NOSCALESTART);
-	V_DrawFill(barx, bary + vid.dupy, barw, vid.dupy, (colormap ? colormap[0] : 0)|V_NOSCALESTART);
+	V_DrawFill(barx, bary, barw, (3 * vid.dupy), (colormap ? colormap[31] : 31)|V_NOSCALESTART|flags);
+	V_DrawFill(barx, bary + vid.dupy, barw, vid.dupy, (colormap ? colormap[0] : 0)|V_NOSCALESTART|flags);
 	// END DRAWFILL DUMBNESS
 
 	// Draw the stem
-	V_DrawFixedPatch(x, y, FRACUNIT, 0, kp_nametagstem, colormap);
+	V_DrawFixedPatch(x, y, FRACUNIT, flags, kp_nametagstem, colormap);
 
 	// Draw the name itself
-	V_DrawThinStringAtFixed(x + (5*FRACUNIT), y - (26*FRACUNIT), clr, player_names[p - players]);
+	V_DrawThinStringAtFixed(x + (5*FRACUNIT), y - (26*FRACUNIT), clr|flags, player_names[p - players]);
 }
 
 playertagtype_t K_WhichPlayerTag(player_t *p)
@@ -3776,7 +3776,7 @@ playertagtype_t K_WhichPlayerTag(player_t *p)
 	return PLAYERTAG_NONE;
 }
 
-void K_DrawPlayerTag(fixed_t x, fixed_t y, player_t *p, playertagtype_t type)
+void K_DrawPlayerTag(fixed_t x, fixed_t y, player_t *p, playertagtype_t type, INT32 flags)
 {
 	switch (type)
 	{
@@ -3789,8 +3789,8 @@ void K_DrawPlayerTag(fixed_t x, fixed_t y, player_t *p, playertagtype_t type)
 		break;
 
 	case PLAYERTAG_NAME:
-		K_DrawNameTagForPlayer(x, y, p);
-		K_DrawTypingNotifier(x, y, p);
+		K_DrawNameTagForPlayer(x, y, p, flags);
+		K_DrawTypingNotifier(x, y, p, flags);
 		break;
 
 	default:
