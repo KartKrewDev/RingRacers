@@ -574,7 +574,13 @@ void K_CullTargetList(std::vector<TargetTracking>& targetList)
 
 						if (cv_debughudtracker.value)
 						{
-							V_DrawFill(x * kBlockSize, y * kBlockSize, kBlockSize, kBlockSize, 39 + debugColorCycle);
+							V_DrawFill(
+								x * kBlockSize,
+								y * kBlockSize,
+								kBlockSize,
+								kBlockSize,
+								(39 + debugColorCycle) | V_SPLITSCREEN
+							);
 						}
 					}
 				}
