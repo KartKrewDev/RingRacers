@@ -612,6 +612,12 @@ void K_CullTargetList(std::vector<TargetTracking>& targetList)
 				y1 = tr.result.y - (30 * FRACUNIT);
 				y2 = tr.result.y - (4 * FRACUNIT);
 				bit = 2; // nametags will cull on a separate plane
+
+				// see also K_DrawNameTagForPlayer
+				if ((gametyperules & GTR_ITEMARROWS) && p->itemtype != KITEM_NONE && p->itemamount != 0)
+				{
+					x1 -= 24 * FRACUNIT;
+				}
 			}
 			else if (tr.nametag != PLAYERTAG_NONE)
 			{

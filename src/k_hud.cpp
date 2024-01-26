@@ -1359,6 +1359,7 @@ void K_DrawLikeMapThumbnail(fixed_t x, fixed_t y, fixed_t width, UINT32 flags, p
 	);
 }
 
+// see also K_DrawNameTagItemSpy
 static void K_drawKartItem(void)
 {
 	// ITEM_X = BASEVIDWIDTH-50;	// 270
@@ -3729,6 +3730,47 @@ static void K_DrawTypingNotifier(fixed_t x, fixed_t y, player_t *p, INT32 flags)
 	}
 }
 
+// see also K_drawKartItem
+static void K_DrawNameTagItemSpy(INT32 x, INT32 y, player_t *p, INT32 flags)
+{
+	using srb2::Draw;
+	bool tiny = r_splitscreen > 1;
+	Draw bar = Draw(x, y).flags(V_NOSCALESTART|flags);
+	Draw box = tiny ? bar.xy(-22 * vid.dupx, -17 * vid.dupy) : bar.xy(-40 * vid.dupx, -26 * vid.dupy);
+
+	box.colorize(p->skincolor).patch(kp_itembg[tiny ? 4 : 2]);
+
+	if (!(p->itemflags & IF_ITEMOUT) || (leveltime & 1))
+	{
+		switch (p->itemtype)
+		{
+		case KITEM_INVINCIBILITY:
+			box.patch(kp_invincibility[((leveltime % (6*3)) / 3) + (tiny ? 13 : 7)]);
+			break;
+
+		case KITEM_ORBINAUT:
+			box.patch(kp_orbinaut[4 + tiny]);
+			break;
+
+		default:
+			if (patch_t *ico = K_GetCachedItemPatch(p->itemtype, 1 + tiny))
+			{
+				box.patch(ico);
+			}
+		}
+	}
+
+	if (p->itemamount > 1)
+	{
+		(tiny ?
+			bar.xy(-3 * vid.dupx, -4 * vid.dupy).font(Draw::Font::kPing) :
+			bar.xy(-4 * vid.dupx, -2 * vid.dupy).font(Draw::Font::kThinTimer)
+		)
+			.align(Draw::Align::kRight)
+			.text("{}", p->itemamount);
+	}
+}
+
 static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p, INT32 flags)
 {
 	const INT32 clr = skincolors[p->skincolor].chatcolor;
@@ -3769,6 +3811,12 @@ static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p, INT32 flag
 	if (vid.height != BASEVIDHEIGHT * vid.dupy)
 	{
 		bary += (vid.height - (BASEVIDHEIGHT * vid.dupy)) / 2;
+	}
+
+	// see also K_CullTargetList
+	if ((gametyperules & GTR_ITEMARROWS) && p->itemtype != KITEM_NONE && p->itemamount != 0)
+	{
+		K_DrawNameTagItemSpy(barx, bary, p, flags);
 	}
 
 	// Lat: 10/06/2020: colormap can be NULL on the frame you join a game, just arbitrarily use palette indexes 31 and 0 instead of whatever the colormap would give us instead to avoid crashes.
