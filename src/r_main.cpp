@@ -55,6 +55,8 @@ INT64 mytotal = 0;
 #endif
 //profile stuff ---------------------------------------------------------
 
+extern "C" consvar_t cv_debugrender_visplanes;
+
 // Fineangles in the SCREENWIDTH wide window.
 #define FIELDOFVIEW 2048
 
@@ -1454,13 +1456,13 @@ static void Mask_Post (maskcount_t* m)
 // ================
 
 // viewx, viewy, viewangle, all that good stuff must be set
-static void R_RenderViewpoint(maskcount_t* mask)
+static void R_RenderViewpoint(maskcount_t* mask, INT32 cachenum)
 {
 	Mask_Pre(mask);
 
 	curdrawsegs = ds_p;
 
-	R_RenderBSPNode((INT32)numnodes - 1);
+	R_RenderFirstBSPNode(cachenum);
 	R_AddPrecipitationSprites();
 
 	Mask_Post(mask);
@@ -1516,7 +1518,7 @@ void R_RenderPlayerView(void)
 
 	srb2::ThreadPool::Sema tp_sema;
 	srb2::g_main_threadpool->begin_sema();
-	R_RenderViewpoint(&masks[nummasks - 1]);
+	R_RenderViewpoint(&masks[nummasks - 1], nummasks - 1);
 
 	ps_bsptime = I_GetPreciseTime() - ps_bsptime;
 #ifdef TIMING
@@ -1574,7 +1576,7 @@ void R_RenderPlayerView(void)
 			// Render the BSP from the new viewpoint, and clip
 			// any sprites with the new clipsegs and window.
 
-			R_RenderViewpoint(&masks[nummasks - 1]);
+			R_RenderViewpoint(&masks[nummasks - 1], nummasks - 1);
 
 			portalskipprecipmobjs = false;
 
@@ -1602,6 +1604,58 @@ void R_RenderPlayerView(void)
 	ps_sw_maskedtime = I_GetPreciseTime();
 	R_DrawMasked(masks, nummasks);
 	ps_sw_maskedtime = I_GetPreciseTime() - ps_sw_maskedtime;
+
+	if (cv_debugrender_visplanes.value)
+	{
+		for (INT32 i = 0; i < MAXVISPLANES; i++)
+		{
+			for (visplane_t* pl = visplanes[i]; pl; pl = pl->next)
+			{
+				if (pl->minx > pl->maxx)
+					continue;
+				auto col = [](int x, int top, int bot)
+				{
+					if (top > bot)
+						std::swap(top, bot);
+					UINT8* p = &screens[0][x + top * vid.width];
+					while (top <= bot)
+					{
+						*p = 35;
+						p += vid.width;
+						top++;
+					}
+				};
+				auto span = [col](int x, int top, int bot)
+				{
+					if (top <= bot)
+						col(x, top, bot);
+				};
+				INT32 top = pl->top[pl->minx];
+				INT32 bottom = pl->bottom[pl->minx];
+				span(pl->minx, top, bottom);
+				span(pl->maxx, pl->top[pl->maxx], pl->bottom[pl->maxx]);
+				for (INT32 x = pl->minx + 1; x < pl->maxx; ++x)
+				{
+					INT32 new_top = pl->top[x];
+					INT32 new_bottom = pl->bottom[x];
+					if (new_top > new_bottom)
+						continue;
+					if (top > bottom)
+					{
+						col(x, new_top, new_top);
+						col(x, new_bottom, new_bottom);
+					}
+					else
+					{
+						col(x, top, new_top);
+						col(x, bottom, new_bottom);
+					}
+					top = new_top;
+					bottom = new_bottom;
+				}
+			}
+		}
+	}
 
 	// debugrender_portal: fill portals with red, draw over everything
 	if (portal_base && cv_debugrender_portal.value)
