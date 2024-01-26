@@ -1,6 +1,7 @@
 #include <algorithm>
 
 #include "../d_player.h"
+#include "../k_battle.h"
 #include "../k_objects.h"
 #include "../m_fixed.h"
 #include "../info.h"
@@ -230,7 +231,10 @@ void Obj_SpawnGachaBomRebound(mobj_t* source, mobj_t* target)
 		x->color = target->color;
 		x->angle = angle;
 
-		P_InstaScale(x, 2 * x->scale);
+		if (!(gametyperules & GTR_BUMPERS) || battleprisons)
+		{
+			P_InstaScale(x, 2 * x->scale);
+		}
 
 		rebound_mode(x) = static_cast<int>(mode);
 		rebound_timer(x) = kReboundAcceptPause;

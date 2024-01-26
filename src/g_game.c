@@ -1526,7 +1526,8 @@ boolean G_CouldView(INT32 playernum)
 //
 boolean G_CanView(INT32 playernum, UINT8 viewnum, boolean onlyactive)
 {
-	if (!playeringame[playernum] || players[playernum].spectator)
+	// PF_ELIMINATED: Battle Overtime Barrier killed this player
+	if (!playeringame[playernum] || players[playernum].spectator || (players[playernum].pflags & PF_ELIMINATED))
 	{
 		return false;
 	}
@@ -1974,7 +1975,7 @@ void G_Ticker(boolean run)
 				{
 					Music_Play("intermission");
 				}
-				else if (musiccountdown == MUSIC_COUNTDOWN_MAX - TALLY_TIME)
+				else if (musiccountdown == MUSIC_COUNTDOWN_MAX - K_TallyDelay())
 				{
 					P_EndingMusic();
 				}
@@ -2361,6 +2362,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->checkpointId = checkpointId;
 
 	p->ringvolume = 255;
+	p->ringtransparency = 255;
+
+	p->topAccel = MAXTOPACCEL;
 
 	p->botvars.rubberband = FRACUNIT;
 
@@ -2603,21 +2607,11 @@ mapthing_t *G_FindBattleStart(INT32 playernum)
 
 	if (numdmstarts)
 	{
-		extern consvar_t cv_battlespawn;
-		if (cv_battlespawn.value)
+		for (j = 0; j < 64; j++)
 		{
-			i = cv_battlespawn.value - 1;
-			if (i < numdmstarts)
+			i = P_RandomKey(PR_PLAYERSTARTS, numdmstarts);
+			if (G_CheckSpot(playernum, deathmatchstarts[i]))
 				return deathmatchstarts[i];
-		}
-		else
-		{
-			for (j = 0; j < 64; j++)
-			{
-				i = P_RandomKey(PR_PLAYERSTARTS, numdmstarts);
-				if (G_CheckSpot(playernum, deathmatchstarts[i]))
-					return deathmatchstarts[i];
-			}
 		}
 		if (doprints)
 			CONS_Alert(CONS_WARNING, M_GetText("Could not spawn at any Deathmatch starts!\n"));
@@ -2792,14 +2786,20 @@ static inline mapthing_t *G_FindTeamStartOrFallback(INT32 playernum)
 
 mapthing_t *G_FindMapStart(INT32 playernum)
 {
+	extern consvar_t cv_battlespawn;
 	mapthing_t *spawnpoint;
 
 	if (!playeringame[playernum])
 		return NULL;
 
+	// -- battlespawn cheat --
+	// Everyone spawns at the same spot
+	if ((gametyperules & GTR_BATTLESTARTS) && cv_battlespawn.value > 0 && cv_battlespawn.value <= numdmstarts)
+		spawnpoint = deathmatchstarts[cv_battlespawn.value - 1];
+
 	// -- Podium --
 	// Single special behavior
-	if (K_PodiumSequence() == true)
+	else if (K_PodiumSequence() == true)
 		spawnpoint = G_FindPodiumStart(playernum);
 
 	// -- Time Attack / Battle duels --
@@ -3499,7 +3499,7 @@ static UINT16 *g_allowedMaps = NULL;
 static size_t g_randMapStack = 0;
 #endif
 
-UINT16 G_RandMap(UINT32 tolflags, UINT16 pprevmap, boolean ignoreBuffers, boolean callAgainSoon, UINT16 *extBuffer)
+UINT16 G_RandMapPerPlayerCount(UINT32 tolflags, UINT16 pprevmap, boolean ignoreBuffers, boolean callAgainSoon, UINT16 *extBuffer, UINT8 numPlayers)
 {
 	INT32 allowedMapsCount = 0;
 	INT32 extBufferCount = 0;
@@ -3555,6 +3555,12 @@ tryAgain:
 		if ((mapheaderinfo[i]->menuflags & LF2_HIDEINMENU) == LF2_HIDEINMENU)
 		{
 			// Not intended to be accessed in multiplayer.
+			continue;
+		}
+
+		if (numPlayers > mapheaderinfo[i]->playerLimit)
+		{
+			// Too many players for this map.
 			continue;
 		}
 
@@ -3663,6 +3669,11 @@ tryAgain:
 #endif
 
 	return ret;
+}
+
+UINT16 G_RandMap(UINT32 tolflags, UINT16 pprevmap, boolean ignoreBuffers, boolean callAgainSoon, UINT16 *extBuffer)
+{
+	return G_RandMapPerPlayerCount(tolflags, pprevmap, ignoreBuffers, callAgainSoon, extBuffer, 0);
 }
 
 void G_AddMapToBuffer(UINT16 map)
@@ -5893,7 +5904,10 @@ void G_GetBackupCupData(boolean actuallygetdata)
 	P_GetBackupCupData(&save);
 
 	if (cv_dummygpdifficulty.value != cupsavedata.difficulty
-	|| !!cv_dummygpencore.value != cupsavedata.encore)
+#if 0 // TODO: encore GP
+	|| !!cv_dummygpencore.value != cupsavedata.encore
+#endif
+	)
 	{
 		// Still not compatible.
 		cupsavedata.cup = NULL;

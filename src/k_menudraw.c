@@ -6036,6 +6036,12 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 	categoryside = (challengesmenu.extradata[id].flip <= TILEFLIP_MAX/4
 		|| challengesmenu.extradata[id].flip > (3*TILEFLIP_MAX)/4);
 
+#ifdef DEVELOP
+	extern consvar_t cv_debugchallenges;
+	if (cv_debugchallenges.value)
+		categoryside = false;
+#endif
+
 	if (categoryside)
 	{
 		char categoryid = '0';

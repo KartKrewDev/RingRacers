@@ -756,13 +756,8 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		return BMIT_CONTINUE;
 	}
 
-	if (thing->type == MT_BATTLEUFO)
+	if (thing->type == MT_BATTLEUFO && tm.thing->player)
 	{
-		if (tm.thing->type != MT_PLAYER)
-		{
-			return BMIT_CONTINUE; // not a player
-		}
-
 		if (thing->health <= 0)
 		{
 			return BMIT_CONTINUE; // dead
@@ -778,7 +773,12 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			return BMIT_CONTINUE; // underneath
 		}
 
-		if (!tm.thing->player || !tm.thing->player->fastfall)
+		if (P_PlayerInPain(tm.thing->player))
+		{
+			return BMIT_CONTINUE; // spinout would cause a softlock
+		}
+
+		if (!tm.thing->player->fastfall)
 		{
 			fixed_t tractorHeight = 211*mapobjectscale;
 			fixed_t zRange = FixedDiv(thing->z - tm.thing->z, tractorHeight);
@@ -981,16 +981,29 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	if (tm.thing->type == MT_RANDOMITEM)
 		return BMIT_CONTINUE;
 
+	if (tm.thing->type != MT_PLAYER && thing->player && K_PlayerGuard(thing->player) && K_BubbleShieldCanReflect(thing, tm.thing))
+	{
+		// see if it went over / under
+		if (tm.thing->z > thing->z + thing->height)
+			return BMIT_CONTINUE; // overhead
+		if (tm.thing->z + tm.thing->height < thing->z)
+			return BMIT_CONTINUE; // underneath
+
+		return K_BubbleShieldReflect(thing, tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
+	}
+	else if (thing->type != MT_PLAYER && tm.thing->player && K_PlayerGuard(tm.thing->player) && K_BubbleShieldCanReflect(tm.thing, thing))
+	{
+		// see if it went over / under
+		if (tm.thing->z > thing->z + thing->height)
+			return BMIT_CONTINUE; // overhead
+		if (tm.thing->z + tm.thing->height < thing->z)
+			return BMIT_CONTINUE; // underneath
+
+		return K_BubbleShieldReflect(tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
+	}
+
 	// Bubble Shield reflect
-	if (((thing->type == MT_BUBBLESHIELD && thing->target->player && thing->target->player->bubbleblowup)
-		|| (thing->player && thing->player->bubbleblowup))
-		&& (tm.thing->type == MT_ORBINAUT || tm.thing->type == MT_JAWZ || tm.thing->type == MT_GACHABOM
-		|| tm.thing->type == MT_BANANA || tm.thing->type == MT_EGGMANITEM || tm.thing->type == MT_BALLHOG
-		|| tm.thing->type == MT_SSMINE || tm.thing->type == MT_LANDMINE || tm.thing->type == MT_SINK
-		|| tm.thing->type == MT_GARDENTOP
-		|| tm.thing->type == MT_DROPTARGET
-		|| tm.thing->type == MT_KART_LEFTOVER
-		|| (tm.thing->type == MT_PLAYER && thing->target != tm.thing)))
+	if (thing->type == MT_BUBBLESHIELD && !P_MobjWasRemoved(thing->target) && thing->target->player && thing->target->player->bubbleblowup)
 	{
 		// see if it went over / under
 		if (tm.thing->z > thing->z + thing->height)
@@ -1000,15 +1013,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 
 		return K_BubbleShieldCollide(thing, tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
-	else if (((tm.thing->type == MT_BUBBLESHIELD && tm.thing->target->player && tm.thing->target->player->bubbleblowup)
-		|| (tm.thing->player && tm.thing->player->bubbleblowup))
-		&& (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ || thing->type == MT_GACHABOM
-		|| thing->type == MT_BANANA || thing->type == MT_EGGMANITEM || thing->type == MT_BALLHOG
-		|| thing->type == MT_SSMINE || thing->type == MT_LANDMINE || thing->type == MT_SINK
-		|| thing->type == MT_GARDENTOP
-		|| thing->type == MT_DROPTARGET
-		|| thing->type == MT_KART_LEFTOVER
-		|| (thing->type == MT_PLAYER && tm.thing->target != thing)))
+	else if (tm.thing->type == MT_BUBBLESHIELD && !P_MobjWasRemoved(tm.thing->target) && tm.thing->target->player && tm.thing->target->player->bubbleblowup)
 	{
 		// see if it went over / under
 		if (tm.thing->z > thing->z + thing->height)
@@ -4101,7 +4106,12 @@ static void P_BouncePlayerMove(mobj_t *mo, TryMoveResult_t *result)
 		);
 	}
 
-	if (mo->eflags & MFE_JUSTBOUNCEDWALL) // Stronger push-out
+	if (mo->health <= 0)
+	{
+		tmxmove = mo->momx;
+		tmymove = mo->momy;
+	}
+	else if (mo->eflags & MFE_JUSTBOUNCEDWALL) // Stronger push-out
 	{
 		tmxmove = mmomx;
 		tmymove = mmomy;
@@ -4137,6 +4147,11 @@ static void P_BouncePlayerMove(mobj_t *mo, TryMoveResult_t *result)
 	mo->momy = tmymove;
 	mo->player->cmomx = tmxmove;
 	mo->player->cmomy = tmymove;
+
+	if (mo->health <= 0)
+	{
+		mo->momz = 16 * mapobjectscale;
+	}
 
 	if (!bestslideline || !P_IsLineTripWire(bestslideline))
 	{

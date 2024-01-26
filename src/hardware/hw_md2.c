@@ -704,6 +704,9 @@ spritemodelfound:
 	fclose(f);
 }
 
+//#define BlendLuminance (K_ColorRelativeLuminance(r, g, b))
+#define BlendLuminance(r, g, b) ((UINT8)((r * 0.2126) + (g * 0.7152) + (b * 0.0722)))
+
 static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMipmap_t *grMipmap, INT32 skinnum, skincolornum_t color)
 {
 	GLPatch_t *hwrPatch = gpatch->hardware;
@@ -799,8 +802,9 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 		for (i = 0; i < translen; i++) // moved from inside the loop to here
 		{
 			RGBA_t tempc = V_GetColor(translation[i]);
-			colorbrightnesses[i] = K_ColorRelativeLuminance(tempc.s.red, tempc.s.green, tempc.s.blue); // store brightnesses for comparison
+			colorbrightnesses[i] = BlendLuminance(tempc.s.red, tempc.s.green, tempc.s.blue); // store brightnesses for comparison
 		}
+
 		// generate lookup table for color brightness matching
 		for (b = 0; b < 256; b++)
 		{
@@ -922,8 +926,8 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 					{
 						UINT16 imagebright, blendbright;
 
-						imagebright = K_ColorRelativeLuminance(image->s.red, image->s.green, image->s.blue);
-						blendbright = K_ColorRelativeLuminance(blendimage->s.red, blendimage->s.green, blendimage->s.blue);
+						imagebright = BlendLuminance(image->s.red, image->s.green, image->s.blue);
+						blendbright = BlendLuminance(blendimage->s.red, blendimage->s.green, blendimage->s.blue);
 
 						// slightly dumb average between the blend image color and base image colour, usually one or the other will be fully opaque anyway
 						brightness = (imagebright*(255-blendimage->s.alpha))/255 + (blendbright*blendimage->s.alpha)/255;
@@ -938,7 +942,7 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 					}
 					else
 					{
-						brightness = K_ColorRelativeLuminance(blendimage->s.red, blendimage->s.green, blendimage->s.blue);
+						brightness = BlendLuminance(blendimage->s.red, blendimage->s.green, blendimage->s.blue);
 					}
 				}
 
@@ -1045,7 +1049,7 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 					UINT32 tempcolor;
 					UINT16 colorbright;
 
-					colorbright = K_ColorRelativeLuminance(blendcolor.s.red, blendcolor.s.green, blendcolor.s.blue);
+					colorbright = BlendLuminance(blendcolor.s.red, blendcolor.s.green, blendcolor.s.blue);
 
 					if (colorbright == 0)
 					{
@@ -1181,8 +1185,8 @@ static void HWR_GetBlendedTexture(patch_t *patch, patch_t *blendpatch, INT32 ski
 
 static boolean HWR_AllowModel(mobj_t *mobj)
 {
-	// Signpost overlay. Not needed.
-	if (mobj->state-states == S_KART_SIGN)
+	// Don't allow rendering of model for these.
+	if (mobj->sprite2 == SPR2_XTRA || mobj->sprite2 == SPR2_SIGN || mobj->sprite2 == SPR2_SIGL || mobj->sprite2 == SPR2_TALK)
 		return false;
 
 	// Otherwise, render the model.
@@ -1355,10 +1359,10 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 				colormap = sector->extra_colormap;
 		}
 
-		if (R_ThingIsSemiBright(spr->mobj))
-			lightlevel = 128 + (lightlevel>>1);
+		if (!lightset)
+			HWR_ObjectLightLevelPost(spr, sector, &lightlevel, true);
 
-		HWR_Lighting(&Surf, lightlevel, colormap);
+		HWR_Lighting(&Surf, lightlevel, colormap, P_SectorUsesDirectionalLighting(sector) && !R_ThingIsFullBright(spr->mobj));
 	}
 	else
 		Surf.PolyColor.rgba = 0xFFFFFFFF;

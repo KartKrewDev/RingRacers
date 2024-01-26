@@ -72,7 +72,7 @@ void HWR_DrawScreenFinalTexture(int width, int height);
 
 // This stuff is put here so models can use them
 boolean HWR_OverrideObjectLightLevel(mobj_t *thing, INT32 *lightlevel);
-void HWR_Lighting(FSurfaceInfo *Surface, INT32 light_level, extracolormap_t *colormap);
+void HWR_Lighting(FSurfaceInfo *Surface, INT32 light_level, extracolormap_t *colormap, const boolean directional);
 UINT8 HWR_FogBlockAlpha(INT32 light, extracolormap_t *colormap); // Let's see if this can work
 
 UINT8 HWR_GetTranstableAlpha(INT32 transtablenum);

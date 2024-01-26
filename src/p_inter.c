@@ -386,13 +386,18 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 	switch (special->type)
 	{
 		case MT_FLOATINGITEM: // SRB2Kart
+			if (special->extravalue1 > 0 && toucher != special->tracer)
+			{
+				player->pflags |= PF_CASTSHADOW;
+				return;
+			}
+
 			if (special->threshold >= FIRSTPOWERUP)
 			{
 				if (P_PlayerInPain(player))
 					return;
 
 				K_GivePowerUp(player, special->threshold, special->movecount);
-				player->flashing = 2*TICRATE;
 			}
 			else
 			{
@@ -543,6 +548,13 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				const tic_t orbit = 2*TICRATE;
 				Obj_BeginEmeraldOrbit(special, toucher, toucher->radius, orbit, orbit * 20);
 				Obj_SetEmeraldAwardee(special, toucher);
+			}
+
+			// You have 6 emeralds and you touch the 7th: win instantly!
+			if (ALLCHAOSEMERALDS((player->emeralds | special->extravalue1)))
+			{
+				player->emeralds |= special->extravalue1;
+				K_CheckEmeralds(player);
 			}
 
 			return;
@@ -1732,7 +1744,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 		target->flags &= ~(MF_SOLID|MF_SHOOTABLE); // does not block
 		P_UnsetThingPosition(target);
-		target->flags |= MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY;
+		target->flags |= MF_NOBLOCKMAP|MF_NOCLIPTHING|MF_NOGRAVITY;
 		P_SetThingPosition(target);
 		target->standingslope = NULL;
 		target->terrain = NULL;
@@ -1764,6 +1776,16 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 		if (gametyperules & GTR_BUMPERS)
 		{
+			if (battleovertime.enabled >= 10*TICRATE) // Overtime Barrier is armed
+			{
+				target->player->pflags |= PF_ELIMINATED;
+				if (target->player->darkness_end < leveltime)
+				{
+					target->player->darkness_start = leveltime;
+				}
+				target->player->darkness_end = INFTICS;
+			}
+
 			K_CheckBumpers();
 
 			if (target->player->roundscore > 1)
@@ -1796,6 +1818,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		case MT_PLAYER:
 			if (damagetype != DMG_SPECTATOR)
 			{
+				fixed_t flingSpeed = FixedHypot(target->momx, target->momy);
 				angle_t flingAngle;
 				mobj_t *kart;
 
@@ -1848,8 +1871,18 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				// so make sure that this draws at the correct angle.
 				target->rollangle = 0;
 
-				P_InstaThrust(target, flingAngle, 14 * target->scale);
-				P_SetObjectMomZ(target, 14*FRACUNIT, false);
+				fixed_t inflictorSpeed = 0;
+				if (!P_MobjWasRemoved(inflictor))
+				{
+					inflictorSpeed = FixedHypot(inflictor->momx, inflictor->momy);
+					if (inflictorSpeed > flingSpeed)
+					{
+						flingSpeed = inflictorSpeed;
+					}
+				}
+
+				P_InstaThrust(target, flingAngle, max(flingSpeed, 14 * target->scale));
+				P_SetObjectMomZ(target, 20*FRACUNIT, false);
 
 				P_PlayDeathSound(target);
 			}
@@ -2160,7 +2193,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 					P_Thrust(target, R_PointToAngle2(owner->x, owner->y, target->x, target->y), 4 * target->scale);
 				}
 
-				target->momz += (24 * target->scale) * P_MobjFlip(target);
+				target->momz += (18 * target->scale) * P_MobjFlip(target);
 				target->fuse = 8;
 
 				overlay = P_SpawnMobjFromMobj(target, 0, 0, 0, MT_OVERLAY);
@@ -2205,7 +2238,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		}
 
 		case MT_MONITOR:
-			Obj_MonitorOnDeath(target);
+			Obj_MonitorOnDeath(target, source);
 			break;
 		case MT_BATTLEUFO:
 			Obj_BattleUFODeath(target, inflictor);
@@ -2651,6 +2684,43 @@ static void AddNullHitlag(player_t *player, tic_t oldHitlag)
 	}
 }
 
+static boolean P_FlashingException(const player_t *player, const mobj_t *inflictor)
+{
+	if (!inflictor)
+	{
+		// Sector damage always behaves the same.
+		return false;
+	}
+
+	if (inflictor->type == MT_SSMINE)
+	{
+		// Mine's first hit is DMG_EXPLODE.
+		// Afterward, it leaves a spinout hitbox which remains for a short period.
+		// If the spinout hitbox ignored flashing tics, you would be combod every tic and die instantly.
+		// DMG_EXPLODE already ignores flashing tics (correct behavior).
+		return false;
+	}
+
+	if (!P_IsKartItem(inflictor->type) && inflictor->type != MT_PLAYER)
+	{
+		// Exception only applies to player items.
+		// Also applies to players because of PvP collision.
+		// Lightning Shield also uses the player object as inflictor.
+		return false;
+	}
+
+	if (!P_PlayerInPain(player))
+	{
+		// Flashing tics is sometimes used in a way unrelated to damage.
+		// E.g. picking up a power-up gives you flashing tics.
+		// Respect this usage of flashing tics.
+		return false;
+	}
+
+	// Flashing tics are ignored.
+	return true;
+}
+
 /** Damages an object, which may or may not be a player.
   * For melee attacks, source and inflictor are the same.
   *
@@ -3014,7 +3084,12 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					}
 
 					// DMG_EXPLODE excluded from flashtic checks to prevent dodging eggbox/SPB with weak spinout
-					if ((target->hitlag == 0 || allowcombo == false) && player->flashing > 0 && type != DMG_EXPLODE && type != DMG_STUMBLE && type != DMG_WHUMBLE)
+					if ((target->hitlag == 0 || allowcombo == false) &&
+						player->flashing > 0 &&
+						type != DMG_EXPLODE &&
+						type != DMG_STUMBLE &&
+						type != DMG_WHUMBLE &&
+						P_FlashingException(player, inflictor) == false)
 					{
 						// Post-hit invincibility
 						K_DoInstashield(player);
@@ -3179,7 +3254,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			if (type != DMG_STUMBLE && type != DMG_WHUMBLE)
 			{
 				if (type != DMG_STING)
-					K_UpdateDamageFlashing(player, K_GetKartFlashing(player));
+					player->flashing = K_GetKartFlashing(player);
 
 				player->ringburst += ringburst;
 
@@ -3276,7 +3351,9 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	if (source && source->player && target)
 		G_GhostAddHit((INT32) (source->player - players), target);
 
-	if ((gametyperules & GTR_BUMPERS) && !battleprisons)
+	// Insta-Whip (DMG_WHUMBLE): do not reduce hitlag because
+	// this can leave room for double-damage.
+	if ((damagetype & DMG_TYPEMASK) != DMG_WHUMBLE && (gametyperules & GTR_BUMPERS) && !battleprisons)
 		laglength /= 2;
 
 	K_SetHitLagForObjects(target, inflictor, source, laglength, true);

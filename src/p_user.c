@@ -67,6 +67,7 @@
 #include "music.h"
 #include "k_tally.h"
 #include "k_objects.h"
+#include "k_endcam.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_light.h"
@@ -1187,15 +1188,38 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 
 	player->pflags |= flags;
 
-	const boolean losing = K_IsPlayerLosing(player);
-	const boolean specialout = (specialstageinfo.valid == true && losing == true);
-
 	if (P_IsLocalPlayer(player) && (!player->spectator && !demo.playback))
 	{
 		legitimateexit = true;
 		player->roundconditions.checkthisframe = true;
 		gamedata->deferredconditioncheck = true;
 	}
+
+	player->exiting = 1;
+
+	if (!player->spectator)
+	{
+		ClearFakePlayerSkin(player);
+
+		if ((gametyperules & GTR_CIRCUIT)) // Special Race-like handling
+		{
+			K_UpdateAllPlayerPositions();
+
+			if (P_CheckRacers() && !exitcountdown)
+			{
+				G_BeginLevelExit();
+			}
+		}
+		else if (!exitcountdown) // All other gametypes
+		{
+			G_BeginLevelExit();
+		}
+	}
+
+	const boolean losing = K_IsPlayerLosing(player); // HEY!!!! Set it AFTER K_UpdateAllPlayerPositions!!!!
+	const boolean specialout = (specialstageinfo.valid == true && losing == true);
+
+	K_UpdatePowerLevelsFinalize(player, false);
 
 	if (G_GametypeUsesLives() && losing)
 	{
@@ -1209,12 +1233,8 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 		musiccountdown = MUSIC_COUNTDOWN_MAX;
 	}
 
-	player->exiting = 1;
-
 	if (!player->spectator)
 	{
-		ClearFakePlayerSkin(player);
-
 		if (!(gametyperules & GTR_SPHERES))
 		{
 			player->hudrings = RINGTOTAL(player);
@@ -1235,20 +1255,6 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 					player->xtralife = (extra - oldExtra);
 				}
 			}
-		}
-
-		if ((gametyperules & GTR_CIRCUIT)) // Special Race-like handling
-		{
-			K_UpdateAllPlayerPositions();
-
-			if (P_CheckRacers() && !exitcountdown)
-			{
-				G_BeginLevelExit();
-			}
-		}
-		else if (!exitcountdown) // All other gametypes
-		{
-			G_BeginLevelExit();
 		}
 
 		if (specialstageinfo.valid == true && losing == false && P_MobjWasRemoved(player->mo) == false)
@@ -1308,6 +1314,7 @@ void P_DoAllPlayersExit(pflags_t flags, boolean trygivelife)
 		{
 			continue;
 		}
+
 		if (players[i].exiting)
 		{
 			continue;
@@ -2751,7 +2758,7 @@ static void P_DeathThink(player_t *player)
 		}
 	}
 
-	if ((player->pflags & PF_ELIMINATED) /*&& (gametyperules & GTR_BUMPERS)*/)
+	if ((player->pflags & PF_ELIMINATED) || exitcountdown)
 	{
 		playerGone = true;
 	}
@@ -2976,6 +2983,11 @@ void P_ToggleDemoCamera(UINT8 viewnum)
 
 void P_ResetCamera(player_t *player, camera_t *thiscam)
 {
+	if (g_endcam.active)
+	{
+		return;
+	}
+
 	tic_t tries = 0;
 	fixed_t x, y, z;
 
@@ -3069,7 +3081,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		num = 0;
 	}
 
-	if (thiscam->freecam || player->spectator)
+	if ((thiscam->freecam || player->spectator) && !g_endcam.active)
 	{
 		P_DemoCameraMovement(thiscam, num);
 		return true;
@@ -3077,6 +3089,12 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 	if (paused || P_AutoPause())
 		return true;
+
+	if (g_endcam.active)
+	{
+		K_MoveEndCamera(thiscam);
+		return true;
+	}
 
 	playerScale = FixedDiv(player->mo->scale, mapobjectscale);
 	scaleDiff = playerScale - FRACUNIT;
@@ -3718,7 +3736,7 @@ void P_DoTimeOver(player_t *player)
 	}
 
 	player->pflags |= PF_NOCONTEST;
-	K_UpdatePowerLevelsOnFailure(player);
+	K_UpdatePowerLevelsFinalize(player, false);
 
 	if (G_GametypeUsesLives())
 	{

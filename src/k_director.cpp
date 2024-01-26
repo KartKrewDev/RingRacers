@@ -112,7 +112,9 @@ struct DirectorInfo
 			}
 
 			// pair finished? try the next one
-			if (players[playerstat[targetposition].sorted].exiting)
+			if (players[playerstat[targetposition].sorted].exiting ||
+				// Battle: player was killed by Overtime Barrier
+				(players[playerstat[targetposition].sorted].pflags & PF_ELIMINATED))
 			{
 				continue;
 			}
@@ -135,12 +137,6 @@ struct DirectorInfo
 			if (viewplayernum() == target)
 			{
 				break;
-			}
-
-			// if this is a splitscreen player, try next pair
-			if (P_IsDisplayPlayer(&players[target]))
-			{
-				continue;
 			}
 
 			// if we're certain the back half of the pair is actually in this position, try to switch

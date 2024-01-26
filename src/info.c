@@ -653,10 +653,10 @@ char sprnames[NUMSPRITES + 1][5] =
 	"PUYC",
 	"PUYD",
 	"PUYE",
-	
+
 	// Aerial Highlands
 	"BCLD",
-	
+
 	// Avant Garden
 	"AGTU",
 	"AGTL",
@@ -665,7 +665,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"AGFL",
 	"AGFF",
 	"AGCL",
-	
+
 	// Sky Sanctuary
 	"SSCL",
 
@@ -3327,10 +3327,10 @@ state_t states[NUMSTATES] =
 	{SPR_PUYA, 3, -1, {A_BlendEyePuyoHack}, 0, 0, S_NULL},					// S_BLENDEYE_PUYO_SHOCK,
 	{SPR_PUYA, 4|FF_ANIMATE,  5, {A_BlendEyePuyoHack}, 2, 2, S_NULL},				// S_BLENDEYE_PUYO_DIE,
 	{SPR_PUYA, 5,             2, {A_BlendEyePuyoHack}, 0, 0, S_BLENDEYE_PUYO_DIE},	// S_BLENDEYE_PUYO_DUST,
-	
+
 	// Aerial Highlands
 	{SPR_BCLD, FF_ANIMATE, -1, {NULL}, 3, 6, S_AHZCLOUD},  // S_AHZCLOUD
-	
+
 	// Avant Garden
 	{SPR_AGTL, FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_AGZBULB_BASE}, // S_AGZBULB_BASE
 	{SPR_AGTU, 0, -1, {NULL}, 0, 0, S_AGZBULB_NEUTRAL}, // S_AGZBULB_NEUTRAL
@@ -3341,7 +3341,7 @@ state_t states[NUMSTATES] =
 	{SPR_AGFL, 0, -1, {NULL}, 0, 0, S_AGFL}, // S_AGFL
 	{SPR_AGFF, 0, -1, {NULL}, 0, 0, S_AGFF}, // S_AGFF
 	{SPR_AGCL, FF_ANIMATE, -1, {NULL}, 3, 6, S_AGZCLOUD}, // S_AGZCLOUD
-	
+
 	// Sky Sanctuary
 	{SPR_SSCL, FF_ANIMATE, -1, {NULL}, 3, 6, S_SSZCLOUD}, // S_SSZCLOUD
 
@@ -19660,7 +19660,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		MF_SCENERY|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_NOGRAVITY, // flags
 		S_NULL          // raisestate
 	},
-	
+
 	{           // MT_AHZ_CLOUD
 		-1,             // doomednum
 		S_AHZCLOUD,     // spawnstate
@@ -19687,7 +19687,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		MF_NOGRAVITY|MF_SPECIAL,   // flags
 		S_NULL          // raisestate
 	},
-	
+
 	{           // MT_AHZ_CLOUDCLUSTER
 		3486,           // doomednum
 		S_INVISIBLE,    // spawnstate
@@ -19714,7 +19714,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		MF_NOGRAVITY,   // flags
 		S_NULL          // raisestate
 	},
-	
+
 	{           // MT_AGZ_BULB
 		3445,           // doomednum
 		S_INVISIBLE,    // spawnstate
@@ -19741,7 +19741,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		MF_SPECIAL,   // flags
 		S_NULL          // raisestate
 	},
-	
+
 	{           // MT_AGZ_BULB_PART
 		-1,             // doomednum
 		S_INVISIBLE,    // spawnstate
@@ -19768,7 +19768,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		MF_NOGRAVITY,   // flags
 		S_NULL          // raisestate
 	},
-	
+
 	{           // MT_AGZ_TREE
 		3447,           // doomednum
 		S_AGTR,         // spawnstate
@@ -19795,7 +19795,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // flags
 		S_NULL          // raisestate
 	},
-	
+
 	{           // MT_AGZ_AGFL
 		3448,           // doomednum
 		S_AGFL,         // spawnstate
@@ -19822,7 +19822,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // flags
 		S_NULL          // raisestate
 	},
-	
+
 	{           // MT_AGZ_AGFF
 		3449,           // doomednum
 		S_AGFF,         // spawnstate
@@ -19849,7 +19849,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // flags
 		S_NULL          // raisestate
 	},
-	
+
 	{           // MT_AGZ_CLOUD
 		-1,             // doomednum
 		S_AGZCLOUD,     // spawnstate
@@ -19876,7 +19876,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		MF_NOGRAVITY|MF_SPECIAL,   // flags
 		S_NULL          // raisestate
 	},
-	
+
 	{           // MT_AGZ_CLOUDCLUSTER
 		3446,           // doomednum
 		S_INVISIBLE,    // spawnstate
@@ -19903,7 +19903,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		MF_NOGRAVITY,   // flags
 		S_NULL          // raisestate
 	},
-	
+
 	{           // MT_SSZ_CLOUD
 		-1,             // doomednum
 		S_SSZCLOUD,     // spawnstate
@@ -19930,7 +19930,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		MF_NOGRAVITY|MF_SPECIAL,   // flags
 		S_NULL          // raisestate
 	},
-	
+
 	{           // MT_SSZ_CLOUDCLUSTER
 		3456,           // doomednum
 		S_INVISIBLE,    // spawnstate
@@ -21806,8 +21806,8 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,       // xdeathstate
 		sfx_None,     // deathsound
 		0,            // speed
-		32*4*FRACUNIT,// radius
-		64*4*FRACUNIT,// height
+		32*FRACUNIT,// radius
+		64*FRACUNIT,// height
 		0,            // dispoffset
 		0,            // mass
 		0,            // damage

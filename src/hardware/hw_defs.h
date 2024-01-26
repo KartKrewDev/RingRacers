@@ -258,6 +258,7 @@ enum ETextureFlags
 	TF_WRAPXY      = TF_WRAPY|TF_WRAPX, // very common so use alias is more easy
 	TF_CHROMAKEYED = 0x00000010,
 	TF_TRANSPARENT = 0x00000040,        // texture with some alpha == 0
+	TF_BRIGHTMAP   = 0x00000080,
 };
 
 struct FTextureInfo
@@ -276,6 +277,7 @@ struct FLightInfo
 	FUINT			light_level;
 	FUINT			fade_start;
 	FUINT			fade_end;
+	boolean			directional;
 };
 typedef struct FLightInfo FLightInfo;
 
@@ -320,6 +322,11 @@ typedef enum hwdshaderoption hwdshaderoption_t;
 enum hwdshaderinfo
 {
 	HWD_SHADERINFO_LEVELTIME = 1,
+	HWD_SHADERINFO_LIGHT_X,
+	HWD_SHADERINFO_LIGHT_Y,
+	HWD_SHADERINFO_LIGHT_Z,
+	HWD_SHADERINFO_LIGHT_CONTRAST,
+	HWD_SHADERINFO_LIGHT_BACKLIGHT,
 };
 
 typedef enum hwdshaderinfo hwdshaderinfo_t;

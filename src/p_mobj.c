@@ -1945,7 +1945,7 @@ void P_XYMovement(mobj_t *mo)
 		return;
 	//}
 
-	if (((!(mo->eflags & MFE_VERTICALFLIP) && mo->z > mo->floorz) || (mo->eflags & MFE_VERTICALFLIP && mo->z+mo->height < mo->ceilingz))
+	if (((!(mo->eflags & MFE_VERTICALFLIP) && (mo->momz > 0 || mo->z > mo->floorz)) || (mo->eflags & MFE_VERTICALFLIP && (mo->momz < 0 || mo->z+mo->height < mo->ceilingz)))
 		&& !(player && player->carry == CR_SLIDING))
 		return; // no friction when airborne
 
@@ -2406,6 +2406,11 @@ boolean P_ZMovement(mobj_t *mo)
 		{
 			mom.x = mom.y = 0;
 			mom.z = -mom.z/2;
+		}
+		else if (mo->type == MT_PLAYER) // only DEAD players
+		{
+			mom.z = -mom.z;
+			mo->flags |= MF_NOCLIP | MF_NOCLIPHEIGHT; // fall through floor next time
 		}
 		else if (mo->flags & MF_MISSILE)
 		{
@@ -3256,6 +3261,16 @@ boolean P_CanRunOnWater(mobj_t *mobj, ffloor_t *rover)
 				// FIXME: Count solid FOFs in these checks
 				return false;
 			}
+		}
+
+		// E-brake during water-run forces a fastfall.
+		// We disable the ebrake input safety to do this, so we've gotta check it as late as
+		// possible: otherwise, this would cause misinput fastfall or underwater twerking.
+		if (mobj->player != NULL && K_PlayerEBrake(mobj->player))
+		{
+			if (P_IsObjectOnGround(mobj) && !mobj->player->fastfall)
+				mobj->player->pflags &= ~PF_NOFASTFALL;
+			return false;
 		}
 
 		return true;
@@ -5217,6 +5232,39 @@ cont:
 
 // Kartitem stuff.
 
+// These are held/thrown by players.
+boolean P_IsKartItem(INT32 type)
+{
+	switch (type)
+	{
+		case MT_POGOSPRING:
+		case MT_EGGMANITEM:
+		case MT_EGGMANITEM_SHIELD:
+		case MT_BANANA:
+		case MT_BANANA_SHIELD:
+		case MT_ORBINAUT:
+		case MT_ORBINAUT_SHIELD:
+		case MT_JAWZ:
+		case MT_JAWZ_SHIELD:
+		case MT_SSMINE:
+		case MT_SSMINE_SHIELD:
+		case MT_LANDMINE:
+		case MT_DROPTARGET:
+		case MT_DROPTARGET_SHIELD:
+		case MT_BALLHOG:
+		case MT_SPB:
+		case MT_BUBBLESHIELDTRAP:
+		case MT_GARDENTOP:
+		case MT_HYUDORO:
+		case MT_SINK:
+		case MT_GACHABOM:
+			return true;
+
+		default:
+			return false;
+	}
+}
+
 // This item is never attached to a player -- it can DIE
 // unconditionally in death sectors.
 boolean P_IsKartFieldItem(INT32 type)
@@ -5295,6 +5343,7 @@ static boolean P_IsTrackerType(INT32 type)
 		case MT_OVERTIME_CENTER:
 		case MT_MONITOR:
 		case MT_EMERALD:
+		case MT_BATTLEUFO_SPAWNER: // debug
 		case MT_BATTLEUFO:
 		case MT_SUPER_FLICKY:
 		case MT_SPRAYCAN:
@@ -7348,6 +7397,15 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 
 		K_UpdateMobjItemOverlay(mobj, mobj->threshold, mobj->movecount);
+
+		if (mobj->extravalue1 > 0)
+		{
+			mobj->extravalue1--;
+			if (mobj->extravalue1 < TICRATE)
+			{
+				mobj->colorized = mobj->extravalue1 & 1;
+			}
+		}
 		break;
 	}
 	case MT_ITEMCAPSULE:
@@ -12536,19 +12594,20 @@ void P_SpawnPlayer(INT32 playernum)
 
 	if (G_IsPartyLocal(playernum))
 	{
-		// Spectating always enables director cam. If there
-		// is no one to view, this will do nothing. If
-		// someone enters the game later, it will
-		// automatically switch to that player.
-		K_ToggleDirector(G_PartyPosition(playernum), p->spectator);
-
 		// Spectators can switch to freecam. This should be
 		// disabled when they enter the race, or when the level
 		// changes.
 		if (!demo.playback)
 		{
 			camera[G_PartyPosition(playernum)].freecam = false;
+			displayplayers[G_PartyPosition(playernum)] = playernum;
 		}
+
+		// Spectating always enables director cam. If there
+		// is no one to view, this will do nothing. If
+		// someone enters the game later, it will
+		// automatically switch to that player.
+		K_ToggleDirector(G_PartyPosition(playernum), p->spectator);
 	}
 	else if (pcount == 1 && !p->spectator)
 	{
@@ -12874,10 +12933,6 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 			break;
 		case MT_CHECKPOINT_END:
 			if (!(gametyperules & GTR_CHECKPOINTS))
-				return false;
-			break;
-		case MT_ANCIENTSHRINE:
-			if (netgame)
 				return false;
 			break;
 		default:

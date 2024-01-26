@@ -87,6 +87,7 @@ enum
 
 	X      (KART),
 	X     (TIMER),
+	X (TINYTIMER),
 	X        (GM),
 	X      (LSHI),
 	X     (LSLOW),

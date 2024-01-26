@@ -162,6 +162,21 @@ static UINT8 cheatf_savetheframes(void)
 	return 1;
 }
 
+static UINT8 cheatf_mentalsonic(void)
+{
+	cv_mentalsonic.value = !(cv_mentalsonic.value);
+	if (cv_mentalsonic.value)
+	{
+		S_StartSound(NULL, sfx_gshbb);
+	}
+	else
+	{
+		S_StartSound(NULL, sfx_kc46);
+	}
+
+	return 1;
+}
+
 #ifdef DEVELOP
 static UINT8 cheatf_devmode(void)
 {
@@ -235,6 +250,12 @@ static cheatseq_t cheat_savetheframes = {
 	(UINT8[]){ SCRAMBLE('s'), SCRAMBLE('a'), SCRAMBLE('v'), SCRAMBLE('e'), SCRAMBLE('t'), SCRAMBLE('h'), SCRAMBLE('e'), SCRAMBLE('f'), SCRAMBLE('r'), SCRAMBLE('a'), SCRAMBLE('m'), SCRAMBLE('e'), SCRAMBLE('s'), 0xff }
 };
 
+static cheatseq_t cheat_mentalsonic = {
+	NULL, cheatf_mentalsonic,
+	(UINT8[]){ SCRAMBLE('m'), SCRAMBLE('e'), SCRAMBLE('n'), SCRAMBLE('t'), SCRAMBLE('a'), SCRAMBLE('l'), SCRAMBLE(' '), SCRAMBLE('s'), SCRAMBLE('o'), SCRAMBLE('n'), SCRAMBLE('i'), SCRAMBLE('c'), 0xff }
+};
+
+
 #ifdef DEVELOP
 static cheatseq_t cheat_devmode = {
 	NULL, cheatf_devmode,
@@ -253,6 +274,7 @@ cheatseq_t *cheatseqlist[] =
 	&cheat_wrongwarp,
 	&cheat_savetheanimals,
 	&cheat_savetheframes,
+	&cheat_mentalsonic,
 #ifdef DEVELOP
 	&cheat_devmode,
 	&cheat_skipgoner,
@@ -581,6 +603,8 @@ struct debugFlagNames_s const debug_flag_names[] =
 	{"RNG", DBG_RNG},
 	{"Randomizer", DBG_RNG}, // alt name
 	{"Music", DBG_MUSIC},
+	{"PwrLv", DBG_PWRLV},
+	{"PowerLevel", DBG_PWRLV}, // alt name
 	{NULL, 0}
 };
 

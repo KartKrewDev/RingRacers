@@ -31,6 +31,7 @@ void Music_Init(void)
 		tune.fade_out = 1500;
 		tune.fade_out_inclusive = false;
 		tune.resume_fade_in = 750;
+		tune.use_level_volume = true;
 		tune.sync = true;
 		tune.credit = true;
 		tune.vapes = true;
@@ -416,4 +417,14 @@ void Music_BatchExempt(const char* id)
 	{
 		tune->resist_once = true;
 	}
+}
+
+void Music_LevelVolume(int volume)
+{
+	g_tunes.level_volume(volume, false);
+}
+
+void Music_ResetLevelVolume(void)
+{
+	g_tunes.level_volume(100, true);
 }

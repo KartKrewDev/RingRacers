@@ -216,10 +216,10 @@ Wav::Wav(tcb::span<std::byte> data)
 				switch (read_fmt->bit_width)
 				{
 				case 8:
-					interleaved_samples = std::move(read_uint8_samples_from_stream(stream, sample_count));
+					interleaved_samples = read_uint8_samples_from_stream(stream, sample_count);
 					break;
 				case 16:
-					interleaved_samples = std::move(read_int16_samples_from_stream(stream, sample_count));
+					interleaved_samples = read_int16_samples_from_stream(stream, sample_count);
 					break;
 				default:
 					throw std::runtime_error("unsupported sample amplitude bit width");

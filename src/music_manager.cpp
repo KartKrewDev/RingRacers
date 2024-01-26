@@ -79,7 +79,13 @@ void TuneManager::tick()
 	{
 		if (load())
 		{
-			I_FadeInPlaySong(tune->resume ? tune->resume_fade_in : tune->fade_in, tune->loop);
+			I_PlaySong(tune->loop);
+			I_FadeSongFromVolume(
+				tune->use_level_volume ? level_volume_ : 100,
+				0,
+				tune->resume ? tune->resume_fade_in : tune->fade_in,
+				nullptr
+			);
 			seek(tune);
 
 			adjust_volume();
@@ -115,6 +121,19 @@ void TuneManager::tick()
 		{
 			tune->ending = true;
 		}
+	}
+
+	if (level_volume_ != old_level_volume_ && tune->use_level_volume && tune->can_fade_out)
+	{
+		if (volume_fade_)
+		{
+			I_FadeSong(level_volume_, tune->resume_fade_in, nullptr);
+		}
+		else
+		{
+			I_SetInternalMusicVolume(level_volume_);
+		}
+		old_level_volume_ = level_volume_;
 	}
 }
 

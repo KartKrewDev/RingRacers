@@ -7,6 +7,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
+#include <unordered_map>
+
 #include "doomdef.h" // skincolornum_t
 #include "doomtype.h"
 #include "hu_stuff.h"
@@ -27,6 +29,96 @@ int Draw::TextElement::width() const
 	return font_ ? font_width(*font_, default_font_flags(*font_) | flags_.value_or(0), string_.c_str()) / FRACUNIT : 0;
 }
 
+Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
+{
+	static const std::unordered_map<std::string_view, char> translation = {
+#define BUTTON(str, lower_bits) \
+		{str,             0xB0 | lower_bits},\
+		{str "_animated", 0xA0 | lower_bits},\
+		{str "_pressed",  0x90 | lower_bits}
+
+		BUTTON("up", 0x00),
+		BUTTON("down", 0x01),
+		BUTTON("right", 0x02),
+		BUTTON("left", 0x03),
+
+		BUTTON("r", 0x07),
+		BUTTON("l", 0x08),
+		BUTTON("start", 0x09),
+
+		BUTTON("a", 0x0A),
+		BUTTON("b", 0x0B),
+		BUTTON("c", 0x0C),
+
+		BUTTON("x", 0x0D),
+		BUTTON("y", 0x0E),
+		BUTTON("z", 0x0F),
+
+#undef BUTTON
+
+		{"white", 0x80},
+		{"purple", 0x81},
+		{"yellow", 0x82},
+		{"green", 0x83},
+		{"blue", 0x84},
+		{"red", 0x85},
+		{"gray", 0x86},
+		{"orange", 0x87},
+		{"sky", 0x88},
+		{"lavender", 0x89},
+		{"gold", 0x8A},
+		{"aqua", 0x8B},
+		{"magenta", 0x8C},
+		{"pink", 0x8D},
+		{"brown", 0x8E},
+		{"tan", 0x8F},
+	};
+
+	string_.clear();
+	string_.reserve(raw.size());
+
+	using std::size_t;
+	using std::string_view;
+
+	for (;;)
+	{
+		size_t p = raw.find('<');
+
+		// Copy characters until the start tag
+		string_.append(raw.substr(0, p));
+
+		if (p == raw.npos)
+		{
+			break; // end of string
+		}
+
+		raw.remove_prefix(p);
+
+		// Find end tag
+		p = raw.find('>');
+
+		if (p == raw.npos)
+		{
+			break; // no end tag
+		}
+
+		string_view code = raw.substr(1, p - 1);
+
+		if (auto it = translation.find(code); it != translation.end())
+		{
+			string_.push_back(it->second); // replace with character code
+		}
+		else
+		{
+			string_.append(raw.substr(0, p + 1)); // code not found, leave text verbatim
+		}
+
+		raw.remove_prefix(p + 1); // past end of tag
+	}
+
+	return *this;
+}
+
 void Chain::patch(patch_t* patch) const
 {
 	const auto _ = Clipper(*this);
@@ -38,11 +130,6 @@ void Chain::patch(patch_t* patch) const
 	const fixed_t v = stretchV ? FloatToFixed(height_ / patch->height) : FRACUNIT;
 
 	V_DrawStretchyFixedPatch(FloatToFixed(x_), FloatToFixed(y_), h * scale_, v * scale_, flags_, patch, colormap_);
-}
-
-void Chain::patch(const char* name) const
-{
-	patch(static_cast<patch_t*>(W_CachePatchName(name, PU_CACHE)));
 }
 
 void Chain::thumbnail(UINT16 mapnum) const
@@ -132,6 +219,36 @@ void Chain::button_(Button type, int ver, std::optional<bool> press) const
 	}
 }
 
+void Chain::sticker(patch_t* end_graphic, UINT8 color) const
+{
+	const auto _ = Clipper(*this);
+
+	INT32 x = x_;
+	INT32 y = y_;
+	INT32 width = width_;
+	INT32 flags = flags_ | V_FLIP;
+
+	auto fill = [&](int x, int width) { V_DrawFill(x, y, width, SHORT(end_graphic->height), color | (flags_ & ~0xFF)); };
+
+	if (align_ == Align::kRight)
+	{
+		width = -(width);
+		flags ^= V_FLIP;
+		fill(x + width, -(width));
+	}
+	else
+	{
+		fill(x, width);
+	}
+
+	V_DrawScaledPatch(x + width, y, flags, end_graphic);
+
+	if (align_ == Align::kCenter)
+	{
+		V_DrawScaledPatch(x, y, flags ^ V_FLIP, end_graphic);
+	}
+}
+
 Chain::Clipper::Clipper(const Chain& chain)
 {
 	V_SetClipRect(
@@ -146,6 +263,11 @@ Chain::Clipper::Clipper(const Chain& chain)
 Chain::Clipper::~Clipper()
 {
 	V_ClearClipRect();
+}
+
+patch_t* Draw::cache_patch(const char* name)
+{
+	return static_cast<patch_t*>(W_CachePatchName(name, PU_CACHE));
 }
 
 int Draw::font_to_fontno(Font font)
@@ -172,6 +294,9 @@ int Draw::font_to_fontno(Font font)
 
 	case Font::kTimer:
 		return TIMER_FONT;
+
+	case Font::kThinTimer:
+		return TINYTIMER_FONT;
 
 	case Font::kMenu:
 		return MENU_FONT;

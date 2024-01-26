@@ -24,6 +24,8 @@
 #include "music.h"
 #include "hu_stuff.h"
 #include "m_easing.h"
+#include "k_endcam.h"
+#include "p_tick.h"
 
 #define BARRIER_MIN_RADIUS (768 * mapobjectscale)
 
@@ -43,7 +45,7 @@ UINT8 maptargets = 0; // Capsules in map
 UINT8 numtargets = 0; // Capsules busted
 
 // Battle: someone won by collecting all 7 Chaos Emeralds
-boolean g_emeraldWin = false;
+tic_t g_emeraldWin = 0;
 
 INT32 K_StartingBumperCount(void)
 {
@@ -122,6 +124,7 @@ void K_CheckBumpers(void)
 	UINT8 numingame = 0;
 	UINT8 nobumpers = 0;
 	UINT8 eliminated = 0;
+	SINT8 kingofthehill = -1;
 
 	if (!(gametyperules & GTR_BUMPERS))
 		return;
@@ -148,6 +151,10 @@ void K_CheckBumpers(void)
 		{
 			eliminated++;
 		}
+		else
+		{
+			kingofthehill = i;
+		}
 	}
 
 	if (numingame - eliminated == 2 && battleovertime.enabled && battleovertime.radius <= BARRIER_MIN_RADIUS)
@@ -166,6 +173,13 @@ void K_CheckBumpers(void)
 	}
 	else if (eliminated >= numingame - 1)
 	{
+		if (kingofthehill != -1)
+		{
+			// If every other player is eliminated, the
+			// last player standing wins by default.
+			players[kingofthehill].roundscore = 100;
+		}
+
 		P_DoAllPlayersExit(0, false);
 		return;
 	}
@@ -195,10 +209,32 @@ void K_CheckEmeralds(player_t *player)
 		return;
 	}
 
+	if (player->exiting)
+	{
+		return;
+	}
+
 	player->roundscore = 100; // lmao
 
 	P_DoAllPlayersExit(0, false);
-	g_emeraldWin = true;
+
+	// TODO: this would be better if the timing lived in
+	// Tally code. But I didn't do it that, so this just
+	// shittily approximates syncing up with Tally.
+	g_emeraldWin = leveltime + (3*TICRATE);
+
+	if (!P_MobjWasRemoved(player->mo))
+	{
+		K_StartRoundWinCamera(
+			player->mo,
+			player->angleturn + ANGLE_180,
+			400*mapobjectscale,
+			6*TICRATE,
+			FRACUNIT/16
+		);
+
+		g_emeraldWin += g_endcam.swirlDuration;
+	}
 }
 
 UINT16 K_GetChaosEmeraldColor(UINT32 emeraldType)
@@ -528,7 +564,11 @@ void K_RunPaperItemSpawners(void)
 
 			//CONS_Printf("leveltime = %d ", leveltime);
 
-			if (spotAvailable > 0 && monitorsSpawned < BATTLE_MONITOR_SPAWN_LIMIT)
+			// Duel   =  2 + 1 =  3 / 2 = 1
+			// Small  =  5 + 1 =  6 / 2 = 3
+			// Medium = 10 + 1 = 11 / 2 = 5
+			// Large  = 16 + 1 = 17 / 2 = 8
+			if (spotAvailable > 0 && monitorsSpawned < (mapheaderinfo[gamemap - 1]->playerLimit + 1) / 2)
 			{
 				const UINT8 r = spotMap[P_RandomKey(PR_ITEM_ROULETTE, spotAvailable)];
 
@@ -609,6 +649,7 @@ static void K_SpawnOvertimeLaser(fixed_t x, fixed_t y, fixed_t scale)
 
 	for (i = 0; i <= r_splitscreen; i++)
 	{
+		camera_t *cam = &camera[i];
 		player_t *player = &players[displayplayers[i]];
 		fixed_t zpos;
 		SINT8 flip;
@@ -620,13 +661,13 @@ static void K_SpawnOvertimeLaser(fixed_t x, fixed_t y, fixed_t scale)
 
 		if (player->mo->eflags & MFE_VERTICALFLIP)
 		{
-			zpos = player->mo->z + player->mo->height;
-			zpos = min(zpos + heightPadding, player->mo->ceilingz);
+			zpos = cam->z + player->mo->height;
+			zpos = min(zpos + heightPadding, cam->ceilingz);
 		}
 		else
 		{
-			zpos = player->mo->z;
-			zpos = max(zpos - heightPadding, player->mo->floorz);
+			zpos = cam->z;
+			zpos = max(zpos - heightPadding, cam->floorz);
 		}
 
 		flip = P_MobjFlip(player->mo);
@@ -642,7 +683,7 @@ static void K_SpawnOvertimeLaser(fixed_t x, fixed_t y, fixed_t scale)
 			}
 
 			mo->angle = R_PointToAngle2(mo->x, mo->y, battleovertime.x, battleovertime.y) + ANGLE_90;
-			mo->renderflags |= (RF_DONTDRAW & ~(K_GetPlayerDontDrawFlag(player)));
+			mo->renderflags |= (RF_DONTDRAW & ~(K_GetPlayerDontDrawFlag(player))) | RF_HIDEINSKYBOX;
 
 			P_SetScale(mo, scale);
 
@@ -684,6 +725,36 @@ static void K_SpawnOvertimeLaser(fixed_t x, fixed_t y, fixed_t scale)
 					return;
 			}
 		}
+	}
+}
+
+void K_SpawnOvertimeBarrier(void)
+{
+	if (battleovertime.radius <= 0)
+	{
+		return;
+	}
+
+	const INT32 orbs = 32;
+	const angle_t angoff = ANGLE_MAX / orbs;
+	const UINT8 spriteSpacing = 128;
+
+	fixed_t circumference = FixedMul(M_PI_FIXED, battleovertime.radius * 2);
+	fixed_t scale = max(circumference / spriteSpacing / orbs, mapobjectscale);
+
+	fixed_t size = FixedMul(mobjinfo[MT_OVERTIME_PARTICLE].radius, scale);
+	fixed_t posOffset = max(battleovertime.radius - size, 0);
+
+	INT32 i;
+
+	for (i = 0; i < orbs; i++)
+	{
+		angle_t ang = (i * angoff) + FixedAngle((leveltime * FRACUNIT) / 4);
+
+		fixed_t x = battleovertime.x + P_ReturnThrustX(NULL, ang, posOffset);
+		fixed_t y = battleovertime.y + P_ReturnThrustY(NULL, ang, posOffset);
+
+		K_SpawnOvertimeLaser(x, y, scale);
 	}
 }
 
@@ -744,29 +815,9 @@ void K_RunBattleOvertime(void)
 		}
 	}
 
-	if (battleovertime.radius > 0)
+	if (!P_LevelIsFrozen())
 	{
-		const INT32 orbs = 32;
-		const angle_t angoff = ANGLE_MAX / orbs;
-		const UINT8 spriteSpacing = 128;
-
-		fixed_t circumference = FixedMul(M_PI_FIXED, battleovertime.radius * 2);
-		fixed_t scale = max(circumference / spriteSpacing / orbs, mapobjectscale);
-
-		fixed_t size = FixedMul(mobjinfo[MT_OVERTIME_PARTICLE].radius, scale);
-		fixed_t posOffset = max(battleovertime.radius - size, 0);
-
-		INT32 i;
-
-		for (i = 0; i < orbs; i++)
-		{
-			angle_t ang = (i * angoff) + FixedAngle((leveltime * FRACUNIT) / 4);
-
-			fixed_t x = battleovertime.x + P_ReturnThrustX(NULL, ang, posOffset);
-			fixed_t y = battleovertime.y + P_ReturnThrustY(NULL, ang, posOffset);
-
-			K_SpawnOvertimeLaser(x, y, scale);
-		}
+		K_SpawnOvertimeBarrier();
 	}
 }
 
@@ -867,7 +918,7 @@ void K_BattleInit(boolean singleplayercontext)
 	g_battleufo.due = starttime;
 	g_battleufo.previousId = Obj_RandomBattleUFOSpawnerID() - 1;
 
-	g_emeraldWin = false;
+	g_emeraldWin = 0;
 }
 
 UINT8 K_Bumpers(player_t *player)

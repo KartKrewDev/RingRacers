@@ -17,6 +17,7 @@
 // The texture for the next polygon given to HWR_ProcessPolygon.
 // Set with HWR_SetCurrentTexture.
 GLMipmap_t *current_texture = NULL;
+GLMipmap_t *current_brightmap = NULL;
 
 boolean currently_batching = false;
 
@@ -42,10 +43,10 @@ int unsortedVertexArrayAllocSize = 65536;
 // Call HWR_RenderBatches to render all the collected geometry.
 void HWR_StartBatching(void)
 {
-    if (currently_batching)
-        I_Error("Repeat call to HWR_StartBatching without HWR_RenderBatches");
+	if (currently_batching)
+		I_Error("Repeat call to HWR_StartBatching without HWR_RenderBatches");
 
-    // init arrays if that has not been done yet
+	// init arrays if that has not been done yet
 	if (!finalVertexArray)
 	{
 		finalVertexArray = malloc(finalVertexArrayAllocSize * sizeof(FOutVector));
@@ -55,7 +56,7 @@ void HWR_StartBatching(void)
 		unsortedVertexArray = malloc(unsortedVertexArrayAllocSize * sizeof(FOutVector));
 	}
 
-    currently_batching = true;
+	currently_batching = true;
 }
 
 // This replaces the direct calls to pfnSetTexture in cases where batching is available.
@@ -63,14 +64,29 @@ void HWR_StartBatching(void)
 // Doing this was easier than getting a texture pointer to HWR_ProcessPolygon.
 void HWR_SetCurrentTexture(GLMipmap_t *texture)
 {
-    if (currently_batching)
-    {
-        current_texture = texture;
-    }
-    else
-    {
-        HWD.pfnSetTexture(texture);
-    }
+	if (currently_batching)
+	{
+		if (texture != NULL)
+		{
+			if (texture->flags & TF_BRIGHTMAP)
+			{
+				current_brightmap = texture;
+			}
+			else
+			{
+				current_texture = texture;
+				current_brightmap = NULL;
+			}
+		}
+		else
+		{
+			current_texture = current_brightmap = NULL;
+		}
+	}
+	else
+	{
+		HWD.pfnSetTexture(texture);
+	}
 }
 
 // If batching is enabled, this function collects the polygon data and the chosen texture
@@ -78,7 +94,7 @@ void HWR_SetCurrentTexture(GLMipmap_t *texture)
 // render the polygon immediately.
 void HWR_ProcessPolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPts, FBITFIELD PolyFlags, int shader, boolean horizonSpecial)
 {
-    if (currently_batching)
+	if (currently_batching)
 	{
 		if (!pSurf)
 			I_Error("Got a null FSurfaceInfo in batching");// nulls should not come in the stuff that batching currently applies to
@@ -114,6 +130,7 @@ void HWR_ProcessPolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPt
 		polygonArray[polygonArraySize].numVerts = iNumPts;
 		polygonArray[polygonArraySize].polyFlags = PolyFlags;
 		polygonArray[polygonArraySize].texture = current_texture;
+		polygonArray[polygonArraySize].brightmap = current_brightmap;
 		polygonArray[polygonArraySize].shader = shader;
 		polygonArray[polygonArraySize].horizonSpecial = horizonSpecial;
 		polygonArraySize++;
@@ -123,10 +140,10 @@ void HWR_ProcessPolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPt
 	}
 	else
 	{
-        if (shader)
-            HWD.pfnSetShader(shader);
-        HWD.pfnDrawPolygon(pSurf, pOutVerts, iNumPts, PolyFlags);
-    }
+		if (shader)
+			HWD.pfnSetShader(shader);
+		HWD.pfnDrawPolygon(pSurf, pOutVerts, iNumPts, PolyFlags);
+	}
 }
 
 static int comparePolygons(const void *p1, const void *p2)
@@ -161,6 +178,15 @@ static int comparePolygons(const void *p1, const void *p2)
 	diff64 = downloaded1 - downloaded2;
 	if (diff64 != 0) return diff64;
 
+	downloaded1 = 0;
+	downloaded2 = 0;
+	if (poly1->brightmap)
+		downloaded1 = poly1->brightmap->downloaded; // there should be a opengl texture name here, usable for comparisons
+	if (poly2->brightmap)
+		downloaded2 = poly2->brightmap->downloaded;
+	diff64 = downloaded1 - downloaded2;
+	if (diff64 != 0) return diff64;
+
 	diff = poly1->polyFlags - poly2->polyFlags;
 	if (diff != 0) return diff;
 
@@ -176,6 +202,10 @@ static int comparePolygons(const void *p1, const void *p2)
 	diff = poly1->surf.LightInfo.fade_start - poly2->surf.LightInfo.fade_start;
 	if (diff != 0) return diff;
 	diff = poly1->surf.LightInfo.fade_end - poly2->surf.LightInfo.fade_end;
+
+	diff = poly1->surf.LightInfo.directional - poly2->surf.LightInfo.directional;
+	if (diff != 0) return diff;
+
 	return diff;
 }
 
@@ -219,15 +249,17 @@ static int comparePolygonsNoShaders(const void *p1, const void *p2)
 // the rendering backend to draw them.
 void HWR_RenderBatches(void)
 {
-    int finalVertexWritePos = 0;// position in finalVertexArray
+	int finalVertexWritePos = 0;// position in finalVertexArray
 	int finalIndexWritePos = 0;// position in finalVertexIndexArray
 
 	int polygonReadPos = 0;// position in polygonIndexArray
 
 	int currentShader;
 	int nextShader = 0;
-	GLMipmap_t *currentTexture;
+	GLMipmap_t *currentTexture = NULL;
 	GLMipmap_t *nextTexture = NULL;
+	GLMipmap_t *currentBrightmap = NULL;
+	GLMipmap_t *nextBrightmap = NULL;
 	FBITFIELD currentPolyFlags = 0;
 	FBITFIELD nextPolyFlags = 0;
 	FSurfaceInfo currentSurfaceInfo;
@@ -235,12 +267,13 @@ void HWR_RenderBatches(void)
 
 	int i;
 
-    if (!currently_batching)
+	if (!currently_batching)
 		I_Error("HWR_RenderBatches called without starting batching");
 
 	nextSurfaceInfo.LightInfo.fade_end = 0;
 	nextSurfaceInfo.LightInfo.fade_start = 0;
 	nextSurfaceInfo.LightInfo.light_level = 0;
+	nextSurfaceInfo.LightInfo.directional = false;
 
 	currently_batching = false;// no longer collecting batches
 	if (!polygonArraySize)
@@ -268,14 +301,16 @@ void HWR_RenderBatches(void)
 	// sort order
 	// 1. shader
 	// 2. texture
-	// 3. polyflags
-	// 4. colors + light level
+	// 3. brightmap
+	// 4. polyflags
+	// 5. colors + light level
 	// not sure about what order of the last 2 should be, or if it even matters
 
 	ps_hw_batchdrawtime = I_GetPreciseTime();
 
 	currentShader = polygonArray[polygonIndexArray[0]].shader;
 	currentTexture = polygonArray[polygonIndexArray[0]].texture;
+	currentBrightmap = polygonArray[polygonIndexArray[0]].brightmap;
 	currentPolyFlags = polygonArray[polygonIndexArray[0]].polyFlags;
 	currentSurfaceInfo = polygonArray[polygonIndexArray[0]].surf;
 	// For now, will sort and track the colors. Vertex attributes could be used instead of uniforms
@@ -289,9 +324,15 @@ void HWR_RenderBatches(void)
 	}
 
 	if (currentPolyFlags & PF_NoTexture)
-		currentTexture = NULL;
-    else
-	    HWD.pfnSetTexture(currentTexture);
+	{
+		currentTexture = currentBrightmap = NULL;
+	}
+	else
+	{
+		HWD.pfnSetTexture(currentTexture);
+		if (currentBrightmap)
+			HWD.pfnSetTexture(currentBrightmap);
+	}
 
 	while (1)// note: remember handling notexture polyflag as having texture number 0 (also in comparePolygons)
 	{
@@ -361,16 +402,17 @@ void HWR_RenderBatches(void)
 			int nextIndex = polygonIndexArray[polygonReadPos];
 			nextShader = polygonArray[nextIndex].shader;
 			nextTexture = polygonArray[nextIndex].texture;
+			nextBrightmap = polygonArray[nextIndex].brightmap;
 			nextPolyFlags = polygonArray[nextIndex].polyFlags;
 			nextSurfaceInfo = polygonArray[nextIndex].surf;
 			if (nextPolyFlags & PF_NoTexture)
-				nextTexture = 0;
+				nextTexture = nextBrightmap = 0;
 			if (currentShader != nextShader && cv_glshaders.value && gl_shadersavailable)
 			{
 				changeState = true;
 				changeShader = true;
 			}
-			if (currentTexture != nextTexture)
+			if (currentTexture != nextTexture || currentBrightmap != nextBrightmap)
 			{
 				changeState = true;
 				changeTexture = true;
@@ -387,7 +429,8 @@ void HWR_RenderBatches(void)
 					currentSurfaceInfo.FadeColor.rgba != nextSurfaceInfo.FadeColor.rgba ||
 					currentSurfaceInfo.LightInfo.light_level != nextSurfaceInfo.LightInfo.light_level ||
 					currentSurfaceInfo.LightInfo.fade_start != nextSurfaceInfo.LightInfo.fade_start ||
-					currentSurfaceInfo.LightInfo.fade_end != nextSurfaceInfo.LightInfo.fade_end)
+					currentSurfaceInfo.LightInfo.fade_end != nextSurfaceInfo.LightInfo.fade_end ||
+					currentSurfaceInfo.LightInfo.directional != nextSurfaceInfo.LightInfo.directional)
 				{
 					changeState = true;
 					changeSurfaceInfo = true;
@@ -406,7 +449,7 @@ void HWR_RenderBatches(void)
 		if (changeState || stopFlag)
 		{
 			// execute draw call
-            HWD.pfnDrawIndexedTriangles(&currentSurfaceInfo, finalVertexArray, finalIndexWritePos, currentPolyFlags, finalVertexIndexArray);
+			HWD.pfnDrawIndexedTriangles(&currentSurfaceInfo, finalVertexArray, finalIndexWritePos, currentPolyFlags, finalVertexIndexArray);
 			// update stats
 			ps_hw_numcalls++;
 			ps_hw_numverts += finalIndexWritePos;
@@ -431,10 +474,14 @@ void HWR_RenderBatches(void)
 		if (changeTexture)
 		{
 			// texture should be already ready for use from calls to SetTexture during batch collection
-		    HWD.pfnSetTexture(nextTexture);
+			HWD.pfnSetTexture(nextTexture);
 			currentTexture = nextTexture;
-			changeTexture = false;
 
+			if (nextBrightmap)
+				HWD.pfnSetTexture(nextBrightmap);
+			currentBrightmap = nextBrightmap;
+
+			changeTexture = false;
 			ps_hw_numtextures++;
 		}
 		if (changePolyFlags)

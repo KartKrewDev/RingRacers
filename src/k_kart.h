@@ -47,10 +47,18 @@ Make sure this matches the actual number of states
 #define STUMBLE_AIRTIME TICRATE
 
 #define MAXRINGVOLUME 255
+#define MAXRINGTRANSPARENCY 255
 #define MINRINGVOLUME 100
+#define MINRINGTRANSPARENCY 100
 #define RINGVOLUMECOLLECTPENALTY 3
+#define RINGTRANSPARENCYCOLLECTPENALTY 0
 #define RINGVOLUMEUSEPENALTY 15
+#define RINGTRANSPARENCYUSEPENALTY 15
 #define RINGVOLUMEREGEN 1
+#define RINGTRANSPARENCYREGEN 3
+
+#define MAXTOPACCEL (12*FRACUNIT)
+#define TOPACCELREGEN (FRACUNIT/16)
 
 // Mispredicted turns can generate phantom sliptide inputs for a few tics.
 // Delay the wavedash visuals until we're reasonably sure that it's a deliberate turn.
@@ -192,7 +200,6 @@ fixed_t K_GetKartSpeedFromStat(UINT8 kartspeed);
 fixed_t K_GetKartSpeed(const player_t *player, boolean doboostpower, boolean dorubberbanding);
 fixed_t K_GetKartAccel(const player_t *player);
 UINT16 K_GetKartFlashing(const player_t *player);
-void K_UpdateDamageFlashing(player_t *player, UINT16 tics);
 boolean K_PlayerShrinkCheat(const player_t *player);
 void K_UpdateShrinkCheat(player_t *player);
 boolean K_KartKickstart(const player_t *player);

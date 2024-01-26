@@ -100,6 +100,8 @@ typedef struct gl_vissprite_s
 	mobj_t *mobj; // NOTE: This is a precipmobj_t if precip is true !!! Watch out.
 } gl_vissprite_t;
 
+void HWR_ObjectLightLevelPost(gl_vissprite_t *spr, const sector_t *sector, INT32 *lightlevel, boolean model);
+
 // --------
 // hw_bsp.c
 // --------

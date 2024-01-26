@@ -47,6 +47,8 @@
 #include "music.h"
 #include "k_dialogue.h"
 #include "m_easing.h"
+#include "k_hud.h" // messagetimer
+#include "k_endcam.h"
 
 #include "lua_profile.h"
 
@@ -64,12 +66,12 @@ static boolean g_freezeLevel;
 
 boolean P_LevelIsFrozen(void)
 {
-	return (g_freezeLevel || g_freezeCheat);
+	return (g_freezeLevel || g_freezeCheat || K_EndCameraIsFreezing());
 }
 
 boolean P_FreezeCheat(void)
 {
-	return (g_freezeLevel || g_freezeCheat);
+	return (g_freezeLevel || g_freezeCheat || K_EndCameraIsFreezing());
 }
 
 void P_SetFreezeCheat(boolean value)
@@ -100,7 +102,7 @@ boolean P_MobjIsFrozen(mobj_t *mobj)
 		}
 	}
 
-	if (g_freezeLevel == true)
+	if (g_freezeLevel == true || K_EndCameraIsFreezing())
 	{
 		// level totally frozen
 		return true;
@@ -731,24 +733,21 @@ static inline void P_DeviceRumbleTick(void)
 		UINT16 low = 0;
 		UINT16 high = 0;
 
-		if (player->mo == NULL)
-			continue;
-
-		if (player->exiting)
-			continue;
-
-		if ((player->mo->eflags & MFE_DAMAGEHITLAG) && player->mo->hitlag)
+		if (player->mo != NULL && !player->exiting)
 		{
-			low = high = 65536 / 2;
-		}
-		else if (player->sneakertimer > (sneakertime-(TICRATE/2)))
-		{
-			low = high = 65536 / (3+player->numsneakers);
-		}
-		else if (((player->boostpower < FRACUNIT) || (player->stairjank > 8))
-			&& P_IsObjectOnGround(player->mo) && player->speed != 0)
-		{
-			low = high = 65536 / 32;
+			if ((player->mo->eflags & MFE_DAMAGEHITLAG) && player->mo->hitlag)
+			{
+				low = high = 65536 / 2;
+			}
+			else if (player->sneakertimer > (sneakertime-(TICRATE/2)))
+			{
+				low = high = 65536 / (3+player->numsneakers);
+			}
+			else if (((player->boostpower < FRACUNIT) || (player->stairjank > 8))
+				&& P_IsObjectOnGround(player->mo) && player->speed != 0)
+			{
+				low = high = 65536 / 32;
+			}
 		}
 
 		G_PlayerDeviceRumble(i, low, high);
@@ -766,6 +765,8 @@ void P_RunChaseCameras(void)
 			P_MoveChaseCamera(&players[displayplayers[i]], &camera[i], false);
 		}
 	}
+
+	K_EndCameraGC();
 }
 
 static fixed_t P_GetDarkness(tic_t start, tic_t end)
@@ -785,7 +786,8 @@ static fixed_t P_GetDarkness(tic_t start, tic_t end)
 			t = end - leveltime;
 		}
 
-		return Easing_Linear((t * FRACUNIT) / DARKNESS_FADE_TIME, 0, FRACUNIT/7);
+		return Easing_Linear((t * FRACUNIT) / DARKNESS_FADE_TIME, 0,
+			(gametyperules & GTR_BUMPERS) ? FRACUNIT/3 : FRACUNIT/7);
 	}
 
 	return 0;
@@ -1198,6 +1200,7 @@ void P_Ticker(boolean run)
 	if (run && !levelloading && leveltime)
 	{
 		K_TickDialogue();
+		K_TickMessages();
 	}
 
 	LUA_HOOK(PostThinkFrame);

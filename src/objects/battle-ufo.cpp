@@ -12,7 +12,9 @@
 #include "../p_local.h"
 #include "../k_battle.h"
 #include "../k_objects.h"
+#include "../k_powerup.h"
 #include "../k_kart.h"
+#include "../k_hud.h" // K_AddMessage
 
 using srb2::math::Fixed;
 using srb2::Mobj;
@@ -81,7 +83,7 @@ public:
 		auto min = [&](auto cmp) { return std::min_element(list_.begin(), list_.end(), cmp); };
 
 		return *(it != list_.end()
-			? min([order](T a, T b) { return order < a->id() && a->id() < b->id(); })
+			? min([order](T a, T b) { return order < a->id() && (b->id() <= order || a->id() < b->id()); })
 			: min([](T a, T b) { return a->id() < b->id(); }));
 	}
 
@@ -114,6 +116,9 @@ public:
 
 		Spawner* spawner = next(g_battleufo.previousId);
 		UFO* ufo = static_cast<UFO*>(P_SpawnMobjFromMobj(spawner, 0, 0, 250*FRACUNIT - ofs, MT_BATTLEUFO));
+		
+		K_AddMessage("Crack the Combat UFO!", true, false);
+		S_StartSound(NULL, sfx_mbs54);
 
 		ufo->sprzoff(ofs * spawner->scale());
 
@@ -148,26 +153,30 @@ void Obj_BattleUFODeath(mobj_t *mobj, mobj_t *inflictor)
 {
 	UFO* ufo = static_cast<UFO*>(mobj);
 	const SINT8 flip = P_MobjFlip(ufo);
+	const kartitems_t pwrup = static_cast<kartitems_t>(P_RandomRange(PR_BATTLEUFO, FIRSTPOWERUP, LASTPOWERUP));
 
 	ufo->momz = -(8*mapobjectscale)/2;
 
-	mobj_t* drop = K_CreatePaperItem(
-		ufo->x,
-		ufo->y,
-		ufo->z + (flip),
-		0,
-		flip,
-		P_RandomRange(PR_BATTLEUFO, FIRSTPOWERUP, LASTPOWERUP),
-		BATTLE_POWERUP_TIME
-	);
-
-	if (!P_MobjWasRemoved(inflictor) && inflictor->type == MT_INSTAWHIP)
+	if (!P_MobjWasRemoved(inflictor) && inflictor->type == MT_INSTAWHIP &&
+		!P_MobjWasRemoved(inflictor->target) && inflictor->target->player)
 	{
-		// Take momentum of player who whips
-		inflictor = inflictor->target;
+		// Just give it to the player, they earned it.
+		K_GivePowerUp(inflictor->target->player, pwrup, BATTLE_POWERUP_TIME);
 	}
+	else
+	{
+		mobj_t *drop = K_CreatePaperItem(
+			ufo->x,
+			ufo->y,
+			ufo->z + ufo->sprzoff() + (flip),
+			0,
+			flip,
+			pwrup,
+			BATTLE_POWERUP_TIME
+		);
 
-	drop->momz = !P_MobjWasRemoved(inflictor) ? inflictor->momz : 0;
+		drop->hitlag = ufo->hitlag();
+	}
 
 	if (ufo->spawner())
 	{
@@ -247,4 +256,9 @@ INT32 Obj_RandomBattleUFOSpawnerID(void)
 void Obj_BattleUFOBeamThink(mobj_t *beam)
 {
 	P_SetObjectMomZ(beam, beam->info->speed, true);
+}
+
+INT32 Obj_BattleUFOSpawnerID(const mobj_t *spawner)
+{
+	return static_cast<const Spawner*>(spawner)->id();
 }

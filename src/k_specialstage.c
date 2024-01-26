@@ -21,6 +21,7 @@
 #include "z_zone.h"
 #include "k_waypoint.h"
 #include "k_objects.h"
+#include "music.h"
 
 struct specialstageinfo specialstageinfo;
 
@@ -127,6 +128,11 @@ void K_TickSpecialStage(void)
 	K_MoveExitBeam();
 }
 
+/*--------------------------------------------------
+	mobj_t *K_GetPossibleSpecialTarget(void)
+
+		See header file for description.
+--------------------------------------------------*/
 mobj_t *K_GetPossibleSpecialTarget(void)
 {
 	if (specialstageinfo.valid == false)
@@ -140,4 +146,21 @@ mobj_t *K_GetPossibleSpecialTarget(void)
 		return NULL;
 
 	return specialstageinfo.ufo;
+}
+
+/*--------------------------------------------------
+	void K_FadeOutSpecialMusic(UINT32 distance)
+
+		See header file for description.
+--------------------------------------------------*/
+void K_FadeOutSpecialMusic(UINT32 distance)
+{
+	if (specialstageinfo.valid == false)
+	{
+		return;
+	}
+
+	const UINT32 threshold = FixedMul(16000, mapobjectscale);
+
+	Music_LevelVolume(min(distance, threshold) * 100 / threshold);
 }

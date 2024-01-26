@@ -19,6 +19,7 @@
 #include "k_powerup.h"
 #include "k_hitlag.h"
 #include "m_random.h"
+#include "k_hud.h" // K_AddMessage
 
 angle_t K_GetCollideAngle(mobj_t *t1, mobj_t *t2)
 {
@@ -743,19 +744,51 @@ void K_LightningShieldAttack(mobj_t *actor, fixed_t size)
 			P_BlockThingsIterator(bx, by, PIT_LightningShieldAttack);
 }
 
-boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
+boolean K_BubbleShieldCanReflect(mobj_t *t1, mobj_t *t2)
 {
-	if (t1->type == MT_PLAYER)
+	return (t2->type == MT_ORBINAUT || t2->type == MT_JAWZ || t2->type == MT_GACHABOM
+		|| t2->type == MT_BANANA || t2->type == MT_EGGMANITEM || t2->type == MT_BALLHOG
+		|| t2->type == MT_SSMINE || t2->type == MT_LANDMINE || t2->type == MT_SINK
+		|| t2->type == MT_GARDENTOP
+		|| t2->type == MT_DROPTARGET
+		|| t2->type == MT_KART_LEFTOVER
+		|| (t2->type == MT_PLAYER && t1->target != t2));
+}
+
+boolean K_BubbleShieldReflect(mobj_t *t1, mobj_t *t2)
+{
+	mobj_t *owner = t1->player ? t1 : t1->target;
+
+	if (t2->target != owner || !t2->threshold || t2->type == MT_DROPTARGET)
 	{
-		// Bubble Shield already has a hitbox, and it gets
-		// teleported every tic so the Bubble itself will
-		// always make contact with other objects.
-		//
-		// Therefore, we don't need a second, smaller hitbox
-		// on the player. It'll just cause unwanted hitlag.
-		return true;
+		if (t1->player && K_PlayerGuard(t1->player))
+		{
+			K_KartSolidBounce(t1, t2);
+			K_DoPowerClash(t1, t2);
+		}
+		if (!t2->momx && !t2->momy)
+		{
+			t2->momz += (24*t2->scale) * P_MobjFlip(t2);
+		}
+		else
+		{
+			t2->momx = -6*t2->momx;
+			t2->momy = -6*t2->momy;
+			t2->momz = -6*t2->momz;
+			t2->angle += ANGLE_180;
+		}
+		if (t2->type == MT_JAWZ)
+			P_SetTarget(&t2->tracer, t2->target); // Back to the source!
+		P_SetTarget(&t2->target, owner); // Let the source reflect it back again!
+		t2->threshold = 10;
+		S_StartSound(t1, sfx_s3k44);
 	}
 
+	return true;
+}
+
+boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
+{
 	if (t2->type == MT_PLAYER)
 	{
 		// Counter desyncs
@@ -777,30 +810,20 @@ boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 			// Don't play from t1 else it gets cut out... for some reason.
 			S_StartSound(t2, sfx_s3k44);
 		}
-	}
-	else
-	{
-		if (!t2->threshold || t2->type == MT_DROPTARGET)
-		{
-			if (!t2->momx && !t2->momy)
-			{
-				t2->momz += (24*t2->scale) * P_MobjFlip(t2);
-			}
-			else
-			{
-				t2->momx = -4*t2->momx;
-				t2->momy = -4*t2->momy;
-				t2->momz = -4*t2->momz;
-				t2->angle += ANGLE_180;
-			}
-			if (t2->type == MT_JAWZ)
-				P_SetTarget(&t2->tracer, t2->target); // Back to the source!
-			t2->threshold = 10;
-			S_StartSound(t1, sfx_s3k44);
-		}
+
+		return true;
 	}
 
-	// no interaction
+	if (K_BubbleShieldCanReflect(t1, t2))
+	{
+		return K_BubbleShieldReflect(t1, t2);
+	}
+
+	if (t2->flags & MF_SHOOTABLE)
+	{
+		P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL);
+	}
+
 	return true;
 }
 
@@ -825,8 +848,7 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 	{
 		player_t *victimPlayer = victim->player;
 
-		//if (victim != attacker && !P_PlayerInPain(victimPlayer) && victimPlayer->flashing == 0)
-		if (victim != attacker && victim->hitlag == 0)
+		if (victim != attacker && (P_PlayerInPain(victimPlayer) ? victim->hitlag == 0 : victimPlayer->flashing == 0))
 		{
 			// If both players have a whip, hits are order-of-execution dependent and that sucks.
 			// Player expectation is a clash here.
@@ -841,8 +863,8 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 				attacker->renderflags &= ~RF_DONTDRAW;
 
 				angle_t thrangle = R_PointToAngle2(attacker->x, attacker->y, victim->x, victim->y);
-				P_Thrust(victim, thrangle, FRACUNIT*7);
-				P_Thrust(attacker, ANGLE_180 + thrangle, FRACUNIT*7);
+				P_Thrust(victim, thrangle, mapobjectscale*28);
+				P_Thrust(attacker, ANGLE_180 + thrangle, mapobjectscale*28);
 
 				return false;
 			}
@@ -876,6 +898,9 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 				attackerPlayer->instaWhipCharge = 0;
 				attackerPlayer->flashing = 0;
 
+				K_AddMessageForPlayer(victimPlayer, "Whip Reflected!", false, false);
+				K_AddMessageForPlayer(attackerPlayer, "COUNTERED!!", false, false);
+
 				// Localized broly for a local event.
 				if (mobj_t *broly = Obj_SpawnBrolyKi(victim, victimHitlag/2))
 				{
@@ -907,7 +932,7 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 			K_DropPowerUps(victimPlayer);
 
 			angle_t thrangle = ANGLE_180 + R_PointToAngle2(victim->x, victim->y, shield->x, shield->y);
-			P_Thrust(victim, thrangle, FRACUNIT*10);
+			P_Thrust(victim, thrangle, mapobjectscale*40);
 
 			K_AddHitLag(victim, victimHitlag, true);
 			K_AddHitLag(attacker, attackerHitlag, false);
@@ -1046,8 +1071,7 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 			|| (t1->player->invincibilitytimer > 0)
 			|| (t1->player->flamedash > 0 && t1->player->itemtype == KITEM_FLAMESHIELD)
 			|| (t1->player->curshield == KSHIELD_TOP && !K_IsHoldingDownTop(t1->player))
-			|| (t1->player->bubbleblowup > 0)
-			|| (t1->player->spheres > 0 && K_PlayerEBrake(t1->player));
+			|| (t1->player->bubbleblowup > 0);
 	};
 
 	if (canClash(t1, t2) && canClash(t2, t1))
@@ -1150,7 +1174,7 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 
 		bool stung = false;
 
-		if (t2->player->rings <= 0 && t2->player->spheres <= 0)
+		if (t2->player->rings <= 0 && t2->health == 1) // no bumpers
 		{
 			P_DamageMobj(t2, t1, t1, 1, DMG_STING|DMG_WOMBO);
 			stung = true;

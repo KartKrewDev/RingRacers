@@ -1679,7 +1679,7 @@ static void R_ProjectBoundingBox(mobj_t *thing, vissprite_t *vis)
 	box->x2test = 0;
 }
 
-static fixed_t R_GetSpriteDirectionalLighting(angle_t angle)
+fixed_t R_GetSpriteDirectionalLighting(angle_t angle)
 {
 	// Copied from P_UpdateSegLightOffset
 	const UINT8 contrast = std::min(std::max(0, maplighting.contrast - maplighting.backlight), UINT8_MAX);
@@ -2792,6 +2792,12 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 	limit_dist = (fixed_t)(cv_drawdist.value) * mapobjectscale;
 	for (thing = sec->thinglist; thing; thing = thing->snext)
 	{
+		// do not render in skybox
+		if ((thing->renderflags & RF_HIDEINSKYBOX) && portalskipprecipmobjs)
+		{
+			continue;
+		}
+
 		if (R_ThingWithinDist(thing, limit_dist))
 		{
 			const INT32 oldobjectsdrawn = objectsdrawn;

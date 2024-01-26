@@ -613,8 +613,7 @@ void Obj_SSChainMobjThink(mobj_t* mo)
 
 void Obj_SSGachaTargetMobjSpawn(mobj_t* mo)
 {
-	mo->scale *= 4;
-	mo->destscale = mo->scale;
+	P_InstaScale(mo, 4*mo->scale);
 }
 
 void Obj_SSCabotronMobjSpawn(mobj_t* mo)

@@ -975,6 +975,7 @@ typedef enum
 
 	RF_ABSOLUTELIGHTLEVEL = 0x00010000, //  mobj_t.lightlevel is absolute instead of relative
 	RF_REDUCEVFX          = 0x00020000, //  only mobj_t.owner can see this object
+	RF_HIDEINSKYBOX       = 0x00040000, //  do not render in skybox
 
 	RF_DONTDRAW         = 0x00F00000,   // --Don't generate a vissprite
 	RF_DONTDRAWP1       = 0x00100000,   // No P1

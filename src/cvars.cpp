@@ -712,7 +712,7 @@ consvar_t cv_kartbot = UnsavedNetVar("bots", "Off").values({
 	{13,"Lv.MAX"},
 });
 
-consvar_t cv_kartbumpers = UnsavedNetVar("battlebumpers", "3").min_max(1, 12);
+consvar_t cv_kartbumpers = UnsavedNetVar("battlebumpers", "3").min_max(0, 12);
 
 void KartEliminateLast_OnChange(void);
 consvar_t cv_karteliminatelast = UnsavedNetVar("eliminatelast", "Yes").yes_no().onchange(KartEliminateLast_OnChange);
@@ -856,6 +856,10 @@ consvar_t cv_kartdebugnodes = ServerCheat("debugnodes", "Off").on_off().descript
 
 consvar_t cv_1pswap = PlayerCheat("1pswap", "1").min_max(1, MAXSPLITSCREENPLAYERS).description("Let P1's Profile control a different splitscreen player");
 
+#ifdef DEVELOP
+	consvar_t cv_debugchallenges = PlayerCheat("debugchallenges", "Off").on_off().description("Chao keys are infinite, unlock any tile, relock tiles, animations play quickly");
+#endif
+
 consvar_t cv_debugfinishline = PlayerCheat("debugfinishline", "Off").on_off().description("Highlight finish lines, respawn lines, death pits and instakill planes with high contrast colors");
 consvar_t cv_debughudtracker = PlayerCheat("debughudtracker", "Off").on_off().description("Highlight overlapping HUD tracker blocks");
 
@@ -887,6 +891,8 @@ consvar_t cv_palettenum = PlayerCheat("palettenum", "0").values(CV_Unsigned).onc
 
 extern CV_PossibleValue_t renderhitbox_cons_t[];
 consvar_t cv_renderhitbox = PlayerCheat("renderhitbox", "Off").values(renderhitbox_cons_t).description("Show hitboxes around objects");
+
+consvar_t cv_mentalsonic = PlayerCheat("mentalsonic", "Off").values(CV_OnOff).flags(CV_HIDDEN).description("Works out at the library");
 
 //
 // Dummy variables used solely in the menu system.

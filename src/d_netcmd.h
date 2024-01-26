@@ -98,6 +98,8 @@ extern consvar_t cv_kartdebugstart;
 extern consvar_t cv_debugrank;
 extern consvar_t cv_battletest;
 
+extern consvar_t cv_mentalsonic;
+
 typedef enum {
 	CV_CAPSULETEST_OFF,
 	CV_CAPSULETEST_MULTIPLAYER,

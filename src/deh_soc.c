@@ -1417,6 +1417,29 @@ void readlevelheader(MYFILE *f, char * name)
 					mapheaderinfo[num]->destroyforchallenge_size = j;
 				}
 			}
+			else if (fastcmp(word, "LOBBYSIZE"))
+			{
+				if (fastcmp(word2, "DUEL"))
+				{
+					mapheaderinfo[num]->playerLimit = 2;
+				}
+				else if (fastcmp(word2, "SMALL"))
+				{
+					mapheaderinfo[num]->playerLimit = 5;
+				}
+				else if (fastcmp(word2, "MEDIUM"))
+				{
+					mapheaderinfo[num]->playerLimit = 10;
+				}
+				else if (fastcmp(word2, "LARGE"))
+				{
+					mapheaderinfo[num]->playerLimit = 16;
+				}
+				else
+				{
+					deh_warning("Level header %d: invalid lobby size '%s'", num, word2);
+				}
+			}
 			else
 				deh_warning("Level header %d: unknown word '%s'", num, word);
 		}

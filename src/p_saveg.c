@@ -47,6 +47,7 @@
 #include "g_party.h"
 #include "k_vote.h"
 #include "k_zvote.h"
+#include "k_endcam.h"
 
 #include <tracy/tracy/TracyC.h>
 
@@ -490,6 +491,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT16(save->p, players[i].superring);
 		WRITEUINT8(save->p, players[i].nextringaward);
 		WRITEUINT8(save->p, players[i].ringvolume);
+		WRITEUINT8(save->p, players[i].ringtransparency);
 		WRITEUINT16(save->p, players[i].ringburst);
 
 		WRITEUINT8(save->p, players[i].curshield);
@@ -570,6 +572,8 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].finalfailsafe);
 
 		WRITEUINT8(save->p, players[i].lastsafelap);
+
+		WRITEFIXED(save->p, players[i].topAccel);
 
 		WRITEMEM(save->p, players[i].public_key, PUBKEYLENGTH);
 
@@ -1061,6 +1065,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].superring = READUINT16(save->p);
 		players[i].nextringaward = READUINT8(save->p);
 		players[i].ringvolume = READUINT8(save->p);
+		players[i].ringtransparency = READUINT8(save->p);
 		players[i].ringburst = READUINT16(save->p);
 
 		players[i].curshield = READUINT8(save->p);
@@ -1141,6 +1146,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].finalfailsafe = READUINT8(save->p);
 
 		players[i].lastsafelap = READUINT8(save->p);
+
+		players[i].topAccel = READFIXED(save->p);
 
 		READMEM(save->p, players[i].public_key, PUBKEYLENGTH);
 
@@ -5739,6 +5746,12 @@ static void P_RelinkPointers(void)
 
 	P_LoadMobjPointers(RelinkMobjVoid);
 
+	if (g_endcam.panMobj)
+	{
+		if (!RelinkMobj(&g_endcam.panMobj))
+			CONS_Debug(DBG_GAMELOGIC, "g_endcam.panMobj not found\n");
+	}
+
 	// use info field (value = oldposition) to relink mobjs
 	for (currentthinker = thlist[THINK_MOBJ].next; currentthinker != &thlist[THINK_MOBJ];
 		currentthinker = currentthinker->next)
@@ -6454,7 +6467,7 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 	WRITEINT32(save->p, numgotboxes);
 	WRITEUINT8(save->p, numtargets);
 	WRITEUINT8(save->p, battleprisons);
-	WRITEUINT8(save->p, g_emeraldWin);
+	WRITEUINT32(save->p, g_emeraldWin);
 
 	WRITEUINT8(save->p, gamespeed);
 	WRITEUINT8(save->p, numlaps);
@@ -6640,7 +6653,7 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 	numgotboxes = READINT32(save->p);
 	numtargets = READUINT8(save->p);
 	battleprisons = (boolean)READUINT8(save->p);
-	g_emeraldWin = (boolean)READUINT8(save->p);
+	g_emeraldWin = (tic_t)READUINT32(save->p);
 
 	gamespeed = READUINT8(save->p);
 	numlaps = READUINT8(save->p);
@@ -6851,6 +6864,9 @@ void P_SaveNetGame(savebuffer_t *save, boolean resending)
 		}
 	}
 
+	K_SaveEndCamera(save);
+	WriteMobjPointer(g_endcam.panMobj);
+
 	P_NetArchivePlayers(save);
 	P_NetArchiveParties(save);
 	P_NetArchiveRoundQueue(save);
@@ -6915,6 +6931,9 @@ boolean P_LoadNetGame(savebuffer_t *save, boolean reloading)
 
 	if (!P_NetUnArchiveMisc(save, reloading))
 		return false;
+
+	K_LoadEndCamera(save);
+	ReadMobjPointer(&g_endcam.panMobj);
 
 	P_NetUnArchivePlayers(save);
 	P_NetUnArchiveParties(save);

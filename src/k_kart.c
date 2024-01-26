@@ -50,6 +50,7 @@
 #include "k_tally.h"
 #include "music.h"
 #include "m_easing.h"
+#include "k_endcam.h"
 
 // SOME IMPORTANT VARIABLES DEFINED IN DOOMDEF.H:
 // gamespeed is cc (0 for easy, 1 for normal, 2 for hard)
@@ -1016,9 +1017,14 @@ boolean K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2)
 
 	if (mobj1->type == MT_PLAYER && mobj2->type == MT_PLAYER)
 	{
-		if (K_PlayerGuard(mobj1->player))
+		boolean guard1 = K_PlayerGuard(mobj1->player);
+		boolean guard2 = K_PlayerGuard(mobj2->player);
+
+		if (guard1 && guard2)
+			K_DoPowerClash(mobj1, mobj2);
+		else if (guard1)
 			K_DoGuardBreak(mobj1, mobj2);
-		if (K_PlayerGuard(mobj2->player))
+		else if (guard2)
 			K_DoGuardBreak(mobj2, mobj1);
 	}
 
@@ -2978,6 +2984,12 @@ boolean K_WaterSkip(mobj_t *mobj)
 				// Don't allow
 				return false;
 			}
+
+			if (K_PlayerEBrake(mobj->player))
+			{
+				return false;
+			}
+			
 			// Allow
 			break;
 		}
@@ -3281,7 +3293,9 @@ static void K_GetKartBoostPower(player_t *player)
 
 	if (player->invincibilitytimer) // Invincibility
 	{
-		ADDBOOST(3*FRACUNIT/8 + (FRACUNIT / 1400 * (player->invincibilitytimer)), 3*FRACUNIT, SLIPTIDEHANDLING/2); // + 37.5 + ?% top speed, + 300% acceleration, +25% handling
+		// S-Monitor: no extra %
+		fixed_t extra = FRACUNIT / 1400 * (player->invincibilitytimer - K_PowerUpRemaining(player, POWERUP_SMONITOR));
+		ADDBOOST(3*FRACUNIT/8 + extra, 3*FRACUNIT, SLIPTIDEHANDLING/2); // + 37.5 + ?% top speed, + 300% acceleration, +25% handling
 	}
 
 	if (player->growshrinktimer > 0) // Grow
@@ -3531,7 +3545,7 @@ fixed_t K_GetKartAccel(const player_t *player)
 	// Marble Garden Top gets 1200% accel
 	if (player->curshield == KSHIELD_TOP)
 	{
-		k_accel *= 12;
+		k_accel = FixedMul(k_accel, player->topAccel);
 	}
 
 	if (K_PodiumSequence() == true)
@@ -3550,6 +3564,11 @@ UINT16 K_GetKartFlashing(const player_t *player)
 {
 	UINT16 tics = flashingtics;
 
+	if (gametyperules & GTR_BUMPERS)
+	{
+		return 1;
+	}
+
 	if (player == NULL)
 	{
 		return tics;
@@ -3557,16 +3576,6 @@ UINT16 K_GetKartFlashing(const player_t *player)
 
 	tics += (tics/8) * (player->kartspeed);
 	return tics;
-}
-
-void K_UpdateDamageFlashing(player_t *player, UINT16 tics)
-{
-	if (gametyperules & GTR_BUMPERS)
-	{
-		return;
-	}
-
-	player->flashing = tics;
 }
 
 boolean K_PlayerShrinkCheat(const player_t *player)
@@ -3651,7 +3660,17 @@ SINT8 K_GetForwardMove(const player_t *player)
 		}
 		else
 		{
-			forwardmove = MAXPLMOVE;
+			// forwardmove = MAXPLMOVE;
+
+			UINT8 minmove = MAXPLMOVE/10;
+			fixed_t assistmove = (MAXPLMOVE - minmove) * FRACUNIT;
+
+			angle_t topdelta = player->mo->angle - K_MomentumAngle(player->mo);
+			fixed_t topmult = FINECOSINE(topdelta >> ANGLETOFINESHIFT);
+			topmult = (topmult/2) + (FRACUNIT/2);
+			assistmove = FixedMul(topmult, assistmove);
+
+			forwardmove = minmove + FixedInt(assistmove);
 		}
 	}
 
@@ -3836,7 +3855,10 @@ void K_DoGuardBreak(mobj_t *t1, mobj_t *t2) {
 	S_StartSound(t1, sfx_gbrk);
 	K_AddHitLag(t1, 24, true);
 
-	angle_t thrangle = R_PointToAngle2(t1->x, t1->y, t2->x, t2->y);
+	K_AddMessageForPlayer(t2->player, "Smashed 'em!", false, false);
+	K_AddMessageForPlayer(t1->player, "BARRIER BREAK!!", false, false);
+
+	angle_t thrangle = R_PointToAngle2(t2->x, t2->y, t1->x, t1->y);
 	P_Thrust(t1, thrangle, 7*mapobjectscale);
 
 	P_DamageMobj(t1, t2, t2, 1, DMG_TUMBLE);
@@ -3901,7 +3923,18 @@ void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UIN
 	// Check this before adding to player score
 	if ((gametyperules & GTR_BUMPERS) && finishOff && g_pointlimit <= player->roundscore)
 	{
+		player->roundscore = 100; // Make sure you win!
 		P_DoAllPlayersExit(0, false);
+
+		mobj_t *source = !P_MobjWasRemoved(inflictor) ? inflictor : player->mo;
+
+		K_StartRoundWinCamera(
+			victim->mo,
+			R_PointToAngle2(source->x, source->y, victim->mo->x, victim->mo->y) + ANGLE_135,
+			200*mapobjectscale,
+			8*TICRATE,
+			FRACUNIT/512
+		);
 	}
 
 	P_AddPlayerScore(player, points);
@@ -5956,6 +5989,9 @@ void K_Squish(mobj_t *mo)
 
 	mo->spriteyscale =
 		FixedDiv(FRACUNIT, mo->spritexscale);
+
+	if (cv_mentalsonic.value && (mo->type == MT_PLAYER || (!P_MobjWasRemoved(mo->target) && mo->target->type == MT_PLAYER)))
+		mo->spriteyscale *= 2;
 }
 
 static mobj_t *K_FindLastTrailMobj(player_t *player)
@@ -7905,7 +7941,7 @@ void K_KartPlayerHUDUpdate(player_t *player)
 	if (player->positiondelay)
 		player->positiondelay--;
 
-	if (!(player->pflags & PF_FAULT))
+	if (!(player->pflags & PF_FAULT || player->pflags & PF_VOID))
 		player->karthud[khud_fault] = 0;
 	else if (player->karthud[khud_fault] > 0 && player->karthud[khud_fault] <= 2*TICRATE)
 		player->karthud[khud_fault]++;
@@ -8396,9 +8432,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->spinouttimer != 0)
 	{
 		if (( player->spinouttype & KSPIN_IFRAMES ) == 0)
-			K_UpdateDamageFlashing(player, 0);
+			player->flashing = 0;
 		else
-			K_UpdateDamageFlashing(player, K_GetKartFlashing(player));
+			player->flashing = K_GetKartFlashing(player);
 	}
 
 	if (player->spinouttimer)
@@ -8467,7 +8503,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			if (K_PlayerGuard(player) && !K_PowerUpRemaining(player, POWERUP_BARRIER) && (player->ebrakefor%6 == 0))
 				player->spheres--;
 
-			if (player->instaWhipCharge && !K_PowerUpRemaining(players, POWERUP_BADGE) && leveltime%6 == 0)
+			if (player->instaWhipCharge && !K_PowerUpRemaining(players, POWERUP_BADGE) && leveltime%6 == 0 && !P_PlayerInPain(player))
 				player->spheres--;
 		}
 		else
@@ -8574,9 +8610,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			S_StartSound(player->mo, sfx_s1af);
 
 		player->oldGuard = true;
-
-		if (!K_PowerUpRemaining(player, POWERUP_BARRIER))
-			player->instaWhipCharge = 0;
 	}
 	else if (player->oldGuard)
 	{
@@ -8693,7 +8726,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->nextringaward = 99; // Next time we need to award superring, spawn the first one instantly.
 	}
 
-	if (player->pflags & PF_VOID) // Returning from FAULT VOID
+	if (player->pflags & PF_VOID && player->mo->hitlag == 0) // Returning from FAULT VOID
 	{
 		player->pflags &= ~PF_VOID;
 		player->mo->renderflags &= ~RF_DONTDRAW;
@@ -8723,6 +8756,17 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
+	// Players that bounce far off walls get reduced Top accel, to give them some time to get their bearings.
+	if ((player->mo->eflags & MFE_JUSTBOUNCEDWALL) && player->curshield == KSHIELD_TOP)
+	{
+		angle_t topdelta = player->mo->angle - K_MomentumAngle(player->mo);
+		fixed_t topmult = FINECOSINE(topdelta >> ANGLETOFINESHIFT);
+		topmult = (topmult/2) + (FRACUNIT/2); // 0 to original
+		player->topAccel = FixedMul(topmult, player->topAccel);
+	}
+
+	player->topAccel = min(player->topAccel + TOPACCELREGEN, MAXTOPACCEL);
+
 	if (player->stealingtimer == 0
 		&& player->rocketsneakertimer
 		&& onground == true)
@@ -8737,6 +8781,14 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->ringvolume = MAXRINGVOLUME;
 	else
 		player->ringvolume += RINGVOLUMEREGEN;
+
+	// :D
+	if (player->ringtransparency < MINRINGTRANSPARENCY)
+		player->ringtransparency = MINRINGTRANSPARENCY;
+	else if (MAXRINGTRANSPARENCY - player->ringtransparency < RINGTRANSPARENCYREGEN)
+		player->ringtransparency = MAXRINGTRANSPARENCY;
+	else
+		player->ringtransparency += RINGTRANSPARENCYREGEN;
 
 	if (player->sadtimer)
 		player->sadtimer--;
@@ -8878,19 +8930,22 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 				P_DamageMobj(player->mo, NULL, NULL, 1, DMG_TIMEOVER);
 			}
 
-			if (leveltime < player->darkness_end)
+			if (!player->exiting && !(player->pflags & PF_ELIMINATED))
 			{
-				if (leveltime > player->darkness_end - DARKNESS_FADE_TIME)
+				if (leveltime < player->darkness_end)
 				{
-					player->darkness_start = leveltime - (player->darkness_end - leveltime);
+					if (leveltime > player->darkness_end - DARKNESS_FADE_TIME)
+					{
+						player->darkness_start = leveltime - (player->darkness_end - leveltime);
+					}
 				}
-			}
-			else
-			{
-				player->darkness_start = leveltime;
-			}
+				else
+				{
+					player->darkness_start = leveltime;
+				}
 
-			player->darkness_end = leveltime + (2 * DARKNESS_FADE_TIME);
+				player->darkness_end = leveltime + (2 * DARKNESS_FADE_TIME);
+			}
 		}
 	}
 
@@ -10644,6 +10699,12 @@ void K_KartUpdatePosition(player_t *player)
 		player->topinfirst = 0;
 	}
 
+	// Special stages: fade out music near the finish line
+	if (P_IsLocalPlayer(player))
+	{
+		K_FadeOutSpecialMusic(player->distancetofinish);
+	}
+
 	player->position = position;
 }
 
@@ -10800,6 +10861,11 @@ boolean K_PlayerGuard(const player_t *player)
 	if (K_PowerUpRemaining(player, POWERUP_BARRIER))
 	{
 		return true;
+	}
+
+	if (player->instaWhipCharge != 0)
+	{
+		return false;
 	}
 
 	if (player->spheres == 0)
@@ -11651,7 +11717,19 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			player->instaWhipCharge = 0;
 		}
 
-		if (chargingwhip)
+		if (chargingwhip && K_PressingEBrake(player))
+		{
+			// 1) E-braking on the ground: cancels Insta-Whip.
+			//    Still lets you keep your Whip while fast-falling.
+			// 2) Do not interrupt Guard.
+			if (P_IsObjectOnGround(player->mo) || K_PlayerGuard(player))
+			{
+				if (player->instaWhipCharge)
+					player->defenseLockout = PUNISHWINDOW;
+				player->instaWhipCharge = 0;
+			}
+		}
+		else if (chargingwhip)
 		{
 			player->instaWhipCharge = min(player->instaWhipCharge + 1, INSTAWHIP_TETHERBLOCK + 1);
 
@@ -11725,6 +11803,20 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				{
 					mobj_t *ring = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_RING);
 					P_SetMobjState(ring, S_FASTRING1);
+
+					if (P_IsDisplayPlayer(player))
+					{
+						UINT8 startfade = 220;
+						UINT8 transfactor = 10 * (min(startfade, player->ringtransparency)) / startfade;
+						if (transfactor < 10)
+						{
+							transfactor = max(transfactor, 4);
+							ring->renderflags |= ((10-transfactor) << RF_TRANSSHIFT);
+							ring->renderflags |= RF_ADD;
+						}
+					}
+					player->ringtransparency -= RINGTRANSPARENCYUSEPENALTY;
+
 					ring->extravalue1 = 1; // Ring use animation timer
 					ring->extravalue2 = 1; // Ring use animation flag
 					ring->shadowscale = 0;
@@ -13332,6 +13424,11 @@ UINT32 K_PointLimitForGametype(void)
 			{
 				ptsCap += 4;
 			}
+		}
+
+		if (ptsCap > 16)
+		{
+			ptsCap = 16;
 		}
 	}
 

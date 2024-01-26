@@ -42,21 +42,15 @@ void Obj_CloudSpawn(mobj_t *mobj)
 			return;
 	}
 
-	if (mobj->type != MT_AGZ_CLOUDCLUSTER)
-	{
-		mobj->destscale = mapobjectscale * 4;
-		P_SetScale(mobj, mobj->destscale);
-	}
+	mobj->destscale = mapobjectscale * 4;
+	P_SetScale(mobj, mobj->destscale);
 
 	mobj_t *cloud = P_SpawnMobj(mobj->x, mobj->y, mobj->z, cloudtype);
 	angle_t ang = mobj->angle;
 	UINT8 dist = 128;
 
-	if (cloudtype == MT_AGZ_CLOUD)
-	{
-		cloud->destscale = cloud->scale * 2;
-		P_SetScale(cloud, cloud->destscale);
-	}
+	cloud->destscale = cloud->scale * 2;
+	P_SetScale(cloud, cloud->destscale);
 
 	for (UINT8 i = 0; i < 4; i++)
 	{
@@ -65,10 +59,11 @@ void Obj_CloudSpawn(mobj_t *mobj)
 
 		cloud = P_SpawnMobj(x, y, mobj->z, cloudtype);
 
+		cloud->destscale = cloud->scale * 2;
+		P_SetScale(cloud, cloud->destscale);
+
 		if (cloudtype == MT_AGZ_CLOUD)
 		{
-			cloud->destscale = cloud->scale * 2;
-			P_SetScale(cloud, cloud->destscale);
 			cloud->frame = P_RandomRange(PR_DECORATION, 0, 3);
 		}
 
@@ -157,20 +152,8 @@ void Obj_PlayerCloudThink(player_t *player)
 			if (P_MobjWasRemoved(mo->tracer))
 				return;
 
-			switch(mo->tracer->type)
-			{
-				case MT_AHZ_CLOUD:
-					P_SetObjectMomZ(mo, CLOUDB_ZTHRUST, false);
-					break;
-				case MT_AGZ_CLOUD:
-					mo->momz = FixedMul(mapobjectscale, CLOUD_ZTHRUST * P_MobjFlip(mo->tracer));
-					break;
-				case MT_SSZ_CLOUD:
-					P_SetObjectMomZ(mo, CLOUD_ZTHRUST, false);
-					break;
-				default:
-					break;
-			}
+			mo->momz = FixedMul(mapobjectscale,
+				(mo->tracer->type == MT_AHZ_CLOUD ? CLOUDB_ZTHRUST : CLOUD_ZTHRUST) * P_MobjFlip(mo->tracer));
 			player->cloudlaunch = TICRATE;
 
 			P_InstaThrust(mo, mo->cusval, mo->cvmem);

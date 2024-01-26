@@ -14,6 +14,7 @@
 
 #include "doomdef.h"
 #include "doomstat.h"
+#include "k_battle.h"
 #include "k_kart.h"
 #include "m_random.h"
 #include "p_local.h"
@@ -195,6 +196,11 @@ static void K_SpawnHitLagEFX(mobj_t *victim, mobj_t *inflictor, mobj_t *source, 
 		newScale = 3 * victim->destscale;
 	}
 
+	if ((gametyperules & GTR_BUMPERS) && battleprisons == false)
+	{
+		newScale = 3 * newScale / 4;
+	}
+
 	if (P_MobjWasRemoved(source) == false)
 	{
 		color = (source->player != NULL) ? source->player->skincolor : source->color;
@@ -252,6 +258,12 @@ void K_SetHitLagForObjects(mobj_t *victim, mobj_t *inflictor, mobj_t *source, IN
 	if (tics <= 0)
 	{
 		return;
+	}
+
+	if (P_MobjWasRemoved(inflictor) == false && inflictor->type == MT_BUBBLESHIELD)
+	{
+		// Bubble blow-up: hitlag is based on player's speed
+		inflictor = source;
 	}
 
 	if (P_MobjWasRemoved(victim) == false && P_MobjWasRemoved(inflictor) == false)

@@ -95,7 +95,7 @@ void Obj_MonitorThink(mobj_t *monitor);
 void Obj_MonitorPartThink(mobj_t *part);
 fixed_t Obj_MonitorGetDamage(mobj_t *monitor, mobj_t *inflictor, UINT8 damagetype);
 void Obj_MonitorOnDamage(mobj_t *monitor, mobj_t *inflictor, INT32 damage);
-void Obj_MonitorOnDeath(mobj_t *monitor);
+void Obj_MonitorOnDeath(mobj_t *monitor, mobj_t *source);
 void Obj_MonitorShardThink(mobj_t *shard);
 UINT32 Obj_MonitorGetEmerald(const mobj_t *monitor);
 void Obj_MonitorSetItemSpot(mobj_t *monitor, mobj_t *spot);
@@ -188,6 +188,7 @@ void Obj_UnlinkBattleUFOSpawner(mobj_t *spawner);
 void Obj_SpawnBattleUFOFromSpawner(void);
 INT32 Obj_RandomBattleUFOSpawnerID(void);
 void Obj_BattleUFOBeamThink(mobj_t *beam);
+INT32 Obj_BattleUFOSpawnerID(const mobj_t *spawner);
 
 /* Power-Up Aura */
 void Obj_SpawnPowerUpAura(player_t* player);

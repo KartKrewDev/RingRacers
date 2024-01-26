@@ -114,6 +114,8 @@
 #include "k_mapuser.h"
 #include "music.h"
 #include "k_dialogue.h"
+#include "k_hud.h" // K_ClearPersistentMessages
+#include "k_endcam.h"
 
 // Replay names have time
 #if !defined (UNDER_CE)
@@ -457,6 +459,7 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 	mapheaderinfo[num]->levelselect = 0;
 	mapheaderinfo[num]->levelflags = 0;
 	mapheaderinfo[num]->menuflags = 0;
+	mapheaderinfo[num]->playerLimit = MAXPLAYERS;
 	mapheaderinfo[num]->mobj_scale = FRACUNIT;
 	mapheaderinfo[num]->default_waypoint_radius = 0;
 	P_ClearMapHeaderLighting(&mapheaderinfo[num]->lighting);
@@ -3657,23 +3660,26 @@ void P_UpdateSegLightOffset(seg_t *li)
 
 boolean P_SectorUsesDirectionalLighting(const sector_t *sector)
 {
-	// explicitly turned on
-	if (sector->flags & MSF_DIRECTIONLIGHTING)
+	if (sector != NULL)
 	{
-		return true;
-	}
+		// explicitly turned on
+		if (sector->flags & MSF_DIRECTIONLIGHTING)
+		{
+			return true;
+		}
 
-	// explicitly turned off
-	if (sector->flags & MSF_FLATLIGHTING)
-	{
-		return false;
-	}
+		// explicitly turned off
+		if (sector->flags & MSF_FLATLIGHTING)
+		{
+			return false;
+		}
 
-	// automatically turned on
-	if (sector->ceilingpic == skyflatnum)
-	{
-		// sky is visible
-		return true;
+		// automatically turned on
+		if (sector->ceilingpic == skyflatnum)
+		{
+			// sky is visible
+			return true;
+		}
 	}
 
 	// default is off, for indoors
@@ -7691,6 +7697,8 @@ static void P_InitLevelSettings(void)
 
 	K_ResetSpecialStage();
 	K_ResetBossInfo();
+
+	memset(&g_endcam, 0, sizeof g_endcam);
 }
 
 #if 0
@@ -8204,6 +8212,8 @@ void P_LoadLevelMusic(void)
 		tic_t level_music_start = starttime + (TICRATE/2);
 		Music_Seek("level", (std::max(leveltime, level_music_start) - level_music_start) * 1000UL / TICRATE);
 	}
+
+	Music_ResetLevelVolume();
 }
 
 /** Loads a level from a lump or external wad.
@@ -8477,6 +8487,8 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	P_InitTIDHash();
 	R_InitMobjInterpolators();
 	P_InitCachedActions();
+
+	K_ClearPersistentMessages();
 
 	// internal game map
 	maplumpname = mapheaderinfo[gamemap-1]->lumpname;
@@ -8848,6 +8860,11 @@ static lumpinfo_t* FindFolder(const char *folName, UINT16 *start, UINT16 *end, l
 	return lumpinfo;
 }
 
+static tic_t round_to_next_second(tic_t time)
+{
+	return static_cast<tic_t>(std::ceil(time / static_cast<float>(TICRATE)) * TICRATE);
+}
+
 static void P_DeriveAutoMedalTimes(mapheader_t& map)
 {
 	// Gather staff ghost times
@@ -8876,21 +8893,25 @@ static void P_DeriveAutoMedalTimes(mapheader_t& map)
 	std::sort(stafftimes.begin(), stafftimes.end());
 
 	// Auto Platinum is the best staff ghost time
-	// Auto Gold is the median staff ghost time
-	// Silver and Bronze are 10% longer successively
+	// Auto Gold is the median staff ghost time or 10% longer than Platinum, whichever is higher
+	// Silver and Bronze are 10% longer and 10% longer successively
+	// Gold, Silver and Bronze are rounded up to the next second
 
 	tic_t best = stafftimes.at(0);
-	tic_t gold = stafftimes.at(stafftimes.size() / 2);
+	tic_t gold = std::max(
+		round_to_next_second(stafftimes.at(stafftimes.size() / 2)),
+		round_to_next_second(static_cast<tic_t>(std::ceil(best * 1.1f)))
+	);
 	if (gold == best)
 	{
 		gold += 1;
 	}
-	tic_t silver = static_cast<tic_t>(std::ceil(gold * 1.1f));
+	tic_t silver = round_to_next_second(static_cast<tic_t>(std::ceil(gold * 1.1f)));
 	if (silver == gold)
 	{
 		silver += 1;
 	}
-	tic_t bronze = static_cast<tic_t>(std::ceil(silver * 1.1f));
+	tic_t bronze = round_to_next_second(static_cast<tic_t>(std::ceil(silver * 1.1f)));
 	if (bronze == silver)
 	{
 		bronze += 1;

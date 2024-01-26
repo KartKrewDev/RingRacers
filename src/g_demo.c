@@ -834,7 +834,7 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 	if (ghost->player && (
 			ghostext[playernum].itemtype != ghost->player->itemtype ||
 			ghostext[playernum].itemamount != ghost->player->itemamount ||
-			ghostext[playernum].health < ghost->health
+			ghostext[playernum].health != ghost->health
 		))
 	{
 		ghostext[playernum].flags |= EZT_ITEMDATA;
@@ -1155,7 +1155,7 @@ void G_ConsGhostTic(INT32 playernum)
 
 		if (players[playernum].itemtype != ghostext[playernum].itemtype
 			|| players[playernum].itemamount != ghostext[playernum].itemamount
-			|| testmo->health < ghostext[playernum].health)
+			|| testmo->health != ghostext[playernum].health)
 		{
 			if (demosynced)
 				CONS_Alert(CONS_WARNING, M_GetText("Demo playback has desynced (item/bumpers)!\n"));
@@ -1738,7 +1738,8 @@ void G_RecordDemo(const char *name)
 	strcpy(demoname, name);
 	strcat(demoname, ".lmp");
 	//@TODO make a maxdemosize cvar
-	maxsize = 1024*1024*2;
+	// NOPE. We are kicking this can HELLA down the road. -Tyron 2024-01-20
+	maxsize = 1024*1024*4;
 
 	if (M_CheckParm("-maxdemo") && M_IsNextParm())
 		maxsize = atoi(M_GetNextParm()) * 1024;

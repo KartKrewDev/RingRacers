@@ -670,7 +670,9 @@ Obj_MonitorOnDamage
 }
 
 void
-Obj_MonitorOnDeath (mobj_t *monitor)
+Obj_MonitorOnDeath
+(		mobj_t * monitor,
+		mobj_t * source)
 {
 	const UINT8 itemcount = get_monitor_itemcount(monitor);
 	const angle_t ang = ANGLE_MAX / itemcount;
@@ -686,12 +688,20 @@ Obj_MonitorOnDeath (mobj_t *monitor)
 		const SINT8 result = get_item_result();
 		const UINT32 localseed = restore_item_rng(sharedseed);
 
-		adjust_monitor_drop(monitor,
+		mobj_t *drop = adjust_monitor_drop(monitor,
 				K_FlingPaperItem(
 					monitor->x, monitor->y, monitor->z + (128 * mapobjectscale * flip),
 					i * ang, flip,
 					K_ItemResultToType(result),
 					K_ItemResultToAmount(result)));
+
+		if (!P_MobjWasRemoved(source) && source->player)
+		{
+			P_SetTarget(&drop->tracer, source);
+			drop->extravalue1 = 6*TICRATE;
+			drop->colorized = true;
+			drop->color = source->player->skincolor;
+		}
 
 		// K_FlingPaperItem may advance RNG, so update our
 		// copy of the seed afterward
