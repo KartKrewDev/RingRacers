@@ -1015,6 +1015,10 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 	}
 #endif
 
+	UINT32 alphalevel;
+	if ((alphalevel = V_GetAlphaLevel(c)) >= 10)
+		return;
+
 	if (!(c & V_NOSCALESTART))
 	{
 		INT32 dupx = vid.dupx, dupy = vid.dupy;
@@ -1081,7 +1085,7 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 
 	g_2d.begin_quad()
 		.patch(nullptr)
-		.color(r / 255.f, g / 255.f, b / 255.f, 1.f)
+		.color(r / 255.f, g / 255.f, b / 255.f, (10 - alphalevel) / 10.f)
 		.rect(x, y, w, h)
 		.done();
 }
