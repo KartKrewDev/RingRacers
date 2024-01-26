@@ -6,6 +6,7 @@
 #include "core/static_vec.hpp"
 #include "v_draw.hpp"
 
+#include "g_game.h"
 #include "k_battle.h"
 #include "k_hud.h"
 #include "k_kart.h"
@@ -67,6 +68,7 @@ struct TargetTracking
 	trackingResult_t result;
 	fixed_t camDist;
 	bool foreground;
+	playertagtype_t nametag;
 
 	skincolornum_t color() const
 	{
@@ -163,6 +165,42 @@ struct TargetTracking
 		}
 
 		return nullptr;
+	}
+
+	bool is_player_nametag_on_screen() const
+	{
+		const player_t* player = mobj->player;
+
+		if (nametag == PLAYERTAG_NONE)
+		{
+			return false;
+		}
+
+		if (player->spectator)
+		{
+			// Not in-game
+			return false;
+		}
+
+		if (mobj->renderflags & K_GetPlayerDontDrawFlag(stplyr))
+		{
+			// Invisible on this screen
+			return false;
+		}
+
+		if (camDist > 8192*mapobjectscale)
+		{
+			// Too far away
+			return false;
+		}
+
+		if (!P_CheckSight(stplyr->mo, const_cast<mobj_t*>(mobj)))
+		{
+			// Can't see
+			return false;
+		}
+
+		return true;
 	}
 
 private:
@@ -320,6 +358,12 @@ Visibility is_object_visible(const mobj_t* mobj)
 
 void K_DrawTargetTracking(const TargetTracking& target)
 {
+	if (target.nametag != PLAYERTAG_NONE)
+	{
+		K_DrawPlayerTag(target.result.x, target.result.y, target.mobj->player, target.nametag);
+		return;
+	}
+
 	Visibility visibility = is_object_visible(target.mobj);
 
 	if (visibility == Visibility::kFlicker && (leveltime & 1))
@@ -553,6 +597,11 @@ void K_CullTargetList(std::vector<TargetTracking>& targetList)
 				return;
 			}
 
+			if (tr.nametag != PLAYERTAG_NONE)
+			{
+				return;
+			}
+
 			fixed_t x1 = std::max(((tr.result.x - kTrackerRadius) / kBlockSize) / FRACUNIT, 0);
 			fixed_t x2 = std::min(((tr.result.x + kTrackerRadius) / kBlockSize) / FRACUNIT, kXBlocks - 1);
 			fixed_t y1 = std::max(((tr.result.y - kTrackerRadius) / kBlockSize) / FRACUNIT, 0);
@@ -618,7 +667,10 @@ void K_drawTargetHUD(const vector3_t* origin, player_t* player)
 			continue;
 		}
 
-		if (is_object_tracking_target(mobj) == false)
+		bool tracking = is_object_tracking_target(mobj);
+		playertagtype_t nametag = mobj->player ? K_WhichPlayerTag(mobj->player) : PLAYERTAG_NONE;
+
+		if (tracking == false && nametag == PLAYERTAG_NONE)
 		{
 			continue;
 		}
@@ -634,10 +686,39 @@ void K_drawTargetHUD(const vector3_t* origin, player_t* player)
 		tr.mobj = mobj;
 		tr.camDist = R_PointToDist2(origin->x, origin->y, pos.x, pos.y);
 		tr.foreground = false;
+		tr.nametag = PLAYERTAG_NONE;
 
-		K_ObjectTracking(&tr.result, &pos, false);
+		if (tracking)
+		{
+			K_ObjectTracking(&tr.result, &pos, false);
+			targetList.push_back(tr);
+		}
 
-		targetList.push_back(tr);
+		if (!mobj->player)
+		{
+			continue;
+		}
+
+		tr.nametag = nametag;
+
+		if (tr.is_player_nametag_on_screen())
+		{
+			fixed_t headOffset = 36*mobj->scale;
+			if (stplyr->mo->eflags & MFE_VERTICALFLIP)
+			{
+				pos.z -= headOffset;
+			}
+			else
+			{
+				pos.z += headOffset;
+			}
+			K_ObjectTracking(&tr.result, &pos, false);
+
+			if (tr.result.onScreen == true)
+			{
+				targetList.push_back(tr);
+			}
+		}
 	}
 
 	// Sort by distance from camera. Further trackers get

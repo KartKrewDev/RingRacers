@@ -3749,6 +3749,55 @@ static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p)
 	V_DrawThinStringAtFixed(x + (5*FRACUNIT), y - (26*FRACUNIT), clr, player_names[p - players]);
 }
 
+playertagtype_t K_WhichPlayerTag(player_t *p)
+{
+	UINT8 cnum = R_GetViewNumber();
+
+	if (!(demo.playback == true && camera[cnum].freecam == true) && P_IsDisplayPlayer(p) &&
+		p != &players[displayplayers[cnum]])
+	{
+		return PLAYERTAG_LOCAL;
+	}
+	else if (p->bot)
+	{
+		if (p->botvars.rival == true)
+		{
+			return PLAYERTAG_RIVAL;
+		}
+	}
+	else if (netgame || demo.playback)
+	{
+		if (K_ShowPlayerNametag(p) == true)
+		{
+			return PLAYERTAG_NAME;
+		}
+	}
+
+	return PLAYERTAG_NONE;
+}
+
+void K_DrawPlayerTag(fixed_t x, fixed_t y, player_t *p, playertagtype_t type)
+{
+	switch (type)
+	{
+	case PLAYERTAG_LOCAL:
+		K_DrawLocalTagForPlayer(x, y, p, G_PartyPosition(p - players));
+		break;
+
+	case PLAYERTAG_RIVAL:
+		K_DrawRivalTagForPlayer(x, y);
+		break;
+
+	case PLAYERTAG_NAME:
+		K_DrawNameTagForPlayer(x, y, p);
+		K_DrawTypingNotifier(x, y, p);
+		break;
+
+	default:
+		break;
+	}
+}
+
 typedef struct weakspotdraw_t
 {
 	UINT8 i;
@@ -3788,12 +3837,8 @@ static void K_DrawWeakSpot(weakspotdraw_t *ws)
 
 static void K_drawKartNameTags(void)
 {
-	const fixed_t maxdistance = 8192*mapobjectscale;
 	vector3_t c;
 	UINT8 cnum = R_GetViewNumber();
-	UINT8 tobesorted[MAXPLAYERS];
-	fixed_t sortdist[MAXPLAYERS];
-	UINT8 sortlen = 0;
 	size_t i, j;
 
 	if (stplyr == NULL || stplyr->mo == NULL || P_MobjWasRemoved(stplyr->mo))
@@ -3911,141 +3956,6 @@ static void K_drawKartNameTags(void)
 	}
 
 	K_drawTargetHUD(&c, stplyr);
-
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		player_t *ntplayer = &players[i];
-		fixed_t distance = maxdistance+1;
-		vector3_t v;
-
-		if (!playeringame[i] || ntplayer->spectator)
-		{
-			// Not in-game
-			continue;
-		}
-
-		if (ntplayer->mo == NULL || P_MobjWasRemoved(ntplayer->mo))
-		{
-			// No object
-			continue;
-		}
-
-		if (ntplayer->mo->renderflags & K_GetPlayerDontDrawFlag(stplyr))
-		{
-			// Invisible on this screen
-			continue;
-		}
-
-		if (!P_CheckSight(stplyr->mo, ntplayer->mo))
-		{
-			// Can't see
-			continue;
-		}
-
-		v.x = R_InterpolateFixed(ntplayer->mo->old_x, ntplayer->mo->x);
-		v.y = R_InterpolateFixed(ntplayer->mo->old_y, ntplayer->mo->y);
-		v.z = R_InterpolateFixed(ntplayer->mo->old_z, ntplayer->mo->z);
-
-		if (!(ntplayer->mo->eflags & MFE_VERTICALFLIP))
-		{
-			v.z += ntplayer->mo->height;
-		}
-
-		distance = R_PointToDist2(c.x, c.y, v.x, v.y);
-
-		if (distance > maxdistance)
-		{
-			// Too far away
-			continue;
-		}
-
-		tobesorted[sortlen] = ntplayer - players;
-		sortdist[sortlen] = distance;
-		sortlen++;
-	}
-
-	if (sortlen > 0)
-	{
-		UINT8 sortedplayers[MAXPLAYERS];
-
-		for (i = 0; i < sortlen; i++)
-		{
-			UINT8 pos = 0;
-
-			for (j = 0; j < sortlen; j++)
-			{
-				if (j == i)
-				{
-					continue;
-				}
-
-				if (sortdist[i] < sortdist[j]
-				|| (sortdist[i] == sortdist[j] && i > j))
-				{
-					pos++;
-				}
-			}
-
-			sortedplayers[pos] = tobesorted[i];
-		}
-
-		for (i = 0; i < sortlen; i++)
-		{
-			trackingResult_t result;
-			player_t *ntplayer = &players[sortedplayers[i]];
-
-			fixed_t headOffset = 36*ntplayer->mo->scale;
-
-			SINT8 localindicator = -1;
-			vector3_t v;
-
-			v.x = R_InterpolateFixed(ntplayer->mo->old_x, ntplayer->mo->x);
-			v.y = R_InterpolateFixed(ntplayer->mo->old_y, ntplayer->mo->y);
-			v.z = R_InterpolateFixed(ntplayer->mo->old_z, ntplayer->mo->z);
-
-			v.z += (ntplayer->mo->height / 2);
-
-			if (stplyr->mo->eflags & MFE_VERTICALFLIP)
-			{
-				v.z -= headOffset;
-			}
-			else
-			{
-				v.z += headOffset;
-			}
-
-			K_ObjectTracking(&result, &v, false);
-
-			if (result.onScreen == true)
-			{
-				if (!(demo.playback == true && camera[cnum].freecam == true) && P_IsDisplayPlayer(ntplayer) &&
-						ntplayer != &players[displayplayers[cnum]])
-				{
-					localindicator = G_PartyPosition(ntplayer - players);
-				}
-
-				if (localindicator >= 0)
-				{
-					K_DrawLocalTagForPlayer(result.x, result.y, ntplayer, localindicator);
-				}
-				else if (ntplayer->bot)
-				{
-					if (ntplayer->botvars.rival == true)
-					{
-						K_DrawRivalTagForPlayer(result.x, result.y);
-					}
-				}
-				else if (netgame || demo.playback)
-				{
-					if (K_ShowPlayerNametag(ntplayer) == true)
-					{
-						K_DrawNameTagForPlayer(result.x, result.y, ntplayer);
-						K_DrawTypingNotifier(result.x, result.y, ntplayer);
-					}
-				}
-			}
-		}
-	}
 
 	V_ClearClipRect();
 }
