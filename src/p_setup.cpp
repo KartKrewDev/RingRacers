@@ -7785,9 +7785,13 @@ static void P_LoadRecordGhosts(void)
 {
 	// see also /menus/play-local-race-time-attack.c's M_PrepareTimeAttack
 	char *gpath;
+	const char *modeprefix = "";
 	INT32 i;
 
 	gpath = Z_StrDup(va("%s" PATHSEP "media" PATHSEP "replay" PATHSEP "%s" PATHSEP "%s", srb2home, timeattackfolder, G_BuildMapName(gamemap)));
+
+	if (modeattacking & ATTACKING_SPB)
+		modeprefix = "spb-";
 
 	// Best Time ghost
 	if (modeattacking & ATTACKING_TIME)
@@ -7799,7 +7803,7 @@ static void P_LoadRecordGhosts(void)
 				if (cv_ghost_besttime.value == 1 && players[consoleplayer].skin != i)
 					continue;
 
-				P_TryAddExternalGhost(va("%s-%s-time-best.lmp", gpath, skins[i].name));
+				P_TryAddExternalGhost(va("%s-%s-%stime-best.lmp", gpath, skins[i].name, modeprefix));
 			}
 		}
 	}
@@ -7814,7 +7818,7 @@ static void P_LoadRecordGhosts(void)
 				if (cv_ghost_bestlap.value == 1 && players[consoleplayer].skin != i)
 					continue;
 
-				P_TryAddExternalGhost(va("%s-%s-lap-best.lmp", gpath, skins[i].name));
+				P_TryAddExternalGhost(va("%s-%s-%slap-best.lmp", gpath, skins[i].name, modeprefix));
 			}
 		}
 	}
@@ -7827,7 +7831,7 @@ static void P_LoadRecordGhosts(void)
 			if (cv_ghost_last.value == 1 && players[consoleplayer].skin != i)
 				continue;
 
-			P_TryAddExternalGhost(va("%s-%s-last.lmp", gpath, skins[i].name));
+			P_TryAddExternalGhost(va("%s-%s-%slast.lmp", gpath, skins[i].name, modeprefix));
 		}
 	}
 

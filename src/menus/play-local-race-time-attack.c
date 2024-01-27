@@ -11,12 +11,6 @@
 #include "../z_zone.h" // Z_StrDup/Z_Free
 #include "../m_cond.h"
 
-void CV_SPBAttackChanged(void);
-void CV_SPBAttackChanged(void)
-{
-	G_UpdateTimeStickerMedals(levellist.choosemap, false);
-}
-
 struct timeattackmenu_s timeattackmenu;
 
 void M_TimeAttackTick(void)
@@ -214,39 +208,23 @@ menu_t PLAY_TAGhostsDef = {
 	NULL
 };
 
-// time attack stuff...
-void M_PrepareTimeAttack(INT32 choice)
+void CV_SPBAttackChanged(void);
+void CV_SPBAttackChanged(void)
 {
-	(void) choice;
-
-	timeattackmenu.ticker = 0;
-
-	// Gametype guess
-	if (levellist.guessgt != MAXGAMETYPES)
-	{
-		levellist.newgametype = levellist.guessgt;
-		if (!(gametypes[levellist.newgametype]->tol & mapheaderinfo[levellist.choosemap]->typeoflevel))
-		{
-			INT32 guess = G_GuessGametypeByTOL(mapheaderinfo[levellist.choosemap]->typeoflevel);
-			if (guess != -1)
-				levellist.newgametype = guess;
-		}
-	}
-
-	if (levellist.levelsearch.timeattack == false || levellist.newgametype != GT_RACE || !M_SecretUnlocked(SECRET_SPBATTACK, true))
-		CV_SetValue(&cv_dummyspbattack, 0);
-
-	// Time-sticker Medals
 	G_UpdateTimeStickerMedals(levellist.choosemap, false);
 
 	// Menu options
 	{
 		// see also p_setup.c's P_LoadRecordGhosts
 		char *gpath = Z_StrDup(va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", srb2home, timeattackfolder, G_BuildMapName(levellist.choosemap+1)));
+		const char *modeprefix = "";
 		UINT8 active;
 
 		if (!gpath)
 			return;
+
+		if (cv_dummyspbattack.value)
+			modeprefix = "spb-";
 
 		active = false;
 		PLAY_TimeAttack[ta_guest].status = IT_DISABLED;
@@ -256,11 +234,11 @@ void M_PrepareTimeAttack(INT32 choice)
 		// Check if file exists, if not, disable options
 		PLAY_TAReplay[tareplay_besttime].status =
 			PLAY_TAReplayGuest[taguest_besttime].status = IT_DISABLED;
-		if (FIL_FileExists(va("%s-%s-time-best.lmp", gpath, cv_skin[0].string)))
+		if (FIL_FileExists(va("%s-%s-%stime-best.lmp", gpath, cv_skin[0].string, modeprefix)))
 		{
 			PLAY_TAReplay[tareplay_besttime].status = IT_STRING|IT_CALL;
 			PLAY_TAReplayGuest[taguest_besttime].status = IT_STRING|IT_CALL;
-			active |= (1|2|4);
+			active |= (1|2|4|8);
 		}
 		else if (PLAY_TAReplayGuestDef.lastOn == taguest_besttime)
 			PLAY_TAReplayGuestDef.lastOn = taguest_back;
@@ -270,23 +248,23 @@ void M_PrepareTimeAttack(INT32 choice)
 			PLAY_TAGhosts[taghost_bestlap].status = IT_DISABLED;
 		if ((gametypes[levellist.newgametype]->rules & GTR_CIRCUIT)
 			&& (mapheaderinfo[levellist.choosemap]->numlaps != 1)
-			&& FIL_FileExists(va("%s-%s-lap-best.lmp", gpath, cv_skin[0].string)))
+			&& FIL_FileExists(va("%s-%s-%slap-best.lmp", gpath, cv_skin[0].string, modeprefix)))
 		{
 			PLAY_TAReplay[tareplay_bestlap].status = IT_STRING|IT_CALL;
 			PLAY_TAReplayGuest[taguest_bestlap].status = IT_STRING|IT_CALL;
 			PLAY_TAGhosts[taghost_bestlap].status = IT_STRING|IT_CVAR;
-			active |= (1|2|4);
+			active |= (1|2|4|8);
 		}
 		else if (PLAY_TAReplayGuestDef.lastOn == taguest_bestlap)
 			PLAY_TAReplayGuestDef.lastOn = taguest_back;
 
 		PLAY_TAReplay[tareplay_last].status =
 			PLAY_TAReplayGuest[taguest_last].status = IT_DISABLED;
-		if (FIL_FileExists(va("%s-%s-last.lmp", gpath, cv_skin[0].string)))
+		if (FIL_FileExists(va("%s-%s-%slast.lmp", gpath, cv_skin[0].string, modeprefix)))
 		{
 			PLAY_TAReplay[tareplay_last].status = IT_STRING|IT_CALL;
 			PLAY_TAReplayGuest[taguest_last].status = IT_STRING|IT_CALL;
-			active |= (1|2|4);
+			active |= (1|2|4|8);
 		}
 		else if (PLAY_TAReplayGuestDef.lastOn == taguest_last)
 			PLAY_TAReplayGuestDef.lastOn = taguest_back;
@@ -314,6 +292,9 @@ void M_PrepareTimeAttack(INT32 choice)
 			active |= 1|4;
 		}
 
+		if (currentMenu == &PLAY_TimeAttackDef)
+			PLAY_TimeAttackDef.lastOn = itemOn;
+
 		if (active & 1)
 			PLAY_TimeAttack[ta_replay].status = IT_STRING|IT_SUBMENU;
 		else if (PLAY_TimeAttackDef.lastOn == ta_replay)
@@ -327,8 +308,40 @@ void M_PrepareTimeAttack(INT32 choice)
 		/*else if (PLAY_TimeAttackDef.lastOn == ta_ghosts)
 			PLAY_TimeAttackDef.lastOn = ta_start;*/
 
+		if ((active & 8) && levellist.newgametype == GT_RACE && M_SecretUnlocked(SECRET_SPBATTACK, true))
+			PLAY_TAReplay[tareplay_header].status = IT_HEADER;
+
+		if (currentMenu == &PLAY_TimeAttackDef)
+			itemOn = PLAY_TimeAttackDef.lastOn;
+
 		Z_Free(gpath);
 	}
+}
+
+// time attack stuff...
+void M_PrepareTimeAttack(INT32 choice)
+{
+	(void) choice;
+
+	timeattackmenu.ticker = 0;
+
+	// Gametype guess
+	if (levellist.guessgt != MAXGAMETYPES)
+	{
+		levellist.newgametype = levellist.guessgt;
+		if (!(gametypes[levellist.newgametype]->tol & mapheaderinfo[levellist.choosemap]->typeoflevel))
+		{
+			INT32 guess = G_GuessGametypeByTOL(mapheaderinfo[levellist.choosemap]->typeoflevel);
+			if (guess != -1)
+				levellist.newgametype = guess;
+		}
+	}
+
+	if (levellist.levelsearch.timeattack == false || levellist.newgametype != GT_RACE || !M_SecretUnlocked(SECRET_SPBATTACK, true))
+		CV_StealthSetValue(&cv_dummyspbattack, 0);
+
+	// Menu options / Time-sticker medals
+	CV_SPBAttackChanged();
 }
 
 void M_HandleStaffReplay(INT32 choice)
@@ -383,7 +396,12 @@ void M_ReplayTimeAttack(INT32 choice)
 			return;
 	}
 
-	G_DoPlayDemo(va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s-%s-%s.lmp", srb2home, timeattackfolder, G_BuildMapName(levellist.choosemap+1), cv_skin[0].string, which));
+	const char *modeprefix = "";
+
+	if (cv_dummyspbattack.value)
+		modeprefix = "spb-";
+
+	G_DoPlayDemo(va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s-%s-%s%s.lmp", srb2home, timeattackfolder, G_BuildMapName(levellist.choosemap+1), cv_skin[0].string, modeprefix, which));
 }
 
 static const char *TA_GuestReplay_Str = NULL;
@@ -402,7 +420,12 @@ static void M_WriteGuestReplay(INT32 ch)
 
 	if (TA_GuestReplay_Str != NULL)
 	{
-		len = FIL_ReadFile(va("%s-%s-%s.lmp", gpath, cv_skin[0].string, TA_GuestReplay_Str), &buf);
+		const char *modeprefix = "";
+
+		if (cv_dummyspbattack.value)
+			modeprefix = "spb-";
+
+		len = FIL_ReadFile(va("%s-%s-%s%s.lmp", gpath, cv_skin[0].string, modeprefix, TA_GuestReplay_Str), &buf);
 		if (!len)
 		{
 			M_StartMessage("Guest Replay", "Replay to copy no longer exists!", NULL, MM_NOTHING, NULL, NULL);
@@ -468,6 +491,7 @@ void M_StartTimeAttack(INT32 choice)
 {
 	char *gpath;
 	char nameofdemo[256];
+	const char *modeprefix = "";
 
 	(void)choice;
 
@@ -482,6 +506,7 @@ void M_StartTimeAttack(INT32 choice)
 	if (cv_dummyspbattack.value)
 	{
 		modeattacking |= ATTACKING_SPB;
+		modeprefix = "spb-";
 	}
 
 	// Still need to reset devmode
@@ -516,7 +541,7 @@ void M_StartTimeAttack(INT32 choice)
 	strcat(gpath, PATHSEP);
 	strcat(gpath, G_BuildMapName(levellist.choosemap+1));
 
-	snprintf(nameofdemo, sizeof nameofdemo, "%s-%s-last", gpath, cv_skin[0].string);
+	snprintf(nameofdemo, sizeof nameofdemo, "%s-%s-%slast", gpath, cv_skin[0].string, modeprefix);
 
 	if (!cv_autorecord.value)
 		remove(va("%s"PATHSEP"%s.lmp", srb2home, nameofdemo));

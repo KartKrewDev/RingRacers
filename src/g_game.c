@@ -582,6 +582,12 @@ static void G_UpdateRecordReplays(void)
 {
 	char *gpath;
 	char lastdemo[256], bestdemo[256];
+	const char *modeprefix = "";
+
+	if (modeattacking & ATTACKING_SPB)
+	{
+		modeprefix = "spb-";
+	}
 
 	if (players[consoleplayer].pflags & PF_NOCONTEST)
 	{
@@ -601,7 +607,7 @@ static void G_UpdateRecordReplays(void)
 	strcat(gpath, PATHSEP);
 	strcat(gpath, G_BuildMapName(gamemap));
 
-	snprintf(lastdemo, 255, "%s-%s-last.lmp", gpath, cv_skin[0].string);
+	snprintf(lastdemo, 255, "%s-%s-%slast.lmp", gpath, cv_skin[0].string, modeprefix);
 
 	if (modeattacking != ATTACKING_NONE && FIL_FileExists(lastdemo))
 	{
@@ -614,7 +620,7 @@ static void G_UpdateRecordReplays(void)
 
 		if (modeattacking & ATTACKING_TIME)
 		{
-			snprintf(bestdemo, 255, "%s-%s-time-best.lmp", gpath, cv_skin[0].string);
+			snprintf(bestdemo, 255, "%s-%s-%stime-best.lmp", gpath, cv_skin[0].string, modeprefix);
 			if (!FIL_FileExists(bestdemo) || G_CmpDemoTime(bestdemo, lastdemo) & 1)
 			{ // Better time, save this demo.
 				if (FIL_FileExists(bestdemo))
@@ -626,7 +632,7 @@ static void G_UpdateRecordReplays(void)
 
 		if (modeattacking & ATTACKING_LAP)
 		{
-			snprintf(bestdemo, 255, "%s-%s-lap-best.lmp", gpath, cv_skin[0].string);
+			snprintf(bestdemo, 255, "%s-%s-%slap-best.lmp", gpath, cv_skin[0].string, modeprefix);
 			if (!FIL_FileExists(bestdemo) || G_CmpDemoTime(bestdemo, lastdemo) & (1<<1))
 			{ // Better lap time, save this demo.
 				if (FIL_FileExists(bestdemo))
