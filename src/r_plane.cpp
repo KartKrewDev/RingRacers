@@ -1275,6 +1275,9 @@ INT16 R_PlaneIsHighlighted(const visplane_t *pl)
 	case SD_INSTAKILL:
 		return 35; // red
 
+	case SD_STUMBLE:
+		return 72; // yellow
+
 	default:
 		return -1;
 	}
