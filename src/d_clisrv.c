@@ -2490,6 +2490,7 @@ static void Command_connect(void)
 
 	// Menu restore state.
 	restoreMenu = &PLAY_MP_OptSelectDef;
+	currentMenu->lastOn = itemOn;
 
 	Music_Remap("menu", "NETMD2");
 
