@@ -88,8 +88,8 @@ typedef enum
 {
 	tareplay_besttime = 0,
 	tareplay_bestlap,
-	tareplay_gap1,
 	tareplay_last,
+	tareplay_gap1,
 	tareplay_guest,
 	tareplay_staff,
 	tareplay_gap2,
@@ -100,8 +100,8 @@ menuitem_t PLAY_TAReplay[] =
 {
 	{IT_STRING | IT_CALL, "Replay Best Time", NULL, "MENUI006", {.routine = M_ReplayTimeAttack}, 0, 0},
 	{IT_STRING | IT_CALL, "Replay Best Lap", NULL, "MENUI006", {.routine = M_ReplayTimeAttack}, 0, 0},
-	{IT_HEADERTEXT|IT_HEADER, "", NULL, NULL, {NULL}, 0, 0},
 	{IT_STRING | IT_CALL, "Replay Last", NULL, "MENUI006", {.routine = M_ReplayTimeAttack}, 0, 0},
+	{IT_HEADERTEXT|IT_HEADER, "", NULL, NULL, {NULL}, 0, 0},
 	{IT_STRING | IT_CALL, "Replay Guest", NULL, "MENUI006", {.routine = M_ReplayTimeAttack}, 0, 0},
 	{IT_STRING | IT_ARROWS, "Replay Staff", NULL, "MENUI006", {.routine = M_HandleStaffReplay}, 0, 0},
 	{IT_HEADERTEXT|IT_HEADER, "", NULL, NULL, {NULL}, 0, 0},
