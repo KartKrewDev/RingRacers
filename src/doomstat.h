@@ -152,11 +152,16 @@ struct skinreference_t
 #define MV_MYSTICMELODY		(1<<4)
 #define MV_MAX          	(MV_VISITED|MV_BEATEN|MV_ENCORE|MV_SPBATTACK|MV_MYSTICMELODY)
 
+struct recordtimes_t
+{
+	tic_t time; ///< Time in which the level was finished.
+	tic_t lap;  ///< Best lap time for this level.
+};
+
 struct recorddata_t
 {
 	UINT8 mapvisited;
-	tic_t time; ///< Time in which the level was finished.
-	tic_t lap;  ///< Best lap time for this level.
+	recordtimes_t timeattack; ///< Best times for Time Attack
 };
 
 #define KARTSPEED_AUTO -1

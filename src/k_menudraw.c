@@ -3503,8 +3503,9 @@ void M_DrawTimeAttack(void)
 
 	if (currentMenu == &PLAY_TimeAttackDef)
 	{
-		tic_t timerec = mapheaderinfo[map]->records.time;
-		tic_t laprec = mapheaderinfo[map]->records.lap;
+		recordtimes_t *record = &mapheaderinfo[map]->records.timeattack;
+		tic_t timerec = record->time;
+		tic_t laprec = record->lap;
 		UINT32 timeheight = 82;
 
 		if ((gametypes[levellist.newgametype]->rules & GTR_CIRCUIT)
@@ -7236,13 +7237,13 @@ static void M_DrawStatsMaps(void)
 			if (!(mapheaderinfo[i]->typeoflevel & (TOL_RACE|TOL_BATTLE|TOL_SPECIAL|TOL_VERSUS)))
 				continue;
 
-			if (mapheaderinfo[i]->records.time <= 0)
+			if (mapheaderinfo[i]->records.timeattack.time <= 0)
 			{
 				mapsunfinished++;
 				continue;
 			}
 
-			besttime += mapheaderinfo[i]->records.time;
+			besttime += mapheaderinfo[i]->records.timeattack.time;
 		}
 
 		V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 60, 0,
@@ -7322,7 +7323,7 @@ static void M_DrawStatsMaps(void)
 			)
 		)
 		{
-			besttime = mapheaderinfo[mnum]->records.time;
+			besttime = mapheaderinfo[mnum]->records.timeattack.time;
 
 			if (besttime)
 			{

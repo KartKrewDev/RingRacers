@@ -386,10 +386,10 @@ void G_ClearRecords(void)
 // For easy retrieval of records
 tic_t G_GetBestTime(INT16 map)
 {
-	if (!mapheaderinfo[map] || mapheaderinfo[map]->records.time <= 0)
+	if (!mapheaderinfo[map] || mapheaderinfo[map]->records.timeattack.time <= 0)
 		return (tic_t)UINT32_MAX;
 
-	return mapheaderinfo[map]->records.time;
+	return mapheaderinfo[map]->records.timeattack.time;
 }
 
 // BE RIGHT BACK
@@ -536,21 +536,22 @@ void G_TickTimeStickerMedals(void)
 void G_UpdateRecords(void)
 {
 	UINT8 earnedEmblems;
+	recordtimes_t *record = &mapheaderinfo[gamemap-1]->records.timeattack;
 
 	if (modeattacking & ATTACKING_TIME)
 	{
 		tic_t time = players[consoleplayer].realtime;
 		if (players[consoleplayer].pflags & PF_NOCONTEST)
 			time = UINT32_MAX;
-		if (((mapheaderinfo[gamemap-1]->records.time == 0) || (time < mapheaderinfo[gamemap-1]->records.time))
+		if (((record->time == 0) || (time < record->time))
 		&& (time < UINT32_MAX)) // DNF
-			mapheaderinfo[gamemap-1]->records.time = time;
+			record->time = time;
 	}
 
 	if (modeattacking & ATTACKING_LAP)
 	{
-		if ((mapheaderinfo[gamemap-1]->records.lap == 0) || (bestlap < mapheaderinfo[gamemap-1]->records.lap))
-			mapheaderinfo[gamemap-1]->records.lap = bestlap;
+		if ((record->lap == 0) || (bestlap < record->lap))
+			record->lap = bestlap;
 	}
 
 	// Check emblems when level data is updated
@@ -5069,8 +5070,8 @@ void G_LoadGameData(void)
 			recorddata_t dummyrecord;
 
 			dummyrecord.mapvisited = READUINT8(save.p);
-			dummyrecord.time = (tic_t)READUINT32(save.p);
-			dummyrecord.lap  = (tic_t)READUINT32(save.p);
+			dummyrecord.timeattack.time = (tic_t)READUINT32(save.p);
+			dummyrecord.timeattack.lap  = (tic_t)READUINT32(save.p);
 
 			if (mapnum < nummapheaders && mapheaderinfo[mapnum])
 			{
@@ -5081,8 +5082,8 @@ void G_LoadGameData(void)
 			}
 			else if (
 				(dummyrecord.mapvisited & MV_BEATEN)
-				|| dummyrecord.time != 0
-				|| dummyrecord.lap != 0
+				|| dummyrecord.timeattack.time != 0
+				|| dummyrecord.timeattack.lap != 0
 			)
 			{
 				// Invalid, but we don't want to lose all the juicy statistics.
@@ -5684,8 +5685,8 @@ void G_SaveGameData(void)
 
 			WRITEUINT8(save.p, mapvisitedtemp);
 
-			WRITEUINT32(save.p, mapheaderinfo[i]->records.time);
-			WRITEUINT32(save.p, mapheaderinfo[i]->records.lap);
+			WRITEUINT32(save.p, mapheaderinfo[i]->records.timeattack.time);
+			WRITEUINT32(save.p, mapheaderinfo[i]->records.timeattack.lap);
 
 			if (--numgamedatamapheaders == 0)
 				break;
@@ -5702,8 +5703,8 @@ void G_SaveGameData(void)
 
 				WRITEUINT8(save.p, unloadedmap->records.mapvisited);
 
-				WRITEUINT32(save.p, unloadedmap->records.time);
-				WRITEUINT32(save.p, unloadedmap->records.lap);
+				WRITEUINT32(save.p, unloadedmap->records.timeattack.time);
+				WRITEUINT32(save.p, unloadedmap->records.timeattack.lap);
 
 				if (--numgamedatamapheaders == 0)
 					break;
