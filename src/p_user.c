@@ -487,7 +487,7 @@ void P_GivePlayerLives(player_t *player, INT32 numlives)
 }
 
 // Adds to the player's score
-void P_AddPlayerScore(player_t *player, UINT32 amount)
+void P_AddPlayerScore(player_t *player, INT32 amount)
 {
 	if (!((gametyperules & GTR_POINTLIMIT)))
 		return;
@@ -495,8 +495,11 @@ void P_AddPlayerScore(player_t *player, UINT32 amount)
 	if (player->exiting) // srb2kart
 		return;
 
+	// Don't underflow.
 	// Don't go above MAXSCORE.
-	if (player->roundscore + amount < MAXSCORE)
+	if (amount < 0 && (UINT32)-amount > player->roundscore)
+		player->roundscore = 0;
+	else if (player->roundscore + amount < MAXSCORE)
 		player->roundscore += amount;
 	else
 		player->roundscore = MAXSCORE;

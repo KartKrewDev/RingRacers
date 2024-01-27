@@ -209,6 +209,7 @@ CV_PossibleValue_t kartdebugitem_cons_t[] =
 	{POWERUP_BUMPER, "Bumper"},
 	{POWERUP_BADGE, "Badge"},
 	{POWERUP_SUPERFLICKY, "SuperFlicky"},
+	{POWERUP_POINTS, "Points"},
 	{0}
 };
 

@@ -6,6 +6,7 @@
 #include "core/static_vec.hpp"
 #include "v_draw.hpp"
 
+#include "g_game.h"
 #include "k_battle.h"
 #include "k_hud.h"
 #include "k_kart.h"
@@ -67,6 +68,7 @@ struct TargetTracking
 	trackingResult_t result;
 	fixed_t camDist;
 	bool foreground;
+	playertagtype_t nametag;
 
 	skincolornum_t color() const
 	{
@@ -163,6 +165,42 @@ struct TargetTracking
 		}
 
 		return nullptr;
+	}
+
+	bool is_player_nametag_on_screen() const
+	{
+		const player_t* player = mobj->player;
+
+		if (nametag == PLAYERTAG_NONE)
+		{
+			return false;
+		}
+
+		if (player->spectator)
+		{
+			// Not in-game
+			return false;
+		}
+
+		if (mobj->renderflags & K_GetPlayerDontDrawFlag(stplyr))
+		{
+			// Invisible on this screen
+			return false;
+		}
+
+		if (camDist > 8192*mapobjectscale)
+		{
+			// Too far away
+			return false;
+		}
+
+		if (!P_CheckSight(stplyr->mo, const_cast<mobj_t*>(mobj)))
+		{
+			// Can't see
+			return false;
+		}
+
+		return true;
 	}
 
 private:
@@ -320,6 +358,12 @@ Visibility is_object_visible(const mobj_t* mobj)
 
 void K_DrawTargetTracking(const TargetTracking& target)
 {
+	if (target.nametag != PLAYERTAG_NONE)
+	{
+		K_DrawPlayerTag(target.result.x, target.result.y, target.mobj->player, target.nametag, target.foreground ? 0 : V_60TRANS);
+		return;
+	}
+
 	Visibility visibility = is_object_visible(target.mobj);
 
 	if (visibility == Visibility::kFlicker && (leveltime & 1))
@@ -524,6 +568,7 @@ void K_DrawTargetTracking(const TargetTracking& target)
 		{
 			using srb2::Draw;
 			Draw(FixedToFloat(result.x), FixedToFloat(result.y))
+				.flags(V_SPLITSCREEN)
 				.font(Draw::Font::kThin)
 				.align(Draw::Align::kCenter)
 				.text("BUFO ID: {}", Obj_BattleUFOSpawnerID(target.mobj));
@@ -533,10 +578,11 @@ void K_DrawTargetTracking(const TargetTracking& target)
 
 void K_CullTargetList(std::vector<TargetTracking>& targetList)
 {
-	constexpr int kBlockSize = 20;
-	constexpr int kXBlocks = BASEVIDWIDTH / kBlockSize;
-	constexpr int kYBlocks = BASEVIDHEIGHT / kBlockSize;
-	bool map[kXBlocks][kYBlocks] = {};
+	constexpr int kBlockWidth = 20;
+	constexpr int kBlockHeight = 10;
+	constexpr int kXBlocks = BASEVIDWIDTH / kBlockWidth;
+	constexpr int kYBlocks = BASEVIDHEIGHT / kBlockHeight;
+	UINT8 map[kXBlocks][kYBlocks] = {};
 
 	constexpr fixed_t kTrackerRadius = 30*FRACUNIT/2; // just an approximation of common HUD tracker
 
@@ -552,10 +598,43 @@ void K_CullTargetList(std::vector<TargetTracking>& targetList)
 				return;
 			}
 
-			fixed_t x1 = std::max(((tr.result.x - kTrackerRadius) / kBlockSize) / FRACUNIT, 0);
-			fixed_t x2 = std::min(((tr.result.x + kTrackerRadius) / kBlockSize) / FRACUNIT, kXBlocks - 1);
-			fixed_t y1 = std::max(((tr.result.y - kTrackerRadius) / kBlockSize) / FRACUNIT, 0);
-			fixed_t y2 = std::min(((tr.result.y + kTrackerRadius) / kBlockSize) / FRACUNIT, kYBlocks - 1);
+			fixed_t x1, x2, y1, y2;
+			UINT8 bit = 1;
+
+			// TODO: there should be some generic system
+			// instead of this special case.
+			if (tr.nametag == PLAYERTAG_NAME)
+			{
+				const player_t* p = tr.mobj->player;
+
+				x1 = tr.result.x;
+				x2 = tr.result.x + ((6 + V_ThinStringWidth(player_names[p - players], 0)) * FRACUNIT);
+				y1 = tr.result.y - (30 * FRACUNIT);
+				y2 = tr.result.y - (4 * FRACUNIT);
+				bit = 2; // nametags will cull on a separate plane
+
+				// see also K_DrawNameTagForPlayer
+				if ((gametyperules & GTR_ITEMARROWS) && p->itemtype != KITEM_NONE && p->itemamount != 0)
+				{
+					x1 -= 24 * FRACUNIT;
+				}
+			}
+			else if (tr.nametag != PLAYERTAG_NONE)
+			{
+				return;
+			}
+			else
+			{
+				x1 = tr.result.x - kTrackerRadius;
+				x2 = tr.result.x + kTrackerRadius;
+				y1 = tr.result.y - kTrackerRadius;
+				y2 = tr.result.y + kTrackerRadius;
+			}
+
+			x1 = std::max(x1 / kBlockWidth / FRACUNIT, 0);
+			x2 = std::min(x2 / kBlockWidth / FRACUNIT, kXBlocks - 1);
+			y1 = std::max(y1 / kBlockHeight / FRACUNIT, 0);
+			y2 = std::min(y2 / kBlockHeight / FRACUNIT, kYBlocks - 1);
 
 			bool allMine = true;
 
@@ -563,17 +642,23 @@ void K_CullTargetList(std::vector<TargetTracking>& targetList)
 			{
 				for (fixed_t y = y1; y <= y2; ++y)
 				{
-					if (map[x][y])
+					if (map[x][y] & bit)
 					{
 						allMine = false;
 					}
 					else
 					{
-						map[x][y] = true;
+						map[x][y] |= bit;
 
 						if (cv_debughudtracker.value)
 						{
-							V_DrawFill(x * kBlockSize, y * kBlockSize, kBlockSize, kBlockSize, 39 + debugColorCycle);
+							V_DrawFill(
+								x * kBlockWidth,
+								y * kBlockHeight,
+								kBlockWidth,
+								kBlockHeight,
+								(39 + debugColorCycle) | V_SPLITSCREEN
+							);
 						}
 					}
 				}
@@ -611,7 +696,10 @@ void K_drawTargetHUD(const vector3_t* origin, player_t* player)
 			continue;
 		}
 
-		if (is_object_tracking_target(mobj) == false)
+		bool tracking = is_object_tracking_target(mobj);
+		playertagtype_t nametag = mobj->player ? K_WhichPlayerTag(mobj->player) : PLAYERTAG_NONE;
+
+		if (tracking == false && nametag == PLAYERTAG_NONE)
 		{
 			continue;
 		}
@@ -627,10 +715,39 @@ void K_drawTargetHUD(const vector3_t* origin, player_t* player)
 		tr.mobj = mobj;
 		tr.camDist = R_PointToDist2(origin->x, origin->y, pos.x, pos.y);
 		tr.foreground = false;
+		tr.nametag = PLAYERTAG_NONE;
 
-		K_ObjectTracking(&tr.result, &pos, false);
+		if (tracking)
+		{
+			K_ObjectTracking(&tr.result, &pos, false);
+			targetList.push_back(tr);
+		}
 
-		targetList.push_back(tr);
+		if (!mobj->player)
+		{
+			continue;
+		}
+
+		tr.nametag = nametag;
+
+		if (tr.is_player_nametag_on_screen())
+		{
+			fixed_t headOffset = 36*mobj->scale;
+			if (stplyr->mo->eflags & MFE_VERTICALFLIP)
+			{
+				pos.z -= headOffset;
+			}
+			else
+			{
+				pos.z += headOffset;
+			}
+			K_ObjectTracking(&tr.result, &pos, false);
+
+			if (tr.result.onScreen == true)
+			{
+				targetList.push_back(tr);
+			}
+		}
 	}
 
 	// Sort by distance from camera. Further trackers get

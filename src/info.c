@@ -472,14 +472,12 @@ char sprnames[NUMSPRITES + 1][5] =
 	"PWCL", // Invinc/grow clash VFX
 	"GBRK", // Guard break
 
-	"ARRO", // player arrows
 	"ITEM",
 	"ITMO",
 	"ITMI",
 	"ITMN",
 	"PWRB",
 	"RBOW", // power-up aura
-	"WANT",
 
 	"PBOM", // player bomb
 
@@ -2743,20 +2741,6 @@ state_t states[NUMSTATES] =
 
 	{SPR_PWCL, FF_FULLBRIGHT|FF_ANIMATE|FF_PAPERSPRITE, 10, {NULL}, 9, 1, S_NULL}, // S_POWERCLASH
 	{SPR_GBRK, FF_ADD|FF_FULLBRIGHT|FF_ANIMATE|FF_PAPERSPRITE, 24, {NULL}, 5, 4, S_NULL}, // S_GUARDBREAK
-
-	// Above player arrow
-	{SPR_ARRO, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_PLAYERARROW
-	{SPR_ARRO, FF_FULLBRIGHT|1, -1, {NULL}, 0, 0, S_NULL}, // S_PLAYERARROW_BOX
-	{SPR_NULL, FF_FULLBRIGHT, -1, {NULL}, 0, 11, S_NULL}, // S_PLAYERARROW_ITEM
-	{SPR_ITMN, FF_FULLBRIGHT, 2, {NULL}, 0, 11, S_NULL}, // S_PLAYERARROW_NUMBER
-	{SPR_ITMN, FF_FULLBRIGHT|11, 2, {NULL}, 0, 11, S_NULL}, // S_PLAYERARROW_X
-	{SPR_WANT, FF_FULLBRIGHT, 5, {NULL}, 0, 0, S_PLAYERARROW_WANTED2}, // S_PLAYERARROW_WANTED1
-	{SPR_WANT, FF_FULLBRIGHT|1, 1, {NULL}, 0, 0, S_PLAYERARROW_WANTED3}, // S_PLAYERARROW_WANTED2
-	{SPR_WANT, FF_FULLBRIGHT|2, 3, {NULL}, 0, 0, S_PLAYERARROW_WANTED4}, // S_PLAYERARROW_WANTED3
-	{SPR_WANT, FF_FULLBRIGHT|3, 1, {NULL}, 0, 0, S_PLAYERARROW_WANTED5}, // S_PLAYERARROW_WANTED4
-	{SPR_WANT, FF_FULLBRIGHT|4, 3, {NULL}, 0, 0, S_PLAYERARROW_WANTED6}, // S_PLAYERARROW_WANTED5
-	{SPR_WANT, FF_FULLBRIGHT|5, 1, {NULL}, 0, 0, S_PLAYERARROW_WANTED7}, // S_PLAYERARROW_WANTED6
-	{SPR_WANT, FF_FULLBRIGHT|6, 3, {NULL}, 0, 0, S_PLAYERARROW_WANTED1}, // S_PLAYERARROW_WANTED7
 
 	{SPR_SPBM, 0, 1, {NULL}, 0, 0,  S_PLAYERBOMB2}, // S_PLAYERBOMB1
 	{SPR_SPBM, 1, 1, {NULL}, 0, 0,  S_PLAYERBOMB3}, // S_PLAYERBOMB2
@@ -16420,60 +16404,6 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,				// activesound
 		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
 		S_NULL					// raisestate
-	},
-
-	{           // MT_PLAYERARROW
-		-1,             // doomednum
-		S_PLAYERARROW,  // spawnstate
-		1000,           // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_NULL,         // deathstate
-		S_NULL,         // xdeathstate
-		sfx_None,       // deathsound
-		8,              // speed
-		36*FRACUNIT,    // radius
-		37*FRACUNIT,    // height
-		-2,             // display offset
-		16,             // mass
-		0,              // damage
-		sfx_None,       // activesound
-		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP, // flags
-		S_NULL          // raisestate
-	},
-
-	{           // MT_PLAYERWANTED
-		-1,             // doomednum
-		S_PLAYERARROW_WANTED1,  // spawnstate
-		1000,           // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_NULL,         // deathstate
-		S_NULL,         // xdeathstate
-		sfx_None,       // deathsound
-		8,              // speed
-		36*FRACUNIT,    // radius
-		37*FRACUNIT,    // height
-		-2,             // display offset
-		16,             // mass
-		0,              // damage
-		sfx_None,       // activesound
-		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP, // flags
-		S_NULL          // raisestate
 	},
 
 	{           // MT_KARMAHITBOX

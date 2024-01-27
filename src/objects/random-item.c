@@ -147,8 +147,10 @@ void Obj_RandomItemVisuals(mobj_t *mobj)
 
 boolean Obj_RandomItemSpawnIn(mobj_t *mobj)
 {
+	// We don't want item spawnpoints to be visible during
+	// POSITION in Battle.
 	// battleprisons isn't set in time to do this on spawn. GROAN
-	if ((mobj->flags2 & MF2_BOSSFLEE) && (gametyperules & GTR_BUMPERS) && !battleprisons)
+	if ((mobj->flags2 & MF2_BOSSFLEE) && (gametyperules & (GTR_CIRCUIT|GTR_PAPERITEMS)) == GTR_PAPERITEMS && !battleprisons)
 		mobj->renderflags |= RF_DONTDRAW;
 
 	if ((leveltime == starttime) && !(gametyperules & GTR_CIRCUIT) && (mobj->flags2 & MF2_BOSSFLEE)) // here on map start?

@@ -3897,6 +3897,12 @@ void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UIN
 		return;
 	}
 
+	if (player->exiting)
+	{
+		// The round has already ended, don't mess with points
+		return;
+	}
+
 	if ((inflictor && !P_MobjWasRemoved(inflictor)) && (inflictor->type == MT_BANANA && inflictor->health > 1))
 	{
 		trapItem = true;
@@ -3923,8 +3929,7 @@ void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UIN
 	// Check this before adding to player score
 	if ((gametyperules & GTR_BUMPERS) && finishOff && g_pointlimit <= player->roundscore)
 	{
-		player->roundscore = 100; // Make sure you win!
-		P_DoAllPlayersExit(0, false);
+		K_EndBattleRound(player);
 
 		mobj_t *source = !P_MobjWasRemoved(inflictor) ? inflictor : player->mo;
 
@@ -3937,8 +3942,7 @@ void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UIN
 		);
 	}
 
-	P_AddPlayerScore(player, points);
-	K_SpawnBattlePoints(player, victim, points);
+	K_GivePointsToPlayer(player, victim, points);
 }
 
 void K_SpinPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 type)
@@ -4845,6 +4849,12 @@ void K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount)
 
 	// Play steal sound
 	S_StartSound(player->mo, sfx_3db06);
+}
+
+void K_GivePointsToPlayer(player_t *player, player_t *victim, UINT8 amount)
+{
+	P_AddPlayerScore(player, amount);
+	K_SpawnBattlePoints(player, victim, amount);
 }
 
 #define MINEQUAKEDIST 4096
@@ -13422,7 +13432,7 @@ UINT32 K_PointLimitForGametype(void)
 		{
 			if (D_IsPlayerHumanAndGaming(i))
 			{
-				ptsCap += 4;
+				ptsCap += 3;
 			}
 		}
 

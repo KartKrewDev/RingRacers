@@ -192,6 +192,8 @@ struct cliprect_t
 const cliprect_t *V_GetClipRect(void);
 void V_SetClipRect(fixed_t x, fixed_t y, fixed_t w, fixed_t h, INT32 flags);
 void V_ClearClipRect(void);
+void V_SaveClipRect(cliprect_t *copy);
+void V_RestoreClipRect(const cliprect_t *copy);
 
 // defines for old functions
 #define V_DrawPatch(x,y,s,p) V_DrawFixedPatch((x)<<FRACBITS, (y)<<FRACBITS, FRACUNIT, s|V_NOSCALESTART|V_NOSCALEPATCH, p, NULL)

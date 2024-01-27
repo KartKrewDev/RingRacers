@@ -5862,6 +5862,29 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 					P_SpawnGhostMobj(mobj);
 					P_SpawnGhostMobj(mobj->target);
 				}
+
+				// And because this needs to inherit player-lock renderflags,
+				// may as well do that logic in here too. Groooooooooss
+				boolean locked = true;
+				UINT32 lockflag = RF_TRANS40;
+				if (!mobj->target->extravalue1)
+					locked = false;
+				else if (mobj->target->extravalue1 < TICRATE && (mobj->target->extravalue1 % 2))
+					locked = false;
+
+				mobj->target->colorized = false;
+				mobj->target->renderflags &= ~lockflag;
+				mobj->renderflags &= ~lockflag;
+				if (locked)
+				{
+					mobj->target->colorized = true;
+					if ((r_splitscreen == 0) && !P_MobjWasRemoved(mobj->target->tracer)
+						&& mobj->target->tracer->player && !P_IsDisplayPlayer(mobj->target->tracer->player))
+					{
+						mobj->target->renderflags |= lockflag;
+						mobj->renderflags |= lockflag;
+					}
+				}
 				break;
 
 			default:
@@ -6232,259 +6255,6 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		if (mobj->state == states + S_BATTLEBUMPER_EXDEBRIS2)
 		{
 			mobj->renderflags ^= RF_DONTDRAW;
-		}
-		break;
-
-	// see also K_drawKartItem in k_hud.c
-	case MT_PLAYERARROW: // FIXME: Delete this object, attach to name tags instead.
-		if (mobj->target && mobj->target->health
-			&& mobj->target->player && !mobj->target->player->spectator
-			&& mobj->target->health && mobj->target->player->playerstate != PST_DEAD
-			/*&& players[displayplayers[0]].mo && !players[displayplayers[0]].spectator*/)
-		{
-			fixed_t scale = 3*mobj->target->scale;
-			mobj->color = mobj->target->color;
-			K_MatchGenericExtraFlags(mobj, mobj->target);
-
-			if (!(gametyperules & GTR_BUMPERS)
-#if 1 // Set to 0 to test without needing to host
-				|| (P_IsDisplayPlayer(mobj->target->player))
-#endif
-				)
-				mobj->renderflags |= RF_DONTDRAW;
-
-			P_UnsetThingPosition(mobj);
-			mobj->x = mobj->target->x;
-			mobj->y = mobj->target->y;
-
-			mobj->angle = R_PointToAngle(mobj->x, mobj->y) + ANGLE_90; // literally only happened because i wanted to ^L^R the SPR_ITEM's
-
-			if (!r_splitscreen && players[displayplayers[0]].mo)
-			{
-				scale = mobj->target->scale + FixedMul(FixedDiv(abs(P_AproxDistance(players[displayplayers[0]].mo->x-mobj->target->x,
-					players[displayplayers[0]].mo->y-mobj->target->y)), RING_DIST), mobj->target->scale);
-				if (scale > 16*mobj->target->scale)
-					scale = 16*mobj->target->scale;
-			}
-			mobj->destscale = scale;
-
-			if (!(mobj->target->eflags & MFE_VERTICALFLIP))
-			{
-				mobj->z = mobj->target->z + mobj->target->height + (16*mobj->target->scale);
-				mobj->eflags &= ~MFE_VERTICALFLIP;
-			}
-			else
-			{
-				mobj->z = mobj->target->z - mobj->target->height - (16*mobj->target->scale);
-				mobj->eflags |= MFE_VERTICALFLIP;
-			}
-			P_SetThingPosition(mobj);
-
-			if (!mobj->tracer)
-			{
-				mobj_t *overlay = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_OVERLAY);
-				P_SetTarget(&mobj->tracer, overlay);
-				P_SetTarget(&mobj->tracer->target, mobj);
-				P_SetMobjState(mobj->tracer, S_PLAYERARROW_ITEM);
-				P_SetScale(mobj->tracer, (mobj->tracer->destscale = mobj->scale));
-			}
-
-			// Do this in an easy way
-			if (mobj->target->player->itemRoulette.active)
-			{
-				mobj->tracer->color = mobj->target->player->skincolor;
-				mobj->tracer->colorized = true;
-			}
-			else
-			{
-				mobj->tracer->color = SKINCOLOR_NONE;
-				mobj->tracer->colorized = false;
-			}
-
-			if (!(mobj->renderflags & RF_DONTDRAW))
-			{
-				//const INT32 numberdisplaymin = ((mobj->target->player->itemtype == KITEM_ORBINAUT) ? 5 : 2);
-
-				// Set it to use the correct states for its condition
-				if (mobj->target->player->itemRoulette.active)
-				{
-					P_SetMobjState(mobj, S_PLAYERARROW_BOX);
-					mobj->tracer->sprite = SPR_ITEM;
-					mobj->tracer->frame = 1 | FF_FULLBRIGHT;
-					mobj->tracer->renderflags &= ~RF_DONTDRAW;
-				}
-				else if (mobj->target->player->stealingtimer < 0)
-				{
-					P_SetMobjState(mobj, S_PLAYERARROW_BOX);
-					mobj->tracer->sprite = SPR_ITEM;
-					mobj->tracer->frame = FF_FULLBRIGHT|KITEM_HYUDORO;
-					if (leveltime & 2)
-						mobj->tracer->renderflags &= ~RF_DONTDRAW;
-					else
-						mobj->tracer->renderflags |= RF_DONTDRAW;
-				}
-				else if ((mobj->target->player->stealingtimer > 0) && (leveltime & 2))
-				{
-					P_SetMobjState(mobj, S_PLAYERARROW_BOX);
-					mobj->tracer->sprite = SPR_ITEM;
-					mobj->tracer->frame = FF_FULLBRIGHT|KITEM_HYUDORO;
-					mobj->tracer->renderflags &= ~RF_DONTDRAW;
-				}
-				else if (mobj->target->player->eggmanexplode > 1)
-				{
-					P_SetMobjState(mobj, S_PLAYERARROW_BOX);
-					mobj->tracer->sprite = SPR_ITEM;
-					mobj->tracer->frame = FF_FULLBRIGHT|KITEM_EGGMAN;
-					if (leveltime & 1)
-						mobj->tracer->renderflags &= ~RF_DONTDRAW;
-					else
-						mobj->tracer->renderflags |= RF_DONTDRAW;
-				}
-				else if (mobj->target->player->rocketsneakertimer > 1)
-				{
-					//itembar = mobj->target->player->rocketsneakertimer; -- not today satan
-					P_SetMobjState(mobj, S_PLAYERARROW_BOX);
-					mobj->tracer->sprite = SPR_ITEM;
-					mobj->tracer->frame = FF_FULLBRIGHT|KITEM_ROCKETSNEAKER;
-					if (leveltime & 1)
-						mobj->tracer->renderflags &= ~RF_DONTDRAW;
-					else
-						mobj->tracer->renderflags |= RF_DONTDRAW;
-				}
-				else if (mobj->target->player->itemtype && mobj->target->player->itemamount > 0)
-				{
-					P_SetMobjState(mobj, S_PLAYERARROW_BOX);
-
-					switch (mobj->target->player->itemtype)
-					{
-						case KITEM_ORBINAUT:
-							mobj->tracer->sprite = SPR_ITMO;
-							mobj->tracer->frame = FF_FULLBRIGHT|K_GetOrbinautItemFrame(mobj->target->player->itemamount);
-							break;
-						case KITEM_INVINCIBILITY:
-							mobj->tracer->sprite = SPR_ITMI;
-							mobj->tracer->frame = FF_FULLBRIGHT|K_GetInvincibilityItemFrame();
-							break;
-						case KITEM_SAD:
-							mobj->tracer->sprite = SPR_ITEM;
-							mobj->tracer->frame = FF_FULLBRIGHT;
-							break;
-						default:
-							mobj->tracer->sprite = SPR_ITEM;
-							mobj->tracer->frame = FF_FULLBRIGHT|(mobj->target->player->itemtype);
-							break;
-					}
-
-					if (mobj->target->player->itemflags & IF_ITEMOUT)
-					{
-						if (leveltime & 1)
-							mobj->tracer->renderflags &= ~RF_DONTDRAW;
-						else
-							mobj->tracer->renderflags |= RF_DONTDRAW;
-					}
-					else
-						mobj->tracer->renderflags &= ~RF_DONTDRAW;
-				}
-				else
-				{
-					P_SetMobjState(mobj, S_PLAYERARROW);
-					P_SetMobjState(mobj->tracer, S_PLAYERARROW_ITEM);
-				}
-
-				mobj->tracer->destscale = scale;
-
-#if 0
-				if (mobj->target->player->itemamount >= numberdisplaymin
-					&& mobj->target->player->itemamount <= 10) // Meh, too difficult to support greater than this; convert this to a decent HUD object and then maybe :V
-				{
-					mobj_t *number = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_OVERLAY);
-					mobj_t *numx = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_OVERLAY);
-
-					P_SetTarget(&number->target, mobj);
-					P_SetMobjState(number, S_PLAYERARROW_NUMBER);
-					P_SetScale(number, mobj->scale);
-					number->destscale = scale;
-					number->frame = FF_FULLBRIGHT|(mobj->target->player->itemamount);
-
-					P_SetTarget(&numx->target, mobj);
-					P_SetMobjState(numx, S_PLAYERARROW_X);
-					P_SetScale(numx, mobj->scale);
-					numx->destscale = scale;
-				}
-#endif
-
-#if 0
-				if (K_IsPlayerWanted(mobj->target->player) && mobj->movecount != 1)
-				{
-					mobj_t *wanted = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_PLAYERWANTED);
-					P_SetTarget(&wanted->target, mobj->target);
-					P_SetTarget(&wanted->tracer, mobj);
-					P_SetScale(wanted, mobj->scale);
-					wanted->destscale = scale;
-					mobj->movecount = 1;
-				}
-				else if (!K_IsPlayerWanted(mobj->target->player))
-#endif
-					mobj->movecount = 0;
-			}
-			else
-				mobj->tracer->renderflags |= RF_DONTDRAW;
-		}
-		else if (mobj->health > 0)
-		{
-			P_KillMobj(mobj, NULL, NULL, DMG_NORMAL);
-			return;
-		}
-		break;
-	case MT_PLAYERWANTED:
-		if (mobj->target && mobj->target->health && mobj->tracer
-			&& mobj->target->player && !mobj->target->player->spectator
-			&& mobj->target->health && mobj->target->player->playerstate != PST_DEAD
-			&& players[g_localplayers[0]].mo && !players[g_localplayers[0]].spectator)
-		{
-			fixed_t scale = 3*mobj->target->scale;
-
-			if (!K_IsPlayerWanted(mobj->target->player))
-			{
-				mobj->tracer->movecount = 0;
-				P_RemoveMobj(mobj);
-				return;
-			}
-
-			if (mobj->tracer->renderflags & RF_DONTDRAW)
-				mobj->renderflags |= RF_DONTDRAW;
-			else
-				mobj->renderflags &= ~RF_DONTDRAW;
-
-			P_UnsetThingPosition(mobj);
-			mobj->x = mobj->target->x;
-			mobj->y = mobj->target->y;
-
-			if (!r_splitscreen && players[displayplayers[0]].mo)
-			{
-				scale = mobj->target->scale + FixedMul(FixedDiv(abs(P_AproxDistance(players[displayplayers[0]].mo->x-mobj->target->x,
-					players[displayplayers[0]].mo->y-mobj->target->y)), RING_DIST), mobj->target->scale);
-				if (scale > 16*mobj->target->scale)
-					scale = 16*mobj->target->scale;
-			}
-			mobj->destscale = scale;
-
-			if (!(mobj->target->eflags & MFE_VERTICALFLIP))
-			{
-				mobj->z = mobj->target->z + mobj->target->height + (16*mobj->target->scale) + (64*scale);
-				mobj->eflags &= ~MFE_VERTICALFLIP;
-			}
-			else
-			{
-				mobj->z = mobj->target->z - mobj->target->height - (16*mobj->target->scale) - (64*scale);
-				mobj->eflags |= MFE_VERTICALFLIP;
-			}
-			P_SetThingPosition(mobj);
-		}
-		else if (mobj->health > 0)
-		{
-			P_KillMobj(mobj, NULL, NULL, DMG_NORMAL);
-			return;
 		}
 		break;
 	case MT_ITEMCAPSULE_PART:
@@ -7363,14 +7133,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		K_UpdateMobjItemOverlay(mobj, mobj->threshold, mobj->movecount);
 
+		// ACHTUNG HACK - this is the player-lock timer used when breaking monitors,
+		// but the visual side-effects of this are in the MT_OVERLAY thinker so that
+		// the backdrop can also go transparent. EUUUAUUAUUAAAUUUUGGGHGHHHHHHHGSSS
 		if (mobj->extravalue1 > 0)
-		{
 			mobj->extravalue1--;
-			if (mobj->extravalue1 < TICRATE)
-			{
-				mobj->colorized = mobj->extravalue1 & 1;
-			}
-		}
+			
 		break;
 	}
 	case MT_ITEMCAPSULE:
@@ -12315,14 +12083,6 @@ void P_SpawnPlayer(INT32 playernum)
 	K_InitStumbleIndicator(p);
 	K_InitWavedashIndicator(p);
 	K_InitTrickIndicator(p);
-
-	if (gametyperules & GTR_ITEMARROWS)
-	{
-		mobj_t *overheadarrow = P_SpawnMobj(mobj->x, mobj->y, mobj->z + mobj->height + 16*FRACUNIT, MT_PLAYERARROW);
-		P_SetTarget(&overheadarrow->target, mobj);
-		overheadarrow->renderflags |= RF_DONTDRAW;
-		P_SetScale(overheadarrow, mobj->destscale);
-	}
 
 	if ((gametyperules & GTR_BUMPERS) && !p->spectator)
 	{
