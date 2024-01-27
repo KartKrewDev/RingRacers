@@ -80,7 +80,8 @@ menu_t PLAY_TimeAttackDef = {
 
 typedef enum
 {
-	tareplay_besttime = 0,
+	tareplay_header = 0,
+	tareplay_besttime,
 	tareplay_bestlap,
 	tareplay_last,
 	tareplay_gap1,
@@ -92,6 +93,7 @@ typedef enum
 
 menuitem_t PLAY_TAReplay[] =
 {
+	{IT_HEADERTEXT|IT_HEADER, "<!>", NULL, NULL, {NULL}, 0, 0},
 	{IT_STRING | IT_CALL, "Replay Best Time", NULL, "MENUI006", {.routine = M_ReplayTimeAttack}, 0, 0},
 	{IT_STRING | IT_CALL, "Replay Best Lap", NULL, "MENUI006", {.routine = M_ReplayTimeAttack}, 0, 0},
 	{IT_STRING | IT_CALL, "Replay Last", NULL, "MENUI006", {.routine = M_ReplayTimeAttack}, 0, 0},
@@ -231,6 +233,8 @@ void CV_SPBAttackChanged(void)
 		PLAY_TimeAttack[ta_replay].status = IT_DISABLED;
 		PLAY_TimeAttack[ta_ghosts].status = IT_DISABLED;
 
+		PLAY_TAReplay[tareplay_header].status = IT_DISABLED;
+
 		// Check if file exists, if not, disable options
 		PLAY_TAReplay[tareplay_besttime].status =
 			PLAY_TAReplayGuest[taguest_besttime].status = IT_DISABLED;
@@ -309,7 +313,10 @@ void CV_SPBAttackChanged(void)
 			PLAY_TimeAttackDef.lastOn = ta_start;*/
 
 		if ((active & 8) && levellist.newgametype == GT_RACE && M_SecretUnlocked(SECRET_SPBATTACK, true))
+		{
 			PLAY_TAReplay[tareplay_header].status = IT_HEADER;
+			PLAY_TAReplay[tareplay_header].text = cv_dummyspbattack.value ? "SPB Attack..." : "Time Attack...";
+		}
 
 		if (currentMenu == &PLAY_TimeAttackDef)
 			itemOn = PLAY_TimeAttackDef.lastOn;
