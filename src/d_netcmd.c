@@ -6069,6 +6069,8 @@ static void Got_Cheat(UINT8 **cp, INT32 playernum)
 			UINT8 powerup = READUINT8(*cp);
 			UINT16 time = READUINT16(*cp);
 
+			powerup = min(powerup, LASTPOWERUP);
+
 			// FIXME: we should have actual KITEM_ name array
 			const char *powerupname = cv_kartdebugitem.PossibleValue[
 				1 + NUMKARTITEMS + (powerup - FIRSTPOWERUP)].strvalue;
