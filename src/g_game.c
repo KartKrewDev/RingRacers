@@ -536,7 +536,9 @@ void G_TickTimeStickerMedals(void)
 void G_UpdateRecords(void)
 {
 	UINT8 earnedEmblems;
-	recordtimes_t *record = &mapheaderinfo[gamemap-1]->records.timeattack;
+	recordtimes_t *record = (modeattacking & ATTACKING_SPB) ?
+		&mapheaderinfo[gamemap-1]->records.spbattack :
+		&mapheaderinfo[gamemap-1]->records.timeattack;
 
 	if (modeattacking & ATTACKING_TIME)
 	{
@@ -4685,7 +4687,7 @@ void G_LoadGameSettings(void)
 }
 
 #define GD_VERSIONCHECK 0xBA5ED123 // Change every major version, as usual
-#define GD_VERSIONMINOR 10 // Change every format update
+#define GD_VERSIONMINOR 11 // Change every format update
 
 // You can't rearrange these without a special format update
 typedef enum
@@ -5073,6 +5075,16 @@ void G_LoadGameData(void)
 			dummyrecord.timeattack.time = (tic_t)READUINT32(save.p);
 			dummyrecord.timeattack.lap  = (tic_t)READUINT32(save.p);
 
+			if (versionMinor < 11)
+			{
+				memset(&dummyrecord.spbattack, 0, sizeof dummyrecord.spbattack);
+			}
+			else
+			{
+				dummyrecord.spbattack.time = (tic_t)READUINT32(save.p);
+				dummyrecord.spbattack.lap  = (tic_t)READUINT32(save.p);
+			}
+
 			if (mapnum < nummapheaders && mapheaderinfo[mapnum])
 			{
 				// Valid mapheader, time to populate with record data.
@@ -5084,6 +5096,8 @@ void G_LoadGameData(void)
 				(dummyrecord.mapvisited & MV_BEATEN)
 				|| dummyrecord.timeattack.time != 0
 				|| dummyrecord.timeattack.lap != 0
+				|| dummyrecord.spbattack.time != 0
+				|| dummyrecord.spbattack.lap != 0
 			)
 			{
 				// Invalid, but we don't want to lose all the juicy statistics.
@@ -5687,6 +5701,8 @@ void G_SaveGameData(void)
 
 			WRITEUINT32(save.p, mapheaderinfo[i]->records.timeattack.time);
 			WRITEUINT32(save.p, mapheaderinfo[i]->records.timeattack.lap);
+			WRITEUINT32(save.p, mapheaderinfo[i]->records.spbattack.time);
+			WRITEUINT32(save.p, mapheaderinfo[i]->records.spbattack.lap);
 
 			if (--numgamedatamapheaders == 0)
 				break;
@@ -5705,6 +5721,8 @@ void G_SaveGameData(void)
 
 				WRITEUINT32(save.p, unloadedmap->records.timeattack.time);
 				WRITEUINT32(save.p, unloadedmap->records.timeattack.lap);
+				WRITEUINT32(save.p, unloadedmap->records.spbattack.time);
+				WRITEUINT32(save.p, unloadedmap->records.spbattack.lap);
 
 				if (--numgamedatamapheaders == 0)
 					break;

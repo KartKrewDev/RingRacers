@@ -162,6 +162,7 @@ struct recorddata_t
 {
 	UINT8 mapvisited;
 	recordtimes_t timeattack; ///< Best times for Time Attack
+	recordtimes_t spbattack; ///< Best times for SPB Attack
 };
 
 #define KARTSPEED_AUTO -1

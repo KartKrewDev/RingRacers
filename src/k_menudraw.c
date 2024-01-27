@@ -3503,7 +3503,8 @@ void M_DrawTimeAttack(void)
 
 	if (currentMenu == &PLAY_TimeAttackDef)
 	{
-		recordtimes_t *record = &mapheaderinfo[map]->records.timeattack;
+		recorddata_t *rcp = &mapheaderinfo[map]->records;
+		recordtimes_t *record = cv_dummyspbattack.value ? &rcp->spbattack : &rcp->timeattack;
 		tic_t timerec = record->time;
 		tic_t laprec = record->lap;
 		UINT32 timeheight = 82;
