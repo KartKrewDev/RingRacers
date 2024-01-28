@@ -270,7 +270,7 @@ boolean M_Responder(event_t *ev)
 	boolean menuKeyJustChanged = false;
 
 	if (dedicated
-		|| (demo.playback && demo.title)
+		|| (demo.playback && demo.attract)
 		|| M_GamestateCanOpenMenu() == false)
 	{
 		return false;

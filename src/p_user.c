@@ -68,6 +68,7 @@
 #include "k_tally.h"
 #include "k_objects.h"
 #include "k_endcam.h"
+#include "k_credits.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_light.h"
@@ -3190,7 +3191,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 	mo = player->mo;
 
-	if (P_MobjIsFrozen(mo) || player->playerstate == PST_DEAD)
+	if (P_MobjIsFrozen(mo) || player->playerstate == PST_DEAD || F_CreditsDemoExitFade() >= 0)
 	{
 		// Do not move the camera while in hitlag!
 		// The camera zooming out after you got hit makes it hard to focus on the vibration.
@@ -4003,6 +4004,11 @@ DoABarrelRoll (player_t *player)
 
 	fixed_t smoothing;
 
+	if (player->exiting || F_CreditsDemoExitFade() >= 0)
+	{
+		return;
+	}
+
 	if (player->loop.radius)
 	{
 		return;
@@ -4011,11 +4017,6 @@ DoABarrelRoll (player_t *player)
 	if (player->respawn.state != RESPAWNST_NONE)
 	{
 		player->tilt = 0;
-		return;
-	}
-
-	if (player->exiting)
-	{
 		return;
 	}
 

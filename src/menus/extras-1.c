@@ -7,6 +7,7 @@
 #include "../m_cheat.h"
 #include "../s_sound.h"
 #include "../f_finale.h"
+#include "../k_credits.h"
 
 static void M_Credits(INT32 choice)
 {

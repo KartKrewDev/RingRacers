@@ -43,7 +43,7 @@ struct demovars_s {
 	char titlename[65];
 	boolean recording, playback, timing;
 	UINT16 version; // Current file format of the demo being played
-	boolean title; // Title Screen demo can be cancelled by any key
+	UINT8 attract; // Attract demo can be cancelled by any key
 	boolean rewinding; // Rewind in progress
 
 	boolean loadfiles, ignorefiles; // Demo file loading options
@@ -208,6 +208,13 @@ void G_SaveDemo(void);
 boolean G_DemoTitleResponder(event_t *ev);
 
 boolean G_CheckDemoTitleEntry(void);
+
+typedef enum
+{
+	DEMO_ATTRACT_OFF = 0,
+	DEMO_ATTRACT_TITLE,
+	DEMO_ATTRACT_CREDITS
+} demoAttractMode_t;
 
 #ifdef __cplusplus
 } // extern "C"

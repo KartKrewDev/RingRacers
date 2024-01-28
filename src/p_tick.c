@@ -1075,7 +1075,10 @@ void P_Ticker(boolean run)
 		}
 	}
 
-	timeinmap++;
+	if (g_fast_forward == 0)
+	{
+		timeinmap++;
+	}
 
 	if (G_GametypeHasTeams())
 		P_DoTeamStuff();

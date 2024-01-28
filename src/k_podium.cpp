@@ -82,6 +82,8 @@ static struct podiumData_s
 
 	cupheader_t *cup;
 
+	boolean fastForward;
+
 	char header[64];
 
 	void Init(void);
@@ -92,6 +94,8 @@ static struct podiumData_s
 
 void podiumData_s::Init(void)
 {
+	fastForward = false;
+
 	if (grandprixinfo.cup != nullptr)
 	{
 		rank = grandprixinfo.rank;
@@ -117,7 +121,7 @@ void podiumData_s::Init(void)
 		memset(&rank, 0, sizeof(gpRank_t));
 		rank.skin = players[consoleplayer].skin;
 
-		rank.numPlayers = 1; //M_RandomRange(1, MAXSPLITSCREENPLAYERS);
+		rank.numPlayers = std::clamp<UINT8>(M_RandomRange(0, MAXSPLITSCREENPLAYERS + 1), 1, MAXSPLITSCREENPLAYERS);
 		rank.totalPlayers = K_GetGPPlayerCount(rank.numPlayers);
 
 		rank.position = M_RandomRange(1, 4);
@@ -472,6 +476,23 @@ void podiumData_s::Draw(void)
 		drawer_winner
 			.colormap(bestHuman->skin, static_cast<skincolornum_t>(bestHuman->skincolor))
 			.patch(faceprefix[bestHuman->skin][FACE_WANTED]);
+
+		UINT32 continuesColor = 0;
+
+		if (rank.continuesUsed == 0)
+		{
+			continuesColor = V_YELLOWMAP;
+		}
+		else if (rank.continuesUsed > 2)
+		{
+			continuesColor = V_REDMAP;
+		}
+
+		drawer_winner
+			.xy(64, 18)
+			.flags(continuesColor)
+			.font(srb2::Draw::Font::kThin)
+			.text(va("Continues used ... %d", rank.continuesUsed));
 
 		if (cup != nullptr)
 		{
@@ -993,6 +1014,7 @@ void K_FinishCeremony(void)
 	}
 
 	g_podiumData.ranking = true;
+	g_fast_forward = 0;
 }
 
 /*--------------------------------------------------
@@ -1116,6 +1138,34 @@ void K_CeremonyTicker(boolean run)
 
 	if (g_podiumData.ranking == false)
 	{
+		if (run == true)
+		{
+			if (g_podiumData.fastForward == true)
+			{
+				if (g_fast_forward == 0)
+				{
+					// Possibly an infinite loop, finalize even if we're still in the middle of the cutscene.
+					K_FinishCeremony();
+				}
+			}
+			else
+			{
+				if (menuactive == false && M_MenuConfirmPressed(0) == true)
+				{
+					if (!netgame)
+					{
+						constexpr tic_t kSkipToTime = 60 * TICRATE;
+						if (kSkipToTime > leveltime)
+						{
+							g_fast_forward = kSkipToTime - leveltime;
+						}
+					}
+
+					g_podiumData.fastForward = true;
+				}
+			}
+		}
+
 		return;
 	}
 

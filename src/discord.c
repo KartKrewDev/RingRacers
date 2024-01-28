@@ -154,7 +154,7 @@ static void DRPC_HandleJoin(const char *secret)
 	char *ip = DRPC_XORIPString(secret);
 	CONS_Printf("Connecting to %s via Discord\n", ip);
 	M_ClearMenus(true); //Don't have menus open during connection screen
-	if (demo.playback && demo.title)
+	if (demo.playback && demo.attract)
 		G_CheckDemoStatus(); //Stop the title demo, so that the connect command doesn't error if a demo is playing
 	COM_BufAddText(va("connect \"%s\"\n", ip));
 	free(ip);
@@ -482,7 +482,7 @@ void DRPC_UpdatePresence(void)
 		// Offline info
 		if (Playing())
 			discordPresence.state = "Offline";
-		else if (demo.playback && !demo.title)
+		else if (demo.playback && !demo.attract)
 			discordPresence.state = "Watching Replay";
 		else
 			discordPresence.state = "Menu";
@@ -507,7 +507,7 @@ void DRPC_UpdatePresence(void)
 	}
 
 	if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) // Map info
-		&& !(demo.playback && demo.title))
+		&& !(demo.playback && demo.attract))
 	{
 #ifdef USEMAPIMG
 		if ((gamemap >= 1 && gamemap <= 60) // supported race maps

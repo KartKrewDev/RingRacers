@@ -55,6 +55,7 @@
 #include "k_color.h"
 #include "k_follower.h"
 #include "k_vote.h"
+#include "k_credits.h"
 
 boolean nodrawers; // for comparative timing purposes
 boolean noblit; // for comparative timing purposes
@@ -3301,7 +3302,7 @@ void G_DoPlayDemo(const char *defdemoname)
 
 	numlaps = READUINT8(demobuf.p);
 
-	if (demo.title) // Titledemos should always play and ought to always be compatible with whatever wadlist is running.
+	if (demo.attract) // Attract demos should always play and ought to always be compatible with whatever wadlist is running.
 		G_SkipDemoExtraFiles(&demobuf.p);
 	else if (demo.loadfiles)
 		G_LoadDemoExtraFiles(&demobuf.p);
@@ -3614,7 +3615,7 @@ void G_DoPlayDemo(const char *defdemoname)
 
 	splitscreen = 0;
 
-	if (demo.title)
+	if (demo.attract == DEMO_ATTRACT_TITLE)
 	{
 		splitscreen = M_RandomKey(6)-1;
 		splitscreen = min(min(3, numslots-1), splitscreen); // Bias toward 1p and 4p views
@@ -4020,7 +4021,7 @@ void G_TimeDemo(const char *name)
 	if (cv_vidwait.value)
 		CV_Set(&cv_vidwait, "0");
 	demo.timing = true;
-	singletics = true;
+	g_singletics = true;
 	framecount = 0;
 	demostarttime = I_GetTime();
 	G_DeferedPlayDemo(name);
@@ -4218,7 +4219,7 @@ void G_StopDemo(void)
 	demobuf.buffer = NULL;
 	demo.playback = false;
 	demo.timing = false;
-	singletics = false;
+	g_singletics = false;
 
 	{
 		UINT8 i;
@@ -4260,7 +4261,7 @@ boolean G_CheckDemoStatus(void)
 		if (demo.quitafterplaying)
 			I_Quit();
 
-		if (multiplayer && !demo.title)
+		if (multiplayer && !demo.attract)
 			G_FinishExitLevel();
 		else
 		{
@@ -4270,6 +4271,8 @@ boolean G_CheckDemoStatus(void)
 				COM_ImmedExecute("quit");
 			else if (modeattacking)
 				M_EndModeAttackRun();
+			else if (demo.attract == DEMO_ATTRACT_CREDITS)
+				F_ContinueCredits();
 			else
 				D_StartTitle();
 		}
