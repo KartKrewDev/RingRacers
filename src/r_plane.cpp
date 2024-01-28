@@ -940,7 +940,7 @@ void R_DrawSinglePlane(drawspandata_t *ds, visplane_t *pl, boolean allow_paralle
 	INT32 type, spanfunctype = BASEDRAWFUNC;
 	debugrender_highlight_t debug = debugrender_highlight_t::SW_HI_PLANES;
 	void (*mapfunc)(drawspandata_t*, void(*)(drawspandata_t*), INT32, INT32, INT32, boolean) = R_MapPlane;
-	bool highlight = R_PlaneIsHighlighted(pl);
+	INT16 highlight = R_PlaneIsHighlighted(pl);
 
 	if (!(pl->minx <= pl->maxx))
 		return;
@@ -952,10 +952,10 @@ void R_DrawSinglePlane(drawspandata_t *ds, visplane_t *pl, boolean allow_paralle
 	// sky flat
 	if (pl->picnum == skyflatnum)
 	{
-		if (highlight)
+		if (highlight != -1)
 		{
 			drawcolumndata_t dc = {};
-			dc.r8_flatcolor = 35; // red
+			dc.r8_flatcolor = highlight;
 			dc.lightmap = colormaps;
 
 			for (dc.x = pl->minx; dc.x <= pl->maxx; ++dc.x)
@@ -1021,7 +1021,7 @@ void R_DrawSinglePlane(drawspandata_t *ds, visplane_t *pl, boolean allow_paralle
 
 				// Hacked up support for alpha value in software mode Tails 09-24-2002
 				// ...unhacked by toaster 04-01-2021
-				if (!highlight)
+				if (highlight == -1)
 				{
 					INT32 trans = (10*((256+12) - pl->ffloor->alpha))/255;
 					if (trans >= 10)
@@ -1221,9 +1221,9 @@ void R_DrawSinglePlane(drawspandata_t *ds, visplane_t *pl, boolean allow_paralle
 		ds->planezlight = zlight[light];
 	}
 
-	if (highlight && R_SetSpanFuncFlat(BASEDRAWFUNC))
+	if (highlight != -1 && R_SetSpanFuncFlat(BASEDRAWFUNC))
 	{
-		ds->r8_flatcolor = 35; // red
+		ds->r8_flatcolor = highlight;
 		ds->flatlighting = colormaps;
 	}
 	else
@@ -1267,7 +1267,18 @@ void R_PlaneBounds(visplane_t *plane)
 	plane->low = low;
 }
 
-boolean R_PlaneIsHighlighted(const visplane_t *pl)
+INT16 R_PlaneIsHighlighted(const visplane_t *pl)
 {
-	return pl->damage == SD_DEATHPIT || pl->damage == SD_INSTAKILL;
+	switch (pl->damage)
+	{
+	case SD_DEATHPIT:
+	case SD_INSTAKILL:
+		return 35; // red
+
+	case SD_STUMBLE:
+		return 72; // yellow
+
+	default:
+		return -1;
+	}
 }
