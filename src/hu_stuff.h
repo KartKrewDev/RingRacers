@@ -69,6 +69,7 @@ enum
 	X        (HU),
 	X      (MENU),
 	X      (TINY),
+	X       (MED),
 	X      (FILE),
 
 	X        (LT),

@@ -40,6 +40,7 @@ public:
 		kTimer,
 		kThinTimer,
 		kMenu,
+		kMedium,
 	};
 
 	enum class Align
