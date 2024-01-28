@@ -533,26 +533,29 @@ menu_t *M_SpecificMenuRestore(menu_t *torestore)
 	|| torestore == &PLAY_TimeAttackDef)
 	{
 		// Handle unlock restrictions
+
+		levellist = restorelevellist;
+
 		cupheader_t *currentcup = levellist.levelsearch.cup;
 
-		M_SetupGametypeMenu(-1);
-
-		if (levellist.newgametype == GT_RACE)
+		if (levellist.levelsearch.tutorial)
 		{
-			M_SetupRaceMenu(-1);
-			M_SetupDifficultyOptions((cupgrid.grandprix == false));
+			M_InitExtras(-1);
+		}
+		else
+		{
+			M_SetupGametypeMenu(-1);
+
+			if (levellist.newgametype == GT_RACE)
+			{
+				M_SetupRaceMenu(-1);
+				M_SetupDifficultyOptions((cupgrid.grandprix == false));
+			}
 		}
 
 		if (!M_LevelListFromGametype(-1))
 		{
-			if (PLAY_LevelSelectDef.prevMenu == &PLAY_CupSelectDef)
-			{
-				torestore = PLAY_CupSelectDef.prevMenu;
-			}
-			else
-			{
-				torestore = PLAY_LevelSelectDef.prevMenu;
-			}
+			torestore = levellist.backMenu;
 		}
 		else
 		{
@@ -560,18 +563,11 @@ menu_t *M_SpecificMenuRestore(menu_t *torestore)
 			{
 				torestore = &PLAY_CupSelectDef;
 			}
-			else if (torestore == &PLAY_TimeAttackDef)
+			else if (levellist.levelsearch.timeattack)
 			{
-				M_PrepareTimeAttack(0);
+				M_PrepareTimeAttack(true);
 			}
 		}
-	}
-	else if (torestore == &PLAY_RaceDifficultyDef)
-	{
-		// Handle a much smaller subset of unlock restrictions
-		M_SetupGametypeMenu(-1);
-		M_SetupRaceMenu(-1);
-		M_SetupDifficultyOptions((cupgrid.grandprix == false));
 	}
 	else if (torestore == &PLAY_MP_OptSelectDef)
 	{
@@ -671,8 +667,6 @@ void M_StartControlPanel(void)
 			}
 		}
 
-		M_PickMenuBGMap();
-
 		if (M_GameTrulyStarted() == false)
 		{
 			// Are you ready for the First Boot Experience?
@@ -717,13 +711,14 @@ void M_StartControlPanel(void)
 
 			M_PlayMenuJam();
 		}
+
+		itemOn = currentMenu->lastOn;
+		M_UpdateMenuBGImage(true);
 	}
 	else
 	{
 		M_OpenPauseMenu();
 	}
-
-	itemOn = currentMenu->lastOn;
 
 	CON_ToggleOff(); // move away console
 }
@@ -744,6 +739,8 @@ void M_ClearMenus(boolean callexitmenufunc)
 #ifndef DC // Save the config file. I'm sick of crashing the game later and losing all my changes!
 	COM_BufAddText(va("saveconfig \"%s\" -silent\n", configfile));
 #endif //Alam: But not on the Dreamcast's VMUs
+
+	currentMenu->lastOn = itemOn;
 
 	if (gamestate == GS_MENU) // Back to title screen
 	{

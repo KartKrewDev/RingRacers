@@ -52,6 +52,42 @@ boolean M_TimeAttackInputs(INT32 ch)
 		return true;
 	}
 
+	if (menucmd[pid].dpad_lr != 0
+		&& !((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_ARROWS
+			|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR)
+	)
+	{
+		if (menucmd[pid].dpad_lr > 0)
+		{
+			levellist.cursor++;
+			if (levellist.cursor >= levellist.mapcount)
+			{
+				M_LevelSelectCupSwitch(true, false);
+				levellist.cursor = 0;
+			}
+		}
+		else
+		{
+			levellist.cursor--;
+			if (levellist.cursor < 0)
+			{
+				M_LevelSelectCupSwitch(false, false);
+				levellist.cursor = levellist.mapcount-1;
+			}
+		}
+
+		M_LevelSelectScrollDest();
+		levellist.slide.start = 0;
+
+		M_LevelSelected(levellist.cursor, false);
+		itemOn = ta_start;
+
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+
+		return true;
+	}
+
 	return false;
 }
 
@@ -215,11 +251,12 @@ menu_t PLAY_TAGhostsDef = {
 };
 
 // time attack stuff...
-void M_PrepareTimeAttack(INT32 choice)
+void M_PrepareTimeAttack(boolean menuupdate)
 {
-	(void) choice;
-
-	timeattackmenu.ticker = 0;
+	if (menuupdate)
+	{
+		timeattackmenu.ticker = 0;
+	}
 
 	// Gametype guess
 	if (levellist.guessgt != MAXGAMETYPES)
@@ -426,7 +463,7 @@ static void M_WriteGuestReplay(INT32 ch)
 	Z_Free(rguest);
 	Z_Free(gpath);
 
-	M_PrepareTimeAttack(0);
+	M_PrepareTimeAttack(false);
 	M_SetupNextMenu(&PLAY_TimeAttackDef, false);
 
 	// TODO the following isn't showing up and I'm not sure why

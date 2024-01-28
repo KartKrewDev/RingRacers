@@ -37,7 +37,8 @@ menu_t PLAY_LevelSelectDef = {
 	NULL
 };
 
-struct levellist_s levellist;
+levellist_t levellist;
+levellist_t restorelevellist;
 
 //
 // M_CanShowLevelInList
@@ -278,6 +279,8 @@ boolean M_LevelListFromGametype(INT16 gt)
 			CV_SetValue(&cv_dummyspbattack, 0);
 		}
 
+		levellist.backMenu = currentMenu;
+
 		if (gamestate == GS_MENU)
 		{
 			const char *music;
@@ -290,8 +293,8 @@ boolean M_LevelListFromGametype(INT16 gt)
 			}
 			else
 			{
-				music = currentMenu->music;
-				bgroutine = currentMenu->bgroutine;
+				music = levellist.backMenu->music;
+				bgroutine = levellist.backMenu->bgroutine;
 			}
 
 			menu_t *remap_menus[] = {
@@ -304,17 +307,18 @@ boolean M_LevelListFromGametype(INT16 gt)
 				NULL
 			};
 
-			size_t i;
+			INT16 i, j;
 			for (i = 0; remap_menus[i]; i++)
 			{
 				remap_menus[i]->music = music;
 				remap_menus[i]->bgroutine = bgroutine;
-			}
 
-			// Not for the time attack ones
-			PLAY_CupSelectDef.menuitems[0].patch = \
-			PLAY_LevelSelectDef.menuitems[0].patch = \
-				currentMenu->menuitems[itemOn].patch;
+				for (j = 0; j < remap_menus[i]->numitems; j++)
+				{
+					remap_menus[i]->menuitems[j].patch = \
+						currentMenu->menuitems[itemOn].patch;
+				}
+			}
 		}
 	}
 
@@ -548,10 +552,11 @@ boolean M_LevelListFromGametype(INT16 gt)
 			cupgrid.pageno = 0;
 		}
 
+		PLAY_CupSelectDef.prevMenu = levellist.backMenu;
+		PLAY_LevelSelectDef.prevMenu = &PLAY_CupSelectDef;
+
 		if (gt != -1)
 		{
-			PLAY_CupSelectDef.prevMenu = currentMenu;
-			PLAY_LevelSelectDef.prevMenu = &PLAY_CupSelectDef;
 			M_SetupNextMenu(&PLAY_CupSelectDef, false);
 		}
 
@@ -597,15 +602,16 @@ boolean M_LevelListFromGametype(INT16 gt)
 	M_LevelSelectScrollDest();
 	levellist.slide.start = 0;
 
+	PLAY_LevelSelectDef.prevMenu = levellist.backMenu;
+
 	if (gt != -1)
 	{
 		if (levellist.levelsearch.tutorial && levellist.mapcount == 1)
 		{
-			M_LevelSelected(0); // Skip the list!
+			M_LevelSelected(0, true); // Skip the list!
 		}
 		else
 		{
-			PLAY_LevelSelectDef.prevMenu = currentMenu;
 			M_SetupNextMenu(&PLAY_LevelSelectDef, false);
 		}
 	}
@@ -658,7 +664,7 @@ void M_LevelSelectInit(INT32 choice)
 	}
 }
 
-void M_LevelSelected(INT16 add)
+void M_LevelSelected(INT16 add, boolean menuupdate)
 {
 	UINT8 i = 0;
 	INT16 map = M_GetFirstLevelInList(&i, &levellist.levelsearch);
@@ -685,13 +691,18 @@ void M_LevelSelected(INT16 add)
 
 	if (levellist.levelsearch.timeattack)
 	{
-		S_StartSound(NULL, sfx_s3k63);
+		restorelevellist = levellist;
 
-		M_PrepareTimeAttack(0);
+		M_PrepareTimeAttack(menuupdate);
 
-		PLAY_TimeAttackDef.lastOn = ta_start;
-		PLAY_TimeAttackDef.prevMenu = currentMenu;
-		M_SetupNextMenu(&PLAY_TimeAttackDef, false);
+		if (menuupdate)
+		{
+			S_StartSound(NULL, sfx_s3k63);
+
+			PLAY_TimeAttackDef.lastOn = ta_start;
+			PLAY_TimeAttackDef.prevMenu = currentMenu;
+			M_SetupNextMenu(&PLAY_TimeAttackDef, false);
+		}
 	}
 	else
 	{
@@ -744,19 +755,17 @@ void M_LevelSelected(INT16 add)
 
 			D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_kartencore.value == 1), 1, 1, false, false);
 
-			if (!M_GameTrulyStarted() ||
-				levellist.levelsearch.tutorial)
-			{
-				restoreMenu = currentMenu;
-			}
-			else if (levellist.netgame == true)
+			if (levellist.netgame == true)
 			{
 				restoreMenu = &PLAY_MP_OptSelectDef;
 			}
-			else
+			else /*if (!M_GameTrulyStarted() ||
+				levellist.levelsearch.tutorial)*/
 			{
-				restoreMenu = &PLAY_RaceDifficultyDef;
+				restoreMenu = currentMenu;
 			}
+
+			restorelevellist = levellist;
 		}
 		else
 		{
@@ -765,6 +774,87 @@ void M_LevelSelected(INT16 add)
 		}
 
 		M_ClearMenus(true);
+	}
+}
+
+boolean M_LevelSelectCupSwitch(boolean next, boolean skipones)
+{
+	levelsearch_t templevelsearch = levellist.levelsearch;
+
+	while (1)
+	{
+		if (next)
+		{
+			// Next
+			if (++cupgrid.x >= CUPMENU_COLUMNS)
+			{
+				cupgrid.x = 0;
+				if (++cupgrid.y >= CUPMENU_ROWS)
+				{
+					cupgrid.y = 0;
+					if (++cupgrid.pageno >= cupgrid.numpages)
+					{
+						cupgrid.pageno = 0;
+					}
+				}
+			}
+		}
+		else
+		{
+			// Prev
+			if (cupgrid.x == 0)
+			{
+				cupgrid.x = CUPMENU_COLUMNS;
+				if (cupgrid.y == 0)
+				{
+					cupgrid.y = CUPMENU_ROWS;
+					if (cupgrid.pageno == 0)
+					{
+						cupgrid.pageno = cupgrid.numpages;
+					}
+					cupgrid.pageno--;
+				}
+				cupgrid.y--;
+			}
+			cupgrid.x--;
+		}
+
+		templevelsearch.cup = cupgrid.builtgrid[CUPMENU_CURSORID];
+
+		if (templevelsearch.cup == levellist.levelsearch.cup)
+		{
+			return false;
+		}
+
+		if (!templevelsearch.cup)
+		{
+			continue;
+		}
+
+		UINT16 count = M_CountLevelsToShowInList(&templevelsearch);
+
+		if (count == 0
+		// The following isn't ideal, but in addition to the
+		// necessary programming work being extremely annoying,
+		// I also just think being forced to switch between
+		// Time Attack single-course views and multi-course
+		// selections would just plain kind of look bad.
+		// ~toast 250124 (ON A PLANE BACK FROM MAGFEST WOOOOOOOO)
+		|| (skipones && count == 1))
+		{
+			continue;
+		}
+
+		levellist.levelsearch = templevelsearch;
+
+		levellist.mapcount = count;
+		if (levellist.cursor >= count)
+			levellist.cursor = count-1;
+
+		M_LevelSelectScrollDest();
+		levellist.slide.start = 0;
+
+		return true;
 	}
 }
 
@@ -795,13 +885,26 @@ void M_LevelSelectHandler(INT32 choice)
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(pid);
 	}
+	else if (levellist.levelsearch.cup == NULL)
+		; // Mode with no cup? No left/right input for you!
+	else if (menucmd[pid].dpad_lr != 0)
+	{
+		if (M_LevelSelectCupSwitch(
+			(menucmd[pid].dpad_lr > 0),
+			levellist.levelsearch.timeattack)
+		)
+		{
+			S_StartSound(NULL, sfx_s3k5b);
+			M_SetMenuDelay(pid);
+		}
+	}
 
 	M_LevelSelectScrollDest();
 
 	if (M_MenuConfirmPressed(pid) /*|| M_MenuButtonPressed(pid, MBT_START)*/)
 	{
 		M_SetMenuDelay(pid);
-		M_LevelSelected(levellist.cursor);
+		M_LevelSelected(levellist.cursor, true);
 	}
 	else if (M_MenuBackPressed(pid))
 	{

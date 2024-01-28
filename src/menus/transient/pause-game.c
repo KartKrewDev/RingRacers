@@ -123,7 +123,7 @@ void M_OpenPauseMenu(void)
 	pausemenu.openoffset.dist = 0;
 	pausemenu.closing = false;
 
-	currentMenu->lastOn = mpause_continue;	// Make sure we select "RESUME GAME" by default
+	itemOn = currentMenu->lastOn = mpause_continue;	// Make sure we select "RESUME GAME" by default
 
 	// Now the hilarious balancing act of deciding what options should be enabled and which ones shouldn't be!
 	// By default, disable anything sensitive:

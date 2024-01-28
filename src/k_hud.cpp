@@ -1999,14 +1999,14 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 
 			if (gamedata->collected[(stickermedalinfo.emblems[i]-emblemlocations)])
 			{
-				V_DrawSmallMappedPatch(workx, worky, splitflags,
+				V_DrawMappedPatch(workx, worky, splitflags,
 					static_cast<patch_t*>(W_CachePatchName(M_GetEmblemPatch(stickermedalinfo.emblems[i], false), PU_CACHE)),
 					R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(stickermedalinfo.emblems[i]), GTC_CACHE)
 				);
 			}
 			else
 			{
-				V_DrawSmallMappedPatch(workx, worky, splitflags,
+				V_DrawMappedPatch(workx, worky, splitflags,
 					static_cast<patch_t*>(W_CachePatchName("NEEDIT", PU_CACHE)),
 					NULL
 				);
