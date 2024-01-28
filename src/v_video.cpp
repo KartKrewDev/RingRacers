@@ -2285,6 +2285,10 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 					break;
 			}
 			break;
+		case MED_FONT:
+			result->chw    = 6;
+			result->spacew = 6;
+			break;
 		case LT_FONT:
 			result->spacew = 12;
 			break;
@@ -2330,6 +2334,7 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 		case MENU_FONT:
 		case TINY_FONT:
 		case KART_FONT:
+		case MED_FONT:
 			result->lfh = 12;
 			break;
 		case LT_FONT:
@@ -2383,6 +2388,9 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 				result->dim_fn = FixedCharacterDim;
 			else
 				result->dim_fn = BunchedCharacterDim;
+			break;
+		case MED_FONT:
+			result->dim_fn = FixedCharacterDim;
 			break;
 		case GM_FONT:
 			if (result->chw)

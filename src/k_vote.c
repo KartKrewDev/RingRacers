@@ -865,16 +865,16 @@ static void Y_DrawVoteSelection(fixed_t offset)
 			);
 
 			size_t ci;
-			for (ci = 0; ci < 10; ci++)
+			for (ci = 0; ci < 12; ci++)
 			{
 				const size_t c = (ci + charAnim) % vote_draw.levels[i].str_len;
 
 				V_DrawCharacterScaled(
-					(fx + (7 * dupx * ci)) << FRACBITS,
-					(fy - fh + (2 * dupy)) << FRACBITS,
+					(fx + (6 * dupx * ci)) << FRACBITS,
+					(fy - fh + dupy) << FRACBITS,
 					FRACUNIT,
-					V_ORANGEMAP | V_NOSCALESTART,
-					HU_FONT,
+					V_ORANGEMAP | V_FORCEUPPERCASE | V_NOSCALESTART,
+					MED_FONT,
 					vote_draw.levels[i].str[c],
 					NULL
 				);

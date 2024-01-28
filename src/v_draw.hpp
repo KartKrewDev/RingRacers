@@ -38,6 +38,7 @@ public:
 		kPing,
 		kTimer,
 		kMenu,
+		kMedium,
 	};
 
 	enum class Align
