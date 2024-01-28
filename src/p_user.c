@@ -583,7 +583,12 @@ void P_AddPlayerScore(player_t *player, INT32 amount)
 	if (amount < 0 && (UINT32)-amount > player->roundscore)
 		player->roundscore = 0;
 	else if (player->roundscore + amount < MAXSCORE)
+	{
+		if (player->roundscore < g_pointlimit && g_pointlimit <= player->roundscore + amount)
+			HU_DoTitlecardCEchoForDuration(player, "K.O. READY!", true, 5*TICRATE/2);
+
 		player->roundscore += amount;
+	}
 	else
 		player->roundscore = MAXSCORE;
 }
