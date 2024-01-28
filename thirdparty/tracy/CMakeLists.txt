@@ -1,4 +1,4 @@
-# Tracy Profiler Client 0.9.1
+# Tracy Profiler Client 0.10.0
 # BSD 3-clause
 # Copyright (c) 2017-2023, Bartosz Taudul <wolf@nereid.pl>
 
