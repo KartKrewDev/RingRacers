@@ -8,6 +8,7 @@
 #include "../../r_main.h" // R_ExecuteSetViewSize
 #include "../../p_local.h" // P_InitCameraCmd
 #include "../../d_main.h" // D_StartTitle
+#include "../../k_credits.h"
 
 static void M_PlaybackTick(void);
 
@@ -58,9 +59,13 @@ void M_EndModeAttackRun(void)
 
 	modeattacking = ATTACKING_NONE; // Kept until now because of Command_ExitGame_f
 
-	if (demo.title == true)
+	if (demo.attract == DEMO_ATTRACT_TITLE)
 	{
 		D_StartTitle();
+	}
+	else if (demo.attract == DEMO_ATTRACT_CREDITS)
+	{
+		F_ContinueCredits();
 	}
 	else
 	{

@@ -786,7 +786,7 @@ extern INT32 wantedreduce;
 extern INT32 wantedfrequency;
 
 extern UINT8 introtoplay;
-extern UINT8 creditscutscene;
+extern UINT8 g_credits_cutscene;
 extern UINT8 useSeal;
 
 extern UINT8 use1upSound;
@@ -914,7 +914,10 @@ extern INT16 wipetypepre;
 extern INT16 wipetypepost;
 
 // debug flag to cancel adaptiveness
-extern boolean singletics;
+extern boolean g_singletics;
+extern tic_t g_fast_forward;
+
+#define singletics (g_singletics == true || g_fast_forward > 0)
 
 // =============
 // Netgame stuff

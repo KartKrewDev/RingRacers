@@ -1357,7 +1357,7 @@ void M_StartMovie(moviemode_t mode)
 	}
 #endif
 
-	//singletics = (moviemode != MM_OFF);
+	//g_singletics = (moviemode != MM_OFF);
 #endif
 }
 

@@ -1447,7 +1447,7 @@ static void CL_LoadReceivedSavegame(boolean reloading)
 
 	paused = false;
 	demo.playback = false;
-	demo.title = false;
+	demo.attract = DEMO_ATTRACT_OFF;
 	titlemapinaction = false;
 	tutorialchallenge = TUTORIALSKIP_NONE;
 	automapactive = false;
@@ -2424,7 +2424,7 @@ static void Command_connect(void)
 		return;
 	}
 
-	if (Playing() || demo.title)
+	if (Playing() || demo.attract)
 	{
 		CONS_Printf(M_GetText("You cannot connect while in a game. End this game first.\n"));
 		return;
@@ -6597,15 +6597,22 @@ void NetUpdate(void)
 	nowtime = I_GetTime();
 	realtics = nowtime - gametime;
 
-	if (realtics <= 0) // nothing new to update
-		return;
-
-	if (realtics > 5)
+	if (!demo.playback && g_fast_forward > 0)
 	{
-		if (server)
-			realtics = 1;
-		else
-			realtics = 5;
+		realtics = 1;
+	}
+	else
+	{
+		if (realtics <= 0) // nothing new to update
+			return;
+
+		if (realtics > 5)
+		{
+			if (server)
+				realtics = 1;
+			else
+				realtics = 5;
+		}
 	}
 
 #ifdef DEDICATEDIDLETIME

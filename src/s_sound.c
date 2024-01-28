@@ -249,7 +249,8 @@ boolean S_SoundDisabled(void)
 {
 	return (
 			sound_disabled ||
-			( window_notinfocus && ! (cv_bgaudio.value & 2) )
+			( window_notinfocus && ! (cv_bgaudio.value & 2) ) ||
+			(g_fast_forward > 0)
 	);
 }
 
@@ -1226,6 +1227,10 @@ void S_AttemptToRestoreMusic(void)
 			break;
 		case GS_MENU:
 			M_PlayMenuJam();
+			break;
+		case GS_CREDITS:
+			Music_Loop("credits", true);
+			Music_Play("credits");
 			break;
 		default:
 			break;
