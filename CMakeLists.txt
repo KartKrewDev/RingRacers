@@ -153,9 +153,10 @@ add_subdirectory(assets)
 
 include(GitUtilities)
 
-if("${SRB2_SDL2_EXE_NAME}" STREQUAL "")
+get_git_dir(SRB2_GIT_DIR)
+
+if(NOT "${SRB2_GIT_DIR}" STREQUAL "" AND "${SRB2_SDL2_EXE_NAME}" STREQUAL "")
 	# cause a reconfigure if the branch changes
-	get_git_dir(SRB2_GIT_DIR)
 	configure_file("${SRB2_GIT_DIR}/HEAD" HEAD COPYONLY)
 
 	git_current_branch(SRB2_GIT_REVISION)
@@ -174,8 +175,10 @@ if("${SRB2_SDL2_EXE_NAME}" STREQUAL "")
 	if (SRB2_CONFIG_TESTERS)
 		list(APPEND EXE_NAME_PARTS "TESTERS")
 	endif()
-else()
+elseif(NOT "${SRB2_SDL2_EXE_NAME}" STREQUAL "")
 	list(APPEND EXE_NAME_PARTS ${SRB2_SDL2_EXE_NAME})
+else()
+	list(APPEND EXE_NAME_PARTS "ringracers")
 endif()
 
 list(APPEND EXE_NAME_PARTS ${SRB2_SDL2_EXE_SUFFIX})
