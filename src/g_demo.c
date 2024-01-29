@@ -734,6 +734,7 @@ void G_GhostAddHit(INT32 playernum, mobj_t *victim)
 
 void G_WriteAllGhostTics(void)
 {
+	boolean toobig = false;
 	INT32 i, counter = leveltime;
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -750,12 +751,18 @@ void G_WriteAllGhostTics(void)
 
 		WRITEUINT8(demobuf.p, i);
 		G_WriteGhostTic(players[i].mo, i);
+
+		// attention here for the ticcmd size!
+		// latest demos with mouse aiming byte in ticcmd
+		if (demobuf.p >= demobuf.end - (13 + 9 + 9))
+		{
+			toobig = true;
+			break;
+		}
 	}
 	WRITEUINT8(demobuf.p, 0xFF);
 
-	// attention here for the ticcmd size!
-	// latest demos with mouse aiming byte in ticcmd
-	if (demobuf.p >= demobuf.end - (13 + 9 + 9))
+	if (toobig)
 	{
 		G_CheckDemoStatus(); // no more space
 		return;
