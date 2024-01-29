@@ -108,12 +108,10 @@ static void M_PlaybackTick(void)
 		for (i = playback_viewcount; i <= playback_view4; i++)
 			PAUSE_PlaybackMenu[i].status = IT_DISABLED;
 
-		//PAUSE_PlaybackMenu[playback_moreoptions].mvar1 = 72;
-		//PAUSE_PlaybackMenu[playback_quit].mvar1 = 88;
-		PAUSE_PlaybackMenu[playback_quit].mvar1 = 72;
+		PAUSE_PlaybackMenu[playback_freecam].mvar1 = 72;
+		PAUSE_PlaybackMenu[playback_quit].mvar1 = 88;
 
-		//currentMenu->x = BASEVIDWIDTH/2 - 52;
-		currentMenu->x = BASEVIDWIDTH/2 - 44;
+		currentMenu->x = BASEVIDWIDTH/2 - 52;
 	}
 	else
 	{
@@ -124,9 +122,8 @@ static void M_PlaybackTick(void)
 		for (i = r_splitscreen+1; i < 4; i++)
 			PAUSE_PlaybackMenu[playback_view1+i].status = IT_DISABLED;
 
-		//PAUSE_PlaybackMenu[playback_moreoptions].mvar1 = 156;
-		//PAUSE_PlaybackMenu[playback_quit].mvar1 = 172;
-		PAUSE_PlaybackMenu[playback_quit].mvar1 = 156;
+		PAUSE_PlaybackMenu[playback_freecam].mvar1 = 156;
+		PAUSE_PlaybackMenu[playback_quit].mvar1 = 172;
 
 		//currentMenu->x = BASEVIDWIDTH/2 - 94;
 		currentMenu->x = BASEVIDWIDTH/2 - 88;
