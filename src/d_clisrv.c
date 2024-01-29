@@ -3542,7 +3542,6 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 	CONS_Debug(DBG_NETPLAY, "addplayer: %d %d\n", node, newplayernum);
 
-	G_AddPlayer(newplayernum);
 	//G_SpectatePlayerOnJoin(newplayernum); -- caused desyncs in this spot :(
 
 	if (newplayernum+1 > doomcom->numslots)
@@ -3556,6 +3555,8 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 	console = READUINT8(*p);
 	splitscreenplayer = READUINT8(*p);
+
+	G_AddPlayer(newplayernum, console);
 
 	for (i = 0; i < MAXAVAILABILITY; i++)
 	{
@@ -3592,9 +3593,6 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 	players[newplayernum].splitscreenindex = splitscreenplayer;
 	players[newplayernum].bot = false;
-
-	playerconsole[newplayernum] = console;
-	G_BuildLocalSplitscreenParty(newplayernum);
 
 	if (node == mynode && splitscreenplayer == 0)
 		S_AttemptToRestoreMusic(); // Earliest viable point

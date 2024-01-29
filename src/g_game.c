@@ -2919,12 +2919,15 @@ void G_DoReborn(INT32 playernum)
 
 // These are the barest esentials.
 // This func probably doesn't even need to know if the player is a bot.
-void G_AddPlayer(INT32 playernum)
+void G_AddPlayer(INT32 playernum, INT32 console)
 {
 	CL_ClearPlayer(playernum);
 	G_DestroyParty(playernum);
 
 	playeringame[playernum] = true;
+
+	playerconsole[playernum] = console;
+	G_BuildLocalSplitscreenParty(playernum);
 
 	player_t *newplayer = &players[playernum];
 
