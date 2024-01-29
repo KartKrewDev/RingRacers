@@ -537,7 +537,7 @@ consvar_t cv_maxping = Server("maxdelay", "20").values(CV_Unsigned);
 consvar_t cv_menujam = Server("menujam", "menu").values({{0, "menu"}, {1, "menu2"}, {2, "menu3"}});
 consvar_t cv_menujam_update = Server("menujam_update", "Off").on_off();
 consvar_t cv_netdemosyncquality = Server("netdemo_syncquality", "1").min_max(1, 35);
-consvar_t cv_netdemosize = Server("netdemo_size", "4").values(CV_Natural);
+consvar_t cv_netdemosize = Server("netdemo_size", "6").values(CV_Natural);
 
 void NetTimeout_OnChange(void);
 consvar_t cv_nettimeout = Server("nettimeout", "210").min_max(TICRATE/7, 60*TICRATE).onchange(NetTimeout_OnChange);
