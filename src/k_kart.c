@@ -2984,6 +2984,12 @@ boolean K_WaterSkip(mobj_t *mobj)
 				// Don't allow
 				return false;
 			}
+
+			if (K_PlayerEBrake(mobj->player))
+			{
+				return false;
+			}
+			
 			// Allow
 			break;
 		}
@@ -3891,6 +3897,12 @@ void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UIN
 		return;
 	}
 
+	if (player->exiting)
+	{
+		// The round has already ended, don't mess with points
+		return;
+	}
+
 	if ((inflictor && !P_MobjWasRemoved(inflictor)) && (inflictor->type == MT_BANANA && inflictor->health > 1))
 	{
 		trapItem = true;
@@ -3917,8 +3929,7 @@ void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UIN
 	// Check this before adding to player score
 	if ((gametyperules & GTR_BUMPERS) && finishOff && g_pointlimit <= player->roundscore)
 	{
-		player->roundscore = 100; // Make sure you win!
-		P_DoAllPlayersExit(0, false);
+		K_EndBattleRound(player);
 
 		mobj_t *source = !P_MobjWasRemoved(inflictor) ? inflictor : player->mo;
 
@@ -3931,8 +3942,7 @@ void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UIN
 		);
 	}
 
-	P_AddPlayerScore(player, points);
-	K_SpawnBattlePoints(player, victim, points);
+	K_GivePointsToPlayer(player, victim, points);
 }
 
 void K_SpinPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 type)
@@ -4855,6 +4865,12 @@ void K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount)
 
 	// Play steal sound
 	S_StartSound(player->mo, sfx_3db06);
+}
+
+void K_GivePointsToPlayer(player_t *player, player_t *victim, UINT8 amount)
+{
+	P_AddPlayerScore(player, amount);
+	K_SpawnBattlePoints(player, victim, amount);
 }
 
 #define MINEQUAKEDIST 4096
@@ -5999,6 +6015,9 @@ void K_Squish(mobj_t *mo)
 
 	mo->spriteyscale =
 		FixedDiv(FRACUNIT, mo->spritexscale);
+
+	if (cv_mentalsonic.value && (mo->type == MT_PLAYER || (!P_MobjWasRemoved(mo->target) && mo->target->type == MT_PLAYER)))
+		mo->spriteyscale *= 2;
 }
 
 static mobj_t *K_FindLastTrailMobj(player_t *player)
@@ -7948,7 +7967,7 @@ void K_KartPlayerHUDUpdate(player_t *player)
 	if (player->positiondelay)
 		player->positiondelay--;
 
-	if (!(player->pflags & PF_FAULT))
+	if (!(player->pflags & PF_FAULT || player->pflags & PF_VOID))
 		player->karthud[khud_fault] = 0;
 	else if (player->karthud[khud_fault] > 0 && player->karthud[khud_fault] <= 2*TICRATE)
 		player->karthud[khud_fault]++;
@@ -8733,7 +8752,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->nextringaward = 99; // Next time we need to award superring, spawn the first one instantly.
 	}
 
-	if (player->pflags & PF_VOID) // Returning from FAULT VOID
+	if (player->pflags & PF_VOID && player->mo->hitlag == 0) // Returning from FAULT VOID
 	{
 		player->pflags &= ~PF_VOID;
 		player->mo->renderflags &= ~RF_DONTDRAW;
@@ -13442,7 +13461,7 @@ UINT32 K_PointLimitForGametype(void)
 		{
 			if (D_IsPlayerHumanAndGaming(i))
 			{
-				ptsCap += 4;
+				ptsCap += 3;
 			}
 		}
 

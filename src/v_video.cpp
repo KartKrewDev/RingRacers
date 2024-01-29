@@ -715,6 +715,16 @@ void V_ClearClipRect(void)
 	cliprect.enabled = false;
 }
 
+void V_SaveClipRect(cliprect_t *copy)
+{
+	*copy = cliprect;
+}
+
+void V_RestoreClipRect(const cliprect_t *copy)
+{
+	cliprect = *copy;
+}
+
 static UINT8 hudplusalpha[11]  = { 10,  8,  6,  4,  2,  0,  0,  0,  0,  0,  0};
 static UINT8 hudminusalpha[11] = { 10,  9,  9,  8,  8,  7,  7,  6,  6,  5,  5};
 
@@ -1015,6 +1025,10 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 	}
 #endif
 
+	UINT32 alphalevel;
+	if ((alphalevel = V_GetAlphaLevel(c)) >= 10)
+		return;
+
 	if (!(c & V_NOSCALESTART))
 	{
 		INT32 dupx = vid.dupx, dupy = vid.dupy;
@@ -1081,7 +1095,7 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 
 	g_2d.begin_quad()
 		.patch(nullptr)
-		.color(r / 255.f, g / 255.f, b / 255.f, 1.f)
+		.color(r / 255.f, g / 255.f, b / 255.f, (10 - alphalevel) / 10.f)
 		.rect(x, y, w, h)
 		.done();
 }
@@ -2288,6 +2302,10 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 					break;
 			}
 			break;
+		case MED_FONT:
+			result->chw    = 6;
+			result->spacew = 6;
+			break;
 		case LT_FONT:
 			result->spacew = 12;
 			break;
@@ -2334,6 +2352,7 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 		case TINY_FONT:
 		case TINYTIMER_FONT:
 		case KART_FONT:
+		case MED_FONT:
 			result->lfh = 12;
 			break;
 		case LT_FONT:
@@ -2388,6 +2407,9 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 				result->dim_fn = FixedCharacterDim;
 			else
 				result->dim_fn = BunchedCharacterDim;
+			break;
+		case MED_FONT:
+			result->dim_fn = FixedCharacterDim;
 			break;
 		case GM_FONT:
 			if (result->chw)

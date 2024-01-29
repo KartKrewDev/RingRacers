@@ -173,14 +173,9 @@ void K_CheckBumpers(void)
 	}
 	else if (eliminated >= numingame - 1)
 	{
-		if (kingofthehill != -1)
-		{
-			// If every other player is eliminated, the
-			// last player standing wins by default.
-			players[kingofthehill].roundscore = 100;
-		}
-
-		P_DoAllPlayersExit(0, false);
+		// If every other player is eliminated, the
+		// last player standing wins by default.
+		K_EndBattleRound(kingofthehill != -1 ? &players[kingofthehill] : NULL);
 		return;
 	}
 
@@ -209,14 +204,10 @@ void K_CheckEmeralds(player_t *player)
 		return;
 	}
 
-	if (player->exiting)
+	if (!K_EndBattleRound(player))
 	{
 		return;
 	}
-
-	player->roundscore = 100; // lmao
-
-	P_DoAllPlayersExit(0, false);
 
 	// TODO: this would be better if the timing lived in
 	// Tally code. But I didn't do it that, so this just
@@ -966,6 +957,30 @@ boolean K_BattleOvertimeKiller(mobj_t *mobj)
 	}
 
 	P_KillMobj(mobj, NULL, NULL, DMG_NORMAL);
+
+	return true;
+}
+
+boolean K_EndBattleRound(player_t *victor)
+{
+	if (victor)
+	{
+		if (victor->exiting)
+		{
+			// In Battle, players always exit altogether.
+			// So it can be assumed that if this player is
+			// exiting, the round has already ended.
+			return false;
+		}
+
+		if (gametyperules & GTR_POINTLIMIT)
+		{
+			// Lock the winner in before the round ends.
+			victor->roundscore = 100;
+		}
+	}
+
+	P_DoAllPlayersExit(0, false);
 
 	return true;
 }

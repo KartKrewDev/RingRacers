@@ -89,6 +89,7 @@
 #include "music.h"
 #include "k_dialogue.h"
 #include "k_bans.h"
+#include "k_credits.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h" // 3D View Rendering
@@ -144,8 +145,10 @@ static char *startuppwads[MAX_WADFILES];
 
 boolean devparm = false; // started game with -devparm
 
-boolean singletics = false; // timedemo
+boolean g_singletics = false; // timedemo
 boolean lastdraw = false;
+
+tic_t g_fast_forward = 0;
 
 postimg_t postimgtype[MAXSPLITSCREENPLAYERS];
 INT32 postimgparam[MAXSPLITSCREENPLAYERS];
@@ -630,6 +633,15 @@ static bool D_Display(void)
 					V_DrawCustomFadeScreen(((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), 31-(lt_fade*2));
 				}
 
+				if (demo.attract == DEMO_ATTRACT_CREDITS)
+				{
+					INT32 val = F_CreditsDemoExitFade();
+					if (val >= 0)
+					{
+						V_DrawCustomFadeScreen("FADEMAP0", val);
+					}
+				}
+
 				VID_DisplaySoftwareScreen();
 			}
 
@@ -950,7 +962,7 @@ void D_SRB2Loop(void)
 			rendertimefrac_unpaused = FRACUNIT;
 		}
 
-		if ((interp || doDisplay) && !frameskip)
+		if ((interp || doDisplay) && !frameskip && g_fast_forward == 0)
 		{
 			if (!renderisnewtic)
 				P_ResetInterpHudRandSeed(false);
@@ -1077,7 +1089,7 @@ void D_ClearState(void)
 	memset(displayplayers, 0, sizeof(displayplayers));
 	memset(g_localplayers, 0, sizeof g_localplayers);
 	consoleplayer = 0;
-	demo.title = false;
+	demo.attract = DEMO_ATTRACT_OFF;
 	G_SetGametype(GT_RACE); // SRB2kart
 	paused = false;
 
@@ -1609,6 +1621,9 @@ void D_SRB2Main(void)
 
 #endif //ifndef DEVELOP
 	mainwads++; // shaders.pk3
+
+	// Load credits_def lump
+	F_LoadCreditsDefinitions();
 
 	// Do it before P_InitMapData because PNG patch
 	// conversion sometimes needs the palette

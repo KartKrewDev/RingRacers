@@ -87,6 +87,7 @@ inline Draw::Chain& Draw::Chain::clipx(float left, float right)
 {
 	clipx1_ = left;
 	clipx2_ = right;
+	clip_ = true;
 	return *this;
 }
 
@@ -94,6 +95,13 @@ inline Draw::Chain& Draw::Chain::clipy(float top, float bottom)
 {
 	clipy1_ = top;
 	clipy2_ = bottom;
+	clip_ = true;
+	return *this;
+}
+
+inline Draw::Chain& Draw::Chain::clip(bool yes)
+{
+	clip_ = yes;
 	return *this;
 }
 
@@ -103,19 +111,19 @@ inline Draw::Chain& Draw::Chain::colormap(const UINT8* colormap)
 	return *this;
 }
 
-inline Draw::Chain& Draw::Chain::colormap(skincolornum_t color)
+inline Draw::Chain& Draw::Chain::colormap(UINT16 color)
 {
-	return colormap(R_GetTranslationColormap(TC_DEFAULT, color, GTC_CACHE));
+	return colormap(R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(color), GTC_CACHE));
 }
 
-inline Draw::Chain& Draw::Chain::colormap(INT32 skin, skincolornum_t color)
+inline Draw::Chain& Draw::Chain::colormap(INT32 skin, UINT16 color)
 {
-	return colormap(R_GetTranslationColormap(skin, color, GTC_CACHE));
+	return colormap(R_GetTranslationColormap(skin, static_cast<skincolornum_t>(color), GTC_CACHE));
 }
 
-inline Draw::Chain& Draw::Chain::colorize(skincolornum_t color)
+inline Draw::Chain& Draw::Chain::colorize(UINT16 color)
 {
-	return colormap(R_GetTranslationColormap(TC_RAINBOW, color, GTC_CACHE));
+	return colormap(R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(color), GTC_CACHE));
 }
 
 }; // namespace srb2

@@ -187,6 +187,11 @@ class TiccmdBuilder
 			return;
 		}
 
+		if (player()->mo != NULL && P_MobjIsFrozen(player()->mo))
+		{
+			return;
+		}
+
 		angle_t angleChange = 0;
 
 		while (realtics > 0)

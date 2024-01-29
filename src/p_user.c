@@ -68,6 +68,7 @@
 #include "k_tally.h"
 #include "k_objects.h"
 #include "k_endcam.h"
+#include "k_credits.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_light.h"
@@ -570,7 +571,7 @@ void P_GivePlayerLives(player_t *player, INT32 numlives)
 }
 
 // Adds to the player's score
-void P_AddPlayerScore(player_t *player, UINT32 amount)
+void P_AddPlayerScore(player_t *player, INT32 amount)
 {
 	if (!((gametyperules & GTR_POINTLIMIT)))
 		return;
@@ -578,9 +579,17 @@ void P_AddPlayerScore(player_t *player, UINT32 amount)
 	if (player->exiting) // srb2kart
 		return;
 
+	// Don't underflow.
 	// Don't go above MAXSCORE.
-	if (player->roundscore + amount < MAXSCORE)
+	if (amount < 0 && (UINT32)-amount > player->roundscore)
+		player->roundscore = 0;
+	else if (player->roundscore + amount < MAXSCORE)
+	{
+		if (player->roundscore < g_pointlimit && g_pointlimit <= player->roundscore + amount)
+			HU_DoTitlecardCEchoForDuration(player, "K.O. READY!", true, 5*TICRATE/2);
+
 		player->roundscore += amount;
+	}
 	else
 		player->roundscore = MAXSCORE;
 }
@@ -1271,15 +1280,38 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 
 	player->pflags |= flags;
 
-	const boolean losing = K_IsPlayerLosing(player);
-	const boolean specialout = (specialstageinfo.valid == true && losing == true);
-
 	if (P_IsLocalPlayer(player) && (!player->spectator && !demo.playback))
 	{
 		legitimateexit = true;
 		player->roundconditions.checkthisframe = true;
 		gamedata->deferredconditioncheck = true;
 	}
+
+	player->exiting = 1;
+
+	if (!player->spectator)
+	{
+		ClearFakePlayerSkin(player);
+
+		if ((gametyperules & GTR_CIRCUIT)) // Special Race-like handling
+		{
+			K_UpdateAllPlayerPositions();
+
+			if (P_CheckRacers() && !exitcountdown)
+			{
+				G_BeginLevelExit();
+			}
+		}
+		else if (!exitcountdown) // All other gametypes
+		{
+			G_BeginLevelExit();
+		}
+	}
+
+	const boolean losing = K_IsPlayerLosing(player); // HEY!!!! Set it AFTER K_UpdateAllPlayerPositions!!!!
+	const boolean specialout = (specialstageinfo.valid == true && losing == true);
+
+	K_UpdatePowerLevelsFinalize(player, false);
 
 	if (G_GametypeUsesLives() && losing)
 	{
@@ -1293,12 +1325,8 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 		musiccountdown = MUSIC_COUNTDOWN_MAX;
 	}
 
-	player->exiting = 1;
-
 	if (!player->spectator)
 	{
-		ClearFakePlayerSkin(player);
-
 		if (!(gametyperules & GTR_SPHERES))
 		{
 			player->hudrings = RINGTOTAL(player);
@@ -1319,20 +1347,6 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 					player->xtralife = (extra - oldExtra);
 				}
 			}
-		}
-
-		if ((gametyperules & GTR_CIRCUIT)) // Special Race-like handling
-		{
-			K_UpdateAllPlayerPositions();
-
-			if (P_CheckRacers() && !exitcountdown)
-			{
-				G_BeginLevelExit();
-			}
-		}
-		else if (!exitcountdown) // All other gametypes
-		{
-			G_BeginLevelExit();
 		}
 
 		if (specialstageinfo.valid == true && losing == false && P_MobjWasRemoved(player->mo) == false)
@@ -1392,6 +1406,7 @@ void P_DoAllPlayersExit(pflags_t flags, boolean trygivelife)
 		{
 			continue;
 		}
+
 		if (players[i].exiting)
 		{
 			continue;
@@ -3181,7 +3196,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 	mo = player->mo;
 
-	if (P_MobjIsFrozen(mo) || player->playerstate == PST_DEAD)
+	if (P_MobjIsFrozen(mo) || player->playerstate == PST_DEAD || F_CreditsDemoExitFade() >= 0)
 	{
 		// Do not move the camera while in hitlag!
 		// The camera zooming out after you got hit makes it hard to focus on the vibration.
@@ -3816,7 +3831,7 @@ void P_DoTimeOver(player_t *player)
 	}
 
 	player->pflags |= PF_NOCONTEST;
-	K_UpdatePowerLevelsOnFailure(player);
+	K_UpdatePowerLevelsFinalize(player, false);
 
 	if (G_GametypeUsesLives())
 	{
@@ -3994,6 +4009,11 @@ DoABarrelRoll (player_t *player)
 
 	fixed_t smoothing;
 
+	if (player->exiting || F_CreditsDemoExitFade() >= 0)
+	{
+		return;
+	}
+
 	if (player->loop.radius)
 	{
 		return;
@@ -4002,11 +4022,6 @@ DoABarrelRoll (player_t *player)
 	if (player->respawn.state != RESPAWNST_NONE)
 	{
 		player->tilt = 0;
-		return;
-	}
-
-	if (player->exiting)
-	{
 		return;
 	}
 

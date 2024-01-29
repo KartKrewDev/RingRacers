@@ -8259,9 +8259,14 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	P_InitLevelSettings();
 
-	if (!demo.title)
+	if (demo.attract != DEMO_ATTRACT_TITLE)
 	{
 		Music_Stop("title");
+	}
+
+	if (demo.attract != DEMO_ATTRACT_CREDITS)
+	{
+		Music_Stop("credits");
 	}
 
 	for (i = 0; i <= r_splitscreen; i++)
@@ -8378,7 +8383,11 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 				FixedDiv((F_GetWipeLength(wipedefs[wipe_level_toblack])-2)*NEWTICRATERATIO, NEWTICRATE), MUSICRATE));
 #endif
 
-		if (K_PodiumSequence())
+		if (demo.attract)
+		{
+			; // Leave the music alone! We're already playing what we want!
+		}
+		else if (K_PodiumSequence())
 		{
 			// mapmusrng is set by local player position in K_ResetCeremony
 			P_LoadLevelMusic();

@@ -12,6 +12,7 @@
 /// \brief BSP traversal, handling of LineSegs for rendering
 
 #include <algorithm>
+#include <vector>
 
 #include <tracy/tracy/Tracy.hpp>
 
@@ -31,7 +32,7 @@
 
 #include "k_terrain.h"
 
-extern "C" consvar_t cv_debugfinishline;
+extern "C" consvar_t cv_debugfinishline, cv_debugrender_freezebsp;
 
 seg_t *curline;
 side_t *sidedef;
@@ -52,6 +53,9 @@ INT32 doorclosed;
 // A wall was drawn covering the whole screen, which means we
 // can block off the BSP across that seg.
 boolean g_walloffscreen;
+
+static std::vector<std::vector<INT32>> node_cache;
+static std::vector<INT32>* current_node_cache;
 
 boolean R_NoEncore(sector_t *sector, levelflat_t *flat, boolean ceiling)
 {
@@ -1420,5 +1424,46 @@ void R_RenderBSPNode(INT32 bspnum)
 		portalcullsector = NULL;
 	}
 
-	R_Subsector(bspnum == -1 ? 0 : bspnum & ~NF_SUBSECTOR);
+	bspnum = (bspnum == -1 ? 0 : bspnum & ~NF_SUBSECTOR);
+	R_Subsector(bspnum);
+
+	if (current_node_cache)
+	{
+		current_node_cache->push_back(bspnum);
+	}
+}
+
+static bool render_cache(size_t cachenum)
+{
+	if (node_cache.empty() && !cv_debugrender_freezebsp.value)
+	{
+		current_node_cache = nullptr;
+		return false;
+	}
+
+	if (!cv_debugrender_freezebsp.value)
+	{
+		// free cache
+		node_cache = {};
+		current_node_cache = nullptr;
+		return false;
+	}
+
+	if (node_cache.size() <= cachenum)
+	{
+		node_cache.resize(cachenum + 1);
+		current_node_cache = &node_cache[cachenum];
+		return false;
+	}
+
+	for (INT32 bspnum : node_cache[cachenum])
+		R_Subsector(bspnum);
+
+	return true;
+}
+
+void R_RenderFirstBSPNode(size_t cachenum)
+{
+	if (!render_cache(cachenum))
+		R_RenderBSPNode((INT32)numnodes - 1);
 }

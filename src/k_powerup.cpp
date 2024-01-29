@@ -6,6 +6,8 @@
 #include "k_objects.h"
 #include "k_powerup.h"
 #include "k_hud.h" // K_AddMessage
+#include "p_mobj.h"
+#include "s_sound.h"
 
 tic_t K_PowerUpRemaining(const player_t* player, kartitems_t powerup)
 {
@@ -85,6 +87,16 @@ void K_GivePowerUp(player_t* player, kartitems_t powerup, tic_t time)
 		else
 		{
 			Obj_SpawnSuperFlickySwarm(player, time);
+		}
+		break;
+
+	case POWERUP_POINTS:
+		K_AddMessageForPlayer(player, "Got 6 POINTS!", true, false);
+		K_GivePointsToPlayer(player, nullptr, 6);
+
+		if (!P_MobjWasRemoved(player->mo))
+		{
+			S_StartSound(player->mo, sfx_token);
 		}
 		break;
 

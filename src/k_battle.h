@@ -53,6 +53,7 @@ void K_BattleInit(boolean singleplayercontext);
 UINT8 K_Bumpers(player_t *player);
 INT32 K_BumpersToHealth(UINT8 bumpers);
 boolean K_BattleOvertimeKiller(mobj_t *mobj);
+boolean K_EndBattleRound(player_t *victor);
 
 #ifdef __cplusplus
 } // extern "C"

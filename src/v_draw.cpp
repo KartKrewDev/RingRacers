@@ -251,18 +251,23 @@ void Chain::sticker(patch_t* end_graphic, UINT8 color) const
 
 Chain::Clipper::Clipper(const Chain& chain)
 {
-	V_SetClipRect(
-		FloatToFixed(chain.clipx1_),
-		FloatToFixed(chain.clipy1_),
-		FloatToFixed(chain.clipx2_ - chain.clipx1_),
-		FloatToFixed(chain.clipy2_ - chain.clipy1_),
-		chain.flags_
-	);
+	V_SaveClipRect(&save_);
+
+	if (chain.clip_)
+	{
+		V_SetClipRect(
+			FloatToFixed(chain.clipx1_),
+			FloatToFixed(chain.clipy1_),
+			FloatToFixed(chain.clipx2_ - chain.clipx1_),
+			FloatToFixed(chain.clipy2_ - chain.clipy1_),
+			chain.flags_
+		);
+	}
 }
 
 Chain::Clipper::~Clipper()
 {
-	V_ClearClipRect();
+	V_RestoreClipRect(&save_);
 }
 
 patch_t* Draw::cache_patch(const char* name)
@@ -300,6 +305,9 @@ int Draw::font_to_fontno(Font font)
 
 	case Font::kMenu:
 		return MENU_FONT;
+
+	case Font::kMedium:
+		return MED_FONT;
 	}
 
 	return TINY_FONT;

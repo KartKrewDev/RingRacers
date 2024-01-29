@@ -3539,10 +3539,10 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 			}
 			else if (fastcmp(word, "CREDITSCUTSCENE"))
 			{
-				creditscutscene = (UINT8)get_number(word2);
+				g_credits_cutscene = (UINT8)get_number(word2);
 				// range check, you morons.
-				if (creditscutscene > 128)
-					creditscutscene = 128;
+				if (g_credits_cutscene > 128)
+					g_credits_cutscene = 128;
 			}
 			else if (fastcmp(word, "USESEAL"))
 			{

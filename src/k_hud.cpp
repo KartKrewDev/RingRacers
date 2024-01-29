@@ -130,36 +130,36 @@ static patch_t *kp_wantedsplit;
 static patch_t *kp_wantedreticle;
 static patch_t *kp_minimapdot;
 
-static patch_t *kp_itembg[4];
+static patch_t *kp_itembg[6];
 static patch_t *kp_ringbg[4];
 static patch_t *kp_itemtimer[2];
 static patch_t *kp_itemmulsticker[2];
 static patch_t *kp_itemx;
 
-static patch_t *kp_sadface[2];
-static patch_t *kp_sneaker[2];
-static patch_t *kp_rocketsneaker[2];
-static patch_t *kp_invincibility[13];
-static patch_t *kp_banana[2];
-static patch_t *kp_eggman[2];
-static patch_t *kp_orbinaut[5];
-static patch_t *kp_jawz[2];
-static patch_t *kp_mine[2];
-static patch_t *kp_landmine[2];
-static patch_t *kp_ballhog[2];
-static patch_t *kp_selfpropelledbomb[2];
-static patch_t *kp_grow[2];
-static patch_t *kp_shrink[2];
-static patch_t *kp_lightningshield[2];
-static patch_t *kp_bubbleshield[2];
-static patch_t *kp_flameshield[2];
-static patch_t *kp_hyudoro[2];
-static patch_t *kp_pogospring[2];
-static patch_t *kp_superring[2];
-static patch_t *kp_kitchensink[2];
-static patch_t *kp_droptarget[2];
-static patch_t *kp_gardentop[2];
-static patch_t *kp_gachabom[2];
+static patch_t *kp_sadface[3];
+static patch_t *kp_sneaker[3];
+static patch_t *kp_rocketsneaker[3];
+static patch_t *kp_invincibility[19];
+static patch_t *kp_banana[3];
+static patch_t *kp_eggman[3];
+static patch_t *kp_orbinaut[6];
+static patch_t *kp_jawz[3];
+static patch_t *kp_mine[3];
+static patch_t *kp_landmine[3];
+static patch_t *kp_ballhog[3];
+static patch_t *kp_selfpropelledbomb[3];
+static patch_t *kp_grow[3];
+static patch_t *kp_shrink[3];
+static patch_t *kp_lightningshield[3];
+static patch_t *kp_bubbleshield[3];
+static patch_t *kp_flameshield[3];
+static patch_t *kp_hyudoro[3];
+static patch_t *kp_pogospring[3];
+static patch_t *kp_superring[3];
+static patch_t *kp_kitchensink[3];
+static patch_t *kp_droptarget[3];
+static patch_t *kp_gardentop[3];
+static patch_t *kp_gachabom[3];
 static patch_t *kp_bar[2];
 static patch_t *kp_doublebar[2];
 static patch_t *kp_triplebar[2];
@@ -612,6 +612,40 @@ void K_LoadKartHUDGraphics(void)
 		buffer[7] = '0'+((i+1)%10);
 		HU_UpdatePatch(&kp_flameshieldmeter_bg[i][1], "%s", buffer);
 	}
+
+	// 4P item spy
+	HU_UpdatePatch(&kp_itembg[4], "ISPYBG");
+	HU_UpdatePatch(&kp_itembg[5], "ISPYBGD");
+
+	//HU_UpdatePatch(&kp_sadface[2], "ISPYSAD");
+	HU_UpdatePatch(&kp_sneaker[2], "ISPYSHOE");
+	HU_UpdatePatch(&kp_rocketsneaker[2], "ISPYRSHE");
+	sprintf(buffer, "ISPYINVx");
+	for (i = 0; i < 6; i++)
+	{
+		buffer[7] = '1'+i;
+		HU_UpdatePatch(&kp_invincibility[i+13], "%s", buffer);
+	}
+	HU_UpdatePatch(&kp_banana[2], "ISPYBANA");
+	HU_UpdatePatch(&kp_eggman[2], "ISPYEGGM");
+	HU_UpdatePatch(&kp_orbinaut[5], "ISPYORBN");
+	HU_UpdatePatch(&kp_jawz[2], "ISPYJAWZ");
+	HU_UpdatePatch(&kp_mine[2], "ISPYMINE");
+	HU_UpdatePatch(&kp_landmine[2], "ISPYLNDM");
+	HU_UpdatePatch(&kp_ballhog[2], "ISPYBHOG");
+	HU_UpdatePatch(&kp_selfpropelledbomb[2], "ISPYSPB");
+	HU_UpdatePatch(&kp_grow[2], "ISPYGROW");
+	HU_UpdatePatch(&kp_shrink[2], "ISPYSHRK");
+	HU_UpdatePatch(&kp_lightningshield[2], "ISPYTHNS");
+	HU_UpdatePatch(&kp_bubbleshield[2], "ISPYBUBS");
+	HU_UpdatePatch(&kp_flameshield[2], "ISPYFLMS");
+	HU_UpdatePatch(&kp_hyudoro[2], "ISPYHYUD");
+	HU_UpdatePatch(&kp_pogospring[2], "ISPYPOGO");
+	HU_UpdatePatch(&kp_superring[2], "ISPYRING");
+	HU_UpdatePatch(&kp_kitchensink[2], "ISPYSINK");
+	HU_UpdatePatch(&kp_droptarget[2], "ISPYDTRG");
+	HU_UpdatePatch(&kp_gardentop[2], "ISPYGTOP");
+	HU_UpdatePatch(&kp_gachabom[2], "ISPYGBOM");
 
 	// CHECK indicators
 	sprintf(buffer, "K_CHECKx");
@@ -1325,7 +1359,7 @@ void K_DrawLikeMapThumbnail(fixed_t x, fixed_t y, fixed_t width, UINT32 flags, p
 	);
 }
 
-// see also MT_PLAYERARROW mobjthinker in p_mobj.c
+// see also K_DrawNameTagItemSpy
 static void K_drawKartItem(void)
 {
 	// ITEM_X = BASEVIDWIDTH-50;	// 270
@@ -1965,14 +1999,14 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 
 			if (gamedata->collected[(stickermedalinfo.emblems[i]-emblemlocations)])
 			{
-				V_DrawSmallMappedPatch(workx, worky, splitflags,
+				V_DrawMappedPatch(workx, worky, splitflags,
 					static_cast<patch_t*>(W_CachePatchName(M_GetEmblemPatch(stickermedalinfo.emblems[i], false), PU_CACHE)),
 					R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(stickermedalinfo.emblems[i]), GTC_CACHE)
 				);
 			}
 			else
 			{
-				V_DrawSmallMappedPatch(workx, worky, splitflags,
+				V_DrawMappedPatch(workx, worky, splitflags,
 					static_cast<patch_t*>(W_CachePatchName("NEEDIT", PU_CACHE)),
 					NULL
 				);
@@ -3207,6 +3241,7 @@ static void K_drawKartSpeedometer(boolean gametypeinfoshown)
 static void K_drawBlueSphereMeter(boolean gametypeinfoshown)
 {
 	const UINT8 maxBars = 4;
+	// see also K_DrawNameTagSphereMeter
 	const UINT8 segColors[] = {73, 64, 52, 54, 55, 35, 34, 33, 202, 180, 181, 182, 164, 165, 166, 153, 152};
 	const UINT8 sphere = std::clamp(static_cast<int>(stplyr->spheres), 0, 40);
 
@@ -3675,28 +3710,101 @@ static void K_DrawRivalTagForPlayer(fixed_t x, fixed_t y)
 	V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN, kp_rival[blink], NULL);
 }
 
-static void K_DrawTypingDot(fixed_t x, fixed_t y, UINT8 duration, player_t *p)
+static void K_DrawTypingDot(fixed_t x, fixed_t y, UINT8 duration, player_t *p, INT32 flags)
 {
 	if (p->typing_duration > duration)
 	{
-		V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN, kp_typdot, NULL);
+		V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN|flags, kp_typdot, NULL);
 	}
 }
 
-static void K_DrawTypingNotifier(fixed_t x, fixed_t y, player_t *p)
+static void K_DrawTypingNotifier(fixed_t x, fixed_t y, player_t *p, INT32 flags)
 {
 	if (p->cmd.flags & TICCMD_TYPING)
 	{
-		V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN, kp_talk, NULL);
+		V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN|flags, kp_talk, NULL);
 
 		/* spacing closer with the last two looks a better most of the time */
-		K_DrawTypingDot(x + 3*FRACUNIT,              y, 15, p);
-		K_DrawTypingDot(x + 6*FRACUNIT - FRACUNIT/3, y, 31, p);
-		K_DrawTypingDot(x + 9*FRACUNIT - FRACUNIT/3, y, 47, p);
+		K_DrawTypingDot(x + 3*FRACUNIT,              y, 15, p, flags);
+		K_DrawTypingDot(x + 6*FRACUNIT - FRACUNIT/3, y, 31, p, flags);
+		K_DrawTypingDot(x + 9*FRACUNIT - FRACUNIT/3, y, 47, p, flags);
 	}
 }
 
-static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p)
+// see also K_drawKartItem
+static void K_DrawNameTagItemSpy(INT32 x, INT32 y, player_t *p, INT32 flags)
+{
+	using srb2::Draw;
+	bool tiny = r_splitscreen > 1;
+	Draw bar = Draw(x, y).flags(V_NOSCALESTART|flags);
+	Draw box = tiny ? bar.xy(-22 * vid.dupx, -17 * vid.dupy) : bar.xy(-40 * vid.dupx, -26 * vid.dupy);
+
+	box.colorize(p->skincolor).patch(kp_itembg[tiny ? 4 : 2]);
+
+	if (!(p->itemflags & IF_ITEMOUT) || (leveltime & 1))
+	{
+		switch (p->itemtype)
+		{
+		case KITEM_INVINCIBILITY:
+			box.patch(kp_invincibility[((leveltime % (6*3)) / 3) + (tiny ? 13 : 7)]);
+			break;
+
+		case KITEM_ORBINAUT:
+			box.patch(kp_orbinaut[4 + tiny]);
+			break;
+
+		default:
+			if (patch_t *ico = K_GetCachedItemPatch(p->itemtype, 1 + tiny))
+			{
+				box.patch(ico);
+			}
+		}
+	}
+
+	if (p->itemamount > 1)
+	{
+		(tiny ?
+			bar.xy(-3 * vid.dupx, -4 * vid.dupy).font(Draw::Font::kPing) :
+			bar.xy(-4 * vid.dupx, -2 * vid.dupy).font(Draw::Font::kThinTimer)
+		)
+			.align(Draw::Align::kRight)
+			.text("{}", p->itemamount);
+	}
+}
+
+static void K_DrawNameTagSphereMeter(INT32 x, INT32 y, INT32 width, INT32 spheres, INT32 flags)
+{
+	using srb2::Draw;
+	Draw bar = Draw(x + vid.dupx, y).flags(V_NOSCALESTART).height(vid.dupy);
+
+	// see also K_drawBlueSphereMeter
+	const UINT8 segColors[] = {73, 64, 52, 54, 55, 35, 34, 33, 202, 180, 181, 182, 164, 165, 166, 153, 152};
+
+	spheres = std::clamp(spheres, 0, 40);
+	int colorIndex = (spheres * sizeof segColors) / (40 + 1);
+
+	int px = r_splitscreen > 1 ? 1 : 2;
+	int b = 10 * px;
+	int m = spheres * px;
+
+	while (m > 0)
+	{
+		if (b > m)
+			b = m;
+
+		Draw seg = bar.width(b);
+
+		seg.fill(segColors[std::max(colorIndex - 1, 0)]);
+		seg.y(vid.dupy).fill(segColors[std::max(colorIndex - 2, 0)]);
+		seg.y(2 * vid.dupy).height(2 * vid.dupy).fill(segColors[colorIndex]);
+		seg.y(4 * vid.dupy).fill(31);
+
+		bar = bar.x(b + vid.dupx);
+		m -= b;
+	}
+}
+
+static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p, INT32 flags)
 {
 	const INT32 clr = skincolors[p->skincolor].chatcolor;
 	const INT32 namelen = V_ThinStringWidth(player_names[p - players], 0);
@@ -3738,16 +3846,76 @@ static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p)
 		bary += (vid.height - (BASEVIDHEIGHT * vid.dupy)) / 2;
 	}
 
+	// see also K_CullTargetList
+	if ((gametyperules & GTR_ITEMARROWS) && p->itemtype != KITEM_NONE && p->itemamount != 0)
+	{
+		K_DrawNameTagItemSpy(barx, bary, p, flags);
+	}
+
+	if (gametyperules & GTR_SPHERES)
+	{
+		K_DrawNameTagSphereMeter(barx, bary + (4 * vid.dupy), barw, p->spheres, flags);
+	}
+
 	// Lat: 10/06/2020: colormap can be NULL on the frame you join a game, just arbitrarily use palette indexes 31 and 0 instead of whatever the colormap would give us instead to avoid crashes.
-	V_DrawFill(barx, bary, barw, (3 * vid.dupy), (colormap ? colormap[31] : 31)|V_NOSCALESTART);
-	V_DrawFill(barx, bary + vid.dupy, barw, vid.dupy, (colormap ? colormap[0] : 0)|V_NOSCALESTART);
+	V_DrawFill(barx, bary, barw, (3 * vid.dupy), (colormap ? colormap[31] : 31)|V_NOSCALESTART|flags);
+	V_DrawFill(barx, bary + vid.dupy, barw, vid.dupy, (colormap ? colormap[0] : 0)|V_NOSCALESTART|flags);
 	// END DRAWFILL DUMBNESS
 
 	// Draw the stem
-	V_DrawFixedPatch(x, y, FRACUNIT, 0, kp_nametagstem, colormap);
+	V_DrawFixedPatch(x, y, FRACUNIT, flags, kp_nametagstem, colormap);
 
 	// Draw the name itself
-	V_DrawThinStringAtFixed(x + (5*FRACUNIT), y - (26*FRACUNIT), clr, player_names[p - players]);
+	V_DrawThinStringAtFixed(x + (5*FRACUNIT), y - (26*FRACUNIT), clr|flags, player_names[p - players]);
+}
+
+playertagtype_t K_WhichPlayerTag(player_t *p)
+{
+	UINT8 cnum = R_GetViewNumber();
+
+	if (!(demo.playback == true && camera[cnum].freecam == true) && P_IsDisplayPlayer(p) &&
+		p != &players[displayplayers[cnum]])
+	{
+		return PLAYERTAG_LOCAL;
+	}
+	else if (p->bot)
+	{
+		if (p->botvars.rival == true)
+		{
+			return PLAYERTAG_RIVAL;
+		}
+	}
+	else if (netgame || demo.playback)
+	{
+		if (K_ShowPlayerNametag(p) == true)
+		{
+			return PLAYERTAG_NAME;
+		}
+	}
+
+	return PLAYERTAG_NONE;
+}
+
+void K_DrawPlayerTag(fixed_t x, fixed_t y, player_t *p, playertagtype_t type, INT32 flags)
+{
+	switch (type)
+	{
+	case PLAYERTAG_LOCAL:
+		K_DrawLocalTagForPlayer(x, y, p, G_PartyPosition(p - players));
+		break;
+
+	case PLAYERTAG_RIVAL:
+		K_DrawRivalTagForPlayer(x, y);
+		break;
+
+	case PLAYERTAG_NAME:
+		K_DrawNameTagForPlayer(x, y, p, flags);
+		K_DrawTypingNotifier(x, y, p, flags);
+		break;
+
+	default:
+		break;
+	}
 }
 
 typedef struct weakspotdraw_t
@@ -3789,12 +3957,8 @@ static void K_DrawWeakSpot(weakspotdraw_t *ws)
 
 static void K_drawKartNameTags(void)
 {
-	const fixed_t maxdistance = 8192*mapobjectscale;
 	vector3_t c;
 	UINT8 cnum = R_GetViewNumber();
-	UINT8 tobesorted[MAXPLAYERS];
-	fixed_t sortdist[MAXPLAYERS];
-	UINT8 sortlen = 0;
 	size_t i, j;
 
 	if (stplyr == NULL || stplyr->mo == NULL || P_MobjWasRemoved(stplyr->mo))
@@ -3912,141 +4076,6 @@ static void K_drawKartNameTags(void)
 	}
 
 	K_drawTargetHUD(&c, stplyr);
-
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		player_t *ntplayer = &players[i];
-		fixed_t distance = maxdistance+1;
-		vector3_t v;
-
-		if (!playeringame[i] || ntplayer->spectator)
-		{
-			// Not in-game
-			continue;
-		}
-
-		if (ntplayer->mo == NULL || P_MobjWasRemoved(ntplayer->mo))
-		{
-			// No object
-			continue;
-		}
-
-		if (ntplayer->mo->renderflags & K_GetPlayerDontDrawFlag(stplyr))
-		{
-			// Invisible on this screen
-			continue;
-		}
-
-		if (!P_CheckSight(stplyr->mo, ntplayer->mo))
-		{
-			// Can't see
-			continue;
-		}
-
-		v.x = R_InterpolateFixed(ntplayer->mo->old_x, ntplayer->mo->x);
-		v.y = R_InterpolateFixed(ntplayer->mo->old_y, ntplayer->mo->y);
-		v.z = R_InterpolateFixed(ntplayer->mo->old_z, ntplayer->mo->z);
-
-		if (!(ntplayer->mo->eflags & MFE_VERTICALFLIP))
-		{
-			v.z += ntplayer->mo->height;
-		}
-
-		distance = R_PointToDist2(c.x, c.y, v.x, v.y);
-
-		if (distance > maxdistance)
-		{
-			// Too far away
-			continue;
-		}
-
-		tobesorted[sortlen] = ntplayer - players;
-		sortdist[sortlen] = distance;
-		sortlen++;
-	}
-
-	if (sortlen > 0)
-	{
-		UINT8 sortedplayers[MAXPLAYERS];
-
-		for (i = 0; i < sortlen; i++)
-		{
-			UINT8 pos = 0;
-
-			for (j = 0; j < sortlen; j++)
-			{
-				if (j == i)
-				{
-					continue;
-				}
-
-				if (sortdist[i] < sortdist[j]
-				|| (sortdist[i] == sortdist[j] && i > j))
-				{
-					pos++;
-				}
-			}
-
-			sortedplayers[pos] = tobesorted[i];
-		}
-
-		for (i = 0; i < sortlen; i++)
-		{
-			trackingResult_t result;
-			player_t *ntplayer = &players[sortedplayers[i]];
-
-			fixed_t headOffset = 36*ntplayer->mo->scale;
-
-			SINT8 localindicator = -1;
-			vector3_t v;
-
-			v.x = R_InterpolateFixed(ntplayer->mo->old_x, ntplayer->mo->x);
-			v.y = R_InterpolateFixed(ntplayer->mo->old_y, ntplayer->mo->y);
-			v.z = R_InterpolateFixed(ntplayer->mo->old_z, ntplayer->mo->z);
-
-			v.z += (ntplayer->mo->height / 2);
-
-			if (stplyr->mo->eflags & MFE_VERTICALFLIP)
-			{
-				v.z -= headOffset;
-			}
-			else
-			{
-				v.z += headOffset;
-			}
-
-			K_ObjectTracking(&result, &v, false);
-
-			if (result.onScreen == true)
-			{
-				if (!(demo.playback == true && camera[cnum].freecam == true) && P_IsDisplayPlayer(ntplayer) &&
-						ntplayer != &players[displayplayers[cnum]])
-				{
-					localindicator = G_PartyPosition(ntplayer - players);
-				}
-
-				if (localindicator >= 0)
-				{
-					K_DrawLocalTagForPlayer(result.x, result.y, ntplayer, localindicator);
-				}
-				else if (ntplayer->bot)
-				{
-					if (ntplayer->botvars.rival == true)
-					{
-						K_DrawRivalTagForPlayer(result.x, result.y);
-					}
-				}
-				else if (netgame || demo.playback)
-				{
-					if (K_ShowPlayerNametag(ntplayer) == true)
-					{
-						K_DrawNameTagForPlayer(result.x, result.y, ntplayer);
-						K_DrawTypingNotifier(result.x, result.y, ntplayer);
-					}
-				}
-			}
-		}
-	}
 
 	V_ClearClipRect();
 }
@@ -5230,6 +5259,11 @@ static void K_drawChallengerScreen(void)
 
 static void K_drawLapStartAnim(void)
 {
+	if (demo.attract == DEMO_ATTRACT_CREDITS)
+	{
+		return;
+	}
+
 	// This is an EVEN MORE insanely complicated animation.
 	const UINT8 t = stplyr->karthud[khud_lapanimation];
 	const UINT8 progress = 80 - t;
@@ -5816,7 +5850,7 @@ void K_TickMessages()
 static void K_DrawMessageFeed(void)
 {
 	int i;
-	for (i = 0; i <= splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
 		messagestate_t state = messagestates[i];
 
@@ -5844,7 +5878,7 @@ static void K_DrawMessageFeed(void)
 		UINT8 x = 160;
 		UINT8 y = 10;
 		SINT8 shift = 0;
-		if (splitscreen >= 2)
+		if (r_splitscreen >= 2)
 		{
 			text.font(Draw::Font::kThin);
 			shift = -2;
@@ -5858,7 +5892,7 @@ static void K_DrawMessageFeed(void)
 			if (i >= 2)
 				y += BASEVIDHEIGHT / 2;
 		}
-		else if (splitscreen >= 1)
+		else if (r_splitscreen >= 1)
 		{
 			y = 5;
 
@@ -5899,7 +5933,7 @@ void K_drawKartHUD(void)
 			K_drawEmeraldWin(false);
 	}
 
-	if (!demo.title)
+	if (!demo.attract)
 	{
 		// Draw the CHECK indicator before the other items, so it's overlapped by everything else
 		if (LUA_HudEnabled(hud_check))	// delete lua when?
@@ -5923,7 +5957,7 @@ void K_drawKartHUD(void)
 			K_drawKartMinimap();
 	}
 
-	if (demo.title)
+	if (demo.attract)
 		;
 	else if (gametype == GT_TUTORIAL)
 	{
@@ -5973,19 +6007,22 @@ void K_drawKartHUD(void)
 
 	if (!stplyr->spectator && !freecam) // Bottom of the screen elements, don't need in spectate mode
 	{
-		if (demo.title) // Draw title logo instead in demo.titles
+		if (demo.attract)
 		{
-			INT32 x = BASEVIDWIDTH - 8, y = BASEVIDHEIGHT-8, snapflags = V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SLIDEIN;
-			patch_t *pat = static_cast<patch_t*>(W_CachePatchName((cv_alttitle.value ? "MTSJUMPR1" : "MTSBUMPR1"), PU_CACHE));
-
-			if (r_splitscreen == 3)
+			if (demo.attract == DEMO_ATTRACT_TITLE) // Draw logo on title screen demos
 			{
-				x = BASEVIDWIDTH/2;
-				y = BASEVIDHEIGHT/2;
-				snapflags = 0;
-			}
+				INT32 x = BASEVIDWIDTH - 8, y = BASEVIDHEIGHT-8, snapflags = V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SLIDEIN;
+				patch_t *pat = static_cast<patch_t*>(W_CachePatchName((cv_alttitle.value ? "MTSJUMPR1" : "MTSBUMPR1"), PU_CACHE));
 
-			V_DrawScaledPatch(x-(SHORT(pat->width)), y-(SHORT(pat->height)), snapflags, pat);
+				if (r_splitscreen == 3)
+				{
+					x = BASEVIDWIDTH/2;
+					y = BASEVIDHEIGHT/2;
+					snapflags = 0;
+				}
+
+				V_DrawScaledPatch(x-(SHORT(pat->width)), y-(SHORT(pat->height)), snapflags, pat);
+			}
 		}
 		else
 		{

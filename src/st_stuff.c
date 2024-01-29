@@ -749,7 +749,7 @@ patch_t *ST_getRoundPicture(boolean small)
 //
 void ST_runTitleCard(void)
 {
-	boolean run = !(paused || P_AutoPause());
+	boolean run = !(paused || P_AutoPause() || g_fast_forward > 0);
 	INT32 auxticker;
 	boolean doroundicon = (ST_getRoundPicture(false) != NULL);
 
@@ -1246,7 +1246,7 @@ static void ST_overlayDrawer(void)
 	{
 		if (cv_showviewpointtext.value)
 		{
-			if (!demo.title && !P_IsLocalPlayer(stplyr) && !camera[viewnum].freecam)
+			if (!demo.attract && !P_IsLocalPlayer(stplyr) && !camera[viewnum].freecam)
 			{
 				if (!r_splitscreen)
 				{

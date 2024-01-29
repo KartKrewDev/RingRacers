@@ -208,6 +208,7 @@ CV_PossibleValue_t kartdebugitem_cons_t[] =
 	{POWERUP_BUMPER, "Bumper"},
 	{POWERUP_BADGE, "Badge"},
 	{POWERUP_SUPERFLICKY, "SuperFlicky"},
+	{POWERUP_POINTS, "Points"},
 	{0}
 };
 
@@ -6067,6 +6068,8 @@ static void Got_Cheat(UINT8 **cp, INT32 playernum)
 		case CHEAT_GIVEPOWERUP: {
 			UINT8 powerup = READUINT8(*cp);
 			UINT16 time = READUINT16(*cp);
+
+			powerup = min(powerup, LASTPOWERUP);
 
 			// FIXME: we should have actual KITEM_ name array
 			const char *powerupname = cv_kartdebugitem.PossibleValue[

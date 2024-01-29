@@ -129,7 +129,9 @@ static void M_StartCup(UINT8 entry)
 	SV_StartSinglePlayerServer(levellist.newgametype, levellist.netgame);
 
 	M_ClearMenus(true);
+
 	restoreMenu = &PLAY_CupSelectDef;
+	restorelevellist = levellist;
 
 	if (entry < roundqueue.size)
 	{
@@ -265,12 +267,21 @@ void M_CupSelectHandler(INT32 choice)
 
 		M_SetMenuDelay(pid);
 
+		if (!newcup)
+		{
+			S_StartSound(NULL, sfx_s3kb2);
+			return;
+		}
+
 		levellist.levelsearch.cup = newcup;
 		count = M_CountLevelsToShowInList(&levellist.levelsearch);
 
-		if ((!newcup)
-			|| (count == 0)
-			|| (cupgrid.grandprix == true && newcup->cachedlevels[0] == NEXTMAP_INVALID))
+		if (count == 0
+			|| (
+				cupgrid.grandprix == true
+				&& newcup->cachedlevels[0] == NEXTMAP_INVALID
+			)
+		)
 		{
 			S_StartSound(NULL, sfx_s3kb2);
 			return;
@@ -300,7 +311,7 @@ void M_CupSelectHandler(INT32 choice)
 		else if (count == 1 && levellist.levelsearch.timeattack == true)
 		{
 			currentMenu->transitionID = PLAY_TimeAttackDef.transitionID+1;
-			M_LevelSelected(0);
+			M_LevelSelected(0, true);
 		}
 		else
 		{

@@ -105,7 +105,8 @@ void R_CalculateSlopeVectors(drawspandata_t* ds);
 // Sets the slope vector pointers for the current tilted span.
 void R_SetTiltedSpan(drawspandata_t* ds, INT32 span);
 
-boolean R_PlaneIsHighlighted(const visplane_t *pl);
+// Returns a palette index or -1 if not highlighted
+INT16 R_PlaneIsHighlighted(const visplane_t *pl);
 
 struct visffloor_t
 {
