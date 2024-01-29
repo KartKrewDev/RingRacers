@@ -5721,22 +5721,22 @@ void M_DrawPlaybackMenu(void)
 
 		if (i == itemOn)
 		{
-			V_DrawCharacter(currentMenu->x + currentMenu->menuitems[i].mvar1 + 4, currentMenu->y + 14,
-				'\x1A' | V_SNAPTOTOP|highlightflags, false);
+			V_DrawMenuString(currentMenu->x + currentMenu->menuitems[i].mvar1 + 4, currentMenu->y + 14,
+				V_SNAPTOTOP|highlightflags, "\x1A");
 
-			V_DrawCenteredString(BASEVIDWIDTH/2, currentMenu->y + 18, V_SNAPTOTOP, currentMenu->menuitems[i].text);
+			V_DrawCenteredMenuString(BASEVIDWIDTH/2, currentMenu->y + 19, V_SNAPTOTOP, currentMenu->menuitems[i].text);
 
 			if ((currentMenu->menuitems[i].status & IT_TYPE) == IT_ARROWS)
 			{
 				char *str;
 
 				if (!(i == playback_viewcount && r_splitscreen == 3))
-					V_DrawCharacter(BASEVIDWIDTH/2 - 4, currentMenu->y + 28 - (skullAnimCounter/5),
-						'\x1A' | V_SNAPTOTOP|highlightflags, false); // up arrow
+					V_DrawMenuString(BASEVIDWIDTH/2 - 4, currentMenu->y + 28 - (skullAnimCounter/5),
+						V_SNAPTOTOP|highlightflags, "\x1A"); // up arrow
 
 				if (!(i == playback_viewcount && r_splitscreen == 0))
-					V_DrawCharacter(BASEVIDWIDTH/2 - 4, currentMenu->y + 48 + (skullAnimCounter/5),
-						'\x1B' | V_SNAPTOTOP|highlightflags, false); // down arrow
+					V_DrawMenuString(BASEVIDWIDTH/2 - 4, currentMenu->y + 48 + (skullAnimCounter/5),
+						V_SNAPTOTOP|highlightflags, "\x1B"); // down arrow
 
 				switch (i)
 				{
@@ -5755,7 +5755,7 @@ void M_DrawPlaybackMenu(void)
 					continue;
 				}
 
-				V_DrawCenteredString(BASEVIDWIDTH/2, currentMenu->y + 38, V_SNAPTOTOP|highlightflags, str);
+				V_DrawCenteredMenuString(BASEVIDWIDTH/2, currentMenu->y + 38, V_SNAPTOTOP|highlightflags, str);
 			}
 		}
 	}
