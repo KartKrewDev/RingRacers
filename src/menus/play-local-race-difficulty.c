@@ -4,6 +4,8 @@
 #include "../i_time.h"
 #include "../k_menu.h"
 #include "../m_cond.h" // Condition Sets
+#include "../s_sound.h"
+#include "../sounds.h"
 
 menuitem_t PLAY_RaceDifficulty[] =
 {
@@ -44,6 +46,8 @@ static void tick_routine(void)
 		return;
 	}
 
+	S_StartSound(NULL, sfx_s23b);
+
 	switch (g_drace_timer.dist)
 	{
 		case drace_mritems:
@@ -76,6 +80,7 @@ static boolean input_routine(INT32 ch)
 		{
 			g_drace_timer.start = I_GetTime();
 			g_drace_timer.dist = i;
+			S_StartSound(NULL, sfx_s3k5b);
 			return true;
 		}
 	}
