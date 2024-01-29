@@ -2088,16 +2088,13 @@ void G_WriteMetalTic(mobj_t *metal)
 //
 void G_RecordDemo(const char *name)
 {
+	extern consvar_t cv_netdemosize;
+
 	INT32 maxsize;
 
 	strcpy(demoname, name);
 	strcat(demoname, ".lmp");
-	//@TODO make a maxdemosize cvar
-	// NOPE. We are kicking this can HELLA down the road. -Tyron 2024-01-20
-	maxsize = 1024*1024*4;
-
-	if (M_CheckParm("-maxdemo") && M_IsNextParm())
-		maxsize = atoi(M_GetNextParm()) * 1024;
+	maxsize = 1024 * 1024 * cv_netdemosize.value;
 
 //	if (demobuf.buffer)
 //		Z_Free(demobuf.buffer);
