@@ -2114,6 +2114,20 @@ void G_RecordDemo(const char *name)
 
 	demo.recording = true;
 	demo.buffer = &demobuf;
+
+	/* FIXME: This whole file is in a wretched state. Take a
+	look at G_WriteAllGhostTics and G_WriteDemoTiccmd, they
+	write a lot of data. It's not realistic to refactor that
+	code in order to know exactly HOW MANY bytes it can write
+	out. So here's the deal. Reserve a decent block of memory
+	at the end of the buffer and never use it. Those bastard
+	functions will check if they overran the buffer, but it
+	should be safe enough because they'll think there's less
+	memory than there actually is and stop early. */
+	const size_t deadspace = 1024;
+	I_Assert(demobuf.size > deadspace);
+	demobuf.size -= deadspace;
+	demobuf.end -= deadspace;
 }
 
 void G_RecordMetal(void)
