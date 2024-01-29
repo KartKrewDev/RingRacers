@@ -7,10 +7,6 @@ target_sources(SRB2SDL2 PRIVATE
 	filter.hpp
 	gain.cpp
 	gain.hpp
-	gme_player.cpp
-	gme_player.hpp
-	gme.cpp
-	gme.hpp
 	mixer.cpp
 	mixer.hpp
 	music_player.cpp

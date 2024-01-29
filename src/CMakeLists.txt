@@ -245,9 +245,6 @@ if("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
 	target_compile_definitions(SRB2SDL2 PRIVATE -DMACOSX)
 endif()
 
-target_link_libraries(SRB2SDL2 PRIVATE gme::gme)
-target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_GME)
-
 target_link_libraries(SRB2SDL2 PRIVATE ZLIB::ZLIB)
 target_link_libraries(SRB2SDL2 PRIVATE PNG::PNG)
 target_link_libraries(SRB2SDL2 PRIVATE CURL::libcurl)
