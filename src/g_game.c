@@ -4270,7 +4270,7 @@ static void G_DoCompleted(void)
 			}
 		}
 
-		if (grandprixinfo.gp == true && grandprixinfo.wonround == true && player->exiting)
+		if (grandprixinfo.gp == true && grandprixinfo.wonround == true && player->exiting && !retrying)
 		{
 			if (player->bot == true)
 			{
