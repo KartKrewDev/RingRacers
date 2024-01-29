@@ -448,6 +448,31 @@ static void ST_drawRenderDebug(INT32 *height)
 	ST_pushDebugString(height, va("Skybox Portals: %4s", sizeu1(i->skybox_portals)));
 }
 
+static void ST_drawDemoDebug(INT32 *height)
+{
+	if (!demo.recording && !demo.playback)
+		return;
+
+	size_t needle = demo.buffer->p - demo.buffer->buffer;
+	size_t size = demo.buffer->size;
+	double percent = (double)needle / size * 100.0;
+	double avg = (double)needle / leveltime;
+
+	ST_pushDebugString(height, va("%s/%s bytes", sizeu1(needle), sizeu2(size)));
+	ST_pushDebugString(height, va(
+			"%.2f/%.2f MB %5.2f%%",
+			needle / (1024.0 * 1024.0),
+			size / (1024.0 * 1024.0),
+			percent
+	));
+	ST_pushDebugString(height, va(
+			"%.2f KB/s (ETA %.2f minutes)",
+			avg * TICRATE / 1024.0,
+			(size - needle) / (avg * TICRATE * 60.0)
+	));
+	ST_pushDebugString(height, va("Demo (%s)", demo.recording ? "recording" : "playback"));
+}
+
 void ST_drawDebugInfo(void)
 {
 	INT32 height = 192;
@@ -545,6 +570,11 @@ void ST_drawDebugInfo(void)
 	if (cht_debug & DBG_RENDER)
 	{
 		ST_drawRenderDebug(&height);
+	}
+
+	if (cht_debug & DBG_DEMO)
+	{
+		ST_drawDemoDebug(&height);
 	}
 
 	if (cht_debug & DBG_MEMORY)

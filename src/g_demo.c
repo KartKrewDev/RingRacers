@@ -2106,6 +2106,7 @@ void G_RecordDemo(const char *name)
 	demobuf.p = NULL;
 
 	demo.recording = true;
+	demo.buffer = &demobuf;
 }
 
 void G_RecordMetal(void)
@@ -3243,6 +3244,7 @@ void G_DoPlayDemo(const char *defdemoname)
 	// read demo header
 	gameaction = ga_nothing;
 	demo.playback = true;
+	demo.buffer = &demobuf;
 	if (memcmp(demobuf.p, DEMOHEADER, 12))
 	{
 		snprintf(msg, 1024, M_GetText("%s is not a Ring Racers replay file.\n"), pdemoname);

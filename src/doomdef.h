@@ -548,6 +548,7 @@ typedef enum
 	DBG_SETUP			= 0x00000400,
 	DBG_LUA				= 0x00000800,
 	DBG_RNG				= 0x00001000,
+	DBG_DEMO			= 0x00002000,
 } debugFlags_t;
 
 struct debugFlagNames_s

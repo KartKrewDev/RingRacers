@@ -65,6 +65,8 @@ struct demovars_s {
 	UINT8 numskins;
 	democharlist_t *skinlist;
 	UINT8 currentskinid[MAXPLAYERS];
+
+	const savebuffer_t *buffer; // debug, valid only if recording or playback
 };
 
 extern struct demovars_s demo;
