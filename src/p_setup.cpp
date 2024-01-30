@@ -807,10 +807,14 @@ static void P_SpawnMapThings(boolean spawnemblems)
 				continue; // These were already spawned
 		}
 
-		if (mt->type == mobjinfo[MT_BATTLECAPSULE].doomednum
-			|| mt->type == mobjinfo[MT_ITEMCAPSULE].doomednum)
+		if (mt->type == mobjinfo[MT_ITEMCAPSULE].doomednum)
 		{
-			continue; // These will spawn later
+			continue; // These will spawn later (in k_battle.c K_BattleInit)
+		}
+
+		if (mt->type == mobjinfo[MT_BATTLECAPSULE].doomednum && gametype != GT_TUTORIAL)
+		{
+			continue; // These will spawn later (in k_battle.c K_BattleInit), unless we're in a tutorial
 		}
 
 		if (!spawnemblems && mt->type == mobjinfo[MT_EMBLEM].doomednum)
