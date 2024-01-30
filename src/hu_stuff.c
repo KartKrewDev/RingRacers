@@ -883,7 +883,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 
 void HU_TickSongCredits(void)
 {
-	if (cursongcredit.def == NULL) // No def
+	if (cursongcredit.text == NULL) // No def
 	{
 		cursongcredit.x = cursongcredit.old_x = 0;
 		cursongcredit.anim = 0;
@@ -1991,7 +1991,7 @@ static void HU_DrawDemoInfo(void)
 //
 void HU_DrawSongCredits(void)
 {
-	if (!cursongcredit.def || cursongcredit.trans >= NUMTRANSMAPS) // No def
+	if (!cursongcredit.text || cursongcredit.trans >= NUMTRANSMAPS) // No def
 	{
 		return;
 	}
