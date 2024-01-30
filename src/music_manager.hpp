@@ -106,8 +106,6 @@ private:
 
 	bool stop_credit_ = false;
 
-	bool gme_; // hack
-
 	int level_volume_ = 100;
 	int old_level_volume_ = 100;
 	bool volume_fade_ = false;
