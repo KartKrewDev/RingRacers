@@ -37,9 +37,11 @@ Make sure this matches the actual number of states
 #define INSTAWHIP_TETHERBLOCK (TICRATE*4)
 #define PUNISHWINDOW (7*TICRATE/10)
 
-#define DAMAGEFLOAT (FRACUNIT/50)
-#define DAMAGETHRUST (FRACUNIT/70)
-#define THRUSTCAP (TICRATE*10)
+#define MAXCOMBOTHRUST (mapobjectscale*20)
+#define MAXCOMBOFLOAT (mapobjectscale*10)
+#define MINCOMBOTHRUST (mapobjectscale*2)
+#define MINCOMBOFLOAT (mapobjectscale*1)
+#define MAXCOMBOTIME (TICRATE*10)
 
 #define FLAMESHIELD_MAX (120)
 

@@ -8805,17 +8805,28 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->bumperinflate && player->mo->hitlag == 0)
 	{
-		UINT16 cappedthrust = min(player->progressivethrust, THRUSTCAP);
+		fixed_t thrustdelta = MAXCOMBOTHRUST - MINCOMBOTHRUST;
+		fixed_t floatdelta = MAXCOMBOFLOAT - MINCOMBOFLOAT;
+
+		fixed_t thrustpertic = thrustdelta / MAXCOMBOTIME;
+		fixed_t floatpertic = floatdelta / MAXCOMBOTIME;
+
+		fixed_t totalthrust = thrustpertic * player->progressivethrust + MINCOMBOTHRUST;
+		fixed_t totalfloat = floatpertic * player->progressivethrust + MINCOMBOFLOAT;
+
+		if (player->speed > K_GetKartSpeed(player, false, false))
+			totalthrust = 0;
 
 		if (player->tumbleBounces && player->tumbleBounces <= TUMBLEBOUNCES)
 		{
-			player->mo->momz += DAMAGEFLOAT * cappedthrust;
-			P_Thrust(player->mo, K_MomentumAngle(player->mo), DAMAGETHRUST * cappedthrust / 2);
+			player->mo->momz += totalfloat;
+			P_Thrust(player->mo, K_MomentumAngle(player->mo), totalthrust/2);
 		}
 		else
 		{
-			P_Thrust(player->mo, K_MomentumAngle(player->mo), DAMAGETHRUST * cappedthrust);
+			P_Thrust(player->mo, K_MomentumAngle(player->mo), totalthrust);
 		}
+
 		player->bumperinflate--;
 	}
 
@@ -8925,7 +8936,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->spinouttimer || player->tumbleBounces)
 	{
-		player->progressivethrust++;
+		if (player->progressivethrust < MAXCOMBOTIME)
+			player->progressivethrust++;
 		if (player->incontrol > 0)
 			player->incontrol = 0;
 		player->incontrol--;
