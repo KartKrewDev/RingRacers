@@ -3374,11 +3374,12 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				//P_KillPlayer(player, inflictor, source, damagetype);
 			}
 
-			// Have bumpers? Demote wipeout combos to stumble, force the attacker to make a DI read.
-			if (player->mo->health > 1 && gametyperules & GTR_BUMPERS)
+			// Death save! On your last hit, no matter what, demote to weakest damage type for one last escape chance.
+			if (player->mo->health == 2 && damage && gametyperules & GTR_BUMPERS)
 			{
-				if (type == DMG_WIPEOUT && P_PlayerInPain(player))
-					type = DMG_STUMBLE;
+				S_StartSound(target, sfx_gshc7);
+				player->flashing = TICRATE;
+				type = DMG_STUMBLE;
 			}
 
 			switch (type)

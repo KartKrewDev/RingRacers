@@ -4560,11 +4560,13 @@ void K_BumperInflate(player_t *player)
 	if (!player || P_MobjWasRemoved(player->mo))
 		return;
 
-	if (!(player->mo->health > 1 && gametyperules & GTR_BUMPERS))
+	if (!(gametyperules & GTR_BUMPERS))
 		return;
 
 	player->bumperinflate = 3;
-	S_StartSound(player->mo, sfx_cdpcm9);
+
+	if (player->mo->health > 1)
+		S_StartSound(player->mo, sfx_cdpcm9);
 }
 
 static void K_HandleTumbleBounce(player_t *player)
@@ -8801,15 +8803,18 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->hyudorotimer)
 		player->hyudorotimer--;
 
-	if (player->bumperinflate && player->mo->health > 1 && player->mo->hitlag == 0)
+	if (player->bumperinflate && player->mo->hitlag == 0)
 	{
+		UINT16 cappedthrust = min(player->progressivethrust, THRUSTCAP);
+
 		if (player->tumbleBounces && player->tumbleBounces <= TUMBLEBOUNCES)
 		{
-			player->mo->momz += BUMPER_FLOAT;
+			player->mo->momz += DAMAGEFLOAT * cappedthrust;
+			P_Thrust(player->mo, K_MomentumAngle(player->mo), DAMAGETHRUST * cappedthrust / 2);
 		}
-		else if (player->speed < K_GetKartSpeed(player, false, false)/2)
+		else
 		{
-			P_Thrust(player->mo, K_MomentumAngle(player->mo), BUMPER_THRUST);
+			P_Thrust(player->mo, K_MomentumAngle(player->mo), DAMAGETHRUST * cappedthrust);
 		}
 		player->bumperinflate--;
 	}
@@ -8920,12 +8925,15 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->spinouttimer || player->tumbleBounces)
 	{
+		player->progressivethrust++;
 		if (player->incontrol > 0)
 			player->incontrol = 0;
 		player->incontrol--;
 	}
 	else
 	{
+		if (player->progressivethrust && leveltime % 3 == 0)
+			player->progressivethrust--;
 		if (player->incontrol < 0)
 			player->incontrol = 0;
 		player->incontrol++;
