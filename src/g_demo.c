@@ -235,7 +235,7 @@ void G_ReadDemoExtraData(void)
 		{
 			if (!playeringame[p])
 			{
-				G_AddPlayer(p);
+				G_AddPlayer(p, p);
 			}
 
 			for (i = 0; i < MAXAVAILABILITY; i++)
@@ -3511,7 +3511,7 @@ void G_DoPlayDemo(const char *defdemoname)
 		if (!playeringame[displayplayers[0]] || players[displayplayers[0]].spectator)
 			displayplayers[0] = consoleplayer = serverplayer = p;
 
-		G_AddPlayer(p);
+		G_AddPlayer(p, p);
 		players[p].spectator = spectator;
 
 		if (flags & DEMO_KICKSTART)
