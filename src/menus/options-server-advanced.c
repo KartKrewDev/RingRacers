@@ -13,7 +13,7 @@ menuitem_t OPTIONS_ServerAdvanced[] =
 		NULL, {.cvar = &cv_masterserver}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Debug Log", "Save technical info about communication with the Master Server.",
-		NULL, {.cvar = &cv_noticedownload}, 0, 0},
+		NULL, {.cvar = &cv_masterserver_debug}, 0, 0},
 
 
 	{IT_HEADER, "Network Connection", NULL,
