@@ -423,6 +423,7 @@ consvar_t cv_pauseifunfocused = Player("pauseifunfocused", "Yes").yes_no();
 
 extern CV_PossibleValue_t cv_renderer_t[];
 consvar_t cv_renderer = Player("renderer", "Software").flags(CV_NOLUA).values(cv_renderer_t).onchange(SCR_ChangeRenderer);
+consvar_t cv_parallelsoftware = Player("parallelsoftware", "On").on_off();
 
 consvar_t cv_renderview = Player("renderview", "On").on_off().dont_save();
 consvar_t cv_rollingdemos = Player("rollingdemos", "On").on_off();
