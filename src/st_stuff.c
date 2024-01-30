@@ -1459,10 +1459,19 @@ void ST_DrawServerSplash(boolean timelimited)
 
 	fixed_t textX = (BASEVIDWIDTH - 16 - 36) * FRACUNIT;
 	fixed_t textY = (24 - 8) * FRACUNIT;
-
-	V_DrawRightAlignedStringAtFixed(
-		textX, textY,
+	fixed_t textW = V_StringScaledWidth(
+		FRACUNIT, FRACUNIT, FRACUNIT,
 		(V_SNAPTORIGHT|V_SNAPTOTOP) | opacityFlag,
+		MED_FONT,
+		connectedservername
+	);
+
+	V_DrawStringScaled(
+		textX - textW, textY,
+		FRACUNIT, FRACUNIT, FRACUNIT,
+		(V_SNAPTORIGHT|V_SNAPTOTOP) | opacityFlag,
+		NULL,
+		MED_FONT,
 		connectedservername
 	);
 
