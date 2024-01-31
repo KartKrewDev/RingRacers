@@ -91,7 +91,6 @@ endif()
 
 add_subdirectory(thirdparty)
 
-find_package(GME REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(PNG REQUIRED)
 find_package(SDL2 CONFIG REQUIRED)

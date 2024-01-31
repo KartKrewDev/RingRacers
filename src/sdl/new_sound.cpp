@@ -437,8 +437,6 @@ const char* I_SongType(void)
 	{
 	case audio::MusicType::kOgg:
 		return "OGG";
-	case audio::MusicType::kGme:
-		return "GME";
 	case audio::MusicType::kMod:
 		return "Mod";
 	default:

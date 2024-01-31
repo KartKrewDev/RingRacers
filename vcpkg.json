@@ -6,7 +6,6 @@
         "curl",
         "fmt",
         "sdl2",
-        "libgme",
         "libpng",
         "libogg",
         "libvpx",
