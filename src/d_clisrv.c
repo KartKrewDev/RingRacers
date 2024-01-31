@@ -3411,8 +3411,8 @@ void SV_ResetServer(void)
 	// clear server_context
 	memset(server_context, '-', 8);
 
-	strncpy(connectedservername, "\0", MAXSERVERNAME);
-	strncpy(connectedservercontact, "\0", MAXSERVERCONTACT);
+	strlcpy(connectedservername, "\0", MAXSERVERNAME);
+	strlcpy(connectedservercontact, "\0", MAXSERVERCONTACT);
 
 	CV_RevertNetVars();
 
@@ -3442,8 +3442,8 @@ static void SV_GenContext(void)
 			server_context[i] = 'a'+(a-26);
 	}
 
-	strncpy(connectedservername, cv_servername.string, MAXSERVERNAME);
-	strncpy(connectedservercontact, cv_server_contact.string, MAXSERVERCONTACT);
+	strlcpy(connectedservername, cv_servername.string, MAXSERVERNAME);
+	strlcpy(connectedservercontact, cv_server_contact.string, MAXSERVERCONTACT);
 }
 #endif // TESTERS
 
@@ -4578,8 +4578,8 @@ static void HandlePacketFromAwayNode(SINT8 node)
 
 				memcpy(server_context, netbuffer->u.servercfg.server_context, 8);
 
-				strncpy(connectedservername, netbuffer->u.servercfg.server_name, MAXSERVERNAME);
-				strncpy(connectedservercontact, netbuffer->u.servercfg.server_contact, MAXSERVERCONTACT);
+				strlcpy(connectedservername, netbuffer->u.servercfg.server_name, MAXSERVERNAME);
+				strlcpy(connectedservercontact, netbuffer->u.servercfg.server_contact, MAXSERVERCONTACT);
 			}
 
 #ifdef HAVE_DISCORDRPC
