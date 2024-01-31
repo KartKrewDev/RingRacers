@@ -666,7 +666,7 @@ void R_DrawPlanes(void)
 			if (pl->ffloor != NULL || pl->polyobj != NULL)
 				continue;
 
-			R_DrawSinglePlane(&ds, pl, true);
+			R_DrawSinglePlane(&ds, pl, cv_parallelsoftware.value);
 		}
 	}
 }

@@ -59,6 +59,9 @@ menuitem_t OPTIONS_Video[] =
 	{IT_STRING | IT_CVAR, "Enable Skyboxes", "Turning this off may improve performance, but reduces courses' background details.",
 		NULL, {.cvar = &cv_skybox}, 0, 0},
 
+	{IT_STRING | IT_CVAR, "Parallel Software", "Uses multiple CPU cores for the software renderer if available, for a FPS boost.",
+		NULL, {.cvar = &cv_parallelsoftware}, 0, 0},
+
 #ifdef HWRENDER
 	{IT_NOTHING|IT_SPACE, NULL, NULL,
 		NULL, {NULL}, 0, 0},
