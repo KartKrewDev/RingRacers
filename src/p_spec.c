@@ -1961,7 +1961,8 @@ static void K_HandleLapIncrement(player_t *player)
 				linecrossed = leveltime;
 				if (starttime > leveltime) // Overlong starts shouldn't reset time on cross
 					starttime = leveltime;
-				demo_extradata[player-players] |= DXD_START;
+				if (demo.recording)
+					demo_extradata[player-players] |= DXD_START;
 				Music_Stop("position");
 			}
 
