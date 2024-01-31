@@ -2081,10 +2081,20 @@ static void R_ProjectSprite(mobj_t *thing)
 		if (x2 < 0)
 			return;
 
-		if ((range = x2 - x1) <= 0)
+		range = x2 - x1;
+		if (range < 0)
+		{
 			return;
+		}
 
 		range++; // fencepost problem
+
+		if (range > 32767)
+		{
+			// If the range happens to be too large for fixed_t,
+			// abort the draw to avoid xscale becoming negative due to arithmetic overflow.
+			return;
+		}
 
 		scalestep = ((yscale2 - yscale)/range);
 
@@ -2528,8 +2538,8 @@ static void R_ProjectSprite(mobj_t *thing)
 		// diminished light
 		lindex = FixedMul(xscale, LIGHTRESOLUTIONFIX)>>(LIGHTSCALESHIFT);
 
-		if (lindex >= MAXLIGHTSCALE)
-			lindex = MAXLIGHTSCALE-1;
+		// Mitigate against negative xscale and arithmetic overflow
+		lindex = std::clamp(lindex, 0, MAXLIGHTSCALE - 1);
 
 		if (vis->cut & SC_SEMIBRIGHT)
 			lindex = (MAXLIGHTSCALE/2) + (lindex >> 1);
