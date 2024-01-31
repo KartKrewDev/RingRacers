@@ -7763,7 +7763,7 @@ static void P_ResetSpawnpoints(void)
 		skyboxviewpnts[i] = skyboxcenterpnts[i] = NULL;
 }
 
-static void P_TryAddExternalGhost(char *defdemoname)
+static void P_TryAddExternalGhost(const char *defdemoname)
 {
 	if (FIL_FileExists(defdemoname))
 	{
@@ -7789,46 +7789,57 @@ static void P_LoadRecordGhosts(void)
 
 	gpath = Z_StrDup(va("%s" PATHSEP "media" PATHSEP "replay" PATHSEP "%s" PATHSEP "%s", srb2home, timeattackfolder, G_BuildMapName(gamemap)));
 
-	// Best Time ghost
-	if (modeattacking & ATTACKING_TIME)
+	enum
 	{
-		if (cv_ghost_besttime.value)
-		{
-			for (i = 0; i < numskins; ++i)
-			{
-				if (cv_ghost_besttime.value == 1 && players[consoleplayer].skin != i)
-					continue;
+		kTime	= 1 << 0,
+		kLap	= 1 << 1,
+		kLast	= 1 << 2,
+	};
 
-				P_TryAddExternalGhost(va("%s-%s-time-best.lmp", gpath, skins[i].name));
-			}
-		}
-	}
-
-	// Best Lap ghost
-	if (modeattacking & ATTACKING_LAP)
+	auto map_ghosts = [](int value)
 	{
-		if (cv_ghost_bestlap.value)
-		{
-			for (i = 0; i < numskins; ++i)
-			{
-				if (cv_ghost_bestlap.value == 1 && players[consoleplayer].skin != i)
-					continue;
+		auto map = [](const consvar_t& cvar, int value, UINT8 bit) { return cvar.value == value ? bit : 0; };
 
-				P_TryAddExternalGhost(va("%s-%s-lap-best.lmp", gpath, skins[i].name));
-			}
-		}
-	}
+		return
+			// Best Time ghost
+			((modeattacking & ATTACKING_TIME) ? map(cv_ghost_besttime, value, kTime) : 0) |
 
-	// Last ghost
-	if (cv_ghost_last.value)
+			// Best Lap ghost
+			((modeattacking & ATTACKING_LAP) ? map(cv_ghost_bestlap, value, kLap) : 0) |
+
+			// Best Lap ghost
+			map(cv_ghost_last, value, kLast);
+	};
+
+	auto add_ghosts = [gpath](const std::string& base, UINT8 bits)
+	{
+		auto load = [base](const char* suffix) { P_TryAddExternalGhost(fmt::format("{}-{}.lmp", base, suffix).c_str()); };
+
+		if (bits & kTime)
+			load("time-best");
+
+		if (bits & kLap)
+			load("lap-best");
+
+		if (bits & kLast)
+			load("last");
+	};
+
+	UINT8 allGhosts = map_ghosts(2);
+	UINT8 sameGhosts = map_ghosts(1);
+
+	if (allGhosts)
 	{
 		for (i = 0; i < numskins; ++i)
-		{
-			if (cv_ghost_last.value == 1 && players[consoleplayer].skin != i)
-				continue;
+			add_ghosts(fmt::format("{}-{}", gpath, skins[i].name), allGhosts);
+	}
 
-			P_TryAddExternalGhost(va("%s-%s-last.lmp", gpath, skins[i].name));
-		}
+	if (sameGhosts)
+	{
+		INT32 skin = R_SkinAvailable(cv_skin[0].string);
+		if (skin < 0 || !R_SkinUsable(consoleplayer, skin, false))
+			skin = 0; // use default skin
+		add_ghosts(fmt::format("{}-{}", gpath, skins[skin].name), sameGhosts);
 	}
 
 	// Guest ghost

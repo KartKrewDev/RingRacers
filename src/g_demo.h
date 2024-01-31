@@ -188,7 +188,7 @@ extern demoghost *ghosts;
 void G_DeferedPlayDemo(const char *demo);
 void G_DoPlayDemo(const char *defdemoname);
 void G_TimeDemo(const char *name);
-void G_AddGhost(savebuffer_t *buffer, char *defdemoname);
+void G_AddGhost(savebuffer_t *buffer, const char *defdemoname);
 staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer);
 void G_FreeGhosts(void);
 void G_DoneLevelLoad(void);
