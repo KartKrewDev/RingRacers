@@ -829,7 +829,8 @@ static boolean K_JustBumpedException(mobj_t *mobj)
 	{
 		case MT_SA2_CRATE:
 			return Obj_SA2CrateIsMetal(mobj);
-
+		case MT_WALLSPIKE:
+			return true;
 		default:
 			break;
 	}
@@ -2989,7 +2990,7 @@ boolean K_WaterSkip(mobj_t *mobj)
 			{
 				return false;
 			}
-			
+
 			// Allow
 			break;
 		}
