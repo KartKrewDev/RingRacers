@@ -4252,16 +4252,7 @@ void G_StopDemo(void)
 	Z_Free(demo.skinlist);
 	demo.skinlist = NULL;
 
-	if (gamestate == GS_INTERMISSION)
-		Y_EndIntermission(); // cleanup
-
-	if (gamestate == GS_VOTING)
-		Y_EndVote();
-
-	G_SetGamestate(GS_NULL);
-	wipegamestate = GS_NULL;
-	SV_StopServer();
-	SV_ResetServer();
+	D_ClearState();
 }
 
 boolean G_CheckDemoStatus(void)
