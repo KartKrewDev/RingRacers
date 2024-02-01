@@ -11342,7 +11342,14 @@ boolean K_FastFallBounce(player_t *player)
 		if (player->curshield == KSHIELD_BUBBLE)
 		{
 			S_StartSound(player->mo, sfx_s3k44);
-			P_InstaThrust(player->mo, player->mo->angle, 11*max(player->speed, abs(player->fastfall))/10);
+
+			// This is a slightly irritating way of doing this, but because ground contact while
+			// bubblebouncing gives you 1 tic of ground friction, naively using a factor of player
+			// speed makes your sustained speed heavily gamespeed dependent.
+			fixed_t minspeed = 12*K_GetKartSpeed(player, false, false)/10;
+			fixed_t fallspeed = abs(player->fastfall);
+			P_InstaThrust(player->mo, player->mo->angle, 11*max(minspeed, fallspeed)/10);
+
 			bounce += 3 * mapobjectscale;
 		}
 		else
