@@ -3381,6 +3381,11 @@ void SV_ResetServer(void)
 	memset(playeringame, false, sizeof playeringame);
 	memset(playernode, UINT8_MAX, sizeof playernode);
 
+	pingmeasurecount = 1;
+	memset(realpingtable, 0, sizeof realpingtable);
+	memset(playerpingtable, 0, sizeof playerpingtable);
+	memset(playerpacketlosstable, 0, sizeof playerpacketlosstable);
+
 	ClearAdminPlayers();
 	Schedule_Clear();
 	Automate_Clear();
