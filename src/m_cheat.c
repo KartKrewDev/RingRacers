@@ -605,6 +605,8 @@ struct debugFlagNames_s const debug_flag_names[] =
 	{"Music", DBG_MUSIC},
 	{"PwrLv", DBG_PWRLV},
 	{"PowerLevel", DBG_PWRLV}, // alt name
+	{"Demo", DBG_DEMO},
+	{"Replay", DBG_DEMO}, // alt name
 	{NULL, 0}
 };
 

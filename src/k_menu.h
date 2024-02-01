@@ -342,6 +342,7 @@ typedef enum
 	dopt_replay,
 	dopt_rprecord,
 	dopt_rpsync,
+	dopt_rpsize,
 #ifdef HAVE_DISCORDRPC
 	dopt_discord,
 	dopt_drp,

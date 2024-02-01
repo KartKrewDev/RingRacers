@@ -734,6 +734,7 @@ void G_GhostAddHit(INT32 playernum, mobj_t *victim)
 
 void G_WriteAllGhostTics(void)
 {
+	boolean toobig = false;
 	INT32 i, counter = leveltime;
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -750,12 +751,18 @@ void G_WriteAllGhostTics(void)
 
 		WRITEUINT8(demobuf.p, i);
 		G_WriteGhostTic(players[i].mo, i);
+
+		// attention here for the ticcmd size!
+		// latest demos with mouse aiming byte in ticcmd
+		if (demobuf.p >= demobuf.end - (13 + 9 + 9))
+		{
+			toobig = true;
+			break;
+		}
 	}
 	WRITEUINT8(demobuf.p, 0xFF);
 
-	// attention here for the ticcmd size!
-	// latest demos with mouse aiming byte in ticcmd
-	if (demobuf.p >= demobuf.end - (13 + 9 + 9))
+	if (toobig)
 	{
 		G_CheckDemoStatus(); // no more space
 		return;
@@ -2088,16 +2095,13 @@ void G_WriteMetalTic(mobj_t *metal)
 //
 void G_RecordDemo(const char *name)
 {
+	extern consvar_t cv_netdemosize;
+
 	INT32 maxsize;
 
 	strcpy(demoname, name);
 	strcat(demoname, ".lmp");
-	//@TODO make a maxdemosize cvar
-	// NOPE. We are kicking this can HELLA down the road. -Tyron 2024-01-20
-	maxsize = 1024*1024*4;
-
-	if (M_CheckParm("-maxdemo") && M_IsNextParm())
-		maxsize = atoi(M_GetNextParm()) * 1024;
+	maxsize = 1024 * 1024 * cv_netdemosize.value;
 
 //	if (demobuf.buffer)
 //		Z_Free(demobuf.buffer);
@@ -2109,6 +2113,21 @@ void G_RecordDemo(const char *name)
 	demobuf.p = NULL;
 
 	demo.recording = true;
+	demo.buffer = &demobuf;
+
+	/* FIXME: This whole file is in a wretched state. Take a
+	look at G_WriteAllGhostTics and G_WriteDemoTiccmd, they
+	write a lot of data. It's not realistic to refactor that
+	code in order to know exactly HOW MANY bytes it can write
+	out. So here's the deal. Reserve a decent block of memory
+	at the end of the buffer and never use it. Those bastard
+	functions will check if they overran the buffer, but it
+	should be safe enough because they'll think there's less
+	memory than there actually is and stop early. */
+	const size_t deadspace = 1024;
+	I_Assert(demobuf.size > deadspace);
+	demobuf.size -= deadspace;
+	demobuf.end -= deadspace;
 }
 
 void G_RecordMetal(void)
@@ -3246,6 +3265,7 @@ void G_DoPlayDemo(const char *defdemoname)
 	// read demo header
 	gameaction = ga_nothing;
 	demo.playback = true;
+	demo.buffer = &demobuf;
 	if (memcmp(demobuf.p, DEMOHEADER, 12))
 	{
 		snprintf(msg, 1024, M_GetText("%s is not a Ring Racers replay file.\n"), pdemoname);
