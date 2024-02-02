@@ -43,6 +43,18 @@ std::string& filter_out(std::string& out, const std::string_view& range, F filte
 	return out;
 };
 
+int hexconv(int c)
+{
+	if (std::isdigit(c))
+		return c - '0';
+
+	c = std::toupper(c);
+	if (c >= 'A' && c <= 'F')
+		return 10 + (c - 'A');
+
+	return -1;
+}
+
 }; // namespace
 
 namespace srb2::sanitize
@@ -64,9 +76,58 @@ std::string sanitize(std::string_view in, SanitizeMode mode)
 		}());
 }
 
+std::string parse_carets(std::string_view in, ParseMode mode)
+{
+	std::string out;
+
+	using std::size_t;
+	for (;;)
+	{
+		size_t p = in.find('^');
+
+		// copy chars up until the caret
+		// but filter out codes outside of the ASCII range
+		filter_out(out, in.substr(0, p), print_filter);
+
+		if (p == in.npos)
+		{
+			break; // end of input
+		}
+
+		in.remove_prefix(p);
+
+		// need two characters for caret code
+		// convert to color byte
+		if (int c; in.length() > 1 && (c = hexconv(in[1])) != -1)
+		{
+			out.push_back(0x80 | c);
+		}
+
+		if (mode != ParseMode::kConsume)
+		{
+			// preserve caret code in output
+			filter_out(out, in.substr(0, 2), print_filter);
+		}
+
+		if (in.length() < 2)
+		{
+			break;
+		}
+
+		in.remove_prefix(2);
+	}
+
+	return out;
+}
+
 }; // namespace srb2
 
 void D_SanitizeKeepColors(char *out, const char *in, size_t out_size)
 {
 	strlcpy(out, sanitize(in, SanitizeMode::kKeepColors).c_str(), out_size);
+}
+
+void D_ParseCarets(char *out, const char *in, size_t out_size)
+{
+	strlcpy(out, parse_carets(in, ParseMode::kConsume).c_str(), out_size);
 }

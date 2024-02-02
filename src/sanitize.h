@@ -25,8 +25,17 @@ enum class SanitizeMode
 	kKeepColors,
 };
 
+enum class ParseMode
+{
+	kConsume,
+	kPreserve,
+};
+
 // sanitizes string of all 0x80 codes
 std::string sanitize(std::string_view in, SanitizeMode mode);
+
+// sanitizes string of all 0x80 codes then parses caret codes
+std::string parse_carets(std::string_view in, ParseMode mode);
 
 }; // namespace srb2
 
@@ -34,6 +43,7 @@ extern "C" {
 #endif
 
 void D_SanitizeKeepColors(char *out, const char *in, size_t out_size); // SanitizeMode::kKeepColors
+void D_ParseCarets(char *out, const char *in, size_t out_size); // ParseMode::kConsume
 
 #ifdef __cplusplus
 } // extern "C"
