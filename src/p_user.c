@@ -1379,7 +1379,7 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 			}
 		}
 
-		if (player == &players[consoleplayer])
+		if (!demo.savebutton && P_IsLocalPlayer(player))
 			demo.savebutton = leveltime;
 	}
 }
