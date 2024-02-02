@@ -15,6 +15,7 @@
 
 #include "doomtype.h"
 #include "sanitize.h"
+#include "v_draw.hpp"
 
 using namespace srb2::sanitize;
 
@@ -130,4 +131,13 @@ void D_SanitizeKeepColors(char *out, const char *in, size_t out_size)
 void D_ParseCarets(char *out, const char *in, size_t out_size)
 {
 	strlcpy(out, parse_carets(in, ParseMode::kConsume).c_str(), out_size);
+}
+
+INT32 M_DrawCaretString(INT32 x, INT32 y, const char *string, boolean preserve)
+{
+	using srb2::Draw;
+	Draw::TextElement text(parse_carets(string, preserve ? ParseMode::kPreserve : ParseMode::kConsume));
+	text.font(Draw::Font::kConsole);
+	Draw(x, y).text(text);
+	return text.width();
 }
