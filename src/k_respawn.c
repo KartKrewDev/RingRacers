@@ -317,7 +317,12 @@ void K_DoIngameRespawn(player_t *player)
 	player->respawn.init = true;
 	player->respawn.fast = true;
 	player->respawn.returnspeed = 0;
-	player->laps = min(player->laps, player->lastsafelap);
+
+	if (player->lastsafelap < player->laps)
+	{
+		player->laps = player->lastsafelap;
+		player->cheatchecknum = player->lastsafecheatcheck;
+	}
 
 	player->respawn.airtimer = player->airtime;
 	player->respawn.truedeath = !!(player->pflags & PF_FAULT);

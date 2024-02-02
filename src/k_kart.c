@@ -9578,6 +9578,7 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 		{
 			player->respawn.wp = bestwaypoint;
 			player->lastsafelap = player->laps;
+			player->lastsafecheatcheck = player->cheatchecknum;
 		}
 	}
 
