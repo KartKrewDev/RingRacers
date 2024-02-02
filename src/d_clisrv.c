@@ -65,6 +65,7 @@
 #include "k_zvote.h"
 #include "music.h"
 #include "k_bans.h"
+#include "sanitize.h"
 
 // cl loading screen
 #include "v_video.h"
@@ -4346,7 +4347,6 @@ void HandleSigfail(const char *string)
   */
 static void HandleServerInfo(SINT8 node)
 {
-	char servername[MAXSERVERNAME];
 	// compute ping in ms
 	const tic_t ticnow = I_GetTime();
 	const tic_t ticthen = (tic_t)LONG(netbuffer->u.serverinfo.time);
@@ -4357,8 +4357,7 @@ static void HandleServerInfo(SINT8 node)
 		[sizeof netbuffer->u.serverinfo.application - 1] = '\0';
 	netbuffer->u.serverinfo.gametypename
 		[sizeof netbuffer->u.serverinfo.gametypename - 1] = '\0';
-	memcpy(servername, netbuffer->u.serverinfo.servername, MAXSERVERNAME);
-	CopyCaretColors(netbuffer->u.serverinfo.servername, servername, MAXSERVERNAME);
+	D_SanitizeKeepColors(netbuffer->u.serverinfo.servername, netbuffer->u.serverinfo.servername, MAXSERVERNAME);
 
 	// If we have cause to reject it, it's not worth observing.
 	if (
@@ -4578,8 +4577,8 @@ static void HandlePacketFromAwayNode(SINT8 node)
 
 				memcpy(server_context, netbuffer->u.servercfg.server_context, 8);
 
-				strlcpy(connectedservername, netbuffer->u.servercfg.server_name, MAXSERVERNAME);
-				strlcpy(connectedservercontact, netbuffer->u.servercfg.server_contact, MAXSERVERCONTACT);
+				D_SanitizeKeepColors(connectedservername, netbuffer->u.servercfg.server_name, MAXSERVERNAME);
+				D_SanitizeKeepColors(connectedservercontact, netbuffer->u.servercfg.server_contact, MAXSERVERCONTACT);
 			}
 
 #ifdef HAVE_DISCORDRPC

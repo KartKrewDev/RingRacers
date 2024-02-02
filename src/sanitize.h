@@ -1,0 +1,42 @@
+// DR. ROBOTNIK'S RING RACERS
+//-----------------------------------------------------------------------------
+// Copyright (C) 2024 by James Robert Roman
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+
+#ifndef sanitize_h
+#define sanitize_h
+
+#include "doomtype.h"
+
+#ifdef __cplusplus
+#include <string>
+#include <string_view>
+
+namespace srb2::sanitize
+{
+
+enum class SanitizeMode
+{
+	kPrintable,
+	kKeepColors,
+};
+
+// sanitizes string of all 0x80 codes
+std::string sanitize(std::string_view in, SanitizeMode mode);
+
+}; // namespace srb2
+
+extern "C" {
+#endif
+
+void D_SanitizeKeepColors(char *out, const char *in, size_t out_size); // SanitizeMode::kKeepColors
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
+#endif // sanitize_h
