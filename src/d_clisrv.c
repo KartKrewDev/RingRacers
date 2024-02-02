@@ -1201,8 +1201,8 @@ static boolean SV_SendServerConfig(INT32 node)
 
 	memcpy(netbuffer->u.servercfg.server_context, server_context, 8);
 
-	strncpy(netbuffer->u.servercfg.server_name, cv_servername.string, MAXSERVERNAME);
-	strncpy(netbuffer->u.servercfg.server_contact, cv_server_contact.string, MAXSERVERCONTACT);
+	D_ParseCarets(netbuffer->u.servercfg.server_name, cv_servername.string, MAXSERVERNAME);
+	D_ParseCarets(netbuffer->u.servercfg.server_contact, cv_server_contact.string, MAXSERVERCONTACT);
 
 	{
 		const size_t len = sizeof (serverconfig_pak);
@@ -3378,8 +3378,8 @@ static void SV_GenContext(void)
 			server_context[i] = 'a'+(a-26);
 	}
 
-	strlcpy(connectedservername, cv_servername.string, MAXSERVERNAME);
-	strlcpy(connectedservercontact, cv_server_contact.string, MAXSERVERCONTACT);
+	D_ParseCarets(connectedservername, cv_servername.string, MAXSERVERNAME);
+	D_ParseCarets(connectedservercontact, cv_server_contact.string, MAXSERVERCONTACT);
 }
 #endif // TESTERS
 
