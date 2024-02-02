@@ -5691,7 +5691,7 @@ static boolean P_AllowSpecialCeiling(sector_t *sec, mobj_t *thing)
 	return false;
 }
 
-static void P_CheckMobj3DFloorAction(mobj_t *mo, sector_t *sec, boolean continuous)
+static void P_CheckMobj3DFloorAction(mobj_t *mo, sector_t *sec, boolean continuous, boolean sectorchanged)
 {
 	sector_t *originalsector = mo->subsector->sector;
 	ffloor_t *rover;
@@ -5750,6 +5750,10 @@ static void P_CheckMobj3DFloorAction(mobj_t *mo, sector_t *sec, boolean continuo
 				continue;
 			}
 		}
+		else if (sectorchanged == false)
+		{
+			continue;
+		}
 
 		activator = Z_Calloc(sizeof(activator_t), PU_LEVEL, NULL);
 		I_Assert(activator != NULL);
@@ -5771,7 +5775,7 @@ static void P_CheckMobj3DFloorAction(mobj_t *mo, sector_t *sec, boolean continuo
 	}
 }
 
-static void P_CheckMobjPolyobjAction(mobj_t *mo, boolean continuous)
+static void P_CheckMobjPolyobjAction(mobj_t *mo, boolean continuous, boolean sectorchanged)
 {
 	sector_t *originalsector = mo->subsector->sector;
 	polyobj_t *po;
@@ -5826,6 +5830,10 @@ static void P_CheckMobjPolyobjAction(mobj_t *mo, boolean continuous)
 				continue;
 			}
 		}
+		else if (sectorchanged == false)
+		{
+			continue;
+		}
 
 		activator = Z_Calloc(sizeof(activator_t), PU_LEVEL, NULL);
 		I_Assert(activator != NULL);
@@ -5847,7 +5855,7 @@ static void P_CheckMobjPolyobjAction(mobj_t *mo, boolean continuous)
 	}
 }
 
-static void P_CheckMobjSectorAction(mobj_t *mo, sector_t *sec, boolean continuous)
+static void P_CheckMobjSectorAction(mobj_t *mo, sector_t *sec, boolean continuous, boolean sectorchanged)
 {
 	activator_t *activator = NULL;
 	boolean result = false;
@@ -5884,6 +5892,10 @@ static void P_CheckMobjSectorAction(mobj_t *mo, sector_t *sec, boolean continuou
 			return;
 		}
 	}
+	else if (sectorchanged == false)
+	{
+		return;
+	}
 
 	activator = Z_Calloc(sizeof(activator_t), PU_LEVEL, NULL);
 	I_Assert(activator != NULL);
@@ -5902,7 +5914,7 @@ static void P_CheckMobjSectorAction(mobj_t *mo, sector_t *sec, boolean continuou
 	}
 }
 
-void P_CheckMobjTouchingSectorActions(mobj_t *mobj, boolean continuous)
+void P_CheckMobjTouchingSectorActions(mobj_t *mobj, boolean continuous, boolean sectorchanged)
 {
 	sector_t *originalsector;
 
@@ -5928,13 +5940,13 @@ void P_CheckMobjTouchingSectorActions(mobj_t *mobj, boolean continuous)
 		}
 	}
 
-	P_CheckMobj3DFloorAction(mobj, originalsector, continuous);
+	P_CheckMobj3DFloorAction(mobj, originalsector, continuous, sectorchanged);
 	if TELEPORTED(mobj)	return;
 
-	P_CheckMobjPolyobjAction(mobj, continuous);
+	P_CheckMobjPolyobjAction(mobj, continuous, sectorchanged);
 	if TELEPORTED(mobj)	return;
 
-	P_CheckMobjSectorAction(mobj, originalsector, continuous);
+	P_CheckMobjSectorAction(mobj, originalsector, continuous, sectorchanged);
 }
 
 #undef TELEPORTED
@@ -9558,4 +9570,22 @@ void P_FreeQuake(quake_t *remove)
 	}
 
 	Z_Free(remove);
+}
+
+void P_CheckSectorTransitionalEffects(mobj_t *thing, sector_t *prevsec, boolean wasgrounded)
+{
+	if (!udmf)
+	{
+		return;
+	}
+
+	boolean sectorchanged = (prevsec != thing->subsector->sector);
+
+	if (!sectorchanged && wasgrounded == P_IsObjectOnGround(thing))
+	{
+		return;
+	}
+
+	// Check for each time / once sector special actions
+	P_CheckMobjTouchingSectorActions(thing, false, sectorchanged);
 }
