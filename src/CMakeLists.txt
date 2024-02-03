@@ -201,6 +201,9 @@ if("${CMAKE_COMPILER_IS_GNUCC}" AND "${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
 		# On MinGW with internal libraries, link the standard library statically
 		target_link_options(SRB2SDL2 PRIVATE "-static")
 	endif()
+	if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+		target_link_options(SRB2SDL2 PRIVATE "-Wl,--large-address-aware")
+	endif()
 endif()
 
 target_compile_features(SRB2SDL2 PRIVATE c_std_11 cxx_std_17)
