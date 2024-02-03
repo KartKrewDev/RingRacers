@@ -1856,7 +1856,7 @@ Command_Invite_f (void)
 		return;
 	}
 
-	if (r_splitscreen >= MAXSPLITSCREENPLAYERS)
+	if (G_PartySize(consoleplayer) >= MAXSPLITSCREENPLAYERS)
 	{
 		CONS_Alert(CONS_WARNING, "Your party is full!\n");
 		return;
@@ -1983,7 +1983,7 @@ Command_RejectInvite_f (void)
 static void
 Command_LeaveParty_f (void)
 {
-	if (r_splitscreen > splitscreen)
+	if (G_PartySize(consoleplayer) > G_LocalSplitscreenPartySize(consoleplayer))
 	{
 		CONS_Printf("\x85Leaving party...\n");
 

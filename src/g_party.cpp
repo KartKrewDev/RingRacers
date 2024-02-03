@@ -128,16 +128,15 @@ public:
 			return;
 		}
 
-		// Rendering stuff is not valid outside of levels.
-		if (!G_GamestateUsesLevel())
-		{
-			return;
-		}
-
 		for (std::size_t i = 0; i < size(); ++i)
 		{
 			displayplayers[i] = at(i);
-			G_FixCamera(1 + i);
+
+			// Camera is not valid outside of levels.
+			if (G_GamestateUsesLevel())
+			{
+				G_FixCamera(1 + i);
+			}
 		}
 
 		r_splitscreen = size() - 1;
