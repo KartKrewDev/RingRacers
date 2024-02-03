@@ -3326,7 +3326,7 @@ void G_AddTOL(UINT32 newtol, const char *tolname)
 //
 boolean G_GametypeUsesLives(void)
 {
-	if (modeattacking || metalrecording) // NOT in Record Attack
+	if (modeattacking) // NOT in Record Attack
 		return false;
 
 	if ((grandprixinfo.gp == true) // In Grand Prix
@@ -4345,11 +4345,6 @@ static void G_DoCompleted(void)
 			pausedelay = 0;
 
 		gameaction = ga_nothing;
-
-		if (metalplayback)
-			G_StopMetalDemo();
-		if (metalrecording)
-			G_StopMetalRecording(false);
 
 		if (automapactive)
 			AM_Stop();

@@ -385,16 +385,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 	// We now identify by object type, not sprite! Tails 04-11-2001
 	switch (special->type)
 	{
-		case MT_MEMENTOSTP:	 // Mementos teleport
-			// Teleport player to the other teleporter (special->target). We'll assume there's always only ever 2.
-			if (!special->target)
-				return;	// foolproof crash prevention check!!!!!
-
-			P_SetOrigin(player->mo, special->target->x, special->target->y, special->target->z + (48<<FRACBITS));
-			player->mo->angle = special->target->angle;
-			P_SetObjectMomZ(player->mo, 12<<FRACBITS, false);
-			P_InstaThrust(player->mo, player->mo->angle, 20<<FRACBITS);
-			return;
 		case MT_FLOATINGITEM: // SRB2Kart
 			if (special->extravalue1 > 0 && toucher != special->tracer)
 			{
@@ -581,33 +571,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			special->frame |= FF_TRANS90;
 			return;
 		*/
-		case MT_SMK_MOLE:
-			if (special->target && !P_MobjWasRemoved(special->target))
-				return;
-
-			if (special->health <= 0 || toucher->health <= 0)
-				return;
-
-			if (!player->mo || player->spectator)
-				return;
-
-			// kill
-			if (player->invincibilitytimer > 0
-				|| K_IsBigger(toucher, special) == true
-				|| player->flamedash > 0)
-			{
-				P_KillMobj(special, toucher, toucher, DMG_NORMAL);
-				return;
-			}
-
-			// no interaction
-			if (player->flashing > 0 || player->hyudorotimer > 0 || P_PlayerInPain(player))
-				return;
-
-			// attach to player!
-			P_SetTarget(&special->target, toucher);
-			S_StartSound(special, sfx_s1a2);
-			return;
 
 		case MT_SPECIALSTAGEBOMB:
 			// only attempt to damage the player if they're not invincible
@@ -915,11 +878,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 		case MT_LSZ_BUNGEE:
 			Obj_BungeeSpecial(special, player);
-			return;
-
-		// CTF Flags
-		case MT_REDFLAG:
-		case MT_BLUEFLAG:
 			return;
 
 		case MT_CHEATCHECK:
@@ -1643,8 +1601,6 @@ boolean P_CheckRacers(void)
   */
 void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damagetype)
 {
-	mobj_t *mo;
-
 	if (target->flags & (MF_ENEMY|MF_BOSS))
 		target->momx = target->momy = target->momz = 0;
 
@@ -1733,9 +1689,6 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 	// Let EVERYONE know what happened to a player! 01-29-2002 Tails
 	if (target->player && !target->player->spectator)
 	{
-		if (metalrecording) // Ack! Metal Sonic shouldn't die! Cut the tape, end recording!
-			G_StopMetalRecording(true);
-
 		target->renderflags &= ~RF_DONTDRAW;
 	}
 
@@ -1822,148 +1775,14 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 	// Other death animation effects
 	switch(target->type)
 	{
-		case MT_BOUNCEPICKUP:
-		case MT_RAILPICKUP:
-		case MT_AUTOPICKUP:
-		case MT_EXPLODEPICKUP:
-		case MT_SCATTERPICKUP:
-		case MT_GRENADEPICKUP:
-			P_SetObjectMomZ(target, FRACUNIT, false);
-			target->fuse = target->info->damage;
-			break;
-
-		case MT_BUGGLE:
-			if (inflictor && inflictor->player // did a player kill you? Spawn relative to the player so they're bound to get it
-			&& P_AproxDistance(inflictor->x - target->x, inflictor->y - target->y) <= inflictor->radius + target->radius + FixedMul(8*FRACUNIT, inflictor->scale) // close enough?
-			&& inflictor->z <= target->z + target->height + FixedMul(8*FRACUNIT, inflictor->scale)
-			&& inflictor->z + inflictor->height >= target->z - FixedMul(8*FRACUNIT, inflictor->scale))
-				mo = P_SpawnMobj(inflictor->x + inflictor->momx, inflictor->y + inflictor->momy, inflictor->z + (inflictor->height / 2) + inflictor->momz, MT_EXTRALARGEBUBBLE);
-			else
-				mo = P_SpawnMobj(target->x, target->y, target->z, MT_EXTRALARGEBUBBLE);
-			mo->destscale = target->scale;
-			P_SetScale(mo, mo->destscale);
-			P_SetMobjState(mo, mo->info->raisestate);
-			break;
-
-		case MT_YELLOWSHELL:
-			P_SpawnMobjFromMobj(target, 0, 0, 0, MT_YELLOWSPRING);
-			break;
-
-		case MT_CRAWLACOMMANDER:
-			target->momx = target->momy = target->momz = 0;
-			break;
-
-		case MT_CRUSHSTACEAN:
-			if (target->tracer)
-			{
-				mobj_t *chain = target->tracer->target, *chainnext;
-				while (chain)
-				{
-					chainnext = chain->target;
-					P_RemoveMobj(chain);
-					chain = chainnext;
-				}
-				S_StopSound(target->tracer);
-				P_KillMobj(target->tracer, inflictor, source, damagetype);
-			}
-			break;
-
-		case MT_BANPYURA:
-			if (target->tracer)
-			{
-				S_StopSound(target->tracer);
-				P_KillMobj(target->tracer, inflictor, source, damagetype);
-			}
-			break;
-
-		case MT_EGGSHIELD:
-			P_SetObjectMomZ(target, 4*target->scale, false);
-			P_InstaThrust(target, target->angle, 3*target->scale);
-			target->flags = (target->flags|MF_NOCLIPHEIGHT) & ~MF_NOGRAVITY;
-			break;
-
-		case MT_DRAGONBOMBER:
-			{
-				mobj_t *segment = target;
-				while (segment->tracer != NULL)
-				{
-					P_KillMobj(segment->tracer, NULL, NULL, DMG_NORMAL);
-					segment = segment->tracer;
-				}
-				break;
-			}
-
-		case MT_EGGMOBILE3:
-			{
-				mobj_t *mo2;
-				thinker_t *th;
-				UINT32 i = 0; // to check how many clones we've removed
-
-				// scan the thinkers to make sure all the old pinch dummies are gone on death
-				for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
-				{
-					if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
-						continue;
-
-					mo = (mobj_t *)th;
-					if (mo->type != (mobjtype_t)target->info->mass)
-						continue;
-					if (mo->tracer != target)
-						continue;
-
-					P_KillMobj(mo, inflictor, source, damagetype);
-					mo->destscale = mo->scale/8;
-					mo->scalespeed = (mo->scale - mo->destscale)/(2*TICRATE);
-					mo->momz = mo->info->speed;
-					mo->angle = FixedAngle((P_RandomKey(PR_UNDEFINED, 36)*10)<<FRACBITS);
-
-					mo2 = P_SpawnMobjFromMobj(mo, 0, 0, 0, MT_BOSSJUNK);
-					mo2->angle = mo->angle;
-					P_SetMobjState(mo2, S_BOSSSEBH2);
-
-					if (++i == 2) // we've already removed 2 of these, let's stop now
-						break;
-					else
-						S_StartSound(mo, mo->info->deathsound); // done once to prevent sound stacking
-				}
-			}
-			break;
-
-		case MT_BIGMINE:
-			if (inflictor)
-			{
-				fixed_t dx = target->x - inflictor->x, dy = target->y - inflictor->y, dz = target->z - inflictor->z;
-				fixed_t dm = FixedHypot(dz, FixedHypot(dy, dx));
-				target->momx = FixedDiv(FixedDiv(dx, dm), dm)*512;
-				target->momy = FixedDiv(FixedDiv(dy, dm), dm)*512;
-				target->momz = FixedDiv(FixedDiv(dz, dm), dm)*512;
-			}
-			if (source)
-				P_SetTarget(&target->tracer, source);
-			break;
-
 		case MT_BLASTEXECUTOR:
 			if (target->spawnpoint)
 				P_LinedefExecute(target->spawnpoint->angle, (source ? source : inflictor), target->subsector->sector);
 			break;
 
-		case MT_SPINBOBERT:
-			if (target->hnext)
-				P_KillMobj(target->hnext, inflictor, source, damagetype);
-			if (target->hprev)
-				P_KillMobj(target->hprev, inflictor, source, damagetype);
-			break;
-
 		case MT_EGGTRAP:
 			// Time for birdies! Yaaaaaaaay!
 			target->fuse = TICRATE;
-			break;
-
-		case MT_MINECART:
-			A_Scream(target);
-			target->momx = target->momy = target->momz = 0;
-			if (target->target && target->target->health)
-				P_KillMobj(target->target, target, source, DMG_NORMAL);
 			break;
 
 		case MT_PLAYER:
@@ -2064,26 +1883,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			target->tics = 175;
 			return;
 
-		case MT_METALSONIC_RACE:
-			target->fuse = TICRATE*3;
-			target->momx = target->momy = target->momz = 0;
-			P_SetObjectMomZ(target, 14*FRACUNIT, false);
-			target->flags = (target->flags & ~MF_NOGRAVITY)|(MF_NOCLIP|MF_NOCLIPTHING);
-			break;
-
 		// SRB2Kart:
-		case MT_SMK_ICEBLOCK:
-			{
-				mobj_t *cur = target->hnext;
-				while (cur && !P_MobjWasRemoved(cur))
-				{
-					P_SetMobjState(cur, S_SMK_ICEBLOCK2);
-					cur = cur->hnext;
-				}
-				target->fuse = 10;
-				S_StartSound(target, sfx_s3k80);
-			}
-			break;
 
 		case MT_ITEMCAPSULE:
 		{
@@ -2437,23 +2237,6 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			P_KillMobj(cur, inflictor, source, DMG_NORMAL);
 			cur = cur->hnext;
 		}
-	}
-
-	// Bounce up on death
-	if (target->type == MT_SMK_PIPE || target->type == MT_SMK_MOLE || target->type == MT_SMK_THWOMP)
-	{
-		target->flags &= (~MF_NOGRAVITY);
-
-		if (target->eflags & MFE_VERTICALFLIP)
-			target->z -= target->height;
-		else
-			target->z += target->height;
-
-		S_StartSound(target, target->info->deathsound);
-
-		P_SetObjectMomZ(target, 8<<FRACBITS, false);
-		if (inflictor)
-			P_InstaThrust(target, R_PointToAngle2(inflictor->x, inflictor->y, target->x, target->y)+ANGLE_90, 16<<FRACBITS);
 	}
 
 	// Final state setting - do something instead of P_SetMobjState;
@@ -2955,7 +2738,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	}
 
 	// Everything above here can't be forced.
-	if (!metalrecording)
 	{
 		UINT8 shouldForce = LUA_HookShouldDamage(target, inflictor, source, damage, damagetype);
 		if (P_MobjWasRemoved(target))

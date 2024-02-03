@@ -193,7 +193,6 @@ extern UINT16 musicwads;
 extern boolean savemoddata; // This mod saves time/emblem data.
 extern boolean usedCheats;
 extern boolean imcontinuing; // Temporary flag while continuing
-extern boolean metalrecording;
 
 #define ATTACKING_NONE	0
 #define ATTACKING_TIME	1

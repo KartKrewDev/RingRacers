@@ -184,8 +184,6 @@ INT32 P_GivePlayerRings(player_t *player, INT32 num_rings);
 INT32 P_GivePlayerSpheres(player_t *player, INT32 num_spheres);
 void P_GivePlayerLives(player_t *player, INT32 numlives);
 UINT8 P_GetNextEmerald(void);
-void P_GiveEmerald(boolean spawnObj);
-void P_GiveFinishFlags(player_t *player);
 boolean P_AutoPause(void);
 
 void P_ElementalFire(player_t *player, boolean cropcircle);

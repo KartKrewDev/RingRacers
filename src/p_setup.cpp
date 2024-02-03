@@ -8247,9 +8247,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	// Initialize sector node list.
 	P_Initsecnode();
 
-	if (metalplayback)
-		G_StopMetalDemo();
-
 	// Clear CECHO messages
 	HU_ClearCEcho();
 	HU_ClearTitlecardCEcho();
@@ -8757,8 +8754,6 @@ void P_PostLoadLevel(void)
 
 	P_InitPlayers();
 
-	if (metalrecording)
-		G_BeginMetal();
 	if (demo.recording) // Okay, level loaded, character spawned and skinned,
 		G_BeginRecording(); // I AM NOW READY TO RECORD.
 	demo.deferstart = true;

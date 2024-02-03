@@ -99,13 +99,9 @@ struct menudemo_t {
 };
 
 
-extern mobj_t *metalplayback;
-
 // Only called by startup code.
 void G_RecordDemo(const char *name);
-void G_RecordMetal(void);
 void G_BeginRecording(void);
-void G_BeginMetal(void);
 
 // Only called by shutdown code.
 void G_WriteStanding(UINT8 ranking, char *name, INT32 skinnum, UINT16 color, UINT32 val);
@@ -158,11 +154,6 @@ void G_StoreRewindInfo(void);
 void G_PreviewRewind(tic_t previewtime);
 void G_ConfirmRewind(tic_t rewindtime);
 
-void G_ReadMetalTic(mobj_t *metal);
-void G_WriteMetalTic(mobj_t *metal);
-void G_SaveMetal(UINT8 **buffer);
-void G_LoadMetal(UINT8 **buffer);
-
 // Your naming conventions are stupid and useless.
 // There is no conflict here.
 struct demoghost {
@@ -194,10 +185,6 @@ void G_AddGhost(savebuffer_t *buffer, char *defdemoname);
 staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer);
 void G_FreeGhosts(void);
 void G_DoneLevelLoad(void);
-
-void G_DoPlayMetal(void);
-void G_StopMetalDemo(void);
-ATTRNORETURN void FUNCNORETURN G_StopMetalRecording(boolean kill);
 
 void G_StopDemo(void);
 boolean G_CheckDemoStatus(void);

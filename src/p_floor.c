@@ -980,16 +980,6 @@ static mobj_t *SearchMarioNode(msecnode_t *node)
 		case MT_THOK:
 		case MT_GHOST:
 		case MT_OVERLAY:
-		case MT_ELEMENTAL_ORB:
-		case MT_ATTRACT_ORB:
-		case MT_FORCE_ORB:
-		case MT_ARMAGEDDON_ORB:
-		case MT_WHIRLWIND_ORB:
-		case MT_PITY_ORB:
-		case MT_FLAMEAURA_ORB:
-		case MT_BUBBLEWRAP_ORB:
-		case MT_THUNDERCOIN_ORB:
-		case MT_IVSP:
 		case MT_SUPERSPARK:
 		case MT_RAIN:
 		case MT_SNOWFLAKE:
@@ -999,18 +989,11 @@ static mobj_t *SearchMarioNode(msecnode_t *node)
 		case MT_SMOKE:
 		case MT_SMALLBUBBLE:
 		case MT_MEDIUMBUBBLE:
-		case MT_TFOG:
 		case MT_SEED:
 		case MT_PARTICLE:
-		case MT_SCORE:
 		case MT_DROWNNUMBERS:
-		case MT_GOTEMERALD:
-		case MT_LOCKON:
-		case MT_TAG:
-		case MT_GOTFLAG:
 		case MT_HOOP:
 		case MT_HOOPCOLLIDE:
-		case MT_NIGHTSCORE:
 			continue;
 		default:
 			break;
