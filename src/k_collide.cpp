@@ -848,27 +848,33 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 	{
 		player_t *victimPlayer = victim->player;
 
-		if (victim != attacker && (P_PlayerInPain(victimPlayer) ? victim->hitlag == 0 : victimPlayer->flashing == 0))
+		if (victim == attacker)
+			return false;
+
+		// If both players have a whip, hits are order-of-execution dependent and that sucks.
+		// Player expectation is a clash here.
+		if (victimPlayer->whip && !P_MobjWasRemoved(victimPlayer->whip))
 		{
-			// If both players have a whip, hits are order-of-execution dependent and that sucks.
-			// Player expectation is a clash here.
-			if (victimPlayer->whip && !P_MobjWasRemoved(victimPlayer->whip))
-			{
-				victimPlayer->whip->extravalue2 = 1;
-				shield->extravalue2 = 1;
-
-				K_DoPowerClash(victim, attacker);
-
-				victim->renderflags &= ~RF_DONTDRAW;
-				attacker->renderflags &= ~RF_DONTDRAW;
-
-				angle_t thrangle = R_PointToAngle2(attacker->x, attacker->y, victim->x, victim->y);
-				P_Thrust(victim, thrangle, mapobjectscale*28);
-				P_Thrust(attacker, ANGLE_180 + thrangle, mapobjectscale*28);
-
+			if (victim->hitlag != 0)
 				return false;
-			}
 
+			victimPlayer->whip->extravalue2 = 1;
+			shield->extravalue2 = 1;
+
+			K_DoPowerClash(victim, attacker);
+
+			victim->renderflags &= ~RF_DONTDRAW;
+			attacker->renderflags &= ~RF_DONTDRAW;
+
+			angle_t thrangle = R_PointToAngle2(attacker->x, attacker->y, victim->x, victim->y);
+			P_Thrust(victim, thrangle, mapobjectscale*28);
+			P_Thrust(attacker, ANGLE_180 + thrangle, mapobjectscale*28);
+
+			return false;
+		}
+
+		if (P_PlayerInPain(victimPlayer) ? victim->hitlag == 0 : victimPlayer->flashing == 0)
+		{
 			// Instawhip _always_ loses to guard.
 			if (K_PlayerGuard(victimPlayer))
 			//if (true)
