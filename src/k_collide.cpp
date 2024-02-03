@@ -1042,6 +1042,10 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 		return false;
 	}
 
+	// What the fuck is calling this with stale refs? Whatever, validation's cheap.
+	if (P_MobjWasRemoved(t1) || P_MobjWasRemoved(t2) || !t1->player || !t2->player)
+		return false;
+
 	// Clash instead of damage if both parties have any of these conditions
 	auto canClash = [](mobj_t *t1, mobj_t *t2)
 	{
