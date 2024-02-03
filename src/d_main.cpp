@@ -856,6 +856,7 @@ void D_SRB2Loop(void)
 		precise_t enterprecise = I_GetPreciseTime();
 		precise_t finishprecise = enterprecise;
 
+		g_dc = {};
 		Z_Frame_Reset();
 
 		{
