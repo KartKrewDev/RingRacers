@@ -20,8 +20,10 @@ namespace srb2::hwr2
 class PaletteManager
 {
 	rhi::Handle<rhi::Texture> palette_;
+#if 0
 	rhi::Handle<rhi::Texture> lighttable_;
 	rhi::Handle<rhi::Texture> encore_lighttable_;
+#endif
 	rhi::Handle<rhi::Texture> default_colormap_;
 
 	std::unordered_map<const uint8_t*, rhi::Handle<rhi::Texture>> colormaps_;
@@ -36,8 +38,10 @@ public:
 	PaletteManager& operator=(PaletteManager&&);
 
 	rhi::Handle<rhi::Texture> palette() const noexcept { return palette_; }
+#if 0
 	rhi::Handle<rhi::Texture> lighttable() const noexcept { return lighttable_; }
 	rhi::Handle<rhi::Texture> encore_lighttable() const noexcept { return encore_lighttable_; }
+#endif
 	rhi::Handle<rhi::Texture> default_colormap() const noexcept { return default_colormap_; }
 
 	void update(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
