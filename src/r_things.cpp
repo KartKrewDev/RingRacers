@@ -685,7 +685,7 @@ void R_DrawMaskedColumn(drawcolumndata_t* dc, column_t *column, column_t *bright
 		if (dc->yh >= baseclip && baseclip != -1)
 			dc->yh = baseclip;
 
-		if (dc->yl <= dc->yh && dc->yh > 0)
+		if (dc->yl <= dc->yh && dc->yh > 0 && column->length != 0)
 		{
 			dc->source = (UINT8 *)column + 3;
 			dc->sourcelength = column->length;
@@ -772,7 +772,7 @@ void R_DrawFlippedMaskedColumn(drawcolumndata_t* dc, column_t *column, column_t 
 		if (dc->yh >= vid.height) // dc_yl must be < vid.height, so reduces number of checks in tight loop
 			dc->yh = vid.height - 1;
 
-		if (dc->yl <= dc->yh && dc->yh > 0)
+		if (dc->yl <= dc->yh && dc->yh > 0 && column->length != 0)
 		{
 			dc->source = static_cast<UINT8*>(ZZ_Alloc(column->length));
 			dc->sourcelength = column->length;
