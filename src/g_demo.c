@@ -1220,8 +1220,8 @@ void G_GhostTicker(void)
 			continue;
 		}
 
-		// Pause jhosts that cross until we cross ourself.
-		if (g->linecrossed && !linecrossed)
+		// Pause jhosts that cross until the timer starts.
+		if (g->linecrossed && leveltime < starttime)
 			continue;
 
 readghosttic:
@@ -1531,7 +1531,8 @@ skippedghosttic:
 			continue;
 		}
 
-		if (linecrossed && !g->linecrossed)
+		// If the timer started, skip ahead until the ghost starts too.
+		if (starttime <= leveltime && !g->linecrossed)
 			goto readghosttic;
 
 		p = g;
