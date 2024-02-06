@@ -1566,6 +1566,11 @@ typedef enum
 	sfx_gshf0,
 	sfx_gshf1,
 
+	// Pinball
+	sfx_cftbl0,
+	sfx_cftbl1,
+	sfx_cftbl2,
+
 	// And LASTLY, Kart's skin sounds.
 	sfx_kwin,
 	sfx_klose,

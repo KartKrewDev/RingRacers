@@ -296,6 +296,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT32(save->p, players[i].spectatorReentry);
 		WRITEUINT32(save->p, players[i].griefValue);
 		WRITEUINT8(save->p, players[i].griefStrikes);
+		WRITEUINT8(save->p, players[i].griefWarned);
 
 		WRITEUINT8(save->p, players[i].splitscreenindex);
 
@@ -914,6 +915,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].spectatorReentry = READUINT32(save->p);
 		players[i].griefValue = READUINT32(save->p);
 		players[i].griefStrikes = READUINT8(save->p);
+		players[i].griefWarned = READUINT8(save->p);
 
 		players[i].splitscreenindex = READUINT8(save->p);
 

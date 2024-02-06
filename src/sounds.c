@@ -1492,6 +1492,11 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"gshf0", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshf1", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
 
+  // Pinball
+  {"cftbl0", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"cftbl1", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"cftbl2", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+
   // SRB2kart - Skin sounds
   {"kwin",   false,  64, 96, -1, NULL, 0,   SKSKWIN,  -1, LUMPERROR, ""},
   {"klose",  false,  64, 96, -1, NULL, 0,  SKSKLOSE,  -1, LUMPERROR, ""},
