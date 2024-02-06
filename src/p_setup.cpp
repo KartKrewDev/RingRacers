@@ -3117,8 +3117,6 @@ static void P_LoadTextmap(void)
 	side_t     *sd;
 	mapthing_t *mt;
 
-	CONS_Alert(CONS_NOTICE, "UDMF support is still a work-in-progress; its specs and features are prone to change until it is fully implemented.\n");
-
 	/// Given the UDMF specs, some fields are given a default value.
 	/// If an element's field has a default value set, it is omitted
 	/// from the textmap, and therefore we have to account for it by
@@ -8664,6 +8662,16 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	}
 
 	P_MapEnd(); // tm.thing is no longer needed from this point onwards
+
+	if (!udmf && !P_CanWriteTextmap())
+	{
+		// *Playing* binary maps is disabled; the support is kept in the code for binary map conversions only.
+		// This is to make sure people use UDMF and, indirectly, guarantee that they will ship their PWAD
+		// maps with extended GL nodes, as per UDMF requirement. We can retrofit a modern hardware renderer
+		// into the game in the future without disrupting existing PWADs, which does not suffer from the issues
+		// of the current GL renderer.
+		I_Error("Playing binary maps is disabled; please convert to UDMF TEXTMAP and rebuild nodes.");
+	}
 
 	if (!fromnetsave)
 	{
