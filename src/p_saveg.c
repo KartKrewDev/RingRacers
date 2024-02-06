@@ -572,6 +572,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].finalfailsafe);
 
 		WRITEUINT8(save->p, players[i].lastsafelap);
+		WRITEUINT8(save->p, players[i].lastsafecheatcheck);
 
 		WRITEFIXED(save->p, players[i].topAccel);
 
@@ -1146,6 +1147,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].finalfailsafe = READUINT8(save->p);
 
 		players[i].lastsafelap = READUINT8(save->p);
+		players[i].lastsafecheatcheck = READUINT8(save->p);
 
 		players[i].topAccel = READFIXED(save->p);
 
