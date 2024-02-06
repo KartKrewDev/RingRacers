@@ -587,11 +587,12 @@ sector_t *P_PlayerTouchingSectorSpecial(player_t *player, INT32 section, INT32 n
 sector_t *P_PlayerTouchingSectorSpecialFlag(player_t *player, sectorspecialflags_t flag);
 void P_PlayerInSpecialSector(player_t *player);
 void P_CheckMobjTrigger(mobj_t *mobj, boolean pushable);
-void P_CheckMobjTouchingSectorActions(mobj_t *mobj, boolean continuous);
+void P_CheckMobjTouchingSectorActions(mobj_t *mobj, boolean continuous, boolean sectorchanged);
 sector_t *P_FindPlayerTrigger(player_t *player, line_t *sourceline);
 boolean P_IsPlayerValid(size_t playernum);
 boolean P_CanPlayerTrigger(size_t playernum);
 void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *roversector);
+void P_CheckSectorTransitionalEffects(mobj_t *thing, sector_t *prevsec, boolean wasgrounded);
 
 fixed_t P_FindLowestFloorSurrounding(sector_t *sec);
 fixed_t P_FindHighestFloorSurrounding(sector_t *sec);
