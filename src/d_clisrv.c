@@ -65,6 +65,7 @@
 #include "k_zvote.h"
 #include "music.h"
 #include "k_bans.h"
+#include "sanitize.h"
 
 // cl loading screen
 #include "v_video.h"
@@ -1001,70 +1002,6 @@ static boolean CL_SendKey(void)
 	return HSendPacket(servernode, false, 0, sizeof (clientkey_pak) );
 }
 
-static void
-CopyCaretColors (char *p, const char *s, int n)
-{
-	char *t;
-	int   m;
-	int   c;
-	if (!n)
-		return;
-	while (( t = strchr(s, '^') ))
-	{
-		m = ( t - s );
-
-		if (m >= n)
-		{
-			memcpy(p, s, n);
-			return;
-		}
-		else
-			memcpy(p, s, m);
-
-		p += m;
-		n -= m;
-		s += m;
-
-		if (!n)
-			return;
-
-		if (s[1])
-		{
-			c = toupper(s[1]);
-			if (isdigit(c))
-				c = 0x80 + ( c - '0' );
-			else if (c >= 'A' && c <= 'F')
-				c = 0x80 + ( c - 'A' );
-			else
-				c = 0;
-
-			if (c)
-			{
-				*p++ = c;
-				n--;
-
-				if (!n)
-					return;
-			}
-			else
-			{
-				if (n < 2)
-					break;
-
-				memcpy(p, s, 2);
-
-				p += 2;
-				n -= 2;
-			}
-
-			s += 2;
-		}
-		else
-			break;
-	}
-	strncpy(p, s, n);
-}
-
 static void SV_SendServerInfo(INT32 node, tic_t servertime)
 {
 	UINT8 *p;
@@ -1111,8 +1048,7 @@ static void SV_SendServerInfo(INT32 node, tic_t servertime)
 		(dedicated ? SV_DEDICATED : 0)
 	);
 
-	CopyCaretColors(netbuffer->u.serverinfo.servername, cv_servername.string,
-		MAXSERVERNAME);
+	D_ParseCarets(netbuffer->u.serverinfo.servername, cv_servername.string, MAXSERVERNAME);
 
 	M_Memcpy(netbuffer->u.serverinfo.mapmd5, mapmd5, 16);
 
@@ -1265,8 +1201,8 @@ static boolean SV_SendServerConfig(INT32 node)
 
 	memcpy(netbuffer->u.servercfg.server_context, server_context, 8);
 
-	strncpy(netbuffer->u.servercfg.server_name, cv_servername.string, MAXSERVERNAME);
-	strncpy(netbuffer->u.servercfg.server_contact, cv_server_contact.string, MAXSERVERCONTACT);
+	D_ParseCarets(netbuffer->u.servercfg.server_name, cv_servername.string, MAXSERVERNAME);
+	D_ParseCarets(netbuffer->u.servercfg.server_contact, cv_server_contact.string, MAXSERVERCONTACT);
 
 	{
 		const size_t len = sizeof (serverconfig_pak);
@@ -3438,8 +3374,8 @@ static void SV_GenContext(void)
 			server_context[i] = 'a'+(a-26);
 	}
 
-	strlcpy(connectedservername, cv_servername.string, MAXSERVERNAME);
-	strlcpy(connectedservercontact, cv_server_contact.string, MAXSERVERCONTACT);
+	D_ParseCarets(connectedservername, cv_servername.string, MAXSERVERNAME);
+	D_ParseCarets(connectedservercontact, cv_server_contact.string, MAXSERVERCONTACT);
 }
 #endif // TESTERS
 
@@ -4340,7 +4276,6 @@ void HandleSigfail(const char *string)
   */
 static void HandleServerInfo(SINT8 node)
 {
-	char servername[MAXSERVERNAME];
 	// compute ping in ms
 	const tic_t ticnow = I_GetTime();
 	const tic_t ticthen = (tic_t)LONG(netbuffer->u.serverinfo.time);
@@ -4351,8 +4286,7 @@ static void HandleServerInfo(SINT8 node)
 		[sizeof netbuffer->u.serverinfo.application - 1] = '\0';
 	netbuffer->u.serverinfo.gametypename
 		[sizeof netbuffer->u.serverinfo.gametypename - 1] = '\0';
-	memcpy(servername, netbuffer->u.serverinfo.servername, MAXSERVERNAME);
-	CopyCaretColors(netbuffer->u.serverinfo.servername, servername, MAXSERVERNAME);
+	D_SanitizeKeepColors(netbuffer->u.serverinfo.servername, netbuffer->u.serverinfo.servername, MAXSERVERNAME);
 
 	// If we have cause to reject it, it's not worth observing.
 	if (
@@ -4572,8 +4506,8 @@ static void HandlePacketFromAwayNode(SINT8 node)
 
 				memcpy(server_context, netbuffer->u.servercfg.server_context, 8);
 
-				strlcpy(connectedservername, netbuffer->u.servercfg.server_name, MAXSERVERNAME);
-				strlcpy(connectedservercontact, netbuffer->u.servercfg.server_contact, MAXSERVERCONTACT);
+				D_SanitizeKeepColors(connectedservername, netbuffer->u.servercfg.server_name, MAXSERVERNAME);
+				D_SanitizeKeepColors(connectedservercontact, netbuffer->u.servercfg.server_contact, MAXSERVERCONTACT);
 			}
 
 #ifdef HAVE_DISCORDRPC

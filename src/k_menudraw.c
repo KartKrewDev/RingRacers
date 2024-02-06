@@ -69,6 +69,7 @@
 
 #include "i_time.h"
 #include "m_easing.h"
+#include "sanitize.h"
 
 #ifdef PC_DOS
 #include <stdio.h> // for snprintf
@@ -532,12 +533,12 @@ static void M_DrawMenuTyping(void)
 	V_DrawFill(x + 4, y + 4 + 5, 1, 8+6, 121);
 	V_DrawFill(x + 5 + boxwidth - 8, y + 4 + 5, 1, 8+6, 121);
 
-	V_DrawString(x + 8, y + 12, 0, menutyping.cache);
+	INT32 textwidth = M_DrawCaretString(x + 8, y + 12, menutyping.cache, true);
 	if (skullAnimCounter < 4
 		&& menutyping.menutypingclose == false
 		&& menutyping.menutypingfade == (menutyping.keyboardtyping ? 9 : 18))
 	{
-		V_DrawCharacter(x + 8 + V_StringWidth(menutyping.cache, 0), y + 12 + 1, '_', false);
+		V_DrawCharacter(x + 8 + textwidth, y + 12 + 1, '_', false);
 	}
 
 	const INT32 buttonwidth = ((boxwidth + 1)/NUMVIRTUALKEYSINROW);
@@ -4493,7 +4494,7 @@ box_found:
 										V_DrawMenuString(x + (skullAnimCounter/5) + 7, y + 9, highlightflags, "\x1D");
 									}
 
-									V_DrawString(x + xoffs + 8, y + 9, 0, cv->string);
+									M_DrawCaretString(x + xoffs + 8, y + 9, cv->string, false);
 
 									y += LINEHEIGHT;
 								}
