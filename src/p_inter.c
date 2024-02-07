@@ -1643,7 +1643,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 	// SRB2kart
 	// I wish I knew a better way to do this
-	if (target->target && target->target->player && target->target->player->mo)
+	if (!P_MobjWasRemoved(target->target) && target->target->player && !P_MobjWasRemoved(target->target->player->mo))
 	{
 		if ((target->target->player->itemflags & IF_EGGMANOUT) && target->type == MT_EGGMANITEM_SHIELD)
 			target->target->player->itemflags &= ~IF_EGGMANOUT;
