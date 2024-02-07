@@ -12139,7 +12139,12 @@ void A_SSMineExplode(mobj_t *actor)
 		return;
 
 	delay = K_MineExplodeAttack(actor, (3*actor->info->painchance)>>1, (boolean)locvar1);
-	K_SpawnMineExplosion(actor, (actor->target && actor->target->player) ? actor->target->player->skincolor : SKINCOLOR_KETCHUP, delay);
+	
+	skincolornum_t color = SKINCOLOR_KETCHUP;
+	if (!P_MobjWasRemoved(actor->target) && actor->target->player)
+		color = actor->target->player->skincolor;
+		
+	K_SpawnMineExplosion(actor, color, delay);
 }
 
 void A_SSMineFlash(mobj_t *actor)
