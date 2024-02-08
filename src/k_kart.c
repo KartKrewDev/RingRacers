@@ -9770,6 +9770,7 @@ void K_UpdateDistanceFromFinishLine(player_t *const player)
 						adddist = (UINT32)disttowaypoint;
 					}
 					*/
+					Z_Free(pathBackwards.array);
 				}
 				/*
 				else
