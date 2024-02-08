@@ -301,6 +301,7 @@ void DRPC_RemoveRequest(discordRequest_t *removeRequest)
 	}
 
 	Z_Free(removeRequest->username);
+	Z_Free(removeRequest->discriminator);
 	Z_Free(removeRequest->userID);
 	Z_Free(removeRequest);
 }
