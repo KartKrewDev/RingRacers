@@ -2698,7 +2698,11 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	if (damagetype != DMG_SPECTATOR && target->player && target->player->spectator)
 		return false;
 
-	if (!P_MobjWasRemoved(source) && source->player && source->player->spectator)
+	// source is checked without a removal guard in so many places that it's genuinely less work to do it here.
+	if (source && P_MobjWasRemoved(source))
+		source = NULL;
+
+	if (source && source->player && source->player->spectator)
 		return false;
 
 	if (((damagetype & DMG_TYPEMASK) == DMG_STING)
