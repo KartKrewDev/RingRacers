@@ -2642,6 +2642,14 @@ static boolean P_FlashingException(const player_t *player, const mobj_t *inflict
 		return false;
 	}
 
+	if (inflictor->type == MT_SPB)
+	{
+		// The SPB does not die on impact with players other than its intended target.
+		// Ignoring flashing tics would cause an endless combo on anyone who gets in way of the SPB.
+		// Upon hitting its target, DMG_EXPLODE will be used (which ignores flashing tics).
+		return false;
+	}
+
 	if (!P_IsKartItem(inflictor->type) && inflictor->type != MT_PLAYER)
 	{
 		// Exception only applies to player items.
