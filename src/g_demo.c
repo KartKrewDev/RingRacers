@@ -3283,7 +3283,7 @@ void G_DoPlayDemo(const char *defdemoname)
 	CV_StealthSetValue(&cv_playbackspeed, 1);
 }
 
-void G_AddGhost(savebuffer_t *buffer, char *defdemoname)
+void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 {
 	INT32 i;
 	char name[17], color[MAXCOLORNAME+1], md5[16];
