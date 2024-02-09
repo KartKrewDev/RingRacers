@@ -2843,7 +2843,7 @@ void R_AddPrecipitationSprites(void)
 	const fixed_t drawdist = cv_drawdist_precip.value * mapobjectscale;
 
 	INT32 xl, xh, yl, yh, bx, by;
-	precipmobj_t *th;
+	precipmobj_t *th, *next;
 
 	// no, no infinite draw distance for precipitation. this option at zero is supposed to turn it off
 	if (drawdist == 0)
@@ -2863,8 +2863,11 @@ void R_AddPrecipitationSprites(void)
 	{
 		for (by = yl; by <= yh; by++)
 		{
-			for (th = precipblocklinks[(by * bmapwidth) + bx]; th; th = th->bnext)
+			for (th = precipblocklinks[(by * bmapwidth) + bx]; th; th = next)
 			{
+				// Store this beforehand because R_ProjectPrecipitionSprite may free th (see P_PrecipThinker)
+				next = th->bnext;
+
 				if (R_PrecipThingVisible(th))
 				{
 					R_ProjectPrecipitationSprite(th);
