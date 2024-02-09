@@ -685,10 +685,11 @@ void R_DrawMaskedColumn(drawcolumndata_t* dc, column_t *column, column_t *bright
 		if (dc->yh >= baseclip && baseclip != -1)
 			dc->yh = baseclip;
 
-		if (dc->yl <= dc->yh && dc->yh > 0)
+		if (dc->yl <= dc->yh && dc->yh > 0 && column->length != 0)
 		{
 			dc->source = (UINT8 *)column + 3;
 			dc->sourcelength = column->length;
+			dc->texheight = column->length;
 			if (brightmap != NULL)
 			{
 				dc->brightmap = (UINT8 *)brightmap + 3;
@@ -771,10 +772,11 @@ void R_DrawFlippedMaskedColumn(drawcolumndata_t* dc, column_t *column, column_t 
 		if (dc->yh >= vid.height) // dc_yl must be < vid.height, so reduces number of checks in tight loop
 			dc->yh = vid.height - 1;
 
-		if (dc->yl <= dc->yh && dc->yh > 0)
+		if (dc->yl <= dc->yh && dc->yh > 0 && column->length != 0)
 		{
 			dc->source = static_cast<UINT8*>(ZZ_Alloc(column->length));
 			dc->sourcelength = column->length;
+			dc->texheight = column->length;
 			for (s = (UINT8 *)column+2+column->length, d = dc->source; d < dc->source+column->length; --s)
 				*d++ = *s;
 
@@ -2841,7 +2843,7 @@ void R_AddPrecipitationSprites(void)
 	const fixed_t drawdist = cv_drawdist_precip.value * mapobjectscale;
 
 	INT32 xl, xh, yl, yh, bx, by;
-	precipmobj_t *th;
+	precipmobj_t *th, *next;
 
 	// no, no infinite draw distance for precipitation. this option at zero is supposed to turn it off
 	if (drawdist == 0)
@@ -2861,8 +2863,11 @@ void R_AddPrecipitationSprites(void)
 	{
 		for (by = yl; by <= yh; by++)
 		{
-			for (th = precipblocklinks[(by * bmapwidth) + bx]; th; th = th->bnext)
+			for (th = precipblocklinks[(by * bmapwidth) + bx]; th; th = next)
 			{
+				// Store this beforehand because R_ProjectPrecipitionSprite may free th (see P_PrecipThinker)
+				next = th->bnext;
+
 				if (R_PrecipThingVisible(th))
 				{
 					R_ProjectPrecipitationSprite(th);

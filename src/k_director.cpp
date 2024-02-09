@@ -212,6 +212,12 @@ private:
 			}
 		}
 
+		if (playerstat[0].sorted == -1)
+		{
+			maxdist = -1;
+			return;
+		}
+
 		maxdist = P_ScaleFromMap(players[playerstat[0].sorted].distancetofinish, FRACUNIT);
 	}
 

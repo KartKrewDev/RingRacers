@@ -1255,7 +1255,15 @@ static void K_DrawDraftCombiring(player_t *player, mobj_t *victim, fixed_t curdi
 	}
 	else
 	{
-		c = FixedMul((CHAOTIXBANDCOLORS - 1)<<FRACBITS, FixedDiv(curdist-minimumdist, maxdist-minimumdist)) >> FRACBITS;
+		fixed_t num = curdist - minimumdist;
+		fixed_t den = maxdist - minimumdist;
+		if (den < 1)
+			den = 1;
+		if (num < 0)
+			num = 0;
+		if (num > den)
+			num = den;
+		c = FixedMul((CHAOTIXBANDCOLORS - 1)<<FRACBITS, FixedDiv(num, den)) >> FRACBITS;
 	}
 
 	stepx = (victim->x - player->mo->x) / CHAOTIXBANDLEN;
@@ -7235,7 +7243,7 @@ void K_RepairOrbitChain(mobj_t *orbit)
 	}
 
 	// Then recount to make sure item amount is correct
-	if (orbit->target && orbit->target->player)
+	if (orbit->target && orbit->target->player && !P_MobjWasRemoved(orbit->target))
 	{
 		INT32 num = 0;
 
@@ -7252,7 +7260,7 @@ void K_RepairOrbitChain(mobj_t *orbit)
 				prev->movedir = num;
 		}
 
-		if (orbit->target->player->itemamount != num)
+		if (orbit->target && !P_MobjWasRemoved(orbit->target) && orbit->target->player->itemamount != num)
 			orbit->target->player->itemamount = num;
 	}
 }
@@ -9763,6 +9771,7 @@ void K_UpdateDistanceFromFinishLine(player_t *const player)
 						adddist = (UINT32)disttowaypoint;
 					}
 					*/
+					Z_Free(pathBackwards.array);
 				}
 				/*
 				else

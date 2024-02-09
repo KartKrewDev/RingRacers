@@ -1643,7 +1643,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 	// SRB2kart
 	// I wish I knew a better way to do this
-	if (target->target && target->target->player && target->target->player->mo)
+	if (!P_MobjWasRemoved(target->target) && target->target->player && !P_MobjWasRemoved(target->target->player->mo))
 	{
 		if ((target->target->player->itemflags & IF_EGGMANOUT) && target->type == MT_EGGMANITEM_SHIELD)
 			target->target->player->itemflags &= ~IF_EGGMANOUT;
@@ -2697,6 +2697,10 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	// Spectator handling
 	if (damagetype != DMG_SPECTATOR && target->player && target->player->spectator)
 		return false;
+
+	// source is checked without a removal guard in so many places that it's genuinely less work to do it here.
+	if (source && P_MobjWasRemoved(source))
+		source = NULL;
 
 	if (source && source->player && source->player->spectator)
 		return false;

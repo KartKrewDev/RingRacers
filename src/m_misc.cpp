@@ -2276,7 +2276,7 @@ static UINT32 tokenizerInputLength = 0;
 static UINT8 tokenizerInComment = 0; // 0 = not in comment, 1 = // Single-line, 2 = /* Multi-line */
 static boolean tokenizerIsString = false; // did we strip quotes from this token?
 
-void M_TokenizerOpen(const char *inputString)
+void M_TokenizerOpen(const char *inputString, size_t inputLength)
 {
 	size_t i;
 
@@ -2286,7 +2286,7 @@ void M_TokenizerOpen(const char *inputString)
 		tokenCapacity[i] = 1024;
 		tokenizerToken[i] = (char*)Z_Malloc(tokenCapacity[i] * sizeof(char), PU_STATIC, NULL);
 	}
-	tokenizerInputLength = strlen(tokenizerInput);
+	tokenizerInputLength = inputLength;
 }
 
 void M_TokenizerClose(void)

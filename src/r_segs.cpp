@@ -396,12 +396,9 @@ static void R_RenderMaskedSegLoop(drawcolumndata_t* dc, drawseg_t *drawseg, INT3
 						bmCol = (column_t *)((UINT8 *)R_GetBrightmapColumn(texnum, maskedtexturecol[dc->x]) - 3);
 					}
 
-					for (i = 0; i < dc->numlights; i++)
+					auto set_light_vars = [&](INT32 i)
 					{
 						rlight = &dc->lightlist[i];
-
-						if ((rlight->flags & FOF_NOSHADE))
-							continue;
 
 						lightnum = R_AdjustLightLevel(rlight->lightnum);
 
@@ -421,20 +418,38 @@ static void R_RenderMaskedSegLoop(drawcolumndata_t* dc, drawseg_t *drawseg, INT3
 							rlight->rcolormap = rlight->extra_colormap->colormap + (xwalllights[pindex] - colormaps);
 						else
 							rlight->rcolormap = xwalllights[pindex];
+					};
+
+					auto set_colormap_below_light = [&]
+					{
+						dc->colormap = rlight->rcolormap;
+						dc->lightmap = xwalllights[pindex];
+						dc->fullbright = colormaps;
+						if (remap && !(ldef->flags & ML_TFERLINE))
+						{
+							dc->colormap += COLORMAP_REMAPOFFSET;
+							dc->fullbright += COLORMAP_REMAPOFFSET;
+						}
+					};
+
+					// Use the base sector's light level above the first FOF.
+					// You can imagine it as the sky casting its light on top of the highest FOF.
+					set_light_vars(0);
+					set_colormap_below_light();
+
+					for (i = 0; i < dc->numlights; i++)
+					{
+						if ((dc->lightlist[i].flags & FOF_NOSHADE))
+							continue;
+
+						set_light_vars(i);
 
 						height = rlight->height;
 						rlight->height += rlight->heightstep;
 
 						if (height <= windowtop)
 						{
-							dc->colormap = rlight->rcolormap;
-							dc->lightmap = xwalllights[pindex];
-							dc->fullbright = colormaps;
-							if (remap && !(ldef->flags & ML_TFERLINE))
-							{
-								dc->colormap += COLORMAP_REMAPOFFSET;
-								dc->fullbright += COLORMAP_REMAPOFFSET;
-							}
+							set_colormap_below_light();
 							continue;
 						}
 
@@ -453,14 +468,7 @@ static void R_RenderMaskedSegLoop(drawcolumndata_t* dc, drawseg_t *drawseg, INT3
 						}
 						colfunc_2s(dc, col, bmCol, -1);
 						windowtop = windowbottom + 1;
-						dc->colormap = rlight->rcolormap;
-						dc->lightmap = xwalllights[pindex];
-						dc->fullbright = colormaps;
-						if (remap && !(ldef->flags & ML_TFERLINE))
-						{
-							dc->colormap += COLORMAP_REMAPOFFSET;
-							dc->fullbright += COLORMAP_REMAPOFFSET;
-						}
+						set_colormap_below_light();
 					}
 					windowbottom = realbot;
 					if (windowtop < windowbottom)
@@ -1158,42 +1166,64 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 				fixed_t bheight = 0;
 				INT32 solid = 0;
 
+				auto set_light_vars = [&](INT32 i)
+				{
+					rlight = &dc->lightlist[i];
+
+					lightnum = R_AdjustLightLevel(rlight->lightnum);
+
+					if (lightnum < 0)
+						xwalllights = scalelight[0];
+					else if (lightnum >= LIGHTLEVELS)
+						xwalllights = scalelight[LIGHTLEVELS-1];
+					else
+						xwalllights = scalelight[lightnum];
+
+					pindex = FixedMul(spryscale, LIGHTRESOLUTIONFIX)>>LIGHTSCALESHIFT;
+
+					if (pindex >= MAXLIGHTSCALE)
+						pindex = MAXLIGHTSCALE-1;
+
+					if (pfloor->fofflags & FOF_FOG)
+					{
+						if (pfloor->master->frontsector->extra_colormap)
+							rlight->rcolormap = pfloor->master->frontsector->extra_colormap->colormap + (xwalllights[pindex] - colormaps);
+						else
+							rlight->rcolormap = xwalllights[pindex];
+					}
+					else
+					{
+						if (rlight->extra_colormap)
+							rlight->rcolormap = rlight->extra_colormap->colormap + (xwalllights[pindex] - colormaps);
+						else
+							rlight->rcolormap = xwalllights[pindex];
+					}
+				};
+
+				auto set_colormap_below_light = [&]
+				{
+					dc->colormap = rlight->rcolormap;
+					dc->lightmap = xwalllights[pindex];
+					dc->fullbright = colormaps;
+					if (remap && !(curline->linedef->flags & ML_TFERLINE))
+					{
+						dc->colormap += COLORMAP_REMAPOFFSET;
+						dc->fullbright += COLORMAP_REMAPOFFSET;
+					}
+				};
+
+				// Use the base sector's light level above the first FOF.
+				// You can imagine it as the sky casting its light on top of the highest FOF.
+				set_light_vars(0);
+				set_colormap_below_light();
+
 				for (i = 0; i < dc->numlights; i++)
 				{
 					// Check if the current light effects the colormap/lightlevel
 					rlight = &dc->lightlist[i];
 					xwalllights = NULL;
 					if (!(dc->lightlist[i].flags & FOF_NOSHADE))
-					{
-						lightnum = R_AdjustLightLevel(rlight->lightnum);
-
-						if (lightnum < 0)
-							xwalllights = scalelight[0];
-						else if (lightnum >= LIGHTLEVELS)
-							xwalllights = scalelight[LIGHTLEVELS-1];
-						else
-							xwalllights = scalelight[lightnum];
-
-						pindex = FixedMul(spryscale, LIGHTRESOLUTIONFIX)>>LIGHTSCALESHIFT;
-
-						if (pindex >= MAXLIGHTSCALE)
-							pindex = MAXLIGHTSCALE-1;
-
-						if (pfloor->fofflags & FOF_FOG)
-						{
-							if (pfloor->master->frontsector->extra_colormap)
-								rlight->rcolormap = pfloor->master->frontsector->extra_colormap->colormap + (xwalllights[pindex] - colormaps);
-							else
-								rlight->rcolormap = xwalllights[pindex];
-						}
-						else
-						{
-							if (rlight->extra_colormap)
-								rlight->rcolormap = rlight->extra_colormap->colormap + (xwalllights[pindex] - colormaps);
-							else
-								rlight->rcolormap = xwalllights[pindex];
-						}
-					}
+						set_light_vars(i);
 
 					solid = 0; // don't carry over solid-cutting flag from the previous light
 
@@ -1227,16 +1257,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 					if (height <= windowtop)
 					{
 						if (xwalllights)
-						{
-							dc->colormap = rlight->rcolormap;
-							dc->lightmap = xwalllights[pindex];
-							dc->fullbright = colormaps;
-							if (remap && !(curline->linedef->flags & ML_TFERLINE))
-							{
-								dc->colormap += COLORMAP_REMAPOFFSET;
-								dc->fullbright += COLORMAP_REMAPOFFSET;
-							}
-						}
+							set_colormap_below_light();
 						if (solid && windowtop < bheight)
 							windowtop = bheight;
 						continue;
@@ -1264,16 +1285,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 					else
 						windowtop = windowbottom + 1;
 					if (xwalllights)
-					{
-						dc->colormap = rlight->rcolormap;
-						dc->lightmap = xwalllights[pindex];
-						dc->fullbright = colormaps;
-						if (remap && !(curline->linedef->flags & ML_TFERLINE))
-						{
-							dc->colormap += COLORMAP_REMAPOFFSET;
-							dc->fullbright += COLORMAP_REMAPOFFSET;
-						}
-					}
+						set_colormap_below_light();
 				}
 				windowbottom = sprbotscreen;
 				// draw the texture, if there is any space left
@@ -2049,11 +2061,17 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 			ceilingbackslide = FixedMul(backsector->c_slope->zdelta, FINECOSINE((lineangle-backsector->c_slope->xydirection)>>ANGLETOFINESHIFT));
 	}
 
+	auto get_flat_tex = [](INT32 texnum)
+	{
+		texnum = R_GetTextureNum(texnum);
+		return textures[texnum]->holes ? 0 : texnum; // R_DrawWallColumn cannot render holey textures
+	};
+
 	if (!backsector)
 	{
 		fixed_t texheight;
 		// single sided line
-		midtexture = R_GetTextureNum(sidedef->midtexture);
+		midtexture = get_flat_tex(sidedef->midtexture);
 		midbrightmapped = R_TextureHasBrightmap(midtexture);
 		midremap = wantremap && R_TextureCanRemap(sidedef->midtexture);
 		texheight = textureheight[midtexture];
@@ -2246,7 +2264,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 		{
 			fixed_t texheight;
 			// top texture
-			toptexture = R_GetTextureNum(sidedef->toptexture);
+			toptexture = get_flat_tex(sidedef->toptexture);
 			topbrightmapped = R_TextureHasBrightmap(toptexture);
 			topremap = wantremap && R_TextureCanRemap(sidedef->toptexture);
 			texheight = textureheight[toptexture];
@@ -2276,7 +2294,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 			&& (worldlow > worldbottom || worldlowslope > worldbottomslope)) // Only if VISIBLE!!!
 		{
 			// bottom texture
-			bottomtexture = R_GetTextureNum(sidedef->bottomtexture);
+			bottomtexture = get_flat_tex(sidedef->bottomtexture);
 			bottombrightmapped = R_TextureHasBrightmap(bottomtexture);
 			bottomremap = wantremap && R_TextureCanRemap(sidedef->bottomtexture);
 
