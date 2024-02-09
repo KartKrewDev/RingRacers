@@ -7260,7 +7260,7 @@ void K_RepairOrbitChain(mobj_t *orbit)
 				prev->movedir = num;
 		}
 
-		if (!P_MobjWasRemoved(orbit->target) && orbit->target->player->itemamount != num)
+		if (orbit->target && !P_MobjWasRemoved(orbit->target) && orbit->target->player->itemamount != num)
 			orbit->target->player->itemamount = num;
 	}
 }
