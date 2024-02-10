@@ -6238,7 +6238,9 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			if (mobj->target->player->bumperinflate)
 			{
 				mobj->frame |= FF_INVERT;
-				P_SetScale(mobj, mobj->target->scale + (mobj->target->scale * 3 * mobj->target->player->bumperinflate / 4));
+				// This line sucks. Scale to player, plus up to 1.5x their size based on how long the combo you're in is.
+				P_SetScale(mobj, mobj->target->scale + (mobj->target->player->progressivethrust * 3 * mobj->target->scale / 2 / MAXCOMBOTIME));
+
 			}
 			else
 			{

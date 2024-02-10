@@ -41,7 +41,7 @@ Make sure this matches the actual number of states
 #define MAXCOMBOFLOAT (mapobjectscale*10)
 #define MINCOMBOTHRUST (mapobjectscale*2)
 #define MINCOMBOFLOAT (mapobjectscale*1)
-#define MAXCOMBOTIME (TICRATE*10)
+#define MAXCOMBOTIME (TICRATE*6)
 
 #define FLAMESHIELD_MAX (120)
 
