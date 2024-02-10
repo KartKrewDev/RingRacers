@@ -707,6 +707,7 @@ static void R_DrawSkyPlane(visplane_t *pl, void(*colfunc)(drawcolumndata_t*), bo
 	dc.texturemid = skytexturemid;
 	dc.texheight = textureheight[skytexture]
 		>>FRACBITS;
+	dc.sourcelength = dc.texheight;
 
 	x = pl->minx;
 
