@@ -954,6 +954,7 @@ struct player_t
 	UINT8 finalfailsafe; // When you can't Ringshooter, force respawn as a last ditch effort!
 
 	UINT8 lastsafelap;
+	UINT8 lastsafecheatcheck;
 
 	fixed_t topAccel; // Reduced on straight wall collisions to give players extra recovery time
 

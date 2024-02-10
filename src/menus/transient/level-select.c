@@ -713,15 +713,13 @@ void M_LevelSelected(INT16 add, boolean menuupdate)
 			netgame = false;
 			multiplayer = true;
 
-			strncpy(connectedservername, cv_servername.string, MAXSERVERNAME);
+			strlcpy(connectedservername, cv_servername.string, MAXSERVERNAME);
 
 			// Still need to reset devmode
 			cht_debug = 0;
 
 			if (demo.playback)
 				G_StopDemo();
-			if (metalrecording)
-				G_StopMetalDemo();
 
 				/*if (levellist.choosemap == 0)
 					levellist.choosemap = G_RandMap(G_TOLFlag(levellist.newgametype), -1, 0, 0, false, NULL);*/

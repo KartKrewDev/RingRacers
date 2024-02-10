@@ -161,6 +161,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	k_credits.cpp
 	music.cpp
 	music_manager.cpp
+	sanitize.cpp
 )
 
 if(SRB2_CONFIG_ENABLE_WEBM_MOVIES)
@@ -200,6 +201,9 @@ if("${CMAKE_COMPILER_IS_GNUCC}" AND "${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
 	if("${SRB2_CONFIG_STATIC_STDLIB}")
 		# On MinGW with internal libraries, link the standard library statically
 		target_link_options(SRB2SDL2 PRIVATE "-static")
+	endif()
+	if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+		target_link_options(SRB2SDL2 PRIVATE "-Wl,--large-address-aware")
 	endif()
 endif()
 
@@ -244,9 +248,6 @@ endif()
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
 	target_compile_definitions(SRB2SDL2 PRIVATE -DMACOSX)
 endif()
-
-target_link_libraries(SRB2SDL2 PRIVATE gme::gme)
-target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_GME)
 
 target_link_libraries(SRB2SDL2 PRIVATE ZLIB::ZLIB)
 target_link_libraries(SRB2SDL2 PRIVATE PNG::PNG)

@@ -685,7 +685,7 @@ void R_DrawMaskedColumn(drawcolumndata_t* dc, column_t *column, column_t *bright
 		if (dc->yh >= baseclip && baseclip != -1)
 			dc->yh = baseclip;
 
-		if (dc->yl <= dc->yh && dc->yh > 0)
+		if (dc->yl <= dc->yh && dc->yh > 0 && column->length != 0)
 		{
 			dc->source = (UINT8 *)column + 3;
 			dc->sourcelength = column->length;
@@ -771,7 +771,7 @@ void R_DrawFlippedMaskedColumn(drawcolumndata_t* dc, column_t *column, column_t 
 		if (dc->yh >= vid.height) // dc_yl must be < vid.height, so reduces number of checks in tight loop
 			dc->yh = vid.height - 1;
 
-		if (dc->yl <= dc->yh && dc->yh > 0)
+		if (dc->yl <= dc->yh && dc->yh > 0 && column->length != 0)
 		{
 			dc->source = static_cast<UINT8*>(ZZ_Alloc(column->length));
 			dc->sourcelength = column->length;
@@ -2081,10 +2081,20 @@ static void R_ProjectSprite(mobj_t *thing)
 		if (x2 < 0)
 			return;
 
-		if ((range = x2 - x1) <= 0)
+		range = x2 - x1;
+		if (range < 0)
+		{
 			return;
+		}
 
 		range++; // fencepost problem
+
+		if (range > 32767)
+		{
+			// If the range happens to be too large for fixed_t,
+			// abort the draw to avoid xscale becoming negative due to arithmetic overflow.
+			return;
+		}
 
 		scalestep = ((yscale2 - yscale)/range);
 
@@ -2528,8 +2538,8 @@ static void R_ProjectSprite(mobj_t *thing)
 		// diminished light
 		lindex = FixedMul(xscale, LIGHTRESOLUTIONFIX)>>(LIGHTSCALESHIFT);
 
-		if (lindex >= MAXLIGHTSCALE)
-			lindex = MAXLIGHTSCALE-1;
+		// Mitigate against negative xscale and arithmetic overflow
+		lindex = std::clamp(lindex, 0, MAXLIGHTSCALE - 1);
 
 		if (vis->cut & SC_SEMIBRIGHT)
 			lindex = (MAXLIGHTSCALE/2) + (lindex >> 1);
@@ -2831,7 +2841,7 @@ void R_AddPrecipitationSprites(void)
 	const fixed_t drawdist = cv_drawdist_precip.value * mapobjectscale;
 
 	INT32 xl, xh, yl, yh, bx, by;
-	precipmobj_t *th;
+	precipmobj_t *th, *next;
 
 	// no, no infinite draw distance for precipitation. this option at zero is supposed to turn it off
 	if (drawdist == 0)
@@ -2851,8 +2861,11 @@ void R_AddPrecipitationSprites(void)
 	{
 		for (by = yl; by <= yh; by++)
 		{
-			for (th = precipblocklinks[(by * bmapwidth) + bx]; th; th = th->bnext)
+			for (th = precipblocklinks[(by * bmapwidth) + bx]; th; th = next)
 			{
+				// Store this beforehand because R_ProjectPrecipitionSprite may free th (see P_PrecipThinker)
+				next = th->bnext;
+
 				if (R_PrecipThingVisible(th))
 				{
 					R_ProjectPrecipitationSprite(th);

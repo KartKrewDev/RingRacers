@@ -301,6 +301,7 @@ void DRPC_RemoveRequest(discordRequest_t *removeRequest)
 	}
 
 	Z_Free(removeRequest->username);
+	Z_Free(removeRequest->discriminator);
 	Z_Free(removeRequest->userID);
 	Z_Free(removeRequest);
 }
@@ -412,6 +413,7 @@ void DRPC_UpdatePresence(void)
 #endif
 
 	boolean joinSecretSet = false;
+	char *clientJoinSecret = NULL;
 
 	DiscordRichPresence discordPresence;
 	memset(&discordPresence, 0, sizeof(discordPresence));
@@ -447,7 +449,8 @@ void DRPC_UpdatePresence(void)
 			// Grab the host's IP for joining.
 			if ((join = DRPC_GetServerIP()) != NULL)
 			{
-				discordPresence.joinSecret = DRPC_XORIPString(join);
+				clientJoinSecret = DRPC_XORIPString(join);
+				discordPresence.joinSecret = clientJoinSecret;
 				joinSecretSet = true;
 			}
 			else
@@ -650,6 +653,7 @@ void DRPC_UpdatePresence(void)
 	}
 
 	Discord_UpdatePresence(&discordPresence);
+	free(clientJoinSecret);
 }
 
 #endif // HAVE_DISCORDRPC

@@ -39,6 +39,18 @@ void Obj_ArkArrowSetup(mobj_t *mobj, mapthing_t *mthing)
 
 void Obj_ArkArrowThink(mobj_t *mobj)
 {
+	if (cv_reducevfx.value)
+	{
+		mobj->frame &= ~FF_FRAMEMASK;
+		mobj->frame &= ~FF_ANIMATE;
+		return;
+	}
+	else
+	{
+		mobj->frame |= FF_ANIMATE;
+	}
+
+
 	fixed_t offset = FixedMul(mapobjectscale,
 		FixedMul(ARKARROW_BOBRANGE,
 			FixedMul(FINESINE(FixedAngle(leveltime * ARKARROW_BOBSPEED + mobj->extravalue2) >> ANGLETOFINESHIFT) + FRACUNIT, FRACUNIT >> 1)

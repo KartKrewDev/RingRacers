@@ -2112,6 +2112,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	INT32 checkpointId;
 	boolean enteredGame;
 	UINT8 lastsafelap;
+	UINT8 lastsafecheatcheck;
 
 	roundconditions_t roundconditions;
 	boolean saveroundconditions;
@@ -2220,6 +2221,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		khudfinish = 0;
 		cheatchecknum = 0;
 		lastsafelap = 0;
+		lastsafecheatcheck = 0;
 
 		saveroundconditions = false;
 		tallyactive = false;
@@ -2267,6 +2269,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		saveroundconditions = true;
 
 		lastsafelap = players[player].lastsafelap;
+		lastsafecheatcheck = players[player].lastsafecheatcheck;
 
 		tallyactive = players[player].tally.active;
 		if (tallyactive)
@@ -2339,6 +2342,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->steering = steering;
 	p->angleturn = playerangleturn;
 	p->lastsafelap = lastsafelap;
+	p->lastsafecheatcheck = lastsafecheatcheck;
 
 	// save player config truth reborn
 	p->skincolor = skincolor;
@@ -2919,12 +2923,15 @@ void G_DoReborn(INT32 playernum)
 
 // These are the barest esentials.
 // This func probably doesn't even need to know if the player is a bot.
-void G_AddPlayer(INT32 playernum)
+void G_AddPlayer(INT32 playernum, INT32 console)
 {
 	CL_ClearPlayer(playernum);
 	G_DestroyParty(playernum);
 
 	playeringame[playernum] = true;
+
+	playerconsole[playernum] = console;
+	G_BuildLocalSplitscreenParty(playernum);
 
 	player_t *newplayer = &players[playernum];
 
@@ -3323,7 +3330,7 @@ void G_AddTOL(UINT32 newtol, const char *tolname)
 //
 boolean G_GametypeUsesLives(void)
 {
-	if (modeattacking || metalrecording) // NOT in Record Attack
+	if (modeattacking) // NOT in Record Attack
 		return false;
 
 	if ((grandprixinfo.gp == true) // In Grand Prix
@@ -4342,11 +4349,6 @@ static void G_DoCompleted(void)
 			pausedelay = 0;
 
 		gameaction = ga_nothing;
-
-		if (metalplayback)
-			G_StopMetalDemo();
-		if (metalrecording)
-			G_StopMetalRecording(false);
 
 		if (automapactive)
 			AM_Stop();

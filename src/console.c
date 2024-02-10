@@ -931,7 +931,7 @@ boolean CON_Responder(event_t *ev)
 	if (ev->type != ev_console)
 	{
 		#ifndef DEVELOP // I have driven this course 45 times and I just want to give myself rocketsneakers
-		if (modeattacking || metalrecording || marathonmode)
+		if (modeattacking || marathonmode)
 			return false;
 		#endif
 

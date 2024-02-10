@@ -53,6 +53,7 @@
 #include "k_grandprix.h" // K_CanChangeRules
 #include "k_rank.h" // K_GetGradeColor
 #include "k_zvote.h" // K_GetMidVoteLabel
+#include "k_boss.h"
 
 #include "y_inter.h" // Y_RoundQueueDrawer
 
@@ -69,6 +70,7 @@
 
 #include "i_time.h"
 #include "m_easing.h"
+#include "sanitize.h"
 
 #ifdef PC_DOS
 #include <stdio.h> // for snprintf
@@ -532,12 +534,12 @@ static void M_DrawMenuTyping(void)
 	V_DrawFill(x + 4, y + 4 + 5, 1, 8+6, 121);
 	V_DrawFill(x + 5 + boxwidth - 8, y + 4 + 5, 1, 8+6, 121);
 
-	V_DrawString(x + 8, y + 12, 0, menutyping.cache);
+	INT32 textwidth = M_DrawCaretString(x + 8, y + 12, menutyping.cache, true);
 	if (skullAnimCounter < 4
 		&& menutyping.menutypingclose == false
 		&& menutyping.menutypingfade == (menutyping.keyboardtyping ? 9 : 18))
 	{
-		V_DrawCharacter(x + 8 + V_StringWidth(menutyping.cache, 0), y + 12 + 1, '_', false);
+		V_DrawCharacter(x + 8 + textwidth, y + 12 + 1, '_', false);
 	}
 
 	const INT32 buttonwidth = ((boxwidth + 1)/NUMVIRTUALKEYSINROW);
@@ -911,8 +913,10 @@ static void M_DrawPausedText(INT32 x)
 	patch_t *pausebg = W_CachePatchName("M_STRIPU", PU_CACHE);
 	patch_t *pausetext = W_CachePatchName("M_PAUSET", PU_CACHE);
 
-	V_DrawFixedPatch(x, 0, FRACUNIT, V_SNAPTOLEFT|V_SNAPTOTOP|V_ADD, pausebg,   NULL);
-	V_DrawFixedPatch(x, 0, FRACUNIT, V_SNAPTOLEFT|V_SNAPTOTOP,       pausetext, NULL);
+	INT32 snapFlags = menuactive ? 0 : (V_SNAPTOLEFT|V_SNAPTOTOP);
+
+	V_DrawFixedPatch(x, -5*FRACUNIT, FRACUNIT, snapFlags|V_ADD, pausebg,   NULL);
+	V_DrawFixedPatch(x, -5*FRACUNIT, FRACUNIT, snapFlags,       pausetext, NULL);
 }
 
 //
@@ -4493,7 +4497,7 @@ box_found:
 										V_DrawMenuString(x + (skullAnimCounter/5) + 7, y + 9, highlightflags, "\x1D");
 									}
 
-									V_DrawString(x + xoffs + 8, y + 9, 0, cv->string);
+									M_DrawCaretString(x + xoffs + 8, y + 9, cv->string, false);
 
 									y += LINEHEIGHT;
 								}
@@ -5327,9 +5331,12 @@ void M_DrawPause(void)
 	INT16 ypos = -50;	// Draw 3 items from selected item (y=100 - 3 items spaced by 50 px each... you get the idea.)
 	INT16 dypos;
 
-	fixed_t t = M_DueFrac(pausemenu.openoffset.start, 6);
-	INT16 offset = menutransition.tics ? floor(pow(2, (double)menutransition.tics)) :
-		(pausemenu.openoffset.dist ? Easing_InQuad(t, 0, 256) : Easing_OutQuad(t, 256, 0));
+	fixed_t mt = M_DueFrac(pausemenu.openoffset.start, 6);
+
+	if (pausemenu.openoffset.dist)
+		mt = FRACUNIT - mt;
+
+	INT16 offset = menutransition.tics ? floor(pow(2, (double)menutransition.tics)) : Easing_OutQuad(mt, 256, 0);
 	INT16 arrxpos = 150 + 2*offset;	// To draw the background arrow.
 
 	INT16 j = 0;
@@ -5338,9 +5345,68 @@ void M_DrawPause(void)
 	patch_t *arrstart = W_CachePatchName("M_PTIP", PU_CACHE);
 	patch_t *arrfill = W_CachePatchName("M_PFILL", PU_CACHE);
 
-	t = M_DueFrac(pausemenu.offset.start, 3);
+	fixed_t t = M_DueFrac(pausemenu.offset.start, 3);
 
 	//V_DrawFadeScreen(0xFF00, 16);
+
+	{
+		INT32 x = Easing_OutQuad(mt, -BASEVIDWIDTH, 0);
+		INT32 y = 56;
+
+		if (g_realsongcredit)
+		{
+			V_DrawThinString(x + 2, y, 0, g_realsongcredit);
+		}
+
+		if (gamestate == GS_LEVEL)
+		{
+			const char *name = bossinfo.valid && bossinfo.enemyname ?
+				bossinfo.enemyname : mapheaderinfo[gamemap-1]->menuttl;
+			char *buf = NULL;
+
+			if (!name[0])
+			{
+				buf = G_BuildMapTitle(gamemap);
+				name = buf;
+			}
+
+			INT32 width = V_StringScaledWidth(
+				FRACUNIT,
+				FRACUNIT,
+				FRACUNIT,
+				0,
+				MED_FONT,
+				name
+			) / FRACUNIT;
+
+			y += 11;
+
+			V_DrawFill(x + 1, y + 8, width + 20, 3, 31);
+
+			V_DrawStringScaled(
+				(x + 19) * FRACUNIT,
+				y * FRACUNIT,
+				FRACUNIT,
+				FRACUNIT,
+				FRACUNIT,
+				V_AQUAMAP,
+				NULL,
+				MED_FONT,
+				name
+			);
+
+			K_DrawMapThumbnail(
+				(x + 1) * FRACUNIT,
+				(y - 1) * FRACUNIT,
+				16 * FRACUNIT,
+				0,
+				gamemap - 1,
+				NULL
+			);
+
+			Z_Free(buf);
+		}
+	}
 
 	// "PAUSED"
 	if (!paused && !demo.playback && !modeattacking && !netgame) // as close to possible as P_AutoPause, but not dependent on menuactive

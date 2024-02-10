@@ -526,8 +526,6 @@ void M_StartTimeAttack(INT32 choice)
 
 	if (demo.playback)
 		G_StopDemo();
-	if (metalrecording)
-		G_StopMetalDemo();
 
 	splitscreen = 0;
 	SplitScreen_OnChange();

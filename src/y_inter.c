@@ -82,6 +82,7 @@ static INT32 replayprompttic;
 
 static fixed_t mqscroll = 0;
 static fixed_t chkscroll = 0;
+static fixed_t ttlscroll = 0;
 
 intertype_t intertype = int_none;
 
@@ -1523,6 +1524,55 @@ void Y_DrawIntermissionHeader(fixed_t x, fixed_t y, boolean gotthrough, const ch
 	V_ClearClipRect();
 }
 
+static void Y_DrawMapTitleString(fixed_t x, const char *name)
+{
+	V_DrawStringScaled(
+		x - ttlscroll,
+		(BASEVIDHEIGHT - 73) * FRACUNIT,
+		FRACUNIT,
+		FRACUNIT,
+		FRACUNIT,
+		V_SUBTRACT | V_60TRANS,
+		NULL,
+		LSHI_FONT,
+		name
+	);
+}
+
+static fixed_t Y_DrawMapTitle(void)
+{
+	const char *name = bossinfo.valid && bossinfo.enemyname ?
+		bossinfo.enemyname : mapheaderinfo[prevmap]->menuttl;
+	char *buf = NULL;
+
+	if (!name[0])
+	{
+		buf = G_BuildMapTitle(prevmap + 1);
+		name = buf;
+	}
+
+	fixed_t w = V_StringScaledWidth(
+		FRACUNIT,
+		FRACUNIT,
+		FRACUNIT,
+		0,
+		LSHI_FONT,
+		name
+	) + (16 * FRACUNIT);
+
+	fixed_t x = BASEVIDWIDTH * FRACUNIT;
+
+	while (x > -w)
+	{
+		Y_DrawMapTitleString(x, name);
+		x -= w;
+	}
+
+	Z_Free(buf);
+
+	return w;
+}
+
 //
 // Y_IntermissionDrawer
 //
@@ -1565,6 +1615,8 @@ void Y_IntermissionDrawer(void)
 	V_DrawFixedPatch(chkscroll, 0, FRACUNIT, V_SUBTRACT, rbgchk, NULL);
 	V_DrawFixedPatch(chkscroll - chkloop, 0, FRACUNIT, V_SUBTRACT, rbgchk, NULL);
 
+	fixed_t ttlloop = Y_DrawMapTitle();
+
 	// Animate scrolling elements if relevant
 	if (!paused && !P_AutoPause())
 	{
@@ -1575,6 +1627,10 @@ void Y_IntermissionDrawer(void)
 		chkscroll += renderdeltatics;
 		if (chkscroll > chkloop)
 			chkscroll %= chkloop;
+
+		ttlscroll += renderdeltatics * 2;
+		if (ttlscroll > ttlloop)
+			ttlscroll %= ttlloop;
 	}
 
 	if (renderisnewtic)
@@ -1618,7 +1674,7 @@ skiptallydrawer:
 	{
 		if (speedscramble != -1 && speedscramble != gamespeed)
 		{
-			V_DrawCenteredThinString(BASEVIDWIDTH/2, 154, highlightflags|V_SNAPTOBOTTOM,
+			V_DrawCenteredThinString(BASEVIDWIDTH/2, 154, highlightflags,
 				va(M_GetText("Next race will be %s Speed!"), kartspeed_cons_t[1+speedscramble].strvalue));
 		}
 	}

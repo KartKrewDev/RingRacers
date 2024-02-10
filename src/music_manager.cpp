@@ -60,6 +60,7 @@ void TuneManager::tick()
 			// Only stop the music credit if the song actually
 			// changed.
 			S_StopMusicCredit();
+			S_UnloadMusicCredit();
 		}
 
 		stop_credit_ = false;
@@ -91,14 +92,14 @@ void TuneManager::tick()
 			adjust_volume();
 			I_SetSongSpeed(tune->speed());
 
+			S_LoadMusicCredit();
+
 			if (tune->credit && !tune->resume)
 			{
 				S_ShowMusicCredit();
 			}
 
 			tune->resume = true;
-
-			gme_ = !std::strcmp(I_SongType(), "GME");
 		}
 		else
 		{
@@ -181,18 +182,6 @@ void TuneManager::adjust_volume() const
 
 bool TuneManager::resync()
 {
-	if (gme_)
-	{
-		// This is dodging the problem. GME can be very slow
-		// for seeking, since it (probably) just emulates the
-		// entire song up to where its seeking.
-		//
-		// The time loss is not easily predictable, and it
-		// causes repeated resyncing, so just don't sync if
-		// it's GME.
-		return false;
-	}
-
 	if (hu_stopped)
 	{
 		// The server is not sending updates. Don't resync

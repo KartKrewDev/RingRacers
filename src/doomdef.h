@@ -500,7 +500,7 @@ char *M_GetToken(const char *inputString);
 void M_UnGetToken(void);
 UINT32 M_GetTokenPos(void);
 
-void M_TokenizerOpen(const char *inputString);
+void M_TokenizerOpen(const char *inputString, size_t inputLength);
 void M_TokenizerClose(void);
 const char *M_TokenizerRead(UINT32 i);
 UINT32 M_TokenizerGetEndPos(void);
@@ -548,6 +548,7 @@ typedef enum
 	DBG_SETUP			= 0x00000400,
 	DBG_LUA				= 0x00000800,
 	DBG_RNG				= 0x00001000,
+	DBG_DEMO			= 0x00002000,
 } debugFlags_t;
 
 struct debugFlagNames_s

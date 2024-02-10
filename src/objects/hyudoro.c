@@ -581,6 +581,8 @@ hyudoro_patrol_hit_player
 
 	K_StripItems(player);
 
+	S_StartSound(toucher, sfx_s3k92);
+
 	/* do not make 1st place invisible */
 	if (player->position != 1)
 	{
@@ -653,6 +655,7 @@ hyudoro_return_hit_player
 	// them until they use/lose it.
 	if (!award_immediately(hyu))
 	{
+		S_StartSound(hyudoro_target(hyu), sfx_kc3d);
 		hyudoro_mode(hyu) = HYU_HOVER;
 		append_hyudoro(&toucher->player->hoverhyudoro, hyu);
 	}

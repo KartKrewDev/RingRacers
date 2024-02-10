@@ -19,14 +19,10 @@
 #include <variant>
 #include <vector>
 
-#include <gme/gme.h>
 #include <stb_vorbis.h>
-#undef byte	 // BLARGG!! NO!!
-#undef check // STOP IT!!!!
 
 #include "../cxxutil.hpp"
 #include "../io/streams.hpp"
-#include "gme_player.hpp"
 #include "ogg_player.hpp"
 #include "resample.hpp"
 #include "xmp_player.hpp"
@@ -97,7 +93,6 @@ public:
 	void _load(tcb::span<std::byte> data)
 	{
 		ogg_inst_ = nullptr;
-		gme_inst_ = nullptr;
 		xmp_inst_ = nullptr;
 		resampler_ = std::nullopt;
 
@@ -114,33 +109,6 @@ public:
 			// it's probably not ogg
 			ogg_inst_ = nullptr;
 			resampler_ = std::nullopt;
-		}
-
-		if (!resampler_)
-		{
-			try
-			{
-				if (data[0] == std::byte {0x1F} && data[1] == std::byte {0x8B})
-				{
-					io::ZlibInputStream stream {io::SpanStream(data)};
-					audio::Gme gme = audio::load_gme(stream);
-					gme_inst_ = std::make_shared<GmePlayer<2>>(std::move(gme));
-				}
-				else
-				{
-					io::SpanStream stream {data};
-					audio::Gme gme = audio::load_gme(stream);
-					gme_inst_ = std::make_shared<GmePlayer<2>>(std::move(gme));
-				}
-
-				resampler_ = Resampler<2>(gme_inst_, 1.f);
-			}
-			catch (const std::exception& ex)
-			{
-				// it's probably not gme
-				gme_inst_ = nullptr;
-				resampler_ = std::nullopt;
-			}
 		}
 
 		if (!resampler_)
@@ -176,11 +144,6 @@ public:
 			playing_ = true;
 			ogg_inst_->reset();
 		}
-		else if (gme_inst_)
-		{
-			playing_ = true;
-			gme_inst_->reset();
-		}
 		else if (xmp_inst_)
 		{
 			xmp_inst_->looping(looping);
@@ -196,10 +159,6 @@ public:
 			ogg_inst_->playing(true);
 			playing_ = true;
 		}
-		else if (gme_inst_)
-		{
-			playing_ = true;
-		}
 		else if (xmp_inst_)
 		{
 			playing_ = true;
@@ -211,10 +170,6 @@ public:
 		if (ogg_inst_)
 		{
 			ogg_inst_->playing(false);
-			playing_ = false;
-		}
-		else if (gme_inst_)
-		{
 			playing_ = false;
 		}
 		else if (xmp_inst_)
@@ -231,11 +186,6 @@ public:
 			ogg_inst_->playing(false);
 			playing_ = false;
 		}
-		else if (gme_inst_)
-		{
-			gme_inst_->reset();
-			playing_ = false;
-		}
 		else if (xmp_inst_)
 		{
 			xmp_inst_->reset();
@@ -250,11 +200,6 @@ public:
 			ogg_inst_->seek(position_seconds);
 			return;
 		}
-		if (gme_inst_)
-		{
-			gme_inst_->seek(position_seconds);
-			return;
-		}
 		if (xmp_inst_)
 		{
 			xmp_inst_->seek(position_seconds);
@@ -266,8 +211,6 @@ public:
 	{
 		if (ogg_inst_)
 			return ogg_inst_->playing();
-		else if (gme_inst_)
-			return playing_;
 		else if (xmp_inst_)
 			return playing_;
 
@@ -278,8 +221,6 @@ public:
 	{
 		if (ogg_inst_)
 			return audio::MusicType::kOgg;
-		else if (gme_inst_)
-			return audio::MusicType::kGme;
 		else if (xmp_inst_)
 			return audio::MusicType::kMod;
 
@@ -290,8 +231,6 @@ public:
 	{
 		if (ogg_inst_)
 			return ogg_inst_->duration_seconds();
-		if (gme_inst_)
-			return gme_inst_->duration_seconds();
 		if (xmp_inst_)
 			return xmp_inst_->duration_seconds();
 
@@ -302,8 +241,6 @@ public:
 	{
 		if (ogg_inst_)
 			return ogg_inst_->loop_point_seconds();
-		if (gme_inst_)
-			return gme_inst_->loop_point_seconds();
 
 		return std::nullopt;
 	}
@@ -312,8 +249,6 @@ public:
 	{
 		if (ogg_inst_)
 			return ogg_inst_->position_seconds();
-		if (gme_inst_)
-			return gme_inst_->position_seconds();
 		if (xmp_inst_)
 			return xmp_inst_->position_seconds();
 
@@ -354,7 +289,6 @@ public:
 
 private:
 	std::shared_ptr<OggPlayer<2>> ogg_inst_;
-	std::shared_ptr<GmePlayer<2>> gme_inst_;
 	std::shared_ptr<XmpPlayer<2>> xmp_inst_;
 	std::optional<Resampler<2>> resampler_;
 	bool playing_ {false};

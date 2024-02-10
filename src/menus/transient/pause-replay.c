@@ -19,7 +19,7 @@ menuitem_t PAUSE_PlaybackMenu[] =
 	{IT_CALL   | IT_STRING, "Restart",				NULL, "M_PRSTRT",	{.routine = M_PlaybackRewind},			 20, 0},
 	{IT_CALL   | IT_STRING, "Pause",				NULL, "M_PPAUSE",	{.routine = M_PlaybackPause},			 36, 0},
 	{IT_CALL   | IT_STRING, "Fast-Forward",			NULL, "M_PFFWD",	{.routine = M_PlaybackFastForward},		 52, 0},
-	{IT_CALL   | IT_STRING, "Backup Frame",			NULL, "M_PSTEPB",	{.routine = M_PlaybackRewind},			 20, 0},
+	{IT_CALL   | IT_STRING, "Restart",				NULL, "M_PRSTRT",	{.routine = M_PlaybackRewind},			 20, 0},
 	{IT_CALL   | IT_STRING, "Resume",				NULL, "M_PRESUM",	{.routine = M_PlaybackPause},			 36, 0},
 	{IT_CALL   | IT_STRING, "Advance Frame",		NULL, "M_PFADV",	{.routine = M_PlaybackAdvance},			 52, 0},
 

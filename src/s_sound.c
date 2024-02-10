@@ -986,7 +986,8 @@ boolean S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 
 
 	if (sfxinfo->pitch & SF_OUTSIDESOUND) // Rain special case
 	{
-		fixed_t x, y, yl, yh, xl, xh, newdist;
+		INT64 x, y, yl, yh, xl, xh;
+		fixed_t newdist;
 
 		if (R_PointInSubsector(listensource.x, listensource.y)->sector->ceilingpic == skyflatnum)
 			approx_dist = 0;
@@ -1243,6 +1244,7 @@ void S_AttemptToRestoreMusic(void)
 
 musicdef_t *musicdefstart = NULL;
 struct cursongcredit cursongcredit; // Currently displayed song credit info
+char *g_realsongcredit;
 struct soundtest soundtest; // Sound Test (sound test)
 
 static void S_InsertMusicAtSoundTestSequenceTail(const char *musname, UINT16 map, UINT8 altref, musicdef_t ***tail)
@@ -2092,11 +2094,11 @@ void S_InitMusicDefs(void)
 }
 
 //
-// S_ShowMusicCredit
+// S_LoadMusicCredit
 //
-// Display current song's credit on screen
+// Load the current song's credit into memory
 //
-void S_ShowMusicCredit(void)
+void S_LoadMusicCredit(void)
 {
 	UINT8 i = 0;
 	musicdef_t *def = S_FindMusicDef(Music_CurrentSong(), &i);
@@ -2106,18 +2108,13 @@ void S_ShowMusicCredit(void)
 	size_t len = 128, worklen;
 	INT32 widthused = (3*BASEVIDWIDTH/4) - 7, workwidth;
 
-	if (!cv_songcredits.value)
-		return;
+	S_UnloadMusicCredit();
 
 	if (!def) // No definitions
 		return;
 
 	if (!def->title)
-	{
-		// Like showing a blank credit.
-		S_StopMusicCredit();
 		return;
-	}
 
 	work = va("\x1F %s", def->title);
 	worklen = strlen(work);
@@ -2165,9 +2162,34 @@ void S_ShowMusicCredit(void)
 	if (credittext[0] == '\0')
 		return;
 
-	cursongcredit.def = def;
+	g_realsongcredit = Z_StrDup(credittext);
+}
+
+void S_UnloadMusicCredit(void)
+{
+	Z_Free(g_realsongcredit);
+	g_realsongcredit = NULL;
+}
+
+//
+// S_ShowMusicCredit
+//
+// Display current song's credit on screen
+//
+void S_ShowMusicCredit(void)
+{
+	if (!cv_songcredits.value)
+		return;
+
+	if (!g_realsongcredit)
+	{
+		// Like showing a blank credit.
+		S_StopMusicCredit();
+		return;
+	}
+
 	Z_Free(cursongcredit.text);
-	cursongcredit.text = Z_StrDup(credittext);
+	cursongcredit.text = Z_StrDup(g_realsongcredit);
 	cursongcredit.anim = 5*TICRATE;
 	cursongcredit.x = cursongcredit.old_x = 0;
 	cursongcredit.trans = NUMTRANSMAPS;
@@ -2175,7 +2197,8 @@ void S_ShowMusicCredit(void)
 
 void S_StopMusicCredit(void)
 {
-	cursongcredit.def = NULL;
+	Z_Free(cursongcredit.text);
+	memset(&cursongcredit,0,sizeof(struct cursongcredit));
 }
 
 /// ------------------------

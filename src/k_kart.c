@@ -829,7 +829,8 @@ static boolean K_JustBumpedException(mobj_t *mobj)
 	{
 		case MT_SA2_CRATE:
 			return Obj_SA2CrateIsMetal(mobj);
-
+		case MT_WALLSPIKE:
+			return true;
 		default:
 			break;
 	}
@@ -1254,7 +1255,15 @@ static void K_DrawDraftCombiring(player_t *player, mobj_t *victim, fixed_t curdi
 	}
 	else
 	{
-		c = FixedMul((CHAOTIXBANDCOLORS - 1)<<FRACBITS, FixedDiv(curdist-minimumdist, maxdist-minimumdist)) >> FRACBITS;
+		fixed_t num = curdist - minimumdist;
+		fixed_t den = maxdist - minimumdist;
+		if (den < 1)
+			den = 1;
+		if (num < 0)
+			num = 0;
+		if (num > den)
+			num = den;
+		c = FixedMul((CHAOTIXBANDCOLORS - 1)<<FRACBITS, FixedDiv(num, den)) >> FRACBITS;
 	}
 
 	stepx = (victim->x - player->mo->x) / CHAOTIXBANDLEN;
@@ -2989,7 +2998,7 @@ boolean K_WaterSkip(mobj_t *mobj)
 			{
 				return false;
 			}
-			
+
 			// Allow
 			break;
 		}
@@ -7252,7 +7261,7 @@ void K_RepairOrbitChain(mobj_t *orbit)
 	}
 
 	// Then recount to make sure item amount is correct
-	if (orbit->target && orbit->target->player)
+	if (orbit->target && orbit->target->player && !P_MobjWasRemoved(orbit->target))
 	{
 		INT32 num = 0;
 
@@ -7269,7 +7278,7 @@ void K_RepairOrbitChain(mobj_t *orbit)
 				prev->movedir = num;
 		}
 
-		if (orbit->target->player->itemamount != num)
+		if (orbit->target && !P_MobjWasRemoved(orbit->target) && orbit->target->player->itemamount != num)
 			orbit->target->player->itemamount = num;
 	}
 }
@@ -9626,6 +9635,7 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 		{
 			player->respawn.wp = bestwaypoint;
 			player->lastsafelap = player->laps;
+			player->lastsafecheatcheck = player->cheatchecknum;
 		}
 	}
 
@@ -9810,6 +9820,7 @@ void K_UpdateDistanceFromFinishLine(player_t *const player)
 						adddist = (UINT32)disttowaypoint;
 					}
 					*/
+					Z_Free(pathBackwards.array);
 				}
 				/*
 				else
@@ -11390,7 +11401,14 @@ boolean K_FastFallBounce(player_t *player)
 		if (player->curshield == KSHIELD_BUBBLE)
 		{
 			S_StartSound(player->mo, sfx_s3k44);
-			P_InstaThrust(player->mo, player->mo->angle, 11*max(player->speed, abs(player->fastfall))/10);
+
+			// This is a slightly irritating way of doing this, but because ground contact while
+			// bubblebouncing gives you 1 tic of ground friction, naively using a factor of player
+			// speed makes your sustained speed heavily gamespeed dependent.
+			fixed_t minspeed = 12*K_GetKartSpeed(player, false, false)/10;
+			fixed_t fallspeed = abs(player->fastfall);
+			P_InstaThrust(player->mo, player->mo->angle, 11*max(minspeed, fallspeed)/10);
+
 			bounce += 3 * mapobjectscale;
 		}
 		else
