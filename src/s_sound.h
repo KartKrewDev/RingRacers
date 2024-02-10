@@ -174,15 +174,18 @@ struct musicdef_t
 	soundtestsequence_t sequence;
 };
 
+// For HUD, doesn't always appear
 extern struct cursongcredit
 {
-	musicdef_t *def;
 	char *text;
 	UINT16 anim;
 	UINT8 trans;
 	fixed_t x;
 	fixed_t old_x;
 } cursongcredit;
+
+// For menu, always appears
+extern char *g_realsongcredit;
 
 extern struct soundtest
 {
@@ -216,6 +219,8 @@ extern musicdef_t *musicdefstart;
 void S_LoadMusicDefs(UINT16 wadnum);
 void S_InitMusicDefs(void);
 musicdef_t *S_FindMusicDef(const char *name, UINT8 *i);
+void S_LoadMusicCredit(void);
+void S_UnloadMusicCredit(void);
 void S_ShowMusicCredit(void);
 void S_StopMusicCredit(void);
 

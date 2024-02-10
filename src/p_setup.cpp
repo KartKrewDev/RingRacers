@@ -7629,8 +7629,7 @@ static void P_InitLevelSettings(void)
 	g_quakes = NULL;
 
 	// song credit init
-	Z_Free(cursongcredit.text);
-	memset(&cursongcredit,0,sizeof(struct cursongcredit));
+	S_StopMusicCredit();
 	cursongcredit.trans = NUMTRANSMAPS;
 
 	for (i = 0; i < MAXPLAYERS; i++)
