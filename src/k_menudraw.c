@@ -912,8 +912,10 @@ static void M_DrawPausedText(INT32 x)
 	patch_t *pausebg = W_CachePatchName("M_STRIPU", PU_CACHE);
 	patch_t *pausetext = W_CachePatchName("M_PAUSET", PU_CACHE);
 
-	V_DrawFixedPatch(x, 0, FRACUNIT, V_SNAPTOLEFT|V_SNAPTOTOP|V_ADD, pausebg,   NULL);
-	V_DrawFixedPatch(x, 0, FRACUNIT, V_SNAPTOLEFT|V_SNAPTOTOP,       pausetext, NULL);
+	INT32 snapFlags = menuactive ? 0 : (V_SNAPTOLEFT|V_SNAPTOTOP);
+
+	V_DrawFixedPatch(x, -5*FRACUNIT, FRACUNIT, snapFlags|V_ADD, pausebg,   NULL);
+	V_DrawFixedPatch(x, -5*FRACUNIT, FRACUNIT, snapFlags,       pausetext, NULL);
 }
 
 //
