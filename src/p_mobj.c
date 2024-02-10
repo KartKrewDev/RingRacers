@@ -6235,7 +6235,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			// Shrink your items if the player shrunk too.
 			P_SetScale(mobj, mobj->target->scale);
 
-			if (mobj->target->player->bumperinflate)
+			if (mobj->target->player->bumperinflate && bumpers > mobj->threshold)
 			{
 				mobj->frame |= FF_INVERT;
 				// This line sucks. Scale to player, plus up to 1.5x their size based on how long the combo you're in is.
