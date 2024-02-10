@@ -8953,7 +8953,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	}
 	else
 	{
-		if (player->progressivethrust && leveltime % 3 == 0)
+		if (player->progressivethrust)
 			player->progressivethrust--;
 		if (player->incontrol < 0)
 			player->incontrol = 0;
