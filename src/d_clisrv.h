@@ -582,7 +582,7 @@ void GenerateChallenge(uint8_t *buf);
 shouldsign_t ShouldSignChallenge(uint8_t *message);
 
 // Initialise the other field
-void RegisterNetXCmd(netxcmd_t id, void (*cmd_f)(UINT8 **p, INT32 playernum));
+void RegisterNetXCmd(netxcmd_t id, void (*cmd_f)(const UINT8 **p, INT32 playernum));
 void SendNetXCmdForPlayer(UINT8 playerid, netxcmd_t id, const void *param, size_t nparam);
 #define SendNetXCmd(id, param, nparam) SendNetXCmdForPlayer(0, id, param, nparam) // Shortcut for P1
 void SendKick(UINT8 playernum, UINT8 msg);

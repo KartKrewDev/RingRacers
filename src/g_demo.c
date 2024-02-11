@@ -331,7 +331,7 @@ void G_ReadDemoExtraData(void)
 		}
 		if (extradata & DXD_WEAPONPREF)
 		{
-			WeaponPref_Parse(&demobuf.p, p);
+			demobuf.p += WeaponPref_Parse(demobuf.p, p);
 
 			//CONS_Printf("weaponpref is %d for player %d\n", i, p);
 		}
@@ -3039,7 +3039,7 @@ void G_DoPlayDemo(const char *defdemoname)
 	}
 
 	// net var data
-	CV_LoadDemoVars(&demobuf.p);
+	demobuf.p += CV_LoadDemoVars(demobuf.p);
 
 	// Sigh ... it's an empty demo.
 	if (*demobuf.p == DEMOMARKER)

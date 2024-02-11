@@ -36,7 +36,7 @@ static void clear_lua_stack(void)
 		lua_settop(gL, 0); // clear stack
 }
 
-void Got_Luacmd(UINT8 **cp, INT32 playernum)
+void Got_Luacmd(const UINT8 **cp, INT32 playernum)
 {
 	UINT8 i, argc, flags;
 	char buf[256];

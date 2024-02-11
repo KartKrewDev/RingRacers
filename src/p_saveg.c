@@ -6929,7 +6929,7 @@ boolean P_LoadNetGame(savebuffer_t *save, boolean reloading)
 
 	current_savebuffer = save;
 
-	CV_LoadNetVars(&save->p);
+	save->p += CV_LoadNetVars(save->p);
 
 	if (!P_NetUnArchiveMisc(save, reloading))
 		return false;

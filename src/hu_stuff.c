@@ -183,7 +183,7 @@ static void Command_Sayto_f(void);
 static void Command_Sayteam_f(void);
 static void Command_CSay_f(void);
 static void Command_Shout(void);
-static void Got_Saycmd(UINT8 **p, INT32 playernum);
+static void Got_Saycmd(const UINT8 **p, INT32 playernum);
 
 void HU_LoadGraphics(void)
 {
@@ -660,7 +660,7 @@ static void Command_Shout(void)
   * \sa DoSayPacket
   * \author Graue <graue@oceanbase.org>
   */
-static void Got_Saycmd(UINT8 **p, INT32 playernum)
+static void Got_Saycmd(const UINT8 **p, INT32 playernum)
 {
 	SINT8 target;
 	UINT8 flags;
