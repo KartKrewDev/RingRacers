@@ -55,6 +55,7 @@
 #include "k_color.h"
 #include "k_follower.h"
 #include "k_vote.h"
+#include "k_credits.h"
 
 boolean nodrawers; // for comparative timing purposes
 boolean noblit; // for comparative timing purposes
@@ -67,12 +68,6 @@ static UINT8 demoflags;
 boolean demosynced = true; // console warning message
 
 struct demovars_s demo;
-
-boolean metalrecording; // recording as metal sonic
-mobj_t *metalplayback;
-static UINT8 *metalbuffer = NULL;
-static UINT8 *metal_p;
-static UINT16 metalversion;
 
 // extra data stuff (events registered this frame while recording)
 static struct {
@@ -152,9 +147,6 @@ UINT8 demo_extradata[MAXPLAYERS];
 UINT8 demo_writerng; // 0=no, 1=yes, 2=yes but on a timeout
 static ticcmd_t oldcmd[MAXPLAYERS];
 
-#define METALDEATH 0x44
-#define METALSNICE 0x69
-
 #define DW_END        0xFF // End of extradata block
 #define DW_RNG        0xFE // Check RNG seed!
 
@@ -163,7 +155,7 @@ static ticcmd_t oldcmd[MAXPLAYERS];
 // Below consts are only used for demo extrainfo sections
 #define DW_STANDING 0x00
 
-// For Metal Sonic and time attack ghosts
+// For time attack ghosts
 #define GZT_XYZ    0x01
 #define GZT_MOMXY  0x02
 #define GZT_MOMZ   0x04
@@ -190,22 +182,7 @@ static ticcmd_t oldcmd[MAXPLAYERS];
 #define FZT_SCALE 0x10 // different scale to object
 // spare FZT slots 0x20 to 0x80
 
-static mobj_t oldmetal, oldghost[MAXPLAYERS];
-
-void G_SaveMetal(UINT8 **buffer)
-{
-	I_Assert(buffer != NULL && *buffer != NULL);
-
-	WRITEUINT32(*buffer, metal_p - metalbuffer);
-}
-
-void G_LoadMetal(UINT8 **buffer)
-{
-	I_Assert(buffer != NULL && *buffer != NULL);
-
-	G_DoPlayMetal();
-	metal_p = metalbuffer + READUINT32(*buffer);
-}
+static mobj_t oldghost[MAXPLAYERS];
 
 void G_ReadDemoExtraData(void)
 {
@@ -234,7 +211,7 @@ void G_ReadDemoExtraData(void)
 		{
 			if (!playeringame[p])
 			{
-				G_AddPlayer(p);
+				G_AddPlayer(p, p);
 			}
 
 			for (i = 0; i < MAXAVAILABILITY; i++)
@@ -690,7 +667,7 @@ void G_WriteDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 
 void G_GhostAddFlip(INT32 playernum)
 {
-	if (!metalrecording && (!demo.recording || !(demoflags & DF_GHOST)))
+	if ((!demo.recording || !(demoflags & DF_GHOST)))
 		return;
 	ghostext[playernum].flags |= EZT_FLIP;
 }
@@ -710,7 +687,7 @@ void G_GhostAddColor(INT32 playernum, ghostcolor_t color)
 
 void G_GhostAddScale(INT32 playernum, fixed_t scale)
 {
-	if (!metalrecording && (!demo.recording || !(demoflags & DF_GHOST)))
+	if ((!demo.recording || !(demoflags & DF_GHOST)))
 		return;
 	if (ghostext[playernum].lastscale == scale)
 	{
@@ -733,6 +710,7 @@ void G_GhostAddHit(INT32 playernum, mobj_t *victim)
 
 void G_WriteAllGhostTics(void)
 {
+	boolean toobig = false;
 	INT32 i, counter = leveltime;
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -749,12 +727,18 @@ void G_WriteAllGhostTics(void)
 
 		WRITEUINT8(demobuf.p, i);
 		G_WriteGhostTic(players[i].mo, i);
+
+		// attention here for the ticcmd size!
+		// latest demos with mouse aiming byte in ticcmd
+		if (demobuf.p >= demobuf.end - (13 + 9 + 9))
+		{
+			toobig = true;
+			break;
+		}
 	}
 	WRITEUINT8(demobuf.p, 0xFF);
 
-	// attention here for the ticcmd size!
-	// latest demos with mouse aiming byte in ticcmd
-	if (demobuf.p >= demobuf.end - (13 + 9 + 9))
+	if (toobig)
 	{
 		G_CheckDemoStatus(); // no more space
 		return;
@@ -1236,8 +1220,8 @@ void G_GhostTicker(void)
 			continue;
 		}
 
-		// Pause jhosts that cross until we cross ourself.
-		if (g->linecrossed && !linecrossed)
+		// Pause jhosts that cross until the timer starts.
+		if (g->linecrossed && leveltime < starttime)
 			continue;
 
 readghosttic:
@@ -1547,7 +1531,8 @@ skippedghosttic:
 			continue;
 		}
 
-		if (linecrossed && !g->linecrossed)
+		// If the timer started, skip ahead until the ghost starts too.
+		if (starttime <= leveltime && !g->linecrossed)
 			goto readghosttic;
 
 		p = g;
@@ -1752,351 +1737,18 @@ void G_ConfirmRewind(tic_t rewindtime)
 		P_ResetCamera(&players[displayplayers[i]], &camera[i]);
 }
 
-void G_ReadMetalTic(mobj_t *metal)
-{
-	UINT8 ziptic;
-	UINT8 xziptic = 0;
-
-	if (!metal_p)
-		return;
-
-	if (!metal->health)
-	{
-		G_StopMetalDemo();
-		return;
-	}
-
-	switch (*metal_p)
-	{
-		case METALSNICE:
-			break;
-		case METALDEATH:
-			if (metal->tracer)
-				P_RemoveMobj(metal->tracer);
-			P_KillMobj(metal, NULL, NULL, DMG_NORMAL);
-			/* FALLTHRU */
-		case DEMOMARKER:
-		default:
-			// end of demo data stream
-			G_StopMetalDemo();
-			return;
-	}
-	metal_p++;
-
-	ziptic = READUINT8(metal_p);
-
-	// Read changes from the tic
-	if (ziptic & GZT_XYZ)
-	{
-		// make sure the values are read in the right order
-		oldmetal.x = READFIXED(metal_p);
-		oldmetal.y = READFIXED(metal_p);
-		oldmetal.z = READFIXED(metal_p);
-		P_MoveOrigin(metal, oldmetal.x, oldmetal.y, oldmetal.z);
-		oldmetal.x = metal->x;
-		oldmetal.y = metal->y;
-		oldmetal.z = metal->z;
-	}
-	else
-	{
-		if (ziptic & GZT_MOMXY)
-		{
-			oldmetal.momx = (metalversion < 0x000e) ? READINT16(metal_p)<<8 : READFIXED(metal_p);
-			oldmetal.momy = (metalversion < 0x000e) ? READINT16(metal_p)<<8 : READFIXED(metal_p);
-		}
-		if (ziptic & GZT_MOMZ)
-			oldmetal.momz = (metalversion < 0x000e) ? READINT16(metal_p)<<8 : READFIXED(metal_p);
-		oldmetal.x += oldmetal.momx;
-		oldmetal.y += oldmetal.momy;
-		oldmetal.z += oldmetal.momz;
-	}
-	if (ziptic & GZT_ANGLE)
-		metal->angle = READUINT8(metal_p)<<24;
-	if (ziptic & GZT_FRAME)
-		oldmetal.frame = READUINT32(metal_p);
-	if (ziptic & GZT_SPR2)
-		oldmetal.sprite2 = READUINT8(metal_p);
-
-	// Set movement, position, and angle
-	// oldmetal contains where you're supposed to be.
-	metal->momx = oldmetal.momx;
-	metal->momy = oldmetal.momy;
-	metal->momz = oldmetal.momz;
-	P_UnsetThingPosition(metal);
-	metal->x = oldmetal.x;
-	metal->y = oldmetal.y;
-	metal->z = oldmetal.z;
-	P_SetThingPosition(metal);
-	metal->frame = oldmetal.frame;
-	metal->sprite2 = oldmetal.sprite2;
-
-	if (ziptic & GZT_EXTRA)
-	{ // But wait, there's more!
-		xziptic = READUINT8(metal_p);
-		if (xziptic & EZT_FLIP)
-		{
-			metal->eflags ^= MFE_VERTICALFLIP;
-			metal->flags2 ^= MF2_OBJECTFLIP;
-		}
-		if (xziptic & EZT_SCALE)
-		{
-			metal->destscale = READFIXED(metal_p);
-			if (metal->destscale != metal->scale)
-				P_SetScale(metal, metal->destscale);
-		}
-		if (xziptic & EZT_SPRITE)
-			metal->sprite = READUINT16(metal_p);
-	}
-
-#define follow metal->tracer
-		if (ziptic & GZT_FOLLOW)
-		{ // Even more...
-			UINT8 followtic = READUINT8(metal_p);
-			fixed_t temp;
-			if (followtic & FZT_SPAWNED)
-			{
-				if (follow)
-					P_RemoveMobj(follow);
-				P_SetTarget(&follow, P_SpawnMobjFromMobj(metal, 0, 0, 0, MT_GHOST));
-				P_SetTarget(&follow->tracer, metal);
-				follow->tics = -1;
-				temp = READINT16(metal_p)<<FRACBITS;
-				follow->height = FixedMul(follow->scale, temp);
-
-				if (followtic & FZT_LINKDRAW)
-					follow->flags2 |= MF2_LINKDRAW;
-
-				if (followtic & FZT_COLORIZED)
-					follow->colorized = true;
-
-				if (followtic & FZT_SKIN)
-					follow->skin = &skins[READUINT8(metal_p)];
-			}
-			if (follow)
-			{
-				if (followtic & FZT_SCALE)
-					follow->destscale = READFIXED(metal_p);
-				else
-					follow->destscale = metal->destscale;
-				if (follow->destscale != follow->scale)
-					P_SetScale(follow, follow->destscale);
-
-				P_UnsetThingPosition(follow);
-				temp = (metalversion < 0x000e) ? READINT16(metal_p)<<8 : READFIXED(metal_p);
-				follow->x = metal->x + temp;
-				temp = (metalversion < 0x000e) ? READINT16(metal_p)<<8 : READFIXED(metal_p);
-				follow->y = metal->y + temp;
-				temp = (metalversion < 0x000e) ? READINT16(metal_p)<<8 : READFIXED(metal_p);
-				follow->z = metal->z + temp;
-				P_SetThingPosition(follow);
-				if (followtic & FZT_SKIN)
-					follow->sprite2 = READUINT8(metal_p);
-				else
-					follow->sprite2 = 0;
-				follow->sprite = READUINT16(metal_p);
-				follow->frame = READUINT32(metal_p); // NOT & FF_FRAMEMASK here, so 32 bits
-				follow->angle = metal->angle;
-				follow->color = READUINT16(metal_p);
-
-				if (!(followtic & FZT_SPAWNED))
-				{
-					if (xziptic & EZT_FLIP)
-					{
-						follow->flags2 ^= MF2_OBJECTFLIP;
-						follow->eflags ^= MFE_VERTICALFLIP;
-					}
-				}
-			}
-		}
-		else if (follow)
-		{
-			P_RemoveMobj(follow);
-			P_SetTarget(&follow, NULL);
-		}
-#undef follow
-}
-
-void G_WriteMetalTic(mobj_t *metal)
-{
-	UINT8 ziptic = 0;
-	UINT8 *ziptic_p;
-
-	if (!demobuf.p) // demobuf.p will be NULL until the race start linedef executor is activated!
-		return;
-
-	WRITEUINT8(demobuf.p, METALSNICE);
-	ziptic_p = demobuf.p++; // the ziptic, written at the end of this function
-
-	#define MAXMOM (0xFFFF<<8)
-
-	// GZT_XYZ is only useful if you've moved 256 FRACUNITS or more in a single tic.
-	if (abs(metal->x-oldmetal.x) > MAXMOM
-	|| abs(metal->y-oldmetal.y) > MAXMOM
-	|| abs(metal->z-oldmetal.z) > MAXMOM)
-	{
-		oldmetal.x = metal->x;
-		oldmetal.y = metal->y;
-		oldmetal.z = metal->z;
-		ziptic |= GZT_XYZ;
-		WRITEFIXED(demobuf.p,oldmetal.x);
-		WRITEFIXED(demobuf.p,oldmetal.y);
-		WRITEFIXED(demobuf.p,oldmetal.z);
-	}
-	else
-	{
-		// For moving normally:
-		// Store movement as a fixed value
-		fixed_t momx = metal->x-oldmetal.x;
-		fixed_t momy = metal->y-oldmetal.y;
-		if (momx != oldmetal.momx
-		|| momy != oldmetal.momy)
-		{
-			oldmetal.momx = momx;
-			oldmetal.momy = momy;
-			ziptic |= GZT_MOMXY;
-			WRITEFIXED(demobuf.p,momx);
-			WRITEFIXED(demobuf.p,momy);
-		}
-		momx = metal->z-oldmetal.z;
-		if (momx != oldmetal.momz)
-		{
-			oldmetal.momz = momx;
-			ziptic |= GZT_MOMZ;
-			WRITEFIXED(demobuf.p,momx);
-		}
-
-		// This SHOULD set oldmetal.x/y/z to match metal->x/y/z
-		oldmetal.x += oldmetal.momx;
-		oldmetal.y += oldmetal.momy;
-		oldmetal.z += oldmetal.momz;
-	}
-
-	#undef MAXMOM
-
-	// Only store the 8 most relevant bits of angle
-	// because exact values aren't too easy to discern to begin with when only 8 angles have different sprites
-	// and it does not affect movement at all anyway.
-	if (metal->player && metal->player->drawangle>>24 != oldmetal.angle)
-	{
-		oldmetal.angle = metal->player->drawangle>>24;
-		ziptic |= GZT_ANGLE;
-		WRITEUINT8(demobuf.p,oldmetal.angle);
-	}
-
-	// Store the sprite frame.
-	if ((metal->frame & FF_FRAMEMASK) != oldmetal.frame)
-	{
-		oldmetal.frame = metal->frame; // NOT & FF_FRAMEMASK here, so 32 bits
-		ziptic |= GZT_FRAME;
-		WRITEUINT32(demobuf.p,oldmetal.frame);
-	}
-
-	if (metal->sprite == SPR_PLAY
-	&& metal->sprite2 != oldmetal.sprite2)
-	{
-		oldmetal.sprite2 = metal->sprite2;
-		ziptic |= GZT_SPR2;
-		WRITEUINT8(demobuf.p,oldmetal.sprite2);
-	}
-
-	// Check for sprite set changes
-	if (metal->sprite != oldmetal.sprite)
-	{
-		oldmetal.sprite = metal->sprite;
-		ghostext[0].flags |= EZT_SPRITE;
-	}
-
-	if (ghostext[0].flags & ~(EZT_COLOR|EZT_HIT)) // these two aren't handled by metal ever
-	{
-		ziptic |= GZT_EXTRA;
-
-		if (ghostext[0].scale == ghostext[0].lastscale)
-			ghostext[0].flags &= ~EZT_SCALE;
-
-		WRITEUINT8(demobuf.p,ghostext[0].flags);
-		if (ghostext[0].flags & EZT_SCALE)
-		{
-			WRITEFIXED(demobuf.p,ghostext[0].scale);
-			ghostext[0].lastscale = ghostext[0].scale;
-		}
-		if (ghostext[0].flags & EZT_SPRITE)
-			WRITEUINT16(demobuf.p,oldmetal.sprite);
-		ghostext[0].flags = 0;
-	}
-
-	if (metal->player && metal->player->followmobj && !(metal->player->followmobj->sprite == SPR_NULL || (metal->player->followmobj->renderflags & RF_DONTDRAW) == RF_DONTDRAW))
-	{
-		fixed_t temp;
-		UINT8 *followtic_p = demobuf.p++;
-		UINT8 followtic = 0;
-
-		ziptic |= GZT_FOLLOW;
-
-		if (metal->player->followmobj->skin)
-			followtic |= FZT_SKIN;
-
-		if (!(oldmetal.flags2 & MF2_AMBUSH))
-		{
-			followtic |= FZT_SPAWNED;
-			WRITEINT16(demobuf.p,metal->player->followmobj->info->height>>FRACBITS);
-			if (metal->player->followmobj->flags2 & MF2_LINKDRAW)
-				followtic |= FZT_LINKDRAW;
-			if (metal->player->followmobj->colorized)
-				followtic |= FZT_COLORIZED;
-			if (followtic & FZT_SKIN)
-				WRITEUINT8(demobuf.p,(UINT8)(((skin_t *)(metal->player->followmobj->skin))-skins));
-			oldmetal.flags2 |= MF2_AMBUSH;
-		}
-
-		if (metal->player->followmobj->scale != metal->scale)
-		{
-			followtic |= FZT_SCALE;
-			WRITEFIXED(demobuf.p,metal->player->followmobj->scale);
-		}
-
-		temp = metal->player->followmobj->x-metal->x;
-		WRITEFIXED(demobuf.p,temp);
-		temp = metal->player->followmobj->y-metal->y;
-		WRITEFIXED(demobuf.p,temp);
-		temp = metal->player->followmobj->z-metal->z;
-		WRITEFIXED(demobuf.p,temp);
-		if (followtic & FZT_SKIN)
-			WRITEUINT8(demobuf.p,metal->player->followmobj->sprite2);
-		WRITEUINT16(demobuf.p,metal->player->followmobj->sprite);
-		WRITEUINT32(demobuf.p,metal->player->followmobj->frame); // NOT & FF_FRAMEMASK here, so 32 bits
-		WRITEUINT16(demobuf.p,metal->player->followmobj->color);
-
-		*followtic_p = followtic;
-	}
-	else
-		oldmetal.flags2 &= ~MF2_AMBUSH;
-
-	*ziptic_p = ziptic;
-
-	// attention here for the ticcmd size!
-	// latest demos with mouse aiming byte in ticcmd
-	if (demobuf.p >= demobuf.end - 32)
-	{
-		G_StopMetalRecording(false); // no more space
-		return;
-	}
-}
-
 //
 // G_RecordDemo
 //
 void G_RecordDemo(const char *name)
 {
+	extern consvar_t cv_netdemosize;
+
 	INT32 maxsize;
 
 	strcpy(demoname, name);
 	strcat(demoname, ".lmp");
-	//@TODO make a maxdemosize cvar
-	// NOPE. We are kicking this can HELLA down the road. -Tyron 2024-01-20
-	maxsize = 1024*1024*4;
-
-	if (M_CheckParm("-maxdemo") && M_IsNextParm())
-		maxsize = atoi(M_GetNextParm()) * 1024;
+	maxsize = 1024 * 1024 * cv_netdemosize.value;
 
 //	if (demobuf.buffer)
 //		Z_Free(demobuf.buffer);
@@ -2108,22 +1760,21 @@ void G_RecordDemo(const char *name)
 	demobuf.p = NULL;
 
 	demo.recording = true;
-}
+	demo.buffer = &demobuf;
 
-void G_RecordMetal(void)
-{
-	INT32 maxsize;
-	maxsize = 1024*1024;
-	if (M_CheckParm("-maxdemo") && M_IsNextParm())
-		maxsize = atoi(M_GetNextParm()) * 1024;
-
-	// FIXME: this file doesn't manage its memory and actually free this when it's done using it
-	Z_Free(demobuf.buffer);
-	P_SaveBufferAlloc(&demobuf, maxsize);
-	Z_SetUser(demobuf.buffer, (void**)&demobuf.buffer);
-	demobuf.p = NULL;
-
-	metalrecording = true;
+	/* FIXME: This whole file is in a wretched state. Take a
+	look at G_WriteAllGhostTics and G_WriteDemoTiccmd, they
+	write a lot of data. It's not realistic to refactor that
+	code in order to know exactly HOW MANY bytes it can write
+	out. So here's the deal. Reserve a decent block of memory
+	at the end of the buffer and never use it. Those bastard
+	functions will check if they overran the buffer, but it
+	should be safe enough because they'll think there's less
+	memory than there actually is and stop early. */
+	const size_t deadspace = 1024;
+	I_Assert(demobuf.size > deadspace);
+	demobuf.size -= deadspace;
+	demobuf.end -= deadspace;
 }
 
 static void G_SaveDemoExtraFiles(UINT8 **pp)
@@ -2657,39 +2308,6 @@ void G_BeginRecording(void)
 				ghostext[i].flags |= EZT_FLIP;
 		}
 	}
-}
-
-void G_BeginMetal(void)
-{
-	mobj_t *mo = players[consoleplayer].mo;
-
-#if 0
-	if (demobuf.p)
-		return;
-#endif
-
-	demobuf.p = demobuf.buffer;
-
-	// Write header.
-	M_Memcpy(demobuf.p, DEMOHEADER, 12); demobuf.p += 12;
-	WRITEUINT8(demobuf.p,VERSION);
-	WRITEUINT8(demobuf.p,SUBVERSION);
-	WRITEUINT16(demobuf.p,DEMOVERSION);
-
-	// demo checksum
-	demobuf.p += 16;
-
-	M_Memcpy(demobuf.p, "METL", 4); demobuf.p += 4;
-
-	memset(&ghostext,0,sizeof(ghostext));
-	ghostext[0].lastscale = ghostext[0].scale = FRACUNIT;
-
-	// Set up our memory.
-	memset(&oldmetal,0,sizeof(oldmetal));
-	oldmetal.x = mo->x;
-	oldmetal.y = mo->y;
-	oldmetal.z = mo->z;
-	oldmetal.angle = mo->angle>>24;
 }
 
 void G_WriteStanding(UINT8 ranking, char *name, INT32 skinnum, UINT16 color, UINT32 val)
@@ -3245,6 +2863,7 @@ void G_DoPlayDemo(const char *defdemoname)
 	// read demo header
 	gameaction = ga_nothing;
 	demo.playback = true;
+	demo.buffer = &demobuf;
 	if (memcmp(demobuf.p, DEMOHEADER, 12))
 	{
 		snprintf(msg, 1024, M_GetText("%s is not a Ring Racers replay file.\n"), pdemoname);
@@ -3301,7 +2920,7 @@ void G_DoPlayDemo(const char *defdemoname)
 
 	numlaps = READUINT8(demobuf.p);
 
-	if (demo.title) // Titledemos should always play and ought to always be compatible with whatever wadlist is running.
+	if (demo.attract) // Attract demos should always play and ought to always be compatible with whatever wadlist is running.
 		G_SkipDemoExtraFiles(&demobuf.p);
 	else if (demo.loadfiles)
 		G_LoadDemoExtraFiles(&demobuf.p);
@@ -3510,7 +3129,7 @@ void G_DoPlayDemo(const char *defdemoname)
 		if (!playeringame[displayplayers[0]] || players[displayplayers[0]].spectator)
 			displayplayers[0] = consoleplayer = serverplayer = p;
 
-		G_AddPlayer(p);
+		G_AddPlayer(p, p);
 		players[p].spectator = spectator;
 
 		if (flags & DEMO_KICKSTART)
@@ -3614,7 +3233,7 @@ void G_DoPlayDemo(const char *defdemoname)
 
 	splitscreen = 0;
 
-	if (demo.title)
+	if (demo.attract == DEMO_ATTRACT_TITLE)
 	{
 		splitscreen = M_RandomKey(6)-1;
 		splitscreen = min(min(3, numslots-1), splitscreen); // Bias toward 1p and 4p views
@@ -3664,7 +3283,7 @@ void G_DoPlayDemo(const char *defdemoname)
 	CV_StealthSetValue(&cv_playbackspeed, 1);
 }
 
-void G_AddGhost(savebuffer_t *buffer, char *defdemoname)
+void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 {
 	INT32 i;
 	char name[17], color[MAXCOLORNAME+1], md5[16];
@@ -4020,76 +3639,10 @@ void G_TimeDemo(const char *name)
 	if (cv_vidwait.value)
 		CV_Set(&cv_vidwait, "0");
 	demo.timing = true;
-	singletics = true;
+	g_singletics = true;
 	framecount = 0;
 	demostarttime = I_GetTime();
 	G_DeferedPlayDemo(name);
-}
-
-void G_DoPlayMetal(void)
-{
-	lumpnum_t l;
-	mobj_t *mo = NULL;
-	thinker_t *th;
-
-	// it's an internal demo
-	// TODO: Use map header to determine lump name
-	if ((l = W_CheckNumForName(va("%sMS",G_BuildMapName(gamemap)))) == LUMPERROR)
-	{
-		CONS_Alert(CONS_WARNING, M_GetText("No bot recording for this map.\n"));
-		return;
-	}
-	else
-		metalbuffer = metal_p = W_CacheLumpNum(l, PU_STATIC);
-
-	// find metal sonic
-	for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
-	{
-		if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
-			continue;
-
-		mo = (mobj_t *)th;
-		if (mo->type != MT_METALSONIC_RACE)
-			continue;
-
-		break;
-	}
-	if (th == &thlist[THINK_MOBJ])
-	{
-		CONS_Alert(CONS_ERROR, M_GetText("Failed to find bot entity.\n"));
-		Z_Free(metalbuffer);
-		return;
-	}
-
-	// read demo header
-	metal_p += 12; // DEMOHEADER
-	metal_p++; // VERSION
-	metal_p++; // SUBVERSION
-	metalversion = READUINT16(metal_p);
-	switch(metalversion)
-	{
-	case DEMOVERSION: // latest always supported
-		break;
-	// too old, cannot support.
-	default:
-		CONS_Alert(CONS_WARNING, M_GetText("Failed to load bot recording for this map, format version incompatible.\n"));
-		Z_Free(metalbuffer);
-		return;
-	}
-	metal_p += 16; // demo checksum
-	if (memcmp(metal_p, "METL", 4))
-	{
-		CONS_Alert(CONS_WARNING, M_GetText("Failed to load bot recording for this map, wasn't recorded in Metal format.\n"));
-		Z_Free(metalbuffer);
-		return;
-	} metal_p += 4; // "METL"
-
-	// read initial tic
-	memset(&oldmetal,0,sizeof(oldmetal));
-	oldmetal.x = mo->x;
-	oldmetal.y = mo->y;
-	oldmetal.z = mo->z;
-	metalplayback = mo;
 }
 
 void G_DoneLevelLoad(void)
@@ -4109,6 +3662,7 @@ void G_DoneLevelLoad(void)
 ===================
 */
 
+#if 0 // since it's not actually used anymore, just a reference...
 // Writes the demo's checksum, or just random garbage if you can't do that for some reason.
 static void WriteDemoChecksum(void)
 {
@@ -4121,33 +3675,7 @@ static void WriteDemoChecksum(void)
 	md5_buffer((char *)p+16, demobuf.p - (p+16), p); // make a checksum of everything after the checksum in the file.
 #endif
 }
-
-// Stops metal sonic's demo. Separate from other functions because metal + replays can coexist
-void G_StopMetalDemo(void)
-{
-	// Metal Sonic finishing doesn't end the game, dammit.
-	Z_Free(metalbuffer);
-	metalbuffer = NULL;
-	metalplayback = NULL;
-	metal_p = NULL;
-}
-
-// Stops metal sonic recording.
-ATTRNORETURN void FUNCNORETURN G_StopMetalRecording(boolean kill)
-{
-	boolean saved = false;
-	if (demobuf.p)
-	{
-		WRITEUINT8(demobuf.p, (kill) ? METALDEATH : DEMOMARKER); // add the demo end (or metal death) marker
-		WriteDemoChecksum();
-		saved = FIL_WriteFile(va("%sMS.LMP", G_BuildMapName(gamemap)), demobuf.buffer, demobuf.p - demobuf.buffer); // finally output the file.
-	}
-	Z_Free(demobuf.buffer);
-	metalrecording = false;
-	if (saved)
-		I_Error("Saved to %sMS.LMP", G_BuildMapName(gamemap));
-	I_Error("Failed to save demo!");
-}
+#endif
 
 // Stops timing a demo.
 static void G_StopTimingDemo(void)
@@ -4218,7 +3746,7 @@ void G_StopDemo(void)
 	demobuf.buffer = NULL;
 	demo.playback = false;
 	demo.timing = false;
-	singletics = false;
+	g_singletics = false;
 
 	{
 		UINT8 i;
@@ -4231,23 +3759,12 @@ void G_StopDemo(void)
 	Z_Free(demo.skinlist);
 	demo.skinlist = NULL;
 
-	if (gamestate == GS_INTERMISSION)
-		Y_EndIntermission(); // cleanup
-
-	if (gamestate == GS_VOTING)
-		Y_EndVote();
-
-	G_SetGamestate(GS_NULL);
-	wipegamestate = GS_NULL;
-	SV_StopServer();
-	SV_ResetServer();
+	D_ClearState();
 }
 
 boolean G_CheckDemoStatus(void)
 {
 	G_FreeGhosts();
-
-	// DO NOT end metal sonic demos here
 
 	if (demo.timing)
 	{
@@ -4260,7 +3777,7 @@ boolean G_CheckDemoStatus(void)
 		if (demo.quitafterplaying)
 			I_Quit();
 
-		if (multiplayer && !demo.title)
+		if (multiplayer && !demo.attract)
 			G_FinishExitLevel();
 		else
 		{
@@ -4270,6 +3787,8 @@ boolean G_CheckDemoStatus(void)
 				COM_ImmedExecute("quit");
 			else if (modeattacking)
 				M_EndModeAttackRun();
+			else if (demo.attract == DEMO_ATTRACT_CREDITS)
+				F_ContinueCredits();
 			else
 				D_StartTitle();
 		}

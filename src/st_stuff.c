@@ -53,6 +53,7 @@
 #include "music.h"
 #include "i_sound.h"
 #include "k_dialogue.h"
+#include "m_easing.h"
 
 UINT16 objectsdrawn = 0;
 
@@ -448,6 +449,31 @@ static void ST_drawRenderDebug(INT32 *height)
 	ST_pushDebugString(height, va("Skybox Portals: %4s", sizeu1(i->skybox_portals)));
 }
 
+static void ST_drawDemoDebug(INT32 *height)
+{
+	if (!demo.recording && !demo.playback)
+		return;
+
+	size_t needle = demo.buffer->p - demo.buffer->buffer;
+	size_t size = demo.buffer->size;
+	double percent = (double)needle / size * 100.0;
+	double avg = (double)needle / leveltime;
+
+	ST_pushDebugString(height, va("%s/%s bytes", sizeu1(needle), sizeu2(size)));
+	ST_pushDebugString(height, va(
+			"%.2f/%.2f MB %5.2f%%",
+			needle / (1024.0 * 1024.0),
+			size / (1024.0 * 1024.0),
+			percent
+	));
+	ST_pushDebugString(height, va(
+			"%.2f KB/s (ETA %.2f minutes)",
+			avg * TICRATE / 1024.0,
+			(size - needle) / (avg * TICRATE * 60.0)
+	));
+	ST_pushDebugString(height, va("Demo (%s)", demo.recording ? "recording" : "playback"));
+}
+
 void ST_drawDebugInfo(void)
 {
 	INT32 height = 192;
@@ -545,6 +571,11 @@ void ST_drawDebugInfo(void)
 	if (cht_debug & DBG_RENDER)
 	{
 		ST_drawRenderDebug(&height);
+	}
+
+	if (cht_debug & DBG_DEMO)
+	{
+		ST_drawDemoDebug(&height);
 	}
 
 	if (cht_debug & DBG_MEMORY)
@@ -749,7 +780,7 @@ patch_t *ST_getRoundPicture(boolean small)
 //
 void ST_runTitleCard(void)
 {
-	boolean run = !(paused || P_AutoPause());
+	boolean run = !(paused || P_AutoPause() || g_fast_forward > 0);
 	INT32 auxticker;
 	boolean doroundicon = (ST_getRoundPicture(false) != NULL);
 
@@ -1246,7 +1277,7 @@ static void ST_overlayDrawer(void)
 	{
 		if (cv_showviewpointtext.value)
 		{
-			if (!demo.title && !P_IsLocalPlayer(stplyr) && !camera[viewnum].freecam)
+			if (!demo.attract && !P_IsLocalPlayer(stplyr) && !camera[viewnum].freecam)
 			{
 				if (!r_splitscreen)
 				{
@@ -1428,10 +1459,19 @@ void ST_DrawServerSplash(boolean timelimited)
 
 	fixed_t textX = (BASEVIDWIDTH - 16 - 36) * FRACUNIT;
 	fixed_t textY = (24 - 8) * FRACUNIT;
-
-	V_DrawRightAlignedStringAtFixed(
-		textX, textY,
+	fixed_t textW = V_StringScaledWidth(
+		FRACUNIT, FRACUNIT, FRACUNIT,
 		(V_SNAPTORIGHT|V_SNAPTOTOP) | opacityFlag,
+		MED_FONT,
+		connectedservername
+	);
+
+	V_DrawStringScaled(
+		textX - textW, textY,
+		FRACUNIT, FRACUNIT, FRACUNIT,
+		(V_SNAPTORIGHT|V_SNAPTOTOP) | opacityFlag,
+		NULL,
+		MED_FONT,
 		connectedservername
 	);
 
@@ -1581,28 +1621,23 @@ void ST_Drawer(void)
 	// Replay manual-save stuff
 	if (demo.recording && multiplayer && demo.savebutton && demo.savebutton + 3*TICRATE < leveltime)
 	{
+		tic_t fadeLength = TICRATE;
+		tic_t t = leveltime - (demo.savebutton + 3*TICRATE);
+		INT32 flags = V_SNAPTOTOP | V_SNAPTORIGHT |
+			(Easing_Linear(min(t, fadeLength) * FRACUNIT / fadeLength, 9, 0) << V_ALPHASHIFT);
+
 		switch (demo.savemode)
 		{
 		case DSM_NOTSAVING:
-		{
-			INT32 buttonx = BASEVIDWIDTH;
-			INT32 buttony = 2;
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, flags|V_YELLOWMAP, "\xAB" "or " "\xAE" "Save replay");
+			break;
 
-			K_drawButtonAnim(buttonx - 76, buttony, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT, kp_button_b[1], leveltime);
-			V_DrawRightAlignedThinString(buttonx - 55, buttony, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_YELLOWMAP, "or");
-			K_drawButtonAnim(buttonx - 55, buttony, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT, kp_button_x[1], leveltime);
-			V_DrawRightAlignedThinString(buttonx - 2, buttony, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_YELLOWMAP, "Save replay");
-			break;
-		}
 		case DSM_WILLAUTOSAVE:
-		{
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 55, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_YELLOWMAP, "Replay will be saved.");
-			K_drawButtonAnim(BASEVIDWIDTH - 56, 0, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT, kp_button_b[1], leveltime);
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_YELLOWMAP, "Change title");
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, flags|V_YELLOWMAP, "Replay will be saved.  \xAB" "Change title");
 			break;
-		}
+
 		case DSM_WILLSAVE:
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_YELLOWMAP, "Replay will be saved.");
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, flags|V_YELLOWMAP, "Replay will be saved.");
 			break;
 
 		case DSM_TITLEENTRY:

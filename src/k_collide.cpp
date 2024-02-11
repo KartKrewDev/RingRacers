@@ -848,27 +848,33 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 	{
 		player_t *victimPlayer = victim->player;
 
-		if (victim != attacker && (P_PlayerInPain(victimPlayer) ? victim->hitlag == 0 : victimPlayer->flashing == 0))
+		if (victim == attacker)
+			return false;
+
+		// If both players have a whip, hits are order-of-execution dependent and that sucks.
+		// Player expectation is a clash here.
+		if (victimPlayer->whip && !P_MobjWasRemoved(victimPlayer->whip))
 		{
-			// If both players have a whip, hits are order-of-execution dependent and that sucks.
-			// Player expectation is a clash here.
-			if (victimPlayer->whip && !P_MobjWasRemoved(victimPlayer->whip))
-			{
-				victimPlayer->whip->extravalue2 = 1;
-				shield->extravalue2 = 1;
-
-				K_DoPowerClash(victim, attacker);
-
-				victim->renderflags &= ~RF_DONTDRAW;
-				attacker->renderflags &= ~RF_DONTDRAW;
-
-				angle_t thrangle = R_PointToAngle2(attacker->x, attacker->y, victim->x, victim->y);
-				P_Thrust(victim, thrangle, mapobjectscale*28);
-				P_Thrust(attacker, ANGLE_180 + thrangle, mapobjectscale*28);
-
+			if (victim->hitlag != 0)
 				return false;
-			}
 
+			victimPlayer->whip->extravalue2 = 1;
+			shield->extravalue2 = 1;
+
+			K_DoPowerClash(victim, attacker);
+
+			victim->renderflags &= ~RF_DONTDRAW;
+			attacker->renderflags &= ~RF_DONTDRAW;
+
+			angle_t thrangle = R_PointToAngle2(attacker->x, attacker->y, victim->x, victim->y);
+			P_Thrust(victim, thrangle, mapobjectscale*28);
+			P_Thrust(attacker, ANGLE_180 + thrangle, mapobjectscale*28);
+
+			return false;
+		}
+
+		if (P_PlayerInPain(victimPlayer) ? victim->hitlag == 0 : victimPlayer->flashing == 0)
+		{
 			// Instawhip _always_ loses to guard.
 			if (K_PlayerGuard(victimPlayer))
 			//if (true)
@@ -1028,34 +1034,6 @@ boolean K_FallingRockCollide(mobj_t *t1, mobj_t *t2)
 	return true;
 }
 
-boolean K_SMKIceBlockCollide(mobj_t *t1, mobj_t *t2)
-{
-	if (!(t2->flags & MF_SOLID || t2->flags & MF_SHOOTABLE))
-		return true;
-
-	if (!(t2->health))
-		return true;
-
-	if (t2->type == MT_BANANA || t2->type == MT_BANANA_SHIELD
-		|| t2->type == MT_EGGMANITEM || t2->type == MT_EGGMANITEM_SHIELD
-		|| t2->type == MT_SSMINE || t2->type == MT_SSMINE_SHIELD
-		|| t2->type == MT_DROPTARGET_SHIELD
-		|| t2->type == MT_ORBINAUT_SHIELD || t2->type == MT_JAWZ_SHIELD)
-		return false;
-
-	if (t1->health)
-		P_KillMobj(t1, t2, t2, DMG_NORMAL);
-
-	/*
-	if (t2->player && (t2->player->invincibilitytimer > 0
-		|| K_IsBigger(t2, t1) == true))
-		return true;
-	*/
-
-	K_KartSolidBounce(t1, t2);
-	return true;
-}
-
 boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 {
 	if (K_PodiumSequence() == true)
@@ -1063,6 +1041,10 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 		// Always regular bumps, no ring toss.
 		return false;
 	}
+
+	// What the fuck is calling this with stale refs? Whatever, validation's cheap.
+	if (P_MobjWasRemoved(t1) || P_MobjWasRemoved(t2) || !t1->player || !t2->player)
+		return false;
 
 	// Clash instead of damage if both parties have any of these conditions
 	auto canClash = [](mobj_t *t1, mobj_t *t2)

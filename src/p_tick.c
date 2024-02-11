@@ -1075,7 +1075,10 @@ void P_Ticker(boolean run)
 		}
 	}
 
-	timeinmap++;
+	if (g_fast_forward == 0)
+	{
+		timeinmap++;
+	}
 
 	if (G_GametypeHasTeams())
 		P_DoTeamStuff();
@@ -1158,11 +1161,6 @@ void P_Ticker(boolean run)
 
 			quake = quake->next;
 		}
-
-		if (metalplayback)
-			G_ReadMetalTic(metalplayback);
-		if (metalrecording)
-			G_WriteMetalTic(players[consoleplayer].mo);
 
 		if (demo.recording)
 		{

@@ -572,6 +572,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].finalfailsafe);
 
 		WRITEUINT8(save->p, players[i].lastsafelap);
+		WRITEUINT8(save->p, players[i].lastsafecheatcheck);
 
 		WRITEFIXED(save->p, players[i].topAccel);
 
@@ -1146,6 +1147,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].finalfailsafe = READUINT8(save->p);
 
 		players[i].lastsafelap = READUINT8(save->p);
+		players[i].lastsafecheatcheck = READUINT8(save->p);
 
 		players[i].topAccel = READFIXED(save->p);
 
@@ -5958,14 +5960,6 @@ static inline void P_NetArchiveSpecials(savebuffer_t *save)
 	// Current global weather type
 	WRITEUINT8(save->p, globalweather);
 
-	if (metalplayback) // Is metal sonic running?
-	{
-		WRITEUINT8(save->p, 0x01);
-		G_SaveMetal(&save->p);
-	}
-	else
-		WRITEUINT8(save->p, 0x00);
-
 	TracyCZoneEnd(__zone);
 }
 
@@ -6005,9 +5999,6 @@ static void P_NetUnArchiveSpecials(savebuffer_t *save)
 		if (curWeather != PRECIP_NONE)
 			P_SwitchWeather(globalweather);
 	}
-
-	if (READUINT8(save->p) == 0x01) // metal sonic
-		G_LoadMetal(&save->p);
 
 	TracyCZoneEnd(__zone);
 }

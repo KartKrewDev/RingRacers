@@ -8,6 +8,7 @@
 #include "../../r_main.h" // R_ExecuteSetViewSize
 #include "../../p_local.h" // P_InitCameraCmd
 #include "../../d_main.h" // D_StartTitle
+#include "../../k_credits.h"
 
 static void M_PlaybackTick(void);
 
@@ -15,10 +16,10 @@ menuitem_t PAUSE_PlaybackMenu[] =
 {
 	{IT_CALL   | IT_STRING, "Hide Menu",			NULL, "M_PHIDE",	{.routine = M_SelectableClearMenus},	  0, 0},
 
-	{IT_CALL   | IT_STRING, "Rewind",				NULL, "M_PREW",		{.routine = M_PlaybackRewind},			 20, 0},
+	{IT_CALL   | IT_STRING, "Restart",				NULL, "M_PRSTRT",	{.routine = M_PlaybackRewind},			 20, 0},
 	{IT_CALL   | IT_STRING, "Pause",				NULL, "M_PPAUSE",	{.routine = M_PlaybackPause},			 36, 0},
 	{IT_CALL   | IT_STRING, "Fast-Forward",			NULL, "M_PFFWD",	{.routine = M_PlaybackFastForward},		 52, 0},
-	{IT_CALL   | IT_STRING, "Backup Frame",			NULL, "M_PSTEPB",	{.routine = M_PlaybackRewind},			 20, 0},
+	{IT_CALL   | IT_STRING, "Restart",				NULL, "M_PRSTRT",	{.routine = M_PlaybackRewind},			 20, 0},
 	{IT_CALL   | IT_STRING, "Resume",				NULL, "M_PRESUM",	{.routine = M_PlaybackPause},			 36, 0},
 	{IT_CALL   | IT_STRING, "Advance Frame",		NULL, "M_PFADV",	{.routine = M_PlaybackAdvance},			 52, 0},
 
@@ -58,9 +59,13 @@ void M_EndModeAttackRun(void)
 
 	modeattacking = ATTACKING_NONE; // Kept until now because of Command_ExitGame_f
 
-	if (demo.title == true)
+	if (demo.attract == DEMO_ATTRACT_TITLE)
 	{
 		D_StartTitle();
+	}
+	else if (demo.attract == DEMO_ATTRACT_CREDITS)
+	{
+		F_ContinueCredits();
 	}
 	else
 	{
@@ -103,12 +108,10 @@ static void M_PlaybackTick(void)
 		for (i = playback_viewcount; i <= playback_view4; i++)
 			PAUSE_PlaybackMenu[i].status = IT_DISABLED;
 
-		//PAUSE_PlaybackMenu[playback_moreoptions].mvar1 = 72;
-		//PAUSE_PlaybackMenu[playback_quit].mvar1 = 88;
-		PAUSE_PlaybackMenu[playback_quit].mvar1 = 72;
+		PAUSE_PlaybackMenu[playback_freecam].mvar1 = 72;
+		PAUSE_PlaybackMenu[playback_quit].mvar1 = 88;
 
-		//currentMenu->x = BASEVIDWIDTH/2 - 52;
-		currentMenu->x = BASEVIDWIDTH/2 - 44;
+		currentMenu->x = BASEVIDWIDTH/2 - 52;
 	}
 	else
 	{
@@ -119,9 +122,8 @@ static void M_PlaybackTick(void)
 		for (i = r_splitscreen+1; i < 4; i++)
 			PAUSE_PlaybackMenu[playback_view1+i].status = IT_DISABLED;
 
-		//PAUSE_PlaybackMenu[playback_moreoptions].mvar1 = 156;
-		//PAUSE_PlaybackMenu[playback_quit].mvar1 = 172;
-		PAUSE_PlaybackMenu[playback_quit].mvar1 = 156;
+		PAUSE_PlaybackMenu[playback_freecam].mvar1 = 156;
+		PAUSE_PlaybackMenu[playback_quit].mvar1 = 172;
 
 		//currentMenu->x = BASEVIDWIDTH/2 - 94;
 		currentMenu->x = BASEVIDWIDTH/2 - 88;
@@ -135,6 +137,7 @@ void M_SetPlaybackMenuPointer(void)
 
 void M_PlaybackRewind(INT32 choice)
 {
+#if 0
 	static tic_t lastconfirmtime;
 
 	(void)choice;
@@ -157,6 +160,11 @@ void M_PlaybackRewind(INT32 choice)
 	}
 
 	CV_SetValue(&cv_playbackspeed, 1);
+#else
+	(void)choice;
+	G_DoPlayDemo(NULL); // Restart the current demo
+	M_ClearMenus(true);
+#endif
 }
 
 void M_PlaybackPause(INT32 choice)

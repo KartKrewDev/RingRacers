@@ -1653,8 +1653,6 @@ void I_Quit(void)
 
 	if (demo.recording)
 		G_CheckDemoStatus();
-	if (metalrecording)
-		G_StopMetalRecording(false);
 
 #ifdef DEVELOP
 	// Join up with thread if waiting
@@ -1787,8 +1785,6 @@ void I_Error(const char *error, ...)
 #ifndef TESTERS
 	if (demo.recording)
 		G_CheckDemoStatus();
-	if (metalrecording)
-		G_StopMetalRecording(false);
 #endif
 
 	D_QuitNetGame();

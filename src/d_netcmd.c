@@ -135,6 +135,7 @@ static void Command_Addfile(void);
 static void Command_ListWADS_f(void);
 static void Command_ListDoomednums_f(void);
 static void Command_cxdiag_f(void);
+static void Command_ListUnusedSprites_f(void);
 static void Command_RunSOC(void);
 static void Command_Pause(void);
 
@@ -399,6 +400,7 @@ void D_RegisterServerCommands(void)
 	COM_AddDebugCommand("listwad", Command_ListWADS_f);
 	COM_AddDebugCommand("listmapthings", Command_ListDoomednums_f);
 	COM_AddDebugCommand("cxdiag", Command_cxdiag_f);
+	COM_AddCommand("listunusedsprites", Command_ListUnusedSprites_f);
 
 	COM_AddCommand("runsoc", Command_RunSOC);
 	COM_AddCommand("pause", Command_Pause);
@@ -1854,7 +1856,7 @@ Command_Invite_f (void)
 		return;
 	}
 
-	if (r_splitscreen >= MAXSPLITSCREENPLAYERS)
+	if (G_PartySize(consoleplayer) >= MAXSPLITSCREENPLAYERS)
 	{
 		CONS_Alert(CONS_WARNING, "Your party is full!\n");
 		return;
@@ -1981,7 +1983,7 @@ Command_RejectInvite_f (void)
 static void
 Command_LeaveParty_f (void)
 {
-	if (r_splitscreen > splitscreen)
+	if (G_PartySize(consoleplayer) > G_LocalSplitscreenPartySize(consoleplayer))
 	{
 		CONS_Printf("\x85Leaving party...\n");
 
@@ -2019,8 +2021,6 @@ static void Command_Playdemo_f(void)
 	// disconnect from server here?
 	if (demo.playback)
 		G_StopDemo();
-	if (metalplayback)
-		G_StopMetalDemo();
 
 	// open the demo file
 	strcpy(name, COM_Argv(1));
@@ -2058,8 +2058,6 @@ static void Command_Timedemo_f(void)
 	// disconnect from server here?
 	if (demo.playback)
 		G_StopDemo();
-	if (metalplayback)
-		G_StopMetalDemo();
 
 	// open the demo file
 	strcpy (timedemo_name, COM_Argv(1));
@@ -5016,6 +5014,46 @@ static void Command_cxdiag_f(void)
 		CONS_Printf("\x83""No errors detected! Good job\n");
 }
 
+void Command_ListUnusedSprites_f(void)
+{
+	size_t i, j;
+
+	CONS_Printf("\x82Printing sprite non-usage...\n");
+
+	for (i = 0; i < NUMSPRITES; i++)
+	{
+		if (sprites[i].numframes)
+		{
+			// We're only showing unused sprites...
+			continue;
+		}
+
+		if (i < SPR_FIRSTFREESLOT)
+		{
+			CONS_Printf("	\x87""hardcode SPR_""%.4s\n", sprnames[i]);
+			continue;
+		}
+
+		if (used_spr[(i-SPR_FIRSTFREESLOT)/8] == 0xFF)
+		{
+			for (j = 0; j < 8; j++)
+			{
+				CONS_Printf("	\x81""freeslot SPR_""%.4s\n", sprnames[i+j]);
+			}
+
+			i += j;
+		}
+
+		if (used_spr[(i-SPR_FIRSTFREESLOT)/8] & (1<<(i%8)))
+		{
+			CONS_Printf("	\x81""freeslot SPR_""%.4s\n", sprnames[i]);
+			continue;
+		}
+
+		break;
+	}
+}
+
 // =========================================================================
 //                            MISC. COMMANDS
 // =========================================================================
@@ -6068,6 +6106,8 @@ static void Got_Cheat(UINT8 **cp, INT32 playernum)
 		case CHEAT_GIVEPOWERUP: {
 			UINT8 powerup = READUINT8(*cp);
 			UINT16 time = READUINT16(*cp);
+
+			powerup = min(powerup, LASTPOWERUP);
 
 			// FIXME: we should have actual KITEM_ name array
 			const char *powerupname = cv_kartdebugitem.PossibleValue[

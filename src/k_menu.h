@@ -342,6 +342,7 @@ typedef enum
 	dopt_replay,
 	dopt_rprecord,
 	dopt_rpsync,
+	dopt_rpsize,
 #ifdef HAVE_DISCORDRPC
 	dopt_discord,
 	dopt_drp,
@@ -524,6 +525,7 @@ typedef enum
 	playback_view2,
 	playback_view3,
 	playback_view4,
+	playback_freecam,
 	playback_quit
 } playback_e;
 
@@ -823,7 +825,7 @@ typedef struct levelsearch_s {
 
 #define M_LEVELLIST_SLIDETIME 4
 
-extern struct levellist_s {
+typedef struct levellist_s {
 	SINT8 cursor;
 	menu_anim_t slide;
 	UINT16 y;
@@ -833,7 +835,11 @@ extern struct levellist_s {
 	UINT8 guessgt;
 	levelsearch_t levelsearch;
 	boolean netgame;	// Start the game in an actual server
-} levellist;
+	menu_t *backMenu;
+} levellist_t;
+
+extern levellist_t levellist;
+extern levellist_t restorelevellist;
 
 extern cupheader_t dummy_lostandfound;
 
@@ -850,7 +856,8 @@ void M_CupSelectTick(void);
 void M_LevelSelectHandler(INT32 choice);
 void M_LevelSelectTick(void);
 
-void M_LevelSelected(INT16 add);
+void M_LevelSelected(INT16 add, boolean menuupdate);
+boolean M_LevelSelectCupSwitch(boolean next, boolean skipones);
 
 // dummy consvars for GP & match race setup
 extern consvar_t cv_dummygpdifficulty;
@@ -893,7 +900,7 @@ void M_PleaseWait(void);
 void M_PopupMasterServerRules(void);
 
 // Time Attack
-void M_PrepareTimeAttack(INT32 choice);
+void M_PrepareTimeAttack(boolean menuupdate);
 void M_StartTimeAttack(INT32 choice);
 void M_ReplayTimeAttack(INT32 choice);
 void M_HandleStaffReplay(INT32 choice);

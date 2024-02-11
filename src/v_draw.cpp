@@ -305,6 +305,9 @@ int Draw::font_to_fontno(Font font)
 
 	case Font::kMenu:
 		return MENU_FONT;
+
+	case Font::kMedium:
+		return MED_FONT;
 	}
 
 	return TINY_FONT;

@@ -154,7 +154,7 @@ static void DRPC_HandleJoin(const char *secret)
 	char *ip = DRPC_XORIPString(secret);
 	CONS_Printf("Connecting to %s via Discord\n", ip);
 	M_ClearMenus(true); //Don't have menus open during connection screen
-	if (demo.playback && demo.title)
+	if (demo.playback && demo.attract)
 		G_CheckDemoStatus(); //Stop the title demo, so that the connect command doesn't error if a demo is playing
 	COM_BufAddText(va("connect \"%s\"\n", ip));
 	free(ip);
@@ -301,6 +301,7 @@ void DRPC_RemoveRequest(discordRequest_t *removeRequest)
 	}
 
 	Z_Free(removeRequest->username);
+	Z_Free(removeRequest->discriminator);
 	Z_Free(removeRequest->userID);
 	Z_Free(removeRequest);
 }
@@ -412,6 +413,7 @@ void DRPC_UpdatePresence(void)
 #endif
 
 	boolean joinSecretSet = false;
+	char *clientJoinSecret = NULL;
 
 	DiscordRichPresence discordPresence;
 	memset(&discordPresence, 0, sizeof(discordPresence));
@@ -447,7 +449,8 @@ void DRPC_UpdatePresence(void)
 			// Grab the host's IP for joining.
 			if ((join = DRPC_GetServerIP()) != NULL)
 			{
-				discordPresence.joinSecret = DRPC_XORIPString(join);
+				clientJoinSecret = DRPC_XORIPString(join);
+				discordPresence.joinSecret = clientJoinSecret;
 				joinSecretSet = true;
 			}
 			else
@@ -482,7 +485,7 @@ void DRPC_UpdatePresence(void)
 		// Offline info
 		if (Playing())
 			discordPresence.state = "Offline";
-		else if (demo.playback && !demo.title)
+		else if (demo.playback && !demo.attract)
 			discordPresence.state = "Watching Replay";
 		else
 			discordPresence.state = "Menu";
@@ -507,7 +510,7 @@ void DRPC_UpdatePresence(void)
 	}
 
 	if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) // Map info
-		&& !(demo.playback && demo.title))
+		&& !(demo.playback && demo.attract))
 	{
 #ifdef USEMAPIMG
 		if ((gamemap >= 1 && gamemap <= 60) // supported race maps
@@ -650,6 +653,7 @@ void DRPC_UpdatePresence(void)
 	}
 
 	Discord_UpdatePresence(&discordPresence);
+	free(clientJoinSecret);
 }
 
 #endif // HAVE_DISCORDRPC

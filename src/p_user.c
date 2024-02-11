@@ -68,6 +68,7 @@
 #include "k_tally.h"
 #include "k_objects.h"
 #include "k_endcam.h"
+#include "k_credits.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_light.h"
@@ -318,89 +319,6 @@ UINT8 P_GetNextEmerald(void)
 }
 
 //
-// P_GiveEmerald
-//
-// Award an emerald upon completion
-// of a special stage.
-//
-void P_GiveEmerald(boolean spawnObj)
-{
-	UINT8 em = P_GetNextEmerald();
-
-	S_StartSound(NULL, sfx_cgot); // Got the emerald!
-	stagefailed = false;
-
-	if (spawnObj)
-	{
-		// The Chaos Emerald begins to orbit us!
-		// Only visibly give it to ONE person!
-		UINT8 i, pnum = ((playeringame[consoleplayer]) && (!players[consoleplayer].spectator) && (players[consoleplayer].mo)) ? consoleplayer : 255;
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			mobj_t *emmo;
-			if (!playeringame[i])
-				continue;
-			if (players[i].spectator)
-				continue;
-			if (!players[i].mo)
-				continue;
-
-			emmo = P_SpawnMobjFromMobj(players[i].mo, 0, 0, players[i].mo->height, MT_GOTEMERALD);
-			if (!emmo)
-				continue;
-			P_SetTarget(&emmo->target, players[i].mo);
-			P_SetMobjState(emmo, mobjinfo[MT_GOTEMERALD].meleestate + em);
-
-			// Make sure we're not being carried before our tracer is changed
-			players[i].carry = CR_NONE;
-
-			P_SetTarget(&players[i].mo->tracer, emmo);
-
-			if (pnum == 255)
-			{
-				pnum = i;
-				continue;
-			}
-
-			if (i == pnum)
-				continue;
-
-			emmo->flags2 |= RF_DONTDRAW;
-		}
-	}
-}
-
-//
-// P_GiveFinishFlags
-//
-// Give the player visual indicators
-// that they've finished the map.
-//
-void P_GiveFinishFlags(player_t *player)
-{
-	angle_t angle = FixedAngle(player->mo->angle << FRACBITS);
-	UINT8 i;
-
-	if (!player->mo)
-		return;
-
-	if (!(netgame||multiplayer))
-		return;
-
-	for (i = 0; i < 3; i++)
-	{
-		angle_t fa = (angle >> ANGLETOFINESHIFT) & FINEMASK;
-		fixed_t xoffs = FINECOSINE(fa);
-		fixed_t yoffs = FINESINE(fa);
-		mobj_t* flag = P_SpawnMobjFromMobj(player->mo, xoffs, yoffs, 0, MT_FINISHFLAG);
-		flag->angle = angle;
-		angle += FixedAngle(120*FRACUNIT);
-
-		P_SetTarget(&flag->target, player->mo);
-	}
-}
-
-//
 // P_FindLowestLap
 //
 // SRB2Kart, a similar function as above for finding the lowest lap
@@ -583,7 +501,12 @@ void P_AddPlayerScore(player_t *player, INT32 amount)
 	if (amount < 0 && (UINT32)-amount > player->roundscore)
 		player->roundscore = 0;
 	else if (player->roundscore + amount < MAXSCORE)
+	{
+		if (player->roundscore < g_pointlimit && g_pointlimit <= player->roundscore + amount)
+			HU_DoTitlecardCEchoForDuration(player, "K.O. READY!", true, 5*TICRATE/2);
+
 		player->roundscore += amount;
+	}
 	else
 		player->roundscore = MAXSCORE;
 }
@@ -1373,7 +1296,7 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 			}
 		}
 
-		if (player == &players[consoleplayer])
+		if (!demo.savebutton && P_IsLocalPlayer(player))
 			demo.savebutton = leveltime;
 	}
 }
@@ -1616,9 +1539,6 @@ static void P_CheckBustableBlocks(player_t *player)
 				player->mo->momx >>= 1;
 				player->mo->momy >>= 1;
 			}
-
-			//if (metalrecording)
-			//	G_RecordBustup(rover);
 
 			EV_CrumbleChain(NULL, rover); // node->m_sector
 
@@ -3190,7 +3110,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 	mo = player->mo;
 
-	if (P_MobjIsFrozen(mo) || player->playerstate == PST_DEAD)
+	if (P_MobjIsFrozen(mo) || player->playerstate == PST_DEAD || F_CreditsDemoExitFade() >= 0)
 	{
 		// Do not move the camera while in hitlag!
 		// The camera zooming out after you got hit makes it hard to focus on the vibration.
@@ -4003,6 +3923,11 @@ DoABarrelRoll (player_t *player)
 
 	fixed_t smoothing;
 
+	if (player->exiting || F_CreditsDemoExitFade() >= 0)
+	{
+		return;
+	}
+
 	if (player->loop.radius)
 	{
 		return;
@@ -4011,11 +3936,6 @@ DoABarrelRoll (player_t *player)
 	if (player->respawn.state != RESPAWNST_NONE)
 	{
 		player->tilt = 0;
-		return;
-	}
-
-	if (player->exiting)
-	{
 		return;
 	}
 

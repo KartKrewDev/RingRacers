@@ -13,8 +13,6 @@
 
 #include "../cxxutil.hpp"
 #include "../io/streams.hpp"
-#include "gme.hpp"
-#include "gme_player.hpp"
 #include "ogg.hpp"
 #include "ogg_player.hpp"
 #include "resample.hpp"
@@ -183,33 +181,6 @@ optional<SoundChunk> try_load_ogg(tcb::span<std::byte> data)
 	return chunk;
 }
 
-optional<SoundChunk> try_load_gme(tcb::span<std::byte> data)
-{
-	std::shared_ptr<audio::GmePlayer<1>> player;
-	try
-	{
-		if (data[0] == std::byte {0x1F} && data[1] == std::byte {0x8B})
-		{
-			io::SpanStream stream {data};
-			audio::Gme gme = audio::load_gme(stream);
-			player = std::make_shared<GmePlayer<1>>(std::move(gme));
-		}
-		else
-		{
-			io::ZlibInputStream stream {io::SpanStream(data)};
-			audio::Gme gme = audio::load_gme(stream);
-			player = std::make_shared<GmePlayer<1>>(std::move(gme));
-		}
-	}
-	catch (...)
-	{
-		return nullopt;
-	}
-	std::vector<Sample<1>> samples {generate_to_vec(*player)};
-	SoundChunk chunk {std::move(samples)};
-	return chunk;
-}
-
 } // namespace
 
 optional<SoundChunk> srb2::audio::try_load_chunk(tcb::span<std::byte> data)
@@ -230,10 +201,6 @@ optional<SoundChunk> srb2::audio::try_load_chunk(tcb::span<std::byte> data)
 		return ret;
 
 	ret = try_load_ogg(data);
-	if (ret)
-		return ret;
-
-	ret = try_load_gme(data);
 	if (ret)
 		return ret;
 

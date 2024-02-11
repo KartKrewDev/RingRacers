@@ -605,6 +605,8 @@ struct debugFlagNames_s const debug_flag_names[] =
 	{"Music", DBG_MUSIC},
 	{"PwrLv", DBG_PWRLV},
 	{"PowerLevel", DBG_PWRLV}, // alt name
+	{"Demo", DBG_DEMO},
+	{"Replay", DBG_DEMO}, // alt name
 	{NULL, 0}
 };
 
@@ -801,7 +803,6 @@ static void OP_CycleThings(INT32 amt)
 				op_currentthing = 0;
 		} while
 		(mobjinfo[op_currentthing].doomednum == -1
-			|| op_currentthing == MT_NIGHTSDRONE
 			|| mobjinfo[op_currentthing].flags & MF_NOSECTOR
 			|| (states[mobjinfo[op_currentthing].spawnstate].sprite == SPR_NULL
 			 && states[mobjinfo[op_currentthing].seestate].sprite == SPR_NULL)

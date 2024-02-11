@@ -66,6 +66,7 @@ option(SRB2_CONFIG_TESTERS "Compile a build for testers." OFF)
 option(SRB2_CONFIG_MOBJCONSISTANCY "Compile with MOBJCONSISTANCY defined." OFF)
 option(SRB2_CONFIG_PACKETDROP "Compile with PACKETDROP defined." OFF)
 option(SRB2_CONFIG_ZDEBUG "Compile with ZDEBUG defined." OFF)
+option(SRB2_CONFIG_SKIP_COMPTIME "Skip regenerating comptime. To speed up iterative debug builds in IDEs." OFF)
 # SRB2_CONFIG_PROFILEMODE is probably superceded by some CMake setting.
 option(SRB2_CONFIG_PROFILEMODE "Compile for profiling (GCC only)." OFF)
 option(SRB2_CONFIG_TRACY "Compile with Tracy profiling enabled" OFF)
@@ -90,7 +91,6 @@ endif()
 
 add_subdirectory(thirdparty)
 
-find_package(GME REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(PNG REQUIRED)
 find_package(SDL2 CONFIG REQUIRED)
@@ -153,9 +153,10 @@ add_subdirectory(assets)
 
 include(GitUtilities)
 
-if("${SRB2_SDL2_EXE_NAME}" STREQUAL "")
+get_git_dir(SRB2_GIT_DIR)
+
+if(NOT "${SRB2_GIT_DIR}" STREQUAL "" AND "${SRB2_SDL2_EXE_NAME}" STREQUAL "")
 	# cause a reconfigure if the branch changes
-	get_git_dir(SRB2_GIT_DIR)
 	configure_file("${SRB2_GIT_DIR}/HEAD" HEAD COPYONLY)
 
 	git_current_branch(SRB2_GIT_REVISION)
@@ -174,8 +175,10 @@ if("${SRB2_SDL2_EXE_NAME}" STREQUAL "")
 	if (SRB2_CONFIG_TESTERS)
 		list(APPEND EXE_NAME_PARTS "TESTERS")
 	endif()
-else()
+elseif(NOT "${SRB2_SDL2_EXE_NAME}" STREQUAL "")
 	list(APPEND EXE_NAME_PARTS ${SRB2_SDL2_EXE_NAME})
+else()
+	list(APPEND EXE_NAME_PARTS "ringracers")
 endif()
 
 list(APPEND EXE_NAME_PARTS ${SRB2_SDL2_EXE_SUFFIX})

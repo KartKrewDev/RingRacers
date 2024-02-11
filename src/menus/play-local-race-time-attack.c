@@ -46,6 +46,42 @@ boolean M_TimeAttackInputs(INT32 ch)
 		return true;
 	}
 
+	if (menucmd[pid].dpad_lr != 0
+		&& !((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_ARROWS
+			|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR)
+	)
+	{
+		if (menucmd[pid].dpad_lr > 0)
+		{
+			levellist.cursor++;
+			if (levellist.cursor >= levellist.mapcount)
+			{
+				M_LevelSelectCupSwitch(true, false);
+				levellist.cursor = 0;
+			}
+		}
+		else
+		{
+			levellist.cursor--;
+			if (levellist.cursor < 0)
+			{
+				M_LevelSelectCupSwitch(false, false);
+				levellist.cursor = levellist.mapcount-1;
+			}
+		}
+
+		M_LevelSelectScrollDest();
+		levellist.slide.start = 0;
+
+		M_LevelSelected(levellist.cursor, false);
+		itemOn = ta_start;
+
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+
+		return true;
+	}
+
 	return false;
 }
 
@@ -276,7 +312,7 @@ void CV_SPBAttackChanged(void)
 		PLAY_TAReplay[tareplay_guest].status =
 			PLAY_TAGhosts[taghost_guest].status =
 			PLAY_TAReplayGuest[taguest_delete].status = IT_DISABLED;
-		if (FIL_FileExists(va("%s-guest.lmp", gpath)))
+		if (FIL_FileExists(va("%s-%sguest.lmp", gpath, modeprefix)))
 		{
 			PLAY_TAReplay[tareplay_guest].status = IT_STRING|IT_CALL;
 			PLAY_TAReplayGuest[taguest_delete].status = IT_STRING|IT_CALL;
@@ -288,7 +324,7 @@ void CV_SPBAttackChanged(void)
 
 		PLAY_TAReplay[tareplay_staff].status =
 			PLAY_TAGhosts[taghost_staff].status = IT_DISABLED;
-		if (mapheaderinfo[levellist.choosemap]->ghostCount > 0)
+		if (mapheaderinfo[levellist.choosemap]->ghostCount > 0 && !modeprefix[0])
 		{
 			PLAY_TAReplay[tareplay_staff].status = IT_STRING|IT_ARROWS;
 			PLAY_TAGhosts[taghost_staff].status = IT_STRING|IT_CVAR;
@@ -325,12 +361,13 @@ void CV_SPBAttackChanged(void)
 	}
 }
 
-// time attack stuff...
-void M_PrepareTimeAttack(INT32 choice)
+/// time attack stuff...
+void M_PrepareTimeAttack(boolean menuupdate)
 {
-	(void) choice;
-
-	timeattackmenu.ticker = 0;
+	if (menuupdate)
+	{
+		timeattackmenu.ticker = 0;
+	}
 
 	// Gametype guess
 	if (levellist.guessgt != MAXGAMETYPES)
@@ -386,6 +423,11 @@ void M_ReplayTimeAttack(INT32 choice)
 	demo.loadfiles = false;
 	demo.ignorefiles = true; // Just assume that record attack replays have the files needed
 
+	const char *modeprefix = "";
+
+	if (cv_dummyspbattack.value)
+		modeprefix = "spb-";
+
 	switch (choice)
 	{
 		default:
@@ -399,14 +441,9 @@ void M_ReplayTimeAttack(INT32 choice)
 			which = "last";
 			break;
 		case tareplay_guest:
-			G_DoPlayDemo(va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s-guest.lmp", srb2home, timeattackfolder, G_BuildMapName(levellist.choosemap+1)));
+			G_DoPlayDemo(va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s-%sguest.lmp", srb2home, timeattackfolder, G_BuildMapName(levellist.choosemap+1), modeprefix));
 			return;
 	}
-
-	const char *modeprefix = "";
-
-	if (cv_dummyspbattack.value)
-		modeprefix = "spb-";
 
 	G_DoPlayDemo(va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s-%s-%s%s.lmp", srb2home, timeattackfolder, G_BuildMapName(levellist.choosemap+1), cv_skin[0].string, modeprefix, which));
 }
@@ -425,13 +462,13 @@ static void M_WriteGuestReplay(INT32 ch)
 
 	gpath = Z_StrDup(va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", srb2home, timeattackfolder, G_BuildMapName(levellist.choosemap+1)));
 
+	const char *modeprefix = "";
+
+	if (cv_dummyspbattack.value)
+		modeprefix = "spb-";
+
 	if (TA_GuestReplay_Str != NULL)
 	{
-		const char *modeprefix = "";
-
-		if (cv_dummyspbattack.value)
-			modeprefix = "spb-";
-
 		len = FIL_ReadFile(va("%s-%s-%s%s.lmp", gpath, cv_skin[0].string, modeprefix, TA_GuestReplay_Str), &buf);
 		if (!len)
 		{
@@ -441,7 +478,7 @@ static void M_WriteGuestReplay(INT32 ch)
 		}
 	}
 
-	rguest = Z_StrDup(va("%s-guest.lmp", gpath));
+	rguest = Z_StrDup(va("%s-%sguest.lmp", gpath, modeprefix));
 
 	if (FIL_FileExists(rguest))
 	{
@@ -456,7 +493,7 @@ static void M_WriteGuestReplay(INT32 ch)
 	Z_Free(rguest);
 	Z_Free(gpath);
 
-	M_PrepareTimeAttack(0);
+	M_PrepareTimeAttack(false);
 	M_SetupNextMenu(&PLAY_TimeAttackDef, false);
 
 	// TODO the following isn't showing up and I'm not sure why
@@ -484,7 +521,12 @@ void M_SetGuestReplay(INT32 choice)
 			break;
 	}
 
-	if (FIL_FileExists(va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s-guest.lmp", srb2home, timeattackfolder, G_BuildMapName(levellist.choosemap+1))))
+	const char *modeprefix = "";
+
+	if (cv_dummyspbattack.value)
+		modeprefix = "spb-";
+
+	if (FIL_FileExists(va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s-%sguest.lmp", srb2home, timeattackfolder, G_BuildMapName(levellist.choosemap+1), modeprefix)))
 	{
 		M_StartMessage("Guest Replay", va("Are you sure you want to\n%s the guest replay data?\n", (TA_GuestReplay_Str != NULL ? "overwrite" : "delete")), &M_WriteGuestReplay, MM_YESNO, NULL, NULL);
 	}
@@ -521,8 +563,6 @@ void M_StartTimeAttack(INT32 choice)
 
 	if (demo.playback)
 		G_StopDemo();
-	if (metalrecording)
-		G_StopMetalDemo();
 
 	splitscreen = 0;
 	SplitScreen_OnChange();

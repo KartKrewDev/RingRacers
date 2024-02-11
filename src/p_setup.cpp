@@ -807,10 +807,14 @@ static void P_SpawnMapThings(boolean spawnemblems)
 				continue; // These were already spawned
 		}
 
-		if (mt->type == mobjinfo[MT_BATTLECAPSULE].doomednum
-			|| mt->type == mobjinfo[MT_ITEMCAPSULE].doomednum)
+		if (mt->type == mobjinfo[MT_ITEMCAPSULE].doomednum)
 		{
-			continue; // These will spawn later
+			continue; // These will spawn later (in k_battle.c K_BattleInit)
+		}
+
+		if (mt->type == mobjinfo[MT_BATTLECAPSULE].doomednum && gametype != GT_TUTORIAL)
+		{
+			continue; // These will spawn later (in k_battle.c K_BattleInit), unless we're in a tutorial
 		}
 
 		if (!spawnemblems && mt->type == mobjinfo[MT_EMBLEM].doomednum)
@@ -3117,8 +3121,6 @@ static void P_LoadTextmap(void)
 	side_t     *sd;
 	mapthing_t *mt;
 
-	CONS_Alert(CONS_NOTICE, "UDMF support is still a work-in-progress; its specs and features are prone to change until it is fully implemented.\n");
-
 	/// Given the UDMF specs, some fields are given a default value.
 	/// If an element's field has a default value set, it is omitted
 	/// from the textmap, and therefore we have to account for it by
@@ -3457,7 +3459,7 @@ static boolean P_LoadMapData(const virtres_t *virt)
 	if (udmf) // Count how many entries for each type we got in textmap.
 	{
 		virtlump_t *textmap = vres_Find(virt, "TEXTMAP");
-		M_TokenizerOpen((char *)textmap->data);
+		M_TokenizerOpen((char *)textmap->data, textmap->size);
 		if (!TextmapCount(textmap->size))
 		{
 			M_TokenizerClose();
@@ -7627,8 +7629,7 @@ static void P_InitLevelSettings(void)
 	g_quakes = NULL;
 
 	// song credit init
-	Z_Free(cursongcredit.text);
-	memset(&cursongcredit,0,sizeof(struct cursongcredit));
+	S_StopMusicCredit();
 	cursongcredit.trans = NUMTRANSMAPS;
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -7763,7 +7764,7 @@ static void P_ResetSpawnpoints(void)
 		skyboxviewpnts[i] = skyboxcenterpnts[i] = NULL;
 }
 
-static void P_TryAddExternalGhost(char *defdemoname)
+static void P_TryAddExternalGhost(const char *defdemoname)
 {
 	if (FIL_FileExists(defdemoname))
 	{
@@ -7793,54 +7794,65 @@ static void P_LoadRecordGhosts(void)
 	if (modeattacking & ATTACKING_SPB)
 		modeprefix = "spb-";
 
-	// Best Time ghost
-	if (modeattacking & ATTACKING_TIME)
+	enum
 	{
-		if (cv_ghost_besttime.value)
-		{
-			for (i = 0; i < numskins; ++i)
-			{
-				if (cv_ghost_besttime.value == 1 && players[consoleplayer].skin != i)
-					continue;
+		kTime	= 1 << 0,
+		kLap	= 1 << 1,
+		kLast	= 1 << 2,
+	};
 
-				P_TryAddExternalGhost(va("%s-%s-%stime-best.lmp", gpath, skins[i].name, modeprefix));
-			}
-		}
-	}
-
-	// Best Lap ghost
-	if (modeattacking & ATTACKING_LAP)
+	auto map_ghosts = [](int value)
 	{
-		if (cv_ghost_bestlap.value)
-		{
-			for (i = 0; i < numskins; ++i)
-			{
-				if (cv_ghost_bestlap.value == 1 && players[consoleplayer].skin != i)
-					continue;
+		auto map = [](const consvar_t& cvar, int value, UINT8 bit) { return cvar.value == value ? bit : 0; };
 
-				P_TryAddExternalGhost(va("%s-%s-%slap-best.lmp", gpath, skins[i].name, modeprefix));
-			}
-		}
-	}
+		return
+			// Best Time ghost
+			((modeattacking & ATTACKING_TIME) ? map(cv_ghost_besttime, value, kTime) : 0) |
 
-	// Last ghost
-	if (cv_ghost_last.value)
+			// Best Lap ghost
+			((modeattacking & ATTACKING_LAP) ? map(cv_ghost_bestlap, value, kLap) : 0) |
+
+			// Best Lap ghost
+			map(cv_ghost_last, value, kLast);
+	};
+
+	auto add_ghosts = [gpath](const std::string& base, UINT8 bits)
+	{
+		auto load = [base](const char* suffix) { P_TryAddExternalGhost(fmt::format("{}-{}.lmp", base, suffix).c_str()); };
+
+		if (bits & kTime)
+			load("time-best");
+
+		if (bits & kLap)
+			load("lap-best");
+
+		if (bits & kLast)
+			load("last");
+	};
+
+	UINT8 allGhosts = map_ghosts(2);
+	UINT8 sameGhosts = map_ghosts(1);
+
+	if (allGhosts)
 	{
 		for (i = 0; i < numskins; ++i)
-		{
-			if (cv_ghost_last.value == 1 && players[consoleplayer].skin != i)
-				continue;
+			add_ghosts(fmt::format("{}-{}{}", gpath, skins[i].name, modeprefix), allGhosts);
+	}
 
-			P_TryAddExternalGhost(va("%s-%s-%slast.lmp", gpath, skins[i].name, modeprefix));
-		}
+	if (sameGhosts)
+	{
+		INT32 skin = R_SkinAvailable(cv_skin[0].string);
+		if (skin < 0 || !R_SkinUsable(consoleplayer, skin, false))
+			skin = 0; // use default skin
+		add_ghosts(fmt::format("{}-{}{}", gpath, skins[skin].name, modeprefix), sameGhosts);
 	}
 
 	// Guest ghost
 	if (cv_ghost_guest.value)
-		P_TryAddExternalGhost(va("%s-guest.lmp", gpath));
+		P_TryAddExternalGhost(va("%s-%sguest.lmp", gpath, modeprefix));
 
 	// Staff Attack ghosts
-	if (cv_ghost_staff.value)
+	if (cv_ghost_staff.value && !modeprefix[0])
 	{
 		for (i = mapheaderinfo[gamemap-1]->ghostCount; i > 0; i--)
 		{
@@ -8251,9 +8263,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	// Initialize sector node list.
 	P_Initsecnode();
 
-	if (metalplayback)
-		G_StopMetalDemo();
-
 	// Clear CECHO messages
 	HU_ClearCEcho();
 	HU_ClearTitlecardCEcho();
@@ -8263,9 +8272,14 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	P_InitLevelSettings();
 
-	if (!demo.title)
+	if (demo.attract != DEMO_ATTRACT_TITLE)
 	{
 		Music_Stop("title");
+	}
+
+	if (demo.attract != DEMO_ATTRACT_CREDITS)
+	{
+		Music_Stop("credits");
 	}
 
 	for (i = 0; i <= r_splitscreen; i++)
@@ -8382,7 +8396,11 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 				FixedDiv((F_GetWipeLength(wipedefs[wipe_level_toblack])-2)*NEWTICRATERATIO, NEWTICRATE), MUSICRATE));
 #endif
 
-		if (K_PodiumSequence())
+		if (demo.attract)
+		{
+			; // Leave the music alone! We're already playing what we want!
+		}
+		else if (K_PodiumSequence())
 		{
 			// mapmusrng is set by local player position in K_ResetCeremony
 			P_LoadLevelMusic();
@@ -8663,6 +8681,16 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	P_MapEnd(); // tm.thing is no longer needed from this point onwards
 
+	if (!udmf && !P_CanWriteTextmap())
+	{
+		// *Playing* binary maps is disabled; the support is kept in the code for binary map conversions only.
+		// This is to make sure people use UDMF and, indirectly, guarantee that they will ship their PWAD
+		// maps with extended GL nodes, as per UDMF requirement. We can retrofit a modern hardware renderer
+		// into the game in the future without disrupting existing PWADs, which does not suffer from the issues
+		// of the current GL renderer.
+		I_Error("Playing binary maps is disabled; please convert to UDMF TEXTMAP and rebuild nodes.");
+	}
+
 	if (!fromnetsave)
 	{
 		INT32 buf = gametic % BACKUPTICS;
@@ -8752,8 +8780,6 @@ void P_PostLoadLevel(void)
 
 	P_InitPlayers();
 
-	if (metalrecording)
-		G_BeginMetal();
 	if (demo.recording) // Okay, level loaded, character spawned and skinned,
 		G_BeginRecording(); // I AM NOW READY TO RECORD.
 	demo.deferstart = true;

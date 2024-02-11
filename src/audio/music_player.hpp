@@ -25,7 +25,6 @@ namespace srb2::audio
 enum class MusicType
 {
 	kOgg,
-	kGme,
 	kMod
 };
 

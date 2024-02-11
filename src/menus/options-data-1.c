@@ -4,6 +4,8 @@
 #include "../k_menu.h"
 #include "../discord.h" // discord rpc cvars
 
+extern consvar_t cv_netdemosize;
+
 // data options menu -- see dopt_e
 menuitem_t OPTIONS_Data[] =
 {
@@ -25,6 +27,9 @@ menuitem_t OPTIONS_Data[] =
 
 	{IT_STRING | IT_CVAR, "Net Consistency Quality", "For filesize, how often do we write position data in online replays?",
 		NULL, {.cvar = &cv_netdemosyncquality}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Buffer Size (MB)", "Lets replays last longer with more players. Uses more RAM.",
+		NULL, {.cvar = &cv_netdemosize}, 0, 0},
 
 #ifdef HAVE_DISCORDRPC
 	{IT_HEADER, "Discord Rich Presence...", NULL,

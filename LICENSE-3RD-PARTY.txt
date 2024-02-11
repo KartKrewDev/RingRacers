@@ -830,10 +830,6 @@ Public License instead of this License.  But first, please read
 --------------------------------------------------------------------------------
                         GNU Lesser General Public License, Version 2.1
         applies to:
-        - Game_Music_Emu
-          Shay Green <gblargg@gmail.com>
-          http://www.slack.net/~ant/
-
         - libintl
           Copyright (C) 1995-2018 Free Software Foundation, Inc.
           https://www.gnu.org/software/gettext/

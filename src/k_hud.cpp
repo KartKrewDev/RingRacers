@@ -1999,14 +1999,14 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 
 			if (gamedata->collected[(stickermedalinfo.emblems[i]-emblemlocations)])
 			{
-				V_DrawSmallMappedPatch(workx, worky, splitflags,
+				V_DrawMappedPatch(workx, worky, splitflags,
 					static_cast<patch_t*>(W_CachePatchName(M_GetEmblemPatch(stickermedalinfo.emblems[i], false), PU_CACHE)),
 					R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(stickermedalinfo.emblems[i]), GTC_CACHE)
 				);
 			}
 			else
 			{
-				V_DrawSmallMappedPatch(workx, worky, splitflags,
+				V_DrawMappedPatch(workx, worky, splitflags,
 					static_cast<patch_t*>(W_CachePatchName("NEEDIT", PU_CACHE)),
 					NULL
 				);
@@ -5259,6 +5259,11 @@ static void K_drawChallengerScreen(void)
 
 static void K_drawLapStartAnim(void)
 {
+	if (demo.attract == DEMO_ATTRACT_CREDITS)
+	{
+		return;
+	}
+
 	// This is an EVEN MORE insanely complicated animation.
 	const UINT8 t = stplyr->karthud[khud_lapanimation];
 	const UINT8 progress = 80 - t;
@@ -5928,7 +5933,7 @@ void K_drawKartHUD(void)
 			K_drawEmeraldWin(false);
 	}
 
-	if (!demo.title)
+	if (!demo.attract)
 	{
 		// Draw the CHECK indicator before the other items, so it's overlapped by everything else
 		if (LUA_HudEnabled(hud_check))	// delete lua when?
@@ -5952,7 +5957,7 @@ void K_drawKartHUD(void)
 			K_drawKartMinimap();
 	}
 
-	if (demo.title)
+	if (demo.attract)
 		;
 	else if (gametype == GT_TUTORIAL)
 	{
@@ -6002,19 +6007,22 @@ void K_drawKartHUD(void)
 
 	if (!stplyr->spectator && !freecam) // Bottom of the screen elements, don't need in spectate mode
 	{
-		if (demo.title) // Draw title logo instead in demo.titles
+		if (demo.attract)
 		{
-			INT32 x = BASEVIDWIDTH - 8, y = BASEVIDHEIGHT-8, snapflags = V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SLIDEIN;
-			patch_t *pat = static_cast<patch_t*>(W_CachePatchName((cv_alttitle.value ? "MTSJUMPR1" : "MTSBUMPR1"), PU_CACHE));
-
-			if (r_splitscreen == 3)
+			if (demo.attract == DEMO_ATTRACT_TITLE) // Draw logo on title screen demos
 			{
-				x = BASEVIDWIDTH/2;
-				y = BASEVIDHEIGHT/2;
-				snapflags = 0;
-			}
+				INT32 x = BASEVIDWIDTH - 8, y = BASEVIDHEIGHT-8, snapflags = V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SLIDEIN;
+				patch_t *pat = static_cast<patch_t*>(W_CachePatchName((cv_alttitle.value ? "MTSJUMPR1" : "MTSBUMPR1"), PU_CACHE));
 
-			V_DrawScaledPatch(x-(SHORT(pat->width)), y-(SHORT(pat->height)), snapflags, pat);
+				if (r_splitscreen == 3)
+				{
+					x = BASEVIDWIDTH/2;
+					y = BASEVIDHEIGHT/2;
+					snapflags = 0;
+				}
+
+				V_DrawScaledPatch(x-(SHORT(pat->width)), y-(SHORT(pat->height)), snapflags, pat);
+			}
 		}
 		else
 		{

@@ -221,24 +221,13 @@ static void R_DrawColumnTemplate(drawcolumndata_t *dc)
 
 		// Inner loop that does the actual texture mapping, e.g. a DDA-like scaling.
 		// This is as fast as it gets.
-		heightmask = dc->texheight-1;
-		if (dc->sourcelength <= 0)
-		{
-			// Note: we need to unconditionally clamp in npow2 draw loop to avoid a CPU branch
-			// This is to just render it effectively the identity function.
-			npow2min = INT32_MIN;
-			npow2max = INT32_MAX;
-		}
-		else
-		{
-			npow2min = -1;
-			npow2max = dc->sourcelength;
-		}
+		heightmask = dc->sourcelength-1;
+		npow2min = -1;
+		npow2max = dc->sourcelength;
 
-		if (dc->texheight & heightmask)   // not a power of 2 -- killough
+		if (dc->sourcelength & heightmask)   // not a power of 2 -- killough
 		{
-			heightmask++;
-			heightmask <<= FRACBITS;
+			heightmask = dc->texheight << FRACBITS;
 
 			if (frac < 0)
 			{

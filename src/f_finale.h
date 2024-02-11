@@ -35,7 +35,7 @@ boolean F_CutsceneResponder(event_t *ev);
 void F_IntroTicker(void);
 void F_TitleScreenTicker(boolean run);
 void F_CutsceneTicker(void);
-void F_TitleDemoTicker(void);
+void F_AttractDemoTicker(void);
 void F_TextPromptTicker(void);
 
 // Called by main loop.
@@ -50,9 +50,6 @@ void F_WaitingPlayersDrawer(void);
 void F_GameEvaluationDrawer(void);
 void F_StartGameEvaluation(void);
 void F_GameEvaluationTicker(void);
-
-void F_CreditTicker(void);
-void F_CreditDrawer(void);
 
 void F_VersionDrawer(void);
 
@@ -71,7 +68,6 @@ void F_StartGameEnd(void);
 void F_StartIntro(void);
 void F_StartTitleScreen(void);
 void F_StartEnding(void);
-void F_StartCredits(void);
 
 extern INT32 finalecount;
 extern INT32 titlescrollxspeed;

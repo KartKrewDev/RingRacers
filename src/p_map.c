@@ -103,6 +103,9 @@ camera_t *mapcampointer;
 //
 static boolean P_TeleportMove(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z)
 {
+	boolean startingonground = P_IsObjectOnGround(thing);
+	sector_t *oldsector = thing->subsector->sector;
+
 	numspechit = 0U;
 
 	// the move is ok,
@@ -131,6 +134,8 @@ static boolean P_TeleportMove(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z)
 	thing->ceilingz = tm.ceilingz;
 	thing->floorrover = tm.floorrover;
 	thing->ceilingrover = tm.ceilingrover;
+
+	P_CheckSectorTransitionalEffects(thing, oldsector, startingonground);
 
 	return true;
 }
@@ -486,18 +491,6 @@ static void P_DoFanAndGasJet(mobj_t *spring, mobj_t *object)
 
 	switch (spring->type)
 	{
-		case MT_FAN: // fan
-			if (zdist > (spring->health << FRACBITS)) // max z distance determined by health (set by map thing args[0])
-				break;
-			if (flipval*object->momz >= FixedMul(speed, spring->scale)) // if object's already moving faster than your best, don't bother
-				break;
-
-			object->momz += flipval*FixedMul(speed/4, spring->scale);
-
-			// limit the speed if too high
-			if (flipval*object->momz > FixedMul(speed, spring->scale))
-				object->momz = flipval*FixedMul(speed, spring->scale);
-			break;
 		case MT_STEAM: // Steam
 			if (zdist > FixedMul(16*FRACUNIT, spring->scale))
 				break;
@@ -948,27 +941,6 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		return Obj_ShrinkLaserCollide(tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
 
-	if (tm.thing->type == MT_SMK_ICEBLOCK)
-	{
-		// see if it went over / under
-		if (tm.thing->z > thing->z + thing->height)
-			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
-			return BMIT_CONTINUE; // underneath
-
-		return K_SMKIceBlockCollide(tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
-	}
-	else if (thing->type == MT_SMK_ICEBLOCK)
-	{
-		// see if it went over / under
-		if (tm.thing->z > thing->z + thing->height)
-			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
-			return BMIT_CONTINUE; // underneath
-
-		return K_SMKIceBlockCollide(thing, tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
-	}
-
 	if (tm.thing->type == MT_EGGMANITEM || tm.thing->type == MT_EGGMANITEM_SHIELD)
 	{
 		// see if it went over / under
@@ -1224,25 +1196,6 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		return BMIT_CONTINUE;
 	}
 
-	if ((thing->type == MT_SPRINGSHELL || thing->type == MT_YELLOWSHELL) && thing->health > 0
-	 && (tm.thing->player || (tm.thing->flags & MF_PUSHABLE)) && tm.thing->health > 0)
-	{
-		// Multiplying by -1 inherently flips "less than" and "greater than"
-		fixed_t tmz     = ((thing->eflags & MFE_VERTICALFLIP) ? -(tm.thing->z + tm.thing->height) : tm.thing->z);
-		fixed_t tmznext = ((thing->eflags & MFE_VERTICALFLIP) ? -tm.thing->momz : tm.thing->momz) + tmz;
-		fixed_t thzh    = ((thing->eflags & MFE_VERTICALFLIP) ? -thing->z : thing->z + thing->height);
-		//fixed_t sprarea = FixedMul(8*FRACUNIT, thing->scale) * P_MobjFlip(thing);
-
-		//if ((tmznext <= thzh && tmz > thzh) || (tmznext > thzh - sprarea && tmznext < thzh))
-		if (tmznext <= thzh)
-		{
-			P_DoSpring(thing, tm.thing);
-		//	return BMIT_CONTINUE;
-		}
-		//else if (tmz > thzh - sprarea && tmz < thzh) // Don't damage people springing up / down
-			return BMIT_CONTINUE;
-	}
-
 	// missiles can hit other things
 	if ((tm.thing->flags & MF_MISSILE) && !damage) // if something was already damaged, don't run this
 	{
@@ -1419,13 +1372,13 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 
 	if (thing->flags & MF_PUSHABLE)
 	{
-		if (tm.thing->type == MT_FAN || tm.thing->type == MT_STEAM)
+		if (tm.thing->type == MT_STEAM)
 			P_DoFanAndGasJet(tm.thing, thing);
 	}
 
 	if (tm.thing->flags & MF_PUSHABLE)
 	{
-		if (thing->type == MT_FAN || thing->type == MT_STEAM)
+		if (thing->type == MT_STEAM)
 		{
 			P_DoFanAndGasJet(thing, tm.thing);
 			return BMIT_CONTINUE;
@@ -1450,7 +1403,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 
 	if (thing->player)
 	{
-		if (tm.thing->type == MT_FAN || tm.thing->type == MT_STEAM)
+		if (tm.thing->type == MT_STEAM)
 			P_DoFanAndGasJet(tm.thing, thing);
 	}
 
@@ -1459,7 +1412,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		if (!tm.thing->health)
 			return BMIT_CONTINUE;
 
-		if (thing->type == MT_FAN || thing->type == MT_STEAM)
+		if (thing->type == MT_STEAM)
 			P_DoFanAndGasJet(thing, tm.thing);
 		else if (thing->flags & MF_SPRING)
 		{
@@ -1543,72 +1496,6 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 				K_KartSolidBounce(tm.thing, thing);
 				return BMIT_CONTINUE;
 			}
-		}
-		else if (thing->type == MT_SMK_PIPE)
-		{
-			// see if it went over / under
-			if (tm.thing->z > thing->z + thing->height)
-				return BMIT_CONTINUE; // overhead
-			if (tm.thing->z + tm.thing->height < thing->z)
-				return BMIT_CONTINUE; // underneath
-
-			if (!thing->health)
-				return BMIT_CONTINUE; // dead
-
-			if (tm.thing->player->invincibilitytimer > 0
-				|| K_IsBigger(tm.thing, thing) == true)
-			{
-				P_KillMobj(thing, tm.thing, tm.thing, DMG_NORMAL);
-				return BMIT_CONTINUE; // kill
-			}
-
-			K_KartSolidBounce(tm.thing, thing);
-			return BMIT_CONTINUE;
-		}
-		else if (thing->type == MT_SMK_THWOMP)
-		{
-			if (!thing->health)
-				return BMIT_CONTINUE; // dead
-
-			if (!thwompsactive)
-				return BMIT_CONTINUE; // not active yet
-
-			if ((tm.thing->z < thing->z) && (thing->z >= thing->movefactor-(256<<FRACBITS)))
-			{
-				thing->extravalue1 = 1; // purposely try to stomp on players early
-				//S_StartSound(thing, sfx_s1bb);
-			}
-
-			// see if it went over / under
-			if (tm.thing->z > thing->z + thing->height)
-				return BMIT_CONTINUE; // overhead
-			if (tm.thing->z + tm.thing->height < thing->z)
-				return BMIT_CONTINUE; // underneath
-
-			// kill
-			if (tm.thing->player->invincibilitytimer > 0
-				|| K_IsBigger(tm.thing, thing) == true)
-			{
-				P_KillMobj(thing, tm.thing, tm.thing, DMG_NORMAL);
-				return BMIT_CONTINUE;
-			}
-
-			// no interaction
-			if (tm.thing->player->flashing > 0 || tm.thing->player->hyudorotimer > 0 || tm.thing->player->spinouttimer > 0)
-				return BMIT_CONTINUE;
-
-			// collide
-			if (tm.thing->z < thing->z && thing->momz < 0)
-				P_DamageMobj(tm.thing, thing, thing, 1, DMG_TUMBLE);
-			else
-			{
-				if ((K_KartSolidBounce(tm.thing, thing) == true) && (thing->flags2 & MF2_AMBUSH))
-				{
-					P_DamageMobj(tm.thing, thing, thing, 1, DMG_WIPEOUT);
-				}
-			}
-
-			return BMIT_CONTINUE;
 		}
 		else if (thing->type == MT_KART_LEFTOVER)
 		{
@@ -2252,8 +2139,6 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y, TryMoveResult_t *re
 
 			if (P_CheckSolidFFloorSurface(thing, rover))
 				;
-			else if (thing->type == MT_SKIM && (rover->fofflags & FOF_SWIMMABLE))
-				;
 			else if (!((rover->fofflags & FOF_BLOCKPLAYER && thing->player)
 			    || (rover->fofflags & FOF_BLOCKOTHERS && !thing->player)
 				|| rover->fofflags & FOF_QUICKSAND))
@@ -2290,8 +2175,7 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y, TryMoveResult_t *re
 			}
 
 			if (bottomheight < tm.ceilingz && abs(delta1) >= abs(delta2)
-				&& !(rover->fofflags & FOF_PLATFORM)
-				&& !(thing->type == MT_SKIM && (rover->fofflags & FOF_SWIMMABLE)))
+				&& !(rover->fofflags & FOF_PLATFORM))
 			{
 				tm.ceilingz = tm.drpoffceilz = bottomheight;
 				tm.ceilingrover = rover;
@@ -3056,7 +2940,7 @@ increment_move
 				}
 			}
 
-			if (!allowdropoff && !(thing->flags & MF_FLOAT) && thing->type != MT_SKIM && !tm.floorthing)
+			if (!allowdropoff && !(thing->flags & MF_FLOAT) && !tm.floorthing)
 			{
 				if (thing->eflags & MFE_VERTICALFLIP)
 				{
@@ -3106,6 +2990,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff, Try
 	fixed_t startingonground = P_IsObjectOnGround(thing);
 	fixed_t stairjank = 0;
 	pslope_t *oldslope = thing->standingslope;
+	sector_t *oldsector = thing->subsector->sector;
 
 	// Is the move OK?
 	if (increment_move(thing, x, y, allowdropoff, &stairjank, result) == false)
@@ -3242,6 +3127,8 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff, Try
 		thing->eflags |= MFE_ONGROUND;
 
 	P_SetThingPosition(thing);
+
+	P_CheckSectorTransitionalEffects(thing, oldsector, startingonground);
 
 	// remove any duplicates that may be in spechitint
 	spechitint_removedups();
@@ -4229,27 +4116,8 @@ void P_BounceMove(mobj_t *mo, TryMoveResult_t *result)
 	if (bestslideline == NULL)
 		return;
 
-	if (mo->type == MT_SHELL)
-	{
-		tmxmove = mmomx;
-		tmymove = mmomy;
-	}
-	else if (mo->type == MT_THROWNBOUNCE)
-	{
-		tmxmove = FixedMul(mmomx, (FRACUNIT - (FRACUNIT>>6) - (FRACUNIT>>5)));
-		tmymove = FixedMul(mmomy, (FRACUNIT - (FRACUNIT>>6) - (FRACUNIT>>5)));
-	}
-	else if (mo->type == MT_THROWNGRENADE)
-	{
-		// Quickly decay speed as it bounces
-		tmxmove = FixedDiv(mmomx, 2*FRACUNIT);
-		tmymove = FixedDiv(mmomy, 2*FRACUNIT);
-	}
-	else
-	{
-		tmxmove = FixedMul(mmomx, (FRACUNIT - (FRACUNIT>>2) - (FRACUNIT>>3)));
-		tmymove = FixedMul(mmomy, (FRACUNIT - (FRACUNIT>>2) - (FRACUNIT>>3)));
-	}
+	tmxmove = FixedMul(mmomx, (FRACUNIT - (FRACUNIT>>2) - (FRACUNIT>>3)));
+	tmymove = FixedMul(mmomy, (FRACUNIT - (FRACUNIT>>2) - (FRACUNIT>>3)));
 
 	P_HitBounceLine(bestslideline); // clip the moves
 

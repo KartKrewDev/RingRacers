@@ -72,6 +72,7 @@
 #include "music.h"
 #include "k_roulette.h"
 #include "k_objects.h"
+#include "k_credits.h"
 
 #ifdef HAVE_DISCORDRPC
 #include "discord.h"
@@ -271,7 +272,7 @@ UINT8 use1upSound = 0;
 UINT8 maxXtraLife = 2; // Max extra lives from rings
 
 UINT8 introtoplay;
-UINT8 creditscutscene;
+UINT8 g_credits_cutscene;
 UINT8 useSeal = 1;
 
 tic_t racecountdown, exitcountdown, musiccountdown; // for racing
@@ -1293,6 +1294,10 @@ void G_PreLevelTitleCard(void)
 //
 boolean G_IsTitleCardAvailable(void)
 {
+	// Don't show for attract demos
+	if (demo.attract)
+		return false;
+
 	// Overwrites all other title card exceptions.
 	if (K_CheckBossIntro() == true)
 		return true;
@@ -1325,10 +1330,26 @@ boolean G_Responder(event_t *ev)
 {
 	//INT32 i;
 
-	// any other key pops up menu if in demos
-	if (gameaction == ga_nothing && !demo.quitafterplaying &&
-		((demo.playback && !modeattacking && !demo.title && !multiplayer) || gamestate == GS_TITLESCREEN))
+	if (demo.playback && demo.attract)
 	{
+		if (demo.attract == DEMO_ATTRACT_TITLE)
+		{
+			// Title demo uses intro responder
+			if (F_IntroResponder(ev))
+			{
+				// stop the title demo
+				G_CheckDemoStatus();
+				return true;
+			}
+		}
+
+		return false;
+	}
+	else if (gameaction == ga_nothing
+		&& !demo.quitafterplaying
+		&& ((demo.playback && !modeattacking && !multiplayer) || gamestate == GS_TITLESCREEN))
+	{
+		// any other key pops up menu if in demos
 		if (ev->type == ev_keydown
 		|| (ev->type == ev_gamepad_axis && ev->data1 >= JOYANALOGS
 			&& ((abs(ev->data2) > JOYAXISRANGE/2
@@ -1342,17 +1363,7 @@ boolean G_Responder(event_t *ev)
 			M_StartControlPanel();
 			return true;
 		}
-		return false;
-	}
-	else if (demo.playback && demo.title)
-	{
-		// Title demo uses intro responder
-		if (F_IntroResponder(ev))
-		{
-			// stop the title demo
-			G_CheckDemoStatus();
-			return true;
-		}
+
 		return false;
 	}
 
@@ -1870,8 +1881,8 @@ void G_Ticker(boolean run)
 	switch (gamestate)
 	{
 		case GS_LEVEL:
-			if (demo.title)
-				F_TitleDemoTicker();
+			if (demo.attract)
+				F_AttractDemoTicker();
 			P_Ticker(run); // tic the game
 			F_TextPromptTicker();
 			AM_Ticker();
@@ -1994,6 +2005,16 @@ void G_Ticker(boolean run)
 
 			K_TickMidVote();
 		}
+
+		if (g_fast_forward == 0 && demo.attract == DEMO_ATTRACT_CREDITS)
+		{
+			F_TickCreditsDemoExit();
+		}
+
+		if (g_fast_forward > 0)
+		{
+			g_fast_forward--;
+		}
 	}
 }
 
@@ -2100,6 +2121,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	INT32 checkpointId;
 	boolean enteredGame;
 	UINT8 lastsafelap;
+	UINT8 lastsafecheatcheck;
 
 	roundconditions_t roundconditions;
 	boolean saveroundconditions;
@@ -2208,6 +2230,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		khudfinish = 0;
 		cheatchecknum = 0;
 		lastsafelap = 0;
+		lastsafecheatcheck = 0;
 
 		saveroundconditions = false;
 		tallyactive = false;
@@ -2255,6 +2278,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		saveroundconditions = true;
 
 		lastsafelap = players[player].lastsafelap;
+		lastsafecheatcheck = players[player].lastsafecheatcheck;
 
 		tallyactive = players[player].tally.active;
 		if (tallyactive)
@@ -2327,6 +2351,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->steering = steering;
 	p->angleturn = playerangleturn;
 	p->lastsafelap = lastsafelap;
+	p->lastsafecheatcheck = lastsafecheatcheck;
 
 	// save player config truth reborn
 	p->skincolor = skincolor;
@@ -2907,12 +2932,15 @@ void G_DoReborn(INT32 playernum)
 
 // These are the barest esentials.
 // This func probably doesn't even need to know if the player is a bot.
-void G_AddPlayer(INT32 playernum)
+void G_AddPlayer(INT32 playernum, INT32 console)
 {
 	CL_ClearPlayer(playernum);
 	G_DestroyParty(playernum);
 
 	playeringame[playernum] = true;
+
+	playerconsole[playernum] = console;
+	G_BuildLocalSplitscreenParty(playernum);
 
 	player_t *newplayer = &players[playernum];
 
@@ -3311,7 +3339,7 @@ void G_AddTOL(UINT32 newtol, const char *tolname)
 //
 boolean G_GametypeUsesLives(void)
 {
-	if (modeattacking || metalrecording) // NOT in Record Attack
+	if (modeattacking) // NOT in Record Attack
 		return false;
 
 	if ((grandprixinfo.gp == true) // In Grand Prix
@@ -4258,7 +4286,7 @@ static void G_DoCompleted(void)
 			}
 		}
 
-		if (grandprixinfo.gp == true && grandprixinfo.wonround == true && player->exiting)
+		if (grandprixinfo.gp == true && grandprixinfo.wonround == true && player->exiting && !retrying)
 		{
 			if (player->bot == true)
 			{
@@ -4330,11 +4358,6 @@ static void G_DoCompleted(void)
 			pausedelay = 0;
 
 		gameaction = ga_nothing;
-
-		if (metalplayback)
-			G_StopMetalDemo();
-		if (metalrecording)
-			G_StopMetalRecording(false);
 
 		if (automapactive)
 			AM_Stop();
