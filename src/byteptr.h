@@ -52,25 +52,25 @@ extern "C" {
 
 // what is this?
 #if defined (__GNUC__) && defined (DEALIGNED)
-#define READUINT8(p)        ({   UINT8 *p_tmp = (UINT8   *)p;   UINT8 b; memcpy(&b, p, sizeof(  UINT8)); p_tmp++; *(void**)(&(p)) = (void *)p_tmp; b; })
-#define READSINT8(p)        ({   SINT8 *p_tmp = (SINT8   *)p;   SINT8 b; memcpy(&b, p, sizeof(  SINT8)); p_tmp++; *(void**)(&(p)) = (void *)p_tmp; b; })
-#define READINT16(p)        ({   INT16 *p_tmp = (INT16   *)p;   INT16 b; memcpy(&b, p, sizeof(  INT16)); p_tmp++; *(void**)(&(p)) = (void *)p_tmp; b; })
-#define READUINT16(p)       ({  UINT16 *p_tmp = (UINT16  *)p;  UINT16 b; memcpy(&b, p, sizeof( UINT16)); p_tmp++; *(void**)(&(p)) = (void *)p_tmp; b; })
-#define READINT32(p)        ({   INT32 *p_tmp = (INT32   *)p;   INT32 b; memcpy(&b, p, sizeof(  INT32)); p_tmp++; *(void**)(&(p)) = (void *)p_tmp; b; })
-#define READUINT32(p)       ({  UINT32 *p_tmp = (UINT32  *)p;  UINT32 b; memcpy(&b, p, sizeof( UINT32)); p_tmp++; *(void**)(&(p)) = (void *)p_tmp; b; })
-#define READCHAR(p)         ({    char *p_tmp = (char    *)p;    char b; memcpy(&b, p, sizeof(   char)); p_tmp++; *(void**)(&(p)) = (void *)p_tmp; b; })
-#define READFIXED(p)        ({ fixed_t *p_tmp = (fixed_t *)p; fixed_t b; memcpy(&b, p, sizeof(fixed_t)); p_tmp++; *(void**)(&(p)) = (void *)p_tmp; b; })
-#define READANGLE(p)        ({ angle_t *p_tmp = (angle_t *)p; angle_t b; memcpy(&b, p, sizeof(angle_t)); p_tmp++; *(void**)(&(p)) = (void *)p_tmp; b; })
+#define READUINT8(p)        ({   const UINT8 *p_tmp = (const UINT8   *)p;   UINT8 b; memcpy(&b, p, sizeof(  UINT8)); p_tmp++; *(const void**)(&(p)) = (const void *)p_tmp; b; })
+#define READSINT8(p)        ({   const SINT8 *p_tmp = (const SINT8   *)p;   SINT8 b; memcpy(&b, p, sizeof(  SINT8)); p_tmp++; *(const void**)(&(p)) = (const void *)p_tmp; b; })
+#define READINT16(p)        ({   const INT16 *p_tmp = (const INT16   *)p;   INT16 b; memcpy(&b, p, sizeof(  INT16)); p_tmp++; *(const void**)(&(p)) = (const void *)p_tmp; b; })
+#define READUINT16(p)       ({  const UINT16 *p_tmp = (const UINT16  *)p;  UINT16 b; memcpy(&b, p, sizeof( UINT16)); p_tmp++; *(const void**)(&(p)) = (const void *)p_tmp; b; })
+#define READINT32(p)        ({   const INT32 *p_tmp = (const INT32   *)p;   INT32 b; memcpy(&b, p, sizeof(  INT32)); p_tmp++; *(const void**)(&(p)) = (const void *)p_tmp; b; })
+#define READUINT32(p)       ({  const UINT32 *p_tmp = (const UINT32  *)p;  UINT32 b; memcpy(&b, p, sizeof( UINT32)); p_tmp++; *(const void**)(&(p)) = (const void *)p_tmp; b; })
+#define READCHAR(p)         ({    const char *p_tmp = (const char    *)p;    char b; memcpy(&b, p, sizeof(   char)); p_tmp++; *(const void**)(&(p)) = (const void *)p_tmp; b; })
+#define READFIXED(p)        ({ const fixed_t *p_tmp = (const fixed_t *)p; fixed_t b; memcpy(&b, p, sizeof(fixed_t)); p_tmp++; *(const void**)(&(p)) = (const void *)p_tmp; b; })
+#define READANGLE(p)        ({ const angle_t *p_tmp = (const angle_t *)p; angle_t b; memcpy(&b, p, sizeof(angle_t)); p_tmp++; *(const void**)(&(p)) = (const void *)p_tmp; b; })
 #else
-#define READUINT8(p)        ((UINT8*)(*(void**)(&(p)) = (void*)&((UINT8*)(p))[1]))[-1]
-#define READSINT8(p)        ((SINT8*)(*(void**)(&(p)) = (void*)&((SINT8*)(p))[1]))[-1]
-#define READINT16(p)        ((INT16*)(*(void**)(&(p)) = (void*)&((INT16*)(p))[1]))[-1]
-#define READUINT16(p)       ((UINT16*)(*(void**)(&(p)) = (void*)&((UINT16*)(p))[1]))[-1]
-#define READINT32(p)        ((INT32*)(*(void**)(&(p)) = (void*)&((INT32*)(p))[1]))[-1]
-#define READUINT32(p)       ((UINT32*)(*(void**)(&(p)) = (void*)&((UINT32*)(p))[1]))[-1]
-#define READCHAR(p)         ((char*)(*(void**)(&(p)) = (void*)&((char*)(p))[1]))[-1]
-#define READFIXED(p)        ((fixed_t*)(*(void**)(&(p)) = (void*)&((fixed_t*)(p))[1]))[-1]
-#define READANGLE(p)        ((angle_t*)(*(void**)(&(p)) = (void*)&((angle_t*)(p))[1]))[-1]
+#define READUINT8(p)        ((const UINT8*)(*(const void**)(&(p)) = (const void*)&((const UINT8*)(p))[1]))[-1]
+#define READSINT8(p)        ((const SINT8*)(*(const void**)(&(p)) = (const void*)&((const SINT8*)(p))[1]))[-1]
+#define READINT16(p)        ((const INT16*)(*(const void**)(&(p)) = (const void*)&((const INT16*)(p))[1]))[-1]
+#define READUINT16(p)       ((const UINT16*)(*(const void**)(&(p)) = (const void*)&((const UINT16*)(p))[1]))[-1]
+#define READINT32(p)        ((const INT32*)(*(const void**)(&(p)) = (const void*)&((const INT32*)(p))[1]))[-1]
+#define READUINT32(p)       ((const UINT32*)(*(const void**)(&(p)) = (const void*)&((const UINT32*)(p))[1]))[-1]
+#define READCHAR(p)         ((const char*)(*(const void**)(&(p)) = (const void*)&((const char*)(p))[1]))[-1]
+#define READFIXED(p)        ((const fixed_t*)(*(const void**)(&(p)) = (const void*)&((const fixed_t*)(p))[1]))[-1]
+#define READANGLE(p)        ((const angle_t*)(*(const void**)(&(p)) = (const void*)&((const angle_t*)(p))[1]))[-1]
 #endif
 
 #else //SRB2_BIG_ENDIAN
@@ -133,15 +133,15 @@ FUNCINLINE static ATTRINLINE UINT32 readulong(void *ptr)
 	return (ucp[3] << 24) | (ucp[2] << 16) | (ucp[1] << 8) | ucp[0];
 }
 
-#define READUINT8(p)        ((UINT8*)(p = (void*)&((UINT8*)p)[1]))[-1]
-#define READSINT8(p)        ((SINT8*)(p = (void*)&((SINT8*)p)[1]))[-1]
-#define READINT16(p)        readshort(&((INT16*)(p = (void*)&((INT16*)p)[1]))[-1])
-#define READUINT16(p)       readushort(&((UINT16*)(p = (void*)&((UINT16*)p)[1]))[-1])
-#define READINT32(p)        readlong(&((INT32*)(p = (void*)&((INT32*)p)[1]))[-1])
-#define READUINT32(p)       readulong(&((UINT32*)(p = (void*)&((UINT32*)p)[1]))
-#define READCHAR(p)         ((char*)(p = (void*)&((char*)p)[1]))[-1]
-#define READFIXED(p)        readlong(&((fixed_t*)(p = (void*)&((fixed_t*)p)[1]))[-1])
-#define READANGLE(p)        readulong(&((angle_t*)(p = (void*)&((angle_t*)p)[1]))[-1])
+#define READUINT8(p)        ((const UINT8*)(p = (const void*)&((const UINT8*)p)[1]))[-1]
+#define READSINT8(p)        ((const SINT8*)(p = (const void*)&((const SINT8*)p)[1]))[-1]
+#define READINT16(p)        readshort(&((const INT16*)(p = (const void*)&((const INT16*)p)[1]))[-1])
+#define READUINT16(p)       readushort(&((const UINT16*)(p = (const void*)&((const UINT16*)p)[1]))[-1])
+#define READINT32(p)        readlong(&((const INT32*)(p = (const void*)&((const INT32*)p)[1]))[-1])
+#define READUINT32(p)       readulong(&((const UINT32*)(p = (const void*)&((const UINT32*)p)[1]))
+#define READCHAR(p)         ((const char*)(p = (const void*)&((const char*)p)[1]))[-1]
+#define READFIXED(p)        readlong(&((const fixed_t*)(p = (const void*)&((const fixed_t*)p)[1]))[-1])
+#define READANGLE(p)        readulong(&((const angle_t*)(p = (const void*)&((const angle_t*)p)[1]))[-1])
 #endif //SRB2_BIG_ENDIAN
 
 #undef DEALIGNED
