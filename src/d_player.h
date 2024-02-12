@@ -965,6 +965,8 @@ struct player_t
 	mobj_t *hand;
 	mobj_t *flickyAttacker;
 
+	SINT8 pitblame; // Index of last player that hit you, resets after being in control for a bit. If you deathpit, credit the old attacker!
+
 	UINT8 instaWhipCharge;
 	UINT8 defenseLockout; // Committed to universal attack/defense, make 'em vulnerable! No whip/guard.
 	UINT8 instaWhipChargeLockout; // Input safety

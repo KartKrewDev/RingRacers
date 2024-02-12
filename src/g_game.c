@@ -2389,6 +2389,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->ringvolume = 255;
 	p->ringtransparency = 255;
 
+	p->pitblame = -1;
+
 	p->topAccel = MAXTOPACCEL;
 
 	p->botvars.rubberband = FRACUNIT;
