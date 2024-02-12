@@ -2502,7 +2502,17 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 
 			if (gametyperules & (GTR_BUMPERS|GTR_CHECKPOINTS))
 			{
-				player->mo->health--;
+				if ((player->pitblame > -1) && (player->pitblame < MAXPLAYERS)
+					&& (playeringame[player->pitblame]) && (!players[player->pitblame].spectator) 
+					&& (players[player->pitblame].mo) && (!P_MobjWasRemoved(players[player->pitblame].mo)))
+				{
+					P_DamageMobj(player->mo, players[player->pitblame].mo, players[player->pitblame].mo, 1, DMG_KARMA);
+					player->pitblame = -1;
+				}
+				else if (player->mo->health > 1 || battleprisons)
+				{
+					player->mo->health--;
+				}
 			}
 
 			if (player->mo->health <= 0)
@@ -3131,6 +3141,14 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				{
 					// Drop all of your emeralds
 					K_DropEmeraldsFromPlayer(player, player->emeralds);
+				}
+			}
+
+			if (source && source != player->mo && source->player)
+			{
+				if (damagetype != DMG_DEATHPIT)
+				{
+					player->pitblame = source->player - players;
 				}
 			}
 

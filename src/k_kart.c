@@ -8914,6 +8914,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	player->incontrol = min(player->incontrol, 5*TICRATE);
 	player->incontrol = max(player->incontrol, -5*TICRATE);
 
+	if (player->incontrol == 3*TICRATE)
+		player->pitblame = -1;
+
 	if (P_PlayerInPain(player) || player->respawn.state != RESPAWNST_NONE)
 	{
 		player->lastpickuptype = -1; // got your ass beat, go grab anything

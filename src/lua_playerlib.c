@@ -351,6 +351,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->topAccel);
 	else if (fastcmp(field,"instaWhipCharge"))
 		lua_pushinteger(L, plr->instaWhipCharge);
+	else if (fastcmp(field,"pitblame"))
+		lua_pushinteger(L, plr->pitblame);
 	else if (fastcmp(field,"defenseLockout"))
 		lua_pushinteger(L, plr->defenseLockout);
 	else if (fastcmp(field,"oldGuard"))
@@ -877,6 +879,8 @@ static int player_set(lua_State *L)
 		plr->topAccel = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"instaWhipCharge"))
 		plr->instaWhipCharge = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"pitblame"))
+		plr->pitblame = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"defenseLockout"))
 		plr->defenseLockout = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"oldGuard"))
