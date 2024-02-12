@@ -2068,7 +2068,8 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 		if (textures[texnum]->holes)
 		{
 			srb2::r_debug::add_texture_to_frame_list(texnum);
-			return 0; // R_DrawWallColumn cannot render holey textures
+			// R_DrawWallColumn cannot render holey textures
+			return R_GetTextureNum(R_CheckTextureNumForName("TRANSER1"));
 		}
 		return texnum;
 	};
