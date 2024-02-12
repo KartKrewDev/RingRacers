@@ -2502,10 +2502,12 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 
 			if (gametyperules & (GTR_BUMPERS|GTR_CHECKPOINTS))
 			{
-				if ((player->pitblame != -1) && (playeringame[player->pitblame]) && (!players[player->pitblame].spectator) 
+				if ((player->pitblame > -1) && (player->pitblame < MAXPLAYERS)
+					&& (playeringame[player->pitblame]) && (!players[player->pitblame].spectator) 
 					&& (players[player->pitblame].mo) && (!P_MobjWasRemoved(players[player->pitblame].mo)))
 				{
 					P_DamageMobj(player->mo, players[player->pitblame].mo, players[player->pitblame].mo, 1, DMG_KARMA);
+					player->pitblame = -1;
 				}
 				else if (player->mo->health > 1 || battleprisons)
 				{
