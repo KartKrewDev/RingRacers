@@ -35,6 +35,7 @@
 #include "core/memory.h"
 #include "core/thread_pool.h"
 #include "k_terrain.h"
+#include "r_debug.hpp"
 
 extern "C" consvar_t cv_debugfinishline;
 
@@ -2064,7 +2065,12 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 	auto get_flat_tex = [](INT32 texnum)
 	{
 		texnum = R_GetTextureNum(texnum);
-		return textures[texnum]->holes ? 0 : texnum; // R_DrawWallColumn cannot render holey textures
+		if (textures[texnum]->holes)
+		{
+			srb2::r_debug::add_texture_to_frame_list(texnum);
+			return 0; // R_DrawWallColumn cannot render holey textures
+		}
+		return texnum;
 	};
 
 	if (!backsector)

@@ -90,6 +90,7 @@
 #include "k_dialogue.h"
 #include "k_bans.h"
 #include "k_credits.h"
+#include "r_debug.hpp"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h" // 3D View Rendering
@@ -663,6 +664,7 @@ static bool D_Display(void)
 				{
 					AM_Drawer();
 					ST_Drawer();
+					srb2::r_debug::draw_frame_list();
 					F_TextPromptDrawer();
 					break;
 				}
@@ -858,6 +860,7 @@ void D_SRB2Loop(void)
 
 		g_dc = {};
 		Z_Frame_Reset();
+		srb2::r_debug::clear_frame_list();
 
 		{
 			// Casting the return value of a function is bad practice (apparently)
