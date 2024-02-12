@@ -592,9 +592,11 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEANGLE(save->p, players[i].besthanddirection);
 
 		WRITEINT16(save->p, players[i].incontrol);
+		WRITEUINT16(save->p, players[i].progressivethrust);
 
 		WRITEUINT8(save->p, players[i].markedfordeath);
 		WRITEUINT8(save->p, players[i].dotrickfx);
+		WRITEUINT8(save->p, players[i].bumperinflate);
 
 		WRITEUINT8(save->p, players[i].ringboxdelay);
 		WRITEUINT8(save->p, players[i].ringboxaward);
@@ -1169,9 +1171,11 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].besthanddirection = READANGLE(save->p);
 
 		players[i].incontrol = READINT16(save->p);
+		players[i].progressivethrust = READUINT16(save->p);
 
 		players[i].markedfordeath = READUINT8(save->p);
 		players[i].dotrickfx = READUINT8(save->p);
+		players[i].bumperinflate = READUINT8(save->p);
 
 		players[i].ringboxdelay = READUINT8(save->p);
 		players[i].ringboxaward = READUINT8(save->p);

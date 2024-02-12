@@ -3161,6 +3161,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			player->preventfailsafe = TICRATE*3;
 			player->pflags &= ~PF_GAINAX;
 			Obj_EndBungee(player);
+			K_BumperInflate(target->player);
 
 			if (player->spectator == false && !(player->charflags & SF_IRONMAN))
 			{
@@ -3183,6 +3184,14 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				type = DMG_TUMBLE;
 				P_StartQuakeFromMobj(5, 32 * player->mo->scale, 512 * player->mo->scale, player->mo);
 				//P_KillPlayer(player, inflictor, source, damagetype);
+			}
+
+			// Death save! On your last hit, no matter what, demote to weakest damage type for one last escape chance.
+			if (player->mo->health == 2 && damage && gametyperules & GTR_BUMPERS)
+			{
+				S_StartSound(target, sfx_gshc7);
+				player->flashing = TICRATE;
+				type = DMG_STUMBLE;
 			}
 
 			switch (type)
