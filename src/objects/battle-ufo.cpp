@@ -147,7 +147,7 @@ void Obj_BattleUFOThink(mobj_t *mobj)
 
 	if ((ufo->extravalue1 % (TICRATE*2)) == 0)
 	{
-		S_StartSound(ufo, sfx_gbrk); // for debug because it's loud af, use s3k95 probably
+		S_StartSound(ufo, sfx_s3ka5);
 	}
 
 	if (!battleovertime.enabled && ufo->extravalue1 <= 5*TICRATE)
