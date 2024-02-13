@@ -56,6 +56,7 @@
 #include "k_follower.h"
 #include "k_vote.h"
 #include "k_credits.h"
+#include "k_grandprix.h"
 
 boolean nodrawers; // for comparative timing purposes
 boolean noblit; // for comparative timing purposes
@@ -116,6 +117,8 @@ demoghost *ghosts = NULL;
 
 #define DF_ENCORE       0x40
 #define DF_MULTIPLAYER  0x80 // This demo was recorded in multiplayer mode!
+
+#define DF_GRANDPRIX    0x0100
 
 #define DEMO_SPECTATOR		0x01
 #define DEMO_KICKSTART		0x02
@@ -2126,6 +2129,9 @@ void G_BeginRecording(void)
 	if (multiplayer)
 		demoflags |= DF_LUAVARS;
 
+	if (grandprixinfo.gp)
+		demoflags |= DF_GRANDPRIX;
+
 	// Setup header.
 	M_Memcpy(demobuf.p, DEMOHEADER, 12); demobuf.p += 12;
 	WRITEUINT8(demobuf.p,VERSION);
@@ -2185,6 +2191,13 @@ void G_BeginRecording(void)
 
 	// Save netvar data
 	CV_SaveDemoVars(&demobuf.p);
+
+	if ((demoflags & DF_GRANDPRIX))
+	{
+		WRITEUINT8(demobuf.p, grandprixinfo.gamespeed);
+		WRITEUINT8(demobuf.p, grandprixinfo.masterbots == true);
+		WRITEUINT8(demobuf.p, grandprixinfo.eventmode);
+	}
 
 	// Now store some info for each in-game player
 
@@ -2274,6 +2287,10 @@ void G_BeginRecording(void)
 
 			// And mobjtype_t is best with UINT32 too...
 			WRITEUINT32(demobuf.p, player->followitem);
+
+			// GP
+			WRITESINT8(demobuf.p, player->lives);
+			WRITEINT16(demobuf.p, player->totalring);
 		}
 	}
 
@@ -3042,6 +3059,15 @@ void G_DoPlayDemo(const char *defdemoname)
 	// net var data
 	CV_LoadDemoVars(&demobuf.p);
 
+	memset(&grandprixinfo, 0, sizeof grandprixinfo);
+	if ((demoflags & DF_GRANDPRIX))
+	{
+		grandprixinfo.gp = true;
+		grandprixinfo.gamespeed = READUINT8(demobuf.p);
+		grandprixinfo.masterbots = READUINT8(demobuf.p) != 0;
+		grandprixinfo.eventmode = READUINT8(demobuf.p);
+	}
+
 	// Sigh ... it's an empty demo.
 	if (*demobuf.p == DEMOMARKER)
 	{
@@ -3216,6 +3242,10 @@ void G_DoPlayDemo(const char *defdemoname)
 
 		// Followitem
 		players[p].followitem = READUINT32(demobuf.p);
+
+		// GP
+		players[p].lives = READSINT8(demobuf.p);
+		players[p].totalring = READINT16(demobuf.p);
 
 		// Look for the next player
 		p = READUINT8(demobuf.p);
@@ -3400,6 +3430,9 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 		p++;
 	}
 
+	if ((flags & DF_GRANDPRIX))
+		p += 3;
+
 	if (*p == DEMOMARKER)
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Replay is empty.\n"), defdemoname);
@@ -3443,6 +3476,9 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	p += 2; // powerlevel
 
 	p += 4; // followitem (maybe change later)
+
+	p += 1; // lives
+	p += 2; // rings
 
 	if (READUINT8(p) != 0xFF)
 	{
@@ -3608,6 +3644,9 @@ staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer)
 		SKIPSTRING(p);
 		p++; // stealth
 	}
+
+	if ((flags & DF_GRANDPRIX))
+		p += 3;
 
 	// Assert first player is in and then read name
 	if (READUINT8(p) != 0)
