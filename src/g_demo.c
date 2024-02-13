@@ -64,7 +64,7 @@ tic_t demostarttime; // for comparative timing purposes
 static char demoname[MAX_WADPATH];
 static savebuffer_t demobuf = {0};
 static UINT8 *demotime_p, *demoinfo_p;
-static UINT8 demoflags;
+static UINT16 demoflags;
 boolean demosynced = true; // console warning message
 
 struct demovars_s demo;
@@ -2148,7 +2148,7 @@ void G_BeginRecording(void)
 	WRITESTRINGN(demobuf.p, mapheaderinfo[gamemap-1]->lumpname, MAXMAPLUMPNAME);
 	M_Memcpy(demobuf.p, mapmd5, 16); demobuf.p += 16;
 
-	WRITEUINT8(demobuf.p, demoflags);
+	WRITEUINT16(demobuf.p, demoflags);
 
 	WRITESTRINGN(demobuf.p, gametypes[gametype]->name, MAXGAMETYPELENGTH);
 
@@ -2364,7 +2364,7 @@ void G_SetDemoTime(UINT32 ptime, UINT32 plap)
 UINT8 G_CmpDemoTime(char *oldname, char *newname)
 {
 	UINT8 *buffer,*p;
-	UINT8 flags;
+	UINT16 flags;
 	UINT32 oldtime = UINT32_MAX, newtime = UINT32_MAX;
 	UINT32 oldlap = UINT32_MAX, newlap = UINT32_MAX;
 	UINT16 oldversion;
@@ -2395,7 +2395,7 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	p += 4; // PLAY
 	SKIPSTRING(p); // gamemap
 	p += 16; // map md5
-	flags = READUINT8(p); // demoflags
+	flags = READUINT16(p); // demoflags
 	SKIPSTRING(p); // gametype
 	p++; // numlaps
 	G_SkipDemoExtraFiles(&p);
@@ -2454,7 +2454,7 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	} p += 4; // "PLAY"
 	SKIPSTRING(p); // gamemap
 	p += 16; // mapmd5
-	flags = READUINT8(p);
+	flags = READUINT16(p);
 	SKIPSTRING(p); // gametype
 	p++; // numlaps
 	G_SkipDemoExtraFiles(&p);
@@ -2498,7 +2498,8 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 {
 	savebuffer_t info = {0};
 	UINT8 *extrainfo_p;
-	UINT8 version, subversion, pdemoflags, worknumskins, skinid;
+	UINT8 version, subversion, worknumskins, skinid;
+	UINT16 pdemoflags;
 	democharlist_t *skinlist = NULL;
 	UINT16 pdemoversion, count;
 	char mapname[MAXMAPLUMPNAME],gtname[MAXGAMETYPELENGTH];
@@ -2578,7 +2579,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 		goto corrupt;
 	}
 
-	pdemoflags = READUINT8(info.p);
+	pdemoflags = READUINT16(info.p);
 
 	// temp?
 	if (!(pdemoflags & DF_MULTIPLAYER))
@@ -2914,7 +2915,7 @@ void G_DoPlayDemo(const char *defdemoname)
 	READSTRINGN(demobuf.p, mapname, sizeof(mapname)); // gamemap
 	demobuf.p += 16; // mapmd5
 
-	demoflags = READUINT8(demobuf.p);
+	demoflags = READUINT16(demobuf.p);
 
 	READSTRINGN(demobuf.p, gtname, sizeof(gtname)); // gametype
 
@@ -3288,7 +3289,7 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	INT32 i;
 	char name[17], color[MAXCOLORNAME+1], md5[16];
 	demoghost *gh;
-	UINT8 flags;
+	UINT16 flags;
 	UINT8 *p;
 	mapthing_t *mthing;
 	UINT16 count, ghostversion;
@@ -3346,7 +3347,7 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	SKIPSTRING(p); // gamemap
 	p += 16; // mapmd5 (possibly check for consistency?)
 
-	flags = READUINT8(p);
+	flags = READUINT16(p);
 	if (!(flags & DF_GHOST))
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("Ghost %s: No ghost data in this demo.\n"), defdemoname);
@@ -3534,7 +3535,7 @@ staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer)
 {
 	UINT8 *p = buffer;
 	UINT16 ghostversion;
-	UINT8 flags;
+	UINT16 flags;
 	INT32 i;
 	staffbrief_t temp = {0};
 	staffbrief_t *ret = NULL;
@@ -3575,7 +3576,7 @@ staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer)
 	SKIPSTRING(p); // gamemap
 	p += 16; // mapmd5 (possibly check for consistency?)
 
-	flags = READUINT8(p);
+	flags = READUINT16(p);
 	if (!(flags & DF_GHOST))
 	{
 		goto fail; // we don't NEED to do it here, but whatever
