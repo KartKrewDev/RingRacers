@@ -550,7 +550,7 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"s3k92",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Ghost"},
   {"s3k93",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Gas release"},
   {"s3k94",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Spike"},
-  {"s3k95",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Lava burst"},
+  {"s3k95",  false,  64,  16, -1, NULL, 0,        -1,  -1, LUMPERROR, "Lava burst"}, // Also used for bufo
   {"s3k96",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Landing"},
   {"s3k97",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Wind"},
   {"s3k98",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Falling spike"},
