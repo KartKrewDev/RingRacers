@@ -2667,6 +2667,9 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 	if (pdemoflags & DF_ENCORE)
 		pdemo->kartspeed |= DF_ENCORE;
 
+	if (pdemoflags & DF_GRANDPRIX)
+		pdemo->gp = true;
+
 	// Read standings!
 	count = 0;
 

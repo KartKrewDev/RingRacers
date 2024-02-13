@@ -89,6 +89,7 @@ struct menudemo_t {
 	INT16 gametype;
 	SINT8 kartspeed; // Add OR DF_ENCORE for encore mode, idk
 	UINT8 numlaps;
+	UINT8 gp;
 
 	struct {
 		UINT8 ranking;
