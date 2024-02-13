@@ -218,6 +218,11 @@ public:
 					return "<Unknown gametype>";
 				}
 
+				if (gt == GT_SPECIAL)
+				{
+					return "Sealed Star";
+				}
+
 				if ((rules() & GTR_PRISONS) && gp)
 				{
 					return "Prison Break";
