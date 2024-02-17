@@ -193,12 +193,12 @@ public:
 			};
 
 			explicit Gametype() {}
-			explicit Gametype(INT16 gt, Race race) : gametype_(get(gt)), var_(race) {}
-			explicit Gametype(INT16 gt) : gametype_(get(gt)) {}
+			explicit Gametype(INT16 gt, bool gp) : gametype_(get(gt)), name_(get_name(gt, gp)) {}
+			explicit Gametype(INT16 gt, bool gp, Race race) : Gametype(gt, gp) { var_ = race; }
 
 			bool valid() const { return gametype_; }
 
-			std::string_view name() const { return valid() ? gametype_->name : "<Unknown gametype>"; }
+			std::string_view name() const { return name_; }
 			UINT32 rules() const { return valid() ? gametype_->rules : 0u; }
 
 			bool ranks_time() const { return !ranks_points(); }
@@ -208,7 +208,28 @@ public:
 
 		private:
 			const gametype_t* gametype_ = nullptr;
+			std::string_view name_;
 			std::variant<std::monostate, Race> var_;
+
+			std::string_view get_name(INT16 gt, bool gp) const
+			{
+				if (!valid())
+				{
+					return "<Unknown gametype>";
+				}
+
+				if (gt == GT_SPECIAL)
+				{
+					return "Sealed Star";
+				}
+
+				if ((rules() & GTR_PRISONS) && gp)
+				{
+					return "Prison Break";
+				}
+
+				return gametype_->name;
+			}
 
 			static gametype_t* get(INT16 gt) { return gt >= 0 && gt < numgametypes ? gametypes[gt] : nullptr; }
 		};
