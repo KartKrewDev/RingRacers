@@ -1206,14 +1206,26 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 
 	player->exiting = 1;
 
+	if (!player->spectator && (gametyperules & GTR_CIRCUIT)) // Special Race-like handling
+	{
+		K_UpdateAllPlayerPositions();
+	}
+
+	const boolean losing = K_IsPlayerLosing(player); // HEY!!!! Set it AFTER K_UpdateAllPlayerPositions!!!!
+	const boolean specialout = (specialstageinfo.valid == true && losing == true);
+
+	if (G_GametypeUsesLives() && losing)
+	{
+		// Remove a life from the losing player
+		K_PlayerLoseLife(player);
+	}
+
 	if (!player->spectator)
 	{
 		ClearFakePlayerSkin(player);
 
 		if ((gametyperules & GTR_CIRCUIT)) // Special Race-like handling
 		{
-			K_UpdateAllPlayerPositions();
-
 			if (P_CheckRacers() && !exitcountdown)
 			{
 				G_BeginLevelExit();
@@ -1225,16 +1237,7 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 		}
 	}
 
-	const boolean losing = K_IsPlayerLosing(player); // HEY!!!! Set it AFTER K_UpdateAllPlayerPositions!!!!
-	const boolean specialout = (specialstageinfo.valid == true && losing == true);
-
 	K_UpdatePowerLevelsFinalize(player, false);
-
-	if (G_GametypeUsesLives() && losing)
-	{
-		// Remove a life from the losing player
-		K_PlayerLoseLife(player);
-	}
 
 	if (P_IsLocalPlayer(player) && !specialout && musiccountdown == 0)
 	{
