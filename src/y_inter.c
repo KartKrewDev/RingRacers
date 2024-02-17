@@ -207,7 +207,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 		i = data.num[data.numplayers];
 
 		completed[i] = true;
-		data.grade[i] = players[i].tally.rank;
+		data.grade[i] = K_PlayerTallyActive(&players[i]) ? players[i].tally.rank : GRADE_INVALID;
 
 		data.color[data.numplayers] = players[i].skincolor;
 		data.character[data.numplayers] = players[i].skin;
