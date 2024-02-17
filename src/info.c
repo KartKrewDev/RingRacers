@@ -20954,7 +20954,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,            // mass
 		0,            // damage
 		sfx_None,     // activesound
-		MF_SCENERY|MF_RUNSPAWNFUNC|MF_NOGRAVITY, // flags
+		MF_RUNSPAWNFUNC|MF_NOGRAVITY, // flags
 		S_NULL        // raisestate
 	},
 	{           // MT_SSCANDLE_SIDE
@@ -20980,7 +20980,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,            // mass
 		0,            // damage
 		sfx_None,     // activesound
-		MF_SCENERY|MF_NOGRAVITY|MF_NOTHINK, // flags
+		MF_SCENERY|MF_NOGRAVITY|MF_NOTHINK|MF_DRAWFROMFARAWAY, // flags
 		S_NULL        // raisestate
 	},
 	{           // MT_SSCANDLE_FLAME
@@ -21006,7 +21006,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,            // mass
 		0,            // damage
 		sfx_None,     // activesound
-		MF_SCENERY|MF_NOGRAVITY, // flags
+		MF_SCENERY|MF_NOGRAVITY|MF_DRAWFROMFARAWAY, // flags
 		S_NULL        // raisestate
 	},
 	{           // MT_SS_HOLOGRAM
