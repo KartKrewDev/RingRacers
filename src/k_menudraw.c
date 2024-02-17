@@ -3530,19 +3530,20 @@ void M_DrawTimeAttack(void)
 		K_drawKartTimestamp(timerec, 162+t, timeheight+6, 0, 1);
 
 		// SPB Attack control hint + menu overlay
-		if (levellist.newgametype == GT_RACE && levellist.levelsearch.timeattack == true && M_SecretUnlocked(SECRET_SPBATTACK, true))
 		{
 			INT32 buttonx = 162 + t;
 			INT32 buttony = timeheight;
 
-			K_drawButtonAnim(buttonx + 35, buttony - 3, V_SNAPTOLEFT, kp_button_r, timeattackmenu.ticker);
+			if (M_EncoreAttackTogglePermitted())
+			{
+				K_drawButtonAnim(buttonx + 35, buttony - 3, V_SNAPTOLEFT, kp_button_r, timeattackmenu.ticker);
+			}
 
 			if ((timeattackmenu.spbflicker == 0 || timeattackmenu.ticker % 2) == (cv_dummyspbattack.value == 1))
 			{
 				V_DrawMappedPatch(buttonx + 7, buttony - 1, 0, W_CachePatchName("K_SPBATK", PU_CACHE), R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_RED, GTC_MENUCACHE));
 			}
 		}
-
 	}
 	else
 		opty = 80;

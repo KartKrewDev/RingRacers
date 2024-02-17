@@ -428,7 +428,7 @@ void G_UpdateTimeStickerMedals(UINT16 map, boolean showownrecord)
 			}
 			case ET_MAP:
 			{
-				if (emblem->flags & ME_SPBATTACK && cv_dummyspbattack.value)
+				if (emblem->flags & (ME_SPBATTACK|ME_ENCORE) && cv_dummyspbattack.value)
 					break;
 				goto bademblem;
 			}
@@ -436,7 +436,7 @@ void G_UpdateTimeStickerMedals(UINT16 map, boolean showownrecord)
 				goto bademblem;
 		}
 
-		if (cv_dummyspbattack.value && !(emblem->flags & ME_SPBATTACK))
+		if (cv_dummyspbattack.value && !(emblem->flags & (ME_SPBATTACK|ME_ENCORE)))
 			return;
 
 		if (!gamedata->collected[(emblem-emblemlocations)] && gonnadrawtime)
@@ -537,7 +537,7 @@ void G_TickTimeStickerMedals(void)
 void G_UpdateRecords(void)
 {
 	UINT8 earnedEmblems;
-	recordtimes_t *record = (modeattacking & ATTACKING_SPB) ?
+	recordtimes_t *record = (encoremode == true) ?
 		&mapheaderinfo[gamemap-1]->records.spbattack :
 		&mapheaderinfo[gamemap-1]->records.timeattack;
 
@@ -585,7 +585,7 @@ static void G_UpdateRecordReplays(void)
 	char lastdemo[256], bestdemo[256];
 	const char *modeprefix = "";
 
-	if (modeattacking & ATTACKING_SPB)
+	if (encoremode)
 	{
 		modeprefix = "spb-";
 	}

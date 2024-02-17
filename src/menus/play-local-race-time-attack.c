@@ -22,13 +22,21 @@ void M_TimeAttackTick(void)
 	}
 }
 
+boolean M_EncoreAttackTogglePermitted(void)
+{
+	if ((gametypes[levellist.newgametype]->rules & GTR_ENCORE) == 0) //levellist.newgametype != GT_RACE
+		return false;
+
+	return M_SecretUnlocked(SECRET_SPBATTACK, true);
+}
+
 boolean M_TimeAttackInputs(INT32 ch)
 {
 	const UINT8 pid = 0;
 	const boolean buttonR = M_MenuButtonPressed(pid, MBT_R);
 	(void) ch;
 
-	if (buttonR && levellist.newgametype == GT_RACE && M_SecretUnlocked(SECRET_SPBATTACK, true))
+	if (buttonR && M_EncoreAttackTogglePermitted())
 	{
 		CV_AddValue(&cv_dummyspbattack, 1);
 		timeattackmenu.spbflicker = TICRATE/6;
@@ -348,7 +356,7 @@ void CV_SPBAttackChanged(void)
 		/*else if (PLAY_TimeAttackDef.lastOn == ta_ghosts)
 			PLAY_TimeAttackDef.lastOn = ta_start;*/
 
-		if ((active & 8) && levellist.newgametype == GT_RACE && M_SecretUnlocked(SECRET_SPBATTACK, true))
+		if ((active & 8) && M_EncoreAttackTogglePermitted())
 		{
 			PLAY_TAReplay[tareplay_header].status = IT_HEADER;
 			PLAY_TAReplay[tareplay_header].text = cv_dummyspbattack.value ? "SPB Attack..." : "Time Attack...";
@@ -381,8 +389,18 @@ void M_PrepareTimeAttack(boolean menuupdate)
 		}
 	}
 
-	if (levellist.levelsearch.timeattack == false || levellist.newgametype != GT_RACE || !M_SecretUnlocked(SECRET_SPBATTACK, true))
+	if (cv_dummyspbattack.value
+	&& (levellist.levelsearch.timeattack == false || !M_EncoreAttackTogglePermitted()))
+	{
 		CV_StealthSetValue(&cv_dummyspbattack, 0);
+
+		if (!menuupdate)
+		{
+			timeattackmenu.spbflicker = TICRATE/6;
+			S_StartSound(NULL, sfx_s3k92);
+			S_StopSoundByID(NULL, sfx_s3k9f);
+		}
+	}
 
 	// Menu options / Time-sticker medals
 	CV_SPBAttackChanged();
@@ -554,7 +572,10 @@ void M_StartTimeAttack(INT32 choice)
 
 	if (cv_dummyspbattack.value)
 	{
-		modeattacking |= ATTACKING_SPB;
+		if (levellist.newgametype == GT_RACE)
+		{
+			modeattacking |= ATTACKING_SPB;
+		}
 		modeprefix = "spb-";
 	}
 
@@ -598,7 +619,7 @@ void M_StartTimeAttack(INT32 choice)
 	restoreMenu = &PLAY_TimeAttackDef;
 
 	M_ClearMenus(true);
-	D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_dummygpencore.value == 1), 1, 1, false, false);
+	D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_dummyspbattack.value == 1), 1, 1, false, false);
 
 	G_UpdateTimeStickerMedals(levellist.choosemap, true);
 }

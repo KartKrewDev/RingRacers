@@ -7791,7 +7791,7 @@ static void P_LoadRecordGhosts(void)
 
 	gpath = Z_StrDup(va("%s" PATHSEP "media" PATHSEP "replay" PATHSEP "%s" PATHSEP "%s", srb2home, timeattackfolder, G_BuildMapName(gamemap)));
 
-	if (modeattacking & ATTACKING_SPB)
+	if (encoremode)
 		modeprefix = "spb-";
 
 	enum
@@ -8294,7 +8294,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		wipegamestate = gamestate; // Don't fade if reloading the gamestate
 	// Encore mode fade to pink to white
 	// This is handled BEFORE sounds are stopped.
-	else if (encoremode && !prevencoremode && !demo.rewinding)
+	else if (encoremode && !prevencoremode && modeattacking == ATTACKING_NONE && !demo.rewinding)
 	{
 		if (rendermode != render_none)
 		{
