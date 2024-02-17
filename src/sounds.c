@@ -1448,7 +1448,7 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"gshc4", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshc5", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshc6", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
-  {"gshc7", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"gshc7", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, //x8away
   {"gshc8", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshc9", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshca", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},

@@ -4562,6 +4562,22 @@ static boolean K_LastTumbleBounceCondition(player_t *player)
 	return (player->tumbleBounces > TUMBLEBOUNCES && player->tumbleHeight < 60);
 }
 
+// Bumpers give you bonus launch height and speed, strengthening your DI to help evade combos.
+// bumperinflate visuals are handled by MT_BATTLEBUMPER, but the effects are in K_KartPlayerThink.
+void K_BumperInflate(player_t *player)
+{
+	if (!player || P_MobjWasRemoved(player->mo))
+		return;
+
+	if (!(gametyperules & GTR_BUMPERS))
+		return;
+
+	player->bumperinflate = 3;
+
+	if (player->mo->health > 1)
+		S_StartSound(player->mo, sfx_cdpcm9);
+}
+
 static void K_HandleTumbleBounce(player_t *player)
 {
 	player->tumbleBounces++;
@@ -4608,6 +4624,8 @@ static void K_HandleTumbleBounce(player_t *player)
 			P_ResetPitchRoll(player->mo); // Prevent Kodachrome Void infinite
 		}
 	}
+
+	K_BumperInflate(player);
 
 	// A bit of damage hitlag.
 	// This gives a window for DI!!
@@ -8794,6 +8812,33 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->hyudorotimer)
 		player->hyudorotimer--;
 
+	if (player->bumperinflate && player->mo->hitlag == 0)
+	{
+		fixed_t thrustdelta = MAXCOMBOTHRUST - MINCOMBOTHRUST;
+		fixed_t floatdelta = MAXCOMBOFLOAT - MINCOMBOFLOAT;
+
+		fixed_t thrustpertic = thrustdelta / MAXCOMBOTIME;
+		fixed_t floatpertic = floatdelta / MAXCOMBOTIME;
+
+		fixed_t totalthrust = thrustpertic * player->progressivethrust + MINCOMBOTHRUST;
+		fixed_t totalfloat = floatpertic * player->progressivethrust + MINCOMBOFLOAT;
+
+		if (player->speed > K_GetKartSpeed(player, false, false))
+			totalthrust = 0;
+
+		if (player->tumbleBounces && player->tumbleBounces <= TUMBLEBOUNCES)
+		{
+			player->mo->momz += totalfloat;
+			P_Thrust(player->mo, K_MomentumAngle(player->mo), totalthrust/2);
+		}
+		else
+		{
+			P_Thrust(player->mo, K_MomentumAngle(player->mo), totalthrust);
+		}
+
+		player->bumperinflate--;
+	}
+
 	if (player->ringvolume < MINRINGVOLUME)
 		player->ringvolume = MINRINGVOLUME;
 	else if (MAXRINGVOLUME - player->ringvolume < RINGVOLUMEREGEN)
@@ -8900,12 +8945,16 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->spinouttimer || player->tumbleBounces)
 	{
+		if (player->progressivethrust < MAXCOMBOTIME)
+			player->progressivethrust++;
 		if (player->incontrol > 0)
 			player->incontrol = 0;
 		player->incontrol--;
 	}
 	else
 	{
+		if (player->progressivethrust)
+			player->progressivethrust--;
 		if (player->incontrol < 0)
 			player->incontrol = 0;
 		player->incontrol++;
@@ -8913,6 +8962,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	player->incontrol = min(player->incontrol, 5*TICRATE);
 	player->incontrol = max(player->incontrol, -5*TICRATE);
+
+	if (player->incontrol == 3*TICRATE)
+		player->pitblame = -1;
 
 	if (P_PlayerInPain(player) || player->respawn.state != RESPAWNST_NONE)
 	{

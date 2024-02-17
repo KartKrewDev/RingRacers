@@ -257,8 +257,14 @@ static int player_get(lua_State *L)
 		lua_pushboolean(L, plr->flipDI);
 	else if (fastcmp(field,"markedfordeath"))
 		lua_pushboolean(L, plr->markedfordeath);
+	else if (fastcmp(field,"incontrol"))
+		lua_pushboolean(L, plr->incontrol);
+	else if (fastcmp(field,"progressivethrust"))
+		lua_pushboolean(L, plr->progressivethrust);
 	else if (fastcmp(field,"dotrickfx"))
 		lua_pushboolean(L, plr->dotrickfx);
+	else if (fastcmp(field,"bumperinflate"))
+		lua_pushboolean(L, plr->bumperinflate);
 	else if (fastcmp(field,"ringboxdelay"))
 		lua_pushinteger(L, plr->ringboxdelay);
 	else if (fastcmp(field,"ringboxaward"))
@@ -351,6 +357,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->topAccel);
 	else if (fastcmp(field,"instaWhipCharge"))
 		lua_pushinteger(L, plr->instaWhipCharge);
+	else if (fastcmp(field,"pitblame"))
+		lua_pushinteger(L, plr->pitblame);
 	else if (fastcmp(field,"defenseLockout"))
 		lua_pushinteger(L, plr->defenseLockout);
 	else if (fastcmp(field,"oldGuard"))
@@ -781,10 +789,16 @@ static int player_set(lua_State *L)
 		plr->justDI = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"flipDI"))
 		plr->flipDI = luaL_checkboolean(L, 3);
+	else if (fastcmp(field,"incontrol"))
+		plr->incontrol = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"progressivethrust"))
+		plr->progressivethrust = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"markedfordeath"))
 		plr->markedfordeath = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"dotrickfx"))
 		plr->dotrickfx = luaL_checkboolean(L, 3);
+	else if (fastcmp(field,"bumperinflate"))
+		plr->bumperinflate = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"ringboxdelay"))
 		plr->ringboxdelay = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"ringboxaward"))
@@ -877,6 +891,8 @@ static int player_set(lua_State *L)
 		plr->topAccel = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"instaWhipCharge"))
 		plr->instaWhipCharge = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"pitblame"))
+		plr->pitblame = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"defenseLockout"))
 		plr->defenseLockout = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"oldGuard"))

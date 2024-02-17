@@ -2502,7 +2502,17 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 
 			if (gametyperules & (GTR_BUMPERS|GTR_CHECKPOINTS))
 			{
-				player->mo->health--;
+				if ((player->pitblame > -1) && (player->pitblame < MAXPLAYERS)
+					&& (playeringame[player->pitblame]) && (!players[player->pitblame].spectator) 
+					&& (players[player->pitblame].mo) && (!P_MobjWasRemoved(players[player->pitblame].mo)))
+				{
+					P_DamageMobj(player->mo, players[player->pitblame].mo, players[player->pitblame].mo, 1, DMG_KARMA);
+					player->pitblame = -1;
+				}
+				else if (player->mo->health > 1 || battleprisons)
+				{
+					player->mo->health--;
+				}
 			}
 
 			if (player->mo->health <= 0)
@@ -3134,6 +3144,14 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				}
 			}
 
+			if (source && source != player->mo && source->player)
+			{
+				if (damagetype != DMG_DEATHPIT)
+				{
+					player->pitblame = source->player - players;
+				}
+			}
+
 			player->sneakertimer = player->numsneakers = 0;
 			player->driftboost = player->strongdriftboost = 0;
 			player->gateBoost = 0;
@@ -3143,6 +3161,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			player->preventfailsafe = TICRATE*3;
 			player->pflags &= ~PF_GAINAX;
 			Obj_EndBungee(player);
+			K_BumperInflate(target->player);
 
 			if (player->spectator == false && !(player->charflags & SF_IRONMAN))
 			{
@@ -3165,6 +3184,14 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				type = DMG_TUMBLE;
 				P_StartQuakeFromMobj(5, 32 * player->mo->scale, 512 * player->mo->scale, player->mo);
 				//P_KillPlayer(player, inflictor, source, damagetype);
+			}
+
+			// Death save! On your last hit, no matter what, demote to weakest damage type for one last escape chance.
+			if (player->mo->health == 2 && damage && gametyperules & GTR_BUMPERS)
+			{
+				S_StartSound(target, sfx_gshc7);
+				player->flashing = TICRATE;
+				type = DMG_STUMBLE;
 			}
 
 			switch (type)

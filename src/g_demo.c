@@ -56,6 +56,7 @@
 #include "k_follower.h"
 #include "k_vote.h"
 #include "k_credits.h"
+#include "k_grandprix.h"
 
 boolean nodrawers; // for comparative timing purposes
 boolean noblit; // for comparative timing purposes
@@ -64,7 +65,7 @@ tic_t demostarttime; // for comparative timing purposes
 static char demoname[MAX_WADPATH];
 static savebuffer_t demobuf = {0};
 static UINT8 *demotime_p, *demoinfo_p;
-static UINT8 demoflags;
+static UINT16 demoflags;
 boolean demosynced = true; // console warning message
 
 struct demovars_s demo;
@@ -103,7 +104,7 @@ demoghost *ghosts = NULL;
 // DEMO RECORDING
 //
 
-#define DEMOVERSION 0x0007
+#define DEMOVERSION 0x0008
 #define DEMOHEADER  "\xF0" "KartReplay" "\x0F"
 
 #define DF_ATTACKMASK   (ATTACKING_TIME|ATTACKING_LAP|ATTACKING_SPB) // This demo contains time/lap data
@@ -116,6 +117,8 @@ demoghost *ghosts = NULL;
 
 #define DF_ENCORE       0x40
 #define DF_MULTIPLAYER  0x80 // This demo was recorded in multiplayer mode!
+
+#define DF_GRANDPRIX    0x0100
 
 #define DEMO_SPECTATOR		0x01
 #define DEMO_KICKSTART		0x02
@@ -2126,6 +2129,9 @@ void G_BeginRecording(void)
 	if (multiplayer)
 		demoflags |= DF_LUAVARS;
 
+	if (grandprixinfo.gp)
+		demoflags |= DF_GRANDPRIX;
+
 	// Setup header.
 	M_Memcpy(demobuf.p, DEMOHEADER, 12); demobuf.p += 12;
 	WRITEUINT8(demobuf.p,VERSION);
@@ -2148,7 +2154,7 @@ void G_BeginRecording(void)
 	WRITESTRINGN(demobuf.p, mapheaderinfo[gamemap-1]->lumpname, MAXMAPLUMPNAME);
 	M_Memcpy(demobuf.p, mapmd5, 16); demobuf.p += 16;
 
-	WRITEUINT8(demobuf.p, demoflags);
+	WRITEUINT16(demobuf.p, demoflags);
 
 	WRITESTRINGN(demobuf.p, gametypes[gametype]->name, MAXGAMETYPELENGTH);
 
@@ -2185,6 +2191,13 @@ void G_BeginRecording(void)
 
 	// Save netvar data
 	CV_SaveDemoVars(&demobuf.p);
+
+	if ((demoflags & DF_GRANDPRIX))
+	{
+		WRITEUINT8(demobuf.p, grandprixinfo.gamespeed);
+		WRITEUINT8(demobuf.p, grandprixinfo.masterbots == true);
+		WRITEUINT8(demobuf.p, grandprixinfo.eventmode);
+	}
 
 	// Now store some info for each in-game player
 
@@ -2274,6 +2287,10 @@ void G_BeginRecording(void)
 
 			// And mobjtype_t is best with UINT32 too...
 			WRITEUINT32(demobuf.p, player->followitem);
+
+			// GP
+			WRITESINT8(demobuf.p, player->lives);
+			WRITEINT16(demobuf.p, player->totalring);
 		}
 	}
 
@@ -2364,7 +2381,7 @@ void G_SetDemoTime(UINT32 ptime, UINT32 plap)
 UINT8 G_CmpDemoTime(char *oldname, char *newname)
 {
 	UINT8 *buffer,*p;
-	UINT8 flags;
+	UINT16 flags;
 	UINT32 oldtime = UINT32_MAX, newtime = UINT32_MAX;
 	UINT32 oldlap = UINT32_MAX, newlap = UINT32_MAX;
 	UINT16 oldversion;
@@ -2395,7 +2412,7 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	p += 4; // PLAY
 	SKIPSTRING(p); // gamemap
 	p += 16; // map md5
-	flags = READUINT8(p); // demoflags
+	flags = READUINT16(p); // demoflags
 	SKIPSTRING(p); // gametype
 	p++; // numlaps
 	G_SkipDemoExtraFiles(&p);
@@ -2454,7 +2471,7 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	} p += 4; // "PLAY"
 	SKIPSTRING(p); // gamemap
 	p += 16; // mapmd5
-	flags = READUINT8(p);
+	flags = READUINT16(p);
 	SKIPSTRING(p); // gametype
 	p++; // numlaps
 	G_SkipDemoExtraFiles(&p);
@@ -2498,7 +2515,8 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 {
 	savebuffer_t info = {0};
 	UINT8 *extrainfo_p;
-	UINT8 version, subversion, pdemoflags, worknumskins, skinid;
+	UINT8 version, subversion, worknumskins, skinid;
+	UINT16 pdemoflags;
 	democharlist_t *skinlist = NULL;
 	UINT16 pdemoversion, count;
 	char mapname[MAXMAPLUMPNAME],gtname[MAXGAMETYPELENGTH];
@@ -2578,7 +2596,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 		goto corrupt;
 	}
 
-	pdemoflags = READUINT8(info.p);
+	pdemoflags = READUINT16(info.p);
 
 	// temp?
 	if (!(pdemoflags & DF_MULTIPLAYER))
@@ -2648,6 +2666,9 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 
 	if (pdemoflags & DF_ENCORE)
 		pdemo->kartspeed |= DF_ENCORE;
+
+	if (pdemoflags & DF_GRANDPRIX)
+		pdemo->gp = true;
 
 	// Read standings!
 	count = 0;
@@ -2914,7 +2935,7 @@ void G_DoPlayDemo(const char *defdemoname)
 	READSTRINGN(demobuf.p, mapname, sizeof(mapname)); // gamemap
 	demobuf.p += 16; // mapmd5
 
-	demoflags = READUINT8(demobuf.p);
+	demoflags = READUINT16(demobuf.p);
 
 	READSTRINGN(demobuf.p, gtname, sizeof(gtname)); // gametype
 
@@ -3040,6 +3061,15 @@ void G_DoPlayDemo(const char *defdemoname)
 
 	// net var data
 	CV_LoadDemoVars(&demobuf.p);
+
+	memset(&grandprixinfo, 0, sizeof grandprixinfo);
+	if ((demoflags & DF_GRANDPRIX))
+	{
+		grandprixinfo.gp = true;
+		grandprixinfo.gamespeed = READUINT8(demobuf.p);
+		grandprixinfo.masterbots = READUINT8(demobuf.p) != 0;
+		grandprixinfo.eventmode = READUINT8(demobuf.p);
+	}
 
 	// Sigh ... it's an empty demo.
 	if (*demobuf.p == DEMOMARKER)
@@ -3216,6 +3246,10 @@ void G_DoPlayDemo(const char *defdemoname)
 		// Followitem
 		players[p].followitem = READUINT32(demobuf.p);
 
+		// GP
+		players[p].lives = READSINT8(demobuf.p);
+		players[p].totalring = READINT16(demobuf.p);
+
 		// Look for the next player
 		p = READUINT8(demobuf.p);
 	}
@@ -3249,7 +3283,7 @@ void G_DoPlayDemo(const char *defdemoname)
 		P_SetRandSeed(i, randseed[i]);
 	}
 
-	G_InitNew(demoflags & DF_ENCORE, gamemap, true, true); // Doesn't matter whether you reset or not here, given changes to resetplayer.
+	G_InitNew((demoflags & DF_ENCORE) != 0, gamemap, true, true); // Doesn't matter whether you reset or not here, given changes to resetplayer.
 
 	for (i = 0; i < numslots; i++)
 	{
@@ -3288,7 +3322,7 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	INT32 i;
 	char name[17], color[MAXCOLORNAME+1], md5[16];
 	demoghost *gh;
-	UINT8 flags;
+	UINT16 flags;
 	UINT8 *p;
 	mapthing_t *mthing;
 	UINT16 count, ghostversion;
@@ -3346,7 +3380,7 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	SKIPSTRING(p); // gamemap
 	p += 16; // mapmd5 (possibly check for consistency?)
 
-	flags = READUINT8(p);
+	flags = READUINT16(p);
 	if (!(flags & DF_GHOST))
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("Ghost %s: No ghost data in this demo.\n"), defdemoname);
@@ -3399,6 +3433,9 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 		p++;
 	}
 
+	if ((flags & DF_GRANDPRIX))
+		p += 3;
+
 	if (*p == DEMOMARKER)
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Replay is empty.\n"), defdemoname);
@@ -3442,6 +3479,9 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	p += 2; // powerlevel
 
 	p += 4; // followitem (maybe change later)
+
+	p += 1; // lives
+	p += 2; // rings
 
 	if (READUINT8(p) != 0xFF)
 	{
@@ -3534,7 +3574,7 @@ staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer)
 {
 	UINT8 *p = buffer;
 	UINT16 ghostversion;
-	UINT8 flags;
+	UINT16 flags;
 	INT32 i;
 	staffbrief_t temp = {0};
 	staffbrief_t *ret = NULL;
@@ -3575,7 +3615,7 @@ staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer)
 	SKIPSTRING(p); // gamemap
 	p += 16; // mapmd5 (possibly check for consistency?)
 
-	flags = READUINT8(p);
+	flags = READUINT16(p);
 	if (!(flags & DF_GHOST))
 	{
 		goto fail; // we don't NEED to do it here, but whatever
@@ -3607,6 +3647,9 @@ staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer)
 		SKIPSTRING(p);
 		p++; // stealth
 	}
+
+	if ((flags & DF_GRANDPRIX))
+		p += 3;
 
 	// Assert first player is in and then read name
 	if (READUINT8(p) != 0)

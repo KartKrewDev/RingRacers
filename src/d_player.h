@@ -965,6 +965,8 @@ struct player_t
 	mobj_t *hand;
 	mobj_t *flickyAttacker;
 
+	SINT8 pitblame; // Index of last player that hit you, resets after being in control for a bit. If you deathpit, credit the old attacker!
+
 	UINT8 instaWhipCharge;
 	UINT8 defenseLockout; // Committed to universal attack/defense, make 'em vulnerable! No whip/guard.
 	UINT8 instaWhipChargeLockout; // Input safety
@@ -978,9 +980,11 @@ struct player_t
 	angle_t besthanddirection;
 
 	INT16 incontrol; // -1 to -175 when spinning out or tumbling, 1 to 175 when not. Use to check for combo hits or emergency inputs.
+	UINT16 progressivethrust; // When getting beat up in GTR_BUMPERS, speed up the longer you've been out of control.
 
 	boolean markedfordeath;
 	boolean dotrickfx;
+	UINT8 bumperinflate;
 
 	UINT8 ringboxdelay; // Delay until Ring Box auto-activates
 	UINT8 ringboxaward; // Where did we stop?
