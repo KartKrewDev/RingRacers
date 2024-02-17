@@ -1093,7 +1093,6 @@ void D_ClearState(void)
 	memset(displayplayers, 0, sizeof(displayplayers));
 	memset(g_localplayers, 0, sizeof g_localplayers);
 	consoleplayer = 0;
-	demo.attract = DEMO_ATTRACT_OFF;
 	G_SetGametype(GT_RACE); // SRB2kart
 	paused = false;
 
