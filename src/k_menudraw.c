@@ -4740,20 +4740,18 @@ INT16 controlleroffsets[][2] = {
 };
 
 // Controller patches for button presses.
-// {patch if not pressed, patch if pressed}
-// if NULL, draws nothing.
 // reminder that lumpnames can only be 8 chars at most. (+1 for \0)
 
-char controllerpresspatch[9][2][9] = {
-	{"", "BTP_A"},	// MBT_A
-	{"", "BTP_B"},	// MBT_B
-	{"", "BTP_C"},	// MBT_C
-	{"", "BTP_X"},	// MBT_X
-	{"", "BTP_Y"},	// MBT_Y
-	{"", "BTP_Z"},	// MBT_Z
-	{"BTNP_L", "BTP_L"},// MBT_L
-	{"BTNP_R", "BTP_R"},// MBT_R
-	{"", "BTP_ST"}	// MBT_START
+static const char *controllerpresspatch[9][2] = {
+	{"PR_BTA", "PR_BTAB"}, // MBT_A
+	{"PR_BTB", "PR_BTBB"}, // MBT_B
+	{"PR_BTC", "PR_BTCB"}, // MBT_C
+	{"PR_BTX", "PR_BTXB"}, // MBT_X
+	{"PR_BTY", "PR_BTYB"}, // MBT_Y
+	{"PR_BTZ", "PR_BTZB"}, // MBT_Z
+	{"PR_BTL", "PR_BTLB"}, // MBT_L
+	{"PR_BTR", "PR_BTRB"}, // MBT_R
+	{"PR_BTS", "PR_BTSB"}, // MBT_START
 };
 
 
@@ -4775,16 +4773,12 @@ void M_DrawProfileControls(void)
 	for (i = 0; i < 9; i++)
 	{
 		INT32 bt = 1<<i;
-		if (M_MenuButtonHeld(pid, bt))
-		{
-			if (controllerpresspatch[i][1][0] != '\0')
-				V_DrawScaledPatch(BASEVIDWIDTH*2/3 - optionsmenu.contx, BASEVIDHEIGHT/2 -optionsmenu.conty, 0, W_CachePatchName(controllerpresspatch[i][1], PU_CACHE));
-		}
-		else
-		{
-			if (controllerpresspatch[i][0][0] != '\0')
-				V_DrawScaledPatch(BASEVIDWIDTH*2/3 - optionsmenu.contx, BASEVIDHEIGHT/2 -optionsmenu.conty, 0, W_CachePatchName(controllerpresspatch[i][0], PU_CACHE));
-		}
+		V_DrawScaledPatch(
+			BASEVIDWIDTH*2/3 - optionsmenu.contx,
+			BASEVIDHEIGHT/2 - optionsmenu.conty,
+			0,
+			W_CachePatchName(controllerpresspatch[i][M_MenuButtonHeld(pid, bt) != 0], PU_CACHE)
+		);
 	}
 
 	if (optionsmenu.trycontroller)
