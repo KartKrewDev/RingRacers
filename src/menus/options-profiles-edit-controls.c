@@ -58,20 +58,17 @@ menuitem_t OPTIONS_ProfileControls[] = {
 	{IT_CONTROL, "RECORD VIDEO", "Record a video with sound.",
 		NULL, {.routine = M_ProfileSetControl}, gc_startmovie, 0},
 
-	{IT_CONTROL, "RECORD LOSSLESS", "Record a pixel perfect GIF.",
+	{IT_CONTROL, "RECORD GIF", "Record a pixel perfect GIF.",
 		NULL, {.routine = M_ProfileSetControl}, gc_startlossless, 0},
+
+	{IT_CONTROL, "SHOW RANKINGS", "Display the current rankings mid-game.",
+		NULL, {.routine = M_ProfileSetControl}, gc_rankings, 0},
 
 	{IT_CONTROL, "OPEN CHAT", "Opens full keyboard chatting for online games.",
 		NULL, {.routine = M_ProfileSetControl}, gc_talk, 0},
 
 	{IT_CONTROL, "OPEN TEAM CHAT", "Opens team-only full chat for online games.",
 		NULL, {.routine = M_ProfileSetControl}, gc_teamtalk, 0},
-
-	{IT_CONTROL, "SHOW RANKINGS", "Display the current rankings mid-game.",
-		NULL, {.routine = M_ProfileSetControl}, gc_rankings, 0},
-
-	{IT_CONTROL, "OPEN CONSOLE", "Opens the developer options console.",
-		NULL, {.routine = M_ProfileSetControl}, gc_console, 0},
 
 	{IT_CONTROL, "LUA/A", "May be used by add-ons.",
 		NULL, {.routine = M_ProfileSetControl}, gc_luaa, 0},
@@ -82,7 +79,10 @@ menuitem_t OPTIONS_ProfileControls[] = {
 	{IT_CONTROL, "LUA/C", "May be used by add-ons.",
 		NULL, {.routine = M_ProfileSetControl}, gc_luac, 0},
 
-	{IT_HEADER, "EXTRA", "",
+	{IT_CONTROL, "OPEN CONSOLE", "Opens the developer options console.",
+		NULL, {.routine = M_ProfileSetControl}, gc_console, 0},
+
+	{IT_HEADER, "TEST AND CONFIRM", "",
 		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_CALL, "TRY MAPPINGS", "Test your controls.",
