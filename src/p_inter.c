@@ -3163,6 +3163,10 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			Obj_EndBungee(player);
 			K_BumperInflate(target->player);
 
+			// Explosions are explicit combo setups.
+			if (damagetype & DMG_EXPLODE)
+				player->bumperinflate = 0;
+
 			if (player->spectator == false && !(player->charflags & SF_IRONMAN))
 			{
 				UINT32 skinflags = (demo.playback)
