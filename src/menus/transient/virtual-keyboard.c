@@ -95,7 +95,7 @@ boolean M_ChangeStringCvar(INT32 choice)
 				{
 					strlcat(menutyping.cache, paste, MAXSTRINGLENGTH);
 
-					S_StartSound(NULL, sfx_s3k5b); // Tails
+					S_StartSound(NULL, sfx_tmxbdn); // Tails
 				}
 			}
 			else if (len > 0 /*&& (copypastemode == CVCPM_COPY
@@ -108,9 +108,12 @@ boolean M_ChangeStringCvar(INT32 choice)
 				{
 					// A cut should wipe.
 					strcpy(menutyping.cache, "");
+					S_StartSound(NULL, sfx_tmxbup); // Tails
 				}
-
-				S_StartSound(NULL, sfx_s3k5b); // Tails
+				else
+				{
+					S_StartSound(NULL, sfx_tmxbdn); // Tails
+				}
 			}
 
 			return true;
@@ -128,7 +131,7 @@ boolean M_ChangeStringCvar(INT32 choice)
 				len = strlen(menutyping.cache);
 				menutyping.cache[len - 1] = 0;
 
-				S_StartSound(NULL, sfx_s3k5b); // Tails
+				S_StartSound(NULL, sfx_tmxbup); // Tails
 			}
 			return true;
 		case KEY_DEL:
@@ -136,7 +139,7 @@ boolean M_ChangeStringCvar(INT32 choice)
 			{
 				strcpy(menutyping.cache, "");
 
-				S_StartSound(NULL, sfx_s3k5b); // Tails
+				S_StartSound(NULL, sfx_tmxbup); // Tails
 			}
 			return true;
 		default:
@@ -148,7 +151,7 @@ boolean M_ChangeStringCvar(INT32 choice)
 					menutyping.cache[len++] = (char)choice;
 					menutyping.cache[len] = 0;
 
-					S_StartSound(NULL, sfx_s3k5b); // Tails
+					S_StartSound(NULL, sfx_tmxbdn); // Tails
 				}
 				return true;
 			}
