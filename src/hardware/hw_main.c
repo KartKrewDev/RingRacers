@@ -3423,7 +3423,7 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 
 	if (HWR_UseShader())
 	{
-		shader = SHADER_SPRITE;
+		shader = (R_ThingIsPaperSprite(spr->mobj) || R_ThingIsFloorSprite(spr->mobj)) ? SHADER_SPRITE : SHADER_SPRITECLIPHACK;
 		blend |= PF_ColorMapped;
 	}
 
@@ -3916,7 +3916,7 @@ static void HWR_DrawSprite(gl_vissprite_t *spr)
 
 		if (HWR_UseShader())
 		{
-			shader = SHADER_SPRITE;
+			shader = (R_ThingIsPaperSprite(spr->mobj) || R_ThingIsFloorSprite(spr->mobj)) ? SHADER_SPRITE : SHADER_SPRITECLIPHACK;;
 			blend |= PF_ColorMapped;
 		}
 
