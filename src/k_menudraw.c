@@ -4795,6 +4795,8 @@ void M_DrawProfileControls(void)
 	INT32 x = 8;
 	INT32 i, j, k;
 	const UINT8 pid = 0;
+	patch_t *hint = W_CachePatchName("MENUHINT", PU_CACHE);
+	INT32 hintofs = 3;
 
 	V_DrawScaledPatch(BASEVIDWIDTH*2/3 - optionsmenu.contx, BASEVIDHEIGHT/2 -optionsmenu.conty, 0, W_CachePatchName("PR_CONT", PU_CACHE));
 
@@ -4826,15 +4828,15 @@ void M_DrawProfileControls(void)
 		return;	// Don't draw the rest if we're trying the controller.
 	}
 
-	// Tooltip
-	// The text is slightly shifted hence why we don't just use M_DrawMenuTooltips()
-	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
-	if (currentMenu->menuitems[itemOn].tooltip != NULL)
-	{
-		V_DrawCenteredThinString(229, 12, 0, currentMenu->menuitems[itemOn].tooltip);
-	}
-
 	V_DrawFill(0, 0, 138, 200, 31);	// Black border
+
+	V_SetClipRect(
+		0,
+		0,
+		BASEVIDWIDTH * FRACUNIT,
+		(BASEVIDHEIGHT - SHORT(hint->height) + hintofs) * FRACUNIT,
+		0
+	);
 
 	// Draw the menu options...
 	for (i = 0; i < currentMenu->numitems; i++)
@@ -5013,6 +5015,20 @@ void M_DrawProfileControls(void)
 				break;
 			}
 		}
+	}
+
+	V_ClearClipRect();
+
+	// Tooltip
+	// Draw it at the bottom of the screen
+	{
+		static UINT8 blue[256];
+		blue[31] = 253;
+		V_DrawMappedPatch(0, BASEVIDHEIGHT + hintofs, V_VFLIP, hint, blue);
+	}
+	if (currentMenu->menuitems[itemOn].tooltip != NULL)
+	{
+		V_DrawCenteredThinString(BASEVIDWIDTH/2, BASEVIDHEIGHT + hintofs - 9 - 12, 0, currentMenu->menuitems[itemOn].tooltip);
 	}
 
 	// Overlay for control binding
