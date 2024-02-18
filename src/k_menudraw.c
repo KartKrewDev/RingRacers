@@ -4724,10 +4724,10 @@ void M_DrawEditProfile(void)
 // Controller offsets to center on each button.
 INT16 controlleroffsets[][2] = {
 	{0, 0},			// gc_none
-	{70, 112},		// gc_up
-	{70, 112},		// gc_down
-	{70, 112},		// gc_left
-	{70, 112},		// gc_right
+	{69, 142},		// gc_up
+	{69, 182},		// gc_down
+	{49, 162},		// gc_left
+	{89, 162},		// gc_right
 	{208, 200},		// gc_a
 	{237, 181},		// gc_b
 	{267, 166},		// gc_c
