@@ -1068,6 +1068,8 @@ boolean M_ProfileEditInputs(INT32 ch);
 void M_HandleProfileControls(void);
 boolean M_ProfileControlsInputs(INT32 ch);
 void M_ProfileSetControl(INT32 ch);
+void M_ProfileDefaultControls(INT32 ch);
+void M_ProfileClearControls(INT32 ch);
 
 void M_MapProfileControl(event_t *ev);
 void M_ProfileTryController(INT32 choice);

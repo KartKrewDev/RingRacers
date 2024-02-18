@@ -1,6 +1,7 @@
 /// \file  menus/options-profiles-edit-controls.c
 /// \brief Profile Controls Editor
 
+#include "../g_input.h"
 #include "../k_menu.h"
 #include "../s_sound.h"
 #include "../i_joy.h" // for joystick menu controls
@@ -87,6 +88,12 @@ menuitem_t OPTIONS_ProfileControls[] = {
 
 	{IT_STRING | IT_CALL, "TRY MAPPINGS", "Test your controls.",
 		NULL, {.routine = M_ProfileTryController}, 0, 0},
+
+	{IT_STRING | IT_CALL, "RESET TO DEFAULT", "Reset all controls back to default.",
+		NULL, {.routine = M_ProfileDefaultControls}, 0, 0},
+
+	{IT_STRING | IT_CALL, "CLEAR ALL", "Unbind all controls.",
+		NULL, {.routine = M_ProfileClearControls}, 0, 0},
 
 	{IT_STRING | IT_CALL, "CONFIRM", "Go back to profile setup.",
 		NULL, {.routine = M_ProfileControlsConfirm}, 0, 0},
@@ -288,6 +295,50 @@ void M_ProfileSetControl(INT32 ch)
 	// Otherwise, this will stay at 1 which means we'll overwrite the first bound control.
 
 	optionsmenu.bindtimer = TICRATE*5;
+}
+
+static void M_ProfileDefaultControlsResponse(INT32 ch)
+{
+	if (ch == MA_YES)
+	{
+		memcpy(&optionsmenu.tempcontrols, gamecontroldefault, sizeof optionsmenu.tempcontrols);
+		S_StartSound(NULL, sfx_s24f);
+	}
+}
+
+void M_ProfileDefaultControls(INT32 ch)
+{
+	(void)ch;
+	M_StartMessage(
+		"Profiles",
+		"Reset all controls to the default mappings?",
+		&M_ProfileDefaultControlsResponse,
+		MM_YESNO,
+		NULL,
+		NULL
+	);
+}
+
+static void M_ProfileClearControlsResponse(INT32 ch)
+{
+	if (ch == MA_YES)
+	{
+		memset(&optionsmenu.tempcontrols, 0, sizeof optionsmenu.tempcontrols);
+		S_StartSound(NULL, sfx_s3k66);
+	}
+}
+
+void M_ProfileClearControls(INT32 ch)
+{
+	(void)ch;
+	M_StartMessage(
+		"Profiles",
+		"Clear all control bindings?",
+		&M_ProfileClearControlsResponse,
+		MM_YESNO,
+		NULL,
+		NULL
+	);
 }
 
 // Map the event to the profile.
