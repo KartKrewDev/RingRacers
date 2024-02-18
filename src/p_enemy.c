@@ -12612,7 +12612,7 @@ void A_MakeSSCandle(mobj_t* actor)
 	P_SetTarget(&actor->tracer, fire);
 
 	// Sides
-	for (i = 0; i < 5; i++)
+	for (i = 0; i < 6; i++)
 	{
 		fixed_t a = FixedAngle(60 * FRACUNIT) * i;
 		fixed_t offsetx = actor->x + FixedMul(dist, FCOS(a));
