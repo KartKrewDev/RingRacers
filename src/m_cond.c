@@ -1628,7 +1628,7 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			)
 				return false;
 			if (cn->extrainfo2 != 0)
-				return (K_PodiumGrade() >= cn->requirement);
+				return (K_PodiumGrade() >= cn->extrainfo1);
 			if (cn->extrainfo1 != 0)
 				return (player->position != 0
 					&& player->position <= cn->extrainfo1);
