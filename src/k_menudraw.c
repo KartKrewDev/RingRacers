@@ -4676,6 +4676,7 @@ void M_DrawEditProfile(void)
 
 		UINT8 *colormap = NULL;
 		INT32 tflag = (currentMenu->menuitems[i].status & IT_TRANSTEXT) ? V_TRANSLUCENT : 0;
+		INT32 cx = x;
 
 		y = currentMenu->menuitems[i].mvar2;
 
@@ -4686,13 +4687,14 @@ void M_DrawEditProfile(void)
 		{
 			colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
 
-			V_DrawMenuString(x - 10 - (skullAnimCounter/5), y+1, highlightflags, "\x1C"); // left arrow
+			cx += Easing_OutSine(M_DueFrac(optionsmenu.offset.start, 2), 0, 5);
+			V_DrawMenuString(cx - 10 - (skullAnimCounter/5), y+1, highlightflags, "\x1C"); // left arrow
 		}
 
 		// Text
-		//V_DrawGamemodeString(x, y - 6, tflag, colormap, currentMenu->menuitems[i].text);
+		//V_DrawGamemodeString(cx, y - 6, tflag, colormap, currentMenu->menuitems[i].text);
 		V_DrawStringScaled(
-			x * FRACUNIT,
+			cx * FRACUNIT,
 			(y - 3) * FRACUNIT,
 			FRACUNIT,
 			FRACUNIT,

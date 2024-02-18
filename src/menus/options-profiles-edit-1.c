@@ -1,6 +1,7 @@
 /// \file  menus/options-profiles-edit-1.c
 /// \brief Profile Editor
 
+#include "../i_time.h"
 #include "../k_menu.h"
 #include "../s_sound.h"
 #include "../m_cond.h"
@@ -155,6 +156,11 @@ boolean M_ProfileEditInputs(INT32 ch)
 	{
 		if (currentMenu->menuitems[itemOn].status & IT_TRANSTEXT)
 			return true;	// No.
+	}
+
+	if (menucmd[pid].dpad_ud != 0)
+	{
+		optionsmenu.offset.start = I_GetTime();
 	}
 
 	return false;
