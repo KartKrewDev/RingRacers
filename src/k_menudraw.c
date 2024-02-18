@@ -4912,6 +4912,9 @@ void M_DrawProfileControls(void)
 
 					UINT8 available = 0, set = 0;
 
+					if (i != itemOn)
+						vflags |= V_GRAYMAP;
+
 					// Get userbound controls...
 					for (k = 0; k < MAXINPUTMAPPING; k++)
 					{
@@ -4983,7 +4986,11 @@ void M_DrawProfileControls(void)
 					if (buf[0])
 						;
 					else if (!set)
-						strcpy(buf, "\x85NOT BOUND");
+					{
+						vflags &= ~V_CHARCOLORMASK;
+						vflags |= V_REDMAP;
+						strcpy(buf, "NOT BOUND");
+					}
 					else
 					{
 						for (k = 0; k < MAXINPUTMAPPING; k++)
