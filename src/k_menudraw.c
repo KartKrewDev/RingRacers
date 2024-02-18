@@ -4824,7 +4824,21 @@ void M_DrawProfileControls(void)
 		optionsmenu.tcontx = BASEVIDWIDTH*2/3 - 10;
 		optionsmenu.tconty = BASEVIDHEIGHT/2 +70;
 
-		V_DrawCenteredString(160, 180, highlightflags, va("PRESS NOTHING FOR %d SEC TO GO BACK", optionsmenu.trycontroller/TICRATE));
+		V_DrawCenteredLSTitleLowString(160, 164, 0, "TRY BUTTONS");
+
+		const char *msg = va("Press nothing for %d sec to go back", (optionsmenu.trycontroller + (TICRATE-1)) / TICRATE);
+		fixed_t w = V_StringScaledWidth(FRACUNIT, FRACUNIT, FRACUNIT, highlightflags, MED_FONT, msg);
+		V_DrawStringScaled(
+			160*FRACUNIT - w/2,
+			186*FRACUNIT,
+			FRACUNIT,
+			FRACUNIT,
+			FRACUNIT,
+			highlightflags,
+			NULL,
+			MED_FONT,
+			msg
+		);
 		return;	// Don't draw the rest if we're trying the controller.
 	}
 
