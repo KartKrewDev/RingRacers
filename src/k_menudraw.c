@@ -4754,6 +4754,37 @@ static const char *controllerpresspatch[9][2] = {
 	{"PR_BTS", "PR_BTSB"}, // MBT_START
 };
 
+static const char *M_GetDPadPatchName(SINT8 ud, SINT8 lr)
+{
+	if (ud < 0)
+	{
+		if (lr < 0)
+			return "PR_PADUL";
+		else if (lr > 0)
+			return "PR_PADUR";
+		else
+			return "PR_PADU";
+	}
+	else if (ud > 0)
+	{
+		if (lr < 0)
+			return "PR_PADDL";
+		else if (lr > 0)
+			return "PR_PADDR";
+		else
+			return "PR_PADD";
+	}
+	else
+	{
+		if (lr < 0)
+			return "PR_PADL";
+		else if (lr > 0)
+			return "PR_PADR";
+		else
+			return "PR_PADN";
+	}
+}
+
 
 // the control stuff.
 // Dear god.
@@ -4768,7 +4799,12 @@ void M_DrawProfileControls(void)
 	V_DrawScaledPatch(BASEVIDWIDTH*2/3 - optionsmenu.contx, BASEVIDHEIGHT/2 -optionsmenu.conty, 0, W_CachePatchName("PR_CONT", PU_CACHE));
 
 	// Draw button presses...
-	// @TODO: Dpad when we get the sprites for it.
+	V_DrawScaledPatch(
+		BASEVIDWIDTH*2/3 - optionsmenu.contx,
+		BASEVIDHEIGHT/2 - optionsmenu.conty,
+		0,
+		W_CachePatchName(M_GetDPadPatchName(menucmd[pid].dpad_ud, menucmd[pid].dpad_lr), PU_CACHE)
+	);
 
 	for (i = 0; i < 9; i++)
 	{
