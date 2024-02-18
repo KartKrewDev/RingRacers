@@ -792,6 +792,11 @@ boolean M_ChallengesInputs(INT32 ch)
 			if (cv_debugchallenges.value && challengesmenu.currentunlock < MAXUNLOCKABLES && challengesmenu.unlockanim >= UNLOCKTIME && gamedata->unlocked[challengesmenu.currentunlock] == true)
 			{
 				gamedata->unlocked[challengesmenu.currentunlock] = gamedata->unlockpending[challengesmenu.currentunlock] = false;
+				UINT16 set = unlockables[challengesmenu.currentunlock].conditionset;
+				if (set > 0 && set <= MAXCONDITIONSETS)
+				{
+					gamedata->achieved[set - 1] = false;
+				}
 
 				M_UpdateChallengeGridVisuals();
 			}
