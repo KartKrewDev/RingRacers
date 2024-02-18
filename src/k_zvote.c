@@ -233,7 +233,7 @@ void K_SendCallMidVote(midVoteType_e voteType, INT32 voteVariable)
 }
 
 /*--------------------------------------------------
-	static void Got_CallZVote(UINT8 **cp, INT32 playernum)
+	static void Got_CallZVote(const UINT8 **cp, INT32 playernum)
 
 		Callback function for XD_CALLZVOTE NetXCmd.
 		Attempts to start a new vote using K_InitNewMidVote.
@@ -245,7 +245,7 @@ void K_SendCallMidVote(midVoteType_e voteType, INT32 voteVariable)
 	Return:-
 		N/A
 --------------------------------------------------*/
-static void Got_CallZVote(UINT8 **cp, INT32 playernum)
+static void Got_CallZVote(const UINT8 **cp, INT32 playernum)
 {
 	midVoteType_e type = MVT__MAX;
 	INT32 variable = 0;
@@ -288,7 +288,7 @@ static void K_PlayerSendMidVote(const UINT8 id)
 }
 
 /*--------------------------------------------------
-	static void Got_SetZVote(UINT8 **cp, INT32 playernum)
+	static void Got_SetZVote(const UINT8 **cp, INT32 playernum)
 
 		Callback function for XD_SETZVOTE NetXCmd.
 		Updates the vote table.
@@ -300,7 +300,7 @@ static void K_PlayerSendMidVote(const UINT8 id)
 	Return:-
 		N/A
 --------------------------------------------------*/
-static void Got_SetZVote(UINT8 **cp, INT32 playernum)
+static void Got_SetZVote(const UINT8 **cp, INT32 playernum)
 {
 	(void)cp;
 

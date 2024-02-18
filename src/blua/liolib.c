@@ -261,7 +261,7 @@ static int io_openlocal (lua_State *L) {
 }
 
 
-void Got_LuaFile(UINT8 **cp, INT32 playernum)
+void Got_LuaFile(const UINT8 **cp, INT32 playernum)
 {
 	FILE **pf = NULL;
 	UINT8 success = READUINT8(*cp); // The first (and only) byte indicates whether the file could be opened
