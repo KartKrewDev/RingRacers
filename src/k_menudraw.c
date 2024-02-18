@@ -4810,6 +4810,7 @@ void M_DrawProfileControls(void)
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
 		char buf[256];
+		char buf2[256];
 		INT32 keys[MAXINPUTMAPPING];
 
 		// cursor
@@ -4838,7 +4839,8 @@ void M_DrawProfileControls(void)
 
 				if (currentMenu->menuitems[i].patch)
 				{
-					V_DrawScaledPatch(x+12, y+12, 0, W_CachePatchName(currentMenu->menuitems[i].patch, PU_CACHE));
+					V_DrawScaledPatch(x-4, y+1, 0, W_CachePatchName(currentMenu->menuitems[i].patch, PU_CACHE));
+					V_DrawMenuString(x+12, y+2, (i == itemOn ? highlightflags : 0), currentMenu->menuitems[i].text);
 					drawnpatch = true;
 				}
 				else
@@ -4884,6 +4886,7 @@ void M_DrawProfileControls(void)
 					};
 
 					buf[0] = '\0';
+					buf2[0] = '\0';
 
 
 					// Cool as is this, this doesn't actually help show accurate info because of how some players would set inputs with keyboard and controller at once in a volatile way...
@@ -4930,6 +4933,7 @@ void M_DrawProfileControls(void)
 						}
 					}*/
 
+					char *p = buf;
 					if (buf[0])
 						;
 					else if (!set)
@@ -4942,17 +4946,29 @@ void M_DrawProfileControls(void)
 								continue;
 
 							if (k > 0)
-								strcat(buf," / ");
+								strcat(p," / ");
 
-							if (k == 2 && drawnpatch)	// hacky...
-								strcat(buf, "\n");
+							if (k == 2)   // hacky...
+								p = buf2;
 
-							strcat(buf, G_KeynumToString (keys[k]));
+							strcat(p, G_KeynumToString (keys[k]));
+						}
+					}
+
+					if (i == itemOn)
+					{
+						// Extend yellow wedge down behind
+						// extra line.
+						if (buf2[0])
+						{
+							for (j=24; j < 34; j++)
+								V_DrawFill(0, (y)+j, 128+j, 1, 73);
 						}
 					}
 
 					// don't shift the text if we didn't draw a patch.
-					V_DrawThinString(x + (drawnpatch ? 32 : 0), y + (drawnpatch ? 2 : 12), vflags, buf);
+					V_DrawThinString(x + (drawnpatch ? 13 : 1), y + 12, vflags, buf);
+					V_DrawThinString(x + (drawnpatch ? 13 : 1), y + 22, vflags, buf2);
 
 					// controller dest coords:
 					if (itemOn == i && gc > 0 && gc <= gc_start)

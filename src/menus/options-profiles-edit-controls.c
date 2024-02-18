@@ -10,44 +10,44 @@ menuitem_t OPTIONS_ProfileControls[] = {
 	{IT_HEADER, "MAIN CONTROLS", "That's the stuff on the controller!!",
 		NULL, {NULL}, 0, 0},
 
-	{IT_CONTROL, "A", "Accelerate / Confirm",
-		"PR_BTA", {.routine = M_ProfileSetControl}, gc_a, 0},
+	{IT_CONTROL, "Accel / Confirm", "Accelerate / Confirm",
+		"TLB_A", {.routine = M_ProfileSetControl}, gc_a, 0},
 
-	{IT_CONTROL, "B", "Look backwards / Back",
-		"PR_BTB", {.routine = M_ProfileSetControl}, gc_b, 0},
+	{IT_CONTROL, "Look back", "Look backwards / Go back",
+		"TLB_B", {.routine = M_ProfileSetControl}, gc_b, 0},
 
-	{IT_CONTROL, "C", "Spindash / Extra",
-		"PR_BTC", {.routine = M_ProfileSetControl}, gc_c, 0},
+	{IT_CONTROL, "Spindash", "Spindash / Extra",
+		"TLB_C", {.routine = M_ProfileSetControl}, gc_c, 0},
 
-	{IT_CONTROL, "X", "Brake / Back",
-		"PR_BTX", {.routine = M_ProfileSetControl}, gc_x, 0},
+	{IT_CONTROL, "Brake / Go back", "Brake / Go back",
+		"TLB_D", {.routine = M_ProfileSetControl}, gc_x, 0},
 
-	{IT_CONTROL, "Y", "Respawn",
-		"PR_BTY", {.routine = M_ProfileSetControl}, gc_y, 0},
+	{IT_CONTROL, "Respawn", "Respawn",
+		"TLB_E", {.routine = M_ProfileSetControl}, gc_y, 0},
 
-	{IT_CONTROL, "Z", "Multiplayer quick-chat / quick-vote",
-		"PR_BTZ", {.routine = M_ProfileSetControl}, gc_z, 0},
+	{IT_CONTROL, "Action", "Multiplayer quick-chat / quick-vote",
+		"TLB_F", {.routine = M_ProfileSetControl}, gc_z, 0},
 
-	{IT_CONTROL, "L", "Use item",
-		"PR_BTL", {.routine = M_ProfileSetControl}, gc_l, 0},
+	{IT_CONTROL, "Use Item", "Use item",
+		"TLB_H", {.routine = M_ProfileSetControl}, gc_l, 0},
 
-	{IT_CONTROL, "R", "Drift",
-		"PR_BTR", {.routine = M_ProfileSetControl}, gc_r, 0},
+	{IT_CONTROL, "Drift", "Drift",
+		"TLB_I", {.routine = M_ProfileSetControl}, gc_r, 0},
 
 	{IT_CONTROL, "Turn Left", "Turn left",
-		"PR_PADL", {.routine = M_ProfileSetControl}, gc_left, 0},
+		"TLB_M", {.routine = M_ProfileSetControl}, gc_left, 0},
 
 	{IT_CONTROL, "Turn Right", "Turn right",
-		"PR_PADR", {.routine = M_ProfileSetControl}, gc_right, 0},
+		"TLB_L", {.routine = M_ProfileSetControl}, gc_right, 0},
 
 	{IT_CONTROL, "Aim Forward", "Aim forwards",
-		"PR_PADU", {.routine = M_ProfileSetControl}, gc_up, 0},
+		"TLB_J", {.routine = M_ProfileSetControl}, gc_up, 0},
 
 	{IT_CONTROL, "Aim Backwards", "Aim backwards",
-		"PR_PADD", {.routine = M_ProfileSetControl}, gc_down, 0},
+		"TLB_K", {.routine = M_ProfileSetControl}, gc_down, 0},
 
-	{IT_CONTROL, "Start", "Open pause menu",
-		"PR_BTS", {.routine = M_ProfileSetControl}, gc_start, 0},
+	{IT_CONTROL, "Open pause menu", "Open pause menu",
+		"TLB_G", {.routine = M_ProfileSetControl}, gc_start, 0},
 
 	{IT_HEADER, "OPTIONAL CONTROLS", "Take a screenshot, chat...",
 		NULL, {NULL}, 0, 0},
