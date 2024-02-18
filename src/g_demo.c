@@ -3836,6 +3836,8 @@ boolean G_CheckDemoStatus(void)
 				D_StartTitle();
 		}
 
+		demo.attract = DEMO_ATTRACT_OFF;
+
 		return true;
 	}
 
