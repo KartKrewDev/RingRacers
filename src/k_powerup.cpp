@@ -8,6 +8,7 @@
 #include "k_hud.h" // K_AddMessage
 #include "p_mobj.h"
 #include "s_sound.h"
+#include "p_tick.h"
 
 tic_t K_PowerUpRemaining(const player_t* player, kartitems_t powerup)
 {
@@ -52,33 +53,42 @@ void K_GivePowerUp(player_t* player, kartitems_t powerup, tic_t time)
 		Obj_SpawnPowerUpAura(player);
 	}
 
+	S_StartSound(NULL, sfx_gsha7);
 	player->flashing = 2*TICRATE;
+
+	g_darkness.start = leveltime;
+	g_darkness.end = leveltime + BATTLE_POWERUP_ANIM_TIME + DARKNESS_FADE_TIME;
 
 	switch (powerup)
 	{
 	case POWERUP_SMONITOR:
+		S_StartSound(NULL, sfx_bpwrua);
 		K_AddMessageForPlayer(player, "Got S MONITOR!", true, false);
 		K_DoInvincibility(player, time);
 		player->powerup.superTimer += time;
 		break;
 
 	case POWERUP_BARRIER:
+		S_StartSound(NULL, sfx_bpwrub);
 		K_AddMessageForPlayer(player, "Got MEGA BARRIER!", true, false);
 		player->powerup.barrierTimer += time;
 		Obj_SpawnMegaBarrier(player);
 		break;
 
 	case POWERUP_BUMPER:
+		S_StartSound(NULL, sfx_bpwruc);
 		K_AddMessageForPlayer(player, "Got BUMPER RESTOCK!", true, false);
 		K_GiveBumpersToPlayer(player, nullptr, 5);
 		break;
 
 	case POWERUP_BADGE:
+		S_StartSound(NULL, sfx_bpwrud);
 		K_AddMessageForPlayer(player, "Got RHYTHM BADGE!", true, false);
 		player->powerup.rhythmBadgeTimer += time;
 		break;
 
 	case POWERUP_SUPERFLICKY:
+		S_StartSound(NULL, sfx_bpwrue);
 		K_AddMessageForPlayer(player, "Got SUPER FLICKY!", true, false);
 		if (K_PowerUpRemaining(player, POWERUP_SUPERFLICKY))
 		{
@@ -91,6 +101,7 @@ void K_GivePowerUp(player_t* player, kartitems_t powerup, tic_t time)
 		break;
 
 	case POWERUP_POINTS:
+		S_StartSound(NULL, sfx_bpwruf);
 		K_AddMessageForPlayer(player, "Got 6 POINTS!", true, false);
 		K_GivePointsToPlayer(player, nullptr, 6);
 
