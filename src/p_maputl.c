@@ -29,7 +29,7 @@
 // P_ClosestPointOnLine
 // Finds the closest point on a given line to the supplied point
 //
-void P_ClosestPointOnLine(fixed_t x, fixed_t y, line_t *line, vertex_t *result)
+void P_ClosestPointOnLine(fixed_t x, fixed_t y, const line_t *line, vertex_t *result)
 {
 	fixed_t startx = line->v1->x;
 	fixed_t starty = line->v1->y;
@@ -105,35 +105,15 @@ void P_ClosestPointOnLine3D(const vector3_t *p, const vector3_t *Line, vector3_t
 // P_PointOnLineSide
 // Returns 0 or 1
 //
-INT32 P_PointOnLineSide(fixed_t x, fixed_t y, line_t *line)
+// killough 5/3/98: reformatted, cleaned up
+// ioanch 20151228: made line const
+//
+INT32 P_PointOnLineSide(fixed_t x, fixed_t y, const line_t *line)
 {
-	const vertex_t *v1 = line->v1;
-	fixed_t dx, dy, left, right;
-
-	if (!line->dx)
-	{
-		if (x <= v1->x)
-			return (line->dy > 0);
-
-		return (line->dy < 0);
-	}
-	if (!line->dy)
-	{
-		if (y <= v1->y)
-			return (line->dx < 0);
-
-		return (line->dx > 0);
-	}
-
-	dx = (x - v1->x);
-	dy = (y - v1->y);
-
-	left = FixedMul(line->dy>>FRACBITS, dx);
-	right = FixedMul(dy, line->dx>>FRACBITS);
-
-	if (right < left)
-		return 0; // front side
-	return 1; // back side
+	return
+		!line->dx ? x <= line->v1->x ? line->dy > 0 : line->dy < 0 :
+		!line->dy ? y <= line->v1->y ? line->dx < 0 : line->dx > 0 :
+		((INT64)y - line->v1->y) * line->dx >= line->dy * ((INT64)x - line->v1->x);
 }
 
 //
@@ -141,98 +121,55 @@ INT32 P_PointOnLineSide(fixed_t x, fixed_t y, line_t *line)
 // Considers the line to be infinite
 // Returns side 0 or 1, -1 if box crosses the line.
 //
-INT32 P_BoxOnLineSide(fixed_t *tmbox, line_t *ld)
+// killough 5/3/98: reformatted, cleaned up
+//
+INT32 P_BoxOnLineSide(const fixed_t *tmbox, const line_t *ld)
 {
-	INT32 p1, p2;
+	INT32 p;
 
 	switch (ld->slopetype)
 	{
+		default: // shut up compiler warnings -- killough
 		case ST_HORIZONTAL:
-			p1 = tmbox[BOXTOP] > ld->v1->y;
-			p2 = tmbox[BOXBOTTOM] > ld->v1->y;
-			if (ld->dx < 0)
-			{
-				p1 ^= 1;
-				p2 ^= 1;
-			}
-			break;
-
+			return
+				(tmbox[BOXBOTTOM] > ld->v1->y) == (p = tmbox[BOXTOP] > ld->v1->y) ?
+				p ^ (ld->dx < 0) : -1;
 		case ST_VERTICAL:
-			p1 = tmbox[BOXRIGHT] < ld->v1->x;
-			p2 = tmbox[BOXLEFT] < ld->v1->x;
-			if (ld->dy < 0)
-			{
-				p1 ^= 1;
-				p2 ^= 1;
-			}
-			break;
-
+			return
+				(tmbox[BOXLEFT] < ld->v1->x) == (p = tmbox[BOXRIGHT] < ld->v1->x) ?
+				p ^ (ld->dy < 0) : -1;
 		case ST_POSITIVE:
-			p1 = P_PointOnLineSide(tmbox[BOXLEFT], tmbox[BOXTOP], ld);
-			p2 = P_PointOnLineSide(tmbox[BOXRIGHT], tmbox[BOXBOTTOM], ld);
-			break;
-
+			return
+				P_PointOnLineSide(tmbox[BOXRIGHT], tmbox[BOXBOTTOM], ld) ==
+				(p = P_PointOnLineSide(tmbox[BOXLEFT], tmbox[BOXTOP], ld)) ? p : -1;
 		case ST_NEGATIVE:
-			p1 = P_PointOnLineSide(tmbox[BOXRIGHT], tmbox[BOXTOP], ld);
-			p2 = P_PointOnLineSide(tmbox[BOXLEFT], tmbox[BOXBOTTOM], ld);
-			break;
-
-		default:
-			I_Error("P_BoxOnLineSide: unknown slopetype %d\n", ld->slopetype);
-			return -1;
+			return
+				(P_PointOnLineSide(tmbox[BOXLEFT], tmbox[BOXBOTTOM], ld)) ==
+				(p = P_PointOnLineSide(tmbox[BOXRIGHT], tmbox[BOXTOP], ld)) ? p : -1;
 	}
-
-	if (p1 == p2)
-		return p1;
-	return -1;
 }
 
 //
 // P_PointOnDivlineSide
 // Returns 0 or 1.
 //
-static INT32 P_PointOnDivlineSide(fixed_t x, fixed_t y, divline_t *line)
+// killough 5/3/98: reformatted, cleaned up
+//
+static INT32 P_PointOnDivlineSide(fixed_t x, fixed_t y, const divline_t *line)
 {
-	fixed_t dx, dy, left, right;
-
-	if (!line->dx)
-	{
-		if (x <= line->x)
-			return line->dy > 0;
-
-		return line->dy < 0;
-	}
-	if (!line->dy)
-	{
-		if (y <= line->y)
-			return line->dx < 0;
-
-		return line->dx > 0;
-	}
-
-	dx = (x - line->x);
-	dy = (y - line->y);
-
-	// try to quickly decide by looking at sign bits
-	if ((line->dy ^ line->dx ^ dx ^ dy) & 0x80000000)
-	{
-		if ((line->dy ^ dx) & 0x80000000)
-			return 1; // left is negative
-		return 0;
-	}
-
-	left = FixedMul(line->dy>>8, dx>>8);
-	right = FixedMul(dy>>8, line->dx>>8);
-
-	if (right < left)
-		return 0; // front side
-	return 1; // back side
+	return
+		line->dx == 0 ? x <= line->x ? line->dy > 0 : line->dy < 0 :
+		line->dy == 0 ? y <= line->y ? line->dx < 0 : line->dx > 0 :
+		(line->dy ^ line->dx ^ (x -= line->x) ^ (y -= line->y)) < 0 ? (line->dy ^ x) < 0 :
+		(INT64)(y) * line->dx >= (INT64)(line->dy) * x;
 }
 
 //
 // P_MakeDivline
 //
-void P_MakeDivline(line_t *li, divline_t *dl)
+// ioanch 20151230: made const
+//
+void P_MakeDivline(const line_t *li, divline_t *dl)
 {
 	dl->x = li->v1->x;
 	dl->y = li->v1->y;
@@ -245,19 +182,22 @@ void P_MakeDivline(line_t *li, divline_t *dl)
 // Returns the fractional intercept point along the first divline.
 // This is only called by the addthings and addlines traversers.
 //
-fixed_t P_InterceptVector(divline_t *v2, divline_t *v1)
+// killough 5/3/98: reformatted, cleaned up
+// ioanch 20151229: added const
+//
+fixed_t P_InterceptVector(const divline_t *v2, const divline_t *v1)
 {
-	fixed_t frac, num, den;
-
-	den = FixedMul(v1->dy>>8, v2->dx) - FixedMul(v1->dx>>8, v2->dy);
+	// This is from PRBoom+ by Colin Phipps , GPL 2
+	// no precision/overflow problems
+	INT64 den = (INT64)(v1->dy) * v2->dx - (INT64)(v1->dx) * v2->dy;
+	den >>= 16;
 
 	if (!den)
+	{
 		return 0;
+	}
 
-	num = FixedMul((v1->x - v2->x)>>8, v1->dy) + FixedMul((v2->y - v1->y)>>8, v1->dx);
-	frac = FixedDiv(num, den);
-
-	return frac;
+	return (fixed_t)(((INT64)(v1->x - v2->x) * v1->dy - (INT64)(v1->y - v2->y) * v1->dx) / den);
 }
 
 static fixed_t dist2line(const line_t *ld, const fixed_t x, const fixed_t y)
@@ -1450,8 +1390,7 @@ boolean P_BlockThingsIterator(INT32 x, INT32 y, BlockItReturn_t (*func)(mobj_t *
 static intercept_t *intercepts = NULL;
 static intercept_t *intercept_p = NULL;
 
-divline_t trace;
-static boolean earlyout;
+divline_t g_trace;
 
 //SoM: 4/6/2000: Remove limit on intercepts.
 static void P_CheckIntercepts(void)
@@ -1489,34 +1428,36 @@ static BlockItReturn_t PIT_AddLineIntercepts(line_t *ld)
 	divline_t dl;
 
 	// avoid precision problems with two routines
-	if (trace.dx > FRACUNIT*16 || trace.dy > FRACUNIT*16
-		|| trace.dx < -FRACUNIT*16 || trace.dy < -FRACUNIT*16)
+	if (g_trace.dx > FRACUNIT*16 || g_trace.dy > FRACUNIT*16
+		|| g_trace.dx < -FRACUNIT*16 || g_trace.dy < -FRACUNIT*16)
 	{
 		// Hurdler: crash here with phobia when you shoot
 		// on the door next the stone bridge
 		// stack overflow???
-		s1 = P_PointOnDivlineSide(ld->v1->x, ld->v1->y, &trace);
-		s2 = P_PointOnDivlineSide(ld->v2->x, ld->v2->y, &trace);
+		s1 = P_PointOnDivlineSide(ld->v1->x, ld->v1->y, &g_trace);
+		s2 = P_PointOnDivlineSide(ld->v2->x, ld->v2->y, &g_trace);
 	}
 	else
 	{
-		s1 = P_PointOnLineSide(trace.x, trace.y, ld);
-		s2 = P_PointOnLineSide(trace.x+trace.dx, trace.y+trace.dy, ld);
+		s1 = P_PointOnLineSide(g_trace.x, g_trace.y, ld);
+		s2 = P_PointOnLineSide(g_trace.x+g_trace.dx, g_trace.y+g_trace.dy, ld);
 	}
 
 	if (s1 == s2)
-		return BMIT_CONTINUE; // Line isn't crossed.
+	{
+		// Line isn't crossed.
+		return BMIT_CONTINUE;
+	}
 
 	// Hit the line.
 	P_MakeDivline(ld, &dl);
-	frac = P_InterceptVector(&trace, &dl);
+	frac = P_InterceptVector(&g_trace, &dl);
 
 	if (frac < 0)
-		return BMIT_CONTINUE; // Behind source.
-
-	// Try to take an early out of the check.
-	if (earlyout && frac < FRACUNIT && !ld->backsector)
-		return BMIT_ABORT; // stop checking
+	{
+		// behind source
+		return BMIT_CONTINUE;
+	}
 
 	P_CheckIntercepts();
 
@@ -1533,53 +1474,110 @@ static BlockItReturn_t PIT_AddLineIntercepts(line_t *ld)
 //
 static BlockItReturn_t PIT_AddThingIntercepts(mobj_t *thing)
 {
-	fixed_t px1, py1, px2, py2, frac;
-	INT32 s1, s2;
-	boolean tracepositive;
-	divline_t dl;
+	size_t numfronts = 0;
+	divline_t line;
+	INT32 i;
 
-	tracepositive = (trace.dx ^ trace.dy) > 0;
+	// [RH] Don't check a corner to corner crossection for hit.
+	// Instead, check against the actual bounding box
 
-	// check a corner to corner crossection for hit
-	if (tracepositive)
+	// There's probably a smarter way to determine which two sides
+	// of the thing face the trace than by trying all four sides...
+	for (i = 0; i < 4; ++i)
 	{
-		px1 = thing->x - thing->radius;
-		py1 = thing->y + thing->radius;
+		switch (i)
+		{
+			case 0: // Top edge
+			{
+				line.y = thing->y + thing->radius;
+				if (g_trace.y < line.y)
+				{
+					continue;
+				}
+				line.x = thing->x + thing->radius;
+				line.dx = thing->radius * -2;
+				line.dy = 0;
+				break;
+			}
 
-		px2 = thing->x + thing->radius;
-		py2 = thing->y - thing->radius;
+			case 1: // Right edge
+			{
+				line.x = thing->x + thing->radius;
+				if (g_trace.x < line.x)
+				{
+					continue;
+				}
+				line.y = thing->y - thing->radius;
+				line.dx = 0;
+				line.dy = thing->radius * 2;
+				break;
+			}
+
+			case 2: // Bottom edge
+			{
+				line.y = thing->y - thing->radius;
+				if (g_trace.y > line.y)
+				{
+					continue;
+				}
+				line.x = thing->x - thing->radius;
+				line.dx = thing->radius * 2;
+				line.dy = 0;
+				break;
+			}
+
+			case 3: // Left edge
+			{
+				line.x = thing->x - thing->radius;
+				if (g_trace.x > line.x)
+				{
+					continue;
+				}
+				line.y = thing->y + thing->radius;
+				line.dx = 0;
+				line.dy = thing->radius * -2;
+				break;
+			}
+		}
+
+		// Check if this side is facing the trace origin
+		numfronts++;
+
+		// If it is, see if the trace crosses it
+		if (P_PointOnDivlineSide(line.x, line.y, &g_trace) !=
+			P_PointOnDivlineSide(line.x + line.dx, line.y + line.dy, &g_trace))
+		{
+			// It's a hit
+			fixed_t frac = P_InterceptVector(&g_trace, &line);
+
+			if (frac < 0)
+			{
+				// behind source
+				continue;
+			}
+
+			P_CheckIntercepts();
+
+			intercept_p->frac = frac;
+			intercept_p->isaline = false;
+			intercept_p->d.thing = thing;
+			intercept_p++;
+
+			return BMIT_CONTINUE; // Keep going.
+		}
 	}
-	else
+
+	// If none of the sides was facing the trace, then the trace
+	// must have started inside the box, so add it as an intercept.
+	if (numfronts == 0)
 	{
-		px1 = thing->x - thing->radius;
-		py1 = thing->y - thing->radius;
+		P_CheckIntercepts();
 
-		px2 = thing->x + thing->radius;
-		py2 = thing->y + thing->radius;
+		intercept_p->frac = 0;
+		intercept_p->isaline = false;
+		intercept_p->d.thing = thing;
+		intercept_p++;
 	}
-
-	s1 = P_PointOnDivlineSide(px1, py1, &trace);
-	s2 = P_PointOnDivlineSide(px2, py2, &trace);
-
-	if (s1 == s2)
-		return BMIT_CONTINUE; // Line isn't crossed.
-
-	dl.x = px1;
-	dl.y = py1;
-	dl.dx = px2 - px1;
-	dl.dy = py2 - py1;
-
-	frac = P_InterceptVector(&trace, &dl);
-
-	if (frac < 0)
-		return BMIT_CONTINUE; // Behind source.
-
-	P_CheckIntercepts();
-
-	intercept_p->frac = frac;
-	intercept_p->isaline = false;
-	intercept_p->d.thing = thing;
-	intercept_p++;
 
 	return BMIT_CONTINUE; // Keep going.
 }
@@ -1589,17 +1587,20 @@ static BlockItReturn_t PIT_AddThingIntercepts(mobj_t *thing)
 // Returns true if the traverser function returns true
 // for all lines.
 //
+// killough 5/3/98: reformatted, cleaned up
+//
 static boolean P_TraverseIntercepts(traverser_t func, fixed_t maxfrac)
 {
 	size_t count;
-	fixed_t dist;
-	intercept_t *scan, *in = NULL;
+	intercept_t *in = NULL;
 
 	count = intercept_p - intercepts;
 
 	while (count--)
 	{
-		dist = INT32_MAX;
+		fixed_t dist = INT32_MAX;
+		intercept_t *scan = NULL;
+
 		for (scan = intercepts; scan < intercept_p; scan++)
 		{
 			if (scan->frac < dist)
@@ -1610,12 +1611,19 @@ static boolean P_TraverseIntercepts(traverser_t func, fixed_t maxfrac)
 		}
 
 		if (dist > maxfrac)
+		{
 			return true; // Checked everything in range.
+		}
 
-		if (!func(in))
-			return false; // Don't bother going farther.
+		if (in)
+		{
+			if (!func(in))
+			{
+				return false; // Don't bother going farther.
+			}
 
-		in->frac = INT32_MAX;
+			in->frac = INT32_MAX;
+		}
 	}
 
 	return true; // Everything was traversed.
@@ -1632,10 +1640,8 @@ boolean P_PathTraverse(fixed_t px1, fixed_t py1, fixed_t px2, fixed_t py2,
 	INT32 flags, traverser_t trav)
 {
 	fixed_t xt1, yt1, xt2, yt2;
-	fixed_t xstep, ystep, partial, xintercept, yintercept;
+	fixed_t xstep, ystep, partialx, partialy, xintercept, yintercept;
 	INT32 mapx, mapy, mapxstep, mapystep, count;
-
-	earlyout = flags & PT_EARLYOUT;
 
 	validcount++;
 	intercept_p = intercepts;
@@ -1646,10 +1652,10 @@ boolean P_PathTraverse(fixed_t px1, fixed_t py1, fixed_t px2, fixed_t py2,
 	if (((py1 - bmaporgy) & (MAPBLOCKSIZE-1)) == 0)
 		py1 += FRACUNIT; // Don't side exactly on a line.
 
-	trace.x = px1;
-	trace.y = py1;
-	trace.dx = px2 - px1;
-	trace.dy = py2 - py1;
+	g_trace.x = px1;
+	g_trace.y = py1;
+	g_trace.dx = px2 - px1;
+	g_trace.dy = py2 - py1;
 
 	px1 -= bmaporgx;
 	py1 -= bmaporgy;
@@ -1664,43 +1670,64 @@ boolean P_PathTraverse(fixed_t px1, fixed_t py1, fixed_t px2, fixed_t py2,
 	if (xt2 > xt1)
 	{
 		mapxstep = 1;
-		partial = FRACUNIT - ((px1>>MAPBTOFRAC) & FRACMASK);
+		partialx = FRACUNIT - ((px1>>MAPBTOFRAC) & FRACMASK);
 		ystep = FixedDiv(py2 - py1, abs(px2 - px1));
 	}
 	else if (xt2 < xt1)
 	{
 		mapxstep = -1;
-		partial = (px1>>MAPBTOFRAC) & FRACMASK;
+		partialx = (px1>>MAPBTOFRAC) & FRACMASK;
 		ystep = FixedDiv(py2 - py1, abs(px2 - px1));
 	}
 	else
 	{
 		mapxstep = 0;
-		partial = FRACUNIT;
+		partialx = FRACUNIT;
 		ystep = 256*FRACUNIT;
 	}
 
-	yintercept = (py1>>MAPBTOFRAC) + FixedMul(partial, ystep);
+	yintercept = (py1>>MAPBTOFRAC) + FixedMul(partialx, ystep);
 
 	if (yt2 > yt1)
 	{
 		mapystep = 1;
-		partial = FRACUNIT - ((py1>>MAPBTOFRAC) & FRACMASK);
+		partialy = FRACUNIT - ((py1>>MAPBTOFRAC) & FRACMASK);
 		xstep = FixedDiv(px2 - px1, abs(py2 - py1));
 	}
 	else if (yt2 < yt1)
 	{
 		mapystep = -1;
-		partial = (py1>>MAPBTOFRAC) & FRACMASK;
+		partialy = (py1>>MAPBTOFRAC) & FRACMASK;
 		xstep = FixedDiv(px2 - px1, abs(py2 - py1));
 	}
 	else
 	{
 		mapystep = 0;
-		partial = FRACUNIT;
+		partialy = FRACUNIT;
 		xstep = 256*FRACUNIT;
 	}
-	xintercept = (px1>>MAPBTOFRAC) + FixedMul(partial, xstep);
+	xintercept = (px1>>MAPBTOFRAC) + FixedMul(partialy, xstep);
+
+	// [RH] Fix for traces that pass only through blockmap corners. In that case,
+	// xintercept and yintercept can both be set ahead of mapx and mapy, so the
+	// for loop would never advance anywhere.
+
+	if (abs(xstep) == FRACUNIT && abs(ystep) == FRACUNIT)
+	{
+		if (ystep < 0)
+		{
+			partialx = FRACUNIT - partialx;
+		}
+		if (xstep < 0)
+		{
+			partialy = FRACUNIT - partialy;
+		}
+		if (partialx == partialy)
+		{
+			xintercept = xt1 << FRACBITS;
+			yintercept = yt1 << FRACBITS;
+		}
+	}
 
 	// Step through map blocks.
 	// Count is present to prevent a round off error
@@ -1708,30 +1735,89 @@ boolean P_PathTraverse(fixed_t px1, fixed_t py1, fixed_t px2, fixed_t py2,
 	mapx = xt1;
 	mapy = yt1;
 
-	for (count = 0; count < 64; count++)
+	for (count = 0; count < 100; count++)
 	{
 		if (flags & PT_ADDLINES)
-			if (!P_BlockLinesIterator(mapx, mapy, PIT_AddLineIntercepts))
-				return false; // early out
+		{
+			P_BlockLinesIterator(mapx, mapy, PIT_AddLineIntercepts);
+		}
 
 		if (flags & PT_ADDTHINGS)
-			if (!P_BlockThingsIterator(mapx, mapy, PIT_AddThingIntercepts))
-				return false; // early out
-
-		if (mapx == xt2 && mapy == yt2)
-			break;
-
-		if ((yintercept >> FRACBITS) == mapy)
 		{
-			yintercept += ystep;
-			mapx += mapxstep;
+			P_BlockThingsIterator(mapx, mapy, PIT_AddThingIntercepts);
 		}
-		else if ((xintercept >> FRACBITS) == mapx)
+
+		// both coordinates reached the end, so end the traversing.
+		if ((mapxstep | mapystep) == 0)
 		{
-			xintercept += xstep;
-			mapy += mapystep;
+			break;
+		}
+
+		// [RH] Handle corner cases properly instead of pretending they don't exist.
+		switch ( (((yintercept >> FRACBITS) == mapy) << 1) | ((xintercept >> FRACBITS) == mapx) )
+		{
+			case 0: // neither xintercept nor yintercept match!
+			{
+				count = 100; // Stop traversing, because somebody screwed up.
+				break;
+			}
+			case 1: // xintercept matches
+			{
+				xintercept += xstep;
+				mapy += mapystep;
+				if (mapy == yt2)
+				{
+					mapystep = 0;
+				}
+				break;
+			}
+			case 2: // yintercept matches
+			{
+				yintercept += ystep;
+				mapx += mapxstep;
+				if (mapx == xt2)
+				{
+					mapxstep = 0;
+				}
+				break;
+			}
+			case 3: // xintercept and yintercept both match
+			{
+				// The trace is exiting a block through its corner. Not only does the block
+				// being entered need to be checked (which will happen when this loop
+				// continues), but the other two blocks adjacent to the corner also need to
+				// be checked.
+				if (flags & PT_ADDLINES)
+				{
+					P_BlockLinesIterator(mapx + mapxstep, mapy, PIT_AddLineIntercepts);
+					P_BlockLinesIterator(mapx, mapy + mapystep, PIT_AddLineIntercepts);
+				}
+
+				if (flags & PT_ADDTHINGS)
+				{
+					P_BlockThingsIterator(mapx + mapxstep, mapy, PIT_AddThingIntercepts);
+					P_BlockThingsIterator(mapx, mapy + mapystep, PIT_AddThingIntercepts);
+				}
+
+				xintercept += xstep;
+				yintercept += ystep;
+
+				mapx += mapxstep;
+				mapy += mapystep;
+
+				if (mapx == xt2)
+				{
+					mapxstep = 0;
+				}
+				if (mapy == yt2)
+				{
+					mapystep = 0;
+				}
+				break;
+			}
 		}
 	}
+
 	// Go through the sorted list
 	return P_TraverseIntercepts(trav, FRACUNIT);
 }
