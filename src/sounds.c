@@ -1276,12 +1276,12 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"dmgb4",  false, 255, 8, -1, NULL, 0,         -1,  -1, LUMPERROR, "Damaged"},
 
   // Powerup sounds
-  {"bpwrua",  false, 64, 0, -1, NULL, 0,         -1,  -1, LUMPERROR, "Super Power"},
-  {"bpwrub",  false, 64, 0, -1, NULL, 0,         -1,  -1, LUMPERROR, "Mega Barrier"},
-  {"bpwruc",  false, 64, 0, -1, NULL, 0,         -1,  -1, LUMPERROR, "Bumper Restock"},
-  {"bpwrud",  false, 64, 0, -1, NULL, 0,         -1,  -1, LUMPERROR, "Rhythm Badge"},
-  {"bpwrue",  false, 64, 0, -1, NULL, 0,         -1,  -1, LUMPERROR, "Super Flicky"},
-  {"bpwruf",  false, 64, 0, -1, NULL, 0,         -1,  -1, LUMPERROR, "Bonus"},
+  {"bpwrua",  false, 255, 16, -1, NULL, 0,         -1,  -1, LUMPERROR, "Super Power"},
+  {"bpwrub",  false, 255, 16, -1, NULL, 0,         -1,  -1, LUMPERROR, "Mega Barrier"},
+  {"bpwruc",  false, 255, 16, -1, NULL, 0,         -1,  -1, LUMPERROR, "Bumper Restock"},
+  {"bpwrud",  false, 255, 16, -1, NULL, 0,         -1,  -1, LUMPERROR, "Rhythm Badge"},
+  {"bpwrue",  false, 255, 16, -1, NULL, 0,         -1,  -1, LUMPERROR, "Super Flicky"},
+  {"bpwruf",  false, 255, 16, -1, NULL, 0,         -1,  -1, LUMPERROR, "Bonus"},
 
   // SRB2Kart - Engine sounds
   // Engine class A
