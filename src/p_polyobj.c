@@ -763,7 +763,7 @@ static void Polyobj_removeFromBlockmap(polyobj_t *po)
 // Movement functions
 
 // A version of Lee's routine from p_maputl.c that accepts an mobj pointer
-// argument instead of using tm.thing. Returns true if the line isn't contacted
+// argument instead of using g_tm.thing. Returns true if the line isn't contacted
 // and false otherwise.
 static inline boolean Polyobj_untouched(line_t *ld, mobj_t *mo)
 {
@@ -807,10 +807,10 @@ static void Polyobj_pushThing(polyobj_t *po, line_t *line, mobj_t *mo)
 	if (po->damage && (mo->flags & MF_SHOOTABLE))
 	{
 		P_CheckPosition(mo, mo->x + momx, mo->y + momy, NULL);
-		mo->floorz = tm.floorz;
-		mo->ceilingz = tm.ceilingz;
-		mo->floorrover = tm.floorrover;
-		mo->ceilingrover = tm.ceilingrover;
+		mo->floorz = g_tm.floorz;
+		mo->ceilingz = g_tm.ceilingz;
+		mo->floorrover = g_tm.floorrover;
+		mo->ceilingrover = g_tm.ceilingrover;
 	}
 }
 
@@ -2199,7 +2199,7 @@ boolean EV_DoPolyObjWaypoint(polywaypointdata_t *pwdata)
 	R_CreateInterpolator_Polyobj(&th->thinker, po);
 	// T_PolyObjWaypoint is the only polyobject movement
 	// that can adjust z, so we add these ones too.
-	R_CreateInterpolator_SectorPlane(&th->thinker, po->lines[0]->backsector, false); 
+	R_CreateInterpolator_SectorPlane(&th->thinker, po->lines[0]->backsector, false);
 	R_CreateInterpolator_SectorPlane(&th->thinker, po->lines[0]->backsector, true);
 
 	// Most other polyobject functions handle children by recursively

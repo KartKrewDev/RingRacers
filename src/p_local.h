@@ -398,7 +398,7 @@ struct tm_t
 	fixed_t maxstep;
 };
 
-extern tm_t tm;
+extern tm_t g_tm;
 
 void P_RestoreTMStruct(tm_t tmrestore);
 

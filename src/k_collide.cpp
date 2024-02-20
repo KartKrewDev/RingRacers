@@ -793,12 +793,12 @@ boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 	{
 		// Counter desyncs
 		/*mobj_t *oldthing = thing;
-		mobj_t *oldtm.thing = tm.thing;
+		mobj_t *oldg_tm.thing = g_tm.thing;
 
-		P_Thrust(tm.thing, R_PointToAngle2(thing->x, thing->y, tm.thing->x, tm.thing->y), 4*thing->scale);
+		P_Thrust(g_tm.thing, R_PointToAngle2(thing->x, thing->y, g_tm.thing->x, g_tm.thing->y), 4*thing->scale);
 
 		thing = oldthing;
-		P_SetTarget(&tm.thing, oldtm.thing);*/
+		P_SetTarget(&g_tm.thing, oldg_tm.thing);*/
 
 		if (K_KartBouncing(t2, t1->target) == true)
 		{
