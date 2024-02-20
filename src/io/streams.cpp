@@ -157,14 +157,12 @@ void FileStream::close()
 
 	if (std::fclose((std::FILE*)(this->file_)) != 0)
 	{
+		// The FILE is now invalid even though fclose failed.
+		// There is nothing we can do but abandon the pointer.
+		file_ = nullptr;
 		int err = errno;
 		throw make_exception_from_errno(err);
 	}
 
-	if (std::ferror((std::FILE*)(this->file_)) != 0)
-	{
-		int err = errno;
-		throw make_exception_from_errno(err);
-	}
 	file_ = nullptr;
 }
