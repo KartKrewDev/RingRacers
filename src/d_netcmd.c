@@ -3864,10 +3864,6 @@ void RemoveAdminPlayer(INT32 playernum)
 
 static void Command_Verify_f(void)
 {
-	char buf[8]; // Should be plenty
-	char *temp;
-	INT32 playernum;
-
 	if (client)
 	{
 		CONS_Printf(M_GetText("Only the server can use this.\n"));
@@ -3886,16 +3882,13 @@ static void Command_Verify_f(void)
 		return;
 	}
 
-	strlcpy(buf, COM_Argv(1), sizeof (buf));
+	INT32 playernum = atoi(COM_Argv(1));
 
-	playernum = atoi(buf);
-
-	temp = buf;
-
-	WRITEUINT8(temp, playernum);
-
-	if (playeringame[playernum])
+	if (playernum >= 0 && playernum < MAXPLAYERS && playeringame[playernum])
+	{
+		UINT8 buf[1] = {playernum};
 		SendNetXCmd(XD_VERIFIED, buf, 1);
+	}
 }
 
 static void Got_Verification(const UINT8 **cp, INT32 playernum)
@@ -3920,10 +3913,6 @@ static void Got_Verification(const UINT8 **cp, INT32 playernum)
 
 static void Command_RemoveAdmin_f(void)
 {
-	char buf[8]; // Should be plenty
-	char *temp;
-	INT32 playernum;
-
 	if (client)
 	{
 		CONS_Printf(M_GetText("Only the server can use this.\n"));
@@ -3936,16 +3925,13 @@ static void Command_RemoveAdmin_f(void)
 		return;
 	}
 
-	strlcpy(buf, COM_Argv(1), sizeof(buf));
+	INT32 playernum = atoi(COM_Argv(1));
 
-	playernum = atoi(buf);
-
-	temp = buf;
-
-	WRITEUINT8(temp, playernum);
-
-	if (playeringame[playernum])
+	if (playernum >= 0 && playernum < MAXPLAYERS && playeringame[playernum])
+	{
+		UINT8 buf[1] = {playernum};
 		SendNetXCmd(XD_DEMOTED, buf, 1);
+	}
 }
 
 static void Got_Removal(const UINT8 **cp, INT32 playernum)
