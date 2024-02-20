@@ -11,6 +11,7 @@
 
 #include <cstdio>
 #include <cerrno>
+#include <cstring>
 #include <stdexcept>
 
 template class srb2::io::ZlibInputStream<srb2::io::SpanStream>;
