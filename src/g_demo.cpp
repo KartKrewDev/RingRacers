@@ -11,6 +11,8 @@
 /// \file  g_demo.c
 /// \brief Demo recording and playback
 
+#include <algorithm>
+
 #include "doomdef.h"
 #include "console.h"
 #include "d_main.h"
@@ -266,7 +268,7 @@ void G_ReadDemoExtraData(void)
 				break;
 
 			case DXD_PST_LEFT:
-				CL_RemovePlayer(p, 0);
+				CL_RemovePlayer(p, static_cast<kickreason_t>(0));
 				break;
 			}
 
@@ -353,9 +355,9 @@ void G_ReadDemoExtraData(void)
 			{
 				rng = READUINT32(demobuf.p);
 
-				if (P_GetRandSeed(i) != rng)
+				if (P_GetRandSeed(static_cast<pr_class_t>(i)) != rng)
 				{
-					P_SetRandSeed(i, rng);
+					P_SetRandSeed(static_cast<pr_class_t>(i), rng);
 
 					if (demosynced)
 						CONS_Alert(CONS_WARNING, "Demo playback has desynced (RNG class %d)!\n", i);
@@ -494,7 +496,7 @@ void G_WriteDemoExtraData(void)
 
 			for (i = 0; i < PRNUMSYNCED; i++)
 			{
-				WRITEUINT32(demobuf.p, P_GetRandSeed(i));
+				WRITEUINT32(demobuf.p, P_GetRandSeed(static_cast<pr_class_t>(i)));
 			}
 		}
 	}
@@ -706,7 +708,7 @@ void G_GhostAddHit(INT32 playernum, mobj_t *victim)
 		return;
 	ghostext[playernum].flags |= EZT_HIT;
 	ghostext[playernum].hits++;
-	ghostext[playernum].hitlist = Z_Realloc(ghostext[playernum].hitlist, ghostext[playernum].hits * sizeof(mobj_t *), PU_LEVEL, NULL);
+	ghostext[playernum].hitlist = static_cast<mobj_t**>(Z_Realloc(ghostext[playernum].hitlist, ghostext[playernum].hits * sizeof(mobj_t *), PU_LEVEL, NULL));
 	P_SetTarget(ghostext[playernum].hitlist + (ghostext[playernum].hits-1), victim);
 }
 
@@ -1400,7 +1402,7 @@ readghosttic:
 				}
 			}
 			if (xziptic & EZT_SPRITE)
-				g->mo->sprite = READUINT16(g->p);
+				g->mo->sprite = static_cast<spritenum_t>(READUINT16(g->p));
 			if (xziptic & EZT_ITEMDATA)
 				g->p += 1 + 1 + 4; // itemtype, itemamount, health
 			if (xziptic & EZT_STATDATA)
@@ -1467,7 +1469,7 @@ readghosttic:
 					follow->sprite2 = READUINT8(g->p);
 				else
 					follow->sprite2 = 0;
-				follow->sprite = READUINT16(g->p);
+				follow->sprite = static_cast<spritenum_t>(READUINT16(g->p));
 				follow->frame = (READUINT8(g->p)) | (g->mo->frame & FF_TRANSMASK);
 				follow->angle = g->mo->angle;
 				follow->color = READUINT16(g->p);
@@ -1582,7 +1584,7 @@ void G_StoreRewindInfo(void)
 		return;
 	timetolog = 8;
 
-	info = Z_Calloc(sizeof(rewindinfo_t), PU_STATIC, NULL);
+	info = static_cast<rewindinfo_t*>(Z_Calloc(sizeof(rewindinfo_t), PU_STATIC, NULL));
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -1907,7 +1909,7 @@ static UINT8 G_CheckDemoExtraFiles(savebuffer_t *info, boolean quick)
 	{
 		if (!toomany)
 		{
-			strlcpy(filename, (char *)info->p, min(P_SaveBufferRemaining(info) + 1, sizeof filename));
+			strlcpy(filename, (char *)info->p, std::min(P_SaveBufferRemaining(info) + 1, sizeof filename));
 		}
 		SKIPSTRINGN(info->p, P_SaveBufferRemaining(info));
 
@@ -2011,7 +2013,7 @@ static democharlist_t *G_LoadDemoSkins(savebuffer_t *info, UINT8 *worknumskins, 
 	if (!(*worknumskins))
 		return NULL;
 
-	skinlist = Z_Calloc(sizeof(democharlist_t) * (*worknumskins), PU_STATIC, NULL);
+	skinlist = static_cast<democharlist_t*>(Z_Calloc(sizeof(democharlist_t) * (*worknumskins), PU_STATIC, NULL));
 	if (!skinlist)
 	{
 		I_Error("G_LoadDemoSkins: Insufficient memory to allocate list");
@@ -2181,7 +2183,7 @@ void G_BeginRecording(void)
 
 	for (i = 0; i < PRNUMSYNCED; i++)
 	{
-		WRITEUINT32(demobuf.p, P_GetInitSeed(i));
+		WRITEUINT32(demobuf.p, P_GetInitSeed(static_cast<pr_class_t>(i)));
 	}
 
 	// Reserved for extrainfo location from start of file
@@ -2584,7 +2586,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 		goto badreplay;
 	}
 	info.p += 4; // "PLAY"
-	READSTRINGN(info.p, mapname, min(P_SaveBufferRemaining(&info), sizeof(mapname)));
+	READSTRINGN(info.p, mapname, std::min(P_SaveBufferRemaining(&info), sizeof(mapname)));
 	pdemo->map = G_MapNumber(mapname);
 	info.p += 16; // mapmd5
 
@@ -2602,7 +2604,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 		goto badreplay;
 	}
 
-	READSTRINGN(info.p, gtname, min(P_SaveBufferRemaining(&info), sizeof(gtname))); // gametype
+	READSTRINGN(info.p, gtname, std::min(P_SaveBufferRemaining(&info), sizeof(gtname))); // gametype
 	pdemo->gametype = G_GetGametypeByName(gtname);
 
 	if (P_SaveBufferRemaining(&info) < 1)
@@ -2774,7 +2776,7 @@ void G_DoPlayDemo(const char *defdemoname)
 	if (defdemoname == NULL)
 	{
 		demobuf.p = demobuf.buffer;
-		pdemoname = ZZ_Alloc(1); // Easier than adding checks for this everywhere it's freed
+		pdemoname = static_cast<char*>(ZZ_Alloc(1)); // Easier than adding checks for this everywhere it's freed
 	}
 	else
 	{
@@ -2787,7 +2789,7 @@ void G_DoPlayDemo(const char *defdemoname)
 			n--;
 		if (n != defdemoname)
 			n++;
-		pdemoname = ZZ_Alloc(strlen(n)+1);
+		pdemoname = static_cast<char*>(ZZ_Alloc(strlen(n)+1));
 		strcpy(pdemoname,n);
 
 		M_SetPlaybackMenuPointer();
@@ -3065,7 +3067,7 @@ void G_DoPlayDemo(const char *defdemoname)
 		grandprixinfo.gp = true;
 		grandprixinfo.gamespeed = READUINT8(demobuf.p);
 		grandprixinfo.masterbots = READUINT8(demobuf.p) != 0;
-		grandprixinfo.eventmode = READUINT8(demobuf.p);
+		grandprixinfo.eventmode = static_cast<gpEvent_e>(READUINT8(demobuf.p));
 	}
 
 	// Sigh ... it's an empty demo.
@@ -3236,7 +3238,7 @@ void G_DoPlayDemo(const char *defdemoname)
 		clientpowerlevels[p][gametype == GT_BATTLE ? PWRLV_BATTLE : PWRLV_RACE] = READUINT16(demobuf.p);
 
 		// Followitem
-		players[p].followitem = READUINT32(demobuf.p);
+		players[p].followitem = static_cast<mobjtype_t>(READUINT32(demobuf.p));
 
 		// GP
 		players[p].lives = READSINT8(demobuf.p);
@@ -3262,7 +3264,7 @@ void G_DoPlayDemo(const char *defdemoname)
 	if (demo.attract == DEMO_ATTRACT_TITLE)
 	{
 		splitscreen = M_RandomKey(6)-1;
-		splitscreen = min(min(3, numslots-1), splitscreen); // Bias toward 1p and 4p views
+		splitscreen = std::min<int>(std::min(3, numslots-1), splitscreen); // Bias toward 1p and 4p views
 
 		for (p = 0; p <= splitscreen; p++)
 			G_ResetView(p+1, slots[M_RandomKey(numslots)], false);
@@ -3272,7 +3274,7 @@ void G_DoPlayDemo(const char *defdemoname)
 
 	for (i = 0; i < PRNUMSYNCED; i++)
 	{
-		P_SetRandSeed(i, randseed[i]);
+		P_SetRandSeed(static_cast<pr_class_t>(i), randseed[i]);
 	}
 
 	G_InitNew((demoflags & DF_ENCORE) != 0, gamemap, true, true); // Doesn't matter whether you reset or not here, given changes to resetplayer.
@@ -3484,7 +3486,7 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	}
 
 
-	gh = Z_Calloc(sizeof(demoghost), PU_LEVEL, NULL);
+	gh = static_cast<demoghost*>(Z_Calloc(sizeof(demoghost), PU_LEVEL, NULL));
 	gh->next = ghosts;
 	gh->buffer = buffer->buffer;
 	M_Memcpy(gh->checksum, md5, 16);
@@ -3651,7 +3653,7 @@ staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer)
 
 	M_Memcpy(temp.name, p, 16);
 
-	ret = Z_Malloc(sizeof(staffbrief_t), PU_STATIC, NULL);
+	ret = static_cast<staffbrief_t*>(Z_Malloc(sizeof(staffbrief_t), PU_STATIC, NULL));
 	if (ret)
 		M_Memcpy(ret, &temp, sizeof(staffbrief_t));
 
@@ -3732,7 +3734,7 @@ static void G_StopTimingDemo(void)
 	if (timedemo_csv)
 	{
 		FILE *f;
-		const char *csvpath = va("%s"PATHSEP"%s", srb2home, "timedemo.csv");
+		const char *csvpath = va("%s" PATHSEP "%s", srb2home, "timedemo.csv");
 		const char *header = "id,demoname,seconds,avgfps,leveltime,demotime,framecount,ticrate,rendermode,vidmode,vidwidth,vidheight,procbits\n";
 		const char *rowformat = "\"%s\",\"%s\",%f,%f,%u,%d,%u,%u,%u,%u,%u,%u,%u\n";
 		boolean headerrow = !FIL_FileExists(csvpath);
@@ -3836,7 +3838,7 @@ boolean G_CheckDemoStatus(void)
 	if (!demo.recording)
 		return false;
 
-	if (modeattacking || demo.savemode != DSM_NOTSAVING)
+	if (modeattacking || demo.savemode != demovars_s::DSM_NOTSAVING)
 	{
 		if (demobuf.p)
 		{
@@ -3923,13 +3925,13 @@ void G_SaveDemo(void)
 #endif
 
 	if (FIL_WriteFile(demoname, demobuf.buffer, demobuf.p - demobuf.buffer)) // finally output the file.
-		demo.savemode = DSM_SAVED;
+		demo.savemode = demovars_s::DSM_SAVED;
 	Z_Free(demobuf.buffer);
 	demo.recording = false;
 
 	if (!modeattacking)
 	{
-		if (demo.savemode == DSM_SAVED)
+		if (demo.savemode == demovars_s::DSM_SAVED)
 		{
 			CONS_Printf(M_GetText("Demo %s recorded\n"), demoname);
 			if (gamedata->eversavedreplay == false)
@@ -3957,13 +3959,13 @@ boolean G_DemoTitleResponder(event_t *ev)
 	// Only ESC and non-keyboard keys abort connection
 	if (ch == KEY_ESCAPE)
 	{
-		demo.savemode = (cv_recordmultiplayerdemos.value == 2) ? DSM_WILLAUTOSAVE : DSM_NOTSAVING;
+		demo.savemode = (cv_recordmultiplayerdemos.value == 2) ? demovars_s::DSM_WILLAUTOSAVE : demovars_s::DSM_NOTSAVING;
 		return true;
 	}
 
 	if (ch == KEY_ENTER || ch >= NUMKEYS)
 	{
-		demo.savemode = DSM_WILLSAVE;
+		demo.savemode = demovars_s::DSM_WILLSAVE;
 		return true;
 	}
 
@@ -4001,7 +4003,7 @@ boolean G_CheckDemoTitleEntry(void)
 	if (!G_PlayerInputDown(0, gc_b, 0) && !G_PlayerInputDown(0, gc_x, 0))
 		return false;
 
-	demo.savemode = DSM_TITLEENTRY;
+	demo.savemode = demovars_s::DSM_TITLEENTRY;
 
 	return true;
 }
