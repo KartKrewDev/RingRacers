@@ -30,7 +30,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	hu_stuff.c
 	i_time.c
 	i_video_common.cpp
-	y_inter.c
+	y_inter.cpp
 	st_stuff.c
 	m_aatree.c
 	m_anigif.c
