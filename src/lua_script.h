@@ -63,7 +63,7 @@ void LUA_UnArchive(savebuffer_t *save, boolean network);
 int LUA_PushGlobals(lua_State *L, const char *word);
 int LUA_WriteGlobals(lua_State *L, const char *word);
 
-void Got_Luacmd(UINT8 **cp, INT32 playernum); // lua_consolelib.c
+void Got_Luacmd(const UINT8 **cp, INT32 playernum); // lua_consolelib.c
 void LUA_CVarChanged(void *cvar); // lua_consolelib.c
 int Lua_optoption(lua_State *L, int narg,
 	const char *def, const char *const lst[]);
