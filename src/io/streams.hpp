@@ -616,9 +616,7 @@ public:
 
 	StreamSize read(tcb::span<std::byte> buffer);
 	StreamSize write(tcb::span<const std::byte> buffer);
-
-	// not bothering with seeking for now -- apparently 64-bit file positions is not available in ansi c
-	// StreamSize seek(SeekFrom seek_from, StreamOffset offset);
+	StreamSize seek(SeekFrom seek_from, StreamOffset offset);
 
 	void close();
 };
