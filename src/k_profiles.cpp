@@ -34,11 +34,11 @@ INT32 PR_GetNumProfiles(void)
 	return numprofiles;
 }
 
-static void PR_GenerateProfileKeys(profile_t *new)
+static void PR_GenerateProfileKeys(profile_t *newprofile)
 {
 	static uint8_t seed[32];
 	csprng(seed, 32);
-	crypto_eddsa_key_pair(new->secret_key, new->public_key, seed);
+	crypto_eddsa_key_pair(newprofile->secret_key, newprofile->public_key, seed);
 }
 
 profile_t* PR_MakeProfile(
@@ -49,52 +49,52 @@ profile_t* PR_MakeProfile(
 	INT32 controlarray[num_gamecontrols][MAXINPUTMAPPING],
 	boolean guest)
 {
-	profile_t *new = Z_Calloc(sizeof(profile_t), PU_STATIC, NULL);
+	profile_t *newprofile = static_cast<profile_t*>(Z_Calloc(sizeof(profile_t), PU_STATIC, NULL));
 
-	new->version = PROFILEVER;
+	newprofile->version = PROFILEVER;
 
-	memset(new->secret_key, 0, sizeof(new->secret_key));
-	memset(new->public_key, 0, sizeof(new->public_key));
+	memset(newprofile->secret_key, 0, sizeof(newprofile->secret_key));
+	memset(newprofile->public_key, 0, sizeof(newprofile->public_key));
 
 	if (!guest)
 	{
-		PR_GenerateProfileKeys(new);
+		PR_GenerateProfileKeys(newprofile);
 	}
 
-	strcpy(new->profilename, prname);
-	new->profilename[sizeof new->profilename - 1] = '\0';
+	strcpy(newprofile->profilename, prname);
+	newprofile->profilename[sizeof newprofile->profilename - 1] = '\0';
 
-	strcpy(new->skinname, sname);
-	strcpy(new->playername, pname);
-	new->color = col;
+	strcpy(newprofile->skinname, sname);
+	strcpy(newprofile->playername, pname);
+	newprofile->color = col;
 
-	strcpy(new->follower, fname);
-	new->followercolor = fcol;
-	new->kickstartaccel = false;
-	new->autoroulette = false;
-	new->litesteer = true;
-	new->rumble = true;
+	strcpy(newprofile->follower, fname);
+	newprofile->followercolor = fcol;
+	newprofile->kickstartaccel = false;
+	newprofile->autoroulette = false;
+	newprofile->litesteer = true;
+	newprofile->rumble = true;
 
 	// Copy from gamecontrol directly as we'll be setting controls up directly in the profile.
-	memcpy(new->controls, controlarray, sizeof(new->controls));
+	memcpy(newprofile->controls, controlarray, sizeof(newprofile->controls));
 
-	new->wins = 0;
+	newprofile->wins = 0;
 
-	return new;
+	return newprofile;
 }
 
 profile_t* PR_MakeProfileFromPlayer(const char *prname, const char *pname, const char *sname, const UINT16 col, const char *fname, UINT16 fcol, UINT8 pnum)
 {
 	// Generate profile using the player's gamecontrol, as we set them directly when making profiles from menus.
-	profile_t *new = PR_MakeProfile(prname, pname, sname, col, fname, fcol, gamecontrol[pnum], false);
+	profile_t *newprofile = PR_MakeProfile(prname, pname, sname, col, fname, fcol, gamecontrol[pnum], false);
 
 	// Player bound cvars:
-	new->kickstartaccel = cv_kickstartaccel[pnum].value;
-	new->autoroulette = cv_autoroulette[pnum].value;
-	new->litesteer = cv_litesteer[pnum].value;
-	new->rumble = cv_rumble[pnum].value;
+	newprofile->kickstartaccel = cv_kickstartaccel[pnum].value;
+	newprofile->autoroulette = cv_autoroulette[pnum].value;
+	newprofile->litesteer = cv_litesteer[pnum].value;
+	newprofile->rumble = cv_rumble[pnum].value;
 
-	return new;
+	return newprofile;
 }
 
 boolean PR_AddProfile(profile_t *p)
@@ -352,7 +352,7 @@ void PR_LoadProfiles(void)
 
 	for (i = 1; i < numprofiles; i++)
 	{
-		profilesList[i] = Z_Calloc(sizeof(profile_t), PU_STATIC, NULL);
+		profilesList[i] = static_cast<profile_t*>(Z_Calloc(sizeof(profile_t), PU_STATIC, NULL));
 
 		// Version. (We always update this on successful forward step)
 		profilesList[i]->version = PROFILEVER;
@@ -383,7 +383,7 @@ void PR_LoadProfiles(void)
 			; // Valid, even outside the bounds
 		}
 		else if (profilesList[i]->color >= numskincolors
-			|| K_ColorUsable(profilesList[i]->color, false, false) == false)
+			|| K_ColorUsable(static_cast<skincolornum_t>(profilesList[i]->color), false, false) == false)
 		{
 			profilesList[i]->color = PROFILEDEFAULTCOLOR;
 		}
@@ -399,7 +399,7 @@ void PR_LoadProfiles(void)
 			; // Valid, even outside the bounds
 		}
 		else if (profilesList[i]->followercolor >= numskincolors
-			|| K_ColorUsable(profilesList[i]->followercolor, true, false) == false)
+			|| K_ColorUsable(static_cast<skincolornum_t>(profilesList[i]->followercolor), true, false) == false)
 		{
 			profilesList[i]->followercolor = PROFILEDEFAULTFOLLOWERCOLOR;
 		}
@@ -422,7 +422,7 @@ void PR_LoadProfiles(void)
 		if (version < 7)
 		{
 			profilesList[i]->autoroulette = false;
-			
+
 		}
 		else
 		{
@@ -433,7 +433,7 @@ void PR_LoadProfiles(void)
 		if (version < 8)
 		{
 			profilesList[i]->litesteer = true;
-			
+
 		}
 		else
 		{
@@ -638,7 +638,7 @@ char *GetPrettyRRID(const unsigned char *bin, boolean brief)
 		rrid_buf[i*2]   = "0123456789ABCDEF"[bin[i] >> 4];
 		rrid_buf[i*2+1] = "0123456789ABCDEF"[bin[i] & 0x0F];
 	}
-	
+
 	rrid_buf[len*2] = '\0';
 
 	return rrid_buf;
