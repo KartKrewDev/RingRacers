@@ -2082,7 +2082,7 @@ void F_EndTextPrompt(boolean forceexec, boolean noexec)
 	// \todo net safety, maybe loop all player thinkers?
 	if ((promptwasactive || forceexec) && !noexec && promptpostexectag)
 	{
-		if (tm.thing) // edge case where starting an invalid prompt immediately on level load will make P_MapStart fail
+		if (g_tm.thing) // edge case where starting an invalid prompt immediately on level load will make P_MapStart fail
 			P_LinedefExecute(promptpostexectag, promptmo, NULL);
 		else
 		{

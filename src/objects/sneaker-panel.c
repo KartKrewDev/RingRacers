@@ -49,13 +49,13 @@ void Obj_SneakerPanelSetup(mobj_t *mobj, mapthing_t *mthing)
 	{
 		if (P_IsObjectFlipped(mobj))
 		{
-			if (tm.ceilingz <= mobj->z + mobj->height)
-				mobj->standingslope = tm.ceilingslope;
+			if (g_tm.ceilingz <= mobj->z + mobj->height)
+				mobj->standingslope = g_tm.ceilingslope;
 		}
 		else
 		{
-			if (mobj->z <= tm.floorz)
-				mobj->standingslope = tm.floorslope;
+			if (mobj->z <= g_tm.floorz)
+				mobj->standingslope = g_tm.floorslope;
 		}
 	}
 
