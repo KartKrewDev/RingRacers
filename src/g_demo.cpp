@@ -12,6 +12,10 @@
 /// \brief Demo recording and playback
 
 #include <algorithm>
+#include <cstddef>
+
+#include <tcb/span.hpp>
+#include <nlohmann/json.hpp>
 
 #include "doomdef.h"
 #include "console.h"
@@ -158,6 +162,7 @@ static ticcmd_t oldcmd[MAXPLAYERS];
 
 // Below consts are only used for demo extrainfo sections
 #define DW_STANDING 0x00
+#define DW_STANDING2 0x01
 
 // For time attack ghosts
 #define GZT_XYZ    0x01
@@ -2326,36 +2331,26 @@ void G_BeginRecording(void)
 	}
 }
 
-void G_WriteStanding(UINT8 ranking, char *name, INT32 skinnum, UINT16 color, UINT32 val)
+void srb2::write_current_demo_standings(const srb2::StandingsJson& standings)
 {
-	char temp[16];
+	using namespace srb2;
+	using json = nlohmann::json;
 
-	if (demoinfo_p && *(UINT32 *)demoinfo_p == 0)
-	{
-		WRITEUINT8(demobuf.p, DEMOMARKER); // add the demo end marker
-		*(UINT32 *)demoinfo_p = demobuf.p - demobuf.buffer;
-	}
+	// TODO populate standings data
 
-	WRITEUINT8(demobuf.p, DW_STANDING);
-	WRITEUINT8(demobuf.p, ranking);
+	std::vector<uint8_t> ubjson = json::to_ubjson(standings);
+	uint32_t bytes = ubjson.size();
 
-	// Name
-	memset(temp, 0, 16);
-	strncpy(temp, name, 16);
-	M_Memcpy(demobuf.p,temp,16);
-	demobuf.p += 16;
+	WRITEUINT8(demobuf.p, DW_STANDING2);
 
-	// Skin
-	WRITEUINT8(demobuf.p, skinnum);
+	WRITEUINT32(demobuf.p, bytes);
+	WRITEMEM(demobuf.p, ubjson.data(), bytes);
+}
 
-	// Color
-	memset(temp, 0, 16);
-	strncpy(temp, skincolors[color].name, 16);
-	M_Memcpy(demobuf.p,temp,16);
-	demobuf.p += 16;
-
-	// Score/time/whatever
-	WRITEUINT32(demobuf.p, val);
+void srb2::write_current_demo_end_marker()
+{
+	WRITEUINT8(demobuf.p, DEMOMARKER); // add the demo end marker
+	*(UINT32 *)demoinfo_p = demobuf.p - demobuf.buffer;
 }
 
 void G_SetDemoTime(UINT32 ptime, UINT32 plap)
@@ -2510,6 +2505,52 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	return c;
 }
 
+static bool load_ubjson_standing(menudemo_t* pdemo, tcb::span<std::byte> slice, tcb::span<democharlist_t> demoskins)
+{
+	using namespace srb2;
+	using json = nlohmann::json;
+
+	StandingsJson js;
+	try
+	{
+		js = json::from_ubjson(slice).template get<StandingsJson>();
+	}
+	catch (...)
+	{
+		return false;
+	}
+
+	size_t toread = std::min<size_t>(js.standings.size(), MAXPLAYERS);
+	for (size_t i = 0; i < toread; i++)
+	{
+		StandingJson& jsstanding = js.standings[i];
+		auto& memstanding = pdemo->standings[i];
+		memstanding.ranking = jsstanding.ranking;
+		strlcpy(memstanding.name, jsstanding.name.c_str(), 17);
+		if (jsstanding.demoskin >= demoskins.size())
+		{
+			memstanding.skin = demoskins[0].mapping;
+		}
+		else
+		{
+			memstanding.skin = demoskins[jsstanding.demoskin].mapping;
+		}
+		memstanding.color = SKINCOLOR_NONE;
+		for (size_t j = 0; j < numskincolors; j++)
+		{
+			skincolor_t& skincolor = skincolors[j];
+			if (jsstanding.skincolor == skincolor.name)
+			{
+				memstanding.color = j;
+				break;
+			}
+		}
+		memstanding.timeorscore = jsstanding.timeorscore;
+	}
+
+	return true;
+}
+
 void G_LoadDemoInfo(menudemo_t *pdemo)
 {
 	savebuffer_t info = {0};
@@ -2518,6 +2559,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 	UINT16 pdemoflags;
 	democharlist_t *skinlist = NULL;
 	UINT16 pdemoversion, count;
+	UINT16 legacystandingplayercount;
 	char mapname[MAXMAPLUMPNAME],gtname[MAXGAMETYPELENGTH];
 	INT32 i;
 
@@ -2670,44 +2712,95 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 		pdemo->gp = true;
 
 	// Read standings!
-	count = 0;
+	legacystandingplayercount = 0;
 
 	info.p = extrainfo_p;
 
-	while (P_SaveBufferRemaining(&info) >= 1+1+16+1+16+4 &&
-			READUINT8(info.p) == DW_STANDING) // Assume standings are always first in the extrainfo
+	while (P_SaveBufferRemaining(&info) > 1)
 	{
-		char temp[16];
+		UINT8 extrainfotag = READUINT8(info.p);
 
-		pdemo->standings[count].ranking = READUINT8(info.p);
-
-		// Name
-		M_Memcpy(pdemo->standings[count].name, info.p, 16);
-		info.p += 16;
-
-		// Skin
-		skinid = READUINT8(info.p);
-		if (skinid > worknumskins)
-			skinid = 0;
-		pdemo->standings[count].skin = skinlist[skinid].mapping;
-
-		// Color
-		M_Memcpy(temp,info.p,16);
-		info.p += 16;
-		for (i = 0; i < numskincolors; i++)
-			if (!stricmp(skincolors[i].name,temp))				// SRB2kart
+		switch (extrainfotag)
+		{
+			case DW_STANDING:
 			{
-				pdemo->standings[count].color = i;
+				// This is the only extrainfo tag that is not length prefixed. All others must be.
+				constexpr size_t kLegacyStandingSize = 1+16+1+16+4;
+				if (P_SaveBufferRemaining(&info) < kLegacyStandingSize)
+				{
+					goto corrupt;
+				}
+				if (legacystandingplayercount >= MAXPLAYERS)
+				{
+					info.p += kLegacyStandingSize;
+					break; // switch
+				}
+				char temp[16];
+
+				pdemo->standings[legacystandingplayercount].ranking = READUINT8(info.p);
+
+				// Name
+				M_Memcpy(pdemo->standings[legacystandingplayercount].name, info.p, 16);
+				info.p += 16;
+
+				// Skin
+				skinid = READUINT8(info.p);
+				if (skinid > worknumskins)
+					skinid = 0;
+				pdemo->standings[legacystandingplayercount].skin = skinlist[skinid].mapping;
+
+				// Color
+				M_Memcpy(temp,info.p,16);
+				info.p += 16;
+				for (i = 0; i < numskincolors; i++)
+					if (!stricmp(skincolors[i].name,temp))				// SRB2kart
+					{
+						pdemo->standings[legacystandingplayercount].color = i;
+						break;
+					}
+
+				// Score/time/whatever
+				pdemo->standings[legacystandingplayercount].timeorscore = READUINT32(info.p);
+
+				legacystandingplayercount++;
 				break;
 			}
-
-		// Score/time/whatever
-		pdemo->standings[count].timeorscore = READUINT32(info.p);
-
-		count++;
-
-		if (count >= MAXPLAYERS)
-			break; //@TODO still cycle through the rest of these if extra demo data is ever used
+			case DW_STANDING2:
+			{
+				if (P_SaveBufferRemaining(&info) < 4)
+				{
+					goto corrupt;
+				}
+				UINT32 size = READUINT32(info.p);
+				if (P_SaveBufferRemaining(&info) < size)
+				{
+					goto corrupt;
+				}
+				tcb::span<std::byte> slice = tcb::as_writable_bytes(tcb::span(info.p, size));
+				tcb::span<democharlist_t> demoskins {skinlist, worknumskins};
+				info.p += size;
+				if (!load_ubjson_standing(pdemo, slice, demoskins))
+				{
+					goto corrupt;
+				}
+				break;
+			}
+			default:
+			{
+				// Gracefully ignore other extrainfo tags by skipping their data
+				if (P_SaveBufferRemaining(&info) < 4)
+				{
+					goto corrupt;
+				}
+				UINT32 size = READUINT32(info.p);
+				if (P_SaveBufferRemaining(&info) < size)
+				{
+					goto corrupt;
+				}
+				info.p += size;
+				break;
+			}
+		}
 	}
 
 	if (P_SaveBufferRemaining(&info) == 0)

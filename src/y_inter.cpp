@@ -196,6 +196,8 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 
 	data.isduel = (numplayersingame <= 2);
 
+	srb2::StandingsJson standings {};
+
 	for (j = 0; j < numplayersingame; j++)
 	{
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -240,13 +242,13 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 
 			if (demo.recording)
 			{
-				G_WriteStanding(
-					data.pos[data.numplayers],
-					player_names[i],
-					data.character[data.numplayers],
-					data.color[data.numplayers],
-					data.val[data.numplayers]
-				);
+				srb2::StandingJson standing {};
+				standing.ranking = data.pos[data.numplayers];
+				standing.name = std::string(player_names[i]);
+				standing.demoskin = data.character[data.numplayers];
+				standing.skincolor = std::string(skincolors[data.color[data.numplayers]].name);
+				standing.timeorscore = data.val[data.numplayers];
+				standings.standings.emplace_back(std::move(standing));
 			}
 
 			if (data.val[data.numplayers] == (UINT32_MAX-1))
@@ -282,6 +284,12 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 #undef strtime
 
 		data.numplayers++;
+	}
+
+	if (demo.recording)
+	{
+		srb2::write_current_demo_end_marker();
+		srb2::write_current_demo_standings(standings);
 	}
 
 	if (getmainplayer == true)
