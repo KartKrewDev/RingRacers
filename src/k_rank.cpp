@@ -483,6 +483,7 @@ gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 	const INT32 ringsWeight = 50;
 	const INT32 total = positionWeight + pointsWeight + lapsWeight + prisonsWeight + ringsWeight;
 	const INT32 continuesPenalty = 20;
+	const INT32 continuesPenaltyStart = 2; // Make 0 lives lost add points instead of being neutral.
 
 	INT32 ours = 0;
 	fixed_t percent = 0;
@@ -514,7 +515,7 @@ gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 		ours += (rankData->rings * ringsWeight) / rankData->totalRings;
 	}
 
-	ours -= rankData->continuesUsed * continuesPenalty;
+	ours -= (rankData->continuesUsed - continuesPenaltyStart) * continuesPenalty;
 
 	percent = FixedDiv(ours, total);
 
