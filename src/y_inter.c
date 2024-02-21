@@ -2132,7 +2132,9 @@ void Y_StartIntermission(void)
 	G_SetGamestate(GS_INTERMISSION);
 
 	if (musiccountdown == 0)
-		Music_Play("intermission");
+	{
+		Music_PlayIntermission();
+	}
 
 	S_ShowMusicCredit(); // Always call
 

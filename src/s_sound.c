@@ -1217,7 +1217,7 @@ void S_AttemptToRestoreMusic(void)
 			}
 			// FALLTHRU
 		case GS_INTERMISSION:
-			Music_Play("intermission");
+			Music_PlayIntermission();
 			break;
 		case GS_CEREMONY:
 			Music_Play("level");
