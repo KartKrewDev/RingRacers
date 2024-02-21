@@ -121,8 +121,10 @@ void srb2::save_ng_gamedata()
 		map.visited.encore = mapheaderinfo[i]->records.mapvisited & MV_ENCORE;
 		map.visited.spbattack = mapheaderinfo[i]->records.mapvisited & MV_SPBATTACK;
 		map.visited.mysticmelody = mapheaderinfo[i]->records.mapvisited & MV_MYSTICMELODY;
-		map.stats.besttime = mapheaderinfo[i]->records.time;
-		map.stats.bestlap = mapheaderinfo[i]->records.lap;
+		map.stats.timeattack.besttime = mapheaderinfo[i]->records.time;
+		map.stats.timeattack.bestlap = mapheaderinfo[i]->records.lap;
+		map.stats.spbattack.besttime = 0;
+		map.stats.spbattack.bestlap = 0;
 		ng.maps[lumpname] = map;
 	}
 	for (auto unloadedmap = unloadedmapheaders; unloadedmap; unloadedmap = unloadedmap->next)
@@ -134,8 +136,10 @@ void srb2::save_ng_gamedata()
 		map.visited.encore = unloadedmap->records.mapvisited & MV_ENCORE;
 		map.visited.spbattack = unloadedmap->records.mapvisited & MV_SPBATTACK;
 		map.visited.mysticmelody = unloadedmap->records.mapvisited & MV_MYSTICMELODY;
-		map.stats.besttime = unloadedmap->records.time;
-		map.stats.bestlap = unloadedmap->records.lap;
+		map.stats.timeattack.besttime = unloadedmap->records.time;
+		map.stats.timeattack.bestlap = unloadedmap->records.lap;
+		map.stats.spbattack.besttime = 0;
+		map.stats.spbattack.bestlap = 0;
 		ng.maps[lumpname] = map;
 	}
 	for (int i = 0; i < gamedata->numspraycans; i++)
@@ -499,8 +503,8 @@ void srb2::load_ng_gamedata()
 		dummyrecord.mapvisited |= mappair.second.visited.encore ? MV_ENCORE : 0;
 		dummyrecord.mapvisited |= mappair.second.visited.spbattack ? MV_SPBATTACK : 0;
 		dummyrecord.mapvisited |= mappair.second.visited.mysticmelody ? MV_SPBATTACK : 0;
-		dummyrecord.lap = mappair.second.stats.bestlap;
-		dummyrecord.time = mappair.second.stats.besttime;
+		dummyrecord.time = mappair.second.stats.timeattack.besttime;
+		dummyrecord.lap = mappair.second.stats.timeattack.bestlap;
 
 		if (mapnum < nummapheaders && mapheaderinfo[mapnum])
 		{

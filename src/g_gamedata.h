@@ -126,12 +126,28 @@ struct GamedataMapVisitedJson final
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(GamedataMapVisitedJson, visited, beaten, encore, spbattack, mysticmelody)
 };
 
-struct GamedataMapStatsJson final
+struct GamedataMapStatsTimeAttackJson final
 {
 	uint32_t besttime;
 	uint32_t bestlap;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(GamedataMapStatsJson, besttime, bestlap)
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(GamedataMapStatsTimeAttackJson, besttime, bestlap)
+};
+
+struct GamedataMapStatsSpbAttackJson final
+{
+	uint32_t besttime;
+	uint32_t bestlap;
+
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(GamedataMapStatsSpbAttackJson, besttime, bestlap)
+};
+
+struct GamedataMapStatsJson final
+{
+	GamedataMapStatsTimeAttackJson timeattack;
+	GamedataMapStatsSpbAttackJson spbattack;
+
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(GamedataMapStatsJson, timeattack, spbattack)
 };
 
 struct GamedataMapJson final
