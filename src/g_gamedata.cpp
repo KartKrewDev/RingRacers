@@ -597,7 +597,7 @@ void srb2::load_ng_gamedata()
 			std::string cupname = std::string(cup->name);
 			if (cupname == cuppair.first)
 			{
-				continue;
+				break;
 			}
 		}
 
