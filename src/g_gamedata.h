@@ -59,9 +59,9 @@ struct GamedataChallengeKeysJson final
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(GamedataChallengeKeysJson, pendingkeyrounds, pendingkeyroundoffset, keyspending, chaokeys)
 };
 
-struct GamedataGonerJson final
+struct GamedataMilestonesJson final
 {
-	uint32_t level;
+	uint32_t gonerlevel;
 	bool everloadedaddon;
 	bool everfinishcredits;
 	bool eversavedreplay;
@@ -72,8 +72,8 @@ struct GamedataGonerJson final
 	bool enteredtutorialchallenge;
 
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
-		GamedataGonerJson,
-		level,
+		GamedataMilestonesJson,
+		gonerlevel,
 		everloadedaddon,
 		everfinishcredits,
 		eversavedreplay,
@@ -190,7 +190,7 @@ struct GamedataJson final
 	GamedataRingsJson rings;
 	GamedataRoundsJson rounds;
 	GamedataChallengeKeysJson challengekeys;
-	GamedataGonerJson goner;
+	GamedataMilestonesJson milestones;
 	GamedataPrisonEggPickupsJson prisons;
 	uint32_t tafolderhash;
 	std::vector<bool> emblems;
@@ -210,7 +210,7 @@ struct GamedataJson final
 		rings,
 		rounds,
 		challengekeys,
-		goner,
+		milestones,
 		prisons,
 		tafolderhash,
 		emblems,
