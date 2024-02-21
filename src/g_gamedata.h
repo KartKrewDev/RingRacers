@@ -161,7 +161,7 @@ struct GamedataMapJson final
 struct GamedataSprayCanJson final
 {
 	std::string map;
-	uint16_t color;
+	std::string color;
 
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(GamedataSprayCanJson, map, color)
 };

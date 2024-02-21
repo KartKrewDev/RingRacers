@@ -148,11 +148,24 @@ void srb2::save_ng_gamedata()
 
 		candata_t* can = &gamedata->spraycans[i];
 
-		spraycan.color = can->col;
+		if (can->col >= numskincolors)
+		{
+			continue;
+		}
+		spraycan.color = std::string(skincolors[can->col].name);
+
+		if (can->map == NEXTMAP_INVALID)
+		{
+			spraycan.map = "";
+			ng.spraycans.emplace_back(std::move(spraycan));
+			continue;
+		}
+
 		if (can->map >= nummapheaders)
 		{
 			continue;
 		}
+
 		mapheader_t* mapheader = mapheaderinfo[can->map];
 		if (!mapheader)
 		{
@@ -548,21 +561,42 @@ void srb2::load_ng_gamedata()
 			(gamedata->numspraycans * sizeof(candata_t)),
 			PU_STATIC, NULL));
 
-		for (size_t i = 0; i < js.spraycans.size(); i++)
+		for (size_t i = 0; i < gamedata->numspraycans; i++)
 		{
 			auto& can = js.spraycans[i];
-			gamedata->spraycans[i].col = can.color;
-			gamedata->spraycans[i].map = NEXTMAP_INVALID;
-			if (can.map.empty())
+
+			// Find the skin color index for the name
+			bool foundcolor = false;
+			for (size_t j = 0; j < numskincolors; j++)
 			{
+				if (can.color == skincolors[j].name)
+				{
+					gamedata->spraycans[i].col = j;
+					foundcolor = true;
+					break;
+				}
+			}
+			if (!foundcolor)
+			{
+				// Invalid color name? Ignore the spraycan
+				gamedata->numspraycans -= 1;
+				i -= 1;
 				continue;
 			}
-			UINT16 mapnum = G_MapNumber(can.map.c_str());
-			if (mapnum < 0)
+
+			gamedata->spraycans[i].map = NEXTMAP_INVALID;
+
+			UINT16 mapnum = NEXTMAP_INVALID;
+			if (!can.map.empty())
 			{
-				continue;
+				mapnum = G_MapNumber(can.map.c_str());
 			}
 			gamedata->spraycans[i].map = mapnum;
+			if (mapnum >= nummapheaders)
+			{
+				// Can has not been grabbed on any map, this is intentional.
+				continue;
+			}
 
 			if (gamedata->gotspraycans != i)
 			{
