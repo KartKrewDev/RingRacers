@@ -286,7 +286,7 @@ boolean M_ProfileControlsInputs(INT32 ch)
 	if (M_MenuExtraPressed(pid))
 	{
 		if (M_ClearCurrentControl())
-			S_StartSound(NULL, sfx_s3k66);
+			S_StartSound(NULL, sfx_monch);
 		M_SetMenuDelay(pid);
 		return true;
 	}
