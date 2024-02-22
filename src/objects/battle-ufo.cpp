@@ -112,6 +112,11 @@ public:
 			return;
 		}
 
+		if (exitcountdown)
+		{
+			return;
+		}
+
 		Fixed ofs = mobjinfo[MT_BATTLEUFO].height / 4;
 
 		Spawner* spawner = next(g_battleufo.previousId);
@@ -145,7 +150,7 @@ void Obj_BattleUFOThink(mobj_t *mobj)
 		ufo->spawn_beam();
 	}
 
-	if ((ufo->extravalue1 % (TICRATE*2)) == 0)
+	if (!exitcountdown && (ufo->extravalue1 % (TICRATE*2)) == 0)
 	{
 		S_StartSound(ufo, sfx_s3ka5);
 	}
