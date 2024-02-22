@@ -176,14 +176,10 @@ void M_HandleProfileControls(void)
 		optionsmenu.controlscroll = 0;
 
 	// bindings, cancel if timer is depleted.
-	if (optionsmenu.bindcontrol)
+	if (optionsmenu.bindtimer)
 	{
-		optionsmenu.bindtimer--;
-		if (!optionsmenu.bindtimer)
-		{
-			optionsmenu.bindcontrol = 0;		// we've gone past the max, just stop.
-		}
-
+		if (optionsmenu.bindtimer > 0)
+			optionsmenu.bindtimer--;
 	}
 	else if (currentMenu->menuitems[itemOn].mvar1) // check if we're on a valid menu option...
 	{
@@ -308,7 +304,7 @@ boolean M_ProfileControlsInputs(INT32 ch)
 		return true;
 	}
 
-	if (optionsmenu.bindcontrol)
+	if (optionsmenu.bindtimer)
 		return true;	// Eat all inputs there. We'll use a stupid hack in M_Responder instead.
 
 	//SetDeviceOnPress();	// Update device constantly so that we don't stay stuck with otpions saying a device is unavailable just because we're mapping multiple devices...
@@ -347,25 +343,11 @@ boolean M_ProfileControlsInputs(INT32 ch)
 
 void M_ProfileSetControl(INT32 ch)
 {
-	INT32 controln = currentMenu->menuitems[itemOn].mvar1;
-	UINT8 i;
 	(void) ch;
 
-	optionsmenu.bindcontrol = 1;	// Default to control #1
-
-	for (i = 0; i < MAXINPUTMAPPING; i++)
-	{
-		if (optionsmenu.tempcontrols[controln][i] == KEY_NULL)
-		{
-			optionsmenu.bindcontrol = i+1;
-			break;
-		}
-	}
-
-	// If we could find a null key to map into, map there.
-	// Otherwise, this will stay at 1 which means we'll overwrite the first bound control.
-
 	optionsmenu.bindtimer = TICRATE*5;
+	memset(optionsmenu.bindinputs, 0, sizeof optionsmenu.bindinputs);
+	G_ResetAllDeviceGameKeyDown();
 }
 
 static void M_ProfileDefaultControlsResponse(INT32 ch)
@@ -417,157 +399,61 @@ void M_ProfileClearControls(INT32 ch)
 #define KEYHOLDFOR 1
 void M_MapProfileControl(event_t *ev)
 {
-	INT32 c = 0;
-	UINT8 n = optionsmenu.bindcontrol-1;					// # of input to bind
-	INT32 controln = currentMenu->menuitems[itemOn].mvar1;	// gc_
-	UINT8 where = n;										// By default, we'll save the bind where we're supposed to map.
-	INT32 i;
+	if (ev->type == ev_keydown && ev->data2) // ignore repeating keys
+		return;
+
+	if (optionsmenu.bindtimer > TICRATE*5 - 9) // grace period after entering the bind dialog
+		return;
+
 	INT32 *DeviceGameKeyDownArray = G_GetDeviceGameKeyDownArray(ev->device);
 
 	if (!DeviceGameKeyDownArray)
 		return;
 
-	//SetDeviceOnPress();	// Update player gamepad assignments
-
-	// Only consider keydown and joystick events to make sure we ignore ev_mouse and other events
-	// See also G_MapEventsToControls
-	switch (ev->type)
+	// Find every held button.
+	boolean noinput = true;
+	for (INT32 c = 1; c < NUMINPUTS; ++c)
 	{
-		case ev_keydown:
-			if (ev->data1 < NUMINPUTS)
-			{
-				c = ev->data1;
-			}
-#ifdef PARANOIA
-			else
-			{
-				CONS_Debug(DBG_GAMELOGIC, "Bad downkey input %d\n", ev->data1);
-			}
-#endif
-			break;
-		case ev_gamepad_axis:
-			if (ev->data1 >= JOYAXES)
-			{
-#ifdef PARANOIA
-				CONS_Debug(DBG_GAMELOGIC, "Bad gamepad axis event %d\n", ev->data1);
-#endif
-				return;
-			}
-			else
-			{
-				INT32 deadzone = deadzone = (JOYAXISRANGE * cv_deadzone[0].value) / FRACUNIT; // TODO how properly account for different deadzone cvars for different devices
-				boolean responsivelr = ((ev->data2 != INT32_MAX) && (abs(ev->data2) >= deadzone));
-				boolean responsiveud = ((ev->data3 != INT32_MAX) && (abs(ev->data3) >= deadzone));
+		if (DeviceGameKeyDownArray[c] < 3*JOYAXISRANGE/4)
+			continue;
 
-				i = ev->data1;
+		noinput = false;
 
-				if (i >= JOYANALOGS)
-				{
-					// The trigger axes are handled specially.
-					i -= JOYANALOGS;
-
-					if (responsivelr)
-					{
-						c = KEY_AXIS1 + (JOYANALOGS * 4) + (i * 2);
-					}
-					else if (responsiveud)
-					{
-						c = KEY_AXIS1 + (JOYANALOGS * 4) + (i * 2) + 1;
-					}
-				}
-				else
-				{
-					// Actual analog sticks
-
-					// Only consider unambiguous assignment.
-					if (responsivelr == responsiveud)
-						return;
-
-					if (responsivelr)
-					{
-						if (ev->data2 < 0)
-						{
-							// Left
-							c = KEY_AXIS1 + (i * 4);
-						}
-						else
-						{
-							// Right
-							c = KEY_AXIS1 + (i * 4) + 1;
-						}
-					}
-					else //if (responsiveud)
-					{
-						if (ev->data3 < 0)
-						{
-							// Up
-							c = KEY_AXIS1 + (i * 4) + 2;
-						}
-						else
-						{
-							// Down
-							c = KEY_AXIS1 + (i * 4) + 3;
-						}
-					}
-				}
-			}
-			break;
-		default:
-			return;
-	}
-
-	// safety result
-	if (!c)
-		return;
-
-	// Set menu delay regardless of what we're doing to avoid stupid stuff.
-	M_SetMenuDelay(0);
-
-	// Reset this input so (keyboard keys at least) are not
-	// buffered and caught by menucmd.
-	DeviceGameKeyDownArray[c] = 0;
-
-	// Check if this particular key (c) is already bound in any slot.
-	// If that's the case, simply do nothing.
-	for (i = 0; i < MAXINPUTMAPPING; i++)
-	{
-		if (optionsmenu.tempcontrols[controln][i] == c)
+		for (UINT8 i = 0; i < MAXINPUTMAPPING; ++i)
 		{
-			optionsmenu.bindcontrol = 0;
-			return;
-		}
-	}
+			// If this key is already bound, don't bind it again.
+			if (optionsmenu.bindinputs[i] == c)
+				break;
 
-	// With the way we do things, there cannot be instances of 'gaps' within the controls, so we don't need to pretend like we need to handle that.
-	// Unless of course you tamper with the cfg file, but then it's *your* fault, not mine.
-
-	optionsmenu.tempcontrols[controln][where] = c;
-	optionsmenu.bindcontrol = 0;	// not binding anymore
-
-	// If possible, reapply the profile...
-	// 19/05/22: Actually, no, don't do that, it just fucks everything up in too many cases.
-
-	/*
-	if (gamestate == GS_MENU)	// In menu? Apply this to P1, no questions asked.
-	{
-		// Apply the profile's properties to player 1 but keep the last profile cv to p1's ACTUAL profile to revert once we exit.
-		UINT8 lastp = cv_lastprofile[0].value;
-		PR_ApplyProfile(PR_GetProfileNum(optionsmenu.profile), 0);
-		CV_StealthSetValue(&cv_lastprofile[0], lastp);
-	}
-	else	// != GS_MENU
-	{
-		// ONLY apply the profile if it's in use by anything currently.
-		UINT8 pnum = PR_GetProfileNum(optionsmenu.profile);
-		for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-		{
-			if (cv_lastprofile[i].value == pnum)
+			// Find the first available slot.
+			if (!optionsmenu.bindinputs[i])
 			{
-				PR_ApplyProfile(pnum, i);
+				optionsmenu.bindinputs[i] = c;
 				break;
 			}
 		}
 	}
-	*/
+
+	if (noinput)
+	{
+		{
+			// You can hold a button before entering this
+			// dialog, then buffer a keyup without pressing
+			// anything else. If this happens, don't wipe the
+			// binds, just ignore it.
+			const UINT8 zero[sizeof optionsmenu.bindinputs] = {0};
+			if (!memcmp(zero, optionsmenu.bindinputs, sizeof zero))
+				return;
+		}
+
+		INT32 controln = currentMenu->menuitems[itemOn].mvar1;
+		memcpy(&optionsmenu.tempcontrols[controln], optionsmenu.bindinputs, sizeof optionsmenu.bindinputs);
+		optionsmenu.bindtimer = 0;
+
+		// Set menu delay regardless of what we're doing to avoid stupid stuff.
+		M_SetMenuDelay(0);
+	}
+	else
+		optionsmenu.bindtimer = -1; // prevent skip countdown
 }
 #undef KEYHOLDFOR

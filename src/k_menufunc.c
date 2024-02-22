@@ -308,7 +308,7 @@ boolean M_Responder(event_t *ev)
 
 	// Profiles: Control mapping.
 	// We take the WHOLE EVENT for convenience.
-	if (optionsmenu.bindcontrol)
+	if (optionsmenu.bindtimer)
 	{
 		M_MapProfileControl(ev);
 		return true;	// eat events.

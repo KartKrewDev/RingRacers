@@ -4854,6 +4854,23 @@ static void M_DrawBindBen(INT32 x, INT32 y, INT32 scroll_remaining)
 	V_DrawMappedPatch(x-30, y, 0, W_CachePatchName(va("PR_BIN%c%c", state, '1' + frame), PU_CACHE), aquamap);
 }
 
+static void M_DrawBindMediumString(INT32 y, INT32 flags, const char *string)
+{
+	fixed_t w = V_StringScaledWidth(FRACUNIT, FRACUNIT, FRACUNIT, flags, MED_FONT, string);
+	fixed_t x = BASEVIDWIDTH/2 * FRACUNIT - w/2;
+	V_DrawStringScaled(
+		x,
+		y * FRACUNIT,
+		FRACUNIT,
+		FRACUNIT,
+		FRACUNIT,
+		flags,
+		NULL,
+		MED_FONT,
+		string
+	);
+}
+
 // the control stuff.
 // Dear god.
 void M_DrawProfileControls(void)
@@ -5158,7 +5175,7 @@ void M_DrawProfileControls(void)
 	}
 
 	// Overlay for control binding
-	if (optionsmenu.bindcontrol)
+	if (optionsmenu.bindtimer)
 	{
 		INT16 reversetimer = TICRATE*5 - optionsmenu.bindtimer;
 		INT32 fade = reversetimer;
@@ -5167,14 +5184,33 @@ void M_DrawProfileControls(void)
 		if (fade > 9)
 			fade = 9;
 
-		ypos = (BASEVIDHEIGHT/2) - 4 +16*(9 - fade);
+		ypos = (BASEVIDHEIGHT/2) - 20 +16*(9 - fade);
 		V_DrawFadeScreen(31, fade);
 
-		M_DrawTextBox((BASEVIDWIDTH/2) - (120), ypos - 12, 30, 4);
+		M_DrawTextBox((BASEVIDWIDTH/2) - (120), ypos - 12, 30, 8);
 
-		V_DrawCenteredString(BASEVIDWIDTH/2, ypos, 0, va("Press key #%d for control", optionsmenu.bindcontrol));
-		V_DrawCenteredString(BASEVIDWIDTH/2, ypos +10, 0, va("\"%s\"", currentMenu->menuitems[itemOn].text));
-		V_DrawCenteredString(BASEVIDWIDTH/2, ypos +20, highlightflags, va("(WAIT %d SECONDS TO SKIP)", optionsmenu.bindtimer/TICRATE));
+		V_DrawCenteredMenuString(BASEVIDWIDTH/2, ypos, V_GRAYMAP, "Hold and release inputs for");
+		V_DrawCenteredMenuString(BASEVIDWIDTH/2, ypos + 10, V_GRAYMAP, va("\"%s\"", currentMenu->menuitems[itemOn].text));
+
+		if (optionsmenu.bindtimer > 0)
+		{
+			M_DrawBindMediumString(
+				ypos + 50,
+				highlightflags,
+				va("(WAIT %d SEC TO SKIP)", (optionsmenu.bindtimer + (TICRATE-1)) / TICRATE)
+			);
+		}
+		else
+		{
+			for (i = 0; i < MAXINPUTMAPPING && optionsmenu.bindinputs[i]; ++i)
+			{
+				M_DrawBindMediumString(
+					ypos + (2 + i)*10,
+					highlightflags | V_FORCEUPPERCASE,
+					G_KeynumToString(optionsmenu.bindinputs[i])
+				);
+			}
+		}
 	}
 }
 

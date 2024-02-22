@@ -225,7 +225,6 @@ void M_ProfileDeviceSelect(INT32 choice)
 
 	// While we're here, setup the incoming controls menu to reset the scroll & bind status:
 	optionsmenu.controlscroll = 0;
-	optionsmenu.bindcontrol = 0;
 	optionsmenu.bindtimer = 0;
 
 	optionsmenu.lastkey = 0;

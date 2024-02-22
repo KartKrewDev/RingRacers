@@ -997,10 +997,10 @@ extern struct optionsmenu_s {
 	// This is only applied to the profile when you exit out of the controls menu.
 
 	INT16 controlscroll;		// scrolling for the control menu....
-	UINT8 bindcontrol;			// 0: not binding, 1: binding control #1, 2: binding control #2
 	INT16 bindtimer;			// Timer until binding is cancelled (5s)
 	UINT16 bindben;				// Hold right timer
 	UINT8 bindben_swallow;		// (bool) control is about to be cleared; (int) swallow/pose animation timer
+	INT32 bindinputs[MAXINPUTMAPPING]; // Set while binding
 
 	INT16 trycontroller;		// Starts at 3*TICRATE, holding B lowers this, when at 0, cancel controller try mode.
 
