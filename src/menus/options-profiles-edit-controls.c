@@ -285,6 +285,33 @@ boolean M_ProfileControlsInputs(INT32 ch)
 	{
 		if (menucmd[pid].dpad_ud || menucmd[pid].dpad_lr || menucmd[pid].buttons)
 		{
+			if (menucmd[pid].dpad_ud != menucmd[pid].prev_dpad_ud || menucmd[pid].dpad_lr != menucmd[pid].prev_dpad_lr)
+				S_StartSound(NULL, sfx_s3k5b);
+
+			UINT32 newbuttons = menucmd[pid].buttons & ~(menucmd[pid].buttonsHeld);
+
+			if (newbuttons & MBT_L)
+				S_StartSound(NULL, sfx_kc69);
+			if (newbuttons & MBT_R)
+				S_StartSound(NULL, sfx_s3ka2);
+			
+			if (newbuttons & MBT_A)
+				S_StartSound(NULL, sfx_kc3c);
+			if (newbuttons & MBT_B)
+				S_StartSound(NULL, sfx_3db09);
+			if (newbuttons & MBT_C)
+				S_StartSound(NULL, sfx_s1be);
+			
+			if (newbuttons & MBT_X)
+				S_StartSound(NULL, sfx_s1a4);
+			if (newbuttons & MBT_Y)
+				S_StartSound(NULL, sfx_s3kcas);
+			if (newbuttons & MBT_Z)
+				S_StartSound(NULL, sfx_s3kc3s);
+
+			if (newbuttons & MBT_START)
+				S_StartSound(NULL, sfx_gshdc);
+
 			optionsmenu.trycontroller = 5*TICRATE;
 		}
 		else
