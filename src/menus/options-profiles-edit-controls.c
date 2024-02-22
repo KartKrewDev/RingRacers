@@ -193,19 +193,37 @@ static void M_ProfileControlSaveResponse(INT32 choice)
 		{
 			memcpy(&gamecontrol[belongsto], optionsmenu.tempcontrols, sizeof(gamecontroldefault));
 		}
-
-		M_GoBack(0);
 	}
+	else
+	{
+		// Revert changes
+		memcpy(optionsmenu.tempcontrols, optionsmenu.profile->controls, sizeof(gamecontroldefault));
+	}
+
+	M_GoBack(0);
 }
 
 void M_ProfileControlsConfirm(INT32 choice)
 {
-	(void)choice;
+	if (!memcmp(optionsmenu.profile->controls, optionsmenu.tempcontrols, sizeof(gamecontroldefault)))
+	{
+		M_GoBack(0); // no change
+	}
+	else if (choice == 0)
+	{
+		M_StartMessage(
+			"Profiles",
+			"You have unsaved changes to your controls.\n"
+			"Please confirm if you wish to save them.\n",
+			&M_ProfileControlSaveResponse,
+			MM_YESNO,
+			NULL,
+			NULL
+		);
+	}
+	else
+		M_ProfileControlSaveResponse(MA_YES);
 
-	//M_StartMessage("Profiles", M_GetText("Exiting will save the control changes\nfor this Profile.\nIs this okay?\n"), &M_ProfileControlSaveResponse, MM_YESNO, NULL, NULL);
-	// TODO: Add a graphic for controls saving, instead of obnoxious prompt.
-
-	M_ProfileControlSaveResponse(MA_YES);
 
 	// Reapply player 1's real profile.
 	if (cv_currprofile.value > -1)
