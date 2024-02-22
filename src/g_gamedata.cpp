@@ -182,7 +182,7 @@ void srb2::save_ng_gamedata()
 		}
 		srb2::GamedataCupJson cupdata {};
 		cupdata.name = std::string(cup->name);
-		for (int i = 0; i < 4; i++)
+		for (size_t i = 0; i < std::min<size_t>(KARTGP_MAX, cupdata.records.size()); i++)
 		{
 			cupdata.records[i].bestgrade = cup->windata[i].best_grade;
 			cupdata.records[i].bestplacement = cup->windata[i].best_placement;
@@ -622,7 +622,7 @@ void srb2::load_ng_gamedata()
 
 	for (auto& cuppair : js.cups)
 	{
-		cupwindata_t dummywindata[4] {{}};
+		std::array<cupwindata_t, KARTGP_MAX> dummywindata {{}};
 		cupheader_t* cup = nullptr;
 
 		// Find the loaded cup
@@ -636,7 +636,7 @@ void srb2::load_ng_gamedata()
 		}
 
 		// Digest its data...
-		for (size_t j = 0; j < (size_t)KARTGP_MAX; j++)
+		for (size_t j = 0; j < std::min<size_t>(KARTGP_MAX, cuppair.second.records.size()); j++)
 		{
 			dummywindata[j].best_placement = cuppair.second.records[j].bestplacement;
 			dummywindata[j].best_grade = static_cast<gp_rank_e>(cuppair.second.records[j].bestgrade);
@@ -682,7 +682,7 @@ void srb2::load_ng_gamedata()
 		{
 			// We found a cup, so assign the windata.
 
-			memcpy(cup->windata, dummywindata, sizeof(cup->windata));
+			memcpy(cup->windata, dummywindata.data(), sizeof(cup->windata));
 		}
 		else if (dummywindata[0].best_placement != 0)
 		{
@@ -704,7 +704,7 @@ void srb2::load_ng_gamedata()
 			unloadedcupheaders = unloadedcup;
 
 			// Finally, copy into.
-			memcpy(unloadedcup->windata, dummywindata, sizeof(cup->windata));
+			memcpy(unloadedcup->windata, dummywindata.data(), sizeof(cup->windata));
 		}
 	}
 

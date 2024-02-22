@@ -179,7 +179,7 @@ struct GamedataCupRecordsJson final
 struct GamedataCupJson final
 {
 	std::string name;
-	std::array<GamedataCupRecordsJson, 4> records;
+	std::vector<GamedataCupRecordsJson> records;
 
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(GamedataCupJson, name, records)
 };
