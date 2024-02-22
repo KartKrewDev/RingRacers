@@ -476,50 +476,59 @@ gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 
 	INT32 retGrade = GRADE_E;
 
-	const INT32 positionWeight = 150;
-	const INT32 pointsWeight = 100;
-	const INT32 lapsWeight = (rankData->totalLaps > 0) ? 100 : 0;
-	const INT32 prisonsWeight = (rankData->totalPrisons > 0) ? 100 : 0;
-	const INT32 ringsWeight = 50;
-	const INT32 total = positionWeight + pointsWeight + lapsWeight + prisonsWeight + ringsWeight;
-	const INT32 continuesPenalty = 20;
-	const INT32 continuesPenaltyStart = 2; // Make 0 lives lost add points instead of being neutral.
+	rankData->scorePosition = 0;
+	rankData->scoreGPPoints = 0;
+	rankData->scoreLaps = 0;
+	rankData->scorePrisons = 0;
+	rankData->scoreRings = 0;
+	rankData->scoreContinues = 0;
+	rankData->scoreTotal = 0;
 
-	INT32 ours = 0;
-	fixed_t percent = 0;
+	const INT32 lapsWeight = (rankData->totalLaps > 0) ? RANK_WEIGHT_LAPS : 0;
+	const INT32 prisonsWeight = (rankData->totalPrisons > 0) ? RANK_WEIGHT_PRISONS : 0;
+
+	const INT32 total = RANK_WEIGHT_POSITION + RANK_WEIGHT_SCORE + lapsWeight + prisonsWeight + RANK_WEIGHT_RINGS;
+	const INT32 continuesPenalty = total / RANK_CONTINUE_PENALTY_DIV;
 
 	if (rankData->position > 0)
 	{
 		const INT32 sc = (rankData->position - 1);
 		const INT32 loser = (RANK_NEUTRAL_POSITION - 1);
-		ours += ((loser - sc) * positionWeight) / loser;
+		rankData->scorePosition += ((loser - sc) * RANK_WEIGHT_POSITION) / loser;
 	}
 
 	if (rankData->totalPoints > 0)
 	{
-		ours += (rankData->winPoints * pointsWeight) / rankData->totalPoints;
+		rankData->scoreGPPoints += (rankData->winPoints * RANK_WEIGHT_SCORE) / rankData->totalPoints;
 	}
 
 	if (rankData->totalLaps > 0)
 	{
-		ours += (rankData->laps * lapsWeight) / rankData->totalLaps;
+		rankData->scoreLaps += (rankData->laps * lapsWeight) / rankData->totalLaps;
 	}
 
 	if (rankData->totalPrisons > 0)
 	{
-		ours += (rankData->prisons * prisonsWeight) / rankData->totalPrisons;
+		rankData->scorePrisons += (rankData->prisons * prisonsWeight) / rankData->totalPrisons;
 	}
 
 	if (rankData->totalRings > 0)
 	{
-		ours += (rankData->rings * ringsWeight) / rankData->totalRings;
+		rankData->scoreRings += (rankData->rings * RANK_WEIGHT_RINGS) / rankData->totalRings;
 	}
 
-	ours -= (rankData->continuesUsed - continuesPenaltyStart) * continuesPenalty;
+	rankData->scoreContinues -= (rankData->continuesUsed - RANK_CONTINUE_PENALTY_START) * continuesPenalty;
 
-	percent = FixedDiv(ours, total);
+	rankData->scoreTotal = 
+		rankData->scorePosition +
+		rankData->scoreGPPoints +
+		rankData->scoreLaps + 
+		rankData->scorePrisons +
+		rankData->scoreRings +
+		rankData->scoreContinues;
 
-	for (retGrade = 0; retGrade < GRADE_A; retGrade++)
+	const fixed_t percent = FixedDiv(rankData->scoreTotal, total);
+	for (retGrade = GRADE_E; retGrade < GRADE_A; retGrade++)
 	{
 		if (percent < gradePercents[retGrade])
 		{

@@ -61,6 +61,14 @@ struct gpRank_t
 
 	boolean specialWon;
 
+	INT32 scorePosition;
+	INT32 scoreGPPoints;
+	INT32 scoreLaps;
+	INT32 scorePrisons;
+	INT32 scoreRings;
+	INT32 scoreContinues;
+	INT32 scoreTotal;
+
 	UINT8 numLevels;
 	gpRank_level_t levels[ROUNDQUEUE_MAX];
 
@@ -78,6 +86,15 @@ extern "C" {
 
 // 3rd place is neutral, anything below is a penalty
 #define RANK_NEUTRAL_POSITION (3)
+
+#define RANK_WEIGHT_POSITION (150)
+#define RANK_WEIGHT_SCORE (100)
+#define RANK_WEIGHT_LAPS (100)
+#define RANK_WEIGHT_PRISONS (100)
+#define RANK_WEIGHT_RINGS (50)
+
+#define RANK_CONTINUE_PENALTY_DIV (20) // 5% of the total grade
+#define RANK_CONTINUE_PENALTY_START (2)
 
 /*--------------------------------------------------
 	void K_InitGrandPrixRank(gpRank_t *rankData);
