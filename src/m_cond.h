@@ -369,6 +369,7 @@ struct gamedata_t
 
 	// PLAY TIME
 	UINT32 totalplaytime;
+	UINT32 modeplaytime[GDGT_MAX];
 	UINT32 roundsplayed[GDGT_MAX];
 	UINT32 totalrings;
 	UINT32 totaltumbletime;
@@ -495,6 +496,7 @@ UINT16 M_EmblemMapNum(emblem_t *emblem);
 #define M_Achieved(a) ((a) >= MAXCONDITIONSETS || gamedata->achieved[a])
 
 boolean M_UseAlternateTitleScreen(void);
+INT32 M_GameDataGameType(INT32 gametype, boolean battleprisons);
 
 #ifdef __cplusplus
 } // extern "C"

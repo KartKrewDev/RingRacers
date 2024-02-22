@@ -46,6 +46,11 @@ void srb2::save_ng_gamedata()
 	GamedataJson ng {};
 
 	ng.playtime.total = gamedata->totalplaytime;
+	ng.playtime.race = gamedata->modeplaytime[GDGT_RACE];
+	ng.playtime.battle = gamedata->modeplaytime[GDGT_BATTLE];
+	ng.playtime.prisons = gamedata->modeplaytime[GDGT_PRISONS];
+	ng.playtime.special = gamedata->modeplaytime[GDGT_SPECIAL];
+	ng.playtime.custom = gamedata->modeplaytime[GDGT_CUSTOM];
 	ng.rings.total = gamedata->totalrings;
 	ng.playtime.tumble = gamedata->totaltumbletime;
 	ng.rounds.race = gamedata->roundsplayed[GDGT_RACE];
@@ -412,6 +417,11 @@ void srb2::load_ng_gamedata()
 	gamedata->evercrashed = dirty;
 
 	gamedata->totalplaytime = js.playtime.total;
+	gamedata->modeplaytime[GDGT_RACE] = js.playtime.race;
+	gamedata->modeplaytime[GDGT_BATTLE] = js.playtime.battle;
+	gamedata->modeplaytime[GDGT_PRISONS] = js.playtime.prisons;
+	gamedata->modeplaytime[GDGT_SPECIAL] = js.playtime.special;
+	gamedata->modeplaytime[GDGT_CUSTOM] = js.playtime.custom;
 	gamedata->totalrings = js.rings.total;
 	gamedata->totaltumbletime = js.playtime.tumble;
 	gamedata->roundsplayed[GDGT_RACE] = js.rounds.race;

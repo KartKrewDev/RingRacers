@@ -944,6 +944,15 @@ void P_Ticker(boolean run)
 			// Keep track of how long they've been playing!
 			gamedata->totalplaytime++;
 
+			if (gametype != GT_TUTORIAL)
+			{
+				INT32 mode = M_GameDataGameType(gametype, battleprisons);
+				if (mode >= 0 && mode < GDGT_MAX)
+				{
+					gamedata->modeplaytime[mode]++;
+				}
+			}
+
 			// TODO would this be laggy with more conditions in play...
 			if (
 				(leveltime > introtime

@@ -27,9 +27,23 @@ namespace srb2
 struct GamedataPlaytimeJson final
 {
 	uint32_t total;
+	uint32_t race;
+	uint32_t battle;
+	uint32_t prisons;
+	uint32_t special;
+	uint32_t custom;
 	uint32_t tumble;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(GamedataPlaytimeJson, total, tumble)
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
+		GamedataPlaytimeJson,
+		total,
+		race,
+		battle,
+		prisons,
+		special,
+		custom,
+		tumble
+	)
 };
 
 struct GamedataRingsJson final
