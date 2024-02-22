@@ -136,6 +136,23 @@ static void SetDeviceOnPress(void)
 }
 */
 
+static boolean M_ClearCurrentControl(void)
+{
+	// check if we're on a valid menu option...
+	if (currentMenu->menuitems[itemOn].mvar1)
+	{
+		// clear controls for that key
+		INT32 i;
+
+		for (i = 0; i < MAXINPUTMAPPING; i++)
+			optionsmenu.tempcontrols[currentMenu->menuitems[itemOn].mvar1][i] = KEY_NULL;
+
+		return true;
+	}
+
+	return false;
+}
+
 void M_HandleProfileControls(void)
 {
 	UINT8 maxscroll = currentMenu->numitems - 5;
@@ -268,17 +285,8 @@ boolean M_ProfileControlsInputs(INT32 ch)
 
 	if (M_MenuExtraPressed(pid))
 	{
-		// check if we're on a valid menu option...
-		if (currentMenu->menuitems[itemOn].mvar1)
-		{
-			// clear controls for that key
-			INT32 i;
-
-			for (i = 0; i < MAXINPUTMAPPING; i++)
-				optionsmenu.tempcontrols[currentMenu->menuitems[itemOn].mvar1][i] = KEY_NULL;
-
+		if (M_ClearCurrentControl())
 			S_StartSound(NULL, sfx_s3k66);
-		}
 		M_SetMenuDelay(pid);
 		return true;
 	}
