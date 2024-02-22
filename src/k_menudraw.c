@@ -4871,6 +4871,16 @@ static void M_DrawBindMediumString(INT32 y, INT32 flags, const char *string)
 	);
 }
 
+static INT32 M_DrawProfileLegend(INT32 x, INT32 y, const char *legend, const char *mediocre_key)
+{
+	INT32 w = V_ThinStringWidth(legend, 0);
+	V_DrawThinString(x - w, y, 0, legend);
+	x -= w + 2;
+	if (mediocre_key)
+		M_DrawMediocreKeyboardKey(mediocre_key, &x, y, false, true);
+	return x;
+}
+
 // the control stuff.
 // Dear god.
 void M_DrawProfileControls(void)
@@ -5171,7 +5181,14 @@ void M_DrawProfileControls(void)
 	}
 	if (currentMenu->menuitems[itemOn].tooltip != NULL)
 	{
-		V_DrawCenteredThinString(BASEVIDWIDTH/2, BASEVIDHEIGHT + hintofs - 9 - 12, 0, currentMenu->menuitems[itemOn].tooltip);
+		INT32 ypos = BASEVIDHEIGHT + hintofs - 9 - 12;
+		V_DrawThinString(12, ypos, V_YELLOWMAP, currentMenu->menuitems[itemOn].tooltip);
+
+		boolean standardbuttons = gamedata->gonerlevel > GDGONER_PROFILE;
+		INT32 xpos = BASEVIDWIDTH - 12;
+		xpos = standardbuttons ?
+			M_DrawProfileLegend(xpos, ypos, "\xB2/  \xBC Clear", NULL) :
+			M_DrawProfileLegend(xpos, ypos, "Clear", "BKSP");
 	}
 
 	// Overlay for control binding
