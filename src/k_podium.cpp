@@ -551,6 +551,12 @@ void podiumData_s::Draw(void)
 
 			if (i > 0)
 			{
+				drawer_line
+					.xy(-88, 6)
+					.width(304)
+					.height(2)
+					.fill(31);
+
 				lvl = &rank.levels[i - 1];
 
 				if (lvl->id > 0)
@@ -746,6 +752,10 @@ void podiumData_s::Draw(void)
 			drawer_totals_left = drawer_totals_left.x( transition_i * -BASEVIDWIDTH );
 			drawer_totals_right = drawer_totals_right.x( transition_i * BASEVIDWIDTH );
 		}
+
+		drawer_totals_left
+			.xy(8.0, 8.0)
+			.patch("R_RTPBR");
 
 		skincolornum_t continuesColor = SKINCOLOR_NONE;
 		if (rank.continuesUsed == 0)
