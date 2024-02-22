@@ -42,7 +42,7 @@ void srb2::save_ng_gamedata()
 		return;
 	}
 
-	GamedataJson ng{};
+	GamedataJson ng {};
 
 	ng.playtime.total = gamedata->totalplaytime;
 	ng.rings.total = gamedata->totalrings;
@@ -100,21 +100,21 @@ void srb2::save_ng_gamedata()
 	ng.timesBeaten = gamedata->timesBeaten;
 	for (int i = 0; i < numskins; i++)
 	{
-		srb2::GamedataSkinJson skin;
+		srb2::GamedataSkinJson skin {};
 		std::string name = std::string(skins[i].name);
 		skin.records.wins = skins[i].records.wins;
-		ng.skins[name] = skin;
+		ng.skins[name] = std::move(skin);
 	}
 	for (auto unloadedskin = unloadedskins; unloadedskin; unloadedskin = unloadedskin->next)
 	{
-		srb2::GamedataSkinJson skin;
+		srb2::GamedataSkinJson skin {};
 		std::string name = std::string(unloadedskin->name);
 		skin.records.wins = unloadedskin->records.wins;
-		ng.skins[name] = skin;
+		ng.skins[name] = std::move(skin);
 	}
 	for (int i = 0; i < nummapheaders; i++)
 	{
-		srb2::GamedataMapJson map;
+		srb2::GamedataMapJson map {};
 		std::string lumpname = std::string(mapheaderinfo[i]->lumpname);
 		map.visited.visited = mapheaderinfo[i]->records.mapvisited & MV_VISITED;
 		map.visited.beaten = mapheaderinfo[i]->records.mapvisited & MV_BEATEN;
@@ -125,11 +125,11 @@ void srb2::save_ng_gamedata()
 		map.stats.timeattack.bestlap = mapheaderinfo[i]->records.lap;
 		map.stats.spbattack.besttime = 0;
 		map.stats.spbattack.bestlap = 0;
-		ng.maps[lumpname] = map;
+		ng.maps[lumpname] = std::move(map);
 	}
 	for (auto unloadedmap = unloadedmapheaders; unloadedmap; unloadedmap = unloadedmap->next)
 	{
-		srb2::GamedataMapJson map;
+		srb2::GamedataMapJson map {};
 		std::string lumpname = std::string(unloadedmap->lumpname);
 		map.visited.visited = unloadedmap->records.mapvisited & MV_VISITED;
 		map.visited.beaten = unloadedmap->records.mapvisited & MV_BEATEN;
@@ -140,11 +140,11 @@ void srb2::save_ng_gamedata()
 		map.stats.timeattack.bestlap = unloadedmap->records.lap;
 		map.stats.spbattack.besttime = 0;
 		map.stats.spbattack.bestlap = 0;
-		ng.maps[lumpname] = map;
+		ng.maps[lumpname] = std::move(map);
 	}
 	for (int i = 0; i < gamedata->numspraycans; i++)
 	{
-		srb2::GamedataSprayCanJson spraycan;
+		srb2::GamedataSprayCanJson spraycan {};
 
 		candata_t* can = &gamedata->spraycans[i];
 
@@ -172,7 +172,7 @@ void srb2::save_ng_gamedata()
 			continue;
 		}
 		spraycan.map = std::string(mapheader->lumpname);
-		ng.spraycans.push_back(spraycan);
+		ng.spraycans.emplace_back(std::move(spraycan));
 	}
 	for (auto cup = kartcupheaders; cup; cup = cup->next)
 	{
@@ -180,7 +180,7 @@ void srb2::save_ng_gamedata()
 		{
 			continue;
 		}
-		srb2::GamedataCupJson cupdata;
+		srb2::GamedataCupJson cupdata {};
 		cupdata.name = std::string(cup->name);
 		for (int i = 0; i < 4; i++)
 		{
@@ -189,7 +189,7 @@ void srb2::save_ng_gamedata()
 			cupdata.records[i].bestskin = std::string(skins[cup->windata[i].best_skin.id].name);
 			cupdata.records[i].emerald = cup->windata[i].got_emerald;
 		}
-		ng.cups[cupdata.name] = cupdata;
+		ng.cups[cupdata.name] = std::move(cupdata);
 	}
 	for (auto unloadedcup = unloadedcupheaders; unloadedcup; unloadedcup = unloadedcup->next)
 	{
@@ -197,7 +197,7 @@ void srb2::save_ng_gamedata()
 		{
 			continue;
 		}
-		srb2::GamedataCupJson cupdata;
+		srb2::GamedataCupJson cupdata {};
 		cupdata.name = std::string(unloadedcup->name);
 		for (int i = 0; i < 4; i++)
 		{
@@ -206,12 +206,12 @@ void srb2::save_ng_gamedata()
 			cupdata.records[i].bestskin = std::string(skins[unloadedcup->windata[i].best_skin.id].name);
 			cupdata.records[i].emerald = unloadedcup->windata[i].got_emerald;
 		}
-		ng.cups[cupdata.name] = cupdata;
+		ng.cups[cupdata.name] = std::move(cupdata);
 	}
 
-	std::string gamedataname_s{gamedatafilename};
-	fs::path savepath{fmt::format("{}/{}", srb2home, gamedataname_s)};
-	fs::path tmpsavepath{fmt::format("{}/{}.tmp", srb2home, gamedataname_s)};
+	std::string gamedataname_s {gamedatafilename};
+	fs::path savepath {fmt::format("{}/{}", srb2home, gamedataname_s)};
+	fs::path tmpsavepath {fmt::format("{}/{}.tmp", srb2home, gamedataname_s)};
 
 	json ngdata_json = ng;
 
@@ -465,7 +465,7 @@ void srb2::load_ng_gamedata()
 		}
 		else
 		{
-			gamedata->challengegrid = NULL;
+			gamedata->challengegrid = nullptr;
 		}
 	}
 
