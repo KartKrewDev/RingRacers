@@ -4785,6 +4785,74 @@ static const char *M_GetDPadPatchName(SINT8 ud, SINT8 lr)
 	}
 }
 
+static void M_DrawBindBen(INT32 x, INT32 y, INT32 scroll_remaining)
+{
+	// optionsmenu.bindben_swallow
+	const int pose_time = 30;
+	const int swallow_time = pose_time + 14;
+
+	// Lid closed
+	int state = 'A';
+	int frame = 0;
+
+	if (optionsmenu.bindben_swallow > 100)
+	{
+		// Quick swallow (C button)
+		state = 'C';
+
+		int t = 106 - optionsmenu.bindben_swallow;
+		if (t < 3)
+			frame = 0;
+		else
+			frame = t - 3;
+	}
+	else if (scroll_remaining <= 0)
+	{
+		// Chewing (text done scrolling)
+		state = 'B';
+		frame = I_GetTime() / 2 % 4;
+
+		// When state changes from 'lid open' to 'chewing',
+		// play chomp sound.
+		if (!optionsmenu.bindben_swallow)
+			S_StartSound(NULL, sfx_monch);
+
+		// Ready to swallow when button is released.
+		optionsmenu.bindben_swallow = swallow_time + 1;
+	}
+	else if (optionsmenu.bindben)
+	{
+		// Lid open (text scrolling)
+		frame = 1;
+	}
+	else if (optionsmenu.bindben_swallow)
+	{
+		if (optionsmenu.bindben_swallow > pose_time)
+		{
+			// Swallow
+			state = 'C';
+
+			int t = swallow_time - optionsmenu.bindben_swallow;
+			if (t < 8)
+				frame = 0;
+			else
+				frame = 1 + (t - 8) / 2 % 3;
+		}
+		else
+		{
+			// Pose
+			state = 'D';
+
+			int t = pose_time - optionsmenu.bindben_swallow;
+			if (t < 10)
+				frame = 0;
+			else
+				frame = 1 + (t - 10) / 4 % 5;
+		}
+	}
+
+	V_DrawMappedPatch(x-30, y, 0, W_CachePatchName(va("PR_BIN%c%c", state, '1' + frame), PU_CACHE), aquamap);
+}
 
 // the control stuff.
 // Dear god.
@@ -5008,6 +5076,9 @@ void M_DrawProfileControls(void)
 						}
 					}
 
+					INT32 bindx = x;
+					INT32 benx = 142;
+					INT32 beny = y - 8;
 					if (i == itemOn)
 					{
 						// Extend yellow wedge down behind
@@ -5016,12 +5087,46 @@ void M_DrawProfileControls(void)
 						{
 							for (j=24; j < 34; j++)
 								V_DrawFill(0, (y)+j, 128+j, 1, 73);
+							benx += 10;
+							beny += 10;
+						}
+
+						// Scroll text into Bind Ben.
+						bindx += optionsmenu.bindben * 3;
+
+						if (buf2[0])
+						{
+							// Bind Ben: suck characters off
+							// the end of the first line onto
+							// the beginning of the second
+							// line.
+							UINT16 n = strlen(buf);
+							UINT16 t = min(optionsmenu.bindben, n);
+							memmove(&buf2[t], buf2, t + 1);
+							memcpy(buf2, &buf[n - t], t);
+							buf[n - t] = '\0';
 						}
 					}
 
-					// don't shift the text if we didn't draw a patch.
-					V_DrawThinString(x + (drawnpatch ? 13 : 1), y + 12, vflags, buf);
-					V_DrawThinString(x + (drawnpatch ? 13 : 1), y + 22, vflags, buf2);
+					{
+						cliprect_t clip;
+						V_SaveClipRect(&clip); // preserve cliprect for tooltip
+
+						// Clip text as it scrolls into Bind Ben.
+						V_SetClipRect(0, 0, (benx-14)*FRACUNIT, 200*FRACUNIT, 0);
+
+						if (i != itemOn || !optionsmenu.bindben_swallow)
+						{
+							// don't shift the text if we didn't draw a patch.
+							V_DrawThinString(bindx + (drawnpatch ? 13 : 1), y + 12, vflags, buf);
+							V_DrawThinString(bindx + (drawnpatch ? 13 : 1), y + 22, vflags, buf2);
+						}
+
+						V_RestoreClipRect(&clip);
+					}
+
+					if (i == itemOn)
+						M_DrawBindBen(benx, beny, (benx-14) - bindx);
 
 					// controller dest coords:
 					if (itemOn == i && gc > 0 && gc <= gc_start)

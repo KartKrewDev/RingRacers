@@ -155,6 +155,7 @@ static boolean M_ClearCurrentControl(void)
 
 void M_HandleProfileControls(void)
 {
+	const UINT8 pid = 0;
 	UINT8 maxscroll = currentMenu->numitems - 5;
 	M_OptionsTick();
 
@@ -183,6 +184,35 @@ void M_HandleProfileControls(void)
 			optionsmenu.bindcontrol = 0;		// we've gone past the max, just stop.
 		}
 
+	}
+	else if (currentMenu->menuitems[itemOn].mvar1) // check if we're on a valid menu option...
+	{
+		// Hold right to begin clearing the control.
+		//
+		// If bindben timer increases enough, bindben_swallow
+		// will be set.
+		// This is a commitment to clear the control.
+		// You can keep holding right to postpone the clear
+		// but once you let go, you are locked out of
+		// pressing it again until the animation finishes.
+		if (menucmd[pid].dpad_lr > 0 && (optionsmenu.bindben || !optionsmenu.bindben_swallow))
+		{
+			optionsmenu.bindben++;
+		}
+		else
+		{
+			optionsmenu.bindben = 0;
+
+			if (optionsmenu.bindben_swallow)
+			{
+				optionsmenu.bindben_swallow--;
+
+				if (optionsmenu.bindben_swallow == 100) // special countdown for the "quick" animation
+					optionsmenu.bindben_swallow = 0;
+				else if (!optionsmenu.bindben_swallow) // long animation, clears control when done
+					M_ClearCurrentControl();
+			}
+		}
 	}
 }
 
@@ -287,6 +317,8 @@ boolean M_ProfileControlsInputs(INT32 ch)
 	{
 		if (M_ClearCurrentControl())
 			S_StartSound(NULL, sfx_monch);
+		optionsmenu.bindben = 0;
+		optionsmenu.bindben_swallow = M_OPTIONS_BINDBEN_QUICK;
 		M_SetMenuDelay(pid);
 		return true;
 	}
@@ -295,6 +327,19 @@ boolean M_ProfileControlsInputs(INT32 ch)
 		M_ProfileControlsConfirm(0);
 		M_SetMenuDelay(pid);
 		return true;
+	}
+
+	if (menucmd[pid].dpad_ud)
+	{
+		if (optionsmenu.bindben_swallow)
+		{
+			// Control would be cleared, but we're
+			// interrupting the animation so clear it
+			// immediately.
+			M_ClearCurrentControl();
+		}
+		optionsmenu.bindben = 0;
+		optionsmenu.bindben_swallow = 0;
 	}
 
 	return false;
