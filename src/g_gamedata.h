@@ -170,10 +170,10 @@ struct GamedataCupRecordsJson final
 {
 	uint8_t bestplacement;
 	uint8_t bestgrade;
-	uint8_t emerald;
+	bool gotemerald;
 	std::string bestskin;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(GamedataCupRecordsJson, bestplacement, bestgrade, emerald, bestskin)
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(GamedataCupRecordsJson, bestplacement, bestgrade, gotemerald, bestskin)
 };
 
 struct GamedataCupJson final

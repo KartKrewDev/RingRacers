@@ -187,7 +187,7 @@ void srb2::save_ng_gamedata()
 			cupdata.records[i].bestgrade = cup->windata[i].best_grade;
 			cupdata.records[i].bestplacement = cup->windata[i].best_placement;
 			cupdata.records[i].bestskin = std::string(skins[cup->windata[i].best_skin.id].name);
-			cupdata.records[i].emerald = cup->windata[i].got_emerald;
+			cupdata.records[i].gotemerald = cup->windata[i].got_emerald;
 		}
 		ng.cups[cupdata.name] = std::move(cupdata);
 	}
@@ -204,7 +204,7 @@ void srb2::save_ng_gamedata()
 			cupdata.records[i].bestgrade = unloadedcup->windata[i].best_grade;
 			cupdata.records[i].bestplacement = unloadedcup->windata[i].best_placement;
 			cupdata.records[i].bestskin = std::string(skins[unloadedcup->windata[i].best_skin.id].name);
-			cupdata.records[i].emerald = unloadedcup->windata[i].got_emerald;
+			cupdata.records[i].gotemerald = unloadedcup->windata[i].got_emerald;
 		}
 		ng.cups[cupdata.name] = std::move(cupdata);
 	}
@@ -640,7 +640,7 @@ void srb2::load_ng_gamedata()
 		{
 			dummywindata[j].best_placement = cuppair.second.records[j].bestplacement;
 			dummywindata[j].best_grade = static_cast<gp_rank_e>(cuppair.second.records[j].bestgrade);
-			dummywindata[j].got_emerald = cuppair.second.records[j].emerald;
+			dummywindata[j].got_emerald = cuppair.second.records[j].gotemerald;
 
 			dummywindata[j].best_skin.id = MAXSKINS;
 			dummywindata[j].best_skin.unloaded = nullptr;
