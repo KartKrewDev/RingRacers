@@ -45,7 +45,7 @@ static boolean S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source,
 static void Command_Tunes_f(void);
 static void Command_RestartAudio_f(void);
 static void Command_PlaySound(void);
-static void Got_PlaySound(UINT8 **p, INT32 playernum);
+static void Got_PlaySound(const UINT8 **p, INT32 playernum);
 static void Command_MusicDef_f(void);
 
 void Captioning_OnChange(void);
@@ -1217,7 +1217,7 @@ void S_AttemptToRestoreMusic(void)
 			}
 			// FALLTHRU
 		case GS_INTERMISSION:
-			Music_Play("intermission");
+			Music_PlayIntermission();
 			break;
 		case GS_CEREMONY:
 			Music_Play("level");
@@ -2414,7 +2414,7 @@ static void Command_PlaySound(void)
 	SendNetXCmd(XD_PLAYSOUND, buf, buf_p - buf);
 }
 
-static void Got_PlaySound(UINT8 **cp, INT32 playernum)
+static void Got_PlaySound(const UINT8 **cp, INT32 playernum)
 {
 	INT32 sound_id = READINT32(*cp);
 

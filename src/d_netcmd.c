@@ -84,31 +84,31 @@
 // protos
 // ------
 
-static void Got_NameAndColor(UINT8 **cp, INT32 playernum);
-static void Got_WeaponPref(UINT8 **cp, INT32 playernum);
-static void Got_PartyInvite(UINT8 **cp, INT32 playernum);
-static void Got_AcceptPartyInvite(UINT8 **cp, INT32 playernum);
-static void Got_CancelPartyInvite(UINT8 **cp, INT32 playernum);
-static void Got_LeaveParty(UINT8 **cp, INT32 playernum);
-static void Got_Mapcmd(UINT8 **cp, INT32 playernum);
-static void Got_ExitLevelcmd(UINT8 **cp, INT32 playernum);
-static void Got_SetupVotecmd(UINT8 **cp, INT32 playernum);
-static void Got_ModifyVotecmd(UINT8 **cp, INT32 playernum);
-static void Got_PickVotecmd(UINT8 **cp, INT32 playernum);
-static void Got_RequestAddfilecmd(UINT8 **cp, INT32 playernum);
-static void Got_Addfilecmd(UINT8 **cp, INT32 playernum);
-static void Got_Pause(UINT8 **cp, INT32 playernum);
-static void Got_RandomSeed(UINT8 **cp, INT32 playernum);
-static void Got_RunSOCcmd(UINT8 **cp, INT32 playernum);
-static void Got_Teamchange(UINT8 **cp, INT32 playernum);
-static void Got_Clearscores(UINT8 **cp, INT32 playernum);
-static void Got_DiscordInfo(UINT8 **cp, INT32 playernum);
-static void Got_ScheduleTaskcmd(UINT8 **cp, INT32 playernum);
-static void Got_ScheduleClearcmd(UINT8 **cp, INT32 playernum);
-static void Got_Automatecmd(UINT8 **cp, INT32 playernum);
-static void Got_RequestMapQueuecmd(UINT8 **cp, INT32 playernum);
-static void Got_MapQueuecmd(UINT8 **cp, INT32 playernum);
-static void Got_Cheat(UINT8 **cp, INT32 playernum);
+static void Got_NameAndColor(const UINT8 **cp, INT32 playernum);
+static void Got_WeaponPref(const UINT8 **cp, INT32 playernum);
+static void Got_PartyInvite(const UINT8 **cp, INT32 playernum);
+static void Got_AcceptPartyInvite(const UINT8 **cp, INT32 playernum);
+static void Got_CancelPartyInvite(const UINT8 **cp, INT32 playernum);
+static void Got_LeaveParty(const UINT8 **cp, INT32 playernum);
+static void Got_Mapcmd(const UINT8 **cp, INT32 playernum);
+static void Got_ExitLevelcmd(const UINT8 **cp, INT32 playernum);
+static void Got_SetupVotecmd(const UINT8 **cp, INT32 playernum);
+static void Got_ModifyVotecmd(const UINT8 **cp, INT32 playernum);
+static void Got_PickVotecmd(const UINT8 **cp, INT32 playernum);
+static void Got_RequestAddfilecmd(const UINT8 **cp, INT32 playernum);
+static void Got_Addfilecmd(const UINT8 **cp, INT32 playernum);
+static void Got_Pause(const UINT8 **cp, INT32 playernum);
+static void Got_RandomSeed(const UINT8 **cp, INT32 playernum);
+static void Got_RunSOCcmd(const UINT8 **cp, INT32 playernum);
+static void Got_Teamchange(const UINT8 **cp, INT32 playernum);
+static void Got_Clearscores(const UINT8 **cp, INT32 playernum);
+static void Got_DiscordInfo(const UINT8 **cp, INT32 playernum);
+static void Got_ScheduleTaskcmd(const UINT8 **cp, INT32 playernum);
+static void Got_ScheduleClearcmd(const UINT8 **cp, INT32 playernum);
+static void Got_Automatecmd(const UINT8 **cp, INT32 playernum);
+static void Got_RequestMapQueuecmd(const UINT8 **cp, INT32 playernum);
+static void Got_MapQueuecmd(const UINT8 **cp, INT32 playernum);
+static void Got_Cheat(const UINT8 **cp, INT32 playernum);
 
 static void Command_Playdemo_f(void);
 static void Command_Timedemo_f(void);
@@ -165,12 +165,12 @@ static void Command_Clearscores_f(void);
 // Remote Administration
 static void Command_Changepassword_f(void);
 static void Command_Login_f(void);
-static void Got_Verification(UINT8 **cp, INT32 playernum);
-static void Got_Removal(UINT8 **cp, INT32 playernum);
+static void Got_Verification(const UINT8 **cp, INT32 playernum);
+static void Got_Removal(const UINT8 **cp, INT32 playernum);
 static void Command_Verify_f(void);
 static void Command_RemoveAdmin_f(void);
 static void Command_MotD_f(void);
-static void Got_MotD_f(UINT8 **cp, INT32 playernum);
+static void Got_MotD_f(const UINT8 **cp, INT32 playernum);
 
 static void Command_ShowScores_f(void);
 static void Command_ShowTime_f(void);
@@ -1094,7 +1094,7 @@ static void FinalisePlaystateChange(INT32 playernum)
 	P_CheckRacers(); // also SRB2Kart
 }
 
-static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
+static void Got_NameAndColor(const UINT8 **cp, INT32 playernum)
 {
 	player_t *p = &players[playernum];
 	char name[MAXPLAYERNAME+1];
@@ -1278,11 +1278,12 @@ void WeaponPref_Save(UINT8 **cp, INT32 playernum)
 	WRITEUINT8(*cp, prefs);
 }
 
-void WeaponPref_Parse(UINT8 **cp, INT32 playernum)
+size_t WeaponPref_Parse(const UINT8 *bufstart, INT32 playernum)
 {
+	const UINT8 *p = bufstart;
 	player_t *player = &players[playernum];
 
-	UINT8 prefs = READUINT8(*cp);
+	UINT8 prefs = READUINT8(p);
 
 	player->pflags &= ~(PF_KICKSTARTACCEL|PF_SHRINKME|PF_AUTOROULETTE);
 
@@ -1302,17 +1303,19 @@ void WeaponPref_Parse(UINT8 **cp, INT32 playernum)
 		// so this will have to do.
 		K_UpdateShrinkCheat(player);
 	}
+
+	return p - bufstart;
 }
 
-static void Got_WeaponPref(UINT8 **cp,INT32 playernum)
+static void Got_WeaponPref(const UINT8 **cp,INT32 playernum)
 {
-	WeaponPref_Parse(cp, playernum);
+	*cp += WeaponPref_Parse(*cp, playernum);
 
 	// SEE ALSO g_demo.c
 	demo_extradata[playernum] |= DXD_WEAPONPREF;
 }
 
-static void Got_PartyInvite(UINT8 **cp,INT32 playernum)
+static void Got_PartyInvite(const UINT8 **cp,INT32 playernum)
 {
 	UINT8 invitee;
 
@@ -1356,7 +1359,7 @@ static void Got_PartyInvite(UINT8 **cp,INT32 playernum)
 	}
 }
 
-static void Got_AcceptPartyInvite(UINT8 **cp,INT32 playernum)
+static void Got_AcceptPartyInvite(const UINT8 **cp,INT32 playernum)
 {
 	int invitation;
 
@@ -1397,7 +1400,7 @@ static void Got_AcceptPartyInvite(UINT8 **cp,INT32 playernum)
 	}
 }
 
-static void Got_CancelPartyInvite(UINT8 **cp,INT32 playernum)
+static void Got_CancelPartyInvite(const UINT8 **cp,INT32 playernum)
 {
 	UINT8 invitee;
 
@@ -1427,7 +1430,7 @@ static void Got_CancelPartyInvite(UINT8 **cp,INT32 playernum)
 	}
 }
 
-static void Got_LeaveParty(UINT8 **cp,INT32 playernum)
+static void Got_LeaveParty(const UINT8 **cp,INT32 playernum)
 {
 	(void)cp;
 
@@ -2700,7 +2703,7 @@ static void Command_Map_f(void)
   *                  ::serverplayer or ::adminplayer.
   * \sa D_MapChange
   */
-static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
+static void Got_Mapcmd(const UINT8 **cp, INT32 playernum)
 {
 	UINT8 flags;
 	INT32 presetplayer = 1;
@@ -3113,7 +3116,7 @@ static void Command_QueueMap_f(void)
 	Z_Free(mapname);
 }
 
-static void Got_RequestMapQueuecmd(UINT8 **cp, INT32 playernum)
+static void Got_RequestMapQueuecmd(const UINT8 **cp, INT32 playernum)
 {
 	UINT8 flags;
 	boolean setencore;
@@ -3158,7 +3161,7 @@ static void Got_RequestMapQueuecmd(UINT8 **cp, INT32 playernum)
 	Handle_MapQueueSend(mapnumber, setgametype, setencore);
 }
 
-static void Got_MapQueuecmd(UINT8 **cp, INT32 playernum)
+static void Got_MapQueuecmd(const UINT8 **cp, INT32 playernum)
 {
 	UINT8 flags, queueposition, i;
 	boolean setencore;
@@ -3260,7 +3263,7 @@ static void Command_Pause(void)
 		CONS_Printf(M_GetText("Only the server or a remote admin can use this.\n"));
 }
 
-static void Got_Pause(UINT8 **cp, INT32 playernum)
+static void Got_Pause(const UINT8 **cp, INT32 playernum)
 {
 	UINT8 dedicatedpause = false;
 	const char *playername;
@@ -3321,7 +3324,7 @@ static void Got_Pause(UINT8 **cp, INT32 playernum)
   * \param playernum Player responsible for the message. Must be ::serverplayer.
   * \author Graue <graue@oceanbase.org>
   */
-static void Got_RandomSeed(UINT8 **cp, INT32 playernum)
+static void Got_RandomSeed(const UINT8 **cp, INT32 playernum)
 {
 	UINT32 seed;
 
@@ -3358,7 +3361,7 @@ static void Command_Clearscores_f(void)
   * \sa XD_CLEARSCORES, Command_Clearscores_f
   * \author SSNTails <http://www.ssntails.org>
   */
-static void Got_Clearscores(UINT8 **cp, INT32 playernum)
+static void Got_Clearscores(const UINT8 **cp, INT32 playernum)
 {
 	INT32 i;
 
@@ -3608,7 +3611,7 @@ void P_SetPlayerSpectator(INT32 playernum)
 }
 
 //todo: This and the other teamchange functions are getting too long and messy. Needs cleaning.
-static void Got_Teamchange(UINT8 **cp, INT32 playernum)
+static void Got_Teamchange(const UINT8 **cp, INT32 playernum)
 {
 	changeteam_union NetPacket;
 	boolean error = false, wasspectator = false;
@@ -3861,10 +3864,6 @@ void RemoveAdminPlayer(INT32 playernum)
 
 static void Command_Verify_f(void)
 {
-	char buf[8]; // Should be plenty
-	char *temp;
-	INT32 playernum;
-
 	if (client)
 	{
 		CONS_Printf(M_GetText("Only the server can use this.\n"));
@@ -3883,19 +3882,16 @@ static void Command_Verify_f(void)
 		return;
 	}
 
-	strlcpy(buf, COM_Argv(1), sizeof (buf));
+	INT32 playernum = atoi(COM_Argv(1));
 
-	playernum = atoi(buf);
-
-	temp = buf;
-
-	WRITEUINT8(temp, playernum);
-
-	if (playeringame[playernum])
+	if (playernum >= 0 && playernum < MAXPLAYERS && playeringame[playernum])
+	{
+		UINT8 buf[1] = {playernum};
 		SendNetXCmd(XD_VERIFIED, buf, 1);
+	}
 }
 
-static void Got_Verification(UINT8 **cp, INT32 playernum)
+static void Got_Verification(const UINT8 **cp, INT32 playernum)
 {
 	INT16 num = READUINT8(*cp);
 
@@ -3917,10 +3913,6 @@ static void Got_Verification(UINT8 **cp, INT32 playernum)
 
 static void Command_RemoveAdmin_f(void)
 {
-	char buf[8]; // Should be plenty
-	char *temp;
-	INT32 playernum;
-
 	if (client)
 	{
 		CONS_Printf(M_GetText("Only the server can use this.\n"));
@@ -3933,19 +3925,16 @@ static void Command_RemoveAdmin_f(void)
 		return;
 	}
 
-	strlcpy(buf, COM_Argv(1), sizeof(buf));
+	INT32 playernum = atoi(COM_Argv(1));
 
-	playernum = atoi(buf);
-
-	temp = buf;
-
-	WRITEUINT8(temp, playernum);
-
-	if (playeringame[playernum])
+	if (playernum >= 0 && playernum < MAXPLAYERS && playeringame[playernum])
+	{
+		UINT8 buf[1] = {playernum};
 		SendNetXCmd(XD_DEMOTED, buf, 1);
+	}
 }
 
-static void Got_Removal(UINT8 **cp, INT32 playernum)
+static void Got_Removal(const UINT8 **cp, INT32 playernum)
 {
 	UINT8 num = READUINT8(*cp);
 
@@ -4224,7 +4213,7 @@ static void Command_MotD_f(void)
 	Z_Free(mymotd);
 }
 
-static void Got_MotD_f(UINT8 **cp, INT32 playernum)
+static void Got_MotD_f(const UINT8 **cp, INT32 playernum)
 {
 	char *mymotd = Z_Malloc(sizeof(motd), PU_STATIC, NULL);
 	INT32 i;
@@ -4288,7 +4277,7 @@ static void Command_RunSOC(void)
 	SendNetXCmd(XD_RUNSOC, buf, length);
 }
 
-static void Got_RunSOCcmd(UINT8 **cp, INT32 playernum)
+static void Got_RunSOCcmd(const UINT8 **cp, INT32 playernum)
 {
 	char filename[256];
 	filestatus_t ncs = FS_NOTCHECKED;
@@ -4480,7 +4469,7 @@ static void Command_Addfile(void)
 #endif/*TESTERS*/
 }
 
-static void Got_RequestAddfilecmd(UINT8 **cp, INT32 playernum)
+static void Got_RequestAddfilecmd(const UINT8 **cp, INT32 playernum)
 {
 	char filename[241];
 	filestatus_t ncs = FS_NOTCHECKED;
@@ -4539,7 +4528,7 @@ static void Got_RequestAddfilecmd(UINT8 **cp, INT32 playernum)
 	COM_BufAddText(va("addfile %s\n", filename));
 }
 
-static void Got_Addfilecmd(UINT8 **cp, INT32 playernum)
+static void Got_Addfilecmd(const UINT8 **cp, INT32 playernum)
 {
 	char filename[241];
 	filestatus_t ncs = FS_NOTCHECKED;
@@ -5635,7 +5624,7 @@ static void Command_ExitLevel_f(void)
 	}
 }
 
-static void Got_ExitLevelcmd(UINT8 **cp, INT32 playernum)
+static void Got_ExitLevelcmd(const UINT8 **cp, INT32 playernum)
 {
 	(void)cp;
 
@@ -5657,7 +5646,7 @@ static void Got_ExitLevelcmd(UINT8 **cp, INT32 playernum)
 	G_FinishExitLevel();
 }
 
-static void Got_SetupVotecmd(UINT8 **cp, INT32 playernum)
+static void Got_SetupVotecmd(const UINT8 **cp, INT32 playernum)
 {
 	INT16 newGametype = 0;
 	boolean baseEncore = false;
@@ -5732,7 +5721,7 @@ static void Got_SetupVotecmd(UINT8 **cp, INT32 playernum)
 	Y_StartVote();
 }
 
-static void Got_ModifyVotecmd(UINT8 **cp, INT32 playernum)
+static void Got_ModifyVotecmd(const UINT8 **cp, INT32 playernum)
 {
 	UINT8 targetID = READUINT8(*cp);
 	SINT8 vote = READSINT8(*cp);
@@ -5778,7 +5767,7 @@ fail:
 	}
 }
 
-static void Got_PickVotecmd(UINT8 **cp, INT32 playernum)
+static void Got_PickVotecmd(const UINT8 **cp, INT32 playernum)
 {
 	SINT8 pick = READSINT8(*cp);
 	SINT8 level = READSINT8(*cp);
@@ -5794,7 +5783,7 @@ static void Got_PickVotecmd(UINT8 **cp, INT32 playernum)
 	Y_SetupVoteFinish(pick, level);
 }
 
-static void Got_ScheduleTaskcmd(UINT8 **cp, INT32 playernum)
+static void Got_ScheduleTaskcmd(const UINT8 **cp, INT32 playernum)
 {
 	char command[MAXTEXTCMD];
 	INT16 seconds;
@@ -5824,7 +5813,7 @@ static void Got_ScheduleTaskcmd(UINT8 **cp, INT32 playernum)
 	}
 }
 
-static void Got_ScheduleClearcmd(UINT8 **cp, INT32 playernum)
+static void Got_ScheduleClearcmd(const UINT8 **cp, INT32 playernum)
 {
 	(void)cp;
 
@@ -5846,7 +5835,7 @@ static void Got_ScheduleClearcmd(UINT8 **cp, INT32 playernum)
 	}
 }
 
-static void Got_Automatecmd(UINT8 **cp, INT32 playernum)
+static void Got_Automatecmd(const UINT8 **cp, INT32 playernum)
 {
 	UINT8 eventID;
 	char command[MAXTEXTCMD];
@@ -5889,7 +5878,7 @@ static void Got_Automatecmd(UINT8 **cp, INT32 playernum)
 	}
 }
 
-static void Got_Cheat(UINT8 **cp, INT32 playernum)
+static void Got_Cheat(const UINT8 **cp, INT32 playernum)
 {
 	UINT8 targetPlayer = READUINT8(*cp);
 	cheat_t cheat = READUINT8(*cp);
@@ -7125,7 +7114,7 @@ void LiveStudioAudience_OnChange(void)
 	livestudioaudience_timer = 90;
 }
 
-void Got_DiscordInfo(UINT8 **p, INT32 playernum)
+void Got_DiscordInfo(const UINT8 **p, INT32 playernum)
 {
 	if (playernum != serverplayer /*&& !IsPlayerAdmin(playernum)*/)
 	{

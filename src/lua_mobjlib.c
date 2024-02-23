@@ -565,13 +565,13 @@ static int mobj_set(lua_State *L)
 	case mobj_z:
 	{
 		// z doesn't cross sector bounds so it's okay.
-		tm_t ptm = tm;
+		tm_t ptm = g_tm;
 		mo->z = luaL_checkfixed(L, 3);
 		P_CheckPosition(mo, mo->x, mo->y, NULL);
-		mo->floorz = tm.floorz;
-		mo->ceilingz = tm.ceilingz;
-		mo->floorrover = tm.floorrover;
-		mo->ceilingrover = tm.ceilingrover;
+		mo->floorz = g_tm.floorz;
+		mo->ceilingz = g_tm.ceilingz;
+		mo->floorrover = g_tm.floorrover;
+		mo->ceilingrover = g_tm.ceilingrover;
 		P_RestoreTMStruct(ptm);
 		break;
 	}
@@ -636,29 +636,29 @@ static int mobj_set(lua_State *L)
 		return NOSET;
 	case mobj_radius:
 	{
-		tm_t ptm = tm;
+		tm_t ptm = g_tm;
 		mo->radius = luaL_checkfixed(L, 3);
 		if (mo->radius < 0)
 			mo->radius = 0;
 		P_CheckPosition(mo, mo->x, mo->y, NULL);
-		mo->floorz = tm.floorz;
-		mo->ceilingz = tm.ceilingz;
-		mo->floorrover = tm.floorrover;
-		mo->ceilingrover = tm.ceilingrover;
+		mo->floorz = g_tm.floorz;
+		mo->ceilingz = g_tm.ceilingz;
+		mo->floorrover = g_tm.floorrover;
+		mo->ceilingrover = g_tm.ceilingrover;
 		P_RestoreTMStruct(ptm);
 		break;
 	}
 	case mobj_height:
 	{
-		tm_t ptm = tm;
+		tm_t ptm = g_tm;
 		mo->height = luaL_checkfixed(L, 3);
 		if (mo->height < 0)
 			mo->height = 0;
 		P_CheckPosition(mo, mo->x, mo->y, NULL);
-		mo->floorz = tm.floorz;
-		mo->ceilingz = tm.ceilingz;
-		mo->floorrover = tm.floorrover;
-		mo->ceilingrover = tm.ceilingrover;
+		mo->floorz = g_tm.floorz;
+		mo->ceilingz = g_tm.ceilingz;
+		mo->floorrover = g_tm.floorrover;
+		mo->ceilingrover = g_tm.ceilingrover;
 		P_RestoreTMStruct(ptm);
 		break;
 	}

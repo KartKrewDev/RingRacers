@@ -142,7 +142,7 @@ void RemoveLuaFileTransfer(void);
 void RemoveAllLuaFileTransfers(void);
 void SV_AbortLuaFileTransfer(INT32 node);
 void CL_PrepareDownloadLuaFile(void);
-void Got_LuaFile(UINT8 **cp, INT32 playernum);
+void Got_LuaFile(const UINT8 **cp, INT32 playernum);
 void StoreLuaFileCallback(INT32 id);
 void RemoveLuaFileCallback(INT32 id);
 void MakePathDirs(char *path);

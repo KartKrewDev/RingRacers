@@ -48,6 +48,9 @@ struct IsSeekableStream
 						  StreamSize> {};
 
 template <typename T>
+struct IsFlushableStream : public std::is_same<decltype(std::declval<T&>().flush()), void> {};
+
+template <typename T>
 struct IsStream : public std::disjunction<IsInputStream<T>, IsOutputStream<T>> {};
 
 template <typename T>
@@ -59,6 +62,8 @@ template <typename T>
 inline constexpr const bool IsOutputStreamV = IsOutputStream<T>::value;
 template <typename T>
 inline constexpr const bool IsSeekableStreamV = IsSeekableStream<T>::value;
+template <typename T>
+inline constexpr const bool IsFlushableStreamV = IsFlushableStream<T>::value;
 template <typename T>
 inline constexpr const bool IsStreamV = IsStream<T>::value;
 template <typename T>
@@ -570,6 +575,54 @@ inline void read_exact(VecStream& stream, tcb::span<std::byte> buffer)
 	std::copy(copy_begin, copy_end, buffer.begin());
 }
 
+enum class FileStreamMode
+{
+	kRead,
+	kWrite,
+	kAppend,
+};
+
+class FileStreamException final : public std::exception
+{
+	std::string msg_;
+
+public:
+	explicit FileStreamException(const char* msg);
+	explicit FileStreamException(const std::string& msg);
+	FileStreamException(const FileStreamException&);
+	FileStreamException(FileStreamException&&) noexcept;
+	~FileStreamException();
+
+	FileStreamException& operator=(const FileStreamException&);
+	FileStreamException& operator=(FileStreamException&&) noexcept;
+
+	virtual const char* what() const noexcept override;
+};
+
+class FileStream final
+{
+	void* file_ = nullptr; // Type is omitted to avoid include cstdio
+	FileStreamMode mode_;
+
+public:
+	FileStream() noexcept;
+	FileStream(const FileStream&) = delete;
+	FileStream(FileStream&&) noexcept;
+	FileStream(const std::string& path, FileStreamMode mode = FileStreamMode::kRead);
+	~FileStream();
+
+	FileStream& operator=(const FileStream&) = delete;
+	FileStream& operator=(FileStream&&) noexcept;
+
+	StreamSize read(tcb::span<std::byte> buffer);
+	StreamSize write(tcb::span<const std::byte> buffer);
+
+	// not bothering with seeking for now -- apparently 64-bit file positions is not available in ansi c
+	// StreamSize seek(SeekFrom seek_from, StreamOffset offset);
+
+	void close();
+};
+
 class ZlibException : public std::exception {
 	int err_ {0};
 	std::string msg_;
@@ -758,6 +811,124 @@ private:
 		buf_head_ = 0;
 	}
 };
+
+extern template class ZlibInputStream<SpanStream>;
+extern template class ZlibInputStream<VecStream>;
+
+template <typename O,
+		  typename std::enable_if_t<IsOutputStreamV<O> && std::is_move_constructible_v<O> &&
+									std::is_move_assignable_v<O>>* = nullptr>
+class BufferedOutputStream final
+{
+	O inner_;
+	std::vector<std::byte> buf_;
+	tcb::span<const std::byte>::size_type cap_;
+
+public:
+	explicit BufferedOutputStream(O&& o) : inner_(std::forward<O>(o)), buf_(), cap_(8192) {}
+	BufferedOutputStream(O&& o, tcb::span<const std::byte>::size_type capacity) : inner_(std::forward<O>(o)), buf_(), cap_(capacity) {}
+	BufferedOutputStream(const BufferedOutputStream&) = delete;
+	BufferedOutputStream(BufferedOutputStream&&) = default;
+	~BufferedOutputStream() = default;
+
+	BufferedOutputStream& operator=(const BufferedOutputStream&) = delete;
+	BufferedOutputStream& operator=(BufferedOutputStream&&) = default;
+
+	StreamSize write(tcb::span<const std::byte> buffer)
+	{
+		StreamSize totalwritten = 0;
+		while (buffer.size() > 0)
+		{
+			std::size_t tocopy = std::min(std::min(cap_, cap_ - buf_.size()), buffer.size());
+			tcb::span<const std::byte> copy_slice = buffer.subspan(0, tocopy);
+			buf_.reserve(cap_);
+			buf_.insert(buf_.end(), copy_slice.begin(), copy_slice.end());
+			flush();
+			totalwritten += copy_slice.size();
+
+			buffer = buffer.subspan(tocopy);
+		}
+
+		return totalwritten;
+	}
+
+	void flush()
+	{
+		tcb::span<const std::byte> writebuf = tcb::make_span(buf_);
+		write_exact(inner_, writebuf);
+		buf_.resize(0);
+	}
+
+	O&& stream() noexcept
+	{
+		return std::move(inner_);
+	}
+};
+
+extern template class BufferedOutputStream<FileStream>;
+
+template <typename I,
+		  typename std::enable_if_t<IsInputStreamV<I> && std::is_move_constructible_v<I> &&
+									std::is_move_assignable_v<I>>* = nullptr>
+class BufferedInputStream final
+{
+	I inner_;
+	std::vector<std::byte> buf_;
+	tcb::span<std::byte>::size_type cap_;
+
+public:
+	template <typename std::enable_if_t<std::is_default_constructible_v<I>>* = nullptr>
+	BufferedInputStream() : inner_(), buf_(), cap_(8192) {}
+
+	explicit BufferedInputStream(I&& i) : inner_(std::forward<I>(i)), buf_(), cap_(8192) {}
+	BufferedInputStream(I&& i, tcb::span<std::byte>::size_type capacity) : inner_(std::forward<I>(i)), buf_(), cap_(capacity) {}
+	BufferedInputStream(const BufferedInputStream&) = delete;
+	BufferedInputStream(BufferedInputStream&&) = default;
+	~BufferedInputStream() = default;
+
+	BufferedInputStream& operator=(const BufferedInputStream&) = delete;
+	BufferedInputStream& operator=(BufferedInputStream&&) = default;
+
+	StreamSize read(tcb::span<std::byte> buffer)
+	{
+		StreamSize totalread = 0;
+		buf_.reserve(cap_);
+		while (buffer.size() > 0)
+		{
+			std::size_t toread = cap_ - buf_.size();
+			std::size_t prereadsize = buf_.size();
+			buf_.resize(prereadsize + toread);
+			tcb::span<std::byte> readspan{buf_.data() + prereadsize, buf_.data() + prereadsize + toread};
+			StreamSize bytesread = inner_.read(readspan);
+			buf_.resize(prereadsize + bytesread);
+
+			StreamSize tocopyfrombuf = std::min(buffer.size(), buf_.size());
+			std::copy(buf_.begin(), std::next(buf_.begin(), tocopyfrombuf), buffer.begin());
+			buffer = buffer.subspan(tocopyfrombuf);
+			totalread += tocopyfrombuf;
+
+			// Move the remaining buffer backwards
+			std::size_t bufremaining = buf_.size() - tocopyfrombuf;
+			std::move(std::next(buf_.begin(), tocopyfrombuf), buf_.end(), buf_.begin());
+			buf_.resize(bufremaining);
+
+			// If we read 0 bytes from the stream, assume the inner stream won't return more for a while.
+			// The caller can read in a loop if it must (i.e. read_exact)
+			if (bytesread == 0)
+			{
+				break;
+			}
+		}
+		return totalread;
+	}
+
+	I&& stream() noexcept
+	{
+		return std::move(inner_);
+	}
+};
+
+extern template class BufferedInputStream<FileStream>;
 
 // Utility functions
 

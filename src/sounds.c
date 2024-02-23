@@ -566,7 +566,7 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"s3ka2",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Launch"},
   {"s3ka3",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Rising charge"},
   {"s3ka4",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Powering up"},
-  {"s3ka5",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"s3ka5",  false,  64,  16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // bufo x8away
   {"s3ka6",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Attraction fizzle"},
   {"s3ka7",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Countdown beep"},
   {"s3ka8",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Energy"},

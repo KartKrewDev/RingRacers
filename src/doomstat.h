@@ -121,9 +121,6 @@ extern preciptype_t curWeather;
 struct skinrecord_t
 {
 	UINT32 wins;
-
-	// Purely assistive in gamedata save processes
-	UINT32 _saveid;
 };
 
 struct unloaded_skin_t
@@ -561,7 +558,6 @@ struct mapheader_t
 	mobjtype_t destroyforchallenge[MAXDESTRUCTIBLES];	///< Assistive for UCRP_MAPDESTROYOBJECTS
 	UINT8 destroyforchallenge_size;						///< Number for above
 
-	UINT32 _saveid;						///< Purely assistive in gamedata save processes
 	UINT16 cache_spraycan;				///< Cached Spraycan ID
 	UINT16 cache_maplock;				///< Cached Unlockable ID
 

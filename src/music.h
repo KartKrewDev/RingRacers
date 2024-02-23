@@ -59,6 +59,10 @@ const char *Music_CurrentId(void);
 // back to the start.)
 void Music_Play(const char *id);
 
+// Same as Music_Play, but a convenience for remapping intermission
+// based on game state.
+void Music_PlayIntermission(void);
+
 // Postpone the end of this tune until N tics from now. The
 // tune should already be playing before calling this.
 void Music_DelayEnd(const char *id, tic_t duration);

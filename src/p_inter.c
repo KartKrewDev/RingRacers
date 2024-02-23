@@ -1505,7 +1505,7 @@ boolean P_CheckRacers(void)
 	}
 	else
 	{
-		if (griefed == true)
+		if (griefed == true && numHumans > 0)
 		{
 			// Don't do this if someone spectated
 			eliminateLast = false;
@@ -2503,7 +2503,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 			if (gametyperules & (GTR_BUMPERS|GTR_CHECKPOINTS))
 			{
 				if ((player->pitblame > -1) && (player->pitblame < MAXPLAYERS)
-					&& (playeringame[player->pitblame]) && (!players[player->pitblame].spectator) 
+					&& (playeringame[player->pitblame]) && (!players[player->pitblame].spectator)
 					&& (players[player->pitblame].mo) && (!P_MobjWasRemoved(players[player->pitblame].mo)))
 				{
 					P_DamageMobj(player->mo, players[player->pitblame].mo, players[player->pitblame].mo, 1, DMG_KARMA);
@@ -3162,6 +3162,10 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			player->pflags &= ~PF_GAINAX;
 			Obj_EndBungee(player);
 			K_BumperInflate(target->player);
+
+			// Explosions are explicit combo setups.
+			if (damagetype & DMG_EXPLODE)
+				player->bumperinflate = 0;
 
 			if (player->spectator == false && !(player->charflags & SF_IRONMAN))
 			{

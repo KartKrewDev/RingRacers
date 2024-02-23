@@ -236,7 +236,7 @@ void CleanupPlayerName(INT32 playernum, const char *newname);
 boolean EnsurePlayerNameIsGood(char *name, INT32 playernum);
 void WeaponPref_Send(UINT8 ssplayer);
 void WeaponPref_Save(UINT8 **cp, INT32 playernum);
-void WeaponPref_Parse(UINT8 **cp, INT32 playernum);
+size_t WeaponPref_Parse(const UINT8 *p, INT32 playernum);
 void D_SendPlayerConfig(UINT8 n);
 void Command_ExitGame_f(void);
 void Command_Retry_f(void);

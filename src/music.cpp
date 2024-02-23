@@ -216,6 +216,20 @@ void Music_Play(const char* id)
 	}
 }
 
+void Music_PlayIntermission(void)
+{
+	// why aren't the ATTACK_ enums declared alongside modeattacking?
+	if (modeattacking != 0)
+	{
+		Music_Remap("intermission", "timent");
+	}
+	else
+	{
+		Music_Remap("intermission", "racent");
+	}
+	Music_Play("intermission");
+}
+
 void Music_DelayEnd(const char* id, tic_t duration)
 {
 	Tune* tune = g_tunes.find(id);

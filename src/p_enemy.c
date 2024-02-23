@@ -495,10 +495,10 @@ boolean P_Move(mobj_t *actor, fixed_t speed)
 
 	if (!P_TryMove(actor, tryx, tryy, false, NULL))
 	{
-		if (actor->flags & MF_FLOAT && tm.floatok)
+		if (actor->flags & MF_FLOAT && g_tm.floatok)
 		{
 			// must adjust height
-			if (actor->z < tm.floorz)
+			if (actor->z < g_tm.floorz)
 				actor->z += FixedMul(FLOATSPEED, actor->scale);
 			else
 				actor->z -= FixedMul(FLOATSPEED, actor->scale);
@@ -9940,13 +9940,13 @@ void A_FlickyCenter(mobj_t *actor)
 		{
 			actor->extravalue2 = 1;
 		 	P_SetOrigin(actor, actor->target->x, actor->target->y, actor->target->z);
-			P_SetTarget(&tm.thing, NULL);
+			P_SetTarget(&g_tm.thing, NULL);
 		}
 		else if(actor->extravalue2)
 		{
 			actor->extravalue2 = 0;
 			P_SetOrigin(actor, originx, originy, originz);
-			P_SetTarget(&tm.thing, NULL);
+			P_SetTarget(&g_tm.thing, NULL);
 		}
 	}
 }
@@ -12139,11 +12139,11 @@ void A_SSMineExplode(mobj_t *actor)
 		return;
 
 	delay = K_MineExplodeAttack(actor, (3*actor->info->painchance)>>1, (boolean)locvar1);
-	
+
 	skincolornum_t color = SKINCOLOR_KETCHUP;
 	if (!P_MobjWasRemoved(actor->target) && actor->target->player)
 		color = actor->target->player->skincolor;
-		
+
 	K_SpawnMineExplosion(actor, color, delay);
 }
 
@@ -12612,7 +12612,7 @@ void A_MakeSSCandle(mobj_t* actor)
 	P_SetTarget(&actor->tracer, fire);
 
 	// Sides
-	for (i = 0; i < 5; i++)
+	for (i = 0; i < 6; i++)
 	{
 		fixed_t a = FixedAngle(60 * FRACUNIT) * i;
 		fixed_t offsetx = actor->x + FixedMul(dist, FCOS(a));

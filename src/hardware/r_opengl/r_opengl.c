@@ -922,6 +922,9 @@ static struct {
 	{GLSL_DEFAULT_VERTEX_SHADER, GLSL_SOFTWARE_FRAGMENT_SHADER},
 
 	// Sprite shader
+	{GLSL_DEFAULT_VERTEX_SHADER, GLSL_SOFTWARE_FRAGMENT_SHADER},
+
+	// Sprite clipping hack shader (for pulling things out of the floor)
 	{GLSL_SPRITECLIP_HACK_VERTEX_SHADER, GLSL_SOFTWARE_FRAGMENT_SHADER},
 
 	// Model shader

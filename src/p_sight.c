@@ -380,13 +380,13 @@ static boolean P_CanBotTraverse(seg_t *seg, divline_t *divl, register los_t *los
 	frac = P_InterceptVector2(&los->strace, divl);
 
 	// calculate position at intercept
-	tm.x = los->strace.x + FixedMul(los->strace.dx, frac);
-	tm.y = los->strace.y + FixedMul(los->strace.dy, frac);
+	g_tm.x = los->strace.x + FixedMul(los->strace.dx, frac);
+	g_tm.y = los->strace.y + FixedMul(los->strace.dy, frac);
 
 	// set openrange, opentop, openbottom
 	open.fofType = (flip ? LO_FOF_CEILINGS : LO_FOF_FLOORS);
 	P_LineOpening(line, los->t1, &open);
-	maxstep = P_GetThingStepUp(los->t1, tm.x, tm.y);
+	maxstep = P_GetThingStepUp(los->t1, g_tm.x, g_tm.y);
 
 	if (open.range < los->t1->height)
 	{
@@ -408,7 +408,7 @@ static boolean P_CanBotTraverse(seg_t *seg, divline_t *divl, register los_t *los
 			UINT8 side = P_DivlineSide(los->t2x, los->t2y, divl) & 1;
 			sector_t *sector = (side == 1) ? seg->backsector : seg->frontsector;
 
-			if (K_BotHatesThisSector(los->t1->player, sector, tm.x, tm.y))
+			if (K_BotHatesThisSector(los->t1->player, sector, g_tm.x, g_tm.y))
 			{
 				// This line does not block us, but we don't want to cross it regardless.
 				return false;
@@ -448,13 +448,13 @@ static boolean P_CanWaypointTraverse(seg_t *seg, divline_t *divl, register los_t
 	frac = P_InterceptVector2(&los->strace, divl);
 
 	// calculate position at intercept
-	tm.x = los->strace.x + FixedMul(los->strace.dx, frac);
-	tm.y = los->strace.y + FixedMul(los->strace.dy, frac);
+	g_tm.x = los->strace.x + FixedMul(los->strace.dx, frac);
+	g_tm.y = los->strace.y + FixedMul(los->strace.dy, frac);
 
 	// set openrange, opentop, openbottom
 	open.fofType = (flip ? LO_FOF_CEILINGS : LO_FOF_FLOORS);
 	P_LineOpening(line, los->t1, &open);
-	maxstep = P_GetThingStepUp(los->t1, tm.x, tm.y);
+	maxstep = P_GetThingStepUp(los->t1, g_tm.x, g_tm.y);
 
 #if 0
 	if (los->t2->type == MT_WAYPOINT)

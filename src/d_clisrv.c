@@ -320,9 +320,9 @@ tic_t ExpandTics(INT32 low, tic_t basetic)
 // Some extra data function for handle textcmd buffer
 // -----------------------------------------------------------------
 
-static void (*listnetxcmd[MAXNETXCMD])(UINT8 **p, INT32 playernum);
+static void (*listnetxcmd[MAXNETXCMD])(const UINT8 **p, INT32 playernum);
 
-void RegisterNetXCmd(netxcmd_t id, void (*cmd_f)(UINT8 **p, INT32 playernum))
+void RegisterNetXCmd(netxcmd_t id, void (*cmd_f)(const UINT8 **p, INT32 playernum))
 {
 #ifdef PARANOIA
 	if (id >= MAXNETXCMD)
@@ -463,12 +463,12 @@ static boolean ExtraDataTicker(void)
 	{
 		if (playeringame[i] || i == 0)
 		{
-			UINT8 *bufferstart = D_GetExistingTextcmd(gametic, i);
+			const UINT8 *bufferstart = D_GetExistingTextcmd(gametic, i);
 
 			if (bufferstart)
 			{
-				UINT8 *curpos = bufferstart;
-				UINT8 *bufferend = &curpos[((UINT16*)curpos)[0]+2];
+				const UINT8 *curpos = bufferstart;
+				const UINT8 *bufferend = &curpos[((const UINT16*)curpos)[0]+2];
 
 				curpos += 2;
 				while (curpos < bufferend)
@@ -2825,7 +2825,7 @@ static void Command_Kick(void)
 		CONS_Printf(M_GetText("Only the server or a remote admin can use this.\n"));
 }
 
-static void Got_KickCmd(UINT8 **p, INT32 playernum)
+static void Got_KickCmd(const UINT8 **p, INT32 playernum)
 {
 	INT32 pnum, msg;
 	char buf[3 + MAX_REASONLENGTH];
@@ -3195,9 +3195,9 @@ static void Command_ResendGamestate(void)
 	}
 }
 
-static void Got_AddPlayer(UINT8 **p, INT32 playernum);
-static void Got_RemovePlayer(UINT8 **p, INT32 playernum);
-static void Got_AddBot(UINT8 **p, INT32 playernum);
+static void Got_AddPlayer(const UINT8 **p, INT32 playernum);
+static void Got_RemovePlayer(const UINT8 **p, INT32 playernum);
+static void Got_AddBot(const UINT8 **p, INT32 playernum);
 
 void Joinable_OnChange(void);
 void Joinable_OnChange(void)
@@ -3457,7 +3457,7 @@ static inline void SV_AddNode(INT32 node)
 }
 
 // Xcmd XD_ADDPLAYER
-static void Got_AddPlayer(UINT8 **p, INT32 playernum)
+static void Got_AddPlayer(const UINT8 **p, INT32 playernum)
 {
 	INT16 node, newplayernum;
 	UINT8 console;
@@ -3566,7 +3566,7 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 }
 
 // Xcmd XD_REMOVEPLAYER
-static void Got_RemovePlayer(UINT8 **p, INT32 playernum)
+static void Got_RemovePlayer(const UINT8 **p, INT32 playernum)
 {
 	SINT8 pnum, reason;
 
@@ -3593,7 +3593,7 @@ static void Got_RemovePlayer(UINT8 **p, INT32 playernum)
 
 // Xcmd XD_ADDBOT
 // Compacted version of XD_ADDPLAYER for simplicity
-static void Got_AddBot(UINT8 **p, INT32 playernum)
+static void Got_AddBot(const UINT8 **p, INT32 playernum)
 {
 	INT16 newplayernum;
 	UINT8 skinnum = 0;

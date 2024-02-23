@@ -5874,6 +5874,7 @@ static void K_DrawMessageFeed(void)
 		Draw::TextElement text(submsg);
 
 		text.font(Draw::Font::kMenu);
+		submsg = text.parse(submsg).string();
 
 		UINT8 x = 160;
 		UINT8 y = 10;
@@ -5899,7 +5900,7 @@ static void K_DrawMessageFeed(void)
 			if (i >= 1)
 				y += BASEVIDHEIGHT / 2;
 		}
-		UINT8 sw = text.width();
+		UINT16 sw = text.width();
 
 		K_DrawSticker(x - sw/2, y, sw, 0, true);
 		Draw(x, y+shift).align(Draw::Align::kCenter).text(text);
