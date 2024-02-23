@@ -1,6 +1,7 @@
 /// \file  menus/options-profiles-edit-controls.c
 /// \brief Profile Controls Editor
 
+#include "../g_input.h"
 #include "../k_menu.h"
 #include "../s_sound.h"
 #include "../i_joy.h" // for joystick menu controls
@@ -10,44 +11,44 @@ menuitem_t OPTIONS_ProfileControls[] = {
 	{IT_HEADER, "MAIN CONTROLS", "That's the stuff on the controller!!",
 		NULL, {NULL}, 0, 0},
 
-	{IT_CONTROL, "A", "Accelerate / Confirm",
-		"PR_BTA", {.routine = M_ProfileSetControl}, gc_a, 0},
+	{IT_CONTROL, "Accel / Confirm", "Accelerate / Confirm",
+		"TLB_A", {.routine = M_ProfileSetControl}, gc_a, 0},
 
-	{IT_CONTROL, "B", "Look backwards / Back",
-		"PR_BTB", {.routine = M_ProfileSetControl}, gc_b, 0},
+	{IT_CONTROL, "Look back", "Look backwards / Go back",
+		"TLB_B", {.routine = M_ProfileSetControl}, gc_b, 0},
 
-	{IT_CONTROL, "C", "Spindash / Extra",
-		"PR_BTC", {.routine = M_ProfileSetControl}, gc_c, 0},
+	{IT_CONTROL, "Spindash", "Spindash / Extra",
+		"TLB_C", {.routine = M_ProfileSetControl}, gc_c, 0},
 
-	{IT_CONTROL, "X", "Brake / Back",
-		"PR_BTX", {.routine = M_ProfileSetControl}, gc_x, 0},
+	{IT_CONTROL, "Brake / Go back", "Brake / Go back",
+		"TLB_D", {.routine = M_ProfileSetControl}, gc_x, 0},
 
-	{IT_CONTROL, "Y", "Respawn",
-		"PR_BTY", {.routine = M_ProfileSetControl}, gc_y, 0},
+	{IT_CONTROL, "Respawn", "Respawn",
+		"TLB_E", {.routine = M_ProfileSetControl}, gc_y, 0},
 
-	{IT_CONTROL, "Z", "Multiplayer quick-chat / quick-vote",
-		"PR_BTZ", {.routine = M_ProfileSetControl}, gc_z, 0},
+	{IT_CONTROL, "Action", "Multiplayer quick-chat / quick-vote",
+		"TLB_F", {.routine = M_ProfileSetControl}, gc_z, 0},
 
-	{IT_CONTROL, "L", "Use item",
-		"PR_BTL", {.routine = M_ProfileSetControl}, gc_l, 0},
+	{IT_CONTROL, "Use Item", "Use item",
+		"TLB_H", {.routine = M_ProfileSetControl}, gc_l, 0},
 
-	{IT_CONTROL, "R", "Drift",
-		"PR_BTR", {.routine = M_ProfileSetControl}, gc_r, 0},
+	{IT_CONTROL, "Drift", "Drift",
+		"TLB_I", {.routine = M_ProfileSetControl}, gc_r, 0},
 
 	{IT_CONTROL, "Turn Left", "Turn left",
-		"PR_PADL", {.routine = M_ProfileSetControl}, gc_left, 0},
+		"TLB_M", {.routine = M_ProfileSetControl}, gc_left, 0},
 
 	{IT_CONTROL, "Turn Right", "Turn right",
-		"PR_PADR", {.routine = M_ProfileSetControl}, gc_right, 0},
+		"TLB_L", {.routine = M_ProfileSetControl}, gc_right, 0},
 
 	{IT_CONTROL, "Aim Forward", "Aim forwards",
-		"PR_PADU", {.routine = M_ProfileSetControl}, gc_up, 0},
+		"TLB_J", {.routine = M_ProfileSetControl}, gc_up, 0},
 
 	{IT_CONTROL, "Aim Backwards", "Aim backwards",
-		"PR_PADD", {.routine = M_ProfileSetControl}, gc_down, 0},
+		"TLB_K", {.routine = M_ProfileSetControl}, gc_down, 0},
 
-	{IT_CONTROL, "Start", "Open pause menu",
-		"PR_BTS", {.routine = M_ProfileSetControl}, gc_start, 0},
+	{IT_CONTROL, "Open pause menu", "Open pause menu",
+		"TLB_G", {.routine = M_ProfileSetControl}, gc_start, 0},
 
 	{IT_HEADER, "OPTIONAL CONTROLS", "Take a screenshot, chat...",
 		NULL, {NULL}, 0, 0},
@@ -58,20 +59,17 @@ menuitem_t OPTIONS_ProfileControls[] = {
 	{IT_CONTROL, "RECORD VIDEO", "Record a video with sound.",
 		NULL, {.routine = M_ProfileSetControl}, gc_startmovie, 0},
 
-	{IT_CONTROL, "RECORD LOSSLESS", "Record a pixel perfect GIF.",
+	{IT_CONTROL, "RECORD GIF", "Record a pixel perfect GIF.",
 		NULL, {.routine = M_ProfileSetControl}, gc_startlossless, 0},
+
+	{IT_CONTROL, "SHOW RANKINGS", "Display the current rankings mid-game.",
+		NULL, {.routine = M_ProfileSetControl}, gc_rankings, 0},
 
 	{IT_CONTROL, "OPEN CHAT", "Opens full keyboard chatting for online games.",
 		NULL, {.routine = M_ProfileSetControl}, gc_talk, 0},
 
 	{IT_CONTROL, "OPEN TEAM CHAT", "Opens team-only full chat for online games.",
 		NULL, {.routine = M_ProfileSetControl}, gc_teamtalk, 0},
-
-	{IT_CONTROL, "SHOW RANKINGS", "Display the current rankings mid-game.",
-		NULL, {.routine = M_ProfileSetControl}, gc_rankings, 0},
-
-	{IT_CONTROL, "OPEN CONSOLE", "Opens the developer options console.",
-		NULL, {.routine = M_ProfileSetControl}, gc_console, 0},
 
 	{IT_CONTROL, "LUA/A", "May be used by add-ons.",
 		NULL, {.routine = M_ProfileSetControl}, gc_luaa, 0},
@@ -82,11 +80,20 @@ menuitem_t OPTIONS_ProfileControls[] = {
 	{IT_CONTROL, "LUA/C", "May be used by add-ons.",
 		NULL, {.routine = M_ProfileSetControl}, gc_luac, 0},
 
-	{IT_HEADER, "EXTRA", "",
+	{IT_CONTROL, "OPEN CONSOLE", "Opens the developer options console.",
+		NULL, {.routine = M_ProfileSetControl}, gc_console, 0},
+
+	{IT_HEADER, "TEST AND CONFIRM", "",
 		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_CALL, "TRY MAPPINGS", "Test your controls.",
 		NULL, {.routine = M_ProfileTryController}, 0, 0},
+
+	{IT_STRING | IT_CALL, "RESET TO DEFAULT", "Reset all controls back to default.",
+		NULL, {.routine = M_ProfileDefaultControls}, 0, 0},
+
+	{IT_STRING | IT_CALL, "CLEAR ALL", "Unbind all controls.",
+		NULL, {.routine = M_ProfileClearControls}, 0, 0},
 
 	{IT_STRING | IT_CALL, "CONFIRM", "Go back to profile setup.",
 		NULL, {.routine = M_ProfileControlsConfirm}, 0, 0},
@@ -129,8 +136,26 @@ static void SetDeviceOnPress(void)
 }
 */
 
+static boolean M_ClearCurrentControl(void)
+{
+	// check if we're on a valid menu option...
+	if (currentMenu->menuitems[itemOn].mvar1)
+	{
+		// clear controls for that key
+		INT32 i;
+
+		for (i = 0; i < MAXINPUTMAPPING; i++)
+			optionsmenu.tempcontrols[currentMenu->menuitems[itemOn].mvar1][i] = KEY_NULL;
+
+		return true;
+	}
+
+	return false;
+}
+
 void M_HandleProfileControls(void)
 {
+	const UINT8 pid = 0;
 	UINT8 maxscroll = currentMenu->numitems - 5;
 	M_OptionsTick();
 
@@ -151,14 +176,39 @@ void M_HandleProfileControls(void)
 		optionsmenu.controlscroll = 0;
 
 	// bindings, cancel if timer is depleted.
-	if (optionsmenu.bindcontrol)
+	if (optionsmenu.bindtimer)
 	{
-		optionsmenu.bindtimer--;
-		if (!optionsmenu.bindtimer)
+		if (optionsmenu.bindtimer > 0)
+			optionsmenu.bindtimer--;
+	}
+	else if (currentMenu->menuitems[itemOn].mvar1) // check if we're on a valid menu option...
+	{
+		// Hold right to begin clearing the control.
+		//
+		// If bindben timer increases enough, bindben_swallow
+		// will be set.
+		// This is a commitment to clear the control.
+		// You can keep holding right to postpone the clear
+		// but once you let go, you are locked out of
+		// pressing it again until the animation finishes.
+		if (menucmd[pid].dpad_lr > 0 && (optionsmenu.bindben || !optionsmenu.bindben_swallow))
 		{
-			optionsmenu.bindcontrol = 0;		// we've gone past the max, just stop.
+			optionsmenu.bindben++;
 		}
+		else
+		{
+			optionsmenu.bindben = 0;
 
+			if (optionsmenu.bindben_swallow)
+			{
+				optionsmenu.bindben_swallow--;
+
+				if (optionsmenu.bindben_swallow == 100) // special countdown for the "quick" animation
+					optionsmenu.bindben_swallow = 0;
+				else if (!optionsmenu.bindben_swallow) // long animation, clears control when done
+					M_ClearCurrentControl();
+			}
+		}
 	}
 }
 
@@ -186,19 +236,37 @@ static void M_ProfileControlSaveResponse(INT32 choice)
 		{
 			memcpy(&gamecontrol[belongsto], optionsmenu.tempcontrols, sizeof(gamecontroldefault));
 		}
-
-		M_GoBack(0);
 	}
+	else
+	{
+		// Revert changes
+		memcpy(optionsmenu.tempcontrols, optionsmenu.profile->controls, sizeof(gamecontroldefault));
+	}
+
+	M_GoBack(0);
 }
 
 void M_ProfileControlsConfirm(INT32 choice)
 {
-	(void)choice;
+	if (!memcmp(optionsmenu.profile->controls, optionsmenu.tempcontrols, sizeof(gamecontroldefault)))
+	{
+		M_GoBack(0); // no change
+	}
+	else if (choice == 0)
+	{
+		M_StartMessage(
+			"Profiles",
+			"You have unsaved changes to your controls.\n"
+			"Please confirm if you wish to save them.\n",
+			&M_ProfileControlSaveResponse,
+			MM_YESNO,
+			NULL,
+			NULL
+		);
+	}
+	else
+		M_ProfileControlSaveResponse(MA_YES);
 
-	//M_StartMessage("Profiles", M_GetText("Exiting will save the control changes\nfor this Profile.\nIs this okay?\n"), &M_ProfileControlSaveResponse, MM_YESNO, NULL, NULL);
-	// TODO: Add a graphic for controls saving, instead of obnoxious prompt.
-
-	M_ProfileControlSaveResponse(MA_YES);
 
 	// Reapply player 1's real profile.
 	if (cv_currprofile.value > -1)
@@ -217,6 +285,33 @@ boolean M_ProfileControlsInputs(INT32 ch)
 	{
 		if (menucmd[pid].dpad_ud || menucmd[pid].dpad_lr || menucmd[pid].buttons)
 		{
+			if (menucmd[pid].dpad_ud != menucmd[pid].prev_dpad_ud || menucmd[pid].dpad_lr != menucmd[pid].prev_dpad_lr)
+				S_StartSound(NULL, sfx_s3k5b);
+
+			UINT32 newbuttons = menucmd[pid].buttons & ~(menucmd[pid].buttonsHeld);
+
+			if (newbuttons & MBT_L)
+				S_StartSound(NULL, sfx_kc69);
+			if (newbuttons & MBT_R)
+				S_StartSound(NULL, sfx_s3ka2);
+			
+			if (newbuttons & MBT_A)
+				S_StartSound(NULL, sfx_kc3c);
+			if (newbuttons & MBT_B)
+				S_StartSound(NULL, sfx_3db09);
+			if (newbuttons & MBT_C)
+				S_StartSound(NULL, sfx_s1be);
+			
+			if (newbuttons & MBT_X)
+				S_StartSound(NULL, sfx_s1a4);
+			if (newbuttons & MBT_Y)
+				S_StartSound(NULL, sfx_s3kcas);
+			if (newbuttons & MBT_Z)
+				S_StartSound(NULL, sfx_s3kc3s);
+
+			if (newbuttons & MBT_START)
+				S_StartSound(NULL, sfx_gshdc);
+
 			optionsmenu.trycontroller = 5*TICRATE;
 		}
 		else
@@ -236,24 +331,17 @@ boolean M_ProfileControlsInputs(INT32 ch)
 		return true;
 	}
 
-	if (optionsmenu.bindcontrol)
+	if (optionsmenu.bindtimer)
 		return true;	// Eat all inputs there. We'll use a stupid hack in M_Responder instead.
 
 	//SetDeviceOnPress();	// Update device constantly so that we don't stay stuck with otpions saying a device is unavailable just because we're mapping multiple devices...
 
 	if (M_MenuExtraPressed(pid))
 	{
-		// check if we're on a valid menu option...
-		if (currentMenu->menuitems[itemOn].mvar1)
-		{
-			// clear controls for that key
-			INT32 i;
-
-			for (i = 0; i < MAXINPUTMAPPING; i++)
-				optionsmenu.tempcontrols[currentMenu->menuitems[itemOn].mvar1][i] = KEY_NULL;
-
-			S_StartSound(NULL, sfx_s3k66);
-		}
+		if (M_ClearCurrentControl())
+			S_StartSound(NULL, sfx_monch);
+		optionsmenu.bindben = 0;
+		optionsmenu.bindben_swallow = M_OPTIONS_BINDBEN_QUICK;
 		M_SetMenuDelay(pid);
 		return true;
 	}
@@ -264,30 +352,73 @@ boolean M_ProfileControlsInputs(INT32 ch)
 		return true;
 	}
 
+	if (menucmd[pid].dpad_ud)
+	{
+		if (optionsmenu.bindben_swallow)
+		{
+			// Control would be cleared, but we're
+			// interrupting the animation so clear it
+			// immediately.
+			M_ClearCurrentControl();
+		}
+		optionsmenu.bindben = 0;
+		optionsmenu.bindben_swallow = 0;
+	}
+
 	return false;
 }
 
 void M_ProfileSetControl(INT32 ch)
 {
-	INT32 controln = currentMenu->menuitems[itemOn].mvar1;
-	UINT8 i;
 	(void) ch;
 
-	optionsmenu.bindcontrol = 1;	// Default to control #1
-
-	for (i = 0; i < MAXINPUTMAPPING; i++)
-	{
-		if (optionsmenu.tempcontrols[controln][i] == KEY_NULL)
-		{
-			optionsmenu.bindcontrol = i+1;
-			break;
-		}
-	}
-
-	// If we could find a null key to map into, map there.
-	// Otherwise, this will stay at 1 which means we'll overwrite the first bound control.
-
 	optionsmenu.bindtimer = TICRATE*5;
+	memset(optionsmenu.bindinputs, 0, sizeof optionsmenu.bindinputs);
+	G_ResetAllDeviceGameKeyDown();
+}
+
+static void M_ProfileDefaultControlsResponse(INT32 ch)
+{
+	if (ch == MA_YES)
+	{
+		memcpy(&optionsmenu.tempcontrols, gamecontroldefault, sizeof optionsmenu.tempcontrols);
+		S_StartSound(NULL, sfx_s24f);
+	}
+}
+
+void M_ProfileDefaultControls(INT32 ch)
+{
+	(void)ch;
+	M_StartMessage(
+		"Profiles",
+		"Reset all controls to the default mappings?",
+		&M_ProfileDefaultControlsResponse,
+		MM_YESNO,
+		NULL,
+		NULL
+	);
+}
+
+static void M_ProfileClearControlsResponse(INT32 ch)
+{
+	if (ch == MA_YES)
+	{
+		memset(&optionsmenu.tempcontrols, 0, sizeof optionsmenu.tempcontrols);
+		S_StartSound(NULL, sfx_s3k66);
+	}
+}
+
+void M_ProfileClearControls(INT32 ch)
+{
+	(void)ch;
+	M_StartMessage(
+		"Profiles",
+		"Clear all control bindings?",
+		&M_ProfileClearControlsResponse,
+		MM_YESNO,
+		NULL,
+		NULL
+	);
 }
 
 // Map the event to the profile.
@@ -295,157 +426,61 @@ void M_ProfileSetControl(INT32 ch)
 #define KEYHOLDFOR 1
 void M_MapProfileControl(event_t *ev)
 {
-	INT32 c = 0;
-	UINT8 n = optionsmenu.bindcontrol-1;					// # of input to bind
-	INT32 controln = currentMenu->menuitems[itemOn].mvar1;	// gc_
-	UINT8 where = n;										// By default, we'll save the bind where we're supposed to map.
-	INT32 i;
+	if (ev->type == ev_keydown && ev->data2) // ignore repeating keys
+		return;
+
+	if (optionsmenu.bindtimer > TICRATE*5 - 9) // grace period after entering the bind dialog
+		return;
+
 	INT32 *DeviceGameKeyDownArray = G_GetDeviceGameKeyDownArray(ev->device);
 
 	if (!DeviceGameKeyDownArray)
 		return;
 
-	//SetDeviceOnPress();	// Update player gamepad assignments
-
-	// Only consider keydown and joystick events to make sure we ignore ev_mouse and other events
-	// See also G_MapEventsToControls
-	switch (ev->type)
+	// Find every held button.
+	boolean noinput = true;
+	for (INT32 c = 1; c < NUMINPUTS; ++c)
 	{
-		case ev_keydown:
-			if (ev->data1 < NUMINPUTS)
-			{
-				c = ev->data1;
-			}
-#ifdef PARANOIA
-			else
-			{
-				CONS_Debug(DBG_GAMELOGIC, "Bad downkey input %d\n", ev->data1);
-			}
-#endif
-			break;
-		case ev_gamepad_axis:
-			if (ev->data1 >= JOYAXES)
-			{
-#ifdef PARANOIA
-				CONS_Debug(DBG_GAMELOGIC, "Bad gamepad axis event %d\n", ev->data1);
-#endif
-				return;
-			}
-			else
-			{
-				INT32 deadzone = deadzone = (JOYAXISRANGE * cv_deadzone[0].value) / FRACUNIT; // TODO how properly account for different deadzone cvars for different devices
-				boolean responsivelr = ((ev->data2 != INT32_MAX) && (abs(ev->data2) >= deadzone));
-				boolean responsiveud = ((ev->data3 != INT32_MAX) && (abs(ev->data3) >= deadzone));
+		if (DeviceGameKeyDownArray[c] < 3*JOYAXISRANGE/4)
+			continue;
 
-				i = ev->data1;
+		noinput = false;
 
-				if (i >= JOYANALOGS)
-				{
-					// The trigger axes are handled specially.
-					i -= JOYANALOGS;
-
-					if (responsivelr)
-					{
-						c = KEY_AXIS1 + (JOYANALOGS * 4) + (i * 2);
-					}
-					else if (responsiveud)
-					{
-						c = KEY_AXIS1 + (JOYANALOGS * 4) + (i * 2) + 1;
-					}
-				}
-				else
-				{
-					// Actual analog sticks
-
-					// Only consider unambiguous assignment.
-					if (responsivelr == responsiveud)
-						return;
-
-					if (responsivelr)
-					{
-						if (ev->data2 < 0)
-						{
-							// Left
-							c = KEY_AXIS1 + (i * 4);
-						}
-						else
-						{
-							// Right
-							c = KEY_AXIS1 + (i * 4) + 1;
-						}
-					}
-					else //if (responsiveud)
-					{
-						if (ev->data3 < 0)
-						{
-							// Up
-							c = KEY_AXIS1 + (i * 4) + 2;
-						}
-						else
-						{
-							// Down
-							c = KEY_AXIS1 + (i * 4) + 3;
-						}
-					}
-				}
-			}
-			break;
-		default:
-			return;
-	}
-
-	// safety result
-	if (!c)
-		return;
-
-	// Set menu delay regardless of what we're doing to avoid stupid stuff.
-	M_SetMenuDelay(0);
-
-	// Reset this input so (keyboard keys at least) are not
-	// buffered and caught by menucmd.
-	DeviceGameKeyDownArray[c] = 0;
-
-	// Check if this particular key (c) is already bound in any slot.
-	// If that's the case, simply do nothing.
-	for (i = 0; i < MAXINPUTMAPPING; i++)
-	{
-		if (optionsmenu.tempcontrols[controln][i] == c)
+		for (UINT8 i = 0; i < MAXINPUTMAPPING; ++i)
 		{
-			optionsmenu.bindcontrol = 0;
-			return;
-		}
-	}
+			// If this key is already bound, don't bind it again.
+			if (optionsmenu.bindinputs[i] == c)
+				break;
 
-	// With the way we do things, there cannot be instances of 'gaps' within the controls, so we don't need to pretend like we need to handle that.
-	// Unless of course you tamper with the cfg file, but then it's *your* fault, not mine.
-
-	optionsmenu.tempcontrols[controln][where] = c;
-	optionsmenu.bindcontrol = 0;	// not binding anymore
-
-	// If possible, reapply the profile...
-	// 19/05/22: Actually, no, don't do that, it just fucks everything up in too many cases.
-
-	/*
-	if (gamestate == GS_MENU)	// In menu? Apply this to P1, no questions asked.
-	{
-		// Apply the profile's properties to player 1 but keep the last profile cv to p1's ACTUAL profile to revert once we exit.
-		UINT8 lastp = cv_lastprofile[0].value;
-		PR_ApplyProfile(PR_GetProfileNum(optionsmenu.profile), 0);
-		CV_StealthSetValue(&cv_lastprofile[0], lastp);
-	}
-	else	// != GS_MENU
-	{
-		// ONLY apply the profile if it's in use by anything currently.
-		UINT8 pnum = PR_GetProfileNum(optionsmenu.profile);
-		for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-		{
-			if (cv_lastprofile[i].value == pnum)
+			// Find the first available slot.
+			if (!optionsmenu.bindinputs[i])
 			{
-				PR_ApplyProfile(pnum, i);
+				optionsmenu.bindinputs[i] = c;
 				break;
 			}
 		}
 	}
-	*/
+
+	if (noinput)
+	{
+		{
+			// You can hold a button before entering this
+			// dialog, then buffer a keyup without pressing
+			// anything else. If this happens, don't wipe the
+			// binds, just ignore it.
+			const UINT8 zero[sizeof optionsmenu.bindinputs] = {0};
+			if (!memcmp(zero, optionsmenu.bindinputs, sizeof zero))
+				return;
+		}
+
+		INT32 controln = currentMenu->menuitems[itemOn].mvar1;
+		memcpy(&optionsmenu.tempcontrols[controln], optionsmenu.bindinputs, sizeof optionsmenu.bindinputs);
+		optionsmenu.bindtimer = 0;
+
+		// Set menu delay regardless of what we're doing to avoid stupid stuff.
+		M_SetMenuDelay(0);
+	}
+	else
+		optionsmenu.bindtimer = -1; // prevent skip countdown
 }
 #undef KEYHOLDFOR

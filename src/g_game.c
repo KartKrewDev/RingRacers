@@ -972,7 +972,7 @@ INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
 
 boolean G_PlayerInputDown(UINT8 p, INT32 gc, UINT8 menuPlayers)
 {
-	return (G_PlayerInputAnalog(p, gc, menuPlayers) != 0);
+	return (abs(G_PlayerInputAnalog(p, gc, menuPlayers)) >= JOYAXISRANGE/2);
 }
 
 //

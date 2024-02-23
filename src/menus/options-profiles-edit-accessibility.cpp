@@ -5,6 +5,7 @@
 
 #include "../command.h"
 #include "../k_menu.h"
+#include "../m_easing.h"
 #include "../p_local.h" // cv_tilting
 
 extern "C" consvar_t cv_mindelay;
@@ -16,7 +17,7 @@ namespace
 
 void draw_routine()
 {
-	Draw row = Draw(0, currentMenu->y).font(Draw::Font::kMenu);
+	Draw row = Draw(M_EaseWithTransition(Easing_InSine, 5 * 48), currentMenu->y).font(Draw::Font::kMenu);
 
 	M_DrawEditProfileTooltips();
 

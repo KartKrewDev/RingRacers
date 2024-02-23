@@ -2382,7 +2382,7 @@ void M_DrawCharacterSelect(void)
 	UINT8 priority = 0;
 	INT16 quadx, quady;
 	INT16 skin;
-	INT32 basex = optionsmenu.profile ? (64 + M_EaseWithTransition(Easing_Linear, 5 * 32)) : 0;
+	INT32 basex = optionsmenu.profile ? (64 + M_EaseWithTransition(Easing_InSine, 5 * 48)) : 0;
 	boolean forceskin = M_CharacterSelectForceInAction();
 
 	if (setup_numplayers > 0)
@@ -4676,6 +4676,7 @@ void M_DrawEditProfile(void)
 
 		UINT8 *colormap = NULL;
 		INT32 tflag = (currentMenu->menuitems[i].status & IT_TRANSTEXT) ? V_TRANSLUCENT : 0;
+		INT32 cx = x;
 
 		y = currentMenu->menuitems[i].mvar2;
 
@@ -4686,13 +4687,14 @@ void M_DrawEditProfile(void)
 		{
 			colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
 
-			V_DrawMenuString(x - 10 - (skullAnimCounter/5), y+1, highlightflags, "\x1C"); // left arrow
+			cx += Easing_OutSine(M_DueFrac(optionsmenu.offset.start, 2), 0, 5);
+			V_DrawMenuString(cx - 10 - (skullAnimCounter/5), y+1, highlightflags, "\x1C"); // left arrow
 		}
 
 		// Text
-		//V_DrawGamemodeString(x, y - 6, tflag, colormap, currentMenu->menuitems[i].text);
+		//V_DrawGamemodeString(cx, y - 6, tflag, colormap, currentMenu->menuitems[i].text);
 		V_DrawStringScaled(
-			x * FRACUNIT,
+			cx * FRACUNIT,
 			(y - 3) * FRACUNIT,
 			FRACUNIT,
 			FRACUNIT,
@@ -4722,10 +4724,10 @@ void M_DrawEditProfile(void)
 // Controller offsets to center on each button.
 INT16 controlleroffsets[][2] = {
 	{0, 0},			// gc_none
-	{70, 112},		// gc_up
-	{70, 112},		// gc_down
-	{70, 112},		// gc_left
-	{70, 112},		// gc_right
+	{69, 142},		// gc_up
+	{69, 182},		// gc_down
+	{49, 162},		// gc_left
+	{89, 162},		// gc_right
 	{208, 200},		// gc_a
 	{237, 181},		// gc_b
 	{267, 166},		// gc_c
@@ -4738,22 +4740,146 @@ INT16 controlleroffsets[][2] = {
 };
 
 // Controller patches for button presses.
-// {patch if not pressed, patch if pressed}
-// if NULL, draws nothing.
 // reminder that lumpnames can only be 8 chars at most. (+1 for \0)
 
-char controllerpresspatch[9][2][9] = {
-	{"", "BTP_A"},	// MBT_A
-	{"", "BTP_B"},	// MBT_B
-	{"", "BTP_C"},	// MBT_C
-	{"", "BTP_X"},	// MBT_X
-	{"", "BTP_Y"},	// MBT_Y
-	{"", "BTP_Z"},	// MBT_Z
-	{"BTNP_L", "BTP_L"},// MBT_L
-	{"BTNP_R", "BTP_R"},// MBT_R
-	{"", "BTP_ST"}	// MBT_START
+static const char *controllerpresspatch[9][2] = {
+	{"PR_BTA", "PR_BTAB"}, // MBT_A
+	{"PR_BTB", "PR_BTBB"}, // MBT_B
+	{"PR_BTC", "PR_BTCB"}, // MBT_C
+	{"PR_BTX", "PR_BTXB"}, // MBT_X
+	{"PR_BTY", "PR_BTYB"}, // MBT_Y
+	{"PR_BTZ", "PR_BTZB"}, // MBT_Z
+	{"PR_BTL", "PR_BTLB"}, // MBT_L
+	{"PR_BTR", "PR_BTRB"}, // MBT_R
+	{"PR_BTS", "PR_BTSB"}, // MBT_START
 };
 
+static const char *M_GetDPadPatchName(SINT8 ud, SINT8 lr)
+{
+	if (ud < 0)
+	{
+		if (lr < 0)
+			return "PR_PADUL";
+		else if (lr > 0)
+			return "PR_PADUR";
+		else
+			return "PR_PADU";
+	}
+	else if (ud > 0)
+	{
+		if (lr < 0)
+			return "PR_PADDL";
+		else if (lr > 0)
+			return "PR_PADDR";
+		else
+			return "PR_PADD";
+	}
+	else
+	{
+		if (lr < 0)
+			return "PR_PADL";
+		else if (lr > 0)
+			return "PR_PADR";
+		else
+			return "PR_PADN";
+	}
+}
+
+static void M_DrawBindBen(INT32 x, INT32 y, INT32 scroll_remaining)
+{
+	// optionsmenu.bindben_swallow
+	const int pose_time = 30;
+	const int swallow_time = pose_time + 14;
+
+	// Lid closed
+	int state = 'A';
+	int frame = 0;
+
+	if (optionsmenu.bindben_swallow > 100)
+	{
+		// Quick swallow (C button)
+		state = 'C';
+
+		int t = 106 - optionsmenu.bindben_swallow;
+		if (t < 3)
+			frame = 0;
+		else
+			frame = t - 3;
+	}
+	else if (scroll_remaining <= 0)
+	{
+		// Chewing (text done scrolling)
+		state = 'B';
+		frame = I_GetTime() / 2 % 4;
+
+		// When state changes from 'lid open' to 'chewing',
+		// play chomp sound.
+		if (!optionsmenu.bindben_swallow)
+			S_StartSound(NULL, sfx_monch);
+
+		// Ready to swallow when button is released.
+		optionsmenu.bindben_swallow = swallow_time + 1;
+	}
+	else if (optionsmenu.bindben)
+	{
+		// Lid open (text scrolling)
+		frame = 1;
+	}
+	else if (optionsmenu.bindben_swallow)
+	{
+		if (optionsmenu.bindben_swallow > pose_time)
+		{
+			// Swallow
+			state = 'C';
+
+			int t = swallow_time - optionsmenu.bindben_swallow;
+			if (t < 8)
+				frame = 0;
+			else
+				frame = 1 + (t - 8) / 2 % 3;
+		}
+		else
+		{
+			// Pose
+			state = 'D';
+
+			int t = pose_time - optionsmenu.bindben_swallow;
+			if (t < 10)
+				frame = 0;
+			else
+				frame = 1 + (t - 10) / 4 % 5;
+		}
+	}
+
+	V_DrawMappedPatch(x-30, y, 0, W_CachePatchName(va("PR_BIN%c%c", state, '1' + frame), PU_CACHE), aquamap);
+}
+
+static void M_DrawBindMediumString(INT32 y, INT32 flags, const char *string)
+{
+	fixed_t w = V_StringScaledWidth(FRACUNIT, FRACUNIT, FRACUNIT, flags, MED_FONT, string);
+	fixed_t x = BASEVIDWIDTH/2 * FRACUNIT - w/2;
+	V_DrawStringScaled(
+		x,
+		y * FRACUNIT,
+		FRACUNIT,
+		FRACUNIT,
+		FRACUNIT,
+		flags,
+		NULL,
+		MED_FONT,
+		string
+	);
+}
+
+static INT32 M_DrawProfileLegend(INT32 x, INT32 y, const char *legend, const char *mediocre_key)
+{
+	INT32 w = V_ThinStringWidth(legend, 0);
+	V_DrawThinString(x - w, y, 0, legend);
+	x -= w + 2;
+	if (mediocre_key)
+		M_DrawMediocreKeyboardKey(mediocre_key, &x, y, false, true);
+	return x;
+}
 
 // the control stuff.
 // Dear god.
@@ -4764,25 +4890,28 @@ void M_DrawProfileControls(void)
 	INT32 x = 8;
 	INT32 i, j, k;
 	const UINT8 pid = 0;
+	patch_t *hint = W_CachePatchName("MENUHINT", PU_CACHE);
+	INT32 hintofs = 3;
 
 	V_DrawScaledPatch(BASEVIDWIDTH*2/3 - optionsmenu.contx, BASEVIDHEIGHT/2 -optionsmenu.conty, 0, W_CachePatchName("PR_CONT", PU_CACHE));
 
 	// Draw button presses...
-	// @TODO: Dpad when we get the sprites for it.
+	V_DrawScaledPatch(
+		BASEVIDWIDTH*2/3 - optionsmenu.contx,
+		BASEVIDHEIGHT/2 - optionsmenu.conty,
+		0,
+		W_CachePatchName(M_GetDPadPatchName(menucmd[pid].dpad_ud, menucmd[pid].dpad_lr), PU_CACHE)
+	);
 
 	for (i = 0; i < 9; i++)
 	{
 		INT32 bt = 1<<i;
-		if (M_MenuButtonHeld(pid, bt))
-		{
-			if (controllerpresspatch[i][1][0] != '\0')
-				V_DrawScaledPatch(BASEVIDWIDTH*2/3 - optionsmenu.contx, BASEVIDHEIGHT/2 -optionsmenu.conty, 0, W_CachePatchName(controllerpresspatch[i][1], PU_CACHE));
-		}
-		else
-		{
-			if (controllerpresspatch[i][0][0] != '\0')
-				V_DrawScaledPatch(BASEVIDWIDTH*2/3 - optionsmenu.contx, BASEVIDHEIGHT/2 -optionsmenu.conty, 0, W_CachePatchName(controllerpresspatch[i][0], PU_CACHE));
-		}
+		V_DrawScaledPatch(
+			BASEVIDWIDTH*2/3 - optionsmenu.contx,
+			BASEVIDHEIGHT/2 - optionsmenu.conty,
+			0,
+			W_CachePatchName(controllerpresspatch[i][M_MenuButtonHeld(pid, bt) != 0], PU_CACHE)
+		);
 	}
 
 	if (optionsmenu.trycontroller)
@@ -4790,24 +4919,39 @@ void M_DrawProfileControls(void)
 		optionsmenu.tcontx = BASEVIDWIDTH*2/3 - 10;
 		optionsmenu.tconty = BASEVIDHEIGHT/2 +70;
 
-		V_DrawCenteredString(160, 180, highlightflags, va("PRESS NOTHING FOR %d SEC TO GO BACK", optionsmenu.trycontroller/TICRATE));
+		V_DrawCenteredLSTitleLowString(160, 164, 0, "TRY BUTTONS");
+
+		const char *msg = va("Press nothing for %d sec to go back", (optionsmenu.trycontroller + (TICRATE-1)) / TICRATE);
+		fixed_t w = V_StringScaledWidth(FRACUNIT, FRACUNIT, FRACUNIT, highlightflags, MED_FONT, msg);
+		V_DrawStringScaled(
+			160*FRACUNIT - w/2,
+			186*FRACUNIT,
+			FRACUNIT,
+			FRACUNIT,
+			FRACUNIT,
+			highlightflags,
+			NULL,
+			MED_FONT,
+			msg
+		);
 		return;	// Don't draw the rest if we're trying the controller.
 	}
 
-	// Tooltip
-	// The text is slightly shifted hence why we don't just use M_DrawMenuTooltips()
-	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
-	if (currentMenu->menuitems[itemOn].tooltip != NULL)
-	{
-		V_DrawCenteredThinString(229, 12, 0, currentMenu->menuitems[itemOn].tooltip);
-	}
-
 	V_DrawFill(0, 0, 138, 200, 31);	// Black border
+
+	V_SetClipRect(
+		0,
+		0,
+		BASEVIDWIDTH * FRACUNIT,
+		(BASEVIDHEIGHT - SHORT(hint->height) + hintofs) * FRACUNIT,
+		0
+	);
 
 	// Draw the menu options...
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
 		char buf[256];
+		char buf2[256];
 		INT32 keys[MAXINPUTMAPPING];
 
 		// cursor
@@ -4836,7 +4980,8 @@ void M_DrawProfileControls(void)
 
 				if (currentMenu->menuitems[i].patch)
 				{
-					V_DrawScaledPatch(x+12, y+12, 0, W_CachePatchName(currentMenu->menuitems[i].patch, PU_CACHE));
+					V_DrawScaledPatch(x-4, y+1, 0, W_CachePatchName(currentMenu->menuitems[i].patch, PU_CACHE));
+					V_DrawMenuString(x+12, y+2, (i == itemOn ? highlightflags : 0), currentMenu->menuitems[i].text);
 					drawnpatch = true;
 				}
 				else
@@ -4862,6 +5007,9 @@ void M_DrawProfileControls(void)
 
 					UINT8 available = 0, set = 0;
 
+					if (i != itemOn)
+						vflags |= V_GRAYMAP;
+
 					// Get userbound controls...
 					for (k = 0; k < MAXINPUTMAPPING; k++)
 					{
@@ -4882,6 +5030,7 @@ void M_DrawProfileControls(void)
 					};
 
 					buf[0] = '\0';
+					buf2[0] = '\0';
 
 
 					// Cool as is this, this doesn't actually help show accurate info because of how some players would set inputs with keyboard and controller at once in a volatile way...
@@ -4928,10 +5077,15 @@ void M_DrawProfileControls(void)
 						}
 					}*/
 
+					char *p = buf;
 					if (buf[0])
 						;
 					else if (!set)
-						strcpy(buf, "\x85NOT BOUND");
+					{
+						vflags &= ~V_CHARCOLORMASK;
+						vflags |= V_REDMAP;
+						strcpy(buf, "NOT BOUND");
+					}
 					else
 					{
 						for (k = 0; k < MAXINPUTMAPPING; k++)
@@ -4940,17 +5094,66 @@ void M_DrawProfileControls(void)
 								continue;
 
 							if (k > 0)
-								strcat(buf," / ");
+								strcat(p," / ");
 
-							if (k == 2 && drawnpatch)	// hacky...
-								strcat(buf, "\n");
+							if (k == 2)   // hacky...
+								p = buf2;
 
-							strcat(buf, G_KeynumToString (keys[k]));
+							strcat(p, G_KeynumToString (keys[k]));
 						}
 					}
 
-					// don't shift the text if we didn't draw a patch.
-					V_DrawThinString(x + (drawnpatch ? 32 : 0), y + (drawnpatch ? 2 : 12), vflags, buf);
+					INT32 bindx = x;
+					INT32 benx = 142;
+					INT32 beny = y - 8;
+					if (i == itemOn)
+					{
+						// Extend yellow wedge down behind
+						// extra line.
+						if (buf2[0])
+						{
+							for (j=24; j < 34; j++)
+								V_DrawFill(0, (y)+j, 128+j, 1, 73);
+							benx += 10;
+							beny += 10;
+						}
+
+						// Scroll text into Bind Ben.
+						bindx += optionsmenu.bindben * 3;
+
+						if (buf2[0])
+						{
+							// Bind Ben: suck characters off
+							// the end of the first line onto
+							// the beginning of the second
+							// line.
+							UINT16 n = strlen(buf);
+							UINT16 t = min(optionsmenu.bindben, n);
+							memmove(&buf2[t], buf2, t + 1);
+							memcpy(buf2, &buf[n - t], t);
+							buf[n - t] = '\0';
+						}
+					}
+
+					{
+						cliprect_t clip;
+						V_SaveClipRect(&clip); // preserve cliprect for tooltip
+
+						// Clip text as it scrolls into Bind Ben.
+						V_SetClipRect(0, 0, (benx-14)*FRACUNIT, 200*FRACUNIT, 0);
+
+						if (i != itemOn || !optionsmenu.bindben_swallow)
+						{
+							// don't shift the text if we didn't draw a patch.
+							V_DrawThinString(bindx + (drawnpatch ? 13 : 1), y + 12, vflags, buf);
+							V_DrawThinString(bindx + (drawnpatch ? 13 : 1), y + 22, vflags, buf2);
+						}
+
+						V_RestoreClipRect(&clip);
+					}
+
+					if (i == itemOn)
+						M_DrawBindBen(benx, beny, (benx-14) - bindx);
 
 					// controller dest coords:
 					if (itemOn == i && gc > 0 && gc <= gc_start)
@@ -4967,8 +5170,29 @@ void M_DrawProfileControls(void)
 		}
 	}
 
+	V_ClearClipRect();
+
+	// Tooltip
+	// Draw it at the bottom of the screen
+	{
+		static UINT8 blue[256];
+		blue[31] = 253;
+		V_DrawMappedPatch(0, BASEVIDHEIGHT + hintofs, V_VFLIP, hint, blue);
+	}
+	if (currentMenu->menuitems[itemOn].tooltip != NULL)
+	{
+		INT32 ypos = BASEVIDHEIGHT + hintofs - 9 - 12;
+		V_DrawThinString(12, ypos, V_YELLOWMAP, currentMenu->menuitems[itemOn].tooltip);
+
+		boolean standardbuttons = gamedata->gonerlevel > GDGONER_PROFILE;
+		INT32 xpos = BASEVIDWIDTH - 12;
+		xpos = standardbuttons ?
+			M_DrawProfileLegend(xpos, ypos, "\xB2/  \xBC Clear", NULL) :
+			M_DrawProfileLegend(xpos, ypos, "Clear", "BKSP");
+	}
+
 	// Overlay for control binding
-	if (optionsmenu.bindcontrol)
+	if (optionsmenu.bindtimer)
 	{
 		INT16 reversetimer = TICRATE*5 - optionsmenu.bindtimer;
 		INT32 fade = reversetimer;
@@ -4977,14 +5201,33 @@ void M_DrawProfileControls(void)
 		if (fade > 9)
 			fade = 9;
 
-		ypos = (BASEVIDHEIGHT/2) - 4 +16*(9 - fade);
+		ypos = (BASEVIDHEIGHT/2) - 20 +16*(9 - fade);
 		V_DrawFadeScreen(31, fade);
 
-		M_DrawTextBox((BASEVIDWIDTH/2) - (120), ypos - 12, 30, 4);
+		M_DrawTextBox((BASEVIDWIDTH/2) - (120), ypos - 12, 30, 8);
 
-		V_DrawCenteredString(BASEVIDWIDTH/2, ypos, 0, va("Press key #%d for control", optionsmenu.bindcontrol));
-		V_DrawCenteredString(BASEVIDWIDTH/2, ypos +10, 0, va("\"%s\"", currentMenu->menuitems[itemOn].text));
-		V_DrawCenteredString(BASEVIDWIDTH/2, ypos +20, highlightflags, va("(WAIT %d SECONDS TO SKIP)", optionsmenu.bindtimer/TICRATE));
+		V_DrawCenteredMenuString(BASEVIDWIDTH/2, ypos, V_GRAYMAP, "Hold and release inputs for");
+		V_DrawCenteredMenuString(BASEVIDWIDTH/2, ypos + 10, V_GRAYMAP, va("\"%s\"", currentMenu->menuitems[itemOn].text));
+
+		if (optionsmenu.bindtimer > 0)
+		{
+			M_DrawBindMediumString(
+				ypos + 50,
+				highlightflags,
+				va("(WAIT %d SEC TO SKIP)", (optionsmenu.bindtimer + (TICRATE-1)) / TICRATE)
+			);
+		}
+		else
+		{
+			for (i = 0; i < MAXINPUTMAPPING && optionsmenu.bindinputs[i]; ++i)
+			{
+				M_DrawBindMediumString(
+					ypos + (2 + i)*10,
+					highlightflags | V_FORCEUPPERCASE,
+					G_KeynumToString(optionsmenu.bindinputs[i])
+				);
+			}
+		}
 	}
 }
 
