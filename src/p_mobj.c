@@ -6458,48 +6458,8 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		Obj_CheckpointThink(mobj);
 		break;
 	case MT_SCRIPT_THING:
-	{
-		if (mobj->thing_args[2] != 0)
-		{
-			// turned off
-			break;
-		}
-
-		UINT8 i;
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (playeringame[i] == false || players[i].spectator == true)
-			{
-				continue;
-			}
-
-			player_t *player = &players[i];
-			if (P_MobjWasRemoved(player->mo) == true)
-			{
-				continue;
-			}
-
-			fixed_t dist = R_PointToDist2(
-				mobj->x, mobj->y,
-				player->mo->x, player->mo->y
-			);
-
-			if (dist < mobj->thing_args[0] * FRACUNIT)
-			{
-				P_ActivateThingSpecial(mobj, player->mo);
-
-				if (mobj->thing_args[1] == 0)
-				{
-					P_RemoveMobj(mobj);
-					return;
-				}
-
-				break;
-			}
-		}
-
-		break;
-	}
+		Obj_TalkPointThink(mobj);
+		return;
 	case MT_SPIKEDTARGET:
 	{
 		if (P_MobjWasRemoved(mobj->target) || (mobj->target->health <= 0) || (mobj->target->z == mobj->target->floorz))

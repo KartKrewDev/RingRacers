@@ -53,6 +53,7 @@ target_sources(SRB2SDL2 PRIVATE
 	cloud.c
 	waterfall-particle.c
 	sealed-star.c
+	talk-point.cpp
 )
 
 add_subdirectory(versus)
