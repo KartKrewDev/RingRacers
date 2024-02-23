@@ -37,17 +37,12 @@ extern "C" {
 
 #define KART_FONTSIZE (KART_FONTEND - KART_FONTSTART + 1)
 
-#define TIMER_FONTSTART '"' // the first font character
-#define TIMER_FONTEND '9'
-
-#define TIMER_FONTSIZE (TIMER_FONTEND - TIMER_FONTSTART + 1)
-
 #define AZ_FONTSTART 'A' // the first font character
 #define AZ_FONTEND 'Z'
 
 #define AZ_FONTSIZE (AZ_FONTEND - AZ_FONTSTART + 1)
 
-#define NUM_FONTSTART '-' // the first font character
+#define NUM_FONTSTART '"' // the first font character
 #define NUM_FONTEND '9'
 
 #define NUM_FONTSIZE (NUM_FONTEND - NUM_FONTSTART + 1)
