@@ -36,6 +36,7 @@ struct TalkPoint : Mobj
 	Fixed radius() const { return mobj_t::thing_args[0] * FRACUNIT; }
 	bool oneshot() const { return !mobj_t::thing_args[1]; }
 	bool disabled() const { return mobj_t::thing_args[2]; }
+	bool invisible() const { return mobj_t::thing_args[3]; }
 
 	void extravalue1() = delete;
 	tic_t collect() const { return mobj_t::extravalue1; }
@@ -173,6 +174,12 @@ private:
 
 void TalkPoint::init()
 {
+	if (invisible())
+	{
+		renderflags |= RF_DONTDRAW;
+		return;
+	}
+
 	if (scaling() == 0)
 	{
 		return;
