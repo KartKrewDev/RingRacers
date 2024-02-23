@@ -2004,6 +2004,10 @@ void HU_DrawSongCredits(void)
 	{
 		y = (BASEVIDHEIGHT - 13) * FRACUNIT;
 	}
+	else if (gamestate == GS_MENU)
+	{
+		y = 30 * FRACUNIT;
+	}
 	else
 	{
 		y = (r_splitscreen ? (BASEVIDHEIGHT/2)-4 : 40) * FRACUNIT;
