@@ -7786,9 +7786,13 @@ static void P_LoadRecordGhosts(void)
 {
 	// see also /menus/play-local-race-time-attack.c's M_PrepareTimeAttack
 	char *gpath;
+	const char *modeprefix = "";
 	INT32 i;
 
 	gpath = Z_StrDup(va("%s" PATHSEP "media" PATHSEP "replay" PATHSEP "%s" PATHSEP "%s", srb2home, timeattackfolder, G_BuildMapName(gamemap)));
+
+	if (encoremode)
+		modeprefix = "spb-";
 
 	enum
 	{
@@ -7832,7 +7836,7 @@ static void P_LoadRecordGhosts(void)
 	if (allGhosts)
 	{
 		for (i = 0; i < numskins; ++i)
-			add_ghosts(fmt::format("{}-{}", gpath, skins[i].name), allGhosts);
+			add_ghosts(fmt::format("{}-{}{}", gpath, skins[i].name, modeprefix), allGhosts);
 	}
 
 	if (sameGhosts)
@@ -7840,15 +7844,15 @@ static void P_LoadRecordGhosts(void)
 		INT32 skin = R_SkinAvailable(cv_skin[0].string);
 		if (skin < 0 || !R_SkinUsable(consoleplayer, skin, false))
 			skin = 0; // use default skin
-		add_ghosts(fmt::format("{}-{}", gpath, skins[skin].name), sameGhosts);
+		add_ghosts(fmt::format("{}-{}{}", gpath, skins[skin].name, modeprefix), sameGhosts);
 	}
 
 	// Guest ghost
 	if (cv_ghost_guest.value)
-		P_TryAddExternalGhost(va("%s-guest.lmp", gpath));
+		P_TryAddExternalGhost(va("%s-%sguest.lmp", gpath, modeprefix));
 
 	// Staff Attack ghosts
-	if (cv_ghost_staff.value)
+	if (cv_ghost_staff.value && !modeprefix[0])
 	{
 		for (i = mapheaderinfo[gamemap-1]->ghostCount; i > 0; i--)
 		{
@@ -8290,7 +8294,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		wipegamestate = gamestate; // Don't fade if reloading the gamestate
 	// Encore mode fade to pink to white
 	// This is handled BEFORE sounds are stopped.
-	else if (encoremode && !prevencoremode && !demo.rewinding)
+	else if (encoremode && !prevencoremode && modeattacking == ATTACKING_NONE && !demo.rewinding)
 	{
 		if (rendermode != render_none)
 		{

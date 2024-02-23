@@ -3508,8 +3508,10 @@ void M_DrawTimeAttack(void)
 
 	if (currentMenu == &PLAY_TimeAttackDef)
 	{
-		tic_t timerec = mapheaderinfo[map]->records.time;
-		tic_t laprec = mapheaderinfo[map]->records.lap;
+		recorddata_t *rcp = &mapheaderinfo[map]->records;
+		recordtimes_t *record = cv_dummyspbattack.value ? &rcp->spbattack : &rcp->timeattack;
+		tic_t timerec = record->time;
+		tic_t laprec = record->lap;
 		UINT32 timeheight = 82;
 
 		if ((gametypes[levellist.newgametype]->rules & GTR_CIRCUIT)
@@ -3528,19 +3530,20 @@ void M_DrawTimeAttack(void)
 		K_drawKartTimestamp(timerec, 162+t, timeheight+6, 0, 1);
 
 		// SPB Attack control hint + menu overlay
-		if (levellist.newgametype == GT_RACE && levellist.levelsearch.timeattack == true && M_SecretUnlocked(SECRET_SPBATTACK, true))
 		{
 			INT32 buttonx = 162 + t;
 			INT32 buttony = timeheight;
 
-			K_drawButtonAnim(buttonx + 35, buttony - 3, V_SNAPTOLEFT, kp_button_r, timeattackmenu.ticker);
+			if (M_EncoreAttackTogglePermitted())
+			{
+				K_drawButtonAnim(buttonx + 35, buttony - 3, V_SNAPTOLEFT, kp_button_r, timeattackmenu.ticker);
+			}
 
 			if ((timeattackmenu.spbflicker == 0 || timeattackmenu.ticker % 2) == (cv_dummyspbattack.value == 1))
 			{
 				V_DrawMappedPatch(buttonx + 7, buttony - 1, 0, W_CachePatchName("K_SPBATK", PU_CACHE), R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_RED, GTC_MENUCACHE));
 			}
 		}
-
 	}
 	else
 		opty = 80;
@@ -7546,13 +7549,13 @@ static void M_DrawStatsMaps(void)
 			if (!(mapheaderinfo[i]->typeoflevel & (TOL_RACE|TOL_BATTLE|TOL_SPECIAL|TOL_VERSUS)))
 				continue;
 
-			if (mapheaderinfo[i]->records.time <= 0)
+			if (mapheaderinfo[i]->records.timeattack.time <= 0)
 			{
 				mapsunfinished++;
 				continue;
 			}
 
-			besttime += mapheaderinfo[i]->records.time;
+			besttime += mapheaderinfo[i]->records.timeattack.time;
 		}
 
 		V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 60, 0,
@@ -7632,7 +7635,7 @@ static void M_DrawStatsMaps(void)
 			)
 		)
 		{
-			besttime = mapheaderinfo[mnum]->records.time;
+			besttime = mapheaderinfo[mnum]->records.timeattack.time;
 
 			if (besttime)
 			{

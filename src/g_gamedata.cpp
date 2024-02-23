@@ -121,10 +121,10 @@ void srb2::save_ng_gamedata()
 		map.visited.encore = mapheaderinfo[i]->records.mapvisited & MV_ENCORE;
 		map.visited.spbattack = mapheaderinfo[i]->records.mapvisited & MV_SPBATTACK;
 		map.visited.mysticmelody = mapheaderinfo[i]->records.mapvisited & MV_MYSTICMELODY;
-		map.stats.timeattack.besttime = mapheaderinfo[i]->records.time;
-		map.stats.timeattack.bestlap = mapheaderinfo[i]->records.lap;
-		map.stats.spbattack.besttime = 0;
-		map.stats.spbattack.bestlap = 0;
+		map.stats.timeattack.besttime = mapheaderinfo[i]->records.timeattack.time;
+		map.stats.timeattack.bestlap = mapheaderinfo[i]->records.timeattack.lap;
+		map.stats.spbattack.besttime = mapheaderinfo[i]->records.spbattack.time;
+		map.stats.spbattack.bestlap = mapheaderinfo[i]->records.spbattack.lap;
 		ng.maps[lumpname] = std::move(map);
 	}
 	for (auto unloadedmap = unloadedmapheaders; unloadedmap; unloadedmap = unloadedmap->next)
@@ -136,10 +136,10 @@ void srb2::save_ng_gamedata()
 		map.visited.encore = unloadedmap->records.mapvisited & MV_ENCORE;
 		map.visited.spbattack = unloadedmap->records.mapvisited & MV_SPBATTACK;
 		map.visited.mysticmelody = unloadedmap->records.mapvisited & MV_MYSTICMELODY;
-		map.stats.timeattack.besttime = unloadedmap->records.time;
-		map.stats.timeattack.bestlap = unloadedmap->records.lap;
-		map.stats.spbattack.besttime = 0;
-		map.stats.spbattack.bestlap = 0;
+		map.stats.timeattack.besttime = unloadedmap->records.timeattack.time;
+		map.stats.timeattack.bestlap = unloadedmap->records.timeattack.lap;
+		map.stats.spbattack.besttime = unloadedmap->records.spbattack.time;
+		map.stats.spbattack.bestlap = unloadedmap->records.spbattack.lap;
 		ng.maps[lumpname] = std::move(map);
 	}
 	for (int i = 0; i < gamedata->numspraycans; i++)
@@ -536,8 +536,10 @@ void srb2::load_ng_gamedata()
 		dummyrecord.mapvisited |= mappair.second.visited.encore ? MV_ENCORE : 0;
 		dummyrecord.mapvisited |= mappair.second.visited.spbattack ? MV_SPBATTACK : 0;
 		dummyrecord.mapvisited |= mappair.second.visited.mysticmelody ? MV_SPBATTACK : 0;
-		dummyrecord.time = mappair.second.stats.timeattack.besttime;
-		dummyrecord.lap = mappair.second.stats.timeattack.bestlap;
+		dummyrecord.timeattack.time = mappair.second.stats.timeattack.besttime;
+		dummyrecord.timeattack.lap = mappair.second.stats.timeattack.bestlap;
+		dummyrecord.spbattack.time = mappair.second.stats.spbattack.besttime;
+		dummyrecord.spbattack.lap = mappair.second.stats.spbattack.bestlap;
 
 		if (mapnum < nummapheaders && mapheaderinfo[mapnum])
 		{
@@ -545,7 +547,9 @@ void srb2::load_ng_gamedata()
 
 			mapheaderinfo[mapnum]->records = dummyrecord;
 		}
-		else if (dummyrecord.mapvisited & MV_BEATEN || dummyrecord.time != 0 || dummyrecord.lap != 0)
+		else if (dummyrecord.mapvisited & MV_BEATEN
+		|| dummyrecord.timeattack.time != 0 || dummyrecord.timeattack.lap != 0
+		|| dummyrecord.spbattack.time != 0 || dummyrecord.spbattack.lap != 0)
 		{
 			// Invalid, but we don't want to lose all the juicy statistics.
 			// Instead, update a FILO linked list of "unloaded mapheaders".

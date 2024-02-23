@@ -388,10 +388,10 @@ void G_ClearRecords(void)
 // For easy retrieval of records
 tic_t G_GetBestTime(INT16 map)
 {
-	if (!mapheaderinfo[map] || mapheaderinfo[map]->records.time <= 0)
+	if (!mapheaderinfo[map] || mapheaderinfo[map]->records.timeattack.time <= 0)
 		return (tic_t)UINT32_MAX;
 
-	return mapheaderinfo[map]->records.time;
+	return mapheaderinfo[map]->records.timeattack.time;
 }
 
 // BE RIGHT BACK
@@ -429,7 +429,7 @@ void G_UpdateTimeStickerMedals(UINT16 map, boolean showownrecord)
 			}
 			case ET_MAP:
 			{
-				if (emblem->flags & ME_SPBATTACK && cv_dummyspbattack.value)
+				if (emblem->flags & (ME_SPBATTACK|ME_ENCORE) && cv_dummyspbattack.value)
 					break;
 				goto bademblem;
 			}
@@ -437,7 +437,7 @@ void G_UpdateTimeStickerMedals(UINT16 map, boolean showownrecord)
 				goto bademblem;
 		}
 
-		if (cv_dummyspbattack.value && !(emblem->flags & ME_SPBATTACK))
+		if (cv_dummyspbattack.value && !(emblem->flags & (ME_SPBATTACK|ME_ENCORE)))
 			return;
 
 		if (!gamedata->collected[(emblem-emblemlocations)] && gonnadrawtime)
@@ -538,21 +538,24 @@ void G_TickTimeStickerMedals(void)
 void G_UpdateRecords(void)
 {
 	UINT8 earnedEmblems;
+	recordtimes_t *record = (encoremode == true) ?
+		&mapheaderinfo[gamemap-1]->records.spbattack :
+		&mapheaderinfo[gamemap-1]->records.timeattack;
 
 	if (modeattacking & ATTACKING_TIME)
 	{
 		tic_t time = players[consoleplayer].realtime;
 		if (players[consoleplayer].pflags & PF_NOCONTEST)
 			time = UINT32_MAX;
-		if (((mapheaderinfo[gamemap-1]->records.time == 0) || (time < mapheaderinfo[gamemap-1]->records.time))
+		if (((record->time == 0) || (time < record->time))
 		&& (time < UINT32_MAX)) // DNF
-			mapheaderinfo[gamemap-1]->records.time = time;
+			record->time = time;
 	}
 
 	if (modeattacking & ATTACKING_LAP)
 	{
-		if ((mapheaderinfo[gamemap-1]->records.lap == 0) || (bestlap < mapheaderinfo[gamemap-1]->records.lap))
-			mapheaderinfo[gamemap-1]->records.lap = bestlap;
+		if ((record->lap == 0) || (bestlap < record->lap))
+			record->lap = bestlap;
 	}
 
 	// Check emblems when level data is updated
@@ -581,6 +584,12 @@ static void G_UpdateRecordReplays(void)
 {
 	char *gpath;
 	char lastdemo[256], bestdemo[256];
+	const char *modeprefix = "";
+
+	if (encoremode)
+	{
+		modeprefix = "spb-";
+	}
 
 	if (players[consoleplayer].pflags & PF_NOCONTEST)
 	{
@@ -600,7 +609,7 @@ static void G_UpdateRecordReplays(void)
 	strcat(gpath, PATHSEP);
 	strcat(gpath, G_BuildMapName(gamemap));
 
-	snprintf(lastdemo, 255, "%s-%s-last.lmp", gpath, cv_skin[0].string);
+	snprintf(lastdemo, 255, "%s-%s-%slast.lmp", gpath, cv_skin[0].string, modeprefix);
 
 	if (modeattacking != ATTACKING_NONE && FIL_FileExists(lastdemo))
 	{
@@ -613,7 +622,7 @@ static void G_UpdateRecordReplays(void)
 
 		if (modeattacking & ATTACKING_TIME)
 		{
-			snprintf(bestdemo, 255, "%s-%s-time-best.lmp", gpath, cv_skin[0].string);
+			snprintf(bestdemo, 255, "%s-%s-%stime-best.lmp", gpath, cv_skin[0].string, modeprefix);
 			if (!FIL_FileExists(bestdemo) || G_CmpDemoTime(bestdemo, lastdemo) & 1)
 			{ // Better time, save this demo.
 				if (FIL_FileExists(bestdemo))
@@ -625,7 +634,7 @@ static void G_UpdateRecordReplays(void)
 
 		if (modeattacking & ATTACKING_LAP)
 		{
-			snprintf(bestdemo, 255, "%s-%s-lap-best.lmp", gpath, cv_skin[0].string);
+			snprintf(bestdemo, 255, "%s-%s-%slap-best.lmp", gpath, cv_skin[0].string, modeprefix);
 			if (!FIL_FileExists(bestdemo) || G_CmpDemoTime(bestdemo, lastdemo) & (1<<1))
 			{ // Better lap time, save this demo.
 				if (FIL_FileExists(bestdemo))

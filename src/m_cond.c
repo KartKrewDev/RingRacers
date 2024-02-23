@@ -3470,9 +3470,9 @@ boolean M_GotLowEnoughTime(INT32 tictime)
 		if (!mapheaderinfo[i] || (mapheaderinfo[i]->menuflags & LF2_NOTIMEATTACK))
 			continue;
 
-		if (!mapheaderinfo[i]->records.time)
+		if (!mapheaderinfo[i]->records.timeattack.time)
 			return false;
-		if ((curtics += mapheaderinfo[i]->records.time) > tictime)
+		if ((curtics += mapheaderinfo[i]->records.timeattack.time) > tictime)
 			return false;
 	}
 	return true;
