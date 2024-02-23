@@ -6460,6 +6460,9 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 	case MT_SCRIPT_THING:
 		Obj_TalkPointThink(mobj);
 		return;
+	case MT_SCRIPT_THING_ORB:
+		Obj_TalkPointOrbThink(mobj);
+		return;
 	case MT_SPIKEDTARGET:
 	{
 		if (P_MobjWasRemoved(mobj->target) || (mobj->target->health <= 0) || (mobj->target->z == mobj->target->floorz))
@@ -10565,6 +10568,10 @@ fixed_t P_GetMobjDefaultScale(mobj_t *mobj)
 			return 4*FRACUNIT;
 		case MT_WALLSPIKE:
 			return 2*FRACUNIT;
+		case MT_SCRIPT_THING:
+			return 4*FRACUNIT;
+		case MT_SCRIPT_THING_ORB:
+			return 2*FRACUNIT;
 		default:
 			break;
 	}
@@ -13839,6 +13846,11 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	case MT_SSWINDOW:
 	{
 		Obj_SSWindowMapThingSpawn(mobj, mthing);
+		break;
+	}
+	case MT_SCRIPT_THING:
+	{
+		Obj_TalkPointInit(mobj);
 		break;
 	}
 	default:

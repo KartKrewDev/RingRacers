@@ -734,6 +734,9 @@ char sprnames[NUMSPRITES + 1][5] =
 	"SENC",
 	"SEAS",
 
+	// Tutorial
+	"TLKP", // Talk Point
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	"VIEW",
 };
@@ -3515,6 +3518,10 @@ state_t states[NUMSTATES] =
 
 	// MT_STARSTREAM
 	{SPR_SEAS, FF_ANIMATE|0, 30, {NULL}, 29, 1, S_NULL}, // S_STARSTREAM
+
+	// MT_SCRIPT_THING
+	{SPR_TLKP, 0|FF_SEMIBRIGHT|FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_NULL}, // S_TALKPOINT
+	{SPR_TLKP, 1|FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_TALKPOINT_ORB
 };
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] =
@@ -18517,7 +18524,34 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 
 	{           // MT_SCRIPT_THING
 		4096,           // doomednum
-		S_INVISIBLE,    // spawnstate
+		S_TALKPOINT,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		16*FRACUNIT,    // radius
+		16*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_NOGRAVITY|MF_SCENERY, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_SCRIPT_THING_ORB
+		-1,           // doomednum
+		S_TALKPOINT_ORB, // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound
