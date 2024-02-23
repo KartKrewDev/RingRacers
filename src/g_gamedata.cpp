@@ -182,12 +182,22 @@ void srb2::save_ng_gamedata()
 		}
 		srb2::GamedataCupJson cupdata {};
 		cupdata.name = std::string(cup->name);
-		for (size_t i = 0; i < std::min<size_t>(KARTGP_MAX, cupdata.records.size()); i++)
+		for (size_t i = 0; i < KARTGP_MAX; i++)
 		{
-			cupdata.records[i].bestgrade = cup->windata[i].best_grade;
-			cupdata.records[i].bestplacement = cup->windata[i].best_placement;
-			cupdata.records[i].bestskin = std::string(skins[cup->windata[i].best_skin.id].name);
-			cupdata.records[i].gotemerald = cup->windata[i].got_emerald;
+			srb2::GamedataCupRecordsJson newrecords {};
+			newrecords.bestgrade = cup->windata[i].best_grade;
+			newrecords.bestplacement = cup->windata[i].best_placement;
+			skinreference_t& skinref = cup->windata[i].best_skin;
+			if (skinref.unloaded)
+			{
+				newrecords.bestskin = std::string(skinref.unloaded->name);
+			}
+			else
+			{
+				newrecords.bestskin = std::string(skins[skinref.id].name);
+			}
+			newrecords.gotemerald = cup->windata[i].got_emerald;
+			cupdata.records.emplace_back(std::move(newrecords));
 		}
 		ng.cups[cupdata.name] = std::move(cupdata);
 	}
@@ -199,12 +209,22 @@ void srb2::save_ng_gamedata()
 		}
 		srb2::GamedataCupJson cupdata {};
 		cupdata.name = std::string(unloadedcup->name);
-		for (int i = 0; i < 4; i++)
+		for (int i = 0; i < KARTGP_MAX; i++)
 		{
-			cupdata.records[i].bestgrade = unloadedcup->windata[i].best_grade;
-			cupdata.records[i].bestplacement = unloadedcup->windata[i].best_placement;
-			cupdata.records[i].bestskin = std::string(skins[unloadedcup->windata[i].best_skin.id].name);
-			cupdata.records[i].gotemerald = unloadedcup->windata[i].got_emerald;
+			srb2::GamedataCupRecordsJson newrecords {};
+			newrecords.bestgrade = unloadedcup->windata[i].best_grade;
+			newrecords.bestplacement = unloadedcup->windata[i].best_placement;
+			skinreference_t& skinref = unloadedcup->windata[i].best_skin;
+			if (skinref.unloaded)
+			{
+				newrecords.bestskin = std::string(skinref.unloaded->name);
+			}
+			else
+			{
+				newrecords.bestskin = std::string(skins[skinref.id].name);
+			}
+			newrecords.gotemerald = unloadedcup->windata[i].got_emerald;
+			cupdata.records.emplace_back(std::move(newrecords));
 		}
 		ng.cups[cupdata.name] = std::move(cupdata);
 	}
@@ -645,22 +665,10 @@ void srb2::load_ng_gamedata()
 			dummywindata[j].best_skin.id = MAXSKINS;
 			dummywindata[j].best_skin.unloaded = nullptr;
 
-			bool skinfound = false;
-			for (int skin = 0; skin < numskins; skin++)
+			int skinloaded = R_SkinAvailable(cuppair.second.records[j].bestskin.c_str());
+			if (skinloaded >= 0)
 			{
-				std::string skinname = std::string(skins[skin].name);
-				if (skinname == cuppair.second.records[j].bestskin)
-				{
-					skinreference_t ref {};
-					ref.id = skin;
-					ref.unloaded = nullptr;
-					dummywindata[j].best_skin = ref;
-					skinfound = true;
-					break;
-				}
-			}
-			if (skinfound)
-			{
+				dummywindata[j].best_skin.id = skinloaded;
 				continue;
 			}
 			for (auto unloadedskin = unloadedskins; unloadedskin; unloadedskin = unloadedskin->next)
@@ -672,7 +680,6 @@ void srb2::load_ng_gamedata()
 					ref.id = MAXSKINS;
 					ref.unloaded = unloadedskin;
 					dummywindata[j].best_skin = ref;
-					skinfound = true;
 					break;
 				}
 			}
