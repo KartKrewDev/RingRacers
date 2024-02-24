@@ -520,6 +520,9 @@ boolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2)
 	if (t2->player && (t2->player->hyudorotimer || t2->player->justbumped))
 		return true;
 
+	if (draggeddroptarget && P_MobjWasRemoved(draggeddroptarget))
+		draggeddroptarget = NULL; // Beware order-of-execution on crushers, I guess?!
+
 	if (t1->health > 3) // forward thrown
 	{
 		strength = 0;
@@ -650,7 +653,7 @@ boolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2)
 		S_StartSound(t2, sfx_kdtrg1);
 	}
 
-	if (draggeddroptarget && draggeddroptarget->player)
+	if (draggeddroptarget && !P_MobjWasRemoved(draggeddroptarget) && draggeddroptarget->player)
 	{
 		// The following removes t1, be warned
 		// (its newly assigned properties are moved across)
