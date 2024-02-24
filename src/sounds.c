@@ -1263,6 +1263,8 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"ssbmpr",  false,  64,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, "UNDESCRIBED SSBMPR"}, // SF_X4AWAYSOUND
   {"chcrun",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "UNDESCRIBED CHCRUN"},
 
+  {"hint",    false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Hint Ring"},
+
   // Damage sounds
   {"dmga1",  false, 255, 8, -1, NULL, 0,         -1,  -1, LUMPERROR, "Damaged"},
   {"dmga2",  false, 255, 8, -1, NULL, 0,         -1,  -1, LUMPERROR, "Damaged"},

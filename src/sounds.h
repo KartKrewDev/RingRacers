@@ -1338,6 +1338,9 @@ typedef enum
 	sfx_ssbmpr,
 	sfx_chcrun,
 
+	// Tutorial Hint
+	sfx_hint,
+
 	// Damage sounds
 	sfx_dmga1,
 	sfx_dmga2,

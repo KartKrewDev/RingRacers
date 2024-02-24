@@ -100,6 +100,11 @@ struct TalkPoint : Mobj
 					collect(kCollectDuration);
 				}
 
+				if (!invisible() && P_IsDisplayPlayer(&players[i]))
+				{
+					S_StartSound(nullptr, sfx_hint);
+				}
+
 				break;
 			}
 		}
