@@ -9045,8 +9045,12 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		else
 		{
 			player->eggmanexplode--;
+			
+			if (!S_SoundPlaying(player->mo, sfx_kc51))
+				S_StartSound(player->mo, sfx_kc51);
 			if (player->eggmanexplode == 5*TICRATE/2)
 				S_StartSound(player->mo, sfx_s3k53);
+
 			if (player->eggmanexplode <= 0)
 			{
 				mobj_t *eggsexplode;
@@ -9059,6 +9063,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 				K_FlipFromObject(eggsexplode, player->mo);
 
 				S_StopSoundByID(player->mo, sfx_s3k53);
+				S_StopSoundByID(player->mo, sfx_kc51);
 
 				eggsexplode->threshold = KITEM_EGGMAN;
 
@@ -13423,6 +13428,7 @@ void K_EggmanTransfer(player_t *source, player_t *victim)
 	source->eggmanTransferDelay = 10;
 
 	S_StopSoundByID(source->mo, sfx_s3k53);
+	S_StopSoundByID(source->mo, sfx_kc51);
 }
 
 tic_t K_TimeLimitForGametype(void)
