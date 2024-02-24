@@ -1569,6 +1569,20 @@ typedef enum
 	sfx_gshf0,
 	sfx_gshf1,
 
+	// Generic menu SFX
+	sfx_tmxatt,
+	sfx_tmxawd,
+	sfx_tmxbak,
+	sfx_tmxdsm,
+	sfx_tmxerr,
+	sfx_tmxfwd,
+	sfx_tmxnah,
+	sfx_tmxqst,
+	sfx_tmxsuc,
+	sfx_tmxunx,
+	sfx_tmxbdn,
+	sfx_tmxbup,
+
 	// And LASTLY, Kart's skin sounds.
 	sfx_kwin,
 	sfx_klose,
