@@ -5356,6 +5356,7 @@ static boolean P_IsTrackerType(INT32 type)
 		case MT_BATTLEUFO:
 		case MT_SUPER_FLICKY:
 		case MT_SPRAYCAN:
+		case MT_WAYPOINT: // debug
 			return true;
 
 		default:
