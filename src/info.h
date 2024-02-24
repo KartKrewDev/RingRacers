@@ -1269,6 +1269,9 @@ typedef enum sprite
 	SPR_SENC, // Cabotron
 	SPR_SEAS, // Starstream
 
+	// Tutorial
+	SPR_TLKP, // Talk Point
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	SPR_VIEW,
 
@@ -4002,6 +4005,10 @@ typedef enum state
 	// MT_STARSTREAM
 	S_STARSTREAM,
 
+	// MT_SCRIPT_THING
+	S_TALKPOINT,
+	S_TALKPOINT_ORB,
+
 	S_FIRSTFREESLOT,
 	S_LASTFREESLOT = S_FIRSTFREESLOT + NUMSTATEFREESLOTS - 1,
 	NUMSTATES
@@ -4742,6 +4749,7 @@ typedef enum mobj_type
 
 	MT_CHECKPOINT_END,
 	MT_SCRIPT_THING,
+	MT_SCRIPT_THING_ORB,
 
 	MT_RIDEROID,
 	MT_RIDEROIDNODE,
