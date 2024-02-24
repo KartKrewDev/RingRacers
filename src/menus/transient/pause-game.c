@@ -429,10 +429,7 @@ void M_TryAgain(INT32 choice)
 		G_CheckDemoStatus(); // Cancel recording
 		M_StartTimeAttack(-1);
 	}
-	else
-	{
-		G_SetRetryFlag();
-	}
+	G_SetRetryFlag();
 }
 
 static void M_GiveUpResponse(INT32 ch)
