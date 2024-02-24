@@ -5546,22 +5546,41 @@ static void K_DrawWaypointDebugger(void)
 	if (R_GetViewNumber() != 0) // only for p1
 		return;
 
+	constexpr int kH = 8;
+	using srb2::Draw;
+	Draw::TextElement label;
+	label.font(Draw::Font::kThin);
+	label.flags(V_AQUAMAP);
+	Draw line = Draw(8, 136).font(Draw::Font::kMenu);
+	auto put = [&](const char* label_str, auto&&... args)
+	{
+		constexpr int kTabWidth = 48;
+		label.string(label_str);
+		int x = label.width() + kTabWidth;
+		x -= x % kTabWidth;
+		line.size(x + 4, 2).y(7).fill(31);
+		line.text(label);
+		line.x(x).text(args...);
+		line = line.y(kH);
+	};
+
 	if (netgame)
 	{
-		V_DrawString(8, 136, 0, va("Online griefing: [%u, %u]", stplyr->griefValue/TICRATE, stplyr->griefStrikes));
+		line = line.y(-kH);
+		put("Online griefing:", "[{}, {}]", stplyr->griefValue/TICRATE, stplyr->griefStrikes);
 	}
 
-	V_DrawString(8, 146, 0, va("Current Waypoint ID: %d", K_GetWaypointID(stplyr->currentwaypoint)));
-	V_DrawString(8, 156, 0, va("Next Waypoint ID: %d%s", K_GetWaypointID(stplyr->nextwaypoint), ((stplyr->pflags & PF_WRONGWAY) ? " (WRONG WAY)" : "")));
-	V_DrawString(8, 166, 0, va("Respawn Waypoint ID: %d", K_GetWaypointID(stplyr->respawn.wp)));
-	V_DrawString(8, 176, 0, va("Finishline Distance: %d", stplyr->distancetofinish));
+	put("Current Waypoint ID:", "{}", K_GetWaypointID(stplyr->currentwaypoint));
+	put("Next Waypoint ID:", "{}{}", K_GetWaypointID(stplyr->nextwaypoint), ((stplyr->pflags & PF_WRONGWAY) ? " (WRONG WAY)" : ""));
+	put("Respawn Waypoint ID:", "{}", K_GetWaypointID(stplyr->respawn.wp));
+	put("Finishline Distance:", "{}", stplyr->distancetofinish);
 
 	if (numcheatchecks > 0)
 	{
 		if (stplyr->cheatchecknum == numcheatchecks)
-			V_DrawString(8, 186, 0, va("Cheat Check: %d / %d (Can finish)", stplyr->cheatchecknum, numcheatchecks));
+			put("Cheat Check:", "{} / {} (Can finish)", stplyr->cheatchecknum, numcheatchecks);
 		else
-			V_DrawString(8, 186, 0, va("Cheat Check: %d / %d", stplyr->cheatchecknum, numcheatchecks));
+			put("Cheat Check:", "{} / {}", stplyr->cheatchecknum, numcheatchecks);
 	}
 }
 
