@@ -435,7 +435,7 @@ void G_WriteDemoExtraData(void)
 			{
 				// Color
 				memset(name, 0, 16);
-				strncpy(name, skincolors[players[i].skincolor].name, 16);
+				strlcpy(name, skincolors[players[i].skincolor].name, 16);
 				M_Memcpy(demobuf.p,name,16);
 				demobuf.p += 16;
 			}
@@ -443,7 +443,7 @@ void G_WriteDemoExtraData(void)
 			{
 				// Name
 				memset(name, 0, 16);
-				strncpy(name, player_names[i], 16);
+				strlcpy(name, player_names[i], 16);
 				M_Memcpy(demobuf.p,name,16);
 				demobuf.p += 16;
 			}
@@ -454,7 +454,7 @@ void G_WriteDemoExtraData(void)
 				if (players[i].followerskin == -1)
 					strncpy(name, "None", 16);
 				else
-					strncpy(name, followers[players[i].followerskin].name, 16);
+					strlcpy(name, followers[players[i].followerskin].name, 16);
 				M_Memcpy(demobuf.p, name, 16);
 				demobuf.p += 16;
 
@@ -465,7 +465,7 @@ void G_WriteDemoExtraData(void)
 					if (Followercolor_cons_t[j].value == players[i].followercolor)
 						break;
 				}
-				strncpy(name, Followercolor_cons_t[j].strvalue, 16);	// Not KartColor_Names because followercolor has extra values such as "Match"
+				strlcpy(name, Followercolor_cons_t[j].strvalue, 16);	// Not KartColor_Names because followercolor has extra values such as "Match"
 				M_Memcpy(demobuf.p,name,16);
 				demobuf.p += 16;
 
@@ -1983,7 +1983,7 @@ static void G_SaveDemoSkins(UINT8 **pp)
 	{
 		// Skinname, for first attempt at identification.
 		memset(skin, 0, 16);
-		strncpy(skin, skins[i].name, 16);
+		strlcpy(skin, skins[i].name, 16);
 		WRITEMEM((*pp), skin, 16);
 
 		// Backup information for second pass.
@@ -2234,7 +2234,7 @@ void G_BeginRecording(void)
 
 			// Name
 			memset(name, 0, 16);
-			strncpy(name, player_names[p], 16);
+			strlcpy(name, player_names[p], 16);
 			M_Memcpy(demobuf.p,name,16);
 			demobuf.p += 16;
 
