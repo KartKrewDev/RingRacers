@@ -564,14 +564,23 @@ void K_DrawTargetTracking(const TargetTracking& target)
 			);
 		};
 
-		if (target.mobj->type == MT_BATTLEUFO_SPAWNER) // debug
+		using srb2::Draw;
+		auto debug = [&]() -> Draw
 		{
-			using srb2::Draw;
-			Draw(FixedToFloat(result.x), FixedToFloat(result.y))
+			return Draw(FixedToFloat(result.x), FixedToFloat(result.y))
 				.flags(V_SPLITSCREEN)
 				.font(Draw::Font::kThin)
-				.align(Draw::Align::kCenter)
-				.text("BUFO ID: {}", Obj_BattleUFOSpawnerID(target.mobj));
+				.align(Draw::Align::kCenter);
+		};
+
+		switch (target.mobj->type) // debug
+		{
+		case MT_BATTLEUFO_SPAWNER:
+			debug().text("BUFO ID: {}", Obj_BattleUFOSpawnerID(target.mobj));
+			break;
+
+		default:
+			break;
 		}
 	}
 }
