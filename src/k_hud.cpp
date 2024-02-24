@@ -5574,6 +5574,7 @@ static void K_DrawWaypointDebugger(void)
 	put("Next Waypoint ID:", "{}{}", K_GetWaypointID(stplyr->nextwaypoint), ((stplyr->pflags & PF_WRONGWAY) ? " (WRONG WAY)" : ""));
 	put("Respawn Waypoint ID:", "{}", K_GetWaypointID(stplyr->respawn.wp));
 	put("Finishline Distance:", "{}", stplyr->distancetofinish);
+	put("Last Safe Lap:", "{}", stplyr->lastsafelap);
 
 	if (numcheatchecks > 0)
 	{
@@ -5581,6 +5582,7 @@ static void K_DrawWaypointDebugger(void)
 			put("Cheat Check:", "{} / {} (Can finish)", stplyr->cheatchecknum, numcheatchecks);
 		else
 			put("Cheat Check:", "{} / {}", stplyr->cheatchecknum, numcheatchecks);
+		put("Last Safe Cheat Check:", "{}", stplyr->lastsafecheatcheck);
 	}
 }
 
