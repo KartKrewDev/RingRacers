@@ -128,6 +128,8 @@ void K_DoFault(player_t *player)
 --------------------------------------------------*/
 void K_DoIngameRespawn(player_t *player)
 {
+	boolean faultstartfaulting = false;
+
 	if (!player->mo || P_MobjWasRemoved(player->mo))
 	{
 		return;
@@ -149,7 +151,24 @@ void K_DoIngameRespawn(player_t *player)
 	{
 		const waypoint_t *finish = K_GetFinishLineWaypoint();
 
-		if (!(mapheaderinfo[gamemap-1]->levelflags & LF_SECTIONRACE) && finish != NULL)
+		if (numfaultstarts > 0 && faultstart)
+		{
+			subsector_t *subs;
+			if ((subs = R_PointInSubsectorOrNull(faultstart->x << FRACBITS, faultstart->y << FRACBITS)) != NULL)
+			{
+				faultstartfaulting = true;
+				player->respawn.wp = NULL;
+				player->respawn.flip = false;
+				player->respawn.pointx = faultstart->x << FRACBITS;
+				player->respawn.pointy = faultstart->y << FRACBITS;
+				player->respawn.pointz =
+					P_GetSectorFloorZAt(subs->sector, faultstart->x << FRACBITS, faultstart->y << FRACBITS)
+					+ (faultstart->z << FRACBITS)
+					+ K_RespawnOffset(player, player->respawn.flip);
+				player->respawn.pointangle = FixedAngle(faultstart->angle << FRACBITS);
+			}
+		}
+		else if (!(mapheaderinfo[gamemap-1]->levelflags & LF_SECTIONRACE) && finish != NULL)
 			player->respawn.wp = finish->prevwaypoints[0];
 		K_DoFault(player);
 	}
@@ -197,6 +216,10 @@ void K_DoIngameRespawn(player_t *player)
 			player->respawn.distanceleft = (dist * mapobjectscale) / FRACUNIT;
 			K_RespawnAtWaypoint(player, player->respawn.wp);
 		}
+	}
+	else if (faultstartfaulting)
+	{
+		; // Do nothing, position was already set
 	}
 	else if ((gametyperules & GTR_CHECKPOINTS)
 		&& player->checkpointId
