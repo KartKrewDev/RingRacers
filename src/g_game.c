@@ -2821,6 +2821,18 @@ static inline mapthing_t *G_FindTeamStartOrFallback(INT32 playernum)
 	return spawnpoint;
 }
 
+static inline mapthing_t *G_FindTimeAttackStartOrFallback(INT32 playernum)
+{
+	mapthing_t *spawnpoint = NULL;
+	if (!(spawnpoint = faultstart)
+		&& !(spawnpoint = G_FindRaceStart(playernum))
+		&& !(spawnpoint = G_FindBattleStart(playernum)))
+	{
+		spawnpoint = G_FindTeamStart(playernum);
+	}
+	return spawnpoint;
+}
+
 mapthing_t *G_FindMapStart(INT32 playernum)
 {
 	extern consvar_t cv_battlespawn;
@@ -2839,9 +2851,14 @@ mapthing_t *G_FindMapStart(INT32 playernum)
 	else if (K_PodiumSequence() == true)
 		spawnpoint = G_FindPodiumStart(playernum);
 
-	// -- Time Attack / Battle duels --
+	// -- Time Attack --
+	// Order: Fault->Race->DM->CTF
+	else if (K_TimeAttackRules() == true && modeattacking != ATTACKING_NONE)
+		spawnpoint = G_FindTimeAttackStartOrFallback(playernum);
+
+	// -- Battle duels --
 	// Order: Race->DM->CTF
-	else if (K_TimeAttackRules() == true || ((gametyperules & GTR_BATTLESTARTS) && inDuel))
+	else if (((gametyperules & GTR_BATTLESTARTS) && inDuel))
 		spawnpoint = G_FindRaceStartOrFallback(playernum);
 
 	// -- CTF --

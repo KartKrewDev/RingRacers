@@ -187,11 +187,13 @@ UINT8 *rejectmatrix;
 
 // Maintain single and multi player starting spots.
 INT32 numdmstarts, numcoopstarts, numredctfstarts, numbluectfstarts;
+INT32 numfaultstarts;
 
 mapthing_t *deathmatchstarts[MAX_DM_STARTS];
 mapthing_t *playerstarts[MAXPLAYERS];
 mapthing_t *bluectfstarts[MAXPLAYERS];
 mapthing_t *redctfstarts[MAXPLAYERS];
+mapthing_t *faultstart;
 
 // Global state for PartialAddWadFile/MultiSetupWadFiles
 // Might be replacable with parameters, but non-trivial when the functions are called on separate tics
@@ -7744,6 +7746,8 @@ static void P_ResetSpawnpoints(void)
 	UINT8 i;
 
 	numdmstarts = numredctfstarts = numbluectfstarts = 0;
+	numfaultstarts = 0;
+	faultstart = NULL;
 
 	// reset the player starts
 	for (i = 0; i < MAXPLAYERS; i++)
