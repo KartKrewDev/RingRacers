@@ -1235,6 +1235,7 @@ enum {
 	WP_KICKSTARTACCEL = 1<<0,
 	WP_SHRINKME = 1<<1,
 	WP_AUTOROULETTE = 1<<2,
+	WP_ANALOGSTICK = 1<<3,
 };
 
 void WeaponPref_Send(UINT8 ssplayer)
@@ -1249,6 +1250,9 @@ void WeaponPref_Send(UINT8 ssplayer)
 
 	if (cv_shrinkme[ssplayer].value)
 		prefs |= WP_SHRINKME;
+
+	if (gamecontrolflags[ssplayer] & GCF_ANALOGSTICK)
+		prefs |= WP_ANALOGSTICK;
 
 	SendNetXCmdForPlayer(ssplayer, XD_WEAPONPREF, &prefs, 1);
 }
@@ -1267,6 +1271,9 @@ void WeaponPref_Save(UINT8 **cp, INT32 playernum)
 
 	if (player->pflags & PF_SHRINKME)
 		prefs |= WP_SHRINKME;
+
+	if (player->pflags & PF_ANALOGSTICK)
+		prefs |= WP_ANALOGSTICK;
 
 	WRITEUINT8(*cp, prefs);
 }
@@ -1288,6 +1295,11 @@ size_t WeaponPref_Parse(const UINT8 *bufstart, INT32 playernum)
 
 	if (prefs & WP_SHRINKME)
 		player->pflags |= PF_SHRINKME;
+
+	if (prefs & WP_ANALOGSTICK)
+		player->pflags |= PF_ANALOGSTICK;
+	else
+		player->pflags &= ~PF_ANALOGSTICK;
 
 	if (leveltime < 2)
 	{

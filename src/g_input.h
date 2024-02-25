@@ -100,6 +100,11 @@ typedef enum
 	gc_drift = gc_r,
 } gamecontrols_e;
 
+typedef enum
+{
+	GCF_ANALOGSTICK = 1 << 0,
+} gamecontrol_flags_e;
+
 // mouse values are used once
 extern consvar_t cv_controlperkey;
 
@@ -113,6 +118,7 @@ extern INT32 gamekeydown[MAXDEVICES][NUMINPUTS];
 
 // several key codes (or virtual key) per game control
 extern INT32 gamecontrol[MAXSPLITSCREENPLAYERS][num_gamecontrols][MAXINPUTMAPPING];
+extern UINT8 gamecontrolflags[MAXSPLITSCREENPLAYERS];
 extern INT32 gamecontroldefault[num_gamecontrols][MAXINPUTMAPPING]; // default control storage
 extern INT32 menucontrolreserved[num_gamecontrols][MAXINPUTMAPPING];
 

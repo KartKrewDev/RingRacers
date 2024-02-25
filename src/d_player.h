@@ -103,7 +103,9 @@ typedef enum
 
 	PF_RINGLOCK			= 1<<13, // Prevent picking up rings while SPB is locked on
 
-	//14-17 free, was previously itemflags stuff
+	PF_ANALOGSTICK		= 1<<14, // This player is using an analog joystick
+
+	//15-17 free, was previously itemflags stuff
 
 	PF_DRIFTINPUT		= 1<<18, // Drifting!
 	PF_GETSPARKS		= 1<<19, // Can get sparks

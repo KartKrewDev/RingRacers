@@ -31,6 +31,7 @@ INT32 gamekeydown[MAXDEVICES][NUMINPUTS];
 
 // two key codes (or virtual key) per game control
 INT32 gamecontrol[MAXSPLITSCREENPLAYERS][num_gamecontrols][MAXINPUTMAPPING];
+UINT8 gamecontrolflags[MAXSPLITSCREENPLAYERS];
 INT32 gamecontroldefault[num_gamecontrols][MAXINPUTMAPPING]; // default control storage
 INT32 menucontrolreserved[num_gamecontrols][MAXINPUTMAPPING];
 
@@ -963,9 +964,37 @@ void G_DefineDefaultControls(void)
 	menucontrolreserved[gc_start][0] = KEY_ESCAPE; // Handled special
 }
 
+static boolean G_ControlUsesAxis(INT32 map[MAXINPUTMAPPING])
+{
+	for (INT32 i = 0; i < MAXINPUTMAPPING; i++)
+	{
+		INT32 key = map[i];
+		if (key >= KEY_AXIS1 && key < JOYINPUTEND)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void G_ApplyControlScheme(UINT8 splitplayer, INT32 (*fromcontrols)[MAXINPUTMAPPING])
 {
+	UINT8 flags = 0;
+
+	if (G_ControlUsesAxis(fromcontrols[gc_up]) ||
+		G_ControlUsesAxis(fromcontrols[gc_down]) ||
+		G_ControlUsesAxis(fromcontrols[gc_left]) ||
+		G_ControlUsesAxis(fromcontrols[gc_right]))
+	{
+		flags |= GCF_ANALOGSTICK;
+	}
+
 	memcpy(gamecontrol[splitplayer], fromcontrols, sizeof gamecontrol[splitplayer]);
+	gamecontrolflags[splitplayer] = flags;
+
+	if (Playing())
+		WeaponPref_Send(splitplayer); // update PF_ANALOGSTICK
 }
 
 void G_SaveKeySetting(FILE *f, INT32 (*fromcontrolsa)[MAXINPUTMAPPING], INT32 (*fromcontrolsb)[MAXINPUTMAPPING], INT32 (*fromcontrolsc)[MAXINPUTMAPPING], INT32 (*fromcontrolsd)[MAXINPUTMAPPING])
