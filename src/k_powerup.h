@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-#define BATTLE_POWERUP_ANIM_TIME (40)
+#define BATTLE_POWERUP_VFX_TIME (40)
 
 tic_t K_PowerUpRemaining(const player_t *player, kartitems_t powerup);
 UINT32 K_AnyPowerUpRemaining(const player_t *player); // returns POWERUP_BIT mask

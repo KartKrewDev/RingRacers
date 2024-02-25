@@ -57,7 +57,7 @@ void K_GivePowerUp(player_t* player, kartitems_t powerup, tic_t time)
 	player->flashing = 2*TICRATE;
 
 	g_darkness.start = leveltime;
-	g_darkness.end = leveltime + BATTLE_POWERUP_ANIM_TIME + DARKNESS_FADE_TIME;
+	g_darkness.end = leveltime + BATTLE_POWERUP_VFX_TIME + DARKNESS_FADE_TIME;
 
 	switch (powerup)
 	{
