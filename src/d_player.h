@@ -103,7 +103,7 @@ typedef enum
 
 	PF_RINGLOCK			= 1<<13, // Prevent picking up rings while SPB is locked on
 
-	PF_LITESTEER		= 1<<14, // Hold Down to shallow turn (digital only)
+	PF_ANALOGSTICK		= 1<<14, // This player is using an analog joystick
 
 	//15-17 free, was previously itemflags stuff
 

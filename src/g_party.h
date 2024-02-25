@@ -63,6 +63,9 @@ const UINT8 *G_PartyArray(UINT8 player);
 UINT8 G_PartyPosition(UINT8 player);
 
 //
+UINT8 G_LocalSplitscreenPartyPosition(UINT8 player);
+
+//
 //        Globals
 //
 

@@ -3994,7 +3994,7 @@ const char *const PLAYERFLAG_LIST[] = {
 
 	"RINGLOCK", // Prevent picking up rings while SPB is locked on
 
-	"LITESTEER", // Shallow digital turn with DOWN
+	"ANALOGSTICK", // This player is using an analog joystick
 	"\x01", // Free
 	"\x01", // Free
 	"\x01", // Free
