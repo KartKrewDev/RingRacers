@@ -8210,7 +8210,7 @@ void P_LoadLevelMusic(void)
 {
 	const char *music = mapheaderinfo[gamemap-1]->musname[mapmusrng];
 
-	if (gametyperules & GTR_NOPOSITION)
+	if (gametyperules & GTR_NOPOSITION || modeattacking != ATTACKING_NONE)
 	{
 		if (!stricmp(Music_Song("level_nosync"), music))
 		{
