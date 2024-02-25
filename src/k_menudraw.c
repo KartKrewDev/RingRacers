@@ -4742,52 +4742,6 @@ INT16 controlleroffsets[][2] = {
 	{149, 187},		// gc_start
 };
 
-// Controller patches for button presses.
-// reminder that lumpnames can only be 8 chars at most. (+1 for \0)
-
-static const char *controllerpresspatch[9][2] = {
-	{"PR_BTA", "PR_BTAB"}, // MBT_A
-	{"PR_BTB", "PR_BTBB"}, // MBT_B
-	{"PR_BTC", "PR_BTCB"}, // MBT_C
-	{"PR_BTX", "PR_BTXB"}, // MBT_X
-	{"PR_BTY", "PR_BTYB"}, // MBT_Y
-	{"PR_BTZ", "PR_BTZB"}, // MBT_Z
-	{"PR_BTL", "PR_BTLB"}, // MBT_L
-	{"PR_BTR", "PR_BTRB"}, // MBT_R
-	{"PR_BTS", "PR_BTSB"}, // MBT_START
-};
-
-static const char *M_GetDPadPatchName(SINT8 ud, SINT8 lr)
-{
-	if (ud < 0)
-	{
-		if (lr < 0)
-			return "PR_PADUL";
-		else if (lr > 0)
-			return "PR_PADUR";
-		else
-			return "PR_PADU";
-	}
-	else if (ud > 0)
-	{
-		if (lr < 0)
-			return "PR_PADDL";
-		else if (lr > 0)
-			return "PR_PADDR";
-		else
-			return "PR_PADD";
-	}
-	else
-	{
-		if (lr < 0)
-			return "PR_PADL";
-		else if (lr > 0)
-			return "PR_PADR";
-		else
-			return "PR_PADN";
-	}
-}
-
 static void M_DrawBindBen(INT32 x, INT32 y, INT32 scroll_remaining)
 {
 	// optionsmenu.bindben_swallow
@@ -4896,26 +4850,7 @@ void M_DrawProfileControls(void)
 	patch_t *hint = W_CachePatchName("MENUHINT", PU_CACHE);
 	INT32 hintofs = 3;
 
-	V_DrawScaledPatch(BASEVIDWIDTH*2/3 - optionsmenu.contx, BASEVIDHEIGHT/2 -optionsmenu.conty, 0, W_CachePatchName("PR_CONT", PU_CACHE));
-
-	// Draw button presses...
-	V_DrawScaledPatch(
-		BASEVIDWIDTH*2/3 - optionsmenu.contx,
-		BASEVIDHEIGHT/2 - optionsmenu.conty,
-		0,
-		W_CachePatchName(M_GetDPadPatchName(menucmd[pid].dpad_ud, menucmd[pid].dpad_lr), PU_CACHE)
-	);
-
-	for (i = 0; i < 9; i++)
-	{
-		INT32 bt = 1<<i;
-		V_DrawScaledPatch(
-			BASEVIDWIDTH*2/3 - optionsmenu.contx,
-			BASEVIDHEIGHT/2 - optionsmenu.conty,
-			0,
-			W_CachePatchName(controllerpresspatch[i][M_MenuButtonHeld(pid, bt) != 0], PU_CACHE)
-		);
-	}
+	K_DrawInputDisplay(BASEVIDWIDTH*2/3 - optionsmenu.contx, BASEVIDHEIGHT/2 - optionsmenu.conty, pid);
 
 	if (optionsmenu.trycontroller)
 	{

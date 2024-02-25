@@ -63,6 +63,8 @@ void K_DrawKartPositionNumXY(
 	boolean exit, boolean lastLap, boolean losing
 );
 
+void K_DrawInputDisplay(INT32 x, INT32 y, UINT8 pid);
+
 extern patch_t *kp_capsuletarget_arrow[2][2];
 extern patch_t *kp_capsuletarget_icon[2];
 extern patch_t *kp_capsuletarget_far[2][2];
