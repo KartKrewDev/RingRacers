@@ -8214,7 +8214,7 @@ void P_LoadLevelMusic(void)
 {
 	const char *music = mapheaderinfo[gamemap-1]->musname[mapmusrng];
 
-	if (gametyperules & GTR_NOPOSITION)
+	if (gametyperules & GTR_NOPOSITION || modeattacking != ATTACKING_NONE)
 	{
 		if (!stricmp(Music_Song("level_nosync"), music))
 		{
@@ -8367,14 +8367,10 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	// Special stage & record attack retry fade to white
 	// This is handled BEFORE sounds are stopped.
-	if (G_GetModeAttackRetryFlag())
+	if (G_IsModeAttackRetrying() && !demo.playback && gametype != GT_VERSUS)
 	{
-		if (modeattacking && !demo.playback)
-		{
-			ranspecialwipe = 2;
-			//wipestyleflags |= (WSF_FADEOUT|WSF_TOWHITE);
-		}
-		G_ClearModeAttackRetryFlag();
+		ranspecialwipe = 2;
+		//wipestyleflags |= (WSF_FADEOUT|WSF_TOWHITE);
 	}
 
 	// Make sure all sounds are stopped before Z_FreeTags.
@@ -8414,7 +8410,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			if (ranspecialwipe == 2)
 			{
 				pausedelay = -3; // preticker plus one
-				S_StartSound(NULL, sfx_s3k73);
 			}
 
 			// We should be fine starting music here.

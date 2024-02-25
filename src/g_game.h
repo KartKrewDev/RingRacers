@@ -250,9 +250,7 @@ void G_SetRetryFlag(void);
 void G_ClearRetryFlag(void);
 boolean G_GetRetryFlag(void);
 
-void G_SetModeAttackRetryFlag(void);
-void G_ClearModeAttackRetryFlag(void);
-boolean G_GetModeAttackRetryFlag(void);
+boolean G_IsModeAttackRetrying(void);
 
 void G_LoadGameData(void);
 void G_LoadGameSettings(void);

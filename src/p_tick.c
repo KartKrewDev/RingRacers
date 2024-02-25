@@ -1039,7 +1039,18 @@ void P_Ticker(boolean run)
 				}
 
 				// POSITION!! music
-				P_StartPositionMusic(true); // exact times only
+				if (modeattacking == ATTACKING_NONE)
+				{
+					P_StartPositionMusic(true); // exact times only
+				}
+			}
+		}
+
+		if (modeattacking != ATTACKING_NONE)
+		{
+			if (leveltime == 4 && !Music_Playing("level_nosync"))
+			{
+				Music_Play("level_nosync");
 			}
 		}
 
