@@ -497,7 +497,7 @@ static void PR_ApplyProfile_Settings(profile_t *p, UINT8 playernum)
 	CV_StealthSetValue(&cv_rumble[playernum], p->rumble);
 
 	// set controls...
-	memcpy(&gamecontrol[playernum], p->controls, sizeof(gamecontroldefault));
+	G_ApplyControlScheme(playernum, p->controls);
 }
 
 static void PR_ApplyProfile_Memory(UINT8 profilenum, UINT8 playernum)

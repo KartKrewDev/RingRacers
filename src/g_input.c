@@ -963,19 +963,9 @@ void G_DefineDefaultControls(void)
 	menucontrolreserved[gc_start][0] = KEY_ESCAPE; // Handled special
 }
 
-void G_CopyControls(INT32 (*setupcontrols)[MAXINPUTMAPPING], INT32 (*fromcontrols)[MAXINPUTMAPPING], const INT32 *gclist, INT32 gclen)
+void G_ApplyControlScheme(UINT8 splitplayer, INT32 (*fromcontrols)[MAXINPUTMAPPING])
 {
-	INT32 i, j, gc;
-
-	for (i = 0; i < (gclist && gclen ? gclen : num_gamecontrols); i++)
-	{
-		gc = (gclist && gclen) ? gclist[i] : i;
-
-		for (j = 0; j < MAXINPUTMAPPING; j++)
-		{
-			setupcontrols[gc][j] = fromcontrols[gc][j];
-		}
-	}
+	memcpy(gamecontrol[splitplayer], fromcontrols, sizeof gamecontrol[splitplayer]);
 }
 
 void G_SaveKeySetting(FILE *f, INT32 (*fromcontrolsa)[MAXINPUTMAPPING], INT32 (*fromcontrolsb)[MAXINPUTMAPPING], INT32 (*fromcontrolsc)[MAXINPUTMAPPING], INT32 (*fromcontrolsd)[MAXINPUTMAPPING])

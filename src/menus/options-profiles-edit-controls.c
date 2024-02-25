@@ -219,7 +219,7 @@ void M_ProfileTryController(INT32 choice)
 	optionsmenu.trycontroller = TICRATE*5;
 
 	// Apply these controls right now on P1's end.
-	memcpy(&gamecontrol[0], optionsmenu.tempcontrols, sizeof(gamecontroldefault));
+	G_ApplyControlScheme(0, optionsmenu.tempcontrols);
 }
 
 static void M_ProfileControlSaveResponse(INT32 choice)
@@ -234,7 +234,7 @@ static void M_ProfileControlSaveResponse(INT32 choice)
 		// Don't apply the profile itself as that would lead to issues mid-game.
 		if (belongsto > -1 && belongsto < MAXSPLITSCREENPLAYERS)
 		{
-			memcpy(&gamecontrol[belongsto], optionsmenu.tempcontrols, sizeof(gamecontroldefault));
+			G_ApplyControlScheme(belongsto, optionsmenu.tempcontrols);
 		}
 	}
 	else
@@ -325,7 +325,7 @@ boolean M_ProfileControlsInputs(INT32 ch)
 			profile_t *cpr = PR_GetProfile(cv_currprofile.value);
 			if (cpr == NULL)
 				cpr = PR_GetProfile(0); // Creating a profile at boot, revert to guest profile
-			memcpy(&gamecontrol[0], cpr->controls, sizeof(gamecontroldefault));
+			G_ApplyControlScheme(0, cpr->controls);
 		}
 
 		return true;
