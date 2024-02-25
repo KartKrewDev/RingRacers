@@ -1954,7 +1954,9 @@ static void K_HandleLapIncrement(player_t *player)
 				nump++;
 			}
 
+			player->cheatchecknum = 0;
 			player->laps++;
+			K_UpdateAllPlayerPositions();
 
 			if (G_TimeAttackStart() && !linecrossed)
 			{
@@ -1986,8 +1988,6 @@ static void K_HandleLapIncrement(player_t *player)
 
 			if (netgame && player->laps > numlaps)
 				CON_LogMessage(va(M_GetText("%s has finished the race.\n"), player_names[player-players]));
-
-			player->cheatchecknum = 0;
 
 			if (gametyperules & GTR_SPECIALSTART)
 			{
@@ -2182,6 +2182,7 @@ static void K_HandleLapDecrement(player_t *player)
 		{
 			player->cheatchecknum = numcheatchecks;
 			player->laps--;
+			K_UpdateAllPlayerPositions();
 			curlap = UINT32_MAX;
 		}
 	}

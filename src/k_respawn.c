@@ -197,8 +197,10 @@ void K_DoIngameRespawn(player_t *player)
 	{
 		if (player->respawn.fromRingShooter == true)
 		{
+			waypoint_t *finishline = K_GetFinishLineWaypoint();
 			waypoint_t *prevWP = player->respawn.wp;
-			while (prevWP->numprevwaypoints > 0)
+			// Laps don't decrement while respawning, so don't cross behind the finish line
+			while (prevWP->numprevwaypoints > 0 && prevWP != finishline)
 			{
 				prevWP = prevWP->prevwaypoints[0];
 				if (K_GetWaypointIsSpawnpoint(prevWP) == true)
@@ -340,12 +342,6 @@ void K_DoIngameRespawn(player_t *player)
 	player->respawn.init = true;
 	player->respawn.fast = true;
 	player->respawn.returnspeed = 0;
-
-	if (player->lastsafelap < player->laps)
-	{
-		player->laps = player->lastsafelap;
-		player->cheatchecknum = player->lastsafecheatcheck;
-	}
 
 	player->respawn.airtimer = player->airtime;
 	player->respawn.truedeath = !!(player->pflags & PF_FAULT);

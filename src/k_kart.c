@@ -9674,6 +9674,14 @@ void K_UpdateDistanceFromFinishLine(player_t *const player)
 		waypoint_t *finishline   = K_GetFinishLineWaypoint();
 		waypoint_t *nextwaypoint = NULL;
 
+		if (player->respawn.state == RESPAWNST_MOVE &&
+			player->respawn.init == true &&
+			player->lastsafelap < player->laps)
+		{
+			player->laps = player->lastsafelap;
+			player->cheatchecknum = player->lastsafecheatcheck;
+		}
+
 		if (player->spectator)
 		{
 			// Don't update waypoints while spectating
