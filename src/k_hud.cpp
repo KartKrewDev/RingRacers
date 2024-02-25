@@ -5682,6 +5682,8 @@ struct messagestate_t
 				return;
 		}
 
+		if (exitcountdown)
+			return;
 
 		if (timer == 0 && mode == MM_IN)
 			S_StartSound(NULL, sfx_s3k47);
@@ -5793,6 +5795,10 @@ void K_TickMessages()
 static void K_DrawMessageFeed(void)
 {
 	int i;
+
+	if (exitcountdown)
+		return;
+
 	for (i = 0; i <= r_splitscreen; i++)
 	{
 		messagestate_t state = messagestates[i];
