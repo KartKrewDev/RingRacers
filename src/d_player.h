@@ -103,9 +103,7 @@ typedef enum
 
 	PF_RINGLOCK			= 1<<13, // Prevent picking up rings while SPB is locked on
 
-	PF_LITESTEER		= 1<<14, // Hold Down to shallow turn (digital only)
-
-	//15-17 free, was previously itemflags stuff
+	//14-17 free, was previously itemflags stuff
 
 	PF_DRIFTINPUT		= 1<<18, // Drifting!
 	PF_GETSPARKS		= 1<<19, // Can get sparks
