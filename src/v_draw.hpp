@@ -180,6 +180,7 @@ public:
 
 		void patch(patch_t* patch) const;
 		void patch(const char* name) const { patch(Draw::cache_patch(name)); }
+		void patch(const std::string& name) const { patch(name.c_str()); }
 
 		void thumbnail(UINT16 mapnum) const;
 
