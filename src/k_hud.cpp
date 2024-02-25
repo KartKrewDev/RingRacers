@@ -50,6 +50,7 @@
 #include "k_rank.h"
 #include "g_party.h"
 #include "k_hitlag.h"
+#include "g_input.h"
 
 //{ 	Patch Definitions
 static patch_t *kp_nodraw;
@@ -5160,85 +5161,27 @@ static void K_drawKartFirstPerson(void)
 	}
 }
 
-// doesn't need to ever support 4p
 static void K_drawInput(void)
 {
-	static INT32 pn = 0;
-	INT32 target = 0, splitflags = (V_SNAPTOBOTTOM|V_SNAPTORIGHT);
-	INT32 x = BASEVIDWIDTH - 32, y = BASEVIDHEIGHT-24, offs, col;
-	const INT32 accent1 = splitflags | skincolors[stplyr->skincolor].ramp[5];
-	const INT32 accent2 = splitflags | skincolors[stplyr->skincolor].ramp[9];
-	ticcmd_t *cmd = &stplyr->cmd;
-
-#define BUTTW 8
-#define BUTTH 11
-
-#define drawbutt(xoffs, butt, symb)\
-	if (!stplyr->exiting && (cmd->buttons & butt))\
-	{\
-		offs = 2;\
-		col = accent1;\
-	}\
-	else\
-	{\
-		offs = 0;\
-		col = accent2;\
-		V_DrawFill(x+(xoffs), y+BUTTH, BUTTW-1, 2, splitflags|31);\
-	}\
-	V_DrawFill(x+(xoffs), y+offs, BUTTW-1, BUTTH, col);\
-	V_DrawFixedPatch((x+1+(xoffs))<<FRACBITS, (y+offs+1)<<FRACBITS, FRACUNIT, splitflags, fontv[TINY_FONT].font[symb-HU_FONTSTART], NULL)
-
-	drawbutt(-2*BUTTW, BT_ACCELERATE, 'A');
-	drawbutt(  -BUTTW, BT_BRAKE,      'B');
-	drawbutt(       0, BT_DRIFT,      'D');
-	drawbutt(   BUTTW, BT_ATTACK,     'I');
-
-#undef drawbutt
-
-#undef BUTTW
-#undef BUTTH
-
-	y -= 1;
-
-	if (stplyr->exiting || !stplyr->steering) // no turn
-		target = 0;
-	else // turning of multiple strengths!
-	{
-		target = ((abs(stplyr->steering) - 1)/125)+1;
-		if (target > 4)
-			target = 4;
-		if (stplyr->steering < 0)
-			target = -target;
-	}
-
-	if (pn != target)
-	{
-		if (abs(pn - target) == 1)
-			pn = target;
-		else if (pn < target)
-			pn += 2;
-		else //if (pn > target)
-			pn -= 2;
-	}
-
-	if (pn < 0)
-	{
-		splitflags |= V_FLIP; // right turn
-		x--;
-	}
-
-	target = abs(pn);
-	if (target > 4)
-		target = 4;
-
-	if (!stplyr->skincolor)
-		V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, FRACUNIT, splitflags, kp_inputwheel[target], NULL);
-	else
-	{
-		UINT8 *colormap;
-		colormap = R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(stplyr->skincolor), GTC_CACHE);
-		V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, FRACUNIT, splitflags, kp_inputwheel[target], colormap);
-	}
+	INT32 def[4][3] = {
+		{247, 156, V_SNAPTOBOTTOM | V_SNAPTORIGHT}, // 1p
+		{247, 56, V_SNAPTOBOTTOM | V_SNAPTORIGHT}, // 2p
+		{6, 52, V_SNAPTOBOTTOM | V_SNAPTOLEFT}, // 4p left
+		{282 - BASEVIDWIDTH/2, 52, V_SNAPTOBOTTOM | V_SNAPTORIGHT}, // 4p right
+	};
+	INT32 k = r_splitscreen <= 1 ? r_splitscreen : 2 + (R_GetViewNumber() & 1);
+	INT32 flags = def[k][2] | V_SPLITSCREEN | V_SLIDEIN;
+	char mode = ((stplyr->pflags & PF_ANALOGSTICK) ? '4' : '2') + (r_splitscreen > 1);
+	bool local = !demo.playback && P_IsMachineLocalPlayer(stplyr);
+	K_DrawInputDisplay(
+		def[k][0],
+		def[k][1],
+		flags,
+		mode,
+		(local ? G_LocalSplitscreenPartyPosition : G_PartyPosition)(stplyr - players),
+		local,
+		stplyr->speed > 0
+	);
 }
 
 static void K_drawChallengerScreen(void)

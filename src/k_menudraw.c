@@ -4850,7 +4850,7 @@ void M_DrawProfileControls(void)
 	patch_t *hint = W_CachePatchName("MENUHINT", PU_CACHE);
 	INT32 hintofs = 3;
 
-	K_DrawInputDisplay(BASEVIDWIDTH*2/3 - optionsmenu.contx, BASEVIDHEIGHT/2 - optionsmenu.conty, pid);
+	K_DrawInputDisplay(BASEVIDWIDTH*2/3 - optionsmenu.contx, BASEVIDHEIGHT/2 - optionsmenu.conty, 0, '_', pid, true, false);
 
 	if (optionsmenu.trycontroller)
 	{
