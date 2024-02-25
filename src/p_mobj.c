@@ -12428,6 +12428,16 @@ static boolean P_SpawnNonMobjMapThing(mapthing_t *mthing)
 		}
 		return true;
 	}
+	else if (mthing->type == 36) // Kart fault start
+	{
+		if (numfaultstarts < MAXPLAYERS)
+		{
+			faultstart = mthing;
+			mthing->type = 0;
+			numfaultstarts++;
+		}
+		return true;
+	}
 	else if (mthing->type == 750 // Slope vertex point (formerly chaos spawn)
 		     || (mthing->type == FLOOR_SLOPE_THING || mthing->type == CEILING_SLOPE_THING) // Slope anchors
 		     || (mthing->type >= 600 && mthing->type <= 611) // Special placement patterns

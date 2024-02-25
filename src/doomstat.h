@@ -871,6 +871,7 @@ extern tic_t gametic;
 extern mapthing_t *playerstarts[MAXPLAYERS]; // Cooperative
 extern mapthing_t *bluectfstarts[MAXPLAYERS]; // CTF
 extern mapthing_t *redctfstarts[MAXPLAYERS]; // CTF
+extern mapthing_t *faultstart; // Kart Fault
 
 #define TUBEWAYPOINTSEQUENCESIZE 256
 #define NUMTUBEWAYPOINTSEQUENCES 256
