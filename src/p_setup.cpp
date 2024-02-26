@@ -7678,7 +7678,11 @@ static void P_InitLevelSettings(void)
 		|| tutorialchallenge ==  TUTORIALSKIP_INPROGRESS
 	)
 	{
-		if (gametyperules & GTR_CIRCUIT)
+		if ((gametyperules & GTR_CATCHER) && encoremode == false)
+		{
+			gamespeed = KARTSPEED_NORMAL;
+		}
+		else if (gametyperules & GTR_CIRCUIT)
 		{
 			gamespeed = KARTSPEED_HARD;
 		}
