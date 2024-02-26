@@ -416,6 +416,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	// Additional Kart Objects
 	"AUDI", // Audience members
 	"BUZB", // Sapphire Coast Buzz Mk3
+	"SACO", // Sapphire Coast Fauna
 	"BRNG", // Chaotix Big Ring
 
 	// Ark Arrows
@@ -2648,6 +2649,15 @@ state_t states[NUMSTATES] =
 	{SPR_FLAM,  FF_FULLBRIGHT|FF_ADD|1,  3, {NULL}, 0, 0, S_FLAYM3}, // S_FLAYM2,
 	{SPR_FLAM,  FF_FULLBRIGHT|FF_ADD|2,  3, {NULL}, 0, 0, S_FLAYM4}, // S_FLAYM3,
 	{SPR_FLAM,  FF_FULLBRIGHT|FF_ADD|3,  3, {NULL}, 0, 0, S_FLAYM1}, // S_FLAYM4,
+
+	{SPR_SACO, 0, -1, {NULL}, 0, 0, S_NULL}, // S_PALMTREE2
+	{SPR_SACO, 1, -1, {NULL}, 0, 0, S_NULL}, // S_PURPLEFLOWER1
+	{SPR_SACO, 2, -1, {NULL}, 0, 0, S_NULL}, // S_PURPLEFLOWER2
+	{SPR_SACO, 3, -1, {NULL}, 0, 0, S_NULL}, // S_YELLOWFLOWER1
+	{SPR_SACO, 4, -1, {NULL}, 0, 0, S_NULL}, // S_YELLOWFLOWER2
+	{SPR_SACO, 5, -1, {NULL}, 0, 0, S_NULL}, // S_PLANT2
+	{SPR_SACO, 6, -1, {NULL}, 0, 0, S_NULL}, // S_PLANT3
+	{SPR_SACO, 7, -1, {NULL}, 0, 0, S_NULL}, // S_PLANT4
 
 	{SPR_BRNG, 0, 2, {NULL}, 0, 0, S_BIGRING02}, // S_BIGRING01
 	{SPR_BRNG, 1, 2, {NULL}, 0, 0, S_BIGRING03}, // S_BIGRING02
@@ -16140,6 +16150,223 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // damage
 		sfx_None,       // activesound
 		MF_NOGRAVITY|MF_SPECIAL|MF_PAIN, // flags
+		S_NULL          // raisestate
+	},
+
+
+	{           // MT_PALMTREE2
+		2016,           // doomednum
+		S_PALMTREE2,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		16*FRACUNIT,    // radius
+		96*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SCENERY|MF_NOCLIPTHING, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_PURPLEFLOWER1
+		3000,           // doomednum
+		S_PURPLEFLOWER1, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		16*FRACUNIT,    // radius
+		40*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SCENERY|MF_NOCLIPTHING|MF_NOGRAVITY, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_PURPLEFLOWER2
+		3001,           // doomednum
+		S_PURPLEFLOWER2, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		16*FRACUNIT,    // radius
+		40*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SCENERY|MF_NOCLIPTHING|MF_NOGRAVITY, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_YELLOWFLOWER1
+		3002,           // doomednum
+		S_YELLOWFLOWER1, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		16*FRACUNIT,    // radius
+		40*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SCENERY|MF_NOCLIPTHING|MF_NOGRAVITY, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_YELLOWFLOWER2
+		3003,           // doomednum
+		S_YELLOWFLOWER2, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		16*FRACUNIT,    // radius
+		40*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SCENERY|MF_NOCLIPTHING|MF_NOGRAVITY, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_PLANT2
+		4022,           // doomednum
+		S_PLANT2,       // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		16*FRACUNIT,    // radius
+		40*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SCENERY|MF_NOCLIPTHING|MF_NOGRAVITY, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_PLANT3
+		4024,           // doomednum
+		S_PLANT3,       // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		16*FRACUNIT,    // radius
+		40*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SCENERY|MF_NOCLIPTHING, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_PLANT4
+		4025,           // doomednum
+		S_PLANT4,       // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		16*FRACUNIT,    // radius
+		40*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SCENERY|MF_NOCLIPTHING, // flags
 		S_NULL          // raisestate
 	},
 

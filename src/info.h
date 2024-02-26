@@ -955,6 +955,7 @@ typedef enum sprite
 	// Additional Kart Objects
 	SPR_AUDI, // Audience members
 	SPR_BUZB, // Buzz Bomber
+	SPR_SACO, // Sapphire Coast Fauna
 	SPR_BRNG, // Chaotix Big Ring
 
 	// Ark Arrows
@@ -3154,6 +3155,14 @@ typedef enum state
 	S_FLAYM2,
 	S_FLAYM3,
 	S_FLAYM4,
+	S_PALMTREE2,
+	S_PURPLEFLOWER1,
+	S_PURPLEFLOWER2,
+	S_YELLOWFLOWER1,
+	S_YELLOWFLOWER2,
+	S_PLANT2,
+	S_PLANT3,
+	S_PLANT4,
 
 	// Chaotix Big Ring
 	S_BIGRING01,
@@ -4606,6 +4615,15 @@ typedef enum mobj_type
 	MT_RANDOMAUDIENCE,
 
 	MT_FLAYM,
+
+	MT_PALMTREE2,
+	MT_PURPLEFLOWER1,
+	MT_PURPLEFLOWER2,
+	MT_YELLOWFLOWER1,
+	MT_YELLOWFLOWER2,
+	MT_PLANT2,
+	MT_PLANT3,
+	MT_PLANT4,
 
 	MT_BIGRING,
 
