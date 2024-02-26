@@ -4377,8 +4377,6 @@ static void G_DoCompleted(void)
 
 	// Then, update some important game state.
 	{
-		legitimateexit = false;
-
 		if (modeattacking && pausedelay)
 			pausedelay = 0;
 
@@ -4449,6 +4447,9 @@ static void G_DoCompleted(void)
 		prevmap = gamemap-1;
 		tutorialchallenge = TUTORIALSKIP_NONE;
 	}
+
+	// This can now be set.
+	legitimateexit = false;
 
 	if (!demo.playback)
 	{
