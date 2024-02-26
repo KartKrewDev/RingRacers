@@ -398,9 +398,6 @@ boolean K_IsPlayerLosing(player_t *player)
 	if (specialstageinfo.valid == true)
 		return false; // anything short of DNF is COOL
 
-	if (tutorialchallenge == TUTORIALSKIP_INPROGRESS)
-		return true; // anything short of perfect is SUCK
-
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i] || players[i].spectator)
