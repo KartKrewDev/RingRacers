@@ -10,6 +10,11 @@
 /// \file  k_profiles.c
 /// \brief implements methods for profiles etc.
 
+#include <algorithm>
+
+#include <fmt/format.h>
+
+#include "io/streams.hpp"
 #include "doomtype.h"
 #include "d_main.h" // pandf
 #include "byteptr.h" // READ/WRITE macros
@@ -34,11 +39,11 @@ INT32 PR_GetNumProfiles(void)
 	return numprofiles;
 }
 
-static void PR_GenerateProfileKeys(profile_t *new)
+static void PR_GenerateProfileKeys(profile_t *newprofile)
 {
 	static uint8_t seed[32];
 	csprng(seed, 32);
-	crypto_eddsa_key_pair(new->secret_key, new->public_key, seed);
+	crypto_eddsa_key_pair(newprofile->secret_key, newprofile->public_key, seed);
 }
 
 profile_t* PR_MakeProfile(
@@ -49,52 +54,52 @@ profile_t* PR_MakeProfile(
 	INT32 controlarray[num_gamecontrols][MAXINPUTMAPPING],
 	boolean guest)
 {
-	profile_t *new = Z_Calloc(sizeof(profile_t), PU_STATIC, NULL);
+	profile_t *newprofile = static_cast<profile_t*>(Z_Calloc(sizeof(profile_t), PU_STATIC, NULL));
 
-	new->version = PROFILEVER;
+	newprofile->version = PROFILEVER;
 
-	memset(new->secret_key, 0, sizeof(new->secret_key));
-	memset(new->public_key, 0, sizeof(new->public_key));
+	memset(newprofile->secret_key, 0, sizeof(newprofile->secret_key));
+	memset(newprofile->public_key, 0, sizeof(newprofile->public_key));
 
 	if (!guest)
 	{
-		PR_GenerateProfileKeys(new);
+		PR_GenerateProfileKeys(newprofile);
 	}
 
-	strcpy(new->profilename, prname);
-	new->profilename[sizeof new->profilename - 1] = '\0';
+	strcpy(newprofile->profilename, prname);
+	newprofile->profilename[sizeof newprofile->profilename - 1] = '\0';
 
-	strcpy(new->skinname, sname);
-	strcpy(new->playername, pname);
-	new->color = col;
+	strcpy(newprofile->skinname, sname);
+	strcpy(newprofile->playername, pname);
+	newprofile->color = col;
 
-	strcpy(new->follower, fname);
-	new->followercolor = fcol;
-	new->kickstartaccel = false;
-	new->autoroulette = false;
-	new->litesteer = true;
-	new->rumble = true;
+	strcpy(newprofile->follower, fname);
+	newprofile->followercolor = fcol;
+	newprofile->kickstartaccel = false;
+	newprofile->autoroulette = false;
+	newprofile->litesteer = true;
+	newprofile->rumble = true;
 
 	// Copy from gamecontrol directly as we'll be setting controls up directly in the profile.
-	memcpy(new->controls, controlarray, sizeof(new->controls));
+	memcpy(newprofile->controls, controlarray, sizeof(newprofile->controls));
 
-	new->wins = 0;
+	newprofile->wins = 0;
 
-	return new;
+	return newprofile;
 }
 
 profile_t* PR_MakeProfileFromPlayer(const char *prname, const char *pname, const char *sname, const UINT16 col, const char *fname, UINT16 fcol, UINT8 pnum)
 {
 	// Generate profile using the player's gamecontrol, as we set them directly when making profiles from menus.
-	profile_t *new = PR_MakeProfile(prname, pname, sname, col, fname, fcol, gamecontrol[pnum], false);
+	profile_t *newprofile = PR_MakeProfile(prname, pname, sname, col, fname, fcol, gamecontrol[pnum], false);
 
 	// Player bound cvars:
-	new->kickstartaccel = cv_kickstartaccel[pnum].value;
-	new->autoroulette = cv_autoroulette[pnum].value;
-	new->litesteer = cv_litesteer[pnum].value;
-	new->rumble = cv_rumble[pnum].value;
+	newprofile->kickstartaccel = cv_kickstartaccel[pnum].value;
+	newprofile->autoroulette = cv_autoroulette[pnum].value;
+	newprofile->litesteer = cv_litesteer[pnum].value;
+	newprofile->rumble = cv_rumble[pnum].value;
 
-	return new;
+	return newprofile;
 }
 
 boolean PR_AddProfile(profile_t *p)
@@ -236,10 +241,10 @@ void PR_InitNewProfile(void)
 
 void PR_SaveProfiles(void)
 {
-	size_t length = 0;
-	const size_t headerlen = strlen(PROFILEHEADER);
-	UINT8 i, j, k;
-	savebuffer_t save = {0};
+	namespace fs = std::filesystem;
+	using json = nlohmann::json;
+	using namespace srb2;
+	namespace io = srb2::io;
 
 	if (profilesList[PROFILE_GUEST] == NULL)
 	{
@@ -247,65 +252,94 @@ void PR_SaveProfiles(void)
 		return;
 	}
 
-	if (P_SaveBufferAlloc(&save, sizeof(UINT32) + (numprofiles * sizeof(profile_t))) == false)
+	ProfilesJson ng{};
+
+	for (size_t i = 1; i < numprofiles; i++)
 	{
-		I_Error("No more free memory for saving profiles\n");
-		return;
-	}
+		ProfileJson jsonprof;
+		profile_t* cprof = profilesList[i];
 
-	// Add header.
-	WRITESTRINGN(save.p, PROFILEHEADER, headerlen);
-	WRITEUINT8(save.p, PROFILEVER);
-	WRITEUINT8(save.p, numprofiles);
-
-	for (i = 1; i < numprofiles; i++)
-	{
-		// Names and keys, all the string data up front
-		WRITESTRINGN(save.p, profilesList[i]->profilename, PROFILENAMELEN);
-		WRITEMEM(save.p, profilesList[i]->public_key, sizeof(((profile_t *)0)->public_key));
-		WRITEMEM(save.p, profilesList[i]->secret_key, sizeof(((profile_t *)0)->secret_key));
-		WRITESTRINGN(save.p, profilesList[i]->playername, MAXPLAYERNAME);
-
-		// Character and colour.
-		WRITESTRINGN(save.p, profilesList[i]->skinname, SKINNAMESIZE);
-		WRITEUINT16(save.p, profilesList[i]->color);
-
-		// Follower and colour.
-		WRITESTRINGN(save.p, profilesList[i]->follower, SKINNAMESIZE);
-		WRITEUINT16(save.p, profilesList[i]->followercolor);
-
-		WRITEUINT32(save.p, profilesList[i]->wins);
-
-		// Consvars.
-		WRITEUINT8(save.p, profilesList[i]->kickstartaccel);
-		WRITEUINT8(save.p, profilesList[i]->autoroulette);
-		WRITEUINT8(save.p, profilesList[i]->litesteer);
-		WRITEUINT8(save.p, profilesList[i]->rumble);
-
-		// Controls.
-		for (j = 0; j < num_gamecontrols; j++)
+		jsonprof.version = PROFILEVER;
+		jsonprof.profilename = std::string(cprof->profilename);
+		std::copy(std::begin(cprof->public_key), std::end(cprof->public_key), std::begin(jsonprof.publickey));
+		std::copy(std::begin(cprof->secret_key), std::end(cprof->secret_key), std::begin(jsonprof.secretkey));
+		jsonprof.playername = std::string(cprof->playername);
+		jsonprof.skinname = std::string(cprof->skinname);
+		jsonprof.colorname = std::string(skincolors[cprof->color].name);
+		jsonprof.followername = std::string(cprof->follower);
+		if (cprof->followercolor == FOLLOWERCOLOR_MATCH)
 		{
-			for (k = 0; k < MAXINPUTMAPPING; k++)
+			jsonprof.followercolorname = "Match";
+		}
+		else if (cprof->followercolor == FOLLOWERCOLOR_OPPOSITE)
+		{
+			jsonprof.followercolorname = "Opposite";
+		}
+		else if (cprof->followercolor == SKINCOLOR_NONE)
+		{
+			jsonprof.followercolorname = "Default";
+		}
+		else if (cprof->followercolor >= numskincolors)
+		{
+			jsonprof.followercolorname = std::string();
+		}
+		else
+		{
+			jsonprof.followercolorname = std::string(skincolors[cprof->followercolor].name);
+		}
+		jsonprof.records.wins = cprof->wins;
+		jsonprof.preferences.kickstartaccel = cprof->kickstartaccel;
+		jsonprof.preferences.autoroulette = cprof->autoroulette;
+		jsonprof.preferences.litesteer = cprof->litesteer;
+		jsonprof.preferences.rumble = cprof->rumble;
+
+		for (size_t j = 0; j < num_gamecontrols; j++)
+		{
+			for (size_t k = 0; k < MAXINPUTMAPPING; k++)
 			{
-				WRITEINT32(save.p, profilesList[i]->controls[j][k]);
+				jsonprof.controls[j][k] = cprof->controls[j][k];
 			}
 		}
+
+		ng.profiles.emplace_back(std::move(jsonprof));
 	}
 
-	length = save.p - save.buffer;
+	std::vector<uint8_t> ubjson = json::to_ubjson(ng);
 
-	if (!FIL_WriteFile(va(pandf, srb2home, PROFILESFILE), save.buffer, length))
+	std::string realpath = fmt::format("{}/{}", srb2home, PROFILESFILE);
+	std::string tmppath = fmt::format("{}.tmp", realpath);
+
+	try
 	{
-		P_SaveBufferFree(&save);
+		io::FileStream file {tmppath, io::FileStreamMode::kWrite};
+		io::BufferedOutputStream<io::FileStream> bos {std::move(file)};
+
+		io::write(static_cast<uint32_t>(0x52494E47), bos, io::Endian::kBE); // "RING"
+		io::write(static_cast<uint32_t>(0x5052464C), bos, io::Endian::kBE); // "PRFL"
+		io::write(static_cast<uint8_t>(0), bos); // reserved1
+		io::write(static_cast<uint8_t>(0), bos); // reserved2
+		io::write(static_cast<uint8_t>(0), bos); // reserved3
+		io::write(static_cast<uint8_t>(0), bos); // reserved4
+		io::write_exact(bos, tcb::as_bytes(tcb::make_span(ubjson)));
+		bos.flush();
+		file = bos.stream();
+		file.close();
+
+		fs::rename(tmppath, realpath);
+	}
+	catch (...)
+	{
 		I_Error("Couldn't save profiles. Are you out of Disk space / playing in a protected folder?");
 	}
-	P_SaveBufferFree(&save);
 }
 
 void PR_LoadProfiles(void)
 {
-	const size_t headerlen = strlen(PROFILEHEADER);
-	UINT8 i, j, k, version;
+	namespace fs = std::filesystem;
+	using namespace srb2;
+	namespace io = srb2::io;
+	using json = nlohmann::json;
+
 	profile_t *dprofile = PR_MakeProfile(
 		PROFILEDEFAULTNAME,
 		PROFILEDEFAULTPNAME,
@@ -314,166 +348,132 @@ void PR_LoadProfiles(void)
 		gamecontroldefault,
 		true
 	);
-	savebuffer_t save = {0};
 
-	if (P_SaveBufferFromFile(&save, va(pandf, srb2home, PROFILESFILE)) == false)
+	std::string datapath {fmt::format("{}/{}", srb2home, PROFILESFILE)};
+
+	io::BufferedInputStream<io::FileStream> bis;
+	try
 	{
-		// No profiles. Add the default one.
+		io::FileStream file {datapath, io::FileStreamMode::kRead};
+		bis = io::BufferedInputStream(std::move(file));
+	}
+	catch (const io::FileStreamException& ex)
+	{
 		PR_AddProfile(dprofile);
 		return;
 	}
 
-	if (strncmp(PROFILEHEADER, (const char *)save.buffer, headerlen))
+	ProfilesJson js;
+	try
 	{
-		const char *gdfolder = "the Ring Racers folder";
-		if (strcmp(srb2home,"."))
-			gdfolder = srb2home;
+		uint32_t magic1;
+		uint32_t magic2;
+		uint8_t reserved1;
+		uint8_t reserved2;
+		uint8_t reserved3;
+		uint8_t reserved4;
+		magic1 = io::read_uint32(bis, io::Endian::kBE);
+		magic2 = io::read_uint32(bis, io::Endian::kBE);
+		reserved1 = io::read_uint8(bis);
+		reserved2 = io::read_uint8(bis);
+		reserved3 = io::read_uint8(bis);
+		reserved4 = io::read_uint8(bis);
 
-		P_SaveBufferFree(&save);
-		I_Error("Not a valid Profile file.\nDelete %s (maybe in %s) and try again.", PROFILESFILE, gdfolder);
+		if (magic1 != 0x52494E47 || magic2 != 0x5052464C || reserved1 != 0 || reserved2 != 0 || reserved3 != 0 || reserved4 != 0)
+		{
+			throw std::domain_error("Header is incompatible");
+		}
+
+		std::vector<std::byte> remainder = io::read_to_vec(bis);
+		// safety: std::byte repr is always uint8_t 1-byte aligned
+		tcb::span<uint8_t> remainder_as_u8 = tcb::span((uint8_t*)remainder.data(), remainder.size());
+		json parsed = json::from_ubjson(remainder_as_u8);
+		js = parsed.template get<ProfilesJson>();
 	}
-	save.p += headerlen;
-
-	version = READUINT8(save.p);
-	if (version > PROFILEVER)
+	catch (...)
 	{
-		P_SaveBufferFree(&save);
-		I_Error("Existing %s is from the future! (expected %d, got %d)", PROFILESFILE, PROFILEVER, version);
-	}
-	else if (version < PROFILEVER)
-	{
-		// We're converting - let'd create a backup.
-		FIL_WriteFile(va("%s" PATHSEP "%s.bak", srb2home, PROFILESFILE), save.buffer, save.size);
+		I_Error("Profiles file is corrupt");
+		return;
 	}
 
-	numprofiles = READUINT8(save.p);
-	if (numprofiles > MAXPROFILES)
-		numprofiles = MAXPROFILES;
-
-	for (i = 1; i < numprofiles; i++)
+	numprofiles = js.profiles.size() + 1; // 1 for guest
+	if (numprofiles > MAXPROFILES+1)
 	{
-		profilesList[i] = Z_Calloc(sizeof(profile_t), PU_STATIC, NULL);
+		numprofiles = MAXPROFILES+1;
+	}
 
-		// Version. (We always update this on successful forward step)
-		profilesList[i]->version = PROFILEVER;
+	for (size_t i = 1; i < numprofiles; i++)
+	{
+		auto& jsprof = js.profiles[i - 1];
+		profile_t* newprof = static_cast<profile_t*>(Z_Calloc(sizeof(profile_t), PU_STATIC, NULL));
+		profilesList[i] = newprof;
 
-		// Names and keys, all the identity stuff up front
-		READSTRINGN(save.p, profilesList[i]->profilename, PROFILENAMELEN);
+		newprof->version = jsprof.version;
+		strlcpy(newprof->profilename, jsprof.profilename.c_str(), sizeof(newprof->profilename));
+		memcpy(newprof->public_key, jsprof.publickey.data(), sizeof(newprof->public_key));
+		memcpy(newprof->secret_key, jsprof.secretkey.data(), sizeof(newprof->secret_key));
 
-		// Profile update 2-->3: Add profile keys.
-		if (version < 3)
+		strlcpy(newprof->playername, jsprof.playername.c_str(), sizeof(newprof->playername));
+		strlcpy(newprof->skinname, jsprof.skinname.c_str(), sizeof(newprof->skinname));
+		newprof->color = PROFILEDEFAULTCOLOR;
+		for (size_t c = 0; c < numskincolors; c++)
 		{
-			// Generate missing keys.
-			PR_GenerateProfileKeys(profilesList[i]);
-		}
-		else
-		{
-			READMEM(save.p, profilesList[i]->public_key, sizeof(((profile_t *)0)->public_key));
-			READMEM(save.p, profilesList[i]->secret_key, sizeof(((profile_t *)0)->secret_key));
-		}
-
-		READSTRINGN(save.p, profilesList[i]->playername, MAXPLAYERNAME);
-
-		// Character and colour.
-		READSTRINGN(save.p, profilesList[i]->skinname, SKINNAMESIZE);
-		profilesList[i]->color = READUINT16(save.p);
-
-		if (profilesList[i]->color == SKINCOLOR_NONE)
-		{
-			; // Valid, even outside the bounds
-		}
-		else if (profilesList[i]->color >= numskincolors
-			|| K_ColorUsable(profilesList[i]->color, false, false) == false)
-		{
-			profilesList[i]->color = PROFILEDEFAULTCOLOR;
-		}
-
-		// Follower and colour.
-		READSTRINGN(save.p, profilesList[i]->follower, SKINNAMESIZE);
-		profilesList[i]->followercolor = READUINT16(save.p);
-
-		if (profilesList[i]->followercolor == FOLLOWERCOLOR_MATCH
-			|| profilesList[i]->followercolor == FOLLOWERCOLOR_OPPOSITE
-			|| profilesList[i]->followercolor == SKINCOLOR_NONE)
-		{
-			; // Valid, even outside the bounds
-		}
-		else if (profilesList[i]->followercolor >= numskincolors
-			|| K_ColorUsable(profilesList[i]->followercolor, true, false) == false)
-		{
-			profilesList[i]->followercolor = PROFILEDEFAULTFOLLOWERCOLOR;
-		}
-
-		// Profile update 5-->6: PWR isn't in profile data anymore.
-		if (version < 6)
-		{
-			save.p += PWRLV_NUMTYPES*2;
-			profilesList[i]->wins = 0;
-		}
-		else
-		{
-			profilesList[i]->wins = READUINT32(save.p);
-		}
-
-		// Consvars.
-		profilesList[i]->kickstartaccel = (boolean)READUINT8(save.p);
-
-		// 6->7, add autoroulette
-		if (version < 7)
-		{
-			profilesList[i]->autoroulette = false;
-			
-		}
-		else
-		{
-			profilesList[i]->autoroulette = (boolean)READUINT8(save.p);
-		}
-
-		// 7->8, add litesteer
-		if (version < 8)
-		{
-			profilesList[i]->litesteer = true;
-			
-		}
-		else
-		{
-			profilesList[i]->litesteer = (boolean)READUINT8(save.p);
-		}
-
-		if (version < 4)
-		{
-			profilesList[i]->rumble = true;
-		}
-		else
-		{
-			profilesList[i]->rumble = (boolean)READUINT8(save.p);
-		}
-
-		// Controls.
-		for (j = 0; j < num_gamecontrols; j++)
-		{
-#ifdef DEVELOP
-			// Profile update 1-->2: Add gc_rankings.
-			// Profile update 4-->5: Add gc_startlossless.
-			if ((j == gc_rankings && version < 2) ||
-				(j == gc_startlossless && version < 5))
+			if (jsprof.colorname == skincolors[c].name && K_ColorUsable(static_cast<skincolornum_t>(c), false, false))
 			{
-				for (k = 0; k < MAXINPUTMAPPING; k++)
+				newprof->color = c;
+				break;
+			}
+		}
+
+		strlcpy(newprof->follower, jsprof.followername.c_str(), sizeof(newprof->follower));
+		newprof->followercolor = PROFILEDEFAULTFOLLOWERCOLOR;
+		if (jsprof.followercolorname == "Match")
+		{
+			newprof->followercolor = FOLLOWERCOLOR_MATCH;
+		}
+		else if (jsprof.followercolorname == "Opposite")
+		{
+			newprof->followercolor = FOLLOWERCOLOR_OPPOSITE;
+		}
+		else if (jsprof.followercolorname == "Default")
+		{
+			newprof->followercolor = SKINCOLOR_NONE;
+		}
+		else if (!jsprof.followercolorname.empty())
+		{
+			for (size_t c = 0; c < numskincolors; c++)
+			{
+				if (jsprof.followercolorname == skincolors[c].name && K_ColorUsable(static_cast<skincolornum_t>(c), false, false))
 				{
-					profilesList[i]->controls[j][k] = gamecontroldefault[j][k];
+					newprof->followercolor = c;
+					break;
 				}
-				continue;
 			}
-#endif
+		}
 
-			for (k = 0; k < MAXINPUTMAPPING; k++)
+		newprof->wins = jsprof.records.wins;
+		newprof->kickstartaccel = jsprof.preferences.kickstartaccel;
+		newprof->autoroulette = jsprof.preferences.autoroulette;
+		newprof->litesteer = jsprof.preferences.litesteer;
+		newprof->rumble = jsprof.preferences.rumble;
+
+		try
+		{
+			for (size_t j = 0; j < num_gamecontrols; j++)
 			{
-				profilesList[i]->controls[j][k] = READINT32(save.p);
+				for (size_t k = 0; k < MAXINPUTMAPPING; k++)
+				{
+					newprof->controls[j][k] = jsprof.controls.at(j).at(k);
+				}
 			}
+		}
+		catch (const std::out_of_range& ex)
+		{
+			I_Error("Profile '%s' controls are corrupt", jsprof.playername.c_str());
+			return;
 		}
 	}
 
-	// Add the the default profile directly to avoid letting anyone tamper with it.
 	profilesList[PROFILE_GUEST] = dprofile;
 }
 
@@ -638,7 +638,7 @@ char *GetPrettyRRID(const unsigned char *bin, boolean brief)
 		rrid_buf[i*2]   = "0123456789ABCDEF"[bin[i] >> 4];
 		rrid_buf[i*2+1] = "0123456789ABCDEF"[bin[i] & 0x0F];
 	}
-	
+
 	rrid_buf[len*2] = '\0';
 
 	return rrid_buf;

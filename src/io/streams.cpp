@@ -166,3 +166,63 @@ void FileStream::close()
 
 	file_ = nullptr;
 }
+
+static int portable_fseek64(FILE* file, int64_t offset, int origin)
+{
+#ifdef _MSC_VER
+	return _fseeki64(file, offset, origin);
+#elif __APPLE__
+	return fseeko(file, offset, origin);
+#else
+	return fseeko64(file, offset, origin);
+#endif
+}
+
+static int64_t portable_ftell64(FILE* file)
+{
+#ifdef _MSC_VER
+	return _ftelli64(file);
+#elif __APPLE__
+	return ftello(file);
+#else
+	return ftello64(file);
+#endif
+}
+
+StreamSize FileStream::seek(SeekFrom seek_from, StreamOffset offset)
+{
+	if (!file_)
+	{
+		throw std::domain_error("FileStream is empty");
+	}
+
+	int origin;
+	switch (seek_from)
+	{
+		case SeekFrom::kStart:
+			origin = SEEK_SET;
+			break;
+		case SeekFrom::kCurrent:
+			origin = SEEK_CUR;
+			break;
+		case SeekFrom::kEnd:
+			origin = SEEK_END;
+			break;
+		default:
+			throw std::invalid_argument("invalid SeekFrom");
+	}
+
+	if (portable_fseek64((FILE*)(file_), offset, origin) != 0)
+	{
+		int err = errno;
+		throw make_exception_from_errno(err);
+	}
+
+	StreamOffset newpos = portable_ftell64((FILE*)(file_));
+	if (newpos < 0)
+	{
+		int err = errno;
+		throw make_exception_from_errno(err);
+	}
+	return newpos;
+}

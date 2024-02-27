@@ -11,6 +11,12 @@
 /// \file  g_demo.c
 /// \brief Demo recording and playback
 
+#include <algorithm>
+#include <cstddef>
+
+#include <tcb/span.hpp>
+#include <nlohmann/json.hpp>
+
 #include "doomdef.h"
 #include "console.h"
 #include "d_main.h"
@@ -156,6 +162,7 @@ static ticcmd_t oldcmd[MAXPLAYERS];
 
 // Below consts are only used for demo extrainfo sections
 #define DW_STANDING 0x00
+#define DW_STANDING2 0x01
 
 // For time attack ghosts
 #define GZT_XYZ    0x01
@@ -266,7 +273,7 @@ void G_ReadDemoExtraData(void)
 				break;
 
 			case DXD_PST_LEFT:
-				CL_RemovePlayer(p, 0);
+				CL_RemovePlayer(p, static_cast<kickreason_t>(0));
 				break;
 			}
 
@@ -353,9 +360,9 @@ void G_ReadDemoExtraData(void)
 			{
 				rng = READUINT32(demobuf.p);
 
-				if (P_GetRandSeed(i) != rng)
+				if (P_GetRandSeed(static_cast<pr_class_t>(i)) != rng)
 				{
-					P_SetRandSeed(i, rng);
+					P_SetRandSeed(static_cast<pr_class_t>(i), rng);
 
 					if (demosynced)
 						CONS_Alert(CONS_WARNING, "Demo playback has desynced (RNG class %d)!\n", i);
@@ -433,7 +440,7 @@ void G_WriteDemoExtraData(void)
 			{
 				// Color
 				memset(name, 0, 16);
-				strncpy(name, skincolors[players[i].skincolor].name, 16);
+				strlcpy(name, skincolors[players[i].skincolor].name, 16);
 				M_Memcpy(demobuf.p,name,16);
 				demobuf.p += 16;
 			}
@@ -441,7 +448,7 @@ void G_WriteDemoExtraData(void)
 			{
 				// Name
 				memset(name, 0, 16);
-				strncpy(name, player_names[i], 16);
+				strlcpy(name, player_names[i], 16);
 				M_Memcpy(demobuf.p,name,16);
 				demobuf.p += 16;
 			}
@@ -452,7 +459,7 @@ void G_WriteDemoExtraData(void)
 				if (players[i].followerskin == -1)
 					strncpy(name, "None", 16);
 				else
-					strncpy(name, followers[players[i].followerskin].name, 16);
+					strlcpy(name, followers[players[i].followerskin].name, 16);
 				M_Memcpy(demobuf.p, name, 16);
 				demobuf.p += 16;
 
@@ -463,7 +470,7 @@ void G_WriteDemoExtraData(void)
 					if (Followercolor_cons_t[j].value == players[i].followercolor)
 						break;
 				}
-				strncpy(name, Followercolor_cons_t[j].strvalue, 16);	// Not KartColor_Names because followercolor has extra values such as "Match"
+				strlcpy(name, Followercolor_cons_t[j].strvalue, 16);	// Not KartColor_Names because followercolor has extra values such as "Match"
 				M_Memcpy(demobuf.p,name,16);
 				demobuf.p += 16;
 
@@ -494,7 +501,7 @@ void G_WriteDemoExtraData(void)
 
 			for (i = 0; i < PRNUMSYNCED; i++)
 			{
-				WRITEUINT32(demobuf.p, P_GetRandSeed(i));
+				WRITEUINT32(demobuf.p, P_GetRandSeed(static_cast<pr_class_t>(i)));
 			}
 		}
 	}
@@ -706,7 +713,7 @@ void G_GhostAddHit(INT32 playernum, mobj_t *victim)
 		return;
 	ghostext[playernum].flags |= EZT_HIT;
 	ghostext[playernum].hits++;
-	ghostext[playernum].hitlist = Z_Realloc(ghostext[playernum].hitlist, ghostext[playernum].hits * sizeof(mobj_t *), PU_LEVEL, NULL);
+	ghostext[playernum].hitlist = static_cast<mobj_t**>(Z_Realloc(ghostext[playernum].hitlist, ghostext[playernum].hits * sizeof(mobj_t *), PU_LEVEL, NULL));
 	P_SetTarget(ghostext[playernum].hitlist + (ghostext[playernum].hits-1), victim);
 }
 
@@ -1400,7 +1407,7 @@ readghosttic:
 				}
 			}
 			if (xziptic & EZT_SPRITE)
-				g->mo->sprite = READUINT16(g->p);
+				g->mo->sprite = static_cast<spritenum_t>(READUINT16(g->p));
 			if (xziptic & EZT_ITEMDATA)
 				g->p += 1 + 1 + 4; // itemtype, itemamount, health
 			if (xziptic & EZT_STATDATA)
@@ -1467,7 +1474,7 @@ readghosttic:
 					follow->sprite2 = READUINT8(g->p);
 				else
 					follow->sprite2 = 0;
-				follow->sprite = READUINT16(g->p);
+				follow->sprite = static_cast<spritenum_t>(READUINT16(g->p));
 				follow->frame = (READUINT8(g->p)) | (g->mo->frame & FF_TRANSMASK);
 				follow->angle = g->mo->angle;
 				follow->color = READUINT16(g->p);
@@ -1582,7 +1589,7 @@ void G_StoreRewindInfo(void)
 		return;
 	timetolog = 8;
 
-	info = Z_Calloc(sizeof(rewindinfo_t), PU_STATIC, NULL);
+	info = static_cast<rewindinfo_t*>(Z_Calloc(sizeof(rewindinfo_t), PU_STATIC, NULL));
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -1907,7 +1914,7 @@ static UINT8 G_CheckDemoExtraFiles(savebuffer_t *info, boolean quick)
 	{
 		if (!toomany)
 		{
-			strlcpy(filename, (char *)info->p, min(P_SaveBufferRemaining(info) + 1, sizeof filename));
+			strlcpy(filename, (char *)info->p, std::min(P_SaveBufferRemaining(info) + 1, sizeof filename));
 		}
 		SKIPSTRINGN(info->p, P_SaveBufferRemaining(info));
 
@@ -1981,7 +1988,7 @@ static void G_SaveDemoSkins(UINT8 **pp)
 	{
 		// Skinname, for first attempt at identification.
 		memset(skin, 0, 16);
-		strncpy(skin, skins[i].name, 16);
+		strlcpy(skin, skins[i].name, 16);
 		WRITEMEM((*pp), skin, 16);
 
 		// Backup information for second pass.
@@ -2011,7 +2018,7 @@ static democharlist_t *G_LoadDemoSkins(savebuffer_t *info, UINT8 *worknumskins, 
 	if (!(*worknumskins))
 		return NULL;
 
-	skinlist = Z_Calloc(sizeof(democharlist_t) * (*worknumskins), PU_STATIC, NULL);
+	skinlist = static_cast<democharlist_t*>(Z_Calloc(sizeof(democharlist_t) * (*worknumskins), PU_STATIC, NULL));
 	if (!skinlist)
 	{
 		I_Error("G_LoadDemoSkins: Insufficient memory to allocate list");
@@ -2181,7 +2188,7 @@ void G_BeginRecording(void)
 
 	for (i = 0; i < PRNUMSYNCED; i++)
 	{
-		WRITEUINT32(demobuf.p, P_GetInitSeed(i));
+		WRITEUINT32(demobuf.p, P_GetInitSeed(static_cast<pr_class_t>(i)));
 	}
 
 	// Reserved for extrainfo location from start of file
@@ -2232,7 +2239,7 @@ void G_BeginRecording(void)
 
 			// Name
 			memset(name, 0, 16);
-			strncpy(name, player_names[p], 16);
+			strlcpy(name, player_names[p], 16);
 			M_Memcpy(demobuf.p,name,16);
 			demobuf.p += 16;
 
@@ -2324,36 +2331,26 @@ void G_BeginRecording(void)
 	}
 }
 
-void G_WriteStanding(UINT8 ranking, char *name, INT32 skinnum, UINT16 color, UINT32 val)
+void srb2::write_current_demo_standings(const srb2::StandingsJson& standings)
 {
-	char temp[16];
+	using namespace srb2;
+	using json = nlohmann::json;
 
-	if (demoinfo_p && *(UINT32 *)demoinfo_p == 0)
-	{
-		WRITEUINT8(demobuf.p, DEMOMARKER); // add the demo end marker
-		*(UINT32 *)demoinfo_p = demobuf.p - demobuf.buffer;
-	}
+	// TODO populate standings data
 
-	WRITEUINT8(demobuf.p, DW_STANDING);
-	WRITEUINT8(demobuf.p, ranking);
+	std::vector<uint8_t> ubjson = json::to_ubjson(standings);
+	uint32_t bytes = ubjson.size();
 
-	// Name
-	memset(temp, 0, 16);
-	strncpy(temp, name, 16);
-	M_Memcpy(demobuf.p,temp,16);
-	demobuf.p += 16;
+	WRITEUINT8(demobuf.p, DW_STANDING2);
 
-	// Skin
-	WRITEUINT8(demobuf.p, skinnum);
+	WRITEUINT32(demobuf.p, bytes);
+	WRITEMEM(demobuf.p, ubjson.data(), bytes);
+}
 
-	// Color
-	memset(temp, 0, 16);
-	strncpy(temp, skincolors[color].name, 16);
-	M_Memcpy(demobuf.p,temp,16);
-	demobuf.p += 16;
-
-	// Score/time/whatever
-	WRITEUINT32(demobuf.p, val);
+void srb2::write_current_demo_end_marker()
+{
+	WRITEUINT8(demobuf.p, DEMOMARKER); // add the demo end marker
+	*(UINT32 *)demoinfo_p = demobuf.p - demobuf.buffer;
 }
 
 void G_SetDemoTime(UINT32 ptime, UINT32 plap)
@@ -2508,6 +2505,52 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	return c;
 }
 
+static bool load_ubjson_standing(menudemo_t* pdemo, tcb::span<std::byte> slice, tcb::span<democharlist_t> demoskins)
+{
+	using namespace srb2;
+	using json = nlohmann::json;
+
+	StandingsJson js;
+	try
+	{
+		js = json::from_ubjson(slice).template get<StandingsJson>();
+	}
+	catch (...)
+	{
+		return false;
+	}
+
+	size_t toread = std::min<size_t>(js.standings.size(), MAXPLAYERS);
+	for (size_t i = 0; i < toread; i++)
+	{
+		StandingJson& jsstanding = js.standings[i];
+		auto& memstanding = pdemo->standings[i];
+		memstanding.ranking = jsstanding.ranking;
+		strlcpy(memstanding.name, jsstanding.name.c_str(), 17);
+		if (jsstanding.demoskin >= demoskins.size())
+		{
+			memstanding.skin = demoskins[0].mapping;
+		}
+		else
+		{
+			memstanding.skin = demoskins[jsstanding.demoskin].mapping;
+		}
+		memstanding.color = SKINCOLOR_NONE;
+		for (size_t j = 0; j < numskincolors; j++)
+		{
+			skincolor_t& skincolor = skincolors[j];
+			if (jsstanding.skincolor == skincolor.name)
+			{
+				memstanding.color = j;
+				break;
+			}
+		}
+		memstanding.timeorscore = jsstanding.timeorscore;
+	}
+
+	return true;
+}
+
 void G_LoadDemoInfo(menudemo_t *pdemo)
 {
 	savebuffer_t info = {0};
@@ -2516,6 +2559,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 	UINT16 pdemoflags;
 	democharlist_t *skinlist = NULL;
 	UINT16 pdemoversion, count;
+	UINT16 legacystandingplayercount;
 	char mapname[MAXMAPLUMPNAME],gtname[MAXGAMETYPELENGTH];
 	INT32 i;
 
@@ -2584,7 +2628,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 		goto badreplay;
 	}
 	info.p += 4; // "PLAY"
-	READSTRINGN(info.p, mapname, min(P_SaveBufferRemaining(&info), sizeof(mapname)));
+	READSTRINGN(info.p, mapname, std::min(P_SaveBufferRemaining(&info), sizeof(mapname)));
 	pdemo->map = G_MapNumber(mapname);
 	info.p += 16; // mapmd5
 
@@ -2602,7 +2646,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 		goto badreplay;
 	}
 
-	READSTRINGN(info.p, gtname, min(P_SaveBufferRemaining(&info), sizeof(gtname))); // gametype
+	READSTRINGN(info.p, gtname, std::min(P_SaveBufferRemaining(&info), sizeof(gtname))); // gametype
 	pdemo->gametype = G_GetGametypeByName(gtname);
 
 	if (P_SaveBufferRemaining(&info) < 1)
@@ -2668,44 +2712,95 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 		pdemo->gp = true;
 
 	// Read standings!
-	count = 0;
+	legacystandingplayercount = 0;
 
 	info.p = extrainfo_p;
 
-	while (P_SaveBufferRemaining(&info) >= 1+1+16+1+16+4 &&
-			READUINT8(info.p) == DW_STANDING) // Assume standings are always first in the extrainfo
+	while (P_SaveBufferRemaining(&info) > 1)
 	{
-		char temp[16];
+		UINT8 extrainfotag = READUINT8(info.p);
 
-		pdemo->standings[count].ranking = READUINT8(info.p);
-
-		// Name
-		M_Memcpy(pdemo->standings[count].name, info.p, 16);
-		info.p += 16;
-
-		// Skin
-		skinid = READUINT8(info.p);
-		if (skinid > worknumskins)
-			skinid = 0;
-		pdemo->standings[count].skin = skinlist[skinid].mapping;
-
-		// Color
-		M_Memcpy(temp,info.p,16);
-		info.p += 16;
-		for (i = 0; i < numskincolors; i++)
-			if (!stricmp(skincolors[i].name,temp))				// SRB2kart
+		switch (extrainfotag)
+		{
+			case DW_STANDING:
 			{
-				pdemo->standings[count].color = i;
+				// This is the only extrainfo tag that is not length prefixed. All others must be.
+				constexpr size_t kLegacyStandingSize = 1+16+1+16+4;
+				if (P_SaveBufferRemaining(&info) < kLegacyStandingSize)
+				{
+					goto corrupt;
+				}
+				if (legacystandingplayercount >= MAXPLAYERS)
+				{
+					info.p += kLegacyStandingSize;
+					break; // switch
+				}
+				char temp[16];
+
+				pdemo->standings[legacystandingplayercount].ranking = READUINT8(info.p);
+
+				// Name
+				M_Memcpy(pdemo->standings[legacystandingplayercount].name, info.p, 16);
+				info.p += 16;
+
+				// Skin
+				skinid = READUINT8(info.p);
+				if (skinid > worknumskins)
+					skinid = 0;
+				pdemo->standings[legacystandingplayercount].skin = skinlist[skinid].mapping;
+
+				// Color
+				M_Memcpy(temp,info.p,16);
+				info.p += 16;
+				for (i = 0; i < numskincolors; i++)
+					if (!stricmp(skincolors[i].name,temp))				// SRB2kart
+					{
+						pdemo->standings[legacystandingplayercount].color = i;
+						break;
+					}
+
+				// Score/time/whatever
+				pdemo->standings[legacystandingplayercount].timeorscore = READUINT32(info.p);
+
+				legacystandingplayercount++;
 				break;
 			}
-
-		// Score/time/whatever
-		pdemo->standings[count].timeorscore = READUINT32(info.p);
-
-		count++;
-
-		if (count >= MAXPLAYERS)
-			break; //@TODO still cycle through the rest of these if extra demo data is ever used
+			case DW_STANDING2:
+			{
+				if (P_SaveBufferRemaining(&info) < 4)
+				{
+					goto corrupt;
+				}
+				UINT32 size = READUINT32(info.p);
+				if (P_SaveBufferRemaining(&info) < size)
+				{
+					goto corrupt;
+				}
+				tcb::span<std::byte> slice = tcb::as_writable_bytes(tcb::span(info.p, size));
+				tcb::span<democharlist_t> demoskins {skinlist, worknumskins};
+				info.p += size;
+				if (!load_ubjson_standing(pdemo, slice, demoskins))
+				{
+					goto corrupt;
+				}
+				break;
+			}
+			default:
+			{
+				// Gracefully ignore other extrainfo tags by skipping their data
+				if (P_SaveBufferRemaining(&info) < 4)
+				{
+					goto corrupt;
+				}
+				UINT32 size = READUINT32(info.p);
+				if (P_SaveBufferRemaining(&info) < size)
+				{
+					goto corrupt;
+				}
+				info.p += size;
+				break;
+			}
+		}
 	}
 
 	if (P_SaveBufferRemaining(&info) == 0)
@@ -2774,7 +2869,7 @@ void G_DoPlayDemo(const char *defdemoname)
 	if (defdemoname == NULL)
 	{
 		demobuf.p = demobuf.buffer;
-		pdemoname = ZZ_Alloc(1); // Easier than adding checks for this everywhere it's freed
+		pdemoname = static_cast<char*>(ZZ_Alloc(1)); // Easier than adding checks for this everywhere it's freed
 	}
 	else
 	{
@@ -2787,7 +2882,7 @@ void G_DoPlayDemo(const char *defdemoname)
 			n--;
 		if (n != defdemoname)
 			n++;
-		pdemoname = ZZ_Alloc(strlen(n)+1);
+		pdemoname = static_cast<char*>(ZZ_Alloc(strlen(n)+1));
 		strcpy(pdemoname,n);
 
 		M_SetPlaybackMenuPointer();
@@ -3065,7 +3160,7 @@ void G_DoPlayDemo(const char *defdemoname)
 		grandprixinfo.gp = true;
 		grandprixinfo.gamespeed = READUINT8(demobuf.p);
 		grandprixinfo.masterbots = READUINT8(demobuf.p) != 0;
-		grandprixinfo.eventmode = READUINT8(demobuf.p);
+		grandprixinfo.eventmode = static_cast<gpEvent_e>(READUINT8(demobuf.p));
 	}
 
 	// Sigh ... it's an empty demo.
@@ -3236,7 +3331,7 @@ void G_DoPlayDemo(const char *defdemoname)
 		clientpowerlevels[p][gametype == GT_BATTLE ? PWRLV_BATTLE : PWRLV_RACE] = READUINT16(demobuf.p);
 
 		// Followitem
-		players[p].followitem = READUINT32(demobuf.p);
+		players[p].followitem = static_cast<mobjtype_t>(READUINT32(demobuf.p));
 
 		// GP
 		players[p].lives = READSINT8(demobuf.p);
@@ -3262,7 +3357,7 @@ void G_DoPlayDemo(const char *defdemoname)
 	if (demo.attract == DEMO_ATTRACT_TITLE)
 	{
 		splitscreen = M_RandomKey(6)-1;
-		splitscreen = min(min(3, numslots-1), splitscreen); // Bias toward 1p and 4p views
+		splitscreen = std::min<int>(std::min(3, numslots-1), splitscreen); // Bias toward 1p and 4p views
 
 		for (p = 0; p <= splitscreen; p++)
 			G_ResetView(p+1, slots[M_RandomKey(numslots)], false);
@@ -3272,7 +3367,7 @@ void G_DoPlayDemo(const char *defdemoname)
 
 	for (i = 0; i < PRNUMSYNCED; i++)
 	{
-		P_SetRandSeed(i, randseed[i]);
+		P_SetRandSeed(static_cast<pr_class_t>(i), randseed[i]);
 	}
 
 	G_InitNew((demoflags & DF_ENCORE) != 0, gamemap, true, true); // Doesn't matter whether you reset or not here, given changes to resetplayer.
@@ -3484,7 +3579,7 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	}
 
 
-	gh = Z_Calloc(sizeof(demoghost), PU_LEVEL, NULL);
+	gh = static_cast<demoghost*>(Z_Calloc(sizeof(demoghost), PU_LEVEL, NULL));
 	gh->next = ghosts;
 	gh->buffer = buffer->buffer;
 	M_Memcpy(gh->checksum, md5, 16);
@@ -3651,7 +3746,7 @@ staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer)
 
 	M_Memcpy(temp.name, p, 16);
 
-	ret = Z_Malloc(sizeof(staffbrief_t), PU_STATIC, NULL);
+	ret = static_cast<staffbrief_t*>(Z_Malloc(sizeof(staffbrief_t), PU_STATIC, NULL));
 	if (ret)
 		M_Memcpy(ret, &temp, sizeof(staffbrief_t));
 
@@ -3732,7 +3827,7 @@ static void G_StopTimingDemo(void)
 	if (timedemo_csv)
 	{
 		FILE *f;
-		const char *csvpath = va("%s"PATHSEP"%s", srb2home, "timedemo.csv");
+		const char *csvpath = va("%s" PATHSEP "%s", srb2home, "timedemo.csv");
 		const char *header = "id,demoname,seconds,avgfps,leveltime,demotime,framecount,ticrate,rendermode,vidmode,vidwidth,vidheight,procbits\n";
 		const char *rowformat = "\"%s\",\"%s\",%f,%f,%u,%d,%u,%u,%u,%u,%u,%u,%u\n";
 		boolean headerrow = !FIL_FileExists(csvpath);
@@ -3836,7 +3931,7 @@ boolean G_CheckDemoStatus(void)
 	if (!demo.recording)
 		return false;
 
-	if (modeattacking || demo.savemode != DSM_NOTSAVING)
+	if (modeattacking || demo.savemode != demovars_s::DSM_NOTSAVING)
 	{
 		if (demobuf.p)
 		{
@@ -3923,13 +4018,13 @@ void G_SaveDemo(void)
 #endif
 
 	if (FIL_WriteFile(demoname, demobuf.buffer, demobuf.p - demobuf.buffer)) // finally output the file.
-		demo.savemode = DSM_SAVED;
+		demo.savemode = demovars_s::DSM_SAVED;
 	Z_Free(demobuf.buffer);
 	demo.recording = false;
 
 	if (!modeattacking)
 	{
-		if (demo.savemode == DSM_SAVED)
+		if (demo.savemode == demovars_s::DSM_SAVED)
 		{
 			CONS_Printf(M_GetText("Demo %s recorded\n"), demoname);
 			if (gamedata->eversavedreplay == false)
@@ -3957,13 +4052,13 @@ boolean G_DemoTitleResponder(event_t *ev)
 	// Only ESC and non-keyboard keys abort connection
 	if (ch == KEY_ESCAPE)
 	{
-		demo.savemode = (cv_recordmultiplayerdemos.value == 2) ? DSM_WILLAUTOSAVE : DSM_NOTSAVING;
+		demo.savemode = (cv_recordmultiplayerdemos.value == 2) ? demovars_s::DSM_WILLAUTOSAVE : demovars_s::DSM_NOTSAVING;
 		return true;
 	}
 
 	if (ch == KEY_ENTER || ch >= NUMKEYS)
 	{
-		demo.savemode = DSM_WILLSAVE;
+		demo.savemode = demovars_s::DSM_WILLSAVE;
 		return true;
 	}
 
@@ -4001,7 +4096,7 @@ boolean G_CheckDemoTitleEntry(void)
 	if (!G_PlayerInputDown(0, gc_b, 0) && !G_PlayerInputDown(0, gc_x, 0))
 		return false;
 
-	demo.savemode = DSM_TITLEENTRY;
+	demo.savemode = demovars_s::DSM_TITLEENTRY;
 
 	return true;
 }

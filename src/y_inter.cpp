@@ -9,6 +9,8 @@
 /// \file  y_inter.c
 /// \brief Tally screens, or "Intermissions" as they were formally called in Doom
 
+#include <algorithm>
+
 #include "doomdef.h"
 #include "doomstat.h"
 #include "d_main.h"
@@ -194,6 +196,8 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 
 	data.isduel = (numplayersingame <= 2);
 
+	srb2::StandingsJson standings {};
+
 	for (j = 0; j < numplayersingame; j++)
 	{
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -238,13 +242,13 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 
 			if (demo.recording)
 			{
-				G_WriteStanding(
-					data.pos[data.numplayers],
-					player_names[i],
-					data.character[data.numplayers],
-					data.color[data.numplayers],
-					data.val[data.numplayers]
-				);
+				srb2::StandingJson standing {};
+				standing.ranking = data.pos[data.numplayers];
+				standing.name = std::string(player_names[i]);
+				standing.demoskin = data.character[data.numplayers];
+				standing.skincolor = std::string(skincolors[data.color[data.numplayers]].name);
+				standing.timeorscore = data.val[data.numplayers];
+				standings.standings.emplace_back(std::move(standing));
 			}
 
 			if (data.val[data.numplayers] == (UINT32_MAX-1))
@@ -282,6 +286,12 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 		data.numplayers++;
 	}
 
+	if (demo.recording)
+	{
+		srb2::write_current_demo_end_marker();
+		srb2::write_current_demo_standings(standings);
+	}
+
 	if (getmainplayer == true)
 	{
 		// Okay, player scores have been set now - we can calculate GP-relevant material.
@@ -308,7 +318,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 					data.showrank = (rankforline >= GRADE_A);
 
 					data.linemeter =
-						(min(rankforline, GRADE_A)
+						(std::min(rankforline, GRADE_A)
 							* (2 * TICRATE)
 						) / GRADE_A;
 
@@ -465,7 +475,7 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 
 	INT32 hilicol = highlightflags;
 
-	patch_t *resbar = W_CachePatchName("R_RESBAR", PU_PATCH); // Results bars for players
+	patch_t *resbar = static_cast<patch_t*>(W_CachePatchName("R_RESBAR", PU_PATCH)); // Results bars for players
 
 	if (drawping || standings->rankingsmode != 0)
 	{
@@ -550,7 +560,7 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 			UINT8 *charcolormap = NULL;
 			if (standings->color[i] != SKINCOLOR_NONE)
 			{
-				charcolormap = R_GetTranslationColormap(standings->character[i], standings->color[i], GTC_CACHE);
+				charcolormap = R_GetTranslationColormap(standings->character[i], static_cast<skincolornum_t>(standings->color[i]), GTC_CACHE);
 			}
 
 			if (standings->isduel)
@@ -558,8 +568,8 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 				INT32 duelx = x + 22 + (datarightofcolumn ? inwardshim : -inwardshim);
 				INT32 duely = y - 80;
 
-				V_DrawScaledPatch(duelx, duely, 0, W_CachePatchName("DUELGRPH", PU_CACHE));
-				V_DrawScaledPatch(duelx + 8, duely + 9, V_TRANSLUCENT, W_CachePatchName("PREVBACK", PU_CACHE));
+				V_DrawScaledPatch(duelx, duely, 0, static_cast<patch_t*>(W_CachePatchName("DUELGRPH", PU_CACHE)));
+				V_DrawScaledPatch(duelx + 8, duely + 9, V_TRANSLUCENT, static_cast<patch_t*>(W_CachePatchName("PREVBACK", PU_CACHE)));
 
 				UINT8 spr2 = SPR2_STIN;
 				if (standings->pos[i] == 2)
@@ -591,7 +601,7 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 
 				if (j > splitscreen)
 				{
-					V_DrawScaledPatch(letterpos, duely, 0, W_CachePatchName(va("CHAR%s", (players[pnum].bot ? "CPU" : "EGGA")), PU_CACHE));
+					V_DrawScaledPatch(letterpos, duely, 0, static_cast<patch_t*>(W_CachePatchName(va("CHAR%s", (players[pnum].bot ? "CPU" : "EGGA")), PU_CACHE)));
 				}
 				else
 				{
@@ -599,12 +609,12 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 
 					UINT8 profilen = cv_lastprofile[j].value;
 
-					V_DrawScaledPatch(duelx, duely, 0, W_CachePatchName("FILEBACK", PU_CACHE));
+					V_DrawScaledPatch(duelx, duely, 0, static_cast<patch_t*>(W_CachePatchName("FILEBACK", PU_CACHE)));
 
 					if (datarightofcolumn && j == 0)
 						letterpos++; // A is one pixel thinner
 
-					V_DrawScaledPatch(letterpos, duely, 0, W_CachePatchName(va("CHARSEL%c", 'A' + j), PU_CACHE));
+					V_DrawScaledPatch(letterpos, duely, 0, static_cast<patch_t*>(W_CachePatchName(va("CHARSEL%c", 'A' + j), PU_CACHE)));
 
 					profile_t *pr = PR_GetProfile(profilen);
 
@@ -628,13 +638,13 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 					V_DrawMappedPatch(
 						x+14, y-5,
 						0,
-						W_CachePatchName("MINIDEAD", PU_CACHE),
-						R_GetTranslationColormap(TC_DEFAULT, standings->color[i], GTC_CACHE)
+						static_cast<patch_t*>(W_CachePatchName("MINIDEAD", PU_CACHE)),
+						R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(standings->color[i]), GTC_CACHE)
 					);
 				}
 				else
 				{
-					charcolormap = R_GetTranslationColormap(standings->character[i], standings->color[i], GTC_CACHE);
+					charcolormap = R_GetTranslationColormap(standings->character[i], static_cast<skincolornum_t>(standings->color[i]), GTC_CACHE);
 					V_DrawMappedPatch(x+14, y-5, 0, faceprefix[standings->character[i]][FACE_MINIMAP], charcolormap);
 				}
 			}
@@ -742,27 +752,27 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 			}
 			else if (standings->grade[pnum] != GRADE_INVALID)
 			{
-				patch_t *gradePtc = W_CachePatchName(va("R_INRNK%c", K_GetGradeChar(standings->grade[pnum])), PU_PATCH);
+				patch_t *gradePtc = static_cast<patch_t*>(W_CachePatchName(va("R_INRNK%c", K_GetGradeChar(static_cast<gp_rank_e>(standings->grade[pnum]))), PU_PATCH));
 				patch_t *gradeBG = NULL;
 
 				UINT16 gradeColor = SKINCOLOR_NONE;
 				UINT8 *gradeClm = NULL;
 
-				gradeColor = K_GetGradeColor(standings->grade[pnum]);
+				gradeColor = K_GetGradeColor(static_cast<gp_rank_e>(standings->grade[pnum]));
 				if (gradeColor != SKINCOLOR_NONE)
 				{
-					gradeClm = R_GetTranslationColormap(TC_DEFAULT, gradeColor, GTC_CACHE);
+					gradeClm = R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(gradeColor), GTC_CACHE);
 				}
 
 				if (datarightofcolumn)
 				{
-					gradeBG = W_CachePatchName("R_INRNKR", PU_PATCH);
+					gradeBG = static_cast<patch_t*>(W_CachePatchName("R_INRNKR", PU_PATCH));
 					V_DrawMappedPatch(x + 118, y, 0, gradeBG, gradeClm);
 					V_DrawMappedPatch(x + 118 + 4, y - 1, 0, gradePtc, gradeClm);
 				}
 				else
 				{
-					gradeBG = W_CachePatchName("R_INRNKL", PU_PATCH);
+					gradeBG = static_cast<patch_t*>(W_CachePatchName("R_INRNKL", PU_PATCH));
 					V_DrawMappedPatch(x - 12, y, 0, gradeBG, gradeClm);
 					V_DrawMappedPatch(x - 12 + 3, y - 1, 0, gradePtc, gradeClm);
 				}
@@ -828,27 +838,27 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 	INT32 bufferspace = ((vid.width/vid.dupx) - BASEVIDWIDTH) / 2;
 
 	// Background pieces
-	patch_t *queuebg_flat = W_CachePatchName("R_RMBG1", PU_PATCH);
-	patch_t *queuebg_upwa = W_CachePatchName("R_RMBG2", PU_PATCH);
-	patch_t *queuebg_down = W_CachePatchName("R_RMBG3", PU_PATCH);
-	patch_t *queuebg_prize = W_CachePatchName("R_RMBG4", PU_PATCH);
+	patch_t *queuebg_flat = static_cast<patch_t*>(W_CachePatchName("R_RMBG1", PU_PATCH));
+	patch_t *queuebg_upwa = static_cast<patch_t*>(W_CachePatchName("R_RMBG2", PU_PATCH));
+	patch_t *queuebg_down = static_cast<patch_t*>(W_CachePatchName("R_RMBG3", PU_PATCH));
+	patch_t *queuebg_prize = static_cast<patch_t*>(W_CachePatchName("R_RMBG4", PU_PATCH));
 
 	// Progression lines
 	patch_t *line_upwa[BPP_MAX];
 	patch_t *line_down[BPP_MAX];
 	patch_t *line_flat[BPP_MAX];
 
-	line_upwa[BPP_AHEAD] = W_CachePatchName("R_RRMLN1", PU_PATCH);
-	line_upwa[BPP_DONE] = W_CachePatchName("R_RRMLN3", PU_PATCH);
-	line_upwa[BPP_SHADOW] = W_CachePatchName("R_RRMLS1", PU_PATCH);
+	line_upwa[BPP_AHEAD] = static_cast<patch_t*>(W_CachePatchName("R_RRMLN1", PU_PATCH));
+	line_upwa[BPP_DONE] = static_cast<patch_t*>(W_CachePatchName("R_RRMLN3", PU_PATCH));
+	line_upwa[BPP_SHADOW] = static_cast<patch_t*>(W_CachePatchName("R_RRMLS1", PU_PATCH));
 
-	line_down[BPP_AHEAD] = W_CachePatchName("R_RRMLN2", PU_PATCH);
-	line_down[BPP_DONE] = W_CachePatchName("R_RRMLN4", PU_PATCH);
-	line_down[BPP_SHADOW] = W_CachePatchName("R_RRMLS2", PU_PATCH);
+	line_down[BPP_AHEAD] = static_cast<patch_t*>(W_CachePatchName("R_RRMLN2", PU_PATCH));
+	line_down[BPP_DONE] = static_cast<patch_t*>(W_CachePatchName("R_RRMLN4", PU_PATCH));
+	line_down[BPP_SHADOW] = static_cast<patch_t*>(W_CachePatchName("R_RRMLS2", PU_PATCH));
 
-	line_flat[BPP_AHEAD] = W_CachePatchName("R_RRMLN5", PU_PATCH);
-	line_flat[BPP_DONE] = W_CachePatchName("R_RRMLN6", PU_PATCH);
-	line_flat[BPP_SHADOW] = W_CachePatchName("R_RRMLS3", PU_PATCH);
+	line_flat[BPP_AHEAD] = static_cast<patch_t*>(W_CachePatchName("R_RRMLN5", PU_PATCH));
+	line_flat[BPP_DONE] = static_cast<patch_t*>(W_CachePatchName("R_RRMLN6", PU_PATCH));
+	line_flat[BPP_SHADOW] = static_cast<patch_t*>(W_CachePatchName("R_RRMLS3", PU_PATCH));
 
 	// Progress markers
 	patch_t *level_dot[BPP_MAIN];
@@ -856,17 +866,17 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 	patch_t *capsu_dot[BPP_MAIN];
 	patch_t *prize_dot[BPP_MAIN];
 
-	level_dot[BPP_AHEAD] = W_CachePatchName("R_RRMRK2", PU_PATCH);
-	level_dot[BPP_DONE] = W_CachePatchName("R_RRMRK1", PU_PATCH);
+	level_dot[BPP_AHEAD] = static_cast<patch_t*>(W_CachePatchName("R_RRMRK2", PU_PATCH));
+	level_dot[BPP_DONE] = static_cast<patch_t*>(W_CachePatchName("R_RRMRK1", PU_PATCH));
 
-	bonus_dot[BPP_AHEAD] = W_CachePatchName("R_RRMRK7", PU_PATCH);
-	bonus_dot[BPP_DONE] = W_CachePatchName("R_RRMRK8", PU_PATCH);
+	bonus_dot[BPP_AHEAD] = static_cast<patch_t*>(W_CachePatchName("R_RRMRK7", PU_PATCH));
+	bonus_dot[BPP_DONE] = static_cast<patch_t*>(W_CachePatchName("R_RRMRK8", PU_PATCH));
 
-	capsu_dot[BPP_AHEAD] = W_CachePatchName("R_RRMRK3", PU_PATCH);
-	capsu_dot[BPP_DONE] = W_CachePatchName("R_RRMRK5", PU_PATCH);
+	capsu_dot[BPP_AHEAD] = static_cast<patch_t*>(W_CachePatchName("R_RRMRK3", PU_PATCH));
+	capsu_dot[BPP_DONE] = static_cast<patch_t*>(W_CachePatchName("R_RRMRK5", PU_PATCH));
 
-	prize_dot[BPP_AHEAD] = W_CachePatchName("R_RRMRK4", PU_PATCH);
-	prize_dot[BPP_DONE] = W_CachePatchName("R_RRMRK6", PU_PATCH);
+	prize_dot[BPP_AHEAD] = static_cast<patch_t*>(W_CachePatchName("R_RRMRK4", PU_PATCH));
+	prize_dot[BPP_DONE] = static_cast<patch_t*>(W_CachePatchName("R_RRMRK6", PU_PATCH));
 
 	UINT8 *colormap = NULL, *oppositemap = NULL;
 	fixed_t playerx = 0, playery = 0;
@@ -891,8 +901,8 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 		pcolor = players[standings->mainplayer].skincolor;
 	}
 
-	colormap = R_GetTranslationColormap(TC_DEFAULT, pcolor, GTC_CACHE);
-	oppositemap = R_GetTranslationColormap(TC_DEFAULT, skincolors[pcolor].invcolor, GTC_CACHE);
+	colormap = R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(pcolor), GTC_CACHE);
+	oppositemap = R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(skincolors[pcolor].invcolor), GTC_CACHE);
 
 	UINT8 workingqueuesize = roundqueue.size;
 	boolean upwa = false;
@@ -924,7 +934,7 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 		SINT8 deferxoffs = 0;
 
 		const INT32 desiredx2 = (290 + bufferspace);
-		spacetospecial = max(desiredx2 - widthofroundqueue - (24 - bufferspace), 16);
+		spacetospecial = std::max(desiredx2 - widthofroundqueue - (24 - bufferspace), 16);
 
 		if (roundqueue.position == roundqueue.size)
 		{
@@ -1237,7 +1247,7 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 					}
 					else
 					{
-						const fixed_t fillend = min((playerx / FRACUNIT) + 2, barend);
+						const fixed_t fillend = std::min((playerx / FRACUNIT) + 2, barend);
 
 						while (xiter < fillend)
 						{
@@ -1353,8 +1363,8 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 	if (playery != 0)
 	{
 		patch_t *rpmark[2];
-		rpmark[0] = W_CachePatchName("R_RPMARK", PU_PATCH);
-		rpmark[1] = W_CachePatchName("R_R2MARK", PU_PATCH);
+		rpmark[0] = static_cast<patch_t*>(W_CachePatchName("R_RPMARK", PU_PATCH));
+		rpmark[1] = static_cast<patch_t*>(W_CachePatchName("R_R2MARK", PU_PATCH));
 
 		// Change alignment
 		playerx -= (10 * FRACUNIT);
@@ -1377,7 +1387,7 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 				FRACUNIT,
 				baseflags,
 				faceprefix[pskin][FACE_RANK],
-				R_GetTranslationColormap(pskin, pcolor, GTC_CACHE)
+				R_GetTranslationColormap(pskin, static_cast<skincolornum_t>(pcolor), GTC_CACHE)
 			);
 		}
 		else
@@ -1473,7 +1483,7 @@ void Y_DrawIntermissionHeader(fixed_t x, fixed_t y, boolean gotthrough, const ch
 	}
 
 	// Header bar
-	patch_t *rtpbr = W_CachePatchName((small ? "R_RTPB4" : "R_RTPBR"), PU_PATCH);
+	patch_t *rtpbr = static_cast<patch_t*>(W_CachePatchName((small ? "R_RTPB4" : "R_RTPBR"), PU_PATCH));
 	V_DrawFixedPatch((20 * frac) + x, (24 * frac) + y, FRACUNIT, small_flag, rtpbr, NULL);
 
 	fixed_t headerx, headery, headerwidth = 0;
@@ -1517,7 +1527,7 @@ void Y_DrawIntermissionHeader(fixed_t x, fixed_t y, boolean gotthrough, const ch
 	if (gotthrough)
 	{
 		// GOT THROUGH ROUND
-		patch_t *gthro = W_CachePatchName((small ? "R_GTHR4" : "R_GTHRO"), PU_PATCH);
+		patch_t *gthro = static_cast<patch_t*>(W_CachePatchName((small ? "R_GTHR4" : "R_GTHRO"), PU_PATCH));
 		V_DrawFixedPatch((50 * frac) + x, (42 * frac) + y, FRACUNIT, small_flag, gthro, NULL);
 	}
 
@@ -1594,15 +1604,15 @@ void Y_IntermissionDrawer(void)
 	fixed_t x;
 
 	// Checker scroll
-	patch_t *rbgchk = W_CachePatchName("R_RBGCHK", PU_PATCH);
+	patch_t *rbgchk = static_cast<patch_t*>(W_CachePatchName("R_RBGCHK", PU_PATCH));
 
 	// Scrolling marquee
-	patch_t *rrmq = W_CachePatchName("R_RRMQ", PU_PATCH);
+	patch_t *rrmq = static_cast<patch_t*>(W_CachePatchName("R_RRMQ", PU_PATCH));
 
 	fixed_t mqloop = SHORT(rrmq->width)*FRACUNIT;
 	fixed_t chkloop = SHORT(rbgchk->width)*FRACUNIT;
 
-	UINT8 *bgcolor = R_GetTranslationColormap(TC_INTERMISSION, 0, GTC_CACHE);
+	UINT8 *bgcolor = R_GetTranslationColormap(TC_INTERMISSION, static_cast<skincolornum_t>(0), GTC_CACHE);
 
 	// Draw the background
 	K_DrawMapThumbnail(0, 0, BASEVIDWIDTH<<FRACBITS, (data.encore ? V_FLIP : 0), prevmap, bgcolor);
@@ -1681,11 +1691,11 @@ skiptallydrawer:
 
 finalcounter:
 	{
-		if ((modeattacking == ATTACKING_NONE) && (demo.recording || demo.savemode == DSM_SAVED) && !demo.playback)
+		if ((modeattacking == ATTACKING_NONE) && (demo.recording || demo.savemode == demovars_s::DSM_SAVED) && !demo.playback)
 		{
 			switch (demo.savemode)
 			{
-				case DSM_NOTSAVING:
+				case demovars_s::DSM_NOTSAVING:
 				{
 					INT32 buttonx = BASEVIDWIDTH;
 					INT32 buttony = 2;
@@ -1696,11 +1706,11 @@ finalcounter:
 					V_DrawRightAlignedThinString(buttonx - 2, buttony, highlightflags, "Save replay");
 					break;
 				}
-				case DSM_SAVED:
+				case demovars_s::DSM_SAVED:
 					V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, highlightflags, "Replay saved!");
 					break;
 
-				case DSM_TITLEENTRY:
+				case demovars_s::DSM_TITLEENTRY:
 					ST_DrawDemoTitleEntry();
 					break;
 
@@ -1745,13 +1755,13 @@ void Y_Ticker(void)
 
 	if (demo.recording)
 	{
-		if (demo.savemode == DSM_NOTSAVING)
+		if (demo.savemode == demovars_s::DSM_NOTSAVING)
 		{
 			replayprompttic++;
 			G_CheckDemoTitleEntry();
 		}
 
-		if (demo.savemode == DSM_WILLSAVE || demo.savemode == DSM_WILLAUTOSAVE)
+		if (demo.savemode == demovars_s::DSM_WILLSAVE || demo.savemode == demovars_s::DSM_WILLAUTOSAVE)
 			G_SaveDemo();
 	}
 
@@ -1983,7 +1993,7 @@ void Y_DetermineIntermissionType(void)
 	}
 
 	// set initially
-	intertype = gametypes[gametype]->intermission;
+	intertype = static_cast<intertype_t>(gametypes[gametype]->intermission);
 
 	// special cases
 	if (intertype == int_scoreortimeattack)
@@ -2060,7 +2070,7 @@ void Y_StartIntermission(void)
 	else
 	{
 		// Minimum two seconds for match results, then two second slideover approx halfway through
-		sorttic = max((timer/2) - 2*TICRATE, 2*TICRATE);
+		sorttic = std::max((timer/2) - 2*TICRATE, 2*TICRATE);
 	}
 
 	// TODO: code's a mess, I'm just making it extra clear
@@ -2147,8 +2157,8 @@ void Y_StartIntermission(void)
 	}
 
 	Automate_Run(AEV_INTERMISSIONSTART);
-	bgpatch = W_CachePatchName("MENUBG", PU_STATIC);
-	widebgpatch = W_CachePatchName("WEIRDRES", PU_STATIC);
+	bgpatch = static_cast<patch_t*>(W_CachePatchName("MENUBG", PU_STATIC));
+	widebgpatch = static_cast<patch_t*>(W_CachePatchName("WEIRDRES", PU_STATIC));
 }
 
 // ======

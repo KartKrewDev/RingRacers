@@ -183,9 +183,9 @@ void read(uint16_t& value, I& stream, Endian endian = Endian::kLE) {
 }
 
 template <typename I, typename std::enable_if_t<IsInputStreamV<I>>* = nullptr>
-uint16_t read_uint16(I& stream) {
+uint16_t read_uint16(I& stream, Endian endian = Endian::kLE) {
 	uint16_t ret;
-	read(ret, stream);
+	read(ret, stream, endian);
 	return ret;
 }
 
@@ -211,9 +211,9 @@ void read(int16_t& value, I& stream, Endian endian = Endian::kLE) {
 }
 
 template <typename I, typename std::enable_if_t<IsInputStreamV<I>>* = nullptr>
-int16_t read_int16(I& stream) {
+int16_t read_int16(I& stream, Endian endian = Endian::kLE) {
 	int16_t ret;
-	read(ret, stream);
+	read(ret, stream, endian);
 	return ret;
 }
 
@@ -235,9 +235,9 @@ void read(uint32_t& value, I& stream, Endian endian = Endian::kLE) {
 }
 
 template <typename I, typename std::enable_if_t<IsInputStreamV<I>>* = nullptr>
-uint32_t read_uint32(I& stream) {
+uint32_t read_uint32(I& stream, Endian endian = Endian::kLE) {
 	uint32_t ret;
-	read(ret, stream);
+	read(ret, stream, endian);
 	return ret;
 }
 
@@ -267,9 +267,9 @@ void read(int32_t& value, I& stream, Endian endian = Endian::kLE) {
 }
 
 template <typename I, typename std::enable_if_t<IsInputStreamV<I>>* = nullptr>
-int32_t read_int32(I& stream) {
+int32_t read_int32(I& stream, Endian endian = Endian::kLE) {
 	int32_t ret;
-	read(ret, stream);
+	read(ret, stream, endian);
 	return ret;
 }
 
@@ -295,9 +295,9 @@ void read(uint64_t& value, I& stream, Endian endian = Endian::kLE) {
 }
 
 template <typename I, typename std::enable_if_t<IsInputStreamV<I>>* = nullptr>
-uint64_t read_uint64(I& stream) {
+uint64_t read_uint64(I& stream, Endian endian = Endian::kLE) {
 	uint64_t ret;
-	read(ret, stream);
+	read(ret, stream, endian);
 	return ret;
 }
 
@@ -335,9 +335,9 @@ void read(int64_t& value, I& stream, Endian endian = Endian::kLE) {
 }
 
 template <typename I, typename std::enable_if_t<IsInputStreamV<I>>* = nullptr>
-int64_t read_int64(I& stream) {
+int64_t read_int64(I& stream, Endian endian = Endian::kLE) {
 	int64_t ret;
-	read(ret, stream);
+	read(ret, stream, endian);
 	return ret;
 }
 
@@ -354,9 +354,9 @@ void read(float& value, I& stream, Endian endian = Endian::kLE) {
 }
 
 template <typename I, typename std::enable_if_t<IsInputStreamV<I>>* = nullptr>
-float read_float(I& stream) {
+float read_float(I& stream, Endian endian = Endian::kLE) {
 	float ret;
-	read(ret, stream);
+	read(ret, stream, endian);
 	return ret;
 }
 
@@ -373,9 +373,9 @@ void read(double& value, I& stream, Endian endian = Endian::kLE) {
 }
 
 template <typename I, typename std::enable_if_t<IsInputStreamV<I>>* = nullptr>
-double read_double(I& stream) {
+double read_double(I& stream, Endian endian = Endian::kLE) {
 	double ret;
-	read(ret, stream);
+	read(ret, stream, endian);
 	return ret;
 }
 
@@ -616,9 +616,7 @@ public:
 
 	StreamSize read(tcb::span<std::byte> buffer);
 	StreamSize write(tcb::span<const std::byte> buffer);
-
-	// not bothering with seeking for now -- apparently 64-bit file positions is not available in ansi c
-	// StreamSize seek(SeekFrom seek_from, StreamOffset offset);
+	StreamSize seek(SeekFrom seek_from, StreamOffset offset);
 
 	void close();
 };

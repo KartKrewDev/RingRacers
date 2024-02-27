@@ -19,6 +19,44 @@
 #include "d_event.h"
 
 #ifdef __cplusplus
+
+#include <string>
+#include <vector>
+
+#include <nlohmann/json.hpp>
+
+// Modern json formats
+namespace srb2
+{
+struct StandingJson
+{
+	uint8_t ranking;
+	std::string name;
+	uint8_t demoskin;
+	std::string skincolor;
+	uint32_t timeorscore;
+
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
+		StandingJson,
+		ranking,
+		name,
+		demoskin,
+		skincolor,
+		timeorscore
+	)
+};
+struct StandingsJson
+{
+	std::vector<StandingJson> standings;
+
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(StandingsJson, standings)
+};
+
+void write_current_demo_standings(const StandingsJson& standings);
+void write_current_demo_end_marker();
+
+} // namespace srb2
+
 extern "C" {
 #endif
 
@@ -105,7 +143,6 @@ void G_RecordDemo(const char *name);
 void G_BeginRecording(void);
 
 // Only called by shutdown code.
-void G_WriteStanding(UINT8 ranking, char *name, INT32 skinnum, UINT16 color, UINT32 val);
 void G_SetDemoTime(UINT32 ptime, UINT32 plap);
 UINT8 G_CmpDemoTime(char *oldname, char *newname);
 
