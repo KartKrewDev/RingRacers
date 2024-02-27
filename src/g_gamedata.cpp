@@ -596,6 +596,7 @@ void srb2::load_ng_gamedata()
 				if (can.color == skincolors[j].name)
 				{
 					gamedata->spraycans[i].col = j;
+					skincolors[j].cache_spraycan = i;
 					foundcolor = true;
 					break;
 				}
