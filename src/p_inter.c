@@ -2509,7 +2509,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 					P_DamageMobj(player->mo, players[player->pitblame].mo, players[player->pitblame].mo, 1, DMG_KARMA);
 					player->pitblame = -1;
 				}
-				else if (player->mo->health > 1 || battleprisons)
+				else if (player->mo->health > 1 || K_Cooperative())
 				{
 					player->mo->health--;
 				}
