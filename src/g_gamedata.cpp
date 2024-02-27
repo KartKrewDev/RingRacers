@@ -320,7 +320,7 @@ void srb2::load_ng_gamedata()
 		// The following used to be in M_ClearSecrets, but that was silly.
 		M_UpdateUnlockablesAndExtraEmblems(false, true);
 		M_FinaliseGameData();
-		gamedata->loaded = true;
+		gamedata->loaded = false;
 		return;
 	}
 
