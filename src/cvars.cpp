@@ -859,7 +859,13 @@ consvar_t cv_kartdebugnodes = ServerCheat("debugnodes", "Off").on_off().descript
 consvar_t cv_1pswap = PlayerCheat("1pswap", "1").min_max(1, MAXSPLITSCREENPLAYERS).description("Let P1's Profile control a different splitscreen player");
 
 #ifdef DEVELOP
-	consvar_t cv_debugchallenges = PlayerCheat("debugchallenges", "Off").on_off().description("Chao keys are infinite, unlock any tile, relock tiles, animations play quickly");
+	consvar_t cv_debugchallenges = PlayerCheat("debugchallenges", "Off").description("Chao keys are infinite, unlock any tile, relock tiles, animations play quickly").values({
+		{1, "MIN"},
+		{UINT16_MAX-1, "MAX"},
+		{0, "Off"},
+		{-1, "On"},
+		{-2, "Tag"},
+	});
 #endif
 
 consvar_t cv_debugfinishline = PlayerCheat("debugfinishline", "Off").on_off().description("Highlight finish lines, respawn lines, death pits and instakill planes with high contrast colors");
