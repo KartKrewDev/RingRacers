@@ -2975,13 +2975,11 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 	}
 	else if (fastcmp(params[0], "ISDIFFICULTY"))
 	{
-		//PARAMCHECK(1);
+		PARAMCHECK(1);
 		ty = UCRP_ISDIFFICULTY;
-		re = KARTSPEED_NORMAL;
-		if (params[1])
 		{
 			if (fastcmp(params[1], "NORMAL"))
-				;
+				re = KARTSPEED_NORMAL;
 			else if (fastcmp(params[1], "HARD"))
 				re = KARTSPEED_HARD;
 			else if (fastcmp(params[1], "MASTER"))
