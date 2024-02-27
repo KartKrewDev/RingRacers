@@ -457,7 +457,7 @@ void srb2::load_ng_gamedata()
 	}
 	else
 	{
-		gamedata->challengegridwidth = std::min(js.challengegrid.width, (uint32_t)0);
+		gamedata->challengegridwidth = std::max(js.challengegrid.width, (uint32_t)0);
 		if (gamedata->challengegrid)
 		{
 			Z_Free(gamedata->challengegrid);
