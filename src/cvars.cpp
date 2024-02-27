@@ -919,7 +919,7 @@ consvar_t cv_dummygpencore = MenuDummy("dummygpencore", "Off").on_off();
 consvar_t cv_dummyip = MenuDummy("dummyip", "");
 
 extern CV_PossibleValue_t dummykartspeed_cons_t[];
-consvar_t cv_dummykartspeed = MenuDummy("dummykartspeed", "Normal").values(dummykartspeed_cons_t);
+consvar_t cv_dummykartspeed = MenuDummy("dummykartspeed", "Gear 2").values(dummykartspeed_cons_t);
 
 consvar_t cv_dummymatchbots = MenuDummy("dummymatchbots", "Off").values({
 	{0, "Off"},

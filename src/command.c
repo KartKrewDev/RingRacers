@@ -83,15 +83,15 @@ CV_PossibleValue_t CV_TrueFalse[] = {{0, "False"}, {1, "True"}, {0, NULL}};
 // SRB2kart
 CV_PossibleValue_t kartspeed_cons_t[] = {
 	{KARTSPEED_AUTO, "Auto"},
-	{KARTSPEED_EASY, "Easy"},
-	{KARTSPEED_NORMAL, "Normal"},
-	{KARTSPEED_HARD, "Hard"},
+	{KARTSPEED_EASY, "Gear 1"},
+	{KARTSPEED_NORMAL, "Gear 2"},
+	{KARTSPEED_HARD, "Gear 3"},
 	{0, NULL}
 };
 CV_PossibleValue_t dummykartspeed_cons_t[] = {
-	{KARTSPEED_EASY, "Easy"},
-	{KARTSPEED_NORMAL, "Normal"},
-	{KARTSPEED_HARD, "Hard"},
+	{KARTSPEED_EASY, "Gear 1"},
+	{KARTSPEED_NORMAL, "Gear 2"},
+	{KARTSPEED_HARD, "Gear 3"},
 	{0, NULL}
 };
 CV_PossibleValue_t gpdifficulty_cons_t[] = {
@@ -2033,7 +2033,7 @@ static void CV_SetCVar(consvar_t *var, const char *value, boolean stealth)
 
 		if (var == &cv_kartspeed && !M_SecretUnlocked(SECRET_HARDSPEED, false))
 		{
-			if (!stricmp(value, "Hard") || atoi(value) >= KARTSPEED_HARD)
+			if (!stricmp(value, "Gear 3") || atoi(value) >= KARTSPEED_HARD)
 			{
 				CONS_Printf(M_GetText("You haven't unlocked this yet!\n"));
 				return;
