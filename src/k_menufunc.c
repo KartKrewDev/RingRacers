@@ -436,8 +436,7 @@ void M_PlayMenuJam(void)
 
 	const boolean trulystarted = M_GameTrulyStarted();
 	const boolean profilemode = (
-		trulystarted
-		&& optionsmenu.profilemenu
+		optionsmenu.profilemenu
 		&& !optionsmenu.resetprofilemenu
 	);
 
@@ -449,7 +448,9 @@ void M_PlayMenuJam(void)
 		return;
 	}
 
-	if (!trulystarted)
+	// trulystarted == false in the Tutorial.
+	// But profile menu music should play during the Tutorial (Playing()).
+	if (!trulystarted && !Playing())
 	{
 		if (M_GonerMusicPlayable() && NotCurrentlyPlaying("_GONER"))
 		{
