@@ -1612,10 +1612,12 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			return (cn->requirement != -1 && player->followerskin == cn->requirement);
 		case UCRP_ISDIFFICULTY:
 			if (grandprixinfo.gp == false)
-				return (gamespeed >= cn->requirement);
+				return false;
 			if (cn->requirement == KARTGP_MASTER)
 				return (grandprixinfo.masterbots == true);
 			return (grandprixinfo.gamespeed >= cn->requirement);
+		case UCRP_ISGEAR:
+			return (gamespeed >= cn->requirement);
 
 		case UCRP_PODIUMCUP:
 			if (grandprixinfo.gp == false || K_PodiumSequence() == false)
@@ -2527,6 +2529,8 @@ static const char *M_GetConditionString(condition_t *cn)
 
 			return speedtext;
 		}
+		case UCRP_ISGEAR:
+			return va("in Gear %d", cn->requirement + 1);
 
 		case UCRP_PODIUMCUP:
 		{
