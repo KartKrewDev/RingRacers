@@ -141,12 +141,15 @@ void R_CheckTextureDuplicates(INT32 start, INT32 end)
 
 void R_PrintTextureDuplicates(void)
 {
+	if (g_dups_thread.joinable())
+	{
+		g_dups_thread.join();
+	}
+
 	if (g_dups.empty())
 	{
 		return;
 	}
-
-	g_dups_thread.join();
 
 	for (auto [key, v] : g_dups)
 	{
