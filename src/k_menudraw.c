@@ -5528,6 +5528,24 @@ void M_DrawPause(void)
 
 	fixed_t t = M_DueFrac(pausemenu.offset.start, 3);
 
+	UINT8 splitspectatestate = 0;
+	if (G_GametypeHasSpectators() && pausemenu.splitscreenfocusid <= splitscreen)
+	{
+		// Identify relevant spectator state of pausemenu.splitscreenfocusid.
+		// See also M_HandleSpectatorToggle.
+
+		const UINT8 splitspecid =
+			g_localplayers[pausemenu.splitscreenfocusid];
+
+		if (players[splitspecid].spectator)
+		{
+			splitspectatestate =
+				(players[splitspecid].pflags & PF_WANTSTOJOIN)
+					? UINT8_MAX
+					: 1;
+		}
+	}
+
 	//V_DrawFadeScreen(0xFF00, 16);
 
 	{
@@ -5630,7 +5648,6 @@ void M_DrawPause(void)
 
 	while (itemsdrawn < 7)
 	{
-
 		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
 		{
 			case IT_STRING:
@@ -5643,6 +5660,17 @@ void M_DrawPause(void)
 					pp = W_CachePatchName(
 						va("M_ICOR2%c", ('A'+(pausemenu.ticker & 1))),
 						PU_CACHE);
+				}
+				else if (i == mpause_spectatetoggle)
+				{
+					pp = W_CachePatchName(
+						((splitspectatestate == 1)
+							? "M_ICOENT"
+							: "M_ICOSPC"
+						), PU_CACHE
+					);
+					if (i == itemOn)
+						colormap = yellowmap;
 				}
 				else
 				{
@@ -5668,29 +5696,30 @@ void M_DrawPause(void)
 			}
 		}
 
-
 		i++;	// Regardless of whether we drew or not, go to the next item in the menu.
 		if (i >= currentMenu->numitems)
 		{
 			i = 0;
 			while (!(currentMenu->menuitems[i].status & IT_DISPLAY))
 				i++;
-
 		}
 	}
 
 	// Draw the string!
 
 	const char *maintext = NULL;
+	const char *selectableheadertext = NULL;
 	const char *selectabletext = NULL;
-	INT32 mainflags = V_YELLOWMAP, selectableflags = 0;
+	INT32 mainflags = 0, selectableflags = 0;
 
 	if (itemOn == mpause_changegametype)
 	{
+		selectableheadertext = currentMenu->menuitems[itemOn].text;
 		selectabletext = gametypes[menugametype]->name;
 	}
 	else if (itemOn == mpause_callvote)
 	{
+		selectableheadertext = currentMenu->menuitems[itemOn].text;
 		selectabletext = K_GetMidVoteLabel(menucallvote);
 
 		if (K_MinimalCheckNewMidVote(menucallvote) == false)
@@ -5714,22 +5743,57 @@ void M_DrawPause(void)
 			}
 
 			if (maintext != NULL)
+			{
+				mainflags |= V_YELLOWMAP;
 				selectableflags |= V_MODULATE;
+			}
+		}
+	}
+	else if (itemOn == mpause_spectatetoggle)
+	{
+		const char *spectatetext = NULL;
+		INT32 spectateflags = 0;
+
+		if (splitspectatestate == 0)
+			spectatetext = "SPECTATE";
+		else if (splitspectatestate == 1)
+		{
+			spectatetext = "ENTER GAME";
+
+			if (!cv_allowteamchange.value)
+			{
+				spectateflags |= V_MODULATE;
+			}
+		}
+		else
+			spectatetext = "CANCEL JOIN";
+
+		if (splitscreen)
+		{
+			selectableheadertext = spectatetext;
+			selectabletext = va("PLAYER %c", 'A' + pausemenu.splitscreenfocusid);
+			selectableflags |= spectateflags;
+		}
+		else
+		{
+			maintext = spectatetext;
+			mainflags |= spectateflags;
 		}
 	}
 	else
 	{
 		maintext = currentMenu->menuitems[itemOn].text;
-		mainflags = 0;
+	}
+
+	if (selectableheadertext != NULL)
+	{
+		// For selections, show the full menu text on top.
+		V_DrawCenteredLSTitleHighString(220 + offset*2, 75, selectableflags, selectableheadertext);
 	}
 
 	if (selectabletext != NULL)
 	{
-		// We have a selection. Let's show the full menu text on top, and the choice below.
-
-		if (currentMenu->menuitems[itemOn].text)
-			V_DrawCenteredLSTitleHighString(220 + offset*2, 75, selectableflags, currentMenu->menuitems[itemOn].text);
-
+		// The selectable text is shown below.
 		selectableflags |= V_YELLOWMAP;
 
 		INT32 w = V_LSTitleLowStringWidth(selectabletext, selectableflags)/2;
