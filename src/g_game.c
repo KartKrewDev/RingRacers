@@ -2121,7 +2121,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	INT32 itemtype;
 	INT32 itemamount;
 	INT32 growshrinktimer;
-	UINT16 nocontrol;
 	INT32 khudfault;
 	INT32 kickstartaccel;
 	INT32 checkpointId;
@@ -2227,7 +2226,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		spheres = 0;
 		kickstartaccel = 0;
 		khudfault = 0;
-		nocontrol = 0;
 		laps = 0;
 		latestlap = 0;
 		lapPoints = 0;
@@ -2265,7 +2263,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		kickstartaccel = players[player].kickstartaccel;
 
 		khudfault = players[player].karthud[khud_fault];
-		nocontrol = players[player].nocontrol;
 
 		laps = players[player].laps;
 		latestlap = players[player].latestlap;
@@ -2397,7 +2394,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->eggmanblame = -1;
 	p->lastdraft = -1;
 	p->karthud[khud_fault] = khudfault;
-	p->nocontrol = nocontrol;
 	p->kickstartaccel = kickstartaccel;
 	p->checkpointId = checkpointId;
 
