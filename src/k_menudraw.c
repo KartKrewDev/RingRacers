@@ -6185,9 +6185,13 @@ void M_DrawAddons(void)
 
 static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili)
 {
+#ifdef DEVELOP
+	extern consvar_t cv_debugchallenges;
+#endif
 	unlockable_t *ref = NULL;
 	patch_t *pat = missingpat;
 	UINT8 *colormap = NULL, *bgmap = NULL;
+	INT32 tileflags = 0;
 	fixed_t siz, accordion;
 	UINT16 id, num;
 	boolean unlockedyet;
@@ -6204,6 +6208,16 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 
 	// Okay, this is what we want to draw.
 	ref = &unlockables[num];
+
+#ifdef DEVELOP
+	if (cv_debugchallenges.value > 0 &&
+		cv_debugchallenges.value != ref->conditionset)
+	{
+		// Searching for a conditionset, fade out any tiles
+		// that don't match.
+		tileflags = V_80TRANS;
+	}
+#endif
 
 	unlockedyet = !((gamedata->unlocked[num] == false)
 		|| (challengesmenu.pending && num == challengesmenu.currentunlock && challengesmenu.unlockanim <= UNLOCKTIME));
@@ -6275,7 +6289,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 		(x*FRACUNIT) + (SHORT(pat->width)*(FRACUNIT-accordion)/2), y*FRACUNIT,
 		accordion,
 		FRACUNIT,
-		0, pat,
+		tileflags, pat,
 		bgmap
 	);
 
@@ -6285,9 +6299,12 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 		|| challengesmenu.extradata[id].flip > (3*TILEFLIP_MAX)/4);
 
 #ifdef DEVELOP
-	extern consvar_t cv_debugchallenges;
 	if (cv_debugchallenges.value)
+	{
+		// Show the content of every tile without needing to
+		// flip them.
 		categoryside = false;
+	}
 #endif
 
 	if (categoryside)
@@ -6471,7 +6488,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 			((x + 5)*FRACUNIT) + (32*(FRACUNIT-accordion)/2), (y + 5)*FRACUNIT,
 			FixedDiv(32*accordion, siz),
 			FixedDiv(32 << FRACBITS, siz),
-			0, pat,
+			tileflags, pat,
 			colormap
 		);
 	}
@@ -6481,17 +6498,13 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 			((x + 2)*FRACUNIT) + (16*(FRACUNIT-accordion)/2), (y + 2)*FRACUNIT,
 			FixedDiv(16*accordion, siz),
 			FixedDiv(16 << FRACBITS, siz),
-			0, pat,
+			tileflags, pat,
 			colormap
 		);
 	}
 
 drawborder:
-	if (!hili)
-	{
-		return;
-	}
-
+	if (hili)
 	{
 		boolean maj = (ref != NULL && ref->majorunlock);
 		char buffer[9];
@@ -6509,6 +6522,17 @@ drawborder:
 			colormap
 		);
 	}
+
+#ifdef DEVELOP
+	if (cv_debugchallenges.value == -2 ||
+		cv_debugchallenges.value > 0)
+	{
+		// Display the conditionset for this tile.
+		V_DrawThinString(x, y,
+			ref->conditionset == cv_debugchallenges.value ? V_AQUAMAP : V_GRAYMAP,
+			va("%u", ref->conditionset));
+	}
+#endif
 }
 
 #define challengetransparentstrength 8

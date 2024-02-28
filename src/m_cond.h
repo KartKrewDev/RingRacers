@@ -92,7 +92,8 @@ typedef enum
 	UCRP_ISCHARACTER, // character == [skin]
 	UCRP_ISENGINECLASS, // engine class [class]
 	UCRP_HASFOLLOWER, // follower == [followerskin]
-	UCRP_ISDIFFICULTY, // difficulty >= [difficulty]
+	UCRP_ISDIFFICULTY, // GP difficulty >= [difficulty]
+	UCRP_ISGEAR, // gear speed >= [speed]
 
 	UCRP_PODIUMCUP, // cup == [cup] [optional: >= grade OR place]
 	UCRP_PODIUMEMERALD, // Get to podium sequence with that cup's emerald

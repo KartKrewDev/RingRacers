@@ -895,6 +895,31 @@ static void CON_InputDelChar(void)
 // ----
 //
 
+static void AdjustTextSize(INT32 n)
+{
+	INT32 range = max(vid.dupx, vid.dupy);
+	if (range < 3) // make bigger jumps if the resolution is small
+		n *= 4 - range;
+
+	// 1-3 ascending is larger
+	// but 0 is special and is the largest
+	INT32 cur = (cv_constextsize.value & V_SCALEPATCHMASK) >> V_SCALEPATCHSHIFT;
+	if (!cur) // reverse direction at 0
+	{
+		if (n < 0)
+			cur = 4 + n;
+		else
+			return;
+	}
+	else
+		cur += n;
+	if (cur < 1) // min: V_NOSCALEPATCH
+		cur = 1;
+	if (cur > 4) // max: 4 & 3 = 0
+		cur = 4;
+	CV_SetValue(&cv_constextsize, (cur << V_SCALEPATCHSHIFT) & V_SCALEPATCHMASK);
+}
+
 // Handles console key input
 //
 boolean CON_Responder(event_t *ev)
@@ -1135,6 +1160,18 @@ boolean CON_Responder(event_t *ev)
 		{
 			input_sel = 0;
 			input_cur = input_len;
+			return true;
+		}
+
+		// Zoom
+		if (key == '=')
+		{
+			AdjustTextSize(1);
+			return true;
+		}
+		else if (key == '-')
+		{
+			AdjustTextSize(-1);
 			return true;
 		}
 
