@@ -58,7 +58,7 @@ UINT8 setrenderneeded = 0;
 CV_PossibleValue_t cv_renderer_t[] = {
 	{1, "Software"},
 #ifdef HWRENDER
-	{2, "OpenGL"},
+	{2, "Legacy GL"},
 #endif
 	{0, NULL}
 };
