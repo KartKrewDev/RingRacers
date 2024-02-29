@@ -62,6 +62,7 @@ const char* dpad_suffix(const Vec2<float>& v)
 void K_DrawInputDisplay(INT32 x, INT32 y, INT32 flags, char mode, UINT8 pid, boolean local, boolean transparent)
 {
 	const ticcmd_t& cmd = players[displayplayers[pid]].cmd;
+	const boolean analog = (mode == '4' || mode == '5') ? players[displayplayers[pid]].analoginput : false;
 	const std::string prefix = fmt::format("PR{}", mode);
 	auto gfx = [&](auto format, auto&&... args) { return prefix + fmt::format(format, args...); };
 	auto but = [&](char key, INT32 gc, UINT32 bt)
@@ -81,10 +82,10 @@ void K_DrawInputDisplay(INT32 x, INT32 y, INT32 flags, char mode, UINT8 pid, boo
 		} :
 		Vec2<float> {
 			-cmd.turning / (float)KART_FULLTURN,
-			(float)cmd.throwdir,
+			-cmd.throwdir / (float)KART_FULLTURN,
 		};
 
-	box.patch(gfx("PAD{}", dpad_suffix(dpad)));
+	box.patch(gfx("PAD{}", analog ? "N" : dpad_suffix(dpad)));
 	box.patch(but('A', gc_a, BT_ACCELERATE));
 	box.patch(but('B', gc_b, BT_LOOKBACK));
 	box.patch(but('C', gc_c, BT_SPINDASHMASK));
@@ -98,6 +99,9 @@ void K_DrawInputDisplay(INT32 x, INT32 y, INT32 flags, char mode, UINT8 pid, boo
 	if (mode == '4' || mode == '5') // Saturn 3D
 	{
 		float dist = (mode == '4') ? 3.f : 2.f;
+
+		if (!analog)
+			dist = 0;
 
 		box.patch(gfx("JOY1"));
 		box.xy(dpad.x * dist, -dpad.y * dist).patch(gfx("JOY2"));
