@@ -3708,10 +3708,14 @@ static void Got_Teamchange(const UINT8 **cp, INT32 playernum)
 	//Now that we've done our error checking and killed the player
 	//if necessary, put the player on the correct team/status.
 
+	// This serves us in both teamchange contexts.
 	if (NetPacket.packet.newteam != 0)
 	{
-		// This serves us in both teamchange contexts.
 		players[playernum].pflags |= PF_WANTSTOJOIN;
+	}
+	else
+	{
+		players[playernum].pflags &= ~PF_WANTSTOJOIN;
 	}
 
 	if (G_GametypeHasTeams())

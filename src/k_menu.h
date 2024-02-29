@@ -497,10 +497,7 @@ typedef enum
 	mpause_tryagain,
 
 	mpause_continue,
-	mpause_spectate,
-	mpause_entergame,
-	mpause_canceljoin,
-	mpause_spectatemenu,
+	mpause_spectatetoggle,
 	mpause_psetup,
 	mpause_cheats,
 	mpause_options,
@@ -1151,6 +1148,8 @@ extern struct pausemenu_s {
 
 	menu_anim_t openoffset;	// Used when you open / close the menu to slide everything in.
 	boolean closing;		// When this is set, the open offset goes backwards to close the menu smoothly.
+
+	UINT8 splitscreenfocusid; // This is not exclusively visual, but thog dont care. For selecting splitscreen players to individually change their spectator state.
 } pausemenu;
 
 void M_OpenPauseMenu(void);
@@ -1174,9 +1173,7 @@ extern consvar_t cv_dummyspectator;
 void M_RestartMap(INT32 choice);				// Restart level (MP)
 void M_TryAgain(INT32 choice);					// Try again (SP)
 void M_GiveUp(INT32 choice);					// Give up (SP)
-void M_ConfirmSpectate(INT32 choice);			// Spectate confirm when you're alone
-void M_ConfirmEnterGame(INT32 choice);			// Enter game confirm when you're alone
-void M_ConfirmSpectateChange(INT32 choice);		// Splitscreen spectate/play menu func
+void M_HandleSpectateToggle(INT32 choice);		// Spectate confirm
 void M_EndGame(INT32 choice);					// Quitting to title
 
 // Replay Playback
