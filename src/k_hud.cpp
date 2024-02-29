@@ -5494,7 +5494,7 @@ static void K_DrawWaypointDebugger(void)
 	Draw::TextElement label;
 	label.font(Draw::Font::kThin);
 	label.flags(V_AQUAMAP);
-	Draw line = Draw(8, 136).font(Draw::Font::kMenu);
+	Draw line = Draw(8, 110).font(Draw::Font::kMenu);
 	auto put = [&](const char* label_str, auto&&... args)
 	{
 		constexpr int kTabWidth = 48;
