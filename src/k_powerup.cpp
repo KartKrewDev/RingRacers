@@ -9,6 +9,7 @@
 #include "p_mobj.h"
 #include "s_sound.h"
 #include "p_tick.h"
+#include "k_hitlag.h"
 
 tic_t K_PowerUpRemaining(const player_t* player, kartitems_t powerup)
 {
@@ -55,6 +56,8 @@ void K_GivePowerUp(player_t* player, kartitems_t powerup, tic_t time)
 
 	S_StartSound(NULL, sfx_gsha7);
 	player->flashing = 2*TICRATE;
+	K_AddHitLag(player->mo, BATTLE_POWERUP_VFX_TIME, false);
+	player->powerupVFXTimer = BATTLE_POWERUP_VFX_TIME;
 
 	g_darkness.start = leveltime;
 	g_darkness.end = leveltime + BATTLE_POWERUP_VFX_TIME + DARKNESS_FADE_TIME;

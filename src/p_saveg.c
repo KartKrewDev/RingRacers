@@ -584,6 +584,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].instaWhipCharge);
 		WRITEUINT8(save->p, players[i].defenseLockout);
 		WRITEUINT8(save->p, players[i].oldGuard);
+		WRITEUINT8(save->p, players[i].powerupVFXTimer);
 
 		WRITEUINT8(save->p, players[i].preventfailsafe);
 
@@ -1166,6 +1167,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].instaWhipCharge = READUINT8(save->p);
 		players[i].defenseLockout = READUINT8(save->p);
 		players[i].oldGuard = READUINT8(save->p);
+		players[i].powerupVFXTimer = READUINT8(save->p);
 
 		players[i].preventfailsafe = READUINT8(save->p);
 
@@ -6047,7 +6049,7 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 		if (mapnum < nummapheaders && mapheaderinfo[mapnum] != NULL)
 		{
 			WRITEUINT8(save->p, roundqueue.entries[i].overridden);
-			
+
 			if (roundqueue.entries[i].overridden == true)
 			{
 				WRITESTRINGL(save->p, mapheaderinfo[mapnum]->lumpname, MAXMAPLUMPNAME);
