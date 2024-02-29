@@ -4075,7 +4075,7 @@ void P_PlayerThink(player_t *player)
 	// Save the dir the player is holding
 	//  to allow items to be thrown forward or backward.
 	{
-		const INT16 threshold = 0; //(KART_FULLTURN / 2);
+		const INT16 threshold = 6*KART_FULLTURN/10;
 		if (cmd->throwdir > threshold)
 		{
 			player->throwdir = 1;

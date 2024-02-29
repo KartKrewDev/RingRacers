@@ -8868,6 +8868,19 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->defenseLockout--;
 	}
 
+	UINT16 normalturn = abs(cmd->turning);
+	UINT16 normalaim = abs(cmd->throwdir);
+
+	if (normalturn != 0 || normalaim != 0)
+	{
+		if (normalturn != KART_FULLTURN && normalturn != KART_FULLTURN/2 && normalturn != 0)
+			player->analoginput = true;
+		if (normalaim != KART_FULLTURN && normalaim != KART_FULLTURN/2 && normalaim != 0)
+			player->analoginput = true;
+		if (normalturn == KART_FULLTURN/2 && normalaim == KART_FULLTURN)
+			player->analoginput = false;
+	}
+
 	if (player->dotrickfx && !player->mo->hitlag)
 	{
 		int i;
@@ -12803,7 +12816,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				INT16 aimingcompare = abs(cmd->throwdir) - abs(cmd->turning);
 
 				// Uses cmd->turning over steering intentionally.
-#define TRICKTHRESHOLD (KART_FULLTURN/4)
+#define TRICKTHRESHOLD (KART_FULLTURN/2)
 				if (aimingcompare < -TRICKTHRESHOLD) // side trick
 				{
 					S_StartSoundAtVolume(player->mo, sfx_trick0, 255/2);
