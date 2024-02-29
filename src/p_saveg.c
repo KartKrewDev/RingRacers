@@ -417,6 +417,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT32(save->p, K_GetWaypointHeapIndex(players[i].nextwaypoint));
 		WRITEUINT32(save->p, players[i].airtime);
 		WRITEUINT32(save->p, players[i].lastairtime);
+		WRITEUINT8(save->p, players[i].bigwaypointgap);
 		WRITEUINT8(save->p, players[i].startboost);
 		WRITEUINT8(save->p, players[i].dropdashboost);
 
@@ -996,6 +997,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].nextwaypoint = (waypoint_t *)(size_t)READUINT32(save->p);
 		players[i].airtime = READUINT32(save->p);
 		players[i].lastairtime = READUINT32(save->p);
+		players[i].bigwaypointgap = READUINT8(save->p);
 		players[i].startboost = READUINT8(save->p);
 		players[i].dropdashboost = READUINT8(save->p);
 

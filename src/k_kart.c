@@ -8709,6 +8709,13 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		K_DoIngameRespawn(player);
 	}
 
+	if (player->bigwaypointgap)
+	{
+		player->bigwaypointgap--;
+		if (!player->bigwaypointgap)
+			K_DoIngameRespawn(player);
+	}
+
 	if (player->tripwireUnstuck && !player->mo->hitlag)
 		player->tripwireUnstuck--;
 
@@ -9874,6 +9881,17 @@ static void K_UpdatePlayerWaypoints(player_t *const player)
 		player->currentwaypoint = old_currentwaypoint;
 		player->nextwaypoint = old_nextwaypoint;
 		K_UpdateDistanceFromFinishLine(player);
+
+		// Start the auto respawn timer when the distance jumps.
+		if (!player->bigwaypointgap)
+		{
+			player->bigwaypointgap = 35;
+		}
+	}
+	else
+	{
+		// Reset the auto respawn timer if distance changes are back to normal.
+		player->bigwaypointgap = 0;
 	}
 
 	// Respawn point should only be updated when we're going to a nextwaypoint

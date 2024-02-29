@@ -5527,6 +5527,11 @@ static void K_DrawWaypointDebugger(void)
 			put("Cheat Check:", "{} / {}", stplyr->cheatchecknum, numcheatchecks);
 		put("Last Safe Cheat Check:", "{}", stplyr->lastsafecheatcheck);
 	}
+
+	if (stplyr->bigwaypointgap)
+	{
+		put("Auto Respawn Timer:", "{}", stplyr->bigwaypointgap);
+	}
 }
 
 static void K_DrawBotDebugger(void)
