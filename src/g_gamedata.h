@@ -32,6 +32,7 @@ struct GamedataPlaytimeJson final
 	uint32_t prisons;
 	uint32_t special;
 	uint32_t custom;
+	uint32_t menus;
 	uint32_t tumble;
 
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
@@ -42,6 +43,7 @@ struct GamedataPlaytimeJson final
 		prisons,
 		special,
 		custom,
+		menus,
 		tumble
 	)
 };

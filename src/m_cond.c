@@ -654,6 +654,7 @@ void M_ClearStats(void)
 	gamedata->totalplaytime = 0;
 	for (i = 0; i < GDGT_MAX; ++i)
 		gamedata->modeplaytime[i] = 0;
+	gamedata->totalmenutime = 0;
 	gamedata->totalrings = 0;
 	gamedata->totaltumbletime = 0;
 	for (i = 0; i < GDGT_MAX; ++i)
