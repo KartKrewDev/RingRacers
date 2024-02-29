@@ -164,7 +164,7 @@ class TiccmdBuilder
 
 		cmd->forwardmove = clamp(cmd->forwardmove, MAXPLMOVE);
 		cmd->turning = clamp(cmd->turning, KART_FULLTURN);
-		cmd->throwdir = clamp(cmd->throwdir, 1);
+		cmd->throwdir = clamp(cmd->throwdir, KART_FULLTURN);
 
 		// Send leveltime when this tic was generated to the server for control lag calculations.
 		// Only do this when in a level. Also do this after the hook, so that it can't overwrite this.
@@ -343,12 +343,9 @@ class TiccmdBuilder
 		}
 
 		// But forward/backward IS used for aiming.
-		// throwdir > 0 throws forward, throwdir < 0 throws backward
-		// but we always use -1, 0 or 1 for consistency here.
-		// this allows the throw deadzone to be adjusted in the future without breaking demos
-		if (std::abs(joystickvector.yaxis) > JOYAXISRANGE / 2)
+		if (joystickvector.yaxis != 0)
 		{
-			cmd->throwdir = -std::clamp(joystickvector.yaxis, -1, 1);
+			cmd->throwdir -= (joystickvector.yaxis * KART_FULLTURN) / JOYAXISRANGE;
 		}
 	}
 
@@ -382,7 +379,7 @@ class TiccmdBuilder
 		kart_analog_input();
 
 		// Digital users can input diagonal-back for shallow turns.
-		//
+		// 
 		// There's probably some principled way of doing this in the gamepad handler itself,
 		// by only applying this filtering to inputs sourced from an axis. This is a little
 		// ugly with the current abstractions, though, and there's a fortunate trick here:
