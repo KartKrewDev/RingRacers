@@ -385,19 +385,63 @@ boolean M_Responder(event_t *ev)
 		}
 #endif
 
-		// Attack modes quick-restart
-		if (CON_Ready() == false && modeattacking && G_PlayerInputDown(0, gc_y, splitscreen + 1) == true)
+		if (CON_Ready() == false)
 		{
-			M_TryAgain(0);
-			return true;
-		}
+			boolean allowmpause = true;
 
-		if (CON_Ready() == false && G_PlayerInputDown(0, gc_start, splitscreen + 1) == true)
-		{
-			if (!chat_on)
+			// Special mid-game input behaviours
+			if (Playing() && !demo.playback)
 			{
-				M_StartControlPanel();
-				return true;
+				// Quick Retry (Y in modeattacking)
+				if (modeattacking && G_PlayerInputDown(0, gc_y, splitscreen + 1) == true)
+				{
+					M_TryAgain(0);
+					return true;
+				}
+
+				// Quick Spectate (L+R+A+Start online)
+				if (G_GametypeHasSpectators())
+				{
+					UINT8 workingpid = 0;
+					for (workingpid = 0; workingpid <= splitscreen; workingpid++)
+					{
+						if (players[g_localplayers[workingpid]].spectator == true)
+							continue;
+
+						if (G_PlayerInputDown(workingpid, gc_l, 0) == false)
+							continue;
+						if (G_PlayerInputDown(workingpid, gc_r, 0) == false)
+							continue;
+						if (G_PlayerInputDown(workingpid, gc_a, 0) == false)
+							continue;
+						if (G_PlayerInputDown(workingpid, gc_start, 0) == false)
+							continue;
+
+						if (workingpid == 0)
+						{
+							allowmpause = false;
+							COM_ImmedExecute("changeteam spectator");
+							continue;
+						}
+
+						COM_ImmedExecute(
+							va(
+								"changeteam%u spectator",
+								workingpid + 1
+							)
+						);
+					}
+				}
+			}
+
+			// Bog-standard Pause
+			if (allowmpause && G_PlayerInputDown(0, gc_start, splitscreen + 1) == true)
+			{
+				if (!chat_on)
+				{
+					M_StartControlPanel();
+					return true;
+				}
 			}
 		}
 
