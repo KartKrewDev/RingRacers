@@ -3920,10 +3920,8 @@ boolean G_CheckDemoStatus(void)
 			else if (demo.attract == DEMO_ATTRACT_CREDITS)
 				F_ContinueCredits();
 			else
-				D_StartTitle();
+				D_SetDeferredStartTitle(true);
 		}
-
-		demo.attract = DEMO_ATTRACT_OFF;
 
 		return true;
 	}

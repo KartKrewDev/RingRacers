@@ -366,6 +366,9 @@ static void F_InitCreditsSlide(void)
 		}
 	}
 #endif
+
+	// Clear the console hud just to avoid anything getting in the way.
+	CON_ClearHUD();
 }
 
 void F_StartCredits(void)
