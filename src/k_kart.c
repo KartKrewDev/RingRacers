@@ -1410,6 +1410,18 @@ static boolean K_TryDraft(player_t *player, mobj_t *dest, fixed_t minDist, fixed
 	}
 #endif
 
+	// Bots are unusually good at keeping their facing aligned on long, tight turns.
+	// Force them to give up tether in these situations, like a drifting player typically would.
+	UINT16 rejectThreshold = KART_FULLTURN/4;
+	if (K_PlayerUsesBotMovement(player) && (abs(player->oldcmd.turning + player->cmd.turning) >= rejectThreshold))
+	{
+		mobj_t *indicator = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_THOK);
+		indicator->scale *= 2;
+		indicator->color = SKINCOLOR_RED;
+		indicator->tics = 2;
+		return false;
+	}
+
 	olddraft = player->draftpower;
 
 	player->draftleeway = leniency;
@@ -1504,12 +1516,9 @@ static void K_UpdateDraft(player_t *player)
 		leniency *= 4;
 	}
 
-	// Want to berserk attack? Get your speed FIRST.
-	if (player->instaWhipCharge >= INSTAWHIP_TETHERBLOCK || player->defenseLockout)
-		return;
-
-	// Not enough speed to draft.
-	if (player->speed >= 20 * player->mo->scale)
+	// You need speed and commitment to draft.
+	if (player->speed >= 20 * player->mo->scale
+		&& player->instaWhipCharge < INSTAWHIP_TETHERBLOCK && !player->defenseLockout)
 	{
 		if (addUfo != NULL)
 		{
