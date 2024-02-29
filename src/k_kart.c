@@ -8738,6 +8738,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->finalfailsafe = 0;
 	}
 
+	if (player->freeRingShooterCooldown && !player->mo->hitlag)
+		player->freeRingShooterCooldown--;
+
 	if (player->superring)
 	{
 		player->nextringaward++;
