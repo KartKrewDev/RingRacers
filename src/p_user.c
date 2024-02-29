@@ -1275,7 +1275,7 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 		}
 	}
 
-	K_InitPlayerTally(player);
+	//K_InitPlayerTally(player); -- we defer this to P_PlayerAfterThink
 
 	if (demo.playback == false)
 	{
@@ -4464,6 +4464,12 @@ void P_PlayerAfterThink(player_t *player)
 		I_Error("P_PlayerAfterThink: players[%s].mo == NULL", sizeu1(playeri));
 	}
 #endif
+
+	if (player->exiting && !K_PlayerTallyActive(player))
+	{
+		// We defer P_DoPlayerExit tallies to the end of the tic.
+		K_InitPlayerTally(player);
+	}
 
 	if (P_IsObjectOnGround(player->mo) == true)
 	{
