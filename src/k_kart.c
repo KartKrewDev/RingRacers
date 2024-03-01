@@ -1415,10 +1415,6 @@ static boolean K_TryDraft(player_t *player, mobj_t *dest, fixed_t minDist, fixed
 	UINT16 rejectThreshold = KART_FULLTURN/4;
 	if (K_PlayerUsesBotMovement(player) && (abs(player->oldcmd.turning + player->cmd.turning) >= rejectThreshold))
 	{
-		mobj_t *indicator = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_THOK);
-		indicator->scale *= 2;
-		indicator->color = SKINCOLOR_RED;
-		indicator->tics = 2;
 		return false;
 	}
 
