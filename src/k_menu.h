@@ -557,7 +557,8 @@ extern struct menutyping_s
 
 	vkb_query_fn_t queryfn; // callback on open and close
 	menu_t *dummymenu;
-	char cache[MAXSTRINGLENGTH]; // cached string
+	size_t cachelen;
+	char *cache; // cached string
 
 } menutyping;
 // While typing, we'll have a fade strongly darken the screen to overlay the typing menu instead
@@ -685,7 +686,7 @@ void M_PlayMenuJam(void);
 
 boolean M_ConsiderSealedSwapAlert(void);
 
-void M_OpenVirtualKeyboard(boolean gamepad, vkb_query_fn_t queryfn, menu_t *dummymenu);
+void M_OpenVirtualKeyboard(boolean gamepad, size_t cachelen, vkb_query_fn_t queryfn, menu_t *dummymenu);
 void M_AbortVirtualKeyboard(void);
 void M_MenuTypingInput(INT32 key);
 

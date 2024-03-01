@@ -4113,6 +4113,7 @@ boolean G_CheckDemoTitleEntry(void)
 	demo.willsave = true;
 	M_OpenVirtualKeyboard(
 		false,
+		sizeof demo.titlename,
 		[](const char* replace) -> const char*
 		{
 			if (replace)

@@ -1136,7 +1136,7 @@ static void M_HandleMenuInput(void)
 			if (M_MenuConfirmPressed(pid))
 			{
 				// If we entered this menu by pressing a menu Key, default to keyboard typing, otherwise use controller.
-				M_OpenVirtualKeyboard(thisMenuKey == -1, M_QueryCvarAction, NULL);
+				M_OpenVirtualKeyboard(thisMenuKey == -1, MAXSTRINGLENGTH, M_QueryCvarAction, NULL);
 				return;
 			}
 			else if (M_MenuExtraPressed(pid))
