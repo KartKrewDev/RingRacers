@@ -966,6 +966,8 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 		S_StopSoundByID(ufo, hums[i]);
 	}
 
+	UFOUpdateSound(ufo);
+
 	P_StartQuake(10, 64 * ufo->scale, 0, NULL);
 
 	return true;
