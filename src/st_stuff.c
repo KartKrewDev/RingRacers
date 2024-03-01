@@ -1457,6 +1457,30 @@ void ST_DrawServerSplash(boolean timelimited)
 	}
 }
 
+void ST_DrawSaveReplayHint(INT32 flags)
+{
+	const char *text = "";
+	switch (demo.savemode)
+	{
+	case DSM_NOTSAVING:
+		text = "\xAB" "or " "\xAE" "Save replay";
+		break;
+
+	case DSM_WILLAUTOSAVE:
+		text = "Replay will be saved.  \xAB" "Change title";
+		break;
+
+	case DSM_WILLSAVE:
+		text = "Replay will be saved.";
+		break;
+
+	case DSM_SAVED:
+		text = "Replay saved!";
+		break;
+	}
+	V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, flags|V_YELLOWMAP, text);
+}
+
 static fixed_t ST_CalculateFadeIn(player_t *player)
 {
 	const tic_t length = TICRATE/4;
@@ -1596,22 +1620,6 @@ void ST_Drawer(void)
 		INT32 flags = V_SNAPTOTOP | V_SNAPTORIGHT |
 			(Easing_Linear(min(t, fadeLength) * FRACUNIT / fadeLength, 9, 0) << V_ALPHASHIFT);
 
-		switch (demo.savemode)
-		{
-		case DSM_NOTSAVING:
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, flags|V_YELLOWMAP, "\xAB" "or " "\xAE" "Save replay");
-			break;
-
-		case DSM_WILLAUTOSAVE:
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, flags|V_YELLOWMAP, "Replay will be saved.  \xAB" "Change title");
-			break;
-
-		case DSM_WILLSAVE:
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, flags|V_YELLOWMAP, "Replay will be saved.");
-			break;
-
-		default: // Don't render anything
-			break;
-		}
+		ST_DrawSaveReplayHint(flags);
 	}
 }

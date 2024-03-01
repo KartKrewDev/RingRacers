@@ -76,6 +76,7 @@ extern tic_t lt_exitticker, lt_endtime;
 extern tic_t lt_fade;
 
 void ST_DrawServerSplash(boolean timelimited);
+void ST_DrawSaveReplayHint(INT32 flags);
 
 // return if player a is in the same team as player b
 boolean ST_SameTeam(player_t *a, player_t *b);

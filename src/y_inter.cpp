@@ -1693,26 +1693,7 @@ finalcounter:
 	{
 		if ((modeattacking == ATTACKING_NONE) && (demo.recording || demo.savemode == demovars_s::DSM_SAVED) && !demo.playback)
 		{
-			switch (demo.savemode)
-			{
-				case demovars_s::DSM_NOTSAVING:
-				{
-					INT32 buttonx = BASEVIDWIDTH;
-					INT32 buttony = 2;
-
-					K_drawButtonAnim(buttonx - 76, buttony, 0, kp_button_b[1], replayprompttic);
-					V_DrawRightAlignedThinString(buttonx - 55, buttony, highlightflags, "or");
-					K_drawButtonAnim(buttonx - 55, buttony, 0, kp_button_x[1], replayprompttic);
-					V_DrawRightAlignedThinString(buttonx - 2, buttony, highlightflags, "Save replay");
-					break;
-				}
-				case demovars_s::DSM_SAVED:
-					V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, highlightflags, "Replay saved!");
-					break;
-
-				default: // Don't render any text here
-					break;
-			}
+			ST_DrawSaveReplayHint(0);
 		}
 	}
 
