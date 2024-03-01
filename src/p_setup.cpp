@@ -8177,19 +8177,32 @@ void P_ResetLevelMusic(void)
 {
 	UINT8 idx = 0;
 
-	if (mapheaderinfo[gamemap-1]->musname_size > 1)
+	mapheader_t* mapheader = mapheaderinfo[gamemap - 1];
+
+	// To keep RNG in sync, we will always pull from RNG, even if unused
+	UINT32 random = P_Random(PR_MUSICSELECT);
+
+	if (demo.playback)
+	{
+		// mapmusrng has already been set by the demo; just make sure it's valid
+		if (mapmusrng >= mapheader->musname_size)
+		{
+			mapmusrng = 0;
+		}
+		return;
+	}
+
+	if (mapheader->musname_size > 1)
 	{
 		UINT8 tempmapmus[MAXMUSNAMES], tempmapmus_size = 1, i;
 
 		tempmapmus[0] = 0;
 
-		for (i = 1; i < mapheaderinfo[gamemap-1]->musname_size; i++)
+		for (i = 1; i < mapheader->musname_size; i++)
 		{
-			if (mapheaderinfo[gamemap-1]->cache_muslock[i-1] < MAXUNLOCKABLES
-			&& !M_CheckNetUnlockByID(mapheaderinfo[gamemap-1]->cache_muslock[i-1]))
+			if (mapheader->cache_muslock[i-1] < MAXUNLOCKABLES
+			&& !M_CheckNetUnlockByID(mapheader->cache_muslock[i-1]))
 				continue;
-
-			//CONS_Printf("TEST - %u\n", i);
 
 			tempmapmus[tempmapmus_size++] = i;
 		}
@@ -8204,9 +8217,8 @@ void P_ResetLevelMusic(void)
 			}
 			else
 			{
-				idx = P_RandomKey(PR_MUSICSELECT, tempmapmus_size);
+				idx = random % tempmapmus_size;
 			}
-			//CONS_Printf("Rolled position %u, maps to %u\n", mapmusrng, tempmapmus[mapmusrng]);
 			idx = tempmapmus[idx];
 		}
 	}
@@ -8216,7 +8228,13 @@ void P_ResetLevelMusic(void)
 
 void P_LoadLevelMusic(void)
 {
-	const char *music = mapheaderinfo[gamemap-1]->musname[mapmusrng];
+	mapheader_t* mapheader = mapheaderinfo[gamemap-1];
+	const char *music = mapheader->musname[0];
+
+	if (mapmusrng < mapheader->musname_size)
+	{
+		music = mapheader->musname[mapmusrng];
+	}
 
 	if (gametyperules & GTR_NOPOSITION || modeattacking != ATTACKING_NONE)
 	{
