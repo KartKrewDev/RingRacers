@@ -903,6 +903,7 @@ extern CV_PossibleValue_t renderhitbox_cons_t[];
 consvar_t cv_renderhitbox = PlayerCheat("renderhitbox", "Off").values(renderhitbox_cons_t).description("Show hitboxes around objects");
 
 consvar_t cv_mentalsonic = PlayerCheat("mentalsonic", "Off").values(CV_OnOff).flags(CV_HIDDEN).description("Works out at the library");
+consvar_t cv_4thgear = PlayerCheat("4thgear", "Off").values(CV_OnOff).flags(CV_HIDDEN).description("Surpassing your limits!");
 
 //
 // Dummy variables used solely in the menu system.

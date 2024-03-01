@@ -177,6 +177,22 @@ static UINT8 cheatf_mentalsonic(void)
 	return 1;
 }
 
+static UINT8 cheatf_4thgear(void)
+{
+	cv_4thgear.value = !(cv_4thgear.value);
+	if (cv_4thgear.value)
+	{
+		M_StartMessage("Restraint device compromised!", "Local play sped up to ""\x85""4th Gear!""\x80""\nLet's see what you're made of!\n\n""\x86""No effect in netplay and attack modes.", NULL, MM_NOTHING, NULL, NULL);
+		S_StartSound(NULL, sfx_gshc4);
+	}
+	else
+	{
+		S_StartSound(NULL, sfx_kc46);
+	}
+
+	return 1;
+}
+
 #ifdef DEVELOP
 static UINT8 cheatf_devmode(void)
 {
@@ -254,6 +270,13 @@ static cheatseq_t cheat_mentalsonic = {
 	NULL, cheatf_mentalsonic,
 	(UINT8[]){ SCRAMBLE('m'), SCRAMBLE('e'), SCRAMBLE('n'), SCRAMBLE('t'), SCRAMBLE('a'), SCRAMBLE('l'), SCRAMBLE(' '), SCRAMBLE('s'), SCRAMBLE('o'), SCRAMBLE('n'), SCRAMBLE('i'), SCRAMBLE('c'), 0xff }
 };
+static cheatseq_t cheat_4thgear = {
+	NULL, cheatf_4thgear,
+	(UINT8[]){ SCRAMBLE('l'), SCRAMBLE('e'), SCRAMBLE('t'), SCRAMBLE('\''), SCRAMBLE('s'), SCRAMBLE(' '),
+		SCRAMBLE('g'), SCRAMBLE('e'), SCRAMBLE('t'), SCRAMBLE(' '),
+		SCRAMBLE('f'), SCRAMBLE('i'), SCRAMBLE('r'), SCRAMBLE('e'), SCRAMBLE('d'), SCRAMBLE(' '),
+		SCRAMBLE('u'), SCRAMBLE('p'), SCRAMBLE('!'), 0xff }
+};
 
 
 #ifdef DEVELOP
@@ -275,6 +298,7 @@ cheatseq_t *cheatseqlist[] =
 	&cheat_savetheanimals,
 	&cheat_savetheframes,
 	&cheat_mentalsonic,
+	&cheat_4thgear,
 #ifdef DEVELOP
 	&cheat_devmode,
 	&cheat_skipgoner,
