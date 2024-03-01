@@ -164,7 +164,7 @@ static UINT8 cheatf_savetheframes(void)
 
 static UINT8 cheatf_mentalsonic(void)
 {
-	cv_mentalsonic.value = !(cv_mentalsonic.value);
+	CV_SetValue(&cv_mentalsonic, !cv_mentalsonic.value);
 	if (cv_mentalsonic.value)
 	{
 		S_StartSound(NULL, sfx_gshbb);
