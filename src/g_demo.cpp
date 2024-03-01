@@ -3200,14 +3200,12 @@ void G_DoPlayDemo(const char *defdemoname)
 	// didn't start recording right away.
 	demo.deferstart = false;
 
-	displayplayers[0] = consoleplayer = 0;
+	consoleplayer = 0;
 	memset(playeringame,0,sizeof(playeringame));
+	memset(displayplayers,0,sizeof(displayplayers));
 
 	// Load players that were in-game when the map started
 	p = READUINT8(demobuf.p);
-
-	for (i = 1; i < MAXSPLITSCREENPLAYERS; i++)
-		displayplayers[i] = INT32_MAX;
 
 	while (p != 0xFF)
 	{

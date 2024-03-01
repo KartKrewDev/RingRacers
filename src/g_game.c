@@ -1648,13 +1648,6 @@ void G_ResetView(UINT8 viewnum, INT32 playernum, boolean onlyactive)
 			viewnum = playersviewable;
 		r_splitscreen = viewnum-1;
 
-		/* Prepare extra views for G_FindView to pass. */
-		for (viewd = splits+1; viewd < viewnum; ++viewd)
-		{
-			displayplayerp = (&displayplayers[viewd-1]);
-			(*displayplayerp) = INT32_MAX;
-		}
-
 		R_ExecuteSetViewSize();
 	}
 
