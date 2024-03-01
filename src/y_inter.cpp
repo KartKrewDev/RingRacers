@@ -1756,9 +1756,6 @@ void Y_Ticker(void)
 			replayprompttic++;
 			G_CheckDemoTitleEntry();
 		}
-
-		if (demo.savemode == demovars_s::DSM_WILLSAVE || demo.savemode == demovars_s::DSM_WILLAUTOSAVE)
-			G_SaveDemo();
 	}
 
 	// Check for pause or menu up in single player
