@@ -926,6 +926,8 @@ void M_SetupNextMenu(menu_t *menudef, boolean notransition)
 
 void M_GoBack(INT32 choice)
 {
+	const INT16 behaviourflags = currentMenu->behaviourflags;
+
 	(void)choice;
 
 	noFurtherInput = true;
@@ -948,7 +950,8 @@ void M_GoBack(INT32 choice)
 	else // No returning to the title screen.
 		M_QuitSRB2(-1);
 
-	S_StartSound(NULL, sfx_s3k5b);
+	if (!(behaviourflags & MBF_SOUNDLESS))
+		S_StartSound(NULL, sfx_s3k5b);
 }
 
 //
