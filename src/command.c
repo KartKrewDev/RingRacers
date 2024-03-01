@@ -1374,9 +1374,9 @@ static const char *cv_null_string = "";
   *
   * \param name Variable to search for.
   * \return Pointer to the variable if found, or NULL.
-  * \sa CV_FindNetVar
+  * \sa CV_FindVar
   */
-consvar_t *CV_FindVar(const char *name)
+static consvar_t *CV_FindVarInternal(const char *name)
 {
 	consvar_t *cvar;
 
@@ -1385,6 +1385,22 @@ consvar_t *CV_FindVar(const char *name)
 			return cvar;
 
 	return NULL;
+}
+
+/** Searches if a variable has been registered and is visible to the console.
+  *
+  * \param name Variable to search for.
+  * \return Pointer to the variable if found, or NULL.
+  * \sa CV_FindVarInternal
+  */
+consvar_t *CV_FindVar(const char *name)
+{
+	consvar_t *cvar = CV_FindVarInternal(name);
+
+	if (cvar && (cvar->flags & CV_NOSHOWHELP))
+		return NULL;
+
+	return cvar;
 }
 
 /** Finds a net variable based on its identifier number.
@@ -1418,7 +1434,7 @@ static void Setvalue(consvar_t *var, const char *valstr, boolean stealth);
 void CV_RegisterVar(consvar_t *variable)
 {
 	// first check to see if it has already been defined
-	if (CV_FindVar(variable->name))
+	if (CV_FindVarInternal(variable->name))
 	{
 		CONS_Printf(M_GetText("Variable %s is already defined\n"), variable->name);
 		return;
@@ -1792,7 +1808,7 @@ ReadDemoVar (const UINT8 **p, const char **return_value, boolean *return_stealth
 	SKIPSTRING (*p);
 	stealth = READUINT8  (*p);
 
-	cvar = CV_FindVar(name);
+	cvar = CV_FindVarInternal(name);
 
 	if (cvar)
 	{
