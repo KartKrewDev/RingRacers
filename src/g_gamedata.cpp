@@ -109,8 +109,18 @@ void srb2::save_ng_gamedata()
 	for (int i = 0; i < numskins; i++)
 	{
 		srb2::GamedataSkinJson skin {};
-		std::string name = std::string(skins[i].name);
-		skin.records.wins = skins[i].records.wins;
+		skin_t& memskin = skins[i];
+
+		std::string name = std::string(memskin.name);
+		skin.records.wins = memskin.records.wins;
+		skin.records.rounds = memskin.records.rounds;
+		skin.records.time.total = memskin.records.timeplayed;
+		skin.records.time.race = memskin.records.modetimeplayed[GDGT_RACE];
+		skin.records.time.battle = memskin.records.modetimeplayed[GDGT_BATTLE];
+		skin.records.time.prisons = memskin.records.modetimeplayed[GDGT_PRISONS];
+		skin.records.time.special = memskin.records.modetimeplayed[GDGT_SPECIAL];
+		skin.records.time.custom = memskin.records.modetimeplayed[GDGT_CUSTOM];
+		skin.records.time.tumble = memskin.records.tumbletime;
 		ng.skins[name] = std::move(skin);
 	}
 	for (auto unloadedskin = unloadedskins; unloadedskin; unloadedskin = unloadedskin->next)
@@ -516,7 +526,16 @@ void srb2::load_ng_gamedata()
 	{
 		INT32 skin = R_SkinAvailableEx(skinpair.first.c_str(), false);
 		skinrecord_t dummyrecord {};
+
 		dummyrecord.wins = skinpair.second.records.wins;
+		dummyrecord.rounds = skinpair.second.records.rounds;
+		dummyrecord.timeplayed = skinpair.second.records.time.total;
+		dummyrecord.modetimeplayed[GDGT_RACE] = skinpair.second.records.time.race;
+		dummyrecord.modetimeplayed[GDGT_BATTLE] = skinpair.second.records.time.battle;
+		dummyrecord.modetimeplayed[GDGT_PRISONS] = skinpair.second.records.time.prisons;
+		dummyrecord.modetimeplayed[GDGT_SPECIAL] = skinpair.second.records.time.special;
+		dummyrecord.modetimeplayed[GDGT_CUSTOM] = skinpair.second.records.time.custom;
+		dummyrecord.tumbletime = skinpair.second.records.time.tumble;
 
 		if (skin != -1)
 		{

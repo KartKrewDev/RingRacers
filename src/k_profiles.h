@@ -36,8 +36,9 @@ namespace srb2
 struct ProfileRecordsJson
 {
 	uint32_t wins;
+	uint32_t rounds;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(ProfileRecordsJson, wins)
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(ProfileRecordsJson, wins, rounds)
 };
 
 struct ProfilePreferencesJson
@@ -147,6 +148,7 @@ struct profile_t
 	UINT16 followercolor;				// Follower color
 
 	UINT32 wins;	// I win I win I win
+	UINT32 rounds;  // I played I played I played
 
 	// Player-specific consvars.
 	// @TODO: List all of those

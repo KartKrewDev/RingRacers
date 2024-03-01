@@ -944,12 +944,63 @@ void P_Ticker(boolean run)
 			// Keep track of how long they've been playing!
 			gamedata->totalplaytime++;
 
+			// Per-skin total playtime for all machine-local players
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				skin_t *playerskin;
+
+				if (!P_IsMachineLocalPlayer(&players[i]))
+				{
+					continue;
+				}
+
+				if (!(playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo)))
+				{
+					continue;
+				}
+
+				if (players[i].skin >= numskins)
+				{
+					continue;
+				}
+
+				playerskin = &skins[players[i].skin];
+
+				playerskin->records.timeplayed++;
+			}
+
 			if (gametype != GT_TUTORIAL)
 			{
 				INT32 mode = M_GameDataGameType(gametype, battleprisons);
+
+				// Gamedata mode playtime
 				if (mode >= 0 && mode < GDGT_MAX)
 				{
 					gamedata->modeplaytime[mode]++;
+				}
+
+				// Per-skin mode playtime
+				for (i = 0; i < MAXPLAYERS; i++)
+				{
+					skin_t *playerskin;
+
+					if (!P_IsMachineLocalPlayer(&players[i]))
+					{
+						continue;
+					}
+
+					if (!(playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo)))
+					{
+						continue;
+					}
+
+					if (players[i].skin >= numskins)
+					{
+						continue;
+					}
+
+					playerskin = &skins[players[i].skin];
+					playerskin->records.modetimeplayed[mode]++;
 				}
 			}
 

@@ -122,6 +122,10 @@ extern preciptype_t curWeather;
 struct skinrecord_t
 {
 	UINT32 wins;
+	UINT32 rounds;
+	UINT32 timeplayed;
+	UINT32 modetimeplayed[5]; // no GDGT_MAX, m_cond.h is not included in here... it might need to be?
+	UINT32 tumbletime;
 };
 
 struct unloaded_skin_t

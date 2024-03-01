@@ -88,6 +88,7 @@ profile_t* PR_MakeProfile(
 	memcpy(newprofile->controls, controlarray, sizeof(newprofile->controls));
 
 	newprofile->wins = 0;
+	newprofile->rounds = 0;
 
 	return newprofile;
 }
@@ -293,6 +294,7 @@ void PR_SaveProfiles(void)
 			jsonprof.followercolorname = std::string(skincolors[cprof->followercolor].name);
 		}
 		jsonprof.records.wins = cprof->wins;
+		jsonprof.records.rounds = cprof->rounds;
 		jsonprof.preferences.kickstartaccel = cprof->kickstartaccel;
 		jsonprof.preferences.autoroulette = cprof->autoroulette;
 		jsonprof.preferences.litesteer = cprof->litesteer;
@@ -458,6 +460,7 @@ void PR_LoadProfiles(void)
 		}
 
 		newprof->wins = jsprof.records.wins;
+		newprof->rounds = jsprof.records.rounds;
 		newprof->kickstartaccel = jsprof.preferences.kickstartaccel;
 		newprof->autoroulette = jsprof.preferences.autoroulette;
 		newprof->litesteer = jsprof.preferences.litesteer;

@@ -120,11 +120,40 @@ struct GamedataChallengeGridJson final
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(GamedataChallengeGridJson, width, grid)
 };
 
+struct GamedataSkinRecordsPlaytimeJson final
+{
+	uint32_t total;
+	uint32_t race;
+	uint32_t battle;
+	uint32_t prisons;
+	uint32_t special;
+	uint32_t custom;
+	uint32_t tumble;
+
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
+		GamedataSkinRecordsPlaytimeJson,
+		total,
+		race,
+		battle,
+		prisons,
+		special,
+		custom,
+		tumble
+	)
+};
+
 struct GamedataSkinRecordsJson final
 {
 	uint32_t wins;
+	uint32_t rounds;
+	GamedataSkinRecordsPlaytimeJson time;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(GamedataSkinRecordsJson, wins)
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
+		GamedataSkinRecordsJson,
+		wins,
+		rounds,
+		time
+	)
 };
 
 struct GamedataSkinJson final

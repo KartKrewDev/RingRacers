@@ -8196,11 +8196,19 @@ void K_KartPlayerHUDUpdate(player_t *player)
 	else
 		player->karthud[khud_finish] = 0;
 
+	// Tumble time stat update
 	if (demo.playback == false && P_IsMachineLocalPlayer(player) == true)
 	{
 		if (player->tumbleBounces != 0 && gamedata->totaltumbletime != UINT32_MAX)
 		{
 			gamedata->totaltumbletime++;
+
+			if (player->skin >= 0 && player->skin < numskins)
+			{
+				skin_t *playerskin;
+				playerskin = &skins[player->skin];
+				playerskin->records.tumbletime++;
+			}
 		}
 	}
 }
