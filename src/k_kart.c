@@ -9884,16 +9884,17 @@ static void K_UpdatePlayerWaypoints(player_t *const player)
 	K_UpdateDistanceFromFinishLine(player);
 
 	// Respawning should be a full reset.
+	// So should touching the first waypoint ever.
 	UINT32 delta = u32_delta(player->distancetofinish, player->distancetofinishprev);
-	if (player->respawn.state == RESPAWNST_NONE && delta > distance_threshold)
+	if (player->respawn.state == RESPAWNST_NONE && delta > distance_threshold && old_currentwaypoint != NULL)
 	{
 		CONS_Debug(DBG_GAMELOGIC, "Player %s: waypoint ID %d too far away (%u > %u)\n",
 			sizeu1(player - players), K_GetWaypointID(player->nextwaypoint), delta, distance_threshold);
 
-		// Distance jump is too great, keep the old waypoints and recalculate distance.
+		// Distance jump is too great, keep the old waypoints and old distance.
 		player->currentwaypoint = old_currentwaypoint;
 		player->nextwaypoint = old_nextwaypoint;
-		K_UpdateDistanceFromFinishLine(player);
+		player->distancetofinish = player->distancetofinishprev;
 
 		// Start the auto respawn timer when the distance jumps.
 		if (!player->bigwaypointgap)
@@ -9904,11 +9905,15 @@ static void K_UpdatePlayerWaypoints(player_t *const player)
 	else
 	{
 		// Reset the auto respawn timer if distance changes are back to normal.
-		player->bigwaypointgap = 0;
+		if (player->bigwaypointgap == 1)
+		{
+			player->bigwaypointgap = 0;
+		}
 	}
 
 	// Respawn point should only be updated when we're going to a nextwaypoint
 	if ((updaterespawn) &&
+	(player->bigwaypointgap == 0) &&
 	(player->respawn.state == RESPAWNST_NONE) &&
 	(player->nextwaypoint != old_nextwaypoint) &&
 	(K_GetWaypointIsSpawnpoint(player->nextwaypoint)) &&
