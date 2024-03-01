@@ -542,6 +542,7 @@ extern INT32 menuKey; // keyboard key pressed for menu
 extern INT16 virtualKeyboard[5][NUMVIRTUALKEYSINROW];
 extern INT16 shift_virtualKeyboard[5][NUMVIRTUALKEYSINROW];
 
+typedef const char *(*vkb_query_fn_t)(const char *replace);
 extern struct menutyping_s
 {
 	boolean active;				// Active
@@ -554,6 +555,7 @@ extern struct menutyping_s
 	boolean keyboardcapslock;
 	boolean keyboardshift;
 
+	vkb_query_fn_t queryfn; // callback on open and close
 	char cache[MAXSTRINGLENGTH]; // cached string
 
 } menutyping;
@@ -682,7 +684,7 @@ void M_PlayMenuJam(void);
 
 boolean M_ConsiderSealedSwapAlert(void);
 
-void M_OpenVirtualKeyboard(boolean gamepad);
+void M_OpenVirtualKeyboard(boolean gamepad, vkb_query_fn_t queryfn);
 void M_MenuTypingInput(INT32 key);
 
 void M_QuitResponse(INT32 ch);

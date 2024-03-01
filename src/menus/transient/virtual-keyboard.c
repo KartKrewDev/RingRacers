@@ -180,7 +180,7 @@ static void M_ToggleVirtualShift(void)
 static void M_CloseVirtualKeyboard(void)
 {
 	menutyping.menutypingclose = true;	// close menu.
-	CV_Set(currentMenu->menuitems[itemOn].itemaction.cvar, menutyping.cache);
+	menutyping.queryfn(menutyping.cache);
 }
 
 static boolean M_IsTypingKey(INT32 key)
@@ -405,11 +405,12 @@ void M_MenuTypingInput(INT32 key)
 	}
 }
 
-void M_OpenVirtualKeyboard(boolean gamepad)
+void M_OpenVirtualKeyboard(boolean gamepad, vkb_query_fn_t queryfn)
 {
 	menutyping.keyboardtyping = !gamepad;
 	menutyping.active = true;
 	menutyping.menutypingclose = false;
 
-	strlcpy(menutyping.cache, currentMenu->menuitems[itemOn].itemaction.cvar->string, MAXSTRINGLENGTH);
+	menutyping.queryfn = queryfn;
+	strlcpy(menutyping.cache, queryfn(NULL), MAXSTRINGLENGTH);
 }

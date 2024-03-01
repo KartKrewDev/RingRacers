@@ -188,6 +188,14 @@ static void M_ChangeCvar(INT32 choice)
 	M_ChangeCvarDirect(choice, currentMenu->menuitems[itemOn].itemaction.cvar);
 }
 
+static const char *M_QueryCvarAction(const char *replace)
+{
+	consvar_t *cvar = currentMenu->menuitems[itemOn].itemaction.cvar;
+	if (replace)
+		CV_Set(cvar, replace);
+	return cvar->string;
+}
+
 boolean M_NextOpt(void)
 {
 	INT16 oldItemOn = itemOn; // prevent infinite loop
@@ -1124,7 +1132,8 @@ static void M_HandleMenuInput(void)
 			// If we're hovering over a IT_CV_STRING option, pressing A/X opens the typing submenu
 			if (M_MenuConfirmPressed(pid))
 			{
-				M_OpenVirtualKeyboard(thisMenuKey == -1);	// If we entered this menu by pressing a menu Key, default to keyboard typing, otherwise use controller.
+				// If we entered this menu by pressing a menu Key, default to keyboard typing, otherwise use controller.
+				M_OpenVirtualKeyboard(thisMenuKey == -1, M_QueryCvarAction);
 				return;
 			}
 			else if (M_MenuExtraPressed(pid))
