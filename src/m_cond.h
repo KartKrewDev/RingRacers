@@ -369,6 +369,7 @@ struct gamedata_t
 
 	// PLAY TIME
 	UINT32 totalplaytime;
+	UINT32 totalnetgametime;
 	UINT32 modeplaytime[GDGT_MAX];
 	UINT32 totalmenutime;
 	UINT32 totaltimestaringatstatistics;

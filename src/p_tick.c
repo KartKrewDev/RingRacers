@@ -944,6 +944,12 @@ void P_Ticker(boolean run)
 			// Keep track of how long they've been playing!
 			gamedata->totalplaytime++;
 
+			// Netgame total time
+			if (netgame)
+			{
+				gamedata->totalnetgametime++;
+			}
+
 			// Per-skin total playtime for all machine-local players
 			for (i = 0; i < MAXPLAYERS; i++)
 			{

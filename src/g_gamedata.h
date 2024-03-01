@@ -27,6 +27,7 @@ namespace srb2
 struct GamedataPlaytimeJson final
 {
 	uint32_t total;
+	uint32_t netgame;
 	uint32_t race;
 	uint32_t battle;
 	uint32_t prisons;
@@ -39,6 +40,7 @@ struct GamedataPlaytimeJson final
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
 		GamedataPlaytimeJson,
 		total,
+		netgame,
 		race,
 		battle,
 		prisons,
