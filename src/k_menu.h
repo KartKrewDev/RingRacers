@@ -556,6 +556,7 @@ extern struct menutyping_s
 	boolean keyboardshift;
 
 	vkb_query_fn_t queryfn; // callback on open and close
+	menu_t *dummymenu;
 	char cache[MAXSTRINGLENGTH]; // cached string
 
 } menutyping;
@@ -684,7 +685,8 @@ void M_PlayMenuJam(void);
 
 boolean M_ConsiderSealedSwapAlert(void);
 
-void M_OpenVirtualKeyboard(boolean gamepad, vkb_query_fn_t queryfn);
+void M_OpenVirtualKeyboard(boolean gamepad, vkb_query_fn_t queryfn, menu_t *dummymenu);
+void M_AbortVirtualKeyboard(void);
 void M_MenuTypingInput(INT32 key);
 
 void M_QuitResponse(INT32 ch);

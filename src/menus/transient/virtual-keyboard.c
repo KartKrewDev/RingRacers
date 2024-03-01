@@ -183,6 +183,16 @@ static void M_CloseVirtualKeyboard(void)
 	menutyping.queryfn(menutyping.cache);
 }
 
+void M_AbortVirtualKeyboard(void)
+{
+	if (!menutyping.active)
+		return;
+
+	menutyping.active = false;
+	if (currentMenu == menutyping.dummymenu)
+		M_GoBack(0);
+}
+
 static boolean M_IsTypingKey(INT32 key)
 {
 	return key == KEY_BACKSPACE || key == KEY_ENTER
@@ -202,7 +212,7 @@ void M_MenuTypingInput(INT32 key)
 		// Closing
 		menutyping.menutypingfade--;
 		if (!menutyping.menutypingfade)
-			menutyping.active = false;
+			M_AbortVirtualKeyboard();
 
 		return;	// prevent inputs while closing the menu.
 	}
@@ -405,12 +415,26 @@ void M_MenuTypingInput(INT32 key)
 	}
 }
 
-void M_OpenVirtualKeyboard(boolean gamepad, vkb_query_fn_t queryfn)
+void M_OpenVirtualKeyboard(boolean gamepad, vkb_query_fn_t queryfn, menu_t *dummymenu)
 {
 	menutyping.keyboardtyping = !gamepad;
 	menutyping.active = true;
 	menutyping.menutypingclose = false;
 
 	menutyping.queryfn = queryfn;
+	menutyping.dummymenu = dummymenu;
 	strlcpy(menutyping.cache, queryfn(NULL), MAXSTRINGLENGTH);
+
+	if (dummymenu)
+	{
+		if (!menuactive)
+		{
+			M_StartControlPanel();
+			dummymenu->prevMenu = NULL;
+		}
+		else
+			dummymenu->prevMenu = currentMenu;
+
+		M_SetupNextMenu(dummymenu, true);
+	}
 }

@@ -839,7 +839,7 @@ void M_ClearMenus(boolean callexitmenufunc)
 		D_StartTitle();
 	}
 
-	menutyping.active = false;
+	M_AbortVirtualKeyboard();
 	menumessage.active = false;
 
 	menuactive = false;
@@ -1133,7 +1133,7 @@ static void M_HandleMenuInput(void)
 			if (M_MenuConfirmPressed(pid))
 			{
 				// If we entered this menu by pressing a menu Key, default to keyboard typing, otherwise use controller.
-				M_OpenVirtualKeyboard(thisMenuKey == -1, M_QueryCvarAction);
+				M_OpenVirtualKeyboard(thisMenuKey == -1, M_QueryCvarAction, NULL);
 				return;
 			}
 			else if (M_MenuExtraPressed(pid))
