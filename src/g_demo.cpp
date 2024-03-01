@@ -3992,7 +3992,7 @@ boolean G_CheckDemoStatus(void)
 	if (!demo.recording)
 		return false;
 
-	if (modeattacking || demo.savemode != demovars_s::DSM_NOTSAVING)
+	if (modeattacking || demo.willsave)
 	{
 		if (demobuf.p)
 		{
@@ -4081,14 +4081,13 @@ void G_SaveDemo(void)
 	md5_buffer((char *)p+16, (demobuf.buffer + length) - (p+16), p);
 #endif
 
-	if (FIL_WriteFile(demoname, demobuf.buffer, demobuf.p - demobuf.buffer)) // finally output the file.
-		demo.savemode = demovars_s::DSM_SAVED;
+	bool saved = FIL_WriteFile(demoname, demobuf.buffer, demobuf.p - demobuf.buffer); // finally output the file.
 	Z_Free(demobuf.buffer);
 	demo.recording = false;
 
 	if (!modeattacking)
 	{
-		if (demo.savemode == demovars_s::DSM_SAVED)
+		if (saved)
 		{
 			CONS_Printf(M_GetText("Demo %s recorded\n"), demoname);
 			if (gamedata->eversavedreplay == false)
@@ -4111,7 +4110,7 @@ boolean G_CheckDemoTitleEntry(void)
 	if (!G_PlayerInputDown(0, gc_b, 0) && !G_PlayerInputDown(0, gc_x, 0))
 		return false;
 
-	demo.savemode = demovars_s::DSM_WILLSAVE;
+	demo.willsave = true;
 	M_OpenVirtualKeyboard(
 		false,
 		[](const char* replace) -> const char*

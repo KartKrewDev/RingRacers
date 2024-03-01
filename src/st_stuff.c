@@ -1459,26 +1459,11 @@ void ST_DrawServerSplash(boolean timelimited)
 
 void ST_DrawSaveReplayHint(INT32 flags)
 {
-	const char *text = "";
-	switch (demo.savemode)
-	{
-	case DSM_NOTSAVING:
-		text = "\xAB" "or " "\xAE" "Save replay";
-		break;
-
-	case DSM_WILLAUTOSAVE:
-		text = "Replay will be saved.  \xAB" "Change title";
-		break;
-
-	case DSM_WILLSAVE:
-		text = "Replay will be saved.";
-		break;
-
-	case DSM_SAVED:
-		text = "Replay saved!";
-		break;
-	}
-	V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, flags|V_YELLOWMAP, text);
+	V_DrawRightAlignedThinString(
+		BASEVIDWIDTH - 2, 2,
+		flags|V_YELLOWMAP,
+		demo.willsave ? "Replay will be saved.  \xAB" "Change title" : "\xAB" "or " "\xAE" "Save replay"
+	);
 }
 
 static fixed_t ST_CalculateFadeIn(player_t *player)

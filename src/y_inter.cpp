@@ -80,7 +80,6 @@ static INT32 powertype = PWRLV_DISABLED;
 static INT32 intertic;
 static INT32 endtic = -1;
 static INT32 sorttic = -1;
-static INT32 replayprompttic;
 
 static fixed_t mqscroll = 0;
 static fixed_t chkscroll = 0;
@@ -1690,12 +1689,8 @@ skiptallydrawer:
 	}
 
 finalcounter:
-	{
-		if ((modeattacking == ATTACKING_NONE) && (demo.recording || demo.savemode == demovars_s::DSM_SAVED) && !demo.playback)
-		{
-			ST_DrawSaveReplayHint(0);
-		}
-	}
+	if ((modeattacking == ATTACKING_NONE) && demo.recording)
+		ST_DrawSaveReplayHint(0);
 
 	if (Y_CanSkipIntermission())
 	{
@@ -1731,13 +1726,7 @@ void Y_Ticker(void)
 		return;
 
 	if (demo.recording)
-	{
-		if (demo.savemode == demovars_s::DSM_NOTSAVING)
-		{
-			replayprompttic++;
-			G_CheckDemoTitleEntry();
-		}
-	}
+		G_CheckDemoTitleEntry();
 
 	// Check for pause or menu up in single player
 	if (paused || P_AutoPause())

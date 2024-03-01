@@ -90,12 +90,7 @@ struct demovars_s {
 	boolean netgame; // multiplayer netgame
 
 	tic_t savebutton; // Used to determine when the local player can choose to save the replay while the race is still going
-	enum {
-		DSM_NOTSAVING,
-		DSM_WILLAUTOSAVE,
-		DSM_WILLSAVE,
-		DSM_SAVED
-	} savemode;
+	boolean willsave;
 
 	boolean freecam;
 
