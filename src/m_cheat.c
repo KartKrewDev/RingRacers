@@ -179,7 +179,7 @@ static UINT8 cheatf_mentalsonic(void)
 
 static UINT8 cheatf_4thgear(void)
 {
-	cv_4thgear.value = !(cv_4thgear.value);
+	CV_SetValue(&cv_4thgear, !cv_4thgear.value);
 	if (cv_4thgear.value)
 	{
 		M_StartMessage("Restraint device compromised!", "Local play sped up to ""\x85""4th Gear!""\x80""\nLet's see what you're made of!\n\n""\x86""No effect in netplay and attack modes.", NULL, MM_NOTHING, NULL, NULL);
