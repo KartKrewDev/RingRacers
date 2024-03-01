@@ -6226,35 +6226,85 @@ static void Got_Cheat(const UINT8 **cp, INT32 playernum)
 	}
 }
 
+static const char *displayplayer_compose_col(int playernum)
+{
+	return va("\x84(%d) \x83%s\x80", playernum, player_names[playernum]);
+}
+
+static int displayplayer_col_len(const char *text)
+{
+	int n = strlen(text);
+	int k = n;
+	int i;
+	for (i = 0; i < n; ++i)
+	{
+		if (!isprint(text[i]))
+			k--;
+	}
+	return k;
+}
+
+static void displayplayer_calc_col(int *col, const char *text)
+{
+	if (text && text[0] != ' ')
+	{
+		int n = displayplayer_col_len(text);
+		if (*col < n)
+			*col = n;
+	}
+}
+
+static void displayplayer_print_col(int *col, const char *text)
+{
+	if (text)
+	{
+		if (*col)
+		{
+			int n = *col - displayplayer_col_len(text);
+			CONS_Printf("%s%*s ", text, n, "");
+		}
+	}
+	else
+		CONS_Printf("\n");
+}
+
+static void displayplayer_iter_table(int table[5], void(*col_cb)(int*,const char*))
+{
+	int i;
+
+	col_cb(&table[0], "");
+	for (i = 0; i < 4; ++i)
+		col_cb(&table[1 + i], va(" %d", i));
+	col_cb(NULL, NULL);
+
+	col_cb(&table[0], "g_local");
+	for (i = 0; i <= splitscreen; ++i)
+		col_cb(&table[1 + i], displayplayer_compose_col(g_localplayers[i]));
+	col_cb(NULL, NULL);
+
+	col_cb(&table[0], "display");
+	for (i = 0; i <= r_splitscreen; ++i)
+		col_cb(&table[1 + i], displayplayer_compose_col(displayplayers[i]));
+	col_cb(NULL, NULL);
+
+	col_cb(&table[0], "local party");
+	for (i = 0; i < G_LocalSplitscreenPartySize(consoleplayer); ++i)
+		col_cb(&table[1 + i], displayplayer_compose_col(G_LocalSplitscreenPartyMember(consoleplayer, i)));
+	col_cb(NULL, NULL);
+
+	col_cb(&table[0], "final party");
+	for (i = 0; i < G_PartySize(consoleplayer); ++i)
+		col_cb(&table[1 + i], displayplayer_compose_col(G_PartyMember(consoleplayer, i)));
+	col_cb(NULL, NULL);
+}
+
 /** Prints the number of displayplayers[0].
-  *
-  * \todo Possibly remove this; it was useful for debugging at one point.
   */
 static void Command_Displayplayer_f(void)
 {
-	int playernum;
-	int i;
-	for (i = 0; i <= splitscreen; ++i)
-	{
-		playernum = g_localplayers[i];
-		CONS_Printf(
-				"local   player %d: \x84(%d) \x83%s\x80\n",
-				i,
-				playernum,
-				player_names[playernum]
-		);
-	}
-	CONS_Printf("\x83----------------------------------------\x80\n");
-	for (i = 0; i <= r_splitscreen; ++i)
-	{
-		playernum = displayplayers[i];
-		CONS_Printf(
-				"display player %d: \x84(%d) \x83%s\x80\n",
-				i,
-				playernum,
-				player_names[playernum]
-		);
-	}
+	int table[5] = {0};
+	displayplayer_iter_table(table, displayplayer_calc_col);
+	displayplayer_iter_table(table, displayplayer_print_col);
 }
 
 /** Quits a game and returns to the title screen.
