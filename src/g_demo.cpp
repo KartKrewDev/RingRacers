@@ -1776,6 +1776,9 @@ void G_ConfirmRewind(tic_t rewindtime)
 //
 void G_RecordDemo(const char *name)
 {
+	if (demo.recording)
+		G_CheckDemoStatus();
+
 	extern consvar_t cv_netdemosize;
 
 	INT32 maxsize;
