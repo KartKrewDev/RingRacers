@@ -3322,13 +3322,19 @@ static void K_GetKartBoostPower(player_t *player)
 	if (player->wavedashboost)
 	{
 		// NB: This is intentionally under the 25% handleboost threshold required to initiate a sliptide
-		ADDBOOST(8*FRACUNIT/10, 
+		ADDBOOST(
+			Easing_InCubic(
+				player->lastwavedash,
+				0,
+				8*FRACUNIT/10
+			),
 			Easing_InSine(
-				min(FRACUNIT, player->wavedashboost * FRACUNIT / 15),
+				player->lastwavedash,
 				0,
 				4*FRACUNIT
 			),
-		2*SLIPTIDEHANDLING/5);  // + 80% top speed, +400% acceleration (peak), +20% handling
+			2*SLIPTIDEHANDLING/5
+		);  // + 80% top speed (peak), +400% acceleration (peak), +20% handling
 	}
 
 	if (player->spindashboost) // Spindash boost
@@ -8669,6 +8675,14 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->wavedashboost--;
 	}
 
+	if (player->wavedashboost == 0 || player->lastwavedash > FRACUNIT)
+	{
+		player->lastwavedash = FRACUNIT;
+		// lastwavedash is for nerfing tap wavedashes: when other parts of the code
+		// want to award wavedashboost, let them do that without unexpected side
+		// effects based on the last recorded wavedash. They can set this on their own!
+	}
+
 	if (player->speedpunt)
 		player->speedpunt--;
 
@@ -10639,15 +10653,20 @@ static void K_KartDrift(player_t *player, boolean onground)
 					fixed_t yourPower = maxZipPower - FixedMul(yourPowerReduction, powerSpread);
 					int yourBoost = FixedInt(FixedMul(yourPower, player->wavedash/10 * FRACUNIT));
 
+					// Award boost.
 					player->wavedashboost += yourBoost;
 
+					// Set power of the resulting boost.
+					player->lastwavedash = min(FRACUNIT, FRACUNIT * player->wavedash / MIN_WAVEDASH_CHARGE);
+
+					// Scale boost sound to power.
 					S_StartSoundAtVolume(player->mo, sfx_waved3, 
 						Easing_InSine(
-							min(FRACUNIT, player->wavedash * FRACUNIT / MIN_WAVEDASH_CHARGE),
+							player->lastwavedash,
 							120,
 							255
 						)
-					); // Boost
+					);
 
 					K_SpawnDriftBoostExplosion(player, 0);
 				}
