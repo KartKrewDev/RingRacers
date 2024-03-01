@@ -3938,11 +3938,12 @@ boolean G_CheckDemoStatus(void)
 			G_FinishExitLevel();
 		else
 		{
+			UINT8 wasmodeattacking = modeattacking;
 			G_StopDemo();
 
 			if (timedemo_quit)
 				COM_ImmedExecute("quit");
-			else if (modeattacking)
+			else if (wasmodeattacking)
 				M_EndModeAttackRun();
 			else if (demo.attract == DEMO_ATTRACT_CREDITS)
 				F_ContinueCredits();
