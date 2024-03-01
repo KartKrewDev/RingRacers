@@ -278,12 +278,6 @@ void D_ProcessEvents(void)
 
 		HandleGamepadDeviceEvents(ev);
 
-		if (demo.savemode == demovars_s::DSM_TITLEENTRY)
-		{
-			if (G_DemoTitleResponder(ev))
-				continue;
-		}
-
 		// console input
 #ifdef HAVE_THREADS
 		I_lock_mutex(&con_mutex);

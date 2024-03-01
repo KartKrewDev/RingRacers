@@ -93,7 +93,6 @@ struct demovars_s {
 	enum {
 		DSM_NOTSAVING,
 		DSM_WILLAUTOSAVE,
-		DSM_TITLEENTRY,
 		DSM_WILLSAVE,
 		DSM_SAVED
 	} savemode;
@@ -231,8 +230,6 @@ void G_LoadDemoInfo(menudemo_t *pdemo, boolean allownonmultiplayer);
 void G_DeferedPlayDemo(const char *demo);
 
 void G_SaveDemo(void);
-
-boolean G_DemoTitleResponder(event_t *ev);
 
 boolean G_CheckDemoTitleEntry(void);
 

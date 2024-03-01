@@ -1710,10 +1710,6 @@ finalcounter:
 					V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, highlightflags, "Replay saved!");
 					break;
 
-				case demovars_s::DSM_TITLEENTRY:
-					ST_DrawDemoTitleEntry();
-					break;
-
 				default: // Don't render any text here
 					break;
 			}

@@ -65,6 +65,30 @@
 #include "k_credits.h"
 #include "k_grandprix.h"
 
+static menuitem_t TitleEntry[] =
+{
+	{IT_NOTHING | IT_SPACE, "Save Replay", NULL,
+		NULL, {NULL}, 0, 0},
+};
+
+static menu_t TitleEntryDef = {
+	sizeof (TitleEntry) / sizeof (menuitem_t),
+	NULL,
+	0,
+	TitleEntry,
+	0, 0,
+	0, 0,
+	MBF_SOUNDLESS,
+	NULL,
+	0, 0,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 boolean nodrawers; // for comparative timing purposes
 boolean noblit; // for comparative timing purposes
 tic_t demostarttime; // for comparative timing purposes
@@ -3992,6 +4016,9 @@ void G_SaveDemo(void)
 	UINT8 i;
 #endif
 
+	if (currentMenu == &TitleEntryDef)
+		M_ClearMenus(true);
+
 	// Ensure extrainfo pointer is always available, even if no info is present.
 	if (demoinfo_p && *(UINT32 *)demoinfo_p == 0)
 	{
@@ -4076,55 +4103,6 @@ void G_SaveDemo(void)
 	}
 }
 
-boolean G_DemoTitleResponder(event_t *ev)
-{
-	size_t len;
-	INT32 ch;
-
-	if (ev->type != ev_keydown)
-		return false;
-
-	ch = (INT32)ev->data1;
-
-	// Only ESC and non-keyboard keys abort connection
-	if (ch == KEY_ESCAPE)
-	{
-		demo.savemode = (cv_recordmultiplayerdemos.value == 2) ? demovars_s::DSM_WILLAUTOSAVE : demovars_s::DSM_NOTSAVING;
-		return true;
-	}
-
-	if (ch == KEY_ENTER || ch >= NUMKEYS)
-	{
-		demo.savemode = demovars_s::DSM_WILLSAVE;
-		return true;
-	}
-
-	if ((ch >= HU_FONTSTART && ch <= HU_FONTEND && fontv[HU_FONT].font[ch-HU_FONTSTART])
-	  || ch == ' ') // Allow spaces, of course
-	{
-		len = strlen(demo.titlename);
-		if (len < 64)
-		{
-			demo.titlename[len+1] = 0;
-			demo.titlename[len] = CON_ShiftChar(ch);
-		}
-	}
-	else if (ch == KEY_BACKSPACE)
-	{
-		if (shiftdown)
-			memset(demo.titlename, 0, sizeof(demo.titlename));
-		else
-		{
-			len = strlen(demo.titlename);
-
-			if (len > 0)
-				demo.titlename[len-1] = 0;
-		}
-	}
-
-	return true;
-}
-
 boolean G_CheckDemoTitleEntry(void)
 {
 	if (menuactive || chat_on)
@@ -4133,7 +4111,17 @@ boolean G_CheckDemoTitleEntry(void)
 	if (!G_PlayerInputDown(0, gc_b, 0) && !G_PlayerInputDown(0, gc_x, 0))
 		return false;
 
-	demo.savemode = demovars_s::DSM_TITLEENTRY;
+	demo.savemode = demovars_s::DSM_WILLSAVE;
+	M_OpenVirtualKeyboard(
+		false,
+		[](const char* replace) -> const char*
+		{
+			if (replace)
+				strlcpy(demo.titlename, replace, sizeof demo.titlename);
+			return demo.titlename;
+		},
+		&TitleEntryDef
+	);
 
 	return true;
 }
