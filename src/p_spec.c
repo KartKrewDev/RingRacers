@@ -1956,7 +1956,46 @@ static void K_HandleLapIncrement(player_t *player)
 
 			player->cheatchecknum = 0;
 			player->laps++;
-			K_UpdateAllPlayerPositions();
+
+			// P_DoPlayerExit can edit latestlap, so we do this first
+			boolean lapisfresh = (player->laps > player->latestlap);
+			if (lapisfresh) // mcgamer would be proud
+			{
+				player->latestlap = player->laps;
+			}
+
+			// finished race exit setup
+			if (player->laps > numlaps)
+			{
+				pflags_t applyflags = 0;
+				if (specialstageinfo.valid == true)
+				{
+					// Don't permit a win just by sneaking ahead of the UFO/emerald.
+					if (!(specialstageinfo.ufo == NULL || P_MobjWasRemoved(specialstageinfo.ufo)))
+					{
+						applyflags |= PF_NOCONTEST;
+
+						HU_DoTitlecardCEcho(player, "EMPTY\\HANDED?", false);
+					}
+				}
+
+				P_DoPlayerExit(player, applyflags);
+
+				if (netgame && lapisfresh)
+					CON_LogMessage(va(M_GetText("%s has finished the race.\n"), player_names[player-players]));
+			}
+			else
+			{
+				UINT32 skinflags = (demo.playback)
+					? demo.skinlist[demo.currentskinid[(player-players)]].flags
+					: skins[player->skin].flags;
+				if (skinflags & SF_IRONMAN)
+				{
+					SetRandomFakePlayerSkin(player, true);
+				}
+
+				K_UpdateAllPlayerPositions(); // P_DoPlayerExit calls this
+			}
 
 			if (G_TimeAttackStart() && !linecrossed)
 			{
@@ -1979,15 +2018,12 @@ static void K_HandleLapIncrement(player_t *player)
 				rainbowstartavailable = false;
 			}
 
-			if (player->laps == 1 && modeattacking & ATTACKING_SPB)
+			if (player->laps == 1 && (modeattacking & ATTACKING_SPB))
 			{
 				P_SpawnMobj(player->mo->x - FixedMul(1000*mapobjectscale, FINECOSINE(player->mo->angle >> ANGLETOFINESHIFT)),
 					player->mo->y - FixedMul(1000*mapobjectscale, FINESINE(player->mo->angle >> ANGLETOFINESHIFT)),
 					player->mo->z, MT_SPB);
 			}
-
-			if (netgame && player->laps > numlaps)
-				CON_LogMessage(va(M_GetText("%s has finished the race.\n"), player_names[player-players]));
 
 			if (gametyperules & GTR_SPECIALSTART)
 			{
@@ -2019,7 +2055,7 @@ static void K_HandleLapIncrement(player_t *player)
 				}
 			}
 
-			if (player->laps > player->latestlap)
+			if (lapisfresh)
 			{
 				if (player->laps > 1)
 				{
@@ -2050,8 +2086,6 @@ static void K_HandleLapIncrement(player_t *player)
 					}
 				}
 
-				player->latestlap = player->laps;
-
 				// Set up lap animation vars
 				if (player->latestlap > 1)
 				{
@@ -2071,34 +2105,6 @@ static void K_HandleLapIncrement(player_t *player)
 						player->karthud[khud_laphand] = 0; // No hands in FREE PLAY
 
 					player->karthud[khud_lapanimation] = 80;
-				}
-			}
-
-			// finished race exit setup
-			if (player->laps > numlaps)
-			{
-				pflags_t applyflags = 0;
-				if (specialstageinfo.valid == true)
-				{
-					// Don't permit a win just by sneaking ahead of the UFO/emerald.
-					if (!(specialstageinfo.ufo == NULL || P_MobjWasRemoved(specialstageinfo.ufo)))
-					{
-						applyflags |= PF_NOCONTEST;
-
-						HU_DoTitlecardCEcho(player, "EMPTY\\HANDED?", false);
-					}
-				}
-
-				P_DoPlayerExit(player, applyflags);
-			}
-			else
-			{
-				UINT32 skinflags = (demo.playback)
-					? demo.skinlist[demo.currentskinid[(player-players)]].flags
-					: skins[player->skin].flags;
-				if (skinflags & SF_IRONMAN)
-				{
-					SetRandomFakePlayerSkin(player, true);
 				}
 			}
 
