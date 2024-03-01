@@ -3322,7 +3322,13 @@ static void K_GetKartBoostPower(player_t *player)
 	if (player->wavedashboost)
 	{
 		// NB: This is intentionally under the 25% handleboost threshold required to initiate a sliptide
-		ADDBOOST(8*FRACUNIT/10, 4*FRACUNIT, 2*SLIPTIDEHANDLING/5);  // + 80% top speed, + 400% acceleration, +20% handling
+		ADDBOOST(8*FRACUNIT/10, 
+			Easing_InSine(
+				min(FRACUNIT, player->wavedashboost * FRACUNIT / 15),
+				0,
+				4*FRACUNIT
+			),
+		2*SLIPTIDEHANDLING/5);  // + 80% top speed, +400% acceleration (peak), +20% handling
 	}
 
 	if (player->spindashboost) // Spindash boost
@@ -10616,7 +10622,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 			player->wavedashdelay++;
 			if (player->wavedashdelay > TICRATE/2)
 			{
-				if (player->wavedash >= MIN_WAVEDASH_CHARGE)
+				if (player->wavedash > HIDEWAVEDASHCHARGE)
 				{
 					fixed_t maxZipPower = 2*FRACUNIT;
 					fixed_t minZipPower = 1*FRACUNIT;
@@ -10635,7 +10641,13 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 					player->wavedashboost += yourBoost;
 
-					S_StartSoundAtVolume(player->mo, sfx_waved3, 255); // Boost
+					S_StartSoundAtVolume(player->mo, sfx_waved3, 
+						Easing_InSine(
+							min(FRACUNIT, player->wavedash * FRACUNIT / MIN_WAVEDASH_CHARGE),
+							120,
+							255
+						)
+					); // Boost
 
 					K_SpawnDriftBoostExplosion(player, 0);
 				}
