@@ -1911,6 +1911,8 @@ static void K_HandleLapIncrement(player_t *player)
 {
 	if (player)
 	{
+		if (player->respawn.state == RESPAWNST_MOVE)
+			return;
 		if (!G_TimeAttackStart() && leveltime < starttime && !(gametyperules & GTR_ROLLINGSTART))
 		{
 			// freeze 'em until fault penalty is over
