@@ -23,6 +23,12 @@
 extern consvar_t cv_debugchallenges;
 #endif
 
+static void M_StatisticsTicker(void)
+{
+	// the funny
+	gamedata->totaltimestaringatstatistics++;
+}
+
 menuitem_t MISC_ChallengesStatsDummyMenu[] =
 {
 	{IT_STRING | IT_CALL, "Back", NULL, NULL, {.routine = M_GoBack}, 0, 0},
@@ -60,7 +66,7 @@ menu_t MISC_StatisticsDef = {
 	98, 0,
 	M_DrawStatistics,
 	M_DrawExtrasBack,
-	NULL,
+	M_StatisticsTicker,
 	NULL,
 	NULL,
 	M_StatisticsInputs,

@@ -371,6 +371,7 @@ struct gamedata_t
 	UINT32 totalplaytime;
 	UINT32 modeplaytime[GDGT_MAX];
 	UINT32 totalmenutime;
+	UINT32 totaltimestaringatstatistics;
 	UINT32 roundsplayed[GDGT_MAX];
 	UINT32 totalrings;
 	UINT32 totaltumbletime;
