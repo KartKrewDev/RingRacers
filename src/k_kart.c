@@ -10533,20 +10533,21 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 	// No longer meet the conditions to sliptide?
 	// We'll spot you the sliptide as long as you keep turning, but no charging wavedashes.
-	boolean keepsliptide = false;
+	boolean extendedSliptide = false;
 
+	// We don't meet sliptide conditions!
 	if ((player->handleboost < (SLIPTIDEHANDLING/2))
 	|| (!player->steering)
 	|| (!player->aizdriftstrat)
 	|| (player->steering > 0) != (player->aizdriftstrat > 0))
 	{
-		if (!player->drift && player->steering && player->aizdriftstrat && player->wavedash // If we were sliptiding last tic,
-			&& (player->steering > 0) == (player->aizdriftstrat > 0) // we're steering in the right direction,
+		if (!player->drift && player->steering && player->aizdriftextend // If we were sliptiding last tic,
+			&& (player->steering > 0) == (player->aizdriftextend > 0) // we're steering in the right direction,
 			&& player->speed >= K_GetKartSpeed(player, false, true)) // and we're above the threshold to spawn dust...
 		{
-			keepsliptide = true; // Then keep your current sliptide, but note the behavior change for wavedash handling.
+			extendedSliptide = true; // Then keep your current sliptide, but note the behavior change for wavedash handling.
 		}
-		else
+		else // Otherwise, update sliptide status as usual.
 		{
 			if (!player->drift)
 				player->aizdriftstrat = 0;
@@ -10558,16 +10559,22 @@ static void K_KartDrift(player_t *player, boolean onground)
 	if (player->airtime > 2) // Arbitrary number. Small discontinuities due to Super Jank shouldn't thrash your handling properties.
 	{
 		player->aizdriftstrat = 0;
-		keepsliptide = false;
+		extendedSliptide = false;
 	}
+
+	// If we're sliptiding, whether through an extension or otherwise, allow sliptide extensions next tic.
+	if (K_Sliptiding(player))
+		player->aizdriftextend = player->aizdriftstrat;		
+	else
+		player->aizdriftextend = 0;
 
 
 	if ((player->aizdriftstrat && !player->drift)
-		|| (keepsliptide))
+		|| (extendedSliptide))
 	{
 		K_SpawnAIZDust(player);
 
-		if (!keepsliptide)
+		if (!extendedSliptide)
 		{
 			// Give charge proportional to your angle. Sharp turns are rewarding, slow analog slides are not—remember, this is giving back the speed you gave up.
 			UINT16 addCharge = FixedInt(
@@ -10605,9 +10612,9 @@ static void K_KartDrift(player_t *player, boolean onground)
 		player->aizdriftstrat = 0;
 	*/
 
-	if (!K_Sliptiding(player) || keepsliptide)
+	if (!K_Sliptiding(player) || extendedSliptide)
 	{
-		if (!keepsliptide && K_IsLosingWavedash(player) && player->wavedash > 0)
+		if (!extendedSliptide && K_IsLosingWavedash(player) && player->wavedash > 0)
 		{
 			if (player->wavedash > HIDEWAVEDASHCHARGE && !S_SoundPlaying(player->mo, sfx_waved2))
 				S_StartSoundAtVolume(player->mo, sfx_waved2, 255); // Losing combo time, going to boost
