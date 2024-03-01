@@ -335,6 +335,7 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 		challengesmenu.requestnew = false;
 		challengesmenu.chaokeyadd = false;
 		challengesmenu.keywasadded = false;
+		challengesmenu.considersealedswapalert = false;
 		challengesmenu.chaokeyhold = 0;
 		challengesmenu.currentunlock = MAXUNLOCKABLES;
 		challengesmenu.unlockcondition = NULL;
@@ -668,9 +669,14 @@ void M_ChallengesTick(void)
 		if (challengesmenu.currentunlock < MAXUNLOCKABLES
 			&& challengesmenu.unlockanim == UNLOCKTIME)
 		{
+			unlockable_t *ref = &unlockables[challengesmenu.currentunlock];
+
 			// Unlock animation... also tied directly to the actual unlock!
 			gamedata->unlocked[challengesmenu.currentunlock] = true;
 			M_UpdateUnlockablesAndExtraEmblems(true, true);
+
+			if (ref->type == SECRET_SPECIALATTACK)
+				challengesmenu.considersealedswapalert = true;
 
 			// Update shown description just in case..?
 			if (challengesmenu.unlockcondition)
@@ -682,12 +688,10 @@ void M_ChallengesTick(void)
 
 			if (challengesmenu.extradata)
 			{
-				unlockable_t *ref;
 				UINT16 bombcolor;
 
 				M_UpdateChallengeGridExtraData(challengesmenu.extradata);
 
-				ref = &unlockables[challengesmenu.currentunlock];
 				bombcolor = SKINCOLOR_NONE;
 
 				if (ref->color != SKINCOLOR_NONE && ref->color < numskincolors)
@@ -747,7 +751,14 @@ void M_ChallengesTick(void)
 				// Play music the moment control returns.
 				M_PlayMenuJam();
 
-				if (gamedata->chaokeytutorial == false
+				if (challengesmenu.considersealedswapalert == true
+				&& M_ConsiderSealedSwapAlert() == true)
+				{
+					// No keygen tutorial in this case...
+					// not ideal but at least unlikely to
+					// get at same time?? :V
+				}
+				else if (gamedata->chaokeytutorial == false
 				&& challengesmenu.keywasadded == true)
 				{
 					M_ChallengesTutorial(CCTUTORIAL_KEYGEN);

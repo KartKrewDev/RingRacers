@@ -96,6 +96,7 @@ static UINT8 cheatf_warp(void)
 	if (success)
 	{
 		gamedata->gonerlevel = GDGONER_DONE;
+		gamedata->sealedswapalerted = true;
 		G_SetUsedCheats();
 	}
 
@@ -231,6 +232,7 @@ static UINT8 cheatf_devmode(void)
 	}
 
 	gamedata->gonerlevel = GDGONER_DONE;
+	gamedata->sealedswapalerted = true;
 
 	M_ClearMenus(true);
 

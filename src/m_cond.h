@@ -291,6 +291,7 @@ typedef enum {
 // This is the largest number of 9s that will fit in UINT32 and UINT16 respectively.
 #define GDMAX_RINGS 999999999
 #define GDMAX_CHAOKEYS 9999
+#define GDMAX_SEALEDSWAPS 7
 
 #define GDCONVERT_ROUNDSTOKEY 14
 
@@ -371,11 +372,14 @@ struct gamedata_t
 	UINT32 totalrings;
 	UINT32 totaltumbletime;
 
-	// Chao Key condition bypass
+	// CHAO KEYS AND THEIR GENERATION
 	UINT32 pendingkeyrounds;
 	UINT8 pendingkeyroundoffset;
 	UINT16 keyspending;
 	UINT16 chaokeys;
+
+	// EMERALD REMAPPING
+	cupheader_t *sealedswaps[GDMAX_SEALEDSWAPS];
 
 	// SPECIFIC SPECIAL EVENTS
 	boolean everloadedaddon;
@@ -387,6 +391,7 @@ struct gamedata_t
 	boolean majorkeyskipattempted;
 	boolean enteredtutorialchallenge;
 	boolean finishedtutorialchallenge;
+	boolean sealedswapalerted;
 	gdmusic_t musicstate;
 
 	UINT8 gonerlevel;

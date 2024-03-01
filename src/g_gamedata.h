@@ -70,6 +70,7 @@ struct GamedataMilestonesJson final
 	bool majorkeyskipattempted;
 	bool finishedtutorialchallenge;
 	bool enteredtutorialchallenge;
+	bool sealedswapalerted;
 
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
 		GamedataMilestonesJson,
@@ -81,7 +82,8 @@ struct GamedataMilestonesJson final
 		chaokeytutorial,
 		majorkeyskipattempted,
 		finishedtutorialchallenge,
-		enteredtutorialchallenge
+		enteredtutorialchallenge,
+		sealedswapalerted
 	)
 };
 
@@ -184,6 +186,13 @@ struct GamedataCupJson final
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(GamedataCupJson, name, records)
 };
 
+struct GamedataSealedSwapJson final
+{
+	std::string name;
+
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(GamedataSealedSwapJson, name)
+};
+
 struct GamedataJson final
 {
 	GamedataPlaytimeJson playtime;
@@ -203,6 +212,7 @@ struct GamedataJson final
 	std::unordered_map<std::string, GamedataMapJson> maps;
 	std::vector<GamedataSprayCanJson> spraycans;
 	std::unordered_map<std::string, GamedataCupJson> cups;
+	std::vector<GamedataSealedSwapJson> sealedswaps;
 
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
 		GamedataJson,
@@ -222,7 +232,8 @@ struct GamedataJson final
 		skins,
 		maps,
 		spraycans,
-		cups
+		cups,
+		sealedswaps
 	)
 };
 

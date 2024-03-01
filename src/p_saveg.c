@@ -6280,6 +6280,14 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 		{
 			UINT32 val = READUINT32(save->p);
 
+			if (roundqueue.entries[i].rankrestricted && roundqueue.position != i+1)
+			{
+				// If this is a Sealed Star that hasn't yet been
+				// reached, don't be picky about divergance. Just
+				// use the base game without question. ~toast 010324
+				continue;
+			}
+
 			mapnum = roundqueue.entries[i].mapnum;
 			if (mapnum < nummapheaders && mapheaderinfo[mapnum] != NULL)
 			{

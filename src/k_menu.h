@@ -680,6 +680,8 @@ void M_Init(void);
 
 void M_PlayMenuJam(void);
 
+boolean M_ConsiderSealedSwapAlert(void);
+
 void M_OpenVirtualKeyboard(boolean gamepad);
 void M_MenuTypingInput(INT32 key);
 
@@ -1346,6 +1348,8 @@ extern struct challengesmenu_s {
 
 	boolean chaokeyadd, keywasadded;
 	UINT8 chaokeyhold;
+
+	boolean considersealedswapalert;
 
 	boolean requestflip;
 

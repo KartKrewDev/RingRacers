@@ -560,6 +560,35 @@ void M_PlayMenuJam(void)
 
 #undef IsCurrentlyPlaying
 
+boolean M_ConsiderSealedSwapAlert(void)
+{
+	if (gamedata->sealedswapalerted == true)
+		return false;
+
+	if (gamedata->sealedswaps[GDMAX_SEALEDSWAPS-1] != NULL // all found
+	|| M_SecretUnlocked(SECRET_SPECIALATTACK, true)) // true order
+	{
+		gamedata->sealedswapalerted = true;
+
+		// Don't make a message if no Sealed Stars have yet been found.
+		if (gamedata->everseenspecial == false)
+			return false;
+
+		M_StartMessage(
+			"Message from the Stars",
+			"As if called by fate, the Emeralds you've\n"
+			"collected return to their rightful places...\n"
+			"\n"
+			"The Sealed Stars are now ordered via Cups!\n",
+			NULL, MM_NOTHING, NULL, NULL
+		);
+
+		return true;
+	}
+
+	return false;
+}
+
 void M_ValidateRestoreMenu(void)
 {
 	if (restoreMenu == NULL || restoreMenu == &MAIN_GonerDef)
@@ -628,6 +657,11 @@ menu_t *M_SpecificMenuRestore(menu_t *torestore)
 	// One last catch.
 	M_SetupPlayMenu(-1);
 	PLAY_CharSelectDef.prevMenu = &MainDef;
+
+	if (torestore != &MISC_ChallengesDef)
+	{
+		M_ConsiderSealedSwapAlert();
+	}
 
 	return torestore;
 }

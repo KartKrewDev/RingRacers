@@ -83,6 +83,7 @@ static struct podiumData_s
 	sfxenum_t gradeVoice;
 
 	cupheader_t *cup;
+	UINT8 emeraldnum;
 
 	boolean fastForward;
 
@@ -102,6 +103,7 @@ void podiumData_s::Init(void)
 	{
 		rank = grandprixinfo.rank;
 		cup = grandprixinfo.cup;
+		emeraldnum = cup->emeraldnum;
 	}
 	else
 	{
@@ -119,6 +121,7 @@ void podiumData_s::Init(void)
 
 			cup = cup->next;
 		}
+		emeraldnum = 0;
 
 		memset(&rank, 0, sizeof(gpRank_t));
 		rank.skin = players[consoleplayer].skin;
@@ -628,12 +631,7 @@ void podiumData_s::Draw(void)
 						case GPEVENT_SPECIAL:
 						{
 							srb2::Draw drawer_emerald = drawer_gametype;
-							UINT8 emeraldNum = 0;
-
-							if (cup != nullptr)
-							{
-								emeraldNum = cup->emeraldnum;
-							}
+							UINT8 emeraldNum = g_podiumData.emeraldnum;
 
 							boolean useWhiteFrame = ((leveltime & 1) || !dta->gotSpecialPrize);
 							patch_t *emeraldPatch = nullptr;
@@ -844,12 +842,7 @@ void podiumData_s::Draw(void)
 
 		if (rank.specialWon == true)
 		{
-			UINT8 emeraldNum = 0;
-
-			if (cup != nullptr)
-			{
-				emeraldNum = cup->emeraldnum;
-			}
+			UINT8 emeraldNum = g_podiumData.emeraldnum;
 
 			const boolean emeraldBlink = (leveltime & 1);
 			patch_t *emeraldOverlay = nullptr;
@@ -1263,6 +1256,60 @@ void K_ResetCeremony(void)
 		return;
 	}
 
+	cupheader_t *emeraldcup = NULL;
+
+	if (gamedata->sealedswaps[GDMAX_SEALEDSWAPS-1] != NULL // all found
+	|| grandprixinfo.cup->id >= basenumkartcupheaders // custom content
+	|| M_SecretUnlocked(SECRET_SPECIALATTACK, false)) // true order
+	{
+		// Standard order.
+		emeraldcup = grandprixinfo.cup;
+	}
+	else
+	{
+		// Determine order from sealedswaps.
+		for (i = 0; i < GDMAX_SEALEDSWAPS; i++)
+		{
+			if (gamedata->sealedswaps[i] == NULL)
+			{
+				if (g_podiumData.rank.specialWon == true)
+				{
+					// First visit! Mark it off.
+					gamedata->sealedswaps[i] = grandprixinfo.cup;
+				}
+
+				break;
+			}
+
+			if (gamedata->sealedswaps[i] != grandprixinfo.cup)
+				continue;
+
+			// Repeat visit, grab the same ID.
+			break;
+		}
+
+		// If there's pending stars, apply them to the new cup order.
+		if (i < GDMAX_SEALEDSWAPS)
+		{
+			emeraldcup = kartcupheaders;
+			while (emeraldcup)
+			{
+				if (emeraldcup->id >= basenumkartcupheaders)
+				{
+					emeraldcup = NULL;
+					break;
+				}
+
+				if (emeraldcup->emeraldnum == i+1)
+					break;
+
+				emeraldcup = emeraldcup->next;
+			}
+
+			g_podiumData.emeraldnum = i+1;
+		}
+	}
+
 	// Write grade, position, and emerald-having-ness for later sessions!
 	i = (grandprixinfo.masterbots) ? KARTGP_MASTER : grandprixinfo.gamespeed;
 
@@ -1292,9 +1339,9 @@ void K_ResetCeremony(void)
 			anymerit = true;
 		}
 
-		if (g_podiumData.rank.specialWon == true)
+		if (g_podiumData.rank.specialWon == true && emeraldcup)
 		{
-			grandprixinfo.cup->windata[i].got_emerald = true;
+			emeraldcup->windata[i].got_emerald = true;
 			anymerit = true;
 		}
 
