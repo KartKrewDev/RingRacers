@@ -243,6 +243,8 @@ typedef enum
 	DEMO_ATTRACT_CREDITS
 } demoAttractMode_t;
 
+void G_SyncDemoParty(INT32 rem, INT32 newsplitscreen);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

@@ -1838,8 +1838,15 @@ static void Command_SetViews_f(void)
 		// Even if the splits go beyond the real number of
 		// splitscreen players, displayplayers was filled
 		// with duplicates of P1 (see Got_AddPlayer).
-		r_splitscreen = newsplits-1;
-		R_ExecuteSetViewSize();
+		if (demo.playback)
+		{
+			G_SyncDemoParty(consoleplayer, newsplits-1);
+		}
+		else
+		{
+			r_splitscreen = newsplits-1;
+			R_ExecuteSetViewSize();
+		}
 
 		// If promoting (outside of replays), make sure the
 		// camera is in the correct position.

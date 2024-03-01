@@ -1685,8 +1685,13 @@ void G_ResetView(UINT8 viewnum, INT32 playernum, boolean onlyactive)
 		}
 	}
 
-	if (viewnum == 1 && demo.playback)
-		consoleplayer = displayplayers[0];
+	if (demo.playback)
+	{
+		if (viewnum == 1)
+			consoleplayer = displayplayers[0];
+
+		G_SyncDemoParty(olddisplayplayer, r_splitscreen);
+	}
 
 	// change statusbar also if playing back demo
 	if (demo.quitafterplaying)

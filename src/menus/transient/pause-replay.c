@@ -9,6 +9,7 @@
 #include "../../p_local.h" // P_InitCameraCmd
 #include "../../d_main.h" // D_StartTitle
 #include "../../k_credits.h"
+#include "../../g_demo.h"
 
 static void M_PlaybackTick(void);
 
@@ -220,13 +221,12 @@ void M_PlaybackSetViews(INT32 choice)
 	{
 		if (choice == 0)
 		{
-			r_splitscreen--;
+			G_SyncDemoParty(displayplayers[r_splitscreen], r_splitscreen - 1);
 		}
 		else
 		{
-			r_splitscreen = 0;
+			G_SyncDemoParty(consoleplayer, 0);
 		}
-		R_ExecuteSetViewSize();
 	}
 }
 
