@@ -671,6 +671,7 @@ struct player_t
 	mobj_t *ringShooter;	// DEZ respawner object
 	tic_t airtime; 			// Used to track just air time, but has evolved over time into a general "karted" timer. Rename this variable?
 	tic_t lastairtime;
+	UINT8 bigwaypointgap;	// timer counts down if finish line distance gap is too big to update waypoint
 	UINT8 startboost;		// (0 to 125) - Boost you get from start of race
 	UINT8 dropdashboost;	// Boost you get when holding A while respawning
 
@@ -981,6 +982,8 @@ struct player_t
 
 	INT16 incontrol; // -1 to -175 when spinning out or tumbling, 1 to 175 when not. Use to check for combo hits or emergency inputs.
 	UINT16 progressivethrust; // When getting beat up in GTR_BUMPERS, speed up the longer you've been out of control.
+
+	boolean analoginput; // Has an input been recorded that requires analog usage? For input display.
 
 	boolean markedfordeath;
 	boolean dotrickfx;

@@ -1128,7 +1128,7 @@ void D_StartTitle(void)
 	D_ClearState();
 	F_StartTitleScreen();
 	M_ClearMenus(false);
-	g_deferredtitle = true;
+	g_deferredtitle = false;
 }
 
 void D_SetDeferredStartTitle(boolean deferred)

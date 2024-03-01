@@ -366,7 +366,7 @@ static boolean K_BotGenericPressItem(const player_t *player, ticcmd_t *cmd, SINT
 		return false;
 	}
 
-	cmd->throwdir = std::clamp(static_cast<int>(dir), -1, 1);
+	cmd->throwdir = KART_FULLTURN * dir;
 	cmd->buttons |= BT_ATTACK;
 	//player->botvars.itemconfirm = 0;
 	return true;
@@ -1023,7 +1023,7 @@ static void K_BotItemBallhog(const player_t *player, ticcmd_t *cmd)
 
 	if (hold == true)
 	{
-		cmd->throwdir = std::clamp(static_cast<int>(throwdir), -1, 1);
+		cmd->throwdir = KART_FULLTURN * throwdir;
 		cmd->buttons |= BT_ATTACK;
 	}
 }

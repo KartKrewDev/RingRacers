@@ -4739,7 +4739,7 @@ static void FuzzTiccmd(ticcmd_t* target)
 	{
 		target->forwardmove = P_RandomRange(PR_FUZZ, -MAXPLMOVE, MAXPLMOVE);
 		target->turning = P_RandomRange(PR_FUZZ, -KART_FULLTURN, KART_FULLTURN);
-		target->throwdir = P_RandomRange(PR_FUZZ, -1, 1);
+		target->throwdir = P_RandomRange(PR_FUZZ, -KART_FULLTURN, KART_FULLTURN);
 		target->buttons = P_RandomRange(PR_FUZZ, 0, 255);
 
 		// Make fuzzed players more likely to do impactful things
@@ -5942,7 +5942,7 @@ static void SV_Maketic(void)
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		packetloss[i][maketic%PACKETMEASUREWINDOW] = false;
-
+		
 		if (!playeringame[i])
 			continue;
 
@@ -6089,6 +6089,11 @@ boolean TryRunTics(tic_t realtics)
 			consistancy[gametic % BACKUPTICS] = Consistancy();
 
 			ps_tictime = I_GetPreciseTime() - ps_tictime;
+
+			if (D_IsDeferredStartTitle())
+			{
+				D_StartTitle();
+			}
 
 			// Leave a certain amount of tics present in the net buffer as long as we've ran at least one tic this frame.
 			if (client && gamestate == GS_LEVEL && leveltime > 1 && neededtic <= gametic + cv_netticbuffer.value)

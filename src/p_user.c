@@ -1275,7 +1275,7 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 		}
 	}
 
-	K_InitPlayerTally(player);
+	//K_InitPlayerTally(player); -- we defer this to P_PlayerAfterThink
 
 	if (demo.playback == false)
 	{
@@ -2126,7 +2126,7 @@ static INT16 P_FindClosestTurningForAngle(player_t *player, INT32 targetAngle, I
 
 	// Slightly frumpy binary search for the ideal turning input.
 	// We do this instead of reversing K_GetKartTurnValue so that future handling changes are automatically accounted for.
-
+	
 	while (attempts++ < 20) // Practical calls of this function search maximum 10 times, this is solely for safety.
 	{
 		// These need to be treated as signed, or situations where boundaries straddle 0 are a mess.
@@ -2247,7 +2247,7 @@ static void P_UpdatePlayerAngle(player_t *player)
 		// Corrections via fake turn go through easing.
 		// That means undoing them takes the same amount of time as doing them.
 		// This can lead to oscillating death spiral states on a multi-tic correction, as we swing past the target angle.
-		// So before we go into death-spirals, if our predicton is _almost_ right...
+		// So before we go into death-spirals, if our predicton is _almost_ right... 
 		angle_t leniency = (4*ANG1/3) * min(player->cmd.latency, 6);
 		// Don't force another turning tic, just give them the desired angle!
 
@@ -2346,7 +2346,7 @@ void P_MovePlayer(player_t *player)
 	//////////////////////
 
 	P_UpdatePlayerAngle(player);
-
+	
 	ticruned++;
 	if (!(cmd->flags & TICCMD_RECEIVED))
 		ticmiss++;
@@ -4075,11 +4075,12 @@ void P_PlayerThink(player_t *player)
 	// Save the dir the player is holding
 	//  to allow items to be thrown forward or backward.
 	{
-		if (cmd->throwdir > 0)
+		const INT16 threshold = 6*KART_FULLTURN/10;
+		if (cmd->throwdir > threshold)
 		{
 			player->throwdir = 1;
 		}
-		else if (cmd->throwdir < 0)
+		else if (cmd->throwdir < -threshold)
 		{
 			player->throwdir = -1;
 		}
@@ -4397,7 +4398,7 @@ void P_PlayerThink(player_t *player)
 	{
 		player->stairjank--;
 	}
-
+	
 	// Random skin / "ironman"
 	{
 		UINT32 skinflags = (demo.playback)
@@ -4463,6 +4464,12 @@ void P_PlayerAfterThink(player_t *player)
 		I_Error("P_PlayerAfterThink: players[%s].mo == NULL", sizeu1(playeri));
 	}
 #endif
+
+	if (player->exiting && !K_PlayerTallyActive(player))
+	{
+		// We defer P_DoPlayerExit tallies to the end of the tic.
+		K_InitPlayerTally(player);
+	}
 
 	if (P_IsObjectOnGround(player->mo) == true)
 	{
