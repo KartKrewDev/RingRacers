@@ -47,6 +47,8 @@ void srb2::save_ng_gamedata()
 
 	ng.playtime.total = gamedata->totalplaytime;
 	ng.playtime.netgame = gamedata->totalnetgametime;
+	ng.playtime.timeattack = gamedata->timeattackingtotaltime;
+	ng.playtime.spbattack = gamedata->spbattackingtotaltime;
 	ng.playtime.race = gamedata->modeplaytime[GDGT_RACE];
 	ng.playtime.battle = gamedata->modeplaytime[GDGT_BATTLE];
 	ng.playtime.prisons = gamedata->modeplaytime[GDGT_PRISONS];
@@ -145,6 +147,15 @@ void srb2::save_ng_gamedata()
 		map.stats.timeattack.bestlap = mapheaderinfo[i]->records.timeattack.lap;
 		map.stats.spbattack.besttime = mapheaderinfo[i]->records.spbattack.time;
 		map.stats.spbattack.bestlap = mapheaderinfo[i]->records.spbattack.lap;
+		map.stats.time.total = mapheaderinfo[i]->records.timeplayed;
+		map.stats.time.netgame = mapheaderinfo[i]->records.netgametimeplayed;
+		map.stats.time.race = mapheaderinfo[i]->records.modetimeplayed[GDGT_RACE];
+		map.stats.time.battle = mapheaderinfo[i]->records.modetimeplayed[GDGT_BATTLE];
+		map.stats.time.prisons = mapheaderinfo[i]->records.modetimeplayed[GDGT_PRISONS];
+		map.stats.time.special = mapheaderinfo[i]->records.modetimeplayed[GDGT_SPECIAL];
+		map.stats.time.custom = mapheaderinfo[i]->records.modetimeplayed[GDGT_CUSTOM];
+		map.stats.time.timeattack = mapheaderinfo[i]->records.timeattacktimeplayed;
+		map.stats.time.spbattack = mapheaderinfo[i]->records.spbattacktimeplayed;
 		ng.maps[lumpname] = std::move(map);
 	}
 	for (auto unloadedmap = unloadedmapheaders; unloadedmap; unloadedmap = unloadedmap->next)
@@ -160,6 +171,15 @@ void srb2::save_ng_gamedata()
 		map.stats.timeattack.bestlap = unloadedmap->records.timeattack.lap;
 		map.stats.spbattack.besttime = unloadedmap->records.spbattack.time;
 		map.stats.spbattack.bestlap = unloadedmap->records.spbattack.lap;
+		map.stats.time.total = unloadedmap->records.timeplayed;
+		map.stats.time.netgame = unloadedmap->records.netgametimeplayed;
+		map.stats.time.race = unloadedmap->records.modetimeplayed[GDGT_RACE];
+		map.stats.time.battle = unloadedmap->records.modetimeplayed[GDGT_BATTLE];
+		map.stats.time.prisons = unloadedmap->records.modetimeplayed[GDGT_PRISONS];
+		map.stats.time.special = unloadedmap->records.modetimeplayed[GDGT_SPECIAL];
+		map.stats.time.custom = unloadedmap->records.modetimeplayed[GDGT_CUSTOM];
+		map.stats.time.timeattack = unloadedmap->records.timeattacktimeplayed;
+		map.stats.time.spbattack = unloadedmap->records.spbattacktimeplayed;
 		ng.maps[lumpname] = std::move(map);
 	}
 	for (int i = 0; i < gamedata->numspraycans; i++)
@@ -431,6 +451,8 @@ void srb2::load_ng_gamedata()
 
 	gamedata->totalplaytime = js.playtime.total;
 	gamedata->totalnetgametime = js.playtime.netgame;
+	gamedata->timeattackingtotaltime = js.playtime.timeattack;
+	gamedata->spbattackingtotaltime = js.playtime.spbattack;
 	gamedata->modeplaytime[GDGT_RACE] = js.playtime.race;
 	gamedata->modeplaytime[GDGT_BATTLE] = js.playtime.battle;
 	gamedata->modeplaytime[GDGT_PRISONS] = js.playtime.prisons;
@@ -582,6 +604,15 @@ void srb2::load_ng_gamedata()
 		dummyrecord.timeattack.lap = mappair.second.stats.timeattack.bestlap;
 		dummyrecord.spbattack.time = mappair.second.stats.spbattack.besttime;
 		dummyrecord.spbattack.lap = mappair.second.stats.spbattack.bestlap;
+		dummyrecord.timeplayed = mappair.second.stats.time.total;
+		dummyrecord.netgametimeplayed = mappair.second.stats.time.netgame;
+		dummyrecord.modetimeplayed[GDGT_RACE] = mappair.second.stats.time.race;
+		dummyrecord.modetimeplayed[GDGT_BATTLE] = mappair.second.stats.time.battle;
+		dummyrecord.modetimeplayed[GDGT_PRISONS] = mappair.second.stats.time.prisons;
+		dummyrecord.modetimeplayed[GDGT_SPECIAL] = mappair.second.stats.time.special;
+		dummyrecord.modetimeplayed[GDGT_CUSTOM] = mappair.second.stats.time.custom;
+		dummyrecord.timeattacktimeplayed = mappair.second.stats.time.timeattack;
+		dummyrecord.spbattacktimeplayed = mappair.second.stats.time.spbattack;
 
 		if (mapnum < nummapheaders && mapheaderinfo[mapnum])
 		{

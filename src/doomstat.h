@@ -165,6 +165,13 @@ struct recorddata_t
 	UINT8 mapvisited;
 	recordtimes_t timeattack; ///< Best times for Time Attack
 	recordtimes_t spbattack; ///< Best times for SPB Attack
+	UINT32 timeplayed;
+	UINT32 netgametimeplayed;
+	UINT32 modetimeplayed[5];
+	UINT32 timeattacktimeplayed;
+	UINT32 spbattacktimeplayed;
+	UINT32 rounds;
+	UINT32 wins;
 };
 
 #define KARTSPEED_AUTO -1

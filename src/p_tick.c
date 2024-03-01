@@ -941,13 +941,28 @@ void P_Ticker(boolean run)
 
 		if (gamedata && gamestate == GS_LEVEL && !demo.playback)
 		{
+			mapheader_t *mapheader;
+
+			mapheader = mapheaderinfo[gamemap - 1];
+
 			// Keep track of how long they've been playing!
 			gamedata->totalplaytime++;
+
+			// Map playtime
+			if (mapheader)
+			{
+				mapheader->records.timeplayed++;
+			}
 
 			// Netgame total time
 			if (netgame)
 			{
 				gamedata->totalnetgametime++;
+
+				if (mapheader)
+				{
+					mapheader->records.netgametimeplayed++;
+				}
 			}
 
 			// Per-skin total playtime for all machine-local players
@@ -983,6 +998,28 @@ void P_Ticker(boolean run)
 				if (mode >= 0 && mode < GDGT_MAX)
 				{
 					gamedata->modeplaytime[mode]++;
+					if (mapheader)
+					{
+						mapheader->records.modetimeplayed[mode]++;
+					}
+				}
+
+				// Attacking mode playtime
+				if ((modeattacking & ATTACKING_TIME) != 0)
+				{
+					gamedata->timeattackingtotaltime++;
+					if (mapheader)
+					{
+						mapheader->records.timeattacktimeplayed++;
+					}
+				}
+				else if ((modeattacking & ATTACKING_SPB) != 0)
+				{
+					gamedata->spbattackingtotaltime++;
+					if (mapheader)
+					{
+						mapheader->records.spbattacktimeplayed++;
+					}
 				}
 
 				// Per-skin mode playtime

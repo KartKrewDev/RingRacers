@@ -28,6 +28,8 @@ struct GamedataPlaytimeJson final
 {
 	uint32_t total;
 	uint32_t netgame;
+	uint32_t timeattack;
+	uint32_t spbattack;
 	uint32_t race;
 	uint32_t battle;
 	uint32_t prisons;
@@ -41,6 +43,8 @@ struct GamedataPlaytimeJson final
 		GamedataPlaytimeJson,
 		total,
 		netgame,
+		timeattack,
+		spbattack,
 		race,
 		battle,
 		prisons,
@@ -194,12 +198,44 @@ struct GamedataMapStatsSpbAttackJson final
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(GamedataMapStatsSpbAttackJson, besttime, bestlap)
 };
 
+struct GamedataMapStatsPlaytimeJson final
+{
+	uint32_t total;
+	uint32_t netgame;
+	uint32_t race;
+	uint32_t battle;
+	uint32_t prisons;
+	uint32_t special;
+	uint32_t custom;
+	uint32_t timeattack;
+	uint32_t spbattack;
+
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
+		GamedataMapStatsPlaytimeJson,
+		total,
+		netgame,
+		race,
+		battle,
+		prisons,
+		special,
+		custom,
+		timeattack,
+		spbattack
+	)
+};
+
 struct GamedataMapStatsJson final
 {
 	GamedataMapStatsTimeAttackJson timeattack;
 	GamedataMapStatsSpbAttackJson spbattack;
+	GamedataMapStatsPlaytimeJson time;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(GamedataMapStatsJson, timeattack, spbattack)
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
+		GamedataMapStatsJson,
+		timeattack,
+		spbattack,
+		time
+	)
 };
 
 struct GamedataMapJson final

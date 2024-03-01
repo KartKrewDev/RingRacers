@@ -653,6 +653,8 @@ void M_ClearStats(void)
 	UINT8 i;
 	gamedata->totalplaytime = 0;
 	gamedata->totalnetgametime = 0;
+	gamedata->timeattackingtotaltime = 0;
+	gamedata->spbattackingtotaltime = 0;
 	for (i = 0; i < GDGT_MAX; ++i)
 		gamedata->modeplaytime[i] = 0;
 	gamedata->totalmenutime = 0;
