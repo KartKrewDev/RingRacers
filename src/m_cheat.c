@@ -177,6 +177,21 @@ static UINT8 cheatf_mentalsonic(void)
 	return 1;
 }
 
+static UINT8 cheatf_shittysigns(void)
+{
+	CV_SetValue(&cv_shittysigns, !cv_shittysigns.value);
+	if (cv_shittysigns.value)
+	{
+		S_StartSound(NULL, sfx_mixup);
+	}
+	else
+	{
+		S_StartSound(NULL, sfx_nghurt);
+	}
+
+	return 1;
+}
+
 static UINT8 cheatf_4thgear(void)
 {
 	CV_SetValue(&cv_4thgear, !cv_4thgear.value);
@@ -278,6 +293,10 @@ static cheatseq_t cheat_4thgear = {
 		SCRAMBLE('u'), SCRAMBLE('p'), SCRAMBLE('!'), 0xff }
 };
 
+static cheatseq_t cheat_shittysigns = {
+	NULL, cheatf_shittysigns,
+	(UINT8[]){ SCRAMBLE('i'), SCRAMBLE('d'), SCRAMBLE('s'), SCRAMBLE('p'), SCRAMBLE('i'), SCRAMBLE('s'), SCRAMBLE('p'), SCRAMBLE('o'), SCRAMBLE('p'), SCRAMBLE('d'), 0xff }
+};
 
 #ifdef DEVELOP
 static cheatseq_t cheat_devmode = {
@@ -298,6 +317,7 @@ cheatseq_t *cheatseqlist[] =
 	&cheat_savetheanimals,
 	&cheat_savetheframes,
 	&cheat_mentalsonic,
+	&cheat_shittysigns,
 	&cheat_4thgear,
 #ifdef DEVELOP
 	&cheat_devmode,
