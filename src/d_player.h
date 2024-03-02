@@ -925,6 +925,7 @@ struct player_t
 
 	UINT32 griefValue;
 	UINT8 griefStrikes;
+	boolean griefWarned;
 
 	UINT8 typing_timer; // Counts down while keystrokes are not emitted
 	UINT8 typing_duration; // How long since resumed timer

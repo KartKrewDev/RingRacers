@@ -69,6 +69,7 @@
 #include "k_objects.h"
 #include "k_endcam.h"
 #include "k_credits.h"
+#include "k_hud.h" // K_AddMessage
 
 #ifdef HWRENDER
 #include "hardware/hw_light.h"
@@ -4643,6 +4644,9 @@ void P_IncrementGriefValue(player_t *player, UINT32 *grief, const UINT32 griefMa
 	{
 		// Playing normally.
 		*grief = *grief - 1;
+
+		if (*grief == 0)
+			player->griefWarned = false;
 	}
 }
 
@@ -4660,6 +4664,14 @@ void P_CheckRaceGriefing(player_t *player, boolean dopunishment)
 
 	P_IncrementGriefValue(player, &player->griefValue, griefMax);
 
+	if (dopunishment && !player->griefWarned && player->griefValue >= (griefMax/2))
+	{
+		K_AddMessageForPlayer(player, "Get moving!", true, false);
+		if (P_IsLocalPlayer(player))
+			S_StartSound(NULL, sfx_cftbl0);
+		player->griefWarned = true;
+	}
+
 	if (dopunishment && player->griefValue >= griefMax)
 	{
 		if (player->griefStrikes < 3)
@@ -4668,6 +4680,7 @@ void P_CheckRaceGriefing(player_t *player, boolean dopunishment)
 		}
 
 		player->griefValue = 0;
+		player->griefWarned = false;
 
 		if (server)
 		{

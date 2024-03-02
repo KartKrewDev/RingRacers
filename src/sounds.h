@@ -1569,6 +1569,11 @@ typedef enum
 	sfx_gshf0,
 	sfx_gshf1,
 
+	// Pinball
+	sfx_cftbl0,
+	sfx_cftbl1,
+	sfx_cftbl2,
+	
 	// Generic menu SFX
 	sfx_tmxatt,
 	sfx_tmxawd,

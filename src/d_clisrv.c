@@ -3004,6 +3004,7 @@ static void Got_KickCmd(const UINT8 **p, INT32 playernum)
 			kickreason = KR_LEAVE;
 			break;
 		case KICK_MSG_GRIEF:
+			S_StartSound(NULL, sfx_cftbl1);
 			HU_AddChatText(va("\x82*%s has been kicked (Automatic grief detection)", player_names[pnum]), false);
 			kickreason = KR_KICK;
 			break;

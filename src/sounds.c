@@ -1493,6 +1493,11 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"gshf0", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshf1", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
 
+  // Pinball
+  {"cftbl0", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"cftbl1", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"cftbl2", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  
   // Generic menu SFX
   {"tmxatt", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Attention
   {"tmxawd", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Award

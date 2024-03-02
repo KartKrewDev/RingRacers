@@ -655,6 +655,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->griefValue);
 	else if (fastcmp(field,"griefStrikes"))
 		lua_pushinteger(L, plr->griefStrikes);
+	else if (fastcmp(field,"griefWarned"))
+		lua_pushinteger(L, plr->griefWarned);		
 	else if (fastcmp(field,"splitscreenindex"))
 		lua_pushinteger(L, plr->splitscreenindex);
 #ifdef HWRENDER
@@ -1186,6 +1188,8 @@ static int player_set(lua_State *L)
 		plr->griefValue = (UINT32)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"griefStrikes"))
 		plr->griefStrikes = (UINT8)luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"griefWarned"))
+		plr->griefWarned = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"splitscreenindex"))
 		return NOSET;
 #ifdef HWRENDER
