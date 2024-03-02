@@ -422,6 +422,10 @@ fixed_t K_GetKartGameSpeedScalar(SINT8 value)
 	// Normal = 100%
 	// Hard = 118.75%
 	// Nightmare = 137.5% ?!?!
+
+	if (cv_4thgear.value && !netgame && (!demo.playback || !demo.netgame) && !modeattacking)
+		value = 3;
+
 	return ((13 + (3*value)) << FRACBITS) / 16;
 }
 
