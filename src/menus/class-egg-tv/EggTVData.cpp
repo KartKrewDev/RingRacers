@@ -216,7 +216,7 @@ EggTVData::Replay::Replay(Folder::Cache::ReplayRef& ref) : ref_(&ref)
 
 	std::copy_n(path.string().c_str(), path.native().size() + 1, info.filepath);
 
-	G_LoadDemoInfo(&info);
+	G_LoadDemoInfo(&info, /*allownonmultiplayer*/ false);
 
 	if (info.type != MD_LOADED)
 	{
