@@ -47,6 +47,7 @@
 #include "lua_hook.h"
 #include "md5.h" // demo checksums
 #include "p_saveg.h" // savebuffer_t
+#include "g_party.h"
 
 // SRB2Kart
 #include "d_netfil.h" // nameonly
@@ -3227,14 +3228,12 @@ void G_DoPlayDemo(const char *defdemoname)
 	// didn't start recording right away.
 	demo.deferstart = false;
 
-	displayplayers[0] = consoleplayer = 0;
+	consoleplayer = 0;
 	memset(playeringame,0,sizeof(playeringame));
+	memset(displayplayers,0,sizeof(displayplayers));
 
 	// Load players that were in-game when the map started
 	p = READUINT8(demobuf.p);
-
-	for (i = 1; i < MAXSPLITSCREENPLAYERS; i++)
-		displayplayers[i] = INT32_MAX;
 
 	while (p != 0xFF)
 	{
@@ -4125,4 +4124,34 @@ boolean G_CheckDemoTitleEntry(void)
 	demo.savemode = demovars_s::DSM_TITLEENTRY;
 
 	return true;
+}
+
+void G_SyncDemoParty(INT32 rem, INT32 newsplitscreen)
+{
+	int r_splitscreen_copy = r_splitscreen;
+	INT32 displayplayers_copy[MAXSPLITSCREENPLAYERS];
+	memcpy(displayplayers_copy, displayplayers, sizeof displayplayers);
+
+	// If we switch away from someone's view, that player
+	// should be removed from the party.
+	// However, it is valid to have the player on multiple
+	// viewports.
+
+	// Remove this player
+	G_LeaveParty(rem);
+
+	// And reset the rest of the party
+	for (int i = 0; i <= r_splitscreen_copy; ++i)
+		G_LeaveParty(displayplayers_copy[i]);
+
+	// Restore the party, without the removed player, and
+	// with the order matching displayplayers
+	for (int i = 0; i <= newsplitscreen; ++i)
+		G_JoinParty(consoleplayer, displayplayers_copy[i]);
+
+	// memcpy displayplayers back to preserve duplicates
+	// (G_JoinParty will not create duplicates itself)
+	r_splitscreen = newsplitscreen;
+	memcpy(displayplayers, displayplayers_copy, sizeof displayplayers);
+	R_ExecuteSetViewSize();
 }

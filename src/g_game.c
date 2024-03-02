@@ -1648,13 +1648,6 @@ void G_ResetView(UINT8 viewnum, INT32 playernum, boolean onlyactive)
 			viewnum = playersviewable;
 		r_splitscreen = viewnum-1;
 
-		/* Prepare extra views for G_FindView to pass. */
-		for (viewd = splits+1; viewd < viewnum; ++viewd)
-		{
-			displayplayerp = (&displayplayers[viewd-1]);
-			(*displayplayerp) = INT32_MAX;
-		}
-
 		R_ExecuteSetViewSize();
 	}
 
@@ -1679,21 +1672,30 @@ void G_ResetView(UINT8 viewnum, INT32 playernum, boolean onlyactive)
 
 	/* Focus our target view first so that we don't take its player. */
 	(*displayplayerp) = playernum;
-	if ((*displayplayerp) != olddisplayplayer)
-	{
-		G_FixCamera(viewnum);
-	}
 
+	/* If a viewpoint changes, reset the camera to clear uninitialized memory. */
 	if (viewnum > splits)
 	{
-		for (viewd = splits+1; viewd < viewnum; ++viewd)
+		for (viewd = splits+1; viewd <= viewnum; ++viewd)
 		{
 			G_FixCamera(viewd);
 		}
 	}
+	else
+	{
+		if ((*displayplayerp) != olddisplayplayer)
+		{
+			G_FixCamera(viewnum);
+		}
+	}
 
-	if (viewnum == 1 && demo.playback)
-		consoleplayer = displayplayers[0];
+	if (demo.playback)
+	{
+		if (viewnum == 1)
+			consoleplayer = displayplayers[0];
+
+		G_SyncDemoParty(olddisplayplayer, r_splitscreen);
+	}
 
 	// change statusbar also if playing back demo
 	if (demo.quitafterplaying)

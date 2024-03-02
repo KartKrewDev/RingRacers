@@ -323,3 +323,10 @@ UINT8 G_LocalSplitscreenPartyPosition(UINT8 player)
 
 	return party.find(player) - party.begin();
 }
+
+UINT8 G_LocalSplitscreenPartyMember(UINT8 player, UINT8 index)
+{
+	SRB2_ASSERT(index < local_party[player].size());
+
+	return local_party[player][index];
+}

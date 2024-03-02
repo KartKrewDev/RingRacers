@@ -66,6 +66,9 @@ UINT8 G_PartyPosition(UINT8 player);
 UINT8 G_LocalSplitscreenPartyPosition(UINT8 player);
 
 //
+UINT8 G_LocalSplitscreenPartyMember(UINT8 player, UINT8 index);
+
+//
 //        Globals
 //
 
