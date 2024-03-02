@@ -3270,7 +3270,7 @@ boolean M_CheckNetUnlockByID(UINT16 unlockid)
 		return true; // default permit
 	}
 
-	if (netgame)
+	if (netgame || demo.playback)
 	{
 		return netUnlocked[unlockid];
 	}

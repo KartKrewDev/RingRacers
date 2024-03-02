@@ -110,7 +110,7 @@ demoghost *ghosts = NULL;
 // DEMO RECORDING
 //
 
-#define DEMOVERSION 0x0008
+#define DEMOVERSION 0x0009
 #define DEMOHEADER  "\xF0" "KartReplay" "\x0F"
 
 #define DF_ATTACKMASK   (ATTACKING_TIME|ATTACKING_LAP|ATTACKING_SPB) // This demo contains time/lap data
@@ -2205,6 +2205,18 @@ void G_BeginRecording(void)
 		WRITEUINT8(demobuf.p, grandprixinfo.eventmode);
 	}
 
+	// Save netUnlocked from actual unlocks
+	// (netUnlocked is used in m_cond.c M_CheckNetUnlockByID)
+	WRITEUINT32(demobuf.p, MAXUNLOCKABLES);
+	for (size_t unlockindex = 0; unlockindex < MAXUNLOCKABLES; unlockindex++)
+	{
+		UINT8 unlock = gamedata->unlocked[unlockindex];
+		WRITEUINT8(demobuf.p, unlock);
+	}
+
+	// Save "mapmusrng" used for altmusic selection
+	WRITEUINT8(demobuf.p, mapmusrng);
+
 	// Now store some info for each in-game player
 
 	// Lat' 12/05/19: Do note that for the first game you load, everything that gets saved here is total garbage;
@@ -3163,6 +3175,21 @@ void G_DoPlayDemo(const char *defdemoname)
 		grandprixinfo.eventmode = static_cast<gpEvent_e>(READUINT8(demobuf.p));
 	}
 
+	// Load unlocks into netUnlocked
+	{
+		UINT32 unlockables = READUINT32(demobuf.p);
+		UINT32 unlocksread = std::min<UINT32>(unlockables, MAXUNLOCKABLES);
+		for (size_t i = 0; i < unlocksread; i++)
+		{
+			netUnlocked[i] = static_cast<boolean>(READUINT8(demobuf.p));
+		}
+		// skip remainder
+		demobuf.p += unlockables - unlocksread;
+	}
+
+	// Load "mapmusrng" used for altmusic selection
+	mapmusrng = READUINT8(demobuf.p);
+
 	// Sigh ... it's an empty demo.
 	if (*demobuf.p == DEMOMARKER)
 	{
@@ -3911,11 +3938,12 @@ boolean G_CheckDemoStatus(void)
 			G_FinishExitLevel();
 		else
 		{
+			UINT8 wasmodeattacking = modeattacking;
 			G_StopDemo();
 
 			if (timedemo_quit)
 				COM_ImmedExecute("quit");
-			else if (modeattacking)
+			else if (wasmodeattacking)
 				M_EndModeAttackRun();
 			else if (demo.attract == DEMO_ATTRACT_CREDITS)
 				F_ContinueCredits();
