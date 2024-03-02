@@ -696,6 +696,7 @@ struct player_t
 	UINT8 gateSound;		// Sound effect combo
 
 	SINT8 aizdriftstrat;	// (-1 to 1) - Let go of your drift while boosting? Helper for the SICK STRATZ (sliptiding!) you have just unlocked
+	SINT8 aizdriftextend;	// Nonzero when you were sliptiding last tic, sign indicates direction.
 	INT32 aizdrifttilt;
 	INT32 aizdriftturn;
 
