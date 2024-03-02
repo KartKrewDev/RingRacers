@@ -27,7 +27,7 @@ extern "C" {
 #define ORIGINAL_ASPECT (320.0f/200.0f)
 
 // Uncomment this to enable the OpenGL loading screen
-//#define HWR_LOADING_SCREEN
+#define HWR_LOADING_SCREEN
 
 // SRB2Kart
 

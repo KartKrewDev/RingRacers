@@ -596,9 +596,9 @@ static void loading_status(void)
 	V_DrawRightAlignedString(x+50, y, V_YELLOWMAP, s);
 
 	// Is this really necessary at this point..?
-	V_DrawCenteredString(BASEVIDWIDTH/2, 40, V_YELLOWMAP, "OPENGL MODE IS INCOMPLETE AND MAY");
-	V_DrawCenteredString(BASEVIDWIDTH/2, 50, V_YELLOWMAP, "NOT DISPLAY SOME SURFACES.");
-	V_DrawCenteredString(BASEVIDWIDTH/2, 70, V_YELLOWMAP, "USE AT SONIC'S RISK.");
+	V_DrawCenteredString(BASEVIDWIDTH/2, 40, V_YELLOWMAP, "LEGACY GL IS INCOMPLETE AND MANY");
+	V_DrawCenteredString(BASEVIDWIDTH/2, 50, V_YELLOWMAP, "VISUAL FEATURES ARE MISSING/BROKEN.");
+	V_DrawCenteredString(BASEVIDWIDTH/2, 70, V_YELLOWMAP, "USE AT ROBOTNIK'S RISK.");
 
 	I_UpdateNoVsync();
 }
