@@ -7,6 +7,7 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
+#include <algorithm>
 #include <string>
 
 #include <fmt/format.h>
@@ -18,6 +19,8 @@
 #include "../i_joy.h"
 #include "../k_hud.h"
 #include "../k_kart.h"
+#include "../m_easing.h"
+#include "../p_tick.h"
 #include "../v_draw.hpp"
 
 using srb2::Draw;
@@ -61,6 +64,19 @@ const char* dpad_suffix(const Vec2<float>& v)
 
 void K_DrawInputDisplay(INT32 x, INT32 y, INT32 flags, char mode, UINT8 pid, boolean local, boolean transparent)
 {
+	auto fade_in = []
+	{
+		constexpr tic_t kStart = TICRATE;
+		constexpr tic_t kDuration = TICRATE/2;
+		fixed_t f = std::min(std::max(leveltime, kStart) - kStart, kDuration) * FRACUNIT / kDuration;
+		return Easing_Linear(f, 0, 9);
+	};
+	auto alpha_to_flag = [](int alpha) { return (9 - alpha) << V_ALPHASHIFT; };
+
+	int alpha = fade_in();
+	if (alpha == 0)
+		return;
+
 	const ticcmd_t& cmd = players[displayplayers[pid]].cmd;
 	const boolean analog = (mode == '4' || mode == '5') ? players[displayplayers[pid]].analoginput : false;
 	const std::string prefix = fmt::format("PR{}", mode);
@@ -73,7 +89,8 @@ void K_DrawInputDisplay(INT32 x, INT32 y, INT32 flags, char mode, UINT8 pid, boo
 
 	Draw box = Draw(x, y).flags(flags);
 
-	box.flags(transparent ? V_TRANSLUCENT : 0).patch(gfx("CONT"));
+	box.flags(alpha_to_flag(alpha / (transparent ? 2 : 1))).patch(gfx("CONT"));
+	box = box.flags(alpha_to_flag(alpha));
 
 	Vec2<float> dpad = local ?
 		Vec2<float> {

@@ -5170,7 +5170,7 @@ static void K_drawInput(void)
 		{282 - BASEVIDWIDTH/2, 52, V_SNAPTOBOTTOM | V_SNAPTORIGHT}, // 4p right
 	};
 	INT32 k = r_splitscreen <= 1 ? r_splitscreen : 2 + (R_GetViewNumber() & 1);
-	INT32 flags = def[k][2] | V_SPLITSCREEN | V_SLIDEIN;
+	INT32 flags = def[k][2] | V_SPLITSCREEN;
 	char mode = ((stplyr->pflags & PF_ANALOGSTICK) ? '4' : '2') + (r_splitscreen > 1);
 	bool local = !demo.playback && P_IsMachineLocalPlayer(stplyr);
 	K_DrawInputDisplay(
