@@ -4702,6 +4702,8 @@ void K_ApplyTripWire(player_t *player, tripwirestate_t state)
 				Obj_GardenTopDestroy(player);
 			}
 		}
+		
+		player->tripwireLeniency += TICRATE/2;
 	}
 	else if (state == TRIPSTATE_BLOCKED)
 	{
