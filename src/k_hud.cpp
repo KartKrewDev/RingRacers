@@ -5167,7 +5167,7 @@ static void K_drawInput(void)
 	UINT8 viewnum = R_GetViewNumber();
 	boolean freecam = camera[viewnum].freecam;	//disable some hud elements w/ freecam
 
-	if (!cv_drawinput.value && !modeattacking)
+	if (!cv_drawinput.value && !modeattacking && gametype != GT_TUTORIAL)
 		return;
 
 	if (stplyr->spectator || freecam || demo.attract)
