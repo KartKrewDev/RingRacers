@@ -134,7 +134,7 @@ typedef enum
 	CV_MODIFIED = 64,    // this bit is set when cvar is modified
 	CV_SHOWMODIF = 128,  // say something when modified
 	CV_SHOWMODIFONETIME = 256, // same but will be reset to 0 when modified, set in toggle
-	CV_NOSHOWHELP = 512, // Don't show variable in the HELP list Tails 08-13-2002
+	CV_NOSHOWHELP = 512, // Cannot be accessed by the console, but it still exists in the cvar list
 	CV_HIDDEN = 1024, // variable is not part of the cvar list so cannot be accessed by the console
 	                 // can only be set when we have the pointer to it
 	                 // used on menus
