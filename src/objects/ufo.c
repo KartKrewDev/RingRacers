@@ -951,6 +951,7 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 		ACS_RunCatcherScript(source);
 
 		S_StopSound(ufo);
+		S_StartSound(ufo, sfx_gbrk);
 		S_StartSound(ufo, sfx_clawk2);
 		P_StartQuake(20, 64 * ufo->scale, 0, NULL);
 
