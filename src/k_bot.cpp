@@ -577,14 +577,14 @@ fixed_t K_BotRubberband(const player_t *player)
 	const fixed_t difficultyEase = ((player->botvars.difficulty - 1) * FRACUNIT) / (MAXBOTDIFFICULTY - 1);
 
 	// Lv.   1: x0.65 avg
-	// Lv. MAX: x1.1 avg
+	// Lv. MAX: x1.05 avg
 	const fixed_t rubberBase = Easing_OutSine(
 		difficultyEase,
 		FRACUNIT * 65 / 100,
 		FRACUNIT * 105 / 100
 	);
 
-	// +/- x0.25
+	// +/- x0.35
 	const fixed_t rubberStretchiness = FixedMul(
 		FixedDiv(
 			35 * FRACUNIT / 100,
