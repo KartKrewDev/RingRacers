@@ -62,7 +62,7 @@ const char* dpad_suffix(const Vec2<float>& v)
 
 }; // namespace
 
-void K_DrawInputDisplay(INT32 x, INT32 y, INT32 flags, char mode, UINT8 pid, boolean local, boolean transparent)
+void K_DrawInputDisplay(float x, float y, INT32 flags, char mode, UINT8 pid, boolean local, boolean transparent)
 {
 	auto fade_in = []
 	{

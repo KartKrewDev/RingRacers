@@ -51,6 +51,7 @@
 #include "g_party.h"
 #include "k_hitlag.h"
 #include "g_input.h"
+#include "k_dialogue.h"
 
 //{ 	Patch Definitions
 static patch_t *kp_nodraw;
@@ -5174,8 +5175,8 @@ static void K_drawInput(void)
 	char mode = ((stplyr->pflags & PF_ANALOGSTICK) ? '4' : '2') + (r_splitscreen > 1);
 	bool local = !demo.playback && P_IsMachineLocalPlayer(stplyr);
 	K_DrawInputDisplay(
-		def[k][0],
-		def[k][1],
+		def[k][0] - FixedToFloat(K_GetDialogueSlide(34 * FRACUNIT)),
+		def[k][1] - FixedToFloat(K_GetDialogueSlide(51 * FRACUNIT)),
 		flags,
 		mode,
 		(local ? G_LocalSplitscreenPartyPosition : G_PartyPosition)(stplyr - players),
