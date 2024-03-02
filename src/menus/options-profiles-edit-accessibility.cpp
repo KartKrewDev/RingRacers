@@ -8,7 +8,7 @@
 #include "../m_easing.h"
 #include "../p_local.h" // cv_tilting
 
-extern "C" consvar_t cv_mindelay;
+extern "C" consvar_t cv_mindelay, cv_drawinput;
 
 using srb2::Draw;
 
@@ -119,6 +119,9 @@ menuitem_t OPTIONS_ProfileAccessibility[] = {
 
 	{IT_STRING | IT_CVAR, "Screenshake", "Adjust shake intensity from hazards and offroad.",
 		NULL, {.cvar = &cv_screenshake}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Input Display", "Show virtual controller on the HUD.",
+		NULL, {.cvar = &cv_drawinput}, 0, 0},
 };
 
 menu_t OPTIONS_ProfileAccessibilityDef = {

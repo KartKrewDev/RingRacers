@@ -359,6 +359,7 @@ consvar_t cv_drawdist_precip = Player("drawdist_precip", "1024").values({
 	{0, "None"},
 });
 
+consvar_t cv_drawinput = Player("drawinput", "No").yes_no();
 consvar_t cv_ffloorclip = Player("ffloorclip", "On").on_off();
 
 consvar_t cv_fpscap = Player("fpscap", "Match refresh rate").values({
@@ -889,7 +890,6 @@ consvar_t cv_debugrender_spriteclip = PlayerCheat("debugrender_spriteclip", "Off
 consvar_t cv_debugrender_visplanes = PlayerCheat("debugrender_visplanes", "Off").on_off().description("Highlight the number of visplanes");
 consvar_t cv_devmode_screen = PlayerCheat("devmode_screen", "1").min_max(1, 4).description("Choose which splitscreen player devmode applies to");
 consvar_t cv_drawpickups = PlayerCheat("drawpickups", "Yes").yes_no().description("Hide rings, spheres, item capsules, prison capsules (visual only)");
-consvar_t cv_drawinput = PlayerCheat("drawinput", "No").yes_no().description("Draw turn inputs outside of Record Attack (turn solver debugging)");
 
 void lua_profile_OnChange(void);
 consvar_t cv_lua_profile = PlayerCheat("lua_profile", "0").values(CV_Unsigned).onchange(lua_profile_OnChange).description("Show hook timings over an average of N tics");
