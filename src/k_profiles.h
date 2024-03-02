@@ -23,6 +23,82 @@
 #include "k_follower.h"		// followers
 
 #ifdef __cplusplus
+
+#include <array>
+#include <cstdint>
+#include <string>
+#include <vector>
+
+#include <nlohmann/json.hpp>
+
+namespace srb2
+{
+
+struct ProfileRecordsJson
+{
+	uint32_t wins;
+
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(ProfileRecordsJson, wins)
+};
+
+struct ProfilePreferencesJson
+{
+	bool kickstartaccel;
+	bool autoroulette;
+	bool litesteer;
+	bool rumble;
+	tm test;
+
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
+		ProfilePreferencesJson,
+		kickstartaccel,
+		autoroulette,
+		litesteer,
+		rumble
+	)
+};
+
+struct ProfileJson
+{
+	uint32_t version;
+	std::string profilename;
+	std::string playername;
+	std::array<uint8_t, 32> publickey = {{}};
+	std::array<uint8_t, 64> secretkey = {{}};
+	std::string skinname;
+	std::string colorname;
+	std::string followername;
+	std::string followercolorname;
+	ProfileRecordsJson records;
+	ProfilePreferencesJson preferences;
+	std::array<std::array<int32_t, MAXINPUTMAPPING>, gamecontrols_e::num_gamecontrols> controls = {{{{}}}};
+
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
+		ProfileJson,
+		version,
+		profilename,
+		playername,
+		publickey,
+		secretkey,
+		skinname,
+		colorname,
+		followername,
+		followercolorname,
+		records,
+		preferences,
+		controls
+	)
+};
+
+struct ProfilesJson
+{
+	std::vector<ProfileJson> profiles;
+
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(ProfilesJson, profiles)
+};
+
+} // namespace srb2
+
 extern "C" {
 #endif
 
@@ -31,7 +107,7 @@ extern "C" {
 #define SKINNAMESIZE 16
 
 #define PROFILENAMELEN 6
-#define PROFILEVER 8
+#define PROFILEVER 1
 #define MAXPROFILES 16
 #define PROFILESFILE "ringprofiles.prf"
 #define PROFILE_GUEST 0

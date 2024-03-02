@@ -47,7 +47,7 @@ menu_t MISC_StatisticsDef = {
 	280, 185,
 	0, 0,
 	0,
-	"EXTRAS",
+	"EXSTAT",
 	98, 0,
 	M_DrawStatistics,
 	M_DrawExtrasBack,
@@ -526,7 +526,7 @@ void M_ChallengesTick(void)
 				challengesmenu.chaokeyhold++;
 
 				UINT32 chaohold_duration =
-					CHAOHOLD_PADDING 
+					CHAOHOLD_PADDING
 					+ ((unlockables[challengesmenu.currentunlock].majorunlock == true)
 						? CHAOHOLD_MAJOR
 						: CHAOHOLD_STANDARD
@@ -792,6 +792,11 @@ boolean M_ChallengesInputs(INT32 ch)
 			if (cv_debugchallenges.value && challengesmenu.currentunlock < MAXUNLOCKABLES && challengesmenu.unlockanim >= UNLOCKTIME && gamedata->unlocked[challengesmenu.currentunlock] == true)
 			{
 				gamedata->unlocked[challengesmenu.currentunlock] = gamedata->unlockpending[challengesmenu.currentunlock] = false;
+				UINT16 set = unlockables[challengesmenu.currentunlock].conditionset;
+				if (set > 0 && set <= MAXCONDITIONSETS)
+				{
+					gamedata->achieved[set - 1] = false;
+				}
 
 				M_UpdateChallengeGridVisuals();
 			}

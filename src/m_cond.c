@@ -1612,10 +1612,12 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			return (cn->requirement != -1 && player->followerskin == cn->requirement);
 		case UCRP_ISDIFFICULTY:
 			if (grandprixinfo.gp == false)
-				return (gamespeed >= cn->requirement);
+				return false;
 			if (cn->requirement == KARTGP_MASTER)
 				return (grandprixinfo.masterbots == true);
 			return (grandprixinfo.gamespeed >= cn->requirement);
+		case UCRP_ISGEAR:
+			return (gamespeed >= cn->requirement);
 
 		case UCRP_PODIUMCUP:
 			if (grandprixinfo.gp == false || K_PodiumSequence() == false)
@@ -1628,7 +1630,7 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			)
 				return false;
 			if (cn->extrainfo2 != 0)
-				return (K_PodiumGrade() >= cn->requirement);
+				return (K_PodiumGrade() >= cn->extrainfo1);
 			if (cn->extrainfo1 != 0)
 				return (player->position != 0
 					&& player->position <= cn->extrainfo1);
@@ -2527,6 +2529,8 @@ static const char *M_GetConditionString(condition_t *cn)
 
 			return speedtext;
 		}
+		case UCRP_ISGEAR:
+			return va("in Gear %d", cn->requirement + 1);
 
 		case UCRP_PODIUMCUP:
 		{
@@ -3266,7 +3270,7 @@ boolean M_CheckNetUnlockByID(UINT16 unlockid)
 		return true; // default permit
 	}
 
-	if (netgame)
+	if (netgame || demo.playback)
 	{
 		return netUnlocked[unlockid];
 	}
@@ -3470,9 +3474,9 @@ boolean M_GotLowEnoughTime(INT32 tictime)
 		if (!mapheaderinfo[i] || (mapheaderinfo[i]->menuflags & LF2_NOTIMEATTACK))
 			continue;
 
-		if (!mapheaderinfo[i]->records.time)
+		if (!mapheaderinfo[i]->records.timeattack.time)
 			return false;
-		if ((curtics += mapheaderinfo[i]->records.time) > tictime)
+		if ((curtics += mapheaderinfo[i]->records.timeattack.time) > tictime)
 			return false;
 	}
 	return true;

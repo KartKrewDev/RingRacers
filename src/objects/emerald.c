@@ -338,6 +338,7 @@ void Obj_GiveEmerald(mobj_t *emerald)
 		case MT_ITEMCAPSULE: // objects/hyudoro.c
 			// DMG_INSTAKILL to kill it without respawning later
 			P_KillMobj(emerald_award(emerald), emerald_orbit(emerald), emerald_orbit(emerald), DMG_INSTAKILL);
+			S_StartSound(emerald_orbit(emerald), sfx_kc3e);
 
 			if (emerald_orbit(emerald)->player)
 			{

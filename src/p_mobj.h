@@ -447,6 +447,8 @@ struct mobj_t
 
 	mobj_t *owner;
 
+	INT32 po_movecount; // Polyobject carrying (NOT savegame, NOT Lua)
+
 	// WARNING: New fields must be added separately to savegame and Lua.
 };
 

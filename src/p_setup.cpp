@@ -187,11 +187,13 @@ UINT8 *rejectmatrix;
 
 // Maintain single and multi player starting spots.
 INT32 numdmstarts, numcoopstarts, numredctfstarts, numbluectfstarts;
+INT32 numfaultstarts;
 
 mapthing_t *deathmatchstarts[MAX_DM_STARTS];
 mapthing_t *playerstarts[MAXPLAYERS];
 mapthing_t *bluectfstarts[MAXPLAYERS];
 mapthing_t *redctfstarts[MAXPLAYERS];
+mapthing_t *faultstart;
 
 // Global state for PartialAddWadFile/MultiSetupWadFiles
 // Might be replacable with parameters, but non-trivial when the functions are called on separate tics
@@ -807,10 +809,14 @@ static void P_SpawnMapThings(boolean spawnemblems)
 				continue; // These were already spawned
 		}
 
-		if (mt->type == mobjinfo[MT_BATTLECAPSULE].doomednum
-			|| mt->type == mobjinfo[MT_ITEMCAPSULE].doomednum)
+		if (mt->type == mobjinfo[MT_ITEMCAPSULE].doomednum)
 		{
-			continue; // These will spawn later
+			continue; // These will spawn later (in k_battle.c K_BattleInit)
+		}
+
+		if (mt->type == mobjinfo[MT_BATTLECAPSULE].doomednum && gametype != GT_TUTORIAL)
+		{
+			continue; // These will spawn later (in k_battle.c K_BattleInit), unless we're in a tutorial
 		}
 
 		if (!spawnemblems && mt->type == mobjinfo[MT_EMBLEM].doomednum)
@@ -3117,8 +3123,6 @@ static void P_LoadTextmap(void)
 	side_t     *sd;
 	mapthing_t *mt;
 
-	CONS_Alert(CONS_NOTICE, "UDMF support is still a work-in-progress; its specs and features are prone to change until it is fully implemented.\n");
-
 	/// Given the UDMF specs, some fields are given a default value.
 	/// If an element's field has a default value set, it is omitted
 	/// from the textmap, and therefore we have to account for it by
@@ -3457,7 +3461,7 @@ static boolean P_LoadMapData(const virtres_t *virt)
 	if (udmf) // Count how many entries for each type we got in textmap.
 	{
 		virtlump_t *textmap = vres_Find(virt, "TEXTMAP");
-		M_TokenizerOpen((char *)textmap->data);
+		M_TokenizerOpen((char *)textmap->data, textmap->size);
 		if (!TextmapCount(textmap->size))
 		{
 			M_TokenizerClose();
@@ -7627,8 +7631,7 @@ static void P_InitLevelSettings(void)
 	g_quakes = NULL;
 
 	// song credit init
-	Z_Free(cursongcredit.text);
-	memset(&cursongcredit,0,sizeof(struct cursongcredit));
+	S_StopMusicCredit();
 	cursongcredit.trans = NUMTRANSMAPS;
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -7675,7 +7678,11 @@ static void P_InitLevelSettings(void)
 		|| tutorialchallenge ==  TUTORIALSKIP_INPROGRESS
 	)
 	{
-		if (gametyperules & GTR_CIRCUIT)
+		if ((gametyperules & GTR_CATCHER) && encoremode == false)
+		{
+			gamespeed = KARTSPEED_NORMAL;
+		}
+		else if (gametyperules & GTR_CIRCUIT)
 		{
 			gamespeed = KARTSPEED_HARD;
 		}
@@ -7743,6 +7750,8 @@ static void P_ResetSpawnpoints(void)
 	UINT8 i;
 
 	numdmstarts = numredctfstarts = numbluectfstarts = 0;
+	numfaultstarts = 0;
+	faultstart = NULL;
 
 	// reset the player starts
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -7763,7 +7772,7 @@ static void P_ResetSpawnpoints(void)
 		skyboxviewpnts[i] = skyboxcenterpnts[i] = NULL;
 }
 
-static void P_TryAddExternalGhost(char *defdemoname)
+static void P_TryAddExternalGhost(const char *defdemoname)
 {
 	if (FIL_FileExists(defdemoname))
 	{
@@ -7785,58 +7794,73 @@ static void P_LoadRecordGhosts(void)
 {
 	// see also /menus/play-local-race-time-attack.c's M_PrepareTimeAttack
 	char *gpath;
+	const char *modeprefix = "";
 	INT32 i;
 
 	gpath = Z_StrDup(va("%s" PATHSEP "media" PATHSEP "replay" PATHSEP "%s" PATHSEP "%s", srb2home, timeattackfolder, G_BuildMapName(gamemap)));
 
-	// Best Time ghost
-	if (modeattacking & ATTACKING_TIME)
+	if (encoremode)
+		modeprefix = "spb-";
+
+	enum
 	{
-		if (cv_ghost_besttime.value)
-		{
-			for (i = 0; i < numskins; ++i)
-			{
-				if (cv_ghost_besttime.value == 1 && players[consoleplayer].skin != i)
-					continue;
+		kTime	= 1 << 0,
+		kLap	= 1 << 1,
+		kLast	= 1 << 2,
+	};
 
-				P_TryAddExternalGhost(va("%s-%s-time-best.lmp", gpath, skins[i].name));
-			}
-		}
-	}
-
-	// Best Lap ghost
-	if (modeattacking & ATTACKING_LAP)
+	auto map_ghosts = [](int value)
 	{
-		if (cv_ghost_bestlap.value)
-		{
-			for (i = 0; i < numskins; ++i)
-			{
-				if (cv_ghost_bestlap.value == 1 && players[consoleplayer].skin != i)
-					continue;
+		auto map = [](const consvar_t& cvar, int value, UINT8 bit) { return cvar.value == value ? bit : 0; };
 
-				P_TryAddExternalGhost(va("%s-%s-lap-best.lmp", gpath, skins[i].name));
-			}
-		}
-	}
+		return
+			// Best Time ghost
+			((modeattacking & ATTACKING_TIME) ? map(cv_ghost_besttime, value, kTime) : 0) |
 
-	// Last ghost
-	if (cv_ghost_last.value)
+			// Best Lap ghost
+			((modeattacking & ATTACKING_LAP) ? map(cv_ghost_bestlap, value, kLap) : 0) |
+
+			// Best Lap ghost
+			map(cv_ghost_last, value, kLast);
+	};
+
+	auto add_ghosts = [gpath](const std::string& base, UINT8 bits)
+	{
+		auto load = [base](const char* suffix) { P_TryAddExternalGhost(fmt::format("{}-{}.lmp", base, suffix).c_str()); };
+
+		if (bits & kTime)
+			load("time-best");
+
+		if (bits & kLap)
+			load("lap-best");
+
+		if (bits & kLast)
+			load("last");
+	};
+
+	UINT8 allGhosts = map_ghosts(2);
+	UINT8 sameGhosts = map_ghosts(1);
+
+	if (allGhosts)
 	{
 		for (i = 0; i < numskins; ++i)
-		{
-			if (cv_ghost_last.value == 1 && players[consoleplayer].skin != i)
-				continue;
+			add_ghosts(fmt::format("{}-{}{}", gpath, skins[i].name, modeprefix), allGhosts);
+	}
 
-			P_TryAddExternalGhost(va("%s-%s-last.lmp", gpath, skins[i].name));
-		}
+	if (sameGhosts)
+	{
+		INT32 skin = R_SkinAvailable(cv_skin[0].string);
+		if (skin < 0 || !R_SkinUsable(consoleplayer, skin, false))
+			skin = 0; // use default skin
+		add_ghosts(fmt::format("{}-{}{}", gpath, skins[skin].name, modeprefix), sameGhosts);
 	}
 
 	// Guest ghost
 	if (cv_ghost_guest.value)
-		P_TryAddExternalGhost(va("%s-guest.lmp", gpath));
+		P_TryAddExternalGhost(va("%s-%sguest.lmp", gpath, modeprefix));
 
 	// Staff Attack ghosts
-	if (cv_ghost_staff.value)
+	if (cv_ghost_staff.value && !modeprefix[0])
 	{
 		for (i = mapheaderinfo[gamemap-1]->ghostCount; i > 0; i--)
 		{
@@ -8153,19 +8177,32 @@ void P_ResetLevelMusic(void)
 {
 	UINT8 idx = 0;
 
-	if (mapheaderinfo[gamemap-1]->musname_size > 1)
+	mapheader_t* mapheader = mapheaderinfo[gamemap - 1];
+
+	// To keep RNG in sync, we will always pull from RNG, even if unused
+	UINT32 random = P_Random(PR_MUSICSELECT);
+
+	if (demo.playback)
+	{
+		// mapmusrng has already been set by the demo; just make sure it's valid
+		if (mapmusrng >= mapheader->musname_size)
+		{
+			mapmusrng = 0;
+		}
+		return;
+	}
+
+	if (mapheader->musname_size > 1)
 	{
 		UINT8 tempmapmus[MAXMUSNAMES], tempmapmus_size = 1, i;
 
 		tempmapmus[0] = 0;
 
-		for (i = 1; i < mapheaderinfo[gamemap-1]->musname_size; i++)
+		for (i = 1; i < mapheader->musname_size; i++)
 		{
-			if (mapheaderinfo[gamemap-1]->cache_muslock[i-1] < MAXUNLOCKABLES
-			&& !M_CheckNetUnlockByID(mapheaderinfo[gamemap-1]->cache_muslock[i-1]))
+			if (mapheader->cache_muslock[i-1] < MAXUNLOCKABLES
+			&& !M_CheckNetUnlockByID(mapheader->cache_muslock[i-1]))
 				continue;
-
-			//CONS_Printf("TEST - %u\n", i);
 
 			tempmapmus[tempmapmus_size++] = i;
 		}
@@ -8180,9 +8217,8 @@ void P_ResetLevelMusic(void)
 			}
 			else
 			{
-				idx = P_RandomKey(PR_MUSICSELECT, tempmapmus_size);
+				idx = random % tempmapmus_size;
 			}
-			//CONS_Printf("Rolled position %u, maps to %u\n", mapmusrng, tempmapmus[mapmusrng]);
 			idx = tempmapmus[idx];
 		}
 	}
@@ -8192,9 +8228,15 @@ void P_ResetLevelMusic(void)
 
 void P_LoadLevelMusic(void)
 {
-	const char *music = mapheaderinfo[gamemap-1]->musname[mapmusrng];
+	mapheader_t* mapheader = mapheaderinfo[gamemap-1];
+	const char *music = mapheader->musname[0];
 
-	if (gametyperules & GTR_NOPOSITION)
+	if (mapmusrng < mapheader->musname_size)
+	{
+		music = mapheader->musname[mapmusrng];
+	}
+
+	if (gametyperules & GTR_NOPOSITION || modeattacking != ATTACKING_NONE)
 	{
 		if (!stricmp(Music_Song("level_nosync"), music))
 		{
@@ -8278,7 +8320,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		wipegamestate = gamestate; // Don't fade if reloading the gamestate
 	// Encore mode fade to pink to white
 	// This is handled BEFORE sounds are stopped.
-	else if (encoremode && !prevencoremode && !demo.rewinding)
+	else if (encoremode && !prevencoremode && modeattacking == ATTACKING_NONE && !demo.rewinding)
 	{
 		if (rendermode != render_none)
 		{
@@ -8347,14 +8389,10 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	// Special stage & record attack retry fade to white
 	// This is handled BEFORE sounds are stopped.
-	if (G_GetModeAttackRetryFlag())
+	if (G_IsModeAttackRetrying() && !demo.playback && gametype != GT_VERSUS)
 	{
-		if (modeattacking && !demo.playback)
-		{
-			ranspecialwipe = 2;
-			//wipestyleflags |= (WSF_FADEOUT|WSF_TOWHITE);
-		}
-		G_ClearModeAttackRetryFlag();
+		ranspecialwipe = 2;
+		//wipestyleflags |= (WSF_FADEOUT|WSF_TOWHITE);
 	}
 
 	// Make sure all sounds are stopped before Z_FreeTags.
@@ -8394,7 +8432,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			if (ranspecialwipe == 2)
 			{
 				pausedelay = -3; // preticker plus one
-				S_StartSound(NULL, sfx_s3k73);
 			}
 
 			// We should be fine starting music here.
@@ -8664,6 +8701,16 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	}
 
 	P_MapEnd(); // tm.thing is no longer needed from this point onwards
+
+	if (!udmf && !P_CanWriteTextmap())
+	{
+		// *Playing* binary maps is disabled; the support is kept in the code for binary map conversions only.
+		// This is to make sure people use UDMF and, indirectly, guarantee that they will ship their PWAD
+		// maps with extended GL nodes, as per UDMF requirement. We can retrofit a modern hardware renderer
+		// into the game in the future without disrupting existing PWADs, which does not suffer from the issues
+		// of the current GL renderer.
+		I_Error("Playing binary maps is disabled; please convert to UDMF TEXTMAP and rebuild nodes.");
+	}
 
 	if (!fromnetsave)
 	{

@@ -520,6 +520,9 @@ boolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2)
 	if (t2->player && (t2->player->hyudorotimer || t2->player->justbumped))
 		return true;
 
+	if (draggeddroptarget && P_MobjWasRemoved(draggeddroptarget))
+		draggeddroptarget = NULL; // Beware order-of-execution on crushers, I guess?!
+
 	if (t1->health > 3) // forward thrown
 	{
 		strength = 0;
@@ -650,7 +653,7 @@ boolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2)
 		S_StartSound(t2, sfx_kdtrg1);
 	}
 
-	if (draggeddroptarget && draggeddroptarget->player)
+	if (draggeddroptarget && !P_MobjWasRemoved(draggeddroptarget) && draggeddroptarget->player)
 	{
 		// The following removes t1, be warned
 		// (its newly assigned properties are moved across)
@@ -793,12 +796,12 @@ boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 	{
 		// Counter desyncs
 		/*mobj_t *oldthing = thing;
-		mobj_t *oldtm.thing = tm.thing;
+		mobj_t *oldg_tm.thing = g_tm.thing;
 
-		P_Thrust(tm.thing, R_PointToAngle2(thing->x, thing->y, tm.thing->x, tm.thing->y), 4*thing->scale);
+		P_Thrust(g_tm.thing, R_PointToAngle2(thing->x, thing->y, g_tm.thing->x, g_tm.thing->y), 4*thing->scale);
 
 		thing = oldthing;
-		P_SetTarget(&tm.thing, oldtm.thing);*/
+		P_SetTarget(&g_tm.thing, oldg_tm.thing);*/
 
 		if (K_KartBouncing(t2, t1->target) == true)
 		{
@@ -1041,6 +1044,10 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 		// Always regular bumps, no ring toss.
 		return false;
 	}
+
+	// What the fuck is calling this with stale refs? Whatever, validation's cheap.
+	if (P_MobjWasRemoved(t1) || P_MobjWasRemoved(t2) || !t1->player || !t2->player)
+		return false;
 
 	// Clash instead of damage if both parties have any of these conditions
 	auto canClash = [](mobj_t *t1, mobj_t *t2)

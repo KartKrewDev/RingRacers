@@ -59,66 +59,22 @@ static INT32 sightcounts[2];
 //
 // Returns side 0 (front), 1 (back), or 2 (on).
 //
-static INT32 P_DivlineSide(fixed_t x, fixed_t y, divline_t *node)
+// killough 4/19/98: made static, cleaned up
+
+static INT32 P_DivlineSide(fixed_t x, fixed_t y, const divline_t *node)
 {
-	fixed_t dx, dy, left, right;
-
-	if (!node->dx)
-	{
-		if (x == node->x)
-			return 2;
-
-		if (x <= node->x)
-			return (node->dy > 0);
-
-		return (node->dy < 0);
-	}
-
-	if (!node->dy)
-	{
-		if (y == node->y)
-			return 2;
-
-		if (y <= node->y)
-			return (node->dx < 0);
-
-		return (node->dx > 0);
-	}
-
-	dx = x - node->x;
-	dy = y - node->y;
-
-	left = (node->dy>>FRACBITS) * (dx>>FRACBITS);
-	right = (dy>>FRACBITS) * (node->dx>>FRACBITS);
-
-	if (right < left)
-		return 0; // front side
-
-	if (left == right)
-		return 2;
-
-	return 1; // back side
+	fixed_t left, right;
+	return
+		!node->dx ? x == node->x ? 2 : x <= node->x ? node->dy > 0 : node->dy < 0 :
+		!node->dy ? y == node->y ? 2 : y <= node->y ? node->dx < 0 : node->dx > 0 :
+		(right = ((y - node->y) >> FRACBITS) * (node->dx >> FRACBITS)) <
+		(left  = ((x - node->x) >> FRACBITS) * (node->dy >> FRACBITS)) ? 0 :
+		right == left ? 2 : 1;
 }
 
-//
-// P_InterceptVector2
-//
-// Returns the fractional intercept point along the first divline.
-// This is only called by the addthings and addlines traversers.
-//
-static fixed_t P_InterceptVector2(divline_t *v2, divline_t *v1)
+static INT32 P_DivlineCrossed(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2, const divline_t *node)
 {
-	fixed_t frac, num, den;
-
-	den = FixedMul(v1->dy>>8, v2->dx) - FixedMul(v1->dx>>8, v2->dy);
-
-	if (!den)
-		return 0;
-
-	num = FixedMul((v1->x - v2->x)>>8, v1->dy) + FixedMul((v2->y - v1->y)>>8, v1->dx);
-	frac = FixedDiv(num, den);
-
-	return frac;
+	return (P_DivlineSide(x1, y1, node) == P_DivlineSide(x2, y2, node));
 }
 
 static boolean P_IsVisiblePolyObj(polyobj_t *po, divline_t *divl, register los_t *los)
@@ -140,7 +96,7 @@ static boolean P_IsVisiblePolyObj(polyobj_t *po, divline_t *divl, register los_t
 	}
 	*/
 
-	frac = P_InterceptVector2(&los->strace, divl);
+	frac = P_InterceptVector(&los->strace, divl);
 
 	// get slopes of top and bottom of this polyobject line
 	topslope = FixedDiv(polysec->ceilingheight - los->sightzstart , frac);
@@ -191,16 +147,14 @@ static boolean P_CrossSubsecPolyObj(polyobj_t *po, register los_t *los, register
 		v2 = line->v2;
 
 		// line isn't crossed?
-		if (P_DivlineSide(v1->x, v1->y, &los->strace) ==
-			P_DivlineSide(v2->x, v2->y, &los->strace))
+		if (P_DivlineCrossed(v1->x, v1->y, v2->x, v2->y, &los->strace))
 			continue;
 
 		divl.dx = v2->x - (divl.x = v1->x);
 		divl.dy = v2->y - (divl.y = v1->y);
 
 		// line isn't crossed?
-		if (P_DivlineSide(los->strace.x, los->strace.y, &divl) ==
-			P_DivlineSide(los->t2x, los->t2y, &divl))
+		if (P_DivlineCrossed(los->strace.x, los->strace.y, los->t2x, los->t2y, &divl))
 			continue;
 
 		if (funcs->validatePolyobj(po, &divl, los) == false)
@@ -228,7 +182,7 @@ static boolean P_IsVisible(seg_t *seg, divline_t *divl, register los_t *los)
 	}
 
 	// calculate fractional intercept (how far along we are divided by how far we are from t2)
-	frac = P_InterceptVector2(&los->strace, divl);
+	frac = P_InterceptVector(&los->strace, divl);
 
 	front = seg->frontsector;
 	back  = seg->backsector;
@@ -377,16 +331,16 @@ static boolean P_CanBotTraverse(seg_t *seg, divline_t *divl, register los_t *los
 	}
 
 	// calculate fractional intercept (how far along we are divided by how far we are from t2)
-	frac = P_InterceptVector2(&los->strace, divl);
+	frac = P_InterceptVector(&los->strace, divl);
 
 	// calculate position at intercept
-	tm.x = los->strace.x + FixedMul(los->strace.dx, frac);
-	tm.y = los->strace.y + FixedMul(los->strace.dy, frac);
+	g_tm.x = los->strace.x + FixedMul(los->strace.dx, frac);
+	g_tm.y = los->strace.y + FixedMul(los->strace.dy, frac);
 
 	// set openrange, opentop, openbottom
 	open.fofType = (flip ? LO_FOF_CEILINGS : LO_FOF_FLOORS);
 	P_LineOpening(line, los->t1, &open);
-	maxstep = P_GetThingStepUp(los->t1, tm.x, tm.y);
+	maxstep = P_GetThingStepUp(los->t1, g_tm.x, g_tm.y);
 
 	if (open.range < los->t1->height)
 	{
@@ -408,7 +362,7 @@ static boolean P_CanBotTraverse(seg_t *seg, divline_t *divl, register los_t *los
 			UINT8 side = P_DivlineSide(los->t2x, los->t2y, divl) & 1;
 			sector_t *sector = (side == 1) ? seg->backsector : seg->frontsector;
 
-			if (K_BotHatesThisSector(los->t1->player, sector, tm.x, tm.y))
+			if (K_BotHatesThisSector(los->t1->player, sector, g_tm.x, g_tm.y))
 			{
 				// This line does not block us, but we don't want to cross it regardless.
 				return false;
@@ -445,16 +399,16 @@ static boolean P_CanWaypointTraverse(seg_t *seg, divline_t *divl, register los_t
 	}
 
 	// calculate fractional intercept (how far along we are divided by how far we are from t2)
-	frac = P_InterceptVector2(&los->strace, divl);
+	frac = P_InterceptVector(&los->strace, divl);
 
 	// calculate position at intercept
-	tm.x = los->strace.x + FixedMul(los->strace.dx, frac);
-	tm.y = los->strace.y + FixedMul(los->strace.dy, frac);
+	g_tm.x = los->strace.x + FixedMul(los->strace.dx, frac);
+	g_tm.y = los->strace.y + FixedMul(los->strace.dy, frac);
 
 	// set openrange, opentop, openbottom
 	open.fofType = (flip ? LO_FOF_CEILINGS : LO_FOF_FLOORS);
 	P_LineOpening(line, los->t1, &open);
-	maxstep = P_GetThingStepUp(los->t1, tm.x, tm.y);
+	maxstep = P_GetThingStepUp(los->t1, g_tm.x, g_tm.y);
 
 #if 0
 	if (los->t2->type == MT_WAYPOINT)
@@ -569,16 +523,14 @@ static boolean P_CrossSubsector(size_t num, register los_t *los, register los_fu
 		v2 = line->v2;
 
 		// line isn't crossed?
-		if (P_DivlineSide(v1->x, v1->y, &los->strace) ==
-			P_DivlineSide(v2->x, v2->y, &los->strace))
+		if (P_DivlineCrossed(v1->x, v1->y, v2->x, v2->y, &los->strace))
 			continue;
 
 		divl.dx = v2->x - (divl.x = v1->x);
 		divl.dy = v2->y - (divl.y = v1->y);
 
 		// line isn't crossed?
-		if (P_DivlineSide(los->strace.x, los->strace.y, &divl) ==
-			P_DivlineSide(los->t2x, los->t2y, &divl))
+		if (P_DivlineCrossed(los->strace.x, los->strace.y, los->t2x, los->t2y, &divl))
 			continue;
 
 		if (funcs->validate(seg, &divl, los) == false)
@@ -597,24 +549,34 @@ static boolean P_CrossSubsector(size_t num, register los_t *los, register los_fu
 //  if strace crosses the given node successfully.
 //
 // killough 4/20/98: rewritten to remove tail recursion, clean up, and optimize
+// cph - Made to use R_PointOnSide instead of P_DivlineSide, since the latter
+//  could return 2 which was ambigous, and the former is
+//  better optimised; also removes two casts :-)
 
 static boolean P_CrossBSPNode(INT32 bspnum, register los_t *los, register los_funcs_t *funcs)
 {
 	while (!(bspnum & NF_SUBSECTOR))
 	{
 		register node_t *bsp = nodes + bspnum;
-		INT32 side = P_DivlineSide(los->strace.x, los->strace.y, (divline_t *)bsp) & 1;
+		INT32 side = R_PointOnSide(los->strace.x, los->strace.y, bsp);
+		INT32 side2 = R_PointOnSide(los->t2x, los->t2y, bsp);
 
-		if (side == P_DivlineSide(los->t2x, los->t2y, (divline_t *) bsp))
+		if (side == side2)
 		{
-			bspnum = bsp->children[side]; // doesn't touch the other side
+			// doesn't touch the other side
+			bspnum = bsp->children[side];
 		}
-		else         // the partition plane is crossed here
+		else
 		{
+			// the partition plane is crossed here
 			if (!P_CrossBSPNode(bsp->children[side], los, funcs))
+			{
 				return false;  // cross the starting side
+			}
 			else
+			{
 				bspnum = bsp->children[side ^ 1];  // cross the ending side
+			}
 		}
 	}
 

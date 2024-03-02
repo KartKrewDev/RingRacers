@@ -28,7 +28,7 @@
 
 using namespace srb2;
 
-extern "C" consvar_t cv_debughudtracker, cv_battleufotest;
+extern "C" consvar_t cv_debughudtracker, cv_battleufotest, cv_kartdebugwaypoints;
 
 namespace
 {
@@ -109,6 +109,7 @@ struct TargetTracking
 		switch (mobj->type)
 		{
 		case MT_SPRAYCAN:
+		case MT_WAYPOINT:
 			return false;
 
 		default:
@@ -230,6 +231,7 @@ private:
 			};
 
 		case MT_BATTLEUFO_SPAWNER:
+		case MT_WAYPOINT:
 			return {};
 
 		default:
@@ -335,6 +337,9 @@ bool is_object_tracking_target(const mobj_t* mobj)
 
 	case MT_BATTLEUFO_SPAWNER:
 		return cv_battleufotest.value;
+
+	case MT_WAYPOINT:
+		return cv_kartdebugwaypoints.value;
 
 	default:
 		return false;
@@ -564,14 +569,31 @@ void K_DrawTargetTracking(const TargetTracking& target)
 			);
 		};
 
-		if (target.mobj->type == MT_BATTLEUFO_SPAWNER) // debug
+		using srb2::Draw;
+		auto debug = [&]() -> Draw
 		{
-			using srb2::Draw;
-			Draw(FixedToFloat(result.x), FixedToFloat(result.y))
+			return Draw(FixedToFloat(result.x), FixedToFloat(result.y))
 				.flags(V_SPLITSCREEN)
 				.font(Draw::Font::kThin)
-				.align(Draw::Align::kCenter)
-				.text("BUFO ID: {}", Obj_BattleUFOSpawnerID(target.mobj));
+				.align(Draw::Align::kCenter);
+		};
+
+		switch (target.mobj->type) // debug
+		{
+		case MT_BATTLEUFO_SPAWNER:
+			debug().text("BUFO ID: {}", Obj_BattleUFOSpawnerID(target.mobj));
+			break;
+
+		case MT_WAYPOINT:
+			if (target.camDist < 2048 * mapobjectscale)
+			{
+				bool isNext = stplyr->nextwaypoint && stplyr->nextwaypoint->mobj == target.mobj;
+				debug().flags(isNext ? V_GREENMAP : 0).text("{}", target.mobj->movecount); // waypoint ID
+			}
+			break;
+
+		default:
+			break;
 		}
 	}
 }

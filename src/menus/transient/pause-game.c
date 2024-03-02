@@ -54,17 +54,8 @@ menuitem_t PAUSE_Main[] =
 	{IT_STRING | IT_CALL, "RESUME GAME", "M_ICOUNP",
 		NULL, {.routine = M_QuitPauseMenu}, 0, 0},
 
-	{IT_STRING | IT_CALL, "SPECTATE", "M_ICOSPC",
-		NULL, {.routine = M_ConfirmSpectate}, 0, 0},
-
-	{IT_STRING | IT_CALL, "ENTER GAME", "M_ICOENT",
-		NULL, {.routine = M_ConfirmEnterGame}, 0, 0},
-
-	{IT_STRING | IT_CALL, "CANCEL JOIN", "M_ICOSPC",
-		NULL, {.routine = M_ConfirmSpectate}, 0, 0},
-
-	{IT_STRING | IT_SUBMENU, "JOIN OR SPECTATE", "M_ICOENT",
-		NULL, {NULL}, 0, 0},
+	{IT_STRING | IT_ARROWS, "SPECTATE", "M_ICOSPC",
+		NULL, {.routine = M_HandleSpectateToggle}, 0, 0},
 
 	{IT_STRING | IT_CALL, "PLAYER SETUP", "M_ICOCHR",
 		NULL, {.routine = M_CharacterSelect}, 0, 0},
@@ -142,10 +133,7 @@ void M_OpenPauseMenu(void)
 	PAUSE_Main[mpause_restartmap].status = IT_DISABLED;
 	PAUSE_Main[mpause_tryagain].status = IT_DISABLED;
 
-	PAUSE_Main[mpause_spectate].status = IT_DISABLED;
-	PAUSE_Main[mpause_entergame].status = IT_DISABLED;
-	PAUSE_Main[mpause_canceljoin].status = IT_DISABLED;
-	PAUSE_Main[mpause_spectatemenu].status = IT_DISABLED;
+	PAUSE_Main[mpause_spectatetoggle].status = IT_DISABLED;
 	PAUSE_Main[mpause_psetup].status = IT_DISABLED;
 	PAUSE_Main[mpause_cheats].status = IT_DISABLED;
 
@@ -236,17 +224,13 @@ void M_OpenPauseMenu(void)
 
 	if (G_GametypeHasSpectators())
 	{
-		if (splitscreen)
-			PAUSE_Main[mpause_spectatemenu].status = IT_STRING|IT_SUBMENU;
-		else
+		if (pausemenu.splitscreenfocusid > splitscreen)
 		{
-			if (!players[consoleplayer].spectator)
-				PAUSE_Main[mpause_spectate].status = IT_STRING | IT_CALL;
-			else if (players[consoleplayer].pflags & PF_WANTSTOJOIN)
-				PAUSE_Main[mpause_canceljoin].status = IT_STRING | IT_CALL;
-			else
-				PAUSE_Main[mpause_entergame].status = IT_STRING | IT_CALL;
+			// Only futz if necessary.
+			pausemenu.splitscreenfocusid = 0;
 		}
+
+		PAUSE_Main[mpause_spectatetoggle].status = IT_STRING | IT_ARROWS;
 	}
 
 	if (CV_CheatsEnabled())
@@ -429,10 +413,7 @@ void M_TryAgain(INT32 choice)
 		G_CheckDemoStatus(); // Cancel recording
 		M_StartTimeAttack(-1);
 	}
-	else
-	{
-		G_SetRetryFlag();
-	}
+	G_SetRetryFlag();
 }
 
 static void M_GiveUpResponse(INT32 ch)
@@ -465,24 +446,86 @@ void M_GiveUp(INT32 choice)
 }
 
 // Pause spectate / join functions
-void M_ConfirmSpectate(INT32 choice)
-{
-	(void)choice;
-	// We allow switching to spectator even if team changing is not allowed
-	M_QuitPauseMenu(-1);
-	COM_ImmedExecute("changeteam spectator");
-}
-
-void M_ConfirmEnterGame(INT32 choice)
-{
-	(void)choice;
-	if (!cv_allowteamchange.value)
+void M_HandleSpectateToggle(INT32 choice)
+{	
+	if (choice == 2)
 	{
-		M_StartMessage("Team Change", M_GetText("The server is not allowing\nteam changes at this time.\n"), NULL, MM_NOTHING, NULL, NULL);
+		if (!(G_GametypeHasSpectators() && pausemenu.splitscreenfocusid <= splitscreen))
+		{
+			M_StartMessage("Team Change", va("You can't change spectator status right now. (Player %c)", ('A' + pausemenu.splitscreenfocusid)), NULL, MM_NOTHING, NULL, NULL);
+			return;
+		}
+
+		boolean tospectator = false;
+		{
+			// Identify relevant spectator state of pausemenu.splitscreenfocusid.
+			// See also M_DrawPause.
+
+			const UINT8 splitspecid =
+				g_localplayers[pausemenu.splitscreenfocusid];
+
+			tospectator = (
+				players[splitspecid].spectator == false
+				|| (players[splitspecid].pflags & PF_WANTSTOJOIN)
+			);
+		}
+
+		if (!tospectator && !cv_allowteamchange.value)
+		{
+			M_StartMessage("Team Change", M_GetText("The server is not allowing\nteam changes at this time.\n"), NULL, MM_NOTHING, NULL, NULL);
+			return;
+		}
+
+		M_QuitPauseMenu(-1);
+
+		const char *destinationstate = tospectator ? "spectator" : "playing";
+
+		// These console command names...
+		if (pausemenu.splitscreenfocusid == 0)
+		{
+			COM_ImmedExecute(
+				va(
+					"changeteam %s",
+					destinationstate
+				)
+			);
+		}
+		else
+		{
+			COM_ImmedExecute(
+				va(
+					"changeteam%u %s",
+					pausemenu.splitscreenfocusid + 1,
+					destinationstate
+				)
+			);
+		}
+
 		return;
 	}
-	M_QuitPauseMenu(-1);
-	COM_ImmedExecute("changeteam playing");
+
+	if (splitscreen == 0)
+		return;
+
+	if (choice == 0) // left
+	{
+		if (pausemenu.splitscreenfocusid)
+			pausemenu.splitscreenfocusid--;
+		else
+			pausemenu.splitscreenfocusid = splitscreen;
+	}
+	else if (choice == 1) // right
+	{
+		if (pausemenu.splitscreenfocusid < splitscreen)
+			pausemenu.splitscreenfocusid++;
+		else
+			pausemenu.splitscreenfocusid = 0;
+	}
+	else // reset
+	{
+		pausemenu.splitscreenfocusid = 0;
+	}
+	S_StartSound(NULL, sfx_s3k5b);
 }
 
 static void M_ExitGameResponse(INT32 ch)

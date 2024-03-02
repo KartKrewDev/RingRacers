@@ -112,6 +112,11 @@ public:
 			return;
 		}
 
+		if (exitcountdown)
+		{
+			return;
+		}
+
 		Fixed ofs = mobjinfo[MT_BATTLEUFO].height / 4;
 
 		Spawner* spawner = next(g_battleufo.previousId);
@@ -123,6 +128,8 @@ public:
 		ufo->sprzoff(ofs * spawner->scale());
 
 		ufo->spawner(spawner);
+
+		ufo->extravalue1 = 0; // Lifetime
 	}
 };
 
@@ -134,6 +141,8 @@ void Obj_BattleUFOThink(mobj_t *mobj)
 {
 	UFO* ufo = static_cast<UFO*>(mobj);
 
+	ufo->extravalue1++;
+
 	ufo->bob();
 
 	if ((leveltime/2) & 1)
@@ -141,7 +150,12 @@ void Obj_BattleUFOThink(mobj_t *mobj)
 		ufo->spawn_beam();
 	}
 
-	if (!battleovertime.enabled)
+	if (!exitcountdown && (ufo->extravalue1 % (TICRATE*2)) == 0)
+	{
+		S_StartSound(ufo, sfx_s3ka5);
+	}
+
+	if (!battleovertime.enabled && ufo->extravalue1 <= 5*TICRATE)
 	{
 		Obj_PointPlayersToXY(mobj->x, mobj->y);
 	}

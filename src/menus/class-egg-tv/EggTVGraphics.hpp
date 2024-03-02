@@ -92,10 +92,9 @@ public:
 		std::unordered_map<std::string_view, patch> gametype = {
 			{"Race",			"RHGT1"},
 			{"Battle",			"RHGT2"},
-
-			// TODO: requires support in the demo format
-			//{"Prisons",			"RHGT3"},
-			//{"Special",			"RHGT4"},
+			{"Prison Break",	"RHGT3"},
+			{"Sealed Star",		"RHGT4"},
+			{"Versus",			"RHGT5"},
 		};
 
 		patch fav			= "RHFAV";

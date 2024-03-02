@@ -1338,6 +1338,9 @@ typedef enum
 	sfx_ssbmpr,
 	sfx_chcrun,
 
+	// Tutorial Hint
+	sfx_hint,
+
 	// Damage sounds
 	sfx_dmga1,
 	sfx_dmga2,
@@ -1570,6 +1573,20 @@ typedef enum
 	sfx_cftbl0,
 	sfx_cftbl1,
 	sfx_cftbl2,
+	
+	// Generic menu SFX
+	sfx_tmxatt,
+	sfx_tmxawd,
+	sfx_tmxbak,
+	sfx_tmxdsm,
+	sfx_tmxerr,
+	sfx_tmxfwd,
+	sfx_tmxnah,
+	sfx_tmxqst,
+	sfx_tmxsuc,
+	sfx_tmxunx,
+	sfx_tmxbdn,
+	sfx_tmxbup,
 
 	// And LASTLY, Kart's skin sounds.
 	sfx_kwin,

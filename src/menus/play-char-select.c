@@ -502,7 +502,7 @@ static boolean M_HandlePressStart(setup_player_t *p, UINT8 num)
 			else if (num)
 			{
 				// For any player past player 1, set controls to default profile controls, otherwise it's generally awful to do any menuing...
-				memcpy(&gamecontrol[num], gamecontroldefault, sizeof(gamecontroldefault));
+				G_ApplyControlScheme(num, gamecontroldefault);
 			}
 
 			G_SetDeviceForPlayer(num, device);

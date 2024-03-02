@@ -392,6 +392,11 @@ void Obj_SSCabotronMobjSpawn(mobj_t* mo);
 void Obj_SSCabotronMobjThink(mobj_t* mo);
 void Obj_SSCabotronStarMobjThink(mobj_t* mo);
 
+/* Talk Point */
+void Obj_TalkPointInit(mobj_t* mo);
+void Obj_TalkPointThink(mobj_t* mo);
+void Obj_TalkPointOrbThink(mobj_t* mo);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

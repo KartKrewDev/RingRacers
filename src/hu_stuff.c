@@ -183,7 +183,7 @@ static void Command_Sayto_f(void);
 static void Command_Sayteam_f(void);
 static void Command_CSay_f(void);
 static void Command_Shout(void);
-static void Got_Saycmd(UINT8 **p, INT32 playernum);
+static void Got_Saycmd(const UINT8 **p, INT32 playernum);
 
 void HU_LoadGraphics(void)
 {
@@ -325,7 +325,7 @@ void HU_Init(void)
 		PR   ("MKFNT");
 		REG;
 
-		ADIM (TIMER);
+		ADIM (NUM);
 		PR   ("TMFNT");
 		REG;
 
@@ -660,11 +660,12 @@ static void Command_Shout(void)
   * \sa DoSayPacket
   * \author Graue <graue@oceanbase.org>
   */
-static void Got_Saycmd(UINT8 **p, INT32 playernum)
+static void Got_Saycmd(const UINT8 **p, INT32 playernum)
 {
 	SINT8 target;
 	UINT8 flags;
 	const char *dispname;
+	char buf[HU_MAXMSGLEN + 1];
 	char *msg;
 	boolean action = false;
 	char *ptr;
@@ -678,8 +679,8 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 	target = READSINT8(*p);
 	flags = READUINT8(*p);
 	playernum = READUINT8(*p);
-	msg = (char *)*p;
-	SKIPSTRINGL(*p, HU_MAXMSGLEN + 1);
+	msg = buf;
+	READSTRINGL(*p, msg, HU_MAXMSGLEN + 1);
 
 	//check for invalid characters (0x80 or above)
 	{
@@ -883,7 +884,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 
 void HU_TickSongCredits(void)
 {
-	if (cursongcredit.def == NULL) // No def
+	if (cursongcredit.text == NULL) // No def
 	{
 		cursongcredit.x = cursongcredit.old_x = 0;
 		cursongcredit.anim = 0;
@@ -1991,7 +1992,7 @@ static void HU_DrawDemoInfo(void)
 //
 void HU_DrawSongCredits(void)
 {
-	if (!cursongcredit.def || cursongcredit.trans >= NUMTRANSMAPS) // No def
+	if (!cursongcredit.text || cursongcredit.trans >= NUMTRANSMAPS) // No def
 	{
 		return;
 	}
@@ -2002,6 +2003,10 @@ void HU_DrawSongCredits(void)
 	if (gamestate == GS_INTERMISSION)
 	{
 		y = (BASEVIDHEIGHT - 13) * FRACUNIT;
+	}
+	else if (gamestate == GS_MENU)
+	{
+		y = 30 * FRACUNIT;
 	}
 	else
 	{

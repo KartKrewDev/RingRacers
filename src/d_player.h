@@ -103,7 +103,7 @@ typedef enum
 
 	PF_RINGLOCK			= 1<<13, // Prevent picking up rings while SPB is locked on
 
-	PF_LITESTEER		= 1<<14, // Hold Down to shallow turn (digital only)
+	PF_ANALOGSTICK		= 1<<14, // This player is using an analog joystick
 
 	//15-17 free, was previously itemflags stuff
 
@@ -671,6 +671,7 @@ struct player_t
 	mobj_t *ringShooter;	// DEZ respawner object
 	tic_t airtime; 			// Used to track just air time, but has evolved over time into a general "karted" timer. Rename this variable?
 	tic_t lastairtime;
+	UINT8 bigwaypointgap;	// timer counts down if finish line distance gap is too big to update waypoint
 	UINT8 startboost;		// (0 to 125) - Boost you get from start of race
 	UINT8 dropdashboost;	// Boost you get when holding A while respawning
 
@@ -695,6 +696,7 @@ struct player_t
 	UINT8 gateSound;		// Sound effect combo
 
 	SINT8 aizdriftstrat;	// (-1 to 1) - Let go of your drift while boosting? Helper for the SICK STRATZ (sliptiding!) you have just unlocked
+	SINT8 aizdriftextend;	// Nonzero when you were sliptiding last tic, sign indicates direction.
 	INT32 aizdrifttilt;
 	INT32 aizdriftturn;
 
@@ -953,8 +955,10 @@ struct player_t
 	UINT16 infinitether; // Generic infinitether time, used for infinitether leniency.
 
 	UINT8 finalfailsafe; // When you can't Ringshooter, force respawn as a last ditch effort!
+	UINT8 freeRingShooterCooldown; // Can't use a free Ring Shooter again too soon after respawning.
 
 	UINT8 lastsafelap;
+	UINT8 lastsafecheatcheck;
 
 	fixed_t topAccel; // Reduced on straight wall collisions to give players extra recovery time
 
@@ -964,6 +968,8 @@ struct player_t
 	mobj_t *whip;
 	mobj_t *hand;
 	mobj_t *flickyAttacker;
+
+	SINT8 pitblame; // Index of last player that hit you, resets after being in control for a bit. If you deathpit, credit the old attacker!
 
 	UINT8 instaWhipCharge;
 	UINT8 defenseLockout; // Committed to universal attack/defense, make 'em vulnerable! No whip/guard.
@@ -978,9 +984,13 @@ struct player_t
 	angle_t besthanddirection;
 
 	INT16 incontrol; // -1 to -175 when spinning out or tumbling, 1 to 175 when not. Use to check for combo hits or emergency inputs.
+	UINT16 progressivethrust; // When getting beat up in GTR_BUMPERS, speed up the longer you've been out of control.
+
+	boolean analoginput; // Has an input been recorded that requires analog usage? For input display.
 
 	boolean markedfordeath;
 	boolean dotrickfx;
+	UINT8 bumperinflate;
 
 	UINT8 ringboxdelay; // Delay until Ring Box auto-activates
 	UINT8 ringboxaward; // Where did we stop?

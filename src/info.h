@@ -955,6 +955,7 @@ typedef enum sprite
 	// Additional Kart Objects
 	SPR_AUDI, // Audience members
 	SPR_BUZB, // Buzz Bomber
+	SPR_SACO, // Sapphire Coast Fauna
 	SPR_BRNG, // Chaotix Big Ring
 
 	// Ark Arrows
@@ -1268,6 +1269,9 @@ typedef enum sprite
 	SPR_SENB, // Cabotron
 	SPR_SENC, // Cabotron
 	SPR_SEAS, // Starstream
+
+	// Tutorial
+	SPR_TLKP, // Talk Point
 
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	SPR_VIEW,
@@ -3151,6 +3155,14 @@ typedef enum state
 	S_FLAYM2,
 	S_FLAYM3,
 	S_FLAYM4,
+	S_PALMTREE2,
+	S_PURPLEFLOWER1,
+	S_PURPLEFLOWER2,
+	S_YELLOWFLOWER1,
+	S_YELLOWFLOWER2,
+	S_PLANT2,
+	S_PLANT3,
+	S_PLANT4,
 
 	// Chaotix Big Ring
 	S_BIGRING01,
@@ -4002,6 +4014,10 @@ typedef enum state
 	// MT_STARSTREAM
 	S_STARSTREAM,
 
+	// MT_SCRIPT_THING
+	S_TALKPOINT,
+	S_TALKPOINT_ORB,
+
 	S_FIRSTFREESLOT,
 	S_LASTFREESLOT = S_FIRSTFREESLOT + NUMSTATEFREESLOTS - 1,
 	NUMSTATES
@@ -4600,6 +4616,15 @@ typedef enum mobj_type
 
 	MT_FLAYM,
 
+	MT_PALMTREE2,
+	MT_PURPLEFLOWER1,
+	MT_PURPLEFLOWER2,
+	MT_YELLOWFLOWER1,
+	MT_YELLOWFLOWER2,
+	MT_PLANT2,
+	MT_PLANT3,
+	MT_PLANT4,
+
 	MT_BIGRING,
 
 	MT_ARKARROW, // Ark Arrows
@@ -4742,6 +4767,7 @@ typedef enum mobj_type
 
 	MT_CHECKPOINT_END,
 	MT_SCRIPT_THING,
+	MT_SCRIPT_THING_ORB,
 
 	MT_RIDEROID,
 	MT_RIDEROIDNODE,

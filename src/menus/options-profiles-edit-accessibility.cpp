@@ -5,6 +5,7 @@
 
 #include "../command.h"
 #include "../k_menu.h"
+#include "../m_easing.h"
 #include "../p_local.h" // cv_tilting
 
 extern "C" consvar_t cv_mindelay;
@@ -16,7 +17,7 @@ namespace
 
 void draw_routine()
 {
-	Draw row = Draw(0, currentMenu->y).font(Draw::Font::kMenu);
+	Draw row = Draw(M_EaseWithTransition(Easing_InSine, 5 * 48), currentMenu->y).font(Draw::Font::kMenu);
 
 	M_DrawEditProfileTooltips();
 
@@ -116,7 +117,7 @@ menuitem_t OPTIONS_ProfileAccessibility[] = {
 	{IT_STRING | IT_CVAR, "Reduce Effects", "If overwhelmed, hide less-important particle cues.",
 		NULL, {.cvar = &cv_reducevfx}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Screenshake Strength", "Adjust shake intensity from hazards and offroad.",
+	{IT_STRING | IT_CVAR, "Screenshake", "Adjust shake intensity from hazards and offroad.",
 		NULL, {.cvar = &cv_screenshake}, 0, 0},
 };
 

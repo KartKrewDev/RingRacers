@@ -398,9 +398,6 @@ boolean K_IsPlayerLosing(player_t *player)
 	if (specialstageinfo.valid == true)
 		return false; // anything short of DNF is COOL
 
-	if (tutorialchallenge == TUTORIALSKIP_INPROGRESS)
-		return true; // anything short of perfect is SUCK
-
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i] || players[i].spectator)
@@ -1255,7 +1252,15 @@ static void K_DrawDraftCombiring(player_t *player, mobj_t *victim, fixed_t curdi
 	}
 	else
 	{
-		c = FixedMul((CHAOTIXBANDCOLORS - 1)<<FRACBITS, FixedDiv(curdist-minimumdist, maxdist-minimumdist)) >> FRACBITS;
+		fixed_t num = curdist - minimumdist;
+		fixed_t den = maxdist - minimumdist;
+		if (den < 1)
+			den = 1;
+		if (num < 0)
+			num = 0;
+		if (num > den)
+			num = den;
+		c = FixedMul((CHAOTIXBANDCOLORS - 1)<<FRACBITS, FixedDiv(num, den)) >> FRACBITS;
 	}
 
 	stepx = (victim->x - player->mo->x) / CHAOTIXBANDLEN;
@@ -1405,6 +1410,14 @@ static boolean K_TryDraft(player_t *player, mobj_t *dest, fixed_t minDist, fixed
 	}
 #endif
 
+	// Bots are unusually good at keeping their facing aligned on long, tight turns.
+	// Force them to give up tether in these situations, like a drifting player typically would.
+	UINT16 rejectThreshold = KART_FULLTURN/4;
+	if (K_PlayerUsesBotMovement(player) && (abs(player->oldcmd.turning + player->cmd.turning) >= rejectThreshold))
+	{
+		return false;
+	}
+
 	olddraft = player->draftpower;
 
 	player->draftleeway = leniency;
@@ -1499,12 +1512,9 @@ static void K_UpdateDraft(player_t *player)
 		leniency *= 4;
 	}
 
-	// Want to berserk attack? Get your speed FIRST.
-	if (player->instaWhipCharge >= INSTAWHIP_TETHERBLOCK || player->defenseLockout)
-		return;
-
-	// Not enough speed to draft.
-	if (player->speed >= 20 * player->mo->scale)
+	// You need speed and commitment to draft.
+	if (player->speed >= 20 * player->mo->scale
+		&& player->instaWhipCharge < INSTAWHIP_TETHERBLOCK && !player->defenseLockout)
 	{
 		if (addUfo != NULL)
 		{
@@ -3817,14 +3827,14 @@ void K_DoPowerClash(mobj_t *t1, mobj_t *t2) {
 	{
 		t1->player->instashield = 1;
 		t1->player->speedpunt += 20;
-		lag1 -= min(lag1, t1->player->speedpunt/10);
+		lag1 -= min(lag1, t1->player->speedpunt/10); 
 	}
 
 	if (t2->player)
 	{
 		t2->player->instashield = 1;
 		t2->player->speedpunt += 20;
-		lag2 -= min(lag1, t2->player->speedpunt/10);
+		lag2 -= min(lag1, t2->player->speedpunt/10); 
 	}
 
 	S_StartSound(t1, sfx_parry);
@@ -4554,6 +4564,22 @@ static boolean K_LastTumbleBounceCondition(player_t *player)
 	return (player->tumbleBounces > TUMBLEBOUNCES && player->tumbleHeight < 60);
 }
 
+// Bumpers give you bonus launch height and speed, strengthening your DI to help evade combos.
+// bumperinflate visuals are handled by MT_BATTLEBUMPER, but the effects are in K_KartPlayerThink.
+void K_BumperInflate(player_t *player)
+{
+	if (!player || P_MobjWasRemoved(player->mo))
+		return;
+
+	if (!(gametyperules & GTR_BUMPERS))
+		return;
+
+	player->bumperinflate = 3;
+
+	if (player->mo->health > 1)
+		S_StartSound(player->mo, sfx_cdpcm9);
+}
+
 static void K_HandleTumbleBounce(player_t *player)
 {
 	player->tumbleBounces++;
@@ -4600,6 +4626,8 @@ static void K_HandleTumbleBounce(player_t *player)
 			P_ResetPitchRoll(player->mo); // Prevent Kodachrome Void infinite
 		}
 	}
+
+	K_BumperInflate(player);
 
 	// A bit of damage hitlag.
 	// This gives a window for DI!!
@@ -7235,7 +7263,7 @@ void K_RepairOrbitChain(mobj_t *orbit)
 	}
 
 	// Then recount to make sure item amount is correct
-	if (orbit->target && orbit->target->player)
+	if (orbit->target && orbit->target->player && !P_MobjWasRemoved(orbit->target))
 	{
 		INT32 num = 0;
 
@@ -7252,7 +7280,7 @@ void K_RepairOrbitChain(mobj_t *orbit)
 				prev->movedir = num;
 		}
 
-		if (orbit->target->player->itemamount != num)
+		if (orbit->target && !P_MobjWasRemoved(orbit->target) && orbit->target->player->itemamount != num)
 			orbit->target->player->itemamount = num;
 	}
 }
@@ -8203,7 +8231,7 @@ static void K_UpdateTripwire(player_t *player)
 		if (triplevel != TRIPWIRE_CONSUME)
 			player->tripwireLeniency = max(player->tripwireLeniency, TRIPWIRETIME);
 	}
-
+	
 	// TRIPWIRE_CONSUME is only applied in very specific cases (currently, riding Garden Top)
 	// and doesn't need leniency; however, it should track leniency from other pass conditions,
 	// so that stripping Garden Top feels consistent.
@@ -8552,10 +8580,10 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (P_PlayerInPain(player))
 	{
-		player->ringboost = 0;
+		player->ringboost = 0;		
 	}
 	else if (player->ringboost)
-	{
+	{	
 		// These values can get FUCKED ever since ring-stacking speed changes.
 		// If we're not actively being awarded rings, roll off extreme ringboost durations.
 		if (player->superring == 0)
@@ -8580,7 +8608,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->flamedash)
 	{
 		player->flamedash--;
-
+		
 		if (player->flamedash == 0)
 			S_StopSoundByID(player->mo, sfx_fshld1);
 		else if (player->flamedash == 3 && player->curshield == KSHIELD_FLAME) // "Why 3?" We can't blend sounds so this is the best shit I've got
@@ -8686,6 +8714,13 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		K_DoIngameRespawn(player);
 	}
 
+	if (player->bigwaypointgap)
+	{
+		player->bigwaypointgap--;
+		if (!player->bigwaypointgap)
+			K_DoIngameRespawn(player);
+	}
+
 	if (player->tripwireUnstuck && !player->mo->hitlag)
 		player->tripwireUnstuck--;
 
@@ -8714,6 +8749,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	{
 		player->finalfailsafe = 0;
 	}
+
+	if (player->freeRingShooterCooldown && !player->mo->hitlag)
+		player->freeRingShooterCooldown--;
 
 	if (player->superring)
 	{
@@ -8786,6 +8824,33 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->hyudorotimer)
 		player->hyudorotimer--;
 
+	if (player->bumperinflate && player->mo->hitlag == 0)
+	{
+		fixed_t thrustdelta = MAXCOMBOTHRUST - MINCOMBOTHRUST;
+		fixed_t floatdelta = MAXCOMBOFLOAT - MINCOMBOFLOAT;
+
+		fixed_t thrustpertic = thrustdelta / MAXCOMBOTIME;
+		fixed_t floatpertic = floatdelta / MAXCOMBOTIME;
+
+		fixed_t totalthrust = thrustpertic * player->progressivethrust + MINCOMBOTHRUST;
+		fixed_t totalfloat = floatpertic * player->progressivethrust + MINCOMBOFLOAT;
+
+		if (player->speed > K_GetKartSpeed(player, false, false))
+			totalthrust = 0;
+
+		if (player->tumbleBounces && player->tumbleBounces <= TUMBLEBOUNCES)
+		{
+			player->mo->momz += totalfloat;
+			P_Thrust(player->mo, K_MomentumAngle(player->mo), totalthrust/2);
+		}
+		else
+		{
+			P_Thrust(player->mo, K_MomentumAngle(player->mo), totalthrust);
+		}
+
+		player->bumperinflate--;
+	}
+
 	if (player->ringvolume < MINRINGVOLUME)
 		player->ringvolume = MINRINGVOLUME;
 	else if (MAXRINGVOLUME - player->ringvolume < RINGVOLUMEREGEN)
@@ -8816,6 +8881,19 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	{
 		player->instaWhipCharge = 0;
 		player->defenseLockout--;
+	}
+
+	UINT16 normalturn = abs(cmd->turning);
+	UINT16 normalaim = abs(cmd->throwdir);
+
+	if (normalturn != 0 || normalaim != 0)
+	{
+		if (normalturn != KART_FULLTURN && normalturn != KART_FULLTURN/2 && normalturn != 0)
+			player->analoginput = true;
+		if (normalaim != KART_FULLTURN && normalaim != KART_FULLTURN/2 && normalaim != 0)
+			player->analoginput = true;
+		if (normalturn == KART_FULLTURN/2 && normalaim == KART_FULLTURN)
+			player->analoginput = false;
 	}
 
 	if (player->dotrickfx && !player->mo->hitlag)
@@ -8892,12 +8970,16 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->spinouttimer || player->tumbleBounces)
 	{
+		if (player->progressivethrust < MAXCOMBOTIME)
+			player->progressivethrust++;
 		if (player->incontrol > 0)
 			player->incontrol = 0;
 		player->incontrol--;
 	}
 	else
 	{
+		if (player->progressivethrust)
+			player->progressivethrust--;
 		if (player->incontrol < 0)
 			player->incontrol = 0;
 		player->incontrol++;
@@ -8905,6 +8987,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	player->incontrol = min(player->incontrol, 5*TICRATE);
 	player->incontrol = max(player->incontrol, -5*TICRATE);
+
+	if (player->incontrol == 3*TICRATE)
+		player->pitblame = -1;
 
 	if (P_PlayerInPain(player) || player->respawn.state != RESPAWNST_NONE)
 	{
@@ -8985,8 +9070,12 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		else
 		{
 			player->eggmanexplode--;
+			
+			if (!S_SoundPlaying(player->mo, sfx_kc51))
+				S_StartSound(player->mo, sfx_kc51);
 			if (player->eggmanexplode == 5*TICRATE/2)
 				S_StartSound(player->mo, sfx_s3k53);
+
 			if (player->eggmanexplode <= 0)
 			{
 				mobj_t *eggsexplode;
@@ -8999,6 +9088,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 				K_FlipFromObject(eggsexplode, player->mo);
 
 				S_StopSoundByID(player->mo, sfx_s3k53);
+				S_StopSoundByID(player->mo, sfx_kc51);
 
 				eggsexplode->threshold = KITEM_EGGMAN;
 
@@ -9360,26 +9450,27 @@ void K_KartPlayerAfterThink(player_t *player)
 }
 
 /*--------------------------------------------------
-	static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
+	static boolean K_SetPlayerNextWaypoint(player_t *player)
 
-		Gets the next waypoint of a player, by finding their closest waypoint, then checking which of itself and next or
+		Sets the next waypoint of a player, by finding their closest waypoint, then checking which of itself and next or
 		previous waypoints are infront of the player.
+		Also sets the current waypoint.
 
 	Input Arguments:-
 		player - The player the next waypoint is being found for
 
 	Return:-
-		The waypoint that is the player's next waypoint
+		Whether it is safe to update the respawn waypoint
 --------------------------------------------------*/
-static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
+static boolean K_SetPlayerNextWaypoint(player_t *player)
 {
 	waypoint_t *finishline = K_GetFinishLineWaypoint();
 	waypoint_t *bestwaypoint = NULL;
+	boolean    updaterespawn = false;
 
 	if ((player != NULL) && (player->mo != NULL) && (P_MobjWasRemoved(player->mo) == false))
 	{
 		waypoint_t *waypoint     = K_GetBestWaypointForMobj(player->mo, player->currentwaypoint);
-		boolean    updaterespawn = false;
 
 		// Our current waypoint.
 		bestwaypoint = waypoint;
@@ -9568,24 +9659,19 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 			player->pflags &= ~PF_UPDATEMYRESPAWN;
 		}
 
-		// Respawn point should only be updated when we're going to a nextwaypoint
-		if ((updaterespawn) &&
-		(player->respawn.state == RESPAWNST_NONE) &&
-		(bestwaypoint != NULL) &&
-		(bestwaypoint != player->nextwaypoint) &&
-		(K_GetWaypointIsSpawnpoint(bestwaypoint)) &&
-		(K_GetWaypointIsEnabled(bestwaypoint) == true))
+		// If nextwaypoint is NULL, it means we don't want to update the waypoint until we touch another one.
+		// player->nextwaypoint will keep its previous value in this case.
+		if (bestwaypoint != NULL)
 		{
-			player->respawn.wp = bestwaypoint;
-			player->lastsafelap = player->laps;
+			player->nextwaypoint = bestwaypoint;
 		}
 	}
 
-	return bestwaypoint;
+	return updaterespawn;
 }
 
 /*--------------------------------------------------
-	void K_UpdateDistanceFromFinishLine(player_t *const player)
+	static void K_UpdateDistanceFromFinishLine(player_t *const player)
 
 		Updates the distance a player has to the finish line.
 
@@ -9595,38 +9681,11 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 	Return:-
 		None
 --------------------------------------------------*/
-void K_UpdateDistanceFromFinishLine(player_t *const player)
+static void K_UpdateDistanceFromFinishLine(player_t *const player)
 {
-	if (K_PodiumSequence() == true)
-	{
-		K_UpdatePodiumWaypoints(player);
-		return;
-	}
-
 	if ((player != NULL) && (player->mo != NULL))
 	{
 		waypoint_t *finishline   = K_GetFinishLineWaypoint();
-		waypoint_t *nextwaypoint = NULL;
-
-		if (player->spectator)
-		{
-			// Don't update waypoints while spectating
-			nextwaypoint = finishline;
-		}
-		else
-		{
-			nextwaypoint = K_GetPlayerNextWaypoint(player);
-		}
-
-		if (nextwaypoint != NULL)
-		{
-			// If nextwaypoint is NULL, it means we don't want to update the waypoint until we touch another one.
-			// player->nextwaypoint will keep its previous value in this case.
-			player->nextwaypoint = nextwaypoint;
-		}
-
-		// Update prev value (used for grief prevention code)
-		player->distancetofinishprev = player->distancetofinish;
 
 		// nextwaypoint is now the waypoint that is in front of us
 		if ((player->exiting && !(player->pflags & PF_NOCONTEST)) || player->spectator)
@@ -9762,6 +9821,7 @@ void K_UpdateDistanceFromFinishLine(player_t *const player)
 						adddist = (UINT32)disttowaypoint;
 					}
 					*/
+					Z_Free(pathBackwards.array);
 				}
 				/*
 				else
@@ -9799,6 +9859,72 @@ void K_UpdateDistanceFromFinishLine(player_t *const player)
 				}
 			}
 		}
+	}
+}
+
+static UINT32 u32_delta(UINT32 x, UINT32 y)
+{
+	return x > y ? x - y : y - x;
+}
+
+/*--------------------------------------------------
+	static void K_UpdatePlayerWaypoints(player_t *const player)
+
+		Updates the player's waypoints and finish line distance.
+
+	Input Arguments:-
+		player - The player to update
+
+	Return:-
+		None
+--------------------------------------------------*/
+static void K_UpdatePlayerWaypoints(player_t *const player)
+{
+	const UINT32 distance_threshold = FixedMul(32768, mapobjectscale);
+
+	waypoint_t *const old_currentwaypoint = player->currentwaypoint;
+	waypoint_t *const old_nextwaypoint = player->nextwaypoint;
+
+	boolean updaterespawn = K_SetPlayerNextWaypoint(player);
+
+	// Update prev value (used for grief prevention code)
+	player->distancetofinishprev = player->distancetofinish;
+	K_UpdateDistanceFromFinishLine(player);
+
+	// Respawning should be a full reset.
+	UINT32 delta = u32_delta(player->distancetofinish, player->distancetofinishprev);
+	if (player->respawn.state == RESPAWNST_NONE && delta > distance_threshold)
+	{
+		CONS_Debug(DBG_GAMELOGIC, "Player %s: waypoint ID %d too far away (%u > %u)\n",
+			sizeu1(player - players), K_GetWaypointID(player->nextwaypoint), delta, distance_threshold);
+
+		// Distance jump is too great, keep the old waypoints and recalculate distance.
+		player->currentwaypoint = old_currentwaypoint;
+		player->nextwaypoint = old_nextwaypoint;
+		K_UpdateDistanceFromFinishLine(player);
+
+		// Start the auto respawn timer when the distance jumps.
+		if (!player->bigwaypointgap)
+		{
+			player->bigwaypointgap = 35;
+		}
+	}
+	else
+	{
+		// Reset the auto respawn timer if distance changes are back to normal.
+		player->bigwaypointgap = 0;
+	}
+
+	// Respawn point should only be updated when we're going to a nextwaypoint
+	if ((updaterespawn) &&
+	(player->respawn.state == RESPAWNST_NONE) &&
+	(player->nextwaypoint != old_nextwaypoint) &&
+	(K_GetWaypointIsSpawnpoint(player->nextwaypoint)) &&
+	(K_GetWaypointIsEnabled(player->nextwaypoint) == true))
+	{
+		player->respawn.wp = player->nextwaypoint;
+		player->lastsafelap = player->laps;
+		player->lastsafecheatcheck = player->cheatchecknum;
 	}
 }
 
@@ -10415,20 +10541,21 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 	// No longer meet the conditions to sliptide?
 	// We'll spot you the sliptide as long as you keep turning, but no charging wavedashes.
-	boolean keepsliptide = false;
+	boolean extendedSliptide = false;
 
+	// We don't meet sliptide conditions!
 	if ((player->handleboost < (SLIPTIDEHANDLING/2))
 	|| (!player->steering)
 	|| (!player->aizdriftstrat)
 	|| (player->steering > 0) != (player->aizdriftstrat > 0))
 	{
-		if (!player->drift && player->steering && player->aizdriftstrat && player->wavedash // If we were sliptiding last tic,
-			&& (player->steering > 0) == (player->aizdriftstrat > 0) // we're steering in the right direction,
+		if (!player->drift && player->steering && player->aizdriftextend // If we were sliptiding last tic,
+			&& (player->steering > 0) == (player->aizdriftextend > 0) // we're steering in the right direction,
 			&& player->speed >= K_GetKartSpeed(player, false, true)) // and we're above the threshold to spawn dust...
 		{
-			keepsliptide = true; // Then keep your current sliptide, but note the behavior change for wavedash handling.
+			extendedSliptide = true; // Then keep your current sliptide, but note the behavior change for wavedash handling.
 		}
-		else
+		else // Otherwise, update sliptide status as usual.
 		{
 			if (!player->drift)
 				player->aizdriftstrat = 0;
@@ -10440,16 +10567,22 @@ static void K_KartDrift(player_t *player, boolean onground)
 	if (player->airtime > 2) // Arbitrary number. Small discontinuities due to Super Jank shouldn't thrash your handling properties.
 	{
 		player->aizdriftstrat = 0;
-		keepsliptide = false;
+		extendedSliptide = false;
 	}
+
+	// If we're sliptiding, whether through an extension or otherwise, allow sliptide extensions next tic.
+	if (K_Sliptiding(player))
+		player->aizdriftextend = player->aizdriftstrat;		
+	else
+		player->aizdriftextend = 0;
 
 
 	if ((player->aizdriftstrat && !player->drift)
-		|| (keepsliptide))
+		|| (extendedSliptide))
 	{
 		K_SpawnAIZDust(player);
 
-		if (!keepsliptide)
+		if (!extendedSliptide)
 		{
 			// Give charge proportional to your angle. Sharp turns are rewarding, slow analog slides are not—remember, this is giving back the speed you gave up.
 			UINT16 addCharge = FixedInt(
@@ -10487,9 +10620,9 @@ static void K_KartDrift(player_t *player, boolean onground)
 		player->aizdriftstrat = 0;
 	*/
 
-	if (!K_Sliptiding(player) || keepsliptide)
+	if (!K_Sliptiding(player) || extendedSliptide)
 	{
-		if (!keepsliptide && K_IsLosingWavedash(player) && player->wavedash > 0)
+		if (!extendedSliptide && K_IsLosingWavedash(player) && player->wavedash > 0)
 		{
 			if (player->wavedash > HIDEWAVEDASHCHARGE && !S_SoundPlaying(player->mo, sfx_waved2))
 				S_StartSoundAtVolume(player->mo, sfx_waved2, 255); // Losing combo time, going to boost
@@ -10726,10 +10859,27 @@ void K_UpdateAllPlayerPositions(void)
 	// First loop: Ensure all players' distance to the finish line are all accurate
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
+		player_t *player = &players[i];
+		if (!playeringame[i] || player->spectator || !player->mo || P_MobjWasRemoved(player->mo))
 		{
-			K_UpdateDistanceFromFinishLine(&players[i]);
+			continue;
 		}
+
+		if (K_PodiumSequence() == true)
+		{
+			K_UpdatePodiumWaypoints(player);
+			continue;
+		}
+
+		if (player->respawn.state == RESPAWNST_MOVE &&
+			player->respawn.init == true &&
+			player->lastsafelap < player->laps)
+		{
+			player->laps = player->lastsafelap;
+			player->cheatchecknum = player->lastsafecheatcheck;
+		}
+
+		K_UpdatePlayerWaypoints(player);
 	}
 
 	// Second loop: Ensure all player positions reflect everyone's distances
@@ -11690,7 +11840,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			UINT32 behind = K_GetItemRouletteDistance(player, player->itemRoulette.playing);
 			UINT32 behindMulti = behind / 500;
 			behindMulti = min(behindMulti, 60);
-
+				
 
 			UINT32 award = 5*player->ringboxaward + 10;
 			if (!cv_thunderdome.value)
@@ -12183,7 +12333,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									player->ballhogcharge++;
 									if (player->ballhogcharge % BALLHOGINCREMENT == 0)
 									{
-										sfxenum_t hogsound[] =
+										sfxenum_t hogsound[] = 
 										{
 											sfx_bhog00,
 											sfx_bhog01,
@@ -12728,12 +12878,11 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				const angle_t angledelta = FixedAngle(36*FRACUNIT);
 				angle_t baseangle = player->mo->angle + angledelta/2;
 
-				boolean throwing = cmd->throwdir != 0;
-				INT16 turnmagnitude = abs(cmd->turning);
+				INT16 aimingcompare = abs(cmd->throwdir) - abs(cmd->turning);
 
 				// Uses cmd->turning over steering intentionally.
-#define TRICKTHRESHOLD (KART_FULLTURN/4)
-				if (abs(turnmagnitude) > TRICKTHRESHOLD && !throwing) // side trick
+#define TRICKTHRESHOLD (KART_FULLTURN/2)
+				if (aimingcompare < -TRICKTHRESHOLD) // side trick
 				{
 					S_StartSoundAtVolume(player->mo, sfx_trick0, 255/2);
 					player->dotrickfx = true;
@@ -12772,7 +12921,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						P_SetPlayerMobjState(player->mo, S_KART_FAST_LOOK_R);
 					}
 				}
-				else if (abs(turnmagnitude) <= TRICKTHRESHOLD && throwing) // forward/back trick
+				else if (aimingcompare > TRICKTHRESHOLD) // forward/back trick
 				{
 					S_StartSoundAtVolume(player->mo, sfx_trick0, 255/2);
 					player->dotrickfx = true;
@@ -12843,7 +12992,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					if (P_MobjWasRemoved(player->trickIndicator) == false)
 						trickcolor = player->trickIndicator->color;
 
-					if (player->trickpanel == TRICKSTATE_FORWARD)
+					if (player->trickpanel == TRICKSTATE_FORWARD)	
 					{
 						for (j = 0; j < 2; j++)
 						{
@@ -13361,6 +13510,7 @@ void K_EggmanTransfer(player_t *source, player_t *victim)
 	source->eggmanTransferDelay = 10;
 
 	S_StopSoundByID(source->mo, sfx_s3k53);
+	S_StopSoundByID(source->mo, sfx_kc51);
 }
 
 tic_t K_TimeLimitForGametype(void)

@@ -418,6 +418,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT32(save->p, K_GetWaypointHeapIndex(players[i].nextwaypoint));
 		WRITEUINT32(save->p, players[i].airtime);
 		WRITEUINT32(save->p, players[i].lastairtime);
+		WRITEUINT8(save->p, players[i].bigwaypointgap);
 		WRITEUINT8(save->p, players[i].startboost);
 		WRITEUINT8(save->p, players[i].dropdashboost);
 
@@ -443,6 +444,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].gateSound);
 
 		WRITESINT8(save->p, players[i].aizdriftstrat);
+		WRITESINT8(save->p, players[i].aizdriftextend);
 		WRITEINT32(save->p, players[i].aizdrifttilt);
 		WRITEINT32(save->p, players[i].aizdriftturn);
 
@@ -573,10 +575,13 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].finalfailsafe);
 
 		WRITEUINT8(save->p, players[i].lastsafelap);
+		WRITEUINT8(save->p, players[i].lastsafecheatcheck);
 
 		WRITEFIXED(save->p, players[i].topAccel);
 
 		WRITEMEM(save->p, players[i].public_key, PUBKEYLENGTH);
+
+		WRITESINT8(save->p, players[i].pitblame);
 
 		WRITEUINT8(save->p, players[i].instaWhipCharge);
 		WRITEUINT8(save->p, players[i].defenseLockout);
@@ -590,9 +595,13 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEANGLE(save->p, players[i].besthanddirection);
 
 		WRITEINT16(save->p, players[i].incontrol);
+		WRITEUINT16(save->p, players[i].progressivethrust);
+
+		WRITEUINT8(save->p, players[i].analoginput);
 
 		WRITEUINT8(save->p, players[i].markedfordeath);
 		WRITEUINT8(save->p, players[i].dotrickfx);
+		WRITEUINT8(save->p, players[i].bumperinflate);
 
 		WRITEUINT8(save->p, players[i].ringboxdelay);
 		WRITEUINT8(save->p, players[i].ringboxaward);
@@ -993,6 +1002,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].nextwaypoint = (waypoint_t *)(size_t)READUINT32(save->p);
 		players[i].airtime = READUINT32(save->p);
 		players[i].lastairtime = READUINT32(save->p);
+		players[i].bigwaypointgap = READUINT8(save->p);
 		players[i].startboost = READUINT8(save->p);
 		players[i].dropdashboost = READUINT8(save->p);
 
@@ -1018,6 +1028,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].gateSound = READUINT8(save->p);
 
 		players[i].aizdriftstrat = READSINT8(save->p);
+		players[i].aizdriftextend = READSINT8(save->p);
 		players[i].aizdrifttilt = READINT32(save->p);
 		players[i].aizdriftturn = READINT32(save->p);
 
@@ -1148,10 +1159,13 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].finalfailsafe = READUINT8(save->p);
 
 		players[i].lastsafelap = READUINT8(save->p);
+		players[i].lastsafecheatcheck = READUINT8(save->p);
 
 		players[i].topAccel = READFIXED(save->p);
 
 		READMEM(save->p, players[i].public_key, PUBKEYLENGTH);
+
+		players[i].pitblame = READSINT8(save->p);
 
 		players[i].instaWhipCharge = READUINT8(save->p);
 		players[i].defenseLockout = READUINT8(save->p);
@@ -1165,9 +1179,13 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].besthanddirection = READANGLE(save->p);
 
 		players[i].incontrol = READINT16(save->p);
+		players[i].progressivethrust = READUINT16(save->p);
+
+		players[i].analoginput = READUINT8(save->p);
 
 		players[i].markedfordeath = READUINT8(save->p);
 		players[i].dotrickfx = READUINT8(save->p);
+		players[i].bumperinflate = READUINT8(save->p);
 
 		players[i].ringboxdelay = READUINT8(save->p);
 		players[i].ringboxaward = READUINT8(save->p);
@@ -6929,7 +6947,7 @@ boolean P_LoadNetGame(savebuffer_t *save, boolean reloading)
 
 	current_savebuffer = save;
 
-	CV_LoadNetVars(&save->p);
+	save->p += CV_LoadNetVars(save->p);
 
 	if (!P_NetUnArchiveMisc(save, reloading))
 		return false;

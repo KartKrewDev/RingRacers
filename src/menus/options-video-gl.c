@@ -7,13 +7,34 @@
 menuitem_t OPTIONS_VideoOGL[] =
 {
 
-	{IT_STRING | IT_CVAR, "Renderer", "Change renderers between Software and OpenGL",
-		NULL, {.cvar = &cv_renderer}, 0, 0},
-
-	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+	{IT_HEADER, "Rendering Backend...", "Watch people get confused anyway!!",
 		NULL, {NULL}, 0, 0},
 
-	{IT_HEADER, "OpenGL Options...", "Watch people get confused anyway!!",
+	{IT_STRING | IT_SPACE, "Legacy GL supports 3D models and true", "",
+		NULL, {NULL}, 0, 0},
+
+	{IT_STRING | IT_SPACE, "perspective, but many visual features", "",
+		NULL, {NULL}, 0, 0},
+
+	{IT_STRING | IT_SPACE, "are missing/broken.", "",
+		NULL, {NULL}, 0, 0},
+
+	{IT_SPACE | IT_NOTHING, NULL, NULL,
+		NULL, {NULL}, 0, 0},
+
+	{IT_STRING | IT_SPACE, "\x85Legacy GL will eventually be replaced.", "",
+		NULL, {NULL}, 0, 0},
+
+	{IT_STRING | IT_SPACE, "\x85Please don't report visual bugs!", "",
+		NULL, {NULL}, 0, 0}, // Unless you've got an MR to fix them.
+
+	{IT_SPACE | IT_NOTHING, NULL, NULL,
+		NULL, {NULL}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Renderer", "If you don't know why you're changing this, leave it on Software!",
+		NULL, {.cvar = &cv_renderer}, 0, 0},
+
+	{IT_HEADER, "Legacy GL Options...", "Watch people get confused anyway!!",
 		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "3D Models", "Use 3D models instead of sprites when applicable.",

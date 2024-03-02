@@ -45,33 +45,33 @@
 
 #include "m_perfstats.h" // ps_checkposition_calls
 
-tm_t tm = {0};
+tm_t g_tm = {0};
 
 void P_RestoreTMStruct(tm_t tmrestore)
 {
 	// Reference count management
 	// These are effectively a no-op if mobj remains the same
-	P_SetTarget(&tm.thing, tmrestore.thing);
-	P_SetTarget(&tm.floorthing, tmrestore.floorthing);
-	P_SetTarget(&tm.hitthing, tmrestore.hitthing);
+	P_SetTarget(&g_tm.thing, tmrestore.thing);
+	P_SetTarget(&g_tm.floorthing, tmrestore.floorthing);
+	P_SetTarget(&g_tm.hitthing, tmrestore.hitthing);
 
 	// Restore state
-	tm = tmrestore;
+	g_tm = tmrestore;
 
 	// Validation
-	if (tm.thing && P_MobjWasRemoved(tm.thing) == true)
+	if (g_tm.thing && P_MobjWasRemoved(g_tm.thing) == true)
 	{
-		P_SetTarget(&tm.thing, NULL);
+		P_SetTarget(&g_tm.thing, NULL);
 	}
 
-	if (tm.floorthing && P_MobjWasRemoved(tm.floorthing) == true)
+	if (g_tm.floorthing && P_MobjWasRemoved(g_tm.floorthing) == true)
 	{
-		P_SetTarget(&tm.floorthing, NULL);
+		P_SetTarget(&g_tm.floorthing, NULL);
 	}
 
-	if (tm.hitthing && P_MobjWasRemoved(tm.hitthing) == true)
+	if (g_tm.hitthing && P_MobjWasRemoved(g_tm.hitthing) == true)
 	{
-		P_SetTarget(&tm.hitthing, NULL);
+		P_SetTarget(&g_tm.hitthing, NULL);
 	}
 }
 
@@ -103,6 +103,9 @@ camera_t *mapcampointer;
 //
 static boolean P_TeleportMove(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z)
 {
+	boolean startingonground = P_IsObjectOnGround(thing);
+	sector_t *oldsector = thing->subsector->sector;
+
 	numspechit = 0U;
 
 	// the move is ok,
@@ -127,10 +130,12 @@ static boolean P_TeleportMove(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z)
 	if (P_MobjWasRemoved(thing))
 		return true;
 
-	thing->floorz = tm.floorz;
-	thing->ceilingz = tm.ceilingz;
-	thing->floorrover = tm.floorrover;
-	thing->ceilingrover = tm.ceilingrover;
+	thing->floorz = g_tm.floorz;
+	thing->ceilingz = g_tm.ceilingz;
+	thing->floorrover = g_tm.floorrover;
+	thing->ceilingrover = g_tm.ceilingrover;
+
+	P_CheckSectorTransitionalEffects(thing, oldsector, startingonground);
 
 	return true;
 }
@@ -518,24 +523,24 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	fixed_t blockdist;
 	boolean damage = false;
 
-	if (tm.thing == NULL || P_MobjWasRemoved(tm.thing) == true)
-		return BMIT_STOP; // func just popped our tm.thing, cannot continue.
+	if (g_tm.thing == NULL || P_MobjWasRemoved(g_tm.thing) == true)
+		return BMIT_STOP; // func just popped our g_tm.thing, cannot continue.
 
 	// Ignore... things.
 	if (thing == NULL || P_MobjWasRemoved(thing) == true)
 		return BMIT_CONTINUE;
 
 	// don't clip against self
-	if (thing == tm.thing)
+	if (thing == g_tm.thing)
 		return BMIT_CONTINUE;
 
 	// Ignore spectators
-	if ((tm.thing->player && tm.thing->player->spectator)
+	if ((g_tm.thing->player && g_tm.thing->player->spectator)
 	|| (thing->player && thing->player->spectator))
 		return BMIT_CONTINUE;
 
 	// Ignore the collision if BOTH things are in hitlag.
-	if (P_MobjIsFrozen(thing) && P_MobjIsFrozen(tm.thing))
+	if (P_MobjIsFrozen(thing) && P_MobjIsFrozen(g_tm.thing))
 		return BMIT_CONTINUE;
 
 	if ((thing->flags & MF_NOCLIPTHING) || !(thing->flags & (MF_SOLID|MF_SPECIAL|MF_PAIN|MF_SHOOTABLE|MF_SPRING)))
@@ -545,9 +550,9 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	if (P_MobjIsReappearing(thing))
 		return BMIT_CONTINUE;
 
-	blockdist = thing->radius + tm.thing->radius;
+	blockdist = thing->radius + g_tm.thing->radius;
 
-	if (abs(thing->x - tm.x) >= blockdist || abs(thing->y - tm.y) >= blockdist)
+	if (abs(thing->x - g_tm.x) >= blockdist || abs(thing->y - g_tm.y) >= blockdist)
 		return BMIT_CONTINUE; // didn't hit it
 
 	if (thing->flags & MF_PAPERCOLLISION) // CAUTION! Very easy to get stuck inside MF_SOLID objects. Giving the player MF_PAPERCOLLISION is a bad idea unless you know what you're doing.
@@ -569,47 +574,47 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		junk.dx = 2*cosradius; // v2.x - v1.x;
 		junk.dy = 2*sinradius; // v2.y - v1.y;
 
-		if (tm.thing->flags & MF_PAPERCOLLISION) // more strenuous checking to prevent clipping issues
+		if (g_tm.thing->flags & MF_PAPERCOLLISION) // more strenuous checking to prevent clipping issues
 		{
 			INT32 check1, check2, check3, check4;
-			fixed_t tmcosradius = FixedMul(tm.thing->radius, FINECOSINE(tm.thing->angle>>ANGLETOFINESHIFT));
-			fixed_t tmsinradius = FixedMul(tm.thing->radius, FINESINE(tm.thing->angle>>ANGLETOFINESHIFT));
-			if (abs(thing->x - tm.x) >= (abs(tmcosradius) + abs(cosradius)) || abs(thing->y - tm.y) >= (abs(tmsinradius) + abs(sinradius)))
+			fixed_t tmcosradius = FixedMul(g_tm.thing->radius, FINECOSINE(g_tm.thing->angle>>ANGLETOFINESHIFT));
+			fixed_t tmsinradius = FixedMul(g_tm.thing->radius, FINESINE(g_tm.thing->angle>>ANGLETOFINESHIFT));
+			if (abs(thing->x - g_tm.x) >= (abs(tmcosradius) + abs(cosradius)) || abs(thing->y - g_tm.y) >= (abs(tmsinradius) + abs(sinradius)))
 				return BMIT_CONTINUE; // didn't hit it
-			check1 = P_PointOnLineSide(tm.x - tmcosradius, tm.y - tmsinradius, &junk);
-			check2 = P_PointOnLineSide(tm.x + tmcosradius, tm.y + tmsinradius, &junk);
-			check3 = P_PointOnLineSide(tm.x + tm.thing->momx - tmcosradius, tm.y + tm.thing->momy - tmsinradius, &junk);
-			check4 = P_PointOnLineSide(tm.x + tm.thing->momx + tmcosradius, tm.y + tm.thing->momy + tmsinradius, &junk);
+			check1 = P_PointOnLineSide(g_tm.x - tmcosradius, g_tm.y - tmsinradius, &junk);
+			check2 = P_PointOnLineSide(g_tm.x + tmcosradius, g_tm.y + tmsinradius, &junk);
+			check3 = P_PointOnLineSide(g_tm.x + g_tm.thing->momx - tmcosradius, g_tm.y + g_tm.thing->momy - tmsinradius, &junk);
+			check4 = P_PointOnLineSide(g_tm.x + g_tm.thing->momx + tmcosradius, g_tm.y + g_tm.thing->momy + tmsinradius, &junk);
 			if ((check1 == check2) && (check2 == check3) && (check3 == check4))
 				return BMIT_CONTINUE; // the line doesn't cross between collider's start or end
 		}
 		else
 		{
-			if (abs(thing->x - tm.x) >= (tm.thing->radius + abs(cosradius)) || abs(thing->y - tm.y) >= (tm.thing->radius + abs(sinradius)))
+			if (abs(thing->x - g_tm.x) >= (g_tm.thing->radius + abs(cosradius)) || abs(thing->y - g_tm.y) >= (g_tm.thing->radius + abs(sinradius)))
 				return BMIT_CONTINUE; // didn't hit it
-			if ((P_PointOnLineSide(tm.x - tm.thing->radius, tm.y - tm.thing->radius, &junk)
-			== P_PointOnLineSide(tm.x + tm.thing->radius, tm.y + tm.thing->radius, &junk))
-			&& (P_PointOnLineSide(tm.x + tm.thing->radius, tm.y - tm.thing->radius, &junk)
-			== P_PointOnLineSide(tm.x - tm.thing->radius, tm.y + tm.thing->radius, &junk)))
+			if ((P_PointOnLineSide(g_tm.x - g_tm.thing->radius, g_tm.y - g_tm.thing->radius, &junk)
+			== P_PointOnLineSide(g_tm.x + g_tm.thing->radius, g_tm.y + g_tm.thing->radius, &junk))
+			&& (P_PointOnLineSide(g_tm.x + g_tm.thing->radius, g_tm.y - g_tm.thing->radius, &junk)
+			== P_PointOnLineSide(g_tm.x - g_tm.thing->radius, g_tm.y + g_tm.thing->radius, &junk)))
 				return BMIT_CONTINUE; // the line doesn't cross between either pair of opposite corners
 		}
 	}
-	else if (tm.thing->flags & MF_PAPERCOLLISION)
+	else if (g_tm.thing->flags & MF_PAPERCOLLISION)
 	{
 		fixed_t tmcosradius, tmsinradius;
 		vertex_t v1, v2; // fake vertexes
 		line_t junk; // fake linedef
 
-		tmcosradius = FixedMul(tm.thing->radius, FINECOSINE(tm.thing->angle>>ANGLETOFINESHIFT));
-		tmsinradius = FixedMul(tm.thing->radius, FINESINE(tm.thing->angle>>ANGLETOFINESHIFT));
+		tmcosradius = FixedMul(g_tm.thing->radius, FINECOSINE(g_tm.thing->angle>>ANGLETOFINESHIFT));
+		tmsinradius = FixedMul(g_tm.thing->radius, FINESINE(g_tm.thing->angle>>ANGLETOFINESHIFT));
 
-		if (abs(thing->x - tm.x) >= (thing->radius + abs(tmcosradius)) || abs(thing->y - tm.y) >= (thing->radius + abs(tmsinradius)))
+		if (abs(thing->x - g_tm.x) >= (thing->radius + abs(tmcosradius)) || abs(thing->y - g_tm.y) >= (thing->radius + abs(tmsinradius)))
 			return BMIT_CONTINUE; // didn't hit it
 
-		v1.x = tm.x - tmcosradius;
-		v1.y = tm.y - tmsinradius;
-		v2.x = tm.x + tmcosradius;
-		v2.y = tm.y + tmsinradius;
+		v1.x = g_tm.x - tmcosradius;
+		v1.y = g_tm.y - tmsinradius;
+		v2.x = g_tm.x + tmcosradius;
+		v2.y = g_tm.y + tmsinradius;
 
 		junk.v1 = &v1;
 		junk.v2 = &v2;
@@ -625,16 +630,16 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	}
 
 	{
-		UINT8 shouldCollide = LUA_Hook2Mobj(thing, tm.thing, MOBJ_HOOK(MobjCollide)); // checks hook for thing's type
-		if (P_MobjWasRemoved(tm.thing) || P_MobjWasRemoved(thing))
+		UINT8 shouldCollide = LUA_Hook2Mobj(thing, g_tm.thing, MOBJ_HOOK(MobjCollide)); // checks hook for thing's type
+		if (P_MobjWasRemoved(g_tm.thing) || P_MobjWasRemoved(thing))
 			return BMIT_CONTINUE; // one of them was removed???
 		if (shouldCollide == 1)
 			return BMIT_ABORT; // force collide
 		else if (shouldCollide == 2)
 			return BMIT_CONTINUE; // force no collide
 
-		shouldCollide = LUA_Hook2Mobj(tm.thing, thing, MOBJ_HOOK(MobjMoveCollide)); // checks hook for tm.thing's type
-		if (P_MobjWasRemoved(tm.thing) || P_MobjWasRemoved(thing))
+		shouldCollide = LUA_Hook2Mobj(g_tm.thing, thing, MOBJ_HOOK(MobjMoveCollide)); // checks hook for g_tm.thing's type
+		if (P_MobjWasRemoved(g_tm.thing) || P_MobjWasRemoved(thing))
 			return BMIT_CONTINUE; // one of them was removed???
 		if (shouldCollide == 1)
 			return BMIT_ABORT; // force collide
@@ -644,42 +649,42 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 
 	// Blend-Eye internal noclip
 	if ((thing->type == MT_BLENDEYE_GLASS || thing->type == MT_BLENDEYE_SHIELD || thing->type == MT_BLENDEYE_EGGBEATER)
-	&& (tm.thing->type == MT_BLENDEYE_MAIN || tm.thing->type == MT_BLENDEYE_EYE || tm.thing->type == MT_BLENDEYE_PUYO))
+	&& (g_tm.thing->type == MT_BLENDEYE_MAIN || g_tm.thing->type == MT_BLENDEYE_EYE || g_tm.thing->type == MT_BLENDEYE_PUYO))
 		return BMIT_CONTINUE;
 
 	if (thing->flags & MF_PAIN)
 	{ // Player touches painful thing sitting on the floor
 		// see if it went over / under
-		if (thing->z > tm.thing->z + tm.thing->height)
+		if (thing->z > g_tm.thing->z + g_tm.thing->height)
 			return BMIT_CONTINUE; // overhead
-		if (thing->z + thing->height < tm.thing->z)
+		if (thing->z + thing->height < g_tm.thing->z)
 			return BMIT_CONTINUE; // underneath
-		if (tm.thing->flags & MF_SHOOTABLE && thing->health > 0)
+		if (g_tm.thing->flags & MF_SHOOTABLE && thing->health > 0)
 		{
 			UINT32 damagetype = (thing->info->mass & 0xFF);
 
-			P_DamageMobj(tm.thing, thing, thing, 1, damagetype);
+			P_DamageMobj(g_tm.thing, thing, thing, 1, damagetype);
 
-			if (P_MobjWasRemoved(tm.thing) || P_MobjWasRemoved(thing))
+			if (P_MobjWasRemoved(g_tm.thing) || P_MobjWasRemoved(thing))
 				return BMIT_CONTINUE;
 
 			damage = true;
 		}
 	}
-	else if (tm.thing->flags & MF_PAIN && thing->player)
+	else if (g_tm.thing->flags & MF_PAIN && thing->player)
 	{ // Painful thing splats player in the face
 		// see if it went over / under
-		if (tm.thing->z > thing->z + thing->height)
+		if (g_tm.thing->z > thing->z + thing->height)
 			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
+		if (g_tm.thing->z + g_tm.thing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
-		if (thing->flags & MF_SHOOTABLE && tm.thing->health > 0)
+		if (thing->flags & MF_SHOOTABLE && g_tm.thing->health > 0)
 		{
-			UINT32 damagetype = (tm.thing->info->mass & 0xFF);
+			UINT32 damagetype = (g_tm.thing->info->mass & 0xFF);
 
-			P_DamageMobj(thing, tm.thing, tm.thing, 1, damagetype);
+			P_DamageMobj(thing, g_tm.thing, g_tm.thing, 1, damagetype);
 
-			if (P_MobjWasRemoved(tm.thing) || P_MobjWasRemoved(thing))
+			if (P_MobjWasRemoved(g_tm.thing) || P_MobjWasRemoved(thing))
 				return BMIT_CONTINUE;
 
 			damage = true;
@@ -687,16 +692,16 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	}
 
 	// check for skulls slamming into things
-	if (tm.thing->flags2 & MF2_SKULLFLY)
+	if (g_tm.thing->flags2 & MF2_SKULLFLY)
 	{
 		// see if it went over / under
-		if (tm.thing->z > thing->z + thing->height)
+		if (g_tm.thing->z > thing->z + thing->height)
 			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
+		if (g_tm.thing->z + g_tm.thing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
 
-		tm.thing->flags2 &= ~MF2_SKULLFLY;
-		tm.thing->momx = tm.thing->momy = tm.thing->momz = 0;
+		g_tm.thing->flags2 &= ~MF2_SKULLFLY;
+		g_tm.thing->momx = g_tm.thing->momy = g_tm.thing->momz = 0;
 		return BMIT_ABORT; // stop moving
 	}
 
@@ -704,166 +709,166 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 
 	if (thing->type == MT_DLZ_SEASAW_HITBOX)
 	{
-		if (tm.thing->type == MT_PLAYER)
-			Obj_DLZSeasawCollide(tm.thing, thing);	// all checks are performed in there.
+		if (g_tm.thing->type == MT_PLAYER)
+			Obj_DLZSeasawCollide(g_tm.thing, thing);	// all checks are performed in there.
 
 		return BMIT_CONTINUE;
 	}
 
 	if (thing->type == MT_GPZ_SEASAW_HITBOX)
 	{
-		if (tm.thing->type == MT_PLAYER)
-			Obj_GPZSeasawCollide(tm.thing, thing);	// all checks are performed in there.
+		if (g_tm.thing->type == MT_PLAYER)
+			Obj_GPZSeasawCollide(g_tm.thing, thing);	// all checks are performed in there.
 
 		return BMIT_CONTINUE;
 	}
 
 	if (thing->type == MT_DLZ_HOVER)
 	{
-		if (tm.thing->type == MT_PLAYER)
-			Obj_DLZHoverCollide(tm.thing, thing);
+		if (g_tm.thing->type == MT_PLAYER)
+			Obj_DLZHoverCollide(g_tm.thing, thing);
 
 		return BMIT_CONTINUE;
 	}
 
 	if (thing->type == MT_DLZ_RINGVACCUM)
 	{
-		if (tm.thing->type == MT_FLINGRING)
-			Obj_DLZRingVaccumCollide(tm.thing, thing);
+		if (g_tm.thing->type == MT_FLINGRING)
+			Obj_DLZRingVaccumCollide(g_tm.thing, thing);
 
 		return BMIT_CONTINUE;
 	}
 
-	if (tm.thing->type == MT_INSTAWHIP)
+	if (g_tm.thing->type == MT_INSTAWHIP)
 	{
-		if (tm.thing->z > thing->z + thing->height)
+		if (g_tm.thing->z > thing->z + thing->height)
 			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
+		if (g_tm.thing->z + g_tm.thing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
-		K_InstaWhipCollide(tm.thing, thing);
+		K_InstaWhipCollide(g_tm.thing, thing);
 		return BMIT_CONTINUE;
 	}
 
-	if (tm.thing->type == MT_PATROLIVOBALL)
+	if (g_tm.thing->type == MT_PATROLIVOBALL)
 	{
 		if (!thing->player)
 			return BMIT_CONTINUE;
-		if (tm.thing->z > thing->z + thing->height)
+		if (g_tm.thing->z > thing->z + thing->height)
 			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
+		if (g_tm.thing->z + g_tm.thing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
-		Obj_PatrolIvoBallTouch(tm.thing, thing);
+		Obj_PatrolIvoBallTouch(g_tm.thing, thing);
 		return BMIT_CONTINUE;
 	}
 
-	if (thing->type == MT_BATTLEUFO && tm.thing->player)
+	if (thing->type == MT_BATTLEUFO && g_tm.thing->player)
 	{
 		if (thing->health <= 0)
 		{
 			return BMIT_CONTINUE; // dead
 		}
 
-		if (tm.thing->z > thing->z + thing->height)
+		if (g_tm.thing->z > thing->z + thing->height)
 		{
 			return BMIT_CONTINUE; // overhead
 		}
 
-		if (tm.thing->z + tm.thing->height < thing->floorz)
+		if (g_tm.thing->z + g_tm.thing->height < thing->floorz)
 		{
 			return BMIT_CONTINUE; // underneath
 		}
 
-		if (P_PlayerInPain(tm.thing->player))
+		if (P_PlayerInPain(g_tm.thing->player))
 		{
 			return BMIT_CONTINUE; // spinout would cause a softlock
 		}
 
-		if (!tm.thing->player->fastfall)
+		if (!g_tm.thing->player->fastfall)
 		{
 			fixed_t tractorHeight = 211*mapobjectscale;
-			fixed_t zRange = FixedDiv(thing->z - tm.thing->z, tractorHeight);
+			fixed_t zRange = FixedDiv(thing->z - g_tm.thing->z, tractorHeight);
 			fixed_t momZ = max(zRange, FRACUNIT/16);
 
-			if (tm.thing->eflags & MFE_UNDERWATER)
+			if (g_tm.thing->eflags & MFE_UNDERWATER)
 			{
 				momZ = (117 * momZ) / 200;
 			}
 
-			P_SetObjectMomZ(tm.thing, momZ, true);
+			P_SetObjectMomZ(g_tm.thing, momZ, true);
 		}
 
 		fixed_t friction = 33*FRACUNIT/35;
-		tm.thing->momx = FixedMul(tm.thing->momx, friction);
-		tm.thing->momy = FixedMul(tm.thing->momy, friction);
+		g_tm.thing->momx = FixedMul(g_tm.thing->momx, friction);
+		g_tm.thing->momy = FixedMul(g_tm.thing->momy, friction);
 		return BMIT_CONTINUE;
 	}
 
 	if (thing->type == MT_BLENDEYE_EGGBEATER
-		&& tm.thing->type == MT_PLAYER && tm.thing->player)
+		&& g_tm.thing->type == MT_PLAYER && g_tm.thing->player)
 	{
-		if (tm.thing->z > thing->z + thing->height)
+		if (g_tm.thing->z > thing->z + thing->height)
 		{
 			return BMIT_CONTINUE; // overhead
 		}
 
-		if (tm.thing->z + tm.thing->height < thing->z)
+		if (g_tm.thing->z + g_tm.thing->height < thing->z)
 		{
 			return BMIT_CONTINUE; // underneath
 		}
 
-		VS_BlendEye_Eggbeater_Touched(thing, tm.thing);
+		VS_BlendEye_Eggbeater_Touched(thing, g_tm.thing);
 	}
 
 	if (thing->type == MT_SPB)
 	{
-		if (tm.thing->type != MT_PLAYER
-			&& thing->tracer != tm.thing)
+		if (g_tm.thing->type != MT_PLAYER
+			&& thing->tracer != g_tm.thing)
 		{
 			// Needs to be a player or the
 			// thing that we're chasing.
 			return BMIT_CONTINUE;
 		}
 
-		if (tm.thing->z > thing->z + thing->height)
+		if (g_tm.thing->z > thing->z + thing->height)
 		{
 			return BMIT_CONTINUE; // overhead
 		}
 
-		if (tm.thing->z + tm.thing->height < thing->z)
+		if (g_tm.thing->z + g_tm.thing->height < thing->z)
 		{
 			return BMIT_CONTINUE; // underneath
 		}
 
-		Obj_SPBTouch(thing, tm.thing);
+		Obj_SPBTouch(thing, g_tm.thing);
 		return BMIT_CONTINUE;
 	}
-	else if (tm.thing->type == MT_SPB)
+	else if (g_tm.thing->type == MT_SPB)
 	{
 		if (thing->type != MT_PLAYER
-			&& tm.thing->tracer != thing)
+			&& g_tm.thing->tracer != thing)
 		{
 			// Needs to be a player or the
 			// thing that we're chasing.
 			return BMIT_CONTINUE;
 		}
 
-		if (tm.thing->z > thing->z + thing->height)
+		if (g_tm.thing->z > thing->z + thing->height)
 		{
 			return BMIT_CONTINUE; // overhead
 		}
 
-		if (tm.thing->z + tm.thing->height < thing->z)
+		if (g_tm.thing->z + g_tm.thing->height < thing->z)
 		{
 			return BMIT_CONTINUE; // underneath
 		}
 
-		Obj_SPBTouch(tm.thing, thing);
+		Obj_SPBTouch(g_tm.thing, thing);
 		return BMIT_CONTINUE;
 	}
 
 	if (thing->type == MT_SHRINK_GUN || thing->type == MT_SHRINK_PARTICLE)
 	{
-		if (tm.thing->type != MT_PLAYER)
+		if (g_tm.thing->type != MT_PLAYER)
 		{
 			return BMIT_CONTINUE;
 		}
@@ -873,160 +878,160 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			// Use special collision for the laser gun.
 			// The laser sprite itself is just a visual,
 			// the gun itself does the colliding for us.
-			if (tm.thing->z > thing->z)
+			if (g_tm.thing->z > thing->z)
 			{
 				return BMIT_CONTINUE; // overhead
 			}
 
-			if (tm.thing->z + tm.thing->height < thing->floorz)
+			if (g_tm.thing->z + g_tm.thing->height < thing->floorz)
 			{
 				return BMIT_CONTINUE; // underneath
 			}
 		}
 		else
 		{
-			if (tm.thing->z > thing->z + thing->height)
+			if (g_tm.thing->z > thing->z + thing->height)
 			{
 				return BMIT_CONTINUE; // overhead
 			}
 
-			if (tm.thing->z + tm.thing->height < thing->z)
+			if (g_tm.thing->z + g_tm.thing->height < thing->z)
 			{
 				return BMIT_CONTINUE; // underneath
 			}
 		}
 
-		return Obj_ShrinkLaserCollide(thing, tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
+		return Obj_ShrinkLaserCollide(thing, g_tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
-	else if (tm.thing->type == MT_SHRINK_GUN || tm.thing->type == MT_SHRINK_PARTICLE)
+	else if (g_tm.thing->type == MT_SHRINK_GUN || g_tm.thing->type == MT_SHRINK_PARTICLE)
 	{
 		if (thing->type != MT_PLAYER)
 		{
 			return BMIT_CONTINUE;
 		}
 
-		if (tm.thing->type == MT_SHRINK_GUN)
+		if (g_tm.thing->type == MT_SHRINK_GUN)
 		{
 			// Use special collision for the laser gun.
 			// The laser sprite itself is just a visual,
 			// the gun itself does the colliding for us.
-			if (thing->z > tm.thing->z)
+			if (thing->z > g_tm.thing->z)
 			{
 				return BMIT_CONTINUE; // overhead
 			}
 
-			if (thing->z + thing->height < tm.thing->floorz)
+			if (thing->z + thing->height < g_tm.thing->floorz)
 			{
 				return BMIT_CONTINUE; // underneath
 			}
 		}
 		else
 		{
-			if (tm.thing->z > thing->z + thing->height)
+			if (g_tm.thing->z > thing->z + thing->height)
 			{
 				return BMIT_CONTINUE; // overhead
 			}
 
-			if (tm.thing->z + tm.thing->height < thing->z)
+			if (g_tm.thing->z + g_tm.thing->height < thing->z)
 			{
 				return BMIT_CONTINUE; // underneath
 			}
 		}
 
-		return Obj_ShrinkLaserCollide(tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
+		return Obj_ShrinkLaserCollide(g_tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
 
-	if (tm.thing->type == MT_EGGMANITEM || tm.thing->type == MT_EGGMANITEM_SHIELD)
+	if (g_tm.thing->type == MT_EGGMANITEM || g_tm.thing->type == MT_EGGMANITEM_SHIELD)
 	{
 		// see if it went over / under
-		if (tm.thing->z > thing->z + thing->height)
+		if (g_tm.thing->z > thing->z + thing->height)
 			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
+		if (g_tm.thing->z + g_tm.thing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
 
-		return K_EggItemCollide(tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
+		return K_EggItemCollide(g_tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
 	else if (thing->type == MT_EGGMANITEM || thing->type == MT_EGGMANITEM_SHIELD)
 	{
 		// see if it went over / under
-		if (tm.thing->z > thing->z + thing->height)
+		if (g_tm.thing->z > thing->z + thing->height)
 			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
+		if (g_tm.thing->z + g_tm.thing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
 
-		return K_EggItemCollide(thing, tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
+		return K_EggItemCollide(thing, g_tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
 
-	if (tm.thing->type == MT_RANDOMITEM)
+	if (g_tm.thing->type == MT_RANDOMITEM)
 		return BMIT_CONTINUE;
 
-	if (tm.thing->type != MT_PLAYER && thing->player && K_PlayerGuard(thing->player) && K_BubbleShieldCanReflect(thing, tm.thing))
+	if (g_tm.thing->type != MT_PLAYER && thing->player && K_PlayerGuard(thing->player) && K_BubbleShieldCanReflect(thing, g_tm.thing))
 	{
 		// see if it went over / under
-		if (tm.thing->z > thing->z + thing->height)
+		if (g_tm.thing->z > thing->z + thing->height)
 			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
+		if (g_tm.thing->z + g_tm.thing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
 
-		return K_BubbleShieldReflect(thing, tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
+		return K_BubbleShieldReflect(thing, g_tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
-	else if (thing->type != MT_PLAYER && tm.thing->player && K_PlayerGuard(tm.thing->player) && K_BubbleShieldCanReflect(tm.thing, thing))
+	else if (thing->type != MT_PLAYER && g_tm.thing->player && K_PlayerGuard(g_tm.thing->player) && K_BubbleShieldCanReflect(g_tm.thing, thing))
 	{
 		// see if it went over / under
-		if (tm.thing->z > thing->z + thing->height)
+		if (g_tm.thing->z > thing->z + thing->height)
 			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
+		if (g_tm.thing->z + g_tm.thing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
 
-		return K_BubbleShieldReflect(tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
+		return K_BubbleShieldReflect(g_tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
 
 	// Bubble Shield reflect
 	if (thing->type == MT_BUBBLESHIELD && !P_MobjWasRemoved(thing->target) && thing->target->player && thing->target->player->bubbleblowup)
 	{
 		// see if it went over / under
-		if (tm.thing->z > thing->z + thing->height)
+		if (g_tm.thing->z > thing->z + thing->height)
 			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
+		if (g_tm.thing->z + g_tm.thing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
 
-		return K_BubbleShieldCollide(thing, tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
+		return K_BubbleShieldCollide(thing, g_tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
-	else if (tm.thing->type == MT_BUBBLESHIELD && !P_MobjWasRemoved(tm.thing->target) && tm.thing->target->player && tm.thing->target->player->bubbleblowup)
+	else if (g_tm.thing->type == MT_BUBBLESHIELD && !P_MobjWasRemoved(g_tm.thing->target) && g_tm.thing->target->player && g_tm.thing->target->player->bubbleblowup)
 	{
 		// see if it went over / under
-		if (tm.thing->z > thing->z + thing->height)
+		if (g_tm.thing->z > thing->z + thing->height)
 			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
+		if (g_tm.thing->z + g_tm.thing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
 
-		return K_BubbleShieldCollide(tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
+		return K_BubbleShieldCollide(g_tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
 
 	// double make sure bubbles won't collide with anything else
-	if (thing->type == MT_BUBBLESHIELD || tm.thing->type == MT_BUBBLESHIELD)
+	if (thing->type == MT_BUBBLESHIELD || g_tm.thing->type == MT_BUBBLESHIELD)
 		return BMIT_CONTINUE;
 
 	// Droptarget reflect
 	if ((thing->type == MT_DROPTARGET || thing->type == MT_DROPTARGET_SHIELD)
-		&& (tm.thing->type == MT_ORBINAUT || tm.thing->type == MT_JAWZ || tm.thing->type == MT_GACHABOM
-		|| tm.thing->type == MT_BANANA || tm.thing->type == MT_EGGMANITEM || tm.thing->type == MT_BALLHOG
-		|| tm.thing->type == MT_SSMINE || tm.thing->type == MT_LANDMINE || tm.thing->type == MT_SINK
-		|| tm.thing->type == MT_GARDENTOP
-		|| tm.thing->type == MT_MONITOR
-		|| tm.thing->type == MT_BATTLECAPSULE
-		|| tm.thing->type == MT_KART_LEFTOVER
-		|| (tm.thing->type == MT_PLAYER)))
+		&& (g_tm.thing->type == MT_ORBINAUT || g_tm.thing->type == MT_JAWZ || g_tm.thing->type == MT_GACHABOM
+		|| g_tm.thing->type == MT_BANANA || g_tm.thing->type == MT_EGGMANITEM || g_tm.thing->type == MT_BALLHOG
+		|| g_tm.thing->type == MT_SSMINE || g_tm.thing->type == MT_LANDMINE || g_tm.thing->type == MT_SINK
+		|| g_tm.thing->type == MT_GARDENTOP
+		|| g_tm.thing->type == MT_MONITOR
+		|| g_tm.thing->type == MT_BATTLECAPSULE
+		|| g_tm.thing->type == MT_KART_LEFTOVER
+		|| (g_tm.thing->type == MT_PLAYER)))
 	{
 		// see if it went over / under
-		if (tm.thing->z > thing->z + thing->height)
+		if (g_tm.thing->z > thing->z + thing->height)
 			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
+		if (g_tm.thing->z + g_tm.thing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
 
-		return K_DropTargetCollide(thing, tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
+		return K_DropTargetCollide(thing, g_tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
-	else if ((tm.thing->type == MT_DROPTARGET || tm.thing->type == MT_DROPTARGET_SHIELD)
+	else if ((g_tm.thing->type == MT_DROPTARGET || g_tm.thing->type == MT_DROPTARGET_SHIELD)
 		&& (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ || thing->type == MT_GACHABOM
 		|| thing->type == MT_BANANA || thing->type == MT_EGGMANITEM || thing->type == MT_BALLHOG
 		|| thing->type == MT_SSMINE || thing->type == MT_LANDMINE || thing->type == MT_SINK
@@ -1037,175 +1042,175 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		|| (thing->type == MT_PLAYER)))
 	{
 		// see if it went over / under
-		if (tm.thing->z > thing->z + thing->height)
+		if (g_tm.thing->z > thing->z + thing->height)
 			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
+		if (g_tm.thing->z + g_tm.thing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
 
-		return K_DropTargetCollide(tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
+		return K_DropTargetCollide(g_tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
 
 	// double make sure drop targets won't collide with anything else
-	if (thing->type == MT_DROPTARGET || tm.thing->type == MT_DROPTARGET
-		|| thing->type == MT_DROPTARGET_SHIELD || tm.thing->type == MT_DROPTARGET_SHIELD)
+	if (thing->type == MT_DROPTARGET || g_tm.thing->type == MT_DROPTARGET
+		|| thing->type == MT_DROPTARGET_SHIELD || g_tm.thing->type == MT_DROPTARGET_SHIELD)
 		return BMIT_CONTINUE;
 
-	if (tm.thing->type == MT_ORBINAUT || tm.thing->type == MT_JAWZ || tm.thing->type == MT_GACHABOM
-		|| tm.thing->type == MT_ORBINAUT_SHIELD || tm.thing->type == MT_JAWZ_SHIELD
-		|| tm.thing->type == MT_GARDENTOP)
+	if (g_tm.thing->type == MT_ORBINAUT || g_tm.thing->type == MT_JAWZ || g_tm.thing->type == MT_GACHABOM
+		|| g_tm.thing->type == MT_ORBINAUT_SHIELD || g_tm.thing->type == MT_JAWZ_SHIELD
+		|| g_tm.thing->type == MT_GARDENTOP)
 	{
 		// see if it went over / under
-		if (tm.thing->z > thing->z + thing->height)
+		if (g_tm.thing->z > thing->z + thing->height)
 			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
+		if (g_tm.thing->z + g_tm.thing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
 
-		return Obj_OrbinautJawzCollide(tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
+		return Obj_OrbinautJawzCollide(g_tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
 	else if (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ || thing->type == MT_GACHABOM
 		|| thing->type == MT_ORBINAUT_SHIELD || thing->type == MT_JAWZ_SHIELD
 		|| thing->type == MT_GARDENTOP)
 	{
 		// see if it went over / under
-		if (tm.thing->z > thing->z + thing->height)
+		if (g_tm.thing->z > thing->z + thing->height)
 			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
+		if (g_tm.thing->z + g_tm.thing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
 
-		return Obj_OrbinautJawzCollide(thing, tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
+		return Obj_OrbinautJawzCollide(thing, g_tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
 
-	if (tm.thing->type == MT_BANANA || tm.thing->type == MT_BANANA_SHIELD || tm.thing->type == MT_BALLHOG)
+	if (g_tm.thing->type == MT_BANANA || g_tm.thing->type == MT_BANANA_SHIELD || g_tm.thing->type == MT_BALLHOG)
 	{
 		// see if it went over / under
-		if (tm.thing->z > thing->z + thing->height)
+		if (g_tm.thing->z > thing->z + thing->height)
 			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
+		if (g_tm.thing->z + g_tm.thing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
 
-		return K_BananaBallhogCollide(tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
+		return K_BananaBallhogCollide(g_tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
 	else if (thing->type == MT_BANANA || thing->type == MT_BANANA_SHIELD || thing->type == MT_BALLHOG)
 	{
 		// see if it went over / under
-		if (tm.thing->z > thing->z + thing->height)
+		if (g_tm.thing->z > thing->z + thing->height)
 			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
+		if (g_tm.thing->z + g_tm.thing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
 
-		return K_BananaBallhogCollide(thing, tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
+		return K_BananaBallhogCollide(thing, g_tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
 
-	if (tm.thing->type == MT_SSMINE || tm.thing->type == MT_SSMINE_SHIELD)
+	if (g_tm.thing->type == MT_SSMINE || g_tm.thing->type == MT_SSMINE_SHIELD)
 	{
 		// see if it went over / under
-		if (tm.thing->z > thing->z + thing->height)
+		if (g_tm.thing->z > thing->z + thing->height)
 			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
+		if (g_tm.thing->z + g_tm.thing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
 
-		return K_MineCollide(tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
+		return K_MineCollide(g_tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
 	else if (thing->type == MT_SSMINE || thing->type == MT_SSMINE_SHIELD)
 	{
 		// see if it went over / under
-		if (tm.thing->z > thing->z + thing->height)
+		if (g_tm.thing->z > thing->z + thing->height)
 			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
+		if (g_tm.thing->z + g_tm.thing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
 
-		return K_MineCollide(thing, tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
+		return K_MineCollide(thing, g_tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
 
-	if (tm.thing->type == MT_LANDMINE)
+	if (g_tm.thing->type == MT_LANDMINE)
 	{
 		// see if it went over / under
-		if (tm.thing->z > thing->z + thing->height)
+		if (g_tm.thing->z > thing->z + thing->height)
 			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
+		if (g_tm.thing->z + g_tm.thing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
 
-		return K_LandMineCollide(tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
+		return K_LandMineCollide(g_tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
 	else if (thing->type == MT_LANDMINE)
 	{
 		// see if it went over / under
-		if (tm.thing->z > thing->z + thing->height)
+		if (g_tm.thing->z > thing->z + thing->height)
 			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
+		if (g_tm.thing->z + g_tm.thing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
 
-		return K_LandMineCollide(thing, tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
+		return K_LandMineCollide(thing, g_tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
 
-	if (tm.thing->type == MT_SINK)
+	if (g_tm.thing->type == MT_SINK)
 	{
 		// see if it went over / under
-		if (tm.thing->z > thing->z + thing->height)
+		if (g_tm.thing->z > thing->z + thing->height)
 			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
+		if (g_tm.thing->z + g_tm.thing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
 
-		return K_KitchenSinkCollide(tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
+		return K_KitchenSinkCollide(g_tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
 	else if (thing->type == MT_SINK)
 	{
 		// see if it went over / under
-		if (tm.thing->z > thing->z + thing->height)
+		if (g_tm.thing->z > thing->z + thing->height)
 			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
+		if (g_tm.thing->z + g_tm.thing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
 
-		return K_KitchenSinkCollide(thing, tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
+		return K_KitchenSinkCollide(thing, g_tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
 
-	if (tm.thing->type == MT_FALLINGROCK)
+	if (g_tm.thing->type == MT_FALLINGROCK)
 	{
 		// see if it went over / under
-		if (tm.thing->z > thing->z + thing->height)
+		if (g_tm.thing->z > thing->z + thing->height)
 			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
+		if (g_tm.thing->z + g_tm.thing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
 
-		return K_FallingRockCollide(tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
+		return K_FallingRockCollide(g_tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
 	else if (thing->type == MT_FALLINGROCK)
 	{
 		// see if it went over / under
-		if (tm.thing->z > thing->z + thing->height)
+		if (g_tm.thing->z > thing->z + thing->height)
 			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
+		if (g_tm.thing->z + g_tm.thing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
 
-		return K_FallingRockCollide(thing, tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
+		return K_FallingRockCollide(thing, g_tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
 
 	if (thing->type == MT_SNEAKERPANEL)
 	{
-		Obj_SneakerPanelCollide(thing, tm.thing);
+		Obj_SneakerPanelCollide(thing, g_tm.thing);
 		return BMIT_CONTINUE;
 	}
-	else if (tm.thing->type == MT_SNEAKERPANEL)
+	else if (g_tm.thing->type == MT_SNEAKERPANEL)
 	{
-		Obj_SneakerPanelCollide(tm.thing, thing);
+		Obj_SneakerPanelCollide(g_tm.thing, thing);
 		return BMIT_CONTINUE;
 	}
 
 	// missiles can hit other things
-	if ((tm.thing->flags & MF_MISSILE) && !damage) // if something was already damaged, don't run this
+	if ((g_tm.thing->flags & MF_MISSILE) && !damage) // if something was already damaged, don't run this
 	{
-		UINT8 damagetype = (tm.thing->info->mass ^ DMG_WOMBO);
+		UINT8 damagetype = (g_tm.thing->info->mass ^ DMG_WOMBO);
 
 		// see if it went over / under
-		if (tm.thing->z > thing->z + thing->height)
+		if (g_tm.thing->z > thing->z + thing->height)
 			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
+		if (g_tm.thing->z + g_tm.thing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
 
-		if (tm.thing->target && tm.thing->target->type == thing->type)
+		if (g_tm.thing->target && g_tm.thing->target->type == thing->type)
 		{
 			// Don't hit same species as originator.
-			if (thing == tm.thing->target)
+			if (thing == g_tm.thing->target)
 				return BMIT_CONTINUE;
 
 			if (thing->type != MT_PLAYER)
@@ -1223,40 +1228,40 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		}
 
 		// damage / explode
-		P_DamageMobj(thing, tm.thing, tm.thing->target, 1, damagetype);
+		P_DamageMobj(thing, g_tm.thing, g_tm.thing->target, 1, damagetype);
 
 		// don't traverse any more
 		return BMIT_ABORT;
 	}
 
-	if (thing->flags & MF_PUSHABLE && (tm.thing->player || tm.thing->flags & MF_PUSHABLE)
-		&& tm.thing->z + tm.thing->height > thing->z && tm.thing->z < thing->z + thing->height
-		&& !(netgame && tm.thing->player && tm.thing->player->spectator)) // Push thing!
+	if (thing->flags & MF_PUSHABLE && (g_tm.thing->player || g_tm.thing->flags & MF_PUSHABLE)
+		&& g_tm.thing->z + g_tm.thing->height > thing->z && g_tm.thing->z < thing->z + thing->height
+		&& !(netgame && g_tm.thing->player && g_tm.thing->player->spectator)) // Push thing!
 	{
 		if (thing->flags2 & MF2_SLIDEPUSH) // Make it slide
 		{
-			if (tm.thing->momy > 0 && tm.thing->momy > FixedMul(4*FRACUNIT, thing->scale) && tm.thing->momy > thing->momy)
+			if (g_tm.thing->momy > 0 && g_tm.thing->momy > FixedMul(4*FRACUNIT, thing->scale) && g_tm.thing->momy > thing->momy)
 			{
 				thing->momy += FixedMul(PUSHACCEL, thing->scale);
-				tm.thing->momy -= FixedMul(PUSHACCEL, thing->scale);
+				g_tm.thing->momy -= FixedMul(PUSHACCEL, thing->scale);
 			}
-			else if (tm.thing->momy < 0 && tm.thing->momy < FixedMul(-4*FRACUNIT, thing->scale)
-				&& tm.thing->momy < thing->momy)
+			else if (g_tm.thing->momy < 0 && g_tm.thing->momy < FixedMul(-4*FRACUNIT, thing->scale)
+				&& g_tm.thing->momy < thing->momy)
 			{
 				thing->momy -= FixedMul(PUSHACCEL, thing->scale);
-				tm.thing->momy += FixedMul(PUSHACCEL, thing->scale);
+				g_tm.thing->momy += FixedMul(PUSHACCEL, thing->scale);
 			}
-			if (tm.thing->momx > 0 && tm.thing->momx > FixedMul(4*FRACUNIT, thing->scale)
-				&& tm.thing->momx > thing->momx)
+			if (g_tm.thing->momx > 0 && g_tm.thing->momx > FixedMul(4*FRACUNIT, thing->scale)
+				&& g_tm.thing->momx > thing->momx)
 			{
 				thing->momx += FixedMul(PUSHACCEL, thing->scale);
-				tm.thing->momx -= FixedMul(PUSHACCEL, thing->scale);
+				g_tm.thing->momx -= FixedMul(PUSHACCEL, thing->scale);
 			}
-			else if (tm.thing->momx < 0 && tm.thing->momx < FixedMul(-4*FRACUNIT, thing->scale)
-				&& tm.thing->momx < thing->momx)
+			else if (g_tm.thing->momx < 0 && g_tm.thing->momx < FixedMul(-4*FRACUNIT, thing->scale)
+				&& g_tm.thing->momx < thing->momx)
 			{
 				thing->momx -= FixedMul(PUSHACCEL, thing->scale);
-				tm.thing->momx += FixedMul(PUSHACCEL, thing->scale);
+				g_tm.thing->momx += FixedMul(PUSHACCEL, thing->scale);
 			}
 
 			if (thing->momx > FixedMul(thing->info->speed, thing->scale))
@@ -1270,190 +1275,190 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		}
 		else
 		{
-			if (tm.thing->momx > FixedMul(4*FRACUNIT, thing->scale))
-				tm.thing->momx = FixedMul(4*FRACUNIT, thing->scale);
-			else if (tm.thing->momx < FixedMul(-4*FRACUNIT, thing->scale))
-				tm.thing->momx = FixedMul(-4*FRACUNIT, thing->scale);
-			if (tm.thing->momy > FixedMul(4*FRACUNIT, thing->scale))
-				tm.thing->momy = FixedMul(4*FRACUNIT, thing->scale);
-			else if (tm.thing->momy < FixedMul(-4*FRACUNIT, thing->scale))
-				tm.thing->momy = FixedMul(-4*FRACUNIT, thing->scale);
+			if (g_tm.thing->momx > FixedMul(4*FRACUNIT, thing->scale))
+				g_tm.thing->momx = FixedMul(4*FRACUNIT, thing->scale);
+			else if (g_tm.thing->momx < FixedMul(-4*FRACUNIT, thing->scale))
+				g_tm.thing->momx = FixedMul(-4*FRACUNIT, thing->scale);
+			if (g_tm.thing->momy > FixedMul(4*FRACUNIT, thing->scale))
+				g_tm.thing->momy = FixedMul(4*FRACUNIT, thing->scale);
+			else if (g_tm.thing->momy < FixedMul(-4*FRACUNIT, thing->scale))
+				g_tm.thing->momy = FixedMul(-4*FRACUNIT, thing->scale);
 
-			thing->momx = tm.thing->momx;
-			thing->momy = tm.thing->momy;
+			thing->momx = g_tm.thing->momx;
+			thing->momy = g_tm.thing->momy;
 		}
 
 		if (thing->type != MT_GARGOYLE || P_IsObjectOnGround(thing))
 			S_StartSound(thing, thing->info->activesound);
 
-		P_SetTarget(&thing->target, tm.thing);
+		P_SetTarget(&thing->target, g_tm.thing);
 	}
 
 	// check for special pickup
-	if (thing->flags & MF_SPECIAL && tm.thing->player)
+	if (thing->flags & MF_SPECIAL && g_tm.thing->player)
 	{
-		P_TouchSpecialThing(thing, tm.thing, true); // can remove thing
+		P_TouchSpecialThing(thing, g_tm.thing, true); // can remove thing
 		return BMIT_CONTINUE;
 	}
 	// check again for special pickup
-	if (tm.thing->flags & MF_SPECIAL && thing->player)
+	if (g_tm.thing->flags & MF_SPECIAL && thing->player)
 	{
-		P_TouchSpecialThing(tm.thing, thing, true); // can remove thing
+		P_TouchSpecialThing(g_tm.thing, thing, true); // can remove thing
 		return BMIT_CONTINUE;
 	}
 
 	// Sprite Spikes!
-	if ((tm.thing->type == MT_SPIKE || tm.thing->type == MT_WALLSPIKE) && (tm.thing->flags & MF_SOLID)) // spike pops up
+	if ((g_tm.thing->type == MT_SPIKE || g_tm.thing->type == MT_WALLSPIKE) && (g_tm.thing->flags & MF_SOLID)) // spike pops up
 	{
 		// see if it went over / under
-		if (tm.thing->z > thing->z + thing->height)
+		if (g_tm.thing->z > thing->z + thing->height)
 			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
+		if (g_tm.thing->z + g_tm.thing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
 
 		if (thing->flags & MF_SHOOTABLE)
 		{
-			if (P_MobjFlip(thing) == P_MobjFlip(tm.thing))
+			if (P_MobjFlip(thing) == P_MobjFlip(g_tm.thing))
 			{
-				if (P_DamageMobj(thing, tm.thing, tm.thing, 1, DMG_TUMBLE))
+				if (P_DamageMobj(thing, g_tm.thing, g_tm.thing, 1, DMG_TUMBLE))
 				{
 					// FIXME: None of this is correct for wall spikes,
 					// but I don't feel like testing that right now.
 
 					// Increase vertical momentum for a strong effect
-					thing->momz += (tm.thing->height / 2) * P_MobjFlip(tm.thing);
+					thing->momz += (g_tm.thing->height / 2) * P_MobjFlip(g_tm.thing);
 
 					// Teleport on top of the spikes
 					P_MoveOrigin(
 						thing,
 						thing->x,
 						thing->y,
-						tm.thing->z + (P_MobjFlip(thing) > 0 ? tm.thing->height : -thing->height)
+						g_tm.thing->z + (P_MobjFlip(thing) > 0 ? g_tm.thing->height : -thing->height)
 					);
 				}
 			}
 			else
 			{
-				P_DamageMobj(thing, tm.thing, tm.thing, 1, DMG_NORMAL);
+				P_DamageMobj(thing, g_tm.thing, g_tm.thing, 1, DMG_NORMAL);
 			}
 		}
 		return BMIT_CONTINUE;
 	}
 	else if ((thing->type == MT_SPIKE || thing->type == MT_WALLSPIKE) &&
-		(thing->flags & MF_SOLID) && (tm.thing->flags & MF_SHOOTABLE)) // stationary spike
+		(thing->flags & MF_SOLID) && (g_tm.thing->flags & MF_SHOOTABLE)) // stationary spike
 	{
 		// see if it went over / under
-		if (tm.thing->z > thing->z + thing->height)
+		if (g_tm.thing->z > thing->z + thing->height)
 			return BMIT_CONTINUE; // overhead
-		if (tm.thing->z + tm.thing->height < thing->z)
+		if (g_tm.thing->z + g_tm.thing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
 
-		if (tm.thing->player && tm.thing->player && tm.thing->player->tumbleBounces > 0)
+		if (g_tm.thing->player && g_tm.thing->player && g_tm.thing->player->tumbleBounces > 0)
 		{
 			return BMIT_CONTINUE;
 		}
 
-		if (!P_IsObjectOnGround(tm.thing) && tm.thing->momz * P_MobjFlip(tm.thing) < 0) // fell into it
+		if (!P_IsObjectOnGround(g_tm.thing) && g_tm.thing->momz * P_MobjFlip(g_tm.thing) < 0) // fell into it
 		{
-			P_DamageMobj(tm.thing, thing, thing, 1, DMG_TUMBLE);
+			P_DamageMobj(g_tm.thing, thing, thing, 1, DMG_TUMBLE);
 			return BMIT_CONTINUE;
 		}
 		else
 		{
 			// Do not return because solidity code comes below.
-			P_DamageMobj(tm.thing, thing, thing, 1, DMG_NORMAL);
+			P_DamageMobj(g_tm.thing, thing, thing, 1, DMG_NORMAL);
 		}
 	}
 
 	if (thing->flags & MF_PUSHABLE)
 	{
-		if (tm.thing->type == MT_STEAM)
-			P_DoFanAndGasJet(tm.thing, thing);
+		if (g_tm.thing->type == MT_STEAM)
+			P_DoFanAndGasJet(g_tm.thing, thing);
 	}
 
-	if (tm.thing->flags & MF_PUSHABLE)
+	if (g_tm.thing->flags & MF_PUSHABLE)
 	{
 		if (thing->type == MT_STEAM)
 		{
-			P_DoFanAndGasJet(thing, tm.thing);
+			P_DoFanAndGasJet(thing, g_tm.thing);
 			return BMIT_CONTINUE;
 		}
 		else if (thing->flags & MF_SPRING)
 		{
-			if ( thing->z <= tm.thing->z + tm.thing->height
-			&& tm.thing->z <= thing->z + thing->height)
-				if (P_DoSpring(thing, tm.thing))
+			if ( thing->z <= g_tm.thing->z + g_tm.thing->height
+			&& g_tm.thing->z <= thing->z + thing->height)
+				if (P_DoSpring(thing, g_tm.thing))
 					return BMIT_ABORT;
 			return BMIT_CONTINUE;
 		}
 	}
 
 	// thanks to sal for solidenemies dot lua
-	if (thing->flags & (MF_ENEMY|MF_BOSS) && tm.thing->flags & (MF_ENEMY|MF_BOSS))
+	if (thing->flags & (MF_ENEMY|MF_BOSS) && g_tm.thing->flags & (MF_ENEMY|MF_BOSS))
 	{
-		if ((thing->z + thing->height >= tm.thing->z)
-		&& (tm.thing->z + tm.thing->height >= thing->z))
+		if ((thing->z + thing->height >= g_tm.thing->z)
+		&& (g_tm.thing->z + g_tm.thing->height >= thing->z))
 			return BMIT_ABORT;
 	}
 
 	if (thing->player)
 	{
-		if (tm.thing->type == MT_STEAM)
-			P_DoFanAndGasJet(tm.thing, thing);
+		if (g_tm.thing->type == MT_STEAM)
+			P_DoFanAndGasJet(g_tm.thing, thing);
 	}
 
-	if (tm.thing->player) // Is the moving/interacting object the player?
+	if (g_tm.thing->player) // Is the moving/interacting object the player?
 	{
-		if (!tm.thing->health)
+		if (!g_tm.thing->health)
 			return BMIT_CONTINUE;
 
 		if (thing->type == MT_STEAM)
-			P_DoFanAndGasJet(thing, tm.thing);
+			P_DoFanAndGasJet(thing, g_tm.thing);
 		else if (thing->flags & MF_SPRING)
 		{
-			if ( thing->z <= tm.thing->z + tm.thing->height
-			&& tm.thing->z <= thing->z + thing->height)
-				if (P_DoSpring(thing, tm.thing))
+			if ( thing->z <= g_tm.thing->z + g_tm.thing->height
+			&& g_tm.thing->z <= thing->z + thing->height)
+				if (P_DoSpring(thing, g_tm.thing))
 					return BMIT_ABORT;
 			return BMIT_CONTINUE;
 		}
 		else if (thing->player) // bounce when players collide
 		{
 			// see if it went over / under
-			if (tm.thing->z > thing->z + thing->height)
+			if (g_tm.thing->z > thing->z + thing->height)
 				return BMIT_CONTINUE; // overhead
-			if (tm.thing->z + tm.thing->height < thing->z)
+			if (g_tm.thing->z + g_tm.thing->height < thing->z)
 				return BMIT_CONTINUE; // underneath
 
-			if (thing->player->hyudorotimer || tm.thing->player->hyudorotimer)
+			if (thing->player->hyudorotimer || g_tm.thing->player->hyudorotimer)
 			{
 				return BMIT_CONTINUE;
 			}
 
-			if (!P_MobjWasRemoved(thing) && !P_MobjWasRemoved(tm.thing))
+			if (!P_MobjWasRemoved(thing) && !P_MobjWasRemoved(g_tm.thing))
 			{
 				if (thing->player->eggmanexplode)
 				{
-					K_EggmanTransfer(thing->player, tm.thing->player);
-				} else if (tm.thing->player->eggmanexplode)
+					K_EggmanTransfer(thing->player, g_tm.thing->player);
+				} else if (g_tm.thing->player->eggmanexplode)
 				{
-					K_EggmanTransfer(tm.thing->player, thing->player);
+					K_EggmanTransfer(g_tm.thing->player, thing->player);
 				}
 			}
 
 			// The bump has to happen last
-			if (P_IsObjectOnGround(thing) && tm.thing->momz < 0 && tm.thing->player->trickpanel)
+			if (P_IsObjectOnGround(thing) && g_tm.thing->momz < 0 && g_tm.thing->player->trickpanel)
 			{
-				P_DamageMobj(thing, tm.thing, tm.thing, 1, DMG_TUMBLE);
+				P_DamageMobj(thing, g_tm.thing, g_tm.thing, 1, DMG_TUMBLE);
 			}
-			else if (P_IsObjectOnGround(tm.thing) && thing->momz < 0 && thing->player->trickpanel)
+			else if (P_IsObjectOnGround(g_tm.thing) && thing->momz < 0 && thing->player->trickpanel)
 			{
-				P_DamageMobj(tm.thing, thing, thing, 1, DMG_TUMBLE);
+				P_DamageMobj(g_tm.thing, thing, thing, 1, DMG_TUMBLE);
 			}
 
-			if (K_KartBouncing(tm.thing, thing) == true)
+			if (K_KartBouncing(g_tm.thing, thing) == true)
 			{
-				K_PvPTouchDamage(tm.thing, thing);
+				K_PvPTouchDamage(g_tm.thing, thing);
 			}
 
 			return BMIT_CONTINUE;
@@ -1462,94 +1467,94 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		{
 			if (!(thing->flags & MF_SPECIAL))
 			{
-				Obj_PlayerUFOCollide(thing, tm.thing);
+				Obj_PlayerUFOCollide(thing, g_tm.thing);
 				return BMIT_CONTINUE;
 			}
 		}
 		else if (thing->type == MT_BLUEROBRA_HEAD || thing->type == MT_BLUEROBRA_JOINT)
 		{
 			// see if it went over / under
-			if (tm.thing->z > thing->z + thing->height)
+			if (g_tm.thing->z > thing->z + thing->height)
 				return BMIT_CONTINUE; // overhead
-			if (tm.thing->z + tm.thing->height < thing->z)
+			if (g_tm.thing->z + g_tm.thing->height < thing->z)
 				return BMIT_CONTINUE; // underneath
 
 			if (!thing->health)
 				return BMIT_CONTINUE; // dead
 
-			if (tm.thing->player->invincibilitytimer > 0
-				|| K_IsBigger(tm.thing, thing) == true)
+			if (g_tm.thing->player->invincibilitytimer > 0
+				|| K_IsBigger(g_tm.thing, thing) == true)
 			{
 				if (thing->type == MT_BLUEROBRA_JOINT)
-					P_KillMobj(thing->target, tm.thing, tm.thing, DMG_NORMAL);
+					P_KillMobj(thing->target, g_tm.thing, g_tm.thing, DMG_NORMAL);
 				else
-					P_KillMobj(thing, tm.thing, tm.thing, DMG_NORMAL);
+					P_KillMobj(thing, g_tm.thing, g_tm.thing, DMG_NORMAL);
 				return BMIT_CONTINUE;
 			}
 			else
 			{
-				K_KartSolidBounce(tm.thing, thing);
+				K_KartSolidBounce(g_tm.thing, thing);
 				return BMIT_CONTINUE;
 			}
 		}
 		else if (thing->type == MT_KART_LEFTOVER)
 		{
 			// see if it went over / under
-			if (tm.thing->z > thing->z + thing->height)
+			if (g_tm.thing->z > thing->z + thing->height)
 				return BMIT_CONTINUE; // overhead
-			if (tm.thing->z + tm.thing->height < thing->z)
+			if (g_tm.thing->z + g_tm.thing->height < thing->z)
 				return BMIT_CONTINUE; // underneath
 
-			if (K_PlayerCanPunt(tm.thing->player))
+			if (K_PlayerCanPunt(g_tm.thing->player))
 			{
-				P_DamageMobj(thing, tm.thing, tm.thing, 1, DMG_NORMAL);
+				P_DamageMobj(thing, g_tm.thing, g_tm.thing, 1, DMG_NORMAL);
 			}
 			else
 			{
-				K_KartBouncing(tm.thing, thing);
+				K_KartBouncing(g_tm.thing, thing);
 			}
 			return BMIT_CONTINUE;
 		}
 		else if (thing->type == MT_MONITOR)
 		{
 			// see if it went over / under
-			if (tm.thing->z > thing->z + thing->height)
+			if (g_tm.thing->z > thing->z + thing->height)
 				return BMIT_CONTINUE; // overhead
-			if (tm.thing->z + tm.thing->height < thing->z)
+			if (g_tm.thing->z + g_tm.thing->height < thing->z)
 				return BMIT_CONTINUE; // underneath
 
-			P_DamageMobj(thing, tm.thing, tm.thing, 1, DMG_NORMAL);
-			K_KartBouncing(tm.thing, thing);
+			P_DamageMobj(thing, g_tm.thing, g_tm.thing, 1, DMG_NORMAL);
+			K_KartBouncing(g_tm.thing, thing);
 			return BMIT_CONTINUE;
 		}
-		else if ((thing->flags & MF_SHOOTABLE) && K_PlayerCanPunt(tm.thing->player))
+		else if ((thing->flags & MF_SHOOTABLE) && K_PlayerCanPunt(g_tm.thing->player))
 		{
 			// see if it went over / under
-			if (tm.thing->z > thing->z + thing->height)
+			if (g_tm.thing->z > thing->z + thing->height)
 				return BMIT_CONTINUE; // overhead
-			if (tm.thing->z + tm.thing->height < thing->z)
+			if (g_tm.thing->z + g_tm.thing->height < thing->z)
 				return BMIT_CONTINUE; // underneath
 
-			P_DamageMobj(thing, tm.thing, tm.thing, 1, DMG_NORMAL);
+			P_DamageMobj(thing, g_tm.thing, g_tm.thing, 1, DMG_NORMAL);
 			return BMIT_CONTINUE;
 		}
 		else if (thing->flags & MF_SOLID)
 		{
 			// see if it went over / under
-			if (tm.thing->z > thing->z + thing->height)
+			if (g_tm.thing->z > thing->z + thing->height)
 				return BMIT_CONTINUE; // overhead
-			if (tm.thing->z + tm.thing->height < thing->z)
+			if (g_tm.thing->z + g_tm.thing->height < thing->z)
 				return BMIT_CONTINUE; // underneath
 
-			if (!K_PuntCollide(thing, tm.thing))
+			if (!K_PuntCollide(thing, g_tm.thing))
 			{
-				K_KartSolidBounce(tm.thing, thing);
+				K_KartSolidBounce(g_tm.thing, thing);
 			}
 			return BMIT_CONTINUE;
 		}
 	}
 
-	switch (tm.thing->type)
+	switch (g_tm.thing->type)
 	{
 		case MT_SA2_CRATE:
 		case MT_ICECAPBLOCK:
@@ -1558,13 +1563,13 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			if (thing->flags & MF_SOLID)
 			{
 				fixed_t thingtop = thing->z + thing->height;
-				if (tm.thing->z > thing->z && thingtop > tm.floorz)
+				if (g_tm.thing->z > thing->z && thingtop > g_tm.floorz)
 				{
-					tm.floorz = thingtop;
-					tm.floorrover = NULL;
-					tm.floorslope = NULL;
-					tm.floorpic = -1;
-					tm.floorstep = 0;
+					g_tm.floorz = thingtop;
+					g_tm.floorrover = NULL;
+					g_tm.floorslope = NULL;
+					g_tm.floorpic = -1;
+					g_tm.floorstep = 0;
 					return BMIT_CONTINUE;
 				}
 			}
@@ -1579,28 +1584,28 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	// bring back this code for a moving platform-style
 	// object, separate it properly.
 #if 0
-	if ((tm.thing->flags & MF_SPRING || tm.thing->type == MT_STEAM || tm.thing->type == MT_SPIKE || tm.thing->type == MT_WALLSPIKE) && (thing->player))
+	if ((g_tm.thing->flags & MF_SPRING || g_tm.thing->type == MT_STEAM || g_tm.thing->type == MT_SPIKE || g_tm.thing->type == MT_WALLSPIKE) && (thing->player))
 		; // springs, gas jets and springs should never be able to step up onto a player
 	// z checking at last
 	// Treat noclip things as non-solid!
 	else if ((thing->flags & (MF_SOLID|MF_NOCLIP)) == MF_SOLID
-		&& (tm.thing->flags & (MF_SOLID|MF_NOCLIP)) == MF_SOLID)
+		&& (g_tm.thing->flags & (MF_SOLID|MF_NOCLIP)) == MF_SOLID)
 	{
 		fixed_t topz, tmtopz;
 
-		if (tm.thing->eflags & MFE_VERTICALFLIP)
+		if (g_tm.thing->eflags & MFE_VERTICALFLIP)
 		{
 			// pass under
-			tmtopz = tm.thing->z;
+			tmtopz = g_tm.thing->z;
 
 			if (tmtopz > thing->z + thing->height)
 			{
-				if (thing->z + thing->height > tm.floorz)
+				if (thing->z + thing->height > g_tm.floorz)
 				{
-					tm.floorz = thing->z + thing->height;
-					tm.floorrover = NULL;
-					tm.floorslope = NULL;
-					tm.floorpic = -1;
+					g_tm.floorz = thing->z + thing->height;
+					g_tm.floorrover = NULL;
+					g_tm.floorslope = NULL;
+					g_tm.floorpic = -1;
 				}
 				return BMIT_CONTINUE;
 			}
@@ -1611,40 +1616,40 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			// (dont climb max. 24units while already in air)
 			// since return false doesn't handle momentum properly,
 			// we lie to P_TryMove() so it's always too high
-			if (tm.thing->player && tm.thing->z + tm.thing->height > topz
-				&& tm.thing->z + tm.thing->height < tm.thing->ceilingz)
+			if (g_tm.thing->player && g_tm.thing->z + g_tm.thing->height > topz
+				&& g_tm.thing->z + g_tm.thing->height < g_tm.thing->ceilingz)
 			{
 				if (thing->flags & MF_GRENADEBOUNCE && (thing->flags & MF_MONITOR || thing->info->flags & MF_MONITOR)) // Gold monitor hack...
 					return BMIT_ABORT;
 
-				tm.floorz = tm.ceilingz = topz; // block while in air
-				tm.ceilingrover = NULL;
-				tm.ceilingslope = NULL;
-				tm.ceilingpic = -1;
-				P_SetTarget(&tm.floorthing, thing); // needed for side collision
+				g_tm.floorz = g_tm.ceilingz = topz; // block while in air
+				g_tm.ceilingrover = NULL;
+				g_tm.ceilingslope = NULL;
+				g_tm.ceilingpic = -1;
+				P_SetTarget(&g_tm.floorthing, thing); // needed for side collision
 			}
-			else if (topz < tm.ceilingz && tm.thing->z <= thing->z+thing->height)
+			else if (topz < g_tm.ceilingz && g_tm.thing->z <= thing->z+thing->height)
 			{
-				tm.ceilingz = topz;
-				tm.ceilingrover = NULL;
-				tm.ceilingslope = NULL;
-				tm.ceilingpic = -1;
-				P_SetTarget(&tm.floorthing, thing); // thing we may stand on
+				g_tm.ceilingz = topz;
+				g_tm.ceilingrover = NULL;
+				g_tm.ceilingslope = NULL;
+				g_tm.ceilingpic = -1;
+				P_SetTarget(&g_tm.floorthing, thing); // thing we may stand on
 			}
 		}
 		else
 		{
 			// pass under
-			tmtopz = tm.thing->z + tm.thing->height;
+			tmtopz = g_tm.thing->z + g_tm.thing->height;
 
 			if (tmtopz < thing->z)
 			{
-				if (thing->z < tm.ceilingz)
+				if (thing->z < g_tm.ceilingz)
 				{
-					tm.ceilingz = thing->z;
-					tm.ceilingrover = NULL;
-					tm.ceilingslope = NULL;
-					tm.ceilingpic = -1;
+					g_tm.ceilingz = thing->z;
+					g_tm.ceilingrover = NULL;
+					g_tm.ceilingslope = NULL;
+					g_tm.ceilingpic = -1;
 				}
 				return BMIT_CONTINUE;
 			}
@@ -1655,25 +1660,25 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			// (dont climb max. 24units while already in air)
 			// since return false doesn't handle momentum properly,
 			// we lie to P_TryMove() so it's always too high
-			if (tm.thing->player && tm.thing->z < topz
-				&& tm.thing->z > tm.thing->floorz)
+			if (g_tm.thing->player && g_tm.thing->z < topz
+				&& g_tm.thing->z > g_tm.thing->floorz)
 			{
 				if (thing->flags & MF_GRENADEBOUNCE && (thing->flags & MF_MONITOR || thing->info->flags & MF_MONITOR)) // Gold monitor hack...
 					return BMIT_ABORT;
 
-				tm.floorz = tm.ceilingz = topz; // block while in air
-				tm.floorrover = NULL;
-				tm.floorslope = NULL;
-				tm.floorpic = -1;
-				P_SetTarget(&tm.floorthing, thing); // needed for side collision
+				g_tm.floorz = g_tm.ceilingz = topz; // block while in air
+				g_tm.floorrover = NULL;
+				g_tm.floorslope = NULL;
+				g_tm.floorpic = -1;
+				P_SetTarget(&g_tm.floorthing, thing); // needed for side collision
 			}
-			else if (topz > tm.floorz && tm.thing->z+tm.thing->height >= thing->z)
+			else if (topz > g_tm.floorz && g_tm.thing->z+g_tm.thing->height >= thing->z)
 			{
-				tm.floorz = topz;
-				tm.floorrover = NULL;
-				tm.floorslope = NULL;
-				tm.floorpic = -1;
-				P_SetTarget(&tm.floorthing, thing); // thing we may stand on
+				g_tm.floorz = topz;
+				g_tm.floorrover = NULL;
+				g_tm.floorslope = NULL;
+				g_tm.floorpic = -1;
+				P_SetTarget(&g_tm.floorthing, thing); // thing we may stand on
 			}
 		}
 	}
@@ -1684,7 +1689,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 }
 
 // PIT_CheckCameraLine
-// Adjusts tm.floorz and tm.ceilingz as lines are contacted - FOR CAMERA ONLY
+// Adjusts g_tm.floorz and g_tm.ceilingz as lines are contacted - FOR CAMERA ONLY
 static BlockItReturn_t PIT_CheckCameraLine(line_t *ld)
 {
 	opening_t open = {0};
@@ -1692,13 +1697,13 @@ static BlockItReturn_t PIT_CheckCameraLine(line_t *ld)
 	if (ld->polyobj && !(ld->polyobj->flags & POF_SOLID))
 		return BMIT_CONTINUE;
 
-	if (tm.bbox[BOXRIGHT] <= ld->bbox[BOXLEFT] || tm.bbox[BOXLEFT] >= ld->bbox[BOXRIGHT]
-		|| tm.bbox[BOXTOP] <= ld->bbox[BOXBOTTOM] || tm.bbox[BOXBOTTOM] >= ld->bbox[BOXTOP])
+	if (g_tm.bbox[BOXRIGHT] <= ld->bbox[BOXLEFT] || g_tm.bbox[BOXLEFT] >= ld->bbox[BOXRIGHT]
+		|| g_tm.bbox[BOXTOP] <= ld->bbox[BOXBOTTOM] || g_tm.bbox[BOXBOTTOM] >= ld->bbox[BOXTOP])
 	{
 		return BMIT_CONTINUE;
 	}
 
-	if (P_BoxOnLineSide(tm.bbox, ld) != -1)
+	if (P_BoxOnLineSide(g_tm.bbox, ld) != -1)
 		return BMIT_CONTINUE;
 
 	// A line has been hit
@@ -1724,22 +1729,22 @@ static BlockItReturn_t PIT_CheckCameraLine(line_t *ld)
 	P_CameraLineOpening(ld, &open);
 
 	// adjust floor / ceiling heights
-	if (open.ceiling < tm.ceilingz)
+	if (open.ceiling < g_tm.ceilingz)
 	{
-		tm.ceilingz = open.ceiling;
-		tm.ceilingline = ld;
+		g_tm.ceilingz = open.ceiling;
+		g_tm.ceilingline = ld;
 	}
 
-	if (open.floor > tm.floorz)
+	if (open.floor > g_tm.floorz)
 	{
-		tm.floorz = open.floor;
+		g_tm.floorz = open.floor;
 	}
 
-	if (open.highceiling > tm.drpoffceilz)
-		tm.drpoffceilz = open.highceiling;
+	if (open.highceiling > g_tm.drpoffceilz)
+		g_tm.drpoffceilz = open.highceiling;
 
-	if (open.lowfloor < tm.dropoffz)
-		tm.dropoffz = open.lowfloor;
+	if (open.lowfloor < g_tm.dropoffz)
+		g_tm.dropoffz = open.lowfloor;
 
 	return BMIT_CONTINUE;
 }
@@ -1801,45 +1806,45 @@ static boolean P_UsingStepUp(mobj_t *thing)
 
 //
 // PIT_CheckLine
-// Adjusts tm.floorz and tm.ceilingz as lines are contacted
+// Adjusts g_tm.floorz and g_tm.ceilingz as lines are contacted
 //
 static BlockItReturn_t PIT_CheckLine(line_t *ld)
 {
-	const fixed_t thingtop = tm.thing->z + tm.thing->height;
+	const fixed_t thingtop = g_tm.thing->z + g_tm.thing->height;
 	opening_t open = {0};
 
 	if (ld->polyobj && !(ld->polyobj->flags & POF_SOLID))
 		return BMIT_CONTINUE;
 
-	if (tm.bbox[BOXRIGHT] <= ld->bbox[BOXLEFT] || tm.bbox[BOXLEFT] >= ld->bbox[BOXRIGHT]
-	|| tm.bbox[BOXTOP] <= ld->bbox[BOXBOTTOM] || tm.bbox[BOXBOTTOM] >= ld->bbox[BOXTOP])
+	if (g_tm.bbox[BOXRIGHT] <= ld->bbox[BOXLEFT] || g_tm.bbox[BOXLEFT] >= ld->bbox[BOXRIGHT]
+	|| g_tm.bbox[BOXTOP] <= ld->bbox[BOXBOTTOM] || g_tm.bbox[BOXBOTTOM] >= ld->bbox[BOXTOP])
 		return BMIT_CONTINUE;
 
-	if (P_BoxOnLineSide(tm.bbox, ld) != -1)
+	if (P_BoxOnLineSide(g_tm.bbox, ld) != -1)
 		return BMIT_CONTINUE;
 
-	if (tm.thing->flags & MF_PAPERCOLLISION) // Caution! Turning whilst up against a wall will get you stuck. You probably shouldn't give the player this flag.
+	if (g_tm.thing->flags & MF_PAPERCOLLISION) // Caution! Turning whilst up against a wall will get you stuck. You probably shouldn't give the player this flag.
 	{
 		fixed_t cosradius, sinradius;
-		cosradius = FixedMul(tm.thing->radius, FINECOSINE(tm.thing->angle>>ANGLETOFINESHIFT));
-		sinradius = FixedMul(tm.thing->radius, FINESINE(tm.thing->angle>>ANGLETOFINESHIFT));
-		if (P_PointOnLineSide(tm.x - cosradius, tm.y - sinradius, ld)
-		== P_PointOnLineSide(tm.x + cosradius, tm.y + sinradius, ld))
+		cosradius = FixedMul(g_tm.thing->radius, FINECOSINE(g_tm.thing->angle>>ANGLETOFINESHIFT));
+		sinradius = FixedMul(g_tm.thing->radius, FINESINE(g_tm.thing->angle>>ANGLETOFINESHIFT));
+		if (P_PointOnLineSide(g_tm.x - cosradius, g_tm.y - sinradius, ld)
+		== P_PointOnLineSide(g_tm.x + cosradius, g_tm.y + sinradius, ld))
 			return BMIT_CONTINUE; // the line doesn't cross between collider's start or end
 #ifdef PAPER_COLLISIONCORRECTION
 		{
 			fixed_t dist;
 			vertex_t result;
 			angle_t langle;
-			P_ClosestPointOnLine(tm.x, tm.y, ld, &result);
+			P_ClosestPointOnLine(g_tm.x, g_tm.y, ld, &result);
 			langle = R_PointToAngle2(ld->v1->x, ld->v1->y, ld->v2->x, ld->v2->y);
-			langle += ANGLE_90*(P_PointOnLineSide(tm.x, tm.y, ld) ? -1 : 1);
-			dist = abs(FixedMul(tm.thing->radius, FINECOSINE((tm.thing->angle - langle)>>ANGLETOFINESHIFT)));
+			langle += ANGLE_90*(P_PointOnLineSide(g_tm.x, g_tm.y, ld) ? -1 : 1);
+			dist = abs(FixedMul(g_tm.thing->radius, FINECOSINE((g_tm.thing->angle - langle)>>ANGLETOFINESHIFT)));
 			cosradius = FixedMul(dist, FINECOSINE(langle>>ANGLETOFINESHIFT));
 			sinradius = FixedMul(dist, FINESINE(langle>>ANGLETOFINESHIFT));
-			tm.thing->flags |= MF_NOCLIP;
-			P_MoveOrigin(tm.thing, result.x + cosradius - tm.thing->momx, result.y + sinradius - tm.thing->momy, tm.thing->z);
-			tm.thing->flags &= ~MF_NOCLIP;
+			g_tm.thing->flags |= MF_NOCLIP;
+			P_MoveOrigin(g_tm.thing, result.x + cosradius - g_tm.thing->momx, result.y + sinradius - g_tm.thing->momy, g_tm.thing->z);
+			g_tm.thing->flags &= ~MF_NOCLIP;
 		}
 #endif
 	}
@@ -1858,16 +1863,16 @@ static BlockItReturn_t PIT_CheckLine(line_t *ld)
 	// this line is out of the if so upper and lower textures can be hit by a splat
 
 	{
-		UINT8 shouldCollide = LUA_HookMobjLineCollide(tm.thing, ld); // checks hook for thing's type
-		if (P_MobjWasRemoved(tm.thing))
+		UINT8 shouldCollide = LUA_HookMobjLineCollide(g_tm.thing, ld); // checks hook for thing's type
+		if (P_MobjWasRemoved(g_tm.thing))
 			return BMIT_CONTINUE; // one of them was removed???
 		if (shouldCollide == 1)
 		{
-			if (tm.sweep)
+			if (g_tm.sweep)
 			{
 				P_TestLine(ld);
 			}
-			tm.blocking = true; // force collide
+			g_tm.blocking = true; // force collide
 			return BMIT_CONTINUE;
 		}
 		else if (shouldCollide == 2)
@@ -1876,50 +1881,50 @@ static BlockItReturn_t PIT_CheckLine(line_t *ld)
 
 	if (!ld->backsector) // one sided line
 	{
-		if (P_PointOnLineSide(tm.thing->x, tm.thing->y, ld))
+		if (P_PointOnLineSide(g_tm.thing->x, g_tm.thing->y, ld))
 			return BMIT_CONTINUE; // don't hit the back side
 
-		if (tm.sweep)
+		if (g_tm.sweep)
 		{
 			P_TestLine(ld);
 		}
-		tm.blocking = true;
+		g_tm.blocking = true;
 		return BMIT_CONTINUE;
 	}
 
-	if (P_IsLineBlocking(ld, tm.thing))
+	if (P_IsLineBlocking(ld, g_tm.thing))
 	{
-		if (tm.sweep)
+		if (g_tm.sweep)
 		{
 			P_TestLine(ld);
 		}
-		tm.blocking = true;
+		g_tm.blocking = true;
 		return BMIT_CONTINUE;
 	}
 
 	// set openrange, opentop, openbottom
-	P_LineOpening(ld, tm.thing, &open);
+	P_LineOpening(ld, g_tm.thing, &open);
 
-	if (tm.sweep && P_UsingStepUp(tm.thing))
+	if (g_tm.sweep && P_UsingStepUp(g_tm.thing))
 	{
 		// copied from P_TryMove
 		// TODO: refactor this into one place
-		if (open.range < tm.thing->height)
+		if (open.range < g_tm.thing->height)
 		{
 			P_TestLine(ld);
 		}
-		else if (tm.maxstep > 0)
+		else if (g_tm.maxstep > 0)
 		{
-			if (tm.thing->z < open.floor)
+			if (g_tm.thing->z < open.floor)
 			{
-				if (open.floorstep > tm.maxstep)
+				if (open.floorstep > g_tm.maxstep)
 				{
 					P_TestLine(ld);
 				}
 			}
-			else if (open.ceiling < tm.thing->z + tm.thing->height)
+			else if (open.ceiling < g_tm.thing->z + g_tm.thing->height)
 			{
-				if (open.ceilingstep > tm.maxstep)
+				if (open.ceilingstep > g_tm.maxstep)
 				{
 					P_TestLine(ld);
 				}
@@ -1928,38 +1933,38 @@ static BlockItReturn_t PIT_CheckLine(line_t *ld)
 	}
 
 	// adjust floor / ceiling heights
-	if (open.ceiling < tm.ceilingz)
+	if (open.ceiling < g_tm.ceilingz)
 	{
-		tm.ceilingz = open.ceiling;
-		tm.ceilingline = ld;
-		tm.ceilingrover = open.ceilingrover;
-		tm.ceilingslope = open.ceilingslope;
-		tm.ceilingpic = open.ceilingpic;
-		tm.ceilingstep = open.ceilingstep;
-		if (thingtop == tm.thing->ceilingz)
+		g_tm.ceilingz = open.ceiling;
+		g_tm.ceilingline = ld;
+		g_tm.ceilingrover = open.ceilingrover;
+		g_tm.ceilingslope = open.ceilingslope;
+		g_tm.ceilingpic = open.ceilingpic;
+		g_tm.ceilingstep = open.ceilingstep;
+		if (thingtop == g_tm.thing->ceilingz)
 		{
-			tm.thing->ceilingdrop = open.ceilingdrop;
+			g_tm.thing->ceilingdrop = open.ceilingdrop;
 		}
 	}
 
-	if (open.floor > tm.floorz)
+	if (open.floor > g_tm.floorz)
 	{
-		tm.floorz = open.floor;
-		tm.floorrover = open.floorrover;
-		tm.floorslope = open.floorslope;
-		tm.floorpic = open.floorpic;
-		tm.floorstep = open.floorstep;
-		if (tm.thing->z == tm.thing->floorz)
+		g_tm.floorz = open.floor;
+		g_tm.floorrover = open.floorrover;
+		g_tm.floorslope = open.floorslope;
+		g_tm.floorpic = open.floorpic;
+		g_tm.floorstep = open.floorstep;
+		if (g_tm.thing->z == g_tm.thing->floorz)
 		{
-			tm.thing->floordrop = open.floordrop;
+			g_tm.thing->floordrop = open.floordrop;
 		}
 	}
 
-	if (open.highceiling > tm.drpoffceilz)
-		tm.drpoffceilz = open.highceiling;
+	if (open.highceiling > g_tm.drpoffceilz)
+		g_tm.drpoffceilz = open.highceiling;
 
-	if (open.lowfloor < tm.dropoffz)
-		tm.dropoffz = open.lowfloor;
+	if (open.lowfloor < g_tm.dropoffz)
+		g_tm.dropoffz = open.lowfloor;
 
 	// we've crossed the line
 	if (P_SpecialIsLinedefCrossType(ld))
@@ -1970,14 +1975,14 @@ static BlockItReturn_t PIT_CheckLine(line_t *ld)
 	{
 		fixed_t textop, texbottom;
 
-		P_GetMidtextureTopBottom(ld, tm.x, tm.y,
+		P_GetMidtextureTopBottom(ld, g_tm.x, g_tm.y,
 				&textop, &texbottom);
 
 		/* The effect handling is done later but it won't
 			know the height values anymore. So don't even add
 			this line to the list unless this thing clips the
 			tripwire's midtexture. */
-		if (tm.thing->z <= textop && thingtop >= texbottom)
+		if (g_tm.thing->z <= textop && thingtop >= texbottom)
 			add_spechit(ld);
 	}
 
@@ -2004,20 +2009,20 @@ static BlockItReturn_t PIT_CheckLine(line_t *ld)
 //
 // out:
 //  newsubsec
-//  tm.floorz
-//  tm.ceilingz
-//  tm.dropoffz
-//  tm.drpoffceilz
+//  g_tm.floorz
+//  g_tm.ceilingz
+//  g_tm.dropoffz
+//  g_tm.drpoffceilz
 //   the lowest point contacted
 //   (monsters won't move to a dropoff)
 //  speciallines[]
 //  numspeciallines
 //
 
-// tm.floorz
-//     the nearest floor or thing's top under tm.thing
-// tm.ceilingz
-//     the nearest ceiling or thing's bottom over tm.thing
+// g_tm.floorz
+//     the nearest floor or thing's top under g_tm.thing
+// g_tm.ceilingz
+//     the nearest ceiling or thing's bottom over g_tm.thing
 //
 boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y, TryMoveResult_t *result)
 {
@@ -2034,36 +2039,36 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y, TryMoveResult_t *re
 		I_Error("Previously-removed Thing of type %u crashes P_CheckPosition!", thing->type);
 #endif
 
-	P_SetTarget(&tm.thing, thing);
-	tm.flags = thing->flags;
+	P_SetTarget(&g_tm.thing, thing);
+	g_tm.flags = thing->flags;
 
-	tm.x = x;
-	tm.y = y;
+	g_tm.x = x;
+	g_tm.y = y;
 
-	tm.bbox[BOXTOP] = y + tm.thing->radius;
-	tm.bbox[BOXBOTTOM] = y - tm.thing->radius;
-	tm.bbox[BOXRIGHT] = x + tm.thing->radius;
-	tm.bbox[BOXLEFT] = x - tm.thing->radius;
+	g_tm.bbox[BOXTOP] = y + g_tm.thing->radius;
+	g_tm.bbox[BOXBOTTOM] = y - g_tm.thing->radius;
+	g_tm.bbox[BOXRIGHT] = x + g_tm.thing->radius;
+	g_tm.bbox[BOXLEFT] = x - g_tm.thing->radius;
 
 	newsubsec = R_PointInSubsector(x, y);
-	tm.ceilingline = NULL;
-	tm.blocking = false;
+	g_tm.ceilingline = NULL;
+	g_tm.blocking = false;
 
 	// The base floor / ceiling is from the subsector
 	// that contains the point.
 	// Any contacted lines the step closer together
 	// will adjust them.
-	tm.floorz = tm.dropoffz = P_GetFloorZ(thing, newsubsec->sector, x, y, NULL); //newsubsec->sector->floorheight;
-	tm.ceilingz = P_GetCeilingZ(thing, newsubsec->sector, x, y, NULL); //newsubsec->sector->ceilingheight;
-	tm.floorrover = NULL;
-	tm.ceilingrover = NULL;
-	tm.floorslope = newsubsec->sector->f_slope;
-	tm.ceilingslope = newsubsec->sector->c_slope;
-	tm.floorpic = newsubsec->sector->floorpic;
-	tm.ceilingpic = newsubsec->sector->ceilingpic;
+	g_tm.floorz = g_tm.dropoffz = P_GetFloorZ(thing, newsubsec->sector, x, y, NULL); //newsubsec->sector->floorheight;
+	g_tm.ceilingz = P_GetCeilingZ(thing, newsubsec->sector, x, y, NULL); //newsubsec->sector->ceilingheight;
+	g_tm.floorrover = NULL;
+	g_tm.ceilingrover = NULL;
+	g_tm.floorslope = newsubsec->sector->f_slope;
+	g_tm.ceilingslope = newsubsec->sector->c_slope;
+	g_tm.floorpic = newsubsec->sector->floorpic;
+	g_tm.ceilingpic = newsubsec->sector->ceilingpic;
 
-	tm.floorstep = 0;
-	tm.ceilingstep = 0;
+	g_tm.floorstep = 0;
+	g_tm.ceilingstep = 0;
 
 	if (thingtop < thing->ceilingz)
 	{
@@ -2075,7 +2080,7 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y, TryMoveResult_t *re
 		thing->floordrop = 0;
 	}
 
-	// Check list of fake floors and see if tm.floorz/tm.ceilingz need to be altered.
+	// Check list of fake floors and see if g_tm.floorz/g_tm.ceilingz need to be altered.
 	if (newsubsec->sector->ffloors)
 	{
 		ffloor_t *rover;
@@ -2110,22 +2115,22 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y, TryMoveResult_t *re
 					// Land on the top or the bottom, depending on gravity flip.
 					if (!(thing->eflags & MFE_VERTICALFLIP) && thing->z >= topheight - sinklevel && thing->momz <= 0)
 					{
-						if (tm.floorz < topheight - sinklevel)
+						if (g_tm.floorz < topheight - sinklevel)
 						{
-							tm.floorz = topheight - sinklevel;
-							tm.floorrover = rover;
-							tm.floorslope = *rover->t_slope;
-							tm.floorpic = *rover->toppic;
+							g_tm.floorz = topheight - sinklevel;
+							g_tm.floorrover = rover;
+							g_tm.floorslope = *rover->t_slope;
+							g_tm.floorpic = *rover->toppic;
 						}
 					}
 					else if (thing->eflags & MFE_VERTICALFLIP && thingtop <= bottomheight + sinklevel && thing->momz >= 0)
 					{
-						if (tm.ceilingz > bottomheight + sinklevel)
+						if (g_tm.ceilingz > bottomheight + sinklevel)
 						{
-							tm.ceilingz = bottomheight + sinklevel;
-							tm.ceilingrover = rover;
-							tm.ceilingslope = *rover->b_slope;
-							tm.ceilingpic = *rover->bottompic;
+							g_tm.ceilingz = bottomheight + sinklevel;
+							g_tm.ceilingrover = rover;
+							g_tm.ceilingslope = *rover->b_slope;
+							g_tm.ceilingpic = *rover->bottompic;
 						}
 					}
 				}
@@ -2143,12 +2148,12 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y, TryMoveResult_t *re
 			{
 				if (thing->z < topheight && bottomheight < thingtop)
 				{
-					if (tm.floorz < thing->z)
+					if (g_tm.floorz < thing->z)
 					{
-						tm.floorz = thing->z;
-						tm.floorrover = rover;
-						tm.floorslope = NULL;
-						tm.floorpic = *rover->toppic;
+						g_tm.floorz = thing->z;
+						g_tm.floorrover = rover;
+						g_tm.floorslope = NULL;
+						g_tm.floorpic = *rover->toppic;
 					}
 				}
 				// Quicksand blocks never change heights otherwise.
@@ -2160,22 +2165,22 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y, TryMoveResult_t *re
 			delta2 = thingtop - (bottomheight
 				+ ((topheight - bottomheight)/2));
 
-			if (topheight > tm.floorz && abs(delta1) < abs(delta2)
+			if (topheight > g_tm.floorz && abs(delta1) < abs(delta2)
 				&& !(rover->fofflags & FOF_REVERSEPLATFORM))
 			{
-				tm.floorz = tm.dropoffz = topheight;
-				tm.floorrover = rover;
-				tm.floorslope = *rover->t_slope;
-				tm.floorpic = *rover->toppic;
+				g_tm.floorz = g_tm.dropoffz = topheight;
+				g_tm.floorrover = rover;
+				g_tm.floorslope = *rover->t_slope;
+				g_tm.floorpic = *rover->toppic;
 			}
 
-			if (bottomheight < tm.ceilingz && abs(delta1) >= abs(delta2)
+			if (bottomheight < g_tm.ceilingz && abs(delta1) >= abs(delta2)
 				&& !(rover->fofflags & FOF_PLATFORM))
 			{
-				tm.ceilingz = tm.drpoffceilz = bottomheight;
-				tm.ceilingrover = rover;
-				tm.ceilingslope = *rover->b_slope;
-				tm.ceilingpic = *rover->bottompic;
+				g_tm.ceilingz = g_tm.drpoffceilz = bottomheight;
+				g_tm.ceilingrover = rover;
+				g_tm.ceilingslope = *rover->b_slope;
+				g_tm.ceilingpic = *rover->bottompic;
 			}
 		}
 	}
@@ -2185,14 +2190,14 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y, TryMoveResult_t *re
 	// based on their origin point, and can overlap
 	// into adjacent blocks by up to MAXRADIUS units.
 
-	xl = (unsigned)(tm.bbox[BOXLEFT] - bmaporgx - MAXRADIUS)>>MAPBLOCKSHIFT;
-	xh = (unsigned)(tm.bbox[BOXRIGHT] - bmaporgx + MAXRADIUS)>>MAPBLOCKSHIFT;
-	yl = (unsigned)(tm.bbox[BOXBOTTOM] - bmaporgy - MAXRADIUS)>>MAPBLOCKSHIFT;
-	yh = (unsigned)(tm.bbox[BOXTOP] - bmaporgy + MAXRADIUS)>>MAPBLOCKSHIFT;
+	xl = (unsigned)(g_tm.bbox[BOXLEFT] - bmaporgx - MAXRADIUS)>>MAPBLOCKSHIFT;
+	xh = (unsigned)(g_tm.bbox[BOXRIGHT] - bmaporgx + MAXRADIUS)>>MAPBLOCKSHIFT;
+	yl = (unsigned)(g_tm.bbox[BOXBOTTOM] - bmaporgy - MAXRADIUS)>>MAPBLOCKSHIFT;
+	yh = (unsigned)(g_tm.bbox[BOXTOP] - bmaporgy + MAXRADIUS)>>MAPBLOCKSHIFT;
 
 	BMBOUNDFIX(xl, xh, yl, yh);
 
-	// Check polyobjects and see if tm.floorz/tm.ceilingz need to be altered
+	// Check polyobjects and see if g_tm.floorz/g_tm.ceilingz need to be altered
 	{
 		validcount++;
 
@@ -2223,7 +2228,7 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y, TryMoveResult_t *re
 
 						po->validcount = validcount;
 
-						if (!P_BBoxInsidePolyobj(po, tm.bbox)
+						if (!P_BBoxInsidePolyobj(po, g_tm.bbox)
 							|| !(po->flags & POF_SOLID))
 						{
 							plink = (polymaplink_t *)(plink->link.next);
@@ -2247,20 +2252,20 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y, TryMoveResult_t *re
 						delta1 = thing->z - (polybottom + ((polytop - polybottom)/2));
 						delta2 = thingtop - (polybottom + ((polytop - polybottom)/2));
 
-						if (polytop > tm.floorz && abs(delta1) < abs(delta2))
+						if (polytop > g_tm.floorz && abs(delta1) < abs(delta2))
 						{
-							tm.floorz = tm.dropoffz = polytop;
-							tm.floorslope = NULL;
-							tm.floorrover = NULL;
-							tm.floorpic = polysec->ceilingpic;
+							g_tm.floorz = g_tm.dropoffz = polytop;
+							g_tm.floorslope = NULL;
+							g_tm.floorrover = NULL;
+							g_tm.floorpic = polysec->ceilingpic;
 						}
 
-						if (polybottom < tm.ceilingz && abs(delta1) >= abs(delta2))
+						if (polybottom < g_tm.ceilingz && abs(delta1) >= abs(delta2))
 						{
-							tm.ceilingz = tm.drpoffceilz = polybottom;
-							tm.ceilingslope = NULL;
-							tm.ceilingrover = NULL;
-							tm.ceilingpic = polysec->floorpic;
+							g_tm.ceilingz = g_tm.drpoffceilz = polybottom;
+							g_tm.ceilingslope = NULL;
+							g_tm.ceilingrover = NULL;
+							g_tm.ceilingpic = polysec->floorpic;
 						}
 					}
 					plink = (polymaplink_t *)(plink->link.next);
@@ -2269,9 +2274,9 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y, TryMoveResult_t *re
 		}
 	}
 
-	// tm.floorthing is set when tm.floorz comes from a thing's top
-	P_SetTarget(&tm.floorthing, NULL);
-	P_SetTarget(&tm.hitthing, NULL);
+	// g_tm.floorthing is set when g_tm.floorz comes from a thing's top
+	P_SetTarget(&g_tm.floorthing, NULL);
+	P_SetTarget(&g_tm.hitthing, NULL);
 
 	validcount++;
 
@@ -2294,10 +2299,10 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y, TryMoveResult_t *re
 				}
 				else
 				{
-					P_SetTarget(&tm.hitthing, tm.floorthing);
+					P_SetTarget(&g_tm.hitthing, g_tm.floorthing);
 				}
 
-				if (P_MobjWasRemoved(tm.thing))
+				if (P_MobjWasRemoved(g_tm.thing))
 				{
 					return false;
 				}
@@ -2305,7 +2310,7 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y, TryMoveResult_t *re
 		}
 	}
 
-	if (tm.flags & MF_NOCLIP)
+	if (g_tm.flags & MF_NOCLIP)
 	{
 		// Sal 12/19/2022 -- PIT_CheckThing code will still run
 		// with MF_NOCLIP enabled, but they won't be blocked
@@ -2328,7 +2333,7 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y, TryMoveResult_t *re
 		}
 	}
 
-	if (tm.blocking)
+	if (g_tm.blocking)
 	{
 		blockval = false;
 	}
@@ -2336,14 +2341,14 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y, TryMoveResult_t *re
 	if (result != NULL)
 	{
 		result->line = NULL;
-		result->mo = tm.hitthing;
+		result->mo = g_tm.hitthing;
 	}
 	else
 	{
 		P_ClearTestLines();
 	}
 
-	tm.sweep = false;
+	g_tm.sweep = false;
 
 	return blockval;
 }
@@ -2383,23 +2388,23 @@ boolean P_CheckCameraPosition(fixed_t x, fixed_t y, camera_t *thiscam)
 	INT32 xl, xh, yl, yh, bx, by;
 	subsector_t *newsubsec;
 
-	tm.x = x;
-	tm.y = y;
+	g_tm.x = x;
+	g_tm.y = y;
 
-	tm.bbox[BOXTOP] = y + thiscam->radius;
-	tm.bbox[BOXBOTTOM] = y - thiscam->radius;
-	tm.bbox[BOXRIGHT] = x + thiscam->radius;
-	tm.bbox[BOXLEFT] = x - thiscam->radius;
+	g_tm.bbox[BOXTOP] = y + thiscam->radius;
+	g_tm.bbox[BOXBOTTOM] = y - thiscam->radius;
+	g_tm.bbox[BOXRIGHT] = x + thiscam->radius;
+	g_tm.bbox[BOXLEFT] = x - thiscam->radius;
 
 	newsubsec = R_PointInSubsector(x, y);
-	tm.ceilingline = NULL;
+	g_tm.ceilingline = NULL;
 
 	mapcampointer = thiscam;
 
 	if (newsubsec->sector->flags & MSF_NOCLIPCAMERA)
 	{ // Camera noclip on entire sector.
-		tm.floorz = tm.dropoffz = thiscam->z;
-		tm.ceilingz = tm.drpoffceilz = thiscam->z + thiscam->height;
+		g_tm.floorz = g_tm.dropoffz = thiscam->z;
+		g_tm.ceilingz = g_tm.drpoffceilz = thiscam->z + thiscam->height;
 		return true;
 	}
 
@@ -2407,26 +2412,26 @@ boolean P_CheckCameraPosition(fixed_t x, fixed_t y, camera_t *thiscam)
 	// that contains the point.
 	// Any contacted lines the step closer together
 	// will adjust them.
-	tm.floorz = tm.dropoffz = P_CameraGetFloorZ(thiscam, newsubsec->sector, x, y, NULL);
+	g_tm.floorz = g_tm.dropoffz = P_CameraGetFloorZ(thiscam, newsubsec->sector, x, y, NULL);
 
-	tm.ceilingz = P_CameraGetCeilingZ(thiscam, newsubsec->sector, x, y, NULL);
+	g_tm.ceilingz = P_CameraGetCeilingZ(thiscam, newsubsec->sector, x, y, NULL);
 
 	// Cameras use the heightsec's heights rather then the actual sector heights.
 	// If you can see through it, why not move the camera through it too?
 	if (newsubsec->sector->heightsec >= 0)
 	{
-		tm.floorz = tm.dropoffz = sectors[newsubsec->sector->heightsec].floorheight;
-		tm.ceilingz = tm.drpoffceilz = sectors[newsubsec->sector->heightsec].ceilingheight;
+		g_tm.floorz = g_tm.dropoffz = sectors[newsubsec->sector->heightsec].floorheight;
+		g_tm.ceilingz = g_tm.drpoffceilz = sectors[newsubsec->sector->heightsec].ceilingheight;
 	}
 
 	// Use preset camera clipping heights if set with Sector Special Parameters whose control sector has Camera Intangible special -Red
 	if (newsubsec->sector->camsec >= 0)
 	{
-		tm.floorz = tm.dropoffz = sectors[newsubsec->sector->camsec].floorheight;
-		tm.ceilingz = tm.drpoffceilz = sectors[newsubsec->sector->camsec].ceilingheight;
+		g_tm.floorz = g_tm.dropoffz = sectors[newsubsec->sector->camsec].floorheight;
+		g_tm.ceilingz = g_tm.drpoffceilz = sectors[newsubsec->sector->camsec].ceilingheight;
 	}
 
-	// Check list of fake floors and see if tm.floorz/tm.ceilingz need to be altered.
+	// Check list of fake floors and see if g_tm.floorz/g_tm.ceilingz need to be altered.
 	if (newsubsec->sector->ffloors)
 	{
 		ffloor_t *rover;
@@ -2446,13 +2451,13 @@ boolean P_CheckCameraPosition(fixed_t x, fixed_t y, camera_t *thiscam)
 				+ ((topheight - bottomheight)/2));
 			delta2 = thingtop - (bottomheight
 				+ ((topheight - bottomheight)/2));
-			if (topheight > tm.floorz && abs(delta1) < abs(delta2))
+			if (topheight > g_tm.floorz && abs(delta1) < abs(delta2))
 			{
-				tm.floorz = tm.dropoffz = topheight;
+				g_tm.floorz = g_tm.dropoffz = topheight;
 			}
-			if (bottomheight < tm.ceilingz && abs(delta1) >= abs(delta2))
+			if (bottomheight < g_tm.ceilingz && abs(delta1) >= abs(delta2))
 			{
-				tm.ceilingz = tm.drpoffceilz = bottomheight;
+				g_tm.ceilingz = g_tm.drpoffceilz = bottomheight;
 			}
 		}
 	}
@@ -2462,14 +2467,14 @@ boolean P_CheckCameraPosition(fixed_t x, fixed_t y, camera_t *thiscam)
 	// based on their origin point, and can overlap
 	// into adjacent blocks by up to MAXRADIUS units.
 
-	xl = (unsigned)(tm.bbox[BOXLEFT] - bmaporgx)>>MAPBLOCKSHIFT;
-	xh = (unsigned)(tm.bbox[BOXRIGHT] - bmaporgx)>>MAPBLOCKSHIFT;
-	yl = (unsigned)(tm.bbox[BOXBOTTOM] - bmaporgy)>>MAPBLOCKSHIFT;
-	yh = (unsigned)(tm.bbox[BOXTOP] - bmaporgy)>>MAPBLOCKSHIFT;
+	xl = (unsigned)(g_tm.bbox[BOXLEFT] - bmaporgx)>>MAPBLOCKSHIFT;
+	xh = (unsigned)(g_tm.bbox[BOXRIGHT] - bmaporgx)>>MAPBLOCKSHIFT;
+	yl = (unsigned)(g_tm.bbox[BOXBOTTOM] - bmaporgy)>>MAPBLOCKSHIFT;
+	yh = (unsigned)(g_tm.bbox[BOXTOP] - bmaporgy)>>MAPBLOCKSHIFT;
 
 	BMBOUNDFIX(xl, xh, yl, yh);
 
-	// Check polyobjects and see if tm.floorz/tm.ceilingz need to be altered
+	// Check polyobjects and see if g_tm.floorz/g_tm.ceilingz need to be altered
 	{
 		validcount++;
 
@@ -2529,11 +2534,11 @@ boolean P_CheckCameraPosition(fixed_t x, fixed_t y, camera_t *thiscam)
 						delta1 = thiscam->z - (polybottom + ((polytop - polybottom)/2));
 						delta2 = thingtop - (polybottom + ((polytop - polybottom)/2));
 
-						if (polytop > tm.floorz && abs(delta1) < abs(delta2))
-							tm.floorz = tm.dropoffz = polytop;
+						if (polytop > g_tm.floorz && abs(delta1) < abs(delta2))
+							g_tm.floorz = g_tm.dropoffz = polytop;
 
-						if (polybottom < tm.ceilingz && abs(delta1) >= abs(delta2))
-							tm.ceilingz = tm.drpoffceilz = polybottom;
+						if (polybottom < g_tm.ceilingz && abs(delta1) >= abs(delta2))
+							g_tm.ceilingz = g_tm.drpoffceilz = polybottom;
 					}
 					plink = (polymaplink_t *)(plink->link.next);
 				}
@@ -2566,7 +2571,7 @@ boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam)
 
 	UINT8 i;
 
-	tm.floatok = false;
+	g_tm.floatok = false;
 
 	for (i = 0; i <= r_splitscreen; i++)
 	{
@@ -2590,7 +2595,7 @@ boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam)
 
 		if (!(players[displayplayers[i]].pflags & PF_NOCONTEST)) // Time Over should not clip through walls
 		{
-			tm.floatok = true;
+			g_tm.floatok = true;
 			thiscam->floorz = thiscam->z;
 			thiscam->ceilingz = thiscam->z + thiscam->height;
 			thiscam->x = x;
@@ -2616,18 +2621,18 @@ boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam)
 			if (!P_CheckCameraPosition(tryx, tryy, thiscam))
 				return false; // solid wall or thing
 
-			if (tm.ceilingz - tm.floorz < thiscam->height)
+			if (g_tm.ceilingz - g_tm.floorz < thiscam->height)
 				return false; // doesn't fit
 
-			tm.floatok = true;
+			g_tm.floatok = true;
 
-			if (tm.ceilingz - thiscam->z < thiscam->height)
+			if (g_tm.ceilingz - thiscam->z < thiscam->height)
 			{
-				if (s == thiscam->subsector && tm.ceilingz >= thiscam->z)
+				if (s == thiscam->subsector && g_tm.ceilingz >= thiscam->z)
 				{
-					tm.floatok = true;
-					thiscam->floorz = tm.floorz;
-					thiscam->ceilingz = tm.floorz + thiscam->height;
+					g_tm.floatok = true;
+					thiscam->floorz = g_tm.floorz;
+					thiscam->ceilingz = g_tm.floorz + thiscam->height;
 					thiscam->x = x;
 					thiscam->y = y;
 					thiscam->subsector = s;
@@ -2637,21 +2642,21 @@ boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam)
 					return false; // mobj must lower itself to fit
 			}
 
-			if ((tm.floorz - thiscam->z > MAXCAMERASTEPMOVE))
+			if ((g_tm.floorz - thiscam->z > MAXCAMERASTEPMOVE))
 				return false; // too big a step up
 		} while(tryx != x || tryy != y);
 	}
 	else
 	{
-		tm.floorz = P_CameraGetFloorZ(thiscam, thiscam->subsector->sector, x, y, NULL);
-		tm.ceilingz = P_CameraGetCeilingZ(thiscam, thiscam->subsector->sector, x, y, NULL);
+		g_tm.floorz = P_CameraGetFloorZ(thiscam, thiscam->subsector->sector, x, y, NULL);
+		g_tm.ceilingz = P_CameraGetCeilingZ(thiscam, thiscam->subsector->sector, x, y, NULL);
 	}
 
 	// the move is ok,
 	// so link the thing into its new position
 
-	thiscam->floorz = tm.floorz;
-	thiscam->ceilingz = tm.ceilingz;
+	thiscam->floorz = g_tm.floorz;
+	thiscam->ceilingz = g_tm.ceilingz;
 	thiscam->x = x;
 	thiscam->y = y;
 	thiscam->subsector = s;
@@ -2703,7 +2708,7 @@ BlockItReturn_t PIT_PushableMoved(mobj_t *thing)
 		// These are all non-static map variables that are changed for each and every single mobj
 		// See, changing player's momx/y would possibly trigger stuff as if the player were running somehow, so this must be done to keep the player standing
 		// All this so players can ride gargoyles!
-		tm_t oldtm = tm;
+		tm_t oldtm = g_tm;
 
 		// Move the player
 		P_TryMove(thing, thing->x + stand->momx, thing->y + stand->momy, true, NULL);
@@ -2780,7 +2785,7 @@ increment_move
 	fixed_t radius = thing->radius;
 	fixed_t thingtop;
 	fixed_t stairjank = 0;
-	tm.floatok = false;
+	g_tm.floatok = false;
 
 	// reset this to 0 at the start of each trymove call as it's only used here
 	numspechitint = 0U;
@@ -2820,12 +2825,12 @@ increment_move
 
 		if (P_UsingStepUp(thing))
 		{
-			tm.maxstep = P_GetThingStepUp(thing, tryx, tryy);
+			g_tm.maxstep = P_GetThingStepUp(thing, tryx, tryy);
 		}
 
 		if (result)
 		{
-			tm.sweep = true;
+			g_tm.sweep = true;
 		}
 
 		boolean move_ok = P_CheckPosition(thing, tryx, tryy, result);
@@ -2853,17 +2858,17 @@ increment_move
 			// All things are affected by their scale.
 			fixed_t maxstep = P_GetThingStepUp(thing, tryx, tryy);
 
-			if (tm.ceilingz - tm.floorz < thing->height)
+			if (g_tm.ceilingz - g_tm.floorz < thing->height)
 			{
-				if (tm.floorthing != NULL)
+				if (g_tm.floorthing != NULL)
 				{
-					P_SetTarget(&tm.hitthing, tm.floorthing);
+					P_SetTarget(&g_tm.hitthing, g_tm.floorthing);
 				}
 
 				return false; // doesn't fit
 			}
 
-			tm.floatok = true;
+			g_tm.floatok = true;
 
 			if (maxstep > 0)
 			{
@@ -2873,15 +2878,15 @@ increment_move
 				thingtop = thing->z + thing->height;
 
 				// Step up
-				if (thing->z < tm.floorz)
+				if (thing->z < g_tm.floorz)
 				{
-					if (tm.floorstep <= maxstep)
+					if (g_tm.floorstep <= maxstep)
 					{
 						if (!flipped)
-							stairjank = tm.floorstep;
+							stairjank = g_tm.floorstep;
 
-						thing->z = thing->floorz = tm.floorz;
-						thing->floorrover = tm.floorrover;
+						thing->z = thing->floorz = g_tm.floorz;
+						thing->floorrover = g_tm.floorrover;
 						thing->eflags |= MFE_JUSTSTEPPEDDOWN;
 					}
 					else
@@ -2889,15 +2894,15 @@ increment_move
 						return false; // mobj must raise itself to fit
 					}
 				}
-				else if (tm.ceilingz < thingtop)
+				else if (g_tm.ceilingz < thingtop)
 				{
-					if (tm.ceilingstep <= maxstep)
+					if (g_tm.ceilingstep <= maxstep)
 					{
 						if (flipped)
-							stairjank = tm.ceilingstep;
+							stairjank = g_tm.ceilingstep;
 
-						thing->z = ( thing->ceilingz = tm.ceilingz ) - thing->height;
-						thing->ceilingrover = tm.ceilingrover;
+						thing->z = ( thing->ceilingz = g_tm.ceilingz ) - thing->height;
+						thing->ceilingrover = g_tm.ceilingrover;
 						thing->eflags |= MFE_JUSTSTEPPEDDOWN;
 					}
 					else
@@ -2912,37 +2917,37 @@ increment_move
 					// If the floor difference is MAXSTEPMOVE or less, and the sector isn't Section1:14, ALWAYS
 					// step down! Formerly required a Section1:13 sector for the full MAXSTEPMOVE, but no more.
 
-					if (thingtop == thing->ceilingz && tm.ceilingz > thingtop && tm.ceilingz - thingtop <= maxstep)
+					if (thingtop == thing->ceilingz && g_tm.ceilingz > thingtop && g_tm.ceilingz - thingtop <= maxstep)
 					{
 						if (flipped)
-							stairjank = (tm.ceilingz - thingtop);
+							stairjank = (g_tm.ceilingz - thingtop);
 
-						thing->z = (thing->ceilingz = tm.ceilingz) - thing->height;
-						thing->ceilingrover = tm.ceilingrover;
+						thing->z = (thing->ceilingz = g_tm.ceilingz) - thing->height;
+						thing->ceilingrover = g_tm.ceilingrover;
 						thing->eflags |= MFE_JUSTSTEPPEDDOWN;
 						thing->ceilingdrop = 0;
 					}
-					else if (thing->z == thing->floorz && tm.floorz < thing->z && thing->z - tm.floorz <= maxstep)
+					else if (thing->z == thing->floorz && g_tm.floorz < thing->z && thing->z - g_tm.floorz <= maxstep)
 					{
 						if (!flipped)
-							stairjank = (thing->z - tm.floorz);
+							stairjank = (thing->z - g_tm.floorz);
 
-						thing->z = thing->floorz = tm.floorz;
-						thing->floorrover = tm.floorrover;
+						thing->z = thing->floorz = g_tm.floorz;
+						thing->floorrover = g_tm.floorrover;
 						thing->eflags |= MFE_JUSTSTEPPEDDOWN;
 						thing->floordrop = 0;
 					}
 				}
 			}
 
-			if (!allowdropoff && !(thing->flags & MF_FLOAT) && !tm.floorthing)
+			if (!allowdropoff && !(thing->flags & MF_FLOAT) && !g_tm.floorthing)
 			{
 				if (thing->eflags & MFE_VERTICALFLIP)
 				{
-					if (tm.drpoffceilz - tm.ceilingz > maxstep)
+					if (g_tm.drpoffceilz - g_tm.ceilingz > maxstep)
 						return false;
 				}
-				else if (tm.floorz - tm.dropoffz > maxstep)
+				else if (g_tm.floorz - g_tm.dropoffz > maxstep)
 					return false; // don't stand over a dropoff
 			}
 		}
@@ -2985,6 +2990,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff, Try
 	fixed_t startingonground = P_IsObjectOnGround(thing);
 	fixed_t stairjank = 0;
 	pslope_t *oldslope = thing->standingslope;
+	sector_t *oldsector = thing->subsector->sector;
 
 	// Is the move OK?
 	if (increment_move(thing, x, y, allowdropoff, &stairjank, result) == false)
@@ -3021,21 +3027,21 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff, Try
 	// Link the thing into its new position
 	P_UnsetThingPosition(thing);
 
-	thing->floorz = tm.floorz;
-	thing->ceilingz = tm.ceilingz;
-	thing->floorrover = tm.floorrover;
-	thing->ceilingrover = tm.ceilingrover;
+	thing->floorz = g_tm.floorz;
+	thing->ceilingz = g_tm.ceilingz;
+	thing->floorrover = g_tm.floorrover;
+	thing->ceilingrover = g_tm.ceilingrover;
 
 	if (!(thing->flags & MF_NOCLIPHEIGHT))
 	{
 		// Assign thing's standingslope if needed
-		if (thing->z <= tm.floorz && !(thing->eflags & MFE_VERTICALFLIP))
+		if (thing->z <= g_tm.floorz && !(thing->eflags & MFE_VERTICALFLIP))
 		{
-			K_UpdateMobjTerrain(thing, tm.floorpic);
+			K_UpdateMobjTerrain(thing, g_tm.floorpic);
 
-			if (!startingonground && tm.floorslope)
+			if (!startingonground && g_tm.floorslope)
 			{
-				P_HandleSlopeLanding(thing, tm.floorslope);
+				P_HandleSlopeLanding(thing, g_tm.floorslope);
 			}
 
 			if (thing->momz <= 0)
@@ -3043,7 +3049,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff, Try
 				angle_t oldPitch = thing->pitch;
 				angle_t oldRoll = thing->roll;
 
-				thing->standingslope = tm.floorslope;
+				thing->standingslope = g_tm.floorslope;
 				P_SetPitchRollFromSlope(thing, thing->standingslope);
 
 				if (thing->player)
@@ -3052,13 +3058,13 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff, Try
 				}
 			}
 		}
-		else if (thing->z+thing->height >= tm.ceilingz && (thing->eflags & MFE_VERTICALFLIP))
+		else if (thing->z+thing->height >= g_tm.ceilingz && (thing->eflags & MFE_VERTICALFLIP))
 		{
-			K_UpdateMobjTerrain(thing, tm.ceilingpic);
+			K_UpdateMobjTerrain(thing, g_tm.ceilingpic);
 
-			if (!startingonground && tm.ceilingslope)
+			if (!startingonground && g_tm.ceilingslope)
 			{
-				P_HandleSlopeLanding(thing, tm.ceilingslope);
+				P_HandleSlopeLanding(thing, g_tm.ceilingslope);
 			}
 
 			if (thing->momz >= 0)
@@ -3066,7 +3072,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff, Try
 				angle_t oldPitch = thing->pitch;
 				angle_t oldRoll = thing->roll;
 
-				thing->standingslope = tm.ceilingslope;
+				thing->standingslope = g_tm.ceilingslope;
 				P_SetPitchRollFromSlope(thing, thing->standingslope);
 
 				if (thing->player)
@@ -3115,12 +3121,14 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff, Try
 	thing->x = x;
 	thing->y = y;
 
-	if (tm.floorthing)
+	if (g_tm.floorthing)
 		thing->eflags &= ~MFE_ONGROUND; // not on real floor
 	else
 		thing->eflags |= MFE_ONGROUND;
 
 	P_SetThingPosition(thing);
+
+	P_CheckSectorTransitionalEffects(thing, oldsector, startingonground);
 
 	// remove any duplicates that may be in spechitint
 	spechitint_removedups();
@@ -3187,13 +3195,13 @@ boolean P_SceneryTryMove(mobj_t *thing, fixed_t x, fixed_t y, TryMoveResult_t *r
 		{
 			const fixed_t maxstep = P_BaseStepUp();
 
-			if (tm.ceilingz - tm.floorz < thing->height)
+			if (g_tm.ceilingz - g_tm.floorz < thing->height)
 				return false; // doesn't fit
 
-			if (tm.ceilingz - thing->z < thing->height)
+			if (g_tm.ceilingz - thing->z < thing->height)
 				return false; // mobj must lower itself to fit
 
-			if (tm.floorz - thing->z > maxstep)
+			if (g_tm.floorz - thing->z > maxstep)
 				return false; // too big a step up
 		}
 	} while(tryx != x || tryy != y);
@@ -3202,14 +3210,14 @@ boolean P_SceneryTryMove(mobj_t *thing, fixed_t x, fixed_t y, TryMoveResult_t *r
 	// so link the thing into its new position
 	P_UnsetThingPosition(thing);
 
-	thing->floorz = tm.floorz;
-	thing->ceilingz = tm.ceilingz;
-	thing->floorrover = tm.floorrover;
-	thing->ceilingrover = tm.ceilingrover;
+	thing->floorz = g_tm.floorz;
+	thing->ceilingz = g_tm.ceilingz;
+	thing->floorrover = g_tm.floorrover;
+	thing->ceilingrover = g_tm.ceilingrover;
 	thing->x = x;
 	thing->y = y;
 
-	if (tm.floorthing)
+	if (g_tm.floorthing)
 		thing->eflags &= ~MFE_ONGROUND; // not on real floor
 	else
 		thing->eflags |= MFE_ONGROUND;
@@ -3337,17 +3345,17 @@ static boolean P_ThingHeightClip(mobj_t *thing)
 	if (P_MobjWasRemoved(thing))
 		return true;
 
-	floormoved = (thing->eflags & MFE_VERTICALFLIP && tm.ceilingz != thing->ceilingz)
-		|| (!(thing->eflags & MFE_VERTICALFLIP) && tm.floorz != thing->floorz);
+	floormoved = (thing->eflags & MFE_VERTICALFLIP && g_tm.ceilingz != thing->ceilingz)
+		|| (!(thing->eflags & MFE_VERTICALFLIP) && g_tm.floorz != thing->floorz);
 
-	thing->floorz = tm.floorz;
-	thing->ceilingz = tm.ceilingz;
-	thing->floorrover = tm.floorrover;
-	thing->ceilingrover = tm.ceilingrover;
+	thing->floorz = g_tm.floorz;
+	thing->ceilingz = g_tm.ceilingz;
+	thing->floorrover = g_tm.floorrover;
+	thing->ceilingrover = g_tm.ceilingrover;
 
 	// Ugly hack?!?! As long as just ceilingz is the lowest,
 	// you'll still get crushed, right?
-	if (tm.floorz > oldfloorz+thing->height)
+	if (g_tm.floorz > oldfloorz+thing->height)
 		return true;
 
 	if (onfloor && !(thing->flags & MF_NOGRAVITY) && floormoved)
@@ -3371,15 +3379,15 @@ static boolean P_ThingHeightClip(mobj_t *thing)
 				thing->z = thing->floorz;
 		}
 	}
-	else if (!tm.floorthing)
+	else if (!g_tm.floorthing)
 	{
 		// don't adjust a floating monster unless forced to
 		if (thing->eflags & MFE_VERTICALFLIP)
 		{
-			if (!onfloor && thing->z < tm.floorz)
+			if (!onfloor && thing->z < g_tm.floorz)
 				thing->z = thing->floorz;
 		}
-		else if (!onfloor && thing->z + thing->height > tm.ceilingz)
+		else if (!onfloor && thing->z + thing->height > g_tm.ceilingz)
 			thing->z = thing->ceilingz - thing->height;
 	}
 
@@ -4055,6 +4063,15 @@ static void P_BouncePlayerMove(mobj_t *mo, TryMoveResult_t *result)
 
 	P_PlayerHitBounceLine(bestslideline, &result->normal);
 	mo->eflags |= MFE_JUSTBOUNCEDWALL;
+
+	// Combo avoidance!
+	if (mo->player && P_PlayerInPain(mo->player) && gametyperules & GTR_BUMPERS && mo->health == 1)
+	{
+		K_StumblePlayer(mo->player);
+		K_BumperInflate(mo->player);
+		mo->player->tumbleBounces = TUMBLEBOUNCES;
+		mo->hitlag = max(mo->hitlag, 6);
+	}
 
 	mo->momx = tmxmove;
 	mo->momy = tmymove;
@@ -4816,13 +4833,13 @@ void P_DelPrecipSeclist(mprecipsecnode_t *node)
 
 static inline BlockItReturn_t PIT_GetSectors(line_t *ld)
 {
-	if (tm.bbox[BOXRIGHT] <= ld->bbox[BOXLEFT] ||
-		tm.bbox[BOXLEFT] >= ld->bbox[BOXRIGHT] ||
-		tm.bbox[BOXTOP] <= ld->bbox[BOXBOTTOM] ||
-		tm.bbox[BOXBOTTOM] >= ld->bbox[BOXTOP])
+	if (g_tm.bbox[BOXRIGHT] <= ld->bbox[BOXLEFT] ||
+		g_tm.bbox[BOXLEFT] >= ld->bbox[BOXRIGHT] ||
+		g_tm.bbox[BOXTOP] <= ld->bbox[BOXBOTTOM] ||
+		g_tm.bbox[BOXBOTTOM] >= ld->bbox[BOXTOP])
 	return BMIT_CONTINUE;
 
-	if (P_BoxOnLineSide(tm.bbox, ld) != -1)
+	if (P_BoxOnLineSide(g_tm.bbox, ld) != -1)
 		return BMIT_CONTINUE;
 
 	if (ld->polyobj) // line belongs to a polyobject, don't add it
@@ -4835,7 +4852,7 @@ static inline BlockItReturn_t PIT_GetSectors(line_t *ld)
 	// allowed to move to this position, then the sector_list
 	// will be attached to the Thing's mobj_t at touching_sectorlist.
 
-	sector_list = P_AddSecnode(ld->frontsector,tm.thing,sector_list);
+	sector_list = P_AddSecnode(ld->frontsector,g_tm.thing,sector_list);
 
 	// Don't assume all lines are 2-sided, since some Things
 	// like MT_TFOG are allowed regardless of whether their radius takes
@@ -4843,7 +4860,7 @@ static inline BlockItReturn_t PIT_GetSectors(line_t *ld)
 
 	// Use sidedefs instead of 2s flag to determine two-sidedness.
 	if (ld->backsector)
-		sector_list = P_AddSecnode(ld->backsector, tm.thing, sector_list);
+		sector_list = P_AddSecnode(ld->backsector, g_tm.thing, sector_list);
 
 	return BMIT_CONTINUE;
 }
@@ -4851,13 +4868,13 @@ static inline BlockItReturn_t PIT_GetSectors(line_t *ld)
 // Tails 08-25-2002
 static inline BlockItReturn_t PIT_GetPrecipSectors(line_t *ld)
 {
-	if (tm.precipbbox[BOXRIGHT] <= ld->bbox[BOXLEFT] ||
-		tm.precipbbox[BOXLEFT] >= ld->bbox[BOXRIGHT] ||
-		tm.precipbbox[BOXTOP] <= ld->bbox[BOXBOTTOM] ||
-		tm.precipbbox[BOXBOTTOM] >= ld->bbox[BOXTOP])
+	if (g_tm.precipbbox[BOXRIGHT] <= ld->bbox[BOXLEFT] ||
+		g_tm.precipbbox[BOXLEFT] >= ld->bbox[BOXRIGHT] ||
+		g_tm.precipbbox[BOXTOP] <= ld->bbox[BOXBOTTOM] ||
+		g_tm.precipbbox[BOXBOTTOM] >= ld->bbox[BOXTOP])
 	return BMIT_CONTINUE;
 
-	if (P_BoxOnLineSide(tm.precipbbox, ld) != -1)
+	if (P_BoxOnLineSide(g_tm.precipbbox, ld) != -1)
 		return BMIT_CONTINUE;
 
 	if (ld->polyobj) // line belongs to a polyobject, don't add it
@@ -4870,7 +4887,7 @@ static inline BlockItReturn_t PIT_GetPrecipSectors(line_t *ld)
 	// allowed to move to this position, then the sector_list
 	// will be attached to the Thing's mobj_t at touching_sectorlist.
 
-	precipsector_list = P_AddPrecipSecnode(ld->frontsector, tm.precipthing, precipsector_list);
+	precipsector_list = P_AddPrecipSecnode(ld->frontsector, g_tm.precipthing, precipsector_list);
 
 	// Don't assume all lines are 2-sided, since some Things
 	// like MT_TFOG are allowed regardless of whether their radius takes
@@ -4878,7 +4895,7 @@ static inline BlockItReturn_t PIT_GetPrecipSectors(line_t *ld)
 
 	// Use sidedefs instead of 2s flag to determine two-sidedness.
 	if (ld->backsector)
-		precipsector_list = P_AddPrecipSecnode(ld->backsector, tm.precipthing, precipsector_list);
+		precipsector_list = P_AddPrecipSecnode(ld->backsector, g_tm.precipthing, precipsector_list);
 
 	return BMIT_CONTINUE;
 }
@@ -4890,7 +4907,7 @@ void P_CreateSecNodeList(mobj_t *thing, fixed_t x, fixed_t y)
 {
 	INT32 xl, xh, yl, yh, bx, by;
 	msecnode_t *node = sector_list;
-	tm_t ptm = tm; /* cph - see comment at func end */
+	tm_t ptm = g_tm; /* cph - see comment at func end */
 
 	// First, clear out the existing m_thing fields. As each node is
 	// added or verified as needed, m_thing will be set properly. When
@@ -4903,23 +4920,23 @@ void P_CreateSecNodeList(mobj_t *thing, fixed_t x, fixed_t y)
 		node = node->m_sectorlist_next;
 	}
 
-	P_SetTarget(&tm.thing, thing);
-	tm.flags = thing->flags;
+	P_SetTarget(&g_tm.thing, thing);
+	g_tm.flags = thing->flags;
 
-	tm.x = x;
-	tm.y = y;
+	g_tm.x = x;
+	g_tm.y = y;
 
-	tm.bbox[BOXTOP] = y + tm.thing->radius;
-	tm.bbox[BOXBOTTOM] = y - tm.thing->radius;
-	tm.bbox[BOXRIGHT] = x + tm.thing->radius;
-	tm.bbox[BOXLEFT] = x - tm.thing->radius;
+	g_tm.bbox[BOXTOP] = y + g_tm.thing->radius;
+	g_tm.bbox[BOXBOTTOM] = y - g_tm.thing->radius;
+	g_tm.bbox[BOXRIGHT] = x + g_tm.thing->radius;
+	g_tm.bbox[BOXLEFT] = x - g_tm.thing->radius;
 
 	validcount++; // used to make sure we only process a line once
 
-	xl = (unsigned)(tm.bbox[BOXLEFT] - bmaporgx)>>MAPBLOCKSHIFT;
-	xh = (unsigned)(tm.bbox[BOXRIGHT] - bmaporgx)>>MAPBLOCKSHIFT;
-	yl = (unsigned)(tm.bbox[BOXBOTTOM] - bmaporgy)>>MAPBLOCKSHIFT;
-	yh = (unsigned)(tm.bbox[BOXTOP] - bmaporgy)>>MAPBLOCKSHIFT;
+	xl = (unsigned)(g_tm.bbox[BOXLEFT] - bmaporgx)>>MAPBLOCKSHIFT;
+	xh = (unsigned)(g_tm.bbox[BOXRIGHT] - bmaporgx)>>MAPBLOCKSHIFT;
+	yl = (unsigned)(g_tm.bbox[BOXBOTTOM] - bmaporgy)>>MAPBLOCKSHIFT;
+	yh = (unsigned)(g_tm.bbox[BOXTOP] - bmaporgy)>>MAPBLOCKSHIFT;
 
 	BMBOUNDFIX(xl, xh, yl, yh);
 
@@ -4946,10 +4963,10 @@ void P_CreateSecNodeList(mobj_t *thing, fixed_t x, fixed_t y)
 	}
 
 	/* cph -
-	* This is the strife we get into for using global variables. tm.thing
+	* This is the strife we get into for using global variables. g_tm.thing
 	*  is being used by several different functions calling
 	*  P_BlockThingIterator, including functions that can be called *from*
-	*  P_BlockThingIterator. Using a global tm.thing is not reentrant.
+	*  P_BlockThingIterator. Using a global g_tm.thing is not reentrant.
 	* OTOH for Boom/MBF demos we have to preserve the buggy behavior.
 	*  Fun. We restore its previous value unless we're in a Boom/MBF demo.
 	*/
@@ -4961,7 +4978,7 @@ void P_CreatePrecipSecNodeList(precipmobj_t *thing,fixed_t x,fixed_t y)
 {
 	INT32 xl, xh, yl, yh, bx, by;
 	mprecipsecnode_t *node = precipsector_list;
-	tm_t ptm = tm; /* cph - see comment at func end */
+	tm_t ptm = g_tm; /* cph - see comment at func end */
 
 	// First, clear out the existing m_thing fields. As each node is
 	// added or verified as needed, m_thing will be set properly. When
@@ -4974,19 +4991,19 @@ void P_CreatePrecipSecNodeList(precipmobj_t *thing,fixed_t x,fixed_t y)
 		node = node->m_sectorlist_next;
 	}
 
-	tm.precipthing = thing;
+	g_tm.precipthing = thing;
 
-	tm.precipbbox[BOXTOP] = y + 2*FRACUNIT;
-	tm.precipbbox[BOXBOTTOM] = y - 2*FRACUNIT;
-	tm.precipbbox[BOXRIGHT] = x + 2*FRACUNIT;
-	tm.precipbbox[BOXLEFT] = x - 2*FRACUNIT;
+	g_tm.precipbbox[BOXTOP] = y + 2*FRACUNIT;
+	g_tm.precipbbox[BOXBOTTOM] = y - 2*FRACUNIT;
+	g_tm.precipbbox[BOXRIGHT] = x + 2*FRACUNIT;
+	g_tm.precipbbox[BOXLEFT] = x - 2*FRACUNIT;
 
 	validcount++; // used to make sure we only process a line once
 
-	xl = (unsigned)(tm.precipbbox[BOXLEFT] - bmaporgx)>>MAPBLOCKSHIFT;
-	xh = (unsigned)(tm.precipbbox[BOXRIGHT] - bmaporgx)>>MAPBLOCKSHIFT;
-	yl = (unsigned)(tm.precipbbox[BOXBOTTOM] - bmaporgy)>>MAPBLOCKSHIFT;
-	yh = (unsigned)(tm.precipbbox[BOXTOP] - bmaporgy)>>MAPBLOCKSHIFT;
+	xl = (unsigned)(g_tm.precipbbox[BOXLEFT] - bmaporgx)>>MAPBLOCKSHIFT;
+	xh = (unsigned)(g_tm.precipbbox[BOXRIGHT] - bmaporgx)>>MAPBLOCKSHIFT;
+	yl = (unsigned)(g_tm.precipbbox[BOXBOTTOM] - bmaporgy)>>MAPBLOCKSHIFT;
+	yh = (unsigned)(g_tm.precipbbox[BOXTOP] - bmaporgy)>>MAPBLOCKSHIFT;
 
 	BMBOUNDFIX(xl, xh, yl, yh);
 
@@ -5013,10 +5030,10 @@ void P_CreatePrecipSecNodeList(precipmobj_t *thing,fixed_t x,fixed_t y)
 	}
 
 	/* cph -
-	* This is the strife we get into for using global variables. tm.thing
+	* This is the strife we get into for using global variables. g_tm.thing
 	*  is being used by several different functions calling
 	*  P_BlockThingIterator, including functions that can be called *from*
-	*  P_BlockThingIterator. Using a global tm.thing is not reentrant.
+	*  P_BlockThingIterator. Using a global g_tm.thing is not reentrant.
 	* OTOH for Boom/MBF demos we have to preserve the buggy behavior.
 	*  Fun. We restore its previous value unless we're in a Boom/MBF demo.
 	*/
@@ -5024,16 +5041,16 @@ void P_CreatePrecipSecNodeList(precipmobj_t *thing,fixed_t x,fixed_t y)
 }
 
 /* cphipps 2004/08/30 -
- * Must clear tm.thing at tic end, as it might contain a pointer to a removed thinker, or the level might have ended/been ended and we clear the objects it was pointing too. Hopefully we don't need to carry this between tics for sync. */
+ * Must clear g_tm.thing at tic end, as it might contain a pointer to a removed thinker, or the level might have ended/been ended and we clear the objects it was pointing too. Hopefully we don't need to carry this between tics for sync. */
 void P_MapStart(void)
 {
-	if (tm.thing)
-		I_Error("P_MapStart: tm.thing set!");
+	if (g_tm.thing)
+		I_Error("P_MapStart: g_tm.thing set!");
 }
 
 void P_MapEnd(void)
 {
-	P_SetTarget(&tm.thing, NULL);
+	P_SetTarget(&g_tm.thing, NULL);
 }
 
 // P_FloorzAtPos

@@ -1558,12 +1558,12 @@ bustupdone:
 //
 static boolean P_CheckSkyHit(mobj_t *mo)
 {
-	if (tm.ceilingline && tm.ceilingline->backsector
-		&& tm.ceilingline->backsector->ceilingpic == skyflatnum
-		&& tm.ceilingline->frontsector
-		&& tm.ceilingline->frontsector->ceilingpic == skyflatnum
-		&& (mo->z >= tm.ceilingline->frontsector->ceilingheight
-		|| mo->z >= tm.ceilingline->backsector->ceilingheight))
+	if (g_tm.ceilingline && g_tm.ceilingline->backsector
+		&& g_tm.ceilingline->backsector->ceilingpic == skyflatnum
+		&& g_tm.ceilingline->frontsector
+		&& g_tm.ceilingline->frontsector->ceilingpic == skyflatnum
+		&& (mo->z >= g_tm.ceilingline->frontsector->ceilingheight
+		|| mo->z >= g_tm.ceilingline->backsector->ceilingheight))
 			return true;
 	return false;
 }
@@ -1668,7 +1668,7 @@ void P_XYMovement(mobj_t *mo)
 		// blocked move
 		moved = false;
 
-		if (LUA_HookMobjMoveBlocked(mo, tm.hitthing, result.line))
+		if (LUA_HookMobjMoveBlocked(mo, g_tm.hitthing, result.line))
 		{
 			if (P_MobjWasRemoved(mo))
 				return;
@@ -1695,7 +1695,7 @@ void P_XYMovement(mobj_t *mo)
 			// draw damage on wall
 			//SPLAT TEST ----------------------------------------------------------
 #ifdef WALLSPLATS
-			if (tm.blockingline && mo->type != MT_REDRING && mo->type != MT_FIREBALL
+			if (g_tm.blockingline && mo->type != MT_REDRING && mo->type != MT_FIREBALL
 			&& !(mo->flags2 & (MF2_AUTOMATIC|MF2_RAILRING|MF2_BOUNCERING|MF2_EXPLOSION|MF2_SCATTER)))
 				// set by last P_TryMove() that failed
 			{
@@ -1703,13 +1703,13 @@ void P_XYMovement(mobj_t *mo)
 				divline_t misl;
 				fixed_t frac;
 
-				P_MakeDivline(tm.blockingline, &divl);
+				P_MakeDivline(g_tm.blockingline, &divl);
 				misl.x = mo->x;
 				misl.y = mo->y;
 				misl.dx = mo->momx;
 				misl.dy = mo->momy;
 				frac = P_InterceptVector(&divl, &misl);
-				R_AddWallSplat(tm.blockingline, P_PointOnLineSide(mo->x,mo->y,tm.blockingline),
+				R_AddWallSplat(g_tm.blockingline, P_PointOnLineSide(mo->x,mo->y,g_tm.blockingline),
 					"A_DMG3", mo->z, frac, SPLATDRAWMODE_SHADE);
 			}
 #endif
@@ -2209,9 +2209,12 @@ boolean P_ZMovement(mobj_t *mo)
 {
 	fixed_t dist, delta;
 	boolean onground;
+	boolean wasonground;
 
 	I_Assert(mo != NULL);
 	I_Assert(!P_MobjWasRemoved(mo));
+
+	wasonground = P_IsObjectOnGround(mo);
 
 	// Intercept the stupid 'fall through 3dfloors' bug
 	if (mo->subsector->sector->ffloors)
@@ -2364,11 +2367,11 @@ boolean P_ZMovement(mobj_t *mo)
 		mom.y = mo->momy;
 		mom.z = mo->momz;
 
-		K_UpdateMobjTerrain(mo, ((mo->eflags & MFE_VERTICALFLIP) ? tm.ceilingpic : tm.floorpic));
+		K_UpdateMobjTerrain(mo, ((mo->eflags & MFE_VERTICALFLIP) ? g_tm.ceilingpic : g_tm.floorpic));
 
-		if (((mo->eflags & MFE_VERTICALFLIP) ? tm.ceilingslope : tm.floorslope) && (mo->type != MT_STEAM))
+		if (((mo->eflags & MFE_VERTICALFLIP) ? g_tm.ceilingslope : g_tm.floorslope) && (mo->type != MT_STEAM))
 		{
-			mo->standingslope = (mo->eflags & MFE_VERTICALFLIP) ? tm.ceilingslope : tm.floorslope;
+			mo->standingslope = (mo->eflags & MFE_VERTICALFLIP) ? g_tm.ceilingslope : g_tm.floorslope;
 			P_SetPitchRollFromSlope(mo, mo->standingslope);
 			P_ReverseQuantizeMomentumToSlope(&mom, mo->standingslope);
 		}
@@ -2595,11 +2598,11 @@ boolean P_ZMovement(mobj_t *mo)
 				}
 			}
 			else
-				mom.z = (tm.floorthing ? tm.floorthing->momz : 0);
+				mom.z = (g_tm.floorthing ? g_tm.floorthing->momz : 0);
 
 		}
-		else if (tm.floorthing)
-			mom.z = tm.floorthing->momz;
+		else if (g_tm.floorthing)
+			mom.z = g_tm.floorthing->momz;
 
 		if (mo->standingslope) { // MT_STEAM will never have a standingslope, see above.
 			P_QuantizeMomentumToSlope(&mom, mo->standingslope);
@@ -2672,6 +2675,8 @@ boolean P_ZMovement(mobj_t *mo)
 				mo->momz = 0;
 		}
 	}
+
+	P_CheckSectorTransitionalEffects(mo, mo->subsector->sector, wasonground);
 
 	return true;
 }
@@ -2769,6 +2774,7 @@ static boolean P_PlayerPolyObjectZMovement(mobj_t *mo)
 void P_PlayerZMovement(mobj_t *mo)
 {
 	boolean onground;
+	boolean wasonground;
 	angle_t oldPitch, oldRoll;
 
 	I_Assert(mo != NULL);
@@ -2777,6 +2783,7 @@ void P_PlayerZMovement(mobj_t *mo)
 	if (!mo->player)
 		return;
 
+	wasonground = P_IsObjectOnGround(mo);
 	oldPitch = mo->pitch;
 	oldRoll = mo->roll;
 
@@ -2836,7 +2843,7 @@ void P_PlayerZMovement(mobj_t *mo)
 			mo->z = mo->floorz;
 		}
 
-		K_UpdateMobjTerrain(mo, (mo->eflags & MFE_VERTICALFLIP ? tm.ceilingpic : tm.floorpic));
+		K_UpdateMobjTerrain(mo, (mo->eflags & MFE_VERTICALFLIP ? g_tm.ceilingpic : g_tm.floorpic));
 
 		// Get up if you fell.
 		if (mo->player->panim == PA_HURT && mo->player->spinouttimer == 0 && mo->player->tumbleBounces == 0)
@@ -2844,10 +2851,10 @@ void P_PlayerZMovement(mobj_t *mo)
 			P_SetPlayerMobjState(mo, S_KART_STILL);
 		}
 
-		if (!mo->standingslope && (mo->eflags & MFE_VERTICALFLIP ? tm.ceilingslope : tm.floorslope))
+		if (!mo->standingslope && (mo->eflags & MFE_VERTICALFLIP ? g_tm.ceilingslope : g_tm.floorslope))
 		{
 			// Handle landing on slope during Z movement
-			P_HandleSlopeLanding(mo, (mo->eflags & MFE_VERTICALFLIP ? tm.ceilingslope : tm.floorslope));
+			P_HandleSlopeLanding(mo, (mo->eflags & MFE_VERTICALFLIP ? g_tm.ceilingslope : g_tm.floorslope));
 		}
 
 		if (P_MobjFlip(mo) * mo->momz < 0) // falling
@@ -2862,12 +2869,12 @@ void P_PlayerZMovement(mobj_t *mo)
 
 			if (clipmomz)
 			{
-				mo->momz = (tm.floorthing ? tm.floorthing->momz : 0);
+				mo->momz = (g_tm.floorthing ? g_tm.floorthing->momz : 0);
 			}
 		}
-		else if (tm.floorthing)
+		else if (g_tm.floorthing)
 		{
-			mo->momz = tm.floorthing->momz;
+			mo->momz = g_tm.floorthing->momz;
 		}
 	}
 	else
@@ -2961,6 +2968,8 @@ void P_PlayerZMovement(mobj_t *mo)
 			K_SpawnBumpEffect(mo);
 		}
 	}
+
+	P_CheckSectorTransitionalEffects(mo, mo->subsector->sector, wasonground);
 }
 
 boolean P_SceneryZMovement(mobj_t *mo)
@@ -3115,9 +3124,9 @@ boolean P_SceneryZMovement(mobj_t *mo)
 		{
 			mo->eflags |= MFE_JUSTHITFLOOR; // Spin Attack
 
-			if (tm.floorthing)
-				mo->momz = tm.floorthing->momz;
-			else if (!tm.floorthing)
+			if (g_tm.floorthing)
+				mo->momz = g_tm.floorthing->momz;
+			else if (!g_tm.floorthing)
 				mo->momz = 0;
 		}
 	}
@@ -3859,8 +3868,8 @@ boolean P_CameraThinker(player_t *player, camera_t *thiscam, boolean resetcalled
 	}
 
 	thiscam->subsector = R_PointInSubsector(thiscam->x, thiscam->y);
-	thiscam->floorz = tm.floorz;
-	thiscam->ceilingz = tm.ceilingz;
+	thiscam->floorz = g_tm.floorz;
+	thiscam->ceilingz = g_tm.ceilingz;
 
 	if (thiscam->momz || thiscam->pmomz)
 	{
@@ -4020,8 +4029,8 @@ static void P_PlayerMobjThinker(mobj_t *mobj)
 		mobj->z += mobj->momz;
 		P_SetThingPosition(mobj);
 		P_CheckPosition(mobj, mobj->x, mobj->y, NULL);
-		mobj->floorz = tm.floorz;
-		mobj->ceilingz = tm.ceilingz;
+		mobj->floorz = g_tm.floorz;
+		mobj->ceilingz = g_tm.ceilingz;
 		mobj->terrain = NULL;
 		goto animonly;
 	}
@@ -5347,6 +5356,7 @@ static boolean P_IsTrackerType(INT32 type)
 		case MT_BATTLEUFO:
 		case MT_SUPER_FLICKY:
 		case MT_SPRAYCAN:
+		case MT_WAYPOINT: // debug
 			return true;
 
 		default:
@@ -6226,6 +6236,18 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			// Shrink your items if the player shrunk too.
 			P_SetScale(mobj, mobj->target->scale);
 
+			if (mobj->target->player->bumperinflate && bumpers > mobj->threshold)
+			{
+				mobj->frame |= FF_INVERT;
+				// This line sucks. Scale to player, plus up to 1.5x their size based on how long the combo you're in is.
+				P_SetScale(mobj, mobj->target->scale + (mobj->target->player->progressivethrust * 3 * mobj->target->scale / 2 / MAXCOMBOTIME));
+
+			}
+			else
+			{
+				mobj->frame &= ~FF_INVERT;
+			}
+
 			P_UnsetThingPosition(mobj);
 			{
 				const angle_t fa = ang >> ANGLETOFINESHIFT;
@@ -6437,48 +6459,11 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		Obj_CheckpointThink(mobj);
 		break;
 	case MT_SCRIPT_THING:
-	{
-		if (mobj->thing_args[2] != 0)
-		{
-			// turned off
-			break;
-		}
-
-		UINT8 i;
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (playeringame[i] == false || players[i].spectator == true)
-			{
-				continue;
-			}
-
-			player_t *player = &players[i];
-			if (P_MobjWasRemoved(player->mo) == true)
-			{
-				continue;
-			}
-
-			fixed_t dist = R_PointToDist2(
-				mobj->x, mobj->y,
-				player->mo->x, player->mo->y
-			);
-
-			if (dist < mobj->thing_args[0] * FRACUNIT)
-			{
-				P_ActivateThingSpecial(mobj, player->mo);
-
-				if (mobj->thing_args[1] == 0)
-				{
-					P_RemoveMobj(mobj);
-					return;
-				}
-
-				break;
-			}
-		}
-
-		break;
-	}
+		Obj_TalkPointThink(mobj);
+		return;
+	case MT_SCRIPT_THING_ORB:
+		Obj_TalkPointOrbThink(mobj);
+		return;
 	case MT_SPIKEDTARGET:
 	{
 		if (P_MobjWasRemoved(mobj->target) || (mobj->target->health <= 0) || (mobj->target->z == mobj->target->floorz))
@@ -7138,7 +7123,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		// the backdrop can also go transparent. EUUUAUUAUUAAAUUUUGGGHGHHHHHHHGSSS
 		if (mobj->extravalue1 > 0)
 			mobj->extravalue1--;
-			
+
 		break;
 	}
 	case MT_ITEMCAPSULE:
@@ -10145,13 +10130,13 @@ void P_MobjThinker(mobj_t *mobj)
 	mobj->eflags &= ~(MFE_PUSHED|MFE_SPRUNG|MFE_JUSTBOUNCEDWALL|MFE_DAMAGEHITLAG|MFE_SLOPELAUNCHED);
 
 	// sal: what the hell? is there any reason this isn't done, like, literally ANYWHERE else?
-	P_SetTarget(&tm.floorthing, NULL);
-	P_SetTarget(&tm.hitthing, NULL);
+	P_SetTarget(&g_tm.floorthing, NULL);
+	P_SetTarget(&g_tm.hitthing, NULL);
 
 	if (udmf)
 	{
 		// Check for continuous sector special actions
-		P_CheckMobjTouchingSectorActions(mobj, true);
+		P_CheckMobjTouchingSectorActions(mobj, true, true);
 	}
 	else
 	{
@@ -10499,10 +10484,10 @@ void P_SceneryThinker(mobj_t *mobj)
 		P_CheckPosition(mobj, mobj->x, mobj->y, NULL); // Need this to pick up objects!
 		if (P_MobjWasRemoved(mobj))
 			return;
-		mobj->floorz = tm.floorz;
-		mobj->ceilingz = tm.ceilingz;
-		mobj->floorrover = tm.floorrover;
-		mobj->ceilingrover = tm.ceilingrover;
+		mobj->floorz = g_tm.floorz;
+		mobj->ceilingz = g_tm.ceilingz;
+		mobj->floorrover = g_tm.floorrover;
+		mobj->ceilingrover = g_tm.ceilingrover;
 	}
 	else
 	{
@@ -10583,6 +10568,10 @@ fixed_t P_GetMobjDefaultScale(mobj_t *mobj)
 		case MT_AIZ_DDB:
 			return 4*FRACUNIT;
 		case MT_WALLSPIKE:
+			return 2*FRACUNIT;
+		case MT_SCRIPT_THING:
+			return 4*FRACUNIT;
+		case MT_SCRIPT_THING_ORB:
 			return 2*FRACUNIT;
 		default:
 			break;
@@ -12440,6 +12429,16 @@ static boolean P_SpawnNonMobjMapThing(mapthing_t *mthing)
 		}
 		return true;
 	}
+	else if (mthing->type == 36) // Kart fault start
+	{
+		if (numfaultstarts < MAXPLAYERS)
+		{
+			faultstart = mthing;
+			mthing->type = 0;
+			numfaultstarts++;
+		}
+		return true;
+	}
 	else if (mthing->type == 750 // Slope vertex point (formerly chaos spawn)
 		     || (mthing->type == FLOOR_SLOPE_THING || mthing->type == CEILING_SLOPE_THING) // Slope anchors
 		     || (mthing->type >= 600 && mthing->type <= 611) // Special placement patterns
@@ -13379,6 +13378,8 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 			mobj->movefactor = 0;
 		}
 
+		// thing_args[3]: SPB speed (objects/spb.c)
+
 		// Sryder 2018-12-7: Grabbed this from the old MT_BOSS3WAYPOINT section so they'll be in the waypointcap instead
 		P_SetTarget(&mobj->tracer, waypointcap);
 		P_SetTarget(&waypointcap, mobj);
@@ -13858,6 +13859,11 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	case MT_SSWINDOW:
 	{
 		Obj_SSWindowMapThingSpawn(mobj, mthing);
+		break;
+	}
+	case MT_SCRIPT_THING:
+	{
+		Obj_TalkPointInit(mobj);
 		break;
 	}
 	default:

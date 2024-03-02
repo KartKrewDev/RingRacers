@@ -1954,14 +1954,56 @@ static void K_HandleLapIncrement(player_t *player)
 				nump++;
 			}
 
+			player->cheatchecknum = 0;
 			player->laps++;
+
+			// P_DoPlayerExit can edit latestlap, so we do this first
+			boolean lapisfresh = (player->laps > player->latestlap);
+			if (lapisfresh) // mcgamer would be proud
+			{
+				player->latestlap = player->laps;
+			}
+
+			// finished race exit setup
+			if (player->laps > numlaps)
+			{
+				pflags_t applyflags = 0;
+				if (specialstageinfo.valid == true)
+				{
+					// Don't permit a win just by sneaking ahead of the UFO/emerald.
+					if (!(specialstageinfo.ufo == NULL || P_MobjWasRemoved(specialstageinfo.ufo)))
+					{
+						applyflags |= PF_NOCONTEST;
+
+						HU_DoTitlecardCEcho(player, "EMPTY\\HANDED?", false);
+					}
+				}
+
+				P_DoPlayerExit(player, applyflags);
+
+				if (netgame && lapisfresh)
+					CON_LogMessage(va(M_GetText("%s has finished the race.\n"), player_names[player-players]));
+			}
+			else
+			{
+				UINT32 skinflags = (demo.playback)
+					? demo.skinlist[demo.currentskinid[(player-players)]].flags
+					: skins[player->skin].flags;
+				if (skinflags & SF_IRONMAN)
+				{
+					SetRandomFakePlayerSkin(player, true);
+				}
+
+				K_UpdateAllPlayerPositions(); // P_DoPlayerExit calls this
+			}
 
 			if (G_TimeAttackStart() && !linecrossed)
 			{
 				linecrossed = leveltime;
 				if (starttime > leveltime) // Overlong starts shouldn't reset time on cross
 					starttime = leveltime;
-				demo_extradata[player-players] |= DXD_START;
+				if (demo.recording)
+					demo_extradata[player-players] |= DXD_START;
 				Music_Stop("position");
 			}
 
@@ -1976,17 +2018,12 @@ static void K_HandleLapIncrement(player_t *player)
 				rainbowstartavailable = false;
 			}
 
-			if (player->laps == 1 && modeattacking & ATTACKING_SPB)
+			if (player->laps == 1 && (modeattacking & ATTACKING_SPB))
 			{
 				P_SpawnMobj(player->mo->x - FixedMul(1000*mapobjectscale, FINECOSINE(player->mo->angle >> ANGLETOFINESHIFT)),
 					player->mo->y - FixedMul(1000*mapobjectscale, FINESINE(player->mo->angle >> ANGLETOFINESHIFT)),
 					player->mo->z, MT_SPB);
 			}
-
-			if (netgame && player->laps > numlaps)
-				CON_LogMessage(va(M_GetText("%s has finished the race.\n"), player_names[player-players]));
-
-			player->cheatchecknum = 0;
 
 			if (gametyperules & GTR_SPECIALSTART)
 			{
@@ -2018,7 +2055,7 @@ static void K_HandleLapIncrement(player_t *player)
 				}
 			}
 
-			if (player->laps > player->latestlap)
+			if (lapisfresh)
 			{
 				if (player->laps > 1)
 				{
@@ -2049,8 +2086,6 @@ static void K_HandleLapIncrement(player_t *player)
 					}
 				}
 
-				player->latestlap = player->laps;
-
 				// Set up lap animation vars
 				if (player->latestlap > 1)
 				{
@@ -2070,34 +2105,6 @@ static void K_HandleLapIncrement(player_t *player)
 						player->karthud[khud_laphand] = 0; // No hands in FREE PLAY
 
 					player->karthud[khud_lapanimation] = 80;
-				}
-			}
-
-			// finished race exit setup
-			if (player->laps > numlaps)
-			{
-				pflags_t applyflags = 0;
-				if (specialstageinfo.valid == true)
-				{
-					// Don't permit a win just by sneaking ahead of the UFO/emerald.
-					if (!(specialstageinfo.ufo == NULL || P_MobjWasRemoved(specialstageinfo.ufo)))
-					{
-						applyflags |= PF_NOCONTEST;
-
-						HU_DoTitlecardCEcho(player, "EMPTY\\HANDED?", false);
-					}
-				}
-
-				P_DoPlayerExit(player, applyflags);
-			}
-			else
-			{
-				UINT32 skinflags = (demo.playback)
-					? demo.skinlist[demo.currentskinid[(player-players)]].flags
-					: skins[player->skin].flags;
-				if (skinflags & SF_IRONMAN)
-				{
-					SetRandomFakePlayerSkin(player, true);
 				}
 			}
 
@@ -2181,6 +2188,7 @@ static void K_HandleLapDecrement(player_t *player)
 		{
 			player->cheatchecknum = numcheatchecks;
 			player->laps--;
+			K_UpdateAllPlayerPositions();
 			curlap = UINT32_MAX;
 		}
 	}
@@ -5686,7 +5694,7 @@ static boolean P_AllowSpecialCeiling(sector_t *sec, mobj_t *thing)
 	return false;
 }
 
-static void P_CheckMobj3DFloorAction(mobj_t *mo, sector_t *sec, boolean continuous)
+static void P_CheckMobj3DFloorAction(mobj_t *mo, sector_t *sec, boolean continuous, boolean sectorchanged)
 {
 	sector_t *originalsector = mo->subsector->sector;
 	ffloor_t *rover;
@@ -5745,6 +5753,10 @@ static void P_CheckMobj3DFloorAction(mobj_t *mo, sector_t *sec, boolean continuo
 				continue;
 			}
 		}
+		else if (sectorchanged == false)
+		{
+			continue;
+		}
 
 		activator = Z_Calloc(sizeof(activator_t), PU_LEVEL, NULL);
 		I_Assert(activator != NULL);
@@ -5766,7 +5778,7 @@ static void P_CheckMobj3DFloorAction(mobj_t *mo, sector_t *sec, boolean continuo
 	}
 }
 
-static void P_CheckMobjPolyobjAction(mobj_t *mo, boolean continuous)
+static void P_CheckMobjPolyobjAction(mobj_t *mo, boolean continuous, boolean sectorchanged)
 {
 	sector_t *originalsector = mo->subsector->sector;
 	polyobj_t *po;
@@ -5821,6 +5833,10 @@ static void P_CheckMobjPolyobjAction(mobj_t *mo, boolean continuous)
 				continue;
 			}
 		}
+		else if (sectorchanged == false)
+		{
+			continue;
+		}
 
 		activator = Z_Calloc(sizeof(activator_t), PU_LEVEL, NULL);
 		I_Assert(activator != NULL);
@@ -5842,7 +5858,7 @@ static void P_CheckMobjPolyobjAction(mobj_t *mo, boolean continuous)
 	}
 }
 
-static void P_CheckMobjSectorAction(mobj_t *mo, sector_t *sec, boolean continuous)
+static void P_CheckMobjSectorAction(mobj_t *mo, sector_t *sec, boolean continuous, boolean sectorchanged)
 {
 	activator_t *activator = NULL;
 	boolean result = false;
@@ -5879,6 +5895,10 @@ static void P_CheckMobjSectorAction(mobj_t *mo, sector_t *sec, boolean continuou
 			return;
 		}
 	}
+	else if (sectorchanged == false)
+	{
+		return;
+	}
 
 	activator = Z_Calloc(sizeof(activator_t), PU_LEVEL, NULL);
 	I_Assert(activator != NULL);
@@ -5897,7 +5917,7 @@ static void P_CheckMobjSectorAction(mobj_t *mo, sector_t *sec, boolean continuou
 	}
 }
 
-void P_CheckMobjTouchingSectorActions(mobj_t *mobj, boolean continuous)
+void P_CheckMobjTouchingSectorActions(mobj_t *mobj, boolean continuous, boolean sectorchanged)
 {
 	sector_t *originalsector;
 
@@ -5923,13 +5943,13 @@ void P_CheckMobjTouchingSectorActions(mobj_t *mobj, boolean continuous)
 		}
 	}
 
-	P_CheckMobj3DFloorAction(mobj, originalsector, continuous);
+	P_CheckMobj3DFloorAction(mobj, originalsector, continuous, sectorchanged);
 	if TELEPORTED(mobj)	return;
 
-	P_CheckMobjPolyobjAction(mobj, continuous);
+	P_CheckMobjPolyobjAction(mobj, continuous, sectorchanged);
 	if TELEPORTED(mobj)	return;
 
-	P_CheckMobjSectorAction(mobj, originalsector, continuous);
+	P_CheckMobjSectorAction(mobj, originalsector, continuous, sectorchanged);
 }
 
 #undef TELEPORTED
@@ -9551,4 +9571,22 @@ void P_FreeQuake(quake_t *remove)
 	}
 
 	Z_Free(remove);
+}
+
+void P_CheckSectorTransitionalEffects(mobj_t *thing, sector_t *prevsec, boolean wasgrounded)
+{
+	if (!udmf)
+	{
+		return;
+	}
+
+	boolean sectorchanged = (prevsec != thing->subsector->sector);
+
+	if (!sectorchanged && wasgrounded == P_IsObjectOnGround(thing))
+	{
+		return;
+	}
+
+	// Check for each time / once sector special actions
+	P_CheckMobjTouchingSectorActions(thing, false, sectorchanged);
 }

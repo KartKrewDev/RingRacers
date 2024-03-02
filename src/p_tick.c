@@ -12,6 +12,7 @@
 /// \brief Archiving: SaveGame I/O, Thinker, Ticker
 
 #include "doomstat.h"
+#include "d_main.h"
 #include "g_game.h"
 #include "g_input.h"
 #include "p_local.h"
@@ -1039,7 +1040,18 @@ void P_Ticker(boolean run)
 				}
 
 				// POSITION!! music
-				P_StartPositionMusic(true); // exact times only
+				if (modeattacking == ATTACKING_NONE)
+				{
+					P_StartPositionMusic(true); // exact times only
+				}
+			}
+		}
+
+		if (modeattacking != ATTACKING_NONE)
+		{
+			if (leveltime == 4 && !Music_Playing("level_nosync"))
+			{
+				Music_Play("level_nosync");
 			}
 		}
 
@@ -1240,6 +1252,11 @@ void P_Ticker(boolean run)
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		G_CopyTiccmd(&players[i].oldcmd, &players[i].cmd, 1);
+	}
+
+	if (D_IsDeferredStartTitle())
+	{
+		D_StartTitle();
 	}
 //	Z_CheckMemCleanup();
 }

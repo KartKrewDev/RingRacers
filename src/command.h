@@ -281,13 +281,13 @@ void CV_SaveVariables(FILE *f);
 void CV_SaveVars(UINT8 **p, boolean in_demo);
 
 #define CV_SaveNetVars(p) CV_SaveVars(p, false)
-void CV_LoadNetVars(UINT8 **p);
+size_t CV_LoadNetVars(const UINT8 *p);
 
 // then revert after leaving a netgame
 void CV_RevertNetVars(void);
 
 #define CV_SaveDemoVars(p) CV_SaveVars(p, true)
-void CV_LoadDemoVars(UINT8 **p);
+size_t CV_LoadDemoVars(const UINT8 *p);
 
 // reset cheat netvars after cheats is deactivated
 void CV_CheatsChanged(void);

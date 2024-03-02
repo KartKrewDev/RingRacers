@@ -37,6 +37,12 @@ Make sure this matches the actual number of states
 #define INSTAWHIP_TETHERBLOCK (TICRATE*4)
 #define PUNISHWINDOW (7*TICRATE/10)
 
+#define MAXCOMBOTHRUST (mapobjectscale*20)
+#define MAXCOMBOFLOAT (mapobjectscale*10)
+#define MINCOMBOTHRUST (mapobjectscale*2)
+#define MINCOMBOFLOAT (mapobjectscale*1)
+#define MAXCOMBOTIME (TICRATE*4)
+
 #define FLAMESHIELD_MAX (120)
 
 #define RR_PROJECTILE_FUSE (8*TICRATE)
@@ -159,7 +165,6 @@ void K_RepairOrbitChain(mobj_t *orbit);
 void K_CalculateBananaSlope(mobj_t *mobj, fixed_t x, fixed_t y, fixed_t z, fixed_t radius, fixed_t height, boolean flip, boolean player);
 mobj_t *K_FindJawzTarget(mobj_t *actor, player_t *source, angle_t range);
 INT32 K_GetKartRingPower(const player_t *player, boolean boosted);
-void K_UpdateDistanceFromFinishLine(player_t *const player);
 boolean K_CheckPlayersRespawnColliding(INT32 playernum, fixed_t x, fixed_t y);
 INT16 K_UpdateSteeringValue(INT16 inputSteering, INT16 destSteering);
 INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue);
@@ -256,6 +261,8 @@ boolean K_IsPlayingDisplayPlayer(player_t *player);
 
 boolean K_PlayerCanPunt(player_t *player);
 void K_MakeObjectReappear(mobj_t *mo);
+
+void K_BumperInflate(player_t *player);
 
 #ifdef __cplusplus
 } // extern "C"

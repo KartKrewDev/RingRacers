@@ -1,6 +1,7 @@
 /// \file  menus/options-profiles-edit-1.c
 /// \brief Profile Editor
 
+#include "../i_time.h"
 #include "../k_menu.h"
 #include "../s_sound.h"
 #include "../m_cond.h"
@@ -157,6 +158,11 @@ boolean M_ProfileEditInputs(INT32 ch)
 			return true;	// No.
 	}
 
+	if (menucmd[pid].dpad_ud != 0)
+	{
+		optionsmenu.offset.start = I_GetTime();
+	}
+
 	return false;
 }
 
@@ -219,7 +225,6 @@ void M_ProfileDeviceSelect(INT32 choice)
 
 	// While we're here, setup the incoming controls menu to reset the scroll & bind status:
 	optionsmenu.controlscroll = 0;
-	optionsmenu.bindcontrol = 0;
 	optionsmenu.bindtimer = 0;
 
 	optionsmenu.lastkey = 0;

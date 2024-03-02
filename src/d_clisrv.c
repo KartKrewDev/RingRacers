@@ -65,6 +65,7 @@
 #include "k_zvote.h"
 #include "music.h"
 #include "k_bans.h"
+#include "sanitize.h"
 
 // cl loading screen
 #include "v_video.h"
@@ -319,9 +320,9 @@ tic_t ExpandTics(INT32 low, tic_t basetic)
 // Some extra data function for handle textcmd buffer
 // -----------------------------------------------------------------
 
-static void (*listnetxcmd[MAXNETXCMD])(UINT8 **p, INT32 playernum);
+static void (*listnetxcmd[MAXNETXCMD])(const UINT8 **p, INT32 playernum);
 
-void RegisterNetXCmd(netxcmd_t id, void (*cmd_f)(UINT8 **p, INT32 playernum))
+void RegisterNetXCmd(netxcmd_t id, void (*cmd_f)(const UINT8 **p, INT32 playernum))
 {
 #ifdef PARANOIA
 	if (id >= MAXNETXCMD)
@@ -462,12 +463,12 @@ static boolean ExtraDataTicker(void)
 	{
 		if (playeringame[i] || i == 0)
 		{
-			UINT8 *bufferstart = D_GetExistingTextcmd(gametic, i);
+			const UINT8 *bufferstart = D_GetExistingTextcmd(gametic, i);
 
 			if (bufferstart)
 			{
-				UINT8 *curpos = bufferstart;
-				UINT8 *bufferend = &curpos[((UINT16*)curpos)[0]+2];
+				const UINT8 *curpos = bufferstart;
+				const UINT8 *bufferend = &curpos[((const UINT16*)curpos)[0]+2];
 
 				curpos += 2;
 				while (curpos < bufferend)
@@ -1001,70 +1002,6 @@ static boolean CL_SendKey(void)
 	return HSendPacket(servernode, false, 0, sizeof (clientkey_pak) );
 }
 
-static void
-CopyCaretColors (char *p, const char *s, int n)
-{
-	char *t;
-	int   m;
-	int   c;
-	if (!n)
-		return;
-	while (( t = strchr(s, '^') ))
-	{
-		m = ( t - s );
-
-		if (m >= n)
-		{
-			memcpy(p, s, n);
-			return;
-		}
-		else
-			memcpy(p, s, m);
-
-		p += m;
-		n -= m;
-		s += m;
-
-		if (!n)
-			return;
-
-		if (s[1])
-		{
-			c = toupper(s[1]);
-			if (isdigit(c))
-				c = 0x80 + ( c - '0' );
-			else if (c >= 'A' && c <= 'F')
-				c = 0x80 + ( c - 'A' );
-			else
-				c = 0;
-
-			if (c)
-			{
-				*p++ = c;
-				n--;
-
-				if (!n)
-					return;
-			}
-			else
-			{
-				if (n < 2)
-					break;
-
-				memcpy(p, s, 2);
-
-				p += 2;
-				n -= 2;
-			}
-
-			s += 2;
-		}
-		else
-			break;
-	}
-	strncpy(p, s, n);
-}
-
 static void SV_SendServerInfo(INT32 node, tic_t servertime)
 {
 	UINT8 *p;
@@ -1111,8 +1048,7 @@ static void SV_SendServerInfo(INT32 node, tic_t servertime)
 		(dedicated ? SV_DEDICATED : 0)
 	);
 
-	CopyCaretColors(netbuffer->u.serverinfo.servername, cv_servername.string,
-		MAXSERVERNAME);
+	D_ParseCarets(netbuffer->u.serverinfo.servername, cv_servername.string, MAXSERVERNAME);
 
 	M_Memcpy(netbuffer->u.serverinfo.mapmd5, mapmd5, 16);
 
@@ -1265,8 +1201,8 @@ static boolean SV_SendServerConfig(INT32 node)
 
 	memcpy(netbuffer->u.servercfg.server_context, server_context, 8);
 
-	strncpy(netbuffer->u.servercfg.server_name, cv_servername.string, MAXSERVERNAME);
-	strncpy(netbuffer->u.servercfg.server_contact, cv_server_contact.string, MAXSERVERCONTACT);
+	D_ParseCarets(netbuffer->u.servercfg.server_name, cv_servername.string, MAXSERVERNAME);
+	D_ParseCarets(netbuffer->u.servercfg.server_contact, cv_server_contact.string, MAXSERVERCONTACT);
 
 	{
 		const size_t len = sizeof (serverconfig_pak);
@@ -2889,7 +2825,7 @@ static void Command_Kick(void)
 		CONS_Printf(M_GetText("Only the server or a remote admin can use this.\n"));
 }
 
-static void Got_KickCmd(UINT8 **p, INT32 playernum)
+static void Got_KickCmd(const UINT8 **p, INT32 playernum)
 {
 	INT32 pnum, msg;
 	char buf[3 + MAX_REASONLENGTH];
@@ -3260,9 +3196,9 @@ static void Command_ResendGamestate(void)
 	}
 }
 
-static void Got_AddPlayer(UINT8 **p, INT32 playernum);
-static void Got_RemovePlayer(UINT8 **p, INT32 playernum);
-static void Got_AddBot(UINT8 **p, INT32 playernum);
+static void Got_AddPlayer(const UINT8 **p, INT32 playernum);
+static void Got_RemovePlayer(const UINT8 **p, INT32 playernum);
+static void Got_AddBot(const UINT8 **p, INT32 playernum);
 
 void Joinable_OnChange(void);
 void Joinable_OnChange(void)
@@ -3378,6 +3314,11 @@ void SV_ResetServer(void)
 	memset(playeringame, false, sizeof playeringame);
 	memset(playernode, UINT8_MAX, sizeof playernode);
 
+	pingmeasurecount = 1;
+	memset(realpingtable, 0, sizeof realpingtable);
+	memset(playerpingtable, 0, sizeof playerpingtable);
+	memset(playerpacketlosstable, 0, sizeof playerpacketlosstable);
+
 	ClearAdminPlayers();
 	Schedule_Clear();
 	Automate_Clear();
@@ -3439,8 +3380,8 @@ static void SV_GenContext(void)
 			server_context[i] = 'a'+(a-26);
 	}
 
-	strlcpy(connectedservername, cv_servername.string, MAXSERVERNAME);
-	strlcpy(connectedservercontact, cv_server_contact.string, MAXSERVERCONTACT);
+	D_ParseCarets(connectedservername, cv_servername.string, MAXSERVERNAME);
+	D_ParseCarets(connectedservercontact, cv_server_contact.string, MAXSERVERCONTACT);
 }
 #endif // TESTERS
 
@@ -3517,13 +3458,14 @@ static inline void SV_AddNode(INT32 node)
 }
 
 // Xcmd XD_ADDPLAYER
-static void Got_AddPlayer(UINT8 **p, INT32 playernum)
+static void Got_AddPlayer(const UINT8 **p, INT32 playernum)
 {
 	INT16 node, newplayernum;
 	UINT8 console;
 	UINT8 splitscreenplayer = 0;
 	UINT8 i;
 	player_t *newplayer;
+	uint8_t public_key[PUBKEYLENGTH];
 
 	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
 	{
@@ -3547,13 +3489,14 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 	newplayer = &players[newplayernum];
 
 	READSTRINGN(*p, player_names[newplayernum], MAXPLAYERNAME);
-	READMEM(*p, players[newplayernum].public_key, PUBKEYLENGTH);
+	READMEM(*p, public_key, PUBKEYLENGTH);
 	READMEM(*p, clientpowerlevels[newplayernum], sizeof(((serverplayer_t *)0)->powerlevels));
 
 	console = READUINT8(*p);
 	splitscreenplayer = READUINT8(*p);
 
 	G_AddPlayer(newplayernum, console);
+	memcpy(players[newplayernum].public_key, public_key, PUBKEYLENGTH);
 
 	for (i = 0; i < MAXAVAILABILITY; i++)
 	{
@@ -3626,7 +3569,7 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 }
 
 // Xcmd XD_REMOVEPLAYER
-static void Got_RemovePlayer(UINT8 **p, INT32 playernum)
+static void Got_RemovePlayer(const UINT8 **p, INT32 playernum)
 {
 	SINT8 pnum, reason;
 
@@ -3653,7 +3596,7 @@ static void Got_RemovePlayer(UINT8 **p, INT32 playernum)
 
 // Xcmd XD_ADDBOT
 // Compacted version of XD_ADDPLAYER for simplicity
-static void Got_AddBot(UINT8 **p, INT32 playernum)
+static void Got_AddBot(const UINT8 **p, INT32 playernum)
 {
 	INT16 newplayernum;
 	UINT8 skinnum = 0;
@@ -4341,7 +4284,6 @@ void HandleSigfail(const char *string)
   */
 static void HandleServerInfo(SINT8 node)
 {
-	char servername[MAXSERVERNAME];
 	// compute ping in ms
 	const tic_t ticnow = I_GetTime();
 	const tic_t ticthen = (tic_t)LONG(netbuffer->u.serverinfo.time);
@@ -4352,8 +4294,7 @@ static void HandleServerInfo(SINT8 node)
 		[sizeof netbuffer->u.serverinfo.application - 1] = '\0';
 	netbuffer->u.serverinfo.gametypename
 		[sizeof netbuffer->u.serverinfo.gametypename - 1] = '\0';
-	memcpy(servername, netbuffer->u.serverinfo.servername, MAXSERVERNAME);
-	CopyCaretColors(netbuffer->u.serverinfo.servername, servername, MAXSERVERNAME);
+	D_SanitizeKeepColors(netbuffer->u.serverinfo.servername, netbuffer->u.serverinfo.servername, MAXSERVERNAME);
 
 	// If we have cause to reject it, it's not worth observing.
 	if (
@@ -4573,8 +4514,8 @@ static void HandlePacketFromAwayNode(SINT8 node)
 
 				memcpy(server_context, netbuffer->u.servercfg.server_context, 8);
 
-				strlcpy(connectedservername, netbuffer->u.servercfg.server_name, MAXSERVERNAME);
-				strlcpy(connectedservercontact, netbuffer->u.servercfg.server_contact, MAXSERVERCONTACT);
+				D_SanitizeKeepColors(connectedservername, netbuffer->u.servercfg.server_name, MAXSERVERNAME);
+				D_SanitizeKeepColors(connectedservercontact, netbuffer->u.servercfg.server_contact, MAXSERVERCONTACT);
 			}
 
 #ifdef HAVE_DISCORDRPC
@@ -4799,7 +4740,7 @@ static void FuzzTiccmd(ticcmd_t* target)
 	{
 		target->forwardmove = P_RandomRange(PR_FUZZ, -MAXPLMOVE, MAXPLMOVE);
 		target->turning = P_RandomRange(PR_FUZZ, -KART_FULLTURN, KART_FULLTURN);
-		target->throwdir = P_RandomRange(PR_FUZZ, -1, 1);
+		target->throwdir = P_RandomRange(PR_FUZZ, -KART_FULLTURN, KART_FULLTURN);
 		target->buttons = P_RandomRange(PR_FUZZ, 0, 255);
 
 		// Make fuzzed players more likely to do impactful things
@@ -6002,7 +5943,7 @@ static void SV_Maketic(void)
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		packetloss[i][maketic%PACKETMEASUREWINDOW] = false;
-
+		
 		if (!playeringame[i])
 			continue;
 
@@ -6149,6 +6090,11 @@ boolean TryRunTics(tic_t realtics)
 			consistancy[gametic % BACKUPTICS] = Consistancy();
 
 			ps_tictime = I_GetPreciseTime() - ps_tictime;
+
+			if (D_IsDeferredStartTitle())
+			{
+				D_StartTitle();
+			}
 
 			// Leave a certain amount of tics present in the net buffer as long as we've ran at least one tic this frame.
 			if (client && gamestate == GS_LEVEL && leveltime > 1 && neededtic <= gametic + cv_netticbuffer.value)

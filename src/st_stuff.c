@@ -53,6 +53,7 @@
 #include "music.h"
 #include "i_sound.h"
 #include "k_dialogue.h"
+#include "m_easing.h"
 
 UINT16 objectsdrawn = 0;
 
@@ -1458,10 +1459,19 @@ void ST_DrawServerSplash(boolean timelimited)
 
 	fixed_t textX = (BASEVIDWIDTH - 16 - 36) * FRACUNIT;
 	fixed_t textY = (24 - 8) * FRACUNIT;
-
-	V_DrawRightAlignedStringAtFixed(
-		textX, textY,
+	fixed_t textW = V_StringScaledWidth(
+		FRACUNIT, FRACUNIT, FRACUNIT,
 		(V_SNAPTORIGHT|V_SNAPTOTOP) | opacityFlag,
+		MED_FONT,
+		connectedservername
+	);
+
+	V_DrawStringScaled(
+		textX - textW, textY,
+		FRACUNIT, FRACUNIT, FRACUNIT,
+		(V_SNAPTORIGHT|V_SNAPTOTOP) | opacityFlag,
+		NULL,
+		MED_FONT,
 		connectedservername
 	);
 
@@ -1611,28 +1621,23 @@ void ST_Drawer(void)
 	// Replay manual-save stuff
 	if (demo.recording && multiplayer && demo.savebutton && demo.savebutton + 3*TICRATE < leveltime)
 	{
+		tic_t fadeLength = TICRATE;
+		tic_t t = leveltime - (demo.savebutton + 3*TICRATE);
+		INT32 flags = V_SNAPTOTOP | V_SNAPTORIGHT |
+			(Easing_Linear(min(t, fadeLength) * FRACUNIT / fadeLength, 9, 0) << V_ALPHASHIFT);
+
 		switch (demo.savemode)
 		{
 		case DSM_NOTSAVING:
-		{
-			INT32 buttonx = BASEVIDWIDTH;
-			INT32 buttony = 2;
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, flags|V_YELLOWMAP, "\xAB" "or " "\xAE" "Save replay");
+			break;
 
-			K_drawButtonAnim(buttonx - 76, buttony, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT, kp_button_b[1], leveltime);
-			V_DrawRightAlignedThinString(buttonx - 55, buttony, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_YELLOWMAP, "or");
-			K_drawButtonAnim(buttonx - 55, buttony, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT, kp_button_x[1], leveltime);
-			V_DrawRightAlignedThinString(buttonx - 2, buttony, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_YELLOWMAP, "Save replay");
-			break;
-		}
 		case DSM_WILLAUTOSAVE:
-		{
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 55, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_YELLOWMAP, "Replay will be saved.");
-			K_drawButtonAnim(BASEVIDWIDTH - 56, 0, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT, kp_button_b[1], leveltime);
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_YELLOWMAP, "Change title");
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, flags|V_YELLOWMAP, "Replay will be saved.  \xAB" "Change title");
 			break;
-		}
+
 		case DSM_WILLSAVE:
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_YELLOWMAP, "Replay will be saved.");
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, flags|V_YELLOWMAP, "Replay will be saved.");
 			break;
 
 		case DSM_TITLEENTRY:

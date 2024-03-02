@@ -915,7 +915,10 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			return;
 
 		case MT_RINGSHOOTER:
-			Obj_PlayerUsedRingShooter(special, player);
+			if (player->freeRingShooterCooldown)
+				player->pflags |= PF_CASTSHADOW; // you can't use this right now!
+			else
+				Obj_PlayerUsedRingShooter(special, player);
 			return;
 
 		case MT_SUPER_FLICKY:
@@ -1505,7 +1508,7 @@ boolean P_CheckRacers(void)
 	}
 	else
 	{
-		if (griefed == true)
+		if (griefed == true && numHumans > 0)
 		{
 			// Don't do this if someone spectated
 			eliminateLast = false;
@@ -1643,7 +1646,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 	// SRB2kart
 	// I wish I knew a better way to do this
-	if (target->target && target->target->player && target->target->player->mo)
+	if (!P_MobjWasRemoved(target->target) && target->target->player && !P_MobjWasRemoved(target->target->player->mo))
 	{
 		if ((target->target->player->itemflags & IF_EGGMANOUT) && target->type == MT_EGGMANITEM_SHIELD)
 			target->target->player->itemflags &= ~IF_EGGMANOUT;
@@ -2502,7 +2505,17 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 
 			if (gametyperules & (GTR_BUMPERS|GTR_CHECKPOINTS))
 			{
-				player->mo->health--;
+				if ((player->pitblame > -1) && (player->pitblame < MAXPLAYERS)
+					&& (playeringame[player->pitblame]) && (!players[player->pitblame].spectator)
+					&& (players[player->pitblame].mo) && (!P_MobjWasRemoved(players[player->pitblame].mo)))
+				{
+					P_DamageMobj(player->mo, players[player->pitblame].mo, players[player->pitblame].mo, 1, DMG_KARMA);
+					player->pitblame = -1;
+				}
+				else if (player->mo->health > 1 || K_Cooperative())
+				{
+					player->mo->health--;
+				}
 			}
 
 			if (player->mo->health <= 0)
@@ -2642,6 +2655,14 @@ static boolean P_FlashingException(const player_t *player, const mobj_t *inflict
 		return false;
 	}
 
+	if (inflictor->type == MT_SPB)
+	{
+		// The SPB does not die on impact with players other than its intended target.
+		// Ignoring flashing tics would cause an endless combo on anyone who gets in way of the SPB.
+		// Upon hitting its target, DMG_EXPLODE will be used (which ignores flashing tics).
+		return false;
+	}
+
 	if (!P_IsKartItem(inflictor->type) && inflictor->type != MT_PLAYER)
 	{
 		// Exception only applies to player items.
@@ -2697,6 +2718,10 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	// Spectator handling
 	if (damagetype != DMG_SPECTATOR && target->player && target->player->spectator)
 		return false;
+
+	// source is checked without a removal guard in so many places that it's genuinely less work to do it here.
+	if (source && P_MobjWasRemoved(source))
+		source = NULL;
 
 	if (source && source->player && source->player->spectator)
 		return false;
@@ -3122,6 +3147,14 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				}
 			}
 
+			if (source && source != player->mo && source->player)
+			{
+				if (damagetype != DMG_DEATHPIT)
+				{
+					player->pitblame = source->player - players;
+				}
+			}
+
 			player->sneakertimer = player->numsneakers = 0;
 			player->driftboost = player->strongdriftboost = 0;
 			player->gateBoost = 0;
@@ -3131,6 +3164,11 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			player->preventfailsafe = TICRATE*3;
 			player->pflags &= ~PF_GAINAX;
 			Obj_EndBungee(player);
+			K_BumperInflate(target->player);
+
+			// Explosions are explicit combo setups.
+			if (damagetype & DMG_EXPLODE)
+				player->bumperinflate = 0;
 
 			if (player->spectator == false && !(player->charflags & SF_IRONMAN))
 			{
@@ -3153,6 +3191,14 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				type = DMG_TUMBLE;
 				P_StartQuakeFromMobj(5, 32 * player->mo->scale, 512 * player->mo->scale, player->mo);
 				//P_KillPlayer(player, inflictor, source, damagetype);
+			}
+
+			// Death save! On your last hit, no matter what, demote to weakest damage type for one last escape chance.
+			if (player->mo->health == 2 && damage && gametyperules & GTR_BUMPERS)
+			{
+				S_StartSound(target, sfx_gshc7);
+				player->flashing = TICRATE;
+				type = DMG_STUMBLE;
 			}
 
 			switch (type)

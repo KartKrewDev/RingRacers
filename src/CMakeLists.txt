@@ -17,8 +17,9 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	f_finale.c
 	f_wipe.cpp
 	g_build_ticcmd.cpp
-	g_demo.c
+	g_demo.cpp
 	g_game.c
+	g_gamedata.cpp
 	g_input.c
 	g_party.cpp
 	am_map.c
@@ -29,7 +30,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	hu_stuff.c
 	i_time.c
 	i_video_common.cpp
-	y_inter.c
+	y_inter.cpp
 	st_stuff.c
 	m_aatree.c
 	m_anigif.c
@@ -72,6 +73,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	r_data.c
 	r_debug.cpp
 	r_debug_parser.cpp
+	r_debug_printer.cpp
 	r_draw.cpp
 	r_fps.c
 	r_main.cpp
@@ -143,7 +145,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	k_terrain.c
 	k_director.cpp
 	k_follower.c
-	k_profiles.c
+	k_profiles.cpp
 	k_specialstage.c
 	k_roulette.c
 	k_podium.cpp
@@ -161,6 +163,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	k_credits.cpp
 	music.cpp
 	music_manager.cpp
+	sanitize.cpp
 )
 
 if(SRB2_CONFIG_ENABLE_WEBM_MOVIES)

@@ -50,6 +50,7 @@
 #include "k_rank.h"
 #include "g_party.h"
 #include "k_hitlag.h"
+#include "g_input.h"
 
 //{ 	Patch Definitions
 static patch_t *kp_nodraw;
@@ -5160,85 +5161,27 @@ static void K_drawKartFirstPerson(void)
 	}
 }
 
-// doesn't need to ever support 4p
 static void K_drawInput(void)
 {
-	static INT32 pn = 0;
-	INT32 target = 0, splitflags = (V_SNAPTOBOTTOM|V_SNAPTORIGHT);
-	INT32 x = BASEVIDWIDTH - 32, y = BASEVIDHEIGHT-24, offs, col;
-	const INT32 accent1 = splitflags | skincolors[stplyr->skincolor].ramp[5];
-	const INT32 accent2 = splitflags | skincolors[stplyr->skincolor].ramp[9];
-	ticcmd_t *cmd = &stplyr->cmd;
-
-#define BUTTW 8
-#define BUTTH 11
-
-#define drawbutt(xoffs, butt, symb)\
-	if (!stplyr->exiting && (cmd->buttons & butt))\
-	{\
-		offs = 2;\
-		col = accent1;\
-	}\
-	else\
-	{\
-		offs = 0;\
-		col = accent2;\
-		V_DrawFill(x+(xoffs), y+BUTTH, BUTTW-1, 2, splitflags|31);\
-	}\
-	V_DrawFill(x+(xoffs), y+offs, BUTTW-1, BUTTH, col);\
-	V_DrawFixedPatch((x+1+(xoffs))<<FRACBITS, (y+offs+1)<<FRACBITS, FRACUNIT, splitflags, fontv[TINY_FONT].font[symb-HU_FONTSTART], NULL)
-
-	drawbutt(-2*BUTTW, BT_ACCELERATE, 'A');
-	drawbutt(  -BUTTW, BT_BRAKE,      'B');
-	drawbutt(       0, BT_DRIFT,      'D');
-	drawbutt(   BUTTW, BT_ATTACK,     'I');
-
-#undef drawbutt
-
-#undef BUTTW
-#undef BUTTH
-
-	y -= 1;
-
-	if (stplyr->exiting || !stplyr->steering) // no turn
-		target = 0;
-	else // turning of multiple strengths!
-	{
-		target = ((abs(stplyr->steering) - 1)/125)+1;
-		if (target > 4)
-			target = 4;
-		if (stplyr->steering < 0)
-			target = -target;
-	}
-
-	if (pn != target)
-	{
-		if (abs(pn - target) == 1)
-			pn = target;
-		else if (pn < target)
-			pn += 2;
-		else //if (pn > target)
-			pn -= 2;
-	}
-
-	if (pn < 0)
-	{
-		splitflags |= V_FLIP; // right turn
-		x--;
-	}
-
-	target = abs(pn);
-	if (target > 4)
-		target = 4;
-
-	if (!stplyr->skincolor)
-		V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, FRACUNIT, splitflags, kp_inputwheel[target], NULL);
-	else
-	{
-		UINT8 *colormap;
-		colormap = R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(stplyr->skincolor), GTC_CACHE);
-		V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, FRACUNIT, splitflags, kp_inputwheel[target], colormap);
-	}
+	INT32 def[4][3] = {
+		{247, 156, V_SNAPTOBOTTOM | V_SNAPTORIGHT}, // 1p
+		{247, 56, V_SNAPTOBOTTOM | V_SNAPTORIGHT}, // 2p
+		{6, 52, V_SNAPTOBOTTOM | V_SNAPTOLEFT}, // 4p left
+		{282 - BASEVIDWIDTH/2, 52, V_SNAPTOBOTTOM | V_SNAPTORIGHT}, // 4p right
+	};
+	INT32 k = r_splitscreen <= 1 ? r_splitscreen : 2 + (R_GetViewNumber() & 1);
+	INT32 flags = def[k][2] | V_SPLITSCREEN | V_SLIDEIN;
+	char mode = ((stplyr->pflags & PF_ANALOGSTICK) ? '4' : '2') + (r_splitscreen > 1);
+	bool local = !demo.playback && P_IsMachineLocalPlayer(stplyr);
+	K_DrawInputDisplay(
+		def[k][0],
+		def[k][1],
+		flags,
+		mode,
+		(local ? G_LocalSplitscreenPartyPosition : G_PartyPosition)(stplyr - players),
+		local,
+		stplyr->speed > 0
+	);
 }
 
 static void K_drawChallengerScreen(void)
@@ -5546,22 +5489,48 @@ static void K_DrawWaypointDebugger(void)
 	if (R_GetViewNumber() != 0) // only for p1
 		return;
 
+	constexpr int kH = 8;
+	using srb2::Draw;
+	Draw::TextElement label;
+	label.font(Draw::Font::kThin);
+	label.flags(V_AQUAMAP);
+	Draw line = Draw(8, 110).font(Draw::Font::kMenu);
+	auto put = [&](const char* label_str, auto&&... args)
+	{
+		constexpr int kTabWidth = 48;
+		label.string(label_str);
+		int x = label.width() + kTabWidth;
+		x -= x % kTabWidth;
+		line.size(x + 4, 2).y(7).fill(31);
+		line.text(label);
+		line.x(x).text(args...);
+		line = line.y(kH);
+	};
+
 	if (netgame)
 	{
-		V_DrawString(8, 136, 0, va("Online griefing: [%u, %u]", stplyr->griefValue/TICRATE, stplyr->griefStrikes));
+		line = line.y(-kH);
+		put("Online griefing:", "[{}, {}]", stplyr->griefValue/TICRATE, stplyr->griefStrikes);
 	}
 
-	V_DrawString(8, 146, 0, va("Current Waypoint ID: %d", K_GetWaypointID(stplyr->currentwaypoint)));
-	V_DrawString(8, 156, 0, va("Next Waypoint ID: %d%s", K_GetWaypointID(stplyr->nextwaypoint), ((stplyr->pflags & PF_WRONGWAY) ? " (WRONG WAY)" : "")));
-	V_DrawString(8, 166, 0, va("Respawn Waypoint ID: %d", K_GetWaypointID(stplyr->respawn.wp)));
-	V_DrawString(8, 176, 0, va("Finishline Distance: %d", stplyr->distancetofinish));
+	put("Current Waypoint ID:", "{}", K_GetWaypointID(stplyr->currentwaypoint));
+	put("Next Waypoint ID:", "{}{}", K_GetWaypointID(stplyr->nextwaypoint), ((stplyr->pflags & PF_WRONGWAY) ? " (WRONG WAY)" : ""));
+	put("Respawn Waypoint ID:", "{}", K_GetWaypointID(stplyr->respawn.wp));
+	put("Finishline Distance:", "{}", stplyr->distancetofinish);
+	put("Last Safe Lap:", "{}", stplyr->lastsafelap);
 
 	if (numcheatchecks > 0)
 	{
 		if (stplyr->cheatchecknum == numcheatchecks)
-			V_DrawString(8, 186, 0, va("Cheat Check: %d / %d (Can finish)", stplyr->cheatchecknum, numcheatchecks));
+			put("Cheat Check:", "{} / {} (Can finish)", stplyr->cheatchecknum, numcheatchecks);
 		else
-			V_DrawString(8, 186, 0, va("Cheat Check: %d / %d", stplyr->cheatchecknum, numcheatchecks));
+			put("Cheat Check:", "{} / {}", stplyr->cheatchecknum, numcheatchecks);
+		put("Last Safe Cheat Check:", "{}", stplyr->lastsafecheatcheck);
+	}
+
+	if (stplyr->bigwaypointgap)
+	{
+		put("Auto Respawn Timer:", "{}", stplyr->bigwaypointgap);
 	}
 }
 
@@ -5739,6 +5708,8 @@ struct messagestate_t
 				return;
 		}
 
+		if (exitcountdown)
+			return;
 
 		if (timer == 0 && mode == MM_IN)
 			S_StartSound(NULL, sfx_s3k47);
@@ -5850,6 +5821,10 @@ void K_TickMessages()
 static void K_DrawMessageFeed(void)
 {
 	int i;
+
+	if (exitcountdown)
+		return;
+
 	for (i = 0; i <= r_splitscreen; i++)
 	{
 		messagestate_t state = messagestates[i];
@@ -5874,6 +5849,7 @@ static void K_DrawMessageFeed(void)
 		Draw::TextElement text(submsg);
 
 		text.font(Draw::Font::kMenu);
+		submsg = text.parse(submsg).string();
 
 		UINT8 x = 160;
 		UINT8 y = 10;
@@ -5899,7 +5875,7 @@ static void K_DrawMessageFeed(void)
 			if (i >= 1)
 				y += BASEVIDHEIGHT / 2;
 		}
-		UINT8 sw = text.width();
+		UINT16 sw = text.width();
 
 		K_DrawSticker(x - sw/2, y, sw, 0, true);
 		Draw(x, y+shift).align(Draw::Align::kCenter).text(text);

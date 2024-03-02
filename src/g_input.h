@@ -100,6 +100,11 @@ typedef enum
 	gc_drift = gc_r,
 } gamecontrols_e;
 
+typedef enum
+{
+	GCF_ANALOGSTICK = 1 << 0,
+} gamecontrol_flags_e;
+
 // mouse values are used once
 extern consvar_t cv_controlperkey;
 
@@ -113,6 +118,7 @@ extern INT32 gamekeydown[MAXDEVICES][NUMINPUTS];
 
 // several key codes (or virtual key) per game control
 extern INT32 gamecontrol[MAXSPLITSCREENPLAYERS][num_gamecontrols][MAXINPUTMAPPING];
+extern UINT8 gamecontrolflags[MAXSPLITSCREENPLAYERS];
 extern INT32 gamecontroldefault[num_gamecontrols][MAXINPUTMAPPING]; // default control storage
 extern INT32 menucontrolreserved[num_gamecontrols][MAXINPUTMAPPING];
 
@@ -194,7 +200,7 @@ void Command_Setcontrol3_f(void);
 void Command_Setcontrol4_f(void);
 void G_DefineDefaultControls(void);
 INT32 G_GetControlScheme(INT32 (*fromcontrols)[MAXINPUTMAPPING], const INT32 *gclist, INT32 gclen);
-void G_CopyControls(INT32 (*setupcontrols)[MAXINPUTMAPPING], INT32 (*fromcontrols)[MAXINPUTMAPPING], const INT32 *gclist, INT32 gclen);
+void G_ApplyControlScheme(UINT8 splitplayer, INT32 (*fromcontrols)[MAXINPUTMAPPING]);
 void G_SaveKeySetting(FILE *f, INT32 (*fromcontrolsa)[MAXINPUTMAPPING], INT32 (*fromcontrolsb)[MAXINPUTMAPPING], INT32 (*fromcontrolsc)[MAXINPUTMAPPING], INT32 (*fromcontrolsd)[MAXINPUTMAPPING]);
 INT32 G_CheckDoubleUsage(INT32 keynum, INT32 playernum, boolean modify);
 

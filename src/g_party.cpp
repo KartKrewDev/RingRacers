@@ -316,3 +316,10 @@ UINT8 G_PartyPosition(UINT8 player)
 
 	return party.find(player) - party.begin();
 }
+
+UINT8 G_LocalSplitscreenPartyPosition(UINT8 player)
+{
+	const Party& party = local_party[player];
+
+	return party.find(player) - party.begin();
+}

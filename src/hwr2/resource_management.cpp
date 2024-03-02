@@ -32,6 +32,7 @@ void PaletteManager::update(Rhi& rhi, Handle<GraphicsContext> ctx)
 		palette_ = rhi.create_texture({TextureFormat::kRGBA, kPaletteSize, 1, TextureWrapMode::kClamp, TextureWrapMode::kClamp});
 	}
 
+#if 0
 	if (!lighttable_)
 	{
 		lighttable_ = rhi.create_texture({TextureFormat::kLuminance, kPaletteSize, kLighttableRows, TextureWrapMode::kClamp, TextureWrapMode::kClamp});
@@ -41,6 +42,7 @@ void PaletteManager::update(Rhi& rhi, Handle<GraphicsContext> ctx)
 	{
 		encore_lighttable_ = rhi.create_texture({TextureFormat::kLuminance, kPaletteSize, kLighttableRows, TextureWrapMode::kClamp, TextureWrapMode::kClamp});
 	}
+#endif
 
 	if (!default_colormap_)
 	{
@@ -57,6 +59,7 @@ void PaletteManager::update(Rhi& rhi, Handle<GraphicsContext> ctx)
 		rhi.update_texture(ctx, palette_, {0, 0, kPaletteSize, 1}, PixelFormat::kRGBA8, tcb::as_bytes(tcb::span(palette_32)));
 	}
 
+#if 0
 	// Lighttables
 	{
 		if (colormaps != nullptr)
@@ -65,12 +68,15 @@ void PaletteManager::update(Rhi& rhi, Handle<GraphicsContext> ctx)
 			rhi.update_texture(ctx, lighttable_, {0, 0, kPaletteSize, kLighttableRows}, PixelFormat::kR8, colormap_bytes);
 		}
 
+		// FIXME: This is broken, encoremap should not be used directly.
+		// Instead, use colormaps + COLORMAP_REMAPOFFSET. See R_ReInitColormaps.
 		if (encoremap != nullptr)
 		{
 			tcb::span<const std::byte> encoremap_bytes = tcb::as_bytes(tcb::span(encoremap, kPaletteSize * kLighttableRows));
 			rhi.update_texture(ctx, encore_lighttable_, {0, 0, kPaletteSize, kLighttableRows}, PixelFormat::kR8, encoremap_bytes);
 		}
 	}
+#endif
 
 	// Default colormap
 	{

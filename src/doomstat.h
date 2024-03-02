@@ -121,9 +121,6 @@ extern preciptype_t curWeather;
 struct skinrecord_t
 {
 	UINT32 wins;
-
-	// Purely assistive in gamedata save processes
-	UINT32 _saveid;
 };
 
 struct unloaded_skin_t
@@ -152,11 +149,17 @@ struct skinreference_t
 #define MV_MYSTICMELODY		(1<<4)
 #define MV_MAX          	(MV_VISITED|MV_BEATEN|MV_ENCORE|MV_SPBATTACK|MV_MYSTICMELODY)
 
+struct recordtimes_t
+{
+	tic_t time; ///< Time in which the level was finished.
+	tic_t lap;  ///< Best lap time for this level.
+};
+
 struct recorddata_t
 {
 	UINT8 mapvisited;
-	tic_t time; ///< Time in which the level was finished.
-	tic_t lap;  ///< Best lap time for this level.
+	recordtimes_t timeattack; ///< Best times for Time Attack
+	recordtimes_t spbattack; ///< Best times for SPB Attack
 };
 
 #define KARTSPEED_AUTO -1
@@ -555,7 +558,6 @@ struct mapheader_t
 	mobjtype_t destroyforchallenge[MAXDESTRUCTIBLES];	///< Assistive for UCRP_MAPDESTROYOBJECTS
 	UINT8 destroyforchallenge_size;						///< Number for above
 
-	UINT32 _saveid;						///< Purely assistive in gamedata save processes
 	UINT16 cache_spraycan;				///< Cached Spraycan ID
 	UINT16 cache_maplock;				///< Cached Unlockable ID
 
@@ -869,6 +871,7 @@ extern tic_t gametic;
 extern mapthing_t *playerstarts[MAXPLAYERS]; // Cooperative
 extern mapthing_t *bluectfstarts[MAXPLAYERS]; // CTF
 extern mapthing_t *redctfstarts[MAXPLAYERS]; // CTF
+extern mapthing_t *faultstart; // Kart Fault
 
 #define TUBEWAYPOINTSEQUENCESIZE 256
 #define NUMTUBEWAYPOINTSEQUENCES 256

@@ -790,10 +790,20 @@ static void SPBChase(mobj_t *spb, mobj_t *bestMobj)
 		desiredSpeed = 20 * chase->scale;
 	}
 
-	if (chasePlayer != NULL && chasePlayer->carry == CR_SLIDING)
+	if (chasePlayer != NULL)
 	{
-		// Hack for current sections to make them fair.
-		desiredSpeed = min(desiredSpeed, chasePlayer->speed / 2);
+		if (chasePlayer->carry == CR_SLIDING)
+		{
+			// Hack for current sections to make them fair.
+			desiredSpeed = min(desiredSpeed, chasePlayer->speed / 2);
+		}
+
+		const mobj_t *waypoint = chasePlayer->currentwaypoint ? chasePlayer->currentwaypoint->mobj : NULL;
+		// thing_args[3]: SPB speed (0-100)
+		if (waypoint && waypoint->thing_args[3]) // 0 = default speed (unchanged)
+		{
+			desiredSpeed = desiredSpeed * waypoint->thing_args[3] / 100;
+		}
 	}
 
 	destAngle = R_PointToAngle2(spb->x, spb->y, chase->x, chase->y);

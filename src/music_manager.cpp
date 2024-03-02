@@ -60,6 +60,7 @@ void TuneManager::tick()
 			// Only stop the music credit if the song actually
 			// changed.
 			S_StopMusicCredit();
+			S_UnloadMusicCredit();
 		}
 
 		stop_credit_ = false;
@@ -90,6 +91,8 @@ void TuneManager::tick()
 
 			adjust_volume();
 			I_SetSongSpeed(tune->speed());
+
+			S_LoadMusicCredit();
 
 			if (tune->credit && !tune->resume)
 			{

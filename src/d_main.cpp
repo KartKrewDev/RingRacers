@@ -90,6 +90,7 @@
 #include "k_dialogue.h"
 #include "k_bans.h"
 #include "k_credits.h"
+#include "r_debug.hpp"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h" // 3D View Rendering
@@ -663,6 +664,7 @@ static bool D_Display(void)
 				{
 					AM_Drawer();
 					ST_Drawer();
+					srb2::r_debug::draw_frame_list();
 					F_TextPromptDrawer();
 					break;
 				}
@@ -856,7 +858,9 @@ void D_SRB2Loop(void)
 		precise_t enterprecise = I_GetPreciseTime();
 		precise_t finishprecise = enterprecise;
 
+		g_dc = {};
 		Z_Frame_Reset();
+		srb2::r_debug::clear_frame_list();
 
 		{
 			// Casting the return value of a function is bad practice (apparently)
@@ -1089,7 +1093,6 @@ void D_ClearState(void)
 	memset(displayplayers, 0, sizeof(displayplayers));
 	memset(g_localplayers, 0, sizeof g_localplayers);
 	consoleplayer = 0;
-	demo.attract = DEMO_ATTRACT_OFF;
 	G_SetGametype(GT_RACE); // SRB2kart
 	paused = false;
 
@@ -1125,7 +1128,7 @@ void D_StartTitle(void)
 	D_ClearState();
 	F_StartTitleScreen();
 	M_ClearMenus(false);
-	g_deferredtitle = true;
+	g_deferredtitle = false;
 }
 
 void D_SetDeferredStartTitle(boolean deferred)

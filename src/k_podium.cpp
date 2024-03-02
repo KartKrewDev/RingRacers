@@ -61,6 +61,8 @@ typedef enum
 	PODIUM_ST_DATA_PAUSE,
 	PODIUM_ST_LEVEL_APPEAR,
 	PODIUM_ST_LEVEL_PAUSE,
+	PODIUM_ST_TOTALS_SLIDEIN,
+	PODIUM_ST_TOTALS_PAUSE,
 	PODIUM_ST_GRADE_APPEAR,
 	PODIUM_ST_GRADE_VOICE,
 	PODIUM_ST_DONE,
@@ -126,6 +128,8 @@ void podiumData_s::Init(void)
 
 		rank.position = M_RandomRange(1, 4);
 
+		rank.continuesUsed = M_RandomRange(0, 3);
+
 		// Fake totals
 		rank.numLevels = 8;
 
@@ -136,25 +140,21 @@ void podiumData_s::Init(void)
 		}
 		rank.totalRings = numRaces * rank.numPlayers * 20;
 
-		UINT32 laps = numRaces * 3;
-		for (INT32 i = 0; i < rank.numPlayers+1; i++)
-		{
-			rank.totalLaps += laps;
-		}
-
 		// Randomized winnings
 		INT32 rgs = 0;
+		INT32 laps = 0;
+		INT32 tlaps = 0;
 		INT32 prs = 0;
 		INT32 tprs = 0;
 
 		rank.winPoints = M_RandomRange(0, rank.totalPoints);
-		rank.laps = M_RandomRange(0, rank.totalLaps);
-		rank.specialWon = M_Random() & 1;
 
 		for (INT32 i = 0; i < rank.numLevels; i++)
 		{
 			gpRank_level_t *const lvl = &rank.levels[i];
 			UINT8 specialWinner = 0;
+			UINT16 pprs = 0;
+			UINT16 plaps = 0;
 
 			lvl->id = M_RandomRange(4, nummapheaders);
 
@@ -165,6 +165,8 @@ void podiumData_s::Init(void)
 				case 5:
 				{
 					lvl->event = GPEVENT_BONUS;
+					lvl->totalPrisons = M_RandomRange(1, 10);
+					tprs += lvl->totalPrisons;
 					break;
 				}
 				case 7:
@@ -173,16 +175,15 @@ void podiumData_s::Init(void)
 					specialWinner = M_RandomRange(0, rank.numPlayers);
 					break;
 				}
+				default:
+				{
+					lvl->totalLapPoints = M_RandomRange(2, 5) * 2;
+					tlaps += lvl->totalLapPoints;
+					break;
+				}
 			}
 
 			lvl->time = M_RandomRange(50*TICRATE, 210*TICRATE);
-
-			lvl->totalLapPoints = M_RandomRange(2, 5) * 2;
-
-			lvl->totalPrisons = M_RandomRange(1, 10);
-			tprs += lvl->totalPrisons;
-
-			UINT16 pprs = 0;
 
 			for (INT32 j = 0; j < rank.numPlayers; j++)
 			{
@@ -196,6 +197,7 @@ void podiumData_s::Init(void)
 					rgs += dta->rings;
 
 					dta->lapPoints = M_RandomRange(0, lvl->totalLapPoints);
+					plaps = std::max(plaps, dta->lapPoints);
 				}
 
 				if (lvl->event == GPEVENT_BONUS)
@@ -208,6 +210,10 @@ void podiumData_s::Init(void)
 				{
 					dta->gotSpecialPrize = (j+1 == specialWinner);
 					dta->grade = GRADE_E;
+					if (dta->gotSpecialPrize)
+					{
+						rank.specialWon = true;
+					}
 				}
 				else
 				{
@@ -215,10 +221,13 @@ void podiumData_s::Init(void)
 				}
 			}
 
+			laps += plaps;
 			prs += pprs;
 		}
 
 		rank.rings = rgs;
+		rank.laps = laps;
+		rank.totalLaps = tlaps;
 		rank.prisons = prs;
 		rank.totalPrisons = tprs;
 	}
@@ -342,11 +351,25 @@ void podiumData_s::Tick(void)
 			}
 			else
 			{
-				state = PODIUM_ST_GRADE_APPEAR;
+				state = PODIUM_ST_TOTALS_SLIDEIN;
 				transition = 0;
-				transitionTime = TICRATE/7;
-				delay = TICRATE/2;
+				transitionTime = TICRATE/2;
+				delay = TICRATE/5;
 			}
+			break;
+		}
+		case PODIUM_ST_TOTALS_SLIDEIN:
+		{
+			state = PODIUM_ST_TOTALS_PAUSE;
+			delay = TICRATE/5;
+			break;
+		}
+		case PODIUM_ST_TOTALS_PAUSE:
+		{
+			state = PODIUM_ST_GRADE_APPEAR;
+			transition = 0;
+			transitionTime = TICRATE/7;
+			delay = TICRATE/2;
 			break;
 		}
 		case PODIUM_ST_GRADE_APPEAR:
@@ -477,32 +500,38 @@ void podiumData_s::Draw(void)
 			.colormap(bestHuman->skin, static_cast<skincolornum_t>(bestHuman->skincolor))
 			.patch(faceprefix[bestHuman->skin][FACE_WANTED]);
 
-		UINT32 continuesColor = 0;
-
-		if (rank.continuesUsed == 0)
-		{
-			continuesColor = V_YELLOWMAP;
-		}
-		else if (rank.continuesUsed > 2)
-		{
-			continuesColor = V_REDMAP;
-		}
+		drawer_winner
+			.xy(44, 31)
+			.align(srb2::Draw::Align::kCenter)
+			.font(srb2::Draw::Font::kZVote)
+			.text(va("%c%d", (rank.scorePosition > 0 ? '+' : ' '), rank.scorePosition));
 
 		drawer_winner
-			.xy(64, 18)
-			.flags(continuesColor)
-			.font(srb2::Draw::Font::kThin)
-			.text(va("Continues used ... %d", rank.continuesUsed));
+			.xy(64, 19)
+			.patch("K_POINT4");
+
+		drawer_winner
+			.xy(88, 21)
+			.align(srb2::Draw::Align::kLeft)
+			.font(srb2::Draw::Font::kPing)
+			.colormap(TC_RAINBOW, SKINCOLOR_GOLD)
+			.text(va("%d", rank.winPoints));
+
+		drawer_winner
+			.xy(75, 31)
+			.align(srb2::Draw::Align::kCenter)
+			.font(srb2::Draw::Font::kZVote)
+			.text(va("%c%d", (rank.scoreGPPoints > 0 ? '+' : ' '), rank.scoreGPPoints));
+
+
+		srb2::Draw drawer_trophy = drawer.xy(272, 10);
+		if (state == PODIUM_ST_DATA_SLIDEIN)
+		{
+			drawer_trophy = drawer_trophy.x( transition_i * BASEVIDWIDTH );
+		}
 
 		if (cup != nullptr)
 		{
-			srb2::Draw drawer_trophy = drawer.xy(272, 10);
-
-			if (state == PODIUM_ST_DATA_SLIDEIN)
-			{
-				drawer_trophy = drawer_trophy.x( transition_i * BASEVIDWIDTH );
-			}
-
 			M_DrawCup(
 				cup, drawer_trophy.x() * FRACUNIT, drawer_trophy.y() * FRACUNIT,
 				0, true,
@@ -522,6 +551,12 @@ void podiumData_s::Draw(void)
 
 			if (i > 0)
 			{
+				drawer_line
+					.xy(-88, 6)
+					.width(304)
+					.height(2)
+					.fill(31);
+
 				lvl = &rank.levels[i - 1];
 
 				if (lvl->id > 0)
@@ -701,6 +736,102 @@ void podiumData_s::Draw(void)
 		}
 	}
 
+	if (state >= PODIUM_ST_TOTALS_SLIDEIN)
+	{
+		srb2::Draw drawer_totals = drawer
+			.xy(BASEVIDWIDTH * 0.5, BASEVIDHEIGHT - 48.0);
+
+		srb2::Draw drawer_totals_left = drawer_totals
+			.x(-144.0);
+
+		srb2::Draw drawer_totals_right = drawer_totals
+			.x(78.0);
+
+		if (state == PODIUM_ST_TOTALS_SLIDEIN)
+		{
+			drawer_totals_left = drawer_totals_left.x( transition_i * -BASEVIDWIDTH );
+			drawer_totals_right = drawer_totals_right.x( transition_i * BASEVIDWIDTH );
+		}
+
+		drawer_totals_left
+			.xy(8.0, 8.0)
+			.patch("R_RTPBR");
+
+		skincolornum_t continuesColor = SKINCOLOR_NONE;
+		if (rank.continuesUsed == 0)
+		{
+			continuesColor = SKINCOLOR_GOLD;
+		}
+		else if (rank.scoreContinues < 0)
+		{
+			continuesColor = SKINCOLOR_RED;
+		}
+
+		drawer_totals_left
+			.y(24.0)
+			.patch("RANKCONT");
+
+		drawer_totals_left
+			.xy(44.0, 24.0)
+			.align(srb2::Draw::Align::kCenter)
+			.font(srb2::Draw::Font::kTimer)
+			.colormap( TC_RAINBOW, continuesColor )
+			.text(va("%d", rank.continuesUsed));
+
+		drawer_totals_left
+			.xy(44.0, 38.0)
+			.align(srb2::Draw::Align::kCenter)
+			.font(srb2::Draw::Font::kZVote)
+			.colormap( TC_RAINBOW, continuesColor )
+			.text(va("%c%d", (rank.scoreContinues >= 0 ? '+' : ' '), rank.scoreContinues));
+
+		drawer_totals_left
+			.patch("RANKRING");
+
+		drawer_totals_left
+			.xy(44.0, 0.0)
+			.align(srb2::Draw::Align::kCenter)
+			.font(srb2::Draw::Font::kThinTimer)
+			.text(va("%d / %d", rank.rings, rank.totalRings));
+
+		drawer_totals_left
+			.xy(44.0, 14.0)
+			.align(srb2::Draw::Align::kCenter)
+			.font(srb2::Draw::Font::kZVote)
+			.text(va("%c%d", (rank.scoreRings > 0 ? '+' : ' '), rank.scoreRings));
+
+		drawer_totals_right
+			.xy(10.0, 46.0)
+			.patch("CAPS_ZB");
+
+		drawer_totals_right
+			.xy(44.0, 24.0)
+			.align(srb2::Draw::Align::kCenter)
+			.font(srb2::Draw::Font::kThinTimer)
+			.text(va("%d / %d", rank.prisons, rank.totalPrisons));
+
+		drawer_totals_right
+			.xy(44.0, 38.0)
+			.align(srb2::Draw::Align::kCenter)
+			.font(srb2::Draw::Font::kZVote)
+			.text(va("%c%d", (rank.scorePrisons > 0 ? '+' : ' '), rank.scorePrisons));
+
+		drawer_totals_right
+			.patch("RANKLAPS");
+
+		drawer_totals_right
+			.xy(44.0, 0.0)
+			.align(srb2::Draw::Align::kCenter)
+			.font(srb2::Draw::Font::kThinTimer)
+			.text(va("%d / %d", rank.laps, rank.totalLaps));
+
+		drawer_totals_right
+			.xy(44.0, 14.0)
+			.align(srb2::Draw::Align::kCenter)
+			.font(srb2::Draw::Font::kZVote)
+			.text(va("%c%d", (rank.scoreLaps > 0 ? '+' : ' '), rank.scoreLaps));
+	}
+
 	if ((state == PODIUM_ST_GRADE_APPEAR && delay == 0)
 		|| state >= PODIUM_ST_GRADE_VOICE)
 	{
@@ -710,6 +841,76 @@ void podiumData_s::Draw(void)
 		srb2::Draw grade_drawer = drawer
 			.xy(BASEVIDWIDTH * 0.5, BASEVIDHEIGHT - 2.0 - (grade_img->height * 0.5))
 			.colormap( static_cast<skincolornum_t>(K_GetGradeColor( static_cast<gp_rank_e>(grade) )) );
+
+		if (rank.specialWon == true)
+		{
+			UINT8 emeraldNum = 0;
+
+			if (cup != nullptr)
+			{
+				emeraldNum = cup->emeraldnum;
+			}
+
+			const boolean emeraldBlink = (leveltime & 1);
+			patch_t *emeraldOverlay = nullptr;
+			patch_t *emeraldUnderlay = nullptr;
+			skincolornum_t emeraldColor = SKINCOLOR_NONE;
+
+			if (emeraldNum == 0)
+			{
+				emeraldOverlay = static_cast<patch_t*>( W_CachePatchName("KBLNC0", PU_CACHE) );
+			}
+			else
+			{
+				emeraldColor = static_cast<skincolornum_t>( SKINCOLOR_CHAOSEMERALD1 + ((emeraldNum - 1) % 7) );
+
+				if (emeraldNum > 7)
+				{
+					emeraldOverlay = static_cast<patch_t*>( W_CachePatchName("SEMRA0", PU_CACHE) );
+					emeraldUnderlay = static_cast<patch_t*>( W_CachePatchName("SEMRB0", PU_CACHE) );
+				}
+				else
+				{
+					emeraldOverlay = static_cast<patch_t*>( W_CachePatchName("EMRCA0", PU_CACHE) );
+					emeraldUnderlay = static_cast<patch_t*>( W_CachePatchName("EMRCB0", PU_CACHE) );
+				}
+			}
+
+			srb2::Draw emerald_drawer = grade_drawer
+				.xy(-48, 20)
+				.colormap(emeraldColor)
+				.scale(0.5);
+
+			if (emeraldBlink)
+			{
+				emerald_drawer
+					.flags(V_ADD)
+					.patch(emeraldOverlay);
+
+				if (emeraldUnderlay != nullptr)
+				{
+					emerald_drawer
+						.patch(emeraldUnderlay);
+				}
+			}
+			else
+			{
+				emerald_drawer
+					.patch(emeraldOverlay);
+			}
+		}
+
+		grade_drawer
+			.xy(48, -2)
+			.align(srb2::Draw::Align::kCenter)
+			.font(srb2::Draw::Font::kMenu)
+			.text("TOTAL");
+
+		grade_drawer
+			.xy(48, 8)
+			.align(srb2::Draw::Align::kCenter)
+			.font(srb2::Draw::Font::kThinTimer)
+			.text(va("%d", rank.scoreTotal));
 
 		float sc = 1.0;
 		if (state == PODIUM_ST_GRADE_APPEAR)

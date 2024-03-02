@@ -20,6 +20,8 @@
 #pragma GCC diagnostic ignored "-Wclobbered"
 #endif
 
+#include <filesystem>
+
 #include <unistd.h>
 #endif
 
@@ -575,7 +577,7 @@ void Command_LoadConfig_f(void)
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
-		G_CopyControls(gamecontrol[i], gamecontroldefault, NULL, 0);
+		G_ApplyControlScheme(i, gamecontroldefault);
 	}
 
 	// temporarily reset execversion to default
@@ -629,7 +631,7 @@ void M_FirstLoadConfig(void)
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
-		G_CopyControls(gamecontrol[i], gamecontroldefault, NULL, 0);
+		G_ApplyControlScheme(i, gamecontroldefault);
 	}
 
 	// register execversion here before we load any configs
@@ -673,7 +675,7 @@ void M_FirstLoadConfig(void)
 void M_SaveConfig(const char *filename)
 {
 	FILE *f;
-	char *filepath;
+	char tmppath[2048];
 
 	// make sure not to write back the config until it's been correctly loaded
 	if (!gameconfig_loaded)
@@ -691,17 +693,23 @@ void M_SaveConfig(const char *filename)
 		// append srb2home to beginning of filename
 		// but check if srb2home isn't already there, first
 		if (!strstr(filename, srb2home))
-			filepath = va(pandf,srb2home, filename);
-		else
-			filepath = Z_StrDup(filename);
-
-		f = fopen(filepath, "w");
-		// change it only if valid
-		if (f)
-			strcpy(configfile, filepath);
+		{
+			sprintf(tmppath, "%s" PATHSEP "%s.tmp", srb2home, filename);
+		}
 		else
 		{
-			CONS_Alert(CONS_ERROR, M_GetText("Couldn't save game config file %s\n"), filepath);
+			sprintf(tmppath, "%s", filename);
+		}
+
+		f = fopen(tmppath, "w");
+		// change it only if valid
+		if (f)
+		{
+			strcpy(configfile, tmppath);
+		}
+		else
+		{
+			CONS_Alert(CONS_ERROR, M_GetText("Couldn't save game config file %s\n"), tmppath);
 			return;
 		}
 	}
@@ -713,7 +721,9 @@ void M_SaveConfig(const char *filename)
 			return;
 		}
 
-		f = fopen(configfile, "w");
+		sprintf(tmppath, "%s.tmp", configfile);
+
+		f = fopen(tmppath, "w");
 		if (!f)
 		{
 			CONS_Alert(CONS_ERROR, M_GetText("Couldn't save game config file %s\n"), configfile);
@@ -738,6 +748,24 @@ void M_SaveConfig(const char *filename)
 	}
 
 	fclose(f);
+
+	{
+		// Atomically replace the old config once the new one has been written.
+
+		namespace fs = std::filesystem;
+
+		fs::path tmp{tmppath};
+		fs::path real{configfile};
+
+		try
+		{
+			fs::rename(tmp, real);
+		}
+		catch (const fs::filesystem_error& ex)
+		{
+			CONS_Alert(CONS_ERROR, M_GetText("Failed to move temp config file to real destination\n"));
+		}
+	}
 }
 
 // ==========================================================================
@@ -2276,7 +2304,7 @@ static UINT32 tokenizerInputLength = 0;
 static UINT8 tokenizerInComment = 0; // 0 = not in comment, 1 = // Single-line, 2 = /* Multi-line */
 static boolean tokenizerIsString = false; // did we strip quotes from this token?
 
-void M_TokenizerOpen(const char *inputString)
+void M_TokenizerOpen(const char *inputString, size_t inputLength)
 {
 	size_t i;
 
@@ -2286,7 +2314,7 @@ void M_TokenizerOpen(const char *inputString)
 		tokenCapacity[i] = 1024;
 		tokenizerToken[i] = (char*)Z_Malloc(tokenCapacity[i] * sizeof(char), PU_STATIC, NULL);
 	}
-	tokenizerInputLength = strlen(tokenizerInput);
+	tokenizerInputLength = inputLength;
 }
 
 void M_TokenizerClose(void)

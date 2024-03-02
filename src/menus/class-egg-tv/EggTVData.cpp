@@ -237,7 +237,7 @@ EggTVData::Replay::Replay(Folder::Cache::ReplayRef& ref) : ref_(&ref)
 
 	if (info.gametype == GT_RACE)
 	{
-		gametype_ = Gametype(GT_RACE, Gametype::Race {
+		gametype_ = Gametype(GT_RACE, info.gp, Gametype::Race {
 			info.numlaps,
 			kartspeed_cons_t[(info.kartspeed & ~(DF_ENCORE)) + 1].strvalue,
 			(info.kartspeed & DF_ENCORE) != 0,
@@ -245,7 +245,7 @@ EggTVData::Replay::Replay(Folder::Cache::ReplayRef& ref) : ref_(&ref)
 	}
 	else
 	{
-		gametype_ = Gametype(info.gametype);
+		gametype_ = Gametype(info.gametype, info.gp);
 	}
 
 	for (const auto& data : info.standings)

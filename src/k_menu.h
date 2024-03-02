@@ -497,10 +497,7 @@ typedef enum
 	mpause_tryagain,
 
 	mpause_continue,
-	mpause_spectate,
-	mpause_entergame,
-	mpause_canceljoin,
-	mpause_spectatemenu,
+	mpause_spectatetoggle,
 	mpause_psetup,
 	mpause_cheats,
 	mpause_options,
@@ -906,6 +903,7 @@ void M_ReplayTimeAttack(INT32 choice);
 void M_HandleStaffReplay(INT32 choice);
 void M_SetGuestReplay(INT32 choice);
 void M_TimeAttackTick(void);
+boolean M_EncoreAttackTogglePermitted(void);
 boolean M_TimeAttackInputs (INT32 choice);
 
 // MP selection
@@ -966,6 +964,7 @@ struct modedesc_t
 #define MAXCOLUMNMODES   12     //max modes displayed in one column
 #define MAXMODEDESCS     (MAXCOLUMNMODES*3)
 #define M_OPTIONS_OFSTIME 5
+#define M_OPTIONS_BINDBEN_QUICK 106
 // Keep track of some options properties
 extern struct optionsmenu_s {
 
@@ -996,8 +995,10 @@ extern struct optionsmenu_s {
 	// This is only applied to the profile when you exit out of the controls menu.
 
 	INT16 controlscroll;		// scrolling for the control menu....
-	UINT8 bindcontrol;			// 0: not binding, 1: binding control #1, 2: binding control #2
 	INT16 bindtimer;			// Timer until binding is cancelled (5s)
+	UINT16 bindben;				// Hold right timer
+	UINT8 bindben_swallow;		// (bool) control is about to be cleared; (int) swallow/pose animation timer
+	INT32 bindinputs[MAXINPUTMAPPING]; // Set while binding
 
 	INT16 trycontroller;		// Starts at 3*TICRATE, holding B lowers this, when at 0, cancel controller try mode.
 
@@ -1068,6 +1069,8 @@ boolean M_ProfileEditInputs(INT32 ch);
 void M_HandleProfileControls(void);
 boolean M_ProfileControlsInputs(INT32 ch);
 void M_ProfileSetControl(INT32 ch);
+void M_ProfileDefaultControls(INT32 ch);
+void M_ProfileClearControls(INT32 ch);
 
 void M_MapProfileControl(event_t *ev);
 void M_ProfileTryController(INT32 choice);
@@ -1145,6 +1148,8 @@ extern struct pausemenu_s {
 
 	menu_anim_t openoffset;	// Used when you open / close the menu to slide everything in.
 	boolean closing;		// When this is set, the open offset goes backwards to close the menu smoothly.
+
+	UINT8 splitscreenfocusid; // This is not exclusively visual, but thog dont care. For selecting splitscreen players to individually change their spectator state.
 } pausemenu;
 
 void M_OpenPauseMenu(void);
@@ -1168,9 +1173,7 @@ extern consvar_t cv_dummyspectator;
 void M_RestartMap(INT32 choice);				// Restart level (MP)
 void M_TryAgain(INT32 choice);					// Try again (SP)
 void M_GiveUp(INT32 choice);					// Give up (SP)
-void M_ConfirmSpectate(INT32 choice);			// Spectate confirm when you're alone
-void M_ConfirmEnterGame(INT32 choice);			// Enter game confirm when you're alone
-void M_ConfirmSpectateChange(INT32 choice);		// Splitscreen spectate/play menu func
+void M_HandleSpectateToggle(INT32 choice);		// Spectate confirm
 void M_EndGame(INT32 choice);					// Quitting to title
 
 // Replay Playback

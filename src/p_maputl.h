@@ -46,13 +46,13 @@ boolean P_PathTraverse(fixed_t px1, fixed_t py1, fixed_t px2, fixed_t py2,
 	INT32 pflags, traverser_t ptrav);
 
 #define P_AproxDistance(dx, dy) FixedHypot(dx, dy)
-void P_ClosestPointOnLine(fixed_t x, fixed_t y, line_t *line, vertex_t *result);
+void P_ClosestPointOnLine(fixed_t x, fixed_t y, const line_t *line, vertex_t *result);
 void P_ClosestPointOnLine3D(const vector3_t *p, const vector3_t *line, vector3_t *result);
-INT32 P_PointOnLineSide(fixed_t x, fixed_t y, line_t *line);
-void P_MakeDivline(line_t *li, divline_t *dl);
+INT32 P_PointOnLineSide(fixed_t x, fixed_t y, const line_t *line);
+void P_MakeDivline(const line_t *li, divline_t *dl);
 void P_CameraLineOpening(line_t *plinedef, opening_t *open);
-fixed_t P_InterceptVector(divline_t *v2, divline_t *v1);
-INT32 P_BoxOnLineSide(fixed_t *tmbox, line_t *ld);
+fixed_t P_InterceptVector(const divline_t *v2, const divline_t *v1);
+INT32 P_BoxOnLineSide(const fixed_t *tmbox, const line_t *ld);
 line_t * P_FindNearestLine(const fixed_t x, const fixed_t y, const sector_t *, const INT32 special);
 void P_UnsetPrecipThingPosition(precipmobj_t *thing);
 void P_SetPrecipitationThingPosition(precipmobj_t *thing);
@@ -89,11 +89,10 @@ typedef enum
 boolean P_BlockLinesIterator(INT32 x, INT32 y, BlockItReturn_t(*func)(line_t *));
 boolean P_BlockThingsIterator(INT32 x, INT32 y, BlockItReturn_t(*func)(mobj_t *));
 
-#define PT_ADDLINES     1
-#define PT_ADDTHINGS    2
-#define PT_EARLYOUT     4
+#define PT_ADDLINES		(1)
+#define PT_ADDTHINGS	(2)
 
-extern divline_t trace;
+extern divline_t g_trace;
 
 // call your user function for each line of the blockmap in the
 // bbox defined by the radius

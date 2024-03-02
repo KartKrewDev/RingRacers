@@ -83,15 +83,15 @@ CV_PossibleValue_t CV_TrueFalse[] = {{0, "False"}, {1, "True"}, {0, NULL}};
 // SRB2kart
 CV_PossibleValue_t kartspeed_cons_t[] = {
 	{KARTSPEED_AUTO, "Auto"},
-	{KARTSPEED_EASY, "Easy"},
-	{KARTSPEED_NORMAL, "Normal"},
-	{KARTSPEED_HARD, "Hard"},
+	{KARTSPEED_EASY, "Gear 1"},
+	{KARTSPEED_NORMAL, "Gear 2"},
+	{KARTSPEED_HARD, "Gear 3"},
 	{0, NULL}
 };
 CV_PossibleValue_t dummykartspeed_cons_t[] = {
-	{KARTSPEED_EASY, "Easy"},
-	{KARTSPEED_NORMAL, "Normal"},
-	{KARTSPEED_HARD, "Hard"},
+	{KARTSPEED_EASY, "Gear 1"},
+	{KARTSPEED_NORMAL, "Gear 2"},
+	{KARTSPEED_HARD, "Gear 3"},
 	{0, NULL}
 };
 CV_PossibleValue_t gpdifficulty_cons_t[] = {
@@ -341,7 +341,7 @@ static const char *com_null_string = "";
 static char *com_args = NULL; // current command args or NULL
 static int com_flags;
 
-static void Got_NetVar(UINT8 **p, INT32 playernum);
+static void Got_NetVar(const UINT8 **p, INT32 playernum);
 
 /** Initializes command buffer and adds basic commands.
   */
@@ -1749,16 +1749,16 @@ badinput:
 static boolean serverloading = false;
 
 static consvar_t *
-ReadNetVar (UINT8 **p, char **return_value, boolean *return_stealth)
+ReadNetVar (const UINT8 **p, const char **return_value, boolean *return_stealth)
 {
 	UINT16  netid;
-	char   *val;
+	const char   *val;
 	boolean stealth;
 
 	consvar_t *cvar;
 
 	netid   = READUINT16 (*p);
-	val     = (char *)*p;
+	val     = (const char *)*p;
 	SKIPSTRING (*p);
 	stealth = READUINT8  (*p);
 
@@ -1778,17 +1778,17 @@ ReadNetVar (UINT8 **p, char **return_value, boolean *return_stealth)
 }
 
 static consvar_t *
-ReadDemoVar (UINT8 **p, char **return_value, boolean *return_stealth)
+ReadDemoVar (const UINT8 **p, const char **return_value, boolean *return_stealth)
 {
-	char   *name;
-	char   *val;
+	const char   *name;
+	const char   *val;
 	boolean stealth;
 
 	consvar_t *cvar;
 
-	name    = (char *)*p;
+	name    = (const char *)*p;
 	SKIPSTRING (*p);
-	val     = (char *)*p;
+	val     = (const char *)*p;
 	SKIPSTRING (*p);
 	stealth = READUINT8  (*p);
 
@@ -1805,10 +1805,10 @@ ReadDemoVar (UINT8 **p, char **return_value, boolean *return_stealth)
 	return cvar;
 }
 
-static void Got_NetVar(UINT8 **p, INT32 playernum)
+static void Got_NetVar(const UINT8 **p, INT32 playernum)
 {
 	consvar_t *cvar;
-	char *svalue;
+	const char *svalue;
 	boolean stealth;
 
 	if (playernum != serverplayer && !IsPlayerAdmin(playernum) && !serverloading)
@@ -1858,15 +1858,16 @@ void CV_SaveVars(UINT8 **p, boolean in_demo)
 	WRITEUINT16(count_p, count);
 }
 
-static void CV_LoadVars(UINT8 **p,
-		consvar_t *(*got)(UINT8 **p, char **ret_value, boolean *ret_stealth))
+static size_t CV_LoadVars(const UINT8 *bufstart,
+		consvar_t *(*got)(const UINT8 **p, const char **ret_value, boolean *ret_stealth))
 {
+	const UINT8 *p = bufstart;
 	const boolean store = (client || demo.playback);
 
 	consvar_t *cvar;
 	UINT16 count;
 
-	char *val;
+	const char *val;
 	boolean stealth;
 
 	// prevent "invalid command received"
@@ -1887,16 +1888,18 @@ static void CV_LoadVars(UINT8 **p,
 		}
 	}
 
-	count = READUINT16(*p);
+	count = READUINT16(p);
 	while (count--)
 	{
-		cvar = (*got)(p, &val, &stealth);
+		cvar = (*got)(&p, &val, &stealth);
 
 		if (cvar)
 			Setvalue(cvar, val, stealth);
 	}
 
 	serverloading = false;
+
+	return p - bufstart;
 }
 
 void CV_RevertNetVars(void)
@@ -1928,14 +1931,14 @@ void CV_RevertNetVars(void)
 	}
 }
 
-void CV_LoadNetVars(UINT8 **p)
+size_t CV_LoadNetVars(const UINT8 *p)
 {
-	CV_LoadVars(p, ReadNetVar);
+	return CV_LoadVars(p, ReadNetVar);
 }
 
-void CV_LoadDemoVars(UINT8 **p)
+size_t CV_LoadDemoVars(const UINT8 *p)
 {
-	CV_LoadVars(p, ReadDemoVar);
+	return CV_LoadVars(p, ReadDemoVar);
 }
 
 static void CV_SetCVar(consvar_t *var, const char *value, boolean stealth);
@@ -2030,7 +2033,7 @@ static void CV_SetCVar(consvar_t *var, const char *value, boolean stealth)
 
 		if (var == &cv_kartspeed && !M_SecretUnlocked(SECRET_HARDSPEED, false))
 		{
-			if (!stricmp(value, "Hard") || atoi(value) >= KARTSPEED_HARD)
+			if (!stricmp(value, "Gear 3") || atoi(value) >= KARTSPEED_HARD)
 			{
 				CONS_Printf(M_GetText("You haven't unlocked this yet!\n"));
 				return;

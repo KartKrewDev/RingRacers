@@ -2162,6 +2162,14 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_FLAYM2",
 	"S_FLAYM3",
 	"S_FLAYM4",
+	"S_PALMTREE2",
+	"S_PURPLEFLOWER1",
+	"S_PURPLEFLOWER2",
+	"S_YELLOWFLOWER1",
+	"S_YELLOWFLOWER2",
+	"S_PLANT2",
+	"S_PLANT3",
+	"S_PLANT4",
 
 	// Chaotix Big Ring
 	"S_BIGRING01",
@@ -3005,6 +3013,10 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 
 	// MT_STARSTREAM
 	"S_STARSTREAM",
+
+	// MT_SCRIPT_THING
+	"S_TALKPOINT",
+	"S_TALKPOINT_ORB",
 };
 
 // RegEx to generate this from info.h: ^\tMT_([^,]+), --> \t"MT_\1",
@@ -3584,6 +3596,15 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_FLAYM",
 
+	"MT_PALMTREE2",
+	"MT_PURPLEFLOWER1",
+	"MT_PURPLEFLOWER2",
+	"MT_YELLOWFLOWER1",
+	"MT_YELLOWFLOWER2",
+	"MT_PLANT2",
+	"MT_PLANT3",
+	"MT_PLANT4",
+
 	"MT_BIGRING",
 
 	"MT_ARKARROW", // Ark Arrows
@@ -3726,6 +3747,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_CHECKPOINT_END",
 	"MT_SCRIPT_THING",
+	"MT_SCRIPT_THING_ORB",
 
 	"MT_RIDEROID",
 	"MT_RIDEROIDNODE",
@@ -3989,7 +4011,7 @@ const char *const PLAYERFLAG_LIST[] = {
 
 	"RINGLOCK", // Prevent picking up rings while SPB is locked on
 
-	"LITESTEER", // Shallow digital turn with DOWN
+	"ANALOGSTICK", // This player is using an analog joystick
 	"\x01", // Free
 	"\x01", // Free
 	"\x01", // Free

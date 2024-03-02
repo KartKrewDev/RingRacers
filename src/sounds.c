@@ -566,7 +566,7 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"s3ka2",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Launch"},
   {"s3ka3",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Rising charge"},
   {"s3ka4",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Powering up"},
-  {"s3ka5",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"s3ka5",  false,  64,  16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // bufo x8away
   {"s3ka6",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Attraction fizzle"},
   {"s3ka7",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Countdown beep"},
   {"s3ka8",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Energy"},
@@ -1263,6 +1263,8 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"ssbmpr",  false,  64,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, "UNDESCRIBED SSBMPR"}, // SF_X4AWAYSOUND
   {"chcrun",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "UNDESCRIBED CHCRUN"},
 
+  {"hint",    false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Hint Ring"},
+
   // Damage sounds
   {"dmga1",  false, 255, 8, -1, NULL, 0,         -1,  -1, LUMPERROR, "Damaged"},
   {"dmga2",  false, 255, 8, -1, NULL, 0,         -1,  -1, LUMPERROR, "Damaged"},
@@ -1402,7 +1404,6 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"krti12", false,  48, 65, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
 
   // Gunstar Heroes
-  // Gunstar Heroes
   {"gsha0", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gsha1", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gsha2", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
@@ -1448,7 +1449,7 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"gshc4", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshc5", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshc6", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
-  {"gshc7", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"gshc7", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, //x8away
   {"gshc8", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshc9", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshca", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
@@ -1496,6 +1497,20 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"cftbl0", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"cftbl1", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"cftbl2", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  
+  // Generic menu SFX
+  {"tmxatt", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Attention
+  {"tmxawd", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Award
+  {"tmxbak", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Back
+  {"tmxdsm", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Dismiss
+  {"tmxerr", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Error
+  {"tmxfwd", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Forward
+  {"tmxnah", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // "Nah"
+  {"tmxqst", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Question
+  {"tmxsuc", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Success
+  {"tmxunx", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Unexpected item in bagging area
+  {"tmxbdn", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Button down
+  {"tmxbup", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Button up
 
   // SRB2kart - Skin sounds
   {"kwin",   false,  64, 96, -1, NULL, 0,   SKSKWIN,  -1, LUMPERROR, ""},
