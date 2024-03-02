@@ -100,6 +100,7 @@ extern consvar_t cv_battletest;
 
 extern consvar_t cv_mentalsonic;
 extern consvar_t cv_shittysigns;
+extern consvar_t cv_4thgear;
 
 typedef enum {
 	CV_CAPSULETEST_OFF,

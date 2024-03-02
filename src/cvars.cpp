@@ -787,6 +787,8 @@ consvar_t cv_votetime = UnsavedNetVar("votetime", "20").min_max(10, 3600);
 // Cheats don't save...
 //
 
+consvar_t cv_4thgear = OnlineCheat("4thgear", "Off").values(CV_OnOff).flags(CV_NOSHOWHELP).description("Surpassing your limits!");
+
 consvar_t cv_barriertime = OnlineCheat("barriertime", "30").values(CV_Natural).description("How long it takes for the Barrier to shrink in Battle Overtime");
 consvar_t cv_battlespawn = OnlineCheat("battlespawn", "0").values(CV_Unsigned).description("Spawn every player at the same spawnpoint in Battle (0 = random spawns)");
 consvar_t cv_battletest = OnlineCheat("battletest", "Off").on_off().description("Free Play goes to Battle instead of Prisons");
