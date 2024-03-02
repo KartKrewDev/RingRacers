@@ -2007,7 +2007,8 @@ Command_LeaveParty_f (void)
 // UINT8 *demofile; // demo file buffer
 static void Command_Playdemo_f(void)
 {
-	char name[256];
+	const char *arg1 = NULL;
+	menudemo_t menudemo = {0};
 
 	if (COM_Argc() < 2)
 	{
@@ -2026,30 +2027,44 @@ static void Command_Playdemo_f(void)
 		return;
 	}
 
+	arg1 = COM_Argv(1);
+
+	// Internal if no extension, external if one exists
+	if (FIL_CheckExtension(arg1))
+	{
+		// External demos must be checked first
+		sprintf(menudemo.filepath, "%s" PATHSEP "%s", srb2home, arg1);
+		G_LoadDemoInfo(&menudemo, /*allownonmultiplayer*/ true);
+
+		if (menudemo.type != MD_LOADED)
+		{
+			// Do nothing because the demo can't be played
+			CONS_Alert(CONS_ERROR, "Unable to playdemo %s", menudemo.filepath);
+			return;
+		}
+	}
+	else
+	{
+		strlcpy(menudemo.filepath, arg1, sizeof(menudemo.filepath));
+	}
+
 	// disconnect from server here?
 	if (demo.playback)
 		G_StopDemo();
 
-	// open the demo file
-	strcpy(name, COM_Argv(1));
-	// dont add .lmp so internal game demos can be played
-
-	CONS_Printf(M_GetText("Playing back demo '%s'.\n"), name);
+	CONS_Printf(M_GetText("Playing back demo '%s'.\n"), menudemo.filepath);
 
 	demo.loadfiles = strcmp(COM_Argv(2), "-addfiles") == 0;
 	demo.ignorefiles = strcmp(COM_Argv(2), "-force") == 0;
 
-	// Internal if no extension, external if one exists
-	// If external, convert the file name to a path in SRB2's home directory
-	if (FIL_CheckExtension(name))
-		G_DoPlayDemo(va("%s"PATHSEP"%s", srb2home, name));
-	else
-		G_DoPlayDemo(name);
+	G_DoPlayDemo(menudemo.filepath);
 }
 
 static void Command_Timedemo_f(void)
 {
 	size_t i = 0;
+	const char *arg1 = NULL;
+	menudemo_t menudemo = {0};
 
 	if (COM_Argc() < 2)
 	{
@@ -2063,13 +2078,32 @@ static void Command_Timedemo_f(void)
 		return;
 	}
 
+	arg1 = COM_Argv(1);
+
+	// Internal if no extension, external if one exists
+	if (FIL_CheckExtension(arg1))
+	{
+		// External demos must be checked first
+		sprintf(menudemo.filepath, "%s" PATHSEP "%s", srb2home, arg1);
+		G_LoadDemoInfo(&menudemo, /*allownonmultiplayer*/ true);
+
+		if (menudemo.type != MD_LOADED)
+		{
+			// Do nothing because the demo can't be played
+			CONS_Alert(CONS_ERROR, "Unable to timedemo %s", menudemo.filepath);
+			return;
+		}
+
+		strlcpy(timedemo_name, menudemo.filepath, sizeof(timedemo_name));
+	}
+	else
+	{
+		strlcpy(timedemo_name, arg1, sizeof(timedemo_name));
+	}
+
 	// disconnect from server here?
 	if (demo.playback)
 		G_StopDemo();
-
-	// open the demo file
-	strcpy (timedemo_name, COM_Argv(1));
-	// dont add .lmp so internal game demos can be played
 
 	// print timedemo results as CSV?
 	i = COM_CheckParm("-csv");
