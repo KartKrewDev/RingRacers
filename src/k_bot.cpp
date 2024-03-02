@@ -581,7 +581,7 @@ fixed_t K_BotRubberband(const player_t *player)
 	const fixed_t rubberBase = Easing_OutSine(
 		difficultyEase,
 		FRACUNIT * 65 / 100,
-		FRACUNIT * 10 / 10
+		FRACUNIT * 105 / 100
 	);
 
 	// +/- x0.25
