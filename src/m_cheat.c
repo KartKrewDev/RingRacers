@@ -179,7 +179,7 @@ static UINT8 cheatf_mentalsonic(void)
 
 static UINT8 cheatf_shittysigns(void)
 {
-	cv_shittysigns.value = !(cv_shittysigns.value);
+	CV_SetValue(&cv_shittysigns, !cv_shittysigns.value);
 	if (cv_shittysigns.value)
 	{
 		S_StartSound(NULL, sfx_mixup);
