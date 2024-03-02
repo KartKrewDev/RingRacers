@@ -762,7 +762,7 @@ char spr2names[NUMPLAYERSPRITES][5] =
 	"SPIN", // Spinout
 	"DEAD", // Dead
 
-	"SIGN", "SIGL", // Finish signpost
+	"SIGN", "SIGL", "SSIG", // Finish signpost
 	"XTRA", // Three Faces of Darkness
 	"TALK", // Dialogue
 };
@@ -806,6 +806,7 @@ playersprite_t spr2defaults[NUMPLAYERSPRITES] = {
 
 	0, // SPR2_SIGN
 	SPR2_SIGN, // SPR2_SIGL
+	SPR2_SIGN, // SPR2_SSIG
 	0, // SPR2_XTRA
 	0, // SPR2_TALK
 };

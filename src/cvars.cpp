@@ -902,7 +902,8 @@ consvar_t cv_palettenum = PlayerCheat("palettenum", "0").values(CV_Unsigned).onc
 extern CV_PossibleValue_t renderhitbox_cons_t[];
 consvar_t cv_renderhitbox = PlayerCheat("renderhitbox", "Off").values(renderhitbox_cons_t).description("Show hitboxes around objects");
 
-consvar_t cv_mentalsonic = PlayerCheat("mentalsonic", "Off").values(CV_OnOff).flags(CV_HIDDEN).description("Works out at the library");
+consvar_t cv_mentalsonic = Player("mentalsonic", "Off").dont_save().values(CV_OnOff).flags(CV_NOSHOWHELP).description("Works out at the library");
+consvar_t cv_shittysigns = Player("shittysigns", "Off").dont_save().values(CV_OnOff).flags(CV_NOSHOWHELP).description("It's better because it's worse");
 
 //
 // Dummy variables used solely in the menu system.

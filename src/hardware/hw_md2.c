@@ -1186,7 +1186,7 @@ static void HWR_GetBlendedTexture(patch_t *patch, patch_t *blendpatch, INT32 ski
 static boolean HWR_AllowModel(mobj_t *mobj)
 {
 	// Don't allow rendering of model for these.
-	if (mobj->sprite2 == SPR2_XTRA || mobj->sprite2 == SPR2_SIGN || mobj->sprite2 == SPR2_SIGL || mobj->sprite2 == SPR2_TALK)
+	if (mobj->sprite2 == SPR2_XTRA || mobj->sprite2 == SPR2_SIGN || mobj->sprite2 == SPR2_SIGL || mobj->sprite2 == SPR2_SSIG || mobj->sprite2 == SPR2_TALK)
 		return false;
 
 	// Otherwise, render the model.

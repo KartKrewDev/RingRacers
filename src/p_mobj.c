@@ -8912,9 +8912,13 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 					{
 						cur->skin = &skins[newplayer->skin];
 						cur->color = newplayer->skincolor;
+						
 						// Even if we didn't have the Perfect Sign to consider,
 						// it's still necessary to refresh SPR2 on skin changes.
 						P_SetMobjState(cur, (newperfect == true) ? S_KART_SIGL : S_KART_SIGN);
+
+						if (cv_shittysigns.value && cur->state != &states[S_KART_SIGL])
+							cur->sprite2 = P_GetSkinSprite2(&skins[newplayer->skin], SPR2_SSIG, NULL);;
 					}
 				}
 				else if (cur->state == &states[S_SIGN_ERROR])

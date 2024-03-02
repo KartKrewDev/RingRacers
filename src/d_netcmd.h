@@ -99,6 +99,7 @@ extern consvar_t cv_debugrank;
 extern consvar_t cv_battletest;
 
 extern consvar_t cv_mentalsonic;
+extern consvar_t cv_shittysigns;
 
 typedef enum {
 	CV_CAPSULETEST_OFF,
