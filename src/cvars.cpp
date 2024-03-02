@@ -445,7 +445,6 @@ consvar_t cv_showfocuslost = Player("showfocuslost", "Yes").yes_no();
 void R_SetViewSize(void);
 consvar_t cv_showhud = Player("showhud", "Yes").yes_no().onchange(R_SetViewSize).dont_save();
 
-consvar_t cv_showinputjoy = Player("showinputjoy", "Off").on_off().dont_save();
 consvar_t cv_skybox = Player("skybox", "On").on_off();
 
 // Display song credits
