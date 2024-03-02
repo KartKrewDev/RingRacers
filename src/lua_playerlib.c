@@ -287,6 +287,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->gateSound);
 	else if (fastcmp(field,"aizdriftstraft"))
 		lua_pushinteger(L, plr->aizdriftstrat);
+	else if (fastcmp(field,"aizdriftextend"))
+		lua_pushinteger(L, plr->aizdriftextend);
 	else if (fastcmp(field,"aizdrifttilt"))
 		lua_pushinteger(L, plr->aizdrifttilt);
 	else if (fastcmp(field,"aizdriftturn"))

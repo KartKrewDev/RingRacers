@@ -443,6 +443,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].gateSound);
 
 		WRITESINT8(save->p, players[i].aizdriftstrat);
+		WRITESINT8(save->p, players[i].aizdriftextend);
 		WRITEINT32(save->p, players[i].aizdrifttilt);
 		WRITEINT32(save->p, players[i].aizdriftturn);
 
@@ -1025,6 +1026,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].gateSound = READUINT8(save->p);
 
 		players[i].aizdriftstrat = READSINT8(save->p);
+		players[i].aizdriftextend = READSINT8(save->p);
 		players[i].aizdrifttilt = READINT32(save->p);
 		players[i].aizdriftturn = READINT32(save->p);
 

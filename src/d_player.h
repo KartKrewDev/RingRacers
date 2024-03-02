@@ -696,6 +696,7 @@ struct player_t
 	UINT8 gateSound;		// Sound effect combo
 
 	SINT8 aizdriftstrat;	// (-1 to 1) - Let go of your drift while boosting? Helper for the SICK STRATZ (sliptiding!) you have just unlocked
+	SINT8 aizdriftextend;	// Nonzero when you were sliptiding last tic, sign indicates direction.
 	INT32 aizdrifttilt;
 	INT32 aizdriftturn;
 
@@ -953,6 +954,7 @@ struct player_t
 	UINT16 infinitether; // Generic infinitether time, used for infinitether leniency.
 
 	UINT8 finalfailsafe; // When you can't Ringshooter, force respawn as a last ditch effort!
+	UINT8 freeRingShooterCooldown; // Can't use a free Ring Shooter again too soon after respawning.
 
 	UINT8 lastsafelap;
 	UINT8 lastsafecheatcheck;

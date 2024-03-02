@@ -915,7 +915,10 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			return;
 
 		case MT_RINGSHOOTER:
-			Obj_PlayerUsedRingShooter(special, player);
+			if (player->freeRingShooterCooldown)
+				player->pflags |= PF_CASTSHADOW; // you can't use this right now!
+			else
+				Obj_PlayerUsedRingShooter(special, player);
 			return;
 
 		case MT_SUPER_FLICKY:
