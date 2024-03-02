@@ -885,6 +885,9 @@ static void K_HandleDropDash(player_t *player)
 		player->respawn.state = RESPAWNST_NONE;
 
 		player->mo->flags &= ~(MF_NOCLIPTHING);
+
+		// Don't touch another Ring Shooter (still lets you summon a Ring Shooter yourself)
+		player->freeRingShooterCooldown = 2*TICRATE;
 	}
 }
 
