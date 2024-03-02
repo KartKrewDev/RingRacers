@@ -972,7 +972,7 @@ struct player_t
 	UINT8 defenseLockout; // Committed to universal attack/defense, make 'em vulnerable! No whip/guard.
 	UINT8 instaWhipChargeLockout; // Input safety
 	boolean oldGuard;
-	tic_t powerupVFXTimer; // Battle powerup feedback
+	UINT8 powerupVFXTimer; // Battle powerup feedback
 
 	UINT8 preventfailsafe; // Set when taking damage to prevent cheesing eggboxes
 
