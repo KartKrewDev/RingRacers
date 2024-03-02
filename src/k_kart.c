@@ -6729,7 +6729,7 @@ void K_DoInvincibility(player_t *player, tic_t time)
 		S_StartSound(player->mo, sfx_alarmi);
 	}
 
-	player->invincibilitytimer += time;
+	player->invincibilitytimer = max(time, player->invincibilitytimer + 5*TICRATE);
 }
 
 void K_KillBananaChain(mobj_t *banana, mobj_t *inflictor, mobj_t *source)
