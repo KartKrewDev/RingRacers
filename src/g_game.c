@@ -1672,16 +1672,20 @@ void G_ResetView(UINT8 viewnum, INT32 playernum, boolean onlyactive)
 
 	/* Focus our target view first so that we don't take its player. */
 	(*displayplayerp) = playernum;
-	if ((*displayplayerp) != olddisplayplayer)
-	{
-		G_FixCamera(viewnum);
-	}
 
+	/* If a viewpoint changes, reset the camera to clear uninitialized memory. */
 	if (viewnum > splits)
 	{
-		for (viewd = splits+1; viewd < viewnum; ++viewd)
+		for (viewd = splits+1; viewd <= viewnum; ++viewd)
 		{
 			G_FixCamera(viewd);
+		}
+	}
+	else
+	{
+		if ((*displayplayerp) != olddisplayplayer)
+		{
+			G_FixCamera(viewnum);
 		}
 	}
 
