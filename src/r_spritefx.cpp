@@ -23,7 +23,18 @@ INT32 R_ThingLightLevel(mobj_t* thing)
 
 	if (player)
 	{
-		if ((player->instaWhipCharge || player->defenseLockout) && !player->whip && (leveltime & 1))
+		if (player->powerupVFXTimer)
+		{
+			if ((leveltime & 1))
+			{
+				lightlevel -= 255;
+			}
+			else
+			{
+				lightlevel += 255;
+			}
+		}
+		else if ((player->instaWhipCharge || player->defenseLockout) && !player->whip && (leveltime & 1))
 		{
 			// Darken on every other frame of instawhip cooldown
 			lightlevel -= 128;

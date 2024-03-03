@@ -409,7 +409,7 @@ struct botvars_t
 
 typedef enum
 {
-	UFOD_GENERIC	= 1, 
+	UFOD_GENERIC	= 1,
 	UFOD_BOOST		= 1<<1,
 	UFOD_WHIP		= 1<<2,
 	UFOD_BANANA		= 1<<3,
@@ -975,6 +975,7 @@ struct player_t
 	UINT8 defenseLockout; // Committed to universal attack/defense, make 'em vulnerable! No whip/guard.
 	UINT8 instaWhipChargeLockout; // Input safety
 	boolean oldGuard;
+	UINT8 powerupVFXTimer; // Battle powerup feedback
 
 	UINT8 preventfailsafe; // Set when taking damage to prevent cheesing eggboxes
 

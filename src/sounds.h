@@ -1351,6 +1351,14 @@ typedef enum
 	sfx_dmgb3,
 	sfx_dmgb4,
 
+	// Powerup sounds
+	sfx_bpwrua, // Super Power
+	sfx_bpwrub, // Mega Barrier
+	sfx_bpwruc, // Bumper Restock
+	sfx_bpwrud, // Rhythm Badge
+	sfx_bpwrue, // Super Flicky
+	sfx_bpwruf, // Bonus
+
 	// Next up: UNIQUE ENGINE SOUNDS! Hoooooo boy...
 	// Engine class A - Low Speed, Low Weight
 	sfx_krta00,
