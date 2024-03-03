@@ -987,6 +987,7 @@ struct player_t
 
 	INT16 incontrol; // -1 to -175 when spinning out or tumbling, 1 to 175 when not. Use to check for combo hits or emergency inputs.
 	UINT16 progressivethrust; // When getting beat up in GTR_BUMPERS, speed up the longer you've been out of control.
+	UINT8 ringvisualwarning;
 
 	boolean analoginput; // Has an input been recorded that requires analog usage? For input display.
 

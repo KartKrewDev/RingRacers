@@ -8437,6 +8437,20 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 			debtflag->color = player->skincolor;
 			debtflag->fuse = 2;
+
+			if (!(gametyperules & GTR_SPHERES))
+			{
+				P_SetScale(debtflag, 
+					Easing_InQuint(
+						min(FRACUNIT, FRACUNIT*player->ringvisualwarning/(TICRATE*3)),
+						debtflag->scale,
+						debtflag->scale*2
+					)
+				);
+				if (player->ringvisualwarning <= 1)
+					debtflag->renderflags = K_GetPlayerDontDrawFlag(player);
+			}
+				
 		}
 
 		if (player->springstars && (leveltime & 1))
@@ -9011,6 +9025,21 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		if (player->incontrol < 0)
 			player->incontrol = 0;
 		player->incontrol++;
+	}
+
+	if (player->rings <= 0)
+	{
+		if (player->ringvisualwarning > 1)
+			player->ringvisualwarning--;
+	}
+	else
+	{
+		player->ringvisualwarning = 0;
+	}
+
+	if (player->ringvisualwarning == 0 && player->rings <= 0)
+	{
+		player->ringvisualwarning = 6*TICRATE/2;
 	}
 
 	player->incontrol = min(player->incontrol, 5*TICRATE);
