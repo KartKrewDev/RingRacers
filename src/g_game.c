@@ -3933,15 +3933,68 @@ void G_GPCupIntoRoundQueue(cupheader_t *cup, UINT8 setgametype, boolean setencor
 	// At the end of the Cup is a Rank-restricted treat.
 	// So we append it to the end of the roundqueue.
 	// (as long as it exists, of course!)
-	cupLevelNum = cup->cachedlevels[CUPCACHE_SPECIAL];
-	if (cupLevelNum < nummapheaders)
 	{
-		G_MapIntoRoundQueue(
-			cupLevelNum,
-			G_GuessGametypeByTOL(mapheaderinfo[cupLevelNum]->typeoflevel),
-			setencore, // if this isn't correct, Got_Mapcmd will fix it
-			true // Rank-restricted!
-		);
+		// Of course, this last minute game design tweak
+		// has to make things a little complicated. We
+		// basically just make sure they're dispensed
+		// at the intended difficulty sequence until
+		// you've got them all, at which point they
+		// become their intended order permanently.
+		// ~toast 010324
+		cupheader_t *emeraldcup = NULL;
+
+		if (gamedata->sealedswaps[GDMAX_SEALEDSWAPS-1] != NULL // all found
+		|| cup->id >= basenumkartcupheaders // custom content
+		|| M_SecretUnlocked(SECRET_SPECIALATTACK, false)) // true order
+		{
+			// Standard order.
+			emeraldcup = cup;
+		}
+		else
+		{
+			// Determine order from sealedswaps.
+			for (i = 0; (i < GDMAX_SEALEDSWAPS && gamedata->sealedswaps[i]); i++)
+			{
+				if (gamedata->sealedswaps[i] != grandprixinfo.cup)
+					continue;
+
+				// Repeat visit, grab the same ID.
+				break;
+			}
+
+			// If there's pending stars, get them from the associated cup order.
+			if (i < GDMAX_SEALEDSWAPS)
+			{
+				emeraldcup = kartcupheaders;
+				while (emeraldcup)
+				{
+					if (emeraldcup->id >= basenumkartcupheaders)
+					{
+						emeraldcup = NULL;
+						break;
+					}
+
+					if (emeraldcup->emeraldnum == i+1)
+						break;
+
+					emeraldcup = emeraldcup->next;
+				}
+			}
+		}
+
+		if (emeraldcup)
+		{
+			cupLevelNum = emeraldcup->cachedlevels[CUPCACHE_SPECIAL];
+			if (cupLevelNum < nummapheaders)
+			{
+				G_MapIntoRoundQueue(
+					cupLevelNum,
+					G_GuessGametypeByTOL(mapheaderinfo[cupLevelNum]->typeoflevel),
+					setencore, // if this isn't correct, Got_Mapcmd will fix it
+					true // Rank-restricted!
+				);
+			}
+		}
 	}
 
 	if (roundqueue.size == 0)

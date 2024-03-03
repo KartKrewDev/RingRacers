@@ -666,6 +666,7 @@ void M_ClearStats(void)
 	gamedata->majorkeyskipattempted = false;
 	gamedata->enteredtutorialchallenge = false;
 	gamedata->finishedtutorialchallenge = false;
+	gamedata->sealedswapalerted = false;
 	gamedata->musicstate = GDMUSIC_NONE;
 
 	gamedata->importprofilewins = false;
@@ -719,6 +720,8 @@ void M_ClearSecrets(void)
 	{
 		skincolors[i].cache_spraycan = UINT16_MAX;
 	}
+
+	memset(gamedata->sealedswaps, 0, sizeof(gamedata->sealedswaps));
 
 	Z_Free(gamedata->challengegrid);
 	gamedata->challengegrid = NULL;

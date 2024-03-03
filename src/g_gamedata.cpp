@@ -64,6 +64,7 @@ void srb2::save_ng_gamedata()
 	ng.milestones.majorkeyskipattempted = gamedata->majorkeyskipattempted;
 	ng.milestones.finishedtutorialchallenge = gamedata->finishedtutorialchallenge;
 	ng.milestones.enteredtutorialchallenge = gamedata->enteredtutorialchallenge;
+	ng.milestones.sealedswapalerted = gamedata->sealedswapalerted;
 	ng.milestones.gonerlevel = gamedata->gonerlevel;
 	ng.prisons.thisprisoneggpickup = gamedata->thisprisoneggpickup;
 	ng.prisons.prisoneggstothispickup = gamedata->prisoneggstothispickup;
@@ -176,7 +177,7 @@ void srb2::save_ng_gamedata()
 	}
 	for (auto cup = kartcupheaders; cup; cup = cup->next)
 	{
-		if (cup->windata[0].best_placement == 0)
+		if (cup->windata[0].best_placement == 0 && cup->windata[1].got_emerald == false)
 		{
 			continue;
 		}
@@ -227,6 +228,17 @@ void srb2::save_ng_gamedata()
 			cupdata.records.emplace_back(std::move(newrecords));
 		}
 		ng.cups[cupdata.name] = std::move(cupdata);
+	}
+
+	for (int i = 0; (i < GDMAX_SEALEDSWAPS && gamedata->sealedswaps[i]); i++)
+	{
+		srb2::GamedataSealedSwapJson sealedswap {};
+
+		cupheader_t* cup = gamedata->sealedswaps[i];
+
+		sealedswap.name = std::string(cup->name);
+
+		ng.sealedswaps.emplace_back(std::move(sealedswap));
 	}
 
 	std::string gamedataname_s {gamedatafilename};
@@ -418,6 +430,7 @@ void srb2::load_ng_gamedata()
 	gamedata->majorkeyskipattempted = js.milestones.majorkeyskipattempted;
 	gamedata->finishedtutorialchallenge = js.milestones.finishedtutorialchallenge;
 	gamedata->enteredtutorialchallenge = js.milestones.enteredtutorialchallenge;
+	gamedata->sealedswapalerted = js.milestones.sealedswapalerted;
 	gamedata->gonerlevel = js.milestones.gonerlevel;
 	gamedata->thisprisoneggpickup = js.prisons.thisprisoneggpickup;
 	gamedata->prisoneggstothispickup = js.prisons.prisoneggstothispickup;
@@ -717,6 +730,33 @@ void srb2::load_ng_gamedata()
 
 			// Finally, copy into.
 			memcpy(unloadedcup->windata, dummywindata.data(), sizeof(cup->windata));
+		}
+	}
+
+	size_t sealedswaps_size = js.sealedswaps.size();
+	for (size_t i = 0; i < std::min((size_t)GDMAX_SEALEDSWAPS, sealedswaps_size); i++)
+	{
+		cupheader_t* cup = nullptr;
+
+		// Find BASE cups only
+		for (cup = kartcupheaders; cup; cup = cup->next)
+		{
+			if (cup->id >= basenumkartcupheaders)
+			{
+				cup = NULL;
+				break;
+			}
+
+			std::string cupname = std::string(cup->name);
+			if (cupname == js.sealedswaps[i].name)
+			{
+				break;
+			}
+		}
+
+		if (cup)
+		{
+			gamedata->sealedswaps[i] = cup;
 		}
 	}
 

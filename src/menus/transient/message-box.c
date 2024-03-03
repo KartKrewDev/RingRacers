@@ -116,6 +116,9 @@ void M_StopMessage(INT32 choice)
 
 boolean M_MenuMessageTick(void)
 {
+	if (menuwipe)
+		return false;
+
 	if (menumessage.closing)
 	{
 		if (menumessage.closing > MENUMESSAGECLOSE)
