@@ -6747,7 +6747,7 @@ void K_DoInvincibility(player_t *player, tic_t time)
 		S_StartSound(player->mo, sfx_alarmi);
 	}
 
-	player->invincibilitytimer += time;
+	player->invincibilitytimer = time;
 }
 
 void K_KillBananaChain(mobj_t *banana, mobj_t *inflictor, mobj_t *source)
@@ -12134,7 +12134,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								UINT32 behindScaled = behind * TICRATE / 4000;
 								behindScaled = min(behindScaled, 10*TICRATE);
 
-								K_DoInvincibility(player, 10 * TICRATE + behindScaled);
+								K_DoInvincibility(player,
+									max(10u * TICRATE + behindScaled, player->invincibilitytimer + 5u*TICRATE));
 								K_PlayPowerGloatSound(player->mo);
 								player->itemamount--;
 								player->botvars.itemconfirm = 0;

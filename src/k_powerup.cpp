@@ -67,7 +67,7 @@ void K_GivePowerUp(player_t* player, kartitems_t powerup, tic_t time)
 	case POWERUP_SMONITOR:
 		S_StartSound(NULL, sfx_bpwrua);
 		K_AddMessageForPlayer(player, "Got S MONITOR!", true, false);
-		K_DoInvincibility(player, time);
+		K_DoInvincibility(player, player->invincibilitytimer + time);
 		player->powerup.superTimer += time;
 		break;
 
