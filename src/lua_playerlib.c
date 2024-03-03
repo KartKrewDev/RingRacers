@@ -345,6 +345,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->wavedashdelay);
 	else if (fastcmp(field,"wavedashboost"))
 		lua_pushinteger(L, plr->wavedashboost);
+	else if (fastcmp(field,"wavedashpower"))
+		lua_pushinteger(L, plr->wavedashpower);
 	else if (fastcmp(field,"speedpunt"))
 		lua_pushinteger(L, plr->speedpunt);
 	else if (fastcmp(field,"trickcharge"))
@@ -883,6 +885,8 @@ static int player_set(lua_State *L)
 		plr->wavedashdelay = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"wavedashboost"))
 		plr->wavedashboost = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"wavedashpower"))
+		plr->wavedashpower = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"speedpunt"))
 		plr->speedpunt = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"trickcharge"))

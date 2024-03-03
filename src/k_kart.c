@@ -3331,7 +3331,19 @@ static void K_GetKartBoostPower(player_t *player)
 	if (player->wavedashboost)
 	{
 		// NB: This is intentionally under the 25% handleboost threshold required to initiate a sliptide
-		ADDBOOST(8*FRACUNIT/10, 4*FRACUNIT, 2*SLIPTIDEHANDLING/5);  // + 80% top speed, + 400% acceleration, +20% handling
+		ADDBOOST(
+			Easing_InCubic(
+				player->wavedashpower,
+				0,
+				8*FRACUNIT/10
+			),
+			Easing_InSine(
+				player->wavedashpower,
+				0,
+				4*FRACUNIT
+			),
+			2*SLIPTIDEHANDLING/5
+		);  // + 80% top speed (peak), +400% acceleration (peak), +20% handling
 	}
 
 	if (player->spindashboost) // Spindash boost
@@ -4422,7 +4434,7 @@ void K_UpdateStumbleIndicator(player_t *player)
 	}
 }
 
-#define MIN_WAVEDASH_CHARGE ((7*TICRATE/16)*9)
+#define MIN_WAVEDASH_CHARGE ((11*TICRATE/16)*9)
 
 static boolean K_IsLosingWavedash(player_t *player)
 {
@@ -8674,6 +8686,11 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->wavedashboost--;
 	}
 
+	if (player->wavedashboost == 0 || player->wavedashpower > FRACUNIT)
+	{
+		player->wavedashpower = FRACUNIT; // Safety
+	}
+
 	if (player->speedpunt)
 		player->speedpunt--;
 
@@ -10402,6 +10419,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 			{
 				player->driftboost += 20;
 				player->wavedashboost += 10;
+				player->wavedashpower = FRACUNIT;
 				P_Thrust(player->mo, pushdir, player->speed / 2);
 				S_StartSound(player->mo, sfx_gshba);
 				player->trickcharge = 0;
@@ -10647,7 +10665,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 			player->wavedashdelay++;
 			if (player->wavedashdelay > TICRATE/2)
 			{
-				if (player->wavedash >= MIN_WAVEDASH_CHARGE)
+				if (player->wavedash > HIDEWAVEDASHCHARGE)
 				{
 					fixed_t maxZipPower = 2*FRACUNIT;
 					fixed_t minZipPower = 1*FRACUNIT;
@@ -10664,9 +10682,20 @@ static void K_KartDrift(player_t *player, boolean onground)
 					fixed_t yourPower = maxZipPower - FixedMul(yourPowerReduction, powerSpread);
 					int yourBoost = FixedInt(FixedMul(yourPower, player->wavedash/10 * FRACUNIT));
 
+					// Award boost.
 					player->wavedashboost += yourBoost;
 
-					S_StartSoundAtVolume(player->mo, sfx_waved3, 255); // Boost
+					// Set power of the resulting boost.
+					player->wavedashpower = min(FRACUNIT, FRACUNIT * player->wavedash / MIN_WAVEDASH_CHARGE);
+
+					// Scale boost sound to power.
+					S_StartSoundAtVolume(player->mo, sfx_waved3, 
+						Easing_InSine(
+							player->wavedashpower,
+							120,
+							255
+						)
+					);
 
 					K_SpawnDriftBoostExplosion(player, 0);
 				}
@@ -12563,6 +12592,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 										{
 											P_InstaThrust(player->mo, player->mo->angle, player->speed + (80 * mapobjectscale));
 											player->wavedashboost += TICRATE; // Just for keeping speed briefly vs. tripwire etc.
+											player->wavedashpower = FRACUNIT;
 											// If this doesn't turn out to be reliable, I'll change it to directly set leniency or something.
 										}
 										K_PlayAttackTaunt(player->mo);
