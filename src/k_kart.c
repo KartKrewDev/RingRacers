@@ -12448,7 +12448,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
 							{
 								player->itemamount--;
+								K_SetItemOut(player);
 								K_ThrowKartItem(player, true, MT_SPB, 1, 0, 0);
+								K_UnsetItemOut(player);
 								K_PlayAttackTaunt(player->mo);
 								player->botvars.itemconfirm = 0;
 							}
