@@ -12406,6 +12406,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									{
 										INT32 numhogs = min((player->ballhogcharge / BALLHOGINCREMENT), player->itemamount);
 
+										K_SetItemOut(player); // need this to set itemscale
+
 										if (numhogs <= 0)
 										{
 											// no tapfire scams
@@ -12434,6 +12436,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 											K_PlayAttackTaunt(player->mo);
 										}
 
+										K_UnsetItemOut(player);
 										player->ballhogcharge = 0;
 										player->itemflags &= ~IF_HOLDREADY;
 										player->botvars.itemconfirm = 0;
@@ -12772,7 +12775,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						case KITEM_GACHABOM:
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
 							{
+								K_SetItemOut(player); // need this to set itemscale
 								K_ThrowKartItem(player, true, MT_GACHABOM, 0, 0, 0);
+								K_UnsetItemOut(player);
 								K_PlayAttackTaunt(player->mo);
 								player->itemamount--;
 								player->roundconditions.gachabom_miser = (
