@@ -1479,13 +1479,19 @@ static void K_BotItemInstashield(const player_t *player, ticcmd_t *cmd)
 	const fixed_t radius = FixedMul(mobjinfo[MT_INSTAWHIP].radius, player->mo->scale);
 	size_t i = SIZE_MAX;
 
-	if (K_ItemButtonWasDown(player) == true)
-	{
-		// Release the button, dude.
-		return;
-	}
+	boolean nearbyThreat = false; // Someone's near enough to worry about, start charging.
+	boolean attackOpportunity = false; // Someone's close enough to hit!
+	boolean coastIsClear = true; // Nobody is nearby, let any pending charge go.
 
-	if (player->instaWhipCharge || leveltime < starttime || player->spindash)
+	UINT8 stupidRating = MAXBOTDIFFICULTY - player->botvars.difficulty;
+	// Weak bots take a second to react on offense.
+	UINT8 reactiontime = stupidRating;
+ 	// Weak bots misjudge their attack range. Purely accurate at Lv.MAX, 250% overestimate at Lv.1
+	fixed_t radiusWithError = radius + 3*(radius * stupidRating / MAXBOTDIFFICULTY)/2;
+
+	// Future work: Expand threat range versus fast pursuers.
+
+	if (leveltime < starttime || player->spindash || player->defenseLockout)
 	{
 		// Instashield is on cooldown.
 		return;
@@ -1517,18 +1523,41 @@ static void K_BotItemInstashield(const player_t *player, ticcmd_t *cmd)
 			(player->mo->z - target->mo->z) / 4
 		);
 
-		if (dist <= radius)
+		if (dist <= 8 * radius)
 		{
-			K_ItemConfirmForTarget(player, cmd, target, player->botvars.difficulty * 2);
+			coastIsClear = false;
+		}
+
+		if (dist <= 5 * radius)
+		{
+			nearbyThreat = true;
+		}
+
+		if (dist <= (radiusWithError + target->mo->radius))
+		{
+			attackOpportunity = true;
+			K_ItemConfirmForTarget(player, cmd, target, 1);
 		}
 	}
 
-	if (player->botvars.itemconfirm > 10*TICRATE)
+	if (player->instaWhipCharge) // Already charging, do we stay committed?
 	{
-		// Use it!!
-		cmd->buttons |= BT_ATTACK;
-		//player->botvars.itemconfirm = 0;
+		cmd->buttons |= BT_ATTACK; // Keep holding, unless...
+
+		// ...there are no attackers that are even distantly threatening...
+		if (coastIsClear)
+			cmd->buttons &= ~BT_ATTACK;
+
+		// ...or we're ready to rock.
+		if (attackOpportunity && player->instaWhipCharge >= (INSTAWHIP_CHARGETIME + reactiontime) && player->botvars.itemconfirm >= reactiontime)
+			cmd->buttons &= ~BT_ATTACK;
 	}
+	else // When should we get spooked and start a charge?
+	{
+		if (nearbyThreat)
+			cmd->buttons |= BT_ATTACK;
+	}
+
 }
 
 /*--------------------------------------------------
@@ -1800,7 +1829,7 @@ static void K_UpdateBotGameplayVarsItemUsageMash(player_t *player)
 --------------------------------------------------*/
 void K_UpdateBotGameplayVarsItemUsage(player_t *player)
 {
-	if (player->itemflags & IF_USERINGS)
+	if (player->itemflags & IF_USERINGS && !player->instaWhipCharge)
 	{
 		return;
 	}

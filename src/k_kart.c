@@ -8520,6 +8520,17 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	else if (player->rings < -20)
 		player->rings = -20;
 
+	if (cv_kartdebugbotwhip.value)
+	{
+		if (player->bot)
+		{
+			player->rings = 0;
+			player->itemtype = 0;
+			player->itemamount = 0;
+			player->itemRoulette.active = false;
+		}
+	}
+
 	if (player->spheres > 40)
 		player->spheres = 40;
 	// where's the < 0 check? see below the following block!
@@ -11974,6 +11985,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			{
 				S_StartSound(player->mo, sfx_kc50);
 				player->instaWhipCharge = 0;
+				player->botvars.itemconfirm = 0;
 			}
 			else
 			{

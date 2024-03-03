@@ -816,6 +816,8 @@ consvar_t cv_kartdebugbots = OnlineCheat("debugbots", "Off").on_off().descriptio
 consvar_t cv_kartdebugdistribution = OnlineCheat("debugitemodds", "Off").on_off().description("Show items that the roulette can roll");
 consvar_t cv_kartdebughuddrop = OnlineCheat("debugitemdrop", "Off").on_off().description("Players drop paper items when damaged in any way");
 
+consvar_t cv_kartdebugbotwhip = OnlineCheat("debugbotwhip", "Off").on_off().description("Disable bot ring and item pickups");
+
 extern CV_PossibleValue_t kartdebugitem_cons_t[];
 consvar_t cv_kartdebugitem = OnlineCheat("debugitem", "None").values(kartdebugitem_cons_t).description("Force item boxes to only roll one kind of item");
 
