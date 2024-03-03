@@ -8630,7 +8630,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	K_ClearFinishBeamLine();
 
 	// Load the waypoints please!
-	if (gametyperules & GTR_CIRCUIT)
+	if (gametyperules & GTR_CIRCUIT && gamestate != GS_TITLESCREEN)
 	{
 		if (K_SetupWaypointList() == false)
 		{
