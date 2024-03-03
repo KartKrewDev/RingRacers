@@ -1911,6 +1911,8 @@ static void K_HandleLapIncrement(player_t *player)
 {
 	if (player)
 	{
+		if (player->respawn.state == RESPAWNST_MOVE || player->bigwaypointgap)
+			return;
 		if (!G_TimeAttackStart() && leveltime < starttime && !(gametyperules & GTR_ROLLINGSTART))
 		{
 			// freeze 'em until fault penalty is over
@@ -2182,7 +2184,7 @@ static void K_HandleLapDecrement(player_t *player)
 {
 	if (player)
 	{
-		if (player->respawn.state == RESPAWNST_MOVE)
+		if (player->respawn.state == RESPAWNST_MOVE || player->bigwaypointgap)
 			return;
 		if ((player->cheatchecknum == 0) && (player->laps > 0))
 		{
