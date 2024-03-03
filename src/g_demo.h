@@ -227,7 +227,7 @@ void G_DoneLevelLoad(void);
 void G_StopDemo(void);
 boolean G_CheckDemoStatus(void);
 
-void G_LoadDemoInfo(menudemo_t *pdemo);
+void G_LoadDemoInfo(menudemo_t *pdemo, boolean allownonmultiplayer);
 void G_DeferedPlayDemo(const char *demo);
 
 void G_SaveDemo(void);

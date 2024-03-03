@@ -1345,6 +1345,7 @@ boolean G_Responder(event_t *ev)
 			{
 				// stop the title demo
 				G_CheckDemoStatus();
+				demo.attract = DEMO_ATTRACT_OFF;
 				return true;
 			}
 		}

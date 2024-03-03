@@ -8,6 +8,7 @@
 #include "../v_video.h"
 #include "../d_main.h" // srb2home
 #include "../m_misc.h" // M_MkdirEach
+#include "../s_sound.h" // S_StartSound
 #include "../z_zone.h" // Z_StrDup/Z_Free
 #include "../m_cond.h"
 
@@ -433,14 +434,8 @@ void M_HandleStaffReplay(INT32 choice)
 
 void M_ReplayTimeAttack(INT32 choice)
 {
-	const char *which;
-
-	restoreMenu = &PLAY_TimeAttackDef;
-
-	M_ClearMenus(true);
-	demo.loadfiles = false;
-	demo.ignorefiles = true; // Just assume that record attack replays have the files needed
-
+	menudemo_t menudemo = {0};
+	const char *which = NULL;
 	const char *modeprefix = "";
 
 	if (cv_dummyspbattack.value)
@@ -459,11 +454,32 @@ void M_ReplayTimeAttack(INT32 choice)
 			which = "last";
 			break;
 		case tareplay_guest:
-			G_DoPlayDemo(va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s-%sguest.lmp", srb2home, timeattackfolder, G_BuildMapName(levellist.choosemap+1), modeprefix));
-			return;
+			sprintf(menudemo.filepath, "%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s-%sguest.lmp", srb2home, timeattackfolder, G_BuildMapName(levellist.choosemap+1), modeprefix);
+			break;
 	}
 
-	G_DoPlayDemo(va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s-%s-%s%s.lmp", srb2home, timeattackfolder, G_BuildMapName(levellist.choosemap+1), cv_skin[0].string, modeprefix, which));
+	if (which)
+	{
+		sprintf(menudemo.filepath, "%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s-%s-%s%s.lmp", srb2home, timeattackfolder, G_BuildMapName(levellist.choosemap+1), cv_skin[0].string, modeprefix, which);
+	}
+
+	G_LoadDemoInfo(&menudemo, /*allownonmultiplayer*/ true);
+
+	if (menudemo.type != MD_LOADED || menudemo.addonstatus > 0)
+	{
+		// Do nothing because the demo can't be played
+		S_StartSound(NULL, sfx_tmxerr);
+		M_StartMessage("Invalid Replay", "Replay cannot be played on this version of the game", NULL, MM_NOTHING, NULL, "Back");
+		return;
+	}
+
+	restoreMenu = &PLAY_TimeAttackDef;
+
+	M_ClearMenus(true);
+	demo.loadfiles = false;
+	demo.ignorefiles = true; // Just assume that record attack replays have the files needed
+
+	G_DoPlayDemo(menudemo.filepath);
 }
 
 static const char *TA_GuestReplay_Str = NULL;

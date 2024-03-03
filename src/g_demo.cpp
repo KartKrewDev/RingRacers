@@ -2564,7 +2564,7 @@ static bool load_ubjson_standing(menudemo_t* pdemo, tcb::span<std::byte> slice, 
 	return true;
 }
 
-void G_LoadDemoInfo(menudemo_t *pdemo)
+void G_LoadDemoInfo(menudemo_t *pdemo, boolean allownonmultiplayer)
 {
 	savebuffer_t info = {0};
 	UINT8 *extrainfo_p;
@@ -2653,7 +2653,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 	pdemoflags = READUINT16(info.p);
 
 	// temp?
-	if (!(pdemoflags & DF_MULTIPLAYER))
+	if (!(pdemoflags & DF_MULTIPLAYER) && !allownonmultiplayer)
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("%s is not a multiplayer replay and can't be listed on this menu fully yet.\n"), pdemo->filepath);
 		goto badreplay;
@@ -2677,6 +2677,18 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("%s has an invalid skin list.\n"), pdemo->filepath);
 		goto badreplay;
+	}
+
+	if ((pdemoflags & DF_ATTACKMASK))
+	{
+		if ((pdemoflags & ATTACKING_TIME))
+		{
+			info.p += 4; // time
+		}
+		if ((pdemoflags & ATTACKING_LAP))
+		{
+			info.p += 4; // lap
+		}
 	}
 
 	for (i = 0; i < PRNUMSYNCED; i++)
