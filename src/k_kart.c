@@ -11364,7 +11364,7 @@ static void K_KartSpindash(player_t *player)
 
 	if (player->spindash > 0 && (buttons & (BT_DRIFT|BT_BRAKE|BT_ACCELERATE)) != (BT_DRIFT|BT_BRAKE|BT_ACCELERATE))
 	{
-		player->spindashspeed = (player->spindash * FRACUNIT) / MAXCHARGETIME;
+		player->spindashspeed = (min(player->spindash, MAXCHARGETIME) * FRACUNIT) / MAXCHARGETIME;
 		player->spindashboost = TICRATE;
 
 		// if spindash was charged enough, give a small thrust.
