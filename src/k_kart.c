@@ -9891,9 +9891,10 @@ static void K_UpdateDistanceFromFinishLine(player_t *const player)
 				// correct we need to add to it the length of the entire circuit multiplied by the number of laps
 				// left after this one. This will give us the total distance to the finish line, and allow item
 				// distance calculation to work easily
-				if ((mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE) == 0U)
+				const mapheader_t *mapheader = mapheaderinfo[gamemap - 1];
+				if ((mapheader->levelflags & LF_SECTIONRACE) == 0U)
 				{
-					const UINT8 numfulllapsleft = ((UINT8)numlaps - player->laps);
+					const UINT8 numfulllapsleft = ((UINT8)numlaps - player->laps) / mapheader->lapspersection;
 					player->distancetofinish += numfulllapsleft * K_GetCircuitLength();
 				}
 			}

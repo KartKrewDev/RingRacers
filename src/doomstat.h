@@ -509,6 +509,7 @@ struct mapheader_t
 	UINT16 levelflags;					///< LF_flags:  merged booleans into one UINT16 for space, see below
 	UINT32 typeoflevel;					///< Combination of typeoflevel flags.
 	UINT8 numlaps;						///< Number of laps in circuit mode, unless overridden.
+	UINT8 lapspersection;				///< Number of laps per section in hybrid section-circuit maps.
 	fixed_t gravity;					///< Map-wide gravity.
 	char relevantskin[SKINNAMESIZE+1];	///< Skin to use for tutorial (if not provided, uses Eggman.)
 
