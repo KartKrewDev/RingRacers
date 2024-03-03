@@ -9891,9 +9891,10 @@ static void K_UpdateDistanceFromFinishLine(player_t *const player)
 				// correct we need to add to it the length of the entire circuit multiplied by the number of laps
 				// left after this one. This will give us the total distance to the finish line, and allow item
 				// distance calculation to work easily
-				if ((mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE) == 0U)
+				const mapheader_t *mapheader = mapheaderinfo[gamemap - 1];
+				if ((mapheader->levelflags & LF_SECTIONRACE) == 0U)
 				{
-					const UINT8 numfulllapsleft = ((UINT8)numlaps - player->laps);
+					const UINT8 numfulllapsleft = ((UINT8)numlaps - player->laps) / mapheader->lapspersection;
 					player->distancetofinish += numfulllapsleft * K_GetCircuitLength();
 				}
 			}
@@ -9935,18 +9936,27 @@ static void K_UpdatePlayerWaypoints(player_t *const player)
 	UINT32 delta = u32_delta(player->distancetofinish, player->distancetofinishprev);
 	if (player->respawn.state == RESPAWNST_NONE && delta > distance_threshold && old_currentwaypoint != NULL)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "Player %s: waypoint ID %d too far away (%u > %u)\n",
-			sizeu1(player - players), K_GetWaypointID(player->nextwaypoint), delta, distance_threshold);
+		extern consvar_t cv_debuglapcheat;
+#define debug_args "Player %s: waypoint ID %d too far away (%u > %u)\n", \
+		sizeu1(player - players), K_GetWaypointID(player->nextwaypoint), delta, distance_threshold
+		if (cv_debuglapcheat.value)
+			CONS_Printf(debug_args);
+		else
+			CONS_Debug(DBG_GAMELOGIC, debug_args);
+#undef debug_args
 
-		// Distance jump is too great, keep the old waypoints and old distance.
-		player->currentwaypoint = old_currentwaypoint;
-		player->nextwaypoint = old_nextwaypoint;
-		player->distancetofinish = player->distancetofinishprev;
-
-		// Start the auto respawn timer when the distance jumps.
-		if (!player->bigwaypointgap)
+		if (!cv_debuglapcheat.value)
 		{
-			player->bigwaypointgap = 35;
+			// Distance jump is too great, keep the old waypoints and old distance.
+			player->currentwaypoint = old_currentwaypoint;
+			player->nextwaypoint = old_nextwaypoint;
+			player->distancetofinish = player->distancetofinishprev;
+
+			// Start the auto respawn timer when the distance jumps.
+			if (!player->bigwaypointgap)
+			{
+				player->bigwaypointgap = 35;
+			}
 		}
 	}
 	else
