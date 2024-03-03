@@ -2702,9 +2702,11 @@ void V_DrawStringScaled(
 					c -= font->start;
 					if (V_CharacterValid(font, c) == true)
 					{
+						// Remove offsets from patch
+						fixed_t patchxofs = SHORT (font->font[c]->leftoffset) * dupx * FRACUNIT;
 						cw = SHORT (font->font[c]->width) * dupx;
 						cxoff = (*fontspec.dim_fn)(scale, fontspec.chw, hchw, dupx, &cw);
-						V_DrawFixedPatch(cx + cxoff, cy + cyoff, scale,
+						V_DrawFixedPatch(cx + cxoff + patchxofs, cy + cyoff, scale,
 								flags, font->font[c], colormap);
 						cx += cw;
 					}
