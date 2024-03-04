@@ -553,6 +553,12 @@ void F_RunWipe(UINT8 wipemode, UINT8 wipetype, boolean drawMenu, const char *col
 		}
 
 		I_OsPolling();
+		// The event buffer is rather small so we need to
+		// process these events immediately, to make sure
+		// inputs don't get stuck (would happen a lot with
+		// some controllers that send a lot of analog
+		// events).
+		D_ProcessEvents(false);
 		I_UpdateNoBlit();
 
 		if (drawMenu && rendermode != render_none)

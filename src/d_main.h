@@ -50,7 +50,7 @@ void D_PostEvent(const event_t *ev);
 void D_PostEvent_end(void);    // delimiter for locking memory
 #endif
 
-void D_ProcessEvents(void);
+void D_ProcessEvents(boolean callresponders);
 
 const char *D_Home(void);
 
