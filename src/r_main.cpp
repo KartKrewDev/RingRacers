@@ -1617,7 +1617,11 @@ void R_RenderPlayerView(void)
 				{
 					if (top > bot)
 						std::swap(top, bot);
-					UINT8* p = &screens[0][x + top * vid.width];
+					if (top < 0)
+						top = 0;
+					if (bot > viewheight-1)
+						bot = viewheight-1;
+					UINT8* p = &topleft[x + top * vid.width];
 					while (top <= bot)
 					{
 						*p = 35;
@@ -1634,7 +1638,7 @@ void R_RenderPlayerView(void)
 				INT32 bottom = pl->bottom[pl->minx];
 				span(pl->minx, top, bottom);
 				span(pl->maxx, pl->top[pl->maxx], pl->bottom[pl->maxx]);
-				for (INT32 x = pl->minx + 1; x < pl->maxx; ++x)
+				for (INT32 x = pl->minx + 1; x < std::min(pl->maxx, viewwidth); ++x)
 				{
 					INT32 new_top = pl->top[x];
 					INT32 new_bottom = pl->bottom[x];
@@ -1668,14 +1672,14 @@ void R_RenderPlayerView(void)
 			INT32 width = (portal->end - portal->start);
 			INT32 i;
 
-			for (i = 0; i < width; ++i)
+			for (i = 0; i < std::min(width, viewwidth); ++i)
 			{
 				INT32 yl = std::max(portal->ceilingclip[i] + 1, 0);
 				INT32 yh = std::min(static_cast<INT32>(portal->floorclip[i]), viewheight);
 
 				for (; yl < yh; ++yl)
 				{
-					screens[0][portal->start + i + (yl * vid.width)] = pal;
+					topleft[portal->start + i + (yl * vid.width)] = pal;
 				}
 			}
 
