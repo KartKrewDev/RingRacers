@@ -3758,3 +3758,9 @@ const char *M_GetEmblemPatch(emblem_t *em, boolean big)
 
 	return pnamebuf;
 }
+
+boolean M_UseAlternateTitleScreen(void)
+{
+	extern consvar_t cv_alttitle;
+	return cv_alttitle.value && M_SecretUnlocked(SECRET_ALTTITLE, true);
+}
