@@ -19,6 +19,22 @@ menuitem_t OPTIONS_Server[] =
 		NULL, {.cvar = &cv_advertise}, 0, 0},
 
 
+	{IT_HEADER, "Players...", NULL,
+		NULL, {NULL}, 0, 0},
+	
+	{IT_STRING | IT_CVAR, "Maximum Players", "How many players can play at once.",
+		NULL, {.cvar = &cv_maxplayers}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Maximum Connections", "How many players & spectators can connect to the server.",
+		NULL, {.cvar = &cv_maxconnections}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "CPU Difficulty", "Bots can fill unused slots. How strong should they be?",
+		NULL, {.cvar = &cv_kartbot}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Use PWR.LV", "Set whether players should be rated on their performance.",
+		NULL, {.cvar = &cv_kartusepwrlv}, 0, 0},	
+
+
 	{IT_HEADER, "Progression...", NULL,
 		NULL, {NULL}, 0, 0},
 
@@ -32,14 +48,8 @@ menuitem_t OPTIONS_Server[] =
 		NULL, {.cvar = &cv_votetime}, 0, 0},
 
 
-	{IT_HEADER, "Joining...", NULL,
+	{IT_HEADER, "Permissions...", NULL,
 		NULL, {NULL}, 0, 0},
-
-	{IT_STRING | IT_CVAR, "Maximum Players", "How many players can play at once.",
-		NULL, {.cvar = &cv_maxplayers}, 0, 0},
-
-	{IT_STRING | IT_CVAR, "Maximum Connections", "How many players & spectators can connect to the server.",
-		NULL, {.cvar = &cv_maxconnections}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Allow Joining", "Sets whether players can connect to your server.",
 		NULL, {.cvar = &cv_allownewplayer}, 0, 0},
@@ -60,8 +70,7 @@ menuitem_t OPTIONS_Server[] =
 	{IT_STRING | IT_CVAR, "Chat Spam Protection", "Prevents too many message from a single player.",
 		NULL, {.cvar = &cv_chatspamprotection}, 0, 0},
 
-
-	{IT_SPACE | IT_DYBIGSPACE, NULL,  NULL,
+	{IT_HEADER, "Advanced...", NULL,
 		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_SUBMENU, "Advanced...", "Advanced options. Be careful when messing with these!",

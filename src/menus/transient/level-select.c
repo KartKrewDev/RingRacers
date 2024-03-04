@@ -747,7 +747,9 @@ void M_LevelSelected(INT16 add, boolean menuupdate)
 
 			SV_StartSinglePlayerServer(levellist.newgametype, levellist.netgame);
 
-			CV_StealthSet(&cv_kartbot, cv_dummymatchbots.string);
+			if (!levellist.netgame)
+				CV_StealthSet(&cv_kartbot, cv_dummymatchbots.string);
+
 			CV_StealthSet(&cv_kartencore, (cv_dummygpencore.value == 1) ? "On" : "Auto");
 			CV_StealthSet(&cv_kartspeed, (cv_dummykartspeed.value == KARTSPEED_NORMAL) ? "Auto" : cv_dummykartspeed.string);
 
