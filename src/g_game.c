@@ -1191,8 +1191,10 @@ void G_DoLoadLevelEx(boolean resetplayer, gamestate_t newstate)
 	}
 
 	// clear cmd building stuff
-	G_ResetAllDeviceGameKeyDown();
-	G_ResetAllDeviceResponding();
+	// We don't clear them anymore, so you can buffer inputs
+	// on map change / map restart.
+	//G_ResetAllDeviceGameKeyDown();
+	//G_ResetAllDeviceResponding();
 
 	// clear hud messages remains (usually from game startup)
 	CON_ClearHUD();
