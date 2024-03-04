@@ -1093,7 +1093,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 	else
 	{
 
-#ifdef RANGECHECK
+#if 0
 		if (vis->x1test && vis->x2test)
 		{
 			INT32 x1test = vis->x1test;
@@ -1112,7 +1112,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 				CONS_Printf("THE GAME WOULD HAVE CRASHED, %d (old) vs %d (new)\n", (x2test - x1test), (vis->x2 - vis->x1));
 			}
 		}
-#endif // RANGECHECK
+#endif
 
 		// Non-paper drawing loop
 		for (dc.x = vis->x1; dc.x <= vis->x2; dc.x++, frac += vis->xiscale, sprtopscreen += vis->shear.tan)
