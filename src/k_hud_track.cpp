@@ -232,7 +232,7 @@ private:
 
 		case MT_BATTLEUFO_SPAWNER:
 		case MT_WAYPOINT:
-		case MT_BUBBLESHIELD:
+		case MT_BUBBLESHIELDTRAP:
 		case MT_GARDENTOP:
 			return {};
 
@@ -344,10 +344,15 @@ bool is_object_tracking_target(const mobj_t* mobj)
 		return cv_kartdebugwaypoints.value;
 
 	case MT_BUBBLESHIELDTRAP:
-		return mobj->tracer && !P_MobjWasRemoved(mobj->tracer) && mobj->tracer->player && P_IsDisplayPlayer(mobj->tracer->player);
+		return mobj->tracer && !P_MobjWasRemoved(mobj->tracer)
+		&& mobj->tracer->player && P_IsDisplayPlayer(mobj->tracer->player)
+		&& mobj->tracer->player == &players[displayplayers[R_GetViewNumber()]];
 
 	case MT_GARDENTOP:
-		return Obj_GardenTopPlayerNeedsHelp(mobj);
+		return  mobj->tracer && !P_MobjWasRemoved(mobj->tracer)
+			&& mobj->tracer->player && P_IsDisplayPlayer(mobj->tracer->player)
+			&& mobj->tracer->player == &players[displayplayers[R_GetViewNumber()]]
+			&& Obj_GardenTopPlayerNeedsHelp(mobj);
 
 	default:
 		return false;
