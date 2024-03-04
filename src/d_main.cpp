@@ -264,7 +264,7 @@ void HandleGamepadDeviceEvents(event_t *ev)
 // D_ProcessEvents
 // Send all the events of the given timestamp down the responder chain
 //
-void D_ProcessEvents(void)
+void D_ProcessEvents(boolean callresponders)
 {
 	event_t *ev;
 	int i;
@@ -297,6 +297,9 @@ void D_ProcessEvents(void)
 
 		// update keys current state
 		G_MapEventsToControls(ev);
+
+		if (!callresponders)
+			continue; // eat
 
 		// Menu input
 #ifdef HAVE_THREADS
