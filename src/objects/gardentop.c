@@ -47,6 +47,7 @@ enum {
 #define top_waveangle(o) ((o)->movedir)
 /* wavepause will take mobjinfo reactiontime automatically */
 #define top_wavepause(o) ((o)->reactiontime)
+#define top_helpme(o) ((o)->cusval)
 
 #define spark_top(o) ((o)->target)
 #define spark_angle(o) ((o)->movedir)
@@ -133,6 +134,7 @@ init_top
 	top_float(top) = 0;
 	top_sound(top) = sfx_None;
 	top_waveangle(top) = 0;
+	top_helpme(top) = (mode == TOP_ANCHORED) ? 1 : 0;
 }
 
 static void
@@ -190,6 +192,8 @@ spawn_grind_spark (mobj_t *top)
 
 		player = get_rider_player(rider);
 	}
+
+	top_helpme(top) = 0;
 
 	spark = P_SpawnMobjFromMobj(
 			top, x, y, 0, MT_DRIFTSPARK);
@@ -686,4 +690,10 @@ Obj_GardenTopPlayerIsGrinding (const player_t *player)
 	mobj_t *top = K_GetGardenTop(player);
 
 	return top ? is_top_grinding(top) : false;
+}
+
+boolean
+Obj_GardenTopPlayerNeedsHelp (const mobj_t *top)
+{
+	return top ? top_helpme(top) : false;
 }
