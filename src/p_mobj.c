@@ -11290,7 +11290,7 @@ tic_t itemrespawntime[ITEMQUESIZE];
 size_t iquehead, iquetail;
 
 #ifdef PARANOIA
-#define SCRAMBLE_REMOVED // Force debug build to crash when Removed mobj is accessed
+//#define SCRAMBLE_REMOVED // Force debug build to crash when Removed mobj is accessed
 #endif
 void P_RemoveMobj(mobj_t *mobj)
 {
