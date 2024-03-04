@@ -600,6 +600,8 @@ void K_DrawTargetTracking(const TargetTracking& target)
 				.align(Draw::Align::kCenter);
 		};
 
+		srb2::Draw::Font splitfont = (r_splitscreen > 1) ? Draw::Font::kThin : Draw::Font::kMenu;
+
 		switch (target.mobj->type)
 		{
 		case MT_BATTLEUFO_SPAWNER:
@@ -619,13 +621,13 @@ void K_DrawTargetTracking(const TargetTracking& target)
 				.flags(V_SPLITSCREEN)
 				.font(Draw::Font::kMenu)
 				.align(Draw::Align::kCenter)
-				.text(((leveltime/3)%2) ? "\x93    " : "    \x92");
+				.text(((leveltime/3)%2) ? "\xB3    " : "    \xB2");
 			break;
 
 		case MT_GARDENTOP:
 			Draw(FixedToFloat(result.x), FixedToFloat(result.y))
 				.flags(V_SPLITSCREEN)
-				.font(Draw::Font::kMenu)
+				.font(splitfont)
 				.align(Draw::Align::kCenter)
 				.text("Try \xA7!");
 

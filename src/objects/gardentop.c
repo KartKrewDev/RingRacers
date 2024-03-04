@@ -48,6 +48,7 @@ enum {
 /* wavepause will take mobjinfo reactiontime automatically */
 #define top_wavepause(o) ((o)->reactiontime)
 #define top_helpme(o) ((o)->cusval)
+#define top_lifetime(o) ((o)->cvmem)
 
 #define spark_top(o) ((o)->target)
 #define spark_angle(o) ((o)->movedir)
@@ -135,6 +136,7 @@ init_top
 	top_sound(top) = sfx_None;
 	top_waveangle(top) = 0;
 	top_helpme(top) = (mode == TOP_ANCHORED) ? 1 : 0;
+	top_lifetime(top) = 0;
 }
 
 static void
@@ -436,6 +438,8 @@ anchor_top (mobj_t *top)
 	top->momy = 0;
 	top->momz = rider->momz;
 
+	top_lifetime(top)++;
+
 	/* The Z momentum can put the Top slightly ahead of the
 	   player in that axis too. It looks cool if the Top
 	   falls below you but not if it bounces up. */
@@ -695,5 +699,7 @@ Obj_GardenTopPlayerIsGrinding (const player_t *player)
 boolean
 Obj_GardenTopPlayerNeedsHelp (const mobj_t *top)
 {
-	return top ? top_helpme(top) : false;
+	if (top && top_mode(top) != TOP_ANCHORED)
+		return false;
+	return top ? (top_helpme(top) || top_lifetime(top) < 3*TICRATE) : false;
 }
