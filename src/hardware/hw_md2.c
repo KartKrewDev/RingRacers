@@ -570,7 +570,7 @@ void HWR_InitModels(void)
 
 addskinmodel:
 		// add player model
-		s = R_SkinAvailable(skinname);
+		s = R_SkinAvailableEx(skinname, false);
 		if (s != -1)
 		{
 			md2_playermodels[s].skin = s;

@@ -136,15 +136,17 @@ static void Sk_SetDefaultValue(skin_t *skin)
 }
 
 // Grab the default skin
+#define DEFAULTBOTSKINNAME "eggrobo"
 UINT8 R_BotDefaultSkin(void)
 {
 	static INT32 defaultbotskin = -1;
 
+	if (demo.playback)
+		return R_SkinAvailableEx(DEFAULTBOTSKINNAME, true);
+
 	if (defaultbotskin == -1)
 	{
-		const char *defaultbotskinname = "eggrobo";
-
-		defaultbotskin = R_SkinAvailable(defaultbotskinname);
+		defaultbotskin = R_SkinAvailableEx(DEFAULTBOTSKINNAME, false);
 
 		if (defaultbotskin == -1)
 		{
@@ -155,6 +157,7 @@ UINT8 R_BotDefaultSkin(void)
 
 	return (UINT8)defaultbotskin;
 }
+#undef DEFAULTBOTSKINNAME
 
 //
 // Initialize the basic skins
@@ -319,8 +322,27 @@ UINT32 R_GetLocalRandomSkin(void)
 // warning return -1 if not found
 INT32 R_SkinAvailable(const char *name)
 {
+	return R_SkinAvailableEx(name, true);
+}
+
+INT32 R_SkinAvailableEx(const char *name, boolean demoskins)
+{
 	INT32 i;
 	UINT32 hash = quickncasehash(name, SKINNAMESIZE);
+
+	if (demo.playback && demoskins)
+	{
+		for (i = 0; i < demo.numskins; i++)
+		{
+			if (demo.skinlist[i].namehash != hash)
+				continue;
+
+			if (stricmp(demo.skinlist[i].name,name)!=0)
+				continue;
+
+			return i;
+		}
+	}
 
 	for (i = 0; i < numskins; i++)
 	{
@@ -946,7 +968,7 @@ void R_AddSkins(UINT16 wadnum, boolean mainfile)
 			// Others can't go in there because we don't want them to be patchable.
 			if (!stricmp(stoken, "name"))
 			{
-				INT32 skinnum = R_SkinAvailable(value);
+				INT32 skinnum = R_SkinAvailableEx(value, false);
 				strlwr(value);
 				if (skinnum == -1)
 					STRBUFCPY(skin->name, value);
@@ -961,7 +983,7 @@ void R_AddSkins(UINT16 wadnum, boolean mainfile)
 					snprintf(value2, stringspace,
 						"%s%d", value, numskins);
 					value2[stringspace - 1] = '\0';
-					if (R_SkinAvailable(value2) == -1)
+					if (R_SkinAvailableEx(value2, false) == -1)
 						// I'm lazy so if NEW name is already used I leave the 'skin x'
 						// default skin name set in Sk_SetDefaultValue
 						STRBUFCPY(skin->name, value2);
@@ -1141,7 +1163,7 @@ void R_PatchSkins(UINT16 wadnum, boolean mainfile)
 				if (!stricmp(stoken, "name"))
 				{
 					strlwr(value);
-					skinnum = R_SkinAvailable(value);
+					skinnum = R_SkinAvailableEx(value, false);
 					if (skinnum != -1)
 						skin = &skins[skinnum];
 					else

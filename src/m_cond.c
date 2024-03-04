@@ -1206,7 +1206,7 @@ void M_UpdateConditionSetsPending(void)
 				case UCRP_ISCHARACTER:
 				case UCRP_MAKERETIRE:
 				{
-					cn->requirement = R_SkinAvailable(cn->stringvar);
+					cn->requirement = R_SkinAvailableEx(cn->stringvar, false);
 
 					if (cn->requirement < 0)
 					{
@@ -2021,7 +2021,7 @@ static const char *M_GetConditionCharacter(INT32 skin, boolean directlyrequires)
 			for (j = 0; j < SKINRIVALS; j++)
 			{
 				const char *rivalname = skins[i].rivals[j];
-				INT32 rivalnum = R_SkinAvailable(rivalname);
+				INT32 rivalnum = R_SkinAvailableEx(rivalname, false);
 
 				if (rivalnum != skin)
 					continue;
@@ -3504,7 +3504,7 @@ INT32 M_UnlockableSkinNum(unlockable_t *unlock)
 		}
 
 		// Get the skin from the string.
-		skinnum = R_SkinAvailable(unlock->stringVar);
+		skinnum = R_SkinAvailableEx(unlock->stringVar, false);
 		if (skinnum != -1)
 		{
 			unlock->stringVarCache = skinnum;

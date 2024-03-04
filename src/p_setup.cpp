@@ -7850,7 +7850,7 @@ static void P_LoadRecordGhosts(void)
 
 	if (sameGhosts)
 	{
-		INT32 skin = R_SkinAvailable(cv_skin[0].string);
+		INT32 skin = R_SkinAvailableEx(cv_skin[0].string, false);
 		if (skin < 0 || !R_SkinUsable(-1, skin, false))
 			skin = 0; // use default skin
 		add_ghosts(fmt::format("{}-{}{}", gpath, skins[skin].name, modeprefix), sameGhosts);

@@ -203,7 +203,7 @@ static INT16 M_GetMenuCategoryFromFollower(setup_player_t *p)
 static void M_SetupProfileGridPos(setup_player_t *p)
 {
 	profile_t *pr = PR_GetProfile(p->profilen);
-	INT32 i = R_SkinAvailable(pr->skinname);
+	INT32 i = R_SkinAvailableEx(pr->skinname, false);
 	INT32 alt = 0;	// Hey it's my character's name!
 
 	if (i == -1)
@@ -247,7 +247,7 @@ static void M_SetupProfileGridPos(setup_player_t *p)
 
 static void M_SetupMidGameGridPos(setup_player_t *p, UINT8 num)
 {
-	INT32 i = R_SkinAvailable(cv_skin[num].zstring);
+	INT32 i = R_SkinAvailableEx(cv_skin[num].zstring, false);
 	INT32 alt = 0;	// Hey it's my character's name!
 
 	if (i == -1)

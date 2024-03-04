@@ -378,7 +378,7 @@ static int libd_getSprite2Patch(lua_State *L)
 		i = lua_tonumber(L, 1);
 		if (i < 0 || i >= MAXSKINS)
 			return luaL_error(L, "skin number %d out of range (0 - %d)", i, MAXSKINS-1);
-		if (i >= numskins)
+		if (i >= (demo.playback ? demo.numskins : numskins))
 			return 0;
 	}
 	else // find skin by name
@@ -388,6 +388,9 @@ static int libd_getSprite2Patch(lua_State *L)
 		if (i == -1)
 			return 0;
 	}
+
+	if (demo.playback)
+		i = demo.skinlist[i].mapping;
 
 	lua_remove(L, 1); // remove skin now
 
@@ -1040,6 +1043,9 @@ static int libd_getColormap(lua_State *L)
 		if (i != -1) // if -1, just default to TC_DEFAULT as above
 			skinnum = i;
 	}
+
+	if (demo.playback)
+		skinnum = demo.skinlist[skinnum].mapping;
 
 	// all was successful above, now we generate the colormap at last!
 

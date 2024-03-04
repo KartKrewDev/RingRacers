@@ -2064,12 +2064,14 @@ static democharlist_t *G_LoadDemoSkins(savebuffer_t *info, UINT8 *worknumskins, 
 			return NULL;
 		}
 
-		READMEM(info->p, skin, 16);
+		READMEM(info->p, skinlist[i].name, 16);
+		skinlist[i].name[16] = '\0';
+		skinlist[i].namehash = quickncasehash(skinlist[i].name, SKINNAMESIZE);
 		skinlist[i].kartspeed = READUINT8(info->p);
 		skinlist[i].kartweight = READUINT8(info->p);
 		skinlist[i].flags = READUINT32(info->p);
 
-		result = R_SkinAvailable(skin);
+		result = R_SkinAvailableEx(skin, false);
 		if (result == -1)
 		{
 			if (!getclosest)

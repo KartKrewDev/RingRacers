@@ -69,6 +69,8 @@ extern consvar_t cv_recordmultiplayerdemos, cv_netdemosyncquality;
 extern tic_t demostarttime;
 
 struct democharlist_t {
+	char name[17];
+	UINT32 namehash;
 	UINT8 mapping; // No, this isn't about levels. It maps to loaded character ID.
 	UINT8 kartspeed;
 	UINT8 kartweight;

@@ -345,7 +345,7 @@ UINT16 M_GetCvPlayerColor(UINT8 pnum)
 	if (color != SKINCOLOR_NONE)
 		return color;
 
-	INT32 skin = R_SkinAvailable(cv_skin[pnum].string);
+	INT32 skin = R_SkinAvailableEx(cv_skin[pnum].string, false);
 	if (skin == -1)
 		return SKINCOLOR_NONE;
 
@@ -377,7 +377,7 @@ static void M_DrawMenuParty(void)
 	// Despite the work put into it, can't use M_GetCvPlayerColor directly - we need to reference skin always.
 	#define grab_skin_and_colormap(pnum) \
 	{ \
-		skin = R_SkinAvailable(cv_skin[pnum].string); \
+		skin = R_SkinAvailableEx(cv_skin[pnum].string, false); \
 		color = cv_playercolor[pnum].value; \
 		if (skin == -1) \
 			skin = 0; \
@@ -2277,7 +2277,7 @@ void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 	if (p != NULL && p->version)
 	{
 		truecol = p->color;
-		skinnum = R_SkinAvailable(p->skinname);
+		skinnum = R_SkinAvailableEx(p->skinname, false);
 		strcpy(pname, p->profilename);
 	}
 
@@ -6516,7 +6516,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 				INT32 skin = M_UnlockableFollowerNum(ref);
 				if (skin != -1)
 				{
-					INT32 psk = R_SkinAvailable(cv_skin[0].string);
+					INT32 psk = R_SkinAvailableEx(cv_skin[0].string, false);
 					UINT16 col = K_GetEffectiveFollowerColor(followers[skin].defaultcolor, &followers[skin], cv_playercolor[0].value, (psk != -1) ? &skins[psk] : &skins[0]);
 					colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
 					pat = W_CachePatchName(followers[skin].icon, PU_CACHE);
@@ -6775,7 +6775,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 		}
 		case SECRET_FOLLOWER:
 		{
-			INT32 skin = R_SkinAvailable(cv_skin[0].string);
+			INT32 skin = R_SkinAvailableEx(cv_skin[0].string, false);
 			INT32 fskin = M_UnlockableFollowerNum(ref);
 
 			// Draw proximity reference for character
@@ -6806,7 +6806,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			INT32 colorid = M_UnlockableColorNum(ref);
 			if (colorid == SKINCOLOR_NONE)
 				break;
-			INT32 skin = R_SkinAvailable(cv_skin[0].string);
+			INT32 skin = R_SkinAvailableEx(cv_skin[0].string, false);
 			if (skin == -1)
 				skin = 0;
 			colormap = R_GetTranslationColormap(skin, colorid, GTC_MENUCACHE);

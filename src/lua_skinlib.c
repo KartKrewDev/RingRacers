@@ -196,7 +196,7 @@ static int lib_getSkin(lua_State *L)
 	}
 
 	// find skin by name
-	i = R_SkinAvailable(field);
+	i = R_SkinAvailableEx(field, false);
 	if (i != -1)
 	{
 		LUA_PushUserdata(L, &skins[i], META_SKIN);
