@@ -319,6 +319,15 @@ void HU_Init(void)
 		PR   ("PRFN");
 		REG;
 
+		DIM  ('0', 10);
+		DIG  (2);
+
+		PR   ("ROLNUM");
+		REG;
+
+		PR   ("RO4NUM");
+		REG;
+
 		DIG  (3);
 
 		ADIM (KART);

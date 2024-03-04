@@ -308,6 +308,12 @@ int Draw::font_to_fontno(Font font)
 
 	case Font::kMedium:
 		return MED_FONT;
+
+	case Font::kRollingNum:
+		return ROLNUM_FONT;
+
+	case Font::kRollingNum4P:
+		return RO4NUM_FONT;
 	}
 
 	return TINY_FONT;

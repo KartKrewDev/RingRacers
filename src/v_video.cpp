@@ -2342,6 +2342,12 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 		case PINGF_FONT:
 			result->spacew = 3;
 			break;
+		case ROLNUM_FONT:
+			result->spacew = 17;
+			break;
+		case RO4NUM_FONT:
+			result->spacew = 9;
+			break;
 	}
 
 	switch (fontno)
@@ -2372,6 +2378,12 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 		case OPPRF_FONT:
 		case PINGF_FONT:
 			result->lfh = 10;
+			break;
+		case ROLNUM_FONT:
+			result->lfh = 33;
+			break;
+		case RO4NUM_FONT:
+			result->lfh = 15;
 			break;
 	}
 
@@ -2432,6 +2444,8 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 			break;
 		case OPPRF_FONT:
 		case PINGF_FONT:
+		case ROLNUM_FONT:
+		case RO4NUM_FONT:
 			if (result->chw)
 				result->dim_fn = FixedCharacterDim;
 			else
