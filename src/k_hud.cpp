@@ -88,6 +88,7 @@ patch_t *kp_facenum[MAXPLAYERS+1];
 static patch_t *kp_facehighlight[8];
 
 static patch_t *kp_nocontestminimap;
+static patch_t *kp_unknownminimap;
 static patch_t *kp_spbminimap;
 static patch_t *kp_wouldyoustillcatchmeifiwereaworm;
 static patch_t *kp_catcherminimap;
@@ -386,7 +387,7 @@ void K_LoadKartHUDGraphics(void)
 
 	// Special minimap icons
 	HU_UpdatePatch(&kp_nocontestminimap, "MINIDEAD");
-
+	HU_UpdatePatch(&kp_unknownminimap, "HUHMAP");
 	HU_UpdatePatch(&kp_spbminimap, "SPBMMAP");
 
 	HU_UpdatePatch(&kp_wouldyoustillcatchmeifiwereaworm, "MINIPROG");
@@ -4401,6 +4402,9 @@ static void K_drawKartMinimap(void)
 				skin = ((skin_t*)g->mo->skin)-skins;
 			else
 				skin = 0;
+
+			workingPic = R_CanShowSkinInDemo(skin) ? faceprefix[skin][FACE_MINIMAP] : kp_unknownminimap;
+
 			if (g->mo->color)
 			{
 				if (g->mo->colorized)
@@ -4414,7 +4418,7 @@ static void K_drawKartMinimap(void)
 			interpx = R_InterpolateFixed(g->mo->old_x, g->mo->x);
 			interpy = R_InterpolateFixed(g->mo->old_y, g->mo->y);
 
-			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, faceprefix[skin][FACE_MINIMAP], colormap);
+			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, workingPic, colormap);
 			g = g->next;
 		}
 	}
@@ -4470,7 +4474,7 @@ static void K_drawKartMinimap(void)
 			{
 				skin = ((skin_t*)mobj->skin)-skins;
 
-				workingPic = faceprefix[skin][FACE_MINIMAP];
+				workingPic = R_CanShowSkinInDemo(skin) ? faceprefix[skin][FACE_MINIMAP] : kp_unknownminimap;
 
 				if (mobj->color)
 				{
@@ -4666,7 +4670,7 @@ static void K_drawKartMinimap(void)
 		{
 			skin = ((skin_t*)mobj->skin)-skins;
 
-			workingPic = faceprefix[skin][FACE_MINIMAP];
+			workingPic = R_CanShowSkinInDemo(skin) ? faceprefix[skin][FACE_MINIMAP] : kp_unknownminimap;
 
 			if (mobj->color)
 			{

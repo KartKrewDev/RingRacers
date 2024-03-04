@@ -44,6 +44,13 @@ INT32 R_ThingLightLevel(mobj_t* thing)
 		{
 			lightlevel -= 255;
 		}
+
+		if (!R_CanShowSkinInDemo((skin_t*)thing->skin-skins)
+		&& !thing->colorized
+		&& !thing->hitlag)
+		{
+			lightlevel -= 128;
+		}
 	}
 
 	return lightlevel;
