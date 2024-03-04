@@ -1987,8 +1987,13 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 				}
 			}
 
-			workx -= V_ThinStringWidth(stickermedalinfo.targettext, splitflags);
-			V_DrawThinString(workx, worky, splitflags, stickermedalinfo.targettext);
+			using srb2::Draw;
+			Draw::TextElement text(stickermedalinfo.targettext);
+			text.flags(splitflags);
+			text.font(Draw::Font::kZVote);
+
+			workx -= text.width();
+			Draw(workx, worky).text(text);
 		}
 
 		workx -= (6 + (i*5));
@@ -5953,11 +5958,19 @@ void K_drawKartHUD(void)
 	{
 		// Draw the timestamp
 		if (LUA_HudEnabled(hud_time))
-			K_drawKartTimestamp(stplyr->realtime,
-				TIME_X,
-				TIME_Y,
-				V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP|V_SNAPTORIGHT,
-				0);
+		{
+			bool ta = modeattacking && !demo.playback;
+			INT32 flags = V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP|V_SNAPTORIGHT;
+			K_drawKartTimestamp(stplyr->realtime, TIME_X, TIME_Y + (ta ? 2 : 0), flags, 0);
+			if (ta)
+			{
+				using srb2::Draw;
+				Draw(BASEVIDWIDTH - 19, 2)
+					.flags(flags | V_YELLOWMAP)
+					.align(Draw::Align::kRight)
+					.text("\xBE Restart");
+			}
+		}
 
 		islonesome = K_drawKartPositionFaces();
 	}
