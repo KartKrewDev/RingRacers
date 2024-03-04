@@ -7014,7 +7014,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 		{
 			x = 8;
 			y = BASEVIDHEIGHT-16;
-			V_DrawGamemodeString(x, y - 33, 0, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_MENUCACHE), cv_alttitle.string);
+			V_DrawGamemodeString(x, y - 33, 0, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_MENUCACHE), M_UseAlternateTitleScreen() ? "On" : "Off");
 
 			K_drawButtonAnim(x, y, 0, kp_button_a[1], challengesmenu.ticker);
 			x += SHORT(kp_button_a[1][0]->width);
@@ -8202,7 +8202,7 @@ void M_DrawWrongWarp(void)
 		titleoffset += titlewidth;
 	}
 
-	patch_t *bumper = W_CachePatchName((cv_alttitle.value ? "MTSJUMPR1" : "MTSBUMPR1"), PU_CACHE);
+	patch_t *bumper = W_CachePatchName((M_UseAlternateTitleScreen() ? "MTSJUMPR1" : "MTSBUMPR1"), PU_CACHE);
 	V_DrawScaledPatch(x-(SHORT(bumper->width)), (BASEVIDHEIGHT-8)-(SHORT(bumper->height)), 0, bumper);
 }
 

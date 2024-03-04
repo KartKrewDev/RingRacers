@@ -1023,7 +1023,7 @@ static void F_DrawCreditsTitleDrop(void)
 		0, -BASEVIDHEIGHT * (FRACUNIT / 2),
 		FRACUNIT, 0,
 		static_cast<patch_t *>(W_CachePatchName(
-			(cv_alttitle.value ? "KTSJUMPR1" : "KTSBUMPR1"),
+			(M_UseAlternateTitleScreen() ? "KTSJUMPR1" : "KTSBUMPR1"),
 			PU_CACHE
 		)),
 		nullptr

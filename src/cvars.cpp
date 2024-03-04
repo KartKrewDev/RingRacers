@@ -301,10 +301,7 @@ consvar_t cv_addons_search_case = Player("addons_search_case", "No").yes_no();
 consvar_t cv_addons_search_type = Player("addons_search_type", "Anywhere").values({{0, "Start"}, {1, "Anywhere"}});
 consvar_t cv_addons_showall = Player("addons_showall", "No").yes_no();
 consvar_t cv_allowguests = Player("allowguests", "On").on_off();
-
-void AltTitle_OnChange(void);
-consvar_t cv_alttitle = Player("alttitle", "Off").flags(CV_NOSHOWHELP).on_off().onchange_noinit(AltTitle_OnChange);
-
+consvar_t cv_alttitle = Player("alttitle", "Off").on_off();
 consvar_t cv_alwaysgrabmouse = GraphicsDriver("alwaysgrabmouse", "Off").on_off();
 
 consvar_t cv_apng_delay = Player("apng_speed", "1x").values({

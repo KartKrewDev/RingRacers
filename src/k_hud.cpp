@@ -5998,7 +5998,7 @@ void K_drawKartHUD(void)
 			if (demo.attract == DEMO_ATTRACT_TITLE) // Draw logo on title screen demos
 			{
 				INT32 x = BASEVIDWIDTH - 8, y = BASEVIDHEIGHT-8, snapflags = V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SLIDEIN;
-				patch_t *pat = static_cast<patch_t*>(W_CachePatchName((cv_alttitle.value ? "MTSJUMPR1" : "MTSBUMPR1"), PU_CACHE));
+				patch_t *pat = static_cast<patch_t*>(W_CachePatchName((M_UseAlternateTitleScreen() ? "MTSJUMPR1" : "MTSBUMPR1"), PU_CACHE));
 
 				if (r_splitscreen == 3)
 				{

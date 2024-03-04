@@ -5195,19 +5195,6 @@ FUNCNORETURN static ATTRNORETURN void Command_Quit_f(void)
 	I_Quit();
 }
 
-void AltTitle_OnChange(void)
-{
-	if (!cv_alttitle.value)
-		return; // it's fine.
-
-	if (!M_SecretUnlocked(SECRET_ALTTITLE, true))
-	{
-		CONS_Printf(M_GetText("You haven't earned this yet.\n"));
-		CV_StealthSetValue(&cv_alttitle, 0);
-		return;
-	}
-}
-
 void ItemFinder_OnChange(void)
 {
 	if (!cv_itemfinder.value)
