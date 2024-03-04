@@ -20,6 +20,7 @@
 #include "p_local.h"
 #include "r_main.h"
 #include "s_sound.h"
+#include "m_easing.h"
 
 /*--------------------------------------------------
 	void K_AddHitLag(mobj_t *mo, INT32 tics, boolean fromDamage)
@@ -152,7 +153,11 @@ static void K_PlayHitLagSFX(mobj_t *victim, UINT8 tics)
 		soundID = sfx_dmgb1;
 	}
 
-	soundID += ((tics * (NUM_HITLAG_SOUNDS - 1)) + (MAXHITLAGTICS >> 1)) / MAXHITLAGTICS;
+	soundID += Easing_Linear(
+		min(FRACUNIT, FRACUNIT*tics/MAXHITLAGTICS),
+		0,
+		NUM_HITLAG_SOUNDS-1
+	);
 	S_StartSound(victim, soundID);
 }
 
