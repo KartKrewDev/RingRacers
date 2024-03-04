@@ -232,6 +232,8 @@ private:
 
 		case MT_BATTLEUFO_SPAWNER:
 		case MT_WAYPOINT:
+		case MT_BUBBLESHIELDTRAP:
+		case MT_GARDENTOP:
 			return {};
 
 		default:
@@ -341,8 +343,33 @@ bool is_object_tracking_target(const mobj_t* mobj)
 	case MT_WAYPOINT:
 		return cv_kartdebugwaypoints.value;
 
+	case MT_BUBBLESHIELDTRAP:
+		return mobj->tracer && !P_MobjWasRemoved(mobj->tracer)
+		&& mobj->tracer->player && P_IsDisplayPlayer(mobj->tracer->player)
+		&& mobj->tracer->player == &players[displayplayers[R_GetViewNumber()]];
+
+	case MT_GARDENTOP:
+		return  mobj->tracer && !P_MobjWasRemoved(mobj->tracer)
+			&& mobj->tracer->player && P_IsDisplayPlayer(mobj->tracer->player)
+			&& mobj->tracer->player == &players[displayplayers[R_GetViewNumber()]]
+			&& Obj_GardenTopPlayerNeedsHelp(mobj);
+
 	default:
 		return false;
+	}
+}
+
+bool can_object_be_offscreen(const mobj_t* mobj)
+{
+	switch (mobj->type)
+	{
+	// You can see this, you fucking liar
+	case MT_GARDENTOP:
+	case MT_BUBBLESHIELDTRAP:
+		return false;
+
+	default:
+		return true;
 	}
 }
 
@@ -381,7 +408,7 @@ void K_DrawTargetTracking(const TargetTracking& target)
 	const trackingResult_t& result = target.result;
 	int32_t timer = 0;
 
-	if (result.onScreen == false)
+	if (can_object_be_offscreen(target.mobj) && result.onScreen == false)
 	{
 		// Off-screen, draw alongside the borders of the screen.
 		// Probably the most complicated thing.
@@ -578,7 +605,9 @@ void K_DrawTargetTracking(const TargetTracking& target)
 				.align(Draw::Align::kCenter);
 		};
 
-		switch (target.mobj->type) // debug
+		srb2::Draw::Font splitfont = (r_splitscreen > 1) ? Draw::Font::kThin : Draw::Font::kMenu;
+
+		switch (target.mobj->type)
 		{
 		case MT_BATTLEUFO_SPAWNER:
 			debug().text("BUFO ID: {}", Obj_BattleUFOSpawnerID(target.mobj));
@@ -591,6 +620,21 @@ void K_DrawTargetTracking(const TargetTracking& target)
 				debug().flags(isNext ? V_GREENMAP : 0).text("{}", target.mobj->movecount); // waypoint ID
 			}
 			break;
+
+		case MT_BUBBLESHIELDTRAP:
+			Draw(FixedToFloat(result.x), FixedToFloat(result.y))
+				.flags(V_SPLITSCREEN)
+				.font(Draw::Font::kMenu)
+				.align(Draw::Align::kCenter)
+				.text(((leveltime/3)%2) ? "\xB3    " : "    \xB2");
+			break;
+
+		case MT_GARDENTOP:
+			Draw(FixedToFloat(result.x), FixedToFloat(result.y))
+				.flags(V_SPLITSCREEN)
+				.font(splitfont)
+				.align(Draw::Align::kCenter)
+				.text("Try \xA7!");
 
 		default:
 			break;
