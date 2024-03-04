@@ -80,7 +80,6 @@ static INT32 powertype = PWRLV_DISABLED;
 static INT32 intertic;
 static INT32 endtic = -1;
 static INT32 sorttic = -1;
-static INT32 replayprompttic;
 
 static fixed_t mqscroll = 0;
 static fixed_t chkscroll = 0;
@@ -1690,35 +1689,8 @@ skiptallydrawer:
 	}
 
 finalcounter:
-	{
-		if ((modeattacking == ATTACKING_NONE) && (demo.recording || demo.savemode == demovars_s::DSM_SAVED) && !demo.playback)
-		{
-			switch (demo.savemode)
-			{
-				case demovars_s::DSM_NOTSAVING:
-				{
-					INT32 buttonx = BASEVIDWIDTH;
-					INT32 buttony = 2;
-
-					K_drawButtonAnim(buttonx - 76, buttony, 0, kp_button_b[1], replayprompttic);
-					V_DrawRightAlignedThinString(buttonx - 55, buttony, highlightflags, "or");
-					K_drawButtonAnim(buttonx - 55, buttony, 0, kp_button_x[1], replayprompttic);
-					V_DrawRightAlignedThinString(buttonx - 2, buttony, highlightflags, "Save replay");
-					break;
-				}
-				case demovars_s::DSM_SAVED:
-					V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, highlightflags, "Replay saved!");
-					break;
-
-				case demovars_s::DSM_TITLEENTRY:
-					ST_DrawDemoTitleEntry();
-					break;
-
-				default: // Don't render any text here
-					break;
-			}
-		}
-	}
+	if ((modeattacking == ATTACKING_NONE) && demo.recording)
+		ST_DrawSaveReplayHint(0);
 
 	if (Y_CanSkipIntermission())
 	{
@@ -1754,16 +1726,7 @@ void Y_Ticker(void)
 		return;
 
 	if (demo.recording)
-	{
-		if (demo.savemode == demovars_s::DSM_NOTSAVING)
-		{
-			replayprompttic++;
-			G_CheckDemoTitleEntry();
-		}
-
-		if (demo.savemode == demovars_s::DSM_WILLSAVE || demo.savemode == demovars_s::DSM_WILLAUTOSAVE)
-			G_SaveDemo();
-	}
+		G_CheckDemoTitleEntry();
 
 	// Check for pause or menu up in single player
 	if (paused || P_AutoPause())

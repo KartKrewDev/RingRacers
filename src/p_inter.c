@@ -2935,7 +2935,9 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				{
 					sfx = sfx_invind;
 				}
-				else if (K_IsBigger(target, inflictor) == true)
+				else if (K_IsBigger(target, inflictor) == true &&
+					// SPB bypasses grow (K_IsBigger handles NULL check)
+					(type != DMG_EXPLODE || inflictor->type != MT_SPBEXPLOSION || !inflictor->movefactor))
 				{
 					sfx = sfx_grownd;
 				}

@@ -495,6 +495,21 @@ static void M_DrawMenuTooltips(void)
 	}
 }
 
+static const char *M_MenuTypingCroppedString(void)
+{
+	static char buf[36];
+	const char *p = menutyping.cache;
+	size_t n = strlen(p);
+	if (n > sizeof buf)
+	{
+		p += n - sizeof buf;
+		n = sizeof buf;
+	}
+	memcpy(buf, p, n);
+	buf[n] = '\0';
+	return buf;
+}
+
 // Draws the typing submenu
 static void M_DrawMenuTyping(void)
 {
@@ -534,7 +549,7 @@ static void M_DrawMenuTyping(void)
 	V_DrawFill(x + 4, y + 4 + 5, 1, 8+6, 121);
 	V_DrawFill(x + 5 + boxwidth - 8, y + 4 + 5, 1, 8+6, 121);
 
-	INT32 textwidth = M_DrawCaretString(x + 8, y + 12, menutyping.cache, true);
+	INT32 textwidth = M_DrawCaretString(x + 8, y + 12, M_MenuTypingCroppedString(), true);
 	if (skullAnimCounter < 4
 		&& menutyping.menutypingclose == false
 		&& menutyping.menutypingfade == (menutyping.keyboardtyping ? 9 : 18))
@@ -2823,6 +2838,57 @@ fixed_t M_DrawCupWinData(INT32 rankx, INT32 ranky, cupheader_t *cup, UINT8 diffi
 	rankx += 19 - (rankw / 2);
 
 	cupwindata_t *windata = &(cup->windata[difficulty]);
+	UINT8 emeraldnum = UINT8_MAX;
+
+	if (!noemerald)
+	{
+		if (gamedata->sealedswaps[GDMAX_SEALEDSWAPS-1] != NULL // all found
+		|| cup->id >= basenumkartcupheaders // custom content
+		|| M_SecretUnlocked(SECRET_SPECIALATTACK, true)) // true order
+		{
+			// Standard order.
+			if (windata->got_emerald == true)
+			{
+				emeraldnum = cup->emeraldnum;
+			}
+		}
+		else
+		{
+			// Determine order from sealedswaps.
+			UINT8 i;
+			for (i = 0; (i < GDMAX_SEALEDSWAPS && gamedata->sealedswaps[i]); i++)
+			{
+				if (gamedata->sealedswaps[i] != cup)
+					continue;
+
+				break;
+			}
+
+			// If there's pending stars, get them from the associated cup order.
+			if (i < GDMAX_SEALEDSWAPS)
+			{
+				cupheader_t *emeraldcup = kartcupheaders;
+				while (emeraldcup)
+				{
+					if (emeraldcup->id >= basenumkartcupheaders)
+					{
+						emeraldcup = NULL;
+						break;
+					}
+
+					if (emeraldcup->emeraldnum == i+1)
+					{
+						if (emeraldcup->windata[difficulty].got_emerald == true)
+							emeraldnum = i+1;
+						break;
+					}
+
+					emeraldcup = emeraldcup->next;
+				}
+			}
+		}
+	}
+
 	if (windata->best_placement == 0)
 	{
 		if (statsmode)
@@ -2832,14 +2898,13 @@ fixed_t M_DrawCupWinData(INT32 rankx, INT32 ranky, cupheader_t *cup, UINT8 diffi
 			V_DrawCharacter((14-4)/2 + rankx, ranky, '.' | V_GRAYMAP, false);
 			rankx += 14 + 1;
 			V_DrawCharacter((12-4)/2 + rankx, ranky, '.' | V_GRAYMAP, false);
-
-			if (!noemerald)
-			{
-				rankx += 12 + 1;
-				V_DrawCharacter((12-4)/2 + rankx, ranky, '.' | V_GRAYMAP, false);
-			}
 		}
-		return rankw;
+		else
+		{
+			rankx += 14 + 1;
+		}
+
+		goto windataemeraldmaybe;
 	}
 
 	UINT8 *colormap = NULL;
@@ -2934,13 +2999,15 @@ fixed_t M_DrawCupWinData(INT32 rankx, INT32 ranky, cupheader_t *cup, UINT8 diffi
 	if (charPat)
 		V_DrawFixedPatch((rankx)*FRACUNIT, (ranky)*FRACUNIT, FRACUNIT, 0, charPat, colormap);
 
+windataemeraldmaybe:
+
 	rankx += 12 + 1;
 
 	if (noemerald)
 		;
-	else if (windata->got_emerald == true)
+	else if (emeraldnum != UINT8_MAX)
 	{
-		if (cup->emeraldnum == 0)
+		if (emeraldnum == 0)
 			V_DrawCharacter(rankx+2, ranky+2, '+', false);
 		else
 		{
@@ -2948,14 +3015,14 @@ fixed_t M_DrawCupWinData(INT32 rankx, INT32 ranky, cupheader_t *cup, UINT8 diffi
 
 			if (!flash)
 			{
-				UINT16 col = SKINCOLOR_CHAOSEMERALD1 + (cup->emeraldnum-1) % 7;
+				UINT16 col = SKINCOLOR_CHAOSEMERALD1 + (emeraldnum-1) % 7;
 
 				colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
 			}
 
 			const char *emname = va(
 				"%sMAP%c",
-				(cup->emeraldnum > 7) ? "SUP" : "EME",
+				(emeraldnum > 7) ? "SUP" : "EME",
 				colormap ? '\0' : 'B'
 			);
 
@@ -3116,7 +3183,7 @@ void M_DrawCupSelect(void)
 				y += 44; //(8 + 100) - (20 + 44)
 			}
 
-			if (windata && windata->best_placement != 0)
+			if (windata)
 			{
 				M_DrawCupWinData(
 					x,

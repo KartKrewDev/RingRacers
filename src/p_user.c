@@ -296,9 +296,29 @@ UINT8 P_GetNextEmerald(void)
 {
 	cupheader_t *cup = NULL;
 
-	if (grandprixinfo.gp == true)
+	if (grandprixinfo.gp == true && grandprixinfo.cup)
 	{
-		cup = grandprixinfo.cup;
+		if (gamedata->sealedswaps[GDMAX_SEALEDSWAPS-1] != NULL // all found
+		|| grandprixinfo.cup->id >= basenumkartcupheaders // custom content
+		|| M_SecretUnlocked(SECRET_SPECIALATTACK, false)) // true order
+		{
+			cup = grandprixinfo.cup;
+		}
+		else
+		{
+			// Determine order from sealedswaps.
+			UINT8 i;
+			for (i = 0; (i < GDMAX_SEALEDSWAPS && gamedata->sealedswaps[i]); i++)
+			{
+				if (gamedata->sealedswaps[i] != grandprixinfo.cup)
+					continue;
+
+				// Repeat visit, grab the same ID.
+				break;
+			}
+
+			return i+1;
+		}
 	}
 
 	if (cup == NULL)

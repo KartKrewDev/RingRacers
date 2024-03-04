@@ -51,6 +51,7 @@
 #include "g_party.h"
 #include "k_hitlag.h"
 #include "g_input.h"
+#include "k_dialogue.h"
 
 //{ 	Patch Definitions
 static patch_t *kp_nodraw;
@@ -5163,19 +5164,28 @@ static void K_drawKartFirstPerson(void)
 
 static void K_drawInput(void)
 {
+	UINT8 viewnum = R_GetViewNumber();
+	boolean freecam = camera[viewnum].freecam;	//disable some hud elements w/ freecam
+
+	if (!cv_drawinput.value && !modeattacking && gametype != GT_TUTORIAL)
+		return;
+
+	if (stplyr->spectator || freecam || demo.attract)
+		return;
+
 	INT32 def[4][3] = {
 		{247, 156, V_SNAPTOBOTTOM | V_SNAPTORIGHT}, // 1p
 		{247, 56, V_SNAPTOBOTTOM | V_SNAPTORIGHT}, // 2p
 		{6, 52, V_SNAPTOBOTTOM | V_SNAPTOLEFT}, // 4p left
 		{282 - BASEVIDWIDTH/2, 52, V_SNAPTOBOTTOM | V_SNAPTORIGHT}, // 4p right
 	};
-	INT32 k = r_splitscreen <= 1 ? r_splitscreen : 2 + (R_GetViewNumber() & 1);
-	INT32 flags = def[k][2] | V_SPLITSCREEN | V_SLIDEIN;
+	INT32 k = r_splitscreen <= 1 ? r_splitscreen : 2 + (viewnum & 1);
+	INT32 flags = def[k][2] | V_SPLITSCREEN;
 	char mode = ((stplyr->pflags & PF_ANALOGSTICK) ? '4' : '2') + (r_splitscreen > 1);
 	bool local = !demo.playback && P_IsMachineLocalPlayer(stplyr);
 	K_DrawInputDisplay(
-		def[k][0],
-		def[k][1],
+		def[k][0] - FixedToFloat(K_GetDialogueSlide(34 * FRACUNIT)),
+		def[k][1] - FixedToFloat(K_GetDialogueSlide(51 * FRACUNIT)),
 		flags,
 		mode,
 		(local ? G_LocalSplitscreenPartyPosition : G_PartyPosition)(stplyr - players),
@@ -6062,13 +6072,6 @@ void K_drawKartHUD(void)
 				K_drawRingCounter(gametypeinfoshown);
 			}
 
-			if ((modeattacking && !bossinfo.valid) || cv_drawinput.value)
-			{
-				// Draw the input UI
-				if (LUA_HudEnabled(hud_position))
-					K_drawInput();
-			}
-
 			// Draw the item window
 			if (LUA_HudEnabled(hud_item) && !freecam)
 			{
@@ -6128,7 +6131,10 @@ void K_drawKartHUD(void)
 		K_drawEmeraldWin(true);
 
 	if (modeattacking || freecam) // everything after here is MP and debug only
+	{
+		K_drawInput();
 		return;
+	}
 
 	if ((gametyperules & GTR_KARMA) && !r_splitscreen && (stplyr->karthud[khud_yougotem] % 2)) // * YOU GOT EM *
 		V_DrawScaledPatch(BASEVIDWIDTH/2 - (SHORT(kp_yougotem->width)/2), 32, V_HUDTRANS, kp_yougotem);
@@ -6146,6 +6152,10 @@ void K_drawKartHUD(void)
 	if (K_DirectorIsAvailable(viewnum) == true && LUA_HudEnabled(hud_textspectator))
 	{
 		K_drawSpectatorHUD(true);
+	}
+	else
+	{
+		K_drawInput();
 	}
 
 	if (cv_kartdebugdistribution.value)

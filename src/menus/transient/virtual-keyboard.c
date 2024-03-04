@@ -5,6 +5,7 @@
 #include "../../s_sound.h"
 #include "../../console.h" // CON_ShiftChar
 #include "../../i_system.h" // I_Clipboard funcs
+#include "../../z_zone.h"
 
 // Typing "sub"-menu
 struct menutyping_s menutyping;
@@ -91,9 +92,9 @@ boolean M_ChangeStringCvar(INT32 choice)
 				const char *paste = I_ClipboardPaste();
 				if (paste == NULL || paste[0] == '\0')
 					;
-				else if (len < MAXSTRINGLENGTH - 1)
+				else if (len < menutyping.cachelen)
 				{
-					strlcat(menutyping.cache, paste, MAXSTRINGLENGTH);
+					strlcat(menutyping.cache, paste, menutyping.cachelen + 1);
 
 					S_StartSound(NULL, sfx_tmxbdn); // Tails
 				}
@@ -146,7 +147,7 @@ boolean M_ChangeStringCvar(INT32 choice)
 			if (choice >= 32 && choice <= 127)
 			{
 				len = strlen(menutyping.cache);
-				if (len < MAXSTRINGLENGTH - 1)
+				if (len < menutyping.cachelen)
 				{
 					menutyping.cache[len++] = (char)choice;
 					menutyping.cache[len] = 0;
@@ -180,7 +181,19 @@ static void M_ToggleVirtualShift(void)
 static void M_CloseVirtualKeyboard(void)
 {
 	menutyping.menutypingclose = true;	// close menu.
-	CV_Set(currentMenu->menuitems[itemOn].itemaction.cvar, menutyping.cache);
+	menutyping.queryfn(menutyping.cache);
+}
+
+void M_AbortVirtualKeyboard(void)
+{
+	if (!menutyping.active)
+		return;
+
+	menutyping.active = false;
+	Z_Free(menutyping.cache);
+
+	if (currentMenu == menutyping.dummymenu)
+		M_GoBack(0);
 }
 
 static boolean M_IsTypingKey(INT32 key)
@@ -202,7 +215,7 @@ void M_MenuTypingInput(INT32 key)
 		// Closing
 		menutyping.menutypingfade--;
 		if (!menutyping.menutypingfade)
-			menutyping.active = false;
+			M_AbortVirtualKeyboard();
 
 		return;	// prevent inputs while closing the menu.
 	}
@@ -405,11 +418,28 @@ void M_MenuTypingInput(INT32 key)
 	}
 }
 
-void M_OpenVirtualKeyboard(boolean gamepad)
+void M_OpenVirtualKeyboard(boolean gamepad, size_t cachelen, vkb_query_fn_t queryfn, menu_t *dummymenu)
 {
 	menutyping.keyboardtyping = !gamepad;
 	menutyping.active = true;
 	menutyping.menutypingclose = false;
 
-	strlcpy(menutyping.cache, currentMenu->menuitems[itemOn].itemaction.cvar->string, MAXSTRINGLENGTH);
+	menutyping.queryfn = queryfn;
+	menutyping.dummymenu = dummymenu;
+	menutyping.cachelen = cachelen;
+	Z_Malloc(cachelen + 1, PU_STATIC, &menutyping.cache);
+	strlcpy(menutyping.cache, queryfn(NULL), cachelen + 1);
+
+	if (dummymenu)
+	{
+		if (!menuactive)
+		{
+			M_StartControlPanel();
+			dummymenu->prevMenu = NULL;
+		}
+		else
+			dummymenu->prevMenu = currentMenu;
+
+		M_SetupNextMenu(dummymenu, true);
+	}
 }

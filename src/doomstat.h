@@ -509,6 +509,7 @@ struct mapheader_t
 	UINT16 levelflags;					///< LF_flags:  merged booleans into one UINT16 for space, see below
 	UINT32 typeoflevel;					///< Combination of typeoflevel flags.
 	UINT8 numlaps;						///< Number of laps in circuit mode, unless overridden.
+	UINT8 lapspersection;				///< Number of laps per section in hybrid section-circuit maps.
 	fixed_t gravity;					///< Map-wide gravity.
 	char relevantskin[SKINNAMESIZE+1];	///< Skin to use for tutorial (if not provided, uses Eggman.)
 
@@ -927,7 +928,6 @@ extern tic_t g_fast_forward;
 
 #include "d_clisrv.h"
 
-extern consvar_t cv_showinputjoy; // display joystick in time attack
 extern consvar_t cv_forceskin; // force clients to use the server's skin
 extern consvar_t cv_downloading; // allow clients to downloading WADs.
 extern consvar_t cv_nettimeout; // SRB2Kart: Advanced server options menu

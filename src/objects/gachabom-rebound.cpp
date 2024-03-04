@@ -228,7 +228,7 @@ void Obj_SpawnGachaBomRebound(mobj_t* source, mobj_t* target)
 	{
 		mobj_t *x = P_SpawnMobjFromMobjUnscaled(source, 0, 0, target->height / 2, MT_GACHABOM_REBOUND);
 
-		x->color = target->color;
+		x->color = target->player ? target->player->skincolor : target->color;
 		x->angle = angle;
 
 		if (!(gametyperules & GTR_BUMPERS) || battleprisons)

@@ -2535,6 +2535,8 @@ static int mapheaderinfo_get(lua_State *L)
 		lua_pushinteger(L, header->palette);
 	else if (fastcmp(field,"numlaps"))
 		lua_pushinteger(L, header->numlaps);
+	else if (fastcmp(field,"lapspersection"))
+		lua_pushinteger(L, header->lapspersection);
 	else if (fastcmp(field,"levelselect"))
 		lua_pushinteger(L, header->levelselect);
 	else if (fastcmp(field,"levelflags"))

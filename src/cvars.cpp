@@ -359,6 +359,7 @@ consvar_t cv_drawdist_precip = Player("drawdist_precip", "1024").values({
 	{0, "None"},
 });
 
+consvar_t cv_drawinput = Player("drawinput", "No").yes_no();
 consvar_t cv_ffloorclip = Player("ffloorclip", "On").on_off();
 
 consvar_t cv_fpscap = Player("fpscap", "Match refresh rate").values({
@@ -445,7 +446,6 @@ consvar_t cv_showfocuslost = Player("showfocuslost", "Yes").yes_no();
 void R_SetViewSize(void);
 consvar_t cv_showhud = Player("showhud", "Yes").yes_no().onchange(R_SetViewSize).dont_save();
 
-consvar_t cv_showinputjoy = Player("showinputjoy", "Off").on_off().dont_save();
 consvar_t cv_skybox = Player("skybox", "On").on_off();
 
 // Display song credits
@@ -804,6 +804,7 @@ consvar_t cv_capsuletest = OnlineCheat("capsuletest", "Off").values(capsuletest_
 
 consvar_t cv_debugcheese = OnlineCheat("debugcheese", "Off").on_off().description("Disable checks that prevent farming item boxes");
 consvar_t cv_debugencorevote = OnlineCheat("debugencorevote", "Off").on_off().description("Force encore choice to appear on vote screen");
+consvar_t cv_debuglapcheat = OnlineCheat("debuglapcheat", "Off").on_off().description("Permit far waypoint jumps and disable lap cheat prevention");
 consvar_t cv_forcebots = OnlineCheat("forcebots", "No").yes_no().description("Force bots to appear, even in wrong game modes");
 
 void ForceSkin_OnChange(void);
@@ -815,6 +816,8 @@ consvar_t cv_kartdebugamount = OnlineCheat("debugitemamount", "1").min_max(1, 25
 consvar_t cv_kartdebugbots = OnlineCheat("debugbots", "Off").on_off().description("Bot AI debugger");
 consvar_t cv_kartdebugdistribution = OnlineCheat("debugitemodds", "Off").on_off().description("Show items that the roulette can roll");
 consvar_t cv_kartdebughuddrop = OnlineCheat("debugitemdrop", "Off").on_off().description("Players drop paper items when damaged in any way");
+
+consvar_t cv_kartdebugbotwhip = OnlineCheat("debugbotwhip", "Off").on_off().description("Disable bot ring and item pickups");
 
 extern CV_PossibleValue_t kartdebugitem_cons_t[];
 consvar_t cv_kartdebugitem = OnlineCheat("debugitem", "None").values(kartdebugitem_cons_t).description("Force item boxes to only roll one kind of item");
@@ -892,7 +895,6 @@ consvar_t cv_debugrender_spriteclip = PlayerCheat("debugrender_spriteclip", "Off
 consvar_t cv_debugrender_visplanes = PlayerCheat("debugrender_visplanes", "Off").on_off().description("Highlight the number of visplanes");
 consvar_t cv_devmode_screen = PlayerCheat("devmode_screen", "1").min_max(1, 4).description("Choose which splitscreen player devmode applies to");
 consvar_t cv_drawpickups = PlayerCheat("drawpickups", "Yes").yes_no().description("Hide rings, spheres, item capsules, prison capsules (visual only)");
-consvar_t cv_drawinput = PlayerCheat("drawinput", "No").yes_no().description("Draw turn inputs outside of Record Attack (turn solver debugging)");
 
 void lua_profile_OnChange(void);
 consvar_t cv_lua_profile = PlayerCheat("lua_profile", "0").values(CV_Unsigned).onchange(lua_profile_OnChange).description("Show hook timings over an average of N tics");

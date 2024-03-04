@@ -1512,6 +1512,8 @@ void CONS_Printf(const char *fmt, ...)
 	vsprintf(txt, fmt, argptr);
 	va_end(argptr);
 
+	Lock_state();
+
 	// echo console prints to log file
 	DEBFILE(txt);
 
@@ -1520,8 +1522,6 @@ void CONS_Printf(const char *fmt, ...)
 		CON_Print(txt);
 
 	CON_LogMessage(txt);
-
-	Lock_state();
 
 	// make sure new text is visible
 	con_scrollup = 0;

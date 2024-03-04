@@ -2878,7 +2878,7 @@ static void Got_Mapcmd(const UINT8 **cp, INT32 playernum)
 	if (demo.playback && !demo.timing)
 		precache = false;
 
-	demo.savemode = (cv_recordmultiplayerdemos.value == 2) ? DSM_WILLAUTOSAVE : DSM_NOTSAVING;
+	demo.willsave = (cv_recordmultiplayerdemos.value == 2);
 	demo.savebutton = 0;
 
 	G_InitNew(pencoremode, mapnumber, presetplayer, skipprecutscene);

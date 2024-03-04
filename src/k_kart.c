@@ -8534,6 +8534,17 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	else if (player->rings < -20)
 		player->rings = -20;
 
+	if (cv_kartdebugbotwhip.value)
+	{
+		if (player->bot)
+		{
+			player->rings = 0;
+			player->itemtype = 0;
+			player->itemamount = 0;
+			player->itemRoulette.active = false;
+		}
+	}
+
 	if (player->spheres > 40)
 		player->spheres = 40;
 	// where's the < 0 check? see below the following block!
@@ -9909,9 +9920,10 @@ static void K_UpdateDistanceFromFinishLine(player_t *const player)
 				// correct we need to add to it the length of the entire circuit multiplied by the number of laps
 				// left after this one. This will give us the total distance to the finish line, and allow item
 				// distance calculation to work easily
-				if ((mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE) == 0U)
+				const mapheader_t *mapheader = mapheaderinfo[gamemap - 1];
+				if ((mapheader->levelflags & LF_SECTIONRACE) == 0U)
 				{
-					const UINT8 numfulllapsleft = ((UINT8)numlaps - player->laps);
+					const UINT8 numfulllapsleft = ((UINT8)numlaps - player->laps) / mapheader->lapspersection;
 					player->distancetofinish += numfulllapsleft * K_GetCircuitLength();
 				}
 			}
@@ -9953,18 +9965,27 @@ static void K_UpdatePlayerWaypoints(player_t *const player)
 	UINT32 delta = u32_delta(player->distancetofinish, player->distancetofinishprev);
 	if (player->respawn.state == RESPAWNST_NONE && delta > distance_threshold && old_currentwaypoint != NULL)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "Player %s: waypoint ID %d too far away (%u > %u)\n",
-			sizeu1(player - players), K_GetWaypointID(player->nextwaypoint), delta, distance_threshold);
+		extern consvar_t cv_debuglapcheat;
+#define debug_args "Player %s: waypoint ID %d too far away (%u > %u)\n", \
+		sizeu1(player - players), K_GetWaypointID(player->nextwaypoint), delta, distance_threshold
+		if (cv_debuglapcheat.value)
+			CONS_Printf(debug_args);
+		else
+			CONS_Debug(DBG_GAMELOGIC, debug_args);
+#undef debug_args
 
-		// Distance jump is too great, keep the old waypoints and old distance.
-		player->currentwaypoint = old_currentwaypoint;
-		player->nextwaypoint = old_nextwaypoint;
-		player->distancetofinish = player->distancetofinishprev;
-
-		// Start the auto respawn timer when the distance jumps.
-		if (!player->bigwaypointgap)
+		if (!cv_debuglapcheat.value)
 		{
-			player->bigwaypointgap = 35;
+			// Distance jump is too great, keep the old waypoints and old distance.
+			player->currentwaypoint = old_currentwaypoint;
+			player->nextwaypoint = old_nextwaypoint;
+			player->distancetofinish = player->distancetofinishprev;
+
+			// Start the auto respawn timer when the distance jumps.
+			if (!player->bigwaypointgap)
+			{
+				player->bigwaypointgap = 35;
+			}
 		}
 	}
 	else
@@ -11382,7 +11403,7 @@ static void K_KartSpindash(player_t *player)
 
 	if (player->spindash > 0 && (buttons & (BT_DRIFT|BT_BRAKE|BT_ACCELERATE)) != (BT_DRIFT|BT_BRAKE|BT_ACCELERATE))
 	{
-		player->spindashspeed = (player->spindash * FRACUNIT) / MAXCHARGETIME;
+		player->spindashspeed = (min(player->spindash, MAXCHARGETIME) * FRACUNIT) / MAXCHARGETIME;
 		player->spindashboost = TICRATE;
 
 		// if spindash was charged enough, give a small thrust.
@@ -12003,6 +12024,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			{
 				S_StartSound(player->mo, sfx_kc50);
 				player->instaWhipCharge = 0;
+				player->botvars.itemconfirm = 0;
 			}
 			else
 			{
@@ -12436,6 +12458,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									{
 										INT32 numhogs = min((player->ballhogcharge / BALLHOGINCREMENT), player->itemamount);
 
+										K_SetItemOut(player); // need this to set itemscale
+
 										if (numhogs <= 0)
 										{
 											// no tapfire scams
@@ -12464,6 +12488,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 											K_PlayAttackTaunt(player->mo);
 										}
 
+										K_UnsetItemOut(player);
 										player->ballhogcharge = 0;
 										player->itemflags &= ~IF_HOLDREADY;
 										player->botvars.itemconfirm = 0;
@@ -12475,7 +12500,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
 							{
 								player->itemamount--;
+								K_SetItemOut(player);
 								K_ThrowKartItem(player, true, MT_SPB, 1, 0, 0);
+								K_UnsetItemOut(player);
 								K_PlayAttackTaunt(player->mo);
 								player->botvars.itemconfirm = 0;
 							}
@@ -12802,7 +12829,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						case KITEM_GACHABOM:
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
 							{
+								K_SetItemOut(player); // need this to set itemscale
 								K_ThrowKartItem(player, true, MT_GACHABOM, 0, 0, 0);
+								K_UnsetItemOut(player);
 								K_PlayAttackTaunt(player->mo);
 								player->itemamount--;
 								player->roundconditions.gachabom_miser = (
