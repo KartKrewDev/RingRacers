@@ -4549,7 +4549,7 @@ void G_AfterIntermission(void)
 		M_PlaybackQuit(0);
 		return;
 	}
-	else if (demo.recording && (modeattacking || demo.savemode != DSM_NOTSAVING))
+	else if (demo.recording && (modeattacking || demo.willsave))
 		G_SaveDemo();
 
 	if (modeattacking) // End the run.

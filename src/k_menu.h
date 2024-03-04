@@ -542,6 +542,7 @@ extern INT32 menuKey; // keyboard key pressed for menu
 extern INT16 virtualKeyboard[5][NUMVIRTUALKEYSINROW];
 extern INT16 shift_virtualKeyboard[5][NUMVIRTUALKEYSINROW];
 
+typedef const char *(*vkb_query_fn_t)(const char *replace);
 extern struct menutyping_s
 {
 	boolean active;				// Active
@@ -554,7 +555,10 @@ extern struct menutyping_s
 	boolean keyboardcapslock;
 	boolean keyboardshift;
 
-	char cache[MAXSTRINGLENGTH]; // cached string
+	vkb_query_fn_t queryfn; // callback on open and close
+	menu_t *dummymenu;
+	size_t cachelen;
+	char *cache; // cached string
 
 } menutyping;
 // While typing, we'll have a fade strongly darken the screen to overlay the typing menu instead
@@ -682,7 +686,8 @@ void M_PlayMenuJam(void);
 
 boolean M_ConsiderSealedSwapAlert(void);
 
-void M_OpenVirtualKeyboard(boolean gamepad);
+void M_OpenVirtualKeyboard(boolean gamepad, size_t cachelen, vkb_query_fn_t queryfn, menu_t *dummymenu);
+void M_AbortVirtualKeyboard(void);
 void M_MenuTypingInput(INT32 key);
 
 void M_QuitResponse(INT32 ch);

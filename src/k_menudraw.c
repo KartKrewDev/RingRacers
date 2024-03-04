@@ -495,6 +495,21 @@ static void M_DrawMenuTooltips(void)
 	}
 }
 
+static const char *M_MenuTypingCroppedString(void)
+{
+	static char buf[36];
+	const char *p = menutyping.cache;
+	size_t n = strlen(p);
+	if (n > sizeof buf)
+	{
+		p += n - sizeof buf;
+		n = sizeof buf;
+	}
+	memcpy(buf, p, n);
+	buf[n] = '\0';
+	return buf;
+}
+
 // Draws the typing submenu
 static void M_DrawMenuTyping(void)
 {
@@ -534,7 +549,7 @@ static void M_DrawMenuTyping(void)
 	V_DrawFill(x + 4, y + 4 + 5, 1, 8+6, 121);
 	V_DrawFill(x + 5 + boxwidth - 8, y + 4 + 5, 1, 8+6, 121);
 
-	INT32 textwidth = M_DrawCaretString(x + 8, y + 12, menutyping.cache, true);
+	INT32 textwidth = M_DrawCaretString(x + 8, y + 12, M_MenuTypingCroppedString(), true);
 	if (skullAnimCounter < 4
 		&& menutyping.menutypingclose == false
 		&& menutyping.menutypingfade == (menutyping.keyboardtyping ? 9 : 18))

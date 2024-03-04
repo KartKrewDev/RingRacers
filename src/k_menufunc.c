@@ -188,6 +188,14 @@ static void M_ChangeCvar(INT32 choice)
 	M_ChangeCvarDirect(choice, currentMenu->menuitems[itemOn].itemaction.cvar);
 }
 
+static const char *M_QueryCvarAction(const char *replace)
+{
+	consvar_t *cvar = currentMenu->menuitems[itemOn].itemaction.cvar;
+	if (replace)
+		CV_Set(cvar, replace);
+	return cvar->string;
+}
+
 boolean M_NextOpt(void)
 {
 	INT16 oldItemOn = itemOn; // prevent infinite loop
@@ -831,7 +839,7 @@ void M_ClearMenus(boolean callexitmenufunc)
 		D_StartTitle();
 	}
 
-	menutyping.active = false;
+	M_AbortVirtualKeyboard();
 	menumessage.active = false;
 
 	menuactive = false;
@@ -918,6 +926,8 @@ void M_SetupNextMenu(menu_t *menudef, boolean notransition)
 
 void M_GoBack(INT32 choice)
 {
+	const INT16 behaviourflags = currentMenu->behaviourflags;
+
 	(void)choice;
 
 	noFurtherInput = true;
@@ -940,7 +950,8 @@ void M_GoBack(INT32 choice)
 	else // No returning to the title screen.
 		M_QuitSRB2(-1);
 
-	S_StartSound(NULL, sfx_s3k5b);
+	if (!(behaviourflags & MBF_SOUNDLESS))
+		S_StartSound(NULL, sfx_s3k5b);
 }
 
 //
@@ -1124,7 +1135,8 @@ static void M_HandleMenuInput(void)
 			// If we're hovering over a IT_CV_STRING option, pressing A/X opens the typing submenu
 			if (M_MenuConfirmPressed(pid))
 			{
-				M_OpenVirtualKeyboard(thisMenuKey == -1);	// If we entered this menu by pressing a menu Key, default to keyboard typing, otherwise use controller.
+				// If we entered this menu by pressing a menu Key, default to keyboard typing, otherwise use controller.
+				M_OpenVirtualKeyboard(thisMenuKey == -1, MAXSTRINGLENGTH, M_QueryCvarAction, NULL);
 				return;
 			}
 			else if (M_MenuExtraPressed(pid))
