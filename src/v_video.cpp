@@ -987,10 +987,8 @@ void V_DrawBlock(INT32 x, INT32 y, INT32 scrn, INT32 width, INT32 height, const 
 	UINT8 *dest;
 	const UINT8 *deststop;
 
-#ifdef RANGECHECK
 	if (x < 0 || x + width > vid.width || y < 0 || y + height > vid.height || (unsigned)scrn > 4)
 		I_Error("Bad V_DrawBlock");
-#endif
 
 	dest = screens[scrn] + y*vid.width + x;
 	deststop = screens[scrn] + vid.rowbytes * vid.height;

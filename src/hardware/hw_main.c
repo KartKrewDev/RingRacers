@@ -4740,10 +4740,11 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	tr_y = FIXED_TO_FLOAT(interp.y);
 
 	// decide which patch to use for sprite relative to player
-#ifdef RANGECHECK
 	if ((unsigned)thing->sprite >= numsprites)
-		I_Error("HWR_ProjectSprite: invalid sprite number %i ", thing->sprite);
-#endif
+	{
+		CONS_Debug(DBG_RENDER, "HWR_ProjectSprite: invalid sprite number %i\n", thing->sprite);
+		return;
+	}
 
 	rot = thing->frame&FF_FRAMEMASK;
 
@@ -5184,22 +5185,20 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 
 	// decide which patch to use for sprite relative to player
 	if ((unsigned)thing->sprite >= numsprites)
-#ifdef RANGECHECK
-		I_Error("HWR_ProjectPrecipitationSprite: invalid sprite number %i ",
+	{
+		CONS_Debug(DBG_RENDER, "HWR_ProjectPrecipitationSprite: invalid sprite number %i\n",
 		        thing->sprite);
-#else
 		return;
-#endif
+	}
 
 	sprdef = &sprites[thing->sprite];
 
 	if ((size_t)(thing->frame&FF_FRAMEMASK) >= sprdef->numframes)
-#ifdef RANGECHECK
-		I_Error("HWR_ProjectPrecipitationSprite: invalid sprite frame %i : %i for %s",
+	{
+		CONS_Debug(DBG_RENDER, "HWR_ProjectPrecipitationSprite: invalid sprite frame %i : %i for %s\n",
 		        thing->sprite, thing->frame, sprnames[thing->sprite]);
-#else
 		return;
-#endif
+	}
 
 	sprframe = &sprdef->spriteframes[ thing->frame & FF_FRAMEMASK];
 

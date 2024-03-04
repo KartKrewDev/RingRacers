@@ -1073,9 +1073,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 	}
 	else if (vis->cut & SC_SHEAR)
 	{
-#ifdef RANGECHECK
 		pwidth = patch->width;
-#endif
 
 		// Vertically sheared sprite
 		for (dc.x = vis->x1; dc.x <= vis->x2; dc.x++, frac += vis->xiscale, dc.texturemid -= vis->shear.tan)
@@ -1191,10 +1189,11 @@ static void R_DrawPrecipitationVisSprite(vissprite_t *vis)
 	{
 		texturecolumn = frac>>FRACBITS;
 
-#ifdef RANGECHECK
 		if (texturecolumn < 0 || texturecolumn >= patch->width)
-			I_Error("R_DrawPrecipitationSpriteRange: bad texturecolumn");
-#endif
+		{
+			CONS_Debug(DBG_RENDER, "R_DrawPrecipitationSpriteRange: bad texturecolumn\n");
+			break;
+		}
 
 		column = (column_t *)((UINT8 *)patch->columns + (patch->columnofs[texturecolumn]));
 
@@ -1832,10 +1831,11 @@ static void R_ProjectSprite(mobj_t *thing)
 	sortscale = FixedDiv(projectiony[viewssnum], tz);
 
 	// decide which patch to use for sprite relative to player
-#ifdef RANGECHECK
 	if ((size_t)(thing->sprite) >= numsprites)
-		I_Error("R_ProjectSprite: invalid sprite number %d ", thing->sprite);
-#endif
+	{
+		CONS_Debug(DBG_RENDER, "R_ProjectSprite: invalid sprite number %d\n", thing->sprite);
+		return;
+	}
 
 	frame = thing->frame&FF_FRAMEMASK;
 
@@ -2634,19 +2634,21 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	yscale = FixedDiv(projectiony[viewssnum], tz);
 
 	// decide which patch to use for sprite relative to player
-#ifdef RANGECHECK
 	if ((unsigned)thing->sprite >= numsprites)
-		I_Error("R_ProjectPrecipitationSprite: invalid sprite number %d ",
+	{
+		CONS_Debug(DBG_RENDER, "R_ProjectPrecipitationSprite: invalid sprite number %d\n",
 			thing->sprite);
-#endif
+		return;
+	}
 
 	sprdef = &sprites[thing->sprite];
 
-#ifdef RANGECHECK
 	if ((UINT8)(thing->frame&FF_FRAMEMASK) >= sprdef->numframes)
-		I_Error("R_ProjectPrecipitationSprite: invalid sprite frame %d : %d for %s",
+	{
+		CONS_Debug(DBG_RENDER, "R_ProjectPrecipitationSprite: invalid sprite frame %d : %d for %s\n",
 			thing->sprite, thing->frame, sprnames[thing->sprite]);
-#endif
+		return;
+	}
 
 	sprframe = &sprdef->spriteframes[thing->frame & FF_FRAMEMASK];
 
