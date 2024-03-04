@@ -317,8 +317,8 @@ void G_ReadDemoExtraData(void)
 			skinid = READUINT8(demobuf.p);
 			if (skinid >= demo.numskins)
 				skinid = 0;
-			SetPlayerSkinByNum(p, demo.skinlist[skinid].mapping);
-			demo.currentskinid[p] = skinid;
+			ghostext[p].skinid = demo.currentskinid[p] = skinid;
+			SetPlayerSkinByNum(p, skinid);
 
 			players[p].kartspeed = ghostext[p].kartspeed = demo.skinlist[skinid].kartspeed;
 			players[p].kartweight = ghostext[p].kartweight = demo.skinlist[skinid].kartweight;
@@ -424,7 +424,7 @@ void G_WriteDemoExtraData(void)
 			{
 				for (j = 0; j < MAXAVAILABILITY; j++)
 				{
-					WRITEUINT8(demobuf.p, players[i].availabilities[i]);
+					WRITEUINT8(demobuf.p, players[i].availabilities[j]);
 				}
 
 				WRITEUINT8(demobuf.p, (UINT8)players[i].bot);
@@ -3354,12 +3354,9 @@ void G_DoPlayDemo(const char *defdemoname)
 
 		// Skin
 
-		i = READUINT8(demobuf.p);
-		if (i >= demo.numskins)
-			i = 0;
-		SetPlayerSkinByNum(p, demo.skinlist[i].mapping);
-		demo.currentskinid[p] = ghostext[p].skinid = i;
-
+		demo.currentskinid[p] = READUINT8(demobuf.p);
+		if (demo.currentskinid[p] >= demo.numskins)
+			demo.currentskinid[p] = 0;
 		lastfakeskin[p] = READUINT8(demobuf.p);
 
 		// Color
@@ -3442,6 +3439,15 @@ void G_DoPlayDemo(const char *defdemoname)
 		UINT8 j;
 
 		p = slots[i];
+
+		for (j = 0; j < MAXAVAILABILITY; j++)
+		{
+			players[p].availabilities[j] = availabilities[p][j];
+		}
+
+		ghostext[p].skinid = demo.currentskinid[p];
+		SetPlayerSkinByNum(p, demo.currentskinid[p]);
+
 		if (players[p].mo)
 		{
 			players[p].mo->color = players[p].skincolor;
@@ -3457,11 +3463,6 @@ void G_DoPlayDemo(const char *defdemoname)
 		players[p].kartweight = ghostext[p].kartweight = demo.skinlist[demo.currentskinid[p]].kartweight;
 		players[p].charflags = ghostext[p].charflags = demo.skinlist[demo.currentskinid[p]].flags;
 		players[p].lastfakeskin = lastfakeskin[p];
-
-		for (j = 0; j < MAXAVAILABILITY; j++)
-		{
-			players[p].availabilities[j] = availabilities[p][j];
-		}
 	}
 
 	demo.deferstart = true;

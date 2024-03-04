@@ -226,7 +226,7 @@ UINT8 *R_GetSkinAvailabilities(boolean demolock, INT32 botforcecharacter)
 boolean R_SkinUsable(INT32 playernum, INT32 skinnum, boolean demoskins)
 {
 	boolean needsunlocked = false;
-	boolean useplayerstruct = (Playing() && playernum != -1);
+	boolean useplayerstruct = ((Playing() || demo.playback) && playernum != -1);
 	UINT16 i;
 	INT32 skinid;
 
@@ -357,6 +357,9 @@ engineclass_t R_GetEngineClass(SINT8 speed, SINT8 weight, skinflags_t flags)
 // Auxillary function that actually sets the skin
 static void SetSkin(player_t *player, INT32 skinnum)
 {
+	if (demo.playback)
+		skinnum = demo.skinlist[skinnum].mapping;
+
 	skin_t *skin = &skins[skinnum];
 
 	player->skin = skinnum;
@@ -404,9 +407,9 @@ static void SetSkin(player_t *player, INT32 skinnum)
 // (If your mod locked them all, then you kinda stupid)
 static INT32 GetPlayerDefaultSkin(INT32 playernum)
 {
-	INT32 i;
+	INT32 i, skincount = (demo.playback ? demo.numskins : numskins);
 
-	for (i = 0; i < numskins; i++)
+	for (i = 0; i < skincount; i++)
 	{
 		if (R_SkinUsable(playernum, i, false))
 		{
