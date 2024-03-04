@@ -80,6 +80,8 @@ enum
 	X (NIGHTSNUM),
 	X   (PINGNUM),
 	X	(PROFNUM),
+	X    (ROLNUM),
+	X    (RO4NUM),
 
 	X      (KART),
 	X     (TIMER),
