@@ -1987,8 +1987,13 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 				}
 			}
 
-			workx -= V_ThinStringWidth(stickermedalinfo.targettext, splitflags);
-			V_DrawThinString(workx, worky, splitflags, stickermedalinfo.targettext);
+			using srb2::Draw;
+			Draw::TextElement text(stickermedalinfo.targettext);
+			text.flags(splitflags);
+			text.font(Draw::Font::kZVote);
+
+			workx -= text.width();
+			Draw(workx, worky).text(text);
 		}
 
 		workx -= (6 + (i*5));
