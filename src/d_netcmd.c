@@ -6078,6 +6078,9 @@ static void Got_Cheat(const UINT8 **cp, INT32 playernum)
 				}
 				P_MapEnd();
 
+				player->pflags |= PF_TRUSTWAYPOINTS;
+				player->bigwaypointgap = 0;
+
 				S_StartSound(player->mo, sfx_mixup);
 			}
 
