@@ -2033,7 +2033,6 @@ static void G_SaveDemoSkins(UINT8 **pp)
 
 static democharlist_t *G_LoadDemoSkins(savebuffer_t *info, UINT8 *worknumskins, boolean getclosest)
 {
-	char skin[17];
 	UINT8 i, byte, shif;
 	democharlist_t *skinlist = NULL;
 
@@ -2052,8 +2051,6 @@ static democharlist_t *G_LoadDemoSkins(savebuffer_t *info, UINT8 *worknumskins, 
 		I_Error("G_LoadDemoSkins: Insufficient memory to allocate list");
 	}
 
-	skin[16] = '\0';
-
 	for (i = 0; i < (*worknumskins); i++)
 	{
 		INT32 result = -1;
@@ -2071,7 +2068,7 @@ static democharlist_t *G_LoadDemoSkins(savebuffer_t *info, UINT8 *worknumskins, 
 		skinlist[i].kartweight = READUINT8(info->p);
 		skinlist[i].flags = READUINT32(info->p);
 
-		result = R_SkinAvailableEx(skin, false);
+		result = R_SkinAvailableEx(skinlist[i].name, false);
 		if (result == -1)
 		{
 			if (!getclosest)
