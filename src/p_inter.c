@@ -1226,6 +1226,10 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 
 			if (secretpickup)
 			{
+				// Grab attention with a long sound effect.
+				target->hitlag += 56;
+				S_StartSound(target, sfx_s3k85);
+
 				secretpickup->hitlag = target->hitlag;
 
 				secretpickup->z -= secretpickup->height/2;
@@ -1252,6 +1256,26 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 					secretpickup, secretpickup->angle,
 					P_ReturnThrustX(secretpickup, launchangle, launchmomentum)
 				);
+
+				mobj_t *flare = P_SpawnMobj(
+					target->x, target->y,
+					target->z + target->height/2,
+					MT_SPARK
+				);
+
+				if (flare)
+				{
+					// Will flicker in place until secretpickup exits hitlag.
+					flare->colorized = true;
+					flare->renderflags |= RF_ALWAYSONTOP;
+					P_InstaScale(flare, 4 * flare->scale);
+					P_SetTarget(&secretpickup->target, flare);
+					P_SetMobjStateNF(flare, S_PRISONEGGDROP_FLAREA1);
+				}
+
+				// Darken the level for roughly how long it takes until the last sound effect stops playing.
+				g_darkness.start = leveltime;
+				g_darkness.end = leveltime + target->hitlag + TICRATE + DARKNESS_FADE_TIME;
 			}
 		}
 	}
