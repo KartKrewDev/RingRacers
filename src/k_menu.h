@@ -295,10 +295,26 @@ extern menu_t PLAY_MP_OptSelectDef;
 
 typedef enum
 {
+	mp_host = 0,
+	mp_browse,
+	mp_directjoin,
+	mp_back,
+} mp_e;
+
+typedef enum
+{
+	mhost_gametype = 0,
+	mhost_gameplay_options,
+	mhost_server_options,
+	mhost_boxend,
+	mhost_mapselect = mhost_boxend,
+	mhost_back,
+
+	// TODO, remove these (old code)
 	mhost_sname = 0,
 	mhost_public,
 	mhost_maxp,
-	mhost_gametype,
+	//mhost_gametype,
 	mhost_go,
 } mhost_e;
 
@@ -1058,6 +1074,8 @@ void M_OptionsChangeBGColour(INT16 newcolour);	// changes the background colour 
 
 void M_VideoOptions(INT32 choice);
 void M_SoundOptions(INT32 choice);
+void M_GameplayOptions(INT32 choice);
+void M_ServerOptions(INT32 choice);
 
 void M_HandleItemToggles(INT32 choice);	// For item toggling
 void M_EraseData(INT32 choice);	// For data erasing
@@ -1090,6 +1108,9 @@ void M_HandleVideoModes(INT32 ch);
 
 // data stuff
 void M_HandleProfileErase(INT32 choice);
+
+// Draws "List via" at the bottom of the screen.
+void M_DrawMasterServerReminder(void);
 
 // Draws the EGGA CHANNEL background.
 void M_DrawEggaChannel(void);

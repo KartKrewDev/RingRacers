@@ -94,7 +94,7 @@ menu_t PLAY_RaceDifficultyDef = {
 	0,
 	PLAY_RaceDifficulty,
 	0, 0,
-	0, 0,
+	drace_boxend, 0,
 	0,
 	NULL,
 	1, 5,

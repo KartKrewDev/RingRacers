@@ -926,6 +926,7 @@ consvar_t cv_dummygpdifficulty = MenuDummy("dummygpdifficulty", "Normal").values
 consvar_t cv_dummygpencore = MenuDummy("dummygpencore", "Off").on_off();
 
 consvar_t cv_dummyip = MenuDummy("dummyip", "");
+consvar_t cv_dummyipselect = MenuDummy("dummyipselect", "0").min_max(0, 2);
 
 extern CV_PossibleValue_t dummykartspeed_cons_t[];
 consvar_t cv_dummykartspeed = MenuDummy("dummykartspeed", "Gear 2").values(dummykartspeed_cons_t);

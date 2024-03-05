@@ -6,9 +6,21 @@
 #include "../z_zone.h"
 #include "../mserv.h"
 
+static void draw_routine(void)
+{
+	M_DrawRaceDifficulty();
+	M_DrawMasterServerReminder();
+}
+
+static void tick_routine(void)
+{
+	PLAY_MP_Host[mhost_gametype].text = gametypes[menugametype]->name;
+}
+
 // MULTIPLAYER HOST SCREEN -- see mhost_e
 menuitem_t PLAY_MP_Host[] =
 {
+#if 0
 	//{IT_NOTHING | IT_KEYHANDLER, NULL, NULL, NULL, M_MPOptSelect, 0, 0},
 
 	{IT_STRING | IT_CVAR | IT_CV_STRING, "Server Name", "Display name for your game online. Other players will see this.",
@@ -25,7 +37,21 @@ menuitem_t PLAY_MP_Host[] =
 
 	{IT_STRING | IT_CALL, "GO", "Select a map with the currently selected gamemode",
 		NULL, {.routine = M_MPSetupNetgameMapSelect}, 0, 0},
+#endif
+	{IT_STRING | IT_ARROWS, "Gametype", "Choose the type of play on your serer.",
+		NULL, {.routine = M_HandleHostMenuGametype}, 0, 0},
 
+	{IT_STRING2 | IT_CALL, "Gameplay Options...", "Adjust settings pertaining to gameplay.",
+		NULL, {.routine = M_GameplayOptions}, 0, 0},
+
+	{IT_STRING2 | IT_CALL, "Server Options...", "Adjust settings pertaining to online play.",
+		NULL, {.routine = M_ServerOptions}, 0, 0},
+
+	{IT_STRING | IT_CALL, "Map Select", "Go on and select a level!",
+		NULL, {.routine = M_MPSetupNetgameMapSelect}, 0, 0},
+
+	{IT_STRING | IT_CALL, "Back", NULL,
+		NULL, {.routine = M_GoBack}, 0, 0},
 };
 
 menu_t PLAY_MP_HostDef = {
@@ -34,13 +60,13 @@ menu_t PLAY_MP_HostDef = {
 	0,
 	PLAY_MP_Host,
 	0, 0,
-	0, 0,
+	mhost_boxend, 0,
 	0,
 	"NETMD2",
-	-1, 1,	// 1 frame transition.... This is really just because I don't want the black fade when we press esc, hehe
-	M_DrawMPHost,
+	4, 5,
+	draw_routine,
 	M_DrawEggaChannel,
-	M_MPOptSelectTick,	// This handles the unfolding options
+	tick_routine,
 	NULL,
 	M_MPResetOpts,
 	NULL
@@ -66,8 +92,8 @@ void M_MPHostInit(INT32 choice)
 {
 	(void)choice;
 	mpmenu.modewinextend[0][0] = 1;
-	M_SetupNextMenu(&PLAY_MP_HostDef, true);
-	itemOn = mhost_go;
+	PLAY_MP_HostDef.lastOn = mhost_mapselect;
+	M_SetupNextMenu(&PLAY_MP_HostDef, false);
 
 	Get_rules();
 	// There's one downside to doing it this way:
