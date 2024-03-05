@@ -873,6 +873,10 @@ consvar_t cv_1pswap = PlayerCheat("1pswap", "1").min_max(1, MAXSPLITSCREENPLAYER
 consvar_t cv_debugfinishline = PlayerCheat("debugfinishline", "Off").on_off().description("Highlight finish lines, respawn lines, death pits and instakill planes with high contrast colors");
 consvar_t cv_debughudtracker = PlayerCheat("debughudtracker", "Off").on_off().description("Highlight overlapping HUD tracker blocks");
 
+#ifdef DEVELOP
+	consvar_t cv_debugprisoncd = PlayerCheat("debugprisoncd", "Off").on_off().description("Always drop a CD from breaking Prisons");
+#endif
+
 consvar_t cv_debugrank = PlayerCheat("debugrank", "Off").description("Show GP rank state on the HUD; optionally force a rank grade").values({
 	{0, "Off"},
 	{1, "On"},

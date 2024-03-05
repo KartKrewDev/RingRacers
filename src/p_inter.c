@@ -1198,13 +1198,21 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 			secretextratime = TICRATE/2;
 		}
 
-		if (
+
+#ifdef DEVELOP
+		extern consvar_t cv_debugprisoncd;
+#endif
+		if ((
 			grandprixinfo.gp == true // Bonus Round
 			&& demo.playback == false // Not playback
 			&& netgame == false // game design + makes it easier to implement
 			&& gamedata->thisprisoneggpickup_cached != NULL
 			&& gamedata->prisoneggstothispickup == 0
 			&& gamedata->thisprisoneggpickupgrabbed == false
+			)
+#ifdef DEVELOP
+			|| (cv_debugprisoncd.value && gamedata->thisprisoneggpickup_cached != NULL)
+#endif
 		)
 		{
 			// Will be 0 for the next level

@@ -1019,6 +1019,32 @@ cacheprisoneggpickup:
 	}
 
 	//CONS_Printf("thisprisoneggpickup = %u (MAXCONDITIONSETS is %u)\n", gamedata->thisprisoneggpickup, MAXCONDITIONSETS);
+
+#ifdef DEVELOP
+	extern consvar_t cv_debugprisoncd;
+	// If all drops are collected, just force the first valid one.
+	if (cv_debugprisoncd.value && gamedata->thisprisoneggpickup_cached == NULL)
+	{
+		for (i = 0; gamedata->thisprisoneggpickup_cached == NULL &&
+			i < gamedata->numprisoneggpickups; i++)
+		{
+			c = &conditionSets[gamedata->prisoneggpickups[i]];
+			if (c->numconditions)
+			{
+				for (j = 0; j < c->numconditions; ++j)
+				{
+					cn = &c->condition[j];
+					if (cn->type != UC_PRISONEGGCD)
+						continue;
+
+					gamedata->thisprisoneggpickup = gamedata->prisoneggpickups[i];
+					gamedata->thisprisoneggpickup_cached = cn;
+					break;
+				}
+			}
+		}
+	}
+#endif
 }
 
 static void M_PrecacheLevelLocks(void)
