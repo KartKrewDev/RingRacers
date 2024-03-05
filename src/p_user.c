@@ -1314,13 +1314,13 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 				PR_SaveProfiles();
 			}
 
-			if (P_IsLocalPlayer(player) && player->skin < numskins)
+			if (P_IsMachineLocalPlayer(player) && player->skin < numskins)
 			{
 				skins[player->skin].records.wins++;
 			}
 		}
 
-		if (!demo.savebutton && P_IsLocalPlayer(player))
+		if (!demo.savebutton && P_IsMachineLocalPlayer(player))
 			demo.savebutton = leveltime;
 	}
 }
