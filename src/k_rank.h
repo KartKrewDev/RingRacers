@@ -37,6 +37,7 @@ struct gpRank_level_t
 	gpRank_level_perplayer_t perPlayer[MAXSPLITSCREENPLAYERS];
 };
 
+// Please remember to update P_ArchiveMisc
 struct gpRank_t
 {
 	UINT8 numPlayers;
