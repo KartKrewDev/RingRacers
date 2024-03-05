@@ -1520,6 +1520,9 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"tmxbdn", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Button down
   {"tmxbup", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Button up
 
+  // SMS
+  {"sting0", false,  64, 2, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Ring loss
+
   // SRB2kart - Skin sounds
   {"kwin",   false,  64, 96, -1, NULL, 0,   SKSKWIN,  -1, LUMPERROR, ""},
   {"klose",  false,  64, 96, -1, NULL, 0,  SKSKLOSE,  -1, LUMPERROR, ""},

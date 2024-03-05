@@ -4819,6 +4819,11 @@ void K_DebtStingPlayer(player_t *player, mobj_t *source)
 	player->spinouttimer = length;
 	player->wipeoutslow = min(length-1, wipeoutslowtime+1);
 
+	player->ringvisualwarning = TICRATE*2;
+
+	if (P_IsDisplayPlayer(player))
+		S_StartSoundAtVolume(NULL, sfx_sting0, 170);
+
 	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 }
 

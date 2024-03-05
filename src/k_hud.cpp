@@ -2957,7 +2957,19 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 	rn[0] = ((abs(stplyr->hudrings) / 10) % 10);
 	rn[1] = (abs(stplyr->hudrings) % 10);
 
-	if (stplyr->hudrings <= 0 && (leveltime/5 & 1)) // In debt
+	if (stplyr->hudrings <= 0 && stplyr->ringvisualwarning > 1)
+	{
+		colorring = true;	
+		if ((leveltime/2 & 1))
+		{
+			ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_CRIMSON, GTC_CACHE);
+		}
+		else
+		{
+			ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_WHITE, GTC_CACHE);
+		}
+	}
+	else if (stplyr->hudrings <= 0 && (leveltime/5 & 1)) // In debt
 	{
 		ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_CRIMSON, GTC_CACHE);
 		colorring = true;
