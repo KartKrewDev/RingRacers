@@ -104,8 +104,9 @@ typedef enum
 	PF_RINGLOCK			= 1<<13, // Prevent picking up rings while SPB is locked on
 
 	PF_ANALOGSTICK		= 1<<14, // This player is using an analog joystick
+	PF_TRUSTWAYPOINTS	= 1<<15, // Do not activate lap cheat prevention next time finish line distance is updated
 
-	//15-17 free, was previously itemflags stuff
+	//16-17 free, was previously itemflags stuff
 
 	PF_DRIFTINPUT		= 1<<18, // Drifting!
 	PF_GETSPARKS		= 1<<19, // Can get sparks

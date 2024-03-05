@@ -9987,10 +9987,11 @@ static void K_UpdatePlayerWaypoints(player_t *const player)
 	player->distancetofinishprev = player->distancetofinish;
 	K_UpdateDistanceFromFinishLine(player);
 
-	// Respawning should be a full reset.
-	// So should touching the first waypoint ever.
 	UINT32 delta = u32_delta(player->distancetofinish, player->distancetofinishprev);
-	if (player->respawn.state == RESPAWNST_NONE && delta > distance_threshold && old_currentwaypoint != NULL)
+	if (delta > distance_threshold &&
+		player->respawn.state == RESPAWNST_NONE && // Respawning should be a full reset.
+		old_currentwaypoint != NULL && // So should touching the first waypoint ever.
+		!(player->pflags & PF_TRUSTWAYPOINTS)) // Special exception.
 	{
 		extern consvar_t cv_debuglapcheat;
 #define debug_args "Player %s: waypoint ID %d too far away (%u > %u)\n", \
@@ -10036,6 +10037,8 @@ static void K_UpdatePlayerWaypoints(player_t *const player)
 		player->lastsafelap = player->laps;
 		player->lastsafecheatcheck = player->cheatchecknum;
 	}
+
+	player->pflags &= ~PF_TRUSTWAYPOINTS; // clear special exception
 }
 
 INT32 K_GetKartRingPower(const player_t *player, boolean boosted)
