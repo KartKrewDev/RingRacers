@@ -1085,6 +1085,7 @@ void D_ClearState(void)
 	nextmapoverride = 0;
 	skipstats = 0;
 	tutorialchallenge = TUTORIALSKIP_NONE;
+	gamemap = 1;
 
 	gameaction = ga_nothing;
 	memset(displayplayers, 0, sizeof(displayplayers));
