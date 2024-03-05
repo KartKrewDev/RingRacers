@@ -999,12 +999,12 @@ void M_Drawer(void)
 			F_VersionDrawer();
 		}
 
-		// Draw message overlay when needed
-		M_DrawMenuMessage();
-
 		// Draw typing overlay when needed, above all other menu elements.
 		if (menutyping.active)
 			M_DrawMenuTyping();
+
+		// Draw message overlay when needed
+		M_DrawMenuMessage();
 	}
 
 	if (menuwipe)
