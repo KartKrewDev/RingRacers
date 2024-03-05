@@ -28,6 +28,8 @@
 #include "k_color.h"
 #include "command.h"
 
+extern "C" consvar_t cv_dummyprofilefov, cv_fov[MAXSPLITSCREENPLAYERS];
+
 CV_PossibleValue_t lastprofile_cons_t[] = {{-1, "MIN"}, {MAXPROFILES, "MAX"}, {0, NULL}};
 
 // List of all the profiles.
@@ -79,6 +81,7 @@ profile_t* PR_MakeProfile(
 	newprofile->autoroulette = false;
 	newprofile->litesteer = true;
 	newprofile->rumble = true;
+	newprofile->fov = atoi(cv_dummyprofilefov.defaultvalue);
 
 	// Copy from gamecontrol directly as we'll be setting controls up directly in the profile.
 	memcpy(newprofile->controls, controlarray, sizeof(newprofile->controls));
@@ -98,6 +101,7 @@ profile_t* PR_MakeProfileFromPlayer(const char *prname, const char *pname, const
 	newprofile->autoroulette = cv_autoroulette[pnum].value;
 	newprofile->litesteer = cv_litesteer[pnum].value;
 	newprofile->rumble = cv_rumble[pnum].value;
+	newprofile->fov = cv_fov[pnum].value / FRACUNIT;
 
 	return newprofile;
 }
@@ -292,6 +296,7 @@ void PR_SaveProfiles(void)
 		jsonprof.preferences.autoroulette = cprof->autoroulette;
 		jsonprof.preferences.litesteer = cprof->litesteer;
 		jsonprof.preferences.rumble = cprof->rumble;
+		jsonprof.preferences.fov = cprof->fov;
 
 		for (size_t j = 0; j < num_gamecontrols; j++)
 		{
@@ -456,6 +461,7 @@ void PR_LoadProfiles(void)
 		newprof->autoroulette = jsprof.preferences.autoroulette;
 		newprof->litesteer = jsprof.preferences.litesteer;
 		newprof->rumble = jsprof.preferences.rumble;
+		newprof->fov = jsprof.preferences.fov;
 
 		try
 		{
@@ -495,6 +501,7 @@ static void PR_ApplyProfile_Settings(profile_t *p, UINT8 playernum)
 	CV_StealthSetValue(&cv_autoroulette[playernum], p->autoroulette);
 	CV_StealthSetValue(&cv_litesteer[playernum], p->litesteer);
 	CV_StealthSetValue(&cv_rumble[playernum], p->rumble);
+	CV_StealthSetValue(&cv_fov[playernum], p->fov);
 
 	// set controls...
 	G_ApplyControlScheme(playernum, p->controls);

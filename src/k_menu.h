@@ -1047,6 +1047,7 @@ extern consvar_t cv_dummyprofilekickstart;
 extern consvar_t cv_dummyprofileautoroulette;
 extern consvar_t cv_dummyprofilelitesteer;
 extern consvar_t cv_dummyprofilerumble;
+extern consvar_t cv_dummyprofilefov;
 
 void M_ResetOptions(void);
 void M_InitOptions(INT32 choice); // necessary for multiplayer since there's some options we won't want to access
