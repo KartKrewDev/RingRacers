@@ -2015,6 +2015,13 @@ static void K_HandleLapIncrement(player_t *player)
 					SetRandomFakePlayerSkin(player, true);
 				}
 
+				// Always trust waypoints entering the first lap.
+				// This accounts for special POSITION room setups.
+				// debuglapcheat can be used to expose errors that would be hidden by this exception.
+				extern consvar_t cv_debuglapcheat;
+				if (!cv_debuglapcheat.value && player->laps == 1)
+					player->pflags |= PF_TRUSTWAYPOINTS;
+
 				K_UpdateAllPlayerPositions(); // P_DoPlayerExit calls this
 			}
 
