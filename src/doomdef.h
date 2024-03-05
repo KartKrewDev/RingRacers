@@ -67,12 +67,10 @@ extern "C" {
 #if !defined (NDEBUG)
 #define PACKETDROP
 #define PARANOIA
-//#define RANGECHECK
 #define ZDEBUG
 #endif
 
 // Uncheck this to compile debugging code
-#define RANGECHECK
 //#ifndef PARANOIA
 //#define PARANOIA // do some tests that never fail but maybe
 // turn this on by make etc.. DEBUGMODE = 1 or use the Debug profile in the VC++ projects

@@ -105,12 +105,10 @@ static void R_DrawColumnTemplate(drawcolumndata_t *dc)
 		return;
 	}
 
-#ifdef RANGECHECK
 	if ((unsigned)dc->x >= (unsigned)vid.width || dc->yl < 0 || dc->yh >= vid.height)
 	{
 		return;
 	}
-#endif
 
 	if constexpr (Type & DrawColumnType::DC_LIGHTLIST)
 	{
@@ -341,10 +339,8 @@ void R_DrawFogColumn(drawcolumndata_t *dc)
 	if (count < 0)
 		return;
 
-#ifdef RANGECHECK
 	if ((unsigned)dc->x >= (unsigned)vid.width || dc->yl < 0 || dc->yh >= vid.height)
 		return;
-#endif
 
 	// Framebuffer destination address.
 	// Use ylookup LUT to avoid multiply with ScreenWidth.
@@ -408,10 +404,8 @@ void R_DrawColumn_Flat(drawcolumndata_t *dc)
 	if (count < 0) // Zero length, column does not exceed a pixel.
 		return;
 
-#ifdef RANGECHECK
 	if ((unsigned)dc->x >= (unsigned)vid.width || dc->yl < 0 || dc->yh >= vid.height)
 		return;
-#endif
 
 	// Framebuffer destination address.
 	// Use ylookup LUT to avoid multiply with ScreenWidth.

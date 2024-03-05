@@ -909,14 +909,12 @@ static void R_Subsector(size_t num)
 
 	ZoneScoped;
 
-#ifdef RANGECHECK
-	if (num >= numsubsectors)
-		I_Error("R_Subsector: ss %s with numss = %s\n", sizeu1(num), sizeu2(numsubsectors));
-#endif
-
 	// subsectors added at run-time
 	if (num >= numsubsectors)
+	{
+		CONS_Debug(DBG_RENDER, "R_Subsector: ss %s with numss = %s\n", sizeu1(num), sizeu2(numsubsectors));
 		return;
+	}
 
 	sub = &subsectors[num];
 	frontsector = sub->sector;

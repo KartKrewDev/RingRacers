@@ -1427,15 +1427,11 @@ void T_PolyObjRotate(polyrotate_t *th)
 	polyobj_t *po = Polyobj_GetForNum(th->polyObjNum);
 
 	if (!po)
-#ifdef RANGECHECK
-		I_Error("T_PolyObjRotate: thinker has invalid id %d\n", th->polyObjNum);
-#else
 	{
 		CONS_Debug(DBG_POLYOBJ, "T_PolyObjRotate: thinker with invalid id %d removed.\n", th->polyObjNum);
 		P_RemoveThinker(&th->thinker);
 		return;
 	}
-#endif
 
 	// check for displacement due to override and reattach when possible
 	if (po->thinker == NULL)
@@ -1508,15 +1504,11 @@ void T_PolyObjMove(polymove_t *th)
 	polyobj_t *po = Polyobj_GetForNum(th->polyObjNum);
 
 	if (!po)
-#ifdef RANGECHECK
-		I_Error("T_PolyObjMove: thinker has invalid id %d\n", th->polyObjNum);
-#else
 	{
 		CONS_Debug(DBG_POLYOBJ, "T_PolyObjMove: thinker with invalid id %d removed.\n", th->polyObjNum);
 		P_RemoveThinker(&th->thinker);
 		return;
 	}
-#endif
 
 	// check for displacement due to override and reattach when possible
 	if (po->thinker == NULL)
@@ -1598,15 +1590,11 @@ void T_PolyObjWaypoint(polywaypoint_t *th)
 	fixed_t speed = th->speed;
 
 	if (!po)
-#ifdef RANGECHECK
-		I_Error("T_PolyObjWaypoint: thinker has invalid id %d\n", th->polyObjNum);
-#else
 	{
 		CONS_Debug(DBG_POLYOBJ, "T_PolyObjWaypoint: thinker with invalid id %d removed.", th->polyObjNum);
 		P_RemoveThinker(&th->thinker);
 		return;
 	}
-#endif
 
 	// check for displacement due to override and reattach when possible
 	if (!po->thinker)
@@ -1714,15 +1702,11 @@ void T_PolyDoorSlide(polyslidedoor_t *th)
 	polyobj_t *po = Polyobj_GetForNum(th->polyObjNum);
 
 	if (!po)
-#ifdef RANGECHECK
-		I_Error("T_PolyDoorSlide: thinker has invalid id %d\n", th->polyObjNum);
-#else
 	{
 		CONS_Debug(DBG_POLYOBJ, "T_PolyDoorSlide: thinker with invalid id %d removed.\n", th->polyObjNum);
 		P_RemoveThinker(&th->thinker);
 		return;
 	}
-#endif
 
 	// check for displacement due to override and reattach when possible
 	if (po->thinker == NULL)
@@ -1819,15 +1803,11 @@ void T_PolyDoorSwing(polyswingdoor_t *th)
 	polyobj_t *po = Polyobj_GetForNum(th->polyObjNum);
 
 	if (!po)
-#ifdef RANGECHECK
-		I_Error("T_PolyDoorSwing: thinker has invalid id %d\n", th->polyObjNum);
-#else
 	{
 		CONS_Debug(DBG_POLYOBJ, "T_PolyDoorSwing: thinker with invalid id %d removed.\n", th->polyObjNum);
 		P_RemoveThinker(&th->thinker);
 		return;
 	}
-#endif
 
 	// check for displacement due to override and reattach when possible
 	if (po->thinker == NULL)
@@ -1918,15 +1898,11 @@ void T_PolyObjDisplace(polydisplace_t *th)
 	fixed_t dx, dy;
 
 	if (!po)
-#ifdef RANGECHECK
-		I_Error("T_PolyObjDisplace: thinker has invalid id %d\n", th->polyObjNum);
-#else
 	{
 		CONS_Debug(DBG_POLYOBJ, "T_PolyObjDisplace: thinker with invalid id %d removed.\n", th->polyObjNum);
 		P_RemoveThinker(&th->thinker);
 		return;
 	}
-#endif
 
 	// check for displacement due to override and reattach when possible
 	if (po->thinker == NULL)
@@ -1958,15 +1934,11 @@ void T_PolyObjRotDisplace(polyrotdisplace_t *th)
 	fixed_t rotangle;
 
 	if (!po)
-#ifdef RANGECHECK
-		I_Error("T_PolyObjRotDisplace: thinker has invalid id %d\n", th->polyObjNum);
-#else
 	{
 		CONS_Debug(DBG_POLYOBJ, "T_PolyObjRotDisplace: thinker with invalid id %d removed.\n", th->polyObjNum);
 		P_RemoveThinker(&th->thinker);
 		return;
 	}
-#endif
 
 	// check for displacement due to override and reattach when possible
 	if (po->thinker == NULL)
@@ -2442,15 +2414,11 @@ void T_PolyObjFlag(polymove_t *th)
 	size_t i;
 
 	if (!po)
-#ifdef RANGECHECK
-		I_Error("T_PolyObjFlag: thinker has invalid id %d\n", th->polyObjNum);
-#else
 	{
 		CONS_Debug(DBG_POLYOBJ, "T_PolyObjFlag: thinker with invalid id %d removed.\n", th->polyObjNum);
 		P_RemoveThinker(&th->thinker);
 		return;
 	}
-#endif
 
 	// check for displacement due to override and reattach when possible
 	if (po->thinker == NULL)
@@ -2549,15 +2517,11 @@ void T_PolyObjFade(polyfade_t *th)
 	polyobj_t *po = Polyobj_GetForNum(th->polyObjNum);
 
 	if (!po)
-#ifdef RANGECHECK
-		I_Error("T_PolyObjFade: thinker has invalid id %d\n", th->polyObjNum);
-#else
 	{
 		CONS_Debug(DBG_POLYOBJ, "T_PolyObjFade: thinker with invalid id %d removed.\n", th->polyObjNum);
 		P_RemoveThinker(&th->thinker);
 		return;
 	}
-#endif
 
 	// check for displacement due to override and reattach when possible
 	if (po->thinker == NULL)

@@ -579,7 +579,7 @@ target_compile_definitions(SRB2SDL2 PRIVATE -DCMAKECONFIG)
 
 # Misc. build options from Makefiles
 if(SRB2_CONFIG_DEBUGMODE)
-	target_compile_definitions(SRB2SDL2 PRIVATE -DZDEBUG -DPARANOIA -DRANGECHECK -DPACKETDROP)
+	target_compile_definitions(SRB2SDL2 PRIVATE -DZDEBUG -DPARANOIA -DPACKETDROP)
 endif()
 if(SRB2_CONFIG_TESTERS)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DTESTERS)
