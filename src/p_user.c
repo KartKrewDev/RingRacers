@@ -1320,7 +1320,7 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 			}
 		}
 
-		if (!demo.savebutton && P_IsLocalPlayer(player))
+		if (!demo.savebutton && P_IsMachineLocalPlayer(player))
 			demo.savebutton = leveltime;
 	}
 }
