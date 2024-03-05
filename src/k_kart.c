@@ -4820,9 +4820,7 @@ void K_DebtStingPlayer(player_t *player, mobj_t *source)
 	player->wipeoutslow = min(length-1, wipeoutslowtime+1);
 
 	player->ringvisualwarning = TICRATE*2;
-
-	if (P_IsDisplayPlayer(player))
-		S_StartSoundAtVolume(NULL, sfx_sting0, 170);
+	player->stingfx = true;
 
 	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 }
@@ -8977,6 +8975,12 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->trickcharge = 8*TICRATE;
 
 		player->dotrickfx = false;
+	}
+
+	if (player->stingfx && !player->mo->hitlag)
+	{
+		S_StartSound(player->mo, sfx_s226l);
+		player->stingfx = false;
 	}
 
 	// Don't screw up chain ring pickup/usage with instawhip charge.

@@ -604,6 +604,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		WRITEUINT8(save->p, players[i].markedfordeath);
 		WRITEUINT8(save->p, players[i].dotrickfx);
+		WRITEUINT8(save->p, players[i].stingfx);
 		WRITEUINT8(save->p, players[i].bumperinflate);
 
 		WRITEUINT8(save->p, players[i].ringboxdelay);
@@ -1191,6 +1192,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		players[i].markedfordeath = READUINT8(save->p);
 		players[i].dotrickfx = READUINT8(save->p);
+		players[i].stingfx = READUINT8(save->p);
 		players[i].bumperinflate = READUINT8(save->p);
 
 		players[i].ringboxdelay = READUINT8(save->p);

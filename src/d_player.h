@@ -993,6 +993,7 @@ struct player_t
 
 	boolean markedfordeath;
 	boolean dotrickfx;
+	boolean stingfx;
 	UINT8 bumperinflate;
 
 	UINT8 ringboxdelay; // Delay until Ring Box auto-activates
