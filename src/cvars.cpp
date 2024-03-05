@@ -356,7 +356,7 @@ consvar_t cv_drawdist_precip = Player("drawdist_precip", "1024").values({
 	{0, "None"},
 });
 
-consvar_t cv_drawinput = Player("drawinput", "No").yes_no();
+consvar_t cv_drawinput = Player("drawinput", "Off").on_off();
 consvar_t cv_ffloorclip = Player("ffloorclip", "On").on_off();
 
 consvar_t cv_fpscap = Player("fpscap", "Match refresh rate").values({
@@ -951,6 +951,7 @@ void Dummymenuplayer_OnChange(void);
 consvar_t cv_dummymenuplayer = MenuDummy("dummymenuplayer", "P1").onchange(Dummymenuplayer_OnChange).values({{0, "NOPE"}, {1, "P1"}, {2, "P2"}, {3, "P3"}, {4, "P4"}});
 
 consvar_t cv_dummyprofileautoroulette = MenuDummy("dummyprofileautoroulette", "Off").on_off();
+consvar_t cv_dummyprofilefov = MenuDummy("dummyprofilefov", "90").min_max(70, 110);
 consvar_t cv_dummyprofilelitesteer = MenuDummy("dummyprofilelitesteer", "On").on_off();
 consvar_t cv_dummyprofilekickstart = MenuDummy("dummyprofilekickstart", "Off").on_off();
 consvar_t cv_dummyprofilename = MenuDummy("dummyprofilename", "");

@@ -90,15 +90,18 @@ static void M_ProfileEditApply(void)
 	optionsmenu.profile->autoroulette = cv_dummyprofileautoroulette.value;
 	optionsmenu.profile->litesteer = cv_dummyprofilelitesteer.value;
 	optionsmenu.profile->rumble = cv_dummyprofilerumble.value;
+	optionsmenu.profile->fov = cv_dummyprofilefov.value;
 
 	// If this profile is in-use by anyone, apply the changes immediately upon exiting.
 	// Don't apply the profile itself as that would lead to issues mid-game.
 	if (belongsto > -1 && belongsto < MAXSPLITSCREENPLAYERS)
 	{
+		extern consvar_t cv_fov[MAXSPLITSCREENPLAYERS];
 		CV_SetValue(&cv_kickstartaccel[belongsto], cv_dummyprofilekickstart.value);
 		CV_SetValue(&cv_autoroulette[belongsto], cv_dummyprofileautoroulette.value);
 		CV_SetValue(&cv_litesteer[belongsto], cv_dummyprofilelitesteer.value);
 		CV_SetValue(&cv_rumble[belongsto], cv_dummyprofilerumble.value);
+		CV_SetValue(&cv_fov[belongsto], cv_dummyprofilefov.value);
 	}
 
 	// Reapply player 1's real profile.

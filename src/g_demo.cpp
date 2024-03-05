@@ -3591,7 +3591,7 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	// Skip unlockables
 	{
 		UINT32 unlockables = READUINT32(p);
-		p += std::min<UINT32>(unlockables, MAXUNLOCKABLES);
+		p += unlockables;
 	}
 
 	p++; // mapmusrng
@@ -3814,7 +3814,7 @@ staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer)
 	// Skip unlockables
 	{
 		UINT32 unlockables = READUINT32(p);
-		p += std::min<UINT32>(unlockables, MAXUNLOCKABLES);
+		p += unlockables;
 	}
 
 	p++; // mapmusrng

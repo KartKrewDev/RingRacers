@@ -93,6 +93,7 @@ void M_StartEditProfile(INT32 c)
 			CV_StealthSetValue(&cv_dummyprofileautoroulette, optionsmenu.profile->autoroulette);
 			CV_StealthSetValue(&cv_dummyprofilelitesteer, optionsmenu.profile->litesteer);
 			CV_StealthSetValue(&cv_dummyprofilerumble, optionsmenu.profile->rumble);
+			CV_StealthSetValue(&cv_dummyprofilefov, optionsmenu.profile->fov);
 		}
 		else
 		{
@@ -102,6 +103,7 @@ void M_StartEditProfile(INT32 c)
 			CV_StealthSetValue(&cv_dummyprofileautoroulette, 0); // off
 			CV_StealthSetValue(&cv_dummyprofilelitesteer, 1); // on
 			CV_StealthSetValue(&cv_dummyprofilerumble, 1);	// on
+			CV_StealthSetValue(&cv_dummyprofilefov, 90);
 		}
 
 		// Setup greyout and stuff.
