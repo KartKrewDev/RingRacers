@@ -5920,9 +5920,9 @@ static void Local_Maketic(INT32 realtics)
 	INT32 i;
 
 	I_OsPolling(); // I_Getevent
-	D_ProcessEvents(); // menu responder, cons responder,
-	                   // game responder calls HU_Responder, AM_Responder,
-	                   // and G_MapEventsToControls
+	D_ProcessEvents(true); // menu responder, cons responder,
+	                       // game responder calls HU_Responder, AM_Responder,
+	                       // and G_MapEventsToControls
 
 	if (!dedicated) rendergametic = gametic;
 

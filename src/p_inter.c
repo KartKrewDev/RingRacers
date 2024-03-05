@@ -634,6 +634,14 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			P_SetTarget(&special->tracer, toucher);
 			toucher->flags |= MF_NOGRAVITY;
 			toucher->momz = (8*toucher->scale) * P_MobjFlip(toucher);
+
+			// Snap to the unfortunate player and quit moving laterally, or we can end up quite far away
+			special->momx = 0;
+			special->momy = 0;
+			special->x = toucher->x;
+			special->y = toucher->y;
+			special->z = toucher->z;
+
 			S_StartSound(toucher, sfx_s1b2);
 			return;
 
@@ -3114,8 +3122,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 						source->player->invincibilityextensions++;
 
 						source->player->invincibilitytimer += kinvextend;
-						// This has a scaling boost type now, don't let it get too crazy
-						source->player->invincibilitytimer = min(source->player->invincibilitytimer, 20*TICRATE);
 
 						if (P_IsDisplayPlayer(source->player))
 							S_StartSound(NULL, sfx_gsha7);

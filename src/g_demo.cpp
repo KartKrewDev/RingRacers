@@ -3588,6 +3588,14 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	if ((flags & DF_GRANDPRIX))
 		p += 3;
 
+	// Skip unlockables
+	{
+		UINT32 unlockables = READUINT32(p);
+		p += std::min<UINT32>(unlockables, MAXUNLOCKABLES);
+	}
+
+	p++; // mapmusrng
+
 	if (*p == DEMOMARKER)
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Replay is empty.\n"), defdemoname);
@@ -3802,6 +3810,14 @@ staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer)
 
 	if ((flags & DF_GRANDPRIX))
 		p += 3;
+
+	// Skip unlockables
+	{
+		UINT32 unlockables = READUINT32(p);
+		p += std::min<UINT32>(unlockables, MAXUNLOCKABLES);
+	}
+
+	p++; // mapmusrng
 
 	// Assert first player is in and then read name
 	if (READUINT8(p) != 0)

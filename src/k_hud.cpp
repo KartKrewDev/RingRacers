@@ -1371,6 +1371,7 @@ static void K_drawKartItem(void)
 	// Set to 'no item' just in case.
 	const UINT8 offset = ((r_splitscreen > 1) ? 1 : 0);
 	patch_t *localpatch[3] = { kp_nodraw, kp_nodraw, kp_nodraw };
+	UINT8 localamt[3] = {0, 0, 0};
 	patch_t *localbg = ((offset) ? kp_itembg[2] : kp_itembg[0]);
 	patch_t *localinv = ((offset) ? kp_invincibility[((leveltime % (6*3)) / 3) + 7] : kp_invincibility[(leveltime % (7*3)) / 3]);
 	INT32 fx = 0, fy = 0, fflags = 0;	// final coords for hud and flags...
@@ -1403,14 +1404,19 @@ static void K_drawKartItem(void)
 			{
 				case KITEM_INVINCIBILITY:
 					localpatch[i] = localinv;
+					localamt[i] = amt;
 					break;
 
 				case KITEM_ORBINAUT:
 					localpatch[i] = kp_orbinaut[(offset ? 4 : std::min(amt-1, 3))];
+					if (amt > 4)
+						localamt[i] = amt;
 					break;
 
 				default:
 					localpatch[i] = K_GetCachedItemPatch(item, offset);
+					if (item != KITEM_BALLHOG || amt != 5)
+						localamt[i] = amt;
 					break;
 			}
 		}
@@ -1586,25 +1592,35 @@ static void K_drawKartItem(void)
 		V_SLIDEIN|fflags
 	);
 
-	V_DrawFixedPatch(
-		fx<<FRACBITS, (fy<<FRACBITS) + rouletteOffset + rouletteSpace,
-		FRACUNIT, V_HUDTRANS|V_SLIDEIN|fflags,
-		localpatch[0], (localcolor[0] ? R_GetTranslationColormap(colormode[0], localcolor[0], GTC_CACHE) : NULL)
-	);
-	V_DrawFixedPatch(
-		fx<<FRACBITS, (fy<<FRACBITS) + rouletteOffset - rouletteSpace,
-		FRACUNIT, V_HUDTRANS|V_SLIDEIN|fflags,
-		localpatch[2], (localcolor[2] ? R_GetTranslationColormap(colormode[2], localcolor[2], GTC_CACHE) : NULL)
-	);
+	auto draw_item = [&](fixed_t y, int i)
+	{
+		const UINT8 *colormap = (localcolor[i] ? R_GetTranslationColormap(colormode[i], localcolor[i], GTC_CACHE) : NULL);
+		V_DrawFixedPatch(
+			fx<<FRACBITS, (fy<<FRACBITS) + rouletteOffset + y,
+			FRACUNIT, V_HUDTRANS|V_SLIDEIN|fflags,
+			localpatch[i], colormap
+		);
+		if (localamt[i] > 1)
+		{
+			using srb2::Draw;
+			Draw(
+				fx + rouletteCrop.x + FixedToFloat(rouletteSpace/2),
+				fy + rouletteCrop.y + FixedToFloat(rouletteOffset + y + rouletteSpace) - (r_splitscreen > 1 ? 15 : 33))
+				.font(r_splitscreen > 1 ? Draw::Font::kRollingNum4P : Draw::Font::kRollingNum)
+				.align(Draw::Align::kCenter)
+				.flags(V_HUDTRANS|V_SLIDEIN|fflags)
+				.colormap(colormap)
+				.text("{}", localamt[i]);
+		}
+	};
+
+	draw_item(rouletteSpace, 0);
+	draw_item(-rouletteSpace, 2);
 
 	if (stplyr->itemRoulette.active == true)
 	{
 		// Draw the item underneath the box.
-		V_DrawFixedPatch(
-			fx<<FRACBITS, (fy<<FRACBITS) + rouletteOffset,
-			FRACUNIT, V_HUDTRANS|V_SLIDEIN|fflags,
-			localpatch[1], (localcolor[1] ? R_GetTranslationColormap(colormode[1], localcolor[1], GTC_CACHE) : NULL)
-		);
+		draw_item(0, 1);
 		V_ClearClipRect();
 	}
 	else
@@ -1987,8 +2003,13 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 				}
 			}
 
-			workx -= V_ThinStringWidth(stickermedalinfo.targettext, splitflags);
-			V_DrawThinString(workx, worky, splitflags, stickermedalinfo.targettext);
+			using srb2::Draw;
+			Draw::TextElement text(stickermedalinfo.targettext);
+			text.flags(splitflags);
+			text.font(Draw::Font::kZVote);
+
+			workx -= text.width();
+			Draw(workx, worky).text(text);
 		}
 
 		workx -= (6 + (i*5));
@@ -5953,11 +5974,19 @@ void K_drawKartHUD(void)
 	{
 		// Draw the timestamp
 		if (LUA_HudEnabled(hud_time))
-			K_drawKartTimestamp(stplyr->realtime,
-				TIME_X,
-				TIME_Y,
-				V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP|V_SNAPTORIGHT,
-				0);
+		{
+			bool ta = modeattacking && !demo.playback;
+			INT32 flags = V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP|V_SNAPTORIGHT;
+			K_drawKartTimestamp(stplyr->realtime, TIME_X, TIME_Y + (ta ? 2 : 0), flags, 0);
+			if (ta)
+			{
+				using srb2::Draw;
+				Draw(BASEVIDWIDTH - 19, 2)
+					.flags(flags | V_YELLOWMAP)
+					.align(Draw::Align::kRight)
+					.text("\xBE Restart");
+			}
+		}
 
 		islonesome = K_drawKartPositionFaces();
 	}
@@ -5998,7 +6027,7 @@ void K_drawKartHUD(void)
 			if (demo.attract == DEMO_ATTRACT_TITLE) // Draw logo on title screen demos
 			{
 				INT32 x = BASEVIDWIDTH - 8, y = BASEVIDHEIGHT-8, snapflags = V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SLIDEIN;
-				patch_t *pat = static_cast<patch_t*>(W_CachePatchName((cv_alttitle.value ? "MTSJUMPR1" : "MTSBUMPR1"), PU_CACHE));
+				patch_t *pat = static_cast<patch_t*>(W_CachePatchName((M_UseAlternateTitleScreen() ? "MTSJUMPR1" : "MTSBUMPR1"), PU_CACHE));
 
 				if (r_splitscreen == 3)
 				{

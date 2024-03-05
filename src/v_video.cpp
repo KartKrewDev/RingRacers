@@ -987,10 +987,8 @@ void V_DrawBlock(INT32 x, INT32 y, INT32 scrn, INT32 width, INT32 height, const 
 	UINT8 *dest;
 	const UINT8 *deststop;
 
-#ifdef RANGECHECK
 	if (x < 0 || x + width > vid.width || y < 0 || y + height > vid.height || (unsigned)scrn > 4)
 		I_Error("Bad V_DrawBlock");
-#endif
 
 	dest = screens[scrn] + y*vid.width + x;
 	deststop = screens[scrn] + vid.rowbytes * vid.height;
@@ -2342,6 +2340,12 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 		case PINGF_FONT:
 			result->spacew = 3;
 			break;
+		case ROLNUM_FONT:
+			result->spacew = 17;
+			break;
+		case RO4NUM_FONT:
+			result->spacew = 9;
+			break;
 	}
 
 	switch (fontno)
@@ -2372,6 +2376,12 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 		case OPPRF_FONT:
 		case PINGF_FONT:
 			result->lfh = 10;
+			break;
+		case ROLNUM_FONT:
+			result->lfh = 33;
+			break;
+		case RO4NUM_FONT:
+			result->lfh = 15;
 			break;
 	}
 
@@ -2432,6 +2442,8 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 			break;
 		case OPPRF_FONT:
 		case PINGF_FONT:
+		case ROLNUM_FONT:
+		case RO4NUM_FONT:
 			if (result->chw)
 				result->dim_fn = FixedCharacterDim;
 			else

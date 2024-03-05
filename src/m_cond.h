@@ -494,6 +494,8 @@ UINT16 M_EmblemMapNum(emblem_t *emblem);
 
 #define M_Achieved(a) ((a) >= MAXCONDITIONSETS || gamedata->achieved[a])
 
+boolean M_UseAlternateTitleScreen(void);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

@@ -469,10 +469,11 @@ static boolean P_CrossSubsector(size_t num, register los_t *los, register los_fu
 	seg_t *seg;
 	INT32 count;
 
-#ifdef RANGECHECK
 	if (num >= numsubsectors)
-		I_Error("P_CrossSubsector: ss %s with numss = %s\n", sizeu1(num), sizeu2(numsubsectors));
-#endif
+	{
+		CONS_Debug(DBG_RENDER, "P_CrossSubsector: ss %s with numss = %s\n", sizeu1(num), sizeu2(numsubsectors));
+		return true;
+	}
 
 	// haleyjd 02/23/06: this assignment should be after the above check
 	seg = segs + subsectors[num].firstline;

@@ -27,6 +27,7 @@ void Obj_GardenTopThink(mobj_t *top);
 void Obj_GardenTopSparkThink(mobj_t *spark);
 void Obj_GardenTopArrowThink(mobj_t *arrow);
 boolean Obj_GardenTopPlayerIsGrinding(const player_t *player);
+boolean Obj_GardenTopPlayerNeedsHelp(const mobj_t *top);
 
 /* Shrink */
 void Obj_PohbeeThinker(mobj_t *pohbee);

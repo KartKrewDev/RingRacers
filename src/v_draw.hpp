@@ -41,6 +41,8 @@ public:
 		kThinTimer,
 		kMenu,
 		kMedium,
+		kRollingNum,
+		kRollingNum4P,
 	};
 
 	enum class Align

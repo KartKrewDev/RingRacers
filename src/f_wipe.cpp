@@ -494,11 +494,6 @@ void F_RunWipe(UINT8 wipemode, UINT8 wipetype, boolean drawMenu, const char *col
 	WipeInAction = true;
 	wipe_scr = screens[0];
 
-	// FIXME: Wipes SUCK and drop input events for some reason, causing stuck gamepad inputs.
-	// It's better to ignore an intentional hold than to turn a tap into a phantom hold.
-	// (If you're removing this, remove the one after the inner loop too!)
-	G_ResetAllDeviceGameKeyDown();
-
 	// lastwipetic should either be 0 or the tic we last wiped
 	// on for fade-to-black
 	for (;;)
@@ -558,6 +553,12 @@ void F_RunWipe(UINT8 wipemode, UINT8 wipetype, boolean drawMenu, const char *col
 		}
 
 		I_OsPolling();
+		// The event buffer is rather small so we need to
+		// process these events immediately, to make sure
+		// inputs don't get stuck (would happen a lot with
+		// some controllers that send a lot of analog
+		// events).
+		D_ProcessEvents(false);
 		I_UpdateNoBlit();
 
 		if (drawMenu && rendermode != render_none)
@@ -585,11 +586,6 @@ void F_RunWipe(UINT8 wipemode, UINT8 wipetype, boolean drawMenu, const char *col
 	}
 
 	WipeInAction = false;
-
-	// FIXME: Wipes SUCK and drop input events for some reason, causing stuck gamepad inputs.
-	// It's better to ignore an intentional hold than to turn a tap into a phantom hold.
-	// (If you're removing this, remove the one before the inner loop too!)
-	G_ResetAllDeviceGameKeyDown();
 
 	if (fcolor)
 	{

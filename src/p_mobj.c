@@ -5359,6 +5359,12 @@ static boolean P_IsTrackerType(INT32 type)
 		case MT_WAYPOINT: // debug
 			return true;
 
+		case MT_BUBBLESHIELDTRAP: // Mash prompt
+			return true;
+
+		case MT_GARDENTOP: // Frey
+			return true;
+
 		default:
 			return false;
 	}
