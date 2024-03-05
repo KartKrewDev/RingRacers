@@ -8772,7 +8772,14 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		K_DoIngameRespawn(player);
 	}
 
-	if (player->bigwaypointgap)
+	// Don't tick down while in damage state.
+	// There may be some maps where the timer activates for
+	// a moment during normal play, but would quickly correct
+	// itself when the player drives forward.
+	// If the player is in a damage state, they may not be
+	// able to move in time.
+	// Always let the respawn prompt appear.
+	if (player->bigwaypointgap && (player->bigwaypointgap > AUTORESPAWN_THRESHOLD || !P_PlayerInPain(player)))
 	{
 		player->bigwaypointgap--;
 		if (!player->bigwaypointgap)
