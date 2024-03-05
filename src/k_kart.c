@@ -8429,32 +8429,36 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		// Battle: spawn zero-bumpers indicator
 		if ((gametyperules & GTR_SPHERES) ? player->mo->health <= 1 : player->rings <= 0)
 		{
-			mobj_t *debtflag = P_SpawnMobj(player->mo->x + player->mo->momx, player->mo->y + player->mo->momy,
-				player->mo->z + P_GetMobjZMovement(player->mo) + player->mo->height + (24*player->mo->scale), MT_THOK);
+			UINT8 doubler;
 
-			P_SetMobjState(debtflag, S_RINGDEBT);
-			P_SetScale(debtflag, (debtflag->destscale = player->mo->scale));
-
-			K_MatchGenericExtraFlags(debtflag, player->mo);
-			debtflag->frame += (leveltime % 4);
-
-			if ((leveltime/12) & 1)
-				debtflag->frame += 4;
-
-			debtflag->color = player->skincolor;
-			debtflag->fuse = 2;
-
-			if (!(gametyperules & GTR_SPHERES))
+			// GROSS. In order to have a transparent version of this for a splitscreen local player, we actually need to spawn two!
+			for (doubler = 0; doubler < 2; doubler++)
 			{
-				P_SetScale(debtflag, 
-					Easing_InQuint(
-						min(FRACUNIT, FRACUNIT*player->ringvisualwarning/(TICRATE*3)),
-						debtflag->scale,
-						debtflag->scale*2
-					)
-				);
-				if (player->ringvisualwarning <= 1)
-					debtflag->renderflags = K_GetPlayerDontDrawFlag(player);
+				mobj_t *debtflag = P_SpawnMobj(player->mo->x + player->mo->momx, player->mo->y + player->mo->momy,
+					player->mo->z + P_GetMobjZMovement(player->mo) + player->mo->height + (24*player->mo->scale), MT_THOK);
+
+				P_SetMobjState(debtflag, S_RINGDEBT);
+				P_SetScale(debtflag, (debtflag->destscale = player->mo->scale));
+
+				K_MatchGenericExtraFlags(debtflag, player->mo);
+				debtflag->frame += (leveltime % 4);
+
+				if ((leveltime/12) & 1)
+					debtflag->frame += 4;
+
+				debtflag->color = player->skincolor;
+				debtflag->fuse = 2;
+
+				if (doubler == 0) // Real copy. Draw for everyone but us.
+				{
+					debtflag->renderflags |= K_GetPlayerDontDrawFlag(player);
+				}
+				else if (doubler == 1) // Fake copy. Draw for only us, and go transparent after a bit.
+				{
+					debtflag->renderflags |= (RF_DONTDRAW & ~K_GetPlayerDontDrawFlag(player));
+					if (player->ringvisualwarning <= 1 || gametyperules & GTR_SPHERES)
+						debtflag->renderflags |= RF_TRANS50;
+				}
 			}
 				
 		}
