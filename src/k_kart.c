@@ -9991,6 +9991,7 @@ static void K_UpdatePlayerWaypoints(player_t *const player)
 	if (delta > distance_threshold &&
 		player->respawn.state == RESPAWNST_NONE && // Respawning should be a full reset.
 		old_currentwaypoint != NULL && // So should touching the first waypoint ever.
+		player->laps != 0 && // POSITION rooms may have unorthodox waypoints to guide bots.
 		!(player->pflags & PF_TRUSTWAYPOINTS)) // Special exception.
 	{
 		extern consvar_t cv_debuglapcheat;
