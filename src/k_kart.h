@@ -70,6 +70,11 @@ Make sure this matches the actual number of states
 // Delay the wavedash visuals until we're reasonably sure that it's a deliberate turn.
 #define HIDEWAVEDASHCHARGE (60)
 
+// Auto-respawn timer for when lap cheating or out of bounds
+// is detected.
+#define AUTORESPAWN_TIME (10*TICRATE)
+#define AUTORESPAWN_THRESHOLD (7*TICRATE)
+
 angle_t K_ReflectAngle(angle_t angle, angle_t against, fixed_t maxspeed, fixed_t yourspeed);
 
 boolean K_IsDuelItem(mobjtype_t type);

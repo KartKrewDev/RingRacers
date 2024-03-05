@@ -8777,6 +8777,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->bigwaypointgap--;
 		if (!player->bigwaypointgap)
 			K_DoIngameRespawn(player);
+		else if (player->bigwaypointgap == AUTORESPAWN_THRESHOLD)
+			K_AddMessageForPlayer(player, "Press \xAE to respawn", true, false);
 	}
 
 	if (player->tripwireUnstuck && !player->mo->hitlag)
@@ -8797,7 +8799,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->respawn.state == RESPAWNST_NONE && (player->cmd.buttons & BT_RESPAWN) == BT_RESPAWN)
 	{
 		player->finalfailsafe++; // Decremented by ringshooter to "freeze" this timer
-		if (player->finalfailsafe >= 4*TICRATE)
+		// Part-way through the auto-respawn timer, you can tap Ring Shooter to respawn early
+		if (player->finalfailsafe >= 4*TICRATE ||
+			(player->bigwaypointgap && player->bigwaypointgap < AUTORESPAWN_THRESHOLD))
 		{
 			K_DoIngameRespawn(player);
 			player->finalfailsafe = 0;
@@ -10000,14 +10004,14 @@ static void K_UpdatePlayerWaypoints(player_t *const player)
 			// Start the auto respawn timer when the distance jumps.
 			if (!player->bigwaypointgap)
 			{
-				player->bigwaypointgap = 35;
+				player->bigwaypointgap = AUTORESPAWN_TIME;
 			}
 		}
 	}
 	else
 	{
 		// Reset the auto respawn timer if distance changes are back to normal.
-		if (player->bigwaypointgap == 1)
+		if (player->bigwaypointgap <= AUTORESPAWN_THRESHOLD + 1)
 		{
 			player->bigwaypointgap = 0;
 		}
