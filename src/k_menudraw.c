@@ -4164,6 +4164,13 @@ static void M_DrawServerCountAndHorizontalBar(void)
 
 void M_DrawMPServerBrowser(void)
 {
+	const char *header[3][2] = {
+		{"Server Browser", "BG_MPS1"},
+		{"Core Servers", "BG_MPS1"},
+		{"Modded Servers", "BG_MPS2"},
+	};
+	int mode = M_SecretUnlocked(SECRET_ADDONS, true) ? (mpmenu.room ? 2 : 1) : 0;
+
 	patch_t *text1 = W_CachePatchName("MENUBGT1", PU_CACHE);
 	patch_t *text2 = W_CachePatchName("MENUBGT2", PU_CACHE);
 
@@ -4183,7 +4190,7 @@ void M_DrawMPServerBrowser(void)
 	UINT8 i;
 
 	// background stuff
-	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("BG_MPS3", PU_CACHE), NULL);
+	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName(header[mode][1], PU_CACHE), NULL);
 
 	V_DrawFixedPatch(0, (BASEVIDHEIGHT + 16) * FRACUNIT, FRACUNIT, V_TRANSLUCENT, W_CachePatchName("MENUBG2", PU_CACHE), NULL);
 
@@ -4257,12 +4264,7 @@ void M_DrawMPServerBrowser(void)
 	V_DrawFill(0, 53, 320, 1, 31);
 	V_DrawFill(0, 55, 320, 1, 31);
 
-	const char *headertext;
-	if (M_SecretUnlocked(SECRET_ADDONS, true))
-		headertext = va("%s Servers", mpmenu.room ? "Modded" : "Core");
-	else
-		headertext = "Server Browser";
-	V_DrawCenteredGamemodeString(160, 2, 0, 0, headertext);
+	V_DrawCenteredGamemodeString(160, 2, 0, 0, header[mode][0]);
 
 	// normal menu options
 	M_DrawGenericMenu();
