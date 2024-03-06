@@ -4823,7 +4823,7 @@ void K_DebtStingPlayer(player_t *player, mobj_t *source)
 	player->stingfx = true;
 
 	if (P_IsDisplayPlayer(player))
-		S_StartSound(NULL, sfx_sting0);
+		S_StartSoundAtVolume(NULL, sfx_sting0, 200);
 
 	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 }
