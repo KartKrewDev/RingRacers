@@ -1505,6 +1505,9 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"cftbl0", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"cftbl1", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"cftbl2", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+
+  // S-erotonin
+  {"srank", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   
   // Generic menu SFX
   {"tmxatt", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Attention

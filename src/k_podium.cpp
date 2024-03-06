@@ -378,6 +378,8 @@ void podiumData_s::Tick(void)
 		case PODIUM_ST_GRADE_APPEAR:
 		{
 			S_StartSound(nullptr, sfx_rank);
+			if (K_CalculateGPGrade(&rank) >= GRADE_S)
+				S_StartSoundAtVolume(nullptr, sfx_srank, 200);
 			state = PODIUM_ST_GRADE_VOICE;
 			delay = TICRATE/2;
 			break;
