@@ -686,9 +686,10 @@ void M_PlayMenuJam(void);
 
 boolean M_ConsiderSealedSwapAlert(void);
 
-void M_OpenVirtualKeyboard(boolean gamepad, size_t cachelen, vkb_query_fn_t queryfn, menu_t *dummymenu);
+void M_OpenVirtualKeyboard(size_t cachelen, vkb_query_fn_t queryfn, menu_t *dummymenu);
 void M_AbortVirtualKeyboard(void);
 void M_MenuTypingInput(INT32 key);
+void M_SwitchVirtualKeyboard(boolean gamepad);
 
 void M_QuitResponse(INT32 ch);
 void M_QuitSRB2(INT32 choice);

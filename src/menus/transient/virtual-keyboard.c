@@ -196,17 +196,21 @@ void M_AbortVirtualKeyboard(void)
 		M_GoBack(0);
 }
 
-static boolean M_IsTypingKey(INT32 key)
-{
-	return key == KEY_BACKSPACE || key == KEY_ENTER
-		|| key == KEY_ESCAPE || key == KEY_DEL
-		|| key == KEY_LCTRL || key == KEY_RCTRL
-		|| isprint(key);
-}
-
 void M_MenuTypingInput(INT32 key)
 {
 	const UINT8 pid = 0;
+
+	// Determine when to check for keyboard inputs or controller inputs using menuKey, which is the key passed here as argument.
+	if (key > 0)
+	{
+		boolean gamepad = (key >= NUMKEYS);
+		M_SwitchVirtualKeyboard(gamepad);
+		if (gamepad)
+			return;
+	}
+
+	if (!menutyping.active)
+		return;
 
 	// Fade-in
 
@@ -233,71 +237,28 @@ void M_MenuTypingInput(INT32 key)
 			menutyping.menutypingfade++;
 		}
 
+		if (menutyping.menutypingfade >= 9) // either is visible
+		{
+			if (key == KEY_ENTER || key == KEY_ESCAPE)
+			{
+				M_CloseVirtualKeyboard();
+
+				M_SetMenuDelay(pid);
+				S_StartSound(NULL, sfx_s3k5b);
+
+				return;
+			}
+
+			if (menutyping.keyboardtyping)
+			{
+				M_ChangeStringCvar(key);
+				return;
+			}
+		}
+
 		if (menutyping.menutypingfade != destination)
 		{
 			// Don't allow typing until it's fully opened.
-			return;
-		}
-	}
-
-	// Determine when to check for keyboard inputs or controller inputs using menuKey, which is the key passed here as argument.
-	if (!menutyping.keyboardtyping)	// controller inputs
-	{
-		// we pressed a keyboard input that's not any of our buttons
-		if (key >= 0 && M_IsTypingKey(key) && menucmd[pid].dpad_lr == 0 && menucmd[pid].dpad_ud == 0
-			&& !(menucmd[pid].buttons & MBT_A)
-			&& !(menucmd[pid].buttons & MBT_B)
-			&& !(menucmd[pid].buttons & MBT_C)
-			&& !(menucmd[pid].buttons & MBT_X)
-			&& !(menucmd[pid].buttons & MBT_Y)
-			&& !(menucmd[pid].buttons & MBT_Z)
-			&& !(menucmd[pid].buttons & MBT_START))
-		{
-			menutyping.keyboardtyping = true;
-		}
-	}
-	else	// Keyboard inputs.
-	{
-		// On the flipside, if we're pressing any keyboard input, switch to controller inputs.
-		if (key >= 0 && !M_IsTypingKey(key) && (
-			M_MenuButtonPressed(pid, MBT_A)
-			|| M_MenuButtonPressed(pid, MBT_B)
-			|| M_MenuButtonPressed(pid, MBT_C)
-			|| M_MenuButtonPressed(pid, MBT_X)
-			|| M_MenuButtonPressed(pid, MBT_Y)
-			|| M_MenuButtonPressed(pid, MBT_Z)
-			|| M_MenuButtonPressed(pid, MBT_START)
-			|| (menucmd[pid].dpad_lr != 0 && menucmd[pid].prev_dpad_lr == 0)
-			|| (menucmd[pid].dpad_ud != 0 && menucmd[pid].prev_dpad_ud != 0)
-		))
-		{
-			/*CONS_Printf("key is %d, \
-				%c%c%c-%c%c%c-%c-%c%c%c%c\n",
-				key,
-				M_MenuButtonPressed(pid, MBT_A) ? 'A' : ' ',
-				M_MenuButtonPressed(pid, MBT_B) ? 'B' : ' ',
-				M_MenuButtonPressed(pid, MBT_C) ? 'C' : ' ',
-				M_MenuButtonPressed(pid, MBT_X) ? 'X' : ' ',
-				M_MenuButtonPressed(pid, MBT_Y) ? 'Y' : ' ',
-				M_MenuButtonPressed(pid, MBT_Z) ? 'Z' : ' ',
-				M_MenuButtonPressed(pid, MBT_START) ? '+' : ' ',
-				menucmd[pid].dpad_lr < 0 ? '<' : ' ',
-				menucmd[pid].dpad_ud > 0 ? '^' : ' ',
-				menucmd[pid].dpad_ud < 0 ? 'v' : ' ',
-				menucmd[pid].dpad_lr > 0 ? '>' : ' '
-				);*/
-			menutyping.keyboardtyping = false;
-			return;
-		}
-
-		// OTHERWISE, process keyboard inputs for typing!
-		if (key == KEY_ENTER || key == KEY_ESCAPE)
-		{
-			M_CloseVirtualKeyboard();
-
-			M_SetMenuDelay(pid);
-			S_StartSound(NULL, sfx_s3k5b);
-
 			return;
 		}
 	}
@@ -418,9 +379,8 @@ void M_MenuTypingInput(INT32 key)
 	}
 }
 
-void M_OpenVirtualKeyboard(boolean gamepad, size_t cachelen, vkb_query_fn_t queryfn, menu_t *dummymenu)
+void M_OpenVirtualKeyboard(size_t cachelen, vkb_query_fn_t queryfn, menu_t *dummymenu)
 {
-	menutyping.keyboardtyping = !gamepad;
 	menutyping.active = true;
 	menutyping.menutypingclose = false;
 
@@ -442,4 +402,10 @@ void M_OpenVirtualKeyboard(boolean gamepad, size_t cachelen, vkb_query_fn_t quer
 
 		M_SetupNextMenu(dummymenu, true);
 	}
+}
+
+void M_SwitchVirtualKeyboard(boolean gamepad)
+{
+	extern consvar_t cv_debugvirtualkeyboard;
+	menutyping.keyboardtyping = cv_debugvirtualkeyboard.value ? false : !gamepad;
 }
