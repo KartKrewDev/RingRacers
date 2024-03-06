@@ -275,8 +275,6 @@ static boolean M_GamestateCanOpenMenu(void)
 //
 boolean M_Responder(event_t *ev)
 {
-	boolean menuKeyJustChanged = false;
-
 	if (dedicated
 		|| (demo.playback && demo.attract)
 		|| M_GamestateCanOpenMenu() == false)
@@ -311,7 +309,6 @@ boolean M_Responder(event_t *ev)
 	{
 		// Record keyboard presses
 		menuKey = ev->data1;
-		menuKeyJustChanged = true;
 	}
 
 	// Profiles: Control mapping.
@@ -455,12 +452,6 @@ boolean M_Responder(event_t *ev)
 
 		noFurtherInput = false; // turns out we didn't care
 		return false;
-	}
-
-	// Typing for CV_IT_STRING
-	if (menuKeyJustChanged && menutyping.active && !menutyping.menutypingclose && menutyping.keyboardtyping)
-	{
-		M_ChangeStringCvar(menuKey);
 	}
 
 	// We're in the menu itself now.
@@ -1097,7 +1088,7 @@ static void M_HandleMenuInput(void)
 	// Typing for CV_IT_STRING
 	if (menutyping.active)
 	{
-		M_MenuTypingInput(thisMenuKey);
+		M_MenuTypingInput(-1);
 		return;
 	}
 
@@ -1136,7 +1127,7 @@ static void M_HandleMenuInput(void)
 			if (M_MenuConfirmPressed(pid))
 			{
 				// If we entered this menu by pressing a menu Key, default to keyboard typing, otherwise use controller.
-				M_OpenVirtualKeyboard(thisMenuKey == -1, MAXSTRINGLENGTH, M_QueryCvarAction, NULL);
+				M_OpenVirtualKeyboard(MAXSTRINGLENGTH, M_QueryCvarAction, NULL);
 				return;
 			}
 			else if (M_MenuExtraPressed(pid))
