@@ -1596,6 +1596,12 @@ typedef enum
 	sfx_tmxbdn,
 	sfx_tmxbup,
 
+	// SMS
+	sfx_sting0,
+
+	// Patch-up
+	sfx_s226l,
+
 	// And LASTLY, Kart's skin sounds.
 	sfx_kwin,
 	sfx_klose,
