@@ -229,7 +229,7 @@ UINT8 *R_GetSkinAvailabilities(boolean demolock, INT32 botforcecharacter)
 boolean R_SkinUsable(INT32 playernum, INT32 skinnum, boolean demoskins)
 {
 	boolean needsunlocked = false;
-	boolean useplayerstruct = ((Playing() || demo.playback) && playernum != -1);
+	boolean useplayerstruct = ((Playing() || demo.playback) && playernum >= 0);
 	UINT16 i;
 	INT32 skinid;
 
@@ -299,6 +299,13 @@ boolean R_SkinUsable(INT32 playernum, INT32 skinnum, boolean demoskins)
 	return (boolean)(gamedata->unlocked[i]);
 }
 
+boolean R_CanShowSkinInDemo(INT32 skinnum)
+{
+	if (modeattacking == ATTACKING_NONE && !(demo.playback && demo.attract))
+		return true;
+	return R_SkinUsable(-2, skinnum, false);
+}
+
 // Returns a random unlocked skin ID.
 UINT32 R_GetLocalRandomSkin(void)
 {
@@ -307,7 +314,7 @@ UINT32 R_GetLocalRandomSkin(void)
 
 	for (i = 0; i < numskins; i++)
 	{
-		if (!R_SkinUsable(-1, i, false))
+		if (!R_SkinUsable(-2, i, false))
 			continue;
 		grabskins[usableskins++] = i;
 	}
