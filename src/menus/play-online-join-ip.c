@@ -77,7 +77,6 @@ void M_JoinIP(const char *ipa)
 {
 	if (*(ipa) == '\0')	// Jack shit
 	{
-		M_StartMessage("Online Play", "Please specify an address.\n", NULL, MM_NOTHING, NULL, NULL);
 		return;
 	}
 

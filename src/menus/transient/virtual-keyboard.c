@@ -190,6 +190,7 @@ void M_AbortVirtualKeyboard(void)
 		return;
 
 	menutyping.active = false;
+	menutyping.menutypingfade = 0;
 	Z_Free(menutyping.cache);
 
 	if (currentMenu == menutyping.dummymenu)

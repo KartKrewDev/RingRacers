@@ -5,6 +5,7 @@
 #include "../m_cond.h"
 #include "../s_sound.h"
 #include "../mserv.h" // cv_masterserver
+#include "../m_misc.h"
 
 #if defined (TESTERS)
 	#define IT_STRING_CALL_NOTESTERS IT_DISABLED
@@ -73,20 +74,117 @@ static void M_PreMPRoomSelectInit(INT32 choice)
 	M_MPRoomSelectInit(0);
 }
 
+static const char *query_ip(const char *replace)
+{
+	if (replace)
+		M_JoinIP(replace);
+	return "";
+}
+
+static boolean uses_gamepad;
+
+static void ip_entry(void)
+{
+	M_OpenVirtualKeyboard(uses_gamepad, MAXSTRINGLENGTH, query_ip, NULL);
+}
+
+static consvar_t *ip_cvar(void)
+{
+	extern consvar_t cv_dummyipselect;
+	return &cv_dummyipselect;
+}
+
+static void confirm_ip_select(INT32 choice)
+{
+	if (choice == MA_YES)
+	{
+		consvar_t *cv = ip_cvar();
+		M_JoinIP(joinedIPlist[cv->value][0]);
+	}
+}
+
+static void find_ip(INT32 add)
+{
+	consvar_t *cv = ip_cvar();
+	for (int i = 0; i < NUMLOGIP; ++i)
+	{
+		CV_AddValue(cv, add);
+		if (*joinedIPlist[cv->value][0])
+			break;
+	}
+}
+
+static void direct_join_routine(INT32 choice)
+{
+	consvar_t *cv = ip_cvar();
+	INT32 index = cv->value;
+
+	if (choice == 2)
+			ip_entry();
+	else if (choice == -1)
+	{
+		const char *ip = joinedIPlist[index][0];
+		if (*ip)
+		{
+			M_StartMessage("Direct Join", va("Connect to %s?", joinedIPlist[index][0]),
+				&confirm_ip_select, MM_YESNO, "Connect", "Back");
+		}
+	}
+	else
+		find_ip(choice ? 1 : -1);
+}
+
+// mp_e
 menuitem_t PLAY_MP_OptSelect[] =
 {
 	{IT_STRING_CALL_NOTESTERS, "Host Game", "Start your own online game!",
 		NULL, {.routine = M_PreMPHostInit}, 0, 0},
 
-	{IT_STRING | IT_CALL, "Server Browser", "Search for game servers to play in.",
+	{IT_STRING | IT_CALL, "Browse", "Search for game servers to play in.",
 		NULL, {.routine = M_PreMPRoomSelectInit}, 0, 0},
 
-	{IT_STRING | IT_CALL, "Join by IP", "Join an online game by its IP address.",
-		NULL, {.routine = M_MPJoinIPInit}, 0, 0},
+	{IT_STRING | IT_ARROWS, "Direct Join", "Join an online game by its IP address.",
+		NULL, {.routine = direct_join_routine}, 0, 0},
+
+	{IT_STRING | IT_CALL, "Back", NULL, NULL, {.routine = M_GoBack}, 0, 0},
 };
 
 #undef IT_STRING_CALL_NOTESTERS
 
+static void draw_routine(void)
+{
+	M_DrawKartGamemodeMenu();
+	M_DrawMasterServerReminder();
+}
+
+static boolean any_stored_ips(void)
+{
+	for (int i = 0; i < NUMLOGIP; ++i)
+	{
+		if (*joinedIPlist[i][0])
+			return true;
+	}
+	return false;
+}
+
+static void init_routine(void)
+{
+	menuitem_t *it = &PLAY_MP_OptSelect[mp_directjoin];
+	CV_SetValue(ip_cvar(), 0);
+	if (any_stored_ips())
+	{
+		it->status = IT_STRING | IT_ARROWS;
+		find_ip(1);
+	}
+	else
+		it->status = IT_STRING | IT_CALL;
+}
+
+static boolean input_routine(INT32 key)
+{
+	uses_gamepad = (key == -1);
+	return false;
+}
 
 menu_t PLAY_MP_OptSelectDef = {
 	sizeof (PLAY_MP_OptSelect) / sizeof (menuitem_t),
@@ -101,13 +199,13 @@ menu_t PLAY_MP_OptSelectDef = {
 	0, 0,
 	0,
 	"NETMD2",
-	-1, 1,
-	M_DrawMPOptSelect,
+	4, 5,
+	draw_routine,
 	M_DrawEggaChannel,
-	M_MPOptSelectTick,
 	NULL,
+	init_routine,
 	NULL,
-	NULL
+	input_routine
 };
 
 struct mpmenu_s mpmenu;
