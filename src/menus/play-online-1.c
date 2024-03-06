@@ -85,7 +85,7 @@ static boolean uses_gamepad;
 
 static void ip_entry(void)
 {
-	M_OpenVirtualKeyboard(uses_gamepad, MAXSTRINGLENGTH, query_ip, NULL);
+	M_OpenVirtualKeyboard(MAXSTRINGLENGTH, query_ip, NULL);
 }
 
 static consvar_t *ip_cvar(void)
