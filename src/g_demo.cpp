@@ -1255,7 +1255,7 @@ void G_GhostTicker(void)
 		}
 
 		// Pause jhosts that cross until the timer starts.
-		if (g->linecrossed && leveltime < starttime)
+		if (g->linecrossed && leveltime < starttime && G_TimeAttackStart())
 			continue;
 
 readghosttic:
@@ -1566,7 +1566,7 @@ skippedghosttic:
 		}
 
 		// If the timer started, skip ahead until the ghost starts too.
-		if (starttime <= leveltime && !g->linecrossed)
+		if (starttime <= leveltime && !g->linecrossed && G_TimeAttackStart())
 			goto readghosttic;
 
 		p = g;
