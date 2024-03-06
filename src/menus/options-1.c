@@ -23,11 +23,11 @@ menuitem_t OPTIONS_Main[] =
 	{IT_STRING | IT_SUBMENU, "HUD Options", "Options related to the Heads-Up Display.",
 		NULL, {.submenu = &OPTIONS_HUDDef}, 0, 0},
 
-	{IT_STRING | IT_SUBMENU, "Gameplay Options", "Change various game related options",
-		NULL, {.submenu = &OPTIONS_GameplayDef}, 0, 0},
+	{IT_STRING | IT_CALL, "Gameplay Options", "Change various game related options",
+		NULL, {.routine = M_GameplayOptions}, 0, 0},
 
-	{IT_STRING | IT_SUBMENU, "Server Options", "Change various specific options for your game server.",
-		NULL, {.submenu = &OPTIONS_ServerDef}, 0, 0},
+	{IT_STRING | IT_CALL, "Server Options", "Change various specific options for your game server.",
+		NULL, {.routine = M_ServerOptions}, 0, 0},
 
 	{IT_STRING | IT_SUBMENU, "Data Options", "Miscellaneous data options such as the screenshot format.",
 		NULL, {.submenu = &OPTIONS_DataDef}, 0, 0},
@@ -90,8 +90,8 @@ void M_InitOptions(INT32 choice)
 	if (gamestate == GS_MENU
 		|| ((server || IsPlayerAdmin(consoleplayer)) && K_CanChangeRules(false)))
 	{
-		OPTIONS_MainDef.menuitems[mopt_gameplay].status = IT_STRING | IT_SUBMENU;
-		OPTIONS_MainDef.menuitems[mopt_server].status = IT_STRING | IT_SUBMENU;
+		OPTIONS_MainDef.menuitems[mopt_gameplay].status = IT_STRING | IT_CALL;
+		OPTIONS_MainDef.menuitems[mopt_server].status = IT_STRING | IT_CALL;
 		OPTIONS_GameplayDef.menuitems[gopt_encore].status =
 			(M_SecretUnlocked(SECRET_ENCORE, false) ? (IT_STRING | IT_CVAR) : IT_DISABLED);
 	}
@@ -226,6 +226,18 @@ void M_SoundOptions(INT32 choice)
 	(void)choice;
 	M_OptionsMenuGoto(&OPTIONS_SoundDef);
 	M_GonerResetLooking(GDGONER_SOUND);
+}
+
+void M_GameplayOptions(INT32 choice)
+{
+	(void)choice;
+	M_OptionsMenuGoto(&OPTIONS_GameplayDef);
+}
+
+void M_ServerOptions(INT32 choice)
+{
+	(void)choice;
+	M_OptionsMenuGoto(&OPTIONS_ServerDef);
 }
 
 boolean M_OptionsInputs(INT32 ch)

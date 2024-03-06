@@ -1906,12 +1906,31 @@ void P_SwitchWeather(preciptype_t newWeather)
 		P_SpawnPrecipitation();
 }
 
+static boolean K_IgnoreFinishLine(player_t *player)
+{
+	// Lightsnake travels to the first waypoint in a straight
+	// line (init).
+	// This has the potential to inadvertently cross a finish
+	// line and remove a lap (happened on Hardhat Havoc).
+	// After the first waypoint, lightsnake follows the
+	// waypoints in order so it's not an issue there.
+	if (player->respawn.state == RESPAWNST_MOVE && player->respawn.init == true)
+		return true;
+
+	// If potential lap cheating has been detected, do not
+	// interact with the finish line at all.
+	if (player->bigwaypointgap)
+		return true;
+
+	return false;
+}
+
 // Passed over the finish line forwards
 static void K_HandleLapIncrement(player_t *player)
 {
 	if (player)
 	{
-		if (player->respawn.state == RESPAWNST_MOVE || player->bigwaypointgap)
+		if (K_IgnoreFinishLine(player))
 			return;
 		if (!G_TimeAttackStart() && leveltime < starttime && !(gametyperules & GTR_ROLLINGSTART))
 		{
@@ -2184,7 +2203,7 @@ static void K_HandleLapDecrement(player_t *player)
 {
 	if (player)
 	{
-		if (player->respawn.state == RESPAWNST_MOVE || player->bigwaypointgap)
+		if (K_IgnoreFinishLine(player))
 			return;
 		if ((player->cheatchecknum == 0) && (player->laps > 0))
 		{

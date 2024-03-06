@@ -150,7 +150,7 @@ static boolean P_UnArchivePlayer(savebuffer_t *save)
 	INT32 skin;
 
 	READSTRINGN(save->p, skinname, SKINNAMESIZE);
-	skin = R_SkinAvailable(skinname);
+	skin = R_SkinAvailableEx(skinname, false);
 
 	if (skin == -1)
 	{
@@ -176,7 +176,7 @@ static boolean P_UnArchivePlayer(savebuffer_t *save)
 		savedata.bots[pid].valid = true;
 
 		READSTRINGN(save->p, skinname, SKINNAMESIZE);
-		skin = R_SkinAvailable(skinname);
+		skin = R_SkinAvailableEx(skinname, false);
 
 		if (skin == -1)
 		{
@@ -598,11 +598,13 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		WRITEINT16(save->p, players[i].incontrol);
 		WRITEUINT16(save->p, players[i].progressivethrust);
+		WRITEUINT8(save->p, players[i].ringvisualwarning);
 
 		WRITEUINT8(save->p, players[i].analoginput);
 
 		WRITEUINT8(save->p, players[i].markedfordeath);
 		WRITEUINT8(save->p, players[i].dotrickfx);
+		WRITEUINT8(save->p, players[i].stingfx);
 		WRITEUINT8(save->p, players[i].bumperinflate);
 
 		WRITEUINT8(save->p, players[i].ringboxdelay);
@@ -1184,11 +1186,13 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		players[i].incontrol = READINT16(save->p);
 		players[i].progressivethrust = READUINT16(save->p);
+		players[i].ringvisualwarning = READUINT8(save->p);
 
 		players[i].analoginput = READUINT8(save->p);
 
 		players[i].markedfordeath = READUINT8(save->p);
 		players[i].dotrickfx = READUINT8(save->p);
+		players[i].stingfx = READUINT8(save->p);
 		players[i].bumperinflate = READUINT8(save->p);
 
 		players[i].ringboxdelay = READUINT8(save->p);

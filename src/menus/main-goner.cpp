@@ -84,7 +84,7 @@ public:
 	{
 		if (!skinName.empty())
 		{
-			this->skinID = R_SkinAvailable(skinName.c_str());
+			this->skinID = R_SkinAvailableEx(skinName.c_str(), false);
 		}
 
 		this->offset = offset;

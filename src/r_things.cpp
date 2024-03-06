@@ -835,37 +835,42 @@ boolean R_ThingIsFlashing(mobj_t *thing)
 
 UINT8 *R_GetSpriteTranslation(vissprite_t *vis)
 {
-	if (!(vis->cut & SC_PRECIP) &&
-			R_ThingIsFlashing(vis->mobj))
+	if (vis->cut & SC_PRECIP)
 	{
-		return R_GetTranslationColormap(TC_HITLAG, static_cast<skincolornum_t>(0), GTC_CACHE);
+		// Simplified func, less safe properties to check
+		if (vis->mobj->color)
+			R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(vis->mobj->color), GTC_CACHE);
+		return NULL;
 	}
-	/*
-	else if (R_SpriteIsFlashing(vis)) // Bosses "flash"
+
+	size_t skinnum = TC_DEFAULT;
+
+	if (vis->mobj->skin && vis->mobj->sprite == SPR_PLAY) // This thing is a player!
 	{
-		if (vis->mobj->type == MT_CYBRAKDEMON || vis->mobj->colorized)
-			return R_GetTranslationColormap(TC_ALLWHITE, 0, GTC_CACHE);
-		else if (vis->mobj->type == MT_METALSONIC_BATTLE)
-			return R_GetTranslationColormap(TC_METALSONIC, 0, GTC_CACHE);
-		else
-			return R_GetTranslationColormap(TC_BOSS, 0, GTC_CACHE);
-	}
-	*/
-	else if (vis->mobj->color)
-	{
-		// New colormap stuff for skins Tails 06-07-2002
-		if (!(vis->cut & SC_PRECIP) && vis->mobj->colorized)
-			return R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(vis->mobj->color), GTC_CACHE);
-		else if (!(vis->cut & SC_PRECIP) && vis->mobj->skin && vis->mobj->sprite == SPR_PLAY) // This thing is a player!
+		skinnum = (skin_t*)vis->mobj->skin-skins;
+
+		// Hide not-yet-unlocked characters in replays from other people
+		if (!R_CanShowSkinInDemo(skinnum))
 		{
-			size_t skinnum = (skin_t*)vis->mobj->skin-skins;
-			return R_GetTranslationColormap((INT32)skinnum, static_cast<skincolornum_t>(vis->mobj->color), GTC_CACHE);
+			skinnum = TC_BLINK;
 		}
-		else // Use the defaults
-			return R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(vis->mobj->color), GTC_CACHE);
 	}
-	else if (vis->mobj->sprite == SPR_PLAY) // Looks like a player, but doesn't have a color? Get rid of green sonic syndrome.
-		return R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_BLUE, GTC_CACHE);
+
+	if (R_ThingIsFlashing(vis->mobj))
+	{
+		if (skinnum != (size_t)TC_BLINK)
+			skinnum = TC_HITLAG;
+
+		return R_GetTranslationColormap(skinnum, static_cast<skincolornum_t>(0), GTC_CACHE);
+	}
+
+	if (vis->mobj->color)
+	{
+		if (skinnum != (size_t)TC_BLINK && vis->mobj->colorized)
+			skinnum = TC_RAINBOW;
+
+		return R_GetTranslationColormap(skinnum, static_cast<skincolornum_t>(vis->mobj->color), GTC_CACHE);
+	}
 
 	return NULL;
 }
@@ -1073,9 +1078,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 	}
 	else if (vis->cut & SC_SHEAR)
 	{
-#ifdef RANGECHECK
 		pwidth = patch->width;
-#endif
 
 		// Vertically sheared sprite
 		for (dc.x = vis->x1; dc.x <= vis->x2; dc.x++, frac += vis->xiscale, dc.texturemid -= vis->shear.tan)
@@ -1093,7 +1096,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 	else
 	{
 
-#ifdef RANGECHECK
+#if 0
 		if (vis->x1test && vis->x2test)
 		{
 			INT32 x1test = vis->x1test;
@@ -1112,7 +1115,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 				CONS_Printf("THE GAME WOULD HAVE CRASHED, %d (old) vs %d (new)\n", (x2test - x1test), (vis->x2 - vis->x1));
 			}
 		}
-#endif // RANGECHECK
+#endif
 
 		// Non-paper drawing loop
 		for (dc.x = vis->x1; dc.x <= vis->x2; dc.x++, frac += vis->xiscale, sprtopscreen += vis->shear.tan)
@@ -1191,10 +1194,11 @@ static void R_DrawPrecipitationVisSprite(vissprite_t *vis)
 	{
 		texturecolumn = frac>>FRACBITS;
 
-#ifdef RANGECHECK
 		if (texturecolumn < 0 || texturecolumn >= patch->width)
-			I_Error("R_DrawPrecipitationSpriteRange: bad texturecolumn");
-#endif
+		{
+			CONS_Debug(DBG_RENDER, "R_DrawPrecipitationSpriteRange: bad texturecolumn\n");
+			break;
+		}
 
 		column = (column_t *)((UINT8 *)patch->columns + (patch->columnofs[texturecolumn]));
 
@@ -1832,10 +1836,11 @@ static void R_ProjectSprite(mobj_t *thing)
 	sortscale = FixedDiv(projectiony[viewssnum], tz);
 
 	// decide which patch to use for sprite relative to player
-#ifdef RANGECHECK
 	if ((size_t)(thing->sprite) >= numsprites)
-		I_Error("R_ProjectSprite: invalid sprite number %d ", thing->sprite);
-#endif
+	{
+		CONS_Debug(DBG_RENDER, "R_ProjectSprite: invalid sprite number %d\n", thing->sprite);
+		return;
+	}
 
 	frame = thing->frame&FF_FRAMEMASK;
 
@@ -2634,19 +2639,21 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	yscale = FixedDiv(projectiony[viewssnum], tz);
 
 	// decide which patch to use for sprite relative to player
-#ifdef RANGECHECK
 	if ((unsigned)thing->sprite >= numsprites)
-		I_Error("R_ProjectPrecipitationSprite: invalid sprite number %d ",
+	{
+		CONS_Debug(DBG_RENDER, "R_ProjectPrecipitationSprite: invalid sprite number %d\n",
 			thing->sprite);
-#endif
+		return;
+	}
 
 	sprdef = &sprites[thing->sprite];
 
-#ifdef RANGECHECK
 	if ((UINT8)(thing->frame&FF_FRAMEMASK) >= sprdef->numframes)
-		I_Error("R_ProjectPrecipitationSprite: invalid sprite frame %d : %d for %s",
+	{
+		CONS_Debug(DBG_RENDER, "R_ProjectPrecipitationSprite: invalid sprite frame %d : %d for %s\n",
 			thing->sprite, thing->frame, sprnames[thing->sprite]);
-#endif
+		return;
+	}
 
 	sprframe = &sprdef->spriteframes[thing->frame & FF_FRAMEMASK];
 

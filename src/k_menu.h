@@ -295,10 +295,26 @@ extern menu_t PLAY_MP_OptSelectDef;
 
 typedef enum
 {
+	mp_host = 0,
+	mp_browse,
+	mp_directjoin,
+	mp_back,
+} mp_e;
+
+typedef enum
+{
+	mhost_gametype = 0,
+	mhost_gameplay_options,
+	mhost_server_options,
+	mhost_boxend,
+	mhost_mapselect = mhost_boxend,
+	mhost_back,
+
+	// TODO, remove these (old code)
 	mhost_sname = 0,
 	mhost_public,
 	mhost_maxp,
-	mhost_gametype,
+	//mhost_gametype,
 	mhost_go,
 } mhost_e;
 
@@ -686,9 +702,10 @@ void M_PlayMenuJam(void);
 
 boolean M_ConsiderSealedSwapAlert(void);
 
-void M_OpenVirtualKeyboard(boolean gamepad, size_t cachelen, vkb_query_fn_t queryfn, menu_t *dummymenu);
+void M_OpenVirtualKeyboard(size_t cachelen, vkb_query_fn_t queryfn, menu_t *dummymenu);
 void M_AbortVirtualKeyboard(void);
 void M_MenuTypingInput(INT32 key);
+void M_SwitchVirtualKeyboard(boolean gamepad);
 
 void M_QuitResponse(INT32 ch);
 void M_QuitSRB2(INT32 choice);
@@ -1047,6 +1064,7 @@ extern consvar_t cv_dummyprofilekickstart;
 extern consvar_t cv_dummyprofileautoroulette;
 extern consvar_t cv_dummyprofilelitesteer;
 extern consvar_t cv_dummyprofilerumble;
+extern consvar_t cv_dummyprofilefov;
 
 void M_ResetOptions(void);
 void M_InitOptions(INT32 choice); // necessary for multiplayer since there's some options we won't want to access
@@ -1057,6 +1075,8 @@ void M_OptionsChangeBGColour(INT16 newcolour);	// changes the background colour 
 
 void M_VideoOptions(INT32 choice);
 void M_SoundOptions(INT32 choice);
+void M_GameplayOptions(INT32 choice);
+void M_ServerOptions(INT32 choice);
 
 void M_HandleItemToggles(INT32 choice);	// For item toggling
 void M_EraseData(INT32 choice);	// For data erasing
@@ -1089,6 +1109,9 @@ void M_HandleVideoModes(INT32 ch);
 
 // data stuff
 void M_HandleProfileErase(INT32 choice);
+
+// Draws "List via" at the bottom of the screen.
+void M_DrawMasterServerReminder(void);
 
 // Draws the EGGA CHANNEL background.
 void M_DrawEggaChannel(void);

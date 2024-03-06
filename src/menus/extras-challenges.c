@@ -714,7 +714,7 @@ void M_ChallengesTick(void)
 						INT32 fskin = M_UnlockableFollowerNum(ref);
 						if (fskin != -1)
 						{
-							INT32 psk = R_SkinAvailable(cv_skin[0].string);
+							INT32 psk = R_SkinAvailableEx(cv_skin[0].string, false);
 							if (psk == -1)
 								psk = 0;
 							bombcolor = K_GetEffectiveFollowerColor(followers[fskin].defaultcolor, &followers[fskin], cv_playercolor[0].value, &skins[psk]);

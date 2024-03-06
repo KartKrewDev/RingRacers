@@ -506,6 +506,10 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 
 	// Prison Egg Drops
 	"S_PRISONEGGDROP_CD",
+	"S_PRISONEGGDROP_FLAREA1",
+	"S_PRISONEGGDROP_FLAREA2",
+	"S_PRISONEGGDROP_FLAREB1",
+	"S_PRISONEGGDROP_FLAREB2",
 
 	// Bubble Source
 	"S_BUBBLES1",

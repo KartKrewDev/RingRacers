@@ -54,15 +54,22 @@ menu_t PAUSE_PlaybackMenuDef = {
 
 void M_EndModeAttackRun(void)
 {
-	G_CheckDemoStatus(); // Cancel recording
+	if (demo.playback)
+	{
+		G_CheckDemoStatus(); // Cancel recording
+		return;
+	}
 
 	Command_ExitGame_f(); // Clear a bunch of state
+
+	if (!modeattacking)
+		return;
 
 	modeattacking = ATTACKING_NONE; // Kept until now because of Command_ExitGame_f
 
 	if (demo.attract == DEMO_ATTRACT_TITLE)
 	{
-		D_StartTitle();
+		D_SetDeferredStartTitle(true);
 	}
 	else if (demo.attract == DEMO_ATTRACT_CREDITS)
 	{

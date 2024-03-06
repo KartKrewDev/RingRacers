@@ -356,7 +356,7 @@ consvar_t cv_drawdist_precip = Player("drawdist_precip", "1024").values({
 	{0, "None"},
 });
 
-consvar_t cv_drawinput = Player("drawinput", "No").yes_no();
+consvar_t cv_drawinput = Player("drawinput", "Off").on_off();
 consvar_t cv_ffloorclip = Player("ffloorclip", "On").on_off();
 
 consvar_t cv_fpscap = Player("fpscap", "Match refresh rate").values({
@@ -873,6 +873,10 @@ consvar_t cv_1pswap = PlayerCheat("1pswap", "1").min_max(1, MAXSPLITSCREENPLAYER
 consvar_t cv_debugfinishline = PlayerCheat("debugfinishline", "Off").on_off().description("Highlight finish lines, respawn lines, death pits and instakill planes with high contrast colors");
 consvar_t cv_debughudtracker = PlayerCheat("debughudtracker", "Off").on_off().description("Highlight overlapping HUD tracker blocks");
 
+#ifdef DEVELOP
+	consvar_t cv_debugprisoncd = PlayerCheat("debugprisoncd", "Off").on_off().description("Always drop a CD from breaking Prisons");
+#endif
+
 consvar_t cv_debugrank = PlayerCheat("debugrank", "Off").description("Show GP rank state on the HUD; optionally force a rank grade").values({
 	{0, "Off"},
 	{1, "On"},
@@ -890,6 +894,7 @@ consvar_t cv_debugrender_freezebsp = PlayerCheat("debugrender_freezebsp", "Off")
 consvar_t cv_debugrender_portal = PlayerCheat("debugrender_portal", "Off").on_off().description("Highlight visual portals in red");
 consvar_t cv_debugrender_spriteclip = PlayerCheat("debugrender_spriteclip", "Off").on_off().description("Let sprites draw through walls");
 consvar_t cv_debugrender_visplanes = PlayerCheat("debugrender_visplanes", "Off").on_off().description("Highlight the number of visplanes");
+consvar_t cv_debugvirtualkeyboard = PlayerCheat("debugvirtualkeyboard", "Off").on_off().description("Always show virtual keyboard instead of using real keyboard input.");
 consvar_t cv_devmode_screen = PlayerCheat("devmode_screen", "1").min_max(1, 4).description("Choose which splitscreen player devmode applies to");
 consvar_t cv_drawpickups = PlayerCheat("drawpickups", "Yes").yes_no().description("Hide rings, spheres, item capsules, prison capsules (visual only)");
 
@@ -926,6 +931,7 @@ consvar_t cv_dummygpdifficulty = MenuDummy("dummygpdifficulty", "Normal").values
 consvar_t cv_dummygpencore = MenuDummy("dummygpencore", "Off").on_off();
 
 consvar_t cv_dummyip = MenuDummy("dummyip", "");
+consvar_t cv_dummyipselect = MenuDummy("dummyipselect", "0").min_max(0, 2);
 
 extern CV_PossibleValue_t dummykartspeed_cons_t[];
 consvar_t cv_dummykartspeed = MenuDummy("dummykartspeed", "Gear 2").values(dummykartspeed_cons_t);
@@ -951,6 +957,7 @@ void Dummymenuplayer_OnChange(void);
 consvar_t cv_dummymenuplayer = MenuDummy("dummymenuplayer", "P1").onchange(Dummymenuplayer_OnChange).values({{0, "NOPE"}, {1, "P1"}, {2, "P2"}, {3, "P3"}, {4, "P4"}});
 
 consvar_t cv_dummyprofileautoroulette = MenuDummy("dummyprofileautoroulette", "Off").on_off();
+consvar_t cv_dummyprofilefov = MenuDummy("dummyprofilefov", "90").min_max(70, 110);
 consvar_t cv_dummyprofilelitesteer = MenuDummy("dummyprofilelitesteer", "On").on_off();
 consvar_t cv_dummyprofilekickstart = MenuDummy("dummyprofilekickstart", "Off").on_off();
 consvar_t cv_dummyprofilename = MenuDummy("dummyprofilename", "");

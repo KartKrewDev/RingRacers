@@ -345,7 +345,7 @@ UINT16 M_GetCvPlayerColor(UINT8 pnum)
 	if (color != SKINCOLOR_NONE)
 		return color;
 
-	INT32 skin = R_SkinAvailable(cv_skin[pnum].string);
+	INT32 skin = R_SkinAvailableEx(cv_skin[pnum].string, false);
 	if (skin == -1)
 		return SKINCOLOR_NONE;
 
@@ -377,7 +377,7 @@ static void M_DrawMenuParty(void)
 	// Despite the work put into it, can't use M_GetCvPlayerColor directly - we need to reference skin always.
 	#define grab_skin_and_colormap(pnum) \
 	{ \
-		skin = R_SkinAvailable(cv_skin[pnum].string); \
+		skin = R_SkinAvailableEx(cv_skin[pnum].string, false); \
 		color = cv_playercolor[pnum].value; \
 		if (skin == -1) \
 			skin = 0; \
@@ -999,12 +999,12 @@ void M_Drawer(void)
 			F_VersionDrawer();
 		}
 
-		// Draw message overlay when needed
-		M_DrawMenuMessage();
-
 		// Draw typing overlay when needed, above all other menu elements.
 		if (menutyping.active)
 			M_DrawMenuTyping();
+
+		// Draw message overlay when needed
+		M_DrawMenuMessage();
 	}
 
 	if (menuwipe)
@@ -1222,6 +1222,38 @@ void M_DrawGenericMenu(void)
 
 static tic_t gm_flipStart;
 
+static INT32 M_DrawRejoinIP(INT32 x, INT32 y, INT32 tx)
+{
+	extern consvar_t cv_dummyipselect;
+	char (*ip)[MAX_LOGIP] = joinedIPlist[cv_dummyipselect.value];
+	if (!*ip[0])
+		return 0;
+
+	INT16 shift = 20;
+	x -= shift;
+
+	INT16 j = 0;
+	for (j=0; j <= (GM_YOFFSET + 10) / 2; j++)
+	{
+		// Draw rectangles that look like the current selected item starting from the top of the actual selection graphic and going up to where it's supposed to go.
+		// With colour 169 (that's the index of the shade of black the plague colourization gives us. ...No I don't like using a magic number either.
+		V_DrawFill((x-1) + j, y + (2*j), 226, 2, 169);
+	}
+
+	x += GM_XOFFSET + 14;
+	y += GM_YOFFSET;
+
+	const char *text = ip[0];
+	INT32 w = V_ThinStringWidth(text, 0);
+	INT32 f = highlightflags;
+	V_DrawMenuString(x - 10 - (skullAnimCounter/5), y, f, "\x1C"); // left arrow
+	V_DrawMenuString(x + w + 2+ (skullAnimCounter/5), y, f, "\x1D"); // right arrow
+	V_DrawThinString(x, y, f, text);
+	V_DrawRightAlignedThinString(BASEVIDWIDTH + 4 + tx, y, V_ORANGEMAP, "\xAC Rejoin");
+
+	return shift;
+}
+
 //
 // M_DrawKartGamemodeMenu
 //
@@ -1266,10 +1298,19 @@ void M_DrawKartGamemodeMenu(void)
 		}
 
 		INT32 cx = x;
+		boolean selected = (i == itemOn && menutransition.tics == menutransition.dest);
 
-		if (i == itemOn && menutransition.tics == menutransition.dest)
+		if (selected)
 		{
-			cx -= Easing_OutSine(M_DueFrac(gm_flipStart, GM_FLIPTIME), 0, GM_XOFFSET / 2);
+			fixed_t f = M_DueFrac(gm_flipStart, GM_FLIPTIME);
+			cx -= Easing_OutSine(f, 0, (GM_XOFFSET / 2));
+
+			// Direct Join
+			if (currentMenu == &PLAY_MP_OptSelectDef && i == mp_directjoin)
+			{
+				INT32 shift = M_DrawRejoinIP(cx, y, cx - x);
+				cx -= Easing_OutSine(f, 0, shift);
+			}
 		}
 
 		type = (currentMenu->menuitems[i].status & IT_DISPLAY);
@@ -1281,7 +1322,7 @@ void M_DrawKartGamemodeMenu(void)
 				{
 					UINT8 *colormap = NULL;
 
-					if (i == itemOn && menutransition.tics == menutransition.dest)
+					if (selected)
 					{
 						colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
 					}
@@ -2277,7 +2318,7 @@ void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 	if (p != NULL && p->version)
 	{
 		truecol = p->color;
-		skinnum = R_SkinAvailable(p->skinname);
+		skinnum = R_SkinAvailableEx(p->skinname, false);
 		strcpy(pname, p->profilename);
 	}
 
@@ -2550,7 +2591,7 @@ void M_DrawRaceDifficulty(void)
 
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
-		if (i >= drace_boxend)
+		if (i >= currentMenu->extra1)
 		{
 			x = GM_STARTX + (GM_XOFFSET * 5 / 2);
 			y = GM_STARTY + (GM_YOFFSET * 5 / 2);
@@ -2615,7 +2656,7 @@ void M_DrawRaceDifficulty(void)
 				{
 					colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
 
-					if (i >= drace_boxend)
+					if (i >= currentMenu->extra1)
 					{
 						cx -= Easing_OutSine(M_DueFrac(gm_flipStart, GM_FLIPTIME), 0, GM_XOFFSET / 2);
 					}
@@ -2626,17 +2667,21 @@ void M_DrawRaceDifficulty(void)
 				}
 
 
-				if (currentMenu->menuitems[i].status & IT_CVAR)
+				if (currentMenu->menuitems[i].status & (IT_CVAR | IT_ARROWS))
 				{
 
 					INT32 fx = (cx - tx);
 					INT32 centx = fx + (320-fx)/2 + (tx);	// undo the menutransition movement to redo it here otherwise the text won't move at the same speed lole.
 
-					// implicitely we'll only take care of normal consvars
-					consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
+					const char *val = currentMenu->menuitems[i].text;
+					if (currentMenu->menuitems[i].status & IT_CVAR)
+					{
+						consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
+						val = cv->string;
+					}
 
 					V_DrawFixedPatch(cx*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, W_CachePatchName("MENUSHRT", PU_CACHE), colormap);
-					V_DrawCenteredGamemodeString(centx, y - 3, 0, colormap, cv->string);
+					V_DrawCenteredGamemodeString(centx, y - 3, 0, colormap, val);
 
 					if (i == itemOn)
 					{
@@ -2656,7 +2701,7 @@ void M_DrawRaceDifficulty(void)
 				x += GM_XOFFSET;
 				y += GM_YOFFSET;
 
-				if (i < drace_boxend)
+				if (i < currentMenu->extra1)
 				{
 					y += 2; // extra spacing for Match Race options
 				}
@@ -3715,7 +3760,7 @@ void M_DrawTimeAttack(void)
 
 // NOTE: This is pretty rigid and only intended for use with the multiplayer options menu which has *3* choices.
 
-static void M_DrawMasterServerReminder(void)
+void M_DrawMasterServerReminder(void)
 {
 	// Did you change the Server Browser address? Have a little reminder.
 
@@ -3725,7 +3770,7 @@ static void M_DrawMasterServerReminder(void)
 	else
 		mservflags = warningflags;
 
-	INT32 y = BASEVIDHEIGHT - 24;
+	INT32 y = BASEVIDHEIGHT - 10;
 
 	V_DrawFadeFill(0, y-1, BASEVIDWIDTH, 10+1, 0, 31, 5);
 	V_DrawCenteredThinString(BASEVIDWIDTH/2, y,
@@ -3785,7 +3830,7 @@ void M_DrawEggaChannel(void)
 	patch_t *background = W_CachePatchName("M_EGGACH", PU_CACHE);
 
 	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 25);
-	V_DrawFixedPatch(160<<FRACBITS, 104<<FRACBITS, FRACUNIT, 0, background, NULL);
+	V_DrawFixedPatch((menuactive ? 75 : 160)<<FRACBITS, 104<<FRACBITS, FRACUNIT, 0, background, NULL);
 	V_DrawVhsEffect(false);	// VHS the background! (...sorry OGL my love)
 }
 
@@ -4119,6 +4164,13 @@ static void M_DrawServerCountAndHorizontalBar(void)
 
 void M_DrawMPServerBrowser(void)
 {
+	const char *header[3][2] = {
+		{"Server Browser", "BG_MPS1"},
+		{"Core Servers", "BG_MPS1"},
+		{"Modded Servers", "BG_MPS2"},
+	};
+	int mode = M_SecretUnlocked(SECRET_ADDONS, true) ? (mpmenu.room ? 2 : 1) : 0;
+
 	patch_t *text1 = W_CachePatchName("MENUBGT1", PU_CACHE);
 	patch_t *text2 = W_CachePatchName("MENUBGT2", PU_CACHE);
 
@@ -4138,7 +4190,7 @@ void M_DrawMPServerBrowser(void)
 	UINT8 i;
 
 	// background stuff
-	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("BG_MPS3", PU_CACHE), NULL);
+	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName(header[mode][1], PU_CACHE), NULL);
 
 	V_DrawFixedPatch(0, (BASEVIDHEIGHT + 16) * FRACUNIT, FRACUNIT, V_TRANSLUCENT, W_CachePatchName("MENUBG2", PU_CACHE), NULL);
 
@@ -4212,12 +4264,7 @@ void M_DrawMPServerBrowser(void)
 	V_DrawFill(0, 53, 320, 1, 31);
 	V_DrawFill(0, 55, 320, 1, 31);
 
-	const char *headertext;
-	if (M_SecretUnlocked(SECRET_ADDONS, true))
-		headertext = va("%s Servers", mpmenu.room ? "Modded" : "Core");
-	else
-		headertext = "Server Browser";
-	V_DrawCenteredGamemodeString(160, 2, 0, 0, headertext);
+	V_DrawCenteredGamemodeString(160, 2, 0, 0, header[mode][0]);
 
 	// normal menu options
 	M_DrawGenericMenu();
@@ -6516,7 +6563,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 				INT32 skin = M_UnlockableFollowerNum(ref);
 				if (skin != -1)
 				{
-					INT32 psk = R_SkinAvailable(cv_skin[0].string);
+					INT32 psk = R_SkinAvailableEx(cv_skin[0].string, false);
 					UINT16 col = K_GetEffectiveFollowerColor(followers[skin].defaultcolor, &followers[skin], cv_playercolor[0].value, (psk != -1) ? &skins[psk] : &skins[0]);
 					colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
 					pat = W_CachePatchName(followers[skin].icon, PU_CACHE);
@@ -6775,7 +6822,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 		}
 		case SECRET_FOLLOWER:
 		{
-			INT32 skin = R_SkinAvailable(cv_skin[0].string);
+			INT32 skin = R_SkinAvailableEx(cv_skin[0].string, false);
 			INT32 fskin = M_UnlockableFollowerNum(ref);
 
 			// Draw proximity reference for character
@@ -6806,7 +6853,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			INT32 colorid = M_UnlockableColorNum(ref);
 			if (colorid == SKINCOLOR_NONE)
 				break;
-			INT32 skin = R_SkinAvailable(cv_skin[0].string);
+			INT32 skin = R_SkinAvailableEx(cv_skin[0].string, false);
 			if (skin == -1)
 				skin = 0;
 			colormap = R_GetTranslationColormap(skin, colorid, GTC_MENUCACHE);

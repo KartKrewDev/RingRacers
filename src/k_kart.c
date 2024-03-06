@@ -4819,6 +4819,12 @@ void K_DebtStingPlayer(player_t *player, mobj_t *source)
 	player->spinouttimer = length;
 	player->wipeoutslow = min(length-1, wipeoutslowtime+1);
 
+	player->ringvisualwarning = TICRATE*2;
+	player->stingfx = true;
+
+	if (P_IsDisplayPlayer(player))
+		S_StartSoundAtVolume(NULL, sfx_sting0, 200);
+
 	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 }
 
@@ -8095,7 +8101,7 @@ void K_KartPlayerHUDUpdate(player_t *player)
 	else
 		player->karthud[khud_finish] = 0;
 
-	if (demo.playback == false && P_IsLocalPlayer(player) == true)
+	if (demo.playback == false && P_IsMachineLocalPlayer(player) == true)
 	{
 		if (player->tumbleBounces != 0 && gamedata->totaltumbletime != UINT32_MAX)
 		{
@@ -8423,20 +8429,38 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		// Battle: spawn zero-bumpers indicator
 		if ((gametyperules & GTR_SPHERES) ? player->mo->health <= 1 : player->rings <= 0)
 		{
-			mobj_t *debtflag = P_SpawnMobj(player->mo->x + player->mo->momx, player->mo->y + player->mo->momy,
-				player->mo->z + P_GetMobjZMovement(player->mo) + player->mo->height + (24*player->mo->scale), MT_THOK);
+			UINT8 doubler;
 
-			P_SetMobjState(debtflag, S_RINGDEBT);
-			P_SetScale(debtflag, (debtflag->destscale = player->mo->scale));
+			// GROSS. In order to have a transparent version of this for a splitscreen local player, we actually need to spawn two!
+			for (doubler = 0; doubler < 2; doubler++)
+			{
+				mobj_t *debtflag = P_SpawnMobj(player->mo->x + player->mo->momx, player->mo->y + player->mo->momy,
+					player->mo->z + P_GetMobjZMovement(player->mo) + player->mo->height + (24*player->mo->scale), MT_THOK);
 
-			K_MatchGenericExtraFlags(debtflag, player->mo);
-			debtflag->frame += (leveltime % 4);
+				P_SetMobjState(debtflag, S_RINGDEBT);
+				P_SetScale(debtflag, (debtflag->destscale = player->mo->scale));
 
-			if ((leveltime/12) & 1)
-				debtflag->frame += 4;
+				K_MatchGenericExtraFlags(debtflag, player->mo);
+				debtflag->frame += (leveltime % 4);
 
-			debtflag->color = player->skincolor;
-			debtflag->fuse = 2;
+				if ((leveltime/12) & 1)
+					debtflag->frame += 4;
+
+				debtflag->color = player->skincolor;
+				debtflag->fuse = 2;
+
+				if (doubler == 0) // Real copy. Draw for everyone but us.
+				{
+					debtflag->renderflags |= K_GetPlayerDontDrawFlag(player);
+				}
+				else if (doubler == 1) // Fake copy. Draw for only us, and go transparent after a bit.
+				{
+					debtflag->renderflags |= (RF_DONTDRAW & ~K_GetPlayerDontDrawFlag(player));
+					if (player->ringvisualwarning <= 1 || gametyperules & GTR_SPHERES)
+						debtflag->renderflags |= RF_TRANS50;
+				}
+			}
+				
 		}
 
 		if (player->springstars && (leveltime & 1))
@@ -8960,6 +8984,12 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->dotrickfx = false;
 	}
 
+	if (player->stingfx && !player->mo->hitlag)
+	{
+		S_StartSound(player->mo, sfx_s226l);
+		player->stingfx = false;
+	}
+
 	// Don't screw up chain ring pickup/usage with instawhip charge.
 	// If the button stays held, delay charge a bit.
 	if (player->instaWhipChargeLockout)
@@ -9022,6 +9052,21 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		if (player->incontrol < 0)
 			player->incontrol = 0;
 		player->incontrol++;
+	}
+
+	if (player->rings <= 0)
+	{
+		if (player->ringvisualwarning > 1)
+			player->ringvisualwarning--;
+	}
+	else
+	{
+		player->ringvisualwarning = 0;
+	}
+
+	if (player->ringvisualwarning == 0 && player->rings <= 0)
+	{
+		player->ringvisualwarning = 6*TICRATE/2;
 	}
 
 	player->incontrol = min(player->incontrol, 5*TICRATE);

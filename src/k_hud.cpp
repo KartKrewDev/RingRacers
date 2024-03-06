@@ -88,6 +88,7 @@ patch_t *kp_facenum[MAXPLAYERS+1];
 static patch_t *kp_facehighlight[8];
 
 static patch_t *kp_nocontestminimap;
+static patch_t *kp_unknownminimap;
 static patch_t *kp_spbminimap;
 static patch_t *kp_wouldyoustillcatchmeifiwereaworm;
 static patch_t *kp_catcherminimap;
@@ -386,7 +387,7 @@ void K_LoadKartHUDGraphics(void)
 
 	// Special minimap icons
 	HU_UpdatePatch(&kp_nocontestminimap, "MINIDEAD");
-
+	HU_UpdatePatch(&kp_unknownminimap, "HUHMAP");
 	HU_UpdatePatch(&kp_spbminimap, "SPBMMAP");
 
 	HU_UpdatePatch(&kp_wouldyoustillcatchmeifiwereaworm, "MINIPROG");
@@ -2957,7 +2958,19 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 	rn[0] = ((abs(stplyr->hudrings) / 10) % 10);
 	rn[1] = (abs(stplyr->hudrings) % 10);
 
-	if (stplyr->hudrings <= 0 && (leveltime/5 & 1)) // In debt
+	if (stplyr->hudrings <= 0 && stplyr->ringvisualwarning > 1)
+	{
+		colorring = true;	
+		if ((leveltime/2 & 1))
+		{
+			ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_CRIMSON, GTC_CACHE);
+		}
+		else
+		{
+			ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_WHITE, GTC_CACHE);
+		}
+	}
+	else if (stplyr->hudrings <= 0 && (leveltime/5 & 1)) // In debt
 	{
 		ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_CRIMSON, GTC_CACHE);
 		colorring = true;
@@ -3068,16 +3081,24 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 
 		V_DrawMappedPatch(LAPS_X+ringx+7, fy-5, V_HUDTRANS|V_SLIDEIN|splitflags|ringflip, kp_ring[ringanim_realframe], (colorring ? ringmap : NULL));
 
+		// "Why fy-4? Why LAPS_X+29+1?"
+		// "use magic numbers" - jartha 2024-03-05
 		if (stplyr->hudrings < 0) // Draw the minus for ring debt
 		{
-			V_DrawMappedPatch(LAPS_X+23, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringdebtminus, ringmap);
-			V_DrawMappedPatch(LAPS_X+29, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[rn[0]], ringmap);
-			V_DrawMappedPatch(LAPS_X+35, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[rn[1]], ringmap);
+			V_DrawMappedPatch(LAPS_X+23-1, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringdebtminus, ringmap);
+			using srb2::Draw;
+			Draw row = Draw(LAPS_X+29+0, fy-4).flags(V_HUDTRANS|V_SLIDEIN|splitflags).font(Draw::Font::kThinTimer).colormap(ringmap);
+			row.text("{:02}", abs(stplyr->hudrings));
+			// V_DrawMappedPatch(LAPS_X+29, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[TALLNUM_FONT].font[rn[0]], ringmap);
+			// V_DrawMappedPatch(LAPS_X+35, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[TALLNUM_FONT].font[rn[1]], ringmap);
 		}
 		else
 		{
-			V_DrawMappedPatch(LAPS_X+23, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[rn[0]], ringmap);
-			V_DrawMappedPatch(LAPS_X+29, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[rn[1]], ringmap);
+			using srb2::Draw;
+			Draw row = Draw(LAPS_X+23+3, fy-4).flags(V_HUDTRANS|V_SLIDEIN|splitflags).font(Draw::Font::kThinTimer).colormap(ringmap);
+			row.text("{:02}", abs(stplyr->hudrings));
+			// V_DrawMappedPatch(LAPS_X+23, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[TALLNUM_FONT].font[rn[0]], ringmap);
+			// V_DrawMappedPatch(LAPS_X+29, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[TALLNUM_FONT].font[rn[1]], ringmap);
 		}
 
 		// SPB ring lock
@@ -4401,6 +4422,9 @@ static void K_drawKartMinimap(void)
 				skin = ((skin_t*)g->mo->skin)-skins;
 			else
 				skin = 0;
+
+			workingPic = R_CanShowSkinInDemo(skin) ? faceprefix[skin][FACE_MINIMAP] : kp_unknownminimap;
+
 			if (g->mo->color)
 			{
 				if (g->mo->colorized)
@@ -4414,7 +4438,7 @@ static void K_drawKartMinimap(void)
 			interpx = R_InterpolateFixed(g->mo->old_x, g->mo->x);
 			interpy = R_InterpolateFixed(g->mo->old_y, g->mo->y);
 
-			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, faceprefix[skin][FACE_MINIMAP], colormap);
+			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, workingPic, colormap);
 			g = g->next;
 		}
 	}
@@ -4470,7 +4494,7 @@ static void K_drawKartMinimap(void)
 			{
 				skin = ((skin_t*)mobj->skin)-skins;
 
-				workingPic = faceprefix[skin][FACE_MINIMAP];
+				workingPic = R_CanShowSkinInDemo(skin) ? faceprefix[skin][FACE_MINIMAP] : kp_unknownminimap;
 
 				if (mobj->color)
 				{
@@ -4666,7 +4690,7 @@ static void K_drawKartMinimap(void)
 		{
 			skin = ((skin_t*)mobj->skin)-skins;
 
-			workingPic = faceprefix[skin][FACE_MINIMAP];
+			workingPic = R_CanShowSkinInDemo(skin) ? faceprefix[skin][FACE_MINIMAP] : kp_unknownminimap;
 
 			if (mobj->color)
 			{

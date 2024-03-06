@@ -7499,6 +7499,10 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 			mobj->z += P_MobjFlip(mobj);
 			mobj->flags2 |= MF2_AMBUSH;
+
+			// Finish flare animation.
+			if (mobj->target && !P_MobjWasRemoved(mobj->target))
+				P_SetMobjStateNF(mobj->target, S_PRISONEGGDROP_FLAREB1);
 		}
 
 		if (teststate == S_PRISONEGGDROP_CD)
@@ -7538,6 +7542,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 					sparkle->color = M_RandomChance(FRACUNIT/2) ? SKINCOLOR_ULTRAMARINE : SKINCOLOR_MAGENTA;
 					sparkle->momz += 8 * mobj->scale * P_MobjFlip(mobj);
+					sparkle->scale = 3 * sparkle->scale;
+					sparkle->scalespeed = abs(sparkle->scale - sparkle->destscale) / 16;
+
+					// Colorize flare.
+					if (mobj->target && !P_MobjWasRemoved(mobj->target))
+						mobj->target->color = sparkle->color;
 				}
 			}
 		}

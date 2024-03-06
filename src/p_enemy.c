@@ -3522,6 +3522,16 @@ void A_AttractChase(mobj_t *actor)
 
 				S_ReducedVFXSoundAtVolume(actor->target, sfx_s1b5, actor->target->player->ringvolume, NULL);
 
+				if (actor->target->player->rings <= 10 && P_IsDisplayPlayer(actor->target->player))
+				{
+					S_ReducedVFXSoundAtVolume(actor->target, sfx_gshab, 
+						210 - 10*actor->target->player->rings
+					, NULL);
+
+					if (actor->target->player->rings == 0)
+						S_ReducedVFXSoundAtVolume(actor->target, sfx_gshad, 127, NULL);
+				}
+
 				actor->target->player->ringvolume -= RINGVOLUMEUSEPENALTY;
 
 				sparkle = P_SpawnMobj(actor->target->x, actor->target->y, actor->target->z, MT_RINGSPARKS);

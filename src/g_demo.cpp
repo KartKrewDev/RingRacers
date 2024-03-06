@@ -317,8 +317,8 @@ void G_ReadDemoExtraData(void)
 			skinid = READUINT8(demobuf.p);
 			if (skinid >= demo.numskins)
 				skinid = 0;
-			SetPlayerSkinByNum(p, demo.skinlist[skinid].mapping);
-			demo.currentskinid[p] = skinid;
+			ghostext[p].skinid = demo.currentskinid[p] = skinid;
+			SetPlayerSkinByNum(p, skinid);
 
 			players[p].kartspeed = ghostext[p].kartspeed = demo.skinlist[skinid].kartspeed;
 			players[p].kartweight = ghostext[p].kartweight = demo.skinlist[skinid].kartweight;
@@ -424,7 +424,7 @@ void G_WriteDemoExtraData(void)
 			{
 				for (j = 0; j < MAXAVAILABILITY; j++)
 				{
-					WRITEUINT8(demobuf.p, players[i].availabilities[i]);
+					WRITEUINT8(demobuf.p, players[i].availabilities[j]);
 				}
 
 				WRITEUINT8(demobuf.p, (UINT8)players[i].bot);
@@ -2033,7 +2033,6 @@ static void G_SaveDemoSkins(UINT8 **pp)
 
 static democharlist_t *G_LoadDemoSkins(savebuffer_t *info, UINT8 *worknumskins, boolean getclosest)
 {
-	char skin[17];
 	UINT8 i, byte, shif;
 	democharlist_t *skinlist = NULL;
 
@@ -2052,8 +2051,6 @@ static democharlist_t *G_LoadDemoSkins(savebuffer_t *info, UINT8 *worknumskins, 
 		I_Error("G_LoadDemoSkins: Insufficient memory to allocate list");
 	}
 
-	skin[16] = '\0';
-
 	for (i = 0; i < (*worknumskins); i++)
 	{
 		INT32 result = -1;
@@ -2064,12 +2061,14 @@ static democharlist_t *G_LoadDemoSkins(savebuffer_t *info, UINT8 *worknumskins, 
 			return NULL;
 		}
 
-		READMEM(info->p, skin, 16);
+		READMEM(info->p, skinlist[i].name, 16);
+		skinlist[i].name[16] = '\0';
+		skinlist[i].namehash = quickncasehash(skinlist[i].name, SKINNAMESIZE);
 		skinlist[i].kartspeed = READUINT8(info->p);
 		skinlist[i].kartweight = READUINT8(info->p);
 		skinlist[i].flags = READUINT32(info->p);
 
-		result = R_SkinAvailable(skin);
+		result = R_SkinAvailableEx(skinlist[i].name, false);
 		if (result == -1)
 		{
 			if (!getclosest)
@@ -3354,12 +3353,9 @@ void G_DoPlayDemo(const char *defdemoname)
 
 		// Skin
 
-		i = READUINT8(demobuf.p);
-		if (i >= demo.numskins)
-			i = 0;
-		SetPlayerSkinByNum(p, demo.skinlist[i].mapping);
-		demo.currentskinid[p] = ghostext[p].skinid = i;
-
+		demo.currentskinid[p] = READUINT8(demobuf.p);
+		if (demo.currentskinid[p] >= demo.numskins)
+			demo.currentskinid[p] = 0;
 		lastfakeskin[p] = READUINT8(demobuf.p);
 
 		// Color
@@ -3442,6 +3438,15 @@ void G_DoPlayDemo(const char *defdemoname)
 		UINT8 j;
 
 		p = slots[i];
+
+		for (j = 0; j < MAXAVAILABILITY; j++)
+		{
+			players[p].availabilities[j] = availabilities[p][j];
+		}
+
+		ghostext[p].skinid = demo.currentskinid[p];
+		SetPlayerSkinByNum(p, demo.currentskinid[p]);
+
 		if (players[p].mo)
 		{
 			players[p].mo->color = players[p].skincolor;
@@ -3457,11 +3462,6 @@ void G_DoPlayDemo(const char *defdemoname)
 		players[p].kartweight = ghostext[p].kartweight = demo.skinlist[demo.currentskinid[p]].kartweight;
 		players[p].charflags = ghostext[p].charflags = demo.skinlist[demo.currentskinid[p]].flags;
 		players[p].lastfakeskin = lastfakeskin[p];
-
-		for (j = 0; j < MAXAVAILABILITY; j++)
-		{
-			players[p].availabilities[j] = availabilities[p][j];
-		}
 	}
 
 	demo.deferstart = true;
@@ -3591,7 +3591,7 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	// Skip unlockables
 	{
 		UINT32 unlockables = READUINT32(p);
-		p += std::min<UINT32>(unlockables, MAXUNLOCKABLES);
+		p += unlockables;
 	}
 
 	p++; // mapmusrng
@@ -3814,7 +3814,7 @@ staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer)
 	// Skip unlockables
 	{
 		UINT32 unlockables = READUINT32(p);
-		p += std::min<UINT32>(unlockables, MAXUNLOCKABLES);
+		p += unlockables;
 	}
 
 	p++; // mapmusrng
@@ -4131,7 +4131,6 @@ boolean G_CheckDemoTitleEntry(void)
 
 	demo.willsave = true;
 	M_OpenVirtualKeyboard(
-		false,
 		sizeof demo.titlename,
 		[](const char* replace) -> const char*
 		{

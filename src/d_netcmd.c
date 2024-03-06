@@ -960,7 +960,7 @@ static void SendNameAndColor(const UINT8 n)
 
 	// check if player has the skin loaded (cv_skin may have
 	// the name of a skin that was available in the previous game)
-	cv_skin[n].value = R_SkinAvailable(cv_skin[n].string);
+	cv_skin[n].value = R_SkinAvailableEx(cv_skin[n].string, false);
 	if ((cv_skin[n].value < 0) || !R_SkinUsable(playernum, cv_skin[n].value, false))
 	{
 		CV_StealthSet(&cv_skin[n], DEFAULTSKIN);

@@ -418,6 +418,12 @@ static INT32 AssignDeviceToFirstUnassignedPlayer(INT32 device)
 	return -1;
 }
 
+static void update_vkb_axis(INT32 axis)
+{
+	if (axis > JOYAXISRANGE/2)
+		M_SwitchVirtualKeyboard(true);
+}
+
 //
 // Remaps the inputs to game controls.
 //
@@ -460,6 +466,8 @@ void G_MapEventsToControls(event_t *ev)
 		case ev_keydown:
 			if (ev->data1 < NUMINPUTS)
 			{
+				M_MenuTypingInput(ev->data1);
+
 				if (ev->data2) // OS repeat? We handle that ourselves
 				{
 					break;
@@ -556,11 +564,13 @@ void G_MapEventsToControls(event_t *ev)
 				if (ev->data2 != INT32_MAX)
 				{
 					DeviceGameKeyDownArray[KEY_AXIS1 + (JOYANALOGS * 4) + (i * 2)] = max(0, ev->data2);
+					update_vkb_axis(max(0, ev->data2));
 				}
 
 				if (ev->data3 != INT32_MAX)
 				{
 					DeviceGameKeyDownArray[KEY_AXIS1 + (JOYANALOGS * 4) + (i * 2) + 1] = max(0, ev->data3);
+					update_vkb_axis(max(0, ev->data3));
 				}
 			}
 			else
@@ -592,6 +602,7 @@ void G_MapEventsToControls(event_t *ev)
 						DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4)] = 0;
 						DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4) + 1] = abs(ev->data2);
 					}
+					update_vkb_axis(abs(ev->data2));
 				}
 
 				if (ev->data3 != INT32_MAX)
@@ -608,6 +619,7 @@ void G_MapEventsToControls(event_t *ev)
 						DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4) + 2] = 0;
 						DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4) + 3] = abs(ev->data3);
 					}
+					update_vkb_axis(abs(ev->data3));
 				}
 			}
 			break;

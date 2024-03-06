@@ -1947,7 +1947,7 @@ void D_SRB2Main(void)
 			profile_t *pr = PR_GetProfile(cv_ttlprofilen.value);
 			if (pr != NULL)
 			{
-				INT32 importskin = R_SkinAvailable(pr->skinname);
+				INT32 importskin = R_SkinAvailableEx(pr->skinname, false);
 				if (importskin != -1)
 				{
 					skins[importskin].records.wins = pr->wins;

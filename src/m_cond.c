@@ -1019,6 +1019,32 @@ cacheprisoneggpickup:
 	}
 
 	//CONS_Printf("thisprisoneggpickup = %u (MAXCONDITIONSETS is %u)\n", gamedata->thisprisoneggpickup, MAXCONDITIONSETS);
+
+#ifdef DEVELOP
+	extern consvar_t cv_debugprisoncd;
+	// If all drops are collected, just force the first valid one.
+	if (cv_debugprisoncd.value && gamedata->thisprisoneggpickup_cached == NULL)
+	{
+		for (i = 0; gamedata->thisprisoneggpickup_cached == NULL &&
+			i < gamedata->numprisoneggpickups; i++)
+		{
+			c = &conditionSets[gamedata->prisoneggpickups[i]];
+			if (c->numconditions)
+			{
+				for (j = 0; j < c->numconditions; ++j)
+				{
+					cn = &c->condition[j];
+					if (cn->type != UC_PRISONEGGCD)
+						continue;
+
+					gamedata->thisprisoneggpickup = gamedata->prisoneggpickups[i];
+					gamedata->thisprisoneggpickup_cached = cn;
+					break;
+				}
+			}
+		}
+	}
+#endif
 }
 
 static void M_PrecacheLevelLocks(void)
@@ -1206,7 +1232,7 @@ void M_UpdateConditionSetsPending(void)
 				case UCRP_ISCHARACTER:
 				case UCRP_MAKERETIRE:
 				{
-					cn->requirement = R_SkinAvailable(cn->stringvar);
+					cn->requirement = R_SkinAvailableEx(cn->stringvar, false);
 
 					if (cn->requirement < 0)
 					{
@@ -2021,7 +2047,7 @@ static const char *M_GetConditionCharacter(INT32 skin, boolean directlyrequires)
 			for (j = 0; j < SKINRIVALS; j++)
 			{
 				const char *rivalname = skins[i].rivals[j];
-				INT32 rivalnum = R_SkinAvailable(rivalname);
+				INT32 rivalnum = R_SkinAvailableEx(rivalname, false);
 
 				if (rivalnum != skin)
 					continue;
@@ -3504,7 +3530,7 @@ INT32 M_UnlockableSkinNum(unlockable_t *unlock)
 		}
 
 		// Get the skin from the string.
-		skinnum = R_SkinAvailable(unlock->stringVar);
+		skinnum = R_SkinAvailableEx(unlock->stringVar, false);
 		if (skinnum != -1)
 		{
 			unlock->stringVarCache = skinnum;
