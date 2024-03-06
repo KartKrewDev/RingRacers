@@ -2715,7 +2715,7 @@ void V_DrawStringScaled(
 					if (V_CharacterValid(font, c) == true)
 					{
 						// Remove offsets from patch
-						fixed_t patchxofs = SHORT (font->font[c]->leftoffset) * dupx * FRACUNIT;
+						fixed_t patchxofs = SHORT (font->font[c]->leftoffset) * dupx * scale;
 						cw = SHORT (font->font[c]->width) * dupx;
 						cxoff = (*fontspec.dim_fn)(scale, fontspec.chw, hchw, dupx, &cw);
 						V_DrawFixedPatch(cx + cxoff + patchxofs, cy + cyoff, scale,
