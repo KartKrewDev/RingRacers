@@ -1581,6 +1581,9 @@ typedef enum
 	sfx_cftbl0,
 	sfx_cftbl1,
 	sfx_cftbl2,
+
+	// S-erotonin
+	sfx_srank,
 	
 	// Generic menu SFX
 	sfx_tmxatt,
