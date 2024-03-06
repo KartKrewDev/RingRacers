@@ -150,7 +150,7 @@ static boolean P_UnArchivePlayer(savebuffer_t *save)
 	INT32 skin;
 
 	READSTRINGN(save->p, skinname, SKINNAMESIZE);
-	skin = R_SkinAvailable(skinname);
+	skin = R_SkinAvailableEx(skinname, false);
 
 	if (skin == -1)
 	{
@@ -176,7 +176,7 @@ static boolean P_UnArchivePlayer(savebuffer_t *save)
 		savedata.bots[pid].valid = true;
 
 		READSTRINGN(save->p, skinname, SKINNAMESIZE);
-		skin = R_SkinAvailable(skinname);
+		skin = R_SkinAvailableEx(skinname, false);
 
 		if (skin == -1)
 		{

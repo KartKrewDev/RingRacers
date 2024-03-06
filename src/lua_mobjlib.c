@@ -721,7 +721,11 @@ static int mobj_set(lua_State *L)
 		if (skin != -1)
 		{
 			if (!mo->player || R_SkinUsable(mo->player-players, skin, false))
+			{
+				if (demo.playback)
+					skin = demo.skinlist[skin].mapping;
 				mo->skin = &skins[skin];
+			}
 
 			return 0;
 		}

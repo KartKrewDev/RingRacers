@@ -508,7 +508,7 @@ void srb2::load_ng_gamedata()
 
 	for (auto& skinpair : js.skins)
 	{
-		INT32 skin = R_SkinAvailable(skinpair.first.c_str());
+		INT32 skin = R_SkinAvailableEx(skinpair.first.c_str(), false);
 		skinrecord_t dummyrecord {};
 		dummyrecord.wins = skinpair.second.records.wins;
 
@@ -683,7 +683,7 @@ void srb2::load_ng_gamedata()
 			dummywindata[j].best_skin.id = MAXSKINS;
 			dummywindata[j].best_skin.unloaded = nullptr;
 
-			int skinloaded = R_SkinAvailable(cuppair.second.records[j].bestskin.c_str());
+			int skinloaded = R_SkinAvailableEx(cuppair.second.records[j].bestskin.c_str(), false);
 			if (skinloaded >= 0)
 			{
 				dummywindata[j].best_skin.id = skinloaded;

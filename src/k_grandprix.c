@@ -133,7 +133,7 @@ void K_InitGrandPrixBots(void)
 	UINT8 numplayers = 0;
 	UINT8 competitors[MAXSPLITSCREENPLAYERS];
 
-	UINT8 usableskins;
+	UINT8 usableskins, skincount = (demo.playback ? demo.numskins : numskins);;
 	UINT8 grabskins[MAXSKINS+1];
 
 	UINT8 botskinlist[MAXPLAYERS];
@@ -146,7 +146,7 @@ void K_InitGrandPrixBots(void)
 	memset(botskinlist, defaultbotskin, sizeof (botskinlist));
 
 	// Init usable bot skins list
-	for (usableskins = 0; usableskins < numskins; usableskins++)
+	for (usableskins = 0; usableskins < skincount; usableskins++)
 	{
 		grabskins[usableskins] = usableskins;
 	}
@@ -671,7 +671,7 @@ void K_RetireBots(void)
 	const UINT8 defaultbotskin = R_BotDefaultSkin();
 	SINT8 newDifficulty;
 
-	UINT8 usableskins;
+	UINT8 usableskins, skincount = (demo.playback ? demo.numskins : numskins);
 	UINT8 grabskins[MAXSKINS+1];
 
 	UINT8 i;
@@ -687,7 +687,7 @@ void K_RetireBots(void)
 	}
 
 	// Init usable bot skins list
-	for (usableskins = 0; usableskins < numskins; usableskins++)
+	for (usableskins = 0; usableskins < skincount; usableskins++)
 	{
 		grabskins[usableskins] = usableskins;
 	}

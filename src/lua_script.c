@@ -16,6 +16,7 @@
 #include "deh_lua.h"
 #include "z_zone.h"
 #include "w_wad.h"
+#include "r_things.h" // numskins
 #include "p_setup.h"
 #include "r_state.h"
 #include "r_sky.h"
@@ -370,6 +371,9 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 		return 1;
 	} else if (fastcmp(word,"replayplayback")) {
 		lua_pushboolean(L, demo.playback);
+		return 1;
+	} else if (fastcmp(word,"replaynumskins")) {
+		lua_pushinteger(L, (demo.playback ? demo.numskins : numskins));
 		return 1;
 	} else if (fastcmp(word, "gamestate")) {
 		lua_pushinteger(L, gamestate);

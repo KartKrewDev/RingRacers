@@ -177,12 +177,12 @@ void K_UpdateMatchRaceBots(void)
 	UINT8 numbots = 0;
 	UINT8 numwaiting = 0;
 	SINT8 wantedbots = 0;
-	UINT8 usableskins = 0;
+	UINT8 usableskins = 0, skincount = (demo.playback ? demo.numskins : numskins);;
 	UINT8 grabskins[MAXSKINS+1];
 	UINT8 i;
 
 	// Init usable bot skins list
-	for (i = 0; i < numskins; i++)
+	for (i = 0; i < skincount; i++)
 	{
 		grabskins[usableskins++] = i;
 	}

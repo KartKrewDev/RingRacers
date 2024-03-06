@@ -136,15 +136,17 @@ static void Sk_SetDefaultValue(skin_t *skin)
 }
 
 // Grab the default skin
+#define DEFAULTBOTSKINNAME "eggrobo"
 UINT8 R_BotDefaultSkin(void)
 {
 	static INT32 defaultbotskin = -1;
 
+	if (demo.playback)
+		return R_SkinAvailableEx(DEFAULTBOTSKINNAME, true);
+
 	if (defaultbotskin == -1)
 	{
-		const char *defaultbotskinname = "eggrobo";
-
-		defaultbotskin = R_SkinAvailable(defaultbotskinname);
+		defaultbotskin = R_SkinAvailableEx(DEFAULTBOTSKINNAME, false);
 
 		if (defaultbotskin == -1)
 		{
@@ -155,6 +157,7 @@ UINT8 R_BotDefaultSkin(void)
 
 	return (UINT8)defaultbotskin;
 }
+#undef DEFAULTBOTSKINNAME
 
 //
 // Initialize the basic skins
@@ -226,7 +229,7 @@ UINT8 *R_GetSkinAvailabilities(boolean demolock, INT32 botforcecharacter)
 boolean R_SkinUsable(INT32 playernum, INT32 skinnum, boolean demoskins)
 {
 	boolean needsunlocked = false;
-	boolean useplayerstruct = (Playing() && playernum != -1);
+	boolean useplayerstruct = ((Playing() || demo.playback) && playernum >= 0);
 	UINT16 i;
 	INT32 skinid;
 
@@ -296,6 +299,13 @@ boolean R_SkinUsable(INT32 playernum, INT32 skinnum, boolean demoskins)
 	return (boolean)(gamedata->unlocked[i]);
 }
 
+boolean R_CanShowSkinInDemo(INT32 skinnum)
+{
+	if (modeattacking == ATTACKING_NONE && !(demo.playback && demo.attract))
+		return true;
+	return R_SkinUsable(-2, skinnum, false);
+}
+
 // Returns a random unlocked skin ID.
 UINT32 R_GetLocalRandomSkin(void)
 {
@@ -304,7 +314,7 @@ UINT32 R_GetLocalRandomSkin(void)
 
 	for (i = 0; i < numskins; i++)
 	{
-		if (!R_SkinUsable(-1, i, false))
+		if (!R_SkinUsable(-2, i, false))
 			continue;
 		grabskins[usableskins++] = i;
 	}
@@ -319,8 +329,27 @@ UINT32 R_GetLocalRandomSkin(void)
 // warning return -1 if not found
 INT32 R_SkinAvailable(const char *name)
 {
+	return R_SkinAvailableEx(name, true);
+}
+
+INT32 R_SkinAvailableEx(const char *name, boolean demoskins)
+{
 	INT32 i;
 	UINT32 hash = quickncasehash(name, SKINNAMESIZE);
+
+	if (demo.playback && demoskins)
+	{
+		for (i = 0; i < demo.numskins; i++)
+		{
+			if (demo.skinlist[i].namehash != hash)
+				continue;
+
+			if (stricmp(demo.skinlist[i].name,name)!=0)
+				continue;
+
+			return i;
+		}
+	}
 
 	for (i = 0; i < numskins; i++)
 	{
@@ -357,6 +386,9 @@ engineclass_t R_GetEngineClass(SINT8 speed, SINT8 weight, skinflags_t flags)
 // Auxillary function that actually sets the skin
 static void SetSkin(player_t *player, INT32 skinnum)
 {
+	if (demo.playback)
+		skinnum = demo.skinlist[skinnum].mapping;
+
 	skin_t *skin = &skins[skinnum];
 
 	player->skin = skinnum;
@@ -404,9 +436,9 @@ static void SetSkin(player_t *player, INT32 skinnum)
 // (If your mod locked them all, then you kinda stupid)
 static INT32 GetPlayerDefaultSkin(INT32 playernum)
 {
-	INT32 i;
+	INT32 i, skincount = (demo.playback ? demo.numskins : numskins);
 
-	for (i = 0; i < numskins; i++)
+	for (i = 0; i < skincount; i++)
 	{
 		if (R_SkinUsable(playernum, i, false))
 		{
@@ -943,7 +975,7 @@ void R_AddSkins(UINT16 wadnum, boolean mainfile)
 			// Others can't go in there because we don't want them to be patchable.
 			if (!stricmp(stoken, "name"))
 			{
-				INT32 skinnum = R_SkinAvailable(value);
+				INT32 skinnum = R_SkinAvailableEx(value, false);
 				strlwr(value);
 				if (skinnum == -1)
 					STRBUFCPY(skin->name, value);
@@ -958,7 +990,7 @@ void R_AddSkins(UINT16 wadnum, boolean mainfile)
 					snprintf(value2, stringspace,
 						"%s%d", value, numskins);
 					value2[stringspace - 1] = '\0';
-					if (R_SkinAvailable(value2) == -1)
+					if (R_SkinAvailableEx(value2, false) == -1)
 						// I'm lazy so if NEW name is already used I leave the 'skin x'
 						// default skin name set in Sk_SetDefaultValue
 						STRBUFCPY(skin->name, value2);
@@ -1138,7 +1170,7 @@ void R_PatchSkins(UINT16 wadnum, boolean mainfile)
 				if (!stricmp(stoken, "name"))
 				{
 					strlwr(value);
-					skinnum = R_SkinAvailable(value);
+					skinnum = R_SkinAvailableEx(value, false);
 					if (skinnum != -1)
 						skin = &skins[skinnum];
 					else

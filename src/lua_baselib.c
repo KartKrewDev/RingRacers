@@ -2266,9 +2266,10 @@ static int lib_rSetPlayerSkin(lua_State *L)
 		return luaL_error(L, "argument #2 not given (expected number or string)");
 	else if (lua_type(L, 2) == LUA_TNUMBER) // skin number
 	{
+		INT32 skincount = (demo.playback ? demo.numskins : numskins);
 		i = luaL_checkinteger(L, 2);
-		if (i < 0 || i >= numskins)
-			return luaL_error(L, "skin %d (argument #2) out of range (0 - %d)", i, numskins-1);
+		if (i < 0 || i >= skincount)
+			return luaL_error(L, "skin %d (argument #2) out of range (0 - %d)", i, skincount-1);
 	}
 	else // skin name
 	{

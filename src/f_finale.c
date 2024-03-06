@@ -1345,12 +1345,12 @@ void F_TitleScreenDrawer(void)
 			if (cache_gametrulystarted == true)
 			{
 				const char *eggName = "eggman";
-				INT32 eggSkin = R_SkinAvailable(eggName);
+				INT32 eggSkin = R_SkinAvailableEx(eggName, false);
 				skincolornum_t eggColor = SKINCOLOR_RED;
 				UINT8 *eggColormap = NULL;
 
 				const char *tailsName = "tails";
-				INT32 tailsSkin = R_SkinAvailable(tailsName);
+				INT32 tailsSkin = R_SkinAvailableEx(tailsName, false);
 				skincolornum_t tailsColor = SKINCOLOR_ORANGE;
 				UINT8 *tailsColormap = NULL;
 
