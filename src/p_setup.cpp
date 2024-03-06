@@ -8210,11 +8210,16 @@ void P_ResetLevelMusic(void)
 
 		if (tempmapmus_size > 1)
 		{
-			if (g_reloadingMap)
+			if (g_reloadingMap == (modeattacking == ATTACKING_NONE))
 			{
 				// If restarting the map, simply cycle
 				// through available alt music.
 				idx = (mapmusrng + 1) % tempmapmus_size;
+			}
+			else if (modeattacking)
+			{
+				// Short circuit the cycle.
+				idx = mapmusrng % tempmapmus_size;
 			}
 			else
 			{
