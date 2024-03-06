@@ -952,7 +952,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 	{
 		R_SetColumnFunc(COLDRAWFUNC_TRANS, false); // translate certain pixels to white
 	}
-	else if (vis->mobj->color && vis->transmap) // Color mapping
+	else if (vis->transmap && dc.translation) // Color mapping
 	{
 		R_SetColumnFunc(COLDRAWFUNC_TRANSTRANS, false);
 		dc.transmap = vis->transmap;
@@ -962,9 +962,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 		R_SetColumnFunc(COLDRAWFUNC_FUZZY, false);
 		dc.transmap = vis->transmap;    //Fab : 29-04-98: translucency table
 	}
-	else if (vis->mobj->color) // translate green skin to another color
-		R_SetColumnFunc(COLDRAWFUNC_TRANS, false);
-	else if (vis->mobj->sprite == SPR_PLAY) // Looks like a player, but doesn't have a color? Get rid of green sonic syndrome.
+	else if (dc.translation) // translate green skin to another color
 		R_SetColumnFunc(COLDRAWFUNC_TRANS, false);
 
 	if (vis->extra_colormap && !(vis->cut & SC_FULLBRIGHT) && !(vis->renderflags & RF_NOCOLORMAPS))
