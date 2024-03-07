@@ -654,12 +654,12 @@ static void K_SpawnOvertimeLaser(fixed_t x, fixed_t y, fixed_t scale)
 		if (player->mo->eflags & MFE_VERTICALFLIP)
 		{
 			zpos = cam->z + player->mo->height;
-			zpos = min(zpos + heightPadding, cam->ceilingz);
+			zpos = min(zpos + heightPadding, cam->centerceilingz);
 		}
 		else
 		{
 			zpos = cam->z;
-			zpos = max(zpos - heightPadding, cam->floorz);
+			zpos = max(zpos - heightPadding, cam->centerfloorz);
 		}
 
 		flip = P_MobjFlip(player->mo);
