@@ -357,35 +357,9 @@ boolean Obj_IceCubeThink(mobj_t* mo)
 
 void Obj_IceCubeInput(player_t* player)
 {
-	// FIXME: this should be in the bot ticcmd code
-	auto bot_hack = [player]
-	{
-		if (!K_PlayerUsesBotMovement(player))
-		{
-			return false;
-		}
-
-		if (leveltime % 7)
-		{
-			return false;
-		}
-
-		if (player->sneakertimer)
-		{
-			return false;
-		}
-
-		if (!P_IsObjectOnGround(player->mo))
-		{
-			return false;
-		}
-
-		return true;
-	};
-
 	// Must be mashing some buttons
 	auto press = [player](buttoncode_t bt) { return (player->cmd.buttons & ~player->oldcmd.buttons) & bt; };
-	if (!(press(BT_ACCELERATE) || press(BT_ATTACK) || press(BT_DRIFT) || bot_hack()))
+	if (!(press(BT_ACCELERATE) || press(BT_ATTACK) || press(BT_DRIFT)))
 	{
 		return;
 	}

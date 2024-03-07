@@ -1561,6 +1561,40 @@ static void K_BotItemInstashield(const player_t *player, ticcmd_t *cmd)
 }
 
 /*--------------------------------------------------
+	static void K_BotItemIceCube(player_t *player, ticcmd_t *cmd)
+
+		Item usage for ice cubes.
+
+	Input Arguments:-
+		player - Bot to do this for.
+		cmd - Bot's ticcmd to edit.
+
+	Return:-
+		None
+--------------------------------------------------*/
+static void K_BotItemIceCube(const player_t *player, ticcmd_t *cmd)
+{
+	ZoneScoped;
+
+	if (leveltime % 7)
+	{
+		return;
+	}
+
+	if (player->sneakertimer)
+	{
+		return;
+	}
+
+	if (!P_IsObjectOnGround(player->mo))
+	{
+		return;
+	}
+
+	cmd->buttons |= BT_DRIFT;
+}
+
+/*--------------------------------------------------
 	static tic_t K_BotItemRouletteMashConfirm(const player_t *player)
 
 		How long this bot waits before selecting an item for
@@ -1616,6 +1650,12 @@ static void K_BotItemRouletteMash(const player_t *player, ticcmd_t *cmd)
 void K_BotItemUsage(const player_t *player, ticcmd_t *cmd, INT16 turnamt)
 {
 	ZoneScoped;
+
+	if (player->icecube.frozen)
+	{
+		K_BotItemIceCube(player, cmd);
+		return;
+	}
 
 	if (player->itemflags & IF_USERINGS)
 	{
