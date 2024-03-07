@@ -1367,7 +1367,7 @@ consvar_t cv_mute = UnsavedNetVar("mute", "Off").on_off().onchange(Mute_OnChange
 	consvar_t cv_glmodellighting = OpenGL("gr_modellighting", "Off").on_off();
 #endif
 
-	consvar_t cv_glmodels = OpenGL("gr_models", "Off").on_off();
+	consvar_t cv_glmodels = OpenGL("gr_models", "On").on_off();
 	consvar_t cv_glshearing = OpenGL("gr_shearing", "Off").values({{0, "Off"}, {1, "On"}, {2, "Third-person"}});
 	consvar_t cv_glskydome = OpenGL("gr_skydome", "On").on_off();
 	consvar_t cv_glsolvetjoin = OpenGL("gr_solvetjoin", "On").on_off().dont_save();
