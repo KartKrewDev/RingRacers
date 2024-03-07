@@ -175,7 +175,8 @@ void K_CheckBumpers(void)
 	{
 		// If every other player is eliminated, the
 		// last player standing wins by default.
-		K_EndBattleRound(kingofthehill != -1 ? &players[kingofthehill] : NULL);
+		if (numingame > 1)
+			K_EndBattleRound(kingofthehill != -1 ? &players[kingofthehill] : NULL);
 		return;
 	}
 
