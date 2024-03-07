@@ -46,6 +46,11 @@ struct Spinner : Mobj
 	{
 		fixed_t f = FRACUNIT - std::clamp(fuse, 0, duration()) * FRACUNIT / std::max(duration(), 1);
 
+		if (fuse == duration() - 20)
+		{
+			S_StartSound(nullptr, sound());
+		}
+
 		angle += Easing_InQuad(f, ANGLE_11hh, ANGLE_45);
 		renderflags = (renderflags & ~RF_TRANSMASK) | (Easing_Linear(f, 0, 9) << RF_TRANSSHIFT);
 		spritescale({Easing_Linear(f, 4*FRACUNIT, FRACUNIT/4), Easing_Linear(f, FRACUNIT, 6*FRACUNIT)});
@@ -53,6 +58,28 @@ struct Spinner : Mobj
 		if (--fuse <= 0)
 		{
 			remove();
+		}
+	}
+
+private:
+	sfxenum_t sound() const
+	{
+		switch (powerup())
+		{
+		case POWERUP_SMONITOR:
+			return sfx_bpwrua;
+		case POWERUP_BARRIER:
+			return sfx_bpwrub;
+		case POWERUP_BUMPER:
+			return sfx_bpwruc;
+		case POWERUP_BADGE:
+			return sfx_bpwrud;
+		case POWERUP_SUPERFLICKY:
+			return sfx_bpwrue;
+		case POWERUP_POINTS:
+			return sfx_bpwruf;
+		default:
+			return sfx_thok;
 		}
 	}
 };
