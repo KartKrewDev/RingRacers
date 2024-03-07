@@ -724,6 +724,9 @@ extern int
 #undef UPDATE_ALERT
 #endif
 
+// p_sight.c
+#define TRAVERSE_MAX 2
+
 /// Other karma comeback modes
 //#define OTHERKARMAMODES
 

@@ -360,6 +360,7 @@ typedef UINT32 tic_t;
 #endif
 
 #define TOSTR(x) #x
+#define TOSTR2(x) TOSTR(x) // expand x first
 
 /* preprocessor dumb and needs second macro to expand input */
 #define WSTRING2(s) L ## s
