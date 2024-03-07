@@ -8399,7 +8399,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	// Special stage & record attack retry fade to white
 	// This is handled BEFORE sounds are stopped.
-	if (G_IsModeAttackRetrying() && !demo.playback && gametype != GT_VERSUS)
+	if (G_IsModeAttackRetrying() && !demo.playback && (gametyperules & GTR_BOSS) == 0)
 	{
 		ranspecialwipe = 2;
 		//wipestyleflags |= (WSF_FADEOUT|WSF_TOWHITE);
@@ -8477,7 +8477,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			levelfadecol = 0;
 			wipetype = wipe_encore_towhite;
 		}
-		else if (skipstats == 1)
+		else if (skipstats == 1 && (gametyperules & GTR_BOSS) == 0)
 		{
 			// MapWarp
 			if (ranspecialwipe != 2)
