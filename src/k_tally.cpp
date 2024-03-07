@@ -863,7 +863,7 @@ void level_tally_t::Tick(void)
 				else
 				{
 					state = TALLY_ST_DONE;
-					delay = 5*TICRATE;
+					delay = (modeattacking) ? 2*TICRATE: 5*TICRATE;
 				}
 			}
 			break;
@@ -1407,5 +1407,7 @@ boolean K_PlayerTallyActive(player_t *player)
 
 tic_t K_TallyDelay(void)
 {
+	if (modeattacking)
+		return TICRATE;
 	return ((gametyperules & GTR_BUMPERS) ? 4 : 3) * TICRATE;
 }

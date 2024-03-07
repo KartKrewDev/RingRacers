@@ -4565,7 +4565,7 @@ static void P_SetupSignObject(mobj_t *sign, mobj_t *pmo, boolean error)
 	mobj_t *cur = sign, *prev = NULL;
 
 	// Setup the sign itself
-	P_SetScale(sign, (sign->destscale = 3 * sign->scale / 2)); // 1.5x
+	P_SetScale(sign, (sign->destscale = 5 * sign->scale / 2)); // 2.5x
 	P_SetTarget(&sign->target, pmo);
 	P_SetMobjState(sign, S_SIGN_POLE);
 
