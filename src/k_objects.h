@@ -398,6 +398,10 @@ void Obj_TalkPointInit(mobj_t* mo);
 void Obj_TalkPointThink(mobj_t* mo);
 void Obj_TalkPointOrbThink(mobj_t* mo);
 
+/* Power-up Spinner */
+void Obj_SpawnPowerUpSpinner(mobj_t *source, INT32 powerup, tic_t duration);
+void Obj_TickPowerUpSpinner(mobj_t *mobj);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

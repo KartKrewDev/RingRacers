@@ -6596,6 +6596,11 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		Obj_SSGobletMobjThink(mobj);
 		return;
 	}
+	case MT_GOTPOWERUP:
+	{
+		Obj_TickPowerUpSpinner(mobj);
+		return;
+	}
 	default:
 		if (mobj->fuse)
 		{ // Scenery object fuse! Very basic!
