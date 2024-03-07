@@ -711,6 +711,14 @@ void P_EndingMusic(void)
 		{
 			jingle = "_win";
 		}
+
+		if (modeattacking)
+		{
+			if (players[consoleplayer].realtime < oldbest && oldbest != (tic_t)UINT32_MAX)
+				jingle = "newrec";
+			else
+				jingle = "norec";
+		}
 	}
 
 skippingposition:

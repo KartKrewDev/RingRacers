@@ -34,6 +34,8 @@ extern INT32 numdmstarts, numcoopstarts, numredctfstarts, numbluectfstarts, numf
 extern boolean levelloading;
 extern UINT8 levelfadecol;
 
+extern tic_t oldbest;
+
 extern lumpnum_t lastloadedmaplumpnum; // for comparative savegame
 extern virtres_t *curmapvirt;
 

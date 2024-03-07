@@ -156,6 +156,10 @@ boolean stoppedclock;
 boolean levelloading;
 UINT8 levelfadecol;
 
+tic_t oldbest;
+// I cannot fucking believe this is needed, but gamedata is updated at exactly
+// the wrong time to check your record in the tally screen.
+
 virtres_t *curmapvirt;
 
 // BLOCKMAP
@@ -8705,6 +8709,8 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		M_UpdateUnlockablesAndExtraEmblems(true, true);
 		G_SaveGameData();
 	}
+
+	oldbest = G_GetBestTime(gamemap - 1);
 
 	P_MapEnd(); // tm.thing is no longer needed from this point onwards
 

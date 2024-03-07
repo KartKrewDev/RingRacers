@@ -20,7 +20,7 @@
 
 #define TALLY_WINDOW_SIZE (2)
 
-#define MUSIC_COUNTDOWN_MAX (K_TallyDelay() + 8*TICRATE)
+#define MUSIC_COUNTDOWN_MAX (K_TallyDelay() + (modeattacking ? 5*TICRATE : 8*TICRATE))
 
 typedef enum
 {
