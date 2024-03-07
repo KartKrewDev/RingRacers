@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+#include "k_battle.h"
 #include "k_kart.h"
 #include "k_objects.h"
 #include "k_powerup.h"
@@ -127,7 +128,7 @@ void K_DropPowerUps(player_t* player)
 
 		if (remaining)
 		{
-			K_DropPaperItem(player, powerup, remaining);
+			K_DropPaperItem(player, powerup, std::max<tic_t>(remaining, BATTLE_POWERUP_DROPPED_TIME));
 			callback();
 		}
 	};
