@@ -687,7 +687,7 @@ static bool D_Display(void)
 		}
 	}
 
-	if (Playing())
+	if (Playing() || demo.playback)
 	{
 		HU_Drawer();
 	}
