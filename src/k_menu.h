@@ -1104,7 +1104,6 @@ void M_ProfileTryController(INT32 choice);
 void M_ProfileControlsConfirm(INT32 choice);
 
 // video modes menu (resolution)
-void M_VideoModeMenu(INT32 choice);
 void M_HandleVideoModes(INT32 ch);
 
 // data stuff

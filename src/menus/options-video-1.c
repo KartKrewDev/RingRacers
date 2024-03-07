@@ -10,8 +10,8 @@
 menuitem_t OPTIONS_Video[] =
 {
 
-	{IT_STRING | IT_CALL, "Set Resolution...", "Change the screen resolution for the game.",
-		NULL, {.routine = M_VideoModeMenu}, 0, 0},
+	{IT_STRING | IT_SUBMENU, "Set Resolution...", "Change the screen resolution for the game.",
+		NULL, {.submenu = &OPTIONS_VideoModesDef}, 0, 0},
 
 	{IT_NOTHING|IT_SPACE, NULL, NULL,
 		NULL, {NULL}, 0, 0},
