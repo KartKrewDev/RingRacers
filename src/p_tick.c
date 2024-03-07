@@ -1081,7 +1081,8 @@ void P_Ticker(boolean run)
 			ACS_RunPositionScript();
 		}
 
-		if (timelimitintics > 0 && leveltime == (timelimitintics + starttime + 1))
+		if ((gametyperules & GTR_OVERTIME) && !battleprisons &&
+			timelimitintics > 0 && leveltime == (timelimitintics + starttime + 1))
 		{
 			ACS_RunOvertimeScript();
 		}
