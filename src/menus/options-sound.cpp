@@ -220,22 +220,22 @@ boolean input_routine(INT32)
 menuitem_t OPTIONS_Sound[] =
 {
 
-	{IT_STRING | IT_ARROWS | IT_CV_SLIDER, "Volume", "Adjust the volume of game audio.",
+	{IT_STRING | IT_ARROWS | IT_CV_SLIDER, "Volume", "Loudness of all game audio.",
 		NULL, {.routine = slider_routine}, 0, Slider::kMasterVolume},
 
-	{IT_STRING | IT_ARROWS | IT_CV_SLIDER, "SFX Volume", "Adjust the volume of sound effects.",
+	{IT_STRING | IT_ARROWS | IT_CV_SLIDER, "SFX Volume", "Loudness of sound effects.",
 		NULL, {.routine = slider_routine}, 0, Slider::kSfxVolume},
 
-	{IT_STRING | IT_ARROWS | IT_CV_SLIDER, "Music Volume", "Adjust the volume of music playback.",
+	{IT_STRING | IT_ARROWS | IT_CV_SLIDER, "Music Volume", "Loudness of music.",
 		NULL, {.routine = slider_routine}, 0, Slider::kMusicVolume},
 
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Chat Notifications", "Set when to play notification sounds when chat messages are received.",
+	{IT_STRING | IT_CVAR, "Chat Notifications", "Play a sound effect when chat messages appear.",
 		NULL, {.cvar = &cv_chatnotifications}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Character Voices", "Set how often to play character voices in game.",
+	{IT_STRING | IT_CVAR, "Character Voices", "How often to play character voices in a race.",
 		NULL, {.cvar = &cv_kartvoices}, 0, 0},
 
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,

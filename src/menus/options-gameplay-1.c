@@ -10,16 +10,16 @@ menuitem_t OPTIONS_Gameplay[] =
 	{IT_HEADER, "Race...", NULL,
 		NULL, {NULL}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Game Speed", "Change Game Speed for the next map.",
+	{IT_STRING | IT_CVAR, "Game Speed", "Gear for the next map.",
 		NULL, {.cvar = &cv_kartspeed}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Base Lap Count", "Change how many laps must be completed per race.",
+	{IT_STRING | IT_CVAR, "Base Lap Count", "How many laps must be completed per race.",
 		NULL, {.cvar = &cv_numlaps}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Frantic Items", "Make item odds crazier with more powerful items!",
 		NULL, {.cvar = &cv_kartfrantic}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Encore Mode", "Forces Encore Mode on for the next map.",
+	{IT_STRING | IT_CVAR, "Encore Mode", "Play in Encore Mode next map.",
 		NULL, {.cvar = &cv_kartencore}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Exit Countdown", "How long players have to finish after 1st place finishes.",
@@ -29,20 +29,20 @@ menuitem_t OPTIONS_Gameplay[] =
 	{IT_HEADER, "Battle...", NULL,
 		NULL, {NULL}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Time Limit", "Change the time limit for Battle rounds.",
+	{IT_STRING | IT_CVAR, "Time Limit", "Time limit for Battle rounds.",
 		NULL, {.cvar = &cv_timelimit}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Point Limit", "How many strikes it takes to win a Battle.",
 		NULL, {.cvar = &cv_pointlimit}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Starting Bumpers", "Change how many bumpers player start with in Battle.",
+	{IT_STRING | IT_CVAR, "Starting Bumpers", "How many bumpers players start with in Battle.",
 		NULL, {.cvar = &cv_kartbumpers}, 0, 0},
 
 
 	{IT_SPACE | IT_DYBIGSPACE, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 
-	{IT_STRING | IT_SUBMENU, "Random Item Toggles...", "Change which items to enable for your games.",
+	{IT_STRING | IT_SUBMENU, "Random Item Toggles...", "Which items appear in your games.",
 		NULL, {.submenu = &OPTIONS_GameplayItemsDef}, 0, 0},
 
 };

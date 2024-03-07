@@ -353,11 +353,10 @@ typedef enum
 typedef enum
 {
 	dopt_screenshot = 0,
-	dopt_addon,
+	dopt_advanced,
 	dopt_spacer1,
 	dopt_replay,
 	dopt_rprecord,
-	dopt_rpsync,
 	dopt_rpsize,
 #ifdef HAVE_DISCORDRPC
 	dopt_discord,
@@ -369,6 +368,14 @@ typedef enum
 	dopt_spacer2,
 	dopt_erase,
 } dopt_e;
+
+typedef enum
+{
+	daopt_addon = 0,
+	daopt_spacer1,
+	daopt_replay,
+	daopt_replaycons,
+} daopt_e;
 
 extern menuitem_t OPTIONS_Profiles[];
 extern menu_t OPTIONS_ProfilesDef;
@@ -404,10 +411,8 @@ extern menu_t OPTIONS_VideoDef;
 extern menuitem_t OPTIONS_VideoModes[];
 extern menu_t OPTIONS_VideoModesDef;
 
-#ifdef HWRENDER
-extern menuitem_t OPTIONS_VideoOGL[];
-extern menu_t OPTIONS_VideoOGLDef;
-#endif
+extern menuitem_t OPTIONS_VideoAdvanced[];
+extern menu_t OPTIONS_VideoAdvancedDef;
 
 extern menuitem_t OPTIONS_Sound[];
 extern menu_t OPTIONS_SoundDef;
@@ -420,7 +425,8 @@ extern menu_t OPTIONS_HUDOnlineDef;
 
 typedef enum
 {
-	gopt_gamespeed = 0,
+	gopt_spacer0 = 0,
+	gopt_gamespeed,
 	gopt_baselapcount,
 	gopt_frantic,
 	gopt_encore,
@@ -451,8 +457,11 @@ extern menu_t OPTIONS_DataDef;
 extern menuitem_t OPTIONS_DataScreenshot[];
 extern menu_t OPTIONS_DataScreenshotDef;
 
-extern menuitem_t OPTIONS_DataAddon[];
-extern menu_t OPTIONS_DataAddonDef;
+extern menuitem_t OPTIONS_DataAdvanced[];
+extern menu_t OPTIONS_DataAdvancedDef;
+
+extern menuitem_t OPTIONS_DataAdvancedAddon[];
+extern menu_t OPTIONS_DataAdvancedAddonDef;
 
 extern menuitem_t OPTIONS_DataErase[];
 extern menu_t OPTIONS_DataEraseDef;

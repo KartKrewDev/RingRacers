@@ -11,25 +11,25 @@
 menuitem_t OPTIONS_Main[] =
 {
 
-	{IT_STRING | IT_CALL, "Profile Setup", "Remap keys & buttons to your likings.",
+	{IT_STRING | IT_CALL, "Profile Setup", "Remap keys & buttons.",
 		NULL, {.routine = M_ProfileSelectInit}, 0, 0},
 
-	{IT_STRING | IT_CALL, "Video Options", "Change video settings such as the resolution.",
+	{IT_STRING | IT_CALL, "Video Options", "Change the resolution.",
 		NULL, {.routine = M_VideoOptions}, 0, 0},
 
-	{IT_STRING | IT_CALL, "Sound Options", "Adjust various sound settings such as the volume.",
+	{IT_STRING | IT_CALL, "Sound Options", "Adjust the volume.",
 		NULL, {.routine = M_SoundOptions}, 0, 0},
 
-	{IT_STRING | IT_SUBMENU, "HUD Options", "Options related to the Heads-Up Display.",
+	{IT_STRING | IT_SUBMENU, "HUD Options", "Tweak the Heads-Up Display.",
 		NULL, {.submenu = &OPTIONS_HUDDef}, 0, 0},
 
-	{IT_STRING | IT_CALL, "Gameplay Options", "Change various game related options",
+	{IT_STRING | IT_CALL, "Gameplay Options", "Modify game mechanics.",
 		NULL, {.routine = M_GameplayOptions}, 0, 0},
 
-	{IT_STRING | IT_CALL, "Server Options", "Change various specific options for your game server.",
+	{IT_STRING | IT_CALL, "Server Options", "Update server settings.",
 		NULL, {.routine = M_ServerOptions}, 0, 0},
 
-	{IT_STRING | IT_SUBMENU, "Data Options", "Miscellaneous data options such as the screenshot format.",
+	{IT_STRING | IT_SUBMENU, "Data Options", "Video recording, file saving, Discord status.",
 		NULL, {.submenu = &OPTIONS_DataDef}, 0, 0},
 
 #ifdef TODONEWMANUAL
@@ -96,9 +96,9 @@ void M_InitOptions(INT32 choice)
 			(M_SecretUnlocked(SECRET_ENCORE, false) ? (IT_STRING | IT_CVAR) : IT_DISABLED);
 	}
 
-	OPTIONS_DataDef.menuitems[dopt_addon].status = (M_SecretUnlocked(SECRET_ADDONS, true)
+	OPTIONS_DataAdvancedDef.menuitems[daopt_addon].status = (M_SecretUnlocked(SECRET_ADDONS, true)
 		? (IT_STRING | IT_SUBMENU)
-		: (IT_TRANSTEXT2 | IT_SPACE));
+		: (IT_NOTHING | IT_SPACE));
 	OPTIONS_DataDef.menuitems[dopt_erase].status = (gamestate == GS_MENU
 		? (IT_STRING | IT_SUBMENU)
 		: (IT_TRANSTEXT2 | IT_SPACE));

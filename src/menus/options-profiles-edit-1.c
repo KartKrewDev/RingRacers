@@ -12,16 +12,16 @@ menuitem_t OPTIONS_EditProfile[] = {
 	{IT_STRING | IT_CVAR | IT_CV_STRING, "Profile ID", "6-character long name to identify this Profile.",
 		NULL, {.cvar = &cv_dummyprofilename}, 0, 41},
 
-	{IT_STRING | IT_CALL, "Controls", "Select the button mappings for this Profile.",
+	{IT_STRING | IT_CALL, "Controls", "Change the button mappings.",
 	NULL, {.routine = M_ProfileDeviceSelect}, 0, 71},
 
 	{IT_STRING | IT_SUBMENU, "Accessibility", "Acccessibility and quality of life options.",
 		NULL, {.submenu = &OPTIONS_ProfileAccessibilityDef}, 0, 91},
 
-	{IT_STRING | IT_CALL, "Character", "Default character and color for this Profile.",
+	{IT_STRING | IT_CALL, "Character", "Default character and color.",
 		NULL, {.routine = M_CharacterSelect}, 0, 111},
 
-	{IT_STRING | IT_CVAR | IT_CV_STRING, "Player Tag", "Name displayed online when using this Profile.",
+	{IT_STRING | IT_CVAR | IT_CV_STRING, "Player Tag", "Name displayed online and in replays.",
 	NULL, {.cvar = &cv_dummyprofileplayername}, 0, 141},
 
 	{IT_STRING | IT_CALL, "Confirm", "Confirm changes.",

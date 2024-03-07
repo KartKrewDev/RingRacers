@@ -540,7 +540,7 @@ consvar_t cv_netdemosize = Server("netdemo_size", "6").values(CV_Natural);
 void NetTimeout_OnChange(void);
 consvar_t cv_nettimeout = Server("nettimeout", "210").min_max(TICRATE/7, 60*TICRATE).onchange(NetTimeout_OnChange);
 
-consvar_t cv_pause = NetVar("pausepermission", "Server").values({{0, "Server"}, {1, "All"}});
+consvar_t cv_pause = NetVar("pausepermission", "Server Admins").values({{0, "Server Admins"}, {1, "Everyone"}});
 consvar_t cv_pingmeasurement = Server("pingmeasurement", "Frames").values({{0, "Frames"}, {1, "Milliseconds"}});
 consvar_t cv_playbackspeed = Server("playbackspeed", "1").min_max(1, 10).dont_save();
 
@@ -1326,7 +1326,7 @@ consvar_t cv_chattime = Player("chattime", "8").min_max(5, 999);
 consvar_t cv_chatwidth = Player("chatwidth", "150").min_max(64, 150);
 
 // old shit console chat. (mostly exists for stuff like terminal, not because I cared if anyone liked the old chat.)
-consvar_t cv_consolechat = Player("chatmode", "Window").values({{0, "Window"}, {1, "Console"}, {2, "Window (Hidden)"}});
+consvar_t cv_consolechat = Player("chatmode", "Yes").values({{0, "Yes"}, {2, "No"}});
 
 consvar_t cv_gamestochat = Player("gamestochat", "0").values(CV_Unsigned);
 

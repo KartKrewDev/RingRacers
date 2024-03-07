@@ -2,10 +2,26 @@
 /// \brief OpenGL Options
 
 #include "../k_menu.h"
+#include "../r_main.h"	// cv_skybox
 #include "../hardware/hw_main.h"	// gl consvars
 
-menuitem_t OPTIONS_VideoOGL[] =
+menuitem_t OPTIONS_VideoAdvanced[] =
 {
+	{IT_HEADER, "Performance...", NULL,
+		NULL, {NULL}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Draw Distance", "How far objects can be drawn. A tradeoff between performance & visibility.",
+		NULL, {.cvar = &cv_drawdist}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Weather Draw Distance", "Affects how far weather visuals can be drawn. Lower values improve performance.",
+		NULL, {.cvar = &cv_drawdist_precip}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Enable Skyboxes", "Turning this off may improve performance, but reduces courses' background details.",
+		NULL, {.cvar = &cv_skybox}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Parallel Software", "Uses multiple CPU cores for the software renderer if available, for a FPS boost.",
+		NULL, {.cvar = &cv_parallelsoftware}, 0, 0},
+
 
 	{IT_HEADER, "Rendering Backend...", "Watch people get confused anyway!!",
 		NULL, {NULL}, 0, 0},
@@ -67,11 +83,11 @@ menuitem_t OPTIONS_VideoOGL[] =
 		NULL, {.cvar = &cv_glshearing}, 0, 0},
 };
 
-menu_t OPTIONS_VideoOGLDef = {
-	sizeof (OPTIONS_VideoOGL) / sizeof (menuitem_t),
+menu_t OPTIONS_VideoAdvancedDef = {
+	sizeof (OPTIONS_VideoAdvanced) / sizeof (menuitem_t),
 	&OPTIONS_VideoDef,
 	0,
-	OPTIONS_VideoOGL,
+	OPTIONS_VideoAdvanced,
 	48, 80,
 	SKINCOLOR_PLAGUE, 0,
 	MBF_DRAWBGWHILEPLAYING,

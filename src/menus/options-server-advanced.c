@@ -38,7 +38,7 @@ menuitem_t OPTIONS_ServerAdvanced[] =
 	{IT_HEADER, "Addon Downloading", NULL,
 		NULL, {NULL}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Max File Transfer", "Maximum size of the files that can be downloaded from joining clients. (KB)",
+	{IT_STRING | IT_CVAR, "Max File Transfer", "Maximum size of each file that joining players may download. (KB)",
 		NULL, {.cvar = &cv_maxsend}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "File Transfer Speed", "File transfer packet rate. Larger values send more data.",
@@ -48,13 +48,13 @@ menuitem_t OPTIONS_ServerAdvanced[] =
 	{IT_HEADER, "Logging", NULL,
 		NULL, {NULL}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Log Joiner IPs", "Shows the IP of connecting players.",
+	{IT_STRING | IT_CVAR, "Log Joiner IPs", "Shows the IP address of connecting players as they join.",
 		NULL, {.cvar = &cv_showjoinaddress}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Log Resynch", "Shows which players need resynchronization.",
 		NULL, {.cvar = &cv_blamecfail}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Log Transfers", "Shows when clients are downloading files from you.",
+	{IT_STRING | IT_CVAR, "Log Transfers", "Shows when players are downloading files from you.",
 		NULL, {.cvar = &cv_noticedownload}, 0, 0},
 };
 
