@@ -63,6 +63,11 @@ void K_GivePowerUp(player_t* player, kartitems_t powerup, tic_t time)
 	g_darkness.start = leveltime;
 	g_darkness.end = leveltime + BATTLE_POWERUP_VFX_TIME + DARKNESS_FADE_TIME;
 
+	g_musicfade.start = leveltime;
+	g_musicfade.end = g_musicfade.start + 90;
+	g_musicfade.fade = 20;
+	g_musicfade.ticked = false;
+
 	switch (powerup)
 	{
 	case POWERUP_SMONITOR:
