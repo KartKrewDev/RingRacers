@@ -237,12 +237,14 @@ void M_GameplayOptions(INT32 choice)
 {
 	(void)choice;
 	M_OptionsMenuGoto(&OPTIONS_GameplayDef);
+	OPTIONS_MainDef.lastOn = mopt_gameplay;
 }
 
 void M_ServerOptions(INT32 choice)
 {
 	(void)choice;
 	M_OptionsMenuGoto(&OPTIONS_ServerDef);
+	OPTIONS_MainDef.lastOn = mopt_server;
 }
 
 boolean M_OptionsInputs(INT32 ch)
