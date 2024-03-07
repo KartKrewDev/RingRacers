@@ -118,6 +118,7 @@ void K_TimerReset(void)
 {
 	starttime = introtime = 0;
 	memset(&g_darkness, 0, sizeof g_darkness);
+	memset(&g_musicfade, 0, sizeof g_musicfade);
 	numbulbs = 1;
 	inDuel = rainbowstartavailable = false;
 	linecrossed = 0;
