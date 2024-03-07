@@ -6104,6 +6104,14 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 
 		WRITEUINT8(save->p, (UINT8)rank->specialWon);
 
+		WRITEINT32(save->p, rank->scorePosition);
+		WRITEINT32(save->p, rank->scoreGPPoints);
+		WRITEINT32(save->p, rank->scoreLaps);
+		WRITEINT32(save->p, rank->scorePrisons);
+		WRITEINT32(save->p, rank->scoreRings);
+		WRITEINT32(save->p, rank->scoreContinues);
+		WRITEINT32(save->p, rank->scoreTotal);
+
 		WRITEUINT8(save->p, rank->numLevels);
 
 		for (i = 0; i < rank->numLevels; i++)
@@ -6334,6 +6342,14 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 		rank->totalRings = READUINT32(save->p);
 
 		rank->specialWon = (boolean)READUINT8(save->p);
+
+		rank->scorePosition = READINT32(save->p);
+		rank->scoreGPPoints = READINT32(save->p);
+		rank->scoreLaps = READINT32(save->p);
+		rank->scorePrisons = READINT32(save->p);
+		rank->scoreRings = READINT32(save->p);
+		rank->scoreContinues = READINT32(save->p);
+		rank->scoreTotal = READINT32(save->p);
 
 		rank->numLevels = READUINT8(save->p);
 
