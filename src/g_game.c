@@ -4032,14 +4032,54 @@ void G_GetNextMap(void)
 		nextmap = (nextmapoverride-1);
 		setalready = true;
 
-		// Roundqueue integration: Override the current entry!
-		if (nextmap < nummapheaders
-		&& roundqueue.position > 0
-		&& roundqueue.position <= roundqueue.size)
+		// Tutorial Challenge behaviour
+		if (
+			netgame == false
+			&& gametype == GT_TUTORIAL
+			&& nextmap == NEXTMAP_TUTORIALCHALLENGE
+			&& (
+				!gamedata
+				|| gamedata->enteredtutorialchallenge == false
+				|| M_GameTrulyStarted() == true
+			)
+		)
 		{
-			UINT8 entry = roundqueue.position-1;
-			roundqueue.entries[entry].mapnum = nextmap;
-			roundqueue.entries[entry].overridden = true;
+			nextmap = G_MapNumber(tutorialchallengemap);
+			if (nextmap < nummapheaders)
+			{
+				tutorialchallenge = TUTORIALSKIP_INPROGRESS;
+				gamedata->enteredtutorialchallenge = true;
+				// A gamedata save will happen on successful level enter
+
+				// Also set character, color, and follower from profile
+				
+			}
+		}
+
+		if (nextmap < nummapheaders && mapheaderinfo[nextmap])
+		{
+			if (tutorialchallenge == TUTORIALSKIP_INPROGRESS
+			|| (mapheaderinfo[nextmap]->typeoflevel & G_TOLFlag(gametype)) == 0)
+			{
+				INT32 lastgametype = gametype;
+				INT32 newgametype = G_GuessGametypeByTOL(mapheaderinfo[nextmap]->typeoflevel);
+				if (newgametype == -1)
+					newgametype = GT_RACE; // sensible default
+
+				G_SetGametype(newgametype);
+				D_GameTypeChanged(lastgametype);
+			}
+
+			// Roundqueue integration: Override the current entry!
+			if (roundqueue.position > 0
+			&& roundqueue.position <= roundqueue.size)
+			{
+				UINT8 entry = roundqueue.position-1;
+
+				roundqueue.entries[entry].mapnum = nextmap;
+				roundqueue.entries[entry].gametype = gametype;
+				roundqueue.entries[entry].overridden = true;
+			}
 		}
 	}
 	else if (roundqueue.size > 0)
@@ -4485,7 +4525,11 @@ static void G_DoCompleted(void)
 		{
 			// Return to whence you came with your tail between your legs
 			tutorialchallenge = TUTORIALSKIP_FAILED;
+
+			INT32 lastgametype = gametype;
 			G_SetGametype(GT_TUTORIAL);
+			D_GameTypeChanged(lastgametype);
+
 			nextmapoverride = prevmap+1;
 		}
 		else
@@ -4587,31 +4631,6 @@ void G_AfterIntermission(void)
 //
 void G_NextLevel(void)
 {
-	if (
-		gametype == GT_TUTORIAL
-		&& nextmap == NEXTMAP_TUTORIALCHALLENGE
-		&& (
-			!gamedata
-			|| gamedata->enteredtutorialchallenge == false
-			|| M_GameTrulyStarted() == true
-		)
-	)
-	{
-		nextmap = G_MapNumber(tutorialchallengemap);
-		if (
-			nextmap < nummapheaders
-			&& mapheaderinfo[nextmap] != NULL
-			&& mapheaderinfo[nextmap]->typeoflevel != 0
-		)
-		{
-			tutorialchallenge = TUTORIALSKIP_INPROGRESS;
-			G_SetGametype(G_GuessGametypeByTOL(mapheaderinfo[nextmap]->typeoflevel));
-
-			gamedata->enteredtutorialchallenge = true;
-			// A gamedata save will happen on successful level enter
-		}
-	}
-
 	if (nextmap >= NEXTMAP_SPECIAL)
 	{
 		G_EndGame();
