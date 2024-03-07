@@ -2253,8 +2253,6 @@ void HU_drawPing(fixed_t x, fixed_t y, UINT32 lag, UINT32 pl, INT32 flags, boole
 	boolean drawlocal = (offline && cv_mindelay.value && lag <= (tic_t)cv_mindelay.value);
 	fixed_t x2, y2;
 
-	y = y - 10*FRACUNIT; // Making space for connection quality, sorry.
-
 	if (!server && lag <= (tic_t)cv_mindelay.value)
 	{
 		lag = cv_mindelay.value;
