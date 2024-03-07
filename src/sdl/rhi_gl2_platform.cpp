@@ -44,6 +44,8 @@ static constexpr const char* pipeline_lump_slug(rhi::PipelineProgram program)
 		return "postprocesswipe";
 	case rhi::PipelineProgram::kPostimg:
 		return "postimg";
+	case rhi::PipelineProgram::kCrt:
+		return "crt";
 	default:
 		return "";
 	}

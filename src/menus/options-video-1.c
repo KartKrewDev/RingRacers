@@ -27,6 +27,9 @@ menuitem_t OPTIONS_Video[] =
 	{IT_STRING | IT_CVAR, "FPS Cap", "Handles the frame rate of the game (35 to match game logic)",
 		NULL, {.cvar = &cv_fpscap}, 0, 0},
 
+	{IT_STRING | IT_CVAR, "Screen Effect", "Uses a special effect when displaying the game.",
+		NULL, {.cvar = &cv_scr_effect}, 0, 0},
+
 	{IT_NOTHING|IT_SPACE, NULL, NULL,
 		NULL, {NULL}, 0, 0},
 

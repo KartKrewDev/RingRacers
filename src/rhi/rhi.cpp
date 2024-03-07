@@ -67,6 +67,16 @@ const ProgramRequirements srb2::rhi::kProgramRequirementsPostimg = {
 	ProgramSamplerRequirements {{{SamplerName::kSampler0, true}, {SamplerName::kSampler1, false}}}
 };
 
+const ProgramRequirements srb2::rhi::kProgramRequirementsCrt = {
+	ProgramVertexInputRequirements {
+		{ProgramVertexInput {VertexAttributeName::kPosition, VertexAttributeFormat::kFloat3, true},
+		 ProgramVertexInput {VertexAttributeName::kTexCoord0, VertexAttributeFormat::kFloat2, false},
+		 ProgramVertexInput {VertexAttributeName::kColor, VertexAttributeFormat::kFloat4, false}}},
+	ProgramUniformRequirements {
+		{{{{UniformName::kProjection, true}}},
+		 {{{UniformName::kModelView, true}, {UniformName::kTexCoord0Transform, true}, {UniformName::kSampler0Size, true}}}}},
+	ProgramSamplerRequirements {{{SamplerName::kSampler0, true}, {SamplerName::kSampler1, true}}}};
+
 const ProgramRequirements& rhi::program_requirements_for_program(PipelineProgram program) noexcept
 {
 	switch (program)
@@ -79,6 +89,8 @@ const ProgramRequirements& rhi::program_requirements_for_program(PipelineProgram
 		return kProgramRequirementsPostprocessWipe;
 	case PipelineProgram::kPostimg:
 		return kProgramRequirementsPostimg;
+	case PipelineProgram::kCrt:
+		return kProgramRequirementsCrt;
 	default:
 		std::terminate();
 	}

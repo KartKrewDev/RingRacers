@@ -172,7 +172,8 @@ enum class PipelineProgram
 	kUnshaded,
 	kUnshadedPaletted,
 	kPostprocessWipe,
-	kPostimg
+	kPostimg,
+	kCrt
 };
 
 enum class BufferType
@@ -285,6 +286,7 @@ extern const ProgramRequirements kProgramRequirementsUnshaded;
 extern const ProgramRequirements kProgramRequirementsUnshadedPaletted;
 extern const ProgramRequirements kProgramRequirementsPostprocessWipe;
 extern const ProgramRequirements kProgramRequirementsPostimg;
+extern const ProgramRequirements kProgramRequirementsCrt;
 
 const ProgramRequirements& program_requirements_for_program(PipelineProgram program) noexcept;
 
@@ -480,6 +482,12 @@ enum class TextureWrapMode
 	kClamp
 };
 
+enum class TextureFilterMode
+{
+	kNearest,
+	kLinear
+};
+
 struct TextureDesc
 {
 	TextureFormat format;
@@ -487,6 +495,8 @@ struct TextureDesc
 	uint32_t height;
 	TextureWrapMode u_wrap;
 	TextureWrapMode v_wrap;
+	TextureFilterMode mag;
+	TextureFilterMode min;
 };
 
 struct BufferDesc
