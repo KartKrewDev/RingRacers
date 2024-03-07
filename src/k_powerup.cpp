@@ -56,7 +56,7 @@ void K_GivePowerUp(player_t* player, kartitems_t powerup, tic_t time)
 
 	S_StartSound(NULL, sfx_gsha7l);
 	player->flashing = 2*TICRATE;
-	K_AddHitLag(player->mo, BATTLE_POWERUP_VFX_TIME, false);
+	player->mo->hitlag += BATTLE_POWERUP_VFX_TIME;
 	player->powerupVFXTimer = BATTLE_POWERUP_VFX_TIME;
 	Obj_SpawnPowerUpSpinner(player->mo, powerup, BATTLE_POWERUP_VFX_TIME);
 
