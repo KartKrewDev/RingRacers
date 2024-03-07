@@ -938,6 +938,10 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			Obj_DashRingTouch(special, player);
 			return;
 
+		case MT_ADVENTUREAIRBOOSTER_HITBOX:
+			Obj_AdventureAirBoosterHitboxTouch(special, player);
+			return;
+
 		case MT_DLZ_ROCKET:
 			Obj_DLZRocketSpecial(special, player);
 			return;

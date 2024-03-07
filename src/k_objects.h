@@ -398,6 +398,11 @@ void Obj_TalkPointInit(mobj_t* mo);
 void Obj_TalkPointThink(mobj_t* mo);
 void Obj_TalkPointOrbThink(mobj_t* mo);
 
+/* Adventure Dash Ring */
+void Obj_AdventureAirBoosterSetup(mobj_t *mobj, mapthing_t *mthing);
+void Obj_AdventureAirBoosterHitboxTouch(mobj_t *hitbox, player_t *player);
+void Obj_AdventureAirBoosterFuse(mobj_t *mobj);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

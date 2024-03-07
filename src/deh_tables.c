@@ -2437,6 +2437,12 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_DASHRING_VERTICAL_FLASH1",
 	"S_DASHRING_VERTICAL_FLASH2",
 
+	// Adventure Air Booster
+	"S_ADVENTUREAIRBOOSTER",
+	"S_ADVENTUREAIRBOOSTER_EXHAUST1",
+	"S_ADVENTUREAIRBOOSTER_EXHAUST2",
+	"S_ADVENTUREAIRBOOSTER_PART",
+
 	// Sneaker Panels
 	"S_SNEAKERPANEL",
 	"S_SNEAKERPANEL_SMALL",
@@ -2522,6 +2528,17 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_KOHRAN",
 	"S_KANNA",
 	"S_OGAMI",
+
+	// Dimension Disaster
+	"S_DVDTRUMPET",
+	"S_DVDSHINE1",
+	"S_DVDSHINE2",
+	"S_DVDSHINE3",
+	"S_DVDSHINE4",
+	"S_DVDSHINE5",
+	"S_DVDSPARK1",
+	"S_DVDSPARK2",
+	"S_DVDSPARK3",
 
 	"S_SUNBEAMPALM_STEM",
 	"S_SUNBEAMPALM_LEAF",
@@ -3638,6 +3655,11 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_DASHRING",
 	"MT_RAINBOWDASHRING",
 
+	// Adventure Air Booster
+	"MT_ADVENTUREAIRBOOSTER",
+	"MT_ADVENTUREAIRBOOSTER_HITBOX",
+	"MT_ADVENTUREAIRBOOSTER_PART",
+
 	// Sneaker Panels
 	"MT_SNEAKERPANEL",
 	"MT_SNEAKERPANELSPAWNER",
@@ -3697,6 +3719,10 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	// Hanagumi Hall
 	"MT_HANAGUMIHALL_STEAM",
 	"MT_HANAGUMIHALL_NPC",
+
+	// Dimension Disaster
+	"MT_DVDTRUMPET",
+	"MT_DVDPARTICLE",
 
 	"MT_SUNBEAMPALM_STEM",
 	"MT_SUNBEAMPALM_LEAF",

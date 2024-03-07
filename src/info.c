@@ -501,6 +501,9 @@ char sprnames[NUMSPRITES + 1][5] =
 	// Dash Rings
 	"RAIR",
 
+	// Adventure Air Booster
+	"ADVR",
+
 	// Sneaker Panels
 	"BSTP",
 	"BSTS",
@@ -548,6 +551,10 @@ char sprnames[NUMSPRITES + 1][5] =
 	"HGCE",
 	"HGCF",
 	"HGCG",
+
+	// Dimension Disaster
+	"DVDD",
+	"SPRC",
 
 	"TUST",
 	"TULE",
@@ -2929,6 +2936,12 @@ state_t states[NUMSTATES] =
 	{SPR_NULL,        0, TICRATE/3 - 2, {NULL}, 0, 0, S_DASHRING_VERTICAL_FLASH2},   // S_DASHRING_VERTICAL_FLASH1
 	{SPR_RAIR, FF_ADD|3,             2, {NULL}, 0, 0, S_DASHRING_VERTICAL_FLASH1},   // S_DASHRING_VERTICAL_FLASH2
 
+	// Adventure Air Booster
+	{SPR_ADVR, 17|FF_FULLBRIGHT|FF_ADD, 1, {A_RollAngle}, 8, 0, S_ADVENTUREAIRBOOSTER}, // S_ADVENTUREAIRBOOSTER
+	{SPR_ADVR,  5|FF_FULLBRIGHT|FF_ADD|FF_ANIMATE|FF_PAPERSPRITE, 10, {NULL}, 4, 2, S_NULL}, // S_ADVENTUREAIRBOOSTER_EXHAUST1
+	{SPR_ADVR, 11|FF_FULLBRIGHT|FF_ADD|FF_ANIMATE|FF_PAPERSPRITE, 10, {NULL}, 4, 2, S_NULL}, // S_ADVENTUREAIRBOOSTER_EXHAUST2
+	{SPR_ADVR,  0|FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_NULL}, // S_ADVENTUREAIRBOOSTER_PART
+
 	// Sneaker Panels
 	{SPR_BSTP, FF_ANIMATE|FF_GLOBALANIM|FF_FLOORSPRITE|FF_FULLBRIGHT, -1, {NULL}, 5, 2, S_SNEAKERPANEL},       // S_SNEAKERPANEL
 	{SPR_BSTS, FF_ANIMATE|FF_GLOBALANIM|FF_FLOORSPRITE|FF_FULLBRIGHT, -1, {NULL}, 5, 2, S_SNEAKERPANEL_SMALL}, // S_SNEAKERPANEL_SMALL
@@ -3018,6 +3031,17 @@ state_t states[NUMSTATES] =
 	{SPR_HGCE, 0, -1, {NULL}, 0, 0, S_NULL}, // S_KOHRAN
 	{SPR_HGCF, 0, -1, {NULL}, 0, 0, S_NULL}, // S_KANNA
 	{SPR_HGCG, 0, -1, {NULL}, 0, 0, S_NULL}, // S_OGAMI
+
+	// Dimension Disaster
+	{SPR_DVDD, 1, -1, {NULL}, 0, 0, S_NULL}, // S_DVDTRUMPET
+	{SPR_SPRC, 1|FF_FULLBRIGHT, 3, {NULL}, 0, 0, S_DVDSHINE2}, // S_DVDSHINE1
+	{SPR_SPRC, 2|FF_FULLBRIGHT, 3, {NULL}, 0, 0, S_DVDSHINE3}, // S_DVDSHINE2
+	{SPR_SPRC, 3|FF_FULLBRIGHT, 3, {NULL}, 0, 0, S_DVDSHINE4}, // S_DVDSHINE3
+	{SPR_SPRC, 4|FF_FULLBRIGHT, 3, {NULL}, 0, 0, S_DVDSHINE5}, // S_DVDSHINE4
+	{SPR_SPRC, 5|FF_FULLBRIGHT, 3, {NULL}, 0, 0, S_DVDSHINE1}, // S_DVDSHINE5
+	{SPR_SPRC,            FF_FULLBRIGHT|6, 3, {NULL}, 0, 0, S_DVDSPARK2}, // S_DVDSPARK1
+	{SPR_SPRC, FF_TRANS20|FF_FULLBRIGHT|7, 3, {NULL}, 0, 0, S_DVDSPARK3}, // S_DVDSPARK2
+	{SPR_SPRC, FF_TRANS40|FF_FULLBRIGHT|8, 3, {NULL}, 0, 0, S_NULL},      // S_DVDSPARK3
 
 	{SPR_TUST, FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_NULL}, // S_SUNBEAMPALM_STEM
 	{SPR_TULE, FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_NULL}, // S_SUNBEAMPALM_LEAF
@@ -16807,6 +16831,87 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL          // raisestate
 	},
 
+	{           // MT_ADVENTUREAIRBOOSTER
+		3500,        // doomednum
+		S_ADVENTUREAIRBOOSTER, // spawnstate
+		1000,        // spawnhealth
+		S_NULL,      // seestate
+		sfx_spdpad,  // seesound
+		0,           // reactiontime
+		sfx_None,    // attacksound
+		S_NULL,      // painstate
+		0,           // painchance
+		sfx_None,    // painsound
+		S_NULL,      // meleestate
+		S_NULL,      // missilestate
+		S_NULL,      // deathstate
+		S_NULL,      // xdeathstate
+		sfx_None,    // deathsound
+		0,           // speed
+		50*FRACUNIT, // radius
+		100*FRACUNIT, // height
+		0,           // dispoffset
+		0,           // mass
+		0,           // damage
+		sfx_supert,  // activesound
+		MF_NOCLIPHEIGHT|MF_NOGRAVITY, // flags
+		S_NULL       // raisestate
+	},
+
+	{           // MT_ADVENTUREAIRBOOSTER_HITBOX
+		-1,          // doomednum
+		S_INVISIBLE, // spawnstate
+		1000,        // spawnhealth
+		S_NULL,      // seestate
+		sfx_None,    // seesound
+		0,           // reactiontime
+		sfx_None,    // attacksound
+		S_NULL,      // painstate
+		0,           // painchance
+		sfx_None,    // painsound
+		S_NULL,      // meleestate
+		S_NULL,      // missilestate
+		S_NULL,      // deathstate
+		S_NULL,      // xdeathstate
+		sfx_None,    // deathsound
+		0,           // speed
+		127*FRACUNIT, // radius
+		256*FRACUNIT, // height
+		0,           // dispoffset
+		0,           // mass
+		0,           // damage
+		sfx_None,    // activesound
+		MF_NOCLIPHEIGHT|MF_SPECIAL|MF_NOGRAVITY, // flags
+		S_NULL       // raisestate
+	},
+
+	{           // MT_ADVENTUREAIRBOOSTER_PART
+		-1,          // doomednum
+		S_ADVENTUREAIRBOOSTER_PART, // spawnstate
+		1000,        // spawnhealth
+		S_NULL,      // seestate
+		sfx_None,    // seesound
+		0,           // reactiontime
+		sfx_None,    // attacksound
+		S_NULL,      // painstate
+		0,           // painchance
+		sfx_None,    // painsound
+		S_NULL,      // meleestate
+		S_NULL,      // missilestate
+		S_NULL,      // deathstate
+		S_NULL,      // xdeathstate
+		sfx_None,    // deathsound
+		0,           // speed
+		32*FRACUNIT, // radius
+		64*FRACUNIT, // height
+		0,           // dispoffset
+		0,           // mass
+		0,           // damage
+		sfx_None,    // activesound
+		MF_NOTHINK|MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_NOGRAVITY, // flags
+		S_NULL       // raisestate
+	},
+
 	{           // MT_SNEAKERPANEL
 		510,         // doomednum
 		S_SNEAKERPANEL,  // spawnstate
@@ -17749,6 +17854,60 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,           // damage
 		sfx_None,    // activesound
 		MF_DONTENCOREMAP|MF_NOCLIP|MF_SCENERY|MF_NOGRAVITY, // flags
+		S_NULL       // raisestate
+	},
+
+	{           // MT_DVDTRUMPET
+		3181,        // doomednum
+		S_DVDTRUMPET, // spawnstate
+		1000,        // spawnhealth
+		S_NULL,      // seestate
+		sfx_None,    // seesound
+		0,           // reactiontime
+		sfx_None,    // attacksound
+		S_NULL,      // painstate
+		0,           // painchance
+		sfx_None,    // painsound
+		S_NULL,      // meleestate
+		S_NULL,      // missilestate
+		S_NULL,      // deathstate
+		S_NULL,      // xdeathstate
+		sfx_None,    // deathsound
+		0,           // speed
+		8*FRACUNIT,  // radius
+		14*FRACUNIT, // height
+		0,           // dispoffset
+		0,           // mass
+		0,           // damage
+		sfx_None,    // activesound
+		MF_NOTHINK|MF_SCENERY, // flags
+		S_NULL       // raisestate
+	},
+
+	{           // MT_DVDPARTICLE
+		-1,          // doomednum
+		S_DVDSPARK1, // spawnstate
+		1,           // spawnhealth
+		S_NULL,      // seestate
+		sfx_None,    // seesound
+		8,           // reactiontime
+		sfx_None,    // attacksound
+		S_NULL,      // painstate
+		0,           // painchance
+		sfx_None,    // painsound
+		S_NULL,      // meleestate
+		S_NULL,      // missilestate
+		S_NULL,      // deathstate
+		S_NULL,      // xdeathstate
+		sfx_None,    // deathsound
+		2*FRACUNIT,  // speed
+		8*FRACUNIT,  // radius
+		14*FRACUNIT, // height
+		0,           // dispoffset
+		100,         // mass
+		62*FRACUNIT, // damage
+		sfx_None,    // activesound
+		MF_NOCLIP|MF_SCENERY|MF_NOGRAVITY|MF_NOBLOCKMAP, // flags
 		S_NULL       // raisestate
 	},
 
