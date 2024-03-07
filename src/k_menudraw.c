@@ -4532,8 +4532,11 @@ box_found:
 				}
 				/* FALLTHRU */
 			case IT_NOTHING:
-			case IT_DYBIGSPACE:
 				y += SMALLLINEHEIGHT;
+				break;
+
+			case IT_DYBIGSPACE:
+				y += SMALLLINEHEIGHT/2;
 				break;
 #if 0
 			case IT_BIGSLIDER:
