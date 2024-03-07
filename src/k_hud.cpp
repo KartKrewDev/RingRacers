@@ -5228,9 +5228,12 @@ static void K_drawInput(void)
 	INT32 flags = def[k][2] | V_SPLITSCREEN;
 	char mode = ((stplyr->pflags & PF_ANALOGSTICK) ? '4' : '2') + (r_splitscreen > 1);
 	bool local = !demo.playback && P_IsMachineLocalPlayer(stplyr);
+	fixed_t slide = K_GetDialogueSlide(FRACUNIT);
+	if (slide)
+		flags &= ~(V_SNAPTORIGHT); // don't draw underneath the dialogue box in non-green resolutions
 	K_DrawInputDisplay(
-		def[k][0] - FixedToFloat(K_GetDialogueSlide(34 * FRACUNIT)),
-		def[k][1] - FixedToFloat(K_GetDialogueSlide(51 * FRACUNIT)),
+		def[k][0] - FixedToFloat(34 * slide),
+		def[k][1] - FixedToFloat(51 * slide),
 		flags,
 		mode,
 		(local ? G_LocalSplitscreenPartyPosition : G_PartyPosition)(stplyr - players),
