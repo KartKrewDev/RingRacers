@@ -20178,7 +20178,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,           // mass
 		0,           // damage
 		sfx_None,    // activesound
-		MF_NOCLIPHEIGHT|MF_NOSQUISH, // flags
+		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_SCENERY|MF_NOSQUISH, // flags
 		S_NULL       // raisestate
 	},
 	{           // MT_SIDEWAYSFREEZETHRUSTER
