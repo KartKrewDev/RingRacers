@@ -834,6 +834,12 @@ consvar_t cv_restrictskinchange = OnlineCheat("restrictskinchange", "Yes").yes_n
 consvar_t cv_spbtest = OnlineCheat("spbtest", "Off").on_off().description("SPB can never target a player");
 consvar_t cv_showgremlins = OnlineCheat("showgremlins", "No").yes_no().description("Show line collision errors");
 consvar_t cv_timescale = OnlineCheat(cvlist_timer)("timescale", "1.0").floating_point().min_max(FRACUNIT/20, 20*FRACUNIT).description("Overclock or slow down the game");
+
+#ifdef DEVELOP
+	// change the default value in doomdef.h (so it affects release builds too)
+	consvar_t cv_debugtraversemax = OnlineCheat("debugtraversemax", TOSTR2(TRAVERSE_MAX)).min_max(0, 255).description("Improve line-of-sight detection (waypoints) but may slow down the game");
+#endif
+
 consvar_t cv_ufo_follow = OnlineCheat("ufo_follow", "0").min_max(0, MAXPLAYERS).description("Make UFO Catcher folow this player");
 consvar_t cv_ufo_health = OnlineCheat("ufo_health", "-1").min_max(-1, 100).description("Override UFO Catcher health -- applied at spawn or when value is changed");
 

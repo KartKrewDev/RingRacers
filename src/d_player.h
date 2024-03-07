@@ -104,8 +104,9 @@ typedef enum
 	PF_RINGLOCK			= 1<<13, // Prevent picking up rings while SPB is locked on
 
 	PF_ANALOGSTICK		= 1<<14, // This player is using an analog joystick
+	PF_TRUSTWAYPOINTS	= 1<<15, // Do not activate lap cheat prevention next time finish line distance is updated
 
-	//15-17 free, was previously itemflags stuff
+	//16-17 free, was previously itemflags stuff
 
 	PF_DRIFTINPUT		= 1<<18, // Drifting!
 	PF_GETSPARKS		= 1<<19, // Can get sparks
@@ -671,7 +672,7 @@ struct player_t
 	mobj_t *ringShooter;	// DEZ respawner object
 	tic_t airtime; 			// Used to track just air time, but has evolved over time into a general "karted" timer. Rename this variable?
 	tic_t lastairtime;
-	UINT8 bigwaypointgap;	// timer counts down if finish line distance gap is too big to update waypoint
+	UINT16 bigwaypointgap;	// timer counts down if finish line distance gap is too big to update waypoint
 	UINT8 startboost;		// (0 to 125) - Boost you get from start of race
 	UINT8 dropdashboost;	// Boost you get when holding A while respawning
 

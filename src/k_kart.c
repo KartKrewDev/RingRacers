@@ -8772,11 +8772,20 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		K_DoIngameRespawn(player);
 	}
 
-	if (player->bigwaypointgap)
+	// Don't tick down while in damage state.
+	// There may be some maps where the timer activates for
+	// a moment during normal play, but would quickly correct
+	// itself when the player drives forward.
+	// If the player is in a damage state, they may not be
+	// able to move in time.
+	// Always let the respawn prompt appear.
+	if (player->bigwaypointgap && (player->bigwaypointgap > AUTORESPAWN_THRESHOLD || !P_PlayerInPain(player)))
 	{
 		player->bigwaypointgap--;
 		if (!player->bigwaypointgap)
 			K_DoIngameRespawn(player);
+		else if (player->bigwaypointgap == AUTORESPAWN_THRESHOLD)
+			K_AddMessageForPlayer(player, "Press \xAE to respawn", true, false);
 	}
 
 	if (player->tripwireUnstuck && !player->mo->hitlag)
@@ -8797,7 +8806,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->respawn.state == RESPAWNST_NONE && (player->cmd.buttons & BT_RESPAWN) == BT_RESPAWN)
 	{
 		player->finalfailsafe++; // Decremented by ringshooter to "freeze" this timer
-		if (player->finalfailsafe >= 4*TICRATE)
+		// Part-way through the auto-respawn timer, you can tap Ring Shooter to respawn early
+		if (player->finalfailsafe >= 4*TICRATE ||
+			(player->bigwaypointgap && player->bigwaypointgap < AUTORESPAWN_THRESHOLD))
 		{
 			K_DoIngameRespawn(player);
 			player->finalfailsafe = 0;
@@ -9976,10 +9987,12 @@ static void K_UpdatePlayerWaypoints(player_t *const player)
 	player->distancetofinishprev = player->distancetofinish;
 	K_UpdateDistanceFromFinishLine(player);
 
-	// Respawning should be a full reset.
-	// So should touching the first waypoint ever.
 	UINT32 delta = u32_delta(player->distancetofinish, player->distancetofinishprev);
-	if (player->respawn.state == RESPAWNST_NONE && delta > distance_threshold && old_currentwaypoint != NULL)
+	if (delta > distance_threshold &&
+		player->respawn.state == RESPAWNST_NONE && // Respawning should be a full reset.
+		old_currentwaypoint != NULL && // So should touching the first waypoint ever.
+		player->laps != 0 && // POSITION rooms may have unorthodox waypoints to guide bots.
+		!(player->pflags & PF_TRUSTWAYPOINTS)) // Special exception.
 	{
 		extern consvar_t cv_debuglapcheat;
 #define debug_args "Player %s: waypoint ID %d too far away (%u > %u)\n", \
@@ -10000,14 +10013,14 @@ static void K_UpdatePlayerWaypoints(player_t *const player)
 			// Start the auto respawn timer when the distance jumps.
 			if (!player->bigwaypointgap)
 			{
-				player->bigwaypointgap = 35;
+				player->bigwaypointgap = AUTORESPAWN_TIME;
 			}
 		}
 	}
 	else
 	{
 		// Reset the auto respawn timer if distance changes are back to normal.
-		if (player->bigwaypointgap == 1)
+		if (player->bigwaypointgap <= AUTORESPAWN_THRESHOLD + 1)
 		{
 			player->bigwaypointgap = 0;
 		}
@@ -10025,6 +10038,8 @@ static void K_UpdatePlayerWaypoints(player_t *const player)
 		player->lastsafelap = player->laps;
 		player->lastsafecheatcheck = player->cheatchecknum;
 	}
+
+	player->pflags &= ~PF_TRUSTWAYPOINTS; // clear special exception
 }
 
 INT32 K_GetKartRingPower(const player_t *player, boolean boosted)

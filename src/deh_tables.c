@@ -4016,7 +4016,7 @@ const char *const PLAYERFLAG_LIST[] = {
 	"RINGLOCK", // Prevent picking up rings while SPB is locked on
 
 	"ANALOGSTICK", // This player is using an analog joystick
-	"\x01", // Free
+	"TRUSTWAYPOINTS", // Do not activate lap cheat prevention next time finish line distance is updated
 	"\x01", // Free
 	"\x01", // Free
 

@@ -52,7 +52,11 @@ typedef struct
 
 static INT32 sightcounts[2];
 
-#define TRAVERSE_MAX (2)
+#ifdef DEVELOP
+extern consvar_t cv_debugtraversemax;
+#undef TRAVERSE_MAX
+#define TRAVERSE_MAX (cv_debugtraversemax.value)
+#endif
 
 //
 // P_DivlineSide
