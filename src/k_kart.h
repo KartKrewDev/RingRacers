@@ -233,8 +233,6 @@ void K_KartEbrakeVisuals(player_t *p);
 void K_HandleDirectionalInfluence(player_t *player);
 fixed_t K_DefaultPlayerRadius(player_t *player);
 
-boolean K_ShouldSpawnDuelItems(void);
-
 // sound stuff for lua
 void K_PlayAttackTaunt(mobj_t *source);
 void K_PlayBoostTaunt(mobj_t *source);

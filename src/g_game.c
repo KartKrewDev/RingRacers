@@ -2879,7 +2879,7 @@ mapthing_t *G_FindMapStart(INT32 playernum)
 
 	// -- DM/Tag/CTF-spectator/etc --
 	// Order: DM->CTF->Race
-	else if (gametyperules & GTR_BATTLESTARTS)
+	else if ((gametyperules & GTR_BATTLESTARTS) && !battleprisons)
 		spawnpoint = G_FindBattleStartOrFallback(playernum);
 
 	// -- Other game modes --

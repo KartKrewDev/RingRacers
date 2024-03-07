@@ -125,11 +125,6 @@ void K_TimerReset(void)
 	g_pointlimit = 0;
 }
 
-boolean K_ShouldSpawnDuelItems(void)
-{
-	return (inDuel == true || (grandprixinfo.gp && grandprixinfo.eventmode == GPEVENT_BONUS));
-}
-
 static void K_SpawnItemCapsules(void)
 {
 	mapthing_t *mt = mapthings;
@@ -281,7 +276,10 @@ void K_TimerInit(void)
 	timelimitintics = K_TimeLimitForGametype();
 	g_pointlimit = K_PointLimitForGametype();
 
-	if (K_ShouldSpawnDuelItems())
+	// K_TimerInit is called after all mapthings are spawned,
+	// so they didn't know if it's supposed to be a duel
+	// (inDuel is always false before K_TimerInit is called).
+	if (inDuel)
 	{
 		K_SpawnDuelOnlyItems();
 	}
