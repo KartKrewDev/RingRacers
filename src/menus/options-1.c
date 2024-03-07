@@ -212,6 +212,11 @@ static void M_OptionsMenuGoto(menu_t *assignment)
 {
 	assignment->prevMenu = currentMenu;
 	M_SetupNextMenu(assignment, false);
+	if (currentMenu != &OPTIONS_MainDef)
+	{
+		optionsmenu.ticker = 0;
+		M_OptionsTick();
+	}
 }
 
 void M_VideoOptions(INT32 choice)
