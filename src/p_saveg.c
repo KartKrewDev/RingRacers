@@ -6052,6 +6052,8 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 
 	UINT8 i;
 	UINT16 mapnum;
+	UINT16 gtnum;
+
 	for (i = 0; i < roundqueue.size; i++)
 	{
 		mapnum = roundqueue.entries[i].mapnum;
@@ -6063,6 +6065,18 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 			if (roundqueue.entries[i].overridden == true)
 			{
 				WRITESTRINGL(save->p, mapheaderinfo[mapnum]->lumpname, MAXMAPLUMPNAME);
+
+				gtnum = roundqueue.entries[i].gametype;
+				if (gtnum < numgametypes && gametypes[gtnum])
+				{
+					WRITESTRINGL(save->p, gametypes[roundqueue.entries[i].gametype]->name, MAXGAMETYPELENGTH);
+				}
+				else
+				{
+					// Unrecoverable, so we at least try to provide a debugging hint
+					const char *badgtstr = va("bad GT %03d on save?", gtnum); // ~20ch vs 32 (MAXGAMETYPELENGTH as of writing)
+					WRITESTRINGL(save->p, badgtstr, MAXGAMETYPELENGTH);
+				}
 			}
 			else
 			{
@@ -6270,6 +6284,8 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 
 	UINT8 i, j;
 	UINT16 mapnum;
+	INT32 gtnum;
+
 	for (i = 0; i < roundqueue.size; i++)
 	{
 		roundqueue.entries[i].overridden = (boolean)READUINT8(save->p);
@@ -6282,13 +6298,27 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 			}
 
 			char mapname[MAXMAPLUMPNAME];
+			char gtname[MAXGAMETYPELENGTH];
 
 			READSTRINGL(save->p, mapname, MAXMAPLUMPNAME);
+			READSTRINGL(save->p, gtname, MAXGAMETYPELENGTH);
+
 			mapnum = G_MapNumber(mapname);
 
 			if (mapnum < nummapheaders)
 			{
 				roundqueue.entries[i].mapnum = mapnum;
+
+				gtnum = G_GetGametypeByName(gtname);
+				if (gtnum == -1)
+				{
+					CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Cup \"%s\"'s level composition is invalid (unknown gametype \"%s\" at overridden entry %u/%u).\n", cupname, gtname, i, roundqueue.size);
+					return false;
+				}
+
+				roundqueue.entries[i].gametype = gtnum;
+
+				// Success, don't fall through to failure
 				continue;
 			}
 		}
@@ -6308,7 +6338,10 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 			if (mapnum < nummapheaders && mapheaderinfo[mapnum] != NULL)
 			{
 				if (mapheaderinfo[mapnum]->lumpnamehash == val)
+				{
+					// Success, don't fall through to failure
 					continue;
+				}
 			}
 		}
 
