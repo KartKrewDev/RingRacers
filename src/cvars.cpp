@@ -1347,7 +1347,7 @@ consvar_t cv_mute = UnsavedNetVar("mute", "Off").on_off().onchange(Mute_OnChange
 
 	extern CV_PossibleValue_t glanisotropicmode_cons_t[];
 	void CV_glanisotropic_OnChange(void);
-	consvar_t cv_glanisotropicmode = OpenGL("gr_anisotropicmode", "1").values(glanisotropicmode_cons_t).onchange(CV_glanisotropic_OnChange).dont_save();
+	consvar_t cv_glanisotropicmode = OpenGL("gr_anisotropicmode", "1").values(glanisotropicmode_cons_t).onchange(CV_glanisotropic_OnChange);
 
 	consvar_t cv_glbatching = OpenGL("gr_batching", "On").on_off().dont_save();
 
