@@ -3269,6 +3269,7 @@ void G_DoPlayDemo(const char *defdemoname)
 	consoleplayer = 0;
 	memset(playeringame,0,sizeof(playeringame));
 	memset(displayplayers,0,sizeof(displayplayers));
+	memset(camera,0,sizeof(camera)); // reset freecam
 
 	// Load players that were in-game when the map started
 	p = READUINT8(demobuf.p);
