@@ -9048,6 +9048,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->spinouttimer || player->tumbleBounces)
 	{
+		if (player->ballhogcharge)
+			player->ballhogcharge = 0;
+
 		if (player->progressivethrust < MAXCOMBOTIME)
 			player->progressivethrust++;
 		if (player->incontrol > 0)
