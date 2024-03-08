@@ -2843,7 +2843,7 @@ static void Got_Mapcmd(const UINT8 **cp, INT32 playernum)
 				&& mapnumber == gamemap);
 		if (pforcespecialstage // Forced.
 			|| (caughtretry && grandprixinfo.eventmode == GPEVENT_SPECIAL) // Catch retries of forced.
-			|| (gametyperules & (GTR_BOSS|GTR_CATCHER))) // Conventional rules.
+			|| (roundqueue.size == 0 && (gametyperules & (GTR_BOSS|GTR_CATCHER)))) // Force convention for the (queue)map command.
 		{
 			grandprixinfo.eventmode = GPEVENT_SPECIAL;
 
