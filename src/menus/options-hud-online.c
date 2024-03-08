@@ -7,7 +7,7 @@
 menuitem_t OPTIONS_HUDOnline[] =
 {
 
-	{IT_STRING | IT_CVAR, "Chat Mode", "Choose whether to display chat in its own window or the console.",
+	{IT_STRING | IT_CVAR, "Show Chat", "Show chat by default or keep it hidden until you open it.",
 		NULL, {.cvar = &cv_consolechat}, 0, 0},
 
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
@@ -28,7 +28,7 @@ menuitem_t OPTIONS_HUDOnline[] =
 	{IT_STRING | IT_CVAR, "Message Fadeout Time (s)", "How long chat messages stay displayed with the chat closed.",
 		NULL, {.cvar = &cv_chattime}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Message Tint", "Shows the tint for new chat messages when the box is closed.",
+	{IT_STRING | IT_CVAR, "Message Fadeout Tint", "Shows the tint for new chat messages when the box is closed.",
 		NULL, {.cvar = &cv_chatbacktint}, 0, 0},
 
 };

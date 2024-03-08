@@ -6005,13 +6005,41 @@ void K_drawKartHUD(void)
 			bool ta = modeattacking && !demo.playback;
 			INT32 flags = V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP|V_SNAPTORIGHT;
 			K_drawKartTimestamp(stplyr->realtime, TIME_X, TIME_Y + (ta ? 2 : 0), flags, 0);
-			if (ta)
+			if (modeattacking)
 			{
-				using srb2::Draw;
-				Draw(BASEVIDWIDTH - 19, 2)
-					.flags(flags | V_YELLOWMAP)
-					.align(Draw::Align::kRight)
-					.text("\xBE Restart");
+				if (ta)
+				{
+					using srb2::Draw;
+					Draw(BASEVIDWIDTH - 19, 2)
+						.flags(flags | V_YELLOWMAP)
+						.align(Draw::Align::kRight)
+						.text("\xBE Restart");
+				}
+				else
+				{
+					using srb2::Draw;
+					Draw row = Draw(BASEVIDWIDTH - 20, TIME_Y + 18).flags(flags).align(Draw::Align::kRight);
+					auto insert = [&](const char *label, UINT32 tics)
+					{
+						Draw::TextElement text =
+							tics != UINT32_MAX ?
+							Draw::TextElement(
+								"{}'{}\"{}",
+								G_TicsToMinutes(tics, true),
+								G_TicsToSeconds(tics),
+								G_TicsToCentiseconds(tics)
+							) :
+							Draw::TextElement("--'--\"--");
+						text.font(Draw::Font::kZVote);
+						row.x(-text.width()).flags(V_ORANGEMAP).text(label);
+						row.y(1).text(text);
+						row = row.y(10);
+					};
+					if (modeattacking & ATTACKING_TIME)
+						insert("Finish: ", hu_demotime);
+					if (modeattacking & ATTACKING_LAP)
+						insert("Best Lap: ", hu_demolap);
+				}
 			}
 		}
 

@@ -10,7 +10,8 @@ target_sources(SRB2SDL2 PRIVATE
 	main-profile-select.c
 	options-1.c
 	options-data-1.c
-	options-data-addons.c
+	options-data-advanced-1.c
+	options-data-advanced-addon.c
 	options-data-erase-1.c
 	options-data-erase-profile.c
 	options-data-screenshots.c
@@ -26,7 +27,7 @@ target_sources(SRB2SDL2 PRIVATE
 	options-server-advanced.c
 	options-sound.cpp
 	options-video-1.c
-	options-video-gl.c
+	options-video-advanced.c
 	options-video-modes.c
 	play-1.c
 	play-char-select.c

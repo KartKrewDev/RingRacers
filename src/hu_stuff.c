@@ -1958,43 +1958,6 @@ static void HU_DrawTitlecardCEcho(size_t num)
 UINT32 hu_demotime;
 UINT32 hu_demolap;
 
-static void HU_DrawDemoInfo(void)
-{
-	if (!multiplayer)/* netreplay */
-	{
-		V_DrawCenteredString((BASEVIDWIDTH/2), BASEVIDHEIGHT-40, 0, M_GetText("Replay:"));
-		V_DrawCenteredString((BASEVIDWIDTH/2), BASEVIDHEIGHT-32, 0, player_names[0]);
-	}
-	else
-	{
-		V_DrawRightAlignedThinString(BASEVIDWIDTH-2, BASEVIDHEIGHT-10, 0, demo.titlename);
-	}
-
-	if (modeattacking & ATTACKING_TIME)
-	{
-		V_DrawRightAlignedString((BASEVIDWIDTH/2)-4, BASEVIDHEIGHT-24, V_YELLOWMAP|V_MONOSPACE, "BEST TIME:");
-		if (hu_demotime != UINT32_MAX)
-			V_DrawString((BASEVIDWIDTH/2)+4, BASEVIDHEIGHT-24, V_MONOSPACE, va("%i'%02i\"%02i",
-				G_TicsToMinutes(hu_demotime,true),
-				G_TicsToSeconds(hu_demotime),
-				G_TicsToCentiseconds(hu_demotime)));
-		else
-			V_DrawString((BASEVIDWIDTH/2)+4, BASEVIDHEIGHT-24, V_MONOSPACE, "--'--\"--");
-	}
-
-	if (modeattacking & ATTACKING_LAP)
-	{
-		V_DrawRightAlignedString((BASEVIDWIDTH/2)-4, BASEVIDHEIGHT-16, V_YELLOWMAP|V_MONOSPACE, "BEST LAP:");
-		if (hu_demolap != UINT32_MAX)
-			V_DrawString((BASEVIDWIDTH/2)+4, BASEVIDHEIGHT-16, V_MONOSPACE, va("%i'%02i\"%02i",
-				G_TicsToMinutes(hu_demolap,true),
-				G_TicsToSeconds(hu_demolap),
-				G_TicsToCentiseconds(hu_demolap)));
-		else
-			V_DrawString((BASEVIDWIDTH/2)+4, BASEVIDHEIGHT-16, V_MONOSPACE, "--'--\"--");
-	}
-}
-
 
 //
 // Song credits
@@ -2067,11 +2030,6 @@ void HU_Drawer(void)
 				LUA_HookHUD(luahuddrawlist_scores, HUD_HOOK(scores));
 			}
 			LUA_HUD_DrawList(luahuddrawlist_scores);
-		}
-
-		if (demo.playback)
-		{
-			HU_DrawDemoInfo();
 		}
 	}
 
@@ -2252,8 +2210,6 @@ void HU_drawPing(fixed_t x, fixed_t y, UINT32 lag, UINT32 pl, INT32 flags, boole
 	INT32 gfxnum; // gfx to draw
 	boolean drawlocal = (offline && cv_mindelay.value && lag <= (tic_t)cv_mindelay.value);
 	fixed_t x2, y2;
-
-	y = y - 10*FRACUNIT; // Making space for connection quality, sorry.
 
 	if (!server && lag <= (tic_t)cv_mindelay.value)
 	{

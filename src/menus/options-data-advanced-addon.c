@@ -1,10 +1,7 @@
-/// \file  menus/options-data-addons.c
-/// \brief Addon Options
-
 #include "../k_menu.h"
 #include "../filesrch.h" // addons cvars
 
-menuitem_t OPTIONS_DataAddon[] =
+menuitem_t OPTIONS_DataAdvancedAddon[] =
 {
 
 	{IT_HEADER, "Addon List", NULL,
@@ -27,11 +24,11 @@ menuitem_t OPTIONS_DataAddon[] =
 
 };
 
-menu_t OPTIONS_DataAddonDef = {
-	sizeof (OPTIONS_DataAddon) / sizeof (menuitem_t),
-	&OPTIONS_DataDef,
+menu_t OPTIONS_DataAdvancedAddonDef = {
+	sizeof (OPTIONS_DataAdvancedAddon) / sizeof (menuitem_t),
+	&OPTIONS_DataAdvancedDef,
 	0,
-	OPTIONS_DataAddon,
+	OPTIONS_DataAdvancedAddon,
 	48, 80,
 	SKINCOLOR_BLUEBERRY, 0,
 	MBF_DRAWBGWHILEPLAYING,

@@ -1279,20 +1279,30 @@ static void ST_overlayDrawer(void)
 		{
 			if (!demo.attract && !P_IsLocalPlayer(stplyr) && !camera[viewnum].freecam)
 			{
-				if (!r_splitscreen)
+				if (r_splitscreen <= 1)
 				{
-					V_DrawCenteredString((BASEVIDWIDTH/2), BASEVIDHEIGHT-40, V_HUDTRANSHALF, M_GetText("VIEWPOINT:"));
-					V_DrawCenteredString((BASEVIDWIDTH/2), BASEVIDHEIGHT-32, V_HUDTRANSHALF, player_names[stplyr-players]);
-				}
-				else if (r_splitscreen == 1)
-				{
-					char name[MAXPLAYERNAME+12];
+					INT32 flags = V_SNAPTOBOTTOM | V_SPLITSCREEN | V_HUDTRANS;
+					INT32 x = BASEVIDWIDTH/2;
+					INT32 y = (BASEVIDHEIGHT / (r_splitscreen + 1)) - 34;
+					INT32 width = 50;
 
-					INT32 y = (viewnum == 0) ? 4 : BASEVIDHEIGHT/2-12;
-					sprintf(name, "VIEWPOINT: %s", player_names[stplyr-players]);
-					V_DrawRightAlignedThinString(BASEVIDWIDTH-40, y, V_HUDTRANSHALF|V_SNAPTOTOP|V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN, name);
+					if (r_splitscreen)
+					{
+						flags = (flags & ~V_ALPHAMASK) | V_HUDTRANSHALF;
+						y += 4;
+					}
+					else
+					{
+						V_DrawFill(x - width/2, y + 6, width, 2, flags | 31);
+						V_DrawCenteredThinString(x, y, flags | V_ORANGEMAP, "Watching");
+					}
+
+					const char *text = player_names[stplyr-players];
+					fixed_t textwidth = V_StringScaledWidth(FRACUNIT, FRACUNIT, FRACUNIT, flags, KART_FONT, text);
+					V_DrawStringScaled(x*FRACUNIT - textwidth/2, (y+10)*FRACUNIT,
+						FRACUNIT, FRACUNIT, FRACUNIT, flags, NULL, KART_FONT, text);
 				}
-				else if (r_splitscreen)
+				else
 				{
 					V_DrawCenteredThinString((vid.width/vid.dupx)/4, BASEVIDHEIGHT/2 - 12, V_HUDTRANSHALF|V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN, player_names[stplyr-players]);
 				}

@@ -10,11 +10,11 @@ extern consvar_t cv_netdemosize;
 menuitem_t OPTIONS_Data[] =
 {
 
-	{IT_STRING | IT_SUBMENU, "Video Recording...", "Set options relative to screenshot and movie capture.",
+	{IT_STRING | IT_SUBMENU, "Video Recording...", "Options for recording clips.",
 		NULL, {.submenu = &OPTIONS_DataScreenshotDef}, 0, 0},
 
-	{IT_STRING | IT_SUBMENU, "Addons...", "Set options relative to the addons menu.",
-		NULL, {.submenu = &OPTIONS_DataAddonDef}, 0, 0},
+	{IT_STRING | IT_SUBMENU, "Advanced...", "Technical settings that you probably don't want to change.",
+		NULL, {.submenu = &OPTIONS_DataAdvancedDef}, 0, 0},
 
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
@@ -22,11 +22,8 @@ menuitem_t OPTIONS_Data[] =
 	{IT_HEADER, "Replays...", NULL,
 		NULL, {NULL}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Record Replays", "Select when to save replays.",
+	{IT_STRING | IT_CVAR, "Record Replays", "How the save prompt should appear.",
 		NULL, {.cvar = &cv_recordmultiplayerdemos}, 0, 0},
-
-	{IT_STRING | IT_CVAR, "Net Consistency Quality", "For filesize, how often do we write position data in online replays?",
-		NULL, {.cvar = &cv_netdemosyncquality}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Buffer Size (MB)", "Lets replays last longer with more players. Uses more RAM.",
 		NULL, {.cvar = &cv_netdemosize}, 0, 0},
@@ -51,7 +48,7 @@ menuitem_t OPTIONS_Data[] =
 	{IT_SPACE | IT_DYBIGSPACE, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 
-	{IT_STRING | IT_SUBMENU, "\x85""Erase Data...", "Erase specific data. Be careful, what's deleted is gone forever!",
+	{IT_STRING | IT_SUBMENU, "\x85""Erase Data...", "Erase save data. Be careful, what's deleted is gone forever!",
 		NULL, {.submenu = &OPTIONS_DataEraseDef}, 0, 0},
 
 };

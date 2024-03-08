@@ -176,8 +176,6 @@ void M_ChangeCvarDirect(INT32 choice, consvar_t *cv)
 			choice *= (TICRATE/7);
 		else if (cv == &cv_maxsend)
 			choice *= 512;
-		else if (cv == &cv_maxping)
-			choice *= 50;
 
 		CV_AddValue(cv, choice);
 	}
