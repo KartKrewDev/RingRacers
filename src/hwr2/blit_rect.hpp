@@ -25,6 +25,7 @@ public:
 	enum class BlitMode
 	{
 		kNearest,
+		kSharpBilinear,
 		kCrt,
 	};
 

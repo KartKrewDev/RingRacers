@@ -685,6 +685,34 @@ void Gl2Rhi::update_texture(
 	GL_ASSERT;
 }
 
+void Gl2Rhi::update_texture_settings(
+	Handle<GraphicsContext> ctx,
+	Handle<Texture> texture,
+	TextureWrapMode u_wrap,
+	TextureWrapMode v_wrap,
+	TextureFilterMode min,
+	TextureFilterMode mag
+)
+{
+	SRB2_ASSERT(graphics_context_active_ == true);
+
+	SRB2_ASSERT(texture_slab_.is_valid(texture) == true);
+	auto& t = texture_slab_[texture];
+
+	gl_->ActiveTexture(GL_TEXTURE0);
+	GL_ASSERT;
+	gl_->BindTexture(GL_TEXTURE_2D, t.texture);
+	GL_ASSERT;
+	gl_->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, map_texture_wrap(u_wrap));
+	GL_ASSERT;
+	gl_->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, map_texture_wrap(v_wrap));
+	GL_ASSERT;
+	gl_->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, map_texture_filter(min));
+	GL_ASSERT;
+	gl_->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, map_texture_filter(mag));
+	GL_ASSERT;
+}
+
 rhi::Handle<rhi::Buffer> Gl2Rhi::create_buffer(const rhi::BufferDesc& desc)
 {
 	GLenum target = map_buffer_type(desc.type);

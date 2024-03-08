@@ -173,6 +173,7 @@ enum class PipelineProgram
 	kUnshadedPaletted,
 	kPostprocessWipe,
 	kPostimg,
+	kSharpBilinear,
 	kCrt
 };
 
@@ -286,6 +287,7 @@ extern const ProgramRequirements kProgramRequirementsUnshaded;
 extern const ProgramRequirements kProgramRequirementsUnshadedPaletted;
 extern const ProgramRequirements kProgramRequirementsPostprocessWipe;
 extern const ProgramRequirements kProgramRequirementsPostimg;
+extern const ProgramRequirements kProgramRequirementsSharpBilinear;
 extern const ProgramRequirements kProgramRequirementsCrt;
 
 const ProgramRequirements& program_requirements_for_program(PipelineProgram program) noexcept;
@@ -495,8 +497,8 @@ struct TextureDesc
 	uint32_t height;
 	TextureWrapMode u_wrap;
 	TextureWrapMode v_wrap;
-	TextureFilterMode mag;
 	TextureFilterMode min;
+	TextureFilterMode mag;
 };
 
 struct BufferDesc
@@ -627,6 +629,14 @@ struct Rhi
 		Rect region,
 		srb2::rhi::PixelFormat data_format,
 		tcb::span<const std::byte> data
+	) = 0;
+	virtual void update_texture_settings(
+		Handle<GraphicsContext> ctx,
+		Handle<Texture> texture,
+		TextureWrapMode u_wrap,
+		TextureWrapMode v_wrap,
+		TextureFilterMode min,
+		TextureFilterMode mag
 	) = 0;
 	virtual Handle<UniformSet> create_uniform_set(Handle<GraphicsContext> ctx, const CreateUniformSetInfo& info) = 0;
 	virtual Handle<BindingSet>

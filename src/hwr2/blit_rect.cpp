@@ -51,6 +51,20 @@ static const PipelineDesc kUnshadedPipelineDescription = {
 	FaceWinding::kCounterClockwise,
 	{0.f, 0.f, 0.f, 1.f}};
 
+/// @brief Pipeline used for sharp bilinear special blit.
+static const PipelineDesc kSharpBilinearPipelineDescription = {
+	PipelineProgram::kSharpBilinear,
+	{{{sizeof(BlitVertex)}}, {{VertexAttributeName::kPosition, 0, 0}, {VertexAttributeName::kTexCoord0, 0, 12}}},
+	{{{UniformName::kProjection}, {{UniformName::kModelView, UniformName::kTexCoord0Transform, UniformName::kSampler0Size}}}},
+	{{// RGB/A texture
+	  SamplerName::kSampler0}},
+	std::nullopt,
+	{std::nullopt, {true, true, true, true}},
+	PrimitiveType::kTriangles,
+	CullMode::kNone,
+	FaceWinding::kCounterClockwise,
+	{0.f, 0.f, 0.f, 1.f}};
+
 /// @brief Pipeline used for CRT special blit
 static const PipelineDesc kCrtPipelineDescription = {
 	PipelineProgram::kCrt,
@@ -84,6 +98,9 @@ void BlitRectPass::prepass(Rhi& rhi)
 		{
 			case BlitRectPass::BlitMode::kNearest:
 				pipeline_ = rhi.create_pipeline(kUnshadedPipelineDescription);
+				break;
+			case BlitRectPass::BlitMode::kSharpBilinear:
+				pipeline_ = rhi.create_pipeline(kSharpBilinearPipelineDescription);
 				break;
 			case BlitRectPass::BlitMode::kCrt:
 				pipeline_ = rhi.create_pipeline(kCrtPipelineDescription);
@@ -240,6 +257,30 @@ void BlitRectPass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 
 		std::array<rhi::VertexAttributeBufferBinding, 1> vbs = {{{0, quad_vbo_}}};
 		std::array<rhi::TextureBinding, 2> tbs = {{{rhi::SamplerName::kSampler0, texture_}, {rhi::SamplerName::kSampler1, dot_pattern_}}};
+		binding_set_ = rhi.create_binding_set(ctx, pipeline_, {vbs, tbs});
+		break;
+	}
+	case BlitRectPass::BlitMode::kSharpBilinear:
+	{
+		std::array<rhi::UniformVariant, 3> g2_uniforms = {
+			// ModelView
+			glm::scale(
+				glm::identity<glm::mat4>(),
+				glm::vec3(taller ? 2.f : 2.f * aspect, taller ? 2.f * (1.f / aspect) : 2.f, 1.f)
+			),
+			// Texcoord0 Transform
+			glm::mat3(
+				glm::vec3(1.f, 0.f, 0.f),
+				glm::vec3(0.f, output_flip_ ? -1.f : 1.f, 0.f),
+				glm::vec3(0.f, output_flip_ ? 1.f : 0.f, 1.f)
+			),
+			// Sampler0 size
+			glm::vec2(texture_details.width, texture_details.height)
+		};
+		uniform_sets_[1] = rhi.create_uniform_set(ctx, {g2_uniforms});
+
+		std::array<rhi::VertexAttributeBufferBinding, 1> vbs = {{{0, quad_vbo_}}};
+		std::array<rhi::TextureBinding, 1> tbs = {{{rhi::SamplerName::kSampler0, texture_}}};
 		binding_set_ = rhi.create_binding_set(ctx, pipeline_, {vbs, tbs});
 		break;
 	}
