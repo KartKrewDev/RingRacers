@@ -3841,7 +3841,7 @@ void G_HandleSaveLevel(boolean removecondition)
 	|| roundqueue.size == 0)
 		return;
 
-	if (roundqueue.position == 1
+	if ((roundqueue.position == 1 && roundqueue.entries[0].overridden == false)
 	|| players[consoleplayer].lives <= 1) // because a life is lost on reload
 		goto doremove;
 
@@ -4144,7 +4144,7 @@ void G_GetNextMap(void)
 
 			// Handle primary queue position update.
 			roundqueue.position++;
-			if (grandprixinfo.gp == false || gametype == roundqueue.entries[0].gametype)
+			if (grandprixinfo.gp == false || gametype == GT_RACE) // roundqueue.entries[0].gametype
 			{
 				roundqueue.roundnum++;
 			}
