@@ -430,6 +430,7 @@ consvar_t cv_scr_depth = Player("scr_depth", "16 bits").values({{8, "8 bits"}, {
 //added : 03-02-98: default screen mode, as loaded/saved in config
 consvar_t cv_scr_width = Player("scr_width", "640").values(CV_Unsigned);
 consvar_t cv_scr_height = Player("scr_height", "400").values(CV_Unsigned);
+consvar_t cv_scr_effect = Player("scr_effect", "Sharp Bilinear").values({{0, "Nearest"}, {1, "Sharp Bilinear"}, {2, "SalCRT"}}).save();
 
 consvar_t cv_scr_scale = Player("scr_scale", "1.0").floating_point();
 consvar_t cv_scr_x = Player("scr_x", "0.0").floating_point();

@@ -198,6 +198,14 @@ public:
 		srb2::rhi::PixelFormat data_format,
 		tcb::span<const std::byte> data
 	) override;
+	virtual void update_texture_settings(
+		Handle<GraphicsContext> ctx,
+		Handle<Texture> texture,
+		TextureWrapMode u_wrap,
+		TextureWrapMode v_wrap,
+		TextureFilterMode min,
+		TextureFilterMode mag
+	) override;
 	virtual Handle<UniformSet>
 	create_uniform_set(Handle<GraphicsContext> ctx, const CreateUniformSetInfo& info) override;
 	virtual Handle<BindingSet>
