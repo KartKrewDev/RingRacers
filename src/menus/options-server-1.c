@@ -67,7 +67,7 @@ menuitem_t OPTIONS_Server[] =
 	{IT_STRING | IT_CVAR, "Mute Chat", "Prevent everyone but admins from sending chat messages.",
 		NULL, {.cvar = &cv_mute}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Chat Spam Protection", "Prevent too many message from a single player.",
+	{IT_STRING | IT_CVAR, "Chat Spam Protection", "Prevent too many messages from a single player.",
 		NULL, {.cvar = &cv_chatspamprotection}, 0, 0},
 
 	{IT_SPACE | IT_DYBIGSPACE, NULL,  NULL,

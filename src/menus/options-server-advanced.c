@@ -28,7 +28,7 @@ menuitem_t OPTIONS_ServerAdvanced[] =
 	{IT_STRING | IT_CVAR, "Ping Timeout (s)", "Players must be above the ping limit for this long before being kicked.",
 		NULL, {.cvar = &cv_pingtimeout}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Connection Timeout (tics)", "Players not giving any netowrk activity for this long are kicked.",
+	{IT_STRING | IT_CVAR, "Connection Timeout (tics)", "Players not giving any network activity for this long are kicked.",
 		NULL, {.cvar = &cv_nettimeout}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Join Timeout (tics)", "Players taking too long to join are kicked.",
