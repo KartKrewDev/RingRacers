@@ -531,7 +531,7 @@ consvar_t cv_masterserver_token = Server("masterserver_token", "");
 void MasterClient_Ticker(void);
 consvar_t cv_masterserver_update_rate = Server("masterserver_update_rate", "15").min_max(2, 60).onchange_noinit(MasterClient_Ticker);
 
-consvar_t cv_maxping = Server("maxdelay", "20").values(CV_Unsigned);
+consvar_t cv_maxping = Server("maxdelay", "20").min_max(0, 30);
 consvar_t cv_menujam = Server("menujam", "menu").values({{0, "menu"}, {1, "menu2"}, {2, "menu3"}});
 consvar_t cv_menujam_update = Server("menujam_update", "Off").on_off();
 consvar_t cv_netdemosyncquality = Server("netdemo_syncquality", "1").min_max(1, 35);

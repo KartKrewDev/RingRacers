@@ -22,10 +22,10 @@ menuitem_t OPTIONS_ServerAdvanced[] =
 	{IT_STRING | IT_CVAR, "Resynch. Attempts", "How many times to attempt sending data to desynchronized players.",
 		NULL, {.cvar = &cv_resynchattempts}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Ping Limit (ms)", "Players above the ping limit will get kicked from the server.",
+	{IT_STRING | IT_CVAR, "Delay Limit (tics)", "Players above the delay limit will get kicked from the server.",
 		NULL, {.cvar = &cv_maxping}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Ping Timeout (s)", "Players must be above the ping limit for this long before being kicked.",
+	{IT_STRING | IT_CVAR, "Delay Timeout (seconds)", "Players must be above the delay limit for this long before being kicked.",
 		NULL, {.cvar = &cv_pingtimeout}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Connection Timeout (tics)", "Players not giving any network activity for this long are kicked.",
