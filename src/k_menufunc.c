@@ -273,6 +273,25 @@ static boolean M_GamestateCanOpenMenu(void)
 //
 boolean M_Responder(event_t *ev)
 {
+	if (ev->type == ev_keydown && !ev->data2)
+	{
+		extern consvar_t cv_showhud;
+		switch (ev->data1)
+		{
+			case KEY_F3: // Toggle HUD
+				// I am lazy so this button is also
+				// hardcoded.
+				CV_SetValue(&cv_showhud, !cv_showhud.value);
+				return true;
+
+			case KEY_F11: // Fullscreen
+				// F11 can always be used to toggle
+				// fullscreen, it's a safe key.
+				CV_AddValue(&cv_fullscreen, 1);
+				return true;
+		}
+	}
+
 	if (dedicated
 		|| (demo.playback && demo.attract)
 		|| M_GamestateCanOpenMenu() == false)
