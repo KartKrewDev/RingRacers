@@ -918,7 +918,7 @@ void M_DrawMenuMessage(void)
 		}
 
 		V_DrawString((BASEVIDWIDTH - V_StringWidth(string, 0))/2, y, 0, string);
-		y += 9;
+		y += 8;
 	}
 }
 
