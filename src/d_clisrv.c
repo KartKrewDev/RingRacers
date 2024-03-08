@@ -679,7 +679,7 @@ static inline void CL_DrawConnectionStatus(void)
 
 		// Draw bottom box
 		M_DrawTextBox(BASEVIDWIDTH/2-128-8, BASEVIDHEIGHT-24-8, 32, 1);
-		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-24, V_YELLOWMAP, "Press (B) to abort");
+		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-24, V_YELLOWMAP, "Press \xAB or \xAD to abort");
 
 		for (i = 0; i < 16; ++i)
 			V_DrawFill((BASEVIDWIDTH/2-128) + (i * 16), BASEVIDHEIGHT-24, 16, 8, palstart + ((animtime - i) & 15));
@@ -752,7 +752,7 @@ static inline void CL_DrawConnectionStatus(void)
 			INT32 checkednum = 0;
 			INT32 i;
 
-			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-24, V_YELLOWMAP, "Press (B) to abort");
+			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-24, V_YELLOWMAP, "Press \xAB or \xAD to abort");
 
 			//ima just count files here
 			for (i = 0; i < fileneedednum; i++)
@@ -774,7 +774,7 @@ static inline void CL_DrawConnectionStatus(void)
 			INT32 loadcompletednum = 0;
 			INT32 i;
 
-			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-24, V_YELLOWMAP, "Press (B) to abort");
+			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-24, V_YELLOWMAP, "Press \xAB or \xAD to abort");
 
 			//ima just count files here
 			for (i = 0; i < fileneedednum; i++)
@@ -801,7 +801,7 @@ static inline void CL_DrawConnectionStatus(void)
 
 			// Draw the bottom box.
 			M_DrawTextBox(BASEVIDWIDTH/2-128-8, BASEVIDHEIGHT-58-8, 32, 1);
-			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-58-14, V_YELLOWMAP, "Press (B) to abort");
+			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-58-14, V_YELLOWMAP, "Press \xAB or \xAD to abort");
 
 			Net_GetNetStat();
 			dldlength = (INT32)((file->currentsize/(double)file->totalsize) * 256);
@@ -867,7 +867,7 @@ static inline void CL_DrawConnectionStatus(void)
 
 			//Draw bottom box
 			M_DrawTextBox(BASEVIDWIDTH/2-128-8, BASEVIDHEIGHT-24-8, 32, 1);
-			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-24, V_YELLOWMAP, "Press (B) to abort");
+			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-24, V_YELLOWMAP, "Press \xAB or \xAD to abort");
 
 			for (i = 0; i < 16; ++i)
 				V_DrawFill((BASEVIDWIDTH/2-128) + (i * 16), BASEVIDHEIGHT-24, 16, 8, palstart + ((animtime - i) & 15));
@@ -5943,7 +5943,7 @@ static void SV_Maketic(void)
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		packetloss[i][maketic%PACKETMEASUREWINDOW] = false;
-		
+
 		if (!playeringame[i])
 			continue;
 
