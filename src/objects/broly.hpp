@@ -44,7 +44,7 @@ struct Broly : Mobj
 
 	bool valid() const { return duration(); }
 
-	tic_t remaining() const { return tics - kBufferTics; }
+	tic_t remaining() const { return tics > kBufferTics ? tics - kBufferTics : 0u; }
 
 	Fixed linear() const { return (remaining() * FRACUNIT) / duration(); }
 
