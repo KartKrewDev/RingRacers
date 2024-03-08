@@ -75,6 +75,7 @@ struct gpRank_t
 
 #ifdef __cplusplus
 	void Init(void);
+	void Rejigger(UINT16 removedmap, UINT16 removedgt, UINT16 addedmap, UINT16 addedgt);
 	void Update(void);
 #endif
 };
@@ -111,6 +112,26 @@ extern "C" {
 --------------------------------------------------*/
 
 void K_InitGrandPrixRank(gpRank_t *rankData);
+
+
+/*--------------------------------------------------
+	void K_RejiggerGPRankData(gpRank_t *rankData, UINT16 removedmap, UINT16 removedgt, UINT16 addedmap, UINT16 addedgt)
+
+		Recalculates rank requirements for overriden round.
+
+	Input Arguments:-
+		rankData - Pointer to struct that contains all
+			of the information required to calculate GP rank.
+		removedmap - Level ID for round extracted
+		removedgt - Gametype ID for round extracted
+		addedmap - Level ID for round extracted
+		addedgt - Gametype ID for round extracted
+
+	Return:-
+		N/A
+--------------------------------------------------*/
+
+void K_RejiggerGPRankData(gpRank_t *rankData, UINT16 removedmap, UINT16 removedgt, UINT16 addedmap, UINT16 addedgt);
 
 
 /*--------------------------------------------------

@@ -4076,6 +4076,16 @@ void G_GetNextMap(void)
 			{
 				UINT8 entry = roundqueue.position-1;
 
+				if (grandprixinfo.gp)
+				{
+					K_RejiggerGPRankData(
+						&grandprixinfo.rank,
+						roundqueue.entries[entry].mapnum,
+						roundqueue.entries[entry].gametype,
+						nextmap,
+						gametype);
+				}
+
 				roundqueue.entries[entry].mapnum = nextmap;
 				roundqueue.entries[entry].gametype = gametype;
 				roundqueue.entries[entry].overridden = true;
