@@ -316,7 +316,7 @@ void I_FinishUpdate(void)
 			g_hw_state.sharp_bilinear_blit_rect->draw(*rhi, ctx);
 			break;
 		case 2:
-			rhi->update_texture_settings(ctx, g_hw_state.backbuffer->color(), TextureWrapMode::kClamp, TextureWrapMode::kClamp, TextureFilterMode::kNearest, TextureFilterMode::kNearest);
+			rhi->update_texture_settings(ctx, g_hw_state.backbuffer->color(), TextureWrapMode::kClamp, TextureWrapMode::kClamp, TextureFilterMode::kLinear, TextureFilterMode::kLinear);
 			g_hw_state.crt_blit_rect->draw(*rhi, ctx);
 			break;
 		default:
