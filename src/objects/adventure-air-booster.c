@@ -214,4 +214,5 @@ void Obj_AdventureAirBoosterFuse(mobj_t *mobj)
 	mobj->destscale = mobj->movefactor;
 	ghost->destscale = mobj->movefactor * 8;
 	ghost->scalespeed = mobj->movefactor;
+	ghost->height = mobj->height;
 }
