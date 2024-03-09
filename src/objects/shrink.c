@@ -536,11 +536,13 @@ boolean Obj_ShrinkLaserCollide(mobj_t *gun, mobj_t *victim)
 	owner = pohbee_owner(pohbee);
 	prevTimer = victim->player->growshrinktimer;
 
-	fixed_t normalizer = FixedDiv(FRACUNIT, gun->cusval);
-	fixed_t scale = FixedMul(gun->scale, normalizer);
+	fixed_t scale = FRACUNIT; // Used if you hit the gun/laser.
 
-	if (gun->type != MT_SHRINK_PARTICLE) // You hit the gun/laser! 
-		scale = FRACUNIT; // (Which doesn't have a cusval for its original scale, because it never changes)
+	if (gun->type == MT_SHRINK_PARTICLE && gun->cusval != 0) // Hit the laser trail, scale the punishment down.
+	{
+		fixed_t normalizer = FixedDiv(FRACUNIT, gun->cusval); // cusval = original scale of the particle, as it eases down to 0
+		scale = FixedMul(gun->scale, normalizer);
+	}
 
 	if (owner != NULL && victim == owner)
 	{
@@ -583,7 +585,7 @@ boolean Obj_ShrinkLaserCollide(mobj_t *gun, mobj_t *victim)
 	}
 	else
 	{
-		// Bullshit contact. Let 'em off fof free.
+		// Bullshit contact. Let 'em off for free.
 		if (scale < FRACUNIT/4)
 			return true;
 
