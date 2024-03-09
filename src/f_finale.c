@@ -285,6 +285,7 @@ static void F_TitleBGScroll(INT32 scrollspeed)
 //  INTRO SCENE
 // =============
 #define NUMINTROSCENES 5
+#define INTROSCENE_DISCLAIMER 1
 #define INTROSCENE_KREW 2 // first scene with Kart Krew Dev
 INT32 intro_scenenum = 0;
 INT32 intro_curtime = 0;
@@ -294,7 +295,7 @@ const char *introtext[NUMINTROSCENES];
 static tic_t introscenetime[NUMINTROSCENES] =
 {
 	2*TICRATE,				// OUR SRB2 ASSOCIATES
-	TICRATE,				// Listen to Funtown USA by tv room
+	4*TICRATE,				// Disclaimer and Epilepsy Warning
 	(3*TICRATE)/2,			// KKD
 	(2*TICRATE)/3,			// S&K
 	TICRATE + (TICRATE/3),	// Get ready !!
@@ -453,6 +454,16 @@ void F_IntroDrawer(void)
 		return;
 	}
 
+	if (intro_scenenum == INTROSCENE_DISCLAIMER)
+	{
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+		V_DrawString(0, 0, 0, "characters belong to sega");
+		V_DrawString(0, 8, 0, "blah blah blah");
+		V_DrawString(0, 16, 0, "epilepsy warning");
+		V_DrawString(0, 24, 0, "play in a well lit room yada yada");
+		return;
+	}
+
 	F_IntroDrawScene();
 }
 
@@ -488,6 +499,8 @@ void F_IntroTicker(void)
 		//F_NewCutscene(introtext[intro_scenenum]);
 		timetonext = introscenetime[intro_scenenum];
 		animtimer = stoptimer = 0;
+		if (intro_scenenum == INTROSCENE_DISCLAIMER)
+			wipegamestate = -1;
 		if (intro_scenenum == INTROSCENE_KREW)
 			wipegamestate = -1;
 	}
@@ -574,6 +587,12 @@ boolean F_IntroResponder(event_t *event)
 
 	if (keypressed)
 		return false;
+
+	if (intro_scenenum <= INTROSCENE_DISCLAIMER)
+	{
+		// do not allow skipping the disclaimer
+		return false;
+	}
 
 	keypressed = true;
 	return true;
