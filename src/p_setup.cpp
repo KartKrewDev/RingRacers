@@ -8236,6 +8236,11 @@ void P_ResetLevelMusic(void)
 	mapmusrng = idx;
 }
 
+boolean P_UseContinuousLevelMusic(void)
+{
+	return (gametyperules & GTR_NOPOSITION) || modeattacking != ATTACKING_NONE;
+}
+
 void P_LoadLevelMusic(void)
 {
 	mapheader_t* mapheader = mapheaderinfo[gamemap-1];
@@ -8246,7 +8251,7 @@ void P_LoadLevelMusic(void)
 		music = mapheader->musname[mapmusrng];
 	}
 
-	if (gametyperules & GTR_NOPOSITION || modeattacking != ATTACKING_NONE)
+	if (P_UseContinuousLevelMusic())
 	{
 		if (!stricmp(Music_Song("level_nosync"), music))
 		{
