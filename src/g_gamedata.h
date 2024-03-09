@@ -98,7 +98,7 @@ struct GamedataPrisonEggPickupsJson final
 struct GamedataChallengeGridJson final
 {
 	uint32_t width;
-	std::vector<int16_t> grid;
+	std::vector<uint16_t> grid;
 
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(GamedataChallengeGridJson, width, grid)
 };
