@@ -9306,6 +9306,12 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 		player->icecube.shaketimer--;
 	}
+
+	if ((player->mo->eflags & MFE_UNDERWATER) && player->curshield != KSHIELD_BUBBLE)
+	{
+		if (player->breathTimer < UINT16_MAX)
+			player->breathTimer++;
+	}
 }
 
 void K_KartResetPlayerColor(player_t *player)

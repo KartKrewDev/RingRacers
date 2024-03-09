@@ -3441,13 +3441,17 @@ void P_MobjCheckWater(mobj_t *mobj)
 		return;
 	}
 
-	if (p != NULL
-		&& p->curshield != KSHIELD_BUBBLE
-		&& mobj->waterskip == 0
-		&& wasinwater)
+	if (wasinwater && p != NULL)
 	{
-		// Play the gasp sound
-		S_StartSound(mobj, sfx_s3k38);
+		if (p->curshield != KSHIELD_BUBBLE
+			&& mobj->waterskip == 0
+			&& p->breathTimer > 15*TICRATE)
+		{
+			// Play the gasp sound
+			S_StartSound(mobj, sfx_s3k38);
+		}
+
+		p->breathTimer = 0;
 	}
 
 	if (mobj->flags & MF_APPLYTERRAIN)

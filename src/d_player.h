@@ -810,6 +810,8 @@ struct player_t
 
 	SINT8 glanceDir; // Direction the player is trying to look backwards in
 
+	UINT16 breathTimer; // Holding your breath underwater
+
 	//////////////
 	// rideroid //
 	//////////////
