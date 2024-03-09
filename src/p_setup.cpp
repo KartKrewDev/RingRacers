@@ -433,6 +433,8 @@ static void P_ClearMapHeaderLighting(mapheader_lighting_t *lighting)
   */
 static void P_ClearSingleMapHeaderInfo(INT16 num)
 {
+	int i;
+
 	mapheaderinfo[num]->lvlttl[0] = '\0';
 	mapheaderinfo[num]->menuttl[0] = '\0';
 	mapheaderinfo[num]->zonttl[0] = '\0';
@@ -441,13 +443,22 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 	mapheaderinfo[num]->gravity = DEFAULT_GRAVITY;
 	mapheaderinfo[num]->keywords[0] = '\0';
 	mapheaderinfo[num]->relevantskin[0] = '\0';
+
 	mapheaderinfo[num]->musname[0][0] = 0;
 	mapheaderinfo[num]->musname_size = 0;
+
+	for (i = 0; i < MAXMUSNAMES-1; i++)
+	{
+		mapheaderinfo[num]->cache_muslock[i] = MAXUNLOCKABLES;
+	}
+
 	mapheaderinfo[num]->positionmus[0] = '\0';
 	mapheaderinfo[num]->associatedmus[0][0] = 0;
 	mapheaderinfo[num]->associatedmus_size = 0;
+
 	mapheaderinfo[num]->mustrack = 0;
 	mapheaderinfo[num]->muspos = 0;
+
 	mapheaderinfo[num]->weather = PRECIP_NONE;
 	snprintf(mapheaderinfo[num]->skytexture, 5, "SKY1");
 	mapheaderinfo[num]->skytexture[4] = 0;
@@ -494,7 +505,7 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 
 	if (mapheaderinfo[num]->ghostBrief != NULL)
 	{
-		for (int i = 0; i < mapheaderinfo[num]->ghostCount; i++)
+		for (i = 0; i < mapheaderinfo[num]->ghostCount; i++)
 		{
 			Z_Free(mapheaderinfo[num]->ghostBrief[i]);
 		}

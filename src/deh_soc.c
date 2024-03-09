@@ -1234,8 +1234,6 @@ void readlevelheader(MYFILE *f, char * name)
 							break;
 						deh_strlcpy(mapheaderinfo[num]->musname[j], tmp,
 							sizeof(mapheaderinfo[num]->musname[j]), va("Level header %d: music", num));
-						if (j)
-							mapheaderinfo[num]->cache_muslock[j - 1] = MAXUNLOCKABLES;
 						j++;
 					} while ((tmp = strtok(NULL,",")) != NULL);
 
