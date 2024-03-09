@@ -117,9 +117,9 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"bubbl3", false,  11,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Glub"},
   {"bubbl4", false,  11,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Glub"},
   {"bubbl5", false,  11,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Glub"},
-  {"floush", false,  16,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Glub"},
+  {"floush", false,  16,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, "Glub"},
   {"splash", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Glub"}, // labeling sfx_splash as "glub" and sfx_splish as "splash" seems wrong but isn't
-  {"splish", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Splash"}, // Splish Tails 12-08-2000
+  {"splish", false,  64,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, "Splash"}, // Splish Tails 12-08-2000
   {"wdrip1", false,   8,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Drip"},
   {"wdrip2", false,   8 , 0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Drip"},
   {"wdrip3", false,   8,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Drip"},
@@ -666,7 +666,7 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"s3kd9l", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Magnetism"}, // ditto
   {"s3kdas", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Click"},
   {"s3kdal", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Click"}, // ditto
-  {"s3kdbs", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Running on water"},
+  {"s3kdbs", false,  64,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, "Running on water"},
   {"s3kdbl", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Running on water"}, // ditto
 
   // 3D Blast sounds (the "missing" ones are direct copies of S3K's, no minor differences what-so-ever)
