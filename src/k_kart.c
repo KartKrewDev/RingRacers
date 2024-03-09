@@ -118,16 +118,12 @@ void K_TimerReset(void)
 {
 	starttime = introtime = 0;
 	memset(&g_darkness, 0, sizeof g_darkness);
+	memset(&g_musicfade, 0, sizeof g_musicfade);
 	numbulbs = 1;
 	inDuel = rainbowstartavailable = false;
 	linecrossed = 0;
 	timelimitintics = extratimeintics = secretextratime = 0;
 	g_pointlimit = 0;
-}
-
-boolean K_ShouldSpawnDuelItems(void)
-{
-	return (inDuel == true || (grandprixinfo.gp && grandprixinfo.eventmode == GPEVENT_BONUS));
 }
 
 static void K_SpawnItemCapsules(void)
@@ -281,7 +277,10 @@ void K_TimerInit(void)
 	timelimitintics = K_TimeLimitForGametype();
 	g_pointlimit = K_PointLimitForGametype();
 
-	if (K_ShouldSpawnDuelItems())
+	// K_TimerInit is called after all mapthings are spawned,
+	// so they didn't know if it's supposed to be a duel
+	// (inDuel is always false before K_TimerInit is called).
+	if (inDuel)
 	{
 		K_SpawnDuelOnlyItems();
 	}
@@ -1017,7 +1016,8 @@ boolean K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2)
 
 	K_SpawnBumpForObjs(mobj1, mobj2);
 
-	if (mobj1->type == MT_PLAYER && mobj2->type == MT_PLAYER)
+	if (mobj1->type == MT_PLAYER && mobj2->type == MT_PLAYER
+		&& !mobj1->player->powerupVFXTimer && !mobj2->player->powerupVFXTimer)
 	{
 		boolean guard1 = K_PlayerGuard(mobj1->player);
 		boolean guard2 = K_PlayerGuard(mobj2->player);
@@ -8437,6 +8437,10 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 				mobj_t *debtflag = P_SpawnMobj(player->mo->x + player->mo->momx, player->mo->y + player->mo->momy,
 					player->mo->z + P_GetMobjZMovement(player->mo) + player->mo->height + (24*player->mo->scale), MT_THOK);
 
+				debtflag->old_x = player->mo->old_x;
+				debtflag->old_y = player->mo->old_y;
+				debtflag->old_z = player->mo->old_z + P_GetMobjZMovement(player->mo) + player->mo->height + (24*player->mo->scale);
+
 				P_SetMobjState(debtflag, S_RINGDEBT);
 				P_SetScale(debtflag, (debtflag->destscale = player->mo->scale));
 
@@ -9050,6 +9054,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->spinouttimer || player->tumbleBounces)
 	{
+		if (player->ballhogcharge)
+			player->ballhogcharge = 0;
+
 		if (player->progressivethrust < MAXCOMBOTIME)
 			player->progressivethrust++;
 		if (player->incontrol > 0)

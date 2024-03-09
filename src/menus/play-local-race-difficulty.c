@@ -52,6 +52,8 @@ static void tick_routine(void)
 	{
 		case drace_mritems:
 			M_SetupNextMenu(&OPTIONS_GameplayItemsDef, false);
+			optionsmenu.ticker = 0;
+			M_OptionsTick();
 			break;
 
 		case drace_encore:

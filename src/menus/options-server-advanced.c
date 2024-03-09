@@ -22,13 +22,13 @@ menuitem_t OPTIONS_ServerAdvanced[] =
 	{IT_STRING | IT_CVAR, "Resynch. Attempts", "How many times to attempt sending data to desynchronized players.",
 		NULL, {.cvar = &cv_resynchattempts}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Ping Limit (ms)", "Players above the ping limit will get kicked from the server.",
+	{IT_STRING | IT_CVAR, "Delay Limit (tics)", "Players above the delay limit will get kicked from the server.",
 		NULL, {.cvar = &cv_maxping}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Ping Timeout (s)", "Players must be above the ping limit for this long before being kicked.",
+	{IT_STRING | IT_CVAR, "Delay Timeout (seconds)", "Players must be above the delay limit for this long before being kicked.",
 		NULL, {.cvar = &cv_pingtimeout}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Connection Timeout (tics)", "Players not giving any netowrk activity for this long are kicked.",
+	{IT_STRING | IT_CVAR, "Connection Timeout (tics)", "Players not giving any network activity for this long are kicked.",
 		NULL, {.cvar = &cv_nettimeout}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Join Timeout (tics)", "Players taking too long to join are kicked.",
@@ -38,7 +38,7 @@ menuitem_t OPTIONS_ServerAdvanced[] =
 	{IT_HEADER, "Addon Downloading", NULL,
 		NULL, {NULL}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Max File Transfer", "Maximum size of the files that can be downloaded from joining clients. (KB)",
+	{IT_STRING | IT_CVAR, "Max File Transfer", "Maximum size of each file that joining players may download. (KB)",
 		NULL, {.cvar = &cv_maxsend}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "File Transfer Speed", "File transfer packet rate. Larger values send more data.",
@@ -48,13 +48,13 @@ menuitem_t OPTIONS_ServerAdvanced[] =
 	{IT_HEADER, "Logging", NULL,
 		NULL, {NULL}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Log Joiner IPs", "Shows the IP of connecting players.",
+	{IT_STRING | IT_CVAR, "Log Joiner IPs", "Shows the IP address of connecting players as they join.",
 		NULL, {.cvar = &cv_showjoinaddress}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Log Resynch", "Shows which players need resynchronization.",
 		NULL, {.cvar = &cv_blamecfail}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Log Transfers", "Shows when clients are downloading files from you.",
+	{IT_STRING | IT_CVAR, "Log Transfers", "Shows when players are downloading files from you.",
 		NULL, {.cvar = &cv_noticedownload}, 0, 0},
 };
 

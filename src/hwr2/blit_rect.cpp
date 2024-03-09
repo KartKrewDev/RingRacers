@@ -51,7 +51,36 @@ static const PipelineDesc kUnshadedPipelineDescription = {
 	FaceWinding::kCounterClockwise,
 	{0.f, 0.f, 0.f, 1.f}};
 
-BlitRectPass::BlitRectPass() = default;
+/// @brief Pipeline used for sharp bilinear special blit.
+static const PipelineDesc kSharpBilinearPipelineDescription = {
+	PipelineProgram::kSharpBilinear,
+	{{{sizeof(BlitVertex)}}, {{VertexAttributeName::kPosition, 0, 0}, {VertexAttributeName::kTexCoord0, 0, 12}}},
+	{{{UniformName::kProjection}, {{UniformName::kModelView, UniformName::kTexCoord0Transform, UniformName::kSampler0Size}}}},
+	{{// RGB/A texture
+	  SamplerName::kSampler0}},
+	std::nullopt,
+	{std::nullopt, {true, true, true, true}},
+	PrimitiveType::kTriangles,
+	CullMode::kNone,
+	FaceWinding::kCounterClockwise,
+	{0.f, 0.f, 0.f, 1.f}};
+
+/// @brief Pipeline used for CRT special blit
+static const PipelineDesc kCrtPipelineDescription = {
+	PipelineProgram::kCrt,
+	{{{sizeof(BlitVertex)}}, {{VertexAttributeName::kPosition, 0, 0}, {VertexAttributeName::kTexCoord0, 0, 12}}},
+	{{{UniformName::kProjection}, {{UniformName::kModelView, UniformName::kTexCoord0Transform, UniformName::kSampler0Size}}}},
+	{{// RGB/A texture
+	  SamplerName::kSampler0, SamplerName::kSampler1}},
+	std::nullopt,
+	{std::nullopt, {true, true, true, true}},
+	PrimitiveType::kTriangles,
+	CullMode::kNone,
+	FaceWinding::kCounterClockwise,
+	{0.f, 0.f, 0.f, 1.f}};
+
+BlitRectPass::BlitRectPass() : BlitRectPass(BlitRectPass::BlitMode::kNearest) {}
+BlitRectPass::BlitRectPass(BlitRectPass::BlitMode blit_mode) : blit_mode_(blit_mode) {}
 BlitRectPass::~BlitRectPass() = default;
 
 void BlitRectPass::draw(Rhi& rhi, Handle<GraphicsContext> ctx)
@@ -65,7 +94,21 @@ void BlitRectPass::prepass(Rhi& rhi)
 {
 	if (!pipeline_)
 	{
-		pipeline_ = rhi.create_pipeline(kUnshadedPipelineDescription);
+		switch (blit_mode_)
+		{
+			case BlitRectPass::BlitMode::kNearest:
+				pipeline_ = rhi.create_pipeline(kUnshadedPipelineDescription);
+				break;
+			case BlitRectPass::BlitMode::kSharpBilinear:
+				pipeline_ = rhi.create_pipeline(kSharpBilinearPipelineDescription);
+				break;
+			case BlitRectPass::BlitMode::kCrt:
+				pipeline_ = rhi.create_pipeline(kCrtPipelineDescription);
+				break;
+			default:
+				std::terminate();
+		}
+
 	}
 
 	if (!quad_vbo_)
@@ -78,6 +121,20 @@ void BlitRectPass::prepass(Rhi& rhi)
 	{
 		quad_ibo_ = rhi.create_buffer({sizeof(kIndices), BufferType::kIndexBuffer, BufferUsage::kImmutable});
 		quad_ibo_needs_upload_ = true;
+	}
+
+	if (blit_mode_ == BlitRectPass::BlitMode::kCrt && !dot_pattern_)
+	{
+		dot_pattern_ = rhi.create_texture({
+			rhi::TextureFormat::kRGBA,
+			12,
+			4,
+			rhi::TextureWrapMode::kRepeat,
+			rhi::TextureWrapMode::kRepeat,
+			rhi::TextureFilterMode::kLinear,
+			rhi::TextureFilterMode::kLinear
+		});
+		dot_pattern_needs_upload_ = true;
 	}
 }
 
@@ -95,6 +152,67 @@ void BlitRectPass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 		quad_ibo_needs_upload_ = false;
 	}
 
+	if (dot_pattern_needs_upload_ && dot_pattern_)
+	{
+		// Listen. I'm a *very* particular kind of lazy.
+		// If I'm being honest, I just don't want to have to embed a .png in the pk3s and deal with that.
+		static const uint8_t kDotPattern[] = {
+			255, 0, 0, 255,
+			0, 0, 0, 255,
+			0, 255, 0, 255,
+			0, 0, 0, 255,
+			0, 0, 255, 255,
+			0, 0, 0, 255,
+			255, 0, 0, 255,
+			0, 0, 0, 255,
+			0, 255, 0, 255,
+			0, 0, 0, 255,
+			0, 0, 255, 255,
+			0, 0, 0, 255,
+
+			255, 0, 0, 255,
+			0, 0, 0, 255,
+			0, 255, 0, 255,
+			0, 0, 0, 255,
+			0, 0, 255, 255,
+			0, 0, 0, 255,
+			0, 0, 0, 255,
+			0, 0, 0, 255,
+			0, 0, 0, 255,
+			0, 0, 0, 255,
+			0, 0, 0, 255,
+			0, 0, 0, 255,
+
+			255, 0, 0, 255,
+			0, 0, 0, 255,
+			0, 255, 0, 255,
+			0, 0, 0, 255,
+			0, 0, 255, 255,
+			0, 0, 0, 255,
+			255, 0, 0, 255,
+			0, 0, 0, 255,
+			0, 255, 0, 255,
+			0, 0, 0, 255,
+			0, 0, 255, 255,
+			0, 0, 0, 255,
+
+			0, 0, 0, 255,
+			0, 0, 0, 255,
+			0, 0, 0, 255,
+			0, 0, 0, 255,
+			0, 0, 0, 255,
+			0, 0, 0, 255,
+			255, 0, 0, 255,
+			0, 0, 0, 255,
+			0, 255, 0, 255,
+			0, 0, 0, 255,
+			0, 0, 255, 255,
+			0, 0, 0, 255,
+		};
+		rhi.update_texture(ctx, dot_pattern_, {0, 0, 12, 4}, PixelFormat::kRGBA8, tcb::as_bytes(tcb::span(kDotPattern)));
+		dot_pattern_needs_upload_ = false;
+	}
+
 	float aspect = 1.0;
 	float output_aspect = 1.0;
 	if (output_correct_aspect_)
@@ -104,6 +222,8 @@ void BlitRectPass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 	}
 	bool taller = aspect > output_aspect;
 
+	rhi::TextureDetails texture_details = rhi.get_texture_details(texture_);
+
 	std::array<rhi::UniformVariant, 1> g1_uniforms = {{
 		// Projection
 		glm::scale(
@@ -112,26 +232,81 @@ void BlitRectPass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 		)
 	}};
 
-	std::array<rhi::UniformVariant, 2> g2_uniforms = {
-		// ModelView
-		glm::scale(
-			glm::identity<glm::mat4>(),
-			glm::vec3(taller ? 2.f : 2.f * aspect, taller ? 2.f * (1.f / aspect) : 2.f, 1.f)
-		),
-		// Texcoord0 Transform
-		glm::mat3(
-			glm::vec3(1.f, 0.f, 0.f),
-			glm::vec3(0.f, output_flip_ ? -1.f : 1.f, 0.f),
-			glm::vec3(0.f, output_flip_ ? 1.f : 0.f, 1.f)
-		)
-	};
-
 	uniform_sets_[0] = rhi.create_uniform_set(ctx, {g1_uniforms});
-	uniform_sets_[1] = rhi.create_uniform_set(ctx, {g2_uniforms});
 
-	std::array<rhi::VertexAttributeBufferBinding, 1> vbs = {{{0, quad_vbo_}}};
-	std::array<rhi::TextureBinding, 1> tbs = {{{rhi::SamplerName::kSampler0, texture_}}};
-	binding_set_ = rhi.create_binding_set(ctx, pipeline_, {vbs, tbs});
+	switch (blit_mode_)
+	{
+	case BlitRectPass::BlitMode::kCrt:
+	{
+		std::array<rhi::UniformVariant, 3> g2_uniforms = {
+			// ModelView
+			glm::scale(
+				glm::identity<glm::mat4>(),
+				glm::vec3(taller ? 2.f : 2.f * aspect, taller ? 2.f * (1.f / aspect) : 2.f, 1.f)
+			),
+			// Texcoord0 Transform
+			glm::mat3(
+				glm::vec3(1.f, 0.f, 0.f),
+				glm::vec3(0.f, output_flip_ ? -1.f : 1.f, 0.f),
+				glm::vec3(0.f, output_flip_ ? 1.f : 0.f, 1.f)
+			),
+			// Sampler 0 Size
+			glm::vec2(texture_details.width, texture_details.height)
+		};
+		uniform_sets_[1] = rhi.create_uniform_set(ctx, {g2_uniforms});
+
+		std::array<rhi::VertexAttributeBufferBinding, 1> vbs = {{{0, quad_vbo_}}};
+		std::array<rhi::TextureBinding, 2> tbs = {{{rhi::SamplerName::kSampler0, texture_}, {rhi::SamplerName::kSampler1, dot_pattern_}}};
+		binding_set_ = rhi.create_binding_set(ctx, pipeline_, {vbs, tbs});
+		break;
+	}
+	case BlitRectPass::BlitMode::kSharpBilinear:
+	{
+		std::array<rhi::UniformVariant, 3> g2_uniforms = {
+			// ModelView
+			glm::scale(
+				glm::identity<glm::mat4>(),
+				glm::vec3(taller ? 2.f : 2.f * aspect, taller ? 2.f * (1.f / aspect) : 2.f, 1.f)
+			),
+			// Texcoord0 Transform
+			glm::mat3(
+				glm::vec3(1.f, 0.f, 0.f),
+				glm::vec3(0.f, output_flip_ ? -1.f : 1.f, 0.f),
+				glm::vec3(0.f, output_flip_ ? 1.f : 0.f, 1.f)
+			),
+			// Sampler0 size
+			glm::vec2(texture_details.width, texture_details.height)
+		};
+		uniform_sets_[1] = rhi.create_uniform_set(ctx, {g2_uniforms});
+
+		std::array<rhi::VertexAttributeBufferBinding, 1> vbs = {{{0, quad_vbo_}}};
+		std::array<rhi::TextureBinding, 1> tbs = {{{rhi::SamplerName::kSampler0, texture_}}};
+		binding_set_ = rhi.create_binding_set(ctx, pipeline_, {vbs, tbs});
+		break;
+	}
+	default:
+	{
+		std::array<rhi::UniformVariant, 2> g2_uniforms = {
+			// ModelView
+			glm::scale(
+				glm::identity<glm::mat4>(),
+				glm::vec3(taller ? 2.f : 2.f * aspect, taller ? 2.f * (1.f / aspect) : 2.f, 1.f)
+			),
+			// Texcoord0 Transform
+			glm::mat3(
+				glm::vec3(1.f, 0.f, 0.f),
+				glm::vec3(0.f, output_flip_ ? -1.f : 1.f, 0.f),
+				glm::vec3(0.f, output_flip_ ? 1.f : 0.f, 1.f)
+			)
+		};
+		uniform_sets_[1] = rhi.create_uniform_set(ctx, {g2_uniforms});
+
+		std::array<rhi::VertexAttributeBufferBinding, 1> vbs = {{{0, quad_vbo_}}};
+		std::array<rhi::TextureBinding, 1> tbs = {{{rhi::SamplerName::kSampler0, texture_}}};
+		binding_set_ = rhi.create_binding_set(ctx, pipeline_, {vbs, tbs});
+		break;
+	}
+	}
 }
 
 void BlitRectPass::graphics(Rhi& rhi, Handle<GraphicsContext> ctx)

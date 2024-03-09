@@ -6596,6 +6596,11 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		Obj_SSGobletMobjThink(mobj);
 		return;
 	}
+	case MT_GOTPOWERUP:
+	{
+		Obj_TickPowerUpSpinner(mobj);
+		return;
+	}
 	default:
 		if (mobj->fuse)
 		{ // Scenery object fuse! Very basic!
@@ -12491,12 +12496,18 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 			break;
 	}
 
-	if (!K_ShouldSpawnDuelItems())
+	// This duel check is tricky.
+	// At map load, inDuel is always false, because
+	// K_TimerInit is called afterward. K_TimerInit will then
+	// spawn all the duel mode objects itself, which ends up
+	// calling this function again.
+	// So that's why this check is even here.
+	if (inDuel == false && (grandprixinfo.gp == false || grandprixinfo.eventmode != GPEVENT_BONUS))
 	{
 		if (K_IsDuelItem(i) == true
 			&& K_DuelItemAlwaysSpawns(mthing) == false)
 		{
-			// Only spawns in Duels.
+			// Only spawns in Duels or GP bonus rounds.
 			return false;
 		}
 	}

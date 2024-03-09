@@ -209,6 +209,11 @@ void Obj_DashRingTouch(mobj_t *mobj, player_t *player);
 void Obj_DashRingPlayerThink(player_t *player);
 boolean Obj_DashRingPlayerHasNoGravity(player_t *player);
 
+/* Adventure Dash Ring */
+void Obj_AdventureAirBoosterSetup(mobj_t *mobj, mapthing_t *mthing);
+void Obj_AdventureAirBoosterHitboxTouch(mobj_t *hitbox, player_t *player);
+void Obj_AdventureAirBoosterFuse(mobj_t *mobj);
+
 /* Sneaker Panels */
 void Obj_SneakerPanelSpriteScale(mobj_t *mobj);
 void Obj_SneakerPanelSpawn(mobj_t *mobj);
@@ -398,10 +403,9 @@ void Obj_TalkPointInit(mobj_t* mo);
 void Obj_TalkPointThink(mobj_t* mo);
 void Obj_TalkPointOrbThink(mobj_t* mo);
 
-/* Adventure Dash Ring */
-void Obj_AdventureAirBoosterSetup(mobj_t *mobj, mapthing_t *mthing);
-void Obj_AdventureAirBoosterHitboxTouch(mobj_t *hitbox, player_t *player);
-void Obj_AdventureAirBoosterFuse(mobj_t *mobj);
+/* Power-up Spinner */
+void Obj_SpawnPowerUpSpinner(mobj_t *source, INT32 powerup, tic_t duration);
+void Obj_TickPowerUpSpinner(mobj_t *mobj);
 
 #ifdef __cplusplus
 } // extern "C"

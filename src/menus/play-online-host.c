@@ -41,10 +41,10 @@ menuitem_t PLAY_MP_Host[] =
 	{IT_STRING | IT_ARROWS, "Gametype", "Choose the type of play on your serer.",
 		NULL, {.routine = M_HandleHostMenuGametype}, 0, 0},
 
-	{IT_STRING2 | IT_CALL, "Gameplay Options...", "Adjust settings pertaining to gameplay.",
+	{IT_STRING2 | IT_CALL, "Gameplay Options...", "Modify game mechanics.",
 		NULL, {.routine = M_GameplayOptions}, 0, 0},
 
-	{IT_STRING2 | IT_CALL, "Server Options...", "Adjust settings pertaining to online play.",
+	{IT_STRING2 | IT_CALL, "Server Options...", "Update server settings.",
 		NULL, {.routine = M_ServerOptions}, 0, 0},
 
 	{IT_STRING | IT_CALL, "Map Select", "Go on and select a level!",

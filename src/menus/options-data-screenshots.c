@@ -10,7 +10,7 @@
 menuitem_t OPTIONS_DataScreenshot[] =
 {
 #ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
-	{IT_HEADER, "Movie Recording (F9)", NULL,
+	{IT_HEADER, "WebM Recording (F9)", NULL,
 		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Max. Duration (s)", "Automatically stop recording after this much time.",
@@ -28,10 +28,10 @@ menuitem_t OPTIONS_DataScreenshot[] =
 	{IT_SPACE | IT_NOTHING, NULL, NULL,
 		NULL, {NULL}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Resolution", "Video resolution",
+	{IT_STRING | IT_CVAR, "Resolution", "Video resolution.",
 		NULL, {.cvar = &cv_movie_resolution}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Max. FPS", "Video framerate",
+	{IT_STRING | IT_CVAR, "Max. FPS", "Video framerate.",
 		NULL, {.cvar = &cv_movie_fps}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Record Audio", "Record audio.",
@@ -41,7 +41,7 @@ menuitem_t OPTIONS_DataScreenshot[] =
 	{IT_HEADER, "Lossless Recording (F10)", NULL,
 		NULL, {NULL}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Recording Format", "What file format will lossless recordings use?",
+	{IT_STRING | IT_CVAR, "Recording Format", "Which file format will lossless recordings use?",
 		NULL, {.cvar = &cv_lossless_recorder}, 0, 0},
 
 };

@@ -918,7 +918,7 @@ void M_DrawMenuMessage(void)
 		}
 
 		V_DrawString((BASEVIDWIDTH - V_StringWidth(string, 0))/2, y, 0, string);
-		y += 9;
+		y += 8;
 	}
 }
 
@@ -3338,38 +3338,25 @@ static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
 	}
 	else
 	{
-		boolean donewithone = false;
-
 		char *ttlsource =
 			mapheaderinfo[map]->menuttl[0]
 			? mapheaderinfo[map]->menuttl
 			: mapheaderinfo[map]->lvlttl;
 
-		for (i = 0; i < 22; i++)
+		// If there are 2 or more words:
+		// - Last word goes on word2
+		// - Everything else on word1
+		char *p = strrchr(ttlsource, ' ');
+		if (p)
 		{
-			if (!ttlsource[i])
-				break;
-
-			if (ttlsource[i] == ' ')
-			{
-				if (!donewithone)
-				{
-					donewithone = true;
-					continue;
-				}
-			}
-
-			if (donewithone)
-			{
-				word2[word2len] = ttlsource[i];
-				word2len++;
-			}
-			else
-			{
-				word1[word1len] = ttlsource[i];
-				word1len++;
-			}
+			word2len = strlen(p + 1);
+			memcpy(word2, p + 1, word2len);
 		}
+		else
+			p = ttlsource + strlen(ttlsource);
+
+		word1len = p - ttlsource;
+		memcpy(word1, ttlsource, word1len);
 	}
 
 	if (!mapheaderinfo[map]->menuttl[0] && mapheaderinfo[map]->actnum)
@@ -4545,8 +4532,11 @@ box_found:
 				}
 				/* FALLTHRU */
 			case IT_NOTHING:
-			case IT_DYBIGSPACE:
 				y += SMALLLINEHEIGHT;
+				break;
+
+			case IT_DYBIGSPACE:
+				y += SMALLLINEHEIGHT/2;
 				break;
 #if 0
 			case IT_BIGSLIDER:

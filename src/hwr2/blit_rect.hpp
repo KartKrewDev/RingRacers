@@ -21,6 +21,15 @@ namespace srb2::hwr2
 /// @brief A render pass which blits a rect using a source texture or textures.
 class BlitRectPass
 {
+public:
+	enum class BlitMode
+	{
+		kNearest,
+		kSharpBilinear,
+		kCrt,
+	};
+
+private:
 	rhi::Handle<rhi::Pipeline> pipeline_;
 	rhi::Handle<rhi::Texture> texture_;
 	uint32_t texture_width_ = 0;
@@ -33,15 +42,20 @@ class BlitRectPass
 	rhi::Handle<rhi::Buffer> quad_ibo_;
 	std::array<rhi::Handle<rhi::UniformSet>, 2> uniform_sets_;
 	rhi::Handle<rhi::BindingSet> binding_set_;
+	BlitMode blit_mode_;
+	rhi::Handle<rhi::Texture> dot_pattern_;
 
 	bool quad_vbo_needs_upload_ = false;
 	bool quad_ibo_needs_upload_ = false;
+	bool dot_pattern_needs_upload_ = false;
 
 	void prepass(rhi::Rhi& rhi);
 	void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
 	void graphics(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
 
 public:
+
+	explicit BlitRectPass(BlitMode blit_mode);
 	BlitRectPass();
 	~BlitRectPass();
 

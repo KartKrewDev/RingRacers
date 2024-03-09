@@ -82,7 +82,9 @@ static void reset_hardware_state(Rhi* rhi)
 	g_hw_state.software_screen_renderer = std::make_unique<SoftwareScreenRenderer>();
 	g_hw_state.blit_postimg_screens = std::make_unique<BlitPostimgScreens>(g_hw_state.palette_manager.get());
 	g_hw_state.wipe = std::make_unique<PostprocessWipePass>();
-	g_hw_state.blit_rect = std::make_unique<BlitRectPass>();
+	g_hw_state.blit_rect = std::make_unique<BlitRectPass>(BlitRectPass::BlitMode::kNearest);
+	g_hw_state.sharp_bilinear_blit_rect = std::make_unique<BlitRectPass>(BlitRectPass::BlitMode::kSharpBilinear);
+	g_hw_state.crt_blit_rect = std::make_unique<BlitRectPass>(BlitRectPass::BlitMode::kCrt);
 	g_hw_state.screen_capture = std::make_unique<ScreenshotPass>();
 	g_hw_state.backbuffer = std::make_unique<UpscaleBackbuffer>();
 	g_hw_state.wipe_frames = {};
@@ -294,13 +296,34 @@ void I_FinishUpdate(void)
 			float y = (vid.realheight - h) * (0.5f + (FixedToFloat(cv_scr_y.value) * 0.5f));
 
 			g_hw_state.blit_rect->set_output(x, y, w, h, true, true);
+			g_hw_state.sharp_bilinear_blit_rect->set_output(x, y, w, h, true, true);
+			g_hw_state.crt_blit_rect->set_output(x, y, w, h, true, true);
 		}
 		else
 		{
 			g_hw_state.blit_rect->set_output(0, 0, vid.realwidth, vid.realheight, true, true);
+			g_hw_state.sharp_bilinear_blit_rect->set_output(0, 0, vid.realwidth, vid.realheight, true, true);
+			g_hw_state.crt_blit_rect->set_output(0, 0, vid.realwidth, vid.realheight, true, true);
 		}
 		g_hw_state.blit_rect->set_texture(g_hw_state.backbuffer->color(), static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height));
-		g_hw_state.blit_rect->draw(*rhi, ctx);
+		g_hw_state.sharp_bilinear_blit_rect->set_texture(g_hw_state.backbuffer->color(), static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height));
+		g_hw_state.crt_blit_rect->set_texture(g_hw_state.backbuffer->color(), static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height));
+
+		switch (cv_scr_effect.value)
+		{
+		case 1:
+			rhi->update_texture_settings(ctx, g_hw_state.backbuffer->color(), TextureWrapMode::kClamp, TextureWrapMode::kClamp, TextureFilterMode::kLinear, TextureFilterMode::kLinear);
+			g_hw_state.sharp_bilinear_blit_rect->draw(*rhi, ctx);
+			break;
+		case 2:
+			rhi->update_texture_settings(ctx, g_hw_state.backbuffer->color(), TextureWrapMode::kClamp, TextureWrapMode::kClamp, TextureFilterMode::kLinear, TextureFilterMode::kLinear);
+			g_hw_state.crt_blit_rect->draw(*rhi, ctx);
+			break;
+		default:
+			rhi->update_texture_settings(ctx, g_hw_state.backbuffer->color(), TextureWrapMode::kClamp, TextureWrapMode::kClamp, TextureFilterMode::kNearest, TextureFilterMode::kNearest);
+			g_hw_state.blit_rect->draw(*rhi, ctx);
+			break;
+		}
 		rhi->end_render_pass(ctx);
 
 		rhi->end_graphics(ctx);

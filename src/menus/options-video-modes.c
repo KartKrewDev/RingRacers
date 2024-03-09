@@ -12,6 +12,8 @@ menuitem_t OPTIONS_VideoModes[] = {
 
 };
 
+static void M_VideoModeMenu(void);
+
 menu_t OPTIONS_VideoModesDef = {
 	sizeof (OPTIONS_VideoModes) / sizeof (menuitem_t),
 	&OPTIONS_VideoDef,
@@ -25,19 +27,17 @@ menu_t OPTIONS_VideoModesDef = {
 	M_DrawVideoModes,
 	M_DrawOptionsCogs,
 	M_OptionsTick,
-	NULL,
+	M_VideoModeMenu,
 	NULL,
 	NULL,
 };
 
 // setup video mode menu
-void M_VideoModeMenu(INT32 choice)
+static void M_VideoModeMenu(void)
 {
 	INT32 i, j, vdup, nummodes;
 	UINT32 width, height;
 	const char *desc;
-
-	(void)choice;
 
 	memset(optionsmenu.modedescs, 0, sizeof(optionsmenu.modedescs));
 
@@ -100,8 +100,6 @@ void M_VideoModeMenu(INT32 choice)
 	}
 
 	optionsmenu.vidm_column_size = (optionsmenu.vidm_nummodes+2) / 3;
-
-	M_SetupNextMenu(&OPTIONS_VideoModesDef, false);
 }
 
 // special menuitem key handler for video mode list

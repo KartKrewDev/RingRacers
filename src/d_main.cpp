@@ -272,9 +272,19 @@ void D_ProcessEvents(boolean callresponders)
 	boolean eaten;
 
 	G_ResetAllDeviceResponding();
-	for (; eventtail != eventhead; eventtail = (eventtail+1) & (MAXEVENTS-1))
+
+	// Save these in local variables because eventtail !=
+	// eventhead was evaluating true when they were equal,
+	// but only when using the Y button to restart a Time
+	// Attack??
+	INT32 tail = eventtail;
+	INT32 head = eventhead;
+
+	eventtail = eventhead;
+
+	for (; tail != head; tail = (tail+1) & (MAXEVENTS-1))
 	{
-		ev = &events[eventtail];
+		ev = &events[tail];
 
 		HandleGamepadDeviceEvents(ev);
 
@@ -687,7 +697,7 @@ static bool D_Display(void)
 		}
 	}
 
-	if (Playing())
+	if (Playing() || demo.playback)
 	{
 		HU_Drawer();
 	}

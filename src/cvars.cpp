@@ -430,6 +430,7 @@ consvar_t cv_scr_depth = Player("scr_depth", "16 bits").values({{8, "8 bits"}, {
 //added : 03-02-98: default screen mode, as loaded/saved in config
 consvar_t cv_scr_width = Player("scr_width", "640").values(CV_Unsigned);
 consvar_t cv_scr_height = Player("scr_height", "400").values(CV_Unsigned);
+consvar_t cv_scr_effect = Player("scr_effect", "Sharp Bilinear").values({{0, "Nearest"}, {1, "Sharp Bilinear"}, {2, "SalCRT"}}).save();
 
 consvar_t cv_scr_scale = Player("scr_scale", "1.0").floating_point();
 consvar_t cv_scr_x = Player("scr_x", "0.0").floating_point();
@@ -531,7 +532,7 @@ consvar_t cv_masterserver_token = Server("masterserver_token", "");
 void MasterClient_Ticker(void);
 consvar_t cv_masterserver_update_rate = Server("masterserver_update_rate", "15").min_max(2, 60).onchange_noinit(MasterClient_Ticker);
 
-consvar_t cv_maxping = Server("maxdelay", "20").values(CV_Unsigned);
+consvar_t cv_maxping = Server("maxdelay", "20").min_max(0, 30);
 consvar_t cv_menujam = Server("menujam", "menu").values({{0, "menu"}, {1, "menu2"}, {2, "menu3"}});
 consvar_t cv_menujam_update = Server("menujam_update", "Off").on_off();
 consvar_t cv_netdemosyncquality = Server("netdemo_syncquality", "1").min_max(1, 35);
@@ -540,7 +541,7 @@ consvar_t cv_netdemosize = Server("netdemo_size", "6").values(CV_Natural);
 void NetTimeout_OnChange(void);
 consvar_t cv_nettimeout = Server("nettimeout", "210").min_max(TICRATE/7, 60*TICRATE).onchange(NetTimeout_OnChange);
 
-consvar_t cv_pause = NetVar("pausepermission", "Server").values({{0, "Server"}, {1, "All"}});
+consvar_t cv_pause = NetVar("pausepermission", "Server Admins").values({{0, "Server Admins"}, {1, "Everyone"}});
 consvar_t cv_pingmeasurement = Server("pingmeasurement", "Frames").values({{0, "Frames"}, {1, "Milliseconds"}});
 consvar_t cv_playbackspeed = Server("playbackspeed", "1").min_max(1, 10).dont_save();
 
@@ -1326,7 +1327,7 @@ consvar_t cv_chattime = Player("chattime", "8").min_max(5, 999);
 consvar_t cv_chatwidth = Player("chatwidth", "150").min_max(64, 150);
 
 // old shit console chat. (mostly exists for stuff like terminal, not because I cared if anyone liked the old chat.)
-consvar_t cv_consolechat = Player("chatmode", "Window").values({{0, "Window"}, {1, "Console"}, {2, "Window (Hidden)"}});
+consvar_t cv_consolechat = Player("chatmode", "Yes").values({{0, "Yes"}, {2, "No"}});
 
 consvar_t cv_gamestochat = Player("gamestochat", "0").values(CV_Unsigned);
 
@@ -1347,7 +1348,7 @@ consvar_t cv_mute = UnsavedNetVar("mute", "Off").on_off().onchange(Mute_OnChange
 
 	extern CV_PossibleValue_t glanisotropicmode_cons_t[];
 	void CV_glanisotropic_OnChange(void);
-	consvar_t cv_glanisotropicmode = OpenGL("gr_anisotropicmode", "1").values(glanisotropicmode_cons_t).onchange(CV_glanisotropic_OnChange).dont_save();
+	consvar_t cv_glanisotropicmode = OpenGL("gr_anisotropicmode", "1").values(glanisotropicmode_cons_t).onchange(CV_glanisotropic_OnChange);
 
 	consvar_t cv_glbatching = OpenGL("gr_batching", "On").on_off().dont_save();
 
@@ -1367,7 +1368,7 @@ consvar_t cv_mute = UnsavedNetVar("mute", "Off").on_off().onchange(Mute_OnChange
 	consvar_t cv_glmodellighting = OpenGL("gr_modellighting", "Off").on_off();
 #endif
 
-	consvar_t cv_glmodels = OpenGL("gr_models", "Off").on_off();
+	consvar_t cv_glmodels = OpenGL("gr_models", "On").on_off();
 	consvar_t cv_glshearing = OpenGL("gr_shearing", "Off").values({{0, "Off"}, {1, "On"}, {2, "Third-person"}});
 	consvar_t cv_glskydome = OpenGL("gr_skydome", "On").on_off();
 	consvar_t cv_glsolvetjoin = OpenGL("gr_solvetjoin", "On").on_off().dont_save();

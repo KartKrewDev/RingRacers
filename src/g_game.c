@@ -279,6 +279,7 @@ tic_t racecountdown, exitcountdown, musiccountdown; // for racing
 exitcondition_t g_exit;
 
 darkness_t g_darkness;
+musicfade_t g_musicfade;
 
 fixed_t gravity;
 fixed_t mapobjectscale;
@@ -2879,7 +2880,7 @@ mapthing_t *G_FindMapStart(INT32 playernum)
 
 	// -- DM/Tag/CTF-spectator/etc --
 	// Order: DM->CTF->Race
-	else if (gametyperules & GTR_BATTLESTARTS)
+	else if ((gametyperules & GTR_BATTLESTARTS) && !battleprisons)
 		spawnpoint = G_FindBattleStartOrFallback(playernum);
 
 	// -- Other game modes --
