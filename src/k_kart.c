@@ -4822,7 +4822,7 @@ void K_DebtStingPlayer(player_t *player, mobj_t *source)
 	player->ringvisualwarning = TICRATE*2;
 	player->stingfx = true;
 
-	if (P_IsDisplayPlayer(player))
+	if (P_IsDisplayPlayer(player) && !player->exiting)
 		S_StartSoundAtVolume(NULL, sfx_sting0, 200);
 
 	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
