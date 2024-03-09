@@ -3782,7 +3782,7 @@ void G_UpdateVisited(void)
 		return;
 
 	// Neither for tutorial skip material
-	if (nextmapoverride == NEXTMAP_TUTORIALCHALLENGE+1 || tutorialchallenge != TUTORIALSKIP_NONE)
+	if (tutorialchallenge != TUTORIALSKIP_NONE)
 		return;
 
 	// Check if every local player wiped out.
@@ -4545,24 +4545,26 @@ static void G_DoCompleted(void)
 		else
 		{
 			// Proceed.
+			// ~toast 161123 (5 years of srb2kart, woooouuuu)
 			nextmapoverride = NEXTMAP_TITLE+1;
+			tutorialchallenge = TUTORIALSKIP_NONE;
 
-			gamedata->finishedtutorialchallenge = true;
+			if (!gamedata->finishedtutorialchallenge)
+			{
+				gamedata->finishedtutorialchallenge = true;
 
-			M_UpdateUnlockablesAndExtraEmblems(true, true);
-			gamedata->deferredsave = true;
+				M_UpdateUnlockablesAndExtraEmblems(true, true);
+				gamedata->deferredsave = true;
+			}
 		}
 	}
 	else
 	{
-		// The "else" might not be strictly needed, but I don't
-		// want the "challenge" map to be considered visited before it's your time.
-		// ~toast 161123 (5 years of srb2kart, woooouuuu)
-		prevmap = gamemap-1;
 		tutorialchallenge = TUTORIALSKIP_NONE;
 	}
 
 	// This can now be set.
+	prevmap = gamemap-1;
 	legitimateexit = false;
 
 	if (!demo.playback)
