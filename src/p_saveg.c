@@ -6436,6 +6436,7 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 	else
 		WRITEINT16(save->p, gamestate);
 	WRITEINT16(save->p, gametype);
+	WRITEINT16(save->p, g_lastgametype);
 
 	{
 		UINT32 pig = 0;
@@ -6622,6 +6623,7 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 	G_SetGamestate(READINT16(save->p));
 
 	gametype = READINT16(save->p);
+	g_lastgametype = READINT16(save->p);
 
 	{
 		UINT32 pig = READUINT32(save->p);

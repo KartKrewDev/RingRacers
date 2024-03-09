@@ -244,6 +244,7 @@ char timedemo_csv_id[256];
 boolean timedemo_quit;
 
 INT16 gametype = GT_RACE;
+INT16 g_lastgametype = GT_RACE;
 INT16 numgametypes = GT_FIRSTFREESLOT;
 
 boolean forceresetplayers = false;
@@ -2965,7 +2966,7 @@ static void Command_RestartLevel(void)
 		newencore = (cv_kartencore.value == 1) || encoremode;
 	}
 
-	D_MapChange(gamemap, gametype, newencore, false, 0, false, false);
+	D_MapChange(gamemap, g_lastgametype, newencore, false, 0, false, false);
 }
 
 static void Handle_MapQueueSend(UINT16 newmapnum, UINT16 newgametype, boolean newencoremode)
