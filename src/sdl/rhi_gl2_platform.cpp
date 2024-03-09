@@ -16,6 +16,7 @@
 #include <fmt/core.h>
 
 #include "../cxxutil.hpp"
+#include "../doomstat.h" // mainwads
 #include "../w_wad.h"
 #include "../z_zone.h"
 
@@ -65,11 +66,34 @@ static std::array<std::string, 2> glsllist_lump_names(rhi::PipelineProgram progr
 
 static std::vector<std::string> get_sources_from_glsllist_lump(const char* lumpname)
 {
-	lumpnum_t glsllist_lump_num = W_GetNumForLongName(lumpname);
-	void* glsllist_lump = W_CacheLumpNum(glsllist_lump_num, PU_CACHE);
-	size_t glsllist_lump_length = W_LumpLength(glsllist_lump_num);
+	std::string shaderspk3 = "shaders.pk3";
+	INT32 shaderwadnum = -1;
+	for (INT32 wadnum = 0; wadnum < mainwads; wadnum++)
+	{
+		std::string wadname = std::string(wadfiles[wadnum]->filename);
+		if (wadname.find(shaderspk3) != std::string::npos)
+		{
+			shaderwadnum = wadnum;
+			break;
+		}
+	}
 
-	std::istringstream glsllist(std::string(static_cast<const char*>(glsllist_lump), glsllist_lump_length));
+	if (shaderwadnum < 0)
+	{
+		throw std::runtime_error("Unable to identify the shaders.pk3 wadnum");
+	}
+
+	UINT16 glsllist_lump_num = W_CheckNumForLongNamePwad(lumpname, shaderwadnum, 0);
+	if (glsllist_lump_num == INT16_MAX)
+	{
+		throw std::runtime_error(fmt::format("Unable to find glsllist lump {}", lumpname));
+	}
+
+	std::string glsllist_lump_data;
+	glsllist_lump_data.resize(W_LumpLengthPwad(shaderwadnum, glsllist_lump_num));
+	W_ReadLumpPwad(shaderwadnum, glsllist_lump_num, glsllist_lump_data.data());
+
+	std::istringstream glsllist(glsllist_lump_data);
 	std::vector<std::string> sources;
 	for (std::string line; std::getline(glsllist, line); )
 	{
@@ -88,11 +112,17 @@ static std::vector<std::string> get_sources_from_glsllist_lump(const char* lumpn
 			line.pop_back();
 		}
 
-		lumpnum_t source_lump_num = W_GetNumForLongName(line.c_str());
-		void* source_lump = W_CacheLumpNum(source_lump_num, PU_CACHE);
-		size_t source_lump_length = W_LumpLength(source_lump_num);
+		UINT16 source_lump_num = W_CheckNumForLongNamePwad(line.c_str(), shaderwadnum, 0);
+		if (source_lump_num == INT16_MAX)
+		{
+			throw std::runtime_error(fmt::format("Unable to find glsl source lump lump {}", lumpname));
+		}
 
-		sources.emplace_back(static_cast<const char*>(source_lump), source_lump_length);
+		std::string source_lump;
+		source_lump.resize(W_LumpLengthPwad(shaderwadnum, source_lump_num));
+		W_ReadLumpPwad(shaderwadnum, source_lump_num, source_lump.data());
+
+		sources.emplace_back(source_lump);
 	}
 
 	return sources;
