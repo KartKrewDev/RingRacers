@@ -71,6 +71,7 @@ void Music_Init(void)
 		tune.song = "kgrow";
 		tune.priority = 20;
 		tune.resume_fade_in = 200;
+		tune.use_level_volume = true;
 	}
 
 	{
@@ -78,6 +79,7 @@ void Music_Init(void)
 
 		tune.song = "kinvnc";
 		tune.priority = 21;
+		tune.use_level_volume = true;
 	}
 
 	{

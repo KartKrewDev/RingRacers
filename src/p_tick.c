@@ -808,6 +808,22 @@ static void P_TickDarkness(void)
 	}
 }
 
+static void P_TickMusicFade(void)
+{
+	if (leveltime >= g_musicfade.start && leveltime <= g_musicfade.end)
+	{
+		INT32 half = (g_musicfade.end - g_musicfade.start) / 2;
+		INT32 fade = max(1, g_musicfade.fade);
+		INT32 mid = half - fade;
+		INT32 t = abs((INT32)leveltime - (INT32)(g_musicfade.start + half));
+		Music_LevelVolume((max(t, mid) - mid) * 100 / fade);
+	}
+	else if (!g_musicfade.ticked)
+		Music_LevelVolume(100);
+
+	g_musicfade.ticked = true;
+}
+
 //
 // P_Ticker
 //
@@ -1102,6 +1118,7 @@ void P_Ticker(boolean run)
 			racecountdown--;
 
 		P_TickDarkness();
+		P_TickMusicFade();
 
 		if (exitcountdown >= 1)
 		{

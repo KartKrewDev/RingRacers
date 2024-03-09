@@ -54,6 +54,7 @@ target_sources(SRB2SDL2 PRIVATE
 	waterfall-particle.c
 	sealed-star.c
 	talk-point.cpp
+	powerup-spinner.cpp
 )
 
 add_subdirectory(versus)

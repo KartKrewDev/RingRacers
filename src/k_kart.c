@@ -118,6 +118,7 @@ void K_TimerReset(void)
 {
 	starttime = introtime = 0;
 	memset(&g_darkness, 0, sizeof g_darkness);
+	memset(&g_musicfade, 0, sizeof g_musicfade);
 	numbulbs = 1;
 	inDuel = rainbowstartavailable = false;
 	linecrossed = 0;
@@ -1015,7 +1016,8 @@ boolean K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2)
 
 	K_SpawnBumpForObjs(mobj1, mobj2);
 
-	if (mobj1->type == MT_PLAYER && mobj2->type == MT_PLAYER)
+	if (mobj1->type == MT_PLAYER && mobj2->type == MT_PLAYER
+		&& !mobj1->player->powerupVFXTimer && !mobj2->player->powerupVFXTimer)
 	{
 		boolean guard1 = K_PlayerGuard(mobj1->player);
 		boolean guard2 = K_PlayerGuard(mobj2->player);

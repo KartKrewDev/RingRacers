@@ -6567,6 +6567,11 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 	WRITEUINT32(save->p, g_darkness.start);
 	WRITEUINT32(save->p, g_darkness.end);
 
+	WRITEUINT32(save->p, g_musicfade.start);
+	WRITEUINT32(save->p, g_musicfade.end);
+	WRITEUINT32(save->p, g_musicfade.fade);
+	WRITEUINT8(save->p, g_musicfade.ticked);
+
 	WRITEUINT16(save->p, numchallengedestructibles);
 
 	// Is it paused?
@@ -6752,6 +6757,11 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 
 	g_darkness.start = READUINT32(save->p);
 	g_darkness.end = READUINT32(save->p);
+
+	g_musicfade.start = READUINT32(save->p);
+	g_musicfade.end = READUINT32(save->p);
+	g_musicfade.fade = READUINT32(save->p);
+	g_musicfade.ticked = READUINT8(save->p);
 
 	numchallengedestructibles = READUINT16(save->p);
 

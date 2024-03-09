@@ -811,6 +811,12 @@ extern struct darkness_t
 	fixed_t value[MAXSPLITSCREENPLAYERS];
 } g_darkness;
 
+extern struct musicfade_t
+{
+	tic_t start, end, fade;
+	boolean ticked;
+} g_musicfade;
+
 #define DEFAULT_GRAVITY (4*FRACUNIT/5)
 extern fixed_t gravity;
 extern fixed_t mapobjectscale;

@@ -1496,6 +1496,7 @@ typedef enum
 	sfx_gsha5,
 	sfx_gsha6,
 	sfx_gsha7,
+	sfx_gsha7l,
 	sfx_gsha8,
 	sfx_gsha9,
 	sfx_gshaa,
