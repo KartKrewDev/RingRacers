@@ -1317,7 +1317,22 @@ void S_PopulateSoundTestSequence(void)
 
 	tail = &soundtest.sequence.next;
 
-	// We iterate over all cups.
+	// We iterate over all tutorial maps.
+	for (i = 0; i < nummapheaders; i++)
+	{
+		if (!mapheaderinfo[i])
+			continue;
+
+		if (mapheaderinfo[i]->cup != NULL)
+			continue;
+
+		if ((mapheaderinfo[i]->typeoflevel & TOL_TUTORIAL) == 0)
+			continue;
+
+		S_InsertMapIntoSoundTestSequence(i, &tail);
+	}
+
+	// Next, we iterate over all cups.
 	{
 		cupheader_t *cup;
 		for (cup = kartcupheaders; cup; cup = cup->next)
@@ -1338,13 +1353,16 @@ void S_PopulateSoundTestSequence(void)
 		}
 	}
 
-	// Then, we iterate over all non-cupped maps.
+	// Then, we iterate over all remaining non-cupped maps.
 	for (i = 0; i < nummapheaders; i++)
 	{
 		if (!mapheaderinfo[i])
 			continue;
 
 		if (mapheaderinfo[i]->cup != NULL)
+			continue;
+
+		if (mapheaderinfo[i]->typeoflevel & TOL_TUTORIAL)
 			continue;
 
 		S_InsertMapIntoSoundTestSequence(i, &tail);
