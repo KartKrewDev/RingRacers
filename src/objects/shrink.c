@@ -341,6 +341,7 @@ static void ShrinkLaserThinker(mobj_t *pohbee, mobj_t *gun, mobj_t *laser)
 		particle->color = laser->color;
 
 		P_SetScale(particle, particle->scale * 2);
+		particle->cusval = particle->scale; // Store for later.
 		particle->destscale = 0;
 
 		//particle->momz = 2 * particle->scale * P_MobjFlip(particle);
@@ -535,6 +536,12 @@ boolean Obj_ShrinkLaserCollide(mobj_t *gun, mobj_t *victim)
 	owner = pohbee_owner(pohbee);
 	prevTimer = victim->player->growshrinktimer;
 
+	fixed_t normalizer = FixedDiv(FRACUNIT, gun->cusval);
+	fixed_t scale = FixedMul(gun->scale, normalizer);
+
+	if (gun->type != MT_SHRINK_PARTICLE) // You hit the gun/laser! 
+		scale = FRACUNIT; // (Which doesn't have a cusval for its original scale, because it never changes)
+
 	if (owner != NULL && victim == owner)
 	{
 		// Belongs to us. Give us Grow!
@@ -576,17 +583,21 @@ boolean Obj_ShrinkLaserCollide(mobj_t *gun, mobj_t *victim)
 	}
 	else
 	{
+		// Bullshit contact. Let 'em off fof free.
+		if (scale < FRACUNIT/4)
+			return true;
+
 		if (prevTimer > 0)
 		{
 			// Dock some Grow time.
 			// (Hack-adjacent: Always make sure there's a tic left so standard timer handling can remove the effect properly.)
-			victim->player->growshrinktimer -= min(3*TICRATE/2, victim->player->growshrinktimer - 1);
+			victim->player->growshrinktimer -= min(FixedInt(FixedMul(FRACUNIT*3*TICRATE/2, scale)), victim->player->growshrinktimer - 1);
 			S_StartSound(victim, sfx_s3k40);
 		}
 		else
 		{
 			// Start shrinking!
-			victim->player->growshrinktimer -= 5*TICRATE;
+			victim->player->growshrinktimer -= FixedInt(FixedMul(FRACUNIT*5*TICRATE, scale));
 			S_StartSound(victim, sfx_kc59); // I don't think you ever get to hear this while the pohbee laser is in your teeth, but best effort.
 
 			if (prevTimer >= 0)
