@@ -123,11 +123,11 @@ Obj_AudienceInit
 			// The following is derived from the default bobamp
 			if (mobj->type != MT_EMBLEM && !(mobj->flags & MF_NOGRAVITY) && followers[followerpick].bobamp < 4*FRACUNIT)
 			{
-				audience_bobamp(mobj) = 4*mobj->scale;
+				audience_bobamp(mobj) = 4*mapobjectscale;
 			}
 			else
 			{
-				audience_bobamp(mobj) = FixedMul(mobj->scale, followers[followerpick].bobamp);
+				audience_bobamp(mobj) = FixedMul(mapobjectscale, followers[followerpick].bobamp);
 			}
 		}
 

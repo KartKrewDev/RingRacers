@@ -118,6 +118,7 @@ void K_TimerReset(void)
 {
 	starttime = introtime = 0;
 	memset(&g_darkness, 0, sizeof g_darkness);
+	memset(&g_musicfade, 0, sizeof g_musicfade);
 	numbulbs = 1;
 	inDuel = rainbowstartavailable = false;
 	linecrossed = 0;
@@ -1015,7 +1016,8 @@ boolean K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2)
 
 	K_SpawnBumpForObjs(mobj1, mobj2);
 
-	if (mobj1->type == MT_PLAYER && mobj2->type == MT_PLAYER)
+	if (mobj1->type == MT_PLAYER && mobj2->type == MT_PLAYER
+		&& !mobj1->player->powerupVFXTimer && !mobj2->player->powerupVFXTimer)
 	{
 		boolean guard1 = K_PlayerGuard(mobj1->player);
 		boolean guard2 = K_PlayerGuard(mobj2->player);
@@ -2212,6 +2214,7 @@ static SINT8 K_GlanceAtPlayers(player_t *glancePlayer, boolean horn)
 		if (!podiumspecial)
 		{
 			distance = R_PointToDist2(glancePlayer->mo->x, glancePlayer->mo->y, victim->x, victim->y);
+			distance = R_PointToDist2(0, glancePlayer->mo->z, distance, victim->z);
 
 			if (distance > maxdistance)
 			{
@@ -4828,7 +4831,7 @@ void K_DebtStingPlayer(player_t *player, mobj_t *source)
 	player->ringvisualwarning = TICRATE*2;
 	player->stingfx = true;
 
-	if (P_IsDisplayPlayer(player))
+	if (P_IsDisplayPlayer(player) && !player->exiting)
 		S_StartSoundAtVolume(NULL, sfx_sting0, 200);
 
 	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
@@ -8442,6 +8445,10 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			{
 				mobj_t *debtflag = P_SpawnMobj(player->mo->x + player->mo->momx, player->mo->y + player->mo->momy,
 					player->mo->z + P_GetMobjZMovement(player->mo) + player->mo->height + (24*player->mo->scale), MT_THOK);
+
+				debtflag->old_x = player->mo->old_x;
+				debtflag->old_y = player->mo->old_y;
+				debtflag->old_z = player->mo->old_z + P_GetMobjZMovement(player->mo) + player->mo->height + (24*player->mo->scale);
 
 				P_SetMobjState(debtflag, S_RINGDEBT);
 				P_SetScale(debtflag, (debtflag->destscale = player->mo->scale));

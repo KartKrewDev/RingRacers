@@ -1,3 +1,12 @@
+// DR. ROBOTNIK'S RING RACERS
+//-----------------------------------------------------------------------------
+// Copyright (C) 2023-2024 by Kart Krew.
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+
 #include <algorithm>
 #include <functional>
 
@@ -81,7 +90,7 @@ void K_drawKartPowerUps(void)
 	{
 		auto make_drawer = [](int x, int y, Draw::Font font) -> Draw
 		{
-			return Draw(x, y).font(font).align(Draw::Align::kRight);
+			return Draw(x, y).font(font).align(Draw::Align::kRight).flags(V_SLIDEIN);
 		};
 
 		const int viewnum = R_GetViewNumber();

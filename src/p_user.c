@@ -712,7 +712,7 @@ void P_EndingMusic(void)
 			jingle = "_win";
 		}
 
-		if (modeattacking)
+		if (modeattacking && !K_IsPlayerLosing(bestPlayer))
 		{
 			if (players[consoleplayer].realtime < oldbest && oldbest != (tic_t)UINT32_MAX)
 				jingle = "newrec";
@@ -3053,6 +3053,8 @@ void P_ResetCamera(player_t *player, camera_t *thiscam)
 	thiscam->x = x;
 	thiscam->y = y;
 	thiscam->z = z;
+	thiscam->centerfloorz = player->mo->floorz;
+	thiscam->centerceilingz = player->mo->ceilingz;
 
 	thiscam->angle = player->mo->angle;
 	thiscam->aiming = 0;
@@ -3569,6 +3571,9 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		P_MoveChaseCamera(player, thiscam, false);
 		R_ResetViewInterpolation(num + 1);
 	}
+
+	thiscam->centerfloorz = mo->floorz;
+	thiscam->centerceilingz = mo->ceilingz;
 
 	return (x == thiscam->x && y == thiscam->y && z == thiscam->z && angle == thiscam->aiming);
 

@@ -1420,6 +1420,7 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"gsha5", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gsha6", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gsha7", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"gsha7l",false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gsha8", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gsha9", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshaa", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},

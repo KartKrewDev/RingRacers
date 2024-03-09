@@ -279,6 +279,7 @@ tic_t racecountdown, exitcountdown, musiccountdown; // for racing
 exitcondition_t g_exit;
 
 darkness_t g_darkness;
+musicfade_t g_musicfade;
 
 fixed_t gravity;
 fixed_t mapobjectscale;

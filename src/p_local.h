@@ -112,6 +112,10 @@ struct camera_t
 	fixed_t floorz;
 	fixed_t ceilingz;
 
+	// From the player
+	fixed_t centerfloorz;
+	fixed_t centerceilingz;
+
 	// For movement checking.
 	fixed_t radius;
 	fixed_t height;

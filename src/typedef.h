@@ -143,6 +143,7 @@ TYPEDEF (cupheader_t);
 TYPEDEF (unloaded_cupheader_t);
 TYPEDEF (exitcondition_t);
 TYPEDEF (darkness_t);
+TYPEDEF (musicfade_t);
 
 // font.h
 TYPEDEF (font_t);

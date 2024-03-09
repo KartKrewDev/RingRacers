@@ -556,7 +556,7 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 
 	if (player->respawn.init == false
 		&& player->respawn.fromRingShooter == false
-		&& K_PlayerEBrake(player) == true)
+		&& K_PressingEBrake(player) == true)
 	{
 		// Manual drop!
 		player->respawn.state = RESPAWNST_DROP;

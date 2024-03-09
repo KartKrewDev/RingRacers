@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+#include "k_battle.h"
 #include "k_kart.h"
 #include "k_objects.h"
 #include "k_powerup.h"
@@ -54,44 +55,45 @@ void K_GivePowerUp(player_t* player, kartitems_t powerup, tic_t time)
 		Obj_SpawnPowerUpAura(player);
 	}
 
-	S_StartSound(NULL, sfx_gsha7);
+	S_StartSound(NULL, sfx_gsha7l);
 	player->flashing = 2*TICRATE;
-	K_AddHitLag(player->mo, BATTLE_POWERUP_VFX_TIME, false);
+	player->mo->hitlag += BATTLE_POWERUP_VFX_TIME;
 	player->powerupVFXTimer = BATTLE_POWERUP_VFX_TIME;
+	Obj_SpawnPowerUpSpinner(player->mo, powerup, BATTLE_POWERUP_VFX_TIME);
 
 	g_darkness.start = leveltime;
 	g_darkness.end = leveltime + BATTLE_POWERUP_VFX_TIME + DARKNESS_FADE_TIME;
 
+	g_musicfade.start = leveltime;
+	g_musicfade.end = g_musicfade.start + 90;
+	g_musicfade.fade = 20;
+	g_musicfade.ticked = false;
+
 	switch (powerup)
 	{
 	case POWERUP_SMONITOR:
-		S_StartSound(NULL, sfx_bpwrua);
 		K_AddMessageForPlayer(player, "Got S MONITOR!", true, false);
 		K_DoInvincibility(player, player->invincibilitytimer + time);
 		player->powerup.superTimer += time;
 		break;
 
 	case POWERUP_BARRIER:
-		S_StartSound(NULL, sfx_bpwrub);
 		K_AddMessageForPlayer(player, "Got MEGA BARRIER!", true, false);
 		player->powerup.barrierTimer += time;
 		Obj_SpawnMegaBarrier(player);
 		break;
 
 	case POWERUP_BUMPER:
-		S_StartSound(NULL, sfx_bpwruc);
 		K_AddMessageForPlayer(player, "Got BUMPER RESTOCK!", true, false);
 		K_GiveBumpersToPlayer(player, nullptr, 5);
 		break;
 
 	case POWERUP_BADGE:
-		S_StartSound(NULL, sfx_bpwrud);
 		K_AddMessageForPlayer(player, "Got RHYTHM BADGE!", true, false);
 		player->powerup.rhythmBadgeTimer += time;
 		break;
 
 	case POWERUP_SUPERFLICKY:
-		S_StartSound(NULL, sfx_bpwrue);
 		K_AddMessageForPlayer(player, "Got SUPER FLICKY!", true, false);
 		if (K_PowerUpRemaining(player, POWERUP_SUPERFLICKY))
 		{
@@ -104,7 +106,6 @@ void K_GivePowerUp(player_t* player, kartitems_t powerup, tic_t time)
 		break;
 
 	case POWERUP_POINTS:
-		S_StartSound(NULL, sfx_bpwruf);
 		K_AddMessageForPlayer(player, "Got 6 POINTS!", true, false);
 		K_GivePointsToPlayer(player, nullptr, 6);
 
@@ -127,7 +128,7 @@ void K_DropPowerUps(player_t* player)
 
 		if (remaining)
 		{
-			K_DropPaperItem(player, powerup, remaining);
+			K_DropPaperItem(player, powerup, std::max<tic_t>(remaining, BATTLE_POWERUP_DROPPED_TIME));
 			callback();
 		}
 	};
