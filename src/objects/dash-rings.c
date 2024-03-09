@@ -120,18 +120,27 @@ static boolean DashRingsAreTooClose(mobj_t *ring1, mobj_t *ring2)
 	return false;
 }
 
-void Obj_DashRingTouch(mobj_t *ring, player_t *player)
+boolean Obj_DashRingIsUsableByPlayer(mobj_t *ring, player_t *player)
 {
 	if (player->carry != CR_NONE)
 	{
 		if (player->carry != CR_DASHRING) // being carried by something else
-			return;
+			return false;
 
 		if (player->dashRingPullTics > 0) // being pulled into a dash ring already
-			return;
+			return false;
 
 		if (player->dashRingPushTics > 0 && !P_MobjWasRemoved(player->mo->tracer) && DashRingsAreTooClose(player->mo->tracer, ring)) // dash ring is too close to recently used dash ring
-			return;
+			return false;
+	}
+	return true;
+}
+
+void Obj_DashRingTouch(mobj_t *ring, player_t *player)
+{
+	if (!Obj_DashRingIsUsableByPlayer(ring, player))
+	{
+		return;
 	}
 
 	P_SetTarget(&player->mo->tracer, ring);

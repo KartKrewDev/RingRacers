@@ -208,6 +208,7 @@ void Obj_RainbowDashRingThink(mobj_t *mobj);
 void Obj_DashRingTouch(mobj_t *mobj, player_t *player);
 void Obj_DashRingPlayerThink(player_t *player);
 boolean Obj_DashRingPlayerHasNoGravity(player_t *player);
+boolean Obj_DashRingIsUsableByPlayer(mobj_t *mobj, player_t *player);
 
 /* Adventure Dash Ring */
 void Obj_AdventureAirBoosterSetup(mobj_t *mobj, mapthing_t *mthing);

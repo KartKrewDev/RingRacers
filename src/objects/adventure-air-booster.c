@@ -128,7 +128,7 @@ void Obj_AdventureAirBoosterHitboxTouch(mobj_t *hitbox, player_t *player)
 	fixed_t finalSpeed, playerSpeed, xPos, yPos;
 	SINT8 i;
 
-	if (player->carry != CR_NONE || P_MobjWasRemoved(booster))
+	if (P_MobjWasRemoved(booster) || !Obj_DashRingIsUsableByPlayer(booster, player))
 	{
 		return;
 	}
