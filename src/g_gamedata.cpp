@@ -483,15 +483,8 @@ void srb2::load_ng_gamedata()
 				PU_STATIC, NULL));
 			for (size_t i = 0; i < std::min((size_t)(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT), js.challengegrid.grid.size()); i++)
 			{
-				int16_t gridvalue = js.challengegrid.grid[i];
-				if (gridvalue < 0)
-				{
-					gamedata->challengegrid[i] = MAXUNLOCKABLES;
-				}
-				else
-				{
-					gamedata->challengegrid[i] = static_cast<uint8_t>(gridvalue);
-				}
+				uint16_t gridvalue = js.challengegrid.grid[i];
+				gamedata->challengegrid[i] = gridvalue;
 			}
 
 			M_SanitiseChallengeGrid();
