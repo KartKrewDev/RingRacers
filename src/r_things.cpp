@@ -3871,7 +3871,7 @@ boolean R_ThingIsFullDark(mobj_t *thing)
 	return ((thing->frame & FF_BRIGHTMASK) == FF_FULLDARK);
 }
 
-boolean R_ThingModelUsesDirectionalLightning(mobj_t *thing)
+boolean R_ThingModelUsesDirectionalLighting(mobj_t *thing)
 {
 	if (thing->type == MT_ARKARROW)
 	{
