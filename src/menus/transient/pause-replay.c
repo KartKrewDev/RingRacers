@@ -60,6 +60,22 @@ void M_EndModeAttackRun(void)
 		return;
 	}
 
+	if (nextmapoverride != 0)
+	{
+		M_StartMessage(
+			"Secret Exit",
+			va(
+				"No finish time was recorded.\n"
+				"Secrets don't work in Record modes!\n"
+				"Try again in %s.\n",
+				(gametype == GT_RACE)
+					? "Grand Prix or Match Race"
+					: "Grand Prix"
+			),
+			NULL, MM_NOTHING, NULL, NULL
+		);
+	}
+
 	Command_ExitGame_f(); // Clear a bunch of state
 
 	if (!modeattacking)
