@@ -1259,6 +1259,7 @@ Rloadtextures (INT32 i, INT32 w)
 #ifndef NO_PNG_LUMPS
 			size_t lumplength;
 #endif
+			INT32 width, height;
 
 			if (wadfiles[w]->type == RET_PK3)
 			{
@@ -1271,6 +1272,35 @@ Rloadtextures (INT32 i, INT32 w)
 			lumplength = W_LumpLengthPwad(wadnum, lumpnum);
 #endif
 
+#ifndef NO_PNG_LUMPS
+			if (Picture_IsLumpPNG((UINT8 *)&patchlump, lumplength))
+			{
+				UINT8 *png = W_CacheLumpNumPwad(wadnum, lumpnum, PU_CACHE);
+				Picture_PNGDimensions(png, &width, &height, NULL, NULL, lumplength);
+				width = (INT16)width;
+				height = (INT16)height;
+				Z_Free(png);
+			}
+			else
+#endif
+			{
+				width = SHORT(patchlump.width);
+				height = SHORT(patchlump.height);
+			}
+
+			if (width > 2048 || height > 2048)
+			{
+				// This is INTENTIONAL. Even if software can handle it, very old GL hardware will not.
+				// For the sake of a compatibility baseline, we will not allow anything larger than this.
+				char header[1024];
+				sprintf(header,
+					"Texture patch size cannot be greater than %dx%d!\n"
+					"List of affected textures:\n",
+					sizeLimit, sizeLimit);
+				R_InsertTextureWarning(header, va("\x82" "WARNING: %s", wadfiles[wadnum]->lumpinfo[lumpnum].fullname));
+				continue;
+			}
+
 			//CONS_Printf("\n\"%s\" is a single patch, dimensions %d x %d",W_CheckNameForNumPwad((UINT16)w,texstart+j),patchlump->width, patchlump->height);
 			texture = textures[i] = Z_Calloc(sizeof(texture_t) + sizeof(texpatch_t), PU_STATIC, NULL);
 
@@ -1278,22 +1308,8 @@ Rloadtextures (INT32 i, INT32 w)
 			M_Memcpy(texture->name, W_CheckNameForNumPwad(wadnum, lumpnum), sizeof(texture->name));
 			texture->hash = quickncasehash(texture->name, 8);
 
-#ifndef NO_PNG_LUMPS
-			if (Picture_IsLumpPNG((UINT8 *)&patchlump, lumplength))
-			{
-				UINT8 *png = W_CacheLumpNumPwad(wadnum, lumpnum, PU_CACHE);
-				INT32 width, height;
-				Picture_PNGDimensions(png, &width, &height, NULL, NULL, lumplength);
-				texture->width = (INT16)width;
-				texture->height = (INT16)height;
-				Z_Free(png);
-			}
-			else
-#endif
-			{
-				texture->width = SHORT(patchlump.width);
-				texture->height = SHORT(patchlump.height);
-			}
+			texture->width = width;
+			texture->height = height;
 
 			texture->type = TEXTURETYPE_SINGLEPATCH;
 			texture->patchcount = 1;
@@ -1516,6 +1532,8 @@ void R_LoadTextures(void)
 #ifdef DEVELOP
 	R_CheckTextureDuplicates(0, maintextures);
 #endif
+
+	R_PrintTextureWarnings();
 }
 
 void R_LoadTexturesPwad(UINT16 wadnum)
@@ -1525,6 +1543,8 @@ void R_LoadTexturesPwad(UINT16 wadnum)
 	R_AllocateTextures(newtextures);
 	newtextures = R_DefineTextures(numtextures, wadnum);
 	R_FinishLoadingTextures(newtextures);
+
+	R_PrintTextureWarnings();
 }
 
 static texpatch_t *R_ParsePatch(boolean actuallyLoadPatch)
