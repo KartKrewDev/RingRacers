@@ -1600,7 +1600,7 @@ void D_SRB2Main(void)
 #ifndef DEVELOP
 	// Check MD5s of autoloaded files
 	// Note: Do not add any files that ignore MD5!
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_BIOS_PK3);								// bios.pk3
+	W_VerifyFileMD5(mainwads, ASSET_HASH_BIOS_PK3);								// bios.pk3
 #ifdef USE_PATCH_FILE
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_PATCH_PK3);				// patch.pk3
 #endif
@@ -1615,7 +1615,6 @@ void D_SRB2Main(void)
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_STAFFGHOSTS_PK3);			// staffghosts.pk3
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_SHADERS_PK3);				// shaders.pk3
 #else
-	mainwads++; // bios.pk3
 #ifdef USE_PATCH_FILE
 	mainwads++;	// scripts.pk3
 #endif

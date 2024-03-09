@@ -68,7 +68,7 @@ static std::vector<std::string> get_sources_from_glsllist_lump(const char* lumpn
 {
 	std::string shaderspk3 = "shaders.pk3";
 	INT32 shaderwadnum = -1;
-	for (INT32 wadnum = 0; wadnum < mainwads; wadnum++)
+	for (INT32 wadnum = 0; wadnum <= mainwads; wadnum++)
 	{
 		std::string wadname = std::string(wadfiles[wadnum]->filename);
 		if (wadname.find(shaderspk3) != std::string::npos)
