@@ -712,7 +712,7 @@ void P_EndingMusic(void)
 			jingle = "_win";
 		}
 
-		if (modeattacking)
+		if (modeattacking && !K_IsPlayerLosing(bestPlayer))
 		{
 			if (players[consoleplayer].realtime < oldbest && oldbest != (tic_t)UINT32_MAX)
 				jingle = "newrec";
