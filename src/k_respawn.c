@@ -110,6 +110,12 @@ void K_DoFault(player_t *player)
 		S_StartSound(player->mo, sfx_s3k83);
 		player->karthud[khud_fault] = 1;
 		player->pflags |= PF_FAULT;
+
+		if (P_IsDisplayPlayer(player))
+		{
+			S_StartSound(player->mo, sfx_s3kb2);
+		}
+
 		player->mo->renderflags |= RF_DONTDRAW;
 		player->mo->flags |= MF_NOCLIPTHING;
 
