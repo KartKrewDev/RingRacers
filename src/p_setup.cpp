@@ -8238,6 +8238,9 @@ void P_ResetLevelMusic(void)
 
 boolean P_UseContinuousLevelMusic(void)
 {
+	if (gametyperules & GTR_BOSS)
+		return false;
+
 	return (gametyperules & GTR_NOPOSITION) || modeattacking != ATTACKING_NONE;
 }
 
