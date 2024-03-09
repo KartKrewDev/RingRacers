@@ -3448,7 +3448,7 @@ void P_MobjCheckWater(mobj_t *mobj)
 			&& p->breathTimer > 15*TICRATE)
 		{
 			// Play the gasp sound
-			S_StartSound(mobj, sfx_s3k38);
+			S_StartSound(mobj, (p->charflags & SF_MACHINE) ? sfx_s25a : sfx_s3k38);
 		}
 
 		p->breathTimer = 0;
