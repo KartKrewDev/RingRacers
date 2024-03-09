@@ -55,6 +55,7 @@ target_sources(SRB2SDL2 PRIVATE
 	sealed-star.c
 	talk-point.cpp
 	powerup-spinner.cpp
+	adventure-air-booster.c
 )
 
 add_subdirectory(versus)
