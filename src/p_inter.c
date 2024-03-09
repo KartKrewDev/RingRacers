@@ -1362,8 +1362,6 @@ void P_CheckTimeLimit(void)
 					thinker_t *th;
 					mobj_t *center = NULL;
 
-					fixed_t rx, ry;
-
 					for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
 					{
 						mobj_t *thismo;
@@ -1397,18 +1395,17 @@ void P_CheckTimeLimit(void)
 
 					// Get largest radius from center point to minimap edges
 
-					rx = max(
-							abs(battleovertime.x - (minimapinfo.min_x * FRACUNIT)),
-							abs(battleovertime.x - (minimapinfo.max_x * FRACUNIT))
-					);
-
-					ry = max(
-							abs(battleovertime.y - (minimapinfo.min_y * FRACUNIT)),
-							abs(battleovertime.y - (minimapinfo.max_y * FRACUNIT))
-					);
+					fixed_t r = 0;
+					fixed_t n;
+#define corner(px, py) ((n = FixedHypot(battleovertime.x - (px), battleovertime.y - (py))), r = max(r, n))
+					corner(minimapinfo.min_x * FRACUNIT, minimapinfo.min_y * FRACUNIT);
+					corner(minimapinfo.min_x * FRACUNIT, minimapinfo.max_y * FRACUNIT);
+					corner(minimapinfo.max_x * FRACUNIT, minimapinfo.min_y * FRACUNIT);
+					corner(minimapinfo.max_x * FRACUNIT, minimapinfo.max_y * FRACUNIT);
+#undef corner
 
 					battleovertime.initial_radius = min(
-							max(max(rx, ry), 4096 * mapobjectscale),
+							max(r, 4096 * mapobjectscale),
 							// Prevent overflow in K_RunBattleOvertime
 							FixedDiv(INT32_MAX, M_PI_FIXED) / 2
 					);
