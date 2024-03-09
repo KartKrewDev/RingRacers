@@ -2291,6 +2291,8 @@ struct PositionFacesInfo
 
 	bool near_goal() const
 	{
+		if (g_pointlimit == 0)
+			return false;
 		constexpr tic_t kThreshold = 5;
 		return std::max(kThreshold, g_pointlimit) - kThreshold <= top_score();
 	}
@@ -2405,7 +2407,7 @@ void PositionFacesInfo::draw_1p()
 		}
 
 		// Draw GOAL
-		UINT8 skull = g_pointlimit <= stplyr->roundscore;
+		bool skull = g_pointlimit && (g_pointlimit <= stplyr->roundscore);
 		INT32 height = i*18;
 		INT32 GOAL_Y = Y-height;
 
@@ -2424,7 +2426,7 @@ void PositionFacesInfo::draw_1p()
 			if (leveltime % 16 < 8)
 				V_DrawScaledPatch(FACE_X-5, GOAL_Y-32, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_goaltext1p);
 		}
-		else
+		else if (g_pointlimit)
 		{
 			using srb2::Draw;
 			Draw(FACE_X+8.5, GOAL_Y-15)
@@ -2545,7 +2547,7 @@ void PositionFacesInfo::draw_1p()
 
 			colormap = NULL;
 
-			if (g_pointlimit <= players[rankplayer[i]].roundscore)
+			if (g_pointlimit && g_pointlimit <= players[rankplayer[i]].roundscore)
 			{
 				if (leveltime % 8 < 4)
 				{
@@ -2579,6 +2581,9 @@ void PositionFacesInfo::draw_4p_battle(int x, int y, INT32 flags)
 
 	UINT8 skull = []
 	{
+		if (g_pointlimit == 0)
+			return 0;
+
 		int party = G_PartySize(consoleplayer);
 		for (int i = 0; i < party; ++i)
 		{
@@ -2594,7 +2599,7 @@ void PositionFacesInfo::draw_4p_battle(int x, int y, INT32 flags)
 	skincolornum_t vomit = vomit_color();
 	(vomit ? row.colormap(vomit) : row).patch(kp_goal[skull][1]);
 
-	if (!skull)
+	if (!skull && g_pointlimit)
 	{
 		row.xy(8.5, 5).align(Draw::Align::kCenter).text("{:02}", g_pointlimit);
 	}
@@ -2606,7 +2611,7 @@ void PositionFacesInfo::draw_4p_battle(int x, int y, INT32 flags)
 		const player_t& p = players[rankplayer[i]];
 		col.colormap(p.skin, static_cast<skincolornum_t>(p.skincolor)).patch(faceprefix[p.skin][FACE_MINIMAP]);
 
-		bool dance = g_pointlimit <= p.roundscore;
+		bool dance = g_pointlimit && (g_pointlimit <= p.roundscore);
 		bool flash = dance && leveltime % 8 < 4;
 		(
 			flash ?
@@ -3486,20 +3491,21 @@ static void K_drawKartBumpersOrKarma(void)
 		else
 		{
 			const UINT8 bumpers = K_Bumpers(stplyr);
+			const bool dance = g_pointlimit && (g_pointlimit <= stplyr->roundscore);
 
 			V_DrawMappedPatch(fx-1, fy-2, V_HUDTRANS|V_SLIDEIN|splitflags, kp_rankbumper, colormap);
 
 			using srb2::Draw;
 			Draw row = Draw(fx+12, fy).flags(V_HUDTRANS|V_SLIDEIN|splitflags).font(Draw::Font::kPing);
 			row.text("{:02}", bumpers);
-			if (g_pointlimit <= stplyr->roundscore && leveltime % 8 < 4)
+			if (dance && leveltime % 8 < 4)
 			{
 				row = row.colorize(SKINCOLOR_TANGERINE);
 			}
 			row.xy(10, -2).patch(kp_pts[1]);
 			row
 				.x(31)
-				.flags(g_pointlimit <= stplyr->roundscore ? V_STRINGDANCE : 0)
+				.flags(dance ? V_STRINGDANCE : 0)
 				.text("{:02}", stplyr->roundscore);
 		}
 	}
@@ -3518,6 +3524,7 @@ static void K_drawKartBumpersOrKarma(void)
 		else
 		{
 			const UINT8 bumpers = K_Bumpers(stplyr);
+			const bool dance = g_pointlimit && (g_pointlimit <= stplyr->roundscore);
 
 			if (r_splitscreen == 0)
 			{
@@ -3530,14 +3537,14 @@ static void K_drawKartBumpersOrKarma(void)
 			using srb2::Draw;
 			Draw row = Draw(LAPS_X+12+23+1, fy+3).flags(V_HUDTRANS|V_SLIDEIN|splitflags).font(Draw::Font::kThinTimer);
 			row.text("{:02}", bumpers);
-			if (g_pointlimit <= stplyr->roundscore && leveltime % 8 < 4)
+			if (dance && leveltime % 8 < 4)
 			{
 				row = row.colorize(SKINCOLOR_TANGERINE);
 			}
 			row.xy(12, -2).patch(kp_pts[0]);
 			row
 				.x(12+27)
-				.flags(g_pointlimit <= stplyr->roundscore ? V_STRINGDANCE : 0)
+				.flags(dance ? V_STRINGDANCE : 0)
 				.text("{:02}", stplyr->roundscore);
 		}
 	}
