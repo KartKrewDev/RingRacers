@@ -21559,7 +21559,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,            // mass
 		0,            // damage
 		sfx_None,     // activesound
-		MF_SCENERY|MF_NOGRAVITY|MF_NOCLIP, // flags
+		MF_SCENERY|MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPHEIGHT, // flags
 		S_NULL        // raisestate
 	},
 	{           // MT_SSCHAINSOUND
