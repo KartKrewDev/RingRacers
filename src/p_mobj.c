@@ -10053,6 +10053,11 @@ static boolean P_FuseThink(mobj_t *mobj)
 		P_RemoveMobj(mobj);
 		return false;
 	}
+	case MT_ADVENTUREAIRBOOSTER:
+	{
+		Obj_AdventureAirBoosterFuse(mobj);
+		break;
+	}
 	case MT_SNEAKERPANELSPAWNER:
 	{
 		Obj_SneakerPanelSpawnerFuse(mobj);
@@ -13808,6 +13813,11 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	case MT_RAINBOWDASHRING:
 	{
 		Obj_DashRingSetup(mobj, mthing);
+		break;
+	}
+	case MT_ADVENTUREAIRBOOSTER:
+	{
+		Obj_AdventureAirBoosterSetup(mobj, mthing);
 		break;
 	}
 	case MT_SNEAKERPANEL:
