@@ -2883,7 +2883,7 @@ tripwirepass_t K_TripwirePassConditions(const player_t *player)
 
 	if (
 			player->flamedash ||
-			(player->speed > 2 * K_GetKartSpeed(player, false, false) && player->tripwireReboundDelay == 0)
+			(player->speed > (22 * K_GetKartSpeed(player, false, false) / 10) && player->tripwireReboundDelay == 0)
 	)
 		return TRIPWIRE_BOOST;
 
