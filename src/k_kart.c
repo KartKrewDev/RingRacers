@@ -4120,6 +4120,7 @@ void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source)
 	{
 		const fixed_t addHeight = FixedHypot(FixedHypot(inflictor->momx, inflictor->momy) / 2, FixedHypot(player->mo->momx, player->mo->momy) / 2);
 		player->tumbleHeight += (addHeight / player->mo->scale);
+		player->tumbleHeight = min(200, player->tumbleHeight);
 	}
 
 	S_StartSound(player->mo, sfx_s3k9b);
