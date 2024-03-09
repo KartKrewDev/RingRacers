@@ -1781,6 +1781,7 @@ static void P_DoBubbleBreath(player_t *player)
 	if (!(player->mo->eflags & MFE_UNDERWATER) || player->spectator || player->curshield == KSHIELD_BUBBLE)
 		return;
 
+#if 0
 	if (player->charflags & SF_MACHINE)
 	{
 		if (P_RandomChance(PR_BUBBLE, FRACUNIT/5))
@@ -1794,22 +1795,54 @@ static void P_DoBubbleBreath(player_t *player)
 		}
 	}
 	else
+#endif
 	{
+		fixed_t topspeed = K_GetKartSpeed(player, false, false);
+		fixed_t f = FixedDiv(player->speed, topspeed/2);
+
 		if (player->mo->eflags & MFE_VERTICALFLIP)
 			z += player->mo->height - FixedDiv(player->mo->height,5*(FRACUNIT/4));
 		else
 			z += FixedDiv(player->mo->height,5*(FRACUNIT/4));
 
-		if (P_RandomChance(PR_BUBBLE, FRACUNIT/16))
+		if (P_RandomChance(PR_BUBBLE, FixedMul(FRACUNIT/16, FRACUNIT + 3*f)))
+		{
+			UINT32 seed = P_GetRandSeed(PR_BUBBLE);
+			x += P_RandomRange(PR_BUBBLE, -16, 16) * player->mo->scale;
+			y += P_RandomRange(PR_BUBBLE, -16, 16) * player->mo->scale;
+			z += P_RandomRange(PR_BUBBLE, -16, 16) * player->mo->scale;
+			P_SetRandSeed(PR_BUBBLE, seed);
 			bubble = P_SpawnMobj(x, y, z, MT_SMALLBUBBLE);
-		else if (P_RandomChance(PR_BUBBLE, 3*FRACUNIT/256))
+		}
+		else if (P_RandomChance(PR_BUBBLE, FixedMul(3*FRACUNIT/256, FRACUNIT + 3*f)))
+		{
+			UINT32 seed = P_GetRandSeed(PR_BUBBLE);
+			x += P_RandomRange(PR_BUBBLE, -16, 16) * player->mo->scale;
+			y += P_RandomRange(PR_BUBBLE, -16, 16) * player->mo->scale;
+			z += P_RandomRange(PR_BUBBLE, -16, 16) * player->mo->scale;
+			P_SetRandSeed(PR_BUBBLE, seed);
 			bubble = P_SpawnMobj(x, y, z, MT_MEDIUMBUBBLE);
+		}
+
+		if (bubble)
+		{
+			bubble->color = SKINCOLOR_TEAL;
+			bubble->colorized = true;
+
+			f = min(f, 11*FRACUNIT/10);
+			vector3_t v = {FixedMul(player->mo->momx, f), FixedMul(player->mo->momy, f), FixedMul(player->mo->momz, f)};
+			if (player->mo->standingslope)
+				P_QuantizeMomentumToSlope(&v, player->mo->standingslope);
+			bubble->momx += v.x;
+			bubble->momy += v.y;
+			bubble->momz += v.z;
+		}
 	}
 
 	if (bubble)
 	{
 		bubble->threshold = 42;
-		bubble->destscale = player->mo->scale;
+		bubble->destscale = 3 * player->mo->scale / 2;
 		P_SetScale(bubble, bubble->destscale);
 	}
 }

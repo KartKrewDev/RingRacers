@@ -5941,6 +5941,8 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			P_RemoveMobj(mobj);
 			return;
 		}
+		mobj->momx -= mobj->momx / 64;
+		mobj->momy -= mobj->momy / 64;
 		break;
 	case MT_FLAMEJET:
 		P_FlameJetSceneryThink(mobj);
