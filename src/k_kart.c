@@ -8808,7 +8808,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			K_RemoveGrowShrink(player);
 	}
 
-	if (player->respawn.state == RESPAWNST_NONE && (player->cmd.buttons & BT_RESPAWN) == BT_RESPAWN)
+	if (player->respawn.state != RESPAWNST_MOVE && (player->cmd.buttons & BT_RESPAWN) == BT_RESPAWN)
 	{
 		player->finalfailsafe++; // Decremented by ringshooter to "freeze" this timer
 		// Part-way through the auto-respawn timer, you can tap Ring Shooter to respawn early
