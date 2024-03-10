@@ -1292,6 +1292,11 @@ static void S_InsertMapIntoSoundTestSequence(UINT16 map, musicdef_t ***tail)
 	{
 		S_InsertMusicAtSoundTestSequenceTail(mapheaderinfo[map]->associatedmus[i], map, ALTREF_REQUIRESBEATEN, tail);
 	}
+
+	for (i = 0; i < mapheaderinfo[map]->encoremusname_size; i++)
+	{
+		S_InsertMusicAtSoundTestSequenceTail(mapheaderinfo[map]->encoremusname[i], map, i+MAXMUSNAMES, tail);
+	}
 }
 
 void S_PopulateSoundTestSequence(void)
@@ -1435,17 +1440,33 @@ static boolean S_SoundTestDefLocked(musicdef_t *def)
 	&& !(header->records.mapvisited & MV_VISITED))
 		return true;
 
-	// Associated music only when completed
-	if ((def->sequence.altref == ALTREF_REQUIRESBEATEN)
-	&& !(header->records.mapvisited & MV_BEATEN))
-		return true;
-
-	if (def->sequence.altref != 0 && def->sequence.altref < header->musname_size)
+	if (def->sequence.altref != 0)
 	{
-		// Alt music requires unlocking the alt
-		if ((header->cache_muslock[def->sequence.altref - 1] < MAXUNLOCKABLES)
-		&& gamedata->unlocked[header->cache_muslock[def->sequence.altref - 1]] == false)
-			return true;
+		if ((def->sequence.altref == ALTREF_REQUIRESBEATEN))
+		{
+			// Associated music only when completed
+			if (!(header->records.mapvisited & MV_BEATEN))
+				return true;
+		}
+		else if (def->sequence.altref < MAXMUSNAMES)
+		{
+			// Alt music requires unlocking the alt
+			if ((header->cache_muslock[def->sequence.altref - 1] < MAXUNLOCKABLES)
+			&& gamedata->unlocked[header->cache_muslock[def->sequence.altref - 1]] == false)
+				return true;
+		}
+		else if (def->sequence.altref < MAXMUSNAMES*2)
+		{
+			// Encore!
+			if (M_SecretUnlocked(SECRET_ENCORE, true) == false)
+				return true;
+
+			// Side B of the same CD
+			if (def->sequence.altref > MAXMUSNAMES
+			&& (header->cache_muslock[def->sequence.altref - (1 + MAXMUSNAMES)] < MAXUNLOCKABLES)
+			&& gamedata->unlocked[header->cache_muslock[def->sequence.altref - (1 + MAXMUSNAMES)]] == false)
+				return true;
+		}
 	}
 
 	// Finally, do a full-fat map check.

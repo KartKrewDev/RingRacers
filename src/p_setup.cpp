@@ -446,6 +446,8 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 
 	mapheaderinfo[num]->musname[0][0] = 0;
 	mapheaderinfo[num]->musname_size = 0;
+	mapheaderinfo[num]->encoremusname[0][0] = 0;
+	mapheaderinfo[num]->encoremusname_size = 0;
 
 	for (i = 0; i < MAXMUSNAMES-1; i++)
 	{
@@ -8194,6 +8196,9 @@ void P_ResetLevelMusic(void)
 	UINT8 idx = 0;
 
 	mapheader_t* mapheader = mapheaderinfo[gamemap - 1];
+	UINT8 truesize = (encoremode && mapheader->encoremusname_size)
+		? mapheader->encoremusname_size
+		: mapheader->musname_size;
 
 	// To keep RNG in sync, we will always pull from RNG, even if unused
 	UINT32 random = P_Random(PR_MUSICSELECT);
@@ -8201,20 +8206,20 @@ void P_ResetLevelMusic(void)
 	if (demo.playback)
 	{
 		// mapmusrng has already been set by the demo; just make sure it's valid
-		if (mapmusrng >= mapheader->musname_size)
+		if (mapmusrng >= truesize)
 		{
 			mapmusrng = 0;
 		}
 		return;
 	}
 
-	if (mapheader->musname_size > 1)
+	if (truesize > 1)
 	{
 		UINT8 tempmapmus[MAXMUSNAMES], tempmapmus_size = 1, i;
 
 		tempmapmus[0] = 0;
 
-		for (i = 1; i < mapheader->musname_size; i++)
+		for (i = 1; i < truesize; i++)
 		{
 			if (mapheader->cache_muslock[i-1] < MAXUNLOCKABLES
 			&& !M_CheckNetUnlockByID(mapheader->cache_muslock[i-1]))
@@ -8260,7 +8265,12 @@ void P_LoadLevelMusic(void)
 	mapheader_t* mapheader = mapheaderinfo[gamemap-1];
 	const char *music = mapheader->musname[0];
 
-	if (mapmusrng < mapheader->musname_size)
+	if (encoremode && mapheader->encoremusname_size
+	&& mapmusrng < mapheader->encoremusname_size)
+	{
+		music = mapheader->encoremusname[mapmusrng];
+	}
+	else if (mapmusrng < mapheader->musname_size)
 	{
 		music = mapheader->musname[mapmusrng];
 	}

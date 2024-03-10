@@ -103,7 +103,12 @@ public:
 				return (1.f/encoremul);
 			}
 
-			return encoremul;
+			if (!nightcoreable
+			|| mapheaderinfo[gamemap-1]->encoremusname_size == 0)
+			{
+				// We only vape if the level doesn't have alternate tracks.
+				return encoremul;
+			}
 		}
 
 		return 1.f;
