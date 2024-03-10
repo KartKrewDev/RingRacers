@@ -12005,19 +12005,47 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		player->ringboxdelay--;
 		if (player->ringboxdelay == 0)
 		{
-			UINT32 behind = K_GetItemRouletteDistance(player, player->itemRoulette.playing);
-			UINT32 behindMulti = behind / 500;
-			behindMulti = min(behindMulti, 60);
-
-
 			UINT32 award = 5*player->ringboxaward + 10;
 			if (!cv_thunderdome.value)
 				award = 3 * award / 2;
-			award = award * (behindMulti + 10) / 10;
 
-			// SPB Attack is hard, but we're okay with that.
 			if (modeattacking & ATTACKING_SPB)
+			{
+				// SPB Attack is hard.
 				award = award / 2;
+			}
+			else if (modeattacking)
+			{
+				// At high distance values, the power of Ring Box is mainly an extra source of speed, to be
+				// stacked with power items (or itself!) during the payout period.
+				// Low-dist Ring Box follows some special rules, to somewhat normalize the reward between stat
+				// blocks that respond to rings differently; here, variance in payout period counts for a lot!
+
+				UINT8 accel = 10-player->kartspeed;
+				UINT8 weight = player->kartweight;
+
+				// Fixed point math can suck a dick.
+
+				if (accel > weight)
+				{
+					accel *= 10;
+					weight *= 3;
+				}
+				else
+				{
+					accel *= 3;
+					weight *= 10;
+				}
+				
+				award = (110 + accel + weight) * award / 120;
+			}
+			else
+			{
+				UINT32 behind = K_GetItemRouletteDistance(player, player->itemRoulette.playing);
+				UINT32 behindMulti = behind / 500;
+				behindMulti = min(behindMulti, 60);
+				award = award * (behindMulti + 10) / 10;
+			}	
 
 			K_AwardPlayerRings(player, award, true);
 			player->ringboxaward = 0;
