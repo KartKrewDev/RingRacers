@@ -1288,7 +1288,26 @@ Rloadtextures (INT32 i, INT32 w)
 				height = SHORT(patchlump.height);
 			}
 
-			if (width > 2048 || height > 2048)
+			INT32 sizeLimit = 2048;
+			if (w <= mainwads)
+			{
+				// TODO: we ran out of time to do this properly.
+				// 4096 limit on textures may be incompatible with some older graphics cards (circa 2005-2008?).
+				// This only a consideration for Legacy GL at the moment -- these will still work in Software.
+				// In the future, we may rely more on hardware rendering and this would become a problem.
+				sizeLimit = 4096;
+#ifdef DEVELOP
+				if ((width > 2048 && width < sizeLimit) || (height > 2048 && height < sizeLimit))
+				{
+					R_InsertTextureWarning(
+						" \x87(2.x developer warning, will not appear on release)\n"
+						"\x87These textures should ideally not be larger than 2048x2048:\n",
+						va("\x86%s", wadfiles[wadnum]->lumpinfo[lumpnum].fullname)
+					);
+				}
+#endif
+			}
+			if (width > sizeLimit || height > sizeLimit)
 			{
 				// This is INTENTIONAL. Even if software can handle it, very old GL hardware will not.
 				// For the sake of a compatibility baseline, we will not allow anything larger than this.
