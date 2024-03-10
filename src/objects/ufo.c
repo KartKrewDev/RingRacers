@@ -996,7 +996,7 @@ void Obj_PlayerUFOCollide(mobj_t *ufo, mobj_t *other)
 		return; // We were just hit!
 	}
 
-	if ((other->player->sneakertimer > 0)
+	if (other->player->tripwirePass >= TRIPWIRE_BOOST
 		&& !P_PlayerInPain(other->player)
 		&& (other->player->flashing == 0))
 	{
