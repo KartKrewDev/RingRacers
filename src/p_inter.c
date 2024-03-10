@@ -2526,7 +2526,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 			return false;
 		}
 
-		if (modeattacking & ATTACKING_SPB)
+		if (modeattacking)
 		{
 			// Death in SPB Attack is an instant loss.
 			P_DoPlayerExit(player, PF_NOCONTEST);
