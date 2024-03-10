@@ -61,7 +61,7 @@ enum
 #define pohbee_height(o) ((o)->movefactor)
 #define pohbee_destangle(o) ((o)->movedir)
 
-#define pohbee_owner(o) ((o)->target)
+#define pohbee_owner(o) ((o)->cvmem)
 #define pohbee_guns(o) ((o)->hnext)
 
 #define gun_offset(o) ((o)->movecount)
@@ -80,15 +80,16 @@ enum
 	LASER_GROW,
 };
 
+static player_t *get_pohbee_owner(mobj_t *pohbee)
+{
+	UINT8 p = pohbee_owner(pohbee);
+	return p < MAXPLAYERS && playeringame[p] ? &players[p] : NULL;
+}
+
 static skincolornum_t ShrinkLaserColor(mobj_t *pohbee)
 {
 	UINT8 laserState = LASER_SHRINK;
-	player_t *owner = NULL;
-
-	if (pohbee_owner(pohbee) != NULL && P_MobjWasRemoved(pohbee_owner(pohbee)) == false)
-	{
-		owner = pohbee_owner(pohbee)->player;
-	}
+	player_t *owner = get_pohbee_owner(pohbee);
 
 	if (owner != NULL && P_IsDisplayPlayer(owner) == true)
 	{
@@ -411,10 +412,9 @@ static void ShrinkGunThinker(mobj_t *gun)
 		gun->angle = pohbee->angle;
 	}
 
-	if (pohbee_owner(pohbee) != NULL && P_MobjWasRemoved(pohbee_owner(pohbee)) == false
-		&& pohbee_owner(pohbee)->player != NULL)
+	if (get_pohbee_owner(pohbee) != NULL)
 	{
-		gunColor = pohbee_owner(pohbee)->player->skincolor;
+		gunColor = get_pohbee_owner(pohbee)->skincolor;
 	}
 
 	gun->color = gunColor;
@@ -512,7 +512,7 @@ void Obj_ShrinkGunRemoved(mobj_t *gun)
 boolean Obj_ShrinkLaserCollide(mobj_t *gun, mobj_t *victim)
 {
 	mobj_t *pohbee = gun_pohbee(gun);
-	mobj_t *owner = NULL;
+	player_t *owner = NULL;
 	INT32 prevTimer = 0;
 
 	if (pohbee == NULL || P_MobjWasRemoved(pohbee) == true)
@@ -533,7 +533,7 @@ boolean Obj_ShrinkLaserCollide(mobj_t *gun, mobj_t *victim)
 
 	victim->player->shrinkLaserDelay = TICRATE;
 
-	owner = pohbee_owner(pohbee);
+	owner = get_pohbee_owner(pohbee);
 	prevTimer = victim->player->growshrinktimer;
 
 	fixed_t scale = FRACUNIT; // Used if you hit the gun/laser.
@@ -544,7 +544,7 @@ boolean Obj_ShrinkLaserCollide(mobj_t *gun, mobj_t *victim)
 		scale = FixedMul(gun->scale, normalizer);
 	}
 
-	if (owner != NULL && victim == owner)
+	if (owner != NULL && victim->player == owner)
 	{
 		// Belongs to us. Give us Grow!
 		if (prevTimer < 0)
@@ -690,7 +690,7 @@ static void CreatePohbee(player_t *owner, waypoint_t *start, waypoint_t *end, UI
 	// Valid spawning conditions,
 	// we can start creating each individual part.
 	pohbee = P_SpawnMobjFromMobj(start->mobj, 0, 0, (baseSegs * CHAIN_SIZE * FRACUNIT) + POHBEE_HOVER * 3, MT_SHRINK_POHBEE);
-	P_SetTarget(&pohbee_owner(pohbee), owner->mo);
+	pohbee_owner(pohbee) = owner - players;
 
 	pohbee_mode(pohbee) = POHBEE_MODE_SPAWN;
 	pohbee_timer(pohbee) = POHBEE_TIME;
