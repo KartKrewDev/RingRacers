@@ -598,13 +598,15 @@ void P_EndingMusic(void)
 	UINT8 bestPos = UINT8_MAX;
 	player_t *bestPlayer = NULL;
 
-	SINT8 i;
+	SINT8 i = MAXPLAYERS;
 
 	// See G_DoCompleted and Y_DetermineIntermissionType
 	boolean nointer = ((modeattacking && (players[consoleplayer].pflags & PF_NOCONTEST))
 		|| (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE));
 
-	for (i = 0; i < MAXPLAYERS; i++)
+	if (K_CheckBossIntro())
+		;
+	else for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i]
 		|| players[i].spectator)
@@ -691,33 +693,36 @@ void P_EndingMusic(void)
 			nointer = true;
 		}
 	}
+	else if (K_IsPlayerLosing(bestPlayer) == true)
+	{
+		jingle = "_lose";
+
+		if (G_GametypeUsesLives() == true)
+		{
+			// A retry will be happening
+			nointer = true;
+		}
+	}
 	else
 	{
-		if (K_IsPlayerLosing(bestPlayer) == true)
+		if (K_CheckBossIntro() == true)
 		{
-			jingle = "_lose";
-
-			if (G_GametypeUsesLives() == true)
-			{
-				// A retry will be happening
-				nointer = true;
-			}
+			jingle = "VSENT";
 		}
-		else if (bestPlayer->position == 1)
-		{
-			jingle = "_first";
-		}
-		else if (K_IsPlayerLosing(bestPlayer) == false)
-		{
-			jingle = "_win";
-		}
-
-		if (modeattacking && !K_IsPlayerLosing(bestPlayer))
+		else if (modeattacking)
 		{
 			if (players[consoleplayer].realtime < oldbest && oldbest != (tic_t)UINT32_MAX)
 				jingle = "newrec";
 			else
 				jingle = "norec";
+		}
+		else if (bestPlayer->position == 1)
+		{
+			jingle = "_first";
+		}
+		else
+		{
+			jingle = "_win";
 		}
 	}
 

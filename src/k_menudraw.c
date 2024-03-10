@@ -6927,18 +6927,38 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 		}
 		case SECRET_MAP:
 		{
-			const char *gtname = "INVALID HEADER";
+			boolean validdraw = false;
+			const char *gtname = "Find your prize...";
 			UINT16 mapnum = M_UnlockableMapNum(ref);
 
-			K_DrawMapThumbnail(
-				(x-50)<<FRACBITS, (146+2)<<FRACBITS,
-				80<<FRACBITS,
-				0,
-				mapnum,
-				NULL);
-
-			if (mapnum < nummapheaders && mapheaderinfo[mapnum] != NULL)
+			if (mapnum >= nummapheaders
+				|| mapheaderinfo[mapnum] == NULL
+				|| mapheaderinfo[mapnum]->menuflags & LF2_HIDEINMENU)
 			{
+				gtname = "INVALID HEADER";
+			}
+			else if (
+				( // Check for visitation
+					(mapheaderinfo[mapnum]->menuflags & LF2_NOVISITNEEDED)
+					|| (mapheaderinfo[mapnum]->records.mapvisited & MV_VISITED)
+				) && ( // Check for completion
+					!(mapheaderinfo[mapnum]->menuflags & LF2_FINISHNEEDED)
+					|| (mapheaderinfo[mapnum]->records.mapvisited & MV_BEATEN)
+				)
+			)
+			{
+				validdraw = true;
+			}
+
+			if (validdraw)
+			{
+				K_DrawMapThumbnail(
+					(x-50)<<FRACBITS, (146+2)<<FRACBITS,
+					80<<FRACBITS,
+					0,
+					mapnum,
+					NULL);
+
 				INT32 guessgt = G_GuessGametypeByTOL(mapheaderinfo[mapnum]->typeoflevel);
 
 				if (guessgt == -1)
@@ -6963,6 +6983,15 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 						gtname = gametypes[guessgt]->name;
 					}
 				}
+			}
+			else
+			{
+				V_DrawFixedPatch(
+					(x-50)<<FRACBITS, (146+2)<<FRACBITS,
+					FRACUNIT,
+					0,
+					unvisitedlvl[challengesmenu.ticker % 4],
+					NULL);
 			}
 
 			V_DrawThinString(1, BASEVIDHEIGHT-(9+3), 0, gtname);

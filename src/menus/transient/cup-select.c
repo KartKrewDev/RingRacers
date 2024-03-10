@@ -68,8 +68,9 @@ static void M_StartCup(UINT8 entry)
 		SplitScreen_OnChange();
 	}
 
-	if (entry == 0)
+	if (entry == UINT8_MAX)
 	{
+		entry = 0;
 		memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
 
 		// read our dummy cvars
@@ -116,7 +117,7 @@ static void M_StartCup(UINT8 entry)
 		}
 
 		// Skip Bonus rounds.
-		if (roundqueue.entries[entry].gametype != roundqueue.entries[0].gametype
+		if (roundqueue.entries[entry].gametype != GT_RACE // roundqueue.entries[0].gametype
 			&& roundqueue.entries[entry].rankrestricted == false)
 		{
 			G_GetNextMap(); // updates position in the roundqueue
@@ -187,7 +188,7 @@ static void M_GPBackup(INT32 choice)
 		return;
 	}
 
-	M_StartCup(0);
+	M_StartCup(UINT8_MAX);
 }
 
 void M_CupSelectHandler(INT32 choice)
@@ -306,7 +307,7 @@ void M_CupSelectHandler(INT32 choice)
 				return;
 			}
 
-			M_StartCup(0);
+			M_StartCup(UINT8_MAX);
 		}
 		else if (count == 1 && levellist.levelsearch.timeattack == true)
 		{

@@ -1328,7 +1328,7 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 		else if (
 			roundqueue.entries[i].overridden == true
 			|| (grandprixinfo.gp == true
-				&& roundqueue.entries[i].gametype != roundqueue.entries[0].gametype)
+				&& roundqueue.entries[i].gametype != GT_RACE) // roundqueue.entries[0].gametype
 		)
 		{
 			if ((gametypes[roundqueue.entries[i].gametype]->rules & GTR_PRISONS) == GTR_PRISONS)

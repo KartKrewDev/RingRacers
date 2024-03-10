@@ -238,30 +238,46 @@ static boolean RankCapsules_LoadMapData(const virtres_t *virt)
 }
 
 /*--------------------------------------------------
-	static UINT32 RankCapsules_CountFromMap(const virtres_t *virt)
+	static UINT32 RankCapsules_CountFromMap(INT32 cuplevelnum)
 
 		Counts the number of capsules in a map, without
 		needing to fully load it.
 
 	Input Arguments:-
-		virt - Pointer to the map's virtual resource.
+		cuplevelnum - Map ID to identify Prison Eggs in
 
 	Return:-
 		Number of MT_BATTLECAPSULE instances found.
 --------------------------------------------------*/
-static UINT32 RankCapsules_CountFromMap(const virtres_t *virt)
+static UINT32 RankCapsules_CountFromMap(const INT32 cupLevelNum)
 {
+	lumpnum_t lp = mapheaderinfo[cupLevelNum]->lumpnum;
+	virtres_t *virt = NULL;
+
+	if (lp == LUMPERROR)
+	{
+		return 0;
+	}
+
+	virt = vres_GetMap(lp);
+	if (virt == NULL)
+	{
+		return 0;
+	}
+
 	virtlump_t *textmap = vres_Find(virt, "TEXTMAP");
 
 	g_rankCapsules_udmf = (textmap != NULL);
 	g_rankCapsules_count = 0;
 
-	if (RankCapsules_LoadMapData(virt) == true)
+	if (RankCapsules_LoadMapData(virt) == false)
 	{
-		return g_rankCapsules_count;
+		g_rankCapsules_count = 0;
 	}
 
-	return 0;
+	vres_Free(virt);
+
+	return g_rankCapsules_count;
 }
 
 /*--------------------------------------------------
@@ -332,22 +348,7 @@ void gpRank_t::Init(void)
 		const INT32 cupLevelNum = grandprixinfo.cup->cachedlevels[CUPCACHE_BONUS + i];
 		if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum] != NULL)
 		{
-			lumpnum_t lp = mapheaderinfo[cupLevelNum]->lumpnum;
-			virtres_t *virt = NULL;
-
-			if (lp == LUMPERROR)
-			{
-				continue;
-			}
-
-			virt = vres_GetMap(lp);
-			if (virt == NULL)
-			{
-				continue;
-			}
-
-			totalPrisons += RankCapsules_CountFromMap(virt);
-			vres_Free(virt);
+			totalPrisons += RankCapsules_CountFromMap(cupLevelNum);
 		}
 	}
 }
@@ -355,6 +356,120 @@ void gpRank_t::Init(void)
 void K_InitGrandPrixRank(gpRank_t *rankData)
 {
 	rankData->Init();
+}
+
+/*--------------------------------------------------
+	void K_RejiggerGPRankData(gpRank_t *rankData, UINT16 removedmap, UINT16 removedgt, UINT16 addedmap, UINT16 addedgt)
+
+		See header file for description.
+--------------------------------------------------*/
+void gpRank_t::Rejigger(UINT16 removedmap, UINT16 removedgt, UINT16 addedmap, UINT16 addedgt)
+{
+	INT32 i;
+	UINT32 deltaPoints = 0;
+
+	if ((removedgt == GT_RACE) != (addedgt == GT_RACE))
+	{
+		for (i = 0; i < numPlayers; i++)
+		{
+			deltaPoints += K_CalculateGPRankPoints(i + 1, totalPlayers);
+		}
+
+		if (addedgt == GT_RACE)
+			totalPoints += deltaPoints;
+		else if (totalPoints > deltaPoints)
+			totalPoints -= deltaPoints;
+		else
+			totalPoints = 0;
+	}
+
+	INT32 deltaLaps = 0;
+	INT32 deltaPrisons = 0;
+	INT32 deltaRings = 0;
+
+	if (removedmap < nummapheaders && mapheaderinfo[removedmap] != NULL
+	&& removedgt < numgametypes && gametypes[removedgt])
+	{
+		if (removedgt == GT_RACE)
+		{
+			// AGH CAN'T USE, gametype already possibly not GT_RACE...
+			//deltaLaps -= K_RaceLapCount(removedmap);
+			if (cv_numlaps.value == -1)
+				deltaLaps -= mapheaderinfo[removedmap]->numlaps;
+			else
+				deltaLaps -= cv_numlaps.value;
+		}
+		if ((gametypes[removedgt]->rules & GTR_SPHERES) == 0)
+		{
+			deltaRings -= 20 * numPlayers;
+		}
+		if (gametypes[removedgt]->rules & GTR_PRISONS)
+		{
+			deltaPrisons -= RankCapsules_CountFromMap(removedmap);
+		}
+	}
+
+	if (addedmap < nummapheaders && mapheaderinfo[addedmap] != NULL
+	&& addedgt < numgametypes && gametypes[addedgt])
+	{
+		if (addedgt == GT_RACE)
+		{
+			deltaLaps += K_RaceLapCount(addedmap);
+		}
+		if ((gametypes[addedgt]->rules & GTR_SPHERES) == 0)
+		{
+			deltaRings += 20 * numPlayers;
+		}
+		if (gametypes[addedgt]->rules & GTR_PRISONS)
+		{
+			deltaPrisons += RankCapsules_CountFromMap(addedmap);
+		}
+	}
+
+	if (deltaLaps)
+	{
+		INT32 workingTotalLaps = totalLaps;
+
+		// +1, since 1st place laps are worth 2 pts.
+		for (i = 0; i < numPlayers+1; i++)
+		{
+			workingTotalLaps += deltaLaps;
+		}
+
+		if (workingTotalLaps > 0)
+			totalLaps = workingTotalLaps;
+		else
+			totalLaps = 0;
+
+		deltaLaps += laps;
+		if (deltaLaps > 0)
+			laps = deltaLaps;
+		else
+			laps = 0;
+	}
+
+	if (deltaPrisons)
+	{
+		deltaPrisons += totalPrisons;
+		if (deltaPrisons > 0)
+			totalPrisons = deltaPrisons;
+		else
+			totalPrisons = 0;
+	}
+
+	if (deltaRings)
+	{
+		deltaRings += totalRings;
+		if (totalRings > 0)
+			totalRings = deltaRings;
+		else
+			totalRings = 0;
+	}
+}
+
+void K_RejiggerGPRankData(gpRank_t *rankData, UINT16 removedmap, UINT16 removedgt, UINT16 addedmap, UINT16 addedgt)
+{
+	rankData->Rejigger(removedmap, removedgt, addedmap, addedgt);
 }
 
 /*--------------------------------------------------
