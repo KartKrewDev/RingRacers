@@ -10029,9 +10029,14 @@ static void K_UpdatePlayerWaypoints(player_t *const player)
 	else
 	{
 		// Reset the auto respawn timer if distance changes are back to normal.
-		if (player->bigwaypointgap <= AUTORESPAWN_THRESHOLD + 1)
+		if (player->bigwaypointgap && player->bigwaypointgap <= AUTORESPAWN_THRESHOLD + 1)
 		{
 			player->bigwaypointgap = 0;
+
+			// While the player was in the "bigwaypointgap" state, laps did not change from crossing finish lines.
+			// So reset the lap back to normal, in case they were able to get behind the line.
+			player->laps = player->lastsafelap;
+			player->cheatchecknum = player->lastsafecheatcheck;
 		}
 	}
 
