@@ -1210,8 +1210,10 @@ static void K_UpdateOffroad(player_t *player)
 	// If you are in offroad, a timer starts.
 	if (offroadstrength)
 	{
+		UINT8 offramp = (gamespeed == KARTSPEED_HARD ? 2 : 1);
+
 		if (player->offroad < offroadstrength)
-			player->offroad += offroadstrength / TICRATE;
+			player->offroad += offroadstrength * offramp / TICRATE;
 
 		if (player->offroad > offroadstrength)
 			player->offroad = offroadstrength;
@@ -2875,6 +2877,8 @@ boolean K_SlopeResistance(const player_t *player)
 
 tripwirepass_t K_TripwirePassConditions(const player_t *player)
 {
+	UINT8 tripwirereq = player->offroad ? 3 : 2;
+
 	if (
 			player->invincibilitytimer ||
 			player->sneakertimer
@@ -2883,7 +2887,7 @@ tripwirepass_t K_TripwirePassConditions(const player_t *player)
 
 	if (
 			player->flamedash ||
-			(player->speed > (22 * K_GetKartSpeed(player, false, false) / 10) && player->tripwireReboundDelay == 0)
+			(player->speed > (tripwirereq * K_GetKartSpeed(player, false, false)) && player->tripwireReboundDelay == 0)
 	)
 		return TRIPWIRE_BOOST;
 
@@ -3379,7 +3383,7 @@ static void K_GetKartBoostPower(player_t *player)
 		// hello commit from 18 months ago, The Situation Has Changed.
 		// We buffed rings so many times that weight needs a totally different class of change!
 		// I've left the old formulas in, in case I'm smoking dick, but this was sorely needed in TA especially.
-		const fixed_t herbalfolkmedicine = FRACUNIT + FRACUNIT*(player->kartweight-1)/6 + FRACUNIT*(8-player->kartspeed)/16;
+		const fixed_t herbalfolkmedicine = FRACUNIT + FRACUNIT*(player->kartweight-1)/12 + FRACUNIT*(8-player->kartspeed)/32;
 
 		fixed_t driftSpeed = FRACUNIT/4; // 25% base
 
@@ -8655,7 +8659,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		// retain more speed for small payouts.
 
 		UINT8 roller = TICRATE*2;
-		roller += 8*(8-player->kartspeed);
+		roller += 4*(8-player->kartspeed);
 
 		if (player->superring == 0)
 			player->ringboost -= max((player->ringboost / roller), 1);
