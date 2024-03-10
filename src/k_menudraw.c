@@ -8359,7 +8359,7 @@ void M_DrawSoundTest(void)
 	{
 		UINT32 currenttime = min(Music_Elapsed(tune), Music_TotalDuration(tune));
 
-		V_DrawRightAlignedMenuString(x + 272-1, 18+32, 0,
+		V_DrawRightAlignedThinString(x + 272-1, 18+32, 0,
 			va("%02u:%02u",
 				G_TicsToMinutes(currenttime, true),
 				G_TicsToSeconds(currenttime)
@@ -8373,7 +8373,7 @@ void M_DrawSoundTest(void)
 	{
 		UINT32 exittime = Music_TotalDuration(tune);
 
-		V_DrawRightAlignedMenuString(x + 272-1, 18+32+10, 0,
+		V_DrawRightAlignedThinString(x + 272-1, 18+32+10, 0,
 			va("%02u:%02u",
 				G_TicsToMinutes(exittime, true),
 				G_TicsToSeconds(exittime)
