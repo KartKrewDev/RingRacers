@@ -54,11 +54,40 @@ menu_t PAUSE_PlaybackMenuDef = {
 
 void M_EndModeAttackRun(void)
 {
-	if (demo.playback)
+	// End recording / playback.
+	// Why not check demo.recording?
+	// Because for recording, this may be called from G_AfterIntermission.
+	// And before this function is called, G_SaveDemo is called, which sets demo.recording to false.
+	// Don't need to check demo.playback; G_CheckDemoStatus is safe to call even outside of demos.
+	// Check modeattacking because this function is recursively called (read on for an explanation).
+	if (modeattacking)
 	{
-		G_CheckDemoStatus(); // Cancel recording
-		return;
+		// This must be called for both playback and
+		// recording, because it both finishes playback and
+		// frees ghost data.
+		G_CheckDemoStatus();
+
+		// What does G_CheckDemoStatus do? Here's the answer!
+
+		// Playback:
+		// - Clears everything, including demo state and modeattacking.
+		// - It then calls the current function (M_EndModeAttackRun) AGAIN (after everything was cleared), so return.
+		if (!modeattacking)
+			return;
+
+		// Recording:
+		// - Only saves the demo and clears the demo state.
+		// - Now we need to clear the rest of the gamestate ourself!
 	}
+
+	// Playback: modeattacking is always false, so calling this returns to the menu.
+	// Recording: modeattacking is still true and this function call preserves that.
+	Command_ExitGame_f();
+
+	if (!modeattacking)
+		return;
+
+	// The rest of this is relevant for recording ONLY.
 
 	if (nextmapoverride != 0)
 	{
@@ -76,13 +105,10 @@ void M_EndModeAttackRun(void)
 		);
 	}
 
-	Command_ExitGame_f(); // Clear a bunch of state
+	// Command_ExitGame_f didn't clear this, so now we do.
+	modeattacking = ATTACKING_NONE;
 
-	if (!modeattacking)
-		return;
-
-	modeattacking = ATTACKING_NONE; // Kept until now because of Command_ExitGame_f
-
+	// Return to the menu.
 	if (demo.attract == DEMO_ATTRACT_TITLE)
 	{
 		D_SetDeferredStartTitle(true);
