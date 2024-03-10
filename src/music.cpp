@@ -195,6 +195,14 @@ void Music_Init(void)
 		tune.fade_out = 5000;
 		tune.fade_out_inclusive = false;
 	}
+
+	{
+		Tune& tune = g_tunes.insert("challenge_altmusic");
+
+		tune.priority = 100;
+		tune.resist = true;
+		tune.credit = true;
+	}
 }
 
 void Music_Tick(void)
