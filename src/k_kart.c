@@ -1210,8 +1210,10 @@ static void K_UpdateOffroad(player_t *player)
 	// If you are in offroad, a timer starts.
 	if (offroadstrength)
 	{
+		UINT8 offramp = (gamespeed == KARTSPEED_HARD ? 2 : 1);
+
 		if (player->offroad < offroadstrength)
-			player->offroad += offroadstrength / TICRATE;
+			player->offroad += offroadstrength * offramp / TICRATE;
 
 		if (player->offroad > offroadstrength)
 			player->offroad = offroadstrength;
@@ -2875,6 +2877,8 @@ boolean K_SlopeResistance(const player_t *player)
 
 tripwirepass_t K_TripwirePassConditions(const player_t *player)
 {
+	UINT8 tripwirereq = player->offroad ? 3 : 2;
+
 	if (
 			player->invincibilitytimer ||
 			player->sneakertimer
@@ -2883,7 +2887,7 @@ tripwirepass_t K_TripwirePassConditions(const player_t *player)
 
 	if (
 			player->flamedash ||
-			(player->speed > 2 * K_GetKartSpeed(player, false, false) && player->tripwireReboundDelay == 0)
+			(player->speed > (tripwirereq * K_GetKartSpeed(player, false, false)) && player->tripwireReboundDelay == 0)
 	)
 		return TRIPWIRE_BOOST;
 
@@ -3373,8 +3377,13 @@ static void K_GetKartBoostPower(player_t *player)
 	if (player->driftboost) // Drift Boost
 	{
 		// Rebuff Eggman's stat block corner
-		const INT32 heavyAccel = ((9 - player->kartspeed) * 2) + (player->kartweight - 1);
-		const fixed_t heavyAccelBonus = FRACUNIT + ((heavyAccel * maxmetabolismincrease * 2) / 24);
+		// const INT32 heavyAccel = ((9 - player->kartspeed) * 2) + (player->kartweight - 1);
+		// const fixed_t heavyAccelBonus = FRACUNIT + ((heavyAccel * maxmetabolismincrease * 2) / 24);
+
+		// hello commit from 18 months ago, The Situation Has Changed.
+		// We buffed rings so many times that weight needs a totally different class of change!
+		// I've left the old formulas in, in case I'm smoking dick, but this was sorely needed in TA especially.
+		const fixed_t herbalfolkmedicine = FRACUNIT + FRACUNIT*(player->kartweight-1)/12 + FRACUNIT*(8-player->kartspeed)/32;
 
 		fixed_t driftSpeed = FRACUNIT/4; // 25% base
 
@@ -3385,7 +3394,10 @@ static void K_GetKartBoostPower(player_t *player)
 		}
 
 		// Bottom-left bonus
-		driftSpeed = FixedMul(driftSpeed, heavyAccelBonus);
+		// driftSpeed = FixedMul(driftSpeed, heavyAccelBonus);
+
+		// Fucking bonus ever
+		driftSpeed = FixedMul(driftSpeed, herbalfolkmedicine);
 
 		ADDBOOST(driftSpeed, 4*FRACUNIT, 0); // + variable top speed, + 400% acceleration, +0% handling
 	}
@@ -8643,10 +8655,15 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	}
 	else if (player->ringboost)
 	{
-		// These values can get FUCKED ever since ring-stacking speed changes.
-		// If we're not actively being awarded rings, roll off extreme ringboost durations.
+		// If a Ring Box or Super Ring isn't paying out, aggressively reduce
+		// extreme ringboost duration. Less aggressive for accel types, so they
+		// retain more speed for small payouts.
+
+		UINT8 roller = TICRATE*2;
+		roller += 4*(8-player->kartspeed);
+
 		if (player->superring == 0)
-			player->ringboost -= max((player->ringboost / TICRATE / 2), 1);
+			player->ringboost -= max((player->ringboost / roller), 1);
 		else
 			player->ringboost--;
 	}
@@ -10439,6 +10456,9 @@ static void K_KartDrift(player_t *player, boolean onground)
 			S_StartSound(player->mo, sfx_s23c);
 			//K_SpawnDashDustRelease(player);
 
+			// Used to detect useful driftboosts.
+			UINT8 oldDriftBoost = player->driftboost;
+
 			// Airtime means we're not gaining speed. Get grounded!
 			if (!onground)
 				player->mo->momz -= player->speed/2;
@@ -10514,6 +10534,13 @@ static void K_KartDrift(player_t *player, boolean onground)
 				S_StartSound(player->mo, sfx_gshba);
 				player->trickcharge = 0;
 				player->infinitether = TICRATE*2;
+			}
+
+			// If you actually used a useful driftboost, adjust the added boost, biasing towards bottom-right.
+			// Everyone else has speed-retention mechanics they can chain into themselves: Metal needs help!
+			if (player->driftboost > oldDriftBoost)
+			{
+				player->driftboost = (38 + player->kartweight + player->kartspeed) * player->driftboost / 40;
 			}
 		}
 
