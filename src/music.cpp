@@ -218,6 +218,23 @@ void Music_Play(const char* id)
 	}
 }
 
+void Music_SetFadeOut(const char* id, int fade_out)
+{
+	Tune* tune = g_tunes.find(id);
+
+	if (tune)
+	{
+		tune->fade_out = fade_out;
+
+		if (tune->time_remaining() <= detail::msec_to_tics(tune->fade_out))
+		{
+			// If this action would cause a fade out, start
+			// fading immediately.
+			g_tunes.tick();
+		}
+	}
+}
+
 void Music_DelayEnd(const char* id, tic_t duration)
 {
 	Tune* tune = g_tunes.find(id);

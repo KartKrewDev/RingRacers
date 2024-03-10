@@ -59,6 +59,10 @@ const char *Music_CurrentId(void);
 // back to the start.)
 void Music_Play(const char *id);
 
+// Set fade out duration. Mostly to fix a last minute bug
+// with Stereo Mode.
+void Music_SetFadeOut(const char* id, int fade_out);
+
 // Postpone the end of this tune until N tics from now. The
 // tune should already be playing before calling this.
 void Music_DelayEnd(const char *id, tic_t duration);

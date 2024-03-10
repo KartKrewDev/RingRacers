@@ -1690,10 +1690,7 @@ const char *S_SoundTestTune(UINT8 invert)
 
 boolean S_SoundTestCanSequenceFade(void)
 {
-	return
-		soundtest.current->basenoloop[soundtest.currenttrack] == false &&
-		// Only fade out if we're the last track for this song.
-		soundtest.currenttrack == soundtest.current->numtracks-1;
+	return soundtest.current->basenoloop[soundtest.currenttrack] == false;
 }
 
 static void S_SoundTestReconfigure(const char *tune)
@@ -1728,12 +1725,16 @@ void S_SoundTestPlay(void)
 	}
 
 	// Does song have default loop?
-	if (soundtest.current->basenoloop[soundtest.currenttrack] == false)
+	if (S_SoundTestCanSequenceFade() == true)
 	{
+		// I'd personally like songs in sequence to last between 3 and 6 minutes.
 		if (sequencemaxtime < 3*60*1000)
 		{
-			// I'd personally like songs in sequence to last between 3 and 6 minutes.
-			const UINT32 loopduration = (sequencemaxtime - I_GetSongLoopPoint());
+			const UINT32 looppoint = I_GetSongLoopPoint();
+			const UINT32 loopduration =
+				(looppoint < sequencemaxtime)
+				? sequencemaxtime - looppoint
+				: 0;
 
 			if (!loopduration)
 				;
@@ -1743,6 +1744,16 @@ void S_SoundTestPlay(void)
 			} while (sequencemaxtime < 4*1000);
 			// If the track is EXTREMELY short, keep adding until about 4s!
 		}
+	}
+
+	// Only the last track fades out... but we still use stereo_fade to handle stopping.
+	if (soundtest.currenttrack == soundtest.current->numtracks-1)
+	{
+		Music_SetFadeOut("stereo_fade", 5000);
+	}
+	else
+	{
+		Music_SetFadeOut("stereo_fade", 0);
 	}
 
 	Music_DelayEnd(
