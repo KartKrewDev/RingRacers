@@ -1957,6 +1957,11 @@ static void K_HandleLapIncrement(player_t *player)
 				player->roundconditions.checkthisframe = true;
 			}
 
+			if (P_IsDisplayPlayer(player))
+			{
+				S_StartSound(player->mo, sfx_s3kb2);
+			}
+
 			return;
 		}
 
