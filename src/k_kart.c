@@ -10539,7 +10539,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 			// Everyone else has speed-retention mechanics they can chain into themselves: Metal needs help!
 			if (player->driftboost > oldDriftBoost)
 			{
-				player->driftboost = (18 + player->kartweight + player->kartspeed) * player->driftboost / 20;
+				player->driftboost = (38 + player->kartweight + player->kartspeed) * player->driftboost / 40;
 			}
 		}
 
