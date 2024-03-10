@@ -1037,7 +1037,7 @@ static void Y_VoteStops(SINT8 pick, SINT8 level)
 {
 	Y_FinalizeVote(level);
 
-	if (netgame && P_IsLocalPlayer(&players[pick]))
+	if (netgame && P_IsPartyPlayer(&players[pick]))
 	{
 		S_StartSound(NULL, sfx_yeeeah); // yeeeah!
 	}

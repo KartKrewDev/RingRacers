@@ -2010,7 +2010,7 @@ void G_Ticker(boolean run)
 				musiccountdown--;
 				if (musiccountdown == 1)
 				{
-					Music_PlayIntermission();
+					Y_PlayIntermissionMusic();
 				}
 				else if (musiccountdown == MUSIC_COUNTDOWN_MAX - K_TallyDelay())
 				{
@@ -2596,7 +2596,7 @@ void G_MovePlayerToSpawnOrCheatcheck(INT32 playernum)
 
 mapthing_t *G_FindTeamStart(INT32 playernum)
 {
-	const boolean doprints = P_IsLocalPlayer(&players[playernum]);
+	const boolean doprints = P_IsPartyPlayer(&players[playernum]);
 	INT32 i,j;
 
 	if (!numredctfstarts && !numbluectfstarts) //why even bother, eh?
@@ -2651,7 +2651,7 @@ mapthing_t *G_FindTeamStart(INT32 playernum)
 
 mapthing_t *G_FindBattleStart(INT32 playernum)
 {
-	const boolean doprints = P_IsLocalPlayer(&players[playernum]);
+	const boolean doprints = P_IsPartyPlayer(&players[playernum]);
 	INT32 i, j;
 
 	if (numdmstarts)
@@ -2674,7 +2674,7 @@ mapthing_t *G_FindBattleStart(INT32 playernum)
 
 mapthing_t *G_FindRaceStart(INT32 playernum)
 {
-	const boolean doprints = P_IsLocalPlayer(&players[playernum]);
+	const boolean doprints = P_IsPartyPlayer(&players[playernum]);
 
 	if (numcoopstarts)
 	{
@@ -2770,7 +2770,7 @@ mapthing_t *G_FindRaceStart(INT32 playernum)
 
 mapthing_t *G_FindPodiumStart(INT32 playernum)
 {
-	const boolean doprints = P_IsLocalPlayer(&players[playernum]);
+	const boolean doprints = P_IsPartyPlayer(&players[playernum]);
 
 	if (numcoopstarts)
 	{
@@ -2893,13 +2893,13 @@ mapthing_t *G_FindMapStart(INT32 playernum)
 	{
 		if (nummapthings)
 		{
-			if (P_IsLocalPlayer(&players[playernum]))
+			if (P_IsPartyPlayer(&players[playernum]))
 				CONS_Alert(CONS_ERROR, M_GetText("No player spawns found, spawning at the first mapthing!\n"));
 			spawnpoint = &mapthings[0];
 		}
 		else
 		{
-			if (P_IsLocalPlayer(&players[playernum]))
+			if (P_IsPartyPlayer(&players[playernum]))
 				CONS_Alert(CONS_ERROR, M_GetText("No player spawns found, spawning at the origin!\n"));
 		}
 	}
@@ -3791,7 +3791,7 @@ void G_UpdateVisited(void)
 		if (!playeringame[i]) // Not here.
 			continue;
 
-		if (!P_IsLocalPlayer(&players[i])) // Not local.
+		if (!P_IsPartyPlayer(&players[i])) // Not local.
 			continue;
 
 		if (players[i].spectator == true) // Not playing.

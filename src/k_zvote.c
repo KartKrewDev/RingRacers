@@ -586,7 +586,7 @@ boolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, 
 	if (g_midVote.active == true)
 	{
 		// Don't allow another vote if one is already running.
-		if (P_IsLocalPlayer(caller) == true)
+		if (P_IsMachineLocalPlayer(caller) == true)
 		{
 			CONS_Alert(CONS_ERROR, "A vote is already in progress.\n");
 		}
@@ -597,7 +597,7 @@ boolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, 
 	if (g_midVote.delay > 0)
 	{
 		// Don't allow another vote if one has recently just ran.
-		if (P_IsLocalPlayer(caller) == true)
+		if (P_IsMachineLocalPlayer(caller) == true)
 		{
 			CONS_Alert(CONS_ERROR, "Another vote was called too recently.\n");
 		}
@@ -608,7 +608,7 @@ boolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, 
 	if (type < 0 || type >= MVT__MAX)
 	{
 		// Invalid range.
-		if (P_IsLocalPlayer(caller) == true)
+		if (P_IsMachineLocalPlayer(caller) == true)
 		{
 			CONS_Alert(CONS_ERROR, "Invalid vote type.\n");
 		}
@@ -619,7 +619,7 @@ boolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, 
 	if (g_midVoteTypeDefs[type].cv_allowed.value == 0)
 	{
 		// These types of votes aren't allowed on this server.
-		if (P_IsLocalPlayer(caller) == true)
+		if (P_IsMachineLocalPlayer(caller) == true)
 		{
 			CONS_Alert(CONS_ERROR, "Vote type is not allowed in this server.\n");
 		}
@@ -630,7 +630,7 @@ boolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, 
 	if (caller == NULL || K_PlayerIDAllowedInMidVote(caller - players) == false)
 	{
 		// Invalid calling player.
-		if (caller != NULL && P_IsLocalPlayer(caller) == true)
+		if (caller != NULL && P_IsMachineLocalPlayer(caller) == true)
 		{
 			CONS_Alert(CONS_ERROR, "Invalid calling player.\n");
 		}
@@ -643,7 +643,7 @@ boolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, 
 		if (victim == NULL)
 		{
 			// Invalid victim.
-			if (P_IsLocalPlayer(caller) == true)
+			if (P_IsMachineLocalPlayer(caller) == true)
 			{
 				CONS_Alert(CONS_ERROR, "Can't kick this player; it's invalid.\n");
 			}
@@ -653,7 +653,7 @@ boolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, 
 
 		if (caller == victim)
 		{
-			if (P_IsLocalPlayer(caller) == true)
+			if (P_IsMachineLocalPlayer(caller) == true)
 			{
 				CONS_Alert(CONS_ERROR, "Can't kick yourself.\n");
 			}
@@ -668,7 +668,7 @@ boolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, 
 			)
 		{
 			// Victim is the server or an admin.
-			if (P_IsLocalPlayer(caller) == true)
+			if (P_IsMachineLocalPlayer(caller) == true)
 			{
 				CONS_Alert(CONS_ERROR, "Can't kick this player; they are an administrator.\n");
 			}

@@ -449,7 +449,7 @@ INT32 P_GivePlayerRings(player_t *player, INT32 num_rings)
 	if ((gametyperules & GTR_SPHERES)) // No rings in Battle Mode
 		return 0;
 
-	if (gamedata && num_rings > 0 && P_IsLocalPlayer(player) && gamedata->totalrings <= GDMAX_RINGS)
+	if (gamedata && num_rings > 0 && P_IsPartyPlayer(player) && gamedata->totalrings <= GDMAX_RINGS)
 	{
 		gamedata->totalrings += num_rings;
 	}
@@ -752,7 +752,7 @@ void P_InvincGrowMusic(void)
 	{
 		player_t *player = &players[displayplayers[i]];
 
-		if (!P_IsLocalPlayer(player))
+		if (!P_IsPartyPlayer(player))
 		{
 			// Director cam on another player? Don't play
 			// this.
@@ -1007,13 +1007,13 @@ boolean P_IsMachineLocalPlayer(const player_t *player)
 }
 
 //
-// P_IsLocalPlayer
+// P_IsPartyPlayer
 //
 // Returns true if player is
 // on the local machine
 // (or simulated party)
 //
-boolean P_IsLocalPlayer(const player_t *player)
+boolean P_IsPartyPlayer(const player_t *player)
 {
 	if (player == NULL)
 	{
@@ -1231,7 +1231,7 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 
 	player->pflags |= flags;
 
-	if (P_IsLocalPlayer(player) && (!player->spectator && !demo.playback))
+	if (P_IsPartyPlayer(player) && (!player->spectator && !demo.playback))
 	{
 		legitimateexit = true;
 		player->roundconditions.checkthisframe = true;
@@ -1273,7 +1273,7 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 
 	K_UpdatePowerLevelsFinalize(player, false);
 
-	if (P_IsLocalPlayer(player) && !specialout && musiccountdown == 0)
+	if (P_IsPartyPlayer(player) && !specialout && musiccountdown == 0)
 	{
 		Music_Play("finish_silence");
 		musiccountdown = MUSIC_COUNTDOWN_MAX;
@@ -3807,7 +3807,7 @@ void P_DoTimeOver(player_t *player)
 		return;
 	}
 
-	if (P_IsLocalPlayer(player) && !demo.playback)
+	if (P_IsPartyPlayer(player) && !demo.playback)
 	{
 		legitimateexit = true; // SRB2kart: losing a race is still seeing it through to the end :p
 		player->roundconditions.checkthisframe = true;
@@ -3833,7 +3833,7 @@ void P_DoTimeOver(player_t *player)
 		P_DamageMobj(player->mo, NULL, NULL, 1, DMG_TIMEOVER);
 	}
 
-	if (P_IsLocalPlayer(player) && musiccountdown == 0)
+	if (P_IsPartyPlayer(player) && musiccountdown == 0)
 	{
 		Music_Play("finish_silence");
 		musiccountdown = MUSIC_COUNTDOWN_MAX;
@@ -4210,7 +4210,7 @@ void P_PlayerThink(player_t *player)
 			// SRB2Kart: despite how perfect this is, it's disabled FOR A REASON
 			if (racecountdown == 11*TICRATE - 1)
 			{
-				if (P_IsLocalPlayer(player))
+				if (P_IsPartyPlayer(player))
 					S_ChangeMusicInternal("drown", false);
 			}
 #endif
@@ -4738,7 +4738,7 @@ void P_CheckRaceGriefing(player_t *player, boolean dopunishment)
 	if (dopunishment && !player->griefWarned && player->griefValue >= (griefMax/2))
 	{
 		K_AddMessageForPlayer(player, "Get moving!", true, false);
-		if (P_IsLocalPlayer(player))
+		if (P_IsPartyPlayer(player))
 			S_StartSound(NULL, sfx_cftbl0);
 		player->griefWarned = true;
 	}

@@ -576,7 +576,7 @@ boolean Obj_ShrinkLaserCollide(mobj_t *gun, mobj_t *victim)
 				victim->destscale = FixedMul(victim->destscale, SHRINK_SCALE);
 			}
 
-			if (P_IsLocalPlayer(victim->player) == false && victim->player->invincibilitytimer == 0)
+			if (P_IsPartyPlayer(victim->player) == false && victim->player->invincibilitytimer == 0)
 			{
 				// don't play this if the player has invincibility -- that takes priority
 				S_StartSound(victim, sfx_alarmg);

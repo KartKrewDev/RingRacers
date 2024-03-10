@@ -695,7 +695,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				if (!P_CanPickupEmblem(player, special->health - 1))
 					return;
 
-				if (!P_IsLocalPlayer(player))
+				if (!P_IsPartyPlayer(player))
 				{
 					// Must be party.
 					return;
@@ -733,7 +733,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 					return;
 				}
 
-				if (!P_IsLocalPlayer(player))
+				if (!P_IsPartyPlayer(player))
 				{
 					// Must be party.
 					return;
@@ -832,7 +832,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 					return;
 				}
 
-				if (!P_IsLocalPlayer(player))
+				if (!P_IsPartyPlayer(player))
 				{
 					// Must be party.
 					return;

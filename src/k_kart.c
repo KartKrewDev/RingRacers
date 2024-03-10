@@ -6762,7 +6762,7 @@ void K_DoInvincibility(player_t *player, tic_t time)
 		P_SetScale(overlay, player->mo->scale);
 	}
 
-	if (P_IsLocalPlayer(player) == false)
+	if (P_IsPartyPlayer(player) == false)
 	{
 		S_StartSound(player->mo, sfx_alarmi);
 	}
@@ -7969,7 +7969,7 @@ static void K_UpdateInvincibilitySounds(player_t *player)
 {
 	INT32 sfxnum = sfx_None;
 
-	if (player->mo->health > 0 && !P_IsLocalPlayer(player)) // used to be !P_IsDisplayPlayer(player)
+	if (player->mo->health > 0 && !P_IsPartyPlayer(player)) // used to be !P_IsDisplayPlayer(player)
 	{
 		if (player->invincibilitytimer > 0) // Prioritize invincibility
 			sfxnum = sfx_alarmi;
@@ -11012,7 +11012,7 @@ void K_KartUpdatePosition(player_t *player)
 	}
 
 	// Special stages: fade out music near the finish line
-	if (P_IsLocalPlayer(player))
+	if (P_IsPartyPlayer(player))
 	{
 		K_FadeOutSpecialMusic(player->distancetofinish);
 	}
@@ -12629,7 +12629,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									player->mo->destscale = FixedMul(player->mo->destscale, SHRINK_SCALE);
 								}
 
-								if (P_IsLocalPlayer(player) == false && player->invincibilitytimer == 0)
+								if (P_IsPartyPlayer(player) == false && player->invincibilitytimer == 0)
 								{
 									// don't play this if the player has invincibility -- that takes priority
 									S_StartSound(player->mo, sfx_alarmg);

@@ -162,8 +162,8 @@ boolean P_PlayerInPain(const player_t *player);
 void P_ResetPlayer(player_t *player);
 boolean P_PlayerCanDamage(player_t *player, mobj_t *thing);
 
-boolean P_IsLocalPlayer(const player_t *player);
-boolean P_IsMachineLocalPlayer(const player_t *player);
+boolean P_IsPartyPlayer(const player_t *player);
+boolean P_IsMachineLocalPlayer(const player_t *player); // TODO: rename back to P_IsLocalPlayer?
 boolean P_IsDisplayPlayer(const player_t *player);
 
 void P_SetPlayerAngle(player_t *player, angle_t angle);
