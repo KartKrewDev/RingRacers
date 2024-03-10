@@ -996,7 +996,7 @@ void Obj_PlayerUFOCollide(mobj_t *ufo, mobj_t *other)
 		return; // We were just hit!
 	}
 
-	if ((other->player->sneakertimer > 0)
+	if (other->player->tripwirePass >= TRIPWIRE_BOOST
 		&& !P_PlayerInPain(other->player)
 		&& (other->player->flashing == 0))
 	{
@@ -1004,6 +1004,30 @@ void Obj_PlayerUFOCollide(mobj_t *ufo, mobj_t *other)
 		Obj_SpecialUFODamage(ufo, other, other, DMG_STEAL);
 		other->player->sneakertimer = 0;
 		other->player->numsneakers = 0;
+
+		// Copied from Obj_OrbinautThrown
+		const ffloor_t *rover = P_IsObjectFlipped(other) ? other->ceilingrover : other->floorrover;
+		if (rover && (rover->fofflags & FOF_SWIMMABLE))
+		{
+			// Player is waterskiing so use different math to
+			// reduce their speed some but keep them skiing
+			// at high speeds.
+			fixed_t linear = K_GetKartSpeed(other->player, false, false) / 2;
+			if ((other->player->speed - linear) < other->player->speed / 4)
+			{
+				other->momx /= 4;
+				other->momy /= 4;
+			}
+			else
+			{
+				angle_t mom = R_PointToAngle2(0, 0, other->momx, other->momy);
+				P_Thrust(other, mom, -linear);
+			}
+		}
+		else
+		{
+			K_KartBouncing(other, ufo);
+		}
 	}
 	else
 	{
@@ -1015,9 +1039,9 @@ void Obj_PlayerUFOCollide(mobj_t *ufo, mobj_t *other)
 			// in front
 			K_StumblePlayer(other->player);
 		}
-	}
 
-	K_KartBouncing(other, ufo);
+		K_KartBouncing(other, ufo);
+	}
 }
 
 boolean Obj_UFOEmeraldCollect(mobj_t *ufo, mobj_t *toucher)
