@@ -462,7 +462,7 @@ void SetPlayerSkin(INT32 playernum, const char *skinname)
 		return;
 	}
 
-	if (P_IsLocalPlayer(player))
+	if (P_IsPartyPlayer(player))
 		CONS_Alert(CONS_WARNING, M_GetText("Skin '%s' not found.\n"), skinname);
 	else if(server || IsPlayerAdmin(consoleplayer))
 		CONS_Alert(CONS_WARNING, M_GetText("Player %d (%s) skin '%s' not found\n"), playernum, player_names[playernum], skinname);
@@ -482,7 +482,7 @@ void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 		return;
 	}
 
-	if (P_IsLocalPlayer(player))
+	if (P_IsPartyPlayer(player))
 		CONS_Alert(CONS_WARNING, M_GetText("Requested skin %d not found\n"), skinnum);
 	else if (server || IsPlayerAdmin(consoleplayer))
 		CONS_Alert(CONS_WARNING, "Player %d (%s) skin %d not found\n", playernum, player_names[playernum], skinnum);

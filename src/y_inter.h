@@ -61,6 +61,8 @@ void Y_EndIntermission(void);
 
 void Y_DetermineIntermissionType(void);
 
+void Y_PlayIntermissionMusic(void);
+
 typedef enum
 {
 	int_none,

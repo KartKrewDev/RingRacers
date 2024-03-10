@@ -37,6 +37,7 @@
 #include "i_time.h"
 #include "v_video.h" // V_ThinStringWidth
 #include "music.h"
+#include "y_inter.h" // Y_PlayIntermissionMusic
 
 extern consvar_t cv_mastervolume;
 
@@ -1217,7 +1218,7 @@ void S_AttemptToRestoreMusic(void)
 			}
 			// FALLTHRU
 		case GS_INTERMISSION:
-			Music_PlayIntermission();
+			Y_PlayIntermissionMusic();
 			break;
 		case GS_CEREMONY:
 			Music_Play("level");

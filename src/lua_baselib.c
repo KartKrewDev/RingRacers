@@ -675,7 +675,7 @@ static int lib_pSpawnLockOn(lua_State *L)
 	if (state >= NUMSTATES)
 		return luaL_error(L, "state %d out of range (0 - %d)", state, NUMSTATES-1);
 #if 0
-	if (P_IsLocalPlayer(player)) // Only display it on your own view.
+	if (P_IsPartyPlayer(player)) // Only display it on your own view.
 	{
 		mobj_t *visual = P_SpawnMobj(lockon->x, lockon->y, lockon->z, MT_LOCKON); // positioning, flip handled in P_SceneryThinker
 		P_SetTarget(&visual->target, lockon);
@@ -1639,7 +1639,7 @@ static int lib_pPlayRinglossSound(lua_State *L)
 		if (!player)
 			return LUA_ErrInvalid(L, "player_t");
 	}
-	if (!player || P_IsLocalPlayer(player))
+	if (!player || P_IsPartyPlayer(player))
 		P_PlayRinglossSound(source);
 	return 0;
 }
@@ -1658,7 +1658,7 @@ static int lib_pPlayDeathSound(lua_State *L)
 		if (!player)
 			return LUA_ErrInvalid(L, "player_t");
 	}
-	if (!player || P_IsLocalPlayer(player))
+	if (!player || P_IsPartyPlayer(player))
 		P_PlayDeathSound(source);
 	return 0;
 }
@@ -1677,7 +1677,7 @@ static int lib_pPlayVictorySound(lua_State *L)
 		if (!player)
 			return LUA_ErrInvalid(L, "player_t");
 	}
-	if (!player || P_IsLocalPlayer(player))
+	if (!player || P_IsPartyPlayer(player))
 		P_PlayVictorySound(source);
 	return 0;
 }
@@ -1880,7 +1880,7 @@ static int lib_pSwitchWeather(lua_State *L)
 		user = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
 	if (!user) // global
 		globalweather = weathernum;
-	if (!user || P_IsLocalPlayer(user))
+	if (!user || P_IsPartyPlayer(user))
 		P_SwitchWeather(weathernum);
 	return 0;
 }
@@ -1935,7 +1935,7 @@ static int lib_pSetupLevelSky(lua_State *L)
 		user = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
 	if (!user) // global
 		P_SetupLevelSky(skytexname, true);
-	else if (P_IsLocalPlayer(user))
+	else if (P_IsPartyPlayer(user))
 		P_SetupLevelSky(skytexname, false);
 	return 0;
 }
@@ -1984,7 +1984,7 @@ static int lib_pSetSkyboxMobj(lua_State *L)
 		return luaL_error(L, "skybox mobj index %d is out of range for P_SetSkyboxMobj argument #2 (expected 0 or 1)", w);
 
 #if 0
-	if (!user || P_IsLocalPlayer(user))
+	if (!user || P_IsPartyPlayer(user))
 		skyboxmo[w] = mo;
 #else
 	CONS_Alert(CONS_WARNING, "TODO: P_SetSkyboxMobj is unimplemented\n");
@@ -2409,7 +2409,7 @@ static int lib_sStartSound(lua_State *L)
 	if (!lua_isnil(L, 1))
 		if (!GetValidSoundOrigin(L, &origin))
 			return 0;
-	if (!player || P_IsLocalPlayer(player))
+	if (!player || P_IsPartyPlayer(player))
 	{
 		if (hud_running || hook_cmd_running)
 			origin = NULL;	// HUD rendering and CMD building startsound shouldn't have an origin, just remove it instead of having a retarded error.
@@ -2439,7 +2439,7 @@ static int lib_sStartSoundAtVolume(lua_State *L)
 		if (!GetValidSoundOrigin(L, &origin))
 			return LUA_ErrInvalid(L, "mobj_t/sector_t");
 
-	if (!player || P_IsLocalPlayer(player))
+	if (!player || P_IsPartyPlayer(player))
 		S_StartSoundAtVolume(origin, sound_id, volume);
 	return 0;
 }
@@ -2524,7 +2524,7 @@ static int lib_sStartMusicCaption(lua_State *L)
 			return LUA_ErrInvalid(L, "player_t");
 	}
 
-	if (lifespan && (!player || P_IsLocalPlayer(player)))
+	if (lifespan && (!player || P_IsPartyPlayer(player)))
 	{
 		strlcpy(S_sfx[sfx_None].caption, caption, sizeof(S_sfx[sfx_None].caption));
 		S_StartCaption(sfx_None, -1, lifespan);
@@ -2542,7 +2542,7 @@ static int lib_sShowMusicCredit(lua_State *L)
 		if (!player)
 			return LUA_ErrInvalid(L, "player_t");
 	}
-	if (!player || P_IsLocalPlayer(player))
+	if (!player || P_IsPartyPlayer(player))
 		S_ShowMusicCredit();
 	return 0;
 }
