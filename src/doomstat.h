@@ -631,7 +631,7 @@ struct gametype_t
 extern gametype_t *gametypes[MAXGAMETYPES+1];
 extern INT16 numgametypes;
 
-extern INT16 gametype;
+extern INT16 gametype, g_lastgametype;
 
 // Gametype rules
 enum GameTypeRules

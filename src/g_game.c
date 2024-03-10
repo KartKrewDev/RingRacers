@@ -5126,6 +5126,7 @@ void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skippr
 
 	g_reloadingMap = (map == gamemap);
 	gamemap = map;
+	g_lastgametype = gametype;
 
 	automapactive = false;
 	imcontinuing = false;
