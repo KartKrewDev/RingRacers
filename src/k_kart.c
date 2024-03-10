@@ -10184,7 +10184,7 @@ static fixed_t K_GetUnderwaterStrafeMul(const player_t *player)
 
 	baseline = 2 * K_GetKartSpeed(player, true, true) / 3;
 
-	return max(0, FixedDiv(player->speed - minSpeed, baseline - minSpeed));
+	return max(0, FixedDiv(max(player->speed, minSpeed) - minSpeed, baseline - minSpeed));
 }
 
 INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
