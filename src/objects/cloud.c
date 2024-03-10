@@ -256,8 +256,14 @@ void Obj_BulbTouched(mobj_t *special, mobj_t *toucher)
 
 	toucher->player->tulip = 8*2 +1;
 
-	fixed_t spd = FixedHypot(toucher->momx, toucher->momy);
-	angle_t ang = R_PointToAngle2(0, 0, toucher->momx, toucher->momy);
+	fixed_t spd = 0;
+	angle_t ang = 0;
+
+	if (!special->spawnpoint || special->spawnpoint->thing_args[0] == 0)
+	{
+		spd = FixedHypot(toucher->momx, toucher->momy);
+		ang = R_PointToAngle2(0, 0, toucher->momx, toucher->momy);
+	}
 
 	P_InstaThrust(toucher, 0, 0);
 	P_MoveOrigin(toucher, special->x, special->y, special->z);
