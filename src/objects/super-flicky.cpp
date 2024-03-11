@@ -70,6 +70,7 @@ constexpr tic_t kDelay = 8;
 constexpr tic_t kDamageCooldown = TICRATE;
 constexpr tic_t kStunTime = 10*TICRATE;
 constexpr tic_t kBlockTime = 5*TICRATE;
+constexpr tic_t kOwnerStunnedCooldown = 2*TICRATE;
 
 constexpr int kRiseTime = 1*TICRATE;
 constexpr int kRiseSpeed = 4;
@@ -630,7 +631,7 @@ struct Flicky : mobj_t
 	{
 		if (owner_in_pain())
 		{
-			delay(1);
+			delay(kOwnerStunnedCooldown);
 		}
 	}
 
