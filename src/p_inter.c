@@ -1673,7 +1673,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 	target->flags2 &= ~(MF2_SKULLFLY|MF2_NIGHTSPULL);
 	target->health = 0; // This makes it easy to check if something's dead elsewhere.
 
-	if (target->type != MT_BATTLEBUMPER)
+	if (target->type != MT_BATTLEBUMPER && target->type != MT_PLAYER)
 	{
 		target->shadowscale = 0;
 	}
@@ -1897,8 +1897,9 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 					}
 				}
 
-				P_InstaThrust(target, flingAngle, max(flingSpeed, 14 * target->scale));
-				P_SetObjectMomZ(target, 20*FRACUNIT, false);
+				boolean battle = (gametyperules & (GTR_BUMPERS | GTR_BOSS)) == GTR_BUMPERS;
+				P_InstaThrust(target, flingAngle, max(flingSpeed, 6 * target->scale) / (battle ? 1 : 3));
+				P_SetObjectMomZ(target, battle ? 20*FRACUNIT : 18*FRACUNIT, false);
 
 				P_PlayDeathSound(target);
 			}
