@@ -69,7 +69,7 @@ constexpr fixed_t kRebound = 8*FRACUNIT/9;
 constexpr tic_t kDelay = 8;
 constexpr tic_t kDamageCooldown = TICRATE;
 constexpr tic_t kStunTime = 10*TICRATE;
-constexpr tic_t kBlockTime = 5*TICRATE;
+constexpr tic_t kBlockTime = 10*TICRATE;
 constexpr tic_t kOwnerStunnedCooldown = 2*TICRATE;
 
 constexpr int kRiseTime = 1*TICRATE;
