@@ -3038,6 +3038,11 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	// MT_SCRIPT_THING
 	"S_TALKPOINT",
 	"S_TALKPOINT_ORB",
+
+	"S_BADNIK_EXPLOSION_SHOCKWAVE1",
+	"S_BADNIK_EXPLOSION_SHOCKWAVE2",
+	"S_BADNIK_EXPLOSION1",
+	"S_BADNIK_EXPLOSION2",
 };
 
 // RegEx to generate this from info.h: ^\tMT_([^,]+), --> \t"MT_\1",
@@ -4653,6 +4658,7 @@ struct int_const_s const INT_CONST[] = {
 	// Character flags (skinflags_t)
 	{"SF_MACHINE",SF_MACHINE},
 	{"SF_IRONMAN",SF_IRONMAN},
+	{"SF_BADNIK",SF_BADNIK},
 
 	// Sound flags
 	{"SF_TOTALLYSINGLE",SF_TOTALLYSINGLE},
