@@ -1939,6 +1939,9 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				if (skins[target->player->skin].flags & SF_BADNIK)
 				{
 					P_SpawnBadnikExplosion(target);
+					target->spritexscale = 2*FRACUNIT;
+					target->spriteyscale = 2*FRACUNIT;
+					target->flags |= MF_NOSQUISH;
 				}
 			}
 
