@@ -35,6 +35,7 @@
 #include "st_stuff.h"
 #include "r_fps.h"
 #include "g_party.h"
+#include "g_input.h"
 
 boolean level_tally_t::UseBonuses(void)
 {
@@ -311,6 +312,7 @@ void level_tally_t::Init(player_t *player)
 	laps = totalLaps = 0;
 	points = pointLimit = 0;
 	powerStones = 0;
+	canFastForward = false;
 
 	rank = GRADE_INVALID;
 
@@ -1392,7 +1394,19 @@ void K_InitPlayerTally(player_t *player)
 
 void K_TickPlayerTally(player_t *player)
 {
-	player->tally.Tick();
+	boolean fastForwardInput = G_PlayerInputDown(G_LocalSplitscreenPartyPosition(player - players), gc_a, 0);
+
+	if (fastForwardInput && player->tally.state == TALLY_ST_DONE)
+		player->tally.delay = std::min(player->tally.delay, TICRATE);
+
+	do
+		player->tally.Tick();
+	while (player->tally.state != TALLY_ST_DONE && (fastForwardInput && player->tally.canFastForward));
+
+	if (!fastForwardInput)
+		player->tally.canFastForward = true;
+	else
+		player->tally.canFastForward = false;
 }
 
 void K_DrawPlayerTally(void)

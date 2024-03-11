@@ -96,6 +96,7 @@ struct level_tally_t
 	UINT8 xtraBlink;
 	boolean showGrade;
 	boolean done;
+	boolean canFastForward;
 
 #ifdef __cplusplus
 	boolean UseBonuses(void);
