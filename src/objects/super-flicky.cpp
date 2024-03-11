@@ -33,6 +33,7 @@
 #define flicky_delay(o) ((o)->movecount)
 #define flicky_mode(o) ((o)->extravalue1)
 #define flicky_fly(o) ((o)->extravalue2)
+#define flicky_soundtimer(o) ((o)->cusval)
 
 #define controller_source(o) ((o)->target)
 #define controller_chasing(o) ((o)->tracer)
@@ -249,6 +250,9 @@ struct Flicky : mobj_t
 	Fly fly() const { return static_cast<Fly>(flicky_fly(this)); }
 	void fly(Fly n) { flicky_fly(this) = static_cast<int>(n); }
 
+	tic_t soundtimer() const { return flicky_soundtimer(this); }
+	void soundtimer(tic_t n) { flicky_soundtimer(this) = n; }
+
 	mobj_t* source() const { return controller()->source(); }
 
 	static void spawn(Controller* controller, int phase)
@@ -304,6 +308,11 @@ struct Flicky : mobj_t
 
 	void refocus()
 	{
+		if (soundtimer() > 0)
+		{
+			soundtimer(soundtimer() - 1);
+		}
+
 		if (controller()->ending())
 		{
 			if (controller()->time_remaining() == kRiseTime)
@@ -613,7 +622,15 @@ struct Flicky : mobj_t
 		light_up(true);
 		flags = info->flags;
 
-		S_StartSound(this, sfx_s3k9f);
+		// Put this sound on a cooldown specifically because
+		// it plays rapidly "at the edge of transform range".
+		// I don't know why that happens so just never play
+		// the sound close together.
+		if (!soundtimer())
+		{
+			S_StartSound(this, sfx_s3k9f);
+			soundtimer(2*TICRATE);
+		}
 	}
 
 	void try_nerf()
