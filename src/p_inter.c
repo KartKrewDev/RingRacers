@@ -1634,6 +1634,40 @@ boolean P_CheckRacers(void)
 	return false;
 }
 
+static void P_SpawnBadnikExplosion(mobj_t *target)
+{
+	UINT8 count = 24;
+	angle_t ang = 0;
+	angle_t step = ANGLE_MAX / count;
+	fixed_t spd = 8 * mapobjectscale;
+	for (UINT8 i = 0; i < count; ++i)
+	{
+		mobj_t *x = P_SpawnMobjFromMobjUnscaled(
+			target,
+			P_RandomRange(PR_EXPLOSION, -48, 48) * target->scale,
+			P_RandomRange(PR_EXPLOSION, -48, 48) * target->scale,
+			P_RandomRange(PR_EXPLOSION, -48, 48) * target->scale,
+			MT_THOK
+		);
+		P_InstaScale(x, 3 * x->scale / 2);
+		P_InstaThrust(x, ang, spd);
+		x->momz = P_RandomRange(PR_EXPLOSION, -4, 4) * mapobjectscale;
+		P_SetMobjStateNF(x, S_BADNIK_EXPLOSION1);
+		ang += step;
+	}
+	// burst effects (copied from MT_ITEMCAPSULE)
+	ang = FixedAngle(360*P_RandomFixed(PR_ITEM_DEBRIS));
+	for (UINT8 i = 0; i < 2; i++)
+	{
+		mobj_t *blast = P_SpawnMobjFromMobj(target, 0, 0, target->info->height >> 1, MT_BATTLEBUMPER_BLAST);
+		blast->angle = ang + i*ANGLE_90;
+		P_SetScale(blast, 2*blast->scale/3);
+		blast->destscale = 6*blast->scale;
+		blast->scalespeed = (blast->destscale - blast->scale) / 30;
+		P_SetMobjStateNF(blast, S_BADNIK_EXPLOSION_SHOCKWAVE1 + i);
+	}
+}
+
 /** Kills an object.
   *
   * \param target    The victim.
@@ -1901,6 +1935,14 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				P_SetObjectMomZ(target, 20*FRACUNIT, false);
 
 				P_PlayDeathSound(target);
+
+				if (skins[target->player->skin].flags & SF_BADNIK)
+				{
+					P_SpawnBadnikExplosion(target);
+					target->spritexscale = 2*FRACUNIT;
+					target->spriteyscale = 2*FRACUNIT;
+					target->flags |= MF_NOSQUISH;
+				}
 			}
 
 			// Prisons Free Play: don't eliminate P1 for

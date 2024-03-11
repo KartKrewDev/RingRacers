@@ -872,6 +872,7 @@ static boolean R_ProcessPatchableFields(skin_t *skin, char *stoken, char *value)
 	// 1, true, yes are all valid values
 	GETFLAG(MACHINE)
 	GETFLAG(IRONMAN)
+	GETFLAG(BADNIK)
 #undef GETFLAG
 
 	else // let's check if it's a sound, otherwise error out
