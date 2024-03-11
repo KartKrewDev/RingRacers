@@ -34,6 +34,9 @@ menuitem_t OPTIONS_Server[] =
 	{IT_STRING | IT_CVAR, "Use PWR.LV", "Should players should be rated on their performance?",
 		NULL, {.cvar = &cv_kartusepwrlv}, 0, 0},	
 
+	{IT_STRING | IT_CVAR, "Antigrief Timer (seconds)", "How long can players stop progressing before they're removed?",
+		NULL, {.cvar = &cv_antigrief}, 0, 0},
+
 
 	{IT_HEADER, "Progression...", NULL,
 		NULL, {NULL}, 0, 0},
