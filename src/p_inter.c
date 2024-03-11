@@ -1885,6 +1885,8 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				// so make sure that this draws at the correct angle.
 				target->rollangle = 0;
 
+				target->player->instaWhipCharge = 0;
+
 				fixed_t inflictorSpeed = 0;
 				if (!P_MobjWasRemoved(inflictor))
 				{
