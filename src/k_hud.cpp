@@ -5011,7 +5011,7 @@ static void K_drawKartStartCountdown(void)
 		return;
 	}
 
-	if (stplyr->karthud[khud_fault] != 0)
+	if (stplyr->karthud[khud_fault] != 0 && stplyr->karthud[khud_finish] == 0)
 	{
 		K_drawKartFinish(false);
 	}
