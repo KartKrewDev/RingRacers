@@ -466,7 +466,7 @@ void Obj_SSLampMapThingSpawn(mobj_t* mo, mapthing_t* mt)
 	// we need this because linkdrawing to a papersprite results in all linked mobjs becoming invisible when the papersprite is viewed parallel to its angle
 	core = P_SpawnMobjFromMobj(mo, bulbX, bulbY, BULB_VERTICAL_OFFSET, MT_SS_LAMP_BULB);
 	P_SetTarget(&core->tracer, mo);
-	P_SetMobjState(core, S_SHADOW);
+	core->frame = (core->frame & ~FF_FRAMEMASK) | 5;
 
 	// parallel bulb
 	part = P_SpawnMobjFromMobj(core, 0, 0, 0, MT_SS_LAMP_BULB);
@@ -479,7 +479,7 @@ void Obj_SSLampMapThingSpawn(mobj_t* mo, mapthing_t* mt)
 	bulbX = FixedMul(core->info->radius, FCOS(angle));
 	bulbY = FixedMul(core->info->radius, FSIN(angle));
 	part = core;
-	for (i = 0; i < 1; i++)
+	for (i = 0; i < 2; i++)
 	{
 		P_SetTarget(&part->hnext, P_SpawnMobjFromMobj(core, bulbX, bulbY, 0, MT_SS_LAMP_BULB));
 		P_SetTarget(&part->hnext->hprev, part);
