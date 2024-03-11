@@ -24,6 +24,7 @@
 #include "r_draw.h"
 #include "r_fps.h"
 #include "byteptr.h"
+#include "s_sound.h"
 
 extern consvar_t cv_zvote_quorum;
 extern consvar_t cv_zvote_spectators;
@@ -308,6 +309,8 @@ static void Got_SetZVote(const UINT8 **cp, INT32 playernum)
 	{
 		return;
 	}
+
+	S_StartSound(NULL, sfx_gshad);
 
 	g_midVote.votes[playernum] = true;
 }
@@ -704,6 +707,8 @@ void K_InitNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, play
 	g_midVote.variable = variable;
 	g_midVote.victim = victim;
 
+	S_StartSound(NULL, sfx_cdfm67);
+
 	g_midVote.votes[caller - players] = true;
 
 	for (i = 0; i <= splitscreen; i++)
@@ -825,6 +830,10 @@ static void K_HandleMidVoteInput(void)
 	}
 }
 
+#define ZVOTE_PATCH_EXC_START (4)
+#define ZVOTE_PATCH_EXC_LOOP (3)
+#define ZVOTE_PATCH_BAR_SEGS (12)
+
 /*--------------------------------------------------
 	void K_TickMidVote(void)
 
@@ -874,6 +883,7 @@ void K_TickMidVote(void)
 	{
 		// Vote finished.
 		// Start the ending animation.
+		S_StartSound(NULL, sfx_kc48);
 		g_midVote.end++;
 		g_midVote.endVotes = numVotes;
 		g_midVote.endRequired = requiredVotes;
@@ -882,6 +892,15 @@ void K_TickMidVote(void)
 
 	K_HandleMidVoteInput();
 	g_midVote.time++;
+
+	// Go go gadget duplicated code. Sorry, this blows ass and makes no sense.
+	// I hope we never change this timing again, but if we do, check the drawer as well.
+	const tic_t spd = 2;
+	const tic_t anim = (g_midVote.time - ZVOTE_GUI_SLIDE) / spd;
+	const UINT8 frame = anim % (ZVOTE_PATCH_EXC_LOOP + ZVOTE_GUI_SLIDE);
+
+	if (frame == 0 && g_midVote.time % spd == 0 && g_midVote.gui[R_GetViewNumber()].slide == 0)
+		S_StartSound(NULL, sfx_s3kd2s);
 }
 
 /*--------------------------------------------------
@@ -889,10 +908,6 @@ void K_TickMidVote(void)
 
 		See header file for description.
 --------------------------------------------------*/
-
-#define ZVOTE_PATCH_EXC_START (4)
-#define ZVOTE_PATCH_EXC_LOOP (3)
-#define ZVOTE_PATCH_BAR_SEGS (12)
 
 static patch_t *g_exclamationSlide = NULL;
 static patch_t *g_exclamationStart[ZVOTE_PATCH_EXC_LOOP] = {NULL};
