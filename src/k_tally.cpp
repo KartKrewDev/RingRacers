@@ -312,7 +312,7 @@ void level_tally_t::Init(player_t *player)
 	laps = totalLaps = 0;
 	points = pointLimit = 0;
 	powerStones = 0;
-	canFastForward = false;
+	releasedFastForward = false;
 
 	rank = GRADE_INVALID;
 
@@ -1395,18 +1395,34 @@ void K_InitPlayerTally(player_t *player)
 void K_TickPlayerTally(player_t *player)
 {
 	boolean fastForwardInput = G_PlayerInputDown(G_LocalSplitscreenPartyPosition(player - players), gc_a, 0);
+	boolean allowFastForward = player->tally.state > TALLY_ST_GOTTHRU_SLIDEIN
+		&& player->tally.releasedFastForward 
+		&& grandprixinfo.gp 
+		&& player->tally.state != TALLY_ST_DONE;
 
-	if (fastForwardInput && player->tally.state == TALLY_ST_DONE)
+	if (fastForwardInput && allowFastForward)
+	{
+		do
+			player->tally.Tick();
+		while (player->tally.state != TALLY_ST_DONE);
+
 		player->tally.delay = std::min(player->tally.delay, TICRATE);
-
-	do
+		musiccountdown = 2; // gets decremented to 1 in G_Ticker to immediately trigger intermission music [blows raspberry]
+	}
+	else
+	{
 		player->tally.Tick();
-	while (player->tally.state != TALLY_ST_DONE && (fastForwardInput && player->tally.canFastForward));
+	}
 
 	if (!fastForwardInput)
-		player->tally.canFastForward = true;
+	{
+		player->tally.releasedFastForward = true;
+	}
 	else
-		player->tally.canFastForward = false;
+	{
+		player->tally.releasedFastForward = false;
+	}
+		
 }
 
 void K_DrawPlayerTally(void)
