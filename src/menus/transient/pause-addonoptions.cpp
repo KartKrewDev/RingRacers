@@ -139,8 +139,6 @@ void list_commands()
 
 		lua_pop(gL, 1); // pop command info table
 
-		CONS_Printf("cmd name %s flags %d\n", cmd->name, flags);
-
 		if (!admin_mode() != !(flags & COM_ADMIN))
 			continue;
 
