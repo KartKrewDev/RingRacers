@@ -4425,27 +4425,28 @@ static void K_drawKartMinimap(void)
 		demoghost *g = ghosts;
 		while (g)
 		{
-			if (g->mo->skin)
-				skin = ((skin_t*)g->mo->skin)-skins;
-			else
-				skin = 0;
-
-			workingPic = R_CanShowSkinInDemo(skin) ? faceprefix[skin][FACE_MINIMAP] : kp_unknownminimap;
-
-			if (g->mo->color)
+			if (g->mo && !P_MobjWasRemoved(g->mo) && g->mo->skin)
 			{
-				if (g->mo->colorized)
-					colormap = R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(g->mo->color), GTC_CACHE);
+				skin = ((skin_t*)g->mo->skin)-skins;
+
+				workingPic = R_CanShowSkinInDemo(skin) ? faceprefix[skin][FACE_MINIMAP] : kp_unknownminimap;
+
+				if (g->mo->color)
+				{
+					if (g->mo->colorized)
+						colormap = R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(g->mo->color), GTC_CACHE);
+					else
+						colormap = R_GetTranslationColormap(skin, static_cast<skincolornum_t>(g->mo->color), GTC_CACHE);
+				}
 				else
-					colormap = R_GetTranslationColormap(skin, static_cast<skincolornum_t>(g->mo->color), GTC_CACHE);
+					colormap = NULL;
+
+				interpx = R_InterpolateFixed(g->mo->old_x, g->mo->x);
+				interpy = R_InterpolateFixed(g->mo->old_y, g->mo->y);
+
+				K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, workingPic, colormap);
 			}
-			else
-				colormap = NULL;
 
-			interpx = R_InterpolateFixed(g->mo->old_x, g->mo->x);
-			interpy = R_InterpolateFixed(g->mo->old_y, g->mo->y);
-
-			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, workingPic, colormap);
 			g = g->next;
 		}
 	}
