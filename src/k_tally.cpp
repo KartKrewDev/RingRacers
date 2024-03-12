@@ -1394,7 +1394,8 @@ void K_InitPlayerTally(player_t *player)
 
 void K_TickPlayerTally(player_t *player)
 {
-	boolean fastForwardInput = G_PlayerInputDown(G_LocalSplitscreenPartyPosition(player - players), gc_a, 0);
+	boolean fastForwardInput = !demo.playback && P_IsMachineLocalPlayer(player) &&
+		G_PlayerInputDown(G_LocalSplitscreenPartyPosition(player - players), gc_a, 0);
 	boolean allowFastForward = player->tally.state > TALLY_ST_GOTTHRU_SLIDEIN
 		&& player->tally.releasedFastForward 
 		// - Not allowed online so we don't have to do any
