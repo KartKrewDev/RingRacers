@@ -1234,14 +1234,36 @@ void readlevelheader(MYFILE *f, char * name)
 							break;
 						deh_strlcpy(mapheaderinfo[num]->musname[j], tmp,
 							sizeof(mapheaderinfo[num]->musname[j]), va("Level header %d: music", num));
-						if (j)
-							mapheaderinfo[num]->cache_muslock[j - 1] = MAXUNLOCKABLES;
 						j++;
 					} while ((tmp = strtok(NULL,",")) != NULL);
 
 					if (tmp != NULL)
 						deh_warning("Level header %d: additional music slots past %d discarded", num, MAXMUSNAMES);
 					mapheaderinfo[num]->musname_size = j;
+				}
+			}
+			else if (fastcmp(word, "ENCOREMUSIC"))
+			{
+				if (fastcmp(word2, "NONE"))
+				{
+					mapheaderinfo[num]->encoremusname[0][0] = 0; // becomes empty string
+					mapheaderinfo[num]->encoremusname_size = 0;
+				}
+				else
+				{
+					UINT8 j = 0; // i was declared elsewhere
+					tmp = strtok(word2, ",");
+					do {
+						if (j >= MAXMUSNAMES)
+							break;
+						deh_strlcpy(mapheaderinfo[num]->encoremusname[j], tmp,
+							sizeof(mapheaderinfo[num]->encoremusname[j]), va("Level header %d: encore music", num));
+						j++;
+					} while ((tmp = strtok(NULL,",")) != NULL);
+
+					if (tmp != NULL)
+						deh_warning("Level header %d: additional music slots past %d discarded", num, MAXMUSNAMES);
+					mapheaderinfo[num]->encoremusname_size = j;
 				}
 			}
 			else if (fastcmp(word, "ASSOCIATEDMUSIC"))

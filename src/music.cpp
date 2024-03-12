@@ -195,6 +195,14 @@ void Music_Init(void)
 		tune.fade_out = 5000;
 		tune.fade_out_inclusive = false;
 	}
+
+	{
+		Tune& tune = g_tunes.insert("challenge_altmusic");
+
+		tune.priority = 100;
+		tune.resist = true;
+		tune.credit = true;
+	}
 }
 
 void Music_Tick(void)
@@ -215,6 +223,23 @@ void Music_Play(const char* id)
 	{
 		tune->play();
 		g_tunes.tick(); // play this immediately
+	}
+}
+
+void Music_SetFadeOut(const char* id, int fade_out)
+{
+	Tune* tune = g_tunes.find(id);
+
+	if (tune)
+	{
+		tune->fade_out = fade_out;
+
+		if (tune->time_remaining() <= detail::msec_to_tics(tune->fade_out))
+		{
+			// If this action would cause a fade out, start
+			// fading immediately.
+			g_tunes.tick();
+		}
 	}
 }
 

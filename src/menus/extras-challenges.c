@@ -834,6 +834,8 @@ boolean M_ChallengesInputs(INT32 ch)
 	{
 		if (M_MenuBackPressed(pid) || start)
 		{
+			Music_Stop("challenge_altmusic");
+
 			currentMenu->prevMenu = M_SpecificMenuRestore(currentMenu->prevMenu);
 
 			M_GoBack(0);
@@ -1021,17 +1023,83 @@ boolean M_ChallengesInputs(INT32 ch)
 			return true;
 		}
 
-		if (M_MenuConfirmPressed(pid)
-			&& challengesmenu.currentunlock < MAXUNLOCKABLES
+		if (challengesmenu.currentunlock < MAXUNLOCKABLES
 			&& gamedata->unlocked[challengesmenu.currentunlock])
 		{
 			switch (unlockables[challengesmenu.currentunlock].type)
 			{
-				case SECRET_ALTTITLE: {
-					extern consvar_t cv_alttitle;
-					CV_AddValue(&cv_alttitle, 1);
-					S_StartSound(NULL, sfx_s3kc3s);
-					M_SetMenuDelay(pid);
+				case SECRET_ALTTITLE:
+				{
+					if (M_MenuConfirmPressed(pid))
+					{
+						extern consvar_t cv_alttitle;
+						CV_AddValue(&cv_alttitle, 1);
+						S_StartSound(NULL, sfx_s3kc3s);
+						M_SetMenuDelay(pid);
+					}
+					break;
+				}
+				case SECRET_ALTMUSIC:
+				{
+					UINT8 trymus = 0, musicid = MAXMUSNAMES;
+
+					if (M_MenuConfirmPressed(pid))
+					{
+						trymus = 1;
+					}
+					else if (M_MenuButtonPressed(pid, MBT_L))
+					{
+						trymus = 2;
+					}
+
+					if (trymus)
+					{
+						const char *trymusname = NULL;
+
+						UINT16 map = M_UnlockableMapNum(&unlockables[challengesmenu.currentunlock]);
+						if (map >= nummapheaders
+							|| !mapheaderinfo[map])
+						{
+							;
+						}
+						else for (musicid = 1; musicid < MAXMUSNAMES; musicid++)
+						{
+							if (mapheaderinfo[map]->cache_muslock[musicid - 1] == challengesmenu.currentunlock)
+								break;
+						}
+
+						if (trymus == 1)
+						{
+							if (musicid < mapheaderinfo[map]->musname_size)
+							{
+								trymusname = mapheaderinfo[map]->musname[musicid];
+							}
+						}
+						else
+						{
+							if (musicid < mapheaderinfo[map]->encoremusname_size)
+							{
+								trymusname = mapheaderinfo[map]->encoremusname[musicid];
+							}
+						}
+
+						if (trymusname)
+						{
+							if (!Music_Playing("challenge_altmusic")
+								|| strcmp(Music_Song("challenge_altmusic"), trymusname))
+							{
+								Music_Remap("challenge_altmusic", trymusname);
+								Music_Play("challenge_altmusic");
+							}
+							else
+							{
+								Music_Stop("challenge_altmusic");
+							}
+
+							M_SetMenuDelay(pid);
+						}
+					}
+
 					break;
 				}
 				default:
