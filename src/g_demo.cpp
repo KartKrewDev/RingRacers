@@ -3989,7 +3989,7 @@ boolean G_CheckDemoStatus(void)
 		if (demo.quitafterplaying)
 			I_Quit();
 
-		if (multiplayer && !demo.attract)
+		if (!demo.attract)
 			G_FinishExitLevel();
 		else
 		{
