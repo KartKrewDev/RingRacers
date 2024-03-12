@@ -4956,6 +4956,7 @@ struct int_const_s const INT_CONST[] = {
 	// Lua command registration flags
 	{"COM_ADMIN",COM_ADMIN},
 	{"COM_LOCAL",COM_LOCAL},
+	{"COM_NOSHOWHELP",COM_NOSHOWHELP},
 	{"COM_PLAYER2",COM_PLAYER2},
 	{"COM_PLAYER3",COM_PLAYER3},
 	{"COM_PLAYER4",COM_PLAYER4},

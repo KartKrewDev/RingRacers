@@ -24,6 +24,14 @@
 #include "../../k_menu.h"
 #include "../../screen.h"
 
+#include "../../z_zone.h"
+
+extern "C" {
+#include "../../lua_script.h"
+#include "../../lua_libs.h"
+#include "../../lua_hook.h"
+};
+
 extern "C" void COM_Lua_f(void);
 
 using srb2::Draw;
@@ -39,8 +47,8 @@ enum Mode
 };
 
 const char* mode_strings[kNumModes] = {
-	"Custom Settings - User",
-	"Custom Settings - Host",
+	"User Settings",
+	"Host Settings",
 };
 
 std::vector<menuitem_t> g_menu;
@@ -54,7 +62,7 @@ int menu_mode()
 
 boolean admin_mode()
 {
-	return menu_mode() == kAdmin;
+	return !!(menu_mode() == kAdmin);
 }
 
 void menu_mode(int mode)
@@ -95,15 +103,49 @@ void list_cvars()
 void list_commands()
 {
 	static const auto call = [](INT32 idx) { COM_ImmedExecute(currentMenu->menuitems[idx].text); };
+	UINT16 flags;
 
 	for (xcommand_t* cmd = com_commands; cmd; cmd = cmd->next)
 	{
 		if (!(cmd->function == COM_Lua_f))
-		{
 			continue;
-		}
 
-		// TODO: Admin commands?
+		// Ha Ha What The Fuck
+		// Taken from COM_Lua_f with only a vague idea of what I am doing. Sorry!
+		char* buf;
+
+		I_Assert(gL != NULL);
+
+		lua_settop(gL, 0); // Just in case...
+		lua_pushcfunction(gL, LUA_GetErrorMessage);
+
+		lua_getfield(gL, LUA_REGISTRYINDEX, "COM_Command"); // push COM_Command
+		I_Assert(lua_istable(gL, -1));
+
+		// use buf temporarily -- must use lowercased string
+		buf = Z_StrDup(cmd->name);
+		strlwr(buf);
+		lua_getfield(gL, -1, buf); // push command info table
+		I_Assert(lua_istable(gL, -1));
+		lua_remove(gL, -2); // pop COM_Command
+		Z_Free(buf);
+
+		lua_rawgeti(gL, -1, 2); // push flags from command info table
+		if (lua_isboolean(gL, -1))
+			flags = (lua_toboolean(gL, -1) ? COM_ADMIN : 0);
+		else
+			flags = (UINT16)lua_tointeger(gL, -1);
+		lua_pop(gL, 1); // pop flags
+
+		lua_pop(gL, 1); // pop command info table
+
+		CONS_Printf("cmd name %s flags %d\n", cmd->name, flags);
+
+		if (!admin_mode() != !(flags & COM_ADMIN))
+			continue;
+
+		if (flags & COM_NOSHOWHELP)
+			continue;
 
 		g_menu.push_back(menuitem_t {IT_STRING | IT_CALL, cmd->name, nullptr, nullptr, {.routine = call}, 0, 8});
 	}
@@ -150,7 +192,7 @@ void menu_open()
 	g_menu_offsets = {};
 
 	list_cvars();
-	// list_commands();
+	list_commands();
 
 	std::sort(g_menu.begin(), g_menu.end(),
 		[](menuitem_t& a, menuitem_t& b) { return std::strcmp(a.text, b.text) < 0; });
