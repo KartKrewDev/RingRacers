@@ -1397,6 +1397,7 @@ void K_TickPlayerTally(player_t *player)
 	boolean fastForwardInput = !demo.playback && P_IsMachineLocalPlayer(player) &&
 		G_PlayerInputDown(G_LocalSplitscreenPartyPosition(player - players), gc_a, 0);
 	boolean allowFastForward = player->tally.state > TALLY_ST_GOTTHRU_SLIDEIN
+		&& player->tally.state <= TALLY_ST_DONE
 		&& player->tally.releasedFastForward 
 		// - Not allowed online so we don't have to do any
 		//   networking.
@@ -1410,7 +1411,7 @@ void K_TickPlayerTally(player_t *player)
 	{
 		do
 			player->tally.Tick();
-		while (player->tally.state != TALLY_ST_DONE);
+		while (player->tally.state != TALLY_ST_DONE && player->tally.state != TALLY_ST_GAMEOVER_DONE);
 
 		player->tally.delay = std::min(player->tally.delay, TICRATE);
 		musiccountdown = 2; // gets decremented to 1 in G_Ticker to immediately trigger intermission music [blows raspberry]
