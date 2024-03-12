@@ -1731,6 +1731,10 @@ void Y_StartVote(void)
 	memset(&vote, 0, sizeof(vote));
 	memset(&vote_draw, 0, sizeof(vote_draw));
 
+	// Restarting vote from the menu: stop any long sounds
+	// that were playing (kc37).
+	S_StopSounds();
+
 	vote.tic = vote.endtic = -1;
 
 #ifdef VOTE_TIME_WAIT_FOR_VOTE

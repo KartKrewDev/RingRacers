@@ -315,7 +315,6 @@ void M_HandlePauseMenuGametype(INT32 choice)
 
 	if (choice == 2)
 	{
-		if (menugametype != gametype)
 		{
 			M_ClearMenus(true);
 			if (server || IsPlayerAdmin(consoleplayer))
@@ -331,10 +330,6 @@ void M_HandlePauseMenuGametype(INT32 choice)
 			}
 			return;
 		}
-
-		S_StartSound(NULL, sfx_s3k7b);
-
-		return;
 	}
 
 	if (choice == -1)
