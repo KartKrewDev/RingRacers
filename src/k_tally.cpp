@@ -1397,7 +1397,12 @@ void K_TickPlayerTally(player_t *player)
 	boolean fastForwardInput = G_PlayerInputDown(G_LocalSplitscreenPartyPosition(player - players), gc_a, 0);
 	boolean allowFastForward = player->tally.state > TALLY_ST_GOTTHRU_SLIDEIN
 		&& player->tally.releasedFastForward 
-		&& grandprixinfo.gp 
+		// - Not allowed online so we don't have to do any
+		//   networking.
+		// - Not allowed in replays because splitscreen party
+		//   doesn't exist and it's just simpler to not think
+		//   about.
+		&& (!netgame && !demo.playback)
 		&& player->tally.state != TALLY_ST_DONE;
 
 	if (fastForwardInput && allowFastForward)
