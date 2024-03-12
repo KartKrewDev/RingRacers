@@ -904,7 +904,7 @@ void P_Ticker(boolean run)
 				if (playeringame[i])
 					G_WriteDemoTiccmd(&players[i].cmd, i);
 		}
-		if (demo.playback)
+		if (demo.playback && !demo.waitingfortally)
 		{
 			G_ReadDemoExtraData();
 			for (i = 0; i < MAXPLAYERS; i++)
@@ -1150,9 +1150,12 @@ void P_Ticker(boolean run)
 					exitcountdown--;
 				}
 
-				if (server && exitcountdown == 1)
+				if (exitcountdown == 1)
 				{
-					SendNetXCmd(XD_EXITLEVEL, NULL, 0);
+					if (demo.playback)
+						G_FinishExitLevel();
+					else if (server)
+						SendNetXCmd(XD_EXITLEVEL, NULL, 0);
 				}
 			}
 		}
@@ -1204,14 +1207,15 @@ void P_Ticker(boolean run)
 			if (cv_recordmultiplayerdemos.value && demo.savebutton && demo.savebutton + 3*TICRATE < leveltime)
 				G_CheckDemoTitleEntry();
 		}
-		else if (demo.playback) // Use Ghost data for consistency checks.
+		else if (demo.playback && !demo.waitingfortally) // Use Ghost data for consistency checks.
 		{
 			G_ConsAllGhostTics();
 		}
 
 		if (modeattacking)
 		{
-			G_GhostTicker();
+			if (!demo.waitingfortally)
+				G_GhostTicker();
 			if (!demo.playback)
 				G_TickTimeStickerMedals();
 		}
