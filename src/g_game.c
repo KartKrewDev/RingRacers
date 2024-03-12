@@ -2003,7 +2003,7 @@ void G_Ticker(boolean run)
 			memset(player_name_changes, 0, sizeof player_name_changes);
 		}
 
-		if (Playing() == true)
+		if (Playing() == true || demo.playback)
 		{
 			if (musiccountdown > 1)
 			{
@@ -2017,7 +2017,10 @@ void G_Ticker(boolean run)
 					P_EndingMusic();
 				}
 			}
+		}
 
+		if (Playing() == true)
+		{
 			P_InvincGrowMusic();
 
 			K_TickMidVote();
