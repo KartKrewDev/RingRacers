@@ -422,6 +422,10 @@ static int lib_cvRegisterVar(lua_State *L)
 			lua_rawset(L, 5);
 			lua_pop(L, 1);
 			cvar->func = Lua_OnChange;
+		} else if (i == 6 || (k && fasticmp(k, "description"))) {
+			if (!lua_isstring(L, 4))
+				TYPEERROR("description", LUA_TSTRING)
+			cvar->description = Z_StrDup(lua_tostring(L, 4));
 		}
 		lua_pop(L, 1);
 	}

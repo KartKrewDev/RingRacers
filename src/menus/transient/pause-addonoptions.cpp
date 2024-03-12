@@ -52,6 +52,11 @@ int menu_mode()
 	return PAUSE_AddonOptionsDef.extra1;
 }
 
+boolean admin_mode()
+{
+	return menu_mode() == kAdmin;
+}
+
 void menu_mode(int mode)
 {
 	g_menu_cursors[menu_mode()] = itemOn;
@@ -66,14 +71,13 @@ void list_cvars()
 	for (consvar_t* var = consvar_vars; var; var = var->next)
 	{
 		if (!(var->flags & CV_ADDEDBYLUA))
-		{
 			continue;
-		}
 
-		if (menu_mode() == kUser && var->flags & CV_NETVAR)
-		{
+		if (var->flags & CV_NOSHOWHELP)
 			continue;
-		}
+
+		if (!admin_mode() != !(var->flags & CV_NETVAR)) // LOL.
+			continue;
 
 		UINT16 status = IT_STRING | IT_CVAR;
 		INT32 height = 8;
