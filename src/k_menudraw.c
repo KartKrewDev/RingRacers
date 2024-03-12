@@ -5821,6 +5821,11 @@ void M_DrawPause(void)
 		selectableheadertext = currentMenu->menuitems[itemOn].text;
 		selectabletext = gametypes[menugametype]->name;
 	}
+	else if (itemOn == mpause_addons)
+	{
+		selectableheadertext = "ADDONS";
+		selectabletext = menuaddonoptions ? "LOAD..." : "SETTINGS";
+	}
 	else if (itemOn == mpause_callvote)
 	{
 		selectableheadertext = currentMenu->menuitems[itemOn].text;

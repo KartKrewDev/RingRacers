@@ -12,4 +12,5 @@ target_sources(SRB2SDL2 PRIVATE
 	pause-replay.c
 	virtual-keyboard.c
 	pause-cheats.cpp
+	pause-addonoptions.cpp
 )

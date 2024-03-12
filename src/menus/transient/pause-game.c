@@ -19,8 +19,8 @@
 menuitem_t PAUSE_Main[] =
 {
 
-	{IT_STRING | IT_CALL, "ADDONS", "M_ICOADD",
-		NULL, {.routine = M_Addons}, 0, 0},
+	{IT_STRING | IT_ARROWS, "ADDONS", "M_ICOADD",
+		NULL, {.routine = M_HandlePauseMenuAddons}, 0, 0},
 
 	{IT_STRING | IT_CALL, "STEREO MODE", "M_ICOSTM",
 		NULL, {.routine = M_SoundTest}, 0, 0},
@@ -158,7 +158,7 @@ void M_OpenPauseMenu(void)
 
 			if (M_SecretUnlocked(SECRET_ADDONS, true))
 			{
-				PAUSE_Main[mpause_addons].status = IT_STRING | IT_CALL;
+				PAUSE_Main[mpause_addons].status = IT_STRING | IT_ARROWS;
 			}
 
 			if (netgame)
@@ -306,6 +306,23 @@ boolean M_PauseInputs(INT32 ch)
 		return true;
 	}
 	return false;
+}
+
+UINT32 menuaddonoptions = 0;
+void M_HandlePauseMenuAddons(INT32 choice)
+{
+	if (choice == 2)
+	{
+		if (menuaddonoptions)
+			M_Addons(0);
+		else
+			M_SetupNextMenu(&PAUSE_AddonOptionsDef, false);
+
+		return;
+	}
+
+	menuaddonoptions = menuaddonoptions ? 0 : 1;
+	S_StartSound(NULL, sfx_s3k5b);
 }
 
 // Change gametype
