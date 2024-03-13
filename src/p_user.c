@@ -1273,7 +1273,7 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 
 	K_UpdatePowerLevelsFinalize(player, false);
 
-	if (P_IsPartyPlayer(player) && !specialout && musiccountdown == 0)
+	if (G_IsPartyLocal(player - players) && !specialout && musiccountdown == 0)
 	{
 		Music_Play("finish_silence");
 		musiccountdown = MUSIC_COUNTDOWN_MAX;
@@ -3844,7 +3844,7 @@ void P_DoTimeOver(player_t *player)
 		P_DamageMobj(player->mo, NULL, NULL, 1, DMG_TIMEOVER);
 	}
 
-	if (P_IsPartyPlayer(player) && musiccountdown == 0)
+	if (G_IsPartyLocal(player - players) && musiccountdown == 0)
 	{
 		Music_Play("finish_silence");
 		musiccountdown = MUSIC_COUNTDOWN_MAX;

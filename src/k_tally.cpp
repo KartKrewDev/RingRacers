@@ -35,6 +35,7 @@
 #include "st_stuff.h"
 #include "r_fps.h"
 #include "g_party.h"
+#include "g_input.h"
 
 boolean level_tally_t::UseBonuses(void)
 {
@@ -311,6 +312,7 @@ void level_tally_t::Init(player_t *player)
 	laps = totalLaps = 0;
 	points = pointLimit = 0;
 	powerStones = 0;
+	releasedFastForward = false;
 
 	rank = GRADE_INVALID;
 
@@ -1392,7 +1394,42 @@ void K_InitPlayerTally(player_t *player)
 
 void K_TickPlayerTally(player_t *player)
 {
-	player->tally.Tick();
+	boolean fastForwardInput = !demo.playback && P_IsMachineLocalPlayer(player) &&
+		G_PlayerInputDown(G_LocalSplitscreenPartyPosition(player - players), gc_a, 0);
+	boolean allowFastForward = player->tally.state > TALLY_ST_GOTTHRU_SLIDEIN
+		&& player->tally.state <= TALLY_ST_DONE
+		&& player->tally.releasedFastForward 
+		// - Not allowed online so we don't have to do any
+		//   networking.
+		// - Not allowed in replays because splitscreen party
+		//   doesn't exist and it's just simpler to not think
+		//   about.
+		&& (!netgame && !demo.playback)
+		&& player->tally.state != TALLY_ST_DONE;
+
+	if (fastForwardInput && allowFastForward)
+	{
+		do
+			player->tally.Tick();
+		while (player->tally.state != TALLY_ST_DONE && player->tally.state != TALLY_ST_GAMEOVER_DONE);
+
+		player->tally.delay = std::min(player->tally.delay, TICRATE);
+		musiccountdown = 2; // gets decremented to 1 in G_Ticker to immediately trigger intermission music [blows raspberry]
+	}
+	else
+	{
+		player->tally.Tick();
+	}
+
+	if (!fastForwardInput)
+	{
+		player->tally.releasedFastForward = true;
+	}
+	else
+	{
+		player->tally.releasedFastForward = false;
+	}
+		
 }
 
 void K_DrawPlayerTally(void)

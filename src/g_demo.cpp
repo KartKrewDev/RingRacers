@@ -3959,6 +3959,7 @@ void G_StopDemo(void)
 	demobuf.buffer = NULL;
 	demo.playback = false;
 	demo.timing = false;
+	demo.waitingfortally = false;
 	g_singletics = false;
 
 	{
@@ -3990,7 +3991,13 @@ boolean G_CheckDemoStatus(void)
 		if (demo.quitafterplaying)
 			I_Quit();
 
-		if (multiplayer && !demo.attract)
+		// When this replay was recorded, the player skipped
+		// the Tally and ended the demo early.
+		// Keep the demo open and don't boot to intermission
+		// YET, pause demo playback.
+		if (!demo.waitingfortally && modeattacking && exitcountdown)
+			demo.waitingfortally = true;
+		else if (!demo.attract)
 			G_FinishExitLevel();
 		else
 		{
@@ -4025,6 +4032,7 @@ boolean G_CheckDemoStatus(void)
 	Z_Free(demobuf.buffer);
 
 	demo.recording = false;
+	demo.waitingfortally = false;
 
 	return false;
 }
