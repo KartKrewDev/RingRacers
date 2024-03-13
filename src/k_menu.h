@@ -547,6 +547,7 @@ typedef enum
 	playback_view2,
 	playback_view3,
 	playback_view4,
+	playback_director,
 	playback_freecam,
 	playback_quit
 } playback_e;
