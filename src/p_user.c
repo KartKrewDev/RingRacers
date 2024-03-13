@@ -3473,7 +3473,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	y = mo->y - FixedMul(FINESINE((angle>>ANGLETOFINESHIFT) & FINEMASK), distxy);
 
 	// SRB2Kart: set camera panning
-	if (camstill || resetcalled || player->playerstate == PST_DEAD)
+	if (camstill || resetcalled || player->playerstate == PST_DEAD || player->loop.radius)
 		pan = xpan = ypan = 0;
 	else
 	{
