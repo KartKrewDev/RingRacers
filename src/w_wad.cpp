@@ -1931,6 +1931,17 @@ static void *MakePatch(void *lumpdata, size_t size, INT32 tag, void *cache)
 
 	Patch_Create(static_cast<softwarepatch_t*>(ptr), len, dest);
 
+	{
+		patch_t* patch = (patch_t*) ptr;
+
+		if (patch->width > 2048 || patch->height > 2048)
+		{
+			// This is INTENTIONAL. Even if software can handle it, very old GL hardware will not.
+			// For the sake of a compatibility baseline, we will not allow anything larger than this.
+			I_Error("Patch size cannot be greater than 2048x2048!");
+		}
+	}
+
 	return dest;
 }
 
