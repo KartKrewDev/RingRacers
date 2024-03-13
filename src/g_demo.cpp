@@ -1548,8 +1548,9 @@ skippedghosttic:
 		if (*g->p == DEMOMARKER)
 		{
 			g->mo->momx = g->mo->momy = g->mo->momz = 0;
-#if 1 // freeze frame (maybe more useful for time attackers)
+#if 0 // freeze frame (maybe more useful for time attackers) (2024-03-11: you leave it behind anyway!)
 			g->mo->colorized = true;
+			g->mo->fuse = 10*TICRATE;
 			if (follow)
 				follow->colorized = true;
 #else // dissapearing act
