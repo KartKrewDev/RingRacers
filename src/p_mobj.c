@@ -12152,7 +12152,10 @@ void P_SpawnPlayer(INT32 playernum)
 		// changes.
 		if (!demo.playback)
 		{
-			camera[G_PartyPosition(playernum)].freecam = false;
+			if (!p->spectator)
+			{
+				camera[G_PartyPosition(playernum)].freecam = false;
+			}
 			displayplayers[G_PartyPosition(playernum)] = playernum;
 		}
 
