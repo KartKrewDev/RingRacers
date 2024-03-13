@@ -22,6 +22,11 @@
 
 extern "C" consvar_t cv_devmode_screen;
 
+static bool race_rules()
+{
+	return gametyperules & GTR_CIRCUIT;
+}
+
 #define SWITCHTIME TICRATE * 5			// cooldown between unforced switches
 #define BOREDOMTIME 3 * TICRATE / 2 	// how long until players considered far apart?
 #define TRANSFERTIME TICRATE			// how long to delay reaction shots?
@@ -86,7 +91,9 @@ struct DirectorInfo
 		}
 
 		// if there's only one player left in the list, just switch to that player
-		if (playerstat[0].sorted != -1 && playerstat[1].sorted == -1)
+		if (playerstat[0].sorted != -1 && (playerstat[1].sorted == -1 ||
+				// TODO: Battle; I just threw this together quick. Focus on leader.
+				!race_rules()))
 		{
 			change(playerstat[0].sorted, false);
 			return;

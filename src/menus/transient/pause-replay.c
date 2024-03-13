@@ -10,8 +10,21 @@
 #include "../../d_main.h" // D_StartTitle
 #include "../../k_credits.h"
 #include "../../g_demo.h"
+#include "../../k_director.h"
 
 static void M_PlaybackTick(void);
+
+// This is barebones, just toggle director on all screens.
+static void M_PlaybackToggleDirector(INT32 choice)
+{
+	(void)choice;
+
+	UINT8 i;
+	for (i = 0; i <= r_splitscreen; ++i)
+	{
+		K_ToggleDirector(i, !K_DirectorIsEnabled(i));
+	}
+}
 
 menuitem_t PAUSE_PlaybackMenu[] =
 {
@@ -30,8 +43,9 @@ menuitem_t PAUSE_PlaybackMenu[] =
 	{IT_ARROWS | IT_STRING, "Viewpoint 3",			NULL, "M_PNVIEW",	{.routine = M_PlaybackAdjustView},		120, 0},
 	{IT_ARROWS | IT_STRING, "Viewpoint 4",			NULL, "M_PNVIEW",	{.routine = M_PlaybackAdjustView},		136, 0},
 
-	{IT_CALL   | IT_STRING, "Toggle Free Camera",	NULL, "M_PVIEWS",	{.routine = M_PlaybackToggleFreecam},	156, 0},
-	{IT_CALL   | IT_STRING, "Stop Playback",		NULL, "M_PEXIT",	{.routine = M_PlaybackQuit},			172, 0},
+	{IT_CALL   | IT_STRING, "Toggle Director",		NULL, "UN_IC11A",	{.routine = M_PlaybackToggleDirector},	156, 0},
+	{IT_CALL   | IT_STRING, "Toggle Free Camera",	NULL, "M_PVIEWS",	{.routine = M_PlaybackToggleFreecam},	172, 0},
+	{IT_CALL   | IT_STRING, "Stop Playback",		NULL, "M_PEXIT",	{.routine = M_PlaybackQuit},			188, 0},
 };
 
 menu_t PAUSE_PlaybackMenuDef = {
@@ -39,7 +53,7 @@ menu_t PAUSE_PlaybackMenuDef = {
 	NULL,
 	0,
 	PAUSE_PlaybackMenu,
-	BASEVIDWIDTH/2 - 88, 2,
+	BASEVIDWIDTH/2 - 96, 2,
 	0, 0,
 	MBF_UD_LR_FLIPPED,
 	NULL,
@@ -155,7 +169,7 @@ static void M_PlaybackTick(void)
 
 	if (modeattacking)
 	{
-		for (i = playback_viewcount; i <= playback_view4; i++)
+		for (i = playback_viewcount; i <= playback_director; i++)
 			PAUSE_PlaybackMenu[i].status = IT_DISABLED;
 
 		PAUSE_PlaybackMenu[playback_freecam].mvar1 = 72;
@@ -166,17 +180,18 @@ static void M_PlaybackTick(void)
 	else
 	{
 		PAUSE_PlaybackMenu[playback_viewcount].status = IT_ARROWS|IT_STRING;
+		PAUSE_PlaybackMenu[playback_freecam].status = IT_CALL|IT_STRING;
 
 		for (i = 0; i <= r_splitscreen; i++)
 			PAUSE_PlaybackMenu[playback_view1+i].status = IT_ARROWS|IT_STRING;
 		for (i = r_splitscreen+1; i < 4; i++)
 			PAUSE_PlaybackMenu[playback_view1+i].status = IT_DISABLED;
 
-		PAUSE_PlaybackMenu[playback_freecam].mvar1 = 156;
-		PAUSE_PlaybackMenu[playback_quit].mvar1 = 172;
+		PAUSE_PlaybackMenu[playback_freecam].mvar1 = 172;
+		PAUSE_PlaybackMenu[playback_quit].mvar1 = 188;
 
 		//currentMenu->x = BASEVIDWIDTH/2 - 94;
-		currentMenu->x = BASEVIDWIDTH/2 - 88;
+		currentMenu->x = BASEVIDWIDTH/2 - 96;
 	}
 }
 
