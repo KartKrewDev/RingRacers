@@ -2846,6 +2846,9 @@ static void P_DeathThink(player_t *player)
 	{
 		if (!netgame && !splitscreen
 		&& player->bot == false
+#ifdef DEVELOP
+		&& player->spectator == false
+#endif
 		&& (gametyperules & GTR_CHECKPOINTS))
 		{
 			G_SetRetryFlag();
