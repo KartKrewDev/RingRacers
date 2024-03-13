@@ -2298,7 +2298,7 @@ static void P_UpdatePlayerAngle(player_t *player)
 		// This is the hardest case for the turn solver, because your handling properties on
 		// client side are very different than your handling properties on server side—at least,
 		// until your drift status makes the full round-trip and is reflected in your gamestate.
-		if (player->drift && abs(player->drift) < 5 && player->cmd.latency)
+		if (player->drift && abs(player->drift) < 5)
 		{
 			steeringRight = KART_FULLTURN;
 			steeringLeft = -KART_FULLTURN;
