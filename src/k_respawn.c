@@ -509,6 +509,13 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 				player->respawn.distanceleft = 0;
 			}
 
+			// Almost all legitimate driving, no matter how clumsy, should be faster than death in TA.
+			// Advance only as far as we need to prevent respawn loops!
+			if (modeattacking)
+			{
+				player->respawn.distanceleft = 0;
+			}
+
 			player->respawn.wp = player->respawn.wp->nextwaypoints[nwp];
 			K_RespawnAtWaypoint(player, player->respawn.wp);
 
