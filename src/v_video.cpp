@@ -2251,6 +2251,7 @@ typedef struct
 	fixed_t spacew;
 	fixed_t    lfh;
 	fixed_t (*dim_fn)(fixed_t,fixed_t,INT32,INT32,fixed_t *);
+	UINT8 button_yofs;
 } fontspec_t;
 
 static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
@@ -2262,6 +2263,7 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 
 	// All other properties are guaranteed to be set
 	result->chw = 0;
+	result->button_yofs = 0;
 
 	const INT32 spacing = ( flags & V_SPACINGMASK );
 
@@ -2450,6 +2452,16 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 				result->dim_fn = BunchedCharacterDim;
 			break;
 	}
+
+	switch (fontno)
+	{
+	case HU_FONT:
+		result->button_yofs = 2;
+		break;
+	case MENU_FONT:
+		result->button_yofs = 1;
+		break;
+	}
 }
 
 static UINT8 V_GetButtonCodeWidth(UINT8 c)
@@ -2484,7 +2496,7 @@ static UINT8 V_GetButtonCodeWidth(UINT8 c)
 		break;
 	}
 
-	return x + 2;
+	return x;
 }
 
 void V_DrawStringScaled(
@@ -2668,8 +2680,8 @@ void V_DrawStringScaled(
 							case 0x02: return {{0, 3, Draw::Button::right}};
 							case 0x03: return {{0, 3, Draw::Button::left}};
 
-							case 0x07: return {{0, 1, Draw::Button::r}};
-							case 0x08: return {{0, 1, Draw::Button::l}};
+							case 0x07: return {{0, 2, Draw::Button::r}};
+							case 0x08: return {{0, 2, Draw::Button::l}};
 
 							case 0x09: return {{0, 1, Draw::Button::start}};
 
@@ -2698,16 +2710,15 @@ void V_DrawStringScaled(
 								}
 							};
 
+							cw = V_GetButtonCodeWidth(c) * dupx;
+							cxoff = (*fontspec.dim_fn)(scale, fontspec.chw, hchw, dupx, &cw);
 							Draw(
-								FixedToFloat(cx) - (bt_inst->x * dupx),
-								FixedToFloat(cy + cyoff) - (bt_inst->y * dupy))
+								FixedToFloat(cx + cxoff) - (bt_inst->x * dupx),
+								FixedToFloat(cy + cyoff) - ((bt_inst->y + fontspec.button_yofs) * dupy))
 								.flags(flags)
 								.small_button(bt_inst->type, bt_translate_press());
+							cx += cw;
 						}
-
-						cw = V_GetButtonCodeWidth(c) * dupx;
-						cx += cw * scale;
-
 						break;
 					}
 

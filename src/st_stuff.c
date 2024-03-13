@@ -1472,7 +1472,7 @@ void ST_DrawSaveReplayHint(INT32 flags)
 	V_DrawRightAlignedThinString(
 		BASEVIDWIDTH - 2, 2,
 		flags|V_YELLOWMAP,
-		demo.willsave ? "Replay will be saved.  \xAB" "Change title" : "\xAB" "or " "\xAE" "Save replay"
+		demo.willsave ? "Replay will be saved.  \xAB Change title" : "\xAB or \xAE Save replay"
 	);
 }
 

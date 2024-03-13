@@ -5229,7 +5229,7 @@ void M_DrawProfileControls(void)
 		boolean standardbuttons = gamedata->gonerlevel > GDGONER_PROFILE;
 		INT32 xpos = BASEVIDWIDTH - 12;
 		xpos = standardbuttons ?
-			M_DrawProfileLegend(xpos, ypos, "\xB2/  \xBC Clear", NULL) :
+			M_DrawProfileLegend(xpos, ypos, "\xB2 / \xBC  Clear", NULL) :
 			M_DrawProfileLegend(xpos, ypos, "Clear", "BKSP");
 	}
 
