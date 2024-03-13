@@ -422,7 +422,7 @@ static void R_RasterizeFloorSplat(floorsplat_t *pSplat, vector2_t *verts, visspr
 	if (ds.translation == NULL)
 		ds.translation = colormaps;
 
-	if (vis->extra_colormap)
+	if (vis->extra_colormap && !(vis->cut & SC_FULLBRIGHT) && !(vis->renderflags & RF_NOCOLORMAPS))
 	{
 		if (!ds.colormap)
 			ds.colormap = vis->extra_colormap->colormap;
