@@ -24,6 +24,7 @@
 #include "r_draw.h"
 #include "r_fps.h"
 #include "byteptr.h"
+#include "s_sound.h"
 
 extern consvar_t cv_zvote_quorum;
 extern consvar_t cv_zvote_spectators;
@@ -309,6 +310,8 @@ static void Got_SetZVote(const UINT8 **cp, INT32 playernum)
 		return;
 	}
 
+	S_StartSound(NULL, sfx_gshad);
+
 	g_midVote.votes[playernum] = true;
 }
 
@@ -586,7 +589,7 @@ boolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, 
 	if (g_midVote.active == true)
 	{
 		// Don't allow another vote if one is already running.
-		if (P_IsLocalPlayer(caller) == true)
+		if (P_IsMachineLocalPlayer(caller) == true)
 		{
 			CONS_Alert(CONS_ERROR, "A vote is already in progress.\n");
 		}
@@ -597,7 +600,7 @@ boolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, 
 	if (g_midVote.delay > 0)
 	{
 		// Don't allow another vote if one has recently just ran.
-		if (P_IsLocalPlayer(caller) == true)
+		if (P_IsMachineLocalPlayer(caller) == true)
 		{
 			CONS_Alert(CONS_ERROR, "Another vote was called too recently.\n");
 		}
@@ -608,7 +611,7 @@ boolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, 
 	if (type < 0 || type >= MVT__MAX)
 	{
 		// Invalid range.
-		if (P_IsLocalPlayer(caller) == true)
+		if (P_IsMachineLocalPlayer(caller) == true)
 		{
 			CONS_Alert(CONS_ERROR, "Invalid vote type.\n");
 		}
@@ -619,7 +622,7 @@ boolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, 
 	if (g_midVoteTypeDefs[type].cv_allowed.value == 0)
 	{
 		// These types of votes aren't allowed on this server.
-		if (P_IsLocalPlayer(caller) == true)
+		if (P_IsMachineLocalPlayer(caller) == true)
 		{
 			CONS_Alert(CONS_ERROR, "Vote type is not allowed in this server.\n");
 		}
@@ -630,7 +633,7 @@ boolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, 
 	if (caller == NULL || K_PlayerIDAllowedInMidVote(caller - players) == false)
 	{
 		// Invalid calling player.
-		if (caller != NULL && P_IsLocalPlayer(caller) == true)
+		if (caller != NULL && P_IsMachineLocalPlayer(caller) == true)
 		{
 			CONS_Alert(CONS_ERROR, "Invalid calling player.\n");
 		}
@@ -643,7 +646,7 @@ boolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, 
 		if (victim == NULL)
 		{
 			// Invalid victim.
-			if (P_IsLocalPlayer(caller) == true)
+			if (P_IsMachineLocalPlayer(caller) == true)
 			{
 				CONS_Alert(CONS_ERROR, "Can't kick this player; it's invalid.\n");
 			}
@@ -653,7 +656,7 @@ boolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, 
 
 		if (caller == victim)
 		{
-			if (P_IsLocalPlayer(caller) == true)
+			if (P_IsMachineLocalPlayer(caller) == true)
 			{
 				CONS_Alert(CONS_ERROR, "Can't kick yourself.\n");
 			}
@@ -668,7 +671,7 @@ boolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, 
 			)
 		{
 			// Victim is the server or an admin.
-			if (P_IsLocalPlayer(caller) == true)
+			if (P_IsMachineLocalPlayer(caller) == true)
 			{
 				CONS_Alert(CONS_ERROR, "Can't kick this player; they are an administrator.\n");
 			}
@@ -703,6 +706,8 @@ void K_InitNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, play
 	g_midVote.type = type;
 	g_midVote.variable = variable;
 	g_midVote.victim = victim;
+
+	S_StartSound(NULL, sfx_cdfm67);
 
 	g_midVote.votes[caller - players] = true;
 
@@ -825,6 +830,10 @@ static void K_HandleMidVoteInput(void)
 	}
 }
 
+#define ZVOTE_PATCH_EXC_START (4)
+#define ZVOTE_PATCH_EXC_LOOP (3)
+#define ZVOTE_PATCH_BAR_SEGS (12)
+
 /*--------------------------------------------------
 	void K_TickMidVote(void)
 
@@ -874,6 +883,7 @@ void K_TickMidVote(void)
 	{
 		// Vote finished.
 		// Start the ending animation.
+		S_StartSound(NULL, sfx_kc48);
 		g_midVote.end++;
 		g_midVote.endVotes = numVotes;
 		g_midVote.endRequired = requiredVotes;
@@ -882,6 +892,15 @@ void K_TickMidVote(void)
 
 	K_HandleMidVoteInput();
 	g_midVote.time++;
+
+	// Go go gadget duplicated code. Sorry, this blows ass and makes no sense.
+	// I hope we never change this timing again, but if we do, check the drawer as well.
+	const tic_t spd = 2;
+	const tic_t anim = (g_midVote.time - ZVOTE_GUI_SLIDE) / spd;
+	const UINT8 frame = anim % (ZVOTE_PATCH_EXC_LOOP + ZVOTE_GUI_SLIDE);
+
+	if (frame == 0 && g_midVote.time % spd == 0 && g_midVote.gui[R_GetViewNumber()].slide == 0)
+		S_StartSound(NULL, sfx_s3kd2s);
 }
 
 /*--------------------------------------------------
@@ -889,10 +908,6 @@ void K_TickMidVote(void)
 
 		See header file for description.
 --------------------------------------------------*/
-
-#define ZVOTE_PATCH_EXC_START (4)
-#define ZVOTE_PATCH_EXC_LOOP (3)
-#define ZVOTE_PATCH_BAR_SEGS (12)
 
 static patch_t *g_exclamationSlide = NULL;
 static patch_t *g_exclamationStart[ZVOTE_PATCH_EXC_LOOP] = {NULL};

@@ -2003,21 +2003,24 @@ void G_Ticker(boolean run)
 			memset(player_name_changes, 0, sizeof player_name_changes);
 		}
 
-		if (Playing() == true)
+		if (Playing() == true || demo.playback)
 		{
 			if (musiccountdown > 1)
 			{
 				musiccountdown--;
 				if (musiccountdown == 1)
 				{
-					Music_PlayIntermission();
+					Y_PlayIntermissionMusic();
 				}
 				else if (musiccountdown == MUSIC_COUNTDOWN_MAX - K_TallyDelay())
 				{
 					P_EndingMusic();
 				}
 			}
+		}
 
+		if (Playing() == true)
+		{
 			P_InvincGrowMusic();
 
 			K_TickMidVote();
@@ -2138,6 +2141,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	boolean enteredGame;
 	UINT8 lastsafelap;
 	UINT8 lastsafecheatcheck;
+	UINT16 bigwaypointgap;
 
 	roundconditions_t roundconditions;
 	boolean saveroundconditions;
@@ -2209,6 +2213,31 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	// SRB2kart
 	memcpy(&itemRoulette, &players[player].itemRoulette, sizeof (itemRoulette));
 	memcpy(&respawn, &players[player].respawn, sizeof (respawn));
+
+	// Here's the exact scenario:
+	// - Respawn with Ring Shooter (or lightsnake in general)
+	// - Spectate, re-enter the game
+	// - Now respawn.pointxyz is set to where the player
+	//   spectated
+	// - K_DoIngameRespawn will be called after
+	//   G_PlayerReborn (in P_MovePlayerToCheatcheck)
+	// - If the respawn state is not reset here, then the
+	//   call to K_DoIngameRespawn will do nothing, and
+	//   respawn.pointxyz will stay the same
+	// - This is bad, because when K_RespawnChecker runs, it
+	//   clears the init state once the player reaches
+	//   respawn.pointxyz
+	// - This is because it assumes respawn.pointxyz is where
+	//   the respawn waypoint is located
+	// - In other words, the init state will reset before
+	//   lightsnake reaches the respawn waypoint
+	// - This is bad because lap cheat prevention relies on
+	//   the init state being cleared after reaching the
+	//   respawn waypoint (because moving to the respawn
+	//   waypoint could cross a finish line the wrong way and
+	//   lose a lap)
+	respawn.state = RESPAWNST_NONE;
+
 	memcpy(&public_key, &players[player].public_key, sizeof(public_key));
 
 	if (betweenmaps || leveltime < introtime)
@@ -2246,6 +2275,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		cheatchecknum = 0;
 		lastsafelap = 0;
 		lastsafecheatcheck = 0;
+		bigwaypointgap = 0;
 
 		saveroundconditions = false;
 		tallyactive = false;
@@ -2293,6 +2323,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 		lastsafelap = players[player].lastsafelap;
 		lastsafecheatcheck = players[player].lastsafecheatcheck;
+		bigwaypointgap = players[player].bigwaypointgap;
 
 		tallyactive = players[player].tally.active;
 		if (tallyactive)
@@ -2366,6 +2397,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->angleturn = playerangleturn;
 	p->lastsafelap = lastsafelap;
 	p->lastsafecheatcheck = lastsafecheatcheck;
+	p->bigwaypointgap = bigwaypointgap;
 
 	// save player config truth reborn
 	p->skincolor = skincolor;
@@ -2596,7 +2628,7 @@ void G_MovePlayerToSpawnOrCheatcheck(INT32 playernum)
 
 mapthing_t *G_FindTeamStart(INT32 playernum)
 {
-	const boolean doprints = P_IsLocalPlayer(&players[playernum]);
+	const boolean doprints = P_IsPartyPlayer(&players[playernum]);
 	INT32 i,j;
 
 	if (!numredctfstarts && !numbluectfstarts) //why even bother, eh?
@@ -2651,7 +2683,7 @@ mapthing_t *G_FindTeamStart(INT32 playernum)
 
 mapthing_t *G_FindBattleStart(INT32 playernum)
 {
-	const boolean doprints = P_IsLocalPlayer(&players[playernum]);
+	const boolean doprints = P_IsPartyPlayer(&players[playernum]);
 	INT32 i, j;
 
 	if (numdmstarts)
@@ -2674,7 +2706,7 @@ mapthing_t *G_FindBattleStart(INT32 playernum)
 
 mapthing_t *G_FindRaceStart(INT32 playernum)
 {
-	const boolean doprints = P_IsLocalPlayer(&players[playernum]);
+	const boolean doprints = P_IsPartyPlayer(&players[playernum]);
 
 	if (numcoopstarts)
 	{
@@ -2770,7 +2802,7 @@ mapthing_t *G_FindRaceStart(INT32 playernum)
 
 mapthing_t *G_FindPodiumStart(INT32 playernum)
 {
-	const boolean doprints = P_IsLocalPlayer(&players[playernum]);
+	const boolean doprints = P_IsPartyPlayer(&players[playernum]);
 
 	if (numcoopstarts)
 	{
@@ -2893,13 +2925,13 @@ mapthing_t *G_FindMapStart(INT32 playernum)
 	{
 		if (nummapthings)
 		{
-			if (P_IsLocalPlayer(&players[playernum]))
+			if (P_IsPartyPlayer(&players[playernum]))
 				CONS_Alert(CONS_ERROR, M_GetText("No player spawns found, spawning at the first mapthing!\n"));
 			spawnpoint = &mapthings[0];
 		}
 		else
 		{
-			if (P_IsLocalPlayer(&players[playernum]))
+			if (P_IsPartyPlayer(&players[playernum]))
 				CONS_Alert(CONS_ERROR, M_GetText("No player spawns found, spawning at the origin!\n"));
 		}
 	}
@@ -3782,7 +3814,7 @@ void G_UpdateVisited(void)
 		return;
 
 	// Neither for tutorial skip material
-	if (nextmapoverride == NEXTMAP_TUTORIALCHALLENGE+1 || tutorialchallenge != TUTORIALSKIP_NONE)
+	if (tutorialchallenge != TUTORIALSKIP_NONE)
 		return;
 
 	// Check if every local player wiped out.
@@ -3791,7 +3823,7 @@ void G_UpdateVisited(void)
 		if (!playeringame[i]) // Not here.
 			continue;
 
-		if (!P_IsLocalPlayer(&players[i])) // Not local.
+		if (!P_IsPartyPlayer(&players[i])) // Not local.
 			continue;
 
 		if (players[i].spectator == true) // Not playing.
@@ -3841,7 +3873,7 @@ void G_HandleSaveLevel(boolean removecondition)
 	|| roundqueue.size == 0)
 		return;
 
-	if (roundqueue.position == 1
+	if ((roundqueue.position == 1 && roundqueue.entries[0].overridden == false)
 	|| players[consoleplayer].lives <= 1) // because a life is lost on reload
 		goto doremove;
 
@@ -4032,14 +4064,64 @@ void G_GetNextMap(void)
 		nextmap = (nextmapoverride-1);
 		setalready = true;
 
-		// Roundqueue integration: Override the current entry!
-		if (nextmap < nummapheaders
-		&& roundqueue.position > 0
-		&& roundqueue.position <= roundqueue.size)
+		// Tutorial Challenge behaviour
+		if (
+			netgame == false
+			&& gametype == GT_TUTORIAL
+			&& nextmap == NEXTMAP_TUTORIALCHALLENGE
+			&& (
+				!gamedata
+				|| gamedata->enteredtutorialchallenge == false
+				|| M_GameTrulyStarted() == true
+			)
+		)
 		{
-			UINT8 entry = roundqueue.position-1;
-			roundqueue.entries[entry].mapnum = nextmap;
-			roundqueue.entries[entry].overridden = true;
+			nextmap = G_MapNumber(tutorialchallengemap);
+			if (nextmap < nummapheaders)
+			{
+				tutorialchallenge = TUTORIALSKIP_INPROGRESS;
+				gamedata->enteredtutorialchallenge = true;
+				// A gamedata save will happen on successful level enter
+
+				// Also set character, color, and follower from profile
+				
+			}
+		}
+
+		if (nextmap < nummapheaders && mapheaderinfo[nextmap])
+		{
+			if (tutorialchallenge == TUTORIALSKIP_INPROGRESS
+			|| (mapheaderinfo[nextmap]->typeoflevel & G_TOLFlag(gametype)) == 0)
+			{
+				INT32 lastgametype = gametype;
+				INT32 newgametype = G_GuessGametypeByTOL(mapheaderinfo[nextmap]->typeoflevel);
+				if (newgametype == -1)
+					newgametype = GT_RACE; // sensible default
+
+				G_SetGametype(newgametype);
+				D_GameTypeChanged(lastgametype);
+			}
+
+			// Roundqueue integration: Override the current entry!
+			if (roundqueue.position > 0
+			&& roundqueue.position <= roundqueue.size)
+			{
+				UINT8 entry = roundqueue.position-1;
+
+				if (grandprixinfo.gp)
+				{
+					K_RejiggerGPRankData(
+						&grandprixinfo.rank,
+						roundqueue.entries[entry].mapnum,
+						roundqueue.entries[entry].gametype,
+						nextmap,
+						gametype);
+				}
+
+				roundqueue.entries[entry].mapnum = nextmap;
+				roundqueue.entries[entry].gametype = gametype;
+				roundqueue.entries[entry].overridden = true;
+			}
 		}
 	}
 	else if (roundqueue.size > 0)
@@ -4094,7 +4176,7 @@ void G_GetNextMap(void)
 
 			// Handle primary queue position update.
 			roundqueue.position++;
-			if (grandprixinfo.gp == false || gametype == roundqueue.entries[0].gametype)
+			if (grandprixinfo.gp == false || gametype == GT_RACE) // roundqueue.entries[0].gametype
 			{
 				roundqueue.roundnum++;
 			}
@@ -4485,30 +4567,36 @@ static void G_DoCompleted(void)
 		{
 			// Return to whence you came with your tail between your legs
 			tutorialchallenge = TUTORIALSKIP_FAILED;
+
+			INT32 lastgametype = gametype;
 			G_SetGametype(GT_TUTORIAL);
+			D_GameTypeChanged(lastgametype);
+
 			nextmapoverride = prevmap+1;
 		}
 		else
 		{
 			// Proceed.
+			// ~toast 161123 (5 years of srb2kart, woooouuuu)
 			nextmapoverride = NEXTMAP_TITLE+1;
+			tutorialchallenge = TUTORIALSKIP_NONE;
 
-			gamedata->finishedtutorialchallenge = true;
+			if (!gamedata->finishedtutorialchallenge)
+			{
+				gamedata->finishedtutorialchallenge = true;
 
-			M_UpdateUnlockablesAndExtraEmblems(true, true);
-			gamedata->deferredsave = true;
+				M_UpdateUnlockablesAndExtraEmblems(true, true);
+				gamedata->deferredsave = true;
+			}
 		}
 	}
 	else
 	{
-		// The "else" might not be strictly needed, but I don't
-		// want the "challenge" map to be considered visited before it's your time.
-		// ~toast 161123 (5 years of srb2kart, woooouuuu)
-		prevmap = gamemap-1;
 		tutorialchallenge = TUTORIALSKIP_NONE;
 	}
 
 	// This can now be set.
+	prevmap = gamemap-1;
 	legitimateexit = false;
 
 	if (!demo.playback)
@@ -4587,31 +4675,6 @@ void G_AfterIntermission(void)
 //
 void G_NextLevel(void)
 {
-	if (
-		gametype == GT_TUTORIAL
-		&& nextmap == NEXTMAP_TUTORIALCHALLENGE
-		&& (
-			!gamedata
-			|| gamedata->enteredtutorialchallenge == false
-			|| M_GameTrulyStarted() == true
-		)
-	)
-	{
-		nextmap = G_MapNumber(tutorialchallengemap);
-		if (
-			nextmap < nummapheaders
-			&& mapheaderinfo[nextmap] != NULL
-			&& mapheaderinfo[nextmap]->typeoflevel != 0
-		)
-		{
-			tutorialchallenge = TUTORIALSKIP_INPROGRESS;
-			G_SetGametype(G_GuessGametypeByTOL(mapheaderinfo[nextmap]->typeoflevel));
-
-			gamedata->enteredtutorialchallenge = true;
-			// A gamedata save will happen on successful level enter
-		}
-	}
-
 	if (nextmap >= NEXTMAP_SPECIAL)
 	{
 		G_EndGame();
@@ -4836,7 +4899,7 @@ void G_DirtyGameData(void)
 // Can be called by the startup code or the menu task.
 //
 
-#define SAV_VERSIONMINOR 4
+#define SAV_VERSIONMINOR 5
 
 void G_LoadGame(void)
 {
@@ -5126,6 +5189,7 @@ void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skippr
 
 	g_reloadingMap = (map == gamemap);
 	gamemap = map;
+	g_lastgametype = gametype;
 
 	automapactive = false;
 	imcontinuing = false;

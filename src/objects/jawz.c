@@ -132,6 +132,7 @@ static void JawzChase(mobj_t *th, boolean grounded)
 			ret->frame |= ((leveltime % 10) / 2) + 5;
 			ret->color = jawz_retcolor(th);
 			ret->renderflags = (ret->renderflags & ~RF_DONTDRAW) | (th->renderflags & RF_DONTDRAW);
+			ret->hitlag = 0; // spawns every tic, so don't inherit player hitlag
 		}
 		else
 		{

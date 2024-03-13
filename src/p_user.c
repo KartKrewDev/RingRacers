@@ -449,7 +449,7 @@ INT32 P_GivePlayerRings(player_t *player, INT32 num_rings)
 	if ((gametyperules & GTR_SPHERES)) // No rings in Battle Mode
 		return 0;
 
-	if (gamedata && num_rings > 0 && P_IsLocalPlayer(player) && gamedata->totalrings <= GDMAX_RINGS)
+	if (gamedata && num_rings > 0 && P_IsPartyPlayer(player) && gamedata->totalrings <= GDMAX_RINGS)
 	{
 		gamedata->totalrings += num_rings;
 	}
@@ -598,13 +598,15 @@ void P_EndingMusic(void)
 	UINT8 bestPos = UINT8_MAX;
 	player_t *bestPlayer = NULL;
 
-	SINT8 i;
+	SINT8 i = MAXPLAYERS;
 
 	// See G_DoCompleted and Y_DetermineIntermissionType
 	boolean nointer = ((modeattacking && (players[consoleplayer].pflags & PF_NOCONTEST))
 		|| (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE));
 
-	for (i = 0; i < MAXPLAYERS; i++)
+	if (K_CheckBossIntro())
+		;
+	else for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i]
 		|| players[i].spectator)
@@ -691,33 +693,36 @@ void P_EndingMusic(void)
 			nointer = true;
 		}
 	}
+	else if (K_IsPlayerLosing(bestPlayer) == true)
+	{
+		jingle = "_lose";
+
+		if (G_GametypeUsesLives() == true)
+		{
+			// A retry will be happening
+			nointer = true;
+		}
+	}
 	else
 	{
-		if (K_IsPlayerLosing(bestPlayer) == true)
+		if (K_CheckBossIntro() == true)
 		{
-			jingle = "_lose";
-
-			if (G_GametypeUsesLives() == true)
-			{
-				// A retry will be happening
-				nointer = true;
-			}
+			jingle = "VSENT";
 		}
-		else if (bestPlayer->position == 1)
-		{
-			jingle = "_first";
-		}
-		else if (K_IsPlayerLosing(bestPlayer) == false)
-		{
-			jingle = "_win";
-		}
-
-		if (modeattacking && !K_IsPlayerLosing(bestPlayer))
+		else if (modeattacking)
 		{
 			if (players[consoleplayer].realtime < oldbest && oldbest != (tic_t)UINT32_MAX)
 				jingle = "newrec";
 			else
 				jingle = "norec";
+		}
+		else if (bestPlayer->position == 1)
+		{
+			jingle = "_first";
+		}
+		else
+		{
+			jingle = "_win";
 		}
 	}
 
@@ -747,7 +752,7 @@ void P_InvincGrowMusic(void)
 	{
 		player_t *player = &players[displayplayers[i]];
 
-		if (!P_IsLocalPlayer(player))
+		if (!P_IsPartyPlayer(player))
 		{
 			// Director cam on another player? Don't play
 			// this.
@@ -1002,13 +1007,13 @@ boolean P_IsMachineLocalPlayer(const player_t *player)
 }
 
 //
-// P_IsLocalPlayer
+// P_IsPartyPlayer
 //
 // Returns true if player is
 // on the local machine
 // (or simulated party)
 //
-boolean P_IsLocalPlayer(const player_t *player)
+boolean P_IsPartyPlayer(const player_t *player)
 {
 	if (player == NULL)
 	{
@@ -1226,7 +1231,7 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 
 	player->pflags |= flags;
 
-	if (P_IsLocalPlayer(player) && (!player->spectator && !demo.playback))
+	if (P_IsPartyPlayer(player) && (!player->spectator && !demo.playback))
 	{
 		legitimateexit = true;
 		player->roundconditions.checkthisframe = true;
@@ -1268,7 +1273,7 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 
 	K_UpdatePowerLevelsFinalize(player, false);
 
-	if (P_IsLocalPlayer(player) && !specialout && musiccountdown == 0)
+	if (G_IsPartyLocal(player - players) && !specialout && musiccountdown == 0)
 	{
 		Music_Play("finish_silence");
 		musiccountdown = MUSIC_COUNTDOWN_MAX;
@@ -1778,9 +1783,10 @@ static void P_DoBubbleBreath(player_t *player)
 	fixed_t z = player->mo->z;
 	mobj_t *bubble = NULL;
 
-	if (!(player->mo->eflags & MFE_UNDERWATER) || player->spectator)
+	if (!(player->mo->eflags & MFE_UNDERWATER) || player->spectator || player->curshield == KSHIELD_BUBBLE)
 		return;
 
+#if 0
 	if (player->charflags & SF_MACHINE)
 	{
 		if (P_RandomChance(PR_BUBBLE, FRACUNIT/5))
@@ -1794,22 +1800,54 @@ static void P_DoBubbleBreath(player_t *player)
 		}
 	}
 	else
+#endif
 	{
+		fixed_t topspeed = K_GetKartSpeed(player, false, false);
+		fixed_t f = FixedDiv(player->speed, topspeed/2);
+
 		if (player->mo->eflags & MFE_VERTICALFLIP)
 			z += player->mo->height - FixedDiv(player->mo->height,5*(FRACUNIT/4));
 		else
 			z += FixedDiv(player->mo->height,5*(FRACUNIT/4));
 
-		if (P_RandomChance(PR_BUBBLE, FRACUNIT/16))
+		if (P_RandomChance(PR_BUBBLE, FixedMul(FRACUNIT/16, FRACUNIT + 3*f)))
+		{
+			UINT32 seed = P_GetRandSeed(PR_BUBBLE);
+			x += P_RandomRange(PR_BUBBLE, -16, 16) * player->mo->scale;
+			y += P_RandomRange(PR_BUBBLE, -16, 16) * player->mo->scale;
+			z += P_RandomRange(PR_BUBBLE, -16, 16) * player->mo->scale;
+			P_SetRandSeed(PR_BUBBLE, seed);
 			bubble = P_SpawnMobj(x, y, z, MT_SMALLBUBBLE);
-		else if (P_RandomChance(PR_BUBBLE, 3*FRACUNIT/256))
+		}
+		else if (P_RandomChance(PR_BUBBLE, FixedMul(3*FRACUNIT/256, FRACUNIT + 3*f)))
+		{
+			UINT32 seed = P_GetRandSeed(PR_BUBBLE);
+			x += P_RandomRange(PR_BUBBLE, -16, 16) * player->mo->scale;
+			y += P_RandomRange(PR_BUBBLE, -16, 16) * player->mo->scale;
+			z += P_RandomRange(PR_BUBBLE, -16, 16) * player->mo->scale;
+			P_SetRandSeed(PR_BUBBLE, seed);
 			bubble = P_SpawnMobj(x, y, z, MT_MEDIUMBUBBLE);
+		}
+
+		if (bubble)
+		{
+			bubble->color = SKINCOLOR_TEAL;
+			bubble->colorized = true;
+
+			f = min(f, 11*FRACUNIT/10);
+			vector3_t v = {FixedMul(player->mo->momx, f), FixedMul(player->mo->momy, f), FixedMul(player->mo->momz, f)};
+			if (player->mo->standingslope)
+				P_QuantizeMomentumToSlope(&v, player->mo->standingslope);
+			bubble->momx += v.x;
+			bubble->momy += v.y;
+			bubble->momz += v.z;
+		}
 	}
 
 	if (bubble)
 	{
 		bubble->threshold = 42;
-		bubble->destscale = player->mo->scale;
+		bubble->destscale = 3 * player->mo->scale / 2;
 		P_SetScale(bubble, bubble->destscale);
 	}
 }
@@ -3266,10 +3304,21 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 		if (turn > turnspeed)
 		{
+			// TODO: this code let the panning angle flip
+			// depending on your camera angle when entering
+			// the loop.
+			// It caused just about every loop to look weird
+			// sometimes, since the camera could move
+			// differently than configured.
+			// I don't know if this behavior should ever come
+			// back, but in case it should, I'm leaving this
+			// comment here.
+#if 0
 			if (turn < ANGLE_90)
 			{
 				turnspeed = -(turnspeed);
 			}
+#endif
 
 			focusangle += turnspeed;
 		}
@@ -3424,7 +3473,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	y = mo->y - FixedMul(FINESINE((angle>>ANGLETOFINESHIFT) & FINEMASK), distxy);
 
 	// SRB2Kart: set camera panning
-	if (camstill || resetcalled || player->playerstate == PST_DEAD)
+	if (camstill || resetcalled || player->playerstate == PST_DEAD || player->loop.radius)
 		pan = xpan = ypan = 0;
 	else
 	{
@@ -3769,7 +3818,7 @@ void P_DoTimeOver(player_t *player)
 		return;
 	}
 
-	if (P_IsLocalPlayer(player) && !demo.playback)
+	if (P_IsPartyPlayer(player) && !demo.playback)
 	{
 		legitimateexit = true; // SRB2kart: losing a race is still seeing it through to the end :p
 		player->roundconditions.checkthisframe = true;
@@ -3795,7 +3844,7 @@ void P_DoTimeOver(player_t *player)
 		P_DamageMobj(player->mo, NULL, NULL, 1, DMG_TIMEOVER);
 	}
 
-	if (P_IsLocalPlayer(player) && musiccountdown == 0)
+	if (G_IsPartyLocal(player - players) && musiccountdown == 0)
 	{
 		Music_Play("finish_silence");
 		musiccountdown = MUSIC_COUNTDOWN_MAX;
@@ -4172,7 +4221,7 @@ void P_PlayerThink(player_t *player)
 			// SRB2Kart: despite how perfect this is, it's disabled FOR A REASON
 			if (racecountdown == 11*TICRATE - 1)
 			{
-				if (P_IsLocalPlayer(player))
+				if (P_IsPartyPlayer(player))
 					S_ChangeMusicInternal("drown", false);
 			}
 #endif
@@ -4700,7 +4749,7 @@ void P_CheckRaceGriefing(player_t *player, boolean dopunishment)
 	if (dopunishment && !player->griefWarned && player->griefValue >= (griefMax/2))
 	{
 		K_AddMessageForPlayer(player, "Get moving!", true, false);
-		if (P_IsLocalPlayer(player))
+		if (P_IsPartyPlayer(player))
 			S_StartSound(NULL, sfx_cftbl0);
 		player->griefWarned = true;
 	}

@@ -365,7 +365,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 				break;
 			}
 
-			if (!P_IsLocalPlayer(&players[i]))
+			if (!P_IsPartyPlayer(&players[i]))
 			{
 				continue;
 			}
@@ -530,7 +530,7 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 	boolean (*_isHighlightedPlayer)(const player_t *) =
 		(demo.playback
 			? P_IsDisplayPlayer
-			: P_IsLocalPlayer
+			: P_IsPartyPlayer
 		);
 
 	boolean doreverse = (
@@ -1328,7 +1328,7 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 		else if (
 			roundqueue.entries[i].overridden == true
 			|| (grandprixinfo.gp == true
-				&& roundqueue.entries[i].gametype != roundqueue.entries[0].gametype)
+				&& roundqueue.entries[i].gametype != GT_RACE) // roundqueue.entries[0].gametype
 		)
 		{
 			if ((gametypes[roundqueue.entries[i].gametype]->rules & GTR_PRISONS) == GTR_PRISONS)
@@ -1972,6 +1972,172 @@ void Y_DetermineIntermissionType(void)
 	}
 }
 
+static UINT8 Y_PlayersBestPossiblePosition(player_t *const player)
+{
+	UINT8 bestPossiblePosition = MAXPLAYERS + 1;
+	UINT8 i = UINT8_MAX;
+
+	if ((player->pflags & PF_NOCONTEST) == 0)
+	{
+		if (player->exiting)
+		{
+			// They are finished, so their position is set in stone.
+			bestPossiblePosition = player->position;
+		}
+		else
+		{
+			// If they're NOT finished, then check what their points could be
+			// if they finished in the first available position.
+			bestPossiblePosition = 1;
+
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				player_t *const other = &players[i];
+
+				if (!playeringame[i] || other->spectator)
+				{
+					continue;
+				}
+
+				if (other == player)
+				{
+					continue;
+				}
+
+				if (other->exiting)
+				{
+					bestPossiblePosition = std::max<UINT8>(bestPossiblePosition, other->position + 1);
+				}
+			}
+		}
+	}
+
+	return bestPossiblePosition;
+}
+
+static UINT32 Y_EstimatePodiumScore(player_t *const player, UINT8 numPlaying)
+{
+	UINT8 pos = Y_PlayersBestPossiblePosition(player);
+	UINT32 ourScore = player->score;
+
+	if (pos < numPlaying)
+	{
+		ourScore += K_CalculateGPRankPoints(pos, numPlaying);
+	}
+
+	return ourScore;
+}
+
+static boolean Y_GuaranteedGPFirstPlace(void)
+{
+	player_t *bestInParty = nullptr;
+	UINT32 bestPartyScore = 0;
+
+	UINT8 numPlaying = spectateGriefed;
+
+	UINT8 i = UINT8_MAX;
+
+	// Quick first loop to count players.
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		player_t *const comparePlayer = &players[i];
+
+		if (!playeringame[i] || comparePlayer->spectator)
+		{
+			continue;
+		}
+
+		numPlaying++;
+	}
+
+	// Iterate our party, estimate the best possible exiting score out of all of them.
+	for (i = 0; i <= r_splitscreen; i++)
+	{
+		player_t *const comparePlayer = &players[displayplayers[i]];
+
+		if (comparePlayer->spectator)
+		{
+			continue;
+		}
+
+		if (!comparePlayer->exiting)
+		{
+			continue;
+		}
+
+		UINT32 newScore = Y_EstimatePodiumScore(comparePlayer, numPlaying);
+		if (bestInParty == nullptr || newScore > bestPartyScore)
+		{
+			bestInParty = comparePlayer;
+			bestPartyScore = newScore;
+		}
+	}
+
+	if (bestInParty == nullptr)
+	{
+		// No partied players are actually available,
+		// so always use the regular intermission music.
+		return false;
+	}
+
+	// Iterate through all players not belonging to our party.
+	// Estimate the possible scores that they could get.
+	// Play special music only if none of these scores beat ours!
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		player_t *comparePlayer = &players[i];
+
+		if (!playeringame[i] || comparePlayer->spectator)
+		{
+			continue;
+		}
+
+		if (P_IsPartyPlayer(comparePlayer))
+		{
+			continue;
+		}
+
+		if (Y_EstimatePodiumScore(comparePlayer, numPlaying) >= bestPartyScore)
+		{
+			// NO, there is a chance that we will NOT finish first!
+			// You may still be able to finish first, but it is NOT guaranteed.
+			return false;
+		}
+	}
+
+	// There is an overwhelmingly good chance
+	// that we are finishing in first place.
+	return true;
+}
+
+void Y_PlayIntermissionMusic(void)
+{
+	if (modeattacking != ATTACKING_NONE)
+	{
+		Music_Remap("intermission", "timent");
+	}
+	else if (grandprixinfo.gp == true
+		&& grandprixinfo.cup != nullptr
+		&& roundqueue.size > 0
+		&& roundqueue.roundnum >= grandprixinfo.cup->numlevels)
+	{
+		if (Y_GuaranteedGPFirstPlace())
+		{
+			Music_Remap("intermission", "gprnds");
+		}
+		else
+		{
+			Music_Remap("intermission", "gprnd5");
+		}
+	}
+	else
+	{
+		Music_Remap("intermission", "racent");
+	}
+
+	Music_Play("intermission");
+}
+
 //
 // Y_StartIntermission
 //
@@ -2106,7 +2272,7 @@ void Y_StartIntermission(void)
 
 	if (musiccountdown == 0)
 	{
-		Music_PlayIntermission();
+		Y_PlayIntermissionMusic();
 	}
 
 	S_ShowMusicCredit(); // Always call

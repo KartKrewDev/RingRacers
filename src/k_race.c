@@ -241,11 +241,15 @@ static void K_DrawFinishLineBeamForLine(fixed_t offset, angle_t aiming, line_t *
 	const fixed_t xstep = FixedDiv(line->dx, linelength);
 	const fixed_t ystep = FixedDiv(line->dy, linelength);
 
+	const boolean passable = (leveltime >= starttime || G_TimeAttackStart());
+
 	fixed_t linex = line->v1->x;
 	fixed_t liney = line->v1->y;
 	angle_t lineangle = line->angle + ANGLE_90;
 
 	UINT8 i;
+
+	fixed_t dist[4] = {INT32_MAX, INT32_MAX, INT32_MAX, INT32_MAX};
 
 	if (line->flags & ML_NOCLIMB)
 	{
@@ -283,7 +287,7 @@ static void K_DrawFinishLineBeamForLine(fixed_t offset, angle_t aiming, line_t *
 		y = liney + FixedMul(FixedMul(FINISHLINEBEAM_SPACING, FINESINE(lineangle >> ANGLETOFINESHIFT)), FINECOSINE(aiming >> ANGLETOFINESHIFT));
 		z = FINISHLINEBEAM_SPACING + FixedMul(FINISHLINEBEAM_SPACING, FINESINE(aiming >> ANGLETOFINESHIFT));
 
-		if (leveltime >= starttime || G_TimeAttackStart())
+		if (passable)
 		{
 			spriteframe = 4; // Weakest sprite when passable
 		}
@@ -316,6 +320,16 @@ static void K_DrawFinishLineBeamForLine(fixed_t offset, angle_t aiming, line_t *
 				{
 					beam->color = colorcycle[(leveltime / 4) % COLORCYCLELEN];
 				}
+
+				fixed_t n =
+					R_PointToDist2(
+						players[displayplayers[i]].mo->x,
+						players[displayplayers[i]].mo->y,
+						beam->x,
+						beam->y
+					);
+				if (dist[i] > n)
+					dist[i] = n;
 			}
 		}
 
@@ -387,6 +401,16 @@ static void K_DrawFinishLineBeamForLine(fixed_t offset, angle_t aiming, line_t *
 
 				P_SetTarget(&end2->tracer, end1);
 				end2->flags2 |= MF2_LINKDRAW;
+			}
+
+			if (!passable && leveltime % 40 == 0)
+			{
+				const fixed_t maxdist = 1280 * mapobjectscale;
+				const fixed_t mindist = 320 * mapobjectscale;
+				fixed_t f = min(dist[i], maxdist);
+				f = max(f, mindist);
+				S_StartSoundAtVolume(players[i].mo, sfx_s3k73,
+					FixedMul(FRACUNIT - FixedDiv(f - mindist, maxdist - mindist), 255));
 			}
 		}
 	}

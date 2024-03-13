@@ -1259,6 +1259,7 @@ Rloadtextures (INT32 i, INT32 w)
 #ifndef NO_PNG_LUMPS
 			size_t lumplength;
 #endif
+			INT32 width, height;
 
 			if (wadfiles[w]->type == RET_PK3)
 			{
@@ -1271,6 +1272,54 @@ Rloadtextures (INT32 i, INT32 w)
 			lumplength = W_LumpLengthPwad(wadnum, lumpnum);
 #endif
 
+#ifndef NO_PNG_LUMPS
+			if (Picture_IsLumpPNG((UINT8 *)&patchlump, lumplength))
+			{
+				UINT8 *png = W_CacheLumpNumPwad(wadnum, lumpnum, PU_CACHE);
+				Picture_PNGDimensions(png, &width, &height, NULL, NULL, lumplength);
+				width = (INT16)width;
+				height = (INT16)height;
+				Z_Free(png);
+			}
+			else
+#endif
+			{
+				width = SHORT(patchlump.width);
+				height = SHORT(patchlump.height);
+			}
+
+			INT32 sizeLimit = 2048;
+			if (w <= mainwads)
+			{
+				// TODO: we ran out of time to do this properly.
+				// 4096 limit on textures may be incompatible with some older graphics cards (circa 2005-2008?).
+				// This only a consideration for Legacy GL at the moment -- these will still work in Software.
+				// In the future, we may rely more on hardware rendering and this would become a problem.
+				sizeLimit = 4096;
+#ifdef DEVELOP
+				if ((width > 2048 && width < sizeLimit) || (height > 2048 && height < sizeLimit))
+				{
+					R_InsertTextureWarning(
+						" \x87(2.x developer warning, will not appear on release)\n"
+						"\x87These textures should ideally not be larger than 2048x2048:\n",
+						va("\x86%s", wadfiles[wadnum]->lumpinfo[lumpnum].fullname)
+					);
+				}
+#endif
+			}
+			if (width > sizeLimit || height > sizeLimit)
+			{
+				// This is INTENTIONAL. Even if software can handle it, very old GL hardware will not.
+				// For the sake of a compatibility baseline, we will not allow anything larger than this.
+				char header[1024];
+				sprintf(header,
+					"Texture patch size cannot be greater than %dx%d!\n"
+					"List of affected textures:\n",
+					sizeLimit, sizeLimit);
+				R_InsertTextureWarning(header, va("\x82" "WARNING: %s", wadfiles[wadnum]->lumpinfo[lumpnum].fullname));
+				continue;
+			}
+
 			//CONS_Printf("\n\"%s\" is a single patch, dimensions %d x %d",W_CheckNameForNumPwad((UINT16)w,texstart+j),patchlump->width, patchlump->height);
 			texture = textures[i] = Z_Calloc(sizeof(texture_t) + sizeof(texpatch_t), PU_STATIC, NULL);
 
@@ -1278,22 +1327,8 @@ Rloadtextures (INT32 i, INT32 w)
 			M_Memcpy(texture->name, W_CheckNameForNumPwad(wadnum, lumpnum), sizeof(texture->name));
 			texture->hash = quickncasehash(texture->name, 8);
 
-#ifndef NO_PNG_LUMPS
-			if (Picture_IsLumpPNG((UINT8 *)&patchlump, lumplength))
-			{
-				UINT8 *png = W_CacheLumpNumPwad(wadnum, lumpnum, PU_CACHE);
-				INT32 width, height;
-				Picture_PNGDimensions(png, &width, &height, NULL, NULL, lumplength);
-				texture->width = (INT16)width;
-				texture->height = (INT16)height;
-				Z_Free(png);
-			}
-			else
-#endif
-			{
-				texture->width = SHORT(patchlump.width);
-				texture->height = SHORT(patchlump.height);
-			}
+			texture->width = width;
+			texture->height = height;
 
 			texture->type = TEXTURETYPE_SINGLEPATCH;
 			texture->patchcount = 1;
@@ -1491,13 +1526,6 @@ void R_LoadTextures(void)
 	for (w = 0; w < numwadfiles; w++)
 	{
 		newtextures += R_CountTextures((UINT16)w);
-
-#ifdef DEVELOP
-		if (w == mainwads)
-		{
-			maintextures = newtextures;
-		}
-#endif
 	}
 
 	// If no textures found by this point, bomb out
@@ -1509,13 +1537,22 @@ void R_LoadTextures(void)
 	for (i = 0, w = 0; w < numwadfiles; w++)
 	{
 		i = R_DefineTextures(i, w);
+
+#ifdef DEVELOP
+		if (w == mainwads)
+		{
+			maintextures = i;
+		}
+#endif
 	}
 
-	R_FinishLoadingTextures(newtextures);
+	R_FinishLoadingTextures(i);
 
 #ifdef DEVELOP
 	R_CheckTextureDuplicates(0, maintextures);
 #endif
+
+	R_PrintTextureWarnings();
 }
 
 void R_LoadTexturesPwad(UINT16 wadnum)
@@ -1523,8 +1560,10 @@ void R_LoadTexturesPwad(UINT16 wadnum)
 	INT32 newtextures = R_CountTextures(wadnum);
 
 	R_AllocateTextures(newtextures);
-	R_DefineTextures(numtextures, wadnum);
+	newtextures = R_DefineTextures(numtextures, wadnum);
 	R_FinishLoadingTextures(newtextures);
+
+	R_PrintTextureWarnings();
 }
 
 static texpatch_t *R_ParsePatch(boolean actuallyLoadPatch)

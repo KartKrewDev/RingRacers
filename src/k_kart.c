@@ -422,6 +422,13 @@ fixed_t K_GetKartGameSpeedScalar(SINT8 value)
 	// Hard = 118.75%
 	// Nightmare = 137.5% ?!?!
 
+	// WARNING: This value is used instead of directly checking game speed in some
+	// cases, where hard difficulty breakpoints are needed, but compatibility with
+	// the "4th Gear" cheat seemed relevant. Sorry about the weird indirection!
+	// At the time of writing:
+	// K_UpdateOffroad (G3+ double offroad penalty speed)
+	// P_ButteredSlope (G1- Slope Assist)
+
 	if (cv_4thgear.value && !netgame && (!demo.playback || !demo.netgame) && !modeattacking)
 		value = 3;
 
@@ -1210,8 +1217,10 @@ static void K_UpdateOffroad(player_t *player)
 	// If you are in offroad, a timer starts.
 	if (offroadstrength)
 	{
+		UINT8 offramp = (K_GetKartGameSpeedScalar(gamespeed) > FRACUNIT ? 2 : 1);
+
 		if (player->offroad < offroadstrength)
-			player->offroad += offroadstrength / TICRATE;
+			player->offroad += offroadstrength * offramp / TICRATE;
 
 		if (player->offroad > offroadstrength)
 			player->offroad = offroadstrength;
@@ -2875,6 +2884,8 @@ boolean K_SlopeResistance(const player_t *player)
 
 tripwirepass_t K_TripwirePassConditions(const player_t *player)
 {
+	UINT8 tripwirereq = player->offroad ? 3 : 2;
+
 	if (
 			player->invincibilitytimer ||
 			player->sneakertimer
@@ -2883,7 +2894,7 @@ tripwirepass_t K_TripwirePassConditions(const player_t *player)
 
 	if (
 			player->flamedash ||
-			(player->speed > 2 * K_GetKartSpeed(player, false, false) && player->tripwireReboundDelay == 0)
+			(player->speed > (tripwirereq * K_GetKartSpeed(player, false, false)) && player->tripwireReboundDelay == 0)
 	)
 		return TRIPWIRE_BOOST;
 
@@ -3373,8 +3384,13 @@ static void K_GetKartBoostPower(player_t *player)
 	if (player->driftboost) // Drift Boost
 	{
 		// Rebuff Eggman's stat block corner
-		const INT32 heavyAccel = ((9 - player->kartspeed) * 2) + (player->kartweight - 1);
-		const fixed_t heavyAccelBonus = FRACUNIT + ((heavyAccel * maxmetabolismincrease * 2) / 24);
+		// const INT32 heavyAccel = ((9 - player->kartspeed) * 2) + (player->kartweight - 1);
+		// const fixed_t heavyAccelBonus = FRACUNIT + ((heavyAccel * maxmetabolismincrease * 2) / 24);
+
+		// hello commit from 18 months ago, The Situation Has Changed.
+		// We buffed rings so many times that weight needs a totally different class of change!
+		// I've left the old formulas in, in case I'm smoking dick, but this was sorely needed in TA especially.
+		const fixed_t herbalfolkmedicine = FRACUNIT + FRACUNIT*(player->kartweight-1)/12 + FRACUNIT*(8-player->kartspeed)/32;
 
 		fixed_t driftSpeed = FRACUNIT/4; // 25% base
 
@@ -3385,7 +3401,10 @@ static void K_GetKartBoostPower(player_t *player)
 		}
 
 		// Bottom-left bonus
-		driftSpeed = FixedMul(driftSpeed, heavyAccelBonus);
+		// driftSpeed = FixedMul(driftSpeed, heavyAccelBonus);
+
+		// Fucking bonus ever
+		driftSpeed = FixedMul(driftSpeed, herbalfolkmedicine);
 
 		ADDBOOST(driftSpeed, 4*FRACUNIT, 0); // + variable top speed, + 400% acceleration, +0% handling
 	}
@@ -6750,7 +6769,7 @@ void K_DoInvincibility(player_t *player, tic_t time)
 		P_SetScale(overlay, player->mo->scale);
 	}
 
-	if (P_IsLocalPlayer(player) == false)
+	if (P_IsPartyPlayer(player) == false)
 	{
 		S_StartSound(player->mo, sfx_alarmi);
 	}
@@ -7957,7 +7976,7 @@ static void K_UpdateInvincibilitySounds(player_t *player)
 {
 	INT32 sfxnum = sfx_None;
 
-	if (player->mo->health > 0 && !P_IsLocalPlayer(player)) // used to be !P_IsDisplayPlayer(player)
+	if (player->mo->health > 0 && !P_IsPartyPlayer(player)) // used to be !P_IsDisplayPlayer(player)
 	{
 		if (player->invincibilitytimer > 0) // Prioritize invincibility
 			sfxnum = sfx_alarmi;
@@ -8093,9 +8112,7 @@ void K_KartPlayerHUDUpdate(player_t *player)
 			player->karthud[khud_ringspblock] = (leveltime % 14); // reset to normal anim next time
 	}
 
-	if (player->exiting
-	&& (specialstageinfo.valid == false
-		|| !(player->pflags & PF_NOCONTEST)))
+	if (player->exiting && !(player->pflags & PF_NOCONTEST))
 	{
 		if (player->karthud[khud_finish] <= 2*TICRATE)
 			player->karthud[khud_finish]++;
@@ -8643,10 +8660,15 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	}
 	else if (player->ringboost)
 	{
-		// These values can get FUCKED ever since ring-stacking speed changes.
-		// If we're not actively being awarded rings, roll off extreme ringboost durations.
+		// If a Ring Box or Super Ring isn't paying out, aggressively reduce
+		// extreme ringboost duration. Less aggressive for accel types, so they
+		// retain more speed for small payouts.
+
+		UINT8 roller = TICRATE*2;
+		roller += 4*(8-player->kartspeed);
+
 		if (player->superring == 0)
-			player->ringboost -= max((player->ringboost / TICRATE / 2), 1);
+			player->ringboost -= max((player->ringboost / roller), 1);
 		else
 			player->ringboost--;
 	}
@@ -8809,7 +8831,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			K_RemoveGrowShrink(player);
 	}
 
-	if (player->respawn.state == RESPAWNST_NONE && (player->cmd.buttons & BT_RESPAWN) == BT_RESPAWN)
+	if (player->respawn.state != RESPAWNST_MOVE && (player->cmd.buttons & BT_RESPAWN) == BT_RESPAWN)
 	{
 		player->finalfailsafe++; // Decremented by ringshooter to "freeze" this timer
 		// Part-way through the auto-respawn timer, you can tap Ring Shooter to respawn early
@@ -9306,6 +9328,12 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->mo->sprzoff += P_RandomRange(PR_DECORATION, -4, 4) * player->mo->scale;
 
 		player->icecube.shaketimer--;
+	}
+
+	if ((player->mo->eflags & MFE_UNDERWATER) && player->curshield != KSHIELD_BUBBLE)
+	{
+		if (player->breathTimer < UINT16_MAX)
+			player->breathTimer++;
 	}
 }
 
@@ -10029,9 +10057,14 @@ static void K_UpdatePlayerWaypoints(player_t *const player)
 	else
 	{
 		// Reset the auto respawn timer if distance changes are back to normal.
-		if (player->bigwaypointgap <= AUTORESPAWN_THRESHOLD + 1)
+		if (player->bigwaypointgap && player->bigwaypointgap <= AUTORESPAWN_THRESHOLD + 1)
 		{
 			player->bigwaypointgap = 0;
+
+			// While the player was in the "bigwaypointgap" state, laps did not change from crossing finish lines.
+			// So reset the lap back to normal, in case they were able to get behind the line.
+			player->laps = player->lastsafelap;
+			player->cheatchecknum = player->lastsafecheatcheck;
 		}
 	}
 
@@ -10184,7 +10217,7 @@ static fixed_t K_GetUnderwaterStrafeMul(const player_t *player)
 
 	baseline = 2 * K_GetKartSpeed(player, true, true) / 3;
 
-	return max(0, FixedDiv(player->speed - minSpeed, baseline - minSpeed));
+	return max(0, FixedDiv(max(player->speed, minSpeed) - minSpeed, baseline - minSpeed));
 }
 
 INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
@@ -10439,6 +10472,9 @@ static void K_KartDrift(player_t *player, boolean onground)
 			S_StartSound(player->mo, sfx_s23c);
 			//K_SpawnDashDustRelease(player);
 
+			// Used to detect useful driftboosts.
+			UINT8 oldDriftBoost = player->driftboost;
+
 			// Airtime means we're not gaining speed. Get grounded!
 			if (!onground)
 				player->mo->momz -= player->speed/2;
@@ -10514,6 +10550,13 @@ static void K_KartDrift(player_t *player, boolean onground)
 				S_StartSound(player->mo, sfx_gshba);
 				player->trickcharge = 0;
 				player->infinitether = TICRATE*2;
+			}
+
+			// If you actually used a useful driftboost, adjust the added boost, biasing towards bottom-right.
+			// Everyone else has speed-retention mechanics they can chain into themselves: Metal needs help!
+			if (player->driftboost > oldDriftBoost)
+			{
+				player->driftboost = (38 + player->kartweight + player->kartspeed) * player->driftboost / 40;
 			}
 		}
 
@@ -10979,7 +11022,7 @@ void K_KartUpdatePosition(player_t *player)
 	}
 
 	// Special stages: fade out music near the finish line
-	if (P_IsLocalPlayer(player))
+	if (P_IsPartyPlayer(player))
 	{
 		K_FadeOutSpecialMusic(player->distancetofinish);
 	}
@@ -11972,19 +12015,47 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		player->ringboxdelay--;
 		if (player->ringboxdelay == 0)
 		{
-			UINT32 behind = K_GetItemRouletteDistance(player, player->itemRoulette.playing);
-			UINT32 behindMulti = behind / 500;
-			behindMulti = min(behindMulti, 60);
-
-
 			UINT32 award = 5*player->ringboxaward + 10;
 			if (!cv_thunderdome.value)
 				award = 3 * award / 2;
-			award = award * (behindMulti + 10) / 10;
 
-			// SPB Attack is hard, but we're okay with that.
 			if (modeattacking & ATTACKING_SPB)
+			{
+				// SPB Attack is hard.
 				award = award / 2;
+			}
+			else if (modeattacking)
+			{
+				// At high distance values, the power of Ring Box is mainly an extra source of speed, to be
+				// stacked with power items (or itself!) during the payout period.
+				// Low-dist Ring Box follows some special rules, to somewhat normalize the reward between stat
+				// blocks that respond to rings differently; here, variance in payout period counts for a lot!
+
+				UINT8 accel = 10-player->kartspeed;
+				UINT8 weight = player->kartweight;
+
+				// Fixed point math can suck a dick.
+
+				if (accel > weight)
+				{
+					accel *= 10;
+					weight *= 3;
+				}
+				else
+				{
+					accel *= 3;
+					weight *= 10;
+				}
+				
+				award = (110 + accel + weight) * award / 120;
+			}
+			else
+			{
+				UINT32 behind = K_GetItemRouletteDistance(player, player->itemRoulette.playing);
+				UINT32 behindMulti = behind / 500;
+				behindMulti = min(behindMulti, 60);
+				award = award * (behindMulti + 10) / 10;
+			}	
 
 			K_AwardPlayerRings(player, award, true);
 			player->ringboxaward = 0;
@@ -12568,7 +12639,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									player->mo->destscale = FixedMul(player->mo->destscale, SHRINK_SCALE);
 								}
 
-								if (P_IsLocalPlayer(player) == false && player->invincibilitytimer == 0)
+								if (P_IsPartyPlayer(player) == false && player->invincibilitytimer == 0)
 								{
 									// don't play this if the player has invincibility -- that takes priority
 									S_StartSound(player->mo, sfx_alarmg);

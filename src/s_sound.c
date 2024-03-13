@@ -37,6 +37,7 @@
 #include "i_time.h"
 #include "v_video.h" // V_ThinStringWidth
 #include "music.h"
+#include "y_inter.h" // Y_PlayIntermissionMusic
 
 extern consvar_t cv_mastervolume;
 
@@ -1217,7 +1218,7 @@ void S_AttemptToRestoreMusic(void)
 			}
 			// FALLTHRU
 		case GS_INTERMISSION:
-			Music_PlayIntermission();
+			Y_PlayIntermissionMusic();
 			break;
 		case GS_CEREMONY:
 			Music_Play("level");
@@ -1291,6 +1292,11 @@ static void S_InsertMapIntoSoundTestSequence(UINT16 map, musicdef_t ***tail)
 	{
 		S_InsertMusicAtSoundTestSequenceTail(mapheaderinfo[map]->associatedmus[i], map, ALTREF_REQUIRESBEATEN, tail);
 	}
+
+	for (i = 0; i < mapheaderinfo[map]->encoremusname_size; i++)
+	{
+		S_InsertMusicAtSoundTestSequenceTail(mapheaderinfo[map]->encoremusname[i], map, i+MAXMUSNAMES, tail);
+	}
 }
 
 void S_PopulateSoundTestSequence(void)
@@ -1316,7 +1322,22 @@ void S_PopulateSoundTestSequence(void)
 
 	tail = &soundtest.sequence.next;
 
-	// We iterate over all cups.
+	// We iterate over all tutorial maps.
+	for (i = 0; i < nummapheaders; i++)
+	{
+		if (!mapheaderinfo[i])
+			continue;
+
+		if (mapheaderinfo[i]->cup != NULL)
+			continue;
+
+		if ((mapheaderinfo[i]->typeoflevel & TOL_TUTORIAL) == 0)
+			continue;
+
+		S_InsertMapIntoSoundTestSequence(i, &tail);
+	}
+
+	// Next, we iterate over all cups.
 	{
 		cupheader_t *cup;
 		for (cup = kartcupheaders; cup; cup = cup->next)
@@ -1337,13 +1358,16 @@ void S_PopulateSoundTestSequence(void)
 		}
 	}
 
-	// Then, we iterate over all non-cupped maps.
+	// Then, we iterate over all remaining non-cupped maps.
 	for (i = 0; i < nummapheaders; i++)
 	{
 		if (!mapheaderinfo[i])
 			continue;
 
 		if (mapheaderinfo[i]->cup != NULL)
+			continue;
+
+		if (mapheaderinfo[i]->typeoflevel & TOL_TUTORIAL)
 			continue;
 
 		S_InsertMapIntoSoundTestSequence(i, &tail);
@@ -1416,17 +1440,33 @@ static boolean S_SoundTestDefLocked(musicdef_t *def)
 	&& !(header->records.mapvisited & MV_VISITED))
 		return true;
 
-	// Associated music only when completed
-	if ((def->sequence.altref == ALTREF_REQUIRESBEATEN)
-	&& !(header->records.mapvisited & MV_BEATEN))
-		return true;
-
-	if (def->sequence.altref != 0 && def->sequence.altref < header->musname_size)
+	if (def->sequence.altref != 0)
 	{
-		// Alt music requires unlocking the alt
-		if ((header->cache_muslock[def->sequence.altref - 1] < MAXUNLOCKABLES)
-		&& gamedata->unlocked[header->cache_muslock[def->sequence.altref - 1]] == false)
-			return true;
+		if ((def->sequence.altref == ALTREF_REQUIRESBEATEN))
+		{
+			// Associated music only when completed
+			if (!(header->records.mapvisited & MV_BEATEN))
+				return true;
+		}
+		else if (def->sequence.altref < MAXMUSNAMES)
+		{
+			// Alt music requires unlocking the alt
+			if ((header->cache_muslock[def->sequence.altref - 1] < MAXUNLOCKABLES)
+			&& gamedata->unlocked[header->cache_muslock[def->sequence.altref - 1]] == false)
+				return true;
+		}
+		else if (def->sequence.altref < MAXMUSNAMES*2)
+		{
+			// Encore!
+			if (M_SecretUnlocked(SECRET_ENCORE, true) == false)
+				return true;
+
+			// Side B of the same CD
+			if (def->sequence.altref > MAXMUSNAMES
+			&& (header->cache_muslock[def->sequence.altref - (1 + MAXMUSNAMES)] < MAXUNLOCKABLES)
+			&& gamedata->unlocked[header->cache_muslock[def->sequence.altref - (1 + MAXMUSNAMES)]] == false)
+				return true;
+		}
 	}
 
 	// Finally, do a full-fat map check.
@@ -1671,10 +1711,7 @@ const char *S_SoundTestTune(UINT8 invert)
 
 boolean S_SoundTestCanSequenceFade(void)
 {
-	return
-		soundtest.current->basenoloop[soundtest.currenttrack] == false &&
-		// Only fade out if we're the last track for this song.
-		soundtest.currenttrack == soundtest.current->numtracks-1;
+	return soundtest.current->basenoloop[soundtest.currenttrack] == false;
 }
 
 static void S_SoundTestReconfigure(const char *tune)
@@ -1709,12 +1746,16 @@ void S_SoundTestPlay(void)
 	}
 
 	// Does song have default loop?
-	if (soundtest.current->basenoloop[soundtest.currenttrack] == false)
+	if (S_SoundTestCanSequenceFade() == true)
 	{
+		// I'd personally like songs in sequence to last between 3 and 6 minutes.
 		if (sequencemaxtime < 3*60*1000)
 		{
-			// I'd personally like songs in sequence to last between 3 and 6 minutes.
-			const UINT32 loopduration = (sequencemaxtime - I_GetSongLoopPoint());
+			const UINT32 looppoint = I_GetSongLoopPoint();
+			const UINT32 loopduration =
+				(looppoint < sequencemaxtime)
+				? sequencemaxtime - looppoint
+				: 0;
 
 			if (!loopduration)
 				;
@@ -1724,6 +1765,16 @@ void S_SoundTestPlay(void)
 			} while (sequencemaxtime < 4*1000);
 			// If the track is EXTREMELY short, keep adding until about 4s!
 		}
+	}
+
+	// Only the last track fades out... but we still use stereo_fade to handle stopping.
+	if (soundtest.currenttrack == soundtest.current->numtracks-1)
+	{
+		Music_SetFadeOut("stereo_fade", 5000);
+	}
+	else
+	{
+		Music_SetFadeOut("stereo_fade", 0);
 	}
 
 	Music_DelayEnd(

@@ -1077,7 +1077,8 @@ static void M_PrecacheLevelLocks(void)
 				if (map < nummapheaders
 					&& mapheaderinfo[map])
 				{
-					for (j = 1; j < mapheaderinfo[map]->musname_size; j++)
+					UINT8 greatersize = max(mapheaderinfo[map]->musname_size, mapheaderinfo[map]->encoremusname_size);
+					for (j = 1; j < greatersize; j++)
 					{
 						if (mapheaderinfo[map]->cache_muslock[j - 1] != MAXUNLOCKABLES)
 						{
@@ -1143,7 +1144,7 @@ static void M_PrecacheLevelLocks(void)
 
 						break;
 					}
-					if (j == mapheaderinfo[map]->musname_size)
+					if (j == greatersize)
 						CONS_Alert(CONS_ERROR, "Unlockable %u: Too many SECRET_ALTMUSICs associated with Level %s\n", i+1, mapheaderinfo[map]->lumpname);
 				}
 				else

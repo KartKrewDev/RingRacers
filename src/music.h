@@ -59,9 +59,9 @@ const char *Music_CurrentId(void);
 // back to the start.)
 void Music_Play(const char *id);
 
-// Same as Music_Play, but a convenience for remapping intermission
-// based on game state.
-void Music_PlayIntermission(void);
+// Set fade out duration. Mostly to fix a last minute bug
+// with Stereo Mode.
+void Music_SetFadeOut(const char* id, int fade_out);
 
 // Postpone the end of this tune until N tics from now. The
 // tune should already be playing before calling this.

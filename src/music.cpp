@@ -195,6 +195,14 @@ void Music_Init(void)
 		tune.fade_out = 5000;
 		tune.fade_out_inclusive = false;
 	}
+
+	{
+		Tune& tune = g_tunes.insert("challenge_altmusic");
+
+		tune.priority = 100;
+		tune.resist = true;
+		tune.credit = true;
+	}
 }
 
 void Music_Tick(void)
@@ -218,18 +226,21 @@ void Music_Play(const char* id)
 	}
 }
 
-void Music_PlayIntermission(void)
+void Music_SetFadeOut(const char* id, int fade_out)
 {
-	// why aren't the ATTACK_ enums declared alongside modeattacking?
-	if (modeattacking != 0)
+	Tune* tune = g_tunes.find(id);
+
+	if (tune)
 	{
-		Music_Remap("intermission", "timent");
+		tune->fade_out = fade_out;
+
+		if (tune->time_remaining() <= detail::msec_to_tics(tune->fade_out))
+		{
+			// If this action would cause a fade out, start
+			// fading immediately.
+			g_tunes.tick();
+		}
 	}
-	else
-	{
-		Music_Remap("intermission", "racent");
-	}
-	Music_Play("intermission");
 }
 
 void Music_DelayEnd(const char* id, tic_t duration)

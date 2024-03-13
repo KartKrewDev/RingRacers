@@ -5229,7 +5229,7 @@ void M_DrawProfileControls(void)
 		boolean standardbuttons = gamedata->gonerlevel > GDGONER_PROFILE;
 		INT32 xpos = BASEVIDWIDTH - 12;
 		xpos = standardbuttons ?
-			M_DrawProfileLegend(xpos, ypos, "\xB2/  \xBC Clear", NULL) :
+			M_DrawProfileLegend(xpos, ypos, "\xB2 / \xBC  Clear", NULL) :
 			M_DrawProfileLegend(xpos, ypos, "Clear", "BKSP");
 	}
 
@@ -6927,18 +6927,38 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 		}
 		case SECRET_MAP:
 		{
-			const char *gtname = "INVALID HEADER";
+			boolean validdraw = false;
+			const char *gtname = "Find your prize...";
 			UINT16 mapnum = M_UnlockableMapNum(ref);
 
-			K_DrawMapThumbnail(
-				(x-50)<<FRACBITS, (146+2)<<FRACBITS,
-				80<<FRACBITS,
-				0,
-				mapnum,
-				NULL);
-
-			if (mapnum < nummapheaders && mapheaderinfo[mapnum] != NULL)
+			if (mapnum >= nummapheaders
+				|| mapheaderinfo[mapnum] == NULL
+				|| mapheaderinfo[mapnum]->menuflags & LF2_HIDEINMENU)
 			{
+				gtname = "INVALID HEADER";
+			}
+			else if (
+				( // Check for visitation
+					(mapheaderinfo[mapnum]->menuflags & LF2_NOVISITNEEDED)
+					|| (mapheaderinfo[mapnum]->records.mapvisited & MV_VISITED)
+				) && ( // Check for completion
+					!(mapheaderinfo[mapnum]->menuflags & LF2_FINISHNEEDED)
+					|| (mapheaderinfo[mapnum]->records.mapvisited & MV_BEATEN)
+				)
+			)
+			{
+				validdraw = true;
+			}
+
+			if (validdraw)
+			{
+				K_DrawMapThumbnail(
+					(x-50)<<FRACBITS, (146+2)<<FRACBITS,
+					80<<FRACBITS,
+					0,
+					mapnum,
+					NULL);
+
 				INT32 guessgt = G_GuessGametypeByTOL(mapheaderinfo[mapnum]->typeoflevel);
 
 				if (guessgt == -1)
@@ -6963,6 +6983,15 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 						gtname = gametypes[guessgt]->name;
 					}
 				}
+			}
+			else
+			{
+				V_DrawFixedPatch(
+					(x-50)<<FRACBITS, (146+2)<<FRACBITS,
+					FRACUNIT,
+					0,
+					unvisitedlvl[challengesmenu.ticker % 4],
+					NULL);
 			}
 
 			V_DrawThinString(1, BASEVIDHEIGHT-(9+3), 0, gtname);
@@ -7059,6 +7088,90 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 
 
 			break;
+		}
+		case SECRET_ALTMUSIC:
+		{
+			UINT16 map = M_UnlockableMapNum(ref);
+			if (map >= nummapheaders
+				|| !mapheaderinfo[map])
+			{
+				return;
+			}
+
+			UINT8 musicid;
+			for (musicid = 1; musicid < MAXMUSNAMES; musicid++)
+			{
+				if (mapheaderinfo[map]->cache_muslock[musicid - 1] == challengesmenu.currentunlock)
+					break;
+			}
+
+			if (musicid == MAXMUSNAMES)
+			{
+				return;
+			}
+
+			spritedef_t *sprdef = &sprites[SPR_ALTM];
+			spriteframe_t *sprframe;
+			patch_t *patch;
+			UINT32 addflags = 0;
+
+			x -= 10;
+			y += 15;
+
+			if (sprdef->numframes)
+			{
+				sprframe = &sprdef->spriteframes[0];
+				patch = W_CachePatchNum(sprframe->lumppat[0], PU_CACHE);
+
+				if (sprframe->flip & 1) // Only for first sprite
+				{
+					addflags ^= V_FLIP; // This sprite is left/right flipped!
+				}
+
+				V_DrawFixedPatch(x*FRACUNIT, (y+2)*FRACUNIT, FRACUNIT/2, addflags, patch, NULL);
+			}
+
+			x = 8;
+			y = BASEVIDHEIGHT-16;
+
+			const boolean thismusplaying = Music_Playing("challenge_altmusic");
+			boolean pushed = false;
+			const char *song = NULL;
+
+			if (M_SecretUnlocked(SECRET_ENCORE, true)
+				&& musicid < mapheaderinfo[map]->encoremusname_size)
+			{
+				if (thismusplaying)
+				{
+					song = Music_Song("challenge_altmusic");
+					pushed = strcmp(song, mapheaderinfo[map]->encoremusname[musicid]) == 0;
+				}
+
+				K_drawButton(x&FRACUNIT, y*FRACUNIT, 0, kp_button_l, pushed);
+				x += SHORT(kp_button_l[0]->width);
+				V_DrawThinString(x, y + 1, (pushed ? V_GRAYMAP : highlightflags), "E Side");
+
+				x = 8;
+				y -= 10;
+			}
+
+			if (musicid < mapheaderinfo[map]->musname_size)
+			{
+				if (pushed || !thismusplaying)
+				{
+					pushed = false;
+				}
+				else
+				{
+					if (!song)
+						song = Music_Song("challenge_altmusic");
+					pushed = strcmp(song, mapheaderinfo[map]->musname[musicid]) == 0;
+				}
+
+				K_drawButton(x*FRACUNIT, y*FRACUNIT, 0, kp_button_a[1], pushed);
+				x += SHORT(kp_button_a[1][0]->width);
+				V_DrawThinString(x, y + 1, (pushed ? V_GRAYMAP : highlightflags), "Play CD");
+			}
 		}
 		default:
 		{
@@ -8330,7 +8443,7 @@ void M_DrawSoundTest(void)
 	{
 		UINT32 currenttime = min(Music_Elapsed(tune), Music_TotalDuration(tune));
 
-		V_DrawRightAlignedMenuString(x + 272-1, 18+32, 0,
+		V_DrawRightAlignedThinString(x + 272-1, 18+32, 0,
 			va("%02u:%02u",
 				G_TicsToMinutes(currenttime, true),
 				G_TicsToSeconds(currenttime)
@@ -8344,7 +8457,7 @@ void M_DrawSoundTest(void)
 	{
 		UINT32 exittime = Music_TotalDuration(tune);
 
-		V_DrawRightAlignedMenuString(x + 272-1, 18+32+10, 0,
+		V_DrawRightAlignedThinString(x + 272-1, 18+32+10, 0,
 			va("%02u:%02u",
 				G_TicsToMinutes(exittime, true),
 				G_TicsToSeconds(exittime)

@@ -11,6 +11,7 @@
 #include <cctype>
 #include <cstdint>
 #include <filesystem>
+#include <map>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -28,6 +29,7 @@ namespace
 {
 
 std::unordered_map<std::string, std::vector<const texture_t*>> g_dups;
+std::map<std::string, std::vector<std::string>> g_warnings;
 std::thread g_dups_thread;
 
 std::string key8char(const char cstr[8])
@@ -146,15 +148,37 @@ void R_PrintTextureDuplicates(void)
 		g_dups_thread.join();
 	}
 
-	if (g_dups.empty())
-	{
-		return;
-	}
-
 	for (auto [key, v] : g_dups)
 	{
 		std::for_each(v.cbegin(), v.cend(), print_dup);
 	}
 
 	g_dups = {};
+
+	R_PrintTextureWarnings();
+}
+
+void R_InsertTextureWarning(const char *header, const char *warning)
+{
+	g_warnings[header].push_back(warning);
+}
+
+void R_PrintTextureWarnings(void)
+{
+	if (g_dups_thread.joinable())
+	{
+		return;
+	}
+
+	for (auto [header, v] : g_warnings)
+	{
+		CONS_Alert(CONS_WARNING, "\n%s", header.c_str());
+
+		for (const std::string& warning : v)
+		{
+			CONS_Printf("%s\n", warning.c_str());
+		}
+	}
+
+	g_warnings = {};
 }

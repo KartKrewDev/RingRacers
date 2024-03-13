@@ -1957,6 +1957,11 @@ static void K_HandleLapIncrement(player_t *player)
 				player->roundconditions.checkthisframe = true;
 			}
 
+			if (P_IsDisplayPlayer(player))
+			{
+				S_StartSound(player->mo, sfx_s3kb2);
+			}
+
 			return;
 		}
 
@@ -2192,7 +2197,7 @@ static void K_HandleLapIncrement(player_t *player)
 
 			lastLowestLap = lowestLap;
 
-			if (P_IsLocalPlayer(player))
+			if (P_IsPartyPlayer(player))
 			{
 				player->roundconditions.checkthisframe = true;
 				gamedata->deferredconditioncheck = true;
@@ -3186,7 +3191,7 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 			break;
 
 		case 423: // Change Sky
-			if ((mo && mo->player && P_IsLocalPlayer(mo->player)) || args[1])
+			if ((mo && mo->player && P_IsPartyPlayer(mo->player)) || args[1])
 				P_SetupLevelSky(stringargs[0], args[1]);
 			break;
 
@@ -3196,7 +3201,7 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 				globalweather = (UINT8)(args[0]);
 				P_SwitchWeather(globalweather);
 			}
-			else if (mo && mo->player && P_IsLocalPlayer(mo->player))
+			else if (mo && mo->player && P_IsPartyPlayer(mo->player))
 				P_SwitchWeather(args[0]);
 			break;
 

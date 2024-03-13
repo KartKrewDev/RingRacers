@@ -824,6 +824,15 @@ static void P_TickMusicFade(void)
 	g_musicfade.ticked = true;
 }
 
+static void P_StartLevelMusic(void)
+{
+	if (!Music_Playing("level_nosync"))
+	{
+		// Do not stop level_nosync
+		Music_Play(P_UseContinuousLevelMusic() ? "level_nosync" : "level");
+	}
+}
+
 //
 // P_Ticker
 //
@@ -895,7 +904,7 @@ void P_Ticker(boolean run)
 				if (playeringame[i])
 					G_WriteDemoTiccmd(&players[i].cmd, i);
 		}
-		if (demo.playback)
+		if (demo.playback && !demo.waitingfortally)
 		{
 			G_ReadDemoExtraData();
 			for (i = 0; i < MAXPLAYERS; i++)
@@ -1024,7 +1033,7 @@ void P_Ticker(boolean run)
 			// Bosses have a punchy start, so no position.
 			if (leveltime == 1)
 			{
-				Music_Play("level");
+				P_StartLevelMusic();
 			}
 		}
 		else if (leveltime < starttime + TICRATE)
@@ -1032,11 +1041,7 @@ void P_Ticker(boolean run)
 			if (leveltime == (starttime + (TICRATE/2)))
 			{
 				// Plays the music after the starting countdown.
-				if (!Music_Playing("level_nosync"))
-				{
-					// Do not stop level_nosync
-					Music_Play((gametyperules & GTR_NOPOSITION) ? "level_nosync" : "level");
-				}
+				P_StartLevelMusic();
 			}
 			else if (starttime != introtime)
 			{
@@ -1065,9 +1070,9 @@ void P_Ticker(boolean run)
 
 		if (modeattacking != ATTACKING_NONE)
 		{
-			if (leveltime == 4 && !Music_Playing("level_nosync"))
+			if (leveltime == 4)
 			{
-				Music_Play("level_nosync");
+				P_StartLevelMusic();
 			}
 		}
 
@@ -1145,9 +1150,12 @@ void P_Ticker(boolean run)
 					exitcountdown--;
 				}
 
-				if (server && exitcountdown == 1)
+				if (exitcountdown == 1)
 				{
-					SendNetXCmd(XD_EXITLEVEL, NULL, 0);
+					if (demo.playback)
+						G_FinishExitLevel();
+					else if (server)
+						SendNetXCmd(XD_EXITLEVEL, NULL, 0);
 				}
 			}
 		}
@@ -1199,14 +1207,15 @@ void P_Ticker(boolean run)
 			if (cv_recordmultiplayerdemos.value && demo.savebutton && demo.savebutton + 3*TICRATE < leveltime)
 				G_CheckDemoTitleEntry();
 		}
-		else if (demo.playback) // Use Ghost data for consistency checks.
+		else if (demo.playback && !demo.waitingfortally) // Use Ghost data for consistency checks.
 		{
 			G_ConsAllGhostTics();
 		}
 
 		if (modeattacking)
 		{
-			G_GhostTicker();
+			if (!demo.waitingfortally)
+				G_GhostTicker();
 			if (!demo.playback)
 				G_TickTimeStickerMedals();
 		}

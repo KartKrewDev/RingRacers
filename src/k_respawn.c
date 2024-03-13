@@ -110,6 +110,12 @@ void K_DoFault(player_t *player)
 		S_StartSound(player->mo, sfx_s3k83);
 		player->karthud[khud_fault] = 1;
 		player->pflags |= PF_FAULT;
+
+		if (P_IsDisplayPlayer(player))
+		{
+			S_StartSound(player->mo, sfx_s3kb2);
+		}
+
 		player->mo->renderflags |= RF_DONTDRAW;
 		player->mo->flags |= MF_NOCLIPTHING;
 
@@ -499,6 +505,13 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 				player->respawn.distanceleft -= player->respawn.wp->nextwaypointdistances[nwp];
 			}
 			else
+			{
+				player->respawn.distanceleft = 0;
+			}
+
+			// Almost all legitimate driving, no matter how clumsy, should be faster than death in TA.
+			// Advance only as far as we need to prevent respawn loops!
+			if (modeattacking)
 			{
 				player->respawn.distanceleft = 0;
 			}

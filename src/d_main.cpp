@@ -1629,9 +1629,9 @@ void D_SRB2Main(void)
 	mainwads++; // unlocks.pk3
 #endif
 	mainwads++; // staffghosts.pk3
+	mainwads++; // shaders.pk3
 
 #endif //ifndef DEVELOP
-	mainwads++; // shaders.pk3
 
 	// Load credits_def lump
 	F_LoadCreditsDefinitions();

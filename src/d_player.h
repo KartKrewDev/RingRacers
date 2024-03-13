@@ -48,6 +48,7 @@ typedef enum
 {
 	SF_MACHINE          = 1, // Beep boop. Are you a robot?
 	SF_IRONMAN			= 1<<1, // Pick a new skin during POSITION. I main Random!
+	SF_BADNIK			= 1<<2, // Explodes on death
 	// free up to and including 1<<31
 } skinflags_t;
 
@@ -690,8 +691,8 @@ struct player_t
 
 	SINT8 drift;			// (-5 to 5) - Drifting Left or Right, plus a bigger counter = sharper turn
 	fixed_t driftcharge;	// Charge your drift so you can release a burst of speed
-	UINT8 driftboost;		// (0 to 125) - Boost you get from drifting
-	UINT8 strongdriftboost; // (0 to 125) - While active, boost from drifting gives a stronger speed increase
+	UINT16 driftboost;		// (0 to 125 baseline) - Boost you get from drifting
+	UINT16 strongdriftboost; // (0 to 125) - While active, boost from drifting gives a stronger speed increase
 
 	UINT16 gateBoost;		// Juicebox Manta Ring boosts
 	UINT8 gateSound;		// Sound effect combo
@@ -809,6 +810,8 @@ struct player_t
 	tic_t spheredigestion;
 
 	SINT8 glanceDir; // Direction the player is trying to look backwards in
+
+	UINT16 breathTimer; // Holding your breath underwater
 
 	//////////////
 	// rideroid //

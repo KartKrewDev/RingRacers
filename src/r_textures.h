@@ -114,6 +114,9 @@ lumpnum_t R_GetFlatNumForName(const char *name);
 void R_CheckTextureDuplicates(INT32 start, INT32 end);
 void R_PrintTextureDuplicates(void);
 
+void R_InsertTextureWarning(const char *header, const char *warning);
+void R_PrintTextureWarnings(void);
+
 extern INT32 numtextures;
 
 extern INT32 g_texturenum_dbgline;

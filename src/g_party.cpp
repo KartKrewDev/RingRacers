@@ -101,7 +101,7 @@ public:
 	bool local() const
 	{
 		// consoleplayer is not valid yet.
-		if (!addedtogame)
+		if (!addedtogame && !demo.playback)
 		{
 			return false;
 		}

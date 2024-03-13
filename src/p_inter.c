@@ -695,7 +695,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				if (!P_CanPickupEmblem(player, special->health - 1))
 					return;
 
-				if (!P_IsLocalPlayer(player))
+				if (!P_IsPartyPlayer(player))
 				{
 					// Must be party.
 					return;
@@ -733,7 +733,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 					return;
 				}
 
-				if (!P_IsLocalPlayer(player))
+				if (!P_IsPartyPlayer(player))
 				{
 					// Must be party.
 					return;
@@ -832,7 +832,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 					return;
 				}
 
-				if (!P_IsLocalPlayer(player))
+				if (!P_IsPartyPlayer(player))
 				{
 					// Must be party.
 					return;
@@ -1634,6 +1634,40 @@ boolean P_CheckRacers(void)
 	return false;
 }
 
+static void P_SpawnBadnikExplosion(mobj_t *target)
+{
+	UINT8 count = 24;
+	angle_t ang = 0;
+	angle_t step = ANGLE_MAX / count;
+	fixed_t spd = 8 * mapobjectscale;
+	for (UINT8 i = 0; i < count; ++i)
+	{
+		mobj_t *x = P_SpawnMobjFromMobjUnscaled(
+			target,
+			P_RandomRange(PR_EXPLOSION, -48, 48) * target->scale,
+			P_RandomRange(PR_EXPLOSION, -48, 48) * target->scale,
+			P_RandomRange(PR_EXPLOSION, -48, 48) * target->scale,
+			MT_THOK
+		);
+		P_InstaScale(x, 3 * x->scale / 2);
+		P_InstaThrust(x, ang, spd);
+		x->momz = P_RandomRange(PR_EXPLOSION, -4, 4) * mapobjectscale;
+		P_SetMobjStateNF(x, S_BADNIK_EXPLOSION1);
+		ang += step;
+	}
+	// burst effects (copied from MT_ITEMCAPSULE)
+	ang = FixedAngle(360*P_RandomFixed(PR_ITEM_DEBRIS));
+	for (UINT8 i = 0; i < 2; i++)
+	{
+		mobj_t *blast = P_SpawnMobjFromMobj(target, 0, 0, target->info->height >> 1, MT_BATTLEBUMPER_BLAST);
+		blast->angle = ang + i*ANGLE_90;
+		P_SetScale(blast, 2*blast->scale/3);
+		blast->destscale = 6*blast->scale;
+		blast->scalespeed = (blast->destscale - blast->scale) / 30;
+		P_SetMobjStateNF(blast, S_BADNIK_EXPLOSION_SHOCKWAVE1 + i);
+	}
+}
+
 /** Kills an object.
   *
   * \param target    The victim.
@@ -1673,7 +1707,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 	target->flags2 &= ~(MF2_SKULLFLY|MF2_NIGHTSPULL);
 	target->health = 0; // This makes it easy to check if something's dead elsewhere.
 
-	if (target->type != MT_BATTLEBUMPER)
+	if (target->type != MT_BATTLEBUMPER && target->type != MT_PLAYER)
 	{
 		target->shadowscale = 0;
 	}
@@ -1885,6 +1919,8 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				// so make sure that this draws at the correct angle.
 				target->rollangle = 0;
 
+				target->player->instaWhipCharge = 0;
+
 				fixed_t inflictorSpeed = 0;
 				if (!P_MobjWasRemoved(inflictor))
 				{
@@ -1895,10 +1931,19 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 					}
 				}
 
-				P_InstaThrust(target, flingAngle, max(flingSpeed, 14 * target->scale));
-				P_SetObjectMomZ(target, 20*FRACUNIT, false);
+				boolean battle = (gametyperules & (GTR_BUMPERS | GTR_BOSS)) == GTR_BUMPERS;
+				P_InstaThrust(target, flingAngle, max(flingSpeed, 6 * target->scale) / (battle ? 1 : 3));
+				P_SetObjectMomZ(target, battle ? 20*FRACUNIT : 18*FRACUNIT, false);
 
 				P_PlayDeathSound(target);
+
+				if (skins[target->player->skin].flags & SF_BADNIK)
+				{
+					P_SpawnBadnikExplosion(target);
+					target->spritexscale = 2*FRACUNIT;
+					target->spriteyscale = 2*FRACUNIT;
+					target->flags |= MF_NOSQUISH;
+				}
 			}
 
 			// Prisons Free Play: don't eliminate P1 for

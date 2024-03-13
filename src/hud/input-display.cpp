@@ -73,7 +73,13 @@ void K_DrawInputDisplay(float x, float y, INT32 flags, char mode, UINT8 pid, boo
 	};
 	auto alpha_to_flag = [](int alpha) { return (9 - alpha) << V_ALPHASHIFT; };
 
-	int alpha = fade_in();
+	// No assigned device? Well, you got to this screen somehow.
+	// Use menu behavior to guess from connected devices.
+	boolean guessinput = (G_GetDeviceForPlayer(pid) == -1);
+
+	// PLEASE DO NOT DANNY FUCKING PHANTOM ON THE PROFILE CONTROLS MENU
+	int alpha = (mode == '_') ? 9 : fade_in();
+
 	if (alpha == 0)
 		return;
 
@@ -83,7 +89,7 @@ void K_DrawInputDisplay(float x, float y, INT32 flags, char mode, UINT8 pid, boo
 	auto gfx = [&](auto format, auto&&... args) { return prefix + fmt::format(format, args...); };
 	auto but = [&](char key, INT32 gc, UINT32 bt)
 	{
-		bool press = local ? G_PlayerInputAnalog(pid, gc, 0) : ((cmd.buttons & bt) == bt);
+		bool press = local ? G_PlayerInputAnalog(pid, gc, guessinput) : ((cmd.buttons & bt) == bt);
 		return gfx(press ? "BT{}B" : "BT{}", key);
 	};
 
@@ -94,8 +100,8 @@ void K_DrawInputDisplay(float x, float y, INT32 flags, char mode, UINT8 pid, boo
 
 	Vec2<float> dpad = local ?
 		Vec2<float> {
-			(G_PlayerInputAnalog(pid, gc_right, 0) - G_PlayerInputAnalog(pid, gc_left, 0)) / (float)JOYAXISRANGE,
-			(G_PlayerInputAnalog(pid, gc_up, 0) - G_PlayerInputAnalog(pid, gc_down, 0)) / (float)JOYAXISRANGE,
+			(G_PlayerInputAnalog(pid, gc_right, guessinput) - G_PlayerInputAnalog(pid, gc_left, guessinput)) / (float)JOYAXISRANGE,
+			(G_PlayerInputAnalog(pid, gc_up, guessinput) - G_PlayerInputAnalog(pid, gc_down, guessinput)) / (float)JOYAXISRANGE,
 		} :
 		Vec2<float> {
 			-cmd.turning / (float)KART_FULLTURN,

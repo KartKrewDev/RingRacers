@@ -10,8 +10,21 @@
 #include "../../d_main.h" // D_StartTitle
 #include "../../k_credits.h"
 #include "../../g_demo.h"
+#include "../../k_director.h"
 
 static void M_PlaybackTick(void);
+
+// This is barebones, just toggle director on all screens.
+static void M_PlaybackToggleDirector(INT32 choice)
+{
+	(void)choice;
+
+	UINT8 i;
+	for (i = 0; i <= r_splitscreen; ++i)
+	{
+		K_ToggleDirector(i, !K_DirectorIsEnabled(i));
+	}
+}
 
 menuitem_t PAUSE_PlaybackMenu[] =
 {
@@ -30,8 +43,9 @@ menuitem_t PAUSE_PlaybackMenu[] =
 	{IT_ARROWS | IT_STRING, "Viewpoint 3",			NULL, "M_PNVIEW",	{.routine = M_PlaybackAdjustView},		120, 0},
 	{IT_ARROWS | IT_STRING, "Viewpoint 4",			NULL, "M_PNVIEW",	{.routine = M_PlaybackAdjustView},		136, 0},
 
-	{IT_CALL   | IT_STRING, "Toggle Free Camera",	NULL, "M_PVIEWS",	{.routine = M_PlaybackToggleFreecam},	156, 0},
-	{IT_CALL   | IT_STRING, "Stop Playback",		NULL, "M_PEXIT",	{.routine = M_PlaybackQuit},			172, 0},
+	{IT_CALL   | IT_STRING, "Toggle Director",		NULL, "UN_IC11A",	{.routine = M_PlaybackToggleDirector},	156, 0},
+	{IT_CALL   | IT_STRING, "Toggle Free Camera",	NULL, "M_PVIEWS",	{.routine = M_PlaybackToggleFreecam},	172, 0},
+	{IT_CALL   | IT_STRING, "Stop Playback",		NULL, "M_PEXIT",	{.routine = M_PlaybackQuit},			188, 0},
 };
 
 menu_t PAUSE_PlaybackMenuDef = {
@@ -39,7 +53,7 @@ menu_t PAUSE_PlaybackMenuDef = {
 	NULL,
 	0,
 	PAUSE_PlaybackMenu,
-	BASEVIDWIDTH/2 - 88, 2,
+	BASEVIDWIDTH/2 - 96, 2,
 	0, 0,
 	MBF_UD_LR_FLIPPED,
 	NULL,
@@ -54,19 +68,61 @@ menu_t PAUSE_PlaybackMenuDef = {
 
 void M_EndModeAttackRun(void)
 {
-	if (demo.playback)
+	// End recording / playback.
+	// Why not check demo.recording?
+	// Because for recording, this may be called from G_AfterIntermission.
+	// And before this function is called, G_SaveDemo is called, which sets demo.recording to false.
+	// Don't need to check demo.playback; G_CheckDemoStatus is safe to call even outside of demos.
+	// Check modeattacking because this function is recursively called (read on for an explanation).
+	if (modeattacking)
 	{
-		G_CheckDemoStatus(); // Cancel recording
-		return;
+		// This must be called for both playback and
+		// recording, because it both finishes playback and
+		// frees ghost data.
+		G_CheckDemoStatus();
+
+		// What does G_CheckDemoStatus do? Here's the answer!
+
+		// Playback:
+		// - Clears everything, including demo state and modeattacking.
+		// - It then calls the current function (M_EndModeAttackRun) AGAIN (after everything was cleared), so return.
+		if (!modeattacking)
+			return;
+
+		// Recording:
+		// - Only saves the demo and clears the demo state.
+		// - Now we need to clear the rest of the gamestate ourself!
 	}
 
-	Command_ExitGame_f(); // Clear a bunch of state
+	// Playback: modeattacking is always false, so calling this returns to the menu.
+	// Recording: modeattacking is still true and this function call preserves that.
+	Command_ExitGame_f();
 
 	if (!modeattacking)
 		return;
 
-	modeattacking = ATTACKING_NONE; // Kept until now because of Command_ExitGame_f
+	// The rest of this is relevant for recording ONLY.
 
+	if (nextmapoverride != 0)
+	{
+		M_StartMessage(
+			"Secret Exit",
+			va(
+				"No finish time was recorded.\n"
+				"Secrets don't work in Record modes!\n"
+				"Try again in %s.\n",
+				(gametype == GT_RACE)
+					? "Grand Prix or Match Race"
+					: "Grand Prix"
+			),
+			NULL, MM_NOTHING, NULL, NULL
+		);
+	}
+
+	// Command_ExitGame_f didn't clear this, so now we do.
+	modeattacking = ATTACKING_NONE;
+
+	// Return to the menu.
 	if (demo.attract == DEMO_ATTRACT_TITLE)
 	{
 		D_SetDeferredStartTitle(true);
@@ -113,7 +169,7 @@ static void M_PlaybackTick(void)
 
 	if (modeattacking)
 	{
-		for (i = playback_viewcount; i <= playback_view4; i++)
+		for (i = playback_viewcount; i <= playback_director; i++)
 			PAUSE_PlaybackMenu[i].status = IT_DISABLED;
 
 		PAUSE_PlaybackMenu[playback_freecam].mvar1 = 72;
@@ -124,17 +180,18 @@ static void M_PlaybackTick(void)
 	else
 	{
 		PAUSE_PlaybackMenu[playback_viewcount].status = IT_ARROWS|IT_STRING;
+		PAUSE_PlaybackMenu[playback_freecam].status = IT_CALL|IT_STRING;
 
 		for (i = 0; i <= r_splitscreen; i++)
 			PAUSE_PlaybackMenu[playback_view1+i].status = IT_ARROWS|IT_STRING;
 		for (i = r_splitscreen+1; i < 4; i++)
 			PAUSE_PlaybackMenu[playback_view1+i].status = IT_DISABLED;
 
-		PAUSE_PlaybackMenu[playback_freecam].mvar1 = 156;
-		PAUSE_PlaybackMenu[playback_quit].mvar1 = 172;
+		PAUSE_PlaybackMenu[playback_freecam].mvar1 = 172;
+		PAUSE_PlaybackMenu[playback_quit].mvar1 = 188;
 
 		//currentMenu->x = BASEVIDWIDTH/2 - 94;
-		currentMenu->x = BASEVIDWIDTH/2 - 88;
+		currentMenu->x = BASEVIDWIDTH/2 - 96;
 	}
 }
 

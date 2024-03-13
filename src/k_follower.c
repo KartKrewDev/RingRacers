@@ -110,7 +110,7 @@ boolean K_SetFollowerByName(INT32 playernum, const char *skinname)
 		}
 	}
 
-	if (P_IsLocalPlayer(player))
+	if (P_IsPartyPlayer(player))
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found.\n"), skinname);
 	}
@@ -181,7 +181,7 @@ void K_SetFollowerByNum(INT32 playernum, INT32 skinnum)
 		return;
 	}
 
-	if (P_IsLocalPlayer(player))
+	if (P_IsPartyPlayer(player))
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Follower %d not found\n"), skinnum);
 	}
@@ -738,7 +738,7 @@ void K_FollowerHornTaunt(player_t *taunter, player_t *victim, boolean mysticmelo
 			(demo.playback == false) // No downloading somebody else's replay
 			&& (fl->hornsound == sfx_melody) // Must be the Mystic Melody
 			&& (taunter->bot == false) // No getting your puppies to do it for you
-			&& P_IsLocalPlayer(taunter) // Must be in your party
+			&& P_IsPartyPlayer(taunter) // Must be in your party
 			&& !(mapheaderinfo[gamemap-1]->records.mapvisited & MV_MYSTICMELODY) // Not already done
 		);
 	}

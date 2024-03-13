@@ -1174,7 +1174,7 @@ void P_ButteredSlope(mobj_t *mo)
 		// Easy / Battle: SUPER NERF slope climbs, so that they're usually possible without resources.
 		// (New players suck at budgeting, and may not remember they have spindash / rings at all!)
 		// Special exception for Tutorial because we're trying to teach slope mechanics there.
-		if (gamespeed == KARTSPEED_EASY && gametype != GT_TUTORIAL)
+		if (K_GetKartGameSpeedScalar(gamespeed) < FRACUNIT && gametype != GT_TUTORIAL)
 		{
 			// Same as above, but use facing angle:
 			angle_t easyangle = mo->angle - mo->standingslope->xydirection;

@@ -1548,8 +1548,9 @@ skippedghosttic:
 		if (*g->p == DEMOMARKER)
 		{
 			g->mo->momx = g->mo->momy = g->mo->momz = 0;
-#if 1 // freeze frame (maybe more useful for time attackers)
+#if 0 // freeze frame (maybe more useful for time attackers) (2024-03-11: you leave it behind anyway!)
 			g->mo->colorized = true;
+			g->mo->fuse = 10*TICRATE;
 			if (follow)
 				follow->colorized = true;
 #else // dissapearing act
@@ -3269,6 +3270,7 @@ void G_DoPlayDemo(const char *defdemoname)
 	consoleplayer = 0;
 	memset(playeringame,0,sizeof(playeringame));
 	memset(displayplayers,0,sizeof(displayplayers));
+	memset(camera,0,sizeof(camera)); // reset freecam
 
 	// Load players that were in-game when the map started
 	p = READUINT8(demobuf.p);
@@ -3957,6 +3959,7 @@ void G_StopDemo(void)
 	demobuf.buffer = NULL;
 	demo.playback = false;
 	demo.timing = false;
+	demo.waitingfortally = false;
 	g_singletics = false;
 
 	{
@@ -3988,7 +3991,13 @@ boolean G_CheckDemoStatus(void)
 		if (demo.quitafterplaying)
 			I_Quit();
 
-		if (multiplayer && !demo.attract)
+		// When this replay was recorded, the player skipped
+		// the Tally and ended the demo early.
+		// Keep the demo open and don't boot to intermission
+		// YET, pause demo playback.
+		if (!demo.waitingfortally && modeattacking && exitcountdown)
+			demo.waitingfortally = true;
+		else if (!demo.attract)
 			G_FinishExitLevel();
 		else
 		{
@@ -4023,6 +4032,7 @@ boolean G_CheckDemoStatus(void)
 	Z_Free(demobuf.buffer);
 
 	demo.recording = false;
+	demo.waitingfortally = false;
 
 	return false;
 }

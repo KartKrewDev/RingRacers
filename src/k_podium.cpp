@@ -1247,7 +1247,14 @@ void K_ResetCeremony(void)
 			mapmusrng = 0;
 		}
 
-		while (mapmusrng >= std::max<UINT8>(1, mapheaderinfo[gamemap-1]->musname_size))
+		UINT8 limit = (encoremode && mapheaderinfo[gamemap-1]->encoremusname_size)
+			? mapheaderinfo[gamemap-1]->encoremusname_size
+			: mapheaderinfo[gamemap-1]->musname_size;
+
+		if (limit < 1)
+			limit = 1;
+
+		while (mapmusrng >= limit)
 		{
 			mapmusrng--;
 		}
