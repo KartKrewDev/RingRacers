@@ -44,7 +44,7 @@ static void M_StartCup(UINT8 entry)
 	if (ssplayers > 0)
 	{
 		// Splitscreen is not accomodated with this recovery feature.
-		entry = 0;
+		entry = UINT8_MAX;
 	}
 
 	S_StartSound(NULL, sfx_s3k63);
@@ -184,7 +184,7 @@ static void M_GPBackup(INT32 choice)
 		{
 			M_StartCup(roundqueue.position-1);
 		}
-			
+
 		return;
 	}
 
