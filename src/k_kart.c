@@ -422,6 +422,13 @@ fixed_t K_GetKartGameSpeedScalar(SINT8 value)
 	// Hard = 118.75%
 	// Nightmare = 137.5% ?!?!
 
+	// WARNING: This value is used instead of directly checking game speed in some
+	// cases, where hard difficulty breakpoints are needed, but compatibility with
+	// the "4th Gear" cheat seemed relevant. Sorry about the weird indirection!
+	// At the time of writing:
+	// K_UpdateOffroad (G3+ double offroad penalty speed)
+	// P_ButteredSlope (G1- Slope Assist)
+
 	if (cv_4thgear.value && !netgame && (!demo.playback || !demo.netgame) && !modeattacking)
 		value = 3;
 
@@ -1210,7 +1217,7 @@ static void K_UpdateOffroad(player_t *player)
 	// If you are in offroad, a timer starts.
 	if (offroadstrength)
 	{
-		UINT8 offramp = (gamespeed == KARTSPEED_HARD ? 2 : 1);
+		UINT8 offramp = (K_GetKartGameSpeedScalar(gamespeed) > FRACUNIT ? 2 : 1);
 
 		if (player->offroad < offroadstrength)
 			player->offroad += offroadstrength * offramp / TICRATE;
