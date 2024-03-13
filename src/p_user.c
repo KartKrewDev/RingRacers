@@ -3304,10 +3304,21 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 		if (turn > turnspeed)
 		{
+			// TODO: this code let the panning angle flip
+			// depending on your camera angle when entering
+			// the loop.
+			// It caused just about every loop to look weird
+			// sometimes, since the camera could move
+			// differently than configured.
+			// I don't know if this behavior should ever come
+			// back, but in case it should, I'm leaving this
+			// comment here.
+#if 0
 			if (turn < ANGLE_90)
 			{
 				turnspeed = -(turnspeed);
 			}
+#endif
 
 			focusangle += turnspeed;
 		}
@@ -3462,7 +3473,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	y = mo->y - FixedMul(FINESINE((angle>>ANGLETOFINESHIFT) & FINEMASK), distxy);
 
 	// SRB2Kart: set camera panning
-	if (camstill || resetcalled || player->playerstate == PST_DEAD)
+	if (camstill || resetcalled || player->playerstate == PST_DEAD || player->loop.radius)
 		pan = xpan = ypan = 0;
 	else
 	{
