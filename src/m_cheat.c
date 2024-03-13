@@ -40,6 +40,8 @@
 
 #include "fastcmp.h"
 
+#include "g_party.h"
+
 //
 // CHEAT SEQUENCE PACKAGE
 //
@@ -619,7 +621,11 @@ void Command_Savecheckpoint_f(void)
 	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
 
-	if (!P_MobjWasRemoved(thing))
+	if (camera[G_PartyPosition(consoleplayer)].freecam || players[consoleplayer].spectator)
+	{
+		D_Cheat(consoleplayer, CHEAT_SAVECHECKPOINT, camera[0].x, camera[0].y, camera[0].z);
+	}
+	else if (!P_MobjWasRemoved(thing))
 	{
 		D_Cheat(consoleplayer, CHEAT_SAVECHECKPOINT, thing->x, thing->y, thing->z);
 	}

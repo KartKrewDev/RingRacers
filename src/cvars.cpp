@@ -803,6 +803,7 @@ consvar_t cv_capsuletest = OnlineCheat("capsuletest", "Off").values(capsuletest_
 consvar_t cv_debugcheese = OnlineCheat("debugcheese", "Off").on_off().description("Disable checks that prevent farming item boxes");
 consvar_t cv_debugencorevote = OnlineCheat("debugencorevote", "Off").on_off().description("Force encore choice to appear on vote screen");
 consvar_t cv_debuglapcheat = OnlineCheat("debuglapcheat", "Off").on_off().description("Permit far waypoint jumps and disable lap cheat prevention");
+consvar_t cv_debugnewchallenger = OnlineCheat("debugnewchallenger", "Off").on_off().description("Do not restart the map to toggle Duel mode");
 consvar_t cv_forcebots = OnlineCheat("forcebots", "No").yes_no().description("Force bots to appear, even in wrong game modes");
 
 void ForceSkin_OnChange(void);
@@ -1172,6 +1173,8 @@ consvar_t cv_fov[MAXSPLITSCREENPLAYERS] = {
 	Player("fov3", "90").floating_point().min_max(60*FRACUNIT, 179*FRACUNIT).onchange(Fov_OnChange).dont_save(),
 	Player("fov4", "90").floating_point().min_max(60*FRACUNIT, 179*FRACUNIT).onchange(Fov_OnChange).dont_save(),
 };
+
+consvar_t cv_freecam_speed = Player("freecam_speed", "1").min_max(1, 10).dont_save();
 
 void I_JoyScale(void);
 void I_JoyScale2(void);

@@ -2846,6 +2846,9 @@ static void P_DeathThink(player_t *player)
 	{
 		if (!netgame && !splitscreen
 		&& player->bot == false
+#ifdef DEVELOP
+		&& player->spectator == false
+#endif
 		&& (gametyperules & GTR_CHECKPOINTS))
 		{
 			G_SetRetryFlag();
@@ -2918,6 +2921,8 @@ fixed_t t_cam_rotate[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
 
 void P_DemoCameraMovement(camera_t *cam, UINT8 num)
 {
+	extern consvar_t cv_freecam_speed;
+
 	ticcmd_t *cmd;
 	angle_t thrustangle;
 	player_t *lastp;
@@ -2946,16 +2951,17 @@ void P_DemoCameraMovement(camera_t *cam, UINT8 num)
 	if (!cam->button_a_held)
 	{
 		int dir = ((cmd->buttons & BT_ACCELERATE) ? 1 : 0) + ((cmd->buttons & BT_BRAKE) ? -1 : 0);
+		fixed_t spd = 32*mapobjectscale*cv_freecam_speed.value;
 
 		switch (dir)
 		{
 			case 1:
-				cam->z += 32*mapobjectscale;
+				cam->z += spd;
 				moving = true;
 				break;
 
 			case -1:
-				cam->z -= 32*mapobjectscale;
+				cam->z -= spd;
 				moving = true;
 				break;
 		}
@@ -3025,14 +3031,16 @@ void P_DemoCameraMovement(camera_t *cam, UINT8 num)
 
 	if (cmd->forwardmove != 0)
 	{
+		fixed_t spd = cmd->forwardmove*mapobjectscale*cv_freecam_speed.value;
+
 		thrustangle = cam->angle >> ANGLETOFINESHIFT;
 
-		cam->x += FixedMul(cmd->forwardmove*mapobjectscale, FINECOSINE(thrustangle));
-		cam->y += FixedMul(cmd->forwardmove*mapobjectscale, FINESINE(thrustangle));
+		cam->x += FixedMul(spd, FINECOSINE(thrustangle));
+		cam->y += FixedMul(spd, FINESINE(thrustangle));
 
 		if (!cam->reset_aiming)
 		{
-			cam->z += FixedMul(cmd->forwardmove*mapobjectscale, AIMINGTOSLOPE(cam->aiming));
+			cam->z += FixedMul(spd, AIMINGTOSLOPE(cam->aiming));
 		}
 		// momentums are useless here, directly add to the coordinates
 

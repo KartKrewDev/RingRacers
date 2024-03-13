@@ -13524,7 +13524,8 @@ void K_CheckSpectateStatus(boolean considermapreset)
 
 	// Reset the match when 2P joins 1P, DUEL mode
 	// Reset the match when 3P joins 1P and 2P, DUEL mode must be disabled
-	if (i > 0 && !mapreset && gamestate == GS_LEVEL && (numingame < 3 && numingame+i >= 2))
+	extern consvar_t cv_debugnewchallenger;
+	if (i > 0 && !mapreset && gamestate == GS_LEVEL && (numingame < 3 && numingame+i >= 2) && !cv_debugnewchallenger.value)
 	{
 		Music_Play("comeon"); // COME ON
 		mapreset = 3*TICRATE; // Even though only the server uses this for game logic, set for everyone for HUD
