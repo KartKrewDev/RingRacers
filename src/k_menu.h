@@ -123,8 +123,10 @@ void M_NextMenuGametype(UINT32 forbidden);
 void M_PrevMenuGametype(UINT32 forbidden);
 void M_HandleHostMenuGametype(INT32 choice);
 void M_HandlePauseMenuGametype(INT32 choice);
+void M_HandlePauseMenuAddons(INT32 choice);
 
 extern UINT32 menucallvote; // not midVoteType_e to prevent #include k_zvote
+extern UINT32 menuaddonoptions;
 void M_HandlePauseMenuCallVote(INT32 choice);
 
 //
@@ -483,6 +485,7 @@ extern menu_t PAUSE_MainDef;
 
 extern menu_t PAUSE_KickHandlerDef;
 extern menu_t PAUSE_CheatsDef;
+extern menu_t PAUSE_AddonOptionsDef;
 
 // EXTRAS
 extern menuitem_t MISC_Manual[];

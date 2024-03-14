@@ -29,6 +29,7 @@ enum
 {
 	COM_ADMIN       = 0x01,
 	COM_LOCAL       = 0x02,
+	COM_NOSHOWHELP	= 0x04,
 	COM_PLAYER2     = 0x10,
 	COM_PLAYER3     = 0x20,
 	COM_PLAYER4     = 0x30,
