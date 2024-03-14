@@ -1554,11 +1554,13 @@ boolean P_CheckRacers(void)
 			// Don't do this if someone spectated
 			eliminateLast = false;
 		}
+#ifndef DEVELOP
 		else if (grandprixinfo.gp == true)
 		{
 			// Always do this in GP
 			eliminateLast = true;
 		}
+#endif
 	}
 
 	if (eliminateLast == true && (numExiting >= numPlaying-1))
