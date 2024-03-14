@@ -1320,7 +1320,13 @@ static void ST_overlayDrawer(void)
 				}
 				else
 				{
-					V_DrawCenteredThinString((vid.width/vid.dupx)/4, BASEVIDHEIGHT/2 - 12, V_HUDTRANSHALF|V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN, player_names[stplyr-players]);
+					INT32 y = BASEVIDHEIGHT/2 - 12;
+					INT32 f = V_HUDTRANSHALF|V_SNAPTOBOTTOM|V_SPLITSCREEN;
+					const char *s = player_names[stplyr-players];
+					if (viewnum & 1)
+						V_DrawThinString(12, y, f|V_SNAPTOLEFT, s);
+					else
+						V_DrawRightAlignedThinString(BASEVIDWIDTH/2 - 12, y, f|V_SNAPTORIGHT, s);
 				}
 			}
 		}
