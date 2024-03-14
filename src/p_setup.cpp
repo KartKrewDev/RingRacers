@@ -8561,6 +8561,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		HWR_ClearAllTextures();
 #endif
 
+	G_FreeGhosts(); // ghosts are allocated with PU_LEVEL
 	Patch_FreeTag(PU_PATCH_LOWPRIORITY);
 	Patch_FreeTag(PU_PATCH_ROTATED);
 	Z_FreeTags(PU_LEVEL, PU_PURGELEVEL - 1);
