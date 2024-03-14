@@ -850,6 +850,12 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 					return;
 				}
 
+				if (special->scale > mapobjectscale)
+				{
+					// Short window so you can't pick it up instantly
+					return;
+				}
+
 				if (
 					grandprixinfo.gp == true // Bonus Round
 					&& netgame == false // game design + makes it easier to implement
@@ -872,8 +878,12 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 				if (teststate == S_PRISONEGGDROP_CD)
 				{
-					special->momz = P_MobjFlip(special) * 2 * mapobjectscale;
-					special->flags = (special->flags & ~MF_SPECIAL) | (MF_NOGRAVITY|MF_NOCLIPHEIGHT);
+					if (P_IsObjectOnGround(special))
+					{
+						special->momz = P_MobjFlip(special) * 2 * mapobjectscale;
+						special->flags = (special->flags & ~MF_SPECIAL) | (MF_NOGRAVITY|MF_NOCLIPHEIGHT);
+					}
+
 					special->extravalue1 = 1;
 
 					special->renderflags = (special->renderflags & ~RF_BRIGHTMASK) | (RF_ADD | RF_FULLBRIGHT);
@@ -1230,17 +1240,12 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 
 			if (secretpickup)
 			{
-				// Grab attention with a long sound effect.
-				target->hitlag += 56;
-				S_StartSound(target, sfx_s3k85);
-
 				secretpickup->hitlag = target->hitlag;
 
 				secretpickup->z -= secretpickup->height/2;
 
-				P_SetScale(secretpickup, mapobjectscale/TICRATE);
-				// secretpickup->destscale = mapobjectscale; -- safe assumption it's already set?
-				secretpickup->scalespeed = (2*mapobjectscale)/(3*TICRATE);
+				P_SetScale(secretpickup, 3*secretpickup->scale);
+				secretpickup->scalespeed = (secretpickup->scale - secretpickup->destscale) / TICRATE;
 
 				// flags are NOT from the target - just in case it's just been placed on the ceiling as a gimmick
 				secretpickup->flags2 |= (source->flags2 & MF2_OBJECTFLIP);
@@ -1248,18 +1253,14 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 
 				// Okay these have to use M_Random because replays...
 				// The spawning of these won't be recorded back!
-				const angle_t launchangle = FixedAngle(M_RandomRange(60, 80) * FRACUNIT);
-				const fixed_t launchmomentum = 20 * mapobjectscale;
-
-				secretpickup->momz = P_MobjFlip(target) // THIS one uses target!
-					* P_ReturnThrustY(secretpickup, launchangle, launchmomentum);
-
-				secretpickup->angle = FixedAngle(M_RandomKey(360) * FRACUNIT);
-
-				P_InstaThrust(
-					secretpickup, secretpickup->angle,
-					P_ReturnThrustX(secretpickup, launchangle, launchmomentum)
+				const fixed_t dist = R_PointToDist2(target->x, target->y, source->x, source->y);
+				const fixed_t maxDist = 640 * mapobjectscale;
+				const fixed_t launchmomentum = Easing_Linear(
+					FixedDiv(min(dist, maxDist), maxDist),
+					5 * mapobjectscale,
+					20 * mapobjectscale
 				);
+				secretpickup->momz = P_MobjFlip(target) * launchmomentum; // THIS one uses target!
 
 				mobj_t *flare = P_SpawnMobj(
 					target->x, target->y,
