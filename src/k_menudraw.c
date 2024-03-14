@@ -5656,7 +5656,7 @@ void M_DrawPause(void)
 		INT32 x = Easing_OutQuad(mt, -BASEVIDWIDTH, 0);
 		INT32 y = 56;
 
-		if (g_realsongcredit)
+		if (g_realsongcredit && !S_MusicDisabled())
 		{
 			V_DrawThinString(x + 2, y, 0, g_realsongcredit);
 		}
