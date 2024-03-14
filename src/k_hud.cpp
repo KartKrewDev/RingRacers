@@ -3281,7 +3281,8 @@ static void K_drawKartSpeedometer(boolean gametypeinfoshown)
 		fy += 9;
 	}
 
-	V_DrawScaledPatch(LAPS_X, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_speedometersticker);
+	using srb2::Draw;
+	Draw(LAPS_X+7, fy+1).flags(V_HUDTRANS|V_SLIDEIN|splitflags).align(Draw::Align::kCenter).width(42).small_sticker();
 	V_DrawScaledPatch(LAPS_X+7, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[numbers[0]]);
 	V_DrawScaledPatch(LAPS_X+13, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[numbers[1]]);
 	V_DrawScaledPatch(LAPS_X+19, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[numbers[2]]);
