@@ -1061,14 +1061,14 @@ void P_Ticker(boolean run)
 				}
 
 				// POSITION!! music
-				if (modeattacking == ATTACKING_NONE)
+				if (modeattacking == ATTACKING_NONE || !P_UseContinuousLevelMusic())
 				{
 					P_StartPositionMusic(true); // exact times only
 				}
 			}
 		}
 
-		if (modeattacking != ATTACKING_NONE)
+		if (modeattacking != ATTACKING_NONE && P_UseContinuousLevelMusic())
 		{
 			if (leveltime == 4)
 			{
