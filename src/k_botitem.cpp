@@ -1448,7 +1448,7 @@ static void K_BotItemRings(const player_t *player, ticcmd_t *cmd)
 		return;
 	}
 
-	if (player->speed < K_GetKartSpeed(player, false, true) / 2 // Being slowed down too much
+	if (player->speed < (K_GetKartSpeed(player, false, true) * 9) / 10 // Being slowed down too much
 		|| player->speedboost > (FRACUNIT/5)) // Have another type of boost (tethering)
 	{
 		saferingsval -= 5;
