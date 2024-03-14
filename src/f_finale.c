@@ -457,10 +457,22 @@ void F_IntroDrawer(void)
 	if (intro_scenenum == INTROSCENE_DISCLAIMER)
 	{
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
-		V_DrawString(0, 0, 0, "characters belong to sega");
-		V_DrawString(0, 8, 0, "blah blah blah");
-		V_DrawString(0, 16, 0, "epilepsy warning");
-		V_DrawString(0, 24, 0, "play in a well lit room yada yada");
+		V_DrawCenteredMenuString(160, 10, V_AQUAMAP, "Original games and designs by");
+
+		char* newText = V_ScaledWordWrap(
+			290 << FRACBITS,
+			FRACUNIT, FRACUNIT, FRACUNIT,
+			0, MENU_FONT,
+			"\"Dr. Robotnik's Ring Racers\" is a not-for-profit fangame. \
+			All registered trademarks belong to their respective owners.\n\
+			This game contains flashing lights and high-contrast patterns. \
+			Photosensitive? Use caution and the Profiles>Accessibility menu."
+		);
+
+		V_DrawCenteredMenuString(160, 125, V_AQUAMAP|V_TRANSLUCENT, newText);
+
+		Z_Free(newText);
+
 		return;
 	}
 
