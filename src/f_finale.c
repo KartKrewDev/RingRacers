@@ -295,7 +295,7 @@ const char *introtext[NUMINTROSCENES];
 static tic_t introscenetime[NUMINTROSCENES] =
 {
 	2*TICRATE,				// OUR SRB2 ASSOCIATES
-	4*TICRATE,				// Disclaimer and Epilepsy Warning
+	9*TICRATE,				// Disclaimer and Epilepsy Warning
 	(3*TICRATE)/2,			// KKD
 	(2*TICRATE)/3,			// S&K
 	TICRATE + (TICRATE/3),	// Get ready !!
@@ -434,6 +434,191 @@ static void F_IntroDrawScene(void)
 	//V_DrawString(cx, cy, 0, cutscene_disptext);
 }
 
+typedef enum
+{
+	DISCLAIMER_SHINE = 0,
+	DISCLAIMER_WHITEHOLD,
+	DISCLAIMER_FADE,
+	DISCLAIMER_SOUNDHOLD,
+	DISCLAIMER_SLIDE,
+	DISCLAIMER_FINAL,
+	DISCLAIMER_OUT,
+} disclaimerstate;
+
+static disclaimerstate dc_state = 0;
+static UINT8 dc_tics = 0;
+static UINT8 dc_segaframe = 1;
+static UINT8 dc_bgcol = 0;
+static UINT8 dc_lasttime = 0;
+static boolean dc_ticking = false;
+static UINT8 dc_bluesegafade = 0;
+static UINT8 dc_textfade = 9;
+static UINT8 dc_subtextfade = 9;
+static UINT8 dc_screenfade = 9;
+
+static void F_DisclaimerAdvanceState(void)
+{
+	dc_state++;
+	dc_tics = 0;
+}
+
+static void F_DisclaimerDrawScene(void)
+{
+	// ================================= SETUP
+
+	if (intro_curtime == 0)
+	{
+		dc_state = 0;
+		dc_segaframe = 1;
+		dc_bgcol = 0;
+		dc_bluesegafade = 0;
+		dc_textfade = 9;
+		dc_subtextfade = 9;
+		dc_screenfade = 9;
+		dc_lasttime = intro_curtime;
+	}
+
+	// ================================= TICK?
+
+	if (intro_curtime != dc_lasttime) // This function is once-per-frame, advance time only once per tic
+		dc_ticking = true;
+	else
+		dc_ticking = false;
+
+	dc_lasttime = intro_curtime;
+
+	// ================================= DRAWING
+
+	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, dc_bgcol);
+
+	/*
+	V_DrawFill(0, 0, 320, 10, 254);
+	V_DrawMenuString(1, 1, V_ORANGEMAP, va("ST: %d (%d) - SF: SEGA_A%02d - BG: %d - FADE A %d B %d C %d",
+										dc_state, dc_tics, dc_segaframe, dc_bgcol, dc_bluesegafade, dc_textfade, dc_subtextfade));
+	*/
+
+	if (intro_curtime == 0)
+		return;
+	
+	// Anaglyph SEGA
+	if (dc_state >= DISCLAIMER_SLIDE)
+		V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName(va("SEGA_B%02d", dc_segaframe), PU_CACHE), 0);
+
+	// Blue SEGA
+	if (dc_bluesegafade < 10)
+	{
+		UINT32 overlayalpha = 0;
+
+		if (dc_state >= DISCLAIMER_SLIDE)
+			overlayalpha = dc_bluesegafade << V_ALPHASHIFT;
+		
+		V_DrawFixedPatch(0, 0, FRACUNIT, overlayalpha, W_CachePatchName(va("SEGA_A%02d", dc_segaframe), PU_CACHE), 0);
+	}
+
+	// Disclaimer text
+	if (dc_state >= DISCLAIMER_FINAL)
+	{
+		UINT32 textalpha = 0;
+		if (dc_textfade > 0)
+			textalpha = dc_textfade << V_ALPHASHIFT;
+
+		UINT32 subtextalpha = 0;
+		if (dc_subtextfade > 0)
+			subtextalpha = dc_subtextfade << V_ALPHASHIFT;
+
+		V_DrawCenteredMenuString(160, 25, textalpha, "Original games and designs by");
+
+		char* newText = V_ScaledWordWrap(
+			290 << FRACBITS,
+			FRACUNIT, FRACUNIT, FRACUNIT,
+			0, MENU_FONT,
+			"\"Dr. Robotnik's Ring Racers\" is a not-for-profit fangame. All registered trademarks belong to their respective owners.\nThis game contains flashing lights and high-contrast patterns. Photosensitive? Use caution and the Profiles>Accessibility menu."
+		);
+
+		V_DrawCenteredMenuString(160, 125, subtextalpha, newText);
+
+		Z_Free(newText);
+	}
+
+	// Fade out (would love to use a wipe here, but lmao how the fuck do wipes work)
+	if (dc_state >= DISCLAIMER_OUT)
+	{
+		UINT32 screenalpha = 0;
+
+		if (dc_screenfade > 0)
+			screenalpha = dc_screenfade << V_ALPHASHIFT;
+		
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31|screenalpha);	
+	}
+
+	// ================================= STATE LOGIC
+
+	if (!dc_ticking)
+		return;
+
+	// Advance SEGA animation
+	if (dc_state == DISCLAIMER_SHINE || dc_state == DISCLAIMER_FADE || (dc_state == DISCLAIMER_SLIDE && dc_tics%2))
+		dc_segaframe++;
+
+	// Fade BG to black
+	if (dc_state >= DISCLAIMER_SLIDE)
+	{
+		if (dc_bgcol < 31)
+			dc_bgcol++;
+		else
+			dc_bgcol = 31;
+	}
+
+	// Fade out blue SEGA overlay
+	if (dc_state == DISCLAIMER_SLIDE)
+	{
+		if (dc_bluesegafade < 10 && !(dc_tics%2))
+			dc_bluesegafade++;
+	}
+
+	// Fade in text
+	if (dc_state == DISCLAIMER_FINAL)
+	{
+		if (dc_textfade > 0 && !(dc_tics%3))
+			dc_textfade--;
+
+		if (dc_subtextfade > 5 && !(dc_tics%6))
+			dc_subtextfade--;
+	}
+
+	// Fade out screen
+	if (dc_state == DISCLAIMER_OUT)
+	{
+		if (dc_screenfade > 0 && !(dc_tics%10))
+			dc_screenfade--;
+	}
+
+	// ================================= STATE TRANSITIONS
+
+	dc_tics++;
+
+	if (dc_state == DISCLAIMER_SHINE && dc_segaframe == 18) // End of shine
+		F_DisclaimerAdvanceState();
+
+	if (dc_state == DISCLAIMER_WHITEHOLD && dc_tics == 15)
+		F_DisclaimerAdvanceState();
+
+	if (dc_state == DISCLAIMER_FADE && dc_segaframe == 23) // Solid blue SEGA
+	{
+		F_DisclaimerAdvanceState();
+		Music_Play("lawyer");
+	}
+
+	if (dc_state == DISCLAIMER_SOUNDHOLD && dc_tics == TICRATE*2-5)
+		F_DisclaimerAdvanceState();
+
+	if (dc_state == DISCLAIMER_SLIDE && dc_segaframe == 37) // End of animation
+		F_DisclaimerAdvanceState();
+
+	if (dc_state == DISCLAIMER_FINAL && dc_tics == TICRATE*5)
+		F_DisclaimerAdvanceState();
+}
+
 //
 // F_IntroDrawer
 //
@@ -456,22 +641,7 @@ void F_IntroDrawer(void)
 
 	if (intro_scenenum == INTROSCENE_DISCLAIMER)
 	{
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
-		V_DrawCenteredMenuString(160, 10, V_AQUAMAP, "Original games and designs by");
-
-		char* newText = V_ScaledWordWrap(
-			290 << FRACBITS,
-			FRACUNIT, FRACUNIT, FRACUNIT,
-			0, MENU_FONT,
-			"\"Dr. Robotnik's Ring Racers\" is a not-for-profit fangame. \
-			All registered trademarks belong to their respective owners.\n\
-			This game contains flashing lights and high-contrast patterns. \
-			Photosensitive? Use caution and the Profiles>Accessibility menu."
-		);
-
-		V_DrawCenteredMenuString(160, 125, V_AQUAMAP|V_TRANSLUCENT, newText);
-
-		Z_Free(newText);
+		F_DisclaimerDrawScene();
 
 		return;
 	}

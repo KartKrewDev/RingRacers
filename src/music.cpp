@@ -203,6 +203,14 @@ void Music_Init(void)
 		tune.resist = true;
 		tune.credit = true;
 	}
+
+	{
+		Tune& tune = g_tunes.insert("lawyer");
+
+		tune.song = "lawyer";
+		tune.priority = 35;
+		tune.loop = false;
+	}
 }
 
 void Music_Tick(void)
