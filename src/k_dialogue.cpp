@@ -106,7 +106,8 @@ void Dialogue::Typewriter::WriteText(void)
 		{
 			textTimer += textSpeed;
 		}
-		else if (std::ispunct(c)
+		else if (c != '+' && c != '"' // tutorial hack
+			&& std::ispunct(c)
 			&& std::isspace(nextc))
 		{
 			// slow down for punctuation
@@ -374,7 +375,7 @@ void Dialogue::Draw(void)
 
 	if (speakername && speaker[0])
 	{
-		INT32 speakernamewidth = V_StringWidth(speakername, 0);
+		INT32 speakernamewidth = V_MenuStringWidth(speakername, 0);
 		INT32 existingborder = (portrait == nullptr ? -4 : 3);
 
 		INT32 speakernamewidthoffset = (speakernamewidth + (arrowstep - existingborder) - 1) % arrowstep;
@@ -417,7 +418,7 @@ void Dialogue::Draw(void)
 
 		drawer
 			.xy(speakernamewidthoffset + speakernameedge, -39-9)
-			.font(srb2::Draw::Font::kConsole)
+			.font(srb2::Draw::Font::kMenu)
 			.text(speakername);
 
 		speakernameedge -= 5;
@@ -468,9 +469,18 @@ void Dialogue::Draw(void)
 				.patch("TUTDIAG2");
 		}
 
+		auto bt_translate_press = [this]() -> std::optional<bool>
+		{
+			if (Held())
+				return true;
+			if (TextDone())
+				return {};
+			return false;
+		};
+
 		drawer
 			.xy(17-14 - BASEVIDWIDTH, -39-16)
-			.button(srb2::Draw::Button::z, Held());
+			.button(srb2::Draw::Button::z, bt_translate_press());
 	}
 }
 
