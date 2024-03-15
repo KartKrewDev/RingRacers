@@ -331,7 +331,7 @@ void Dialogue::Draw(void)
 		return;
 	}
 
-	const UINT8 bgcol = 1, darkcol = 235;
+	const UINT8 bgcol = 235, speakerhilicol = 1;
 
 	const fixed_t height = 78 * FRACUNIT;
 
@@ -344,7 +344,7 @@ void Dialogue::Draw(void)
 
 	// TODO -- hack, change when dialogue is made per-player/netsynced
 	UINT32 speakerbgflags = (players[consoleplayer].nocontrol == 0 && P_LevelIsFrozen() == false)
-		? (V_ADD|V_30TRANS)
+		? V_30TRANS
 		: 0;
 
 	drawer
@@ -411,7 +411,7 @@ void Dialogue::Draw(void)
 				.width(speakernamewidth - existingborder)
 				.y(-38-11)
 				.height(11)
-				.fill(darkcol);
+				.fill(speakerhilicol);
 		}
 
 		speakernameedge -= speakernamewidth;
