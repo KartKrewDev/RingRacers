@@ -378,7 +378,7 @@ void Dialogue::Draw(void)
 		INT32 speakernamewidth = V_MenuStringWidth(speakername, 0);
 		INT32 existingborder = (portrait == nullptr ? -4 : 3);
 
-		INT32 speakernamewidthoffset = (speakernamewidth + (arrowstep - existingborder) - 1) % arrowstep;
+		INT32 speakernamewidthoffset = (speakernamewidth + (arrowstep - existingborder) - 2) % arrowstep;
 		if (speakernamewidthoffset)
 		{
 			speakernamewidthoffset = (arrowstep - speakernamewidthoffset);
