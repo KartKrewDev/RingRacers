@@ -335,9 +335,12 @@ void CV_SPBAttackChanged(void)
 			PLAY_TAGhosts[taghost_staff].status = IT_DISABLED;
 		if (mapheaderinfo[levellist.choosemap]->ghostCount > 0 && !modeprefix[0])
 		{
+			extern CV_PossibleValue_t dummystaff_cons_t[];
+			dummystaff_cons_t[1].value = mapheaderinfo[levellist.choosemap]->ghostCount-1;
+			CV_SetValue(&cv_dummystaff, 0);
+
 			PLAY_TAReplay[tareplay_staff].status = IT_STRING|IT_ARROWS;
 			PLAY_TAGhosts[taghost_staff].status = IT_STRING|IT_CVAR;
-			CV_SetValue(&cv_dummystaff, 0);
 			active |= 1|4;
 		}
 
