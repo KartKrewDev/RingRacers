@@ -416,7 +416,6 @@ void M_HandleStaffReplay(INT32 choice)
 	{
 		mapheader_t *mapheader;
 		staffbrief_t *staffbrief;
-		const char* lumpname = NULL;
 		restoreMenu = &PLAY_TimeAttackDef;
 
 		M_ClearMenus(true);
@@ -426,9 +425,7 @@ void M_HandleStaffReplay(INT32 choice)
 		mapheader = mapheaderinfo[levellist.choosemap];
 		staffbrief = mapheader->ghostBrief[cv_dummystaff.value];
 
-		lumpname = W_CheckNameForNumPwad(staffbrief->wad, staffbrief->lump);
-
-		G_DoPlayDemo(lumpname);
+		G_DoPlayDemoEx("", (staffbrief->wad << 16) | staffbrief->lump);
 		return;
 	}
 

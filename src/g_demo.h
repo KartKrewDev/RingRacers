@@ -214,7 +214,8 @@ extern demoghost *ghosts;
 #define DFILE_ERROR_CORRUPT              0x06 // Demo file is corrupted
 
 void G_DeferedPlayDemo(const char *demo);
-void G_DoPlayDemo(const char *defdemoname);
+void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum);
+#define G_DoPlayDemo(defdemoname) G_DoPlayDemoEx(defdemoname, LUMPERROR)
 void G_TimeDemo(const char *name);
 void G_AddGhost(savebuffer_t *buffer, const char *defdemoname);
 staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer);

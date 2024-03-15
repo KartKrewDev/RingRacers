@@ -521,7 +521,7 @@ static boolean F_CreditsPlayDemo(void)
 	demo.ignorefiles = true;
 	demo.loadfiles = false;
 
-	G_DoPlayDemo(demo_name.c_str());
+	G_DoPlayDemoEx("", (brief->wad << 16) | brief->lump);
 
 	g_fast_forward = 30 * TICRATE;
 	g_credits.demo_exit = 0;
