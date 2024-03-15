@@ -331,7 +331,7 @@ void Dialogue::Draw(void)
 		return;
 	}
 
-	const UINT8 bgcol = 235, speakerhilicol = 1;
+	const UINT8 bgcol = 235, speakerhilicol = 240;
 
 	const fixed_t height = 78 * FRACUNIT;
 
