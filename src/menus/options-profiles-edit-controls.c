@@ -17,7 +17,7 @@ menuitem_t OPTIONS_ProfileControls[] = {
 	{IT_CONTROL, "Look back", "Look backwards / Go back",
 		"TLB_B", {.routine = M_ProfileSetControl}, gc_b, 0},
 
-	{IT_CONTROL, "Spindash", "Spindash / Extra",
+	{IT_CONTROL, "Spin Dash", "Spin Dash / Extra",
 		"TLB_C", {.routine = M_ProfileSetControl}, gc_c, 0},
 
 	{IT_CONTROL, "Brake / Go back", "Brake / Go back",
