@@ -6032,7 +6032,7 @@ void K_drawKartHUD(void)
 						Draw::TextElement text =
 							tics != UINT32_MAX ?
 							Draw::TextElement(
-								"{}'{}\"{}",
+								"{:02}'{:02}\"{:02}",
 								G_TicsToMinutes(tics, true),
 								G_TicsToSeconds(tics),
 								G_TicsToCentiseconds(tics)
