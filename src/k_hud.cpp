@@ -3079,10 +3079,12 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 		}
 
 		// Rings
-		if (!uselives)
-			V_DrawScaledPatch(LAPS_X, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringsticker[1]);
-		else
-			V_DrawScaledPatch(LAPS_X, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringsticker[0]);
+		using srb2::Draw;
+		Draw(LAPS_X+7, fy+1)
+			.flags(V_HUDTRANS|V_SLIDEIN|splitflags)
+			.align(Draw::Align::kCenter)
+			.width(uselives ? (stplyr->lives >= 10 ? 70 : 64) : 33)
+			.small_sticker();
 
 		V_DrawMappedPatch(LAPS_X+ringx+7, fy-5, V_HUDTRANS|V_SLIDEIN|splitflags|ringflip, kp_ring[ringanim_realframe], (colorring ? ringmap : NULL));
 
@@ -3122,8 +3124,9 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 				if (livescount > 10)
 					livescount = 10;
 			}
-			//K_DrawLivesDigits -- not using this because it messed with the FENG SHUI
-			V_DrawScaledPatch(LAPS_X+63, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[livescount]);
+			using srb2::Draw;
+			Draw row = Draw(LAPS_X+65, fy-4).flags(V_HUDTRANS|V_SLIDEIN|splitflags).font(Draw::Font::kThinTimer);
+			row.text("{}", livescount);
 		}
 	}
 }
@@ -3278,7 +3281,8 @@ static void K_drawKartSpeedometer(boolean gametypeinfoshown)
 		fy += 9;
 	}
 
-	V_DrawScaledPatch(LAPS_X, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_speedometersticker);
+	using srb2::Draw;
+	Draw(LAPS_X+7, fy+1).flags(V_HUDTRANS|V_SLIDEIN|splitflags).align(Draw::Align::kCenter).width(42).small_sticker();
 	V_DrawScaledPatch(LAPS_X+7, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[numbers[0]]);
 	V_DrawScaledPatch(LAPS_X+13, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[numbers[1]]);
 	V_DrawScaledPatch(LAPS_X+19, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[numbers[2]]);
