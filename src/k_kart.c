@@ -10013,6 +10013,12 @@ static UINT32 u32_delta(UINT32 x, UINT32 y)
 --------------------------------------------------*/
 static void K_UpdatePlayerWaypoints(player_t *const player)
 {
+	if (player->pflags & PF_FREEZEWAYPOINTS)
+	{
+		player->pflags &= ~PF_FREEZEWAYPOINTS;
+		return;
+	}
+
 	const UINT32 distance_threshold = FixedMul(32768, mapobjectscale);
 
 	waypoint_t *const old_currentwaypoint = player->currentwaypoint;

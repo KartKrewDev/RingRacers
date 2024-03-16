@@ -3147,6 +3147,26 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff, Try
 			{
 				P_CrossSpecialLine(ld, oldside, thing);
 			}
+			else if (ld->special == 2001 && thing->player) // Finish Line
+			{
+				// ~~ WAYPOINT BULLSHIT ~~
+				// Right on the line, P_PointOnLineSide may
+				// disagree with P_TraceWaypointTraversal.
+				// If this happens, nextwaypoint may update
+				// ahead of the finish line before the player
+				// crosses it.
+				// This bloats the finish line distance and
+				// triggers lap cheat prevention, preventing
+				// the player from gaining a lap.
+				// Since this only seems like it can happen
+				// very near to the line, simply don't update
+				// waypoints if the player is touching the
+				// line but hasn't crossed it.
+				// This will cause distancetofinish to jump
+				// but only for a very short distance (the
+				// radius of the player).
+				thing->player->pflags |= PF_FREEZEWAYPOINTS;
+			}
 		}
 
 		// Currently this just iterates all checkpoints.
