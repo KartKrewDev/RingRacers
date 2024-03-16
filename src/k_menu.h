@@ -379,6 +379,22 @@ typedef enum
 	daopt_replaycons,
 } daopt_e;
 
+typedef enum
+{
+	sopt_volume,
+	sopt_sfxvolume,
+	sopt_musicvolume,
+	sopt_spacer1,
+	sopt_chatnotifs,
+	sopt_charvoices,
+	sopt_attackmusic,
+	sopt_spacer2,
+	sopt_advanced,
+	sopt_tabbedout,
+	sopt_spacer3,
+	sopt_restart,
+} sopt_e;
+
 extern menuitem_t OPTIONS_Profiles[];
 extern menu_t OPTIONS_ProfilesDef;
 

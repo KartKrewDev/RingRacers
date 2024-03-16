@@ -124,6 +124,8 @@
 
 #include <tracy/tracy/TracyC.h>
 
+extern "C" consvar_t cv_continuousmusic;
+
 //
 // Map MD5, calculated on level load.
 // Sent to clients in PT_SERVERINFO.
@@ -8257,7 +8259,10 @@ boolean P_UseContinuousLevelMusic(void)
 	if (gametyperules & GTR_BOSS)
 		return false;
 
-	return (gametyperules & GTR_NOPOSITION) || modeattacking != ATTACKING_NONE;
+	if (modeattacking != ATTACKING_NONE)
+		return cv_continuousmusic.value;
+
+	return (gametyperules & GTR_NOPOSITION) != 0;
 }
 
 void P_LoadLevelMusic(void)

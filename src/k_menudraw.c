@@ -1037,6 +1037,10 @@ void M_Drawer(void)
 // Used for the secrets menu, to hide yet-to-be-unlocked stuff.
 static const char *M_CreateSecretMenuOption(const char *str)
 {
+#if 1
+	(void)str;
+	return "???";
+#else
 	static char qbuf[64];
 	int i;
 
@@ -1055,6 +1059,7 @@ static const char *M_CreateSecretMenuOption(const char *str)
 
 	qbuf[63] = '\0';
 	return qbuf;
+#endif
 }
 
 //
@@ -4660,7 +4665,7 @@ box_found:
 				if (currentMenu->menuitems[i].mvar1)
 					y = currentMenu->y+currentMenu->menuitems[i].mvar1;
 
-				V_DrawMenuString(x, y, V_TRANSLUCENT|V_OLDSPACING, M_CreateSecretMenuOption(currentMenu->menuitems[i].text));
+				V_DrawMenuString(x + 8, y, V_TRANSLUCENT|V_OLDSPACING, M_CreateSecretMenuOption(currentMenu->menuitems[i].text));
 				y += SMALLLINEHEIGHT;
 				break;
 			case IT_HEADERTEXT: // draws 16 pixels to the left, in yellow text

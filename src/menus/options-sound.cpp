@@ -14,7 +14,7 @@
 #include "../s_sound.h"	// sounds consvars
 #include "../g_game.h" // cv_chatnotifications
 
-extern "C" consvar_t cv_mastervolume;
+extern "C" consvar_t cv_mastervolume, cv_continuousmusic;
 
 using srb2::Draw;
 
@@ -200,6 +200,18 @@ void tick_routine(void)
 	}
 }
 
+void init_routine(void)
+{
+	OPTIONS_Sound[sopt_attackmusic].status = IT_SECRET;
+
+	if (M_SecretUnlocked(SECRET_TIMEATTACK, true) ||
+		M_SecretUnlocked(SECRET_PRISONBREAK, true) ||
+		M_SecretUnlocked(SECRET_SPECIALATTACK, true))
+	{
+		OPTIONS_Sound[sopt_attackmusic].status = IT_STRING | IT_CVAR;
+	}
+}
+
 boolean input_routine(INT32)
 {
 	UINT8 pid = 0; // todo: Add ability for any splitscreen player to bring up the menu.
@@ -238,14 +250,14 @@ menuitem_t OPTIONS_Sound[] =
 	{IT_STRING | IT_CVAR, "Character Voices", "How often to play character voices in a race.",
 		NULL, {.cvar = &cv_kartvoices}, 0, 0},
 
+	{IT_STRING | IT_CVAR, "Continuous Attack Music", "Keep music playing seamlessly when retrying in Attack modes.",
+		NULL, {.cvar = &cv_continuousmusic}, 0, 0},
+
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 
 	{IT_HEADER, "Advanced...",  NULL,
 		NULL, {NULL}, 0, 0},
-
-	{IT_STRING | IT_CVAR, "Reverse L/R Channels", "Reverse left & right channels for Stereo playback.",
-		NULL, {.cvar = &stereoreverse}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Hear Tabbed-out", "Keep playing game audio when the window is out of focus (FOCUS LOST).",
 		NULL, {.cvar = &cv_bgaudio}, 0, 0},
@@ -270,7 +282,7 @@ menu_t OPTIONS_SoundDef = {
 	draw_routine,
 	M_DrawOptionsCogs,
 	tick_routine,
-	NULL,
+	init_routine,
 	NULL,
 	input_routine,
 };
