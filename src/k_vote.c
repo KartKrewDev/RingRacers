@@ -1455,7 +1455,7 @@ static void Y_TickVoteSelection(void)
 					vote.players[i].delay = NEWTICRATE/7;
 				}
 			}
-			else if (menuactive == false)
+			else if (menuactive == false && chat_on == false)
 			{
 				if (G_PlayerInputDown(i, gc_left, 0))
 				{
