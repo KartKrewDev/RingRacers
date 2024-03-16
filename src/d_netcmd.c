@@ -193,6 +193,10 @@ static void Command_Eval(void);
 
 static void Command_WriteTextmap(void);
 
+#ifdef DEVELOP
+static void Command_FastForward(void);
+#endif
+
 // =========================================================================
 //                           CLIENT VARIABLES
 // =========================================================================
@@ -460,6 +464,10 @@ void D_RegisterServerCommands(void)
 #endif
 #ifdef LUA_ALLOW_BYTECODE
 	COM_AddCommand("dumplua", Command_Dumplua_f);
+#endif
+
+#ifdef DEVELOP
+	COM_AddCommand("fastforward", Command_FastForward);
 #endif
 
 	K_RegisterMidVoteCVars();
@@ -6770,6 +6778,86 @@ ROUNDQUEUE_MAX
 
 	CON_ToggleOff();
 }
+
+#ifdef DEVELOP
+static void Command_FastForward(void)
+{
+	boolean r_flag = false;
+	boolean t_flag = false;
+
+	size_t num_time_args = 0;
+	const char *time_arg = NULL;
+
+	for (size_t i = 1; i < COM_Argc(); ++i)
+	{
+		const char *arg = COM_Argv(i);
+		if (arg[0] == '-')
+		{
+			while (*++arg)
+			{
+				switch (*arg)
+				{
+					case 'r':
+						r_flag = true;
+						break;
+					case 't':
+						t_flag = true;
+						break;
+				}
+			}
+		}
+		else
+		{
+			time_arg = arg;
+			num_time_args++;
+		}
+	}
+
+	if (num_time_args != 1)
+	{
+		CONS_Printf(
+			"fastforward [-r] <[mm:]ss>: fast-forward the map time in seconds\n"
+			"fastforward -t [-r] <tics>: fast-forward the map time in tics\n"
+			"* If the map time has already passed, do nothing.\n"
+			"* With -r, fast-forward relative to the current time instead of to an exact map time.\n"
+		);
+		return;
+	}
+
+	char *p;
+	tic_t t = strtol(time_arg, &p, 10);
+
+	if (!t_flag)
+	{
+		t *= TICRATE;
+
+		if (*p == ':')
+		{
+			t *= 60;
+			t += strtol(&p[1], &p, 10) * TICRATE;
+		}
+	}
+
+	if (*p)
+	{
+		CONS_Printf("fastforward: time value is malformed '%s'\n", time_arg);
+		return;
+	}
+
+	if (!r_flag)
+	{
+		if (leveltime > t)
+		{
+			CONS_Printf("fastforward: leveltime has already passed\n");
+			return;
+		}
+
+		t -= leveltime;
+	}
+
+	g_fast_forward = t;
+}
+#endif
 
 /** Makes a change to ::cv_forceskin take effect immediately.
   *
