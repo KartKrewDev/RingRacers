@@ -196,6 +196,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 	data.isduel = (numplayersingame <= 2);
 
 	srb2::StandingsJson standings {};
+	bool savestandings = (!rankingsmode && demo.recording);
 
 	for (j = 0; j < numplayersingame; j++)
 	{
@@ -239,7 +240,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 				players[i].score += data.increase[i];
 			}
 
-			if (demo.recording)
+			if (savestandings)
 			{
 				srb2::StandingJson standing {};
 				standing.ranking = data.pos[data.numplayers];
@@ -285,7 +286,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 		data.numplayers++;
 	}
 
-	if (demo.recording)
+	if (savestandings)
 	{
 		srb2::write_current_demo_end_marker();
 		srb2::write_current_demo_standings(standings);
