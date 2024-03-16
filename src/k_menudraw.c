@@ -3635,7 +3635,7 @@ void M_DrawTimeAttack(void)
 
 			if (M_EncoreAttackTogglePermitted())
 			{
-				K_drawButtonAnim(buttonx + 35, buttony - 3, V_SNAPTOLEFT, kp_button_r, timeattackmenu.ticker);
+				K_drawButtonAnim(buttonx + 35, buttony - 3, 0, kp_button_r, timeattackmenu.ticker);
 			}
 
 			if ((timeattackmenu.spbflicker == 0 || timeattackmenu.ticker % 2) == (cv_dummyspbattack.value == 1))
