@@ -1286,6 +1286,24 @@ static void ST_overlayDrawer(void)
 					INT32 y = (BASEVIDHEIGHT / (r_splitscreen + 1)) - 34;
 					INT32 width = 50;
 
+					const char *text = player_names[stplyr-players];
+					int font = KART_FONT;
+					fixed_t textwidth = V_StringScaledWidth(FRACUNIT, FRACUNIT, FRACUNIT, flags, font, text);
+					fixed_t threshold = textwidth;
+
+					// k_drawKartHUD
+					if (gametyperules & GTR_CIRCUIT)
+						threshold = 200*FRACUNIT;
+					else if (gametyperules & GTR_BUMPERS)
+						threshold = 100*FRACUNIT;
+
+					if (LUA_HudEnabled(hud_gametypeinfo) && textwidth > threshold)
+					{
+						y += 5;
+						font = TINY_FONT;
+						textwidth = V_StringScaledWidth(FRACUNIT, FRACUNIT, FRACUNIT, flags, font, text);
+					}
+
 					if (r_splitscreen)
 					{
 						flags = (flags & ~V_ALPHAMASK) | V_HUDTRANSHALF;
@@ -1297,14 +1315,18 @@ static void ST_overlayDrawer(void)
 						V_DrawCenteredThinString(x, y, flags | V_ORANGEMAP, "Watching");
 					}
 
-					const char *text = player_names[stplyr-players];
-					fixed_t textwidth = V_StringScaledWidth(FRACUNIT, FRACUNIT, FRACUNIT, flags, KART_FONT, text);
 					V_DrawStringScaled(x*FRACUNIT - textwidth/2, (y+10)*FRACUNIT,
-						FRACUNIT, FRACUNIT, FRACUNIT, flags, NULL, KART_FONT, text);
+						FRACUNIT, FRACUNIT, FRACUNIT, flags, NULL, font, text);
 				}
 				else
 				{
-					V_DrawCenteredThinString((vid.width/vid.dupx)/4, BASEVIDHEIGHT/2 - 12, V_HUDTRANSHALF|V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN, player_names[stplyr-players]);
+					INT32 y = BASEVIDHEIGHT/2 - 12;
+					INT32 f = V_HUDTRANSHALF|V_SNAPTOBOTTOM|V_SPLITSCREEN;
+					const char *s = player_names[stplyr-players];
+					if (viewnum & 1)
+						V_DrawThinString(12, y, f|V_SNAPTOLEFT, s);
+					else
+						V_DrawRightAlignedThinString(BASEVIDWIDTH/2 - 12, y, f|V_SNAPTORIGHT, s);
 				}
 			}
 		}

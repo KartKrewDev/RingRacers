@@ -55,7 +55,7 @@ struct List
 			col.text(label_);
 			col = col.x(left ? -(kButtonWidth + kButtonMargin) : width() - (kButtonWidth + kFieldSpacing));
 
-			if (r_splitscreen)
+			//if (r_splitscreen)
 			{
 				auto small_button_offset = [&]
 				{
@@ -72,10 +72,12 @@ struct List
 
 				col.y(small_button_offset()).small_button(button_, pressed_);
 			}
+#if 0
 			else
 			{
 				col.y(-4).button(button_, pressed_);
 			}
+#endif
 		}
 
 	private:
@@ -112,7 +114,8 @@ struct List
 			col = col.x(field.width());
 		}
 
-		row_ = row_.y(r_splitscreen ? -13 : -17);
+		//row_ = row_.y(r_splitscreen ? -13 : -17);
+		row_ = row_.y(-13);
 	}
 
 private:
@@ -173,13 +176,13 @@ void K_drawSpectatorHUD(boolean director)
 		switch (r_splitscreen)
 		{
 		case 0:
-			return List(director ? 80 : 20, 20);
+			return List(director ? 20 : 20, 34);
 
 		case 1:
-			return List(40, 20);
+			return List(40, 30);
 
 		default:
-			return List(10, 20);
+			return List(10, 24);
 		}
 	}();
 
