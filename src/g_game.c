@@ -1797,8 +1797,6 @@ void G_Ticker(boolean run)
 		// Or, alternatively, retry.
 		if (G_GetRetryFlag())
 		{
-			G_ClearRetryFlag();
-
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
 				if (playeringame[i])
