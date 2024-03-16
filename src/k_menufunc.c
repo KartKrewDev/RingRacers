@@ -59,25 +59,6 @@ static boolean noFurtherInput = false;
 
 CV_PossibleValue_t dummystaff_cons_t[] = {{0, "MIN"}, {999, "MAX"}, {0, NULL}};
 
-// ==========================================================================
-// CVAR ONCHANGE EVENTS GO HERE
-// ==========================================================================
-// (there's only a couple anyway)
-
-void Dummystaff_OnChange(void);
-void Dummystaff_OnChange(void)
-{
-	if (mapheaderinfo[levellist.choosemap] == NULL || mapheaderinfo[levellist.choosemap]->ghostCount <= 0)
-		return;
-
-	dummystaff_cons_t[1].value = mapheaderinfo[levellist.choosemap]->ghostCount-1;
-	if (cv_dummystaff.value > dummystaff_cons_t[1].value)
-	{
-		CV_StealthSetValue(&cv_dummystaff, 0);
-		return;
-	}
-}
-
 
 // =========================================================================
 // BASIC MENU HANDLING

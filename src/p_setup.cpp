@@ -8460,6 +8460,10 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		if (demo.attract)
 		{
 			; // Leave the music alone! We're already playing what we want!
+
+			// Pull from RNG even though music will never change
+			// To silence playback has desynced warning
+			P_Random(PR_MUSICSELECT);
 		}
 		else if (K_PodiumSequence())
 		{

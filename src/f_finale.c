@@ -1743,10 +1743,10 @@ void F_TitleScreenTicker(boolean run)
 	if (!(--demoIdleLeft))
 	{
 		char dname[MAXMAPLUMPNAME+1+8+1];
+		lumpnum_t dlump;
 		UINT16 mapnum;
 		UINT8 numstaff;
 		static boolean use_netreplay = false;
-		const char *lumpname;
 		staffbrief_t *brief;
 
 		if ((use_netreplay = !use_netreplay))
@@ -1760,6 +1760,7 @@ void F_TitleScreenTicker(boolean run)
 			{
 				numstaff = M_RandomKey(numstaff)+1;
 				snprintf(dname, 9, "TDEMO%03u", numstaff);
+				dlump = LUMPERROR;
 				goto loadreplay;
 			}
 		}
@@ -1777,14 +1778,14 @@ void F_TitleScreenTicker(boolean run)
 
 		// Setup demo name
 		brief = mapheaderinfo[mapnum]->ghostBrief[numstaff];
-		lumpname = W_CheckNameForNumPwad(brief->wad, brief->lump);
-		strlcpy(dname, lumpname, sizeof(dname));
+		strcpy(dname, "");
+		dlump = (brief->wad << 16) | brief->lump;
 
 loadreplay:
 		demo.attract = DEMO_ATTRACT_TITLE;
 		demo.ignorefiles = true;
 		demo.loadfiles = false;
-		G_DoPlayDemo(dname);
+		G_DoPlayDemoEx(dname, dlump);
 	}
 }
 

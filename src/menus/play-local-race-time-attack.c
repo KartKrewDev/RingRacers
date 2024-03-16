@@ -335,9 +335,12 @@ void CV_SPBAttackChanged(void)
 			PLAY_TAGhosts[taghost_staff].status = IT_DISABLED;
 		if (mapheaderinfo[levellist.choosemap]->ghostCount > 0 && !modeprefix[0])
 		{
+			extern CV_PossibleValue_t dummystaff_cons_t[];
+			dummystaff_cons_t[1].value = mapheaderinfo[levellist.choosemap]->ghostCount-1;
+			CV_SetValue(&cv_dummystaff, 0);
+
 			PLAY_TAReplay[tareplay_staff].status = IT_STRING|IT_ARROWS;
 			PLAY_TAGhosts[taghost_staff].status = IT_STRING|IT_CVAR;
-			CV_SetValue(&cv_dummystaff, 0);
 			active |= 1|4;
 		}
 
@@ -413,7 +416,6 @@ void M_HandleStaffReplay(INT32 choice)
 	{
 		mapheader_t *mapheader;
 		staffbrief_t *staffbrief;
-		const char* lumpname = NULL;
 		restoreMenu = &PLAY_TimeAttackDef;
 
 		M_ClearMenus(true);
@@ -423,9 +425,7 @@ void M_HandleStaffReplay(INT32 choice)
 		mapheader = mapheaderinfo[levellist.choosemap];
 		staffbrief = mapheader->ghostBrief[cv_dummystaff.value];
 
-		lumpname = W_CheckNameForNumPwad(staffbrief->wad, staffbrief->lump);
-
-		G_DoPlayDemo(lumpname);
+		G_DoPlayDemoEx("", (staffbrief->wad << 16) | staffbrief->lump);
 		return;
 	}
 

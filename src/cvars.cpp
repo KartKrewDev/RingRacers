@@ -980,8 +980,7 @@ consvar_t cv_dummyspbattack = MenuDummy("dummyspbattack", "Off").on_off().onchan
 consvar_t cv_dummyspectate = MenuDummy("dummyspectate", "Spectator").values({{0, "Spectator"}, {1, "Playing"}});
 
 extern CV_PossibleValue_t dummystaff_cons_t[];
-void Dummystaff_OnChange(void);
-consvar_t cv_dummystaff = MenuDummy("dummystaff", "0").values(dummystaff_cons_t).onchange(Dummystaff_OnChange);
+consvar_t cv_dummystaff = MenuDummy("dummystaff", "0").values(dummystaff_cons_t);
 
 consvar_t cv_dummyteam = MenuDummy("dummyteam", "Spectator").values({{0, "Spectator"}, {1, "Red"}, {2, "Blue"}});
 

@@ -2891,7 +2891,7 @@ void G_DeferedPlayDemo(const char *name)
 
 #define SKIPERRORS
 
-void G_DoPlayDemo(const char *defdemoname)
+void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 {
 	INT32 i;
 	UINT8 p, numslots = 0;
@@ -2918,7 +2918,7 @@ void G_DoPlayDemo(const char *defdemoname)
 	gtname[MAXGAMETYPELENGTH-1] = '\0';
 
 	// No demo name means we're restarting the current demo
-	if (defdemoname == NULL)
+	if (defdemoname == NULL && deflumpnum == LUMPERROR)
 	{
 		demobuf.p = demobuf.buffer;
 		pdemoname = static_cast<char*>(ZZ_Alloc(1)); // Easier than adding checks for this everywhere it's freed
@@ -2929,18 +2929,21 @@ void G_DoPlayDemo(const char *defdemoname)
 		//Z_Free(demobuf.buffer);
 		demobuf.buffer = NULL;
 
-		n = defdemoname+strlen(defdemoname);
-		while (*n != '/' && *n != '\\' && n != defdemoname)
-			n--;
-		if (n != defdemoname)
-			n++;
-		pdemoname = static_cast<char*>(ZZ_Alloc(strlen(n)+1));
-		strcpy(pdemoname,n);
+		if (defdemoname != NULL)
+		{
+			n = defdemoname+strlen(defdemoname);
+			while (*n != '/' && *n != '\\' && n != defdemoname)
+				n--;
+			if (n != defdemoname)
+				n++;
+			pdemoname = static_cast<char*>(ZZ_Alloc(strlen(n)+1));
+			strcpy(pdemoname,n);
+		}
 
 		M_SetPlaybackMenuPointer();
 
 		// Internal if no extension, external if one exists
-		if (FIL_CheckExtension(defdemoname))
+		if (defdemoname != NULL && FIL_CheckExtension(defdemoname))
 		{
 			//FIL_DefaultExtension(defdemoname, ".lmp");
 			if (P_SaveBufferFromFile(&demobuf, defdemoname) == false)
@@ -2956,7 +2959,12 @@ void G_DoPlayDemo(const char *defdemoname)
 		// load demo resource from WAD
 		else
 		{
-			if (n == defdemoname)
+			if (deflumpnum != LUMPERROR)
+			{
+				P_SaveBufferFromLump(&demobuf, deflumpnum);
+				pdemoname = Z_StrDup(wadfiles[WADFILENUM(deflumpnum)]->lumpinfo[LUMPNUM(deflumpnum)].fullname);
+			}
+			else if (n == defdemoname)
 			{
 				// Raw lump.
 				if ((l = W_CheckNumForName(defdemoname)) == LUMPERROR)
