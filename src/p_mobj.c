@@ -7539,6 +7539,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				else
 					mobj->angle += ANGLE_MAX/(TICRATE/3);
 
+				if (!P_IsObjectOnGround(mobj))
+				{
+					mobj_t *gh = P_SpawnGhostMobj(mobj);
+					gh->renderflags |= RF_ADD;
+				}
+
 				// Non-RNG-advancing equivalent of Obj_SpawnEmeraldSparks
 				if (leveltime % 3 == 0)
 				{
@@ -7560,6 +7566,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 					if (mobj->target && !P_MobjWasRemoved(mobj->target))
 						mobj->target->color = sparkle->color;
 				}
+
+				if (mobj->target && !P_MobjWasRemoved(mobj->target))
+					mobj->target->z = mobj->z;
 			}
 		}
 
