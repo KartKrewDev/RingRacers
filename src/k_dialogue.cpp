@@ -106,7 +106,8 @@ void Dialogue::Typewriter::WriteText(void)
 		{
 			textTimer += textSpeed;
 		}
-		else if (std::ispunct(c)
+		else if (c != '+' && c != '"' // tutorial hack
+			&& std::ispunct(c)
 			&& std::isspace(nextc))
 		{
 			// slow down for punctuation
@@ -330,7 +331,7 @@ void Dialogue::Draw(void)
 		return;
 	}
 
-	const UINT8 bgcol = 1, darkcol = 235;
+	const UINT8 bgcol = 235, speakerhilicol = 240;
 
 	const fixed_t height = 78 * FRACUNIT;
 
@@ -343,7 +344,7 @@ void Dialogue::Draw(void)
 
 	// TODO -- hack, change when dialogue is made per-player/netsynced
 	UINT32 speakerbgflags = (players[consoleplayer].nocontrol == 0 && P_LevelIsFrozen() == false)
-		? (V_ADD|V_30TRANS)
+		? V_30TRANS
 		: 0;
 
 	drawer
@@ -374,10 +375,10 @@ void Dialogue::Draw(void)
 
 	if (speakername && speaker[0])
 	{
-		INT32 speakernamewidth = V_StringWidth(speakername, 0);
+		INT32 speakernamewidth = V_MenuStringWidth(speakername, 0);
 		INT32 existingborder = (portrait == nullptr ? -4 : 3);
 
-		INT32 speakernamewidthoffset = (speakernamewidth + (arrowstep - existingborder) - 1) % arrowstep;
+		INT32 speakernamewidthoffset = (speakernamewidth + (arrowstep - existingborder) - 2) % arrowstep;
 		if (speakernamewidthoffset)
 		{
 			speakernamewidthoffset = (arrowstep - speakernamewidthoffset);
@@ -410,14 +411,14 @@ void Dialogue::Draw(void)
 				.width(speakernamewidth - existingborder)
 				.y(-38-11)
 				.height(11)
-				.fill(darkcol);
+				.fill(speakerhilicol);
 		}
 
 		speakernameedge -= speakernamewidth;
 
 		drawer
 			.xy(speakernamewidthoffset + speakernameedge, -39-9)
-			.font(srb2::Draw::Font::kConsole)
+			.font(srb2::Draw::Font::kMenu)
 			.text(speakername);
 
 		speakernameedge -= 5;
@@ -468,9 +469,18 @@ void Dialogue::Draw(void)
 				.patch("TUTDIAG2");
 		}
 
+		auto bt_translate_press = [this]() -> std::optional<bool>
+		{
+			if (Held())
+				return true;
+			if (TextDone())
+				return {};
+			return false;
+		};
+
 		drawer
 			.xy(17-14 - BASEVIDWIDTH, -39-16)
-			.button(srb2::Draw::Button::z, Held());
+			.button(srb2::Draw::Button::z, bt_translate_press());
 	}
 }
 

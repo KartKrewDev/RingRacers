@@ -12316,7 +12316,7 @@ void P_MovePlayerToSpawn(INT32 playernum, mapthing_t *mthing)
 	mobj->angle = p->drawangle = angle;
 
 	// FAULT
-	if (gamestate == GS_LEVEL && leveltime > introtime && !p->spectator)
+	if (gamestate == GS_LEVEL && leveltime > introtime && !p->spectator && gametype != GT_TUTORIAL)
 	{
 		K_DoIngameRespawn(p);
 	}
