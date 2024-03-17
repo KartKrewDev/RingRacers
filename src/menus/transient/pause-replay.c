@@ -180,6 +180,7 @@ static void M_PlaybackTick(void)
 	else
 	{
 		PAUSE_PlaybackMenu[playback_viewcount].status = IT_ARROWS|IT_STRING;
+		PAUSE_PlaybackMenu[playback_director].status = IT_ARROWS|IT_STRING;
 		PAUSE_PlaybackMenu[playback_freecam].status = IT_CALL|IT_STRING;
 
 		for (i = 0; i <= r_splitscreen; i++)
