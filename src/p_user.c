@@ -711,7 +711,7 @@ void P_EndingMusic(void)
 		}
 		else if (modeattacking)
 		{
-			if (players[consoleplayer].realtime < oldbest && oldbest != (tic_t)UINT32_MAX)
+			if (players[consoleplayer].realtime < oldbest && oldbest != (tic_t)UINT32_MAX && !demo.playback)
 				jingle = "newrec";
 			else
 				jingle = "norec";
