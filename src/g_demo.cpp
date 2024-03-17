@@ -1266,8 +1266,12 @@ readghosttic:
 
 		while (ziptic != DW_END) // Get rid of extradata stuff
 		{
-			if (ziptic == 0) // Only support player 0 info for now
+			if (ziptic < MAXPLAYERS)
 			{
+				UINT8 playerid = ziptic;
+				// We want to skip *any* player extradata because some demos have extradata for bogus players,
+				// but if there is tic data later for those players *then* we'll consider it invalid.
+
 				ziptic = READUINT8(g->p);
 				if (ziptic & DXD_JOINDATA)
 				{
@@ -1275,8 +1279,17 @@ readghosttic:
 					if (READUINT8(g->p) != 0)
 						I_Error("Ghost is not a record attack ghost (bot JOINDATA)");
 				}
-				if (ziptic & DXD_PLAYSTATE && READUINT8(g->p) != DXD_PST_PLAYING)
-					I_Error("Ghost is not a record attack ghost (has PLAYSTATE)");
+				if (ziptic & DXD_PLAYSTATE)
+				{
+					UINT8 playstate = READUINT8(g->p);
+					if (playstate != DXD_PST_PLAYING)
+					{
+#ifdef DEVELOP
+						CONS_Alert(CONS_WARNING, "Ghost demo has non-playing playstate for player %d\n", playerid + 1);
+#endif
+						;
+					}
+				}
 				if (ziptic & DXD_SKIN)
 					g->p++; // We _could_ read this info, but it shouldn't change anything in record attack...
 				if (ziptic & DXD_COLOR)
