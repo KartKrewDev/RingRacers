@@ -4087,7 +4087,9 @@ void M_DrawMPRoomSelect(void)
 
 	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
 
-	V_DrawCenteredThinString(BASEVIDWIDTH/2, 12, 0, (mpmenu.room) ? "Play with addons and community content. (Expect additional downloads!)" : "Jump into a standard game of Ring Racers.");
+	V_DrawCenteredMenuString(BASEVIDWIDTH/2, 24, 0, "\xA3  Select a Room  \xA2");
+
+	V_DrawCenteredThinString(BASEVIDWIDTH/2, 12, 0, (mpmenu.room) ? "Play with community maps, characters, and gametypes. (Expect additional downloads!)" : "Jump into a standard game of Ring Racers.");
 
 	M_DrawMasterServerReminder();
 }
