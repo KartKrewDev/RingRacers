@@ -6229,7 +6229,7 @@ void K_drawKartHUD(void)
 	if (modeattacking || freecam) // everything after here is MP and debug only
 	{
 		K_drawInput();
-		return;
+		goto debug;
 	}
 
 	if ((gametyperules & GTR_KARMA) && !r_splitscreen && (stplyr->karthud[khud_yougotem] % 2)) // * YOU GOT EM *
@@ -6286,6 +6286,7 @@ void K_drawKartHUD(void)
 		}
 	}
 
+debug:
 	K_DrawWaypointDebugger();
 	K_DrawBotDebugger();
 	K_DrawDirectorDebugger();
