@@ -1560,7 +1560,7 @@ void R_LoadTexturesPwad(UINT16 wadnum)
 	INT32 newtextures = R_CountTextures(wadnum);
 
 	R_AllocateTextures(newtextures);
-	newtextures = R_DefineTextures(numtextures, wadnum);
+	newtextures = R_DefineTextures(numtextures, wadnum) - numtextures;
 	R_FinishLoadingTextures(newtextures);
 
 	R_PrintTextureWarnings();
