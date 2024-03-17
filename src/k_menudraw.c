@@ -5611,6 +5611,25 @@ void M_DrawExtras(void)
 // INGAME / PAUSE MENUS
 //
 
+static char *M_GetGameplayMode(void)
+{
+	if (grandprixinfo.gp == true)
+	{
+		if (grandprixinfo.masterbots)
+			return va("Master");
+		if (grandprixinfo.gamespeed == KARTSPEED_HARD)
+			return va("Hard");
+		if (grandprixinfo.gamespeed == KARTSPEED_NORMAL)
+			return va("Normal");
+		return va("Easy");
+	}
+
+	if (cv_4thgear.value)
+		return va("4th Gear!");
+
+	return va("Gear %d\n", gamespeed+1);
+}
+
 // PAUSE MAIN MENU
 void M_DrawPause(void)
 {
@@ -5992,14 +6011,20 @@ void M_DrawPause(void)
 			if (smallroundpatch != NULL)
 			{
 				V_DrawMappedPatch(
-					24, 152 + offset/2,
+					24, 145 + offset/2,
 					0,
 					smallroundpatch,
 					NULL);
 			}
 		}
 
+		V_DrawCenteredMenuString(24, 167 + offset/2, V_YELLOWMAP, M_GetGameplayMode());
+
 		Y_RoundQueueDrawer(&standings, offset/2, false, false);
+	}
+	else
+	{
+		V_DrawMenuString(4, 188 + offset/2, V_YELLOWMAP, M_GetGameplayMode());
 	}
 }
 

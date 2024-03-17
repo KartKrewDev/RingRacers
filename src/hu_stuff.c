@@ -2513,7 +2513,7 @@ static void HU_DrawRankings(void)
 	else if (gametyperules & GTR_CIRCUIT)
 	{
 		V_DrawCenteredString(256, 8, 0, "GAME SPEED");
-		V_DrawCenteredString(256, 16, hilicol, kartspeed_cons_t[1+gamespeed].strvalue);
+		V_DrawCenteredString(256, 16, hilicol, (cv_4thgear.value) ? va("4th Gear") : kartspeed_cons_t[1+gamespeed].strvalue);
 	}
 
 	boolean completed[MAXPLAYERS];
