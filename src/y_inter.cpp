@@ -599,8 +599,9 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 
 				INT32 letterpos = duelx + (datarightofcolumn ? 44 : 0);
 
-				if (j > splitscreen)
+				if (j > splitscreen || demo.playback)
 				{
+					// TODO: EGGA isn't strictly correct for demo playback since they're not really network players, but it's better than displaying local profile.
 					V_DrawScaledPatch(letterpos, duely, 0, static_cast<patch_t*>(W_CachePatchName(va("CHAR%s", (players[pnum].bot ? "CPU" : "EGGA")), PU_CACHE)));
 				}
 				else
