@@ -203,15 +203,7 @@ void K_DoIngameRespawn(player_t *player)
 	{
 		if (player->respawn.fromRingShooter == true)
 		{
-			waypoint_t *finishline = K_GetFinishLineWaypoint();
 			waypoint_t *prevWP = player->respawn.wp;
-			// Laps don't decrement while respawning, so don't cross behind the finish line
-			while (prevWP->numprevwaypoints > 0 && prevWP != finishline)
-			{
-				prevWP = prevWP->prevwaypoints[0];
-				if (K_GetWaypointIsSpawnpoint(prevWP) == true)
-					break;
-			}
 
 			const UINT32 dist = (player->airtime * 48);
 			player->respawn.distanceleft = (dist * mapobjectscale) / FRACUNIT;
