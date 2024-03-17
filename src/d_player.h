@@ -106,8 +106,9 @@ typedef enum
 
 	PF_ANALOGSTICK		= 1<<14, // This player is using an analog joystick
 	PF_TRUSTWAYPOINTS	= 1<<15, // Do not activate lap cheat prevention next time finish line distance is updated
+	PF_FREEZEWAYPOINTS	= 1<<16, // Skip the next waypoint/finish line distance update
 
-	//16-17 free, was previously itemflags stuff
+	//1<<17 free, was previously itemflags stuff
 
 	PF_DRIFTINPUT		= 1<<18, // Drifting!
 	PF_GETSPARKS		= 1<<19, // Can get sparks
