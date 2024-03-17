@@ -2271,6 +2271,13 @@ void Y_StartIntermission(void)
 
 	G_SetGamestate(GS_INTERMISSION);
 
+	if (demo.playback)
+	{
+		// Replay menu is inacessible here.
+		// Press A to continue!
+		M_ClearMenus(true);
+	}
+
 	if (musiccountdown == 0)
 	{
 		Y_PlayIntermissionMusic();
