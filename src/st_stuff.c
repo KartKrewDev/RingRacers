@@ -1271,10 +1271,7 @@ static void ST_overlayDrawer(void)
 		{
 			LUA_HookHUD(luahuddrawlist_game, HUD_HOOK(game));
 		}
-	}
 
-	if (!hu_showscores) // hide the following if TAB is held
-	{
 		if (cv_showviewpointtext.value)
 		{
 			if (!demo.attract && !P_IsPartyPlayer(stplyr) && !camera[viewnum].freecam)

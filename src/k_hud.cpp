@@ -5966,15 +5966,17 @@ void K_drawKartHUD(void)
 	if (!camera[viewnum].chase && !freecam)
 		K_drawKartFirstPerson();
 
+	if (mapreset)
+	{
+		// HERE COMES A NEW CHALLENGER
+		if (R_GetViewNumber() == 0)
+			K_drawChallengerScreen();
+		return;
+	}
+
 	// Draw full screen stuff that turns off the rest of the HUD
 	if (R_GetViewNumber() == 0)
 	{
-		if (mapreset)
-		{
-			K_drawChallengerScreen();
-			return;
-		}
-
 		if (g_emeraldWin)
 			K_drawEmeraldWin(false);
 	}

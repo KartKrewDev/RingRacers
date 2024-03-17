@@ -668,6 +668,15 @@ menu_t *M_SpecificMenuRestore(menu_t *torestore)
 //
 void M_StartControlPanel(void)
 {
+	if (demo.playback && gamestate == GS_INTERMISSION)
+	{
+		// At this point the replay has ended.
+		// The only menu option that works is "Stop Playback".
+		// And intermission can be finished by pressing the
+		// A button, so having a menu at all is useless.
+		return;
+	}
+
 	INT32 i;
 
 	G_ResetAllDeviceGameKeyDown();
