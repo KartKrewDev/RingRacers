@@ -2897,7 +2897,6 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 	UINT8 p, numslots = 0;
 	lumpnum_t l;
 	char color[MAXCOLORNAME+1],follower[17],mapname[MAXMAPLUMPNAME],gtname[MAXGAMETYPELENGTH];
-	const char *n;
 	char *pdemoname;
 	UINT8 availabilities[MAXPLAYERS][MAXAVAILABILITY];
 	UINT8 version,subversion;
@@ -2908,7 +2907,11 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 	UINT8 slots[MAXPLAYERS], lastfakeskin[MAXPLAYERS];
 
 #if defined(SKIPERRORS) && !defined(DEVELOP)
-	boolean skiperrors = false;
+	// RR: Don't print warnings for staff ghosts, since they'll inevitably
+	// happen when we make bugfixes/changes...
+	// Unlike usual, true by default since most codepaths in this func are internal
+	// lumps (or for restarted external files, shouldn't re-print existing errors)
+	boolean skiperrors = true;
 #endif
 
 	G_InitDemoRewind();
@@ -2917,33 +2920,43 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 	color[MAXCOLORNAME] = '\0';
 	gtname[MAXGAMETYPELENGTH-1] = '\0';
 
-	// No demo name means we're restarting the current demo
-	if (defdemoname == NULL && deflumpnum == LUMPERROR)
+	if (deflumpnum != LUMPERROR)
 	{
+		// Load demo resource from explicitly provided lump ID.
+		// (we do NOT care for defdemoname here)
+
+		P_SaveBufferFromLump(&demobuf, deflumpnum);
+		pdemoname = Z_StrDup(wadfiles[WADFILENUM(deflumpnum)]->lumpinfo[LUMPNUM(deflumpnum)].fullname);
+	}
+	else if (defdemoname == NULL)
+	{
+		// No demo name means we're restarting the current demo!
+
 		demobuf.p = demobuf.buffer;
 		pdemoname = static_cast<char*>(ZZ_Alloc(1)); // Easier than adding checks for this everywhere it's freed
 	}
 	else
 	{
+		// We have to guess by the string provided... :face_holding_back_tears:
+
 		// FIXME: this file doesn't manage its memory and actually free this when it's done using it
 		//Z_Free(demobuf.buffer);
 		demobuf.buffer = NULL;
 
-		if (defdemoname != NULL)
-		{
-			n = defdemoname+strlen(defdemoname);
-			while (*n != '/' && *n != '\\' && n != defdemoname)
-				n--;
-			if (n != defdemoname)
-				n++;
-			pdemoname = static_cast<char*>(ZZ_Alloc(strlen(n)+1));
-			strcpy(pdemoname,n);
-		}
+		// This weird construct turns `./media/replay/online/2.0/lmao.lmp` into `lmao.lmp`
+		// I'd wrap it in braces, but the VRES_GHOST feature needs access to n
+		const char *n = defdemoname+strlen(defdemoname);
+		while (*n != '/' && *n != '\\' && n != defdemoname)
+			n--;
+		if (n != defdemoname)
+			n++;
+		pdemoname = static_cast<char*>(ZZ_Alloc(strlen(n)+1));
+		strcpy(pdemoname,n);
 
 		M_SetPlaybackMenuPointer();
 
 		// Internal if no extension, external if one exists
-		if (defdemoname != NULL && FIL_CheckExtension(defdemoname))
+		if (FIL_CheckExtension(defdemoname))
 		{
 			//FIL_DefaultExtension(defdemoname, ".lmp");
 			if (P_SaveBufferFromFile(&demobuf, defdemoname) == false)
@@ -2955,31 +2968,16 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 				M_StartMessage("Demo Playback", msg, NULL, MM_NOTHING, NULL, "Return to Menu");
 				return;
 			}
+
+#if defined(SKIPERRORS) && !defined(DEVELOP)
+			skiperrors = false; // DO print warnings for external lumps
+#endif
 		}
-		// load demo resource from WAD
 		else
 		{
-			if (deflumpnum != LUMPERROR)
-			{
-				P_SaveBufferFromLump(&demobuf, deflumpnum);
-				pdemoname = Z_StrDup(wadfiles[WADFILENUM(deflumpnum)]->lumpinfo[LUMPNUM(deflumpnum)].fullname);
-			}
-			else if (n == defdemoname)
-			{
-				// Raw lump.
-				if ((l = W_CheckNumForName(defdemoname)) == LUMPERROR)
-				{
-					snprintf(msg, 1024, M_GetText("Failed to read lump '%s'.\n"), defdemoname);
-					CONS_Alert(CONS_ERROR, "%s", msg);
-					Z_Free(pdemoname);
-					gameaction = ga_nothing;
-					M_StartMessage("Demo Playback", msg, NULL, MM_NOTHING, NULL, "Return to Menu");
-					return;
-				}
-
-				P_SaveBufferFromLump(&demobuf, l);
-			}
-			else
+			// load demo resource from WAD by name
+#ifdef VRES_GHOST
+			if (n != defdemoname)
 			{
 				// vres GHOST_%u
 				virtres_t *vRes;
@@ -3027,9 +3025,22 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 
 				vres_Free(vRes);
 			}
-#if defined(SKIPERRORS) && !defined(DEVELOP)
-			skiperrors = true; // RR: Don't print warnings for staff ghosts, since they'll inevitably happen when we make bugfixes/changes...
-#endif
+			else
+#endif // VRES_GHOST
+			{
+				// Raw lump.
+				if ((l = W_CheckNumForLongName(defdemoname)) == LUMPERROR)
+				{
+					snprintf(msg, 1024, M_GetText("Failed to read lump '%s'.\n"), defdemoname);
+					CONS_Alert(CONS_ERROR, "%s", msg);
+					Z_Free(pdemoname);
+					gameaction = ga_nothing;
+					M_StartMessage("Demo Playback", msg, NULL, MM_NOTHING, NULL, "Return to Menu");
+					return;
+				}
+
+				P_SaveBufferFromLump(&demobuf, l);
+			}
 		}
 	}
 
