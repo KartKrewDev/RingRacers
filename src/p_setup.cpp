@@ -8858,11 +8858,6 @@ void P_PostLoadLevel(void)
 		G_BeginRecording(); // I AM NOW READY TO RECORD.
 	demo.deferstart = true;
 
-	if (demo.attract == DEMO_ATTRACT_TITLE)
-	{
-		S_ShowMusicCredit();
-	}
-
 	nextmapoverride = 0;
 	skipstats = 0;
 

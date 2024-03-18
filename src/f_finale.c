@@ -65,6 +65,9 @@ static tic_t stoptimer;
 
 static boolean keypressed = false;
 
+static tic_t attractcountdown; // Countdown until attract demo ends
+static boolean attractcredit; // Show music credit once attract demo begins
+
 static INT32 menuanimtimer; // Title screen: background animation timing
 altview_t titlemapcam = {0};
 
@@ -1747,7 +1750,7 @@ void F_TitleScreenTicker(boolean run)
 		UINT16 mapnum;
 		UINT8 numstaff;
 		static boolean use_netreplay = false;
-		staffbrief_t *brief;
+		staffbrief_t *brief = NULL;
 
 		if ((use_netreplay = !use_netreplay))
 		{
@@ -1785,6 +1788,38 @@ loadreplay:
 		demo.attract = DEMO_ATTRACT_TITLE;
 		demo.ignorefiles = true;
 		demo.loadfiles = false;
+
+		attractcountdown = INFTICS;
+
+		if (brief)
+		{
+			// "Random" table of times to skip forward in the demo.
+			// I didn't want to use real random functions because I didn't like the distribution.
+			tic_t table[] = {
+				0,
+				15*TICRATE,
+				brief->lap / 2, // references to brief->lap will skip to the end of Prison replays
+				0,
+				40*TICRATE,
+				brief->lap,
+				0,
+				0,
+				brief->time,
+			};
+			UINT8 numintable = sizeof table / sizeof *table;
+
+			static UINT8 index = UINT8_MAX;
+			if (index == UINT8_MAX)
+				index = M_RandomKey(numintable);
+			else
+				index = (index + 1) % numintable;
+
+			attractcountdown = min(30*TICRATE, brief->time);
+			g_fast_forward = min(table[index], brief->time - attractcountdown);
+			// Show title screen music credit at beginning of demo
+			attractcredit = true;
+		}
+
 		G_DoPlayDemoEx(dname, dlump);
 	}
 }
@@ -1792,6 +1827,18 @@ loadreplay:
 void F_AttractDemoTicker(void)
 {
 	keypressed = false;
+
+	if (attractcountdown > 0 && !g_fast_forward)
+	{
+		if (attractcredit)
+		{
+			S_ShowMusicCredit();
+			attractcredit = false;
+		}
+
+		if (attractcountdown > 0 && !--attractcountdown)
+			G_CheckDemoStatus();
+	}
 }
 
 // ================
