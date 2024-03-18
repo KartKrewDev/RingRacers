@@ -27,6 +27,7 @@ public:
 		kNearest,
 		kSharpBilinear,
 		kCrt,
+		kCrtSharp
 	};
 
 private:
