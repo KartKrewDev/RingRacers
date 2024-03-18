@@ -2030,7 +2030,19 @@ void G_Ticker(boolean run)
 
 		if (g_fast_forward > 0)
 		{
+			if (I_GetTime() > g_fast_forward_clock_stop)
+			{
+				// If too much real time has passed, end the fast-forward early.
+				g_fast_forward = 1;
+			}
+
 			g_fast_forward--;
+
+			if (g_fast_forward == 0)
+			{
+				// Next fast-forward is unlimited.
+				g_fast_forward_clock_stop = INFTICS;
+			}
 		}
 	}
 }

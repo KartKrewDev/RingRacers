@@ -150,6 +150,7 @@ boolean g_singletics = false; // timedemo
 boolean lastdraw = false;
 
 tic_t g_fast_forward = 0;
+tic_t g_fast_forward_clock_stop = INFTICS;
 
 postimg_t postimgtype[MAXSPLITSCREENPLAYERS];
 INT32 postimgparam[MAXSPLITSCREENPLAYERS];
