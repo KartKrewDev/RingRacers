@@ -820,7 +820,7 @@ consvar_t cv_kartdebughuddrop = OnlineCheat("debugitemdrop", "Off").on_off().des
 consvar_t cv_kartdebugbotwhip = OnlineCheat("debugbotwhip", "Off").on_off().description("Disable bot ring and item pickups");
 
 extern CV_PossibleValue_t kartdebugitem_cons_t[];
-consvar_t cv_kartdebugitem = OnlineCheat("debugitem", "None").values(kartdebugitem_cons_t).description("Force item boxes to only roll one kind of item");
+consvar_t cv_kartdebugitem = OnlineCheat("debugitem", "NONE").values(kartdebugitem_cons_t).description("Force item boxes to only roll one kind of item");
 
 consvar_t cv_kartdebugstart = OnlineCheat("debugstart", "-1").min_max(-1, 16).description("Override playercount for POSITION time calcs. -1 default, 0 skip");
 consvar_t cv_kartdebugwaypoints = OnlineCheat("debugwaypoints", "Off").values({{0, "Off"}, {1, "Forwards"}, {2, "Backwards"}}).description("Make waypoints visible");
