@@ -1131,6 +1131,8 @@ static boolean g_deferredtitle = false;
 //
 void D_StartTitle(void)
 {
+	demo.attract = DEMO_ATTRACT_OFF;
+
 	Music_StopAll();
 
 	D_ClearState();

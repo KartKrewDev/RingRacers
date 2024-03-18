@@ -94,8 +94,12 @@ void M_EndModeAttackRun(void)
 		// - Now we need to clear the rest of the gamestate ourself!
 	}
 
-	// Playback: modeattacking is always false, so calling this returns to the menu.
-	// Recording: modeattacking is still true and this function call preserves that.
+	// Playback:
+	// - modeattacking is always false, so calling this returns to the menu.
+	// - Because modeattacking is false, also clears demo.attract.
+	//
+	// Recording:
+	// - modeattacking is still true and this function call preserves that.
 	Command_ExitGame_f();
 
 	if (!modeattacking)
@@ -123,19 +127,8 @@ void M_EndModeAttackRun(void)
 	modeattacking = ATTACKING_NONE;
 
 	// Return to the menu.
-	if (demo.attract == DEMO_ATTRACT_TITLE)
-	{
-		D_SetDeferredStartTitle(true);
-	}
-	else if (demo.attract == DEMO_ATTRACT_CREDITS)
-	{
-		F_ContinueCredits();
-	}
-	else
-	{
-		D_ClearState();
-		M_StartControlPanel();
-	}
+	D_ClearState();
+	M_StartControlPanel();
 }
 
 // Replay Playback Menu

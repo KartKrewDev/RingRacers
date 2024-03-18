@@ -71,6 +71,7 @@
 #include "k_roulette.h"
 #include "k_bans.h"
 #include "k_director.h"
+#include "k_credits.h"
 
 #ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 #include "m_avrecorder.h"
@@ -6374,14 +6375,20 @@ void Command_ExitGame_f(void)
 
 	if (!modeattacking)
 	{
-		if (restoreMenu == NULL)
+		// YES, this is where demo.attract gets cleared!
+		if (demo.attract == DEMO_ATTRACT_CREDITS)
 		{
-			D_StartTitle();
+			F_ContinueCredits(); // <-- clears demo.attract
+		}
+		else if (restoreMenu == NULL) // this is true for attract demos too!
+		{
+			D_StartTitle(); // <-- clears demo.attract
 		}
 		else
 		{
 			D_ClearState();
 			M_StartControlPanel();
+			demo.attract = DEMO_ATTRACT_OFF; // shouldn't ever happen, but let's keep the code symmetrical
 		}
 	}
 }

@@ -430,6 +430,7 @@ void F_ContinueCredits(void)
 {
 	G_SetGamestate(GS_CREDITS);
 	F_CreditsReset();
+	demo.attract = DEMO_ATTRACT_OFF;
 
 	// Returning from playing a demo.
 	// Go to the next slide.

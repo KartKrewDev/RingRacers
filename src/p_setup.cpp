@@ -8342,8 +8342,10 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	P_InitLevelSettings();
 
-	if (demo.attract != DEMO_ATTRACT_TITLE)
+	if (demo.attract != DEMO_ATTRACT_TITLE && gamestate != GS_TITLESCREEN)
 	{
+		// Stop titlescreen music from overriding level music.
+		// Except on the title screen, where an attract demo or title map may be used.
 		Music_Stop("title");
 	}
 
