@@ -38,7 +38,8 @@ tic_t I_GetTime(void);
 */
 void I_InitializeTime(void);
 
-void I_UpdateTime(fixed_t timescale);
+void I_UpdateTime(void);
+fixed_t I_GetTimeScale(void);
 
 /** \brief  Block for at minimum the duration specified. This function makes a
             best effort not to oversleep, and will spinloop if sleeping would

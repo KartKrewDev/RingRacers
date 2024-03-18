@@ -2200,7 +2200,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 	else
 	{
 		I_Sleep(cv_sleep.value);
-		I_UpdateTime(cv_timescale.value);
+		I_UpdateTime();
 	}
 
 	return true;

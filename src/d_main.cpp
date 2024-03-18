@@ -829,7 +829,7 @@ void D_SRB2Loop(void)
 
 	// Pushing of + parameters is now done back in D_SRB2Main, not here.
 
-	I_UpdateTime(cv_timescale.value);
+	I_UpdateTime();
 	oldentertics = I_GetTime();
 
 	// end of loading screen: CONS_Printf() will no more call FinishUpdate()
@@ -877,7 +877,7 @@ void D_SRB2Loop(void)
 
 		bool ranwipe = false;
 
-		I_UpdateTime(cv_timescale.value);
+		I_UpdateTime();
 
 		if (lastwipetic)
 		{

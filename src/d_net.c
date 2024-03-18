@@ -600,7 +600,7 @@ void Net_WaitAllAckReceived(UINT32 timeout)
 		while (tictac == I_GetTime())
 		{
 			I_Sleep(cv_sleep.value);
-			I_UpdateTime(cv_timescale.value);
+			I_UpdateTime();
 		}
 		tictac = I_GetTime();
 		HGetPacket();

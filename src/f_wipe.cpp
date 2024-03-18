@@ -507,7 +507,7 @@ void F_RunWipe(UINT8 wipemode, UINT8 wipetype, boolean drawMenu, const char *col
 		while (!((nowtime = I_GetTime()) - lastwipetic))
 		{
 			I_Sleep(cv_sleep.value);
-			I_UpdateTime(cv_timescale.value);
+			I_UpdateTime();
 		}
 		lastwipetic = nowtime;
 

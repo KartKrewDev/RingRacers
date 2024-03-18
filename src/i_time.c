@@ -57,14 +57,19 @@ void I_InitializeTime(void)
 	I_StartupTimer();
 }
 
-void I_UpdateTime(fixed_t timescale)
+fixed_t I_GetTimeScale(void)
+{
+	return cv_timescale.value;
+}
+
+void I_UpdateTime(void)
 {
 	double ticratescaled;
 	double elapsedseconds;
 	tic_t realtics;
 
 	// get real tics
-	ticratescaled = (double)TICRATE * FIXED_TO_FLOAT(timescale);
+	ticratescaled = (double)TICRATE * FIXED_TO_FLOAT(I_GetTimeScale());
 
 	enterprecise = I_GetPreciseTime();
 	elapsedseconds = (double)(enterprecise - oldenterprecise) / I_GetPrecisePrecision();

@@ -1285,7 +1285,7 @@ void G_PreLevelTitleCard(void)
 		while (!((nowtime = I_GetTime()) - lasttime))
 		{
 			I_Sleep(cv_sleep.value);
-			I_UpdateTime(cv_timescale.value);
+			I_UpdateTime();
 		}
 		lasttime = nowtime;
 	}

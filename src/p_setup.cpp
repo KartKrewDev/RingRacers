@@ -8393,7 +8393,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		while (!((nowtime = I_GetTime()) - lastwipetic)) \
 		{ \
 			I_Sleep(cv_sleep.value); \
-			I_UpdateTime(cv_timescale.value); \
+			I_UpdateTime(); \
 		} \
 		lastwipetic = nowtime; \
 		if (moviemode && rendermode == render_opengl) \

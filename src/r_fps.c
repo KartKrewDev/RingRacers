@@ -50,7 +50,7 @@ UINT32 R_GetFramerateCap(void)
 
 boolean R_UsingFrameInterpolation(void)
 {
-	return (R_GetFramerateCap() != TICRATE || cv_timescale.value < FRACUNIT);
+	return (R_GetFramerateCap() != TICRATE || I_GetTimeScale() < FRACUNIT);
 }
 
 static viewvars_t pview_old[MAXSPLITSCREENPLAYERS];
