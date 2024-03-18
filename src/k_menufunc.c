@@ -726,6 +726,14 @@ void M_StartControlPanel(void)
 	{
 		if (gamestate != GS_MENU)
 		{
+			if (titlemapinaction)
+			{
+				// We clear a LITTLE bit of state, but not a full D_ClearState.
+				// Just enough to guarantee SV_ResetServer is called before session start.
+				SV_StopServer();
+				SV_ResetServer();
+			}
+
 			G_SetGamestate(GS_MENU);
 
 			gameaction = ga_nothing;
