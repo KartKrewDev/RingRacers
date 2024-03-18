@@ -548,6 +548,7 @@ void M_ChallengesTick(void)
 
 					challengesmenu.chaokeyhold = 0;
 					challengesmenu.unlockcount[CMC_CHAOANIM]++;
+					challengesmenu.keywasadded = false; // disappearify the Hand
 
 					S_StartSound(NULL, sfx_chchng);
 

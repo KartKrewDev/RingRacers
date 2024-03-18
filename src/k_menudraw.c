@@ -7282,12 +7282,14 @@ static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 
 	fixed_t keyx = (8+offs)*FRACUNIT, keyy = 0;
 
+	const boolean keybuttonpress = (menumessage.active == false && M_MenuExtraHeld(pid) == true);
+
 	// Button prompt
 	K_drawButton(
 		24 << FRACBITS,
 		16 << FRACBITS,
 		0, kp_button_c[1],
-		menumessage.active == false && M_MenuExtraHeld(pid) == true
+		keybuttonpress
 	);
 
 	// Metyr of rounds played that contribute to Chao Key generation
@@ -7332,6 +7334,20 @@ static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 			textx += 6;
 			i++;
 		}
+	}
+
+	// Hand
+	if (challengesmenu.keywasadded == true)
+	{
+		INT32 handx = 32 + 16;
+		if (keybuttonpress == false)
+		{
+			// Only animate if it's the focus
+			handx -= (skullAnimCounter/5);
+		}
+
+		V_DrawScaledPatch(handx, 8, V_FLIP,
+			W_CachePatchName("M_CURSOR", PU_CACHE));
 	}
 
 	UINT8 keysbeingused = 0;
