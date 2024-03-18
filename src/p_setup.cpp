@@ -8532,15 +8532,24 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			wipetype = wipe_encore_towhite;
 		}
 
-		if (rendermode != render_none)
+		if (g_attractnowipe)
 		{
-			F_WipeStartScreen();
-
-			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
-			F_WipeEndScreen();
+			// Attract demos do a custom fade on exit, so
+			// don't run a wipe here.
+			g_attractnowipe = false;
 		}
+		else
+		{
+			if (rendermode != render_none)
+			{
+				F_WipeStartScreen();
 
-		F_RunWipe(wipetype, wipedefs[wipetype], false, ((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), false, false);
+				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
+				F_WipeEndScreen();
+			}
+
+			F_RunWipe(wipetype, wipedefs[wipetype], false, ((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), false, false);
+		}
 	}
 
 	/*

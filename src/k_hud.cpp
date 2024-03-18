@@ -52,6 +52,7 @@
 #include "k_hitlag.h"
 #include "g_input.h"
 #include "k_dialogue.h"
+#include "f_finale.h"
 
 //{ 	Patch Definitions
 static patch_t *kp_nodraw;
@@ -6097,6 +6098,33 @@ void K_drawKartHUD(void)
 			{
 				INT32 x = BASEVIDWIDTH - 8, y = BASEVIDHEIGHT-8, snapflags = V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SLIDEIN;
 				patch_t *pat = static_cast<patch_t*>(W_CachePatchName((M_UseAlternateTitleScreen() ? "MTSJUMPR1" : "MTSBUMPR1"), PU_CACHE));
+				const UINT8 *colormap = nullptr;
+
+				if (INT32 fade = F_AttractDemoExitFade())
+				{
+					// TODO: Twodee cannot handle
+					// V_DrawCustomFadeScreen.
+					// However, since the screen fade just
+					// uses a colormap, the same colormap can
+					// be applied on a per-patch basis.
+					// I'm only bothering to apply this
+					// colormap to the attract mode sticker,
+					// since it's the lone HUD element.
+					if (lighttable_t *clm = V_LoadCustomFadeMap("FADEMAP0"))
+					{
+						// This must be statically allocated for Twodee
+						static UINT8 *colormap_storage;
+						const UINT8 *fadetable = V_OffsetIntoFadeMap(clm, fade);
+
+						if (!colormap_storage)
+							Z_MallocAlign(256, PU_STATIC, &colormap_storage, 8);
+
+						memcpy(colormap_storage, fadetable, 256);
+						colormap = colormap_storage;
+
+						Z_Free(clm);
+					}
+				}
 
 				if (r_splitscreen == 3)
 				{
@@ -6105,7 +6133,7 @@ void K_drawKartHUD(void)
 					snapflags = 0;
 				}
 
-				V_DrawScaledPatch(x-(SHORT(pat->width)), y-(SHORT(pat->height)), snapflags, pat);
+				V_DrawMappedPatch(x-(SHORT(pat->width)), y-(SHORT(pat->height)), snapflags, pat, colormap);
 			}
 		}
 		else

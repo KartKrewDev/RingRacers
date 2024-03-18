@@ -18,6 +18,8 @@
 #include "command.h"
 #include "doomtype.h"
 #include "d_netcmd.h"
+#include "f_finale.h"
+#include "g_demo.h"
 #include "m_fixed.h"
 #include "i_system.h"
 
@@ -59,6 +61,12 @@ void I_InitializeTime(void)
 
 fixed_t I_GetTimeScale(void)
 {
+	if (demo.playback && demo.attract == DEMO_ATTRACT_TITLE && F_AttractDemoExitFade())
+	{
+		// Slow down at the end of attract demos
+		return FRACUNIT/2;
+	}
+
 	return cv_timescale.value;
 }
 

@@ -649,6 +649,13 @@ static bool D_Display(void)
 						V_DrawCustomFadeScreen("FADEMAP0", val);
 					}
 				}
+				else if (demo.attract == DEMO_ATTRACT_TITLE)
+				{
+					if (INT32 fade = F_AttractDemoExitFade())
+					{
+						V_DrawCustomFadeScreen("FADEMAP0", fade);
+					}
+				}
 
 				VID_DisplaySoftwareScreen();
 			}

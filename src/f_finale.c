@@ -67,6 +67,7 @@ static boolean keypressed = false;
 
 static tic_t attractcountdown; // Countdown until attract demo ends
 static boolean attractcredit; // Show music credit once attract demo begins
+boolean g_attractnowipe; // Do not wipe on return to title screen
 
 static INT32 menuanimtimer; // Title screen: background animation timing
 altview_t titlemapcam = {0};
@@ -1837,8 +1838,20 @@ void F_AttractDemoTicker(void)
 		}
 
 		if (attractcountdown > 0 && !--attractcountdown)
+		{
+			// Fade will be handled without a wipe (see F_AttractDemoExitFade)
+			g_attractnowipe = true;
 			G_CheckDemoStatus();
+		}
 	}
+}
+
+INT32 F_AttractDemoExitFade(void)
+{
+	if (attractcountdown > 15)
+		return 0;
+
+	return 31 - (attractcountdown * 2);
 }
 
 // ================
