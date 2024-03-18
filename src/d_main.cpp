@@ -1131,6 +1131,7 @@ static boolean g_deferredtitle = false;
 //
 void D_StartTitle(void)
 {
+	bool fromAttract = (demo.attract == DEMO_ATTRACT_TITLE);
 	demo.attract = DEMO_ATTRACT_OFF;
 
 	Music_StopAll();
@@ -1139,6 +1140,10 @@ void D_StartTitle(void)
 	F_StartTitleScreen();
 	M_ClearMenus(false);
 	g_deferredtitle = false;
+
+	if (fromAttract)
+		S_ShowMusicCredit(); // Show music credit when returning to the title screen
+
 }
 
 void D_SetDeferredStartTitle(boolean deferred)
