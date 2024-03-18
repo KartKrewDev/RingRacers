@@ -2837,7 +2837,7 @@ static void M_DrawCupTitle(INT16 y, levelsearch_t *levelsearch)
 
 	if (levelsearch->cup == &dummy_lostandfound)
 	{
-		V_DrawCenteredLSTitleLowString(BASEVIDWIDTH/2, y+6, 0, "Lost and Found");
+		V_DrawCenteredLSTitleLowString(BASEVIDWIDTH/2, y+6, 0, "Lost & Found");
 	}
 	else if (levelsearch->cup)
 	{
@@ -7881,7 +7881,7 @@ static void M_DrawStatsMaps(void)
 				else if (mapheaderinfo[mnum]->cup)
 					str = va("%s CUP", mapheaderinfo[mnum]->cup->realname);
 				else
-					str = "LOST AND FOUND";
+					str = "LOST & FOUND";
 
 				V_DrawThinString(20,  y, highlightflags, str);
 			}

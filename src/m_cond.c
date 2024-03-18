@@ -1153,7 +1153,7 @@ static void M_PrecacheLevelLocks(void)
 
 							tempstr = va(
 								"Music: %s #%u %c",
-								(mapheaderinfo[map]->typeoflevel & TOL_TUTORIAL) ? "Tutorial" : "Lost and Found",
+								(mapheaderinfo[map]->typeoflevel & TOL_TUTORIAL) ? "Tutorial" : "Lost & Found",
 								positionid + 1,
 								'A' + j // :D ?
 							);
