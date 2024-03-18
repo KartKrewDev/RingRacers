@@ -525,6 +525,8 @@ static boolean F_CreditsPlayDemo(void)
 	G_DoPlayDemoEx("", (brief->wad << 16) | brief->lump);
 
 	g_fast_forward = 30 * TICRATE;
+	// Slow computers, don't wait all day
+	g_fast_forward_clock_stop = I_GetTime() + 2 * TICRATE;
 	g_credits.demo_exit = 0;
 	return true;
 }

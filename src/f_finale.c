@@ -1817,6 +1817,8 @@ loadreplay:
 
 			attractcountdown = min(30*TICRATE, brief->time);
 			g_fast_forward = min(table[index], brief->time - attractcountdown);
+			// Slow computers, don't wait all day
+			g_fast_forward_clock_stop = I_GetTime() + 2*TICRATE;
 			// Show title screen music credit at beginning of demo
 			attractcredit = true;
 		}
