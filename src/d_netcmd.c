@@ -606,12 +606,21 @@ boolean EnsurePlayerNameIsGood(char *name, INT32 playernum)
 
 	if (len == 0 || len > MAXPLAYERNAME)
 		return false; // Empty or too long.
-	if (name[0] == ' ' || name[len-1] == ' ')
-		return false; // Starts or ends with a space.
+	if (name[0] == ' ')
+		return false; // Starts with a space.
 	if (isdigit(name[0]))
 		return false; // Starts with a digit.
 	if (name[0] == '@' || name[0] == '~')
 		return false; // Starts with an admin symbol.
+
+	// Clean up trailing whitespace.
+	while (len && name[len-1] == ' ')
+	{
+		name[len-1] = '\0';
+		len--;
+	}
+	if (len == 0)
+		return false;
 
 	// Check if it contains a non-printing character.
 	// Note: ANSI C isprint() considers space a printing character.
