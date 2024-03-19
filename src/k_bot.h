@@ -198,6 +198,24 @@ boolean K_AddBot(UINT8 skin, UINT8 difficulty, botStyle_e style, UINT8 *p);
 
 
 /*--------------------------------------------------
+	void K_SetNameForBot(UINT8 newplayernum, const char *realname)
+
+		Sets a bot's name.
+		by K_AddBot, and indirectly by K_AddBotFromServer by sending
+		a packet.
+
+	Input Arguments:-
+		newplayernum - Player slot number to set name for.
+		realname - Proposed name for bot.
+
+	Return:-
+		None
+--------------------------------------------------*/
+
+void K_SetNameForBot(UINT8 newplayernum, const char *realname);
+
+
+/*--------------------------------------------------
 	void K_SetBot(UINT8 newplayernum, UINT8 skinnum, UINT8 difficulty, botStyle_e style);
 
 		Sets a player ID to be a new bot directly. Invoked directly

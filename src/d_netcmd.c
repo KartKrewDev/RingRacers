@@ -603,16 +603,25 @@ static boolean AllowedPlayerNameChar(char ch)
 
 boolean EnsurePlayerNameIsGood(char *name, INT32 playernum)
 {
-	INT32 ix;
+	size_t ix, len = strlen(name);
 
-	if (strlen(name) == 0 || strlen(name) > MAXPLAYERNAME)
+	if (len == 0 || len > MAXPLAYERNAME)
 		return false; // Empty or too long.
-	if (name[0] == ' ' || name[strlen(name)-1] == ' ')
-		return false; // Starts or ends with a space.
+	if (name[0] == ' ')
+		return false; // Starts with a space.
 	if (isdigit(name[0]))
 		return false; // Starts with a digit.
 	if (name[0] == '@' || name[0] == '~')
 		return false; // Starts with an admin symbol.
+
+	// Clean up trailing whitespace.
+	while (len && name[len-1] == ' ')
+	{
+		name[len-1] = '\0';
+		len--;
+	}
+	if (len == 0)
+		return false;
 
 	// Check if it contains a non-printing character.
 	// Note: ANSI C isprint() considers space a printing character.
@@ -621,20 +630,19 @@ boolean EnsurePlayerNameIsGood(char *name, INT32 playernum)
 
 	// Also, anything over 0x80 is disallowed too, since compilers love to
 	// differ on whether they're printable characters or not.
-	for (ix = 0; name[ix] != '\0'; ix++)
+	for (ix = 0; ix < len; ix++)
 		if (!AllowedPlayerNameChar(name[ix]))
 			return false;
 
 	// Check if a player is currently using the name, case-insensitively.
 	for (ix = 0; ix < MAXPLAYERS; ix++)
 	{
-		if (ix != playernum && playeringame[ix]
+		if (ix != (size_t)playernum && playeringame[ix]
 			&& strcasecmp(name, player_names[ix]) == 0)
 		{
 			// We shouldn't kick people out just because
 			// they joined the game with the same name
 			// as someone else -- modify the name instead.
-			size_t len = strlen(name);
 
 			// Recursion!
 			// Slowly strip characters off the end of the
@@ -648,7 +656,7 @@ boolean EnsurePlayerNameIsGood(char *name, INT32 playernum)
 			else if (len == 1) // Agh!
 			{
 				// Last ditch effort...
-				sprintf(name, "%d", M_RandomKey(10));
+				sprintf(name, "%d", 'A' + M_RandomKey(26));
 				if (!EnsurePlayerNameIsGood (name, playernum))
 					return false;
 			}

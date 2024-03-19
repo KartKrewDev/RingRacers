@@ -758,6 +758,25 @@ void K_RetireBots(void)
 
 		if (bot->pflags & PF_NOCONTEST)
 		{
+			// HACK!!!!! two days to end of cleanup period :)
+			// we do this so that any bot that's been removed doesn't count for K_SetNameForBot conflicts
+			player_names[i][0] = '0';
+		}
+	}
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		player_t *bot = NULL;
+
+		if (!playeringame[i] || !players[i].bot || players[i].spectator)
+		{
+			continue;
+		}
+
+		bot = &players[i];
+
+		if (bot->pflags & PF_NOCONTEST)
+		{
 			UINT8 skinnum = defaultbotskin;
 
 			if (usableskins > 0)
@@ -772,9 +791,9 @@ void K_RetireBots(void)
 			bot->botvars.difficulty = newDifficulty;
 			bot->botvars.diffincrease = 0;
 
-			SetPlayerSkinByNum(bot - players, skinnum);
+			SetPlayerSkinByNum(i, skinnum);
 			bot->skincolor = skins[skinnum].prefcolor;
-			sprintf(player_names[bot - players], "%s", skins[skinnum].realname);
+			K_SetNameForBot(i, skins[skinnum].realname);
 
 			bot->score = 0;
 			bot->pflags &= ~PF_NOCONTEST;

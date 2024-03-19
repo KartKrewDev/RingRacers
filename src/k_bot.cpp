@@ -47,6 +47,59 @@
 extern "C" consvar_t cv_forcebots;
 
 /*--------------------------------------------------
+	void K_SetNameForBot(UINT8 playerNum, UINT8 skinnum)
+
+		See header file for description.
+--------------------------------------------------*/
+void K_SetNameForBot(UINT8 newplayernum, const char *realname)
+{
+	UINT8 ix = MAXPLAYERS;
+
+	// These names are generally sourced from skins.
+	I_Assert(MAXPLAYERNAME >= SKINNAMESIZE+2);
+
+	if (netgame == true)
+	{
+		// Check if a player is currently using the name, case-insensitively.
+		// We only do this if online, because it doesn't matter if there are multiple Eggrobo *off*line.
+		// See also EnsurePlayerNameIsGood
+		for (ix = 0; ix < MAXPLAYERS; ix++)
+		{
+			if (ix == newplayernum)
+				continue;
+			if (playeringame[ix] == false)
+				continue;
+			if (strcasecmp(realname, player_names[ix]) != 0)
+				continue;
+
+			break;
+		}
+	}
+
+	if (ix == MAXPLAYERS)
+	{
+		// No conflict detected!
+		sprintf(player_names[newplayernum], "%s", realname);
+		return;
+	}
+
+	// Ok, now we append on the end for duplicates...
+	char namebuffer[MAXPLAYERNAME+1];
+	sprintf(namebuffer, "%s %c", realname, 'A'+newplayernum);
+
+	// ...and use the actual function, to handle more devious duplication.
+	if (!EnsurePlayerNameIsGood(namebuffer, newplayernum))
+	{
+		// we can't bail from adding the bot...
+		// this hopefully uncontroversial pick is all we CAN do
+		sprintf(namebuffer, "Bot %u", newplayernum+1);
+	}
+
+	// And finally write.
+	sprintf(player_names[newplayernum], "%s", namebuffer);
+}
+
+/*--------------------------------------------------
 	void K_SetBot(UINT8 playerNum, UINT8 skinnum, UINT8 difficulty, botStyle_e style)
 
 		See header file for description.
@@ -117,7 +170,7 @@ void K_SetBot(UINT8 newplayernum, UINT8 skinnum, UINT8 difficulty, botStyle_e st
 		}
 	}
 	players[newplayernum].skincolor = color;
-	sprintf(player_names[newplayernum], "%s", realname);
+	K_SetNameForBot(newplayernum, realname);
 
 	SetPlayerSkinByNum(newplayernum, skinnum);
 
