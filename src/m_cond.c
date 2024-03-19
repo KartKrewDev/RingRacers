@@ -2117,7 +2117,7 @@ static const char *M_GetConditionString(condition_t *cn)
 	switch (cn->type)
 	{
 		case UC_PLAYTIME: // Requires total playing time >= x
-			return va("play for %i:%02i:%02i",
+			return va("play the game for %i:%02i:%02i",
 				G_TicsToHours(cn->requirement),
 				G_TicsToMinutes(cn->requirement, false),
 				G_TicsToSeconds(cn->requirement));
@@ -2168,7 +2168,7 @@ static const char *M_GetConditionString(condition_t *cn)
 
 		case UC_GAMECLEAR: // Requires game beaten >= x times
 			if (cn->requirement > 1)
-				return va("beat game %d times", cn->requirement);
+				return va("beat the game %d times", cn->requirement);
 			else
 				return va("beat the game");
 
@@ -2464,14 +2464,14 @@ static const char *M_GetConditionString(condition_t *cn)
 		case UC_ADDON:
 			if (!M_SecretUnlocked(SECRET_ADDONS, true))
 				return NULL;
-			return "load a custom addon into \"Dr. Robotnik's Ring Racers\"";
+			return "load a custom addon";
 		case UC_CREDITS:
 			return "watch the developer credits all the way from start to finish";
 		case UC_REPLAY:
 			return "save a replay after finishing a round";
 		case UC_CRASH:
 			if (gamedata->evercrashed)
-				return "launch \"Dr. Robotnik's Ring Racers\" again after a game crash";
+				return "re-launch the game after a crash";
 			return NULL;
 		case UC_TUTORIALSKIP:
 			return "successfully skip the Tutorial";
