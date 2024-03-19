@@ -13083,7 +13083,9 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	}
 	case MT_SPRAYCAN:
 	{
-		if (nummapspraycans == UINT8_MAX || tutorialchallenge == TUTORIALSKIP_INPROGRESS)
+		if (nummapspraycans == UINT8_MAX
+		|| modeattacking != ATTACKING_NONE
+		|| tutorialchallenge == TUTORIALSKIP_INPROGRESS)
 		{
 			P_RemoveMobj(mobj);
 			return false;
