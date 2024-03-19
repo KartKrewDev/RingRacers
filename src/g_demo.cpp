@@ -2185,6 +2185,8 @@ void G_BeginRecording(void)
 	WRITEUINT8(demobuf.p,SUBVERSION);
 	WRITEUINT16(demobuf.p,DEMOVERSION);
 
+	demo.version = DEMOVERSION;
+
 	// Full replay title
 	demobuf.p += 64;
 	{
