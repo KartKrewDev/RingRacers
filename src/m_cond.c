@@ -1710,6 +1710,9 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 				&& !(player->pflags & PF_NOCONTEST)
 				//&& M_NotFreePlay()
 				&& numtargets >= maptargets);
+		case UCRP_SURVIVE:
+			return (player->exiting
+				&& !(player->pflags & PF_NOCONTEST));
 		case UCRP_NOCONTEST:
 			return (player->pflags & PF_NOCONTEST);
 
@@ -2650,6 +2653,8 @@ static const char *M_GetConditionString(condition_t *cn)
 			return "finish a perfect round";
 		case UCRP_FINISHALLPRISONS:
 			return "break every Prison Egg";
+		case UCRP_SURVIVE:
+			return "survive";
 		case UCRP_NOCONTEST:
 			return "NO CONTEST";
 

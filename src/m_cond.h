@@ -103,6 +103,7 @@ typedef enum
 	UCRP_FINISHCOOL, // Finish in good standing
 	UCRP_FINISHPERFECT, // Finish a perfect race
 	UCRP_FINISHALLPRISONS, // Break all prisons
+	UCRP_SURVIVE, // Survive
 	UCRP_NOCONTEST, // No Contest
 
 	UCRP_SMASHUFO, // Smash the UFO Catcher
