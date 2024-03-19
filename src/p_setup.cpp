@@ -9215,6 +9215,13 @@ UINT8 P_InitMapData(void)
 					mapheaderinfo[i]->ghostBrief[mapheaderinfo[i]->ghostCount] = briefghost;
 					mapheaderinfo[i]->ghostCount++;
 				}
+
+				// Sort shortest to longest for Time Attack menu
+				std::sort(
+					mapheaderinfo[i]->ghostBrief,
+					mapheaderinfo[i]->ghostBrief + mapheaderinfo[i]->ghostCount,
+					[](staffbrief_t* a, staffbrief_t* b) { return a->time < b->time; }
+				);
 			}
 
 			P_DeriveAutoMedalTimes(*mapheaderinfo[i]);
