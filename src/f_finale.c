@@ -453,7 +453,7 @@ static disclaimerstate dc_state = 0;
 static UINT8 dc_tics = 0;
 static UINT8 dc_segaframe = 1;
 static UINT8 dc_bgcol = 0;
-static UINT8 dc_lasttime = 0;
+static INT32 dc_lasttime = 0;
 static boolean dc_ticking = false;
 static UINT8 dc_bluesegafade = 0;
 static UINT8 dc_textfade = 9;
@@ -593,8 +593,10 @@ static void F_DisclaimerDrawScene(void)
 	// Fade out screen
 	if (dc_state == DISCLAIMER_OUT)
 	{
-		if (dc_screenfade > 0 && !(dc_tics%10))
+		if (dc_screenfade > 0)
+		{
 			dc_screenfade--;
+		}
 	}
 
 	// ================================= STATE TRANSITIONS
