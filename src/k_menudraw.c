@@ -7472,6 +7472,100 @@ static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 	}
 }
 
+static void M_DrawChallengeScrollBar(UINT8 *flashmap)
+{
+	const INT32 bary = 4, barh = 1, hiliw = 1;
+
+	if (!gamedata->challengegrid || !gamedata->challengegridwidth)
+		return;
+
+	const INT32 barlen = gamedata->challengegridwidth*hiliw;
+
+	INT32 barx = (BASEVIDWIDTH - barlen)/2;
+	if (barlen > 200)
+	{
+		// TODO I DONT KNOW IF THE MATHS IS WRONG BUT WE DON'T HAVE
+		// 200 COLUMNS YET SO KICKING CAN DOWN THE ROAD ~toast 190324
+		INT32 shif = barlen - 200;
+		barx -= (shif/2 + (shif * challengesmenu.col)/barlen);
+	}
+
+	// bg
+	V_DrawFadeFill(barx, bary, barlen, barh, 0, 31, challengetransparentstrength);
+
+	// This was a macro for experimentation
+	#define COLTOPIX(col) (col*hiliw)
+		//((col * barlen)/gamedata->challengegridwidth)
+
+	INT32 hilix, nextstep, i, completionamount, skiplevel;
+
+	UINT8 flashcol = flashmap[(skullAnimCounter/5) ? 99 : 101];
+
+	// selection
+	hilix = COLTOPIX(challengesmenu.col);
+	V_DrawFill(barx + hilix, bary-1,    hiliw, 1, 0);
+	V_DrawFill(barx + hilix, bary+barh, hiliw, 1, 0);
+
+	INT32 mindiscouragement = 2; // skipping major unlocks is just a LITTLE cringe
+	if (challengesmenu.unlockcount[CMC_PERCENT] == 100
+	&& challengesmenu.unlockcount[CMC_MAJORSKIPPED] == 0)
+		mindiscouragement = 1; // so someone looking for 101% isn't hunting forever
+
+	// unbounded so that we can do the last remaining completionamount draw
+	nextstep = completionamount = skiplevel = 0;
+	for (i = 0; ; i++)
+	{
+		INT32 prevstep = nextstep;
+		nextstep = (i % CHALLENGEGRIDHEIGHT);
+		if (prevstep >= nextstep)
+		{
+			if (completionamount > 0)
+			{
+				if (skiplevel >= mindiscouragement && completionamount == 10)
+				{
+					// awareness
+					completionamount--;
+				}
+
+				V_DrawFadeFill(barx + hilix, bary, hiliw, barh, 0, 1, completionamount);
+			}
+
+			completionamount = skiplevel = 0;
+			hilix = i/CHALLENGEGRIDHEIGHT;
+			hilix = COLTOPIX(hilix);
+		}
+
+		// DO NOT DEREFERENCE gamedata->challengegrid[i] UNTIL AFTER THIS
+		if (i >= gamedata->challengegridwidth*CHALLENGEGRIDHEIGHT)
+			break;
+
+		if (gamedata->challengegrid[i] >= MAXUNLOCKABLES)
+			continue;
+
+		if (gamedata->unlocked[gamedata->challengegrid[i]] && completionamount != -1)
+		{
+			completionamount += (10/CHALLENGEGRIDHEIGHT);
+
+			unlockable_t *ref = &unlockables[gamedata->challengegrid[i]];
+
+			if (skiplevel < 2 && M_Achieved(ref->conditionset - 1) == false)
+			{
+				skiplevel = ref->majorunlock ? 2 : 1;
+			}
+		}
+
+		if (gamedata->unlockpending[gamedata->challengegrid[i]] == false)
+			continue;
+
+		V_DrawFill(barx + hilix, bary, hiliw, barh, flashcol);
+
+		// The pending fill overrides everything else.
+		completionamount = -1;
+	}
+
+	#undef COLTOPIX
+}
+
 void M_DrawChallenges(void)
 {
 	INT32 x = currentMenu->x, explodex, selectx = 0, selecty = 0;
@@ -7593,6 +7687,8 @@ void M_DrawChallenges(void)
 
 	if (challengesmenu.fade)
 		V_DrawFadeScreen(31, challengesmenu.fade);
+
+	M_DrawChallengeScrollBar(flashmap);
 
 	M_DrawChallengeTile(
 		challengesmenu.hilix,
