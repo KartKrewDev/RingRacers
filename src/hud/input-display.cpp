@@ -105,7 +105,7 @@ void K_DrawInputDisplay(float x, float y, INT32 flags, char mode, UINT8 pid, boo
 		} :
 		Vec2<float> {
 			-cmd.turning / (float)KART_FULLTURN,
-			-cmd.throwdir / (float)KART_FULLTURN,
+			cmd.throwdir / (float)KART_FULLTURN,
 		};
 
 	box.patch(gfx("PAD{}", analog ? "N" : dpad_suffix(dpad)));
