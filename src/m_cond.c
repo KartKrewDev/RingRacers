@@ -689,7 +689,6 @@ void M_ClearSecrets(void)
 	Z_Free(gamedata->prisoneggpickups);
 	gamedata->prisoneggpickups = NULL;
 	gamedata->numprisoneggpickups = 0;
-	gamedata->gettableprisoneggpickups = 0;
 	gamedata->thisprisoneggpickup = MAXCONDITIONSETS;
 	gamedata->thisprisoneggpickup_cached = NULL;
 	gamedata->thisprisoneggpickupgrabbed = false;
@@ -915,12 +914,14 @@ static void M_InitPrisonEggPickups(void)
 
 void M_UpdateNextPrisonEggPickup(void)
 {
-	UINT16 i = gamedata->gettableprisoneggpickups, j, swap;
+	UINT16 i, j, swap;
 
 	conditionset_t *c;
 	condition_t *cn;
 
-	boolean firstrun = true;
+#ifdef DEVELOP
+	extern consvar_t cv_debugprisoncd;
+#endif
 
 cacheprisoneggpickup:
 
@@ -928,7 +929,11 @@ cacheprisoneggpickup:
 	gamedata->thisprisoneggpickup_cached = NULL;
 	if (gamedata->thisprisoneggpickup < MAXCONDITIONSETS)
 	{
-		//CONS_Printf("CACHE TEST: thisprisoneggpickup is set to %u\n", gamedata->thisprisoneggpickup);
+#ifdef DEVELOP
+		if (cv_debugprisoncd.value)
+			CONS_Printf("CACHE TEST: thisprisoneggpickup is set to %u\n", gamedata->thisprisoneggpickup);
+#endif
+
 		if (gamedata->achieved[gamedata->thisprisoneggpickup] == false)
 		{
 			c = &conditionSets[gamedata->thisprisoneggpickup];
@@ -945,7 +950,12 @@ cacheprisoneggpickup:
 
 					// Good! Attach the cache.
 					gamedata->thisprisoneggpickup_cached = cn;
-					//CONS_Printf(" successfully set to cn!\n");
+
+#ifdef DEVELOP
+					if (cv_debugprisoncd.value)
+						CONS_Printf(" successfully set to cn!\n");
+#endif
+
 					break;
 				}
 			}
@@ -958,9 +968,16 @@ cacheprisoneggpickup:
 		}
 	}
 
-	if (firstrun && gamedata->numprisoneggpickups && gamedata->thisprisoneggpickup == MAXCONDITIONSETS)
+	if (gamedata->numprisoneggpickups && gamedata->thisprisoneggpickup >= MAXCONDITIONSETS)
 	{
-		for (; i < gamedata->numprisoneggpickups; i++)
+#ifdef DEVELOP
+		if (cv_debugprisoncd.value)
+			CONS_Printf(" Invalid thisprisoneggpickup, rolling a random one...\n");
+#endif
+
+		UINT16 gettableprisoneggpickups = 0;
+
+		for (i = 0; i < gamedata->numprisoneggpickups; i++)
 		{
 			if (gamedata->achieved[gamedata->prisoneggpickups[i]] == false)
 			{
@@ -979,12 +996,15 @@ cacheprisoneggpickup:
 
 						// Okay, this should be available.
 						// Bring to the front!
-						swap = gamedata->prisoneggpickups[gamedata->gettableprisoneggpickups];
-						gamedata->prisoneggpickups[gamedata->gettableprisoneggpickups] =
-							gamedata->prisoneggpickups[i];
-						gamedata->prisoneggpickups[i] = swap;
+						if (i != gettableprisoneggpickups)
+						{
+							swap = gamedata->prisoneggpickups[gettableprisoneggpickups];
+							gamedata->prisoneggpickups[gettableprisoneggpickups] =
+								gamedata->prisoneggpickups[i];
+							gamedata->prisoneggpickups[i] = swap;
+						}
 
-						gamedata->gettableprisoneggpickups++;
+						gettableprisoneggpickups++;
 
 						break;
 					}
@@ -993,36 +1013,31 @@ cacheprisoneggpickup:
 						continue;
 				}
 			}
-
-			// Fell all the way through?
-			// Push this all the way to the back, and lop it off!
-
-			swap = gamedata->prisoneggpickups[gamedata->numprisoneggpickups];
-			gamedata->prisoneggpickups[gamedata->numprisoneggpickups] =
-				gamedata->prisoneggpickups[i];
-			gamedata->prisoneggpickups[i] = swap;
-
-			gamedata->numprisoneggpickups--;
-			i--; // We run the loop again for this entry
 		}
 
-		if (gamedata->gettableprisoneggpickups)
+		if (gettableprisoneggpickups != 0)
 		{
 			gamedata->thisprisoneggpickup =
 				gamedata->prisoneggpickups[
-					M_RandomKey(gamedata->gettableprisoneggpickups)
+					M_RandomKey(gettableprisoneggpickups)
 				];
 
-			firstrun = false;
+#ifdef DEVELOP
+			if (cv_debugprisoncd.value)
+				CONS_Printf(" Selected %u, trying again...\n", gamedata->thisprisoneggpickup);
+#endif
+
 			goto cacheprisoneggpickup;
 		}
 	}
 
-	//CONS_Printf("thisprisoneggpickup = %u (MAXCONDITIONSETS is %u)\n", gamedata->thisprisoneggpickup, MAXCONDITIONSETS);
-
 #ifdef DEVELOP
-	extern consvar_t cv_debugprisoncd;
+	if (cv_debugprisoncd.value)
+		CONS_Printf("thisprisoneggpickup = %u (MAXCONDITIONSETS is %u)\n", gamedata->thisprisoneggpickup, MAXCONDITIONSETS);
+
+#if 0
 	// If all drops are collected, just force the first valid one.
+	// THIS DOESN'T ACTUALLY WORK IF ALL PRISON PRIZES HAVE BEEN REDEEMED AND THE GAME IS RELAUNCHED, so it is not reliable enough to expose as a debugging tool
 	if (cv_debugprisoncd.value && gamedata->thisprisoneggpickup_cached == NULL)
 	{
 		for (i = 0; gamedata->thisprisoneggpickup_cached == NULL &&
@@ -1045,6 +1060,8 @@ cacheprisoneggpickup:
 		}
 	}
 #endif
+
+#endif // DEVELOP
 }
 
 static void M_PrecacheLevelLocks(void)

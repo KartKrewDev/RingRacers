@@ -352,7 +352,6 @@ struct gamedata_t
 
 	// PRISON EGG PICKUPS
 	UINT16 numprisoneggpickups;
-	UINT16 gettableprisoneggpickups;
 	UINT16 thisprisoneggpickup;
 	condition_t *thisprisoneggpickup_cached;
 	boolean thisprisoneggpickupgrabbed;
