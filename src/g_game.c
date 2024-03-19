@@ -1285,7 +1285,7 @@ void G_PreLevelTitleCard(void)
 		while (!((nowtime = I_GetTime()) - lasttime))
 		{
 			I_Sleep(cv_sleep.value);
-			I_UpdateTime(cv_timescale.value);
+			I_UpdateTime();
 		}
 		lasttime = nowtime;
 	}
@@ -1348,7 +1348,6 @@ boolean G_Responder(event_t *ev)
 			{
 				// stop the title demo
 				G_CheckDemoStatus();
-				demo.attract = DEMO_ATTRACT_OFF;
 				return true;
 			}
 		}
@@ -2031,7 +2030,19 @@ void G_Ticker(boolean run)
 
 		if (g_fast_forward > 0)
 		{
+			if (I_GetTime() > g_fast_forward_clock_stop)
+			{
+				// If too much real time has passed, end the fast-forward early.
+				g_fast_forward = 1;
+			}
+
 			g_fast_forward--;
+
+			if (g_fast_forward == 0)
+			{
+				// Next fast-forward is unlimited.
+				g_fast_forward_clock_stop = INFTICS;
+			}
 		}
 	}
 }

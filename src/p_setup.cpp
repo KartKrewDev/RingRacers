@@ -8342,8 +8342,10 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	P_InitLevelSettings();
 
-	if (demo.attract != DEMO_ATTRACT_TITLE)
+	if (demo.attract != DEMO_ATTRACT_TITLE && gamestate != GS_TITLESCREEN)
 	{
+		// Stop titlescreen music from overriding level music.
+		// Except on the title screen, where an attract demo or title map may be used.
 		Music_Stop("title");
 	}
 
@@ -8391,7 +8393,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		while (!((nowtime = I_GetTime()) - lastwipetic)) \
 		{ \
 			I_Sleep(cv_sleep.value); \
-			I_UpdateTime(cv_timescale.value); \
+			I_UpdateTime(); \
 		} \
 		lastwipetic = nowtime; \
 		if (moviemode && rendermode == render_opengl) \
@@ -8530,15 +8532,24 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			wipetype = wipe_encore_towhite;
 		}
 
-		if (rendermode != render_none)
+		if (g_attractnowipe)
 		{
-			F_WipeStartScreen();
-
-			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
-			F_WipeEndScreen();
+			// Attract demos do a custom fade on exit, so
+			// don't run a wipe here.
+			g_attractnowipe = false;
 		}
+		else
+		{
+			if (rendermode != render_none)
+			{
+				F_WipeStartScreen();
 
-		F_RunWipe(wipetype, wipedefs[wipetype], false, ((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), false, false);
+				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
+				F_WipeEndScreen();
+			}
+
+			F_RunWipe(wipetype, wipedefs[wipetype], false, ((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), false, false);
+		}
 	}
 
 	/*
@@ -8855,11 +8866,6 @@ void P_PostLoadLevel(void)
 	if (demo.recording) // Okay, level loaded, character spawned and skinned,
 		G_BeginRecording(); // I AM NOW READY TO RECORD.
 	demo.deferstart = true;
-
-	if (demo.attract == DEMO_ATTRACT_TITLE)
-	{
-		S_ShowMusicCredit();
-	}
 
 	nextmapoverride = 0;
 	skipstats = 0;

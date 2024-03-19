@@ -150,6 +150,7 @@ boolean g_singletics = false; // timedemo
 boolean lastdraw = false;
 
 tic_t g_fast_forward = 0;
+tic_t g_fast_forward_clock_stop = INFTICS;
 
 postimg_t postimgtype[MAXSPLITSCREENPLAYERS];
 INT32 postimgparam[MAXSPLITSCREENPLAYERS];
@@ -649,6 +650,13 @@ static bool D_Display(void)
 						V_DrawCustomFadeScreen("FADEMAP0", val);
 					}
 				}
+				else if (demo.attract == DEMO_ATTRACT_TITLE)
+				{
+					if (INT32 fade = F_AttractDemoExitFade())
+					{
+						V_DrawCustomFadeScreen("FADEMAP0", fade);
+					}
+				}
 
 				VID_DisplaySoftwareScreen();
 			}
@@ -829,7 +837,7 @@ void D_SRB2Loop(void)
 
 	// Pushing of + parameters is now done back in D_SRB2Main, not here.
 
-	I_UpdateTime(cv_timescale.value);
+	I_UpdateTime();
 	oldentertics = I_GetTime();
 
 	// end of loading screen: CONS_Printf() will no more call FinishUpdate()
@@ -877,7 +885,7 @@ void D_SRB2Loop(void)
 
 		bool ranwipe = false;
 
-		I_UpdateTime(cv_timescale.value);
+		I_UpdateTime();
 
 		if (lastwipetic)
 		{
@@ -1131,12 +1139,19 @@ static boolean g_deferredtitle = false;
 //
 void D_StartTitle(void)
 {
+	bool fromAttract = (demo.attract == DEMO_ATTRACT_TITLE);
+	demo.attract = DEMO_ATTRACT_OFF;
+
 	Music_StopAll();
 
 	D_ClearState();
 	F_StartTitleScreen();
 	M_ClearMenus(false);
 	g_deferredtitle = false;
+
+	if (fromAttract)
+		S_ShowMusicCredit(); // Show music credit when returning to the title screen
+
 }
 
 void D_SetDeferredStartTitle(boolean deferred)

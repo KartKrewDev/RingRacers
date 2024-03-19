@@ -1417,7 +1417,9 @@ void K_TickPlayerTally(player_t *player)
 		&& (!netgame && !demo.playback)
 		&& player->tally.state != TALLY_ST_DONE;
 
-	if (fastForwardInput && allowFastForward)
+	if ((fastForwardInput && allowFastForward) ||
+		// Skip tally in atract demos
+		(demo.playback && demo.attract))
 	{
 		do
 			player->tally.Tick();

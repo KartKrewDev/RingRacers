@@ -1566,6 +1566,31 @@ void V_DrawFadeScreen(UINT16 color, UINT8 strength)
 		.done();
 }
 
+lighttable_t *V_LoadCustomFadeMap(const char *lump)
+{
+	lumpnum_t lumpnum = LUMPERROR;
+	lighttable_t *clm = NULL;
+
+	if (lump != NULL)
+		lumpnum = W_GetNumForName(lump);
+	else
+		return NULL;
+
+	if (lumpnum != LUMPERROR)
+	{
+		clm = static_cast<lighttable_t*>(Z_MallocAlign(COLORMAP_SIZE, PU_STATIC, NULL, 8));
+		W_ReadLump(lumpnum, clm);
+		return clm;
+	}
+
+	return NULL;
+}
+
+const UINT8 *V_OffsetIntoFadeMap(const lighttable_t *clm, UINT8 strength)
+{
+	return ((const UINT8 *)clm + strength*256);
+}
+
 //
 // Fade the screen buffer, using a custom COLORMAP lump.
 // Split from V_DrawFadeScreen, because that function has
@@ -1583,33 +1608,21 @@ void V_DrawCustomFadeScreen(const char *lump, UINT8 strength)
 
 	// TODO: fix this for Twodee
 	{
-		lumpnum_t lumpnum = LUMPERROR;
-		lighttable_t *clm = NULL;
+		lighttable_t *clm = V_LoadCustomFadeMap(lump);
 
-		if (lump != NULL)
-			lumpnum = W_GetNumForName(lump);
-		else
-			return;
-
-		if (lumpnum != LUMPERROR)
+		if (clm != NULL)
 		{
-			clm = static_cast<lighttable_t*>(Z_MallocAlign(COLORMAP_SIZE, PU_STATIC, NULL, 8));
-			W_ReadLump(lumpnum, clm);
+			const UINT8 *fadetable = V_OffsetIntoFadeMap(clm, strength);
+			const UINT8 *deststop = screens[0] + vid.rowbytes * vid.height;
+			UINT8 *buf = screens[0];
 
-			if (clm != NULL)
-			{
-				const UINT8 *fadetable = ((UINT8 *)clm + strength*256);
-				const UINT8 *deststop = screens[0] + vid.rowbytes * vid.height;
-				UINT8 *buf = screens[0];
+			// heavily simplified -- we don't need to know x or y
+			// position when we're doing a full screen fade
+			for (; buf < deststop; ++buf)
+				*buf = fadetable[*buf];
 
-				// heavily simplified -- we don't need to know x or y
-				// position when we're doing a full screen fade
-				for (; buf < deststop; ++buf)
-					*buf = fadetable[*buf];
-
-				Z_Free(clm);
-				clm = NULL;
-			}
+			Z_Free(clm);
+			clm = NULL;
 		}
 	}
 }

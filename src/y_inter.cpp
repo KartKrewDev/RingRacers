@@ -1951,7 +1951,9 @@ void Y_DetermineIntermissionType(void)
 	// or for explicit requested skip (outside of modeattacking)
 	|| (modeattacking == ATTACKING_NONE && skipstats != 0)
 	// or tutorial skip material
-	|| (nextmapoverride == NEXTMAP_TUTORIALCHALLENGE+1 || tutorialchallenge != TUTORIALSKIP_NONE))
+	|| (nextmapoverride == NEXTMAP_TUTORIALCHALLENGE+1 || tutorialchallenge != TUTORIALSKIP_NONE)
+	// or title screen attract demos
+	|| (demo.playback && demo.attract == DEMO_ATTRACT_TITLE))
 	{
 		intertype = int_none;
 		return;

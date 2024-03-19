@@ -64,6 +64,8 @@ void F_EndTextPrompt(boolean forceexec, boolean noexec);
 boolean F_GetPromptHideHudAll(void);
 boolean F_GetPromptHideHud(fixed_t y);
 
+INT32 F_AttractDemoExitFade(void);
+
 void F_StartGameEnd(void);
 void F_StartIntro(void);
 void F_StartTitleScreen(void);
@@ -127,6 +129,8 @@ extern boolean g_wipeencorewiggle;
 extern boolean WipeStageTitle;
 
 extern INT32 lastwipetic;
+
+extern boolean g_attractnowipe;
 
 // Don't know where else to place this constant
 // But this file seems appropriate

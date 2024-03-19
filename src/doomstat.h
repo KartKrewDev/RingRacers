@@ -927,6 +927,7 @@ extern INT16 wipetypepost;
 // debug flag to cancel adaptiveness
 extern boolean g_singletics;
 extern tic_t g_fast_forward;
+extern tic_t g_fast_forward_clock_stop;
 
 #define singletics (g_singletics == true || g_fast_forward > 0)
 
