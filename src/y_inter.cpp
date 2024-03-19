@@ -1937,12 +1937,7 @@ void Y_Ticker(void)
 	}
 }
 
-//
-// Y_DetermineIntermissionType
-//
-// Determines the intermission type from the current gametype.
-//
-void Y_DetermineIntermissionType(void)
+boolean Y_ShouldDoIntermission(void)
 {
 	// no intermission for GP events
 	if ((grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE)
@@ -1954,6 +1949,21 @@ void Y_DetermineIntermissionType(void)
 	|| (nextmapoverride == NEXTMAP_TUTORIALCHALLENGE+1 || tutorialchallenge != TUTORIALSKIP_NONE)
 	// or title screen attract demos
 	|| (demo.playback && demo.attract == DEMO_ATTRACT_TITLE))
+	{
+		return false;
+	}
+	return true;
+}
+
+//
+// Y_DetermineIntermissionType
+//
+// Determines the intermission type from the current gametype.
+//
+void Y_DetermineIntermissionType(void)
+{
+	// no intermission for GP events
+	if (!Y_ShouldDoIntermission())
 	{
 		intertype = int_none;
 		return;

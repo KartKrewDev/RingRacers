@@ -59,6 +59,7 @@ void Y_DrawIntermissionButton(INT32 startslide, INT32 through);
 void Y_StartIntermission(void);
 void Y_EndIntermission(void);
 
+boolean Y_ShouldDoIntermission(void);
 void Y_DetermineIntermissionType(void);
 
 void Y_PlayIntermissionMusic(void);
