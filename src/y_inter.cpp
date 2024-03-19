@@ -2139,7 +2139,8 @@ void Y_PlayIntermissionMusic(void)
 		Music_Remap("intermission", "racent");
 	}
 
-	Music_Play("intermission");
+	if (!Music_Playing("intermission"))
+		Music_Play("intermission");
 }
 
 //
