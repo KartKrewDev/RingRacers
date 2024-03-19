@@ -766,6 +766,21 @@ void M_ChallengesTick(void)
 				}
 			}
 		}
+
+		if (challengesmenu.currentunlock < MAXUNLOCKABLES
+		&& gamedata->unlockpending[challengesmenu.currentunlock] == true)
+		{
+			UINT16 id = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
+			if (challengesmenu.extradata
+			&& challengesmenu.extradata[id].flip != (TILEFLIP_MAX/2))
+			{
+				// Only mark visited once flipped
+			}
+			else
+			{
+				gamedata->unlockpending[challengesmenu.currentunlock] = false;
+			}
+		}
 	}
 }
 

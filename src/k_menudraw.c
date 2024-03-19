@@ -6389,7 +6389,7 @@ void M_DrawAddons(void)
 
 // Challenges Menu
 
-static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili)
+static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flashmap, boolean hili)
 {
 #ifdef DEVELOP
 	extern consvar_t cv_debugchallenges;
@@ -6710,6 +6710,13 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 	}
 
 drawborder:
+
+	if (num < MAXUNLOCKABLES && gamedata->unlockpending[num])
+	{
+		INT32 area = (ref->majorunlock) ? 42 : 20;
+		V_DrawFadeFill(x, y, area, area, 0, flashmap[(skullAnimCounter/5) ? 99 : 101], 2);
+	}
+
 	if (hili)
 	{
 		boolean maj = (ref != NULL && ref->majorunlock);
@@ -6719,13 +6726,11 @@ drawborder:
 		buffer[7] = (skullAnimCounter/5) ? '2' : '1';
 		pat = W_CachePatchName(buffer, PU_CACHE);
 
-		colormap = R_GetTranslationColormap(TC_DEFAULT, M_GetCvPlayerColor(0), GTC_MENUCACHE);
-
 		V_DrawFixedPatch(
 			x*FRACUNIT, y*FRACUNIT,
 			FRACUNIT,
 			0, pat,
-			colormap
+			flashmap
 		);
 	}
 
@@ -7519,6 +7524,8 @@ void M_DrawChallenges(void)
 		goto challengedesc;
 	}
 
+	UINT8 *flashmap = R_GetTranslationColormap(TC_DEFAULT, M_GetCvPlayerColor(0), GTC_MENUCACHE);
+
 	y = currentMenu->y;
 
 	V_DrawFadeFill(0, y-2, BASEVIDWIDTH, (challengesgridstep * CHALLENGEGRIDHEIGHT) + 2, 0, 31, challengetransparentstrength);
@@ -7572,7 +7579,7 @@ void M_DrawChallenges(void)
 				continue;
 			}
 
-			M_DrawChallengeTile(i, j, x, y, false);
+			M_DrawChallengeTile(i, j, x, y, flashmap, false);
 		}
 
 		x -= challengesgridstep;
@@ -7592,6 +7599,7 @@ void M_DrawChallenges(void)
 		challengesmenu.hiliy,
 		selectx,
 		selecty,
+		flashmap,
 		true);
 	M_DrawCharSelectExplosions(false, explodex, currentMenu->y);
 
