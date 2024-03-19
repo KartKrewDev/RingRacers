@@ -2250,7 +2250,7 @@ void HU_drawPing(fixed_t x, fixed_t y, UINT32 lag, UINT32 pl, INT32 flags, boole
 		);
 	}
 
-	if (pl || true)
+	if (pl)
 	{
 		V_DrawFill(
 			x/FRACUNIT + 2 - 1,
