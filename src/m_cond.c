@@ -1125,7 +1125,7 @@ static void M_PrecacheLevelLocks(void)
 								}
 
 								tempstr = va(
-									"Music: %s Cup %c%u %c",
+									"Music: %s CUP %c%u %c",
 									mapheaderinfo[map]->cup->realname,
 									prefix,
 									positionid + 1,
@@ -2316,7 +2316,7 @@ static const char *M_GetConditionString(condition_t *cn)
 		}
 
 		case UC_TOTALMEDALS: // Requires number of emblems >= x
-			return va("get %d medals", cn->requirement);
+			return va("get %d Medals", cn->requirement);
 
 		case UC_EMBLEM: // Requires emblem x to be obtained
 		{
@@ -2626,7 +2626,7 @@ static const char *M_GetConditionString(condition_t *cn)
 			{
 				if (cup->id != cn->requirement)
 					continue;
-				return va("%s%s %s Cup",
+				return va("%s%s %s CUP",
 					completetype, orbetter,
 					(M_CupLocked(cup) ? "???" : cup->realname)
 				);
