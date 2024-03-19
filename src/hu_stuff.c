@@ -2188,16 +2188,14 @@ Ping_gfx_color (int lag)
 static int
 PL_gfx_color (int pl)
 {
-	if (pl == 0)
-		return SKINCOLOR_JAWZ;
-	else if (pl <= 2)
-		return SKINCOLOR_MINT;
+	if (pl <= 2)
+		return 72;
 	else if (pl <= 4)
-		return SKINCOLOR_GOLD;
+		return 54;
 	else if (pl <= 6)
-		return SKINCOLOR_RASPBERRY;
+		return 35;
 	else
-		return SKINCOLOR_MAGENTA;
+		return 181;
 }
 
 //
@@ -2252,6 +2250,17 @@ void HU_drawPing(fixed_t x, fixed_t y, UINT32 lag, UINT32 pl, INT32 flags, boole
 		);
 	}
 
+	if (pl || true)
+	{
+		V_DrawFill(
+			x/FRACUNIT + 2 - 1,
+			y/FRACUNIT - 1, 
+			pinggfx[gfxnum]->width + 2,
+			pinggfx[gfxnum]->height + 2,
+			PL_gfx_color(pl)
+		);
+	}
+
 	if (drawlocal)
 	{
 		V_DrawFixedPatch(
@@ -2274,9 +2283,6 @@ void HU_drawPing(fixed_t x, fixed_t y, UINT32 lag, UINT32 pl, INT32 flags, boole
 	}
 
 	colormap = R_GetTranslationColormap(TC_RAINBOW, Ping_gfx_color(lag), GTC_CACHE);
-
-	if (pl)
-		V_DrawPingNum(x2, y2 + 8*FRACUNIT, flags, 100*(PACKETMEASUREWINDOW - pl)/PACKETMEASUREWINDOW, R_GetTranslationColormap(TC_RAINBOW, PL_gfx_color(pl), GTC_CACHE));
 
 	if (servermaxping && lag > servermaxping && hu_tick < 4)
 	{
