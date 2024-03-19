@@ -1426,7 +1426,9 @@ void K_TickPlayerTally(player_t *player)
 		while (player->tally.state != TALLY_ST_DONE && player->tally.state != TALLY_ST_GAMEOVER_DONE);
 
 		player->tally.delay = std::min(player->tally.delay, TICRATE);
-		musiccountdown = 2; // gets decremented to 1 in G_Ticker to immediately trigger intermission music [blows raspberry]
+		
+		if (Y_ShouldDoIntermission())
+			musiccountdown = 2; // gets decremented to 1 in G_Ticker to immediately trigger intermission music [blows raspberry]
 	}
 	else
 	{
