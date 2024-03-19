@@ -7127,6 +7127,32 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 				NULL);
 			break;
 		}
+		case SECRET_ADDONS:
+		{
+			V_DrawFixedPatch(28*FRACUNIT, (BASEVIDHEIGHT-28)*FRACUNIT,
+				FRACUNIT,
+				0, W_CachePatchName("M_ICOADD", PU_CACHE),
+				NULL);
+			break;
+		}
+		case SECRET_SOUNDTEST:
+		{
+			V_DrawFixedPatch(28*FRACUNIT, (BASEVIDHEIGHT-28)*FRACUNIT,
+				FRACUNIT,
+				0, W_CachePatchName("M_ICOSTM", PU_CACHE),
+				NULL);
+			break;
+		}
+		case SECRET_EGGTV:
+		{
+			V_DrawFixedPatch(3*FRACUNIT, (BASEVIDHEIGHT-40)*FRACUNIT,
+				FRACUNIT,
+				0, W_CachePatchName(
+					va("RHTVSQN%c", (challengesmenu.ticker & 2) ? '5' : '6'),
+				PU_CACHE),
+				NULL);
+			break;
+		}
 		case SECRET_ALTTITLE:
 		{
 			x = 8;
