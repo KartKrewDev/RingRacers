@@ -95,7 +95,9 @@ tic_t demostarttime; // for comparative timing purposes
 
 static constexpr DemoBufferSizes get_buffer_sizes(UINT16 version)
 {
-	(void)version;
+	if (version < 0x000A) // old staff ghost support
+		return {16, 16, 16};
+
 	// These sizes are compatible as of version 0x000A
 	static_assert(MAXPLAYERNAME == 21);
 	static_assert(SKINNAMESIZE == 16);
@@ -154,6 +156,10 @@ demoghost *ghosts = NULL;
 // DEMO RECORDING
 //
 
+// Also supported:
+// - 0x0009 (older staff ghosts)
+//   - Player names, skin names and color names were 16
+//     bytes. See get_buffer_sizes().
 #define DEMOVERSION 0x000A
 #define DEMOHEADER  "\xF0" "KartReplay" "\x0F"
 
@@ -2489,6 +2495,7 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	switch(oldversion) // demoversion
 	{
 	case DEMOVERSION: // latest always supported
+	case 0x0009: // older staff ghosts
 		break;
 	// too old, cannot support.
 	default:
@@ -2637,6 +2644,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo, boolean allownonmultiplayer)
 	switch(pdemoversion)
 	{
 	case DEMOVERSION: // latest always supported
+	case 0x0009: // older staff ghosts
 		if (P_SaveBufferRemaining(&info) < 64)
 		{
 			goto corrupt;
@@ -3063,6 +3071,7 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 	switch(demo.version)
 	{
 	case DEMOVERSION: // latest always supported
+	case 0x0009: // older staff ghosts
 		break;
 	// too old, cannot support.
 	default:
@@ -3515,6 +3524,7 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	switch(ghostversion)
 	{
 	case DEMOVERSION: // latest always supported
+	case 0x0009: // older staff ghosts
 		break;
 	// too old, cannot support.
 	default:
@@ -3770,6 +3780,7 @@ staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer)
 	switch(ghostversion)
 	{
 		case DEMOVERSION: // latest always supported
+		case 0x0009: // older staff ghosts
 			break;
 
 		// too old, cannot support.
