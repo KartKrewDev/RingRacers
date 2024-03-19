@@ -174,7 +174,8 @@ enum class PipelineProgram
 	kPostprocessWipe,
 	kPostimg,
 	kSharpBilinear,
-	kCrt
+	kCrt,
+	kCrtSharp
 };
 
 enum class BufferType
@@ -289,6 +290,7 @@ extern const ProgramRequirements kProgramRequirementsPostprocessWipe;
 extern const ProgramRequirements kProgramRequirementsPostimg;
 extern const ProgramRequirements kProgramRequirementsSharpBilinear;
 extern const ProgramRequirements kProgramRequirementsCrt;
+extern const ProgramRequirements kProgramRequirementsCrtSharp;
 
 const ProgramRequirements& program_requirements_for_program(PipelineProgram program) noexcept;
 

@@ -40,6 +40,7 @@ struct HardwareState
 	std::unique_ptr<BlitRectPass> blit_rect;
 	std::unique_ptr<BlitRectPass> sharp_bilinear_blit_rect;
 	std::unique_ptr<BlitRectPass> crt_blit_rect;
+	std::unique_ptr<BlitRectPass> crtsharp_blit_rect;
 	std::unique_ptr<ScreenshotPass> screen_capture;
 	std::unique_ptr<UpscaleBackbuffer> backbuffer;
 	WipeFrames wipe_frames;

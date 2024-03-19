@@ -79,6 +79,20 @@ static const PipelineDesc kCrtPipelineDescription = {
 	FaceWinding::kCounterClockwise,
 	{0.f, 0.f, 0.f, 1.f}};
 
+/// @brief Pipeline used for CRT special blit (sharp)
+static const PipelineDesc kCrtSharpPipelineDescription = {
+	PipelineProgram::kCrtSharp,
+	{{{sizeof(BlitVertex)}}, {{VertexAttributeName::kPosition, 0, 0}, {VertexAttributeName::kTexCoord0, 0, 12}}},
+	{{{UniformName::kProjection}, {{UniformName::kModelView, UniformName::kTexCoord0Transform, UniformName::kSampler0Size}}}},
+	{{// RGB/A texture
+	  SamplerName::kSampler0, SamplerName::kSampler1}},
+	std::nullopt,
+	{std::nullopt, {true, true, true, true}},
+	PrimitiveType::kTriangles,
+	CullMode::kNone,
+	FaceWinding::kCounterClockwise,
+	{0.f, 0.f, 0.f, 1.f}};
+
 BlitRectPass::BlitRectPass() : BlitRectPass(BlitRectPass::BlitMode::kNearest) {}
 BlitRectPass::BlitRectPass(BlitRectPass::BlitMode blit_mode) : blit_mode_(blit_mode) {}
 BlitRectPass::~BlitRectPass() = default;
@@ -105,6 +119,9 @@ void BlitRectPass::prepass(Rhi& rhi)
 			case BlitRectPass::BlitMode::kCrt:
 				pipeline_ = rhi.create_pipeline(kCrtPipelineDescription);
 				break;
+			case BlitRectPass::BlitMode::kCrtSharp:
+				pipeline_ = rhi.create_pipeline(kCrtSharpPipelineDescription);
+				break;
 			default:
 				std::terminate();
 		}
@@ -123,7 +140,7 @@ void BlitRectPass::prepass(Rhi& rhi)
 		quad_ibo_needs_upload_ = true;
 	}
 
-	if (blit_mode_ == BlitRectPass::BlitMode::kCrt && !dot_pattern_)
+	if ((blit_mode_ == BlitRectPass::BlitMode::kCrt || blit_mode_ == BlitRectPass::BlitMode::kCrtSharp) && !dot_pattern_)
 	{
 		dot_pattern_ = rhi.create_texture({
 			rhi::TextureFormat::kRGBA,
@@ -237,6 +254,30 @@ void BlitRectPass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 	switch (blit_mode_)
 	{
 	case BlitRectPass::BlitMode::kCrt:
+	{
+		std::array<rhi::UniformVariant, 3> g2_uniforms = {
+			// ModelView
+			glm::scale(
+				glm::identity<glm::mat4>(),
+				glm::vec3(taller ? 2.f : 2.f * aspect, taller ? 2.f * (1.f / aspect) : 2.f, 1.f)
+			),
+			// Texcoord0 Transform
+			glm::mat3(
+				glm::vec3(1.f, 0.f, 0.f),
+				glm::vec3(0.f, output_flip_ ? -1.f : 1.f, 0.f),
+				glm::vec3(0.f, output_flip_ ? 1.f : 0.f, 1.f)
+			),
+			// Sampler 0 Size
+			glm::vec2(texture_details.width, texture_details.height)
+		};
+		uniform_sets_[1] = rhi.create_uniform_set(ctx, {g2_uniforms});
+
+		std::array<rhi::VertexAttributeBufferBinding, 1> vbs = {{{0, quad_vbo_}}};
+		std::array<rhi::TextureBinding, 2> tbs = {{{rhi::SamplerName::kSampler0, texture_}, {rhi::SamplerName::kSampler1, dot_pattern_}}};
+		binding_set_ = rhi.create_binding_set(ctx, pipeline_, {vbs, tbs});
+		break;
+	}
+	case BlitRectPass::BlitMode::kCrtSharp:
 	{
 		std::array<rhi::UniformVariant, 3> g2_uniforms = {
 			// ModelView
