@@ -2875,8 +2875,8 @@ char *M_BuildConditionSetString(UINT16 unlockid)
 		{
 			if (lastID != cn->id)
 			{
-				worklen = 4;
-				strncat(message, "\nOR ", len);
+				worklen = 6;
+				strncat(message, " - OR ", len);
 			}
 			else
 			{
