@@ -9038,7 +9038,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	else if (!(player->cmd.buttons & BT_ATTACK)) // Deliberate Item button release, no need to protect you from lockout
 		player->instaWhipChargeLockout = 0;
 
-	if (player->instaWhipCharge && player->instaWhipCharge < INSTAWHIP_CHARGETIME)
+	// OOPSIES FIXME pt.2: See OOPSIES FIXME pt.1.
+	// Don't draw attention to a useless, invisible whip charge!
+	if (player->instaWhipCharge && player->instaWhipCharge < INSTAWHIP_CHARGETIME && !player->itemRoulette.active)
 	{
 		if (!S_SoundPlaying(player->mo, sfx_wchrg1))
 			S_StartSoundAtVolume(player->mo, sfx_wchrg1, 255/2);
@@ -12115,7 +12117,14 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		{
 			player->instaWhipCharge = min(player->instaWhipCharge + 1, INSTAWHIP_TETHERBLOCK + 1);
 
-			if (player->instaWhipCharge == 1)
+			// OOPSIES FIXME pt.1: You can charge instawhip between picking up and confirming an item box.
+			// This is vanishingly rare in race and impossible in battle, but SUPER common in prisons!
+			// 
+			// ...But this was discovered after staff ghost recording started, and charging whip prevents
+			// flingring pickup, meaning it has a small but desync-capable gameplay effect.
+			//
+			// So instead of stopping charge, we hide it. How embarrassing!
+			if (player->instaWhipCharge == 1 && !player->itemRoulette.active)
 			{
 				Obj_SpawnInstaWhipRecharge(player, 0);
 				Obj_SpawnInstaWhipRecharge(player, ANGLE_120);
@@ -12141,7 +12150,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		{
 			if (player->instaWhipCharge < INSTAWHIP_CHARGETIME)
 			{
-				S_StartSound(player->mo, sfx_kc50);
+				// OOPSIES FIXME pt.3: See OOPSIES FIXME pt.1.
+				if (!player->itemRoulette.active)
+					S_StartSound(player->mo, sfx_kc50);
 				player->instaWhipCharge = 0;
 				player->botvars.itemconfirm = 0;
 			}
