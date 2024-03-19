@@ -6713,8 +6713,16 @@ drawborder:
 
 	if (num < MAXUNLOCKABLES && gamedata->unlockpending[num])
 	{
-		INT32 area = (ref->majorunlock) ? 42 : 20;
-		V_DrawFadeFill(x, y, area, area, 0, flashmap[(skullAnimCounter/5) ? 99 : 101], 2);
+		const INT32 area = (ref->majorunlock) ? 42 : 20;
+		INT32 val;
+		for (i = 0; i < area; i++)
+		{
+			val = (x + i + challengesmenu.ticker) % 40;
+			if (val >= 20)
+				val = 40 - val;
+			val = (val + 6)/5;
+			V_DrawFadeFill(x + i, y, 1, area, 0, flashmap[98 + val], 2);
+		}
 	}
 
 	if (hili)
@@ -7499,8 +7507,6 @@ static void M_DrawChallengeScrollBar(UINT8 *flashmap)
 
 	INT32 hilix, nextstep, i, completionamount, skiplevel;
 
-	UINT8 flashcol = flashmap[(skullAnimCounter/5) ? 99 : 101];
-
 	// selection
 	hilix = COLTOPIX(challengesmenu.col);
 	V_DrawFill(barx + hilix, bary-1,    hiliw, 1, 0);
@@ -7557,7 +7563,12 @@ static void M_DrawChallengeScrollBar(UINT8 *flashmap)
 		if (gamedata->unlockpending[gamedata->challengegrid[i]] == false)
 			continue;
 
-		V_DrawFill(barx + hilix, bary, hiliw, barh, flashcol);
+		INT32 val = (hilix + challengesmenu.ticker) % 40;
+		if (val >= 20)
+			val = 40 - val;
+		val = (val + 6)/10;
+
+		V_DrawFill(barx + hilix, bary, hiliw, barh, flashmap[99 + val]);
 
 		// The pending fill overrides everything else.
 		completionamount = -1;
