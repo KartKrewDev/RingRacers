@@ -671,13 +671,42 @@ void F_IntroTicker(void)
 		return;
 	}
 
-	if (timetonext <= 0)
+	// check for skipping
+	const boolean disclaimerskippable =
+	(
+		intro_scenenum == INTROSCENE_DISCLAIMER
+		&& dc_state == DISCLAIMER_FINAL
+		&& dc_tics >= (TICRATE/2) + (5*6) // bottom text needs to fade all the way in
+	);
+	const boolean doskip =
+	(
+		skippableallowed
+		&& keypressed
+		&& (timetonext > 10)
+		&& (
+			intro_scenenum >= INTROSCENE_KREW
+			|| disclaimerskippable
+		)
+	);
+
+	if (keypressed)
+		keypressed = false;
+
+	if (doskip && disclaimerskippable)
+	{
+		dc_state = DISCLAIMER_OUT;
+		dc_tics = 0;
+		timetonext = 10;
+	}
+	else if (doskip || timetonext <= 0)
 	{
 		intro_scenenum++;
-		if (intro_scenenum == (M_GameTrulyStarted()
-				? NUMINTROSCENES
-				: INTROSCENE_KREW)
-		)
+		INT32 destscenenum = NUMINTROSCENES-1;
+		if (M_GameTrulyStarted() == false)
+			destscenenum = INTROSCENE_DISCLAIMER;
+		else if (doskip)
+			destscenenum = INTROSCENE_KREW;
+		if (intro_scenenum > destscenenum)
 		{
 			D_StartTitle();
 			// Custom built fade to skip the to-black
@@ -687,10 +716,14 @@ void F_IntroTicker(void)
 		//F_NewCutscene(introtext[intro_scenenum]);
 		timetonext = introscenetime[intro_scenenum];
 		animtimer = stoptimer = 0;
-		if (intro_scenenum == INTROSCENE_DISCLAIMER)
+		if (
+			doskip
+			|| intro_scenenum == INTROSCENE_DISCLAIMER
+			|| intro_scenenum == INTROSCENE_KREW
+		)
+		{
 			wipegamestate = -1;
-		if (intro_scenenum == INTROSCENE_KREW)
-			wipegamestate = -1;
+		}
 	}
 
 	if (intro_scenenum == INTROSCENE_KREW)
@@ -710,10 +743,6 @@ void F_IntroTicker(void)
 	intro_curtime = introscenetime[intro_scenenum] - timetonext;
 
 	F_WriteText();
-
-	// check for skipping
-	if (keypressed)
-		keypressed = false;
 
 	if (animtimer > 0)
 		animtimer--;
@@ -775,12 +804,6 @@ boolean F_IntroResponder(event_t *event)
 
 	if (keypressed)
 		return false;
-
-	if (intro_scenenum <= INTROSCENE_DISCLAIMER)
-	{
-		// do not allow skipping the disclaimer
-		return false;
-	}
 
 	keypressed = true;
 	return true;
