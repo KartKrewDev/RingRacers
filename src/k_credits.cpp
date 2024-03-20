@@ -33,6 +33,7 @@
 #include "w_wad.h"
 #include "z_zone.h"
 #include "i_system.h"
+#include "i_sound.h"
 #include "i_joy.h"
 #include "i_threads.h"
 #include "dehacked.h"
@@ -371,6 +372,21 @@ static void F_InitCreditsSlide(void)
 	CON_ClearHUD();
 }
 
+static void F_NewCreditsMusic(const char *trackname, bool looping)
+{
+	Music_Remap("credits", trackname);
+	Music_Loop("credits", looping);
+	Music_Play("credits");
+}
+
+void F_ConsiderCreditsMusicUpdate(void)
+{
+	if (!Music_CanLoop("credits") && I_GetSongLength() == I_GetSongPosition())
+	{
+		F_NewCreditsMusic("_title", true);
+	}
+}
+
 void F_StartCredits(void)
 {
 	G_SetGamestate(GS_CREDITS);
@@ -391,7 +407,8 @@ void F_StartCredits(void)
 	Music_StopAll();
 	S_StopSounds();
 
-	Music_Play("credits");
+	Music_SetFadeOut("credits", 0);
+	F_NewCreditsMusic("_creds", false);
 
 	F_CreditsReset();
 
@@ -808,6 +825,8 @@ static void F_HandleCreditsTick(void)
 void F_CreditTicker(void)
 {
 	g_credits.havent_ticked = false;
+
+	F_ConsiderCreditsMusicUpdate();
 
 	g_credits.transition_prev = g_credits.transition;
 	g_credits.scroll_timer_prev = g_credits.scroll_timer;

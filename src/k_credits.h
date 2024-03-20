@@ -32,6 +32,8 @@ void F_TickCreditsDemoExit(void);
 
 INT32 F_CreditsDemoExitFade(void);
 
+void F_ConsiderCreditsMusicUpdate(void);
+
 void F_CreditTicker(void);
 
 void F_CreditDrawer(void);

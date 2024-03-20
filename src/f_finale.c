@@ -982,6 +982,7 @@ UINT16 finaleemeralds = 0;
 
 void F_StartGameEvaluation(void)
 {
+	Music_SetFadeOut("credits", 250);
 	Music_DelayEnd("credits", TICRATE/4);
 	Music_Tick(); // it needs to fade out right now
 
@@ -1327,6 +1328,7 @@ void F_GameEvaluationTicker(void)
 	{
 		if (finalecount == 1)
 		{
+			Music_Stop("credits");
 			// sitting on that distant _shore
 			Music_Remap("shore", "_SHORE");
 			Music_Play("shore");
@@ -1336,6 +1338,7 @@ void F_GameEvaluationTicker(void)
 	{
 		if (finalecount == TICRATE/2)
 		{
+			Music_Stop("credits");
 			// _drift across open waters
 			Music_Remap("shore", "_DRIFT");
 			Music_Play("shore");
@@ -2075,7 +2078,15 @@ void F_AttractDemoTicker(void)
 {
 	keypressed = false;
 
-	if (attractcountdown > 0 && !g_fast_forward)
+	if (g_fast_forward)
+		return;
+
+	if (demo.attract == DEMO_ATTRACT_CREDITS)
+	{
+		F_ConsiderCreditsMusicUpdate();
+	}
+
+	if (attractcountdown > 0)
 	{
 		if (attractcredit)
 		{
