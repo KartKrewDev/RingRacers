@@ -362,7 +362,7 @@ void F_StartIntro(void)
 //
 static void F_IntroDrawScene(void)
 {
-	INT32 cx = 68*FRACUNIT, cy = 20*FRACUNIT;
+	INT32 cx = 62*FRACUNIT, cy = 20*FRACUNIT;
 	INT32 jitterx = 0, jittery = 0;
 	INT32 bgxoffs = 0;
 	patch_t *logoparts[5];
