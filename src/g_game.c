@@ -1399,7 +1399,7 @@ boolean G_Responder(event_t *ev)
 	{
 		if (F_IntroResponder(ev))
 		{
-			D_SetDeferredStartTitle(true);
+			//D_SetDeferredStartTitle(true); -- intro state tracked in f_finale directly
 			return true;
 		}
 	}
