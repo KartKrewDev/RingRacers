@@ -448,7 +448,7 @@ struct staffbrief_t
 {
 	UINT16 wad;
 	UINT16 lump;
-	char name[16];
+	char name[MAXPLAYERNAME+1];
 	tic_t time;
 	tic_t lap;
 };

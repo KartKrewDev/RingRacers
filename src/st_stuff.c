@@ -471,7 +471,7 @@ static void ST_drawDemoDebug(INT32 *height)
 			avg * TICRATE / 1024.0,
 			(size - needle) / (avg * TICRATE * 60.0)
 	));
-	ST_pushDebugString(height, va("Demo (%s)", demo.recording ? "recording" : "playback"));
+	ST_pushDebugString(height, va("Demo %04x (%s)", demo.version, demo.recording ? "recording" : "playback"));
 }
 
 void ST_drawDebugInfo(void)

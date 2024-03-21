@@ -93,6 +93,27 @@ boolean nodrawers; // for comparative timing purposes
 boolean noblit; // for comparative timing purposes
 tic_t demostarttime; // for comparative timing purposes
 
+static constexpr DemoBufferSizes get_buffer_sizes(UINT16 version)
+{
+	if (version < 0x000A) // old staff ghost support
+		return {16, 16, 16};
+
+	// These sizes are compatible as of version 0x000A
+	static_assert(MAXPLAYERNAME == 21);
+	static_assert(SKINNAMESIZE == 16);
+	static_assert(MAXCOLORNAME == 32);
+	return {21, 16, 32};
+}
+
+static DemoBufferSizes g_buffer_sizes;
+
+size_t copy_fixed_buf(void* p, const void* s, size_t n)
+{
+	strncpy((char*)p, (const char*)s, n);
+	((char*)p)[n] = '\0';
+	return n;
+}
+
 static char demoname[MAX_WADPATH];
 static savebuffer_t demobuf = {0};
 static UINT8 *demotime_p, *demoinfo_p;
@@ -135,7 +156,11 @@ demoghost *ghosts = NULL;
 // DEMO RECORDING
 //
 
-#define DEMOVERSION 0x0009
+// Also supported:
+// - 0x0009 (older staff ghosts)
+//   - Player names, skin names and color names were 16
+//     bytes. See get_buffer_sizes().
+#define DEMOVERSION 0x000A
 #define DEMOHEADER  "\xF0" "KartReplay" "\x0F"
 
 #define DF_ATTACKMASK   (ATTACKING_TIME|ATTACKING_LAP|ATTACKING_SPB) // This demo contains time/lap data
@@ -221,7 +246,8 @@ static mobj_t oldghost[MAXPLAYERS];
 void G_ReadDemoExtraData(void)
 {
 	INT32 p, extradata, i;
-	char name[17];
+	char name[64];
+	static_assert(sizeof name >= std::max({MAXPLAYERNAME+1u, SKINNAMESIZE+1u, MAXCOLORNAME+1u}));
 
 	if (leveltime > starttime)
 	{
@@ -233,7 +259,7 @@ void G_ReadDemoExtraData(void)
 		}
 	}
 
-	memset(name, '\0', 17);
+	memset(name, '\0', sizeof name);
 
 	p = READUINT8(demobuf.p);
 
@@ -327,8 +353,7 @@ void G_ReadDemoExtraData(void)
 		if (extradata & DXD_COLOR)
 		{
 			// Color
-			M_Memcpy(name, demobuf.p, 16);
-			demobuf.p += 16;
+			demobuf.p += copy_fixed_buf(name, demobuf.p, g_buffer_sizes.color_name);
 			for (i = 0; i < numskincolors; i++)
 				if (!stricmp(skincolors[i].name, name))				// SRB2kart
 				{
@@ -341,19 +366,16 @@ void G_ReadDemoExtraData(void)
 		if (extradata & DXD_NAME)
 		{
 			// Name
-			M_Memcpy(player_names[p],demobuf.p,16);
-			demobuf.p += 16;
+			demobuf.p += copy_fixed_buf(player_names[p], demobuf.p, g_buffer_sizes.player_name);
 		}
 		if (extradata & DXD_FOLLOWER)
 		{
 			// Set our follower
-			M_Memcpy(name, demobuf.p, 16);
-			demobuf.p += 16;
+			demobuf.p += copy_fixed_buf(name, demobuf.p, g_buffer_sizes.skin_name);
 			K_SetFollowerByName(p, name);
 
 			// Follower's color
-			M_Memcpy(name, demobuf.p, 16);
-			demobuf.p += 16;
+			demobuf.p += copy_fixed_buf(name, demobuf.p, g_buffer_sizes.color_name);
 			for (i = 0; i < numskincolors +2; i++)	// +2 because of Match and Opposite
 			{
 				if (!stricmp(Followercolor_cons_t[i].strvalue, name))
@@ -411,7 +433,8 @@ void G_ReadDemoExtraData(void)
 void G_WriteDemoExtraData(void)
 {
 	INT32 i, j;
-	char name[16];
+	char name[64];
+	static_assert(sizeof name >= std::max({MAXPLAYERNAME+1u, SKINNAMESIZE+1u, MAXCOLORNAME+1u}));
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -464,41 +487,28 @@ void G_WriteDemoExtraData(void)
 			if (demo_extradata[i] & DXD_COLOR)
 			{
 				// Color
-				memset(name, 0, 16);
-				strlcpy(name, skincolors[players[i].skincolor].name, 16);
-				M_Memcpy(demobuf.p,name,16);
-				demobuf.p += 16;
+				demobuf.p += copy_fixed_buf(demobuf.p, skincolors[players[i].skincolor].name, g_buffer_sizes.color_name);
 			}
 			if (demo_extradata[i] & DXD_NAME)
 			{
 				// Name
-				memset(name, 0, 16);
-				strlcpy(name, player_names[i], 16);
-				M_Memcpy(demobuf.p,name,16);
-				demobuf.p += 16;
+				demobuf.p += copy_fixed_buf(demobuf.p, player_names[i], g_buffer_sizes.player_name);
 			}
 			if (demo_extradata[i] & DXD_FOLLOWER)
 			{
 				// write follower
-				memset(name, 0, 16);
 				if (players[i].followerskin == -1)
-					strncpy(name, "None", 16);
+					demobuf.p += copy_fixed_buf(demobuf.p, "None", g_buffer_sizes.skin_name);
 				else
-					strlcpy(name, followers[players[i].followerskin].name, 16);
-				M_Memcpy(demobuf.p, name, 16);
-				demobuf.p += 16;
+					demobuf.p += copy_fixed_buf(demobuf.p, followers[players[i].followerskin].name, g_buffer_sizes.skin_name);
 
 				// write follower color
-				memset(name, 0, 16);
 				for (j = (numskincolors+2)-1; j > 0; j--)
 				{
 					if (Followercolor_cons_t[j].value == players[i].followercolor)
 						break;
 				}
-				strlcpy(name, Followercolor_cons_t[j].strvalue, 16);	// Not KartColor_Names because followercolor has extra values such as "Match"
-				M_Memcpy(demobuf.p,name,16);
-				demobuf.p += 16;
-
+				demobuf.p += copy_fixed_buf(demobuf.p, Followercolor_cons_t[j].strvalue, g_buffer_sizes.color_name);	// Not KartColor_Names because followercolor has extra values such as "Match"
 			}
 			if (demo_extradata[i] & DXD_WEAPONPREF)
 			{
@@ -1293,11 +1303,11 @@ readghosttic:
 				if (ziptic & DXD_SKIN)
 					g->p++; // We _could_ read this info, but it shouldn't change anything in record attack...
 				if (ziptic & DXD_COLOR)
-					g->p += 16; // Same tbh
+					g->p += g->sizes.color_name; // Same tbh
 				if (ziptic & DXD_NAME)
-					g->p += 16; // yea
+					g->p += g->sizes.player_name; // yea
 				if (ziptic & DXD_FOLLOWER)
-					g->p += 32; // ok (32 because there's both the skin and the colour)
+					g->p += g->sizes.skin_name + g->sizes.color_name;
 				if (ziptic & DXD_WEAPONPREF)
 					g->p++; // ditto
 				if (ziptic & DXD_START)
@@ -2019,9 +2029,8 @@ static UINT8 G_CheckDemoExtraFiles(savebuffer_t *info, boolean quick)
 	return error;
 }
 
-static void G_SaveDemoSkins(UINT8 **pp)
+static void G_SaveDemoSkins(UINT8 **pp, const DemoBufferSizes &psizes)
 {
-	char skin[16];
 	UINT8 i;
 	UINT8 *availabilitiesbuffer = R_GetSkinAvailabilities(true, -1);
 
@@ -2029,9 +2038,7 @@ static void G_SaveDemoSkins(UINT8 **pp)
 	for (i = 0; i < numskins; i++)
 	{
 		// Skinname, for first attempt at identification.
-		memset(skin, 0, 16);
-		strlcpy(skin, skins[i].name, 16);
-		WRITEMEM((*pp), skin, 16);
+		(*pp) += copy_fixed_buf((*pp), skins[i].name, psizes.skin_name);
 
 		// Backup information for second pass.
 		WRITEUINT8((*pp), skins[i].kartspeed);
@@ -2045,7 +2052,7 @@ static void G_SaveDemoSkins(UINT8 **pp)
 	}
 }
 
-static democharlist_t *G_LoadDemoSkins(savebuffer_t *info, UINT8 *worknumskins, boolean getclosest)
+static democharlist_t *G_LoadDemoSkins(const DemoBufferSizes &psizes, savebuffer_t *info, UINT8 *worknumskins, boolean getclosest)
 {
 	UINT8 i, byte, shif;
 	democharlist_t *skinlist = NULL;
@@ -2069,14 +2076,13 @@ static democharlist_t *G_LoadDemoSkins(savebuffer_t *info, UINT8 *worknumskins, 
 	{
 		INT32 result = -1;
 
-		if (P_SaveBufferRemaining(info) < 16+1+1+4)
+		if (P_SaveBufferRemaining(info) < psizes.skin_name+1+1+4)
 		{
 			Z_Free(skinlist);
 			return NULL;
 		}
 
-		READMEM(info->p, skinlist[i].name, 16);
-		skinlist[i].name[16] = '\0';
+		info->p += copy_fixed_buf(skinlist[i].name, info->p, psizes.skin_name);
 		skinlist[i].namehash = quickncasehash(skinlist[i].name, SKINNAMESIZE);
 		skinlist[i].kartspeed = READUINT8(info->p);
 		skinlist[i].kartweight = READUINT8(info->p);
@@ -2128,7 +2134,7 @@ static democharlist_t *G_LoadDemoSkins(savebuffer_t *info, UINT8 *worknumskins, 
 	return skinlist;
 }
 
-static void G_SkipDemoSkins(UINT8 **pp)
+static void G_SkipDemoSkins(UINT8 **pp, const DemoBufferSizes& psizes)
 {
 	UINT8 demonumskins;
 	UINT8 i;
@@ -2136,7 +2142,7 @@ static void G_SkipDemoSkins(UINT8 **pp)
 	demonumskins = READUINT8((*pp));
 	for (i = 0; i < demonumskins; ++i)
 	{
-		(*pp) += 16; // name
+		(*pp) += psizes.skin_name; // name
 		(*pp)++; // kartspeed
 		(*pp)++; // kartweight
 		(*pp) += 4; // flags
@@ -2148,12 +2154,10 @@ static void G_SkipDemoSkins(UINT8 **pp)
 void G_BeginRecording(void)
 {
 	UINT8 i, j, p;
-	char name[MAXCOLORNAME+1];
 	player_t *player = &players[consoleplayer];
 
 	if (demobuf.p)
 		return;
-	memset(name,0,sizeof(name));
 
 	demobuf.p = demobuf.buffer;
 
@@ -2185,6 +2189,9 @@ void G_BeginRecording(void)
 	WRITEUINT8(demobuf.p,SUBVERSION);
 	WRITEUINT16(demobuf.p,DEMOVERSION);
 
+	demo.version = DEMOVERSION;
+	g_buffer_sizes = get_buffer_sizes(DEMOVERSION);
+
 	// Full replay title
 	demobuf.p += 64;
 	{
@@ -2211,7 +2218,7 @@ void G_BeginRecording(void)
 	G_SaveDemoExtraFiles(&demobuf.p);
 
 	// character list
-	G_SaveDemoSkins(&demobuf.p);
+	G_SaveDemoSkins(&demobuf.p, g_buffer_sizes);
 
 	if ((demoflags & DF_ATTACKMASK))
 	{
@@ -2291,10 +2298,7 @@ void G_BeginRecording(void)
 			}
 
 			// Name
-			memset(name, 0, 16);
-			strlcpy(name, player_names[p], 16);
-			M_Memcpy(demobuf.p,name,16);
-			demobuf.p += 16;
+			demobuf.p += copy_fixed_buf(demobuf.p, player_names[p], g_buffer_sizes.player_name);
 
 			for (j = 0; j < MAXAVAILABILITY; j++)
 			{
@@ -2306,34 +2310,24 @@ void G_BeginRecording(void)
 			WRITEUINT8(demobuf.p, player->lastfakeskin);
 
 			// Color
-			memset(name, 0, 16);
-			strncpy(name, skincolors[player->skincolor].name, 16);
-			M_Memcpy(demobuf.p,name,16);
-			demobuf.p += 16;
+			demobuf.p += copy_fixed_buf(demobuf.p, skincolors[player->skincolor].name, g_buffer_sizes.color_name);
 
 			// Save follower's skin name
 			// PS: We must check for 'follower' to determine if the followerskin is valid. It's going to be 0 if we don't have a follower, but 0 is also absolutely a valid follower!
 			// Doesn't really matter if the follower mobj is valid so long as it exists in a way or another.
 
-			memset(name, 0, 16);
 			if (player->follower)
-				strncpy(name, followers[player->followerskin].name, 16);
+				demobuf.p += copy_fixed_buf(demobuf.p, followers[player->followerskin].name, g_buffer_sizes.skin_name);
 			else
-				strncpy(name, "None", 16);	// Say we don't have one, then.
-
-			M_Memcpy(demobuf.p,name,16);
-			demobuf.p += 16;
+				demobuf.p += copy_fixed_buf(demobuf.p, "None", g_buffer_sizes.skin_name);	// Say we don't have one, then.
 
 			// Save follower's colour
-			memset(name, 0, 16);
 			for (j = (numskincolors+2)-1; j > 0; j--)
 			{
 				if (Followercolor_cons_t[j].value == players[i].followercolor)
 					break;
 			}
-			strncpy(name, Followercolor_cons_t[j].strvalue, 16);	// Not KartColor_Names because followercolor has extra values such as "Match"
-			M_Memcpy(demobuf.p, name, 16);
-			demobuf.p += 16;
+			demobuf.p += copy_fixed_buf(demobuf.p, Followercolor_cons_t[j].strvalue, g_buffer_sizes.color_name);	// Not KartColor_Names because followercolor has extra values such as "Match"
 
 			// Score, since Kart uses this to determine where you start on the map
 			WRITEUINT32(demobuf.p, player->score);
@@ -2464,7 +2458,7 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	p++; // numlaps
 	G_SkipDemoExtraFiles(&p);
 
-	G_SkipDemoSkins(&p);
+	G_SkipDemoSkins(&p, get_buffer_sizes(DEMOVERSION));
 
 	aflags = flags & DF_ATTACKMASK;
 	I_Assert(aflags);
@@ -2501,6 +2495,7 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	switch(oldversion) // demoversion
 	{
 	case DEMOVERSION: // latest always supported
+	case 0x0009: // older staff ghosts
 		break;
 	// too old, cannot support.
 	default:
@@ -2529,7 +2524,7 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 		return UINT8_MAX;
 	}
 
-	G_SkipDemoSkins(&p);
+	G_SkipDemoSkins(&p, get_buffer_sizes(oldversion));
 
 	if (flags & ATTACKING_TIME)
 		oldtime = READUINT32(p);
@@ -2579,7 +2574,7 @@ static bool load_ubjson_standing(menudemo_t* pdemo, tcb::span<std::byte> slice, 
 		StandingJson& jsstanding = js.standings[i];
 		auto& memstanding = pdemo->standings[i];
 		memstanding.ranking = jsstanding.ranking;
-		strlcpy(memstanding.name, jsstanding.name.c_str(), 17);
+		strlcpy(memstanding.name, jsstanding.name.c_str(), sizeof memstanding.name);
 		if (jsstanding.demoskin >= demoskins.size())
 		{
 			memstanding.skin = demoskins[0].mapping;
@@ -2649,6 +2644,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo, boolean allownonmultiplayer)
 	switch(pdemoversion)
 	{
 	case DEMOVERSION: // latest always supported
+	case 0x0009: // older staff ghosts
 		if (P_SaveBufferRemaining(&info) < 64)
 		{
 			goto corrupt;
@@ -2711,7 +2707,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo, boolean allownonmultiplayer)
 
 	pdemo->addonstatus = G_CheckDemoExtraFiles(&info, true);
 
-	skinlist = G_LoadDemoSkins(&info, &worknumskins, false);
+	skinlist = G_LoadDemoSkins(get_buffer_sizes(pdemoversion), &info, &worknumskins, false);
 
 	if (!skinlist)
 	{
@@ -2805,8 +2801,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo, boolean allownonmultiplayer)
 				pdemo->standings[legacystandingplayercount].ranking = READUINT8(info.p);
 
 				// Name
-				M_Memcpy(pdemo->standings[legacystandingplayercount].name, info.p, 16);
-				info.p += 16;
+				info.p += copy_fixed_buf(pdemo->standings[legacystandingplayercount].name, info.p, 16);
 
 				// Skin
 				skinid = READUINT8(info.p);
@@ -2815,8 +2810,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo, boolean allownonmultiplayer)
 				pdemo->standings[legacystandingplayercount].skin = skinlist[skinid].mapping;
 
 				// Color
-				M_Memcpy(temp,info.p,16);
-				info.p += 16;
+				info.p += copy_fixed_buf(temp, info.p, 16);
 				for (i = 0; i < numskincolors; i++)
 					if (!stricmp(skincolors[i].name,temp))				// SRB2kart
 					{
@@ -2909,7 +2903,7 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 	INT32 i;
 	UINT8 p, numslots = 0;
 	lumpnum_t l;
-	char color[MAXCOLORNAME+1],follower[17],mapname[MAXMAPLUMPNAME],gtname[MAXGAMETYPELENGTH];
+	char color[MAXCOLORNAME+1],follower[SKINNAMESIZE+1],mapname[MAXMAPLUMPNAME],gtname[MAXGAMETYPELENGTH];
 	char *pdemoname;
 	UINT8 availabilities[MAXPLAYERS][MAXAVAILABILITY];
 	UINT8 version,subversion;
@@ -2929,8 +2923,6 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 
 	G_InitDemoRewind();
 
-	follower[16] = '\0';
-	color[MAXCOLORNAME] = '\0';
 	gtname[MAXGAMETYPELENGTH-1] = '\0';
 
 	if (deflumpnum != LUMPERROR)
@@ -3079,6 +3071,7 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 	switch(demo.version)
 	{
 	case DEMOVERSION: // latest always supported
+	case 0x0009: // older staff ghosts
 		break;
 	// too old, cannot support.
 	default:
@@ -3090,6 +3083,8 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 		demo.playback = false;
 		return;
 	}
+
+	g_buffer_sizes = get_buffer_sizes(demo.version);
 
 	// demo title
 	M_Memcpy(demo.titlename, demobuf.p, 64);
@@ -3188,7 +3183,7 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 	G_SetGametype(i);
 
 	// character list
-	demo.skinlist = G_LoadDemoSkins(&demobuf, &demo.numskins, true);
+	demo.skinlist = G_LoadDemoSkins(g_buffer_sizes, &demobuf, &demo.numskins, true);
 	if (!demo.skinlist)
 	{
 		snprintf(msg, 1024, M_GetText("%s has an invalid skin list and cannot be played.\n"), pdemoname);
@@ -3377,8 +3372,7 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 		K_UpdateShrinkCheat(&players[p]);
 
 		// Name
-		M_Memcpy(player_names[p],demobuf.p,16);
-		demobuf.p += 16;
+		demobuf.p += copy_fixed_buf(player_names[p], demobuf.p, g_buffer_sizes.player_name);
 
 		for (i = 0; i < MAXAVAILABILITY; i++)
 		{
@@ -3393,8 +3387,7 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 		lastfakeskin[p] = READUINT8(demobuf.p);
 
 		// Color
-		M_Memcpy(color,demobuf.p,16);
-		demobuf.p += 16;
+		demobuf.p += copy_fixed_buf(color, demobuf.p, g_buffer_sizes.color_name);
 		for (i = 0; i < numskincolors; i++)
 			if (!stricmp(skincolors[i].name,color))				// SRB2kart
 			{
@@ -3403,13 +3396,11 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 			}
 
 		// Follower
-		M_Memcpy(follower, demobuf.p, 16);
-		demobuf.p += 16;
+		demobuf.p += copy_fixed_buf(follower, demobuf.p, g_buffer_sizes.skin_name);
 		K_SetFollowerByName(p, follower);
 
 		// Follower colour
-		M_Memcpy(color, demobuf.p, 16);
-		demobuf.p += 16;
+		demobuf.p += copy_fixed_buf(color, demobuf.p, g_buffer_sizes.color_name);
 		for (i = 0; i < numskincolors +2; i++)	// +2 because of Match and Opposite
 		{
 			if (!stricmp(Followercolor_cons_t[i].strvalue, color))
@@ -3506,7 +3497,7 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 {
 	INT32 i;
-	char name[17], color[MAXCOLORNAME+1], md5[16];
+	char name[MAXPLAYERNAME+1], color[MAXCOLORNAME+1], md5[16];
 	demoghost *gh;
 	UINT16 flags;
 	UINT8 *p;
@@ -3515,9 +3506,6 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	skin_t *ghskin = &skins[0];
 	UINT8 worknumskins;
 	democharlist_t *skinlist = NULL;
-
-	name[16] = '\0';
-	color[16] = '\0';
 
 	p = buffer->buffer;
 
@@ -3536,6 +3524,7 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	switch(ghostversion)
 	{
 	case DEMOVERSION: // latest always supported
+	case 0x0009: // older staff ghosts
 		break;
 	// too old, cannot support.
 	default:
@@ -3543,6 +3532,8 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 		P_SaveBufferFree(buffer);
 		return;
 	}
+
+	const DemoBufferSizes ghostsizes = get_buffer_sizes(ghostversion);
 
 	p += 64; // title
 	M_Memcpy(md5, p, 16); p += 16; // demo checksum
@@ -3588,7 +3579,7 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	{
 		// FIXME: the rest of this function is not modifying buffer->p directly so fuck it
 		buffer->p = p;
-		skinlist = G_LoadDemoSkins(buffer, &worknumskins, true);
+		skinlist = G_LoadDemoSkins(ghostsizes, buffer, &worknumskins, true);
 		p = buffer->p;
 	}
 	if (!skinlist)
@@ -3651,8 +3642,7 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	}
 
 	// Player name (TODO: Display this somehow if it doesn't match cv_playername!)
-	M_Memcpy(name, p, 16);
-	p += 16;
+	p += copy_fixed_buf(name, p, ghostsizes.player_name);
 
 	p += MAXAVAILABILITY;
 
@@ -3663,11 +3653,10 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	p++; // lastfakeskin
 
 	// Color
-	M_Memcpy(color, p, 16);
-	p += 16;
+	p += copy_fixed_buf(color, p, ghostsizes.color_name);
 
 	// Follower data was here, skip it, we don't care about it for ghosts.
-	p += 32;	// followerskin (16) + followercolor (16)
+	p += ghostsizes.skin_name + ghostsizes.color_name;
 
 	p += 4; // score
 	p += 2; // powerlevel
@@ -3687,6 +3676,7 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 
 
 	gh = static_cast<demoghost*>(Z_Calloc(sizeof(demoghost), PU_LEVEL, NULL));
+	gh->sizes = ghostsizes;
 	gh->next = ghosts;
 	gh->buffer = buffer->buffer;
 	M_Memcpy(gh->checksum, md5, 16);
@@ -3790,6 +3780,7 @@ staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer)
 	switch(ghostversion)
 	{
 		case DEMOVERSION: // latest always supported
+		case 0x0009: // older staff ghosts
 			break;
 
 		// too old, cannot support.
@@ -3819,7 +3810,7 @@ staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer)
 	p++; // numlaps
 	G_SkipDemoExtraFiles(&p);
 
-	G_SkipDemoSkins(&p);
+	G_SkipDemoSkins(&p, get_buffer_sizes(ghostversion));
 
 	if (flags & ATTACKING_TIME)
 		temp.time = READUINT32(p);
@@ -3859,7 +3850,7 @@ staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer)
 	if (READUINT8(p) & (DEMO_SPECTATOR|DEMO_BOT))
 		goto fail;
 
-	M_Memcpy(temp.name, p, 16);
+	copy_fixed_buf(temp.name, p, get_buffer_sizes(ghostversion).player_name);
 
 	ret = static_cast<staffbrief_t*>(Z_Malloc(sizeof(staffbrief_t), PU_STATIC, NULL));
 	if (ret)

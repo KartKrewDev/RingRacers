@@ -69,7 +69,7 @@ extern consvar_t cv_recordmultiplayerdemos, cv_netdemosyncquality;
 extern tic_t demostarttime;
 
 struct democharlist_t {
-	char name[17];
+	char name[SKINNAMESIZE+1];
 	UINT32 namehash;
 	UINT8 mapping; // No, this isn't about levels. It maps to loaded character ID.
 	UINT8 kartspeed;
@@ -128,7 +128,7 @@ struct menudemo_t {
 
 	struct {
 		UINT8 ranking;
-		char name[17];
+		char name[MAXPLAYERNAME+1];
 		UINT8 skin, color;
 		UINT32 timeorscore;
 	} standings[MAXPLAYERS];
@@ -189,6 +189,13 @@ void G_StoreRewindInfo(void);
 void G_PreviewRewind(tic_t previewtime);
 void G_ConfirmRewind(tic_t rewindtime);
 
+struct DemoBufferSizes
+{
+	size_t player_name;
+	size_t skin_name;
+	size_t color_name;
+};
+
 // Your naming conventions are stupid and useless.
 // There is no conflict here.
 struct demoghost {
@@ -201,6 +208,7 @@ struct demoghost {
 	boolean done;
 	democharlist_t *skinlist;
 	mobj_t oldmo, *mo;
+	struct DemoBufferSizes sizes;
 	struct demoghost *next;
 };
 extern demoghost *ghosts;
