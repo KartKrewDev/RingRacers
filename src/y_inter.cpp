@@ -719,6 +719,8 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 					);
 				}
 			}
+			else if (gamestate == GS_LEVEL)
+				;
 			else if (standings->rankingsmode != 0)
 			{
 				char *increasenum = NULL;
