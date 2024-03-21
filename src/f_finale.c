@@ -1422,6 +1422,8 @@ static void F_CacheTitleScreen(void)
 {
 	UINT16 i;
 
+	kts_copyright = W_CachePatchName("KTSCR", PU_PATCH_LOWPRIORITY);
+
 	switch (curttmode)
 	{
 		case TTMODE_NONE:
@@ -1439,7 +1441,6 @@ static void F_CacheTitleScreen(void)
 			{
 				kts_electricity[i] = W_CachePatchName(va("KTSELCT%.1d", i+1), PU_PATCH_LOWPRIORITY);
 			}
-			kts_copyright = W_CachePatchName("KTSCR", PU_PATCH_LOWPRIORITY);
 			break;
 		}
 
@@ -1602,6 +1603,9 @@ void F_VersionDrawer(void)
 #undef addtext
 }
 
+#define GONERTYPEWRITERDURATION (5)
+#define GONERTYPEWRITERWAIT (TICRATE/2)
+
 // (no longer) De-Demo'd Title Screen
 void F_TitleScreenDrawer(void)
 {
@@ -1632,7 +1636,41 @@ void F_TitleScreenDrawer(void)
 		goto luahook;
 	}
 
-	switch (curttmode)
+	if (cache_gametrulystarted == false)
+	{
+		INT32 trans;
+
+		if (finalecount >= GONERTYPEWRITERWAIT)
+		{	
+			INT32 checkcount = finalecount - GONERTYPEWRITERWAIT;
+			const char *typetext = "RING RACERS";
+			INT32 bx = V_TitleCardStringWidth(typetext, false);
+
+			V_DrawTitleCardString((BASEVIDWIDTH - bx)/2, 80, typetext, V_TRANSLUCENT, true, (checkcount/GONERTYPEWRITERDURATION), 0, false);
+
+			if (checkcount > 2*TICRATE)
+			{
+				trans = 10 - (checkcount - 2*TICRATE)/4;
+				if (trans < 10)
+				{
+					if (trans < 0)
+						trans = 0;
+					trans <<= V_ALPHASHIFT;
+					V_DrawCenteredThinString(BASEVIDWIDTH/2, 80 + 32, V_AQUAMAP|trans, "Press any input to proceed.");
+				}
+			}
+		}
+
+		trans = 10 - finalecount/5;
+		if (trans < 10)
+		{
+			if (trans < 0)
+				trans = 0;
+			trans <<= V_ALPHASHIFT;
+			V_DrawCenteredMenuString(BASEVIDWIDTH/2, (BASEVIDHEIGHT/2) - 7, trans, "Dr. Robotnik's");
+		}
+	}
+	else switch (curttmode)
 	{
 		case TTMODE_NONE:
 		{
@@ -1641,7 +1679,7 @@ void F_TitleScreenDrawer(void)
 
 		case TTMODE_RINGRACERS:
 		{
-			if (cache_gametrulystarted == true)
+			//if (cache_gametrulystarted == true)
 			{
 				const char *eggName = "eggman";
 				INT32 eggSkin = R_SkinAvailableEx(eggName, false);
@@ -1673,12 +1711,7 @@ void F_TitleScreenDrawer(void)
 
 				V_DrawFixedPatch(0, 0, FRACUNIT, 0, kts_bumper, NULL);
 			}
-			else
-			{
-				V_DrawCenteredString(BASEVIDWIDTH/2, (BASEVIDHEIGHT/2) - 4, 0, "Press any button/key to continue");
-			}
 
-			V_DrawFixedPatch(0, 0, FRACUNIT, 0, kts_copyright, NULL);
 			break;
 		}
 
@@ -1703,6 +1736,8 @@ void F_TitleScreenDrawer(void)
 			break;
 		}
 	}
+
+	V_DrawFixedPatch(0, 0, FRACUNIT, 0, kts_copyright, NULL);
 
 luahook:
 	// The title drawer is sometimes called without first being started
@@ -1736,7 +1771,11 @@ void F_TitleScreenTicker(boolean run)
 	{
 		if (finalecount == 0)
 		{
-			if (cache_gametrulystarted && !Music_Playing("title"))
+			if (!cache_gametrulystarted)
+			{
+				S_StartSound(NULL, sfx_s3k93);
+			}
+			else if (!Music_Playing("title"))
 			{
 				// Now start the music
 				Music_Loop("title", looptitle);
@@ -1749,6 +1788,22 @@ void F_TitleScreenTicker(boolean run)
 		}
 
 		finalecount++;
+
+		if (!cache_gametrulystarted && finalecount > GONERTYPEWRITERWAIT)
+		{
+			if (finalecount == GONERTYPEWRITERWAIT + 2*TICRATE + TICRATE/3)
+			{
+				S_StartSound(NULL, sfx_s3k61);
+			}
+
+			if (((finalecount - GONERTYPEWRITERWAIT) % GONERTYPEWRITERDURATION) == 0)
+			{
+				// hardcoded for RING RACERS string
+				INT32 lettercount = (finalecount - GONERTYPEWRITERWAIT)/GONERTYPEWRITERDURATION;
+				if (lettercount != 5 && lettercount <= 11)
+					S_StartSound(NULL, sfx_typri1);
+			}
+		}
 	}
 
 	// don't trigger if doing anything besides idling on title
@@ -1920,6 +1975,8 @@ loadreplay:
 		G_DoPlayDemoEx(dname, dlump);
 	}
 }
+
+#undef GONERTYPEWRITERDURATION
 
 void F_AttractDemoTicker(void)
 {
