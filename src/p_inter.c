@@ -34,6 +34,7 @@
 #include "k_battle.h"
 #include "k_specialstage.h"
 #include "k_pwrlv.h"
+#include "k_profiles.h"
 #include "k_grandprix.h"
 #include "k_respawn.h"
 #include "p_spec.h"
@@ -783,6 +784,19 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				{
 					gamedata->spraycans[can_id].map = gamemap-1;
 					mapheaderinfo[gamemap-1]->cache_spraycan = can_id;
+
+					if (gamedata->gotspraycans == 0
+					&& gametype == GT_TUTORIAL
+					&& cv_ttlprofilen.value > 0
+					&& cv_ttlprofilen.value < PR_GetNumProfiles())
+					{
+						profile_t *p = PR_GetProfile(cv_ttlprofilen.value);
+						if (p->color == SKINCOLOR_NONE)
+						{
+							// Apply your favourite colour to the profile!
+							p->color = gamedata->spraycans[can_id].col;
+						}
+					}
 
 					gamedata->gotspraycans++;
 
