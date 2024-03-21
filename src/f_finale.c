@@ -1547,10 +1547,23 @@ void F_StartTitleScreen(void)
 void F_VersionDrawer(void)
 {
 	// An adapted thing from old menus - most games have version info on the title screen now...
+
 	INT32 texty = vid.height - 10*vid.dupy;
+	INT32 trans = 5;
+
+	if (gamestate == GS_TITLESCREEN)
+	{
+		trans = 10 - (finalecount - (3*TICRATE)/2)/3;
+		if (trans >= 10)
+			return;
+		if (trans < 5)
+			trans = 5;
+	}
+
+	trans = (trans<<V_ALPHASHIFT)|V_NOSCALESTART;
 
 #define addtext(f, str) {\
-	V_DrawThinString(vid.dupx, texty, V_NOSCALESTART|f, str);\
+	V_DrawThinString(vid.dupx, texty, trans|f, str);\
 	texty -= 10*vid.dupy;\
 }
 	if (customversionstring[0] != '\0')
@@ -1563,21 +1576,23 @@ void F_VersionDrawer(void)
 // Development -- show revision / branch info
 #if defined(TESTERS)
 		addtext(V_SKYMAP, "Tester client");
-		addtext(V_TRANSLUCENT, va("%s", compdate));
+		addtext(0, va("%s", compdate));
 #elif defined(DEVELOP)
-		addtext(V_TRANSLUCENT, va("%s %s", comprevision, compnote));
-		addtext(V_TRANSLUCENT, D_GetFancyBranchName());
-#else // Regular build
-		addtext(V_TRANSLUCENT, va("%s", VERSIONSTRING));
-#endif
+		addtext(0, va("%s %s", comprevision, compnote));
+		addtext(0, D_GetFancyBranchName());
+
 		if (compoptimized)
 		{
-			addtext(V_TRANSLUCENT, va("%s build", comptype));
+			addtext(0, va("%s build", comptype));
 		}
 		else
 		{
 			addtext(V_ORANGEMAP, va("%s build (no optimizations)", comptype));
 		}
+
+#else // Regular build
+		addtext(trans, va("%s", VERSIONSTRING));
+#endif
 
 		if (compuncommitted)
 		{
