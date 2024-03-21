@@ -197,22 +197,24 @@ void K_TimerInit(void)
 		return;
 	}
 
+	const boolean bossintro = K_CheckBossIntro();
+
 	// Rooooooolllling staaaaaaart
 	if ((gametyperules & (GTR_ROLLINGSTART|GTR_CIRCUIT)) == (GTR_ROLLINGSTART|GTR_CIRCUIT))
 	{
 		S_StartSound(NULL, sfx_s25f);
 		// The actual push occours in P_InitPlayers
 	}
-	else if (skipstats != 0)
+	else if (skipstats != 0 && bossintro == false)
 	{
-		S_StartSound(NULL, sfx_endwrp);
+		S_StartSound(NULL, sfx_s26c); //sfx_endwrp
 	}
 
 	if ((gametyperules & (GTR_CATCHER|GTR_CIRCUIT)) == (GTR_CATCHER|GTR_CIRCUIT))
 	{
 		K_InitSpecialStage();
 	}
-	else if (K_CheckBossIntro() == true)
+	else if (bossintro == true)
 		;
 	else
 	{
