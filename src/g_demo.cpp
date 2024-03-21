@@ -2796,7 +2796,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo, boolean allownonmultiplayer)
 					info.p += kLegacyStandingSize;
 					break; // switch
 				}
-				char temp[16];
+				char temp[16+1];
 
 				pdemo->standings[legacystandingplayercount].ranking = READUINT8(info.p);
 
