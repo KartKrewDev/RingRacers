@@ -2547,7 +2547,7 @@ void M_DrawCharacterSelect(void)
 	}
 
 	// Explosions when you've made your final selection
-	M_DrawCharSelectExplosions(true, 82, 22);
+	M_DrawCharSelectExplosions(true, basex + 82, 22);
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
