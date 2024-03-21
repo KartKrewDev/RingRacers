@@ -1516,8 +1516,10 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 		case UC_UNLOCKPERCENT:
 		{
 			// Don't let netgame sessions intefere
-			// (or have this give a performance hit)
-			if (Playing())
+			// or have this give a performance hit
+			// (This is formulated this way to
+			// perfectly eclipse M_CheckNetUnlockByID)
+			if (netgame || demo.playback || Playing())
 				return false;
 
 			UINT16 i, unlocked = cn->extrainfo2, total = 0;
