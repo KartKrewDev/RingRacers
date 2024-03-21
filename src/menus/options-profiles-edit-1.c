@@ -18,7 +18,7 @@ menuitem_t OPTIONS_EditProfile[] = {
 	{IT_STRING | IT_SUBMENU, "Accessibility", "Acccessibility and quality of life options.",
 		NULL, {.submenu = &OPTIONS_ProfileAccessibilityDef}, 0, 91},
 
-	{IT_STRING | IT_CALL, "Character", "Default character and color.",
+	{IT_STRING | IT_CALL, "Character", NULL, // tooltip set in M_StartEditProfile
 		NULL, {.routine = M_CharacterSelect}, 0, 111},
 
 	{IT_STRING | IT_CVAR | IT_CV_STRING, "Player Tag", "Name displayed online and in replays.",

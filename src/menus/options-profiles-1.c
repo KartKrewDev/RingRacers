@@ -4,6 +4,7 @@
 #include "../i_time.h"
 #include "../k_menu.h"
 #include "../s_sound.h"
+#include "../m_cond.h"
 
 // profile select
 menuitem_t OPTIONS_Profiles[] = {
@@ -117,6 +118,13 @@ void M_StartEditProfile(INT32 c)
 			OPTIONS_EditProfile[popt_profilepname].status |= IT_TRANSTEXT;
 			OPTIONS_EditProfile[popt_char].status |= IT_TRANSTEXT;
 		}
+
+		// Setup variable tooltips.
+		OPTIONS_EditProfile[popt_char].tooltip = (
+			(gamedata && gamedata->numspraycans != 0 && gamedata->gotspraycans != 0)
+				? "Default character and color."
+				: "Default character."
+		);
 
 		OPTIONS_EditProfileDef.prevMenu = currentMenu;
 		M_SetupNextMenu(&OPTIONS_EditProfileDef, false);
