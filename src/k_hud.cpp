@@ -3145,6 +3145,11 @@ static void K_drawKartAccessibilityIcons(boolean gametypeinfoshown, INT32 fx)
 
     if (r_splitscreen < 2) // adjust to speedometer height
     {
+		if (battleprisons)
+		{
+			fy -= 2;
+		}
+
         if (gametypeinfoshown)
         {
             fy -= 11;
