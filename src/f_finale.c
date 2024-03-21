@@ -300,7 +300,7 @@ static tic_t introscenetime[NUMINTROSCENES] =
 {
 	2*TICRATE,				// OUR SRB2 ASSOCIATES
 	9*TICRATE,				// Disclaimer and Epilepsy Warning
-	(3*TICRATE)/2,			// KKD
+	(5*TICRATE)/2,			// KKD
 	(2*TICRATE)/3,			// S&K
 	TICRATE + (TICRATE/3),	// Get ready !!
 };
@@ -368,6 +368,8 @@ static void F_IntroDrawScene(void)
 	patch_t *logoparts[5];
 	UINT8 bgcol = 31;
 
+	INT32 textoffs = 12 * FRACUNIT;
+
 	if (intro_scenenum < INTROSCENE_KREW)
 	{
 		logoparts[0] = NULL;
@@ -375,8 +377,8 @@ static void F_IntroDrawScene(void)
 	else if (intro_scenenum == INTROSCENE_KREW)
 	{
 		logoparts[0] = W_CachePatchName("KKLOGO_C", PU_CACHE);
-		logoparts[1] = W_CachePatchName("KKTEXT_C", PU_CACHE);
-		logoparts[2] = NULL;
+		//logoparts[1] = W_CachePatchName("KKTEXT_C", PU_CACHE);
+		logoparts[1] = NULL;
 
 		bgcol = 0;
 	}
@@ -432,7 +434,45 @@ static void F_IntroDrawScene(void)
 		{
 			jitterx = -jitterx;
 			jittery = -jittery;
+			cy -= textoffs;
 		}
+	}
+
+	if (intro_scenenum == INTROSCENE_KREW)
+	{
+		V_SetClipRect(
+			0,
+			144 * FRACUNIT,
+			BASEVIDWIDTH * FRACUNIT,
+			BASEVIDHEIGHT * FRACUNIT,
+			0
+		);
+
+		INT32 trans = 10;
+
+		if (intro_curtime < TICRATE/3)
+			textoffs -= ((intro_curtime*3) - TICRATE) * FRACUNIT;
+		else if (timetonext > 10)
+			trans = (10 - (intro_curtime - TICRATE/2));
+		else
+			trans = 10 - (timetonext/2);
+
+		if (trans < 5)
+			trans = 5;
+
+		V_DrawFixedPatch(
+			cx,
+			cy - textoffs,
+			FRACUNIT,
+			0,
+			W_CachePatchName("KKTEXT_C", PU_CACHE),
+			NULL
+		);
+
+		if (trans < 10)
+			V_DrawCenteredMenuString(BASEVIDWIDTH/2, 174 - (textoffs/FRACUNIT), (trans<<V_ALPHASHIFT)|V_SUBTRACT, "2013 - 11 years - 2024");
+
+		V_ClearClipRect();
 	}
 
 	//V_DrawString(cx, cy, 0, cutscene_disptext);
@@ -728,13 +768,27 @@ void F_IntroTicker(void)
 
 	if (intro_scenenum == INTROSCENE_KREW)
 	{
+		if (intro_curtime == TICRATE/2)
+			S_StartSound(NULL, sfx_kc5e);
+
 		if (timetonext == 5)
 			S_StartSound(NULL, sfx_vroom);
 		else if (timetonext == 24)
 		{
 			// Need to use M_Random otherwise it always uses the same sound
-			UINT32 rskin = R_GetLocalRandomSkin();
-			UINT8 rtaunt = M_RandomKey(2);
+			UINT32 rskin;
+			UINT8 rtaunt;
+			if (skippableallowed)
+			{
+				rskin = R_GetLocalRandomSkin();
+				rtaunt = M_RandomKey(2);
+			}
+			else
+			{
+				rskin = R_SkinAvailableEx("eggman", false);
+				rtaunt = 1;
+			}
+
 			sfxenum_t rsound = skins[rskin].soundsid[SKSKBST1+rtaunt];
 			S_StartSound(NULL, rsound);
 		}
