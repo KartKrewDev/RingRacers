@@ -67,8 +67,6 @@ typedef enum
 	UC_CRASH,			// Hee ho !
 	UC_TUTORIALSKIP,	// Complete the Tutorial Challenge
 
-	UC_PASSWORD,		// Type in something funny
-
 	UC_SPRAYCAN,		// Grab a spraycan
 
 	UC_PRISONEGGCD,		// Grab a CD from a Prison Egg
@@ -450,7 +448,6 @@ boolean M_NotFreePlay(void);
 UINT16 M_CheckCupEmeralds(UINT8 difficulty);
 
 // Updating conditions and unlockables
-boolean M_ConditionInterpret(const char *password);
 boolean M_CheckCondition(condition_t *cn, player_t *player);
 boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud, boolean doall);
 

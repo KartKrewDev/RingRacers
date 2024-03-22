@@ -4,7 +4,6 @@
 #include "../i_time.h"
 #include "../k_menu.h"
 #include "../m_cond.h"
-#include "../m_cheat.h"
 #include "../s_sound.h"
 #include "../f_finale.h"
 #include "../k_credits.h"
@@ -170,23 +169,6 @@ void M_ExtrasTick(void)
 	{
 		extrasmenu.textx = 160;
 		extrasmenu.texty = 50;
-	}
-
-	if (menutyping.active == false && cv_dummyextraspassword.string[0] != '\0')
-	{
-		if (M_ConditionInterpret(cv_dummyextraspassword.string) == true)
-		{
-			if (M_UpdateUnlockablesAndExtraEmblems(true, true))
-			{
-				M_Challenges(0);
-			}
-		}
-		else if (cht_Interpret(cv_dummyextraspassword.string) == true && menuactive == true)
-		{
-			M_InitExtras(-1);
-		}
-
-		CV_StealthSet(&cv_dummyextraspassword, "");
 	}
 }
 

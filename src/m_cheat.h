@@ -47,12 +47,6 @@ typedef enum {
 } cheat_t;
 
 //
-// Cheat sequences
-//
-boolean cht_Interpret(const char *password);
-void cht_Init(void);
-
-//
 // ObjectPlace
 //
 void Command_ObjectPlace_f(void);

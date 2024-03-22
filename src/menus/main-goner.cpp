@@ -851,22 +851,6 @@ void M_GonerTick(void)
 	if (menutyping.active || menumessage.active || P_AutoPause())
 		return;
 
-	if (cv_dummyextraspassword.string[0] != '\0')
-	{
-		// Challenges are not interpreted at this stage.
-		// See M_ExtraTick for the full behaviour.
-
-		if (!cht_Interpret(cv_dummyextraspassword.string))
-		{
-			goner_delay = 0;
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE,
-				"Aha! Nice try. You're tricky enough WITHOUT admin access, thank you.");
-			M_GonerHidePassword();
-		}
-
-		CV_StealthSet(&cv_dummyextraspassword, "");
-	}
-
 	if (goner_typewriter.textDone)
 	{
 		if (!LinesOutput.empty())

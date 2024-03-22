@@ -2589,13 +2589,6 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 
 		stringvar = Z_StrDup(spos);
 	}
-	else if (fastcmp(params[0], "PASSWORD"))
-	{
-		EXTENDEDPARAMCHECK(spos, 1);
-		ty = UC_PASSWORD;
-
-		stringvar = Z_StrDup(spos);
-	}
 
 	if (ty != UC_NONE)
 		goto setcondition;

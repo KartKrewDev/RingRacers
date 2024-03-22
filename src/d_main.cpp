@@ -1746,8 +1746,6 @@ void D_SRB2Main(void)
 
 	CON_SetLoadingProgress(LOADED_PWAD);
 
-	cht_Init();
-
 	//---------------------------------------------------- READY SCREEN
 	// we need to check for dedicated before initialization of some subsystems
 
