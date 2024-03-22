@@ -103,23 +103,23 @@
 extern "C" consvar_t cv_lua_profile;
 
 /* Manually defined asset hashes
- * Last updated 2019 / 01 / 18 - Kart v1.0.2 - Main assets
- * Last updated 2020 / 08 / 30 - Kart v1.3 - patch.kart
  */
 
-#define ASSET_HASH_BIOS_PK3					"00000000000000000000000000000000"
-#define ASSET_HASH_GFX_PK3					"00000000000000000000000000000000"
-#define ASSET_HASH_TEXTURES_GENERAL_PK3		"00000000000000000000000000000000"
-#define ASSET_HASH_TEXTURES_SEGA_PK3		"00000000000000000000000000000000"
-#define ASSET_HASH_TEXTURES_ORIGINAL_PK3	"00000000000000000000000000000000"
-#define ASSET_HASH_CHARS_PK3				"00000000000000000000000000000000"
-#define ASSET_HASH_FOLLOWERS_PK3			"00000000000000000000000000000000"
-#define ASSET_HASH_MAPS_PK3					"00000000000000000000000000000000"
+#define ASSET_HASH_BIOS_PK3						"ebda8edf969bd48c7a189b5bafdd51f6"
+#define ASSET_HASH_SCRIPTS_PK3					"ef6c65dd684c2209b457fe57018ea2cd"
+#define ASSET_HASH_GFX_PK3						"4b73f2d2da06f01281fa95db4f2a2f4f"
+#define ASSET_HASH_TEXTURES_GENERAL_PK3			"cf4a51f2904a992ddec233e684cfa925"
+#define ASSET_HASH_TEXTURES_SEGAZONES_PK3		"560cd2a4280d01f54238d75f3443e236"
+#define ASSET_HASH_TEXTURES_ORIGINALZONES_PK3	"ea25113cdda01b8bb355b23ed146edeb"
+#define ASSET_HASH_CHARS_PK3					"6e961c9f69723e40c048f4b29a1a3039"
+#define ASSET_HASH_FOLLOWERS_PK3				"92e447f7bb5aa33d1cd5f03a311b188a"
+#define ASSET_HASH_MAPS_PK3						"f1aceb88f18154581fd7d8e202ed47b2"
+#define ASSET_HASH_UNLOCKS_PK3					"8452bdd0a5a536cbb09c5f85158e029c"
+#define ASSET_HASH_STAFFGHOSTS_PK3				"825a8bc5ebe16966959573db85408daa"
+#define ASSET_HASH_SHADERS_PK3					"dbfb1d5eb9818cd2fb81680c0bab05c0"
 #ifdef USE_PATCH_FILE
-#define ASSET_HASH_PATCH_PK3				"00000000000000000000000000000000"
+#define ASSET_HASH_PATCH_PK3					"00000000000000000000000000000000"
 #endif
-#define ASSET_HASH_STAFFGHOSTS_PK3			"00000000000000000000000000000000"
-#define ASSET_HASH_SHADERS_PK3				"00000000000000000000000000000000"
 
 // Version numbers for netplay :upside_down_face:
 int    VERSION;
@@ -1283,10 +1283,7 @@ static void IdentifyVersion(void)
 	// if you change the ordering of this or add/remove a file, be sure to update the md5
 	// checking in D_SRB2Main
 
-
-#ifdef USE_PATCH_FILE
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"scripts.pk3"));
-#endif
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"gfx.pk3"));
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"textures_general.pk3"));
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"textures_segazones.pk3"));
@@ -1294,12 +1291,12 @@ static void IdentifyVersion(void)
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"chars.pk3"));
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"followers.pk3"));
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"maps.pk3"));
-#define UNLOCKTESTING
-#if defined(DEVELOP) && defined(UNLOCKTESTING)
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"unlocks.pk3"));
-#endif
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"staffghosts.pk3"));
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"shaders.pk3"));
+#ifdef USE_PATCH_FILE
+	D_AddFile(startupiwads, va(pandf,srb2waddir,"patch.pk3"));
+#endif
 
 #if !defined (HAVE_SDL) || defined (HAVE_MIXER)
 
@@ -1615,24 +1612,23 @@ void D_SRB2Main(void)
 #ifndef DEVELOP
 	// Check MD5s of autoloaded files
 	// Note: Do not add any files that ignore MD5!
-	W_VerifyFileMD5(mainwads, ASSET_HASH_BIOS_PK3);								// bios.pk3
+	W_VerifyFileMD5(mainwads, ASSET_HASH_BIOS_PK3);									// bios.pk3
+	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_SCRIPTS_PK3);					// scripts.pk3
+	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_GFX_PK3);						// gfx.pk3
+	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_TEXTURES_GENERAL_PK3);			// textures_general.pk3
+	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_TEXTURES_SEGAZONES_PK3);		// textures_segazones.pk3
+	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_TEXTURES_ORIGINALZONES_PK3);	// textures_originalzones.pk3
+	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_CHARS_PK3);					// chars.pk3
+	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_FOLLOWERS_PK3);				// followers.pk3
+	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_MAPS_PK3);						// maps.pk3
+	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_UNLOCKS_PK3);					// unlocks.pk3
+	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_STAFFGHOSTS_PK3);				// staffghosts.pk3
+	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_SHADERS_PK3);					// shaders.pk3
 #ifdef USE_PATCH_FILE
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_PATCH_PK3);				// patch.pk3
+	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_PATCH_PK3);					// patch.pk3
 #endif
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_GFX_PK3);					// gfx.pk3
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_TEXTURES_GENERAL_PK3);		// textures_general.pk3
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_TEXTURES_SEGA_PK3);		// textures_segazones.pk3
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_TEXTURES_ORIGINAL_PK3);	// textures_originalzones.pk3
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_CHARS_PK3);				// chars.pk3
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_FOLLOWERS_PK3);			// followers.pk3
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_MAPS_PK3);					// maps.pk3
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_UNLOCKS_PK3);				// unlocks.pk3
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_STAFFGHOSTS_PK3);			// staffghosts.pk3
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_SHADERS_PK3);				// shaders.pk3
 #else
-#ifdef USE_PATCH_FILE
 	mainwads++;	// scripts.pk3
-#endif
 	mainwads++;	// gfx.pk3
 	mainwads++;	// textures_general.pk3
 	mainwads++;	// textures_segazones.pk3
@@ -1640,11 +1636,12 @@ void D_SRB2Main(void)
 	mainwads++;	// chars.pk3
 	mainwads++; // followers.pk3
 	mainwads++;	// maps.pk3
-#ifdef UNLOCKTESTING
 	mainwads++; // unlocks.pk3
-#endif
 	mainwads++; // staffghosts.pk3
 	mainwads++; // shaders.pk3
+#ifdef USE_PATCH_FILE
+	mainwads++; // patch.pk3
+#endif
 
 #endif //ifndef DEVELOP
 
