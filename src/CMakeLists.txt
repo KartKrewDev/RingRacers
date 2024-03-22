@@ -616,6 +616,7 @@ if(SRB2_CONFIG_ENABLE_WEBM_MOVIES)
 	add_subdirectory(media)
 endif()
 add_subdirectory(hud)
+add_subdirectory(modp_b64)
 
 # strip debug symbols into separate file when using gcc.
 # to be consistent with Makefile, don't generate for OS X.
