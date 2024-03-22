@@ -1301,8 +1301,6 @@ static void IdentifyVersion(void)
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"staffghosts.pk3"));
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"shaders.pk3"));
 
-#if !defined (HAVE_SDL) || defined (HAVE_MIXER)
-
 #define MUSICTEST(str) \
 	{\
 		const char *musicpath = va(pandf,srb2waddir,str);\
@@ -1321,8 +1319,6 @@ static void IdentifyVersion(void)
 	MUSICTEST("altmusic.pk3")
 
 #undef MUSICTEST
-
-#endif
 }
 
 #ifdef DEVELOP
