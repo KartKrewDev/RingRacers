@@ -4519,6 +4519,9 @@ void K_UpdateWavedashIndicator(player_t *player)
 	mobj->renderflags &= ~RF_TRANSMASK;
 	mobj->renderflags |= RF_PAPERSPRITE;
 
+	if (player->wavedash < MIN_WAVEDASH_CHARGE)
+		mobj->renderflags |= RF_TRANS50;
+
 	if (K_IsLosingWavedash(player))
 	{
 		// Decay timer's ticking
