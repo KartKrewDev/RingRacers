@@ -67,6 +67,8 @@ typedef enum
 	UC_CRASH,			// Hee ho !
 	UC_TUTORIALSKIP,	// Complete the Tutorial Challenge
 
+	UC_PASSWORD,		// Type in something funny
+
 	UC_SPRAYCAN,		// Grab a spraycan
 
 	UC_PRISONEGGCD,		// Grab a CD from a Prison Egg

@@ -7,6 +7,7 @@
 #include "../s_sound.h"
 #include "../f_finale.h"
 #include "../k_credits.h"
+#include "../m_pw.h"
 
 static void M_Credits(INT32 choice)
 {
@@ -169,6 +170,31 @@ void M_ExtrasTick(void)
 	{
 		extrasmenu.textx = 160;
 		extrasmenu.texty = 50;
+	}
+
+	if (menutyping.active == false && cv_dummyextraspassword.string[0] != '\0')
+	{
+		switch (M_TryPassword(cv_dummyextraspassword.string, true))
+		{
+			case M_PW_CHALLENGES:
+				if (M_UpdateUnlockablesAndExtraEmblems(true, true))
+				{
+					M_Challenges(0);
+				}
+				break;
+
+			case M_PW_EXTRAS:
+				if (menuactive == true)
+				{
+					M_InitExtras(-1);
+				}
+				break;
+
+			default:
+				break;
+		}
+
+		CV_StealthSet(&cv_dummyextraspassword, "");
 	}
 }
 

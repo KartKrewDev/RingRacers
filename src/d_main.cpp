@@ -91,6 +91,7 @@
 #include "k_credits.h"
 #include "r_debug.hpp"
 #include "k_director.h"
+#include "m_pw.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h" // 3D View Rendering
@@ -1745,6 +1746,8 @@ void D_SRB2Main(void)
 	P_InitMapData();
 
 	CON_SetLoadingProgress(LOADED_PWAD);
+
+	M_PasswordInit();
 
 	//---------------------------------------------------- READY SCREEN
 	// we need to check for dedicated before initialization of some subsystems

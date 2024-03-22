@@ -15,6 +15,7 @@
 #include "../r_main.h"
 #include "../m_easing.h"
 #include "../g_input.h"
+#include "../m_pw.h"
 
 #include <forward_list>
 
@@ -850,6 +851,22 @@ void M_GonerTick(void)
 
 	if (menutyping.active || menumessage.active || P_AutoPause())
 		return;
+
+	if (cv_dummyextraspassword.string[0] != '\0')
+	{
+		// Challenges are not interpreted at this stage.
+		// See M_ExtraTick for the full behaviour.
+
+		if (M_TryPassword(cv_dummyextraspassword.string, false) != M_PW_EXTRAS)
+		{
+			goner_delay = 0;
+			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE,
+				"Aha! Nice try. You're tricky enough WITHOUT admin access, thank you.");
+			M_GonerHidePassword();
+		}
+
+		CV_StealthSet(&cv_dummyextraspassword, "");
+	}
 
 	if (goner_typewriter.textDone)
 	{

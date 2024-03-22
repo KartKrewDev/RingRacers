@@ -88,6 +88,9 @@ void Command_Goto_f(void);
 void Command_Angle_f(void);
 void Command_RespawnAt_f(void);
 void Command_GotoSkybox_f(void);
+#ifdef DEVELOP
+void Command_Crypt_f(void);
+#endif
 #ifdef _DEBUG
 void Command_CauseCfail_f(void);
 #endif

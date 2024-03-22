@@ -469,6 +469,7 @@ void D_RegisterServerCommands(void)
 
 #ifdef DEVELOP
 	COM_AddDebugCommand("fastforward", Command_FastForward);
+	COM_AddDebugCommand("crypt", Command_Crypt_f);
 #endif
 
 	K_RegisterMidVoteCVars();

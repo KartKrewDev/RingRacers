@@ -1608,6 +1608,8 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			return false;
 		case UC_TUTORIALSKIP:
 			return (gamedata->finishedtutorialchallenge == true);
+		case UC_PASSWORD:
+			return (cn->stringvar == NULL);
 
 		case UC_SPRAYCAN:
 		{
@@ -2475,6 +2477,8 @@ static const char *M_GetConditionString(condition_t *cn)
 			return NULL;
 		case UC_TUTORIALSKIP:
 			return "successfully skip the Tutorial";
+		case UC_PASSWORD:
+			return "enter a secret password";
 
 		case UC_SPRAYCAN:
 		{

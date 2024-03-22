@@ -10,6 +10,8 @@
 /// \file  deh_soc.c
 /// \brief Load SOC file and change tables and text
 
+#include "modp_b64/modp_b64.h"
+
 #include "doomdef.h"
 #include "d_main.h" // for srb2home
 #include "g_game.h"
@@ -42,6 +44,7 @@
 #endif
 
 #include "m_cond.h"
+#include "m_pw_hash.h"
 
 #include "dehacked.h"
 #include "deh_soc.h"
@@ -2588,6 +2591,27 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 		ty = UC_DESCRIPTIONOVERRIDE;
 
 		stringvar = Z_StrDup(spos);
+	}
+	else if (fastcmp(params[0], "PASSWORD"))
+	{
+		size_t slen = strlen(spos);
+
+		EXTENDEDPARAMCHECK(spos, 1);
+		ty = UC_PASSWORD;
+
+		if (slen > modp_b64_encode_len(M_PW_BUF_SIZE)-1)
+		{
+			deh_warning("Password hash is invalid");
+			return;
+		}
+
+		stringvar = Z_Malloc(modp_b64_decode_len(slen), PU_STATIC, NULL);
+		if (modp_b64_decode(stringvar, spos, slen) != M_PW_BUF_SIZE)
+		{
+			deh_warning("Password hash is invalid");
+			Z_Free(stringvar);
+			return;
+		}
 	}
 
 	if (ty != UC_NONE)
