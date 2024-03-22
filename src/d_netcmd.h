@@ -99,6 +99,7 @@ extern consvar_t cv_kartdebugstart;
 extern consvar_t cv_debugrank;
 extern consvar_t cv_battletest;
 
+extern consvar_t cv_bighead;
 extern consvar_t cv_shittysigns;
 extern consvar_t cv_4thgear;
 

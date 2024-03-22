@@ -2,6 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 2022-2023 by Vivian "toastergrl" Grannell.
 // Copyright (C) 2024      by James Robert Roman.
+// Copyright (C) 2024      by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -91,6 +92,179 @@ void iter_conditions(F&& f)
 		}
 	}
 }
+
+//
+// responders
+//
+
+void f_tournament()
+{
+	UINT16 i;
+	boolean success = false;
+
+	/*if (modifiedgame)
+		return 0;*/
+
+	// Unlock EVERYTHING.
+	for (i = 0; i < MAXUNLOCKABLES; i++)
+	{
+		if (!unlockables[i].conditionset)
+			continue;
+		if (gamedata->unlocked[i])
+			continue;
+
+		gamedata->unlocked[i] = true;
+		success = true;
+	}
+
+	// Unlock all hidden levels.
+#define GD_MV_SET (MV_VISITED|MV_BEATEN)
+	for (i = 0; i < nummapheaders; i++)
+	{
+		if ((mapheaderinfo[i]->records.mapvisited & GD_MV_SET) == GD_MV_SET)
+			continue;
+		mapheaderinfo[i]->records.mapvisited |= GD_MV_SET;
+		success = true;
+	}
+#undef GD_MV_SET
+
+	// Goofy, but this call needs to be before M_ClearMenus because that path
+	// calls G_LoadLevel, which will trigger a gamedata save. Garbage factory
+	if (success)
+	{
+		gamedata->gonerlevel = GDGONER_DONE;
+		gamedata->sealedswapalerted = true;
+		G_SetUsedCheats();
+	}
+
+	M_ClearMenus(true);
+
+	const char *text;
+
+	if (success)
+	{
+		S_StartSound(0, sfx_kc42);
+
+		text = M_GetText(
+			"All challenges temporarily unlocked.\n"
+			"Saving is disabled - the game will\n"
+			"return to normal on next launch.\n"
+		);
+	}
+	else
+	{
+		S_StartSound(0, sfx_s3k7b);
+
+		if (usedCheats)
+		{
+			text = M_GetText(
+				"This is the correct password, but\n"
+				"you already have every challenge\n"
+				"unlocked, so nothing has changed.\n"
+			);
+		}
+		else
+		{
+			text = M_GetText(
+				"This is the correct password, but\n"
+				"you already have every challenge\n"
+				"unlocked, so saving is still allowed!\n"
+			);
+		}
+	}
+
+	M_StartMessage("Tournament Mode", text, NULL, MM_NOTHING, NULL, NULL);
+}
+
+void f_bighead()
+{
+	CV_SetValue(&cv_bighead, !cv_bighead.value);
+	if (cv_bighead.value)
+	{
+		S_StartSound(NULL, sfx_gshbb);
+	}
+	else
+	{
+		S_StartSound(NULL, sfx_kc46);
+	}
+}
+
+void f_shittysigns()
+{
+	CV_SetValue(&cv_shittysigns, !cv_shittysigns.value);
+	if (cv_shittysigns.value)
+	{
+		S_StartSound(NULL, sfx_mixup);
+	}
+	else
+	{
+		S_StartSound(NULL, sfx_nghurt);
+	}
+}
+
+void f_4thgear()
+{
+	CV_SetValue(&cv_4thgear, !cv_4thgear.value);
+	if (cv_4thgear.value)
+	{
+		M_StartMessage("Restraint device compromised!", "Local play sped up to ""\x85""4th Gear!""\x80""\nLet's see what you're made of!\n\n""\x86""No effect in netplay and attack modes.", NULL, MM_NOTHING, NULL, NULL);
+		S_StartSound(NULL, sfx_gshc4);
+	}
+	else
+	{
+		S_StartSound(NULL, sfx_kc46);
+	}
+}
+
+#ifdef DEVELOP
+void f_devmode()
+{
+	INT32 i;
+
+	if (modifiedgame)
+		return;
+
+	// Just unlock all the things and turn on -debug and console devmode.
+	for (i = 0; i < MAXUNLOCKABLES; i++)
+	{
+		if (!unlockables[i].conditionset)
+			continue;
+		gamedata->unlocked[i] = true;
+	}
+
+	// Unlock all hidden levels.
+	for (i = 0; i < nummapheaders; i++)
+	{
+		mapheaderinfo[i]->records.mapvisited = MV_MAX;
+	}
+
+	gamedata->gonerlevel = GDGONER_DONE;
+	gamedata->sealedswapalerted = true;
+
+	M_ClearMenus(true);
+
+	// This is a developer feature, you know how to delete ringdata
+	// G_SetUsedCheats();
+	S_StartSound(0, sfx_kc42);
+
+	devparm = true;
+	cht_debug |= 0x8000;
+
+	G_SaveGameData();
+}
+
+void f_gaster()
+{
+	gamedata->gonerlevel = GDGONER_DONE;
+	gamedata->finishedtutorialchallenge = true;
+	M_UpdateUnlockablesAndExtraEmblems(true, true);
+
+	M_ClearMenus(true);
+	S_StartSound(0, sfx_kc42);
+
+	G_SaveGameData();
+}
+#endif
 
 }; // namespace
 
@@ -213,4 +387,16 @@ void Command_Crypt_f(void)
 
 void M_PasswordInit(void)
 {
+	passwords.emplace_back(f_tournament, "dSZpCST31Tu3rPJ4z18iR9Tcv+9Xi8/f7nQGplj2mvruy2A4CJJqZm1gzi6CQKl68pRXiNGUX0n4BI2LjaBcoA==");
+	// Tee hee.
+	passwords.emplace_back([] { M_WrongWarp(0); }, "WAJJ66pw2rSopXOuw4c4iKzIz3goKtivrv7b/THqYP8ev+E/sRn2LMXHqv8s+uzwMcVNoDxNn+AgG26xi+wgzg==");
+	passwords.emplace_back([] { M_GonerGDQ(true); }, "B287p2gJUgmUikAABl1ndG/3r0zqdIMvsMDzBrypwo78BR58S9Whu+Doma00oV+DySTalWYi1VyTs/5GWzgFEg==");
+	passwords.emplace_back([] { M_GonerGDQ(false); }, "1yO8FCDe0PhtgrQt0IQ4TPPfggSOnf4NiRaT86gnj4/PxMbyi4vXl4F4zpm/Xhf2oSStuhr+n7Qv2tcqv6lzaA==");
+	passwords.emplace_back(f_bighead, "V+YkwthNUePKS7zs5uB90VwN6Jeqgl+1r663U5zSGOEIxAO6BoWipzZoxa5H//LM+5Ag9GIGRnEcLbU21hjGfQ==");
+	passwords.emplace_back(f_4thgear, "zRMhR+s27VTYE0jgFf2l+PX51N3qJPvZ3oWuM/71oUaKY5zyQ2y7WIrIb464MFWn4IsK2P5rShsR9MotC/9ojQ==");
+	passwords.emplace_back(f_shittysigns, "fdqz0cQdVKfS4zgN4usUz75+5AhYdDPsrl61H7sIEKHoaEUHPOfcful0jEkVvrV/rpELE0/3srRpxmJYpQofmA==");
+#ifdef DEVELOP
+	passwords.emplace_back(f_devmode, "qXe5jAii7ntJ0VwmaZj9ujDKU69KLUfdGV3Rn2G7xMxOxKo37QpYZvo1E/PIul56ca+nDT6IggGfRqhA8gf6Gw==");
+	passwords.emplace_back(f_gaster, "GZPKJsa++Tt134yS3eBKdP+8vdAHB1thwK2ys6VDfFxcIRtABtM9j4qt8WULFrI+KxCSYMZ6K0mwt5BVzcvvuw==");
+#endif
 }
