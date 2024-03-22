@@ -697,8 +697,15 @@ void M_StartControlPanel(void)
 	{
 		// No instantly skipping the titlescreen.
 		// (We can change this timer later when extra animation is added.)
-		if (finalecount < 1)
+		if (finalecount < (
+			M_GameTrulyStarted()
+				? 1
+				: 3*TICRATE
+			)
+		)
+		{
 			return;
+		}
 
 		if (menumessage.active)
 		{
