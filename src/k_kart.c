@@ -10803,7 +10803,13 @@ static void K_KartDrift(player_t *player, boolean onground)
 		if (!extendedSliptide && K_IsLosingWavedash(player) && player->wavedash > 0)
 		{
 			if (player->wavedash > HIDEWAVEDASHCHARGE && !S_SoundPlaying(player->mo, sfx_waved2))
-				S_StartSoundAtVolume(player->mo, sfx_waved2, 255); // Losing combo time, going to boost
+				S_StartSoundAtVolume(player->mo, sfx_waved2, 
+					Easing_InSine(
+						min(FRACUNIT, FRACUNIT * player->wavedash / MIN_WAVEDASH_CHARGE),
+						120,
+						255
+					)
+				); // Losing combo time, going to boost
 			S_StopSoundByID(player->mo, sfx_waved1);
 			S_StopSoundByID(player->mo, sfx_waved4);
 			player->wavedashdelay++;
