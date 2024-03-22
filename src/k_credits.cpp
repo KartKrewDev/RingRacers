@@ -1125,7 +1125,7 @@ static void F_DrawCreditsKartKrew(void)
 	);
 
 	V_DrawFixedPatch(
-		116 * FRACUNIT, 70 * FRACUNIT,
+		111 * FRACUNIT, 70 * FRACUNIT,
 		FRACUNIT / 2, 0,
 		static_cast<patch_t *>(W_CachePatchName(
 			"KKLOGO_C",
@@ -1135,7 +1135,7 @@ static void F_DrawCreditsKartKrew(void)
 	);
 
 	V_DrawFixedPatch(
-		116 * FRACUNIT, 70 * FRACUNIT,
+		111 * FRACUNIT, 70 * FRACUNIT,
 		FRACUNIT / 2, 0,
 		static_cast<patch_t *>(W_CachePatchName(
 			"KKTEXT_C",
