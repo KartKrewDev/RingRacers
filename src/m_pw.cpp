@@ -12,7 +12,6 @@
 #include <array>
 #include <cctype>
 #include <fstream>
-#include <future>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -36,11 +35,12 @@
 #include "m_pw_hash.h"
 #include "s_sound.h"
 #include "sounds.h"
-#include "stun.h" // csprng
 #include "z_zone.h"
 
 namespace
 {
+
+constexpr const UINT8 kRRSalt[17] = "0L4rlK}{9ay6'VJS";
 
 struct Pw
 {
@@ -102,18 +102,21 @@ try_password_e M_TryPassword(const char *password, boolean conditions)
 	std::string key = password;
 	strlwr(key.data());
 
-	auto worker = [&key](const UINT8* hash, var result)
+	UINT8 key_hash[M_PW_HASH_SIZE];
+	M_HashPassword(key_hash, key.c_str(), kRRSalt);
+
+	auto worker = [key_hash](const UINT8* hash, var result)
 	{
-		if (M_HashCompare(hash, key.c_str()))
+		if (memcmp(key_hash, hash, M_PW_HASH_SIZE))
 			result = std::monostate {}; // fail state
 		return result;
 	};
 
-	// Because hashing is time consuming, do the work in parallel.
-	std::vector<std::future<var>> jobs;
+	var result;
 	auto add_job = [&](auto&&... args)
 	{
-		jobs.push_back(std::move(std::async(std::launch::async, worker, args...)));
+		if (var n = worker(args...); !std::holds_alternative<std::monostate>(n))
+			result = n;
 	};
 
 	for (Pw& pw : passwords)
@@ -122,15 +125,6 @@ try_password_e M_TryPassword(const char *password, boolean conditions)
 	// Only consider challenges passwords as needed.
 	if (conditions)
 		iter_conditions([&](condition_t* cn) { add_job((const UINT8*)cn->stringvar, cn); });
-
-	var result;
-	for (auto& job : jobs)
-	{
-		SRB2_ASSERT(job.valid());
-		// Wait for every thread to finish, then retrieve the last matched password (if any).
-		if (var n = job.get(); !std::holds_alternative<std::monostate>(n))
-			result = n;
-	}
 
 	try_password_e return_code = M_PW_INVALID;
 	if (!std::holds_alternative<std::monostate>(result))
@@ -172,11 +166,8 @@ void Command_Crypt_f(void)
 	auto gen = [](char *input)
 	{
 		UINT8 bin[M_PW_BUF_SIZE];
-		UINT8* salt = &bin[M_PW_HASH_SIZE];
-		csprng(salt, M_PW_SALT_SIZE); // randomize salt
-
 		strlwr(input);
-		M_HashPassword(bin, input, salt);
+		M_HashPassword(bin, input, kRRSalt);
 		CONS_Printf("%s %s\n", input, modp::b64_encode((const char*)bin, M_PW_BUF_SIZE).c_str());
 	};
 

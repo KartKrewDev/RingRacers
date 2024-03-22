@@ -18,9 +18,8 @@ extern "C" {
 
 #define M_PW_HASH_SIZE (64)
 #define M_PW_SALT_SIZE (16)
-#define M_PW_BUF_SIZE (M_PW_HASH_SIZE + M_PW_SALT_SIZE)
+#define M_PW_BUF_SIZE M_PW_HASH_SIZE
 
-boolean M_HashCompare(const UINT8 hash[M_PW_BUF_SIZE], const char *key);
 UINT8 *M_HashPassword(UINT8 hash[M_PW_HASH_SIZE], const char *key, const UINT8 salt[M_PW_SALT_SIZE]);
 
 #ifdef __cplusplus
