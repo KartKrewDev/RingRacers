@@ -300,7 +300,7 @@ static tic_t introscenetime[NUMINTROSCENES] =
 {
 	2*TICRATE,				// OUR SRB2 ASSOCIATES
 	9*TICRATE,				// Disclaimer and Epilepsy Warning
-	(5*TICRATE)/2,			// KKD
+	3*TICRATE,				// KKD
 	(2*TICRATE)/3,			// S&K
 	TICRATE + (TICRATE/3),	// Get ready !!
 };
@@ -440,14 +440,6 @@ static void F_IntroDrawScene(void)
 
 	if (intro_scenenum == INTROSCENE_KREW)
 	{
-		V_SetClipRect(
-			0,
-			144 * FRACUNIT,
-			BASEVIDWIDTH * FRACUNIT,
-			BASEVIDHEIGHT * FRACUNIT,
-			0
-		);
-
 		INT32 trans = 10;
 
 		if (intro_curtime < TICRATE/3)
@@ -460,6 +452,14 @@ static void F_IntroDrawScene(void)
 		if (trans < 5)
 			trans = 5;
 
+		V_SetClipRect(
+			0,
+			144 * FRACUNIT,
+			BASEVIDWIDTH * FRACUNIT,
+			BASEVIDHEIGHT * FRACUNIT,
+			0
+		);
+
 		V_DrawFixedPatch(
 			cx,
 			cy - textoffs,
@@ -469,10 +469,40 @@ static void F_IntroDrawScene(void)
 			NULL
 		);
 
+		V_ClearClipRect();
+
 		if (trans < 10)
+		{
+			V_SetClipRect(
+				0,
+				173 * FRACUNIT - textoffs,
+				BASEVIDWIDTH * FRACUNIT,
+				10 * FRACUNIT,
+				0
+			);
+
+			INT32 runningtally = (intro_curtime - (TICRATE + TICRATE/3));
+
+			if (runningtally > 0)
+			{
+				if (runningtally < 10)
+				{
+					textoffs += runningtally * FRACUNIT;
+				}
+				else
+				{
+					textoffs += 10 * FRACUNIT;
+				}
+			}
+
+			// Joyeaux Anniversaire
 			V_DrawCenteredMenuString(BASEVIDWIDTH/2, 174 - (textoffs/FRACUNIT), (trans<<V_ALPHASHIFT)|V_SUBTRACT, "2013 - 11 years - 2024");
 
-		V_ClearClipRect();
+			// Joyeaux Adressaire
+			V_DrawCenteredMenuString(BASEVIDWIDTH/2, 184 - (textoffs/FRACUNIT), (trans<<V_ALPHASHIFT)|V_SUBTRACT, "kartkrew.org");
+
+			V_ClearClipRect();
+		}
 	}
 
 	//V_DrawString(cx, cy, 0, cutscene_disptext);
@@ -785,7 +815,7 @@ void F_IntroTicker(void)
 	(
 		skippableallowed
 		&& keypressed
-		&& (timetonext > 10)
+		&& (intro_curtime > TICRATE/2)
 		&& (
 			intro_scenenum >= INTROSCENE_KREW
 			|| disclaimerskippable
