@@ -468,7 +468,7 @@ void D_RegisterServerCommands(void)
 #endif
 
 #ifdef DEVELOP
-	COM_AddCommand("fastforward", Command_FastForward);
+	COM_AddDebugCommand("fastforward", Command_FastForward);
 #endif
 
 	K_RegisterMidVoteCVars();
