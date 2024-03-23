@@ -572,9 +572,6 @@ consvar_t cv_serversort = Server("serversort", "Recommended").dont_save().onchan
 	{ 5, "Gametype"},
 });
 
-// show your ping on the HUD next to framerate. Defaults to warning only (shows up if your ping is > maxping)
-consvar_t cv_showping = Server("showping", "Always").values({{0, "Off"}, {1, "Always"}, {2, "Warning"}});
-
 consvar_t cv_showviewpointtext = Server("showviewpointtext", "On").on_off();
 consvar_t cv_skipmapcheck = Server("skipmapcheck", "Off").on_off();
 consvar_t cv_sleep = Server("cpusleep", "1").min_max(0, 1000/TICRATE);
