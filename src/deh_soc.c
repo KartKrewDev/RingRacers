@@ -3659,6 +3659,11 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 				titlescrollyspeed = get_number(word2);
 				titlechanged = true;
 			}
+			else if (fastcmp(word, "TITLESMUSICSTART"))
+			{
+				titlemusicstart = (UINT32)get_number(word2);
+				titlechanged = true;
+			}
 			else if (fastcmp(word, "NUMDEMOS"))
 			{
 				numDemos = (UINT8)get_number(word2);

@@ -76,6 +76,7 @@ void F_PlayTitleScreenMusic(void);
 extern INT32 finalecount;
 extern INT32 titlescrollxspeed;
 extern INT32 titlescrollyspeed;
+extern UINT32 titlemusicstart;
 
 typedef enum
 {

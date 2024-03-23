@@ -56,6 +56,7 @@
 INT32 finalecount;
 INT32 titlescrollxspeed = 16;
 INT32 titlescrollyspeed = 0;
+UINT32 titlemusicstart = 38749;
 boolean titlemapinaction = false;
 
 static INT32 timetonext; // Delay between screen changes
@@ -1862,7 +1863,7 @@ luahook:
 void F_PlayTitleScreenMusic(void)
 {
 	Music_Loop("title", looptitle);
-	Music_Seek("title", 38749); // kick in
+	Music_Seek("title", titlemusicstart); // kick in
 	Music_Play("title");
 }
 
