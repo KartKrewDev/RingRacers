@@ -655,7 +655,7 @@ static void F_DisclaimerDrawScene(void)
 				290 << FRACBITS,
 				FRACUNIT, FRACUNIT, FRACUNIT,
 				0, HU_FONT,
-				"\"Dr. Robotnik's Ring Racers\" is a free fangame & was not produced by or under license from any portion of ""\x88""SEGA Enterprises""\x80"". All registered trademarks belong to their respective owners & were used without intent to harm or profit.\n\nThis software is based on heavily modified code originally created by id Software & is used under the terms of the GNU Public License.\n\n""\x88""SEGA""\x80"" retains rights to the original characters and environments, while all new assets remain property of Kart Krew Dev."
+				"\"Dr. Robotnik's Ring Racers\" is a free fangame & was not produced by or under license from any portion of ""\x88""SEGA Corporation""\x80"". All registered trademarks belong to their respective owners & were used without intent to harm or profit.\n\nThis software is based on heavily modified code originally created by id Software & is used under the terms of the GNU Public License.\n\n""\x88""SEGA""\x80"" retains rights to the original characters and environments, while all new assets remain property of Kart Krew Dev where applicable."
 			);
 
 			V_DrawCenteredString(160, 24, textalpha, newText);
