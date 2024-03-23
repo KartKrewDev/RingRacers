@@ -615,8 +615,13 @@ void M_AddGonerLines(void)
 			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/5,
 				"Mine says \"Robotnik\". You can't beat a classic.");
 
+			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/2,
+				"And I'm not sure if you'll need it, but we always tell new drivers to "\
+				"look at the ""\x87""Accessibility""\x80"" settings. Often there's some "\
+				"feature they're not expecting. Maybe you'd be surprised too?");
+
 			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
-				"Go on, do your ""\x87""Profile Setup""\x80""!");
+				"So go on, do your ""\x87""Profile Setup""\x80""!");
 
 			break;
 		}

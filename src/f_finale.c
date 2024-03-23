@@ -300,7 +300,7 @@ static tic_t introscenetime[NUMINTROSCENES] =
 {
 	2*TICRATE,				// OUR SRB2 ASSOCIATES
 	9*TICRATE,				// Disclaimer and Epilepsy Warning
-	(5*TICRATE)/2,			// KKD
+	3*TICRATE,				// KKD
 	(2*TICRATE)/3,			// S&K
 	TICRATE + (TICRATE/3),	// Get ready !!
 };
@@ -440,14 +440,6 @@ static void F_IntroDrawScene(void)
 
 	if (intro_scenenum == INTROSCENE_KREW)
 	{
-		V_SetClipRect(
-			0,
-			144 * FRACUNIT,
-			BASEVIDWIDTH * FRACUNIT,
-			BASEVIDHEIGHT * FRACUNIT,
-			0
-		);
-
 		INT32 trans = 10;
 
 		if (intro_curtime < TICRATE/3)
@@ -460,6 +452,14 @@ static void F_IntroDrawScene(void)
 		if (trans < 5)
 			trans = 5;
 
+		V_SetClipRect(
+			0,
+			144 * FRACUNIT,
+			BASEVIDWIDTH * FRACUNIT,
+			BASEVIDHEIGHT * FRACUNIT,
+			0
+		);
+
 		V_DrawFixedPatch(
 			cx,
 			cy - textoffs,
@@ -469,10 +469,40 @@ static void F_IntroDrawScene(void)
 			NULL
 		);
 
+		V_ClearClipRect();
+
 		if (trans < 10)
+		{
+			V_SetClipRect(
+				0,
+				173 * FRACUNIT - textoffs,
+				BASEVIDWIDTH * FRACUNIT,
+				10 * FRACUNIT,
+				0
+			);
+
+			INT32 runningtally = (intro_curtime - (TICRATE + TICRATE/3));
+
+			if (runningtally > 0)
+			{
+				if (runningtally < 10)
+				{
+					textoffs += runningtally * FRACUNIT;
+				}
+				else
+				{
+					textoffs += 10 * FRACUNIT;
+				}
+			}
+
+			// Joyeaux Anniversaire
 			V_DrawCenteredMenuString(BASEVIDWIDTH/2, 174 - (textoffs/FRACUNIT), (trans<<V_ALPHASHIFT)|V_SUBTRACT, "2013 - 11 years - 2024");
 
-		V_ClearClipRect();
+			// Joyeaux Adressaire
+			V_DrawCenteredMenuString(BASEVIDWIDTH/2, 184 - (textoffs/FRACUNIT), (trans<<V_ALPHASHIFT)|V_SUBTRACT, "kartkrew.org");
+
+			V_ClearClipRect();
+		}
 	}
 
 	//V_DrawString(cx, cy, 0, cutscene_disptext);
@@ -490,7 +520,7 @@ typedef enum
 } disclaimerstate;
 
 static disclaimerstate dc_state = 0;
-static UINT8 dc_tics = 0;
+static UINT16 dc_tics = 0;
 static UINT8 dc_segaframe = 1;
 static UINT8 dc_bgcol = 0;
 static INT32 dc_lasttime = 0;
@@ -508,14 +538,26 @@ static void F_DisclaimerAdvanceState(void)
 
 static void F_DisclaimerDrawScene(void)
 {
+	boolean heretrulystarted = M_GameTrulyStarted();
+
 	// ================================= SETUP
 
 	if (intro_curtime == 0)
 	{
-		dc_state = 0;
+		if (!heretrulystarted)
+		{
+			dc_state = DISCLAIMER_FINAL;
+			dc_bgcol = 31;
+			dc_bluesegafade = 10;
+		}
+		else
+		{
+			dc_state = 0;
+			dc_bgcol = 0;
+			dc_bluesegafade = 0;
+		}
+
 		dc_segaframe = 1;
-		dc_bgcol = 0;
-		dc_bluesegafade = 0;
 		dc_textfade = 9;
 		dc_subtextfade = 9;
 		dc_screenfade = 9;
@@ -545,7 +587,7 @@ static void F_DisclaimerDrawScene(void)
 		return;
 	
 	// Anaglyph SEGA
-	if (dc_state >= DISCLAIMER_SLIDE)
+	if (heretrulystarted && dc_state >= DISCLAIMER_SLIDE)
 		V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName(va("SEGA_B%02d", dc_segaframe), PU_CACHE), 0);
 
 	// Blue SEGA
@@ -570,16 +612,67 @@ static void F_DisclaimerDrawScene(void)
 		if (dc_subtextfade > 0)
 			subtextalpha = dc_subtextfade << V_ALPHASHIFT;
 
-		V_DrawCenteredMenuString(160, 25, textalpha, "Original games and designs by");
+		char* newText;
 
-		char* newText = V_ScaledWordWrap(
-			290 << FRACBITS,
-			FRACUNIT, FRACUNIT, FRACUNIT,
-			0, MENU_FONT,
-			"\"Dr. Robotnik's Ring Racers\" is a not-for-profit fangame. All registered trademarks belong to their respective owners.\nThis game contains flashing lights and high-contrast patterns. Photosensitive? Use caution and the Profiles>Accessibility menu."
-		);
+		if (!heretrulystarted)
+		{
+			// Megamix disclaimer. ~toast 220324
 
-		V_DrawCenteredMenuString(160, 125, subtextalpha, newText);
+			const char *sillystring = "Dr. Robotnik's Ring Racers";
+			const INT32 sillywidth = V_MenuStringWidth(sillystring, 0) + 12;
+			INT32 sillyx = -((INT32)timetonext % sillywidth);
+
+			V_SetClipRect(
+				1,
+				1,
+				(BASEVIDWIDTH * FRACUNIT) - 1,
+				(BASEVIDHEIGHT * FRACUNIT) - 1,
+				0
+			);
+
+			while (sillyx < BASEVIDWIDTH)
+			{
+				V_DrawMenuString(
+					sillyx,
+					8 + 1,
+					subtextalpha,
+					sillystring
+				);
+
+				sillyx += sillywidth;
+
+				V_DrawMenuString(
+					BASEVIDWIDTH - sillyx,
+					BASEVIDHEIGHT - (8 + 8),
+					subtextalpha,
+					sillystring
+				);
+			}
+
+			V_ClearClipRect();
+
+			newText = V_ScaledWordWrap(
+				290 << FRACBITS,
+				FRACUNIT, FRACUNIT, FRACUNIT,
+				0, HU_FONT,
+				"\"Dr. Robotnik's Ring Racers\" is a free fangame & was not produced by or under license from any portion of ""\x88""SEGA Corporation""\x80"". All registered trademarks belong to their respective owners & were used without intent to harm or profit.\n\nThis software is based on heavily modified code originally created by id Software & is used under the terms of the GNU Public License.\n\n""\x88""SEGA""\x80"" retains rights to the original characters and environments, while all new assets remain property of Kart Krew Dev where applicable."
+			);
+
+			V_DrawCenteredString(160, 24, textalpha, newText);
+		}
+		else
+		{
+			V_DrawCenteredMenuString(160, 25, textalpha, "Original games and designs by");
+
+			newText = V_ScaledWordWrap(
+				290 << FRACBITS,
+				FRACUNIT, FRACUNIT, FRACUNIT,
+				0, MENU_FONT,
+				"\"Dr. Robotnik's Ring Racers\" is a not-for-profit fangame. All registered trademarks belong to their respective owners.\nThis game contains flashing lights and high-contrast patterns. Photosensitive? Use caution and the Profiles>Accessibility menu."
+			);
+
+			V_DrawCenteredMenuString(160, 125, subtextalpha, newText);
+		}
 
 		Z_Free(newText);
 	}
@@ -661,7 +754,7 @@ static void F_DisclaimerDrawScene(void)
 	if (dc_state == DISCLAIMER_SLIDE && dc_segaframe == 37) // End of animation
 		F_DisclaimerAdvanceState();
 
-	if (dc_state == DISCLAIMER_FINAL && dc_tics == TICRATE*5)
+	if (dc_state == DISCLAIMER_FINAL && timetonext < TICRATE/2)
 		F_DisclaimerAdvanceState();
 }
 
@@ -722,7 +815,7 @@ void F_IntroTicker(void)
 	(
 		skippableallowed
 		&& keypressed
-		&& (timetonext > 10)
+		&& (intro_curtime > TICRATE/2)
 		&& (
 			intro_scenenum >= INTROSCENE_KREW
 			|| disclaimerskippable
