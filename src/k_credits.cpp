@@ -79,6 +79,7 @@ struct credits_slide_s
 	std::vector<std::string> strings;
 	size_t strings_height;
 	boolean play_demo_afterwards;
+	int fade_out_music;
 };
 
 static std::vector<struct credits_slide_s> g_credits_slides;
@@ -233,6 +234,7 @@ void F_LoadCreditsDefinitions(void)
 			}
 
 			slide.play_demo_afterwards = slide_obj.value("demo", false);
+			slide.fade_out_music = slide_obj.value("fade_out_music", 0);
 
 			g_credits_slides.push_back( slide );
 		}
@@ -367,6 +369,10 @@ static void F_InitCreditsSlide(void)
 		}
 	}
 #endif
+	else if (slide->type == CRED_TYPE_KARTKREW)
+	{
+
+	}
 
 	// Clear the console hud just to avoid anything getting in the way.
 	CON_ClearHUD();
@@ -448,6 +454,9 @@ void F_ContinueCredits(void)
 	G_SetGamestate(GS_CREDITS);
 	F_CreditsReset();
 	demo.attract = DEMO_ATTRACT_OFF;
+
+	// Do not wipe back to credits, since F_CreditsDemoExitFade exists.
+	wipegamestate = GS_LEVEL;
 
 	// Returning from playing a demo.
 	// Go to the next slide.
@@ -557,6 +566,12 @@ void F_TickCreditsDemoExit(void)
 	if (!menuactive && M_MenuConfirmPressed(0))
 	{
 		g_credits.demo_exit = std::max(g_credits.demo_exit, kDemoExitTicCount - 64);
+	}
+
+	if (INT32 val = F_CreditsDemoExitFade(); val >= 0)
+	{
+		// Fade down sounds with screen fade
+		I_SetSfxVolume(cv_soundvolume.value * (31 - val) / 31);
 	}
 
 	if (g_credits.demo_exit > kDemoExitTicCount)
@@ -811,6 +826,11 @@ static void F_HandleCreditsTick(void)
 	}
 	else if (finalize_slide)
 	{
+		if (slide->fade_out_music)
+		{
+			I_FadeSong(0, slide->fade_out_music, nullptr);
+		}
+
 		if (g_credits.current_slide >= g_credits_slides.size() - 1)
 		{
 			g_credits.finish_counter = 5 * TICRATE;
@@ -1204,4 +1224,9 @@ void F_CreditDrawer(void)
 		star.x += FixedMul(star.vel_x, renderdeltatics);
 		star.y += FixedMul(star.vel_y, renderdeltatics);
 	}
+}
+
+boolean F_CreditsRunning(void)
+{
+	return gamestate == GS_CREDITS || demo.attract == DEMO_ATTRACT_CREDITS;
 }

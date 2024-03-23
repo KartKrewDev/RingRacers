@@ -49,6 +49,7 @@
 #include "k_grandprix.h"
 #include "music.h"
 #include "k_credits.h"
+#include "i_sound.h"
 
 // Stage of animation:
 // 0 = text, 1 = art screen
@@ -1858,6 +1859,13 @@ luahook:
 		M_DrawMenuMessage();
 }
 
+void F_PlayTitleScreenMusic(void)
+{
+	Music_Loop("title", looptitle);
+	Music_Seek("title", 38749); // kick in
+	Music_Play("title");
+}
+
 // (no longer) De-Demo'd Title Screen
 void F_TitleScreenTicker(boolean run)
 {
@@ -1874,8 +1882,7 @@ void F_TitleScreenTicker(boolean run)
 			else if (!Music_Playing("title"))
 			{
 				// Now start the music
-				Music_Loop("title", looptitle);
-				Music_Play("title");
+				F_PlayTitleScreenMusic();
 			}
 		}
 		else if (menumessage.active)
@@ -2092,6 +2099,13 @@ void F_AttractDemoTicker(void)
 		{
 			S_ShowMusicCredit();
 			attractcredit = false;
+		}
+
+		INT32 val = F_AttractDemoExitFade();
+		if (val >= 0)
+		{
+			// Fade down sounds with screen fade
+			I_SetSfxVolume(cv_soundvolume.value * (31 - val) / 31);
 		}
 
 		if (attractcountdown > 0 && !--attractcountdown)

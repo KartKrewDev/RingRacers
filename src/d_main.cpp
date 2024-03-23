@@ -427,6 +427,9 @@ static bool D_Display(void)
 		{
 			// Fade to black first
 			if (G_GamestateUsesLevel() == false // fades to black on its own timing, always
+				// Wipe between credits slides.
+				// But not back from attract demo, since F_CreditsDemoExitFade exists.
+				&& (gamestate != GS_CREDITS || wipegamestate != GS_LEVEL)
 				&& wipetypepre != UINT8_MAX)
 			{
 				F_WipeStartScreen();
@@ -1120,8 +1123,11 @@ void D_ClearState(void)
 	if (rendermode != render_none)
 		V_SetPaletteLump("PLAYPAL");
 
-	S_StopMusicCredit();
+	if (!Music_Playing("credits"))
+		S_StopMusicCredit();
+
 	S_StopSounds();
+	S_SetSfxVolume(); // reset sound volume
 
 	if (gamedata && gamedata->deferredsave)
 		G_SaveGameData();

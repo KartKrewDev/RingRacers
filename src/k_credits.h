@@ -38,6 +38,8 @@ void F_CreditTicker(void);
 
 void F_CreditDrawer(void);
 
+boolean F_CreditsRunning(void);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

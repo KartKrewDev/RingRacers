@@ -71,6 +71,8 @@ void F_StartIntro(void);
 void F_StartTitleScreen(void);
 void F_StartEnding(void);
 
+void F_PlayTitleScreenMusic(void);
+
 extern INT32 finalecount;
 extern INT32 titlescrollxspeed;
 extern INT32 titlescrollyspeed;
