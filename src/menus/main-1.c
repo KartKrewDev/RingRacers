@@ -93,6 +93,10 @@ void M_QuitSRB2(INT32 choice)
 
 	if (M_GameTrulyStarted())
 	{
+		INT32 mrand = M_RandomKey(sizeof(quitsounds) / sizeof(INT32));
+		if (quitsounds[mrand])
+			S_StartSound(NULL, quitsounds[mrand]);
+
 		M_StartMessage(
 			"Quit Game",
 			"Are you sure you want to quit playing?\n",
@@ -115,28 +119,8 @@ void M_QuitSRB2(INT32 choice)
 
 void M_QuitResponse(INT32 ch)
 {
-	tic_t ptime;
-	INT32 mrand;
-
 	if (ch == MA_YES)
 	{
-		if (!(netgame || cht_debug))
-		{
-			mrand = M_RandomKey(sizeof(quitsounds) / sizeof(INT32));
-			if (quitsounds[mrand])
-				S_StartSound(NULL, quitsounds[mrand]);
-
-			//added : 12-02-98: do that instead of I_WaitVbl which does not work
-			ptime = I_GetTime() + NEWTICRATE*2; // Shortened the quit time, used to be 2 seconds Tails 03-26-2001
-			while (ptime > I_GetTime())
-			{
-				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
-				V_DrawSmallScaledPatch(0, 0, 0, W_CachePatchName("GAMEQUIT", PU_CACHE)); // Demo 3 Quit Screen Tails 06-16-2001
-				I_FinishUpdate(); // Update the screen with the image Tails 06-19-2001
-				I_Sleep(cv_sleep.value);
-				I_UpdateTime();
-			}
-		}
 		I_Quit();
 	}
 }
