@@ -1232,7 +1232,8 @@ void level_tally_t::Draw(void)
 									work_tics % 10
 								));
 
-							if (modeattacking && !demo.playback && (state == TALLY_ST_DONE || state == TALLY_ST_TEXT_PAUSE) && players[consoleplayer].realtime < oldbest)
+							if (modeattacking && !demo.playback && (state == TALLY_ST_DONE || state == TALLY_ST_TEXT_PAUSE) 
+								&& !K_IsPlayerLosing(&players[consoleplayer]) && players[consoleplayer].realtime < oldbest)
 							{
 								drawer_text
 									.x(197.0 * frac)
