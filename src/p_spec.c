@@ -9498,7 +9498,7 @@ void P_StartQuakeFromMobj(tic_t time, fixed_t intensity, fixed_t radius, mobj_t 
 
 void P_DoQuakeOffset(UINT8 view, mappoint_t *viewPos, mappoint_t *offset)
 {
-	player_t *viewer = &players[ displayplayers[view] ];
+	const player_t *viewer = &players[ displayplayers[view] ];
 	quake_t *quake = NULL;
 	fixed_t ir = 0;
 	fixed_t addZ = 0;
@@ -9530,7 +9530,6 @@ void P_DoQuakeOffset(UINT8 view, mappoint_t *viewPos, mappoint_t *offset)
 				viewPos->z - quake->epicenter->z
 			) - distBuffer;
 
-
 			fixed_t distEase = FixedDiv(max(epidist, 0), quake->radius);
 			distEase = min(distEase, FRACUNIT);
 			ir = Easing_InCubic(distEase, ir, 0);
@@ -9558,6 +9557,13 @@ void P_DoQuakeOffset(UINT8 view, mappoint_t *viewPos, mappoint_t *offset)
 			ir = FixedMul((viewer->stairjank * FRACUNIT * 5) / 17, mapobjectscale);
 			addZ += ir;
 		}
+	}
+
+	const fixed_t maxShake = FixedMul(cv_cam_height[view].value, mapobjectscale) * 3 / 4;
+	if (addZ > maxShake)
+	{
+		// Cap screen shake between reasonable values
+		addZ = maxShake;
 	}
 
 	// Reverse every tic.
