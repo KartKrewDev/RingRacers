@@ -79,8 +79,7 @@ void Obj_EggBallThink(mobj_t *mo)
 
 			S_StartSound(mo, sfx_s3k59);
 
-			P_StartQuakeFromMobj(FRACUNIT*20, 6, 512 * mapobjectscale, mo);
-
+			P_StartQuakeFromMobj(6, 20 * mo->scale, 512 * mo->scale, mo);
 		}
 	}
 
