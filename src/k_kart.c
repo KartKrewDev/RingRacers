@@ -9342,6 +9342,14 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		if (player->breathTimer < UINT16_MAX)
 			player->breathTimer++;
 	}
+
+	if (spbplace == -1 && modeattacking & ATTACKING_SPB && !player->mo->hitlag && player->mo->health && !P_PlayerInPain(player) && player->laps > 0 && !player->exiting && !(player->pflags & PF_NOCONTEST))
+	{
+		// I'd like this to play a sound to make the situation clearer, but this codepath seems
+		// to run even when you make standard contact with the SPB. Not sure why. Oh well!
+		// S_StartSound(NULL, sfx_s26d);
+		P_DamageMobj(player->mo, NULL, NULL, 1, DMG_INSTAKILL);
+	}
 }
 
 void K_KartResetPlayerColor(player_t *player)
@@ -13016,7 +13024,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		}
 
 		if (spbplace == -1 || player->position != spbplace)
+		{
 			player->pflags &= ~PF_RINGLOCK; // reset ring lock
+		}
+
 
 		if (K_ItemSingularity(player->itemtype) == true)
 		{
