@@ -69,7 +69,6 @@
 #include "fastcmp.h"
 #include "r_fps.h" // Frame interpolation/uncapped
 #include "keys.h"
-#include "filesrch.h" // refreshdirmenu
 #include "g_input.h" // tutorial mode control scheming
 #include "m_perfstats.h"
 #include "core/memory.h"
@@ -919,8 +918,6 @@ void D_SRB2Loop(void)
 
 		if (renderisnewtic)
 		{
-			refreshdirmenu = 0;
-
 			P_ResetInterpHudRandSeed(timeisprogressing);
 
 			// don't skip more than 10 frames at a time
