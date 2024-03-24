@@ -2619,6 +2619,13 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 				{
 					player->mo->health--;
 				}
+				
+			}
+
+			if (modeattacking & ATTACKING_SPB)
+			{
+				P_DamageMobj(player->mo, NULL, NULL, 1, DMG_INSTAKILL);
+				return true;
 			}
 
 			if (player->mo->health <= 0)
