@@ -33,6 +33,7 @@
 #include "w_wad.h"
 #include "z_zone.h"
 #include "i_system.h"
+#include "i_sound.h"
 #include "i_joy.h"
 #include "i_threads.h"
 #include "dehacked.h"
@@ -78,6 +79,7 @@ struct credits_slide_s
 	std::vector<std::string> strings;
 	size_t strings_height;
 	boolean play_demo_afterwards;
+	int fade_out_music;
 };
 
 static std::vector<struct credits_slide_s> g_credits_slides;
@@ -232,6 +234,7 @@ void F_LoadCreditsDefinitions(void)
 			}
 
 			slide.play_demo_afterwards = slide_obj.value("demo", false);
+			slide.fade_out_music = slide_obj.value("fade_out_music", 0);
 
 			g_credits_slides.push_back( slide );
 		}
@@ -366,9 +369,28 @@ static void F_InitCreditsSlide(void)
 		}
 	}
 #endif
+	else if (slide->type == CRED_TYPE_KARTKREW)
+	{
+
+	}
 
 	// Clear the console hud just to avoid anything getting in the way.
 	CON_ClearHUD();
+}
+
+static void F_NewCreditsMusic(const char *trackname, bool looping)
+{
+	Music_Remap("credits", trackname);
+	Music_Loop("credits", looping);
+	Music_Play("credits");
+}
+
+void F_ConsiderCreditsMusicUpdate(void)
+{
+	if (!Music_CanLoop("credits") && I_GetSongLength() == I_GetSongPosition())
+	{
+		F_NewCreditsMusic("_title", true);
+	}
 }
 
 void F_StartCredits(void)
@@ -391,7 +413,8 @@ void F_StartCredits(void)
 	Music_StopAll();
 	S_StopSounds();
 
-	Music_Play("credits");
+	Music_SetFadeOut("credits", 0);
+	F_NewCreditsMusic("_creds", false);
 
 	F_CreditsReset();
 
@@ -431,6 +454,9 @@ void F_ContinueCredits(void)
 	G_SetGamestate(GS_CREDITS);
 	F_CreditsReset();
 	demo.attract = DEMO_ATTRACT_OFF;
+
+	// Do not wipe back to credits, since F_CreditsDemoExitFade exists.
+	wipegamestate = GS_LEVEL;
 
 	// Returning from playing a demo.
 	// Go to the next slide.
@@ -540,6 +566,12 @@ void F_TickCreditsDemoExit(void)
 	if (!menuactive && M_MenuConfirmPressed(0))
 	{
 		g_credits.demo_exit = std::max(g_credits.demo_exit, kDemoExitTicCount - 64);
+	}
+
+	if (INT32 val = F_CreditsDemoExitFade(); val >= 0)
+	{
+		// Fade down sounds with screen fade
+		I_SetSfxVolume(cv_soundvolume.value * (31 - val) / 31);
 	}
 
 	if (g_credits.demo_exit > kDemoExitTicCount)
@@ -794,6 +826,11 @@ static void F_HandleCreditsTick(void)
 	}
 	else if (finalize_slide)
 	{
+		if (slide->fade_out_music)
+		{
+			I_FadeSong(0, slide->fade_out_music, nullptr);
+		}
+
 		if (g_credits.current_slide >= g_credits_slides.size() - 1)
 		{
 			g_credits.finish_counter = 5 * TICRATE;
@@ -808,6 +845,8 @@ static void F_HandleCreditsTick(void)
 void F_CreditTicker(void)
 {
 	g_credits.havent_ticked = false;
+
+	F_ConsiderCreditsMusicUpdate();
 
 	g_credits.transition_prev = g_credits.transition;
 	g_credits.scroll_timer_prev = g_credits.scroll_timer;
@@ -1106,7 +1145,7 @@ static void F_DrawCreditsKartKrew(void)
 	);
 
 	V_DrawFixedPatch(
-		116 * FRACUNIT, 70 * FRACUNIT,
+		111 * FRACUNIT, 70 * FRACUNIT,
 		FRACUNIT / 2, 0,
 		static_cast<patch_t *>(W_CachePatchName(
 			"KKLOGO_C",
@@ -1116,7 +1155,7 @@ static void F_DrawCreditsKartKrew(void)
 	);
 
 	V_DrawFixedPatch(
-		116 * FRACUNIT, 70 * FRACUNIT,
+		111 * FRACUNIT, 70 * FRACUNIT,
 		FRACUNIT / 2, 0,
 		static_cast<patch_t *>(W_CachePatchName(
 			"KKTEXT_C",
@@ -1185,4 +1224,9 @@ void F_CreditDrawer(void)
 		star.x += FixedMul(star.vel_x, renderdeltatics);
 		star.y += FixedMul(star.vel_y, renderdeltatics);
 	}
+}
+
+boolean F_CreditsRunning(void)
+{
+	return gamestate == GS_CREDITS || demo.attract == DEMO_ATTRACT_CREDITS;
 }

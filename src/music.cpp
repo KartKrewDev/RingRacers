@@ -168,8 +168,6 @@ void Music_Init(void)
 
 		tune.priority = 100;
 		tune.song = "_creds";
-		tune.fade_out = 250;
-		tune.loop = false;
 		tune.credit = true;
 	}
 

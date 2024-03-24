@@ -32,9 +32,13 @@ void F_TickCreditsDemoExit(void);
 
 INT32 F_CreditsDemoExitFade(void);
 
+void F_ConsiderCreditsMusicUpdate(void);
+
 void F_CreditTicker(void);
 
 void F_CreditDrawer(void);
+
+boolean F_CreditsRunning(void);
 
 #ifdef __cplusplus
 } // extern "C"

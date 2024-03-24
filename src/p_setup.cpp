@@ -116,6 +116,7 @@
 #include "k_dialogue.h"
 #include "k_hud.h" // K_ClearPersistentMessages
 #include "k_endcam.h"
+#include "k_credits.h"
 
 // Replay names have time
 #if !defined (UNDER_CE)
@@ -7651,8 +7652,11 @@ static void P_InitLevelSettings(void)
 	g_quakes = NULL;
 
 	// song credit init
-	S_StopMusicCredit();
-	cursongcredit.trans = NUMTRANSMAPS;
+	if (!Music_Playing("credits"))
+	{
+		S_StopMusicCredit();
+		cursongcredit.trans = NUMTRANSMAPS;
+	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{

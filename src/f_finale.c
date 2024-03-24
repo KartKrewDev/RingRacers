@@ -49,12 +49,14 @@
 #include "k_grandprix.h"
 #include "music.h"
 #include "k_credits.h"
+#include "i_sound.h"
 
 // Stage of animation:
 // 0 = text, 1 = art screen
 INT32 finalecount;
 INT32 titlescrollxspeed = 16;
 INT32 titlescrollyspeed = 0;
+UINT32 titlemusicstart = 38749;
 boolean titlemapinaction = false;
 
 static INT32 timetonext; // Delay between screen changes
@@ -982,6 +984,7 @@ UINT16 finaleemeralds = 0;
 
 void F_StartGameEvaluation(void)
 {
+	Music_SetFadeOut("credits", 250);
 	Music_DelayEnd("credits", TICRATE/4);
 	Music_Tick(); // it needs to fade out right now
 
@@ -1327,6 +1330,7 @@ void F_GameEvaluationTicker(void)
 	{
 		if (finalecount == 1)
 		{
+			Music_Stop("credits");
 			// sitting on that distant _shore
 			Music_Remap("shore", "_SHORE");
 			Music_Play("shore");
@@ -1336,6 +1340,7 @@ void F_GameEvaluationTicker(void)
 	{
 		if (finalecount == TICRATE/2)
 		{
+			Music_Stop("credits");
 			// _drift across open waters
 			Music_Remap("shore", "_DRIFT");
 			Music_Play("shore");
@@ -1855,6 +1860,13 @@ luahook:
 		M_DrawMenuMessage();
 }
 
+void F_PlayTitleScreenMusic(void)
+{
+	Music_Loop("title", looptitle);
+	Music_Seek("title", titlemusicstart); // kick in
+	Music_Play("title");
+}
+
 // (no longer) De-Demo'd Title Screen
 void F_TitleScreenTicker(boolean run)
 {
@@ -1871,8 +1883,7 @@ void F_TitleScreenTicker(boolean run)
 			else if (!Music_Playing("title"))
 			{
 				// Now start the music
-				Music_Loop("title", looptitle);
-				Music_Play("title");
+				F_PlayTitleScreenMusic();
 			}
 		}
 		else if (menumessage.active)
@@ -2075,12 +2086,27 @@ void F_AttractDemoTicker(void)
 {
 	keypressed = false;
 
-	if (attractcountdown > 0 && !g_fast_forward)
+	if (g_fast_forward)
+		return;
+
+	if (demo.attract == DEMO_ATTRACT_CREDITS)
+	{
+		F_ConsiderCreditsMusicUpdate();
+	}
+
+	if (attractcountdown > 0)
 	{
 		if (attractcredit)
 		{
 			S_ShowMusicCredit();
 			attractcredit = false;
+		}
+
+		INT32 val = F_AttractDemoExitFade();
+		if (val >= 0)
+		{
+			// Fade down sounds with screen fade
+			I_SetSfxVolume(cv_soundvolume.value * (31 - val) / 31);
 		}
 
 		if (attractcountdown > 0 && !--attractcountdown)

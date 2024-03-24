@@ -38,6 +38,7 @@
 #include "v_video.h" // V_ThinStringWidth
 #include "music.h"
 #include "y_inter.h" // Y_PlayIntermissionMusic
+#include "f_finale.h" // F_PlayTitleScreenMusic
 
 extern consvar_t cv_mastervolume;
 
@@ -1224,8 +1225,7 @@ void S_AttemptToRestoreMusic(void)
 			Music_Play("level");
 			break;
 		case GS_TITLESCREEN:
-			Music_Loop("title", looptitle);
-			Music_Play("title");
+			F_PlayTitleScreenMusic();
 			break;
 		case GS_MENU:
 			M_PlayMenuJam();
