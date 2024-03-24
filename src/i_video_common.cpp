@@ -120,8 +120,8 @@ static void temp_legacy_finishupdate_draws()
 
 		if (cv_ticrate.value)
 			SCR_DisplayTicRate();
-
-		if (cv_showping.value && netgame && (consoleplayer != serverplayer || !server_lagless))
+		
+		if (netgame && (consoleplayer != serverplayer || !server_lagless))
 		{
 			if (server_lagless)
 			{

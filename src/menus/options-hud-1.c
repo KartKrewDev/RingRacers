@@ -23,9 +23,6 @@ menuitem_t OPTIONS_HUD[] =
 	{IT_STRING | IT_CVAR, "Show FPS", "Displays the framerate in the lower right corner of the screen.",
 		NULL, {.cvar = &cv_ticrate}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Show Input Delay", "Displays your input delay in the lower right corner of the screen.",
-		NULL, {.cvar = &cv_showping}, 0, 0},
-
 	{IT_STRING | IT_CVAR, "Show \"FOCUS LOST\"", "Displays \"FOCUS LOST\" when the game cannot accept inputs.",
 		NULL, {.cvar = &cv_showfocuslost}, 0, 0},
 

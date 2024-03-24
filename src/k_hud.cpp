@@ -5467,11 +5467,6 @@ K_drawMiniPing (void)
 	UINT32 f = V_SNAPTORIGHT;
 	UINT8 i = R_GetViewNumber();
 
-	if (!cv_showping.value)
-	{
-		return;
-	}
-
 	if (r_splitscreen > 1 && !(i & 1))
 	{
 		f = V_SNAPTOLEFT;

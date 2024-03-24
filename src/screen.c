@@ -579,11 +579,6 @@ void SCR_DisplayLocalPing(void)
 	UINT32 ping = playerpingtable[consoleplayer];
 	UINT32 pl = playerpacketlosstable[consoleplayer];
 
-	if (cv_showping.value == 2 && ping <= servermaxping) // only show 2 (warning) if our ping is at a bad level
-	{
-		return;
-	}
-
 	INT32 dispy = cv_ticrate.value ? 170 : 181;
 	boolean offline = (consoleplayer == serverplayer);
 

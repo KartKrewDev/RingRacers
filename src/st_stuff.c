@@ -491,10 +491,8 @@ void ST_drawDebugInfo(void)
 		height -= 20;
 	}
 
-	if (cv_showping.value)
-	{
-		height -= 20;
-	}
+	// was cv_showping compensation
+	height -= 20;
 
 	if (cht_debug & DBG_BASIC)
 	{
