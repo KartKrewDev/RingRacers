@@ -142,6 +142,7 @@ static void M_ChallengesAutoFocus(UINT16 unlockid, boolean fresh)
 {
 	UINT16 i;
 	INT16 work;
+	boolean posisvalid = false;
 
 	if (unlockid >= MAXUNLOCKABLES && gamedata->pendingkeyrounds > 0
 		&& (gamedata->chaokeys < GDMAX_CHAOKEYS))
@@ -149,28 +150,22 @@ static void M_ChallengesAutoFocus(UINT16 unlockid, boolean fresh)
 
 	if (fresh && unlockid >= MAXUNLOCKABLES)
 	{
-		UINT16 selection[MAXUNLOCKABLES];
-		UINT16 numunlocks = 0;
-
-		// Get a random available unlockable.
-		for (i = 0; i < MAXUNLOCKABLES; i++)
+		if (challengesmenu.currentunlock < MAXUNLOCKABLES)
 		{
-			if (!unlockables[i].conditionset)
-			{
-				continue;
-			}
-
-			if (!gamedata->unlocked[i])
-			{
-				continue;
-			}
-
-			selection[numunlocks++] = i;
+			// Use the last selected time.
+			unlockid = challengesmenu.currentunlock;
+			posisvalid = true;
 		}
-
-		if (!numunlocks)
+		else
 		{
-			// ...OK, get a random unlockable.
+			UINT16 selection[MAXUNLOCKABLES];
+			UINT16 numunlocks = 0;
+
+			boolean triedrandomlevel = 0;
+
+tryfreshrandom:
+
+			// Get a random available unlockable.
 			for (i = 0; i < MAXUNLOCKABLES; i++)
 			{
 				if (!unlockables[i].conditionset)
@@ -178,12 +173,42 @@ static void M_ChallengesAutoFocus(UINT16 unlockid, boolean fresh)
 					continue;
 				}
 
+				// Otherwise we don't care, just pick any non-blank tile
+				if (triedrandomlevel < 2)
+				{
+					// We try for any unlock second
+					if (!gamedata->unlocked[i])
+					{
+						continue;
+					}
+
+					if (triedrandomlevel == 0)
+					{
+						// We try for a pending unlock first
+						if (!gamedata->unlockpending[i])
+						{
+							continue;
+						}
+					}
+				}
+
 				selection[numunlocks++] = i;
 			}
-		}
 
-		unlockid = selection[M_RandomKey(numunlocks)];
+			if (numunlocks == 0)
+			{
+				if (triedrandomlevel == 2)
+					return;
+
+				triedrandomlevel++;
+				goto tryfreshrandom;
+			}
+
+			unlockid = selection[M_RandomKey(numunlocks)];
+		}
 	}
+
+	challengesmenu.unlockanim = (challengesmenu.pending && !challengesmenu.chaokeyadd ? 0 : MAXUNLOCKTIME);
 
 	if (unlockid >= MAXUNLOCKABLES)
 		return;
@@ -192,9 +217,8 @@ static void M_ChallengesAutoFocus(UINT16 unlockid, boolean fresh)
 	if (challengesmenu.unlockcondition)
 		Z_Free(challengesmenu.unlockcondition);
 	challengesmenu.unlockcondition = M_BuildConditionSetString(challengesmenu.currentunlock);
-	challengesmenu.unlockanim = (challengesmenu.pending && !challengesmenu.chaokeyadd ? 0 : MAXUNLOCKTIME);
 
-	if (gamedata->challengegrid == NULL || challengesmenu.extradata == NULL)
+	if (gamedata->challengegrid == NULL || challengesmenu.extradata == NULL || posisvalid)
 		return;
 
 	for (i = 0; i < (CHALLENGEGRIDHEIGHT * gamedata->challengegridwidth); i++)
@@ -330,6 +354,8 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 
 	if (challengesmenu.pending || desiredmenu == NULL)
 	{
+		static boolean firstopen = true;
+
 		challengesmenu.ticker = 0;
 		challengesmenu.requestflip = false;
 		challengesmenu.requestnew = false;
@@ -337,8 +363,13 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 		challengesmenu.keywasadded = false;
 		challengesmenu.considersealedswapalert = false;
 		challengesmenu.chaokeyhold = 0;
-		challengesmenu.currentunlock = MAXUNLOCKABLES;
 		challengesmenu.unlockcondition = NULL;
+
+		if (firstopen)
+		{
+			challengesmenu.currentunlock = MAXUNLOCKABLES;
+			firstopen = false;
+		}
 
 		M_PopulateChallengeGrid();
 		if (gamedata->challengegrid)
@@ -548,6 +579,7 @@ void M_ChallengesTick(void)
 
 					challengesmenu.chaokeyhold = 0;
 					challengesmenu.unlockcount[CMC_CHAOANIM]++;
+					challengesmenu.keywasadded = false; // disappearify the Hand
 
 					S_StartSound(NULL, sfx_chchng);
 
@@ -765,6 +797,21 @@ void M_ChallengesTick(void)
 				}
 			}
 		}
+
+		if (challengesmenu.currentunlock < MAXUNLOCKABLES
+		&& gamedata->unlockpending[challengesmenu.currentunlock] == true)
+		{
+			UINT16 id = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
+			if (challengesmenu.extradata
+			&& challengesmenu.extradata[id].flip != (TILEFLIP_MAX/2))
+			{
+				// Only mark visited once flipped
+			}
+			else
+			{
+				gamedata->unlockpending[challengesmenu.currentunlock] = false;
+			}
+		}
 	}
 }
 
@@ -844,6 +891,8 @@ boolean M_ChallengesInputs(INT32 ch)
 			Z_Free(challengesmenu.extradata);
 			challengesmenu.extradata = NULL;
 
+			if (challengesmenu.unlockcondition)
+				Z_Free(challengesmenu.unlockcondition);
 			challengesmenu.unlockcondition = NULL;
 
 			return true;

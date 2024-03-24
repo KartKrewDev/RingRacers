@@ -880,7 +880,8 @@ static void P_SpawnMapThings(boolean spawnemblems)
 	Z_Free(loopends);
 
 	if (spawnemblems
-		&& gametype != GT_TUTORIAL)
+		&& gametype != GT_TUTORIAL
+		&& !modeattacking)
 	{
 		const UINT8 recommendedcans =
 #ifdef DEVELOP

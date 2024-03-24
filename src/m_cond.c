@@ -1125,7 +1125,7 @@ static void M_PrecacheLevelLocks(void)
 								}
 
 								tempstr = va(
-									"Music: %s Cup %c%u %c",
+									"Music: %s CUP %c%u %c",
 									mapheaderinfo[map]->cup->realname,
 									prefix,
 									positionid + 1,
@@ -1153,7 +1153,7 @@ static void M_PrecacheLevelLocks(void)
 
 							tempstr = va(
 								"Music: %s #%u %c",
-								(mapheaderinfo[map]->typeoflevel & TOL_TUTORIAL) ? "Tutorial" : "Lost and Found",
+								(mapheaderinfo[map]->typeoflevel & TOL_TUTORIAL) ? "Tutorial" : "Lost & Found",
 								positionid + 1,
 								'A' + j // :D ?
 							);
@@ -1516,8 +1516,10 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 		case UC_UNLOCKPERCENT:
 		{
 			// Don't let netgame sessions intefere
-			// (or have this give a performance hit)
-			if (Playing())
+			// or have this give a performance hit
+			// (This is formulated this way to
+			// perfectly eclipse M_CheckNetUnlockByID)
+			if (netgame || demo.playback || Playing())
 				return false;
 
 			UINT16 i, unlocked = cn->extrainfo2, total = 0;
@@ -1710,6 +1712,9 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 				&& !(player->pflags & PF_NOCONTEST)
 				//&& M_NotFreePlay()
 				&& numtargets >= maptargets);
+		case UCRP_SURVIVE:
+			return (player->exiting
+				&& !(player->pflags & PF_NOCONTEST));
 		case UCRP_NOCONTEST:
 			return (player->pflags & PF_NOCONTEST);
 
@@ -2114,7 +2119,7 @@ static const char *M_GetConditionString(condition_t *cn)
 	switch (cn->type)
 	{
 		case UC_PLAYTIME: // Requires total playing time >= x
-			return va("play for %i:%02i:%02i",
+			return va("play the game for %i:%02i:%02i",
 				G_TicsToHours(cn->requirement),
 				G_TicsToMinutes(cn->requirement, false),
 				G_TicsToSeconds(cn->requirement));
@@ -2165,7 +2170,7 @@ static const char *M_GetConditionString(condition_t *cn)
 
 		case UC_GAMECLEAR: // Requires game beaten >= x times
 			if (cn->requirement > 1)
-				return va("beat game %d times", cn->requirement);
+				return va("beat the game %d times", cn->requirement);
 			else
 				return va("beat the game");
 
@@ -2316,7 +2321,7 @@ static const char *M_GetConditionString(condition_t *cn)
 		}
 
 		case UC_TOTALMEDALS: // Requires number of emblems >= x
-			return va("get %d medals", cn->requirement);
+			return va("get %d Medals", cn->requirement);
 
 		case UC_EMBLEM: // Requires emblem x to be obtained
 		{
@@ -2461,14 +2466,14 @@ static const char *M_GetConditionString(condition_t *cn)
 		case UC_ADDON:
 			if (!M_SecretUnlocked(SECRET_ADDONS, true))
 				return NULL;
-			return "load a custom addon into \"Dr. Robotnik's Ring Racers\"";
+			return "load a custom addon";
 		case UC_CREDITS:
 			return "watch the developer credits all the way from start to finish";
 		case UC_REPLAY:
 			return "save a replay after finishing a round";
 		case UC_CRASH:
 			if (gamedata->evercrashed)
-				return "launch \"Dr. Robotnik's Ring Racers\" again after a game crash";
+				return "re-launch the game after a crash";
 			return NULL;
 		case UC_TUTORIALSKIP:
 			return "successfully skip the Tutorial";
@@ -2626,7 +2631,7 @@ static const char *M_GetConditionString(condition_t *cn)
 			{
 				if (cup->id != cn->requirement)
 					continue;
-				return va("%s%s %s Cup",
+				return va("%s%s %s CUP",
 					completetype, orbetter,
 					(M_CupLocked(cup) ? "???" : cup->realname)
 				);
@@ -2650,6 +2655,8 @@ static const char *M_GetConditionString(condition_t *cn)
 			return "finish a perfect round";
 		case UCRP_FINISHALLPRISONS:
 			return "break every Prison Egg";
+		case UCRP_SURVIVE:
+			return "survive";
 		case UCRP_NOCONTEST:
 			return "NO CONTEST";
 
@@ -2875,8 +2882,8 @@ char *M_BuildConditionSetString(UINT16 unlockid)
 		{
 			if (lastID != cn->id)
 			{
-				worklen = 4;
-				strncat(message, "\nOR ", len);
+				worklen = 6;
+				strncat(message, " - OR ", len);
 			}
 			else
 			{

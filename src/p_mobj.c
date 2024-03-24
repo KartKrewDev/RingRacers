@@ -7007,6 +7007,23 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			trans = tr_trans50;
 		}
+		// Non-RNG-advancing equivalent of Obj_SpawnEmeraldSparks
+		else if (leveltime % 3 == 0)
+		{
+			mobj_t *sparkle = P_SpawnMobjFromMobj(
+				mobj,
+				M_RandomRange(-mobj->radius/FRACUNIT, mobj->radius/FRACUNIT) * FRACUNIT,
+				M_RandomRange(-mobj->radius/FRACUNIT, mobj->radius/FRACUNIT) * FRACUNIT,
+				M_RandomRange(0, mobj->height/FRACUNIT) * FRACUNIT,
+				MT_SPARK
+			);
+			P_SetMobjStateNF(sparkle, mobjinfo[MT_EMERALDSPARK].spawnstate);
+
+			sparkle->color = mobj->color;
+			sparkle->momz += 6 * mapobjectscale * P_MobjFlip(mobj);
+			P_SetScale(sparkle, 2);
+			sparkle->destscale = mapobjectscale;
+		}
 
 		if (mobj->reactiontime > 0
 			&& leveltime > starttime)
@@ -13083,7 +13100,9 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	}
 	case MT_SPRAYCAN:
 	{
-		if (nummapspraycans == UINT8_MAX || tutorialchallenge == TUTORIALSKIP_INPROGRESS)
+		if (nummapspraycans == UINT8_MAX
+		|| modeattacking != ATTACKING_NONE
+		|| tutorialchallenge == TUTORIALSKIP_INPROGRESS)
 		{
 			P_RemoveMobj(mobj);
 			return false;

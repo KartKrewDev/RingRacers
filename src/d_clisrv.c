@@ -3928,6 +3928,7 @@ void SV_StopServer(void)
 	maketic = gametic+1;
 	neededtic = maketic;
 	serverrunning = false;
+	titlemapinaction = false;
 }
 
 // called at singleplayer start and stopdemo

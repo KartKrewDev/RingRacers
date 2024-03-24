@@ -2837,7 +2837,7 @@ static void M_DrawCupTitle(INT16 y, levelsearch_t *levelsearch)
 
 	if (levelsearch->cup == &dummy_lostandfound)
 	{
-		V_DrawCenteredLSTitleLowString(BASEVIDWIDTH/2, y+6, 0, "Lost and Found");
+		V_DrawCenteredLSTitleLowString(BASEVIDWIDTH/2, y+6, 0, "Lost & Found");
 	}
 	else if (levelsearch->cup)
 	{
@@ -6389,7 +6389,7 @@ void M_DrawAddons(void)
 
 // Challenges Menu
 
-static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili)
+static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flashmap, boolean hili)
 {
 #ifdef DEVELOP
 	extern consvar_t cv_debugchallenges;
@@ -6710,6 +6710,21 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 	}
 
 drawborder:
+
+	if (num < MAXUNLOCKABLES && gamedata->unlockpending[num])
+	{
+		const INT32 area = (ref->majorunlock) ? 42 : 20;
+		INT32 val;
+		for (i = 0; i < area; i++)
+		{
+			val = (x + i + challengesmenu.ticker) % 40;
+			if (val >= 20)
+				val = 40 - val;
+			val = (val + 6)/5;
+			V_DrawFadeFill(x + i, y, 1, area, 0, flashmap[98 + val], 2);
+		}
+	}
+
 	if (hili)
 	{
 		boolean maj = (ref != NULL && ref->majorunlock);
@@ -6719,13 +6734,11 @@ drawborder:
 		buffer[7] = (skullAnimCounter/5) ? '2' : '1';
 		pat = W_CachePatchName(buffer, PU_CACHE);
 
-		colormap = R_GetTranslationColormap(TC_DEFAULT, M_GetCvPlayerColor(0), GTC_MENUCACHE);
-
 		V_DrawFixedPatch(
 			x*FRACUNIT, y*FRACUNIT,
 			FRACUNIT,
 			0, pat,
-			colormap
+			flashmap
 		);
 	}
 
@@ -7114,6 +7127,32 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 				NULL);
 			break;
 		}
+		case SECRET_ADDONS:
+		{
+			V_DrawFixedPatch(28*FRACUNIT, (BASEVIDHEIGHT-28)*FRACUNIT,
+				FRACUNIT,
+				0, W_CachePatchName("M_ICOADD", PU_CACHE),
+				NULL);
+			break;
+		}
+		case SECRET_SOUNDTEST:
+		{
+			V_DrawFixedPatch(28*FRACUNIT, (BASEVIDHEIGHT-28)*FRACUNIT,
+				FRACUNIT,
+				0, W_CachePatchName("M_ICOSTM", PU_CACHE),
+				NULL);
+			break;
+		}
+		case SECRET_EGGTV:
+		{
+			V_DrawFixedPatch(3*FRACUNIT, (BASEVIDHEIGHT-40)*FRACUNIT,
+				FRACUNIT,
+				0, W_CachePatchName(
+					va("RHTVSQN%c", (challengesmenu.ticker & 2) ? '5' : '6'),
+				PU_CACHE),
+				NULL);
+			break;
+		}
 		case SECRET_ALTTITLE:
 		{
 			x = 8;
@@ -7282,12 +7321,14 @@ static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 
 	fixed_t keyx = (8+offs)*FRACUNIT, keyy = 0;
 
+	const boolean keybuttonpress = (menumessage.active == false && M_MenuExtraHeld(pid) == true);
+
 	// Button prompt
 	K_drawButton(
 		24 << FRACBITS,
 		16 << FRACBITS,
 		0, kp_button_c[1],
-		menumessage.active == false && M_MenuExtraHeld(pid) == true
+		keybuttonpress
 	);
 
 	// Metyr of rounds played that contribute to Chao Key generation
@@ -7332,6 +7373,20 @@ static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 			textx += 6;
 			i++;
 		}
+	}
+
+	// Hand
+	if (challengesmenu.keywasadded == true)
+	{
+		INT32 handx = 32 + 16;
+		if (keybuttonpress == false)
+		{
+			// Only animate if it's the focus
+			handx -= (skullAnimCounter/5);
+		}
+
+		V_DrawScaledPatch(handx, 8, V_FLIP,
+			W_CachePatchName("M_CURSOR", PU_CACHE));
 	}
 
 	UINT8 keysbeingused = 0;
@@ -7451,6 +7506,103 @@ static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 	}
 }
 
+static void M_DrawChallengeScrollBar(UINT8 *flashmap)
+{
+	const INT32 bary = 4, barh = 1, hiliw = 1;
+
+	if (!gamedata->challengegrid || !gamedata->challengegridwidth)
+		return;
+
+	const INT32 barlen = gamedata->challengegridwidth*hiliw;
+
+	INT32 barx = (BASEVIDWIDTH - barlen)/2;
+	if (barlen > 200)
+	{
+		// TODO I DONT KNOW IF THE MATHS IS WRONG BUT WE DON'T HAVE
+		// 200 COLUMNS YET SO KICKING CAN DOWN THE ROAD ~toast 190324
+		INT32 shif = barlen - 200;
+		barx -= (shif/2 + (shif * challengesmenu.col)/barlen);
+	}
+
+	// bg
+	V_DrawFadeFill(barx, bary, barlen, barh, 0, 31, challengetransparentstrength);
+
+	// This was a macro for experimentation
+	#define COLTOPIX(col) (col*hiliw)
+		//((col * barlen)/gamedata->challengegridwidth)
+
+	INT32 hilix, nextstep, i, completionamount, skiplevel;
+
+	// selection
+	hilix = COLTOPIX(challengesmenu.col);
+	V_DrawFill(barx + hilix, bary-1,    hiliw, 1, 0);
+	V_DrawFill(barx + hilix, bary+barh, hiliw, 1, 0);
+
+	INT32 mindiscouragement = 2; // skipping major unlocks is just a LITTLE cringe
+	if (challengesmenu.unlockcount[CMC_PERCENT] == 100
+	&& challengesmenu.unlockcount[CMC_MAJORSKIPPED] == 0)
+		mindiscouragement = 1; // so someone looking for 101% isn't hunting forever
+
+	// unbounded so that we can do the last remaining completionamount draw
+	nextstep = completionamount = skiplevel = 0;
+	for (i = 0; ; i++)
+	{
+		INT32 prevstep = nextstep;
+		nextstep = (i % CHALLENGEGRIDHEIGHT);
+		if (prevstep >= nextstep)
+		{
+			if (completionamount > 0)
+			{
+				if (skiplevel >= mindiscouragement && completionamount == 10)
+				{
+					// awareness
+					completionamount--;
+				}
+
+				V_DrawFadeFill(barx + hilix, bary, hiliw, barh, 0, 1, completionamount);
+			}
+
+			completionamount = skiplevel = 0;
+			hilix = i/CHALLENGEGRIDHEIGHT;
+			hilix = COLTOPIX(hilix);
+		}
+
+		// DO NOT DEREFERENCE gamedata->challengegrid[i] UNTIL AFTER THIS
+		if (i >= gamedata->challengegridwidth*CHALLENGEGRIDHEIGHT)
+			break;
+
+		if (gamedata->challengegrid[i] >= MAXUNLOCKABLES)
+			continue;
+
+		if (gamedata->unlocked[gamedata->challengegrid[i]] && completionamount != -1)
+		{
+			completionamount += (10/CHALLENGEGRIDHEIGHT);
+
+			unlockable_t *ref = &unlockables[gamedata->challengegrid[i]];
+
+			if (skiplevel < 2 && M_Achieved(ref->conditionset - 1) == false)
+			{
+				skiplevel = ref->majorunlock ? 2 : 1;
+			}
+		}
+
+		if (gamedata->unlockpending[gamedata->challengegrid[i]] == false)
+			continue;
+
+		INT32 val = (hilix + challengesmenu.ticker) % 40;
+		if (val >= 20)
+			val = 40 - val;
+		val = (val + 6)/10;
+
+		V_DrawFill(barx + hilix, bary, hiliw, barh, flashmap[99 + val]);
+
+		// The pending fill overrides everything else.
+		completionamount = -1;
+	}
+
+	#undef COLTOPIX
+}
+
 void M_DrawChallenges(void)
 {
 	INT32 x = currentMenu->x, explodex, selectx = 0, selecty = 0;
@@ -7502,6 +7654,8 @@ void M_DrawChallenges(void)
 		V_DrawCenteredMenuString(x, y, V_REDMAP, "No challenges available!?");
 		goto challengedesc;
 	}
+
+	UINT8 *flashmap = R_GetTranslationColormap(TC_DEFAULT, M_GetCvPlayerColor(0), GTC_MENUCACHE);
 
 	y = currentMenu->y;
 
@@ -7556,7 +7710,7 @@ void M_DrawChallenges(void)
 				continue;
 			}
 
-			M_DrawChallengeTile(i, j, x, y, false);
+			M_DrawChallengeTile(i, j, x, y, flashmap, false);
 		}
 
 		x -= challengesgridstep;
@@ -7571,11 +7725,14 @@ void M_DrawChallenges(void)
 	if (challengesmenu.fade)
 		V_DrawFadeScreen(31, challengesmenu.fade);
 
+	M_DrawChallengeScrollBar(flashmap);
+
 	M_DrawChallengeTile(
 		challengesmenu.hilix,
 		challengesmenu.hiliy,
 		selectx,
 		selecty,
+		flashmap,
 		true);
 	M_DrawCharSelectExplosions(false, explodex, currentMenu->y);
 
@@ -7881,7 +8038,7 @@ static void M_DrawStatsMaps(void)
 				else if (mapheaderinfo[mnum]->cup)
 					str = va("%s CUP", mapheaderinfo[mnum]->cup->realname);
 				else
-					str = "LOST AND FOUND";
+					str = "LOST & FOUND";
 
 				V_DrawThinString(20,  y, highlightflags, str);
 			}

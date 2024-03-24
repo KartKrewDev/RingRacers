@@ -113,7 +113,7 @@ void M_EndModeAttackRun(void)
 			"Secret Exit",
 			va(
 				"No finish time was recorded.\n"
-				"Secrets don't work in Record modes!\n"
+				"Secrets don't work in Attack modes!\n"
 				"Try again in %s.\n",
 				(gametype == GT_RACE)
 					? "Grand Prix or Match Race"
