@@ -615,6 +615,7 @@ static void F_DisclaimerDrawScene(void)
 			subtextalpha = dc_subtextfade << V_ALPHASHIFT;
 
 		char* newText;
+		char* twoText;
 
 		if (!heretrulystarted)
 		{
@@ -666,14 +667,26 @@ static void F_DisclaimerDrawScene(void)
 		{
 			V_DrawCenteredMenuString(160, 25, textalpha, "Original games and designs by");
 
+			UINT16 margin = 5;
+			UINT16 offset = BASEVIDWIDTH/2-(BASEVIDWIDTH-margin*2)/2;
 			newText = V_ScaledWordWrap(
-				290 << FRACBITS,
+				(BASEVIDWIDTH - margin*2) << FRACBITS,
 				FRACUNIT, FRACUNIT, FRACUNIT,
 				0, MENU_FONT,
-				"\"Dr. Robotnik's Ring Racers\" is a not-for-profit fangame. All registered trademarks belong to their respective owners.\nThis game contains flashing lights and high-contrast patterns. Photosensitive? Use caution and the Profiles>Accessibility menu."
+				"\"Dr. Robotnik's Ring Racers\" is a not-for-profit fangame. All registered trademarks belong to their respective owners. This game should not be sold."
+			);
+			twoText = V_ScaledWordWrap(
+				(BASEVIDWIDTH - margin*2) << FRACBITS,
+				FRACUNIT, FRACUNIT, FRACUNIT,
+				0, MENU_FONT,
+				"Photosensitivity warning: This game contains flashing lights and high-contrast patterns."
 			);
 
-			V_DrawCenteredMenuString(160, 125, subtextalpha, newText);
+			V_DrawMenuString(offset, 125, subtextalpha, newText);
+			V_DrawMenuString(offset, 165, subtextalpha, twoText);
+			V_DrawMenuString(offset, 165, V_BLUEMAP|subtextalpha, "Photosensitivity warning");
+
+			Z_Free(twoText);
 		}
 
 		Z_Free(newText);
