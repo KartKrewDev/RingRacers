@@ -1115,7 +1115,6 @@ typedef enum
 	sfx_ruburn,
 	sfx_ddash,
 	sfx_tossed,
-	sfx_itpick,
 	sfx_peel,
 	sfx_hogbom,
 	sfx_zio3,
