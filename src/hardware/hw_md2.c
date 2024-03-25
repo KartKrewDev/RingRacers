@@ -830,6 +830,9 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 	if (translen > 0)
 		colorbrightnesses[translen] = colorbrightnesses[translen-1];
 
+	if (skinnum == TC_BLINK)
+		blendcolor = V_GetColor(skincolors[color].ramp[3]);
+
 	while (size--)
 	{
 		if (skinnum == TC_HITLAG)
@@ -858,6 +861,11 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 		{
 			// Turn everything white
 			cur->s.red = cur->s.green = cur->s.blue = 255;
+			cur->s.alpha = image->s.alpha;
+		}
+		else if (skinnum == TC_BLINK)
+		{
+			*cur = blendcolor;
 			cur->s.alpha = image->s.alpha;
 		}
 		else
