@@ -584,6 +584,11 @@ static void loading_status(void)
 	char s[16];
 	int x, y;
 
+	if (gamestate == GS_TITLESCREEN && titlemapinaction)
+	{
+		return;
+	}
+
 	I_OsPolling();
 	CON_Drawer();
 	sprintf(s, "%d%%", (++ls_percent)<<1);
