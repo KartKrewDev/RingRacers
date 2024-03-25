@@ -8579,10 +8579,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 		}
 
-		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + (mobj->eflags & MFE_VERTICALFLIP ? 1 : 1) * mobj->target->height/2);
+		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + mobj->target->height/2);
 		mobj->angle = K_MomentumAngle(mobj->target);
-
-		K_FlipFromObject(mobj, mobj->target);
 
 		if (underlayst != S_NULL)
 		{
