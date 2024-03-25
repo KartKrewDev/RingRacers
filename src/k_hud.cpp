@@ -53,6 +53,7 @@
 #include "g_input.h"
 #include "k_dialogue.h"
 #include "f_finale.h"
+#include "m_easing.h"
 
 //{ 	Patch Definitions
 static patch_t *kp_nodraw;
@@ -5249,6 +5250,18 @@ static void K_drawInput(void)
 	fixed_t slide = K_GetDialogueSlide(FRACUNIT);
 	if (slide)
 		flags &= ~(V_SNAPTORIGHT); // don't draw underneath the dialogue box in non-green resolutions
+
+	// Move above the boss health bar.
+	// TODO: boss HUD only works in 1P, so this only works in 1P too.
+	if (LUA_HudEnabled(hud_position) && bossinfo.valid)
+	{
+		constexpr tic_t kDelay = 2u;
+		// See K_drawBossHealthBar
+		tic_t start = lt_endtime - 1u;
+		tic_t t = std::clamp(lt_ticker, start, start + kDelay) - start;
+		def[0][1] -= 24 + Easing_Linear(t * FRACUNIT / kDelay, 0, 7);
+	}
+
 	K_DrawInputDisplay(
 		def[k][0] - FixedToFloat(34 * slide),
 		def[k][1] - FixedToFloat(51 * slide),
