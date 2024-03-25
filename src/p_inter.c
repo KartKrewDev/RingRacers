@@ -3292,7 +3292,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				player->markedfordeath = true;
 				damagetype = DMG_TUMBLE;
 				type = DMG_TUMBLE;
-				P_StartQuakeFromMobj(5, 32 * player->mo->scale, 512 * player->mo->scale, player->mo);
+				P_StartQuakeFromMobj(5, 44 * player->mo->scale, 2560 * player->mo->scale, player->mo);
 				//P_KillPlayer(player, inflictor, source, damagetype);
 			}
 

@@ -4637,7 +4637,7 @@ static void K_HandleTumbleBounce(player_t *player)
 		}
 
 		player->markedfordeath = false;
-		P_StartQuakeFromMobj(5, 32 * player->mo->scale, 512 * player->mo->scale, player->mo);
+		P_StartQuakeFromMobj(5, 64 * player->mo->scale, 4096 * player->mo->scale, player->mo);
 		P_DamageMobj(player->mo, NULL, NULL, 1, DMG_INSTAKILL);
 		return;
 	}
@@ -4950,7 +4950,7 @@ void K_MineFlashScreen(mobj_t *source)
 	}
 
 	S_StartSound(source, sfx_s3k4e);
-	P_StartQuakeFromMobj(12, 55 * source->scale, MINEQUAKEDIST * source->scale, source);
+	P_StartQuakeFromMobj(18, 55 * source->scale, MINEQUAKEDIST * source->scale, source);
 
 	// check for potential display players near the source so we can have a sick flashpal.
 	for (pnum = 0; pnum < MAXPLAYERS; pnum++)

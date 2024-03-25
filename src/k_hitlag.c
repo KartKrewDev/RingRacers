@@ -185,7 +185,7 @@ static void K_SpawnHitLagEFX(mobj_t *victim, mobj_t *inflictor, mobj_t *source, 
 	I_Assert(P_MobjWasRemoved(victim) == false);
 
 	K_PlayHitLagSFX(victim, tics);
-	P_StartQuakeFromMobj(tics, tics * 2 * mapobjectscale, 512 * mapobjectscale, victim);
+	P_StartQuakeFromMobj(tics, tics * 2 * mapobjectscale, 1536 * mapobjectscale, victim);
 
 	if (P_MobjWasRemoved(inflictor) == false)
 	{
