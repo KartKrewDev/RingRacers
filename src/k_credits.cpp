@@ -409,7 +409,6 @@ void F_StartCredits(void)
 	Music_StopAll();
 	S_StopSounds();
 
-	Music_SetFadeOut("credits", 0);
 	F_NewCreditsMusic("_creds", false);
 
 	F_CreditsReset();

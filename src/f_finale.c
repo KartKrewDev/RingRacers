@@ -984,10 +984,6 @@ UINT16 finaleemeralds = 0;
 
 void F_StartGameEvaluation(void)
 {
-	Music_SetFadeOut("credits", 250);
-	Music_DelayEnd("credits", TICRATE/4);
-	Music_Tick(); // it needs to fade out right now
-
 	S_StopMusicCredit();
 
 	// Credits option in extras menu
