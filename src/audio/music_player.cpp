@@ -63,10 +63,7 @@ public:
 			// the fade gain, even if it would clamp anyway.
 			for (std::size_t i = 0; i < generated; i++)
 			{
-				const float alpha = 1.0 - (gain_samples_target_ - std::min(gain_samples_ + i, gain_samples_target_)) /
-											  static_cast<double>(gain_samples_target_);
-				const float fade_gain = (gain_target_ - gain_) * std::clamp(alpha, 0.f, 1.f) + gain_;
-				buffer[total_written + i] *= fade_gain;
+				buffer[total_written + i] *= current_fade_gain(i);
 			}
 
 			gain_samples_ = std::min(gain_samples_ + generated, gain_samples_target_);
@@ -255,7 +252,7 @@ public:
 		return std::nullopt;
 	}
 
-	void fade_to(float gain, float seconds) { fade_from_to(gain_target_, gain, seconds); }
+	void fade_to(float gain, float seconds) { fade_from_to(current_fade_gain(0), gain, seconds); }
 
 	void fade_from_to(float from, float to, float seconds)
 	{
@@ -300,6 +297,13 @@ private:
 	bool fading_ {false};
 	uint64_t gain_samples_ {0};
 	uint64_t gain_samples_target_ {1};
+
+	float current_fade_gain(uint64_t i) const
+	{
+		const float alpha = 1.0 - (gain_samples_target_ - std::min(gain_samples_ + i, gain_samples_target_)) /
+									  static_cast<double>(gain_samples_target_);
+		return (gain_target_ - gain_) * std::clamp(alpha, 0.f, 1.f) + gain_;
+	}
 };
 
 // The special member functions MUST be declared in this unit, where Impl is complete.
