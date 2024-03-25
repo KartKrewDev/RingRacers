@@ -1279,6 +1279,11 @@ void F_GameEvaluationDrawer(void)
 		}
 	}
 
+#ifdef DEVELOP
+	if (cv_soundtest.value > EVAL_MAX)
+		return;
+#endif
+
 	V_DrawCenteredGamemodeString(
 		BASEVIDWIDTH/2,
 		15,

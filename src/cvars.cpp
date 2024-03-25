@@ -1171,7 +1171,7 @@ consvar_t cv_fov[MAXSPLITSCREENPLAYERS] = {
 	Player("fov4", "90").floating_point().min_max(60*FRACUNIT, 179*FRACUNIT).onchange(Fov_OnChange).dont_save(),
 };
 
-consvar_t cv_freecam_speed = Player("freecam_speed", "1").min_max(1, 10).dont_save();
+consvar_t cv_freecam_speed = Player("freecam_speed", "1").min_max(-64, 10).dont_save();
 
 void I_JoyScale(void);
 void I_JoyScale2(void);

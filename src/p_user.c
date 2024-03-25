@@ -2948,10 +2948,15 @@ void P_DemoCameraMovement(camera_t *cam, UINT8 num)
 	cam->angle += turning;
 
 	// camera movement:
-	if (!cam->button_a_held)
+	if (!cam->button_a_held && cv_freecam_speed.value)
 	{
 		int dir = ((cmd->buttons & BT_ACCELERATE) ? 1 : 0) + ((cmd->buttons & BT_BRAKE) ? -1 : 0);
-		fixed_t spd = 32*mapobjectscale*cv_freecam_speed.value;
+
+		fixed_t spd = 32*mapobjectscale;
+		if (cv_freecam_speed.value > 1)
+			spd *= cv_freecam_speed.value;
+		else if (cv_freecam_speed.value < -1)
+			spd /= -cv_freecam_speed.value;
 
 		switch (dir)
 		{
@@ -3029,9 +3034,13 @@ void P_DemoCameraMovement(camera_t *cam, UINT8 num)
 
 	cam->momx = cam->momy = cam->momz = 0;
 
-	if (cmd->forwardmove != 0)
+	if (cmd->forwardmove != 0 && cv_freecam_speed.value)
 	{
-		fixed_t spd = cmd->forwardmove*mapobjectscale*cv_freecam_speed.value;
+		fixed_t spd = cmd->forwardmove*mapobjectscale;
+		if (cv_freecam_speed.value > 1)
+			spd *= cv_freecam_speed.value;
+		else if (cv_freecam_speed.value < -1)
+			spd /= -cv_freecam_speed.value;
 
 		thrustangle = cam->angle >> ANGLETOFINESHIFT;
 
