@@ -67,6 +67,7 @@
 #include "k_bans.h"
 #include "sanitize.h"
 #include "r_fps.h"
+#include "filesrch.h" // refreshdirmenu
 
 // cl loading screen
 #include "v_video.h"
@@ -6711,6 +6712,7 @@ void NetUpdate(void)
 		I_lock_mutex(&k_menu_mutex);
 #endif
 		M_Ticker();
+		refreshdirmenu = 0;
 #ifdef HAVE_THREADS
 		I_unlock_mutex(k_menu_mutex);
 #endif
