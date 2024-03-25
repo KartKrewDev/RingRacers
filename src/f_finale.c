@@ -861,35 +861,16 @@ void F_IntroTicker(void)
 		}
 	}
 
+	intro_curtime = introscenetime[intro_scenenum] - timetonext;
+
 	if (intro_scenenum == INTROSCENE_KREW)
 	{
 		if (intro_curtime == TICRATE/2)
 			S_StartSound(NULL, sfx_kc5e);
 
-		if (timetonext == 5)
+		if (timetonext == 24)
 			S_StartSound(NULL, sfx_vroom);
-		else if (timetonext == 24)
-		{
-			// Need to use M_Random otherwise it always uses the same sound
-			UINT32 rskin;
-			UINT8 rtaunt;
-			if (skippableallowed)
-			{
-				rskin = R_GetLocalRandomSkin();
-				rtaunt = M_RandomKey(2);
-			}
-			else
-			{
-				rskin = R_SkinAvailableEx("eggman", false);
-				rtaunt = 1;
-			}
-
-			sfxenum_t rsound = skins[rskin].soundsid[SKSKBST1+rtaunt];
-			S_StartSound(NULL, rsound);
-		}
 	}
-
-	intro_curtime = introscenetime[intro_scenenum] - timetonext;
 
 	F_WriteText();
 
