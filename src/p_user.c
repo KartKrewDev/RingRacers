@@ -1333,8 +1333,19 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 			}
 		}
 
-		if (!demo.savebutton && P_IsMachineLocalPlayer(player))
-			demo.savebutton = leveltime;
+		if (!demo.savebutton)
+		{
+			UINT8 outstanding = splitscreen + 1;
+			for (UINT8 i = 0; i <= splitscreen; ++i)
+			{
+				if (players[g_localplayers[i]].exiting)
+					outstanding--;
+			}
+			// Once the entire local party finishes (not
+			// online party), show the "Save Replay" button.
+			if (!outstanding)
+				demo.savebutton = leveltime;
+		}
 	}
 }
 
