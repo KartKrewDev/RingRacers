@@ -830,6 +830,9 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 	if (translen > 0)
 		colorbrightnesses[translen] = colorbrightnesses[translen-1];
 
+	if (skinnum == TC_BLINK)
+		blendcolor = V_GetColor(skincolors[color].ramp[3]);
+
 	while (size--)
 	{
 		if (skinnum == TC_HITLAG)
@@ -858,6 +861,11 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 		{
 			// Turn everything white
 			cur->s.red = cur->s.green = cur->s.blue = 255;
+			cur->s.alpha = image->s.alpha;
+		}
+		else if (skinnum == TC_BLINK)
+		{
+			*cur = blendcolor;
 			cur->s.alpha = image->s.alpha;
 		}
 		else
@@ -1514,29 +1522,23 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		{
 			INT32 skinnum = TC_DEFAULT;
 
-			if (R_ThingIsFlashing(spr->mobj))
+			if (spr->mobj->skin && spr->mobj->sprite == SPR_PLAY) // This thing is a player!
+			{
+				skinnum = (skin_t*)spr->mobj->skin-skins;
+			}
+
+			// Hide not-yet-unlocked characters in replays from other people
+			if (skinnum >= 0 && !R_CanShowSkinInDemo(skinnum))
+			{
+				skinnum = TC_BLINK;
+			}
+			else if (R_ThingIsFlashing(spr->mobj))
 			{
 				skinnum = TC_HITLAG;
 			}
-			/*
-			else if ((spr->mobj->flags & (MF_ENEMY|MF_BOSS)) && (spr->mobj->flags2 & MF2_FRET) && !(spr->mobj->flags & MF_GRENADEBOUNCE) && (leveltime & 1)) // Bosses "flash"
+			else if (spr->mobj->color && spr->mobj->colorized)
 			{
-				if (spr->mobj->type == MT_CYBRAKDEMON || spr->mobj->colorized)
-					skinnum = TC_ALLWHITE;
-				else if (spr->mobj->type == MT_METALSONIC_BATTLE)
-					skinnum = TC_METALSONIC;
-				else
-					skinnum = TC_BOSS;
-			}
-			*/
-			else if ((skincolornum_t)spr->mobj->color != SKINCOLOR_NONE)
-			{
-				if (spr->mobj->colorized)
-					skinnum = TC_RAINBOW;
-				else if (spr->mobj->skin && spr->mobj->sprite == SPR_PLAY)
-					skinnum = (INT32)((skin_t*)spr->mobj->skin-skins);
-				else
-					skinnum = TC_DEFAULT;
+				skinnum = TC_RAINBOW;
 			}
 
 			// Translation or skin number found
