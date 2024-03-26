@@ -1,6 +1,6 @@
 // RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2023 by James Robert Roman
+// Copyright (C) 2023-2024 by James Robert Roman
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -36,7 +36,8 @@ public:
 		int height() const { return height_; }
 
 	private:
-		int width_, height_;
+		int width_ = 0;
+		int height_ = 0;
 
 		std::vector<uint8_t> vec_;
 	};
