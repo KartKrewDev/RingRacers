@@ -361,7 +361,6 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 		challengesmenu.requestnew = false;
 		challengesmenu.chaokeyadd = false;
 		challengesmenu.keywasadded = false;
-		challengesmenu.considersealedswapalert = false;
 		challengesmenu.chaokeyhold = 0;
 		challengesmenu.unlockcondition = NULL;
 
@@ -707,9 +706,6 @@ void M_ChallengesTick(void)
 			gamedata->unlocked[challengesmenu.currentunlock] = true;
 			M_UpdateUnlockablesAndExtraEmblems(true, true);
 
-			if (ref->type == SECRET_SPECIALATTACK)
-				challengesmenu.considersealedswapalert = true;
-
 			// Update shown description just in case..?
 			if (challengesmenu.unlockcondition)
 				Z_Free(challengesmenu.unlockcondition);
@@ -780,11 +776,7 @@ void M_ChallengesTick(void)
 			// Fade decrease.
 			if (--challengesmenu.fade == 0)
 			{
-				// Play music the moment control returns.
-				M_PlayMenuJam();
-
-				if (challengesmenu.considersealedswapalert == true
-				&& M_ConsiderSealedSwapAlert() == true)
+				if (M_ConsiderSealedSwapAlert() == true)
 				{
 					// No keygen tutorial in this case...
 					// not ideal but at least unlikely to
@@ -795,6 +787,9 @@ void M_ChallengesTick(void)
 				{
 					M_ChallengesTutorial(CCTUTORIAL_KEYGEN);
 				}
+
+				// Play music the moment control returns.
+				M_PlayMenuJam();
 			}
 		}
 

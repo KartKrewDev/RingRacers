@@ -528,6 +528,7 @@ void M_PlayMenuJam(void)
 		const char* overridetotrack[GDMUSIC_MAX-1] = {
 			"KEYGEN",
 			"LOSERC",
+			"TRACKA",
 		};
 
 		if (refMenu != NULL && NotCurrentlyPlaying(overridetotrack[override - 1]))
@@ -579,6 +580,9 @@ boolean M_ConsiderSealedSwapAlert(void)
 			"The Sealed Stars are now ordered via Cups!\n",
 			NULL, MM_NOTHING, NULL, NULL
 		);
+
+		if (gamedata->musicstate < GDMUSIC_TRACK10)
+			gamedata->musicstate = GDMUSIC_TRACK10;
 
 		return true;
 	}
