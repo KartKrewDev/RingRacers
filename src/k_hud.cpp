@@ -1134,7 +1134,7 @@ void K_ObjectTracking(trackingResult_t *result, const vector3_t *point, boolean 
 	screenHalfH = (screenHeight >> 1) << FRACBITS;
 
 	// Calculate FOV adjustments.
-	fovDiff = cv_fov[cameraNum].value - baseFov;
+	fovDiff = R_FOV(cameraNum) - baseFov;
 	fov = ((baseFov - fovDiff) / 2) - (stplyr->fovadd / 2);
 	fovTangent = NEWTAN(FixedAngle(fov));
 

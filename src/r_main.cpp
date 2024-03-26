@@ -997,7 +997,7 @@ void R_ExecuteSetViewSize(void)
 
 	for (s = 0; s <= r_splitscreen; ++s)
 	{
-		fov = FixedAngle(cv_fov[s].value/2) + ANGLE_90;
+		fov = FixedAngle(R_FOV(s)/2) + ANGLE_90;
 		fovtan[s] = FixedMul(FINETANGENT(fov >> ANGLETOFINESHIFT), viewmorph[s].zoomneeded);
 		if (r_splitscreen == 1) // Splitscreen FOV should be adjusted to maintain expected vertical view
 			fovtan[s] = 17*fovtan[s]/10;
@@ -1069,6 +1069,16 @@ void R_ExecuteSetViewSize(void)
 #endif
 
 	am_recalc = true;
+}
+
+fixed_t R_FOV(int split)
+{
+	if (gamestate == GS_TITLESCREEN || gamestate == GS_CEREMONY)
+	{
+		return 90*FRACUNIT; // standard setting
+	}
+
+	return cv_fov[split].value;
 }
 
 //
