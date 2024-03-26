@@ -1051,8 +1051,9 @@ void level_tally_t::Draw(void)
 			if (lives_num > 0)
 			{
 				lives_drawer
-					.xy(17.0, 4.0)
-					.patch( va("OPPRNK%02d", lives_num) );
+					.xy(19.0, 1.0)
+					.font(srb2::Draw::Font::kThinTimer)
+					.text("{}", lives_num);
 			}
 		}
 
@@ -1256,7 +1257,7 @@ void level_tally_t::Draw(void)
 
 							const skincolornum_t color = static_cast<skincolornum_t>(owner->skincolor);
 							lives_drawer
-								.x(r_splitscreen ? -7.0 : 0.0)
+								.x(r_splitscreen ? -7.0 : -2.0)
 								.colormap(owner->skin, color)
 								.patch(faceprefix[owner->skin][r_splitscreen ? FACE_MINIMAP : FACE_RANK]);
 
@@ -1270,17 +1271,18 @@ void level_tally_t::Draw(void)
 							{
 								if (r_splitscreen)
 								{
-									lives_drawer
+									lives_drawer = lives_drawer
 										.xy(6.0, 2.0)
-										.align(srb2::Draw::Align::kLeft)
-										.text(va("%d", lives_num));
+										.align(srb2::Draw::Align::kLeft);
 								}
 								else
 								{
-									lives_drawer
-										.xy(17.0, 4.0)
-										.patch( va("OPPRNK%02d", lives_num) );
+									lives_drawer = lives_drawer
+										.xy(17.0, 1.0)
+										.font(srb2::Draw::Font::kThinTimer);
 								}
+
+								lives_drawer.text("{}", lives_num);
 							}
 
 							break;
