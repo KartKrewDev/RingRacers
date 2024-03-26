@@ -235,33 +235,39 @@ void HWR_DrawStretchyFixedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t p
 
 	if (clip)
 	{
-		if (cx < clip->left)
+		float cx1 = cx;
+		float cy1 = cy;
+		float cx2 = cx + fwidth;
+		float cy2 = cy + fheight;
+
+		if (cx1 < clip->left)
 		{
-			s_min = ((clip->left - cx) / fwidth) * s_max;
-			cx = clip->left;
+			s_min = (clip->left - cx1) / fwidth * hwrPatch->max_s;
+			cx1 = clip->left;
 		}
 
-		if (cy < clip->top)
+		if (cy1 < clip->top)
 		{
-			t_min = ((clip->top - cy) / fheight) * t_max;
-			cy = clip->top;
+			t_min = (clip->top - cy1) / fheight * hwrPatch->max_t;
+			cy1 = clip->top;
 		}
 
-		if ((cx + fwidth) > clip->right)
+		if (cx2 > clip->right)
 		{
-			const float n = (clip->right - cx);
-
-			s_max = (s_min + ((n / fwidth) * s_max));
-			fwidth = n;
+			s_max = s_min + (clip->right - cx1) / fwidth * hwrPatch->max_s;
+			cx2 = clip->right;
 		}
 
-		if ((cy + fheight) > clip->bottom)
+		if (cy2 > clip->bottom)
 		{
-			const float n = (clip->bottom - cy);
-
-			t_max = (t_min + ((n / fheight) * t_max));
-			fheight = n;
+			t_max = t_min + (clip->bottom - cy1) / fheight * hwrPatch->max_t;
+			cy2 = clip->bottom;
 		}
+
+		cx = cx1;
+		cy = cy1;
+		fwidth = cx2 - cx1;
+		fheight = cy2 - cy1;
 	}
 
 	// positions of the cx, cy, are between 0 and vid.width/vid.height now, we need them to be between -1 and 1
