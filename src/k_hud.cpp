@@ -90,7 +90,7 @@ patch_t *kp_facenum[MAXPLAYERS+1];
 static patch_t *kp_facehighlight[8];
 
 static patch_t *kp_nocontestminimap;
-static patch_t *kp_unknownminimap;
+patch_t *kp_unknownminimap;
 static patch_t *kp_spbminimap;
 static patch_t *kp_wouldyoustillcatchmeifiwereaworm;
 static patch_t *kp_catcherminimap;
