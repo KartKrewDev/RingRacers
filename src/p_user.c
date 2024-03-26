@@ -547,12 +547,6 @@ void P_PlayDeathSound(mobj_t *source)
 	S_StartSound(source, sfx_s3k35);
 }
 
-void P_PlayVictorySound(mobj_t *source)
-{
-	if (cv_kartvoices.value)
-		S_StartSound(source, sfx_kwin);
-}
-
 //
 // P_StartPositionMusic
 //
