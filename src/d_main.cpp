@@ -90,6 +90,7 @@
 #include "k_bans.h"
 #include "k_credits.h"
 #include "r_debug.hpp"
+#include "k_director.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h" // 3D View Rendering
@@ -347,7 +348,7 @@ gamestate_t wipegamestate = GS_LEVEL;
 INT16 wipetypepre = -1;
 INT16 wipetypepost = -1;
 
-static bool D_Display(void)
+static bool D_Display(bool world)
 {
 	bool ranwipe = false;
 	boolean forcerefresh = false;
@@ -526,7 +527,7 @@ static bool D_Display(void)
 		// see if the border needs to be initially drawn
 		if (G_GamestateUsesLevel() == true)
 		{
-			if (!automapactive && !dedicated && cv_renderview.value)
+			if (!automapactive && !dedicated && cv_renderview.value && (world || forcerefresh))
 			{
 				R_ApplyLevelInterpolators(R_UsingFrameInterpolation() ? rendertimefrac : FRACUNIT);
 
@@ -986,7 +987,32 @@ void D_SRB2Loop(void)
 			if (!renderisnewtic)
 				P_ResetInterpHudRandSeed(false);
 
-			ranwipe = D_Display();
+			bool world = true;
+
+			// TODO: skipping 3D rendering does not work in
+			// Legacy GL -- the screen gets filled with a
+			// single color.
+			// In software, the last frame is preserved,
+			// which is the intended effect.
+			if (rendermode == render_soft)
+			{
+				auto none_freecam = []
+				{
+					for (UINT8 i = 0; i <= r_splitscreen; ++i)
+					{
+						if (camera[i].freecam || (players[displayplayers[i]].spectator && !K_DirectorIsAvailable(i)))
+							return false;
+					}
+					return true;
+				};
+				// 3D rendering is stopped ENTIRELY if the game is paused.
+				// - In single player, opening the menu pauses the game, so it's perfect.
+				// - One exception: freecam is allowed to move when the game is paused.
+				if ((paused || P_AutoPause()) && none_freecam())
+					world = false;
+			}
+
+			ranwipe = D_Display(world);
 		}
 
 #ifdef HWRENDER
