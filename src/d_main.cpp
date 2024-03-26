@@ -834,6 +834,13 @@ void D_SRB2Loop(void)
 	boolean interp = false;
 	boolean doDisplay = false;
 	int frameskip = 0;
+	bool skiplaggyworld = false;
+	double sincelastworld = 0.0;
+	double minworldfps = 0.5;
+
+	double worldfpsrun = 0.0;
+	int worldfpscount = 0;
+	int worldfpsavg = 0;
 
 	if (dedicated)
 		server = true;
@@ -887,6 +894,7 @@ void D_SRB2Loop(void)
 		}
 
 		bool ranwipe = false;
+		bool world = false;
 
 		I_UpdateTime();
 
@@ -987,7 +995,7 @@ void D_SRB2Loop(void)
 			if (!renderisnewtic)
 				P_ResetInterpHudRandSeed(false);
 
-			bool world = true;
+			world = true;
 
 			// TODO: skipping 3D rendering does not work in
 			// Legacy GL -- the screen gets filled with a
@@ -1008,8 +1016,13 @@ void D_SRB2Loop(void)
 				// 3D rendering is stopped ENTIRELY if the game is paused.
 				// - In single player, opening the menu pauses the game, so it's perfect.
 				// - One exception: freecam is allowed to move when the game is paused.
-				if ((paused || P_AutoPause()) && none_freecam())
+				if (((paused || P_AutoPause()) && none_freecam()) ||
+					// 3D framerate is always allowed to at least drop if the menu is open.
+					// Does not affect replay menu because that one is more like a HUD.
+					(skiplaggyworld && menuactive && currentMenu != &PAUSE_PlaybackMenuDef))
+				{
 					world = false;
+				}
 			}
 
 			ranwipe = D_Display(world);
@@ -1068,6 +1081,43 @@ void D_SRB2Loop(void)
 		else
 		{
 			frameskip = 0;
+		}
+
+		if (world)
+		{
+			sincelastworld = 0.0;
+
+			worldfpsrun += deltasecs;
+			worldfpscount++;
+			if (worldfpsrun > 1.0)
+			{
+				worldfpsavg = worldfpscount;
+				worldfpsrun = 0.0;
+				worldfpscount = 0;
+			}
+		}
+		else if (skiplaggyworld)
+		{
+			sincelastworld += deltasecs;
+		}
+
+		// Try to skip 3D rendering if the theoretical framerate drops below 60.
+		// This measures the time spent rendering a single frame.
+		// If the framrate is capped at a lower value than 60,
+		// the time spent on each frame will not artificially increase.
+		// So this measurement is accurate regardless of fpscap.
+		if (sincelastworld <= minworldfps)
+		{
+			double goal = 60.0;
+			if (worldfpsavg < goal)
+			{
+				skiplaggyworld = true;
+				minworldfps = 1.0 / std::max(worldfpsavg * worldfpsavg / goal, 2.0);
+			}
+		}
+		else
+		{
+			skiplaggyworld = false;
 		}
 
 		if (!singletics)
