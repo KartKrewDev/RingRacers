@@ -502,6 +502,8 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 	{
 		// redirect player sound to the sound in the skin table
 		skin_t *skin = (origin->player ? &skins[origin->player->skin] : ((skin_t *)origin->skin));
+		if (R_CanShowSkinInDemo(skin-skins) == false)
+			return;
 		sfx_id = skin->soundsid[sfx->skinsound];
 		sfx = &S_sfx[sfx_id];
 	}
