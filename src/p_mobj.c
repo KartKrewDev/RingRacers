@@ -13095,7 +13095,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	{
 		if (nummapspraycans == UINT8_MAX
 		|| modeattacking != ATTACKING_NONE
-		|| tutorialchallenge == TUTORIALSKIP_INPROGRESS)
+		|| (tutorialchallenge == TUTORIALSKIP_INPROGRESS && gamedata->gotspraycans == 0))
 		{
 			P_RemoveMobj(mobj);
 			return false;
