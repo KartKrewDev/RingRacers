@@ -211,6 +211,7 @@ void M_OptionsTick(void)
 static void M_OptionsMenuGoto(menu_t *assignment)
 {
 	assignment->prevMenu = currentMenu;
+	assignment->music = currentMenu->music;
 	M_SetupNextMenu(assignment, false);
 	if (currentMenu != &OPTIONS_MainDef)
 	{
@@ -236,6 +237,7 @@ void M_SoundOptions(INT32 choice)
 void M_GameplayOptions(INT32 choice)
 {
 	(void)choice;
+	OPTIONS_GameplayItemsDef.music = currentMenu->music;
 	M_OptionsMenuGoto(&OPTIONS_GameplayDef);
 	OPTIONS_MainDef.lastOn = mopt_gameplay;
 }
@@ -243,6 +245,7 @@ void M_GameplayOptions(INT32 choice)
 void M_ServerOptions(INT32 choice)
 {
 	(void)choice;
+	OPTIONS_ServerAdvancedDef.music = currentMenu->music;
 	M_OptionsMenuGoto(&OPTIONS_ServerDef);
 	OPTIONS_MainDef.lastOn = mopt_server;
 }
