@@ -439,7 +439,6 @@ consvar_t cv_scr_y = Player("scr_y", "0.0").floating_point();
 
 consvar_t cv_seenames = Player("seenames", "On").on_off();
 consvar_t cv_shadow = Player("shadow", "On").on_off();
-consvar_t cv_shittyscreen = Player("televisionsignal", "Okay").flags(CV_NOSHOWHELP).values({{0, "Okay"}, {1, "Shitty"}, {2, "Extra Shitty"}}).dont_save();
 consvar_t cv_showfocuslost = Player("showfocuslost", "Yes").yes_no();
 
 void R_SetViewSize(void);
@@ -467,8 +466,6 @@ consvar_t cv_tutorialprompt = Player("tutorialprompt", "On").on_off();
 
 void I_StartupMouse(void);
 consvar_t cv_usemouse = Player("use_mouse", "Off").values({{0, "Off"}, {1, "On"}, {2, "Force"}}).onchange(I_StartupMouse);
-
-consvar_t cv_vhseffect = Player("vhspause", "On").on_off();
 
 // synchronize page flipping with screen refresh
 extern "C++"

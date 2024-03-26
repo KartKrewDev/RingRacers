@@ -781,9 +781,6 @@ static bool D_Display(bool world)
 	//
 	if (!wipe)
 	{
-		if (cv_shittyscreen.value)
-			V_DrawVhsEffect(cv_shittyscreen.value == 2);
-
 		if (cv_netstat.value)
 		{
 			char s[50];

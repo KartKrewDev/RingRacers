@@ -2033,9 +2033,6 @@ void HU_Drawer(void)
 		}
 	}
 
-	if (cv_vhseffect.value && (paused || (demo.playback && cv_playbackspeed.value > 1)))
-		V_DrawVhsEffect(demo.rewinding);
-
 	// draw desynch text
 	if (hu_redownloadinggamestate)
 	{
