@@ -648,7 +648,7 @@ void M_ChallengesTick(void)
 
 				if (gamedata->keyspending > 0)
 				{
-					S_StartSound(NULL, sfx_achiev);
+					S_StartSound(NULL, sfx_keygen);
 					gamedata->keyspending--;
 					gamedata->chaokeys++;
 					challengesmenu.unlockcount[CMC_CHAOANIM]++;

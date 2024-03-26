@@ -1170,8 +1170,8 @@ typedef enum
 	sfx_typri2,
 	sfx_eggspr,
 	sfx_achiev,
+	sfx_keygen,
 	sfx_gpmetr,
-	sfx_endwrp,
 
 	// SRB2Kart - Ring Box
 	sfx_slot00,
