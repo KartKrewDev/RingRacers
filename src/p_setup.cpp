@@ -881,7 +881,8 @@ static void P_SpawnMapThings(boolean spawnemblems)
 
 	if (spawnemblems
 		&& gametype != GT_TUTORIAL
-		&& !modeattacking)
+		&& !modeattacking
+		&& !(tutorialchallenge == TUTORIALSKIP_INPROGRESS && gamedata->gotspraycans == 0))
 	{
 		const UINT8 recommendedcans =
 #ifdef DEVELOP
