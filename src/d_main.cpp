@@ -226,11 +226,9 @@ static void HandleGamepadDeviceRemoved(event_t *ev)
 	int i = 0;
 	I_Assert(ev != NULL);
 	I_Assert(ev->type == ev_gamepad_device_removed);
-
-	G_UnregisterAvailableGamepad(ev->device);
 	CONS_Alert(CONS_NOTICE, "Gamepad device %d disconnected\n", ev->device);
 
-	// Downstream responders need to update player gamepad assignments, pause, etc
+	boolean playerinterrupted = false;
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
@@ -238,7 +236,16 @@ static void HandleGamepadDeviceRemoved(event_t *ev)
 		if (device == ev->device)
 		{
 			G_SetDeviceForPlayer(i, -1);
+			playerinterrupted = true;
 		}
+	}
+
+	// Downstream responders need to update player gamepad assignments, pause, etc
+	G_UnregisterAvailableGamepad(ev->device);
+
+	if (playerinterrupted && Playing() && !netgame && !demo.playback)
+	{
+		M_StartControlPanel();
 	}
 }
 
