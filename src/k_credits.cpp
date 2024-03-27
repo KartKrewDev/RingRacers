@@ -369,10 +369,6 @@ static void F_InitCreditsSlide(void)
 		}
 	}
 #endif
-	else if (slide->type == CRED_TYPE_KARTKREW)
-	{
-
-	}
 
 	// Clear the console hud just to avoid anything getting in the way.
 	CON_ClearHUD();
@@ -413,7 +409,6 @@ void F_StartCredits(void)
 	Music_StopAll();
 	S_StopSounds();
 
-	Music_SetFadeOut("credits", 0);
 	F_NewCreditsMusic("_creds", false);
 
 	F_CreditsReset();
@@ -1224,9 +1219,4 @@ void F_CreditDrawer(void)
 		star.x += FixedMul(star.vel_x, renderdeltatics);
 		star.y += FixedMul(star.vel_y, renderdeltatics);
 	}
-}
-
-boolean F_CreditsRunning(void)
-{
-	return gamestate == GS_CREDITS || demo.attract == DEMO_ATTRACT_CREDITS;
 }
