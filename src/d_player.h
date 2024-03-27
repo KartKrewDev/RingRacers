@@ -310,6 +310,7 @@ typedef enum
 	khud_boostcam,		// Camera push forward on boost
 	khud_destboostcam,	// Ditto
 	khud_timeovercam,	// Camera timer for leaving behind or not
+	khud_aircam,		// Camera follows vertically better in the air
 
 	// Sounds
 	khud_enginesnd,		// Engine sound offset this player is using.

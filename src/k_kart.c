@@ -8537,6 +8537,35 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		//CONS_Printf("cam: %d, dest: %d\n", player->karthud[khud_boostcam], player->karthud[khud_destboostcam]);
 	}
 
+	if (onground)
+	{
+		if (player->karthud[khud_aircam] > 0)
+		{
+			player->karthud[khud_aircam] -= FRACUNIT / 5;
+
+			if (player->karthud[khud_aircam] < 0)
+			{
+				player->karthud[khud_aircam] = 0;
+			}
+
+			//CONS_Printf("cam: %f\n", FixedToFloat(player->karthud[khud_aircam]));
+		}
+	}
+	else
+	{
+		if (player->karthud[khud_aircam] < FRACUNIT)
+		{
+			player->karthud[khud_aircam] += FRACUNIT / TICRATE;
+
+			if (player->karthud[khud_aircam] > FRACUNIT)
+			{
+				player->karthud[khud_aircam] = FRACUNIT;
+			}
+
+			//CONS_Printf("cam: %f\n", FixedToFloat(player->karthud[khud_aircam]));
+		}
+	}
+
 	// Make ABSOLUTELY SURE that your flashing tics don't get set WHILE you're still in hit animations.
 	if (player->spinouttimer != 0)
 	{

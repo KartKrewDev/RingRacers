@@ -70,6 +70,7 @@
 #include "k_endcam.h"
 #include "k_credits.h"
 #include "k_hud.h" // K_AddMessage
+#include "m_easing.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_light.h"
@@ -3458,6 +3459,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	if (mo->standingslope)
 	{
 		pitch = (angle_t)FixedMul(P_ReturnThrustX(mo, thiscam->angle - mo->standingslope->xydirection, FRACUNIT), (fixed_t)mo->standingslope->zangle);
+
 		if (mo->eflags & MFE_VERTICALFLIP)
 		{
 			if (pitch >= ANGLE_180)
@@ -3469,6 +3471,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 				pitch = 0;
 		}
 	}
+
 	pitch = thiscam->pitch + (angle_t)FixedMul(pitch - thiscam->pitch, camspeed/4);
 
 	if (rendermode == render_opengl && !cv_glshearing.value)
@@ -3559,7 +3562,14 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	{
 		thiscam->momx = x - thiscam->x;
 		thiscam->momy = y - thiscam->y;
-		thiscam->momz = FixedMul(z - thiscam->z, camspeed*3/5);
+
+		fixed_t z_speed = Easing_Linear(
+			player->karthud[khud_aircam],
+			camspeed * 3 / 5,
+			camspeed
+		);
+
+		thiscam->momz = FixedMul(z - thiscam->z, z_speed);
 	}
 
 	thiscam->pan = pan;
