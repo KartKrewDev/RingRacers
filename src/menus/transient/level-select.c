@@ -751,7 +751,7 @@ void M_LevelSelected(INT16 add, boolean menuupdate)
 				CV_StealthSet(&cv_kartbot, cv_dummymatchbots.string);
 
 			CV_StealthSet(&cv_kartencore, (cv_dummygpencore.value == 1) ? "On" : "Auto");
-			CV_StealthSet(&cv_kartspeed, (cv_dummykartspeed.value == KARTSPEED_NORMAL) ? "Auto" : cv_dummykartspeed.string);
+			CV_StealthSet(&cv_kartspeed, (cv_dummykartspeed.value == KARTSPEED_NORMAL) ? "Auto Gear" : cv_dummykartspeed.string);
 
 			D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_kartencore.value == 1), 1, 1, false, false);
 
