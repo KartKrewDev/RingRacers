@@ -80,7 +80,7 @@ bool award_target(mobj_t* mobj)
 				player->roundconditions.gachabom_miser = 0;
 			
 			//S_StartSoundAtVolume(target, sfx_grbnd3, 255/3);
-			S_StartSound(target, sfx_itpick);
+			S_StartSound(target, sfx_mbs54);
 
 			return true;
 		}

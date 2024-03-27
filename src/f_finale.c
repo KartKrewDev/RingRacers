@@ -530,7 +530,6 @@ static boolean dc_ticking = false;
 static UINT8 dc_bluesegafade = 0;
 static UINT8 dc_textfade = 9;
 static UINT8 dc_subtextfade = 9;
-static UINT8 dc_screenfade = 9;
 
 static void F_DisclaimerAdvanceState(void)
 {
@@ -562,7 +561,6 @@ static void F_DisclaimerDrawScene(void)
 		dc_segaframe = 1;
 		dc_textfade = 9;
 		dc_subtextfade = 9;
-		dc_screenfade = 9;
 		dc_lasttime = intro_curtime;
 	}
 
@@ -692,17 +690,6 @@ static void F_DisclaimerDrawScene(void)
 		Z_Free(newText);
 	}
 
-	// Fade out (would love to use a wipe here, but lmao how the fuck do wipes work)
-	if (dc_state >= DISCLAIMER_OUT)
-	{
-		UINT32 screenalpha = 0;
-
-		if (dc_screenfade > 0)
-			screenalpha = dc_screenfade << V_ALPHASHIFT;
-		
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31|screenalpha);	
-	}
-
 	// ================================= STATE LOGIC
 
 	if (!dc_ticking)
@@ -738,15 +725,6 @@ static void F_DisclaimerDrawScene(void)
 			dc_subtextfade--;
 	}
 
-	// Fade out screen
-	if (dc_state == DISCLAIMER_OUT)
-	{
-		if (dc_screenfade > 0)
-		{
-			dc_screenfade--;
-		}
-	}
-
 	// ================================= STATE TRANSITIONS
 
 	dc_tics++;
@@ -771,6 +749,30 @@ static void F_DisclaimerDrawScene(void)
 
 	if (dc_state == DISCLAIMER_FINAL && timetonext < TICRATE/2)
 		F_DisclaimerAdvanceState();
+
+	if (dc_state == DISCLAIMER_OUT)
+	{
+		F_WipeStartScreen();
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+		F_WipeEndScreen();
+		F_RunWipe(wipe_level_toblack, wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
+
+		if (M_GameTrulyStarted() == false)
+		{
+			D_StartTitle();
+			return;
+		}
+
+		intro_scenenum++;
+		timetonext = introscenetime[intro_scenenum];
+		animtimer = stoptimer = 0;
+		intro_curtime = 0;
+
+		F_WipeStartScreen();
+		F_IntroDrawScene();
+		F_WipeEndScreen();
+		F_RunWipe(wipe_level_toblack, wipedefs[wipe_level_toblack], false, "FADEMAP0", true, false);
+	}
 }
 
 //
@@ -844,16 +846,21 @@ void F_IntroTicker(void)
 	{
 		dc_state = DISCLAIMER_OUT;
 		dc_tics = 0;
-		timetonext = 10;
 	}
 	else if (doskip || timetonext <= 0)
 	{
 		intro_scenenum++;
+
 		INT32 destscenenum = NUMINTROSCENES-1;
 		if (M_GameTrulyStarted() == false)
+		{
 			destscenenum = INTROSCENE_DISCLAIMER;
+		}
 		else if (doskip)
+		{
 			destscenenum = INTROSCENE_KREW;
+		}
+
 		if (intro_scenenum > destscenenum)
 		{
 			D_StartTitle();
@@ -861,9 +868,11 @@ void F_IntroTicker(void)
 			//wipetypepre = INT16_MAX; -- however, this breaks the title screen cacheing and I don't know why and I'm tired of fighting it.
 			return;
 		}
+
 		//F_NewCutscene(introtext[intro_scenenum]);
 		timetonext = introscenetime[intro_scenenum];
 		animtimer = stoptimer = 0;
+
 		if (
 			doskip
 			|| intro_scenenum == INTROSCENE_DISCLAIMER
@@ -874,35 +883,16 @@ void F_IntroTicker(void)
 		}
 	}
 
+	intro_curtime = introscenetime[intro_scenenum] - timetonext;
+
 	if (intro_scenenum == INTROSCENE_KREW)
 	{
 		if (intro_curtime == TICRATE/2)
 			S_StartSound(NULL, sfx_kc5e);
 
-		if (timetonext == 5)
+		if (timetonext == 24)
 			S_StartSound(NULL, sfx_vroom);
-		else if (timetonext == 24)
-		{
-			// Need to use M_Random otherwise it always uses the same sound
-			UINT32 rskin;
-			UINT8 rtaunt;
-			if (skippableallowed)
-			{
-				rskin = R_GetLocalRandomSkin();
-				rtaunt = M_RandomKey(2);
-			}
-			else
-			{
-				rskin = R_SkinAvailableEx("eggman", false);
-				rtaunt = 1;
-			}
-
-			sfxenum_t rsound = skins[rskin].soundsid[SKSKBST1+rtaunt];
-			S_StartSound(NULL, rsound);
-		}
 	}
-
-	intro_curtime = introscenetime[intro_scenenum] - timetonext;
 
 	F_WriteText();
 

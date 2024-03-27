@@ -13205,7 +13205,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,         // missilestate
 		S_NULL,         // deathstate
 		S_NULL,         // xdeathstate
-		sfx_itpick,     // deathsound
+		sfx_mbs54,      // deathsound
 		0,              // speed
 		48*FRACUNIT,    // radius
 		64*FRACUNIT,    // height
@@ -13232,7 +13232,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,         // missilestate
 		S_NULL,         // deathstate
 		S_NULL,         // xdeathstate
-		sfx_itpick,     // deathsound
+		sfx_mbs54,      // deathsound
 		0,              // speed
 		48*FRACUNIT,    // radius
 		64*FRACUNIT,    // height

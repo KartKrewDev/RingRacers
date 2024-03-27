@@ -1047,7 +1047,6 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"ruburn", false,  48,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Rubber-burn turn ambient
   {"ddash",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Respawn Drop Dash
   {"tossed", false, 192,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Item fired
-  {"itpick", false, 128,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Pick up HUD drop
   {"peel",   false,  96,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Edited S25A for banana landing
   {"hogbom", false,  96,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Ballhog explosions
   {"zio3",   false, 128,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Thunder Shield use
