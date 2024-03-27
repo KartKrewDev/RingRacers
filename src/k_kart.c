@@ -13834,7 +13834,7 @@ void K_EggmanTransfer(player_t *source, player_t *victim)
 	source->eggmanblame = -1;
 	K_StopRoulette(&source->itemRoulette);
 
-	source->eggmanTransferDelay = 10;
+	source->eggmanTransferDelay = 20;
 	victim->eggmanTransferDelay = 10;
 
 	S_StopSoundByID(source->mo, sfx_s3k53);
