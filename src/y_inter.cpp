@@ -391,7 +391,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 					snprintf(data.headerstring,
 						sizeof data.headerstring,
 						"%s",
-						skins[players[i].skin].realname);
+						R_CanShowSkinInDemo(players[i].skin) ? skins[players[i].skin].realname : "???");
 				}
 
 				data.showroundnum = true;
@@ -558,7 +558,11 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 		else
 		{
 			UINT8 *charcolormap = NULL;
-			if (standings->color[i] != SKINCOLOR_NONE)
+			if (!R_CanShowSkinInDemo(standings->character[i]))
+			{
+				charcolormap = R_GetTranslationColormap(TC_BLINK, static_cast<skincolornum_t>(standings->color[i]), GTC_CACHE);
+			}
+			else if (standings->color[i] != SKINCOLOR_NONE)
 			{
 				charcolormap = R_GetTranslationColormap(standings->character[i], static_cast<skincolornum_t>(standings->color[i]), GTC_CACHE);
 			}
@@ -646,7 +650,10 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 				else
 				{
 					charcolormap = R_GetTranslationColormap(standings->character[i], static_cast<skincolornum_t>(standings->color[i]), GTC_CACHE);
-					V_DrawMappedPatch(x+14, y-5, 0, faceprefix[standings->character[i]][FACE_MINIMAP], charcolormap);
+					V_DrawMappedPatch(x+14, y-5, 0,
+						R_CanShowSkinInDemo(standings->character[i]) ?
+						faceprefix[standings->character[i]][FACE_MINIMAP] : kp_unknownminimap,
+						charcolormap);
 				}
 			}
 

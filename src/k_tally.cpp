@@ -425,7 +425,7 @@ void level_tally_t::Init(player_t *player)
 			{
 				snprintf(
 					header, sizeof header,
-					"%s", skins[player->skin].realname
+					"%s", R_CanShowSkinInDemo(player->skin) ? skins[player->skin].realname : "???"
 				);
 			}
 
