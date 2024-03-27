@@ -724,7 +724,7 @@ void KartFrantic_OnChange(void);
 consvar_t cv_kartfrantic = UnsavedNetVar("franticitems", "Off").on_off().onchange_noinit(KartFrantic_OnChange);
 
 void KartSpeed_OnChange(void);
-consvar_t cv_kartspeed = UnsavedNetVar("gamespeed", "Auto").values(kartspeed_cons_t).onchange_noinit(KartSpeed_OnChange);
+consvar_t cv_kartspeed = UnsavedNetVar("gamespeed", "Auto Gear").values(kartspeed_cons_t).onchange_noinit(KartSpeed_OnChange);
 
 consvar_t cv_kartusepwrlv = UnsavedNetVar("usepwrlv", "Yes").yes_no();
 

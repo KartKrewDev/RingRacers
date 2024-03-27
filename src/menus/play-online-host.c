@@ -5,10 +5,41 @@
 #include "../s_sound.h"
 #include "../z_zone.h"
 #include "../mserv.h"
+#include "../v_video.h"
+#include "../m_easing.h"
 
 static void draw_routine(void)
 {
 	M_DrawRaceDifficulty();
+
+	INT32 tx = M_EaseWithTransition(Easing_Linear, 5 * 48);
+
+	if (gametypes[menugametype]->rules & GTR_CIRCUIT) // TODO: speed == KARTSPEED_AUTO
+	{
+		V_DrawRightAlignedThinString(
+			294 + tx,
+			84,
+			highlightflags,
+			va("(%s)", cv_kartspeed.string)
+		);
+	}
+	else
+	{
+		V_DrawRightAlignedThinString(
+			294 + tx,
+			84,
+			highlightflags,
+			"(Time/Points)"
+		);
+	}
+
+	V_DrawRightAlignedThinString(
+		294 + tx,
+		98,
+		!CV_IsSetToDefault(&cv_advertise) ? warningflags : highlightflags,
+		va("(Advertise: %s)", cv_advertise.string)
+	);
+
 	M_DrawMasterServerReminder();
 }
 
