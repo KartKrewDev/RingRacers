@@ -744,6 +744,12 @@ static void F_DisclaimerDrawScene(void)
 		F_WipeEndScreen();
 		F_RunWipe(wipe_level_toblack, wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
 
+		if (M_GameTrulyStarted() == false)
+		{
+			D_StartTitle();
+			return;
+		}
+
 		intro_scenenum++;
 		timetonext = introscenetime[intro_scenenum];
 		animtimer = stoptimer = 0;
