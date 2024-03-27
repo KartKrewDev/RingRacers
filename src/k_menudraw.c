@@ -2764,9 +2764,12 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *baselevelsearch)
 
 	UINT8 i = 0;
 	INT16 maxlevels = M_CountLevelsToShowInList(&locklesslevelsearch);
-	const fixed_t step = (82 * FRACUNIT);
-	fixed_t previewanimwork = (cupgrid.previewanim * FRACUNIT) + rendertimefrac_unpaused;
-	fixed_t x = -(previewanimwork % step);
+	const UINT32 ustep = 82;
+	const fixed_t fracstep = (ustep * FRACUNIT);
+
+	UINT32 unsignedportion = 0;
+	fixed_t x = 0;
+
 	INT16 map, start = M_GetFirstLevelInList(&i, &locklesslevelsearch);
 	UINT8 starti = i;
 
@@ -2774,7 +2777,10 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *baselevelsearch)
 
 	if (baselevelsearch->cup && maxlevels > 0)
 	{
-		INT16 add = (previewanimwork / step) % maxlevels;
+		unsignedportion = (cupgrid.previewanim % (maxlevels * ustep));
+		x = (unsignedportion * FRACUNIT) + rendertimefrac_unpaused;
+
+		INT16 add = (x / fracstep) % maxlevels;
 		map = start;
 		while (add > 0)
 		{
@@ -2787,6 +2793,8 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *baselevelsearch)
 
 			add--;
 		}
+
+		x = -(x % fracstep);
 		while (x < BASEVIDWIDTH * FRACUNIT)
 		{
 			if (map >= nummapheaders)
@@ -2814,17 +2822,21 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *baselevelsearch)
 					NULL);
 			}
 
-			x += step;
+			x += fracstep;
 
 			map = M_GetNextLevelInList(map, &i, &locklesslevelsearch);
 		}
 	}
 	else
 	{
+		unsignedportion = (cupgrid.previewanim % ustep);
+		x = (unsignedportion * FRACUNIT) + rendertimefrac_unpaused;
+
+		x = -(x % fracstep);
 		while (x < BASEVIDWIDTH * FRACUNIT)
 		{
 			V_DrawFixedPatch(x + FRACUNIT, (y+2) * FRACUNIT, FRACUNIT, 0, staticpat, NULL);
-			x += step;
+			x += fracstep;
 		}
 	}
 }
