@@ -241,7 +241,11 @@ void K_UpdateMatchRaceBots(void)
 	}
 	grabskins[usableskins] = MAXSKINS;
 
-	if ((gametyperules & GTR_BOTS) == 0 && !cv_forcebots.value)
+	if (gamestate == GS_TITLESCREEN)
+	{
+		difficulty = 0;
+	}
+	else if ((gametyperules & GTR_BOTS) == 0 && !cv_forcebots.value)
 	{
 		difficulty = 0;
 	}
