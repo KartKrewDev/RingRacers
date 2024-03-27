@@ -5248,6 +5248,24 @@ static void K_drawInput(void)
 	char mode = ((stplyr->pflags & PF_ANALOGSTICK) ? '4' : '2') + (r_splitscreen > 1);
 	bool local = !demo.playback && P_IsMachineLocalPlayer(stplyr);
 	fixed_t slide = K_GetDialogueSlide(FRACUNIT);
+	INT32 tallySlide = []
+	{
+		if (r_splitscreen <= 1)
+		{
+			return 0;
+		}
+		if (!stplyr->tally.active)
+		{
+			return 0;
+		}
+		constexpr INT32 kSlideDown = 22;
+		if (stplyr->tally.state == TALLY_ST_GOTTHRU_SLIDEIN ||
+			stplyr->tally.state == TALLY_ST_GAMEOVER_SLIDEIN)
+		{
+			return Easing_OutQuad(std::min<fixed_t>(stplyr->tally.transition * 2, FRACUNIT), 0, kSlideDown);
+		}
+		return kSlideDown;
+	}();
 	if (slide)
 		flags &= ~(V_SNAPTORIGHT); // don't draw underneath the dialogue box in non-green resolutions
 
@@ -5264,7 +5282,7 @@ static void K_drawInput(void)
 
 	K_DrawInputDisplay(
 		def[k][0] - FixedToFloat(34 * slide),
-		def[k][1] - FixedToFloat(51 * slide),
+		def[k][1] - FixedToFloat(51 * slide) + tallySlide,
 		flags,
 		mode,
 		(local ? G_LocalSplitscreenPartyPosition : G_PartyPosition)(stplyr - players),
