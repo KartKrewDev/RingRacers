@@ -3113,8 +3113,6 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud, boolean doall)
 		response++;
 	}
 
-	response += newkeys;
-
 	// Announce
 	if (response != 0)
 	{
@@ -3124,6 +3122,16 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud, boolean doall)
 		}
 		return true;
 	}
+
+	if (newkeys != 0)
+	{
+		if (loud)
+		{
+			S_StartSound(NULL, sfx_keygen);
+		}
+		return true;
+	}
+
 	return false;
 }
 

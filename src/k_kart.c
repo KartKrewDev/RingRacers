@@ -207,7 +207,7 @@ void K_TimerInit(void)
 	}
 	else if (skipstats != 0 && bossintro == false)
 	{
-		S_StartSound(NULL, sfx_s26c); //sfx_endwrp
+		S_StartSound(NULL, sfx_s26c);
 	}
 
 	if ((gametyperules & (GTR_CATCHER|GTR_CIRCUIT)) == (GTR_CATCHER|GTR_CIRCUIT))

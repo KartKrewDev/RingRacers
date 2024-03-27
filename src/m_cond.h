@@ -286,6 +286,7 @@ typedef enum {
 	GDMUSIC_KEYG,
 	GDMUSIC_KEEPONMENU, // Minimum to keep after leaving the Challenge Grid
 	GDMUSIC_LOSERCLUB = GDMUSIC_KEEPONMENU,
+	GDMUSIC_TRACK10,
 	GDMUSIC_MAX
 } gdmusic_t;
 

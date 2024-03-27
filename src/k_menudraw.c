@@ -6417,9 +6417,9 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flash
 
 #ifdef DEVELOP
 	if (cv_debugchallenges.value > 0 &&
-		cv_debugchallenges.value != ref->conditionset)
+		cv_debugchallenges.value != num+1)
 	{
-		// Searching for a conditionset, fade out any tiles
+		// Searching for an unlockable ID, fade out any tiles
 		// that don't match.
 		tileflags = V_80TRANS;
 	}
@@ -6749,7 +6749,7 @@ drawborder:
 		// Display the conditionset for this tile.
 		V_DrawThinString(x, y,
 			ref->conditionset == cv_debugchallenges.value ? V_AQUAMAP : V_GRAYMAP,
-			va("%u", ref->conditionset));
+			va("%u", num+1));
 	}
 #endif
 }
@@ -7508,6 +7508,10 @@ static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 
 static void M_DrawChallengeScrollBar(UINT8 *flashmap)
 {
+#ifdef DEVELOP
+	extern consvar_t cv_debugchallenges;
+#endif
+
 	const INT32 bary = 4, barh = 1, hiliw = 1;
 
 	if (!gamedata->challengegrid || !gamedata->challengegridwidth)
@@ -7574,7 +7578,21 @@ static void M_DrawChallengeScrollBar(UINT8 *flashmap)
 		if (gamedata->challengegrid[i] >= MAXUNLOCKABLES)
 			continue;
 
-		if (gamedata->unlocked[gamedata->challengegrid[i]] && completionamount != -1)
+#ifdef DEVELOP
+		if (cv_debugchallenges.value > 0
+		&& cv_debugchallenges.value == gamedata->challengegrid[i]+1)
+		{
+			V_DrawFill(barx + hilix, bary, hiliw, barh, (challengesmenu.ticker & 2) ? 0 : 32);
+
+			// The debug fill overrides everything else.
+			completionamount = -1;
+		}
+#endif
+
+		if (completionamount == -1)
+			continue;
+
+		if (gamedata->unlocked[gamedata->challengegrid[i]])
 		{
 			completionamount += (10/CHALLENGEGRIDHEIGHT);
 

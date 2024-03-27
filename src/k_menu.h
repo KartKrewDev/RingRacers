@@ -1405,8 +1405,6 @@ extern struct challengesmenu_s {
 	boolean chaokeyadd, keywasadded;
 	UINT8 chaokeyhold;
 
-	boolean considersealedswapalert;
-
 	boolean requestflip;
 
 	UINT16 unlockcount[CMC_MAX];
