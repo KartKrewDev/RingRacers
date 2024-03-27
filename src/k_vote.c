@@ -660,7 +660,7 @@ static void Y_DrawCatcher(y_vote_catcher *catcher)
 //
 static void Y_DrawVoteBackground(void)
 {
-	static fixed_t bgTimer = 0;
+	static UINT32 bgTimer = 0;
 
 	static fixed_t derrPos = 0;
 	const fixed_t derrLoop = vote_draw.bg_derrText->width * FRACUNIT;
