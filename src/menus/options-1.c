@@ -5,6 +5,7 @@
 #include "../k_menu.h"
 #include "../k_grandprix.h" // K_CanChangeRules
 #include "../m_cond.h" // Condition Sets
+#include "../k_follower.h"
 #include "../s_sound.h"
 
 // options menu --  see mopt_e
@@ -96,6 +97,7 @@ void M_InitOptions(INT32 choice)
 			(M_SecretUnlocked(SECRET_ENCORE, false) ? (IT_STRING | IT_CVAR) : IT_DISABLED);
 	}
 
+	// Data Options
 	OPTIONS_DataAdvancedDef.menuitems[daopt_addon].status = (M_SecretUnlocked(SECRET_ADDONS, true)
 		? (IT_STRING | IT_SUBMENU)
 		: (IT_NOTHING | IT_SPACE));

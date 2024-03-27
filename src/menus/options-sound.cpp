@@ -210,7 +210,28 @@ void tick_routine(void)
 
 void init_routine(void)
 {
+	OPTIONS_Sound[sopt_followhorns].status = IT_SECRET;
 	OPTIONS_Sound[sopt_attackmusic].status = IT_SECRET;
+
+	// We show a kindness. If you have online available,
+	// even if you haven't found a single Follower, you
+	// should be able to turn off other people's horns.
+	bool allow = M_SecretUnlocked(SECRET_ONLINE, true);
+	if (!allow)
+	{
+		UINT16 j;
+		for (j = 0; j < numfollowers; j++)
+		{
+			if (!K_FollowerUsable(j))
+				continue;
+
+			allow = true;
+			break;
+		}
+	}
+
+	if (allow)
+		OPTIONS_Sound[sopt_followhorns].status = IT_STRING | IT_CVAR;
 
 	if (M_SecretUnlocked(SECRET_TIMEATTACK, true) ||
 		M_SecretUnlocked(SECRET_PRISONBREAK, true) ||
@@ -252,16 +273,22 @@ menuitem_t OPTIONS_Sound[] =
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 
+	{IT_HEADER, "Preferences...",  NULL,
+		NULL, {NULL}, 0, 0},
+
 	{IT_STRING | IT_CVAR, "Chat Notifications", "Play a sound effect when chat messages appear.",
 		NULL, {.cvar = &cv_chatnotifications}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Character Voices", "How often to play character voices in a race.",
+	{IT_STRING | IT_CVAR, "Character Voices", "How often to play character voices in a round.",
 		NULL, {.cvar = &cv_kartvoices}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Follower Horns", "How often to play follower horns in a round.",
+		NULL, {.cvar = &cv_karthorns}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Continuous Attack Music", "Keep music playing seamlessly when retrying in Attack modes.",
 		NULL, {.cvar = &cv_continuousmusic}, 0, 0},
 
-	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+	{IT_SPACE | IT_DYBIGSPACE, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 
 	{IT_HEADER, "Advanced...",  NULL,
