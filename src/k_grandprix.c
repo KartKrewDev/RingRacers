@@ -104,15 +104,11 @@ INT16 K_CalculateGPRankPoints(UINT8 position, UINT8 numplayers)
 --------------------------------------------------*/
 UINT8 K_GetGPPlayerCount(UINT8 humans)
 {
-	UINT8 playerCount = 8;
-
-	if (humans > 2)
-	{
-		// Add 3 bots per player beyond 2P
-		playerCount += (humans - 2) * 3;
-	}
-
-	return playerCount;
+	// 1P -> 8 total
+	// 2P -> 8 total
+	// 3P -> 12 total
+	// 4P -> 16 total
+	return max(min(humans * 4, MAXPLAYERS), 8);
 }
 
 /*--------------------------------------------------
