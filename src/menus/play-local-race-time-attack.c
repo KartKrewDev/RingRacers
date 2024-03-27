@@ -337,7 +337,18 @@ void CV_SPBAttackChanged(void)
 		{
 			extern CV_PossibleValue_t dummystaff_cons_t[];
 			dummystaff_cons_t[1].value = mapheaderinfo[levellist.choosemap]->ghostCount-1;
-			CV_SetValue(&cv_dummystaff, 0);
+
+			// LAST MINUTE SANITY
+			static UINT16 laststaffmap = NEXTMAP_INVALID;
+			if (laststaffmap != levellist.choosemap || cv_dummystaff.value < dummystaff_cons_t[0].value)
+			{
+				laststaffmap = levellist.choosemap;
+				CV_SetValue(&cv_dummystaff, dummystaff_cons_t[0].value);
+			}
+			else if (cv_dummystaff.value > dummystaff_cons_t[1].value)
+			{
+				CV_SetValue(&cv_dummystaff, dummystaff_cons_t[1].value);
+			}
 
 			PLAY_TAReplay[tareplay_staff].status = IT_STRING|IT_ARROWS;
 			PLAY_TAGhosts[taghost_staff].status = IT_STRING|IT_CVAR;
@@ -416,7 +427,7 @@ void M_HandleStaffReplay(INT32 choice)
 	{
 		mapheader_t *mapheader;
 		staffbrief_t *staffbrief;
-		restoreMenu = &PLAY_TimeAttackDef;
+		restoreMenu = &PLAY_TAReplayDef;
 
 		M_ClearMenus(true);
 		demo.loadfiles = false;
@@ -473,7 +484,7 @@ void M_ReplayTimeAttack(INT32 choice)
 		return;
 	}
 
-	restoreMenu = &PLAY_TimeAttackDef;
+	restoreMenu = &PLAY_TAReplayDef;
 
 	M_ClearMenus(true);
 	demo.loadfiles = false;
