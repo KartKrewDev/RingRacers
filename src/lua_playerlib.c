@@ -241,19 +241,19 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->spinouttimer);
 	else if (fastcmp(field,"instashield"))
 		lua_pushinteger(L, plr->instashield);
-	else if (fastcmp(field,"nullhitlag"))
+	else if (fastcmp(field,"nullHitlag"))
 		lua_pushinteger(L, plr->nullHitlag);
 	else if (fastcmp(field,"wipeoutslow"))
 		lua_pushinteger(L, plr->wipeoutslow);
 	else if (fastcmp(field,"justbumped"))
 		lua_pushinteger(L, plr->justbumped);
-	else if (fastcmp(field,"tumblebounces"))
+	else if (fastcmp(field,"tumbleBounces"))
 		lua_pushinteger(L, plr->tumbleBounces);
-	else if (fastcmp(field,"tumbleheight"))
+	else if (fastcmp(field,"tumbleHeight"))
 		lua_pushinteger(L, plr->tumbleHeight);
-	else if (fastcmp(field,"justdi"))
+	else if (fastcmp(field,"justDI"))
 		lua_pushinteger(L, plr->justDI);
-	else if (fastcmp(field,"flipdi"))
+	else if (fastcmp(field,"flipDI"))
 		lua_pushboolean(L, plr->flipDI);
 	else if (fastcmp(field,"analoginput"))
 		lua_pushboolean(L, plr->analoginput);
@@ -285,9 +285,9 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->driftboost);
 	else if (fastcmp(field,"strongdriftboost"))
 		lua_pushinteger(L, plr->strongdriftboost);
-	else if (fastcmp(field,"gateboost"))
+	else if (fastcmp(field,"gateBoost"))
 		lua_pushinteger(L, plr->gateBoost);
-	else if (fastcmp(field,"gatesound"))
+	else if (fastcmp(field,"gateSound"))
 		lua_pushinteger(L, plr->gateSound);
 	else if (fastcmp(field,"aizdriftstraft"))
 		lua_pushinteger(L, plr->aizdriftstrat);
@@ -315,7 +315,7 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->spindashboost);
 	else if (fastcmp(field,"fastfall"))
 		lua_pushfixed(L, plr->fastfall);
-	else if (fastcmp(field,"fastfallbase"))
+	else if (fastcmp(field,"fastfallBase"))
 		lua_pushfixed(L, plr->fastfallBase);
 	else if (fastcmp(field,"numboosts"))
 		lua_pushinteger(L, plr->numboosts);
@@ -335,13 +335,13 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->draftleeway);
 	else if (fastcmp(field,"lastdraft"))
 		lua_pushinteger(L, plr->lastdraft);
-	else if (fastcmp(field,"tripwirestate"))
+	else if (fastcmp(field,"tripwireState"))
 		lua_pushinteger(L, plr->tripwireState);
-	else if (fastcmp(field,"tripwirepass"))
+	else if (fastcmp(field,"tripwirePass"))
 		lua_pushinteger(L, plr->tripwirePass);
-	else if (fastcmp(field,"tripwireleniency"))
+	else if (fastcmp(field,"tripwireLeniency"))
 		lua_pushinteger(L, plr->tripwireLeniency);
-	else if (fastcmp(field,"tripwirerebounddelay"))
+	else if (fastcmp(field,"tripwireReboundDelay"))
 		lua_pushinteger(L, plr->tripwireReboundDelay);
 	else if (fastcmp(field,"wavedash"))
 		lua_pushinteger(L, plr->wavedash);
@@ -363,19 +363,19 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->lastsafelap);
 	else if (fastcmp(field,"lastsafecheatcheck"))
 		lua_pushinteger(L, plr->lastsafecheatcheck);
-	else if (fastcmp(field,"topaccel"))
+	else if (fastcmp(field,"topAccel"))
 		lua_pushinteger(L, plr->topAccel);
-	else if (fastcmp(field,"instawhipcharge"))
+	else if (fastcmp(field,"instaWhipCharge"))
 		lua_pushinteger(L, plr->instaWhipCharge);
 	else if (fastcmp(field,"pitblame"))
 		lua_pushinteger(L, plr->pitblame);
-	else if (fastcmp(field,"defenselockout"))
+	else if (fastcmp(field,"defenseLockout"))
 		lua_pushinteger(L, plr->defenseLockout);
-	else if (fastcmp(field,"oldguard"))
+	else if (fastcmp(field,"oldGuard"))
 		lua_pushinteger(L, plr->oldGuard);
 	else if (fastcmp(field,"preventfailsafe"))
 		lua_pushinteger(L, plr->preventfailsafe);
-	else if (fastcmp(field,"tripwireunstuck"))
+	else if (fastcmp(field,"tripwireUnstuck"))
 		lua_pushinteger(L, plr->tripwireUnstuck);
 	/*
 	else if (fastcmp(field,"itemroulette"))
@@ -453,11 +453,11 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->lastjawztarget);
 	else if (fastcmp(field,"jawztargetdelay"))
 		lua_pushinteger(L, plr->jawztargetdelay);
-	else if (fastcmp(field,"confirmvictim"))
+	else if (fastcmp(field,"confirmVictim"))
 		lua_pushinteger(L, plr->confirmVictim);
-	else if (fastcmp(field,"confirmvictimdelay"))
+	else if (fastcmp(field,"confirmVictimDelay"))
 		lua_pushinteger(L, plr->confirmVictimDelay);
-	else if (fastcmp(field,"glancedir"))
+	else if (fastcmp(field,"glanceDir"))
 		lua_pushinteger(L, plr->glanceDir);
 	else if (fastcmp(field,"trickpanel"))
 		lua_pushinteger(L, plr->trickpanel);
@@ -469,9 +469,9 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->trickboostdecay);
 	else if (fastcmp(field,"trickboost"))
 		lua_pushinteger(L, plr->trickboost);
-	else if (fastcmp(field,"dashringpulltics"))
+	else if (fastcmp(field,"dashRingPullTics"))
 		lua_pushinteger(L, plr->dashRingPullTics);
-	else if (fastcmp(field,"dashringpushtics"))
+	else if (fastcmp(field,"dashRingPushTics"))
 		lua_pushinteger(L, plr->dashRingPushTics);
 	else if (fastcmp(field,"roundscore"))
 		lua_pushinteger(L, plr->roundscore);
@@ -655,13 +655,13 @@ static int player_get(lua_State *L)
 		lua_pushboolean(L, plr->bot);
 	else if (fastcmp(field,"jointime"))
 		lua_pushinteger(L, plr->jointime);
-	else if (fastcmp(field,"spectatorreentry"))
+	else if (fastcmp(field,"spectatorReentry"))
 		lua_pushinteger(L, plr->spectatorReentry);
-	else if (fastcmp(field,"griefvalue"))
+	else if (fastcmp(field,"griefValue"))
 		lua_pushinteger(L, plr->griefValue);
-	else if (fastcmp(field,"griefstrikes"))
+	else if (fastcmp(field,"griefStrikes"))
 		lua_pushinteger(L, plr->griefStrikes);
-	else if (fastcmp(field,"griefwarned"))
+	else if (fastcmp(field,"griefWarned"))
 		lua_pushinteger(L, plr->griefWarned);		
 	else if (fastcmp(field,"splitscreenindex"))
 		lua_pushinteger(L, plr->splitscreenindex);
@@ -671,7 +671,7 @@ static int player_get(lua_State *L)
 #endif
 	else if (fastcmp(field,"ping"))
 		lua_pushinteger(L, playerpingtable[( plr - players )]);
-	else if (fastcmp(field, "publickey"))
+	else if (fastcmp(field, "public_key"))
 		lua_pushstring(L, GetPrettyRRID(plr->public_key, false));
 	else {
 		lua_getfield(L, LUA_REGISTRYINDEX, LREG_EXTVARS);
@@ -787,19 +787,19 @@ static int player_set(lua_State *L)
 		plr->spinouttimer = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"instashield"))
 		plr->instashield = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"nullhitlag"))
+	else if (fastcmp(field,"nullHitlag"))
 		plr->nullHitlag = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"wipeoutslow"))
 		plr->wipeoutslow = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"justbumped"))
 		plr->justbumped = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"tumblebounces"))
+	else if (fastcmp(field,"tumbleBounces"))
 		plr->tumbleBounces = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"tumbleheight"))
+	else if (fastcmp(field,"tumbleHeight"))
 		plr->tumbleHeight = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"justdi"))
+	else if (fastcmp(field,"justDI"))
 		plr->justDI = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"flipdi"))
+	else if (fastcmp(field,"flipDI"))
 		plr->flipDI = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"incontrol"))
 		plr->incontrol = luaL_checkinteger(L, 3);
@@ -831,9 +831,9 @@ static int player_set(lua_State *L)
 		plr->driftboost = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"strongdriftboost"))
 		plr->strongdriftboost = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"gateboost"))
+	else if (fastcmp(field,"gateBoost"))
 		plr->gateBoost = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"gatesound"))
+	else if (fastcmp(field,"gateSound"))
 		plr->gateSound = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"aizdriftstraft"))
 		plr->aizdriftstrat = luaL_checkinteger(L, 3);
@@ -859,7 +859,7 @@ static int player_set(lua_State *L)
 		plr->spindashboost = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"fastfall"))
 		plr->fastfall = luaL_checkfixed(L, 3);
-	else if (fastcmp(field,"fastfallbase"))
+	else if (fastcmp(field,"fastfallBase"))
 		plr->fastfallBase = luaL_checkfixed(L, 3);
 	else if (fastcmp(field,"numboosts"))
 		plr->numboosts = luaL_checkinteger(L, 3);
@@ -879,13 +879,13 @@ static int player_set(lua_State *L)
 		plr->draftleeway = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"lastdraft"))
 		plr->lastdraft = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"tripwirestate"))
+	else if (fastcmp(field,"tripwireState"))
 		plr->tripwireState = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"tripwirepass"))
+	else if (fastcmp(field,"tripwirePass"))
 		plr->tripwirePass = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"tripwireleniency"))
+	else if (fastcmp(field,"tripwireLeniency"))
 		plr->tripwireLeniency = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"tripwirerebounddelay"))
+	else if (fastcmp(field,"tripwireReboundDelay"))
 		plr->tripwireReboundDelay = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"wavedash"))
 		plr->wavedash = luaL_checkinteger(L, 3);
@@ -907,19 +907,19 @@ static int player_set(lua_State *L)
 		plr->lastsafelap = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"lastsafecheatcheck"))
 		plr->lastsafecheatcheck = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"topaccel"))
+	else if (fastcmp(field,"topAccel"))
 		plr->topAccel = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"instawhipcharge"))
+	else if (fastcmp(field,"instaWhipCharge"))
 		plr->instaWhipCharge = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"pitblame"))
 		plr->pitblame = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"defenselockout"))
+	else if (fastcmp(field,"defenseLockout"))
 		plr->defenseLockout = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"oldguard"))
+	else if (fastcmp(field,"oldGuard"))
 		plr->oldGuard = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"preventfailsafe"))
 		plr->preventfailsafe = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"tripwireunstuck"))
+	else if (fastcmp(field,"tripwireUnstuck"))
 		plr->tripwireUnstuck = luaL_checkinteger(L, 3);
 	/*
 	else if (fastcmp(field,"itemroulette"))
@@ -997,11 +997,11 @@ static int player_set(lua_State *L)
 		plr->lastjawztarget = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"jawztargetdelay"))
 		plr->jawztargetdelay = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"confirmvictim"))
+	else if (fastcmp(field,"confirmVictim"))
 		plr->confirmVictim = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"confirmvictimdelay"))
+	else if (fastcmp(field,"confirmVictimDelay"))
 		plr->confirmVictimDelay = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"glancedir"))
+	else if (fastcmp(field,"glanceDir"))
 		plr->glanceDir = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"trickpanel"))
 		plr->trickpanel = luaL_checkinteger(L, 3);
@@ -1013,9 +1013,9 @@ static int player_set(lua_State *L)
 		plr->trickboostdecay = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"trickboost"))
 		plr->trickboost = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"dashringpulltics"))
+	else if (fastcmp(field,"dashRingPullTics"))
 		plr->dashRingPullTics = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"dashringpushtics"))
+	else if (fastcmp(field,"dashRingPushTics"))
 		plr->dashRingPushTics = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"roundscore"))
 		plr->roundscore = luaL_checkinteger(L, 3);
@@ -1194,13 +1194,13 @@ static int player_set(lua_State *L)
 		return NOSET;
 	else if (fastcmp(field,"jointime"))
 		return NOSET;
-	else if (fastcmp(field,"spectatorreentry"))
+	else if (fastcmp(field,"spectatorReentry"))
 		plr->spectatorReentry = (UINT32)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"griefvalue"))
+	else if (fastcmp(field,"griefValue"))
 		plr->griefValue = (UINT32)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"griefstrikes"))
+	else if (fastcmp(field,"griefStrikes"))
 		plr->griefStrikes = (UINT8)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"griefwarned"))
+	else if (fastcmp(field,"griefWarned"))
 		plr->griefWarned = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"splitscreenindex"))
 		return NOSET;
