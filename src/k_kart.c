@@ -2693,37 +2693,61 @@ static void K_RegularVoiceTimers(player_t *player)
 		player->karthud[khud_tauntvoices] = 4*TICRATE;
 }
 
-void K_PlayAttackTaunt(mobj_t *source)
+static UINT8 K_ObjectToSkinIDForSounds(mobj_t *source)
 {
-	sfxenum_t pick = P_RandomKey(PR_VOICES, 2); // Gotta roll the RNG every time this is called for sync reasons
-	boolean tasteful = (!source->player || !source->player->karthud[khud_tauntvoices]);
+	if (source->player)
+		return source->player->skin;
 
-	if (cv_kartvoices.value && (tasteful || cv_kartvoices.value == 2))
-		S_StartSound(source, sfx_kattk1+pick);
+	if (!source->skin)
+		return MAXSKINS;
+
+	return ((skin_t *)source->skin)-skins;
+}
+
+static void K_PlayGenericTastefulTaunt(mobj_t *source, sfxenum_t sfx_id)
+{
+	UINT8 skinid = K_ObjectToSkinIDForSounds(source);
+	if (skinid >= numskins)
+		return;
+
+	boolean tasteful = (!source->player || source->player->karthud[khud_tauntvoices]);
+
+	if (
+		cv_kartvoices.value
+		&& (tasteful || cv_kartvoices.value == 2)
+		&& R_CanShowSkinInDemo(skinid)
+	)
+	{
+		S_StartSound(source, sfx_id);
+	}
 
 	if (!tasteful)
 		return;
 
 	K_TauntVoiceTimers(source->player);
+}
+
+void K_PlayAttackTaunt(mobj_t *source)
+{
+	// Gotta roll the RNG every time this is called for sync reasons
+	sfxenum_t pick = P_RandomKey(PR_VOICES, 2);
+	K_PlayGenericTastefulTaunt(source, sfx_kattk1+pick);
 }
 
 void K_PlayBoostTaunt(mobj_t *source)
 {
-	sfxenum_t pick = P_RandomKey(PR_VOICES, 2); // Gotta roll the RNG every time this is called for sync reasons
-	boolean tasteful = (!source->player || !source->player->karthud[khud_tauntvoices]);
-
-	if (cv_kartvoices.value && (tasteful || cv_kartvoices.value == 2))
-		S_StartSound(source, sfx_kbost1+pick);
-
-	if (!tasteful)
-		return;
-
-	K_TauntVoiceTimers(source->player);
+	// Gotta roll the RNG every time this is called for sync reasons
+	sfxenum_t pick = P_RandomKey(PR_VOICES, 2);
+	K_PlayGenericTastefulTaunt(source, sfx_kbost1+pick);
 }
 
 void K_PlayOvertakeSound(mobj_t *source)
 {
-	boolean tasteful = (!source->player || !source->player->karthud[khud_voices]);
+	UINT8 skinid = K_ObjectToSkinIDForSounds(source);
+	if (skinid >= numskins)
+		return;
+
+	boolean tasteful = (!source->player || source->player->karthud[khud_voices]);
 
 	if (!(gametyperules & GTR_CIRCUIT)) // Only in race
 		return;
@@ -2732,8 +2756,14 @@ void K_PlayOvertakeSound(mobj_t *source)
 	if (leveltime < starttime+(10*TICRATE))
 		return;
 
-	if (cv_kartvoices.value && (tasteful || cv_kartvoices.value == 2))
+	if (
+		cv_kartvoices.value
+		&& (tasteful || cv_kartvoices.value == 2)
+		&& R_CanShowSkinInDemo(skinid)
+	)
+	{
 		S_StartSound(source, sfx_kslow);
+	}
 
 	if (!tasteful)
 		return;
@@ -2741,11 +2771,12 @@ void K_PlayOvertakeSound(mobj_t *source)
 	K_RegularVoiceTimers(source->player);
 }
 
-void K_PlayPainSound(mobj_t *source, mobj_t *other)
+static void K_PlayGenericCombatSound(mobj_t *source, mobj_t *other, sfxenum_t sfx_id)
 {
-	sfxenum_t pick = P_RandomKey(PR_VOICES, 2); // Gotta roll the RNG every time this is called for sync reasons
-	skin_t *skin = (source->player ? &skins[source->player->skin] : ((skin_t *)source->skin));
-	sfxenum_t sfx_id = skin->soundsid[S_sfx[sfx_khurt1 + pick].skinsound];
+	UINT8 skinid = K_ObjectToSkinIDForSounds(source);
+	if (skinid >= numskins)
+		return;
+
 	boolean alwaysHear = false;
 
 	if (other != NULL && P_MobjWasRemoved(other) == false && other->player != NULL)
@@ -2753,31 +2784,29 @@ void K_PlayPainSound(mobj_t *source, mobj_t *other)
 		alwaysHear = P_IsDisplayPlayer(other->player);
 	}
 
-	if (cv_kartvoices.value)
+	if (
+		cv_kartvoices.value
+		&& R_CanShowSkinInDemo(skinid)
+	)
 	{
-		S_StartSound(alwaysHear ? NULL : source, sfx_id);
+		S_StartSound(
+			alwaysHear ? NULL : source,
+			skins[skinid].soundsid[S_sfx[sfx_id].skinsound]
+		);
 	}
 
 	K_RegularVoiceTimers(source->player);
 }
 
+void K_PlayPainSound(mobj_t *source, mobj_t *other)
+{
+	sfxenum_t pick = P_RandomKey(PR_VOICES, 2); // Gotta roll the RNG every time this is called for sync reasons
+	K_PlayGenericCombatSound(source, other, sfx_khurt1 + pick);
+}
+
 void K_PlayHitEmSound(mobj_t *source, mobj_t *other)
 {
-	skin_t *skin = (source->player ? &skins[source->player->skin] : ((skin_t *)source->skin));
-	sfxenum_t sfx_id = skin->soundsid[S_sfx[sfx_khitem].skinsound];
-	boolean alwaysHear = false;
-
-	if (other != NULL && P_MobjWasRemoved(other) == false && other->player != NULL)
-	{
-		alwaysHear = P_IsDisplayPlayer(other->player);
-	}
-
-	if (cv_kartvoices.value)
-	{
-		S_StartSound(alwaysHear ? NULL : source, sfx_id);
-	}
-
-	K_RegularVoiceTimers(source->player);
+	K_PlayGenericCombatSound(source, other, sfx_khitem);
 }
 
 void K_TryHurtSoundExchange(mobj_t *victim, mobj_t *attacker)
@@ -2813,12 +2842,35 @@ void K_TryHurtSoundExchange(mobj_t *victim, mobj_t *attacker)
 
 void K_PlayPowerGloatSound(mobj_t *source)
 {
-	if (cv_kartvoices.value)
+	UINT8 skinid = K_ObjectToSkinIDForSounds(source);
+	if (skinid >= numskins)
+		return;
+
+	if (
+		cv_kartvoices.value
+		&& R_CanShowSkinInDemo(skinid)
+	)
 	{
 		S_StartSound(source, sfx_kgloat);
 	}
 
 	K_RegularVoiceTimers(source->player);
+}
+
+// MOVED so we don't have to extern K_ObjectToSkinID
+void P_PlayVictorySound(mobj_t *source)
+{
+	UINT8 skinid = K_ObjectToSkinIDForSounds(source);
+	if (skinid >= numskins)
+		return;
+
+	if (
+		cv_kartvoices.value
+		&& R_CanShowSkinInDemo(skinid)
+	)
+	{
+		S_StartSound(source, sfx_kwin);
+	}
 }
 
 static void K_HandleDelayedHitByEm(player_t *player)
