@@ -127,7 +127,7 @@ UINT8 R_BotDefaultSkin(void);
 
 // Heavy Magician
 void SetFakePlayerSkin(player_t* player, INT32 skinnum);
-void SetRandomFakePlayerSkin(player_t* player, boolean fast);
+void SetRandomFakePlayerSkin(player_t* player, boolean fast, boolean instant);
 void ClearFakePlayerSkin(player_t* player);
 
 // Visual flair

@@ -925,7 +925,7 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 			? demo.skinlist[demo.currentskinid[(source->player-players)]].flags
 			: skins[source->player->skin].flags;
 		if (skinflags & SF_IRONMAN)
-			SetRandomFakePlayerSkin(source->player, true);
+			SetRandomFakePlayerSkin(source->player, true, false);
 	}
 
 	ufo_intangible(ufo) = 60;

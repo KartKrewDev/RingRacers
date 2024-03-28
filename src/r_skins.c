@@ -518,7 +518,7 @@ void SetFakePlayerSkin(player_t* player, INT32 skinid)
 }
 
 // Loudly rerandomize
-void SetRandomFakePlayerSkin(player_t* player, boolean fast)
+void SetRandomFakePlayerSkin(player_t* player, boolean fast, boolean instant)
 {
 	INT32 i;
 	UINT8 usableskins = 0, maxskinpick;
@@ -548,6 +548,9 @@ void SetRandomFakePlayerSkin(player_t* player, boolean fast)
 	i = grabskins[P_RandomKey(PR_RANDOMSKIN, usableskins)];
 
 	SetFakePlayerSkin(player, i);
+
+	if (instant)
+		return;
 
 	if (player->mo && player->spectator == false && !(player->pflags & PF_VOID))
 	{
