@@ -395,6 +395,11 @@ void ItemFinder_OnChange(void);
 consvar_t cv_itemfinder = Player("itemfinder", "Off").flags(CV_NOSHOWHELP).on_off().onchange(ItemFinder_OnChange).dont_save();
 
 consvar_t cv_maxportals = Player("maxportals", "2").values({{0, "MIN"}, {12, "MAX"}}); // lmao rendering 32 portals, you're a card
+consvar_t cv_menuframeskip = Player("menuframeskip", "Off").values({
+	{35, "MIN"},
+	{144, "MAX"},
+	{0, "Off"},
+});
 consvar_t cv_mindelay = Player("mindelay", "2").min_max(0, 30);
 consvar_t cv_movebob = Player("movebob", "1.0").floating_point().min_max(0, 4*FRACUNIT);
 consvar_t cv_netstat = Player("netstat", "Off").on_off().dont_save(); // show bandwidth statistics

@@ -100,7 +100,7 @@
 
 #include "lua_profile.h"
 
-extern "C" consvar_t cv_lua_profile;
+extern "C" consvar_t cv_lua_profile, cv_menuframeskip;
 
 /* Manually defined asset hashes
  */
@@ -1105,7 +1105,7 @@ void D_SRB2Loop(void)
 		// So this measurement is accurate regardless of fpscap.
 		if (sincelastworld <= minworldfps)
 		{
-			double goal = 60.0;
+			double goal = cv_menuframeskip.value;
 			if (worldfpsavg < goal)
 			{
 				skiplaggyworld = true;
