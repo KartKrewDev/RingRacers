@@ -741,6 +741,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"SENB",
 	"SENC",
 	"SEAS",
+	"S_SP",
 
 	// Tutorial
 	"TLKP", // Talk Point
@@ -3533,6 +3534,9 @@ state_t states[NUMSTATES] =
 
 	// MT_SSCHAINSOUND
 	{SPR_NULL, 0, 16, {A_PlaySound}, sfx_ssthnk, 1, S_SSCHAINSOUND}, // S_SSCHAINSOUND
+
+	// MT_SLSTMACE
+	{SPR_S_SP, FF_ANIMATE|FF_SEMIBRIGHT, -1, {NULL}, 3, 2, S_NULL}, // S_SLSTMACE
 
 	// MT_SEALEDSTAR_BUMPER
 	{SPR_SBMP, 0|FF_FULLBRIGHT, -1, {NULL}, 2, 8, S_SEALEDSTAR_BUMPER}, // S_SEALEDSTAR_BUMPER
@@ -21753,9 +21757,9 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL        // raisestate
 	},
 	{           // MT_SLSTMACE
-		-1,         // doomednum
-		S_INVISIBLE, // spawnstate
-		1,            // spawnhealth
+		-1,           // doomednum
+		S_SLSTMACE,   // spawnstate
+		1000,         // spawnhealth
 		S_NULL,       // seestate
 		sfx_None,     // seesound
 		0,            // reactiontime
@@ -21769,13 +21773,13 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,       // xdeathstate
 		sfx_None,     // deathsound
 		0,            // speed
-		1*FRACUNIT,   // radius
-		1*FRACUNIT,   // height
+		40*FRACUNIT,  // radius
+		96*FRACUNIT,  // height
 		0,            // dispoffset
-		0,            // mass
+		DMG_WIPEOUT,  // mass
 		0,            // damage
 		sfx_None,     // activesound
-		0, // flags
+		MF_PAIN|MF_NOHITLAGFORME, // flags
 		S_NULL        // raisestate
 	},
 	{           // MT_SEALEDSTAR_BUMPER

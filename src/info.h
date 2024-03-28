@@ -1276,6 +1276,7 @@ typedef enum sprite
 	SPR_SENB, // Cabotron
 	SPR_SENC, // Cabotron
 	SPR_SEAS, // Starstream
+	SPR_S_SP, // Mace
 
 	// Tutorial
 	SPR_TLKP, // Talk Point
@@ -4017,6 +4018,9 @@ typedef enum state
 
 	// MT_SSCHAINSOUND
 	S_SSCHAINSOUND,
+
+	// MT_SLSTMACE
+	S_SLSTMACE,
 
 	// MT_SEALEDSTAR_BUMPER
 	S_SEALEDSTAR_BUMPER,
