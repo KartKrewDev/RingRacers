@@ -9513,6 +9513,20 @@ void K_KartResetPlayerColor(player_t *player)
 		}
 	}
 
+	if (player->eggmanTransferDelay)
+	{
+		player->mo->colorized = true;
+		if (player->eggmanTransferDelay % 2)
+		{
+			player->mo->color = SKINCOLOR_BLACK;
+		}
+		else
+		{
+			player->mo->color = SKINCOLOR_CRIMSON;
+		}
+		goto finalise;
+	}
+
 	if (player->ringboost && (leveltime & 1)) // ring boosting
 	{
 		player->mo->colorized = true;
@@ -13830,10 +13844,12 @@ void K_EggmanTransfer(player_t *source, player_t *victim)
 {
 	if (victim->eggmanTransferDelay)
 		return;
+	if (source->eggmanTransferDelay)
+		return;
 	if (victim->eggmanexplode)
 		return;
 
-	K_AddHitLag(victim->mo, 2, true);
+	K_AddHitLag(victim->mo, 5, false);
 	K_DropItems(victim);
 	victim->eggmanexplode = 6*TICRATE;
 	victim->eggmanblame = (source - players);
@@ -13842,11 +13858,13 @@ void K_EggmanTransfer(player_t *source, player_t *victim)
 	if (P_IsDisplayPlayer(victim))
 		S_StartSound(NULL, sfx_itrole);
 
-	K_AddHitLag(source->mo, 2, true);
+	K_AddHitLag(source->mo, 5, false);
 	source->eggmanexplode = 0;
 	source->eggmanblame = -1;
 	K_StopRoulette(&source->itemRoulette);
-	source->eggmanTransferDelay = 10;
+
+	source->eggmanTransferDelay = 25;
+	victim->eggmanTransferDelay = 15;
 
 	S_StopSoundByID(source->mo, sfx_s3k53);
 	S_StopSoundByID(source->mo, sfx_kc51);
