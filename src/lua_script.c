@@ -285,7 +285,7 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 	} else if (fastcmp(word,"starttime")) {
 		lua_pushinteger(L, starttime);
 		return 1;
-	} else if (fastcmp(word,"curWeather")) {
+	} else if (fastcmp(word,"curweather")) {
 		lua_pushinteger(L, curWeather);
 		return 1;
 	} else if (fastcmp(word,"globalweather")) {
@@ -351,7 +351,7 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 	} else if (fastcmp(word,"thwompsactive")) {
 		lua_pushboolean(L, thwompsactive);
 		return 1;
-	} else if (fastcmp(word,"lastLowestLap")) {
+	} else if (fastcmp(word,"lastlowestlap")) {
 		lua_pushinteger(L, lastLowestLap);
 		return 1;
 	} else if (fastcmp(word,"spbplace")) {
