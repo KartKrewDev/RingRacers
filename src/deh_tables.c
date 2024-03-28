@@ -3011,6 +3011,9 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	// MT_SSCHAINSOUND
 	"S_SSCHAINSOUND",
 
+	// MT_SLSTMACE
+	"S_SLSTMACE",
+
 	// MT_SEALEDSTAR_BUMPER
 	"S_SEALEDSTAR_BUMPER",
 	"S_SEALEDSTAR_BUMPERHIT",
