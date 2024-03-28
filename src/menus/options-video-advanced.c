@@ -5,6 +5,8 @@
 #include "../r_main.h"	// cv_skybox
 #include "../hardware/hw_main.h"	// gl consvars
 
+extern consvar_t cv_menuframeskip;
+
 menuitem_t OPTIONS_VideoAdvanced[] =
 {
 	{IT_HEADER, "Performance...", NULL,
@@ -21,6 +23,9 @@ menuitem_t OPTIONS_VideoAdvanced[] =
 
 	{IT_STRING | IT_CVAR, "Parallel Software", "Uses multiple CPU cores for the software renderer if available, for a FPS boost.",
 		NULL, {.cvar = &cv_parallelsoftware}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Extra Frame Skipping", "Skip 3D rendering frames while the menu is open.",
+		NULL, {.cvar = &cv_menuframeskip}, 0, 0},
 
 
 	{IT_HEADER, "Rendering Backend...", "Watch people get confused anyway!!",

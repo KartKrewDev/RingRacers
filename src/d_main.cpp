@@ -90,6 +90,7 @@
 #include "k_bans.h"
 #include "k_credits.h"
 #include "r_debug.hpp"
+#include "k_director.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h" // 3D View Rendering
@@ -99,7 +100,7 @@
 
 #include "lua_profile.h"
 
-extern "C" consvar_t cv_lua_profile;
+extern "C" consvar_t cv_lua_profile, cv_menuframeskip;
 
 /* Manually defined asset hashes
  */
@@ -354,7 +355,7 @@ gamestate_t wipegamestate = GS_LEVEL;
 INT16 wipetypepre = -1;
 INT16 wipetypepost = -1;
 
-static bool D_Display(void)
+static bool D_Display(bool world)
 {
 	bool ranwipe = false;
 	boolean forcerefresh = false;
@@ -533,7 +534,7 @@ static bool D_Display(void)
 		// see if the border needs to be initially drawn
 		if (G_GamestateUsesLevel() == true)
 		{
-			if (!automapactive && !dedicated && cv_renderview.value)
+			if (!automapactive && !dedicated && cv_renderview.value && (world || forcerefresh))
 			{
 				R_ApplyLevelInterpolators(R_UsingFrameInterpolation() ? rendertimefrac : FRACUNIT);
 
@@ -787,9 +788,6 @@ static bool D_Display(void)
 	//
 	if (!wipe)
 	{
-		if (cv_shittyscreen.value)
-			V_DrawVhsEffect(cv_shittyscreen.value == 2);
-
 		if (cv_netstat.value)
 		{
 			char s[50];
@@ -840,6 +838,13 @@ void D_SRB2Loop(void)
 	boolean interp = false;
 	boolean doDisplay = false;
 	int frameskip = 0;
+	bool skiplaggyworld = false;
+	double sincelastworld = 0.0;
+	double minworldfps = 0.5;
+
+	double worldfpsrun = 0.0;
+	int worldfpscount = 0;
+	int worldfpsavg = 0;
 
 	if (dedicated)
 		server = true;
@@ -893,6 +898,7 @@ void D_SRB2Loop(void)
 		}
 
 		bool ranwipe = false;
+		bool world = false;
 
 		I_UpdateTime();
 
@@ -993,7 +999,37 @@ void D_SRB2Loop(void)
 			if (!renderisnewtic)
 				P_ResetInterpHudRandSeed(false);
 
-			ranwipe = D_Display();
+			world = true;
+
+			// TODO: skipping 3D rendering does not work in
+			// Legacy GL -- the screen gets filled with a
+			// single color.
+			// In software, the last frame is preserved,
+			// which is the intended effect.
+			if (rendermode == render_soft)
+			{
+				auto none_freecam = []
+				{
+					for (UINT8 i = 0; i <= r_splitscreen; ++i)
+					{
+						if (camera[i].freecam || (players[displayplayers[i]].spectator && !K_DirectorIsAvailable(i)))
+							return false;
+					}
+					return true;
+				};
+				// 3D rendering is stopped ENTIRELY if the game is paused.
+				// - In single player, opening the menu pauses the game, so it's perfect.
+				// - One exception: freecam is allowed to move when the game is paused.
+				if (((paused || P_AutoPause()) && none_freecam()) ||
+					// 3D framerate is always allowed to at least drop if the menu is open.
+					// Does not affect replay menu because that one is more like a HUD.
+					(skiplaggyworld && menuactive && currentMenu != &PAUSE_PlaybackMenuDef))
+				{
+					world = false;
+				}
+			}
+
+			ranwipe = D_Display(world);
 		}
 
 #ifdef HWRENDER
@@ -1049,6 +1085,43 @@ void D_SRB2Loop(void)
 		else
 		{
 			frameskip = 0;
+		}
+
+		if (world)
+		{
+			sincelastworld = 0.0;
+
+			worldfpsrun += deltasecs;
+			worldfpscount++;
+			if (worldfpsrun > 1.0)
+			{
+				worldfpsavg = worldfpscount;
+				worldfpsrun = 0.0;
+				worldfpscount = 0;
+			}
+		}
+		else if (skiplaggyworld)
+		{
+			sincelastworld += deltasecs;
+		}
+
+		// Try to skip 3D rendering if the theoretical framerate drops below 60.
+		// This measures the time spent rendering a single frame.
+		// If the framrate is capped at a lower value than 60,
+		// the time spent on each frame will not artificially increase.
+		// So this measurement is accurate regardless of fpscap.
+		if (sincelastworld <= minworldfps)
+		{
+			double goal = cv_menuframeskip.value;
+			if (worldfpsavg < goal)
+			{
+				skiplaggyworld = true;
+				minworldfps = 1.0 / std::max(worldfpsavg * worldfpsavg / goal, 2.0);
+			}
+		}
+		else
+		{
+			skiplaggyworld = false;
 		}
 
 		if (!singletics)

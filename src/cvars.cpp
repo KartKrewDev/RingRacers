@@ -395,6 +395,11 @@ void ItemFinder_OnChange(void);
 consvar_t cv_itemfinder = Player("itemfinder", "Off").flags(CV_NOSHOWHELP).on_off().onchange(ItemFinder_OnChange).dont_save();
 
 consvar_t cv_maxportals = Player("maxportals", "2").values({{0, "MIN"}, {12, "MAX"}}); // lmao rendering 32 portals, you're a card
+consvar_t cv_menuframeskip = Player("menuframeskip", "Off").values({
+	{35, "MIN"},
+	{144, "MAX"},
+	{0, "Off"},
+});
 consvar_t cv_mindelay = Player("mindelay", "2").min_max(0, 30);
 consvar_t cv_movebob = Player("movebob", "1.0").floating_point().min_max(0, 4*FRACUNIT);
 consvar_t cv_netstat = Player("netstat", "Off").on_off().dont_save(); // show bandwidth statistics
@@ -439,7 +444,6 @@ consvar_t cv_scr_y = Player("scr_y", "0.0").floating_point();
 
 consvar_t cv_seenames = Player("seenames", "On").on_off();
 consvar_t cv_shadow = Player("shadow", "On").on_off();
-consvar_t cv_shittyscreen = Player("televisionsignal", "Okay").flags(CV_NOSHOWHELP).values({{0, "Okay"}, {1, "Shitty"}, {2, "Extra Shitty"}}).dont_save();
 consvar_t cv_showfocuslost = Player("showfocuslost", "Yes").yes_no();
 
 void R_SetViewSize(void);
@@ -467,8 +471,6 @@ consvar_t cv_tutorialprompt = Player("tutorialprompt", "On").on_off();
 
 void I_StartupMouse(void);
 consvar_t cv_usemouse = Player("use_mouse", "Off").values({{0, "Off"}, {1, "On"}, {2, "Force"}}).onchange(I_StartupMouse);
-
-consvar_t cv_vhseffect = Player("vhspause", "On").on_off();
 
 // synchronize page flipping with screen refresh
 extern "C++"
