@@ -177,11 +177,15 @@ boolean P_PlayerOrbit(player_t *player)
 		step = left;
 	}
 
-	// If player slows down by too much, throw them out of
-	// the loop in a tumble.
+	// If player slows down by too much, throw them
+	// out of the loop and reset them.
+	// (markedfordeath will kill the player on their
+	// first ground contact!)
 	if (player->speed < player->mo->scale)
 	{
 		P_HaltPlayerOrbit(player);
+		player->markedfordeath = true;
+		K_PlayPainSound(player->mo, NULL);
 		K_StumblePlayer(player);
 
 		return false;
