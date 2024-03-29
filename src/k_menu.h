@@ -1147,6 +1147,7 @@ void M_DrawMasterServerReminder(void);
 void M_DrawEggaChannel(void);
 
 // Extras menu:
+// woah there pardner, if you modify this check g_demo.cpp too
 #define DF_ENCORE       0x40
 
 #define M_EXTRAS_OFSTIME 4

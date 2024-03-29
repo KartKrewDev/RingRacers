@@ -171,6 +171,7 @@ demoghost *ghosts = NULL;
 
 #define DF_LUAVARS		0x20 // this demo contains extra lua vars
 
+// woah there pardner, if you modify this check k_menu.h too
 #define DF_ENCORE       0x40
 #define DF_MULTIPLAYER  0x80 // This demo was recorded in multiplayer mode!
 
