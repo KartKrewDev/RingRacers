@@ -4291,11 +4291,18 @@ void M_DrawMPServerBrowser(void)
 // Draws the cogs and also the options background!
 void M_DrawOptionsCogs(void)
 {
-	boolean trulystarted = M_GameTrulyStarted();
+	boolean eggahack = (
+		currentMenu->prevMenu == &PLAY_MP_HostDef
+		|| (
+			currentMenu->prevMenu
+			&& currentMenu->prevMenu->prevMenu == &PLAY_MP_HostDef
+			)
+		);
+	boolean solidbg = M_GameTrulyStarted() && !eggahack;
 	UINT32 tick = ((optionsmenu.ticker/10) % 3) + 1;
 
 	// the background isn't drawn outside of being in the main menu state.
-	if (gamestate == GS_MENU && trulystarted)
+	if (gamestate == GS_MENU && solidbg)
 	{
 		patch_t *back = W_CachePatchName(va("OPT_BG%u", tick), PU_CACHE);
 		INT32 tflag = 0;
@@ -4316,10 +4323,15 @@ void M_DrawOptionsCogs(void)
 	}
 	else
 	{
+		if (eggahack)
+		{
+			M_DrawEggaChannelAlignable(true);
+		}
+
 		patch_t *back_pause = W_CachePatchName(va("OPT_BAK%u", tick), PU_CACHE);
 		V_DrawFixedPatch(0, 0, FRACUNIT, V_MODULATE, back_pause, NULL);
 
-		if (!trulystarted)
+		if (!solidbg)
 		{
 			V_DrawFixedPatch(0, 0, FRACUNIT, (V_ADD|V_70TRANS), back_pause, NULL);
 		}
