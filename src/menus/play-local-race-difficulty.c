@@ -40,7 +40,7 @@ menuitem_t PLAY_RaceDifficulty[] =
 	{IT_STRING | IT_CALL, "Cup Select", "Go on and select a cup!", "MENUI004", {.routine = M_LevelSelectInit}, 2, GT_RACE},
 
 	// Match Race
-	{IT_STRING | IT_CALL, "Map Select", "Go on and select a race track!", "MENUI005", {.routine = M_LevelSelectInit}, 0, GT_RACE},
+	{IT_STRING | IT_CALL, "Map Select", "Go on and select a course!", "MENUI005", {.routine = M_LevelSelectInit}, 0, GT_RACE},
 
 	{IT_STRING | IT_CALL, "Back", NULL, NULL, {.routine = M_GoBack}, 0, 0},
 };

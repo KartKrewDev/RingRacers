@@ -78,7 +78,7 @@ menuitem_t PLAY_MP_Host[] =
 	{IT_STRING2 | IT_CALL, "Server Options...", "Update server settings.",
 		NULL, {.routine = M_ServerOptions}, 0, 0},
 
-	{IT_STRING | IT_CALL, "Map Select", "Go on and select a level!",
+	{IT_STRING | IT_CALL, "Map Select", "Go on and select a course!",
 		NULL, {.routine = M_MPSetupNetgameMapSelect}, 0, 0},
 
 	{IT_STRING | IT_CALL, "Back", NULL,
