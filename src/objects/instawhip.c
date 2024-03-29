@@ -1,4 +1,16 @@
-#include "../doomdef.h"
+// DR. ROBOTNIK'S RING RACERS
+//-----------------------------------------------------------------------------
+// Copyright (C) 2024 by AJ "Tyron" Martinez.
+// Copyright (C) 2024 by Kart Krew
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+/// \file  instawhip.c
+/// \brief Instawhip object code.
+
+#include "../doomdef.h"`
 #include "../info.h"
 #include "../k_objects.h"
 #include "../p_local.h"
