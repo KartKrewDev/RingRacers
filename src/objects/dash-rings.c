@@ -1,3 +1,16 @@
+// DR. ROBOTNIK'S RING RACERS
+//-----------------------------------------------------------------------------
+// Copyright (C) 2023-2024 by "Lat'"
+// Copyright (C) 2023-2024 by Lachlan "Lach" Wright
+// Copyright (C) 2023-2024 by Kart Krew
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+/// \file  dash-rings.c
+/// \brief Dash Ring and Rainbow Dash Ring object code.
+
 #include "../p_local.h"
 #include "../k_kart.h"
 #include "../k_objects.h"
