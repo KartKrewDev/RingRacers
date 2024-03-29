@@ -2710,7 +2710,7 @@ static void K_PlayGenericTastefulTaunt(mobj_t *source, sfxenum_t sfx_id)
 	if (skinid >= numskins)
 		return;
 
-	boolean tasteful = (!source->player || source->player->karthud[khud_tauntvoices]);
+	boolean tasteful = (!source->player || !source->player->karthud[khud_tauntvoices]);
 
 	if (
 		cv_kartvoices.value
