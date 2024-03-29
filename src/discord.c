@@ -28,12 +28,19 @@
 #include "byteptr.h"
 #include "stun.h"
 #include "i_tcp.h" // current_port
+#include "k_grandprix.h"
+#include "k_battle.h"
+#include "m_cond.h" // M_GameTrulyStarted
 
 #include "discord.h"
 #include "doomdef.h"
 
 // Feel free to provide your own, if you care enough to create another Discord app for this :P
 #define DISCORD_APPID "977470696852684833"
+
+#ifdef DEVELOP
+#define DISCORD_SECRETIVE
+#endif
 
 // length of IP strings
 #define IP_SIZE 21
@@ -42,7 +49,30 @@ struct discordInfo_s discordInfo;
 
 discordRequest_t *discordRequestList = NULL;
 
+size_t g_discord_skins = 0;
+
 static char self_ip[IP_SIZE];
+
+/*--------------------------------------------------
+	const char *DRPC_HideUsername(const char *input)
+
+		See header file for description.
+--------------------------------------------------*/
+const char *DRPC_HideUsername(const char *input)
+{
+	static char buffer[5];
+	int i;
+
+	buffer[0] = input[0];
+
+	for (i = 1; i < 4; ++i)
+	{
+		buffer[i] = '.';
+	}
+
+	buffer[4] = '\0';
+	return buffer;
+}
 
 /*--------------------------------------------------
 	static char *DRPC_XORIPString(const char *input)
@@ -94,11 +124,11 @@ static void DRPC_HandleReady(const DiscordUser *user)
 {
 	if (cv_discordstreamer.value)
 	{
-		CONS_Printf("Discord: connected to %s\n", user->username);
+		CONS_Printf("Discord: connected to %s\n", DRPC_HideUsername(user->username));
 	}
 	else
 	{
-		CONS_Printf("Discord: connected to %s#%s (%s)\n", user->username, user->discriminator, user->userId);
+		CONS_Printf("Discord: connected to %s (%s)\n", user->username, user->userId);
 	}
 }
 
@@ -234,8 +264,10 @@ static void DRPC_HandleJoinRequest(const DiscordUser *requestUser)
 	newRequest->username = Z_Calloc(344, PU_STATIC, NULL);
 	snprintf(newRequest->username, 344, "%s", requestUser->username);
 
+#if 0
 	newRequest->discriminator = Z_Calloc(8, PU_STATIC, NULL);
 	snprintf(newRequest->discriminator, 8, "%s", requestUser->discriminator);
+#endif
 
 	newRequest->userID = Z_Calloc(32, PU_STATIC, NULL);
 	snprintf(newRequest->userID, 32, "%s", requestUser->userId);
@@ -301,7 +333,9 @@ void DRPC_RemoveRequest(discordRequest_t *removeRequest)
 	}
 
 	Z_Free(removeRequest->username);
+#if 0
 	Z_Free(removeRequest->discriminator);
+#endif
 	Z_Free(removeRequest->userID);
 	Z_Free(removeRequest);
 }
@@ -394,6 +428,68 @@ static void DRPC_EmptyRequests(void)
 	}
 }
 
+#ifndef DISCORD_SECRETIVE
+/*--------------------------------------------------
+	static boolean DRPC_DisplayGonerSetup(void)
+
+		Returns true if we're in the initial
+		tutorial game state.
+--------------------------------------------------*/
+static boolean DRPC_DisplayGonerSetup(void)
+{
+	if (M_GameTrulyStarted())
+	{
+		// We're past all that tutorial stuff.
+		return false;
+	}
+
+	if (Playing())
+	{
+		// Need to check a bunch of stuff manually,
+		// since with command line and/or console you
+		// can play a bit of the game without fully
+		// fully starting the game.
+
+		if (netgame)
+		{
+			// We smuggled into a netgame early,
+			// show the netgame's info.
+			return false;
+		}
+
+		if (tutorialchallenge == TUTORIALSKIP_INPROGRESS)
+		{
+			// Attempting the Dirty Bubble Challenge
+			return true;
+		}
+
+		// If it's not GT_TUTORIAL, it's directly
+		// command line into a specific map.
+		return (gametype == GT_TUTORIAL);
+	}
+
+	// If we're in a menu, and the game hasn't started,
+	// then we're definitely in goner setup.
+	return true;
+}
+#endif
+
+enum {
+	DISCORD_GS_UNKNOWN,
+	DISCORD_GS_CUSTOM,
+	DISCORD_GS_RACE,
+	DISCORD_GS_BATTLE,
+	DISCORD_GS_TUTORIAL,
+	DISCORD_GS_TIMEATTACK,
+	DISCORD_GS_GRANDPRIX,
+	DISCORD_GS_VOTING,
+	DISCORD_GS_MENU,
+	DISCORD_GS_REPLAY,
+	DISCORD_GS_TITLE,
+	DISCORD_GS_CREDITS,
+	DISCORD_GS_GONER
+};
+
 /*--------------------------------------------------
 	void DRPC_UpdatePresence(void)
 
@@ -401,17 +497,6 @@ static void DRPC_EmptyRequests(void)
 --------------------------------------------------*/
 void DRPC_UpdatePresence(void)
 {
-#ifdef USEMAPIMG
-	char mapimg[8+1];
-#endif
-#ifndef DEVELOP
-	char detailstr[48+1];
-	char mapname[5+21+21+2+1];
-
-	char charimg[4+SKINNAMESIZE+1];
-	char charname[11+SKINNAMESIZE+1];
-#endif
-
 	boolean joinSecretSet = false;
 	char *clientJoinSecret = NULL;
 
@@ -432,14 +517,12 @@ void DRPC_UpdatePresence(void)
 		return;
 	}
 
-#ifdef DEVELOP
+#ifdef DISCORD_SECRETIVE
 	// This way, we can use the invite feature in-dev, but not have snoopers seeing any potential secrets! :P
-	discordPresence.largeImageKey = "miscdevelop";
+	discordPresence.largeImageKey = "misc_develop";
 	discordPresence.largeImageText = "No peeking!";
 	discordPresence.state = "Development EXE";
-#endif // DEVELOP
 
-	// Server info
 	if (netgame)
 	{
 		if (DRPC_InvitesAreAllowed() == true)
@@ -459,7 +542,170 @@ void DRPC_UpdatePresence(void)
 			}
 		}
 
-#ifndef DEVELOP
+		discordPresence.partyId = server_context; // Thanks, whoever gave us Mumble support, for implementing the EXACT thing Discord wanted for this field!
+		discordPresence.partySize = D_NumPlayers(); // Players in server
+		discordPresence.partyMax = discordInfo.maxPlayers; // Max players
+	}
+	else
+	{
+		// Reset discord info if you're not in a place that uses it!
+		// Important for if you join a server that compiled without HAVE_DISCORDRPC,
+		// so that you don't ever end up using bad information from another server.
+		memset(&discordInfo, 0, sizeof(discordInfo));
+	}
+
+#else
+
+	char detailstr[128];
+	char localstr[128];
+
+	char charimg[32];
+	char charname[128];
+
+	char gtname[128];
+
+	UINT8 gs = DISCORD_GS_UNKNOWN;
+	if (DRPC_DisplayGonerSetup())
+	{
+		gs = DISCORD_GS_GONER;
+	}
+	else if (demo.playback)
+	{
+		switch (demo.attract)
+		{
+			case DEMO_ATTRACT_TITLE:
+			{
+				gs = DISCORD_GS_TITLE;
+				break;
+			}
+			case DEMO_ATTRACT_CREDITS:
+			{
+				gs = DISCORD_GS_CREDITS;
+				break;
+			}
+			default:
+			{
+				gs = DISCORD_GS_REPLAY;
+				break;
+			}
+		}
+	}
+	else
+	{
+		switch (gamestate)
+		{
+			case GS_LEVEL:
+			case GS_INTERMISSION:
+			{
+				if (grandprixinfo.gp == true)
+				{
+					gs = DISCORD_GS_GRANDPRIX;
+				}
+				else if (modeattacking)
+				{
+					gs = DISCORD_GS_TIMEATTACK;
+				}
+				else if (gametype >= GT_FIRSTFREESLOT)
+				{
+					gs = DISCORD_GS_CUSTOM;
+				}
+				else
+				{
+					switch (gametype)
+					{
+						case GT_RACE:
+						{
+							gs = DISCORD_GS_RACE;
+							break;
+						}
+						case GT_BATTLE:
+						{
+							gs = DISCORD_GS_BATTLE;
+							break;
+						}
+						case GT_TUTORIAL:
+						{
+							gs = DISCORD_GS_TUTORIAL;
+							break;
+						}
+						case GT_SPECIAL:
+						case GT_VERSUS:
+						{
+							// You're using command line.
+							// Just patch over this for now.
+							gs = DISCORD_GS_GRANDPRIX;
+							break;
+						}
+						default:
+						{
+							break; // leave as UNKNOWN...
+						}
+					}
+				}
+				break;
+			}
+			case GS_CEREMONY:
+			{
+				gs = DISCORD_GS_GRANDPRIX;
+				break;
+			}
+			case GS_VOTING:
+			{
+				gs = DISCORD_GS_VOTING;
+				break;
+			}
+			case GS_TITLESCREEN:
+			{
+				gs = DISCORD_GS_TITLE;
+				break;
+			}
+			case GS_CREDITS:
+			{
+				gs = DISCORD_GS_CREDITS;
+				break;
+			}
+			default:
+			{
+				gs = DISCORD_GS_MENU;
+				break;
+			}
+		}
+	}
+
+	// Server info
+	if (gs == DISCORD_GS_GONER)
+	{
+		if (Playing())
+		{
+			discordPresence.state = "TRAINING DATA";
+		}
+		else if (gamedata->gonerlevel >= GDGONER_OUTRO)
+		{
+			discordPresence.state = "EVALUATION";
+		}
+		else
+		{
+			discordPresence.state = "MISSING DATA";
+		}
+	}
+	else if (netgame)
+	{
+		if (DRPC_InvitesAreAllowed() == true)
+		{
+			const char *join;
+
+			// Grab the host's IP for joining.
+			if ((join = DRPC_GetServerIP()) != NULL)
+			{
+				discordPresence.joinSecret = DRPC_XORIPString(join);
+				joinSecretSet = true;
+			}
+			else
+			{
+				return;
+			}
+		}
+
 		if (cv_advertise.value)
 		{
 			discordPresence.state = "Public";
@@ -468,7 +714,6 @@ void DRPC_UpdatePresence(void)
 		{
 			discordPresence.state = "Private";
 		}
-#endif // DEVELOP
 
 		discordPresence.partyId = server_context; // Thanks, whoever gave us Mumble support, for implementing the EXACT thing Discord wanted for this field!
 		discordPresence.partySize = D_NumPlayers(); // Players in server
@@ -481,71 +726,115 @@ void DRPC_UpdatePresence(void)
 		// so that you don't ever end up using bad information from another server.
 		memset(&discordInfo, 0, sizeof(discordInfo));
 
-#ifndef DEVELOP
-		// Offline info
 		if (Playing())
-			discordPresence.state = "Offline";
-		else if (demo.playback && !demo.attract)
-			discordPresence.state = "Watching Replay";
-		else
-			discordPresence.state = "Menu";
-#endif // DEVELOP
-	}
-
-#ifndef DEVELOP
-	// Gametype info
-	if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_VOTING) && Playing())
-	{
-		if (modeattacking)
-			discordPresence.details = "Time Attack";
+		{
+			snprintf(localstr, 128, "Local (%dP)", splitscreen + 1);
+			discordPresence.state = localstr;
+		}
 		else
 		{
-			snprintf(detailstr, 48, "%s%s%s",
-				gametypes[gametype]->name,
-				(gametyperules & GTR_CIRCUIT) ? va(" | %s", kartspeed_cons_t[gamespeed].strvalue) : "",
-				(encoremode == true) ? " | Encore" : ""
-			);
-			discordPresence.details = detailstr;
+			switch (gs)
+			{
+				case DISCORD_GS_REPLAY:
+				{
+					discordPresence.state = "Watching Replay";
+					break;
+				}
+				case DISCORD_GS_TITLE:
+				{
+					discordPresence.state = "Title Screen";
+					break;
+				}
+				case DISCORD_GS_CREDITS:
+				{
+					discordPresence.state = "Watching Credits";
+					break;
+				}
+				default:
+				{
+					discordPresence.state = "Menu";
+					break;
+				}
+			}
 		}
 	}
 
-	if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) // Map info
-		&& !(demo.playback && demo.attract))
+	if (gs == DISCORD_GS_GONER)
 	{
-#ifdef USEMAPIMG
-		if ((gamemap >= 1 && gamemap <= 60) // supported race maps
-			|| (gamemap >= 136 && gamemap <= 164)) // supported battle maps
-		{
-			//FIXME
-			//snprintf(mapimg, 8, "%s", G_BuildMapName(gamemap));
-			strlwr(mapimg);
-			discordPresence.largeImageKey = mapimg; // Map image
-		}
-		else
-#endif
-		if (mapheaderinfo[gamemap-1]->menuflags & LF2_HIDEINMENU)
-		{
-			// Hell map, use the method that got you here :P
-			discordPresence.largeImageKey = "miscdice";
-		}
-		else
-		{
-			// This is probably a custom map!
-			discordPresence.largeImageKey = "mapcustom";
-		}
+		// Gametype info
+		discordPresence.details = "Setup";
 
-		if (mapheaderinfo[gamemap-1]->menuflags & LF2_HIDEINMENU)
+		discordPresence.largeImageKey = "gs_goner";
+		discordPresence.largeImageText = "NO SIGNAL";
+	}
+	else
+	{
+		// Gametype info
+		if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_VOTING || gamestate == GS_CEREMONY) && Playing())
 		{
-			// Hell map, hide the name
-			discordPresence.largeImageText = "Map: ???";
-		}
-		else
-		{
-			// Map name on tool tip
-			char *title = G_BuildMapTitle(gamemap);
-			snprintf(mapname, 48, "Map: %s", title);
-			Z_Free(title);
-			discordPresence.largeImageText = mapname;
+			if (grandprixinfo.gp)
+			{
+				char roundstr[32];
+
+				if (gamestate == GS_CEREMONY)
+				{
+					snprintf(roundstr, 32, " | Ceremony");
+				}
+				else
+				{
+					switch (grandprixinfo.eventmode)
+					{
+						case GPEVENT_BONUS:
+						{
+							snprintf(roundstr, 32, " | Bonus");
+							break;
+						}
+						case GPEVENT_SPECIAL:
+						{
+							snprintf(roundstr, 32, " | Special");
+							break;
+						}
+						case GPEVENT_NONE:
+						{
+							if (roundqueue.position > 0 && roundqueue.position <= roundqueue.size)
+							{
+								snprintf(roundstr, 32, " | Round %d", roundqueue.position);
+							}
+							break;
+						}
+					}
+				}
+
+				snprintf(detailstr, 128, "Grand Prix%s | %s",
+					roundstr,
+					grandprixinfo.masterbots ? "Master" : kartspeed_cons_t[grandprixinfo.gamespeed + 1].strvalue
+				);
+				discordPresence.details = detailstr;
+			}
+			else if (battleprisons == true)
+			{
+				discordPresence.details = "Prison Break";
+			}
+			else if (modeattacking)
+			{
+				if (modeattacking & ATTACKING_SPB)
+				{
+					discordPresence.details = "SPB Attack";
+				}
+				else
+				{
+					discordPresence.details = "Time Attack";
+				}
+			}
+			else
+			{
+				snprintf(detailstr, 128, "%s%s%s",
+					gametypes[gametype]->name,
+					(gametypes[gametype]->speed == KARTSPEED_AUTO) ? va(" | %s", kartspeed_cons_t[gamespeed + 1].strvalue) : "",
+					(encoremode == true) ? " | Encore" : ""
+				);
+				discordPresence.details = detailstr;
+			}
 		}
 
 		if (gamestate == GS_LEVEL && Playing())
@@ -561,90 +850,105 @@ void DRPC_UpdatePresence(void)
 				discordPresence.endTimestamp = mapTimeEnd;
 			}
 		}
-	}
-	else if (gamestate == GS_VOTING)
-	{
-		discordPresence.largeImageKey = ((gametype == GT_BATTLE) ? "miscredplanet" : "miscblueplanet");
-		discordPresence.largeImageText = "Voting";
-	}
-	else
-	{
-		discordPresence.largeImageKey = "misctitle";
-		discordPresence.largeImageText = "Title Screen";
-	}
 
-	// Character info
-	if (Playing() && playeringame[consoleplayer] && !players[consoleplayer].spectator)
-	{
-		// Supported skin names
-		static const char *supportedSkins[] = {
-			// base game
-			"sonic",
-			"tails",
-			"knuckles",
-			"eggman",
-			"metalsonic",
-			// bonus chars
-			"flicky",
-			"motobug",
-			"amy",
-			"mighty",
-			"ray",
-			"espio",
-			"vector",
-			"chao",
-			"gamma",
-			"chaos",
-			"shadow",
-			"rouge",
-			"herochao",
-			"darkchao",
-			"cream",
-			"omega",
-			"blaze",
-			"silver",
-			"wonderboy",
-			"arle",
-			"nights",
-			"sakura",
-			"ulala",
-			"beat",
-			"vyse",
-			"aiai",
-			"kiryu",
-			"aigis",
-			"miku",
-			"doom",
-			NULL
-		};
-
-		boolean customChar = true;
-		UINT8 checkSkin = 0;
-
-		// Character image
-		while (supportedSkins[checkSkin] != NULL)
+		// Gametype image
+		switch (gs)
 		{
-			if (!strcmp(skins[players[consoleplayer].skin].name, supportedSkins[checkSkin]))
+			case DISCORD_GS_CUSTOM:
 			{
-				snprintf(charimg, 21, "char%s", supportedSkins[checkSkin]);
-				discordPresence.smallImageKey = charimg;
-				customChar = false;
+				discordPresence.largeImageKey = "custom_gs";
+				snprintf(gtname, 128, "%s", gametypes[gametype]->name);
+				discordPresence.largeImageText = gtname;
 				break;
 			}
-
-			checkSkin++;
+			case DISCORD_GS_RACE:
+			{
+				discordPresence.largeImageKey = "gs_race";
+				discordPresence.largeImageText = "Race";
+				break;
+			}
+			case DISCORD_GS_BATTLE:
+			{
+				discordPresence.largeImageKey = "gs_battle";
+				discordPresence.largeImageText = "Battle";
+				break;
+			}
+			case DISCORD_GS_TUTORIAL:
+			{
+				discordPresence.largeImageKey = "gs_tutorial";
+				discordPresence.largeImageText = "Tutorial";
+				break;
+			}
+			case DISCORD_GS_TIMEATTACK:
+			{
+				discordPresence.largeImageKey = "gs_timeattack";
+				discordPresence.largeImageText = "Time Attack";
+				break;
+			}
+			case DISCORD_GS_GRANDPRIX:
+			{
+				discordPresence.largeImageKey = "gs_grandprix";
+				discordPresence.largeImageText = "Grand Prix";
+				break;
+			}
+			case DISCORD_GS_VOTING:
+			{
+				discordPresence.largeImageKey = "gs_voting";
+				discordPresence.largeImageText = "Voting";
+				break;
+			}
+			case DISCORD_GS_MENU:
+			{
+				discordPresence.largeImageKey = "gs_menu";
+				discordPresence.largeImageText = "Menu";
+				break;
+			}
+			case DISCORD_GS_REPLAY:
+			{
+				discordPresence.largeImageKey = "gs_replay";
+				discordPresence.largeImageText = "Watching Replay";
+				break;
+			}
+			case DISCORD_GS_TITLE:
+			{
+				discordPresence.largeImageKey = "gs_title";
+				discordPresence.largeImageText = "Title Screen";
+				break;
+			}
+			case DISCORD_GS_CREDITS:
+			{
+				discordPresence.largeImageKey = "gs_credits";
+				discordPresence.largeImageText = "Credits";
+				break;
+			}
+			default:
+			{
+				discordPresence.largeImageKey = "misc_develop";
+				discordPresence.largeImageText = "Invalid DRPC state?";
+				break;
+			}
 		}
 
-		if (customChar == true)
+		// Character info
+		if (Playing() && playeringame[consoleplayer] && !players[consoleplayer].spectator)
 		{
-			// Use the custom character icon!
-			discordPresence.smallImageKey = "charcustom";
-		}
+			// Character image
+			if ((unsigned)players[consoleplayer].skin < g_discord_skins) // Supported skins
+			{
+				snprintf(charimg, 32, "char_%s", skins[ players[consoleplayer].skin ].name);
+				discordPresence.smallImageKey = charimg;
+			}
+			else
+			{
+				// Use the custom character icon!
+				discordPresence.smallImageKey = "custom_char";
+			}
 
-		snprintf(charname, 28, "Character: %s", skins[players[consoleplayer].skin].realname);
-		discordPresence.smallImageText = charname; // Character name
+			snprintf(charname, 128, "Character: %s", skins[players[consoleplayer].skin].realname);
+			discordPresence.smallImageText = charname; // Character name
+		}
 	}
-#endif // DEVELOP
+#endif // DISCORD_SECRETIVE
 
 	if (joinSecretSet == false)
 	{

@@ -7679,7 +7679,8 @@ static void P_InitLevelSettings(void)
 	g_exit.retry = false;
 
 	// Gamespeed and frantic items
-	gamespeed = KARTSPEED_EASY;
+	const boolean multi_speed = (gametypes[gametype]->speed == KARTSPEED_AUTO);
+	gamespeed = multi_speed ? KARTSPEED_EASY : gametypes[gametype]->speed;
 	franticitems = false;
 
 	if (K_PodiumSequence() == true)
@@ -7694,7 +7695,7 @@ static void P_InitLevelSettings(void)
 	}
 	else if (grandprixinfo.gp == true)
 	{
-		if (gametyperules & GTR_CIRCUIT)
+		if (multi_speed)
 		{
 			gamespeed = grandprixinfo.gamespeed;
 		}
@@ -7704,18 +7705,21 @@ static void P_InitLevelSettings(void)
 		|| tutorialchallenge ==  TUTORIALSKIP_INPROGRESS
 	)
 	{
-		if ((gametyperules & GTR_CATCHER) && encoremode == false)
+		if (multi_speed)
 		{
-			gamespeed = KARTSPEED_NORMAL;
-		}
-		else if (gametyperules & GTR_CIRCUIT)
-		{
-			gamespeed = KARTSPEED_HARD;
+			if ((gametyperules & GTR_CATCHER) && encoremode == false)
+			{
+				gamespeed = KARTSPEED_NORMAL;
+			}
+			else
+			{
+				gamespeed = KARTSPEED_HARD;
+			}
 		}
 	}
 	else
 	{
-		if (gametyperules & GTR_CIRCUIT)
+		if (multi_speed)
 		{
 			if (cv_kartspeed.value == KARTSPEED_AUTO)
 				gamespeed = ((speedscramble == -1) ? KARTSPEED_NORMAL : (UINT8)speedscramble);

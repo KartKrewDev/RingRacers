@@ -624,6 +624,7 @@ struct gametype_t
 	UINT32 rules;
 	UINT32 tol;
 	UINT8 intermission;
+	SINT8 speed;
 	INT32 pointlimit;
 	INT32 timelimit;
 	char gppic[9];
