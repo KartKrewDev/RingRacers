@@ -106,7 +106,7 @@ menu_t PLAY_MP_HostDef = {
 void M_PopupMasterServerRules(void)
 {
 #ifdef MASTERSERVER
-	if (cv_advertise.value && (serverrunning || currentMenu == &PLAY_MP_HostDef))
+	if (cv_advertise.value && (serverrunning || gamestate == GS_MENU))
 	{
 		char *rules = GetMasterServerRules();
 
@@ -127,17 +127,14 @@ void M_MPHostInit(INT32 choice)
 	M_SetupNextMenu(&PLAY_MP_HostDef, false);
 
 	Get_rules();
-	// There's one downside to doing it this way:
-	// if you turn advertise on via the console,
-	// then access this menu for the first time,
-	// no rules will pop up because they haven't
-	// arrived yet.
+	// As an async request, rules won't necessarily
+	// be ready in time for the following call...
 	M_PopupMasterServerRules();
-	// HOWEVER, this menu popup isn't for people
-	// who know how to use the Developer Console.
-	// People who CAN do that should already know
-	// what kind of service they're connecting to.
-	// (it'll still appear in the logs later, too!)
+	// ... but either cv_advertise is off, in case
+	// it'll be ready for OPTIONS_ServerDef, or it's
+	// been turned on via console/elsewhere and
+	// Get_rules() has already been called by
+	// M_MPOptSelectInit.
 }
 
 void M_HandleHostMenuGametype(INT32 choice)
