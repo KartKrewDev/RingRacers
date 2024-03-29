@@ -2747,7 +2747,7 @@ void K_PlayOvertakeSound(mobj_t *source)
 	if (skinid >= numskins)
 		return;
 
-	boolean tasteful = (!source->player || source->player->karthud[khud_voices]);
+	boolean tasteful = (!source->player || !source->player->karthud[khud_voices]);
 
 	if (!(gametyperules & GTR_CIRCUIT)) // Only in race
 		return;
