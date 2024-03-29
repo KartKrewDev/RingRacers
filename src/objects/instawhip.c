@@ -10,7 +10,7 @@
 /// \file  instawhip.c
 /// \brief Instawhip object code.
 
-#include "../doomdef.h"`
+#include "../doomdef.h"
 #include "../info.h"
 #include "../k_objects.h"
 #include "../p_local.h"
