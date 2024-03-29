@@ -4542,7 +4542,7 @@ void P_PlayerThink(player_t *player)
 					}
 					else if (!(gametyperules & GTR_CIRCUIT))
 					{
-						SetRandomFakePlayerSkin(player, false);
+						SetRandomFakePlayerSkin(player, false, false);
 					}
 				}
 			}

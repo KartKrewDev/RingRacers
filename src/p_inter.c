@@ -3276,6 +3276,15 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			Obj_EndBungee(player);
 			K_BumperInflate(target->player);
 
+			UINT32 hurtskinflags = (demo.playback)
+					? demo.skinlist[demo.currentskinid[(player-players)]].flags
+					: skins[player->skin].flags;
+			if (hurtskinflags & SF_IRONMAN)
+			{
+				if (gametyperules & GTR_BUMPERS)
+					SetRandomFakePlayerSkin(player, false, true);
+			}
+
 			// Explosions are explicit combo setups.
 			if (damagetype & DMG_EXPLODE)
 				player->bumperinflate = 0;

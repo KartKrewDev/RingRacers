@@ -2017,7 +2017,7 @@ static void K_HandleLapIncrement(player_t *player)
 					: skins[player->skin].flags;
 				if (skinflags & SF_IRONMAN)
 				{
-					SetRandomFakePlayerSkin(player, true);
+					SetRandomFakePlayerSkin(player, true, false);
 				}
 
 				// Always trust waypoints entering the first lap.
