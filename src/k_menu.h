@@ -1144,6 +1144,7 @@ void M_HandleProfileErase(INT32 choice);
 void M_DrawMasterServerReminder(void);
 
 // Draws the EGGA CHANNEL background.
+void M_DrawEggaChannelAlignable(boolean centered);
 void M_DrawEggaChannel(void);
 
 // Extras menu:

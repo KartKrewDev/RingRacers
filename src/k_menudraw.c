@@ -3829,13 +3829,18 @@ static void M_MPOptDrawer(menu_t *m, INT16 extend[3][3])
 }
 
 // Draws the EGGA CHANNEL background.
-void M_DrawEggaChannel(void)
+void M_DrawEggaChannelAlignable(boolean centered)
 {
 	patch_t *background = W_CachePatchName("M_EGGACH", PU_CACHE);
 
 	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 25);
-	V_DrawFixedPatch((menuactive ? 75 : 160)<<FRACBITS, 104<<FRACBITS, FRACUNIT, 0, background, NULL);
+	V_DrawFixedPatch((!centered ? 75 : 160)<<FRACBITS, 104<<FRACBITS, FRACUNIT, 0, background, NULL);
 	V_DrawVhsEffect(false);	// VHS the background! (...sorry OGL my love)
+}
+
+void M_DrawEggaChannel(void)
+{
+	M_DrawEggaChannelAlignable(false);
 }
 
 // Multiplayer mode option select

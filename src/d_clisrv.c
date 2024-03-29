@@ -2110,7 +2110,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 	{
 		I_OsPolling();
 
-		// Needs to be updated here for M_DrawEggaChannel
+		// Needs to be updated here for M_DrawEggaChannelAlignable
 		renderdeltatics = FRACUNIT;
 		rendertimefrac = FRACUNIT;
 
@@ -2169,7 +2169,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 		{
 			if (cl_mode != CL_DOWNLOADFILES && cl_mode != CL_DOWNLOADSAVEGAME)
 			{
-				M_DrawEggaChannel();
+				M_DrawEggaChannelAlignable(true);
 			}
 			CL_DrawConnectionStatus();
 
