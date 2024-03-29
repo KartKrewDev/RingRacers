@@ -1105,7 +1105,7 @@ static void SV_SendServerInfo(INT32 node, tic_t servertime)
 
 	netbuffer->u.serverinfo.httpsource[MAX_MIRROR_LENGTH-1] = '\0';
 
-	if (cv_kartusepwrlv.value)
+	if (K_UsingPowerLevels() != PWRLV_DISABLED)
 		netbuffer->u.serverinfo.avgpwrlv = K_CalculatePowerLevelAvg();
 	else
 		netbuffer->u.serverinfo.avgpwrlv = -1;
