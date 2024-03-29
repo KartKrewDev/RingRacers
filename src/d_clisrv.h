@@ -459,10 +459,14 @@ struct doomdata_t
 #endif
 
 #define MAXSERVERLIST (MAXNETNODES-1)
+#define GTCALC_RACE 0
+#define GTCALC_BATTLE 1
+#define GTCALC_CUSTOM 2
 struct serverelem_t
 {
 	SINT8 node;
 	serverinfo_pak info;
+	UINT8 cachedgtcalc;
 };
 
 extern serverelem_t serverlist[MAXSERVERLIST];

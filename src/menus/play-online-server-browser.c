@@ -299,7 +299,28 @@ void M_ServerListFillDebug(void)
 
 		strcpy(serverlist[i].info.servername, va("Serv %d", i+1));
 
-		strcpy(serverlist[i].info.gametypename, i & 1 ? "Race" : "Battle");
+		const char *tempgtname;
+		if (i < 10 && mpmenu.room == 1)
+		{
+			tempgtname = va("%c%c%c%c",
+				'A' + M_RandomKey(26),
+				'a' + M_RandomKey(26),
+				'a' + M_RandomKey(26),
+				'a' + M_RandomKey(26)
+			);
+		}
+		else
+			tempgtname = (i & 1) ? "Race" : "Battle";
+
+		strcpy(serverlist[i].info.gametypename, tempgtname);
+
+		const INT32 gtidentifier = G_GetGametypeByName(tempgtname);
+		UINT8 gtcalc = GTCALC_RACE;
+		if (gtidentifier != GT_RACE)
+		{
+			gtcalc = (gtidentifier == GT_BATTLE) ? GTCALC_BATTLE : GTCALC_CUSTOM;
+		}
+		serverlist[i].cachedgtcalc = gtcalc;
 
 		serverlist[i].info.kartvars = M_RandomRange(0, 3) & SV_SPEEDMASK;
 

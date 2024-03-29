@@ -1537,15 +1537,16 @@ static boolean SL_InsertServer(serverinfo_pak* info, SINT8 node)
 	i = SL_SearchServer(node);
 	if (i == UINT32_MAX)
 	{
-		// not found add it
+		// not found, check for packet format rejections
+
 		if (serverlistcount >= MAXSERVERLIST)
 			return false; // list full
 
 		if (info->_255 != 255)
-			return false;/* old packet format */
+			return false; // old packet format
 
 		if (info->packetversion != PACKETVERSION)
-			return false;/* old new packet format */
+			return false; // old new packet format
 
 		if (info->version != VERSION)
 			return false; // Not same version.
@@ -1554,16 +1555,40 @@ static boolean SL_InsertServer(serverinfo_pak* info, SINT8 node)
 			return false; // Close, but no cigar.
 
 		if (strcmp(info->application, SRB2APPLICATION))
-			return false;/* that's a different mod */
+			return false; // that's a different mod
+	}
 
-		if (serverlistultimatecount && info->modifiedgame != (mpmenu.room == 1))
-			return false;/* CORE vs MODDED! But only on the server browser page. */
+	const INT32 gtidentifier = G_GetGametypeByName(info->gametypename);
+	UINT8 gtcalc = GTCALC_RACE;
+	if (gtidentifier != GT_RACE)
+	{
+		gtcalc = (gtidentifier == GT_BATTLE) ? GTCALC_BATTLE : GTCALC_CUSTOM;
+	}
 
+	if (i == UINT32_MAX)
+	{
+		// Still not added to list... check for modifiedgame rejections
+		if (serverlistultimatecount)
+		{
+			// We're on the server browser page. We can reject based on our room.
+			if (
+				(
+					info->modifiedgame != false // self-declared
+					|| (gtcalc == GTCALC_CUSTOM) // not a main two gametype
+				) != (mpmenu.room == 1)
+			)
+			{
+				return false; // CORE vs MODDED!
+			}
+		}
+
+		// Ok, FINALLY now we can confirm
 		i = serverlistcount++;
 	}
 
 	serverlist[i].info = *info;
 	serverlist[i].node = node;
+	serverlist[i].cachedgtcalc = gtcalc;
 
 	// resort server list
 	M_SortServerList();
