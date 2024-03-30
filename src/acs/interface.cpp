@@ -245,6 +245,29 @@ void ACS_RunPlayerEnterScript(player_t *player)
 }
 
 /*--------------------------------------------------
+	void ACS_RunPlayerFinishScript(player_t *player)
+
+		See header file for description.
+--------------------------------------------------*/
+void ACS_RunPlayerFinishScript(player_t *player)
+{
+	Environment *env = &ACSEnv;
+
+	ACSVM::GlobalScope *const global = env->getGlobalScope(0);
+	ACSVM::HubScope *const hub = global->getHubScope(0);
+	ACSVM::MapScope *const map = hub->getMapScope(0);
+
+	ACSVM::MapScope::ScriptStartInfo scriptInfo;
+	ThreadInfo info;
+
+	P_SetTarget(&info.mo, player->mo);
+
+	scriptInfo.info = &info;
+
+	map->scriptStartTypeForced(ACS_ST_FINISH, scriptInfo);
+}
+
+/*--------------------------------------------------
 	void ACS_RunLapScript(mobj_t *mo, line_t *line)
 
 		See header file for description.
