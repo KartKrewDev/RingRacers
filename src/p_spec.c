@@ -1997,7 +1997,7 @@ static void K_HandleLapIncrement(player_t *player)
 				if (specialstageinfo.valid == true)
 				{
 					// Don't permit a win just by sneaking ahead of the UFO/emerald.
-					if (!(specialstageinfo.ufo == NULL || P_MobjWasRemoved(specialstageinfo.ufo)))
+					if (K_PlayerIsEmptyHandedInSpecial(player))
 					{
 						applyflags |= PF_NOCONTEST;
 
