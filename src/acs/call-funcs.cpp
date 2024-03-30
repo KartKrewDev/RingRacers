@@ -1672,6 +1672,30 @@ bool CallFunc_PlayerLosing(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM
 }
 
 /*--------------------------------------------------
+	bool CallFunc_PlayerExiting(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Returns the activating player's exiting status.
+--------------------------------------------------*/
+bool CallFunc_PlayerExiting(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	auto info = &static_cast<Thread *>(thread)->info;
+
+	(void)argV;
+	(void)argC;
+
+	if ((info != NULL)
+		&& (info->mo != NULL && P_MobjWasRemoved(info->mo) == false)
+		&& (info->mo->player != NULL))
+	{
+		thread->dataStk.push((info->mo->player->exiting != 0));
+		return false;
+	}
+
+	thread->dataStk.push(false);
+	return false;
+}
+
+/*--------------------------------------------------
 	bool CallFunc_GetObjectDye(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Returns the activating object's current dye.
