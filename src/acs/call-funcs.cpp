@@ -39,6 +39,7 @@
 #include "../r_textures.h"
 #include "../m_cond.h"
 #include "../r_skins.h"
+#include "../k_kart.h"
 #include "../k_battle.h"
 #include "../k_grandprix.h"
 #include "../k_podium.h"
@@ -1639,6 +1640,30 @@ bool CallFunc_PlayerBot(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::W
 	{
 
 		thread->dataStk.push(info->mo->player->bot);
+		return false;
+	}
+
+	thread->dataStk.push(false);
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_PlayerLosing(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Returns the activating player's losing status.
+--------------------------------------------------*/
+bool CallFunc_PlayerLosing(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	auto info = &static_cast<Thread *>(thread)->info;
+
+	(void)argV;
+	(void)argC;
+
+	if ((info != NULL)
+		&& (info->mo != NULL && P_MobjWasRemoved(info->mo) == false)
+		&& (info->mo->player != NULL))
+	{
+		thread->dataStk.push(K_IsPlayerLosing(info->mo->player));
 		return false;
 	}
 
