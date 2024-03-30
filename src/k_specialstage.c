@@ -120,6 +120,19 @@ void K_TickSpecialStage(void)
 		return;
 	}
 
+	// Special stages: fade out music near the finish line
+	UINT8 i;
+	UINT32 lowestdistance = UINT32_MAX;
+	for (i = 0; i <= r_splitscreen; i++)
+	{
+		if (!playeringame[displayplayers[i]] || players[displayplayers[i]].spectator)
+			continue;
+		if (players[displayplayers[i]].distancetofinish >= lowestdistance)
+			continue;
+		lowestdistance = players[displayplayers[i]].distancetofinish;
+	}
+	K_FadeOutSpecialMusic(lowestdistance);
+
 	if (P_MobjWasRemoved(specialstageinfo.ufo))
 	{
 		P_SetTarget(&specialstageinfo.ufo, NULL);
