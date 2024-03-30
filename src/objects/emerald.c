@@ -17,6 +17,7 @@
 #include "../r_main.h"
 #include "../s_sound.h"
 #include "../tables.h"
+#include "../g_game.h"
 
 #define emerald_type(o) ((o)->extravalue1)
 #define emerald_anim_start(o) ((o)->movedir)
@@ -125,6 +126,33 @@ static void Obj_EmeraldOrbitPlayer(mobj_t *emerald)
 	fixed_t r = get_current_radius(emerald);
 	fixed_t x = FixedMul(r, FCOS(emerald->angle));
 	fixed_t y = FixedMul(r, FSIN(emerald->angle));
+
+	// Multiplayer Sealed Stars can become unwinnable if someone deathpits with the emerald. Find a player to retarget!
+	if ((gametyperules & GTR_CATCHER) && emerald_orbit(emerald)->player && (emerald_orbit(emerald)->player->pflags & PF_NOCONTEST))
+	{
+		player_t *bestplayer = emerald_orbit(emerald)->player;
+
+		for (int i = 0; i < MAXPLAYERS; i++)
+		{
+			if (!playeringame[i])
+				continue;
+			if (players[i].spectator)
+				continue;
+			if (players[i].pflags & PF_NOCONTEST)
+				continue;
+			if (!(players[i].mo && !P_MobjWasRemoved(players[i].mo)))
+				continue;
+			if ((bestplayer->pflags & PF_NOCONTEST) || (players[i].distancetofinish < bestplayer->distancetofinish))
+					bestplayer = &players[i];
+		}
+
+		if (!(bestplayer->pflags & PF_NOCONTEST))
+		{
+			P_MoveOrigin(emerald, bestplayer->mo->x, bestplayer->mo->y, bestplayer->mo->z);
+			Obj_BeginEmeraldOrbit(emerald, bestplayer->mo, 100 * mapobjectscale, 64, 0);
+			return;
+		}
+	}
 
 	P_MoveOrigin(
 			emerald,
