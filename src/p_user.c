@@ -4425,9 +4425,6 @@ void P_PlayerThink(player_t *player)
 		{
 			// Allows some turning
 			P_MovePlayer(player);
-
-			if (player->rings <= -20) // We got here from death, so give the player a fresh start.
-				player->rings = 5;
 		}
 	}
 	else if (player->mo->reactiontime)
