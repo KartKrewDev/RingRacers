@@ -1529,6 +1529,12 @@ sfxinfo_t S_sfx[NUMSFX] =
   // Patching up base sounds
   {"s226l",  false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // s2 spikes LOUD
 
+  // Destroyed Kart
+  {"die00",  false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"die01",  false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"die02",  false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"die03",  false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+
   // SRB2kart - Skin sounds
   {"kwin",   false,  64, 96, -1, NULL, 0,   SKSKWIN,  -1, LUMPERROR, ""},
   {"klose",  false,  64, 96, -1, NULL, 0,  SKSKLOSE,  -1, LUMPERROR, ""},

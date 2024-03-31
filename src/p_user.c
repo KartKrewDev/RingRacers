@@ -2825,7 +2825,6 @@ static void P_DeathThink(player_t *player)
 		if (player->mo)
 		{
 			player->mo->flags |= (MF_NOGRAVITY|MF_NOCLIP);
-			player->mo->renderflags |= RF_DONTDRAW;
 		}
 	}
 	else

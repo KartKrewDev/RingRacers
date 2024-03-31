@@ -1282,6 +1282,10 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 				if (mo->fuse)
 					gravityadd /= 10;
 				break;
+			case MT_KART_PARTICLE:
+				if (!mo->fuse)
+					gravityadd *= 2;
+				break;
 			default:
 				break;
 		}
@@ -2468,67 +2472,16 @@ boolean P_ZMovement(mobj_t *mo)
 				mom.z = -mom.z;
 			else if (mo->type == MT_KART_LEFTOVER)
 			{
-				if (mo->health > 1)
-				{
-					const fixed_t tireOffset = 32;
-					const angle_t aOffset = ANGLE_22h;
-
-					UINT8 i;
-					angle_t tireAngle;
-					mobj_t *tire;
-
-					// Spawn tires!
-					mo->health = 1;
-					P_SetMobjState(mo, S_KART_LEFTOVER_NOTIRES);
-
-					// Front tires
-					tireAngle = mo->angle - aOffset;
-					for (i = 0; i < 2; i++)
-					{
-						tire = P_SpawnMobjFromMobj(
-							mo,
-							tireOffset * FINECOSINE(tireAngle >> ANGLETOFINESHIFT),
-							tireOffset * FINESINE(tireAngle >> ANGLETOFINESHIFT),
-							0,
-							MT_KART_TIRE
-						);
-
-						tire->angle = mo->angle;
-						tire->fuse = 3*TICRATE;
-						P_InstaThrust(tire, tireAngle, 4 * mo->scale);
-						P_SetObjectMomZ(tire, 4*FRACUNIT, false);
-
-						tireAngle += (aOffset * 2);
-					}
-
-					// Back tires
-					tireAngle = (mo->angle + ANGLE_180) - aOffset;
-					for (i = 0; i < 2; i++)
-					{
-						tire = P_SpawnMobjFromMobj(
-							mo,
-							tireOffset * FINECOSINE(tireAngle >> ANGLETOFINESHIFT),
-							tireOffset * FINESINE(tireAngle >> ANGLETOFINESHIFT),
-							0,
-							MT_KART_TIRE
-						);
-
-						tire->angle = mo->angle;
-						tire->fuse = 3*TICRATE;
-						P_InstaThrust(tire, tireAngle, 4 * mo->scale);
-						P_SetObjectMomZ(tire, 4*FRACUNIT, false);
-
-						P_SetMobjState(tire, S_KART_TIRE2);
-
-						tireAngle += (aOffset * 2);
-					}
-				}
-
 				mom.z = 0;
 			}
 			else if (mo->type == MT_KART_TIRE)
 			{
 				mom.z = -mom.z;
+			}
+			else if (mo->type == MT_KART_PARTICLE)
+			{
+				mom.z = -mom.z / (mo->fuse ? 1 : 2);
+				Obj_DestroyedKartParticleLanding(mo);
 			}
 			else if (mo->type == MT_BIGTUMBLEWEED
 				|| mo->type == MT_LITTLETUMBLEWEED
@@ -9895,6 +9848,22 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		break;
 	}
 
+	case MT_KART_PARTICLE:
+	{
+		Obj_DestroyedKartParticleThink(mobj);
+		break;
+	}
+
+	case MT_KART_LEFTOVER:
+	{
+		Obj_DestroyedKartThink(mobj);
+		if (P_MobjWasRemoved(mobj))
+		{
+			return false;
+		}
+		break;
+	}
+
 	default:
 		// check mobj against possible water content, before movement code
 		P_MobjCheckWater(mobj);
@@ -9958,6 +9927,7 @@ static boolean P_CanFlickerFuse(mobj_t *mobj)
 		case MT_POGOSPRING:
 		case MT_EMERALD:
 		case MT_BLENDEYE_PUYO:
+		case MT_KART_PARTICLE:
 			if (mobj->fuse <= TICRATE)
 			{
 				return true;

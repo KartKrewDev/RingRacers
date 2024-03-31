@@ -1651,40 +1651,6 @@ boolean P_CheckRacers(void)
 	return false;
 }
 
-static void P_SpawnBadnikExplosion(mobj_t *target)
-{
-	UINT8 count = 24;
-	angle_t ang = 0;
-	angle_t step = ANGLE_MAX / count;
-	fixed_t spd = 8 * mapobjectscale;
-	for (UINT8 i = 0; i < count; ++i)
-	{
-		mobj_t *x = P_SpawnMobjFromMobjUnscaled(
-			target,
-			P_RandomRange(PR_EXPLOSION, -48, 48) * target->scale,
-			P_RandomRange(PR_EXPLOSION, -48, 48) * target->scale,
-			P_RandomRange(PR_EXPLOSION, -48, 48) * target->scale,
-			MT_THOK
-		);
-		P_InstaScale(x, 3 * x->scale / 2);
-		P_InstaThrust(x, ang, spd);
-		x->momz = P_RandomRange(PR_EXPLOSION, -4, 4) * mapobjectscale;
-		P_SetMobjStateNF(x, S_BADNIK_EXPLOSION1);
-		ang += step;
-	}
-	// burst effects (copied from MT_ITEMCAPSULE)
-	ang = FixedAngle(360*P_RandomFixed(PR_ITEM_DEBRIS));
-	for (UINT8 i = 0; i < 2; i++)
-	{
-		mobj_t *blast = P_SpawnMobjFromMobj(target, 0, 0, target->info->height >> 1, MT_BATTLEBUMPER_BLAST);
-		blast->angle = ang + i*ANGLE_90;
-		P_SetScale(blast, 2*blast->scale/3);
-		blast->destscale = 6*blast->scale;
-		blast->scalespeed = (blast->destscale - blast->scale) / 30;
-		P_SetMobjStateNF(blast, S_BADNIK_EXPLOSION_SHOCKWAVE1 + i);
-	}
-}
-
 /** Kills an object.
   *
   * \param target    The victim.
@@ -1885,31 +1851,11 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			{
 				fixed_t flingSpeed = FixedHypot(target->momx, target->momy);
 				angle_t flingAngle;
-				mobj_t *kart;
 
 				target->fuse = TICRATE*3; // timer before mobj disappears from view (even if not an actual player)
 				target->momx = target->momy = target->momz = 0;
 
-				kart = P_SpawnMobjFromMobj(target, 0, 0, 0, MT_KART_LEFTOVER);
-
-				if (kart && !P_MobjWasRemoved(kart))
-				{
-					kart->angle = target->angle;
-					kart->color = target->color;
-					kart->hitlag = target->hitlag;
-					kart->eflags |= MFE_DAMAGEHITLAG;
-					P_SetObjectMomZ(kart, 6*FRACUNIT, false);
-					kart->extravalue1 = target->player->kartweight;
-
-					// Copy interp data
-					kart->old_angle = target->old_angle;
-					kart->old_x = target->old_x;
-					kart->old_y = target->old_y;
-					kart->old_z = target->old_z;
-
-					if (target->player->pflags & PF_NOCONTEST)
-						P_SetTarget(&target->tracer, kart);
-				}
+				Obj_SpawnDestroyedKart(target);
 
 				if (source && !P_MobjWasRemoved(source))
 				{
@@ -1951,16 +1897,6 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				boolean battle = (gametyperules & (GTR_BUMPERS | GTR_BOSS)) == GTR_BUMPERS;
 				P_InstaThrust(target, flingAngle, max(flingSpeed, 6 * target->scale) / (battle ? 1 : 3));
 				P_SetObjectMomZ(target, battle ? 20*FRACUNIT : 18*FRACUNIT, false);
-
-				P_PlayDeathSound(target);
-
-				if (skins[target->player->skin].flags & SF_BADNIK)
-				{
-					P_SpawnBadnikExplosion(target);
-					target->spritexscale = 2*FRACUNIT;
-					target->spriteyscale = 2*FRACUNIT;
-					target->flags |= MF_NOSQUISH;
-				}
 			}
 
 			// Prisons Free Play: don't eliminate P1 for
@@ -2549,6 +2485,9 @@ static boolean P_PlayerHitsPlayer(mobj_t *target, mobj_t *inflictor, mobj_t *sou
 
 static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, UINT8 type)
 {
+	(void)inflictor;
+	(void)source;
+
 	const boolean beforeexit = !(player->exiting || (player->pflags & PF_NOCONTEST));
 
 	if (type == DMG_SPECTATOR && (G_GametypeHasTeams() || G_GametypeHasSpectators()))
@@ -2667,7 +2606,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 	}
 
 	K_DropEmeraldsFromPlayer(player, player->emeralds);
-	K_SetHitLagForObjects(player->mo, inflictor, source, MAXHITLAGTICS, true);
+	//K_SetHitLagForObjects(player->mo, inflictor, source, MAXHITLAGTICS, true);
 
 	player->carry = CR_NONE;
 
@@ -2692,19 +2631,6 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 
 	if (type == DMG_TIMEOVER)
 	{
-		if (gametyperules & GTR_CIRCUIT)
-		{
-			mobj_t *boom;
-
-			player->mo->flags |= (MF_NOGRAVITY|MF_NOCLIP);
-			player->mo->renderflags |= RF_DONTDRAW;
-
-			boom = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_FZEROBOOM);
-			boom->scale = player->mo->scale;
-			boom->angle = player->mo->angle;
-			P_SetTarget(&boom->target, player->mo);
-		}
-
 		player->pflags |= PF_ELIMINATED;
 	}
 
@@ -2892,6 +2818,14 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		case MT_SA2_CRATE:
 		case MT_ICECAPBLOCK:
 			return Obj_TryCrateDamage(target, inflictor);
+
+		case MT_KART_LEFTOVER:
+			// intangible (do not let instawhip shred damage)
+			if (Obj_DestroyKart(target))
+				return false;
+
+			P_SetObjectMomZ(target, 12*FRACUNIT, false);
+			break;
 
 		default:
 			break;
@@ -3462,7 +3396,8 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	if ((damagetype & DMG_TYPEMASK) != DMG_WHUMBLE && (gametyperules & GTR_BUMPERS) && !battleprisons)
 		laglength /= 2;
 
-	K_SetHitLagForObjects(target, inflictor, source, laglength, true);
+	if (!(target->player && (damagetype & DMG_DEATHMASK)))
+		K_SetHitLagForObjects(target, inflictor, source, laglength, true);
 
 	target->flags2 |= MF2_ALREADYHIT;
 

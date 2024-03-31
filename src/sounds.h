@@ -1605,6 +1605,12 @@ typedef enum
 	// Patch-up
 	sfx_s226l,
 
+	// Destroyed Kart
+	sfx_die00,
+	sfx_die01,
+	sfx_die02,
+	sfx_die03,
+
 	// And LASTLY, Kart's skin sounds.
 	sfx_kwin,
 	sfx_klose,

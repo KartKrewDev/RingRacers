@@ -418,6 +418,13 @@ void Obj_TalkPointOrbThink(mobj_t* mo);
 void Obj_SpawnPowerUpSpinner(mobj_t *source, INT32 powerup, tic_t duration);
 void Obj_TickPowerUpSpinner(mobj_t *mobj);
 
+/* Destroyed Kart */
+void Obj_SpawnDestroyedKart(mobj_t *player);
+void Obj_DestroyedKartThink(mobj_t *kart);
+boolean Obj_DestroyKart(mobj_t *kart);
+void Obj_DestroyedKartParticleThink(mobj_t *part);
+void Obj_DestroyedKartParticleLanding(mobj_t *part);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

@@ -370,6 +370,13 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_KART_TIRE1",
 	"S_KART_TIRE2",
 
+	"S_KART_FIRE",
+	"S_KART_SMOKE",
+
+	"S_KART_XPL01",
+	"S_KART_XPL02",
+	"S_KART_XPL03",
+
 	// Boss Explosion
 	"S_BOSSEXPLODE",
 
@@ -3061,6 +3068,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_PLAYER",
 	"MT_KART_LEFTOVER",
 	"MT_KART_TIRE",
+	"MT_KART_PARTICLE",
 
 	// Generic Boss Items
 	"MT_BOSSEXPLODE",
