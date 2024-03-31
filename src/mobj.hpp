@@ -276,6 +276,11 @@ struct Mobj : mobj_t
 	{
 		K_SetHitLagForObjects(this, inflictor, source, tics, damage);
 	}
+	void exact_hitlag(INT32 tics, bool damage)
+	{
+		mobj_t::hitlag = tics;
+		mobj_t::eflags = (mobj_t::eflags & ~MFE_DAMAGEHITLAG) | (MFE_DAMAGEHITLAG * damage);
+	}
 };
 
 }; // namespace srb2
