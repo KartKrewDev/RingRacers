@@ -1281,6 +1281,22 @@ typedef enum sprite
 	// Tutorial
 	SPR_TLKP, // Talk Point
 
+	// Destroyed Kart
+	SPR_DIEA, // tire
+	SPR_DIEB, // pipeframe bar
+	SPR_DIEC, // pedal tip
+	SPR_DIED, // right pedal
+	SPR_DIEE, // steering wheel
+	SPR_DIEF, // kart
+	SPR_DIEG, // left pedal
+	SPR_DIEH, // strut
+	SPR_DIEI, // wheel axle bar
+	SPR_DIEJ, // screw
+	SPR_DIEK, // electric engine
+	SPR_DIEL, // fire
+	SPR_DIEM, // smoke
+	SPR_DIEN, // explosion
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	SPR_VIEW,
 
@@ -1370,6 +1386,13 @@ typedef enum state
 
 	S_KART_TIRE1,
 	S_KART_TIRE2,
+
+	S_KART_FIRE,
+	S_KART_SMOKE,
+
+	S_KART_XPL01,
+	S_KART_XPL02,
+	S_KART_XPL03,
 
 	// Boss Explosion
 	S_BOSSEXPLODE,
@@ -4089,6 +4112,7 @@ typedef enum mobj_type
 	MT_PLAYER,
 	MT_KART_LEFTOVER,
 	MT_KART_TIRE,
+	MT_KART_PARTICLE,
 
 	// Generic Boss Items
 	MT_BOSSEXPLODE,

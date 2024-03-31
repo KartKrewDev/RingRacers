@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2023 by James Robert Roman
+// Copyright (C) 2023-2024 by James Robert Roman
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -157,7 +157,7 @@ struct Mobj : mobj_t
 		statenum_t num() const { return static_cast<statenum_t>(static_cast<const state_t*>(this) - states); }
 	};
 
-	void state(statenum_t state) { P_SetMobjState(this, state); }
+	void state(statenum_t state) { (player ? P_SetPlayerMobjState : P_SetMobjState)(this, state); }
 	const State* state() const { return static_cast<const State*>(mobj_t::state); }
 
 
@@ -275,6 +275,11 @@ struct Mobj : mobj_t
 	void hitlag(Mobj* inflictor, Mobj* source, INT32 tics, bool damage)
 	{
 		K_SetHitLagForObjects(this, inflictor, source, tics, damage);
+	}
+	void exact_hitlag(INT32 tics, bool damage)
+	{
+		mobj_t::hitlag = tics;
+		mobj_t::eflags = (mobj_t::eflags & ~MFE_DAMAGEHITLAG) | (MFE_DAMAGEHITLAG * damage);
 	}
 };
 

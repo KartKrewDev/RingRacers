@@ -746,6 +746,22 @@ char sprnames[NUMSPRITES + 1][5] =
 	// Tutorial
 	"TLKP", // Talk Point
 
+	// Destroyed Kart
+	"DIEA", // tire
+	"DIEB", // pipeframe bar
+	"DIEC", // pedal tip
+	"DIED", // right pedal
+	"DIEE", // steering wheel
+	"DIEF", // kart
+	"DIEG", // left pedal
+	"DIEH", // strut
+	"DIEI", // wheel axle bar
+	"DIEJ", // screw
+	"DIEK", // electric engine
+	"DIEL", // fire
+	"DIEM", // smoke
+	"DIEN", // explosion
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	"VIEW",
 };
@@ -873,17 +889,24 @@ state_t states[NUMSTATES] =
 	{SPR_PLAY, SPR2_DRRO,					  1, {NULL}, 0, 0, S_KART_DRIFT_R_OUT},			// S_KART_DRIFT_R_OUT
 	{SPR_PLAY, SPR2_DRRI,					  1, {NULL}, 0, 0, S_KART_DRIFT_R_IN},			// S_KART_DRIFT_R_IN
 	{SPR_PLAY, SPR2_SPIN|FF_ANIMATE,		350, {NULL}, 0, 1, S_KART_STILL},				// S_KART_SPINOUT
-	{SPR_PLAY, SPR2_DEAD,					  3, {NULL}, 0, 0, S_KART_DEAD},				// S_KART_DEAD
+	{SPR_PLAY, SPR2_DEAD|FF_SEMIBRIGHT,		  3, {NULL}, 0, 0, S_KART_DEAD},				// S_KART_DEAD
 	{SPR_PLAY, SPR2_SIGN|FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 0, 1, 0},					// S_KART_SIGN
 	{SPR_PLAY, SPR2_SIGL|FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 0, 1, 0},					// S_KART_SIGL
 
 	{SPR_NULL, 0, -1, {NULL}, 0, 0, S_OBJPLACE_DUMMY}, // S_OBJPLACE_DUMMY
 
 	{SPR_KART, 0, -1, {NULL}, 0, 0, S_NULL}, // S_KART_LEFTOVER
-	{SPR_KART, 1, -1, {NULL}, 0, 0, S_NULL}, // S_KART_LEFTOVER_NOTIRES
+	{SPR_DIEF, 0, -1, {NULL}, 0, 0, S_NULL}, // S_KART_LEFTOVER_NOTIRES
 
 	{SPR_TIRE, 0, -1, {NULL}, 0, 0, S_NULL}, // S_KART_TIRE1
 	{SPR_TIRE, 1, -1, {NULL}, 0, 0, S_NULL}, // S_KART_TIRE2
+
+	{SPR_DIEL, 0|FF_ANIMATE, 12, {NULL}, 11, 1, S_NULL}, // S_KART_FIRE
+	{SPR_DIEM, FF_SEMIBRIGHT|FF_ANIMATE|FF_TRANS30, 30, {NULL}, 9, 3, S_NULL}, // S_KART_SMOKE
+
+	{SPR_DIEN, 0|FF_PAPERSPRITE|FF_ADD, 3, {NULL}, 0, 0, S_KART_XPL02}, // S_KART_XPL01
+	{SPR_DIEN, 1|FF_PAPERSPRITE|FF_ADD|FF_ANIMATE, 4, {NULL}, 1, 2, S_KART_XPL03}, // S_KART_XPL02
+	{SPR_DIEN, 3|FF_PAPERSPRITE|FF_ADD|FF_ANIMATE, 10, {NULL}, 4, 2, S_NULL}, // S_KART_XPL03
 
 	// Boss Explosion
 	{SPR_BOM2, FF_FULLBRIGHT|FF_ANIMATE, (5*7), {NULL}, 6, 5, S_NULL}, // S_BOSSEXPLODE
@@ -3722,7 +3745,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,       // painsound
 		S_NULL,         // meleestate
 		S_NULL,         // missilestate
-		S_KART_DEAD,    // deathstate
+		S_KART_SPINOUT, // deathstate
 		S_NULL,         // xdeathstate
 		sfx_None,       // deathsound
 		1,              // speed
@@ -3738,13 +3761,13 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 
 	{           // MT_KART_LEFTOVER
 		4095,            // doomednum
-		S_KART_LEFTOVER, // spawnstate
+		S_KART_LEFTOVER_NOTIRES, // spawnstate
 		2,              // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound
 		0,              // reactiontime
 		sfx_None,       // attacksound
-		S_NULL,         // painstate
+		S_KART_LEFTOVER_NOTIRES, // painstate
 		0,              // painchance
 		sfx_None,       // painsound
 		S_NULL,         // meleestate
@@ -3787,6 +3810,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // damage
 		sfx_None,       // activesound
 		MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_KART_PARTICLE
+		-1,             // doomednum
+		S_INVISIBLE,    // spawnstate
+		1,              // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		1,              // speed
+		6*FRACUNIT,     // radius
+		12*FRACUNIT,    // height
+		-1,             // display offset
+		1000,           // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPTHING|MF_DONTENCOREMAP|MF_NOSQUISH, // flags
 		S_NULL          // raisestate
 	},
 
