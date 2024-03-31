@@ -46,6 +46,7 @@
 #include "k_powerup.h"
 #include "k_collide.h"
 #include "m_easing.h"
+#include "k_hud.h" // K_AddMessage
 
 
 // CTF player names
@@ -3254,6 +3255,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			// Death save! On your last hit, no matter what, demote to weakest damage type for one last escape chance.
 			if (player->mo->health == 2 && damage && gametyperules & GTR_BUMPERS)
 			{
+				K_AddMessageForPlayer(player, "\x8DLast Chance!", false, false);
 				S_StartSound(target, sfx_gshc7);
 				player->flashing = TICRATE;
 				type = DMG_STUMBLE;
