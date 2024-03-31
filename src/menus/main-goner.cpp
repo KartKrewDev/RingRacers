@@ -16,6 +16,7 @@
 #include "../m_easing.h"
 #include "../g_input.h"
 #include "../m_pw.h"
+#include "../z_zone.h"
 
 #include <forward_list>
 
@@ -136,16 +137,20 @@ public:
 
 	GonerChatLine(gonerspeakers_t speaker, int delay, std::string dialogue)
 	{
-		this->speaker = speaker;
-		this->dialogue = V_ScaledWordWrap(
+		char *newText = V_ScaledWordWrap(
 			(BASEVIDWIDTH/2 + 6) << FRACBITS,
 			FRACUNIT, FRACUNIT, FRACUNIT,
 			0, TINY_FONT,
 			dialogue.c_str()
 		);
+
+		this->speaker = speaker;
+		this->dialogue = std::string(newText);
 		this->value = delay;
 
 		this->routine = nullptr;
+
+		Z_Free(newText);
 	};
 
 	GonerChatLine(int delay, void (*routine)(void))
