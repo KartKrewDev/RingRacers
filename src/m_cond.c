@@ -1805,7 +1805,7 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 				&& M_NotFreePlay()
 				&& (player->tally.active == true)
 				&& (player->tally.state >= TALLY_ST_GRADE_APPEAR)
-				&& (player->tally.state < TALLY_ST_DONE)
+				&& (player->tally.state <= TALLY_ST_DONE)
 				&& (player->tally.rank >= cn->requirement));
 		case UCRP_FINISHTIME:
 			return (player->exiting
