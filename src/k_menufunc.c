@@ -18,6 +18,10 @@
 #include "m_cond.h"
 #include "music.h"
 
+#ifdef HAVE_DISCORDRPC
+#include "discord.h"
+#endif
+
 #ifdef PC_DOS
 #include <stdio.h> // for snprintf
 int	snprintf(char *str, size_t n, const char *fmt, ...);
@@ -818,6 +822,11 @@ void M_StartControlPanel(void)
 
 		itemOn = currentMenu->lastOn;
 		M_UpdateMenuBGImage(true);
+
+#ifdef HAVE_DISCORDRPC
+		// currentMenu changed during GS_MENU
+		DRPC_UpdatePresence();
+#endif
 	}
 	else
 	{
@@ -939,6 +948,14 @@ void M_SetupNextMenu(menu_t *menudef, boolean notransition)
 
 	M_UpdateMenuBGImage(false);
 	M_PlayMenuJam();
+
+#ifdef HAVE_DISCORDRPC
+	if (gamestate == GS_MENU)
+	{
+		// currentMenu changed during GS_MENU
+		DRPC_UpdatePresence();
+	}
+#endif
 }
 
 void M_GoBack(INT32 choice)

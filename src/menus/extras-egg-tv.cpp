@@ -14,6 +14,10 @@
 #include "../k_menu.h"
 #include "../s_sound.h"
 
+#ifdef HAVE_DISCORDRPC
+#include "../discord.h"
+#endif
+
 using namespace srb2::menus::egg_tv;
 
 namespace
@@ -132,6 +136,10 @@ void M_EggTV(INT32 choice)
 	g_egg_tv = std::make_unique<EggTV>();
 
 	M_SetupNextMenu(&EXTRAS_EggTVDef, false);
+
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 }
 
 void M_EggTV_RefreshButtonLabels()
