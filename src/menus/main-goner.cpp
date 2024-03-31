@@ -859,6 +859,12 @@ void M_GonerTick(void)
 
 		if (M_TryPassword(cv_dummyextraspassword.string, false) != M_PW_EXTRAS)
 		{
+			if (LinesOutput.empty() && !LinesToDigest.empty())
+			{
+				// Remove "Metal Sonic. Are you online?"
+				LinesToDigest.pop_front();
+			}
+
 			goner_delay = 0;
 			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE,
 				"Aha! Nice try. You're tricky enough WITHOUT admin access, thank you.");
@@ -1259,7 +1265,7 @@ static void M_GonerConclude(INT32 choice)
 
 void M_GonerGDQ(boolean opinion)
 {
-	if (currentMenu != &MAIN_GonerDef)
+	if (currentMenu != &MAIN_GonerDef || goner_gdq == true)
 		return;
 
 	LinesToDigest.clear();

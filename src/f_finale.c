@@ -612,8 +612,8 @@ static void F_DisclaimerDrawScene(void)
 		if (dc_subtextfade > 0)
 			subtextalpha = dc_subtextfade << V_ALPHASHIFT;
 
-		char* newText;
-		char* twoText;
+		char *newText;
+		char *twoText;
 
 		if (!heretrulystarted)
 		{
@@ -656,10 +656,32 @@ static void F_DisclaimerDrawScene(void)
 				290 << FRACBITS,
 				FRACUNIT, FRACUNIT, FRACUNIT,
 				0, HU_FONT,
-				"\"Dr. Robotnik's Ring Racers\" is a free fangame & was not produced by or under license from any portion of ""\x88""SEGA Corporation""\x80"". All registered trademarks belong to their respective owners & were used without intent to harm or profit.\n\nThis software is based on heavily modified code originally created by id Software & is used under the terms of the GNU Public License.\n\n""\x88""SEGA""\x80"" retains rights to the original characters and environments, while all new assets remain property of Kart Krew Dev where applicable."
+				"\"Dr. Robotnik's Ring Racers\" is a free fangame & was not produced by or under license from any portion of ""\x88""SEGA Corporation""\x80"". All registered trademarks belong to their respective owners & were used without intent to harm or profit."
 			);
 
-			V_DrawCenteredString(160, 24, textalpha, newText);
+			twoText = V_ScaledWordWrap(
+				290 << FRACBITS,
+				FRACUNIT, FRACUNIT, FRACUNIT,
+				0, HU_FONT,
+				"This software is based on heavily modified code originally created by id Software & is used under the terms of the GNU General Public License 2.0."
+			);
+
+			char *redText;
+			//char *blueText; // seussian
+
+			redText = V_ScaledWordWrap(
+				290 << FRACBITS,
+				FRACUNIT, FRACUNIT, FRACUNIT,
+				0, HU_FONT,
+				"\x88""SEGA""\x80"" retains rights to the original characters and environments, while all new assets remain property of Kart Krew Dev where applicable.\n"
+			);
+
+			V_DrawString(16, 26, textalpha, newText);
+			V_DrawCenteredString(160, 88, textalpha|V_PINKMAP, "This game should not be sold.");
+			V_DrawString(16, 102, textalpha, twoText);
+			V_DrawString(16, 142, textalpha, redText);
+
+			Z_Free(newText);
 		}
 		else
 		{
@@ -667,12 +689,14 @@ static void F_DisclaimerDrawScene(void)
 
 			UINT16 margin = 5;
 			UINT16 offset = BASEVIDWIDTH/2-(BASEVIDWIDTH-margin*2)/2;
+
 			newText = V_ScaledWordWrap(
 				(BASEVIDWIDTH - margin*2) << FRACBITS,
 				FRACUNIT, FRACUNIT, FRACUNIT,
 				0, MENU_FONT,
 				"\"Dr. Robotnik's Ring Racers\" is a not-for-profit fangame. All registered trademarks belong to their respective owners. This game should not be sold."
 			);
+
 			twoText = V_ScaledWordWrap(
 				(BASEVIDWIDTH - margin*2) << FRACBITS,
 				FRACUNIT, FRACUNIT, FRACUNIT,
@@ -683,11 +707,10 @@ static void F_DisclaimerDrawScene(void)
 			V_DrawMenuString(offset, 125, subtextalpha, newText);
 			V_DrawMenuString(offset, 165, subtextalpha, twoText);
 			V_DrawMenuString(offset, 165, V_BLUEMAP|subtextalpha, "Photosensitivity warning");
-
-			Z_Free(twoText);
 		}
 
 		Z_Free(newText);
+		Z_Free(twoText);
 	}
 
 	// ================================= STATE LOGIC
