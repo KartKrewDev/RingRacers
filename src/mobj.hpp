@@ -157,7 +157,7 @@ struct Mobj : mobj_t
 		statenum_t num() const { return static_cast<statenum_t>(static_cast<const state_t*>(this) - states); }
 	};
 
-	void state(statenum_t state) { P_SetMobjState(this, state); }
+	void state(statenum_t state) { (player ? P_SetPlayerMobjState : P_SetMobjState)(this, state); }
 	const State* state() const { return static_cast<const State*>(mobj_t::state); }
 
 
