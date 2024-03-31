@@ -83,6 +83,7 @@ void Obj_DuelBombInit(mobj_t *bomb);
 
 /* Broly Ki */
 mobj_t *Obj_SpawnBrolyKi(mobj_t *source, tic_t duration);
+mobj_t *Obj_SpawnCustomBrolyKi(mobj_t *source, tic_t duration, fixed_t start, fixed_t end);
 boolean Obj_BrolyKiThink(mobj_t *ki);
 
 /* Special Stage UFO */
