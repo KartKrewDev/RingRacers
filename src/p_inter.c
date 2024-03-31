@@ -181,6 +181,11 @@ boolean P_IsPickupCheesy(player_t *player, UINT8 type)
 		return false;
 	}
 
+	if (gametyperules & GTR_CATCHER)
+	{
+		return false;
+	}
+
 	if (player->lastpickupdistance && player->lastpickuptype == type)
 	{
 		UINT32 distancedelta = min(player->distancetofinish - player->lastpickupdistance, player->lastpickupdistance - player->distancetofinish);
