@@ -2249,6 +2249,24 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	memcpy(&public_key, &players[player].public_key, sizeof(public_key));
 
+	// "Real death should always bring you back to the map starting count for rings" - :japanese_ogre:
+	if (gametyperules & GTR_SPHERES)
+	{
+		rings = 0;
+	}
+	else if (G_TimeAttackStart())
+	{
+		rings = 20;
+	}
+	else if (gametyperules & GTR_CATCHER)
+	{
+		rings = 20;
+	}
+	else
+	{
+		rings = 5;
+	}
+
 	if (betweenmaps || leveltime < introtime)
 	{
 		K_StopRoulette(&itemRoulette);
@@ -2256,22 +2274,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		itemtype = 0;
 		itemamount = 0;
 		growshrinktimer = 0;
-		if (gametyperules & GTR_SPHERES)
-		{
-			rings = 0;
-		}
-		else if (G_TimeAttackStart())
-		{
-			rings = 20;
-		}
-		else if (gametyperules & GTR_CATCHER)
-		{
-			rings = 20;
-		}
-		else
-		{
-			rings = 5;
-		}
 		spheres = 0;
 		kickstartaccel = 0;
 		khudfault = 0;
@@ -2308,7 +2310,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		else
 			growshrinktimer = 0;
 
-		rings = players[player].rings;
 		spheres = players[player].spheres;
 		kickstartaccel = players[player].kickstartaccel;
 
