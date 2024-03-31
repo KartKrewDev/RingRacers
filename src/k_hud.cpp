@@ -4307,6 +4307,8 @@ static void K_drawKartMinimap(void)
 	boolean doprogressionbar = false;
 	boolean dofade = false, doencore = false;
 
+	UINT8 minipal;
+
 	// Draw the HUD only when playing in a level.
 	// hu_stuff needs this, unlike st_stuff.
 	if (gamestate != GS_LEVEL)
@@ -4378,22 +4380,45 @@ static void K_drawKartMinimap(void)
 
 	minimaptrans = ((10-minimaptrans)<<FF_TRANSSHIFT);
 
+	// Really looking forward to never writing this loop again
+	UINT8 bestplayer = MAXPLAYERS;
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i])
+			continue;
+		if (players[i].spectator)
+			continue;
+		if (players[i].position == 1)
+			bestplayer = i;
+	}
+
+	if (bestplayer == MAXPLAYERS || leveltime < starttime) // POSITION / no players
+		minipal = ((leveltime/10)%2) ? SKINCOLOR_WHITE : SKINCOLOR_BLACK;
+	else if (players[bestplayer].laps >= numlaps) // Final lap
+		minipal = K_RainbowColor(leveltime);
+	else // Standard: color to leader
+		minipal = players[bestplayer].skincolor;
+
 	if (doencore)
 	{
-		V_DrawScaledPatch(
-			x + (SHORT(workingPic->width)/2),
-			y - (SHORT(workingPic->height)/2),
+		V_DrawFixedPatch(
+			(x + (SHORT(workingPic->width)/2))*FRACUNIT,
+			(y - (SHORT(workingPic->height)/2))*FRACUNIT,
+			FRACUNIT,
 			splitflags|minimaptrans|V_FLIP,
-			workingPic
+			workingPic,
+			R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(minipal), GTC_CACHE)
 		);
 	}
 	else
 	{
-		V_DrawScaledPatch(
-			x - (SHORT(workingPic->width)/2),
-			y - (SHORT(workingPic->height)/2),
+		V_DrawFixedPatch(
+			(x - (SHORT(workingPic->width)/2))*FRACUNIT,
+			(y - (SHORT(workingPic->height)/2))*FRACUNIT,
+			FRACUNIT,
 			splitflags|minimaptrans,
-			workingPic
+			workingPic,
+			R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(minipal), GTC_CACHE)
 		);
 	}
 
