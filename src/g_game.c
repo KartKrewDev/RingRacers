@@ -2520,9 +2520,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		}
 	}
 
-	if (p->spectator == false)
+	if (p->spectator == false && !betweenmaps)
 	{
-		if (betweenmaps || enteredGame == true)
+		if (enteredGame == true)
 		{
 			ACS_RunPlayerEnterScript(p);
 		}
@@ -2531,15 +2531,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 			ACS_RunPlayerRespawnScript(p);
 		}
 	}
-
-	if (betweenmaps)
-		return;
-
-	if (leveltime < starttime)
-		return;
-
-	if (exiting)
-		return;
 }
 
 //

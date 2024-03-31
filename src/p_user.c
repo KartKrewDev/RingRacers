@@ -71,6 +71,7 @@
 #include "k_credits.h"
 #include "k_hud.h" // K_AddMessage
 #include "m_easing.h"
+#include "acs/interface.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_light.h"
@@ -1342,6 +1343,8 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 				demo.savebutton = leveltime;
 		}
 	}
+
+	ACS_RunPlayerFinishScript(player);
 }
 
 //

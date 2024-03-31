@@ -8892,6 +8892,16 @@ void P_PostLoadLevel(void)
 	ACS_RunLevelStartScripts();
 	LUA_HookInt(gamemap, HOOK(MapLoad));
 
+	UINT8 i;
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i])
+			continue;
+		if (players[i].spectator)
+			continue;
+		ACS_RunPlayerEnterScript(&players[i]);
+	}
+
 	P_MapEnd();
 
 	// We're now done loading the level.

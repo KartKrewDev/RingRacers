@@ -2749,13 +2749,6 @@ void K_PlayOvertakeSound(mobj_t *source)
 
 	boolean tasteful = (!source->player || !source->player->karthud[khud_voices]);
 
-	if (!(gametyperules & GTR_CIRCUIT)) // Only in race
-		return;
-
-	// 4 seconds from before race begins, 10 seconds afterwards
-	if (leveltime < starttime+(10*TICRATE))
-		return;
-
 	if (
 		cv_kartvoices.value
 		&& (tasteful || cv_kartvoices.value == 2)
@@ -11100,7 +11093,7 @@ void K_KartUpdatePosition(player_t *player)
 
 	if (position != oldposition) // Changed places?
 	{
-		if (player->positiondelay <= 0 && position < oldposition && P_IsDisplayPlayer(player) == true)
+		if (!K_Cooperative() && player->positiondelay <= 0 && position < oldposition && P_IsDisplayPlayer(player) == true)
 		{
 			// Play sound when getting closer to 1st.
 			UINT32 soundpos = (max(0, position - 1) * MAXPLAYERS)/realplayers; // always 1-15 despite there being 16 players at max...
@@ -11141,12 +11134,6 @@ void K_KartUpdatePosition(player_t *player)
 	else
 	{
 		player->topinfirst = 0;
-	}
-
-	// Special stages: fade out music near the finish line
-	if (P_IsPartyPlayer(player))
-	{
-		K_FadeOutSpecialMusic(player->distancetofinish);
 	}
 
 	player->position = position;
@@ -12106,14 +12093,23 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	boolean HOLDING_ITEM = (player->itemflags & (IF_ITEMOUT|IF_EGGMANOUT));
 	boolean NO_HYUDORO = (player->stealingtimer == 0);
 
-	if (!player->exiting)
+	// Play overtake sounds, but only if
+	// - your place changed
+	// - not exiting
+	// - in relevant gametype
+	// - more than 10 seconds after initial scramble
+	if (player->oldposition != player->position
+	&& !player->exiting
+	&& (gametyperules & GTR_CIRCUIT)
+	&& !K_Cooperative()
+	&& leveltime >= starttime+(10*TICRATE))
 	{
 		if (player->oldposition < player->position) // But first, if you lost a place,
 		{
 			player->oldposition = player->position; // then the other player taunts.
 			K_RegularVoiceTimers(player); // and you can't for a bit
 		}
-		else if (player->oldposition > player->position) // Otherwise,
+		else // Otherwise,
 		{
 			K_PlayOvertakeSound(player->mo); // Say "YOU'RE TOO SLOW!"
 			player->oldposition = player->position; // Restore the old position,

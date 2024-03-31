@@ -69,6 +69,21 @@ void K_TickSpecialStage(void);
 mobj_t *K_GetPossibleSpecialTarget(void);
 
 /*--------------------------------------------------
+	boolean K_PlayerIsEmptyHandedInSpecial(player_t *player)
+
+		Gets whether the player has failed a Sealed
+		Star via finishing without an Emerald
+
+	Input Arguments:-
+		player - Player to check for
+
+	Return:-
+		Should player fail or not
+--------------------------------------------------*/
+
+boolean K_PlayerIsEmptyHandedInSpecial(player_t *player);
+
+/*--------------------------------------------------
 	void K_FadeOutSpecialMusic(UINT32 distance)
 
 		Fade level music out at the end of a special stage.
