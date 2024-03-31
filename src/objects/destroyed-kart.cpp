@@ -128,6 +128,13 @@ struct Particle : Mobj
 
 	void think()
 	{
+		if (!fuse && !momz)
+		{
+			// Getting stuck underneath a crusher... force
+			// a landing so the fuse activates.
+			on_land();
+		}
+
 		if (state()->num() == S_BRAKEDRIFT)
 		{
 			renderflags ^= RF_DONTDRAW;
