@@ -5,6 +5,7 @@
 #include "../k_menu.h"
 #include "../k_grandprix.h" // K_CanChangeRules
 #include "../m_cond.h" // Condition Sets
+#include "../k_follower.h"
 #include "../s_sound.h"
 
 // options menu --  see mopt_e
@@ -96,6 +97,7 @@ void M_InitOptions(INT32 choice)
 			(M_SecretUnlocked(SECRET_ENCORE, false) ? (IT_STRING | IT_CVAR) : IT_DISABLED);
 	}
 
+	// Data Options
 	OPTIONS_DataAdvancedDef.menuitems[daopt_addon].status = (M_SecretUnlocked(SECRET_ADDONS, true)
 		? (IT_STRING | IT_SUBMENU)
 		: (IT_NOTHING | IT_SPACE));
@@ -211,6 +213,7 @@ void M_OptionsTick(void)
 static void M_OptionsMenuGoto(menu_t *assignment)
 {
 	assignment->prevMenu = currentMenu;
+	assignment->music = currentMenu->music;
 	M_SetupNextMenu(assignment, false);
 	if (currentMenu != &OPTIONS_MainDef)
 	{
@@ -236,6 +239,7 @@ void M_SoundOptions(INT32 choice)
 void M_GameplayOptions(INT32 choice)
 {
 	(void)choice;
+	OPTIONS_GameplayItemsDef.music = currentMenu->music;
 	M_OptionsMenuGoto(&OPTIONS_GameplayDef);
 	OPTIONS_MainDef.lastOn = mopt_gameplay;
 }
@@ -243,6 +247,7 @@ void M_GameplayOptions(INT32 choice)
 void M_ServerOptions(INT32 choice)
 {
 	(void)choice;
+	OPTIONS_ServerAdvancedDef.music = currentMenu->music;
 	M_OptionsMenuGoto(&OPTIONS_ServerDef);
 	OPTIONS_MainDef.lastOn = mopt_server;
 }

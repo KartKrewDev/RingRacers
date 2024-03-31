@@ -82,7 +82,7 @@ CV_PossibleValue_t CV_TrueFalse[] = {{0, "False"}, {1, "True"}, {0, NULL}};
 
 // SRB2kart
 CV_PossibleValue_t kartspeed_cons_t[] = {
-	{KARTSPEED_AUTO, "Auto"},
+	{KARTSPEED_AUTO, "Auto Gear"},
 	{KARTSPEED_EASY, "Gear 1"},
 	{KARTSPEED_NORMAL, "Gear 2"},
 	{KARTSPEED_HARD, "Gear 3"},

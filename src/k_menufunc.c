@@ -605,7 +605,8 @@ menu_t *M_SpecificMenuRestore(menu_t *torestore)
 
 	if (torestore == &PLAY_CupSelectDef
 	|| torestore == &PLAY_LevelSelectDef
-	|| torestore == &PLAY_TimeAttackDef)
+	|| torestore == &PLAY_TimeAttackDef
+	|| torestore == &PLAY_TAReplayDef)
 	{
 		// Handle unlock restrictions
 

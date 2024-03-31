@@ -2764,9 +2764,12 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *baselevelsearch)
 
 	UINT8 i = 0;
 	INT16 maxlevels = M_CountLevelsToShowInList(&locklesslevelsearch);
-	const fixed_t step = (82 * FRACUNIT);
-	fixed_t previewanimwork = (cupgrid.previewanim * FRACUNIT) + rendertimefrac_unpaused;
-	fixed_t x = -(previewanimwork % step);
+	const UINT32 ustep = 82;
+	const fixed_t fracstep = (ustep * FRACUNIT);
+
+	UINT32 unsignedportion = 0;
+	fixed_t x = 0;
+
 	INT16 map, start = M_GetFirstLevelInList(&i, &locklesslevelsearch);
 	UINT8 starti = i;
 
@@ -2774,7 +2777,10 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *baselevelsearch)
 
 	if (baselevelsearch->cup && maxlevels > 0)
 	{
-		INT16 add = (previewanimwork / step) % maxlevels;
+		unsignedportion = (cupgrid.previewanim % (maxlevels * ustep));
+		x = (unsignedportion * FRACUNIT) + rendertimefrac_unpaused;
+
+		INT16 add = (x / fracstep) % maxlevels;
 		map = start;
 		while (add > 0)
 		{
@@ -2787,6 +2793,8 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *baselevelsearch)
 
 			add--;
 		}
+
+		x = -(x % fracstep);
 		while (x < BASEVIDWIDTH * FRACUNIT)
 		{
 			if (map >= nummapheaders)
@@ -2814,17 +2822,21 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *baselevelsearch)
 					NULL);
 			}
 
-			x += step;
+			x += fracstep;
 
 			map = M_GetNextLevelInList(map, &i, &locklesslevelsearch);
 		}
 	}
 	else
 	{
+		unsignedportion = (cupgrid.previewanim % ustep);
+		x = (unsignedportion * FRACUNIT) + rendertimefrac_unpaused;
+
+		x = -(x % fracstep);
 		while (x < BASEVIDWIDTH * FRACUNIT)
 		{
 			V_DrawFixedPatch(x + FRACUNIT, (y+2) * FRACUNIT, FRACUNIT, 0, staticpat, NULL);
-			x += step;
+			x += fracstep;
 		}
 	}
 }
@@ -3817,13 +3829,18 @@ static void M_MPOptDrawer(menu_t *m, INT16 extend[3][3])
 }
 
 // Draws the EGGA CHANNEL background.
-void M_DrawEggaChannel(void)
+void M_DrawEggaChannelAlignable(boolean centered)
 {
 	patch_t *background = W_CachePatchName("M_EGGACH", PU_CACHE);
 
 	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 25);
-	V_DrawFixedPatch((menuactive ? 75 : 160)<<FRACBITS, 104<<FRACBITS, FRACUNIT, 0, background, NULL);
+	V_DrawFixedPatch((!centered ? 75 : 160)<<FRACBITS, 104<<FRACBITS, FRACUNIT, 0, background, NULL);
 	V_DrawVhsEffect(false);	// VHS the background! (...sorry OGL my love)
+}
+
+void M_DrawEggaChannel(void)
+{
+	M_DrawEggaChannelAlignable(false);
 }
 
 // Multiplayer mode option select
@@ -4134,7 +4151,7 @@ static void M_DrawServerCountAndHorizontalBar(void)
 
 	if (throbindex == UINT8_MAX)
 	{
-		V_DrawRightAlignedString(
+		V_DrawRightAlignedMenuString(
 			BASEVIDWIDTH - currentMenu->x,
 			y,
 			highlightflags,
@@ -4143,7 +4160,7 @@ static void M_DrawServerCountAndHorizontalBar(void)
 	}
 	else
 	{
-		V_DrawRightAlignedString(
+		V_DrawRightAlignedMenuString(
 			BASEVIDWIDTH - currentMenu->x - 12, y,
 			highlightflags,
 			text
@@ -4169,11 +4186,15 @@ void M_DrawMPServerBrowser(void)
 	patch_t *text1 = W_CachePatchName("MENUBGT1", PU_CACHE);
 	patch_t *text2 = W_CachePatchName("MENUBGT2", PU_CACHE);
 
-	patch_t *raceh = W_CachePatchName("M_SERV1", PU_CACHE);
-	patch_t *batlh = W_CachePatchName("M_SERV2", PU_CACHE);
+	UINT8 i;
 
-	patch_t *racehs = W_CachePatchName("M_SERV12", PU_CACHE);
-	patch_t *batlhs = W_CachePatchName("M_SERV22", PU_CACHE);
+	patch_t *servpats[3];
+	patch_t *gearpats[3];
+	for (i = 0; i < 3; i++)
+	{
+		servpats[i] = W_CachePatchName(va("M_SERV%c", i + '1'), PU_CACHE);
+		gearpats[i] = W_CachePatchName(va("M_SGEAR%c", i + '1'), PU_CACHE);
+	}
 
 	fixed_t text1loop = SHORT(text1->height)*FRACUNIT;
 	fixed_t text2loop = SHORT(text2->width)*FRACUNIT;
@@ -4182,7 +4203,6 @@ void M_DrawMPServerBrowser(void)
 	const UINT8 basey = 56;
 	const INT32 starty = basey - 18*mpmenu.scrolln + mpmenu.slide;
 	INT32 ypos = 0;
-	UINT8 i;
 
 	// background stuff
 	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName(header[mode][1], PU_CACHE), NULL);
@@ -4204,8 +4224,6 @@ void M_DrawMPServerBrowser(void)
 	// the actual server list.
 	for (i = 0; i < serverlistcount; i++)
 	{
-
-		boolean racegt = strcmp(serverlist[i].info.gametypename, "Race") == 0;
 		INT32 transflag = 0;
 		INT32 basetransflag = 0;
 
@@ -4225,13 +4243,23 @@ void M_DrawMPServerBrowser(void)
 		{
 			transflag = transflag << V_ALPHASHIFT;	// shift the translucency flag.
 
-			if (itemOn == 2 && mpmenu.servernum == i)
-				V_DrawFixedPatch(startx*FRACUNIT, (starty + ypos)*FRACUNIT, FRACUNIT, transflag, racegt ? racehs : batlhs, NULL);
-			else
-				V_DrawFixedPatch(startx*FRACUNIT, (starty + ypos)*FRACUNIT, FRACUNIT, transflag, racegt ? raceh : batlh, NULL);
+			if (serverlist[i].cachedgtcalc < 3)
+			{
+				patch_t *focus;
+				if (itemOn == 2 && mpmenu.servernum == i)
+				{
+					focus = W_CachePatchName(va("M_SERH%c", serverlist[i].cachedgtcalc + '1'), PU_CACHE);
+				}
+				else
+				{
+					focus = servpats[serverlist[i].cachedgtcalc];
+				}
+
+				V_DrawFixedPatch(startx*FRACUNIT, (starty + ypos)*FRACUNIT, FRACUNIT, transflag, focus, NULL);
+			}
 
 			// Server name:
-			V_DrawString(startx+11, starty + ypos + 6, transflag, serverlist[i].info.servername);
+			V_DrawThinString(startx+11, starty + ypos + 6, transflag, serverlist[i].info.servername);
 
 			// Ping:
 			V_DrawThinString(startx + 191, starty + ypos + 7, transflag, va("%03d", serverlist[i].info.time));
@@ -4239,16 +4267,34 @@ void M_DrawMPServerBrowser(void)
 			// Playercount
 			V_DrawThinString(startx + 214, starty + ypos + 7, transflag, va("%02d/%02d", serverlist[i].info.numberofplayer, serverlist[i].info.maxplayer));
 
-			// Power Level
-			V_DrawThinString(startx + 248, starty + ypos, transflag, va("%04d PLv", serverlist[i].info.avgpwrlv));
+			const char *pwrtext;
+			if (serverlist[i].cachedgtcalc == GTCALC_CUSTOM)
+			{
+				// Show custom gametype name
+				// (custom PWR is not available, and this is the best place to show the name)
+				pwrtext = serverlist[i].info.gametypename;
+			}
+			else if (serverlist[i].info.avgpwrlv != -1)
+			{
+				// Power Level
+				pwrtext = va("%04d Pwr", serverlist[i].info.avgpwrlv);
+			}
+			else
+			{
+				// Fallback
+				pwrtext = "No Pwr";
+			}
+			V_DrawRightAlignedThinString(startx + 276, starty + ypos, transflag, pwrtext);
 
 			// game speed if applicable:
-			if (racegt)
+			if (serverlist[i].cachedgtcalc != GTCALC_BATTLE)
 			{
 				UINT8 speed = serverlist[i].info.kartvars & SV_SPEEDMASK;
-				patch_t *pp = W_CachePatchName(va("M_SDIFF%d", speed), PU_CACHE);
 
-				V_DrawFixedPatch((startx + 251)*FRACUNIT, (starty + ypos + 9)*FRACUNIT, FRACUNIT, transflag, pp, NULL);
+				if (speed < 3)
+				{
+					V_DrawFixedPatch((startx + 251)*FRACUNIT, (starty + ypos + 9)*FRACUNIT, FRACUNIT, transflag, gearpats[speed], NULL);
+				}
 			}
 		}
 		ypos += SERVERSPACE;
@@ -4274,11 +4320,18 @@ void M_DrawMPServerBrowser(void)
 // Draws the cogs and also the options background!
 void M_DrawOptionsCogs(void)
 {
-	boolean trulystarted = M_GameTrulyStarted();
+	boolean eggahack = (
+		currentMenu->prevMenu == &PLAY_MP_HostDef
+		|| (
+			currentMenu->prevMenu
+			&& currentMenu->prevMenu->prevMenu == &PLAY_MP_HostDef
+			)
+		);
+	boolean solidbg = M_GameTrulyStarted() && !eggahack;
 	UINT32 tick = ((optionsmenu.ticker/10) % 3) + 1;
 
 	// the background isn't drawn outside of being in the main menu state.
-	if (gamestate == GS_MENU && trulystarted)
+	if (gamestate == GS_MENU && solidbg)
 	{
 		patch_t *back = W_CachePatchName(va("OPT_BG%u", tick), PU_CACHE);
 		INT32 tflag = 0;
@@ -4299,10 +4352,15 @@ void M_DrawOptionsCogs(void)
 	}
 	else
 	{
+		if (eggahack)
+		{
+			M_DrawEggaChannelAlignable(true);
+		}
+
 		patch_t *back_pause = W_CachePatchName(va("OPT_BAK%u", tick), PU_CACHE);
 		V_DrawFixedPatch(0, 0, FRACUNIT, V_MODULATE, back_pause, NULL);
 
-		if (!trulystarted)
+		if (!solidbg)
 		{
 			V_DrawFixedPatch(0, 0, FRACUNIT, (V_ADD|V_70TRANS), back_pause, NULL);
 		}

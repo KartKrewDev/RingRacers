@@ -244,6 +244,12 @@ void M_MPOptSelectInit(INT32 choice)
 	M_PrevMenuGametype(forbidden);
 	M_NextMenuGametype(forbidden);
 
+	if (cv_advertise.value)
+	{
+		// Try to have the rules available "early" for opening the Host Game menu.
+		Get_rules();
+	}
+
 	if (choice != -1)
 	{
 		M_SetupNextMenu(&PLAY_MP_OptSelectDef, false);

@@ -385,8 +385,10 @@ typedef enum
 	sopt_sfxvolume,
 	sopt_musicvolume,
 	sopt_spacer1,
+	sopt_preferences,
 	sopt_chatnotifs,
 	sopt_charvoices,
+	sopt_followhorns,
 	sopt_attackmusic,
 	sopt_spacer2,
 	sopt_advanced,
@@ -1142,9 +1144,11 @@ void M_HandleProfileErase(INT32 choice);
 void M_DrawMasterServerReminder(void);
 
 // Draws the EGGA CHANNEL background.
+void M_DrawEggaChannelAlignable(boolean centered);
 void M_DrawEggaChannel(void);
 
 // Extras menu:
+// woah there pardner, if you modify this check g_demo.cpp too
 #define DF_ENCORE       0x40
 
 #define M_EXTRAS_OFSTIME 4
