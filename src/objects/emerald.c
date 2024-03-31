@@ -149,6 +149,9 @@ static void Obj_EmeraldOrbitPlayer(mobj_t *emerald)
 		if (!(bestplayer->pflags & PF_NOCONTEST))
 		{
 			P_MoveOrigin(emerald, bestplayer->mo->x, bestplayer->mo->y, bestplayer->mo->z);
+			P_SetTarget(&emerald->tracer, NULL); // Ensures that tracer is correctly reset, allowing ACS to detect empty-handdeness.
+			// "Why not just check target, which has to be set for any part of the behavior to work at all?"
+			// Because Hyudoro is an emerald. I will not explain further. Program for a different game.
 			Obj_BeginEmeraldOrbit(emerald, bestplayer->mo, 100 * mapobjectscale, 64, 0);
 			return;
 		}
@@ -316,7 +319,7 @@ void Obj_BeginEmeraldOrbit(mobj_t *emerald, mobj_t *target, fixed_t radius, INT3
 	P_SetTarget(&emerald_orbit(emerald), target);
 	P_SetTarget(&emerald->punt_ref, target);
 
-	if (P_MobjWasRemoved(emerald_award(emerald)))
+	if (!emerald_award(emerald) || P_MobjWasRemoved(emerald_award(emerald)))
 	{
 		P_SetTarget(&emerald_award(emerald), target);
 	}
