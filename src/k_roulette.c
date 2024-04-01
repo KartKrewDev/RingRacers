@@ -154,7 +154,7 @@ static UINT8 K_KartItemOddsSpecial[NUMKARTRESULTS-1][4] =
 	{ 1, 1, 0, 0 }, // Jawz
 	{ 0, 0, 0, 0 }, // Mine
 	{ 0, 0, 0, 0 }, // Land Mine
-	{ 0, 0, 0, 0 }, // Ballhog
+	{ 0, 0, 1, 1 }, // Ballhog
 	{ 0, 0, 0, 1 }, // Self-Propelled Bomb
 	{ 0, 0, 0, 0 }, // Grow
 	{ 0, 0, 0, 0 }, // Shrink
@@ -168,11 +168,11 @@ static UINT8 K_KartItemOddsSpecial[NUMKARTRESULTS-1][4] =
 	{ 0, 0, 0, 0 }, // Drop Target
 	{ 0, 0, 0, 0 }, // Garden Top
 	{ 0, 0, 0, 0 }, // Gachabom
-	{ 0, 1, 1, 0 }, // Sneaker x2
-	{ 0, 0, 1, 1 }, // Sneaker x3
+	{ 0, 1, 1, 1 }, // Sneaker x2
+	{ 0, 0, 0, 0 }, // Sneaker x3
 	{ 0, 0, 0, 0 }, // Banana x3
 	{ 0, 1, 1, 0 }, // Orbinaut x3
-	{ 0, 0, 1, 1 }, // Orbinaut x4
+	{ 0, 0, 0, 0 }, // Orbinaut x4
 	{ 0, 0, 1, 1 }, // Jawz x2
 	{ 0, 0, 0, 0 }  // Gachabom x3
 };
