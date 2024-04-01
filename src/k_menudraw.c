@@ -6801,12 +6801,17 @@ drawborder:
 	}
 
 #ifdef DEVELOP
-	if (cv_debugchallenges.value == -2 ||
-		cv_debugchallenges.value > 0)
+	if (
+		(
+			cv_debugchallenges.value == -2
+			|| cv_debugchallenges.value > 0
+		)
+		&& num < MAXUNLOCKABLES
+	)
 	{
 		// Display the conditionset for this tile.
 		V_DrawThinString(x, y,
-			ref->conditionset == cv_debugchallenges.value ? V_AQUAMAP : V_GRAYMAP,
+			num+1 == cv_debugchallenges.value ? V_AQUAMAP : V_GRAYMAP,
 			va("%u", num+1));
 	}
 #endif
