@@ -282,7 +282,24 @@ void SV_BumpMatchStats(void)
 
 		serverplayer_t *stat = SV_GetStatsByPlayerIndex(i);
 
-		if (!(players[i].pflags & PF_NOCONTEST))
+		// It should never be advantageous to idle, only count rounds where the player accomplishes something.
+		// If you NO CONTESTed, assume no participation... 
+		boolean participated = !(players[i].pflags & PF_NOCONTEST);
+
+		if (gametyperules & GTR_CIRCUIT)
+		{
+			// ...unless you completed at least one lap...
+			if (players[i].laps > 1)
+				participated = true;
+		}
+		else if (gametyperules & GTR_BUMPERS)
+		{
+			// ...or scored at least 2 points.
+			if (players[i].roundscore > 1)
+				participated = true;
+		}
+
+		if (participated)
 			stat->finishedrounds++;
 	}
 }
