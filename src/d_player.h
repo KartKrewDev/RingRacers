@@ -464,6 +464,9 @@ struct roundconditions_t
 
 	// 32 triggers, one bit each, for map execution
 	UINT32 unlocktriggers;
+
+	// Forbidding skin-based unlocks if you changed your skin
+	boolean switched_skin;
 };
 
 // player_t struct for all skybox variables
