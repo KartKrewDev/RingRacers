@@ -685,6 +685,11 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			special->extravalue1 = 1; // Ring collect animation timer
 			special->angle = R_PointToAngle2(toucher->x, toucher->y, special->x, special->y); // animation angle
 			P_SetTarget(&special->target, toucher); // toucher for thinker
+
+			// For MT_FLINGRING - don't delete yourself mid-pickup.
+			special->renderflags &= ~RF_DONTDRAW;
+			special->fuse = 0;
+
 			player->pickuprings++;
 
 			return;
