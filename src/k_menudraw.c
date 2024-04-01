@@ -7598,7 +7598,7 @@ static void M_DrawChallengeScrollBar(UINT8 *flashmap)
 	#define COLTOPIX(col) (col*hiliw)
 		//((col * barlen)/gamedata->challengegridwidth)
 
-	INT32 hilix, nextstep, i, completionamount, skiplevel;
+	INT32 hilix, nextstep, i, numincolumn, completionamount, skiplevel;
 
 	// selection
 	hilix = COLTOPIX(challengesmenu.col);
@@ -7611,25 +7611,30 @@ static void M_DrawChallengeScrollBar(UINT8 *flashmap)
 		mindiscouragement = 1; // so someone looking for 101% isn't hunting forever
 
 	// unbounded so that we can do the last remaining completionamount draw
-	nextstep = completionamount = skiplevel = 0;
+	nextstep = numincolumn = completionamount = skiplevel = 0;
 	for (i = 0; ; i++)
 	{
 		INT32 prevstep = nextstep;
 		nextstep = (i % CHALLENGEGRIDHEIGHT);
 		if (prevstep >= nextstep)
 		{
-			if (completionamount > 0)
+			if (completionamount > 0 && numincolumn > 0)
 			{
-				if (skiplevel >= mindiscouragement && completionamount == 10)
+				if (completionamount >= numincolumn)
 				{
-					// awareness
-					completionamount--;
+					// If any have been skipped, we subtract a little for awareness...
+					completionamount = (skiplevel >= mindiscouragement) ? 9 : 10;
+				}
+				else
+				{
+					// Ordinary 0-10 calculation.
+					completionamount = (completionamount*10)/numincolumn;
 				}
 
 				V_DrawFadeFill(barx + hilix, bary, hiliw, barh, 0, 1, completionamount);
 			}
 
-			completionamount = skiplevel = 0;
+			numincolumn = completionamount = skiplevel = 0;
 			hilix = i/CHALLENGEGRIDHEIGHT;
 			hilix = COLTOPIX(hilix);
 		}
@@ -7640,6 +7645,9 @@ static void M_DrawChallengeScrollBar(UINT8 *flashmap)
 
 		if (gamedata->challengegrid[i] >= MAXUNLOCKABLES)
 			continue;
+
+		// Okay, confirmed not a gap.
+		numincolumn++;
 
 #ifdef DEVELOP
 		if (cv_debugchallenges.value > 0
@@ -7657,7 +7665,7 @@ static void M_DrawChallengeScrollBar(UINT8 *flashmap)
 
 		if (gamedata->unlocked[gamedata->challengegrid[i]])
 		{
-			completionamount += (10/CHALLENGEGRIDHEIGHT);
+			completionamount++;
 
 			unlockable_t *ref = &unlockables[gamedata->challengegrid[i]];
 
