@@ -71,6 +71,9 @@ menuitem_t OPTIONS_Server[] =
 	{IT_STRING | IT_CVAR, "Pause Permissions", "Who is allowed to pause the game?",
 		NULL, {.cvar = &cv_pause}, 0, 0},
 
+	{IT_STRING | IT_CVAR, "Rounds Needed To Chat", "How many rounds players must complete before they can chat. Good vs. ban evaders.",
+		NULL, {.cvar = &cv_gamestochat}, 0, 0},
+
 
 	{IT_HEADER, "Chat...", NULL,
 		NULL, {NULL}, 0, 0},
