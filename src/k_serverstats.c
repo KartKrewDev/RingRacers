@@ -292,7 +292,7 @@ void SV_BumpMatchStats(void)
 			if (players[i].laps > 1)
 				participated = true;
 		}
-		else if (gametyperules & GTR_BUMPERS)
+		else if (gametyperules & GTR_POINTLIMIT)
 		{
 			// ...or scored at least 2 points.
 			if (players[i].roundscore > 1)
