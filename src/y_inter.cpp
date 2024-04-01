@@ -844,8 +844,14 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 
 	UINT8 *greymap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_GREY, GTC_CACHE);
 
-	INT32 baseflags = (widescreen ? V_SNAPTOBOTTOM : 0);
-	INT32 bufferspace = ((vid.width/vid.dupx) - BASEVIDWIDTH) / 2;
+	INT32 baseflags = 0;
+	INT32 bufferspace = 0;
+
+	if (widescreen)
+	{
+		baseflags |= V_SNAPTOBOTTOM;
+		bufferspace = ((vid.width/vid.dupx) - BASEVIDWIDTH) / 2;
+	}
 
 	// Background pieces
 	patch_t *queuebg_flat = static_cast<patch_t*>(W_CachePatchName("R_RMBG1", PU_PATCH));
