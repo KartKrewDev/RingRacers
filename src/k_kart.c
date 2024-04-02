@@ -5214,6 +5214,15 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 		finalspeed += FixedMul(source->player->speed, deltaFactor);
 
 		finalscale = K_ItemScaleForPlayer(source->player);
+
+		if (type == MT_GARDENTOP)
+		{
+			mobj_t *top = K_GetGardenTop(source->player);
+			if (top)
+			{
+				finalscale = top->scale;
+			}
+		}
 	}
 
 	if (type == MT_BUBBLESHIELDTRAP)

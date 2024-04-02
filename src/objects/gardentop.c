@@ -45,10 +45,13 @@ enum {
 
 #define rider_top(o) ((o)->hnext)
 
+/* All Top states */
 #define top_mode(o) ((o)->extravalue1)
 #define top_float(o) ((o)->lastlook)
 #define top_sound(o) ((o)->extravalue2)
 #define top_soundtic(o) ((o)->movecount)
+#define top_helpme(o) ((o)->cusval)
+#define top_lifetime(o) ((o)->cvmem)
 
 /* TOP_ANCHORED */
 #define top_rider(o) ((o)->tracer)
@@ -57,8 +60,6 @@ enum {
 #define top_waveangle(o) ((o)->movedir)
 /* wavepause will take mobjinfo reactiontime automatically */
 #define top_wavepause(o) ((o)->reactiontime)
-#define top_helpme(o) ((o)->cusval)
-#define top_lifetime(o) ((o)->cvmem)
 
 #define spark_top(o) ((o)->target)
 #define spark_angle(o) ((o)->movedir)
@@ -562,6 +563,12 @@ Obj_GardenTopDeploy (mobj_t *rider)
 	{
 		player->curshield = KSHIELD_TOP;
 		rider->radius = K_DefaultPlayerRadius(player);
+
+		/* Doing this here to set itemscale.
+		   And unset right afterward so the item box doesn't flicker! */
+		K_SetItemOut(player);
+		P_InstaScale(top, K_ItemScaleForPlayer(player));
+		K_UnsetItemOut(player);
 	}
 
 	spawn_spark_circle(top, 6);
@@ -579,12 +586,12 @@ Obj_GardenTopThrow (player_t *player)
 		const fixed_t oldfloat = top_float(top);
 		const fixed_t height = top->height;
 
-		K_UpdateHnextList(player, true);
-
 		/* Sucks that another one needs to be spawned but
 		   this way, the throwing function can be used. */
 		top = K_ThrowKartItem(
 				player, true, MT_GARDENTOP, 1, 0, 0);
+
+		K_UpdateHnextList(player, true);
 
 		init_top(top, TOP_LOOSE);
 
