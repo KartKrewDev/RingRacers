@@ -1331,7 +1331,7 @@ consvar_t cv_chatwidth = Player("chatwidth", "150").min_max(64, 150);
 // old shit console chat. (mostly exists for stuff like terminal, not because I cared if anyone liked the old chat.)
 consvar_t cv_consolechat = Player("chatmode", "Yes").values({{0, "Yes"}, {2, "No"}});
 
-consvar_t cv_gamestochat = Player("gamestochat", "0").values(CV_Unsigned);
+consvar_t cv_gamestochat = Player("gamestochat", "0").min_max(0, 99);
 
 void Mute_OnChange(void);
 consvar_t cv_mute = UnsavedNetVar("mute", "Off").on_off().onchange(Mute_OnChange);
