@@ -289,9 +289,8 @@ bool is_player_tracking_target(player_t *player = stplyr)
 
 	if (inDuel)
 	{
-		// Always draw targets in 1v1 but don't draw player's
-		// own target on their own viewport.
-		return player != stplyr;
+		// Always draw targets in 1v1.
+		return true;
 	}
 
 	// Except for DUEL mode, Overtime hides all TARGETs except
@@ -330,7 +329,7 @@ bool is_object_tracking_target(const mobj_t* mobj)
 		return battleprisons;
 
 	case MT_PLAYER:
-		return is_player_tracking_target(mobj->player);
+		return mobj->player != stplyr && is_player_tracking_target(mobj->player);
 
 	case MT_OVERTIME_CENTER:
 		return inDuel == false && battleovertime.enabled;
