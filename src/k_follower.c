@@ -757,8 +757,13 @@ void K_FollowerHornTaunt(player_t *taunter, player_t *victim, boolean mysticmelo
 
 	// More expensive checks
 	if (
-		(cv_karthorns.value == 0 && mysticmelodyspecial == false)
-		|| (P_IsDisplayPlayer(victim) == false && cv_karthorns.value != 2)
+		(
+			cv_tastelesstaunts.value == 0
+			&& (
+				(cv_karthorns.value == 0 && mysticmelodyspecial == false)
+				|| P_IsDisplayPlayer(victim) == false
+			)
+		)
 		|| P_MobjWasRemoved(taunter->mo) == true
 		|| P_MobjWasRemoved(taunter->follower) == true
 	)
@@ -768,7 +773,7 @@ void K_FollowerHornTaunt(player_t *taunter, player_t *victim, boolean mysticmelo
 
 	const boolean tasteful = (taunter->karthud[khud_taunthorns] == 0);
 
-	if (tasteful || cv_karthorns.value == 2)
+	if (tasteful || cv_tastelesstaunts.value)
 	{
 		mobj_t *honk = taunter->follower->hprev;
 		const fixed_t desiredscale = (2*taunter->mo->scale)/3;

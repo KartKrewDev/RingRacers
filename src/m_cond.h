@@ -261,7 +261,6 @@ typedef enum
 	SECRET_EGGTV,				// Permit replay playback menu
 	SECRET_SOUNDTEST,			// Permit Sound Test
 	SECRET_ALTTITLE,			// Permit alternate titlescreen
-	SECRET_MEMETAUNTS,			// Permit "Meme" for kartvoices_cons_t
 
 	// Assist restrictions
 	SECRET_ITEMFINDER,			// Permit locating in-level secrets

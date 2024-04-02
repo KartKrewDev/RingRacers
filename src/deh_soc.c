@@ -2451,8 +2451,6 @@ static INT16 parseunlockabletype(char *type)
 		return SECRET_SOUNDTEST;
 	else if (fastcmp(type, "ALTTITLE"))
 		return SECRET_ALTTITLE;
-	else if (fastcmp(type, "MEMETAUNTS"))
-		return SECRET_MEMETAUNTS;
 	else if (fastcmp(type, "ITEMFINDER"))
 		return SECRET_ITEMFINDER;
 

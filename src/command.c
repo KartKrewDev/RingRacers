@@ -103,8 +103,6 @@ CV_PossibleValue_t gpdifficulty_cons_t[] = {
 	{0, NULL}
 };
 
-CV_PossibleValue_t kartvoices_cons_t[] = {{0, "Never"}, {1, "Tasteful"}, {2, "Meme"}, {0, NULL}};
-
 // Filter consvars by EXECVERSION
 // First implementation is 2 (1.0.2), so earlier configs default at 1 (1.0.0)
 // Also set CV_HIDDEN during runtime, after config is loaded
@@ -2314,11 +2312,6 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 				{
 					max = KARTSPEED_HARD+1;
 				}
-			}
-			else if (var->PossibleValue == kartvoices_cons_t
-				&& !M_SecretUnlocked(SECRET_MEMETAUNTS, true))
-			{
-				max--;
 			}
 #ifdef PARANOIA
 			if (currentindice == -1)

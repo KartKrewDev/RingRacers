@@ -6612,7 +6612,6 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flash
 			case SECRET_EGGTV:
 			case SECRET_SOUNDTEST:
 			case SECRET_ALTTITLE:
-			case SECRET_MEMETAUNTS:
 				categoryid = '6';
 				break;
 			case SECRET_TIMEATTACK:
@@ -6708,9 +6707,6 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flash
 				break;
 			case SECRET_ALTTITLE:
 				iconid = 6;
-				break;
-			case SECRET_MEMETAUNTS:
-				iconid = 13;
 				break;
 
 			case SECRET_TIMEATTACK:
