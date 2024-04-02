@@ -1646,8 +1646,6 @@ void F_StartTitleScreen(void)
 		camera[0].height = 0;
 
 		wipegamestate = prevwipegamestate;
-
-		R_ExecuteSetViewSize(); // update FOV
 	}
 	else
 	{
