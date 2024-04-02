@@ -1,5 +1,14 @@
+// DR. ROBOTNIK'S RING RACERS
+//-----------------------------------------------------------------------------
+// Copyright (C) 2024 by Vivian "toastergrl" Grannell.
+// Copyright (C) 2024 by Kart Krew.
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
 /// \file  menus/extras-challenges.c
-/// \brief Challenges.
+/// \brief Challenges board
 
 #include "../i_time.h"
 #include "../k_menu.h"

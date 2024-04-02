@@ -1,15 +1,16 @@
-// SONIC ROBO BLAST 2
+// DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2022-2023 by Vivian "toastergrl" Grannell.
-// Copyright (C) 2012-2016 by Matthew "Kaito Sinclaire" Walsh.
-// Copyright (C) 2012-2020 by Sonic Team Junior.
+// Copyright (C) 2024 by Vivian "toastergrl" Grannell.
+// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2020 by Sonic Team Junior.
+// Copyright (C) 2016 by Matthew "Kaito Sinclaire" Walsh.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  m_cond.c
-/// \brief Unlockable condition system for SRB2 version 2.1
+/// \brief Challenges internals
 
 #include "m_cond.h"
 #include "m_random.h" // M_RandomKey

@@ -1,12 +1,14 @@
-// SONIC ROBO BLAST 2
+// DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2004-2020 by Sonic Team Junior.
+// Copyright (C) 2024 by Vivian "toastergrl" Grannell.
+// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  y_inter.c
+/// \file  y_inter.cpp
 /// \brief Tally screens, or "Intermissions" as they were formally called in Doom
 
 #include <algorithm>
