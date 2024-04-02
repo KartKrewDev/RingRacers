@@ -1203,33 +1203,40 @@ static void Got_NameAndColor(const UINT8 **cp, INT32 playernum)
 
 		// The following is a miniature subset of Got_Teamchange.
 		if ((gamestate == GS_LEVEL) // In a level?
-			&& (cv_restrictskinchange.value) // Skin changes are restricted?
-			&& (G_GametypeHasSpectators() && players[playernum].spectator == false) // not a spectator but could be?
 			&& (players[playernum].jointime > 1) // permit on join
 			&& (leveltime > introtime) // permit during intro turnaround
 			&& (players[playernum].skin != oldskin)) // a skin change actually happened?
 		{
-			for (i = 0; i < MAXPLAYERS; ++i)
-			{
-				if (i == playernum)
-					continue;
-				if (!playeringame[i])
-					continue;
-				if (players[i].spectator)
-					continue;
-				break;
-			}
+			players[playernum].roundconditions.switched_skin = true;
 
-			if (i != MAXPLAYERS // Someone on your server who isn't you?
-				&& LUA_HookTeamSwitch(&players[playernum], 0, false, false, false)) // fiiiine, lua can except it
+			if (
+				cv_restrictskinchange.value // Skin changes are restricted?
+				&& G_GametypeHasSpectators() // not a spectator...
+				&& players[playernum].spectator == false // ...but could be?
+			)
 			{
-				P_DamageMobj(players[playernum].mo, NULL, NULL, 1, DMG_SPECTATOR);
-
-				if (players[i].spectator)
+				for (i = 0; i < MAXPLAYERS; ++i)
 				{
-					HU_AddChatText(va("\x82*%s became a spectator.", player_names[playernum]), false);
+					if (i == playernum)
+						continue;
+					if (!playeringame[i])
+						continue;
+					if (players[i].spectator)
+						continue;
+					break;
+				}
 
-					FinalisePlaystateChange(playernum);
+				if (i != MAXPLAYERS // Someone on your server who isn't you?
+					&& LUA_HookTeamSwitch(&players[playernum], 0, false, false, false)) // fiiiine, lua can except it
+				{
+					P_DamageMobj(players[playernum].mo, NULL, NULL, 1, DMG_SPECTATOR);
+
+					if (players[i].spectator)
+					{
+						HU_AddChatText(va("\x82*%s became a spectator.", player_names[playernum]), false);
+
+						FinalisePlaystateChange(playernum);
+					}
 				}
 			}
 		}

@@ -2267,6 +2267,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		rings = 5;
 	}
 
+	saveroundconditions = false;
+
 	if (betweenmaps || leveltime < introtime)
 	{
 		K_StopRoulette(&itemRoulette);
@@ -2288,7 +2290,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		lastsafecheatcheck = 0;
 		bigwaypointgap = 0;
 
-		saveroundconditions = false;
 		tallyactive = false;
 	}
 	else
@@ -2328,8 +2329,11 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 		pflags |= (players[player].pflags & (PF_STASIS|PF_ELIMINATED|PF_NOCONTEST|PF_FAULT|PF_LOSTLIFE));
 
-		memcpy(&roundconditions, &players[player].roundconditions, sizeof (roundconditions));
-		saveroundconditions = true;
+		if (spectator == false)
+		{
+			memcpy(&roundconditions, &players[player].roundconditions, sizeof (roundconditions));
+			saveroundconditions = true;
+		}
 
 		lastsafelap = players[player].lastsafelap;
 		lastsafecheatcheck = players[player].lastsafecheatcheck;

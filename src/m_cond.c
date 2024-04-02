@@ -1649,9 +1649,13 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 		case UCRP_ISMAP:
 			return (gamemap == cn->requirement+1);
 		case UCRP_ISCHARACTER:
-			return (player->skin == cn->requirement);
+			return (
+				player->roundconditions.switched_skin == false
+				&& player->skin == cn->requirement
+			);
 		case UCRP_ISENGINECLASS:
-			return (player->skin < numskins
+			return (player->roundconditions.switched_skin == false
+				&& player->skin < numskins
 				&& R_GetEngineClass(
 					skins[player->skin].kartspeed,
 					skins[player->skin].kartweight,
