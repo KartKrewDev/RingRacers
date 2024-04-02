@@ -1729,7 +1729,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			{
 				if (target->movedir != 0 && target->movedir < (UINT16)target->target->player->itemamount)
 				{
-					if (target->target->hnext)
+					if (target->target->hnext && !P_MobjWasRemoved(target->target->hnext))
 						K_KillBananaChain(target->target->hnext, inflictor, source);
 					target->target->player->itemamount = 0;
 				}
