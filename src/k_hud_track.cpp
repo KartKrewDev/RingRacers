@@ -28,8 +28,6 @@
 
 using namespace srb2;
 
-using TextElement = srb2::Draw::TextElement;
-
 extern "C" consvar_t cv_debughudtracker, cv_battleufotest, cv_kartdebugwaypoints;
 
 namespace
@@ -66,12 +64,28 @@ struct TargetTracking
 		std::optional<SplitscreenPair> far;
 	};
 
+	struct Tooltip
+	{
+		Tooltip(srb2::Draw::TextElement&& text_) : text(text_) {}
+
+		Tooltip& offset3d(fixed_t x, fixed_t y, fixed_t z)
+		{
+			ofs.x = x;
+			ofs.y = y;
+			ofs.z = z;
+			return *this;
+		}
+
+		srb2::Draw::TextElement text;
+		vector3_t ofs = {};
+	};
+
 	mobj_t* mobj;
 	trackingResult_t result;
 	fixed_t camDist;
 	bool foreground;
 	playertagtype_t nametag;
-	std::optional<TextElement> tooltip;
+	std::optional<Tooltip> tooltip;
 
 	skincolornum_t color() const
 	{
@@ -356,11 +370,14 @@ bool is_object_tracking_target(const mobj_t* mobj)
 	}
 }
 
-std::optional<TextElement> object_tooltip(const mobj_t* mobj)
+std::optional<TargetTracking::Tooltip> object_tooltip(const mobj_t* mobj)
 {
-	auto conditional = [](bool val, auto&& f) { return val ? std::optional<TextElement> {f()} : std::nullopt; };
-
 	using srb2::Draw;
+	using TextElement = Draw::TextElement;
+	using Tooltip = TargetTracking::Tooltip;
+
+	auto conditional = [](bool val, auto&& f) { return val ? std::optional<Tooltip> {f()} : std::nullopt; };
+
 	Draw::Font splitfont = (r_splitscreen > 1) ? Draw::Font::kThin : Draw::Font::kMenu;
 
 	switch (mobj->type)
@@ -398,7 +415,7 @@ std::optional<TextElement> object_tooltip(const mobj_t* mobj)
 	case MT_PLAYER:
 		return conditional(
 			mobj->player == stplyr && stplyr->icecube.frozen,
-			[&] { return TextElement("\xA7"); }
+			[&] { return Tooltip(TextElement("\xA7")).offset3d(0, 0, 64 * mobj->scale * P_MobjFlip(mobj)); }
 		);
 
 	default:
@@ -446,7 +463,7 @@ void K_DrawTargetTracking(const TargetTracking& target)
 
 		srb2::Draw(FixedToFloat(result.x), FixedToFloat(result.y))
 			.align(srb2::Draw::Align::kCenter)
-			.text(*target.tooltip);
+			.text(target.tooltip->text);
 		return;
 	}
 
@@ -773,7 +790,7 @@ void K_drawTargetHUD(const vector3_t* origin, player_t* player)
 
 		bool tracking = is_object_tracking_target(mobj);
 		playertagtype_t nametag = mobj->player ? K_WhichPlayerTag(mobj->player) : PLAYERTAG_NONE;
-		std::optional<TextElement> tooltip = object_tooltip(mobj);
+		auto tooltip = object_tooltip(mobj);
 
 		if (tracking == false && nametag == PLAYERTAG_NONE && !tooltip)
 		{
@@ -793,21 +810,23 @@ void K_drawTargetHUD(const vector3_t* origin, player_t* player)
 		tr.foreground = false;
 		tr.nametag = PLAYERTAG_NONE;
 
-		if (tracking || tooltip)
+		if (tracking)
 		{
 			K_ObjectTracking(&tr.result, &pos, false);
+			targetList.push_back(tr);
+		}
 
-			if (tracking)
-			{
-				targetList.push_back(tr);
-			}
+		if (tooltip)
+		{
+			tooltip->text.flags(tooltip->text.flags().value_or(0) | V_SPLITSCREEN);
+			tr.tooltip = tooltip;
 
-			if (tooltip)
-			{
-				tooltip->flags(tooltip->flags().value_or(0) | V_SPLITSCREEN);
-				tr.tooltip = tooltip;
-				targetList.push_back(tr);
-			}
+			const vector3_t copy = pos;
+			FV3_Add(&pos, &tooltip->ofs);
+			K_ObjectTracking(&tr.result, &pos, false);
+			pos = copy;
+
+			targetList.push_back(tr);
 		}
 
 		if (!mobj->player)
