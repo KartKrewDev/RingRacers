@@ -1,3 +1,12 @@
+// DR. ROBOTNIK'S RING RACERS
+//-----------------------------------------------------------------------------
+// Copyright (C) 2024 by Sally "TehRealSalt" Cochenour.
+// Copyright (C) 2024 by Kart Krew.
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
 /// \file  menus/transient/explosions.c
 /// \brief Explosions used on the character select grid and
 ///        challenges grid.

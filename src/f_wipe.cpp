@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 2024 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
-// Copyright (C) 2016 by Matthew "Inuyasha" Walsh.
+// Copyright (C) 2016 by Matthew "Kaito Sinclaire" Walsh.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
 //
