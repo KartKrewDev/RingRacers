@@ -631,8 +631,11 @@ void DRPC_UpdatePresence(void)
 						case GT_SPECIAL:
 						case GT_VERSUS:
 						{
-							// You're using command line.
-							// Just patch over this for now.
+							// When/if these are accessible outside of
+							// Grand Prix or Time Attack, then these
+							// should get their own images.
+							// But right now, you're just using command line.
+							// Just patch over it for now.
 							gs = DISCORD_GS_GRANDPRIX;
 							break;
 						}
@@ -655,15 +658,26 @@ void DRPC_UpdatePresence(void)
 				break;
 			}
 			case GS_TITLESCREEN:
+			case GS_INTRO:
 			{
 				gs = DISCORD_GS_TITLE;
 				break;
 			}
 			case GS_CREDITS:
+			case GS_EVALUATION:
 			{
 				gs = DISCORD_GS_CREDITS;
 				break;
 			}
+			case GS_MENU:
+			{
+				if (menuactive && currentMenu == &EXTRAS_EggTVDef)
+				{
+					gs = DISCORD_GS_REPLAY;
+					break;
+				}
+			}
+			/* FALLTHRU */
 			default:
 			{
 				gs = DISCORD_GS_MENU;
@@ -737,7 +751,7 @@ void DRPC_UpdatePresence(void)
 			{
 				case DISCORD_GS_REPLAY:
 				{
-					discordPresence.state = "Watching Replay";
+					discordPresence.state = "Watching Replays";
 					break;
 				}
 				case DISCORD_GS_TITLE:
@@ -807,7 +821,7 @@ void DRPC_UpdatePresence(void)
 
 				snprintf(detailstr, 128, "Grand Prix%s | %s",
 					roundstr,
-					grandprixinfo.masterbots ? "Master" : kartspeed_cons_t[grandprixinfo.gamespeed + 1].strvalue
+					grandprixinfo.masterbots ? "Master" : gpdifficulty_cons_t[grandprixinfo.gamespeed].strvalue
 				);
 				discordPresence.details = detailstr;
 			}
@@ -852,6 +866,9 @@ void DRPC_UpdatePresence(void)
 		}
 
 		// Gametype image
+		// I am REALLY REALLY sad that there isn't enough room in a
+		// single Rich Presence app to handle enough images for all
+		// of the maps...
 		switch (gs)
 		{
 			case DISCORD_GS_CUSTOM:
@@ -906,7 +923,7 @@ void DRPC_UpdatePresence(void)
 			case DISCORD_GS_REPLAY:
 			{
 				discordPresence.largeImageKey = "gs_replay";
-				discordPresence.largeImageText = "Watching Replay";
+				discordPresence.largeImageText = "Watching Replays";
 				break;
 			}
 			case DISCORD_GS_TITLE:
