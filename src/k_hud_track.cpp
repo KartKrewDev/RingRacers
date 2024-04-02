@@ -130,6 +130,9 @@ struct TargetTracking
 		case MT_BUBBLESHIELDTRAP:
 			return false;
 
+		case MT_PLAYER:
+			return !tooltip;
+
 		default:
 			return true;
 		}
@@ -390,6 +393,12 @@ std::optional<TextElement> object_tooltip(const mobj_t* mobj)
 		return conditional(
 			mobj->tracer == stplyr->mo && Obj_GardenTopPlayerNeedsHelp(mobj),
 			[&] { return TextElement("Try \xA7!").font(splitfont); }
+		);
+
+	case MT_PLAYER:
+		return conditional(
+			mobj->player == stplyr && stplyr->icecube.frozen,
+			[&] { return TextElement("\xA7"); }
 		);
 
 	default:
