@@ -8825,6 +8825,9 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		{
 			G_PreLevelTitleCard();
 		}
+
+		// Apply FOV override.
+		R_CheckFOV();
 	}
 
 	TracyCZoneEnd(__zone);

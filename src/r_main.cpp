@@ -69,6 +69,7 @@ fixed_t centerxfrac, centeryfrac;
 fixed_t projection[MAXSPLITSCREENPLAYERS];
 fixed_t projectiony[MAXSPLITSCREENPLAYERS]; // aspect ratio
 fixed_t fovtan[MAXSPLITSCREENPLAYERS]; // field of view
+fixed_t g_fovcache[MAXSPLITSCREENPLAYERS];
 
 // just for profiling purposes
 size_t framecount;
@@ -188,7 +189,7 @@ void SplitScreen_OnChange(void)
 extern "C" void Fov_OnChange(void);
 void Fov_OnChange(void)
 {
-	R_SetViewSize();
+	R_CheckFOV();
 }
 
 extern "C" void ChaseCam_OnChange(void);
@@ -955,6 +956,18 @@ void R_SetViewSize(void)
 	setsizeneeded = true;
 }
 
+void R_CheckFOV(void)
+{
+	for (UINT8 s = 0; s <= r_splitscreen; ++s)
+	{
+		if (g_fovcache[s] != R_FOV(s))
+		{
+			R_SetViewSize();
+			break;
+		}
+	}
+}
+
 //
 // R_ExecuteSetViewSize
 //
@@ -997,7 +1010,8 @@ void R_ExecuteSetViewSize(void)
 
 	for (s = 0; s <= r_splitscreen; ++s)
 	{
-		fov = FixedAngle(cv_fov[s].value/2) + ANGLE_90;
+		g_fovcache[s] = R_FOV(s);
+		fov = FixedAngle(g_fovcache[s]/2) + ANGLE_90;
 		fovtan[s] = FixedMul(FINETANGENT(fov >> ANGLETOFINESHIFT), viewmorph[s].zoomneeded);
 		if (r_splitscreen == 1) // Splitscreen FOV should be adjusted to maintain expected vertical view
 			fovtan[s] = 17*fovtan[s]/10;
@@ -1069,6 +1083,16 @@ void R_ExecuteSetViewSize(void)
 #endif
 
 	am_recalc = true;
+}
+
+fixed_t R_FOV(int split)
+{
+	if (gamestate == GS_TITLESCREEN || gamestate == GS_CEREMONY)
+	{
+		return 90*FRACUNIT; // standard setting
+	}
+
+	return cv_fov[split].value;
 }
 
 //

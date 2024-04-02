@@ -34,6 +34,7 @@ extern fixed_t centeryfrac;
 extern fixed_t projection[MAXSPLITSCREENPLAYERS];
 extern fixed_t projectiony[MAXSPLITSCREENPLAYERS];
 extern fixed_t fovtan[MAXSPLITSCREENPLAYERS];
+extern fixed_t g_fovcache[MAXSPLITSCREENPLAYERS];
 
 extern size_t validcount, linecount, loopcount, framecount;
 
@@ -177,6 +178,9 @@ void R_SetViewSize(void);
 
 // do it (sometimes explicitly called)
 void R_ExecuteSetViewSize(void);
+
+fixed_t R_FOV(int split);
+void R_CheckFOV(void);
 
 void R_SetupFrame(int split);
 void R_SkyboxFrame(int split);

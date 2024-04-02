@@ -5450,7 +5450,7 @@ static void HWR_DrawSkyBackground(player_t *player)
 	if (cv_glskydome.value)
 	{
 		FTransform dometransform;
-		const float fpov = FIXED_TO_FLOAT(cv_fov[viewssnum].value+player->fovadd);
+		const float fpov = FIXED_TO_FLOAT(R_FOV(viewssnum)+player->fovadd);
 		postimg_t *type = &postimgtype[R_GetViewNumber()];
 
 		memset(&dometransform, 0x00, sizeof(FTransform));
@@ -5700,7 +5700,7 @@ static void HWR_SetShaderState(void)
 
 static void HWR_RenderViewpoint(player_t *player, boolean drawSkyTexture, boolean timing)
 {
-	const float fpov = FIXED_TO_FLOAT(cv_fov[viewssnum].value+player->fovadd);
+	const float fpov = FIXED_TO_FLOAT(R_FOV(viewssnum)+player->fovadd);
 	postimg_t *type = &postimgtype[viewssnum];
 
 	{
