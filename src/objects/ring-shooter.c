@@ -798,11 +798,11 @@ void Obj_UpdateRingShooterFace(mobj_t *part)
 	// we're going to assume the character's WANTED icon is 32 x 32
 	// let's squish the sprite a bit so that it matches the dimensions of the screen's sprite, which is 26 x 22
 	// (TODO: maybe get the dimensions/offsets from the patches themselves?)
-	part->spritexscale = FixedDiv(26*FRACUNIT, 32*FRACUNIT);
-	part->spriteyscale = FixedDiv(22*FRACUNIT, 32*FRACUNIT);
+	part->old_spritexscale = part->spritexscale = FixedDiv(26*FRACUNIT, 32*FRACUNIT);
+	part->old_spriteyscale = part->spriteyscale = FixedDiv(22*FRACUNIT, 32*FRACUNIT);
 
 	// a normal WANTED icon should have (0, 0) offsets
 	// so let's offset it such that it will match the position of the screen's sprite
-	part->spritexoffset = 16*FRACUNIT; // 32 / 2
-	part->spriteyoffset = 28*FRACUNIT + FixedDiv(11*FRACUNIT, part->spriteyscale); // 32 - 4 (generic monster bottom) + 11 (vertical offset of screen sprite from the bottom)
+	part->old_spritexoffset = part->spritexoffset = 16*FRACUNIT; // 32 / 2
+	part->old_spriteyoffset = part->spriteyoffset = 28*FRACUNIT + FixedDiv(11*FRACUNIT, part->spriteyscale); // 32 - 4 (generic monster bottom) + 11 (vertical offset of screen sprite from the bottom)
 }
