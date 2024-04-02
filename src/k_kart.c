@@ -1,4 +1,11 @@
-// SONIC ROBO BLAST 2 KART ~ ZarroTsu
+// DR. ROBOTNIK'S RING RACERS
+//-----------------------------------------------------------------------------
+// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2018 by ZarroTsu.
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  k_kart.c
 /// \brief SRB2kart general.
