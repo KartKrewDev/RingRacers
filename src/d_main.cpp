@@ -1019,16 +1019,26 @@ void D_SRB2Loop(void)
 					}
 					return true;
 				};
-				// 3D rendering is stopped ENTIRELY if the game is paused.
-				// - In single player, opening the menu pauses the game, so it's perfect.
-				// - One exception: freecam is allowed to move when the game is paused.
-				if (((paused || P_AutoPause()) && none_freecam()) ||
-					// 3D framerate is always allowed to at least drop if the menu is open.
-					// Does not affect replay menu because that one is more like a HUD.
-					(skiplaggyworld && menuactive && currentMenu != &PAUSE_PlaybackMenuDef))
+				auto can_skip = [&]
 				{
+					// Would interfere with "Advanced Frame" button in replays.
+					if (demo.playback)
+						return false;
+
+					// 3D rendering is stopped ENTIRELY if the game is paused.
+					// - In single player, opening the menu pauses the game, so it's perfect.
+					// - One exception: freecam is allowed to move when the game is paused.
+					if ((paused || P_AutoPause()) && none_freecam())
+						return true;
+
+					// 3D framerate is always allowed to at least drop if the menu is open.
+					if (skiplaggyworld && menuactive)
+						return true;
+
+					return false;
+				};
+				if (can_skip())
 					world = false;
-				}
 			}
 
 			ranwipe = D_Display(world);
