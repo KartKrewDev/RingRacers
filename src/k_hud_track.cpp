@@ -383,18 +383,13 @@ std::optional<TextElement> object_tooltip(const mobj_t* mobj)
 
 	case MT_BUBBLESHIELDTRAP:
 		return conditional(
-			mobj->tracer && !P_MobjWasRemoved(mobj->tracer)
-			&& mobj->tracer->player && P_IsDisplayPlayer(mobj->tracer->player)
-			&& mobj->tracer->player == &players[displayplayers[R_GetViewNumber()]],
+			mobj->tracer == stplyr->mo,
 			[&] { return TextElement(((leveltime / 3) % 2) ? "\xB3    " : "    \xB2").font(Draw::Font::kMenu); }
 		);
 
 	case MT_GARDENTOP:
 		return conditional(
-			mobj->tracer && !P_MobjWasRemoved(mobj->tracer)
-			&& mobj->tracer->player && P_IsDisplayPlayer(mobj->tracer->player)
-			&& mobj->tracer->player == &players[displayplayers[R_GetViewNumber()]]
-			&& Obj_GardenTopPlayerNeedsHelp(mobj),
+			mobj->tracer == stplyr->mo && Obj_GardenTopPlayerNeedsHelp(mobj),
 			[&] { return TextElement("Try \xA7!").font(splitfont); }
 		);
 
