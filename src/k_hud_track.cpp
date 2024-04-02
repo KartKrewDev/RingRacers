@@ -28,6 +28,8 @@
 
 using namespace srb2;
 
+using TextElement = srb2::Draw::TextElement;
+
 extern "C" consvar_t cv_debughudtracker, cv_battleufotest, cv_kartdebugwaypoints;
 
 namespace
@@ -69,6 +71,7 @@ struct TargetTracking
 	fixed_t camDist;
 	bool foreground;
 	playertagtype_t nametag;
+	std::optional<TextElement> tooltip;
 
 	skincolornum_t color() const
 	{
@@ -110,6 +113,21 @@ struct TargetTracking
 		{
 		case MT_SPRAYCAN:
 		case MT_WAYPOINT:
+			return false;
+
+		default:
+			return true;
+		}
+	}
+
+	// Special exception because the tracking math sometimes fails.
+	bool can_object_be_offscreen() const
+	{
+		switch (mobj->type)
+		{
+		// You can see this, you fucking liar
+		case MT_GARDENTOP:
+		case MT_BUBBLESHIELDTRAP:
 			return false;
 
 		default:
@@ -230,12 +248,6 @@ private:
 				}},
 			};
 
-		case MT_BATTLEUFO_SPAWNER:
-		case MT_WAYPOINT:
-		case MT_BUBBLESHIELDTRAP:
-		case MT_GARDENTOP:
-			return {};
-
 		default:
 			return {
 				{ // Near
@@ -337,39 +349,57 @@ bool is_object_tracking_target(const mobj_t* mobj)
 		return !(mobj->renderflags & (RF_TRANSMASK | RF_DONTDRAW)) && // the spraycan wasn't collected yet
 			P_CheckSight(stplyr->mo, const_cast<mobj_t*>(mobj));
 
-	case MT_BATTLEUFO_SPAWNER:
-		return cv_battleufotest.value;
-
-	case MT_WAYPOINT:
-		return cv_kartdebugwaypoints.value;
-
-	case MT_BUBBLESHIELDTRAP:
-		return mobj->tracer && !P_MobjWasRemoved(mobj->tracer)
-		&& mobj->tracer->player && P_IsDisplayPlayer(mobj->tracer->player)
-		&& mobj->tracer->player == &players[displayplayers[R_GetViewNumber()]];
-
-	case MT_GARDENTOP:
-		return  mobj->tracer && !P_MobjWasRemoved(mobj->tracer)
-			&& mobj->tracer->player && P_IsDisplayPlayer(mobj->tracer->player)
-			&& mobj->tracer->player == &players[displayplayers[R_GetViewNumber()]]
-			&& Obj_GardenTopPlayerNeedsHelp(mobj);
-
 	default:
 		return false;
 	}
 }
 
-bool can_object_be_offscreen(const mobj_t* mobj)
+std::optional<TextElement> object_tooltip(const mobj_t* mobj)
 {
+	auto conditional = [](bool val, auto&& f) { return val ? std::optional<TextElement> {f()} : std::nullopt; };
+
+	using srb2::Draw;
+	Draw::Font splitfont = (r_splitscreen > 1) ? Draw::Font::kThin : Draw::Font::kMenu;
+
 	switch (mobj->type)
 	{
-	// You can see this, you fucking liar
-	case MT_GARDENTOP:
+	case MT_BATTLEUFO_SPAWNER:
+		return conditional(
+			cv_battleufotest.value,
+			[&] { return TextElement("BUFO ID: {}", Obj_BattleUFOSpawnerID(mobj)); }
+		);
+
+	case MT_WAYPOINT: {
+		return conditional(
+			cv_kartdebugwaypoints.value,
+			[&]
+			{
+				bool isNext = stplyr->nextwaypoint && stplyr->nextwaypoint->mobj == mobj;
+				return TextElement("{}", mobj->movecount) // waypoint ID
+					.flags(isNext ? V_GREENMAP : 0);
+			}
+		);
+	}
+
 	case MT_BUBBLESHIELDTRAP:
-		return false;
+		return conditional(
+			mobj->tracer && !P_MobjWasRemoved(mobj->tracer)
+			&& mobj->tracer->player && P_IsDisplayPlayer(mobj->tracer->player)
+			&& mobj->tracer->player == &players[displayplayers[R_GetViewNumber()]],
+			[&] { return TextElement(((leveltime / 3) % 2) ? "\xB3    " : "    \xB2").font(Draw::Font::kMenu); }
+		);
+
+	case MT_GARDENTOP:
+		return conditional(
+			mobj->tracer && !P_MobjWasRemoved(mobj->tracer)
+			&& mobj->tracer->player && P_IsDisplayPlayer(mobj->tracer->player)
+			&& mobj->tracer->player == &players[displayplayers[R_GetViewNumber()]]
+			&& Obj_GardenTopPlayerNeedsHelp(mobj),
+			[&] { return TextElement("Try \xA7!").font(splitfont); }
+		);
 
 	default:
-		return true;
+		return {};
 	}
 }
 
@@ -396,6 +426,27 @@ void K_DrawTargetTracking(const TargetTracking& target)
 		return;
 	}
 
+	const trackingResult_t& result = target.result;
+
+	if (target.tooltip)
+	{
+		if (target.can_object_be_offscreen() && result.onScreen == false)
+		{
+			return;
+		}
+
+		// Tooltips disappear when far away
+		if (target.camDist >= 2048 * mapobjectscale)
+		{
+			return;
+		}
+
+		srb2::Draw(FixedToFloat(result.x), FixedToFloat(result.y))
+			.align(srb2::Draw::Align::kCenter)
+			.text(*target.tooltip);
+		return;
+	}
+
 	Visibility visibility = is_object_visible(target.mobj);
 
 	if (visibility == Visibility::kFlicker && (leveltime & 1))
@@ -405,10 +456,9 @@ void K_DrawTargetTracking(const TargetTracking& target)
 
 	const uint8_t* colormap = target.colormap();
 
-	const trackingResult_t& result = target.result;
 	int32_t timer = 0;
 
-	if (can_object_be_offscreen(target.mobj) && result.onScreen == false)
+	if (target.can_object_be_offscreen() && result.onScreen == false)
 	{
 		// Off-screen, draw alongside the borders of the screen.
 		// Probably the most complicated thing.
@@ -595,50 +645,6 @@ void K_DrawTargetTracking(const TargetTracking& target)
 				colormap
 			);
 		};
-
-		using srb2::Draw;
-		auto debug = [&]() -> Draw
-		{
-			return Draw(FixedToFloat(result.x), FixedToFloat(result.y))
-				.flags(V_SPLITSCREEN)
-				.font(Draw::Font::kThin)
-				.align(Draw::Align::kCenter);
-		};
-
-		srb2::Draw::Font splitfont = (r_splitscreen > 1) ? Draw::Font::kThin : Draw::Font::kMenu;
-
-		switch (target.mobj->type)
-		{
-		case MT_BATTLEUFO_SPAWNER:
-			debug().text("BUFO ID: {}", Obj_BattleUFOSpawnerID(target.mobj));
-			break;
-
-		case MT_WAYPOINT:
-			if (target.camDist < 2048 * mapobjectscale)
-			{
-				bool isNext = stplyr->nextwaypoint && stplyr->nextwaypoint->mobj == target.mobj;
-				debug().flags(isNext ? V_GREENMAP : 0).text("{}", target.mobj->movecount); // waypoint ID
-			}
-			break;
-
-		case MT_BUBBLESHIELDTRAP:
-			Draw(FixedToFloat(result.x), FixedToFloat(result.y))
-				.flags(V_SPLITSCREEN)
-				.font(Draw::Font::kMenu)
-				.align(Draw::Align::kCenter)
-				.text(((leveltime/3)%2) ? "\xB3    " : "    \xB2");
-			break;
-
-		case MT_GARDENTOP:
-			Draw(FixedToFloat(result.x), FixedToFloat(result.y))
-				.flags(V_SPLITSCREEN)
-				.font(splitfont)
-				.align(Draw::Align::kCenter)
-				.text("Try \xA7!");
-
-		default:
-			break;
-		}
 	}
 }
 
@@ -764,8 +770,9 @@ void K_drawTargetHUD(const vector3_t* origin, player_t* player)
 
 		bool tracking = is_object_tracking_target(mobj);
 		playertagtype_t nametag = mobj->player ? K_WhichPlayerTag(mobj->player) : PLAYERTAG_NONE;
+		std::optional<TextElement> tooltip = object_tooltip(mobj);
 
-		if (tracking == false && nametag == PLAYERTAG_NONE)
+		if (tracking == false && nametag == PLAYERTAG_NONE && !tooltip)
 		{
 			continue;
 		}
@@ -783,10 +790,21 @@ void K_drawTargetHUD(const vector3_t* origin, player_t* player)
 		tr.foreground = false;
 		tr.nametag = PLAYERTAG_NONE;
 
-		if (tracking)
+		if (tracking || tooltip)
 		{
 			K_ObjectTracking(&tr.result, &pos, false);
-			targetList.push_back(tr);
+
+			if (tracking)
+			{
+				targetList.push_back(tr);
+			}
+
+			if (tooltip)
+			{
+				tooltip->flags(tooltip->flags().value_or(0) | V_SPLITSCREEN);
+				tr.tooltip = tooltip;
+				targetList.push_back(tr);
+			}
 		}
 
 		if (!mobj->player)
