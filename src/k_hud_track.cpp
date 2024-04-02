@@ -1,9 +1,12 @@
 #include <algorithm>
+#include <functional>
 #include <cstddef>
 #include <optional>
+#include <variant>
 #include <vector>
 
 #include "core/static_vec.hpp"
+#include "cxxutil.hpp"
 #include "v_draw.hpp"
 
 #include "g_game.h"
@@ -64,11 +67,29 @@ struct TargetTracking
 		std::optional<SplitscreenPair> far;
 	};
 
+	struct Tooltip
+	{
+		Tooltip(srb2::Draw::TextElement&& text_) : var(text_) {}
+		Tooltip(std::function<void(const srb2::Draw&)>&& fn) : var(fn) {}
+
+		Tooltip& offset3d(fixed_t x, fixed_t y, fixed_t z)
+		{
+			ofs.x = x;
+			ofs.y = y;
+			ofs.z = z;
+			return *this;
+		}
+
+		std::variant<srb2::Draw::TextElement, std::function<void(const srb2::Draw&)>> var;
+		vector3_t ofs = {};
+	};
+
 	mobj_t* mobj;
 	trackingResult_t result;
 	fixed_t camDist;
 	bool foreground;
 	playertagtype_t nametag;
+	std::optional<Tooltip> tooltip;
 
 	skincolornum_t color() const
 	{
@@ -111,6 +132,24 @@ struct TargetTracking
 		case MT_SPRAYCAN:
 		case MT_WAYPOINT:
 			return false;
+
+		default:
+			return true;
+		}
+	}
+
+	// Special exception because the tracking math sometimes fails.
+	bool can_object_be_offscreen() const
+	{
+		switch (mobj->type)
+		{
+		// You can see this, you fucking liar
+		case MT_GARDENTOP:
+		case MT_BUBBLESHIELDTRAP:
+			return false;
+
+		case MT_PLAYER:
+			return !tooltip;
 
 		default:
 			return true;
@@ -230,12 +269,6 @@ private:
 				}},
 			};
 
-		case MT_BATTLEUFO_SPAWNER:
-		case MT_WAYPOINT:
-		case MT_BUBBLESHIELDTRAP:
-		case MT_GARDENTOP:
-			return {};
-
 		default:
 			return {
 				{ // Near
@@ -277,9 +310,8 @@ bool is_player_tracking_target(player_t *player = stplyr)
 
 	if (inDuel)
 	{
-		// Always draw targets in 1v1 but don't draw player's
-		// own target on their own viewport.
-		return player != stplyr;
+		// Always draw targets in 1v1.
+		return true;
 	}
 
 	// Except for DUEL mode, Overtime hides all TARGETs except
@@ -318,7 +350,7 @@ bool is_object_tracking_target(const mobj_t* mobj)
 		return battleprisons;
 
 	case MT_PLAYER:
-		return is_player_tracking_target(mobj->player);
+		return mobj->player != stplyr && is_player_tracking_target(mobj->player);
 
 	case MT_OVERTIME_CENTER:
 		return inDuel == false && battleovertime.enabled;
@@ -337,39 +369,72 @@ bool is_object_tracking_target(const mobj_t* mobj)
 		return !(mobj->renderflags & (RF_TRANSMASK | RF_DONTDRAW)) && // the spraycan wasn't collected yet
 			P_CheckSight(stplyr->mo, const_cast<mobj_t*>(mobj));
 
-	case MT_BATTLEUFO_SPAWNER:
-		return cv_battleufotest.value;
-
-	case MT_WAYPOINT:
-		return cv_kartdebugwaypoints.value;
-
-	case MT_BUBBLESHIELDTRAP:
-		return mobj->tracer && !P_MobjWasRemoved(mobj->tracer)
-		&& mobj->tracer->player && P_IsDisplayPlayer(mobj->tracer->player)
-		&& mobj->tracer->player == &players[displayplayers[R_GetViewNumber()]];
-
-	case MT_GARDENTOP:
-		return  mobj->tracer && !P_MobjWasRemoved(mobj->tracer)
-			&& mobj->tracer->player && P_IsDisplayPlayer(mobj->tracer->player)
-			&& mobj->tracer->player == &players[displayplayers[R_GetViewNumber()]]
-			&& Obj_GardenTopPlayerNeedsHelp(mobj);
-
 	default:
 		return false;
 	}
 }
 
-bool can_object_be_offscreen(const mobj_t* mobj)
+std::optional<TargetTracking::Tooltip> object_tooltip(const mobj_t* mobj)
 {
+	using srb2::Draw;
+	using TextElement = Draw::TextElement;
+	using Tooltip = TargetTracking::Tooltip;
+
+	auto conditional = [](bool val, auto&& f) { return val ? std::optional<Tooltip> {f()} : std::nullopt; };
+
+	Draw::Font splitfont = (r_splitscreen > 1) ? Draw::Font::kThin : Draw::Font::kMenu;
+
 	switch (mobj->type)
 	{
-	// You can see this, you fucking liar
-	case MT_GARDENTOP:
+	case MT_BATTLEUFO_SPAWNER:
+		return conditional(
+			cv_battleufotest.value,
+			[&] { return TextElement("BUFO ID: {}", Obj_BattleUFOSpawnerID(mobj)); }
+		);
+
+	case MT_WAYPOINT: {
+		return conditional(
+			cv_kartdebugwaypoints.value,
+			[&]
+			{
+				bool isNext = stplyr->nextwaypoint && stplyr->nextwaypoint->mobj == mobj;
+				return TextElement("{}", mobj->movecount) // waypoint ID
+					.flags(isNext ? V_GREENMAP : 0);
+			}
+		);
+	}
+
 	case MT_BUBBLESHIELDTRAP:
-		return false;
+		return conditional(
+			mobj->tracer == stplyr->mo,
+			[&]
+			{
+				return [](const Draw& box)
+				{
+					bool left = (leveltime / 3) % 2;
+					box
+						.x(12 * (left ? -1 : 1))
+						.font(Draw::Font::kMenu)
+						.align(left ? Draw::Align::kRight : Draw::Align::kLeft)
+						.text(left ? "\xB3" : "\xB2");
+				};
+			}
+		);
+
+	case MT_GARDENTOP:
+		return conditional(
+			mobj->tracer == stplyr->mo && Obj_GardenTopPlayerNeedsHelp(mobj),
+			[&] { return TextElement("Try \xA7!").font(splitfont); }
+		);
+
+	case MT_PLAYER:
+		return conditional(
+			mobj->player == stplyr && stplyr->icecube.frozen,
+			[&] { return Tooltip(TextElement("\xA7")).offset3d(0, 0, 64 * mobj->scale * P_MobjFlip(mobj)); }
+		);
 
 	default:
-		return true;
+		return {};
 	}
 }
 
@@ -396,6 +461,32 @@ void K_DrawTargetTracking(const TargetTracking& target)
 		return;
 	}
 
+	const trackingResult_t& result = target.result;
+
+	if (target.tooltip)
+	{
+		if (target.can_object_be_offscreen() && result.onScreen == false)
+		{
+			return;
+		}
+
+		// Tooltips disappear when far away
+		if (target.camDist >= 2048 * mapobjectscale)
+		{
+			return;
+		}
+
+		using srb2::Draw;
+		Draw box = Draw(FixedToFloat(result.x), FixedToFloat(result.y)).align(Draw::Align::kCenter);
+		auto visitor = srb2::Overload {
+			[&](const srb2::Draw::TextElement& text) { box.text(text); },
+			[&](const std::function<void(const srb2::Draw&)>& fn) { fn(box); },
+		};
+		std::visit(visitor, target.tooltip->var);
+
+		return;
+	}
+
 	Visibility visibility = is_object_visible(target.mobj);
 
 	if (visibility == Visibility::kFlicker && (leveltime & 1))
@@ -405,10 +496,9 @@ void K_DrawTargetTracking(const TargetTracking& target)
 
 	const uint8_t* colormap = target.colormap();
 
-	const trackingResult_t& result = target.result;
 	int32_t timer = 0;
 
-	if (can_object_be_offscreen(target.mobj) && result.onScreen == false)
+	if (target.can_object_be_offscreen() && result.onScreen == false)
 	{
 		// Off-screen, draw alongside the borders of the screen.
 		// Probably the most complicated thing.
@@ -595,50 +685,6 @@ void K_DrawTargetTracking(const TargetTracking& target)
 				colormap
 			);
 		};
-
-		using srb2::Draw;
-		auto debug = [&]() -> Draw
-		{
-			return Draw(FixedToFloat(result.x), FixedToFloat(result.y))
-				.flags(V_SPLITSCREEN)
-				.font(Draw::Font::kThin)
-				.align(Draw::Align::kCenter);
-		};
-
-		srb2::Draw::Font splitfont = (r_splitscreen > 1) ? Draw::Font::kThin : Draw::Font::kMenu;
-
-		switch (target.mobj->type)
-		{
-		case MT_BATTLEUFO_SPAWNER:
-			debug().text("BUFO ID: {}", Obj_BattleUFOSpawnerID(target.mobj));
-			break;
-
-		case MT_WAYPOINT:
-			if (target.camDist < 2048 * mapobjectscale)
-			{
-				bool isNext = stplyr->nextwaypoint && stplyr->nextwaypoint->mobj == target.mobj;
-				debug().flags(isNext ? V_GREENMAP : 0).text("{}", target.mobj->movecount); // waypoint ID
-			}
-			break;
-
-		case MT_BUBBLESHIELDTRAP:
-			Draw(FixedToFloat(result.x), FixedToFloat(result.y))
-				.flags(V_SPLITSCREEN)
-				.font(Draw::Font::kMenu)
-				.align(Draw::Align::kCenter)
-				.text(((leveltime/3)%2) ? "\xB3    " : "    \xB2");
-			break;
-
-		case MT_GARDENTOP:
-			Draw(FixedToFloat(result.x), FixedToFloat(result.y))
-				.flags(V_SPLITSCREEN)
-				.font(splitfont)
-				.align(Draw::Align::kCenter)
-				.text("Try \xA7!");
-
-		default:
-			break;
-		}
 	}
 }
 
@@ -764,8 +810,9 @@ void K_drawTargetHUD(const vector3_t* origin, player_t* player)
 
 		bool tracking = is_object_tracking_target(mobj);
 		playertagtype_t nametag = mobj->player ? K_WhichPlayerTag(mobj->player) : PLAYERTAG_NONE;
+		auto tooltip = object_tooltip(mobj);
 
-		if (tracking == false && nametag == PLAYERTAG_NONE)
+		if (tracking == false && nametag == PLAYERTAG_NONE && !tooltip)
 		{
 			continue;
 		}
@@ -787,6 +834,23 @@ void K_drawTargetHUD(const vector3_t* origin, player_t* player)
 		{
 			K_ObjectTracking(&tr.result, &pos, false);
 			targetList.push_back(tr);
+		}
+
+		if (tooltip)
+		{
+			if (auto* text = std::get_if<srb2::Draw::TextElement>(&tooltip->var))
+			{
+				text->flags(text->flags().value_or(0) | V_SPLITSCREEN);
+			}
+
+			const vector3_t copy = pos;
+			FV3_Add(&pos, &tooltip->ofs);
+			K_ObjectTracking(&tr.result, &pos, false);
+			pos = copy;
+
+			tr.tooltip = tooltip;
+			targetList.push_back(tr);
+			tr.tooltip = {};
 		}
 
 		if (!mobj->player)
