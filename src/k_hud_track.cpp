@@ -1,9 +1,12 @@
 #include <algorithm>
+#include <functional>
 #include <cstddef>
 #include <optional>
+#include <variant>
 #include <vector>
 
 #include "core/static_vec.hpp"
+#include "cxxutil.hpp"
 #include "v_draw.hpp"
 
 #include "g_game.h"
@@ -66,7 +69,8 @@ struct TargetTracking
 
 	struct Tooltip
 	{
-		Tooltip(srb2::Draw::TextElement&& text_) : text(text_) {}
+		Tooltip(srb2::Draw::TextElement&& text_) : var(text_) {}
+		Tooltip(std::function<void(const srb2::Draw&)>&& fn) : var(fn) {}
 
 		Tooltip& offset3d(fixed_t x, fixed_t y, fixed_t z)
 		{
@@ -76,7 +80,7 @@ struct TargetTracking
 			return *this;
 		}
 
-		srb2::Draw::TextElement text;
+		std::variant<srb2::Draw::TextElement, std::function<void(const srb2::Draw&)>> var;
 		vector3_t ofs = {};
 	};
 
@@ -403,7 +407,18 @@ std::optional<TargetTracking::Tooltip> object_tooltip(const mobj_t* mobj)
 	case MT_BUBBLESHIELDTRAP:
 		return conditional(
 			mobj->tracer == stplyr->mo,
-			[&] { return TextElement(((leveltime / 3) % 2) ? "\xB3    " : "    \xB2").font(Draw::Font::kMenu); }
+			[&]
+			{
+				return [](const Draw& box)
+				{
+					bool left = (leveltime / 3) % 2;
+					box
+						.x(12 * (left ? -1 : 1))
+						.font(Draw::Font::kMenu)
+						.align(left ? Draw::Align::kRight : Draw::Align::kLeft)
+						.text(left ? "\xB3" : "\xB2");
+				};
+			}
 		);
 
 	case MT_GARDENTOP:
@@ -461,9 +476,14 @@ void K_DrawTargetTracking(const TargetTracking& target)
 			return;
 		}
 
-		srb2::Draw(FixedToFloat(result.x), FixedToFloat(result.y))
-			.align(srb2::Draw::Align::kCenter)
-			.text(target.tooltip->text);
+		using srb2::Draw;
+		Draw box = Draw(FixedToFloat(result.x), FixedToFloat(result.y)).align(Draw::Align::kCenter);
+		auto visitor = srb2::Overload {
+			[&](const srb2::Draw::TextElement& text) { box.text(text); },
+			[&](const std::function<void(const srb2::Draw&)>& fn) { fn(box); },
+		};
+		std::visit(visitor, target.tooltip->var);
+
 		return;
 	}
 
@@ -818,15 +838,19 @@ void K_drawTargetHUD(const vector3_t* origin, player_t* player)
 
 		if (tooltip)
 		{
-			tooltip->text.flags(tooltip->text.flags().value_or(0) | V_SPLITSCREEN);
-			tr.tooltip = tooltip;
+			if (auto* text = std::get_if<srb2::Draw::TextElement>(&tooltip->var))
+			{
+				text->flags(text->flags().value_or(0) | V_SPLITSCREEN);
+			}
 
 			const vector3_t copy = pos;
 			FV3_Add(&pos, &tooltip->ofs);
 			K_ObjectTracking(&tr.result, &pos, false);
 			pos = copy;
 
+			tr.tooltip = tooltip;
 			targetList.push_back(tr);
+			tr.tooltip = {};
 		}
 
 		if (!mobj->player)
