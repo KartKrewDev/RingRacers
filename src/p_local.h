@@ -138,6 +138,9 @@ struct camera_t
 	// Freecam: aiming needs to be reset after switching from chasecam
 	boolean reset_aiming;
 
+	// Hold up/down to pan the camera vertically
+	SINT8 dpad_y_held;
+
 	// Interpolation data
 	fixed_t old_x, old_y, old_z;
 	angle_t old_angle, old_aiming;
