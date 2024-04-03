@@ -762,6 +762,10 @@ char sprnames[NUMSPRITES + 1][5] =
 	"DIEM", // smoke
 	"DIEN", // explosion
 
+	// Pulley
+	"HCCH",
+	"HCHK",
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	"VIEW",
 };
@@ -22012,6 +22016,58 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		8,            // damage
 		sfx_None,     // activesound
 		MF_SCENERY|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_NOGRAVITY, // flags
+		S_NULL        // raisestate
+	},
+	{           // MT_IPULLUP
+		3444,         // doomednum
+		S_INVISIBLE,  // spawnstate
+		1000,         // spawnhealth
+		S_NULL,       // seestate
+		sfx_None,     // seesound
+		0,            // reactiontime
+		sfx_None,     // attacksound
+		S_NULL,       // painstate
+		0,            // painchance
+		sfx_None,     // painsound
+		S_NULL,       // meleestate
+		S_NULL,       // missilestate
+		S_NULL,       // deathstate
+		S_NULL,       // xdeathstate
+		sfx_None,     // deathsound
+		0,            // speed
+		32*FRACUNIT,  // radius
+		32*FRACUNIT,  // height
+		0,            // dispoffset
+		0,            // mass
+		0,            // damage
+		sfx_None,     // activesound
+		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_SCENERY, // flags
+		S_NULL        // raisestate
+	},
+	{           // MT_PULLUPHOOK
+		3444,         // doomednum
+		S_INVISIBLE,  // spawnstate
+		1000,         // spawnhealth
+		S_NULL,       // seestate
+		sfx_None,     // seesound
+		0,            // reactiontime
+		sfx_None,     // attacksound
+		S_NULL,       // painstate
+		0,            // painchance
+		sfx_None,     // painsound
+		S_NULL,       // meleestate
+		S_NULL,       // missilestate
+		S_NULL,       // deathstate
+		S_NULL,       // xdeathstate
+		sfx_None,     // deathsound
+		0,            // speed
+		64*FRACUNIT,  // radius
+		64*FRACUNIT,  // height
+		0,            // dispoffset
+		0,            // mass
+		0,            // damage
+		sfx_None,     // activesound
+		MF_NOCLIPHEIGHT|MF_SPECIAL|MF_NOGRAVITY|MF_NOCLIP, // flags
 		S_NULL        // raisestate
 	},
 };

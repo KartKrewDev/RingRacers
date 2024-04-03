@@ -804,6 +804,8 @@ struct player_t
 	UINT8 dashRingPullTics; // Timer during which the player is pulled towards a dash ring
 	UINT8 dashRingPushTics; // Timer during which the player displays effects and has no gravity after being thrust by a dash ring
 
+	boolean pullup; // True if the player is attached to a pullup hook
+
 	tic_t ebrakefor;	// Ebrake timer, used for visuals.
 
 	UINT16 faultflash; // Used for misc FAULT visuals

@@ -540,6 +540,8 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].dashRingPullTics);
 		WRITEUINT8(save->p, players[i].dashRingPushTics);
 
+		WRITEUINT8(save->p, players[i].pullup);
+
 		WRITEUINT32(save->p, players[i].ebrakefor);
 
 		WRITEUINT32(save->p, players[i].roundscore);
@@ -1129,6 +1131,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		players[i].dashRingPullTics = READUINT8(save->p);
 		players[i].dashRingPushTics = READUINT8(save->p);
+
+		players[i].pullup = READUINT8(save->p);
 
 		players[i].ebrakefor = READUINT32(save->p);
 

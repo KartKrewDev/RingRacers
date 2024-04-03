@@ -3933,6 +3933,9 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_CABOTRON",
 	"MT_CABOTRONSTAR",
 	"MT_STARSTREAM",
+
+	"MT_IPULLUP",
+	"MT_PULLUPHOOK",
 };
 
 const char *const MOBJFLAG_LIST[] = {
