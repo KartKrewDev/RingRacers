@@ -541,7 +541,7 @@ void srb2::load_ng_gamedata()
 		dummyrecord.mapvisited |= mappair.second.visited.beaten ? MV_BEATEN : 0;
 		dummyrecord.mapvisited |= mappair.second.visited.encore ? MV_ENCORE : 0;
 		dummyrecord.mapvisited |= mappair.second.visited.spbattack ? MV_SPBATTACK : 0;
-		dummyrecord.mapvisited |= mappair.second.visited.mysticmelody ? MV_SPBATTACK : 0;
+		dummyrecord.mapvisited |= mappair.second.visited.mysticmelody ? MV_MYSTICMELODY : 0;
 		dummyrecord.timeattack.time = mappair.second.stats.timeattack.besttime;
 		dummyrecord.timeattack.lap = mappair.second.stats.timeattack.bestlap;
 		dummyrecord.spbattack.time = mappair.second.stats.spbattack.besttime;
