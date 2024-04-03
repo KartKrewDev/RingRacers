@@ -233,6 +233,10 @@ void init_routine(void)
 	if (allow)
 		OPTIONS_Sound[sopt_followhorns].status = IT_STRING | IT_CVAR;
 
+	OPTIONS_Sound[sopt_followhorns].tooltip = cv_tastelesstaunts.value
+		? "Press B to announce that you are pressing B."
+		: "Followers taunt your opponents when looking back at them.";
+
 	if (M_SecretUnlocked(SECRET_TIMEATTACK, true) ||
 		M_SecretUnlocked(SECRET_PRISONBREAK, true) ||
 		M_SecretUnlocked(SECRET_SPECIALATTACK, true))
@@ -282,7 +286,7 @@ menuitem_t OPTIONS_Sound[] =
 	{IT_STRING | IT_CVAR, "Character Voices", "Characters speak when interacting on the course.",
 		NULL, {.cvar = &cv_kartvoices}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Follower Horns", "Followers taunt your opponents when looking back at them.",
+	{IT_STRING | IT_CVAR, "Follower Horns", NULL, // set in init_routine
 		NULL, {.cvar = &cv_karthorns}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Continuous Attack Music", "Keep music playing seamlessly when retrying in Attack modes.",
