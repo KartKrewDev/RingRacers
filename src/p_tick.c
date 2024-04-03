@@ -763,7 +763,18 @@ void P_RunChaseCameras(void)
 	{
 		if (camera[i].chase)
 		{
-			P_MoveChaseCamera(&players[displayplayers[i]], &camera[i], false);
+			player_t *p = &players[displayplayers[i]];
+			camera_t *cam = &camera[i];
+
+			if (p->mo && p->cmd.throwdir != 0)
+			{
+				if (p->speed < 6 * p->mo->scale && abs(cam->dpad_y_held) < 2*TICRATE)
+					cam->dpad_y_held += intsign(p->cmd.throwdir);
+			}
+			else
+				cam->dpad_y_held = 0;
+
+			P_MoveChaseCamera(p, cam, false);
 		}
 	}
 
