@@ -584,7 +584,7 @@ static void loading_status(void)
 	char s[16];
 	int x, y;
 
-	if ((gamestate == GS_TITLESCREEN && titlemapinaction) || demo.attract == DEMO_ATTRACT_CREDITS)
+	if ((gamestate == GS_TITLESCREEN && titlemapinaction) || demo.attract == DEMO_ATTRACT_CREDITS || g_reloadinggamestate)
 	{
 		return;
 	}

@@ -32,6 +32,7 @@ extern mapthing_t *deathmatchstarts[MAX_DM_STARTS];
 extern INT32 numdmstarts, numcoopstarts, numredctfstarts, numbluectfstarts, numfaultstarts;
 
 extern boolean levelloading;
+extern boolean g_reloadinggamestate;
 extern UINT8 levelfadecol;
 
 extern tic_t oldbest;

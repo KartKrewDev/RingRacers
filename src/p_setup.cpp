@@ -126,6 +126,7 @@
 #include <tracy/tracy/TracyC.h>
 
 extern "C" consvar_t cv_continuousmusic;
+boolean g_reloadinggamestate = false;
 
 //
 // Map MD5, calculated on level load.
@@ -8329,6 +8330,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	virtlump_t *encoreLump = NULL;
 
 	levelloading = true;
+	g_reloadinggamestate = reloadinggamestate;
 
 	// This is needed. Don't touch.
 	maptol = mapheaderinfo[gamemap-1]->typeoflevel;
