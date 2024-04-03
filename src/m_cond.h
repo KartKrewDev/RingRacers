@@ -3,7 +3,7 @@
 // Copyright (C) 2024 by Vivian "toastergrl" Grannell.
 // Copyright (C) 2024 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
-// Copyright (C) 2016 by Matthew "Kaito Sinclaire" Walsh.
+// Copyright (C) 2016 by Kay "Kaito" Sinclaire.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.

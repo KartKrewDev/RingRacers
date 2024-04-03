@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
 // Copyright (C) 2024 by Kart Krew.
-// Copyright (C) 2016 by Matthew "Kaito Sinclaire" Walsh.
+// Copyright (C) 2016 by Kay "Kaito" Sinclaire.
 // Copyright (C) 2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
