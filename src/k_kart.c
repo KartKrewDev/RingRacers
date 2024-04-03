@@ -2720,8 +2720,10 @@ static void K_PlayGenericTastefulTaunt(mobj_t *source, sfxenum_t sfx_id)
 	boolean tasteful = (!source->player || !source->player->karthud[khud_tauntvoices]);
 
 	if (
-		cv_kartvoices.value
-		&& (tasteful || cv_kartvoices.value == 2)
+		(
+			(cv_kartvoices.value && tasteful)
+			|| cv_tastelesstaunts.value
+		)
 		&& R_CanShowSkinInDemo(skinid)
 	)
 	{
@@ -2757,8 +2759,10 @@ void K_PlayOvertakeSound(mobj_t *source)
 	boolean tasteful = (!source->player || !source->player->karthud[khud_voices]);
 
 	if (
-		cv_kartvoices.value
-		&& (tasteful || cv_kartvoices.value == 2)
+		(
+			(cv_kartvoices.value && tasteful)
+			|| cv_tastelesstaunts.value
+		)
 		&& R_CanShowSkinInDemo(skinid)
 	)
 	{
@@ -2785,7 +2789,7 @@ static void K_PlayGenericCombatSound(mobj_t *source, mobj_t *other, sfxenum_t sf
 	}
 
 	if (
-		cv_kartvoices.value
+		(cv_kartvoices.value || cv_tastelesstaunts.value)
 		&& R_CanShowSkinInDemo(skinid)
 	)
 	{
@@ -2847,7 +2851,7 @@ void K_PlayPowerGloatSound(mobj_t *source)
 		return;
 
 	if (
-		cv_kartvoices.value
+		(cv_kartvoices.value || cv_tastelesstaunts.value)
 		&& R_CanShowSkinInDemo(skinid)
 	)
 	{
@@ -2865,7 +2869,7 @@ void P_PlayVictorySound(mobj_t *source)
 		return;
 
 	if (
-		cv_kartvoices.value
+		(cv_kartvoices.value || cv_tastelesstaunts.value)
 		&& R_CanShowSkinInDemo(skinid)
 	)
 	{
@@ -12122,15 +12126,15 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	{
 		if (player->oldposition < player->position) // But first, if you lost a place,
 		{
-			player->oldposition = player->position; // then the other player taunts.
+			// then the other player taunts.
 			K_RegularVoiceTimers(player); // and you can't for a bit
 		}
 		else // Otherwise,
 		{
 			K_PlayOvertakeSound(player->mo); // Say "YOU'RE TOO SLOW!"
-			player->oldposition = player->position; // Restore the old position,
 		}
 	}
+	player->oldposition = player->position;
 
 	// Prevent ring misfire
 	if (!(cmd->buttons & BT_ATTACK))

@@ -515,9 +515,8 @@ consvar_t cv_httpsource = Server("http_source", "");
 void JoinTimeout_OnChange(void);
 consvar_t cv_jointimeout = Server("jointimeout", "210").min_max(TICRATE/7, 60*TICRATE).onchange(JoinTimeout_OnChange);
 
-extern CV_PossibleValue_t kartvoices_cons_t[];
-consvar_t cv_karthorns = Server("taunthorns", "Tasteful").values(kartvoices_cons_t);
-consvar_t cv_kartvoices = Server("tauntvoices", "Tasteful").values(kartvoices_cons_t);
+consvar_t cv_karthorns = Server("taunthorns", "On").on_off();
+consvar_t cv_kartvoices = Server("tauntvoices", "On").on_off();
 
 consvar_t cv_kartspeedometer = Server("speedometer", "Percentage").values({{0, "Off"}, {1, "Percentage"}, {2, "Kilometers"}, {3, "Miles"}, {4, "Fracunits"}}); // use tics in display
 consvar_t cv_kicktime = Server("kicktime", "20").values(CV_Unsigned);
@@ -918,6 +917,7 @@ consvar_t cv_renderhitbox = PlayerCheat("renderhitbox", "Off").values(renderhitb
 
 consvar_t cv_bighead = Player("bighead", "Off").dont_save().values(CV_OnOff).flags(CV_NOSHOWHELP).description("Works out at the library");
 consvar_t cv_shittysigns = Player("shittysigns", "Off").dont_save().values(CV_OnOff).flags(CV_NOSHOWHELP).description("It's better because it's worse");
+consvar_t cv_tastelesstaunts = Player("tastelesstaunts", "Off").dont_save().values(CV_OnOff).flags(CV_NOSHOWHELP).description("Universally hated in dev");
 
 //
 // Dummy variables used solely in the menu system.

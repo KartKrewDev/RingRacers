@@ -202,6 +202,19 @@ void f_shittysigns()
 	}
 }
 
+void f_tastelesstaunts()
+{
+	CV_SetValue(&cv_tastelesstaunts, !cv_tastelesstaunts.value);
+	if (cv_tastelesstaunts.value)
+	{
+		S_StartSound(NULL, sfx_kslow);
+	}
+	else
+	{
+		S_StartSound(NULL, sfx_kc46);
+	}
+}
+
 void f_4thgear()
 {
 	CV_SetValue(&cv_4thgear, !cv_4thgear.value);
@@ -395,6 +408,7 @@ void M_PasswordInit(void)
 	passwords.emplace_back(f_bighead, "V+YkwthNUePKS7zs5uB90VwN6Jeqgl+1r663U5zSGOEIxAO6BoWipzZoxa5H//LM+5Ag9GIGRnEcLbU21hjGfQ==");
 	passwords.emplace_back(f_4thgear, "zRMhR+s27VTYE0jgFf2l+PX51N3qJPvZ3oWuM/71oUaKY5zyQ2y7WIrIb464MFWn4IsK2P5rShsR9MotC/9ojQ==");
 	passwords.emplace_back(f_shittysigns, "fdqz0cQdVKfS4zgN4usUz75+5AhYdDPsrl61H7sIEKHoaEUHPOfcful0jEkVvrV/rpELE0/3srRpxmJYpQofmA==");
+	passwords.emplace_back(f_tastelesstaunts, "4QfCuCG0/7z5U5A1hxqlqx83uQTGmQ1aaWPBQ8pqQvw9KRGvxxiDq9UF0N24fDlu0+XYksgkPHJg4A5h5aEQiw==");
 #ifdef DEVELOP
 	passwords.emplace_back(f_devmode, "qXe5jAii7ntJ0VwmaZj9ujDKU69KLUfdGV3Rn2G7xMxOxKo37QpYZvo1E/PIul56ca+nDT6IggGfRqhA8gf6Gw==");
 	passwords.emplace_back(f_gaster, "GZPKJsa++Tt134yS3eBKdP+8vdAHB1thwK2ys6VDfFxcIRtABtM9j4qt8WULFrI+KxCSYMZ6K0mwt5BVzcvvuw==");
