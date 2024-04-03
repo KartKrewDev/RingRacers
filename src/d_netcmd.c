@@ -7216,9 +7216,16 @@ void NumLaps_OnChange(void)
 			CONS_Printf(M_GetText("Number of laps have been set to %d.\n"), numlaps);
 		}
 	}
-	else
+	else if (Playing())
 	{
-		CONS_Printf(M_GetText("Number of laps will be set to %d next round.\n"), cv_numlaps.value);
+		if (cv_numlaps.value == -1)
+		{
+			CONS_Printf(M_GetText("Number of laps will be the map default next round.\n"));
+		}
+		else
+		{
+			CONS_Printf(M_GetText("Number of laps will be set to %d next round.\n"), cv_numlaps.value);
+		}
 	}
 }
 
