@@ -279,10 +279,10 @@ menuitem_t OPTIONS_Sound[] =
 	{IT_STRING | IT_CVAR, "Chat Notifications", "Play a sound effect when chat messages appear.",
 		NULL, {.cvar = &cv_chatnotifications}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Character Voices", "How often to play character voices in a round.",
+	{IT_STRING | IT_CVAR, "Character Voices", "Characters speak when interacting on the course.",
 		NULL, {.cvar = &cv_kartvoices}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Follower Horns", "How often to play follower horns in a round.",
+	{IT_STRING | IT_CVAR, "Follower Horns", "Followers taunt your opponents when looking back at them.",
 		NULL, {.cvar = &cv_karthorns}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Continuous Attack Music", "Keep music playing seamlessly when retrying in Attack modes.",
