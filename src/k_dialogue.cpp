@@ -143,6 +143,23 @@ void Dialogue::Typewriter::CompleteText(void)
 
 void Dialogue::Init(void)
 {
+	if (!active)
+	{
+		auto cache = [](const char* name)
+		{
+			return std::pair {std::string_view {name}, srb2::Draw::cache_patch(name)};
+		};
+		patchCache = {
+			cache("TUTDIAGA"),
+			cache("TUTDIAGB"),
+			cache("TUTDIAGC"),
+			cache("TUTDIAGD"),
+			cache("TUTDIAGF"),
+			cache("TUTDIAGE"),
+			cache("TUTDIAG2"),
+		};
+	}
+
 	active = true;
 }
 
@@ -349,17 +366,17 @@ void Dialogue::Draw(void)
 
 	drawer
 		.flags(speakerbgflags|V_VFLIP|V_FLIP)
-		.patch("TUTDIAGA");
+		.patch(patchCache["TUTDIAGA"]);
 
 	drawer
 		.flags(V_VFLIP|V_FLIP)
-		.patch("TUTDIAGB");
+		.patch(patchCache["TUTDIAGB"]);
 
 	if (portrait != nullptr)
 	{
 		drawer
 			.flags(V_VFLIP|V_FLIP)
-			.patch("TUTDIAGC");
+			.patch(patchCache["TUTDIAGC"]);
 
 		drawer
 			.xy(-10-32, -41-32)
@@ -426,7 +443,7 @@ void Dialogue::Draw(void)
 		drawer
 			.xy(speakernameedge, -36)
 			.flags(V_VFLIP|V_FLIP)
-			.patch("TUTDIAGD");
+			.patch(patchCache["TUTDIAGD"]);
 
 		drawer
 			.xy(speakernameedge, -36-3-11)
@@ -437,7 +454,7 @@ void Dialogue::Draw(void)
 		drawer
 			.xy(speakernameedge + 5, -36)
 			.flags(V_VFLIP|V_FLIP)
-			.patch("TUTDIAGF");
+			.patch(patchCache["TUTDIAGF"]);
 	}
 
 	while (speakernameedge > -142) // the left-most edge
@@ -447,13 +464,13 @@ void Dialogue::Draw(void)
 		drawer
 			.xy(speakernameedge, -36)
 			.flags(V_VFLIP|V_FLIP)
-			.patch("TUTDIAGD");
+			.patch(patchCache["TUTDIAGD"]);
 	}
 
 	drawer
 		.xy(speakernameedge - arrowstep, -36)
 		.flags(V_VFLIP|V_FLIP)
-		.patch("TUTDIAGE");
+		.patch(patchCache["TUTDIAGE"]);
 
 	drawer
 		.xy(10 - BASEVIDWIDTH, -3-32)
@@ -466,7 +483,7 @@ void Dialogue::Draw(void)
 		{
 			drawer
 				.xy(-14, -7-5)
-				.patch("TUTDIAG2");
+				.patch(patchCache["TUTDIAG2"]);
 		}
 
 		auto bt_translate_press = [this]() -> std::optional<bool>
