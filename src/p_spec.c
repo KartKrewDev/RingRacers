@@ -9499,6 +9499,7 @@ void P_StartQuakeFromMobj(tic_t time, fixed_t intensity, fixed_t radius, mobj_t 
 
 void P_DoQuakeOffset(UINT8 view, mappoint_t *viewPos, mappoint_t *offset)
 {
+	const boolean battle = (gametyperules & GTR_PRISONS) && !battleprisons;
 	const player_t *viewer = &players[ displayplayers[view] ];
 	quake_t *quake = NULL;
 	fixed_t ir = 0;
@@ -9522,7 +9523,8 @@ void P_DoQuakeOffset(UINT8 view, mappoint_t *viewPos, mappoint_t *offset)
 		// Modulate with distance from epicenter, if it exists.
 		if (quake->radius > 0 && quake->epicenter != NULL)
 		{
-			const fixed_t distBuffer = 256 * mapobjectscale; // add a small buffer zone before it starts to drop off
+			const fixed_t denom = battle ? 2 : 1;
+			const fixed_t distBuffer = 256 * mapobjectscale / denom; // add a small buffer zone before it starts to drop off
 			const fixed_t epidist = P_AproxDistance(
 				P_AproxDistance(
 					viewPos->x - quake->epicenter->x,
@@ -9531,7 +9533,7 @@ void P_DoQuakeOffset(UINT8 view, mappoint_t *viewPos, mappoint_t *offset)
 				viewPos->z - quake->epicenter->z
 			) - distBuffer;
 
-			fixed_t distEase = FixedDiv(max(epidist, 0), quake->radius);
+			fixed_t distEase = FixedDiv(max(epidist, 0), quake->radius / denom);
 			distEase = min(distEase, FRACUNIT);
 			ir = Easing_InCubic(distEase, ir, 0);
 		}
@@ -9560,7 +9562,14 @@ void P_DoQuakeOffset(UINT8 view, mappoint_t *viewPos, mappoint_t *offset)
 		}
 	}
 
-	const fixed_t maxShake = FixedMul(cv_cam_height[view].value, mapobjectscale) * 3 / 4;
+	fixed_t maxShake = FixedMul(cv_cam_height[view].value, mapobjectscale) * 3 / 4;
+
+	if (battle)
+	{
+		addZ /= 2;
+		maxShake /= 2;
+	}
+
 	if (addZ > maxShake)
 	{
 		// Cap screen shake between reasonable values
@@ -9571,11 +9580,6 @@ void P_DoQuakeOffset(UINT8 view, mappoint_t *viewPos, mappoint_t *offset)
 	if ((leveltime + view) & 1)
 	{
 		addZ = -addZ;
-	}
-
-	if ((gametyperules & GTR_PRISONS) && !battleprisons)
-	{
-		addZ /= 2;
 	}
 
 	if (cv_screenshake.value == 1) // Half
