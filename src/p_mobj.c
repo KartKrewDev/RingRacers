@@ -518,6 +518,11 @@ boolean P_SetMobjState(mobj_t *mobj, statenum_t state)
 		for (;(state = seenstate[i]) > S_NULL; i = state - 1)
 			seenstate[i] = S_NULL; // erase memory of states
 
+	// Shadow automatically turns white on fullbright frames.
+	// For now, only applies to Follower Audience.
+	if (mobj->type == MT_RANDOMAUDIENCE)
+		mobj->whiteshadow = (mobj->frame & FF_FULLBRIGHT) != 0;
+
 	return true;
 }
 
@@ -10693,6 +10698,10 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_PATROLIVOBALL:
 		case MT_AIRIVOBALL:
 			thing->shadowscale = FRACUNIT/2;
+			break;
+		case MT_RANDOMAUDIENCE:
+			thing->shadowscale = FRACUNIT;
+			thing->whiteshadow = false;
 			break;
 		default:
 			if (thing->flags & (MF_ENEMY|MF_BOSS))
