@@ -1791,11 +1791,17 @@ void G_Ticker(boolean run)
 
 	P_MapStart();
 
-	if (gamestate == GS_LEVEL)
+	if (gamestate == GS_LEVEL && G_GetRetryFlag())
 	{
-		// Or, alternatively, retry.
-		if (G_GetRetryFlag())
+		if (demo.playback == true)
 		{
+			// Stop playback!!
+			G_ClearRetryFlag();
+			G_CheckDemoStatus();
+		}
+		else
+		{
+			// Or, alternatively, retry.
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
 				if (playeringame[i])
