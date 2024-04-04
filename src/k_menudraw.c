@@ -8178,20 +8178,23 @@ static void M_DrawStatsMaps(void)
 		{
 			besttime = mapheaderinfo[mnum]->records.timeattack.time;
 
+			const char *todrawtext = "--'--\"--";
+
 			if (besttime)
 			{
-				V_DrawRightAlignedString((BASEVIDWIDTH-24), y+1, 0,
-					va("%02d'%02d\"%02d",
-						G_TicsToMinutes(besttime, true),
-						G_TicsToSeconds(besttime),
-						G_TicsToCentiseconds(besttime)
-					)
+				todrawtext = va("%02d'%02d\"%02d",
+					G_TicsToMinutes(besttime, true),
+					G_TicsToSeconds(besttime),
+					G_TicsToCentiseconds(besttime)
 				);
 			}
-			else
-			{
-				V_DrawRightAlignedString((BASEVIDWIDTH-24), y+1, V_GRAYMAP, "--'--\"--");
-			}
+
+			K_drawKartMicroTime(
+				todrawtext,
+				(BASEVIDWIDTH-24),
+				y,
+				(besttime ? 0 : V_TRANSLUCENT)
+			);
 		}
 
 		M_DrawMapMedals(mnum, medalspos - 8, y, allowtime, allowencore, allowspb);
