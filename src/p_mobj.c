@@ -6566,6 +6566,11 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		Obj_TickPowerUpSpinner(mobj);
 		return;
 	}
+	case MT_IPULLUP:
+	{
+		Obj_PulleyThink(mobj);
+		return;
+	}
 	default:
 		if (mobj->fuse)
 		{ // Scenery object fuse! Very basic!
@@ -10603,6 +10608,8 @@ fixed_t P_GetMobjDefaultScale(mobj_t *mobj)
 		case MT_SCRIPT_THING:
 			return 4*FRACUNIT;
 		case MT_SCRIPT_THING_ORB:
+			return 2*FRACUNIT;
+		case MT_PULLUPHOOK:
 			return 2*FRACUNIT;
 		default:
 			break;

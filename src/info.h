@@ -1297,6 +1297,10 @@ typedef enum sprite
 	SPR_DIEM, // smoke
 	SPR_DIEN, // explosion
 
+	// Pulley
+	SPR_HCCH,
+	SPR_HCHK,
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	SPR_VIEW,
 
@@ -4979,6 +4983,9 @@ typedef enum mobj_type
 	MT_CABOTRON,
 	MT_CABOTRONSTAR,
 	MT_STARSTREAM,
+
+	MT_IPULLUP,
+	MT_PULLUPHOOK,
 
 	MT_FIRSTFREESLOT,
 	MT_LASTFREESLOT = MT_FIRSTFREESLOT + NUMMOBJFREESLOTS - 1,
