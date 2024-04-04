@@ -207,7 +207,7 @@ void f_tastelesstaunts()
 	CV_SetValue(&cv_tastelesstaunts, !cv_tastelesstaunts.value);
 	if (cv_tastelesstaunts.value)
 	{
-		S_StartSound(NULL, sfx_kslow);
+		S_StartSound(NULL, sfx_d4getm);
 	}
 	else
 	{

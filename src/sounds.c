@@ -1223,6 +1223,7 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"cdsprk", false,  255, 0, -1, NULL, 0,         -1,  -1, LUMPERROR, "/"}, // Prison Egg CD sparkling
   {"monch",  false,  255, 0, -1, NULL, 0,         -1,  -1, LUMPERROR, ""},
   {"etexpl", false,  255, 0, -1, NULL, 0,         -1,  -1, LUMPERROR, "Game crash"},
+  {"d4getm", false,  255, 0, -1, NULL, 0,         -1,  -1, LUMPERROR, "Don't forget me"},
 
   {"iwhp", false, 255,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Instawhip attack
   {"gbrk", false, 255,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Guard break!

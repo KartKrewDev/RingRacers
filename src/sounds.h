@@ -1292,6 +1292,7 @@ typedef enum
 	sfx_cdsprk,
 	sfx_monch,
 	sfx_etexpl,
+	sfx_d4getm,
 
 	sfx_iwhp,
 	sfx_gbrk,
