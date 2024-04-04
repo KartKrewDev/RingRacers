@@ -644,6 +644,9 @@ struct side_t
 	// We do not maintain names here.
 	INT32 toptexture, bottomtexture, midtexture;
 
+	// Interpolator installed? (R_CreateInterpolator_SideScroll)
+	boolean acs_interpolated;
+
 	// Linedef the sidedef belongs to
 	line_t *line;
 
