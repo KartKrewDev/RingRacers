@@ -29,6 +29,7 @@
 #include "lua_libs.h"
 #include "lua_hud.h" // hud_running errors
 #include "lua_hook.h" // hook_cmd_running errors
+#include "lua_profile.h"
 
 extern CV_PossibleValue_t Color_cons_t[];
 extern UINT8 skincolor_modified[];
@@ -709,7 +710,10 @@ static void A_Lua(mobj_t *actor)
 	LUA_PushUserdata(gL, actor, META_MOBJ);
 	lua_pushinteger(gL, var1);
 	lua_pushinteger(gL, var2);
+
+	lua_timer_t *timer = LUA_BeginFunctionTimer(gL, -4, "A_Lua");
 	LUA_Call(gL, 3, 0, 1);
+	LUA_EndFunctionTimer(timer);
 
 	if (found)
 	{
