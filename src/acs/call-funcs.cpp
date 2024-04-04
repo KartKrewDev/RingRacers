@@ -2400,6 +2400,37 @@ bool CallFunc_MusicRemap(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::
 }
 
 /*--------------------------------------------------
+	bool CallFunc_MusicDim(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Fade level music into or out of silence.
+--------------------------------------------------*/
+bool CallFunc_MusicDim(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	// 0: int fade time (tics) - time to fade between full volume and silence
+	// 1: [int duration (tics)] - silent duration (not including fade in and fade out), -1 = infinite (default if omitted)
+
+	// If a dim is ongoing, do not interrupt it
+	if (g_musicfade.start < leveltime && g_musicfade.end < leveltime)
+	{
+		g_musicfade.start = leveltime;
+	}
+
+	tic_t fade = argV[0];
+	tic_t duration = INFTICS;
+
+	if (argC > 1 && argV[1] >= 0)
+	{
+		duration = argV[1];
+	}
+
+	g_musicfade.end = duration != INFTICS ? leveltime + duration + 2*fade : INFTICS;
+	g_musicfade.fade = fade;
+	g_musicfade.ticked = false;
+
+	return false;
+}
+
+/*--------------------------------------------------
 	bool CallFunc_Freeze(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Updates level freeze.
