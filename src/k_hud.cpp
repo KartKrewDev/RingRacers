@@ -2015,7 +2015,7 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 			Draw(workx, worky).text(text);
 		}
 
-		workx -= (6 + (i*5));
+		workx -= (((1 + i - stickermedalinfo.platinumcount)*6) - 1);
 
 		if (!mode)
 			splitflags = (splitflags &~ V_HUDTRANSHALF)|V_HUDTRANS;
@@ -2029,16 +2029,21 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 					static_cast<patch_t*>(W_CachePatchName(M_GetEmblemPatch(stickermedalinfo.emblems[i], false), PU_CACHE)),
 					R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(stickermedalinfo.emblems[i]), GTC_CACHE)
 				);
+
+				workx += 6;
 			}
-			else
+			else if (
+				stickermedalinfo.emblems[i]->type != ET_TIME
+				|| stickermedalinfo.emblems[i]->tag != AUTOMEDAL_PLATINUM
+			)
 			{
 				V_DrawMappedPatch(workx, worky, splitflags,
 					static_cast<patch_t*>(W_CachePatchName("NEEDIT", PU_CACHE)),
 					NULL
 				);
-			}
 
-			workx += 6;
+				workx += 6;
+			}
 		}
 	}
 
