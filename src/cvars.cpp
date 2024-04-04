@@ -429,7 +429,7 @@ extern CV_PossibleValue_t cv_renderer_t[];
 consvar_t cv_renderer = Player("renderer", "Software").flags(CV_NOLUA).values(cv_renderer_t).onchange(SCR_ChangeRenderer);
 consvar_t cv_parallelsoftware = Player("parallelsoftware", "On").on_off();
 
-consvar_t cv_renderview = Player("renderview", "On").on_off().dont_save();
+consvar_t cv_renderview = Player("renderview", "On").values({{0, "Off"}, {1, "On"}, {2, "Force"}}).dont_save();
 consvar_t cv_rollingdemos = Player("rollingdemos", "On").on_off();
 consvar_t cv_scr_depth = Player("scr_depth", "16 bits").values({{8, "8 bits"}, {16, "16 bits"}, {24, "24 bits"}, {32, "32 bits"}});
 
