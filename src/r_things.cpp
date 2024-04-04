@@ -3881,9 +3881,14 @@ boolean R_ThingIsFullDark(mobj_t *thing)
 
 boolean R_ThingModelUsesDirectionalLighting(mobj_t *thing)
 {
-	if (thing->type == MT_ARKARROW)
+	switch (thing->type)
 	{
-		return false;
+		case MT_ARKARROW:
+		case MT_ADVENTUREAIRBOOSTER_PART:
+			return false;
+
+		default:
+			break;
 	}
 	return true;
 }

@@ -116,7 +116,7 @@ void Obj_AdventureAirBoosterSetup(mobj_t *mobj, mapthing_t *mthing)
 		yPos = P_ReturnThrustY(NULL, positionAngle, AAB_RADIUS * i) / 2;
 		// with this order of operations, the first arrow we spawn is the right one, then the left one. Angle them accordingly.
 		SpawnPart();
-		part->frame |= 4;
+		P_SetMobjState(part, S_ADVENTUREAIRBOOSTER_ARROW);
 		part->old_angle = part->angle = mobj->angle - (ANGLE_45 * i);
 	}
 #undef SpawnPart
