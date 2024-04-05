@@ -1021,6 +1021,10 @@ void D_SRB2Loop(void)
 				};
 				auto can_skip = [&]
 				{
+					// Always do 3d rendering, even when paused.
+					if (cv_renderview.value == 2)
+						return false;
+
 					// Would interfere with "Advanced Frame" button in replays.
 					if (demo.playback)
 						return false;
