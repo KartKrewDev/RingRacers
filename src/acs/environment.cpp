@@ -187,6 +187,7 @@ Environment::Environment()
 	addFuncDataACS0( 509, addCallFunc(CallFunc_MusicStopAll));
 	addFuncDataACS0( 510, addCallFunc(CallFunc_MusicRemap));
 	addFuncDataACS0( 511, addCallFunc(CallFunc_Freeze));
+	addFuncDataACS0( 512, addCallFunc(CallFunc_MusicDim));
 
 	addFuncDataACS0( 600, addCallFunc(CallFunc_DialogueSetSpeaker));
 	addFuncDataACS0( 601, addCallFunc(CallFunc_DialogueSetCustomSpeaker));
