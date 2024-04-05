@@ -1,3 +1,11 @@
+// DR. ROBOTNIK'S RING RACERS
+//-----------------------------------------------------------------------------
+// Copyright (C) 2024 by Kart Krew.
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
 /// \file  k_collide.cpp
 /// \brief SRB2Kart item collision hooks
 

@@ -1,4 +1,4 @@
-// SONIC ROBO BLAST 2
+// DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
 // Copyright (C) 1995-1996 by the Free Software Foundation, Inc.
 //

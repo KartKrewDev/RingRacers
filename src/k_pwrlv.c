@@ -1,6 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2018-2022 by Sally Cochenour
+// Copyright (C) 2024 by Sally "TehRealSalt" Cochenour
+// Copyright (C) 2024 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.

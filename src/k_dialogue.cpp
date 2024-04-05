@@ -1,8 +1,8 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) by Sonic Team Junior
-// Copyright (C) by Kart Krew
-// Copyright (C) by Sally "TehRealSalt" Cochenour
+// Copyright (C) 2024 by Sally "TehRealSalt" Cochenour
+// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2020 by Sonic Team Junior
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.

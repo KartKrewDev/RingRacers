@@ -1,7 +1,8 @@
-// SONIC ROBO BLAST 2
+// DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 1999-2018 by Sonic Team Junior.
-// Copyright (C)      2019 by Kart Krew.
+// Copyright (C) 2024 by James Robert Roman.
+// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2018 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
