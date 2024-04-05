@@ -16,6 +16,7 @@
 
 #include <string>
 #include <string_view>
+#include <unordered_map>
 
 #include "doomdef.h"
 #include "doomtype.h"
@@ -88,6 +89,8 @@ private:
 	std::string speaker;
 	patch_t *portrait;
 	UINT8 *portraitColormap;
+
+	std::unordered_map<std::string_view, patch_t*> patchCache;
 
 	bool active;
 	fixed_t slide;
