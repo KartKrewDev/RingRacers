@@ -1930,6 +1930,19 @@ tic_t K_TranslateTimer(tic_t drawtime, UINT8 mode, INT32 *return_jitter)
 	return drawtime;
 }
 
+INT32 K_drawKartMicroTime(const char *todrawtext, INT32 workx, INT32 worky, INT32 splitflags)
+{
+	using srb2::Draw;
+	Draw::TextElement text(todrawtext);
+	text.flags(splitflags);
+	text.font(Draw::Font::kZVote);
+
+	INT32 result = text.width();
+	Draw(workx - result, worky).text(text);
+
+	return result;
+}
+
 void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, UINT8 mode)
 {
 	// TIME_X = BASEVIDWIDTH-124;	// 196
@@ -2006,16 +2019,10 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 				}
 			}
 
-			using srb2::Draw;
-			Draw::TextElement text(stickermedalinfo.targettext);
-			text.flags(splitflags);
-			text.font(Draw::Font::kZVote);
-
-			workx -= text.width();
-			Draw(workx, worky).text(text);
+			workx -= K_drawKartMicroTime(stickermedalinfo.targettext, workx, worky, splitflags);
 		}
 
-		workx -= (6 + (i*5));
+		workx -= (((1 + i - stickermedalinfo.platinumcount)*6) - 1);
 
 		if (!mode)
 			splitflags = (splitflags &~ V_HUDTRANSHALF)|V_HUDTRANS;
@@ -2029,16 +2036,21 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 					static_cast<patch_t*>(W_CachePatchName(M_GetEmblemPatch(stickermedalinfo.emblems[i], false), PU_CACHE)),
 					R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(stickermedalinfo.emblems[i]), GTC_CACHE)
 				);
+
+				workx += 6;
 			}
-			else
+			else if (
+				stickermedalinfo.emblems[i]->type != ET_TIME
+				|| stickermedalinfo.emblems[i]->tag != AUTOMEDAL_PLATINUM
+			)
 			{
 				V_DrawMappedPatch(workx, worky, splitflags,
 					static_cast<patch_t*>(W_CachePatchName("NEEDIT", PU_CACHE)),
 					NULL
 				);
-			}
 
-			workx += 6;
+				workx += 6;
+			}
 		}
 	}
 

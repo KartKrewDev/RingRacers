@@ -45,6 +45,7 @@ void K_drawKartFreePlay(void);
 void K_drawKartPowerUps(void);
 void K_drawSpectatorHUD(boolean director);
 void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, UINT8 mode);
+INT32 K_drawKartMicroTime(const char *todrawtext, INT32 workx, INT32 worky, INT32 splitflags);
 void K_drawKart2PTimestamp(void);
 void K_drawKart4PTimestamp(void);
 void K_drawEmeraldWin(boolean overlay);

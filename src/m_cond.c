@@ -3441,16 +3441,31 @@ INT32 M_CountMedals(boolean all, boolean extraonly)
 	{
 		for (i = 0; i < numemblems; ++i)
 		{
+			// Not init in SOC
 			if (emblemlocations[i].type == ET_NONE)
 				continue;
+
+			// Not explicitly a medal
 			if ((emblemlocations[i].type == ET_GLOBAL)
 				&& (emblemlocations[i].flags & GE_NOTMEDAL))
 				continue;
+
+			// Not getting the counter, and not collected
 			if (!all && !gamedata->collected[i])
 				continue;
+
+			// Don't count Platinums in the overall count, so you can get 101% going for them
+			if (all
+				&& (emblemlocations[i].type == ET_TIME)
+				&& (emblemlocations[i].tag == AUTOMEDAL_PLATINUM))
+				continue;
+
+			// Relevant, add to da counter
 			found++;
 		}
 	}
+
+	// Above but for extramedals
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
 	{
 		if (unlockables[i].type != SECRET_EXTRAMEDAL)
@@ -3459,6 +3474,7 @@ INT32 M_CountMedals(boolean all, boolean extraonly)
 			continue;
 		found++;
 	}
+
 	return found;
 }
 
@@ -3473,14 +3489,28 @@ boolean M_GotEnoughMedals(INT32 number)
 	INT32 i, gottenmedals = 0;
 	for (i = 0; i < numemblems; ++i)
 	{
+		// Not init in SOC
 		if (emblemlocations[i].type == ET_NONE)
 			continue;
+
+		// Not explicitly a medal
+		if ((emblemlocations[i].type == ET_GLOBAL)
+			&& (emblemlocations[i].flags & GE_NOTMEDAL))
+			continue;
+
+		// Not collected
 		if (!gamedata->collected[i])
 			continue;
+
+		// Add to counter. Hit our threshold?
 		if (++gottenmedals < number)
 			continue;
+
+		// We did!
 		return true;
 	}
+
+	// Above but for extramedals
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
 	{
 		if (unlockables[i].type != SECRET_EXTRAMEDAL)
@@ -3491,6 +3521,8 @@ boolean M_GotEnoughMedals(INT32 number)
 			continue;
 		return true;
 	}
+
+	// Didn't hit our counter!
 	return false;
 }
 

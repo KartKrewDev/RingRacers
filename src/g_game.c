@@ -440,8 +440,14 @@ void G_UpdateTimeStickerMedals(UINT16 map, boolean showownrecord)
 		if (cv_dummyspbattack.value && !(emblem->flags & (ME_SPBATTACK|ME_ENCORE)))
 			return;
 
-		if (!gamedata->collected[(emblem-emblemlocations)] && gonnadrawtime)
-			break;
+		if (!gamedata->collected[(emblem-emblemlocations)])
+		{
+			if (gonnadrawtime)
+				break;
+
+			if (emblem->type == ET_TIME && emblem->tag == AUTOMEDAL_PLATINUM)
+				stickermedalinfo.platinumcount++;
+		}
 
 		// Simpler than having two checks
 		if (stickermedalinfo.visiblecount == MAXMEDALVISIBLECOUNT)

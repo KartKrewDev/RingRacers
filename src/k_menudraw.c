@@ -7952,24 +7952,32 @@ challengedesc:
 
 #define STATSSTEP 10
 
-static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y)
+static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y, boolean allowtime, boolean allowencore, boolean allowspb)
 {
 	UINT8 lasttype = UINT8_MAX, curtype;
 
 	// M_GetLevelEmblems is ONE-indexed, urgh
-	mapnum++;
+	emblem_t *emblem = M_GetLevelEmblems(mapnum+1);
 
-	emblem_t *emblem = M_GetLevelEmblems(mapnum);
-
-	boolean hasmedals = (emblem != NULL);
+	const boolean hasmedals = (emblem != NULL);
+	boolean collected = false;
 
 	while (emblem)
 	{
+		collected = gamedata->collected[emblem-emblemlocations];
 		switch (emblem->type)
 		{
 			case ET_TIME:
+			{
+				if (!allowtime
+				|| (!collected && emblem->tag == AUTOMEDAL_PLATINUM))
+				{
+					emblem = M_GetLevelEmblems(-1);
+					continue;
+				}
 				curtype = 1;
 				break;
+			}
 			case ET_GLOBAL:
 			{
 				if (emblem->flags & GE_NOTMEDAL)
@@ -7982,8 +7990,8 @@ static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y)
 			}
 			case ET_MAP:
 			{
-				if (((emblem->flags & ME_ENCORE) && !M_SecretUnlocked(SECRET_ENCORE, true))
-					|| ((emblem->flags & ME_SPBATTACK) && !M_SecretUnlocked(SECRET_SPBATTACK, true)))
+				if (((emblem->flags & ME_ENCORE) && !allowencore)
+				|| ((emblem->flags & ME_SPBATTACK) && !allowspb))
 				{
 					emblem = M_GetLevelEmblems(-1);
 					continue;
@@ -7992,8 +8000,10 @@ static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y)
 				break;
 			}
 			default:
+			{
 				curtype = 0;
 				break;
+			}
 		}
 
 		// Shift over if emblem is of a different discipline
@@ -8001,7 +8011,7 @@ static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y)
 			x -= 4;
 		lasttype = curtype;
 
-		if (gamedata->collected[emblem-emblemlocations])
+		if (collected)
 			V_DrawMappedPatch(x, y, 0, W_CachePatchName(M_GetEmblemPatch(emblem, false), PU_CACHE),
 				R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(emblem), GTC_MENUCACHE));
 		else
@@ -8010,9 +8020,6 @@ static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y)
 		emblem = M_GetLevelEmblems(-1);
 		x -= 8;
 	}
-
-	// Undo offset
-	mapnum--;
 
 	if (hasmedals)
 		x -= 4;
@@ -8107,6 +8114,10 @@ static void M_DrawStatsMaps(void)
 
 	i = -1;
 
+	const boolean allowencore = M_SecretUnlocked(SECRET_ENCORE, true);
+	const boolean allowspb = M_SecretUnlocked(SECRET_SPBATTACK, true);
+	boolean allowtime = false;
+
 	while ((mnum = statisticsmenu.maplist[++i]) != NEXTMAP_INVALID)
 	{
 		if (location)
@@ -8157,33 +8168,36 @@ static void M_DrawStatsMaps(void)
 
 		V_DrawFadeFill(24, y + 5, (BASEVIDWIDTH - 24) - 24, 3, 0, 31, 8 - (i & 1)*2);
 
-		if (!(mapheaderinfo[mnum]->menuflags & LF2_NOTIMEATTACK)
-		&& (
+		allowtime = (
 				(timeattack[0] && (mapheaderinfo[mnum]->typeoflevel & TOL_RACE))
 			|| (timeattack[1] && (mapheaderinfo[mnum]->typeoflevel & TOL_BATTLE))
 			|| (timeattack[2] && (mapheaderinfo[mnum]->typeoflevel & (TOL_SPECIAL|TOL_VERSUS)))
-			)
-		)
+		);
+
+		if (!(mapheaderinfo[mnum]->menuflags & LF2_NOTIMEATTACK) && allowtime)
 		{
 			besttime = mapheaderinfo[mnum]->records.timeattack.time;
 
+			const char *todrawtext = "--'--\"--";
+
 			if (besttime)
 			{
-				V_DrawRightAlignedString((BASEVIDWIDTH-24), y+1, 0,
-					va("%02d'%02d\"%02d",
-						G_TicsToMinutes(besttime, true),
-						G_TicsToSeconds(besttime),
-						G_TicsToCentiseconds(besttime)
-					)
+				todrawtext = va("%02d'%02d\"%02d",
+					G_TicsToMinutes(besttime, true),
+					G_TicsToSeconds(besttime),
+					G_TicsToCentiseconds(besttime)
 				);
 			}
-			else
-			{
-				V_DrawRightAlignedString((BASEVIDWIDTH-24), y+1, V_GRAYMAP, "--'--\"--");
-			}
+
+			K_drawKartMicroTime(
+				todrawtext,
+				(BASEVIDWIDTH-24),
+				y,
+				(besttime ? 0 : V_TRANSLUCENT)
+			);
 		}
 
-		M_DrawMapMedals(mnum, medalspos - 8, y);
+		M_DrawMapMedals(mnum, medalspos - 8, y, allowtime, allowencore, allowspb);
 
 		if (mapheaderinfo[mnum]->menuttl[0])
 		{
