@@ -1,10 +1,20 @@
+// DR. ROBOTNIK'S RING RACERS
+//-----------------------------------------------------------------------------
+// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2020 by Sonic Team Junior.
+// Copyright (C) 2020 by Spaddlewit Inc.
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+
 /*
 	From the 'Wizard2' engine by Spaddlewit Inc. ( http://www.spaddlewit.com )
 	An experimental work-in-progress.
 
 	Donated to Sonic Team Junior and adapted to work with
-	Sonic Robo Blast 2. The license of this code matches whatever
-	the licensing is for Sonic Robo Blast 2.
+	Sonic Robo Blast 2.
 */
 
 #include <stdlib.h>
