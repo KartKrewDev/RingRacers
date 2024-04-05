@@ -1493,7 +1493,7 @@ void D_SRB2Main(void)
 	"as published by the Free Software Foundation; either version 2 of\n"
 	"the License, or (at your option) any later version.\n"
 	"See the 'LICENSE.txt' file for details.\n\n"
-	"Sonic the Hedgehog and related characters are trademarks of SEGA.\n"
+	"Dr. Robotnik and related characters are trademarks of SEGA.\n"
 	"We do not claim ownership of SEGA's intellectual property used\n"
 	"in this program.\n\n");
 
