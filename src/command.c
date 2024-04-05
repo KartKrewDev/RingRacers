@@ -2364,17 +2364,13 @@ static boolean CV_FilterVarByVersion(consvar_t *v, const char *valstr)
 	if (!(v->flags & CV_SAVE))
 		return true;
 
-	if (GETMAJOREXECVERSION(cv_execversion.value) < 2) // 2 = 1.0.2
+#if 0 // We don't have changed saved cvars yet
+	if (GETMAJOREXECVERSION(cv_execversion.value) < 2)
 	{
-#if 0
-		// We don't have changed saved cvars yet
-		if (!stricmp(v->name, "alwaysmlook")
-			|| !stricmp(v->name, "alwaysmlook2")
-			|| !stricmp(v->name, "mousemove")
-			|| !stricmp(v->name, "mousemove2"))
+		if (!stricmp(v->name, "example"))
 			return false;
-#endif
 	}
+#endif
 
 	return true;
 }
