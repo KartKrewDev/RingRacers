@@ -1797,7 +1797,15 @@ void G_Ticker(boolean run)
 		{
 			// Stop playback!!
 			G_ClearRetryFlag();
-			G_CheckDemoStatus();
+			// G_CheckDemoStatus() called here fails an I_Assert in g_party.cpp Console()!?
+			// I'm sure there's a completely logical explanation and an elegant solution
+			// where we can defer some sort of state change. However I'm tired, I've been
+			// looking after my niece, my arm hurts a bit when using mouse/keyboard, and
+			// we are ALMOST DONE. So I'm going to bodge this for the sake of release.
+			// The minimal set of calls to dump you back to the menu as soon as possible
+			// will have to do, so that everybody can have fun racing as rings. ~toast 050424
+			G_StopDemo();
+			Command_ExitGame_f();
 		}
 		else
 		{
