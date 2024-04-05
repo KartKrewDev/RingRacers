@@ -4479,7 +4479,6 @@ struct int_const_s const INT_CONST[] = {
 	{"MUSICRATE",MUSICRATE},
 	{"RING_DIST",RING_DIST},
 	{"PUSHACCEL",PUSHACCEL},
-	{"MODID",MODID}, // I don't know, I just thought it would be cool for a wad to potentially know what mod it was loaded into.
 	{"MODVERSION",MODVERSION}, // or what version of the mod this is.
 	{"CODEBASE",CODEBASE}, // or what release of SRB2 this is.
 	{"NEWTICRATE",NEWTICRATE}, // TICRATE*NEWTICRATERATIO

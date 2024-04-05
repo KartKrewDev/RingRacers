@@ -5178,7 +5178,7 @@ static void Command_Version_f(void)
 #ifdef UPDATE_ALERT
 static void Command_ModDetails_f(void)
 {
-	CONS_Printf(M_GetText("Mod ID: %d\nMod Version: %d\nCode Base:%d\n"), MODID, MODVERSION, CODEBASE);
+	CONS_Printf(M_GetText("Mod App Name: %s\nMod Version: %d\nCode Base:%d\n"), SRB2APPLICATION, MODVERSION, CODEBASE);
 }
 #endif
 
