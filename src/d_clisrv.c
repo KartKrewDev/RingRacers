@@ -1018,10 +1018,8 @@ static void SV_SendServerInfo(INT32 node, tic_t servertime)
 	netbuffer->u.serverinfo.version = VERSION;
 	netbuffer->u.serverinfo.subversion = SUBVERSION;
 
-#ifdef DEVELOP
 	memcpy(netbuffer->u.serverinfo.commit,
 			comprevision_abbrev_bin, GIT_SHA_ABBREV);
-#endif
 
 	strncpy(netbuffer->u.serverinfo.application, SRB2APPLICATION,
 			sizeof netbuffer->u.serverinfo.application);
