@@ -126,8 +126,8 @@ extern char logfilename[1024];
 // the other options the same.
 
 // Comment out this line to completely disable update alerts (recommended for testing, but not for release)
-#ifndef BETAVERSION
-//#define UPDATE_ALERT
+#if !defined(BETAVERSION) && !defined(DEVELOP)
+#define UPDATE_ALERT
 #endif
 
 // The string used in the alert that pops up in the event of an update being available.
@@ -137,9 +137,7 @@ extern char logfilename[1024];
 "Please visit kartkrew.org to download it.\n"\
 "\n"\
 "You are using version: %s\n"\
-"The newest version is: %s\n"\
-"\n"\
-"(Press a key)\n"
+"The newest version is: %s\n"
 
 // For future use, the codebase is the version of SRB2 that the modification is based on,
 // and should not be changed unless you have merged changes between versions of SRB2
