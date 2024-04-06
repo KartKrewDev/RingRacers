@@ -311,15 +311,6 @@ typedef enum {
 	GDGONER_DONE,
 } gdgoner_t;
 
-typedef enum {
-	GDGT_RACE,
-	GDGT_BATTLE,
-	GDGT_PRISONS,
-	GDGT_SPECIAL,
-	GDGT_CUSTOM,
-	GDGT_MAX
-} roundsplayed_t;
-
 struct candata_t
 {
 	UINT16 col;

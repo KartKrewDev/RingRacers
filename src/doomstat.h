@@ -124,7 +124,7 @@ struct skinrecord_t
 	UINT32 wins;
 	UINT32 rounds;
 	UINT32 timeplayed;
-	UINT32 modetimeplayed[5]; // no GDGT_MAX, m_cond.h is not included in here... it might need to be?
+	UINT32 modetimeplayed[GDGT_MAX];
 	UINT32 tumbletime;
 };
 
@@ -167,7 +167,7 @@ struct recorddata_t
 	recordtimes_t spbattack; ///< Best times for SPB Attack
 	UINT32 timeplayed;
 	UINT32 netgametimeplayed;
-	UINT32 modetimeplayed[5];
+	UINT32 modetimeplayed[GDGT_MAX];
 	UINT32 timeattacktimeplayed;
 	UINT32 spbattacktimeplayed;
 	UINT32 rounds;
