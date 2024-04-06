@@ -514,7 +514,6 @@ char *sizeu5(size_t num);
 extern int    VERSION;
 extern int SUBVERSION;
 
-#ifdef DEVELOP
 // 4 bytes handles 8 characters of a git object SHA. At
 // around 20k commits, we only need 6 characters for a unique
 // abbreviation. Maybe in another 20k commits, more than 8
@@ -522,7 +521,6 @@ extern int SUBVERSION;
 // P.S. 8 is also what comptime generates
 #define GIT_SHA_ABBREV (4)
 extern UINT8 comprevision_abbrev_bin[GIT_SHA_ABBREV];
-#endif
 
 extern boolean devparm; // development mode (-debug)
 

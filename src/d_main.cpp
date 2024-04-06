@@ -127,9 +127,7 @@ extern "C" consvar_t cv_lua_profile, cv_menuframeskip;
 int    VERSION;
 int SUBVERSION;
 
-#ifdef DEVELOP
 UINT8 comprevision_abbrev_bin[GIT_SHA_ABBREV];
-#endif
 
 #ifdef HAVE_DISCORDRPC
 #include "discord.h"
@@ -1412,7 +1410,6 @@ static void IdentifyVersion(void)
 #undef MUSICTEST
 }
 
-#ifdef DEVELOP
 static void
 D_AbbrevCommit (void)
 {
@@ -1424,7 +1421,6 @@ D_AbbrevCommit (void)
 				&comprevision_abbrev_bin[i]);
 	}
 }
-#endif
 
 static void
 D_ConvertVersionNumbers (void)
@@ -1478,10 +1474,7 @@ void D_SRB2Main(void)
 
 	/* break the version string into version numbers, for netplay */
 	D_ConvertVersionNumbers();
-
-#ifdef DEVELOP
 	D_AbbrevCommit();
-#endif
 
 	// Print GPL notice for our console users (Linux)
 	CONS_Printf(
