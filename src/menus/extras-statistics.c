@@ -255,7 +255,10 @@ static void M_StatisticsPageInit(void)
 		}
 
 		default:
+		{
+			statisticsmenu.maplist = NULL;
 			break;
+		}
 	}
 }
 
