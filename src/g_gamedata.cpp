@@ -555,6 +555,13 @@ void srb2::load_ng_gamedata()
 
 		dummyrecord.wins = skinpair.second.records.wins;
 		dummyrecord.rounds = skinpair.second.records.rounds;
+
+#ifdef DEVELOP
+		// Only good for testing, not for active play... cheaters never prosper!
+		if (dummyrecord.rounds < dummyrecord.wins)
+			dummyrecord.rounds = dummyrecord.wins;
+#endif
+
 		dummyrecord.timeplayed = skinpair.second.records.time.total;
 		dummyrecord.modetimeplayed[GDGT_RACE] = skinpair.second.records.time.race;
 		dummyrecord.modetimeplayed[GDGT_BATTLE] = skinpair.second.records.time.battle;
