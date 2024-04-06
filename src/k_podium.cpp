@@ -591,7 +591,7 @@ void podiumData_s::Draw(void)
 						drawer_perplayer
 							.xy(12, -2)
 							.colormap(player->skin, static_cast<skincolornum_t>(player->skincolor))
-							.patch(faceprefix[rank.skin][FACE_MINIMAP]);
+							.patch(faceprefix[player->skin][FACE_MINIMAP]);
 
 						drawer_perplayer
 							.xy(26, 0)
