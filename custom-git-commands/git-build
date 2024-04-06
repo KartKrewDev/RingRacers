@@ -1,0 +1,43 @@
+#!/bin/sh
+git_dir="$(git rev-parse --git-dir)"
+preset_file="$git_dir/custom-git-build-cached-preset"
+
+from_cache=
+if [ $# -ge 1 ]; then
+	preset="$1"
+else
+	preset="$(cat "$preset_file" 2>/dev/null)"
+	if [ -n "$preset" ]; then
+		from_cache=1
+	fi
+fi
+
+case "$preset" in
+	''|help)
+		git cmake --list-presets
+		>&2 cat <<-EOF
+
+		This is the first you're running 'git build'.
+		Pick a preset from above and try again.
+
+		For example: 'git build ninja-x86_mingw_static_vcpkg-develop'
+
+		After this first run, you can run 'git build' by itself and it will re-use the preset from last time!
+		EOF
+		;;
+
+	*)
+		if [ -n "$from_cache" ]; then
+			echo "Using same build preset as last time: '$preset'"
+		else
+			echo "$preset" > "$preset_file"
+		fi
+		git cmake --build --preset "$preset"
+		if [ $? -ne 0 ]; then
+			>&2 cat <<-EOF
+
+			CMake ran into some sort of error.
+			Have you already ran 'git cmake --preset $preset' at least once?
+			EOF
+		fi
+esac

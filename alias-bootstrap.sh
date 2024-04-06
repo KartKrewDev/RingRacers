@@ -19,7 +19,7 @@ git config 'alias.cmake' '!cmake'
 #
 #     git cmake --build
 #
-git config 'alias.build' '!p="${1##-*}"; [ "$p" ] && shift; git cmake --build --preset "${p:-default}"'
+git config 'alias.build' '!./custom-git-commands/git-build'
 
 # Usage: git crossmake
 #
