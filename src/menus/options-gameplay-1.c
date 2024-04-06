@@ -33,6 +33,9 @@ menuitem_t OPTIONS_Gameplay[] =
 	{IT_STRING | IT_CVAR, "Exit Countdown", "How long players have to finish after 1st place finishes.",
 		NULL, {.cvar = &cv_countdowntime}, 0, 0},
 
+	{IT_STRING | IT_CVAR, "Last Place Explodes", "Once the standings are complete, give the race an explosive finish!",
+		NULL, {.cvar = &cv_karteliminatelast}, 0, 0},
+
 
 	{IT_HEADER, "Battle...", NULL,
 		NULL, {NULL}, 0, 0},
