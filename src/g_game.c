@@ -3132,10 +3132,11 @@ void G_FinishExitLevel(void)
 
 	if (gamestate == GS_LEVEL)
 	{
+		const boolean worknetgame = (demo.playback ? demo.netgame : netgame);
 		if (g_exit.retry)
 		{
 			// Restart cup here whenever we do Online GP
-			if (!netgame)
+			if (!worknetgame)
 			{
 				// We have lives, just redo this one course.
 				G_SetRetryFlag();
@@ -3144,11 +3145,18 @@ void G_FinishExitLevel(void)
 		}
 		else if (g_exit.losing)
 		{
-			// We were in a Special Stage.
+			// Were we in a Special Stage?
 			// We can still progress to the podium when we game over here.
 			const boolean special = grandprixinfo.gp == true && grandprixinfo.cup != NULL && grandprixinfo.eventmode == GPEVENT_SPECIAL;
 
-			if (!netgame && !special)
+			if (demo.playback && !worknetgame)
+			{
+				// Guarantee conclusion to Sealed Star replay
+				G_SetRetryFlag();
+				return;
+			}
+
+			if (!worknetgame && !special)
 			{
 				// Back to the menu with you.
 				G_HandleSaveLevel(true);
