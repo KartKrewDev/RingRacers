@@ -1015,7 +1015,7 @@ void P_Ticker(boolean run)
 							mapheader->records.spbattacktimeplayed++;
 						}
 					}
-					else
+					//else
 					{
 						gamedata->timeattackingtotaltime++;
 						if (mapheader)
