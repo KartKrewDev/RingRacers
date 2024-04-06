@@ -1479,14 +1479,14 @@ void D_SRB2Main(void)
 	// Print GPL notice for our console users (Linux)
 	CONS_Printf(
 	"\n\nDr. Robotnik's Ring Racers\n"
-	"Copyright (C) 1998-2022 by Kart Krew & STJr\n\n"
+	"Copyright (C) 2024 by Kart Krew\n\n"
 	"This program comes with ABSOLUTELY NO WARRANTY.\n\n"
 	"This is free software, and you are welcome to redistribute it\n"
 	"and/or modify it under the terms of the GNU General Public License\n"
 	"as published by the Free Software Foundation; either version 2 of\n"
 	"the License, or (at your option) any later version.\n"
 	"See the 'LICENSE.txt' file for details.\n\n"
-	"Sonic the Hedgehog and related characters are trademarks of SEGA.\n"
+	"Dr. Robotnik and related characters are trademarks of SEGA.\n"
 	"We do not claim ownership of SEGA's intellectual property used\n"
 	"in this program.\n\n");
 

@@ -1,8 +1,8 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 1998-2021 by ZDoom + GZDoom teams, and contributors
-// Copyright (C) 2021 by Sally "TehRealSalt" Cochenour
-// Copyright (C) 2021 by Kart Krew
+// Copyright (C) 2024 by Sally "TehRealSalt" Cochenour
+// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2021 by ZDoom + GZDoom teams, and contributors
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.

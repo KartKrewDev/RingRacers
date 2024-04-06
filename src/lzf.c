@@ -1,6 +1,6 @@
-// SONIC ROBO BLAST 2
+// DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2000-2005 by Marc Alexander Lehmann <schmorp@schmorp.de>
+// Copyright (C) 2005 by Marc Alexander Lehmann <schmorp@schmorp.de>
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.

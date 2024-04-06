@@ -1,8 +1,8 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) by Sally "TehRealSalt" Cochenour
-// Copyright (C) by Lachlan "Lach" Wright
-// Copyright (C) by Kart Krew
+// Copyright (C) 2024 by Sally "TehRealSalt" Cochenour
+// Copyright (C) 2024 by Lachlan "Lach" Wright
+// Copyright (C) 2024 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.

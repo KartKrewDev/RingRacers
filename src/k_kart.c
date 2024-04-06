@@ -11,6 +11,12 @@
 /// \brief SRB2kart general.
 ///        All of the SRB2kart-unique stuff.
 
+// TODO: Break this up into more files.
+// Files dedicated only for "general miscellanea"
+// are straight-up bad coding practice.
+// It's better to have niche files that are
+// too short than one file that's too massive.
+
 #include "k_kart.h"
 #include "k_battle.h"
 #include "k_pwrlv.h"

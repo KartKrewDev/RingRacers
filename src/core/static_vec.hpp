@@ -1,3 +1,13 @@
+// DR. ROBOTNIK'S RING RACERS
+//-----------------------------------------------------------------------------
+// Copyright (C) 2024 by Ronald "Eidolon" Kinard
+// Copyright (C) 2024 by Kart Krew
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+
 #ifndef __SRB2_CORE_STATIC_VEC_HPP__
 #define __SRB2_CORE_STATIC_VEC_HPP__
 
