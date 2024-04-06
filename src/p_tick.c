@@ -1005,20 +1005,23 @@ void P_Ticker(boolean run)
 				}
 
 				// Attacking mode playtime
-				if ((modeattacking & ATTACKING_TIME) != 0)
+				if (modeattacking != ATTACKING_NONE)
 				{
-					gamedata->timeattackingtotaltime++;
-					if (mapheader)
+					if (encoremode) // ((modeattacking & ATTACKING_SPB) != 0)
 					{
-						mapheader->records.timeattacktimeplayed++;
+						gamedata->spbattackingtotaltime++;
+						if (mapheader)
+						{
+							mapheader->records.spbattacktimeplayed++;
+						}
 					}
-				}
-				else if ((modeattacking & ATTACKING_SPB) != 0)
-				{
-					gamedata->spbattackingtotaltime++;
-					if (mapheader)
+					else
 					{
-						mapheader->records.spbattacktimeplayed++;
+						gamedata->timeattackingtotaltime++;
+						if (mapheader)
+						{
+							mapheader->records.timeattacktimeplayed++;
+						}
 					}
 				}
 
