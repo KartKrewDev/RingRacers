@@ -166,6 +166,19 @@ static void M_StatisticsChars(void)
 
 	statisticsmenu.maplist[statisticsmenu.nummaps] = MAXSKINS;
 
+	std::sort(
+		statisticsmenu.maplist,
+		statisticsmenu.maplist + statisticsmenu.nummaps,
+		[](UINT16 a, UINT16 b) {
+			if (skins[a].records.rounds > skins[b].records.rounds)
+				return true;
+			if (skins[a].records.rounds != skins[b].records.rounds)
+				return false;
+			// Stable for skin ID
+			return (a < b);
+		}
+	);
+
 	statisticsmenu.location = 0;
 	statisticsmenu.maxscroll = statisticsmenu.nummaps - 6;
 
