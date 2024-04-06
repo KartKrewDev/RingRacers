@@ -2157,7 +2157,7 @@ static const char *M_GetConditionString(condition_t *cn)
 					return va("INVALID GAMETYPE CONDITION \"%d:%d:%d\"", cn->type, cn->extrainfo1, cn->requirement);
 			}
 
-			return va("play %d%s Round%s", cn->requirement, work,
+			return va("clear %d%s Round%s", cn->requirement, work,
 				(cn->requirement == 1 ? "" : "s"));
 
 		case UC_TOTALRINGS: // Requires collecting >= x rings
@@ -2747,7 +2747,7 @@ static const char *M_GetConditionString(condition_t *cn)
 				cn->requirement
 			);
 		case UCRP_DRAFTDURATION:
-			return va("consistently draft off other racers for %u seconds", cn->requirement);
+			return va("consistently tether off other racers for %u seconds", cn->requirement);
 		case UCRP_GROWCONSECUTIVEBEAMS:
 			return va("touch the blue beams from your own Shrink at least %u times before returning to normal size", cn->requirement);
 
@@ -2776,7 +2776,7 @@ static const char *M_GetConditionString(condition_t *cn)
 		case UCRP_HITMIDAIR:
 			return "hit another racer with a projectile while you're both in the air";
 		case UCRP_HITDRAFTERLOOKBACK:
-			return "hit a racer drafting off you while looking back at them";
+			return "hit a racer tethering off you while looking back at them";
 		case UCRP_GIANTRACERSHRUNKENORBI:
 			return "hit a giant racer with a shrunken Orbinaut";
 		case UCRP_RETURNMARKTOSENDER:
