@@ -1429,6 +1429,12 @@ void M_Ticker(void)
 		skullAnimCounter = 8;
 	}
 
+	if (!Playing())
+	{
+		// Anything in M_Ticker that isn't actively playing is considered "in menus" for time tracking
+		gamedata->totalmenutime++;
+	}
+
 	if (!Playing() && !M_GameTrulyStarted())
 	{
 		M_GonerBGTick();

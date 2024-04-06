@@ -590,6 +590,16 @@ UINT32 quickncasehash (const char *p, size_t n)
 	return x;
 }
 
+// m_cond, doomstat
+typedef enum {
+	GDGT_RACE,
+	GDGT_BATTLE,
+	GDGT_PRISONS,
+	GDGT_SPECIAL,
+	GDGT_CUSTOM,
+	GDGT_MAX
+} roundsplayed_t;
+
 #ifndef __cplusplus
 #ifndef min // Double-Check with WATTCP-32's cdefs.h
 #define min(x, y) (((x) < (y)) ? (x) : (y))

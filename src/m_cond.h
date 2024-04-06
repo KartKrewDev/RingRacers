@@ -311,15 +311,6 @@ typedef enum {
 	GDGONER_DONE,
 } gdgoner_t;
 
-typedef enum {
-	GDGT_RACE,
-	GDGT_BATTLE,
-	GDGT_PRISONS,
-	GDGT_SPECIAL,
-	GDGT_CUSTOM,
-	GDGT_MAX
-} roundsplayed_t;
-
 struct candata_t
 {
 	UINT16 col;
@@ -369,6 +360,12 @@ struct gamedata_t
 
 	// PLAY TIME
 	UINT32 totalplaytime;
+	UINT32 totalnetgametime;
+	UINT32 timeattackingtotaltime;
+	UINT32 spbattackingtotaltime;
+	UINT32 modeplaytime[GDGT_MAX];
+	UINT32 totalmenutime;
+	UINT32 totaltimestaringatstatistics;
 	UINT32 roundsplayed[GDGT_MAX];
 	UINT32 totalrings;
 	UINT32 totaltumbletime;
@@ -495,6 +492,7 @@ UINT16 M_EmblemMapNum(emblem_t *emblem);
 #define M_Achieved(a) ((a) >= MAXCONDITIONSETS || gamedata->achieved[a])
 
 boolean M_UseAlternateTitleScreen(void);
+INT32 M_GameDataGameType(INT32 gametype, boolean battleprisons);
 
 #ifdef __cplusplus
 } // extern "C"

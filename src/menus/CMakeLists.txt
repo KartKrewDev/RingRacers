@@ -3,7 +3,7 @@ target_sources(SRB2SDL2 PRIVATE
 	extras-addons.c
 	extras-challenges.c
 	extras-egg-tv.cpp
-	extras-statistics.c
+	extras-statistics.cpp
 	extras-wrong.c
 	main-1.c
 	main-goner.cpp

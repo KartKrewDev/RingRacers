@@ -68,7 +68,7 @@ static void M_StatisticsMaps(void)
 	UINT16 i;
 	boolean headerexists;
 
-	statisticsmenu.maplist = Z_Malloc(sizeof(UINT16) * (nummapheaders+1 + numkartcupheaders), PU_STATIC, NULL);
+	statisticsmenu.maplist = static_cast<UINT16*>(Z_Malloc(sizeof(UINT16) * (nummapheaders+1 + numkartcupheaders), PU_STATIC, NULL));
 	statisticsmenu.nummaps = 0;
 
 	// Cups
@@ -119,7 +119,7 @@ static void M_StatisticsChars(void)
 {
 	UINT16 i;
 
-	statisticsmenu.maplist = Z_Malloc(sizeof(UINT16) * (1 + numskins), PU_STATIC, NULL);
+	statisticsmenu.maplist = static_cast<UINT16*>(Z_Malloc(sizeof(UINT16) * (1 + numskins), PU_STATIC, NULL));
 	statisticsmenu.nummaps = 0;
 
 	UINT32 beststat = 0;
@@ -166,6 +166,19 @@ static void M_StatisticsChars(void)
 
 	statisticsmenu.maplist[statisticsmenu.nummaps] = MAXSKINS;
 
+	std::sort(
+		statisticsmenu.maplist,
+		statisticsmenu.maplist + statisticsmenu.nummaps,
+		[](UINT16 a, UINT16 b) {
+			if (skins[a].records.rounds > skins[b].records.rounds)
+				return true;
+			if (skins[a].records.rounds != skins[b].records.rounds)
+				return false;
+			// Stable for skin ID
+			return (a < b);
+		}
+	);
+
 	statisticsmenu.location = 0;
 	statisticsmenu.maxscroll = statisticsmenu.nummaps - 6;
 
@@ -208,7 +221,7 @@ static void M_StatisticsChars(void)
 
 static void M_StatisticsGP(void)
 {
-	statisticsmenu.maplist = Z_Malloc(sizeof(UINT16) * (1 + numkartcupheaders), PU_STATIC, NULL);
+	statisticsmenu.maplist = static_cast<UINT16*>(Z_Malloc(sizeof(UINT16) * (1 + numkartcupheaders), PU_STATIC, NULL));
 	statisticsmenu.nummaps = 0;
 
 	cupheader_t *cup;
@@ -255,7 +268,10 @@ static void M_StatisticsPageInit(void)
 		}
 
 		default:
+		{
+			statisticsmenu.maplist = NULL;
 			break;
+		}
 	}
 }
 
@@ -302,15 +318,17 @@ boolean M_StatisticsInputs(INT32 ch)
 	{
 		M_StatisticsPageClear();
 
-		statisticsmenu.page +=
-			statisticspage_max
+		int newpage = static_cast<int>(statisticsmenu.page)
+			+ static_cast<int>(statisticspage_max)
 			+ (
 				(menucmd[pid].dpad_lr > 0)
 					? 1
 					: -1
 			);
 
-		statisticsmenu.page %= statisticspage_max;
+		newpage %= static_cast<int>(statisticspage_max);
+
+		statisticsmenu.page = static_cast<statisticspage_t>(newpage);
 
 		M_StatisticsPageInit();
 

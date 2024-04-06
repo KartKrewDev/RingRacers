@@ -652,6 +652,13 @@ void M_ClearStats(void)
 {
 	UINT8 i;
 	gamedata->totalplaytime = 0;
+	gamedata->totalnetgametime = 0;
+	gamedata->timeattackingtotaltime = 0;
+	gamedata->spbattackingtotaltime = 0;
+	for (i = 0; i < GDGT_MAX; ++i)
+		gamedata->modeplaytime[i] = 0;
+	gamedata->totalmenutime = 0;
+	gamedata->totaltimestaringatstatistics = 0;
 	gamedata->totalrings = 0;
 	gamedata->totaltumbletime = 0;
 	for (i = 0; i < GDGT_MAX; ++i)
@@ -3823,3 +3830,17 @@ boolean M_UseAlternateTitleScreen(void)
 	extern consvar_t cv_alttitle;
 	return cv_alttitle.value && M_SecretUnlocked(SECRET_ALTTITLE, true);
 }
+
+INT32 M_GameDataGameType(INT32 lgametype, boolean lbattleprisons)
+{
+	INT32 playtimemode = GDGT_CUSTOM;
+	if (lgametype == GT_RACE)
+		playtimemode = GDGT_RACE;
+	else if (lgametype == GT_BATTLE)
+		playtimemode = lbattleprisons ? GDGT_PRISONS : GDGT_BATTLE;
+	else if (lgametype == GT_SPECIAL || lgametype == GT_VERSUS)
+		playtimemode = GDGT_SPECIAL;
+
+	return playtimemode;
+}
+

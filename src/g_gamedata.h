@@ -27,9 +27,33 @@ namespace srb2
 struct GamedataPlaytimeJson final
 {
 	uint32_t total;
+	uint32_t netgame;
+	uint32_t timeattack;
+	uint32_t spbattack;
+	uint32_t race;
+	uint32_t battle;
+	uint32_t prisons;
+	uint32_t special;
+	uint32_t custom;
+	uint32_t menus;
+	uint32_t statistics;
 	uint32_t tumble;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(GamedataPlaytimeJson, total, tumble)
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
+		GamedataPlaytimeJson,
+		total,
+		netgame,
+		timeattack,
+		spbattack,
+		race,
+		battle,
+		prisons,
+		special,
+		custom,
+		menus,
+		statistics,
+		tumble
+	)
 };
 
 struct GamedataRingsJson final
@@ -104,11 +128,40 @@ struct GamedataChallengeGridJson final
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(GamedataChallengeGridJson, width, grid)
 };
 
+struct GamedataSkinRecordsPlaytimeJson final
+{
+	uint32_t total;
+	uint32_t race;
+	uint32_t battle;
+	uint32_t prisons;
+	uint32_t special;
+	uint32_t custom;
+	uint32_t tumble;
+
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
+		GamedataSkinRecordsPlaytimeJson,
+		total,
+		race,
+		battle,
+		prisons,
+		special,
+		custom,
+		tumble
+	)
+};
+
 struct GamedataSkinRecordsJson final
 {
 	uint32_t wins;
+	uint32_t rounds;
+	GamedataSkinRecordsPlaytimeJson time;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(GamedataSkinRecordsJson, wins)
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
+		GamedataSkinRecordsJson,
+		wins,
+		rounds,
+		time
+	)
 };
 
 struct GamedataSkinJson final
@@ -145,12 +198,44 @@ struct GamedataMapStatsSpbAttackJson final
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(GamedataMapStatsSpbAttackJson, besttime, bestlap)
 };
 
+struct GamedataMapStatsPlaytimeJson final
+{
+	uint32_t total;
+	uint32_t netgame;
+	uint32_t race;
+	uint32_t battle;
+	uint32_t prisons;
+	uint32_t special;
+	uint32_t custom;
+	uint32_t timeattack;
+	uint32_t spbattack;
+
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
+		GamedataMapStatsPlaytimeJson,
+		total,
+		netgame,
+		race,
+		battle,
+		prisons,
+		special,
+		custom,
+		timeattack,
+		spbattack
+	)
+};
+
 struct GamedataMapStatsJson final
 {
 	GamedataMapStatsTimeAttackJson timeattack;
 	GamedataMapStatsSpbAttackJson spbattack;
+	GamedataMapStatsPlaytimeJson time;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(GamedataMapStatsJson, timeattack, spbattack)
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
+		GamedataMapStatsJson,
+		timeattack,
+		spbattack,
+		time
+	)
 };
 
 struct GamedataMapJson final

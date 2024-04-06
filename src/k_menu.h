@@ -1434,6 +1434,7 @@ typedef enum
 	statisticspage_chars = 0,
 	statisticspage_gp,
 	statisticspage_maps,
+	statisticspage_time,
 	statisticspage_max
 } statisticspage_t;
 

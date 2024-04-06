@@ -8310,7 +8310,7 @@ static void M_DrawStatsChars(void)
 	i = -1;
 
 	V_DrawThinString(20, y - 10, highlightflags, "CHARACTER");
-	V_DrawRightAlignedThinString(BASEVIDWIDTH/2 + 34, y - 10, highlightflags, "WINS");
+	V_DrawRightAlignedThinString(BASEVIDWIDTH/2 + 34, y - 10, highlightflags, "WINS/ROUNDS");
 
 	while ((skin = statisticsmenu.maplist[++i]) < numskins)
 	{
@@ -8328,7 +8328,7 @@ static void M_DrawStatsChars(void)
 
 		V_DrawThinString(24+32+2, y+3, 0, skins[skin].realname);
 
-		V_DrawRightAlignedThinString(BASEVIDWIDTH/2 + 30, y+3, 0, va("%d", skins[skin].records.wins));
+		V_DrawRightAlignedThinString(BASEVIDWIDTH/2 + 30, y+3, 0, va("%d/%d", skins[skin].records.wins, skins[skin].records.rounds));
 
 		y += STATSSTEP;
 
@@ -8474,10 +8474,103 @@ bottomarrow:
 
 #undef STATSSTEP
 
+static void M_GetStatsTime(char *beststr, UINT32 totaltime)
+{
+	beststr[0] = 0;
+
+	boolean showallsubsequent = false;
+
+	UINT32 besttime = G_TicsToHours(totaltime);
+	if (besttime)
+	{
+		showallsubsequent = true;
+		if (besttime >= 24)
+		{
+			strcat(beststr, va("%u day%s, ", besttime/24, (besttime < 48 ? "" : "s")));
+			besttime %= 24;
+		}
+
+		strcat(beststr, va("%u hour%s, ", besttime, (besttime == 1 ? "" : "s")));
+	}
+	besttime = G_TicsToMinutes(totaltime, false);
+	if (besttime || showallsubsequent)
+	{
+		showallsubsequent = true;
+		strcat(beststr, va("%u minute%s, ", besttime, (besttime == 1 ? "" : "s")));
+	}
+	besttime = G_TicsToSeconds(totaltime);
+	strcat(beststr, va("%i second%s", besttime, (besttime == 1 ? "" : "s")));
+}
+
+static void M_DrawStatsTimeTracked(void)
+{
+	INT32 y = 70;
+	char beststr[256];
+
+	#define DISPLAYAMODE(str, besttime) \
+	{ \
+		V_DrawThinString(24, y, 0, str); \
+		M_GetStatsTime(beststr, besttime); \
+		V_DrawRightAlignedThinString(BASEVIDWIDTH-24, y, 0, beststr); \
+		y += 10; \
+	}
+
+	DISPLAYAMODE("Race Mode", gamedata->modeplaytime[GDGT_RACE]);
+
+	if (gamedata->roundsplayed[GDGT_PRISONS])
+	{
+		DISPLAYAMODE("Prison Break", gamedata->modeplaytime[GDGT_PRISONS]);
+	}
+
+	DISPLAYAMODE("Battle Mode", gamedata->modeplaytime[GDGT_BATTLE]);
+
+	if (gamedata->roundsplayed[GDGT_SPECIAL])
+	{
+		DISPLAYAMODE("Special Mode", gamedata->modeplaytime[GDGT_SPECIAL]);
+	}
+
+	if (gamedata->roundsplayed[GDGT_CUSTOM])
+	{
+		DISPLAYAMODE("All Custom Modes", gamedata->modeplaytime[GDGT_CUSTOM]);
+	}
+
+	if (M_SecretUnlocked(SECRET_ONLINE, true))
+	{
+		y += 2;
+
+		DISPLAYAMODE("Playing Online", gamedata->totalnetgametime);
+	}
+
+	if (M_SecretUnlocked(SECRET_TIMEATTACK, true)
+		|| M_SecretUnlocked(SECRET_PRISONBREAK, true)
+		|| M_SecretUnlocked(SECRET_SPECIALATTACK, true))
+	{
+		y += 2;
+
+		DISPLAYAMODE("Time Attack Modes", gamedata->timeattackingtotaltime);
+
+		if (M_SecretUnlocked(SECRET_SPBATTACK, true))
+		{
+			DISPLAYAMODE(" (SPB Attack)", gamedata->spbattackingtotaltime);
+		}
+	}
+
+	if (gamedata->totaltumbletime)
+	{
+		y += 2;
+
+		DISPLAYAMODE("Tumbling through the air", gamedata->totaltumbletime);
+	}
+
+	y += 2;
+
+	DISPLAYAMODE("On Menus", gamedata->totalmenutime);
+	DISPLAYAMODE(" (staring at this screen)", gamedata->totaltimestaringatstatistics);
+}
+
 void M_DrawStatistics(void)
 {
 	char beststr[256];
-	tic_t besttime = 0;
 
 	{
 		const char *pagename = NULL;
@@ -8487,7 +8580,6 @@ void M_DrawStatistics(void)
 
 		switch (statisticsmenu.page)
 		{
-
 			case statisticspage_gp:
 			{
 				pagename = gamedata->everseenspecial
@@ -8511,6 +8603,13 @@ void M_DrawStatistics(void)
 				break;
 			}
 
+			case statisticspage_time:
+			{
+				pagename = "TIME TRACKED";
+				M_DrawStatsTimeTracked();
+				break;
+			}
+
 			default:
 				break;
 		}
@@ -8528,26 +8627,9 @@ void M_DrawStatistics(void)
 			0, "\x1D"); // right arrow
 	}
 
-	beststr[0] = 0;
 	V_DrawThinString(20, 30, highlightflags, "Total Play Time:");
-	besttime = G_TicsToHours(gamedata->totalplaytime);
-	if (besttime)
-	{
-		if (besttime >= 24)
-		{
-			strcat(beststr, va("%u day%s, ", besttime/24, (besttime < 48 ? "" : "s")));
-			besttime %= 24;
-		}
 
-		strcat(beststr, va("%u hour%s, ", besttime, (besttime == 1 ? "" : "s")));
-	}
-	besttime = G_TicsToMinutes(gamedata->totalplaytime, false);
-	if (besttime)
-	{
-		strcat(beststr, va("%u minute%s, ", besttime, (besttime == 1 ? "" : "s")));
-	}
-	besttime = G_TicsToSeconds(gamedata->totalplaytime);
-	strcat(beststr, va("%i second%s", besttime, (besttime == 1 ? "" : "s")));
+	M_GetStatsTime(beststr, gamedata->totalplaytime);
 	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 30, 0, beststr);
 	beststr[0] = 0;
 

@@ -4516,14 +4516,7 @@ static void G_DoCompleted(void)
 	{
 		if (gametype != GT_TUTORIAL)
 		{
-			UINT8 roundtype = GDGT_CUSTOM;
-
-			if (gametype == GT_RACE)
-				roundtype = GDGT_RACE;
-			else if (gametype == GT_BATTLE)
-				roundtype = (battleprisons ? GDGT_PRISONS : GDGT_BATTLE);
-			else if (gametype == GT_SPECIAL || gametype == GT_VERSUS)
-				roundtype = GDGT_SPECIAL;
+			UINT8 roundtype = M_GameDataGameType(gametype, battleprisons);
 
 			gamedata->roundsplayed[roundtype]++;
 		}

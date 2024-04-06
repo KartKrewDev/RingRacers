@@ -1315,18 +1315,31 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 			G_UpdateRecords();
 		}
 
-		if (!losing)
+		// Profile and skin record updates
+		if (P_IsMachineLocalPlayer(player))
 		{
 			profile_t *pr = PR_GetPlayerProfile(player);
+
+			// Profile records
 			if (pr != NULL)
 			{
-				pr->wins++;
+				if (!losing)
+				{
+					pr->wins++;
+				}
+				pr->rounds++;
 				PR_SaveProfiles();
 			}
 
-			if (P_IsMachineLocalPlayer(player) && player->skin < numskins)
+			// Skin records (saved to gamedata)
+			if (player->skin < numskins)
 			{
-				skins[player->skin].records.wins++;
+				skin_t *playerskin = &skins[player->skin];
+				if (!losing)
+				{
+					playerskin->records.wins++;
+				}
+				playerskin->records.rounds++;
 			}
 		}
 

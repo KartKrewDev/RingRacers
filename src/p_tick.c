@@ -941,8 +941,114 @@ void P_Ticker(boolean run)
 
 		if (gamedata && gamestate == GS_LEVEL && !demo.playback)
 		{
+			mapheader_t *mapheader;
+
+			mapheader = mapheaderinfo[gamemap - 1];
+
 			// Keep track of how long they've been playing!
 			gamedata->totalplaytime++;
+
+			// Map playtime
+			if (mapheader)
+			{
+				mapheader->records.timeplayed++;
+			}
+
+			// Netgame total time
+			if (netgame)
+			{
+				gamedata->totalnetgametime++;
+
+				if (mapheader)
+				{
+					mapheader->records.netgametimeplayed++;
+				}
+			}
+
+			// Per-skin total playtime for all machine-local players
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				skin_t *playerskin;
+
+				if (!P_IsMachineLocalPlayer(&players[i]))
+				{
+					continue;
+				}
+
+				if (!(playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo)))
+				{
+					continue;
+				}
+
+				if (players[i].skin >= numskins)
+				{
+					continue;
+				}
+
+				playerskin = &skins[players[i].skin];
+
+				playerskin->records.timeplayed++;
+			}
+
+			if (gametype != GT_TUTORIAL)
+			{
+				INT32 mode = M_GameDataGameType(gametype, battleprisons);
+
+				// Gamedata mode playtime
+				if (mode >= 0 && mode < GDGT_MAX)
+				{
+					gamedata->modeplaytime[mode]++;
+					if (mapheader)
+					{
+						mapheader->records.modetimeplayed[mode]++;
+					}
+				}
+
+				// Attacking mode playtime
+				if (modeattacking != ATTACKING_NONE)
+				{
+					if (encoremode) // ((modeattacking & ATTACKING_SPB) != 0)
+					{
+						gamedata->spbattackingtotaltime++;
+						if (mapheader)
+						{
+							mapheader->records.spbattacktimeplayed++;
+						}
+					}
+					//else
+					{
+						gamedata->timeattackingtotaltime++;
+						if (mapheader)
+						{
+							mapheader->records.timeattacktimeplayed++;
+						}
+					}
+				}
+
+				// Per-skin mode playtime
+				for (i = 0; i < MAXPLAYERS; i++)
+				{
+					skin_t *playerskin;
+
+					if (!P_IsMachineLocalPlayer(&players[i]))
+					{
+						continue;
+					}
+
+					if (!(playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo)))
+					{
+						continue;
+					}
+
+					if (players[i].skin >= numskins)
+					{
+						continue;
+					}
+
+					playerskin = &skins[players[i].skin];
+					playerskin->records.modetimeplayed[mode]++;
+				}
+			}
 
 			// TODO would this be laggy with more conditions in play...
 			if (
