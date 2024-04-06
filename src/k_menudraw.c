@@ -8310,7 +8310,7 @@ static void M_DrawStatsChars(void)
 	i = -1;
 
 	V_DrawThinString(20, y - 10, highlightflags, "CHARACTER");
-	V_DrawRightAlignedThinString(BASEVIDWIDTH/2 + 34, y - 10, highlightflags, "WINS");
+	V_DrawRightAlignedThinString(BASEVIDWIDTH/2 + 34, y - 10, highlightflags, "WINS/ROUNDS");
 
 	while ((skin = statisticsmenu.maplist[++i]) < numskins)
 	{
@@ -8328,7 +8328,7 @@ static void M_DrawStatsChars(void)
 
 		V_DrawThinString(24+32+2, y+3, 0, skins[skin].realname);
 
-		V_DrawRightAlignedThinString(BASEVIDWIDTH/2 + 30, y+3, 0, va("%d", skins[skin].records.wins));
+		V_DrawRightAlignedThinString(BASEVIDWIDTH/2 + 30, y+3, 0, va("%d/%d", skins[skin].records.wins, skins[skin].records.rounds));
 
 		y += STATSSTEP;
 
