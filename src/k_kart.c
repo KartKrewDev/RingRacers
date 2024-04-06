@@ -853,6 +853,17 @@ static boolean K_JustBumpedException(mobj_t *mobj)
 			return Obj_SA2CrateIsMetal(mobj);
 		case MT_WALLSPIKE:
 			return true;
+		case MT_BATTLECAPSULE:
+		{
+			if (gametype == GT_TUTORIAL // Remove gametype check whenever it's safe to break compatibility with ghosts in a post-release patch
+			&& mobj->momx == 0
+			&& mobj->momy == 0
+			&& mobj->momz == 0)
+			{
+				return true;
+			}
+			break;
+		}
 		default:
 			break;
 	}
@@ -4806,7 +4817,7 @@ void K_ApplyTripWire(player_t *player, tripwirestate_t state)
 				Obj_GardenTopDestroy(player);
 			}
 		}
-		
+
 		player->tripwireLeniency += TICRATE/2;
 	}
 	else if (state == TRIPSTATE_BLOCKED)
@@ -8559,7 +8570,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 						debtflag->renderflags |= RF_TRANS50;
 				}
 			}
-				
+
 		}
 
 		if (player->springstars && (leveltime & 1))
@@ -10874,7 +10885,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 	// If we're sliptiding, whether through an extension or otherwise, allow sliptide extensions next tic.
 	if (K_Sliptiding(player))
-		player->aizdriftextend = player->aizdriftstrat;		
+		player->aizdriftextend = player->aizdriftstrat;
 	else
 		player->aizdriftextend = 0;
 
@@ -10927,7 +10938,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 		if (!extendedSliptide && K_IsLosingWavedash(player) && player->wavedash > 0)
 		{
 			if (player->wavedash > HIDEWAVEDASHCHARGE && !S_SoundPlaying(player->mo, sfx_waved2))
-				S_StartSoundAtVolume(player->mo, sfx_waved2, 
+				S_StartSoundAtVolume(player->mo, sfx_waved2,
 					Easing_InSine(
 						min(FRACUNIT, FRACUNIT * player->wavedash / MIN_WAVEDASH_CHARGE),
 						120,
@@ -10963,7 +10974,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 					player->wavedashpower = min(FRACUNIT, FRACUNIT * player->wavedash / MIN_WAVEDASH_CHARGE);
 
 					// Scale boost sound to power.
-					S_StartSoundAtVolume(player->mo, sfx_waved3, 
+					S_StartSoundAtVolume(player->mo, sfx_waved3,
 						Easing_InSine(
 							player->wavedashpower,
 							120,
@@ -12192,7 +12203,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					accel *= 3;
 					weight *= 10;
 				}
-				
+
 				award = (110 + accel + weight) * award / 120;
 			}
 			else
@@ -12201,7 +12212,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				UINT32 behindMulti = behind / 500;
 				behindMulti = min(behindMulti, 60);
 				award = award * (behindMulti + 10) / 10;
-			}	
+			}
 
 			K_AwardPlayerRings(player, award, true);
 			player->ringboxaward = 0;
@@ -12255,7 +12266,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 			// OOPSIES FIXME pt.1: You can charge instawhip between picking up and confirming an item box.
 			// This is vanishingly rare in race and impossible in battle, but SUPER common in prisons!
-			// 
+			//
 			// ...But this was discovered after staff ghost recording started, and charging whip prevents
 			// flingring pickup, meaning it has a small but desync-capable gameplay effect.
 			//
