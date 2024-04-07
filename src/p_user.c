@@ -684,7 +684,7 @@ void P_EndingMusic(void)
 	{
 		jingle = "RETIRE";
 
-		if (G_GametypeUsesLives() == true)
+		if (G_GametypeAllowsRetrying() == true)
 		{
 			// A retry will be happening
 			nointer = true;
@@ -694,7 +694,7 @@ void P_EndingMusic(void)
 	{
 		jingle = "_lose";
 
-		if (G_GametypeUsesLives() == true)
+		if (G_GametypeAllowsRetrying() == true)
 		{
 			// A retry will be happening
 			nointer = true;
@@ -1245,7 +1245,7 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 	const boolean losing = K_IsPlayerLosing(player); // HEY!!!! Set it AFTER K_UpdateAllPlayerPositions!!!!
 	const boolean specialout = (specialstageinfo.valid == true && losing == true);
 
-	if (G_GametypeUsesLives() && losing)
+	if (losing)
 	{
 		// Remove a life from the losing player
 		K_PlayerLoseLife(player);

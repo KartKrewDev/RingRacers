@@ -855,7 +855,7 @@ void K_FakeBotResults(player_t *bot)
 --------------------------------------------------*/
 void K_PlayerLoseLife(player_t *player)
 {
-	if (!G_GametypeUsesLives())
+	if (!G_GametypeUsesLives() || !G_GametypeAllowsRetrying())
 	{
 		return;
 	}

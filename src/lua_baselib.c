@@ -2916,6 +2916,14 @@ static int lib_gGametypeUsesLives(lua_State *L)
 	return 1;
 }
 
+static int lib_gGametypeAllowsRetrying(lua_State *L)
+{
+	//HUDSAFE
+	INLEVEL
+	lua_pushboolean(L, G_GametypeAllowsRetrying());
+	return 1;
+}
+
 static int lib_gGametypeHasTeams(lua_State *L)
 {
 	//HUDSAFE
@@ -3795,6 +3803,7 @@ static luaL_Reg lib[] = {
 	{"G_SetCustomExitVars",lib_gSetCustomExitVars},
 	{"G_ExitLevel",lib_gExitLevel},
 	{"G_GametypeUsesLives",lib_gGametypeUsesLives},
+	{"G_GametypeAllowsRetrying",lib_gGametypeAllowsRetrying},
 	{"G_GametypeHasTeams",lib_gGametypeHasTeams},
 	{"G_GametypeHasSpectators",lib_gGametypeHasSpectators},
 	{"G_TicsToHours",lib_gTicsToHours},

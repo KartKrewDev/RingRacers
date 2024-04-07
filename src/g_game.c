@@ -3077,7 +3077,7 @@ void G_BeginLevelExit(void)
 	g_exit.losing = true;
 	g_exit.retry = false;
 
-	if (!G_GametypeUsesLives() || skipstats != 0)
+	if (!G_GametypeAllowsRetrying() || skipstats != 0)
 	{
 		g_exit.losing = false; // never force a retry
 	}
@@ -3108,11 +3108,11 @@ void G_BeginLevelExit(void)
 		{
 			if (playeringame[i] && !players[i].spectator && !players[i].bot)
 			{
-				if (players[i].lives > 0)
-				{
-					g_exit.retry = true;
-					break;
-				}
+				if (G_GametypeUsesLives() && players[i].lives <= 0)
+					continue;
+
+				g_exit.retry = true;
+				break;
 			}
 		}
 	}
@@ -3443,6 +3443,24 @@ void G_AddTOL(UINT32 newtol, const char *tolname)
 boolean G_GametypeUsesLives(void)
 {
 	if (modeattacking) // NOT in Record Attack
+		return false;
+
+	if (grandprixinfo.gp == true) // In Grand Prix
+		return true;
+
+	return false;
+}
+
+//
+// G_GametypeAllowsRetrying
+//
+// Returns true if retrying is allowed at all.
+// (Retrying may still not be possible if the player doesn't
+// have enough lives.)
+//
+boolean G_GametypeAllowsRetrying(void)
+{
+	if (modeattacking) // Attack modes have their own retry system
 		return false;
 
 	if ((grandprixinfo.gp == true) // In Grand Prix
