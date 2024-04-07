@@ -551,9 +551,11 @@ void level_tally_t::Init(player_t *player)
 
 	done = (player->spectator == true || player->bot == true);
 
-	if (specialstageinfo.valid == true && (player->pflags & PF_NOCONTEST) == PF_NOCONTEST)
+	if (specialstageinfo.valid == true && (player->pflags & PF_NOCONTEST) == PF_NOCONTEST &&
+		(G_GametypeUsesLives() && player->lives <= 0) == false)
 	{
 		// No tally when losing special stages
+		// Except when GAME OVER
 		state = TALLY_ST_IGNORE;
 		delay = 0;
 	}
