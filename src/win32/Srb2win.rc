@@ -95,11 +95,11 @@ BEGIN
         BLOCK "04090000"
         BEGIN
             VALUE "Comments", "Go go-karting with Dr. Robotnik!\0"
-            VALUE "CompanyName", "Kart Krew\0"
+            VALUE "CompanyName", "Kart Krew Dev\0"
             VALUE "FileDescription", "Dr. Robotnik's Ring Racers\0"
             VALUE "FileVersion", VERSIONSTRING_RC
             VALUE "InternalName", "drrr\0"
-            VALUE "LegalCopyright", "Copyright 2018-2020 by Kart Krew\0"
+            VALUE "LegalCopyright", "Copyright 2018-2024 Kart Krew Dev\0"
             VALUE "LegalTrademarks", "Dr. Robotnik and related characters are trademarks of Sega.\0"
             VALUE "OriginalFilename", "drrr.exe\0"
             VALUE "PrivateBuild", "\0"
