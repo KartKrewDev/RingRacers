@@ -4512,6 +4512,10 @@ static void K_drawKartMinimap(void)
 			if ((gametyperules & GTR_BUMPERS) && (players[i].pflags & PF_ELIMINATED))
 				continue;
 
+			// This gets set for a player who has GAME OVER'd
+			if (P_MobjIsReappearing(players[i].mo))
+				continue;
+
 			if (i == displayplayers[0] || i == displayplayers[1] || i == displayplayers[2] || i == displayplayers[3])
 			{
 				// Draw display players on top of everything else
@@ -4722,6 +4726,10 @@ static void K_drawKartMinimap(void)
 			continue;
 
 		mobj = players[localplayers[i]].mo;
+
+		// This gets set for a player who has GAME OVER'd
+		if (P_MobjIsReappearing(mobj))
+			continue;
 
 		if (mobj->health <= 0 && (players[localplayers[i]].pflags & PF_NOCONTEST))
 		{

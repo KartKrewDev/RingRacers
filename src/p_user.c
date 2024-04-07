@@ -4156,6 +4156,11 @@ void P_PlayerThink(player_t *player)
 
 		player->playerstate = PST_DEAD;
 
+		// hide the player sprite forever
+		player->mo->hitlag = INT32_MAX;
+		player->mo->renderflags |= RF_DONTDRAW;
+		player->mo->reappear = INFTICS; // also hides the follower
+
 		// respawn from where you died
 		player->respawn.pointx = player->mo->x;
 		player->respawn.pointy = player->mo->y;
