@@ -586,7 +586,7 @@ static void F_DisclaimerDrawScene(void)
 
 	if (intro_curtime == 0)
 		return;
-	
+
 	// Anaglyph SEGA
 	if (heretrulystarted && dc_state >= DISCLAIMER_SLIDE)
 		V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName(va("SEGA_B%02d", dc_segaframe), PU_CACHE), 0);
@@ -598,7 +598,7 @@ static void F_DisclaimerDrawScene(void)
 
 		if (dc_state >= DISCLAIMER_SLIDE)
 			overlayalpha = dc_bluesegafade << V_ALPHASHIFT;
-		
+
 		V_DrawFixedPatch(0, 0, FRACUNIT, overlayalpha, W_CachePatchName(va("SEGA_A%02d", dc_segaframe), PU_CACHE), 0);
 	}
 
@@ -682,7 +682,7 @@ static void F_DisclaimerDrawScene(void)
 			V_DrawString(16, 102, textalpha, twoText);
 			V_DrawString(16, 142, textalpha, redText);
 
-			Z_Free(newText);
+			Z_Free(redText);
 		}
 		else
 		{
@@ -1767,7 +1767,7 @@ void F_TitleScreenDrawer(void)
 		INT32 trans;
 
 		if (finalecount >= GONERTYPEWRITERWAIT)
-		{	
+		{
 			INT32 checkcount = finalecount - GONERTYPEWRITERWAIT;
 			const char *typetext = "RING RACERS";
 			INT32 bx = V_TitleCardStringWidth(typetext, false);
