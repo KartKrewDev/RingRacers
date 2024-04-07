@@ -4346,12 +4346,15 @@ static void K_drawKartMinimap(void)
 			return; // no pic, just get outta here
 		}
 
-		else if (r_splitscreen < 2) // 1/2P right aligned
+		else if (r_splitscreen < 1) // 1P right aligned
 		{
 			splitflags = (V_SLIDEIN|V_SNAPTORIGHT);
 		}
-		else if (r_splitscreen == 3) // 4P splits
+		else // 2/4P splits
 		{
+			if (r_splitscreen == 1)
+				splitflags = V_SNAPTORIGHT; // 2P right aligned
+
 			dofade = true;
 		}
 		// 3P lives in the middle of the bottom right
