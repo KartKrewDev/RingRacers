@@ -1280,7 +1280,9 @@ readghosttic:
 		{
 			if (ziptic < MAXPLAYERS)
 			{
+#ifdef DEVELOP
 				UINT8 playerid = ziptic;
+#endif
 				// We want to skip *any* player extradata because some demos have extradata for bogus players,
 				// but if there is tic data later for those players *then* we'll consider it invalid.
 
