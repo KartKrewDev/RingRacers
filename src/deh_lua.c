@@ -545,7 +545,7 @@ static inline int lib_getenum(lua_State *L)
 				lua_pushinteger(L, i);
 				return 1;
 			}
-		return 0;
+		return luaL_error(L, "karthud '%s' could not be found.\n", word);
 	}
 	else if (mathlib && fastncmp("KHUD_",word,5)) { // SOCs are ALL CAPS!
 		p = word+5;
