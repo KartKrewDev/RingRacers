@@ -107,7 +107,7 @@ extern "C" consvar_t cv_lua_profile, cv_menuframeskip;
 /* Manually defined asset hashes
  */
 
-#define ASSET_HASH_BIOS_PK3						"902773f002831bdf308391fe4994269f"
+#define ASSET_HASH_BIOS_PK3						"e596a4883ae37a959c3fd7541608eba7"
 #define ASSET_HASH_SCRIPTS_PK3					"30d1cdda398ecfa9532056df83b399a5"
 #define ASSET_HASH_GFX_PK3						"7246a261bf147170721a85af01a9694d"
 #define ASSET_HASH_TEXTURES_GENERAL_PK3			"cf4a51f2904a992ddec233e684cfa925"
