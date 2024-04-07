@@ -4393,7 +4393,7 @@ static void K_drawKartMinimap(void)
 			return;
 	}
 
-	minimaptrans = ((10-minimaptrans)<<FF_TRANSSHIFT);
+	minimaptrans = ((10-minimaptrans)<<V_ALPHASHIFT);
 
 	// Really looking forward to never writing this loop again
 	UINT8 bestplayer = MAXPLAYERS;
