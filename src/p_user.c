@@ -4169,6 +4169,7 @@ void P_PlayerThink(player_t *player)
 		player->respawn.pointz = player->mo->z;
 
 		player->pflags |= PF_LOSTLIFE|PF_ELIMINATED|PF_NOCONTEST;
+		player->realtime = UINT32_MAX;
 		K_InitPlayerTally(player);
 	}
 
