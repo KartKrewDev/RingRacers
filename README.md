@@ -1,8 +1,14 @@
 # Dr. Robotnik's Ring Racers
 
+<p align="center">
+  <a href="https://www.kartkrew.org">
+    <img src="docs/logo.png" width="404" style="image-rendering:pixelated" alt="Dr. Robotnik's Ring Racers logo">
+  </a>
+</p>
+
 Dr. Robotnik's Ring Racers is a kart racing video game originally based on the 3D Sonic the Hedgehog fangame [Sonic Robo Blast 2](https://srb2.org/), itself based on a modified version of [Doom Legacy](http://doomlegacy.sourceforge.net/).
 
-Ring Racers' source code is available under the GNU General Public License version 2.0.
+Ring Racers' source code is available to users under the GNU General Public License version 2.0 or higher.
 
 ## Links
 
@@ -12,7 +18,7 @@ Ring Racers' source code is available under the GNU General Public License versi
 
 ## Disclaimer
 
-Kart Krew Dev is in no way affiliated with SEGA Corporation. We do not claim ownership of any of SEGA's intellectual property used in Dr. Robotnik's Ring Racers.
+Dr. Robotnik's Ring Racers is a work of fan art made available for free without intent to profit or harm the intellectual property rights of the original works it is based on. Kart Krew Dev is in no way affiliated with SEGA Corporation. We do not claim ownership of any of SEGA's intellectual property used in Dr. Robotnik's Ring Racers.
 
 # Development
 
@@ -66,5 +72,5 @@ We welcome external contributions from the community. If you are planning on mak
 
 Our primary source repository is [hosted on the SRB2 Gitlab](https://git.srb2.org/KartKrew/RingRacers). The Github repository is a mirror of this. If you submit a Pull Request to the Github repository, please keep in mind that we do not consistently monitor that mirror and may not see your request.
 
-All contributions must be made available under the GPL General Public License version 2.0 or higher, or public domain. Integrations for third party code must be made to code which is compatibly licensed.
+All contributions must be made available under the GPL General Public License version 2.0, or public domain. Integrations for third party code must be made to code which is compatibly licensed.
 
