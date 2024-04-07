@@ -2882,7 +2882,9 @@ static void P_DeathThink(player_t *player)
 	}
 
 	// Spectate another player after 2 seconds
-	if (G_IsPartyLocal(player - players) && playerGone == true && (gametyperules & GTR_BUMPERS) && player->deadtimer == 2*TICRATE)
+	if (G_IsPartyLocal(player - players) && playerGone == true &&
+		(gametyperules & GTR_BUMPERS) && battleprisons == false &&
+		player->deadtimer == 2*TICRATE)
 	{
 		K_ToggleDirector(G_PartyPosition(player - players), true);
 	}
@@ -4155,6 +4157,11 @@ void P_PlayerThink(player_t *player)
 		player->mo->pmomz = 0;
 
 		player->playerstate = PST_DEAD;
+
+		// hide the player sprite forever
+		player->mo->hitlag = INT32_MAX;
+		player->mo->renderflags |= RF_DONTDRAW;
+		player->mo->reappear = INFTICS; // also hides the follower
 
 		// respawn from where you died
 		player->respawn.pointx = player->mo->x;
