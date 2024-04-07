@@ -26,6 +26,11 @@ constexpr INT32 kHudFlags = V_HUDTRANS | V_SLIDEIN;
 
 tic_t player_timer(const player_t* player)
 {
+	if (player->realtime == UINT32_MAX)
+	{
+		return 0;
+	}
+
 	return K_TranslateTimer(player->realtime, 0, nullptr);
 }
 

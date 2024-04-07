@@ -197,11 +197,11 @@ void M_OpenPauseMenu(void)
 			{
 				retryallowed = true;
 			}
-			else if (G_GametypeUsesLives())
+			else if (G_GametypeAllowsRetrying())
 			{
 				for (i = 0; i <= splitscreen; i++)
 				{
-					if (players[g_localplayers[i]].lives <= 1)
+					if (G_GametypeUsesLives() && players[g_localplayers[i]].lives <= 1)
 						continue;
 					retryallowed = true;
 					break;

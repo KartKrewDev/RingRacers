@@ -198,6 +198,7 @@ INT32 G_GetGametypeByName(const char *gametypestr);
 INT32 G_GuessGametypeByTOL(UINT32 tol);
 
 boolean G_GametypeUsesLives(void);
+boolean G_GametypeAllowsRetrying(void);
 boolean G_GametypeHasTeams(void);
 boolean G_GametypeHasSpectators(void);
 INT16 G_SometimesGetDifferentEncore(void);
