@@ -229,7 +229,6 @@ void f_4thgear()
 	}
 }
 
-#ifdef DEVELOP
 void f_devmode()
 {
 	INT32 i;
@@ -266,7 +265,7 @@ void f_devmode()
 	G_SaveGameData();
 }
 
-void f_gaster()
+void f_proceed()
 {
 	gamedata->gonerlevel = GDGONER_DONE;
 	gamedata->finishedtutorialchallenge = true;
@@ -277,7 +276,6 @@ void f_gaster()
 
 	G_SaveGameData();
 }
-#endif
 
 }; // namespace
 
@@ -409,8 +407,6 @@ void M_PasswordInit(void)
 	passwords.emplace_back(f_4thgear, "zRMhR+s27VTYE0jgFf2l+PX51N3qJPvZ3oWuM/71oUaKY5zyQ2y7WIrIb464MFWn4IsK2P5rShsR9MotC/9ojQ==");
 	passwords.emplace_back(f_shittysigns, "fdqz0cQdVKfS4zgN4usUz75+5AhYdDPsrl61H7sIEKHoaEUHPOfcful0jEkVvrV/rpELE0/3srRpxmJYpQofmA==");
 	passwords.emplace_back(f_tastelesstaunts, "4QfCuCG0/7z5U5A1hxqlqx83uQTGmQ1aaWPBQ8pqQvw9KRGvxxiDq9UF0N24fDlu0+XYksgkPHJg4A5h5aEQiw==");
-#ifdef DEVELOP
-	passwords.emplace_back(f_devmode, "qXe5jAii7ntJ0VwmaZj9ujDKU69KLUfdGV3Rn2G7xMxOxKo37QpYZvo1E/PIul56ca+nDT6IggGfRqhA8gf6Gw==");
-	passwords.emplace_back(f_gaster, "GZPKJsa++Tt134yS3eBKdP+8vdAHB1thwK2ys6VDfFxcIRtABtM9j4qt8WULFrI+KxCSYMZ6K0mwt5BVzcvvuw==");
-#endif
+	passwords.emplace_back(f_devmode, "ybYqLUlREa9TJqV0uftxqGL8jPR1U+uEgrff/jast0kCfeIdzY15VxjveSZho8GOjfRuC3Zt4aJQTvhJcPAhkw==");
+	passwords.emplace_back(f_proceed, "GZPKJsa++Tt134yS3eBKdP+8vdAHB1thwK2ys6VDfFxcIRtABtM9j4qt8WULFrI+KxCSYMZ6K0mwt5BVzcvvuw==");
 }
