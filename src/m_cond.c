@@ -1822,17 +1822,20 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 		case UCRP_FINISHTIME:
 			return (player->exiting
 				&& !(player->pflags & PF_NOCONTEST)
+				&& (!battleprisons || numtargets >= maptargets)
 				//&& M_NotFreePlay()
 				&& player->realtime <= (unsigned)cn->requirement);
 		case UCRP_FINISHTIMEEXACT:
 			return (player->exiting
 				&& !(player->pflags & PF_NOCONTEST)
+				&& (!battleprisons || numtargets >= maptargets)
 				//&& M_NotFreePlay()
 				&& player->realtime/TICRATE == (unsigned)cn->requirement/TICRATE);
 		case UCRP_FINISHTIMELEFT:
 			return (timelimitintics
 				&& player->exiting
 				&& !(player->pflags & PF_NOCONTEST)
+				&& (!battleprisons || numtargets >= maptargets)
 				&& !K_CanChangeRules(false) // too easy to change cv_timelimit
 				&& player->realtime < timelimitintics
 				&& (timelimitintics + extratimeintics + secretextratime - player->realtime) >= (unsigned)cn->requirement);
