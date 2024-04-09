@@ -709,10 +709,14 @@ static void CreatePohbee(player_t *owner, waypoint_t *start, waypoint_t *end, UI
 	pohbee_owner(pohbee) = owner - players;
 
 	// Flip the Poh-Bee if its target waypoint is flipped.
-	if (P_IsObjectFlipped(end->mobj))
+	const boolean waypointflipped = P_IsObjectFlipped(end->mobj);
+	if (waypointflipped != P_IsObjectFlipped(pohbee))
 	{
-		pohbee->flags2 |= MF2_OBJECTFLIP;
-		pohbee->eflags |= MFE_VERTICALFLIP;
+		pohbee->flags2 ^= MF2_OBJECTFLIP;
+		pohbee->eflags ^= MFE_VERTICALFLIP;
+	}
+	if (waypointflipped) // now equivalent to P_IsObjectFlipped(pohbee)
+	{
 		size += pohbee->height - end->mobj->height;
 	}
 
