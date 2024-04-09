@@ -41,3 +41,5 @@ case "$preset" in
 			EOF
 		fi
 esac
+
+echo -ne '\a'
