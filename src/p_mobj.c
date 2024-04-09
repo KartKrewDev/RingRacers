@@ -1116,7 +1116,7 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 
 			gravityadd = -FixedMul(gravity, gravfactor);
 
-			if ((rover->master->frontsector->flags & MSF_GRAVITYFLIP) && gravityadd > 0)
+			if ((rover->master->frontsector->flags & MSF_GRAVITYFLIP) && gravityadd > 0 && P_MobjCanChangeFlip(mo))
 				mo->eflags |= MFE_VERTICALFLIP;
 
 			no3dfloorgrav = false;
@@ -1128,7 +1128,7 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 	{
 		gravityadd = -FixedMul(gravity, P_GetSectorGravityFactor(mo->subsector->sector));
 
-		if ((mo->subsector->sector->flags & MSF_GRAVITYFLIP) && gravityadd > 0)
+		if ((mo->subsector->sector->flags & MSF_GRAVITYFLIP) && gravityadd > 0 && P_MobjCanChangeFlip(mo))
 			mo->eflags |= MFE_VERTICALFLIP;
 	}
 
