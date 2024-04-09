@@ -1429,7 +1429,7 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 //
 // It's a button that slides at the given time
 //
-void Y_DrawIntermissionButton(INT32 startslide, INT32 through)
+void Y_DrawIntermissionButton(INT32 startslide, INT32 through, boolean widescreen)
 {
 	INT32 percentslide = 0;
 	const INT32 slidetime = (TICRATE/4);
@@ -1476,7 +1476,10 @@ void Y_DrawIntermissionButton(INT32 startslide, INT32 through)
 		K_drawButton(
 			2*FRACUNIT - offset,
 			(BASEVIDHEIGHT - 16)*FRACUNIT,
-			0,
+			(widescreen
+				? (V_SNAPTOLEFT|V_SNAPTOBOTTOM)
+				: 0
+			),
 			kp_button_a[1],
 			pressed
 		);
@@ -1714,7 +1717,7 @@ finalcounter:
 	if (Y_CanSkipIntermission())
 	{
 		const tic_t end = roundqueue.size != 0 ? 3*TICRATE : TICRATE;
-		Y_DrawIntermissionButton(INTERBUTTONSLIDEIN - intertic, end - timer);
+		Y_DrawIntermissionButton(INTERBUTTONSLIDEIN - intertic, end - timer, false);
 	}
 	else
 	{

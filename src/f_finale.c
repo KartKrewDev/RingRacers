@@ -1361,7 +1361,7 @@ void F_GameEvaluationDrawer(void)
 		V_DrawCenteredString(BASEVIDWIDTH/2, 182, V_SNAPTOBOTTOM|(ultimatemode ? V_REDMAP : V_YELLOWMAP), endingtext);
 	}
 
-	Y_DrawIntermissionButton(EVALLEN_HALFWAY + TICRATE - finalecount, (finalecount + TICRATE) - timetonext);
+	Y_DrawIntermissionButton(EVALLEN_HALFWAY + TICRATE - finalecount, (finalecount + TICRATE) - timetonext, true);
 }
 
 void F_GameEvaluationTicker(void)
