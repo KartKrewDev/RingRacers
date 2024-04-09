@@ -1673,41 +1673,59 @@ static void SetBlendEquation(GLenum mode)
 
 static void SetBlendMode(FBITFIELD flags)
 {
+	// It is unfortunately valid for flags like PF_Fog, PF_Occluded and PF_Masked to come in in addition to
+	// the exclusive blend types like PF_Additive. So we have to treat them as a special case.
+	// PF_Masked in particular often comes joined with PF_Additive, with Additive needing to take priority.
+
 	// Set blending function
-	switch (flags)
+	if (flags & PF_Fog)
 	{
-		case PF_Translucent & PF_Blending:
-			pglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // alpha = level of transparency
-			break;
-		case PF_Masked & PF_Blending:
-			// Hurdler: does that mean lighting is only made by alpha src?
-			// it sounds ok, but not for polygonsmooth
-			pglBlendFunc(GL_SRC_ALPHA, GL_ZERO);                // 0 alpha = holes in texture
-			break;
-		case PF_Additive & PF_Blending:
-		case PF_Subtractive & PF_Blending:
-		case PF_ReverseSubtract & PF_Blending:
-			pglBlendFunc(GL_SRC_ALPHA, GL_ONE); // src * alpha + dest
-			break;
-		case PF_Environment & PF_Blending:
-			pglBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-			break;
-		case PF_Multiplicative & PF_Blending:
-			pglBlendFunc(GL_DST_COLOR, GL_ZERO);
-			break;
-		case PF_Fog & PF_Fog:
-			// Sryder: Fog
-			// multiplies input colour by input alpha, and destination colour by input colour, then adds them
-			pglBlendFunc(GL_SRC_ALPHA, GL_SRC_COLOR);
-			break;
-		default: // must be 0, otherwise it's an error
-			// No blending
-			pglBlendFunc(GL_ONE, GL_ZERO);   // the same as no blending
-			break;
+		// Sryder: Fog
+		// multiplies input colour by input alpha, and destination colour by input colour, then adds them
+		pglBlendFunc(GL_SRC_ALPHA, GL_SRC_COLOR);
+	}
+	else
+	{
+		boolean blending = true;
+		switch (flags & (PF_Blending & ~(PF_Masked | PF_Occlude)))
+		{
+			case PF_Translucent:
+				pglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // alpha = level of transparency
+				break;
+			case PF_Additive:
+			case PF_Subtractive:
+			case PF_ReverseSubtract:
+				pglBlendFunc(GL_SRC_ALPHA, GL_ONE); // src * alpha + dest
+				break;
+			case PF_Environment:
+				pglBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+				break;
+			case PF_Multiplicative:
+				pglBlendFunc(GL_DST_COLOR, GL_ZERO);
+				break;
+			default:
+				blending = false;
+				break;
+		}
+
+		if (!blending)
+		{
+			if (flags & PF_Masked)
+			{
+				// Hurdler: does that mean lighting is only made by alpha src?
+				// it sounds ok, but not for polygonsmooth
+				pglBlendFunc(GL_SRC_ALPHA, GL_ZERO);                // 0 alpha = holes in texture
+			}
+			else
+			{
+				// No blending
+				pglBlendFunc(GL_ONE, GL_ZERO);   // the same as no blending
+			}
+		}
 	}
 
 	// Set blending equation
-	switch (flags)
+	switch (flags & (PF_Blending & ~(PF_Masked | PF_Occlude)))
 	{
 		case PF_Subtractive & PF_Blending:
 			SetBlendEquation(GL_FUNC_SUBTRACT);
@@ -1723,25 +1741,26 @@ static void SetBlendMode(FBITFIELD flags)
 	}
 
 	// Alpha test
-	switch (flags)
+	if (flags & PF_Fog)
 	{
-		case PF_Masked & PF_Blending:
-			pglAlphaFunc(GL_GREATER, 0.5f);
-			break;
-		case PF_Translucent & PF_Blending:
-		case PF_Additive & PF_Blending:
-		case PF_Subtractive & PF_Blending:
-		case PF_ReverseSubtract & PF_Blending:
-		case PF_Environment & PF_Blending:
-		case PF_Multiplicative & PF_Blending:
-			pglAlphaFunc(GL_NOTEQUAL, 0.0f);
-			break;
-		case PF_Fog & PF_Fog:
-			pglAlphaFunc(GL_ALWAYS, 0.0f); // Don't discard zero alpha fragments
-			break;
-		default:
-			pglAlphaFunc(GL_GREATER, 0.5f);
-			break;
+		pglAlphaFunc(GL_ALWAYS, 0.0f); // Don't discard zero alpha fragments
+	}
+	else
+	{
+		switch (flags & (PF_Blending & ~(PF_Masked | PF_Occlude)))
+		{
+			case PF_Translucent:
+			case PF_Additive:
+			case PF_Subtractive:
+			case PF_ReverseSubtract:
+			case PF_Environment:
+			case PF_Multiplicative:
+				pglAlphaFunc(GL_NOTEQUAL, 0.0f);
+				break;
+			default:
+				pglAlphaFunc(GL_GREATER, 0.5f);
+				break;
+		}
 	}
 }
 
