@@ -4141,7 +4141,7 @@ void G_GetNextMap(void)
 				// A gamedata save will happen on successful level enter
 
 				// Also set character, color, and follower from profile
-				
+
 			}
 		}
 
@@ -4697,6 +4697,8 @@ void G_AfterIntermission(void)
 	}
 	else if (demo.recording && (modeattacking || demo.willsave))
 		G_SaveDemo();
+	else if (demo.recording)
+		G_ResetDemoRecording();
 
 	if (modeattacking) // End the run.
 	{

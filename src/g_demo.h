@@ -238,6 +238,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo, boolean allownonmultiplayer);
 void G_DeferedPlayDemo(const char *demo);
 
 void G_SaveDemo(void);
+void G_ResetDemoRecording(void);
 
 boolean G_CheckDemoTitleEntry(void);
 

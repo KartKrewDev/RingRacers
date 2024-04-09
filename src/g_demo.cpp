@@ -4053,6 +4053,10 @@ boolean G_CheckDemoStatus(void)
 		{
 			G_SaveDemo();
 		}
+		else
+		{
+			G_ResetDemoRecording();
+		}
 		return true;
 	}
 
@@ -4062,6 +4066,12 @@ boolean G_CheckDemoStatus(void)
 	demo.waitingfortally = false;
 
 	return false;
+}
+
+void G_ResetDemoRecording(void)
+{
+	Z_Free(demobuf.buffer);
+	demo.recording = false;
 }
 
 void G_SaveDemo(void)
@@ -4138,8 +4148,7 @@ void G_SaveDemo(void)
 #endif
 
 	bool saved = FIL_WriteFile(demoname, demobuf.buffer, demobuf.p - demobuf.buffer); // finally output the file.
-	Z_Free(demobuf.buffer);
-	demo.recording = false;
+	G_ResetDemoRecording();
 
 	if (!modeattacking)
 	{
