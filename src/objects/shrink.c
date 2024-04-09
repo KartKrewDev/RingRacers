@@ -24,17 +24,6 @@
 #include "../k_waypoint.h"
 #include "../music.h"
 
-//
-// ███████╗██╗██╗░░██╗███╗░░░███╗███████╗
-// ██╔════╝██║╚██╗██╔╝████╗░████║██╔════╝
-// █████╗░░██║░╚███╔╝░██╔████╔██║█████╗░░
-// ██╔══╝░░██║░██╔██╗░██║╚██╔╝██║██╔══╝░░
-// ██║░░░░░██║██╔╝╚██╗██║░╚═╝░██║███████╗
-// ╚═╝░░░░░╚═╝╚═╝░░╚═╝╚═╝░░░░░╚═╝╚══════╝
-//
-// FIXME (because it was completely unsearchable): vertical flip
-//
-
 #define POHBEE_HOVER (128 << FRACBITS)
 #define POHBEE_SPEED (128 << FRACBITS)
 #define POHBEE_TIME (30 * TICRATE)
@@ -135,7 +124,7 @@ static fixed_t GenericDistance(
 
 static fixed_t PohbeeWaypointZ(mobj_t *pohbee, mobj_t *dest)
 {
-	return dest->z + (pohbee_height(pohbee) + FixedMul(POHBEE_HOVER, mapobjectscale) * P_MobjFlip(dest));
+	return dest->z + (pohbee_height(pohbee) + FixedMul(POHBEE_HOVER, mapobjectscale)) * P_MobjFlip(dest);
 }
 
 static void PohbeeSpawn(mobj_t *pohbee)
@@ -303,6 +292,13 @@ static void DoGunSwing(mobj_t *gun, mobj_t *pohbee)
 		dist, FINESINE(pitch >> ANGLETOFINESHIFT)
 	);
 
+	// When in reverse gravity, flip the z offset and make up the difference in height between the Poh-Bee and its gun.
+	if (P_IsObjectFlipped(gun))
+	{
+		offsetZ *= -1;
+		offsetZ += pohbee->height - gun->height;
+	}
+
 	PohbeeMoveTo(gun, pohbee->x + offsetX, pohbee->y + offsetY, pohbee->z + offsetZ);
 }
 
@@ -311,8 +307,21 @@ static void ShrinkLaserThinker(mobj_t *pohbee, mobj_t *gun, mobj_t *laser)
 	const fixed_t gunX = gun->x + gun->momx;
 	const fixed_t gunY = gun->y + gun->momy;
 	const fixed_t gunZ = P_GetMobjFeet(gun) + gun->momz;
+	fixed_t groundZ, spriteHeight;
 
-	PohbeeMoveTo(laser, gunX, gunY, gun->floorz);
+	// Target the ceiling in reverse gravity, otherwise target the floor.
+	if (P_IsObjectFlipped(laser))
+	{
+		groundZ = gun->ceilingz - laser->height;
+		spriteHeight = gun->ceilingz - gunZ;
+	}
+	else
+	{
+		groundZ = gun->floorz;
+		spriteHeight = gunZ - gun->floorz;
+	}
+
+	PohbeeMoveTo(laser, gunX, gunY, groundZ);
 
 	if (ShrinkLaserActive(pohbee) == true)
 	{
@@ -330,7 +339,7 @@ static void ShrinkLaserThinker(mobj_t *pohbee, mobj_t *gun, mobj_t *laser)
 			laser->spritexscale = FRACUNIT;
 		}
 
-		laser->spriteyscale = FixedDiv(FixedDiv(gunZ - gun->floorz, mapobjectscale), laser->info->height);
+		laser->spriteyscale = FixedDiv(FixedDiv(spriteHeight, mapobjectscale), laser->info->height);
 
 		particle = P_SpawnMobjFromMobj(laser, 0, 0, 0, MT_SHRINK_PARTICLE);
 
@@ -382,6 +391,13 @@ static void DoGunChains(mobj_t *gun, mobj_t *pohbee)
 	fixed_t curX = gunX + (offsetX / 2);
 	fixed_t curY = gunY + (offsetY / 2);
 	fixed_t curZ = gunZ + (offsetZ / 2);
+
+	// The starting z coordinate is the bottom of the chain at the top of the gun.
+	// In reverse gravity, offset the z coordinate by the height of a chain, so that it's the top of the chain at the bottom of the gun.
+	if (P_IsObjectFlipped(gun))
+	{
+		curZ -= FixedMul(gun->scale, mobjinfo[MT_SHRINK_CHAIN].height);
+	}
 
 	chain = gun_chains(gun);
 	while (chain != NULL && P_MobjWasRemoved(chain) == false)
@@ -691,6 +707,14 @@ static void CreatePohbee(player_t *owner, waypoint_t *start, waypoint_t *end, UI
 	// we can start creating each individual part.
 	pohbee = P_SpawnMobjFromMobj(start->mobj, 0, 0, (baseSegs * CHAIN_SIZE * FRACUNIT) + POHBEE_HOVER * 3, MT_SHRINK_POHBEE);
 	pohbee_owner(pohbee) = owner - players;
+
+	// Flip the Poh-Bee if its target waypoint is flipped.
+	if (P_IsObjectFlipped(end->mobj))
+	{
+		pohbee->flags2 |= MF2_OBJECTFLIP;
+		pohbee->eflags |= MFE_VERTICALFLIP;
+		size += pohbee->height - end->mobj->height;
+	}
 
 	pohbee_mode(pohbee) = POHBEE_MODE_SPAWN;
 	pohbee_timer(pohbee) = POHBEE_TIME;

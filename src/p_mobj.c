@@ -14965,6 +14965,25 @@ fixed_t P_GetMobjZMovement(mobj_t *mo)
 	return P_ReturnThrustY(mo, slope->zangle, P_ReturnThrustX(mo, angDiff, speed));
 }
 
+// Returns whether this mobj is affected by gravflip sector effects.
+boolean P_MobjCanChangeFlip(mobj_t *mobj)
+{
+	switch (mobj->type)
+	{
+		case MT_SHRINK_POHBEE:
+		case MT_SHRINK_GUN:
+		case MT_SHRINK_CHAIN:
+		case MT_SHRINK_LASER:
+		case MT_SHRINK_PARTICLE:
+			return false;
+
+		default:
+			break;
+	}
+
+	return true;
+}
+
 //
 // Thing IDs / tags
 //
