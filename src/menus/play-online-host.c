@@ -175,7 +175,7 @@ void M_MPSetupNetgameMapSelect(INT32 choice)
 	// Make sure we reset those
 	levellist.levelsearch.timeattack = false;
 	levellist.levelsearch.checklocked = true;
-	cupgrid.grandprix = false;
+	levellist.levelsearch.grandprix = false;
 
 	// okay this is REALLY stupid but this fixes the host menu re-folding on itself when we go back.
 	mpmenu.modewinextend[0][0] = 1;

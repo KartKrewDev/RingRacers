@@ -3222,7 +3222,7 @@ void M_DrawCupSelect(void)
 			if (cupgrid.cache_secondrowlocked == true)
 				y += 28;
 
-			const boolean isGP = (cupgrid.grandprix && (cv_dummygpdifficulty.value >= 0 && cv_dummygpdifficulty.value < KARTGP_MAX));
+			const boolean isGP = (templevelsearch.grandprix && (cv_dummygpdifficulty.value >= 0 && cv_dummygpdifficulty.value < KARTGP_MAX));
 			if (isGP)
 			{
 				windata = &templevelsearch.cup->windata[cv_dummygpdifficulty.value];
@@ -3236,7 +3236,7 @@ void M_DrawCupSelect(void)
 				windata ? windata->best_placement : 0
 			);
 
-			if (cupgrid.grandprix == true
+			if (templevelsearch.grandprix == true
 				&& templevelsearch.cup == cupsavedata.cup
 				&& id != CUPMENU_CURSORID)
 			{
@@ -3284,7 +3284,7 @@ void M_DrawCupSelect(void)
 
 	templevelsearch.cup = cupgrid.builtgrid[CUPMENU_CURSORID];
 
-	if (cupgrid.grandprix == true
+	if (templevelsearch.grandprix == true
 	&& templevelsearch.cup != NULL
 	&& templevelsearch.cup == cupsavedata.cup)
 	{
@@ -6982,7 +6982,8 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 				break;
 
 			templevelsearch.cup = temp;
-			templevelsearch.typeoflevel = G_TOLFlag(GT_RACE)|G_TOLFlag(GT_BATTLE);
+			templevelsearch.typeoflevel = 0; // doesn't matter...
+			templevelsearch.grandprix = true; // this will overwrite
 			templevelsearch.cupmode = true;
 			templevelsearch.timeattack = false;
 			templevelsearch.tutorial = false;

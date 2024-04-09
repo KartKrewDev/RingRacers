@@ -1254,7 +1254,7 @@ void M_GonerTutorial(INT32 choice)
 	// Please also see M_LevelSelectInit as called in extras-1.c
 	levellist.netgame = false;
 	levellist.levelsearch.checklocked = true;
-	cupgrid.grandprix = false;
+	levellist.levelsearch.grandprix = false;
 	levellist.levelsearch.timeattack = false;
 
 	if (!M_LevelListFromGametype(GT_TUTORIAL) && gamedata->gonerlevel < GDGONER_OUTRO)

@@ -289,7 +289,7 @@ void M_CupSelectHandler(INT32 choice)
 
 		if (count == 0
 			|| (
-				cupgrid.grandprix == true
+				levellist.levelsearch.grandprix == true
 				&& newcup->cachedlevels[0] == NEXTMAP_INVALID
 			)
 		)
@@ -298,7 +298,7 @@ void M_CupSelectHandler(INT32 choice)
 			return;
 		}
 
-		if (cupgrid.grandprix == true)
+		if (levellist.levelsearch.grandprix == true)
 		{
 			if (newcup == cupsavedata.cup
 			&& FIL_FileExists(gpbackup))

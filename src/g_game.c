@@ -3557,6 +3557,7 @@ UINT16 G_GetFirstMapOfGametype(UINT16 pgametype)
 	templevelsearch.typeoflevel = G_TOLFlag(pgametype);
 	templevelsearch.cupmode = (!(gametypes[pgametype]->rules & GTR_NOCUPSELECT));
 	templevelsearch.timeattack = false;
+	templevelsearch.grandprix = false;
 	templevelsearch.tutorial = (pgametype == GT_TUTORIAL);
 	templevelsearch.checklocked = true;
 
