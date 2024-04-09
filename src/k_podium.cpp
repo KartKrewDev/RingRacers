@@ -720,7 +720,8 @@ void podiumData_s::Draw(void)
 							.xy(32, 1)
 							.align(srb2::Draw::Align::kCenter)
 							.font(srb2::Draw::Font::kPing)
-							.text(va(
+							.text(lvl->time == UINT32_MAX ?
+								"--'--\"--" : va(
 								"%i'%02i\"%02i",
 								G_TicsToMinutes(lvl->time, true),
 								G_TicsToSeconds(lvl->time),
