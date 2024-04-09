@@ -5066,16 +5066,7 @@ static void K_drawKartStartCountdown(void)
 {
 	INT32 pnum = 0;
 
-	if (stplyr->lives <= 0 && stplyr->playerstate == PST_DEAD)
-	{
-		return;
-	}
-
-	if (stplyr->karthud[khud_fault] != 0 && stplyr->karthud[khud_finish] == 0)
-	{
-		K_drawKartFinish(false);
-	}
-	else if (leveltime >= introtime && leveltime < starttime-(3*TICRATE))
+	if (leveltime >= introtime && leveltime < starttime-(3*TICRATE))
 	{
 		if (numbulbs > 1)
 			K_drawKartStartBulbs();
@@ -6293,7 +6284,15 @@ void K_drawKartHUD(void)
 	}
 
 	// Draw the countdowns after everything else.
-	if (starttime != introtime
+	if (stplyr->lives <= 0 && stplyr->playerstate == PST_DEAD)
+	{
+		;
+	}
+	else if (stplyr->karthud[khud_fault] != 0 && stplyr->karthud[khud_finish] == 0)
+	{
+		K_drawKartFinish(false);
+	}
+	else if (starttime != introtime
 	&& leveltime >= introtime
 	&& leveltime < starttime+TICRATE)
 	{
