@@ -391,6 +391,9 @@ void F_ConsiderCreditsMusicUpdate(void)
 
 void F_StartCredits(void)
 {
+	// Prepare evaluation screen at the end
+	F_InitGameEvaluation();
+
 	G_SetGamestate(GS_CREDITS);
 
 	// Just in case they're open ... somehow

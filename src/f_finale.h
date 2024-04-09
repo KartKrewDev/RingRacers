@@ -49,6 +49,7 @@ void F_WaitingPlayersTicker(void);
 void F_WaitingPlayersDrawer(void);
 
 void F_GameEvaluationDrawer(void);
+void F_InitGameEvaluation(void); // depends on grandprixinfo!
 void F_StartGameEvaluation(void);
 void F_GameEvaluationTicker(void);
 

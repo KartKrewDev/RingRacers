@@ -3193,6 +3193,7 @@ void G_FinishExitLevel(void)
 	}
 	else if (gamestate == GS_CREDITS)
 	{
+		F_InitGameEvaluation();
 		F_StartGameEvaluation();
 	}
 }
@@ -4860,6 +4861,7 @@ void G_EndGame(void)
 		}
 		if (nextmap == NEXTMAP_EVALUATION) // end game with evaluation
 		{
+			F_InitGameEvaluation();
 			F_StartGameEvaluation();
 			return;
 		}

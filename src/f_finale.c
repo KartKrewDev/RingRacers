@@ -1007,12 +1007,10 @@ typedef enum
 #define EVALLEN_PERFECT (18*TICRATE)
 
 static evaluationtype_t evaluationtype;
-UINT16 finaleemeralds = 0;
+static UINT16 finaleemeralds = 0;
 
-void F_StartGameEvaluation(void)
+void F_InitGameEvaluation(void)
 {
-	S_StopMusicCredit();
-
 	// Credits option in extras menu
 	if (
 		grandprixinfo.gp == false
@@ -1021,14 +1019,10 @@ void F_StartGameEvaluation(void)
 #endif
 	)
 	{
-		F_StartGameEnd();
+		evaluationtype = EVAL_MAX; // skip
+		finaleemeralds = 0;
 		return;
 	}
-
-	G_SetGamestate(GS_EVALUATION);
-
-	// Just in case they're open ... somehow
-	M_ClearMenus(true);
 
 	UINT8 difficulty = KARTSPEED_NORMAL;
 	if (grandprixinfo.gp == true)
@@ -1054,6 +1048,24 @@ void F_StartGameEvaluation(void)
 		evaluationtype = EVAL_SUPER;
 	else
 		evaluationtype = EVAL_PERFECT;
+}
+
+void F_StartGameEvaluation(void)
+{
+	S_StopMusicCredit();
+
+	// Credits option in extras menu
+	// Set by F_InitGameEvaluation
+	if (evaluationtype == EVAL_MAX)
+	{
+		F_StartGameEnd();
+		return;
+	}
+
+	G_SetGamestate(GS_EVALUATION);
+
+	// Just in case they're open ... somehow
+	M_ClearMenus(true);
 
 	timetonext = (evaluationtype == EVAL_PERFECT) ? EVALLEN_PERFECT : EVALLEN_NORMAL;
 
@@ -2276,7 +2288,10 @@ void F_EndCutScene(void)
 	else
 	{
 		if (cutnum == g_credits_cutscene-1)
+		{
+			F_InitGameEvaluation(); // FIXME: cutscenes are probably not used, I don't know if it works -jartha
 			F_StartGameEvaluation();
+		}
 		else if (cutnum == introtoplay-1)
 			D_StartTitle();
 		else
