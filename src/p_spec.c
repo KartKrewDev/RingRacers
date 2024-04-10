@@ -3293,7 +3293,7 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 			break;
 
 		case 433: // Flip/flop gravity. Works on pushables, too!
-			if (!mo)
+			if (!mo || !P_MobjCanChangeFlip(mo))
 				return false;
 
 			if (args[0])

@@ -594,6 +594,7 @@ fixed_t P_GetMobjHead(const mobj_t *);
 fixed_t P_GetMobjFeet(const mobj_t *);
 fixed_t P_GetMobjGround(const mobj_t *);
 fixed_t P_GetMobjZMovement(mobj_t *mo);
+boolean P_MobjCanChangeFlip(mobj_t *mobj);
 
 void P_InitTIDHash(void);
 void P_SetThingTID(mobj_t *mo, mtag_t tid);

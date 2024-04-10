@@ -1116,7 +1116,7 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 
 			gravityadd = -FixedMul(gravity, gravfactor);
 
-			if ((rover->master->frontsector->flags & MSF_GRAVITYFLIP) && gravityadd > 0)
+			if ((rover->master->frontsector->flags & MSF_GRAVITYFLIP) && gravityadd > 0 && P_MobjCanChangeFlip(mo))
 				mo->eflags |= MFE_VERTICALFLIP;
 
 			no3dfloorgrav = false;
@@ -1128,7 +1128,7 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 	{
 		gravityadd = -FixedMul(gravity, P_GetSectorGravityFactor(mo->subsector->sector));
 
-		if ((mo->subsector->sector->flags & MSF_GRAVITYFLIP) && gravityadd > 0)
+		if ((mo->subsector->sector->flags & MSF_GRAVITYFLIP) && gravityadd > 0 && P_MobjCanChangeFlip(mo))
 			mo->eflags |= MFE_VERTICALFLIP;
 	}
 
@@ -14978,6 +14978,25 @@ fixed_t P_GetMobjZMovement(mobj_t *mo)
 	speed = FixedHypot(mo->momx, mo->momy);
 
 	return P_ReturnThrustY(mo, slope->zangle, P_ReturnThrustX(mo, angDiff, speed));
+}
+
+// Returns whether this mobj is affected by gravflip sector effects.
+boolean P_MobjCanChangeFlip(mobj_t *mobj)
+{
+	switch (mobj->type)
+	{
+		case MT_SHRINK_POHBEE:
+		case MT_SHRINK_GUN:
+		case MT_SHRINK_CHAIN:
+		case MT_SHRINK_LASER:
+		case MT_SHRINK_PARTICLE:
+			return false;
+
+		default:
+			break;
+	}
+
+	return true;
 }
 
 //
