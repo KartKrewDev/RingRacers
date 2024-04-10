@@ -13505,9 +13505,24 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 		// Ambush = double size (grounded) / half size (aerial)
 		if (!(mthing->thing_args[2] & TMICF_INVERTSIZE) == !P_IsObjectOnGround(mobj))
 		{
-			mobj->extravalue1 = min(mobj->extravalue1 << 1, FixedDiv(MAPBLOCKSIZE, mobj->info->radius)); // don't make them larger than the blockmap can handle
+			mobj->extravalue1 <<= 1;
 			mobj->scalespeed <<= 1;
 		}
+
+		if (gametype == GT_SPECIAL)
+		{
+			// TODO: When we invalidate replays, permit manual size changes everywhere
+			mobj->extravalue1 = FixedMul(mthing->scale, mobj->extravalue1);
+			mobj->scalespeed = FixedMul(mthing->scale, mobj->scalespeed);
+		}
+
+		const fixed_t blimit = FixedDiv(MAPBLOCKSIZE, mobj->info->radius);
+		if (mobj->extravalue1 > blimit)
+		{
+			 // don't make them larger than the blockmap can handle
+			mobj->extravalue1 = blimit;
+		}
+
 		break;
 	}
 	case MT_RANDOMAUDIENCE:
