@@ -2417,7 +2417,7 @@ static const char *M_GetConditionString(condition_t *cn)
 			return work;
 		}
 		case UC_UNLOCKABLE: // Requires unlockable x to be obtained
-			return va("get \"%s\"",
+			return va("get %s",
 				gamedata->unlocked[cn->requirement-1]
 				? unlockables[cn->requirement-1].name
 				: "???");
