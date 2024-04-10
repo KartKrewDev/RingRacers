@@ -2520,7 +2520,7 @@ static const char *M_GetConditionString(condition_t *cn)
 
 		case UC_PRISONEGGCD:
 			// :butterfly: "alternatively you could say 'grab a hot toooon' or 'smooth beeat'"
-			return "BONUS ROUND: grab a prize from a Prison Egg";
+			return "GRAND PRIX: grab a certain prize from a Prison Egg";
 
 		case UC_AND:
 			return "&";
@@ -2529,10 +2529,10 @@ static const char *M_GetConditionString(condition_t *cn)
 		case UC_DESCRIPTIONOVERRIDE:
 			return cn->stringvar;
 
+		case UCRP_PREFIX_BONUSROUND:
+			//return "BONUS ROUND:"; -- our final testers bounced off this, just fallthru to GRAND PRIX instead
 		case UCRP_PREFIX_GRANDPRIX:
 			return "GRAND PRIX:";
-		case UCRP_PREFIX_BONUSROUND:
-			return "BONUS ROUND:";
 		case UCRP_PREFIX_TIMEATTACK:
 			if (!M_SecretUnlocked(SECRET_TIMEATTACK, true))
 				return NULL;
