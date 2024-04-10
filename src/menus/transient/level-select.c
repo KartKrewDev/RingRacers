@@ -76,7 +76,9 @@ boolean M_CanShowLevelInList(INT16 mapnum, levelsearch_t *levelsearch)
 		return false;
 
 	// Check for TOL (permits TEST RUN outside of time attack)
-	if ((levelsearch->timeattack || levelsearch->tutorial || mapheaderinfo[mapnum]->typeoflevel)
+	// (grand prix can contain anything, we limit in a different way)
+	if (levelsearch->grandprix == false
+		&& (levelsearch->timeattack || levelsearch->tutorial || mapheaderinfo[mapnum]->typeoflevel)
 		&& !(mapheaderinfo[mapnum]->typeoflevel & levelsearch->typeoflevel))
 		return false;
 
@@ -133,7 +135,8 @@ UINT16 M_CountLevelsToShowInList(levelsearch_t *levelsearch)
 		if (levelsearch->checklocked && M_CupLocked(levelsearch->cup))
 			return 0;
 
-		for (i = 0; i < CUPCACHE_PODIUM; i++)
+		const INT16 limit = (levelsearch->grandprix ? CUPCACHE_SPECIAL : CUPCACHE_PODIUM);
+		for (i = 0; i < limit; i++)
 		{
 			if (!M_CanShowLevelInList(levelsearch->cup->cachedlevels[i], levelsearch))
 				continue;
@@ -170,7 +173,8 @@ UINT16 M_GetFirstLevelInList(UINT8 *i, levelsearch_t *levelsearch)
 
 		*i = 0;
 		mapnum = NEXTMAP_INVALID;
-		for (; *i < CUPCACHE_PODIUM; (*i)++)
+		const INT16 limit = (levelsearch->grandprix ? CUPCACHE_SPECIAL : CUPCACHE_PODIUM);
+		for (; *i < limit; (*i)++)
 		{
 			if (!M_CanShowLevelInList(levelsearch->cup->cachedlevels[*i], levelsearch))
 				continue;
@@ -200,7 +204,8 @@ UINT16 M_GetNextLevelInList(UINT16 mapnum, UINT8 *i, levelsearch_t *levelsearch)
 	{
 		mapnum = NEXTMAP_INVALID;
 		(*i)++;
-		for (; *i < CUPCACHE_PODIUM; (*i)++)
+		const INT16 limit = (levelsearch->grandprix ? CUPCACHE_SPECIAL : CUPCACHE_PODIUM);
+		for (; *i < limit; (*i)++)
 		{
 			if (!M_CanShowLevelInList(levelsearch->cup->cachedlevels[*i], levelsearch))
 				continue;
@@ -357,7 +362,7 @@ boolean M_LevelListFromGametype(INT16 gt)
 		size_t deltaid = 0;
 
 		G_GetBackupCupData(
-			cupgrid.grandprix == true
+			templevelsearch.grandprix == true
 			&& cv_splitplayers.value <= 1
 		);
 
@@ -436,7 +441,7 @@ boolean M_LevelListFromGametype(INT16 gt)
 				}
 
 				size_t olddelta = deltaid;
-				if (cupgrid.grandprix == false)
+				if (templevelsearch.grandprix == false)
 				{
 					cupheader_t *restore = templevelsearch.cup;
 
@@ -646,15 +651,15 @@ void M_LevelSelectInit(INT32 choice)
 	switch (currentMenu->menuitems[itemOn].mvar1)
 	{
 		case 0:
-			cupgrid.grandprix = false;
+			levellist.levelsearch.grandprix = false;
 			levellist.levelsearch.timeattack = false;
 			break;
 		case 1:
-			cupgrid.grandprix = false;
+			levellist.levelsearch.grandprix = false;
 			levellist.levelsearch.timeattack = true;
 			break;
 		case 2:
-			cupgrid.grandprix = true;
+			levellist.levelsearch.grandprix = true;
 			levellist.levelsearch.timeattack = false;
 			break;
 		default:

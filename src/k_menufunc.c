@@ -639,7 +639,7 @@ menu_t *M_SpecificMenuRestore(menu_t *torestore)
 			if (levellist.newgametype == GT_RACE)
 			{
 				M_SetupRaceMenu(-1);
-				M_SetupDifficultyOptions((cupgrid.grandprix == false));
+				M_SetupDifficultyOptions((levellist.levelsearch.grandprix == false));
 			}
 		}
 

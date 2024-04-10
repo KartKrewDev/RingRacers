@@ -863,7 +863,6 @@ extern struct cupgrid_s {
 	size_t numpages;
 	size_t cappages;
 	tic_t previewanim;
-	boolean grandprix; 	// Setup grand prix server after picking
 	boolean cache_secondrowlocked;
 } cupgrid;
 
@@ -872,6 +871,7 @@ typedef struct levelsearch_s {
 	cupheader_t *cup;
 	boolean timeattack;
 	boolean tutorial;
+	boolean grandprix;
 	boolean cupmode;
 	boolean checklocked;
 } levelsearch_t;
