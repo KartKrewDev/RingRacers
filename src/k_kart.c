@@ -13559,6 +13559,7 @@ void K_CheckSpectateStatus(boolean considermapreset)
 {
 	UINT8 respawnlist[MAXPLAYERS];
 	UINT8 i, j, numingame = 0, numjoiners = 0;
+	UINT8 numhumans = 0, numbots = 0;
 
 	// Maintain spectate wait timer
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -13571,6 +13572,16 @@ void K_CheckSpectateStatus(boolean considermapreset)
 		if (!players[i].spectator)
 		{
 			numingame++;
+
+			if (players[i].bot)
+			{
+				numbots++;
+			}
+			else
+			{
+				numhumans++;
+			}
+
 			players[i].spectatewait = 0;
 			players[i].spectatorReentry = 0;
 			continue;
@@ -13600,7 +13611,7 @@ void K_CheckSpectateStatus(boolean considermapreset)
 		return;
 
 	// DON'T allow if you've hit the in-game player cap
-	if (cv_maxplayers.value && numingame >= cv_maxplayers.value)
+	if (cv_maxplayers.value && numhumans >= cv_maxplayers.value)
 		return;
 
 	// Get the number of players in game, and the players to be de-spectated.
@@ -13684,16 +13695,47 @@ void K_CheckSpectateStatus(boolean considermapreset)
 		}
 	}
 
+	const UINT8 previngame = numingame;
+	INT16 removeBotID = MAXPLAYERS - 1;
+
 	// Finally, we can de-spectate everyone!
 	for (i = 0; i < numjoiners; i++)
 	{
-		//CONS_Printf("player %s is joining on tic %d\n", player_names[respawnlist[i]], leveltime);
-
-		P_SpectatorJoinGame(&players[respawnlist[i]]);
-
 		// Hit the in-game player cap while adding people?
-		if (cv_maxplayers.value && numingame+i >= cv_maxplayers.value)
-			break;
+		if (cv_maxplayers.value && numingame >= cv_maxplayers.value)
+		{
+			if (numbots > 0)
+			{
+				// Find a bot to kill to make room
+				while (removeBotID >= 0)
+				{
+					if (playeringame[removeBotID] && players[removeBotID].bot)
+					{
+						//CONS_Printf("bot %s kicked to make room on tic %d\n", player_names[removeBotID], leveltime);
+						CL_RemovePlayer(removeBotID, KR_LEAVE);
+						numbots--;
+						numingame--;
+						break;
+					}
+
+					removeBotID--;
+				}
+
+				if (removeBotID < 0)
+				{
+					break;
+				}
+			}
+			else
+			{
+				break;
+			}
+		}
+
+		//CONS_Printf("player %s is joining on tic %d\n", player_names[respawnlist[i]], leveltime);
+		P_SpectatorJoinGame(&players[respawnlist[i]]);
+		numhumans++;
+		numingame++;
 	}
 
 	if (considermapreset == false)
@@ -13702,7 +13744,7 @@ void K_CheckSpectateStatus(boolean considermapreset)
 	// Reset the match when 2P joins 1P, DUEL mode
 	// Reset the match when 3P joins 1P and 2P, DUEL mode must be disabled
 	extern consvar_t cv_debugnewchallenger;
-	if (i > 0 && !mapreset && gamestate == GS_LEVEL && (numingame < 3 && numingame+i >= 2) && !cv_debugnewchallenger.value)
+	if (i > 0 && !mapreset && gamestate == GS_LEVEL && (previngame < 3 && numingame >= 2) && !cv_debugnewchallenger.value)
 	{
 		Music_Play("comeon"); // COME ON
 		mapreset = 3*TICRATE; // Even though only the server uses this for game logic, set for everyone for HUD
