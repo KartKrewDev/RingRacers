@@ -552,10 +552,14 @@ void level_tally_t::Init(player_t *player)
 	done = (player->spectator == true || player->bot == true);
 
 	if (specialstageinfo.valid == true && (player->pflags & PF_NOCONTEST) == PF_NOCONTEST &&
-		(G_GametypeUsesLives() && player->lives <= 0) == false)
+		// TODO: this leveltime check works, but checking
+		// leveltime is kind of fragile in case order of
+		// operations ever changes. There should be a better
+		// way to tell if the player spawned GAME OVERed.
+		(G_GametypeUsesLives() && player->lives <= 0 && leveltime == 0) == false)
 	{
 		// No tally when losing special stages
-		// Except when GAME OVER
+		// Except when entering from GAME OVER.
 		state = TALLY_ST_IGNORE;
 		delay = 0;
 	}
