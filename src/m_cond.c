@@ -650,7 +650,8 @@ void M_ClearConditionSet(UINT16 set)
 // Clear ALL secrets.
 void M_ClearStats(void)
 {
-	UINT8 i;
+	UINT16 i;
+
 	gamedata->totalplaytime = 0;
 	gamedata->totalnetgametime = 0;
 	gamedata->timeattackingtotaltime = 0;
@@ -678,6 +679,54 @@ void M_ClearStats(void)
 	gamedata->musicstate = GDMUSIC_NONE;
 
 	gamedata->importprofilewins = false;
+
+	// Skins only store stats, not progression metrics. Good to clear entirely here.
+
+	for (i = 0; i < numskins; i++)
+	{
+		memset(&skins[i].records, 0, sizeof(skins[i].records));
+	}
+
+	unloaded_skin_t *unloadedskin, *nextunloadedskin = NULL;
+	for (unloadedskin = unloadedskins; unloadedskin; unloadedskin = nextunloadedskin)
+	{
+		nextunloadedskin = unloadedskin->next;
+		Z_Free(unloadedskin);
+	}
+	unloadedskins = NULL;
+
+	// We retain exclusively the most important stuff from maps.
+
+	UINT8 restoremapvisited;
+	recordtimes_t restoretimeattack;
+	recordtimes_t restorespbattack;
+
+	for (i = 0; i < nummapheaders; i++)
+	{
+		restoremapvisited = mapheaderinfo[i]->records.mapvisited;
+		restoretimeattack = mapheaderinfo[i]->records.timeattack;
+		restorespbattack = mapheaderinfo[i]->records.spbattack;
+
+		memset(&mapheaderinfo[i]->records, 0, sizeof(recorddata_t));
+
+		mapheaderinfo[i]->records.mapvisited = restoremapvisited;
+		mapheaderinfo[i]->records.timeattack = restoretimeattack;
+		mapheaderinfo[i]->records.spbattack = restorespbattack;
+	}
+
+	unloaded_mapheader_t *unloadedmap;
+	for (unloadedmap = unloadedmapheaders; unloadedmap; unloadedmap = unloadedmap->next)
+	{
+		restoremapvisited = unloadedmap->records.mapvisited;
+		restoretimeattack = unloadedmap->records.timeattack;
+		restorespbattack = unloadedmap->records.spbattack;
+
+		memset(&unloadedmap->records, 0, sizeof(recorddata_t));
+
+		unloadedmap->records.mapvisited = restoremapvisited;
+		unloadedmap->records.timeattack = restoretimeattack;
+		unloadedmap->records.spbattack = restorespbattack;
+	}
 }
 
 void M_ClearSecrets(void)
@@ -706,6 +755,8 @@ void M_ClearSecrets(void)
 	{
 		if (!mapheaderinfo[i])
 			continue;
+
+		mapheaderinfo[i]->records.mapvisited = 0;
 
 		mapheaderinfo[i]->cache_spraycan = UINT16_MAX;
 
