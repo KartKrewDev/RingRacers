@@ -18,23 +18,23 @@
 // These are placed in descending order next to the things they modify, for clarity.
 // Try to keep the mvar2 in order, if you add new profile info!!
 menuitem_t OPTIONS_EditProfile[] = {
-	{IT_STRING | IT_CVAR | IT_CV_STRING, "Profile ID", "6-character long name to identify this Profile.",
+	{IT_STRING | IT_CVAR | IT_CV_STRING, "Profile ID", "6-character long name to display on menus.",
 		NULL, {.cvar = &cv_dummyprofilename}, 0, 41},
 
+	{IT_STRING | IT_CVAR | IT_CV_STRING, "Player Tag", "Full name, displayed online and in replays.",
+		NULL, {.cvar = &cv_dummyprofileplayername}, 0, 61},
+
 	{IT_STRING | IT_CALL, "Controls", "Change the button mappings.",
-	NULL, {.routine = M_ProfileDeviceSelect}, 0, 71},
+		NULL, {.routine = M_ProfileDeviceSelect}, 0, 91},
 
 	{IT_STRING | IT_SUBMENU, "Accessibility", "Acccessibility and quality of life options.",
-		NULL, {.submenu = &OPTIONS_ProfileAccessibilityDef}, 0, 91},
+		NULL, {.submenu = &OPTIONS_ProfileAccessibilityDef}, 0, 111},
 
 	{IT_STRING | IT_CALL, "Character", NULL, // tooltip set in M_StartEditProfile
-		NULL, {.routine = M_CharacterSelect}, 0, 111},
-
-	{IT_STRING | IT_CVAR | IT_CV_STRING, "Player Tag", "Name displayed online and in replays.",
-	NULL, {.cvar = &cv_dummyprofileplayername}, 0, 141},
+		NULL, {.routine = M_CharacterSelect}, 0, 131},
 
 	{IT_STRING | IT_CALL, "Confirm", "Confirm changes.",
-	NULL, {.routine = M_ConfirmProfile}, 0, 171},
+		NULL, {.routine = M_ConfirmProfile}, 0, 171},
 
 };
 
