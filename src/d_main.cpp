@@ -1805,7 +1805,6 @@ void D_SRB2Main(void)
 	PR_LoadProfiles();	// load control profiles
 
 	SV_LoadStats();
-	SV_LoadBans();
 
 #if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
 	VID_PrepareModeList(); // Regenerate Modelist according to cv_fullscreen
@@ -1965,6 +1964,8 @@ void D_SRB2Main(void)
 	if (D_CheckNetGame())
 		autostart = true;
 	CON_SetLoadingProgress(LOADED_DCHECKNETGAME);
+
+	SV_LoadBans(); // Must be after D_CheckNetGame, or winsock getaddrinfo isn't ready and readback throws a fit
 
 	if (splitscreen && !M_CheckParm("-connect")) // Make sure multiplayer & autostart is set if you have splitscreen, even after D_CheckNetGame
 		multiplayer = autostart = true;
