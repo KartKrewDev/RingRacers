@@ -12,9 +12,11 @@
 #include "../k_menu.h"
 #include "../r_main.h"	// cv_skybox
 #include "../hardware/hw_main.h"	// gl consvars
+#include "../i_video.h" // rendermode
 
 extern consvar_t cv_menuframeskip;
 
+// see vaopt_e
 menuitem_t OPTIONS_VideoAdvanced[] =
 {
 	{IT_HEADER, "Performance...", NULL,
@@ -113,3 +115,10 @@ menu_t OPTIONS_VideoAdvancedDef = {
 	NULL,
 	NULL,
 };
+
+void M_RefreshAdvancedVideoOptions(void)
+{
+	OPTIONS_VideoAdvancedDef.numitems = rendermode == render_opengl
+		? sizeof (OPTIONS_VideoAdvanced) / sizeof (menuitem_t)
+		: vaopt_legacygl_begin;
+}

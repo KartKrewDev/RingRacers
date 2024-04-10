@@ -1484,6 +1484,8 @@ boolean VID_CheckRenderer(void)
 	}
 #endif
 
+	M_RefreshAdvancedVideoOptions();
+
 	return rendererchanged;
 }
 
