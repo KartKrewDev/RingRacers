@@ -599,10 +599,9 @@ void podiumData_s::Draw(void)
 							.text(va("%c", ('A' + p)));
 					}
 				}
-				else
+				// Do not draw any stats for GAME OVERed player
+				else if (gpRank_level_perplayer_t *const dta = &lvl->perPlayer[p]; dta->grade != GRADE_INVALID)
 				{
-					gpRank_level_perplayer_t *const dta = &lvl->perPlayer[p];
-
 					srb2::Draw drawer_rank = drawer_perplayer.xy(2, 0);
 
 					if (lvl->event != GPEVENT_SPECIAL)
