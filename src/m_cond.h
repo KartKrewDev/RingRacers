@@ -76,6 +76,7 @@ typedef enum
 
 	 // Just for string building
 	UC_AND,
+	UC_THEN,
 	UC_COMMA,
 	UC_DESCRIPTIONOVERRIDE,
 
