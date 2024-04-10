@@ -174,6 +174,11 @@ void K_SetBot(UINT8 newplayernum, UINT8 skinnum, UINT8 difficulty, botStyle_e st
 
 	SetPlayerSkinByNum(newplayernum, skinnum);
 
+	for (UINT8 i = 0; i < PWRLV_NUMTYPES; i++)
+	{
+		clientpowerlevels[newplayernum][i] = 0;
+	}
+
 	if (netgame)
 	{
 		HU_AddChatText(va("\x82*Bot %d has been added to the game", newplayernum+1), false);
