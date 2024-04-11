@@ -935,11 +935,11 @@ void podiumData_s::Draw(void)
 
 		if (state == PODIUM_ST_DONE)
 		{
-			Y_DrawIntermissionButton(delay, 0);
+			Y_DrawIntermissionButton(delay, 0, true);
 		}
 		else if (state == PODIUM_ST_EXIT)
 		{
-			Y_DrawIntermissionButton(-1, (2*TICRATE) - delay);
+			Y_DrawIntermissionButton(-1, (2*TICRATE) - delay, true);
 		}
 	}
 }
