@@ -1602,7 +1602,13 @@ void V_DrawCustomFadeScreen(const char *lump, UINT8 strength)
 #ifdef HWRENDER
 	if (rendermode != render_soft && rendermode != render_none)
 	{
-		//HWR_DrawCustomFadeScreen(color, strength);
+		HWR_DrawCustomFadeScreen(
+			(strcmp(lump, "FADEMAP1") != 0
+				? 31
+				: 0
+			),
+			strength
+		);
 		return;
 	}
 #endif

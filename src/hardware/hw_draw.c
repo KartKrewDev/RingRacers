@@ -748,6 +748,33 @@ void HWR_EncoreInvertScreen(void)
 	HWD.pfnDrawPolygon(&Surf, v, 4, PF_NoTexture|PF_Invert|PF_NoDepthTest);
 }
 
+void HWR_DrawCustomFadeScreen(UINT8 color, UINT8 strength)
+{
+	FOutVector v[4];
+	FSurfaceInfo Surf;
+
+	v[0].x = v[3].x = -1.0f;
+	v[2].x = v[1].x =  1.0f;
+	v[0].y = v[1].y = -1.0f;
+	v[2].y = v[3].y =  1.0f;
+	v[0].z = v[1].z = v[2].z = v[3].z = 1.0f;
+
+	v[0].s = v[3].s = 0.0f;
+	v[2].s = v[1].s = 1.0f;
+	v[0].t = v[1].t = 1.0f;
+	v[2].t = v[3].t = 0.0f;
+
+	Surf.PolyColor.rgba = V_GetColor(color).rgba;
+
+	UINT16 workingstrength = (strength*12);
+	if (workingstrength > 0xFF)
+		Surf.PolyColor.s.alpha = 0xFF;
+	else
+		Surf.PolyColor.s.alpha = workingstrength;
+
+	HWD.pfnDrawPolygon(&Surf, v, 4, PF_NoTexture|PF_Modulated|PF_Translucent|PF_NoDepthTest);
+}
+
 // Very similar to HWR_DrawConsoleBack, except we draw from the middle(-ish) of the screen to the bottom.
 void HWR_DrawTutorialBack(UINT32 color, INT32 boxheight)
 {
