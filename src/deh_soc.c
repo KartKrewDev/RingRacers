@@ -4087,14 +4087,28 @@ void readcupheader(MYFILE *f, cupheader_t *cup)
 			}
 			else if (fastcmp(word, "EMERALDNUM"))
 			{
-				if (i >= 0 && i <= 14)
-					cup->emeraldnum = (UINT8)i;
+				if (!mainwads || (refreshdirmenu & REFRESHDIR_GAMEDATA))
+				{
+					if (i >= 0 && i <= 14)
+						cup->emeraldnum = (UINT8)i;
+					else
+						deh_warning("%s Cup: invalid emerald number %d", cup->name, i);
+				}
 				else
-					deh_warning("%s Cup: invalid emerald number %d", cup->name, i);
+				{
+					deh_warning("You must define a custom gamedata to use \"%s\"", word);
+				}
 			}
 			else if (fastcmp(word, "PLAYCREDITS"))
 			{
-				cup->playcredits = (i != 0 || word2[0] == 'T' || word2[0] == 'Y');
+				if (!mainwads || (refreshdirmenu & REFRESHDIR_GAMEDATA))
+				{
+					cup->playcredits = (i != 0 || word2[0] == 'T' || word2[0] == 'Y');
+				}
+				else
+				{
+					deh_warning("You must define a custom gamedata to use \"%s\"", word);
+				}
 			}
 			else
 				deh_warning("%s Cup: unknown word '%s'", cup->name, word);
