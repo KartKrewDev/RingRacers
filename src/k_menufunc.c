@@ -176,9 +176,41 @@ void M_ChangeCvarDirect(INT32 choice, consvar_t *cv)
 	}
 }
 
+static void M_ChangeCvarResponse(INT32 choice)
+{
+	if (choice != MA_YES)
+		return;
+
+	consvar_t *cvar = currentMenu->menuitems[itemOn].itemaction.cvar;
+	M_ChangeCvarDirect(choice, cvar);
+}
+
 static void M_ChangeCvar(INT32 choice)
 {
-	M_ChangeCvarDirect(choice, currentMenu->menuitems[itemOn].itemaction.cvar);
+	consvar_t *cvar = currentMenu->menuitems[itemOn].itemaction.cvar;
+
+#ifdef HWRENDER
+	if (cvar == &cv_renderer &&
+		// Switching from Software [to Legacy GL]
+		cv_renderer.value == 1 &&
+		// Not setting to default (ie changing the value)
+		choice != -1)
+	{
+		M_StartMessage(
+			"Switching to Legacy GL",
+			"Legacy GL is \x85" "INCOMPLETE and BROKEN.\x80\n"
+			"\n"
+			"ARE YOU SURE?",
+			M_ChangeCvarResponse,
+			MM_YESNO,
+			NULL,
+			NULL
+		);
+		return;
+	}
+#endif
+
+	M_ChangeCvarDirect(choice, cvar);
 }
 
 static const char *M_QueryCvarAction(const char *replace)

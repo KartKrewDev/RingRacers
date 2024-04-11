@@ -398,6 +398,36 @@ typedef enum
 	sopt_restart,
 } sopt_e;
 
+typedef enum
+{
+	vaopt_spacer1,
+	vaopt_drawdist,
+	vaopt_weatherdist,
+	vaopt_skybox,
+	vaopt_parallel,
+	vaopt_frameskip,
+	vaopt_spacer2,
+	vaopt_spacer3,
+	vaopt_spacer4,
+	vaopt_spacer5,
+	vaopt_spacer6,
+	vaopt_spacer7,
+	vaopt_spacer8,
+	vaopt_spacer9,
+	vaopt_renderer,
+	vaopt_legacygl_begin,
+	vaopt_spacer10 = vaopt_legacygl_begin,
+	vaopt_3dmodels,
+	vaopt_shaders,
+	vaopt_spacer11,
+	vaopt_texturequal,
+	vaopt_anisotropic,
+	vaopt_spacer12,
+	vaopt_billboarding,
+	vaopt_perspective,
+	vaopt_legacygl_end,
+} vaopt_e;
+
 extern menuitem_t OPTIONS_Profiles[];
 extern menu_t OPTIONS_ProfilesDef;
 
@@ -1109,6 +1139,8 @@ void M_VideoOptions(INT32 choice);
 void M_SoundOptions(INT32 choice);
 void M_GameplayOptions(INT32 choice);
 void M_ServerOptions(INT32 choice);
+
+void M_RefreshAdvancedVideoOptions(void);
 
 void M_HandleItemToggles(INT32 choice);	// For item toggling
 void M_EraseData(INT32 choice);	// For data erasing
