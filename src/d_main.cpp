@@ -637,13 +637,17 @@ static bool D_Display(bool world)
 			}
 
 			// rhi: display the software framebuffer to the screen
-			if (rendermode == render_soft)
+			//if (rendermode == render_soft)
 			{
 				// TODO: THIS SHOULD IDEALLY BE IN REGULAR HUD CODE !!
 				// (st_stuff.c ST_Drawer, also duplicated in k_podium.c)
 				// Unfortunately this is the latest place we can do it
 				// If we could immediately tint the GPU data a lot
 				// of problems could be solved (including GL support)
+				// ---
+				// last minute toast edit: We need to run most of this so
+				// that the fallback GL behaviour activates at the right time
+
 				if (gamestate != GS_TITLESCREEN
 				&& G_GamestateUsesLevel() == true
 				&& lt_fade < 16)
@@ -668,7 +672,10 @@ static bool D_Display(bool world)
 					}
 				}
 
-				VID_DisplaySoftwareScreen();
+				if (rendermode == render_soft)
+				{
+					VID_DisplaySoftwareScreen();
+				}
 			}
 
 			if (lastdraw)
