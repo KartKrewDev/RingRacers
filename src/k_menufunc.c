@@ -1213,7 +1213,12 @@ static void M_HandleMenuInput(void)
 			if (M_MenuConfirmPressed(pid))
 			{
 				// If we entered this menu by pressing a menu Key, default to keyboard typing, otherwise use controller.
-				M_OpenVirtualKeyboard(MAXSTRINGLENGTH, M_QueryCvarAction, NULL);
+				M_OpenVirtualKeyboard(
+					(currentMenu->menuitems[itemOn].itemaction.cvar == &cv_dummyprofilename) ? 6 // this sucks, but there's no time.
+						: MAXSTRINGLENGTH,
+					M_QueryCvarAction,
+					NULL
+				);
 				return;
 			}
 			else if (M_MenuExtraPressed(pid))
