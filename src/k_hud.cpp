@@ -1960,7 +1960,11 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 		;
 	else if (mode && !drawtime)
 	{
-		V_DrawTimerString(TX, TY+3, splitflags, "--'--\"--");
+		// apostrophe location     _'__ __
+		V_DrawTimerString(TX+24, TY+3, splitflags, va("'"));
+
+		// quotation mark location    _ __"__
+		V_DrawTimerString(TX+60, TY+3, splitflags, va("\""));
 	}
 	else
 	{
