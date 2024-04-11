@@ -871,7 +871,6 @@ extern boolean inDuel;
 extern tic_t bombflashtimer;	// Used to avoid causing seizures if multiple mines explode close to you :)
 extern boolean legitimateexit;
 extern boolean comebackshowninfo;
-extern tic_t curlap, bestlap;
 
 #define VOTE_SPECIAL (MAXPLAYERS)
 #define VOTE_TOTAL (MAXPLAYERS+1)

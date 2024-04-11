@@ -2094,15 +2094,13 @@ static void K_HandleLapIncrement(player_t *player)
 				if (player->laps > 1)
 				{
 					// save best lap for record attack
-					if (modeattacking && player == &players[consoleplayer])
+					if (player->laptime[LAP_CUR] < player->laptime[LAP_BEST] || player->laptime[LAP_BEST] == 0)
 					{
-						if (curlap < bestlap || bestlap == 0)
-						{
-							bestlap = curlap;
-						}
-
-						curlap = 0;
+						player->laptime[LAP_BEST] = player->laptime[LAP_CUR];
 					}
+
+					player->laptime[LAP_LAST] = player->laptime[LAP_CUR];
+					player->laptime[LAP_CUR] = 0;
 
 					// Update power levels for this lap.
 					K_UpdatePowerLevels(player, player->laps, false);
@@ -2223,7 +2221,7 @@ static void K_HandleLapDecrement(player_t *player)
 			player->cheatchecknum = numcheatchecks;
 			player->laps--;
 			K_UpdateAllPlayerPositions();
-			curlap = UINT32_MAX;
+			player->laptime[LAP_CUR] = UINT32_MAX;
 		}
 	}
 }

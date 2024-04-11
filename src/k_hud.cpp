@@ -6089,7 +6089,26 @@ void K_drawKartHUD(void)
 		{
 			bool ta = modeattacking && !demo.playback;
 			INT32 flags = V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP|V_SNAPTORIGHT;
-			K_drawKartTimestamp(stplyr->realtime, TIME_X, TIME_Y + (ta ? 2 : 0), flags, 0);
+
+			if (stplyr->karthud[khud_lapanimation]
+				&& !stplyr->exiting
+				&& stplyr->laptime[LAP_LAST] != 0
+				&& stplyr->laptime[LAP_LAST] != UINT32_MAX)
+			{
+				if ((stplyr->karthud[khud_lapanimation] / 5) & 1)
+				{
+					K_drawKartTimestamp(stplyr->laptime[LAP_LAST], TIME_X, TIME_Y + (ta ? 2 : 0), flags, 0);
+				}
+				else
+				{
+					V_DrawScaledPatch(TIME_X, TIME_Y + (ta ? 2 : 0), flags, kp_timestickerwide);
+				}
+			}
+			else
+			{
+				K_drawKartTimestamp(stplyr->realtime, TIME_X, TIME_Y + (ta ? 2 : 0), flags, 0);
+			}
+
 			if (modeattacking)
 			{
 				if (ta)

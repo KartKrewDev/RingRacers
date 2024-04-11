@@ -274,6 +274,10 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		WRITEINT16(save->p, players[i].totalring);
 		WRITEUINT32(save->p, players[i].realtime);
+		for (j = 0; j < LAP__MAX; j++)
+		{
+			WRITEUINT32(save->p, players[i].laptime[j]);
+		}
 		WRITEUINT8(save->p, players[i].laps);
 		WRITEUINT8(save->p, players[i].latestlap);
 		WRITEUINT32(save->p, players[i].lapPoints);
@@ -910,6 +914,10 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		players[i].totalring = READINT16(save->p); // Total number of rings obtained for GP
 		players[i].realtime = READUINT32(save->p); // integer replacement for leveltime
+		for (j = 0; j < LAP__MAX; j++)
+		{
+			players[i].laptime[j] = READUINT32(save->p);
+		}
 		players[i].laps = READUINT8(save->p); // Number of laps (optional)
 		players[i].latestlap = READUINT8(save->p);
 		players[i].lapPoints = READUINT32(save->p);

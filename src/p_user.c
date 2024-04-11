@@ -4322,19 +4322,16 @@ void P_PlayerThink(player_t *player)
 		if (leveltime >= starttime)
 		{
 			player->realtime = leveltime - starttime;
-			if (player == &players[consoleplayer])
-			{
-				if (player->spectator)
-					curlap = 0;
-				else if (curlap != UINT32_MAX)
-					curlap++; // This is too complicated to sync to realtime, just sorta hope for the best :V
-			}
+
+			if (player->spectator)
+				player->laptime[LAP_CUR] = 0;
+			else if (player->laptime[LAP_CUR] != UINT32_MAX)
+				player->laptime[LAP_CUR]++; // This is too complicated to sync to realtime, just sorta hope for the best :V
 		}
 		else
 		{
 			player->realtime = 0;
-			if (player == &players[consoleplayer])
-				curlap = 0;
+			player->laptime[LAP_CUR] = 0;
 		}
 	}
 
