@@ -1050,7 +1050,7 @@ boolean Obj_UFOEmeraldCollect(mobj_t *ufo, mobj_t *toucher)
 
 	if (toucher->player != NULL)
 	{
-		if (P_CanPickupItem(toucher->player, 0) == false)
+		if (toucher->player->exiting || mapreset || (toucher->player->pflags & PF_ELIMINATED))
 		{
 			return false;
 		}
