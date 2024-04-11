@@ -1244,9 +1244,10 @@ static mobj_t *InitSpecialUFO(waypoint_t *start)
 		}
 		else
 		{
-			// Prize -- todo, currently using standard Emerald
+			// Prize -- todo, currently using fake Emerald
 			P_SetMobjState(emerald, S_CHAOSEMERALD1);
 			P_SetMobjState(overlay, S_CHAOSEMERALD_UNDER);
+			emerald->color = SKINCOLOR_GOLD;
 		}
 
 		P_SetTarget(&emerald->target, ufo);
