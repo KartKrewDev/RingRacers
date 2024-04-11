@@ -478,7 +478,6 @@ typedef enum
 {
 	gopt_spacer0 = 0,
 	gopt_gamespeed,
-	gopt_baselapcount,
 	gopt_frantic,
 	gopt_encore,
 	gopt_exitcountdown,
