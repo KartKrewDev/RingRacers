@@ -1638,6 +1638,7 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 
 		// Just for string building
 		case UC_AND:
+		case UC_THEN:
 		case UC_COMMA:
 		case UC_DESCRIPTIONOVERRIDE:
 			return true;
@@ -2008,7 +2009,7 @@ static boolean M_CheckConditionSet(conditionset_t *c, player_t *player)
 			continue;
 
 		// Skip entries that are JUST for string building
-		if (cn->type == UC_AND || cn->type == UC_COMMA || cn->type == UC_DESCRIPTIONOVERRIDE)
+		if (cn->type == UC_AND || cn->type == UC_THEN || cn->type == UC_COMMA || cn->type == UC_DESCRIPTIONOVERRIDE)
 			continue;
 
 		lastID = cn->id;
@@ -2417,7 +2418,7 @@ static const char *M_GetConditionString(condition_t *cn)
 			return work;
 		}
 		case UC_UNLOCKABLE: // Requires unlockable x to be obtained
-			return va("get \"%s\"",
+			return va("get %s",
 				gamedata->unlocked[cn->requirement-1]
 				? unlockables[cn->requirement-1].name
 				: "???");
@@ -2524,6 +2525,8 @@ static const char *M_GetConditionString(condition_t *cn)
 
 		case UC_AND:
 			return "&";
+		case UC_THEN:
+			return "then";
 		case UC_COMMA:
 			return ",";
 		case UC_DESCRIPTIONOVERRIDE:

@@ -4876,7 +4876,7 @@ static void Command_cxdiag_f(void)
 					continue;
 				}
 
-				if (cn->type == UC_AND || cn->type == UC_COMMA)
+				if (cn->type == UC_AND || cn->type == UC_THEN || cn->type == UC_COMMA)
 				{
 					if (firstpass)
 						;

@@ -2983,6 +2983,7 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 		}
 	}
 	else if ((offset=0) || fastcmp(params[0], "AND")
+	||        (++offset && fastcmp(params[0], "THEN"))
 	||        (++offset && fastcmp(params[0], "COMMA")))
 	{
 		//PARAMCHECK(1);
