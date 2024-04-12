@@ -334,28 +334,26 @@ consvar_t cv_soundvolume = Player("soundvolume", "80").min_max(0, 100);
 	consvar_t cv_discordstreamer = Player("discordstreamer", "Off").on_off();
 #endif
 
-consvar_t cv_drawdist = Player("drawdist", "8192").values({
-	//{256, "256"},
-	{512, "512"},
-	{768, "768"},
-	{1024, "1024"},
-	{1536, "1536"},
-	{2048, "2048"},
-	{3072, "3072"},
-	{4096, "4096"},
-	{6144, "6144"},
-	{8192, "8192"},
-	{0, "Infinite"},
+consvar_t cv_drawdist = Player("drawdist", "Normal").values({
+	{3072,  "Shortest"},
+	{4096,  "Shorter"},
+	{6144,  "Short"},
+	{8192,  "Normal"},
+	{12288, "Far"},
+	{16384, "Farther"},
+	{24576, "Extreme"},
+	{32768, "Penultimate"},
+	{0,     "Infinite"},
 });
 
-consvar_t cv_drawdist_precip = Player("drawdist_precip", "1024").values({
-	{256, "256"},
-	{512, "512"},
-	{768, "768"},
-	{1024, "1024"},
-	{1536, "1536"},
-	{2048, "2048"},
-	{0, "None"},
+consvar_t cv_drawdist_precip = Player("drawdist_precip", "Normal").values({
+	{256,  "Shortest"},
+	{512,  "Shorter"},
+	{768,  "Short"},
+	{1024, "Normal"},
+	{1536, "Far"},
+	{2048, "Farthest"},
+	{0,    "None"},
 });
 
 consvar_t cv_drawinput = Player("drawinput", "Off").on_off();
