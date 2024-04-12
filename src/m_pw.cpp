@@ -110,6 +110,8 @@ void f_tournament()
 	{
 		if (!unlockables[i].conditionset)
 			continue;
+		if (unlockables[i].conditionset == 55)
+			continue;
 		if (gamedata->unlocked[i])
 			continue;
 
@@ -146,10 +148,12 @@ void f_tournament()
 		S_StartSound(0, sfx_kc42);
 
 		text = M_GetText(
-			"All challenges temporarily unlocked.\n"
+			"Unlocked\x83 almost\x80 everything.\n"
 			"Saving is disabled - the game will\n"
 			"return to normal on next launch.\n"
 		);
+
+		usedTourney = true;
 	}
 	else
 	{
@@ -158,18 +162,20 @@ void f_tournament()
 		if (usedCheats)
 		{
 			text = M_GetText(
-				"This is the correct password, but\n"
-				"you already have every challenge\n"
-				"unlocked, so nothing has changed.\n"
+				"This is the correct password,\n"
+				"but there's nothing to unlock\n"
+				"right now -- nothing has changed.\n"
 			);
 		}
 		else
 		{
 			text = M_GetText(
 				"This is the correct password, but\n"
-				"you already have every challenge\n"
-				"unlocked, so saving is still allowed!\n"
+				"there's nothing to unlock right\n"
+				"now, so saving is still allowed!\n"
 			);
+
+			usedTourney = true;
 		}
 	}
 
@@ -308,7 +314,7 @@ try_password_e M_TryPassword(const char *password, boolean conditions)
 		add_job(pw.hash_.data(), &pw);
 
 	// Only consider challenges passwords as needed.
-	if (conditions)
+	if (conditions && !usedTourney)
 		iter_conditions([&](condition_t* cn) { add_job((const UINT8*)cn->stringvar, cn); });
 
 	try_password_e return_code = M_PW_INVALID;
