@@ -12351,6 +12351,14 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			player->instaWhipCharge = 0;
 	}
 
+	// OOPSIES PIXME pt.4: There's some really specific circumstance where a held Item input won't cancel an
+	// ongoing roulette, which allows you enough time to charge a whip, except the animation is fucking
+	// invisible. Great! Just hack this for release, sorry.
+	if (player->itemRoulette.active)
+	{
+		player->instaWhipCharge = min(player->instaWhipCharge, INSTAWHIP_CHARGETIME - 1);
+	}
+
 	if (player && player->mo && player->mo->health > 0 && !player->spectator && !P_PlayerInPain(player) && !mapreset && leveltime > introtime)
 	{
 		// First, the really specific, finicky items that function without the item being directly in your item slot.
