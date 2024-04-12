@@ -640,12 +640,15 @@ void podiumData_s::Draw(void)
 
 							if (emeraldNum == 0)
 							{
-								emeraldPatch = static_cast<patch_t*>( W_CachePatchName("K_BLNA", PU_CACHE) );
+								// Prize -- todo, currently using fake Emerald
+								emeraldColor = SKINCOLOR_GOLD;
 							}
 							else
 							{
 								emeraldColor = static_cast<skincolornum_t>( SKINCOLOR_CHAOSEMERALD1 + ((emeraldNum - 1) % 7) );
+							}
 
+							{
 								std::string emeraldName;
 								if (emeraldNum > 7)
 								{
@@ -853,12 +856,15 @@ void podiumData_s::Draw(void)
 
 			if (emeraldNum == 0)
 			{
-				emeraldOverlay = static_cast<patch_t*>( W_CachePatchName("KBLNC0", PU_CACHE) );
+				// Prize -- todo, currently using fake Emerald
+				emeraldColor = SKINCOLOR_GOLD;
 			}
 			else
 			{
 				emeraldColor = static_cast<skincolornum_t>( SKINCOLOR_CHAOSEMERALD1 + ((emeraldNum - 1) % 7) );
+			}
 
+			{
 				if (emeraldNum > 7)
 				{
 					emeraldOverlay = static_cast<patch_t*>( W_CachePatchName("SEMRA0", PU_CACHE) );

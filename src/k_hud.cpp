@@ -1889,7 +1889,7 @@ tic_t K_TranslateTimer(tic_t drawtime, UINT8 mode, INT32 *return_jitter)
 {
 	INT32 jitter = 0;
 
-	if (!mode)
+	if (!mode && drawtime != UINT32_MAX)
 	{
 		if (timelimitintics > 0)
 		{
@@ -1948,7 +1948,6 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 	// TIME_X = BASEVIDWIDTH-124;	// 196
 	// TIME_Y = 6;					//   6
 
-	tic_t worktime;
 	INT32 jitter = 0;
 
 	drawtime = K_TranslateTimer(drawtime, mode, &jitter);
@@ -1957,19 +1956,27 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 
 	TX += 33;
 
-	worktime = drawtime/(60*TICRATE);
-
-	if (worktime >= 100)
+	if (drawtime == UINT32_MAX)
+		;
+	else if (mode && !drawtime)
 	{
-		jitter = (drawtime & 1 ? 1 : -1);
-		worktime = 99;
-		drawtime = (100*(60*TICRATE))-1;
-	}
+		// apostrophe location     _'__ __
+		V_DrawTimerString(TX+24, TY+3, splitflags, va("'"));
 
-	if (mode && !drawtime)
-		V_DrawTimerString(TX, TY+3, splitflags, "--'--\"--");
+		// quotation mark location    _ __"__
+		V_DrawTimerString(TX+60, TY+3, splitflags, va("\""));
+	}
 	else
 	{
+		tic_t worktime = drawtime/(60*TICRATE);
+
+		if (worktime >= 100)
+		{
+			jitter = (drawtime & 1 ? 1 : -1);
+			worktime = 99;
+			drawtime = (100*(60*TICRATE))-1;
+		}
+
 		// minutes time      00 __ __
 		V_DrawTimerString(TX,    TY+3+jitter, splitflags, va("%d", worktime/10));
 		V_DrawTimerString(TX+12, TY+3-jitter, splitflags, va("%d", worktime%10));
@@ -6089,7 +6096,26 @@ void K_drawKartHUD(void)
 		{
 			bool ta = modeattacking && !demo.playback;
 			INT32 flags = V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP|V_SNAPTORIGHT;
-			K_drawKartTimestamp(stplyr->realtime, TIME_X, TIME_Y + (ta ? 2 : 0), flags, 0);
+
+			tic_t realtime = stplyr->realtime;
+
+			if (stplyr->karthud[khud_lapanimation]
+				&& !stplyr->exiting
+				&& stplyr->laptime[LAP_LAST] != 0
+				&& stplyr->laptime[LAP_LAST] != UINT32_MAX)
+			{
+				if ((stplyr->karthud[khud_lapanimation] / 5) & 1)
+				{
+					realtime = stplyr->laptime[LAP_LAST];
+				}
+				else
+				{
+					realtime = UINT32_MAX;
+				}
+			}
+
+			K_drawKartTimestamp(realtime, TIME_X, TIME_Y + (ta ? 2 : 0), flags, 0);
+
 			if (modeattacking)
 			{
 				if (ta)

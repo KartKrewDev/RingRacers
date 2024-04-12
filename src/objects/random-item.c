@@ -19,6 +19,7 @@
 #include "../k_battle.h"
 #include "../m_random.h"
 #include "../k_specialstage.h" // specialstageinfo
+#include "../k_kart.h"
 
 #define FLOAT_HEIGHT ( 12 * FRACUNIT )
 #define FLOAT_TIME ( 2 * TICRATE )
@@ -122,7 +123,7 @@ void Obj_RandomItemVisuals(mobj_t *mobj)
 	// the player's cleared out a good portion of the map.
 	//
 	// Then extraval1 starts ticking up and triggers the transformation from Ringbox to Random Item.
-	if (mobj->fuse == 0 && !(mobj->flags & MF_NOCLIPTHING) && !(mobj->flags2 & MF2_BOSSDEAD) && !cv_thunderdome.value
+	if (mobj->fuse == 0 && !(mobj->flags & MF_NOCLIPTHING) && !(mobj->flags2 & MF2_BOSSDEAD) && !K_ThunderDome()
 		&& (modeattacking == ATTACKING_NONE || !!(modeattacking & ATTACKING_SPB) || specialstageinfo.valid)) // Time Attacking in Special is a fucked-looking exception
 	{
 		mobj->extravalue1++;

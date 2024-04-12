@@ -274,6 +274,8 @@ void K_MakeObjectReappear(mobj_t *mo);
 
 void K_BumperInflate(player_t *player);
 
+boolean K_ThunderDome(void);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
