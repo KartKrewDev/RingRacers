@@ -72,6 +72,16 @@
 // comeback is Battle Mode's karma comeback, also bool
 // mapreset is set when enough players fill an empty server
 
+boolean K_ThunderDome(void)
+{
+	if (K_CanChangeRules(true))
+	{
+		return (boolean)cv_thunderdome.value;
+	}
+
+	return false;
+}
+
 // lat: used for when the player is in some weird state where it wouldn't be wise for it to be overwritten by another object that does similarly wacky shit.
 boolean K_isPlayerInSpecialState(player_t *p)
 {
@@ -12181,7 +12191,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		if (player->ringboxdelay == 0)
 		{
 			UINT32 award = 5*player->ringboxaward + 10;
-			if (!cv_thunderdome.value)
+			if (!K_ThunderDome())
 				award = 3 * award / 2;
 
 			if (modeattacking & ATTACKING_SPB)
