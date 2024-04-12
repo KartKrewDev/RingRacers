@@ -8373,30 +8373,9 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	// will be set by player think.
 	players[consoleplayer].viewz = 1;
 
-	// Cancel all d_main.c fadeouts (keep fade in though).
-	if (reloadinggamestate)
-		wipegamestate = gamestate; // Don't fade if reloading the gamestate
-	// Encore mode fade to pink to white
-	// This is handled BEFORE sounds are stopped.
-	else if (encoremode && !prevencoremode && modeattacking == ATTACKING_NONE && !demo.rewinding)
-	{
-		if (rendermode != render_none)
-		{
-			tic_t locstarttime, endtime, nowtime;
+	// (This define might be useful for other areas of code? Not sure)
+	tic_t locstarttime, endtime, nowtime;
 
-			Music_StopAll(); // er, about that...
-
-			// Fade to an inverted screen, with a circle fade...
-			F_WipeStartScreen();
-
-			V_EncoreInvertScreen();
-			F_WipeEndScreen();
-
-			S_StartSound(NULL, sfx_ruby1);
-			F_RunWipe(wipe_encore_toinvert, wipedefs[wipe_encore_toinvert], false, NULL, false, false);
-
-			// Hold on invert for extra effect.
-			// (This define might be useful for other areas of code? Not sure)
 #define WAIT(timetowait) \
 	locstarttime = nowtime = lastwipetic; \
 	endtime = locstarttime + timetowait; \
@@ -8414,6 +8393,28 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			I_CaptureVideoFrame(); \
 		NetKeepAlive(); \
 	} \
+
+	// Cancel all d_main.c fadeouts (keep fade in though).
+	if (reloadinggamestate)
+		wipegamestate = gamestate; // Don't fade if reloading the gamestate
+	// Encore mode fade to pink to white
+	// This is handled BEFORE sounds are stopped.
+	else if (encoremode && !prevencoremode && modeattacking == ATTACKING_NONE && !demo.rewinding)
+	{
+		if (rendermode != render_none)
+		{
+			Music_StopAll(); // er, about that...
+
+			// Fade to an inverted screen, with a circle fade...
+			F_WipeStartScreen();
+
+			V_EncoreInvertScreen();
+			F_WipeEndScreen();
+
+			S_StartSound(NULL, sfx_ruby1);
+			F_RunWipe(wipe_encore_toinvert, wipedefs[wipe_encore_toinvert], false, NULL, false, false);
+
+			// Hold on invert for extra effect.
 
 			WAIT((3*TICRATE)/2);
 			S_StartSound(NULL, sfx_ruby2);
@@ -8441,9 +8442,15 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		{
 			// dedicated servers can call this now, to wait the appropriate amount of time for clients to wipe
 			F_RunWipe(wipe_encore_towhite, wipedefs[wipe_encore_towhite], false, "FADEMAP1", false, true);
+
+			WAIT((3*TICRATE)/2);
+
 			F_RunWipe(wipe_level_toblack, wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
+
+			WAIT((3*TICRATE)/4);
 		}
 	}
+#undef WAIT
 
 	// Special stage & record attack retry fade to white
 	// This is handled BEFORE sounds are stopped.
