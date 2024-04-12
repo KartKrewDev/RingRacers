@@ -60,7 +60,7 @@ INT32 K_StartingBumperCount(void)
 	if (tutorialchallenge == TUTORIALSKIP_INPROGRESS)
 		return 0;
 
-	if (battleprisons || K_CheckBossIntro())
+	if (battleprisons || K_CheckBossIntro() || !K_CanChangeRules(true))
 	{
 		if (grandprixinfo.gp)
 		{

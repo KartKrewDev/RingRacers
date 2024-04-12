@@ -21,9 +21,6 @@ menuitem_t OPTIONS_Gameplay[] =
 	{IT_STRING | IT_CVAR, "Game Speed", "Gear for the next map.",
 		NULL, {.cvar = &cv_kartspeed}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Base Lap Count", "How many laps must be completed per race.",
-		NULL, {.cvar = &cv_numlaps}, 0, 0},
-
 	{IT_STRING | IT_CVAR, "Frantic Items", "Make item odds crazier with more powerful items!",
 		NULL, {.cvar = &cv_kartfrantic}, 0, 0},
 

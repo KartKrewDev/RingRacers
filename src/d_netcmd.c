@@ -7282,13 +7282,6 @@ void KartEncore_OnChange(void)
 void KartEliminateLast_OnChange(void);
 void KartEliminateLast_OnChange(void)
 {
-#ifndef DEVELOP
-	if (K_CanChangeRules(false) == false)
-	{
-		CV_StealthSet(&cv_karteliminatelast, cv_karteliminatelast.defaultvalue);
-	}
-#endif
-
 	P_CheckRacers();
 }
 
