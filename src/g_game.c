@@ -344,14 +344,10 @@ void G_ClearRecords(void)
 {
 	UINT16 i;
 
-	for (i = 0; i < numskins; i++)
-	{
-		memset(&skins[i].records, 0, sizeof(skins[i].records));
-	}
-
 	for (i = 0; i < nummapheaders; i++)
 	{
-		memset(&mapheaderinfo[i]->records, 0, sizeof(recorddata_t));
+		memset(&mapheaderinfo[i]->records.timeattack, 0, sizeof(recordtimes_t));
+		memset(&mapheaderinfo[i]->records.spbattack, 0, sizeof(recordtimes_t));
 	}
 
 	cupheader_t *cup;
@@ -360,14 +356,11 @@ void G_ClearRecords(void)
 		memset(&cup->windata, 0, sizeof(cup->windata));
 	}
 
-	unloaded_skin_t *unloadedskin, *nextunloadedskin = NULL;
-	for (unloadedskin = unloadedskins; unloadedskin; unloadedskin = nextunloadedskin)
-	{
-		nextunloadedskin = unloadedskin->next;
-		Z_Free(unloadedskin);
-	}
-	unloadedskins = NULL;
-
+	// TODO: Technically, these should only remove time attack records here.
+	// But I'm out of juice for dev (+ literally, just finished some OJ).
+	// The stats need to be cleared in M_ClearStats, and I guess there's 
+	// no perfect place to wipe mapvisited because it's not actually part of
+	// basegame progression... so here's fine for launch.  ~toast 100424
 	unloaded_mapheader_t *unloadedmap, *nextunloadedmap = NULL;
 	for (unloadedmap = unloadedmapheaders; unloadedmap; unloadedmap = nextunloadedmap)
 	{
