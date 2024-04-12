@@ -3640,12 +3640,12 @@ static INT32 TOLMaps(UINT8 pgametype)
 				// Not completed
 				continue;
 			}
+		}
 
-			if (M_MapLocked(i + 1) == true)
-			{
-				// We haven't earned this one.
-				continue;
-			}
+		if (M_MapLocked(i + 1) == true)
+		{
+			// We haven't earned this one.
+			continue;
 		}
 
 		num++;
@@ -3753,12 +3753,12 @@ tryAgain:
 				// Not completed
 				continue;
 			}
+		}
 
-			if (M_MapLocked(i + 1) == true)
-			{
-				// We haven't earned this one.
-				continue;
-			}
+		if (M_MapLocked(i + 1) == true)
+		{
+			// We haven't earned this one.
+			continue;
 		}
 
 		if (ignoreBuffers == false)
@@ -4331,12 +4331,12 @@ void G_GetNextMap(void)
 							// Not completed
 							continue;
 						}
+					}
 
-						if (M_MapLocked(cm + 1) == true)
-						{
-							// We haven't earned this one.
-							continue;
-						}
+					if (M_MapLocked(cm + 1) == true)
+					{
+						// We haven't earned this one.
+						continue;
 					}
 
 					// If the map is in multiple cups, only consider the first one valid.
@@ -4416,12 +4416,12 @@ void G_GetNextMap(void)
 						// Not completed
 						continue;
 					}
+				}
 
-					if (M_MapLocked(cm + 1) == true)
-					{
-						// We haven't earned this one.
-						continue;
-					}
+				if (M_MapLocked(cm + 1) == true)
+				{
+					// We haven't earned this one.
+					continue;
 				}
 
 				break;

@@ -3382,8 +3382,7 @@ void SV_ResetServer(void)
 
 	// Copy our unlocks to a place where net material can grab at/overwrite them safely.
 	// (permits all unlocks in dedicated)
-	for (i = 0; i < MAXUNLOCKABLES; i++)
-		netUnlocked[i] = (dedicated || gamedata->unlocked[i]);
+	M_SetNetUnlocked();
 
 	expectChallenge = false;
 

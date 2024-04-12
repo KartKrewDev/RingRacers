@@ -734,8 +734,7 @@ void M_ClearSecrets(void)
 	memset(gamedata->collected, 0, sizeof(gamedata->collected));
 	memset(gamedata->unlocked, 0, sizeof(gamedata->unlocked));
 	memset(gamedata->unlockpending, 0, sizeof(gamedata->unlockpending));
-	if (!dedicated)
-		memset(netUnlocked, 0, sizeof(netUnlocked));
+	memset(netUnlocked, 0, sizeof(netUnlocked));
 	memset(gamedata->achieved, 0, sizeof(gamedata->achieved));
 
 	Z_Free(gamedata->spraycans);
@@ -1279,6 +1278,66 @@ void M_FinaliseGameData(void)
 
 	// Silent update unlockables in case they're out of sync with conditions
 	M_UpdateUnlockablesAndExtraEmblems(false, true);
+}
+
+void M_SetNetUnlocked(void)
+{
+	UINT16 i;
+
+	// Use your gamedata as baseline
+	for (i = 0; i < MAXUNLOCKABLES; i++)
+	{
+		netUnlocked[i] = gamedata->unlocked[i];
+	}
+
+	if (!dedicated)
+	{
+		return;
+	}
+
+	// Dedicated spoiler password - tournament mode equivalent.
+	if (usedTourney)
+	{
+		for (i = 0; i < MAXUNLOCKABLES; i++)
+		{
+			if (unlockables[i].conditionset == 55)
+				continue;
+
+			netUnlocked[i] = true;
+		}
+
+		return;
+	}
+
+	// Okay, now it's dedicated first-week spoilerless behaviour.
+	for (i = 0; i < MAXUNLOCKABLES; i++)
+	{
+		if (netUnlocked[i])
+			continue;
+
+		switch (unlockables[i].type)
+		{
+			case SECRET_CUP:
+			{
+				// Give the first seven Cups for free.
+				cupheader_t *cup = M_UnlockableCup(&unlockables[i]);
+				if (cup && cup->id < 7)
+					netUnlocked[i] = true;
+
+				break;
+			}
+			case SECRET_ADDONS:
+			{
+				netUnlocked[i] = true;
+				break;
+			}
+			default:
+			{
+				// Most stuff isn't given to dedis for free
+				break;
+			}
+		}
+	}
 }
 
 // ----------------------
@@ -3404,11 +3463,6 @@ boolean M_SecretUnlocked(INT32 type, boolean local)
 
 boolean M_CupLocked(cupheader_t *cup)
 {
-	// Don't lock maps in dedicated servers.
-	// That just makes hosts' lives hell.
-	if (dedicated)
-		return false;
-
 	// No skipping over any part of your marathon.
 	if (marathonmode)
 		return false;
@@ -3464,11 +3518,6 @@ boolean M_CupSecondRowLocked(void)
 
 boolean M_MapLocked(UINT16 mapnum)
 {
-	// Don't lock maps in dedicated servers.
-	// That just makes hosts' lives hell.
-	if (dedicated)
-		return false;
-
 	// No skipping over any part of your marathon.
 	if (marathonmode)
 		return false;
