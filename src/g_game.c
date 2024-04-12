@@ -322,8 +322,6 @@ boolean inDuel; // Boolean, keeps track of if it is a 1v1
 tic_t bombflashtimer = 0;	// Cooldown before another FlashPal can be intialized by a bomb exploding near a displayplayer. Avoids seizures.
 boolean legitimateexit; // Did this client actually finish the match?
 boolean comebackshowninfo; // Have you already seen the "ATTACK OR PROTECT" message?
-tic_t curlap; // Current lap time
-tic_t bestlap; // Best lap time
 
 boolean precache = true; // if true, load all graphics at start
 
@@ -554,8 +552,8 @@ void G_UpdateRecords(void)
 
 	if (modeattacking & ATTACKING_LAP)
 	{
-		if ((record->lap == 0) || (bestlap < record->lap))
-			record->lap = bestlap;
+		if ((record->lap == 0) || (players[consoleplayer].laptime[LAP_BEST] < record->lap))
+			record->lap = players[consoleplayer].laptime[LAP_BEST];
 	}
 
 	// Check emblems when level data is updated
@@ -599,7 +597,7 @@ static void G_UpdateRecordReplays(void)
 	// Save demo!
 	bestdemo[255] = '\0';
 	lastdemo[255] = '\0';
-	G_SetDemoTime(players[consoleplayer].realtime, bestlap);
+	G_SetDemoTime(players[consoleplayer].realtime, players[consoleplayer].laptime[LAP_BEST]);
 	G_CheckDemoStatus();
 
 	gpath = va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s",
@@ -2172,6 +2170,10 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	level_tally_t tally;
 	boolean tallyactive;
 
+	tic_t laptime[LAP__MAX];
+
+	INT32 i;
+
 	// This needs to be first, to permit it to wipe extra information
 	jointime = players[player].jointime;
 	if (jointime <= 1)
@@ -2199,6 +2201,11 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		kartspeed = skins[players[player].skin].kartspeed;
 		kartweight = skins[players[player].skin].kartweight;
 		charflags = skins[players[player].skin].flags;
+
+		for (i = 0; i < LAP__MAX; i++)
+		{
+			laptime[i] = 0;
+		}
 	}
 	else
 	{
@@ -2211,6 +2218,11 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		kartweight = players[player].kartweight;
 
 		charflags = (skinflags & SF_IRONMAN) ? skinflags : players[player].charflags;
+
+		for (i = 0; i < LAP__MAX; i++)
+		{
+			laptime[i] = players[player].laptime[i];
+		}
 	}
 	lastfakeskin = players[player].lastfakeskin;
 
@@ -2449,6 +2461,11 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->lapPoints = lapPoints;
 	p->totalring = totalring;
 
+	for (i = 0; i < LAP__MAX; i++)
+	{
+		p->laptime[i] = laptime[i];
+	}
+
 	p->bot = bot;
 	p->botvars.difficulty = botdifficulty;
 	p->rings = rings;
@@ -2512,8 +2529,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	// Check to make sure their color didn't change somehow...
 	if (G_GametypeHasTeams())
 	{
-		UINT8 i;
-
 		if (p->ctfteam == 1 && p->skincolor != skincolor_redteam)
 		{
 			for (i = 0; i <= splitscreen; i++)

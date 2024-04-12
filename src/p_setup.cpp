@@ -7675,7 +7675,6 @@ static void P_InitLevelSettings(void)
 	}
 
 	racecountdown = exitcountdown = musiccountdown = exitfadestarted = 0;
-	curlap = bestlap = 0; // SRB2Kart
 
 	g_exit.losing = false;
 	g_exit.retry = false;

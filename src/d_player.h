@@ -578,6 +578,15 @@ struct altview_t
 	INT32 tics;
 };
 
+// enum for saved lap times
+typedef enum
+{
+	LAP_CUR,
+	LAP_BEST,
+	LAP_LAST,
+	LAP__MAX
+} laptime_e;
+
 extern altview_t titlemapcam;
 
 // ========================================================================
@@ -897,6 +906,7 @@ struct player_t
 
 	INT16 totalring; // Total number of rings obtained for GP
 	tic_t realtime; // integer replacement for leveltime
+	tic_t laptime[LAP__MAX];
 	UINT8 laps; // Number of laps (optional)
 	UINT8 latestlap;
 	UINT32 lapPoints; // Points given from laps
