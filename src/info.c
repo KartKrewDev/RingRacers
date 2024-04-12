@@ -2129,7 +2129,7 @@ state_t states[NUMSTATES] =
 	{SPR_TRC4,                 FF_FULLBRIGHT|FF_ADD|FF_ANIMATE|0, -1, {NULL}, 4, 1, S_NULL}, // S_CHARGERELEASE
 	{SPR_TRC5,                 FF_FULLBRIGHT|FF_ADD|FF_ANIMATE|0, -1, {NULL}, 4, 1, S_NULL}, // S_CHARGEEXTRA
 
-	{SPR_DHND, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SERVANTHAND
+	{SPR_DHND, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_SERVANTHAND
 
 	{SPR_HORN, 0, -1, {NULL}, 0, 0, S_NULL}, // S_HORNCODE
 
@@ -4923,7 +4923,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		4,              // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPTHING|MF_NOHITLAGFORME,  // flags
+		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPTHING|MF_NOHITLAGFORME|MF_DONTENCOREMAP,  // flags
 		S_NULL          // raisestate
 	},
 
@@ -16515,7 +16515,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOGRAVITY|MF_SCENERY,       // flags
+		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 
