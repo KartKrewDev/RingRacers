@@ -9142,15 +9142,19 @@ UINT8 P_InitMapData(void)
 		// Okay, it does...
 		{
 			ret |= MAPRET_ADDED;
-			CONS_Printf("%s\n", name);
 
-			if (basenummapheaders && mapheaderinfo[i]->lumpnum != LUMPERROR)
+			if (basenummapheaders)
 			{
-				G_SetGameModified(multiplayer, true); // oops, double-defined - no record attack privileges for you
+				CONS_Printf("%s\n", name);
 
-				//If you replaced the map you're on, end the level when done.
-				if (i == gamemap - 1)
-					ret |= MAPRET_CURRENTREPLACED;
+				if (mapheaderinfo[i]->lumpnum != LUMPERROR)
+				{
+					G_SetGameModified(multiplayer, true); // oops, double-defined - no record attack privileges for you
+
+					//If you replaced the map you're on, end the level when done.
+					if (i == gamemap - 1)
+						ret |= MAPRET_CURRENTREPLACED;
+				}
 			}
 
 			mapheaderinfo[i]->lumpnum = maplump;
