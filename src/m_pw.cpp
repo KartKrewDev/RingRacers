@@ -43,22 +43,21 @@ namespace
 
 constexpr const UINT8 kRRSalt[17] = "0L4rlK}{9ay6'VJS";
 
+std::array<UINT8, M_PW_BUF_SIZE> decode_hash(std::string encoded)
+{
+	std::array<UINT8, M_PW_BUF_SIZE> decoded;
+	if (modp::b64_decode(encoded).size() != decoded.size())
+		throw std::invalid_argument("hash is incorrectly sized");
+	std::copy(encoded.begin(), encoded.end(), decoded.begin());
+	return decoded;
+}
+
 struct Pw
 {
 	Pw(void (*cb)(), const char *encoded_hash) : cb_(cb), hash_(decode_hash(encoded_hash)) {}
 
 	void (*cb_)();
 	const std::array<UINT8, M_PW_BUF_SIZE> hash_;
-
-private:
-	static std::array<UINT8, M_PW_BUF_SIZE> decode_hash(std::string encoded)
-	{
-		std::array<UINT8, M_PW_BUF_SIZE> decoded;
-		if (modp::b64_decode(encoded).size() != decoded.size())
-			throw std::invalid_argument("hash is incorrectly sized");
-		std::copy(encoded.begin(), encoded.end(), decoded.begin());
-		return decoded;
-	}
 };
 
 std::vector<Pw> passwords;
@@ -340,6 +339,20 @@ try_password_e M_TryPassword(const char *password, boolean conditions)
 	}
 
 	return return_code;
+}
+
+boolean M_TryExactPassword(const char *password, const char *encodedhash)
+{
+	// Normalize input casing
+	std::string key = password;
+	strlwr(key.data());
+
+	UINT8 key_hash[M_PW_HASH_SIZE];
+	M_HashPassword(key_hash, key.c_str(), kRRSalt);
+
+	auto hash = decode_hash(encodedhash);
+
+	return (memcmp(key_hash, hash.data(), M_PW_HASH_SIZE) == 0);
 }
 
 #ifdef DEVELOP

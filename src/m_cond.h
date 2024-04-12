@@ -443,6 +443,7 @@ void M_ClearConditionSet(UINT16 set);
 void M_ClearSecrets(void);
 void M_ClearStats(void);
 void M_FinaliseGameData(void);
+void M_SetNetUnlocked(void);
 
 boolean M_NotFreePlay(void);
 UINT16 M_CheckCupEmeralds(UINT8 difficulty);

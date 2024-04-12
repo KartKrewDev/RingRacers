@@ -1538,6 +1538,19 @@ void D_SRB2Main(void)
 
 	// for dedicated server
 	dedicated = M_CheckParm("-dedicated") != 0;
+	if (dedicated)
+	{
+		p = M_CheckParm("-spoilers");
+		if (p && M_IsNextParm())
+		{
+			usedTourney = M_TryExactPassword(M_GetNextParm(), "XpsOixVTZSW0cwbiYAVgzokAmWfeYNq5mEckVsktheq4GOUWQecF5lWTkGNBJtoYX9vUMprFzraSovOSCeQ96Q==");
+
+			if (usedTourney)
+			{
+				CONS_Printf(M_GetText("Spoiler mode ON.\n"));
+			}
+		}
+	}
 
 	if (devparm)
 		CONS_Printf(M_GetText("Development mode ON.\n"));
@@ -1932,7 +1945,7 @@ void D_SRB2Main(void)
 		}
 
 		{
-			if (!M_CheckParm("-server") && !M_CheckParm("-dedicated"))
+			if (!M_CheckParm("-server") && !dedicated)
 			{
 				G_SetUsedCheats();
 

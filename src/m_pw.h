@@ -27,6 +27,7 @@ try_password_e;
 
 void M_PasswordInit(void);
 try_password_e M_TryPassword(const char *password, boolean challenges);
+boolean M_TryExactPassword(const char *password, const char *encodedhash);
 
 #ifdef __cplusplus
 } // extern "C"
