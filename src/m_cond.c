@@ -2972,6 +2972,11 @@ char *M_BuildConditionSetString(UINT16 unlockid)
 		}
 	}
 
+	if (usedTourney && unlockables[unlockid].conditionset == 55 && gamedata->unlocked[unlockid] == false)
+	{
+		strcpy(message, "Power shrouds this challenge in darkness... (Return here without Tournament Mode!)\0");
+	}
+
 	// Finally, do a clean wordwrap!
 	return V_ScaledWordWrap(
 		DESCRIPTIONWIDTH << FRACBITS,

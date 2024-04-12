@@ -847,7 +847,7 @@ boolean M_ChallengesInputs(INT32 ch)
 		{
 			M_ChallengesTutorial(CCTUTORIAL_MAJORSKIP);
 		}
-		else if (M_CanKeyHiliTile())
+		else if (M_CanKeyHiliTile() && !usedTourney)
 		{
 			challengesmenu.chaokeyhold = 1;
 		}

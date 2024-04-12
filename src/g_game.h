@@ -84,6 +84,8 @@ extern tic_t timeinmap; // Ticker for time spent in level (used for levelcard di
 extern INT32 pausedelay;
 extern boolean pausebreakkey;
 
+extern boolean usedTourney;
+
 extern boolean promptactive;
 
 extern consvar_t cv_tutorialprompt;

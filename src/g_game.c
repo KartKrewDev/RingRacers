@@ -147,6 +147,7 @@ boolean modifiedgame = false; // Set if homebrew PWAD stuff has been added.
 boolean majormods = false; // Set if Lua/Gameplay SOC/replacement map has been added.
 boolean savemoddata = false;
 boolean usedCheats = false; // Set when a "cheats on" is ever used.
+boolean usedTourney = false; // Entered the "Tournament Mode" cheat.
 UINT8 paused;
 UINT8 modeattacking = ATTACKING_NONE;
 boolean imcontinuing = false;
