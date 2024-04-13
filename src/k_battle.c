@@ -179,25 +179,25 @@ void K_CheckBumpers(void)
 			return;
 		}
 	}
-	else if (eliminated >= numingame - 1)
+	else if (numingame > 1)
 	{
 		// If every other player is eliminated, the
 		// last player standing wins by default.
-		if (numingame > 1)
+		if (eliminated >= numingame - 1)
+		{
 			K_EndBattleRound(kingofthehill != -1 ? &players[kingofthehill] : NULL);
-		return;
+			return;
+		}
 	}
-
-	if (numingame <= 1)
+	else
 	{
 		if ((gametyperules & GTR_PRISONS) && !battleprisons && (K_CanChangeRules(true) == true))
 		{
 			// Reset map to turn on battle prisons
 			if (server)
 				D_MapChange(gamemap, gametype, encoremode, true, 0, false, false);
+			return;
 		}
-
-		return;
 	}
 }
 
