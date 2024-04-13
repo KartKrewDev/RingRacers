@@ -668,19 +668,12 @@ static void Y_DrawVoteBackground(void)
 	static fixed_t levelPos = 0;
 	const fixed_t levelLoop = vote_draw.bg_levelText->height * FRACUNIT;
 
-	const UINT8 planetFrame = (bgTimer / FRACUNIT) % PLANET_FRAMES;
-
 	if (cv_reducevfx.value)
 	{
-		// REMOVE ONCE THE RHI BUG IS FIXED,
-		// BUT UNTIL THEN, IVO NEEDS TO NOT DIE
-		V_DrawFill(
-			0, 0,
-			BASEVIDWIDTH, BASEVIDHEIGHT,
-			31
-		);
-		return;
+		bgTimer = 0;
 	}
+
+	const UINT8 planetFrame = (bgTimer / FRACUNIT) % PLANET_FRAMES;
 
 	V_DrawFixedPatch(
 		0, 0,
@@ -736,7 +729,10 @@ static void Y_DrawVoteBackground(void)
 		vote_draw.bg_derrText, NULL
 	);
 
-	bgTimer += renderdeltatics;
+	if (!cv_reducevfx.value)
+	{
+		bgTimer += renderdeltatics;
+	}
 }
 
 static void Y_DrawVoteSelector(const fixed_t y, const fixed_t time, const UINT8 localPlayer)
