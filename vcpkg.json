@@ -4,7 +4,6 @@
     "version": "1.0.0",
     "dependencies": [
         "curl",
-        "fmt",
         "sdl2",
         "libpng",
         "libogg",
