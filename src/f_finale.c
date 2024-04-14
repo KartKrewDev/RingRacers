@@ -505,6 +505,12 @@ static void F_IntroDrawScene(void)
 			V_DrawCenteredMenuString(BASEVIDWIDTH/2, 184 - (textoffs/FRACUNIT), (trans<<V_ALPHASHIFT)|V_SUBTRACT, "kartkrew.org");
 
 			V_ClearClipRect();
+
+			// FIXME:
+			// !!! LEGACY GL OMEGA-HACK !!!
+			// V_SUBTRACT is rendering the entire screen black ONLY IF it is the final draw call.
+			// The following draw call completely off-screen avoids this.
+			V_DrawCharacter(-100, -100, 'c', true);
 		}
 	}
 
