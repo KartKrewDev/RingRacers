@@ -195,7 +195,7 @@ void K_CheckBumpers(void)
 		{
 			// Reset map to turn on battle prisons
 			if (server)
-				D_MapChange(gamemap, gametype, encoremode, true, 0, false, false);
+				D_MapChange(gamemap, gametype, encoremode, true, 1, false, false);
 			return;
 		}
 	}
