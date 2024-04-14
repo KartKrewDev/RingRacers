@@ -281,6 +281,8 @@ typedef enum
 #endif
 #define challengegridloops (gamedata->challengegridwidth >= CHALLENGEGRIDLOOPWIDTH)
 
+#define CH_FURYBIKE 55
+
 // See also M_PlayMenuJam
 typedef enum {
 	GDMUSIC_NONE = 0,

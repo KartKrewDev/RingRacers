@@ -109,7 +109,7 @@ void f_tournament()
 	{
 		if (!unlockables[i].conditionset)
 			continue;
-		if (unlockables[i].conditionset == 55)
+		if (unlockables[i].conditionset == CH_FURYBIKE)
 			continue;
 		if (gamedata->unlocked[i])
 			continue;
