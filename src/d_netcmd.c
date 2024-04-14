@@ -5713,6 +5713,7 @@ static void Got_SetupVotecmd(const UINT8 **cp, INT32 playernum)
 	INT16 tempVoteLevels[VOTE_NUM_LEVELS][2];
 	INT32 i;
 
+	/*
 	if (playernum != serverplayer) // admin shouldn't be able to set up vote...
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal vote setup received from %s\n"), player_names[playernum]);
@@ -5722,6 +5723,7 @@ static void Got_SetupVotecmd(const UINT8 **cp, INT32 playernum)
 		}
 		return;
 	}
+	*/
 
 	newGametype = READINT16(*cp);
 	baseEncore = (boolean)READUINT8(*cp);
