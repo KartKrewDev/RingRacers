@@ -3027,7 +3027,10 @@ char *M_BuildConditionSetString(UINT16 unlockid)
 		if (work == NULL)
 		{
 			stopasap = true;
-			work = "(Find other secrets to learn about this...)";
+			if (message[0] && message[1])
+				work = "???";
+			else
+				work = "(Find other secrets to learn about this...)";
 		}
 		else if (cn->type == UC_DESCRIPTIONOVERRIDE)
 		{
