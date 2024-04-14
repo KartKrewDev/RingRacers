@@ -2979,7 +2979,7 @@ char *M_BuildConditionSetString(UINT16 unlockid)
 	static char message[1024] = "";
 	const char *work = NULL;
 	size_t i;
-	boolean stopasap = false;
+	UINT8 stopasap = 0;
 
 	message[0] = '\0';
 
@@ -3006,14 +3006,16 @@ char *M_BuildConditionSetString(UINT16 unlockid)
 	{
 		cn = &c->condition[i];
 
-		if (i > 0 && (cn->type != UC_COMMA))
+		if (i > 0)
 		{
+			worklen = 0;
 			if (lastID != cn->id)
 			{
+				stopasap = 0;
 				worklen = 6;
 				strncat(message, " - OR ", len);
 			}
-			else
+			else if (stopasap == 0 && cn->type != UC_COMMA)
 			{
 				worklen = 1;
 				strncat(message, " ", len);
@@ -3023,10 +3025,16 @@ char *M_BuildConditionSetString(UINT16 unlockid)
 
 		lastID = cn->id;
 
+		if (stopasap == 1)
+		{
+			// Secret challenge -- show unrelated condition IDs
+			continue;
+		}
+
 		work = M_GetConditionString(cn);
 		if (work == NULL)
 		{
-			stopasap = true;
+			stopasap = 1;
 			if (message[0] && message[1])
 				work = "???";
 			else
@@ -3034,15 +3042,16 @@ char *M_BuildConditionSetString(UINT16 unlockid)
 		}
 		else if (cn->type == UC_DESCRIPTIONOVERRIDE)
 		{
-			stopasap = true;
+			stopasap = 2;
 		}
 		worklen = strlen(work);
 
 		strncat(message, work, len);
 		len -= worklen;
 
-		if (stopasap)
+		if (stopasap == 2)
 		{
+			// Description override - hide all further ones
 			break;
 		}
 	}
