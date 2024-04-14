@@ -5098,7 +5098,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	{
 		vis->colormap = colormaps;
 
-		if (encoremap && (thing->flags & (MF_SCENERY|MF_NOTHINK)) && !(thing->flags & MF_DONTENCOREMAP))
+		if (encoremap && !(thing->flags & MF_DONTENCOREMAP))
 			vis->colormap += COLORMAP_REMAPOFFSET;
 	}
 
