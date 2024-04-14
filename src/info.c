@@ -17028,7 +17028,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,           // mass
 		0,           // damage
 		sfx_None,    // activesound
-		MF_SPECIAL|MF_ENEMY, // flags -- NOTE: IIRC MF_ENEMY was added by mappers to make conveyor belt setups more convenient
+		MF_SPECIAL|MF_ENEMY|MF_DONTENCOREMAP, // flags -- NOTE: IIRC MF_ENEMY was added by mappers to make conveyor belt setups more convenient
 		S_NULL       // raisestate
 	},
 
