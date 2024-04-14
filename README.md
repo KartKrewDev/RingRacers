@@ -29,7 +29,6 @@ Ring Racers is built using a compatible C++ toolchain (GCC, MinGW, Clang and App
 On Linux platforms, you will need the following libraries available on the system.
 
 - libcurl
-- libfmt
 - zlib
 - libpng
 - libogg
