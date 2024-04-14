@@ -11,3 +11,5 @@ add_subdirectory(glad)
 add_subdirectory(tracy)
 
 add_subdirectory(libwebm)
+
+add_subdirectory(fmt)
