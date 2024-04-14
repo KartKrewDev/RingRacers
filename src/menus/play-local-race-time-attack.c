@@ -21,6 +21,7 @@
 #include "../s_sound.h" // S_StartSound
 #include "../z_zone.h" // Z_StrDup/Z_Free
 #include "../m_cond.h"
+#include "../console.h" // CON_ToggleOff
 
 struct timeattackmenu_s timeattackmenu;
 
@@ -615,6 +616,9 @@ void M_StartTimeAttack(INT32 choice)
 		}
 		modeprefix = "spb-";
 	}
+
+	// DON'T SOFTLOCK
+	CON_ToggleOff();
 
 	// Still need to reset devmode
 	cht_debug = 0;
