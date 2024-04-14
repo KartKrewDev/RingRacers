@@ -5910,10 +5910,12 @@ void K_AddMessage(const char *msg, boolean interrupt, boolean persist)
 		if (interrupt)
 			state.clear();
 
+		std::string parsedmsg = srb2::Draw::TextElement().parse(msg).string();
+
 		if (persist)
-			state.objective = msg;
+			state.objective = parsedmsg;
 		else
-			state.add(msg);
+			state.add(parsedmsg);
 	}
 }
 
@@ -5940,10 +5942,12 @@ void K_AddMessageForPlayer(player_t *player, const char *msg, boolean interrupt,
 	if (interrupt)
 		state->clear();
 
+	std::string parsedmsg = srb2::Draw::TextElement().parse(msg).string();
+
 	if (persist)
-		state->objective = msg;
+		state->objective = parsedmsg;
 	else
-		state->add(msg);
+		state->add(parsedmsg);
 }
 
 void K_ClearPersistentMessageForPlayer(player_t *player)
@@ -5997,7 +6001,6 @@ static void K_DrawMessageFeed(void)
 		Draw::TextElement text(submsg);
 
 		text.font(Draw::Font::kMenu);
-		submsg = text.parse(submsg).string();
 
 		UINT8 x = 160;
 		UINT8 y = 10;
