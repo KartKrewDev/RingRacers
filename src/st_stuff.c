@@ -1516,10 +1516,10 @@ static fixed_t ST_CalculateFadeIn(player_t *player)
 
 	if (K_CheckBossIntro() == true || G_IsTitleCardAvailable() == false)
 	{
-		if (leveltime <= 16)
+		if (timeinmap <= 16)
 			timer = 0;
 		else
-			timer = leveltime-16;
+			timer = timeinmap-16;
 	}
 
 	if (timer < length)

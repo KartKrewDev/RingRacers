@@ -7645,7 +7645,9 @@ static void P_InitLevelSettings(void)
 
 	// circuit, race and competition stuff
 	numcheatchecks = 0;
-	timeinmap = 0;
+
+	if (!g_reloadinggamestate)
+		timeinmap = 0;
 
 	// special stage
 	stagefailed = true; // assume failed unless proven otherwise - P_GiveEmerald or emerald touchspecial
