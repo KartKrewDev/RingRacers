@@ -2631,7 +2631,7 @@ static const char *M_GetConditionString(condition_t *cn)
 
 		case UC_PRISONEGGCD:
 			// :butterfly: "alternatively you could say 'grab a hot toooon' or 'smooth beeat'"
-			return "GRAND PRIX: grab a certain prize from a Prison Egg";
+			return "GRAND PRIX: grab a certain prize from a random Prison Egg";
 
 		case UC_AND:
 			return "&";
