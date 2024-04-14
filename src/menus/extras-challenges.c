@@ -468,6 +468,10 @@ boolean M_CanKeyHiliTile(void)
 			return false;
 	}
 
+	// Fury Bike
+	if (unlockables[challengesmenu.currentunlock].conditionset == CH_FURYBIKE)
+		return false;
+
 	// All good!
 	return true;
 }

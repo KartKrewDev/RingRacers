@@ -1300,7 +1300,7 @@ void M_SetNetUnlocked(void)
 	{
 		for (i = 0; i < MAXUNLOCKABLES; i++)
 		{
-			if (unlockables[i].conditionset == 55)
+			if (unlockables[i].conditionset == CH_FURYBIKE)
 				continue;
 
 			netUnlocked[i] = true;
@@ -3094,7 +3094,7 @@ char *M_BuildConditionSetString(UINT16 unlockid)
 		}
 	}
 
-	if (usedTourney && unlockables[unlockid].conditionset == 55 && gamedata->unlocked[unlockid] == false)
+	if (usedTourney && unlockables[unlockid].conditionset == CH_FURYBIKE && gamedata->unlocked[unlockid] == false)
 	{
 		strcpy(message, "Power shrouds this challenge in darkness... (Return here without Tournament Mode!)\0");
 	}
