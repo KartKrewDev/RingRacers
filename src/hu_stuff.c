@@ -2426,7 +2426,15 @@ static void HU_DrawRankings(void)
 		V_DrawString(4, 188, hilicol|V_SNAPTOBOTTOM|V_SNAPTOLEFT, gametypes[gametype]->name);
 
 	// Left hand side
-	if (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE)
+	const boolean roundqueueinaction = (roundqueue.size > 0 && roundqueue.position > 0);
+
+	if (roundqueueinaction
+		&& roundqueue.entries[roundqueue.position-1].overridden == true)
+	{
+		V_DrawCenteredString(64, 8, 0, "ROUND");
+		V_DrawCenteredString(64, 16, hilicol, "???");
+	}
+	else if (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE)
 	{
 		const char *roundstr = NULL;
 		V_DrawCenteredString(64, 8, 0, "ROUND");
@@ -2441,7 +2449,7 @@ static void HU_DrawRankings(void)
 		}
 		V_DrawCenteredString(64, 16, hilicol, roundstr);
 	}
-	else if (roundqueue.size > 0)
+	else if (roundqueueinaction)
 	{
 		V_DrawCenteredString(64, 8, 0, "ROUND");
 		V_DrawCenteredString(64, 16, hilicol, va("%d", roundqueue.roundnum));
