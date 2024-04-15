@@ -12351,9 +12351,12 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			player->instaWhipCharge = 0;
 	}
 
-	// OOPSIES FIXME pt.4: There's some really specific circumstance where a held Item input won't cancel an
-	// ongoing roulette, which allows you enough time to charge a whip, except the animation is fucking
-	// invisible. Great! Just hack this for release, sorry.
+	// OOPSIES FIXME pt.4: This one is kind of esoteric and only theoretically abusable, but
+	// if a player picks up an item during the instawhip input safety window—the one that triggers
+	// after you burn to 0 rings—they can continue to hold the input, then charge a usable whip
+	// without stopping the roulette and acquiring an item, which cancels it.
+	// 
+	// No ghosts use this technique, but your least favorite tournament player might.
 	if (player->itemRoulette.active)
 	{
 		player->instaWhipCharge = min(player->instaWhipCharge, INSTAWHIP_CHARGETIME - 2);
