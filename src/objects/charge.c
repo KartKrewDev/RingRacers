@@ -26,7 +26,11 @@
 // cvmem: spawn time (used to offset flash)
 void Obj_ChargeAuraThink (mobj_t *aura)
 {
-    if (P_MobjWasRemoved(aura->target) || !aura->target->player || (aura->extravalue1 >= CHARGEAURA_BURSTTIME))
+    if (P_MobjWasRemoved(aura->target)
+		|| aura->target->health == 0
+		|| aura->target->destscale <= 1 // sealed star fall out
+		|| !aura->target->player
+		|| (aura->extravalue1 >= CHARGEAURA_BURSTTIME))
     {
         P_RemoveMobj(aura);
     }
