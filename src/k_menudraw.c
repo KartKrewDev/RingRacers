@@ -6825,14 +6825,14 @@ drawborder:
 
 #define challengetransparentstrength 8
 
-void M_DrawCharacterIconAndEngine(INT32 x, INT32 y, UINT8 skin, UINT8 *colormap, boolean dot)
+void M_DrawCharacterIconAndEngine(INT32 x, INT32 y, UINT8 skin, UINT8 *colormap, UINT8 baseskin)
 {
 	V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT,
 		FRACUNIT,
 		0, faceprefix[skin][FACE_RANK],
 		colormap);
 
-	if (dot)
+	if (skin != baseskin)
 	{
 		V_DrawScaledPatch(x, y + 11, 0, W_CachePatchName("ALTSDOT", PU_CACHE));
 	}
@@ -6844,10 +6844,43 @@ void M_DrawCharacterIconAndEngine(INT32 x, INT32 y, UINT8 skin, UINT8 *colormap,
 	V_DrawFill(x+16+1,   y+5,   14,  1,  0);
 	V_DrawFill(x+16+1,   y+5+5, 14,  1,  0);
 
-	// The following is a partial duplication of R_GetEngineClass
+	INT32 s, w;
+
+	if (skins[baseskin].flags & SF_IRONMAN)
 	{
-		INT32 s = (skins[skin].kartspeed - 1)/3;
-		INT32 w = (skins[skin].kartweight - 1)/3;
+		// this is the last thing i will do for rr pre-launhc ~toast 150424
+		// quoth tyron: "stat block rave holy shit"
+
+		UINT32 funnywomantimer = (gamedata->totalmenutime/4);
+		funnywomantimer %= (8*2);
+		if (funnywomantimer <= 8)
+		{
+			s = funnywomantimer % 3;
+			w = (funnywomantimer/3) % 3;
+
+			// snake!
+			if (w == 1)
+				s = 2 - s;
+		}
+		else
+		{
+			funnywomantimer -= 8;
+
+			s = 2 - ((funnywomantimer/3) % 3);
+			w = 2 - (funnywomantimer % 3);
+
+			// snake other way!
+			if (s == 1)
+				w = 2 - w;
+		}
+
+	}
+	else
+	{
+		// The following is a partial duplication of R_GetEngineClass
+
+		s = (skins[skin].kartspeed - 1)/3;
+		w = (skins[skin].kartweight - 1)/3;
 
 		#define LOCKSTAT(stat) \
 			if (stat < 0) { stat = 0; } \
@@ -6855,9 +6888,9 @@ void M_DrawCharacterIconAndEngine(INT32 x, INT32 y, UINT8 skin, UINT8 *colormap,
 			LOCKSTAT(s);
 			LOCKSTAT(w);
 		#undef LOCKSTAT
-
-		V_DrawFill(x+16 + (s*5), y + (w*5), 6, 6, 0);
 	}
+
+	V_DrawFill(x+16 + (s*5), y + (w*5), 6, 6, 0);
 }
 
 static void M_DrawChallengePreview(INT32 x, INT32 y)
@@ -6926,7 +6959,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 					break;
 				}
 
-				M_DrawCharacterIconAndEngine(4, BASEVIDHEIGHT-(4+16), i, colormap, (i != skin));
+				M_DrawCharacterIconAndEngine(4, BASEVIDHEIGHT-(4+16), i, colormap, skin);
 			}
 			break;
 		}
@@ -8324,7 +8357,7 @@ static void M_DrawStatsChars(void)
 		{
 			UINT8 *colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
 
-			M_DrawCharacterIconAndEngine(24, y, skin, colormap, false);
+			M_DrawCharacterIconAndEngine(24, y, skin, colormap, skin);
 		}
 
 		V_DrawThinString(24+32+2, y+3, 0, skins[skin].realname);
