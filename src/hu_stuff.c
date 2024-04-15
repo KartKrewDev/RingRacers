@@ -2426,7 +2426,7 @@ static void HU_DrawRankings(void)
 		V_DrawString(4, 188, hilicol|V_SNAPTOBOTTOM|V_SNAPTOLEFT, gametypes[gametype]->name);
 
 	// Left hand side
-	const boolean roundqueueinaction = (roundqueue.size > 0 && roundqueue.position > 0);
+	const boolean roundqueueinaction = (roundqueue.position > 0 && roundqueue.position <= roundqueue.size);
 
 	if (roundqueueinaction
 		&& roundqueue.entries[roundqueue.position-1].overridden == true)
