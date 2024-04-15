@@ -2421,6 +2421,8 @@ static const char *M_GetConditionString(condition_t *cn)
 
 			if (cn->type == UC_ALLCHAOS)
 				chaostext = "7 Chaos";
+			else if (M_CupSecondRowLocked() == true)
+				return NULL;
 			else if (cn->type == UC_ALLSUPER)
 				chaostext = "7 Super";
 			else
