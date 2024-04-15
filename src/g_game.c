@@ -4532,7 +4532,7 @@ static void G_DoCompleted(void)
 			{
 				// Increase your total rings
 				INT32 ringtotal = player->hudrings;
-				if (ringtotal > 0)
+				if (ringtotal > 0 && grandprixinfo.eventmode != GPEVENT_SPECIAL)
 				{
 					if (ringtotal > 20)
 						ringtotal = 20;
