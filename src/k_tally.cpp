@@ -331,7 +331,8 @@ void level_tally_t::Init(player_t *player)
 			}
 		}
 
-		if ((gametypes[gt]->rules & GTR_SPHERES) == 0)
+		if ((gametypes[gt]->rules & GTR_SPHERES) == 0
+		&& (!grandprixinfo.gp || grandprixinfo.eventmode != GPEVENT_SPECIAL))
 		{
 			if (player->hudrings > 0) // Don't count negative rings
 			{

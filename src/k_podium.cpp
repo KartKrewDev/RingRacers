@@ -599,12 +599,12 @@ void podiumData_s::Draw(void)
 							.text(va("%c", ('A' + p)));
 					}
 				}
-				// Do not draw any stats for GAME OVERed player
-				else if (gpRank_level_perplayer_t *const dta = &lvl->perPlayer[p]; dta->grade != GRADE_INVALID)
+				else
 				{
+					gpRank_level_perplayer_t *const dta = &lvl->perPlayer[p];
 					srb2::Draw drawer_rank = drawer_perplayer.xy(2, 0);
 
-					if (lvl->event != GPEVENT_SPECIAL)
+					if (lvl->event != GPEVENT_SPECIAL && dta->grade != GRADE_INVALID)
 					{
 						drawer_rank
 							.xy(0, -1)
@@ -612,123 +612,127 @@ void podiumData_s::Draw(void)
 							.patch(va("R_CUPRN%c", K_GetGradeChar(dta->grade)));
 					}
 
-					srb2::Draw drawer_gametype = drawer_rank.xy(18, 0);
-
-					switch (lvl->event)
+					// Do not draw any stats for GAME OVERed player
+					if (dta->grade != GRADE_INVALID || lvl->event == GPEVENT_SPECIAL)
 					{
-						case GPEVENT_BONUS:
+						srb2::Draw drawer_gametype = drawer_rank.xy(18, 0);
+
+						switch (lvl->event)
 						{
-							drawer_gametype
-								.xy(0, 1)
-								.patch("K_CAPICO");
-
-							drawer_gametype
-								.xy(22, 1)
-								.align(srb2::Draw::Align::kCenter)
-								.font(srb2::Draw::Font::kPing)
-								.text(va("%d/%d", dta->prisons, lvl->totalPrisons));
-							break;
-						}
-						case GPEVENT_SPECIAL:
-						{
-							srb2::Draw drawer_emerald = drawer_gametype;
-							UINT8 emeraldNum = g_podiumData.emeraldnum;
-
-							boolean useWhiteFrame = ((leveltime & 1) || !dta->gotSpecialPrize);
-							patch_t *emeraldPatch = nullptr;
-							skincolornum_t emeraldColor = SKINCOLOR_NONE;
-
-							if (emeraldNum == 0)
+							case GPEVENT_BONUS:
 							{
-								// Prize -- todo, currently using fake Emerald
-								emeraldColor = SKINCOLOR_GOLD;
+								drawer_gametype
+									.xy(0, 1)
+									.patch("K_CAPICO");
+
+								drawer_gametype
+									.xy(22, 1)
+									.align(srb2::Draw::Align::kCenter)
+									.font(srb2::Draw::Font::kPing)
+									.text(va("%d/%d", dta->prisons, lvl->totalPrisons));
+								break;
 							}
-							else
+							case GPEVENT_SPECIAL:
 							{
-								emeraldColor = static_cast<skincolornum_t>( SKINCOLOR_CHAOSEMERALD1 + ((emeraldNum - 1) % 7) );
-							}
+								srb2::Draw drawer_emerald = drawer_gametype;
+								UINT8 emeraldNum = g_podiumData.emeraldnum;
 
-							{
-								std::string emeraldName;
-								if (emeraldNum > 7)
+								boolean useWhiteFrame = ((leveltime & 1) || !dta->gotSpecialPrize);
+								patch_t *emeraldPatch = nullptr;
+								skincolornum_t emeraldColor = SKINCOLOR_NONE;
+
+								if (emeraldNum == 0)
 								{
-									emeraldName = (useWhiteFrame ? "K_SUPER2" : "K_SUPER1");
+									// Prize -- todo, currently using fake Emerald
+									emeraldColor = SKINCOLOR_GOLD;
 								}
 								else
 								{
-									emeraldName = (useWhiteFrame ? "K_EMERC" : "K_EMERW");
+									emeraldColor = static_cast<skincolornum_t>( SKINCOLOR_CHAOSEMERALD1 + ((emeraldNum - 1) % 7) );
 								}
 
-								emeraldPatch = static_cast<patch_t*>( W_CachePatchName(emeraldName.c_str(), PU_CACHE) );
-							}
-
-							if (dta->gotSpecialPrize)
-							{
-								if (emeraldColor != SKINCOLOR_NONE)
 								{
-									drawer_emerald = drawer_emerald.colormap( emeraldColor );
+									std::string emeraldName;
+									if (emeraldNum > 7)
+									{
+										emeraldName = (useWhiteFrame ? "K_SUPER2" : "K_SUPER1");
+									}
+									else
+									{
+										emeraldName = (useWhiteFrame ? "K_EMERC" : "K_EMERW");
+									}
+
+									emeraldPatch = static_cast<patch_t*>( W_CachePatchName(emeraldName.c_str(), PU_CACHE) );
 								}
+
+								if (dta->gotSpecialPrize)
+								{
+									if (emeraldColor != SKINCOLOR_NONE)
+									{
+										drawer_emerald = drawer_emerald.colormap( emeraldColor );
+									}
+								}
+								else
+								{
+									drawer_emerald = drawer_emerald.colormap( TC_BLINK, SKINCOLOR_BLACK );
+								}
+
+								drawer_emerald
+									.xy(6 - (emeraldPatch->width * 0.5), 0)
+									.patch(emeraldPatch);
+								break;
 							}
-							else
+							default:
 							{
-								drawer_emerald = drawer_emerald.colormap( TC_BLINK, SKINCOLOR_BLACK );
+								drawer_gametype
+									.xy(0, 1)
+									.patch("K_SPTLAP");
+
+								drawer_gametype
+									.xy(22, 1)
+									.align(srb2::Draw::Align::kCenter)
+									.font(srb2::Draw::Font::kPing)
+									.text(va("%d/%d", dta->lapPoints, lvl->totalLapPoints));
+								break;
+							}
+						}
+
+						if (singlePlayer)
+						{
+							srb2::Draw drawer_rings = drawer_gametype.xy(36, 0);
+
+							if (lvl->event == GPEVENT_NONE)
+							{
+								drawer_rings
+									.xy(0, -1)
+									.patch("K_SRING1");
+
+								drawer_rings
+									.xy(22, 1)
+									.colormap(TC_RAINBOW, SKINCOLOR_YELLOW)
+									.align(srb2::Draw::Align::kCenter)
+									.font(srb2::Draw::Font::kPing)
+									.text(va("%d", dta->rings));
 							}
 
-							drawer_emerald
-								.xy(6 - (emeraldPatch->width * 0.5), 0)
-								.patch(emeraldPatch);
-							break;
-						}
-						default:
-						{
-							drawer_gametype
-								.xy(0, 1)
-								.patch("K_SPTLAP");
+							srb2::Draw drawer_timer = drawer_rings.xy(36, 0);
 
-							drawer_gametype
-								.xy(22, 1)
+							drawer_timer
+								.xy(0, 0)
+								.patch("K_STTIMS");
+
+							drawer_timer
+								.xy(32, 1)
 								.align(srb2::Draw::Align::kCenter)
 								.font(srb2::Draw::Font::kPing)
-								.text(va("%d/%d", dta->lapPoints, lvl->totalLapPoints));
-							break;
+								.text(lvl->time == UINT32_MAX ?
+									"--'--\"--" : va(
+									"%i'%02i\"%02i",
+									G_TicsToMinutes(lvl->time, true),
+									G_TicsToSeconds(lvl->time),
+									G_TicsToCentiseconds(lvl->time)
+								));
 						}
-					}
-
-					if (singlePlayer)
-					{
-						srb2::Draw drawer_rings = drawer_gametype.xy(36, 0);
-
-						if (lvl->event == GPEVENT_NONE)
-						{
-							drawer_rings
-								.xy(0, -1)
-								.patch("K_SRING1");
-
-							drawer_rings
-								.xy(22, 1)
-								.colormap(TC_RAINBOW, SKINCOLOR_YELLOW)
-								.align(srb2::Draw::Align::kCenter)
-								.font(srb2::Draw::Font::kPing)
-								.text(va("%d", dta->rings));
-						}
-
-						srb2::Draw drawer_timer = drawer_rings.xy(36, 0);
-
-						drawer_timer
-							.xy(0, 0)
-							.patch("K_STTIMS");
-
-						drawer_timer
-							.xy(32, 1)
-							.align(srb2::Draw::Align::kCenter)
-							.font(srb2::Draw::Font::kPing)
-							.text(lvl->time == UINT32_MAX ?
-								"--'--\"--" : va(
-								"%i'%02i\"%02i",
-								G_TicsToMinutes(lvl->time, true),
-								G_TicsToSeconds(lvl->time),
-								G_TicsToCentiseconds(lvl->time)
-							));
 					}
 				}
 
