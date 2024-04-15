@@ -412,6 +412,7 @@ void F_StartCredits(void)
 	Music_StopAll();
 	S_StopSounds();
 
+	Music_Play("credits_silence"); // mask any music changes from demos
 	F_NewCreditsMusic("_creds", false);
 
 	F_CreditsReset();

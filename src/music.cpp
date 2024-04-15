@@ -165,6 +165,13 @@ void Music_Init(void)
 	}
 
 	{
+		Tune& tune = g_tunes.insert("credits_silence");
+
+		tune.song = "";
+		tune.priority = 100;
+	}
+
+	{
 		Tune& tune = g_tunes.insert("credits");
 
 		tune.priority = 100;
