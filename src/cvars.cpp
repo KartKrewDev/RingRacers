@@ -341,8 +341,8 @@ consvar_t cv_drawdist = Player("drawdist", "Normal").values({
 	{8192,  "Normal"},
 	{12288, "Far"},
 	{16384, "Farther"},
-	{24576, "Extreme"},
-	{32768, "Penultimate"},
+	{20480, "Extreme"},
+	{24576, "Penultimate"},
 	{0,     "Infinite"},
 });
 
