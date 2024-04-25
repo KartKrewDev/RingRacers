@@ -257,7 +257,7 @@ void K_UpdateMatchRaceBots(void)
 	else if (tutorialchallenge == TUTORIALSKIP_INPROGRESS)
 	{
 		pmax = 8; // can you believe this is a nerf
-		difficulty = MAXBOTDIFFICULTY;
+		difficulty = 6;
 	}
 	else if (K_CanChangeRules(true) == false)
 	{
