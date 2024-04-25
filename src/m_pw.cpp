@@ -258,6 +258,7 @@ void f_colors()
 	{
 		S_StartSound(0, sfx_kc42);
 		M_StartMessage("Time for a new look!", "Unlocked all colors. Try not to show off!", NULL, MM_NOTHING, NULL, NULL);
+		G_SaveGameData();
 	}
 	else
 	{
@@ -289,6 +290,7 @@ void f_followers()
 	{
 		S_StartSound(0, sfx_kc42);
 		M_StartMessage("Creatures captured!", "Unlocked all followers. Who's your favorite?", NULL, MM_NOTHING, NULL, NULL);
+		G_SaveGameData();
 	}
 	else
 	{
@@ -330,6 +332,7 @@ void f_maps()
 	{
 		S_StartSound(0, sfx_kc42);
 		M_StartMessage("// FIXME don't crash in certification test", "Unlocked all maps. Go see the world!", NULL, MM_NOTHING, NULL, NULL);
+		G_SaveGameData();
 	}
 	else
 	{
@@ -361,6 +364,7 @@ void f_characters()
 	{
 		S_StartSound(0, sfx_kc42);
 		M_StartMessage("...Is that how you spell it?", "Unlocked most characters. All together now!", NULL, MM_NOTHING, NULL, NULL);
+		G_SaveGameData();
 	}
 	else
 	{
@@ -392,6 +396,7 @@ void f_altmusic()
 	{
 		S_StartSound(0, sfx_kc42);
 		M_StartMessage("Wanna listen to some tunes?", "Unlocked all alternate music -- and Stereo Mode!", NULL, MM_NOTHING, NULL, NULL);
+		G_SaveGameData();
 	}
 	else
 	{
