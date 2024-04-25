@@ -10,6 +10,7 @@
 
 #include "twodee_renderer.hpp"
 
+#include <algorithm>
 #include <unordered_set>
 
 #include <stb_rect_pack.h>
