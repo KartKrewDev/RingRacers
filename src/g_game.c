@@ -4859,6 +4859,9 @@ void G_EndGame(void)
 		{
 			// Tutorial was finished
 			gamedata->tutorialdone = true;
+
+			M_UpdateUnlockablesAndExtraEmblems(true, true);
+			gamedata->deferredsave = true;
 		}
 
 		if (grandprixinfo.gp == true)
