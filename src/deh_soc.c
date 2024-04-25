@@ -2952,7 +2952,8 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 	||        (++offset && fastcmp(params[0], "CREDITS"))
 	||        (++offset && fastcmp(params[0], "REPLAY"))
 	||        (++offset && fastcmp(params[0], "CRASH"))
-	||        (++offset && fastcmp(params[0], "TUTORIALSKIP")))
+	||        (++offset && fastcmp(params[0], "TUTORIALSKIP"))
+	||        (++offset && fastcmp(params[0], "TUTORIALDONE")))
 	{
 		//PARAMCHECK(1);
 		ty = UC_ADDON + offset;

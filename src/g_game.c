@@ -4853,27 +4853,36 @@ void G_EndGame(void)
 	}
 
 	// Only do evaluation and credits in singleplayer contexts
-	if (!netgame && grandprixinfo.gp == true)
+	if (!netgame)
 	{
-		G_HandleSaveLevel(true);
-
-		if (nextmap == NEXTMAP_CEREMONY) // end game with ceremony
+		if (gametype == GT_TUTORIAL)
 		{
-			if (K_StartCeremony() == true)
+			// Tutorial was finished
+			gamedata->tutorialdone = true;
+		}
+
+		if (grandprixinfo.gp == true)
+		{
+			G_HandleSaveLevel(true);
+
+			if (nextmap == NEXTMAP_CEREMONY) // end game with ceremony
 			{
+				if (K_StartCeremony() == true)
+				{
+					return;
+				}
+			}
+			if (nextmap == NEXTMAP_CREDITS) // end game with credits
+			{
+				F_StartCredits();
 				return;
 			}
-		}
-		if (nextmap == NEXTMAP_CREDITS) // end game with credits
-		{
-			F_StartCredits();
-			return;
-		}
-		if (nextmap == NEXTMAP_EVALUATION) // end game with evaluation
-		{
-			F_InitGameEvaluation();
-			F_StartGameEvaluation();
-			return;
+			if (nextmap == NEXTMAP_EVALUATION) // end game with evaluation
+			{
+				F_InitGameEvaluation();
+				F_StartGameEvaluation();
+				return;
+			}
 		}
 	}
 

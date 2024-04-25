@@ -67,6 +67,7 @@ typedef enum
 	UC_REPLAY,			// Save a replay
 	UC_CRASH,			// Hee ho !
 	UC_TUTORIALSKIP,	// Complete the Tutorial Challenge
+	UC_TUTORIALDONE,	// Complete the Tutorial at all
 
 	UC_PASSWORD,		// Type in something funny
 
@@ -393,6 +394,7 @@ struct gamedata_t
 	boolean enteredtutorialchallenge;
 	boolean finishedtutorialchallenge;
 	boolean sealedswapalerted;
+	boolean tutorialdone;
 	gdmusic_t musicstate;
 
 	UINT8 gonerlevel;

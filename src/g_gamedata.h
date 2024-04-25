@@ -96,6 +96,7 @@ struct GamedataMilestonesJson final
 	bool finishedtutorialchallenge;
 	bool enteredtutorialchallenge;
 	bool sealedswapalerted;
+	bool tutorialdone;
 
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
 		GamedataMilestonesJson,
@@ -108,7 +109,8 @@ struct GamedataMilestonesJson final
 		majorkeyskipattempted,
 		finishedtutorialchallenge,
 		enteredtutorialchallenge,
-		sealedswapalerted
+		sealedswapalerted,
+		tutorialdone
 	)
 };
 
