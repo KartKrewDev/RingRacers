@@ -234,6 +234,171 @@ void f_4thgear()
 	}
 }
 
+void f_colors()
+{
+	UINT16 i;
+	boolean success = false;
+
+	for (i = 0; i < MAXUNLOCKABLES; i++)
+	{
+		if (!unlockables[i].conditionset)
+			continue;
+		if (unlockables[i].conditionset == CH_FURYBIKE)
+			continue;
+		if (gamedata->unlocked[i])
+			continue;
+		if (unlockables[i].type != SECRET_COLOR)
+			continue;
+
+		gamedata->unlocked[i] = true;
+		success = true;
+	}
+
+	if (success)
+	{
+		S_StartSound(0, sfx_kc42);
+		M_StartMessage("Time for a new look!", "Unlocked all colors. Try not to show off!", NULL, MM_NOTHING, NULL, NULL);
+	}
+	else
+	{
+		M_StartMessage("Time for a new look!", "You've already unlocked all colors.", NULL, MM_NOTHING, NULL, NULL);
+	}
+}
+
+void f_followers()
+{
+	UINT16 i;
+	boolean success = false;
+
+	for (i = 0; i < MAXUNLOCKABLES; i++)
+	{
+		if (!unlockables[i].conditionset)
+			continue;
+		if (unlockables[i].conditionset == CH_FURYBIKE)
+			continue;
+		if (gamedata->unlocked[i])
+			continue;
+		if (unlockables[i].type != SECRET_FOLLOWER)
+			continue;
+
+		gamedata->unlocked[i] = true;
+		success = true;
+	}
+
+	if (success)
+	{
+		S_StartSound(0, sfx_kc42);
+		M_StartMessage("Creatures captured!", "Unlocked all followers. Who's your favorite?", NULL, MM_NOTHING, NULL, NULL);
+	}
+	else
+	{
+		M_StartMessage("Creatures captured!", "You've already unlocked all followers.", NULL, MM_NOTHING, NULL, NULL);
+	}
+}
+
+void f_maps()
+{
+	UINT16 i;
+	boolean success = false;
+
+	for (i = 0; i < MAXUNLOCKABLES; i++)
+	{
+		if (!unlockables[i].conditionset)
+			continue;
+		if (unlockables[i].conditionset == CH_FURYBIKE)
+			continue;
+		if (gamedata->unlocked[i])
+			continue;
+		if (unlockables[i].type != SECRET_MAP && unlockables[i].type != SECRET_CUP)
+			continue;
+
+		gamedata->unlocked[i] = true;
+		success = true;
+	}
+
+#define GD_MV_SET (MV_VISITED|MV_BEATEN)
+	for (i = 0; i < nummapheaders; i++)
+	{
+		if ((mapheaderinfo[i]->records.mapvisited & GD_MV_SET) == GD_MV_SET)
+			continue;
+		mapheaderinfo[i]->records.mapvisited |= GD_MV_SET;
+		success = true;
+	}
+#undef GD_MV_SET
+
+	if (success)
+	{
+		S_StartSound(0, sfx_kc42);
+		M_StartMessage("// FIXME don't crash in certification test", "Unlocked all maps. Go see the world!", NULL, MM_NOTHING, NULL, NULL);
+	}
+	else
+	{
+		M_StartMessage("// FIXME don't crash in certification test", "You've already unlocked all maps.", NULL, MM_NOTHING, NULL, NULL);
+	}
+}
+
+void f_characters()
+{
+	UINT16 i;
+	boolean success = false;
+
+	for (i = 0; i < MAXUNLOCKABLES; i++)
+	{
+		if (!unlockables[i].conditionset)
+			continue;
+		if (unlockables[i].conditionset == CH_FURYBIKE)
+			continue;
+		if (gamedata->unlocked[i])
+			continue;
+		if (unlockables[i].type != SECRET_SKIN)
+			continue;
+
+		gamedata->unlocked[i] = true;
+		success = true;
+	}
+
+	if (success)
+	{
+		S_StartSound(0, sfx_kc42);
+		M_StartMessage("...Is that how you spell it?", "Unlocked most characters. All together now!", NULL, MM_NOTHING, NULL, NULL);
+	}
+	else
+	{
+		M_StartMessage("...Is that how you spell it?", "There are no characters to unlock!", NULL, MM_NOTHING, NULL, NULL);
+	}
+}
+
+void f_altmusic()
+{
+	UINT16 i;
+	boolean success = false;
+
+	for (i = 0; i < MAXUNLOCKABLES; i++)
+	{
+		if (!unlockables[i].conditionset)
+			continue;
+		if (unlockables[i].conditionset == CH_FURYBIKE)
+			continue;
+		if (gamedata->unlocked[i])
+			continue;
+		if (unlockables[i].type != SECRET_ALTMUSIC && unlockables[i].type != SECRET_SOUNDTEST)
+			continue;
+
+		gamedata->unlocked[i] = true;
+		success = true;
+	}
+
+	if (success)
+	{
+		S_StartSound(0, sfx_kc42);
+		M_StartMessage("Wanna listen to some tunes?", "Unlocked all alternate music -- and Stereo Mode!", NULL, MM_NOTHING, NULL, NULL);
+	}
+	else
+	{
+		M_StartMessage("Wanna listen to some tunes?", "You've already unlocked all music!", NULL, MM_NOTHING, NULL, NULL);
+	}
+}
+
 void f_devmode()
 {
 	INT32 i;
@@ -428,4 +593,9 @@ void M_PasswordInit(void)
 	passwords.emplace_back(f_tastelesstaunts, "4QfCuCG0/7z5U5A1hxqlqx83uQTGmQ1aaWPBQ8pqQvw9KRGvxxiDq9UF0N24fDlu0+XYksgkPHJg4A5h5aEQiw==");
 	passwords.emplace_back(f_devmode, "ybYqLUlREa9TJqV0uftxqGL8jPR1U+uEgrff/jast0kCfeIdzY15VxjveSZho8GOjfRuC3Zt4aJQTvhJcPAhkw==");
 	passwords.emplace_back(f_proceed, "GZPKJsa++Tt134yS3eBKdP+8vdAHB1thwK2ys6VDfFxcIRtABtM9j4qt8WULFrI+KxCSYMZ6K0mwt5BVzcvvuw==");
+	passwords.emplace_back(f_colors, "aSk8dw6FzJtTEmovh8fVEtUBpu6lj3QlRT/B5lwiEhAw8dAhRBQLdvtYlPaQcZISWI4wneAfAo6w5d6uf5r++g==");
+	passwords.emplace_back(f_followers, "zYCIZw2qcnUbtF0P2ybLNHajdl8zrje0hzGex7yuMFe7fj4mvx4AegoMmvir28YvAbfAqkz/ekQRzr+RhrycHw==");
+	passwords.emplace_back(f_maps, "u/Svaf+DCnCpJ8xmP3AVP4CK6X6X4O3fY73cmIq88ZJEygwz+n+L66q4Vhlv13vWgld1PEyRszFErzflQt9WZw==");
+	passwords.emplace_back(f_characters, "MohmPqpaGSd3MEHLfQKUFl/Yg8pHE+12X1LHEP59Gs/5w1u8mPtGUXNv1GYTF+c8gQqT5hXpZ3FeZ/EfCxo34g==");
+	passwords.emplace_back(f_altmusic, "dZgxKNagOtB9F7wXqUUPzsuq4tfQlfK8ZqEeFXdI3Hd+k5tYfRm3ToLgbqawaNmwuLVrJ8PB+QnH4gT3ojnTMw==");
 }
