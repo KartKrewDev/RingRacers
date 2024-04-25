@@ -412,6 +412,7 @@ void PR_LoadProfiles(void)
 
 	for (size_t i = 1; i < numprofiles; i++)
 	{
+		bool converted = false;
 		auto& jsprof = js.profiles[i - 1];
 		profile_t* newprof = static_cast<profile_t*>(Z_Calloc(sizeof(profile_t), PU_STATIC, NULL));
 		profilesList[i] = newprof;
@@ -467,6 +468,13 @@ void PR_LoadProfiles(void)
 		newprof->rumble = jsprof.preferences.rumble;
 		newprof->fov = jsprof.preferences.fov;
 
+		if (jsprof.version == 1)
+		{
+			// Version 1 -> 2: litesteer is now off by default, reset old profiles
+			newprof->litesteer = false;
+			converted = true;
+		}
+
 		try
 		{
 			for (size_t j = 0; j < num_gamecontrols; j++)
@@ -481,6 +489,12 @@ void PR_LoadProfiles(void)
 		{
 			I_Error("Profile '%s' controls are corrupt", jsprof.playername.c_str());
 			return;
+		}
+
+		if (converted)
+		{
+			CONS_Printf("Profile '%s' was converted from version %d to version %d\n",
+				newprof->profilename, jsprof.version, PROFILEVER);
 		}
 	}
 

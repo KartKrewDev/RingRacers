@@ -109,7 +109,11 @@ extern "C" {
 #define SKINNAMESIZE 16
 
 #define PROFILENAMELEN 6
-#define PROFILEVER 1
+// Version history:
+// 1 - first
+// 2 - litesteer is off by default, old profiles litesteer
+//     option is reset to default
+#define PROFILEVER 2
 #define MAXPROFILES 16
 #define PROFILESFILE "ringprofiles.prf"
 #define PROFILE_GUEST 0
