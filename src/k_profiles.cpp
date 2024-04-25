@@ -468,13 +468,6 @@ void PR_LoadProfiles(void)
 		newprof->rumble = jsprof.preferences.rumble;
 		newprof->fov = jsprof.preferences.fov;
 
-		if (jsprof.version == 1)
-		{
-			// Version 1 -> 2: litesteer is now off by default, reset old profiles
-			newprof->litesteer = false;
-			converted = true;
-		}
-
 		try
 		{
 			for (size_t j = 0; j < num_gamecontrols; j++)
@@ -489,6 +482,26 @@ void PR_LoadProfiles(void)
 		{
 			I_Error("Profile '%s' controls are corrupt", jsprof.playername.c_str());
 			return;
+		}
+
+		if (jsprof.version == 1)
+		{
+			// Version 1 -> 2:
+			// - litesteer is now off by default, reset old profiles
+			newprof->litesteer = false;
+
+			auto unbound = [](const INT32* map)
+			{
+				INT32 zero[MAXINPUTMAPPING] = {};
+				return !memcmp(map, zero, sizeof zero);
+			};
+			if (unbound(newprof->controls[gc_talk]))
+			{
+				// - unbound talk control gets reset to default
+				memcpy(newprof->controls[gc_talk], gamecontroldefault[gc_talk], sizeof newprof->controls[gc_talk]);
+			}
+
+			converted = true;
 		}
 
 		if (converted)
