@@ -80,7 +80,7 @@ profile_t* PR_MakeProfile(
 	newprofile->followercolor = fcol;
 	newprofile->kickstartaccel = false;
 	newprofile->autoroulette = false;
-	newprofile->litesteer = true;
+	newprofile->litesteer = false;
 	newprofile->rumble = true;
 	newprofile->fov = atoi(cv_dummyprofilefov.defaultvalue);
 
