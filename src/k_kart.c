@@ -3523,6 +3523,12 @@ static void K_GetKartBoostPower(player_t *player)
 		ADDBOOST(0, FRACUNIT, 2*SLIPTIDEHANDLING/10); // 0% speed 100% accel 20% handle
 	}
 
+	// This should always remain the last boost stack before tethering
+	if (player->botvars.rubberband > FRACUNIT && K_PlayerUsesBotMovement(player) == true)
+	{
+		ADDBOOST(player->botvars.rubberband - FRACUNIT, 0, 0);
+	}
+
 	if (player->draftpower > 0) // Drafting
 	{
 		// 30% - 44%, each point of speed adds 1.75%
@@ -3638,7 +3644,7 @@ fixed_t K_GetKartSpeed(const player_t *player, boolean doboostpower, boolean dor
 
 	finalspeed = FixedMul(finalspeed, mapobjectscale);
 
-	if (dorubberband == true && K_PlayerUsesBotMovement(player) == true)
+	if (dorubberband == true && player->botvars.rubberband < FRACUNIT && K_PlayerUsesBotMovement(player) == true)
 	{
 		finalspeed = FixedMul(finalspeed, player->botvars.rubberband);
 	}
