@@ -642,7 +642,7 @@ consvar_t cv_advertise = UnsavedNetVar("advertise", "No").yes_no().onchange_noin
 consvar_t cv_allowexitlevel = UnsavedNetVar("allowexitlevel", "No").yes_no();
 consvar_t cv_allowmlook = UnsavedNetVar("allowmlook", "Yes").yes_no();
 consvar_t cv_allowteamchange = UnsavedNetVar("allowteamchange", "Yes").yes_no();
-consvar_t cv_antigrief = UnsavedNetVar("antigrief", "30").min_max(10, 180, {{0, "Off"}});
+consvar_t cv_antigrief = NetVar("antigrief", "30").min_max(10, 180, {{0, "Off"}});
 consvar_t cv_automate = UnsavedNetVar("automate", "On").on_off();
 
 // If on and you're an admin, your messages will automatically become shouts.
@@ -733,7 +733,7 @@ void LiveStudioAudience_OnChange(void);
 	consvar_t cv_livestudioaudience = UnsavedNetVar("livestudioaudience", "Off").on_off().onchange(LiveStudioAudience_OnChange);
 #endif
 
-consvar_t cv_maxplayers = UnsavedNetVar("maxplayers", "8").min_max(1, MAXPLAYERS);
+consvar_t cv_maxplayers = NetVar("maxplayers", "8").min_max(1, MAXPLAYERS);
 
 // Scoring type options
 consvar_t cv_overtime = UnsavedNetVar("overtime", "Yes").yes_no();
