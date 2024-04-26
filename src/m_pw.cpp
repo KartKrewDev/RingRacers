@@ -124,6 +124,10 @@ void f_tournament()
 	{
 		if ((mapheaderinfo[i]->records.mapvisited & GD_MV_SET) == GD_MV_SET)
 			continue;
+		if (mapheaderinfo[i]->typeoflevel & TOL_VERSUS)
+			continue;
+		if (!strcmp(mapheaderinfo[i]->lumpname, "RR_HIDDENPALACE"))
+			continue;
 		mapheaderinfo[i]->records.mapvisited |= GD_MV_SET;
 		success = true;
 	}
