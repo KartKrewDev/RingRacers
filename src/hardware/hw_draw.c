@@ -641,13 +641,18 @@ void HWR_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color, UINT16 ac
 	if (!(color & V_NOSCALESTART))
 	{
 		float dupx = (float)vid.dupx, dupy = (float)vid.dupy;
+		INT32 intx, inty;
 
 		fx *= dupx;
 		fy *= dupy;
 		fw *= dupx;
 		fh *= dupy;
 
-		// adjustxy
+		intx = (INT32)fx;
+		inty = (INT32)fy;
+		V_AdjustXYWithSnap(&intx, &inty, color, dupx, dupy);
+		fx = (float)intx;
+		fy = (float)inty;
 	}
 
 	if (fx >= vid.width || fy >= vid.height)
@@ -984,27 +989,18 @@ void HWR_DrawDiag(INT32 x, INT32 y, INT32 wh, INT32 color)
 	if (!(color & V_NOSCALESTART))
 	{
 		float dupx = (float)vid.dupx, dupy = (float)vid.dupy;
+		INT32 intx, inty;
 
 		fx *= dupx;
 		fy *= dupy;
 		fw *= dupx;
 		fh *= dupy;
 
-		if (fabsf((float)vid.width - ((float)BASEVIDWIDTH * dupx)) > 1.0E-36f)
-		{
-			if (color & V_SNAPTORIGHT)
-				fx += ((float)vid.width - ((float)BASEVIDWIDTH * dupx));
-			else if (!(color & V_SNAPTOLEFT))
-				fx += ((float)vid.width - ((float)BASEVIDWIDTH * dupx)) / 2;
-		}
-		if (fabsf((float)vid.height - ((float)BASEVIDHEIGHT * dupy)) > 1.0E-36f)
-		{
-			// same thing here
-			if (color & V_SNAPTOBOTTOM)
-				fy += ((float)vid.height - ((float)BASEVIDHEIGHT * dupy));
-			else if (!(color & V_SNAPTOTOP))
-				fy += ((float)vid.height - ((float)BASEVIDHEIGHT * dupy)) / 2;
-		}
+		intx = (INT32)fx;
+		inty = (INT32)fy;
+		V_AdjustXYWithSnap(&intx, &inty, color, dupx, dupy);
+		fx = (float)intx;
+		fy = (float)inty;
 	}
 
 	if (fx >= vid.width || fy >= vid.height)
