@@ -4137,11 +4137,6 @@ void G_GetNextMap(void)
 			netgame == false
 			&& gametype == GT_TUTORIAL
 			&& nextmap == NEXTMAP_TUTORIALCHALLENGE
-			&& (
-				!gamedata
-				|| gamedata->enteredtutorialchallenge == false
-				|| M_GameTrulyStarted() == true
-			)
 		)
 		{
 			nextmap = G_MapNumber(tutorialchallengemap);
