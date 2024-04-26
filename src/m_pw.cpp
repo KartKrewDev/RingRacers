@@ -404,6 +404,129 @@ void f_altmusic()
 	}
 }
 
+void f_timeattack()
+{
+	UINT16 i;
+	boolean success = false;
+	boolean already_have_encore = M_SecretUnlocked(SECRET_ENCORE, true);
+
+	for (i = 0; i < MAXUNLOCKABLES; i++)
+	{
+		if (!unlockables[i].conditionset)
+			continue;
+		if (unlockables[i].conditionset == CH_FURYBIKE)
+			continue;
+		if (gamedata->unlocked[i])
+			continue;
+
+		if (unlockables[i].type == SECRET_TIMEATTACK
+			|| unlockables[i].type == SECRET_PRISONBREAK
+			|| unlockables[i].type == SECRET_SPECIALATTACK
+			|| (unlockables[i].type == SECRET_SPBATTACK && already_have_encore))
+		{
+			gamedata->unlocked[i] = true;
+			success = true;
+		}
+	}
+
+	if (success)
+	{
+		S_StartSound(0, sfx_kc42);
+		if (already_have_encore)
+		{
+			M_StartMessage("Time Trial ON, OK!", "Unlocked all Time Attack modes -- including SPB Attack!", NULL, MM_NOTHING, NULL, NULL);
+		}
+		else
+		{
+			M_StartMessage("Time Trial ON, OK!", "Unlocked all Time Attack modes!", NULL, MM_NOTHING, NULL, NULL);
+		}
+		G_SaveGameData();
+	}
+	else
+	{
+		M_StartMessage("Time Trial ON, OK!", "You already have all Time Attack modes.", NULL, MM_NOTHING, NULL, NULL);
+	}
+}
+
+void f_encore()
+{
+	UINT16 i;
+	boolean success = false;
+	boolean already_have_timeattacks = (
+		M_SecretUnlocked(SECRET_TIMEATTACK, true)
+		&& M_SecretUnlocked(SECRET_PRISONBREAK, true)
+		&& M_SecretUnlocked(SECRET_SPECIALATTACK, true)
+	);
+
+	for (i = 0; i < MAXUNLOCKABLES; i++)
+	{
+		if (!unlockables[i].conditionset)
+			continue;
+		if (unlockables[i].conditionset == CH_FURYBIKE)
+			continue;
+		if (gamedata->unlocked[i])
+			continue;
+
+		if (unlockables[i].type == SECRET_ENCORE
+			|| (unlockables[i].type == SECRET_SPBATTACK && already_have_timeattacks))
+		{
+			gamedata->unlocked[i] = true;
+			success = true;
+		}
+	}
+
+	if (success)
+	{
+		S_StartSound(0, sfx_kc42);
+		if (already_have_timeattacks)
+		{
+			M_StartMessage("And turn it all around!", "Unlocked Encore Mode -- and SPB Attack!", NULL, MM_NOTHING, NULL, NULL);
+		}
+		else
+		{
+			M_StartMessage("And turn it all around!", "Unlocked Encore Mode!", NULL, MM_NOTHING, NULL, NULL);
+		}
+		G_SaveGameData();
+	}
+	else
+	{
+		M_StartMessage("And turn it all around!", "You already have Encore Mode.", NULL, MM_NOTHING, NULL, NULL);
+	}
+}
+
+void f_difficulty()
+{
+	UINT16 i;
+	boolean success = false;
+
+	for (i = 0; i < MAXUNLOCKABLES; i++)
+	{
+		if (!unlockables[i].conditionset)
+			continue;
+		if (unlockables[i].conditionset == CH_FURYBIKE)
+			continue;
+		if (gamedata->unlocked[i])
+			continue;
+
+		if (unlockables[i].type == SECRET_HARDSPEED || unlockables[i].type == SECRET_MASTERMODE)
+		{
+			gamedata->unlocked[i] = true;
+			success = true;
+		}
+	}
+
+	if (success)
+	{
+		S_StartSound(0, sfx_kc42);
+		M_StartMessage("TWO SPEEDS,", "All Gear speeds unlocked!", NULL, MM_NOTHING, NULL, NULL);
+		G_SaveGameData();
+	}
+	else
+	{
+		M_StartMessage("TWO SPEEDS,", "You already have all Gear speeds.", NULL, MM_NOTHING, NULL, NULL);
+	}
+}
+
 void f_devmode()
 {
 	INT32 i;
@@ -603,4 +726,7 @@ void M_PasswordInit(void)
 	passwords.emplace_back(f_maps, "u/Svaf+DCnCpJ8xmP3AVP4CK6X6X4O3fY73cmIq88ZJEygwz+n+L66q4Vhlv13vWgld1PEyRszFErzflQt9WZw==");
 	passwords.emplace_back(f_characters, "MohmPqpaGSd3MEHLfQKUFl/Yg8pHE+12X1LHEP59Gs/5w1u8mPtGUXNv1GYTF+c8gQqT5hXpZ3FeZ/EfCxo34g==");
 	passwords.emplace_back(f_altmusic, "dZgxKNagOtB9F7wXqUUPzsuq4tfQlfK8ZqEeFXdI3Hd+k5tYfRm3ToLgbqawaNmwuLVrJ8PB+QnH4gT3ojnTMw==");
+	passwords.emplace_back(f_timeattack, "mFu5OB9d6jnc2kth7HE66wJ42F/GHDzSvuciK1Qw++6iGnpBccxcKjpoxgOvD3eIoqR606ruBINuXi23proXHQ==");
+	passwords.emplace_back(f_encore, "i5u5sIsMs5eITy+LzAXvKm6D9OzOVKhUqSy1mTTV/oUxJX6RPsk8OcyLbNaey9Vc6wXOhz+2+mTXILkIRzvXqA==");
+	passwords.emplace_back(f_difficulty, "MKjOtEFLkgXf21uiECdBTU6XtbkuFWaGh7i8znKo7JrXXEDrCBJmGwINvPg0T3TLn0zlscLvmC5nve7I+NTrnA==");
 }
