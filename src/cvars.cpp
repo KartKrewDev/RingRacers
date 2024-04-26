@@ -713,7 +713,7 @@ consvar_t cv_kartbot = UnsavedNetVar("bots", "Off").values({
 consvar_t cv_kartbumpers = UnsavedNetVar("battlebumpers", "3").min_max(0, 12);
 
 void KartEliminateLast_OnChange(void);
-consvar_t cv_karteliminatelast = UnsavedNetVar("eliminatelast", "Yes").yes_no().onchange(KartEliminateLast_OnChange);
+consvar_t cv_karteliminatelast = NetVar("eliminatelast", "Yes").yes_no().onchange(KartEliminateLast_OnChange);
 
 void KartEncore_OnChange(void);
 consvar_t cv_kartencore = UnsavedNetVar("encore", "Auto").values({{-1, "Auto"}, {0, "Off"}, {1, "On"}}).onchange_noinit(KartEncore_OnChange);
