@@ -7696,6 +7696,10 @@ static void P_InitLevelSettings(void)
 
 		// We don't touch the gamespeed, though!
 	}
+	else if (tutorialchallenge == TUTORIALSKIP_INPROGRESS)
+	{
+		gamespeed = KARTSPEED_NORMAL;
+	}
 	else if (grandprixinfo.gp == true)
 	{
 		if (multi_speed)
@@ -7703,10 +7707,7 @@ static void P_InitLevelSettings(void)
 			gamespeed = grandprixinfo.gamespeed;
 		}
 	}
-	else if (
-		modeattacking != ATTACKING_NONE
-		|| tutorialchallenge ==  TUTORIALSKIP_INPROGRESS
-	)
+	else if (modeattacking != ATTACKING_NONE)
 	{
 		if (multi_speed)
 		{
