@@ -103,11 +103,15 @@ boolean M_CanShowLevelInList(INT16 mapnum, levelsearch_t *levelsearch)
 	// Finally, the most complex check: does the map have lock conditions?
 	if (levelsearch->checklocked)
 	{
-		// Check for visitation
-		if (!(mapheaderinfo[mapnum]->menuflags & LF2_NOVISITNEEDED)
-		&& !(mapheaderinfo[mapnum]->records.mapvisited & MV_VISITED)
-		&& !(cup && cup->cachedlevels[0] == mapnum))
-			return false;
+		// All tutorial courses can be visited for the first time once the game has truly started.
+		if (levelsearch->tutorial == false || M_GameTrulyStarted() == false)
+		{
+			// Check for visitation
+			if (!(mapheaderinfo[mapnum]->menuflags & LF2_NOVISITNEEDED)
+			&& !(mapheaderinfo[mapnum]->records.mapvisited & MV_VISITED)
+			&& !(cup && cup->cachedlevels[0] == mapnum))
+				return false;
+		}
 
 		// Check for completion
 		if ((mapheaderinfo[mapnum]->menuflags & LF2_FINISHNEEDED)

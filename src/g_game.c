@@ -4137,11 +4137,6 @@ void G_GetNextMap(void)
 			netgame == false
 			&& gametype == GT_TUTORIAL
 			&& nextmap == NEXTMAP_TUTORIALCHALLENGE
-			&& (
-				!gamedata
-				|| gamedata->enteredtutorialchallenge == false
-				|| M_GameTrulyStarted() == true
-			)
 		)
 		{
 			nextmap = G_MapNumber(tutorialchallengemap);
@@ -4152,7 +4147,7 @@ void G_GetNextMap(void)
 				// A gamedata save will happen on successful level enter
 
 				// Also set character, color, and follower from profile
-
+				D_SendPlayerConfig(0);
 			}
 		}
 
@@ -4853,27 +4848,39 @@ void G_EndGame(void)
 	}
 
 	// Only do evaluation and credits in singleplayer contexts
-	if (!netgame && grandprixinfo.gp == true)
+	if (!netgame)
 	{
-		G_HandleSaveLevel(true);
-
-		if (nextmap == NEXTMAP_CEREMONY) // end game with ceremony
+		if (gametype == GT_TUTORIAL)
 		{
-			if (K_StartCeremony() == true)
+			// Tutorial was finished
+			gamedata->tutorialdone = true;
+
+			M_UpdateUnlockablesAndExtraEmblems(true, true);
+			gamedata->deferredsave = true;
+		}
+
+		if (grandprixinfo.gp == true)
+		{
+			G_HandleSaveLevel(true);
+
+			if (nextmap == NEXTMAP_CEREMONY) // end game with ceremony
 			{
+				if (K_StartCeremony() == true)
+				{
+					return;
+				}
+			}
+			if (nextmap == NEXTMAP_CREDITS) // end game with credits
+			{
+				F_StartCredits();
 				return;
 			}
-		}
-		if (nextmap == NEXTMAP_CREDITS) // end game with credits
-		{
-			F_StartCredits();
-			return;
-		}
-		if (nextmap == NEXTMAP_EVALUATION) // end game with evaluation
-		{
-			F_InitGameEvaluation();
-			F_StartGameEvaluation();
-			return;
+			if (nextmap == NEXTMAP_EVALUATION) // end game with evaluation
+			{
+				F_InitGameEvaluation();
+				F_StartGameEvaluation();
+				return;
+			}
 		}
 	}
 

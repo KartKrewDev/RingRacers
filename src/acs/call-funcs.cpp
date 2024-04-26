@@ -1928,14 +1928,6 @@ bool CallFunc_CheckTutorialChallenge(ACSVM::Thread *thread, const ACSVM::Word *a
 			thread->dataStk.push(~env->getString( "Failed" )->idx);
 			return false;
 		}
-
-		if (gamedata != nullptr
-		&& gamedata->enteredtutorialchallenge == true
-		&& M_GameTrulyStarted() == false)
-		{
-			thread->dataStk.push(~env->getString( "Locked" )->idx);
-			return false;
-		}
 	}
 
 	thread->dataStk.push(0);
