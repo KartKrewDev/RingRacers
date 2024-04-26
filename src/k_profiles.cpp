@@ -490,6 +490,12 @@ void PR_LoadProfiles(void)
 			// - litesteer is now off by default, reset old profiles
 			newprof->litesteer = false;
 
+			// - fov is now 100 by default, reset if it was left at 90 (old default)
+			if (newprof->fov == 90)
+			{
+				newprof->fov = 100;
+			}
+
 			auto unbound = [](const INT32* map)
 			{
 				INT32 zero[MAXINPUTMAPPING] = {};
