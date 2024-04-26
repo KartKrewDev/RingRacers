@@ -4152,7 +4152,7 @@ void G_GetNextMap(void)
 				// A gamedata save will happen on successful level enter
 
 				// Also set character, color, and follower from profile
-
+				D_SendPlayerConfig(0);
 			}
 		}
 
