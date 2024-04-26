@@ -319,6 +319,27 @@ void K_UpdateMatchRaceBots(void)
 		}
 	}
 
+	auto clear_bots = [&numbots](UINT8 max)
+	{
+		UINT8 i = MAXPLAYERS;
+		while (numbots > max && i > 0)
+		{
+			i--;
+
+			if (playeringame[i] && players[i].bot)
+			{
+				CL_RemovePlayer(i, KR_LEAVE);
+				numbots--;
+			}
+		}
+	};
+
+	if (tutorialchallenge == TUTORIALSKIP_INPROGRESS)
+	{
+		// Prevent Eggman bot carrying over from Tutorial
+		clear_bots(0);
+	}
+
 	if (numbots < wantedbots)
 	{
 		// We require MORE bots!
@@ -372,17 +393,7 @@ void K_UpdateMatchRaceBots(void)
 	}
 	else if (numbots > wantedbots)
 	{
-		i = MAXPLAYERS;
-		while (numbots > wantedbots && i > 0)
-		{
-			i--;
-
-			if (playeringame[i] && players[i].bot)
-			{
-				CL_RemovePlayer(i, KR_LEAVE);
-				numbots--;
-			}
-		}
+		clear_bots(wantedbots);
 	}
 
 	// We should have enough bots now :)
