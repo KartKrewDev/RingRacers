@@ -37,6 +37,10 @@ menuitem_t MAIN_Goner[] =
 {
 	{IT_STRING | IT_CALL, NULL, NULL, NULL, {.routine = M_QuitSRB2}, 0, 0}, // will be replaced
 
+	{IT_STRING | IT_CALL, "EXIT PROGRAM",
+		"CONCLUDE OBSERVATIONS NOW.", NULL,
+		{.routine = M_QuitSRB2}, 0, 0},
+
 	{IT_STRING | IT_CALL, "VIDEO OPTIONS",
 		"CONFIGURE OCULAR PATHWAYS.", NULL,
 		{.routine = M_VideoOptions}, 0, 0},
@@ -59,9 +63,9 @@ menuitem_t MAIN_Goner[] =
 };
 
 menu_t MAIN_GonerDef = {
-	1, // Intentionally not the sizeof calc
+	2,
 	NULL,
-	0,
+	1,
 	MAIN_Goner,
 	26, 160,
 	0, sizeof (MAIN_Goner) / sizeof (menuitem_t), // extra2 is final width
@@ -698,6 +702,8 @@ void M_AddGonerLines(void)
 			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/2,
 				"But yes. Perhaps now you have a better appreciation of what "\
 				"we're building here, Metal.");
+			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/2,
+				"If you need to learn more, you can always come back to the Tutorial later in the ""\x87""Extras""\x80"" menu.");
 			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/5,
 				"Now, I'm willing to let bygones be bygones.");
 			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/2,
@@ -727,6 +733,7 @@ void M_GonerRailroad(bool set)
 	INT16 destsize = std::min(
 		static_cast<INT16>(
 			(set ? 2 : 1) // Quit + options + maybe 1 for extra access
+			+ 1
 			+ std::max(0, gamedata->gonerlevel - GDGONER_VIDEO)
 		),
 		currentMenu->extra2);
@@ -744,12 +751,17 @@ void M_GonerHidePassword(void)
 	if (MAIN_Goner[0].mvar2)
 		return;
 
+#if 0
 	MAIN_Goner[0] =
 		{IT_STRING | IT_CALL, "EXIT PROGRAM",
 			"CONCLUDE OBSERVATIONS NOW.", NULL,
 			{.routine = M_QuitSRB2}, 0, 1};
 
 	S_StartSound(NULL, sfx_s3k5b);
+#else
+	// Always keep the password field, but play menu jam only once.
+	MAIN_Goner[0].mvar2 = 1;
+#endif
 
 	M_PlayMenuJam();
 }
@@ -838,7 +850,7 @@ void M_GonerTick(void)
 		first = goner_gdq = false;
 
 		MAIN_Goner[0] =
-			{IT_STRING | IT_CVAR | IT_CV_STRING, ". . .",
+			{IT_STRING | IT_CVAR | IT_CV_STRING, "PASSWORD",
 				"ATTEMPT ADMINISTRATOR ACCESS.", NULL,
 				{.cvar = &cv_dummyextraspassword}, 0, 0};
 
@@ -846,7 +858,7 @@ void M_GonerTick(void)
 			gamedata->gonerlevel = GDGONER_INTRO;
 
 		M_GonerRailroad(false);
-		itemOn = 0;
+		itemOn = 1;
 
 		lastseenlevel = gamedata->gonerlevel;
 	}
@@ -870,8 +882,10 @@ void M_GonerTick(void)
 	{
 		// Challenges are not interpreted at this stage.
 		// See M_ExtraTick for the full behaviour.
+		auto result = M_TryPassword(cv_dummyextraspassword.string, false);
 
-		if (M_TryPassword(cv_dummyextraspassword.string, false) != M_PW_EXTRAS)
+#if 0
+		if (result != M_PW_EXTRAS)
 		{
 			if (LinesOutput.empty() && !LinesToDigest.empty())
 			{
@@ -884,6 +898,9 @@ void M_GonerTick(void)
 				"Aha! Nice try. You're tricky enough WITHOUT admin access, thank you.");
 			M_GonerHidePassword();
 		}
+#else
+		(void)result;
+#endif
 
 		CV_StealthSet(&cv_dummyextraspassword, "");
 	}
