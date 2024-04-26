@@ -29,7 +29,6 @@
 
 // KILL THIS WHEN WE KILL OLD OGL SUPPORT PLEASE
 #include "d_netcmd.h" // kill
-#include "discord.h"  // kill
 #include "doomstat.h" // kill
 #include "s_sound.h"  // kill
 #include "sdl/ogl_sdl.h"
@@ -121,7 +120,7 @@ static void temp_legacy_finishupdate_draws()
 
 		if (cv_ticrate.value)
 			SCR_DisplayTicRate();
-		
+
 		if (netgame && (consoleplayer != serverplayer || !server_lagless))
 		{
 			if (server_lagless)

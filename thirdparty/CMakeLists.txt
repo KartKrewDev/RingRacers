@@ -1,5 +1,7 @@
 add_subdirectory(glm)
-add_subdirectory(discord-rpc)
+if(SRB2_CONFIG_ENABLE_DISCORDRPC)
+	add_subdirectory(discord-rpc)
+endif()
 add_subdirectory(xmp-lite)
 add_subdirectory(imgui)
 

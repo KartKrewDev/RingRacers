@@ -57,6 +57,7 @@ option(
 	ON
 )
 option(SRB2_CONFIG_ENABLE_WEBM_MOVIES "Enable WebM recording support" ON)
+option(SRB2_CONFIG_ENABLE_DISCORDRPC "Enable Discord RPC features" ON)
 option(SRB2_CONFIG_HWRENDER "Enable hardware render (OpenGL) support" ON)
 option(SRB2_CONFIG_STATIC_OPENGL "Enable static linking GL (do not do this)" OFF)
 option(SRB2_CONFIG_ERRORMODE "Compile C code with warnings treated as errors." OFF)
