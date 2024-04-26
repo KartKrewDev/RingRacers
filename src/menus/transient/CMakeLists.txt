@@ -5,7 +5,6 @@ target_sources(SRB2SDL2 PRIVATE
 	gametype.c
 	manual.c
 	sound-test.c
-	discord-requests.c
 	message-box.c
 	pause-game.c
 	pause-kick.c
@@ -14,3 +13,7 @@ target_sources(SRB2SDL2 PRIVATE
 	pause-cheats.cpp
 	pause-addonoptions.cpp
 )
+
+if(SRB2_CONFIG_ENABLE_DISCORDRPC)
+	target_sources(SRB2SDL2 PRIVATE discord-requests.c)
+endif()

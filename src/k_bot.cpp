@@ -41,7 +41,9 @@
 #include "g_party.h"
 #include "k_grandprix.h" // K_CanChangeRules
 #include "hu_stuff.h" // HU_AddChatText
+#ifdef HAVE_DISCORDRPC
 #include "discord.h" // DRPC_UpdatePresence
+#endif
 #include "i_net.h" // doomcom
 
 extern "C" consvar_t cv_forcebots;
@@ -559,7 +561,7 @@ fixed_t K_BotMapModifier(void)
 {
 	constexpr INT32 complexity_scale = 10000;
 	constexpr fixed_t modifier_max = FRACUNIT * 2;
-	
+
 	const fixed_t complexity_value = std::clamp<fixed_t>(
 		FixedDiv(K_GetTrackComplexity(), complexity_scale),
 		-FixedDiv(FRACUNIT, modifier_max),
@@ -1378,7 +1380,7 @@ static INT32 K_HandleBotTrack(const player_t *player, ticcmd_t *cmd, botpredicti
 	{
 		turnsign = 1;
 	}
-	else 
+	else
 	{
 		turnsign = -1;
 	}
@@ -1514,7 +1516,7 @@ static INT32 K_HandleBotReverse(const player_t *player, ticcmd_t *cmd, botpredic
 		turnsign = -1; // Turn right
 		anglediff = AngleFixed(angle)>>FRACBITS;
 	}
-	else 
+	else
 	{
 		turnsign = 1; // Turn left
 		anglediff = 360-(AngleFixed(angle)>>FRACBITS);
@@ -1535,7 +1537,7 @@ static INT32 K_HandleBotReverse(const player_t *player, ticcmd_t *cmd, botpredic
 		{
 			momdiff = AngleFixed(angle)>>FRACBITS;
 		}
-		else 
+		else
 		{
 			momdiff = 360-(AngleFixed(angle)>>FRACBITS);
 		}
