@@ -323,6 +323,8 @@ void f_maps()
 	{
 		if ((mapheaderinfo[i]->records.mapvisited & GD_MV_SET) == GD_MV_SET)
 			continue;
+		if (mapheaderinfo[i]->typeoflevel & TOL_VERSUS)
+			continue;
 		mapheaderinfo[i]->records.mapvisited |= GD_MV_SET;
 		success = true;
 	}
