@@ -20,7 +20,7 @@ menuitem_t PLAY_RaceGamemodesMenu[] =
 	{IT_STRING | IT_CALL, "Match Race", "Play by your own rules in a specialized, single race!",
 		"MENUI005", {.routine = M_SetupDifficultySelect}, 1, 0},
 
-	{IT_STRING | IT_CALL, "Time Attack", "Record your best time on any track!",
+	{IT_STRING | IT_CALL, "Time Attack", "Race versus your best at \x87Gear 3\x80 - can you handle the heat?",
 		"MENUI006", {.routine = M_LevelSelectInit}, 1, GT_RACE},
 
 	{IT_STRING | IT_CALL, "Back", NULL, NULL, {.routine = M_GoBack}, 0, 0},
