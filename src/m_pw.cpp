@@ -325,6 +325,8 @@ void f_maps()
 			continue;
 		if (mapheaderinfo[i]->typeoflevel & TOL_VERSUS)
 			continue;
+		if (!strcmp(mapheaderinfo[i]->lumpname, "RR_HIDDENPALACE"))
+			continue;
 		mapheaderinfo[i]->records.mapvisited |= GD_MV_SET;
 		success = true;
 	}
@@ -333,12 +335,12 @@ void f_maps()
 	if (success)
 	{
 		S_StartSound(0, sfx_kc42);
-		M_StartMessage("// FIXME don't crash in certification test", "Unlocked all maps. Go see the world!", NULL, MM_NOTHING, NULL, NULL);
+		M_StartMessage("// FIXME don't crash in certification test", "Unlocked most maps. Go see the world!", NULL, MM_NOTHING, NULL, NULL);
 		G_SaveGameData();
 	}
 	else
 	{
-		M_StartMessage("// FIXME don't crash in certification test", "You've already unlocked all maps.", NULL, MM_NOTHING, NULL, NULL);
+		M_StartMessage("// FIXME don't crash in certification test", "There are no maps to unlock.", NULL, MM_NOTHING, NULL, NULL);
 	}
 }
 
