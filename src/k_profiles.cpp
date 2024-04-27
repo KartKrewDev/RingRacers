@@ -398,9 +398,14 @@ void PR_LoadProfiles(void)
 		json parsed = json::from_ubjson(remainder_as_u8);
 		js = parsed.template get<ProfilesJson>();
 	}
+	catch (const std::exception& ex)
+	{
+		I_Error("Profiles file is corrupt.\n\nException: %s", ex.what());
+		return;
+	}
 	catch (...)
 	{
-		I_Error("Profiles file is corrupt");
+		I_Error("Profiles file is corrupt.");
 		return;
 	}
 

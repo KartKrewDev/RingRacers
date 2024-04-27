@@ -434,6 +434,13 @@ void srb2::load_ng_gamedata()
 		json parsed = json::from_ubjson(remainder_as_u8);
 		js = parsed.template get<GamedataJson>();
 	}
+	catch (const std::exception& ex)
+	{
+		const char* gdfolder = G_GameDataFolder();
+		const char* what = ex.what();
+		I_Error("Game data is corrupt.\nDelete %s (maybe in %s) and try again.\n\nException: %s", gamedatafilename, gdfolder, what);
+		return;
+	}
 	catch (...)
 	{
 		const char* gdfolder = G_GameDataFolder();
