@@ -2251,8 +2251,8 @@ void HU_drawPing(fixed_t x, fixed_t y, UINT32 lag, UINT32 pl, INT32 flags, boole
 	if (pl)
 	{
 		V_DrawFill(
-			x/FRACUNIT + 2 - 1,
-			y/FRACUNIT - 1, 
+			-pinggfx[gfxnum]->leftoffset + x/FRACUNIT + 2 - 1,
+			-pinggfx[gfxnum]->topoffset + y/FRACUNIT - 1,
 			pinggfx[gfxnum]->width + 2,
 			pinggfx[gfxnum]->height + 2,
 			PL_gfx_color(pl) | flags
