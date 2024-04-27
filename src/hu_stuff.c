@@ -2218,11 +2218,7 @@ void HU_drawPing(fixed_t x, fixed_t y, UINT32 lag, UINT32 pl, INT32 flags, boole
 
 	if (toside == 0)
 	{
-		if (measureid == 1)
-		{
-			x2 += ((11 - pingmeasure[measureid]->width) * FRACUNIT);
-		}
-		else
+		if (measureid == 0)
 		{
 			x2 += (10 * FRACUNIT);
 		}
@@ -2231,22 +2227,24 @@ void HU_drawPing(fixed_t x, fixed_t y, UINT32 lag, UINT32 pl, INT32 flags, boole
 	}
 	else if (toside > 0)
 	{
-		x2 += (20 * FRACUNIT);
+		// V_DrawPingNum
+		const fixed_t w = (fontv[PINGNUM_FONT].font[0]->width) * FRACUNIT - FRACUNIT;
+		x2 += (16 * FRACUNIT) + (int)(log(Ping_conversion(lag)) / log(10)) * w;
+
+		if (measureid == 0)
+		{
+			x2 += (4 * FRACUNIT);
+		}
 	}
-	//else if (toside < 0)
+	else if (toside < 0)
+	{
+		if (measureid == 1)
+		{
+			x2 -= (pingmeasure[measureid]->width * FRACUNIT);
+		}
+	}
 
 	gfxnum = Ping_gfx_num(lag);
-
-	if (measureid == 1)
-	{
-		V_DrawFixedPatch(
-			x2,
-			y2,
-			FRACUNIT, flags,
-			pingmeasure[measureid],
-			NULL
-		);
-	}
 
 	if (pl)
 	{
@@ -2276,6 +2274,17 @@ void HU_drawPing(fixed_t x, fixed_t y, UINT32 lag, UINT32 pl, INT32 flags, boole
 			y,
 			FRACUNIT, flags,
 			pinggfx[gfxnum],
+			NULL
+		);
+	}
+
+	if (measureid == 1)
+	{
+		V_DrawFixedPatch(
+			x2,
+			y2,
+			FRACUNIT, flags,
+			pingmeasure[measureid],
 			NULL
 		);
 	}
