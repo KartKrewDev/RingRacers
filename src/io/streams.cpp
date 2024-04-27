@@ -172,7 +172,7 @@ static int portable_fseek64(FILE* file, int64_t offset, int origin)
 {
 #ifdef _MSC_VER
 	return _fseeki64(file, offset, origin);
-#elif __APPLE__
+#elif __APPLE__ || defined(__FreeBSD__)
 	return fseeko(file, offset, origin);
 #else
 	return fseeko64(file, offset, origin);
@@ -183,7 +183,7 @@ static int64_t portable_ftell64(FILE* file)
 {
 #ifdef _MSC_VER
 	return _ftelli64(file);
-#elif __APPLE__
+#elif __APPLE__ || defined(__FreeBSD__)
 	return ftello(file);
 #else
 	return ftello64(file);
