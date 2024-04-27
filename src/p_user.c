@@ -2338,7 +2338,7 @@ static void P_UpdatePlayerAngle(player_t *player)
 		// That means undoing them takes the same amount of time as doing them.
 		// This can lead to oscillating death spiral states on a multi-tic correction, as we swing past the target angle.
 		// So before we go into death-spirals, if our predicton is _almost_ right... 
-		angle_t leniency = (4*ANG1/3) * min(player->cmd.latency, 6);
+		angle_t leniency = (8*ANG1/3) * min(player->cmd.latency, 6);
 		// Don't force another turning tic, just give them the desired angle!
 
 		if (targetDelta == angleChange || (maxTurnRight == 0 && maxTurnLeft == 0))
