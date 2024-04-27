@@ -134,7 +134,7 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #include <errno.h>
 #endif
 
-#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
+#if (defined(__linux__) && defined(__USE_GNU)) || (defined (__unix__) || defined (UNIXCOMMON)) && !defined(__linux__) || defined(__APPLE__)
 #include <execinfo.h>
 #include <time.h>
 #define UNIXBACKTRACE
