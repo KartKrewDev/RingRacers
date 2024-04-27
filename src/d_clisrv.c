@@ -122,6 +122,7 @@ UINT16 pingmeasurecount = 1;
 UINT32 realpingtable[MAXPLAYERS]; //the base table of ping where an average will be sent to everyone.
 UINT32 playerpingtable[MAXPLAYERS]; //table of player latency values.
 UINT32 playerpacketlosstable[MAXPLAYERS];
+UINT32 playerdelaytable[MAXPLAYERS]; // mindelay values.
 
 #define GENTLEMANSMOOTHING (TICRATE)
 static tic_t reference_lag;
@@ -3344,6 +3345,7 @@ void SV_ResetServer(void)
 	memset(realpingtable, 0, sizeof realpingtable);
 	memset(playerpingtable, 0, sizeof playerpingtable);
 	memset(playerpacketlosstable, 0, sizeof playerpacketlosstable);
+	memset(playerdelaytable, 0, sizeof playerdelaytable);
 
 	ClearAdminPlayers();
 	Schedule_Clear();
@@ -5278,6 +5280,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 					{
 						playerpingtable[i] = (tic_t)netbuffer->u.netinfo.pingtable[i];
 						playerpacketlosstable[i] = netbuffer->u.netinfo.packetloss[i];
+						playerdelaytable[i] = netbuffer->u.netinfo.delay[i];
 					}
 				}
 
@@ -6251,6 +6254,7 @@ static inline void PingUpdate(void)
 		}
 
 		netbuffer->u.netinfo.packetloss[i] = lost;
+		netbuffer->u.netinfo.delay[i] = playerdelaytable[i];
 	}
 
 	// send the server's maxping as last element of our ping table. This is useful to let us know when we're about to get kicked.

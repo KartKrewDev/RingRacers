@@ -405,6 +405,7 @@ struct netinfo_pak
 {
 	UINT32 pingtable[MAXPLAYERS+1];
 	UINT32 packetloss[MAXPLAYERS+1];
+	UINT32 delay[MAXPLAYERS+1];
 } ATTRPACK;
 
 //
@@ -546,6 +547,7 @@ extern UINT16 pingmeasurecount;
 extern UINT32 realpingtable[MAXPLAYERS];
 extern UINT32 playerpingtable[MAXPLAYERS];
 extern UINT32 playerpacketlosstable[MAXPLAYERS];
+extern UINT32 playerdelaytable[MAXPLAYERS];
 extern tic_t servermaxping;
 
 extern boolean server_lagless;
