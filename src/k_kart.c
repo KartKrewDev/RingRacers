@@ -10456,7 +10456,7 @@ INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
 	}
 	else
 	{
-		p_speed = min(currentSpeed, (p_maxspeed * 2));
+		p_speed = min(currentSpeed / 2, p_maxspeed * 2);
 	}
 
 	if (K_PodiumSequence() == true)
