@@ -6305,39 +6305,30 @@ static void UpdatePingTable(void)
 			}
 		}
 
-		// Don't gentleman below your mindelay
-		if (fastest < (tic_t)cv_mindelay.value)
-			fastest = (tic_t)cv_mindelay.value;
-
-		pingmeasurecount++;
-
 		if (server_lagless)
 			lowest_lag = 0;
 		else
-		{
 			lowest_lag = fastest;
 
-			if (fastest)
-				lag = fastest;
-			else
-				lag = GetLag(0);
+		// Don't gentleman below your mindelay
+		if (lowest_lag < (tic_t)cv_mindelay.value)
+			lowest_lag = (tic_t)cv_mindelay.value;
 
-			lag = ( realpingtable[0] + lag );
+		pingmeasurecount++;
 
-			switch (playerpernode[0])
-			{
-				case 4:
-					realpingtable[nodetoplayer4[0]] = lag;
-					/*FALLTHRU*/
-				case 3:
-					realpingtable[nodetoplayer3[0]] = lag;
-					/*FALLTHRU*/
-				case 2:
-					realpingtable[nodetoplayer2[0]] = lag;
-					/*FALLTHRU*/
-				case 1:
-					realpingtable[nodetoplayer[0]] = lag;
-			}
+		switch (playerpernode[0])
+		{
+			case 4:
+				playerdelaytable[nodetoplayer4[0]] = lowest_lag;
+				/*FALLTHRU*/
+			case 3:
+				playerdelaytable[nodetoplayer3[0]] = lowest_lag;
+				/*FALLTHRU*/
+			case 2:
+				playerdelaytable[nodetoplayer2[0]] = lowest_lag;
+				/*FALLTHRU*/
+			case 1:
+				playerdelaytable[nodetoplayer[0]] = lowest_lag;
 		}
 	}
 	else // We're a client, handle mindelay on the way out.

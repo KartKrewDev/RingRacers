@@ -716,14 +716,14 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 						kp_cpu
 					);*/
 				}
-				else if (pnum != serverplayer || !server_lagless)
+				else
 				{
 					HU_drawPing(
 						(x2 - 2) * FRACUNIT, (y-2) * FRACUNIT,
 						playerpingtable[pnum],
+						playerdelaytable[pnum],
 						playerpacketlosstable[pnum],
 						0,
-						false,
 						(datarightofcolumn ? 1 : -1)
 					);
 				}

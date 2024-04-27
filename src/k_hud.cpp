@@ -5535,7 +5535,9 @@ void K_drawKartFreePlay(void)
 static void
 Draw_party_ping (int ss, INT32 snap)
 {
-	HU_drawMiniPing(0, 0, playerpingtable[displayplayers[ss]], V_SPLITSCREEN|V_SNAPTOTOP|snap);
+	UINT32 ping = playerpingtable[displayplayers[ss]];
+	UINT32 mindelay = playerdelaytable[displayplayers[ss]];
+	HU_drawMiniPing(0, 0, ping, std::max(ping, mindelay), V_SPLITSCREEN|V_SNAPTOTOP|snap);
 }
 
 static void

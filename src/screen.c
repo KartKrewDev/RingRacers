@@ -577,13 +577,13 @@ void SCR_DisplayLocalPing(void)
 		return;
 	}
 
+	UINT32 mindelay = playerdelaytable[consoleplayer];
 	UINT32 ping = playerpingtable[consoleplayer];
 	UINT32 pl = playerpacketlosstable[consoleplayer];
 
 	INT32 dispy = cv_ticrate.value ? 170 : 181;
-	boolean offline = (consoleplayer == serverplayer);
 
-	HU_drawPing(307 * FRACUNIT, dispy * FRACUNIT, ping, pl, V_SNAPTORIGHT | V_SNAPTOBOTTOM, offline, 0);
+	HU_drawPing(307 * FRACUNIT, dispy * FRACUNIT, ping, max(ping, mindelay), pl, V_SNAPTORIGHT | V_SNAPTOBOTTOM, 0);
 }
 
 
