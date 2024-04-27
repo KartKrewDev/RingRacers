@@ -6289,18 +6289,14 @@ static void UpdatePingTable(void)
 		{
 			if (playeringame[i] && playernode[i] > 0)
 			{
-				if (! server_lagless && playernode[i] > 0 && !players[i].spectator)
-				{
-					lag = GetLag(playernode[i]);
-					realpingtable[i] += lag;
+				// TicsToMilliseconds can't handle pings over 1000ms lol
+				realpingtable[i] += GetLag(playernode[i]);
 
+				if (!players[i].spectator)
+				{
+					lag = playerpingtable[i];
 					if (! fastest || lag < fastest)
 						fastest = lag;
-				}
-				else
-				{
-					// TicsToMilliseconds can't handle pings over 1000ms lol
-					realpingtable[i] += GetLag(playernode[i]);
 				}
 			}
 		}
