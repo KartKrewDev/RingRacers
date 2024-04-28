@@ -24,6 +24,7 @@ target_include_directories(discord-rpc PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/inclu
 target_compile_features(discord-rpc PUBLIC cxx_std_11)
 
 target_include_directories(discord-rpc PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include")
+target_compile_definitions(discord-rpc PRIVATE -DRAPIDJSON_NOMEMBERITERATORCLASS)
 
 # Platform-specific connection and register impls
 if(WIN32)
