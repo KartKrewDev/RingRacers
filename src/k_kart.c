@@ -2967,10 +2967,32 @@ boolean K_SlopeResistance(const player_t *player)
 	return false;
 }
 
+fixed_t K_PlayerTripwireSpeedThreshold(const player_t *player)
+{
+	fixed_t required_speed = 2 * K_GetKartSpeed(player, false, false); // 200%
+
+	if (player->offroad && K_ApplyOffroad(player))
+	{
+		// Increase to 300% if you're lawnmowering.
+		required_speed = (required_speed * 3) / 2;
+	}
+
+	if (player->botvars.rubberband > FRACUNIT && K_PlayerUsesBotMovement(player) == true)
+	{
+		// Make it harder for bots to do this when rubberbanding.
+
+		// This is actually biased really hard against the bot,
+		// because the bot rubberbanding speed increase is
+		// decreased with other boosts.
+
+		required_speed = FixedMul(top_speed, player->botvars.rubberband);
+	}
+
+	return required_speed;
+}
+
 tripwirepass_t K_TripwirePassConditions(const player_t *player)
 {
-	UINT8 tripwirereq = player->offroad ? 3 : 2;
-
 	if (
 			player->invincibilitytimer ||
 			player->sneakertimer
@@ -2979,7 +3001,7 @@ tripwirepass_t K_TripwirePassConditions(const player_t *player)
 
 	if (
 			player->flamedash ||
-			(player->speed > (tripwirereq * K_GetKartSpeed(player, false, false)) && player->tripwireReboundDelay == 0)
+			(player->speed > K_PlayerTripwireSpeedThreshold(player)) && player->tripwireReboundDelay == 0)
 	)
 		return TRIPWIRE_BOOST;
 
@@ -3053,7 +3075,7 @@ boolean K_WaterRun(mobj_t *mobj)
 				return K_IsHoldingDownTop(mobj->player) == false;
 			}
 
-			minspeed = 2 * K_GetKartSpeed(mobj->player, false, false); // 200%
+			minspeed = K_PlayerTripwireSpeedThreshold(player);
 
 			if (mobj->player->speed < minspeed / 5) // 40%
 			{
@@ -4851,7 +4873,7 @@ void K_ApplyTripWire(player_t *player, tripwirestate_t state)
 	}
 
 	if (state == TRIPSTATE_PASSED && player->spinouttimer &&
-			player->speed > 2 * K_GetKartSpeed(player, false, true))
+			player->speed > K_PlayerTripwireSpeedThreshold(player))
 	{
 		K_TumblePlayer(player, NULL, NULL);
 	}
@@ -14144,7 +14166,7 @@ boolean K_PlayerCanPunt(player_t *player)
 		return true;
 	}
 
-	if (player->tripwirePass >= TRIPWIRE_BLASTER && player->speed >= 2 * K_GetKartSpeed(player, false, false))
+	if (player->tripwirePass >= TRIPWIRE_BLASTER && player->speed >= K_PlayerTripwireSpeedThreshold(player))
 	{
 		return true;
 	}
