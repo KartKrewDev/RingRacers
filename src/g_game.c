@@ -1813,14 +1813,20 @@ void G_Ticker(boolean run)
 			{
 				if (playeringame[i])
 				{
-					if (players[i].bot == true && grandprixinfo.gp == true && grandprixinfo.masterbots == false)
+					if (players[i].bot == true
+						&& grandprixinfo.gp == true
+						&& grandprixinfo.masterbots == false)
 					{
-						UINT8 bot_level_decrease = 2;
+						UINT8 bot_level_decrease = 3;
 
 						if (grandprixinfo.gamespeed == KARTSPEED_EASY)
-							bot_level_decrease = 3;
+						{
+							bot_level_decrease++;
+						}
 						else if (grandprixinfo.gamespeed == KARTSPEED_HARD)
-							bot_level_decrease = 1;
+						{
+							bot_level_decrease--;
+						}
 
 						if (players[i].botvars.difficulty <= bot_level_decrease)
 						{
