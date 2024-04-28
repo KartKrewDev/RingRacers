@@ -408,7 +408,10 @@ endif()
 # Compatibility flag with later versions of GCC
 # We should really fix our code to not need this
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-	target_compile_options(SRB2SDL2 PRIVATE -mno-ms-bitfields)
+	check_cxx_compiler_flag("-mno-ms-bitfields" HAS_MS_BITFIELDS)
+	if(HAS_MS_BITFIELDS)
+		target_compile_options(SRB2SDL2 PRIVATE -mno-ms-bitfields)
+	endif()
 endif()
 
 # Yes we know we use insecure CRT functions...

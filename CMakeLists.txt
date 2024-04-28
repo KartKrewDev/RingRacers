@@ -8,6 +8,7 @@ endif()
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 include(CMakeDependentOption)
+include(CheckCXXCompilerFlag)
 
 file(STRINGS src/version.h SRB2_VERSION)
 string(REGEX MATCH "[0-9]+\\.[0-9.]+" SRB2_VERSION ${SRB2_VERSION})
