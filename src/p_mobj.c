@@ -1800,8 +1800,15 @@ void P_XYMovement(mobj_t *mo)
 					S_StartSound(mo, mo->info->activesound);
 
 					//{ SRB2kart - Orbinaut, Ballhog
+					// Ballhog dies on contact with walls
+					if (mo->type == MT_BALLHOG)
+					{
+						S_StartSound(mo, mo->info->deathsound);
+						P_KillMobj(mo, NULL, NULL, DMG_NORMAL);
+						return;
+					}
 					// Bump sparks
-					if (mo->type == MT_ORBINAUT || mo->type == MT_BALLHOG || mo->type == MT_GACHABOM)
+					else if (mo->type == MT_ORBINAUT || mo->type == MT_GACHABOM)
 					{
 						mobj_t *fx;
 						fx = P_SpawnMobj(mo->x, mo->y, mo->z, MT_BUMP);
