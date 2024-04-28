@@ -12,6 +12,7 @@
 /// \brief implements methods for profiles etc.
 
 #include <algorithm>
+#include <exception>
 
 #include <fmt/format.h>
 
@@ -331,6 +332,10 @@ void PR_SaveProfiles(void)
 		file.close();
 
 		fs::rename(tmppath, realpath);
+	}
+	catch (const std::exception& ex)
+	{
+		I_Error("Couldn't save profiles. Are you out of Disk space / playing in a protected folder?\n\nException: %s", ex.what());
 	}
 	catch (...)
 	{

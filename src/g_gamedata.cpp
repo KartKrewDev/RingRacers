@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstddef>
+#include <exception>
 #include <filesystem>
 
 #include <fmt/format.h>
@@ -304,7 +305,7 @@ void srb2::save_ng_gamedata()
 		srb2::io::write_exact(file, tcb::as_bytes(tcb::make_span(ubjson)));
 		file.close();
 	}
-	catch (const srb2::io::FileStreamException& ex)
+	catch (const std::exception& ex)
 	{
 		CONS_Alert(CONS_ERROR, "NG Gamedata save failed: %s\n", ex.what());
 	}
