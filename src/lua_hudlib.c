@@ -44,7 +44,7 @@ static const char *const hud_disable_options[] = {
 	"stagetitle",
 	"textspectator",
 	"crosshair",
-
+	"score", //SOMEONE forgot to add this to here! This is why hud.disable() and hud.enable() is bugged for Lua files in v2.1! - Aurora Lucias
 	"time",
 	"gametypeinfo",	// Bumpers / Karma / Laps depending on gametype
 	"minimap",
