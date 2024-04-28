@@ -642,7 +642,11 @@ void K_IncreaseBotDifficulty(player_t *bot)
 			rankNudge = 0;
 			break;
 		case GRADE_A:
-			rankNudge = 1;
+			if (grandprixinfo.gp && grandprixinfo.gamespeed == KARTSPEED_EASY)
+				rankNudge = 0;
+			else
+				rankNudge = 1;
+			break;
 	}
 
 	increase += rankNudge;
