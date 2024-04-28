@@ -2982,10 +2982,10 @@ fixed_t K_PlayerTripwireSpeedThreshold(const player_t *player)
 		// Make it harder for bots to do this when rubberbanding.
 
 		// This is actually biased really hard against the bot,
-		// because the bot rubberbanding speed increase is
+		// because the bot rubberbanding speed increase isgit buil
 		// decreased with other boosts.
 
-		required_speed = FixedMul(top_speed, player->botvars.rubberband);
+		required_speed = FixedMul(required_speed, player->botvars.rubberband);
 	}
 
 	return required_speed;
@@ -3001,7 +3001,7 @@ tripwirepass_t K_TripwirePassConditions(const player_t *player)
 
 	if (
 			player->flamedash ||
-			(player->speed > K_PlayerTripwireSpeedThreshold(player)) && player->tripwireReboundDelay == 0)
+			((player->speed > K_PlayerTripwireSpeedThreshold(player)) && player->tripwireReboundDelay == 0)
 	)
 		return TRIPWIRE_BOOST;
 
@@ -3075,7 +3075,7 @@ boolean K_WaterRun(mobj_t *mobj)
 				return K_IsHoldingDownTop(mobj->player) == false;
 			}
 
-			minspeed = K_PlayerTripwireSpeedThreshold(player);
+			minspeed = K_PlayerTripwireSpeedThreshold(mobj->player);
 
 			if (mobj->player->speed < minspeed / 5) // 40%
 			{
