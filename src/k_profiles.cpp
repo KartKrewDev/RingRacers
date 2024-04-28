@@ -320,17 +320,14 @@ void PR_SaveProfiles(void)
 	try
 	{
 		io::FileStream file {tmppath, io::FileStreamMode::kWrite};
-		io::BufferedOutputStream<io::FileStream> bos {std::move(file)};
 
-		io::write(static_cast<uint32_t>(0x52494E47), bos, io::Endian::kBE); // "RING"
-		io::write(static_cast<uint32_t>(0x5052464C), bos, io::Endian::kBE); // "PRFL"
-		io::write(static_cast<uint8_t>(0), bos); // reserved1
-		io::write(static_cast<uint8_t>(0), bos); // reserved2
-		io::write(static_cast<uint8_t>(0), bos); // reserved3
-		io::write(static_cast<uint8_t>(0), bos); // reserved4
-		io::write_exact(bos, tcb::as_bytes(tcb::make_span(ubjson)));
-		bos.flush();
-		file = bos.stream();
+		io::write(static_cast<uint32_t>(0x52494E47), file, io::Endian::kBE); // "RING"
+		io::write(static_cast<uint32_t>(0x5052464C), file, io::Endian::kBE); // "PRFL"
+		io::write(static_cast<uint8_t>(0), file); // reserved1
+		io::write(static_cast<uint8_t>(0), file); // reserved2
+		io::write(static_cast<uint8_t>(0), file); // reserved3
+		io::write(static_cast<uint8_t>(0), file); // reserved4
+		io::write_exact(file, tcb::as_bytes(tcb::make_span(ubjson)));
 		file.close();
 
 		fs::rename(tmppath, realpath);

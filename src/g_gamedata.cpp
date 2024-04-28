@@ -294,17 +294,14 @@ void srb2::save_ng_gamedata()
 	{
 		std::string tmpsavepathstring = tmpsavepath.string();
 		srb2::io::FileStream file {tmpsavepathstring, srb2::io::FileStreamMode::kWrite};
-		srb2::io::BufferedOutputStream<srb2::io::FileStream> bos {std::move(file)};
 
 		// The header is necessary to validate during loading.
-		srb2::io::write(static_cast<uint32_t>(GD_VERSION_MAJOR), bos); // major
-		srb2::io::write(static_cast<uint8_t>(GD_VERSION_MINOR), bos); // minor/flags
-		srb2::io::write(static_cast<uint8_t>(gamedata->evercrashed), bos); // dirty (crash recovery)
+		srb2::io::write(static_cast<uint32_t>(GD_VERSION_MAJOR), file); // major
+		srb2::io::write(static_cast<uint8_t>(GD_VERSION_MINOR), file); // minor/flags
+		srb2::io::write(static_cast<uint8_t>(gamedata->evercrashed), file); // dirty (crash recovery)
 
 		std::vector<uint8_t> ubjson = json::to_ubjson(ng);
-		srb2::io::write_exact(bos, tcb::as_bytes(tcb::make_span(ubjson)));
-		bos.flush();
-		file = bos.stream();
+		srb2::io::write_exact(file, tcb::as_bytes(tcb::make_span(ubjson)));
 		file.close();
 	}
 	catch (const srb2::io::FileStreamException& ex)
