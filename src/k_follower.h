@@ -49,6 +49,7 @@ typedef enum
 	FOLLOWERSTATE_WIN,
 	FOLLOWERSTATE_LOSE,
 	FOLLOWERSTATE_HITCONFIRM, // Uses movecount as a timer for how long to play this state.
+	FOLLOWERSTATE_RING, // Uses cvmem as a timer for how long to play this state.
 	FOLLOWERSTATE__MAX
 } followerstate_t;
 
@@ -93,6 +94,8 @@ struct follower_t
 	statenum_t losestate;		// state when the player has lost
 	statenum_t hitconfirmstate;	// state for hit confirm
 	tic_t hitconfirmtime;		// time to keep the above playing for
+	statenum_t ringstate;		// state for giving an auto-ring
+	tic_t ringtime;				// time to keep the above playing for
 
 	sfxenum_t hornsound;		// Press (B) to announce you are pressing (B)
 };

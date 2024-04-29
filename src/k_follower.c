@@ -537,6 +537,15 @@ void K_HandleFollower(player_t *player)
 			destAngle += ANGLE_180;
 		}
 
+		// Using auto-ring, face towards the player while throwing your rings.
+		if (player->follower->cvmem)
+		{
+			destAngle = R_PointToAngle2(
+				player->follower->x, player->follower->y,
+				player->mo->x, player->mo->y
+			);
+		}
+
 		// Sal: Smoothly rotate angle to the destination value.
 		angleDiff = AngleDeltaSigned(destAngle, player->follower->angle);
 
@@ -628,8 +637,9 @@ void K_HandleFollower(player_t *player)
 		// hurt or dead
 		if (P_PlayerInPain(player) == true || player->mo->state == &states[S_KART_SPINOUT] || player->mo->health <= 0)
 		{
-			// cancel hit confirm.
+			// cancel hit confirm / rings
 			player->follower->movecount = 0;
+			player->follower->cvmem = 0;
 
 			// spin out
 			player->follower->angle = player->drawangle;
@@ -660,6 +670,11 @@ void K_HandleFollower(player_t *player)
 		{
 			K_UpdateFollowerState(player->follower, fl->hitconfirmstate, FOLLOWERSTATE_HITCONFIRM);
 			player->follower->movecount--;
+		}
+		else if (player->follower->cvmem)
+		{
+			K_UpdateFollowerState(player->follower, fl->ringstate, FOLLOWERSTATE_RING);
+			player->follower->cvmem--;
 		}
 		else if (player->speed > 10*player->mo->scale) // animation for moving fast enough
 		{

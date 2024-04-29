@@ -12650,12 +12650,20 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					ring->shadowscale = 0;
 					P_SetTarget(&ring->target, player->mo); // user
 
-					if (player->follower && !P_MobjWasRemoved(player->follower))
+					if (player->follower != NULL
+						&& P_MobjWasRemoved(player->follower) == false
+						&& player->followerskin >= 0
+						&& player->followerskin < numfollowers)
 					{
 						// TODO: only do when using an auto-ring
+						const follower_t *fl = &followers[player->followerskin];
+
 						ring->cusval = player->follower->x - player->mo->x;
 						ring->cvmem = player->follower->y - player->mo->y;
 						ring->movefactor = P_GetMobjHead(player->follower) - P_GetMobjHead(player->mo);
+
+						// cvmem is used to play the ring animation for followers
+						player->follower->cvmem = fl->ringtime;
 					}
 					else
 					{
