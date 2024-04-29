@@ -287,7 +287,8 @@ void srb2::save_ng_gamedata()
 
 	std::string gamedataname_s {gamedatafilename};
 	fs::path savepath {fmt::format("{}/{}", srb2home, gamedataname_s)};
-	fs::path tmpsavepath {fmt::format("{}/{}.tmp", srb2home, gamedataname_s)};
+	int random_number = rand();
+	fs::path tmpsavepath {fmt::format("{}/{}_{}.tmp", srb2home, gamedataname_s, random_number)};
 
 	json ngdata_json = ng;
 

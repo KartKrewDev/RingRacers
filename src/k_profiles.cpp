@@ -316,7 +316,8 @@ void PR_SaveProfiles(void)
 	std::vector<uint8_t> ubjson = json::to_ubjson(ng);
 
 	std::string realpath = fmt::format("{}/{}", srb2home, PROFILESFILE);
-	std::string tmppath = fmt::format("{}.tmp", realpath);
+	int random_number = rand();
+	std::string tmppath = fmt::format("{}_{}.tmp", realpath, random_number);
 
 	try
 	{
