@@ -649,6 +649,18 @@ static UINT32 K_BotRubberbandDistance(const player_t *player)
 --------------------------------------------------*/
 fixed_t K_BotRubberband(const player_t *player)
 {
+	if (player->exiting)
+	{
+		// You're done, we don't need to rubberband anymore.
+		return FRACUNIT;
+	}
+
+	const botcontroller_t *botController = K_GetBotController(player->mo);
+	if (botController != nullptr && (botController->flags & TMBOT_NORUBBERBAND) == TMBOT_NORUBBERBAND) // Disable rubberbanding
+	{
+		return FRACUNIT;
+	}
+
 	const fixed_t difficultyEase = ((player->botvars.difficulty - 1) * FRACUNIT) / (MAXBOTDIFFICULTY - 1);
 
 	// Lv.   1: x0.65 avg
@@ -681,18 +693,6 @@ fixed_t K_BotRubberband(const player_t *player)
 	fixed_t rubberband = FRACUNIT >> 1;
 	player_t *firstplace = nullptr;
 	size_t i = SIZE_MAX;
-
-	if (player->exiting)
-	{
-		// You're done, we don't need to rubberband anymore.
-		return FRACUNIT;
-	}
-
-	const botcontroller_t *botController = K_GetBotController(player->mo);
-	if (botController != nullptr && (botController->flags & TMBOT_NORUBBERBAND) == TMBOT_NORUBBERBAND) // Disable rubberbanding
-	{
-		return FRACUNIT;
-	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -749,6 +749,20 @@ fixed_t K_BotRubberband(const player_t *player)
 		{
 			rubberband = 0;
 		}
+	}
+
+	UINT32 scaled_dist = player->distancetofinish;
+	if (mapobjectscale != FRACUNIT)
+	{
+		// Bring back to normal scale.
+		scaled_dist = FixedDiv(scaled_dist, mapobjectscale);
+	}
+
+	constexpr UINT32 END_DIST = 2048 * 14;
+	if (scaled_dist < END_DIST)
+	{
+		// At the end of tracks, start slowing down.
+		rubberband = FixedMul(rubberband, FixedDiv(scaled_dist, END_DIST));
 	}
 
 	return Easing_Linear(rubberband, rubberSlow, rubberFast);
