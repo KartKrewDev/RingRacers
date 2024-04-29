@@ -1401,7 +1401,8 @@ static void K_drawKartItem(void)
 
 			const SINT8 result = stplyr->itemRoulette.itemList[index];
 			const SINT8 item = K_ItemResultToType(result);
-			const UINT8 amt = K_ItemResultToAmount(result);
+			const boolean usingDebugItemAmount = cv_kartdebugitem.value != KITEM_NONE && cv_kartdebugitem.value == item && cv_kartdebugamount.value > 1;
+			const UINT8 amt = usingDebugItemAmount ? cv_kartdebugamount.value : K_ItemResultToAmount(result);
 
 			switch (item)
 			{
