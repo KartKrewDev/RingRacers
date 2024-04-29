@@ -10456,7 +10456,16 @@ INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
 	}
 	else
 	{
-		p_speed = min(currentSpeed, (p_maxspeed * 2));
+		// Turning dampens as you go faster, but at extremely high speeds, keeping some control is important.
+		// Dampening is applied in two stages, one harsh and one soft.
+		// The harsh window is larger for characters with better baseline maneuverability.
+		// TODO COMPATLEVEL
+		// Was p_speed = min(stageSpeed, p_maxspeed * 2);
+		fixed_t stageSpeed = min(currentSpeed, (100 + 2*(9-player->kartweight)) * p_maxspeed/100);
+		if (stageSpeed < currentSpeed)
+			stageSpeed += (currentSpeed - stageSpeed) / 3;
+
+		p_speed = min(stageSpeed, p_maxspeed * 2);
 	}
 
 	if (K_PodiumSequence() == true)
@@ -10482,6 +10491,7 @@ INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
 			// Sal: K_GetKartDriftValue is short-circuited to give a weird additive magic number,
 			// instead of an entirely replaced turn value. This gaslit me years ago when I was doing a
 			// code readability pass, where I missed that fact because it also returned early.
+			// TODO COMPATLEVEL (I have no fucking clue what's going on here)
 			turnfixed += K_GetKartDriftValue(player, FRACUNIT) * FRACUNIT;
 			return (turnfixed / FRACUNIT);
 		}
@@ -10500,7 +10510,8 @@ INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
 	fixed_t topspeed = K_GetKartSpeed(player, false, false);
 	if (K_Sliptiding(player))
 	{
-		finalhandleboost = FixedMul(5*SLIPTIDEHANDLING/4, FixedDiv(player->speed, topspeed));
+		// TODO COMPATLEVEL (was 5*SLIPTIDEHANDLING/4)
+		finalhandleboost = FixedMul(3*SLIPTIDEHANDLING/4, FixedDiv(player->speed, topspeed));
 	}
 
 	if (finalhandleboost > 0 && player->respawn.state == RESPAWNST_NONE)
