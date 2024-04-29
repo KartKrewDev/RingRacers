@@ -12649,6 +12649,25 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					ring->extravalue2 = 1; // Ring use animation flag
 					ring->shadowscale = 0;
 					P_SetTarget(&ring->target, player->mo); // user
+
+					if (player->follower && !P_MobjWasRemoved(player->follower))
+					{
+						// TODO: only do when using an auto-ring
+						ring->cusval = player->follower->x - player->mo->x;
+						ring->cvmem = player->follower->y - player->mo->y;
+						ring->movefactor = P_GetMobjHead(player->follower) - P_GetMobjHead(player->mo);
+					}
+					else
+					{
+						ring->cusval = ring->cvmem = ring->movefactor = 0;
+					}
+
+					// really silly stupid dumb HACK to fix interp
+					// without needing to duplicate any code
+					A_AttractChase(ring);
+					P_SetOrigin(ring, ring->x, ring->y, ring->z);
+					ring->extravalue1 = 1;
+
 					player->rings--;
 					if (player->autoring && !(cmd->buttons & BT_ATTACK))
 						player->ringdelay = 6;
