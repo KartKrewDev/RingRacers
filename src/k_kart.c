@@ -2982,7 +2982,7 @@ fixed_t K_PlayerTripwireSpeedThreshold(const player_t *player)
 		// Make it harder for bots to do this when rubberbanding.
 
 		// This is actually biased really hard against the bot,
-		// because the bot rubberbanding speed increase isgit buil
+		// because the bot rubberbanding speed increase is
 		// decreased with other boosts.
 
 		required_speed = FixedMul(required_speed, player->botvars.rubberband);
