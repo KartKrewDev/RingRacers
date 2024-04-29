@@ -170,6 +170,8 @@ extern UINT8 demo_writerng;
 #define DXD_PST_SPECTATING 0x02
 #define DXD_PST_LEFT       0x03
 
+boolean G_CompatLevel(UINT16 level);
+
 // Record/playback tics
 void G_ReadDemoExtraData(void);
 void G_WriteDemoExtraData(void);
