@@ -302,7 +302,7 @@ typedef enum {
 #define GDCONVERT_ROUNDSTOKEY 5
 
 #define GDINIT_CHAOKEYS 10 // Start with 10 Chao Keys !!
-#define GDINIT_PRISONSTOPRIZE 30 // 30 Prison Eggs to your [Wild Prize] !!
+#define GDINIT_PRISONSTOPRIZE 15 // 15 Prison Eggs to your [Wild Prize] !!
 
 typedef enum {
 	GDGONER_INIT = 0,
