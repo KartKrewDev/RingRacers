@@ -2224,12 +2224,13 @@ PL_gfx_color (int pl)
 //
 // HU_drawPing
 //
-void HU_drawPing(fixed_t x, fixed_t y, UINT32 ping, UINT32 lag, UINT32 pl, INT32 flags, SINT8 toside)
+void HU_drawPing(fixed_t x, fixed_t y, UINT32 ping, UINT32 mindelay, UINT32 pl, INT32 flags, SINT8 toside)
 {
 	const UINT8 *colormap = NULL;
 	INT32 measureid = cv_pingmeasurement.value ? 1 : 0;
-	INT32 gfxnum; // gfx to draw
+	patch_t *gfx; // gfx to draw
 	fixed_t x2, y2;
+	UINT32 lag = max(ping, mindelay);
 
 	x2 = x;
 	y2 = y + FRACUNIT;
@@ -2262,39 +2263,33 @@ void HU_drawPing(fixed_t x, fixed_t y, UINT32 ping, UINT32 lag, UINT32 pl, INT32
 		}
 	}
 
-	gfxnum = Ping_gfx_num(ping);
+	if (ping <= mindelay)
+	{
+		gfx = pinglocal[0];
+	}
+	else
+	{
+		gfx = pinggfx[Ping_gfx_num(ping)];
+	}
 
 	if (pl)
 	{
 		V_DrawFill(
-			-pinggfx[gfxnum]->leftoffset + x/FRACUNIT + 2 - 1,
-			-pinggfx[gfxnum]->topoffset + y/FRACUNIT - 1,
-			pinggfx[gfxnum]->width + 2,
-			pinggfx[gfxnum]->height + 2,
+			-gfx->leftoffset + x/FRACUNIT + 2 - 1,
+			-gfx->topoffset + y/FRACUNIT - 1,
+			gfx->width + 2,
+			gfx->height + 2,
 			PL_gfx_color(pl) | flags
 		);
 	}
 
-	if (ping <= lag)
-	{
-		V_DrawFixedPatch(
-			x + (2 * FRACUNIT),
-			y,
-			FRACUNIT, flags,
-			pinglocal[0],
-			NULL
-		);
-	}
-	else
-	{
-		V_DrawFixedPatch(
-			x + (2 * FRACUNIT),
-			y,
-			FRACUNIT, flags,
-			pinggfx[gfxnum],
-			NULL
-		);
-	}
+	V_DrawFixedPatch(
+		x + (2 * FRACUNIT),
+		y,
+		FRACUNIT, flags,
+		gfx,
+		NULL
+	);
 
 	if (measureid == 1)
 	{
@@ -2329,7 +2324,7 @@ void HU_drawPing(fixed_t x, fixed_t y, UINT32 ping, UINT32 lag, UINT32 pl, INT32
 }
 
 void
-HU_drawMiniPing (INT32 x, INT32 y, UINT32 ping, UINT32 lag, INT32 flags)
+HU_drawMiniPing (INT32 x, INT32 y, UINT32 ping, UINT32 mindelay, INT32 flags)
 {
 	patch_t *patch;
 	INT32 w = BASEVIDWIDTH;
@@ -2339,7 +2334,7 @@ HU_drawMiniPing (INT32 x, INT32 y, UINT32 ping, UINT32 lag, INT32 flags)
 		w /= 2;
 	}
 
-	if (ping <= lag)
+	if (ping <= mindelay)
 		patch = pinglocal[1]; // stone shoe
 	else
 		patch = mping[Ping_gfx_num(ping)];

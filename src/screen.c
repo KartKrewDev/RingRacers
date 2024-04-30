@@ -583,7 +583,7 @@ void SCR_DisplayLocalPing(void)
 
 	INT32 dispy = cv_ticrate.value ? 170 : 181;
 
-	HU_drawPing(307 * FRACUNIT, dispy * FRACUNIT, ping, max(ping, mindelay), pl, V_SNAPTORIGHT | V_SNAPTOBOTTOM, 0);
+	HU_drawPing(307 * FRACUNIT, dispy * FRACUNIT, ping, mindelay, pl, V_SNAPTORIGHT | V_SNAPTOBOTTOM, 0);
 }
 
 
