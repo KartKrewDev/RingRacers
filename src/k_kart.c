@@ -12650,12 +12650,12 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					ring->shadowscale = 0;
 					P_SetTarget(&ring->target, player->mo); // user
 
-					if (player->follower != NULL
+					if (player->autoring
+						&& player->follower != NULL
 						&& P_MobjWasRemoved(player->follower) == false
 						&& player->followerskin >= 0
 						&& player->followerskin < numfollowers)
 					{
-						// TODO: only do when using an auto-ring
 						const follower_t *fl = &followers[player->followerskin];
 
 						ring->cusval = player->follower->x - player->mo->x;
