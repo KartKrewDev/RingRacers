@@ -398,6 +398,20 @@ badgrid:
 	gamedata->challengegridwidth = 0;
 }
 
+static void M_ChallengeGridExtraDataAdjacencyRules(challengegridextradata_t *extradata, UINT16 adjacent)
+{
+	// Adjacent unlocked tile, permit hint/general key skip.
+	if (gamedata->unlocked[adjacent] == true)
+	{
+		extradata->flags |= CHE_HINT;
+	}
+	// Adjacent locked tile, prevent 10x key skip.
+	else
+	{
+		extradata->flags &= ~CHE_ALLCLEAR;
+	}
+}
+
 void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata)
 {
 	UINT16 i, j, num, id, tempid, work;
@@ -489,14 +503,7 @@ void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata)
 				}
 				else if (work < MAXUNLOCKABLES)
 				{
-					if (gamedata->unlocked[work] == true)
-					{
-						extradata[id].flags |= CHE_HINT;
-					}
-					else
-					{
-						extradata[id].flags &= ~CHE_ALLCLEAR;
-					}
+					M_ChallengeGridExtraDataAdjacencyRules(extradata+id, work);
 				}
 			}
 
@@ -534,14 +541,7 @@ void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata)
 				}
 				else if (work < MAXUNLOCKABLES)
 				{
-					if (gamedata->unlocked[work] == true)
-					{
-						extradata[id].flags |= CHE_HINT;
-					}
-					else
-					{
-						extradata[id].flags &= ~CHE_ALLCLEAR;
-					}
+					M_ChallengeGridExtraDataAdjacencyRules(extradata+id, work);
 				}
 			}
 
@@ -566,14 +566,7 @@ void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata)
 				}
 				else if (work < MAXUNLOCKABLES)
 				{
-					if (gamedata->unlocked[work] == true)
-					{
-						extradata[id].flags |= CHE_HINT;
-					}
-					else
-					{
-						extradata[id].flags &= ~CHE_ALLCLEAR;
-					}
+					M_ChallengeGridExtraDataAdjacencyRules(extradata+id, work);
 				}
 			}
 
@@ -595,14 +588,7 @@ void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata)
 				}
 				else if (work < MAXUNLOCKABLES)
 				{
-					if (gamedata->unlocked[work] == true)
-					{
-						extradata[id].flags |= CHE_HINT;
-					}
-					else
-					{
-						extradata[id].flags &= ~CHE_ALLCLEAR;
-					}
+					M_ChallengeGridExtraDataAdjacencyRules(extradata+id, work);
 				}
 			}
 		}
