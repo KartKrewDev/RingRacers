@@ -10466,10 +10466,10 @@ INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
 			// Turning dampens as you go faster, but at extremely high speeds, keeping some control is important.
 			// Dampening is applied in two stages, one harsh and one soft.
 			// The harsh window is larger for characters with better baseline maneuverability.
-			fixed_t stageSpeed = min(currentSpeed, (100 + 2*(9-player->kartweight)) * p_maxspeed/100);
+			fixed_t stageSpeed = min(currentSpeed, (110 + 2*(9-player->kartweight)) * p_maxspeed/100);
 			if (stageSpeed < currentSpeed)
 			{
-				stageSpeed += (currentSpeed - stageSpeed) / 3;
+				stageSpeed += (currentSpeed - stageSpeed) / 2;
 			}
 
 			p_speed = min(stageSpeed, p_maxspeed * 2);
