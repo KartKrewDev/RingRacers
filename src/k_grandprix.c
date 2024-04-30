@@ -542,9 +542,9 @@ void K_IncreaseBotDifficulty(player_t *bot)
 
 	bot->botvars.diffincrease = 0;
 
-	if (grandprixinfo.masterbots == true)
+	if (bot->botvars.difficulty >= MAXBOTDIFFICULTY)
 	{
-		// Master bot difficulty is not dynamic.
+		// Already at max difficulty, don't need to increase
 		return;
 	}
 
@@ -656,11 +656,6 @@ void K_IncreaseBotDifficulty(player_t *bot)
 		// TYRON: We want to allow SMALL bot rank downs if a player gets rolled but still squeaks by.
 		// (Think, like, dire E rank in 4th.)
 		// This is a deviation from SalCode™ and should be reexamined if bots get drowsy.
-	}
-	else if (increase > 2)
-	{
-		// Hard cap difficulty increase between rounds
-		increase = 2;
 	}
 
 	bot->botvars.diffincrease = increase;
