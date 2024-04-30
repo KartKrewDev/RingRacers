@@ -12503,7 +12503,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								behindScaled = min(behindScaled, 10*TICRATE);
 
 								K_DoInvincibility(player,
-									max(6u * TICRATE + behindScaled, player->invincibilitytimer + 5u*TICRATE));
+									max(7u * TICRATE + behindScaled, player->invincibilitytimer + 5u*TICRATE));
 								K_PlayPowerGloatSound(player->mo);
 
 								player->itemamount--;
