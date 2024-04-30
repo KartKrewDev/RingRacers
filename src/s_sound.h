@@ -43,6 +43,7 @@ extern consvar_t cv_gamedigimusic;
 
 extern consvar_t cv_gamesounds;
 extern consvar_t cv_bgaudio;
+extern consvar_t cv_streamersafemusic;
 
 typedef enum
 {

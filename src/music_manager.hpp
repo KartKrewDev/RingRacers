@@ -121,6 +121,7 @@ private:
 	}
 
 	bool load() const;
+	musicdef_t* find_musicdef() const;
 	void adjust_volume() const;
 
 	bool resync();
