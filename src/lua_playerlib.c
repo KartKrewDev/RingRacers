@@ -206,6 +206,8 @@ static int player_get(lua_State *L)
 		lua_pushfixed(L, plr->viewheight);
 	else if (fastcmp(field,"viewrollangle"))
 		lua_pushangle(L, plr->viewrollangle);
+	else if (fastcmp(field, "tilt"))
+		lua_pushangle(L, plr->tilt);
 	else if (fastcmp(field,"aiming"))
 		lua_pushangle(L, plr->aiming);
 	else if (fastcmp(field,"drawangle"))
@@ -725,6 +727,8 @@ static int player_set(lua_State *L)
 		plr->viewheight = luaL_checkfixed(L, 3);
 	else if (fastcmp(field,"viewrollangle"))
 		plr->viewrollangle = luaL_checkangle(L, 3);
+	else if (fastcmp(field,"tilt"))
+		plr->tilt = luaL_checkangle(L, 3);
 	else if (fastcmp(field,"aiming")) {
 		UINT8 i;
 		plr->aiming = luaL_checkangle(L, 3);
