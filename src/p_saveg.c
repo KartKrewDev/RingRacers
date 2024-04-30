@@ -565,6 +565,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].typing_duration);
 
 		WRITEUINT8(save->p, players[i].kickstartaccel);
+		WRITEUINT8(save->p, players[i].autoring);
 
 		WRITEUINT8(save->p, players[i].stairjank);
 		WRITEUINT8(save->p, players[i].topdriftheld);
@@ -1166,6 +1167,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].typing_duration = READUINT8(save->p);
 
 		players[i].kickstartaccel = READUINT8(save->p);
+		players[i].autoring = READUINT8(save->p);
 
 		players[i].stairjank = READUINT8(save->p);
 		players[i].topdriftheld = READUINT8(save->p);

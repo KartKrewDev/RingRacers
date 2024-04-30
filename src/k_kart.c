@@ -12606,7 +12606,28 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			// Ring boosting
 			if (player->itemflags & IF_USERINGS)
 			{
-				if ((cmd->buttons & BT_ATTACK) && !player->ringdelay && player->rings > 0)
+				// Auto-Ring
+				boolean autoring;
+				if (
+					player->pflags & PF_AUTORING
+					&& leveltime > starttime
+					&& !(cmd->buttons & BT_BRAKE)
+					&& K_GetKartButtons(player)
+					&& P_IsObjectOnGround(player->mo)
+					&& (
+						player->rings > 18
+						&& FixedDiv(player->speed * 100, K_GetKartSpeed(player, false, true)) < 100*FRACUNIT
+						|| player->rings > 9
+						&& FixedDiv(player->speed * 100, K_GetKartSpeed(player, false, true)) < 85*FRACUNIT
+						||player->rings > 3
+						&& FixedDiv(player->speed * 100, K_GetKartSpeed(player, false, true)) < 35*FRACUNIT
+					)
+				)
+					player->autoring = true;
+				else
+					player->autoring = false;
+
+				if (((cmd->buttons & BT_ATTACK) || player->autoring) && !player->ringdelay && player->rings > 0)
 				{
 					mobj_t *ring = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_RING);
 					P_SetMobjState(ring, S_FASTRING1);
@@ -12629,8 +12650,12 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					ring->shadowscale = 0;
 					P_SetTarget(&ring->target, player->mo); // user
 					player->rings--;
-					player->ringdelay = 3;
+					if (player->autoring && !(cmd->buttons & BT_ATTACK))
+						player->ringdelay = 6;
+					else
+						player->ringdelay = 3;
 				}
+
 			}
 			// Other items
 			else

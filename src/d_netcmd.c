@@ -1258,6 +1258,7 @@ enum {
 	WP_SHRINKME = 1<<1,
 	WP_AUTOROULETTE = 1<<2,
 	WP_ANALOGSTICK = 1<<3,
+	WP_AUTORING = 1<<4,
 };
 
 void WeaponPref_Send(UINT8 ssplayer)
@@ -1275,6 +1276,9 @@ void WeaponPref_Send(UINT8 ssplayer)
 
 	if (gamecontrolflags[ssplayer] & GCF_ANALOGSTICK)
 		prefs |= WP_ANALOGSTICK;
+
+	if (cv_autoring[ssplayer].value)
+		prefs |= WP_AUTORING;
 
 	UINT8 buf[2];
 	buf[0] = prefs;
@@ -1301,6 +1305,9 @@ void WeaponPref_Save(UINT8 **cp, INT32 playernum)
 	if (player->pflags & PF_ANALOGSTICK)
 		prefs |= WP_ANALOGSTICK;
 
+	if (player->pflags & PF_AUTORING)
+		prefs |= WP_AUTORING;
+
 	WRITEUINT8(*cp, prefs);
 }
 
@@ -1311,7 +1318,7 @@ size_t WeaponPref_Parse(const UINT8 *bufstart, INT32 playernum)
 
 	UINT8 prefs = READUINT8(p);
 
-	player->pflags &= ~(PF_KICKSTARTACCEL|PF_SHRINKME|PF_AUTOROULETTE);
+	player->pflags &= ~(PF_KICKSTARTACCEL|PF_SHRINKME|PF_AUTOROULETTE|PF_AUTORING);
 
 	if (prefs & WP_KICKSTARTACCEL)
 		player->pflags |= PF_KICKSTARTACCEL;
@@ -1326,6 +1333,9 @@ size_t WeaponPref_Parse(const UINT8 *bufstart, INT32 playernum)
 		player->pflags |= PF_ANALOGSTICK;
 	else
 		player->pflags &= ~PF_ANALOGSTICK;
+
+	if (prefs & WP_AUTORING)
+		player->pflags |= PF_AUTORING;
 
 	if (leveltime < 2)
 	{
