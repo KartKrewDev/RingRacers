@@ -34,7 +34,7 @@ void ScreenshotPass::capture(Rhi& rhi, Handle<GraphicsContext> ctx)
 	packed_data_.clear();
 	// Pixel data must be in pack alignment (4) so a stride of non-multiple 4 must align to 4
 	uint32_t stride = width_ * 3;
-	uint32_t read_stride = ((width_ + (kPixelRowPackAlignment - 1)) & ~(kPixelRowPackAlignment - 1)) * 3;
+	uint32_t read_stride = ((stride + (kPixelRowPackAlignment - 1)) & ~(kPixelRowPackAlignment - 1));
 	pixel_data_.resize(read_stride * height_); // 3 bytes per pixel for RGB8
 	packed_data_.resize(stride * height_);
 

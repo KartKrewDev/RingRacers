@@ -1759,9 +1759,9 @@ void Gl2Rhi::read_pixels(Handle<GraphicsContext> ctx, const Rect& rect, PixelFor
 	GLint size = std::get<2>(gl_format);
 
 	// Pack alignment comes into play.
-	uint32_t pack_aligned_w = (rect.w + (kPixelRowPackAlignment - 1)) & ~(kPixelRowPackAlignment - 1);
+	uint32_t pack_stride = (rect.w * size + (kPixelRowPackAlignment - 1)) & ~(kPixelRowPackAlignment - 1);
 
-	SRB2_ASSERT(out.size_bytes() == pack_aligned_w * rect.h * size);
+	SRB2_ASSERT(out.size_bytes() == pack_stride * rect.h);
 
 	bool is_back;
 	Rect src_dim;
