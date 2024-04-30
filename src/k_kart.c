@@ -12607,25 +12607,36 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			if (player->itemflags & IF_USERINGS)
 			{
 				// Auto-Ring
-				boolean autoring;
+				UINT8 tiereddelay = 5;
+				player->autoring = false;
 				if (
 					player->pflags & PF_AUTORING
 					&& leveltime > starttime
 					&& !(cmd->buttons & BT_BRAKE)
 					&& K_GetKartButtons(player)
 					&& P_IsObjectOnGround(player->mo)
-					&& (
-						player->rings > 18
-						&& FixedDiv(player->speed * 100, K_GetKartSpeed(player, false, true)) < 100*FRACUNIT
-						|| player->rings > 9
-						&& FixedDiv(player->speed * 100, K_GetKartSpeed(player, false, true)) < 85*FRACUNIT
-						||player->rings > 3
-						&& FixedDiv(player->speed * 100, K_GetKartSpeed(player, false, true)) < 35*FRACUNIT
-					)
 				)
-					player->autoring = true;
-				else
-					player->autoring = false;
+				{
+					fixed_t pspeed = FixedDiv(player->speed * 100, K_GetKartSpeed(player, false, true));
+
+					if (player->rings >= 18 && pspeed < 100*FRACUNIT)
+					{
+						player->autoring = true;
+						tiereddelay = 3;
+					}
+					else if (player->rings >= 10 && pspeed < 85*FRACUNIT)
+					{
+						player->autoring = true;
+						tiereddelay = 4;
+					}
+					else if (player->rings >= 4 && pspeed < 35*FRACUNIT)
+					{
+						player->autoring = true;
+						tiereddelay = 5;
+					}
+					else
+						player->autoring = false;
+				}
 
 				if (((cmd->buttons & BT_ATTACK) || player->autoring) && !player->ringdelay && player->rings > 0)
 				{
@@ -12678,7 +12689,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 					player->rings--;
 					if (player->autoring && !(cmd->buttons & BT_ATTACK))
-						player->ringdelay = 6;
+						player->ringdelay = tiereddelay;
 					else
 						player->ringdelay = 3;
 				}
