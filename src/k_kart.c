@@ -10336,7 +10336,7 @@ static INT16 K_GetKartDriftValue(const player_t *player, fixed_t countersteer)
 	}
 #endif
 
-	return basedrift + (FixedMul(driftadjust * FRACUNIT, countersteer) / FRACUNIT);
+	return basedrift + FixedMul(driftadjust, countersteer);
 }
 
 INT16 K_UpdateSteeringValue(INT16 inputSteering, INT16 destSteering)
@@ -10456,7 +10456,24 @@ INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
 	}
 	else
 	{
-		p_speed = min(currentSpeed, (p_maxspeed * 2));
+		if (G_CompatLevel(0x000A))
+		{
+			// Compat level for 2.0 staff ghosts
+			p_speed = min(currentSpeed, p_maxspeed * 2);
+		}
+		else
+		{
+			// Turning dampens as you go faster, but at extremely high speeds, keeping some control is important.
+			// Dampening is applied in two stages, one harsh and one soft.
+			// The harsh window is larger for characters with better baseline maneuverability.
+			fixed_t stageSpeed = min(currentSpeed, (110 + 2*(9-player->kartweight)) * p_maxspeed/100);
+			if (stageSpeed < currentSpeed)
+			{
+				stageSpeed += (currentSpeed - stageSpeed) / 2;
+			}
+
+			p_speed = min(stageSpeed, p_maxspeed * 2);
+		}
 	}
 
 	if (K_PodiumSequence() == true)
@@ -10477,16 +10494,35 @@ INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
 
 	if (player->drift != 0 && P_IsObjectOnGround(player->mo))
 	{
-		fixed_t countersteer = FixedDiv(turnfixed, KART_FULLTURN*FRACUNIT);
-
-		// If we're drifting we have a completely different turning value
-
-		if (player->pflags & PF_DRIFTEND)
+		if (G_CompatLevel(0x000A))
 		{
-			countersteer = FRACUNIT;
-		}
+			// Compat level for 2.0 staff ghosts
+			fixed_t countersteer = FixedDiv(turnfixed, KART_FULLTURN * FRACUNIT);
 
-		return K_GetKartDriftValue(player, countersteer);
+			if (player->pflags & PF_DRIFTEND)
+			{
+				countersteer = FRACUNIT;
+			}
+
+			return K_GetKartDriftValue(player, countersteer);
+		}
+		else
+		{
+			if (player->pflags & PF_DRIFTEND)
+			{
+				// Sal: K_GetKartDriftValue is short-circuited to give a weird additive magic number,
+				// instead of an entirely replaced turn value. This gaslit me years ago when I was doing a
+				// code readability pass, where I missed that fact because it also returned early.
+				turnfixed += K_GetKartDriftValue(player, FRACUNIT) * FRACUNIT;
+				return (turnfixed / FRACUNIT);
+			}
+			else
+			{
+				// If we're drifting we have a completely different turning value
+				fixed_t countersteer = FixedDiv(turnfixed, KART_FULLTURN * FRACUNIT);
+				return K_GetKartDriftValue(player, countersteer);
+			}
+		}
 	}
 
 	fixed_t finalhandleboost = player->handleboost;
@@ -10496,7 +10532,19 @@ INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
 	fixed_t topspeed = K_GetKartSpeed(player, false, false);
 	if (K_Sliptiding(player))
 	{
-		finalhandleboost = FixedMul(5*SLIPTIDEHANDLING/4, FixedDiv(player->speed, topspeed));
+		fixed_t sliptide_handle;
+
+		if (G_CompatLevel(0x000A))
+		{
+			// Compat level for 2.0 staff ghosts
+			sliptide_handle = 5 * SLIPTIDEHANDLING / 4;
+		}
+		else
+		{
+			sliptide_handle = 3 * SLIPTIDEHANDLING / 4;
+		}
+
+		finalhandleboost = FixedMul(sliptide_handle, FixedDiv(player->speed, topspeed));
 	}
 
 	if (finalhandleboost > 0 && player->respawn.state == RESPAWNST_NONE)

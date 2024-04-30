@@ -161,7 +161,23 @@ demoghost *ghosts = NULL;
 // - 0x0009 (older staff ghosts)
 //   - Player names, skin names and color names were 16
 //     bytes. See get_buffer_sizes().
-#define DEMOVERSION 0x000A
+// - 0x000A (Ring Racers v2.0)
+//   - A bug was preventing control after ending a drift.
+//     Older behavior is kept around for staff ghost compat.
+
+#define DEMOVERSION 0x000B
+
+boolean G_CompatLevel(UINT16 level)
+{
+	if (demo.playback)
+	{
+		// Check gameplay differences for older ghosts
+		return (demo.version <= level);
+	}
+
+	return false;
+}
+
 #define DEMOHEADER  "\xF0" "KartReplay" "\x0F"
 
 #define DF_ATTACKMASK   (ATTACKING_TIME|ATTACKING_LAP|ATTACKING_SPB) // This demo contains time/lap data
