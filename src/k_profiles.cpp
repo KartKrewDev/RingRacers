@@ -12,6 +12,7 @@
 /// \brief implements methods for profiles etc.
 
 #include <algorithm>
+#include <exception>
 
 #include <fmt/format.h>
 
@@ -315,25 +316,27 @@ void PR_SaveProfiles(void)
 	std::vector<uint8_t> ubjson = json::to_ubjson(ng);
 
 	std::string realpath = fmt::format("{}/{}", srb2home, PROFILESFILE);
-	std::string tmppath = fmt::format("{}.tmp", realpath);
+	int random_number = rand();
+	std::string tmppath = fmt::format("{}_{}.tmp", realpath, random_number);
 
 	try
 	{
 		io::FileStream file {tmppath, io::FileStreamMode::kWrite};
-		io::BufferedOutputStream<io::FileStream> bos {std::move(file)};
 
-		io::write(static_cast<uint32_t>(0x52494E47), bos, io::Endian::kBE); // "RING"
-		io::write(static_cast<uint32_t>(0x5052464C), bos, io::Endian::kBE); // "PRFL"
-		io::write(static_cast<uint8_t>(0), bos); // reserved1
-		io::write(static_cast<uint8_t>(0), bos); // reserved2
-		io::write(static_cast<uint8_t>(0), bos); // reserved3
-		io::write(static_cast<uint8_t>(0), bos); // reserved4
-		io::write_exact(bos, tcb::as_bytes(tcb::make_span(ubjson)));
-		bos.flush();
-		file = bos.stream();
+		io::write(static_cast<uint32_t>(0x52494E47), file, io::Endian::kBE); // "RING"
+		io::write(static_cast<uint32_t>(0x5052464C), file, io::Endian::kBE); // "PRFL"
+		io::write(static_cast<uint8_t>(0), file); // reserved1
+		io::write(static_cast<uint8_t>(0), file); // reserved2
+		io::write(static_cast<uint8_t>(0), file); // reserved3
+		io::write(static_cast<uint8_t>(0), file); // reserved4
+		io::write_exact(file, tcb::as_bytes(tcb::make_span(ubjson)));
 		file.close();
 
 		fs::rename(tmppath, realpath);
+	}
+	catch (const std::exception& ex)
+	{
+		I_Error("Couldn't save profiles. Are you out of Disk space / playing in a protected folder?\n\nException: %s", ex.what());
 	}
 	catch (...)
 	{
@@ -398,9 +401,14 @@ void PR_LoadProfiles(void)
 		json parsed = json::from_ubjson(remainder_as_u8);
 		js = parsed.template get<ProfilesJson>();
 	}
+	catch (const std::exception& ex)
+	{
+		I_Error("Profiles file is corrupt.\n\nException: %s", ex.what());
+		return;
+	}
 	catch (...)
 	{
-		I_Error("Profiles file is corrupt");
+		I_Error("Profiles file is corrupt.");
 		return;
 	}
 
