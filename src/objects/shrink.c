@@ -573,8 +573,7 @@ boolean Obj_ShrinkLaserCollide(mobj_t *gun, mobj_t *victim)
 		UINT8 oldGrow = max(victim->player->growshrinktimer, 0);
 		fixed_t easePercent = min(oldGrow * 6*TICRATE / FRACUNIT, FRACUNIT);
 		victim->player->growshrinktimer += Easing_OutSine(easePercent, 6*TICRATE, 2*TICRATE);
-		if (!K_PlayerUsesBotMovement(victim->player))
-			CONS_Printf("grow %d\n", victim->player->growshrinktimer);
+
 		S_StartSound(victim, sfx_kc5a);
 
 		if (victim->player->roundconditions.consecutive_grow_lasers < UINT8_MAX)

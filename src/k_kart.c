@@ -12505,8 +12505,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								K_DoInvincibility(player,
 									max(6u * TICRATE + behindScaled, player->invincibilitytimer + 5u*TICRATE));
 								K_PlayPowerGloatSound(player->mo);
-								if (!K_PlayerUsesBotMovement(player))
-									CONS_Printf("invinc %d\n", player->invincibilitytimer);
+
 								player->itemamount--;
 								player->botvars.itemconfirm = 0;
 							}
