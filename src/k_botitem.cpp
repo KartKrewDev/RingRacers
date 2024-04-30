@@ -1497,6 +1497,13 @@ static void K_BotItemInstashield(const player_t *player, ticcmd_t *cmd)
 		return;
 	}
 
+	if (player->botvars.difficulty <= 7)
+	{
+		// Weak players don't whip.
+		// Weak bots don't either.
+		return;
+	}
+
 	// Find players within the instashield's range.
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
