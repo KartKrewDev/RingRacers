@@ -40,11 +40,6 @@ void FramebufferManager::prepass(Rhi& rhi)
 			rhi.destroy_texture(main_color_);
 			main_color_ = kNullHandle;
 		}
-		if (main_depth_ != kNullHandle)
-		{
-			rhi.destroy_renderbuffer(main_depth_);
-			main_depth_ = kNullHandle;
-		}
 
 		if (post_colors_[0] != kNullHandle)
 		{
@@ -80,10 +75,6 @@ void FramebufferManager::prepass(Rhi& rhi)
 			TextureWrapMode::kClamp,
 			TextureWrapMode::kClamp
 		});
-	}
-	if (main_depth_ == kNullHandle)
-	{
-		main_depth_ = rhi.create_renderbuffer({current_width, current_height});
 	}
 
 	if (post_colors_[0] == kNullHandle)
