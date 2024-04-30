@@ -8925,7 +8925,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
-	if (player->invincibilitytimer && (onground == true || K_PowerUpRemaining(player, POWERUP_SMONITOR)))
+	if (player->invincibilitytimer && (player->ignoreAirtimeLeniency > 0 || onground == true || K_PowerUpRemaining(player, POWERUP_SMONITOR)))
 		player->invincibilitytimer--;
 
 	if (!player->invincibilitytimer)
@@ -8961,7 +8961,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if ((player->respawn.state == RESPAWNST_NONE) && player->growshrinktimer != 0)
 	{
-		if (player->growshrinktimer > 0 && onground == true)
+		if (player->growshrinktimer > 0 && (onground == true || player->ignoreAirtimeLeniency > 0))
 			player->growshrinktimer--;
 		if (player->growshrinktimer < 0)
 			player->growshrinktimer++;
@@ -8986,6 +8986,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	{
 		player->finalfailsafe = 0;
 	}
+
+	if (player->ignoreAirtimeLeniency)
+		player->ignoreAirtimeLeniency--;
 
 	if (player->freeRingShooterCooldown && !player->mo->hitlag)
 		player->freeRingShooterCooldown--;
@@ -11848,6 +11851,8 @@ boolean K_FastFallBounce(player_t *player)
 			fixed_t fallspeed = abs(player->fastfall);
 			P_InstaThrust(player->mo, player->mo->angle, 11*max(minspeed, fallspeed)/10);
 
+			player->ignoreAirtimeLeniency = max(player->ignoreAirtimeLeniency, TICRATE);
+
 			bounce += 3 * mapobjectscale;
 		}
 		else
@@ -12494,12 +12499,14 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO) // Doesn't hold your item slot hostage normally, so you're free to waste it if you have multiple
 							{
 								UINT32 behind = K_GetItemRouletteDistance(player, player->itemRoulette.playing);
-								UINT32 behindScaled = behind * TICRATE / 4000;
+								UINT32 behindScaled = behind * TICRATE / 4500;
 								behindScaled = min(behindScaled, 10*TICRATE);
 
 								K_DoInvincibility(player,
-									max(10u * TICRATE + behindScaled, player->invincibilitytimer + 5u*TICRATE));
+									max(6u * TICRATE + behindScaled, player->invincibilitytimer + 5u*TICRATE));
 								K_PlayPowerGloatSound(player->mo);
+								if (!K_PlayerUsesBotMovement(player))
+									CONS_Printf("invinc %d\n", player->invincibilitytimer);
 								player->itemamount--;
 								player->botvars.itemconfirm = 0;
 							}
