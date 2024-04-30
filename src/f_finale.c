@@ -1295,7 +1295,7 @@ void F_GameEvaluationDrawer(void)
 
 		patch_t *empat = W_CachePatchName(
 			(evaluationtype == EVAL_CHAOS) ? "EMEMAP" : "SUPMAP",
-			PU_PATCH_LOWPRIORITY
+			PU_HUDGFX
 		);
 		x -= 6*FRACUNIT;
 		y -= 6*FRACUNIT;

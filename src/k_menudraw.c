@@ -3098,7 +3098,7 @@ windataemeraldmaybe:
 				colormap ? '\0' : 'B'
 			);
 
-			V_DrawFixedPatch((rankx)*FRACUNIT, (ranky)*FRACUNIT, FRACUNIT, 0, W_CachePatchName(emname, PU_CACHE), colormap);
+			V_DrawFixedPatch((rankx)*FRACUNIT, (ranky)*FRACUNIT, FRACUNIT, 0, W_CachePatchName(emname, PU_HUDGFX), colormap);
 		}
 	}
 	else if (statsmode)
@@ -5414,7 +5414,7 @@ void M_DrawVideoModes(void)
 			va("\x87" "Default mode is %dx%d",
 				cv_scr_width.value, cv_scr_height.value));
 
-		
+
 
 		if (vid.width > 1280 || vid.height > 800)
 			V_DrawCenteredMenuString(BASEVIDWIDTH/2 + t, currentMenu->y + 75+24,
