@@ -507,7 +507,7 @@ static void M_ChallengesTutorial(UINT8 option)
 				"to break open Big Challenge tiles.\n"
 				"\n"
 				"You'll also need to unlock\n"
-				"the surrounding tiles first.\n"
+				"any surrounding small tiles first.\n"
 				), NULL, MM_NOTHING, NULL, NULL);
 			gamedata->majorkeyskipattempted = true;
 			break;

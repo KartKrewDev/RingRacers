@@ -405,8 +405,8 @@ static void M_ChallengeGridExtraDataAdjacencyRules(challengegridextradata_t *ext
 	{
 		extradata->flags |= CHE_HINT;
 	}
-	// Adjacent locked tile, prevent 10x key skip.
-	else
+	// Adjacent locked small tile, prevent 10x key skip.
+	else if (unlockables[adjacent].majorunlock == false)
 	{
 		extradata->flags &= ~CHE_ALLCLEAR;
 	}
