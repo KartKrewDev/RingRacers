@@ -542,9 +542,9 @@ void K_IncreaseBotDifficulty(player_t *bot)
 
 	bot->botvars.diffincrease = 0;
 
-	if (bot->botvars.difficulty >= MAXBOTDIFFICULTY)
+	if (grandprixinfo.masterbots == true)
 	{
-		// Already at max difficulty, don't need to increase
+		// Master bot difficulty is not dynamic.
 		return;
 	}
 
