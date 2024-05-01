@@ -4052,7 +4052,7 @@ boolean G_CheckDemoStatus(void)
 			else if (wasmodeattacking)
 				M_EndModeAttackRun();
 			else if (demo.attract == DEMO_ATTRACT_CREDITS)
-				F_ContinueCredits();
+				F_DeferContinueCredits();
 			else
 				D_SetDeferredStartTitle(true);
 		}

@@ -26,6 +26,10 @@ void F_CreditsReset(void);
 
 void F_StartCredits(void);
 
+void F_DeferContinueCredits(void);
+
+boolean F_IsDeferredContinueCredits(void);
+
 void F_ContinueCredits(void);
 
 void F_TickCreditsDemoExit(void);

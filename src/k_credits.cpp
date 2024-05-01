@@ -126,6 +126,8 @@ constexpr const fixed_t kScrollFactor = FRACUNIT * 7 / 8;
 constexpr const int kSkipSpeed = 8;
 constexpr const int kScrollSkipSpeed = 4;
 
+static bool g_deferred_continue_credits = false;
+
 void F_LoadCreditsDefinitions(void)
 {
 	// Load credits definitions from bios.pk3
@@ -448,8 +450,20 @@ static void F_CreditsNextSlide(void)
 	F_InitCreditsSlide();
 }
 
+void F_DeferContinueCredits(void)
+{
+	g_deferred_continue_credits = true;
+	demo.attract = DEMO_ATTRACT_OFF;
+}
+
+boolean F_IsDeferredContinueCredits(void)
+{
+	return g_deferred_continue_credits;
+}
+
 void F_ContinueCredits(void)
 {
+	g_deferred_continue_credits = false;
 	G_SetGamestate(GS_CREDITS);
 	F_CreditsReset();
 	demo.attract = DEMO_ATTRACT_OFF;
