@@ -81,7 +81,12 @@ void TuneManager::tick()
 	{
 		if (load())
 		{
-			I_PlaySong(tune->loop);
+			musicdef_t* def = find_musicdef();
+			if (!cv_streamersafemusic.value || (def != nullptr && !def->contentidunsafe))
+			{
+				I_PlaySong(tune->loop);
+			}
+
 			I_FadeSongFromVolume(
 				tune->use_level_volume ? level_volume_ : 100,
 				0,
@@ -151,7 +156,11 @@ void TuneManager::pause_unpause() const
 		}
 		else
 		{
-			I_ResumeSong();
+			musicdef_t* def = find_musicdef();
+			if (!cv_streamersafemusic.value || (def != nullptr && !def->contentidunsafe))
+			{
+				I_ResumeSong();
+			}
 		}
 	}
 }
@@ -166,6 +175,12 @@ bool TuneManager::load() const
 	}
 
 	return I_LoadSong(static_cast<char*>(W_CacheLumpNum(lumpnum, PU_MUSIC)), W_LumpLength(lumpnum));
+}
+
+musicdef_t* TuneManager::find_musicdef() const
+{
+	uint8_t index = 0;
+	return S_FindMusicDef(current_song_.c_str(), &index);
 }
 
 void TuneManager::adjust_volume() const

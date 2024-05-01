@@ -292,6 +292,9 @@ menuitem_t OPTIONS_Sound[] =
 	{IT_STRING | IT_CVAR, "Continuous Attack Music", "Keep music playing seamlessly when retrying in Attack modes.",
 		NULL, {.cvar = &cv_continuousmusic}, 0, 0},
 
+	{IT_STRING | IT_CVAR, "Streamer-Safe Music", "Only play music safe for video platforms.",
+		NULL, {.cvar = &cv_streamersafemusic}, 0, 0},
+
 	{IT_SPACE | IT_DYBIGSPACE, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 

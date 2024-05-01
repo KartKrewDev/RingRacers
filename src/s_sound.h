@@ -43,6 +43,7 @@ extern consvar_t cv_gamedigimusic;
 
 extern consvar_t cv_gamesounds;
 extern consvar_t cv_bgaudio;
+extern consvar_t cv_streamersafemusic;
 
 typedef enum
 {
@@ -171,6 +172,7 @@ struct musicdef_t
 	int volume;
 	int debug_volume;
 	boolean important;
+	boolean contentidunsafe;
 	musicdef_t *next;
 	soundtestsequence_t sequence;
 };

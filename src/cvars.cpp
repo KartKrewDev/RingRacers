@@ -318,6 +318,7 @@ void Captioning_OnChange(void);
 consvar_t cv_closedcaptioning = Player("closedcaptioning", "Off").on_off().onchange(Captioning_OnChange);
 
 consvar_t cv_continuousmusic = Player("continuousmusic", "On").on_off();
+consvar_t cv_streamersafemusic = Player("streamersafemusic", "Off").on_off();
 consvar_t cv_controlperkey = Player("controlperkey", "One").values({{1, "One"}, {2, "Several"}});
 
 // actual general (maximum) sound & music volume, saved into the config
