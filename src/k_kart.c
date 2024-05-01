@@ -10538,7 +10538,7 @@ INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
 				fixed_t drift_end_term = K_GetKartDriftValue(player, FRACUNIT) * FRACUNIT;
 				fixed_t drift_exit_frac = (abs(player->drift) * FRACUNIT) / 5;
 
-				turnfixed = Easing_Linear(
+				turnfixed = Easing_InSine(
 					drift_exit_frac,
 					turnfixed,
 					drift_end_term
