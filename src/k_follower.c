@@ -541,8 +541,8 @@ void K_HandleFollower(player_t *player)
 		if (player->follower->cvmem)
 		{
 			destAngle = R_PointToAngle2(
-				player->follower->x, player->follower->y,
-				player->mo->x, player->mo->y
+				player->mo->x, player->mo->y,
+				player->follower->x, player->follower->y
 			);
 		}
 
