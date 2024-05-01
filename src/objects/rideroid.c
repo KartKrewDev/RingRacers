@@ -314,7 +314,7 @@ void Obj_RideroidThink(mobj_t *mo)
 
 
 	// if we hit a wall or get hit, get off of the rideroid.
-	if (pmo->eflags & MFE_JUSTBOUNCEDWALL || P_PlayerInPain(p))
+	if (pmo->eflags & MFE_JUSTBOUNCEDWALL || P_PlayerInPain(p) || p->respawn.state != RESPAWNST_NONE)
 	{
 		Obj_explodeRideroid(mo);
 		return;
