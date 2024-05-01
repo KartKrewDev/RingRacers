@@ -237,6 +237,7 @@ patch_t *kp_button_up[2];
 patch_t *kp_button_down[2];
 patch_t *kp_button_right[2];
 patch_t *kp_button_left[2];
+patch_t *kp_button_dpad[2];
 
 static void K_LoadButtonGraphics(patch_t *kp[2], int letter)
 {
@@ -910,6 +911,7 @@ void K_LoadKartHUDGraphics(void)
 	K_LoadButtonGraphics(kp_button_down, 'K');
 	K_LoadButtonGraphics(kp_button_right, 'L');
 	K_LoadButtonGraphics(kp_button_left, 'M');
+	K_LoadButtonGraphics(kp_button_dpad, 'T');
 }
 
 // For the item toggle menu

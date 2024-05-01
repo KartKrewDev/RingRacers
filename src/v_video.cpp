@@ -2505,6 +2505,11 @@ static UINT8 V_GetButtonCodeWidth(UINT8 c)
 		x = 14;
 		break;
 
+	case 0x04:
+		// dpad
+		x = 14;
+		break;
+
 	case 0x0A:
 	case 0x0B:
 	case 0x0C:
@@ -2699,6 +2704,8 @@ void V_DrawStringScaled(
 							case 0x01: return {{0, 3, Draw::Button::down}};
 							case 0x02: return {{0, 3, Draw::Button::right}};
 							case 0x03: return {{0, 3, Draw::Button::left}};
+
+							case 0x04: return {{0, 4, Draw::Button::dpad}};
 
 							case 0x07: return {{0, 2, Draw::Button::r}};
 							case 0x08: return {{0, 2, Draw::Button::l}};

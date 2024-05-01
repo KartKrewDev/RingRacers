@@ -13393,6 +13393,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				player->tumbleHeight = 30;	// Base tumble bounce height
 				player->trickpanel = TRICKSTATE_NONE;
 				P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
+				K_AddMessageForPlayer(player, "Press <dpad> + <a> to trick!", true, false);
 				if (player->itemflags & (IF_ITEMOUT|IF_EGGMANOUT))
 				{
 					//K_PopPlayerShield(player); // shield is just being yeeted, don't pop

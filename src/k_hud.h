@@ -92,6 +92,7 @@ extern patch_t *kp_button_up[2];
 extern patch_t *kp_button_down[2];
 extern patch_t *kp_button_right[2];
 extern patch_t *kp_button_left[2];
+extern patch_t *kp_button_dpad[2];
 
 extern patch_t *kp_eggnum[6];
 extern patch_t *kp_facenum[MAXPLAYERS+1];
