@@ -540,10 +540,7 @@ void K_HandleFollower(player_t *player)
 		// Using auto-ring, face towards the player while throwing your rings.
 		if (player->follower->cvmem)
 		{
-			destAngle = R_PointToAngle2(
-				player->mo->x, player->mo->y,
-				player->follower->x, player->follower->y
-			);
+			destAngle = player->mo->angle + ANGLE_180;
 		}
 
 		// Sal: Smoothly rotate angle to the destination value.
