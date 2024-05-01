@@ -1576,7 +1576,10 @@ static void K_KartGetItemResult(player_t *const player, kartitems_t getitem)
 	player->botvars.itemconfirm = 0;
 
 	player->itemtype = K_ItemResultToType(getitem);
-	player->itemamount = K_ItemResultToAmount(getitem);
+	UINT8 itemamount = K_ItemResultToAmount(getitem);
+	if (cv_kartdebugitem.value != KITEM_NONE && cv_kartdebugitem.value == player->itemtype && cv_kartdebugamount.value > 1)
+		itemamount = cv_kartdebugamount.value;
+	player->itemamount = itemamount;
 
 	if (player->itemtype == KITEM_SPB)
 		Obj_SPBEradicateCapsules();
