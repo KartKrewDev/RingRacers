@@ -6390,7 +6390,7 @@ void Command_ExitGame_f(void)
 		// YES, this is where demo.attract gets cleared!
 		if (demo.attract == DEMO_ATTRACT_CREDITS)
 		{
-			F_ContinueCredits(); // <-- clears demo.attract
+			F_DeferContinueCredits(); // <-- clears demo.attract
 		}
 		else if (restoreMenu == NULL) // this is true for attract demos too!
 		{

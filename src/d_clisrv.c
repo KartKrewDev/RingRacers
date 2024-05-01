@@ -52,6 +52,7 @@
 #include "stun.h"
 
 // SRB2Kart
+#include "k_credits.h"
 #include "k_kart.h"
 #include "k_battle.h"
 #include "k_pwrlv.h"
@@ -6146,6 +6147,11 @@ boolean TryRunTics(tic_t realtics)
 
 			ps_tictime = I_GetPreciseTime() - ps_tictime;
 
+			if (F_IsDeferredContinueCredits())
+			{
+				F_ContinueCredits();
+			}
+
 			if (D_IsDeferredStartTitle())
 			{
 				D_StartTitle();
@@ -6153,6 +6159,12 @@ boolean TryRunTics(tic_t realtics)
 
 			// Leave a certain amount of tics present in the net buffer as long as we've ran at least one tic this frame.
 			if (client && gamestate == GS_LEVEL && leveltime > 1 && neededtic <= gametic + cv_netticbuffer.value)
+			{
+				break;
+			}
+
+			// if we're no longer in a level state, just exit
+			if (!G_GamestateUsesLevel())
 			{
 				break;
 			}
