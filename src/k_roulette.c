@@ -1356,7 +1356,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	}
 	else if (K_TimeAttackRules() == true)
 	{
-		kartitems_t *presetlist = K_KartItemReelRingSneaker;
+		kartitems_t *presetlist = NULL;
 
 		// If the objective is not to go fast, it's to cause serious damage.
 		if (battleprisons == true)
@@ -1367,10 +1367,55 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 		{
 			presetlist = K_KartItemReelSPBAttack;
 		}
-
-		for (i = 0; presetlist[i] != KITEM_NONE; i++)
+		else if (gametype == GT_TUTORIAL)
 		{
-			K_PushToRouletteItemList(roulette, presetlist[i]);
+			presetlist = K_KartItemReelRingSneaker;
+		}
+
+		if (presetlist != NULL)
+		{
+			for (i = 0; presetlist[i] != KITEM_NONE; i++)
+			{
+				K_PushToRouletteItemList(roulette, presetlist[i]);
+			}
+		}
+		else
+		{
+			// New FREE PLAY behavior;
+			// every item in the game!
+
+			// Create the same item reel given the same inputs.
+			P_SetRandSeed(PR_ITEM_ROULETTE, ITEM_REEL_SEED);
+
+			for (i = 1; i < NUMKARTRESULTS; i++)
+			{
+				if (K_ItemEnabled(i) == true)
+				{
+					spawnChance[i] = ( totalSpawnChance++ );
+				}
+			}
+
+			while (totalSpawnChance > 0)
+			{
+				rngRoll = P_RandomKey(PR_ITEM_ROULETTE, totalSpawnChance);
+				for (i = 1; i < NUMKARTRESULTS && spawnChance[i] <= rngRoll; i++)
+				{
+					continue;
+				}
+
+				K_AddItemToReel(player, roulette, i);
+
+				for (; i < NUMKARTRESULTS; i++)
+				{
+					// Be sure to fix the remaining items' odds too.
+					if (spawnChance[i] > 0)
+					{
+						spawnChance[i]--;
+					}
+				}
+
+				totalSpawnChance--;
+			}
 		}
 
 		return;
