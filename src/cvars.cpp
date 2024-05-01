@@ -409,6 +409,11 @@ consvar_t cv_netticbuffer = Player("netticbuffer", "1").min_max(0, 3);
 void SetChannelsNum(void);
 consvar_t cv_numChannels = Player("snd_channels", "64").values(CV_Unsigned).onchange(SetChannelsNum);
 
+extern CV_PossibleValue_t soundmixingbuffersize_cons_t[];
+consvar_t cv_soundmixingbuffersize = Player("snd_mixingbuffersize", "2048")
+	.values(soundmixingbuffersize_cons_t)
+	.onchange_noinit([]() { COM_ImmedExecute("restartaudio"); });
+
 extern CV_PossibleValue_t perfstats_cons_t[];
 consvar_t cv_perfstats = Player("perfstats", "Off").dont_save().values(perfstats_cons_t);
 

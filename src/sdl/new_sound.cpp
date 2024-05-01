@@ -183,7 +183,7 @@ void initialize_sound()
 	SDL_AudioSpec desired;
 	desired.format = AUDIO_F32SYS;
 	desired.channels = 2;
-	desired.samples = 1024;
+	desired.samples = cv_soundmixingbuffersize.value;
 	desired.freq = 44100;
 	desired.callback = audio_callback;
 
@@ -215,6 +215,7 @@ void initialize_sound()
 		master->add_source(gain_sound_effects);
 		master->add_source(gain_music_channel);
 		mixer_music->add_source(gain_music_player);
+		sound_effect_channels.clear();
 		for (size_t i = 0; i < static_cast<size_t>(cv_numChannels.value); i++)
 		{
 			shared_ptr<SoundEffectPlayer> player = make_shared<SoundEffectPlayer>();
@@ -236,13 +237,10 @@ void I_StartupSound(void)
 
 void I_ShutdownSound(void)
 {
-	SdlAudioLockHandle _;
+	SDL_CloseAudio();
+	SDL_QuitSubSystem(SDL_INIT_AUDIO);
 
-	for (auto& channel : sound_effect_channels)
-	{
-		if (channel)
-			*channel = audio::SoundEffectPlayer();
-	}
+	sound_started = false;
 }
 
 void I_UpdateSound(void)

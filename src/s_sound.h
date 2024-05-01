@@ -38,6 +38,8 @@ extern consvar_t cv_soundvolume, cv_closedcaptioning, cv_digmusicvolume;
 
 extern consvar_t surround;
 extern consvar_t cv_numChannels;
+extern CV_PossibleValue_t soundmixingbuffersize_cons_t[];
+extern consvar_t cv_soundmixingbuffersize;
 
 extern consvar_t cv_gamedigimusic;
 
