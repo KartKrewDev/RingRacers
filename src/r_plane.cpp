@@ -106,6 +106,10 @@ void R_InitPlanes(void)
 // ripples da water texture
 static fixed_t R_CalculateRippleOffset(drawspandata_t* ds, INT32 y)
 {
+	if (cv_reducevfx.value)
+	{
+		return 0;
+	}
 	fixed_t distance = FixedMul(ds->planeheight, yslope[y]);
 	const INT32 yay = (ds->planeripple.offset + (distance>>9)) & 8191;
 	return FixedDiv(FINESINE(yay), (1<<12) + (distance>>11));
