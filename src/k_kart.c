@@ -10530,10 +10530,20 @@ INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
 		{
 			if (player->pflags & PF_DRIFTEND)
 			{
-				// Sal: K_GetKartDriftValue is short-circuited to give a weird additive magic number,
-				// instead of an entirely replaced turn value. This gaslit me years ago when I was doing a
-				// code readability pass, where I missed that fact because it also returned early.
-				turnfixed += K_GetKartDriftValue(player, FRACUNIT) * FRACUNIT;
+				// Sal: This was an unintended control regression from SRB2Kart, but we
+				// kind of prefer how it feels. It kind of sucks because the original
+				// eats turning entirely for a few tics. Let's do a healthy medium between
+				// SRB2Kart and RR: the kick-out value is eased towards normal turning control.
+
+				fixed_t drift_end_term = K_GetKartDriftValue(player, FRACUNIT) * FRACUNIT;
+				fixed_t drift_exit_frac = (abs(player->drift) * FRACUNIT) / 5;
+
+				turnfixed = Easing_Linear(
+					drift_exit_frac,
+					turnfixed,
+					drift_end_term
+				);
+
 				return (turnfixed / FRACUNIT);
 			}
 			else
