@@ -555,7 +555,6 @@ static boolean F_CreditsPlayDemo(void)
 
 	UINT8 ghost_id = M_RandomKey( mapheaderinfo[map_id]->ghostCount );
 	brief = mapheaderinfo[map_id]->ghostBrief[ghost_id];
-	std::string demo_name = static_cast<const char *>(W_CheckNameForNumPwad(brief->wad, brief->lump));
 
 	demo.attract = DEMO_ATTRACT_CREDITS;
 	demo.ignorefiles = true;

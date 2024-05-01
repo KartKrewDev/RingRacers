@@ -7901,7 +7901,7 @@ static void P_LoadRecordGhosts(void)
 			savebuffer_t buf = {0};
 
 			staffbrief_t* ghostbrief = mapheaderinfo[gamemap-1]->ghostBrief[i - 1];
-			const char* lumpname = W_CheckNameForNumPwad(ghostbrief->wad, ghostbrief->lump);
+			const char* lumpname = W_CheckLongNameForNumPwad(ghostbrief->wad, ghostbrief->lump);
 			size_t lumplength = W_LumpLengthPwad(ghostbrief->wad, ghostbrief->lump);
 			if (lumplength == 0)
 			{
