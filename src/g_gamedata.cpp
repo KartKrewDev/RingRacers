@@ -493,7 +493,12 @@ void srb2::load_ng_gamedata()
 	gamedata->tutorialdone = js.milestones.tutorialdone;
 	gamedata->gonerlevel = js.milestones.gonerlevel;
 	gamedata->thisprisoneggpickup = js.prisons.thisprisoneggpickup;
+
 	gamedata->prisoneggstothispickup = js.prisons.prisoneggstothispickup;
+	if (gamedata->prisoneggstothispickup > GDINIT_PRISONSTOPRIZE)
+	{
+		gamedata->prisoneggstothispickup = GDINIT_PRISONSTOPRIZE;
+	}
 
 	size_t emblems_size = js.emblems.size();
 	for (size_t i = 0; i < std::min((size_t)MAXEMBLEMS, emblems_size); i++)

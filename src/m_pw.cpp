@@ -535,6 +535,31 @@ void f_difficulty()
 	}
 }
 
+void f_keys()
+{
+	INT32 givekeys = 25;
+
+	if (gamedata->chaokeys > (GDMAX_CHAOKEYS - givekeys))
+	{
+		givekeys = GDMAX_CHAOKEYS - gamedata->chaokeys;
+	}
+
+	if (givekeys > 0)
+	{
+		S_StartSound(0, sfx_keygen);
+
+		gamedata->chaokeys += givekeys;
+		gamedata->chaokeytutorial = true;
+
+		M_StartMessage("Dr. Robotnik's Ring Racers - Deluxe Edition", va("Claimed %d Chao Keys!", givekeys), NULL, MM_NOTHING, NULL, NULL);
+		G_SaveGameData();
+	}
+	else
+	{
+		M_StartMessage("Dr. Robotnik's Ring Racers - Deluxe Edition", "You have the maximum number of Chao Keys!", NULL, MM_NOTHING, NULL, NULL);
+	}
+}
+
 void f_devmode()
 {
 	INT32 i;
@@ -737,4 +762,5 @@ void M_PasswordInit(void)
 	passwords.emplace_back(f_timeattack, "mFu5OB9d6jnc2kth7HE66wJ42F/GHDzSvuciK1Qw++6iGnpBccxcKjpoxgOvD3eIoqR606ruBINuXi23proXHQ==");
 	passwords.emplace_back(f_encore, "i5u5sIsMs5eITy+LzAXvKm6D9OzOVKhUqSy1mTTV/oUxJX6RPsk8OcyLbNaey9Vc6wXOhz+2+mTXILkIRzvXqA==");
 	passwords.emplace_back(f_difficulty, "MKjOtEFLkgXf21uiECdBTU6XtbkuFWaGh7i8znKo7JrXXEDrCBJmGwINvPg0T3TLn0zlscLvmC5nve7I+NTrnA==");
+	passwords.emplace_back(f_keys, "jgsD6UJ2Xa10QcS2ZDJwcvpd4iia3AXIG8wDDSsHX7kFH5jEXnym45yaNZG9hIKEvBMpVONKR0YTA6JBAQRCvg==");
 }
