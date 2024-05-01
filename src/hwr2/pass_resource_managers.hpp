@@ -24,7 +24,6 @@ namespace srb2::hwr2
 class FramebufferManager final : public Pass
 {
 	rhi::Handle<rhi::Texture> main_color_;
-	rhi::Handle<rhi::Renderbuffer> main_depth_;
 	std::array<rhi::Handle<rhi::Texture>, 2> post_colors_;
 	rhi::Handle<rhi::Texture> wipe_start_color_;
 	rhi::Handle<rhi::Texture> wipe_end_color_;
@@ -52,7 +51,6 @@ public:
 	void reset_post() noexcept { first_postprocess_ = true; }
 
 	rhi::Handle<rhi::Texture> main_color() const noexcept { return main_color_; }
-	rhi::Handle<rhi::Renderbuffer> main_depth() const noexcept { return main_depth_; }
 
 	rhi::Handle<rhi::Texture> current_post_color() const noexcept { return post_colors_[post_index_]; }
 

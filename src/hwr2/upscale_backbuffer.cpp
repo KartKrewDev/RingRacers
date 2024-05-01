@@ -41,7 +41,7 @@ void UpscaleBackbuffer::begin_pass(Rhi& rhi, Handle<GraphicsContext> ctx)
 	auto new_renderpass = [&rhi = rhi](AttachmentLoadOp load_op, AttachmentStoreOp store_op)
 	{
 		RenderPassDesc desc {};
-		desc.use_depth_stencil = true;
+		desc.use_depth_stencil = false;
 		desc.color_load_op = load_op;
 		desc.color_store_op = store_op;
 		desc.depth_load_op = load_op;
@@ -58,11 +58,6 @@ void UpscaleBackbuffer::begin_pass(Rhi& rhi, Handle<GraphicsContext> ctx)
 			rhi.destroy_texture(color_);
 			color_ = kNullHandle;
 		}
-		if (depth_)
-		{
-			rhi.destroy_renderbuffer(depth_);
-			depth_ = kNullHandle;
-		}
 
 		TextureDesc color_tex {};
 		color_tex.format = TextureFormat::kRGBA;
@@ -75,8 +70,6 @@ void UpscaleBackbuffer::begin_pass(Rhi& rhi, Handle<GraphicsContext> ctx)
 		RenderbufferDesc depth_tex {};
 		depth_tex.width = vid_width;
 		depth_tex.height = vid_height;
-
-		depth_ = rhi.create_renderbuffer(depth_tex);
 
 		if (!renderpass_clear_)
 		{
@@ -95,6 +88,5 @@ void UpscaleBackbuffer::begin_pass(Rhi& rhi, Handle<GraphicsContext> ctx)
 	begin_info.render_pass = remake ? renderpass_clear_ : renderpass_;
 	begin_info.clear_color = {0, 0, 0, 1};
 	begin_info.color_attachment = color_;
-	begin_info.depth_stencil_attachment = depth_;
 	rhi.begin_render_pass(ctx, begin_info);
 }
