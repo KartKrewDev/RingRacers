@@ -542,9 +542,9 @@ void K_IncreaseBotDifficulty(player_t *bot)
 
 	bot->botvars.diffincrease = 0;
 
-	if (bot->botvars.difficulty >= MAXBOTDIFFICULTY)
+	if (grandprixinfo.masterbots == true)
 	{
-		// Already at max difficulty, don't need to increase
+		// Master bot difficulty is not dynamic.
 		return;
 	}
 
@@ -642,7 +642,11 @@ void K_IncreaseBotDifficulty(player_t *bot)
 			rankNudge = 0;
 			break;
 		case GRADE_A:
-			rankNudge = 1;
+			if (grandprixinfo.gp && grandprixinfo.gamespeed == KARTSPEED_EASY)
+				rankNudge = 0;
+			else
+				rankNudge = 1;
+			break;
 	}
 
 	increase += rankNudge;
