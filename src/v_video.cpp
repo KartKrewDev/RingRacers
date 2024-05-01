@@ -3460,8 +3460,8 @@ void VID_DisplaySoftwareScreen()
 				uv_offset,
 				uv_size,
 				{
-					postimgtype[i] == postimg_water,
-					postimgtype[i] == postimg_heat,
+					postimgtype[i] == postimg_water && !cv_reducevfx.value,
+					postimgtype[i] == postimg_heat && !cv_reducevfx.value,
 					postimgtype[i] == postimg_flip,
 					postimgtype[i] == postimg_mirror
 				}
