@@ -196,6 +196,6 @@ void Obj_playerDLZRocket(player_t *p)
 	}
 
 	if ((p->dlzrocket > 10 && (P_IsObjectOnGround(p->mo) || p->mo->eflags & MFE_JUSTBOUNCEDWALL))
-	|| p->spinouttimer || p->wipeoutslow || p->tumbleHeight)
+	|| p->spinouttimer || p->wipeoutslow || p->tumbleBounces)
 		Obj_DLZRocketDismount(p);
 }
