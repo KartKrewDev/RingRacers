@@ -4174,8 +4174,11 @@ void G_SaveDemo(void)
 			if (gamedata->eversavedreplay == false)
 			{
 				gamedata->eversavedreplay = true;
-				M_UpdateUnlockablesAndExtraEmblems(true, true);
-				G_SaveGameData();
+				// The following will IMMEDIATELY happen on either next level load
+				// or returning to menu, so don't make the sound just to get cut off
+				//M_UpdateUnlockablesAndExtraEmblems(true, true);
+				//G_SaveGameData();
+				gamedata->deferredsave = true;
 			}
 		}
 		else
