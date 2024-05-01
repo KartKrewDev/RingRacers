@@ -8816,6 +8816,18 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->ringdelay)
 		player->ringdelay--;
 
+	if (player->trickpanel == TRICKSTATE_READY)
+	{
+		if (!player->throwdir && !cmd->turning)
+			player->tricklock = TICRATE/10;
+		else if (player->tricklock)
+			player->tricklock--;
+	}
+	else
+	{
+		player->tricklock = 0;
+	}
+
 	if (P_PlayerInPain(player))
 	{
 		player->ringboost = 0;
@@ -10437,10 +10449,14 @@ INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
 		return 0;
 	}
 
-	if (player->trickpanel == TRICKSTATE_READY || player->trickpanel == TRICKSTATE_FORWARD)
+	// Staff ghosts - direction-only trickpanel behavior
+	if (G_CompatLevel(0x000A) || K_PlayerUsesBotMovement(player))
 	{
-		// Forward trick or rising from trickpanel
-		return 0;
+		if (player->trickpanel == TRICKSTATE_READY || player->trickpanel == TRICKSTATE_FORWARD)
+		{
+			// Forward trick or rising from trickpanel
+			return 0;
+		}
 	}
 
 	if (player->justDI > 0)
@@ -10597,6 +10613,18 @@ INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
 	if (player->trickpanel == TRICKSTATE_LEFT || player->trickpanel == TRICKSTATE_RIGHT)
 	{
 		turnfixed /= 2;
+	}
+
+	// 2.2 - Presteering allowed in trickpanels
+	if (!G_CompatLevel(0x000A) && !K_PlayerUsesBotMovement(player))
+	{
+		if (player->trickpanel == TRICKSTATE_READY || player->trickpanel == TRICKSTATE_FORWARD)
+		{
+			// Forward trick or rising from trickpanel
+			turnfixed /= 2;
+			if (player->tricklock)
+				turnfixed /= (player->tricklock/2 + 1);
+		}
 	}
 
 	return (turnfixed / FRACUNIT);
@@ -13381,6 +13409,15 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 				INT16 aimingcompare = abs(cmd->throwdir) - abs(cmd->turning);
 
+				// 2.2 - Pre-steering trickpanels
+				if (!G_CompatLevel(0x000A) && !K_PlayerUsesBotMovement(player))
+				{
+					if (!(player->cmd.buttons & BT_ACCELERATE))
+					{
+						aimingcompare = 0;
+					}
+				}
+
 				// Uses cmd->turning over steering intentionally.
 #define TRICKTHRESHOLD (KART_FULLTURN/2)
 				if (aimingcompare < -TRICKTHRESHOLD) // side trick
@@ -13611,12 +13648,24 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			player->trickboostdecay = 0;
 		}
 
-		// Wait until we let go off the control stick to remove the delay
-		// buttons must be neutral after the initial trick delay. This prevents weirdness where slight nudges after blast off would send you flying.
-		if ((player->pflags & PF_TRICKDELAY) && !player->throwdir && !cmd->turning && (player->tricktime >= TRICKDELAY))
+		// 2.2 - Lenient trickpanels
+		if (G_CompatLevel(0x000A) || K_PlayerUsesBotMovement(player))
 		{
-			player->pflags &= ~PF_TRICKDELAY;
+			// Wait until we let go off the control stick to remove the delay
+			// buttons must be neutral after the initial trick delay. This prevents weirdness where slight nudges after blast off would send you flying.
+			if ((player->pflags & PF_TRICKDELAY) && !player->throwdir && !cmd->turning && (player->tricktime >= TRICKDELAY))
+			{
+				player->pflags &= ~PF_TRICKDELAY;
+			}
 		}
+		else
+		{
+			if ((player->pflags & PF_TRICKDELAY) && !(player->cmd.buttons & BT_ACCELERATE) && (player->tricktime >= TRICKDELAY))
+			{
+				player->pflags &= ~PF_TRICKDELAY;
+			}
+		}
+
 	}
 
 	K_KartDrift(player, onground);
