@@ -3376,6 +3376,28 @@ fixed_t K_GetSpindashChargeSpeed(const player_t *player)
 	return val;
 }
 
+static fixed_t K_RingDurationBoost(const player_t *player)
+{
+	fixed_t ret = FRACUNIT;
+
+	if (K_PlayerUsesBotMovement(player))
+	{
+		// x2.0 for Lv. 9
+		const fixed_t modifier = K_BotMapModifier();
+		fixed_t add = ((player->botvars.difficulty-1) * modifier) / (DIFFICULTBOT-1);
+
+		ret += add;
+
+		if (player->botvars.rival == true)
+		{
+			// x2.0 for Rival
+			ret *= 2;
+		}
+	}
+
+	return ret;
+}
+
 // v2 almost broke sliptiding when it fixed turning bugs!
 // This value is fine-tuned to feel like v1 again without reverting any of those changes.
 #define SLIPTIDEHANDLING 7*FRACUNIT/8
@@ -3530,7 +3552,12 @@ static void K_GetKartBoostPower(player_t *player)
 	{
 		// This one's a little special: we add extra top speed per tic of ringboost stored up, to allow for Ring Box to really rocket away.
 		// (We compensate when decrementing ringboost to avoid runaway exponential scaling hell.)
-		ADDBOOST(FRACUNIT/4 + (FRACUNIT / 1750 * (player->ringboost)), 4*FRACUNIT, Easing_InCubic(min(FRACUNIT, player->ringboost * FRACUNIT / (TICRATE*12)), 0, 2*SLIPTIDEHANDLING/5)); // + 20% + ???% top speed, + 400% acceleration, +???% handling
+		fixed_t rb = FixedDiv(player->ringboost * FRACUNIT, max(FRACUNIT, K_RingDurationBoost(player)));
+		ADDBOOST(
+			FRACUNIT/4 + FixedMul(FRACUNIT / 1750, rb),
+			4*FRACUNIT,
+			Easing_InCubic(min(FRACUNIT, rb / (TICRATE*12)), 0, 2*SLIPTIDEHANDLING/5)
+		); // + 20% + ???% top speed, + 400% acceleration, +???% handling
 	}
 
 	if (player->eggmanexplode) // Ready-to-explode
@@ -10283,18 +10310,9 @@ INT32 K_GetKartRingPower(const player_t *player, boolean boosted)
 {
 	fixed_t ringPower = ((9 - player->kartspeed) + (9 - player->kartweight)) * (FRACUNIT/2);
 
-	if (boosted == true && K_PlayerUsesBotMovement(player))
+	if (boosted == true)
 	{
-		// x2.0 for Lv. 9
-		const fixed_t modifier = K_BotMapModifier();
-		fixed_t add = ((player->botvars.difficulty-1) * modifier) / (DIFFICULTBOT-1);
-		ringPower = FixedMul(ringPower, FRACUNIT + add);
-
-		if (player->botvars.rival == true)
-		{
-			// x2.0 for Rival
-			ringPower = FixedMul(ringPower, 2*FRACUNIT);
-		}
+		ringPower = FixedMul(ringPower, K_RingDurationBoost(player));
 	}
 
 	return max(ringPower / FRACUNIT, 1);
