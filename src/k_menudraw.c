@@ -8833,7 +8833,16 @@ void M_DrawSoundTest(void)
 		if (soundtest.current->source)
 			V_DrawThinString(x+1, (y += 10), 0, soundtest.current->source);
 		if (soundtest.current->composers)
-			V_DrawThinString(x+1, (y += 10), 0, soundtest.current->composers);
+		{
+			char *wrappedcomposers = V_ScaledWordWrap(
+				(BASEVIDWIDTH - ((x+1)*2)) << FRACBITS,
+				FRACUNIT, FRACUNIT, FRACUNIT,
+				0, TINY_FONT,
+				soundtest.current->composers
+			);
+			V_DrawThinString(x+1, (y += 10), 0, wrappedcomposers);
+			Z_Free(wrappedcomposers);
+		}
 	}
 	else
 	{
