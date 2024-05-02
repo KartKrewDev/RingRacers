@@ -746,6 +746,7 @@ struct player_t
 	UINT8 tripwireState; // see tripwirestate_t
 	UINT8 tripwirePass; // see tripwirepass_t
 	UINT16 tripwireLeniency;	// When reaching a state that lets you go thru tripwire, you get an extra second leniency after it ends to still go through it.
+	UINT8 fakeBoost;	// Some items need to grant tripwire pass briefly, even when their effect is thrust/instathrust. This is a fake boost type to control that.
 
 	itemroulette_t itemRoulette;	// Item roulette data
 
