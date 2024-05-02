@@ -76,6 +76,7 @@ public:
 		down,
 		right,
 		left,
+		dpad,
 	};
 
 	class TextElement

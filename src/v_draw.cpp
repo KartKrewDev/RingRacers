@@ -43,6 +43,8 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 		BUTTON("right", 0x02),
 		BUTTON("left", 0x03),
 
+		BUTTON("dpad", 0x04),
+
 		BUTTON("r", 0x07),
 		BUTTON("l", 0x08),
 		BUTTON("start", 0x09),
@@ -197,6 +199,7 @@ patch_t** get_button_patch(Draw::Button type, int ver)
 	X(down);
 	X(right);
 	X(left);
+	X(dpad);
 
 #undef X
 	}
