@@ -11883,18 +11883,6 @@ static void K_KartSpindash(player_t *player)
 		player->spindash = 0;
 		P_ResetPitchRoll(player->mo);
 
-		// 2.2 - alternate fastfall
-		if (!G_CompatLevel(0x000A))
-		{
-			if (K_PressingEBrake(player) && player->curshield != KSHIELD_BUBBLE && player->trickpanel == TRICKSTATE_NONE)
-			{
-				mobj_t *fuckingthing = P_SpawnGhostMobj(player->mo);
-				fuckingthing->extravalue1 = 69;
-				fuckingthing->renderflags &= ~RF_TRANSMASK;
-				fuckingthing->tics = 3;
-			}
-		}
-
 		return;
 	}
 	else if (player->fastfall != 0)
@@ -12073,17 +12061,13 @@ boolean K_FastFallBounce(player_t *player)
 		// 2.2 - More lenient fastfall
 		if (!G_CompatLevel(0x000A))
 		{
-			if (player->curshield != KSHIELD_BUBBLE && K_PressingEBrake(player))
+			if (player->curshield != KSHIELD_BUBBLE)
 			{
 				// Nudge the player in their facing angle, and provide a little starting momentum if they need it.
 				// The bounce is already a strong tradeoff, so this allows it to be used for saves and get you back into flow.
 				angle_t momangle = K_MomentumAngle(player->mo);
 				fixed_t minspeed = K_GetKartSpeed(player, false, false)/2;
 				fixed_t returnspeed = max(FixedHypot(player->mo->momx, player->mo->momy), minspeed);
-
-				S_StartSound(player->mo, sfx_gshac);
-				S_StartSound(player->mo, sfx_gshdc);
-				K_AddHitLag(player->mo, 4, false);
 
 				// Initial momentum set uses real speed to avoid some weird twitchy behavior at low XY speed
 				P_InstaThrust(player->mo, momangle, FixedHypot(player->mo->momx, player->mo->momy)/2);
