@@ -123,6 +123,7 @@ UINT16 pingmeasurecount = 1;
 UINT32 realpingtable[MAXPLAYERS]; //the base table of ping where an average will be sent to everyone.
 UINT32 playerpingtable[MAXPLAYERS]; //table of player latency values.
 UINT32 playerpacketlosstable[MAXPLAYERS];
+UINT32 playerdelaytable[MAXPLAYERS]; // mindelay values.
 
 #define GENTLEMANSMOOTHING (TICRATE)
 static tic_t reference_lag;
@@ -3345,6 +3346,7 @@ void SV_ResetServer(void)
 	memset(realpingtable, 0, sizeof realpingtable);
 	memset(playerpingtable, 0, sizeof playerpingtable);
 	memset(playerpacketlosstable, 0, sizeof playerpacketlosstable);
+	memset(playerdelaytable, 0, sizeof playerdelaytable);
 
 	ClearAdminPlayers();
 	Schedule_Clear();
@@ -5279,6 +5281,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 					{
 						playerpingtable[i] = (tic_t)netbuffer->u.netinfo.pingtable[i];
 						playerpacketlosstable[i] = netbuffer->u.netinfo.packetloss[i];
+						playerdelaytable[i] = netbuffer->u.netinfo.delay[i];
 					}
 				}
 
@@ -6263,6 +6266,7 @@ static inline void PingUpdate(void)
 		}
 
 		netbuffer->u.netinfo.packetloss[i] = lost;
+		netbuffer->u.netinfo.delay[i] = playerdelaytable[i];
 	}
 
 	// send the server's maxping as last element of our ping table. This is useful to let us know when we're about to get kicked.
@@ -6297,55 +6301,42 @@ static void UpdatePingTable(void)
 		{
 			if (playeringame[i] && playernode[i] > 0)
 			{
-				if (! server_lagless && playernode[i] > 0 && !players[i].spectator)
-				{
-					lag = GetLag(playernode[i]);
-					realpingtable[i] += lag;
+				// TicsToMilliseconds can't handle pings over 1000ms lol
+				realpingtable[i] += GetLag(playernode[i]);
 
+				if (!players[i].spectator)
+				{
+					lag = playerpingtable[i];
 					if (! fastest || lag < fastest)
 						fastest = lag;
-				}
-				else
-				{
-					// TicsToMilliseconds can't handle pings over 1000ms lol
-					realpingtable[i] += GetLag(playernode[i]);
 				}
 			}
 		}
 
-		// Don't gentleman below your mindelay
-		if (fastest < (tic_t)cv_mindelay.value)
-			fastest = (tic_t)cv_mindelay.value;
-
-		pingmeasurecount++;
-
 		if (server_lagless)
 			lowest_lag = 0;
 		else
-		{
 			lowest_lag = fastest;
 
-			if (fastest)
-				lag = fastest;
-			else
-				lag = GetLag(0);
+		// Don't gentleman below your mindelay
+		if (lowest_lag < (tic_t)cv_mindelay.value)
+			lowest_lag = (tic_t)cv_mindelay.value;
 
-			lag = ( realpingtable[0] + lag );
+		pingmeasurecount++;
 
-			switch (playerpernode[0])
-			{
-				case 4:
-					realpingtable[nodetoplayer4[0]] = lag;
-					/*FALLTHRU*/
-				case 3:
-					realpingtable[nodetoplayer3[0]] = lag;
-					/*FALLTHRU*/
-				case 2:
-					realpingtable[nodetoplayer2[0]] = lag;
-					/*FALLTHRU*/
-				case 1:
-					realpingtable[nodetoplayer[0]] = lag;
-			}
+		switch (playerpernode[0])
+		{
+			case 4:
+				playerdelaytable[nodetoplayer4[0]] = lowest_lag;
+				/*FALLTHRU*/
+			case 3:
+				playerdelaytable[nodetoplayer3[0]] = lowest_lag;
+				/*FALLTHRU*/
+			case 2:
+				playerdelaytable[nodetoplayer2[0]] = lowest_lag;
+				/*FALLTHRU*/
+			case 1:
+				playerdelaytable[nodetoplayer[0]] = lowest_lag;
 		}
 	}
 	else // We're a client, handle mindelay on the way out.
