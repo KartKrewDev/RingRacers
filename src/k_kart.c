@@ -4226,7 +4226,7 @@ static fixed_t K_TumbleZ(mobj_t *mo, fixed_t input)
 	return FixedMul(input, -gravityAdjust);
 }
 
-void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source)
+void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source, boolean soften)
 {
 	(void)source;
 
@@ -4250,9 +4250,16 @@ void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source)
 
 	if (inflictor && !P_MobjWasRemoved(inflictor))
 	{
-		const fixed_t addHeight = FixedHypot(FixedHypot(inflictor->momx, inflictor->momy) / 2, FixedHypot(player->mo->momx, player->mo->momy) / 2);
+		fixed_t addHeight = FixedHypot(FixedHypot(inflictor->momx, inflictor->momy) / 2, FixedHypot(player->mo->momx, player->mo->momy) / 2);
+		if (soften)
+			addHeight = FixedMul(addHeight, 6*FRACUNIT/10);
 		player->tumbleHeight += (addHeight / player->mo->scale);
 		player->tumbleHeight = min(200, player->tumbleHeight);
+	}
+
+	if (soften)
+	{
+		player->tumbleBounces = 2;
 	}
 
 	S_StartSound(player->mo, sfx_s3k9b);
@@ -4834,7 +4841,7 @@ void K_ApplyTripWire(player_t *player, tripwirestate_t state)
 {
 	// We are either softlocked or wildly misbehaving. Stop that!
 	if (state == TRIPSTATE_BLOCKED && player->tripwireReboundDelay && (player->speed > 5 * K_GetKartSpeed(player, false, false)))
-		K_TumblePlayer(player, NULL, NULL);
+		K_TumblePlayer(player, NULL, NULL, false);
 
 	if (state == TRIPSTATE_PASSED)
 	{
@@ -4875,7 +4882,7 @@ void K_ApplyTripWire(player_t *player, tripwirestate_t state)
 	if (state == TRIPSTATE_PASSED && player->spinouttimer &&
 			player->speed > K_PlayerTripwireSpeedThreshold(player))
 	{
-		K_TumblePlayer(player, NULL, NULL);
+		K_TumblePlayer(player, NULL, NULL, false);
 	}
 
 	player->tripwireUnstuck += 10;

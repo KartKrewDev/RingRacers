@@ -3169,6 +3169,7 @@ static int lib_kTumblePlayer(lua_State *L)
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	mobj_t *inflictor = NULL;
 	mobj_t *source = NULL;
+	boolean soften = false;
 	NOHUD
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
@@ -3176,7 +3177,8 @@ static int lib_kTumblePlayer(lua_State *L)
 		inflictor = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
 	if (!lua_isnone(L, 3) && lua_isuserdata(L, 3))
 		source = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
-	K_TumblePlayer(player, inflictor, source);
+	soften = lua_optboolean(L, 4);
+	K_TumblePlayer(player, inflictor, source, soften);
 	return 0;
 }
 

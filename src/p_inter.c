@@ -3145,6 +3145,8 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				damage = 0;
 			}
 
+			boolean hitFromInvinc = false;
+
 			// Sting and stumble shouldn't be rewarding Battle hits.
 			if (type == DMG_STING || type == DMG_STUMBLE)
 			{
@@ -3161,6 +3163,8 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 							!K_PowerUpRemaining(source->player, POWERUP_SMONITOR))
 					{
 						tic_t kinvextend;
+
+						hitFromInvinc = true;
 
 						if (gametyperules & GTR_CLOSERPLAYERS)
 							kinvextend = 2*TICRATE;
@@ -3284,7 +3288,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					ringburst = 0;
 					break;
 				case DMG_TUMBLE:
-					K_TumblePlayer(player, inflictor, source);
+					K_TumblePlayer(player, inflictor, source, hitFromInvinc);
 					ringburst = 10;
 					break;
 				case DMG_EXPLODE:
@@ -3328,7 +3332,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			if (gametyperules & GTR_BUMPERS)
 				player->spheres = min(player->spheres + 10, 40);
 
-			if ((hardhit == true) || cv_kartdebughuddrop.value)
+			if ((hardhit == true && !hitFromInvinc) || cv_kartdebughuddrop.value)
 			{
 				K_DropItems(player);
 			}

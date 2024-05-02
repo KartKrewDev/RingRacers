@@ -137,7 +137,7 @@ void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UIN
 void K_RemoveGrowShrink(player_t *player);
 boolean K_IsBigger(mobj_t *compare, mobj_t *other);
 void K_SpinPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 type);
-void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source);
+void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source, boolean soften);
 void K_TumbleInterrupt(player_t *player);
 angle_t K_StumbleSlope(angle_t angle, angle_t pitch, angle_t roll);
 void K_StumblePlayer(player_t *player);
