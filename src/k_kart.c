@@ -3004,7 +3004,8 @@ tripwirepass_t K_TripwirePassConditions(const player_t *player)
 
 	if (
 			player->flamedash ||
-			((player->speed > K_PlayerTripwireSpeedThreshold(player)) && player->tripwireReboundDelay == 0)
+			((player->speed > K_PlayerTripwireSpeedThreshold(player)) && player->tripwireReboundDelay == 0) ||
+			player->fakeBoost
 	)
 		return TRIPWIRE_BOOST;
 
@@ -4882,6 +4883,8 @@ void K_ApplyTripWire(player_t *player, tripwirestate_t state)
 	{
 		S_StartSound(player->mo, sfx_kc40);
 		player->tripwireReboundDelay = 60;
+		if (player->curshield == KSHIELD_BUBBLE)
+			player->tripwireReboundDelay *= 2;
 	}
 
 	player->tripwireState = state;
@@ -9118,6 +9121,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->hyudorotimer)
 		player->hyudorotimer--;
 
+	if (player->fakeBoost)
+		player->fakeBoost--;
+
 	if (player->bumperinflate && player->mo->hitlag == 0)
 	{
 		fixed_t thrustdelta = MAXCOMBOTHRUST - MINCOMBOTHRUST;
@@ -12002,6 +12008,33 @@ boolean K_FastFallBounce(player_t *player)
 			player->ignoreAirtimeLeniency = max(player->ignoreAirtimeLeniency, TICRATE);
 
 			bounce += 3 * mapobjectscale;
+
+			UINT8 i;
+			UINT8 numplayers = 0;
+			if (gametyperules & GTR_CIRCUIT)
+			{
+				for (i = 0; i < MAXPLAYERS; i++)
+				{
+					if (playeringame[i] && !players[i].spectator)
+						numplayers++;
+				}
+			}
+			else
+			{
+				numplayers = 1; // solo behavior
+			}
+
+			if (player->position == 1 && player->positiondelay <= 0 && numplayers != 1)
+			{
+				S_StartSound(player->mo, sfx_kc31);
+				K_StripItems(player);
+				K_AddHitLag(player->mo, 4, false);
+				vector3_t offset = { 0, 0, 0 };
+				K_SpawnSingleHitLagSpark(player->mo, &offset, player->mo->scale*2, 4, 0, player->skincolor);
+			}
+
+			if (player->tripwireReboundDelay)
+				bounce /= 2;
 		}
 		else
 		{
@@ -13114,9 +13147,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 										if (player->throwdir == -1)
 										{
 											P_InstaThrust(player->mo, player->mo->angle, player->speed + (80 * mapobjectscale));
-											player->wavedashboost += TICRATE; // Just for keeping speed briefly vs. tripwire etc.
+											player->wavedashboost += TICRATE;
 											player->wavedashpower = FRACUNIT;
-											// If this doesn't turn out to be reliable, I'll change it to directly set leniency or something.
+											player->fakeBoost = TICRATE/2;
 										}
 										K_PlayAttackTaunt(player->mo);
 										player->bubbleblowup = 0;
@@ -13196,6 +13229,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 											player->mo, player->mo->angle,
 											FixedMul((50*player->mo->scale), K_GetKartGameSpeedScalar(gamespeed))
 										);
+										
+										player->wavedashboost += TICRATE;
+										player->wavedashpower = FRACUNIT;
+										player->fakeBoost = TICRATE/3;
 
 										S_StopSoundByID(player->mo, sfx_fshld1);
 										S_StopSoundByID(player->mo, sfx_fshld0);
