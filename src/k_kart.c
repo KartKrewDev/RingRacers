@@ -11882,7 +11882,17 @@ static void K_KartSpindash(player_t *player)
 				// Intentionally a lop-sided trade-off, so the game doesn't become
 				// Funky Kong's Ring Racers.
 
-				P_PlayerRingBurst(player, 1);
+				// 2.2 - No extended ring debt for recovery spindash
+				if (G_CompatLevel(0x000A))
+				{
+					P_PlayerRingBurst(player, 1);
+				}
+				else
+				{
+					if (player->rings > 0)
+						P_PlayerRingBurst(player, 1);
+				}
+
 			}
 
 			if (chargetime > 0)
