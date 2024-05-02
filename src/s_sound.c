@@ -2204,7 +2204,7 @@ void S_LoadMusicCredit(void)
 
 		widthused -= V_ThinStringWidth(credittext, 0);
 
-#define MUSICCREDITAPPEND(field)\
+#define MUSICCREDITAPPEND(field, force)\
 		if (field)\
 		{\
 			work = va(" - %s", field);\
@@ -2212,7 +2212,7 @@ void S_LoadMusicCredit(void)
 			if (worklen <= len)\
 			{\
 				workwidth = V_ThinStringWidth(work, 0);\
-				if (widthused >= workwidth)\
+				if (force || widthused >= workwidth)\
 				{\
 					strncat(credittext, work, len);\
 					len -= worklen;\
@@ -2221,8 +2221,8 @@ void S_LoadMusicCredit(void)
 			}\
 		}
 
-		MUSICCREDITAPPEND(def->author);
-		MUSICCREDITAPPEND(def->source);
+		MUSICCREDITAPPEND(def->author, true);
+		MUSICCREDITAPPEND(def->source, false);
 
 #undef MUSICCREDITAPPEND
 	}

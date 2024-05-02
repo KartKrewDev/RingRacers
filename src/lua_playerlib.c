@@ -250,6 +250,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->wipeoutslow);
 	else if (fastcmp(field,"justbumped"))
 		lua_pushinteger(L, plr->justbumped);
+	else if (fastcmp(field,"noebrakemagnet"))
+		lua_pushinteger(L, plr->noEbrakeMagnet);
 	else if (fastcmp(field,"tumblebounces"))
 		lua_pushinteger(L, plr->tumbleBounces);
 	else if (fastcmp(field,"tumbleheight"))
@@ -342,6 +344,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->tripwireState);
 	else if (fastcmp(field,"tripwirepass"))
 		lua_pushinteger(L, plr->tripwirePass);
+	else if (fastcmp(field,"fakeboost"))
+		lua_pushinteger(L, plr->fakeBoost);
 	else if (fastcmp(field,"tripwireleniency"))
 		lua_pushinteger(L, plr->tripwireLeniency);
 	else if (fastcmp(field,"tripwirerebounddelay"))
@@ -476,6 +480,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->trickboostdecay);
 	else if (fastcmp(field,"trickboost"))
 		lua_pushinteger(L, plr->trickboost);
+	else if (fastcmp(field,"tricklock"))
+		lua_pushinteger(L, plr->tricklock);
 	else if (fastcmp(field,"dashringpulltics"))
 		lua_pushinteger(L, plr->dashRingPullTics);
 	else if (fastcmp(field,"dashringpushtics"))
@@ -802,6 +808,8 @@ static int player_set(lua_State *L)
 		plr->wipeoutslow = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"justbumped"))
 		plr->justbumped = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"noebrakemagnet"))
+		plr->noEbrakeMagnet = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"tumblebounces"))
 		plr->tumbleBounces = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"tumbleheight"))
@@ -892,6 +900,8 @@ static int player_set(lua_State *L)
 		plr->tripwireState = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"tripwirepass"))
 		plr->tripwirePass = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"fakeboost"))
+		plr->fakeBoost = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"tripwireleniency"))
 		plr->tripwireLeniency = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"tripwirerebounddelay"))
@@ -1026,6 +1036,8 @@ static int player_set(lua_State *L)
 		plr->trickboostdecay = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"trickboost"))
 		plr->trickboost = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"tricklock"))
+		plr->tricklock = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"dashringpulltics"))
 		plr->dashRingPullTics = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"dashringpushtics"))

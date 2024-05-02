@@ -434,6 +434,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEINT32(save->p, players[i].nullHitlag);
 		WRITEUINT8(save->p, players[i].wipeoutslow);
 		WRITEUINT8(save->p, players[i].justbumped);
+		WRITEUINT8(save->p, players[i].noEbrakeMagnet);
 		WRITEUINT8(save->p, players[i].tumbleBounces);
 		WRITEUINT16(save->p, players[i].tumbleHeight);
 
@@ -483,6 +484,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].tripwireState);
 		WRITEUINT8(save->p, players[i].tripwirePass);
 		WRITEUINT16(save->p, players[i].tripwireLeniency);
+		WRITEUINT8(save->p, players[i].fakeBoost);
 
 		WRITESINT8(save->p, players[i].itemtype);
 		WRITEUINT8(save->p, players[i].itemamount);
@@ -540,6 +542,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT32(save->p, players[i].trickboostpower);
 		WRITEUINT8(save->p, players[i].trickboostdecay);
 		WRITEUINT8(save->p, players[i].trickboost);
+		WRITEUINT8(save->p, players[i].tricklock);
 
 		WRITEUINT8(save->p, players[i].dashRingPullTics);
 		WRITEUINT8(save->p, players[i].dashRingPushTics);
@@ -1032,6 +1035,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].nullHitlag = READINT32(save->p);
 		players[i].wipeoutslow = READUINT8(save->p);
 		players[i].justbumped = READUINT8(save->p);
+		players[i].noEbrakeMagnet = READUINT8(save->p);
 		players[i].tumbleBounces = READUINT8(save->p);
 		players[i].tumbleHeight = READUINT16(save->p);
 
@@ -1081,6 +1085,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].tripwireState = READUINT8(save->p);
 		players[i].tripwirePass = READUINT8(save->p);
 		players[i].tripwireLeniency = READUINT16(save->p);
+		players[i].fakeBoost = READUINT8(save->p);
 
 		players[i].itemtype = READSINT8(save->p);
 		players[i].itemamount = READUINT8(save->p);
@@ -1138,6 +1143,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].trickboostpower = READUINT32(save->p);
 		players[i].trickboostdecay = READUINT8(save->p);
 		players[i].trickboost = READUINT8(save->p);
+		players[i].tricklock = READUINT8(save->p);
 
 		players[i].dashRingPullTics = READUINT8(save->p);
 		players[i].dashRingPushTics = READUINT8(save->p);

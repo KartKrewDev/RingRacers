@@ -72,7 +72,7 @@ void K_AddHitLag(mobj_t *mo, INT32 tics, boolean fromDamage)
 	Return:-
 		N/A
 --------------------------------------------------*/
-static void K_SpawnSingleHitLagSpark(
+void K_SpawnSingleHitLagSpark(
 	mobj_t *parent,
 	vector3_t *offset, fixed_t scale,
 	UINT8 tics, UINT8 pause,
