@@ -11775,6 +11775,16 @@ static void K_KartSpindash(player_t *player)
 		K_KartSpindashDust(player->mo);
 	}
 
+	// 2.2 - Driftbrake slideoff fastfall prevention
+	if (!G_CompatLevel(0x000A))
+	{
+		if (player->drift && onGround && player->cmd.buttons & BT_BRAKE)
+		{
+			player->pflags |= PF_NOFASTFALL;
+			return;
+		}
+	}
+
 	if (K_PlayerEBrake(player) == false)
 	{
 		player->spindash = 0;
@@ -11941,6 +11951,23 @@ boolean K_FastFallBounce(player_t *player)
 		player->pflags |= PF_UPDATEMYRESPAWN;
 
 		player->fastfall = 0;
+
+		// 2.2 - More lenient fastfall
+		if (!G_CompatLevel(0x000A))
+		{
+			if (player->curshield != KSHIELD_BUBBLE)
+			{
+				// Nudge the player in their facing angle, and provide a little starting momentum if they need it.
+				// The bounce is already a strong tradeoff, so this allows it to be used for saves and get you back into flow.
+				angle_t momangle = K_MomentumAngle(player->mo);
+				fixed_t minspeed = K_GetKartSpeed(player, false, false)/2;
+				fixed_t returnspeed = max(FixedHypot(player->mo->momx, player->mo->momy), minspeed);
+
+				// Initial momentum set uses real speed to avoid some weird twitchy behavior at low XY speed
+				P_InstaThrust(player->mo, momangle, FixedHypot(player->mo->momx, player->mo->momy)/2);
+				P_Thrust(player->mo, player->mo->angle, returnspeed/2);
+			}
+		}
 
 		player->mo->momz = bounce * P_MobjFlip(player->mo);
 
