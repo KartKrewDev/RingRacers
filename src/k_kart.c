@@ -11843,7 +11843,7 @@ static void K_KartSpindash(player_t *player)
 		// 2.2 - More responsive ebrake
 		if (!G_CompatLevel(0x000A))
 		{
-			if (player->noEbrakeMagnet == 0 && (FixedHypot(player->mo->momx, player->mo->momy) < 20*player->mo->scale))
+			if (onGround && player->noEbrakeMagnet == 0 && (FixedHypot(player->mo->momx, player->mo->momy) < 20*player->mo->scale))
 			{
 				P_Thrust(player->mo, K_MomentumAngleReal(player->mo) + ANGLE_180, FixedHypot(player->mo->momx, player->mo->momy)/8);
 			}
