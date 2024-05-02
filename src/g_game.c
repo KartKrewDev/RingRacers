@@ -265,6 +265,7 @@ INT32 itemtime = 8*TICRATE;
 INT32 bubbletime = TICRATE/2;
 INT32 comebacktime = 3*TICRATE;
 INT32 bumptime = 6;
+INT32 ebraketime = TICRATE;
 INT32 greasetics = 3*TICRATE;
 INT32 wipeoutslowtime = 20;
 INT32 wantedreduce = 5*TICRATE;

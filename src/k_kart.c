@@ -840,6 +840,7 @@ static void K_PlayerJustBumped(player_t *player)
 	}
 
 	player->justbumped = bumptime;
+	player->noEbrakeMagnet = ebraketime;
 	player->spindash = 0;
 
 	// If spinouttimer is not set yet but could be set later,
@@ -983,12 +984,14 @@ boolean K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2)
 	if (mobj1->player && mobj1->player->justbumped && !K_JustBumpedException(mobj2))
 	{
 		mobj1->player->justbumped = bumptime;
+		mobj1->player->noEbrakeMagnet = ebraketime;
 		return false;
 	}
 
 	if (mobj2->player && mobj2->player->justbumped && !K_JustBumpedException(mobj1))
 	{
 		mobj2->player->justbumped = bumptime;
+		mobj2->player->noEbrakeMagnet = ebraketime;
 		return false;
 	}
 
@@ -3369,7 +3372,17 @@ fixed_t K_GetSpindashChargeSpeed(const player_t *player)
 	// more speed for higher weight & speed
 	// Tails = +16.94%, Fang = +34.94%, Mighty = +34.94%, Metal = +43.61%
 	// (can be higher than this value when overcharged)
-	const fixed_t val = (10*FRACUNIT/277) + (((player->kartspeed + player->kartweight) + 2) * FRACUNIT) / 45;
+
+	// The above comment is now strictly incorrect and I can't be assed to do the math properly.
+	// 2.2 introduces a power fudge to compensate for the removal of spindash overcharge. -Tyron
+	fixed_t val = (10*FRACUNIT/277) + (((player->kartspeed + player->kartweight) + 2) * FRACUNIT) / 45;
+
+	// 2.2 - Improved Spindash
+	if (!G_CompatLevel(0x000A))
+	{
+		if (gametyperules & GTR_CIRCUIT)
+			val = 5 * val / 4;
+	}
 
 	// Old behavior before desperation spindash
 	// return (gametyperules & GTR_CLOSERPLAYERS) ? (4 * val) : val;
@@ -9139,6 +9152,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->justbumped > 0)
 		player->justbumped--;
 
+	if (player->noEbrakeMagnet > 0)
+		player->noEbrakeMagnet--;
+
 	if (player->defenseLockout)
 	{
 		player->instaWhipCharge = 0;
@@ -11780,6 +11796,18 @@ static void K_KartSpindash(player_t *player)
 		player->spindash = 0;
 		player->pflags &= ~PF_NOFASTFALL;
 		return;
+	}
+	else
+	{
+		// 2.2 - More responsive ebrake
+		if (!G_CompatLevel(0x000A))
+		{
+			if (player->noEbrakeMagnet == 0 && (FixedHypot(player->mo->momx, player->mo->momy) < 20*player->mo->scale))
+			{
+				P_Thrust(player->mo, K_MomentumAngleReal(player->mo) + ANGLE_180, FixedHypot(player->mo->momx, player->mo->momy)/8);
+			}
+		}
+
 	}
 
 	// Handle fast falling behaviors first.
