@@ -2723,7 +2723,7 @@ static const char *M_GetConditionString(condition_t *cn)
 					default: { break; }
 				}
 
-				if (cn->requirement < GRADE_S)
+				if (cn->extrainfo1 < GRADE_S)
 					orbetter = " or better in";
 				else
 					orbetter = " in";
