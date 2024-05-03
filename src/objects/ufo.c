@@ -939,7 +939,6 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 	if (grandprixinfo.gp)
 	{
 		grandprixinfo.rank.specialDamage += damage;
-		CONS_Printf("new damage %d: %d\n", damage, grandprixinfo.rank.specialDamage);
 	}
 
 	K_SetHitLagForObjects(ufo, inflictor, source, (damage / 3) + 2, true);
