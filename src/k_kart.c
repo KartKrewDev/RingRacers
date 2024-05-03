@@ -12663,9 +12663,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 					if (player->autoring
 						&& player->follower != NULL
-						&& P_MobjWasRemoved(player->follower) == false
-						&& player->followerskin >= 0
-						&& player->followerskin < numfollowers)
+						&& P_MobjWasRemoved(player->follower) == false)
 					{
 						const follower_t *fl = &followers[player->followerskin];
 

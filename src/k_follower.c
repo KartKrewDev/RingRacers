@@ -338,6 +338,8 @@ void K_HandleFollower(player_t *player)
 	angle_t destAngle;
 	INT32 angleDiff;
 
+	boolean fallbackfollower;
+
 	if (player->followerready == false)
 	{
 		// we aren't ready to perform anything follower related yet.
@@ -351,9 +353,14 @@ void K_HandleFollower(player_t *player)
 		player->followerskin = -1;
 	}
 
+	if (player->pflags & PF_AUTORING && player->followerskin == -1)
+		fallbackfollower = true;
+	else
+		fallbackfollower = false;
+
 	// don't do anything if we can't have a follower to begin with.
 	// (It gets removed under those conditions)
-	if (player->spectator || player->followerskin < 0
+	if (player->spectator || player->followerskin < 0 && !fallbackfollower
 	|| player->mo == NULL || P_MobjWasRemoved(player->mo))
 	{
 		if (player->follower)
@@ -364,7 +371,10 @@ void K_HandleFollower(player_t *player)
 	}
 
 	// Before we do anything, let's be sure of where we're supposed to be
-	fl = &followers[player->followerskin];
+	if (fallbackfollower)
+		fl = &followers[K_FollowerAvailable("Goddess")];
+	else
+		fl = &followers[player->followerskin];
 
 	an = player->mo->angle + fl->atangle;
 	zoffs = fl->zoffs;
@@ -417,7 +427,10 @@ void K_HandleFollower(player_t *player)
 	}
 
 	// Set follower colour
-	color = K_GetEffectiveFollowerColor(player->followercolor, fl, player->skincolor, &skins[player->skin]);
+	if (fallbackfollower)
+		color = fl->defaultcolor;
+	else
+		color = K_GetEffectiveFollowerColor(player->followercolor, fl, player->skincolor, &skins[player->skin]);
 
 	if (player->follower == NULL || P_MobjWasRemoved(player->follower)) // follower doesn't exist / isn't valid
 	{
