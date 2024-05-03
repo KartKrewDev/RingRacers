@@ -1770,7 +1770,7 @@ class Segment {
   //        accounted for.
   // index - index in the list of Cues which is currently being adjusted.
   // cue_size - sum of size of all the CuePoint elements.
-  void MoveCuesBeforeClustersHelper(uint64_t diff, int index,
+  void MoveCuesBeforeClustersHelper(uint64_t diff, int32_t index,
                                     uint64_t* cue_size);
 
   // Seeds the random number generator used to make UIDs.

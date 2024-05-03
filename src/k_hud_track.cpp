@@ -752,10 +752,10 @@ void K_CullTargetList(std::vector<TargetTracking>& targetList)
 				y2 = tr.result.y + kTrackerRadius;
 			}
 
-			x1 = std::max(x1 / kBlockWidth / FRACUNIT, 0);
-			x2 = std::min(x2 / kBlockWidth / FRACUNIT, kXBlocks - 1);
-			y1 = std::max(y1 / kBlockHeight / FRACUNIT, 0);
-			y2 = std::min(y2 / kBlockHeight / FRACUNIT, kYBlocks - 1);
+			x1 = std::max<INT32>(x1 / kBlockWidth / FRACUNIT, 0);
+			x2 = std::min<INT32>(x2 / kBlockWidth / FRACUNIT, kXBlocks - 1);
+			y1 = std::max<INT32>(y1 / kBlockHeight / FRACUNIT, 0);
+			y2 = std::min<INT32>(y2 / kBlockHeight / FRACUNIT, kYBlocks - 1);
 
 			bool allMine = true;
 
