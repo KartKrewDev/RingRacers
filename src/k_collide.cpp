@@ -433,7 +433,9 @@ boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 		// Banana snipe!
 		if (t1->health > 1)
 		{
-			if (t1->target && t1->target->player)
+			if (t1->target
+			&& t1->target->player
+			&& t2->player != t1->target->player)
 			{
 				t1->target->player->roundconditions.landmine_dunk = true;
 				t1->target->player->roundconditions.checkthisframe = true;
