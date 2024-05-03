@@ -211,7 +211,7 @@ void draw_menu()
 	K_drawButton((draw.x() + 8) * FRACUNIT, (draw.y() + 8) * FRACUNIT, 0, kp_button_y[0], M_MenuButtonHeld(0, MBT_Y));
 	draw = draw.y(32 + kMargin);
 
-	currentMenu->y = std::min(static_cast<int>(draw.y()), (BASEVIDHEIGHT/2) - g_menu_offsets[itemOn]);
+	currentMenu->y = std::min(static_cast<INT32>(draw.y()), (BASEVIDHEIGHT/2) - g_menu_offsets[itemOn]);
 
 	V_SetClipRect(0, draw.y() * FRACUNIT, BASEVIDWIDTH * FRACUNIT, (BASEVIDHEIGHT - draw.y() - kMargin) * FRACUNIT, 0);
 	M_DrawGenericMenu();

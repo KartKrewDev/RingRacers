@@ -34,7 +34,7 @@ namespace
 
 fixed_t interval(tic_t t, tic_t d)
 {
-	return (std::min(t, d) * FRACUNIT) / std::max(d, 1u);
+	return (std::min(t, d) * FRACUNIT) / std::max<tic_t>(d, 1u);
 }
 
 fixed_t interval(tic_t t, tic_t s, tic_t d)

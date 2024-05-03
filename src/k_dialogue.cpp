@@ -307,7 +307,7 @@ void Dialogue::Tick(void)
 		}
 	}
 
-	slide = std::clamp(slide, 0, FRACUNIT);
+	slide = std::clamp<size_t>(slide, 0, FRACUNIT);
 
 	if (slide != FRACUNIT)
 	{
@@ -354,7 +354,7 @@ void Dialogue::Draw(void)
 
 	INT32 speakernameedge = -6;
 
-	srb2::Draw drawer = 
+	srb2::Draw drawer =
 		srb2::Draw(
 			BASEVIDWIDTH, BASEVIDHEIGHT - FixedToFloat(SlideAmount(height) - height)
 		).flags(V_SNAPTOBOTTOM);

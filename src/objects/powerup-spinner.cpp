@@ -45,7 +45,7 @@ struct Spinner : Mobj
 
 	void think()
 	{
-		fixed_t f = FRACUNIT - std::clamp(fuse, 0, duration()) * FRACUNIT / std::max(duration(), 1);
+		fixed_t f = FRACUNIT - std::clamp<INT32>(fuse, 0, duration()) * FRACUNIT / std::max<INT32>(duration(), 1);
 
 		if (fuse == duration() - 20)
 		{

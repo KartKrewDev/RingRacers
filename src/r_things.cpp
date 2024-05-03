@@ -1082,7 +1082,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 		// Vertically sheared sprite
 		for (dc.x = vis->x1; dc.x <= vis->x2; dc.x++, frac += vis->xiscale, dc.texturemid -= vis->shear.tan)
 		{
-			texturecolumn = std::clamp(frac >> FRACBITS, 0, patch->width - 1);
+			texturecolumn = std::clamp<fixed_t>(frac >> FRACBITS, 0, patch->width - 1);
 
 			column = (column_t *)((UINT8 *)patch->columns + (patch->columnofs[texturecolumn]));
 			if (bmpatch)
@@ -1119,7 +1119,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 		// Non-paper drawing loop
 		for (dc.x = vis->x1; dc.x <= vis->x2; dc.x++, frac += vis->xiscale, sprtopscreen += vis->shear.tan)
 		{
-			texturecolumn = std::clamp(frac >> FRACBITS, 0, patch->width - 1);
+			texturecolumn = std::clamp<fixed_t>(frac >> FRACBITS, 0, patch->width - 1);
 
 			column = (column_t *)((UINT8 *)patch->columns + (patch->columnofs[texturecolumn]));
 
@@ -2373,7 +2373,7 @@ static void R_ProjectSprite(mobj_t *thing)
 			}
 
 			// Less change in contrast in dark sectors
-			extralight = FixedMul(extralight, std::min(std::max(0, lightnum), LIGHTLEVELS - 1) * FRACUNIT / (LIGHTLEVELS - 1));
+			extralight = FixedMul(extralight, std::min<INT32>(std::max<INT32>(0, lightnum), LIGHTLEVELS - 1) * FRACUNIT / (LIGHTLEVELS - 1));
 
 			if (papersprite)
 			{
@@ -2385,7 +2385,7 @@ static void R_ProjectSprite(mobj_t *thing)
 				fixed_t n = FixedDiv(FixedMul(xscale, LIGHTRESOLUTIONFIX), ((MAXLIGHTSCALE-1) << LIGHTSCALESHIFT));
 
 				// Less change in contrast at further distances, to counteract DOOM diminished light
-				extralight = FixedMul(extralight, std::min(n, FRACUNIT));
+				extralight = FixedMul(extralight, std::min<fixed_t>(n, FRACUNIT));
 
 				// Contrast is stronger for normal sprites, stronger than wall lighting is at the same distance
 				lightnum += FixedFloor((extralight / 4) + (FRACUNIT / 2)) / FRACUNIT;
@@ -2551,7 +2551,7 @@ static void R_ProjectSprite(mobj_t *thing)
 		lindex = FixedMul(xscale, LIGHTRESOLUTIONFIX)>>(LIGHTSCALESHIFT);
 
 		// Mitigate against negative xscale and arithmetic overflow
-		lindex = std::clamp(lindex, 0, MAXLIGHTSCALE - 1);
+		lindex = std::clamp<INT32>(lindex, 0, MAXLIGHTSCALE - 1);
 
 		if (vis->cut & SC_SEMIBRIGHT)
 			lindex = (MAXLIGHTSCALE/2) + (lindex >> 1);

@@ -246,7 +246,7 @@ private:
 			return;
 
 		rope()->z = hook()->top();
-		rope()->spriteyscale(Fixed {std::max(0, z - hook()->top())} / std::max<Fixed>(1, 32 * rope()->scale()));
+		rope()->spriteyscale(Fixed {std::max<fixed_t>(0, z - hook()->top())} / std::max<Fixed>(1, 32 * rope()->scale()));
 	}
 };
 
