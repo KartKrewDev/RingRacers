@@ -8093,13 +8093,24 @@ static void M_DrawStatsMaps(void)
 		return;
 	}
 
-	INT32 mapsunfinished = 0;
+	INT32 mapsunfinished = 0, medalspos;
 
-	V_DrawThinString(30, 60, 0, va("x %d/%d", statisticsmenu.gotmedals, statisticsmenu.nummedals));
+	char *medalcountstr = va("x %d/%d", statisticsmenu.gotmedals, statisticsmenu.nummedals);
+
+	V_DrawThinString(30, 60, 0, medalcountstr);
 	V_DrawMappedPatch(20, 60, 0, W_CachePatchName("GOTITA", PU_CACHE),
 				                       R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_GOLD, GTC_MENUCACHE));
 
-	INT32 medalspos = BASEVIDWIDTH - 20;
+	if (gamedata->numspraycans)
+	{
+		medalspos = 30 + V_ThinStringWidth(medalcountstr, 0);
+		medalcountstr = va("x %d/%d", gamedata->gotspraycans, gamedata->numspraycans);
+		V_DrawThinString(20 + medalspos, 60, 0, medalcountstr);
+		V_DrawMappedPatch(10 + medalspos, 60, 0, W_CachePatchName("GOTCAN", PU_CACHE),
+										   R_GetTranslationColormap(TC_DEFAULT, gamedata->spraycans[0].col, GTC_MENUCACHE));
+	}
+
+	medalspos = BASEVIDWIDTH - 20;
 
 	boolean timeattack[3];
 	timeattack[0] = M_SecretUnlocked(SECRET_TIMEATTACK, true);
