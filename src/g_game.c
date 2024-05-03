@@ -2298,7 +2298,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	}
 	else
 	{
-		rings = 5;
+		rings = 10;
 	}
 
 	saveroundconditions = false;
