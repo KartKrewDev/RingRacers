@@ -88,7 +88,7 @@ bool award_target(mobj_t* mobj)
 			player->itemamount++;
 			if (player->roundconditions.gachabom_miser == 1)
 				player->roundconditions.gachabom_miser = 0;
-			
+
 			//S_StartSoundAtVolume(target, sfx_grbnd3, 255/3);
 			S_StartSound(target, sfx_mbs54);
 
@@ -127,7 +127,7 @@ void chase_rebound_target(mobj_t* mobj)
 		mobj->momz = zDelta / 4;
 
 		const tic_t t = distance_to_target(mobj) / travelDistance;
-		const fixed_t newSpeed = std::abs(mobj->scale - mobj->destscale) / std::max(t, 1u);
+		const fixed_t newSpeed = std::abs(mobj->scale - mobj->destscale) / std::max<tic_t>(t, 1u);
 
 		if (newSpeed > mobj->scalespeed)
 		{

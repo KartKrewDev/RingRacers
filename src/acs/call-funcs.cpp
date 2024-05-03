@@ -2026,7 +2026,7 @@ bool CallFunc_SetLineRenderStyle(ACSVM::Thread *thread, const ACSVM::Word *argV,
 	}
 
 	alpha = argV[2];
-	alpha = std::clamp(alpha, 0, FRACUNIT);
+	alpha = std::clamp<fixed_t>(alpha, 0, FRACUNIT);
 
 	TAG_ITER_LINES(tag, lineId)
 	{

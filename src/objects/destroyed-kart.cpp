@@ -387,7 +387,7 @@ private:
 		{
 			fixed_t f = burning() * FRACUNIT / burn_duration();
 
-			if ((leveltime % std::max(1, Easing_OutCubic(f, 8, 1))) == 0)
+			if ((leveltime % std::max<fixed_t>(1, Easing_OutCubic(f, 8, 1))) == 0)
 			{
 				vfx(f);
 			}

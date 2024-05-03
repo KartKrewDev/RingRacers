@@ -779,8 +779,8 @@ static void M_CreateScreenShotPalette(void)
 	for (i = 0, j = 0; i < 768; i += 3, j++)
 	{
 		RGBA_t locpal = ((cv_screenshot_colorprofile.value)
-		? pLocalPalette[(std::max(st_palette,0)*256)+j]
-		: pMasterPalette[(std::max(st_palette,0)*256)+j]);
+		? pLocalPalette[(std::max<INT32>(st_palette,0)*256)+j]
+		: pMasterPalette[(std::max<INT32>(st_palette,0)*256)+j]);
 		screenshot_palette[i] = locpal.s.red;
 		screenshot_palette[i+1] = locpal.s.green;
 		screenshot_palette[i+2] = locpal.s.blue;

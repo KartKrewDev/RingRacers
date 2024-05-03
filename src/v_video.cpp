@@ -1088,8 +1088,8 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 		if (y < clip->top)
 			y = clip->top;
 
-		w = std::max(0, x2 - x);
-		h = std::max(0, y2 - y);
+		w = std::max<INT32>(0, x2 - x);
+		h = std::max<INT32>(0, y2 - y);
 	}
 
 	g_2d.begin_quad()
@@ -2117,7 +2117,7 @@ void V_DrawTitleCardStringFixed(fixed_t x, fixed_t y, fixed_t scale, const char 
 
 				// otherwise; scalex must start at 0
 				// let's have each letter do 4 spins (360*4 + 90 = 1530 "degrees")
-				fakeang = std::min(360 + 90, let_time*41) * ANG1;
+				fakeang = std::min<INT32>(360 + 90, let_time*41) * ANG1;
 				scalex = FINESINE(fakeang>>ANGLETOFINESHIFT);
 			}
 			else if (!bossmode && let_time > threshold)
@@ -2125,7 +2125,7 @@ void V_DrawTitleCardStringFixed(fixed_t x, fixed_t y, fixed_t scale, const char 
 				// Make letters disappear...
 				let_time -= threshold;
 
-				fakeang = std::max(0, (360+90) - let_time*41)*ANG1;
+				fakeang = std::max<INT32>(0, (360+90) - let_time*41)*ANG1;
 				scalex = FINESINE(fakeang>>ANGLETOFINESHIFT);
 			}
 
@@ -2205,7 +2205,7 @@ static inline fixed_t BunchedCharacterDim(
 	(void)chw;
 	(void)hchw;
 	(void)dupx;
-	(*cwp) = FixedMul(std::max(1, (*cwp) - 1) << FRACBITS, scale);
+	(*cwp) = FixedMul(std::max<INT32>(1, (*cwp) - 1) << FRACBITS, scale);
 	return 0;
 }
 
@@ -2219,7 +2219,7 @@ static inline fixed_t MenuCharacterDim(
 	(void)chw;
 	(void)hchw;
 	(void)dupx;
-	(*cwp) = FixedMul(std::max(1, (*cwp) - 2) << FRACBITS, scale);
+	(*cwp) = FixedMul(std::max<INT32>(1, (*cwp) - 2) << FRACBITS, scale);
 	return 0;
 }
 
@@ -2233,7 +2233,7 @@ static inline fixed_t GamemodeCharacterDim(
 	(void)chw;
 	(void)hchw;
 	(void)dupx;
-	(*cwp) = FixedMul(std::max(1, (*cwp) - 2) << FRACBITS, scale);
+	(*cwp) = FixedMul(std::max<INT32>(1, (*cwp) - 2) << FRACBITS, scale);
 	return 0;
 }
 
@@ -2247,7 +2247,7 @@ static inline fixed_t FileCharacterDim(
 	(void)chw;
 	(void)hchw;
 	(void)dupx;
-	(*cwp) = FixedMul(std::max(1, (*cwp) - 3) << FRACBITS, scale);
+	(*cwp) = FixedMul(std::max<INT32>(1, (*cwp) - 3) << FRACBITS, scale);
 	return 0;
 }
 
@@ -2261,7 +2261,7 @@ static inline fixed_t LSTitleCharacterDim(
 	(void)chw;
 	(void)hchw;
 	(void)dupx;
-	(*cwp) = FixedMul(std::max(1, (*cwp) - 4) << FRACBITS, scale);
+	(*cwp) = FixedMul(std::max<INT32>(1, (*cwp) - 4) << FRACBITS, scale);
 	return 0;
 }
 
