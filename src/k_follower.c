@@ -360,7 +360,7 @@ void K_HandleFollower(player_t *player)
 
 	// don't do anything if we can't have a follower to begin with.
 	// (It gets removed under those conditions)
-	if (player->spectator || player->followerskin < 0 && !fallbackfollower
+	if (player->spectator || (player->followerskin < 0 && !fallbackfollower)
 	|| player->mo == NULL || P_MobjWasRemoved(player->mo))
 	{
 		if (player->follower)

@@ -12665,7 +12665,11 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						&& player->follower != NULL
 						&& P_MobjWasRemoved(player->follower) == false)
 					{
-						const follower_t *fl = &followers[player->followerskin];
+						const follower_t *fl = &followers[
+							player->followerskin == -1
+								? K_FollowerAvailable("Goddess")
+								: player->followerskin
+						];
 
 						ring->cusval = player->follower->x - player->mo->x;
 						ring->cvmem = player->follower->y - player->mo->y;
