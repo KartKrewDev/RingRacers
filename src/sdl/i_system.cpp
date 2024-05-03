@@ -1065,7 +1065,9 @@ void I_SetGamepadIndicatorColor(INT32 device_id, UINT8 red, UINT8 green, UINT8 b
 {
 #if !(SDL_VERSION_ATLEAST(2,0,14))
 	(void)device_id;
-	(void)player;
+	(void)red;
+	(void)green;
+	(void)blue;
 #else
 	I_Assert(device_id > 0); // Gamepad devices are always ID 1 or higher
 
@@ -1141,7 +1143,6 @@ void I_GamepadRumble(INT32 device_id, UINT16 low_strength, UINT16 high_strength)
 	(void)device_id;
 	(void)low_strength;
 	(void)high_strength;
-	(void)length_ms;
 #else
 	I_Assert(device_id > 0); // Gamepad devices are always ID 1 or higher
 
@@ -1159,9 +1160,8 @@ void I_GamepadRumbleTriggers(INT32 device_id, UINT16 left_strength, UINT16 right
 {
 #if !(SDL_VERSION_ATLEAST(2,0,14))
 	(void)device_id;
-	(void)low_strength;
-	(void)high_strength;
-	(void)length_ms;
+	(void)left_strength;
+	(void)right_strength;
 #else
 	I_Assert(device_id > 0); // Gamepad devices are always ID 1 or higher
 
