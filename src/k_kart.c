@@ -10866,10 +10866,21 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 			if (player->trickcharge && dokicker)
 			{
-				player->driftboost += 20;
-				player->wavedashboost += 10;
-				player->wavedashpower = FRACUNIT;
-				P_Thrust(player->mo, pushdir, player->speed / 2);
+				// 2.2 - Egg-friendly trick stuff
+				if (G_CompatLevel(0x000A))
+				{
+					player->driftboost += 20;
+					player->wavedashboost += 10;
+					player->wavedashpower = FRACUNIT;
+					P_Thrust(player->mo, pushdir, player->speed / 2);
+				}
+				else
+				{
+					player->driftboost += TICRATE;
+					player->flamedash += TICRATE/2;
+					P_Thrust(player->mo, pushdir, player->speed / 6);
+				}
+
 				S_StartSound(player->mo, sfx_gshba);
 				player->trickcharge = 0;
 				player->infinitether = TICRATE*2;
