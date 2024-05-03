@@ -12599,7 +12599,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		player->instaWhipCharge = min(player->instaWhipCharge, INSTAWHIP_CHARGETIME - 2);
 	}
 
-	if (player && player->mo && player->mo->health > 0 && !player->spectator && !P_PlayerInPain(player) && !mapreset && leveltime > introtime)
+	if (player && player->mo && K_PlayerCanUseItem(player))
 	{
 		// First, the really specific, finicky items that function without the item being directly in your item slot.
 		{
@@ -14479,6 +14479,11 @@ boolean K_PlayerCanPunt(player_t *player)
 void K_MakeObjectReappear(mobj_t *mo)
 {
 	(!P_MobjWasRemoved(mo->punt_ref) ? mo->punt_ref : mo)->reappear = leveltime + (30*TICRATE);
+}
+
+boolean K_PlayerCanUseItem(player_t *player)
+{
+	return (player->mo->health > 0 && !player->spectator && !P_PlayerInPain(player) && !mapreset && leveltime > introtime);
 }
 
 //}

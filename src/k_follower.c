@@ -532,6 +532,13 @@ void K_HandleFollower(player_t *player)
 		{
 			player->follower->renderflags |= RF_DONTDRAW;
 		}
+		else
+		{
+			if ((player->pflags & PF_AUTORING) && !(K_PlayerCanUseItem(player) && (player->itemflags & IF_USERINGS)))
+			{
+				player->follower->renderflags |= RF_TRANS50;
+			}
+		}
 
 		// if we're moving let's make the angle the direction we're moving towards. This is to avoid drifting / reverse looking awkward.
 		if (FixedHypot(player->follower->momx, player->follower->momy) >= player->mo->scale)
