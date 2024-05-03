@@ -6136,6 +6136,7 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 		WRITEUINT32(save->p, rank->totalLaps);
 
 		WRITEUINT32(save->p, (rank->continuesUsed + 1));
+		WRITEUINT32(save->p, rank->specialDamage);
 
 		WRITEUINT32(save->p, rank->prisons);
 		WRITEUINT32(save->p, rank->totalPrisons);
@@ -6394,6 +6395,7 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 		rank->totalLaps = READUINT32(save->p);
 
 		rank->continuesUsed = READUINT32(save->p);
+		rank->specialDamage = READUINT32(save->p);
 
 		rank->prisons = READUINT32(save->p);
 		rank->totalPrisons = READUINT32(save->p);

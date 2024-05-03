@@ -53,6 +53,7 @@ struct gpRank_t
 	UINT32 totalLaps;
 
 	UINT32 continuesUsed;
+	UINT32 specialDamage;
 
 	UINT32 prisons;
 	UINT32 totalPrisons;
