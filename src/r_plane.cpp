@@ -237,7 +237,7 @@ static void R_MapTiltedPlane(drawspandata_t *ds, void(*spanfunc)(drawspandata_t*
 	{
 		ds->bgofs = R_CalculateRippleOffset(ds, y);
 
-		R_SetTiltedSpan(ds, std::clamp(y, 0, viewheight));
+		R_SetTiltedSpan(ds, std::clamp<INT32>(y, 0, viewheight));
 
 		R_CalculatePlaneRipple(ds, ds->currentplane->viewangle + ds->currentplane->plangle);
 		R_SetSlopePlaneVectors(ds, ds->currentplane, y, (ds->xoffs + ds->planeripple.xfrac), (ds->yoffs + ds->planeripple.yfrac));

@@ -2546,8 +2546,8 @@ static INT32 K_CalculateTrackComplexity(void)
 
 			if (delta < 0)
 			{
-				dist_factor = FixedDiv(FRACUNIT, std::max(1, dist_factor));
-				radius_factor = FixedDiv(FRACUNIT, std::max(1, radius_factor));
+				dist_factor = FixedDiv(FRACUNIT, std::max<fixed_t>(1, dist_factor));
+				radius_factor = FixedDiv(FRACUNIT, std::max<fixed_t>(1, radius_factor));
 			}
 			else
 			{

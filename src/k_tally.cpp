@@ -303,7 +303,7 @@ void level_tally_t::Init(player_t *player)
 		: (tutorialchallenge == TUTORIALSKIP_INPROGRESS && K_IsPlayerLosing(player))
 	);
 
-	time = std::min(static_cast<INT32>(player->realtime), (100 * 60 * TICRATE) - 1);
+	time = std::min<INT32>(static_cast<INT32>(player->realtime), (100 * 60 * TICRATE) - 1);
 	ringPool = player->totalring;
 	livesAdded = 0;
 
@@ -372,7 +372,7 @@ void level_tally_t::Init(player_t *player)
 				{
 					if (playeringame[i] == true && players[i].spectator == false)
 					{
-						pointLimit = std::min(pointLimit, static_cast<int>(-players[i].roundscore));
+						pointLimit = std::min<INT32>(pointLimit, static_cast<int>(-players[i].roundscore));
 					}
 				}
 			}
@@ -920,7 +920,7 @@ void level_tally_t::Tick(void)
 			done = true;
 			break;
 		}
-		
+
 		default:
 		{
 			// error occured, silently fix
@@ -1244,7 +1244,7 @@ void level_tally_t::Draw(void)
 									work_tics % 10
 								));
 
-							if (modeattacking && !demo.playback && (state == TALLY_ST_DONE || state == TALLY_ST_TEXT_PAUSE) 
+							if (modeattacking && !demo.playback && (state == TALLY_ST_DONE || state == TALLY_ST_TEXT_PAUSE)
 								&& !K_IsPlayerLosing(&players[consoleplayer]) && players[consoleplayer].realtime < oldbest)
 							{
 								drawer_text
@@ -1422,7 +1422,7 @@ void K_TickPlayerTally(player_t *player)
 		G_PlayerInputDown(G_LocalSplitscreenPartyPosition(player - players), gc_a, 0);
 	boolean allowFastForward = player->tally.state > TALLY_ST_GOTTHRU_SLIDEIN
 		&& player->tally.state <= TALLY_ST_DONE
-		&& player->tally.releasedFastForward 
+		&& player->tally.releasedFastForward
 		// - Not allowed online so we don't have to do any
 		//   networking.
 		// - Not allowed in replays because splitscreen party
@@ -1439,8 +1439,8 @@ void K_TickPlayerTally(player_t *player)
 			player->tally.Tick();
 		while (player->tally.state != TALLY_ST_DONE && player->tally.state != TALLY_ST_GAMEOVER_DONE);
 
-		player->tally.delay = std::min(player->tally.delay, TICRATE);
-		
+		player->tally.delay = std::min<INT32>(player->tally.delay, TICRATE);
+
 		if (Y_ShouldDoIntermission())
 			musiccountdown = 2; // gets decremented to 1 in G_Ticker to immediately trigger intermission music [blows raspberry]
 	}
@@ -1457,7 +1457,7 @@ void K_TickPlayerTally(player_t *player)
 	{
 		player->tally.releasedFastForward = false;
 	}
-		
+
 }
 
 void K_DrawPlayerTally(void)

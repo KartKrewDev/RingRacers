@@ -64,7 +64,7 @@ INT32 G_BasicDeadZoneCalculation(INT32 magnitude, fixed_t deadZone)
 	}
 
 	// Calculate how much the magnitude exceeds the deadzone
-	adjustedMagnitude = std::min(adjustedMagnitude, JOYAXISRANGE) - jdeadzone;
+	adjustedMagnitude = std::min<INT32>(adjustedMagnitude, JOYAXISRANGE) - jdeadzone;
 	return (adjustedMagnitude * JOYAXISRANGE) / (JOYAXISRANGE - jdeadzone);
 }
 
@@ -133,10 +133,10 @@ class TiccmdBuilder
 		joystickvector.yaxis = (normalisedYAxis * normalisedMagnitude) / JOYAXISRANGE;
 
 		// Cap the values so they don't go above the correct maximum
-		joystickvector.xaxis = std::min(joystickvector.xaxis, JOYAXISRANGE);
-		joystickvector.xaxis = std::max(joystickvector.xaxis, -JOYAXISRANGE);
-		joystickvector.yaxis = std::min(joystickvector.yaxis, JOYAXISRANGE);
-		joystickvector.yaxis = std::max(joystickvector.yaxis, -JOYAXISRANGE);
+		joystickvector.xaxis = std::min<INT32>(joystickvector.xaxis, JOYAXISRANGE);
+		joystickvector.xaxis = std::max<INT32>(joystickvector.xaxis, -JOYAXISRANGE);
+		joystickvector.yaxis = std::min<INT32>(joystickvector.yaxis, JOYAXISRANGE);
+		joystickvector.yaxis = std::max<INT32>(joystickvector.yaxis, -JOYAXISRANGE);
 	}
 
 	void hook()
@@ -379,7 +379,7 @@ class TiccmdBuilder
 		kart_analog_input();
 
 		// Digital users can input diagonal-back for shallow turns.
-		// 
+		//
 		// There's probably some principled way of doing this in the gamepad handler itself,
 		// by only applying this filtering to inputs sourced from an axis. This is a little
 		// ugly with the current abstractions, though, and there's a fortunate trick here:

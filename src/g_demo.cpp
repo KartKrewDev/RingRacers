@@ -19,6 +19,7 @@
 #include <nlohmann/json.hpp>
 
 #include "doomdef.h"
+#include "doomtype.h"
 #include "console.h"
 #include "d_main.h"
 #include "d_player.h"
