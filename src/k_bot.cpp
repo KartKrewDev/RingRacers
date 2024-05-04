@@ -2040,6 +2040,9 @@ void K_UpdateBotGameplayVars(player_t *player)
 		return;
 	}
 
+	if (cv_levelskull.value)
+		player->botvars.difficulty = MAXBOTDIFFICULTY;
+
 	player->botvars.rubberband = K_UpdateRubberband(player);
 
 	player->botvars.turnconfirm += player->cmd.bot.turnconfirm;
