@@ -22,7 +22,7 @@
 extern "C" {
 #endif
 
-#define MAXPREDICTTICS 12
+#define MAXPREDICTTICS 30
 
 // Button/action code definitions.
 typedef enum
