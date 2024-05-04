@@ -5297,7 +5297,7 @@ static void K_drawInput(void)
 	char mode = ((stplyr->pflags & PF_ANALOGSTICK) ? '4' : '2') + (r_splitscreen > 1);
 	bool local = !demo.playback && P_IsMachineLocalPlayer(stplyr);
 	fixed_t slide = K_GetDialogueSlide(FRACUNIT);
-	INT32 tallySlide = [] -> INT32
+	INT32 tallySlide = []() -> INT32
 	{
 		if (r_splitscreen <= 1)
 		{
