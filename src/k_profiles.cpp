@@ -518,11 +518,11 @@ void PR_LoadProfiles(void)
 			converted = true;
 		}
 
-		if (js.prof.version == 2)
+		if (jsprof.version == 2)
 		{
 			// Version 2 -> 3:
 			// - Auto Roulette is turned off again so people have to see the warning message
-			newprof->autoroulette == false;
+			newprof->autoroulette = false;
 
 			converted = true;
 		}
