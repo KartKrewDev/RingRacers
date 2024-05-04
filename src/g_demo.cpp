@@ -165,6 +165,7 @@ demoghost *ghosts = NULL;
 // - 0x000A (Ring Racers v2.0)
 //   - A bug was preventing control after ending a drift.
 //     Older behavior is kept around for staff ghost compat.
+//   - Also, polyobject bounce-back was fixed!
 
 #define DEMOVERSION 0x000B
 
