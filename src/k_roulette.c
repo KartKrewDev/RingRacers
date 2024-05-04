@@ -511,7 +511,7 @@ UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers)
 	pdis = K_UndoMapScaling(pdis);
 	pdis = K_ScaleItemDistance(pdis, numPlayers);
 
-	if (player->bot && player->botvars.rival)
+	if (player->bot && (player->botvars.rival || cv_levelskull.value))
 	{
 		// Rival has better odds :)
 		pdis = FixedMul(pdis, FRANTIC_ITEM_SCALE);
@@ -700,7 +700,7 @@ INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, 
 	if (player != NULL)
 	{
 		bot = player->bot;
-		conditions.rival = (bot == true && player->botvars.rival == true);
+		conditions.rival = (bot == true && (player->botvars.rival || cv_levelskull.value));
 		position = player->position;
 	}
 

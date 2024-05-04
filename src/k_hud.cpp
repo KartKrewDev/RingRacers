@@ -3964,7 +3964,7 @@ playertagtype_t K_WhichPlayerTag(player_t *p)
 	}
 	else if (p->bot)
 	{
-		if (p->botvars.rival == true)
+		if (p->botvars.rival == true || cv_levelskull.value)
 		{
 			return PLAYERTAG_RIVAL;
 		}

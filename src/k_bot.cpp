@@ -126,6 +126,9 @@ void K_SetBot(UINT8 newplayernum, UINT8 skinnum, UINT8 difficulty, botStyle_e st
 	players[newplayernum].botvars.style = style;
 	players[newplayernum].lives = 9;
 
+	if (cv_levelskull.value)
+		players[newplayernum].botvars.difficulty = MAXBOTDIFFICULTY;
+
 	// The bot may immediately become a spectator AT THE START of a GP.
 	// For each subsequent round of GP, K_UpdateGrandPrixBots will handle this.
 	players[newplayernum].spectator = grandprixinfo.gp && grandprixinfo.initalize && K_BotDefaultSpectator();
@@ -601,7 +604,7 @@ static UINT32 K_BotRubberbandDistance(const player_t *player)
 	UINT8 pos = 1;
 	UINT8 i;
 
-	if (player->botvars.rival)
+	if (player->botvars.rival || cv_levelskull.value)
 	{
 		// The rival should always try to be the front runner for the race.
 		return 0;
@@ -661,7 +664,10 @@ fixed_t K_BotRubberband(const player_t *player)
 		return FRACUNIT;
 	}
 
-	const fixed_t difficultyEase = ((player->botvars.difficulty - 1) * FRACUNIT) / (MAXBOTDIFFICULTY - 1);
+	fixed_t difficultyEase = ((player->botvars.difficulty - 1) * FRACUNIT) / (MAXBOTDIFFICULTY - 1);
+
+	if (cv_levelskull.value)
+		difficultyEase = FRACUNIT;
 
 	// Lv.   1: x0.65 avg
 	// Lv. MAX: x1.05 avg
