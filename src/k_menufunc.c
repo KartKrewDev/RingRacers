@@ -210,15 +210,15 @@ static void M_ChangeCvar(INT32 choice)
 	}
 #endif
 
-if (cvar == &cv_dummyprofileautoroulette &&
+	if (cvar == &cv_dummyprofileautoroulette &&
 		// Turning Auto Roulette on
-		cv_dummyprofileautoroulette.value == 1 &&
+		cv_dummyprofileautoroulette.value == 0 &&
 		// Not setting to default (ie changing the value)
 		choice != -1)
 	{
 		M_StartMessage(
 			"Turning on Auto Roulette",
-			"\"Ring Racers\" is not designed with random items in mind. With Auto Roulette, you cannot select the item results you want."
+			"\"Ring Racers\" is not designed with random items in mind. With Auto Roulette, you cannot select the item results you want or select an item early."
 			"\n"
 			"You will be at a distinct \x85" "disadvantage. \x80\n" 
 			"\n"
