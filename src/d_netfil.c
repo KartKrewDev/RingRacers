@@ -1787,12 +1787,25 @@ size_t curlwrite_data(void *ptr, size_t size, size_t nmemb, FILE *stream)
 
 int curlprogress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow)
 {
+	time_t curtime;
+
 	(void)clientp;
 	(void)ultotal;
 	(void)ulnow; // Function prototype requires these but we won't use, so just discard
+
+	curtime = time(NULL);
+
 	curl_dlnow = dlnow;
 	curl_dltotal = dltotal;
-	getbytes = curl_dlnow / (time(NULL) - curl_starttime); // To-do: Make this more accurate???
+
+	if (curtime > curl_starttime)
+	{
+		getbytes = curl_dlnow / (curtime - curl_starttime); // To-do: Make this more accurate???
+	}
+	else
+	{
+		getbytes = 0;
+	}
 	return 0;
 }
 
