@@ -1391,7 +1391,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 			{
 				if (K_ItemEnabled(i) == true)
 				{
-					spawnChance[i] = ( totalSpawnChance++ );
+					spawnChance[i] = ( totalSpawnChance += 1 );
 				}
 			}
 
@@ -1403,7 +1403,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 					continue;
 				}
 
-				K_AddItemToReel(player, roulette, i);
+				K_PushToRouletteItemList(roulette, i);
 
 				for (; i < NUMKARTRESULTS; i++)
 				{
