@@ -399,7 +399,7 @@ consvar_t cv_menuframeskip = Player("menuframeskip", "Off").values({
 	{144, "MAX"},
 	{0, "Off"},
 });
-consvar_t cv_mindelay = Player("mindelay", "2").min_max(0, 30);
+consvar_t cv_mindelay = Player("mindelay", "2").min_max(0, 15);
 consvar_t cv_movebob = Player("movebob", "1.0").floating_point().min_max(0, 4*FRACUNIT);
 consvar_t cv_netstat = Player("netstat", "Off").on_off().dont_save(); // show bandwidth statistics
 consvar_t cv_netticbuffer = Player("netticbuffer", "1").min_max(0, 3);
