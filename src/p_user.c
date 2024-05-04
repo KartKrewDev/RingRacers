@@ -1917,7 +1917,7 @@ static void P_3dMovement(player_t *player)
 	vector3_t totalthrust;
 
 	totalthrust.x = totalthrust.y = 0; // I forget if this is needed
-	totalthrust.z = FRACUNIT*P_MobjFlip(player->mo)/3; // A bit of extra push-back on slopes
+	totalthrust.z = FixedMul(mapobjectscale, K_GrowShrinkSpeedMul(player))*P_MobjFlip(player->mo)/3; // A bit of extra push-back on slopes
 
 	if (K_SlopeResistance(player) == true)
 	{
