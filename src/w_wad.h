@@ -154,6 +154,8 @@ INT32 W_InitMultipleFiles(char **filenames, boolean addons);
 
 const char *W_CheckNameForNumPwad(UINT16 wad, UINT16 lump);
 const char *W_CheckNameForNum(lumpnum_t lumpnum);
+const char *W_CheckLongNameForNumPwad(UINT16 wad, UINT16 lump);
+const char *W_CheckLongNameForNum(lumpnum_t lumpnum);
 
 UINT16 W_FindNextEmptyInPwad(UINT16 wad, UINT16 startlump); // checks only in one pwad
 
