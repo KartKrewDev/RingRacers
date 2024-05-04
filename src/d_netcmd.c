@@ -2993,6 +2993,12 @@ static void Command_RestartLevel(void)
 		return;
 	}
 
+	if (K_CanChangeRules(false) == false && CV_CheatsEnabled() == false)
+	{
+		CONS_Printf(M_GetText("Cheats must be enabled.\n"));
+		return;
+	}
+
 	if (cv_kartencore.value != 0)
 	{
 		newencore = (cv_kartencore.value == 1) || encoremode;
