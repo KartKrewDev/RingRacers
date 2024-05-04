@@ -777,7 +777,8 @@ static void M_HandleBeginningFollowers(setup_player_t *p)
 
 static void M_HandleBeginningColorsOrFollowers(setup_player_t *p)
 {
-	S_StartSound(NULL, skins[p->skin].soundsid[S_sfx[sfx_kattk1].skinsound]);
+	if (p->skin != -1)
+		S_StartSound(NULL, skins[p->skin].soundsid[S_sfx[sfx_kattk1].skinsound]);
 	if (M_HandleBeginningColors(p))
 		S_StartSound(NULL, sfx_s3k63);
 	else
@@ -1174,7 +1175,8 @@ static void M_HandleFollowerRotate(setup_player_t *p, UINT8 num)
 			p->mdepth = CSSTEP_FOLLOWERCOLORS;
 			M_NewPlayerColors(p);
 			S_StartSound(NULL, sfx_s3k63);
-			S_StartSound(NULL, followers[p->followern].hornsound);
+			if (p->followern != -1)
+				S_StartSound(NULL, followers[p->followern].hornsound);
 		}
 		else
 		{
