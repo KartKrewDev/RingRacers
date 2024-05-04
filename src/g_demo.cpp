@@ -166,8 +166,12 @@ demoghost *ghosts = NULL;
 //   - A bug was preventing control after ending a drift.
 //     Older behavior is kept around for staff ghost compat.
 //   - Also, polyobject bounce-back was fixed!
+// - 0x000B (Ring Racers v2.1 + In dev revisions)
+//   - SPB cup TA replays were recorded at this time
+//   - Slope physics changed with a scaling fix
+// - 0x000C (Ring Racers v2.2)
 
-#define DEMOVERSION 0x000B
+#define DEMOVERSION 0x000C
 
 boolean G_CompatLevel(UINT16 level)
 {
