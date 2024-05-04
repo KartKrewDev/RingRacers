@@ -112,8 +112,9 @@ extern "C" {
 // Version history:
 // 1 - first
 // 2 - litesteer is off by default, old profiles litesteer
+// 3 - auto roulette is switched off again
 //     option is reset to default
-#define PROFILEVER 2
+#define PROFILEVER 3
 #define MAXPROFILES 16
 #define PROFILESFILE "ringprofiles.prf"
 #define PROFILE_GUEST 0
