@@ -518,7 +518,7 @@ void PR_LoadProfiles(void)
 			converted = true;
 		}
 
-		if (jsprof.version == 2)
+		if (jsprof.version < 3)
 		{
 			// Version 2 -> 3:
 			// - Auto Roulette is turned off again so people have to see the warning message
