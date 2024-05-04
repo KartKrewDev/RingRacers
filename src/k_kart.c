@@ -2866,10 +2866,15 @@ void K_TryHurtSoundExchange(mobj_t *victim, mobj_t *attacker)
 	attacker->player->confirmVictimDelay = TICRATE/2;
 
 	if (attacker->player->follower != NULL
-		&& attacker->player->followerskin >= 0
+		&& attacker->player->followerskin >= -1
 		&& attacker->player->followerskin < numfollowers)
 	{
-		const follower_t *fl = &followers[attacker->player->followerskin];
+		follower_t *fl;
+		if (attacker->player->followerskin == -1) /// mmm spaghetti
+			fl = &followers[K_FollowerAvailable("Goddess")]; // special case for checking for fallback follower for autoring
+		else
+			fl = &followers[attacker->player->followerskin];
+
 		attacker->player->follower->movecount = fl->hitconfirmtime; // movecount is used to play the hitconfirm animation for followers.
 	}
 }
@@ -12612,8 +12617,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				if (
 					player->pflags & PF_AUTORING
 					&& leveltime > starttime
-					&& !(cmd->buttons & BT_BRAKE)
-					&& K_GetKartButtons(player)
+					&& K_GetForwardMove(player)
 					&& P_IsObjectOnGround(player->mo)
 				)
 				{

@@ -766,14 +766,18 @@ void K_FollowerHornTaunt(player_t *taunter, player_t *victim, boolean mysticmelo
 	if (
 		taunter == NULL
 		|| victim == NULL
-		|| taunter->followerskin < 0
+		|| taunter->followerskin < -1
 		|| taunter->followerskin >= numfollowers
 	)
 	{
 		return;
 	}
 
-	const follower_t *fl = &followers[taunter->followerskin];
+	follower_t *fl;
+	if (taunter->followerskin == -1) /// mmm spaghetti
+		fl = &followers[K_FollowerAvailable("Goddess")]; // special case for checking for fallback follower for autoring
+	else
+		fl = &followers[taunter->followerskin];
 
 	// Restrict mystic melody special status
 	if (mysticmelodyspecial == true)
