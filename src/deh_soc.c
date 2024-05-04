@@ -4152,7 +4152,7 @@ void readfollower(MYFILE *f)
 	followers[numfollowers].bobspeed = TICRATE*2;
 	followers[numfollowers].bobamp = 4*FRACUNIT;
 	followers[numfollowers].hitconfirmtime = TICRATE;
-	followers[numfollowers].ringtime = 6;
+	followers[numfollowers].ringtime = 10;
 	followers[numfollowers].defaultcolor = FOLLOWERCOLOR_MATCH;
 	followers[numfollowers].category = UINT8_MAX;
 	followers[numfollowers].hornsound = sfx_horn00;
