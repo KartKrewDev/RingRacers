@@ -518,6 +518,15 @@ void PR_LoadProfiles(void)
 			converted = true;
 		}
 
+		if (js.prof.version == 2)
+		{
+			// Version 2 -> 3:
+			// - Auto Roulette is turned off again so people have to see the warning message
+			newprof->autoroulette == false;
+
+			converted = true;
+		}
+
 		if (converted)
 		{
 			CONS_Printf("Profile '%s' was converted from version %d to version %d\n",
