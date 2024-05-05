@@ -261,7 +261,7 @@ Windows x86:
     - - |
           # make
           echo -e "\e[0Ksection_start:`date +%s`:make[collapsed=false]\r\e[0KCompiling SRB2"
-      - cmake --build --preset ninja-x86_mingw_static_vcpkg-debug -- -k -j8 || cmake --build --preset ninja-x86_mingw_static_vcpkg-debug -- -k
+      - cmake --build --preset ninja-x86_mingw_static_vcpkg-debug --parallel 1 -- --keep-going || cmake --build --preset ninja-x86_mingw_static_vcpkg-debug --parallel 1 -- --keep-going
       - |
           # make
           echo -e "\e[0Ksection_end:`date +%s`:make\r\e[0K"
