@@ -9137,7 +9137,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	{
 		if (rainbowstartavailable && ((leveltime <= starttime) || (leveltime - starttime < 10*TICRATE)))
 		{
-			player->nocontrol = 50;
+			player->nocontrol = TICRATE/2;
 			player->mo->renderflags |= RF_DONTDRAW;
 			player->mo->flags |= MF_NOCLIPTHING;
 		}
