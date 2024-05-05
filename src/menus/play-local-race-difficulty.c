@@ -15,6 +15,8 @@
 #include "../s_sound.h"
 #include "../sounds.h"
 
+boolean interceptedDefaultDifficulty = false;
+
 menuitem_t PLAY_RaceDifficulty[] =
 {
 	// For GP
@@ -127,6 +129,14 @@ void M_SetupDifficultyOptions(INT32 choice)
 	PLAY_RaceDifficulty[drace_cupselect].status = IT_DISABLED;
 	PLAY_RaceDifficulty[drace_mapselect].status = IT_DISABLED;
 
+	if (M_SecretUnlocked(SECRET_HARDSPEED, true) && !interceptedDefaultDifficulty)
+	{
+		CV_SetValue(&cv_dummygpdifficulty, KARTSPEED_NORMAL);
+		CV_SetValue(&cv_dummykartspeed, KARTSPEED_NORMAL);
+	}
+
+	interceptedDefaultDifficulty = true;
+
 	if (choice)		// Match Race
 	{
 		PLAY_RaceDifficulty[drace_mrkartspeed].status = IT_STRING|IT_CVAR; // Kart Speed
@@ -170,13 +180,13 @@ void Dummygpdifficulty_OnChange(void)
 	switch (cv_dummygpdifficulty.value)
 	{
 		case KARTSPEED_EASY:
-			tooltip = "Warm up to the track with some\x83 Gear 1\x80 practice. For\x83 beginners.";
+			tooltip = "Low-stakes racing at \x83Gear 1""\x80"". Take a drive and \x83""enjoy the sights!";
 			break;
 		case KARTSPEED_NORMAL:
-			tooltip = "Push to the top in\x82 Gear 2\x80. A balanced challenge for\x82 everyone!";
+			tooltip = "Aim for the prize at\x82 Gear 2\x80. Can you \x82surpass your limits?";
 			break;
 		case KARTSPEED_HARD:
-			tooltip = "Challenge tough competition at\x87 Gear 3\x80. For\x87 thrill-seekers!";
+			tooltip = "Challenge fierce competition at\x87 Gear 3\x80. For\x87 thrill-seekers!";
 			break;
 		case KARTGP_MASTER:
 			tooltip = "Let's go crazy! Take on brutal CPUs at\x87 Gear 3\x80: for\x85 lunatics only!";
