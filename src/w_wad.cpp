@@ -1021,6 +1021,19 @@ const char *W_CheckNameForNum(lumpnum_t lumpnum)
 	return W_CheckNameForNumPwad(WADFILENUM(lumpnum),LUMPNUM(lumpnum));
 }
 
+const char *W_CheckLongNameForNumPwad(UINT16 wad, UINT16 lump)
+{
+	if (lump >= wadfiles[wad]->numlumps || !TestValidLump(wad, 0))
+		return NULL;
+
+	return wadfiles[wad]->lumpinfo[lump].longname;
+}
+
+const char *W_CheckLongNameForNum(lumpnum_t lumpnum)
+{
+	return W_CheckLongNameForNumPwad(WADFILENUM(lumpnum),LUMPNUM(lumpnum));
+}
+
 //
 // wadid is a wad number
 // (Used for sprites loading)

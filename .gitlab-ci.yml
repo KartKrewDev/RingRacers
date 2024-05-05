@@ -202,7 +202,7 @@ Debian testing GCC:
     - - |
           # cmake
           echo -e "\e[0Ksection_start:`date +%s`:cmake[collapsed=false]\r\e[0KBuilding Makefiles"
-      - cmake -B build.camke -DCPM_USE_LOCAL_PACKAGES:BOOL=ON -DSRB2_CONFIG_ENABLE_TESTS:BOOL=OFF -DSRB2_CONFIG_SYSTEM_LIBRARIES:BOOL=ON -DSRB2_USE_LIBGME:BOOL=OFF -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF -G "Unix Makefiles"
+      - cmake -B build.cmake -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF -G "Unix Makefiles"
       - |
           # cmake
           echo -e "\e[0Ksection_end:`date +%s`:cmake\r\e[0K"
@@ -218,17 +218,19 @@ Debian testing GCC:
 Windows x86:
   stage: build
 
-  when: manual
+  when: on_success
 
   artifacts:
     paths:
-      - "build.cmake/bin/"
-      - "build.cmake/src/config.h"
+      - "build/ninja-x86_mingw_static_vcpkg-debug/bin/"
+      - "build/ninja-x86_mingw_static_vcpkg-debug/src/config.h"
     expose_as: "Win32"
     name: "$CI_PROJECT_PATH_SLUG-$CI_COMMIT_REF_SLUG-$CI_COMMIT_SHORT_SHA-Win32"
 
   variables:
     PREFIX: i686-w64-mingw32
+    CC: /usr/bin/i686-w64-mingw32-gcc-posix
+    CXX: /usr/bin/i686-w64-mingw32-g++-posix
 
   script:
     - - |
@@ -240,9 +242,18 @@ Windows x86:
           echo -e "\e[0Ksection_end:`date +%s`:apt_toolchain\r\e[0K"
 
     - - |
+          # apt_development
+          echo -e "\e[0Ksection_start:`date +%s`:apt_development[collapsed=true]\r\e[0KInstalling development packages"
+      - apt-get install ninja-build
+      - |
+          # apt_development
+          echo -e "\e[0Ksection_end:`date +%s`:apt_development\r\e[0K"
+
+    - - |
           # cmake
           echo -e "\e[0Ksection_start:`date +%s`:cmake[collapsed=false]\r\e[0KBuilding Makefiles"
-      - cmake -B build.cmake -DCPM_USE_LOCAL_PACKAGES:BOOL=ON -DSRB2_CONFIG_ENABLE_TESTS:BOOL=OFF -DSRB2_CONFIG_SYSTEM_LIBRARIES:BOOL=ON -DSRB2_USE_LIBGME:BOOL=OFF -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF -G "Unix Makefiles"
+      - cmake --preset ninja-x86_mingw_static_vcpkg-debug -DVCPKG_TARGET_TRIPLET=x86-mingw-static -DCMAKE_C_COMPILER=/usr/bin/i686-w64-mingw32-gcc-posix -DCMAKE_CXX_COMPILER=/usr/bin/i686-w64-mingw32-g++-posix -G "Unix Makefiles" -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/toolchains/mingw.cmake
+
       - |
           # cmake
           echo -e "\e[0Ksection_end:`date +%s`:cmake\r\e[0K"
@@ -250,7 +261,7 @@ Windows x86:
     - - |
           # make
           echo -e "\e[0Ksection_start:`date +%s`:make[collapsed=false]\r\e[0KCompiling SRB2"
-      - make --directory=build.cmake --keep-going || make --directory=build.cmake --keep-going
+      - cmake --build --preset ninja-x86_mingw_static_vcpkg-debug -- -k -j8 || cmake --build --preset ninja-x86_mingw_static_vcpkg-debug -- -k
       - |
           # make
           echo -e "\e[0Ksection_end:`date +%s`:make\r\e[0K"
@@ -294,7 +305,7 @@ Debian stable:amd64:
     - - |
           # cmake
           echo -e "\e[0Ksection_start:`date +%s`:cmake[collapsed=false]\r\e[0KBuilding Makefiles"
-      - cmake -B build.cmake -DCPM_USE_LOCAL_PACKAGES:BOOL=ON -DSRB2_CONFIG_ENABLE_TESTS:BOOL=OFF -DSRB2_CONFIG_SYSTEM_LIBRARIES:BOOL=ON -DSRB2_USE_LIBGME:BOOL=OFF -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF -G "Unix Makefiles"
+      - cmake -B build.cmake -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF -G "Unix Makefiles"
       - |
           # cmake
           echo -e "\e[0Ksection_end:`date +%s`:cmake\r\e[0K"
@@ -343,7 +354,7 @@ Debian oldstable:amd64:
     - - |
           # cmake
           echo -e "\e[0Ksection_start:`date +%s`:cmake[collapsed=false]\r\e[0KBuilding Makefiles"
-      - cmake -B build.cmake -DCPM_USE_LOCAL_PACKAGES:BOOL=ON -DSRB2_CONFIG_ENABLE_TESTS:BOOL=OFF -DSRB2_CONFIG_SYSTEM_LIBRARIES:BOOL=ON -DSRB2_USE_LIBGME:BOOL=OFF -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF -G "Unix Makefiles"
+      - cmake -B build.cmake -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF -G "Unix Makefiles"
       - |
           # cmake
           echo -e "\e[0Ksection_end:`date +%s`:cmake\r\e[0K"
@@ -394,7 +405,7 @@ Debian stable:i386:
     - - |
           # cmake
           echo -e "\e[0Ksection_start:`date +%s`:cmake[collapsed=false]\r\e[0KBuilding Makefiles"
-      - cmake -B build.cmake -DCPM_USE_LOCAL_PACKAGES:BOOL=ON -DSRB2_CONFIG_ENABLE_TESTS:BOOL=OFF -DSRB2_CONFIG_SYSTEM_LIBRARIES:BOOL=ON -DSRB2_USE_LIBGME:BOOL=OFF -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF -G "Unix Makefiles"
+      - cmake -B build.cmake -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF -G "Unix Makefiles"
       - |
           # cmake
           echo -e "\e[0Ksection_end:`date +%s`:cmake\r\e[0K"
@@ -447,7 +458,7 @@ Debian stable:arm64:
     - - |
           # cmake
           echo -e "\e[0Ksection_start:`date +%s`:cmake[collapsed=false]\r\e[0KBuilding Makefiles"
-      - cmake -B build.cmake -DCPM_USE_LOCAL_PACKAGES:BOOL=ON -DSRB2_CONFIG_ENABLE_TESTS:BOOL=OFF -DSRB2_CONFIG_SYSTEM_LIBRARIES:BOOL=ON -DSRB2_USE_LIBGME:BOOL=OFF -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF -G "Unix Makefiles"
+      - cmake -B build.cmake -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF -G "Unix Makefiles"
       - |
           # cmake
           echo -e "\e[0Ksection_end:`date +%s`:cmake\r\e[0K"
@@ -496,7 +507,7 @@ Debian oldstable:arm64:
     - - |
           # cmake
           echo -e "\e[0Ksection_start:`date +%s`:cmake[collapsed=false]\r\e[0KBuilding Makefiles"
-      - cmake -B build.cmake -DCPM_USE_LOCAL_PACKAGES:BOOL=ON -DSRB2_CONFIG_ENABLE_TESTS:BOOL=OFF -DSRB2_CONFIG_SYSTEM_LIBRARIES:BOOL=ON -DSRB2_USE_LIBGME:BOOL=OFF -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF -G "Unix Makefiles"
+      - cmake -B build.cmake -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF -G "Unix Makefiles"
       - |
           # cmake
           echo -e "\e[0Ksection_end:`date +%s`:cmake\r\e[0K"
@@ -543,7 +554,7 @@ batocera:arm64:
     - - |
           # cmake
           echo -e "\e[0Ksection_start:`date +%s`:cmake[collapsed=false]\r\e[0KBuilding Makefiles"
-      - cmake -B build.cmake -DCPM_USE_LOCAL_PACKAGES:BOOL=ON -DSRB2_CONFIG_ENABLE_TESTS:BOOL=OFF -DSRB2_CONFIG_SYSTEM_LIBRARIES:BOOL=ON -DSRB2_USE_LIBGME:BOOL=OFF -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF -G "Unix Makefiles"
+      - cmake -B build.cmake -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF -G "Unix Makefiles"
       - |
           # cmake
           echo -e "\e[0Ksection_end:`date +%s`:cmake\r\e[0K"
@@ -561,10 +572,12 @@ Windows x64:
 
   when: manual
 
+  allow_failure: true
+
   artifacts:
     paths:
-      - "bin/"
-      - "src/comptime.h"
+      - "build.cmake/bin/"
+      - "build.cmake/src/config.h"
     expose_as: "Win64"
     name: "$CI_PROJECT_PATH_SLUG-$CI_COMMIT_REF_SLUG-$CI_COMMIT_SHORT_SHA-Win64"
 
@@ -581,9 +594,17 @@ Windows x64:
           echo -e "\e[0Ksection_end:`date +%s`:apt_toolchain\r\e[0K"
 
     - - |
+          # apt_development
+          echo -e "\e[0Ksection_start:`date +%s`:apt_development[collapsed=true]\r\e[0KInstalling development packages"
+      - apt-get install ninja-build
+      - |
+          # apt_development
+          echo -e "\e[0Ksection_end:`date +%s`:apt_development\r\e[0K"
+
+    - - |
           # cmake
           echo -e "\e[0Ksection_start:`date +%s`:cmake[collapsed=false]\r\e[0KBuilding Makefiles"
-      - cmake -B build.clang -DCPM_USE_LOCAL_PACKAGES:BOOL=ON -DSRB2_CONFIG_ENABLE_TESTS:BOOL=OFF -DSRB2_CONFIG_SYSTEM_LIBRARIES:BOOL=ON -DSRB2_USE_LIBGME:BOOL=OFF -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF -G "Unix Makefiles"
+      - cmake -B build.cmake -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF -DSRB2_CONFIG_ENABLE_DISCORDRPC=OFF -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-mingw-static -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/toolchains/mingw.cmake
       - |
           # cmake
           echo -e "\e[0Ksection_end:`date +%s`:cmake\r\e[0K"
@@ -637,7 +658,7 @@ Debian stable Clang:
     - - |
           # cmake
           echo -e "\e[0Ksection_start:`date +%s`:cmake[collapsed=false]\r\e[0KBuilding Makefiles"
-      - cmake -B build.clang -DCPM_USE_LOCAL_PACKAGES:BOOL=ON -DSRB2_CONFIG_ENABLE_TESTS:BOOL=OFF -DSRB2_CONFIG_SYSTEM_LIBRARIES:BOOL=ON -DSRB2_USE_LIBGME:BOOL=OFF -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF -G "Unix Makefiles"
+      - cmake -B build.clang -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF -G "Unix Makefiles"
       - |
           # cmake
           echo -e "\e[0Ksection_end:`date +%s`:cmake\r\e[0K"
@@ -780,7 +801,7 @@ Alpine 3 GCC:
     - - |
           # cmake
           echo -e "\e[0Ksection_start:`date +%s`:cmake[collapsed=false]\r\e[0KBuilding Makefiles"
-      - cmake -B build.alpine3 -DCPM_USE_LOCAL_PACKAGES:BOOL=ON -DSRB2_CONFIG_ENABLE_TESTS:BOOL=OFF -DSRB2_CONFIG_SYSTEM_LIBRARIES:BOOL=ON -DSRB2_USE_LIBGME:BOOL=OFF -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF -G "Unix Makefiles"
+      - cmake -B build.alpine3 -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF -G "Unix Makefiles"
       - |
           # cmake
           echo -e "\e[0Ksection_end:`date +%s`:cmake\r\e[0K"
@@ -841,7 +862,7 @@ Alpine 3 GCC Dedicated:
     - - |
           # cmake
           echo -e "\e[0Ksection_start:`date +%s`:cmake[collapsed=false]\r\e[0KBuilding Makefiles"
-      - cmake -B build.alpine3ded -DCPM_USE_LOCAL_PACKAGES:BOOL=ON -DSRB2_CONFIG_ENABLE_TESTS:BOOL=OFF -DSRB2_CONFIG_SYSTEM_LIBRARIES:BOOL=ON -DSRB2_USE_LIBGME:BOOL=OFF -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF -G "Unix Makefiles"
+      - cmake -B build.alpine3ded -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF -G "Unix Makefiles"
       - |
           # cmake
           echo -e "\e[0Ksection_end:`date +%s`:cmake\r\e[0K"
@@ -880,7 +901,7 @@ osxcross x86_64:
     - - |
           # cmake
           echo -e "\e[0Ksection_start:`date +%s`:cmake[collapsed=false]\r\e[0KBuilding Makefiles"
-      - cmake -B build.osxcross --toolchain /osxcross/toolchain.cmake -DCPM_USE_LOCAL_PACKAGES:BOOL=ON -DOPENMPT_INCLUDE_DIR:PATH="/osxcross/macports/pkgs/opt/local/include" -DSDL2_INCLUDE_DIR:PATH="/osxcross/macports/pkgs/opt/local/lib" -DSRB2_CONFIG_ENABLE_TESTS:BOOL=OFF -DSRB2_CONFIG_SYSTEM_LIBRARIES:BOOL=ON -DSRB2_CONFIG_USE_GME:BOOL=OFF -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF -G "Unix Makefiles"
+      - cmake -B build.osxcross --toolchain /osxcross/toolchain.cmake -DCPM_USE_LOCAL_PACKAGES:BOOL=ON -DOPENMPT_INCLUDE_DIR:PATH="/osxcross/macports/pkgs/opt/local/include" -DSDL2_INCLUDE_DIR:PATH="/osxcross/macports/pkgs/opt/local/lib" -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF -G "Unix Makefiles"
       - |
           # make
           echo -e "\e[0Ksection_end:`date +%s`:make\r\e[0K"
@@ -923,7 +944,7 @@ osxcross arm64:
     - - |
           # cmake
           echo -e "\e[0Ksection_start:`date +%s`:cmake[collapsed=false]\r\e[0KBuilding Makefiles"
-      - cmake -B build.osxcross --toolchain /osxcross/toolchain.cmake -DCPM_USE_LOCAL_PACKAGES:BOOL=ON -DOPENMPT_INCLUDE_DIR:PATH="/osxcross/macports/pkgs/opt/local/include" -DSDL2_INCLUDE_DIR:PATH="/osxcross/macports/pkgs/opt/local/lib" -DSRB2_CONFIG_ENABLE_TESTS:BOOL=OFF -DSRB2_CONFIG_SYSTEM_LIBRARIES:BOOL=ON -DSRB2_CONFIG_USE_GME:BOOL=OFF -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF -G "Unix Makefiles"
+      - cmake -B build.osxcross --toolchain /osxcross/toolchain.cmake -DCPM_USE_LOCAL_PACKAGES:BOOL=ON -DOPENMPT_INCLUDE_DIR:PATH="/osxcross/macports/pkgs/opt/local/include" -DSDL2_INCLUDE_DIR:PATH="/osxcross/macports/pkgs/opt/local/lib" -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF -G "Unix Makefiles"
       - |
           # make
           echo -e "\e[0Ksection_end:`date +%s`:make\r\e[0K"

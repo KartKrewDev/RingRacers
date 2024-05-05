@@ -1201,7 +1201,7 @@ consvar_t cv_kickstartaccel[MAXSPLITSCREENPLAYERS] = {
 	Player("kickstartaccel4", "Off").on_off().onchange(weaponPrefChange4)
 };
 
-consvar_t cv_mindelay = Player("mindelay", "2").min_max(0, 30).onchange(weaponPrefChange);
+consvar_t cv_mindelay = Player("mindelay", "2").min_max(0, 15).onchange(weaponPrefChange);
 
 extern CV_PossibleValue_t Color_cons_t[];
 void Color1_OnChange(void);

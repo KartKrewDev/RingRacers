@@ -592,7 +592,7 @@ modelfound:
 	fclose(f);
 }
 
-void HWR_AddPlayerModel(int skin) // For skins that were added after startup
+void HWR_AddPlayerModel(INT32 skin) // For skins that were added after startup
 {
 	FILE *f;
 	char name[24], filename[32];

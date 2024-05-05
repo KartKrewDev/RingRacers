@@ -215,7 +215,7 @@ static void R_RenderMaskedSegLoop(drawcolumndata_t* dc, drawseg_t *drawseg, INT3
 	ldef = curline->linedef;
 	tripwire = P_IsLineTripWire(ldef);
 
-	range = std::max(drawseg->x2-drawseg->x1, 1);
+	range = std::max<INT32>(drawseg->x2-drawseg->x1, 1);
 
 	// Setup lighting based on the presence/lack-of 3D floors.
 	dc->numlights = 0;
@@ -874,7 +874,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 		R_SetColumnFunc(COLDRAWFUNC_FOG, brightmapped);
 	}
 
-	range = std::max(ds->x2-ds->x1, 1);
+	range = std::max<INT32>(ds->x2-ds->x1, 1);
 	//SoM: Moved these up here so they are available for my lightlist calculations
 	rw_scalestep = ds->scalestep;
 	spryscale = ds->scale1 + (x1 - ds->x1)*rw_scalestep;

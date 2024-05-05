@@ -3,7 +3,7 @@
 // Copyright (C) 2024 by AJ "Tyron" Martinez.
 // Copyright (C) 2024 by James Robert Roman.
 // Copyright (C) 2024 by Kart Krew.
-// 
+//
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
@@ -219,7 +219,7 @@ private:
 
 			if (playerstat[position].gap >= BREAKAWAYDIST)
 			{
-				playerstat[position].boredom = std::min(BOREDOMTIME * 2, playerstat[position].boredom + 1);
+				playerstat[position].boredom = std::min<INT32>(BOREDOMTIME * 2, playerstat[position].boredom + 1);
 			}
 			else if (playerstat[position].boredom > 0)
 			{

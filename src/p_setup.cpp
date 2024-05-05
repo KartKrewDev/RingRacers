@@ -3444,8 +3444,8 @@ static void P_ProcessLinedefsAfterSidedefs(void)
 			if (ld->flags & ML_DONTPEGBOTTOM) // alternate alpha (by texture offsets)
 			{
 				extracolormap_t *exc = R_CopyColormap(sides[ld->sidenum[0]].colormap_data, false);
-				INT16 alpha = std::max(std::min(sides[ld->sidenum[0]].textureoffset >> FRACBITS, 25), -25);
-				INT16 fadealpha = std::max(std::min(sides[ld->sidenum[0]].rowoffset >> FRACBITS, 25), -25);
+				INT16 alpha = std::max<fixed_t>(std::min<fixed_t>(sides[ld->sidenum[0]].textureoffset >> FRACBITS, 25), -25);
+				INT16 fadealpha = std::max<fixed_t>(std::min<fixed_t>(sides[ld->sidenum[0]].rowoffset >> FRACBITS, 25), -25);
 
 				// If alpha is negative, set "subtract alpha" flag and store absolute value
 				if (alpha < 0)
@@ -5840,12 +5840,12 @@ static void P_ConvertBinaryLinedefTypes(void)
 			lines[i].args[0] = tag;
 			if (lines[i].flags & ML_DONTPEGBOTTOM)
 			{
-				lines[i].args[1] = std::max(sides[lines[i].sidenum[0]].textureoffset >> FRACBITS, 0);
+				lines[i].args[1] = std::max<fixed_t>(sides[lines[i].sidenum[0]].textureoffset >> FRACBITS, 0);
 				// failsafe: if user specifies Back Y Offset and NOT Front Y Offset, use the Back Offset
 				// to be consistent with other light and fade specials
 				lines[i].args[2] = ((lines[i].sidenum[1] != 0xFFFF && !(sides[lines[i].sidenum[0]].rowoffset >> FRACBITS)) ?
-					std::max(std::min(sides[lines[i].sidenum[1]].rowoffset >> FRACBITS, 255), 0)
-					: std::max(std::min(sides[lines[i].sidenum[0]].rowoffset >> FRACBITS, 255), 0));
+					std::max<fixed_t>(std::min<fixed_t>(sides[lines[i].sidenum[1]].rowoffset >> FRACBITS, 255), 0)
+					: std::max<fixed_t>(std::min<fixed_t>(sides[lines[i].sidenum[0]].rowoffset >> FRACBITS, 255), 0));
 			}
 			else
 			{
@@ -7901,7 +7901,7 @@ static void P_LoadRecordGhosts(void)
 			savebuffer_t buf = {0};
 
 			staffbrief_t* ghostbrief = mapheaderinfo[gamemap-1]->ghostBrief[i - 1];
-			const char* lumpname = W_CheckNameForNumPwad(ghostbrief->wad, ghostbrief->lump);
+			const char* lumpname = W_CheckLongNameForNumPwad(ghostbrief->wad, ghostbrief->lump);
 			size_t lumplength = W_LumpLengthPwad(ghostbrief->wad, ghostbrief->lump);
 			if (lumplength == 0)
 			{

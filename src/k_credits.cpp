@@ -555,7 +555,6 @@ static boolean F_CreditsPlayDemo(void)
 
 	UINT8 ghost_id = M_RandomKey( mapheaderinfo[map_id]->ghostCount );
 	brief = mapheaderinfo[map_id]->ghostBrief[ghost_id];
-	std::string demo_name = static_cast<const char *>(W_CheckNameForNumPwad(brief->wad, brief->lump));
 
 	demo.attract = DEMO_ATTRACT_CREDITS;
 	demo.ignorefiles = true;
@@ -578,7 +577,7 @@ void F_TickCreditsDemoExit(void)
 
 	if (!menuactive && M_MenuConfirmPressed(0))
 	{
-		g_credits.demo_exit = std::max(g_credits.demo_exit, kDemoExitTicCount - 64);
+		g_credits.demo_exit = std::max<tic_t>(g_credits.demo_exit, kDemoExitTicCount - 64);
 	}
 
 	if (INT32 val = F_CreditsDemoExitFade(); val >= 0)
@@ -668,7 +667,7 @@ static boolean F_TickCreditsSlide(void)
 
 	if (g_credits.transition < FRACUNIT)
 	{
-		g_credits.transition = std::min(g_credits.transition + (FRACUNIT / TICRATE), FRACUNIT);
+		g_credits.transition = std::min<INT32>(g_credits.transition + (FRACUNIT / TICRATE), FRACUNIT);
 
 		if (g_credits.split_slide_id < g_credits.split_slide_strings.size())
 		{

@@ -181,7 +181,7 @@ struct Checkpoint : mobj_t
 
 			if (!clip_var())
 			{
-				speed(speed() - FixedDiv(speed() / 50, std::max(speed_multiplier(), 1)));
+				speed(speed() - FixedDiv(speed() / 50, std::max<fixed_t>(speed_multiplier(), 1)));
 			}
 		}
 		else if (!activated())
@@ -324,7 +324,7 @@ private:
 		if (xy_momentum)
 		{
 			P_Thrust(p, dir, xy_momentum);
-			p->momz = P_RandomKey(PR_DECORATION, std::max(z_momentum, 1));
+			p->momz = P_RandomKey(PR_DECORATION, std::max<fixed_t>(z_momentum, 1));
 			p->destscale = 0;
 			p->scalespeed = p->scale / 35;
 			p->color = SKINCOLOR_ULTRAMARINE;

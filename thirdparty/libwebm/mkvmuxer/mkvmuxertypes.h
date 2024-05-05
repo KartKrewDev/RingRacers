@@ -8,14 +8,15 @@
 
 #ifndef MKVMUXER_MKVMUXERTYPES_H_
 #define MKVMUXER_MKVMUXERTYPES_H_
+#include <stdint.h>
 
 namespace mkvmuxer {
 typedef unsigned char uint8;
 typedef short int16;
-typedef int int32;
-typedef unsigned int uint32;
-typedef long long int64;
-typedef unsigned long long uint64;
+typedef int32_t int32;
+typedef uint32_t uint32;
+typedef int64_t int64;
+typedef uint64_t uint64;
 }  // namespace mkvmuxer
 
 // Copied from Chromium basictypes.h

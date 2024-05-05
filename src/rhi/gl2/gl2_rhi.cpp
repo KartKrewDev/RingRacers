@@ -1918,7 +1918,7 @@ void Gl2Rhi::finish()
 	// I sure hope creating FBOs isn't costly on the driver!
 	for (auto& fbset : framebuffers_)
 	{
-		gl_->DeleteFramebuffers(1, &fbset.second);
+		gl_->DeleteFramebuffers(1, (GLuint*)&fbset.second);
 		GL_ASSERT;
 	}
 	framebuffers_.clear();

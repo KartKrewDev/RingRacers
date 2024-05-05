@@ -44,7 +44,7 @@ static const char *const hud_disable_options[] = {
 	"stagetitle",
 	"textspectator",
 	"crosshair",
-
+	"score",
 	"time",
 	"gametypeinfo",	// Bumpers / Karma / Laps depending on gametype
 	"minimap",
