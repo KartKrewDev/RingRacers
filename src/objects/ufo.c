@@ -1347,7 +1347,7 @@ static mobj_t *InitSpecialUFO(waypoint_t *start)
 
 	if (grandprixinfo.gp && grandprixinfo.rank.specialDamage)
 	{
-		ufo->health -= min(mobjinfo[MT_SPECIAL_UFO].spawnhealth/2, grandprixinfo.rank.specialDamage/4);
+		ufo->health -= min(4*mobjinfo[MT_SPECIAL_UFO].spawnhealth/10, grandprixinfo.rank.specialDamage/6);
 	}
 
 	return ufo;
