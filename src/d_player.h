@@ -109,7 +109,7 @@ typedef enum
 	PF_TRUSTWAYPOINTS	= 1<<15, // Do not activate lap cheat prevention next time finish line distance is updated
 	PF_FREEZEWAYPOINTS	= 1<<16, // Skip the next waypoint/finish line distance update
 
-	PF_AUTORING		= 1<<17, // Accessibility: Non-deterministic item box, no manual stop.
+	PF_AUTORING			= 1<<17, // Accessibility: Non-deterministic item box, no manual stop.
 
 	PF_DRIFTINPUT		= 1<<18, // Drifting!
 	PF_GETSPARKS		= 1<<19, // Can get sparks
