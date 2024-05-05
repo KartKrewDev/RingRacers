@@ -338,7 +338,7 @@ void K_HandleFollower(player_t *player)
 	angle_t destAngle;
 	INT32 angleDiff;
 
-	boolean fallbackfollower;
+	INT32 followerskin;
 
 	if (player->followerready == false)
 	{
@@ -353,14 +353,11 @@ void K_HandleFollower(player_t *player)
 		player->followerskin = -1;
 	}
 
-	if (player->pflags & PF_AUTORING && player->followerskin == -1)
-		fallbackfollower = true;
-	else
-		fallbackfollower = false;
+	followerskin = K_GetEffectiveFollowerSkin(player);
 
 	// don't do anything if we can't have a follower to begin with.
 	// (It gets removed under those conditions)
-	if (player->spectator || (player->followerskin < 0 && !fallbackfollower)
+	if (player->spectator || followerskin < 0
 	|| player->mo == NULL || P_MobjWasRemoved(player->mo))
 	{
 		if (player->follower)
@@ -371,10 +368,7 @@ void K_HandleFollower(player_t *player)
 	}
 
 	// Before we do anything, let's be sure of where we're supposed to be
-	if (fallbackfollower)
-		fl = &followers[K_FollowerAvailable("Goddess")];
-	else
-		fl = &followers[player->followerskin];
+	fl = &followers[followerskin];
 
 	an = player->mo->angle + fl->atangle;
 	zoffs = fl->zoffs;
@@ -427,7 +421,7 @@ void K_HandleFollower(player_t *player)
 	}
 
 	// Set follower colour
-	if (fallbackfollower)
+	if (player->followerskin < 0) // using a fallback follower
 		color = fl->defaultcolor;
 	else
 		color = K_GetEffectiveFollowerColor(player->followercolor, fl, player->skincolor, &skins[player->skin]);
@@ -762,22 +756,21 @@ void K_HandleFollower(player_t *player)
 --------------------------------------------------*/
 void K_FollowerHornTaunt(player_t *taunter, player_t *victim, boolean mysticmelodyspecial)
 {
+	// special case for checking for fallback follower for autoring
+	const INT32 followerskin = K_GetEffectiveFollowerSkin(taunter);
+
 	// Basic checks
 	if (
 		taunter == NULL
 		|| victim == NULL
-		|| taunter->followerskin < -1
-		|| taunter->followerskin >= numfollowers
+		|| followerskin < 0
+		|| followerskin >= numfollowers
 	)
 	{
 		return;
 	}
 
-	follower_t *fl;
-	if (taunter->followerskin == -1) /// mmm spaghetti
-		fl = &followers[K_FollowerAvailable("Goddess")]; // special case for checking for fallback follower for autoring
-	else
-		fl = &followers[taunter->followerskin];
+	const follower_t *fl = &followers[followerskin];
 
 	// Restrict mystic melody special status
 	if (mysticmelodyspecial == true)
@@ -901,4 +894,17 @@ void K_FollowerHornTaunt(player_t *taunter, player_t *victim, boolean mysticmelo
 			honk->renderflags &= ~dontdrawflag;
 		}
 	}
+}
+
+/*--------------------------------------------------
+	INT32 K_GetEffectiveFollowerSkin(const player_t *player);
+
+		See header file for description.
+--------------------------------------------------*/
+INT32 K_GetEffectiveFollowerSkin(const player_t *player)
+{
+	if ((player->pflags & PF_AUTORING) && player->followerskin == -1)
+		return K_FollowerAvailable("Goddess");
+	else
+		return player->followerskin;
 }

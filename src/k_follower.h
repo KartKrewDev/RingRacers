@@ -246,6 +246,21 @@ void K_RemoveFollower(player_t *player);
 
 void K_FollowerHornTaunt(player_t *taunter, player_t *victim, boolean mysticmelodyspecial);
 
+/*--------------------------------------------------
+	INT32 K_GetEffectiveFollowerSkin(const player_t *player)
+
+		Returns the player's follower, set by profile or as
+		a fallback.
+
+	Input Arguments:-
+		player - The player.
+
+	Return:-
+		The resultant skin id for the follower, or -1 for None
+--------------------------------------------------*/
+
+INT32 K_GetEffectiveFollowerSkin(const player_t *player);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

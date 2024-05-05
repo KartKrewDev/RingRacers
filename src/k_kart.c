@@ -2865,16 +2865,12 @@ void K_TryHurtSoundExchange(mobj_t *victim, mobj_t *attacker)
 	attacker->player->confirmVictim = (victim->player - players);
 	attacker->player->confirmVictimDelay = TICRATE/2;
 
+	const INT32 followerskin = K_GetEffectiveFollowerSkin(attacker->player);
 	if (attacker->player->follower != NULL
-		&& attacker->player->followerskin >= -1
-		&& attacker->player->followerskin < numfollowers)
+		&& followerskin >= 0
+		&& followerskin < numfollowers)
 	{
-		follower_t *fl;
-		if (attacker->player->followerskin == -1) /// mmm spaghetti
-			fl = &followers[K_FollowerAvailable("Goddess")]; // special case for checking for fallback follower for autoring
-		else
-			fl = &followers[attacker->player->followerskin];
-
+		const follower_t *fl = &followers[followerskin];
 		attacker->player->follower->movecount = fl->hitconfirmtime; // movecount is used to play the hitconfirm animation for followers.
 	}
 }
@@ -12665,15 +12661,14 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					ring->shadowscale = 0;
 					P_SetTarget(&ring->target, player->mo); // user
 
+					const INT32 followerskin = K_GetEffectiveFollowerSkin(player);
 					if (player->autoring
 						&& player->follower != NULL
-						&& P_MobjWasRemoved(player->follower) == false)
+						&& P_MobjWasRemoved(player->follower) == false
+						&& followerskin >= 0
+						&& followerskin < numfollowers)
 					{
-						const follower_t *fl = &followers[
-							player->followerskin == -1
-								? K_FollowerAvailable("Goddess")
-								: player->followerskin
-						];
+						const follower_t *fl = &followers[followerskin];
 
 						ring->cusval = player->follower->x - player->mo->x;
 						ring->cvmem = player->follower->y - player->mo->y;
