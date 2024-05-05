@@ -12617,7 +12617,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				if (
 					player->pflags & PF_AUTORING
 					&& leveltime > starttime
-					&& K_GetForwardMove(player)
+					&& K_GetForwardMove(player) > 0
 					&& P_IsObjectOnGround(player->mo)
 				)
 				{
