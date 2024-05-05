@@ -565,6 +565,18 @@ static boolean K_DenyShieldOdds(kartitems_t item)
 	return false;
 }
 
+static boolean K_DenyAutoRouletteOdds(kartitems_t item)
+{
+	// Deny items that are too hard for newbies
+	switch (item)
+	{
+		case KITEM_GARDENTOP:
+			return true;
+		default:
+			return false;
+	}
+}
+
 /*--------------------------------------------------
 	static fixed_t K_AdjustSPBOdds(const itemroulette_t *roulette, UINT8 position)
 
@@ -736,6 +748,14 @@ INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, 
 	if (K_DenyShieldOdds(item))
 	{
 		return 0;
+	}
+
+	if (roulette->autoroulette == true)
+	{
+		if (K_DenyAutoRouletteOdds(item))
+		{
+			return 0;
+		}
 	}
 
 	if (gametype == GT_BATTLE)
