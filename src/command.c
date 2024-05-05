@@ -98,7 +98,7 @@ CV_PossibleValue_t dummykartspeed_cons_t[] = {
 CV_PossibleValue_t gpdifficulty_cons_t[] = {
 	{KARTSPEED_EASY, "Relaxed"},
 	{KARTSPEED_NORMAL, "Intense"},
-	{KARTSPEED_HARD, "Extreme"},
+	{KARTSPEED_HARD, "Vicious"},
 	{KARTGP_MASTER, "Master"},
 	{0, NULL}
 };

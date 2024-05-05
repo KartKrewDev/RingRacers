@@ -943,7 +943,7 @@ consvar_t cv_dummyextraspassword = MenuDummy("dummyextraspassword", "");
 
 extern CV_PossibleValue_t gpdifficulty_cons_t[];
 void Dummygpdifficulty_OnChange(void);
-consvar_t cv_dummygpdifficulty = MenuDummy("dummygpdifficulty", "Relaxed").values(gpdifficulty_cons_t).onchange(Dummygpdifficulty_OnChange);
+consvar_t cv_dummygpdifficulty = MenuDummy("dummygpdifficulty", "Intense").values(gpdifficulty_cons_t).onchange(Dummygpdifficulty_OnChange);
 consvar_t cv_dummygpencore = MenuDummy("dummygpencore", "Off").on_off();
 
 consvar_t cv_dummyip = MenuDummy("dummyip", "");

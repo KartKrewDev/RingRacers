@@ -134,6 +134,11 @@ void M_SetupDifficultyOptions(INT32 choice)
 		CV_SetValue(&cv_dummygpdifficulty, KARTSPEED_NORMAL);
 		CV_SetValue(&cv_dummykartspeed, KARTSPEED_NORMAL);
 	}
+	else
+	{
+		CV_SetValue(&cv_dummygpdifficulty, KARTSPEED_EASY);
+		CV_SetValue(&cv_dummykartspeed, KARTSPEED_EASY);
+	}
 
 	interceptedDefaultDifficulty = true;
 

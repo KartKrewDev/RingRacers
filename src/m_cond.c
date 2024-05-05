@@ -2378,7 +2378,7 @@ static const char *M_GetConditionString(condition_t *cn)
 			}
 			else if (cn->extrainfo2 == KARTSPEED_HARD)
 			{
-				speedtext = " on Extreme";
+				speedtext = " on Vicious";
 			}
 			else if (cn->extrainfo2 == KARTGP_MASTER)
 			{
@@ -2424,7 +2424,7 @@ static const char *M_GetConditionString(condition_t *cn)
 			else*/
 			if (cn->requirement == KARTSPEED_HARD)
 			{
-				speedtext = " on Extreme";
+				speedtext = " on Vicious";
 			}
 			else if (cn->requirement == KARTGP_MASTER)
 			{
@@ -2690,7 +2690,7 @@ static const char *M_GetConditionString(condition_t *cn)
 			}
 			else if (cn->requirement == KARTSPEED_HARD)
 			{
-				speedtext = "on Extreme";
+				speedtext = "on Vicious";
 			}
 			else if (cn->requirement == KARTGP_MASTER)
 			{
