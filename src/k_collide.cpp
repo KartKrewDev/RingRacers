@@ -559,17 +559,16 @@ boolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2)
 	}
 
 	fixed_t bumppower = FRACUNIT;
-	const fixed_t minbumppower = FRACUNIT/2;
 	if (t2->player)
 	{
 		fixed_t speeddampen = FixedDiv(t2->player->speed, 2*K_GetKartSpeed(t2->player, false, false));
 		bumppower = Easing_InQuad(
 			std::min(speeddampen, FRACUNIT),
 			FRACUNIT,
-			minbumppower
+			3*FRACUNIT/4
 		);
-		if (t2->player->tripwireLeniency)
-			bumppower = minbumppower;
+		if (t2->player->tripwireLeniency || t2->player->tripwirePass != TRIPWIRE_NONE)
+			bumppower = FRACUNIT/2;
 	}
 
 	if (t2->type == MT_INSTAWHIP)
