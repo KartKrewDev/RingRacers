@@ -104,7 +104,7 @@ static void K_RespawnAtWaypoint(player_t *player, waypoint_t *waypoint)
 
 void K_DoFault(player_t *player)
 {
-	player->nocontrol = (starttime - leveltime) + 50;
+	player->nocontrol = (starttime - leveltime) + TICRATE/2;
 	if (!(player->pflags & PF_FAULT))
 	{
 		S_StartSound(player->mo, sfx_s3k83);
