@@ -3484,6 +3484,16 @@ static void K_GetKartBoostPower(player_t *player)
 		);
 	}
 
+	if (player->counterdash) // "Fake Flame" (bubble, voltage)
+	{
+		fixed_t dash = K_FlameShieldDashVar(player->counterdash);
+		ADDBOOST(
+			dash, // + infinite top speed
+			3*FRACUNIT, // + 300% acceleration
+			FixedMul(FixedDiv(dash, FRACUNIT/2), SLIPTIDEHANDLING/2) // + infinite handling
+		);
+	}
+
 	if (player->wavedashboost)
 	{
 		// NB: This is intentionally under the 25% handleboost threshold required to initiate a sliptide
@@ -8921,6 +8931,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			S_StartSoundAtVolume(player->mo, sfx_fshld3, 255/3);
 	}
 
+	if (player->counterdash)
+		player->counterdash--;
+
 	if (player->sneakertimer && player->wipeoutslow > 0 && player->wipeoutslow < wipeoutslowtime+1)
 		player->wipeoutslow = wipeoutslowtime+1;
 
@@ -10867,10 +10880,21 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 			if (player->trickcharge && dokicker)
 			{
-				player->driftboost += 20;
-				player->wavedashboost += 10;
-				player->wavedashpower = FRACUNIT;
-				P_Thrust(player->mo, pushdir, player->speed / 2);
+				// 2.2 - Egg-friendly trick stuff
+				if (G_CompatLevel(0x000B))
+				{
+					player->driftboost += 20;
+					player->wavedashboost += 10;
+					player->wavedashpower = FRACUNIT;
+					P_Thrust(player->mo, pushdir, player->speed / 2);
+				}
+				else
+				{
+					player->driftboost += TICRATE;
+					player->counterdash += TICRATE/2;
+					P_Thrust(player->mo, pushdir, player->speed / 6);
+				}
+
 				S_StartSound(player->mo, sfx_gshba);
 				player->trickcharge = 0;
 				player->infinitether = TICRATE*2;
@@ -13254,11 +13278,11 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									{
 										K_ThrowKartItem(player, (player->throwdir > 0), MT_BUBBLESHIELDTRAP, -1, 0, 0);
 										if (player->throwdir == -1)
-										{
+										{		
 											P_InstaThrust(player->mo, player->mo->angle, player->speed + (80 * mapobjectscale));
 											player->wavedashboost += TICRATE;
 											player->wavedashpower = FRACUNIT;
-											player->fakeBoost = TICRATE/2;
+											player->fakeBoost += TICRATE/2;
 										}
 										K_PlayAttackTaunt(player->mo);
 										player->bubbleblowup = 0;

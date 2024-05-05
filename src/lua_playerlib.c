@@ -428,6 +428,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->bubbleblowup);
 	else if (fastcmp(field,"flamedash"))
 		lua_pushinteger(L, plr->flamedash);
+	else if (fastcmp(field,"counterdash"))
+		lua_pushinteger(L, plr->counterdash);
 	else if (fastcmp(field,"flamemeter"))
 		lua_pushinteger(L, plr->flamemeter);
 	else if (fastcmp(field,"flamelength"))
@@ -984,6 +986,8 @@ static int player_set(lua_State *L)
 		plr->bubbleblowup = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"flamedash"))
 		plr->flamedash = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"counterdash"))
+		plr->counterdash = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"flamemeter"))
 		plr->flamemeter = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"flamelength"))
