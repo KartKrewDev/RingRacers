@@ -13215,7 +13215,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 										K_ThrowKartItem(player, (player->throwdir > 0), MT_BUBBLESHIELDTRAP, -1, 0, 0);
 										if (player->throwdir == -1)
 										{		
-											player->counterdash += TICRATE/2;
+											P_InstaThrust(player->mo, player->mo->angle, player->speed + (80 * mapobjectscale));
 											player->wavedashboost += TICRATE;
 											player->wavedashpower = FRACUNIT;
 											player->fakeBoost += TICRATE/2;
