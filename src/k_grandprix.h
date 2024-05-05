@@ -39,6 +39,7 @@ extern struct grandprixinfo
 	boolean initalize;		///< If true, we need to initialize a new session.
 	boolean wonround;		///< If false, then we retry the map instead of going to the next.
 	gpEvent_e eventmode;	///< Special event mode, bots are set to spectate and a special gametype is played
+	UINT32 specialDamage;	///< Accumulated Sealed Star difficulty reduction
 	gpRank_t rank;			///< Struct containing grading information. (See also: k_rank.h)
 } grandprixinfo;
 

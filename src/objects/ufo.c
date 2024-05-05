@@ -29,6 +29,7 @@
 #include "../k_hitlag.h"
 #include "../acs/interface.h"
 #include "../hu_stuff.h"
+#include "../k_grandprix.h"
 
 #define UFO_BASE_SPEED (42 * FRACUNIT) // UFO's slowest speed.
 #define UFO_SPEEDUP (FRACUNIT >> 1) // Acceleration
@@ -935,6 +936,11 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 
 	ufo->health = max(1, ufo->health - damage);
 
+	if (grandprixinfo.gp)
+	{
+		grandprixinfo.specialDamage += damage;
+	}
+
 	K_SetHitLagForObjects(ufo, inflictor, source, (damage / 3) + 2, true);
 	UFOCopyHitlagToPieces(ufo);
 
@@ -1338,6 +1344,11 @@ static mobj_t *InitSpecialUFO(waypoint_t *start)
 	P_SetTarget(&ufo_piece_next(prevPiece), piece);
 	P_SetTarget(&ufo_piece_prev(piece), prevPiece);
 	prevPiece = piece;
+
+	if (grandprixinfo.gp && grandprixinfo.specialDamage)
+	{
+		ufo->health -= min(4*mobjinfo[MT_SPECIAL_UFO].spawnhealth/10, grandprixinfo.specialDamage/6);
+	}
 
 	return ufo;
 }

@@ -4977,7 +4977,7 @@ void G_DirtyGameData(void)
 // Can be called by the startup code or the menu task.
 //
 
-#define SAV_VERSIONMINOR 5
+#define SAV_VERSIONMINOR 6
 
 void G_LoadGame(void)
 {
