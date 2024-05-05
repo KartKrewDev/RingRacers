@@ -1795,12 +1795,53 @@ void F_TitleScreenDrawer(void)
 			if (checkcount > 2*TICRATE)
 			{
 				trans = 10 - (checkcount - 2*TICRATE)/4;
+
+				if (trans < 0)
+					trans = 0;
+
 				if (trans < 10)
 				{
-					if (trans < 0)
-						trans = 0;
-					trans <<= V_ALPHASHIFT;
-					V_DrawCenteredThinString(BASEVIDWIDTH/2, 80 + 32, V_AQUAMAP|trans, "Press any input to proceed.");
+					V_DrawCenteredThinString(BASEVIDWIDTH/2, 80 + 32, V_AQUAMAP|(trans << V_ALPHASHIFT), "Press any input to proceed.");
+				}
+
+				if (trans < 3)
+				{
+					// Secondary Megamix disclaimer. ~toast 060524
+
+					const char *sillystring = "Technical Kart Racer";
+					const INT32 sillywidth = V_MenuStringWidth(sillystring, 0) + 12;
+					INT32 sillyx = -((INT32)finalecount % sillywidth);
+
+					const INT32 subtextalpha = ((trans + (10 - 3)) << V_ALPHASHIFT);
+
+					V_SetClipRect(
+						1,
+						1,
+						(BASEVIDWIDTH * FRACUNIT) - 1,
+						(BASEVIDHEIGHT * FRACUNIT) - 1,
+						0
+					);
+
+					while (sillyx < BASEVIDWIDTH)
+					{
+						V_DrawMenuString(
+							sillyx,
+							80 - (8 + 8),
+							subtextalpha,
+							sillystring
+						);
+
+						sillyx += sillywidth;
+
+						V_DrawMenuString(
+							BASEVIDWIDTH - sillyx,
+							120 + (8 + 1),
+							subtextalpha,
+							sillystring
+						);
+					}
+
+					V_ClearClipRect();
 				}
 			}
 		}
