@@ -4129,7 +4129,23 @@ void G_GetNextMap(void)
 		return;
 	}
 
-	deferencoremode = (cv_kartencore.value == 1);
+	// tee up an Encore status (overridden by roundqueue, if applicable)
+	if (grandprixinfo.gp)
+	{
+		// Inherit from GP
+		deferencoremode = grandprixinfo.encore;
+	}
+	else if (K_CanChangeRules(true))
+	{
+		// Use cvar
+		deferencoremode = (cv_kartencore.value == 1);
+	}
+	else
+	{
+		// Inherit from current state
+		deferencoremode = encoremode;
+	}
+
 	forceresetplayers = forcespecialstage = false;
 
 	// go to next level
