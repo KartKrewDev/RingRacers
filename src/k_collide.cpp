@@ -28,6 +28,7 @@
 #include "k_hitlag.h"
 #include "m_random.h"
 #include "k_hud.h" // K_AddMessage
+#include "m_easing.h"
 
 angle_t K_GetCollideAngle(mobj_t *t1, mobj_t *t2)
 {
@@ -557,19 +558,47 @@ boolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2)
 		t1->momz = t1->target->momz;
 	}
 
+	fixed_t bumppower = FRACUNIT;
+	const fixed_t minbumppower = FRACUNIT/2;
+	if (t2->player)
+	{
+		fixed_t speeddampen = FixedDiv(t2->player->speed, 2*K_GetKartSpeed(t2->player, false, false));
+		bumppower = Easing_InQuad(
+			std::min(speeddampen, FRACUNIT),
+			FRACUNIT,
+			minbumppower
+		);
+		if (t2->player->tripwireLeniency)
+			bumppower = minbumppower;
+	}
+
+	if (t2->type == MT_INSTAWHIP)
+		bumppower = 0;
+
 	{
 		angle_t t2angle = R_PointToAngle2(t2->momx, t2->momy, 0, 0);
 		angle_t t2deflect;
 		fixed_t t1speed, t2speed;
-		K_KartBouncing(t1, t2);
+
+		if (t2->type == MT_INSTAWHIP && t2->target && !P_MobjWasRemoved(t2->target))
+		{
+			t2angle = R_PointToAngle2(t2->target->momx, t2->target->momy, 0, 0);
+			t2speed = FixedHypot(t2->target->momx, t2->target->momy);
+			P_InstaThrust(t1, ANGLE_180 + R_PointToAngle2(t1->x, t1->y, t2->x, t2->y), 100*t2->target->scale + t2speed);
+		}
+		else
+		{
+			K_KartBouncing(t1, t2);
+			t2speed = FixedHypot(t2->momx, t2->momy);
+		}
+
 		t1speed = FixedHypot(t1->momx, t1->momy);
-		t2speed = FixedHypot(t2->momx, t2->momy);
 
 		t2deflect = t2angle - R_PointToAngle2(0, 0, t2->momx, t2->momy);
 		if (t2deflect > ANGLE_180)
 			t2deflect = InvAngle(t2deflect);
 		if (t2deflect < ANG10)
-			P_InstaThrust(t2, t2angle, t2speed);
+			P_InstaThrust(t2, t2angle, FixedMul(t2speed, bumppower));
 
 		t1->angle = t1->old_angle = R_PointToAngle2(0, 0, t1->momx, t1->momy);
 
@@ -598,6 +627,9 @@ boolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2)
 
 	K_AddHitLag(t1, 6, true);
 	K_AddHitLag(t2, 6, false);
+
+	if (t2->type == MT_INSTAWHIP && t2->target && !P_MobjWasRemoved(t2->target))
+		K_AddHitLag(t2->target, 6, false);
 
 	{
 		mobj_t *ghost = P_SpawnGhostMobj(t1);
@@ -980,6 +1012,11 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 			return true;
 		}
 		return false;
+	}
+	else if (victim->type == MT_DROPTARGET || victim->type == MT_DROPTARGET_SHIELD)
+	{
+		K_DropTargetCollide(victim, shield);
+		return true;
 	}
 	else
 	{
