@@ -238,6 +238,20 @@ void f_4thgear()
 	}
 }
 
+void f_levelskull()
+{
+	CV_SetValue(&cv_levelskull, !cv_levelskull.value);
+	if (cv_levelskull.value)
+	{
+		M_StartMessage("It's over for humans!", "CPU difficulty raised to ""\x85""TRUE MAXIMUM!""\x80""\nThis isn't even remotely fair!", NULL, MM_NOTHING, NULL, NULL);
+		S_StartSound(NULL, sfx_gshdf);
+	}
+	else
+	{
+		S_StartSound(NULL, sfx_kc46);
+	}
+}
+
 void f_colors()
 {
 	UINT16 i;
@@ -763,4 +777,5 @@ void M_PasswordInit(void)
 	passwords.emplace_back(f_encore, "i5u5sIsMs5eITy+LzAXvKm6D9OzOVKhUqSy1mTTV/oUxJX6RPsk8OcyLbNaey9Vc6wXOhz+2+mTXILkIRzvXqA==");
 	passwords.emplace_back(f_difficulty, "MKjOtEFLkgXf21uiECdBTU6XtbkuFWaGh7i8znKo7JrXXEDrCBJmGwINvPg0T3TLn0zlscLvmC5nve7I+NTrnA==");
 	passwords.emplace_back(f_keys, "jgsD6UJ2Xa10QcS2ZDJwcvpd4iia3AXIG8wDDSsHX7kFH5jEXnym45yaNZG9hIKEvBMpVONKR0YTA6JBAQRCvg==");
+	passwords.emplace_back(f_levelskull, "hpQP2tC+TGVQojDcYaC4236+QZZR8Tj/OQb1dAkjnMNpc0/AAdRAIQSveLqd7xW2Dw62Fc3noEkeYTHQkPa+WQ==");
 }

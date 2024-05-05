@@ -1490,7 +1490,7 @@ static boolean K_TryDraft(player_t *player, mobj_t *dest, fixed_t minDist, fixed
 		fixed_t add = (FRACUNIT/200) + ((9 - player->kartspeed) * ((3*FRACUNIT)/1600));;
 		player->draftpower += add;
 
-		if (player->bot && player->botvars.rival)
+		if (player->bot && (player->botvars.rival || cv_levelskull.value))
 		{
 			// Double speed for the rival!
 			player->draftpower += add;
@@ -3402,7 +3402,7 @@ static fixed_t K_RingDurationBoost(const player_t *player)
 
 		ret += add;
 
-		if (player->botvars.rival == true)
+		if (player->botvars.rival == true || cv_levelskull.value)
 		{
 			// x2.0 for Rival
 			ret *= 2;
@@ -3697,7 +3697,7 @@ fixed_t K_GetKartSpeed(const player_t *player, boolean doboostpower, boolean dor
 			fixed_t add = ((player->botvars.difficulty-1) * FixedMul(FRACUNIT / 10, modifier)) / (DIFFICULTBOT-1);
 			finalspeed = FixedMul(finalspeed, FRACUNIT + add);
 
-			if (player->bot && player->botvars.rival)
+			if (player->bot && (player->botvars.rival || cv_levelskull.value))
 			{
 				// +10% top speed for the rival
 				finalspeed = FixedMul(finalspeed, 11*FRACUNIT/10);
