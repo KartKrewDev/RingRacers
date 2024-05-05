@@ -975,6 +975,7 @@ consvar_t cv_dummymenuplayer = MenuDummy("dummymenuplayer", "P1").onchange(Dummy
 consvar_t cv_dummyprofileautoroulette = MenuDummy("dummyprofileautoroulette", "Off").on_off();
 consvar_t cv_dummyprofilefov = MenuDummy("dummyprofilefov", "100").min_max(70, 110);
 consvar_t cv_dummyprofilelitesteer = MenuDummy("dummyprofilelitesteer", "Off").on_off();
+consvar_t cv_dummyprofileautoring = MenuDummy("dummyprofileautoring", "Off").on_off();
 consvar_t cv_dummyprofilekickstart = MenuDummy("dummyprofilekickstart", "Off").on_off();
 consvar_t cv_dummyprofilename = MenuDummy("dummyprofilename", "");
 consvar_t cv_dummyprofileplayername = MenuDummy("dummyprofileplayername", "");
@@ -1085,6 +1086,13 @@ consvar_t cv_litesteer[MAXSPLITSCREENPLAYERS] = {
 	Player("litesteer2", "Off").on_off().onchange(weaponPrefChange2),
 	Player("litesteer3", "Off").on_off().onchange(weaponPrefChange3),
 	Player("litesteer4", "Off").on_off().onchange(weaponPrefChange4),
+};
+
+consvar_t cv_autoring[MAXSPLITSCREENPLAYERS] = {
+	Player("autoring", "Off").on_off().onchange(weaponPrefChange),
+	Player("autoring2", "Off").on_off().onchange(weaponPrefChange2),
+	Player("autoring3", "Off").on_off().onchange(weaponPrefChange3),
+	Player("autoring4", "Off").on_off().onchange(weaponPrefChange4),
 };
 
 consvar_t cv_cam_dist[MAXSPLITSCREENPLAYERS] = {

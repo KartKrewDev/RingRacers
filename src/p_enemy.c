@@ -3547,13 +3547,26 @@ void A_AttractChase(mobj_t *actor)
 			}
 			else
 			{
-				fixed_t offz = FixedMul(80*actor->target->scale, FINESINE(FixedAngle((90 - (9 * abs(10 - actor->extravalue1))) << FRACBITS) >> ANGLETOFINESHIFT));
+				fixed_t hop = FixedMul(
+					80 * actor->target->scale,
+					FINESINE(FixedAngle((90 - (9 * abs(10 - actor->extravalue1))) << FRACBITS) >> ANGLETOFINESHIFT)
+				);
+
+				fixed_t offsFrac = (20 - (actor->extravalue1 - 1)) * FRACUNIT / 20;
+				fixed_t offsX = FixedMul(actor->cusval, offsFrac);
+				fixed_t offsY = FixedMul(actor->cvmem, offsFrac);
+				fixed_t offsZ = FixedMul(actor->movefactor, offsFrac);
+
 				//P_SetScale(actor, (actor->destscale = actor->target->scale));
-				actor->z = actor->target->z;
 				K_MatchGenericExtraFlags(actor, actor->target);
-				P_MoveOrigin(actor, actor->target->x, actor->target->y,
-						actor->z +
-						( actor->target->height + offz )* P_MobjFlip(actor));
+
+				P_MoveOrigin(
+					actor,
+					actor->target->x + offsX,
+					actor->target->y + offsY,
+					actor->target->z + offsZ + ( actor->target->height + hop ) * P_MobjFlip(actor)
+				);
+
 				actor->extravalue1++;
 			}
 		}

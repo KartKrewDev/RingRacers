@@ -4152,6 +4152,7 @@ void readfollower(MYFILE *f)
 	followers[numfollowers].bobspeed = TICRATE*2;
 	followers[numfollowers].bobamp = 4*FRACUNIT;
 	followers[numfollowers].hitconfirmtime = TICRATE;
+	followers[numfollowers].ringtime = 10;
 	followers[numfollowers].defaultcolor = FOLLOWERCOLOR_MATCH;
 	followers[numfollowers].category = UINT8_MAX;
 	followers[numfollowers].hornsound = sfx_horn00;
@@ -4329,6 +4330,16 @@ void readfollower(MYFILE *f)
 			{
 				followers[numfollowers].hitconfirmtime = (tic_t)get_number(word2);
 			}
+			else if (fastcmp(word, "RINGSTATE"))
+			{
+				if (word2)
+					strupr(word2);
+				followers[numfollowers].ringstate = get_number(word2);
+			}
+			else if (fastcmp(word, "RINGTIME"))
+			{
+				followers[numfollowers].ringtime = (tic_t)get_number(word2);
+			}
 			else
 			{
 				deh_warning("Follower %d: unknown word '%s'", numfollowers, word);
@@ -4386,6 +4397,7 @@ if ((signed)followers[numfollowers].field < threshold) \
 	FALLBACK(bobamp, "BOBAMP", 0, 0);
 	FALLBACK(bobspeed, "BOBSPEED", 0, 0);
 	FALLBACK(hitconfirmtime, "HITCONFIRMTIME", 1, 1);
+	FALLBACK(ringtime, "RINGTIME", 1, 1);
 	FALLBACK(scale, "SCALE", 1, 1);				// No null/negative scale
 	FALLBACK(bubblescale, "BUBBLESCALE", 0, 0);	// No negative scale
 
@@ -4408,6 +4420,7 @@ if (!followers[numfollowers].field) \
 	NOSTATE(losestate, "LOSESTATE");
 	NOSTATE(winstate, "WINSTATE");
 	NOSTATE(hitconfirmstate, "HITCONFIRMSTATE");
+	NOSTATE(ringstate, "RINGSTATE");
 #undef NOSTATE
 
 	if (!followers[numfollowers].hornsound)

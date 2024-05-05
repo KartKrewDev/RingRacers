@@ -46,6 +46,7 @@ struct ProfilePreferencesJson
 	bool kickstartaccel;
 	bool autoroulette;
 	bool litesteer;
+	bool autoring;
 	bool rumble;
 	uint8_t fov;
 	tm test;
@@ -55,6 +56,7 @@ struct ProfilePreferencesJson
 		kickstartaccel,
 		autoroulette,
 		litesteer,
+		autoring,
 		rumble,
 		fov
 	)
@@ -160,6 +162,7 @@ struct profile_t
 	boolean kickstartaccel;				// cv_kickstartaccel
 	boolean autoroulette;				// cv_autoroulette
 	boolean litesteer;					// cv_litesteer
+	boolean autoring;					// cv_autoring
 	boolean rumble;						// cv_rumble
 	UINT8 fov;							// cv_fov
 

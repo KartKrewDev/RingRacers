@@ -277,6 +277,8 @@ void K_BumperInflate(player_t *player);
 
 boolean K_ThunderDome(void);
 
+boolean K_PlayerCanUseItem(player_t *player);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

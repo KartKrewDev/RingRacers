@@ -4066,7 +4066,7 @@ const char *const PLAYERFLAG_LIST[] = {
 	"ANALOGSTICK", // This player is using an analog joystick
 	"TRUSTWAYPOINTS", // Do not activate lap cheat prevention next time finish line distance is updated
 	"FREEZEWAYPOINTS", // Skip the next waypoint/finish line distance update
-	"\x01", // Free
+	"AUTORING", // Accessibility: Non-deterministic item box, no manual stop.
 
 	"DRIFTINPUT", // Drifting!
 	"GETSPARKS", // Can get sparks

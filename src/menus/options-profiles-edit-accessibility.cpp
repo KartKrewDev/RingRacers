@@ -105,6 +105,9 @@ menuitem_t OPTIONS_ProfileAccessibility[] = {
 	{IT_STRING | IT_CVAR, "Auto Roulette", "Item roulette auto-stops on a random result.",
 		NULL, {.cvar = &cv_dummyprofileautoroulette}, 0, 0},
 
+	{IT_STRING | IT_CVAR, "Auto Ring", "Auto-use rings to maintain momentum.",
+		NULL, {.cvar = &cv_dummyprofileautoring}, 0, 0},
+
 	{IT_STRING | IT_CVAR, "Kickstart Accel", "Hold A to auto-accel. Tap it to cancel.",
 		NULL, {.cvar = &cv_dummyprofilekickstart}, 0, 0},
 

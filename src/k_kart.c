@@ -2865,11 +2865,12 @@ void K_TryHurtSoundExchange(mobj_t *victim, mobj_t *attacker)
 	attacker->player->confirmVictim = (victim->player - players);
 	attacker->player->confirmVictimDelay = TICRATE/2;
 
+	const INT32 followerskin = K_GetEffectiveFollowerSkin(attacker->player);
 	if (attacker->player->follower != NULL
-		&& attacker->player->followerskin >= 0
-		&& attacker->player->followerskin < numfollowers)
+		&& followerskin >= 0
+		&& followerskin < numfollowers)
 	{
-		const follower_t *fl = &followers[attacker->player->followerskin];
+		const follower_t *fl = &followers[followerskin];
 		attacker->player->follower->movecount = fl->hitconfirmtime; // movecount is used to play the hitconfirm animation for followers.
 	}
 }
@@ -12599,14 +12600,45 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		player->instaWhipCharge = min(player->instaWhipCharge, INSTAWHIP_CHARGETIME - 2);
 	}
 
-	if (player && player->mo && player->mo->health > 0 && !player->spectator && !P_PlayerInPain(player) && !mapreset && leveltime > introtime)
+	if (player && player->mo && K_PlayerCanUseItem(player))
 	{
 		// First, the really specific, finicky items that function without the item being directly in your item slot.
 		{
 			// Ring boosting
 			if (player->itemflags & IF_USERINGS)
 			{
-				if ((cmd->buttons & BT_ATTACK) && !player->ringdelay && player->rings > 0)
+				// Auto-Ring
+				UINT8 tiereddelay = 5;
+				player->autoring = false;
+				if (
+					player->pflags & PF_AUTORING
+					&& leveltime > starttime
+					&& K_GetForwardMove(player) > 0
+					&& P_IsObjectOnGround(player->mo)
+				)
+				{
+					fixed_t pspeed = FixedDiv(player->speed * 100, K_GetKartSpeed(player, false, true));
+
+					if (player->rings >= 18 && pspeed < 100*FRACUNIT)
+					{
+						player->autoring = true;
+						tiereddelay = 3;
+					}
+					else if (player->rings >= 10 && pspeed < 85*FRACUNIT)
+					{
+						player->autoring = true;
+						tiereddelay = 4;
+					}
+					else if (player->rings >= 4 && pspeed < 35*FRACUNIT)
+					{
+						player->autoring = true;
+						tiereddelay = 5;
+					}
+					else
+						player->autoring = false;
+				}
+
+				if (((cmd->buttons & BT_ATTACK) || player->autoring) && !player->ringdelay && player->rings > 0)
 				{
 					mobj_t *ring = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_RING);
 					P_SetMobjState(ring, S_FASTRING1);
@@ -12628,9 +12660,41 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					ring->extravalue2 = 1; // Ring use animation flag
 					ring->shadowscale = 0;
 					P_SetTarget(&ring->target, player->mo); // user
+
+					const INT32 followerskin = K_GetEffectiveFollowerSkin(player);
+					if (player->autoring
+						&& player->follower != NULL
+						&& P_MobjWasRemoved(player->follower) == false
+						&& followerskin >= 0
+						&& followerskin < numfollowers)
+					{
+						const follower_t *fl = &followers[followerskin];
+
+						ring->cusval = player->follower->x - player->mo->x;
+						ring->cvmem = player->follower->y - player->mo->y;
+						ring->movefactor = P_GetMobjHead(player->follower) - P_GetMobjHead(player->mo);
+
+						// cvmem is used to play the ring animation for followers
+						player->follower->cvmem = fl->ringtime;
+					}
+					else
+					{
+						ring->cusval = ring->cvmem = ring->movefactor = 0;
+					}
+
+					// really silly stupid dumb HACK to fix interp
+					// without needing to duplicate any code
+					A_AttractChase(ring);
+					P_SetOrigin(ring, ring->x, ring->y, ring->z);
+					ring->extravalue1 = 1;
+
 					player->rings--;
-					player->ringdelay = 3;
+					if (player->autoring && !(cmd->buttons & BT_ATTACK))
+						player->ringdelay = tiereddelay;
+					else
+						player->ringdelay = 3;
 				}
+
 			}
 			// Other items
 			else
@@ -14414,6 +14478,11 @@ boolean K_PlayerCanPunt(player_t *player)
 void K_MakeObjectReappear(mobj_t *mo)
 {
 	(!P_MobjWasRemoved(mo->punt_ref) ? mo->punt_ref : mo)->reappear = leveltime + (30*TICRATE);
+}
+
+boolean K_PlayerCanUseItem(player_t *player)
+{
+	return (player->mo->health > 0 && !player->spectator && !P_PlayerInPain(player) && !mapreset && leveltime > introtime);
 }
 
 //}

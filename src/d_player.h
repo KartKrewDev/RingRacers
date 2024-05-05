@@ -109,7 +109,7 @@ typedef enum
 	PF_TRUSTWAYPOINTS	= 1<<15, // Do not activate lap cheat prevention next time finish line distance is updated
 	PF_FREEZEWAYPOINTS	= 1<<16, // Skip the next waypoint/finish line distance update
 
-	//1<<17 free, was previously itemflags stuff
+	PF_AUTORING			= 1<<17, // Accessibility: Non-deterministic item box, no manual stop.
 
 	PF_DRIFTINPUT		= 1<<18, // Drifting!
 	PF_GETSPARKS		= 1<<19, // Can get sparks
@@ -955,6 +955,7 @@ struct player_t
 	UINT8 typing_duration; // How long since resumed timer
 
 	UINT8 kickstartaccel;
+	boolean autoring;	// did we autoring this tic?
 
 	UINT8 stairjank;
 	UINT8 topdriftheld;

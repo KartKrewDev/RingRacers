@@ -212,6 +212,7 @@ static patch_t *kp_bossret[4];
 static patch_t *kp_trickcool[2];
 
 patch_t *kp_autoroulette;
+patch_t *kp_autoring;
 
 patch_t *kp_capsuletarget_arrow[2][2];
 patch_t *kp_capsuletarget_icon[2];
@@ -781,6 +782,7 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_trickcool[1], "K_COOL2");
 
 	HU_UpdatePatch(&kp_autoroulette, "A11YITEM");
+	HU_UpdatePatch(&kp_autoring, "A11YRING");
 
 	sprintf(buffer, "K_BOSB0x");
 	for (i = 0; i < 8; i++)
@@ -3249,6 +3251,19 @@ static void K_drawKartAccessibilityIcons(boolean gametypeinfoshown, INT32 fx)
             fx--;
         else
             fx += 12 + 1;
+    }
+
+	if (stplyr->pflags & PF_AUTORING)
+    {
+        if (mirror)
+            fx -= 14;
+
+        V_DrawScaledPatch(fx, fy-1, V_SLIDEIN|splitflags, kp_autoring);
+
+        if (mirror)
+            fx--;
+        else
+            fx += 14 + 1;
     }
 }
 

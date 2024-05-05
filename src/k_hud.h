@@ -78,6 +78,7 @@ extern patch_t *kp_spraycantarget_far[2][6];
 extern patch_t *kp_spraycantarget_near[2][6];
 
 extern patch_t *kp_autoroulette;
+extern patch_t *kp_autoring;
 
 extern patch_t *kp_button_a[2][2];
 extern patch_t *kp_button_b[2][2];

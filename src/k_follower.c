@@ -338,6 +338,8 @@ void K_HandleFollower(player_t *player)
 	angle_t destAngle;
 	INT32 angleDiff;
 
+	INT32 followerskin;
+
 	if (player->followerready == false)
 	{
 		// we aren't ready to perform anything follower related yet.
@@ -351,9 +353,11 @@ void K_HandleFollower(player_t *player)
 		player->followerskin = -1;
 	}
 
+	followerskin = K_GetEffectiveFollowerSkin(player);
+
 	// don't do anything if we can't have a follower to begin with.
 	// (It gets removed under those conditions)
-	if (player->spectator || player->followerskin < 0
+	if (player->spectator || followerskin < 0
 	|| player->mo == NULL || P_MobjWasRemoved(player->mo))
 	{
 		if (player->follower)
@@ -364,7 +368,7 @@ void K_HandleFollower(player_t *player)
 	}
 
 	// Before we do anything, let's be sure of where we're supposed to be
-	fl = &followers[player->followerskin];
+	fl = &followers[followerskin];
 
 	an = player->mo->angle + fl->atangle;
 	zoffs = fl->zoffs;
@@ -417,7 +421,10 @@ void K_HandleFollower(player_t *player)
 	}
 
 	// Set follower colour
-	color = K_GetEffectiveFollowerColor(player->followercolor, fl, player->skincolor, &skins[player->skin]);
+	if (player->followerskin < 0) // using a fallback follower
+		color = fl->defaultcolor;
+	else
+		color = K_GetEffectiveFollowerColor(player->followercolor, fl, player->skincolor, &skins[player->skin]);
 
 	if (player->follower == NULL || P_MobjWasRemoved(player->follower)) // follower doesn't exist / isn't valid
 	{
@@ -519,6 +526,13 @@ void K_HandleFollower(player_t *player)
 		{
 			player->follower->renderflags |= RF_DONTDRAW;
 		}
+		else
+		{
+			if ((player->pflags & PF_AUTORING) && !(K_PlayerCanUseItem(player) && (player->itemflags & IF_USERINGS)))
+			{
+				player->follower->renderflags |= RF_TRANS50;
+			}
+		}
 
 		// if we're moving let's make the angle the direction we're moving towards. This is to avoid drifting / reverse looking awkward.
 		if (FixedHypot(player->follower->momx, player->follower->momy) >= player->mo->scale)
@@ -535,6 +549,12 @@ void K_HandleFollower(player_t *player)
 		if ( player->cmd.buttons & BT_LOOKBACK )
 		{
 			destAngle += ANGLE_180;
+		}
+
+		// Using auto-ring, face towards the player while throwing your rings.
+		if (player->follower->cvmem)
+		{
+			destAngle = player->mo->angle + ANGLE_180;
 		}
 
 		// Sal: Smoothly rotate angle to the destination value.
@@ -628,8 +648,9 @@ void K_HandleFollower(player_t *player)
 		// hurt or dead
 		if (P_PlayerInPain(player) == true || player->mo->state == &states[S_KART_SPINOUT] || player->mo->health <= 0)
 		{
-			// cancel hit confirm.
+			// cancel hit confirm / rings
 			player->follower->movecount = 0;
+			player->follower->cvmem = 0;
 
 			// spin out
 			player->follower->angle = player->drawangle;
@@ -660,6 +681,11 @@ void K_HandleFollower(player_t *player)
 		{
 			K_UpdateFollowerState(player->follower, fl->hitconfirmstate, FOLLOWERSTATE_HITCONFIRM);
 			player->follower->movecount--;
+		}
+		else if (player->follower->cvmem)
+		{
+			K_UpdateFollowerState(player->follower, fl->ringstate, FOLLOWERSTATE_RING);
+			player->follower->cvmem--;
 		}
 		else if (player->speed > 10*player->mo->scale) // animation for moving fast enough
 		{
@@ -730,18 +756,21 @@ void K_HandleFollower(player_t *player)
 --------------------------------------------------*/
 void K_FollowerHornTaunt(player_t *taunter, player_t *victim, boolean mysticmelodyspecial)
 {
+	// special case for checking for fallback follower for autoring
+	const INT32 followerskin = K_GetEffectiveFollowerSkin(taunter);
+
 	// Basic checks
 	if (
 		taunter == NULL
 		|| victim == NULL
-		|| taunter->followerskin < 0
-		|| taunter->followerskin >= numfollowers
+		|| followerskin < 0
+		|| followerskin >= numfollowers
 	)
 	{
 		return;
 	}
 
-	const follower_t *fl = &followers[taunter->followerskin];
+	const follower_t *fl = &followers[followerskin];
 
 	// Restrict mystic melody special status
 	if (mysticmelodyspecial == true)
@@ -865,4 +894,17 @@ void K_FollowerHornTaunt(player_t *taunter, player_t *victim, boolean mysticmelo
 			honk->renderflags &= ~dontdrawflag;
 		}
 	}
+}
+
+/*--------------------------------------------------
+	INT32 K_GetEffectiveFollowerSkin(const player_t *player);
+
+		See header file for description.
+--------------------------------------------------*/
+INT32 K_GetEffectiveFollowerSkin(const player_t *player)
+{
+	if ((player->pflags & PF_AUTORING) && player->followerskin == -1)
+		return K_FollowerAvailable("Goddess");
+	else
+		return player->followerskin;
 }
