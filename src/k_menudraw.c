@@ -5689,10 +5689,10 @@ static char *M_GetGameplayMode(void)
 		if (grandprixinfo.masterbots)
 			return va("Master");
 		if (grandprixinfo.gamespeed == KARTSPEED_HARD)
-			return va("Hard");
+			return va("Vicious");
 		if (grandprixinfo.gamespeed == KARTSPEED_NORMAL)
-			return va("Normal");
-		return va("Easy");
+			return va("Intense");
+		return va("Relaxed");
 	}
 
 	if (cv_4thgear.value)
