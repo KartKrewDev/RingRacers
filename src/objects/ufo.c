@@ -938,7 +938,7 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 
 	if (grandprixinfo.gp)
 	{
-		grandprixinfo.rank.specialDamage += damage;
+		grandprixinfo.specialDamage += damage;
 	}
 
 	K_SetHitLagForObjects(ufo, inflictor, source, (damage / 3) + 2, true);
@@ -1345,9 +1345,9 @@ static mobj_t *InitSpecialUFO(waypoint_t *start)
 	P_SetTarget(&ufo_piece_prev(piece), prevPiece);
 	prevPiece = piece;
 
-	if (grandprixinfo.gp && grandprixinfo.rank.specialDamage)
+	if (grandprixinfo.gp && grandprixinfo.specialDamage)
 	{
-		ufo->health -= min(4*mobjinfo[MT_SPECIAL_UFO].spawnhealth/10, grandprixinfo.rank.specialDamage/6);
+		ufo->health -= min(4*mobjinfo[MT_SPECIAL_UFO].spawnhealth/10, grandprixinfo.specialDamage/6);
 	}
 
 	return ufo;

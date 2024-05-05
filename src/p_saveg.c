@@ -6069,6 +6069,8 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 	WRITEUINT8(save->p, (UINT8)grandprixinfo.encore);
 	WRITEUINT8(save->p, (UINT8)grandprixinfo.masterbots);
 
+	WRITEUINT32(save->p, grandprixinfo.specialDamage);
+
 	WRITESTRINGL(save->p, grandprixinfo.cup->name, MAXCUPNAME);
 
 	// Round Queue information
@@ -6136,7 +6138,6 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 		WRITEUINT32(save->p, rank->totalLaps);
 
 		WRITEUINT32(save->p, (rank->continuesUsed + 1));
-		WRITEUINT32(save->p, rank->specialDamage);
 
 		WRITEUINT32(save->p, rank->prisons);
 		WRITEUINT32(save->p, rank->totalPrisons);
@@ -6217,6 +6218,8 @@ void P_GetBackupCupData(savebuffer_t *save)
 	cupsavedata.encore = (boolean)READUINT8(save->p);
 	boolean masterbots = (boolean)READUINT8(save->p);
 
+	save->p += 4; // specialDamage
+
 	if (masterbots == true)
 		cupsavedata.difficulty = KARTGP_MASTER;
 
@@ -6265,6 +6268,8 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 	grandprixinfo.gamespeed = READUINT8(save->p);
 	grandprixinfo.encore = (boolean)READUINT8(save->p);
 	grandprixinfo.masterbots = (boolean)READUINT8(save->p);
+
+	grandprixinfo.specialDamage = READUINT32(save->p);
 
 	// Find the relevant cup.
 	char cupname[MAXCUPNAME];
@@ -6395,7 +6400,6 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 		rank->totalLaps = READUINT32(save->p);
 
 		rank->continuesUsed = READUINT32(save->p);
-		rank->specialDamage = READUINT32(save->p);
 
 		rank->prisons = READUINT32(save->p);
 		rank->totalPrisons = READUINT32(save->p);
