@@ -107,7 +107,7 @@ extern "C" consvar_t cv_lua_profile, cv_menuframeskip;
 /* Manually defined asset hashes
  */
 
-#define ASSET_HASH_BIOS_PK3						"8e3df443ae9cfde1888a0a152c49a4fb"
+#define ASSET_HASH_BIOS_PK3						"4ae707a2195365baa08422ccf28edae1"
 #define ASSET_HASH_SCRIPTS_PK3					"15e65f7f6d5460f9362c646714f57578"
 #define ASSET_HASH_GFX_PK3						"142df1ca805fd80a688a318cc4d24ca0"
 #define ASSET_HASH_TEXTURES_GENERAL_PK3			"1c91e9d6f407ba8350f7c2dce0035936"
@@ -116,7 +116,7 @@ extern "C" consvar_t cv_lua_profile, cv_menuframeskip;
 #define ASSET_HASH_CHARS_PK3					"bf014478cdda5e9208e3dea3c51f58c5"
 #define ASSET_HASH_FOLLOWERS_PK3				"a37b8796fc1d83d3398f79767aa0de47"
 #define ASSET_HASH_MAPS_PK3						"a8bd1f924531c483f500d96583b7b837"
-#define ASSET_HASH_UNLOCKS_PK3					"9d0820fe2f209d413c8922ccd301ca83"
+#define ASSET_HASH_UNLOCKS_PK3					"ebc06ff46c2cc80e93dadf5f7099d7b8"
 #define ASSET_HASH_STAFFGHOSTS_PK3				"9cb77f6c0e801c1bc61ca84870b65707"
 #define ASSET_HASH_SHADERS_PK3					"dbfb1d5eb9818cd2fb81680c0bab05c0"
 #ifdef USE_PATCH_FILE
