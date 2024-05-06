@@ -5957,6 +5957,9 @@ void K_AddMessageForPlayer(player_t *player, const char *msg, boolean interrupt,
 	if (player && !P_IsDisplayPlayer(player))
 		return;
 
+	if (player && K_PlayerUsesBotMovement(player))
+		return;
+
 	messagestate_t *state = &messagestates[G_PartyPosition(player - players)];
 
 	if (interrupt)
