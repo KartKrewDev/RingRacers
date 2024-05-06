@@ -750,7 +750,7 @@ INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, 
 		return 0;
 	}
 
-	if (roulette->autoroulette == true)
+	if (roulette && roulette->autoroulette == true)
 	{
 		if (K_DenyAutoRouletteOdds(item))
 		{
