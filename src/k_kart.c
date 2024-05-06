@@ -10429,7 +10429,15 @@ static INT16 K_GetKartDriftValue(const player_t *player, fixed_t countersteer)
 	}
 #endif
 
-	return basedrift + FixedMul(driftadjust, countersteer);
+	// Compat level for 2.0 staff ghosts
+	if (G_CompatLevel(0x000A))
+	{
+		return basedrift + (FixedMul(driftadjust * FRACUNIT, countersteer) / FRACUNIT);
+	}
+	else
+	{
+		return basedrift + FixedMul(driftadjust, countersteer);
+	}
 }
 
 INT16 K_UpdateSteeringValue(INT16 inputSteering, INT16 destSteering)
