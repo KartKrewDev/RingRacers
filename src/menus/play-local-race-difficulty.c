@@ -129,15 +129,18 @@ void M_SetupDifficultyOptions(INT32 choice)
 	PLAY_RaceDifficulty[drace_cupselect].status = IT_DISABLED;
 	PLAY_RaceDifficulty[drace_mapselect].status = IT_DISABLED;
 
-	if (M_SecretUnlocked(SECRET_HARDSPEED, true) && !interceptedDefaultDifficulty)
+	if (!interceptedDefaultDifficulty)
 	{
-		CV_SetValue(&cv_dummygpdifficulty, KARTSPEED_NORMAL);
-		CV_SetValue(&cv_dummykartspeed, KARTSPEED_NORMAL);
-	}
-	else
-	{
-		CV_SetValue(&cv_dummygpdifficulty, KARTSPEED_EASY);
-		CV_SetValue(&cv_dummykartspeed, KARTSPEED_EASY);
+		if (M_SecretUnlocked(SECRET_HARDSPEED, true))
+		{
+			CV_SetValue(&cv_dummygpdifficulty, KARTSPEED_NORMAL);
+			CV_SetValue(&cv_dummykartspeed, KARTSPEED_NORMAL);
+		}
+		else
+		{
+			CV_SetValue(&cv_dummygpdifficulty, KARTSPEED_EASY);
+			CV_SetValue(&cv_dummykartspeed, KARTSPEED_EASY);
+		}
 	}
 
 	interceptedDefaultDifficulty = true;
