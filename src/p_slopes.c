@@ -25,6 +25,7 @@
 #include "w_wad.h"
 #include "r_fps.h"
 #include "k_kart.h" // K_PlayerEBrake
+#include "m_easing.h"
 
 pslope_t *slopelist = NULL;
 UINT16 slopecount = 0;
@@ -1202,8 +1203,34 @@ void P_ButteredSlope(mobj_t *mo)
 	// Let's get the gravity strength for the object...
 	thrust = FixedMul(thrust, abs(P_GetMobjGravity(mo)));
 
-	// ... and its friction against the ground for good measure (divided by original friction to keep behaviour for normal slopes the same).
-	thrust = FixedMul(thrust, FixedDiv(mo->friction, ORIG_FRICTION));
+	if (mo->friction != ORIG_FRICTION)
+	{
+		// ... and its friction against the ground for good measure.
+		// (divided by original friction to keep behaviour for normal slopes the same)
+		thrust = FixedMul(thrust, FixedDiv(mo->friction, ORIG_FRICTION));
+
+		// Sal: Also consider movefactor of players.
+		// We want ice to make slopes *really* funnel you in a specific direction.
+		fixed_t move_factor = P_MoveFactorFromFriction(mo->friction);
+
+		if (mo->player != NULL)
+		{
+			if (mo->player->icecube.frozen == true)
+			{
+				// Undo this change with ice cubes, because it is insanity.
+				move_factor = FRACUNIT;
+			}
+			else if (mo->player->tiregrease > 0)
+			{
+				// Undo this change with tire grease, so that
+				// springs and spindash can still overpower slopes.
+				fixed_t grease_frac = clamp((FRACUNIT * mo->player->tiregrease) / greasetics, 0, FRACUNIT);
+				move_factor = Easing_Linear(grease_frac, move_factor, FRACUNIT);
+			}
+		}
+
+		thrust = FixedMul(thrust, FixedDiv(FRACUNIT, move_factor));
+	}
 
 	P_Thrust(mo, mo->standingslope->xydirection, thrust);
 }

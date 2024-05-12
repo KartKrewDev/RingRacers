@@ -12552,12 +12552,7 @@ void K_AdjustPlayerFriction(player_t *player)
 	// Friction was changed, so we must recalculate movefactor
 	if (player->mo->friction != prevfriction)
 	{
-		player->mo->movefactor = FixedDiv(ORIG_FRICTION, player->mo->friction);
-
-		if (player->mo->movefactor < FRACUNIT)
-			player->mo->movefactor = 19*player->mo->movefactor - 18*FRACUNIT;
-		else
-			player->mo->movefactor = FRACUNIT;
+		player->mo->movefactor = P_MoveFactorFromFriction(player->mo->friction);
 	}
 }
 

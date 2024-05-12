@@ -1371,6 +1371,25 @@ void P_ResetPitchRoll(mobj_t *mo)
 	mo->roll = 0;
 }
 
+//
+// P_MoveFactorFromFriction
+//
+fixed_t P_MoveFactorFromFriction(fixed_t friction)
+{
+	fixed_t ret = FixedDiv(ORIG_FRICTION, friction);
+
+	if (ret < FRACUNIT)
+	{
+		ret = 19*ret - 18*FRACUNIT;
+	}
+	else
+	{
+		ret = FRACUNIT;
+	}
+
+	return ret;
+}
+
 #define STOPSPEED (FRACUNIT)
 
 //
