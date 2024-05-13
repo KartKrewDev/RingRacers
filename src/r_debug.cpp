@@ -41,12 +41,33 @@ void R_CheckDebugHighlight(debugrender_highlight_t k)
 
 INT32 R_AdjustLightLevel(INT32 light)
 {
-	constexpr fixed_t kRange = (LIGHTLEVELS - 1) * FRACUNIT;
+	constexpr INT32 kRangeCoarse = (LIGHTLEVELS - 1);
+	constexpr fixed_t kRange = kRangeCoarse * FRACUNIT;
 
 	if (!debugrender_highlight && cv_debugrender_contrast.value == 0)
 	{
-		const fixed_t darken = FixedMul(FixedMul(g_darkness.value[R_GetViewNumber()], mapheaderinfo[gamemap-1]->darkness), kRange);
-		return std::clamp<size_t>((light * FRACUNIT) - darken, 0, kRange) / FRACUNIT;
+		const fixed_t darken = FixedMul(
+			FixedMul(
+				g_darkness.value[ R_GetViewNumber() ],
+				mapheaderinfo[gamemap-1]->darkness
+			),
+			kRange
+		);
+
+		fixed_t factor = FRACUNIT;
+		if (darken > 0)
+		{
+			// Sal: Already dark areas don't need darkened nearly as much.
+			factor = FixedDiv(
+				light * light * light * light,
+				kRangeCoarse * kRangeCoarse * kRangeCoarse * kRangeCoarse
+			);
+		}
+
+		return std::clamp<size_t>(
+			(light * FRACUNIT) - FixedMul(darken, factor),
+			0, kRange
+		) / FRACUNIT;
 	}
 
 	const fixed_t adjust = FixedMul(cv_debugrender_contrast.value, kRange);
