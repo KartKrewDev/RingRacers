@@ -174,7 +174,9 @@ if(NOT "${SRB2_GIT_DIR}" STREQUAL "" AND "${SRB2_SDL2_EXE_NAME}" STREQUAL "")
 	list(APPEND EXE_NAME_PARTS "ringracers")
 
 	if(NOT "${SRB2_GIT_REVISION}" STREQUAL "master")
-		list(APPEND EXE_NAME_PARTS ${SRB2_GIT_REVISION})
+		# substitute path-unsafe characters
+		string(REGEX REPLACE "[\\\/\^\$]" "_" SAFE_REVISION "${SRB2_GIT_REVISION}")
+		list(APPEND EXE_NAME_PARTS ${SAFE_REVISION})
 	endif()
 
 	if (SRB2_CONFIG_TESTERS)
