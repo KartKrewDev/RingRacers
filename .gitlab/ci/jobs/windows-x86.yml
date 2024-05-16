@@ -16,7 +16,7 @@ Windows x86:
 
     - key: apt-$CI_JOB_IMAGE
       paths:
-        - apt-cache
+        - build/apt-cache
       unprotect: true
 
     - key: vcpkg-root
