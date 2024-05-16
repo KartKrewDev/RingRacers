@@ -611,7 +611,7 @@ add_subdirectory(modp_b64)
 # strip debug symbols into separate file when using gcc.
 # to be consistent with Makefile, don't generate for OS X.
 if((CMAKE_COMPILER_IS_GNUCC) AND NOT ("${CMAKE_SYSTEM_NAME}" MATCHES Darwin))
-	if(${CMAKE_BUILD_TYPE} MATCHES RelWithDebInfo)
+	if(${CMAKE_BUILD_TYPE} MATCHES RelWithDebInfo OR SRB2_CONFIG_ALWAYS_MAKE_DEBUGLINK)
 		message(STATUS "Will make separate debug symbols in *.debug")
 		add_custom_command(TARGET SRB2SDL2 POST_BUILD
 			COMMAND ${OBJCOPY} ${OBJCOPY_ONLY_KEEP_DEBUG} $<TARGET_FILE:SRB2SDL2> $<TARGET_FILE:SRB2SDL2>.debug
