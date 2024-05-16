@@ -1,0 +1,42 @@
+Alpine 3 GCC Dedicated:
+  extends: Alpine 3 GCC
+
+  artifacts:
+    paths:
+      - "build.alpine3ded/bin/"
+      - "build.alpine3ded/src/config.h"
+    expose_as: "Apline-3-Dedicated"
+    name: "$CI_PROJECT_PATH_SLUG-$CI_COMMIT_REF_SLUG-$CI_COMMIT_SHORT_SHA-Apline-3-Dedicated"
+
+  script:
+    - - |
+          # apk_toolchain
+          echo -e "\e[0Ksection_start:`date +%s`:apk_toolchain[collapsed=true]\r\e[0KInstalling toolchain packages"
+      - apk add gcc
+      - |
+          # apk_toolchain
+          echo -e "\e[0Ksection_end:`date +%s`:apk_toolchain\r\e[0K"
+
+    - - |
+          # apk_development
+          echo -e "\e[0Ksection_start:`date +%s`:apk_development[collapsed=true]\r\e[0KInstalling development packages"
+      - apk add musl-dev libpng-dev curl-dev
+      - |
+          # apk_development
+          echo -e "\e[0Ksection_end:`date +%s`:apk_development\r\e[0K"
+
+    - - |
+          # cmake
+          echo -e "\e[0Ksection_start:`date +%s`:cmake[collapsed=false]\r\e[0KBuilding Makefiles"
+      - cmake -B build.alpine3ded -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF -G "Unix Makefiles"
+      - |
+          # cmake
+          echo -e "\e[0Ksection_end:`date +%s`:cmake\r\e[0K"
+
+    - - |
+          # make
+          echo -e "\e[0Ksection_start:`date +%s`:make[collapsed=false]\r\e[0KCompiling SRB2"
+      - make --directory=build.alpine3ded --keep-going || make --directory=build.alpine3ded --keep-going
+      - |
+          # make
+          echo -e "\e[0Ksection_end:`date +%s`:make\r\e[0K"

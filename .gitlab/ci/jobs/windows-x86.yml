@@ -1,0 +1,60 @@
+Windows x86:
+  extends: .srb2ci
+
+  stage: build
+
+  when: on_success
+
+  artifacts:
+    paths:
+      - "build/ninja-x86_mingw_static_vcpkg-debug/bin/"
+      - "build/ninja-x86_mingw_static_vcpkg-debug/src/config.h"
+    expose_as: "Win32"
+    name: "$CI_PROJECT_PATH_SLUG-$CI_COMMIT_REF_SLUG-$CI_COMMIT_SHORT_SHA-Win32"
+
+  variables:
+    PREFIX: i686-w64-mingw32
+    CC: /usr/bin/i686-w64-mingw32-gcc-posix
+    CXX: /usr/bin/i686-w64-mingw32-g++-posix
+
+  script:
+    - - |
+          # apt_toolchain
+          echo -e "\e[0Ksection_start:`date +%s`:apt_toolchain[collapsed=true]\r\e[0KInstalling toolchain packages"
+      - apt-get install gcc-mingw-w64-i686-win32
+      - |
+          # apt_toolchain
+          echo -e "\e[0Ksection_end:`date +%s`:apt_toolchain\r\e[0K"
+
+    - - |
+          # apt_development
+          echo -e "\e[0Ksection_start:`date +%s`:apt_development[collapsed=true]\r\e[0KInstalling development packages"
+      - apt-get install ninja-build
+      - |
+          # apt_development
+          echo -e "\e[0Ksection_end:`date +%s`:apt_development\r\e[0K"
+
+    - - |
+          # vcpkg_update
+          echo -e "\e[0Ksection_start:`date +%s`:vcpkg_update[collapsed=true]\r\e[0KUpdating vcpkg"
+      - git -C $VCPKG_ROOT pull
+      - |
+          # vcpkg_update
+          echo -e "\e[0Ksection_end:`date +%s`:vcpkg_update\r\e[0K"
+
+    - - |
+          # cmake
+          echo -e "\e[0Ksection_start:`date +%s`:cmake[collapsed=false]\r\e[0KBuilding Makefiles"
+      - cmake --preset ninja-x86_mingw_static_vcpkg-debug -DVCPKG_TARGET_TRIPLET=x86-mingw-static -DCMAKE_C_COMPILER=/usr/bin/i686-w64-mingw32-gcc-posix -DCMAKE_CXX_COMPILER=/usr/bin/i686-w64-mingw32-g++-posix -G "Unix Makefiles" -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/toolchains/mingw.cmake
+
+      - |
+          # cmake
+          echo -e "\e[0Ksection_end:`date +%s`:cmake\r\e[0K"
+
+    - - |
+          # make
+          echo -e "\e[0Ksection_start:`date +%s`:make[collapsed=false]\r\e[0KCompiling SRB2"
+      - cmake --build --preset ninja-x86_mingw_static_vcpkg-debug --parallel 1 -- --keep-going || cmake --build --preset ninja-x86_mingw_static_vcpkg-debug --parallel 1 -- --keep-going
+      - |
+          # make
+          echo -e "\e[0Ksection_end:`date +%s`:make\r\e[0K"
