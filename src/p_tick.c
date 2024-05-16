@@ -1355,10 +1355,10 @@ void P_Ticker(boolean run)
 		K_TickMessages();
 	}
 
-	LUA_HOOK(PostThinkFrame);
-
 	if (run)
 	{
+		LUA_HOOK(PostThinkFrame);
+
 		R_UpdateLevelInterpolators();
 
 		// Hack: ensure newview is assigned every tic.
