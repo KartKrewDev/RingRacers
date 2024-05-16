@@ -39,7 +39,13 @@ Debian stable:amd64:
     - - |
           # cmake
           echo -e "\e[0Ksection_start:`date +%s`:cmake[collapsed=false]\r\e[0KBuilding Makefiles"
-      - cmake -B build.cmake -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF -G "Unix Makefiles"
+      - |
+          CCACHE=$(which ccache)
+          cmake -B build.cmake \
+            -G "Unix Makefiles" \
+            -DCMAKE_C_COMPILER_LAUNCHER=$CCACHE \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=$CCACHE \
+            -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF
       - |
           # cmake
           echo -e "\e[0Ksection_end:`date +%s`:cmake\r\e[0K"
