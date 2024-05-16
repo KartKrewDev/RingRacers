@@ -92,7 +92,8 @@ Windows x86:
             -DCMAKE_CXX_COMPILER_LAUNCHER=$CCACHE \
             -DCMAKE_C_COMPILER=/usr/bin/i686-w64-mingw32-gcc-posix \
             -DCMAKE_CXX_COMPILER=/usr/bin/i686-w64-mingw32-g++-posix \
-            -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/toolchains/mingw.cmake
+            -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/toolchains/mingw.cmake \
+            -DSRB2_CONFIG_ALWAYS_MAKE_DEBUGLINK=ON
 
       - |
           # cmake
