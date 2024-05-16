@@ -5762,8 +5762,26 @@ static void CL_SendClientCmd(void)
 				spike_time = 0;
 			}
 
+			/*
 			if (server) // Clients have to wait for the gamestate to make it back. Servers don't!
 				lagDelay *= 2; // Simulate the HELLFUCK NIGHTMARE of a complete round trip.
+			*/
+
+			// [deep breath in]
+			// Plausible, elegant explanation that is WRONG AND SUPER HARMFUL.
+			// Clients with stable connections were adding their mindelay to network delay,
+			// even when their mindelay was as high or higher than network delay—which made
+			// client delay APPEAR slower than host mindelay, by the exact value that made
+			// "lmao just double it" make sense at the time.
+			//
+			// While this fix made client connections match server mindelay in our most common
+			// test environment, it also masked an issue that seriously affected online handling
+			// responsiveness, completely ruining our opportunity to further investigate it!
+			//
+			// See UpdatePingTable.
+			// I am taking this shitty code to my grave as an example of "never trust your brain".
+			// -Tyron 2024-05-15
+
 		}
 
 		packetsize = sizeof (clientcmd_pak);
@@ -6335,8 +6353,15 @@ static void UpdatePingTable(void)
 	}
 	else // We're a client, handle mindelay on the way out.
 	{
-		if ((neededtic - gametic) < (tic_t)cv_mindelay.value)
-			lowest_lag = cv_mindelay.value - (neededtic - gametic);
+		// Previously (neededtic - gametic) - WRONG VALUE!
+		// Pretty sure that's measuring jitter, not RTT.
+		// Stable connections would be punished by adding their mindelay to network delay!
+		tic_t mydelay = playerpingtable[consoleplayer];
+
+		if (mydelay < (tic_t)cv_mindelay.value)
+			lowest_lag = cv_mindelay.value - mydelay;
+		else
+			lowest_lag = 0;
 	}
 }
 
