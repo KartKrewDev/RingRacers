@@ -447,10 +447,8 @@ FUNCNORETURN static ATTRNORETURN void signal_handler(INT32 num)
 	write_backtrace(num);
 #endif
 	I_ReportSignal(num, 0);
-	I_ShutdownSystem();
 	signal(num, SIG_DFL);               //default signal action
 	raise(num);
-	I_Quit();
 }
 #endif
 
