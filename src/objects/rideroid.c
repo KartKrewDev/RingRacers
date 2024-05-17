@@ -540,7 +540,7 @@ void Obj_RideroidNodeThink(mobj_t *mo)
 	// check for players coming near us.
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (!playeringame[i] || players[i].spectator || players[i].rideroid ||
+		if (!playeringame[i] || players[i].spectator || players[i].rideroid || players[i].respawn.state != RESPAWNST_NONE ||
 		players[i].rdnodepull || K_isPlayerInSpecialState(&players[i]) || P_PlayerInPain(&players[i]))
 			continue;
 
