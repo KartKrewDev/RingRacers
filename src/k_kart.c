@@ -13624,20 +13624,23 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				const angle_t angledelta = FixedAngle(36*FRACUNIT);
 				angle_t baseangle = player->mo->angle + angledelta/2;
 
-				INT16 aimingcompare = abs(cmd->throwdir) - abs(cmd->turning);
+				// Old ambiguous-input filter, no longer needed for 2.2 tricks
+				// INT16 aimingcompare = abs(cmd->throwdir) - abs(cmd->turning);
+
+				boolean cantrick = true;
 
 				// 2.2 - Pre-steering trickpanels
 				if (!G_CompatLevel(0x000A) && !K_PlayerUsesBotMovement(player))
 				{
 					if (!(player->cmd.buttons & BT_ACCELERATE))
 					{
-						aimingcompare = 0;
+						cantrick = false;
 					}
 				}
 
 				// Uses cmd->turning over steering intentionally.
-#define TRICKTHRESHOLD (KART_FULLTURN/2)
-				if (aimingcompare < -TRICKTHRESHOLD) // side trick
+#define TRICKTHRESHOLD (2*KART_FULLTURN/3)
+				if (cantrick && abs(cmd->turning) > TRICKTHRESHOLD) // side trick
 				{
 					S_StartSoundAtVolume(player->mo, sfx_trick0, 255/2);
 					player->dotrickfx = true;
@@ -13676,7 +13679,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						P_SetPlayerMobjState(player->mo, S_KART_FAST_LOOK_R);
 					}
 				}
-				else if (aimingcompare > TRICKTHRESHOLD) // forward/back trick
+				else if (cantrick && abs(cmd->throwdir) > TRICKTHRESHOLD) // forward/back trick
 				{
 					S_StartSoundAtVolume(player->mo, sfx_trick0, 255/2);
 					player->dotrickfx = true;
