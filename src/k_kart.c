@@ -12528,7 +12528,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			player->instaWhipCharge = 0;
 		}
 
-		if (chargingwhip && K_PressingEBrake(player))
+		if (chargingwhip && (K_PressingEBrake(player) && player->drift == 0))
 		{
 			// 1) E-braking on the ground: cancels Insta-Whip.
 			//    Still lets you keep your Whip while fast-falling.
