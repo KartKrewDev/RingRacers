@@ -31,6 +31,7 @@
 #include "m_random.h"
 #include "r_things.h" // numskins
 #include "k_roulette.h"
+#include "m_easing.h"
 
 /*--------------------------------------------------
 	static inline boolean K_ItemButtonWasDown(const player_t *player)
@@ -1193,7 +1194,10 @@ static void K_BotItemLightning(const player_t *player, ticcmd_t *cmd)
 {
 	ZoneScoped;
 
-	if (K_BotUseItemNearPlayer(player, cmd, 192*player->mo->scale) == false)
+	fixed_t radius = 192 * player->mo->scale;
+	radius = Easing_Linear(FRACUNIT * player->botvars.difficulty / MAXBOTDIFFICULTY, 2*radius, radius);
+
+	if (K_BotUseItemNearPlayer(player, cmd, radius) == false)
 	{
 		if (player->botvars.itemconfirm > 10*TICRATE)
 		{
@@ -1232,7 +1236,8 @@ static void K_BotItemBubble(const player_t *player, ticcmd_t *cmd)
 
 		if (player->bubblecool <= 0)
 		{
-			const fixed_t radius = 192 * player->mo->scale;
+			fixed_t radius = 192 * player->mo->scale;
+			radius = Easing_Linear(FRACUNIT * player->botvars.difficulty / MAXBOTDIFFICULTY, 2*radius, radius);
 
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
