@@ -8647,12 +8647,20 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			// GROSS. In order to have a transparent version of this for a splitscreen local player, we actually need to spawn two!
 			for (doubler = 0; doubler < 2; doubler++)
 			{
+				fixed_t heightOffset = player->mo->height + (24*player->mo->scale);
+				if (P_IsObjectFlipped(player->mo)) 
+				{
+					// This counteracts the offset added by K_FlipFromObject so it looks seamless from non-flipped.
+					heightOffset += player->mo->height - FixedMul(player->mo->scale, player->mo->height);
+					heightOffset *= P_MobjFlip(player->mo); // Fleep.
+				}
+				
 				mobj_t *debtflag = P_SpawnMobj(player->mo->x + player->mo->momx, player->mo->y + player->mo->momy,
-					player->mo->z + P_GetMobjZMovement(player->mo) + player->mo->height + (24*player->mo->scale), MT_THOK);
+					player->mo->z + P_GetMobjZMovement(player->mo) + heightOffset, MT_THOK);
 
 				debtflag->old_x = player->mo->old_x;
 				debtflag->old_y = player->mo->old_y;
-				debtflag->old_z = player->mo->old_z + P_GetMobjZMovement(player->mo) + player->mo->height + (24*player->mo->scale);
+				debtflag->old_z = player->mo->old_z + P_GetMobjZMovement(player->mo) + heightOffset;
 
 				P_SetMobjState(debtflag, S_RINGDEBT);
 				P_SetScale(debtflag, (debtflag->destscale = player->mo->scale));
