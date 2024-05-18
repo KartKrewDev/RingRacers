@@ -171,6 +171,23 @@ static SDL_bool Impl_CreateWindow(SDL_bool fullscreen);
 //static void Impl_SetWindowName(const char *title);
 static void Impl_SetWindowIcon(void);
 
+static void ValidateDisplay(void)
+{
+	// Validate display index, otherwise use main display
+	if (cv_display.value >= SDL_GetNumVideoDisplays())
+	{
+		CV_SetValue(&cv_display, 0);
+	}
+}
+
+static void CenterWindow(void)
+{
+	SDL_SetWindowPosition(window,
+		SDL_WINDOWPOS_CENTERED_DISPLAY(cv_display.value),
+		SDL_WINDOWPOS_CENTERED_DISPLAY(cv_display.value)
+	);
+}
+
 static void SDLSetMode(int width, int height, SDL_bool fullscreen, SDL_bool reposition)
 {
 	static SDL_bool wasfullscreen = SDL_FALSE;
@@ -182,6 +199,14 @@ static void SDLSetMode(int width, int height, SDL_bool fullscreen, SDL_bool repo
 	{
 		if (fullscreen)
 		{
+			if (reposition)
+			{
+				ValidateDisplay();
+				if (SDL_GetWindowDisplayIndex(window) != cv_display.value)
+				{
+					CenterWindow();
+				}
+			}
 			wasfullscreen = SDL_TRUE;
 			SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
 		}
@@ -196,10 +221,8 @@ static void SDLSetMode(int width, int height, SDL_bool fullscreen, SDL_bool repo
 			SDL_SetWindowSize(window, width, height);
 			if (reposition)
 			{
-				SDL_SetWindowPosition(window,
-					SDL_WINDOWPOS_CENTERED_DISPLAY(SDL_GetWindowDisplayIndex(window)),
-					SDL_WINDOWPOS_CENTERED_DISPLAY(SDL_GetWindowDisplayIndex(window))
-				);
+				ValidateDisplay();
+				CenterWindow();
 			}
 		}
 	}
@@ -503,6 +526,9 @@ static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 		case SDL_WINDOWEVENT_SIZE_CHANGED:
 			vid.realwidth = evt.data1;
 			vid.realheight = evt.data2;
+			break;
+		case SDL_WINDOWEVENT_DISPLAY_CHANGED:
+			CV_SetValue(&cv_display, evt.data1);
 			break;
 	}
 
