@@ -11636,7 +11636,7 @@ void K_KartEbrakeVisuals(player_t *p)
 	{
 		if (p->ebrakefor % 20 == 0)
 		{
-			wave = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->floorz, MT_SOFTLANDING);
+			wave = P_SpawnMobj(p->mo->x, p->mo->y, P_GetMobjGround(p->mo), MT_SOFTLANDING);
 			P_InstaScale(wave, p->mo->scale);
 			P_SetTarget(&wave->target, p->mo);
 			P_SetTarget(&wave->owner, p->mo);

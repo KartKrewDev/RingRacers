@@ -10552,8 +10552,8 @@ void P_SceneryThinker(mobj_t *mobj)
 		if (!P_MobjWasRemoved(mobj->target))
 		{
 			// Cast like a shadow on the ground
-			P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->floorz);
-			mobj->standingslope = mobj->target->standingslope;
+			P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, P_GetMobjGround(mobj->target));
+			mobj->standingslope = P_IsObjectOnGround(mobj->target) ? mobj->target->standingslope : NULL;
 
 			if (!P_IsObjectOnGround(mobj->target) && mobj->target->momz < -24 * mapobjectscale)
 			{
