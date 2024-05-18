@@ -1736,11 +1736,7 @@ void I_Error(const char *error, ...)
 		if (errorcount == 7)
 			SDL_Quit();
 		if (errorcount == 8)
-		{
-			M_SaveConfig(NULL);
-			G_DirtyGameData(); // done first in case an error is in G_SaveGameData
-			G_SaveGameData();
-		}
+			G_DirtyGameData();
 		if (errorcount > 20)
 		{
 			va_start(argptr, error);
@@ -1774,9 +1770,10 @@ void I_Error(const char *error, ...)
 	I_OutputMsg("\nI_Error(): %s\n", buffer);
 	// ---
 
-	M_SaveConfig(NULL); // save game config, cvars..
-	G_DirtyGameData(); // done first in case an error is in G_SaveGameData
-	G_SaveGameData(); // Tails 12-08-2002
+	// FUCK OFF, stop allocating memory to write entire gamedata & configs
+	// when the program needs to shut down ASAP and we already save
+	// these all the time! Just set the dirty bit and GET OUT!
+	G_DirtyGameData();
 
 	// Shutdown. Here might be other errors.
 
