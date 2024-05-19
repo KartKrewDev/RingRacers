@@ -88,6 +88,9 @@ static void M_AddFloatVar(consvar_t *cv, fixed_t step)
 
 	const CV_PossibleValue_t *values = cv->PossibleValue;
 
+	if (values == NULL) //cvar is unbounded and will not work! return is here only as a failsafe to prevent crashes
+		return;
+
 	for (i = 0; values[i].strvalue; ++i)
 	{
 		if (cv->value == values[i].value)
@@ -220,7 +223,7 @@ static void M_ChangeCvar(INT32 choice)
 			"Turning on Auto Roulette",
 			"\"Ring Racers\" is not designed with random items in mind. With Auto Roulette, you cannot select the item results you want or select an item early."
 			"\n"
-			"You will be at a distinct \x85" "disadvantage. \x80\n" 
+			"You will be at a distinct \x85" "disadvantage. \x80\n"
 			"\n"
 			"ARE YOU SURE?",
 			M_ChangeCvarResponse,
