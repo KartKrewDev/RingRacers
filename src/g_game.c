@@ -358,7 +358,7 @@ void G_ClearRecords(void)
 
 	// TODO: Technically, these should only remove time attack records here.
 	// But I'm out of juice for dev (+ literally, just finished some OJ).
-	// The stats need to be cleared in M_ClearStats, and I guess there's 
+	// The stats need to be cleared in M_ClearStats, and I guess there's
 	// no perfect place to wipe mapvisited because it's not actually part of
 	// basegame progression... so here's fine for launch.  ~toast 100424
 	unloaded_mapheader_t *unloadedmap, *nextunloadedmap = NULL;
@@ -652,7 +652,7 @@ static void G_UpdateRecordReplays(void)
 	}
 }
 
-// for consistency among messages: this modifies the game and removes savemoddata.
+// for consistency among messages: this marks the game as modified.
 void G_SetGameModified(boolean silent, boolean major)
 {
 	if ((majormods && modifiedgame) || !mainwads || (refreshdirmenu & REFRESHDIR_GAMEDATA)) // new gamedata amnesty?
@@ -665,9 +665,6 @@ void G_SetGameModified(boolean silent, boolean major)
 
 	//savemoddata = false; -- there is literally no reason to do this anymore.
 	majormods = true;
-
-	if (!silent)
-		CONS_Alert(CONS_NOTICE, M_GetText("Game must be restarted to play Record Attack.\n"));
 
 	// If in record attack recording, cancel it.
 	if (modeattacking)
