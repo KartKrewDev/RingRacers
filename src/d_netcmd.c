@@ -6461,14 +6461,12 @@ void Command_Retry_f(void)
   */
 static void Command_Isgamemodified_f(void)
 {
-	if (majormods)
-		CONS_Printf("The game has been modified with major addons, so you cannot play Record Attack.\n");
-	else if (savemoddata)
-		CONS_Printf("The game has been modified with an addon with its own save data, so you can play Record Attack and earn medals.\n");
+	if (savemoddata)
+		CONS_Printf("The game has been modified with an addon using its own save data.\n");
 	else if (modifiedgame)
-		CONS_Printf("The game has been modified with only minor addons. You can play Record Attack, earn medals and unlock extras.\n");
+		CONS_Printf("The game has been modified, but is still using Ring Racers save data.\n");
 	else
-		CONS_Printf("The game has not been modified. You can play Record Attack, earn medals and unlock extras.\n");
+		CONS_Printf("The game has not been modified.\n");
 }
 
 #ifdef _DEBUG
