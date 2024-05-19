@@ -9273,6 +9273,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			for(i = 0;i < 5;i++)
 			{
 				mobj_t *aura = P_SpawnMobjFromMobj(player->mo, 0, 0, player->mo->height/2, MT_CHARGEAURA);
+				aura->eflags &= ~MFE_VERTICALFLIP;
 				aura->angle = player->mo->angle + i*ANG15;
 				P_SetTarget(&aura->target, player->mo);
 				if (i == 0)
@@ -13632,7 +13633,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 			// debug shit
 			//CONS_Printf("%d\n", player->mo->momz / mapobjectscale);
-			if (momz < -10*FRACUNIT)	// :youfuckedup:
+			if (momz * P_MobjFlip(player->mo) < -10*FRACUNIT)	// :youfuckedup:
 			{
 				// tumble if you let your chance pass!!
 				player->tumbleBounces = 1;
