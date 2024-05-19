@@ -428,7 +428,7 @@ static void I_ReportSignal(int num, int coredumped)
 }
 
 #ifndef NEWSIGNALHANDLER
-FUNCNORETURN static ATTRNORETURN void signal_handler(INT32 num)
+static ATTRNORETURN void signal_handler(INT32 num)
 {
 	g_in_exiting_signal_handler = true;
 
