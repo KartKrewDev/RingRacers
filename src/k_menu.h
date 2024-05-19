@@ -1213,6 +1213,7 @@ extern struct extrasmenu_s {
 typedef enum
 {
 	extras_addons = 0,
+	extras_manual,
 	extras_tutorial,
 	extras_challenges,
 	extras_statistics,

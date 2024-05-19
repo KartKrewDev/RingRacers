@@ -309,6 +309,10 @@ void I_RegisterSysCommands(void);
 
 void I_CursedWindowMovement(int xd, int yd);
 
+boolean I_HasOpenURL(void);
+
+void I_OpenURL(const char *data);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
