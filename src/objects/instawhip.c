@@ -81,7 +81,8 @@ void Obj_InstaWhipRechargeThink(mobj_t *x)
 	}
 
 	P_MoveOrigin(x, target->x, target->y, target->z + (target->height / 2));
-	P_InstaScale(x, 2 * target->scale);
+	if (x->scale != target->scale * 2)
+		P_InstaScale(x, target->scale * 2);
 	x->angle = target->angle + recharge_offset(x);
 
 	// Flickers every other frame
