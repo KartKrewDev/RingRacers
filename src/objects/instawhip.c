@@ -59,7 +59,7 @@ void Obj_InstaWhipThink (mobj_t *whip)
 
 void Obj_SpawnInstaWhipRecharge(player_t *player, angle_t angleOffset)
 {
-	mobj_t *x = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_INSTAWHIP_RECHARGE);
+	mobj_t *x = P_SpawnMobjFromMobj(player->mo, 0, 0, player->mo->height / 2, MT_INSTAWHIP_RECHARGE);
 
 	// This was previously used to delay the visual, back when this was VFX for a cooldown
 	// instead of VFX for a charge. We want to instantly bail out of that state now.
