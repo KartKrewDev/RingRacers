@@ -9162,6 +9162,16 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->hyudorotimer)
 		player->hyudorotimer--;
 
+	if (player->bumpUnstuck > 30*5)
+	{
+		player->bumpUnstuck = 0;
+		K_DoIngameRespawn(player);
+	}
+	else if (player->bumpUnstuck)
+	{
+		player->bumpUnstuck--;
+	}
+
 	if (player->fakeBoost)
 		player->fakeBoost--;
 
