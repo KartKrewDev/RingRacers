@@ -44,12 +44,12 @@ static void M_Manual(INT32 choice)
 
 	if (I_HasOpenURL())
 	{
-		M_StartMessage("Online Manual", "This will open a webpage in your default browser.", M_ManualSelect, MM_YESNO, "Let's go!", "Not now...");
+		M_StartMessage("Online Manual", va("This will open a page in your default browser:\n\x86%s", manual_url), M_ManualSelect, MM_YESNO, "Let's go!", "Not now...");
 	}
 	else
 	{
 		I_ClipboardCopy(manual_url, strlen(manual_url));
-		M_StartMessage("Online Manual", "A URL has been copied to your clipboard!", NULL, MM_NOTHING, NULL, NULL);
+		M_StartMessage("Online Manual", va("A URL has been copied to your clipboard:\n\x86%s", manual_url), NULL, MM_NOTHING, NULL, NULL);
 	}
 }
 
