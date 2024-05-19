@@ -12617,7 +12617,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	// if a player picks up an item during the instawhip input safety window—the one that triggers
 	// after you burn to 0 rings—they can continue to hold the input, then charge a usable whip
 	// without stopping the roulette and acquiring an item, which cancels it.
-	// 
+	//
 	// No ghosts use this technique, but your least favorite tournament player might.
 	if (player->itemRoulette.active)
 	{
@@ -13279,7 +13279,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 										player->itemamount--;
 										K_ThrowKartItem(player, (player->throwdir > 0), MT_BUBBLESHIELDTRAP, -1, 0, 0);
 										if (player->throwdir == -1)
-										{		
+										{
 											P_InstaThrust(player->mo, player->mo->angle, player->speed + (80 * mapobjectscale));
 											player->wavedashboost += TICRATE;
 											player->wavedashpower = FRACUNIT;
@@ -13362,7 +13362,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 											player->mo, player->mo->angle,
 											FixedMul((50*player->mo->scale), K_GetKartGameSpeedScalar(gamespeed))
 										);
-										
+
 										player->wavedashboost += TICRATE;
 										player->wavedashpower = FRACUNIT;
 										player->fakeBoost = TICRATE/3;
@@ -13596,7 +13596,13 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 			// We'll never need to go above that.
 			if (player->tricktime <= TRICKDELAY)
+			{
+				// 2.3 - Prevent accidental fastfalls during trickdelay
+				if (!G_CompatLevel(0x000C))
+					player->pflags |= PF_NOFASTFALL;
+
 				player->tricktime++;
+			}
 
 			// debug shit
 			//CONS_Printf("%d\n", player->mo->momz / mapobjectscale);
@@ -13624,14 +13630,20 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				const angle_t angledelta = FixedAngle(36*FRACUNIT);
 				angle_t baseangle = player->mo->angle + angledelta/2;
 
+				UINT16 buttons = player->cmd.buttons;
 				INT16 aimingcompare = abs(cmd->throwdir) - abs(cmd->turning);
 
 				// 2.2 - Pre-steering trickpanels
 				if (!G_CompatLevel(0x000A) && !K_PlayerUsesBotMovement(player))
 				{
-					if (!(player->cmd.buttons & BT_ACCELERATE))
+					if (!(buttons & BT_ACCELERATE))
 					{
 						aimingcompare = 0;
+					}
+					// 2.3 - also allow tricking with the Spindash button
+					else if (!G_CompatLevel(0x000C) && ((buttons & BT_SPINDASHMASK) == BT_SPINDASHMASK))
+					{
+						player->pflags |= PF_NOFASTFALL;
 					}
 				}
 
@@ -13877,9 +13889,22 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		}
 		else
 		{
-			if ((player->pflags & PF_TRICKDELAY) && !(player->cmd.buttons & BT_ACCELERATE) && (player->tricktime >= TRICKDELAY))
+			if (G_CompatLevel(0x000C))
 			{
-				player->pflags &= ~PF_TRICKDELAY;
+				if ((player->pflags & PF_TRICKDELAY) && !(player->cmd.buttons & BT_ACCELERATE) && (player->tricktime >= TRICKDELAY))
+				{
+					player->pflags &= ~PF_TRICKDELAY;
+				}
+			}
+			else
+			// 2.3 - Spindash to trick
+			{
+				// Ignore pre-existing Accel inputs if not pressing Spindash. Always ignore pre-existing Spindash inputs to prevent accidental tricking.
+				if ((player->pflags & PF_TRICKDELAY) && (!(player->cmd.buttons & BT_ACCELERATE) || (((player->cmd.buttons & BT_SPINDASHMASK) == BT_SPINDASHMASK) && (player->oldcmd.buttons & BT_SPINDASHMASK) != BT_SPINDASHMASK)) && (player->tricktime >= TRICKDELAY))
+				{
+					player->pflags &= ~PF_TRICKDELAY;
+					player->pflags |= PF_NOFASTFALL;
+				}
 			}
 		}
 
