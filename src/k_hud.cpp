@@ -2148,6 +2148,12 @@ void K_DrawKartPositionNumXY(
 		boolean exit, boolean lastLap, boolean losing
 	)
 {
+	if (cv_reducevfx.value != 0)
+	{
+		// Reduce the flashing rate
+		counter /= 4;
+	}
+
 	counter /= 3; // Alternate colors every three frames
 
 	UINT8 *color = NULL;
