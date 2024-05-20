@@ -1027,6 +1027,7 @@ void I_OpenURL(const char *data)
 	#if (SDL_VERSION_ATLEAST(2, 0, 14))
 		SDL_OpenURL(data);
 	#else
+		(void)data;
 		return;
 	#endif
 }
