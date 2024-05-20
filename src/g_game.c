@@ -655,6 +655,8 @@ static void G_UpdateRecordReplays(void)
 // for consistency among messages: this marks the game as modified.
 void G_SetGameModified(boolean silent, boolean major)
 {
+	(void)silent;
+
 	if ((majormods && modifiedgame) || !mainwads || (refreshdirmenu & REFRESHDIR_GAMEDATA)) // new gamedata amnesty?
 		return;
 
