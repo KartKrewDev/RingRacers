@@ -13635,6 +13635,16 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 				boolean cantrick = true;
 				UINT16 buttons = player->cmd.buttons;
+				INT16 TRICKTHRESHOLD = 2*KART_FULLTURN/3;
+
+				// 2.3 - aimingcompare
+				if (!!G_CompatLevel(0x000C))
+				{
+					TRICKTHRESHOLD = KART_FULLTURN/2;
+					INT16 aimingcompare = abs(cmd->throwdir) - abs(cmd->turning);
+					if (abs(aimingcompare) < TRICKTHRESHOLD)
+						cantrick = false;
+				}
 
 				// 2.2 - Pre-steering trickpanels
 				if (!G_CompatLevel(0x000A) && !K_PlayerUsesBotMovement(player))
@@ -13651,7 +13661,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				}
 
 				// Uses cmd->turning over steering intentionally.
-#define TRICKTHRESHOLD (2*KART_FULLTURN/3)
 				if (cantrick && abs(cmd->turning) > TRICKTHRESHOLD) // side trick
 				{
 					S_StartSoundAtVolume(player->mo, sfx_trick0, 255/2);
@@ -13743,7 +13752,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						P_SetPlayerMobjState(player->mo, S_KART_FAST);
 					}
 				}
-#undef TRICKTHRESHOLD
 
 				// Finalise everything.
 				if (player->trickpanel != TRICKSTATE_READY) // just changed from 1?
