@@ -1024,7 +1024,11 @@ boolean I_HasOpenURL()
 
 void I_OpenURL(const char *data)
 {
-	SDL_OpenURL(data);
+	#if (SDL_VERSION_ATLEAST(2, 0, 14))
+		SDL_OpenURL(data);
+	#else
+		return;
+	#endif
 }
 
 //
