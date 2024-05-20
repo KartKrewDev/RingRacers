@@ -138,7 +138,7 @@ INT16 K_PowerLevelPlacementScore(player_t *player)
 
 INT16 K_CalculatePowerLevelAvg(void)
 {
-	fixed_t avg = 0;
+	INT32 avg = 0;
 	UINT8 div = 0;
 	SINT8 t = PWRLV_DISABLED;
 	UINT8 i;
@@ -166,7 +166,7 @@ INT16 K_CalculatePowerLevelAvg(void)
 			|| clientpowerlevels[i][t] == 0) // splitscreen player
 			continue;
 
-		avg += (clientpowerlevels[i][t] << FRACBITS);
+		avg += clientpowerlevels[i][t];
 		div++;
 	}
 
@@ -178,7 +178,7 @@ INT16 K_CalculatePowerLevelAvg(void)
 
 	avg /= div;
 
-	return (INT16)(avg >> FRACBITS);
+	return (INT16)avg;
 }
 
 void K_UpdatePowerLevels(player_t *player, UINT8 lap, boolean forfeit)

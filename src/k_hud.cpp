@@ -2148,6 +2148,12 @@ void K_DrawKartPositionNumXY(
 		boolean exit, boolean lastLap, boolean losing
 	)
 {
+	if (cv_reducevfx.value != 0)
+	{
+		// Reduce the flashing rate
+		counter /= 4;
+	}
+
 	counter /= 3; // Alternate colors every three frames
 
 	UINT8 *color = NULL;
@@ -5025,14 +5031,31 @@ static void K_drawKartStartBulbs(void)
 
 				bulbtic -= 14;
 
+				// Reduce VFX disables the bulb animation while still presenting this indicator
+
 				if (bulbtic > length)
 				{
 					bulbtic -= length;
-					patchnum = chillloop_animation[bulbtic % 2];
+
+					if (cv_reducevfx.value != 0)
+					{
+						patchnum = chillloop_animation[0];
+					}
+					else
+					{
+						patchnum = chillloop_animation[bulbtic % 2];
+					}
 				}
 				else
 				{
-					patchnum = loop_animation[bulbtic % 4];
+					if (cv_reducevfx.value != 0)
+					{
+						patchnum = loop_animation[0];
+					}
+					else
+					{
+						patchnum = loop_animation[bulbtic % 4];
+					}
 				}
 			}
 		}

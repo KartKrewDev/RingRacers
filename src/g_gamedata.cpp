@@ -287,15 +287,28 @@ void srb2::save_ng_gamedata()
 
 	std::string gamedataname_s {gamedatafilename};
 	fs::path savepath {fmt::format("{}/{}", srb2home, gamedataname_s)};
-	int random_number = rand();
-	fs::path tmpsavepath {fmt::format("{}/{}_{}.tmp", srb2home, gamedataname_s, random_number)};
+	fs::path baksavepath {fmt::format("{}/{}.bak", srb2home, gamedataname_s)};
 
 	json ngdata_json = ng;
 
+
+	if (fs::exists(savepath))
+	{
+		try
+		{
+			fs::rename(savepath, baksavepath);
+		}
+		catch (const fs::filesystem_error& ex)
+		{
+			CONS_Alert(CONS_ERROR, "Failed to record backup save. Not attempting to save. %s\n", ex.what());
+			return;
+		}
+	}
+
 	try
 	{
-		std::string tmpsavepathstring = tmpsavepath.string();
-		srb2::io::FileStream file {tmpsavepathstring, srb2::io::FileStreamMode::kWrite};
+		std::string savepathstring = savepath.string();
+		srb2::io::FileStream file {savepathstring, srb2::io::FileStreamMode::kWrite};
 
 		// The header is necessary to validate during loading.
 		srb2::io::write(static_cast<uint32_t>(GD_VERSION_MAJOR), file); // major
@@ -308,21 +321,11 @@ void srb2::save_ng_gamedata()
 	}
 	catch (const std::exception& ex)
 	{
-		CONS_Alert(CONS_ERROR, "NG Gamedata save failed: %s\n", ex.what());
+		CONS_Alert(CONS_ERROR, "NG Gamedata save failed. Check directory for a ringdata.dat.bak. %s\n", ex.what());
 	}
 	catch (...)
 	{
-		CONS_Alert(CONS_ERROR, "NG Gamedata save failed\n");
-	}
-
-	try
-	{
-		// Now that the save is written successfully, move it over the old save
-		fs::rename(tmpsavepath, savepath);
-	}
-	catch (const fs::filesystem_error& ex)
-	{
-		CONS_Alert(CONS_ERROR, "NG Gamedata save succeeded but did not replace old save successfully: %s\n", ex.what());
+		CONS_Alert(CONS_ERROR, "NG Gamedata save failed. Check directory for a ringdata.dat.bak.\n");
 	}
 }
 

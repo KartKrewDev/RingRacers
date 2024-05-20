@@ -860,7 +860,7 @@ consvar_t cv_ufo_health = OnlineCheat("ufo_health", "-1").min_max(-1, 100).descr
 consvar_t cv_botscanvote = ServerCheat("botscanvote", "No").yes_no();
 
 void Gravity_OnChange(void);
-consvar_t cv_gravity = ServerCheat("gravity", "0.8").floating_point().onchange(Gravity_OnChange).description("Change the default gravity"); // change DEFAULT_GRAVITY if you change this
+consvar_t cv_gravity = ServerCheat("gravity", "0.8").floating_point().min_max(0, 200*FRACUNIT).onchange(Gravity_OnChange).description("Change the default gravity"); // change DEFAULT_GRAVITY if you change this
 
 consvar_t cv_kartdebugcolorize = ServerCheat("debugcolorize", "Off").on_off().description("Show all colorized options on the HUD");
 consvar_t cv_kartdebugdirector = ServerCheat("debugdirector", "Off").on_off().description("Show director AI on the HUD");
