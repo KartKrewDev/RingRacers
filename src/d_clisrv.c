@@ -4727,8 +4727,7 @@ static void PT_Say(int node)
 
 	{
 		size_t i;
-		const size_t j = strlen(say.message);
-		for (i = 0; i < j; i++)
+		for (i = 0; i < sizeof say.message && say.message[i]; i++)
 		{
 			if (say.message[i] & 0x80)
 			{
