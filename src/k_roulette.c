@@ -1387,7 +1387,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 		{
 			presetlist = K_KartItemReelSPBAttack;
 		}
-		else if (gametype == GT_TUTORIAL)
+		else if (K_CanChangeRules(true) == false) // GT_TUTORIAL, time attack
 		{
 			presetlist = K_KartItemReelRingSneaker;
 		}
