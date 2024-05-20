@@ -13630,15 +13630,28 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				const angle_t angledelta = FixedAngle(36*FRACUNIT);
 				angle_t baseangle = player->mo->angle + angledelta/2;
 
+				// Old ambiguous-input filter, no longer needed for 2.2 tricks
+				// INT16 aimingcompare = abs(cmd->throwdir) - abs(cmd->turning);
+
+				boolean cantrick = true;
 				UINT16 buttons = player->cmd.buttons;
-				INT16 aimingcompare = abs(cmd->throwdir) - abs(cmd->turning);
+				INT16 TRICKTHRESHOLD = 2*KART_FULLTURN/3;
+
+				// 2.3 - aimingcompare
+				if (!!G_CompatLevel(0x000C))
+				{
+					TRICKTHRESHOLD = KART_FULLTURN/2;
+					INT16 aimingcompare = abs(cmd->throwdir) - abs(cmd->turning);
+					if (abs(aimingcompare) < TRICKTHRESHOLD)
+						cantrick = false;
+				}
 
 				// 2.2 - Pre-steering trickpanels
 				if (!G_CompatLevel(0x000A) && !K_PlayerUsesBotMovement(player))
 				{
 					if (!(buttons & BT_ACCELERATE))
 					{
-						aimingcompare = 0;
+						cantrick = false;
 					}
 					// 2.3 - also allow tricking with the Spindash button
 					else if (!G_CompatLevel(0x000C) && ((buttons & BT_SPINDASHMASK) == BT_SPINDASHMASK))
@@ -13648,8 +13661,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				}
 
 				// Uses cmd->turning over steering intentionally.
-#define TRICKTHRESHOLD (KART_FULLTURN/2)
-				if (aimingcompare < -TRICKTHRESHOLD) // side trick
+				if (cantrick && abs(cmd->turning) > TRICKTHRESHOLD) // side trick
 				{
 					S_StartSoundAtVolume(player->mo, sfx_trick0, 255/2);
 					player->dotrickfx = true;
@@ -13688,7 +13700,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						P_SetPlayerMobjState(player->mo, S_KART_FAST_LOOK_R);
 					}
 				}
-				else if (aimingcompare > TRICKTHRESHOLD) // forward/back trick
+				else if (cantrick && abs(cmd->throwdir) > TRICKTHRESHOLD) // forward/back trick
 				{
 					S_StartSoundAtVolume(player->mo, sfx_trick0, 255/2);
 					player->dotrickfx = true;
@@ -13740,7 +13752,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						P_SetPlayerMobjState(player->mo, S_KART_FAST);
 					}
 				}
-#undef TRICKTHRESHOLD
 
 				// Finalise everything.
 				if (player->trickpanel != TRICKSTATE_READY) // just changed from 1?
