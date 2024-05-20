@@ -1013,6 +1013,25 @@ I_CursedWindowMovement (int xd, int yd)
 	SDL_SetWindowPosition(window, window_x + xd, window_y + yd);
 }
 
+boolean I_HasOpenURL()
+{
+	#if (SDL_VERSION_ATLEAST(2, 0, 14))
+		return true;
+	#else
+		return false;
+	#endif
+}
+
+void I_OpenURL(const char *data)
+{
+	#if (SDL_VERSION_ATLEAST(2, 0, 14))
+		SDL_OpenURL(data);
+	#else
+		(void)data;
+		return;
+	#endif
+}
+
 //
 // I_JoyScale
 //

@@ -195,5 +195,15 @@ void I_GetCursorPosition(INT32 *x, INT32 *y)
 	(void)y;
 }
 
+boolean I_HasOpenURL()
+{
+	return 0;
+}
+
+void I_OpenURL(const char *data)
+{
+	return;
+}
+
 #include "../sdl/dosstr.c"
 
