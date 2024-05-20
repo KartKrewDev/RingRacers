@@ -791,9 +791,6 @@ consvar_t cv_votetime = UnsavedNetVar("votetime", "20").min_max(10, 3600);
 // Cheats don't save...
 //
 
-consvar_t cv_4thgear = OnlineCheat("4thgear", "Off").values(CV_OnOff).flags(CV_NOSHOWHELP).description("Surpassing your limits!");
-consvar_t cv_levelskull = OnlineCheat("levelskull", "Off").values(CV_OnOff).flags(CV_NOSHOWHELP).description("What Storm Rig looked like 2 months before 2.0");
-
 consvar_t cv_barriertime = OnlineCheat("barriertime", "30").values(CV_Natural).description("How long it takes for the Barrier to shrink in Battle Overtime");
 consvar_t cv_battlespawn = OnlineCheat("battlespawn", "0").values(CV_Unsigned).description("Spawn every player at the same spawnpoint in Battle (0 = random spawns)");
 consvar_t cv_battletest = OnlineCheat("battletest", "Off").on_off().description("Free Play goes to Battle instead of Prisons");
@@ -926,6 +923,8 @@ consvar_t cv_renderhitbox = PlayerCheat("renderhitbox", "Off").values(renderhitb
 consvar_t cv_bighead = Player("bighead", "Off").dont_save().values(CV_OnOff).flags(CV_NOSHOWHELP).description("Works out at the library");
 consvar_t cv_shittysigns = Player("shittysigns", "Off").dont_save().values(CV_OnOff).flags(CV_NOSHOWHELP).description("It's better because it's worse");
 consvar_t cv_tastelesstaunts = Player("tastelesstaunts", "Off").dont_save().values(CV_OnOff).flags(CV_NOSHOWHELP).description("Universally hated in dev");
+consvar_t cv_4thgear = UnsavedNetVar("4thgear", "Off").values(CV_OnOff).flags(CV_NOSHOWHELP).description("Surpassing your limits!");
+consvar_t cv_levelskull = UnsavedNetVar("levelskull", "Off").values(CV_OnOff).flags(CV_NOSHOWHELP).description("What Storm Rig looked like 2 months before 2.0");
 
 //
 // Dummy variables used solely in the menu system.
