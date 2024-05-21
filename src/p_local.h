@@ -597,8 +597,9 @@ fixed_t P_GetMobjZMovement(mobj_t *mo);
 boolean P_MobjCanChangeFlip(mobj_t *mobj);
 
 void P_InitTIDHash(void);
-void P_SetThingTID(mobj_t *mo, mtag_t tid);
+void P_AddThingTID(mobj_t *mo);
 void P_RemoveThingTID(mobj_t *mo);
+void P_SetThingTID(mobj_t *mo, mtag_t tid);
 mobj_t *P_FindMobjFromTID(mtag_t tid, mobj_t *i, mobj_t *activator);
 
 void P_DeleteMobjStringArgs(mobj_t *mobj);
