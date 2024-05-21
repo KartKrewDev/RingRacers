@@ -606,8 +606,10 @@ boolean Obj_ShrinkLaserCollide(mobj_t *gun, mobj_t *victim)
 	else
 	{
 		// Bullshit contact. Let 'em off for free.
-		if (scale < FRACUNIT/4)
+		if (scale < FRACUNIT/3)
 			return true;
+
+		scale = Easing_InSine(scale, 0, FRACUNIT);
 
 		if (prevTimer > 0)
 		{
