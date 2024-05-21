@@ -2364,7 +2364,12 @@ static void P_UpdatePlayerAngle(player_t *player)
 		{
 			// We're off. Try to legally steer the player towards their camera.
 
-			if (K_Sliptiding(player) && P_IsObjectOnGround(player->mo) && (player->cmd.turning != 0) && ((player->cmd.turning > 0) == (player->aizdriftstrat > 0)))
+			// 2.3 - Never allow turn solver to steer against your input (fixes heavyweight sliptides)
+			boolean restrictDirectionChange = (player->cmd.turning != 0);
+			if (G_CompatLevel(0x000C))
+				restrictDirectionChange = (K_Sliptiding(player) && P_IsObjectOnGround(player->mo) && (player->cmd.turning != 0) && ((player->cmd.turning > 0) == (player->aizdriftstrat > 0)));
+
+			if (restrictDirectionChange)
 			{
 				// Don't change handling direction if someone's inputs are sliptiding, you'll break the sliptide!
 				if (player->cmd.turning > 0)
