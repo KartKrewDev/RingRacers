@@ -2350,7 +2350,7 @@ static void P_UpdatePlayerAngle(player_t *player)
 		}
 		else
 		{
-			leniency_base = 8 * ANG1 / 3;
+			leniency_base = 6 * ANG1 / 3;
 		}
 		angle_t leniency = leniency_base * min(player->cmd.latency, 6);
 		// Don't force another turning tic, just give them the desired angle!
@@ -2364,12 +2364,7 @@ static void P_UpdatePlayerAngle(player_t *player)
 		{
 			// We're off. Try to legally steer the player towards their camera.
 
-			// 2.3 - Never allow turn solver to steer against your input (fixes heavyweight sliptides)
-			boolean restrictDirectionChange = (player->cmd.turning != 0);
-			if (G_CompatLevel(0x000C))
-				restrictDirectionChange = (K_Sliptiding(player) && P_IsObjectOnGround(player->mo) && (player->cmd.turning != 0) && ((player->cmd.turning > 0) == (player->aizdriftstrat > 0)));
-
-			if (restrictDirectionChange)
+			if (K_Sliptiding(player) && P_IsObjectOnGround(player->mo) && (player->cmd.turning != 0) && ((player->cmd.turning > 0) == (player->aizdriftstrat > 0)))
 			{
 				// Don't change handling direction if someone's inputs are sliptiding, you'll break the sliptide!
 				if (player->cmd.turning > 0)
