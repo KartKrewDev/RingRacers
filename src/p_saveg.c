@@ -608,6 +608,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].preventfailsafe);
 
 		WRITEUINT8(save->p, players[i].tripwireUnstuck);
+		WRITEUINT8(save->p, players[i].bumpUnstuck);
 
 		WRITEUINT8(save->p, players[i].handtimer);
 		WRITEANGLE(save->p, players[i].besthanddirection);
@@ -1211,6 +1212,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].preventfailsafe = READUINT8(save->p);
 
 		players[i].tripwireUnstuck = READUINT8(save->p);
+		players[i].bumpUnstuck = READUINT8(save->p);
 
 		players[i].handtimer = READUINT8(save->p);
 		players[i].besthanddirection = READANGLE(save->p);
