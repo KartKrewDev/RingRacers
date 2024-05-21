@@ -2355,7 +2355,7 @@ static void P_UpdatePlayerAngle(player_t *player)
 
 		// Gross. Take a look at sliptide starts properly for 2.4.
 		// Yell at Tyron!
-		if (G_CompatLevel(0x000C))
+		if (!G_CompatLevel(0x000C))
 		{
 			leniency_base = 6 * ANG1 / 3;
 		}
