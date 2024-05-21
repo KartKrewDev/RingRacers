@@ -2352,6 +2352,14 @@ static void P_UpdatePlayerAngle(player_t *player)
 		{
 			leniency_base = 8 * ANG1 / 3;
 		}
+
+		// Gross. Take a look at sliptide starts properly for 2.4.
+		// Yell at Tyron!
+		if (!G_CompatLevel(0x000C))
+		{
+			leniency_base = 6 * ANG1 / 3;
+		}
+
 		angle_t leniency = leniency_base * min(player->cmd.latency, 6);
 		// Don't force another turning tic, just give them the desired angle!
 
