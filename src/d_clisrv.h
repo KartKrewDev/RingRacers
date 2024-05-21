@@ -395,7 +395,7 @@ struct resultsall_pak
 
 struct say_pak
 {
-	char message[HU_MAXMSGLEN + 1];
+	char message[HU_MAXMSGLEN];
 	UINT8 target;
 	UINT8 flags;
 	UINT8 source;
