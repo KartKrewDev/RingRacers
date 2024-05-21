@@ -13656,7 +13656,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				INT16 TRICKTHRESHOLD = 2*KART_FULLTURN/3;
 
 				// 2.3 - aimingcompare
-				if (!!G_CompatLevel(0x000C))
+				if (!G_CompatLevel(0x000C))
 				{
 					TRICKTHRESHOLD = KART_FULLTURN/2;
 					INT16 aimingcompare = abs(cmd->throwdir) - abs(cmd->turning);
