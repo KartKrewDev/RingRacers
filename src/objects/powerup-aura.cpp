@@ -17,6 +17,7 @@
 #include "../p_local.h"
 #include "../p_mobj.h"
 #include "../tables.h"
+#include "../k_kart.h"
 
 // copied from objects/monitor.c
 #define FINE90 (FINEANGLES/4)
@@ -91,8 +92,11 @@ struct Aura : mobj_t
 		{
 			return;
 		}
+		
+		K_FlipFromObject(this, origin());
+		fixed_t flipoffset = P_IsObjectFlipped(origin()) ? origin()->height : 0;
 
-		P_MoveOrigin(this, origin()->x, origin()->y, origin()->z);
+		P_MoveOrigin(this, origin()->x, origin()->y, origin()->z - flipoffset);
 		P_InstaScale(this, 11 * origin()->scale / 10);
 
 		translate();
