@@ -13285,6 +13285,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							if (player->curshield != KSHIELD_BUBBLE)
 							{
 								mobj_t *shield = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_BUBBLESHIELD);
+								// MT_BUBBLESHIELD doesn't have MF_NOBLOCKMAP so we need to remove this manually.	
+								// Otherwise if you roll a bubble shield while flipped, the visuals look too mismatched.
+								shield->eflags &= ~MFE_VERTICALFLIP;
 								P_SetScale(shield, (shield->destscale = (5*shield->destscale)>>2));
 								P_SetTarget(&shield->target, player->mo);
 								S_StartSound(player->mo, sfx_s3k3f);
