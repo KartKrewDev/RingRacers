@@ -3810,24 +3810,24 @@ static boolean K_ShowPlayerNametag(player_t *p)
 	return true;
 }
 
-static void K_DrawLocalTagForPlayer(fixed_t x, fixed_t y, player_t *p, UINT8 id)
+static void K_DrawLocalTagForPlayer(fixed_t x, fixed_t y, player_t *p, UINT8 id, UINT32 flags)
 {
 	UINT8 blink = ((leveltime / 7) & 1);
 	UINT8 *colormap = R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(p->skincolor), GTC_CACHE);
-	V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN, kp_localtag[id][blink], colormap);
+	V_DrawFixedPatch(x, y, FRACUNIT, flags, kp_localtag[id][blink], colormap);
 }
 
-static void K_DrawRivalTagForPlayer(fixed_t x, fixed_t y)
+static void K_DrawRivalTagForPlayer(fixed_t x, fixed_t y, UINT32 flags)
 {
 	UINT8 blink = ((leveltime / 7) & 1);
-	V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN, kp_rival[blink], NULL);
+	V_DrawFixedPatch(x, y, FRACUNIT, flags, kp_rival[blink], NULL);
 }
 
 static void K_DrawTypingDot(fixed_t x, fixed_t y, UINT8 duration, player_t *p, INT32 flags)
 {
 	if (p->typing_duration > duration)
 	{
-		V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN|flags, kp_typdot, NULL);
+		V_DrawFixedPatch(x, y, FRACUNIT, flags, kp_typdot, NULL);
 	}
 }
 
@@ -3849,8 +3849,19 @@ static void K_DrawNameTagItemSpy(INT32 x, INT32 y, player_t *p, INT32 flags)
 {
 	using srb2::Draw;
 	bool tiny = r_splitscreen > 1;
+	SINT8 flip = 1, flipboxoffset = 0;
+	if ((flags & V_VFLIP) == V_VFLIP)
+	{
+		// Remove the v_vflip flag - it makes things messy, but we also understand
+		// that we want to make this look okay for flipped players, so simply use this
+		// opportunity to flip vertical offsets accordingly instead.
+		flags &= ~V_VFLIP;
+		flip = P_MobjFlip(p->mo);
+		flipboxoffset = 8;
+	}
+	
 	Draw bar = Draw(x, y).flags(V_NOSCALESTART|flags);
-	Draw box = tiny ? bar.xy(-22 * vid.dupx, -17 * vid.dupy) : bar.xy(-40 * vid.dupx, -26 * vid.dupy);
+	Draw box = tiny ? bar.xy(-22 * vid.dupx, (-17+flipboxoffset) * vid.dupy) : bar.xy(-40 * vid.dupx, (-26+flipboxoffset) * vid.dupy);
 
 	box.colorize(p->skincolor).patch(kp_itembg[tiny ? 4 : 2]);
 
@@ -3877,8 +3888,8 @@ static void K_DrawNameTagItemSpy(INT32 x, INT32 y, player_t *p, INT32 flags)
 	if (p->itemamount > 1)
 	{
 		(tiny ?
-			bar.xy(-3 * vid.dupx, -4 * vid.dupy).font(Draw::Font::kPing) :
-			bar.xy(-4 * vid.dupx, -2 * vid.dupy).font(Draw::Font::kThinTimer)
+			bar.xy(-3 * vid.dupx, (-4*flip) * vid.dupy).font(Draw::Font::kPing) :
+			bar.xy(-4 * vid.dupx, (-2*flip) * vid.dupy).font(Draw::Font::kThinTimer)
 		)
 			.align(Draw::Align::kRight)
 			.text("{}", p->itemamount);
@@ -3924,6 +3935,13 @@ static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p, INT32 flag
 
 	UINT8 *colormap = V_GetStringColormap(clr);
 	INT32 barx = 0, bary = 0, barw = 0;
+	INT32 flipped = P_MobjFlip(p->mo), flipfilloffset = 0, flipfontoffset = 0, flipspheresoffset = 0;
+	if (flipped == -1)
+	{
+		flipfilloffset = -3; // You cannot really flip drawfill.
+		flipfontoffset = -9; // Accounts for font height.
+		flipspheresoffset = 2;
+	}
 
 	UINT8 cnum = R_GetViewNumber();
 
@@ -3946,7 +3964,7 @@ static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p, INT32 flag
 	bary = (y * vid.dupy) / FRACUNIT;
 
 	barx += (6 * vid.dupx);
-	bary -= (16 * vid.dupx);
+	bary -= ((16 + flipfilloffset) * vid.dupx) * flipped;
 
 	// Center it if necessary
 	if (vid.width != BASEVIDWIDTH * vid.dupx)
@@ -3967,7 +3985,7 @@ static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p, INT32 flag
 
 	if (gametyperules & GTR_SPHERES)
 	{
-		K_DrawNameTagSphereMeter(barx, bary + (4 * vid.dupy), barw, p->spheres, flags);
+		K_DrawNameTagSphereMeter(barx, bary + (((4 + flipspheresoffset) * vid.dupy) * P_MobjFlip(p->mo)), barw, p->spheres, flags);
 	}
 
 	// Lat: 10/06/2020: colormap can be NULL on the frame you join a game, just arbitrarily use palette indexes 31 and 0 instead of whatever the colormap would give us instead to avoid crashes.
@@ -3979,7 +3997,7 @@ static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p, INT32 flag
 	V_DrawFixedPatch(x, y, FRACUNIT, flags, kp_nametagstem, colormap);
 
 	// Draw the name itself
-	V_DrawThinStringAtFixed(x + (5*FRACUNIT), y - (26*FRACUNIT), clr|flags, player_names[p - players]);
+	V_DrawThinStringAtFixed(x + (5*FRACUNIT), y - (((26 + flipfontoffset) * FRACUNIT) * P_MobjFlip(p->mo)), clr|flags, player_names[p - players]);
 }
 
 playertagtype_t K_WhichPlayerTag(player_t *p)
@@ -4009,19 +4027,25 @@ playertagtype_t K_WhichPlayerTag(player_t *p)
 	return PLAYERTAG_NONE;
 }
 
-void K_DrawPlayerTag(fixed_t x, fixed_t y, player_t *p, playertagtype_t type, INT32 flags)
+void K_DrawPlayerTag(fixed_t x, fixed_t y, player_t *p, playertagtype_t type, boolean foreground)
 {
+	INT32 flags = P_IsObjectFlipped(p->mo) ? V_VFLIP : 0; 
+	
 	switch (type)
 	{
 	case PLAYERTAG_LOCAL:
-		K_DrawLocalTagForPlayer(x, y, p, G_PartyPosition(p - players));
+		flags |= V_HUDTRANS|V_SPLITSCREEN;
+		K_DrawLocalTagForPlayer(x, y, p, G_PartyPosition(p - players), flags);
 		break;
 
 	case PLAYERTAG_RIVAL:
-		K_DrawRivalTagForPlayer(x, y);
+		flags |= V_HUDTRANS|V_SPLITSCREEN;
+		K_DrawRivalTagForPlayer(x, y, flags);
 		break;
 
 	case PLAYERTAG_NAME:
+		// We only care about the trans flag here (based?) as well as V_VFLIP.
+		flags |= foreground ? 0 : V_60TRANS;
 		K_DrawNameTagForPlayer(x, y, p, flags);
 		K_DrawTypingNotifier(x, y, p, flags);
 		break;
