@@ -10898,6 +10898,11 @@ INT32 K_GetKartRingPower(const player_t *player, boolean boosted)
 	return max(ringPower / FRACUNIT, 1);
 }
 
+INT32 K_GetFullKartRingPower(const player_t *player, boolean boosted)
+{
+	return 3 + K_GetKartRingPower(player, boosted);
+}
+
 // Returns false if this player being placed here causes them to collide with any other player
 // Used in g_game.c for match etc. respawning
 // This does not check along the z because the z is not correctly set for the spawnee at this point
@@ -13035,28 +13040,34 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			}
 			else if (modeattacking)
 			{
-				// At high distance values, the power of Ring Box is mainly an extra source of speed, to be
-				// stacked with power items (or itself!) during the payout period.
-				// Low-dist Ring Box follows some special rules, to somewhat normalize the reward between stat
-				// blocks that respond to rings differently; here, variance in payout period counts for a lot!
+				// TA has:
+				// - no one to tether from
+				// - no player damage
+				// - no player bumps
+				// ...which nullifies a lot of designed advantages for accel types and high-weight racers.
+				//
+				// In addition, it's at Gear 3 Thunderdome speed, which can make it hard for heavies to
+				// take strong lines without brakedrifting. 
+				//
+				// To try and help close this gap, we fudge Ring Box payouts to allow weaker characters
+				// better access to things that make them go fast, without changing core handling.
 
 				UINT8 accel = 10-player->kartspeed;
 				UINT8 weight = player->kartweight;
+				UINT8 total = accel+weight;
 
-				// Fixed point math can suck a dick.
+				// Max possible accel+weight is 9+9=18.
+				// Scale from base payout at 9/1 to max payout at 1/9.
+				award = Easing_OutSine(FRACUNIT*total/18, award, 2*award);
 
-				if (accel > weight)
+				// And, because we don't have to give a damn about sandbagging, up the stakes the longer we progress! 
+				if (gametyperules & GTR_CIRCUIT)
 				{
-					accel *= 10;
-					weight *= 3;
+					// This should be based on completion percentage, but I looked at
+					// the circuitlength stuff and immediately gave up
+					fixed_t marginTime = FixedDiv(leveltime, TICRATE*60*2);
+					award = Easing_Linear(min(marginTime, FRACUNIT), award, 3*award/2);
 				}
-				else
-				{
-					accel *= 3;
-					weight *= 10;
-				}
-
-				award = (110 + accel + weight) * award / 120;
 			}
 			else
 			{
@@ -13066,6 +13077,15 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				behindMulti = min(behindMulti, 60);
 				award = award * (behindMulti + 10) / 10;
 			}
+
+			// Stacked Ring Box is good. REALLY good. "Uncapped speed that feeds into itself" good.
+			// Keep highly unusual values under control, using the following core rule:
+			// If we already have more boost than we're about to be awarded, STOP!!!
+			UINT32 existing = (player->ringboost / K_GetFullKartRingPower(player, true)); // How many rings (effectively) do we have boost credit for right now?
+			UINT32 reduction = 8*existing/10; // Take an arbitrary percentage of those rings, and...
+			fixed_t reductionfactor = FixedDiv(FRACUNIT*reduction, FRACUNIT*award); // ...get a ratio to compare our potential award against it. 0 = no existing boost, 1+ = existing boost comparable to our award.
+			reductionfactor = min(reductionfactor, FRACUNIT); // Cap for easing function, and...
+			award = Easing_Linear(reductionfactor, award, award/4); // ...ease between unmodified and minimum award.
 
 			K_AwardPlayerRings(player, award, true);
 			player->ringboxaward = 0;

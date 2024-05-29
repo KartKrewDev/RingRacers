@@ -192,6 +192,7 @@ void K_RepairOrbitChain(mobj_t *orbit);
 void K_CalculateBananaSlope(mobj_t *mobj, fixed_t x, fixed_t y, fixed_t z, fixed_t radius, fixed_t height, boolean flip, boolean player);
 mobj_t *K_FindJawzTarget(mobj_t *actor, player_t *source, angle_t range);
 INT32 K_GetKartRingPower(const player_t *player, boolean boosted);
+INT32 K_GetFullKartRingPower(const player_t *player, boolean boosted);
 boolean K_CheckPlayersRespawnColliding(INT32 playernum, fixed_t x, fixed_t y);
 INT16 K_UpdateSteeringValue(INT16 inputSteering, INT16 destSteering);
 INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue);
