@@ -468,7 +468,9 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			}
 
 			P_ItemPop(special);
-			special->fuse = TICRATE;
+
+			if (!special->fuse)
+				special->fuse = TICRATE;
 			return;
 		}
 		case MT_SPHEREBOX:
