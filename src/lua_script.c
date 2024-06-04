@@ -178,6 +178,9 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 	} else if (fastcmp(word,"splitscreen")) {
 		lua_pushinteger(L, splitscreen);
 		return 1;
+	} else if (fastcmp(word,"r_splitscreen")) {
+		lua_pushinteger(L, r_splitscreen);
+		return 1;
 	} else if (fastcmp(word,"gamecomplete")) {
 		lua_pushboolean(L, (gamecomplete != 0));
 		return 1;
