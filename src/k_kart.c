@@ -13054,11 +13054,17 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 				UINT8 accel = 10-player->kartspeed;
 				UINT8 weight = player->kartweight;
-				UINT8 total = accel+weight;
 
-				// Max possible accel+weight is 9+9=18.
+				// Relative stat power for bonus TA Ring Box awards.
+				// AP 1, WP 2 = weight is worth twice what accel is.
+				UINT8 accelPower = 1;
+				UINT8 weightPower = 2;
+
+				UINT8 total = accelPower*accel + weightPower*weight;
+				UINT8 maxtotal = accelPower*9 + weightPower*9;
+
 				// Scale from base payout at 9/1 to max payout at 1/9.
-				award = Easing_OutSine(FRACUNIT*total/18, award, 2*award);
+				award = Easing_OutSine(FRACUNIT*total/maxtotal, award, 18*award/10);
 
 				// And, because we don't have to give a damn about sandbagging, up the stakes the longer we progress! 
 				if (gametyperules & GTR_CIRCUIT)
