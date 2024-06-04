@@ -1045,7 +1045,7 @@ static int libd_getColormap(lua_State *L)
 			skinnum = i;
 	}
 
-	if (demo.playback)
+	if (demo.playback && skinnum >= 0)
 		skinnum = demo.skinlist[skinnum].mapping;
 
 	// all was successful above, now we generate the colormap at last!
