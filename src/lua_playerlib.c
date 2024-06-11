@@ -795,7 +795,7 @@ static int player_set(lua_State *L)
 	else if (fastcmp(field,"distancetofinishprev"))
 		return NOSET;
 	else if (fastcmp(field,"lastpickupdistance"))
-		plr->airtime = luaL_checkinteger(L, 3);
+		plr->lastpickupdistance = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"airtime"))
 		plr->airtime = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"lastairtime"))
