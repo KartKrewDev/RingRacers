@@ -440,6 +440,14 @@ boolean K_IsPlayerLosing(player_t *player)
 	return (player->position > winningpos);
 }
 
+// Some behavior should change if the player approaches the frontrunner unusually fast.
+boolean K_IsPlayerScamming(player_t *player)
+{
+	// "Why 8?" Consistency
+	// "Why 2000?" Vibes
+	return (K_GetItemRouletteDistance(player, 8) < 2000);
+}
+
 fixed_t K_GetKartGameSpeedScalar(SINT8 value)
 {
 	// Easy = 81.25%
@@ -9024,7 +9032,12 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	}
 
 	if (player->invincibilitytimer && (player->ignoreAirtimeLeniency > 0 || onground == true || K_PowerUpRemaining(player, POWERUP_SMONITOR)))
+	{
 		player->invincibilitytimer--;
+		if (player->invincibilitytimer && K_IsPlayerScamming(player))
+			player->invincibilitytimer--;
+	}
+
 
 	if (!player->invincibilitytimer)
 		player->invincibilityextensions = 0;
@@ -9060,7 +9073,12 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if ((player->respawn.state == RESPAWNST_NONE) && player->growshrinktimer != 0)
 	{
 		if (player->growshrinktimer > 0 && (onground == true || player->ignoreAirtimeLeniency > 0))
+		{
 			player->growshrinktimer--;
+			if (player->growshrinktimer && K_IsPlayerScamming(player))
+				player->growshrinktimer--;
+		}
+
 		if (player->growshrinktimer < 0)
 			player->growshrinktimer++;
 
@@ -9378,7 +9396,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (P_PlayerInPain(player) || player->respawn.state != RESPAWNST_NONE)
 	{
-		player->lastpickuptype = -1; // got your ass beat, go grab anything
+		// Too abusable! Revisit this with nerfed boxes or something.
+		// player->lastpickuptype = -1; // got your ass beat, go grab anything
 		player->defenseLockout = 0;	// and reenable defensive tools just in case
 	}
 
@@ -11845,7 +11864,7 @@ static void K_KartSpindash(player_t *player)
 	UINT16 buttons = K_GetKartButtons(player);
 	boolean spawnWind = (leveltime % 2 == 0);
 
-	if (player->mo->hitlag > 0 || P_PlayerInPain(player))
+	if (player->mo->hitlag > 0 || P_PlayerInPain(player) || player->curshield == KSHIELD_TOP)
 	{
 		player->spindash = 0;
 	}
@@ -11961,7 +11980,7 @@ static void K_KartSpindash(player_t *player)
 		S_ReducedVFXSound(player->mo, sfx_ruburn, player);
 	}
 
-	if (player->speed < 6*player->mo->scale)
+	if (player->speed < 6*player->mo->scale && player->curshield != KSHIELD_TOP)
 	{
 		if ((buttons & (BT_DRIFT|BT_BRAKE)) == (BT_DRIFT|BT_BRAKE))
 		{
