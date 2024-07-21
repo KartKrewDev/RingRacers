@@ -41,6 +41,7 @@
 #include "doomstat.h" // MAXSPLITSCREENPLAYERS
 #include "r_fps.h" // Frame interpolation/uncapped
 #include "core/thread_pool.h"
+#include "m_misc.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
@@ -969,6 +970,16 @@ void R_CheckFOV(void)
 	}
 }
 
+boolean R_ShowHUD(void)
+{
+	if (g_takemapthumbnail != TMT_NO)
+	{
+		return false;
+	}
+
+	return (boolean)cv_showhud.value;
+}
+
 //
 // R_ExecuteSetViewSize
 //
@@ -988,7 +999,7 @@ void R_ExecuteSetViewSize(void)
 		return;
 
 	// status bar overlay
-	st_overlay = cv_showhud.value;
+	st_overlay = R_ShowHUD();
 
 	scaledviewwidth = vid.width;
 	viewheight = vid.height;

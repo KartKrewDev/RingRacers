@@ -91,7 +91,7 @@
 #endif
 
 // maximum number of windowed modes (see windowedModes[][])
-#define MAXWINMODES (18)
+#define MAXWINMODES (19)
 
 using namespace srb2;
 
@@ -158,6 +158,7 @@ static INT32 windowedModes[MAXWINMODES][2] =
 	{1280, 800}, // 1.60,4.00
 	{1280, 720}, // 1.66
 	{1152, 864}, // 1.33,3.60
+	{1024,1024}, // SPECIAL, for snapshot taker
 	{1024, 768}, // 1.33,3.20
 	{ 800, 600}, // 1.33,2.50
 	{ 640, 480}, // 1.33,2.00

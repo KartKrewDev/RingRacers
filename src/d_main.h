@@ -55,6 +55,8 @@ void D_ProcessEvents(boolean callresponders);
 
 const char *D_Home(void);
 
+void D_TakeMapSnapshots(void);
+
 //
 // BASE LEVEL
 //

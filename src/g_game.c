@@ -1296,6 +1296,10 @@ void G_PreLevelTitleCard(void)
 //
 boolean G_IsTitleCardAvailable(void)
 {
+	// We're trying to take map pictures dude
+	if (roundqueue.snapshotmaps == true)
+		return false;
+
 	// Don't show for attract demos
 	if (demo.attract)
 		return false;

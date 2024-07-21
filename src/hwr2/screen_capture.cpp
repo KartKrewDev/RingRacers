@@ -23,7 +23,7 @@ ScreenshotPass::~ScreenshotPass() = default;
 
 void ScreenshotPass::capture(Rhi& rhi, Handle<GraphicsContext> ctx)
 {
-	bool doing_screenshot = takescreenshot || moviemode != MM_OFF;
+	bool doing_screenshot = takescreenshot || moviemode != MM_OFF || g_takemapthumbnail != TMT_NO;
 
 	if (!doing_screenshot)
 	{
@@ -46,6 +46,11 @@ void ScreenshotPass::capture(Rhi& rhi, Handle<GraphicsContext> ctx)
 		// Read the aligned data into unaligned linear memory, flipping the rows in the process.
 		uint32_t pixel_data_row = (height_ - row) - 1;
 		std::move(&pixel_data_[pixel_data_row * read_stride], &pixel_data_[pixel_data_row * read_stride + stride], &packed_data_[row * stride]);
+	}
+
+	if (g_takemapthumbnail != TMT_NO)
+	{
+		M_SaveMapThumbnail(width_, height_, tcb::as_bytes(tcb::span(packed_data_)));
 	}
 
 	if (takescreenshot)

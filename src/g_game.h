@@ -71,6 +71,7 @@ extern struct roundqueue
 	UINT8 size;								// Number of entries in the round queue
 	boolean netcommunicate;					// As server, should we net-communicate this in XD_MAP?
 	boolean writetextmap;					// This queue is for automated map conversion
+	boolean snapshotmaps;					// This queue is for automated map thumbnails
 	roundentry_t entries[ROUNDQUEUE_MAX];	// Entries in the round queue
 } roundqueue;
 

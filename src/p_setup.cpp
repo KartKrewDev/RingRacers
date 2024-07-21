@@ -8920,6 +8920,35 @@ void P_PostLoadLevel(void)
 	// We're now done loading the level.
 	levelloading = false;
 
+	if (roundqueue.snapshotmaps == true)
+	{
+		if (roundqueue.size > 0)
+		{
+			D_TakeMapSnapshots();
+
+			G_GetNextMap();
+
+			// roundqueue is wiped after the last round, but
+			// preserve this to track state into the Podium!
+			roundqueue.snapshotmaps = true;
+
+			G_NextLevel();
+			return;
+		}
+		else
+		{
+			// Podium: snapshotmaps is finished. Yay!
+			HU_DoTitlecardCEcho(NULL, va("Congratulations,\\%s!\\Check the console!", cv_playername[0].string), true);
+
+			livestudioaudience_timer = 0;
+			LiveStudioAudience();
+
+			CONS_Printf("\n\n\x83""snapshotmaps: Find your images in %s\n", srb2home);
+
+			roundqueue.snapshotmaps = false;
+		}
+	}
+
 	TracyCZoneEnd(__zone);
 }
 

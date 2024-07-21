@@ -3200,6 +3200,9 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	thiscam->old_angle = thiscam->angle;
 	thiscam->old_aiming = thiscam->aiming;
 
+	if (roundqueue.snapshotmaps == true)
+		return true;
+
 	// We probably shouldn't move the camera if there is no player or player mobj somehow
 	if (!player || !player->mo)
 		return true;

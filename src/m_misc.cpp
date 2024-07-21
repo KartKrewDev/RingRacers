@@ -156,6 +156,8 @@ boolean takescreenshot = false; // Take a screenshot this tic
 
 moviemode_t moviemode = MM_OFF;
 
+g_takemapthumbnail_t g_takemapthumbnail = TMT_NO;
+
 char joinedIPlist[NUMLOGIP][2][MAX_LOGIP];
 char joinedIP[MAX_LOGIP];
 
@@ -1852,6 +1854,46 @@ failure:
 			M_StopMovie();
 	}
 #endif
+}
+
+void M_SaveMapThumbnail(UINT32 width, UINT32 height, tcb::span<const std::byte> data)
+{
+#ifdef USE_PNG
+#if NUMSCREENS > 2
+
+	char *filepath;
+	switch (g_takemapthumbnail)
+	{
+		case TMT_PICTURE:
+		default:
+		{
+			filepath = va("%s" PATHSEP "PICTURE_%s.png", srb2home, G_BuildMapName(gamemap));
+			break;
+		}
+		case TMT_RICHPRES:
+		{
+			filepath = va("%s" PATHSEP "map_%s.png", srb2home, G_BuildMapName(gamemap));
+			break;
+		}
+	}
+
+	// save the file
+	const void* pixel_data = static_cast<const void*>(data.data());
+	boolean ret = M_SavePNG(filepath, pixel_data, width, height, NULL);
+
+	if (ret)
+	{
+		CONS_Printf(M_GetText("Created thumbnail at \"%s\"\n"), filepath);
+	}
+	else
+	{
+		CONS_Alert(CONS_ERROR, M_GetText("Couldn't create %s\n"), filepath);
+	}
+
+	g_takemapthumbnail = TMT_NO;
+
+#endif // #ifdef USE_PNG
+#endif // #if NUMSCREENS > 2
 }
 
 void M_ScreenshotTicker(void)

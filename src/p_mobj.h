@@ -595,6 +595,8 @@ extern INT32 numcheatchecks;
 extern UINT16 bossdisabled;
 extern boolean stoppedclock;
 
+#define EDITOR_CAM_DOOMEDNUM (3328)
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
