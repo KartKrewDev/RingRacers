@@ -1116,6 +1116,8 @@ typedef enum sprite
 	SPR_WAYP,
 	SPR_EGOO,
 
+	SPR_AMPA,
+
 	SPR_WTRL, // Water Trail
 
 	SPR_GCHA, // follower: generic chao
@@ -3662,6 +3664,8 @@ typedef enum state
 	S_WAYPOINTSPLAT,
 	S_EGOORB,
 
+	S_AMPS,
+
 	S_WATERTRAIL1,
 	S_WATERTRAIL2,
 	S_WATERTRAIL3,
@@ -4989,6 +4993,8 @@ typedef enum mobj_type
 
 	MT_IPULLUP,
 	MT_PULLUPHOOK,
+
+	MT_AMPS,
 
 	MT_FIRSTFREESLOT,
 	MT_LASTFREESLOT = MT_FIRSTFREESLOT + NUMMOBJFREESLOTS - 1,

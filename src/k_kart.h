@@ -50,6 +50,8 @@ Make sure this matches the actual number of states
 #define MINCOMBOFLOAT (mapobjectscale*1)
 #define MAXCOMBOTIME (TICRATE*4)
 
+#define AMPLEVEL (30)
+
 #define FLAMESHIELD_MAX (120)
 
 #define RR_PROJECTILE_FUSE (8*TICRATE)
@@ -129,7 +131,10 @@ void K_KartPlayerAfterThink(player_t *player);
 angle_t K_MomentumAngleEx(const mobj_t *mo, const fixed_t threshold);
 angle_t K_MomentumAngleReal(const mobj_t *mo);
 #define K_MomentumAngle(mo) K_MomentumAngleEx(mo, 6 * mo->scale)
+void K_SpawnAmps(player_t *player, UINT8 amps, mobj_t *impact);
+void K_AwardPlayerAmps(player_t *player, UINT8 amps);
 void K_AwardPlayerRings(player_t *player, UINT16 rings, boolean overload);
+boolean K_Overdrive(player_t *player);
 void K_DoInstashield(player_t *player);
 void K_DoPowerClash(mobj_t *t1, mobj_t *t2);
 void K_DoGuardBreak(mobj_t *t1, mobj_t *t2);

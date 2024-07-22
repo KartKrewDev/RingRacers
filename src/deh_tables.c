@@ -2636,6 +2636,8 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_WAYPOINTSPLAT",
 	"S_EGOORB",
 
+	"S_AMPS",
+
 	"S_WATERTRAIL1",
 	"S_WATERTRAIL2",
 	"S_WATERTRAIL3",
@@ -3937,6 +3939,8 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_IPULLUP",
 	"MT_PULLUPHOOK",
+
+	"MT_AMPS",
 };
 
 const char *const MOBJFLAG_LIST[] = {

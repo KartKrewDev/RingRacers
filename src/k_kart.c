@@ -2012,6 +2012,12 @@ static void K_SpawnGenericSpeedLines(player_t *player, boolean top)
 		fast->color = SKINCOLOR_WHITE;
 		fast->colorized = true;
 	}
+	else if (player->overdriveboost)
+	{
+		fast->color = player->skincolor;
+		fast->renderflags |= RF_ADD;
+		fast->scale *= 2;
+	}
 	else if (player->ringboost)
 	{
 		UINT8 ringboostcolors[] = {SKINCOLOR_AQUAMARINE, SKINCOLOR_EMERALD, SKINCOLOR_GARDEN, SKINCOLOR_CROCODILE, SKINCOLOR_BANANA};
@@ -3512,6 +3518,23 @@ static void K_GetKartBoostPower(player_t *player)
 		);  // + 80% top speed (peak), +400% acceleration (peak), +20% handling
 	}
 
+	if (player->overdriveboost)
+	{
+		ADDBOOST(
+			Easing_InCubic(
+				player->overdrivepower,
+				0,
+				5*FRACUNIT/10
+			),
+			Easing_InSine(
+				player->overdrivepower,
+				0,
+				3*FRACUNIT
+			),
+			1*SLIPTIDEHANDLING/5
+		);  // + 80% top speed (peak), +400% acceleration (peak), +20% handling
+	}
+
 	if (player->spindashboost) // Spindash boost
 	{
 		const fixed_t MAXCHARGESPEED = K_GetSpindashChargeSpeed(player);
@@ -3575,11 +3598,14 @@ static void K_GetKartBoostPower(player_t *player)
 
 	if (player->ringboost) // Ring Boost
 	{
+		fixed_t ringboost_base = FRACUNIT/4;
+		if (player->overdriveboost)
+			ringboost_base += FRACUNIT/2;
 		// This one's a little special: we add extra top speed per tic of ringboost stored up, to allow for Ring Box to really rocket away.
 		// (We compensate when decrementing ringboost to avoid runaway exponential scaling hell.)
 		fixed_t rb = FixedDiv(player->ringboost * FRACUNIT, max(FRACUNIT, K_RingDurationBoost(player)));
 		ADDBOOST(
-			FRACUNIT/4 + FixedMul(FRACUNIT / 1750, rb),
+			ringboost_base + FixedMul(FRACUNIT / 1750, rb),
 			4*FRACUNIT,
 			Easing_InCubic(min(FRACUNIT, rb / (TICRATE*12)), 0, 2*SLIPTIDEHANDLING/5)
 		); // + 20% + ???% top speed, + 400% acceleration, +???% handling
@@ -3969,6 +3995,44 @@ angle_t K_MomentumAngleReal(const mobj_t *mo)
 	}
 }
 
+void K_SpawnAmps(player_t *player, UINT8 amps, mobj_t *impact)
+{
+	if (gametyperules & GTR_SPHERES)
+		return;
+
+	// Give that Sonic guy some help.
+	UINT16 scaledamps = min(amps, amps * (10 + player->kartspeed - player->kartweight) / 10);
+
+	for (int i = 0; i < (scaledamps/2); i++)
+	{
+		mobj_t *pickup = P_SpawnMobj(impact->x, impact->y, impact->z, MT_AMPS);
+		pickup->momx = P_RandomRange(PR_ITEM_DEBRIS, -40*mapobjectscale, 40*mapobjectscale);
+		pickup->momy = P_RandomRange(PR_ITEM_DEBRIS, -40*mapobjectscale, 40*mapobjectscale);
+		pickup->momz = P_RandomRange(PR_ITEM_DEBRIS, -40*mapobjectscale, 40*mapobjectscale);
+		pickup->color = player->skincolor;
+		P_SetTarget(&pickup->target, player->mo);
+		player->ampspending++;
+	}
+}
+
+void K_AwardPlayerAmps(player_t *player, UINT8 amps)
+{
+	UINT16 getamped = player->amps + amps;
+
+	if (getamped > 200)
+		player->amps = 200;
+	else
+		player->amps = getamped;
+
+	player->ampsounds++;
+	player->ampspending--;
+
+	if (player->rings <= 0 && player->ampspending == 0)
+	{
+		K_Overdrive(player);
+	}
+}
+
 void K_AwardPlayerRings(player_t *player, UINT16 rings, boolean overload)
 {
 	UINT16 superring;
@@ -3992,6 +4056,24 @@ void K_AwardPlayerRings(player_t *player, UINT16 rings, boolean overload)
 	/* check if not overflow */
 	if (superring > player->superring)
 		player->superring = superring;
+}
+
+boolean K_Overdrive(player_t *player)
+{
+	if (player->amps == 0)
+		return false;
+
+	K_SpawnDriftBoostExplosion(player, 3);
+	K_SpawnDriftElectricSparks(player, player->skincolor, true);
+	S_StartSound(player->mo, sfx_cdfm35);
+	S_StartSound(player->mo, sfx_cdfm13);
+
+	player->overdriveboost += (player->amps)*6;
+	player->overdrivepower = FRACUNIT;
+
+	player->amps = 0;
+
+	return true;
 }
 
 void K_DoInstashield(player_t *player)
@@ -7246,6 +7328,7 @@ void K_DropHnextList(player_t *player)
 				dropwork->momy = work->momy;
 				dropwork->momz = work->momz;
 				dropwork->reactiontime = work->reactiontime;
+				dropwork->tracer = work->tracer;
 				P_SetMobjState(dropwork, mobjinfo[type].painstate);
 			}
 		}
@@ -8987,6 +9070,11 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->wavedashboost--;
 	}
 
+	if (player->overdriveboost > 0 && onground == true)
+	{
+		player->overdriveboost--;
+	}
+
 	if (player->wavedashboost == 0 || player->wavedashpower > FRACUNIT)
 	{
 		player->wavedashpower = FRACUNIT; // Safety
@@ -9037,6 +9125,36 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->tripwireUnstuck = 0;
 		K_DoIngameRespawn(player);
 	}
+
+	if (player->ampsounds && (leveltime%2))
+	{
+		if (P_IsDisplayPlayer(player))
+		{
+			S_StartSoundAtVolume(NULL, sfx_mbs43, 255);
+			S_StartSoundAtVolume(NULL, sfx_mbs43, 255);
+		}
+		else
+		{
+			S_StartSoundAtVolume(NULL, sfx_mbs43, 127);
+		}
+		player->ampsounds--;
+
+		if (player->ampsounds == 0)
+		{
+			UINT8 amplevel = player->amps / AMPLEVEL;
+			static sfxenum_t bwips[7] = {sfx_mbs4c, 
+				sfx_mbs4d, sfx_mbs4e, sfx_mbs4f, sfx_mbs50, 
+				sfx_mbs51, sfx_mbs52};
+			amplevel = min(amplevel, 6);
+
+			if (P_IsDisplayPlayer(player))
+			{
+				S_StartSound(NULL, bwips[amplevel]);
+				S_StartSound(NULL, bwips[amplevel]);
+			}
+		}
+	}
+
 
 	// Don't tick down while in damage state.
 	// There may be some maps where the timer activates for
@@ -9695,6 +9813,22 @@ void K_KartResetPlayerColor(player_t *player)
 		{
 			player->mo->color = SKINCOLOR_CRIMSON;
 		}
+		goto finalise;
+	}
+
+	if (player->overdriveboost && (leveltime & 1))
+	{
+		player->mo->colorized = true;
+		fullbright = true;
+		player->mo->color = player->skincolor;
+		goto finalise;
+
+	}
+	else if (player->overdriveboost)
+	{
+		player->mo->colorized = true;
+		fullbright = true;
+		player->mo->color = SKINCOLOR_WHITE;
 		goto finalise;
 	}
 
@@ -11821,6 +11955,9 @@ static void K_KartSpindashWind(mobj_t *parent)
 	if (parent->player && parent->player->wavedashboost)
 		P_SetScale(wind, wind->scale * 2);
 
+	if (parent->player && parent->player->overdriveboost)
+		P_SetScale(wind, wind->scale * 2);
+
 	if (parent->momx || parent->momy)
 		wind->angle = R_PointToAngle2(0, 0, parent->momx, parent->momy);
 	else
@@ -11884,6 +12021,11 @@ static void K_KartSpindash(player_t *player)
 	}
 
 	if ((player->wavedashboost > 0) && (spawnWind == true))
+	{
+		K_KartSpindashWind(player->mo);
+	}
+
+	if ((player->overdriveboost > 0) && (spawnWind == true))
 	{
 		K_KartSpindashWind(player->mo);
 	}
@@ -12735,6 +12877,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						player->ringdelay = tiereddelay;
 					else
 						player->ringdelay = 3;
+
+					if (player->rings == 0)
+						K_Overdrive(player);
 				}
 
 			}
@@ -13043,6 +13188,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									mo->movecount = 1;
 									mo->movedir = 1;
 									mo->cusval = player->itemscale;
+									P_SetTarget(&mo->tracer, player->mo);
 									P_SetTarget(&mo->target, player->mo);
 									P_SetTarget(&player->mo->hnext, mo);
 								}
@@ -13051,7 +13197,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							else if (ATTACK_IS_DOWN && (player->itemflags & IF_ITEMOUT))
 							{
 								player->itemamount--;
-								K_ThrowKartItem(player, (player->throwdir > 0), MT_DROPTARGET, -1, 0, 0);
+								mobj_t *drop = K_ThrowKartItem(player, (player->throwdir > 0), MT_DROPTARGET, -1, 0, 0);
+								P_SetTarget(&drop->tracer, player->mo);
 								K_PlayAttackTaunt(player->mo);
 								player->itemflags &= ~IF_ITEMOUT;
 								K_UpdateHnextList(player, true);

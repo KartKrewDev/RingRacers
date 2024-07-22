@@ -3006,6 +3006,10 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					sfx = sfx_s3k3a;
 					clash = true;
 				}
+				else if (player->overdriveboost)
+				{
+					clash = true;
+				}
 				else if (player->hyudorotimer > 0)
 					;
 				else
@@ -3068,6 +3072,11 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 						if (inflictor)
 						{
 							K_DoPowerClash(target, inflictor);
+
+							if (inflictor->type != MT_PLAYER)
+							{
+								K_SpawnAmps(player, 5, inflictor);
+							}
 
 							if (inflictor->type == MT_SUPER_FLICKY)
 							{
@@ -3158,6 +3167,8 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 				if (source && source != player->mo && source->player)
 				{
+					K_SpawnAmps(source->player, 20, target);
+
 					// Extend the invincibility if the hit was a direct hit.
 					if (inflictor == source && source->player->invincibilitytimer &&
 							!K_PowerUpRemaining(source->player, POWERUP_SMONITOR))

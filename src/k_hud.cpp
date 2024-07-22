@@ -107,6 +107,9 @@ static patch_t *kp_ringdebtminus;
 static patch_t *kp_ringdebtminussmall;
 static patch_t *kp_ringspblock[16];
 static patch_t *kp_ringspblocksmall[16];
+static patch_t *kp_amps[7][12];
+static patch_t *kp_amps_underlay[12];
+static patch_t *kp_overdrive[32];
 
 static patch_t *kp_speedometersticker;
 static patch_t *kp_speedometerlabel[4];
@@ -415,6 +418,47 @@ void K_LoadKartHUDGraphics(void)
 	{
 		buffer[6] = '0'+(i+1);
 		HU_UpdatePatch(&kp_ring[i], "%s", buffer);
+	}
+
+	// Amps
+	{
+		// Levels 1-6
+		sprintf(buffer, "b_xAMPxx");
+		for (i = 0; i < 6; i++)
+		{
+			buffer[2] = '0'+i+1;
+			for (j = 0; j < 12; j++)
+			{
+				buffer[6] = '0'+((j) / 10);
+				buffer[7] = '0'+((j) % 10);
+				HU_UpdatePatch(&kp_amps[i][j], "%s", buffer);
+			}	
+		}
+
+		// Level 7
+		buffer[2] = '7';
+		buffer[1] = 'A';
+		for (j = 0; j < 12; j++)
+		{
+			buffer[6] = '0'+((j) / 10);
+			buffer[7] = '0'+((j) % 10);
+			HU_UpdatePatch(&kp_amps[i][j], "%s", buffer);
+		}
+		buffer[1] = 'B';
+		for (j = 0; j < 12; j++)
+		{
+			buffer[6] = '0'+((j) / 10);
+			buffer[7] = '0'+((j) % 10);
+			HU_UpdatePatch(&kp_amps_underlay[j], "%s", buffer);
+		}
+	}
+
+	sprintf(buffer, "b_OVRDxx");
+	for (i = 0; i < 32; i++)
+	{
+		buffer[6] = '0'+((i) / 10);
+		buffer[7] = '0'+((i) % 10);
+		HU_UpdatePatch(&kp_overdrive[i], "%s", buffer);
 	}
 
 	HU_UpdatePatch(&kp_ringdebtminus, "RDEBTMIN");
@@ -3125,8 +3169,28 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 			.align(Draw::Align::kCenter)
 			.width(uselives ? (stplyr->lives >= 10 ? 70 : 64) : 33)
 			.small_sticker();
+	
+		if (stplyr->overdriveboost)
+		{
+			V_DrawMappedPatch(LAPS_X+7-8, fy-5-8, V_HUDTRANS|V_SLIDEIN|splitflags, kp_overdrive[leveltime%32], R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(stplyr->skincolor), GTC_CACHE));
+		}
+		else
+		{
+			V_DrawMappedPatch(LAPS_X+ringx+7, fy-5, V_HUDTRANS|V_SLIDEIN|splitflags|ringflip, kp_ring[ringanim_realframe], (colorring ? ringmap : NULL));
 
-		V_DrawMappedPatch(LAPS_X+ringx+7, fy-5, V_HUDTRANS|V_SLIDEIN|splitflags|ringflip, kp_ring[ringanim_realframe], (colorring ? ringmap : NULL));
+			if (stplyr->amps)
+			{
+				UINT8 amplevel = std::min(stplyr->amps / AMPLEVEL, 6);
+
+				V_DrawMappedPatch(LAPS_X+7-7, fy-5-8, V_HUDTRANS|V_SLIDEIN|splitflags, kp_amps[amplevel][leveltime%12], R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(stplyr->skincolor), GTC_CACHE));
+				if (amplevel == 6)
+				{
+					V_DrawMappedPatch(LAPS_X+7-7, fy-5-8, V_ADD|V_HUDTRANS|V_SLIDEIN|splitflags, kp_amps_underlay[leveltime%12], R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(stplyr->skincolor), GTC_CACHE));
+				}
+			}
+		}
+
+
 
 		// "Why fy-4? Why LAPS_X+29+1?"
 		// "use magic numbers" - jartha 2024-03-05

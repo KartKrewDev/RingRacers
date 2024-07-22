@@ -577,6 +577,8 @@ char sprnames[NUMSPRITES + 1][5] =
 	"WAYP",
 	"EGOO",
 
+	"AMPA",
+
 	"WTRL", // Water Trail
 
 	"GCHA", // follower: generic chao
@@ -3167,6 +3169,8 @@ state_t states[NUMSTATES] =
 	{SPR_WAYP, 0, 1, {NULL}, 0, 0, S_NULL}, // S_WAYPOINTORB
 	{SPR_WAYP, 1|FF_FLOORSPRITE, 1, {NULL}, 0, 0, S_NULL}, // S_WAYPOINTSPLAT
 	{SPR_EGOO, 0, 1, {NULL}, 0, 0, S_NULL}, // S_EGOORB
+
+	{SPR_AMPA, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_AMPS
 
 	// Water Trail
 	{SPR_WTRL, FF_PAPERSPRITE  , 2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAIL1
@@ -22071,6 +22075,32 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,            // damage
 		sfx_None,     // activesound
 		MF_NOCLIPHEIGHT|MF_SPECIAL|MF_NOGRAVITY|MF_NOCLIP, // flags
+		S_NULL        // raisestate
+	},
+	{           // MT_AMPS
+		3444,         // doomednum
+		S_AMPS,  	  // spawnstate
+		1000,         // spawnhealth
+		S_NULL,       // seestate
+		sfx_None,     // seesound
+		0,            // reactiontime
+		sfx_None,     // attacksound
+		S_NULL,       // painstate
+		0,            // painchance
+		sfx_None,     // painsound
+		S_NULL,       // meleestate
+		S_NULL,       // missilestate
+		S_NULL,       // deathstate
+		S_NULL,       // xdeathstate
+		sfx_None,     // deathsound
+		0,            // speed
+		32*FRACUNIT,  // radius
+		32*FRACUNIT,  // height
+		0,            // dispoffset
+		0,            // mass
+		0,            // damage
+		sfx_None,     // activesound
+		MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_NOCLIP|MF_NOCLIPTHING, // flags
 		S_NULL        // raisestate
 	},
 };

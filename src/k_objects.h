@@ -139,6 +139,8 @@ void Obj_BlockRingThink(mobj_t *ring);
 void Obj_BlockBodyThink(mobj_t *body);
 void Obj_GuardBreakThink(mobj_t *fx);
 
+void Obj_AmpsThink(mobj_t *amps);
+
 void Obj_ChargeAuraThink(mobj_t *aura);
 void Obj_ChargeFallThink(mobj_t *charge);
 void Obj_ChargeReleaseThink(mobj_t *release);
@@ -161,7 +163,7 @@ void Obj_RandomItemVisuals(mobj_t *mobj);
 boolean Obj_RandomItemSpawnIn(mobj_t *mobj);
 fixed_t Obj_RandomItemScale(fixed_t oldScale);
 void Obj_RandomItemSpawn(mobj_t *mobj);
-#define RINGBOX_TIME (105)
+#define RINGBOX_TIME (70)
 
 /* Gachabom Rebound */
 void Obj_GachaBomReboundThink(mobj_t *mobj);

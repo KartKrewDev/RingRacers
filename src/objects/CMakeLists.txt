@@ -58,6 +58,7 @@ target_sources(SRB2SDL2 PRIVATE
 	adventure-air-booster.c
 	destroyed-kart.cpp
 	pulley.cpp
+	amps.c
 )
 
 add_subdirectory(versus)

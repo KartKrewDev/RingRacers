@@ -29,6 +29,7 @@
 #include "m_random.h"
 #include "k_hud.h" // K_AddMessage
 #include "m_easing.h"
+#include "r_skins.h"
 
 angle_t K_GetCollideAngle(mobj_t *t1, mobj_t *t2)
 {
@@ -692,6 +693,11 @@ boolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2)
 		S_StartSound(t2, sfx_kdtrg2);
 	} else {
 		S_StartSound(t2, sfx_kdtrg1);
+	}
+
+	if (t1->tracer && t1->tracer->player)
+	{
+		K_SpawnAmps(t1->tracer->player, 20, t1);
 	}
 
 	if (draggeddroptarget && !P_MobjWasRemoved(draggeddroptarget) && draggeddroptarget->player)
