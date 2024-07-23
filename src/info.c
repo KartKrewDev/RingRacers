@@ -578,6 +578,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"EGOO",
 
 	"AMPA",
+	"AMPB",
 
 	"WTRL", // Water Trail
 

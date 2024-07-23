@@ -2012,12 +2012,6 @@ static void K_SpawnGenericSpeedLines(player_t *player, boolean top)
 		fast->color = SKINCOLOR_WHITE;
 		fast->colorized = true;
 	}
-	else if (player->overdrive)
-	{
-		fast->color = player->skincolor;
-		fast->renderflags |= RF_ADD;
-		fast->scale *= 2;
-	}
 	else if (player->ringboost)
 	{
 		UINT8 ringboostcolors[] = {SKINCOLOR_AQUAMARINE, SKINCOLOR_EMERALD, SKINCOLOR_GARDEN, SKINCOLOR_CROCODILE, SKINCOLOR_BANANA};
@@ -12022,11 +12016,6 @@ static void K_KartSpindash(player_t *player)
 	}
 
 	if ((player->wavedashboost > 0) && (spawnWind == true))
-	{
-		K_KartSpindashWind(player->mo);
-	}
-
-	if ((player->overdrive > 0) && (spawnWind == true))
 	{
 		K_KartSpindashWind(player->mo);
 	}

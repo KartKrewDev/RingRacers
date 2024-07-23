@@ -17,6 +17,8 @@
 #include "../k_kart.h"
 #include "../k_powerup.h"
 
+static UINT8 interlacedfuckingthing[] = {6,1,7,2,8,3,9,2,1,1,1,2,1,3,1,2,10,1,11,2,4,3,5,2,1,1,1,2,1,3,1,2};
+
 void Obj_BlockRingThink (mobj_t *ring)
 {
     if (P_MobjWasRemoved(ring->target) || !ring->target->player)
@@ -32,23 +34,42 @@ void Obj_BlockRingThink (mobj_t *ring)
         ring->flags &= ~(MF_NOCLIPTHING);
 		P_MoveOrigin(ring, mo->x, mo->y, mo->z + mo->height/2);
 		ring->flags |= MF_NOCLIPTHING;
-        ring->color = mo->color;
+        ring->color = mo->player->skincolor;
 
         fixed_t baseScale = mo->scale / 2;
         baseScale += (mo->scale / 30) * player->spheres;
+
         if (player->overdrive)
+        {
             baseScale += mo->scale;
+            ring->sprite = SPR_AMPB;
+            ring->frame = interlacedfuckingthing[(leveltime/1)%32]-1;
+            ring->colorized = true;
+        }
+        else
+        {
+            ring->colorized = false;
+            ring->frame = 0;
+        }
+
         P_SetScale(ring, baseScale);
 
         // Twirl
-        ring->angle = ring->target->angle + (ANG15 * leveltime);
+        ring->angle = ring->target->angle + (ANG15/2 * leveltime);
         // Visuals
         ring->renderflags |= RF_ADD|RF_PAPERSPRITE;
 
-        if (leveltime%2)
+        if (player->overdrive > 35)
+        {
             ring->renderflags &= ~RF_DONTDRAW;
+        }
         else
-            ring->renderflags |= RF_DONTDRAW;
+        {
+            if (leveltime%2)
+                ring->renderflags &= ~RF_DONTDRAW;
+            else
+                ring->renderflags |= RF_DONTDRAW;
+        }
 
         if (K_PowerUpRemaining(player, POWERUP_BARRIER) || !(K_PlayerGuard(player) || player->overdrive))
             ring->renderflags |= RF_DONTDRAW;
@@ -71,8 +92,6 @@ void Obj_BlockBodyThink (mobj_t *body)
 
         fixed_t baseScale = mo->scale / 2;
         baseScale += (mo->scale / 30) * player->spheres;
-        if (player->overdrive)
-            baseScale += mo->scale;
         P_SetScale(body, baseScale);
 
 		P_MoveOrigin(body, mo->x, mo->y, mo->z + mo->height/2);
@@ -87,7 +106,7 @@ void Obj_BlockBodyThink (mobj_t *body)
         else
             body->renderflags |= RF_DONTDRAW;
 
-        if (K_PowerUpRemaining(player, POWERUP_BARRIER) || !(K_PlayerGuard(player) || player->overdrive))
+        if (K_PowerUpRemaining(player, POWERUP_BARRIER) || !K_PlayerGuard(player))
             body->renderflags |= RF_DONTDRAW;
     }
 }

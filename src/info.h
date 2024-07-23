@@ -1117,6 +1117,7 @@ typedef enum sprite
 	SPR_EGOO,
 
 	SPR_AMPA,
+	SPR_AMPB,
 
 	SPR_WTRL, // Water Trail
 
