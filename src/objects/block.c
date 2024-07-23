@@ -36,6 +36,8 @@ void Obj_BlockRingThink (mobj_t *ring)
 
         fixed_t baseScale = mo->scale / 2;
         baseScale += (mo->scale / 30) * player->spheres;
+        if (player->overdrive)
+            baseScale += mo->scale;
         P_SetScale(ring, baseScale);
 
         // Twirl
@@ -48,7 +50,7 @@ void Obj_BlockRingThink (mobj_t *ring)
         else
             ring->renderflags |= RF_DONTDRAW;
 
-        if (K_PowerUpRemaining(player, POWERUP_BARRIER) || !K_PlayerGuard(player))
+        if (K_PowerUpRemaining(player, POWERUP_BARRIER) || !(K_PlayerGuard(player) || player->overdrive))
             ring->renderflags |= RF_DONTDRAW;
     }
 }
@@ -69,6 +71,8 @@ void Obj_BlockBodyThink (mobj_t *body)
 
         fixed_t baseScale = mo->scale / 2;
         baseScale += (mo->scale / 30) * player->spheres;
+        if (player->overdrive)
+            baseScale += mo->scale;
         P_SetScale(body, baseScale);
 
 		P_MoveOrigin(body, mo->x, mo->y, mo->z + mo->height/2);
@@ -83,7 +87,7 @@ void Obj_BlockBodyThink (mobj_t *body)
         else
             body->renderflags |= RF_DONTDRAW;
 
-        if (K_PowerUpRemaining(player, POWERUP_BARRIER) || !K_PlayerGuard(player))
+        if (K_PowerUpRemaining(player, POWERUP_BARRIER) || !(K_PlayerGuard(player) || player->overdrive))
             body->renderflags |= RF_DONTDRAW;
     }
 }

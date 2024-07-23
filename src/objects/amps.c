@@ -51,6 +51,10 @@ void Obj_AmpsThink (mobj_t *amps)
             if (amps->extravalue1)
                 amps->extravalue1--;
 
+            amps->extravalue2++;
+
+            speed += amps->extravalue1 * amps->scale/2;
+
             fakez = mo->z + (vert * amps->extravalue1 / AMP_ARCTIME);
             damper = 1;
         }
@@ -63,6 +67,11 @@ void Obj_AmpsThink (mobj_t *amps)
             fakez = mo->z + vert;
         }
 
+        if (mo->flags & MFE_VERTICALFLIP)
+            fakez -= mo->height/2;
+        else
+            fakez += mo->height/2;
+
         hang = R_PointToAngle2(amps->x, amps->y, mo->x, mo->y);
         vang = R_PointToAngle2(amps->z, 0, fakez, dist);
 
@@ -71,7 +80,7 @@ void Obj_AmpsThink (mobj_t *amps)
         amps->momy += FixedMul(FINESINE(vang>>ANGLETOFINESHIFT), FixedMul(FINESINE(hang>>ANGLETOFINESHIFT), speed));
         amps->momz += FixedMul(FINECOSINE(vang>>ANGLETOFINESHIFT), speed);
 
-        if (dist < (120 * amps->scale) && amps->extravalue2)
+        if (dist < (120 * amps->scale) && amps->extravalue2 && !player->ampsounds)
         {   
             K_AwardPlayerAmps(player, 2);
             P_RemoveMobj(amps);

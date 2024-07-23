@@ -581,7 +581,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT16(save->p, players[i].wavedash);
 		WRITEUINT8(save->p, players[i].wavedashdelay);
 		WRITEUINT16(save->p, players[i].wavedashboost);
-		WRITEUINT16(save->p, players[i].overdriveboost);
+		WRITEUINT16(save->p, players[i].overdrive);
 		WRITEFIXED(save->p, players[i].wavedashpower);
 		WRITEFIXED(save->p, players[i].overdrivepower);
 		WRITEUINT16(save->p, players[i].speedpunt);
@@ -1191,7 +1191,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].wavedash = READUINT16(save->p);
 		players[i].wavedashdelay = READUINT8(save->p);
 		players[i].wavedashboost = READUINT16(save->p);
-		players[i].overdriveboost = READUINT16(save->p);
+		players[i].overdrive = READUINT16(save->p);
 		players[i].wavedashpower = READFIXED(save->p);
 		players[i].overdrivepower = READFIXED(save->p);
 		players[i].speedpunt = READUINT16(save->p);

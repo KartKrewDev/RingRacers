@@ -1033,7 +1033,7 @@ struct player_t
 	UINT8 ampsounds;
 	UINT8 ampspending;
 	
-	UINT16 overdriveboost;
+	UINT16 overdrive;
 	fixed_t overdrivepower;
 
 	UINT8 itemflags; 	// holds IF_ flags (see itemflags_t)

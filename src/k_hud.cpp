@@ -3170,7 +3170,7 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 			.width(uselives ? (stplyr->lives >= 10 ? 70 : 64) : 33)
 			.small_sticker();
 	
-		if (stplyr->overdriveboost)
+		if (stplyr->overdrive)
 		{
 			V_DrawMappedPatch(LAPS_X+7-8, fy-5-8, V_HUDTRANS|V_SLIDEIN|splitflags, kp_overdrive[leveltime%32], R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(stplyr->skincolor), GTC_CACHE));
 		}

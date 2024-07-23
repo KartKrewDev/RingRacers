@@ -2012,7 +2012,7 @@ static void K_SpawnGenericSpeedLines(player_t *player, boolean top)
 		fast->color = SKINCOLOR_WHITE;
 		fast->colorized = true;
 	}
-	else if (player->overdriveboost)
+	else if (player->overdrive)
 	{
 		fast->color = player->skincolor;
 		fast->renderflags |= RF_ADD;
@@ -3518,7 +3518,7 @@ static void K_GetKartBoostPower(player_t *player)
 		);  // + 80% top speed (peak), +400% acceleration (peak), +20% handling
 	}
 
-	if (player->overdriveboost)
+	if (player->overdrive)
 	{
 		ADDBOOST(
 			Easing_InCubic(
@@ -3599,7 +3599,7 @@ static void K_GetKartBoostPower(player_t *player)
 	if (player->ringboost) // Ring Boost
 	{
 		fixed_t ringboost_base = FRACUNIT/4;
-		if (player->overdriveboost)
+		if (player->overdrive)
 			ringboost_base += FRACUNIT/2;
 		// This one's a little special: we add extra top speed per tic of ringboost stored up, to allow for Ring Box to really rocket away.
 		// (We compensate when decrementing ringboost to avoid runaway exponential scaling hell.)
@@ -4018,14 +4018,30 @@ void K_SpawnAmps(player_t *player, UINT8 amps, mobj_t *impact)
 void K_AwardPlayerAmps(player_t *player, UINT8 amps)
 {
 	UINT16 getamped = player->amps + amps;
+	UINT8 oldamps = player->amps;
 
 	if (getamped > 200)
 		player->amps = 200;
 	else
 		player->amps = getamped;
 
-	player->ampsounds++;
+	player->ampsounds = 1;
 	player->ampspending--;
+
+	if (oldamps/AMPLEVEL != player->amps/AMPLEVEL)
+	{
+		UINT8 amplevel = player->amps / AMPLEVEL;
+		static sfxenum_t bwips[7] = {sfx_mbs4c, 
+			sfx_mbs4d, sfx_mbs4e, sfx_mbs4f, sfx_mbs50, 
+			sfx_mbs51, sfx_mbs52};
+		amplevel = min(amplevel, 6);
+
+		if (P_IsDisplayPlayer(player))
+		{
+			S_StartSound(NULL, bwips[amplevel]);
+			S_StartSound(NULL, bwips[amplevel]);
+		}
+	}
 
 	if (player->rings <= 0 && player->ampspending == 0)
 	{
@@ -4068,7 +4084,7 @@ boolean K_Overdrive(player_t *player)
 	S_StartSound(player->mo, sfx_cdfm35);
 	S_StartSound(player->mo, sfx_cdfm13);
 
-	player->overdriveboost += (player->amps)*6;
+	player->overdrive += (player->amps)*6;
 	player->overdrivepower = FRACUNIT;
 
 	player->amps = 0;
@@ -9070,9 +9086,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->wavedashboost--;
 	}
 
-	if (player->overdriveboost > 0 && onground == true)
+	if (player->overdrive > 0 && onground == true)
 	{
-		player->overdriveboost--;
+		player->overdrive--;
 	}
 
 	if (player->wavedashboost == 0 || player->wavedashpower > FRACUNIT)
@@ -9138,21 +9154,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			S_StartSoundAtVolume(NULL, sfx_mbs43, 127);
 		}
 		player->ampsounds--;
-
-		if (player->ampsounds == 0)
-		{
-			UINT8 amplevel = player->amps / AMPLEVEL;
-			static sfxenum_t bwips[7] = {sfx_mbs4c, 
-				sfx_mbs4d, sfx_mbs4e, sfx_mbs4f, sfx_mbs50, 
-				sfx_mbs51, sfx_mbs52};
-			amplevel = min(amplevel, 6);
-
-			if (P_IsDisplayPlayer(player))
-			{
-				S_StartSound(NULL, bwips[amplevel]);
-				S_StartSound(NULL, bwips[amplevel]);
-			}
-		}
 	}
 
 
@@ -9816,7 +9817,7 @@ void K_KartResetPlayerColor(player_t *player)
 		goto finalise;
 	}
 
-	if (player->overdriveboost && (leveltime & 1))
+	if (player->overdrive && (leveltime & 1))
 	{
 		player->mo->colorized = true;
 		fullbright = true;
@@ -9824,7 +9825,7 @@ void K_KartResetPlayerColor(player_t *player)
 		goto finalise;
 
 	}
-	else if (player->overdriveboost)
+	else if (player->overdrive)
 	{
 		player->mo->colorized = true;
 		fullbright = true;
@@ -11955,7 +11956,7 @@ static void K_KartSpindashWind(mobj_t *parent)
 	if (parent->player && parent->player->wavedashboost)
 		P_SetScale(wind, wind->scale * 2);
 
-	if (parent->player && parent->player->overdriveboost)
+	if (parent->player && parent->player->overdrive)
 		P_SetScale(wind, wind->scale * 2);
 
 	if (parent->momx || parent->momy)
@@ -12025,7 +12026,7 @@ static void K_KartSpindash(player_t *player)
 		K_KartSpindashWind(player->mo);
 	}
 
-	if ((player->overdriveboost > 0) && (spawnWind == true))
+	if ((player->overdrive > 0) && (spawnWind == true))
 	{
 		K_KartSpindashWind(player->mo);
 	}
