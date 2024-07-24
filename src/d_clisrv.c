@@ -6805,6 +6805,22 @@ INT32 D_NumPlayers(void)
 	return num;
 }
 
+/** Returns the number of players racing, not spectating and includes bots
+  * \return Number of players. Can be zero if we're running a ::dedicated
+  *         server.
+  */
+INT32 D_NumPlayersInRace(void)
+{
+    INT32 numPlayers = 0;
+    INT32 i;
+    for (i = 0; i < MAXPLAYERS; i++)
+    {
+        if (playeringame[i] && !players[i].spectator)
+        	numPlayers++;
+    }
+    return numPlayers;
+}
+
 /** Return whether a player is a real person (not a CPU) and not spectating.
   */
 boolean D_IsPlayerHumanAndGaming (INT32 player_number)

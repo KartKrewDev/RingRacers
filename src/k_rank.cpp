@@ -26,6 +26,7 @@
 #include "byteptr.h"
 #include "k_race.h"
 #include "command.h"
+#include "k_objects.h"
 
 // I was ALMOST tempted to start tearing apart all
 // of the map loading code and turning it into C++
@@ -510,7 +511,8 @@ void gpRank_t::Update(void)
 	}
 
 	lvl->time = UINT32_MAX;
-	lvl->totalLapPoints = K_RaceLapCount(gamemap - 1) * 2;
+
+	lvl->totalLapPoints = ( K_RaceLapCount(gamemap - 1) + Obj_GetCheckpointCount() )* 2;
 	lvl->totalPrisons = maptargets;
 
 	UINT8 i;

@@ -5248,7 +5248,7 @@ void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skippr
 			players[i].score = 0;
 		}
 
-		if (resetplayer || map != gamemap)
+		if (resetplayer || !(gametyperules & GTR_CHECKPOINTS && map == gamemap))
 		{
 			players[i].checkpointId = 0;
 		}

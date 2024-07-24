@@ -118,6 +118,7 @@
 #include "k_hud.h" // K_ClearPersistentMessages
 #include "k_endcam.h"
 #include "k_credits.h"
+#include "k_objects.h"
 
 // Replay names have time
 #if !defined (UNDER_CE)
@@ -8585,6 +8586,8 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	ACS_InvalidateMapScope();
 
 	LUA_InvalidateLevel();
+
+	Obj_ClearCheckpoints();
 
 	for (ss = sectors; sectors+numsectors != ss; ss++)
 	{

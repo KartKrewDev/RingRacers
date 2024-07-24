@@ -263,6 +263,9 @@ mobj_t *Obj_FindCheckpoint(INT32 id);
 boolean Obj_GetCheckpointRespawnPosition(const mobj_t *checkpoint, vector3_t *return_pos);
 angle_t Obj_GetCheckpointRespawnAngle(const mobj_t *checkpoint);
 void Obj_ActivateCheckpointInstantly(mobj_t* mobj);
+UINT32 Obj_GetCheckpointCount();
+void Obj_ClearCheckpoints();
+void Obj_DeactivateCheckpoints();
 
 /* Rideroid / Rideroid Node */
 void Obj_RideroidThink(mobj_t *mo);

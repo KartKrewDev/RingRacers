@@ -36,6 +36,7 @@
 #include "r_fps.h"
 #include "g_party.h"
 #include "g_input.h"
+#include "k_objects.h"
 
 boolean level_tally_t::UseBonuses(void)
 {
@@ -343,7 +344,7 @@ void level_tally_t::Init(player_t *player)
 		if ((gametypes[gt]->rules & GTR_CIRCUIT) == GTR_CIRCUIT)
 		{
 			laps = player->lapPoints;
-			totalLaps = numlaps;
+			totalLaps = numlaps + numlaps * Obj_GetCheckpointCount();
 
 			if (inDuel == false)
 			{
