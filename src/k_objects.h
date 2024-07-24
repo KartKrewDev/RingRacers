@@ -139,6 +139,10 @@ void Obj_BlockRingThink(mobj_t *ring);
 void Obj_BlockBodyThink(mobj_t *body);
 void Obj_GuardBreakThink(mobj_t *fx);
 
+void Obj_AmpRingThink(mobj_t *amp);
+void Obj_AmpBodyThink(mobj_t *amp);
+void Obj_AmpAuraThink(mobj_t *amp);
+
 void Obj_AmpsThink(mobj_t *amps);
 
 void Obj_ChargeAuraThink(mobj_t *aura);

@@ -8595,6 +8595,21 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		Obj_BlockBodyThink(mobj);
 		break;
 	}
+	case MT_AMPRING:
+	{
+		Obj_AmpRingThink(mobj);
+		break;
+	}
+	case MT_AMPBODY:
+	{
+		Obj_AmpBodyThink(mobj);
+		break;
+	}
+	case MT_AMPAURA:
+	{
+		Obj_AmpAuraThink(mobj);
+		break;
+	}
 	case MT_CHARGEAURA:
 	{
 		Obj_ChargeAuraThink(mobj);
@@ -12154,6 +12169,24 @@ void P_SpawnPlayer(INT32 playernum)
 		P_SetScale(body, p->mo->scale);
 		K_MatchGenericExtraFlags(body, p->mo);
 		body->renderflags |= RF_DONTDRAW;
+
+		mobj_t *aring = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_AMPRING);
+		P_SetTarget(&aring->target, p->mo);
+		P_SetScale(aring, p->mo->scale);
+		K_MatchGenericExtraFlags(aring, p->mo);
+		aring->renderflags |= RF_DONTDRAW;
+			
+		mobj_t *abody = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_AMPBODY);
+		P_SetTarget(&abody->target, p->mo);
+		P_SetScale(abody, p->mo->scale);
+		K_MatchGenericExtraFlags(abody, p->mo);
+		abody->renderflags |= RF_DONTDRAW;
+
+		mobj_t *aaura = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_AMPAURA);
+		P_SetTarget(&aaura->target, p->mo);
+		P_SetScale(aaura, p->mo->scale);
+		K_MatchGenericExtraFlags(aaura, p->mo);
+		aaura->renderflags |= RF_DONTDRAW;
 
 		if (K_PlayerGuard(p))
 			S_StartSound(body, sfx_s1af);

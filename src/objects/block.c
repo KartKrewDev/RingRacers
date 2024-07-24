@@ -17,8 +17,6 @@
 #include "../k_kart.h"
 #include "../k_powerup.h"
 
-static UINT8 interlacedfuckingthing[] = {6,1,7,2,8,3,9,2,1,1,1,2,1,3,1,2,10,1,11,2,4,3,5,2,1,1,1,2,1,3,1,2};
-
 void Obj_BlockRingThink (mobj_t *ring)
 {
     if (P_MobjWasRemoved(ring->target) || !ring->target->player)
@@ -39,19 +37,6 @@ void Obj_BlockRingThink (mobj_t *ring)
         fixed_t baseScale = mo->scale / 2;
         baseScale += (mo->scale / 30) * player->spheres;
 
-        if (player->overdrive)
-        {
-            baseScale += mo->scale;
-            ring->sprite = SPR_AMPB;
-            ring->frame = interlacedfuckingthing[(leveltime/1)%32]-1;
-            ring->colorized = true;
-        }
-        else
-        {
-            ring->colorized = false;
-            ring->frame = 0;
-        }
-
         P_SetScale(ring, baseScale);
 
         // Twirl
@@ -59,19 +44,12 @@ void Obj_BlockRingThink (mobj_t *ring)
         // Visuals
         ring->renderflags |= RF_ADD|RF_PAPERSPRITE;
 
-        if (player->overdrive > 35)
-        {
+        if (leveltime%2)
             ring->renderflags &= ~RF_DONTDRAW;
-        }
         else
-        {
-            if (leveltime%2)
-                ring->renderflags &= ~RF_DONTDRAW;
-            else
-                ring->renderflags |= RF_DONTDRAW;
-        }
+            ring->renderflags |= RF_DONTDRAW;
 
-        if (K_PowerUpRemaining(player, POWERUP_BARRIER) || !(K_PlayerGuard(player) || player->overdrive))
+        if (K_PowerUpRemaining(player, POWERUP_BARRIER) || !K_PlayerGuard(player))
             ring->renderflags |= RF_DONTDRAW;
     }
 }
