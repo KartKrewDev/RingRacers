@@ -282,8 +282,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->ringboxaward);
 	else if (fastcmp(field,"amps"))
 		lua_pushinteger(L, plr->amps);
-	else if (fastcmp(field,"ampsounds"))
-		lua_pushinteger(L, plr->ampsounds);
+	else if (fastcmp(field,"amppickup"))
+		lua_pushinteger(L, plr->amppickup);
 	else if (fastcmp(field,"ampspending"))
 		lua_pushinteger(L, plr->ampspending);
 	else if (fastcmp(field,"itemflags"))
@@ -366,6 +366,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->wavedashboost);
 	else if (fastcmp(field,"overdrive"))
 		lua_pushinteger(L, plr->overdrive);
+	else if (fastcmp(field,"overshield"))
+		lua_pushinteger(L, plr->overshield);
 	else if (fastcmp(field,"wavedashpower"))
 		lua_pushinteger(L, plr->wavedashpower);
 	else if (fastcmp(field,"overdrivepower"))
@@ -854,8 +856,8 @@ static int player_set(lua_State *L)
 		plr->ringboxaward = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"amps"))
 		plr->amps = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"ampsounds"))
-		plr->ampsounds = luaL_checkinteger(L, 3);	
+	else if (fastcmp(field,"amppickup"))
+		plr->amppickup = luaL_checkinteger(L, 3);	
 	else if (fastcmp(field,"ampspending"))
 		plr->ampspending = luaL_checkinteger(L, 3);		
 	else if (fastcmp(field,"itemflags"))
@@ -936,6 +938,8 @@ static int player_set(lua_State *L)
 		plr->wavedashboost = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"overdrive"))
 		plr->overdrive = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"overshield"))
+		plr->overshield = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"wavedashpower"))
 		plr->wavedashpower = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"overdrivepower"))

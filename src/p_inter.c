@@ -3006,7 +3006,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					sfx = sfx_s3k3a;
 					clash = true;
 				}
-				else if (player->overdrive && 
+				else if (player->overshield && 
 					(type != DMG_EXPLODE || inflictor->type != MT_SPBEXPLOSION || !inflictor->movefactor))
 				{
 					clash = true;

@@ -4019,7 +4019,7 @@ void K_AwardPlayerAmps(player_t *player, UINT8 amps)
 	else
 		player->amps = getamped;
 
-	player->ampsounds = 1;
+	player->amppickup = 1;
 	player->ampspending--;
 
 	if (oldamps/AMPLEVEL != player->amps/AMPLEVEL)
@@ -4079,6 +4079,7 @@ boolean K_Overdrive(player_t *player)
 	S_StartSound(player->mo, sfx_cdfm13);
 
 	player->overdrive += (player->amps)*6;
+	player->overshield += (player->amps)*2;
 	player->overdrivepower = FRACUNIT;
 
 	player->amps = 0;
@@ -9085,6 +9086,11 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->overdrive--;
 	}
 
+	if (player->overshield > 0 && onground == true)
+	{
+		player->overshield--;
+	}
+
 	if (player->wavedashboost == 0 || player->wavedashpower > FRACUNIT)
 	{
 		player->wavedashpower = FRACUNIT; // Safety
@@ -9136,7 +9142,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		K_DoIngameRespawn(player);
 	}
 
-	if (player->ampsounds && (leveltime%2))
+	if (player->amppickup && (leveltime%2))
 	{
 		if (P_IsDisplayPlayer(player))
 		{
@@ -9147,7 +9153,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		{
 			S_StartSoundAtVolume(NULL, sfx_mbs43, 127);
 		}
-		player->ampsounds--;
+		player->amppickup--;
 	}
 
 

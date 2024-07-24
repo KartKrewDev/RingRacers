@@ -582,6 +582,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].wavedashdelay);
 		WRITEUINT16(save->p, players[i].wavedashboost);
 		WRITEUINT16(save->p, players[i].overdrive);
+		WRITEUINT16(save->p, players[i].overshield);
 		WRITEFIXED(save->p, players[i].wavedashpower);
 		WRITEFIXED(save->p, players[i].overdrivepower);
 		WRITEUINT16(save->p, players[i].speedpunt);
@@ -630,7 +631,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].ringboxaward);
 
 		WRITEUINT8(save->p, players[i].amps);
-		WRITEUINT8(save->p, players[i].ampsounds);
+		WRITEUINT8(save->p, players[i].amppickup);
 		WRITEUINT8(save->p, players[i].ampspending);
 
 		WRITEUINT8(save->p, players[i].itemflags);
@@ -1192,6 +1193,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].wavedashdelay = READUINT8(save->p);
 		players[i].wavedashboost = READUINT16(save->p);
 		players[i].overdrive = READUINT16(save->p);
+		players[i].overshield = READUINT16(save->p);
 		players[i].wavedashpower = READFIXED(save->p);
 		players[i].overdrivepower = READFIXED(save->p);
 		players[i].speedpunt = READUINT16(save->p);
@@ -1240,7 +1242,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].ringboxaward = READUINT8(save->p);
 
 		players[i].amps =READUINT8(save->p);
-		players[i].ampsounds =READUINT8(save->p);
+		players[i].amppickup =READUINT8(save->p);
 		players[i].ampspending =READUINT8(save->p);
 
 		players[i].itemflags = READUINT8(save->p);

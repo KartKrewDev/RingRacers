@@ -82,7 +82,7 @@ void Obj_AmpsThink (mobj_t *amps)
         amps->momy += FixedMul(FINESINE(vang>>ANGLETOFINESHIFT), FixedMul(FINESINE(hang>>ANGLETOFINESHIFT), speed));
         amps->momz += FixedMul(FINECOSINE(vang>>ANGLETOFINESHIFT), speed);
 
-        if (dist < (120 * amps->scale) && amps->extravalue2 && !player->ampsounds)
+        if (dist < (120 * amps->scale) && amps->extravalue2 && !player->amppickup)
         {   
             K_AwardPlayerAmps(player, 2);
             P_RemoveMobj(amps);
@@ -116,12 +116,12 @@ void Obj_AmpRingThink (mobj_t *amps)
         amps->angle = amps->target->angle + (ANG15/2 * leveltime);
         amps->renderflags |= RF_ADD|RF_PAPERSPRITE|RF_FULLBRIGHT;
 
-        if (player->overdrive)
+        if (player->overshield)
             amps->renderflags &= ~RF_DONTDRAW;
         else
             amps->renderflags |= RF_DONTDRAW;
 
-        if (player->overdrive < 35 && player->overdrive % 2)
+        if (player->overshield < 35 && player->overshield % 2)
             amps->renderflags |= RF_DONTDRAW;
     }
 }
