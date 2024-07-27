@@ -8847,6 +8847,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 void P_PostLoadLevel(void)
 {
 	TracyCZone(__zone, true);
+	INT32 i;
 
 	P_MapStart();
 
@@ -8882,6 +8883,20 @@ void P_PostLoadLevel(void)
 		K_UpdateMatchRaceBots();
 	}
 
+	if (roundqueue.snapshotmaps == true)
+	{
+		// Force spectator for snapshotmaps command
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (!playeringame[i])
+			{
+				continue;
+			}
+
+			players[i].spectator = true;
+		}
+	}
+
 	K_TimerInit();
 
 	P_InitPlayers();
@@ -8905,7 +8920,6 @@ void P_PostLoadLevel(void)
 	ACS_RunLevelStartScripts();
 	LUA_HookInt(gamemap, HOOK(MapLoad));
 
-	UINT8 i;
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i])

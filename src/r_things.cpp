@@ -3796,6 +3796,7 @@ boolean R_ThingVisible (mobj_t *thing)
 			case MT_BATTLECAPSULE:
 			case MT_BATTLECAPSULE_PIECE:
 			case MT_SPRAYCAN:
+			case MT_PLAYER:
 				return false;
 
 			default:
