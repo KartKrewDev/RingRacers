@@ -4087,6 +4087,27 @@ boolean K_Overdrive(player_t *player)
 	return true;
 }
 
+boolean K_DefensiveOverdrive(player_t *player)
+{
+	if (player->amps == 0)
+		return false;
+	if (player->rings > 0)
+		return false;
+
+	K_SpawnDriftBoostExplosion(player, 3);
+	K_SpawnDriftElectricSparks(player, player->skincolor, true);
+	S_StartSound(player->mo, sfx_cdfm35);
+	S_StartSound(player->mo, sfx_cdfm13);
+
+	player->overdrive += (player->amps)*4;
+	player->overshield += (player->amps)*2 + TICRATE*2;
+	player->overdrivepower = FRACUNIT;
+
+	player->amps = 0;
+
+	return true;
+}
+
 void K_DoInstashield(player_t *player)
 {
 	mobj_t *layera;

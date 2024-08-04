@@ -3357,6 +3357,8 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			{
 				player->flipDI = true;
 			}
+
+			K_DefensiveOverdrive(target->player);
 		}
 	}
 	else

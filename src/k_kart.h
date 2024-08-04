@@ -135,6 +135,7 @@ void K_SpawnAmps(player_t *player, UINT8 amps, mobj_t *impact);
 void K_AwardPlayerAmps(player_t *player, UINT8 amps);
 void K_AwardPlayerRings(player_t *player, UINT16 rings, boolean overload);
 boolean K_Overdrive(player_t *player);
+boolean K_DefensiveOverdrive(player_t *player);
 void K_DoInstashield(player_t *player);
 void K_DoPowerClash(mobj_t *t1, mobj_t *t2);
 void K_DoGuardBreak(mobj_t *t1, mobj_t *t2);
