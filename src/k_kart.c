@@ -13273,6 +13273,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 										P_InstaThrust(player->mo, angle, player->speed + (80 * mapobjectscale));
 										P_SetObjectMomZ(player->mo, player->mo->info->height / 8, true);
 
+										// Limit top spaceflight, whether accidental or on purpose, by forcing a fastfall
+										player->cmd.buttons |= BT_EBRAKEMASK;
+										player->pflags &= ~PF_NOFASTFALL;
+
 										if (top != NULL)
 										{
 											top->momx = player->mo->momx;
