@@ -13,13 +13,10 @@
 
 #include <cmath>
 #include <memory>
-#include <optional>
-#include <variant>
 #include <vector>
 
 #include <tcb/span.hpp>
 
-#include "sound_chunk.hpp"
 #include "source.hpp"
 
 namespace srb2::audio

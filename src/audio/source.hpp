@@ -11,8 +11,6 @@
 #ifndef __SRB2_AUDIO_SOURCE_HPP__
 #define __SRB2_AUDIO_SOURCE_HPP__
 
-#include <array>
-
 #include <tcb/span.hpp>
 
 #include "sample.hpp"

@@ -12,13 +12,11 @@
 
 #include <stb_vorbis.h>
 
-#include "../cxxutil.hpp"
 #include "../io/streams.hpp"
 #include "ogg.hpp"
 #include "ogg_player.hpp"
 #include "resample.hpp"
 #include "sound_chunk.hpp"
-#include "sound_effect_player.hpp"
 #include "wav.hpp"
 #include "wav_player.hpp"
 

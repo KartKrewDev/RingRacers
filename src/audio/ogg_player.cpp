@@ -11,9 +11,7 @@
 #include "ogg_player.hpp"
 
 #include <cmath>
-#include <limits>
 #include <optional>
-#include <stdexcept>
 #include <utility>
 
 using namespace srb2;

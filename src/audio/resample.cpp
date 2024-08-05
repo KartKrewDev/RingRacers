@@ -18,7 +18,6 @@
 
 using std::shared_ptr;
 using std::size_t;
-using std::vector;
 
 using namespace srb2::audio;
 

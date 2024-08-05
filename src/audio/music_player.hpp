@@ -29,7 +29,7 @@ enum class MusicType
 	kMod
 };
 
-class MusicPlayer : public Source<2>
+class MusicPlayer final : public Source<2>
 {
 public:
 	MusicPlayer();
