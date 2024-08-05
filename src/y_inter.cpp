@@ -478,6 +478,7 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 	INT32 hilicol = highlightflags;
 
 	patch_t *resbar = static_cast<patch_t*>(W_CachePatchName("R_RESBAR", PU_PATCH)); // Results bars for players
+	patch_t *cpu = static_cast<patch_t*>(W_CachePatchName("K_CPU", PU_PATCH));
 
 	if (drawping || standings->rankingsmode != 0)
 	{
@@ -710,11 +711,11 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 			{
 				if (players[pnum].bot)
 				{
-					/*V_DrawScaledPatch(
-						x2, y-1,
+					V_DrawScaledPatch(
+						x2-2 + (datarightofcolumn ? 2 : -2), y-2,
 						0,
-						kp_cpu
-					);*/
+						cpu
+					);
 				}
 				else
 				{
