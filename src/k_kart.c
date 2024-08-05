@@ -11403,7 +11403,8 @@ void K_KartUpdatePosition(player_t *player)
 			}
 			else
 			{
-				player->topinfirst = 0;
+				if (player->topinfirst && (leveltime%3 == 0))
+					player->topinfirst--;
 			}
 		}
 	}
