@@ -275,7 +275,8 @@ static void P_ItemPop(mobj_t *actor)
 	actor->extravalue1 = 0;
 
 	// de-solidify
-	actor->flags |= MF_NOCLIPTHING;
+	// (Nope! Handled in fusethink for item pickup leniency)
+	// actor->flags |= MF_NOCLIPTHING;
 
 	// RF_DONTDRAW will flicker as the object's fuse gets
 	// closer to running out (see P_FuseThink)
@@ -447,12 +448,29 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 			statenum_t specialstate = special->state - states;
 
-			if (specialstate >= S_RANDOMITEM1 && specialstate <= S_RANDOMITEM12)
+			if (special->fuse) // This box is respawning, but was broken very recently (see P_FuseThink)
+			{
+				// What was this box broken as?
+				if (special->cvmem)
+					K_StartItemRoulette(player, false);
+				else
+					K_StartItemRoulette(player, true);
+			}
+			else if (specialstate >= S_RANDOMITEM1 && specialstate <= S_RANDOMITEM12)
+			{
 				K_StartItemRoulette(player, false);
+				special->cvmem = 1; // Lenient pickup should be ITEM
+			}
 			else
+			{
 				K_StartItemRoulette(player, true);
+				special->cvmem = 0; // Lenient pickup should be RING
+			}
+
 			P_ItemPop(special);
-			special->fuse = TICRATE;
+
+			if (!special->fuse)
+				special->fuse = TICRATE;
 			return;
 		}
 		case MT_SPHEREBOX:

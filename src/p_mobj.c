@@ -9969,6 +9969,12 @@ static boolean P_FuseThink(mobj_t *mobj)
 
 	mobj->fuse--;
 
+	// Simultaneous item pickup leniency
+	if (mobj->type == MT_RANDOMITEM && mobj->fuse <= TICRATE-5)
+	{
+		mobj->flags |= MF_NOCLIPTHING;
+	}
+
 	if (mobj->fuse)
 		return true;
 
