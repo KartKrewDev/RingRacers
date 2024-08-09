@@ -3193,6 +3193,8 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	sonicloopcamvars_t *loop = &player->loop.camera;
 	tic_t loop_out = leveltime - loop->enter_tic;
 	tic_t loop_in = max(leveltime, loop->exit_tic) - loop->exit_tic;
+	boolean affected_by_loop = (loop_out <=
+		(loop->zoom_in_speed + loop->zoom_out_speed) && leveltime > introtime);
 
 	thiscam->old_x = thiscam->x;
 	thiscam->old_y = thiscam->y;
@@ -3406,8 +3408,9 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	}
 	else if (player->exiting) // SRB2Kart: Leave the camera behind while exiting, for dramatic effect!
 		camstill = true;
-	else if (lookback || lookbackdelay[num]) // SRB2kart - Camera flipper
+	else if ((lookback || lookbackdelay[num]) && !affected_by_loop)
 	{
+		// SRB2Kart -- Camera flip when looking backwards
 #define MAXLOOKBACKDELAY 2
 		camspeed = FRACUNIT;
 		if (lookback)
@@ -3621,6 +3624,14 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	{
 		thiscam->momx = x - thiscam->x;
 		thiscam->momy = y - thiscam->y;
+
+		if (lookback && lookbackdelay[num] && !affected_by_loop) {
+			// when looking back, camera's momentum
+			// should inherit the momentum of the player
+			// plus extra
+			thiscam->momx += 2*mo->momx;
+			thiscam->momy += 2*mo->momy;
+		}
 
 		fixed_t z_speed = Easing_Linear(
 			player->karthud[khud_aircam],
