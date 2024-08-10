@@ -104,7 +104,7 @@ void K_DrawInputDisplay(float x, float y, INT32 flags, char mode, UINT8 pid, boo
 			(G_PlayerInputAnalog(pid, gc_up, guessinput) - G_PlayerInputAnalog(pid, gc_down, guessinput)) / (float)JOYAXISRANGE,
 		} :
 		Vec2<float> {
-			-cmd.turning / (float)KART_FULLTURN,
+			-cmd.turning * (encoremode ? -1 : 1) / (float)KART_FULLTURN,
 			cmd.throwdir / (float)KART_FULLTURN,
 		};
 

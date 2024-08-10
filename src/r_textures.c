@@ -1197,7 +1197,7 @@ Rloadflats (INT32 i, INT32 w)
 			texture->patchcount = 1;
 			texture->holes = false;
 			texture->flip = 0;
-			texture->terrain = K_GetTerrainForTextureName(texture->name);
+			texture->terrainID = K_GetTerrainIDForTextureName(texture->name);
 
 			// Allocate information for the texture's patches.
 			patch = &texture->patches[0];
@@ -1335,7 +1335,7 @@ Rloadtextures (INT32 i, INT32 w)
 			texture->patchcount = 1;
 			texture->holes = false;
 			texture->flip = 0;
-			texture->terrain = K_GetTerrainForTextureName(texture->name);
+			texture->terrainID = K_GetTerrainIDForTextureName(texture->name);
 
 			// Allocate information for the texture's patches.
 			patch = &texture->patches[0];
@@ -1877,7 +1877,7 @@ static texture_t *R_ParseTexture(boolean actuallyLoadTexture)
 			resultTexture->width = newTextureWidth;
 			resultTexture->height = newTextureHeight;
 			resultTexture->type = TEXTURETYPE_COMPOSITE;
-			resultTexture->terrain = K_GetTerrainForTextureName(newTextureName);
+			resultTexture->terrainID = K_GetTerrainIDForTextureName(newTextureName);
 		}
 		Z_Free(texturesToken);
 		texturesToken = M_GetToken(NULL);

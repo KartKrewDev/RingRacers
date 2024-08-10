@@ -855,8 +855,8 @@ void F_IntroTicker(void)
 	const boolean disclaimerskippable =
 	(
 		intro_scenenum == INTROSCENE_DISCLAIMER
-		&& dc_state == DISCLAIMER_FINAL
-		&& dc_tics >= (TICRATE/2) + (5*6) // bottom text needs to fade all the way in
+		&& (dc_state < DISCLAIMER_SLIDE
+		|| (dc_state == DISCLAIMER_FINAL && dc_textfade == 0)) // bottom text needs to fade all the way in
 	);
 	const boolean doskip =
 	(
@@ -874,7 +874,15 @@ void F_IntroTicker(void)
 
 	if (doskip && disclaimerskippable)
 	{
-		dc_state = DISCLAIMER_OUT;
+		if (dc_state == DISCLAIMER_FINAL) {
+			dc_state = DISCLAIMER_OUT;
+			I_FadeOutStopSong(MUSICRATE*2/3);
+		} else {
+			if (dc_state <= DISCLAIMER_FADE)
+				Music_Play("lawyer");
+			dc_state = DISCLAIMER_SLIDE;
+			dc_segaframe = 23;
+		}
 		dc_tics = 0;
 	}
 	else if (doskip || timetonext <= 0)

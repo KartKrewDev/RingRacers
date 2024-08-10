@@ -112,7 +112,7 @@ static boolean K_BRIGHTLumpParser(char *data, size_t size)
 			tkn = M_GetToken(NULL);
 			pos = M_GetTokenPos();
 
-			if (tkn && pos < size)
+			if (tkn && pos <= size)
 			{
 				brightmapStorage_t *bms = K_GetBrightmapStorageByTextureName(tkn);
 
@@ -127,7 +127,7 @@ static boolean K_BRIGHTLumpParser(char *data, size_t size)
 				tkn = M_GetToken(NULL);
 				pos = M_GetTokenPos();
 
-				if (tkn && pos < size)
+				if (tkn && pos <= size)
 				{
 					strncpy(bms->brightmapName, tkn, 8);
 					bms->brightmapHash = quickncasehash(tkn, 8);
