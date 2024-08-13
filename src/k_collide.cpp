@@ -29,6 +29,7 @@
 #include "m_random.h"
 #include "k_hud.h" // K_AddMessage
 #include "m_easing.h"
+#include "r_skins.h"
 
 angle_t K_GetCollideAngle(mobj_t *t1, mobj_t *t2)
 {
@@ -694,6 +695,11 @@ boolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2)
 		S_StartSound(t2, sfx_kdtrg1);
 	}
 
+	if (t1->tracer && t1->tracer->player)
+	{
+		K_SpawnAmps(t1->tracer->player, 20, t1);
+	}
+
 	if (draggeddroptarget && !P_MobjWasRemoved(draggeddroptarget) && draggeddroptarget->player)
 	{
 		// The following removes t1, be warned
@@ -1188,6 +1194,7 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 	auto doStumble = [](mobj_t *t1, mobj_t *t2)
 	{
 		K_StumblePlayer(t2->player);
+		K_SpawnAmps(t1->player, 20, t2);
 	};
 
 	if (forEither(shouldStumble, doStumble))

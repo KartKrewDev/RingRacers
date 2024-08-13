@@ -1029,6 +1029,14 @@ struct player_t
 	UINT8 ringboxdelay; // Delay until Ring Box auto-activates
 	UINT8 ringboxaward; // Where did we stop?
 
+	UINT8 amps;
+	UINT8 amppickup;
+	UINT8 ampspending;
+	
+	UINT16 overdrive;
+	UINT16 overshield;
+	fixed_t overdrivepower;
+
 	UINT8 itemflags; 	// holds IF_ flags (see itemflags_t)
 
 	fixed_t outrun; // Milky Way road effect

@@ -32,14 +32,15 @@ void Obj_BlockRingThink (mobj_t *ring)
         ring->flags &= ~(MF_NOCLIPTHING);
 		P_MoveOrigin(ring, mo->x, mo->y, mo->z + mo->height/2);
 		ring->flags |= MF_NOCLIPTHING;
-        ring->color = mo->color;
+        ring->color = mo->player->skincolor;
 
         fixed_t baseScale = mo->scale / 2;
         baseScale += (mo->scale / 30) * player->spheres;
+
         P_SetScale(ring, baseScale);
 
         // Twirl
-        ring->angle = ring->target->angle + (ANG15 * leveltime);
+        ring->angle = ring->target->angle + (ANG15/2 * leveltime);
         // Visuals
         ring->renderflags |= RF_ADD|RF_PAPERSPRITE;
 
