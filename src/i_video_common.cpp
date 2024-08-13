@@ -113,6 +113,12 @@ static void postframe_update(Rhi& rhi)
 static void temp_legacy_finishupdate_draws()
 {
 	SCR_CalculateFPS();
+
+	if (g_takemapthumbnail != TMT_NO)
+	{
+		return;
+	}
+
 	if (st_overlay)
 	{
 		if (cv_songcredits.value)

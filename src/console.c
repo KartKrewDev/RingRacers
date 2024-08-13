@@ -1887,7 +1887,7 @@ void CON_Drawer(void)
 {
 	Lock_state();
 
-	if (!con_started || !graphics_started)
+	if (!con_started || !graphics_started || g_takemapthumbnail != TMT_NO)
 	{
 		Unlock_state();
 		return;

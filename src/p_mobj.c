@@ -14096,6 +14096,17 @@ static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y,
 	return mobj;
 }
 
+static boolean P_DoomEdNumIsNOP(UINT16 type)
+{
+	if (type == EDITOR_CAM_DOOMEDNUM)
+	{
+		// 3D Mode start Thing
+		return true;
+	}
+
+	return (type == 0);
+}
+
 //
 // P_SpawnMapThing
 // The fields of the mapthing should
@@ -14107,11 +14118,8 @@ mobj_t *P_SpawnMapThing(mapthing_t *mthing)
 	mobj_t *mobj = NULL;
 	fixed_t x, y, z;
 
-	if (!mthing->type)
+	if (P_DoomEdNumIsNOP(mthing->type))
 		return mobj; // Ignore type-0 things as NOPs
-
-	if (mthing->type == 3328) // 3D Mode start Thing
-		return mobj;
 
 	if (!objectplacing && P_SpawnNonMobjMapThing(mthing))
 		return mobj;

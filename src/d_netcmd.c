@@ -194,6 +194,7 @@ static void Command_Automate_Set(void);
 static void Command_Eval(void);
 
 static void Command_WriteTextmap(void);
+static void Command_SnapshotMaps(void);
 
 #ifdef DEVELOP
 static void Command_FastForward(void);
@@ -446,6 +447,7 @@ void D_RegisterServerCommands(void)
 	COM_AddDebugCommand("eval", Command_Eval);
 
 	COM_AddCommand("writetextmap", Command_WriteTextmap);
+	COM_AddCommand("snapshotmaps", Command_SnapshotMaps);
 
 	// for master server connection
 	AddMServCommands();
@@ -6797,6 +6799,76 @@ ROUNDQUEUE_MAX
 	roundqueue.position = 1;
 	roundqueue.roundnum = 1;
 	roundqueue.writetextmap = true;
+
+	size_t i;
+
+	for (i = 1; i < COM_Argc(); ++i)
+	{
+		INT32 map = G_MapNumber(COM_Argv(i));
+
+		if (map < 0 || map >= nummapheaders)
+		{
+			CONS_Alert(CONS_WARNING, "%s: Map doesn't exist. Not doing anything.\n", COM_Argv(i));
+
+			// clear round queue (to be safe)
+			memset(&roundqueue, 0, sizeof(struct roundqueue));
+			return;
+		}
+
+		INT32 gt = G_GuessGametypeByTOL(mapheaderinfo[map]->typeoflevel);
+
+		G_MapIntoRoundQueue(map, gt != -1 ? gt : GT_RACE, false, false);
+	}
+
+	D_MapChange(1 + roundqueue.entries[0].mapnum, roundqueue.entries[0].gametype, false, true, 1, false, false);
+
+	CON_ToggleOff();
+}
+
+static void Command_SnapshotMaps(void)
+{
+	if (COM_Argc() < 2)
+	{
+		CONS_Printf(
+			"snapshotmaps <map> [map2...]: Create a thumbnail screenshot for the specified levels.\n"
+			"- Use the full map name, e.g. RR_TestRun.\n"
+			"- You can give this command UP TO %d map names and it will create images for all of them.\n"
+			"- This command generates two images -- one 320x200 for the PICTURE lump, another 1024x1024 for rich presence.\n"
+			"- The map requires a \"snapshot camera\" object to have been placed.\n"
+			"- The location of the generated images will appear in the console.\n",
+			ROUNDQUEUE_MAX
+		);
+		return;
+	}
+
+	if (Playing())
+	{
+		CONS_Alert(CONS_ERROR, "This command cannot be used in-game. Return to the titlescreen first!\n");
+		return;
+	}
+
+	if (COM_Argc() - 1 > ROUNDQUEUE_MAX)
+	{
+		CONS_Alert(CONS_ERROR, "Cannot snapshot more than %d maps. Try again.\n", ROUNDQUEUE_MAX);
+		return;
+	}
+
+	// Start up a "minor" grand prix session
+	memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
+	memset(&roundqueue, 0, sizeof(struct roundqueue));
+
+	grandprixinfo.gamespeed = KARTSPEED_NORMAL;
+	grandprixinfo.masterbots = false;
+
+	grandprixinfo.gp = true;
+	grandprixinfo.cup = NULL;
+	grandprixinfo.wonround = false;
+
+	grandprixinfo.initalize = true;
+
+	roundqueue.position = 1;
+	roundqueue.roundnum = 1;
+	roundqueue.snapshotmaps = true;
 
 	size_t i;
 

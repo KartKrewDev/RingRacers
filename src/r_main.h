@@ -182,6 +182,8 @@ void R_ExecuteSetViewSize(void);
 fixed_t R_FOV(int split);
 void R_CheckFOV(void);
 
+boolean R_ShowHUD(void);
+
 void R_SetupFrame(int split);
 void R_SkyboxFrame(int split);
 

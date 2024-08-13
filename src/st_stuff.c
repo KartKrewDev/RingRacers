@@ -500,22 +500,33 @@ void ST_drawDebugInfo(void)
 		camera_t *cam = &camera[screen];
 		if (stplyr->spectator || cam->freecam)
 		{
-			const fixed_t d = AngleFixed(cam->angle);
-			V_DrawRightAlignedString(320, height - 24, V_MONOSPACE, va("X: %6d", cam->x>>FRACBITS));
-			V_DrawRightAlignedString(320, height - 16, V_MONOSPACE, va("Y: %6d", cam->y>>FRACBITS));
-			V_DrawRightAlignedString(320, height - 8, V_MONOSPACE, va("Z: %6d", cam->z>>FRACBITS));
-			V_DrawRightAlignedString(320, height, V_MONOSPACE, va("A: %6d", FixedInt(d)));
+			const fixed_t a = AngleFixed(cam->angle);
+			fixed_t p = AngleFixed(cam->aiming);
+
+			if (p > (180 * FRACUNIT))
+			{
+				p = -((360 * FRACUNIT) - p);
+			}
+
+			V_DrawRightAlignedString(320, height - 32, V_MONOSPACE, va("X: %6d", cam->x>>FRACBITS));
+			V_DrawRightAlignedString(320, height - 24, V_MONOSPACE, va("Y: %6d", cam->y>>FRACBITS));
+			V_DrawRightAlignedString(320, height - 16, V_MONOSPACE, va("Z: %6d", cam->z>>FRACBITS));
+			V_DrawRightAlignedString(320, height - 8, V_MONOSPACE, va("A: %6d", FixedInt(a)));
+			V_DrawRightAlignedString(320, height, V_MONOSPACE, va("P: %6d", FixedInt(p)));
+
+			height -= 48;
 		}
 		else
 		{
 			const fixed_t d = AngleFixed(stplyr->mo->angle);
+
 			V_DrawRightAlignedString(320, height - 24, V_MONOSPACE, va("X: %6d", stplyr->mo->x>>FRACBITS));
 			V_DrawRightAlignedString(320, height - 16, V_MONOSPACE, va("Y: %6d", stplyr->mo->y>>FRACBITS));
 			V_DrawRightAlignedString(320, height - 8, V_MONOSPACE, va("Z: %6d", stplyr->mo->z>>FRACBITS));
 			V_DrawRightAlignedString(320, height, V_MONOSPACE, va("A: %6d", FixedInt(d)));
-		}
 
-		height -= 40;
+			height -= 40;
+		}
 	}
 
 	if (cht_debug & DBG_DETAILED)

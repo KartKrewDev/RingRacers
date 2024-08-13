@@ -989,7 +989,7 @@ void M_Drawer(void)
 	}
 
 	// draw pause pic
-	if (paused && !demo.playback && (menuactive || cv_showhud.value))
+	if (paused && !demo.playback && (menuactive || R_ShowHUD()))
 	{
 		M_DrawPausedText(0);
 	}

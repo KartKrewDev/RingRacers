@@ -365,6 +365,11 @@ static bool D_Display(bool world)
 
 	ZoneScoped;
 
+	if (g_takemapthumbnail != TMT_NO)
+	{
+		forcerefresh = true;
+	}
+
 	if (!dedicated)
 	{
 		if (nodrawers)
@@ -638,6 +643,7 @@ static bool D_Display(bool world)
 
 			// rhi: display the software framebuffer to the screen
 			//if (rendermode == render_soft)
+			if (g_takemapthumbnail == TMT_NO)
 			{
 				// TODO: THIS SHOULD IDEALLY BE IN REGULAR HUD CODE !!
 				// (st_stuff.c ST_Drawer, also duplicated in k_podium.c)
@@ -671,11 +677,11 @@ static bool D_Display(bool world)
 						V_DrawCustomFadeScreen("FADEMAP0", fade);
 					}
 				}
+			}
 
-				if (rendermode == render_soft)
-				{
-					VID_DisplaySoftwareScreen();
-				}
+			if (rendermode == render_soft)
+			{
+				VID_DisplaySoftwareScreen();
 			}
 
 			if (lastdraw)
@@ -2319,3 +2325,58 @@ const char *D_Home(void)
 	if (usehome) return userhome;
 	else return NULL;
 }
+
+void D_TakeMapSnapshots(void)
+{
+	// This function sucks ass!
+
+	const INT32 old_mode = vid.modenum;
+	player_t *const player = &players[consoleplayer];
+	mobj_t *newViewMobj = NULL;
+
+	newViewMobj = P_FindObjectTypeFromTag(MT_ALTVIEWMAN, 0);
+	if (newViewMobj == NULL)
+	{
+		// No camera? Skip.
+		CONS_Alert(CONS_WARNING, M_GetText("Map %s does not have an Alternate View Point with tag 0. Unable to create thumbnails.\n"), G_BuildMapName(gamemap));
+		return;
+	}
+
+	P_SetTarget(&player->awayview.mobj, newViewMobj);
+	player->awayview.tics = -1;
+	R_ResetViewInterpolation(0);
+
+	camera[0].x = player->awayview.mobj->x;
+	camera[0].y = player->awayview.mobj->y;
+	camera[0].z = player->awayview.mobj->z;
+	camera[0].angle = player->awayview.mobj->angle;
+	camera[0].aiming = player->awayview.mobj->pitch;
+	camera[0].subsector = player->awayview.mobj->subsector;
+
+	// Force Software mode
+	if (rendermode != 0)
+	{
+		setrenderneeded = 0;
+		D_Display(true);
+	}
+
+	// Render snapshot at game resolution (level select)
+	g_takemapthumbnail = TMT_PICTURE;
+	setmodeneeded = VID_GetModeForSize(BASEVIDWIDTH, BASEVIDHEIGHT) + 1;
+	D_Display(true);
+	I_CaptureVideoFrame();
+
+	// Render snapshot at 1024x1024 (rich presence)
+	g_takemapthumbnail = TMT_RICHPRES;
+	setmodeneeded = VID_GetModeForSize(1024, 1024) + 1;
+	D_Display(true);
+	I_CaptureVideoFrame();
+
+	// Revert mode to user preference
+	if (vid.modenum != old_mode)
+	{
+		setmodeneeded = old_mode + 1;
+		D_Display(true);
+	}
+}
+

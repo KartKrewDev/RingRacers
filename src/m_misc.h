@@ -31,6 +31,8 @@
 void M_DoScreenShot(uint32_t width, uint32_t height, tcb::span<const std::byte> data);
 void M_SaveFrame(uint32_t width, uint32_t height, tcb::span<const std::byte> data);
 
+void M_SaveMapThumbnail(uint32_t width, uint32_t height, tcb::span<const std::byte> data);
+
 extern "C" {
 #endif
 
@@ -42,6 +44,13 @@ typedef enum {
 	MM_AVRECORDER,
 } moviemode_t;
 extern moviemode_t moviemode;
+
+typedef enum {
+	TMT_NO = 0,
+	TMT_PICTURE,
+	TMT_RICHPRES,
+} g_takemapthumbnail_t;
+extern g_takemapthumbnail_t g_takemapthumbnail;
 
 extern consvar_t cv_screenshot_colorprofile;
 extern consvar_t cv_lossless_recorder;

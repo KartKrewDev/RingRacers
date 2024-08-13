@@ -76,6 +76,7 @@ void R_ClearSprites(void);
 UINT8 R_GetBoundingBoxColor(mobj_t *thing);
 boolean R_ThingBoundingBoxVisible(mobj_t *thing);
 
+boolean R_DrawPickups(void);
 boolean R_ThingVisible (mobj_t *thing);
 
 boolean R_ThingWithinDist (mobj_t *thing,

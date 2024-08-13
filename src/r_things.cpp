@@ -3765,13 +3765,23 @@ void R_ClipSprites(drawseg_t* dsstart, portal_t* portal)
 	}
 }
 
+boolean R_DrawPickups(void)
+{
+	if (g_takemapthumbnail != TMT_NO)
+	{
+		return false;
+	}
+
+	return (boolean)cv_drawpickups.value;
+}
+
 /* Check if thing may be drawn from our current view. */
 boolean R_ThingVisible (mobj_t *thing)
 {
 	if (thing->sprite == SPR_NULL)
 		return false;
 
-	if (!cv_drawpickups.value)
+	if (!R_DrawPickups())
 	{
 		switch (thing->type)
 		{
@@ -3786,6 +3796,7 @@ boolean R_ThingVisible (mobj_t *thing)
 			case MT_BATTLECAPSULE:
 			case MT_BATTLECAPSULE_PIECE:
 			case MT_SPRAYCAN:
+			case MT_PLAYER:
 				return false;
 
 			default:
