@@ -598,6 +598,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].ignoreAirtimeLeniency);
 
 		WRITEFIXED(save->p, players[i].topAccel);
+		WRITEFIXED(save->p, players[i].vortexBoost);
 
 		WRITEMEM(save->p, players[i].public_key, PUBKEYLENGTH);
 
@@ -1209,6 +1210,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].ignoreAirtimeLeniency = READUINT8(save->p);
 
 		players[i].topAccel = READFIXED(save->p);
+		players[i].vortexBoost = READFIXED(save->p);
 
 		READMEM(save->p, players[i].public_key, PUBKEYLENGTH);
 

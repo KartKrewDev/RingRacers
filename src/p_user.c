@@ -2363,7 +2363,43 @@ static void P_UpdatePlayerAngle(player_t *player)
 		angle_t leniency = leniency_base * min(player->cmd.latency, 6);
 		// Don't force another turning tic, just give them the desired angle!
 
-		if (targetDelta == angleChange || (maxTurnRight == 0 && maxTurnLeft == 0))
+#if 0 // Old sliptide preservation behavior
+		if (K_Sliptiding(player) && P_IsObjectOnGround(player->mo) && (player->cmd.turning != 0) && ((player->cmd.turning > 0) == (player->aizdriftstrat > 0)))
+		{
+			// Don't change handling direction if someone's inputs are sliptiding, you'll break the sliptide!
+			if (player->cmd.turning > 0)
+			{
+				steeringLeft = max(steeringLeft, 1);
+				steeringRight = max(steeringRight, steeringLeft);
+			}
+			else
+			{
+				steeringRight = min(steeringRight, -1);
+				steeringLeft = min(steeringLeft, steeringRight);
+			}
+		}
+#else // Digital-friendly sliptide preservation behavior
+		if (K_Sliptiding(player) && P_IsObjectOnGround(player->mo))
+		{
+			// Unless someone explicitly inputs a turn that would break their sliptide, keep sliptiding.
+			if (player->aizdriftstrat > 0 && player->cmd.turning >= 0)
+			{
+				steeringLeft = max(steeringLeft, 1);
+				steeringRight = max(steeringRight, steeringLeft);
+			}
+			else if ((player->aizdriftstrat < 0 && player->cmd.turning <= 0))
+			{
+				steeringRight = min(steeringRight, -1);
+				steeringLeft = min(steeringLeft, steeringRight);
+			}
+			else
+			{
+				// :V
+			}
+		}
+#endif
+
+		if (maxTurnRight == 0 && maxTurnLeft == 0)
 		{
 			// Either we're dead on or we can't steer at all.
 			player->steering = targetsteering;
@@ -2371,21 +2407,6 @@ static void P_UpdatePlayerAngle(player_t *player)
 		else
 		{
 			// We're off. Try to legally steer the player towards their camera.
-
-			if (K_Sliptiding(player) && P_IsObjectOnGround(player->mo) && (player->cmd.turning != 0) && ((player->cmd.turning > 0) == (player->aizdriftstrat > 0)))
-			{
-				// Don't change handling direction if someone's inputs are sliptiding, you'll break the sliptide!
-				if (player->cmd.turning > 0)
-				{
-					steeringLeft = max(steeringLeft, 1);
-					steeringRight = max(steeringRight, steeringLeft);
-				}
-				else
-				{
-					steeringRight = min(steeringRight, -1);
-					steeringLeft = min(steeringLeft, steeringRight);
-				}
-			}
 
 			player->steering = P_FindClosestTurningForAngle(player, targetDelta, steeringLeft, steeringRight);
 			angleChange = K_GetKartTurnValue(player, player->steering) << TICCMD_REDUCE;

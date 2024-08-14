@@ -388,6 +388,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->ignoreAirtimeLeniency);
 	else if (fastcmp(field,"topaccel"))
 		lua_pushinteger(L, plr->topAccel);
+	else if (fastcmp(field,"vortexboost"))
+		lua_pushinteger(L, plr->vortexBoost);
 	else if (fastcmp(field,"instawhipcharge"))
 		lua_pushinteger(L, plr->instaWhipCharge);
 	else if (fastcmp(field,"pitblame"))
@@ -960,6 +962,8 @@ static int player_set(lua_State *L)
 		plr->ignoreAirtimeLeniency = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"topaccel"))
 		plr->topAccel = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"vortexboost"))
+		plr->vortexBoost = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"instawhipcharge"))
 		plr->instaWhipCharge = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"pitblame"))

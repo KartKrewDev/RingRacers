@@ -3618,6 +3618,11 @@ static void K_GetKartBoostPower(player_t *player)
 		ADDBOOST(6*FRACUNIT/20, FRACUNIT, 0); // + 30% top speed, + 100% acceleration, +0% handling
 	}
 
+	if (player->vortexBoost) // Holding wavedash vortex (assigned in K_UpdateWavedashIndicator!)
+	{
+		ADDBOOST(player->vortexBoost/6, FRACUNIT/10, 0); // + ???% top speed, + 10% acceleration, +0% handling
+	}
+
 	if (player->trickcharge)
 	{
 		// NB: This is an acceleration-only boost.
@@ -4749,8 +4754,6 @@ void K_UpdateStumbleIndicator(player_t *player)
 	}
 }
 
-#define MIN_WAVEDASH_CHARGE ((11*TICRATE/16)*9)
-
 static boolean K_IsLosingWavedash(player_t *player)
 {
 	if (player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
@@ -4781,6 +4784,7 @@ void K_UpdateWavedashIndicator(player_t *player)
 	if (player->wavedashIndicator == NULL || P_MobjWasRemoved(player->wavedashIndicator) == true)
 	{
 		K_InitWavedashIndicator(player);
+		player->vortexBoost = 0;
 		return;
 	}
 
@@ -4809,6 +4813,15 @@ void K_UpdateWavedashIndicator(player_t *player)
 		mobj->frame++;
 	else if (max(chargeFrame, decayFrame) < mobj->frame)
 		mobj->frame--;
+
+	if (K_Sliptiding(player))
+	{
+		player->vortexBoost = 0;
+	}
+	else
+	{
+		player->vortexBoost = Easing_InCubic(mobj->frame*FRACUNIT/7, FRACUNIT, 0);
+	}
 
 	mobj->renderflags &= ~RF_TRANSMASK;
 	mobj->renderflags |= RF_PAPERSPRITE;
@@ -6008,7 +6021,11 @@ static void K_SpawnAIZDust(player_t *player)
 		spark = P_SpawnMobj(newx, newy, player->mo->z, MT_AIZDRIFTSTRAT);
 
 		spark->angle = travelangle+(player->aizdriftstrat*ANGLE_90);
-		P_SetScale(spark, (spark->destscale = (3*player->mo->scale)>>2));
+		P_SetScale(spark, (spark->destscale = (4*player->mo->scale)>>2));
+
+		fixed_t tiltmod = FixedDiv(abs(player->aizdrifttilt), ANGLE_22h);
+		spark->destscale = FixedMul(spark->destscale, tiltmod);
+		spark->scale = FixedMul(spark->scale, tiltmod);
 
 		spark->momx = (6*player->mo->momx)/5;
 		spark->momy = (6*player->mo->momy)/5;
