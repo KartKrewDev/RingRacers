@@ -55,7 +55,7 @@ void Obj_AmpsThink (mobj_t *amps)
 
             amps->extravalue2++;
 
-            speed += amps->extravalue1 * amps->scale/2;
+            speed += amps->extravalue2 * amps->scale/2;
 
             fakez = mo->z + (vert * amps->extravalue1 / AMP_ARCTIME);
             damper = 1;

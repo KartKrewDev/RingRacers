@@ -4091,7 +4091,7 @@ boolean K_Overdrive(player_t *player)
 	S_StartSound(player->mo, sfx_cdfm35);
 	S_StartSound(player->mo, sfx_cdfm13);
 
-	player->overdrive += (player->amps)*6;
+	player->overdrive += (player->amps)*3;
 	player->overshield += (player->amps)*2;
 	player->overdrivepower = FRACUNIT;
 
@@ -4112,7 +4112,7 @@ boolean K_DefensiveOverdrive(player_t *player)
 	S_StartSound(player->mo, sfx_cdfm35);
 	S_StartSound(player->mo, sfx_cdfm13);
 
-	player->overdrive += (player->amps)*4;
+	player->overdrive += (player->amps)*2;
 	player->overshield += (player->amps)*2 + TICRATE*2;
 	player->overdrivepower = FRACUNIT;
 

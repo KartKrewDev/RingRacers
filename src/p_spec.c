@@ -2116,6 +2116,9 @@ static void K_HandleLapIncrement(player_t *player)
 						{
 							player->lapPoints++;
 						}
+
+						if (player->laps <= numlaps)
+							K_SpawnAmps(player, 10*(D_NumPlayersInRace() - player->position), player->mo);
 					}
 
 					if (player->position == 1 && !(gametyperules & GTR_CHECKPOINTS))
