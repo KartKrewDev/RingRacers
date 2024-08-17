@@ -25,6 +25,8 @@ extern "C" {
 
 #define POS_DELAY_TIME 10
 
+extern INT32 MINI_X, MINI_Y;
+
 struct trackingResult_t
 {
 	fixed_t x, y;
@@ -33,6 +35,11 @@ struct trackingResult_t
 	INT32 angle, pitch;
 	fixed_t fov;
 };
+
+typedef struct position_t
+{
+	fixed_t x, y;
+} position_t;
 
 void K_ObjectTracking(trackingResult_t *result, const vector3_t *point, boolean reverse);
 
@@ -116,7 +123,11 @@ typedef enum
 playertagtype_t;
 
 playertagtype_t K_WhichPlayerTag(player_t *p);
-void K_DrawPlayerTag(fixed_t x, fixed_t y, player_t *p, playertagtype_t type, INT32 flags);
+void K_DrawPlayerTag(fixed_t x, fixed_t y, player_t *p, playertagtype_t type, boolean foreground);
+
+INT32 K_GetMinimapTransFlags(const boolean usingProgressBar);
+INT32 K_GetMinimapSplitFlags(const boolean usingProgressBar);
+position_t K_GetKartObjectPosToMinimapPos(fixed_t objx, fixed_t objy);
 
 #ifdef __cplusplus
 } // extern "C"

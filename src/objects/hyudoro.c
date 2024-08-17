@@ -111,7 +111,10 @@ sine_bob
 		fixed_t sineofs)
 {
 	hyu->sprzoff = FixedMul(HYU_VISUAL_HEIGHT * hyu->scale,
-			sineofs + FINESINE(a >> ANGLETOFINESHIFT));
+			sineofs + FINESINE(a >> ANGLETOFINESHIFT)) * P_MobjFlip(hyu);
+			
+	if (P_IsObjectFlipped(hyu))
+		hyu->sprzoff -= hyu->height;
 }
 
 static void
@@ -155,11 +158,6 @@ project_hyudoro (mobj_t *hyu)
 
 	hyu->z = P_GetZAt(center->standingslope, hyu->x, hyu->y,
 			P_GetMobjGround(center));
-
-	if (P_IsObjectFlipped(hyu))
-	{
-		hyu->z -= hyu->height;
-	}
 }
 
 static void

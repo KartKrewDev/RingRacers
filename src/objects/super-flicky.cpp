@@ -93,7 +93,10 @@ sine_bob
 
 	// slightly modified from objects/hyudoro.c
 	hyu->sprzoff = FixedMul(kBobHeight,
-			sineofs + FINESINE(a >> ANGLETOFINESHIFT));
+			sineofs + FINESINE(a >> ANGLETOFINESHIFT)) * P_MobjFlip(hyu);
+			
+	if (P_IsObjectFlipped(hyu))
+		hyu->sprzoff -= hyu->height;
 }
 
 void
@@ -303,6 +306,7 @@ struct Flicky : mobj_t
 			color = super_color();
 		}
 
+		K_FlipFromObject(this, source());
 		bob_in_place(this, phase() * 8, 32);
 	}
 

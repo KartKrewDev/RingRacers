@@ -466,7 +466,7 @@ void K_DrawTargetTracking(const TargetTracking& target)
 {
 	if (target.nametag != PLAYERTAG_NONE)
 	{
-		K_DrawPlayerTag(target.result.x, target.result.y, target.mobj->player, target.nametag, target.foreground ? 0 : V_60TRANS);
+		K_DrawPlayerTag(target.result.x, target.result.y, target.mobj->player, target.nametag, target.foreground);
 		return;
 	}
 
