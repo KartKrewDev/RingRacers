@@ -28,11 +28,19 @@ void Obj_ServantHandSpawning(player_t *player)
 		{
 			player->handtimer++;
 			if (player->hand == NULL && player->handtimer == TICRATE)
-			{
+			{	
+				fixed_t heightOffset = player->mo->height + 30*mapobjectscale;
+				if (P_IsObjectFlipped(player->mo))
+				{
+					// This counteracts the offset added by K_FlipFromObject so it looks seamless from non-flipped.
+					heightOffset += player->mo->height - FixedMul(player->mo->scale, player->mo->height);
+					heightOffset *= P_MobjFlip(player->mo); // Fleep.
+				}
+				
 				mobj_t *hand = P_SpawnMobj(
 					player->mo->x,
 					player->mo->y,
-					player->mo->z + player->mo->height + 30*mapobjectscale,
+					player->mo->z + heightOffset,
 					MT_SERVANTHAND
 				);
 
@@ -115,13 +123,17 @@ void Obj_ServantHandThink(mobj_t *hand)
 		{
 			hand->color = player->skincolor;
 			hand->angle = player->besthanddirection;
+			
+			fixed_t heightOffset = player->mo->height + 30*mapobjectscale;
+			if (P_IsObjectFlipped(player->mo))
+				heightOffset *= P_MobjFlip(player->mo); // Fleep.
 
+			K_FlipFromObject(hand, player->mo);
 			P_MoveOrigin(hand,
 				player->mo->x + xoffs,
 				player->mo->y + yoffs,
-				player->mo->z + player->mo->height + 30*mapobjectscale
+				player->mo->z + heightOffset
 			);
-			K_FlipFromObject(hand, player->mo);
 
 			hand->sprzoff = player->mo->sprzoff;
 

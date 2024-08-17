@@ -8647,12 +8647,20 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			// GROSS. In order to have a transparent version of this for a splitscreen local player, we actually need to spawn two!
 			for (doubler = 0; doubler < 2; doubler++)
 			{
+				fixed_t heightOffset = player->mo->height + (24*player->mo->scale);
+				if (P_IsObjectFlipped(player->mo)) 
+				{
+					// This counteracts the offset added by K_FlipFromObject so it looks seamless from non-flipped.
+					heightOffset += player->mo->height - FixedMul(player->mo->scale, player->mo->height);
+					heightOffset *= P_MobjFlip(player->mo); // Fleep.
+				}
+				
 				mobj_t *debtflag = P_SpawnMobj(player->mo->x + player->mo->momx, player->mo->y + player->mo->momy,
-					player->mo->z + P_GetMobjZMovement(player->mo) + player->mo->height + (24*player->mo->scale), MT_THOK);
+					player->mo->z + P_GetMobjZMovement(player->mo) + heightOffset, MT_THOK);
 
 				debtflag->old_x = player->mo->old_x;
 				debtflag->old_y = player->mo->old_y;
-				debtflag->old_z = player->mo->old_z + P_GetMobjZMovement(player->mo) + player->mo->height + (24*player->mo->scale);
+				debtflag->old_z = player->mo->old_z + P_GetMobjZMovement(player->mo) + heightOffset;
 
 				P_SetMobjState(debtflag, S_RINGDEBT);
 				P_SetScale(debtflag, (debtflag->destscale = player->mo->scale));
@@ -9265,6 +9273,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			for(i = 0;i < 5;i++)
 			{
 				mobj_t *aura = P_SpawnMobjFromMobj(player->mo, 0, 0, player->mo->height/2, MT_CHARGEAURA);
+				aura->eflags &= ~MFE_VERTICALFLIP;
 				aura->angle = player->mo->angle + i*ANG15;
 				P_SetTarget(&aura->target, player->mo);
 				if (i == 0)
@@ -11628,7 +11637,7 @@ void K_KartEbrakeVisuals(player_t *p)
 	{
 		if (p->ebrakefor % 20 == 0)
 		{
-			wave = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->floorz, MT_SOFTLANDING);
+			wave = P_SpawnMobj(p->mo->x, p->mo->y, P_GetMobjGround(p->mo), MT_SOFTLANDING);
 			P_InstaScale(wave, p->mo->scale);
 			P_SetTarget(&wave->target, p->mo);
 			P_SetTarget(&wave->owner, p->mo);
@@ -13276,6 +13285,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							if (player->curshield != KSHIELD_BUBBLE)
 							{
 								mobj_t *shield = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_BUBBLESHIELD);
+								// MT_BUBBLESHIELD doesn't have MF_NOBLOCKMAP so we need to remove this manually.	
+								// Otherwise if you roll a bubble shield while flipped, the visuals look too mismatched.
+								shield->eflags &= ~MFE_VERTICALFLIP;
 								P_SetScale(shield, (shield->destscale = (5*shield->destscale)>>2));
 								P_SetTarget(&shield->target, player->mo);
 								S_StartSound(player->mo, sfx_s3k3f);
@@ -13624,7 +13636,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 			// debug shit
 			//CONS_Printf("%d\n", player->mo->momz / mapobjectscale);
-			if (momz < -10*FRACUNIT)	// :youfuckedup:
+			if (momz * P_MobjFlip(player->mo) < -10*FRACUNIT)	// :youfuckedup:
 			{
 				// tumble if you let your chance pass!!
 				player->tumbleBounces = 1;

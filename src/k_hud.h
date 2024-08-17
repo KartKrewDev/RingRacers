@@ -123,7 +123,7 @@ typedef enum
 playertagtype_t;
 
 playertagtype_t K_WhichPlayerTag(player_t *p);
-void K_DrawPlayerTag(fixed_t x, fixed_t y, player_t *p, playertagtype_t type, INT32 flags);
+void K_DrawPlayerTag(fixed_t x, fixed_t y, player_t *p, playertagtype_t type, boolean foreground);
 
 INT32 K_GetMinimapTransFlags(const boolean usingProgressBar);
 INT32 K_GetMinimapSplitFlags(const boolean usingProgressBar);

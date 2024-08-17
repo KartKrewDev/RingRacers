@@ -8355,6 +8355,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		P_SetScale(mobj, (mobj->destscale = (5*mobj->target->scale)>>2));
 
 		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + mobj->target->height/2);
+		// Taken from K_FlipFromObject. We just want to flip the visual according to its target, but that's it.
+		mobj->eflags = (mobj->eflags & ~MFE_VERTICALFLIP)|(mobj->target->eflags & MFE_VERTICALFLIP);
+		
 		break;
 	}
 	case MT_BUBBLESHIELD:
@@ -8460,9 +8463,15 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		mobj->extravalue2 = mobj->target->player->bubbleblowup;
 		P_SetScale(mobj, (mobj->destscale = scale));
+		
+		// For some weird reason, the Bubble Shield is the exception flip-wise, it has the offset baked into the sprite.
+		// So instead of simply flipping the object, we have to do a position offset.
+		fixed_t positionOffset = 0;
+		if (P_IsObjectFlipped(mobj->target))
+			positionOffset -= 8 * mobj->scale;
 
 		mobj->flags &= ~(MF_NOCLIPTHING);
-		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z);
+		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + positionOffset);
 		mobj->flags |= MF_NOCLIPTHING;
 		break;
 	}
@@ -8550,6 +8559,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 		}
 
+		// Taken from K_FlipFromObject. We just want to flip the visual according to its target, but that's it.
+		mobj->eflags = (mobj->eflags & ~MFE_VERTICALFLIP)|(mobj->target->eflags & MFE_VERTICALFLIP);
 		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + mobj->target->height/2);
 		mobj->angle = K_MomentumAngle(mobj->target);
 
@@ -10552,8 +10563,8 @@ void P_SceneryThinker(mobj_t *mobj)
 		if (!P_MobjWasRemoved(mobj->target))
 		{
 			// Cast like a shadow on the ground
-			P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->floorz);
-			mobj->standingslope = mobj->target->standingslope;
+			P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, P_GetMobjGround(mobj->target));
+			mobj->standingslope = P_IsObjectOnGround(mobj->target) ? mobj->target->standingslope : NULL;
 
 			if (!P_IsObjectOnGround(mobj->target) && mobj->target->momz < -24 * mapobjectscale)
 			{
