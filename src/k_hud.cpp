@@ -4234,6 +4234,19 @@ static void K_drawKartProgressionMinimapIcon(UINT32 distancetofinish, INT32 hudx
 	V_DrawFixedPatch(hudx, hudy, FRACUNIT, flags, icon, colormap);
 }
 
+position_t K_GetKartObjectPosToMinimapPos(fixed_t objx, fixed_t objy)
+{
+	fixed_t amnumxpos, amnumypos;
+	
+	amnumxpos = (FixedMul(objx, minimapinfo.zoom) - minimapinfo.offs_x);
+	amnumypos = -(FixedMul(objy, minimapinfo.zoom) - minimapinfo.offs_y);
+
+	if (encoremode)
+		amnumxpos = -amnumxpos;
+	
+	return (position_t){amnumxpos, amnumypos};
+}
+
 static void K_drawKartMinimapIcon(fixed_t objx, fixed_t objy, INT32 hudx, INT32 hudy, INT32 flags, patch_t *icon, UINT8 *colormap)
 {
 	// amnum xpos & ypos are the icon's speed around the HUD.
@@ -4242,35 +4255,27 @@ static void K_drawKartMinimapIcon(fixed_t objx, fixed_t objy, INT32 hudx, INT32 
 
 	// am xpos & ypos are the icon's starting position. Withouht
 	// it, they wouldn't 'spawn' on the top-right side of the HUD.
-
-	fixed_t amnumxpos, amnumypos;
+	
+	position_t amnumpos;
 	INT32 amxpos, amypos;
+	
+	amnumpos = K_GetKartObjectPosToMinimapPos(objx, objy);
 
-	amnumxpos = (FixedMul(objx, minimapinfo.zoom) - minimapinfo.offs_x);
-	amnumypos = -(FixedMul(objy, minimapinfo.zoom) - minimapinfo.offs_y);
-
-	if (encoremode)
-		amnumxpos = -amnumxpos;
-
-	amxpos = amnumxpos + ((hudx - (SHORT(icon->width))/2)<<FRACBITS);
-	amypos = amnumypos + ((hudy - (SHORT(icon->height))/2)<<FRACBITS);
+	amxpos = amnumpos.x + ((hudx - (SHORT(icon->width))/2)<<FRACBITS);
+	amypos = amnumpos.y + ((hudy - (SHORT(icon->height))/2)<<FRACBITS);
 
 	V_DrawFixedPatch(amxpos, amypos, FRACUNIT, flags, icon, colormap);
 }
 
 static void K_drawKartMinimapDot(fixed_t objx, fixed_t objy, INT32 hudx, INT32 hudy, INT32 flags, UINT8 color, UINT8 size)
 {
-	fixed_t amnumxpos, amnumypos;
+	position_t amnumpos;
 	INT32 amxpos, amypos;
 
-	amnumxpos = (FixedMul(objx, minimapinfo.zoom) - minimapinfo.offs_x);
-	amnumypos = -(FixedMul(objy, minimapinfo.zoom) - minimapinfo.offs_y);
+	amnumpos = K_GetKartObjectPosToMinimapPos(objx, objy);
 
-	if (encoremode)
-		amnumxpos = -amnumxpos;
-
-	amxpos = (amnumxpos / FRACUNIT);
-	amypos = (amnumypos / FRACUNIT);
+	amxpos = (amnumpos.x / FRACUNIT);
+	amypos = (amnumpos.y / FRACUNIT);
 
 	if (flags & V_NOSCALESTART)
 	{
@@ -4333,6 +4338,50 @@ static void K_drawKartMinimapWaypoint(waypoint_t *wp, UINT8 rank, INT32 hudx, IN
 	K_drawKartMinimapDot(wp->mobj->x, wp->mobj->y, hudx, hudy, flags | V_NOSCALESTART, pal, size);
 }
 
+INT32 K_GetMinimapTransFlags(const boolean usingProgressBar)
+{
+	INT32 minimaptrans = 4;
+	boolean dofade = (usingProgressBar && r_splitscreen > 0) || (!usingProgressBar && r_splitscreen >= 1);
+
+	if (dofade)
+	{
+		minimaptrans = FixedMul(minimaptrans, (st_translucency * FRACUNIT) / 10);
+		
+		// If the minimap is fully transparent, just get your 0 back. Bail out with this.
+		if (!minimaptrans)
+			return minimaptrans;
+	}
+
+	minimaptrans = ((10-minimaptrans)<<V_ALPHASHIFT);
+	
+	return minimaptrans;
+}
+
+INT32 K_GetMinimapSplitFlags(const boolean usingProgressBar)
+{
+	INT32 splitflags = 0;
+	
+	if (usingProgressBar)
+		splitflags = (V_SLIDEIN|V_SNAPTOBOTTOM);
+	else
+	{
+		if (r_splitscreen < 1) // 1P right aligned
+		{
+			splitflags = (V_SLIDEIN|V_SNAPTORIGHT);
+		}
+		else // 2/4P splits
+		{
+			if (r_splitscreen == 1)
+				splitflags = V_SNAPTORIGHT; // 2P right aligned
+			
+			// 3P lives in the middle of the bottom right
+			// viewport and shouldn't fade in OR slide
+		}
+	}
+	
+	return splitflags;
+}
+
 #define ICON_DOT_RADIUS (10)
 
 static void K_drawKartMinimap(void)
@@ -4342,8 +4391,8 @@ static void K_drawKartMinimap(void)
 	INT32 i = 0;
 	INT32 x, y;
 
-	INT32 minimaptrans = 4;
-	INT32 splitflags = 0;
+	INT32 minimaptrans;
+	INT32 splitflags;
 
 	UINT8 skin = 0;
 	UINT8 *colormap = NULL;
@@ -4356,7 +4405,7 @@ static void K_drawKartMinimap(void)
 	fixed_t interpx, interpy;
 
 	boolean doprogressionbar = false;
-	boolean dofade = false, doencore = false;
+	boolean doencore = false;
 
 	UINT8 minipal;
 
@@ -4377,6 +4426,11 @@ static void K_drawKartMinimap(void)
 		// distancetofinish for an arbitrary object. ~toast 070423
 		doprogressionbar = true;
 	}
+	
+	minimaptrans = K_GetMinimapTransFlags(doprogressionbar);
+	if (!minimaptrans) return; // Exit early if it wouldn't draw anyway.
+	
+	splitflags = K_GetMinimapSplitFlags(doprogressionbar);
 
 	if (doprogressionbar == false)
 	{
@@ -4384,20 +4438,6 @@ static void K_drawKartMinimap(void)
 		{
 			return; // no pic, just get outta here
 		}
-
-		else if (r_splitscreen < 1) // 1P right aligned
-		{
-			splitflags = (V_SLIDEIN|V_SNAPTORIGHT);
-		}
-		else // 2/4P splits
-		{
-			if (r_splitscreen == 1)
-				splitflags = V_SNAPTORIGHT; // 2P right aligned
-
-			dofade = true;
-		}
-		// 3P lives in the middle of the bottom right
-		// viewport and shouldn't fade in OR slide
 
 		x = MINI_X;
 		y = MINI_Y;
@@ -4413,26 +4453,14 @@ static void K_drawKartMinimap(void)
 		if (r_splitscreen > 0)
 		{
 			y = BASEVIDHEIGHT/2;
-			dofade = true;
 		}
 		else
 		{
 			y = 180;
-			splitflags = (V_SLIDEIN|V_SNAPTOBOTTOM);
 		}
 
 		workingPic = kp_wouldyoustillcatchmeifiwereaworm;
 	}
-
-	if (dofade)
-	{
-		minimaptrans = FixedMul(minimaptrans, (st_translucency * FRACUNIT) / 10);
-
-		if (!minimaptrans)
-			return;
-	}
-
-	minimaptrans = ((10-minimaptrans)<<V_ALPHASHIFT);
 
 	// Really looking forward to never writing this loop again
 	UINT8 bestplayer = MAXPLAYERS;
