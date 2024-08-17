@@ -2981,6 +2981,54 @@ static int lib_gTicsToMilliseconds(lua_State *L)
 	return 1;
 }
 
+// K_HUD
+////////////
+
+static int lib_kAddMessage(lua_State *L)
+{
+	const char *msg = luaL_checkstring(L, 1);
+	boolean interrupt = lua_optboolean(L, 2);
+	boolean persist = lua_optboolean(L, 3);
+	INLEVEL
+	if (msg == NULL)
+		return luaL_error(L, "argument #1 not given (expected string)");
+	K_AddMessage(msg, interrupt, persist);	
+	return 0;
+}
+
+static int lib_kAddMessageForPlayer(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	const char *msg = luaL_checkstring(L, 2);
+	boolean interrupt = lua_optboolean(L, 3);
+	boolean persist = lua_optboolean(L, 4);
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	if (msg == NULL)
+		return luaL_error(L, "argument #2 not given (expected string)");
+	K_AddMessageForPlayer(player, msg, interrupt, persist);
+	return 0;
+}
+
+static int lib_kClearPersistentMessages(lua_State *L)
+{
+	INLEVEL
+	K_ClearPersistentMessages();
+	lua_pushnil(L);
+	return 0;
+}
+
+static int lib_kClearPersistentMessageForPlayer(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	K_ClearPersistentMessageForPlayer(player);
+	return 0;
+}
+
 // K_KART
 ////////////
 
@@ -3814,6 +3862,12 @@ static luaL_Reg lib[] = {
 	{"G_TicsToCentiseconds",lib_gTicsToCentiseconds},
 	{"G_TicsToMilliseconds",lib_gTicsToMilliseconds},
 	{"getTimeMicros",lib_getTimeMicros},
+
+	// k_hud
+	{"K_AddMessage", lib_kAddMessage},
+	{"K_AddMessageForPlayer", lib_kAddMessageForPlayer},
+	{"K_ClearPersistentMessages", lib_kClearPersistentMessages},
+	{"K_ClearPersistentMessageForPlayer", lib_kClearPersistentMessageForPlayer},
 
 	// k_kart
 	{"K_PlayAttackTaunt", lib_kAttackSound},
