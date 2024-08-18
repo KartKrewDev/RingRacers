@@ -63,7 +63,7 @@ typedef enum
 	
 	PR_MUSICSELECT, // Randomized music selection
 
-	PR_ITEM_ROULETTE, // Item results
+	PR_ITEM_ROULETTE, // Item results. Overwritten constantly by K_FillItemRouletteData, not meant for typical use.
 	PR_ITEM_RINGS, // Flung ring/bumper/player (on death)
 	PR_ITEM_SHRINK, // Shrink gun offsets
 	PR_ITEM_BUBBLE, // Item bubbles
@@ -86,6 +86,8 @@ typedef enum
 	PR_FUZZ, // Stability testing
 
 	PR_FROSTTHROWERS,
+
+	PR_ITEM_SPAWNER, // Battle mode item spawners
 
 	PRNUMSYNCED,
 

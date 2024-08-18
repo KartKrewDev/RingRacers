@@ -10985,15 +10985,15 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		{
 			// set default item & count
 #if 0 // set to 1 to test capsules with random items, e.g. with objectplace
-			if (P_RandomChance(PR_ITEM_ROULETTE, FRACUNIT/3))
+			if (P_RandomChance(PR_ITEM_SPAWNER, FRACUNIT/3))
 				mobj->threshold = KITEM_SUPERRING;
-			else if (P_RandomChance(PR_ITEM_ROULETTE, FRACUNIT/3))
+			else if (P_RandomChance(PR_ITEM_SPAWNER, FRACUNIT/3))
 				mobj->threshold = KITEM_SPB;
-			else if (P_RandomChance(PR_ITEM_ROULETTE, FRACUNIT/3))
+			else if (P_RandomChance(PR_ITEM_SPAWNER, FRACUNIT/3))
 				mobj->threshold = KITEM_ORBINAUT;
 			else
-				mobj->threshold = P_RandomRange(PR_ITEM_ROULETTE, 1, NUMKARTITEMS - 1);
-			mobj->movecount = P_RandomChance(PR_ITEM_ROULETTE, FRACUNIT/3) ? 1 : P_RandomKey(PR_ITEM_ROULETTE, 32) + 1;
+				mobj->threshold = P_RandomRange(PR_ITEM_SPAWNER, 1, NUMKARTITEMS - 1);
+			mobj->movecount = P_RandomChance(PR_ITEM_SPAWNER, FRACUNIT/3) ? 1 : P_RandomKey(PR_ITEM_SPAWNER, 32) + 1;
 #else
 			mobj->threshold = KITEM_SUPERRING; // default item is super ring
 			mobj->movecount = 1;

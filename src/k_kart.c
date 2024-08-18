@@ -7430,7 +7430,7 @@ SINT8 K_GetTotallyRandomResult(UINT8 useodds)
 
 	if (totalspawnchance > 0)
 	{
-		totalspawnchance = P_RandomKey(PR_ITEM_ROULETTE, totalspawnchance);
+		totalspawnchance = P_RandomKey(PR_ITEM_SPAWNER, totalspawnchance);
 		for (i = 0; i < NUMKARTRESULTS && spawnchance[i] <= totalspawnchance; i++);
 	}
 	else
@@ -7520,7 +7520,7 @@ mobj_t *K_FlingPaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 f
 	mobj_t *drop = K_CreatePaperItem(x, y, z, angle, flip, type, amount);
 
 	P_Thrust(drop,
-		FixedAngle(P_RandomFixed(PR_ITEM_ROULETTE) * 180) + angle,
+		FixedAngle(P_RandomFixed(PR_ITEM_SPAWNER) * 180) + angle,
 		16*mapobjectscale);
 
 	drop->momz = flip * 3 * mapobjectscale;
