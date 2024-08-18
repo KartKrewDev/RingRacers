@@ -674,9 +674,6 @@ void __attribute__((optimize("O0"))) Obj_CrossCheckpoints(player_t* player, fixe
 		{
 			player->lapPoints += 1;
 		}
-
-		K_SpawnAmps(player, 100*(D_NumPlayersInRace() - player->position)/50, static_cast<mobj_t*>(chk));
-		K_SpawnAmps(player, 100*(D_NumPlayersInRace() - player->position)/50, static_cast<mobj_t*>(chk->other()));
 	}
 }
 
