@@ -115,15 +115,10 @@ static void M_ProfileEditApply(void)
 		CV_SetValue(&cv_fov[belongsto], cv_dummyprofilefov.value);
 	}
 
-	// Reapply player 1's real profile.
-	// (And then we do this for P1 anyway. I didn't write
-	// this code so I'm not sure why it's doing this, but it
-	// can override cv_skin if forcecharacter is in effect!
-	// I suspect this is intended to set cv_currprofile.
-	// FIXME?)
+	// Reapply player 1's real profile ID.
 	if (cv_currprofile.value > -1)
 	{
-		PR_ApplyProfile(cv_lastprofile[0].value, 0);
+		PR_ApplyProfilePretend(cv_lastprofile[0].value, 0);
 	}
 }
 
