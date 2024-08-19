@@ -495,9 +495,9 @@ struct itemroulette_t
 	SINT8 *itemList;
 #endif
 
-	UINT8 useOdds;
+	UINT8 preexpuseOdds, useOdds;
 	UINT8 playing, exiting;
-	UINT32 preexpdist, preexpuseOdds, dist, baseDist;
+	UINT32 preexpdist, dist, baseDist;
 	UINT32 firstDist, secondDist;
 	UINT32 secondToFirst;
 
