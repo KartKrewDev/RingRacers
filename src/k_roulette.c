@@ -423,13 +423,14 @@ static UINT32 K_UndoMapScaling(UINT32 distance)
 		as well as Frantic Items.
 
 	Input Arguments:-
+		player - The player to get the distance of.
 		distance - Original distance.
 		numPlayers - Number of players in the game.
 
 	Return:-
 		New distance after scaling.
 --------------------------------------------------*/
-static UINT32 K_ScaleItemDistance(UINT32 distance, UINT8 numPlayers)
+static UINT32 K_ScaleItemDistance(const player_t* player, UINT32 distance, UINT8 numPlayers)
 {
 	if (franticitems == true)
 	{
@@ -442,6 +443,9 @@ static UINT32 K_ScaleItemDistance(UINT32 distance, UINT8 numPlayers)
 		distance,
 		FRACUNIT + (K_ItemOddsScale(numPlayers) / 2)
 	);
+
+	// Distance is reduced based on the player's exp
+	distance = FixedMul(distance, min(FRACUNIT, player->exp));
 
 	return distance;
 }
@@ -509,7 +513,7 @@ UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers)
 	}
 
 	pdis = K_UndoMapScaling(pdis);
-	pdis = K_ScaleItemDistance(pdis, numPlayers);
+	pdis = K_ScaleItemDistance(player, pdis, numPlayers);
 
 	if (player->bot && (player->botvars.rival || cv_levelskull.value))
 	{
@@ -1150,7 +1154,7 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 		&& roulette->secondDist > roulette->firstDist)
 	{
 		roulette->secondToFirst = roulette->secondDist - roulette->firstDist;
-		roulette->secondToFirst = K_ScaleItemDistance(roulette->secondToFirst, 16 - roulette->playing); // Reversed scaling
+		roulette->secondToFirst = K_ScaleItemDistance(&players[i], roulette->secondToFirst, 16 - roulette->playing); // Reversed scaling
 	}
 }
 

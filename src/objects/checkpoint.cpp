@@ -669,11 +669,17 @@ void __attribute__((optimize("O0"))) Obj_CrossCheckpoints(player_t* player, fixe
 		if (player->position == 1)
 		{
 			player->lapPoints += 2;
+			player->exp += FRACUNIT/10;
 		}
 		else
 		{
 			player->lapPoints += 1;
+			player->exp += FRACUNIT/20;
 		}
+	}
+	else if (K_IsPlayerLosing(player))
+	{
+		player->exp -= FRACUNIT/20;
 	}
 }
 

@@ -6512,6 +6512,9 @@ void K_drawKartHUD(void)
 	if (cv_kartdebugdistribution.value)
 		K_drawDistributionDebugger();
 
+	// temp debug
+	V_DrawSmallString(8, 2, V_SNAPTOTOP, va("Exp/Dist mult: %.2f", FixedToFloat(stplyr->exp)));
+
 	if (cv_kartdebugnodes.value)
 	{
 		UINT8 p;

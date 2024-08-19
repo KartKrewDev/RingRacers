@@ -281,6 +281,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].laps);
 		WRITEUINT8(save->p, players[i].latestlap);
 		WRITEUINT32(save->p, players[i].lapPoints);
+		WRITEINT32(save->p, players[i].exp);
 		WRITEINT32(save->p, players[i].cheatchecknum);
 		WRITEINT32(save->p, players[i].checkpointId);
 
@@ -937,6 +938,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].laps = READUINT8(save->p); // Number of laps (optional)
 		players[i].latestlap = READUINT8(save->p);
 		players[i].lapPoints = READUINT32(save->p);
+		players[i].exp = READINT32(save->p);
 		players[i].cheatchecknum = READINT32(save->p);
 		players[i].checkpointId = READINT32(save->p);
 
