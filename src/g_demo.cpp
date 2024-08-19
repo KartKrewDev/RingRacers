@@ -428,21 +428,33 @@ void G_ReadDemoExtraData(void)
 
 		switch (p)
 		{
-		case DW_RNG:
-			for (i = 0; i < PRNUMSYNCED; i++)
+			case DW_RNG:
 			{
-				rng = READUINT32(demobuf.p);
-
-				if (P_GetRandSeed(static_cast<pr_class_t>(i)) != rng)
+				UINT32 num_classes;
+				if (demo.version <= 0x000D)
 				{
-					P_SetRandSeed(static_cast<pr_class_t>(i), rng);
-
-					if (demosynced)
-						CONS_Alert(CONS_WARNING, "Demo playback has desynced (RNG class %d)!\n", i);
-					storesynced = false;
+					num_classes = PROLDDEMO;
 				}
+				else
+				{
+					num_classes = READUINT32(demobuf.p);
+				}
+
+				for (i = 0; i < (signed)num_classes; i++)
+				{
+					rng = READUINT32(demobuf.p);
+
+					if (P_GetRandSeed(static_cast<pr_class_t>(i)) != rng)
+					{
+						P_SetRandSeed(static_cast<pr_class_t>(i), rng);
+
+						if (demosynced)
+							CONS_Alert(CONS_WARNING, "Demo playback has desynced (RNG class %d)!\n", i);
+						storesynced = false;
+					}
+				}
+				demosynced = storesynced;
 			}
-			demosynced = storesynced;
 		}
 
 		p = READUINT8(demobuf.p);
@@ -560,6 +572,7 @@ void G_WriteDemoExtraData(void)
 			timeout = 16;
 			WRITEUINT8(demobuf.p, DW_RNG);
 
+			WRITEUINT32(demobuf.p, PRNUMSYNCED);
 			for (i = 0; i < PRNUMSYNCED; i++)
 			{
 				WRITEUINT32(demobuf.p, P_GetRandSeed(static_cast<pr_class_t>(i)));
@@ -1344,7 +1357,18 @@ readghosttic:
 			else if (ziptic == DW_RNG)
 			{
 				INT32 i;
-				for (i = 0; i < PRNUMSYNCED; i++)
+
+				UINT32 num_classes = PROLDDEMO;
+				if (g->version <= 0x000D)
+				{
+					num_classes = PROLDDEMO;
+				}
+				else
+				{
+					num_classes = READUINT32(g->p);
+				}
+
+				for (i = 0; i < (signed)num_classes; i++)
 				{
 					g->p += 4; // RNG seed
 				}
@@ -2262,6 +2286,7 @@ void G_BeginRecording(void)
 		demotime_p = NULL;
 	}
 
+	WRITEUINT32(demobuf.p, PRNUMSYNCED);
 	for (i = 0; i < PRNUMSYNCED; i++)
 	{
 		WRITEUINT32(demobuf.p, P_GetInitSeed(static_cast<pr_class_t>(i)));
@@ -2764,7 +2789,17 @@ void G_LoadDemoInfo(menudemo_t *pdemo, boolean allownonmultiplayer)
 		}
 	}
 
-	for (i = 0; i < PRNUMSYNCED; i++)
+	UINT32 num_classes;
+	if (pdemoversion <= 0x000D)
+	{
+		num_classes = PROLDDEMO;
+	}
+	else
+	{
+		num_classes = READUINT32(info.p);
+	}
+
+	for (i = 0; i < (signed)num_classes; i++)
 	{
 		info.p += 4; // RNG seed
 	}
@@ -3249,9 +3284,30 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 		hu_demolap = READUINT32(demobuf.p);
 
 	// Random seed
+	UINT32 num_classes;
+	if (demo.version <= 0x000D)
+	{
+		num_classes = PROLDDEMO;
+	}
+	else
+	{
+		num_classes = READUINT32(demobuf.p);
+	}
+
 	for (i = 0; i < PRNUMSYNCED; i++)
 	{
-		randseed[i] = READUINT32(demobuf.p);
+		if (i < (signed)num_classes)
+		{
+			// Seed exists
+			randseed[i] = READUINT32(demobuf.p);
+		}
+		else
+		{
+			// This is better than having undefined behavior,
+			// but RNG classes from the future should be
+			// behind a G_CompatLevel check.
+			randseed[i] = P_GetInitSeed(static_cast<pr_class_t>(i));
+		}
 	}
 
 	demobuf.p += 4; // Extrainfo location
@@ -3646,7 +3702,17 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	if (flags & ATTACKING_LAP)
 		p += 4;
 
-	for (i = 0; i < PRNUMSYNCED; i++)
+	UINT32 num_classes;
+	if (demo.version <= 0x000D)
+	{
+		num_classes = PROLDDEMO;
+	}
+	else
+	{
+		num_classes = READUINT32(p);
+	}
+
+	for (i = 0; i < (signed)num_classes; i++)
 	{
 		p += 4; // random seed
 	}
@@ -3876,7 +3942,17 @@ staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer)
 	if (flags & ATTACKING_LAP)
 		temp.lap = READUINT32(p);
 
-	for (i = 0; i < PRNUMSYNCED; i++)
+	UINT32 num_classes;
+	if (demo.version <= 0x000D)
+	{
+		num_classes = PROLDDEMO;
+	}
+	else
+	{
+		num_classes = READUINT32(p);
+	}
+
+	for (i = 0; i < (signed)num_classes; i++)
 	{
 		p += 4; // random seed
 	}

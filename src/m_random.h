@@ -87,7 +87,9 @@ typedef enum
 
 	PR_FROSTTHROWERS,
 
-	PR_ITEM_SPAWNER, // Battle mode item spawners
+	PROLDDEMO, // The number of RNG classes in versions that didn't write down how many RNG classes they had in their replays.
+
+	PR_ITEM_SPAWNER = PROLDDEMO, // Battle mode item spawners
 
 	PRNUMSYNCED,
 
