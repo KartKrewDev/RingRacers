@@ -681,6 +681,8 @@ void __attribute__((optimize("O0"))) Obj_CrossCheckpoints(player_t* player, fixe
 	{
 		player->exp -= FRACUNIT/20;
 	}
+
+	K_UpdatePowerLevels(player, player->laps, false);
 }
 
 mobj_t* Obj_FindCheckpoint(INT32 id)
