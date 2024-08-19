@@ -1496,12 +1496,12 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	if (roulette->preexpuseOdds > roulette->useOdds)
 	{
 		K_AddMessageForPlayer(player, va("items NERFED %u -> %u", roulette->preexpuseOdds, roulette->useOdds), true, false);
-		CONS_Printf("%s items NERFED %u -> %u", player_names[player - players], roulette->preexpuseOdds, roulette->useOdds);
+		CONS_Printf("%s items NERFED %u -> %u\n", player_names[player - players], roulette->preexpuseOdds, roulette->useOdds);
 	}
 	else if (roulette->preexpuseOdds < roulette->useOdds)
 	{
 		K_AddMessageForPlayer(player, va("items BOOSTED %u -> %u", roulette->preexpuseOdds, roulette->useOdds), true, false);
-		CONS_Printf("%s items BOOSTED %u -> %u", player_names[player - players], roulette->preexpuseOdds, roulette->useOdds);
+		CONS_Printf("%s items BOOSTED %u -> %u\n", player_names[player - players], roulette->preexpuseOdds, roulette->useOdds);
 	}
 
 	for (i = 1; i < NUMKARTRESULTS; i++)
