@@ -2118,9 +2118,6 @@ static void K_HandleLapIncrement(player_t *player)
 							player->lapPoints++;
 							player->exp += FRACUNIT/20;
 						}
-
-						if (player->laps <= numlaps)
-							K_SpawnAmps(player, 10*(D_NumPlayersInRace() - player->position), player->mo);
 					}
 					else if (K_IsPlayerLosing(player))
 					{
