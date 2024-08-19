@@ -1490,7 +1490,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	roulette->preexpdist = K_GetItemRouletteDistance(player, roulette->playing);
 	roulette->dist = roulette->preexpdist;
 	roulette->preexpuseOdds = K_FindUseodds(player, roulette);
-	roulette->dist = FixedMul(roulette->preexpdist, player->exp);
+	roulette->dist = FixedMul(roulette->preexpdist, max(player->exp, FRACUNIT/2));
 	roulette->useOdds = K_FindUseodds(player, roulette);
 
 	for (i = 1; i < NUMKARTRESULTS; i++)

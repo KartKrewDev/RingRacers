@@ -5739,12 +5739,21 @@ static void K_drawDistributionDebugger(void)
 	// V_DrawString((x >> FRACBITS) + 20, 50, V_SNAPTOTOP, va("secondDist = %u", rouletteData.secondDist));
 	// V_DrawString((x >> FRACBITS) + 20, 58, V_SNAPTOTOP, va("secondToFirst = %u", rouletteData.secondToFirst));
 
+	if (rouletteData.preexpuseOdds > rouletteData.useOdds)
+	{
+		V_DrawString((x >> FRACBITS) + 20, 10, V_SNAPTOTOP, va("items NERFED %u -> %u", rouletteData.preexpuseOdds, rouletteData.useOdds));
+	}
+	else if (rouletteData.preexpuseOdds < rouletteData.useOdds)
+	{
+		V_DrawString((x >> FRACBITS) + 20, 10, V_SNAPTOTOP, va("items BOOSTED %u -> %u", rouletteData.preexpuseOdds, rouletteData.useOdds));
+	}
+
+	/*
 	V_DrawString((x >> FRACBITS) + 20, 10, V_SNAPTOTOP, va("pre-exp dist %u", rouletteData.preexpdist));
 	V_DrawString((x >> FRACBITS) + 20, 18, V_SNAPTOTOP, va("pre-exp useOdds %u", rouletteData.preexpuseOdds));
 	V_DrawString((x >> FRACBITS) + 20, 26, V_SNAPTOTOP, va("        dist %u", rouletteData.dist));
 	V_DrawString((x >> FRACBITS) + 20, 34, V_SNAPTOTOP, va("     useOdds %u", rouletteData.useOdds));
-
-
+	*/
 
 #ifndef ITEM_LIST_SIZE
 	Z_Free(rouletteData.itemList);

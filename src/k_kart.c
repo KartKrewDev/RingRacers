@@ -4091,7 +4091,7 @@ boolean K_Overdrive(player_t *player)
 	S_StartSound(player->mo, sfx_cdfm35);
 	S_StartSound(player->mo, sfx_cdfm13);
 
-	player->overdrive += (player->amps)*3;
+	player->overdrive += (player->amps)*5;
 	player->overshield += (player->amps)*2;
 	player->overdrivepower = FRACUNIT;
 
@@ -4112,7 +4112,7 @@ boolean K_DefensiveOverdrive(player_t *player)
 	S_StartSound(player->mo, sfx_cdfm35);
 	S_StartSound(player->mo, sfx_cdfm13);
 
-	player->overdrive += (player->amps)*2;
+	player->overdrive += (player->amps)*3;
 	player->overshield += (player->amps)*2 + TICRATE*2;
 	player->overdrivepower = FRACUNIT;
 
@@ -14771,21 +14771,29 @@ boolean K_PlayerCanUseItem(player_t *player)
 
 fixed_t K_GetExpAdjustment(player_t *player)
 {
-	fixed_t exp_power = 1*FRACUNIT/100; // adjust to change overall xp volatility
-	fixed_t exp_drainrate = 995*FRACUNIT/1000; // adjust to change overall item chaos
+	fixed_t exp_power = 3*FRACUNIT/100; // adjust to change overall xp volatility
+	fixed_t exp_stablerate = 3*FRACUNIT/10; // how low is your placement before losing XP? 4*FRACUNIT/10 = top 40% of race will gain
 	fixed_t result = 0;
 
+	INT32 live_players = 0;
+
+	// Increase XP for each player you're beating...
 	for (INT32 i = 0; i < MAXPLAYERS; i++)
 	{
-		if (!playeringame[i] || player->spectator)
+		if (!playeringame[i] || players[i].spectator || player == players+i)
 			continue;
-		
-		result -= exp_power;
+
+		live_players++;
+
 		if (player->position < players[i].position)
-		{
-			result += FixedMul(exp_power, exp_drainrate);
-		}
+			result += exp_power;
 	}
+
+	// ...then take all of the XP you could possibly have earned,
+	// and lose it proportional to the stable rate. If you're below
+	// the stable threshold, this results in you losing XP.
+	result -= exp_power * FixedInt(FixedMul(live_players*FRACUNIT, FRACUNIT - exp_stablerate));
+
 	return result;
 }
 
