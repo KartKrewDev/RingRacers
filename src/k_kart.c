@@ -12703,7 +12703,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			else
 			{
 				UINT32 behind = K_GetItemRouletteDistance(player, player->itemRoulette.playing);
-				behind = FixedMul(behind, K_GetExpAdjustment(player));
+				behind = FixedMul(behind, player->exp);
 				UINT32 behindMulti = behind / 500;
 				behindMulti = min(behindMulti, 60);
 				award = award * (behindMulti + 10) / 10;
