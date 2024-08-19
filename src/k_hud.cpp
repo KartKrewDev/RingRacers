@@ -5698,46 +5698,53 @@ static void K_drawDistributionDebugger(void)
 
 	K_FillItemRouletteData(stplyr, &rouletteData, false);
 
-	for (i = 0; i < rouletteData.itemListLen; i++)
-	{
-		const kartitems_t item = static_cast<kartitems_t>(rouletteData.itemList[i]);
-		UINT8 amount = 1;
+	// for (i = 0; i < rouletteData.itemListLen; i++)
+	// {
+	// 	const kartitems_t item = static_cast<kartitems_t>(rouletteData.itemList[i]);
+	// 	UINT8 amount = 1;
 
-		if (y > (BASEVIDHEIGHT << FRACBITS) - space - pad)
-		{
-			x += space;
-			y = -pad;
-		}
+	// 	if (y > (BASEVIDHEIGHT << FRACBITS) - space - pad)
+	// 	{
+	// 		x += space;
+	// 		y = -pad;
+	// 	}
 
-		V_DrawFixedPatch(x, y, scale, V_SNAPTOTOP,
-				K_GetSmallStaticCachedItemPatch(item), NULL);
+	// 	V_DrawFixedPatch(x, y, scale, V_SNAPTOTOP,
+	// 			K_GetSmallStaticCachedItemPatch(item), NULL);
 
-		// Display amount for multi-items
-		amount = K_ItemResultToAmount(item);
-		if (amount > 1)
-		{
-			V_DrawStringScaled(
-				x + (18 * scale),
-				y + (23 * scale),
-				scale, FRACUNIT, FRACUNIT,
-				V_SNAPTOTOP,
-				NULL, HU_FONT,
-				va("x%d", amount)
-			);
-		}
+	// 	// Display amount for multi-items
+	// 	amount = K_ItemResultToAmount(item);
+	// 	if (amount > 1)
+	// 	{
+	// 		V_DrawStringScaled(
+	// 			x + (18 * scale),
+	// 			y + (23 * scale),
+	// 			scale, FRACUNIT, FRACUNIT,
+	// 			V_SNAPTOTOP,
+	// 			NULL, HU_FONT,
+	// 			va("x%d", amount)
+	// 		);
+	// 	}
 
-		y += space;
-	}
+	// 	y += space;
+	// }
 
-	V_DrawString((x >> FRACBITS) + 20, 2, V_SNAPTOTOP, va("useOdds[%u]", rouletteData.useOdds));
-	V_DrawString((x >> FRACBITS) + 20, 10, V_SNAPTOTOP, va("speed = %u", rouletteData.speed));
+	// V_DrawString((x >> FRACBITS) + 20, 2, V_SNAPTOTOP, va("useOdds[%u]", rouletteData.useOdds));
+	// V_DrawString((x >> FRACBITS) + 20, 10, V_SNAPTOTOP, va("speed = %u", rouletteData.speed));
 
-	V_DrawString((x >> FRACBITS) + 20, 22, V_SNAPTOTOP, va("baseDist = %u", rouletteData.baseDist));
-	V_DrawString((x >> FRACBITS) + 20, 30, V_SNAPTOTOP, va("dist = %u", rouletteData.dist));
+	// V_DrawString((x >> FRACBITS) + 20, 22, V_SNAPTOTOP, va("baseDist = %u", rouletteData.baseDist));
+	// V_DrawString((x >> FRACBITS) + 20, 30, V_SNAPTOTOP, va("dist = %u", rouletteData.dist));
 
-	V_DrawString((x >> FRACBITS) + 20, 42, V_SNAPTOTOP, va("firstDist = %u", rouletteData.firstDist));
-	V_DrawString((x >> FRACBITS) + 20, 50, V_SNAPTOTOP, va("secondDist = %u", rouletteData.secondDist));
-	V_DrawString((x >> FRACBITS) + 20, 58, V_SNAPTOTOP, va("secondToFirst = %u", rouletteData.secondToFirst));
+	// V_DrawString((x >> FRACBITS) + 20, 42, V_SNAPTOTOP, va("firstDist = %u", rouletteData.firstDist));
+	// V_DrawString((x >> FRACBITS) + 20, 50, V_SNAPTOTOP, va("secondDist = %u", rouletteData.secondDist));
+	// V_DrawString((x >> FRACBITS) + 20, 58, V_SNAPTOTOP, va("secondToFirst = %u", rouletteData.secondToFirst));
+
+	V_DrawString((x >> FRACBITS) + 20, 10, V_SNAPTOTOP, va("pre-exp dist %u", rouletteData.preexpdist));
+	V_DrawString((x >> FRACBITS) + 20, 18, V_SNAPTOTOP, va("pre-exp useOdds %u", rouletteData.preexpuseOdds));
+	V_DrawString((x >> FRACBITS) + 20, 26, V_SNAPTOTOP, va("        dist %u", rouletteData.dist));
+	V_DrawString((x >> FRACBITS) + 20, 34, V_SNAPTOTOP, va("     useOdds %u", rouletteData.useOdds));
+
+
 
 #ifndef ITEM_LIST_SIZE
 	Z_Free(rouletteData.itemList);
@@ -6509,11 +6516,12 @@ void K_drawKartHUD(void)
 		K_drawInput();
 	}
 
-	if (cv_kartdebugdistribution.value)
+	// if (cv_kartdebugdistribution.value)
 		K_drawDistributionDebugger();
 
 	// temp debug
-	V_DrawSmallString(8, 2, V_SNAPTOTOP, va("Exp/Dist mult: %.2f", FixedToFloat(stplyr->exp)));
+	V_DrawString(8, 2, V_SNAPTOTOP, va("Exp/Dist mult: %.2f", FixedToFloat(stplyr->exp)));
+	// V_DrawSmallString(8, 4, V_SNAPTOTOP, va("Exp/Dist mult: %.2f", FixedToFloat(stplyr->exp)));
 
 	if (cv_kartdebugnodes.value)
 	{

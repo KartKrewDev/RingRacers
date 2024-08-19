@@ -12703,6 +12703,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			else
 			{
 				UINT32 behind = K_GetItemRouletteDistance(player, player->itemRoulette.playing);
+				behind = FixedMul(behind, K_GetExpAdjustment(player));
 				UINT32 behindMulti = behind / 500;
 				behindMulti = min(behindMulti, 60);
 				award = award * (behindMulti + 10) / 10;
@@ -14766,6 +14767,26 @@ void K_MakeObjectReappear(mobj_t *mo)
 boolean K_PlayerCanUseItem(player_t *player)
 {
 	return (player->mo->health > 0 && !player->spectator && !P_PlayerInPain(player) && !mapreset && leveltime > introtime);
+}
+
+fixed_t K_GetExpAdjustment(player_t *player)
+{
+	fixed_t exp_power = 1*FRACUNIT/100; // adjust to change overall xp volatility
+	fixed_t exp_drainrate = 995*FRACUNIT/1000; // adjust to change overall item chaos
+	fixed_t result = 0;
+
+	for (INT32 i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i] || player->spectator)
+			continue;
+		
+		result -= exp_power;
+		if (player->position < players[i].position)
+		{
+			result += FixedMul(exp_power, exp_drainrate);
+		}
+	}
+	return result;
 }
 
 //}

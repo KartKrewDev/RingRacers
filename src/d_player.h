@@ -497,7 +497,7 @@ struct itemroulette_t
 
 	UINT8 useOdds;
 	UINT8 playing, exiting;
-	UINT32 dist, baseDist;
+	UINT32 preexpdist, preexpuseOdds, dist, baseDist;
 	UINT32 firstDist, secondDist;
 	UINT32 secondToFirst;
 

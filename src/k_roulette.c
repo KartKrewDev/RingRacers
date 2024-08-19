@@ -445,7 +445,7 @@ static UINT32 K_ScaleItemDistance(const player_t* player, UINT32 distance, UINT8
 	);
 
 	// Distance is reduced based on the player's exp
-	distance = FixedMul(distance, min(FRACUNIT, player->exp));
+	// distance = FixedMul(distance, player->exp);
 
 	return distance;
 }
@@ -1487,7 +1487,10 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 
 	// Special cases are all handled, we can now
 	// actually calculate actual item reels.
-	roulette->dist = K_GetItemRouletteDistance(player, roulette->playing);
+	roulette->preexpdist = K_GetItemRouletteDistance(player, roulette->playing);
+	roulette->dist = roulette->preexpdist;
+	roulette->preexpuseOdds = K_FindUseodds(player, roulette);
+	roulette->dist = FixedMul(roulette->preexpdist, player->exp);
 	roulette->useOdds = K_FindUseodds(player, roulette);
 
 	for (i = 1; i < NUMKARTRESULTS; i++)
