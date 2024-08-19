@@ -1493,6 +1493,17 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	roulette->dist = FixedMul(roulette->preexpdist, max(player->exp, FRACUNIT/2));
 	roulette->useOdds = K_FindUseodds(player, roulette);
 
+	if (roulette->preexpuseOdds > roulette->useOdds)
+	{
+		K_AddMessageForPlayer(player, va("items NERFED %u -> %u", roulette->preexpuseOdds, roulette->useOdds), true, false);
+		CONS_Printf("%s items NERFED %u -> %u", player_names[player - players], roulette->preexpuseOdds, roulette->useOdds);
+	}
+	else if (roulette->preexpuseOdds < roulette->useOdds)
+	{
+		K_AddMessageForPlayer(player, va("items BOOSTED %u -> %u", roulette->preexpuseOdds, roulette->useOdds), true, false);
+		CONS_Printf("%s items BOOSTED %u -> %u", player_names[player - players], roulette->preexpuseOdds, roulette->useOdds);
+	}
+
 	for (i = 1; i < NUMKARTRESULTS; i++)
 	{
 		spawnChance[i] = (

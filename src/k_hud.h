@@ -101,7 +101,7 @@ extern patch_t *kp_facenum[MAXPLAYERS+1];
 extern patch_t *kp_unknownminimap;
 
 void K_AddMessage(const char *msg, boolean interrupt, boolean persist);
-void K_AddMessageForPlayer(player_t *player, const char *msg, boolean interrupt, boolean persist);
+void K_AddMessageForPlayer(const player_t *player, const char *msg, boolean interrupt, boolean persist);
 void K_ClearPersistentMessages(void);
 void K_ClearPersistentMessageForPlayer(player_t *player);
 void K_TickMessages(void);
