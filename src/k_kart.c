@@ -14792,7 +14792,7 @@ fixed_t K_GetExpAdjustment(player_t *player)
 	// ...then take all of the XP you could possibly have earned,
 	// and lose it proportional to the stable rate. If you're below
 	// the stable threshold, this results in you losing XP.
-	result -= exp_power * FixedInt(FixedMul(live_players*FRACUNIT, FRACUNIT - exp_stablerate));
+	result -= FixedMul(exp_power, FixedMul(live_players*FRACUNIT, FRACUNIT - exp_stablerate));
 
 	return result;
 }
