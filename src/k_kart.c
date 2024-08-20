@@ -7413,32 +7413,8 @@ void K_DropHnextList(player_t *player)
 
 SINT8 K_GetTotallyRandomResult(UINT8 useodds)
 {
-	INT32 spawnchance[NUMKARTRESULTS];
-	INT32 totalspawnchance = 0;
-	INT32 i;
-
-	memset(spawnchance, 0, sizeof (spawnchance));
-
-	for (i = 1; i < NUMKARTRESULTS; i++)
-	{
-		// Avoid calling K_FillItemRouletteData since that
-		// function resets PR_ITEM_ROULETTE.
-		spawnchance[i] = (
-			totalspawnchance += K_KartGetItemOdds(NULL, NULL, useodds, i)
-		);
-	}
-
-	if (totalspawnchance > 0)
-	{
-		totalspawnchance = P_RandomKey(PR_ITEM_ROULETTE, totalspawnchance);
-		for (i = 0; i < NUMKARTRESULTS && spawnchance[i] <= totalspawnchance; i++);
-	}
-	else
-	{
-		i = KITEM_SAD;
-	}
-
-	return i;
+	// TODO
+	return 0;
 }
 
 mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT8 type, UINT16 amount)

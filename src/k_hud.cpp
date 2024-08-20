@@ -5729,7 +5729,6 @@ static void K_drawDistributionDebugger(void)
 		y += space;
 	}
 
-	V_DrawString((x >> FRACBITS) + 20, 2, V_SNAPTOTOP, va("useOdds[%u]", rouletteData.useOdds));
 	V_DrawString((x >> FRACBITS) + 20, 10, V_SNAPTOTOP, va("speed = %u", rouletteData.speed));
 
 	V_DrawString((x >> FRACBITS) + 20, 22, V_SNAPTOTOP, va("baseDist = %u", rouletteData.baseDist));

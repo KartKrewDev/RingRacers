@@ -651,6 +651,9 @@ typedef struct {
 --------------------------------------------------*/
 static fixed_t K_AdjustItemOddsToConditions(fixed_t newOdds, const itemconditions_t *conditions, const itemroulette_t *roulette)
 {
+	// TODO
+	return newOdds;
+
 	// None if this applies outside of Race modes (for now?)
 	if ((gametyperules & GTR_CIRCUIT) == 0)
 	{
@@ -696,6 +699,7 @@ static fixed_t K_AdjustItemOddsToConditions(fixed_t newOdds, const itemcondition
 
 		See header file for description.
 --------------------------------------------------*/
+
 INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, UINT8 pos, kartitems_t item)
 {
 	boolean bot = false;
@@ -889,116 +893,6 @@ INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, 
 }
 
 /*--------------------------------------------------
-	static UINT8 K_FindUseodds(const player_t *player, itemroulette_t *const roulette)
-
-		Gets which item bracket the player is in.
-		This can be adjusted depending on which
-		items being turned off.
-
-	Input Arguments:-
-		player - The player the roulette is for.
-		roulette - The item roulette data.
-
-	Return:-
-		The item bracket the player is in, as an
-		index to the array.
---------------------------------------------------*/
-static UINT8 K_FindUseodds(const player_t *player, itemroulette_t *const roulette)
-{
-	UINT8 i;
-	UINT8 useOdds = 0;
-	UINT8 distTable[14];
-	UINT8 distLen = 0;
-	UINT8 totalSize = 0;
-	boolean oddsValid[8];
-
-	for (i = 0; i < 8; i++)
-	{
-		UINT8 j;
-
-		if (gametype == GT_BATTLE && i > 1)
-		{
-			oddsValid[i] = false;
-			continue;
-		}
-		else if (specialstageinfo.valid == true && i > 3)
-		{
-			oddsValid[i] = false;
-			continue;
-		}
-
-		for (j = 1; j < NUMKARTRESULTS; j++)
-		{
-			if (K_KartGetItemOdds(player, roulette, i, j) > 0)
-			{
-				break;
-			}
-		}
-
-		oddsValid[i] = (j < NUMKARTRESULTS);
-	}
-
-#define SETUPDISTTABLE(odds, num) \
-	totalSize += num; \
-	if (oddsValid[odds]) \
-		for (i = num; i; --i) \
-			distTable[distLen++] = odds;
-
-	if (gametype == GT_BATTLE) // Battle Mode
-	{
-		useOdds = 0;
-	}
-	else
-	{
-		if (specialstageinfo.valid == true) // Special Stages
-		{
-			SETUPDISTTABLE(0,2);
-			SETUPDISTTABLE(1,2);
-			SETUPDISTTABLE(2,3);
-			SETUPDISTTABLE(3,1);
-		}
-		else
-		{
-			SETUPDISTTABLE(0,1);
-			SETUPDISTTABLE(1,1);
-			SETUPDISTTABLE(2,1);
-			SETUPDISTTABLE(3,2);
-			SETUPDISTTABLE(4,2);
-			SETUPDISTTABLE(5,3);
-			SETUPDISTTABLE(6,3);
-			SETUPDISTTABLE(7,1);
-		}
-
-		for (i = 0; i < totalSize; i++)
-		{
-			fixed_t pos = 0;
-			fixed_t dist = 0;
-			UINT8 index = 0;
-
-			if (i == totalSize-1)
-			{
-				useOdds = distTable[distLen - 1];
-				break;
-			}
-
-			pos = ((i << FRACBITS) * distLen) / totalSize;
-			dist = FixedMul(DISTVAR << FRACBITS, pos) >> FRACBITS;
-			index = FixedInt(FixedRound(pos));
-
-			if (roulette->dist <= (unsigned)dist)
-			{
-				useOdds = distTable[index];
-				break;
-			}
-		}
-	}
-
-#undef SETUPDISTTABLE
-
-	return useOdds;
-}
-
-/*--------------------------------------------------
 	static boolean K_ForcedSPB(const player_t *player, itemroulette_t *const roulette)
 
 		Determines special conditions where we want
@@ -1094,7 +988,6 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 	roulette->itemListLen = 0;
 	roulette->index = 0;
 
-	roulette->useOdds = UINT8_MAX;
 	roulette->baseDist = roulette->dist = 0;
 	roulette->playing = roulette->exiting = 0;
 	roulette->firstDist = roulette->secondDist = UINT32_MAX;
@@ -1328,7 +1221,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	UINT8 numItems = 0;
 	kartitems_t singleItem = KITEM_SAD;
 
-	size_t i;
+	size_t i, j;
 
 	K_InitRoulette(roulette);
 
@@ -1417,7 +1310,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 			// every item in the game!
 
 			// Create the same item reel given the same inputs.
-			P_SetRandSeed(PR_ITEM_ROULETTE, ITEM_REEL_SEED);
+			// P_SetRandSeed(PR_ITEM_ROULETTE, ITEM_REEL_SEED);
 
 			for (i = 1; i < NUMKARTRESULTS; i++)
 			{
@@ -1489,40 +1382,235 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	// actually calculate actual item reels.
 	roulette->preexpdist = K_GetItemRouletteDistance(player, roulette->playing);
 	roulette->dist = roulette->preexpdist;
-	roulette->preexpuseOdds = K_FindUseodds(player, roulette);
 	roulette->dist = FixedMul(roulette->preexpdist, max(player->exp, FRACUNIT/2));
-	roulette->useOdds = K_FindUseodds(player, roulette);
 
-	if (roulette->preexpuseOdds > roulette->useOdds)
+	// == EVERYTHING FUCKED BELOW THIS LINE
+
+	UINT32 targetpower = roulette->dist; // fill roulette with items around this value!
+	UINT32 powers[NUMKARTRESULTS]; // how strong is each item?
+	UINT32 deltas[NUMKARTRESULTS]; // how different is that strength from target?
+	UINT32 candidates[NUMKARTRESULTS]; // how many of this item should we try to insert?
+	UINT32 dupetolerance[NUMKARTRESULTS]; // how willing are we to select this item after already selecting it? higher values = lower dupe penalty
+	UINT32 duplicates[NUMKARTRESULTS]; // how many copies of this item are already waiting to be inserted?
+	boolean permit[NUMKARTRESULTS]; // is this item allowed?
+	boolean firstonly[NUMKARTRESULTS]; // is this item only first?
+	boolean nofirst[NUMKARTRESULTS]; // is this item never for first?
+
+	// Items permissible?
+	for (i = 1; i < NUMKARTRESULTS; i++)
 	{
-		K_AddMessageForPlayer(player, va("items NERFED %u -> %u", roulette->preexpuseOdds, roulette->useOdds), true, false);
-		CONS_Printf("%s items NERFED %u -> %u\n", player_names[player - players], roulette->preexpuseOdds, roulette->useOdds);
+		permit[i] = true;
+
+		boolean notNearEnd = false;
+		boolean powerItem = false;
+		boolean cooldownOnStart = false;
+		
+		switch (i)
+		{
+			case KITEM_BANANA:
+			case KITEM_EGGMAN:
+			case KITEM_SUPERRING:
+			{
+				notNearEnd = true;
+				break;
+			}
+
+			case KITEM_ROCKETSNEAKER:
+			case KITEM_JAWZ:
+			case KITEM_LANDMINE:
+			case KITEM_DROPTARGET:
+			case KITEM_BALLHOG:
+			case KRITEM_TRIPLESNEAKER:
+			case KRITEM_TRIPLEORBINAUT:
+			case KRITEM_QUADORBINAUT:
+			case KRITEM_DUALJAWZ:
+			{
+				powerItem = true;
+				break;
+			}
+
+			case KITEM_HYUDORO:
+			case KRITEM_TRIPLEBANANA:
+			{
+				powerItem = true;
+				notNearEnd = true;
+				break;
+			}
+
+			case KITEM_INVINCIBILITY:
+			case KITEM_MINE:
+			case KITEM_GROW:
+			case KITEM_BUBBLESHIELD:
+			{
+				cooldownOnStart = true;
+				powerItem = true;
+				break;
+			}
+
+			case KITEM_FLAMESHIELD:
+			case KITEM_GARDENTOP:
+			{
+				cooldownOnStart = true;
+				powerItem = true;
+				notNearEnd = true;
+				break;
+			}
+
+			case KITEM_SPB:
+			{
+				cooldownOnStart = true;
+				notNearEnd = true;
+				// TODO forcing, just disable for now
+				permit[i] = false;
+				break;
+			}
+
+			case KITEM_SHRINK:
+			{
+				cooldownOnStart = true;
+				powerItem = true;
+				notNearEnd = true;
+				break;
+			}
+
+			case KITEM_LIGHTNINGSHIELD:
+			{
+				cooldownOnStart = true;
+				powerItem = true;
+				if ((gametyperules & GTR_CIRCUIT) && spbplace != -1)
+				{
+					permit[i] = false;
+				}
+				break;
+			}
+		}
+
+		if (cooldownOnStart && (leveltime < (30*TICRATE) + starttime))
+			permit[i] = false;
+		if (notNearEnd && (roulette != NULL && roulette->baseDist < ENDDIST))
+			permit[i] = false;
+	
 	}
-	else if (roulette->preexpuseOdds < roulette->useOdds)
+	
+	// invent some bullshit Ps based on existing useodds, temp
+	for (i = 1; i < NUMKARTRESULTS; i++)
 	{
-		K_AddMessageForPlayer(player, va("items BOOSTED %u -> %u", roulette->preexpuseOdds, roulette->useOdds), true, false);
-		CONS_Printf("%s items BOOSTED %u -> %u\n", player_names[player - players], roulette->preexpuseOdds, roulette->useOdds);
+		powers[i] = 0;
+		dupetolerance[i] = 0;
+		UINT32 entries = 0;
+		firstonly[i] = true;
+		nofirst[i] = true;
+		for (j = 0; j < 8; j++)
+		{
+			if (K_KartItemOddsRace[i-1][j] > 0)
+			{
+				powers[i] += (j+1) * DISTVAR * K_KartItemOddsRace[i-1][j];
+				entries += K_KartItemOddsRace[i-1][j];
+				if (j > 0)
+					firstonly[i] = false;
+				if (j == 0)
+					nofirst[i] = false;
+			}
+		}
+
+		dupetolerance[i] += entries;
+
+		if (entries)
+			powers[i] /= entries;
+
+		// CONS_Printf("%s: %d - %d - FO %d - NF %d\n", cv_items[i-1].name, powers[i], dupetolerance[i], firstonly[i], nofirst[i]);
 	}
 
+	// temp - null stuff that doesn't have odds, then distance correct
+	for (i = 1; i < NUMKARTRESULTS; i++)
+	{
+		if (powers[i] == 0)
+			permit[i] = false;
+		else
+			powers[i] -= DISTVAR;
+	}
+
+	// stupid hack for test run / no waypoints
+	if (player->position == 1)
+		targetpower = 0;
+
+	// Starting deltas
+	for (i = 1; i < NUMKARTRESULTS; i++)
+	{
+		candidates[i] = 0;
+		deltas[i] = min(targetpower - powers[i], powers[i] - targetpower);
+		// CONS_Printf("starting delta for %s is %d\n", cv_items[i-1].name, deltas[i]);
+	}
+
+	// let's start finding items to list
+	for (i = 0; i < 15; i++)
+	{
+		UINT32 lowestdelta = INT32_MAX;
+		size_t lowestindex = 0;
+
+		// CONS_Printf("LOOP %d\n", i);
+
+		// check each kartitem to see which is the best fit,
+		// based on what's closest to our target power
+		// (but ignore items that aren't allowed now)
+		for (j = 1; j < NUMKARTRESULTS; j++)
+		{
+			// CONS_Printf("precheck %s, FO %d NF %d CD %d\n", cv_items[j-1].name, firstonly[j], nofirst[j], K_GetItemCooldown(j));
+
+			if (!permit[j])
+				continue;
+			if (K_GetItemCooldown(j))
+				continue;
+			if (!K_ItemEnabled(j))
+				continue;
+			if (firstonly[j] && player->position > 1)
+				continue;
+			if (nofirst[j] && player->position == 1)
+				continue;
+
+			// CONS_Printf("checking %s, delta %d\n", cv_items[j-1].name, deltas[j]);
+
+			if (lowestdelta > deltas[j])
+			{
+				lowestindex = j;
+				lowestdelta = deltas[j];
+			}
+
+		}
+
+		// couldn't find an item? goodbye lol
+		if (lowestindex == 0)
+			break;
+
+		// otherwise, prep it to be added and give it a duplicaton penalty,
+		// so that a different item is more likely to be inserted next
+		candidates[lowestindex]++;
+		duplicates[lowestindex]++;
+		deltas[lowestindex] += (DISTVAR*6/dupetolerance[lowestindex])^(duplicates[lowestindex]);
+
+		// CONS_Printf("added %s with candidates %d\n", cv_items[lowestindex-1].name, candidates[lowestindex]);
+	}
+
+	// set up the list indices used to random-shuffle the ro ulette
 	for (i = 1; i < NUMKARTRESULTS; i++)
 	{
 		spawnChance[i] = (
-			totalSpawnChance += K_KartGetItemOdds(player, roulette, roulette->useOdds, i)
+			totalSpawnChance += candidates[i]
 		);
 	}
 
 	if (totalSpawnChance == 0)
 	{
-		// This shouldn't happen, but if it does, early exit.
-		// Maybe can happen if you enable multiple items for
-		// another gametype, so we give the singleItem as a fallback.
+		// why did this fucking happen LOL
+		// don't crash
 		K_AddItemToReel(player, roulette, singleItem);
 		return;
 	}
 
 	// Create the same item reel given the same inputs.
-	P_SetRandSeed(PR_ITEM_ROULETTE, ITEM_REEL_SEED);
+	// P_SetRandSeed(PR_ITEM_ROULETTE, ITEM_REEL_SEED);
 
+	// and insert all of our candidates into the roulette in a random order
 	while (totalSpawnChance > 0)
 	{
 		rngRoll = P_RandomKey(PR_ITEM_ROULETTE, totalSpawnChance);
@@ -1530,6 +1618,8 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 		{
 			continue;
 		}
+
+		// CONS_Printf("adding %s, tsp %d\n", cv_items[i-1].name, totalSpawnChance);
 
 		K_AddItemToReel(player, roulette, i);
 
