@@ -1671,7 +1671,15 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	boolean rival = (player->bot && (player->botvars.rival || cv_levelskull.value));
 	boolean mothfilter = true; // strip unusually weak items from reel?
 	UINT8 reelsize = 15;
-	UINT32 humanscaler = 200;
+	UINT32 humanscaler = 250;
+
+	for (i = 0; i < MAXPLAYERS; ++i)
+	{
+		if (D_IsPlayerHumanAndGaming(i))
+		{
+			humanscaler += 15;
+		}
+	}
 
 	// Cache which items are permissible
 	for (i = 1; i < NUMKARTRESULTS; i++)
@@ -1704,7 +1712,6 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 		}
 		else
 		{
-			humanscaler = 250;
 			powers[i] = humanscaler * K_DynamicItemOddsRace[i-1][0];
 			dupetolerance[i] = K_DynamicItemOddsRace[i-1][1];
 		}
