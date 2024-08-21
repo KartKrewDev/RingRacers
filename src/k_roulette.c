@@ -661,8 +661,6 @@ static fixed_t K_PercentSPBOdds(const itemroulette_t *roulette, UINT8 position)
 			multiplier = FRACUNIT;
 		}
 
-		CONS_Printf("%d; %d / %d\n", leveltime, dist, roulette->secondToFirst);
-
 		return multiplier;
 	}
 }
@@ -838,6 +836,8 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 	{
 		roulette->firstDist = K_UndoMapScaling(K_GetSpecialUFODistance());
 	}
+
+
 
 	// Calculate 2nd's distance from 1st, for SPB
 	if (roulette->firstDist != UINT32_MAX && roulette->secondDist != UINT32_MAX
@@ -1054,6 +1054,40 @@ static boolean K_IsItemFirstPermitted(kartitems_t item)
 		case KITEM_EGGMAN:
 		case KITEM_ORBINAUT:
 		case KITEM_SUPERRING:
+			return true;
+		default:
+			return false;
+	}
+}
+
+
+static boolean K_IsItemSpeed(kartitems_t item)
+{
+	switch (item)
+	{
+		case KITEM_SNEAKER:
+		case KRITEM_DUALSNEAKER:
+		case KRITEM_TRIPLESNEAKER:
+		case KITEM_FLAMESHIELD:
+		case KITEM_ROCKETSNEAKER:
+			return true;
+		default:
+			return false;
+	}
+}
+
+static boolean K_IsItemUselessAlone(kartitems_t item)
+{
+	switch (item)
+	{
+		case KITEM_JAWZ:
+		case KRITEM_DUALJAWZ:
+		case KITEM_LIGHTNINGSHIELD:
+		case KITEM_ORBINAUT:
+		case KRITEM_TRIPLEORBINAUT:
+		case KRITEM_QUADORBINAUT:
+		case KITEM_BALLHOG:
+		case KITEM_BUBBLESHIELD:
 			return true;
 		default:
 			return false;
@@ -1424,10 +1458,35 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 		// CONS_Printf("starting delta for %s is %d\n", cv_items[i-1].name, deltas[i]);
 	}
 
+	// A lot of items suck if no players are nearby to interact with them.
+	// Should we bias towards items that get us back to the action?
+	UINT32 lonelinessThreshold = 3*DISTVAR/2;
+	UINT32 toAttacker = lonelinessThreshold;
+	UINT32 toDefender = lonelinessThreshold;
+	boolean lonely = false;
+
+	if ((gametyperules & GTR_CIRCUIT) && specialstageinfo.valid == false)
+	{	
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (playeringame[i] == false || players[i].spectator == true || players[i].exiting)
+				continue;
+
+			if (players[i].position == player->position + 1)
+				toAttacker = K_UndoMapScaling(players[i].distancetofinish - player->distancetofinish);
+
+			if (players[i].position == player->position - 1)
+				toDefender = K_UndoMapScaling(player->distancetofinish - players[i].distancetofinish);
+		}
+	}
+
+	if (toAttacker >= lonelinessThreshold && toDefender >= lonelinessThreshold && player->position > 1)
+		lonely = true;
+
+	// let's start finding items to list
 	UINT8 added = 0;
 	UINT32 totalreelpower = 0;
 
-	// let's start finding items to list
 	for (i = 0; i < reelsize; i++)
 	{
 		UINT32 lowestdelta = INT32_MAX;
@@ -1465,10 +1524,12 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 		// UINT32 deltapenalty = (DISTVAR*4)^(candidates[bestitem])/dupetolerance[bestitem];
 		UINT32 deltapenalty = 4*DISTVAR*(1+candidates[bestitem])/dupetolerance[bestitem];
 
-		if (K_IsItemPower(i) && rival)
+		if (K_IsItemPower(bestitem) && rival)
 			deltapenalty = 3 * deltapenalty / 4;
-		if (K_IsItemPower(i) && franticitems)
+		if (K_IsItemPower(bestitem) && franticitems)
 			deltapenalty = 3 * deltapenalty / 4;
+		if (lonely && K_IsItemUselessAlone(bestitem))
+			deltapenalty *= 2;
 
 		if (cv_kartdebugdistribution.value > 1)
 		{
@@ -1499,6 +1560,8 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 		// CONS_Printf("added %s with candidates %d\n", cv_items[lowestindex-1].name, candidates[lowestindex]);
 	}
 
+	// Introduce SPB to race if there's a major frontrun breakway
+
 	fixed_t spb_odds = K_PercentSPBOdds(roulette, player->position);
 
 	if ((gametyperules & GTR_CIRCUIT) 
@@ -1528,6 +1591,11 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 			INT32 FLAGS = V_SNAPTOTOP|V_SNAPTORIGHT;
 
 			V_DrawThinString(BASE_X - 12, 5, FLAGS, va("%d", targetpower/humanscaler));
+
+			V_DrawThinString(BASE_X - 12, 5+12, FLAGS, va("%d", toAttacker));
+			V_DrawThinString(BASE_X - 12, 5+24, FLAGS, va("%d", toDefender));
+			if (lonely)
+				V_DrawThinString(BASE_X - 12, 5+36, FLAGS, va(":("));
 
 			for(UINT8 k = 0; k < candidates[i]; k++)
 				V_DrawFixedPatch((BASE_X + 3*k)*FRACUNIT, (BASE_Y-7)*FRACUNIT, (FRACUNIT >> 1), FLAGS, K_GetSmallStaticCachedItemPatch(i), NULL);
