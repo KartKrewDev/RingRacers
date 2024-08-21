@@ -1703,11 +1703,6 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 			powers[i] = humanscaler * K_DynamicItemOddsRace[i-1][0];
 			dupetolerance[i] = K_DynamicItemOddsRace[i-1][1];
 		}
-
-		if (K_IsItemPower(i) && rival)
-			powers[i] = 3 * powers[i] / 4;
-		if (K_IsItemPower(i) && franticitems)
-			powers[i] = 3 * powers[i] / 4;
 	}
 
 	// null stuff that doesn't have odds
