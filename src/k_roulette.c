@@ -1501,7 +1501,9 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 
 	fixed_t spb_odds = K_PercentSPBOdds(roulette, player->position);
 
-	if ((gametyperules & GTR_CIRCUIT) & (spb_odds > 0) & (spbplace == -1))
+	if ((gametyperules & GTR_CIRCUIT) 
+		&& specialstageinfo.valid == false
+		&& (spb_odds > 0) & (spbplace == -1))
 	{
 		permit[KITEM_SPB] = true;
 		deltas[KITEM_SPB] = Easing_Linear(spb_odds, 3000, 0);
