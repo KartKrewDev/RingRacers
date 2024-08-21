@@ -1473,29 +1473,34 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	// == LONELINESS DETECTION
 	// A lot of items suck if no players are nearby to interact with them.
 	// Should we bias towards items that get us back to the action?
-	// This will set the "lonely" flag to be used later.
-	UINT32 lonelinessThreshold = 3*DISTVAR/2;
+	// This will set the "loneliness" percentage to be used later.
+	UINT32 lonelinessThreshold = 3*DISTVAR; // How far away can we be before items are considered useless?
 	UINT32 toAttacker = lonelinessThreshold; // Distance to the player trying to kill us.
 	UINT32 toDefender = lonelinessThreshold; // Distance to the player we are trying to kill.
-	boolean lonely = false;
+	fixed_t loneliness = 0;
 
-	if ((gametyperules & GTR_CIRCUIT) && specialstageinfo.valid == false)
-	{	
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (playeringame[i] == false || players[i].spectator == true || players[i].exiting)
-				continue;
+	if (player->position > 1) // Loneliness is expected when frontrunnning, don't influence their item table.
+	{
+		if ((gametyperules & GTR_CIRCUIT) && specialstageinfo.valid == false)
+		{	
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (playeringame[i] == false || players[i].spectator == true || players[i].exiting)
+					continue;
 
-			if (players[i].position == player->position + 1)
-				toAttacker = K_UndoMapScaling(players[i].distancetofinish - player->distancetofinish);
+				if (players[i].position == player->position + 1)
+					toAttacker = K_UndoMapScaling(players[i].distancetofinish - player->distancetofinish);
 
-			if (players[i].position == player->position - 1)
-				toDefender = K_UndoMapScaling(player->distancetofinish - players[i].distancetofinish);
+				if (players[i].position == player->position - 1)
+					toDefender = K_UndoMapScaling(player->distancetofinish - players[i].distancetofinish);
+			}
 		}
-	}
 
-	if (toAttacker >= lonelinessThreshold && toDefender >= lonelinessThreshold && player->position > 1)
-		lonely = true;
+		// Your relationship to each closest player counts for half, but will be eased later.
+		// If you're far from an attacker but close to a defender, that Ballhog is still useful!
+		loneliness += min(FRACUNIT/2, FRACUNIT * toAttacker / lonelinessThreshold / 2);
+		loneliness += min(FRACUNIT/2, FRACUNIT * toDefender / lonelinessThreshold / 2);
+	}
 
 	// == INTRODUCE TRYHARD-EATING PREDATOR
 	// If the frontrunner's making a major breakaway, "break the rules"
@@ -1558,8 +1563,8 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 
 		// Conversely, if we're lonely, try not to reselect an item that wouldn't be useful to us
 		// without any players to use it on.
-		if (lonely && K_IsItemUselessAlone(bestitem))
-			deltapenalty *= 2;
+		if (K_IsItemUselessAlone(bestitem))
+			deltapenalty = Easing_InCubic(loneliness, deltapenalty, 3*deltapenalty);
 
 		// Draw complex odds debugger. This one breaks down all the calcs in order.
 		if (cv_kartdebugdistribution.value > 1)
@@ -1618,8 +1623,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 			V_DrawThinString(BASE_X - 12, 5, FLAGS, va("%d", targetpower/humanscaler));
 			V_DrawThinString(BASE_X - 12, 5+12, FLAGS, va("%d", toAttacker));
 			V_DrawThinString(BASE_X - 12, 5+24, FLAGS, va("%d", toDefender));
-			if (lonely)
-				V_DrawThinString(BASE_X - 12, 5+36, FLAGS, va(":("));
+			V_DrawThinString(BASE_X - 12, 5+36, FLAGS, va("%d", loneliness));
 			for(UINT8 k = 0; k < candidates[i]; k++)
 				V_DrawFixedPatch((BASE_X + 3*k)*FRACUNIT, (BASE_Y-7)*FRACUNIT, (FRACUNIT >> 1), FLAGS, K_GetSmallStaticCachedItemPatch(i), NULL);
 			UINT8 amount = K_ItemResultToAmount(i);
