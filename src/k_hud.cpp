@@ -1061,7 +1061,7 @@ static patch_t *K_GetCachedItemPatch(INT32 item, UINT8 offset)
 		return NULL;
 }
 
-static patch_t *K_GetSmallStaticCachedItemPatch(kartitems_t item)
+patch_t *K_GetSmallStaticCachedItemPatch(kartitems_t item)
 {
 	UINT8 offset;
 
@@ -5698,6 +5698,8 @@ static void K_drawDistributionDebugger(void)
 
 	K_FillItemRouletteData(stplyr, &rouletteData, false);
 
+	return;
+
 	for (i = 0; i < rouletteData.itemListLen; i++)
 	{
 		const kartitems_t item = static_cast<kartitems_t>(rouletteData.itemList[i]);
@@ -5729,14 +5731,14 @@ static void K_drawDistributionDebugger(void)
 		y += space;
 	}
 
-	V_DrawString((x >> FRACBITS) + 20, 10, V_SNAPTOTOP, va("speed = %u", rouletteData.speed));
+	V_DrawRightAlignedString(320 - (x >> FRACBITS), 10, V_SNAPTOTOP, va("speed = %u", rouletteData.speed));
 
-	V_DrawString((x >> FRACBITS) + 20, 22, V_SNAPTOTOP, va("baseDist = %u", rouletteData.baseDist));
-	V_DrawString((x >> FRACBITS) + 20, 30, V_SNAPTOTOP, va("dist = %u", rouletteData.dist));
+	V_DrawRightAlignedString(320 - (x >> FRACBITS), 22, V_SNAPTOTOP, va("baseDist = %u", rouletteData.baseDist));
+	V_DrawRightAlignedString(320 - (x >> FRACBITS), 30, V_SNAPTOTOP, va("dist = %u", rouletteData.dist));
 
-	V_DrawString((x >> FRACBITS) + 20, 42, V_SNAPTOTOP, va("firstDist = %u", rouletteData.firstDist));
-	V_DrawString((x >> FRACBITS) + 20, 50, V_SNAPTOTOP, va("secondDist = %u", rouletteData.secondDist));
-	V_DrawString((x >> FRACBITS) + 20, 58, V_SNAPTOTOP, va("secondToFirst = %u", rouletteData.secondToFirst));
+	V_DrawRightAlignedString(320 - (x >> FRACBITS), 42, V_SNAPTOTOP, va("firstDist = %u", rouletteData.firstDist));
+	V_DrawRightAlignedString(320 - (x >> FRACBITS), 50, V_SNAPTOTOP, va("secondDist = %u", rouletteData.secondDist));
+	V_DrawRightAlignedString(320 - (x >> FRACBITS), 58, V_SNAPTOTOP, va("secondToFirst = %u", rouletteData.secondToFirst));
 
 #ifndef ITEM_LIST_SIZE
 	Z_Free(rouletteData.itemList);

@@ -51,6 +51,7 @@
 #include "k_objects.h"
 #include "k_grandprix.h"
 #include "k_specialstage.h"
+#include "k_hud.h" // distribution debugger
 
 // Magic number distance for use with item roulette tiers
 #define DISTVAR (2048)
@@ -74,6 +75,111 @@
 #define ROULETTE_SPEED_DIST (150*DISTVAR)
 #define ROULETTE_SPEED_TIMEATTACK (9)
 #define ROULETTE_SPEED_VERSUS_SLOWEST (12)
+
+static UINT32 K_DynamicItemOddsRace[NUMKARTRESULTS-1][2] = 
+{
+	// distance, duplication tolerance
+	{43, 9}, // sneaker
+	{73, 12}, // rocketsneaker
+	{70, 19}, // invincibility
+	{18, 6}, // banana
+	{17, 3}, // eggmark
+	{21, 14}, // orbinaut
+	{26, 7}, // jawz
+	{29, 8}, // mine
+	{10, 3}, // landmine
+	{35, 4}, // ballhog
+	{68, 6}, // selfpropelledbomb
+	{58, 7}, // grow
+	{71, 8}, // shrink
+	{10, 1}, // lightningshield
+	{30, 4}, // bubbleshield
+	{76, 9}, // flameshield
+	{10, 3}, // hyudoro
+	{0, 0}, // pogospring
+	{17, 4}, // superring
+	{0, 0}, // kitchensink
+	{10, 3}, // droptarget
+	{53, 5}, // gardentop
+	{0, 0}, // gachabom
+	{44, 9}, // dualsneaker
+	{61, 12}, // triplesneaker
+	{25, 2}, // triplebanana
+	{30, 1}, // tripleorbinaut
+	{40, 2}, // quadorbinaut
+	{40, 4}, // dualjawz
+	{0, 0}, // triplegachabom
+};
+
+static UINT32 K_DynamicItemOddsBattle[NUMKARTRESULTS-1][2] = 
+{
+	// distance, duplication tolerance
+	{20, 1}, // sneaker
+	{0, 0}, // rocketsneaker
+	{20, 1}, // invincibility
+	{0, 0}, // banana
+	{0, 0}, // eggmark
+	{10, 2}, // orbinaut
+	{12, 4}, // jawz
+	{13, 3}, // mine
+	{0, 0}, // landmine
+	{13, 3}, // ballhog
+	{0, 0}, // selfpropelledbomb
+	{15, 2}, // grow
+	{0, 0}, // shrink
+	{0, 0}, // lightningshield
+	{10, 1}, // bubbleshield
+	{0, 0}, // flameshield
+	{0, 0}, // hyudoro
+	{0, 0}, // pogospring
+	{0, 0}, // superring
+	{0, 0}, // kitchensink
+	{0, 0}, // droptarget
+	{0, 0}, // gardentop
+	{10, 5}, // gachabom
+	{0, 0}, // dualsneaker
+	{20, 1}, // triplesneaker
+	{0, 0}, // triplebanana
+	{10, 2}, // tripleorbinaut
+	{13, 3}, // quadorbinaut
+	{13, 3}, // dualjawz
+	{10, 2}, // triplegachabom
+};
+
+static UINT32 K_DynamicItemOddsSpecial[NUMKARTRESULTS-1][2] = 
+{
+	// distance, duplication tolerance
+	{15, 2}, // sneaker
+	{0, 0}, // rocketsneaker
+	{0, 0}, // invincibility
+	{0, 0}, // banana
+	{0, 0}, // eggmark
+	{20, 3}, // orbinaut
+	{15, 2}, // jawz
+	{0, 0}, // mine
+	{0, 0}, // landmine
+	{0, 0}, // ballhog
+	{70, 1}, // selfpropelledbomb
+	{0, 0}, // grow
+	{0, 0}, // shrink
+	{0, 0}, // lightningshield
+	{0, 0}, // bubbleshield
+	{0, 0}, // flameshield
+	{0, 0}, // hyudoro
+	{0, 0}, // pogospring
+	{0, 0}, // superring
+	{0, 0}, // kitchensink
+	{0, 0}, // droptarget
+	{0, 0}, // gardentop
+	{0, 0}, // gachabom
+	{35, 2}, // dualsneaker
+	{0, 0}, // triplesneaker
+	{0, 0}, // triplebanana
+	{35, 2}, // tripleorbinaut
+	{0, 0}, // quadorbinaut
+	{35, 2}, // dualjawz
+	{0, 0}, // triplegachabom
+};
 
 static UINT8 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 {
@@ -1207,6 +1313,169 @@ static void K_CalculateRouletteSpeed(itemroulette_t *const roulette)
 	roulette->tics = roulette->speed = ROULETTE_SPEED_FASTEST + FixedMul(ROULETTE_SPEED_SLOWEST - ROULETTE_SPEED_FASTEST, total);
 }
 
+static boolean K_IsItemFirstOnly(kartitems_t item)
+{
+	switch (item)
+	{
+		case KITEM_LANDMINE:
+		case KITEM_LIGHTNINGSHIELD:
+		case KITEM_HYUDORO:
+		case KITEM_DROPTARGET:
+			return true;
+		default:
+			return false;
+	}
+}
+
+static boolean K_IsItemFirstPermitted(kartitems_t item)
+{
+	if (K_IsItemFirstOnly(item))
+		return true;
+
+	switch (item)
+	{
+		case KITEM_BANANA:
+		case KITEM_EGGMAN:
+		case KITEM_ORBINAUT:
+		case KITEM_SUPERRING:
+			return true;
+		default:
+			return false;
+	}
+}
+
+// Which items are disallowed for THIS player?
+static boolean K_ShouldPlayerAllowItem(kartitems_t item, const player_t *player)
+{
+	if (!(gametyperules & GTR_CIRCUIT))
+		return true;
+	if (specialstageinfo.valid == true)
+		return true;
+
+	if (player->position == 1)
+		return K_IsItemFirstPermitted(item);
+	else
+		return !K_IsItemFirstOnly(item);
+}
+
+static boolean K_IsItemPower(kartitems_t item)
+{
+	switch (item)
+	{
+		case KITEM_ROCKETSNEAKER:
+		case KITEM_JAWZ:
+		case KITEM_LANDMINE:
+		case KITEM_DROPTARGET:
+		case KITEM_BALLHOG:
+		case KRITEM_TRIPLESNEAKER:
+		case KRITEM_TRIPLEORBINAUT:
+		case KRITEM_QUADORBINAUT:
+		case KRITEM_DUALJAWZ:
+		case KITEM_HYUDORO:
+		case KRITEM_TRIPLEBANANA:
+		case KITEM_FLAMESHIELD:
+		case KITEM_GARDENTOP:
+		case KITEM_SHRINK:
+		case KITEM_LIGHTNINGSHIELD:
+			return true;
+		default:
+			return false;
+	}
+}
+
+// Which items are disallowed for ALL players?
+static boolean K_ShouldAllowItem(kartitems_t item, const itemroulette_t *roulette)
+{
+	if (!(gametyperules & GTR_CIRCUIT))
+		return true;
+	if (specialstageinfo.valid == true)
+		return true;
+
+	boolean notNearEnd = false;
+	boolean cooldownOnStart = false;
+	
+	switch (item)
+	{
+		case KITEM_BANANA:
+		case KITEM_EGGMAN:
+		case KITEM_SUPERRING:
+		{
+			notNearEnd = true;
+			break;
+		}
+
+		case KITEM_HYUDORO:
+		case KRITEM_TRIPLEBANANA:
+		{
+			notNearEnd = true;
+			break;
+		}
+
+		case KITEM_INVINCIBILITY:
+		case KITEM_MINE:
+		case KITEM_GROW:
+		case KITEM_BUBBLESHIELD:
+		{
+			cooldownOnStart = true;
+			break;
+		}
+
+		case KITEM_FLAMESHIELD:
+		case KITEM_GARDENTOP:
+		{
+			cooldownOnStart = true;
+			notNearEnd = true;
+			break;
+		}
+
+		case KITEM_SPB:
+		{
+			cooldownOnStart = true;
+			notNearEnd = true;
+			// TODO forcing, just disable for now
+			return false;
+			break;
+		}
+
+		case KITEM_SHRINK:
+		{
+			cooldownOnStart = true;
+			notNearEnd = true;
+			break;
+		}
+
+		case KITEM_LIGHTNINGSHIELD:
+		{
+			cooldownOnStart = true;
+			if ((gametyperules & GTR_CIRCUIT) && spbplace != -1)
+			{
+				return false;
+			}
+			break;
+		}
+
+		default:
+			break;
+	}
+
+	if (cooldownOnStart && (leveltime < (30*TICRATE) + starttime))
+		return false;
+	if (notNearEnd && (roulette != NULL && roulette->baseDist < ENDDIST))
+		return false;
+	if (K_DenyShieldOdds(item))
+		return false;
+
+	if (roulette && roulette->autoroulette == true)
+	{
+		if (K_DenyAutoRouletteOdds(item))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
 /*--------------------------------------------------
 	void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox)
 
@@ -1382,7 +1651,9 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	// actually calculate actual item reels.
 	roulette->preexpdist = K_GetItemRouletteDistance(player, roulette->playing);
 	roulette->dist = roulette->preexpdist;
-	roulette->dist = FixedMul(roulette->preexpdist, max(player->exp, FRACUNIT/2));
+
+	if (gametyperules & GTR_CIRCUIT)
+		roulette->dist = FixedMul(roulette->preexpdist, max(player->exp, FRACUNIT/2));
 
 	// == EVERYTHING FUCKED BELOW THIS LINE
 
@@ -1391,148 +1662,63 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	UINT32 deltas[NUMKARTRESULTS]; // how different is that strength from target?
 	UINT32 candidates[NUMKARTRESULTS]; // how many of this item should we try to insert?
 	UINT32 dupetolerance[NUMKARTRESULTS]; // how willing are we to select this item after already selecting it? higher values = lower dupe penalty
-	UINT32 duplicates[NUMKARTRESULTS]; // how many copies of this item are already waiting to be inserted?
 	boolean permit[NUMKARTRESULTS]; // is this item allowed?
-	boolean firstonly[NUMKARTRESULTS]; // is this item only first?
-	boolean nofirst[NUMKARTRESULTS]; // is this item never for first?
 
-	// Items permissible?
+	boolean rival = (player->bot && (player->botvars.rival || cv_levelskull.value));
+	boolean mothfilter = true; // strip unusually weak items from reel?
+	UINT8 reelsize = 15;
+	UINT32 humanscaler = 200;
+
+	// Cache which items are permissible
 	for (i = 1; i < NUMKARTRESULTS; i++)
 	{
-		permit[i] = true;
+		permit[i] = K_ShouldAllowItem(i, roulette);
 
-		boolean notNearEnd = false;
-		boolean powerItem = false;
-		boolean cooldownOnStart = false;
-		
-		switch (i)
-		{
-			case KITEM_BANANA:
-			case KITEM_EGGMAN:
-			case KITEM_SUPERRING:
-			{
-				notNearEnd = true;
-				break;
-			}
+		// CONS_Printf("%s permit prepass %d\n", cv_items[i-1].name, permit[i]);
 
-			case KITEM_ROCKETSNEAKER:
-			case KITEM_JAWZ:
-			case KITEM_LANDMINE:
-			case KITEM_DROPTARGET:
-			case KITEM_BALLHOG:
-			case KRITEM_TRIPLESNEAKER:
-			case KRITEM_TRIPLEORBINAUT:
-			case KRITEM_QUADORBINAUT:
-			case KRITEM_DUALJAWZ:
-			{
-				powerItem = true;
-				break;
-			}
+		if (permit[i])
+			permit[i] = K_ShouldPlayerAllowItem(i, player);
 
-			case KITEM_HYUDORO:
-			case KRITEM_TRIPLEBANANA:
-			{
-				powerItem = true;
-				notNearEnd = true;
-				break;
-			}
-
-			case KITEM_INVINCIBILITY:
-			case KITEM_MINE:
-			case KITEM_GROW:
-			case KITEM_BUBBLESHIELD:
-			{
-				cooldownOnStart = true;
-				powerItem = true;
-				break;
-			}
-
-			case KITEM_FLAMESHIELD:
-			case KITEM_GARDENTOP:
-			{
-				cooldownOnStart = true;
-				powerItem = true;
-				notNearEnd = true;
-				break;
-			}
-
-			case KITEM_SPB:
-			{
-				cooldownOnStart = true;
-				notNearEnd = true;
-				// TODO forcing, just disable for now
-				permit[i] = false;
-				break;
-			}
-
-			case KITEM_SHRINK:
-			{
-				cooldownOnStart = true;
-				powerItem = true;
-				notNearEnd = true;
-				break;
-			}
-
-			case KITEM_LIGHTNINGSHIELD:
-			{
-				cooldownOnStart = true;
-				powerItem = true;
-				if ((gametyperules & GTR_CIRCUIT) && spbplace != -1)
-				{
-					permit[i] = false;
-				}
-				break;
-			}
-		}
-
-		if (cooldownOnStart && (leveltime < (30*TICRATE) + starttime))
-			permit[i] = false;
-		if (notNearEnd && (roulette != NULL && roulette->baseDist < ENDDIST))
-			permit[i] = false;
-	
+		// CONS_Printf("%s permit postpass %d\n", cv_items[i-1].name, permit[i]);
 	}
-	
-	// invent some bullshit Ps based on existing useodds, temp
+
+	// temp - i have no fucking clue how pointers work i am so sorry
 	for (i = 1; i < NUMKARTRESULTS; i++)
 	{
-		powers[i] = 0;
-		dupetolerance[i] = 0;
-		UINT32 entries = 0;
-		firstonly[i] = true;
-		nofirst[i] = true;
-		for (j = 0; j < 8; j++)
+		if (gametyperules & GTR_BUMPERS)
 		{
-			if (K_KartItemOddsRace[i-1][j] > 0)
-			{
-				powers[i] += (j+1) * DISTVAR * K_KartItemOddsRace[i-1][j];
-				entries += K_KartItemOddsRace[i-1][j];
-				if (j > 0)
-					firstonly[i] = false;
-				if (j == 0)
-					nofirst[i] = false;
-			}
+			powers[i] = humanscaler * K_DynamicItemOddsBattle[i-1][0];
+			dupetolerance[i] = K_DynamicItemOddsBattle[i-1][1];
+			mothfilter = false;
+		}
+		else if (specialstageinfo.valid == true)
+		{
+			powers[i] = humanscaler * K_DynamicItemOddsSpecial[i-1][0];
+			dupetolerance[i] = K_DynamicItemOddsSpecial[i-1][1];
+			reelsize = 8;
+			mothfilter = false;
+		}
+		else
+		{
+			powers[i] = humanscaler * K_DynamicItemOddsRace[i-1][0];
+			dupetolerance[i] = K_DynamicItemOddsRace[i-1][1];
 		}
 
-		dupetolerance[i] += entries;
-
-		if (entries)
-			powers[i] /= entries;
-
-		// CONS_Printf("%s: %d - %d - FO %d - NF %d\n", cv_items[i-1].name, powers[i], dupetolerance[i], firstonly[i], nofirst[i]);
+		if (K_IsItemPower(i) && rival)
+			powers[i] = 3 * powers[i] / 4;
+		if (K_IsItemPower(i) && franticitems)
+			powers[i] = 3 * powers[i] / 4;
 	}
 
-	// temp - null stuff that doesn't have odds, then distance correct
+	// null stuff that doesn't have odds
 	for (i = 1; i < NUMKARTRESULTS; i++)
 	{
 		if (powers[i] == 0)
+		{
+			// CONS_Printf("%s nulled\n", cv_items[i-1].name);
 			permit[i] = false;
-		else
-			powers[i] -= DISTVAR;
-	}
-
-	// stupid hack for test run / no waypoints
-	if (player->position == 1)
-		targetpower = 0;
+		}
+	}	
 
 	// Starting deltas
 	for (i = 1; i < NUMKARTRESULTS; i++)
@@ -1542,11 +1728,14 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 		// CONS_Printf("starting delta for %s is %d\n", cv_items[i-1].name, deltas[i]);
 	}
 
+	UINT8 added = 0;
+	UINT32 totalreelpower = 0;
+
 	// let's start finding items to list
-	for (i = 0; i < 15; i++)
+	for (i = 0; i < reelsize; i++)
 	{
 		UINT32 lowestdelta = INT32_MAX;
-		size_t lowestindex = 0;
+		size_t bestitem = 0;
 
 		// CONS_Printf("LOOP %d\n", i);
 
@@ -1555,7 +1744,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 		// (but ignore items that aren't allowed now)
 		for (j = 1; j < NUMKARTRESULTS; j++)
 		{
-			// CONS_Printf("precheck %s, FO %d NF %d CD %d\n", cv_items[j-1].name, firstonly[j], nofirst[j], K_GetItemCooldown(j));
+			// CONS_Printf("precheck %s, perm %d CD %d\n", cv_items[j-1].name, permit[j], K_GetItemCooldown(j));
 
 			if (!permit[j])
 				continue;
@@ -1563,40 +1752,97 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 				continue;
 			if (!K_ItemEnabled(j))
 				continue;
-			if (firstonly[j] && player->position > 1)
-				continue;
-			if (nofirst[j] && player->position == 1)
-				continue;
 
 			// CONS_Printf("checking %s, delta %d\n", cv_items[j-1].name, deltas[j]);
 
 			if (lowestdelta > deltas[j])
 			{
-				lowestindex = j;
+				bestitem = j;
 				lowestdelta = deltas[j];
 			}
-
 		}
 
 		// couldn't find an item? goodbye lol
-		if (lowestindex == 0)
+		if (bestitem == 0)
 			break;
+
+		// UINT32 deltapenalty = (DISTVAR*4)^(candidates[bestitem])/dupetolerance[bestitem];
+		UINT32 deltapenalty = 4*DISTVAR*(1+candidates[bestitem])/dupetolerance[bestitem];
+
+		if (K_IsItemPower(i) && rival)
+			deltapenalty = 3 * deltapenalty / 4;
+		if (K_IsItemPower(i) && franticitems)
+			deltapenalty = 3 * deltapenalty / 4;
+
+		if (cv_kartdebugdistribution.value > 1)
+		{
+			UINT16 BASE_X = 18;
+			UINT16 BASE_Y = 5+12*i;
+			INT32 FLAGS = V_SNAPTOTOP|V_SNAPTOLEFT;
+			// V_DrawThinString(BASE_X + 100, BASE_Y, FLAGS, va("%s", cv_items[lowestindex-1].name));
+			V_DrawThinString(BASE_X + 35, BASE_Y, FLAGS, va("P%d", powers[bestitem]/humanscaler));
+			V_DrawThinString(BASE_X + 65, BASE_Y, FLAGS, va("D%d", deltas[bestitem]/humanscaler));
+			V_DrawThinString(BASE_X + 20, BASE_Y, FLAGS, va("%d", dupetolerance[bestitem]));
+			//V_DrawThinString(BASE_X + 70, BASE_Y, FLAGS, va("+%d", deltapenalty));
+			V_DrawFixedPatch(BASE_X*FRACUNIT, (BASE_Y-7)*FRACUNIT, (FRACUNIT >> 1), FLAGS, K_GetSmallStaticCachedItemPatch(bestitem), NULL);
+			UINT8 amount = K_ItemResultToAmount(bestitem);
+			if (amount > 1)
+			{
+				V_DrawThinString(BASE_X, BASE_Y, FLAGS, va("x%d", amount));
+			}
+		}
 
 		// otherwise, prep it to be added and give it a duplicaton penalty,
 		// so that a different item is more likely to be inserted next
-		candidates[lowestindex]++;
-		duplicates[lowestindex]++;
-		deltas[lowestindex] += (DISTVAR*6/dupetolerance[lowestindex])^(duplicates[lowestindex]);
+		candidates[bestitem]++;
+		deltas[bestitem] += deltapenalty;
+
+		totalreelpower += powers[bestitem];
+		added++;
 
 		// CONS_Printf("added %s with candidates %d\n", cv_items[lowestindex-1].name, candidates[lowestindex]);
 	}
 
+	UINT8 debugcount = 0;
+	UINT32 meanreelpower = totalreelpower/max(added, 1);
+
 	// set up the list indices used to random-shuffle the ro ulette
 	for (i = 1; i < NUMKARTRESULTS; i++)
-	{
-		spawnChance[i] = (
-			totalSpawnChance += candidates[i]
-		);
+	{	
+		// filter items vastly too weak for this reel
+		boolean reject = (powers[i] + DISTVAR < meanreelpower);
+
+		if (!mothfilter)
+			reject = false;
+
+		if (cv_kartdebugdistribution.value && candidates[i])
+		{
+			UINT16 BASE_X = 280;
+			UINT16 BASE_Y = 5+12*debugcount;
+			INT32 FLAGS = V_SNAPTOTOP|V_SNAPTORIGHT;
+
+			V_DrawThinString(BASE_X - 12, 5, FLAGS, va("%d", targetpower/humanscaler));
+
+			for(UINT8 k = 0; k < candidates[i]; k++)
+				V_DrawFixedPatch((BASE_X + 3*k)*FRACUNIT, (BASE_Y-7)*FRACUNIT, (FRACUNIT >> 1), FLAGS, K_GetSmallStaticCachedItemPatch(i), NULL);
+
+			UINT8 amount = K_ItemResultToAmount(i);
+			if (amount > 1)
+			{
+				V_DrawThinString(BASE_X, BASE_Y, FLAGS, va("x%d", amount));
+			}
+
+			if (reject)
+				V_DrawThinString(BASE_X, BASE_Y, FLAGS|V_60TRANS, va("WEAK"));
+			debugcount++;
+		}
+
+		if (!reject)
+		{
+			spawnChance[i] = (
+				totalSpawnChance += candidates[i]
+			);
+		}
 	}
 
 	if (totalSpawnChance == 0)
@@ -1607,8 +1853,10 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 		return;
 	}
 
-	// Create the same item reel given the same inputs.
-	// P_SetRandSeed(PR_ITEM_ROULETTE, ITEM_REEL_SEED);
+	/*
+	if (cv_kartdebugdistribution.value)
+		P_SetRandSeed(PR_ITEM_ROULETTE, ITEM_REEL_SEED);
+	*/
 
 	// and insert all of our candidates into the roulette in a random order
 	while (totalSpawnChance > 0)

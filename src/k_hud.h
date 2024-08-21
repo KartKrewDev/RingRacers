@@ -106,6 +106,8 @@ void K_ClearPersistentMessages(void);
 void K_ClearPersistentMessageForPlayer(player_t *player);
 void K_TickMessages(void);
 
+patch_t *K_GetSmallStaticCachedItemPatch(kartitems_t item);
+
 typedef enum
 {
 	PLAYERTAG_NONE,
