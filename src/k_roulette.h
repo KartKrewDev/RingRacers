@@ -78,17 +78,14 @@ botItemPriority_e K_GetBotItemPriority(kartitems_t result);
 
 
 /*--------------------------------------------------
-	INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, UINT8 pos, kartitems_t item);
+	INT32 K_KartGetBattleOdds(const player_t *player, itemroulette_t *const roulette, UINT8 pos, kartitems_t item);
 
-		Gets the frequency an item should show up in
-		an item bracket, and adjusted for special
-		factors (such as Frantic Items).
+		Gets legacy item priority.
+		Currently used only for Battle monitors/spawners.
 
 	Input Arguments:-
 		player - The player we intend to give the item to later.
 			Can be NULL for generic use.
-		roulette - The roulette data that we intend to
-			insert this item into.
 		pos - The item bracket we are in.
 		item - The item to give.
 
@@ -97,7 +94,7 @@ botItemPriority_e K_GetBotItemPriority(kartitems_t result);
 		into the roulette.
 --------------------------------------------------*/
 
-INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, UINT8 pos, kartitems_t item);
+INT32 K_KartGetBattleOdds(const player_t *player, UINT8 pos, kartitems_t item);
 
 
 /*--------------------------------------------------

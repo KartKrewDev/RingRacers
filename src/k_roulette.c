@@ -181,41 +181,8 @@ static UINT32 K_DynamicItemOddsSpecial[NUMKARTRESULTS-1][2] =
 	{0, 0}, // triplegachabom
 };
 
-static UINT8 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
-{
-	{ 0, 0, 2, 3, 4, 0, 0, 0 }, // Sneaker
-	{ 0, 0, 0, 0, 0, 3, 4, 5 }, // Rocket Sneaker
-	{ 0, 0, 0, 0, 2, 5, 5, 7 }, // Invincibility
-	{ 2, 3, 1, 0, 0, 0, 0, 0 }, // Banana
-	{ 1, 2, 0, 0, 0, 0, 0, 0 }, // Eggman Monitor
-	{ 5, 5, 2, 2, 0, 0, 0, 0 }, // Orbinaut
-	{ 0, 4, 2, 1, 0, 0, 0, 0 }, // Jawz
-	{ 0, 3, 3, 2, 0, 0, 0, 0 }, // Mine
-	{ 3, 0, 0, 0, 0, 0, 0, 0 }, // Land Mine
-	{ 0, 0, 2, 2, 0, 0, 0, 0 }, // Ballhog
-	{ 0, 0, 0, 0, 0, 2, 4, 0 }, // Self-Propelled Bomb
-	{ 0, 0, 0, 0, 2, 5, 0, 0 }, // Grow
-	{ 0, 0, 0, 0, 0, 2, 4, 2 }, // Shrink
-	{ 1, 0, 0, 0, 0, 0, 0, 0 }, // Lightning Shield
-	{ 0, 1, 2, 1, 0, 0, 0, 0 }, // Bubble Shield
-	{ 0, 0, 0, 0, 0, 1, 3, 5 }, // Flame Shield
-	{ 3, 0, 0, 0, 0, 0, 0, 0 }, // Hyudoro
-	{ 0, 0, 0, 0, 0, 0, 0, 0 }, // Pogo Spring
-	{ 2, 1, 1, 0, 0, 0, 0, 0 }, // Super Ring
-	{ 0, 0, 0, 0, 0, 0, 0, 0 }, // Kitchen Sink
-	{ 3, 0, 0, 0, 0, 0, 0, 0 }, // Drop Target
-	{ 0, 0, 0, 1, 2, 2, 0, 0 }, // Garden Top
-	{ 0, 0, 0, 0, 0, 0, 0, 0 }, // Gachabom
-	{ 0, 0, 2, 3, 3, 1, 0, 0 }, // Sneaker x2
-	{ 0, 0, 0, 0, 4, 4, 4, 0 }, // Sneaker x3
-	{ 0, 1, 1, 0, 0, 0, 0, 0 }, // Banana x3
-	{ 0, 0, 1, 0, 0, 0, 0, 0 }, // Orbinaut x3
-	{ 0, 0, 0, 2, 0, 0, 0, 0 }, // Orbinaut x4
-	{ 0, 0, 1, 2, 1, 0, 0, 0 }, // Jawz x2
-	{ 0, 0, 0, 0, 0, 0, 0, 0 }  // Gachabom x3
-};
 
-static UINT8 K_KartItemOddsBattle[NUMKARTRESULTS-1][2] =
+static UINT8 K_KartLegacyBattleOdds[NUMKARTRESULTS-1][2] =
 {
 	{ 0, 1 }, // Sneaker
 	{ 0, 0 }, // Rocket Sneaker
@@ -247,40 +214,6 @@ static UINT8 K_KartItemOddsBattle[NUMKARTRESULTS-1][2] =
 	{ 2, 1 }, // Orbinaut x4
 	{ 2, 1 }, // Jawz x2
 	{ 2, 0 }  // Gachabom x3
-};
-
-static UINT8 K_KartItemOddsSpecial[NUMKARTRESULTS-1][4] =
-{
-	{ 1, 1, 0, 0 }, // Sneaker
-	{ 0, 0, 0, 0 }, // Rocket Sneaker
-	{ 0, 0, 0, 0 }, // Invincibility
-	{ 0, 0, 0, 0 }, // Banana
-	{ 0, 0, 0, 0 }, // Eggman Monitor
-	{ 1, 1, 1, 0 }, // Orbinaut
-	{ 1, 1, 0, 0 }, // Jawz
-	{ 0, 0, 0, 0 }, // Mine
-	{ 0, 0, 0, 0 }, // Land Mine
-	{ 0, 0, 0, 0 }, // Ballhog
-	{ 0, 0, 0, 1 }, // Self-Propelled Bomb
-	{ 0, 0, 0, 0 }, // Grow
-	{ 0, 0, 0, 0 }, // Shrink
-	{ 0, 0, 0, 0 }, // Lightning Shield
-	{ 0, 0, 0, 0 }, // Bubble Shield
-	{ 0, 0, 0, 0 }, // Flame Shield
-	{ 0, 0, 0, 0 }, // Hyudoro
-	{ 0, 0, 0, 0 }, // Pogo Spring
-	{ 0, 0, 0, 0 }, // Super Ring
-	{ 0, 0, 0, 0 }, // Kitchen Sink
-	{ 0, 0, 0, 0 }, // Drop Target
-	{ 0, 0, 0, 0 }, // Garden Top
-	{ 0, 0, 0, 0 }, // Gachabom
-	{ 0, 0, 1, 1 }, // Sneaker x2
-	{ 0, 0, 0, 0 }, // Sneaker x3
-	{ 0, 0, 0, 0 }, // Banana x3
-	{ 0, 0, 1, 1 }, // Orbinaut x3
-	{ 0, 0, 0, 0 }, // Orbinaut x4
-	{ 0, 0, 1, 1 }, // Jawz x2
-	{ 0, 0, 0, 0 }  // Gachabom x3
 };
 
 static kartitems_t K_KartItemReelSpecialEnd[] =
@@ -688,9 +621,9 @@ static boolean K_DenyAutoRouletteOdds(kartitems_t item)
 }
 
 /*--------------------------------------------------
-	static fixed_t K_AdjustSPBOdds(const itemroulette_t *roulette, UINT8 position)
+	static fixed_t K_PercentSPBOdds(const itemroulette_t *roulette, UINT8 position)
 
-	Adjust odds of SPB according to distances of first and
+	Provide odds of SPB according to distances of first and
 	second place players.
 
 	Input Arguments:-
@@ -702,7 +635,7 @@ static boolean K_DenyAutoRouletteOdds(kartitems_t item)
 	Return:-
 		New item odds.
 --------------------------------------------------*/
-static fixed_t K_AdjustSPBOdds(const itemroulette_t *roulette, UINT8 position)
+static fixed_t K_PercentSPBOdds(const itemroulette_t *roulette, UINT8 position)
 {
 	I_Assert(roulette != NULL);
 
@@ -728,273 +661,29 @@ static fixed_t K_AdjustSPBOdds(const itemroulette_t *roulette, UINT8 position)
 			multiplier = FRACUNIT;
 		}
 
-		return FixedMul(maxOdds, multiplier);
+		return multiplier;
 	}
 }
 
-typedef struct {
-	boolean powerItem;
-	boolean cooldownOnStart;
-	boolean notNearEnd;
-
-	// gameplay state
-	boolean rival; // player is a bot Rival
-} itemconditions_t;
 
 /*--------------------------------------------------
-	static fixed_t K_AdjustItemOddsToConditions(fixed_t newOdds, const itemconditions_t *conditions, const itemroulette_t *roulette)
-
-		Adjust item odds to certain group conditions.
-
-	Input Arguments:-
-		newOdds - The item odds to adjust.
-		conditions - The conditions state.
-		roulette - The roulette data that we intend to
-			insert this item into.
-
-	Return:-
-		New item odds.
---------------------------------------------------*/
-static fixed_t K_AdjustItemOddsToConditions(fixed_t newOdds, const itemconditions_t *conditions, const itemroulette_t *roulette)
-{
-	// TODO
-	return newOdds;
-
-	// None if this applies outside of Race modes (for now?)
-	if ((gametyperules & GTR_CIRCUIT) == 0)
-	{
-		return newOdds;
-	}
-
-	if ((conditions->cooldownOnStart == true) && (leveltime < (30*TICRATE) + starttime))
-	{
-		// This item should not appear at the beginning of a race. (Usually really powerful crowd-breaking items)
-		newOdds = 0;
-	}
-	else if ((conditions->notNearEnd == true) && (roulette != NULL && roulette->baseDist < ENDDIST))
-	{
-		// This item should not appear at the end of a race. (Usually trap items that lose their effectiveness)
-		newOdds = 0;
-	}
-	else if (conditions->powerItem == true)
-	{
-		// This item is a "power item". This activates "frantic item" toggle related functionality.
-		if (franticitems == true)
-		{
-			// First, power items multiply their odds by 2 if frantic items are on; easy-peasy.
-			newOdds *= 2;
-		}
-
-		if (conditions->rival == true)
-		{
-			// The Rival bot gets frantic-like items, also :p
-			newOdds *= 2;
-		}
-
-		if (roulette != NULL)
-		{
-			newOdds = FixedMul(newOdds, FRACUNIT + K_ItemOddsScale(roulette->playing));
-		}
-	}
-
-	return newOdds;
-}
-
-/*--------------------------------------------------
-	INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, UINT8 pos, kartitems_t item)
+	INT32 K_KartGetBattleOdds(const player_t *player, UINT8 pos, kartitems_t item)
 
 		See header file for description.
 --------------------------------------------------*/
 
-INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, UINT8 pos, kartitems_t item)
+INT32 K_KartGetBattleOdds(const player_t *player, UINT8 pos, kartitems_t item)
 {
-	boolean bot = false;
-	UINT8 position = 0;
-
-	itemconditions_t conditions = {
-		.powerItem = false,
-		.cooldownOnStart = false,
-		.notNearEnd = false,
-		.rival = false,
-	};
-
 	fixed_t newOdds = 0;
 
 	I_Assert(item > KITEM_NONE); // too many off by one scenarioes.
 	I_Assert(item < NUMKARTRESULTS);
 
-	if (player != NULL)
-	{
-		bot = player->bot;
-		conditions.rival = (bot == true && (player->botvars.rival || cv_levelskull.value));
-		position = player->position;
-	}
-
-	if (K_ItemEnabled(item) == false)
-	{
-		return 0;
-	}
-
-	if (K_GetItemCooldown(item) > 0)
-	{
-		// Cooldown is still running, don't give another.
-		return 0;
-	}
-
-	/*
-	if (bot)
-	{
-		// TODO: Item use on bots should all be passed-in functions.
-		// Instead of manually inserting these, it should return 0
-		// for any items without an item use function supplied
-
-		switch (item)
-		{
-			case KITEM_SNEAKER:
-				break;
-			default:
-				return 0;
-		}
-	}
-	*/
-	(void)bot;
-
-	if (K_DenyShieldOdds(item))
-	{
-		return 0;
-	}
-
-	if (roulette && roulette->autoroulette == true)
-	{
-		if (K_DenyAutoRouletteOdds(item))
-		{
-			return 0;
-		}
-	}
-
-	if (gametype == GT_BATTLE)
-	{
-		I_Assert(pos < 2); // DO NOT allow positions past the bounds of the table
-		newOdds = K_KartItemOddsBattle[item-1][pos];
-	}
-	else if (specialstageinfo.valid == true)
-	{
-		I_Assert(pos < 4); // Ditto
-		newOdds = K_KartItemOddsSpecial[item-1][pos];
-	}
-	else
-	{
-		I_Assert(pos < 8); // Ditto
-		newOdds = K_KartItemOddsRace[item-1][pos];
-	}
+	I_Assert(pos < 2); // DO NOT allow positions past the bounds of the table
+	newOdds = K_KartLegacyBattleOdds[item-1][pos];
 
 	newOdds <<= FRACBITS;
 
-	switch (item)
-	{
-		case KITEM_BANANA:
-		case KITEM_EGGMAN:
-		case KITEM_SUPERRING:
-		{
-			conditions.notNearEnd = true;
-			break;
-		}
-
-		case KITEM_ROCKETSNEAKER:
-		case KITEM_JAWZ:
-		case KITEM_LANDMINE:
-		case KITEM_DROPTARGET:
-		case KITEM_BALLHOG:
-		case KRITEM_TRIPLESNEAKER:
-		case KRITEM_TRIPLEORBINAUT:
-		case KRITEM_QUADORBINAUT:
-		case KRITEM_DUALJAWZ:
-		{
-			conditions.powerItem = true;
-			break;
-		}
-
-		case KITEM_HYUDORO:
-		case KRITEM_TRIPLEBANANA:
-		{
-			conditions.powerItem = true;
-			conditions.notNearEnd = true;
-			break;
-		}
-
-		case KITEM_INVINCIBILITY:
-		case KITEM_MINE:
-		case KITEM_GROW:
-		case KITEM_BUBBLESHIELD:
-		{
-			conditions.cooldownOnStart = true;
-			conditions.powerItem = true;
-			break;
-		}
-
-		case KITEM_FLAMESHIELD:
-		case KITEM_GARDENTOP:
-		{
-			conditions.cooldownOnStart = true;
-			conditions.powerItem = true;
-			conditions.notNearEnd = true;
-			break;
-		}
-
-		case KITEM_SPB:
-		{
-			conditions.cooldownOnStart = true;
-			conditions.notNearEnd = true;
-
-			if (roulette != NULL &&
-					(gametyperules & GTR_CIRCUIT) &&
-					specialstageinfo.valid == false)
-			{
-				newOdds = K_AdjustSPBOdds(roulette, position);
-			}
-			break;
-		}
-
-		case KITEM_SHRINK:
-		{
-			conditions.cooldownOnStart = true;
-			conditions.powerItem = true;
-			conditions.notNearEnd = true;
-
-			if (roulette != NULL &&
-					(gametyperules & GTR_CIRCUIT) &&
-					roulette->playing - 1 <= roulette->exiting)
-			{
-				return 0;
-			}
-			break;
-		}
-
-		case KITEM_LIGHTNINGSHIELD:
-		{
-			conditions.cooldownOnStart = true;
-			conditions.powerItem = true;
-
-			if ((gametyperules & GTR_CIRCUIT) && spbplace != -1)
-			{
-				return 0;
-			}
-			break;
-		}
-
-		default:
-		{
-			break;
-		}
-	}
-
-	if (newOdds == 0)
-	{
-		// Nothing else we want to do with odds matters at this point :p
-		return newOdds;
-	}
-
-	newOdds = FixedInt(FixedRound(K_AdjustItemOddsToConditions(newOdds, &conditions, roulette)));
 	return newOdds;
 }
 
@@ -1659,7 +1348,12 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	if (gametyperules & GTR_CIRCUIT)
 		roulette->dist = FixedMul(roulette->preexpdist, max(player->exp, FRACUNIT/2));
 
-	// == EVERYTHING FUCKED BELOW THIS LINE
+	// Dynamic Roulette. Oh boy!
+
+	// STAGE 1: Determine what items are permissible
+	// STAGE 2: Determine the item that's most appropriate for our distance from leader
+	// STAGE 3: Pick that item, then penalize it
+	// STAGE 4: Repeat 3 until the reel is full, then cram everything in
 
 	UINT32 targetpower = roulette->dist; // fill roulette with items around this value!
 	UINT32 powers[NUMKARTRESULTS]; // how strong is each item?
@@ -1670,8 +1364,8 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 
 	boolean rival = (player->bot && (player->botvars.rival || cv_levelskull.value));
 	boolean mothfilter = true; // strip unusually weak items from reel?
-	UINT8 reelsize = 15;
-	UINT32 humanscaler = 250;
+	UINT8 reelsize = 15; // How many items to attempt to add in prepass?
+	UINT32 humanscaler = 250; // Scaler that converts "useodds" style distances in odds tables to raw distances.
 
 	for (i = 0; i < MAXPLAYERS; ++i)
 	{
@@ -1697,6 +1391,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	// temp - i have no fucking clue how pointers work i am so sorry
 	for (i = 1; i < NUMKARTRESULTS; i++)
 	{
+		// NOTE: Battle odds are underspecified, we don't invoke roulettes in this mode!
 		if (gametyperules & GTR_BUMPERS)
 		{
 			powers[i] = humanscaler * K_DynamicItemOddsBattle[i-1][0];
@@ -1859,11 +1554,6 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 		K_AddItemToReel(player, roulette, singleItem);
 		return;
 	}
-
-	/*
-	if (cv_kartdebugdistribution.value)
-		P_SetRandSeed(PR_ITEM_ROULETTE, ITEM_REEL_SEED);
-	*/
 
 	// and insert all of our candidates into the roulette in a random order
 	while (totalSpawnChance > 0)
