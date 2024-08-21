@@ -52,6 +52,7 @@
 #include "k_grandprix.h"
 #include "k_specialstage.h"
 #include "k_hud.h" // distribution debugger
+#include "m_easing.h"
 
 // Magic number distance for use with item roulette tiers
 #define DISTVAR (2048)
@@ -648,7 +649,6 @@ static fixed_t K_PercentSPBOdds(const itemroulette_t *roulette, UINT8 position)
 	{
 		const UINT32 dist = max(0, ((signed)roulette->secondToFirst) - SPBSTARTDIST);
 		const UINT32 distRange = SPBFORCEDIST - SPBSTARTDIST;
-		const fixed_t maxOdds = 20 << FRACBITS;
 		fixed_t multiplier = FixedDiv(dist, distRange);
 
 		if (multiplier < 0)
@@ -660,6 +660,8 @@ static fixed_t K_PercentSPBOdds(const itemroulette_t *roulette, UINT8 position)
 		{
 			multiplier = FRACUNIT;
 		}
+
+		CONS_Printf("%d; %d / %d\n", leveltime, dist, roulette->secondToFirst);
 
 		return multiplier;
 	}
@@ -1365,15 +1367,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	boolean rival = (player->bot && (player->botvars.rival || cv_levelskull.value));
 	boolean mothfilter = true; // strip unusually weak items from reel?
 	UINT8 reelsize = 15; // How many items to attempt to add in prepass?
-	UINT32 humanscaler = 250; // Scaler that converts "useodds" style distances in odds tables to raw distances.
-
-	for (i = 0; i < MAXPLAYERS; ++i)
-	{
-		if (D_IsPlayerHumanAndGaming(i))
-		{
-			humanscaler += 15;
-		}
-	}
+	UINT32 humanscaler = 250 + (roulette->playing * 15); // Scaler that converts "useodds" style distances in odds tables to raw distances.
 
 	// Cache which items are permissible
 	for (i = 1; i < NUMKARTRESULTS; i++)
@@ -1503,6 +1497,14 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 		added++;
 
 		// CONS_Printf("added %s with candidates %d\n", cv_items[lowestindex-1].name, candidates[lowestindex]);
+	}
+
+	fixed_t spb_odds = K_PercentSPBOdds(roulette, player->position);
+
+	if ((gametyperules & GTR_CIRCUIT) & (spb_odds > 0) & (spbplace == -1))
+	{
+		permit[KITEM_SPB] = true;
+		deltas[KITEM_SPB] = Easing_Linear(spb_odds, 3000, 0);
 	}
 
 	UINT8 debugcount = 0;
