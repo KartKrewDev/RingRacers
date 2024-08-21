@@ -1004,6 +1004,9 @@ static void K_CalculateRouletteSpeed(itemroulette_t *const roulette)
 	roulette->tics = roulette->speed = ROULETTE_SPEED_FASTEST + FixedMul(ROULETTE_SPEED_SLOWEST - ROULETTE_SPEED_FASTEST, total);
 }
 
+// Honestly, the "power item" class is kind of a vestigial concept,
+// but we'll faithfully port it over since it's not hurting anything so far
+// (and it's at least ostensibly a Rival balancing mechanism, wheee).
 static boolean K_IsItemPower(kartitems_t item)
 {
 	switch (item)
@@ -1060,7 +1063,8 @@ static boolean K_IsItemFirstPermitted(kartitems_t item)
 	}
 }
 
-
+// Maybe for later...
+#if 0
 static boolean K_IsItemSpeed(kartitems_t item)
 {
 	switch (item)
@@ -1075,6 +1079,7 @@ static boolean K_IsItemSpeed(kartitems_t item)
 			return false;
 	}
 }
+#endif
 
 static boolean K_IsItemUselessAlone(kartitems_t item)
 {
@@ -1094,7 +1099,7 @@ static boolean K_IsItemUselessAlone(kartitems_t item)
 	}
 }
 
-// Which items are disallowed for THIS player?
+// Which items are disallowed for this player's specific placement?
 static boolean K_ShouldPlayerAllowItem(kartitems_t item, const player_t *player)
 {
 	if (!(gametyperules & GTR_CIRCUIT))
@@ -1106,14 +1111,15 @@ static boolean K_ShouldPlayerAllowItem(kartitems_t item, const player_t *player)
 		return K_IsItemFirstPermitted(item);
 	else
 	{
+		// A little inelegant: filter the most chaotic items from courses with early sets and tight layouts.
 		if (K_IsItemPower(item) && (leveltime < ((15*TICRATE) + starttime)))
 			return false;
 		return !K_IsItemFirstOnly(item);
 	}
 }
 
-// Which items are disallowed for ALL players?
-static boolean K_ShouldAllowItem(kartitems_t item, const itemroulette_t *roulette)
+// Which items are disallowed because it's the wrong time for them?
+static boolean K_TimingPermitsItem(kartitems_t item, const itemroulette_t *roulette)
 {
 	if (!(gametyperules & GTR_CIRCUIT))
 		return true;
@@ -1159,10 +1165,9 @@ static boolean K_ShouldAllowItem(kartitems_t item, const itemroulette_t *roulett
 
 		case KITEM_SPB:
 		{
-			cooldownOnStart = true;
-			notNearEnd = true;
-			// TODO forcing, just disable for now
-			return false;
+			// In Race, we reintroduce and reenable this item to counter breakaway frontruns.
+			// No need to roll it if that's not the case.
+			return false; 
 			break;
 		}
 
@@ -1191,26 +1196,16 @@ static boolean K_ShouldAllowItem(kartitems_t item, const itemroulette_t *roulett
 		return false;
 	if (notNearEnd && (roulette != NULL && roulette->baseDist < ENDDIST))
 		return false;
-	if (K_DenyShieldOdds(item))
-		return false;
-
-	if (roulette && roulette->autoroulette == true)
-	{
-		if (K_DenyAutoRouletteOdds(item))
-		{
-			return false;
-		}
-	}
 
 	return true;
 }
 
 /*--------------------------------------------------
-	void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox)
+	void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox, boolean dryrun)
 
 		See header file for description.
 --------------------------------------------------*/
-void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox)
+void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox, boolean dryrun)
 {
 	UINT32 spawnChance[NUMKARTRESULTS] = {0};
 	UINT32 totalSpawnChance = 0;
@@ -1384,39 +1379,53 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	if (gametyperules & GTR_CIRCUIT)
 		roulette->dist = FixedMul(roulette->preexpdist, max(player->exp, FRACUNIT/2));
 
+	// ===============================================================================
 	// Dynamic Roulette. Oh boy!
-
-	// STAGE 1: Determine what items are permissible
-	// STAGE 2: Determine the item that's most appropriate for our distance from leader
-	// STAGE 3: Pick that item, then penalize it
-	// STAGE 4: Repeat 3 until the reel is full, then cram everything in
+	// Alright, here's the broad plan:
+	// 1: Determine what items are permissible
+	// 2: Determine the permitted item that's most appropriate for our distance from leader
+	// 3: Pick that item, then penalize it so it's less likely to be repicked
+	// 4: Repeat 3 until we've picked enough stuff
+	// 5: Skim any items that are much weaker than the reel's average out of the roulette
+	// 6: Cram it all in
 
 	UINT32 targetpower = roulette->dist; // fill roulette with items around this value!
-	UINT32 powers[NUMKARTRESULTS]; // how strong is each item?
+	UINT32 powers[NUMKARTRESULTS]; // how strong is each item? think of this as a "target distance" for this item to spawn at
 	UINT32 deltas[NUMKARTRESULTS]; // how different is that strength from target?
 	UINT32 candidates[NUMKARTRESULTS]; // how many of this item should we try to insert?
 	UINT32 dupetolerance[NUMKARTRESULTS]; // how willing are we to select this item after already selecting it? higher values = lower dupe penalty
 	boolean permit[NUMKARTRESULTS]; // is this item allowed?
 
 	boolean rival = (player->bot && (player->botvars.rival || cv_levelskull.value));
-	boolean mothfilter = true; // strip unusually weak items from reel?
+	boolean filterweakitems = true; // strip unusually weak items from reel?
 	UINT8 reelsize = 15; // How many items to attempt to add in prepass?
 	UINT32 humanscaler = 250 + (roulette->playing * 15); // Scaler that converts "useodds" style distances in odds tables to raw distances.
 
-	// Cache which items are permissible
+	// == ARE THESE ITEMS ALLOWED?
+	// We have a fuckton of rules about when items are allowed to show up,
+	// like limiting trap items at the end of the race, limiting strong
+	// items at the start of the race... Dynamic stuff, not always trivial.
+	// We're about to do a bunch of work with items, so let's cache them all.
 	for (i = 1; i < NUMKARTRESULTS; i++)
 	{
-		permit[i] = K_ShouldAllowItem(i, roulette);
-
-		// CONS_Printf("%s permit prepass %d\n", cv_items[i-1].name, permit[i]);
-
-		if (permit[i])
-			permit[i] = K_ShouldPlayerAllowItem(i, player);
-
-		// CONS_Printf("%s permit postpass %d\n", cv_items[i-1].name, permit[i]);
+		if (!K_TimingPermitsItem(i, roulette))
+			permit[i] = false;
+		else if (!K_ShouldPlayerAllowItem(i, player))
+			permit[i] = false;
+		else if (K_GetItemCooldown(i))
+			permit[i] = false;
+		else if (!K_ItemEnabled(i))
+			permit[i] = false;
+		else if (K_DenyShieldOdds(i))
+			permit[i] = false;
+		else if (roulette && roulette->autoroulette == true && K_DenyAutoRouletteOdds(i))
+			permit[i] = false;
+		else
+			permit[i] = true;
 	}
 
-	// temp - i have no fucking clue how pointers work i am so sorry
+	// == ODDS TIME
+	// Set up the right item odds for the gametype we're in.
 	for (i = 1; i < NUMKARTRESULTS; i++)
 	{
 		// NOTE: Battle odds are underspecified, we don't invoke roulettes in this mode!
@@ -1424,14 +1433,14 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 		{
 			powers[i] = humanscaler * K_DynamicItemOddsBattle[i-1][0];
 			dupetolerance[i] = K_DynamicItemOddsBattle[i-1][1];
-			mothfilter = false;
+			filterweakitems = false;
 		}
 		else if (specialstageinfo.valid == true)
 		{
 			powers[i] = humanscaler * K_DynamicItemOddsSpecial[i-1][0];
 			dupetolerance[i] = K_DynamicItemOddsSpecial[i-1][1];
-			reelsize = 8;
-			mothfilter = false;
+			reelsize = 8; // Smaller roulette in Special because there are much fewer standard items.
+			filterweakitems = false;
 		}
 		else
 		{
@@ -1440,29 +1449,34 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 		}
 	}
 
-	// null stuff that doesn't have odds
+	// == GTFO WEIRD ITEMS
+	// If something is set to distance 0 in its odds table, that means the item
+	// is completely ineligible for the gametype we're in, and should never be selected.
 	for (i = 1; i < NUMKARTRESULTS; i++)
 	{
 		if (powers[i] == 0)
 		{
-			// CONS_Printf("%s nulled\n", cv_items[i-1].name);
 			permit[i] = false;
 		}
 	}	
 
-	// Starting deltas
+	// == REEL CANDIDATE PREP
+	// Dynamic Roulette works by comparing an item's "ideal" distance to our current distance from 1st.
+	// It'll pick the most suitable item, do some math, then move on to the next most suitable item.
+	// Calculate starting deltas and clear out the "candidates" array that stores what we pick.
 	for (i = 1; i < NUMKARTRESULTS; i++)
 	{
 		candidates[i] = 0;
 		deltas[i] = min(targetpower - powers[i], powers[i] - targetpower);
-		// CONS_Printf("starting delta for %s is %d\n", cv_items[i-1].name, deltas[i]);
 	}
 
+	// == LONELINESS DETECTION
 	// A lot of items suck if no players are nearby to interact with them.
 	// Should we bias towards items that get us back to the action?
+	// This will set the "lonely" flag to be used later.
 	UINT32 lonelinessThreshold = 3*DISTVAR/2;
-	UINT32 toAttacker = lonelinessThreshold;
-	UINT32 toDefender = lonelinessThreshold;
+	UINT32 toAttacker = lonelinessThreshold; // Distance to the player trying to kill us.
+	UINT32 toDefender = lonelinessThreshold; // Distance to the player we are trying to kill.
 	boolean lonely = false;
 
 	if ((gametyperules & GTR_CIRCUIT) && specialstageinfo.valid == false)
@@ -1483,32 +1497,39 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	if (toAttacker >= lonelinessThreshold && toDefender >= lonelinessThreshold && player->position > 1)
 		lonely = true;
 
-	// let's start finding items to list
-	UINT8 added = 0;
-	UINT32 totalreelpower = 0;
+	// == INTRODUCE TRYHARD-EATING PREDATOR
+	// If the frontrunner's making a major breakaway, "break the rules"
+	// and insert the SPB into the roulette. This doesn't have to be
+	// incredibly forceful; there's a truly forced special case above.
+	fixed_t spb_odds = K_PercentSPBOdds(roulette, player->position);
+
+	if ((gametyperules & GTR_CIRCUIT) 
+		&& specialstageinfo.valid == false
+		&& (spb_odds > 0) & (spbplace == -1)
+		&& (roulette->preexpdist >= powers[KITEM_SPB])) // SPECIAL CASE: Check raw distance instead of EXP-influenced target distance.
+	{
+		// When reenabling the SPB, we also adjust its delta to ensure that it has good odds of showing up.
+		// Players who are _seriously_ struggling are more likely to see Invinc or Rockets, since those items
+		// have a lower target distance, so we nudge the SPB towards them.
+		permit[KITEM_SPB] = true;
+		deltas[KITEM_SPB] = Easing_Linear(spb_odds, deltas[KITEM_SPB], 0);
+	}
+
+	// == ITEM SELECTION
+	// All the prep work's done: let's pick out a sampler platter of items until we fill the reel.
+	UINT8 added = 0; // How many items added so far?
+	UINT32 totalreelpower = 0; // How much total item power in the reel? Used for an average later.
 
 	for (i = 0; i < reelsize; i++)
 	{
 		UINT32 lowestdelta = INT32_MAX;
 		size_t bestitem = 0;
 
-		// CONS_Printf("LOOP %d\n", i);
-
-		// check each kartitem to see which is the best fit,
-		// based on what's closest to our target power
-		// (but ignore items that aren't allowed now)
+		// Each rep, get the legal item with the lowest delta...
 		for (j = 1; j < NUMKARTRESULTS; j++)
 		{
-			// CONS_Printf("precheck %s, perm %d CD %d\n", cv_items[j-1].name, permit[j], K_GetItemCooldown(j));
-
 			if (!permit[j])
 				continue;
-			if (K_GetItemCooldown(j))
-				continue;
-			if (!K_ItemEnabled(j))
-				continue;
-
-			// CONS_Printf("checking %s, delta %d\n", cv_items[j-1].name, deltas[j]);
 
 			if (lowestdelta > deltas[j])
 			{
@@ -1517,117 +1538,115 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 			}
 		}
 
-		// couldn't find an item? goodbye lol
+		// Couldn't find any eligible items at all? GTFO.
+		// (This should never trigger, but you never know with the item switch menu.)
 		if (bestitem == 0)
 			break;
 
-		// UINT32 deltapenalty = (DISTVAR*4)^(candidates[bestitem])/dupetolerance[bestitem];
+		// Impose a penalty to this item's delta, to bias against selecting it again.
+		// This is naively slashed by an item's "duplicate tolerance":
+		// lower tolerance means that an item is less likely to be reselected (it's "rarer").
 		UINT32 deltapenalty = 4*DISTVAR*(1+candidates[bestitem])/dupetolerance[bestitem];
 
+		// Power items get better odds in frantic, or if you're the rival.
+		// (For the rival, this is way more likely to matter at lower skills, where they're
+		// worse at selecting their item—but it always matters in frantic gameplay.)
 		if (K_IsItemPower(bestitem) && rival)
 			deltapenalty = 3 * deltapenalty / 4;
 		if (K_IsItemPower(bestitem) && franticitems)
 			deltapenalty = 3 * deltapenalty / 4;
+
+		// Conversely, if we're lonely, try not to reselect an item that wouldn't be useful to us
+		// without any players to use it on.
 		if (lonely && K_IsItemUselessAlone(bestitem))
 			deltapenalty *= 2;
 
+		// Draw complex odds debugger. This one breaks down all the calcs in order.
 		if (cv_kartdebugdistribution.value > 1)
 		{
 			UINT16 BASE_X = 18;
 			UINT16 BASE_Y = 5+12*i;
 			INT32 FLAGS = V_SNAPTOTOP|V_SNAPTOLEFT;
-			// V_DrawThinString(BASE_X + 100, BASE_Y, FLAGS, va("%s", cv_items[lowestindex-1].name));
 			V_DrawThinString(BASE_X + 35, BASE_Y, FLAGS, va("P%d", powers[bestitem]/humanscaler));
 			V_DrawThinString(BASE_X + 65, BASE_Y, FLAGS, va("D%d", deltas[bestitem]/humanscaler));
 			V_DrawThinString(BASE_X + 20, BASE_Y, FLAGS, va("%d", dupetolerance[bestitem]));
-			//V_DrawThinString(BASE_X + 70, BASE_Y, FLAGS, va("+%d", deltapenalty));
 			V_DrawFixedPatch(BASE_X*FRACUNIT, (BASE_Y-7)*FRACUNIT, (FRACUNIT >> 1), FLAGS, K_GetSmallStaticCachedItemPatch(bestitem), NULL);
 			UINT8 amount = K_ItemResultToAmount(bestitem);
 			if (amount > 1)
-			{
 				V_DrawThinString(BASE_X, BASE_Y, FLAGS, va("x%d", amount));
-			}
 		}
 
-		// otherwise, prep it to be added and give it a duplicaton penalty,
-		// so that a different item is more likely to be inserted next
+		// Add the selected item to our list of candidates and update its working delta.
 		candidates[bestitem]++;
 		deltas[bestitem] += deltapenalty;
 
+		// Then update our ongoing average of the reel's power.
 		totalreelpower += powers[bestitem];
 		added++;
-
-		// CONS_Printf("added %s with candidates %d\n", cv_items[lowestindex-1].name, candidates[lowestindex]);
 	}
 
-	// Introduce SPB to race if there's a major frontrun breakway
-
-	fixed_t spb_odds = K_PercentSPBOdds(roulette, player->position);
-
-	if ((gametyperules & GTR_CIRCUIT) 
-		&& specialstageinfo.valid == false
-		&& (spb_odds > 0) & (spbplace == -1))
+	if (added == 0)
 	{
-		permit[KITEM_SPB] = true;
-		deltas[KITEM_SPB] = Easing_Linear(spb_odds, 3000, 0);
+		// Guess we're making circles now.
+		// Just do something that doesn't crash.
+		K_AddItemToReel(player, roulette, singleItem);
+		return;
 	}
 
-	UINT8 debugcount = 0;
-	UINT32 meanreelpower = totalreelpower/max(added, 1);
+	UINT8 debugcount = 0; // For the "simple" odds debugger.
+	UINT32 meanreelpower = totalreelpower/max(added, 1); // Average power for the "moth filter".
 
-	// set up the list indices used to random-shuffle the ro ulette
+	// == PREP FOR ADDING TO THE ROULETTE REEL
+	// Sal's prior work for this is rock-solid.
+	// This fills the spawnChance array with a rolling count of items,
+	// so that we can loop upward through it until we hit our random index.
 	for (i = 1; i < NUMKARTRESULTS; i++)
 	{	
-		// filter items vastly too weak for this reel
-		boolean reject = (powers[i] + DISTVAR < meanreelpower);
+		// If an item is far too week for this reel, reject it.
+		// This can happen in regions of the odds with a lot of items that
+		// don't really like to be duplicated. Favor the player; high-rolling
+		// feels exciting, low-rolling feels punishing!
+		boolean reject = (filterweakitems) && (powers[i] + DISTVAR < meanreelpower);
 
-		if (!mothfilter)
-			reject = false;
-
+		// Before we actually apply that rejection, draw the simple odds debugger.
+		// This one is just to watch the distribution for vibes as you drive around.
 		if (cv_kartdebugdistribution.value && candidates[i])
 		{
 			UINT16 BASE_X = 280;
 			UINT16 BASE_Y = 5+12*debugcount;
 			INT32 FLAGS = V_SNAPTOTOP|V_SNAPTORIGHT;
-
 			V_DrawThinString(BASE_X - 12, 5, FLAGS, va("%d", targetpower/humanscaler));
-
 			V_DrawThinString(BASE_X - 12, 5+12, FLAGS, va("%d", toAttacker));
 			V_DrawThinString(BASE_X - 12, 5+24, FLAGS, va("%d", toDefender));
 			if (lonely)
 				V_DrawThinString(BASE_X - 12, 5+36, FLAGS, va(":("));
-
 			for(UINT8 k = 0; k < candidates[i]; k++)
 				V_DrawFixedPatch((BASE_X + 3*k)*FRACUNIT, (BASE_Y-7)*FRACUNIT, (FRACUNIT >> 1), FLAGS, K_GetSmallStaticCachedItemPatch(i), NULL);
-
 			UINT8 amount = K_ItemResultToAmount(i);
 			if (amount > 1)
-			{
 				V_DrawThinString(BASE_X, BASE_Y, FLAGS, va("x%d", amount));
-			}
-
 			if (reject)
 				V_DrawThinString(BASE_X, BASE_Y, FLAGS|V_60TRANS, va("WEAK"));
 			debugcount++;
 		}
 
-		if (!reject)
-		{
-			spawnChance[i] = (
-				totalSpawnChance += candidates[i]
-			);
-		}
+		// Okay, apply the rejection now.
+		if (reject)
+			candidates[i] = 0;
+
+		// Bump totalSpawnChance, write that rolling counter, and move on.
+		spawnChance[i] = (
+			totalSpawnChance += candidates[i]
+		);
 	}
 
-	if (totalSpawnChance == 0)
-	{
-		// why did this fucking happen LOL
-		// don't crash
-		K_AddItemToReel(player, roulette, singleItem);
-		return;
-	}
+	if (dryrun) // We're being called from the debugger on a view conditional!
+		return; // This is net unsafe if we do things with side effects. GTFO!
 
-	// and insert all of our candidates into the roulette in a random order
+	// == FINALLY ADD THIS SHIT TO THE REEL
+	// Super simple: generate a random index,
+	// count up until we hit that index, 
+	// insert that item and decrement everything after.
 	while (totalSpawnChance > 0)
 	{
 		rngRoll = P_RandomKey(PR_ITEM_ROULETTE, totalSpawnChance);
@@ -1636,13 +1655,10 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 			continue;
 		}
 
-		// CONS_Printf("adding %s, tsp %d\n", cv_items[i-1].name, totalSpawnChance);
-
 		K_AddItemToReel(player, roulette, i);
 
 		for (; i < NUMKARTRESULTS; i++)
 		{
-			// Be sure to fix the remaining items' odds too.
 			if (spawnChance[i] > 0)
 			{
 				spawnChance[i]--;
@@ -1663,7 +1679,7 @@ void K_StartItemRoulette(player_t *const player, boolean ringbox)
 	itemroulette_t *const roulette = &player->itemRoulette;
 	size_t i;
 
-	K_FillItemRouletteData(player, roulette, ringbox);
+	K_FillItemRouletteData(player, roulette, ringbox, false);
 
 	if (roulette->autoroulette)
 		roulette->index = P_RandomRange(PR_AUTOROULETTE, 0, roulette->itemListLen - 1);

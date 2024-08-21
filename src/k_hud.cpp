@@ -5684,61 +5684,28 @@ static void K_drawDistributionDebugger(void)
 	itemroulette_t rouletteData = {0};
 
 	const fixed_t scale = (FRACUNIT >> 1);
-	const fixed_t space = 24 * scale;
 	const fixed_t pad = 9 * scale;
 
 	fixed_t x = -pad;
-	fixed_t y = -pad;
-	size_t i;
 
 	if (R_GetViewNumber() != 0) // only for p1
 	{
 		return;
 	}
 
-	K_FillItemRouletteData(stplyr, &rouletteData, false);
+	K_FillItemRouletteData(stplyr, &rouletteData, false, true);
 
-	return;
+	if (cv_kartdebugdistribution.value <= 1)
+		return;
 
-	for (i = 0; i < rouletteData.itemListLen; i++)
-	{
-		const kartitems_t item = static_cast<kartitems_t>(rouletteData.itemList[i]);
-		UINT8 amount = 1;
+	V_DrawRightAlignedThinString(320-(x >> FRACBITS), 100+10, V_SNAPTOTOP|V_SNAPTORIGHT, va("speed = %u", rouletteData.speed));
 
-		if (y > (BASEVIDHEIGHT << FRACBITS) - space - pad)
-		{
-			x += space;
-			y = -pad;
-		}
+	V_DrawRightAlignedThinString(320-(x >> FRACBITS), 100+22, V_SNAPTOTOP|V_SNAPTORIGHT, va("baseDist = %u", rouletteData.baseDist));
+	V_DrawRightAlignedThinString(320-(x >> FRACBITS), 100+30, V_SNAPTOTOP|V_SNAPTORIGHT, va("dist = %u", rouletteData.dist));
 
-		V_DrawFixedPatch(x, y, scale, V_SNAPTOTOP,
-				K_GetSmallStaticCachedItemPatch(item), NULL);
-
-		// Display amount for multi-items
-		amount = K_ItemResultToAmount(item);
-		if (amount > 1)
-		{
-			V_DrawStringScaled(
-				x + (18 * scale),
-				y + (23 * scale),
-				scale, FRACUNIT, FRACUNIT,
-				V_SNAPTOTOP,
-				NULL, HU_FONT,
-				va("x%d", amount)
-			);
-		}
-
-		y += space;
-	}
-
-	V_DrawRightAlignedString(320 - (x >> FRACBITS), 10, V_SNAPTOTOP, va("speed = %u", rouletteData.speed));
-
-	V_DrawRightAlignedString(320 - (x >> FRACBITS), 22, V_SNAPTOTOP, va("baseDist = %u", rouletteData.baseDist));
-	V_DrawRightAlignedString(320 - (x >> FRACBITS), 30, V_SNAPTOTOP, va("dist = %u", rouletteData.dist));
-
-	V_DrawRightAlignedString(320 - (x >> FRACBITS), 42, V_SNAPTOTOP, va("firstDist = %u", rouletteData.firstDist));
-	V_DrawRightAlignedString(320 - (x >> FRACBITS), 50, V_SNAPTOTOP, va("secondDist = %u", rouletteData.secondDist));
-	V_DrawRightAlignedString(320 - (x >> FRACBITS), 58, V_SNAPTOTOP, va("secondToFirst = %u", rouletteData.secondToFirst));
+	V_DrawRightAlignedThinString(320-(x >> FRACBITS), 100+42, V_SNAPTOTOP|V_SNAPTORIGHT, va("firstDist = %u", rouletteData.firstDist));
+	V_DrawRightAlignedThinString(320-(x >> FRACBITS), 100+50, V_SNAPTOTOP|V_SNAPTORIGHT, va("secondDist = %u", rouletteData.secondDist));
+	V_DrawRightAlignedThinString(320-(x >> FRACBITS), 100+58, V_SNAPTOTOP|V_SNAPTORIGHT, va("secondToFirst = %u", rouletteData.secondToFirst));
 
 #ifndef ITEM_LIST_SIZE
 	Z_Free(rouletteData.itemList);

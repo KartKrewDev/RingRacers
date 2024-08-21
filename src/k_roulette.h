@@ -98,7 +98,7 @@ INT32 K_KartGetBattleOdds(const player_t *player, UINT8 pos, kartitems_t item);
 
 
 /*--------------------------------------------------
-	void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox);
+	void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox, boolean dryrun);
 
 		Fills out the item roulette struct when it is
 		initially created. This function needs to be
@@ -110,12 +110,13 @@ INT32 K_KartGetBattleOdds(const player_t *player, UINT8 pos, kartitems_t item);
 			Can be NULL for generic use.
 		roulette - The roulette data struct to fill out.
 		ringbox - Is this roulette fill triggered by a just-respawned Ring Box?
+		dryrun - Are we calling this from the distribution debugger? Don't call RNG or write roulette data!
 
 	Return:-
 		N/A
 --------------------------------------------------*/
 
-void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox);
+void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox, boolean dryrun);
 
 
 /*--------------------------------------------------
