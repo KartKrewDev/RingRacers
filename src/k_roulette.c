@@ -1313,6 +1313,31 @@ static void K_CalculateRouletteSpeed(itemroulette_t *const roulette)
 	roulette->tics = roulette->speed = ROULETTE_SPEED_FASTEST + FixedMul(ROULETTE_SPEED_SLOWEST - ROULETTE_SPEED_FASTEST, total);
 }
 
+static boolean K_IsItemPower(kartitems_t item)
+{
+	switch (item)
+	{
+		case KITEM_ROCKETSNEAKER:
+		case KITEM_JAWZ:
+		case KITEM_LANDMINE:
+		case KITEM_DROPTARGET:
+		case KITEM_BALLHOG:
+		case KRITEM_TRIPLESNEAKER:
+		case KRITEM_TRIPLEORBINAUT:
+		case KRITEM_QUADORBINAUT:
+		case KRITEM_DUALJAWZ:
+		case KITEM_HYUDORO:
+		case KRITEM_TRIPLEBANANA:
+		case KITEM_FLAMESHIELD:
+		case KITEM_GARDENTOP:
+		case KITEM_SHRINK:
+		case KITEM_LIGHTNINGSHIELD:
+			return true;
+		default:
+			return false;
+	}
+}
+
 static boolean K_IsItemFirstOnly(kartitems_t item)
 {
 	switch (item)
@@ -1355,31 +1380,10 @@ static boolean K_ShouldPlayerAllowItem(kartitems_t item, const player_t *player)
 	if (player->position == 1)
 		return K_IsItemFirstPermitted(item);
 	else
-		return !K_IsItemFirstOnly(item);
-}
-
-static boolean K_IsItemPower(kartitems_t item)
-{
-	switch (item)
 	{
-		case KITEM_ROCKETSNEAKER:
-		case KITEM_JAWZ:
-		case KITEM_LANDMINE:
-		case KITEM_DROPTARGET:
-		case KITEM_BALLHOG:
-		case KRITEM_TRIPLESNEAKER:
-		case KRITEM_TRIPLEORBINAUT:
-		case KRITEM_QUADORBINAUT:
-		case KRITEM_DUALJAWZ:
-		case KITEM_HYUDORO:
-		case KRITEM_TRIPLEBANANA:
-		case KITEM_FLAMESHIELD:
-		case KITEM_GARDENTOP:
-		case KITEM_SHRINK:
-		case KITEM_LIGHTNINGSHIELD:
-			return true;
-		default:
+		if (K_IsItemPower(item) && (leveltime < ((15*TICRATE) + starttime)))
 			return false;
+		return !K_IsItemFirstOnly(item);
 	}
 }
 
@@ -1458,7 +1462,7 @@ static boolean K_ShouldAllowItem(kartitems_t item, const itemroulette_t *roulett
 			break;
 	}
 
-	if (cooldownOnStart && (leveltime < (30*TICRATE) + starttime))
+	if (cooldownOnStart && (leveltime < ((30*TICRATE) + starttime)))
 		return false;
 	if (notNearEnd && (roulette != NULL && roulette->baseDist < ENDDIST))
 		return false;
@@ -1700,6 +1704,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 		}
 		else
 		{
+			humanscaler = 250;
 			powers[i] = humanscaler * K_DynamicItemOddsRace[i-1][0];
 			dupetolerance[i] = K_DynamicItemOddsRace[i-1][1];
 		}
