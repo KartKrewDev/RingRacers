@@ -229,6 +229,8 @@ static const struct {
 	{META_LUABANKS,     "luabanks[]"},
 
 	{META_ACTIVATOR,    "activator_t"},
+	
+	{META_FOLLOWER,    "follower_t"},
 	{NULL,              NULL}
 };
 
