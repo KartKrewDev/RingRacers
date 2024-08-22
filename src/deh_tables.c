@@ -24,6 +24,7 @@
 #include "g_state.h" // gamestate_t (for lua)
 #include "r_data.h" // patchalphastyle_t
 #include "k_boss.h" // spottype_t (for lua)
+#include "k_follower.h" // followermode_t (for lua)
 
 #include "deh_tables.h"
 
@@ -5150,6 +5151,10 @@ struct int_const_s const INT_CONST[] = {
 	{"PRECIPFX_THUNDER",PRECIPFX_THUNDER},
 	{"PRECIPFX_LIGHTNING",PRECIPFX_LIGHTNING},
 	{"PRECIPFX_WATERPARTICLES",PRECIPFX_WATERPARTICLES},
+	
+	// followermode_t
+	{"FOLLOWERMODE_FLOAT",FOLLOWERMODE_FLOAT},
+	{"FOLLOWERMODE_GROUND",FOLLOWERMODE_GROUND},
 
 	{NULL,0}
 };
