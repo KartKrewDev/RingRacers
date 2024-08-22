@@ -1590,6 +1590,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 		added++;
 	}
 
+	// No items?!
 	if (added == 0)
 	{
 		// Guess we're making circles now.
@@ -1597,6 +1598,10 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 		K_AddItemToReel(player, roulette, singleItem);
 		return;
 	}
+
+	// Frontrunner roulette is precise, no need to filter it.
+	if (player->position <= 1)
+		filterweakitems = false;
 
 	UINT8 debugcount = 0; // For the "simple" odds debugger.
 	UINT32 meanreelpower = totalreelpower/max(added, 1); // Average power for the "moth filter".
