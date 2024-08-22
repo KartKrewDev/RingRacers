@@ -12974,6 +12974,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						else
 							player->rocketsneakertimer -= 3*TICRATE;
 						player->botvars.itemconfirm = 2*TICRATE;
+						player->overshield += TICRATE/2; // TEMP prototype
 					}
 				}
 				else if (player->itemamount == 0)
@@ -12989,6 +12990,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							{
 								K_DoSneaker(player, 1);
 								K_PlayBoostTaunt(player->mo);
+								player->overshield += TICRATE/2; // TEMP prototype
+								player->sneakertimer += TICRATE; // TEMP prototype
 								player->itemamount--;
 								player->botvars.itemconfirm = 0;
 							}
