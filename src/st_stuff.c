@@ -125,7 +125,7 @@ void ST_doPaletteStuff(void)
 {
 	INT32 palette;
 
-	if (stplyr && stplyr->flashcount)
+	if (stplyr && stplyr->flashcount && cv_reducevfx.value == 0)
 		palette = stplyr->flashpal;
 	else
 		palette = 0;
