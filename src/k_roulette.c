@@ -1389,7 +1389,9 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	// 5: Skim any items that are much weaker than the reel's average out of the roulette
 	// 6: Cram it all in
 
-	UINT32 targetpower = roulette->dist; // fill roulette with items around this value!
+	fixed_t largegamescaler = FRACUNIT + (roulette->playing * (6*FRACUNIT/100)); // Spread out item odds in large games for a less insane experience.
+	UINT32 targetpower = FixedInt(FixedDiv(roulette->dist*FRACUNIT, largegamescaler)); // fill roulette with items around this value!
+
 	UINT32 powers[NUMKARTRESULTS]; // how strong is each item? think of this as a "target distance" for this item to spawn at
 	UINT32 deltas[NUMKARTRESULTS]; // how different is that strength from target?
 	UINT32 candidates[NUMKARTRESULTS]; // how many of this item should we try to insert?
@@ -1399,7 +1401,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	boolean rival = (player->bot && (player->botvars.rival || cv_levelskull.value));
 	boolean filterweakitems = true; // strip unusually weak items from reel?
 	UINT8 reelsize = 15; // How many items to attempt to add in prepass?
-	UINT32 humanscaler = 250 + (roulette->playing * 15); // Scaler that converts "useodds" style distances in odds tables to raw distances.
+	UINT32 humanscaler = 250; // Scaler that converts "useodds" style distances in odds tables to raw distances. Affects general item distance scale.
 
 	// == ARE THESE ITEMS ALLOWED?
 	// We have a fuckton of rules about when items are allowed to show up,
