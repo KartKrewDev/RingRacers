@@ -91,7 +91,7 @@ static UINT32 K_DynamicItemOddsRace[NUMKARTRESULTS-1][2] =
 	{10, 3}, // landmine
 	{35, 4}, // ballhog
 	{68, 6}, // selfpropelledbomb
-	{58, 7}, // grow
+	{65, 7}, // grow
 	{71, 8}, // shrink
 	{10, 1}, // lightningshield
 	{30, 4}, // bubbleshield
@@ -104,7 +104,7 @@ static UINT32 K_DynamicItemOddsRace[NUMKARTRESULTS-1][2] =
 	{53, 5}, // gardentop
 	{0, 0}, // gachabom
 	{44, 9}, // dualsneaker
-	{61, 12}, // triplesneaker
+	{58, 12}, // triplesneaker
 	{25, 2}, // triplebanana
 	{30, 1}, // tripleorbinaut
 	{40, 2}, // quadorbinaut
@@ -1428,6 +1428,9 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 
 	// == ODDS TIME
 	// Set up the right item odds for the gametype we're in.
+
+	UINT32 maxpower = 0; // Clamp target power to the lowest item that exists, or some of the math gets hard to reason about.
+
 	for (i = 1; i < NUMKARTRESULTS; i++)
 	{
 		// NOTE: Battle odds are underspecified, we don't invoke roulettes in this mode!
@@ -1449,7 +1452,11 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 			powers[i] = humanscaler * K_DynamicItemOddsRace[i-1][0];
 			dupetolerance[i] = K_DynamicItemOddsRace[i-1][1];
 		}
+
+		maxpower = max(maxpower, powers[i]);
 	}
+
+	targetpower = min(maxpower, targetpower); // Make sure that we don't fall out of the bottom of the odds table.
 
 	// == GTFO WEIRD ITEMS
 	// If something is set to distance 0 in its odds table, that means the item
