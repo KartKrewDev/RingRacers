@@ -744,8 +744,6 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		}
 #endif
 
-		WRITEUINT8(save->p, players[i].itemRoulette.preexpuseOdds);
-		WRITEUINT8(save->p, players[i].itemRoulette.useOdds);
 		WRITEUINT32(save->p, players[i].itemRoulette.preexpdist);
 		WRITEUINT32(save->p, players[i].itemRoulette.dist);
 		WRITEUINT32(save->p, players[i].itemRoulette.index);
@@ -1370,8 +1368,6 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		}
 #endif
 
-		players[i].itemRoulette.preexpuseOdds = READUINT8(save->p);
-		players[i].itemRoulette.useOdds = READUINT8(save->p);
 		players[i].itemRoulette.preexpdist = READUINT32(save->p);
 		players[i].itemRoulette.dist = READUINT32(save->p);
 		players[i].itemRoulette.index = (size_t)READUINT32(save->p);

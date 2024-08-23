@@ -4007,8 +4007,10 @@ void K_SpawnAmps(player_t *player, UINT8 amps, mobj_t *impact)
 	if (gametyperules & GTR_SPHERES)
 		return;
 
-	// Give that Sonic guy some help.
-	UINT16 scaledamps = min(amps, amps * (10 + player->kartspeed - player->kartweight) / 10);
+	UINT16 scaledamps = min(amps, amps * (10 + (9-player->kartspeed) - (9-player->kartweight)) / 10);
+
+	if (player->position <= 1)
+		scaledamps /= 2;
 
 	for (int i = 0; i < (scaledamps/2); i++)
 	{
@@ -4052,6 +4054,13 @@ void K_AwardPlayerAmps(player_t *player, UINT8 amps)
 
 	if (player->rings <= 0 && player->ampspending == 0)
 	{
+		// Auto Overdrive!
+		// If this is a fresh OD, give 'em some extra juice to make up for lack of flexibility.
+		if (!player->overdrive && player->mo && !P_MobjWasRemoved(player->mo))
+		{
+			S_StartSound(player->mo, sfx_gshac);
+			player->amps *= 2;
+		}
 		K_Overdrive(player);
 	}
 }
@@ -7424,7 +7433,7 @@ SINT8 K_GetTotallyRandomResult(UINT8 useodds)
 		// Avoid calling K_FillItemRouletteData since that
 		// function resets PR_ITEM_ROULETTE.
 		spawnchance[i] = (
-			totalspawnchance += K_KartGetItemOdds(NULL, NULL, useodds, i)
+			totalspawnchance += K_KartGetBattleOdds(NULL, useodds, i)
 		);
 	}
 
@@ -12974,6 +12983,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						else
 							player->rocketsneakertimer -= 3*TICRATE;
 						player->botvars.itemconfirm = 2*TICRATE;
+						player->overshield += TICRATE/2; // TEMP prototype
 					}
 				}
 				else if (player->itemamount == 0)
@@ -12989,6 +12999,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							{
 								K_DoSneaker(player, 1);
 								K_PlayBoostTaunt(player->mo);
+								player->overshield += TICRATE/2; // TEMP prototype
+								player->sneakertimer += TICRATE; // TEMP prototype
 								player->itemamount--;
 								player->botvars.itemconfirm = 0;
 							}
@@ -14777,13 +14789,24 @@ fixed_t K_GetExpAdjustment(player_t *player)
 
 	INT32 live_players = 0;
 
-	// Increase XP for each player you're beating...
 	for (INT32 i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i] || players[i].spectator || player == players+i)
 			continue;
 
 		live_players++;
+	}
+
+	if (live_players < 8)
+	{
+		exp_power += (8 - live_players) * exp_power/4;
+	}
+
+	// Increase XP for each player you're beating...
+	for (INT32 i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i] || players[i].spectator || player == players+i)
+			continue;
 
 		if (player->position < players[i].position)
 			result += exp_power;

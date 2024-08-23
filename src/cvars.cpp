@@ -819,7 +819,7 @@ consvar_t cv_fuzz = OnlineCheat("fuzz", "Off").on_off().description("Human playe
 
 consvar_t cv_kartdebugamount = OnlineCheat("debugitemamount", "1").min_max(1, 255).description("If debugitem, give multiple copies of an item");
 consvar_t cv_kartdebugbots = OnlineCheat("debugbots", "Off").on_off().description("Bot AI debugger");
-consvar_t cv_kartdebugdistribution = OnlineCheat("debugitemodds", "Off").on_off().description("Show items that the roulette can roll");
+consvar_t cv_kartdebugdistribution = OnlineCheat("debugitemodds", "0").min_max(0, 2).description("Show items that the roulette can roll");
 consvar_t cv_kartdebughuddrop = OnlineCheat("debugitemdrop", "Off").on_off().description("Players drop paper items when damaged in any way");
 
 consvar_t cv_kartdebugbotwhip = OnlineCheat("debugbotwhip", "Off").on_off().description("Disable bot ring and item pickups");
