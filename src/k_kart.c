@@ -14780,13 +14780,24 @@ fixed_t K_GetExpAdjustment(player_t *player)
 
 	INT32 live_players = 0;
 
-	// Increase XP for each player you're beating...
 	for (INT32 i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i] || players[i].spectator || player == players+i)
 			continue;
 
 		live_players++;
+	}
+
+	if (live_players < 8)
+	{
+		exp_power += (8 - live_players) * exp_power/4;
+	}
+
+	// Increase XP for each player you're beating...
+	for (INT32 i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i] || players[i].spectator || player == players+i)
+			continue;
 
 		if (player->position < players[i].position)
 			result += exp_power;
