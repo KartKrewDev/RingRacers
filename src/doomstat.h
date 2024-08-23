@@ -664,7 +664,7 @@ enum GameTypeRules
 	GTR_PAPERITEMS			= 1<<6,		// Replaces item boxes with paper item spawners
 	GTR_POWERSTONES			= 1<<7,		// Battle Emerald collectables.
 	GTR_KARMA				= 1<<8,		// Enables the Karma system if you're out of bumpers
-	GTR_ITEMARROWS			= 1<<9,		// Show item box arrows above players
+	// 1<<9 - UNUSED
 
 	// Bonus gametype rules
 	GTR_CHECKPOINTS			= 1<<10,	// Player respawns at specific checkpoints

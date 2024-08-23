@@ -735,9 +735,26 @@ void K_CullTargetList(std::vector<TargetTracking>& targetList)
 				bit = 2; // nametags will cull on a separate plane
 
 				// see also K_DrawNameTagForPlayer
-				if ((gametyperules & GTR_ITEMARROWS) && p->itemtype != KITEM_NONE && p->itemamount != 0)
+				if ((p->itemtype != KITEM_NONE && p->itemamount != 0)
+					|| (p->itemRoulette.active == true && p->itemRoulette.ringbox == false))
 				{
 					x1 -= 24 * FRACUNIT;
+				}
+			}
+			else if (tr.nametag == PLAYERTAG_RIVAL || tr.nametag == PLAYERTAG_CPU)
+			{
+				const player_t* p = tr.mobj->player;
+
+				x1 = tr.result.x - (14 * FRACUNIT);
+				x2 = tr.result.x + (14 * FRACUNIT);
+				y1 = tr.result.y - (20 * FRACUNIT);
+				y2 = tr.result.y - (4 * FRACUNIT);
+				bit = 2; // nametags will cull on a separate plane
+
+				// see also K_DrawNameTagForPlayer
+				if (p->itemtype != KITEM_NONE && p->itemamount != 0)
+				{
+					y1 -= 23 * FRACUNIT;
 				}
 			}
 			else if (tr.nametag != PLAYERTAG_NONE)

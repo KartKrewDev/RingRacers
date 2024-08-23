@@ -205,7 +205,7 @@ static patch_t *kp_itemminimap;
 static patch_t *kp_alagles[10];
 static patch_t *kp_blagles[6];
 
-static patch_t *kp_cpu;
+static patch_t *kp_cpu[2];
 
 static patch_t *kp_nametagstem;
 
@@ -818,7 +818,8 @@ void K_LoadKartHUDGraphics(void)
 		HU_UpdatePatch(&kp_blagles[i], "%s", buffer);
 	}
 
-	HU_UpdatePatch(&kp_cpu, "K_CPU");
+	HU_UpdatePatch(&kp_cpu[0], "K_CPU1");
+	HU_UpdatePatch(&kp_cpu[1], "K_CPU2");
 
 	HU_UpdatePatch(&kp_nametagstem, "K_NAMEST");
 
@@ -3874,19 +3875,6 @@ static boolean K_ShowPlayerNametag(player_t *p)
 	return true;
 }
 
-static void K_DrawLocalTagForPlayer(fixed_t x, fixed_t y, player_t *p, UINT8 id, UINT32 flags)
-{
-	UINT8 blink = ((leveltime / 7) & 1);
-	UINT8 *colormap = R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(p->skincolor), GTC_CACHE);
-	V_DrawFixedPatch(x, y, FRACUNIT, flags, kp_localtag[id][blink], colormap);
-}
-
-static void K_DrawRivalTagForPlayer(fixed_t x, fixed_t y, UINT32 flags)
-{
-	UINT8 blink = ((leveltime / 7) & 1);
-	V_DrawFixedPatch(x, y, FRACUNIT, flags, kp_rival[blink], NULL);
-}
-
 static void K_DrawTypingDot(fixed_t x, fixed_t y, UINT8 duration, player_t *p, INT32 flags)
 {
 	if (p->typing_duration > duration)
@@ -3929,23 +3917,43 @@ static void K_DrawNameTagItemSpy(INT32 x, INT32 y, player_t *p, INT32 flags)
 
 	box.colorize(p->skincolor).patch(kp_itembg[tiny ? 4 : 2]);
 
-	if (!(p->itemflags & IF_ITEMOUT) || (leveltime & 1))
+	INT32 item_type = KITEM_NONE;
+
+	if (p->itemRoulette.active == true && p->itemRoulette.ringbox == false)
 	{
-		switch (p->itemtype)
+		item_type = 1 + (leveltime % (NUMKARTITEMS - 1));
+	}
+	else if (!(p->itemflags & IF_ITEMOUT) || (leveltime & 1))
+	{
+		item_type = p->itemtype;
+	}
+
+	switch (item_type)
+	{
+		case KITEM_NONE:
 		{
+			break;
+		}
+
 		case KITEM_INVINCIBILITY:
+		{
 			box.patch(kp_invincibility[((leveltime % (6*3)) / 3) + (tiny ? 13 : 7)]);
 			break;
+		}
 
 		case KITEM_ORBINAUT:
+		{
 			box.patch(kp_orbinaut[4 + tiny]);
 			break;
+		}
 
 		default:
-			if (patch_t *ico = K_GetCachedItemPatch(p->itemtype, 1 + tiny))
+		{
+			if (patch_t *ico = K_GetCachedItemPatch(item_type, 1 + tiny))
 			{
 				box.patch(ico);
 			}
+			break;
 		}
 	}
 
@@ -3992,7 +4000,77 @@ static void K_DrawNameTagSphereMeter(INT32 x, INT32 y, INT32 width, INT32 sphere
 	}
 }
 
-static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p, INT32 flags)
+static void K_DrawLocalTagForPlayer(fixed_t x, fixed_t y, player_t *p, UINT8 id, UINT32 flags)
+{
+	UINT8 blink = ((leveltime / 7) & 1);
+	UINT8 *colormap = R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(p->skincolor), GTC_CACHE);
+
+	V_DrawFixedPatch(x, y, FRACUNIT, flags, kp_localtag[id][blink], colormap);
+}
+
+static void K_DrawRivalTagForPlayer(fixed_t x, fixed_t y, player_t *p, UINT32 flags)
+{
+	if ((p->itemtype != KITEM_NONE && p->itemamount != 0)
+		|| (p->itemRoulette.active == true && p->itemRoulette.ringbox == false))
+	{
+		INT32 barx = 0, bary = 0;
+
+		barx = (x * vid.dupx) / FRACUNIT;
+		bary = (y * vid.dupy) / FRACUNIT;
+
+		barx += (16 * vid.dupx);
+		bary -= (25 * vid.dupx);
+
+		// Center it if necessary
+		if (vid.width != BASEVIDWIDTH * vid.dupx)
+		{
+			barx += (vid.width - (BASEVIDWIDTH * vid.dupx)) / 2;
+		}
+
+		if (vid.height != BASEVIDHEIGHT * vid.dupy)
+		{
+			bary += (vid.height - (BASEVIDHEIGHT * vid.dupy)) / 2;
+		}
+
+		K_DrawNameTagItemSpy(barx, bary, p, flags);
+	}
+
+	UINT8 blink = ((leveltime / 7) & 1);
+	V_DrawFixedPatch(x, y, FRACUNIT, flags, kp_rival[blink], NULL);
+}
+
+static void K_DrawCPUTagForPlayer(fixed_t x, fixed_t y, player_t *p, UINT32 flags)
+{
+	if ((p->itemtype != KITEM_NONE && p->itemamount != 0)
+		|| (p->itemRoulette.active == true && p->itemRoulette.ringbox == false))
+	{
+		INT32 barx = 0, bary = 0;
+
+		barx = (x * vid.dupx) / FRACUNIT;
+		bary = (y * vid.dupy) / FRACUNIT;
+
+		barx += (16 * vid.dupx);
+		bary -= (25 * vid.dupx);
+
+		// Center it if necessary
+		if (vid.width != BASEVIDWIDTH * vid.dupx)
+		{
+			barx += (vid.width - (BASEVIDWIDTH * vid.dupx)) / 2;
+		}
+
+		if (vid.height != BASEVIDHEIGHT * vid.dupy)
+		{
+			bary += (vid.height - (BASEVIDHEIGHT * vid.dupy)) / 2;
+		}
+
+		K_DrawNameTagItemSpy(barx, bary, p, flags);
+	}
+
+	UINT8 blink = ((leveltime / 7) & 1);
+	V_DrawFixedPatch(x, y, FRACUNIT, flags, kp_cpu[blink], NULL);
+}
+
+static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p, UINT32 flags)
 {
 	const INT32 clr = skincolors[p->skincolor].chatcolor;
 	const INT32 namelen = V_ThinStringWidth(player_names[p - players], 0);
@@ -4042,7 +4120,8 @@ static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p, INT32 flag
 	}
 
 	// see also K_CullTargetList
-	if ((gametyperules & GTR_ITEMARROWS) && p->itemtype != KITEM_NONE && p->itemamount != 0)
+	if ((p->itemtype != KITEM_NONE && p->itemamount != 0)
+		|| (p->itemRoulette.active == true && p->itemRoulette.ringbox == false))
 	{
 		K_DrawNameTagItemSpy(barx, bary, p, flags);
 	}
@@ -4079,6 +4158,10 @@ playertagtype_t K_WhichPlayerTag(player_t *p)
 		{
 			return PLAYERTAG_RIVAL;
 		}
+		else if (K_ShowPlayerNametag(p) == true)
+		{
+			return PLAYERTAG_CPU;
+		}
 	}
 	else if (netgame || demo.playback)
 	{
@@ -4097,25 +4180,30 @@ void K_DrawPlayerTag(fixed_t x, fixed_t y, player_t *p, playertagtype_t type, bo
 	
 	switch (type)
 	{
-	case PLAYERTAG_LOCAL:
-		flags |= V_HUDTRANS|V_SPLITSCREEN;
-		K_DrawLocalTagForPlayer(x, y, p, G_PartyPosition(p - players), flags);
-		break;
+		case PLAYERTAG_LOCAL:
+			flags |= V_SPLITSCREEN;
+			K_DrawLocalTagForPlayer(x, y, p, G_PartyPosition(p - players), flags);
+			break;
 
-	case PLAYERTAG_RIVAL:
-		flags |= V_HUDTRANS|V_SPLITSCREEN;
-		K_DrawRivalTagForPlayer(x, y, flags);
-		break;
+		case PLAYERTAG_RIVAL:
+			flags |= V_SPLITSCREEN;
+			K_DrawRivalTagForPlayer(x, y, p, flags);
+			break;
 
-	case PLAYERTAG_NAME:
-		// We only care about the trans flag here (based?) as well as V_VFLIP.
-		flags |= foreground ? 0 : V_60TRANS;
-		K_DrawNameTagForPlayer(x, y, p, flags);
-		K_DrawTypingNotifier(x, y, p, flags);
-		break;
+		case PLAYERTAG_CPU:
+			flags |= V_SPLITSCREEN;
+			flags |= foreground ? 0 : V_60TRANS;
+			K_DrawCPUTagForPlayer(x, y, p, flags);
+			break;
 
-	default:
-		break;
+		case PLAYERTAG_NAME:
+			flags |= foreground ? 0 : V_60TRANS;
+			K_DrawNameTagForPlayer(x, y, p, flags);
+			K_DrawTypingNotifier(x, y, p, flags);
+			break;
+
+		default:
+			break;
 	}
 }
 
