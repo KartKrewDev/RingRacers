@@ -80,35 +80,35 @@
 static UINT32 K_DynamicItemOddsRace[NUMKARTRESULTS-1][2] = 
 {
 	// distance, duplication tolerance
-	{43, 9}, // sneaker
-	{73, 12}, // rocketsneaker
-	{70, 19}, // invincibility
-	{18, 6}, // banana
-	{17, 3}, // eggmark
-	{21, 14}, // orbinaut
-	{26, 7}, // jawz
-	{29, 8}, // mine
-	{10, 3}, // landmine
-	{35, 4}, // ballhog
-	{68, 6}, // selfpropelledbomb
-	{65, 7}, // grow
-	{71, 8}, // shrink
-	{10, 1}, // lightningshield
-	{30, 4}, // bubbleshield
-	{76, 9}, // flameshield
-	{10, 3}, // hyudoro
+	{22, 14}, // sneaker
+	{63, 12}, // rocketsneaker
+	{60, 19}, // invincibility
+	{8, 6}, // banana
+	{7, 3}, // eggmark
+	{11, 14}, // orbinaut
+	{16, 7}, // jawz
+	{19, 8}, // mine
+	{1, 3}, // landmine
+	{25, 4}, // ballhog
+	{58, 6}, // selfpropelledbomb
+	{55, 7}, // grow
+	{61, 8}, // shrink
+	{1, 1}, // lightningshield
+	{25, 4}, // bubbleshield
+	{66, 9}, // flameshield
+	{1, 3}, // hyudoro
 	{0, 0}, // pogospring
-	{17, 4}, // superring
+	{7, 4}, // superring
 	{0, 0}, // kitchensink
-	{10, 3}, // droptarget
-	{53, 5}, // gardentop
+	{1, 3}, // droptarget
+	{43, 5}, // gardentop
 	{0, 0}, // gachabom
-	{44, 9}, // dualsneaker
-	{58, 12}, // triplesneaker
-	{25, 2}, // triplebanana
-	{30, 1}, // tripleorbinaut
-	{40, 2}, // quadorbinaut
-	{40, 4}, // dualjawz
+	{32, 14}, // dualsneaker
+	{42, 14}, // triplesneaker
+	{15, 2}, // triplebanana
+	{25, 1}, // tripleorbinaut
+	{35, 2}, // quadorbinaut
+	{30, 4}, // dualjawz
 	{0, 0}, // triplegachabom
 };
 
@@ -1509,6 +1509,15 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 		// If you're far from an attacker but close to a defender, that Ballhog is still useful!
 		loneliness += min(FRACUNIT/2, FRACUNIT * toAttacker / lonelinessThreshold / 2);
 		loneliness += min(FRACUNIT/2, FRACUNIT * toDefender / lonelinessThreshold / 2);
+
+		// Give interaction items a nudge against initial selection if you're lonely..
+		for (i = 1; i < NUMKARTRESULTS; i++)
+		{
+			if (K_IsItemUselessAlone(i))
+			{
+				deltas[i] = Easing_InCubic(loneliness, deltas[i], deltas[i] + DISTVAR);
+			}
+		}
 	}
 
 	// == INTRODUCE TRYHARD-EATING PREDATOR
