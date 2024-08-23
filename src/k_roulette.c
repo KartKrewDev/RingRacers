@@ -84,7 +84,7 @@ static UINT32 K_DynamicItemOddsRace[NUMKARTRESULTS-1][2] =
 	{63, 12}, // rocketsneaker
 	{60, 19}, // invincibility
 	{8, 4}, // banana
-	{7, 3}, // eggmark
+	{3, 1}, // eggmark
 	{11, 4}, // orbinaut
 	{16, 4}, // jawz
 	{19, 4}, // mine
@@ -92,7 +92,7 @@ static UINT32 K_DynamicItemOddsRace[NUMKARTRESULTS-1][2] =
 	{25, 3}, // ballhog
 	{58, 6}, // selfpropelledbomb
 	{55, 7}, // grow
-	{61, 8}, // shrink
+	{70, 8}, // shrink
 	{1, 1}, // lightningshield
 	{25, 4}, // bubbleshield
 	{66, 9}, // flameshield
@@ -103,9 +103,9 @@ static UINT32 K_DynamicItemOddsRace[NUMKARTRESULTS-1][2] =
 	{1, 3}, // droptarget
 	{43, 5}, // gardentop
 	{0, 0}, // gachabom
-	{32, 14}, // dualsneaker
+	{30, 14}, // dualsneaker
 	{42, 14}, // triplesneaker
-	{15, 2}, // triplebanana
+	{25, 2}, // triplebanana
 	{25, 1}, // tripleorbinaut
 	{35, 2}, // quadorbinaut
 	{30, 4}, // dualjawz
