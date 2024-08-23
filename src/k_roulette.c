@@ -83,13 +83,13 @@ static UINT32 K_DynamicItemOddsRace[NUMKARTRESULTS-1][2] =
 	{22, 14}, // sneaker
 	{63, 12}, // rocketsneaker
 	{60, 19}, // invincibility
-	{8, 6}, // banana
+	{8, 4}, // banana
 	{7, 3}, // eggmark
-	{11, 14}, // orbinaut
-	{16, 7}, // jawz
-	{19, 8}, // mine
+	{11, 4}, // orbinaut
+	{16, 4}, // jawz
+	{19, 4}, // mine
 	{1, 3}, // landmine
-	{25, 4}, // ballhog
+	{25, 3}, // ballhog
 	{58, 6}, // selfpropelledbomb
 	{55, 7}, // grow
 	{61, 8}, // shrink
@@ -1099,6 +1099,24 @@ static boolean K_IsItemUselessAlone(kartitems_t item)
 	}
 }
 
+static boolean K_IsItemSpeed(kartitems_t item)
+{
+	switch (item)
+	{
+		case KITEM_ROCKETSNEAKER:
+		case KITEM_GROW:
+		case KITEM_INVINCIBILITY:
+		case KITEM_SNEAKER:
+		case KRITEM_DUALSNEAKER:
+		case KRITEM_TRIPLESNEAKER:
+		case KITEM_FLAMESHIELD:
+		case KITEM_SHRINK:
+			return true;
+		default:
+			return false;
+	}
+}
+
 // Which items are disallowed for this player's specific placement?
 static boolean K_ShouldPlayerAllowItem(kartitems_t item, const player_t *player)
 {
@@ -1390,6 +1408,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	// 6: Cram it all in
 
 	fixed_t largegamescaler = roulette->playing * 6 + 100; // Spread out item odds in large games for a less insane experience.
+	largegamescaler = 100; // TEMP
 	UINT32 targetpower = 100 * roulette->dist / largegamescaler; // fill roulette with items around this value!
 
 	UINT32 powers[NUMKARTRESULTS]; // how strong is each item? think of this as a "target distance" for this item to spawn at
@@ -1515,7 +1534,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 		{
 			if (K_IsItemUselessAlone(i))
 			{
-				deltas[i] = Easing_InCubic(loneliness, deltas[i], deltas[i] + DISTVAR);
+				deltas[i] = Easing_InCubic(loneliness, deltas[i], deltas[i] + (2*DISTVAR));
 			}
 		}
 	}
