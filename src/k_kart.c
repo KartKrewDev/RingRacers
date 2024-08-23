@@ -4007,8 +4007,10 @@ void K_SpawnAmps(player_t *player, UINT8 amps, mobj_t *impact)
 	if (gametyperules & GTR_SPHERES)
 		return;
 
-	// Give that Sonic guy some help.
-	UINT16 scaledamps = min(amps, amps * (10 + player->kartspeed - player->kartweight) / 10);
+	UINT16 scaledamps = min(amps, amps * (10 + (9-player->kartspeed) - (9-player->kartweight)) / 10);
+
+	if (player->position <= 1)
+		scaledamps /= 2;
 
 	for (int i = 0; i < (scaledamps/2); i++)
 	{
@@ -4052,6 +4054,13 @@ void K_AwardPlayerAmps(player_t *player, UINT8 amps)
 
 	if (player->rings <= 0 && player->ampspending == 0)
 	{
+		// Auto Overdrive!
+		// If this is a fresh OD, give 'em some extra juice to make up for lack of flexibility.
+		if (!player->overdrive && player->mo && !P_MobjWasRemoved(player->mo))
+		{
+			S_StartSound(player->mo, sfx_gshac);
+			player->amps *= 2;
+		}
 		K_Overdrive(player);
 	}
 }
