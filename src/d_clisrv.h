@@ -657,6 +657,7 @@ extern UINT8 playernode[MAXPLAYERS];
 extern UINT8 playerconsole[MAXPLAYERS];
 
 INT32 D_NumPlayers(void);
+INT32 D_NumPlayersInRace(void);
 boolean D_IsPlayerHumanAndGaming(INT32 player_number);
 
 void D_ResetTiccmds(void);

@@ -17,6 +17,7 @@
 #include "../doomdef.h"
 #include "../doomtype.h"
 #include "../info.h"
+#include "../g_game.h"
 #include "../k_color.h"
 #include "../k_kart.h"
 #include "../k_objects.h"
@@ -34,9 +35,17 @@
 #include "../sounds.h"
 #include "../tables.h"
 
+using std::vector;
+using std::pair;
+using std::min;
+using std::max;
+using std::clamp;
+
 extern mobj_t* svg_checkpoints;
 
 #define checkpoint_id(o) ((o)->thing_args[0])
+#define checkpoint_linetag(o) ((o)->thing_args[1])
+#define checkpoint_extralength(o) ((o)->thing_args[2])
 #define checkpoint_other(o) ((o)->target)
 #define checkpoint_orb(o) ((o)->tracer)
 #define checkpoint_arm(o) ((o)->hnext)
@@ -51,12 +60,14 @@ namespace
 
 struct LineOnDemand : line_t
 {
+	LineOnDemand(const line_t* line) {}
+
 	LineOnDemand(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2) :
 		line_t {
 			.v1 = &v1_data_,
 			.dx = x2 - x1,
 			.dy = y2 - y1,
-			.bbox = {std::max(y1, y2), std::min(y1, y2), std::min(x1, x2), std::max(x1, x2)},
+			.bbox = {max(y1, y2), min(y1, y2), min(x1, x2), max(x1, x2)},
 		},
 		v1_data_ {.x = x1, .y = y1}
 	{
@@ -71,6 +82,12 @@ struct LineOnDemand : line_t
 	}
 
 	bool overlaps(const LineOnDemand& other) const
+	{
+		return bbox[BOXTOP] >= other.bbox[BOXBOTTOM] && bbox[BOXBOTTOM] <= other.bbox[BOXTOP] &&
+			bbox[BOXLEFT] <= other.bbox[BOXRIGHT] && bbox[BOXRIGHT] >= other.bbox[BOXLEFT];
+	}
+
+	bool overlaps(const line_t& other) const
 	{
 		return bbox[BOXTOP] >= other.bbox[BOXBOTTOM] && bbox[BOXBOTTOM] <= other.bbox[BOXTOP] &&
 			bbox[BOXLEFT] <= other.bbox[BOXRIGHT] && bbox[BOXRIGHT] >= other.bbox[BOXLEFT];
@@ -170,6 +187,30 @@ struct Checkpoint : mobj_t
 		deactivate();
 	}
 
+	// will not work properly after a player enters intoa  new lap
+	INT32 players_passed()
+	{
+		INT32 pcount = 0;
+		for (INT32 i = 0; i < MAXPLAYERS; i++)
+		{
+			if (playeringame[i] && !players[i].spectator && players[i].checkpointId >= id())
+				pcount++;
+		}
+		return pcount;
+	}
+
+	boolean top_half_has_passed()
+	{
+		INT32 pcount = 0;
+		INT32 winningpos = 1;
+
+		INT32 nump = D_NumPlayersInRace();
+		winningpos = nump / 2;
+		winningpos += nump % 2;
+
+        return players_passed() >= winningpos;
+	}
+
 	void animate()
 	{
 		orient();
@@ -181,10 +222,11 @@ struct Checkpoint : mobj_t
 
 			if (!clip_var())
 			{
-				speed(speed() - FixedDiv(speed() / 50, std::max<fixed_t>(speed_multiplier(), 1)));
+				speed(speed() - FixedDiv(speed() / 50, max<fixed_t>(speed_multiplier(), 1)));
 			}
 		}
-		else if (!activated())
+		
+		if (!top_half_has_passed())
 		{
 			sparkle_between(0);
 		}
@@ -193,7 +235,7 @@ struct Checkpoint : mobj_t
 	void twirl(angle_t dir, fixed_t multiplier)
 	{
 		var(0);
-		speed_multiplier(std::clamp(multiplier, kMinSpeedMultiplier, kMaxSpeedMultiplier));
+		speed_multiplier(clamp(multiplier, kMinSpeedMultiplier, kMaxSpeedMultiplier));
 		speed(FixedDiv(kBaseSpeed, speed_multiplier()));
 		reverse(AngleDeltaSigned(angle_to_other(), dir) > 0);
 
@@ -266,7 +308,7 @@ private:
 			kMinPivotDelay
 		);
 
-		return to_angle(FixedDiv(std::max(var(), pos) - pos, FRACUNIT - pos)) / 4;
+		return to_angle(FixedDiv(max(var(), pos) - pos, FRACUNIT - pos)) / 4;
 	}
 
 	void orient()
@@ -304,7 +346,7 @@ private:
 		}
 	}
 
-	void spawn_sparkle(const vector3_t& pos, fixed_t xy_momentum, fixed_t z_momentum, angle_t dir)
+	void spawn_sparkle(const vector3_t& pos, fixed_t xy_momentum, fixed_t z_momentum, angle_t dir, skincolornum_t color = SKINCOLOR_ULTRAMARINE)
 	{
 		auto rng = [=](int units) { return P_RandomRange(PR_DECORATION, -(units) * scale, +(units) * scale); };
 
@@ -324,10 +366,10 @@ private:
 		if (xy_momentum)
 		{
 			P_Thrust(p, dir, xy_momentum);
-			p->momz = P_RandomKey(PR_DECORATION, std::max<fixed_t>(z_momentum, 1));
+			p->momz = P_RandomKey(PR_DECORATION, max<fixed_t>(z_momentum, 1));
 			p->destscale = 0;
 			p->scalespeed = p->scale / 35;
-			p->color = SKINCOLOR_ULTRAMARINE;
+			p->color = color;
 			p->fuse = 0;
 
 			// Something lags at the start of the level. The
@@ -342,7 +384,7 @@ private:
 		}
 		else
 		{
-			p->color = K_RainbowColor(leveltime);
+			p->color = color;
 			p->fuse = 2;
 		}
 	}
@@ -369,7 +411,8 @@ private:
 				{x + FixedMul(ofs, FCOS(a)), y + FixedMul(ofs, FSIN(a)), z + (kSparkleZ * scale)},
 				momentum,
 				momentum / 2,
-				dir
+				dir,
+				activated() ? SKINCOLOR_GREEN : SKINCOLOR_ULTRAMARINE
 			);
 		}
 	}
@@ -402,14 +445,93 @@ struct CheckpointManager
 	auto begin() { return list_.begin(); }
 	auto end() { return list_.end(); }
 
-	auto find(INT32 id) { return std::find_if(begin(), end(), [id](Checkpoint* chk) { return chk->id() == id; }); }
+	auto find_checkpoint(INT32 id) {
+		auto it = find_if(list_.begin(), list_.end(), [id](auto pair) { return pair.first->id() == id; });
+		if (it != list_.end())
+		{
+			return it->first;
+		}
+		return static_cast<Checkpoint*>(nullptr);
+	}
 
-	void push_front(Checkpoint* chk) { list_.push_front(chk); }
+	// auto find_pair(Checkpoint* chk) {
+	// 	pair<Checkpoint*, vector<line_t*>> retpair;
+	// 	auto it = find_if(list_.begin(), list_.end(), [chk](auto pair) { return pair.first == chk; });
+	// 	if (it != list_.end())
+	// 	{
+	// 		retpair = *it;
+	// 		return retpair;
+	// 	}
+	// 	return static_cast<pair<Checkpoint*, vector<line_t*>>>(nullptr);
+	// }
 
-	void erase(Checkpoint* chk) { list_.erase(chk); }
+	void remove_checkpoint(mobj_t* end) 
+	{ 
+		auto chk = static_cast<Checkpoint*>(end);
+		auto it = find_if(list_.begin(), list_.end(), [&](auto pair) { return pair.first == chk; });
+		if (it != list_.end())
+		{
+			list_.erase(it);
+		}
+	}
+
+	void link_checkpoint(mobj_t* end)
+	{
+		auto chk = static_cast<Checkpoint*>(end);
+		auto id = chk->id();
+		if (chk->spawnpoint && id == 0)
+			{
+				auto msg = fmt::format(
+					"Checkpoint thing (index #{}, thing type {}) has an invalid ID! ID must not be 0.\n",
+					chk->spawnpoint - mapthings,
+					chk->spawnpoint->type
+				);
+				CONS_Alert(CONS_WARNING, "%s", msg.c_str());
+				return;
+			}
+
+		if (auto other = find_checkpoint(id))
+		{
+			if (chk->spawnpoint && other->spawnpoint && chk->spawnpoint->angle != other->spawnpoint->angle)
+			{
+				auto msg = fmt::format(
+					"Checkpoints things with ID {} (index #{} and #{}, thing type {}) do not have matching angles.\n",
+					chk->id(),
+					chk->spawnpoint - mapthings,
+					other->spawnpoint - mapthings,
+					chk->spawnpoint->type
+				);
+				CONS_Alert(CONS_WARNING, "%s", msg.c_str());
+				return;
+			}
+			other->other(chk);
+			chk->other(other);
+		}
+		else // Checkpoint isn't in the list, find any associated tagged lines and make the pair
+		{
+			vector<line_t*> checklines;
+			if (checkpoint_linetag(chk))
+			{
+				INT32 li;
+				INT32 tag = checkpoint_linetag(chk);
+				TAG_ITER_LINES(tag, li)
+				{
+					line_t* line = lines + li;
+					checklines.push_back(line);
+				}
+			}
+			list_.emplace_back(chk, move(checklines));
+		}
+
+		chk->gingerbread();
+	}
+
+	void clear() { list_.clear(); }
+
+	auto count() { return list_.size(); }
 
 private:
-	srb2::MobjList<Checkpoint, svg_checkpoints> list_;
+	vector<pair<Checkpoint*, vector<line_t*>>> list_;
 };
 
 CheckpointManager g_checkpoints;
@@ -418,54 +540,15 @@ CheckpointManager g_checkpoints;
 
 void Obj_LinkCheckpoint(mobj_t* end)
 {
-	auto chk = static_cast<Checkpoint*>(end);
-
-	if (chk->spawnpoint && chk->id() == 0)
-	{
-		auto msg = fmt::format(
-			"Checkpoint thing (index #{}, thing type {}) has an invalid ID! ID must not be 0.\n",
-			chk->spawnpoint - mapthings,
-			chk->spawnpoint->type
-		);
-		CONS_Alert(CONS_WARNING, "%s", msg.c_str());
-		return;
-	}
-
-	if (auto it = g_checkpoints.find(chk->id()); it != g_checkpoints.end())
-	{
-		Checkpoint* other = *it;
-
-		if (chk->spawnpoint && other->spawnpoint && chk->spawnpoint->angle != other->spawnpoint->angle)
-		{
-			auto msg = fmt::format(
-				"Checkpoints things with ID {} (index #{} and #{}, thing type {}) do not have matching angles.\n",
-				chk->id(),
-				chk->spawnpoint - mapthings,
-				other->spawnpoint - mapthings,
-				chk->spawnpoint->type
-			);
-			CONS_Alert(CONS_WARNING, "%s", msg.c_str());
-			return;
-		}
-
-		other->other(chk);
-		chk->other(other);
-	}
-	else
-	{
-		g_checkpoints.push_front(chk);
-	}
-
-	chk->gingerbread();
+	g_checkpoints.link_checkpoint(end);
 }
 
 void Obj_UnlinkCheckpoint(mobj_t* end)
 {
 	auto chk = static_cast<Checkpoint*>(end);
-
-	g_checkpoints.erase(chk);
-
+	g_checkpoints.remove_checkpoint(end);
 	P_RemoveMobj(chk->orb());
+	P_RemoveMobj(chk->arm());
 }
 
 void Obj_CheckpointThink(mobj_t* end)
@@ -480,39 +563,64 @@ void Obj_CheckpointThink(mobj_t* end)
 	chk->animate();
 }
 
-void Obj_CrossCheckpoints(player_t* player, fixed_t old_x, fixed_t old_y)
+void __attribute__((optimize("O0"))) Obj_CrossCheckpoints(player_t* player, fixed_t old_x, fixed_t old_y)
 {
 	LineOnDemand ray(old_x, old_y, player->mo->x, player->mo->y, player->mo->radius);
 
-	auto it = std::find_if(
+	auto it = find_if(
 		g_checkpoints.begin(),
 		g_checkpoints.end(),
-		[&](const Checkpoint* chk)
+		[&](auto chkpair)
 		{
+			Checkpoint* chk = chkpair.first;
 			if (!chk->valid())
 			{
 				return false;
 			}
 
-			LineOnDemand gate = chk->crossing_line();
+			LineOnDemand* gate;
+
+			if (chkpair.second.empty())
+			{
+				LineOnDemand dyngate = chk->crossing_line();
+				if (!ray.overlaps(dyngate))
+					return false;
+				gate = &dyngate;				
+			}
+			else 
+			{
+				auto it = find_if(
+					chkpair.second.begin(),
+					chkpair.second.end(),
+					[&](const line_t* line)
+					{
+						return ray.overlaps(*line);
+					}
+				);
+				
+				if (it == chkpair.second.end())
+				{
+					return false;
+				}
+
+				line_t* line = *it;
+				gate = static_cast<LineOnDemand*>(line);
+			}
 
 			// Check if the bounding boxes of the two lines
 			// overlap. This relies on the player movement not
 			// being so large that it creates an oversized box,
 			// but thankfully that doesn't seem to happen, under
 			// normal circumstances.
-			if (!ray.overlaps(gate))
-			{
-				return false;
-			}
 
-			INT32 side = P_PointOnLineSide(player->mo->x, player->mo->y, &gate);
-			INT32 oldside = P_PointOnLineSide(old_x, old_y, &gate);
+			INT32 side = P_PointOnLineSide(player->mo->x, player->mo->y, gate);
+			INT32 oldside = P_PointOnLineSide(old_x, old_y, gate);
 
 			if (side == oldside)
 			{
 				// Did not cross.
 				return false;
+				
 			}
 
 			return true;
@@ -524,41 +632,58 @@ void Obj_CrossCheckpoints(player_t* player, fixed_t old_x, fixed_t old_y)
 		return;
 	}
 
-	Checkpoint* chk = *it;
+	Checkpoint* chk = it->first;
 
-	if (chk->activated())
+	if (player->checkpointId == chk->id())
 	{
 		return;
 	}
 
-	for (Checkpoint* chk : g_checkpoints)
+	if (player->position <= 1)
 	{
-		if (chk->valid())
-		{
-			// Swing down any previously passed checkpoints.
-			// TODO: this could look weird in multiplayer if
-			// other players cross different checkpoints.
-			chk->untwirl();
-			chk->other()->untwirl();
-		}
+		angle_t direction = R_PointToAngle2(old_x, old_y, player->mo->x, player->mo->y);
+		fixed_t speed_multiplier = FixedDiv(player->speed, K_GetKartSpeed(player, false, false));
+		chk->twirl(direction, speed_multiplier);
+		chk->other()->twirl(direction, speed_multiplier);
 	}
 
-	angle_t direction = R_PointToAngle2(old_x, old_y, player->mo->x, player->mo->y);
-	fixed_t speed_multiplier = FixedDiv(player->speed, K_GetKartSpeed(player, false, false));
-
-	chk->twirl(direction, speed_multiplier);
-	chk->other()->twirl(direction, speed_multiplier);
+	if (gametyperules & GTR_CHECKPOINTS)
+	{
+		for (auto chkpair : g_checkpoints)
+		{
+			Checkpoint* chk = chkpair.first;
+			if (chk->valid())
+			{
+				chk->untwirl();
+				chk->other()->untwirl();
+			}
+		}
+	}
 
 	S_StartSound(player->mo, sfx_s3k63);
 
 	player->checkpointId = chk->id();
+
+	if (D_NumPlayersInRace() > 1 && !K_IsPlayerLosing(player))
+	{
+		if (player->position == 1)
+		{
+			player->lapPoints += 2;
+		}
+		else
+		{
+			player->lapPoints += 1;
+		}
+	}
+
+	player->exp += K_GetExpAdjustment(player);
+
+	K_UpdatePowerLevels(player, player->laps, false);
 }
 
-mobj_t *Obj_FindCheckpoint(INT32 id)
+mobj_t* Obj_FindCheckpoint(INT32 id)
 {
-	auto it = g_checkpoints.find(id);
-
-	return it != g_checkpoints.end() ? *it : nullptr;
+	return g_checkpoints.find_checkpoint(id);
 }
 
 boolean Obj_GetCheckpointRespawnPosition(const mobj_t* mobj, vector3_t* return_pos)
@@ -591,5 +716,29 @@ void Obj_ActivateCheckpointInstantly(mobj_t* mobj)
 		chk->sparkle_around_center(); // only do it for one
 		chk->activate();
 		chk->other()->activate();
+	}
+}
+
+// Returns a count of checkpoint gates, not objects
+UINT32 Obj_GetCheckpointCount()
+{
+	return g_checkpoints.count();
+}
+
+void Obj_ClearCheckpoints()
+{
+	g_checkpoints.clear();
+}
+
+void Obj_DeactivateCheckpoints()
+{
+	for (auto chkpair : g_checkpoints)
+	{
+		Checkpoint* chk = chkpair.first;
+		if (chk->valid())
+		{
+			chk->untwirl();
+			chk->other()->untwirl();
+		}
 	}
 }

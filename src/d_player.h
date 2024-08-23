@@ -495,9 +495,8 @@ struct itemroulette_t
 	SINT8 *itemList;
 #endif
 
-	UINT8 useOdds;
 	UINT8 playing, exiting;
-	UINT32 dist, baseDist;
+	UINT32 preexpdist, dist, baseDist;
 	UINT32 firstDist, secondDist;
 	UINT32 secondToFirst;
 
@@ -914,6 +913,7 @@ struct player_t
 	UINT8 laps; // Number of laps (optional)
 	UINT8 latestlap;
 	UINT32 lapPoints; // Points given from laps
+	INT32 exp;
 	INT32 cheatchecknum; // The number of the last cheatcheck you hit
 	INT32 checkpointId; // Players respawn here, objects/checkpoint.cpp
 

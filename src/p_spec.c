@@ -2117,6 +2117,14 @@ static void K_HandleLapIncrement(player_t *player)
 							player->lapPoints++;
 						}
 					}
+
+					player->exp += K_GetExpAdjustment(player);
+
+					if (player->position == 1 && !(gametyperules & GTR_CHECKPOINTS))
+					{
+						Obj_DeactivateCheckpoints();
+					}
+					player->checkpointId = 0;
 				}
 
 				// Set up lap animation vars

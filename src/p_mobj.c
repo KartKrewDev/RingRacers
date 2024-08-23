@@ -12572,8 +12572,6 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 				return false;
 			break;
 		case MT_CHECKPOINT_END:
-			if (!(gametyperules & GTR_CHECKPOINTS))
-				return false;
 			break;
 		default:
 			break;

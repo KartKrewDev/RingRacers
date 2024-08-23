@@ -3092,11 +3092,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 						{
 							K_DoPowerClash(target, inflictor);
 
-							if (inflictor->type != MT_PLAYER)
-							{
-								K_SpawnAmps(player, 5, inflictor);
-							}
-
 							if (inflictor->type == MT_SUPER_FLICKY)
 							{
 								Obj_BlockSuperFlicky(inflictor);
@@ -3565,4 +3560,6 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 	{
 		P_FlingBurst(player, fa, MT_DEBTSPIKE, 0, 3 * FRACUNIT / 2, i++);
 	}
+
+	K_DefensiveOverdrive(player);
 }

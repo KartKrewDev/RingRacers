@@ -4007,8 +4007,10 @@ void K_SpawnAmps(player_t *player, UINT8 amps, mobj_t *impact)
 	if (gametyperules & GTR_SPHERES)
 		return;
 
-	// Give that Sonic guy some help.
-	UINT16 scaledamps = min(amps, amps * (10 + player->kartspeed - player->kartweight) / 10);
+	UINT16 scaledamps = min(amps, amps * (10 + (9-player->kartspeed) - (9-player->kartweight)) / 10);
+
+	if (player->position <= 1)
+		scaledamps /= 2;
 
 	for (int i = 0; i < (scaledamps/2); i++)
 	{
@@ -4052,6 +4054,13 @@ void K_AwardPlayerAmps(player_t *player, UINT8 amps)
 
 	if (player->rings <= 0 && player->ampspending == 0)
 	{
+		// Auto Overdrive!
+		// If this is a fresh OD, give 'em some extra juice to make up for lack of flexibility.
+		if (!player->overdrive && player->mo && !P_MobjWasRemoved(player->mo))
+		{
+			S_StartSound(player->mo, sfx_gshac);
+			player->amps *= 2;
+		}
 		K_Overdrive(player);
 	}
 }
@@ -4091,7 +4100,7 @@ boolean K_Overdrive(player_t *player)
 	S_StartSound(player->mo, sfx_cdfm35);
 	S_StartSound(player->mo, sfx_cdfm13);
 
-	player->overdrive += (player->amps)*6;
+	player->overdrive += (player->amps)*5;
 	player->overshield += (player->amps)*2;
 	player->overdrivepower = FRACUNIT;
 
@@ -4112,7 +4121,7 @@ boolean K_DefensiveOverdrive(player_t *player)
 	S_StartSound(player->mo, sfx_cdfm35);
 	S_StartSound(player->mo, sfx_cdfm13);
 
-	player->overdrive += (player->amps)*4;
+	player->overdrive += (player->amps)*3;
 	player->overshield += (player->amps)*2 + TICRATE*2;
 	player->overdrivepower = FRACUNIT;
 
@@ -7424,7 +7433,7 @@ SINT8 K_GetTotallyRandomResult(UINT8 useodds)
 		// Avoid calling K_FillItemRouletteData since that
 		// function resets PR_ITEM_ROULETTE.
 		spawnchance[i] = (
-			totalspawnchance += K_KartGetItemOdds(NULL, NULL, useodds, i)
+			totalspawnchance += K_KartGetBattleOdds(NULL, useodds, i)
 		);
 	}
 
@@ -12712,6 +12721,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			else
 			{
 				UINT32 behind = K_GetItemRouletteDistance(player, player->itemRoulette.playing);
+				behind = FixedMul(behind, max(player->exp, FRACUNIT/2));
 				UINT32 behindMulti = behind / 500;
 				behindMulti = min(behindMulti, 60);
 				award = award * (behindMulti + 10) / 10;
@@ -12982,6 +12992,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						else
 							player->rocketsneakertimer -= 3*TICRATE;
 						player->botvars.itemconfirm = 2*TICRATE;
+						player->overshield += TICRATE/2; // TEMP prototype
 					}
 				}
 				else if (player->itemamount == 0)
@@ -12997,6 +13008,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							{
 								K_DoSneaker(player, 1);
 								K_PlayBoostTaunt(player->mo);
+								player->overshield += TICRATE/2; // TEMP prototype
+								player->sneakertimer += TICRATE; // TEMP prototype
 								player->itemamount--;
 								player->botvars.itemconfirm = 0;
 							}
@@ -14778,6 +14791,45 @@ void K_MakeObjectReappear(mobj_t *mo)
 boolean K_PlayerCanUseItem(player_t *player)
 {
 	return (player->mo->health > 0 && !player->spectator && !P_PlayerInPain(player) && !mapreset && leveltime > introtime);
+}
+
+fixed_t K_GetExpAdjustment(player_t *player)
+{
+	fixed_t exp_power = 3*FRACUNIT/100; // adjust to change overall xp volatility
+	fixed_t exp_stablerate = 3*FRACUNIT/10; // how low is your placement before losing XP? 4*FRACUNIT/10 = top 40% of race will gain
+	fixed_t result = 0;
+
+	INT32 live_players = 0;
+
+	for (INT32 i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i] || players[i].spectator || player == players+i)
+			continue;
+
+		live_players++;
+	}
+
+	if (live_players < 8)
+	{
+		exp_power += (8 - live_players) * exp_power/4;
+	}
+
+	// Increase XP for each player you're beating...
+	for (INT32 i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i] || players[i].spectator || player == players+i)
+			continue;
+
+		if (player->position < players[i].position)
+			result += exp_power;
+	}
+
+	// ...then take all of the XP you could possibly have earned,
+	// and lose it proportional to the stable rate. If you're below
+	// the stable threshold, this results in you losing XP.
+	result -= FixedMul(exp_power, FixedMul(live_players*FRACUNIT, FRACUNIT - exp_stablerate));
+
+	return result;
 }
 
 //}

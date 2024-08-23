@@ -78,17 +78,14 @@ botItemPriority_e K_GetBotItemPriority(kartitems_t result);
 
 
 /*--------------------------------------------------
-	INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, UINT8 pos, kartitems_t item);
+	INT32 K_KartGetBattleOdds(const player_t *player, itemroulette_t *const roulette, UINT8 pos, kartitems_t item);
 
-		Gets the frequency an item should show up in
-		an item bracket, and adjusted for special
-		factors (such as Frantic Items).
+		Gets legacy item priority.
+		Currently used only for Battle monitors/spawners.
 
 	Input Arguments:-
 		player - The player we intend to give the item to later.
 			Can be NULL for generic use.
-		roulette - The roulette data that we intend to
-			insert this item into.
 		pos - The item bracket we are in.
 		item - The item to give.
 
@@ -97,11 +94,11 @@ botItemPriority_e K_GetBotItemPriority(kartitems_t result);
 		into the roulette.
 --------------------------------------------------*/
 
-INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, UINT8 pos, kartitems_t item);
+INT32 K_KartGetBattleOdds(const player_t *player, UINT8 pos, kartitems_t item);
 
 
 /*--------------------------------------------------
-	void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox);
+	void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox, boolean dryrun);
 
 		Fills out the item roulette struct when it is
 		initially created. This function needs to be
@@ -113,12 +110,13 @@ INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, 
 			Can be NULL for generic use.
 		roulette - The roulette data struct to fill out.
 		ringbox - Is this roulette fill triggered by a just-respawned Ring Box?
+		dryrun - Are we calling this from the distribution debugger? Don't call RNG or write roulette data!
 
 	Return:-
 		N/A
 --------------------------------------------------*/
 
-void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox);
+void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox, boolean dryrun);
 
 
 /*--------------------------------------------------

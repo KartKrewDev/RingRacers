@@ -2131,6 +2131,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	UINT8 laps;
 	UINT8 latestlap;
 	UINT32 lapPoints;
+	INT32 exp;
 	UINT16 skincolor;
 	INT32 skin;
 	UINT8 availabilities[MAXAVAILABILITY];
@@ -2319,6 +2320,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		laps = 0;
 		latestlap = 0;
 		lapPoints = 0;
+		exp = FRACUNIT;
 		roundscore = 0;
 		exiting = 0;
 		khudfinish = 0;
@@ -2356,6 +2358,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		laps = players[player].laps;
 		latestlap = players[player].latestlap;
 		lapPoints = players[player].lapPoints;
+		exp = players[player].exp;
 
 		roundscore = players[player].roundscore;
 
@@ -2470,6 +2473,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->laps = laps;
 	p->latestlap = latestlap;
 	p->lapPoints = lapPoints;
+	p->exp = exp;
 	p->totalring = totalring;
 
 	for (i = 0; i < LAP__MAX; i++)
@@ -5248,7 +5252,7 @@ void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skippr
 			players[i].score = 0;
 		}
 
-		if (resetplayer || map != gamemap)
+		if (resetplayer || !(gametyperules & GTR_CHECKPOINTS && map == gamemap))
 		{
 			players[i].checkpointId = 0;
 		}

@@ -288,6 +288,8 @@ boolean K_ThunderDome(void);
 
 boolean K_PlayerCanUseItem(player_t *player);
 
+fixed_t K_GetExpAdjustment(player_t *player);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
