@@ -1408,7 +1408,6 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	// 6: Cram it all in
 
 	fixed_t largegamescaler = roulette->playing * 6 + 100; // Spread out item odds in large games for a less insane experience.
-	largegamescaler = 100; // TEMP
 	UINT32 targetpower = 100 * roulette->dist / largegamescaler; // fill roulette with items around this value!
 
 	UINT32 powers[NUMKARTRESULTS]; // how strong is each item? think of this as a "target distance" for this item to spawn at
