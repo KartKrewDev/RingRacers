@@ -695,9 +695,9 @@ boolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2)
 		S_StartSound(t2, sfx_kdtrg1);
 	}
 
-	if (t1->tracer && t1->tracer->player)
+	if (t1->tracer && t1->tracer->player && t1->player && t1->player != t1->tracer->player)
 	{
-		K_SpawnAmps(t1->tracer->player, 20, t1);
+		K_SpawnAmps(t1->tracer->player, K_PvPAmpReward(20, t1->tracer->player, t1->player), t1);
 	}
 
 	if (draggeddroptarget && !P_MobjWasRemoved(draggeddroptarget) && draggeddroptarget->player)
@@ -1194,7 +1194,7 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 	auto doStumble = [](mobj_t *t1, mobj_t *t2)
 	{
 		K_StumblePlayer(t2->player);
-		K_SpawnAmps(t1->player, 20, t2);
+		K_SpawnAmps(t1->player, K_PvPAmpReward(20, t1->player, t2->player), t2);
 	};
 
 	if (forEither(shouldStumble, doStumble))

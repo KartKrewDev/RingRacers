@@ -33,7 +33,7 @@
 #define jawz_dropped(o) ((o)->flags2 & MF2_AMBUSH)
 #define jawz_droptime(o) ((o)->movecount)
 
-#define jawz_retcolor(o) ((o)->cvmem)
+#define jawz_retcolor(o) ((o)->extravalue2)
 #define jawz_stillturn(o) ((o)->cusval)
 
 #define jawz_owner(o) ((o)->target)

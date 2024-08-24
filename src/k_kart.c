@@ -967,6 +967,12 @@ boolean K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2)
 		|| (mobj2->player && mobj2->player->respawn.state != RESPAWNST_NONE))
 		return false;
 
+	if ((P_IsKartItem(mobj1->type) && mobj1->cvmem)
+		|| (P_IsKartItem(mobj2->type) && mobj2->cvmem)) // Dropped orbital or backward shot, will be stumble
+	{
+		return false;
+	}
+
 	if (mobj1->type != MT_DROPTARGET && mobj1->type != MT_DROPTARGET_SHIELD)
 	{ // Don't bump if you're flashing
 		INT32 flash;
@@ -4002,6 +4008,33 @@ angle_t K_MomentumAngleReal(const mobj_t *mo)
 	}
 }
 
+// Scale amp rewards for crab bucketing. Play ambitiously!
+boolean K_PvPAmpReward(UINT32 award, player_t *attacker, player_t *defender)
+{
+	UINT32 epsilon = FixedMul(2048/4, mapobjectscale); // How close is close enough that full reward seems fair, even if you're technically ahead?
+	UINT32 range = FixedMul(2048, mapobjectscale);
+	UINT32 atkdist = attacker->distancetofinish + epsilon;
+	UINT32 defdist = defender->distancetofinish;
+
+	if (!attacker->bot)
+		CONS_Printf("%d - %d - ", atkdist, defdist);
+
+	if (atkdist > defdist)
+	{
+		// Full reward for an active, even fight.
+	}
+	else
+	{
+		// Reduce the award for an attacker that's significantly ahead.
+		UINT32 delta = min(range, defdist - atkdist);
+		award -= (delta * award / range / 2);
+	}
+
+	if (!attacker->bot)
+		CONS_Printf("%d\n", award);
+	return award;
+}
+
 void K_SpawnAmps(player_t *player, UINT8 amps, mobj_t *impact)
 {
 	if (gametyperules & GTR_SPHERES)
@@ -4009,8 +4042,10 @@ void K_SpawnAmps(player_t *player, UINT8 amps, mobj_t *impact)
 
 	UINT16 scaledamps = min(amps, amps * (10 + (9-player->kartspeed) - (9-player->kartweight)) / 10);
 
+	/*
 	if (player->position <= 1)
 		scaledamps /= 2;
+	*/
 
 	for (int i = 0; i < (scaledamps/2); i++)
 	{
@@ -6666,6 +6701,12 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 		}
 	}
 
+	// Missiles set as traps inflict a nocollide stumble
+	if (dir < 0 && (mapthing == MT_ORBINAUT || mapthing == MT_ORBINAUT_SHIELD || mapthing == MT_JAWZ || mapthing == MT_JAWZ_SHIELD || mapthing == MT_BALLHOG || mapthing == MT_GACHABOM))
+	{
+		mo->cvmem = 1;
+	}
+
 	return mo;
 }
 
@@ -7398,6 +7439,9 @@ void K_DropHnextList(player_t *player)
 				P_SetMobjState(dropwork, mobjinfo[type].painstate);
 			}
 		}
+
+		if (P_IsKartItem(dropwork->type))
+			dropwork->cvmem = 1;
 
 		P_RemoveMobj(work);
 	}
