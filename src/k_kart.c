@@ -4016,9 +4016,6 @@ boolean K_PvPAmpReward(UINT32 award, player_t *attacker, player_t *defender)
 	UINT32 atkdist = attacker->distancetofinish + epsilon;
 	UINT32 defdist = defender->distancetofinish;
 
-	if (!attacker->bot)
-		CONS_Printf("%d - %d - ", atkdist, defdist);
-
 	if (atkdist > defdist)
 	{
 		// Full reward for an active, even fight.
@@ -4030,8 +4027,6 @@ boolean K_PvPAmpReward(UINT32 award, player_t *attacker, player_t *defender)
 		award -= (delta * award / range / 2);
 	}
 
-	if (!attacker->bot)
-		CONS_Printf("%d\n", award);
 	return award;
 }
 
