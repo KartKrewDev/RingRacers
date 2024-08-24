@@ -63,6 +63,7 @@ static patch_t *kp_timestickerwide;
 static patch_t *kp_lapsticker;
 static patch_t *kp_lapstickerwide;
 static patch_t *kp_lapstickernarrow;
+static patch_t *kp_exp[2];
 static patch_t *kp_splitlapflag;
 static patch_t *kp_bumpersticker;
 static patch_t *kp_bumperstickerwide;
@@ -263,6 +264,8 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_lapsticker, "K_STLAPS");
 	HU_UpdatePatch(&kp_lapstickerwide, "K_STLAPW");
 	HU_UpdatePatch(&kp_lapstickernarrow, "K_STLAPN");
+	HU_UpdatePatch(&kp_exp[0], "K_STEXP");
+	HU_UpdatePatch(&kp_exp[1], "K_SPTEXP");
 	HU_UpdatePatch(&kp_splitlapflag, "K_SPTLAP");
 	HU_UpdatePatch(&kp_bumpersticker, "K_STBALN");
 	HU_UpdatePatch(&kp_bumperstickerwide, "K_STBALW");
@@ -2955,10 +2958,89 @@ static void K_drawKartEmeralds(void)
 static void K_drawKartLaps(void)
 {
 	INT32 splitflags = V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN;
+	INT32 bump = 0;
+	boolean drewsticker = false;
 
+	// Jesus Christ.
+	// I do not understand the way this system of offsets is laid out at all,
+	// so it's probably going to be pretty bad to maintain. Sorry.
+
+	if (numlaps != 1)
+	{
+		if (r_splitscreen > 1)
+			bump = 27;
+		else
+			bump = 40;
+	}
+
+	if (numlaps != 1)
+	{
+		if (r_splitscreen > 1)
+		{
+
+			INT32 fx = 0, fy = 0, fr = 0;
+			INT32 flipflag = 0;
+
+			// pain and suffering defined below
+			if (r_splitscreen < 2)	// don't change shit for THIS splitscreen.
+			{
+				fx = LAPS_X;
+				fy = LAPS_Y;
+			}
+			else
+			{
+				if (!(R_GetViewNumber() & 1)) // If we are P1 or P3...
+				{
+					fx = LAPS_X;
+					fy = LAPS_Y;
+					splitflags = V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_SPLITSCREEN;
+				}
+				else // else, that means we're P2 or P4.
+				{
+					fx = LAPS2_X;
+					fy = LAPS2_Y;
+					splitflags = V_SNAPTORIGHT|V_SNAPTOBOTTOM|V_SPLITSCREEN;
+					flipflag = V_FLIP; // make the string right aligned and other shit
+				}
+			}
+
+			fr = fx;
+
+			if (flipflag)
+				fr += 15;
+
+			drewsticker = true;
+			K_DrawMarginSticker(fx-1-(flipflag ? 10 : 0), fy+1, 25+bump, V_HUDTRANS|V_SLIDEIN|splitflags, true, flipflag);
+
+			V_DrawScaledPatch(fr, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_splitlapflag);
+			//V_DrawScaledPatch(fx+22, fy, V_HUDTRANS|V_SLIDEIN|splitflags, frameslash);
+
+			V_DrawScaledPatch(fr+12, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[(stplyr->laps) % 10]);
+			V_DrawScaledPatch(fr+16, fy, V_HUDTRANS|V_SLIDEIN|splitflags, frameslash);
+			V_DrawScaledPatch(fr+20, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[(numlaps) % 10]);
+		}
+		else
+		{
+			K_DrawSticker(LAPS_X+13, LAPS_Y+5, 25+bump, V_HUDTRANS|V_SLIDEIN|splitflags, false);
+			drewsticker = true;
+
+			// Laps
+			V_DrawScaledPatch(LAPS_X, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_lapsticker);
+
+			using srb2::Draw;
+			Draw row = Draw(LAPS_X+25, LAPS_Y+3).flags(V_HUDTRANS|V_SLIDEIN|splitflags).font(Draw::Font::kThinTimer);
+			row.text("{:01}/{:01}", std::min(stplyr->laps, numlaps), numlaps);
+
+			// V_DrawTimerString(LAPS_X+33, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", std::min(stplyr->laps, numlaps), numlaps));
+		}
+	}
+
+	UINT8 displayEXP = std::max(50, FixedInt(100*stplyr->exp));
+
+	// EXP
 	if (r_splitscreen > 1)
 	{
-		INT32 fx = 0, fy = 0;
+		INT32 fx = 0, fy = 0, fr = 0;
 		INT32 flipflag = 0;
 
 		// pain and suffering defined below
@@ -2971,51 +3053,44 @@ static void K_drawKartLaps(void)
 		{
 			if (!(R_GetViewNumber() & 1)) // If we are P1 or P3...
 			{
-				fx = LAPS_X;
+				fx = LAPS_X+bump;
 				fy = LAPS_Y;
 				splitflags = V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_SPLITSCREEN;
 			}
 			else // else, that means we're P2 or P4.
 			{
-				fx = LAPS2_X;
+				fx = LAPS2_X-bump;
 				fy = LAPS2_Y;
 				splitflags = V_SNAPTORIGHT|V_SNAPTOBOTTOM|V_SPLITSCREEN;
 				flipflag = V_FLIP; // make the string right aligned and other shit
 			}
 		}
 
-		// Laps
-		V_DrawScaledPatch(fx-2 + (flipflag ? (SHORT(kp_ringstickersplit[1]->width) - 3) : 0), fy, V_HUDTRANS|V_SLIDEIN|splitflags|flipflag, kp_ringstickersplit[0]);
+		fr = fx;
 
-		V_DrawScaledPatch(fx, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_splitlapflag);
-		V_DrawScaledPatch(fx+22, fy, V_HUDTRANS|V_SLIDEIN|splitflags, frameslash);
+		if (flipflag)
+			fr += 15;
 
-		if (numlaps >= 10)
-		{
-			UINT8 ln[2];
-			ln[0] = ((stplyr->laps / 10) % 10);
-			ln[1] = (stplyr->laps % 10);
+		if (!drewsticker)
+			K_DrawMarginSticker(fr-1+(flipflag ? 2 : 0), fy+1, 25+bump, V_HUDTRANS|V_SLIDEIN|splitflags, true, flipflag);
+										// WHAT IS THIS?
+										// WHAT ARE YOU FUCKING TALKING ABOUT?
+		V_DrawScaledPatch(fr, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_exp[1]);
 
-			V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[ln[0]]);
-			V_DrawScaledPatch(fx+17, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[ln[1]]);
-
-			ln[0] = ((numlaps / 10) % 10);
-			ln[1] = (numlaps % 10);
-
-			V_DrawScaledPatch(fx+27, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[ln[0]]);
-			V_DrawScaledPatch(fx+31, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[ln[1]]);
-		}
-		else
-		{
-			V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[(stplyr->laps) % 10]);
-			V_DrawScaledPatch(fx+27, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[(numlaps) % 10]);
-		}
+		// EXP
+		V_DrawScaledPatch(fr+11, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[displayEXP/100]);
+		V_DrawScaledPatch(fr+15, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[displayEXP/10%10]);
+		V_DrawScaledPatch(fr+19, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[displayEXP%10]);
 	}
 	else
 	{
-		// Laps
-		V_DrawScaledPatch(LAPS_X, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_lapsticker);
-		V_DrawTimerString(LAPS_X+33, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", std::min(stplyr->laps, numlaps), numlaps));
+		if (!drewsticker)
+			K_DrawSticker(LAPS_X+13, LAPS_Y+5, 25+bump, V_HUDTRANS|V_SLIDEIN|splitflags, false);
+
+		V_DrawScaledPatch(LAPS_X+bump, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_exp[0]);
+		using srb2::Draw;
+		Draw row = Draw(LAPS_X+23+bump, LAPS_Y+3).flags(V_HUDTRANS|V_SLIDEIN|splitflags).font(Draw::Font::kThinTimer);
+		row.text("{:03}", displayEXP);
 	}
 }
 
@@ -6491,11 +6566,8 @@ void K_drawKartHUD(void)
 			{
 				if (gametyperules & GTR_CIRCUIT)
 				{
-					if (numlaps != 1)
-					{
-						K_drawKartLaps();
-						gametypeinfoshown = true;
-					}
+					K_drawKartLaps();
+					gametypeinfoshown = true;
 				}
 				else if (gametyperules & GTR_BUMPERS)
 				{
@@ -6620,10 +6692,6 @@ void K_drawKartHUD(void)
 	if (cv_kartdebugdistribution.value)
 		K_drawDistributionDebugger();
 
-	// temp debug
-	V_DrawSmallString(8, 2, V_SNAPTOTOP, va("Exp/Dist mult: %.2f", FixedToFloat(stplyr->exp)));
-	// V_DrawSmallString(8, 4, V_SNAPTOTOP, va("Exp/Dist mult: %.2f", FixedToFloat(stplyr->exp)));
-
 	if (cv_kartdebugnodes.value)
 	{
 		UINT8 p;
@@ -6680,4 +6748,27 @@ void K_DrawSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean isSmall)
 	V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, flags, stickerEnd, NULL);
 	V_DrawFill(x, y, width, height, 24|flags);
 	V_DrawFixedPatch((x + width)*FRACUNIT, y*FRACUNIT, FRACUNIT, flags|V_FLIP, stickerEnd, NULL);
+}
+
+void K_DrawMarginSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean isSmall, boolean leftedge)
+{
+	patch_t *stickerEnd;
+	INT32 height;
+
+	if (isSmall == true)
+	{
+		stickerEnd = static_cast<patch_t*>(W_CachePatchName("K_STIKE2", PU_CACHE));
+		height = 6;
+	}
+	else
+	{
+		stickerEnd = static_cast<patch_t*>(W_CachePatchName("K_STIKEN", PU_CACHE));
+		height = 11;
+	}
+
+	if (leftedge)
+		V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, flags, stickerEnd, NULL);
+	V_DrawFill(x, y, width, height, 24|flags);
+	if (!leftedge)
+		V_DrawFixedPatch((x + width)*FRACUNIT, y*FRACUNIT, FRACUNIT, flags|V_FLIP, stickerEnd, NULL);
 }
