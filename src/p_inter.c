@@ -3305,6 +3305,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			{
 				type = DMG_STUMBLE;
 				player->ringburst += 5; // IT'S THE DAMAGE STUMBLE HACK AGAIN AAAAAAAAHHHHHHHHHHH
+				K_PopPlayerShield(player);
 			}
 
 			switch (type)
