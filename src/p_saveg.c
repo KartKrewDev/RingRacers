@@ -6699,6 +6699,8 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 	size_t i, j;
 	size_t numTasks;
 
+	const INT16 prevgamemap = gamemap;
+
 	if (READUINT32(save->p) != ARCHIVEBLOCK_MISC)
 		I_Error("Bad $$$.sav at archive block Misc");
 
@@ -6739,10 +6741,19 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 
 	mapmusrng = READUINT8(save->p);
 
-	if (!P_LoadLevel(true, reloading))
+	// Only reload the level during a gamestate reload
+	// if the map is horribly mismatched somehow. Minor
+	// differences in level state are already handled
+	// by other parts of the reload, so doing this
+	// on *every* reload wastes lots of time that we
+	// will need for rollback down the road.
+	if (!reloading || prevgamemap != gamemap)
 	{
-		CONS_Alert(CONS_ERROR, M_GetText("Can't load the level!\n"));
-		return false;
+		if (!P_LoadLevel(true, reloading))
+		{
+			CONS_Alert(CONS_ERROR, M_GetText("Can't load the level!\n"));
+			return false;
+		}
 	}
 
 	// get the time
