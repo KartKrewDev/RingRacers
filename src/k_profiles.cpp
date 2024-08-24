@@ -564,7 +564,7 @@ static void PR_ApplyProfile_Appearance(profile_t *p, UINT8 playernum)
 
 static void PR_ApplyProfile_Settings(profile_t *p, UINT8 playernum)
 {
-	// toggles
+	// toggles -- be sure to also adjust M_ProfileEditApply
 	CV_StealthSetValue(&cv_kickstartaccel[playernum], p->kickstartaccel);
 	CV_StealthSetValue(&cv_autoroulette[playernum], p->autoroulette);
 	CV_StealthSetValue(&cv_litesteer[playernum], p->litesteer);
@@ -619,6 +619,21 @@ void PR_ApplyProfileLight(UINT8 profilenum, UINT8 playernum)
 	}
 
 	PR_ApplyProfile_Appearance(p, playernum);
+}
+
+void PR_ApplyProfileToggles(UINT8 profilenum, UINT8 playernum)
+{
+	profile_t *p = PR_GetProfile(profilenum);
+
+	// this CAN happen!!
+	if (p == NULL)
+	{
+		// no need to be as loud...
+		profilenum = 0; // make sure to set this so that the cvar is set properly.
+		p = PR_GetProfile(profilenum);
+	}
+
+	PR_ApplyProfile_Settings(p, playernum);
 }
 
 void PR_ApplyProfilePretend(UINT8 profilenum, UINT8 playernum)
