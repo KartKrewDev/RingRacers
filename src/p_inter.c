@@ -3181,7 +3181,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 				if (source && source != player->mo && source->player)
 				{
-					K_SpawnAmps(source->player, 20, target);
+					K_SpawnAmps(source->player, K_PvPAmpReward(20, source->player, player), target);
 
 					// Extend the invincibility if the hit was a direct hit.
 					if (inflictor == source && source->player->invincibilitytimer &&
@@ -3297,6 +3297,11 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				K_AddMessageForPlayer(player, "\x8DLast Chance!", false, false);
 				S_StartSound(target, sfx_gshc7);
 				player->flashing = TICRATE;
+				type = DMG_STUMBLE;
+			}
+
+			if (inflictor && !P_MobjWasRemoved(inflictor) && P_IsKartItem(inflictor->type) && inflictor->cvmem)
+			{
 				type = DMG_STUMBLE;
 			}
 
