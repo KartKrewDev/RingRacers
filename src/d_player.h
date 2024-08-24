@@ -914,6 +914,7 @@ struct player_t
 	UINT8 latestlap;
 	UINT32 lapPoints; // Points given from laps
 	INT32 exp;
+	UINT16 gradingpointnum; // how many grading points, checkpoint and finishline, you've passed
 	INT32 cheatchecknum; // The number of the last cheatcheck you hit
 	INT32 checkpointId; // Players respawn here, objects/checkpoint.cpp
 

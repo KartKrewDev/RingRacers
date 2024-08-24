@@ -2955,6 +2955,33 @@ static void K_drawKartEmeralds(void)
 	}
 }
 
+INT32 K_GetTransFlagFromFixed(fixed_t value)
+{
+    value = std::clamp(value, FRACUNIT/2, FRACUNIT*3/2);
+    
+    // Calculate distance from 1.0
+    fixed_t distance = abs(FRACUNIT - value);
+    
+    // Map the distance to 0-10 range (10 = closest to 1.0, 0 = farthest from 1.0)
+    INT32 transLevel = 10 - ((distance * 10) / (FRACUNIT/2));
+    
+    // Map 0-10 to V_TRANS flags
+    switch (transLevel) {
+        case 10: return V_70TRANS; // Most transparent (closest to 1.0)
+        case 9: return V_60TRANS;
+        case 8: return V_TRANSLUCENT;
+        case 7: return V_40TRANS;
+        case 6: return V_30TRANS;
+        case 5: return V_20TRANS;
+        case 4: return V_20TRANS;
+        case 3: return V_10TRANS;
+        case 2: return V_10TRANS;
+        case 1:
+        case 0: return 0; // Fully opaque (farthest from 1.0)
+        default: return V_90TRANS; // Shouldn't happen, but default to most transparent
+    }
+}
+
 static void K_drawKartLaps(void)
 {
 	INT32 splitflags = V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN;
@@ -3035,7 +3062,7 @@ static void K_drawKartLaps(void)
 		}
 	}
 
-	UINT8 displayEXP = std::max(50, FixedInt(100*stplyr->exp));
+	UINT16 displayEXP = std::clamp(FixedMul(std::max(stplyr->exp, FRACUNIT/2), (500/K_GetNumGradingPoints())*stplyr->gradingpointnum), 0, 999);
 
 	// EXP
 	if (r_splitscreen > 1)
@@ -3075,7 +3102,11 @@ static void K_drawKartLaps(void)
 			K_DrawMarginSticker(fr-1+(flipflag ? 2 : 0), fy+1, 25+bump, V_HUDTRANS|V_SLIDEIN|splitflags, true, flipflag);
 										// WHAT IS THIS?
 										// WHAT ARE YOU FUCKING TALKING ABOUT?
-		V_DrawScaledPatch(fr, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_exp[1]);
+		V_DrawMappedPatch(fr, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_exp[1], R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_MUSTARD, GTC_CACHE));
+		auto transflag = K_GetTransFlagFromFixed(stplyr->exp);
+		skincolornum_t overlaycolor = stplyr->exp < FRACUNIT ? SKINCOLOR_RUBY : SKINCOLOR_ULTRAMARINE ;
+		auto colormap = R_GetTranslationColormap(TC_RAINBOW, overlaycolor, GTC_CACHE);
+		V_DrawMappedPatch(fr, fy, transflag|V_SLIDEIN|splitflags, kp_exp[1], colormap);
 
 		// EXP
 		V_DrawScaledPatch(fr+11, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[displayEXP/100]);
@@ -3087,7 +3118,13 @@ static void K_drawKartLaps(void)
 		if (!drewsticker)
 			K_DrawSticker(LAPS_X+13, LAPS_Y+5, 25+bump, V_HUDTRANS|V_SLIDEIN|splitflags, false);
 
-		V_DrawScaledPatch(LAPS_X+bump, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_exp[0]);
+		V_DrawMappedPatch(LAPS_X+bump, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_exp[0], R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_MUSTARD, GTC_CACHE));
+
+		auto transflag = K_GetTransFlagFromFixed(stplyr->exp);
+		skincolornum_t overlaycolor = stplyr->exp < FRACUNIT ? SKINCOLOR_RUBY : SKINCOLOR_ULTRAMARINE ;
+		auto colormap = R_GetTranslationColormap(TC_RAINBOW, overlaycolor, GTC_CACHE);
+		V_DrawMappedPatch(LAPS_X+bump, LAPS_Y, transflag|V_SLIDEIN|splitflags, kp_exp[0], colormap);
+
 		using srb2::Draw;
 		Draw row = Draw(LAPS_X+23+bump, LAPS_Y+3).flags(V_HUDTRANS|V_SLIDEIN|splitflags).font(Draw::Font::kThinTimer);
 		row.text("{:03}", displayEXP);
