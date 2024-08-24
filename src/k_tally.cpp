@@ -245,7 +245,7 @@ INT32 level_tally_t::CalculateGrade(void)
 				// Use a special curve for this.
 				// The difference between 0 and 1 lap points is an important difference in skill,
 				// while the difference between 5 and 6 is not very notable.
-				const fixed_t frac = (laps * FRACUNIT) / std::max(1, static_cast<int>(totalLaps));
+				const fixed_t frac = std::min(FRACUNIT, (laps * FRACUNIT) / std::max(1, static_cast<int>(totalLaps)));
 				ours += Easing_OutSine(frac, 0, bonusWeights[i]);
 				break;
 			}
@@ -343,13 +343,8 @@ void level_tally_t::Init(player_t *player)
 
 		if ((gametypes[gt]->rules & GTR_CIRCUIT) == GTR_CIRCUIT)
 		{
-			laps = player->lapPoints;
-			totalLaps = numlaps + numlaps * Obj_GetCheckpointCount();
-
-			if (inDuel == false)
-			{
-				totalLaps *= 2;
-			}
+			laps = std::clamp(FixedMul(std::max(stplyr->exp, FRACUNIT/2), (500/K_GetNumGradingPoints())*player->gradingpointnum), 0, 999);
+			totalLaps = 500;
 		}
 
 		if (battleprisons)
@@ -666,8 +661,8 @@ boolean level_tally_t::IncrementLine(void)
 				break;
 			case TALLY_BONUS_LAP:
 				dest = laps;
-				amount = 1;
-				freq = 4;
+				amount = 20;
+				freq = 1;
 				break;
 			case TALLY_BONUS_PRISON:
 				dest = prisons;

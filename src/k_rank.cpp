@@ -512,7 +512,7 @@ void gpRank_t::Update(void)
 
 	lvl->time = UINT32_MAX;
 
-	lvl->totalLapPoints = ( K_RaceLapCount(gamemap - 1) + Obj_GetCheckpointCount() )* 2;
+	lvl->totalLapPoints = 500;
 	lvl->totalPrisons = maptargets;
 
 	UINT8 i;

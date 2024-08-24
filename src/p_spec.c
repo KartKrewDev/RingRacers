@@ -2119,6 +2119,7 @@ static void K_HandleLapIncrement(player_t *player)
 					}
 
 					player->exp += K_GetExpAdjustment(player);
+					player->gradingpointnum++;
 
 					if (player->position == 1 && !(gametyperules & GTR_CHECKPOINTS))
 					{

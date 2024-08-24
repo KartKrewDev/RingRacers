@@ -677,6 +677,7 @@ void __attribute__((optimize("O0"))) Obj_CrossCheckpoints(player_t* player, fixe
 	}
 
 	player->exp += K_GetExpAdjustment(player);
+	player->gradingpointnum++;
 
 	K_UpdatePowerLevels(player, player->laps, false);
 }
