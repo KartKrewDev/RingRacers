@@ -3300,7 +3300,8 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				type = DMG_STUMBLE;
 			}
 
-			if (inflictor && !P_MobjWasRemoved(inflictor) && P_IsKartItem(inflictor->type) && inflictor->cvmem)
+			if (inflictor && !P_MobjWasRemoved(inflictor) && P_IsKartItem(inflictor->type) && inflictor->cvmem
+				&& inflictor->type != MT_BANANA) // Are there other designed trap items that can be deployed and dropped? If you add one, list it here!
 			{
 				type = DMG_STUMBLE;
 				player->ringburst += 5; // IT'S THE DAMAGE STUMBLE HACK AGAIN AAAAAAAAHHHHHHHHHHH
