@@ -3303,6 +3303,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			if (inflictor && !P_MobjWasRemoved(inflictor) && P_IsKartItem(inflictor->type) && inflictor->cvmem)
 			{
 				type = DMG_STUMBLE;
+				player->ringburst += 5; // IT'S THE DAMAGE STUMBLE HACK AGAIN AAAAAAAAHHHHHHHHHHH
 			}
 
 			switch (type)
