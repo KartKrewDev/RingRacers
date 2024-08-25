@@ -405,10 +405,19 @@ private:
 		fixed_t ofs = (kSparkleOffset * scale) + r;
 		fixed_t between = R_PointToDist2(x, y, other()->x, other()->y);
 
+		angle_t pitch = R_PointToAngle2(0, z, between, other()->z);
+		vector3_t step = {
+			FixedMul(FCOS(a), FCOS(pitch)),
+			FixedMul(FSIN(a), FCOS(pitch)),
+			FSIN(pitch)
+		};
+
+		between = R_PointToDist2(0, z, between, other()->z);
+
 		for (; ofs < between; ofs += 2 * r)
 		{
 			spawn_sparkle(
-				{x + FixedMul(ofs, FCOS(a)), y + FixedMul(ofs, FSIN(a)), z + (kSparkleZ * scale)},
+				{x + FixedMul(ofs, step.x), y + FixedMul(ofs, step.y), z + (kSparkleZ * scale) + FixedMul(ofs, step.z)},
 				momentum,
 				momentum / 2,
 				dir,
