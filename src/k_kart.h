@@ -52,7 +52,7 @@ Make sure this matches the actual number of states
 
 #define OVERDRIVE_STARTUP (0)
 
-#define AMPLEVEL (30)
+#define AMPLEVEL (15)
 
 #define FLAMESHIELD_MAX (120)
 
