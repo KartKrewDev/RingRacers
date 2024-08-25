@@ -151,12 +151,12 @@ void Obj_AmpBodyThink (mobj_t *amps)
         amps->angle = amps->target->angle;
         amps->renderflags |= RF_ADD|RF_FULLBRIGHT;
 
-        if (player->overdrive)
+        if (player->overdrive || player->overdriveready)
             amps->renderflags &= ~RF_DONTDRAW;
         else
             amps->renderflags |= RF_DONTDRAW;
 
-        if (player->overdrive < 35 && player->overdrive % 2)
+        if ((player->overdrive < 35 && player->overdrive % 2) || (player->overdriveready && leveltime % 2))
             amps->renderflags |= RF_DONTDRAW;
     }
 }

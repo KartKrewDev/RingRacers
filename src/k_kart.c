@@ -4125,6 +4125,15 @@ boolean K_Overdrive(player_t *player)
 	if (player->amps == 0)
 		return false;
 
+	if (player->cmd.buttons & BT_ATTACK)
+	{
+		player->overdriveready = OVERDRIVE_STARTUP + 2; // Activates on 1, decremented BEFORE we call this again
+		return false;
+	}
+
+	if (player->overdriveready > 1)
+		return false;
+
 	K_SpawnDriftBoostExplosion(player, 3);
 	K_SpawnDriftElectricSparks(player, player->skincolor, true);
 	S_StartSound(player->mo, sfx_cdfm35);
@@ -4135,6 +4144,7 @@ boolean K_Overdrive(player_t *player)
 	player->overdrivepower = FRACUNIT;
 
 	player->amps = 0;
+	player->overdriveready = 0;
 
 	return true;
 }
@@ -9181,6 +9191,17 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->wavedashboost > 0 && onground == true)
 	{
 		player->wavedashboost--;
+	}
+
+	if (player->overdriveready)
+	{
+		if (player->amps == 0 || player->rings > 0)
+			player->overdriveready = 0;
+		else
+		{
+			player->overdriveready--;
+			K_Overdrive(player);
+		}
 	}
 
 	if (player->overdrive > 0 && onground == true)
