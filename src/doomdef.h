@@ -607,6 +607,9 @@ typedef enum {
 #ifndef max // Double-Check with WATTCP-32's cdefs.h
 #define max(x, y) (((x) > (y)) ? (x) : (y))
 #endif
+#ifndef clamp
+#define clamp(x, y, z) (((x) < (y)) ? (y) : (((x) > (z)) ? (z) : (x)))
+#endif
 #endif
 
 // Max gamepad/joysticks that can be detected/used.

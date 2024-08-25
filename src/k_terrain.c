@@ -703,9 +703,7 @@ void K_SetDefaultFriction(mobj_t *mo)
 	if (mo->terrain != NULL)
 	{
 		fixed_t strength = mo->terrain->friction;
-
 		fixed_t newFriction = INT32_MAX;
-		fixed_t newMovefactor = INT32_MAX;
 
 		if (strength > 0) // sludge
 		{
@@ -731,18 +729,7 @@ void K_SetDefaultFriction(mobj_t *mo)
 
 		if (isPlayer == true)
 		{
-			newMovefactor = FixedDiv(ORIG_FRICTION, newFriction);
-
-			if (newMovefactor < FRACUNIT)
-			{
-				newMovefactor = 19*newMovefactor - 18*FRACUNIT;
-			}
-			else
-			{
-				newMovefactor = FRACUNIT;
-			}
-
-			mo->movefactor = newMovefactor;
+			mo->movefactor = P_MoveFactorFromFriction(newFriction);
 		}
 	}
 }
