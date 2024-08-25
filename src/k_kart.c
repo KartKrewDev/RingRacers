@@ -4086,7 +4086,7 @@ void K_AwardPlayerAmps(player_t *player, UINT8 amps)
 	{
 		// Auto Overdrive!
 		// If this is a fresh OD, give 'em some extra juice to make up for lack of flexibility.
-		if (!player->overdrive && player->mo && !P_MobjWasRemoved(player->mo))
+		if (!player->overdrive && player->mo && !P_MobjWasRemoved(player->mo) && player->overdriveready == 0)
 		{
 			S_StartSound(player->mo, sfx_gshac);
 			player->amps *= 2;
@@ -4145,6 +4145,7 @@ boolean K_Overdrive(player_t *player)
 
 	player->amps = 0;
 	player->overdriveready = 0;
+	player->overdrivelenient = false;
 
 	return true;
 }
@@ -4166,6 +4167,8 @@ boolean K_DefensiveOverdrive(player_t *player)
 	player->overdrivepower = FRACUNIT;
 
 	player->amps = 0;
+	player->overdrivelenient = true;
+	player->overdriveready = false;
 
 	return true;
 }
@@ -9204,15 +9207,25 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
-	if (player->overdrive > 0 && onground == true)
+	if (player->overdrivelenient)
 	{
-		player->overdrive--;
+		// This is a Defensive Overdrive and shouldn't start deducting time until we recover
+		if (!P_PlayerInPain(player))
+			player->overdrivelenient = false;
+	}
+	else
+	{
+		if (player->overdrive > 0 && onground == true)
+		{
+			player->overdrive--;
+		}
+
+		if (player->overshield > 0 && onground == true)
+		{
+			player->overshield--;
+		}
 	}
 
-	if (player->overshield > 0 && onground == true)
-	{
-		player->overshield--;
-	}
 
 	if (player->wavedashboost == 0 || player->wavedashpower > FRACUNIT)
 	{
