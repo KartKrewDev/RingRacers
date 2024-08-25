@@ -50,6 +50,8 @@ Make sure this matches the actual number of states
 #define MINCOMBOFLOAT (mapobjectscale*1)
 #define MAXCOMBOTIME (TICRATE*4)
 
+#define OVERDRIVE_STARTUP (0)
+
 #define AMPLEVEL (30)
 
 #define FLAMESHIELD_MAX (120)
