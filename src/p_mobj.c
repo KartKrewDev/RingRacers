@@ -7823,9 +7823,10 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 			if (p)
 			{
-				if (p->sneakertimer > mobj->movecount)
+				UINT16 timer = max(p->sneakertimer, p->panelsneakertimer);
+				if (timer > mobj->movecount)
 					P_SetMobjState(mobj, S_BOOSTFLAME);
-				mobj->movecount = p->sneakertimer;
+				mobj->movecount = timer;
 			}
 		}
 

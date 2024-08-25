@@ -951,6 +951,7 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 				attacker->renderflags &= ~RF_DONTDRAW;
 				attackerPlayer->spindashboost = 0;
 				attackerPlayer->sneakertimer = 0;
+				attackerPlayer->panelsneakertimer = 0;
 				attackerPlayer->instaWhipCharge = 0;
 				attackerPlayer->flashing = 0;
 
@@ -1174,7 +1175,7 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 	{
 		auto shouldSteal = [](mobj_t *t1, mobj_t *t2)
 		{
-			return ((t1->player->sneakertimer > 0)
+			return ((t1->player->sneakertimer > 0 || t1->player->panelsneakertimer > 0)
 				&& !P_PlayerInPain(t1->player)
 				&& (t1->player->flashing == 0));
 		};
