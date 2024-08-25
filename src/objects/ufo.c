@@ -851,7 +851,7 @@ static UINT8 GetUFODamage(mobj_t *inflictor, UINT8 damageType)
 			{
 				// Players deal damage relative to how many sneakers they used.
 				targetdamaging = UFOD_BOOST;
-				ret = 15 * max(1, inflictor->player->numsneakers);
+				ret = 15 * max(1, inflictor->player->numsneakers + inflictor->player->numpanelsneakers);
 				break;
 			}
 			case MT_SPECIAL_UFO:
@@ -1010,6 +1010,8 @@ void Obj_PlayerUFOCollide(mobj_t *ufo, mobj_t *other)
 		Obj_SpecialUFODamage(ufo, other, other, DMG_STEAL);
 		other->player->sneakertimer = 0;
 		other->player->numsneakers = 0;
+		other->player->panelsneakertimer = 0;
+		other->player->numpanelsneakers = 0;
 
 		// Copied from Obj_OrbinautThrown
 		const ffloor_t *rover = P_IsObjectFlipped(other) ? other->ceilingrover : other->floorrover;

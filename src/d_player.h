@@ -789,6 +789,8 @@ struct player_t
 
 	UINT16 sneakertimer;	// Duration of a Sneaker Boost (from Sneakers or level boosters)
 	UINT8 numsneakers;		// Number of stacked sneaker effects
+	UINT16 panelsneakertimer;
+	UINT8 numpanelsneakers;
 	UINT8 floorboost;		// (0 to 3) - Prevents Sneaker sounds for a brief duration when triggered by a floor panel
 
 	INT16 growshrinktimer;		// > 0 = Big, < 0 = small

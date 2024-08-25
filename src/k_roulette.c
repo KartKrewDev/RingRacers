@@ -80,7 +80,7 @@
 static UINT32 K_DynamicItemOddsRace[NUMKARTRESULTS-1][2] = 
 {
 	// distance, duplication tolerance
-	{22, 14}, // sneaker
+	{20, 10}, // sneaker
 	{63, 12}, // rocketsneaker
 	{60, 19}, // invincibility
 	{8, 4}, // banana
@@ -103,8 +103,8 @@ static UINT32 K_DynamicItemOddsRace[NUMKARTRESULTS-1][2] =
 	{1, 3}, // droptarget
 	{43, 5}, // gardentop
 	{0, 0}, // gachabom
-	{30, 14}, // dualsneaker
-	{42, 14}, // triplesneaker
+	{45, 6}, // dualsneaker
+	{55, 8}, // triplesneaker
 	{25, 2}, // triplebanana
 	{25, 1}, // tripleorbinaut
 	{35, 2}, // quadorbinaut

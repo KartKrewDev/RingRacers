@@ -110,7 +110,7 @@ struct Side : Graphic
 
 struct Toucher : Mobj
 {
-	bool boosting() const { return player && (player->sneakertimer || K_PlayerCanPunt(player)); }
+	bool boosting() const { return player && (player->sneakertimer || player->panelsneakertimer || K_PlayerCanPunt(player)); }
 };
 
 struct AnyBox : Graphic

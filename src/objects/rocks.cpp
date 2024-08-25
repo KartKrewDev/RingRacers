@@ -96,7 +96,7 @@ private:
 	{
 		const player_t* p = toucher->player;
 
-		if (p->sneakertimer || p->invincibilitytimer || p->growshrinktimer > 0 || p->hyudorotimer)
+		if (p->sneakertimer || p->panelsneakertimer || p->invincibilitytimer || p->growshrinktimer > 0 || p->hyudorotimer)
 		{
 			return;
 		}
