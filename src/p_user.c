@@ -4244,6 +4244,7 @@ void P_PlayerThink(player_t *player)
 		PlayerPointerErase(player->hand);
 		PlayerPointerErase(player->ringShooter);
 		PlayerPointerErase(player->hoverhyudoro);
+		PlayerPointerErase(player->ballhogreticule);
 		PlayerPointerErase(player->flickyAttacker);
 		PlayerPointerErase(player->powerup.flickyController);
 		PlayerPointerErase(player->powerup.barrier);

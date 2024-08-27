@@ -2429,6 +2429,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		hoverhyudoro = players[player].hoverhyudoro;
 		skyboxviewpoint = players[player].skybox.viewpoint;
 		skyboxcenterpoint = players[player].skybox.centerpoint;
+
+		K_UpdateBallhogReticules(&players[player], 0, false);
 	}
 	else
 	{

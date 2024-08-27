@@ -59,6 +59,7 @@ target_sources(SRB2SDL2 PRIVATE
 	destroyed-kart.cpp
 	pulley.cpp
 	amps.c
+	ballhog.cpp
 )
 
 add_subdirectory(versus)

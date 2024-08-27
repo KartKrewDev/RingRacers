@@ -2458,6 +2458,7 @@ state_t states[NUMSTATES] =
 	{SPR_BHBM, FF_FULLBRIGHT|13, 1, {NULL}, 0, 0, S_BALLHOGBOOM15},			// S_BALLHOGBOOM14
 	{SPR_BHBM, FF_FULLBRIGHT|14, 1, {NULL}, 0, 0, S_BALLHOGBOOM16},			// S_BALLHOGBOOM15
 	{SPR_BHBM, FF_FULLBRIGHT|15, 1, {NULL}, 0, 0, S_NULL},					// S_BALLHOGBOOM16
+	{SPR_SPBM, FF_FULLBRIGHT|0, -1, {NULL}, 0, 0, S_NULL},					// S_BALLHOG_RETICULE
 
 	{SPR_SPBM, 0, 1, {NULL}, 0, 0,  S_SPB2}, // S_SPB1
 	{SPR_SPBM, 1, 1, {NULL}, 0, 0,  S_SPB3}, // S_SPB2
@@ -15129,9 +15130,9 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	{           // MT_BALLHOG
 		-1,             // doomednum
 		S_BALLHOG1,     // spawnstate
-		140,            // spawnhealth
+		1,              // spawnhealth
 		S_NULL,         // seestate
-		sfx_None,       // seesound
+		sfx_tossed,     // seesound
 		8,              // reactiontime
 		sfx_None,       // attacksound
 		S_NULL,         // painstate
@@ -15142,7 +15143,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_BALLHOG_DEAD, // deathstate
 		S_NULL,         // xdeathstate
 		sfx_hogbom,     // deathsound
-		40*FRACUNIT,    // speed
+		0,              // speed
 		26*FRACUNIT,    // radius
 		64*FRACUNIT,    // height
 		0,              // display offset
@@ -15176,7 +15177,61 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		1,              // damage
 		sfx_None,       // activesound
-		MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_DONTENCOREMAP, // flags
+		MF_NOGRAVITY|MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_BALLHOG_RETICULE
+		-1,             // doomednum
+		S_BALLHOG_RETICULE, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		26*FRACUNIT,    // radius
+		64*FRACUNIT,    // height
+		1,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SCENERY|MF_NOGRAVITY|MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_BALLHOG_RETICULE_TEST
+		-1,             // doomednum
+		S_INVISIBLE,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		26*FRACUNIT,    // radius
+		64*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOTHINK|MF_NOBLOCKMAP|MF_NOCLIPTHING|MF_DONTENCOREMAP|MF_DONTPUNT, // flags
 		S_NULL          // raisestate
 	},
 

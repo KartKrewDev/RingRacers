@@ -64,8 +64,8 @@ mobj_t *Obj_MantaRingCreate(mobj_t *spb, mobj_t *owner, mobj_t *chase);
 /* Orbinaut */
 void Obj_OrbinautThink(mobj_t *th);
 boolean Obj_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2);
-void Obj_OrbinautThrown(mobj_t *th, fixed_t finalSpeed, SINT8 dir);
-void Obj_GachaBomThrown(mobj_t *th, fixed_t finalSpeed, SINT8 dir);
+void Obj_OrbinautThrown(mobj_t *th, fixed_t finalSpeed, fixed_t dir);
+void Obj_GachaBomThrown(mobj_t *th, fixed_t finalSpeed, fixed_t dir);
 void Obj_OrbinautJawzMoveHeld(player_t *player);
 boolean Obj_GachaBomWasTossed(mobj_t *th);
 void Obj_OrbinautDrop(mobj_t *th);
@@ -73,7 +73,7 @@ boolean Obj_OrbinautCanRunOnWater(mobj_t *th);
 
 /* Jawz */
 void Obj_JawzThink(mobj_t *th);
-void Obj_JawzThrown(mobj_t *th, fixed_t finalSpeed, SINT8 dir);
+void Obj_JawzThrown(mobj_t *th, fixed_t finalSpeed, fixed_t dir);
 
 /* Duel Bomb */
 void Obj_DuelBombThink(mobj_t *bomb);
@@ -438,6 +438,11 @@ void Obj_DestroyedKartParticleLanding(mobj_t *part);
 /* Pulley */
 void Obj_PulleyThink(mobj_t *root);
 void Obj_PulleyHookTouch(mobj_t *special, mobj_t *toucher);
+
+/* Ballhog */
+UINT8 K_HogChargeToHogCount(INT32 charge, UINT8 cap);
+void K_UpdateBallhogReticules(player_t *player, UINT8 num_hogs, boolean on_release);
+void K_DoBallhogAttack(player_t *player, UINT8 num_hogs);
 
 #ifdef __cplusplus
 } // extern "C"

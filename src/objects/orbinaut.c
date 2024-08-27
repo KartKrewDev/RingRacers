@@ -323,7 +323,7 @@ boolean Obj_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 	return true;
 }
 
-void Obj_OrbinautThrown(mobj_t *th, fixed_t finalSpeed, SINT8 dir)
+void Obj_OrbinautThrown(mobj_t *th, fixed_t finalSpeed, fixed_t dir)
 {
 	orbinaut_flags(th) = 0;
 
@@ -335,7 +335,7 @@ void Obj_OrbinautThrown(mobj_t *th, fixed_t finalSpeed, SINT8 dir)
 		const mobj_t *owner = orbinaut_owner(th);
 		const ffloor_t *rover = P_IsObjectFlipped(owner) ? owner->ceilingrover : owner->floorrover;
 
-		if (dir != -1 && rover && (rover->fofflags & FOF_SWIMMABLE))
+		if (dir >= 0 && rover && (rover->fofflags & FOF_SWIMMABLE))
 		{
 			// The owner can run on water, so we should too!
 			orbinaut_flags(th) |= ORBI_WATERSKI;
@@ -351,7 +351,7 @@ void Obj_OrbinautThrown(mobj_t *th, fixed_t finalSpeed, SINT8 dir)
 
 	orbinaut_flags(th) |= ORBI_TRAIL;
 
-	if (dir == -1)
+	if (dir < 0)
 	{
 		// Thrown backwards, init orbiting in place
 		orbinaut_turn(th) = ORBINAUT_MAXTURN / ORBINAUT_TURNLERP;
@@ -362,21 +362,19 @@ void Obj_OrbinautThrown(mobj_t *th, fixed_t finalSpeed, SINT8 dir)
 	}
 }
 
-void Obj_GachaBomThrown(mobj_t *th, fixed_t finalSpeed, SINT8 dir)
+void Obj_GachaBomThrown(mobj_t *th, fixed_t finalSpeed, fixed_t dir)
 {
 	Obj_OrbinautThrown(th, finalSpeed, dir);
 
 	orbinaut_flags(th) &= ~(ORBI_TRAIL);
 
-	switch (dir)
+	if (dir < 0)
 	{
-		case -1:
-			orbinaut_flags(th) |= ORBI_SPIN;
-			break;
-
-		case 1:
-			orbinaut_flags(th) |= ORBI_TOSSED;
-			break;
+		orbinaut_flags(th) |= ORBI_SPIN;
+	}
+	else if (dir > 0)
+	{
+		orbinaut_flags(th) |= ORBI_TOSSED;
 	}
 }
 

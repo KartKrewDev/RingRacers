@@ -90,6 +90,7 @@ typedef enum
 	FLICKYCONTROLLER = 0x1000,
 	TRICKINDICATOR = 0x2000,
 	BARRIER = 0x4000,
+	BALLHOGRETICULE = 0x8000, // uh oh, we're full now...
 } player_saveflags;
 
 static inline void P_ArchivePlayer(savebuffer_t *save)
@@ -325,6 +326,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		if (players[i].hoverhyudoro)
 			flags |= HOVERHYUDORO;
 
+		if (players[i].ballhogreticule)
+			flags |= BALLHOGRETICULE;
+
 		if (players[i].stumbleIndicator)
 			flags |= STUMBLE;
 
@@ -368,6 +372,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		if (flags & HOVERHYUDORO)
 			WRITEUINT32(save->p, players[i].hoverhyudoro->mobjnum);
+
+		if (flags & BALLHOGRETICULE)
+			WRITEUINT32(save->p, players[i].ballhogreticule->mobjnum);
 
 		if (flags & STUMBLE)
 			WRITEUINT32(save->p, players[i].stumbleIndicator->mobjnum);
@@ -988,6 +995,9 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		if (flags & HOVERHYUDORO)
 			players[i].hoverhyudoro = (mobj_t *)(size_t)READUINT32(save->p);
+
+		if (flags & BALLHOGRETICULE)
+			players[i].ballhogreticule = (mobj_t *)(size_t)READUINT32(save->p);
 
 		if (flags & STUMBLE)
 			players[i].stumbleIndicator = (mobj_t *)(size_t)READUINT32(save->p);
@@ -5970,6 +5980,11 @@ static void P_RelinkPointers(void)
 		{
 			if (!RelinkMobj(&players[i].hoverhyudoro))
 				CONS_Debug(DBG_GAMELOGIC, "hoverhyudoro not found on player %d\n", i);
+		}
+		if (players[i].ballhogreticule)
+		{
+			if (!RelinkMobj(&players[i].ballhogreticule))
+				CONS_Debug(DBG_GAMELOGIC, "ballhogreticule not found on player %d\n", i);
 		}
 		if (players[i].stumbleIndicator)
 		{

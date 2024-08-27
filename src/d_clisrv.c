@@ -70,6 +70,7 @@
 #include "sanitize.h"
 #include "r_fps.h"
 #include "filesrch.h" // refreshdirmenu
+#include "k_objects.h"
 
 // cl loading screen
 #include "v_video.h"
@@ -2510,6 +2511,7 @@ void CL_ClearPlayer(INT32 playernum)
 		P_SetTarget(&players[playernum].whip, NULL);
 		P_SetTarget(&players[playernum].hand, NULL);
 		P_SetTarget(&players[playernum].hoverhyudoro, NULL);
+		P_SetTarget(&players[playernum].ballhogreticule, NULL);
 		P_SetTarget(&players[playernum].ringShooter, NULL);
 
 		// TODO: Any better handling in store?
