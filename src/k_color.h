@@ -55,7 +55,7 @@ UINT8 K_ColorRelativeLuminance(UINT8 r, UINT8 g, UINT8 b);
 UINT16 K_RainbowColor(tic_t time);
 
 /*--------------------------------------------------
-	void K_RainbowColormap(UINT8 *dest_colormap, UINT8 skincolor);
+	void K_RainbowColormap(UINT8 *dest_colormap, skincolornum_t skincolor);
 
 		Generates a colormap to "colorize" all palette indicies
 		to the provided skincolor.
@@ -68,7 +68,7 @@ UINT16 K_RainbowColor(tic_t time);
 		None
 --------------------------------------------------*/
 
-void K_RainbowColormap(UINT8 *dest_colormap, UINT8 skincolor);
+void K_RainbowColormap(UINT8 *dest_colormap, skincolornum_t skincolor);
 
 /*--------------------------------------------------
 	UINT8 K_HitlagColorValue(RGBA_t color);
@@ -100,7 +100,7 @@ UINT8 K_HitlagColorValue(RGBA_t color);
 void K_HitlagColormap(UINT8 *dest_colormap);
 
 /*--------------------------------------------------
-	void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, UINT8 color);
+	void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, skincolornum_t color);
 
 		Generates a translation colormap for Kart, to replace R_GenerateTranslationColormap in r_draw.c
 
@@ -113,7 +113,7 @@ void K_HitlagColormap(UINT8 *dest_colormap);
 		None
 --------------------------------------------------*/
 
-void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, UINT8 color);
+void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, skincolornum_t color);
 
 
 /*--------------------------------------------------

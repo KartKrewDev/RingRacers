@@ -278,10 +278,10 @@ void M_ProfileControlsConfirm(INT32 choice)
 		M_ProfileControlSaveResponse(MA_YES);
 
 
-	// Reapply player 1's real profile.
+	// Reapply player 1's real profile ID.
 	if (cv_currprofile.value > -1)
 	{
-		PR_ApplyProfile(cv_lastprofile[0].value, 0);
+		PR_ApplyProfilePretend(cv_lastprofile[0].value, 0);
 	}
 }
 

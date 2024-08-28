@@ -1761,17 +1761,6 @@ void D_SRB2Main(void)
 
 	CON_SetLoadingProgress(LOADED_IWAD);
 
-	CONS_Printf("W_InitMultipleFiles(): Adding external PWADs.\n");
-	W_InitMultipleFiles(startuppwads, true);
-	D_CleanFile(startuppwads);
-
-	//
-	// search for pwad maps
-	//
-	P_InitMapData();
-
-	CON_SetLoadingProgress(LOADED_PWAD);
-
 	M_PasswordInit();
 
 	//---------------------------------------------------- READY SCREEN
@@ -1804,14 +1793,35 @@ void D_SRB2Main(void)
 
 	CON_Init();
 
-	CON_SetLoadingProgress(LOADED_HUINIT);
-
 	D_RegisterServerCommands();
 	D_RegisterClientCommands(); // be sure that this is called before D_CheckNetGame
 	R_RegisterEngineStuff();
 	S_RegisterSoundStuff();
 
 	I_RegisterSysCommands();
+	
+	CON_SetLoadingProgress(LOADED_HUINIT);
+	
+	CONS_Printf("W_InitMultipleFiles(): Adding external PWADs.\n");
+	
+	// HACK: Refer to https://git.do.srb2.org/KartKrew/RingRacers/-/merge_requests/29#note_61574
+	partadd_earliestfile = numwadfiles;
+	W_InitMultipleFiles(startuppwads, true);
+	
+	// Only search for pwad maps and reload graphics if we actually have a pwad added
+	if (startuppwads[0] != NULL)
+	{
+		//
+		// search for pwad maps
+		//
+		P_InitMapData();
+		HU_LoadGraphics();
+	}
+	
+	D_CleanFile(startuppwads);
+	partadd_earliestfile = UINT16_MAX;
+
+	CON_SetLoadingProgress(LOADED_PWAD);
 
 	M_Init();
 

@@ -219,6 +219,8 @@ void Music_Init(void)
 	}
 }
 
+
+
 void Music_Tick(void)
 {
 	g_tunes.tick();
@@ -227,6 +229,22 @@ void Music_Tick(void)
 void Music_Flip(void)
 {
 	g_tunes.flip();
+}
+
+void Music_AddTune(const char* id, int priority, int tuneflags)
+{
+	Tune& tune = g_tunes.insert(id);
+
+	tune.song = "";
+	tune.priority = priority;
+
+	tune.loop = (tuneflags & TN_LOOPING);
+	tune.fade_out_inclusive = (tuneflags & TN_INCLUSIVEFADE);
+	tune.use_level_volume = (tuneflags & TN_USEMAPVOLUME);
+	tune.sync = (tuneflags & TN_SYNCMUSIC);
+	tune.credit = (tuneflags & TN_MUSICCRED);
+	tune.vapes = (tuneflags & TN_VAPES);
+	tune.nightcoreable = (tuneflags & TN_NIGHTCOREABLE);
 }
 
 void Music_Play(const char* id)
@@ -251,6 +269,30 @@ void Music_SetFadeOut(const char* id, int fade_out)
 		if (tune->time_remaining() <= detail::msec_to_tics(tune->fade_out))
 		{
 			// If this action would cause a fade out, start
+			// fading immediately.
+			g_tunes.tick();
+		}
+	}
+}
+
+void Music_SetFadeIn(const char* id, int fade_in, boolean resume)
+{
+	Tune* tune = g_tunes.find(id);
+
+	if (tune)
+	{
+		if (resume)
+		{
+			tune->resume_fade_in = fade_in;
+		}
+		else
+		{
+			tune->fade_in = fade_in;
+		}
+
+		if (tune->elapsed() <= detail::msec_to_tics(fade_in))
+		{
+			// If this action would cause a fade in, start
 			// fading immediately.
 			g_tunes.tick();
 		}
@@ -366,6 +408,17 @@ void Music_Remap(const char* id, const char* song)
 	{
 		tune->song = song;
 	}
+}
+
+boolean Music_TuneExists(const char* id)
+{
+	const Tune* tune = g_tunes.find(id);
+
+	if (tune)
+	{
+		return true;
+	}
+	return false;
 }
 
 boolean Music_Playing(const char* id)

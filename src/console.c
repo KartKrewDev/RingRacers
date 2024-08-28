@@ -1917,9 +1917,9 @@ static const char *CON_LoadingStrings[LOADED_ALLDONE+1] =
 	"Init zone memory...", //LOADED_ZINIT
 	"Init game timing...", //LOADED_ISTARTUPTIMER
 	"Loading main assets...", //LOADED_IWAD
-	"Loading add-ons...", //LOADED_PWAD
 	"Init graphics subsystem...", //LOADED_ISTARTUPGRAPHICS
 	"Cache fonts...", //LOADED_HUINIT
+	"Loading add-ons...", //LOADED_PWAD
 	"Load settings...", //LOADED_CONFIG
 	"Cache textures...", //LOADED_INITTEXTUREDATA
 	"Cache sprites...", //LOADED_INITSPIRTES

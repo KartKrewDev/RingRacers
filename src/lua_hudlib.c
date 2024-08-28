@@ -893,6 +893,45 @@ static int libd_drawKartString(lua_State *L)
 	return 0;
 }
 
+static int libd_setClipRect(lua_State *L)
+{
+	fixed_t x = luaL_checkinteger(L, 1);
+	fixed_t y = luaL_checkinteger(L, 2);
+	fixed_t w = luaL_checkinteger(L, 3);
+	fixed_t h = luaL_checkinteger(L, 4);
+	INT32 flags = luaL_optinteger(L, 5, 0);
+	huddrawlist_h list;
+
+	flags &= ~V_PARAMMASK; // Don't let crashes happen.
+
+	HUDONLY
+	lua_getfield(L, LUA_REGISTRYINDEX, "HUD_DRAW_LIST");
+	list = (huddrawlist_h) lua_touserdata(L, -1);
+	lua_pop(L, 1);
+
+	if (LUA_HUD_IsDrawListValid(list))
+		LUA_HUD_AddSetClipRect(list, x, y, w, h, flags);
+	else
+		V_SetClipRect(x, y, w, h, flags);
+	return 0;
+}
+
+static int libd_clearClipRect(lua_State *L)
+{
+	huddrawlist_h list;
+
+	HUDONLY
+	lua_getfield(L, LUA_REGISTRYINDEX, "HUD_DRAW_LIST");
+	list = (huddrawlist_h) lua_touserdata(L, -1);
+	lua_pop(L, 1);
+
+	if (LUA_HUD_IsDrawListValid(list))
+		LUA_HUD_AddClearClipRect(list);
+	else
+		V_ClearClipRect();
+	return 0;
+}
+
 static int libd_titleCardStringWidth(lua_State *L)
 {
 	const char *str = luaL_checkstring(L, 1);
@@ -1013,6 +1052,13 @@ static int libd_renderer(lua_State *L)
 	return 1;
 }
 
+static int libd_splitscreen(lua_State *L)
+{
+	HUDONLY
+	lua_pushinteger(L, r_splitscreen); // push splitscreen
+	return 1;
+}
+
 // M_RANDOM
 //////////////
 
@@ -1111,6 +1157,8 @@ static luaL_Reg lib_draw[] = {
 	{"drawString", libd_drawString},
 	{"drawTitleCardString", libd_drawTitleCardString},
 	{"drawKartString", libd_drawKartString},
+	{"setClipRect", libd_setClipRect},
+	{"clearClipRect", libd_clearClipRect},
 	// misc
 	{"stringWidth", libd_stringWidth},
 	{"titleCardStringWidth", libd_titleCardStringWidth},
@@ -1127,6 +1175,7 @@ static luaL_Reg lib_draw[] = {
 	{"dupx", libd_dupx},
 	{"dupy", libd_dupy},
 	{"renderer", libd_renderer},
+	{"splitscreen", libd_splitscreen},
 	{"localTransFlag", libd_getlocaltransflag},
 	{"drawOnMinimap", libd_drawOnMinimap},
 	{"getDeltaTime", libd_getDeltaTime},

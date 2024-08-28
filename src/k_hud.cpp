@@ -4032,7 +4032,7 @@ static void K_DrawTypingNotifier(fixed_t x, fixed_t y, player_t *p, INT32 flags)
 {
 	if (p->cmd.flags & TICCMD_TYPING)
 	{
-		V_DrawFixedPatch(x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN|flags, kp_talk, NULL);
+		V_DrawFixedPatch(x, y, FRACUNIT, V_SPLITSCREEN|flags, kp_talk, NULL);
 
 		/* spacing closer with the last two looks a better most of the time */
 		K_DrawTypingDot(x + 3*FRACUNIT,              y, 15, p, flags);
@@ -5177,6 +5177,12 @@ static void K_drawKartMinimap(void)
 				angle_t ang = R_InterpolateAngle(mobj->old_angle, mobj->angle);
 				if (encoremode)
 					ang = ANGLE_180 - ang;
+
+				if (skin && mobj->color && !mobj->colorized // relevant to redo
+				&& skins[skin].starttranscolor != skins[0].starttranscolor) // redoing would have an affect
+				{
+					colormap = R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(mobj->color), GTC_CACHE);
+				}
 
 				K_drawKartMinimapIcon(
 						interpx,
