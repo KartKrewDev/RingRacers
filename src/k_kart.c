@@ -13817,7 +13817,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
 							{
 								S_StartSound(player->mo, sfx_gsha7);
-								P_Thrust(player->mo, player->mo->angle, 50*player->mo->scale);
+								P_Thrust(player->mo, K_MomentumAngle(player->mo), 50*player->mo->scale);
 
 								UINT8 numsparks = 8;
 								for (UINT8 i = 0; i < numsparks; i++)
