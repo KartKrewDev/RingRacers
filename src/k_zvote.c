@@ -710,11 +710,10 @@ void K_InitNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, play
 	if (server || IsPlayerAdmin(consoleplayer))
 	{
 		if (victim)
-			CONS_Printf("%s called a vote to %s %s\n", player_names[caller-players], g_midVoteTypeDefs[type].name, player_names[victim-players]);
+			HU_AddChatText(va("%s called a vote to %s %s\n", player_names[caller-players], g_midVoteTypeDefs[type].name, player_names[victim-players]), true);
 		else
-			CONS_Printf("%s called a vote to %s\n", player_names[caller-players], g_midVoteTypeDefs[type].name);
+			HU_AddChatText(va("%s called a vote to %s\n", player_names[caller-players], g_midVoteTypeDefs[type].name), true);
 	}
-		
 
 	S_StartSound(NULL, sfx_cdfm67);
 
