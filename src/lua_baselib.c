@@ -39,6 +39,7 @@
 #include "hu_stuff.h" // for the cecho
 #include "k_powerup.h"
 #include "k_hitlag.h"
+#include "music.h" // music functions necessary for lua integration
 
 #include "lua_script.h"
 #include "lua_libs.h"
@@ -337,6 +338,418 @@ static int lib_reserveLuabanks(lua_State *L)
 	reserved = true;
 	LUA_PushUserdata(L, &luabanks, META_LUABANKS);
 	return 1;
+}
+
+// MUSIC
+////////////
+
+static int lib_mMusicAddTune(lua_State *L)
+{
+	UINT32 priority, tuneflags;
+
+	if (!lua_lumploading)
+		return luaL_error(L, "Tunes cannot be added from within a hook or coroutine!");
+
+	//NOHUD
+	const char *tune_id = luaL_checkstring(L, 1);
+	priority = (UINT32)luaL_optinteger(L, 2, 0);
+	tuneflags = (UINT32)luaL_optinteger(L, 3, 0);
+
+	if (!Music_TuneExists(tune_id))
+	{
+		Music_AddTune(tune_id, priority, tuneflags);
+	}
+
+	return 0;
+}
+
+static int lib_mMusicPlay(lua_State *L)
+{
+	const char *tune_id = luaL_checkstring(L, 1);
+	player_t *player = NULL;
+
+	//NOHUD
+	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
+	{
+		player = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+
+	if (!Music_TuneExists(tune_id))
+	{
+		return LUA_ErrNoTune(L, tune_id);
+	}
+
+	Music_Play(tune_id);
+
+	return 0;
+}
+
+static int lib_mMusicStopAll(lua_State *L)
+{
+	player_t *player = NULL;
+
+	//NOHUD
+	if (!lua_isnone(L, 1) && lua_isuserdata(L, 1))
+	{
+		player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+
+	Music_StopAll();
+
+	return 0;
+}
+
+static int lib_mMusicPauseAll(lua_State *L)
+{
+	player_t *player = NULL;
+
+	//NOHUD
+	if (!lua_isnone(L, 1) && lua_isuserdata(L, 1))
+	{
+		player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+
+	Music_PauseAll();
+
+	return 0;
+}
+
+static int lib_mMusicUnPauseAll(lua_State *L)
+{
+	player_t *player = NULL;
+
+	//NOHUD
+	if (!lua_isnone(L, 1) && lua_isuserdata(L, 1))
+	{
+		player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+
+	Music_UnPauseAll();
+
+	return 0;
+}
+
+static int lib_mMusicRemap(lua_State *L)
+{
+	const char *tune_id = luaL_checkstring(L, 1);
+	const char *music_name = luaL_checkstring(L, 2);
+	player_t *player = NULL;
+
+	//NOHUD
+	if (!lua_isnone(L, 3) && lua_isuserdata(L, 3))
+	{
+		player = *((player_t **)luaL_checkudata(L, 3, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+
+	if (!Music_TuneExists(tune_id))
+	{
+		return LUA_ErrNoTune(L, tune_id);
+	}
+
+	Music_Remap(tune_id, music_name);
+
+	return 0;
+}
+
+static int lib_mMusicDim(lua_State *L)
+{
+	tic_t fade = (tic_t)luaL_checkinteger(L, 1);
+	tic_t duration = INFTICS;
+
+	// If a dim is ongoing, do not interrupt it
+	if (g_musicfade.start < leveltime && g_musicfade.end < leveltime)
+	{
+		g_musicfade.start = leveltime;
+	}
+
+	if (!lua_isnoneornil(L, 2))
+	{
+		duration = (tic_t)luaL_checkinteger(L, 2);
+	}
+
+	g_musicfade.end = (duration != INFTICS) ? leveltime + duration + 2*fade : INFTICS;
+	g_musicfade.fade = fade;
+	g_musicfade.ticked = false;
+
+	return 0;
+}
+
+static int lib_mMusicSetFadeOut(lua_State *L)
+{
+	UINT32 fadeoutms;
+
+	const char *tune_id = luaL_checkstring(L, 1);
+	fadeoutms = (UINT32)luaL_optinteger(L, 2, 0);
+	player_t *player = NULL;
+
+	//NOHUD
+	if (!lua_isnone(L, 3) && lua_isuserdata(L, 3))
+	{
+		player = *((player_t **)luaL_checkudata(L, 3, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+
+	if (!Music_TuneExists(tune_id))
+	{
+		return LUA_ErrNoTune(L, tune_id);
+	}
+
+	Music_SetFadeOut(tune_id, fadeoutms);
+
+	return 0;
+}
+
+static int lib_mMusicSetFadeIn(lua_State *L)
+{
+	UINT32 fadeinms;
+
+	const char *tune_id = luaL_checkstring(L, 1);
+	fadeinms = (UINT32)luaL_optinteger(L, 2, 0);
+	boolean resumefade = lua_optboolean(L, 3);
+
+	player_t *player = NULL;
+
+	//NOHUD
+	if (!lua_isnone(L, 4) && lua_isuserdata(L, 4))
+	{
+		player = *((player_t **)luaL_checkudata(L, 4, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+
+	if (!Music_TuneExists(tune_id))
+	{
+		return LUA_ErrNoTune(L, tune_id);
+	}
+
+	Music_SetFadeIn(tune_id, fadeinms, resumefade);
+
+	return 0;
+}
+
+static int lib_mMusicDelayEnd(lua_State *L)
+{
+	tic_t duration;
+
+	const char *tune_id = luaL_checkstring(L, 1);
+	duration = (tic_t)luaL_optinteger(L, 2, 0);
+	player_t *player = NULL;
+
+	//NOHUD
+	if (!lua_isnone(L, 3) && lua_isuserdata(L, 3))
+	{
+		player = *((player_t **)luaL_checkudata(L, 3, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+
+	if (!Music_TuneExists(tune_id))
+	{
+		return LUA_ErrNoTune(L, tune_id);
+	}
+
+	Music_DelayEnd(tune_id, duration);
+
+	return 0;
+}
+
+static int lib_mMusicSeek(lua_State *L)
+{
+	UINT32 seekms;
+
+	const char *tune_id = luaL_checkstring(L, 1);
+	seekms = (UINT32)luaL_optinteger(L, 2, 0);
+	player_t *player = NULL;
+
+	//NOHUD
+	if (!lua_isnone(L, 3) && lua_isuserdata(L, 3))
+	{
+		player = *((player_t **)luaL_checkudata(L, 3, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+
+	if (!Music_TuneExists(tune_id))
+	{
+		return LUA_ErrNoTune(L, tune_id);
+	}
+
+	Music_Seek(tune_id, seekms);
+
+	return 0;
+}
+
+static int lib_mMusicStop(lua_State *L)
+{
+	const char *tune_id = luaL_checkstring(L, 1);
+	player_t *player = NULL;
+
+	//NOHUD
+	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
+	{
+		player = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+
+	if (!Music_TuneExists(tune_id))
+	{
+		return LUA_ErrNoTune(L, tune_id);
+	}
+
+	Music_Stop(tune_id);
+
+	return 0;
+}
+
+static int lib_mMusicPause(lua_State *L)
+{
+	const char *tune_id = luaL_checkstring(L, 1);
+	player_t *player = NULL;
+
+	//NOHUD
+	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
+	{
+		player = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+
+	if (!Music_TuneExists(tune_id))
+	{
+		return LUA_ErrNoTune(L, tune_id);
+	}
+
+	Music_Pause(tune_id);
+
+	return 0;
+}
+
+static int lib_mMusicUnPause(lua_State *L)
+{
+	const char *tune_id = luaL_checkstring(L, 1);
+	player_t *player = NULL;
+
+	//NOHUD
+	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
+	{
+		player = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+
+	if (!Music_TuneExists(tune_id))
+	{
+		return LUA_ErrNoTune(L, tune_id);
+	}
+
+	Music_UnPause(tune_id);
+
+	return 0;
+}
+
+static int lib_mMusicSuspend(lua_State *L)
+{
+	const char *tune_id = luaL_checkstring(L, 1);
+	player_t *player = NULL;
+
+	//NOHUD
+	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
+	{
+		player = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+
+	if (!Music_TuneExists(tune_id))
+	{
+		return LUA_ErrNoTune(L, tune_id);
+	}
+
+	Music_Suspend(tune_id);
+
+	return 0;
+}
+
+static int lib_mMusicUnSuspend(lua_State *L)
+{
+	const char *tune_id = luaL_checkstring(L, 1);
+	player_t *player = NULL;
+
+	//NOHUD
+	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
+	{
+		player = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+
+	if (!Music_TuneExists(tune_id))
+	{
+		return LUA_ErrNoTune(L, tune_id);
+	}
+
+	Music_UnSuspend(tune_id);
+
+	return 0;
+}
+
+static int lib_mMusicLoop(lua_State *L)
+{
+	const char *tune_id = luaL_checkstring(L, 1);
+	boolean loop = lua_optboolean(L, 2);
+	player_t *player = NULL;
+
+	//NOHUD
+	if (!lua_isnone(L, 3) && lua_isuserdata(L, 3))
+	{
+		player = *((player_t **)luaL_checkudata(L, 3, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+
+	if (!Music_TuneExists(tune_id))
+	{
+		return LUA_ErrNoTune(L, tune_id);
+	}
+
+	Music_Loop(tune_id, loop);
+
+	return 0;
+}
+
+static int lib_mMusicBatchExempt(lua_State *L)
+{
+	const char *tune_id = luaL_checkstring(L, 1);
+	player_t *player = NULL;
+
+	//NOHUD
+	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
+	{
+		player = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+
+	if (!Music_TuneExists(tune_id))
+	{
+		return LUA_ErrNoTune(L, tune_id);
+	}
+
+	Music_BatchExempt(tune_id);
+
+	return 0;
 }
 
 // M_MENU
@@ -3932,6 +4345,26 @@ static luaL_Reg lib[] = {
 
 	// hu_stuff technically?
 	{"HU_DoTitlecardCEcho", lib_startTitlecardCecho},
+
+	// music
+	{"Music_AddTune", lib_mMusicAddTune},
+	{"Music_Play", lib_mMusicPlay},
+	{"Music_Remap", lib_mMusicRemap},
+	{"Music_SetFadeOut", lib_mMusicSetFadeOut},
+	{"Music_SetFadeIn", lib_mMusicSetFadeIn},
+	{"Music_DelayEnd", lib_mMusicDelayEnd},
+	{"Music_Dim", lib_mMusicDim},
+	{"Music_Seek", lib_mMusicSeek},
+	{"Music_Stop", lib_mMusicStop},
+	{"Music_Pause", lib_mMusicPause},
+	{"Music_UnPause", lib_mMusicUnPause},
+	{"Music_Suspend", lib_mMusicSuspend},
+	{"Music_UnSuspend", lib_mMusicUnSuspend},
+	{"Music_StopAll", lib_mMusicStopAll},
+	{"Music_PauseAll", lib_mMusicPauseAll},
+	{"Music_UnPauseAll", lib_mMusicUnPauseAll},
+	{"Music_Loop", lib_mMusicLoop},
+	{"Music_BatchExempt", lib_mMusicBatchExempt},
 
 	{NULL, NULL}
 };

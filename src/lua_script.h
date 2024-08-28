@@ -114,6 +114,9 @@ void COM_Lua_f(void);
 
 #define LUA_ErrSetDirectly(L, type, field) luaL_error(L, type " field " LUA_QL(field) " cannot be set directly.")
 
+// Music: "No tune" error.
+#define LUA_ErrNoTune(L, tune) luaL_error(L, "tune \"%s\" does not exist", tune)
+
 // Deprecation warnings
 // Shows once upon use. Then doesn't show again.
 #define LUA_Deprecated(L,this_func,use_instead)\
