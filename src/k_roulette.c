@@ -470,8 +470,10 @@ static UINT32 K_UndoMapScaling(UINT32 distance)
 	Return:-
 		New distance after scaling.
 --------------------------------------------------*/
-static UINT32 K_ScaleItemDistance(const player_t* player, UINT32 distance, UINT8 numPlayers)
+static UINT32 K_ScaleItemDistance(const player_t *player, UINT32 distance, UINT8 numPlayers)
 {
+	(void)player;
+
 	if (franticitems == true)
 	{
 		// Frantic items pretends everyone's farther apart, for crazier items.
@@ -674,14 +676,14 @@ static fixed_t K_PercentSPBOdds(const itemroulette_t *roulette, UINT8 position)
 
 INT32 K_KartGetBattleOdds(const player_t *player, UINT8 pos, kartitems_t item)
 {
-	fixed_t newOdds = 0;
+	(void)player;
 
 	I_Assert(item > KITEM_NONE); // too many off by one scenarioes.
 	I_Assert(item < NUMKARTRESULTS);
 
 	I_Assert(pos < 2); // DO NOT allow positions past the bounds of the table
-	newOdds = K_KartLegacyBattleOdds[item-1][pos];
 
+	fixed_t newOdds = K_KartLegacyBattleOdds[item-1][pos];
 	newOdds <<= FRACBITS;
 
 	return newOdds;
@@ -1065,24 +1067,6 @@ static boolean K_IsItemFirstPermitted(kartitems_t item)
 	}
 }
 
-// Maybe for later...
-#if 0
-static boolean K_IsItemSpeed(kartitems_t item)
-{
-	switch (item)
-	{
-		case KITEM_SNEAKER:
-		case KRITEM_DUALSNEAKER:
-		case KRITEM_TRIPLESNEAKER:
-		case KITEM_FLAMESHIELD:
-		case KITEM_ROCKETSNEAKER:
-			return true;
-		default:
-			return false;
-	}
-}
-#endif
-
 static boolean K_IsItemUselessAlone(kartitems_t item)
 {
 	switch (item)
@@ -1101,7 +1085,7 @@ static boolean K_IsItemUselessAlone(kartitems_t item)
 	}
 }
 
-static boolean K_IsItemSpeed(kartitems_t item)
+ATTRUNUSED static boolean K_IsItemSpeed(kartitems_t item)
 {
 	switch (item)
 	{

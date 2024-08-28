@@ -15013,7 +15013,7 @@ fixed_t K_GetExpAdjustment(player_t *player)
 	return result;
 }
 
-UINT32 K_GetNumGradingPoints()
+UINT32 K_GetNumGradingPoints(void)
 {
 	return numlaps * (1 + Obj_GetCheckpointCount());
 }

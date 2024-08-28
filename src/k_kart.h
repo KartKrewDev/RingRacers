@@ -296,7 +296,7 @@ boolean K_PlayerCanUseItem(player_t *player);
 
 fixed_t K_GetExpAdjustment(player_t *player);
 
-UINT32 K_GetNumGradingPoints();
+UINT32 K_GetNumGradingPoints(void);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -201,14 +201,13 @@ struct Checkpoint : mobj_t
 
 	boolean top_half_has_passed()
 	{
-		INT32 pcount = 0;
 		INT32 winningpos = 1;
 
 		INT32 nump = D_NumPlayersInRace();
 		winningpos = nump / 2;
 		winningpos += nump % 2;
 
-        return players_passed() >= winningpos;
+		return players_passed() >= winningpos;
 	}
 
 	void animate()
