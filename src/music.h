@@ -35,6 +35,29 @@
 extern "C" {
 #endif
 
+//
+// Tuneflags, for Music_AddTune
+//
+
+// inclusive fade out
+#define TN_INCLUSIVEFADE  0x01
+
+// should the tune use the level volume?
+#define TN_USEMAPVOLUME   0x02
+
+// sync tune to game logic
+#define TN_SYNCMUSIC      0x04
+
+// show tune credit (only on first play)
+#define TN_MUSICCRED      0x08
+
+// allow the game to slow down the music in encore mode
+#define TN_VAPES          0x10
+#define TN_NIGHTCOREABLE  0x20
+#define TN_CHANGEPITCH    (TN_VAPES | TN_NIGHTCOREABLE)
+
+// looping?
+#define TN_LOOPING        0x40
 
 //
 // Get the currently playing tune.
@@ -54,6 +77,8 @@ const char *Music_CurrentId(void);
 // Actions that take effect immediately.
 //
 
+// Add a new tune to the tunes list.
+void Music_AddTune(const char* id, int priority, int tuneflags);
 
 // Begin playing a tune, duration is infinite. If the tune was
 // already playing, this resets its current position (seeks
@@ -63,6 +88,10 @@ void Music_Play(const char *id);
 // Set fade out duration. Mostly to fix a last minute bug
 // with Stereo Mode.
 void Music_SetFadeOut(const char* id, int fade_out);
+
+// Set fade in duration. Done for parity with the BLUA music
+// functions.
+void Music_SetFadeIn(const char* id, int fade_in, boolean resume);
 
 // Postpone the end of this tune until N tics from now. The
 // tune should already be playing before calling this.
@@ -121,6 +150,8 @@ void Music_ResetLevelVolume(void);
 // Query properties.
 //
 
+// Returns true if the tune exists.
+boolean Music_TuneExists(const char* id);
 
 // Returns true if the tune is configured to loop.
 boolean Music_CanLoop(const char *id);
