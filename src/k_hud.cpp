@@ -4881,6 +4881,12 @@ static void K_drawKartMinimap(void)
 				if (encoremode)
 					ang = ANGLE_180 - ang;
 
+				if (skin && mobj->color && !mobj->colorized // relevant to redo
+				&& skins[skin].starttranscolor != skins[0].starttranscolor) // redoing would have an affect
+				{
+					colormap = R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(mobj->color), GTC_CACHE);
+				}
+
 				K_drawKartMinimapIcon(
 						interpx,
 						interpy,
