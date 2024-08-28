@@ -12,14 +12,13 @@
 #define __SRB2_AUDIO_OGG_HPP__
 
 #include <exception>
-#include <stdexcept>
 #include <vector>
 
 #include <stb_vorbis.h>
 #include <tcb/span.hpp>
 
 #include "../io/streams.hpp"
-#include "source.hpp"
+#include "sample.hpp"
 
 namespace srb2::audio
 {

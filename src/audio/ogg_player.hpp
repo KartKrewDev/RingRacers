@@ -13,16 +13,10 @@
 
 #include <cstddef>
 #include <optional>
-#include <stdexcept>
-#include <string>
-#include <type_traits>
-#include <variant>
-#include <vector>
 
 #include <stb_vorbis.h>
 #include <tcb/span.hpp>
 
-#include "../io/streams.hpp"
 #include "ogg.hpp"
 #include "source.hpp"
 

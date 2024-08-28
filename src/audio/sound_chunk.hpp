@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include "source.hpp"
+#include "sample.hpp"
 
 namespace srb2::audio
 {

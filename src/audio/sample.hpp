@@ -11,7 +11,9 @@
 #ifndef __SRB2_AUDIO_SAMPLE_HPP__
 #define __SRB2_AUDIO_SAMPLE_HPP__
 
+#include <array>
 #include <cstddef>
+#include <cstdint>
 
 namespace srb2::audio
 {

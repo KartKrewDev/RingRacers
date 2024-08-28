@@ -14,7 +14,6 @@
 #include <array>
 #include <cstddef>
 #include <exception>
-#include <stdexcept>
 #include <utility>
 #include <vector>
 

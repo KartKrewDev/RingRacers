@@ -10,16 +10,12 @@
 
 #include "sound_effect_player.hpp"
 
-#include <algorithm>
 #include <cmath>
-#include <memory>
 
-using std::shared_ptr;
 using std::size_t;
 
 using srb2::audio::Sample;
 using srb2::audio::SoundEffectPlayer;
-using srb2::audio::Source;
 
 size_t SoundEffectPlayer::generate(tcb::span<Sample<2>> buffer)
 {
