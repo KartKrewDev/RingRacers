@@ -122,6 +122,17 @@ void LUA_HUD_AddDrawKartString(
 	const char *str,
 	INT32 flags
 );
+void LUA_HUD_AddSetClipRect(
+	huddrawlist_h list,
+	fixed_t x,
+	fixed_t y,
+	fixed_t w,
+	fixed_t h,
+	INT32 flags
+);
+void LUA_HUD_AddClearClipRect(
+	huddrawlist_h list
+);
 
 // Draws the given draw list
 void LUA_HUD_DrawList(huddrawlist_h list);

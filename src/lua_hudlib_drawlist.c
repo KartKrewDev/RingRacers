@@ -30,6 +30,8 @@ enum drawitem_e {
 	DI_FadeScreen,
 	DI_DrawTitleCardString,
 	DI_DrawKartString,
+	DI_SetClipRect,
+	DI_ClearClipRect,
 	DI_MAX,
 };
 
@@ -394,6 +396,34 @@ void LUA_HUD_AddDrawKartString(
 	item->flags = flags;
 }
 
+void LUA_HUD_AddSetClipRect(
+	huddrawlist_h list,
+	fixed_t x,
+	fixed_t y,
+	fixed_t w,
+	fixed_t h,
+	INT32 flags
+)
+{
+	size_t i = AllocateDrawItem(list);
+	drawitem_t *item = &list->items[i];
+	item->type = DI_SetClipRect;
+	item->x = x;
+	item->y = y;
+	item->w = w;
+	item->h = h;
+	item->flags = flags;
+}
+
+void LUA_HUD_AddClearClipRect(
+	huddrawlist_h list
+)
+{
+	size_t i = AllocateDrawItem(list);
+	drawitem_t *item = &list->items[i];
+	item->type = DI_ClearClipRect;
+}
+
 void LUA_HUD_DrawList(huddrawlist_h list)
 {
 	size_t i;
@@ -473,6 +503,12 @@ void LUA_HUD_DrawList(huddrawlist_h list)
 				break;
 			case DI_DrawKartString:
 				V_DrawTimerString(item->x, item->y, item->flags, itemstr);
+				break;
+			case DI_SetClipRect:
+				V_SetClipRect(item->x, item->y, item->w, item->h, item->flags);
+				break;
+			case DI_ClearClipRect:
+				V_ClearClipRect();
 				break;
 			default:
 				I_Error("can't draw draw list item: invalid draw list item type");
