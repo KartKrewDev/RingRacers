@@ -103,27 +103,16 @@ static void M_ProfileEditApply(void)
 	optionsmenu.profile->fov = cv_dummyprofilefov.value;
 
 	// If this profile is in-use by anyone, apply the changes immediately upon exiting.
-	// Don't apply the profile itself as that would lead to issues mid-game.
+	// Don't apply the full profile itself as that would lead to issues mid-game.
 	if (belongsto > -1 && belongsto < MAXSPLITSCREENPLAYERS)
 	{
-		extern consvar_t cv_fov[MAXSPLITSCREENPLAYERS];
-		CV_SetValue(&cv_kickstartaccel[belongsto], cv_dummyprofilekickstart.value);
-		CV_SetValue(&cv_autoroulette[belongsto], cv_dummyprofileautoroulette.value);
-		CV_SetValue(&cv_litesteer[belongsto], cv_dummyprofilelitesteer.value);
-		CV_SetValue(&cv_autoring[belongsto], cv_dummyprofileautoring.value);
-		CV_SetValue(&cv_rumble[belongsto], cv_dummyprofilerumble.value);
-		CV_SetValue(&cv_fov[belongsto], cv_dummyprofilefov.value);
+		PR_ApplyProfileToggles(optionsmenu.profilen, belongsto);
 	}
 
-	// Reapply player 1's real profile.
-	// (And then we do this for P1 anyway. I didn't write
-	// this code so I'm not sure why it's doing this, but it
-	// can override cv_skin if forcecharacter is in effect!
-	// I suspect this is intended to set cv_currprofile.
-	// FIXME?)
+	// Reapply player 1's real profile ID.
 	if (cv_currprofile.value > -1)
 	{
-		PR_ApplyProfile(cv_lastprofile[0].value, 0);
+		PR_ApplyProfilePretend(cv_lastprofile[0].value, 0);
 	}
 }
 

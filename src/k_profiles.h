@@ -230,6 +230,11 @@ void PR_ApplyProfile(UINT8 profilenum, UINT8 playernum);
 // Controls, kickstartaccel and "current profile" data is *not* modified.
 void PR_ApplyProfileLight(UINT8 profilenum, UINT8 playernum);
 
+// PR_ApplyProfileToggles(UINT8 profilenum, UINT8 playernum)
+// Applies ONLY controls and kickstartaccel.
+// Exposed for menu code exclusively.
+void PR_ApplyProfileToggles(UINT8 profilenum, UINT8 playernum);
+
 // PR_ApplyProfilePretend(UINT8 profilenum, UINT8 playernum)
 // ONLY modifies "current profile" data.
 // Exists because any other option inteferes with rapid testing.
