@@ -445,6 +445,8 @@ consvar_t cv_scr_scale = Player("scr_scale", "1.0").floating_point();
 consvar_t cv_scr_x = Player("scr_x", "0.0").floating_point();
 consvar_t cv_scr_y = Player("scr_y", "0.0").floating_point();
 
+consvar_t cv_display = Player("display", "0").values(CV_Unsigned).save();
+
 consvar_t cv_seenames = Player("seenames", "On").on_off();
 consvar_t cv_shadow = Player("shadow", "On").on_off();
 consvar_t cv_showfocuslost = Player("showfocuslost", "Yes").yes_no();
