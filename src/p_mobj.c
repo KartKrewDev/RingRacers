@@ -1697,8 +1697,9 @@ boolean P_XYMovement(mobj_t *mo)
 
 		P_PushSpecialLine(result.line, mo);
 
-		if (mo->type == MT_BALLHOG_RETICULE_TEST)
+		if (mo->type == MT_BALLHOG || mo->type == MT_BALLHOG_RETICULE_TEST)
 		{
+			P_ExplodeMissile(mo);
 			return false;
 		}
 
@@ -1813,14 +1814,9 @@ boolean P_XYMovement(mobj_t *mo)
 					xmove = ymove = 0;
 					S_StartSound(mo, mo->info->activesound);
 
-					//{ SRB2kart - Orbinaut, Ballhog
-					// Ballhog dies on contact with walls
-					if (mo->type == MT_BALLHOG)
-					{
-						P_ExplodeMissile(mo);
-					}
+					//{ SRB2kart - Orbinaut
 					// Bump sparks
-					else if (mo->type == MT_ORBINAUT || mo->type == MT_GACHABOM)
+					if (mo->type == MT_ORBINAUT || mo->type == MT_GACHABOM)
 					{
 						mobj_t *fx;
 						fx = P_SpawnMobj(mo->x, mo->y, mo->z, MT_BUMP);
@@ -2260,6 +2256,7 @@ boolean P_ZMovement(mobj_t *mo)
 		mo->eflags &= ~MFE_APPLYPMOMZ;
 	}
 	mo->z += mo->momz;
+
 	onground = P_IsObjectOnGround(mo);
 
 	if (mo->standingslope)
@@ -2323,15 +2320,10 @@ boolean P_ZMovement(mobj_t *mo)
 			}
 			break;
 		case MT_BALLHOG:
-			if (mo->z <= mo->floorz || mo->z + mo->height >= mo->ceilingz)
-			{
-				P_ExplodeMissile(mo);
-				return false;
-			}
-			break;
 		case MT_BALLHOG_RETICULE_TEST:
 			if (mo->z <= mo->floorz || mo->z + mo->height >= mo->ceilingz)
 			{
+				P_ExplodeMissile(mo);
 				return false;
 			}
 			break;
@@ -2380,7 +2372,6 @@ boolean P_ZMovement(mobj_t *mo)
 			else if (delta > 0 && dist < (delta*3))
 				mo->z += FixedMul(FLOATSPEED, mo->scale);
 		}
-
 	}
 
 	// clip movement
@@ -10646,6 +10637,18 @@ void P_SceneryThinker(mobj_t *mobj)
 		Obj_AudienceThink(mobj, !!(mobj->flags2 & MF2_AMBUSH), !!(mobj->flags2 & MF2_DONTRESPAWN));
 		if (P_MobjWasRemoved(mobj))
 			return;
+	}
+
+	if (mobj->type == MT_BALLHOG_RETICULE)
+	{
+		if (mobj->tics & 1)
+		{
+			mobj->renderflags &= ~RF_DONTDRAW;
+		}
+		else
+		{
+			mobj->renderflags |= RF_DONTDRAW;
+		}
 	}
 }
 

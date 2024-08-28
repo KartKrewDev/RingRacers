@@ -59,7 +59,7 @@ static void CalculateHogAngles(UINT8 n)
 
 	if (total_hogs > 1)
 	{
-		const fixed_t base_radius = mobjinfo[MT_BALLHOG].radius * 3 / 2;
+		const fixed_t base_radius = mobjinfo[MT_BALLHOG].radius * 6;
 		fixed_t radius = base_radius;
 		UINT8 max_points = 6;
 		angle_t circle_offset = 0;
@@ -129,13 +129,26 @@ static boolean HogReticuleEmulate(mobj_t *mobj)
 			return true; // mobj was removed
 		}
 
-		//P_CheckPosition(mobj, mobj->x, mobj->y, NULL);
+		if (P_MobjWasRemoved(mobj) == true)
+		{
+			return true;
+		}
 	}
 
-	return (P_MobjWasRemoved(mobj) == true || (x == mobj->x && y == mobj->y && z == mobj->z));
+	if (P_MobjWasRemoved(mobj) == true)
+	{
+		return true;
+	}
+
+	if (x == mobj->x && y == mobj->y && z == mobj->z)
+	{
+		return true;
+	}
+
+	return false;
 }
 
-static void HogReticuleTest(player_t *player, vector3_t *ret)
+static void HogReticuleTest(player_t *player, vector3_t *ret, fixed_t final_scale)
 {
 	// Emulate the movement of a tossed ballhog
 	// until it hits something.
@@ -157,21 +170,11 @@ static void HogReticuleTest(player_t *player, vector3_t *ret)
 	// Intentionally NOT player scale, that doesn't work.
 	proj_speed = FixedMul(proj_speed, mapobjectscale);
 
-	fixed_t finalscale = ITEMSCALE_NORMAL;
-	if (player->mo->scale >= FixedMul(GROW_PHYSICS_SCALE, mapobjectscale))
-	{
-		finalscale = ITEMSCALE_GROW;
-	}
-	else if (player->mo->scale <= FixedMul(SHRINK_PHYSICS_SCALE, mapobjectscale))
-	{
-		finalscale = ITEMSCALE_SHRINK;
-	}
-
 	// Shoot forward
 	//P_MoveOrigin(mo, player->mo->x, player->mo->y, player->mo->z + (player->mo->height / 2));
 	// FINE! YOU WIN! I'll make an object every time I need to test this...
 	mobj_t *mo = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + (player->mo->height / 2), MT_BALLHOG_RETICULE_TEST);
-	mo->fuse = 2; // if something goes wrong, destroy this
+	mo->fuse = 2; // if something goes wrong, destroy it
 
 	mo->angle = player->mo->angle;
 
@@ -183,7 +186,8 @@ static void HogReticuleTest(player_t *player, vector3_t *ret)
 		mo->flags2 |= (player->mo->flags2 & MF2_OBJECTFLIP);
 	}
 
-	//P_SetTarget(&mo->target, player->mo);
+	P_SetTarget(&mo->target, player->mo);
+	mo->threshold = 10;
 
 	mo->extravalue2 = dir;
 
@@ -199,12 +203,12 @@ static void HogReticuleTest(player_t *player, vector3_t *ret)
 		mo->momz = (117 * mo->momz) / 200;
 	}
 
-	P_SetScale(mo, finalscale);
-	mo->destscale = finalscale;
+	P_SetScale(mo, final_scale);
+	mo->destscale = final_scale;
 
 	// Contra spread shot scale up
-	//mo->destscale = mo->destscale << 1;
-	//mo->scalespeed = abs(mo->destscale - mo->scale) / (2*TICRATE);
+	mo->destscale = mo->destscale << 1;
+	mo->scalespeed = abs(mo->destscale - mo->scale) / (2*TICRATE);
 
 	ret->x = mo->x;
 	ret->y = mo->y;
@@ -213,6 +217,11 @@ static void HogReticuleTest(player_t *player, vector3_t *ret)
 	constexpr INT32 max_iteration = 256;
 	for (INT32 i = 0; i < max_iteration; i++)
 	{
+#if 0
+		mobj_t *test = P_SpawnMobj(mo->x, mo->y, mo->z, MT_THOK);
+		test->tics = 2;
+#endif
+
 		if (HogReticuleEmulate(mo) == true)
 		{
 			break;
@@ -238,14 +247,23 @@ void K_UpdateBallhogReticules(player_t *player, UINT8 num_hogs, boolean on_relea
 		return;
 	}
 
-	constexpr tic_t kBallhogReticuleTime = TICRATE / 2;
-
 	const UINT8 start_hogs = num_hogs;
+#if 1
+	if (start_hogs == 0)
+	{
+		return;
+	}
+#endif
+
 	CalculateHogAngles(num_hogs);
 
 	// Calculate center positon
+	fixed_t final_scale = K_ItemScaleFromConst(K_GetItemScaleConst(player->mo->scale));
+
 	vector3_t center = {0, 0, 0};
-	HogReticuleTest(player, &center); // Originally this was called for everything, but it's more optimized to only run 1 prediction.
+	HogReticuleTest(player, &center, final_scale); // Originally this was called for everything, but it's more optimized to only run 1 prediction.
+
+	constexpr tic_t kBallhogReticuleTime = (TICRATE * 3 / 4);
 
 	// Update existing reticules.
 	mobj_t *reticule = player->ballhogreticule;
@@ -259,8 +277,8 @@ void K_UpdateBallhogReticules(player_t *player, UINT8 num_hogs, boolean on_relea
 			const UINT8 old_hogs = reticule->extravalue1;
 
 			UINT8 angle_index = num_hogs - 1;
-			fixed_t x_offset = g_hogangles[angle_index].x;
-			fixed_t y_offset = g_hogangles[angle_index].y;
+			fixed_t x_offset = FixedMul(g_hogangles[angle_index].x, final_scale);
+			fixed_t y_offset = FixedMul(g_hogangles[angle_index].y, final_scale);
 
 			if (on_release == true)
 			{
@@ -291,6 +309,11 @@ void K_UpdateBallhogReticules(player_t *player, UINT8 num_hogs, boolean on_relea
 			}
 
 			reticule->tics = kBallhogReticuleTime;
+			reticule->color = player->skincolor;
+
+			reticule->destscale = final_scale * 2;
+			P_SetScale(reticule, reticule->destscale);
+
 			num_hogs--;
 		}
 #if 0
@@ -334,15 +357,19 @@ void K_UpdateBallhogReticules(player_t *player, UINT8 num_hogs, boolean on_relea
 			P_SetTarget(&new_reticule->hprev, player->mo);
 		}
 
-		// Start in center
 		new_reticule->extravalue1 = start_hogs;
+
 		new_reticule->tics = kBallhogReticuleTime;
+		new_reticule->color = player->skincolor;
+
+		new_reticule->destscale = final_scale * 2;
+		P_SetScale(new_reticule, new_reticule->destscale);
 
 		if (on_release == true)
 		{
 			UINT8 angle_index = num_hogs - 1;
-			fixed_t x_offset = g_hogangles[angle_index].x;
-			fixed_t y_offset = g_hogangles[angle_index].y;
+			fixed_t x_offset = FixedMul(g_hogangles[angle_index].x, final_scale);
+			fixed_t y_offset = FixedMul(g_hogangles[angle_index].y, final_scale);
 
 			P_SetOrigin(new_reticule, center.x + x_offset, center.y + y_offset, center.z);
 		}

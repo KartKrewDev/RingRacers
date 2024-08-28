@@ -909,6 +909,7 @@ typedef enum sprite
 	SPR_DTRG, // Drop Target
 	SPR_BHOG, // Ballhog
 	SPR_BHBM, // Ballhog BOOM
+	SPR_BHGR, // Ballhog reticule
 	SPR_SPBM, // Self-Propelled Bomb
 	SPR_TRIS, // SPB Manta Ring start
 	SPR_TRNQ, // SPB Manta Ring loop

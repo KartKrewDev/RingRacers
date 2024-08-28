@@ -5472,9 +5472,25 @@ void K_SpawnLandMineExplosion(mobj_t *source, skincolornum_t color, tic_t delay)
 	}
 }
 
-fixed_t K_ItemScaleForPlayer(player_t *player)
+fixed_t K_GetItemScaleConst(fixed_t scale)
 {
-	switch (player->itemscale)
+	if (scale >= FixedMul(GROW_PHYSICS_SCALE, mapobjectscale))
+	{
+		return ITEMSCALE_GROW;
+	}
+	else if (scale <= FixedMul(SHRINK_PHYSICS_SCALE, mapobjectscale))
+	{
+		return ITEMSCALE_SHRINK;
+	}
+	else
+	{
+		return ITEMSCALE_NORMAL;
+	}
+}
+
+fixed_t K_ItemScaleFromConst(UINT8 item_scale_const)
+{
+	switch (item_scale_const)
 	{
 		case ITEMSCALE_GROW:
 			return FixedMul(GROW_SCALE, mapobjectscale);
@@ -5485,6 +5501,11 @@ fixed_t K_ItemScaleForPlayer(player_t *player)
 		default:
 			return mapobjectscale;
 	}
+}
+
+fixed_t K_ItemScaleForPlayer(player_t *player)
+{
+	return K_ItemScaleFromConst(player->itemscale);
 }
 
 fixed_t K_DefaultPlayerRadius(player_t *player)
@@ -6598,7 +6619,7 @@ mobj_t *K_ThrowKartItemEx(player_t *player, boolean missile, mobjtype_t mapthing
 
 			if (tossX != 0 || tossY != 0)
 			{
-				fixed_t g = 5 * DEFAULT_GRAVITY / 2; // P_GetMobjGravity does not work here??
+				fixed_t g = FixedMul(5 * DEFAULT_GRAVITY / 2, mapobjectscale); // P_GetMobjGravity does not work here??
 				if (dir > FRACUNIT)
 				{
 					g = FixedMul(g, dir);
@@ -12766,19 +12787,7 @@ static void K_trickPanelTimingVisual(player_t *player, fixed_t momz)
 void K_SetItemOut(player_t *player)
 {
 	player->itemflags |= IF_ITEMOUT;
-
-	if (player->mo->scale >= FixedMul(GROW_PHYSICS_SCALE, mapobjectscale))
-	{
-		player->itemscale = ITEMSCALE_GROW;
-	}
-	else if (player->mo->scale <= FixedMul(SHRINK_PHYSICS_SCALE, mapobjectscale))
-	{
-		player->itemscale = ITEMSCALE_SHRINK;
-	}
-	else
-	{
-		player->itemscale = ITEMSCALE_NORMAL;
-	}
+	player->itemscale = K_GetItemScaleConst(player->mo->scale);
 }
 
 void K_UnsetItemOut(player_t *player)

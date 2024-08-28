@@ -370,6 +370,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"DTRG", // Drop Target
 	"BHOG", // Ballhog
 	"BHBM", // Ballhog BOOM
+	"BHGR", // Ballhog reticule
 	"SPBM", // Self-Propelled Bomb
 	"TRIS", // SPB Manta Ring start
 	"TRNQ", // SPB Manta Ring loop
@@ -2458,7 +2459,7 @@ state_t states[NUMSTATES] =
 	{SPR_BHBM, FF_FULLBRIGHT|13, 1, {NULL}, 0, 0, S_BALLHOGBOOM15},			// S_BALLHOGBOOM14
 	{SPR_BHBM, FF_FULLBRIGHT|14, 1, {NULL}, 0, 0, S_BALLHOGBOOM16},			// S_BALLHOGBOOM15
 	{SPR_BHBM, FF_FULLBRIGHT|15, 1, {NULL}, 0, 0, S_NULL},					// S_BALLHOGBOOM16
-	{SPR_SPBM, FF_FULLBRIGHT|0, -1, {NULL}, 0, 0, S_NULL},					// S_BALLHOG_RETICULE
+	{SPR_BHGR, FF_ANIMATE|FF_FULLBRIGHT|0, 2*TICRATE, {NULL}, 5, 3, S_NULL},	// S_BALLHOG_RETICULE
 
 	{SPR_SPBM, 0, 1, {NULL}, 0, 0,  S_SPB2}, // S_SPB1
 	{SPR_SPBM, 1, 1, {NULL}, 0, 0,  S_SPB3}, // S_SPB2
@@ -15231,7 +15232,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_NOTHINK|MF_NOBLOCKMAP|MF_NOCLIPTHING|MF_DONTENCOREMAP|MF_DONTPUNT, // flags
+		MF_NOCLIPTHING|MF_DONTENCOREMAP|MF_DONTPUNT, // flags
 		S_NULL          // raisestate
 	},
 
