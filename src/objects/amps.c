@@ -195,3 +195,9 @@ void Obj_AmpAuraThink (mobj_t *amps)
             amps->renderflags &= ~RF_DONTDRAW;
     }
 }
+
+void Obj_AmpBurstThink (mobj_t *amps)
+{
+    amps->renderflags &= ~RF_TRANSMASK;
+    amps->renderflags |= (NUMTRANSMAPS - amps->fuse) << RF_TRANSSHIFT;
+}

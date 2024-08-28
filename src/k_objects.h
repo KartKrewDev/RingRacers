@@ -142,6 +142,7 @@ void Obj_GuardBreakThink(mobj_t *fx);
 void Obj_AmpRingThink(mobj_t *amp);
 void Obj_AmpBodyThink(mobj_t *amp);
 void Obj_AmpAuraThink(mobj_t *amp);
+void Obj_AmpBurstThink(mobj_t *amp);
 
 void Obj_AmpsThink(mobj_t *amps);
 

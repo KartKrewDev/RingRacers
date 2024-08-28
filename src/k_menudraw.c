@@ -5533,7 +5533,7 @@ void M_DrawItemToggles(void)
 
 			cv = &cv_items[currentMenu->menuitems[thisitem].mvar1-1];
 
-			drawnum = K_ItemResultToAmount(currentMenu->menuitems[thisitem].mvar1);
+			drawnum = K_ItemResultToAmount(currentMenu->menuitems[thisitem].mvar1, NULL);
 
 			V_DrawScaledPatch(x, y, 0, cv->value ? isbg : isbgd);
 
@@ -5588,7 +5588,7 @@ void M_DrawItemToggles(void)
 		{
 			cv = &cv_items[currentMenu->menuitems[itemOn].mvar1-1];
 
-			drawnum = K_ItemResultToAmount(currentMenu->menuitems[itemOn].mvar1);
+			drawnum = K_ItemResultToAmount(currentMenu->menuitems[itemOn].mvar1, NULL);
 
 			if (cv->value)
 				V_DrawScaledPatch(onx-1, ony-2, 0, W_CachePatchName("K_ITBG", PU_CACHE));

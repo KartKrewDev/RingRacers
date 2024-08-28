@@ -408,7 +408,7 @@ project_icon (mobj_t *part)
 
 		K_UpdateMobjItemOverlay(part,
 				K_ItemResultToType(result),
-				K_ItemResultToAmount(result));
+				K_ItemResultToAmount(result, NULL));
 
 		center_item_sprite(part, 5*FRACUNIT/4);
 	}
@@ -703,7 +703,7 @@ Obj_MonitorOnDeath
 					monitor->x, monitor->y, monitor->z + (128 * mapobjectscale * flip),
 					i * ang, flip,
 					K_ItemResultToType(result),
-					K_ItemResultToAmount(result)));
+					K_ItemResultToAmount(result, NULL)));
 
 		drop->momz /= 2; // This is player-locked, so no need to throw it high
 

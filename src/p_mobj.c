@@ -8641,6 +8641,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		Obj_AmpAuraThink(mobj);
 		break;
 	}
+	case MT_AMPBURST:
+	{
+		Obj_AmpBurstThink(mobj);
+		break;
+	}
 	case MT_CHARGEAURA:
 	{
 		Obj_ChargeAuraThink(mobj);

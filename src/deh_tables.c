@@ -1571,6 +1571,7 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_AMPRING",
 	"S_AMPBODY",
 	"S_AMPAURA",
+	"S_AMPBURST",
 
 	"S_CHARGEAURA",
 	"S_CHARGEFALL",
@@ -3514,6 +3515,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_AMPRING",
 	"MT_AMPBODY",
 	"MT_AMPAURA",
+	"MT_AMPBURST",
 
 	"MT_CHARGEAURA",
 	"MT_CHARGEFALL",

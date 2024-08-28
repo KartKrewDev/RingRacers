@@ -1457,7 +1457,7 @@ static void K_drawKartItem(void)
 			const SINT8 result = stplyr->itemRoulette.itemList[index];
 			const SINT8 item = K_ItemResultToType(result);
 			const boolean usingDebugItemAmount = cv_kartdebugitem.value != KITEM_NONE && cv_kartdebugitem.value == item && cv_kartdebugamount.value > 1;
-			const UINT8 amt = usingDebugItemAmount ? cv_kartdebugamount.value : K_ItemResultToAmount(result);
+			const UINT8 amt = usingDebugItemAmount ? cv_kartdebugamount.value : K_ItemResultToAmount(result, &stplyr->itemRoulette);
 
 			switch (item)
 			{
@@ -1640,7 +1640,12 @@ static void K_drawKartItem(void)
 		fy -= 5;
 	}
 
-	V_DrawScaledPatch(fx, fy, V_HUDTRANS|V_SLIDEIN|fflags, localbg);
+	UINT8 *boxmap = NULL;
+	if (stplyr->itemRoulette.active && (stplyr->itemRoulette.speed - stplyr->itemRoulette.tics < 3) && stplyr->itemRoulette.index == 0)
+	{
+		boxmap = R_GetTranslationColormap(TC_ALLWHITE, SKINCOLOR_WHITE, GTC_CACHE);
+	}
+	V_DrawMappedPatch(fx, fy, V_HUDTRANS|V_SLIDEIN|fflags, localbg, boxmap);
 
 	// Need to draw these in a particular order, for sorting.
 	V_SetClipRect(
@@ -3250,13 +3255,29 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 		if (stplyr->pflags & PF_RINGLOCK)
 			V_DrawScaledPatch(fr-12, fy-13, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringspblocksmall[stplyr->karthud[khud_ringspblock]]);
 
+		UINT32 greyout = V_HUDTRANS;
+		SINT8 superoffset = 5;
+		if (stplyr->superringdisplay)
+		{
+			greyout = V_HUDTRANSHALF;
+			if (flipflag && !uselives)
+				superoffset = -25 - (stplyr->superringdisplay >= 10 ? 3 : 0) - (stplyr->superringdisplay >= 100 ? 3 : 0);
+		}
+
 		// Lives
 		if (uselives)
 		{
 			UINT8 *colormap = R_GetTranslationColormap(stplyr->skin, static_cast<skincolornum_t>(stplyr->skincolor), GTC_CACHE);
-			V_DrawMappedPatch(fr+21, fy-3, V_HUDTRANS|V_SLIDEIN|splitflags, faceprefix[stplyr->skin][FACE_MINIMAP], colormap);
+			V_DrawMappedPatch(fr+21, fy-3, V_SLIDEIN|splitflags|greyout, faceprefix[stplyr->skin][FACE_MINIMAP], colormap);
 			if (stplyr->lives >= 0)
-				K_DrawLivesDigits(fr+34, fy, 4, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font);
+				K_DrawLivesDigits(fr+34, fy, 4, V_SLIDEIN|splitflags|greyout, fontv[PINGNUM_FONT].font);
+		}
+
+		if (stplyr->superringdisplay && !(stplyr->superringalert % 2))
+		{
+			using srb2::Draw;
+			Draw row = Draw(fr+19+superoffset, fy).flags(V_HUDTRANS|V_SLIDEIN|splitflags).font(Draw::Font::kPing).colorize(SKINCOLOR_SAPPHIRE);
+			row.text("+{:01}", abs(stplyr->superringdisplay));
 		}
 	}
 	else
@@ -3303,8 +3324,6 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 			}
 		}
 
-
-
 		// "Why fy-4? Why LAPS_X+29+1?"
 		// "use magic numbers" - jartha 2024-03-05
 		if (stplyr->hudrings < 0) // Draw the minus for ring debt
@@ -3329,11 +3348,18 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 		if (stplyr->pflags & PF_RINGLOCK)
 			V_DrawScaledPatch(LAPS_X-5, fy-17, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringspblock[stplyr->karthud[khud_ringspblock]]);
 
+		UINT32 greyout = V_HUDTRANS;
+		
+		if (stplyr->superringdisplay)
+		{
+			greyout = V_HUDTRANSHALF;
+		}
+
 		// Lives
 		if (uselives)
 		{
 			UINT8 *colormap = R_GetTranslationColormap(stplyr->skin, static_cast<skincolornum_t>(stplyr->skincolor), GTC_CACHE);
-			V_DrawMappedPatch(LAPS_X+46, fy-5, V_HUDTRANS|V_SLIDEIN|splitflags, faceprefix[stplyr->skin][FACE_RANK], colormap);
+			V_DrawMappedPatch(LAPS_X+46, fy-5, V_SLIDEIN|splitflags|greyout, faceprefix[stplyr->skin][FACE_RANK], colormap);
 			SINT8 livescount = 0;
 			if (stplyr->lives > 0)
 			{
@@ -3342,8 +3368,15 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 					livescount = 10;
 			}
 			using srb2::Draw;
-			Draw row = Draw(LAPS_X+65, fy-4).flags(V_HUDTRANS|V_SLIDEIN|splitflags).font(Draw::Font::kThinTimer);
+			Draw row = Draw(LAPS_X+65, fy-4).flags(V_SLIDEIN|splitflags|greyout).font(Draw::Font::kThinTimer);
 			row.text("{}", livescount);
+		}
+
+		if (stplyr->superringdisplay && !(stplyr->superringalert % 2))
+		{
+			using srb2::Draw;
+			Draw row = Draw(LAPS_X+23+3+15, fy-4).flags(V_HUDTRANS|V_SLIDEIN|splitflags).font(Draw::Font::kThinTimer).colorize(SKINCOLOR_SAPPHIRE);
+			row.text("+{:01}", abs(stplyr->superringdisplay));
 		}
 	}
 }
@@ -6455,7 +6488,8 @@ void K_drawKartHUD(void)
 				}
 			}
 
-			K_drawKartTimestamp(realtime, TIME_X, TIME_Y + (ta ? 2 : 0), flags, 0);
+			if (modeattacking || (gametyperules & GTR_TIMELIMIT))
+				K_drawKartTimestamp(realtime, TIME_X, TIME_Y + (ta ? 2 : 0), flags, 0);
 
 			if (modeattacking)
 			{
