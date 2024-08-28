@@ -2014,7 +2014,7 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 	// TIME_X = BASEVIDWIDTH-124;	// 196
 	// TIME_Y = 6;					//   6
 
-	if (!(modeattacking) && !(gametyperules & GTR_TIMELIMIT))
+	if (Playing() && !(modeattacking) && !(gametyperules & GTR_TIMELIMIT))
 		return;
 
 	INT32 jitter = 0;
