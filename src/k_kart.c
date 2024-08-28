@@ -3480,7 +3480,7 @@ static void K_GetKartBoostPower(player_t *player)
 		UINT8 i;
 		for (i = 0; i < player->numsneakers; i++)
 		{
-			ADDBOOST(FRACUNIT*75/100, 8*FRACUNIT, SLIPTIDEHANDLING+SLIPTIDEHANDLING/3); // + 50% top speed, + 800% acceleration, +50% handling
+			ADDBOOST(FRACUNIT*85/100, 8*FRACUNIT, SLIPTIDEHANDLING+SLIPTIDEHANDLING/3); // + 50% top speed, + 800% acceleration, +50% handling
 		}
 	}
 
