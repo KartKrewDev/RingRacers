@@ -432,6 +432,12 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->sparkleanim);
 	else if (fastcmp(field,"superring"))
 		lua_pushinteger(L, plr->superring);
+	else if (fastcmp(field,"superringdisplay"))
+		lua_pushinteger(L, plr->superringdisplay);
+	else if (fastcmp(field,"superringpeak"))
+		lua_pushinteger(L, plr->superringpeak);
+	else if (fastcmp(field,"superringalert"))
+		lua_pushinteger(L, plr->superringalert);
 	else if (fastcmp(field,"nextringaward"))
 		lua_pushinteger(L, plr->nextringaward);
 	else if (fastcmp(field,"ringvolume"))
@@ -1010,6 +1016,12 @@ static int player_set(lua_State *L)
 		plr->sparkleanim = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"superring"))
 		plr->superring = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"superringdisplay"))
+		plr->superringdisplay = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"superringpeak"))
+		plr->superringpeak = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"superringalert"))
+		plr->superringalert = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"nextringaward"))
 		plr->nextringaward = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"ringvolume"))

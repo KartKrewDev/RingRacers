@@ -98,7 +98,7 @@ static UINT32 K_DynamicItemOddsRace[NUMKARTRESULTS-1][2] =
 	{66, 9}, // flameshield
 	{1, 3}, // hyudoro
 	{0, 0}, // pogospring
-	{7, 4}, // superring
+	{30, 8}, // superring (SPECIAL! distance value specifies when this can NO LONGER appear)
 	{0, 0}, // kitchensink
 	{1, 3}, // droptarget
 	{43, 5}, // gardentop
@@ -795,6 +795,8 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 	roulette->eggman = false;
 	roulette->ringbox = false;
 	roulette->autoroulette = false;
+
+	roulette->popcorn = 1;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -1497,6 +1499,26 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 		deltas[i] = min(targetpower - powers[i], powers[i] - targetpower);
 	}
 
+	// == "POPCORN" Super Ring in Race.
+	// This can appear anywhere from 0 to its specified distance, to pad the
+	// reels with non-disruptive catchup (since we have a ton of offensive items
+	// and not many front/mid speed items).
+	boolean canfiltersuperring = true;
+	if ((gametyperules & GTR_CIRCUIT) && (specialstageinfo.valid == false))
+	{
+		if (targetpower > powers[KITEM_SUPERRING])
+		{
+			permit[KITEM_SUPERRING] = false;
+		}
+		else
+		{
+			permit[KITEM_SUPERRING] = true;
+			deltas[KITEM_SUPERRING] = 0;
+			canfiltersuperring = false;
+			roulette->popcorn = (player->position > 1) ? max(1, targetpower/humanscaler/4) : 1;
+		}
+	}
+
 	// == LONELINESS DETECTION
 	// A lot of items suck if no players are nearby to interact with them.
 	// Should we bias towards items that get us back to the action?
@@ -1612,7 +1634,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 			V_DrawThinString(BASE_X + 65, BASE_Y, FLAGS, va("D%d", deltas[bestitem]/humanscaler));
 			V_DrawThinString(BASE_X + 20, BASE_Y, FLAGS, va("%d", dupetolerance[bestitem]));
 			V_DrawFixedPatch(BASE_X*FRACUNIT, (BASE_Y-7)*FRACUNIT, (FRACUNIT >> 1), FLAGS, K_GetSmallStaticCachedItemPatch(bestitem), NULL);
-			UINT8 amount = K_ItemResultToAmount(bestitem);
+			UINT8 amount = K_ItemResultToAmount(bestitem, roulette);
 			if (amount > 1)
 				V_DrawThinString(BASE_X, BASE_Y, FLAGS, va("x%d", amount));
 		}
@@ -1654,6 +1676,10 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 		// feels exciting, low-rolling feels punishing!
 		boolean reject = (filterweakitems) && (powers[i] + DISTVAR < meanreelpower);
 
+		// Popcorn Super Ring is always strong enough, we put it there on purpose.
+		if (i == KITEM_SUPERRING && !canfiltersuperring)
+			reject = false;
+
 		// Before we actually apply that rejection, draw the simple odds debugger.
 		// This one is just to watch the distribution for vibes as you drive around.
 		if (cv_kartdebugdistribution.value && candidates[i])
@@ -1667,7 +1693,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 			V_DrawThinString(BASE_X - 12, 5+36, FLAGS, va("%d", loneliness));
 			for(UINT8 k = 0; k < candidates[i]; k++)
 				V_DrawFixedPatch((BASE_X + 3*k)*FRACUNIT, (BASE_Y-7)*FRACUNIT, (FRACUNIT >> 1), FLAGS, K_GetSmallStaticCachedItemPatch(i), NULL);
-			UINT8 amount = K_ItemResultToAmount(i);
+			UINT8 amount = K_ItemResultToAmount(i, roulette);
 			if (amount > 1)
 				V_DrawThinString(BASE_X, BASE_Y, FLAGS, va("x%d", amount));
 			if (reject)
@@ -1835,7 +1861,7 @@ static void K_KartGetItemResult(player_t *const player, kartitems_t getitem)
 	player->botvars.itemconfirm = 0;
 
 	player->itemtype = K_ItemResultToType(getitem);
-	UINT8 itemamount = K_ItemResultToAmount(getitem);
+	UINT8 itemamount = K_ItemResultToAmount(getitem, &player->itemRoulette);
 	if (cv_kartdebugitem.value != KITEM_NONE && cv_kartdebugitem.value == player->itemtype && cv_kartdebugamount.value > 1)
 		itemamount = cv_kartdebugamount.value;
 	player->itemamount = itemamount;
@@ -2001,6 +2027,13 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 				S_StartSound(NULL, sfx_s240);
 			else
 				S_StartSound(NULL, sfx_itrol1 + roulette->sound);
+			
+			if (roulette->index == 0)
+			{
+				S_StartSound(NULL, sfx_kc50);
+				S_StartSound(NULL, sfx_kc50);
+			}
+
 		}
 	}
 	else

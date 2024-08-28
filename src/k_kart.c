@@ -538,7 +538,7 @@ SINT8 K_ItemResultToType(SINT8 getitem)
 	return getitem;
 }
 
-UINT8 K_ItemResultToAmount(SINT8 getitem)
+UINT8 K_ItemResultToAmount(SINT8 getitem, const itemroulette_t *roulette)
 {
 	switch (getitem)
 	{
@@ -557,6 +557,12 @@ UINT8 K_ItemResultToAmount(SINT8 getitem)
 
 		case KITEM_BALLHOG: // Not a special result, but has a special amount
 			return 5;
+
+		case KITEM_SUPERRING:
+			if (roulette && roulette->popcorn)
+				return roulette->popcorn;
+			else
+				return 1;
 
 		default:
 			return 1;
@@ -4128,7 +4134,11 @@ void K_AwardPlayerRings(player_t *player, UINT16 rings, boolean overload)
 
 	/* check if not overflow */
 	if (superring > player->superring)
+	{
 		player->superring = superring;
+		player->superringpeak = superring;
+		player->superringalert = TICRATE/2;
+	}
 }
 
 boolean K_Overdrive(player_t *player)
@@ -6986,7 +6996,7 @@ void K_DoSneaker(player_t *player, INT32 type)
 			player->overshield += TICRATE/2; // TEMP prototype
 			break;
 		case 2:
-			player->sneakertimer = sneakertime + TICRATE/2;
+			player->sneakertimer = 3*sneakertime/4;
 			player->overshield += TICRATE/2; // TEMP prototype
 			break;
 	}
@@ -7582,7 +7592,7 @@ mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 
 		// but item roulette will need rewritten to change this
 
 		const SINT8 newType = K_ItemResultToType(i);
-		const UINT8 newAmount = K_ItemResultToAmount(i);
+		const UINT8 newAmount = K_ItemResultToAmount(i, NULL);
 
 		if (newAmount > 1)
 		{
@@ -9401,6 +9411,24 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->freeRingShooterCooldown && !player->mo->hitlag)
 		player->freeRingShooterCooldown--;
+
+	if (player->superringalert)
+	{
+		player->superringdisplay = player->superringpeak;
+		player->superringalert--;
+	}
+	else
+	{
+		if (player->superringdisplay != player->superring)
+		{
+			INT16 delta = player->superring - player->superringdisplay;
+			if (player->superring > player->superringdisplay)
+				delta = max(delta/8, 1);
+			else
+				delta = min(delta/8, -1);
+			player->superringdisplay += delta;
+		}
+	}
 
 	if (player->superring)
 	{
@@ -13788,8 +13816,35 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						case KITEM_SUPERRING:
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
 							{
-								K_AwardPlayerRings(player, 20, true);
-								player->itemamount--;
+								S_StartSound(player->mo, sfx_gsha7);
+								P_Thrust(player->mo, player->mo->angle, 50*player->mo->scale);
+
+								UINT8 numsparks = 8;
+								for (UINT8 i = 0; i < numsparks; i++)
+								{
+									mobj_t *sparkle = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_RINGSPARKS);
+									P_InstaScale(sparkle, player->mo->scale*2);
+									P_SetTarget(&sparkle->target, player->mo);
+									sparkle->angle = player->mo->angle + FixedAngle((360*i/numsparks)<<FRACBITS);
+									player->sparkleanim = (player->sparkleanim+1) % 20;
+									P_SetTarget(&sparkle->owner, player->mo);
+									sparkle->renderflags |= RF_REDUCEVFX;
+								}
+
+								mobj_t *burst = P_SpawnMobjFromMobj(player->mo, 0, 0, player->mo->height/2, MT_AMPBURST);
+								burst->momx = player->mo->momx/2;
+								burst->momy = player->mo->momy/2;
+								burst->momz = player->mo->momz/2;
+								burst->angle = player->mo->angle + ANGLE_90;
+								burst->scalespeed = burst->scale;
+								burst->destscale = burst->scale*8;
+								burst->color = SKINCOLOR_GOLD;
+								burst->fuse = 8;
+
+								// player->strongdriftboost += TICRATE;
+								// player->driftboost += TICRATE;
+								K_AwardPlayerRings(player, 20*player->itemamount, true);
+								player->itemamount = 0;
 								player->botvars.itemconfirm = 0;
 							}
 							break;

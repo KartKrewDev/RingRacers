@@ -511,6 +511,8 @@ struct itemroulette_t
 	boolean ringbox;
 	boolean autoroulette;
 	UINT8 reserved;
+
+	UINT8 popcorn;
 };
 
 // enum for bot item priorities
@@ -766,6 +768,9 @@ struct player_t
 	UINT16 ringboost;	// Ring boost timer
 	UINT8 sparkleanim;	// (0 to 19) - Angle offset for ring sparkle animation
 	UINT16 superring;	// You were awarded rings, and have this many of them left to spawn on yourself.
+	UINT16 superringdisplay; // For HUD countup when awarded superring
+	UINT16 superringpeak; // Display award when getting awarded
+	UINT8 superringalert; // Timer for displaying award instead of countdown
 	UINT8 nextringaward;	// When should we spawn our next superring ring?
 	UINT8 ringvolume;		// When consuming lots of rings, lower the sound a little.
 	UINT8 ringtransparency; 	// When consuming lots of rings, fade out the rings again.

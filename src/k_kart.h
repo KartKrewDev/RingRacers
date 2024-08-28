@@ -105,7 +105,7 @@ fixed_t K_GetKartGameSpeedScalar(SINT8 value);
 
 INT32 K_GetShieldFromItem(INT32 item);
 SINT8 K_ItemResultToType(SINT8 getitem);
-UINT8 K_ItemResultToAmount(SINT8 getitem);
+UINT8 K_ItemResultToAmount(SINT8 getitem, const itemroulette_t *roulette);
 tic_t K_GetItemCooldown(SINT8 itemResult);
 void K_SetItemCooldown(SINT8 itemResult, tic_t time);
 void K_RunItemCooldowns(void);
