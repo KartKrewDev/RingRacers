@@ -909,6 +909,7 @@ typedef enum sprite
 	SPR_DTRG, // Drop Target
 	SPR_BHOG, // Ballhog
 	SPR_BHBM, // Ballhog BOOM
+	SPR_BHGR, // Ballhog reticule
 	SPR_SPBM, // Self-Propelled Bomb
 	SPR_TRIS, // SPB Manta Ring start
 	SPR_TRNQ, // SPB Manta Ring loop
@@ -2949,6 +2950,7 @@ typedef enum state
 	S_BALLHOGBOOM14,
 	S_BALLHOGBOOM15,
 	S_BALLHOGBOOM16,
+	S_BALLHOG_RETICULE,
 
 	// Self-Propelled Bomb
 	S_SPB1,
@@ -4639,6 +4641,8 @@ typedef enum mobj_type
 
 	MT_BALLHOG, // Ballhog
 	MT_BALLHOGBOOM,
+	MT_BALLHOG_RETICULE,
+	MT_BALLHOG_RETICULE_TEST,
 
 	MT_SPB, // SPB stuff
 	MT_SPBEXPLOSION,

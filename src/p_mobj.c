@@ -594,18 +594,19 @@ void P_ExplodeMissile(mobj_t *mo)
 
 	mo->momx = mo->momy = mo->momz = 0;
 
-	if (mo->flags & MF_NOCLIPTHING)
+	if (mo->flags2 & MF2_BOSSDEAD)
 		return;
 
 	mo->flags &= ~MF_MISSILE;
 
 	mo->flags |= MF_NOGRAVITY; // Dead missiles don't need to sink anymore.
-	mo->flags |= MF_NOCLIPTHING; // Dummy flag to indicate that this was already called.
+	mo->flags2 |= MF2_BOSSDEAD; // Dummy flag to indicate that this was already called.
 
 	if (mo->info->deathsound && !(mo->flags2 & MF2_DEBRIS))
 		S_StartSound(mo, mo->info->deathsound);
 
 	P_SetMobjState(mo, mo->info->deathstate);
+	mo->health = 0;
 }
 
 // P_InsideANonSolidFFloor
@@ -1059,6 +1060,8 @@ static boolean P_UseUnderwaterGravity(mobj_t *mo)
 	switch (mo->type)
 	{
 		case MT_BANANA:
+		case MT_BALLHOG:
+		case MT_BALLHOG_RETICULE_TEST:
 			return false;
 
 		case MT_GACHABOM:
@@ -1247,6 +1250,8 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 				gravityadd = (5*gravityadd)/2;
 				break;
 			case MT_BANANA:
+			case MT_BALLHOG:
+			case MT_BALLHOG_RETICULE_TEST:
 			case MT_EGGMANITEM:
 			case MT_SSMINE:
 			case MT_LANDMINE:
@@ -1255,9 +1260,9 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 			case MT_EMERALD:
 				if (mo->health > 0)
 				{
-					if (mo->extravalue2 > 0)
+					if (mo->extravalue2 > FRACUNIT)
 					{
-						gravityadd *= mo->extravalue2;
+						gravityadd = FixedMul(gravityadd, mo->extravalue2);
 					}
 
 					gravityadd = (5*gravityadd)/2;
@@ -1600,7 +1605,7 @@ static boolean P_CheckSkyHit(mobj_t *mo)
 //
 // P_XYMovement
 //
-void P_XYMovement(mobj_t *mo)
+boolean P_XYMovement(mobj_t *mo)
 {
 	player_t *player;
 	fixed_t xmove, ymove;
@@ -1626,7 +1631,7 @@ void P_XYMovement(mobj_t *mo)
 			// set in 'search new direction' state?
 			P_SetMobjState(mo, mo->info->spawnstate);
 
-			return;
+			return false;
 		}
 	}
 
@@ -1676,21 +1681,6 @@ void P_XYMovement(mobj_t *mo)
 	if (CheckForBustableBlocks && ((mo->flags & MF_PUSHABLE) || ((mo->info->flags & MF_PUSHABLE) && mo->fuse)))
 		P_PushableCheckBustables(mo);
 
-	//{ SRB2kart - Ballhogs
-	if (mo->type == MT_BALLHOG)
-	{
-		if (mo->health)
-		{
-			mo->health--;
-			if (mo->health == 0)
-			{
-				mo->scalespeed = mo->scale/12;
-				mo->destscale = 0;
-			}
-		}
-	}
-	//}
-
 	if (!P_TryMove(mo, mo->x + xmove, mo->y + ymove, true, &result)
 		&& !(P_MobjWasRemoved(mo) || mo->eflags & MFE_SPRUNG))
 	{
@@ -1700,12 +1690,18 @@ void P_XYMovement(mobj_t *mo)
 		if (LUA_HookMobjMoveBlocked(mo, g_tm.hitthing, result.line))
 		{
 			if (P_MobjWasRemoved(mo))
-				return;
+				return false;
 		}
 		else if (P_MobjWasRemoved(mo))
-			return;
+			return false;
 
 		P_PushSpecialLine(result.line, mo);
+
+		if (mo->type == MT_BALLHOG || mo->type == MT_BALLHOG_RETICULE_TEST)
+		{
+			P_ExplodeMissile(mo);
+			return false;
+		}
 
 		if (mo->flags & MF_MISSILE)
 		{
@@ -1718,7 +1714,7 @@ void P_XYMovement(mobj_t *mo)
 				// Check frontsector as well.
 
 				P_RemoveMobj(mo);
-				return;
+				return false;
 			}
 
 			// draw damage on wall
@@ -1745,7 +1741,7 @@ void P_XYMovement(mobj_t *mo)
 			// --------------------------------------------------------- SPLAT TEST
 
 			P_ExplodeMissile(mo);
-			return;
+			return false;
 		}
 		else
 		{
@@ -1807,27 +1803,20 @@ void P_XYMovement(mobj_t *mo)
 				{
 					P_SlideMove(mo, &result);
 					if (P_MobjWasRemoved(mo))
-						return;
+						return false;
 					xmove = ymove = 0;
 				}
 				else
 				{
 					P_BounceMove(mo, &result);
 					if (P_MobjWasRemoved(mo))
-						return;
+						return false;
 					xmove = ymove = 0;
 					S_StartSound(mo, mo->info->activesound);
 
-					//{ SRB2kart - Orbinaut, Ballhog
-					// Ballhog dies on contact with walls
-					if (mo->type == MT_BALLHOG)
-					{
-						S_StartSound(mo, mo->info->deathsound);
-						P_KillMobj(mo, NULL, NULL, DMG_NORMAL);
-						return;
-					}
+					//{ SRB2kart - Orbinaut
 					// Bump sparks
-					else if (mo->type == MT_ORBINAUT || mo->type == MT_GACHABOM)
+					if (mo->type == MT_ORBINAUT || mo->type == MT_GACHABOM)
 					{
 						mobj_t *fx;
 						fx = P_SpawnMobj(mo->x, mo->y, mo->z, MT_BUMP);
@@ -1886,7 +1875,7 @@ void P_XYMovement(mobj_t *mo)
 		moved = true;
 
 	if (P_MobjWasRemoved(mo)) // MF_SPECIAL touched a player! O_o;;
-		return;
+		return false;
 
 	if (moved == true)
 	{
@@ -1963,29 +1952,30 @@ void P_XYMovement(mobj_t *mo)
 	P_CheckGravity(mo, false);
 
 	if (mo->flags & MF_NOCLIPHEIGHT)
-		return; // no frictions for objects that can pass through floors
+		return moved; // no frictions for objects that can pass through floors
 
 	if (mo->flags & MF_MISSILE || mo->flags2 & MF2_SKULLFLY)
-		return; // no friction for missiles ever
+		return moved; // no friction for missiles ever
 
 	if ((mo->type == MT_BIGTUMBLEWEED || mo->type == MT_LITTLETUMBLEWEED)
 			&& (mo->standingslope && abs(mo->standingslope->zdelta) > FRACUNIT>>8)) // Special exception for tumbleweeds on slopes
-		return;
+		return moved;
 
 	//{ SRB2kart stuff
-	if (mo->type == MT_FLINGRING || mo->type == MT_BALLHOG || mo->type == MT_BUBBLESHIELDTRAP)
-		return;
+	if (mo->type == MT_FLINGRING || mo->type == MT_BALLHOG || mo->type == MT_BALLHOG_RETICULE_TEST || mo->type == MT_BUBBLESHIELDTRAP)
+		return moved;
 
 	if (player && (player->spinouttimer && !player->wipeoutslow)
 		&& player->speed <= FixedDiv(20*mapobjectscale, player->offroad + FRACUNIT))
-		return;
+		return moved;
 	//}
 
 	if (((!(mo->eflags & MFE_VERTICALFLIP) && (mo->momz > 0 || mo->z > mo->floorz)) || (mo->eflags & MFE_VERTICALFLIP && (mo->momz < 0 || mo->z+mo->height < mo->ceilingz)))
 		&& !(player && player->carry == CR_SLIDING))
-		return; // no friction when airborne
+		return moved; // no friction when airborne
 
 	P_XYFriction(mo, oldx, oldy);
+	return moved;
 }
 
 void P_RingXYMovement(mobj_t *mo)
@@ -2266,6 +2256,7 @@ boolean P_ZMovement(mobj_t *mo)
 		mo->eflags &= ~MFE_APPLYPMOMZ;
 	}
 	mo->z += mo->momz;
+
 	onground = P_IsObjectOnGround(mo);
 
 	if (mo->standingslope)
@@ -2328,6 +2319,14 @@ boolean P_ZMovement(mobj_t *mo)
 				return false;
 			}
 			break;
+		case MT_BALLHOG:
+		case MT_BALLHOG_RETICULE_TEST:
+			if (mo->z <= mo->floorz || mo->z + mo->height >= mo->ceilingz)
+			{
+				P_ExplodeMissile(mo);
+				return false;
+			}
+			break;
 		default:
 			// SRB2kart stuff that should die in pits
 			// Shouldn't stop moving along the Z if there's no speed though!
@@ -2373,7 +2372,6 @@ boolean P_ZMovement(mobj_t *mo)
 			else if (delta > 0 && dist < (delta*3))
 				mo->z += FixedMul(FLOATSPEED, mo->scale);
 		}
-
 	}
 
 	// clip movement
@@ -2615,7 +2613,7 @@ boolean P_ZMovement(mobj_t *mo)
 
 	if (((mo->z + mo->height > mo->ceilingz && !(mo->eflags & MFE_VERTICALFLIP))
 		|| (mo->z < mo->floorz && mo->eflags & MFE_VERTICALFLIP))
-	&& !(mo->flags & MF_NOCLIPHEIGHT))
+		&& !(mo->flags & MF_NOCLIPHEIGHT))
 	{
 		if (mo->eflags & MFE_VERTICALFLIP)
 			mo->z = mo->floorz;
@@ -10364,8 +10362,8 @@ void P_MobjThinker(mobj_t *mobj)
 		if (mobj->health > 0 && P_MobjTouchingSectorSpecialFlag(mobj, SSF_DELETEITEMS))
 		{
 			if (mobj->type == MT_SSMINE
-			|| mobj->type == MT_BUBBLESHIELDTRAP
-			|| mobj->type == MT_BALLHOG)
+				|| mobj->type == MT_BUBBLESHIELDTRAP
+				|| mobj->type == MT_BALLHOG)
 			{
 				S_StartSound(mobj, mobj->info->deathsound);
 				P_KillMobj(mobj, NULL, NULL, DMG_NORMAL);
@@ -10639,6 +10637,18 @@ void P_SceneryThinker(mobj_t *mobj)
 		Obj_AudienceThink(mobj, !!(mobj->flags2 & MF2_AMBUSH), !!(mobj->flags2 & MF2_DONTRESPAWN));
 		if (P_MobjWasRemoved(mobj))
 			return;
+	}
+
+	if (mobj->type == MT_BALLHOG_RETICULE)
+	{
+		if (mobj->tics & 1)
+		{
+			mobj->renderflags &= ~RF_DONTDRAW;
+		}
+		else
+		{
+			mobj->renderflags |= RF_DONTDRAW;
+		}
 	}
 }
 

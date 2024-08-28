@@ -1922,6 +1922,7 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_BALLHOGBOOM14",
 	"S_BALLHOGBOOM15",
 	"S_BALLHOGBOOM16",
+	"S_BALLHOG_RETICULE",
 
 	// Self-Propelled Bomb - just an explosion for now...
 	"S_SPB1",
@@ -3585,6 +3586,8 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_BALLHOG", // Ballhog
 	"MT_BALLHOGBOOM",
+	"MT_BALLHOG_RETICULE",
+	"MT_BALLHOG_RETICULE_TEST",
 
 	"MT_SPB", // Self-Propelled Bomb
 	"MT_SPBEXPLOSION",

@@ -556,7 +556,7 @@ UINT8 K_ItemResultToAmount(SINT8 getitem, const itemroulette_t *roulette)
 			return 4;
 
 		case KITEM_BALLHOG: // Not a special result, but has a special amount
-			return 5;
+			return 7;
 
 		case KITEM_SUPERRING:
 			if (roulette && roulette->popcorn)
@@ -3157,7 +3157,6 @@ boolean K_WaterSkip(mobj_t *mobj)
 
 		case MT_ORBINAUT:
 		case MT_JAWZ:
-		case MT_BALLHOG:
 		{
 			// Allow
 			break;
@@ -5473,9 +5472,25 @@ void K_SpawnLandMineExplosion(mobj_t *source, skincolornum_t color, tic_t delay)
 	}
 }
 
-fixed_t K_ItemScaleForPlayer(player_t *player)
+fixed_t K_GetItemScaleConst(fixed_t scale)
 {
-	switch (player->itemscale)
+	if (scale >= FixedMul(GROW_PHYSICS_SCALE, mapobjectscale))
+	{
+		return ITEMSCALE_GROW;
+	}
+	else if (scale <= FixedMul(SHRINK_PHYSICS_SCALE, mapobjectscale))
+	{
+		return ITEMSCALE_SHRINK;
+	}
+	else
+	{
+		return ITEMSCALE_NORMAL;
+	}
+}
+
+fixed_t K_ItemScaleFromConst(UINT8 item_scale_const)
+{
+	switch (item_scale_const)
 	{
 		case ITEMSCALE_GROW:
 			return FixedMul(GROW_SCALE, mapobjectscale);
@@ -5486,6 +5501,11 @@ fixed_t K_ItemScaleForPlayer(player_t *player)
 		default:
 			return mapobjectscale;
 	}
+}
+
+fixed_t K_ItemScaleForPlayer(player_t *player)
+{
+	return K_ItemScaleFromConst(player->itemscale);
 }
 
 fixed_t K_DefaultPlayerRadius(player_t *player)
@@ -5501,7 +5521,7 @@ fixed_t K_DefaultPlayerRadius(player_t *player)
 			player->mo->info->radius);
 }
 
-static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, INT32 flags2, fixed_t speed, SINT8 dir)
+static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, INT32 flags2, fixed_t speed, fixed_t dir)
 {
 	mobj_t *th;
 	fixed_t x, y, z;
@@ -5555,7 +5575,7 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 		finalscale = source->scale;
 	}
 
-	if (dir == -1)
+	if (dir < 0)
 	{
 		fixed_t nerf = FRACUNIT;
 
@@ -5567,10 +5587,6 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 				// These items orbit in place.
 				// Look for a tight radius...
 				nerf = FRACUNIT/4;
-				break;
-
-			case MT_BALLHOG:
-				nerf = FRACUNIT/8;
 				break;
 
 			default:
@@ -5630,11 +5646,6 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 			th->destscale = (5*th->destscale)>>2;
 			S_StartSound(th, sfx_s3kbfl);
 			S_StartSound(th, sfx_cdfm35);
-			break;
-		case MT_BALLHOG:
-			// Contra spread shot scale up
-			th->destscale = th->destscale << 1;
-			th->scalespeed = abs(th->destscale - th->scale) / (2*TICRATE);
 			break;
 		case MT_GARDENTOP:
 			th->movefactor = finalspeed;
@@ -6488,10 +6499,10 @@ static mobj_t *K_FindLastTrailMobj(player_t *player)
 	return trail;
 }
 
-mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, INT32 defaultDir, INT32 altthrow, angle_t angleOffset)
+mobj_t *K_ThrowKartItemEx(player_t *player, boolean missile, mobjtype_t mapthing, INT32 defaultDir, INT32 altthrow, angle_t angleOffset, fixed_t tossX, fixed_t tossY)
 {
 	mobj_t *mo;
-	INT32 dir;
+	fixed_t dir = FRACUNIT;
 	fixed_t PROJSPEED;
 	angle_t newangle;
 	fixed_t newx, newy, newz;
@@ -6504,36 +6515,29 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 	{
 		if (altthrow == 2) // Kitchen sink throwing
 		{
-#if 0
 			if (player->throwdir == 1)
-				dir = 3;
+				dir = 2 * FRACUNIT;
 			else if (player->throwdir == -1)
-				dir = 1;
+				dir = FRACUNIT / 2;
 			else
-				dir = 2;
-#else
-			if (player->throwdir == 1)
-				dir = 2;
-			else
-				dir = 1;
-#endif
+				dir = FRACUNIT;
 		}
 		else
 		{
 			if (player->throwdir == 1)
-				dir = 2;
+				dir = 2 * FRACUNIT;
 			else if (player->throwdir == -1)
-				dir = -1;
+				dir = -FRACUNIT;
 			else
-				dir = 1;
+				dir = FRACUNIT;
 		}
 	}
 	else
 	{
 		if (player->throwdir != 0)
-			dir = player->throwdir;
+			dir = player->throwdir * FRACUNIT;
 		else
-			dir = defaultDir;
+			dir = defaultDir * FRACUNIT;
 	}
 
 	if (mapthing == MT_GACHABOM && dir > 0)
@@ -6604,16 +6608,34 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 
 			S_StartSound(player->mo, mo->info->seesound);
 
-			{
-				angle_t fa = player->mo->angle>>ANGLETOFINESHIFT;
-				fixed_t HEIGHT = ((20 + (dir*10)) * FRACUNIT) + (FixedDiv(player->mo->momz, mapobjectscale)*P_MobjFlip(player->mo)); // Also intentionally not player scale
-
-				P_SetObjectMomZ(mo, HEIGHT, false);
-				mo->momx = player->mo->momx + FixedMul(FINECOSINE(fa), PROJSPEED*dir);
-				mo->momy = player->mo->momy + FixedMul(FINESINE(fa), PROJSPEED*dir);
-			}
-
 			mo->extravalue2 = dir;
+
+			fixed_t HEIGHT = ((20 * FRACUNIT) + (dir * 10)) + (FixedDiv(player->mo->momz, mapobjectscale) * P_MobjFlip(player->mo)); // Also intentionally not player scale
+			P_SetObjectMomZ(mo, HEIGHT, false);
+
+			angle_t fa = (player->mo->angle >> ANGLETOFINESHIFT);
+			mo->momx = player->mo->momx + FixedMul(FINECOSINE(fa), FixedMul(PROJSPEED, dir));
+			mo->momy = player->mo->momy + FixedMul(  FINESINE(fa), FixedMul(PROJSPEED, dir));
+
+			if (tossX != 0 || tossY != 0)
+			{
+				fixed_t g = FixedMul(5 * DEFAULT_GRAVITY / 2, mapobjectscale); // P_GetMobjGravity does not work here??
+				if (dir > FRACUNIT)
+				{
+					g = FixedMul(g, dir);
+				}
+
+				if (g > 0)
+				{
+					const INT32 air_time = (FixedDiv(mo->momz * P_MobjFlip(mo), g) * 2) / FRACUNIT;
+
+					if (air_time > 0)
+					{
+						mo->momx += FixedMul(tossX, finalscale) / air_time;
+						mo->momy += FixedMul(tossY, finalscale) / air_time;
+					}
+				}
+			}
 
 			if (mo->eflags & MFE_UNDERWATER)
 				mo->momz = (117 * mo->momz) / 200;
@@ -6621,15 +6643,22 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 			P_SetScale(mo, finalscale);
 			mo->destscale = finalscale;
 
-			if (mapthing == MT_BANANA)
+			switch (mapthing)
 			{
-				mo->angle = FixedAngle(P_RandomRange(PR_DECORATION, -180, 180) << FRACBITS);
-				mo->rollangle = FixedAngle(P_RandomRange(PR_DECORATION, -180, 180) << FRACBITS);
-			}
-
-			if (mapthing == MT_GACHABOM)
-			{
-				Obj_GachaBomThrown(mo, mo->radius, dir);
+				case MT_BANANA:
+					mo->angle = FixedAngle(P_RandomRange(PR_DECORATION, -180, 180) << FRACBITS);
+					mo->rollangle = FixedAngle(P_RandomRange(PR_DECORATION, -180, 180) << FRACBITS);
+					break;
+				case MT_GACHABOM:
+					Obj_GachaBomThrown(mo, mo->radius, dir);
+					break;
+				case MT_BALLHOG:
+					// Contra spread shot scale up
+					mo->destscale = mo->destscale << 1;
+					mo->scalespeed = abs(mo->destscale - mo->scale) / (2*TICRATE);
+					break;
+				default:
+					break;
 			}
 
 			// this is the small graphic effect that plops in you when you throw an item:
@@ -6728,12 +6757,17 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 	}
 
 	// Missiles set as traps inflict a nocollide stumble
-	if (dir < 0 && (mapthing == MT_ORBINAUT || mapthing == MT_ORBINAUT_SHIELD || mapthing == MT_JAWZ || mapthing == MT_JAWZ_SHIELD || mapthing == MT_BALLHOG || mapthing == MT_GACHABOM))
+	if (dir < 0 && (mapthing == MT_ORBINAUT || mapthing == MT_ORBINAUT_SHIELD || mapthing == MT_JAWZ || mapthing == MT_JAWZ_SHIELD || mapthing == MT_GACHABOM))
 	{
 		mo->cvmem = 1;
 	}
 
 	return mo;
+}
+
+mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, INT32 defaultDir, INT32 altthrow, angle_t angleOffset)
+{
+	return K_ThrowKartItemEx(player, missile, mapthing, defaultDir, altthrow, angleOffset, 0, 0);
 }
 
 void K_PuntMine(mobj_t *origMine, mobj_t *punter)
@@ -12753,19 +12787,7 @@ static void K_trickPanelTimingVisual(player_t *player, fixed_t momz)
 void K_SetItemOut(player_t *player)
 {
 	player->itemflags |= IF_ITEMOUT;
-
-	if (player->mo->scale >= FixedMul(GROW_PHYSICS_SCALE, mapobjectscale))
-	{
-		player->itemscale = ITEMSCALE_GROW;
-	}
-	else if (player->mo->scale <= FixedMul(SHRINK_PHYSICS_SCALE, mapobjectscale))
-	{
-		player->itemscale = ITEMSCALE_SHRINK;
-	}
-	else
-	{
-		player->itemscale = ITEMSCALE_NORMAL;
-	}
+	player->itemscale = K_GetItemScaleConst(player->mo->scale);
 }
 
 void K_UnsetItemOut(player_t *player)
@@ -13424,7 +13446,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						case KITEM_BALLHOG:
 							if (!HOLDING_ITEM && NO_HYUDORO)
 							{
-								INT32 ballhogmax = (player->itemamount) * BALLHOGINCREMENT;
+								INT32 ballhogmax = player->itemamount * BALLHOGINCREMENT;
 
 								// This construct looks a little goofy, but we're basically just
 								// trying to prevent rapid taps from restarting a charge, while
@@ -13437,74 +13459,59 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								if (player->ballhogcharge == 0)
 									player->ballhogtap = false;
 
-								boolean realcharge = (cmd->buttons & BT_ATTACK) && (player->itemflags & IF_HOLDREADY) && (player->ballhogcharge < ballhogmax);
+								boolean realcharge = (cmd->buttons & BT_ATTACK) && (player->itemflags & IF_HOLDREADY) /*&& (player->ballhogcharge < ballhogmax)*/;
 								if ((realcharge && !player->ballhogtap) || (player->ballhogtap && player->ballhogcharge < BALLHOGINCREMENT))
 								{
-									player->ballhogcharge++;
-									if (player->ballhogcharge % BALLHOGINCREMENT == 0)
+									if (player->ballhogcharge < ballhogmax)
 									{
-										sfxenum_t hogsound[] =
+										player->ballhogcharge++;
+
+										if (player->ballhogcharge % BALLHOGINCREMENT == 0)
 										{
-											sfx_bhog00,
-											sfx_bhog01,
-											sfx_bhog02,
-											sfx_bhog03,
-											sfx_bhog04,
-											sfx_bhog05
-										};
-										UINT8 chargesound = max(1, min(player->ballhogcharge / BALLHOGINCREMENT, 6));
-										S_StartSound(player->mo, hogsound[chargesound-1]);
+											sfxenum_t hogsound[] =
+											{
+												sfx_bhog00,
+												sfx_bhog01,
+												sfx_bhog02,
+												sfx_bhog03,
+												sfx_bhog04,
+												sfx_bhog05
+											};
+											UINT8 chargesound = max(1, min(player->ballhogcharge / BALLHOGINCREMENT, 6));
+											S_StartSound(player->mo, hogsound[chargesound-1]);
+										}
 									}
 								}
 								else
 								{
-									if (cmd->buttons & BT_ATTACK)
-									{
-										player->itemflags &= ~IF_HOLDREADY;
-									}
-									else
-									{
-										player->itemflags |= IF_HOLDREADY;
-									}
-
 									if (player->ballhogcharge > 0)
 									{
-										INT32 numhogs = min((player->ballhogcharge / BALLHOGINCREMENT), player->itemamount);
-
-										K_SetItemOut(player); // need this to set itemscale
-
-										if (numhogs <= 0)
+										INT32 numhogs = K_HogChargeToHogCount(player->ballhogcharge, player->itemamount);
+										if (numhogs > 0) // no tapfire scams
 										{
-											// no tapfire scams
-										}
-										else if (numhogs == 1)
-										{
-											player->itemamount--;
-											K_ThrowKartItem(player, true, MT_BALLHOG, 1, 0, 0);
-											K_PlayAttackTaunt(player->mo);
-										}
-										else
-										{
-											angle_t cone = 0x01800000 * (numhogs-1);
-											angle_t offsetAmt = (cone * 2) / (numhogs-1);
-											angle_t angleOffset = cone;
-											INT32 i;
+											K_SetItemOut(player); // need this to set itemscale
 
 											player->itemamount -= numhogs;
-
-											for (i = 0; i < numhogs; i++)
-											{
-												K_ThrowKartItem(player, true, MT_BALLHOG, 1, 0, angleOffset);
-												angleOffset -= offsetAmt;
-											}
-
 											K_PlayAttackTaunt(player->mo);
+											K_DoBallhogAttack(player, numhogs);
+
+											K_UnsetItemOut(player);
 										}
 
-										K_UnsetItemOut(player);
 										player->ballhogcharge = 0;
 										player->itemflags &= ~IF_HOLDREADY;
 										player->botvars.itemconfirm = 0;
+									}
+									else
+									{
+										if (cmd->buttons & BT_ATTACK)
+										{
+											player->itemflags &= ~IF_HOLDREADY;
+										}
+										else
+										{
+											player->itemflags |= IF_HOLDREADY;
+										}
 									}
 								}
 							}
@@ -14379,6 +14386,12 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 	Obj_PlayerBulbThink(player);
 
+	UINT8 hog_count = 0;
+	if (player->itemtype == KITEM_BALLHOG)
+	{
+		hog_count = K_HogChargeToHogCount(player->ballhogcharge, player->itemamount);
+	}
+	K_UpdateBallhogReticules(player, hog_count, false);
 }
 
 void K_CheckSpectateStatus(boolean considermapreset)

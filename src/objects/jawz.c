@@ -253,7 +253,7 @@ void Obj_JawzThink(mobj_t *th)
 	}
 }
 
-void Obj_JawzThrown(mobj_t *th, fixed_t finalSpeed, SINT8 dir)
+void Obj_JawzThrown(mobj_t *th, fixed_t finalSpeed, fixed_t dir)
 {
 	INT32 lastTarg = -1;
 	player_t *owner = NULL;
@@ -270,7 +270,7 @@ void Obj_JawzThrown(mobj_t *th, fixed_t finalSpeed, SINT8 dir)
 		jawz_retcolor(th) = SKINCOLOR_KETCHUP;
 	}
 
-	if (dir == -1)
+	if (dir < 0)
 	{
 		// Thrown backwards, init self-chase
 		P_SetTarget(&jawz_chase(th), jawz_owner(th));

@@ -787,6 +787,7 @@ struct player_t
 
 	UINT16 ballhogcharge;	// Ballhog charge up -- the higher this value, the more projectiles
 	boolean ballhogtap;		// Ballhog released during charge: used to allow semirapid tapfire
+	mobj_t *ballhogreticule;	// First ballhog reticule estimation object
 
 	UINT16 hyudorotimer;	// Duration of the Hyudoro offroad effect itself
 	SINT8 stealingtimer;	// if >0 you are stealing, if <0 you are being stolen from
