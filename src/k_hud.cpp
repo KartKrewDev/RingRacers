@@ -2014,9 +2014,6 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 	// TIME_X = BASEVIDWIDTH-124;	// 196
 	// TIME_Y = 6;					//   6
 
-	if (Playing() && !(modeattacking) && !(gametyperules & GTR_TIMELIMIT))
-		return;
-
 	INT32 jitter = 0;
 
 	drawtime = K_TranslateTimer(drawtime, mode, &jitter);
@@ -6491,7 +6488,8 @@ void K_drawKartHUD(void)
 				}
 			}
 
-			K_drawKartTimestamp(realtime, TIME_X, TIME_Y + (ta ? 2 : 0), flags, 0);
+			if (modeattacking || (gametyperules & GTR_TIMELIMIT))
+				K_drawKartTimestamp(realtime, TIME_X, TIME_Y + (ta ? 2 : 0), flags, 0);
 
 			if (modeattacking)
 			{
