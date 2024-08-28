@@ -1515,7 +1515,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 			permit[KITEM_SUPERRING] = true;
 			deltas[KITEM_SUPERRING] = 0;
 			canfiltersuperring = false;
-			roulette->popcorn = (player->position > 1) ? max(1, targetpower/humanscaler/4) : 1;
+			roulette->popcorn = (player->position > 1) ? max(1, targetpower/humanscaler/3) : 1;
 		}
 	}
 
