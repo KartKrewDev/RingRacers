@@ -68,6 +68,11 @@ static tic_t stoptimer;
 
 static boolean keypressed = false;
 
+#define SKIPHISTORYSIZE 32
+static UINT8 skipinputindex = 0;
+static UINT8 skipinputhistory[SKIPHISTORYSIZE];
+static UINT8 skiptype = 0;
+
 static tic_t attractcountdown; // Countdown until attract demo ends
 static boolean attractcredit; // Show music credit once attract demo begins
 boolean g_attractnowipe; // Do not wipe on return to title screen
@@ -835,6 +840,13 @@ void F_IntroDrawer(void)
 	F_IntroDrawScene();
 }
 
+static void ResetSkipSequences(void)
+{
+	skiptype = 0;
+	skipinputindex = 0;
+	memset(skipinputhistory, 0, sizeof(skipinputhistory));
+}
+
 //
 // F_IntroTicker
 //
@@ -871,6 +883,41 @@ void F_IntroTicker(void)
 
 	if (keypressed)
 		keypressed = false;
+
+	if (skiptype == 2) // Test Run
+	{
+		ResetSkipSequences();
+		if (M_MapLocked(1))
+		{
+			G_SetUsedCheats();
+		}
+
+		D_MapChange(1, GT_RACE, (cv_kartencore.value == 1), true, 0, false, false);
+		return;
+	}
+
+	if (skiptype == 1) // Online
+	{
+		ResetSkipSequences();
+		M_StartControlPanel();
+		currentMenu = &PLAY_MP_OptSelectDef;
+		return;
+	}
+
+	if (skiptype == 3) // Quick Race
+	{
+		ResetSkipSequences();
+		CV_StealthSetValue(&cv_kartbot, 9);
+		CV_StealthSetValue(&cv_maxplayers, 8);
+		D_MapChange(G_RandMap(TOL_RACE, UINT16_MAX-1, true, false, NULL), GT_RACE, (cv_kartencore.value == 1), true, 0, false, false);
+		return;
+	}
+
+	if (skiptype == 4) // Nice Try
+	{
+		ResetSkipSequences();
+		S_StartSound(NULL, sfx_supflk);
+	}
 
 	if (doskip && disclaimerskippable)
 	{
@@ -938,6 +985,60 @@ void F_IntroTicker(void)
 		animtimer--;
 }
 
+// Scan through intro input history looking for skip sequences.
+// Messy and stupid, but input history is required for this to "feel right".
+static void AdvanceSkipSequences(UINT8 input)
+{
+#ifndef DEVELOP
+	if (intro_scenenum != INTROSCENE_DISCLAIMER)
+		return;
+#endif
+
+	// add input to history
+	skipinputhistory[skipinputindex] = input;
+
+	// we're going to walk backwards from the end of the cheat because it's slightly
+	// easier for me to reaosn about
+	// get an index we can naively subtract+mod without dealing with modulo negative horseshit
+	UINT8 mi = (skipinputindex + SKIPHISTORYSIZE);
+
+	// I swear to god there must be a better way to do this,
+	// but SO says you can't get array length from a pointer to the array
+	// because C is a defective dinosaur language for assholes
+#ifdef DEVELOP
+	UINT8 s2cheat[] = {1, 1, 1};
+	UINT8 s3cheat[] = {2, 2, 2};
+	UINT8 s3kcheat[] = {3, 3, 3};
+#else
+	UINT8 s2cheat[] = {1, 1, 1, 3, 3, 3, 1};
+	UINT8 s3cheat[] = {1, 1, 3, 3, 1, 1, 1, 1};
+	UINT8 s3kcheat[] = {4, 4, 4, 2, 2, 2, 1, 1, 1};
+#endif
+	UINT8 nicetry[] = {1, 1, 3, 3, 4, 2, 4, 2};
+	UINT8 *cheats[4] = {s2cheat, s3cheat, s3kcheat, nicetry};
+	UINT8 cheatlengths[4] = {sizeof(s2cheat), sizeof(s3cheat), sizeof(s3kcheat), sizeof(nicetry)};
+
+	for (UINT8 i = 0; i < sizeof(&cheats); i++) 	// for each cheat...
+	{
+		UINT8 cheatsize = cheatlengths[i];
+		boolean matched = true;
+
+		for (UINT8 j = 0; j < cheatsize; j++) // start at our input history index, and walk backwards until an input doesn't match
+		{
+			if (skipinputhistory[(mi-j)%SKIPHISTORYSIZE] != cheats[i][cheatsize-j-1])
+			{
+				matched = false;
+				break;
+			}
+		}
+
+		if (matched) // if we made it through the whole cheat without a mismatch, we are now gaming
+			skiptype = i+1;
+	}
+
+	skipinputindex++;
+}
+
 //
 // F_IntroResponder
 //
@@ -987,6 +1088,26 @@ boolean F_IntroResponder(event_t *event)
 
 		if (event->type != ev_keydown && key != 301)
 			return false;
+	}
+
+	// Quick skips for development/testing. See F_IntroTicker.
+	if (!demo.playback)
+	{
+		switch(key)
+		{
+			case KEY_UPARROW:
+				AdvanceSkipSequences(1);
+				break;
+			case KEY_DOWNARROW:
+				AdvanceSkipSequences(3);
+				break;
+			case KEY_RIGHTARROW:
+				AdvanceSkipSequences(2);
+				break;
+			case KEY_LEFTARROW:
+				AdvanceSkipSequences(4);
+				break;					
+		}
 	}
 
 	if (key != 27 && key != KEY_ENTER && key != KEY_SPACE && key != KEY_BACKSPACE)
