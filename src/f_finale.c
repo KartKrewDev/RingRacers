@@ -917,6 +917,9 @@ void F_IntroTicker(void)
 	{
 		ResetSkipSequences();
 		S_StartSound(NULL, sfx_supflk);
+		S_StartSound(NULL, sfx_supflk);
+		S_StartSound(NULL, sfx_supflk);
+		S_StartSound(NULL, sfx_supflk);
 	}
 
 	if (doskip && disclaimerskippable)
