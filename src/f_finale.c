@@ -1022,7 +1022,7 @@ static void AdvanceSkipSequences(UINT8 input)
 	UINT8 *cheats[4] = {s2cheat, s3cheat, s3kcheat, nicetry};
 	UINT8 cheatlengths[4] = {sizeof(s2cheat), sizeof(s3cheat), sizeof(s3kcheat), sizeof(nicetry)};
 
-	for (UINT8 i = 0; i < sizeof(&cheats); i++) 	// for each cheat...
+	for (UINT8 i = 0; i < 4; i++) 	// for each cheat...
 	{
 		UINT8 cheatsize = cheatlengths[i];
 		boolean matched = true;
