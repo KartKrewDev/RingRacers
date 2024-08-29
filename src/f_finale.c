@@ -900,6 +900,7 @@ void F_IntroTicker(void)
 	{
 		ResetSkipSequences();
 		M_StartControlPanel();
+		CV_StealthSetValue(&cv_advertise, 1);
 		currentMenu = &PLAY_MP_OptSelectDef;
 		return;
 	}
