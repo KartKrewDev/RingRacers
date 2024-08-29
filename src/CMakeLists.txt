@@ -164,6 +164,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	k_bans.cpp
 	k_endcam.cpp
 	k_credits.cpp
+	k_modinfo.cpp
 	music.cpp
 	music_manager.cpp
 	sanitize.cpp
