@@ -4140,6 +4140,12 @@ void K_AwardPlayerRings(player_t *player, UINT16 rings, boolean overload)
 	}
 }
 
+void K_CheckpointCrossAward(player_t *player)
+{
+	player->exp += K_GetExpAdjustment(player);
+	K_AwardPlayerRings(player, (player->bot ? 20 : 10), true);
+}
+
 boolean K_Overdrive(player_t *player)
 {
 	if (player->amps == 0)
