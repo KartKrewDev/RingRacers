@@ -1433,7 +1433,11 @@ static void K_BotItemRings(const player_t *player, ticcmd_t *cmd)
 {
 	ZoneScoped;
 
-	INT32 saferingsval = 16 - K_GetKartRingPower(player, false) - (player->amps/2);
+	INT32 overdrivepreference = player->amps/3;
+	if (player->position <= 1)
+		overdrivepreference = 0;
+
+	INT32 saferingsval = 16 - K_GetKartRingPower(player, false) - overdrivepreference;
 
 	if (leveltime < starttime)
 	{
