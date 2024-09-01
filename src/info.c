@@ -839,6 +839,7 @@ playersprite_t spr2defaults[NUMPLAYERSPRITES] = {
 	SPR2_SIGN, // SPR2_SSIG
 	0, // SPR2_XTRA
 	0, // SPR2_TALK
+	0, // SPR2_DKRT
 };
 
 // Doesn't work with g++, needs actionf_p1 (don't modify this comment)
@@ -902,7 +903,7 @@ state_t states[NUMSTATES] =
 	{SPR_NULL, 0, -1, {NULL}, 0, 0, S_OBJPLACE_DUMMY}, // S_OBJPLACE_DUMMY
 
 	{SPR_KART, 0, -1, {NULL}, 0, 0, S_NULL}, // S_KART_LEFTOVER
-	{SPR_DIEF, 0, -1, {NULL}, 0, 0, S_NULL}, // S_KART_LEFTOVER_NOTIRES
+	{SPR_DIEF, SPR2_DKRT, -1, {NULL}, 0, 0, S_NULL}, // S_KART_LEFTOVER_NOTIRES
 
 	{SPR_TIRE, 0, -1, {NULL}, 0, 0, S_NULL}, // S_KART_TIRE1
 	{SPR_TIRE, 1, -1, {NULL}, 0, 0, S_NULL}, // S_KART_TIRE2

@@ -1195,7 +1195,7 @@ static void HWR_GetBlendedTexture(patch_t *patch, patch_t *blendpatch, INT32 ski
 static boolean HWR_AllowModel(mobj_t *mobj)
 {
 	// Don't allow rendering of model for these.
-	if (mobj->sprite2 == SPR2_XTRA || mobj->sprite2 == SPR2_SIGN || mobj->sprite2 == SPR2_SIGL || mobj->sprite2 == SPR2_SSIG || mobj->sprite2 == SPR2_TALK)
+	if (mobj->sprite2 == SPR2_XTRA || mobj->sprite2 == SPR2_SIGN || mobj->sprite2 == SPR2_SIGL || mobj->sprite2 == SPR2_SSIG || mobj->sprite2 == SPR2_TALK || mobj->sprite2 == SPR2_DKRT) // TODO: Remove SPR2_DKRT from this list of clauses once player-specific destroyed karts have an associated model
 		return false;
 
 	// Otherwise, render the model.
