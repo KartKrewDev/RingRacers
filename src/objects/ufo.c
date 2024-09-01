@@ -1160,13 +1160,13 @@ void Obj_UFOPieceThink(mobj_t *piece)
 		case UFO_PIECE_TYPE_GLASS:
 		{
 			// Flicker glass cracks for visibility
-			if (piece->frame)
+			if (piece->frame == FF_SEMIBRIGHT)
 			{
-				piece->frame = 0;
+				piece->frame = ufo_piece_glass_flickerframe(piece);
 			}
 			else
 			{
-				piece->frame = ufo_piece_glass_flickerframe(piece);
+				piece->frame = FF_SEMIBRIGHT;
 			}
 
 			piece->destscale = 5 * ufo->destscale / 3;
