@@ -707,6 +707,14 @@ void K_InitNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, play
 	g_midVote.variable = variable;
 	g_midVote.victim = victim;
 
+	if (server || IsPlayerAdmin(consoleplayer))
+	{
+		if (victim)
+			HU_AddChatText(va("%s called a vote to %s %s\n", player_names[caller-players], g_midVoteTypeDefs[type].name, player_names[victim-players]), true);
+		else
+			HU_AddChatText(va("%s called a vote to %s\n", player_names[caller-players], g_midVoteTypeDefs[type].name), true);
+	}
+
 	S_StartSound(NULL, sfx_cdfm67);
 
 	g_midVote.votes[caller - players] = true;
