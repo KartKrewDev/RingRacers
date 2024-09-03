@@ -2999,11 +2999,15 @@ static void K_drawKartLaps(void)
 
 	if (inDuel)
 	{
-		UINT8 flashflag = (leveltime % 2 && abs(stplyr->duelscore >= 2)) ? V_TRANSLUCENT : 0;
+		UINT32 flashflag = (stplyr->duelscore >= 0) ? V_BLUEMAP : V_REDMAP;
+		if (leveltime % 2)
+			if (abs(stplyr->duelscore) >= 2)
+				flashflag = V_YELLOWMAP;
+
 		if (stplyr->duelscore >= 0)
-			V_DrawCenteredString(BASEVIDWIDTH/2, 5, V_BLUEMAP|flashflag, va("+%d", stplyr->duelscore));
+			V_DrawCenteredString(BASEVIDWIDTH/2, 5, flashflag, va("+%d", stplyr->duelscore));
 		else
-			V_DrawCenteredString(BASEVIDWIDTH/2, 5, V_REDMAP|flashflag, va("%d", stplyr->duelscore));
+			V_DrawCenteredString(BASEVIDWIDTH/2, 5, flashflag, va("%d", stplyr->duelscore));
 	}
 
 	if (numlaps != 1)

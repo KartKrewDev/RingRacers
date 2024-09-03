@@ -145,6 +145,7 @@ void K_TimerReset(void)
 	numbulbs = 1;
 	inDuel = rainbowstartavailable = false;
 	linecrossed = 0;
+	extralaps = 0;
 	timelimitintics = extratimeintics = secretextratime = 0;
 	g_pointlimit = 0;
 }
@@ -10684,7 +10685,7 @@ static void K_UpdateDistanceFromFinishLine(player_t *const player)
 				const mapheader_t *mapheader = mapheaderinfo[gamemap - 1];
 				if ((mapheader->levelflags & LF_SECTIONRACE) == 0U)
 				{
-					const UINT8 numfulllapsleft = ((UINT8)numlaps - player->laps) / mapheader->lapspersection;
+					const UINT8 numfulllapsleft = ((UINT8)numlaps - player->laps) / mapheader->lapspersection + extralaps;
 					player->distancetofinish += numfulllapsleft * K_GetCircuitLength();
 				}
 			}
