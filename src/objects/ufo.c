@@ -45,6 +45,7 @@
 
 #define UFO_NUMARMS (3)
 #define UFO_ARMDELTA (ANGLE_MAX / UFO_NUMARMS)
+#define UFO_START_GLASSFRAMES (1)
 #define UFO_NUM_GLASSFRAMES (10)
 
 #define ufo_emeraldnum(o) ((o)->cvmem)
@@ -706,7 +707,7 @@ set_flickerframe (mobj_t *ufo, mobj_t *piece)
 		}
 	}
 
-	healthcalc |= FF_FULLBRIGHT;
+	healthcalc = (healthcalc|FF_FULLBRIGHT) + UFO_START_GLASSFRAMES;
 
 	ufo_piece_glass_flickerframe(piece) = healthcalc;
 	piece->frame = healthcalc;
