@@ -45,6 +45,8 @@
 
 #define UFO_NUMARMS (3)
 #define UFO_ARMDELTA (ANGLE_MAX / UFO_NUMARMS)
+#define UFO_START_GLASSFRAMES (1)
+#define UFO_NUM_GLASSFRAMES (10)
 
 #define ufo_emeraldnum(o) ((o)->cvmem)
 #define ufo_waypoint(o) ((o)->extravalue1)
@@ -55,6 +57,8 @@
 #define ufo_pieces(o) ((o)->hnext)
 
 #define ufo_piece_type(o) ((o)->extravalue1)
+
+#define ufo_piece_glass_flickerframe(o) ((o)->cusval)
 
 #define ufo_piece_owner(o) ((o)->target)
 #define ufo_piece_next(o) ((o)->hnext)
@@ -677,6 +681,40 @@ spawn_shard
 }
 
 static void
+set_flickerframe (mobj_t *ufo, mobj_t *piece)
+{
+	INT32 healthcalc = (UFO_NUM_GLASSFRAMES - 1);
+
+	if (ufo && !P_MobjWasRemoved(ufo))
+	{
+		INT32 maxhealth = mobjinfo[MT_SPECIAL_UFO].spawnhealth;
+		healthcalc = (maxhealth - ufo->health);
+
+		if (healthcalc > 0)
+		{
+			maxhealth /= UFO_NUM_GLASSFRAMES;
+			if (maxhealth <= 0)
+				maxhealth = 1;
+			healthcalc /= maxhealth;
+			if (healthcalc >= UFO_NUM_GLASSFRAMES)
+				healthcalc = (UFO_NUM_GLASSFRAMES - 1);
+			if (healthcalc < 0)
+				healthcalc = 0;
+		}
+		else
+		{
+			healthcalc = 0;
+		}
+	}
+
+	healthcalc = (healthcalc|FF_FULLBRIGHT) + UFO_START_GLASSFRAMES;
+
+	ufo_piece_glass_flickerframe(piece) = healthcalc;
+	piece->frame = healthcalc;
+}
+
+
+static void
 spawn_debris (mobj_t *part)
 {
 	mobj_t *ufo = ufo_piece_owner(part);
@@ -704,6 +742,7 @@ static void UFOCopyHitlagToPieces(mobj_t *ufo)
 
 		if (ufo_piece_type(piece) == UFO_PIECE_TYPE_GLASS)
 		{
+			set_flickerframe (ufo, piece);
 			spawn_debris (piece);
 		}
 
@@ -728,6 +767,11 @@ static void UFOKillPiece(mobj_t *piece)
 	switch (ufo_piece_type(piece))
 	{
 		case UFO_PIECE_TYPE_GLASS:
+		{
+			set_flickerframe(NULL, piece);
+			piece->tics = 1;
+			return;
+		}		
 		case UFO_PIECE_TYPE_GLASS_UNDER:
 		case UFO_PIECE_TYPE_STEM:
 		{
@@ -1115,6 +1159,21 @@ void Obj_UFOPieceThink(mobj_t *piece)
 			break;
 		}
 		case UFO_PIECE_TYPE_GLASS:
+		{
+			// Flicker glass cracks for visibility
+			if (piece->frame == FF_SEMIBRIGHT)
+			{
+				piece->frame = ufo_piece_glass_flickerframe(piece);
+			}
+			else
+			{
+				piece->frame = FF_SEMIBRIGHT;
+			}
+
+			piece->destscale = 5 * ufo->destscale / 3;
+			UFOMoveTo(piece, ufo->x, ufo->y, ufo->z);
+			break;
+		}
 		case UFO_PIECE_TYPE_GLASS_UNDER:
 		{
 			piece->destscale = 5 * ufo->destscale / 3;
@@ -1222,6 +1281,12 @@ static mobj_t *InitSpecialUFO(waypoint_t *start)
 		specialstageinfo.maxDist = ufo_distancetofinish(ufo);
 	}
 
+	// Set specialDamage as early as possible, for glass ball's sake
+	if (grandprixinfo.gp && grandprixinfo.specialDamage)
+	{
+		ufo->health -= min(4*(UINT32)mobjinfo[MT_SPECIAL_UFO].spawnhealth/10, grandprixinfo.specialDamage/6);
+	}
+
 	ufo_speed(ufo) = FixedMul(UFO_START_SPEED, K_GetKartGameSpeedScalar(gamespeed));
 
 	// Adjustable Special Stage emerald color/shape
@@ -1295,6 +1360,8 @@ static mobj_t *InitSpecialUFO(waypoint_t *start)
 		P_SetMobjState(piece, S_SPECIAL_UFO_GLASS);
 		ufo_piece_type(piece) = UFO_PIECE_TYPE_GLASS;
 
+		set_flickerframe(ufo, piece);
+
 		/*overlay = P_SpawnMobjFromMobj(piece, 0, 0, 0, MT_OVERLAY);
 		P_SetTarget(&overlay->target, piece);
 		P_SetMobjState(overlay, S_SPECIAL_UFO_GLASS_UNDER);
@@ -1346,11 +1413,6 @@ static mobj_t *InitSpecialUFO(waypoint_t *start)
 	P_SetTarget(&ufo_piece_next(prevPiece), piece);
 	P_SetTarget(&ufo_piece_prev(piece), prevPiece);
 	prevPiece = piece;
-
-	if (grandprixinfo.gp && grandprixinfo.specialDamage)
-	{
-		ufo->health -= min(4*(UINT32)mobjinfo[MT_SPECIAL_UFO].spawnhealth/10, grandprixinfo.specialDamage/6);
-	}
 
 	return ufo;
 }
