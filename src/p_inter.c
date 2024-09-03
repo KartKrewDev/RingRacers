@@ -1544,6 +1544,8 @@ boolean P_CheckRacers(void)
 	const boolean griefed = (spectateGriefed > 0);
 
 	boolean eliminateLast = (!K_CanChangeRules(true) || (cv_karteliminatelast.value != 0));
+	if (inDuel)
+		eliminateLast = false;
 	boolean allHumansDone = true;
 	//boolean allBotsDone = true;
 

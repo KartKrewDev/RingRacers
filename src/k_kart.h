@@ -88,6 +88,11 @@ Make sure this matches the actual number of states
 #define AUTORESPAWN_TIME (10*TICRATE)
 #define AUTORESPAWN_THRESHOLD (7*TICRATE)
 
+#define DUELTIMER_START (10*TICRATE)
+#define DUELTIMER_BONUS (2*TICRATE)
+#define DUELTIMER_MAX (3*DUELTIMER_START/2)
+#define DUELTIMER_NOBONUS (60*TICRATE)
+
 angle_t K_ReflectAngle(angle_t angle, angle_t against, fixed_t maxspeed, fixed_t yourspeed);
 
 boolean K_IsDuelItem(mobjtype_t type);
@@ -203,6 +208,7 @@ void K_SpawnDriftElectricSparks(player_t *player, int color, boolean shockwave);
 void K_KartUpdatePosition(player_t *player);
 void K_UpdateAllPlayerPositions(void);
 SINT8 K_GetTotallyRandomResult(UINT8 useodds);
+boolean K_PlayerLosingDuel(player_t *player);
 mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT8 type, UINT16 amount);
 mobj_t *K_FlingPaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT8 type, UINT16 amount);
 void K_DropPaperItem(player_t *player, UINT8 itemtype, UINT16 itemamount);

@@ -2179,6 +2179,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	UINT8 lastsafecheatcheck;
 	UINT16 bigwaypointgap;
 
+	INT16 duelscore;
+	tic_t dueltimer; 
+
 	roundconditions_t roundconditions;
 	boolean saveroundconditions;
 
@@ -2334,6 +2337,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		bigwaypointgap = 0;
 
 		tallyactive = false;
+
+		dueltimer = 15*TICRATE;
+		duelscore = 0;
 	}
 	else
 	{
@@ -2383,6 +2389,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		lastsafelap = players[player].lastsafelap;
 		lastsafecheatcheck = players[player].lastsafecheatcheck;
 		bigwaypointgap = players[player].bigwaypointgap;
+
+		duelscore = players[player].duelscore;
+		dueltimer = players[player].dueltimer;
 
 		tallyactive = players[player].tally.active;
 		if (tallyactive)
@@ -2520,6 +2529,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->spectatorReentry = spectatorReentry;
 	p->griefValue = griefValue;
 	p->griefStrikes = griefStrikes;
+
+	p->dueltimer = dueltimer;
+	p->duelscore = duelscore;
 
 	memcpy(&p->itemRoulette, &itemRoulette, sizeof (p->itemRoulette));
 	memcpy(&p->respawn, &respawn, sizeof (p->respawn));

@@ -677,6 +677,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->cheatchecknum);
 	else if (fastcmp(field,"duelscore"))
 		lua_pushinteger(L, plr->duelscore);
+	else if (fastcmp(field,"dueltimer"))
+		lua_pushinteger(L, plr->dueltimer);
 	else if (fastcmp(field,"lastsidehit"))
 		lua_pushinteger(L, plr->lastsidehit);
 	else if (fastcmp(field,"lastlinehit"))
@@ -1250,6 +1252,8 @@ static int player_set(lua_State *L)
 		plr->cheatchecknum = (INT32)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"duelscore"))
 		plr->duelscore = (INT16)luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"dueltimer"))
+		plr->dueltimer = (UINT32)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"lastsidehit"))
 		plr->lastsidehit = (INT16)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"lastlinehit"))

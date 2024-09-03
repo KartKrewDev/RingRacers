@@ -2628,11 +2628,38 @@ void PositionFacesInfo::draw_1p()
 			;
 		else if (gametyperules & GTR_CIRCUIT)
 		{
-			INT32 pos = players[rankplayer[i]].position;
-			if (pos < 0 || pos > MAXPLAYERS)
-				pos = 0;
-			// Draws the little number over the face
-			V_DrawScaledPatch(FACE_X-5, Y+10, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_facenum[pos]);
+			if (inDuel)
+			{
+				INT32 flags = V_HUDTRANS | V_SLIDEIN | V_SNAPTOLEFT;
+
+				colormap = NULL;
+
+				if (K_PlayerLosingDuel(&players[rankplayer[i]]) || players[rankplayer[i]].dueltimer == 0)
+				{
+					colormap = R_GetTranslationColormap(TC_RAINBOW, (players[rankplayer[i]].dueltimer == 0) ? SKINCOLOR_CRIMSON : SKINCOLOR_TANGERINE, GTC_CACHE);
+					flags |= V_STRINGDANCE;
+				}
+
+				V_DrawStringScaled(
+						(FACE_X - 5) * FRACUNIT,
+						(Y + 10) * FRACUNIT,
+						FRACUNIT,
+						FRACUNIT,
+						FRACUNIT,
+						flags,
+						colormap,
+						PINGF_FONT,
+						va("%02d.%02d", players[rankplayer[i]].dueltimer/TICRATE, (players[rankplayer[i]].dueltimer%TICRATE)*100/TICRATE)
+				);
+			}
+			else
+			{
+				INT32 pos = players[rankplayer[i]].position;
+				if (pos < 0 || pos > MAXPLAYERS)
+					pos = 0;
+				// Draws the little number over the face
+				V_DrawScaledPatch(FACE_X-5, Y+10, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_facenum[pos]);
+			}
 		}
 		else if (gametyperules & GTR_POINTLIMIT)
 		{
@@ -2996,19 +3023,6 @@ static void K_drawKartLaps(void)
 	// Jesus Christ.
 	// I do not understand the way this system of offsets is laid out at all,
 	// so it's probably going to be pretty bad to maintain. Sorry.
-
-	if (inDuel)
-	{
-		UINT32 flashflag = (stplyr->duelscore >= 0) ? V_BLUEMAP : V_REDMAP;
-		if (leveltime % 2)
-			if (abs(stplyr->duelscore) >= 2)
-				flashflag = V_YELLOWMAP;
-
-		if (stplyr->duelscore >= 0)
-			V_DrawCenteredString(BASEVIDWIDTH/2, 5, flashflag, va("+%d", stplyr->duelscore));
-		else
-			V_DrawCenteredString(BASEVIDWIDTH/2, 5, flashflag, va("%d", stplyr->duelscore));
-	}
 
 	if (numlaps != 1)
 	{
