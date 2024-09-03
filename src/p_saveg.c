@@ -285,7 +285,6 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEINT32(save->p, players[i].exp);
 		WRITEUINT16(save->p, players[i].gradingpointnum);
 		WRITEINT16(save->p, players[i].duelscore);
-		WRITEUINT32(save->p, players[i].dueltimer);
 		WRITEINT32(save->p, players[i].cheatchecknum);
 		WRITEINT32(save->p, players[i].checkpointId);
 
@@ -958,7 +957,6 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].exp = READINT32(save->p);
 		players[i].gradingpointnum = READUINT16(save->p);
 		players[i].duelscore = READINT16(save->p);
-		players[i].dueltimer = READUINT32(save->p);
 		players[i].cheatchecknum = READINT32(save->p);
 		players[i].checkpointId = READINT32(save->p);
 

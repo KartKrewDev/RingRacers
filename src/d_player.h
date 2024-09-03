@@ -927,7 +927,6 @@ struct player_t
 	INT32 checkpointId; // Players respawn here, objects/checkpoint.cpp
 
 	INT16 duelscore;
-	tic_t dueltimer;
 
 	UINT8 ctfteam; // 0 == Spectator, 1 == Red, 2 == Blue
 

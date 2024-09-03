@@ -4147,23 +4147,19 @@ void K_CheckpointCrossAward(player_t *player)
 	K_AwardPlayerRings(player, (player->bot ? 20 : 10), true);
 
 	// Update Duel scoring.
-	if (inDuel)
+	if (inDuel && player->position == 1)
 	{
 		player->duelscore += 1;
-
-		if (player->position == 1)
-		{
-			tic_t effectiveleveltime = min(leveltime, DUELTIMER_NOBONUS);
-			player->dueltimer += Easing_Linear(effectiveleveltime*FRACUNIT/DUELTIMER_NOBONUS, DUELTIMER_BONUS, 0);
-			player->dueltimer = min(player->dueltimer, DUELTIMER_MAX);
-		}
-
 		for (UINT8 i = 0; i < MAXPLAYERS; i++)
 		{
 			if (playeringame[i] && !players[i].spectator && &players[i] != player)
-			{
 				players[i].duelscore -= 1;
-			}
+		}
+
+		if (player->duelscore == 3)
+		{
+			P_DoPlayerExit(player, 0);
+			P_DoAllPlayersExit(PF_NOCONTEST, 0);
 		}
 	}
 
@@ -7620,19 +7616,6 @@ SINT8 K_GetTotallyRandomResult(UINT8 useodds)
 	return i;
 }
 
-boolean K_PlayerLosingDuel(player_t *player)
-{
-	for (UINT8 i = 0; i < MAXPLAYERS; i++)
-	{
-		if (playeringame[i] && !players[i].spectator && &players[i] != player)
-		{
-			if (players[i].duelscore > player->duelscore)
-				return true;
-		}
-	}
-	return false;
-}
-
 mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT8 type, UINT16 amount)
 {
 	mobj_t *drop = P_SpawnMobj(x, y, z, MT_FLOATINGITEM);
@@ -9400,22 +9383,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->invincibilitytimer--;
 		if (player->invincibilitytimer && K_IsPlayerScamming(player))
 			player->invincibilitytimer--;
-	}
-
-	if (inDuel && K_PlayerLosingDuel(player))
-	{
-		if (player->dueltimer)
-		{
-			player->dueltimer--;
-			if (!(player->dueltimer % 4) && P_IsDisplayPlayer(player))
-				S_StartSound(NULL, sfx_s3k55);
-
-			if (player->dueltimer == 0)
-			{
-				P_DoTimeOver(player);
-				P_DoAllPlayersExit(0, false);
-			}
-		}
 	}
 
 
