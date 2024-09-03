@@ -926,6 +926,8 @@ struct player_t
 	INT32 cheatchecknum; // The number of the last cheatcheck you hit
 	INT32 checkpointId; // Players respawn here, objects/checkpoint.cpp
 
+	INT16 duelscore;
+
 	UINT8 ctfteam; // 0 == Spectator, 1 == Red, 2 == Blue
 
 	UINT8 checkskip; // Skipping checkpoints? Oh no no no

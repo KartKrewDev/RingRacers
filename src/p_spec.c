@@ -1991,8 +1991,10 @@ static void K_HandleLapIncrement(player_t *player)
 				player->latestlap = player->laps;
 			}
 
+			boolean specialduelexit = (inDuel && !(mapheaderinfo[gamemap-1]->levelflags & LF_SECTIONRACE));
+
 			// finished race exit setup
-			if (player->laps > numlaps)
+			if (player->laps > numlaps && !specialduelexit)
 			{
 				pflags_t applyflags = 0;
 				if (specialstageinfo.valid == true)

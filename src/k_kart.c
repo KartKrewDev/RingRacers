@@ -4144,6 +4144,24 @@ void K_CheckpointCrossAward(player_t *player)
 {
 	player->exp += K_GetExpAdjustment(player);
 	K_AwardPlayerRings(player, (player->bot ? 20 : 10), true);
+
+	// Update Duel scoring.
+	if (inDuel && player->position == 1)
+	{
+		player->duelscore += 1;
+		for (UINT8 i = 0; i < MAXPLAYERS; i++)
+		{
+			if (playeringame[i] && !players[i].spectator && &players[i] != player)
+				players[i].duelscore -= 1;
+		}
+
+		if (player->duelscore == 3)
+		{
+			P_DoPlayerExit(player, 0);
+			P_DoAllPlayersExit(PF_NOCONTEST, 0);
+		}
+	}
+
 }
 
 boolean K_Overdrive(player_t *player)

@@ -2997,6 +2997,15 @@ static void K_drawKartLaps(void)
 	// I do not understand the way this system of offsets is laid out at all,
 	// so it's probably going to be pretty bad to maintain. Sorry.
 
+	if (inDuel)
+	{
+		UINT8 flashflag = (leveltime % 2 && abs(stplyr->duelscore >= 2)) ? V_TRANSLUCENT : 0;
+		if (stplyr->duelscore >= 0)
+			V_DrawCenteredString(BASEVIDWIDTH/2, 5, V_BLUEMAP|flashflag, va("+%d", stplyr->duelscore));
+		else
+			V_DrawCenteredString(BASEVIDWIDTH/2, 5, V_REDMAP|flashflag, va("%d", stplyr->duelscore));
+	}
+
 	if (numlaps != 1)
 	{
 		if (r_splitscreen > 1)
