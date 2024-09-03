@@ -2055,7 +2055,7 @@ static void K_HandleLapIncrement(player_t *player)
 
 				K_SpawnDriftBoostExplosion(player, 4);
 				K_SpawnDriftElectricSparks(player, SKINCOLOR_SILVER, false);
-				K_SpawnAmps(player, 50, player->mo);
+				K_SpawnAmps(player, (inDuel) ? 20 : 50, player->mo);
 
 				rainbowstartavailable = false;
 			}
