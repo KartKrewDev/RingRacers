@@ -2339,11 +2339,11 @@ void D_SetupVote(INT16 newgametype)
 
 void D_ModifyClientVote(UINT8 player, SINT8 voted)
 {
-	char buf[2];
+	char buf[3];
 	char *p = buf;
-	UINT8 sendPlayer = consoleplayer;
+	UINT8 sendPlayer = 0;
 
-	if (player == UINT8_MAX)
+	if (player >= MAXPLAYERS)
 	{
 		// Special game vote (map anger, duel)
 		if (!server)
@@ -2352,16 +2352,16 @@ void D_ModifyClientVote(UINT8 player, SINT8 voted)
 		}
 	}
 
-	if (player == UINT8_MAX)
-	{
-		// special vote
-		WRITEUINT8(p, UINT8_MAX);
-	}
-	else
-	{
-		INT32 i = 0;
-		WRITEUINT8(p, player);
+	// Context value -- if context has changed, then discard vote update.
+	// This is to prevent votes being registered from different vote types.
+	// Currently used for Duel vs Normal votes.
+	WRITEUINT8(p, Y_VoteContext());
 
+	WRITEUINT8(p, player);
+
+	if (player <= MAXPLAYERS)
+	{
+		INT32 i;
 		for (i = 0; i <= splitscreen; i++)
 		{
 			if (g_localplayers[i] == player)
@@ -5819,17 +5819,24 @@ static void Got_SetupVotecmd(const UINT8 **cp, INT32 playernum)
 
 static void Got_ModifyVotecmd(const UINT8 **cp, INT32 playernum)
 {
+	UINT8 context = READUINT8(*cp);
 	UINT8 targetID = READUINT8(*cp);
 	SINT8 vote = READSINT8(*cp);
 
-	if (targetID == UINT8_MAX)
+	if (context != Y_VoteContext())
 	{
-		if (playernum != serverplayer) // server-only special vote
+		// Silently discard. Server changed the
+		// vote type as we were sending our vote.
+		return;
+	}
+
+	if (targetID >= MAXPLAYERS)
+	{
+		// only the server is allowed to send these
+		if (playernum != serverplayer) 
 		{
 			goto fail;
 		}
-
-		targetID = VOTE_SPECIAL;
 	}
 	else if (playeringame[targetID] == true && players[targetID].bot == true)
 	{

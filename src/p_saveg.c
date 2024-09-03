@@ -6586,6 +6586,7 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 	{
 		WRITEUINT16(save->p, g_voteLevels[i][0]);
 		WRITEUINT16(save->p, g_voteLevels[i][1]);
+		WRITEUINT8(save->p, g_votes_striked[i]);
 	}
 
 	for (i = 0; i < VOTE_TOTAL; i++)
@@ -6795,6 +6796,7 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 	{
 		g_voteLevels[i][0] = READUINT16(save->p);
 		g_voteLevels[i][1] = READUINT16(save->p);
+		g_votes_striked[i] = (boolean)READUINT8(save->p);
 	}
 
 	for (i = 0; i < VOTE_TOTAL; i++)

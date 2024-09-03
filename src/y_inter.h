@@ -61,9 +61,6 @@ void Y_DrawIntermissionButton(INT32 startslide, INT32 through, boolean widescree
 void Y_StartIntermission(void);
 void Y_EndIntermission(void);
 
-boolean Y_ShouldDoIntermission(void);
-void Y_DetermineIntermissionType(void);
-
 void Y_PlayIntermissionMusic(void);
 
 typedef enum
@@ -75,6 +72,10 @@ typedef enum
 } intertype_t;
 
 extern intertype_t intertype;
+
+boolean Y_ShouldDoIntermission(void);
+intertype_t Y_GetIntermissionType(void);
+void Y_DetermineIntermissionType(void);
 
 #ifdef __cplusplus
 } // extern "C"
