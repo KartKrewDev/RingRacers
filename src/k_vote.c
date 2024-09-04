@@ -242,6 +242,32 @@ typedef struct
 static y_vote_data vote = {0};
 static y_vote_draw vote_draw = {0};
 
+static void Y_SetVoteTimer(void)
+{
+	vote.timer = cv_votetime.value * TICRATE;
+
+	if (vote.stage_striking == true)
+	{
+		vote.timer /= 2;
+	}
+}
+
+static UINT8 Y_CountStriked(void)
+{
+	INT32 i;
+
+	UINT8 num_striked = 0;
+	for (i = 0; i < VOTE_NUM_LEVELS; i++)
+	{
+		if (g_votes_striked[i] == true)
+		{
+			num_striked++;
+		}
+	}
+
+	return num_striked;
+}
+
 static boolean Y_VoteIDIsSpecial(const UINT8 playerId)
 {
 	switch (playerId)
@@ -486,18 +512,9 @@ void Y_SetPlayersVote(const UINT8 inputPlayerId, SINT8 newVote)
 
 		if (vote.stage_striking == true)
 		{
-			UINT8 num_striked = 0;
-			for (i = 0; i < VOTE_NUM_LEVELS; i++)
-			{
-				if (g_votes_striked[i] == true)
-				{
-					num_striked++;
-				}
-			}
-
 			if (newVote != VOTE_NOT_PICKED
-				&& num_striked < VOTE_NUM_LEVELS-1
-				&& g_votes_striked[newVote] == false)
+				&& g_votes_striked[newVote] == false
+				&& Y_CountStriked() < VOTE_NUM_LEVELS-1)
 			{
 				// Strike a stage, instead of voting.
 				g_votes_striked[newVote] = true;
@@ -506,7 +523,7 @@ void Y_SetPlayersVote(const UINT8 inputPlayerId, SINT8 newVote)
 				vote.strike_turn = !vote.strike_turn;
 
 				// Reset variables.
-				vote.timer = cv_votetime.value * TICRATE;
+				Y_SetVoteTimer();
 				for (i = 0; i <= splitscreen; i++)
 				{
 					vote.players[i].sentTimeOutVote = false;
@@ -544,12 +561,12 @@ void Y_SetPlayersVote(const UINT8 inputPlayerId, SINT8 newVote)
 	if (vote.timer == -1)
 	{
 		// Someone has voted, so start the timer now.
-		vote.timer = cv_votetime.value * TICRATE;
+		Y_SetVoteTimer();
 	}
 #endif
 }
 
-static void Y_DrawVoteThumbnail(fixed_t center_x, fixed_t center_y, fixed_t width, INT32 flags, SINT8 v, boolean dim, SINT8 playerID)
+static void Y_DrawVoteThumbnail(fixed_t center_x, fixed_t center_y, fixed_t width, INT32 flags, SINT8 v, boolean dim, SINT8 playerID, boolean from_selection)
 {
 	const boolean encore = vote_draw.levels[v].encore;
 	const fixed_t height = (width * BASEVIDHEIGHT) / BASEVIDWIDTH;
@@ -597,7 +614,7 @@ static void Y_DrawVoteThumbnail(fixed_t center_x, fixed_t center_y, fixed_t widt
 	V_AdjustXYWithSnap(&fx, &fy, flags, dupx, dupy);
 
 	boolean striked = false;
-	if (playerID < 0)
+	if (from_selection == true)
 	{
 		striked = g_votes_striked[v];
 	}
@@ -636,6 +653,22 @@ static void Y_DrawVoteThumbnail(fixed_t center_x, fixed_t center_y, fixed_t widt
 				vote_draw.ruby_icon,
 				NULL
 			);
+		}
+
+		if (vote.stage_striking == true
+			&& from_selection == true
+			&& dim == false)
+		{
+			if (Y_CountStriked() < VOTE_NUM_LEVELS-1)
+			{
+				const fixed_t strikeScale = width / 32;
+				V_DrawFixedPatch(
+					center_x - (strikeScale * 25 / 2), center_y - (strikeScale * 22 / 2),
+					strikeScale, flags /*| V_TRANSLUCENT*/,
+					vote_draw.strike_icon,
+					NULL
+				);
+			}
 		}
 	}
 
@@ -765,7 +798,7 @@ static void Y_DrawCatcher(y_vote_catcher *catcher)
 			baseX, catcher->y,
 			((catcher->small == true) ? PILE_WIDTH : SELECTION_WIDTH), 0,
 			catcher->level, false,
-			catcher->player
+			catcher->player, false
 		);
 	}
 
@@ -1028,10 +1061,39 @@ static void Y_DrawVoteSelection(fixed_t offset)
 			x, y - vote_draw.levels[i].hop,
 			SELECTION_WIDTH, 0,
 			i, (selected == false),
-			-1
+			-1, true
 		);
 
 		x += SELECTION_SPACING_W;
+	}
+
+	if (vote.stage_striking == true && Y_CountStriked() < VOTE_NUM_LEVELS-1)
+	{
+		UINT8 current_strike_player = (
+			(vote.strike_turn == true)
+				? (vote.strike_winner - players)
+				: (vote.strike_loser - players)
+		);
+
+		for (i = 0; i <= splitscreen; i++)
+		{
+			if (g_localplayers[i] == current_strike_player)
+			{
+				break;
+			}
+		}
+
+		if (i > splitscreen)
+		{
+			const char *wait_str = va("Waiting for %s...", player_names[current_strike_player]);
+
+			V_DrawThinString(
+				BASEVIDWIDTH / 2 - (V_ThinStringWidth(wait_str, 0) / 2),
+				180,
+				0,
+				wait_str
+			);
+		}
 	}
 
 	//
@@ -1091,7 +1153,7 @@ static void Y_DrawVotePile(void)
 			PILE_WIDTH, 0,
 			g_votes[i],
 			(i != vote.roulette.anim || g_pickedVote == VOTE_NOT_PICKED),
-			i
+			i, false
 		);
 	}
 
@@ -1594,18 +1656,19 @@ static void Y_ExitStageStrike(void)
 {
 	INT32 i;
 
+	vote.stage_striking = false;
+
 	for (i = 0; i < VOTE_NUM_LEVELS; i++)
 	{
 		g_votes_striked[i] = false;
 	}
 
-	vote.stage_striking = false;
-	vote.timer = cv_votetime.value * TICRATE;
-
 	vote.strike_loser = NULL;
 	vote.strike_winner = NULL;
 	vote.strike_turn = false;
 	vote.strike_time_out = false;
+
+	Y_SetVoteTimer();
 }
 
 static boolean Y_CheckStageStrikeStatus(void)
@@ -1880,12 +1943,27 @@ static void Y_TickVoteSelection(void)
 			continue;
 		}
 
-		if (players[i].bot == true && Y_PlayerIDCanVoteRightNow(i) == true && g_votes[i] == VOTE_NOT_PICKED)
+		if (server && players[i].bot == true && Y_PlayerIDCanVoteRightNow(i) == true && g_votes[i] == VOTE_NOT_PICKED)
 		{
-			if (server && ( M_RandomFixed() % 100 ) == 0)
+			if (( M_RandomFixed() % 100 ) == 0)
 			{
 				// bots vote randomly
-				D_ModifyClientVote(i, M_RandomKey(VOTE_NUM_LEVELS));
+				INT32 rng = M_RandomKey(VOTE_NUM_LEVELS);
+				for (i = 0; i < VOTE_NUM_LEVELS; i++)
+				{
+					if (g_votes_striked[i] == false)
+					{
+						break;
+					}
+
+					rng++;
+					if (rng >= VOTE_NUM_LEVELS)
+					{
+						rng = 0;
+					}
+				}
+
+				D_ModifyClientVote(i, rng);
 			}
 		}
 
@@ -2220,12 +2298,6 @@ void Y_StartVote(void)
 
 	vote.tic = vote.endtic = -1;
 
-#ifdef VOTE_TIME_WAIT_FOR_VOTE
-	vote.timer = -1; // Timer is not set until the first vote is added
-#else
-	vote.timer = cv_votetime.value * TICRATE;
-#endif
-
 	g_pickedVote = VOTE_NOT_PICKED;
 	vote.notYetPicked = true;
 
@@ -2259,6 +2331,12 @@ void Y_StartVote(void)
 	}
 
 	Y_DetermineStageStrike();
+
+#ifdef VOTE_TIME_WAIT_FOR_VOTE
+	vote.timer = -1; // Timer is not set until the first vote is added
+#else
+	Y_SetVoteTimer();
+#endif
 
 	Y_InitVoteDrawing();
 

@@ -5833,23 +5833,21 @@ static void Got_ModifyVotecmd(const UINT8 **cp, INT32 playernum)
 	if (targetID >= MAXPLAYERS)
 	{
 		// only the server is allowed to send these
-		if (playernum != serverplayer) 
+		if (playernum != serverplayer)
 		{
 			goto fail;
 		}
 	}
 	else if (playeringame[targetID] == true && players[targetID].bot == true)
 	{
-		if (targetID >= MAXPLAYERS
-			|| playernum != serverplayer)
+		if (playernum != serverplayer)
 		{
 			goto fail;
 		}
 	}
 	else
 	{
-		if (targetID >= MAXPLAYERS
-			|| playernode[targetID] != playernode[playernum])
+		if (playernode[targetID] != playernode[playernum])
 		{
 			goto fail;
 		}
