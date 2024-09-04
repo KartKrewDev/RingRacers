@@ -176,6 +176,7 @@ char srb2home[256] = ".";
 char srb2path[256] = ".";
 boolean usehome = true;
 const char *pandf = "%s" PATHSEP "%s";
+const char *spandf = "%s" PATHSEP "%s" PATHSEP "%s"; // subdirs wooo
 char addonsdir[MAX_WADPATH];
 char downloaddir[sizeof addonsdir + sizeof DOWNLOADDIR_PART] = "DOWNLOAD";
 
@@ -1388,24 +1389,24 @@ static void IdentifyVersion(void)
 	// if you change the ordering of this or add/remove a file, be sure to update the md5
 	// checking in D_SRB2Main
 
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"scripts.pk3"));
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"gfx.pk3"));
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"textures_general.pk3"));
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"textures_segazones.pk3"));
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"textures_originalzones.pk3"));
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"chars.pk3"));
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"followers.pk3"));
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"maps.pk3"));
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"unlocks.pk3"));
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"staffghosts.pk3"));
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"shaders.pk3"));
+	D_AddFile(startupiwads, va(spandf,srb2waddir,"data","scripts.pk3"));
+	D_AddFile(startupiwads, va(spandf,srb2waddir,"data","gfx.pk3"));
+	D_AddFile(startupiwads, va(spandf,srb2waddir,"data","textures_general.pk3"));
+	D_AddFile(startupiwads, va(spandf,srb2waddir,"data","textures_segazones.pk3"));
+	D_AddFile(startupiwads, va(spandf,srb2waddir,"data","textures_originalzones.pk3"));
+	D_AddFile(startupiwads, va(spandf,srb2waddir,"data","chars.pk3"));
+	D_AddFile(startupiwads, va(spandf,srb2waddir,"data","followers.pk3"));
+	D_AddFile(startupiwads, va(spandf,srb2waddir,"data","maps.pk3"));
+	D_AddFile(startupiwads, va(spandf,srb2waddir,"data","unlocks.pk3"));
+	D_AddFile(startupiwads, va(spandf,srb2waddir,"data","staffghosts.pk3"));
+	D_AddFile(startupiwads, va(spandf,srb2waddir,"data","shaders.pk3"));
 #ifdef USE_PATCH_FILE
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"patch.pk3"));
 #endif
 
 #define MUSICTEST(str) \
 	{\
-		const char *musicpath = va(pandf,srb2waddir,str);\
+		const char *musicpath = va(spandf,srb2waddir,"data",str);\
 		int ms = W_VerifyNMUSlumps(musicpath, false); \
 		if (ms == 1) \
 		{ \
