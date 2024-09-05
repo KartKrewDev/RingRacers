@@ -115,76 +115,73 @@ void srb2::save_ng_gamedata()
 		}
 	}
 	ng.timesBeaten = gamedata->timesBeaten;
-	for (int i = 0; i < numskins; i++)
+
+	auto skintojson = [](skinrecord_t *records)
 	{
 		srb2::GamedataSkinJson skin {};
+		skin.records.wins = records->wins;
+		skin.records.rounds = records->rounds;
+		skin.records.time.total = records->timeplayed;
+		skin.records.time.race = records->modetimeplayed[GDGT_RACE];
+		skin.records.time.battle = records->modetimeplayed[GDGT_BATTLE];
+		skin.records.time.prisons = records->modetimeplayed[GDGT_PRISONS];
+		skin.records.time.special = records->modetimeplayed[GDGT_SPECIAL];
+		skin.records.time.custom = records->modetimeplayed[GDGT_CUSTOM];
+		skin.records.time.tumble = records->tumbletime;
+
+		return skin;
+	};
+
+	for (int i = 0; i < numskins; i++)
+	{
 		skin_t& memskin = skins[i];
 
+		auto skin = skintojson(&memskin.records);
 		std::string name = std::string(memskin.name);
-		skin.records.wins = memskin.records.wins;
-		skin.records.rounds = memskin.records.rounds;
-		skin.records.time.total = memskin.records.timeplayed;
-		skin.records.time.race = memskin.records.modetimeplayed[GDGT_RACE];
-		skin.records.time.battle = memskin.records.modetimeplayed[GDGT_BATTLE];
-		skin.records.time.prisons = memskin.records.modetimeplayed[GDGT_PRISONS];
-		skin.records.time.special = memskin.records.modetimeplayed[GDGT_SPECIAL];
-		skin.records.time.custom = memskin.records.modetimeplayed[GDGT_CUSTOM];
-		skin.records.time.tumble = memskin.records.tumbletime;
 		ng.skins[name] = std::move(skin);
 	}
 	for (auto unloadedskin = unloadedskins; unloadedskin; unloadedskin = unloadedskin->next)
 	{
-		srb2::GamedataSkinJson skin {};
+		auto skin = skintojson(&unloadedskin->records);
 		std::string name = std::string(unloadedskin->name);
-		skin.records.wins = unloadedskin->records.wins;
 		ng.skins[name] = std::move(skin);
 	}
-	for (int i = 0; i < nummapheaders; i++)
+
+	auto maptojson = [](recorddata_t *records)
 	{
 		srb2::GamedataMapJson map {};
+		map.visited.visited = records->mapvisited & MV_VISITED;
+		map.visited.beaten = records->mapvisited & MV_BEATEN;
+		map.visited.encore = records->mapvisited & MV_ENCORE;
+		map.visited.spbattack = records->mapvisited & MV_SPBATTACK;
+		map.visited.mysticmelody = records->mapvisited & MV_MYSTICMELODY;
+		map.stats.timeattack.besttime = records->timeattack.time;
+		map.stats.timeattack.bestlap = records->timeattack.lap;
+		map.stats.spbattack.besttime = records->spbattack.time;
+		map.stats.spbattack.bestlap = records->spbattack.lap;
+		map.stats.time.total = records->timeplayed;
+		map.stats.time.netgame = records->netgametimeplayed;
+		map.stats.time.race = records->modetimeplayed[GDGT_RACE];
+		map.stats.time.battle = records->modetimeplayed[GDGT_BATTLE];
+		map.stats.time.prisons = records->modetimeplayed[GDGT_PRISONS];
+		map.stats.time.special = records->modetimeplayed[GDGT_SPECIAL];
+		map.stats.time.custom = records->modetimeplayed[GDGT_CUSTOM];
+		map.stats.time.timeattack = records->timeattacktimeplayed;
+		map.stats.time.spbattack = records->spbattacktimeplayed;
+
+		return map;
+	};
+
+	for (int i = 0; i < nummapheaders; i++)
+	{
+		auto map = maptojson(&mapheaderinfo[i]->records);
 		std::string lumpname = std::string(mapheaderinfo[i]->lumpname);
-		map.visited.visited = mapheaderinfo[i]->records.mapvisited & MV_VISITED;
-		map.visited.beaten = mapheaderinfo[i]->records.mapvisited & MV_BEATEN;
-		map.visited.encore = mapheaderinfo[i]->records.mapvisited & MV_ENCORE;
-		map.visited.spbattack = mapheaderinfo[i]->records.mapvisited & MV_SPBATTACK;
-		map.visited.mysticmelody = mapheaderinfo[i]->records.mapvisited & MV_MYSTICMELODY;
-		map.stats.timeattack.besttime = mapheaderinfo[i]->records.timeattack.time;
-		map.stats.timeattack.bestlap = mapheaderinfo[i]->records.timeattack.lap;
-		map.stats.spbattack.besttime = mapheaderinfo[i]->records.spbattack.time;
-		map.stats.spbattack.bestlap = mapheaderinfo[i]->records.spbattack.lap;
-		map.stats.time.total = mapheaderinfo[i]->records.timeplayed;
-		map.stats.time.netgame = mapheaderinfo[i]->records.netgametimeplayed;
-		map.stats.time.race = mapheaderinfo[i]->records.modetimeplayed[GDGT_RACE];
-		map.stats.time.battle = mapheaderinfo[i]->records.modetimeplayed[GDGT_BATTLE];
-		map.stats.time.prisons = mapheaderinfo[i]->records.modetimeplayed[GDGT_PRISONS];
-		map.stats.time.special = mapheaderinfo[i]->records.modetimeplayed[GDGT_SPECIAL];
-		map.stats.time.custom = mapheaderinfo[i]->records.modetimeplayed[GDGT_CUSTOM];
-		map.stats.time.timeattack = mapheaderinfo[i]->records.timeattacktimeplayed;
-		map.stats.time.spbattack = mapheaderinfo[i]->records.spbattacktimeplayed;
 		ng.maps[lumpname] = std::move(map);
 	}
 	for (auto unloadedmap = unloadedmapheaders; unloadedmap; unloadedmap = unloadedmap->next)
 	{
-		srb2::GamedataMapJson map {};
+		auto map = maptojson(&unloadedmap->records);
 		std::string lumpname = std::string(unloadedmap->lumpname);
-		map.visited.visited = unloadedmap->records.mapvisited & MV_VISITED;
-		map.visited.beaten = unloadedmap->records.mapvisited & MV_BEATEN;
-		map.visited.encore = unloadedmap->records.mapvisited & MV_ENCORE;
-		map.visited.spbattack = unloadedmap->records.mapvisited & MV_SPBATTACK;
-		map.visited.mysticmelody = unloadedmap->records.mapvisited & MV_MYSTICMELODY;
-		map.stats.timeattack.besttime = unloadedmap->records.timeattack.time;
-		map.stats.timeattack.bestlap = unloadedmap->records.timeattack.lap;
-		map.stats.spbattack.besttime = unloadedmap->records.spbattack.time;
-		map.stats.spbattack.bestlap = unloadedmap->records.spbattack.lap;
-		map.stats.time.total = unloadedmap->records.timeplayed;
-		map.stats.time.netgame = unloadedmap->records.netgametimeplayed;
-		map.stats.time.race = unloadedmap->records.modetimeplayed[GDGT_RACE];
-		map.stats.time.battle = unloadedmap->records.modetimeplayed[GDGT_BATTLE];
-		map.stats.time.prisons = unloadedmap->records.modetimeplayed[GDGT_PRISONS];
-		map.stats.time.special = unloadedmap->records.modetimeplayed[GDGT_SPECIAL];
-		map.stats.time.custom = unloadedmap->records.modetimeplayed[GDGT_CUSTOM];
-		map.stats.time.timeattack = unloadedmap->records.timeattacktimeplayed;
-		map.stats.time.spbattack = unloadedmap->records.spbattacktimeplayed;
 		ng.maps[lumpname] = std::move(map);
 	}
 	for (int i = 0; i < gamedata->numspraycans; i++)
@@ -219,20 +216,18 @@ void srb2::save_ng_gamedata()
 		spraycan.map = std::string(mapheader->lumpname);
 		ng.spraycans.emplace_back(std::move(spraycan));
 	}
-	for (auto cup = kartcupheaders; cup; cup = cup->next)
+
+	auto cuptojson = [](cupwindata_t *windata)
 	{
-		if (cup->windata[0].best_placement == 0 && cup->windata[1].got_emerald == false)
-		{
-			continue;
-		}
 		srb2::GamedataCupJson cupdata {};
-		cupdata.name = std::string(cup->name);
+
 		for (size_t i = 0; i < KARTGP_MAX; i++)
 		{
 			srb2::GamedataCupRecordsJson newrecords {};
-			newrecords.bestgrade = cup->windata[i].best_grade;
-			newrecords.bestplacement = cup->windata[i].best_placement;
-			skinreference_t& skinref = cup->windata[i].best_skin;
+
+			newrecords.bestgrade = windata[i].best_grade;
+			newrecords.bestplacement = windata[i].best_placement;
+			skinreference_t& skinref = windata[i].best_skin;
 			if (skinref.unloaded)
 			{
 				newrecords.bestskin = std::string(skinref.unloaded->name);
@@ -241,9 +236,23 @@ void srb2::save_ng_gamedata()
 			{
 				newrecords.bestskin = std::string(skins[skinref.id].name);
 			}
-			newrecords.gotemerald = cup->windata[i].got_emerald;
+			newrecords.gotemerald = windata[i].got_emerald;
+
 			cupdata.records.emplace_back(std::move(newrecords));
 		}
+
+		return cupdata;
+	};
+
+	for (auto cup = kartcupheaders; cup; cup = cup->next)
+	{
+		if (cup->windata[0].best_placement == 0 && cup->windata[1].got_emerald == false)
+		{
+			continue;
+		}
+
+		auto cupdata = cuptojson(cup->windata);
+		cupdata.name = std::string(cup->name);
 		ng.cups[cupdata.name] = std::move(cupdata);
 	}
 	for (auto unloadedcup = unloadedcupheaders; unloadedcup; unloadedcup = unloadedcup->next)
@@ -252,25 +261,9 @@ void srb2::save_ng_gamedata()
 		{
 			continue;
 		}
-		srb2::GamedataCupJson cupdata {};
+
+		auto cupdata = cuptojson(unloadedcup->windata);
 		cupdata.name = std::string(unloadedcup->name);
-		for (int i = 0; i < KARTGP_MAX; i++)
-		{
-			srb2::GamedataCupRecordsJson newrecords {};
-			newrecords.bestgrade = unloadedcup->windata[i].best_grade;
-			newrecords.bestplacement = unloadedcup->windata[i].best_placement;
-			skinreference_t& skinref = unloadedcup->windata[i].best_skin;
-			if (skinref.unloaded)
-			{
-				newrecords.bestskin = std::string(skinref.unloaded->name);
-			}
-			else
-			{
-				newrecords.bestskin = std::string(skins[skinref.id].name);
-			}
-			newrecords.gotemerald = unloadedcup->windata[i].got_emerald;
-			cupdata.records.emplace_back(std::move(newrecords));
-		}
 		ng.cups[cupdata.name] = std::move(cupdata);
 	}
 
