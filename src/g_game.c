@@ -321,6 +321,7 @@ boolean rainbowstartavailable; // Boolean, keeps track of if the rainbow start w
 tic_t linecrossed; // For Time Attack
 boolean inDuel; // Boolean, keeps track of if it is a 1v1
 UINT8 extralaps; // Duel extensions! 
+UINT8 overtimecheckpoints; // Duel overtime speedups!
 
 // Client-sided, unsynched variables (NEVER use in anything that needs to be synced with other players)
 tic_t bombflashtimer = 0;	// Cooldown before another FlashPal can be intialized by a bomb exploding near a displayplayer. Avoids seizures.

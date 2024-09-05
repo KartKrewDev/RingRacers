@@ -146,6 +146,7 @@ void K_TimerReset(void)
 	inDuel = rainbowstartavailable = false;
 	linecrossed = 0;
 	extralaps = 0;
+	overtimecheckpoints = 0;
 	timelimitintics = extratimeintics = secretextratime = 0;
 	g_pointlimit = 0;
 }
@@ -466,7 +467,10 @@ fixed_t K_GetKartGameSpeedScalar(SINT8 value)
 	if (cv_4thgear.value && !netgame && (!demo.playback || !demo.netgame) && !modeattacking)
 		value = 3;
 
-	return ((13 + (3*value)) << FRACBITS) / 16;
+	fixed_t base = ((13 + (3*value)) << FRACBITS) / 16;
+	fixed_t duel = overtimecheckpoints*(1<<FRACBITS)/3;
+
+	return base + duel;
 }
 
 // Array of states to pick the starting point of the animation, based on the actual time left for invincibility.
@@ -4150,6 +4154,14 @@ void K_CheckpointCrossAward(player_t *player)
 	if (inDuel && player->position == 1)
 	{
 		player->duelscore += 1;
+
+		if (leveltime > DUELOVERTIME)
+		{
+			overtimecheckpoints++;
+			K_AddMessage(va("MARGIN BOOST x%d", overtimecheckpoints), true, false);
+			S_StartSound(NULL, sfx_gsha6);
+		}
+
 		for (UINT8 i = 0; i < MAXPLAYERS; i++)
 		{
 			if (playeringame[i] && !players[i].spectator && &players[i] != player)

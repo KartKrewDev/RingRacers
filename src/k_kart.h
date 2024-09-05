@@ -74,6 +74,8 @@ Make sure this matches the actual number of states
 #define RINGVOLUMEREGEN 1
 #define RINGTRANSPARENCYREGEN 3
 
+#define DUELOVERTIME (3*60*TICRATE)
+
 #define MIN_WAVEDASH_CHARGE ((11*TICRATE/16)*9)
 
 #define MAXTOPACCEL (12*FRACUNIT)
