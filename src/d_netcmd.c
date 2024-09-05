@@ -2339,11 +2339,11 @@ void D_SetupVote(INT16 newgametype)
 
 void D_ModifyClientVote(UINT8 player, SINT8 voted)
 {
-	char buf[2];
+	char buf[3];
 	char *p = buf;
-	UINT8 sendPlayer = consoleplayer;
+	UINT8 sendPlayer = 0;
 
-	if (player == UINT8_MAX)
+	if (player >= MAXPLAYERS)
 	{
 		// Special game vote (map anger, duel)
 		if (!server)
@@ -2352,16 +2352,16 @@ void D_ModifyClientVote(UINT8 player, SINT8 voted)
 		}
 	}
 
-	if (player == UINT8_MAX)
-	{
-		// special vote
-		WRITEUINT8(p, UINT8_MAX);
-	}
-	else
-	{
-		INT32 i = 0;
-		WRITEUINT8(p, player);
+	// Context value -- if context has changed, then discard vote update.
+	// This is to prevent votes being registered from different vote types.
+	// Currently used for Duel vs Normal votes.
+	WRITEUINT8(p, Y_VoteContext());
 
+	WRITEUINT8(p, player);
+
+	if (player <= MAXPLAYERS)
+	{
+		INT32 i;
 		for (i = 0; i <= splitscreen; i++)
 		{
 			if (g_localplayers[i] == player)
@@ -2376,13 +2376,12 @@ void D_ModifyClientVote(UINT8 player, SINT8 voted)
 	SendNetXCmdForPlayer(sendPlayer, XD_MODIFYVOTE, buf, p - buf);
 }
 
-void D_PickVote(void)
+void D_PickVote(SINT8 angry_map)
 {
-	char buf[2];
+	char buf[3];
 	char* p = buf;
 	SINT8 temppicks[VOTE_TOTAL];
 	SINT8 templevels[VOTE_TOTAL];
-	SINT8 votecompare = VOTE_NOT_PICKED;
 	UINT8 numvotes = 0, key = 0;
 	INT32 i;
 
@@ -2393,16 +2392,23 @@ void D_PickVote(void)
 			continue;
 		}
 
+		if (i == VOTE_SPECIAL && angry_map != VOTE_NOT_PICKED)
+		{
+			// Anger map is going to change because of
+			// the vote ending. We need to account for this
+			// here because a net command would not be ready
+			// in time for this code.
+			temppicks[numvotes] = i;
+			templevels[numvotes] = angry_map;
+			numvotes++;
+			continue;
+		}
+
 		if (g_votes[i] != VOTE_NOT_PICKED)
 		{
 			temppicks[numvotes] = i;
 			templevels[numvotes] = g_votes[i];
 			numvotes++;
-
-			if (votecompare == VOTE_NOT_PICKED)
-			{
-				votecompare = g_votes[i];
-			}
 		}
 	}
 
@@ -2411,14 +2417,16 @@ void D_PickVote(void)
 		key = M_RandomKey(numvotes);
 		WRITESINT8(p, temppicks[key]);
 		WRITESINT8(p, templevels[key]);
+		WRITESINT8(p, angry_map);
 	}
 	else
 	{
 		WRITESINT8(p, VOTE_NOT_PICKED);
 		WRITESINT8(p, 0);
+		WRITESINT8(p, VOTE_NOT_PICKED);
 	}
 
-	SendNetXCmd(XD_PICKVOTE, &buf, 2);
+	SendNetXCmd(XD_PICKVOTE, &buf, 3);
 }
 
 static char *
@@ -5811,30 +5819,35 @@ static void Got_SetupVotecmd(const UINT8 **cp, INT32 playernum)
 
 static void Got_ModifyVotecmd(const UINT8 **cp, INT32 playernum)
 {
+	UINT8 context = READUINT8(*cp);
 	UINT8 targetID = READUINT8(*cp);
 	SINT8 vote = READSINT8(*cp);
 
-	if (targetID == UINT8_MAX)
+	if (context != Y_VoteContext())
 	{
-		if (playernum != serverplayer) // server-only special vote
+		// Silently discard. Server changed the
+		// vote type as we were sending our vote.
+		return;
+	}
+
+	if (targetID >= MAXPLAYERS)
+	{
+		// only the server is allowed to send these
+		if (playernum != serverplayer)
 		{
 			goto fail;
 		}
-
-		targetID = VOTE_SPECIAL;
 	}
 	else if (playeringame[targetID] == true && players[targetID].bot == true)
 	{
-		if (targetID >= MAXPLAYERS
-			|| playernum != serverplayer)
+		if (playernum != serverplayer)
 		{
 			goto fail;
 		}
 	}
 	else
 	{
-		if (targetID >= MAXPLAYERS
-			|| playernode[targetID] != playernode[playernum])
+		if (playernode[targetID] != playernode[playernum])
 		{
 			goto fail;
 		}
@@ -5859,6 +5872,7 @@ static void Got_PickVotecmd(const UINT8 **cp, INT32 playernum)
 {
 	SINT8 pick = READSINT8(*cp);
 	SINT8 level = READSINT8(*cp);
+	SINT8 anger = READSINT8(*cp);
 
 	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
 	{
@@ -5868,7 +5882,7 @@ static void Got_PickVotecmd(const UINT8 **cp, INT32 playernum)
 		return;
 	}
 
-	Y_SetupVoteFinish(pick, level);
+	Y_SetupVoteFinish(pick, level, anger);
 }
 
 static void Got_ScheduleTaskcmd(const UINT8 **cp, INT32 playernum)
