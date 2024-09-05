@@ -468,7 +468,7 @@ fixed_t K_GetKartGameSpeedScalar(SINT8 value)
 		value = 3;
 
 	fixed_t base = ((13 + (3*value)) << FRACBITS) / 16;
-	fixed_t duel = overtimecheckpoints*(1<<FRACBITS)/6;
+	fixed_t duel = overtimecheckpoints*(1<<FRACBITS)/8;
 
 	return base + duel;
 }
