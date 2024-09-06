@@ -328,21 +328,11 @@ struct Kart : Mobj
 
 		if (Mobj* p = player(); Mobj::valid(p))
 		{
-			if (p->player)
+			if (p->player && skins[p->player->skin].flags & SF_BADNIK)
 			{
-				skin = (&skins[p->player->skin]);
-				color = (p->player->skincolor);
-						
-				// it's necessary to refresh SPR2 on skin changes.
-				state(S_KART_LEFTOVER_NOTIRES);
-				sprite2 = (P_GetSkinSprite2(static_cast<skin_t*>(skin), SPR2_DKRT, NULL));;
-
-				if(skins[p->player->skin].flags & SF_BADNIK){
-					P_SpawnBadnikExplosion(p);
-					p->spritescale({2*FRACUNIT, 2*FRACUNIT});
-					p->flags |= MF_NOSQUISH;
-				}
-
+				P_SpawnBadnikExplosion(p);
+				p->spritescale({2*FRACUNIT, 2*FRACUNIT});
+				p->flags |= MF_NOSQUISH;
 			}
 
 			p->state(S_KART_DEAD);
