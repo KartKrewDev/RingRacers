@@ -9886,10 +9886,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_KART_LEFTOVER:
 	{
 		Obj_DestroyedKartThink(mobj);
+
 		if (P_MobjWasRemoved(mobj))
 		{
 			return false;
 		}
+		
 		break;
 	}
 

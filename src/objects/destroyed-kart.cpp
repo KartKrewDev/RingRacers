@@ -309,15 +309,37 @@ struct Kart : Mobj
 			return true;
 		}
 
+
 		if (health <= 1)
 		{
 			return false;
 		}
 
+		Mobj* p = player();
+		bool pValid = Mobj::valid(p);
+		bool hasCustomHusk = pValid && p->player && skins[p->player->skin].sprites[SPR2_DKRT].numframes;
+
+		if(hasCustomHusk)
+		{
+			skin = (void*)(&skins[p->player->skin]);
+			frame = 0;
+		}
+
 		Particle::spew(this);
-		scale(3 * scale() / 2);
+
+		auto oldScale = scale();
+		scale(3*scale()/2);
+
+		if(hasCustomHusk){
+			flags |= MF_NOSQUISH; //K_Squish() automates spritexscale/spriteyscale & this flag prevents that at the cost of no squish visual when the kart husk hits the ground
+			float div = ((float)1/(float)oldScale)*(float)scale();
+			auto formula = [&](fixed_t subject){return (fixed_t)((float)subject/div);};
+			spritexscale(formula(spritexscale()));
+			spriteyscale(formula(spriteyscale()));
+		}
+
 		health = 1;
-		state(S_KART_LEFTOVER_NOTIRES);
+		state(!hasCustomHusk ? S_KART_LEFTOVER_NOTIRES : S_KART_LEFTOVER_CUSTOM);
 		cooldown(20);
 		burning(burn_duration());
 
@@ -326,9 +348,9 @@ struct Kart : Mobj
 			voice(sfx_die00);
 		}
 
-		if (Mobj* p = player(); Mobj::valid(p))
+		if(pValid)
 		{
-			if (p->player && skins[p->player->skin].flags & SF_BADNIK)
+			if((skins[p->player->skin].flags & SF_BADNIK))
 			{
 				P_SpawnBadnikExplosion(p);
 				p->spritescale({2*FRACUNIT, 2*FRACUNIT});
@@ -446,7 +468,7 @@ private:
 			P_PlayDeathSound(p);
 		}
 
-		// First tick after hitlag: destroyed kart appears!
+		// First tick after hitlag: destroyed kart appears! State will change away from S_INVISIBLE inside destroy() where S_INVISIBLE was set in static spawn()
 		if (state()->num() == S_INVISIBLE)
 		{
 			destroy();
