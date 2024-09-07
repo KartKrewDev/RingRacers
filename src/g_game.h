@@ -232,6 +232,9 @@ void G_UpdateTimeStickerMedals(UINT16 map, boolean showownrecord);
 void G_TickTimeStickerMedals(void);
 void G_UpdateRecords(void);
 
+void G_UpdatePlayerPreferences(player_t *const player);
+void G_UpdateAllPlayerPreferences(void);
+
 void G_Ticker(boolean run);
 boolean G_Responder(event_t *ev);
 

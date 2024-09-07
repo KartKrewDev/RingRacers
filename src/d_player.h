@@ -671,6 +671,11 @@ struct player_t
 	UINT8 carry;
 	UINT16 dye;
 
+	INT32 prefskin; // Queued skin change
+	UINT16 prefcolor; // Queued color change
+	INT32 preffollower; // Queued follower change
+	UINT16 preffollowercolor; // Queued follower color change
+
 	// SRB2kart stuff
 	INT32 karthud[NUMKARTHUD];
 

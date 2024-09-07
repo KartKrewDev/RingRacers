@@ -557,6 +557,14 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->followercolor);
 	else if (fastcmp(field,"follower"))
 		LUA_PushUserdata(L, plr->follower, META_MOBJ);
+	else if (fastcmp(field,"prefskin"))
+		lua_pushinteger(L, plr->prefskin);
+	else if (fastcmp(field,"prefcolor"))
+		lua_pushinteger(L, plr->prefcolor);
+	else if (fastcmp(field,"preffollower"))
+		lua_pushinteger(L, plr->preffollower);
+	else if (fastcmp(field,"preffollowercolor"))
+		lua_pushinteger(L, plr->preffollowercolor);
 	//
 
 	// rideroids
@@ -1122,8 +1130,16 @@ static int player_set(lua_State *L)
 		plr->followercolor = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"followerready"))
 		plr->followerready = luaL_checkboolean(L, 3);
-	else if (fastcmp(field,"follower"))	// it's probably best we don't allow the follower mobj to change.
-		return NOSET;
+	else if (fastcmp(field,"follower"))
+		return NOSET; // it's probably best we don't allow the follower mobj to change.
+	else if (fastcmp(field,"prefskin"))
+		return NOSET; // don't allow changing user preferences
+	else if (fastcmp(field,"prefcolor"))
+		return NOSET; // don't allow changing user preferences
+	else if (fastcmp(field,"preffollower"))
+		return NOSET; // don't allow changing user preferences
+	else if (fastcmp(field,"preffollowercolor"))
+		return NOSET; // don't allow changing user preferences
 
 	// time to add to the endless elseif list!!!!
 	// rideroids

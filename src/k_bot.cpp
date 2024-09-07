@@ -174,15 +174,17 @@ void K_SetBot(UINT8 newplayernum, UINT8 skinnum, UINT8 difficulty, botStyle_e st
 				break;
 		}
 	}
-	players[newplayernum].skincolor = color;
-	K_SetNameForBot(newplayernum, realname);
 
-	SetPlayerSkinByNum(newplayernum, skinnum);
+	K_SetNameForBot(newplayernum, realname);
 
 	for (UINT8 i = 0; i < PWRLV_NUMTYPES; i++)
 	{
 		clientpowerlevels[newplayernum][i] = 0;
 	}
+
+	players[newplayernum].prefcolor = color;
+	players[newplayernum].prefskin = skinnum;
+	G_UpdatePlayerPreferences(&players[newplayernum]);
 
 	if (netgame)
 	{

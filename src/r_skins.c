@@ -408,22 +408,6 @@ static void SetSkin(player_t *player, INT32 skinnum)
 	player->kartweight = skin->kartweight;
 	player->charflags = skin->flags;
 
-#if 0
-	if (!CV_CheatsEnabled() && !(netgame || multiplayer || demo.playback))
-	{
-		for (i = 0; i <= r_splitscreen; i++)
-		{
-			if (playernum == g_localplayers[i])
-			{
-				CV_StealthSetValue(&cv_playercolor[i], skin->prefcolor);
-			}
-		}
-
-		player->skincolor = skin->prefcolor;
-		K_KartResetPlayerColor(player);
-	}
-#endif
-
 	if (player->followmobj)
 	{
 		P_RemoveMobj(player->followmobj);

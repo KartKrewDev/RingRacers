@@ -7978,6 +7978,9 @@ static void P_InitPlayers(void)
 	// Make sure objectplace is OFF when you first start the level!
 	OP_ResetObjectplace();
 
+	// Update skins / colors between levels.
+	G_UpdateAllPlayerPreferences();
+
 	// Are we forcing a character?
 	if (gametype == GT_TUTORIAL)
 	{

@@ -996,11 +996,6 @@ static void SendNameAndColor(const UINT8 n)
 		cv_follower[n].value = -1;
 	}
 
-	if (sendColor == SKINCOLOR_NONE)
-	{
-		sendColor = skins[cv_skin[n].value].prefcolor;
-	}
-
 	if (sendFollowerColor == SKINCOLOR_NONE)
 	{
 		if (cv_follower[n].value >= 0)
@@ -1015,11 +1010,11 @@ static void SendNameAndColor(const UINT8 n)
 
 	// Don't send if everything was identical.
 	if (!strcmp(cv_playername[n].string, player_names[playernum])
-		&& sendColor == player->skincolor
-		&& !stricmp(cv_skin[n].string, skins[player->skin].name)
+		&& sendColor == player->prefcolor
+		&& !stricmp(cv_skin[n].string, skins[player->prefskin].name)
 		&& !stricmp(cv_follower[n].string,
-			(player->followerskin < 0 ? "None" : followers[player->followerskin].name))
-		&& sendFollowerColor == player->followercolor)
+			(player->preffollower < 0 ? "None" : followers[player->preffollower].name))
+		&& sendFollowerColor == player->preffollowercolor)
 	{
 		return;
 	}
@@ -1123,7 +1118,6 @@ static void Got_NameAndColor(const UINT8 **cp, INT32 playernum)
 	UINT16 color, followercolor;
 	UINT8 skin;
 	INT16 follower;
-	SINT8 localplayer = -1;
 	UINT8 i;
 
 #ifdef PARANOIA
@@ -1145,8 +1139,6 @@ static void Got_NameAndColor(const UINT8 **cp, INT32 playernum)
 				I_Error("snacpending[%d] negative!", i);
 			}
 #endif
-
-			localplayer = i;
 			break;
 		}
 	}
@@ -1164,95 +1156,22 @@ static void Got_NameAndColor(const UINT8 **cp, INT32 playernum)
 			SetPlayerName(playernum, name);
 	}
 
-	// set color
-	p->skincolor = color % numskincolors;
-	if (p->mo)
-		p->mo->color = (UINT16)p->skincolor;
-	demo_extradata[playernum] |= DXD_COLOR;
-
-	// normal player colors
-	if (server && !P_IsMachineLocalPlayer(p))
+	// queue the rest for next round
+	p->prefcolor = color % numskincolors;
+	if (K_ColorUsable(p->prefcolor, false, false) == false)
 	{
-		boolean kick = false;
-
-		// don't allow inaccessible colors
-		if (K_ColorUsable(p->skincolor, false, false) == false)
-		{
-			kick = true;
-		}
-
-		if (kick)
-		{
-			CONS_Alert(CONS_WARNING, M_GetText("Illegal color change received from %s, color: %d)\n"), player_names[playernum], p->skincolor);
-			SendKick(playernum, KICK_MSG_CON_FAIL);
-			return;
-		}
+		p->prefcolor = SKINCOLOR_NONE;
 	}
 
-	// set skin
-	if (cv_forceskin.value >= 0 && K_CanChangeRules(true)) // Server wants everyone to use the same player
+	p->prefskin = skin;
+	p->preffollowercolor = followercolor;
+	p->preffollower = follower;
+
+	if (p->jointime < 1)
 	{
-		const INT32 forcedskin = cv_forceskin.value;
-		SetPlayerSkinByNum(playernum, forcedskin);
-
-		if (localplayer != -1)
-			CV_StealthSet(&cv_skin[localplayer], skins[forcedskin].name);
+		// Just entered, update preferences immediately
+		G_UpdatePlayerPreferences(p);
 	}
-	else
-	{
-		UINT8 oldskin = players[playernum].skin;
-
-		SetPlayerSkinByNum(playernum, skin);
-
-		// The following is a miniature subset of Got_Teamchange.
-		if ((gamestate == GS_LEVEL) // In a level?
-			&& (players[playernum].jointime > 1) // permit on join
-			&& (leveltime > introtime) // permit during intro turnaround
-			&& (players[playernum].skin != oldskin)) // a skin change actually happened?
-		{
-			players[playernum].roundconditions.switched_skin = true;
-
-			if (
-				cv_restrictskinchange.value // Skin changes are restricted?
-				&& G_GametypeHasSpectators() // not a spectator...
-				&& players[playernum].spectator == false // ...but could be?
-			)
-			{
-				for (i = 0; i < MAXPLAYERS; ++i)
-				{
-					if (i == playernum)
-						continue;
-					if (!playeringame[i])
-						continue;
-					if (players[i].spectator)
-						continue;
-					break;
-				}
-
-				if (i != MAXPLAYERS // Someone on your server who isn't you?
-					&& LUA_HookTeamSwitch(&players[playernum], 0, false, false, false)) // fiiiine, lua can except it
-				{
-					P_DamageMobj(players[playernum].mo, NULL, NULL, 1, DMG_SPECTATOR);
-
-					if (players[i].spectator)
-					{
-						HU_AddChatText(va("\x82*%s became a spectator.", player_names[playernum]), false);
-
-						FinalisePlaystateChange(playernum);
-					}
-				}
-			}
-		}
-	}
-
-	// set follower colour:
-	// Don't bother doing garbage and kicking if we receive None,
-	// this is both silly and a waste of time,
-	// this will be handled properly in K_HandleFollower.
-	p->followercolor = followercolor;
-
-	// set follower
-	K_SetFollowerByNum(playernum, follower);
 }
 
 enum {

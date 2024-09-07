@@ -1778,6 +1778,65 @@ void G_FixCamera(UINT8 view)
 	R_ResetViewInterpolation(view);
 }
 
+void G_UpdatePlayerPreferences(player_t *const player)
+{
+	// set skin
+	INT32 new_skin = player->prefskin;
+	if (K_CanChangeRules(true) == true && cv_forceskin.value >= 0)
+	{
+		// Server wants everyone to use the same player
+		new_skin = cv_forceskin.value;
+	}
+
+	if (player->skin != new_skin)
+	{
+		SetPlayerSkinByNum(player - players, new_skin);
+	}
+
+	// set color
+	UINT16 new_color = player->prefcolor;
+	if (new_color == SKINCOLOR_NONE)
+	{
+		new_color = skins[player->skin].prefcolor;
+	}
+
+	if (player->skincolor != new_color)
+	{
+		player->skincolor = new_color;
+		K_KartResetPlayerColor(player);
+	}
+
+	// set follower
+	if (player->followerskin != player->preffollower)
+	{
+		K_SetFollowerByNum(player - players, player->preffollower);
+	}
+
+	// set follower color
+	if (player->followercolor != player->preffollowercolor)
+	{
+		// Don't bother doing garbage and kicking if we receive None,
+		// this is both silly and a waste of time,
+		// this will be handled properly in K_HandleFollower.
+		player->followercolor = player->preffollowercolor;
+	}
+}
+
+void G_UpdateAllPlayerPreferences(void)
+{
+	INT32 i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i] == false)
+		{
+			continue;
+		}
+
+		G_UpdatePlayerPreferences(&players[i]);
+	}
+}
+
 //
 // G_Ticker
 // Make ticcmd_ts for the players.
@@ -1869,6 +1928,13 @@ void G_Ticker(boolean run)
 		if (changed == true)
 		{
 			K_UpdateAllPlayerPositions();
+		}
+	}
+	else
+	{
+		if (run)
+		{
+			G_UpdateAllPlayerPreferences();
 		}
 	}
 
@@ -2186,6 +2252,11 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	tic_t laptime[LAP__MAX];
 
+	UINT16 prefcolor;
+	INT32 prefskin;
+	UINT16 preffollowercolor;
+	INT32 preffollower;
+
 	INT32 i;
 
 	// This needs to be first, to permit it to wipe extra information
@@ -2208,6 +2279,11 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	skincolor = players[player].skincolor;
 	skin = players[player].skin;
+
+	prefcolor = players[player].prefcolor;
+	prefskin = players[player].prefskin;
+	preffollower = players[player].preffollower;
+	preffollowercolor = players[player].preffollowercolor;
 
 	if (betweenmaps)
 	{
@@ -2462,6 +2538,11 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	// save player config truth reborn
 	p->skincolor = skincolor;
 	p->skin = skin;
+
+	p->prefcolor = prefcolor;
+	p->prefskin = prefskin;
+	p->preffollower = preffollower;
+	p->preffollowercolor = preffollowercolor;
 
 	p->fakeskin = fakeskin;
 	p->kartspeed = kartspeed;

@@ -247,7 +247,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT16(save->p, players[i].flashpal);
 		WRITEUINT16(save->p, players[i].flashcount);
 
-		WRITEUINT8(save->p, players[i].skincolor);
+		WRITEUINT16(save->p, players[i].skincolor);
 		WRITEINT32(save->p, players[i].skin);
 
 		for (j = 0; j < MAXAVAILABILITY; j++)
@@ -257,6 +257,12 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		WRITEUINT8(save->p, players[i].fakeskin);
 		WRITEUINT8(save->p, players[i].lastfakeskin);
+
+		WRITEUINT16(save->p, players[i].prefcolor);
+		WRITEINT32(save->p, players[i].prefskin);
+		WRITEUINT16(save->p, players[i].preffollowercolor);
+		WRITEINT32(save->p, players[i].preffollower);
+
 		WRITEUINT32(save->p, players[i].score);
 		WRITESINT8(save->p, players[i].lives);
 		WRITESINT8(save->p, players[i].xtralife);
@@ -919,7 +925,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].flashpal = READUINT16(save->p);
 		players[i].flashcount = READUINT16(save->p);
 
-		players[i].skincolor = READUINT8(save->p);
+		players[i].skincolor = READUINT16(save->p);
 		players[i].skin = READINT32(save->p);
 
 		for (j = 0; j < MAXAVAILABILITY; j++)
@@ -929,6 +935,12 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		players[i].fakeskin = READUINT8(save->p);
 		players[i].lastfakeskin = READUINT8(save->p);
+
+		players[i].prefcolor = READUINT16(save->p);
+		players[i].prefskin = READINT32(save->p);
+		players[i].preffollowercolor = READUINT16(save->p);
+		players[i].preffollower = READINT32(save->p);
+
 		players[i].score = READUINT32(save->p);
 		players[i].lives = READSINT8(save->p);
 		players[i].xtralife = READSINT8(save->p); // Ring Extra Life counter
