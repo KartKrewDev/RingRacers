@@ -46,6 +46,9 @@ boolean level_tally_t::UseBonuses(void)
 		return false;
 	}
 
+	if (K_InRaceDuel())
+		return false;
+
 	// No bonuses / ranking in FREE PLAY or Time Attack
 	return (grandprixinfo.gp == true || K_TimeAttackRules() == false);
 }

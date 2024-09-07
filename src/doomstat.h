@@ -868,7 +868,6 @@ extern SINT8 spbplace;
 extern boolean rainbowstartavailable;
 extern tic_t linecrossed;
 extern boolean inDuel;
-extern UINT8 extralaps;
 extern UINT8 overtimecheckpoints;
 
 extern tic_t bombflashtimer;	// Used to avoid causing seizures if multiple mines explode close to you :)

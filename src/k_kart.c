@@ -119,6 +119,27 @@ boolean K_DuelItemAlwaysSpawns(mapthing_t *mt)
 	return !!(mt->thing_args[0]);
 }
 
+boolean K_InRaceDuel(void)
+{
+	return (inDuel && (gametyperules & GTR_CIRCUIT) && !(mapheaderinfo[gamemap-1]->levelflags & LF_SECTIONRACE));
+}
+
+player_t *K_DuelOpponent(player_t *player)
+{
+	if (!K_InRaceDuel())
+		return player; // ????
+	else
+	{
+		for (UINT8 i = 0; i < MAXPLAYERS; i++)
+		{
+			if (playeringame[i] && !players[i].spectator && player - players != i)
+				return &players[i];
+		}
+	}
+
+	return player; // ????????????
+}
+
 static void K_SpawnDuelOnlyItems(void)
 {
 	mapthing_t *mt = NULL;
@@ -145,7 +166,6 @@ void K_TimerReset(void)
 	numbulbs = 1;
 	inDuel = rainbowstartavailable = false;
 	linecrossed = 0;
-	extralaps = 0;
 	overtimecheckpoints = 0;
 	timelimitintics = extratimeintics = secretextratime = 0;
 	g_pointlimit = 0;
@@ -275,6 +295,9 @@ void K_TimerInit(void)
 					introtime = (108) + 5; // 108 for rotation, + 5 for white fade
 					numbulbs += (numPlayers-2); // Extra POSITION!! time
 				}
+
+				if (K_InRaceDuel())
+					numlaps = 200;
 			}
 		}
 
@@ -4151,7 +4174,7 @@ void K_CheckpointCrossAward(player_t *player)
 	K_AwardPlayerRings(player, (player->bot ? 20 : 10), true);
 
 	// Update Duel scoring.
-	if (inDuel && player->position == 1)
+	if (K_InRaceDuel() && player->position == 1)
 	{
 		player->duelscore += 1;
 
@@ -4168,10 +4191,48 @@ void K_CheckpointCrossAward(player_t *player)
 				players[i].duelscore -= 1;
 		}
 
-		if (player->duelscore == 3)
+		if (player->duelscore == DUELWINNINGSCORE)
 		{
+			S_StartSound(NULL, sfx_s3k6a);
 			P_DoPlayerExit(player, 0);
 			P_DoAllPlayersExit(PF_NOCONTEST, 0);
+
+			player_t *opp = K_DuelOpponent(player);
+			opp->position = 2;
+			player->position = 1;
+
+			if (opp->distancetofinish - player->distancetofinish < 128)
+			{
+				K_StartRoundWinCamera(
+					player->mo,
+					player->angleturn + ANGLE_180,
+					400*mapobjectscale,
+					6*TICRATE,
+					FRACUNIT/16
+				);
+			}
+			else
+			{
+				K_StartRoundWinCamera(
+					opp->mo,
+					opp->angleturn + ANGLE_180,
+					400*mapobjectscale,
+					6*TICRATE,
+					FRACUNIT/16
+				);		
+			}
+
+		}
+		else
+		{
+			// Doing this here because duel exit is a weird path, and we don't want to transform for endcam.
+			UINT32 skinflags = (demo.playback)
+					? demo.skinlist[demo.currentskinid[(player-players)]].flags
+					: skins[player->skin].flags;
+			if (skinflags & SF_IRONMAN)
+			{
+				SetRandomFakePlayerSkin(player, true, false);
+			}
 		}
 	}
 
@@ -10697,7 +10758,7 @@ static void K_UpdateDistanceFromFinishLine(player_t *const player)
 				const mapheader_t *mapheader = mapheaderinfo[gamemap - 1];
 				if ((mapheader->levelflags & LF_SECTIONRACE) == 0U)
 				{
-					const UINT8 numfulllapsleft = ((UINT8)numlaps - player->laps) / mapheader->lapspersection + extralaps;
+					const UINT8 numfulllapsleft = ((UINT8)numlaps - player->laps) / mapheader->lapspersection;
 					player->distancetofinish += numfulllapsleft * K_GetCircuitLength();
 				}
 			}
@@ -11706,6 +11767,11 @@ void K_KartUpdatePosition(player_t *player)
 
 			realplayers++;
 		}
+	}
+	else if (K_InRaceDuel() && player->exiting)
+	{
+		// Positions directly set in K_CheckpointCrossAward, don't touch.
+		return;
 	}
 	else
 	{

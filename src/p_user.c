@@ -1368,7 +1368,7 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 void P_DoAllPlayersExit(pflags_t flags, boolean trygivelife)
 {
 	UINT8 i;
-	const boolean dofinishsound = (musiccountdown == 0);
+	const boolean dofinishsound = (musiccountdown == 0) && (!K_InRaceDuel());
 
 	if (grandprixinfo.gp == false
 		|| grandprixinfo.eventmode == GPEVENT_SPECIAL

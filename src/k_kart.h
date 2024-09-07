@@ -75,6 +75,7 @@ Make sure this matches the actual number of states
 #define RINGTRANSPARENCYREGEN 3
 
 #define DUELOVERTIME (3*60*TICRATE)
+#define DUELWINNINGSCORE (1)
 
 #define MIN_WAVEDASH_CHARGE ((11*TICRATE/16)*9)
 
@@ -94,6 +95,8 @@ angle_t K_ReflectAngle(angle_t angle, angle_t against, fixed_t maxspeed, fixed_t
 
 boolean K_IsDuelItem(mobjtype_t type);
 boolean K_DuelItemAlwaysSpawns(mapthing_t *mt);
+boolean K_InRaceDuel(void);
+player_t *K_DuelOpponent(player_t *player);
 
 void K_TimerReset(void);
 void K_TimerInit(void);

@@ -2997,7 +2997,7 @@ static void K_drawKartLaps(void)
 	// I do not understand the way this system of offsets is laid out at all,
 	// so it's probably going to be pretty bad to maintain. Sorry.
 
-	if (inDuel)
+	if (K_InRaceDuel())
 	{
 		UINT32 flashflag = (stplyr->duelscore >= 0) ? V_BLUEMAP : V_REDMAP;
 		if (leveltime % 2)
@@ -3018,7 +3018,7 @@ static void K_drawKartLaps(void)
 			bump = 40;
 	}
 
-	if (numlaps != 1)
+	if (numlaps != 1 && !K_InRaceDuel())
 	{
 		if (r_splitscreen > 1)
 		{

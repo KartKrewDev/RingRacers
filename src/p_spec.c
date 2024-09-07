@@ -52,6 +52,7 @@
 #include "m_easing.h"
 #include "music.h"
 #include "k_battle.h" // battleprisons
+#include "k_endcam.h" // K_EndCameraIsFreezing()
 
 // Not sure if this is necessary, but it was in w_wad.c, so I'm putting it here too -Shadow Hog
 #include <errno.h>
@@ -1993,11 +1994,6 @@ static void K_HandleLapIncrement(player_t *player)
 
 			boolean specialduelexit = (inDuel && !(mapheaderinfo[gamemap-1]->levelflags & LF_SECTIONRACE));
 
-			if (specialduelexit)
-			{
-				extralaps += 1;
-			}
-
 			// finished race exit setup
 			if (player->laps > numlaps && !specialduelexit)
 			{
@@ -2025,7 +2021,8 @@ static void K_HandleLapIncrement(player_t *player)
 					: skins[player->skin].flags;
 				if (skinflags & SF_IRONMAN)
 				{
-					SetRandomFakePlayerSkin(player, true, false);
+					if (!K_InRaceDuel()) // We'll do this in K_CheckpointCrossAward if necessary.
+						SetRandomFakePlayerSkin(player, true, false);
 				}
 
 				// Always trust waypoints entering the first lap.
@@ -2055,7 +2052,7 @@ static void K_HandleLapIncrement(player_t *player)
 
 				K_SpawnDriftBoostExplosion(player, 4);
 				K_SpawnDriftElectricSparks(player, SKINCOLOR_SILVER, false);
-				K_SpawnAmps(player, (inDuel) ? 20 : 50, player->mo);
+				K_SpawnAmps(player, (K_InRaceDuel()) ? 20 : 50, player->mo);
 
 				rainbowstartavailable = false;
 			}
@@ -2077,7 +2074,9 @@ static void K_HandleLapIncrement(player_t *player)
 			}
 			else if (P_IsDisplayPlayer(player))
 			{
-				if (numlaps > 1 && player->laps == numlaps) // final lap
+				if (K_InRaceDuel())
+					S_StartSound(NULL, sfx_s221);
+				else if (numlaps > 1 && player->laps == numlaps) // final lap
 					S_StartSound(NULL, sfx_s3k68);
 				else if ((player->laps > 1) && (player->laps < numlaps)) // non-final lap
 					S_StartSound(NULL, sfx_s221);
@@ -2090,7 +2089,7 @@ static void K_HandleLapIncrement(player_t *player)
 			}
 			else
 			{
-				if ((player->laps > numlaps) && (player->position == 1))
+				if ((player->laps > numlaps) && (player->position == 1) && (!K_InRaceDuel()))
 				{
 					// opponent finished
 					S_StartSound(NULL, sfx_s253);
@@ -4724,7 +4723,7 @@ void P_SetupSignExit(player_t *player, boolean tie)
 		return;
 
 	// SRB2Kart: FINALLY, add in an alternative if no place is found
-	if (player->mo && !P_MobjWasRemoved(player->mo))
+	if (player->mo && !P_MobjWasRemoved(player->mo) && !K_EndCameraIsFreezing())
 	{
 		thing = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->floorz, MT_SIGN);
 		thing->angle = bestAngle;
