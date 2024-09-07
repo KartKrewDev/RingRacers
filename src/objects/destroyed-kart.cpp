@@ -332,8 +332,12 @@ struct Kart : Mobj
 
 		if(hasCustomHusk){
 			flags |= MF_NOSQUISH; //K_Squish() automates spritexscale/spriteyscale & this flag prevents that at the cost of no squish visual when the kart husk hits the ground
-			float div = ((float)1/(float)oldScale)*(float)scale();
-			auto formula = [&](fixed_t subject){return (fixed_t)((float)subject/div);};
+
+			//approximate inverse spritescale() by exaggerating fixed_t values by 100 and then dividing back down instead of doing float maths
+			//this way there's no decimal points and no potential for desyncs across builds/platforms
+			//there is potential this could overflow at exceptionally high scale() values
+			fixed_t z = FixedDiv(FixedMul(scale(),100),oldScale);
+			auto formula = [&](fixed_t subject){return FixedDiv(FixedMul(subject,100),z);};
 			spritexscale(formula(spritexscale()));
 			spriteyscale(formula(spriteyscale()));
 		}
