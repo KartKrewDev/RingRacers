@@ -75,7 +75,7 @@ Make sure this matches the actual number of states
 #define RINGTRANSPARENCYREGEN 3
 
 #define DUELOVERTIME (3*60*TICRATE)
-#define DUELWINNINGSCORE (1)
+#define DUELWINNINGSCORE (3)
 
 #define MIN_WAVEDASH_CHARGE ((11*TICRATE/16)*9)
 
