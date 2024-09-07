@@ -3010,7 +3010,9 @@ static void K_drawKartLaps(void)
 			V_DrawCenteredString(BASEVIDWIDTH/2, 5, flashflag, va("%d", stplyr->duelscore));
 	}
 
-	if (numlaps != 1)
+	boolean drawinglaps = (numlaps != 1 && !K_InRaceDuel());
+
+	if (drawinglaps)
 	{
 		if (r_splitscreen > 1)
 			bump = 27;
@@ -3018,7 +3020,7 @@ static void K_drawKartLaps(void)
 			bump = 40;
 	}
 
-	if (numlaps != 1 && !K_InRaceDuel())
+	if (drawinglaps)
 	{
 		if (r_splitscreen > 1)
 		{
