@@ -4201,7 +4201,7 @@ void K_CheckpointCrossAward(player_t *player)
 			opp->position = 2;
 			player->position = 1;
 
-			if (opp->distancetofinish - player->distancetofinish < 128)
+			if (opp->distancetofinish - player->distancetofinish < 200)
 			{
 				K_StartRoundWinCamera(
 					player->mo,
