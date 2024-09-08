@@ -184,6 +184,8 @@ void K_SetBot(UINT8 newplayernum, UINT8 skinnum, UINT8 difficulty, botStyle_e st
 
 	players[newplayernum].prefcolor = color;
 	players[newplayernum].prefskin = skinnum;
+	players[newplayernum].preffollower = -1;
+	players[newplayernum].preffollowercolor = SKINCOLOR_NONE;
 	G_UpdatePlayerPreferences(&players[newplayernum]);
 
 	if (netgame)

@@ -795,6 +795,8 @@ void K_RetireBots(void)
 
 			bot->prefskin = skinnum;
 			bot->prefcolor = skins[skinnum].prefcolor;
+			bot->preffollower = -1;
+			bot->preffollowercolor = SKINCOLOR_NONE;
 			G_UpdatePlayerPreferences(bot);
 
 			bot->score = 0;
