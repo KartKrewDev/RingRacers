@@ -172,7 +172,7 @@ demoghost *ghosts = NULL;
 // - 0x000C (Ring Racers v2.2)
 // - 0x000D (Ring Racers v2.3)
 
-#define DEMOVERSION 0x000D
+#define DEMOVERSION 0x000E
 
 boolean G_CompatLevel(UINT16 level)
 {

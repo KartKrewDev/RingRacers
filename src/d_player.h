@@ -1049,6 +1049,7 @@ struct player_t
 	UINT16 overshield;
 	fixed_t overdrivepower;
 	UINT8 overdriveready;
+	boolean overdrivelenient;
 
 	UINT8 itemflags; 	// holds IF_ flags (see itemflags_t)
 
