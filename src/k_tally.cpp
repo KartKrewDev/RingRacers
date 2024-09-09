@@ -343,8 +343,13 @@ void level_tally_t::Init(player_t *player)
 
 		if ((gametypes[gt]->rules & GTR_CIRCUIT) == GTR_CIRCUIT)
 		{
-			laps = std::clamp(FixedMul(std::max(stplyr->exp, FRACUNIT/2), (500/K_GetNumGradingPoints())*player->gradingpointnum), 0, 999);
-			totalLaps = 500;
+			UINT16 displayEXP = K_GetDisplayEXP(player);
+
+			if (displayEXP != UINT16_MAX)
+			{
+				laps = displayEXP;
+				totalLaps = 500;
+			}
 		}
 
 		if (battleprisons)

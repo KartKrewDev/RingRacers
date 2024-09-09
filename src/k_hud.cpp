@@ -3116,17 +3116,19 @@ static void K_drawKartTeamScores(void)
 	}
 }
 
-static void K_drawKartLaps(void)
+static boolean K_drawKartLaps(void)
 {
 	INT32 splitflags = V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN;
 	INT32 bump = 0;
 	boolean drewsticker = false;
 
+	UINT16 displayEXP = K_GetDisplayEXP(stplyr);
+
 	// Jesus Christ.
 	// I do not understand the way this system of offsets is laid out at all,
 	// so it's probably going to be pretty bad to maintain. Sorry.
 
-	if (numlaps != 1)
+	if (numlaps != 1 && displayEXP != UINT16_MAX)
 	{
 		if (r_splitscreen > 1)
 			bump = 27;
@@ -3196,10 +3198,12 @@ static void K_drawKartLaps(void)
 		}
 	}
 
-	UINT16 displayEXP = std::clamp(FixedMul(std::max(stplyr->exp, FRACUNIT/2), (500/K_GetNumGradingPoints())*stplyr->gradingpointnum), 0, 999);
-
 	// EXP
-	if (r_splitscreen > 1)
+	if (displayEXP == UINT16_MAX)
+	{
+		;
+	}
+	else if (r_splitscreen > 1)
 	{
 		INT32 fx = 0, fy = 0, fr = 0;
 		INT32 flipflag = 0;
@@ -3263,6 +3267,8 @@ static void K_drawKartLaps(void)
 		Draw row = Draw(LAPS_X+23+bump, LAPS_Y+3).flags(V_HUDTRANS|V_SLIDEIN|splitflags).font(Draw::Font::kThinTimer);
 		row.text("{:03}", displayEXP);
 	}
+
+	return drewsticker;
 }
 
 #define RINGANIM_FLIPFRAME (RINGANIM_NUMFRAMES/2)
@@ -6823,8 +6829,7 @@ void K_drawKartHUD(void)
 			{
 				if (gametyperules & GTR_CIRCUIT)
 				{
-					K_drawKartLaps();
-					gametypeinfoshown = true;
+					gametypeinfoshown = K_drawKartLaps();
 				}
 				else if (gametyperules & GTR_BUMPERS)
 				{
