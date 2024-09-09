@@ -15262,6 +15262,9 @@ UINT16 K_GetDisplayEXP(player_t *player)
 
 UINT32 K_GetNumGradingPoints(void)
 {
+	if (K_Cooperative())
+		return 0;
+
 	return numlaps * (1 + Obj_GetCheckpointCount());
 }
 
