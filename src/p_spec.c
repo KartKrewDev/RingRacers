@@ -1992,10 +1992,8 @@ static void K_HandleLapIncrement(player_t *player)
 				player->latestlap = player->laps;
 			}
 
-			boolean specialduelexit = (inDuel && !(mapheaderinfo[gamemap-1]->levelflags & LF_SECTIONRACE));
-
 			// finished race exit setup
-			if (player->laps > numlaps && !specialduelexit)
+			if (player->laps > numlaps && !K_InRaceDuel())
 			{
 				pflags_t applyflags = 0;
 				if (specialstageinfo.valid == true)
@@ -2021,7 +2019,7 @@ static void K_HandleLapIncrement(player_t *player)
 					: skins[player->skin].flags;
 				if (skinflags & SF_IRONMAN)
 				{
-					if (!K_InRaceDuel()) // We'll do this in K_CheckpointCrossAward if necessary.
+					if ((player->laps == 1 && lapisfresh) || !K_InRaceDuel()) // We'll do this in K_CheckpointCrossAward if necessary.
 						SetRandomFakePlayerSkin(player, true, false);
 				}
 
