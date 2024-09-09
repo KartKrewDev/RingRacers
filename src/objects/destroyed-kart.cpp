@@ -316,8 +316,8 @@ struct Kart : Mobj
 		}
 
 		Mobj* p = player();
-		bool pValid = Mobj::valid(p);
-		bool hasCustomHusk = pValid && p->player && skins[p->player->skin].sprites[SPR2_DKRT].numframes;
+		bool pValid = Mobj::valid(p) && p->player;
+		bool hasCustomHusk = pValid && skins[p->player->skin].sprites[SPR2_DKRT].numframes;
 
 		if(hasCustomHusk)
 		{
