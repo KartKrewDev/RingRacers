@@ -4211,16 +4211,6 @@ void K_CheckpointCrossAward(player_t *player)
 					FRACUNIT/16
 				);
 			}
-			else
-			{
-				K_StartRoundWinCamera(
-					opp->mo,
-					opp->angleturn + ANGLE_180,
-					400*mapobjectscale,
-					6*TICRATE,
-					FRACUNIT/16
-				);		
-			}
 
 		}
 		else
