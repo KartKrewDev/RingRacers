@@ -4181,7 +4181,10 @@ void K_CheckpointCrossAward(player_t *player)
 		if (leveltime > DUELOVERTIME)
 		{
 			overtimecheckpoints++;
-			K_AddMessage(va("MARGIN BOOST x%d", overtimecheckpoints), true, false);
+			if (overtimecheckpoints > 1)
+				K_AddMessage(va("Margin Boost x%d!", overtimecheckpoints), true, false);
+			else
+				K_AddMessage(va("Margin Boost!", overtimecheckpoints), true, false);
 			S_StartSound(NULL, sfx_gsha6);
 		}
 
