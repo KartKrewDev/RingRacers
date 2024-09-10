@@ -4184,7 +4184,7 @@ void K_CheckpointCrossAward(player_t *player)
 			if (overtimecheckpoints > 1)
 				K_AddMessage(va("Margin Boost x%d!", overtimecheckpoints), true, false);
 			else
-				K_AddMessage(va("Margin Boost!", overtimecheckpoints), true, false);
+				K_AddMessage("Margin Boost!", true, false);
 			S_StartSound(NULL, sfx_gsha6);
 		}
 
@@ -4196,15 +4196,11 @@ void K_CheckpointCrossAward(player_t *player)
 
 		if (player->duelscore == DUELWINNINGSCORE)
 		{
-			S_StartSound(NULL, sfx_s3k6a);
-			P_DoPlayerExit(player, 0);
-			P_DoAllPlayersExit(PF_NOCONTEST, 0);
-
 			player_t *opp = K_DuelOpponent(player);
 			opp->position = 2;
 			player->position = 1;
 
-			if (opp->distancetofinish - player->distancetofinish < 200)
+			if (opp->distancetofinish - player->distancetofinish < 200) // Setting player.exiting changes distance reporting, check these first!
 			{
 				K_StartRoundWinCamera(
 					player->mo,
@@ -4215,6 +4211,9 @@ void K_CheckpointCrossAward(player_t *player)
 				);
 			}
 
+			S_StartSound(NULL, sfx_s3k6a);
+			P_DoPlayerExit(player, 0);
+			P_DoAllPlayersExit(PF_NOCONTEST, 0);
 		}
 		else
 		{
@@ -9489,6 +9488,14 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			S_StartSoundAtVolume(NULL, sfx_mbs43, 127);
 		}
 		player->amppickup--;
+	}
+
+	// ACHTUNG TEMPORARY FUCKUP.
+	// Disable skip protection in Race Duel because of distance jumps in infinite-lap contexts.
+	// This shouldn't exist at all in release 2.4, so this is probably fine, right...?
+	if (K_InRaceDuel())
+	{
+		player->pflags |= PF_TRUSTWAYPOINTS;
 	}
 
 
