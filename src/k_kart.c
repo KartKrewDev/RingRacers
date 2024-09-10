@@ -121,7 +121,7 @@ boolean K_DuelItemAlwaysSpawns(mapthing_t *mt)
 
 boolean K_InRaceDuel(void)
 {
-	return (inDuel && (gametyperules & GTR_CIRCUIT) && !(mapheaderinfo[gamemap-1]->levelflags & LF_SECTIONRACE));
+	return (inDuel && (gametyperules & GTR_CIRCUIT) && !(mapheaderinfo[gamemap-1]->levelflags & LF_SECTIONRACE)) && !specialstageinfo.valid;
 }
 
 player_t *K_DuelOpponent(player_t *player)
