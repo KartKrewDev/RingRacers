@@ -3703,7 +3703,7 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 		p += 4;
 
 	UINT32 num_classes;
-	if (demo.version <= 0x000D)
+	if (ghostversion <= 0x000D)
 	{
 		num_classes = PROLDDEMO;
 	}
@@ -3943,7 +3943,7 @@ staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer)
 		temp.lap = READUINT32(p);
 
 	UINT32 num_classes;
-	if (demo.version <= 0x000D)
+	if (ghostversion <= 0x000D)
 	{
 		num_classes = PROLDDEMO;
 	}
