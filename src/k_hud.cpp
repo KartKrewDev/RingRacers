@@ -6494,7 +6494,7 @@ void K_drawKartHUD(void)
 				}
 			}
 
-			if (modeattacking || (gametyperules & GTR_TIMELIMIT))
+			if (modeattacking || (gametyperules & GTR_TIMELIMIT) || cv_drawtimer.value)
 				K_drawKartTimestamp(realtime, TIME_X, TIME_Y + (ta ? 2 : 0), flags, 0);
 
 			if (modeattacking)
