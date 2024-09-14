@@ -3195,14 +3195,31 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 			break;
 
 		case 424: // Change Weather
+		{
+			preciptype_t new_precip = PRECIP_NONE;
+			if (udmf_version < 2)
+			{
+				new_precip = args[0];
+			}
+			else
+			{
+				new_precip = stringargs[0] ? get_number(stringargs[0]) : PRECIP_NONE;
+			}
+
 			if (args[1])
 			{
-				globalweather = (UINT8)(args[0]);
+				globalweather = new_precip;
 				P_SwitchWeather(globalweather);
 			}
-			else if (mo && mo->player && P_IsPartyPlayer(mo->player))
-				P_SwitchWeather(args[0]);
+			else
+			{
+				if (mo && mo->player && P_IsPartyPlayer(mo->player))
+				{
+					P_SwitchWeather(new_precip);
+				}
+			}
 			break;
+		}
 
 		case 425: // Calls P_SetMobjState on calling mobj
 			{
