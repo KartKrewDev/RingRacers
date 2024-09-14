@@ -913,7 +913,7 @@ consvar_t cv_debugrender_visplanes = PlayerCheat("debugrender_visplanes", "Off")
 consvar_t cv_debugvirtualkeyboard = PlayerCheat("debugvirtualkeyboard", "Off").on_off().description("Always show virtual keyboard instead of using real keyboard input.");
 consvar_t cv_devmode_screen = PlayerCheat("devmode_screen", "1").min_max(1, 4).description("Choose which splitscreen player devmode applies to");
 consvar_t cv_drawpickups = PlayerCheat("drawpickups", "Yes").yes_no().description("Hide rings, spheres, item capsules, prison capsules (visual only)");
-consvar_t cv_drawtimer = PlayerCheat("drawtimer", "Yes").yes_no().description("Always draw the timer (race checkpoint timing, etc)");
+consvar_t cv_drawtimer = PlayerCheat("drawtimer", "No").yes_no().description("Always draw the timer (race checkpoint timing, etc)");
 
 void lua_profile_OnChange(void);
 consvar_t cv_lua_profile = PlayerCheat("lua_profile", "0").values(CV_Unsigned).onchange(lua_profile_OnChange).description("Show hook timings over an average of N tics");
