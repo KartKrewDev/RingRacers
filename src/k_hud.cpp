@@ -6303,7 +6303,7 @@ void K_ClearPersistentMessages()
 }
 
 // Return value can be used for "paired" splitscreen messages, true = was displayed
-void K_AddMessageForPlayer(const player_t *player, const char *msg, boolean interrupt, boolean persist)
+void K_AddMessageForPlayer(player_t *player, const char *msg, boolean interrupt, boolean persist)
 {
 	if (!player)
 		return;
@@ -6319,7 +6319,12 @@ void K_AddMessageForPlayer(const player_t *player, const char *msg, boolean inte
 	if (interrupt)
 		state->clear();
 
+	// FIXME: SUPER BAD HACK. 
+	// Need a way to parse messages as a given player instead.
+	player_t *oldstplyr = stplyr;
+	stplyr = player;
 	std::string parsedmsg = srb2::Draw::TextElement().parse(msg).string();
+	stplyr = oldstplyr;
 
 	if (persist)
 		state->objective = parsedmsg;

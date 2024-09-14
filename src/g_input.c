@@ -879,7 +879,7 @@ const char *G_KeynumToString(INT32 keynum)
 	// return a string with the ascii char if displayable
 	if (keynum > ' ' && keynum <= 'z' && keynum != KEY_CONSOLE)
 	{
-		keynamestr[0] = (char)keynum;
+		keynamestr[0] = (char)(keynum - 32); // Uppercase looks better!
 		keynamestr[1] = '\0';
 		return keynamestr;
 	}

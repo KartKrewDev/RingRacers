@@ -141,7 +141,7 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 						ourProfile = PR_GetLocalPlayerProfile(0);
 
 					string_.append("\x88");
-					string_.append(G_KeynumToString(ourProfile->controls[id->second][0]));
+					string_.append((G_KeynumToString(ourProfile->controls[id->second][0])));
 					string_.append("\x80");
 				}
 				else // This is a color code or some other generic glyph, treat it as is.
