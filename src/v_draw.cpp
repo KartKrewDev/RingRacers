@@ -132,16 +132,48 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 
 		if (auto it = translation.find(code); it != translation.end())
 		{
-			if (cv_descriptiveinput.value) // Does this char represent a game control?
+			if (cv_descriptiveinput.value) // Should we do game control translation?
 			{
 				if (auto id = inputdefinition.find(it->second & (~0xF0)); it != translation.end()) // This is a game control, do descriptive input translation!
 				{
-					profile_t *ourProfile = PR_GetPlayerProfile(stplyr); // FIXME: Doesn't work, stplyr is always 0 here!
+					// Grab our local controls
+					UINT8 localplayer = stplyr - players;
+					profile_t *ourProfile = PR_GetLocalPlayerProfile(localplayer);
 					if (ourProfile == NULL)
 						ourProfile = PR_GetLocalPlayerProfile(0);
 
+					INT32 device = G_GetDeviceForPlayer(localplayer); // TODO: Respond to what device player is CURRENTLY using
+					if (device == -1) // No registered device = you can't possibly be using a gamepad
+						device = KEYBOARD_MOUSE_DEVICE;
+
+					INT32 bestbind = -1; // Bind that matches our input device
+					INT32 anybind = -1; // Bind that doesn't match, but is at least for this control
+
+					for (INT32 control = 3; control >= 0; control--) // Prefer earlier binds
+					{
+						INT32 possiblecontrol = ourProfile->controls[id->second][control];
+
+						// if (device is gamepad) == (bound control is in gamepad range) - e.g. if bind matches device
+						if ((device != KEYBOARD_MOUSE_DEVICE) == (possiblecontrol >= KEY_JOY1 && possiblecontrol < JOYINPUTEND))
+						{
+							bestbind = possiblecontrol;
+							anybind = possiblecontrol;
+						}
+						else
+						{
+							anybind = possiblecontrol;
+						}
+					}
+
+					INT32 bind = (bestbind != -1) ? bestbind : anybind; // If we couldn't find a device-appropriate bind, try to at least use something
+
 					string_.append("\x88");
-					string_.append((G_KeynumToString(ourProfile->controls[id->second][0])));
+
+					if (bind == -1)
+						string_.append("[NOT BOUND]");
+					else
+						string_.append((G_KeynumToString(bind)));
+
 					string_.append("\x80");
 				}
 				else // This is a color code or some other generic glyph, treat it as is.
