@@ -162,12 +162,12 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 					}
 					else
 					{
-						string_.append("\x88");
+						string_.append("\x8D");
 
 						if (bind == -1)
 							string_.append("[NOT BOUND]");
 						else
-							string_.append((G_KeynumToString(bind)));
+							string_.append((G_KeynumToShortString(bind)));
 
 						string_.append("\x80");
 					}

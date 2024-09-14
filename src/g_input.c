@@ -759,6 +759,129 @@ static keyname_t keynames[] =
 	{KEY_AXIS1+9, "R TRIGGER"},
 };
 
+static keyname_t shortkeynames[] =
+{
+	{KEY_SPACE, "SPC"},
+	{KEY_CAPSLOCK, "CAPS"},
+	{KEY_ENTER, "ENTER"},
+	{KEY_TAB, "TAB"},
+	{KEY_ESCAPE, "ESC"},
+	{KEY_BACKSPACE, "BSPC"},
+
+	{KEY_NUMLOCK, "NUMLOCK"},
+	{KEY_SCROLLLOCK, "SCRLOCK"},
+
+	// bill gates keys
+	{KEY_LEFTWIN, "LWIN"},
+	{KEY_RIGHTWIN, "RWIN"},
+	{KEY_MENU, "MENU"},
+
+	{KEY_LSHIFT, "LSHIFT"},
+	{KEY_RSHIFT, "RSHIFT"},
+	{KEY_LSHIFT, "SHIFT"},
+	{KEY_LCTRL, "LCTRL"},
+	{KEY_RCTRL, "RCTRL"},
+	{KEY_LCTRL, "CTRL"},
+	{KEY_LALT, "LALT"},
+	{KEY_RALT, "RALT"},
+	{KEY_LALT, "ALT"},
+
+	// keypad keys
+	{KEY_KPADSLASH, "NUM/"},
+	{KEY_KEYPAD7, "NUM7"},
+	{KEY_KEYPAD8, "NUM8"},
+	{KEY_KEYPAD9, "NUM9"},
+	{KEY_MINUSPAD, "NUM-"},
+	{KEY_KEYPAD4, "NUM4"},
+	{KEY_KEYPAD5, "NUM5"},
+	{KEY_KEYPAD6, "NUM6"},
+	{KEY_PLUSPAD, "NUM+"},
+	{KEY_KEYPAD1, "NUM1"},
+	{KEY_KEYPAD2, "NUM2"},
+	{KEY_KEYPAD3, "NUM3"},
+	{KEY_KEYPAD0, "NUM0"},
+	{KEY_KPADDEL, "NUM ."},
+
+	// extended keys (not keypad)
+	{KEY_HOME, "HOME"},
+	{KEY_UPARROW, "UP"},
+	{KEY_PGUP, "PGUP"},
+	{KEY_LEFTARROW, "LEFT"},
+	{KEY_RIGHTARROW, "RIGHT"},
+	{KEY_END, "END"},
+	{KEY_DOWNARROW, "DOWN"},
+	{KEY_PGDN, "PGDN"},
+	{KEY_INS, "INS"},
+	{KEY_DEL, "DEL"},
+
+	// other keys
+	{KEY_F1, "F1"},
+	{KEY_F2, "F2"},
+	{KEY_F3, "F3"},
+	{KEY_F4, "F4"},
+	{KEY_F5, "F5"},
+	{KEY_F6, "F6"},
+	{KEY_F7, "F7"},
+	{KEY_F8, "F8"},
+	{KEY_F9, "F9"},
+	{KEY_F10, "F10"},
+	{KEY_F11, "F11"},
+	{KEY_F12, "F12"},
+
+	// KEY_CONSOLE has an exception in the keyname code
+	{'`', "TILDE"},
+	{KEY_PAUSE, "PAUSE/BREAK"},
+
+	// virtual keys for mouse buttons and joystick buttons
+	{KEY_MOUSE1+0,"M1"},
+	{KEY_MOUSE1+1,"M2"},
+	{KEY_MOUSE1+2,"M3"},
+	{KEY_MOUSE1+3,"M4"},
+	{KEY_MOUSE1+4,"M5"},
+	{KEY_MOUSE1+5,"M6"},
+	{KEY_MOUSE1+6,"M7"},
+	{KEY_MOUSE1+7,"M8"},
+	{KEY_MOUSEMOVE+0,"Mouse Up"},
+	{KEY_MOUSEMOVE+1,"Mouse Down"},
+	{KEY_MOUSEMOVE+2,"Mouse Left"},
+	{KEY_MOUSEMOVE+3,"Mouse Right"},
+	{KEY_MOUSEWHEELUP, "Wheel Up"},
+	{KEY_MOUSEWHEELDOWN, "Wheel Down"},
+
+	{KEY_JOY1+0, "A"},
+	{KEY_JOY1+1, "B"},
+	{KEY_JOY1+2, "X"},
+	{KEY_JOY1+3, "Y"},
+	{KEY_JOY1+4, "BACK"},
+	{KEY_JOY1+5, "GUIDE"},
+	{KEY_JOY1+6, "START"},
+	{KEY_JOY1+7, "LS"},
+	{KEY_JOY1+8, "RS"},
+	{KEY_JOY1+9, "LB"},
+	{KEY_JOY1+10, "RB"},
+	{KEY_JOY1+11, "D-UP"},
+	{KEY_JOY1+12, "D-DOWN"},
+	{KEY_JOY1+13, "D-LEFT"},
+	{KEY_JOY1+14, "D-RIGHT"},
+	{KEY_JOY1+15, "MISC."},
+	{KEY_JOY1+16, "PADDLE1"},
+	{KEY_JOY1+17, "PADDLE2"},
+	{KEY_JOY1+18, "PADDLE3"},
+	{KEY_JOY1+19, "PADDLE4"},
+	{KEY_JOY1+20, "TOUCHPAD"},
+
+	{KEY_AXIS1+0, "LS LEFT"},
+	{KEY_AXIS1+1, "LS RIGHT"},
+	{KEY_AXIS1+2, "LS UP"},
+	{KEY_AXIS1+3, "LS DOWN"},
+	{KEY_AXIS1+4, "RS LEFT"},
+	{KEY_AXIS1+5, "RS RIGHT"},
+	{KEY_AXIS1+6, "RS UP"},
+	{KEY_AXIS1+7, "RS DOWN"},
+	{KEY_AXIS1+8, "LT"},
+	{KEY_AXIS1+9, "RT"},
+};
+
 static const char *gamecontrolname[num_gamecontrols] =
 {
 	"null", // a key/button mapped to gc_null has no effect
@@ -888,6 +1011,30 @@ const char *G_KeynumToString(INT32 keynum)
 	for (j = 0; j < NUMKEYNAMES; j++)
 		if (keynames[j].keynum == keynum)
 			return keynames[j].name;
+
+	// create a name for unknown keys
+	sprintf(keynamestr, "KEY%d", keynum);
+	return keynamestr;
+}
+
+const char *G_KeynumToShortString(INT32 keynum)
+{
+	static char keynamestr[8];
+
+	UINT32 j;
+
+	// return a string with the ascii char if displayable
+	if (keynum > ' ' && keynum <= 'z' && keynum != KEY_CONSOLE)
+	{
+		keynamestr[0] = (char)(keynum - 32); // Uppercase looks better!
+		keynamestr[1] = '\0';
+		return keynamestr;
+	}
+
+	// find a description for special keys
+	for (j = 0; j < NUMKEYNAMES; j++)
+		if (shortkeynames[j].keynum == keynum)
+			return shortkeynames[j].name;
 
 	// create a name for unknown keys
 	sprintf(keynamestr, "KEY%d", keynum);

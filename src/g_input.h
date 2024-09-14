@@ -187,6 +187,7 @@ void G_MapEventsToControls(event_t *ev);
 
 // returns the name of a key
 const char *G_KeynumToString(INT32 keynum);
+const char *G_KeynumToShortString(INT32 keynum);
 INT32 G_KeyStringtoNum(const char *keystr);
 
 boolean G_KeyBindIsNecessary(INT32 gc);

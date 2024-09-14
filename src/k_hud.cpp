@@ -6854,3 +6854,21 @@ void K_DrawMarginSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean isS
 	if (!leftedge)
 		V_DrawFixedPatch((x + width)*FRACUNIT, y*FRACUNIT, FRACUNIT, flags|V_FLIP, stickerEnd, NULL);
 }
+
+INT32 K_DrawGameControl(UINT16 x, UINT16 y, UINT8 player, const char *str, UINT8 alignment)
+{
+	using srb2::Draw;
+		
+	// FIXME: SUPER BAD HACK. 
+	// Need a way to parse messages as a given player instead.
+	player_t *oldstplyr = stplyr;
+	stplyr = &players[player];
+	Draw::TextElement text = Draw::TextElement().parse(str).font(Draw::Font::kMenu);
+	stplyr = oldstplyr;
+
+	INT32 width = text.width();
+
+	Draw(x, y).align((srb2::Draw::Align)alignment).text(text);
+
+	return width;
+}

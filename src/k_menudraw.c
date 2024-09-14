@@ -832,18 +832,9 @@ void M_DrawMenuMessage(void)
 
 		if (standardbuttons)
 		{
-			workx -= SHORT(kp_button_x[1][0]->width);
-			K_drawButton(
-				workx * FRACUNIT, worky * FRACUNIT,
-				0, kp_button_x[1],
-				push
-			);
-
-			workx -= SHORT(kp_button_b[1][0]->width);
-			K_drawButton(
-				workx * FRACUNIT, worky * FRACUNIT,
-				0, kp_button_b[1],
-				push
+			workx -= K_DrawGameControl(
+				workx, worky,
+				0, "<b> / <x>", 2
 			);
 		}
 		else
@@ -871,11 +862,9 @@ void M_DrawMenuMessage(void)
 
 		if (standardbuttons)
 		{
-			workx -= SHORT(kp_button_a[1][0]->width);
-			K_drawButton(
-				workx * FRACUNIT, worky * FRACUNIT,
-				0, kp_button_a[1],
-				push
+			workx -= K_DrawGameControl(
+				workx, worky,
+				0, "<a>", 2
 			);
 		}
 		else
