@@ -22,6 +22,7 @@
 #include "w_wad.h"
 #include "z_zone.h"
 #include "k_profiles.h" // controls
+#include "p_local.h" // stplyr
 
 using srb2::Draw;
 using Chain = Draw::Chain;
@@ -131,14 +132,24 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 
 		if (auto it = translation.find(code); it != translation.end())
 		{
-			if (auto id = inputdefinition.find(it->second & (~0xF0)); it != translation.end())
+			if (cv_descriptiveinput.value) // Does this char represent a game control?
 			{
-				profile_t *ourProfile = PR_GetProfile(cv_lastprofile[0].value);
-				string_.append("\x88");
-				string_.append(G_KeynumToString(ourProfile->controls[id->second][0]));
-				string_.append("\x80");
+				if (auto id = inputdefinition.find(it->second & (~0xF0)); it != translation.end()) // This is a game control, do descriptive input translation!
+				{
+					profile_t *ourProfile = PR_GetPlayerProfile(stplyr); // FIXME: Doesn't work, stplyr is always 0 here!
+					if (ourProfile == NULL)
+						ourProfile = PR_GetLocalPlayerProfile(0);
+
+					string_.append("\x88");
+					string_.append(G_KeynumToString(ourProfile->controls[id->second][0]));
+					string_.append("\x80");
+				}
+				else // This is a color code or some other generic glyph, treat it as is.
+				{
+					string_.push_back(it->second); // replace with character code
+				}
 			}
-			else
+			else // We don't care whether this is a generic glyph, because input translation isn't on.
 			{
 				string_.push_back(it->second); // replace with character code
 			}

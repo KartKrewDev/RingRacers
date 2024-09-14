@@ -13,6 +13,8 @@
 #include "../r_main.h"	// cv_showhud
 #include "../v_video.h" // cv_constextsize
 
+extern consvar_t cv_descriptiveinput;
+
 menuitem_t OPTIONS_HUD[] =
 {
 
@@ -33,6 +35,12 @@ menuitem_t OPTIONS_HUD[] =
 
 	{IT_STRING | IT_CVAR, "Show \"FOCUS LOST\"", "Displays \"FOCUS LOST\" when the game cannot accept inputs.",
 		NULL, {.cvar = &cv_showfocuslost}, 0, 0},
+
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, {NULL}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Use Button Names", "Show button/key names in help text? When off, show Saturn buttons.",
+		NULL, {.cvar = &cv_descriptiveinput}, 0, 0},
 
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
