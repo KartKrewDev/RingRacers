@@ -79,13 +79,12 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 		{"tan", 0x8F},
 	};
 
+	// What glyphs should be rewritten as gamecontrols?
 	static const std::unordered_map<char, gamecontrols_e> inputdefinition = {
 		{0x00, gc_up},
 		{0x01, gc_down},
 		{0x02, gc_right},
 		{0x03, gc_left},
-
-		{0x04, gc_up},
 
 		{0x07, gc_r},
 		{0x08, gc_l},
@@ -98,6 +97,22 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 		{0x0D, gc_x},
 		{0x0E, gc_y},
 		{0x0F, gc_z},
+	};
+
+	// What physical binds should always be rewritten as glyphs anyway?
+	static const std::unordered_map<INT32, char> prettyinputs = {
+		{KEY_UPARROW, 0x00},
+		{KEY_DOWNARROW, 0x01},
+		{KEY_RIGHTARROW, 0x02},
+		{KEY_LEFTARROW, 0x03},
+		{KEY_JOY1+11, 0x00},
+		{KEY_JOY1+12, 0x01},
+		{KEY_JOY1+14, 0x02},
+		{KEY_JOY1+13, 0x03},
+		{KEY_AXIS1+0, 0x03}, // Left
+		{KEY_AXIS1+1, 0x02}, // Right
+		{KEY_AXIS1+2, 0x00}, // Up
+		{KEY_AXIS1+3, 0x01}, // Down
 	};
 
 	string_.clear();
@@ -134,7 +149,7 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 		{
 			if (cv_descriptiveinput.value) // Should we do game control translation?
 			{
-				if (auto id = inputdefinition.find(it->second & (~0xF0)); it != translation.end()) // This is a game control, do descriptive input translation!
+				if (auto id = inputdefinition.find(it->second & (~0xF0)); id != inputdefinition.end()) // This is a game control, do descriptive input translation!
 				{
 					// Grab our local controls
 					UINT8 localplayer = stplyr - players;
@@ -149,9 +164,11 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 					INT32 bestbind = -1; // Bind that matches our input device
 					INT32 anybind = -1; // Bind that doesn't match, but is at least for this control
 
-					for (INT32 control = 3; control >= 0; control--) // Prefer earlier binds
+					INT32 control = 3;
+
+					while (control >= 0) // Prefer earlier binds
 					{
-						INT32 possiblecontrol = ourProfile->controls[id->second][control];
+						INT32 possiblecontrol = ourProfile->controls[(INT32)id->second][control];
 
 						// if (device is gamepad) == (bound control is in gamepad range) - e.g. if bind matches device
 						if ((device != KEYBOARD_MOUSE_DEVICE) == (possiblecontrol >= KEY_JOY1 && possiblecontrol < JOYINPUTEND))
@@ -163,18 +180,27 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 						{
 							anybind = possiblecontrol;
 						}
+
+						control--;
 					}
 
 					INT32 bind = (bestbind != -1) ? bestbind : anybind; // If we couldn't find a device-appropriate bind, try to at least use something
 
-					string_.append("\x88");
-
-					if (bind == -1)
-						string_.append("[NOT BOUND]");
+					if (auto pretty = prettyinputs.find(bind); pretty != prettyinputs.end()) // Gamepad direction or keyboard arrow, use something nice-looking
+					{
+						string_.push_back(0xB0 | pretty->second); // take high bits from glyph invoked and low bits from control
+					}
 					else
-						string_.append((G_KeynumToString(bind)));
+					{
+						string_.append("\x88");
 
-					string_.append("\x80");
+						if (bind == -1)
+							string_.append("[NOT BOUND]");
+						else
+							string_.append((G_KeynumToString(bind)));
+
+						string_.append("\x80");
+					}
 				}
 				else // This is a color code or some other generic glyph, treat it as is.
 				{
