@@ -147,7 +147,8 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 
 		if (auto it = translation.find(code); it != translation.end())
 		{
-			if (cv_descriptiveinput.value) // Should we do game control translation?
+			// FIXME: This isn't how v_video.cpp checks for buttons and I don't know why.
+			if (cv_descriptiveinput.value && ((it->second & 0xF0) != 0x80)) // Should we do game control translation?
 			{
 				if (auto id = inputdefinition.find(it->second & (~0xF0)); id != inputdefinition.end()) // This is a game control, do descriptive input translation!
 				{
