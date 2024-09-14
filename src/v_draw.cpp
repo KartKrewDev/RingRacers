@@ -153,38 +153,8 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 				{
 					// Grab our local controls
 					UINT8 localplayer = stplyr - players;
-					profile_t *ourProfile = PR_GetLocalPlayerProfile(localplayer);
-					if (ourProfile == NULL)
-						ourProfile = PR_GetLocalPlayerProfile(0);
 
-					INT32 device = G_GetDeviceForPlayer(localplayer); // TODO: Respond to what device player is CURRENTLY using
-					if (device == -1) // No registered device = you can't possibly be using a gamepad
-						device = KEYBOARD_MOUSE_DEVICE;
-
-					INT32 bestbind = -1; // Bind that matches our input device
-					INT32 anybind = -1; // Bind that doesn't match, but is at least for this control
-
-					INT32 control = 3;
-
-					while (control >= 0) // Prefer earlier binds
-					{
-						INT32 possiblecontrol = ourProfile->controls[(INT32)id->second][control];
-
-						// if (device is gamepad) == (bound control is in gamepad range) - e.g. if bind matches device
-						if ((device != KEYBOARD_MOUSE_DEVICE) == (possiblecontrol >= KEY_JOY1 && possiblecontrol < JOYINPUTEND))
-						{
-							bestbind = possiblecontrol;
-							anybind = possiblecontrol;
-						}
-						else
-						{
-							anybind = possiblecontrol;
-						}
-
-						control--;
-					}
-
-					INT32 bind = (bestbind != -1) ? bestbind : anybind; // If we couldn't find a device-appropriate bind, try to at least use something
+					INT32 bind = G_FindPlayerBindForGameControl(localplayer, id->second);
 
 					if (auto pretty = prettyinputs.find(bind); pretty != prettyinputs.end()) // Gamepad direction or keyboard arrow, use something nice-looking
 					{
