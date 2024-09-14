@@ -21,6 +21,7 @@
 #include "v_video.h"
 #include "w_wad.h"
 #include "z_zone.h"
+#include "k_profiles.h" // controls
 
 using srb2::Draw;
 using Chain = Draw::Chain;
@@ -77,6 +78,27 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 		{"tan", 0x8F},
 	};
 
+	static const std::unordered_map<char, gamecontrols_e> inputdefinition = {
+		{0x00, gc_up},
+		{0x01, gc_down},
+		{0x02, gc_right},
+		{0x03, gc_left},
+
+		{0x04, gc_up},
+
+		{0x07, gc_r},
+		{0x08, gc_l},
+		{0x09, gc_start},
+
+		{0x0A, gc_a},
+		{0x0B, gc_b},
+		{0x0C, gc_c},
+
+		{0x0D, gc_x},
+		{0x0E, gc_y},
+		{0x0F, gc_z},
+	};
+
 	string_.clear();
 	string_.reserve(raw.size());
 
@@ -109,7 +131,17 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 
 		if (auto it = translation.find(code); it != translation.end())
 		{
-			string_.push_back(it->second); // replace with character code
+			if (auto id = inputdefinition.find(it->second & (~0xF0)); it != translation.end())
+			{
+				profile_t *ourProfile = PR_GetProfile(cv_lastprofile[0].value);
+				string_.append("\x88");
+				string_.append(G_KeynumToString(ourProfile->controls[id->second][0]));
+				string_.append("\x80");
+			}
+			else
+			{
+				string_.push_back(it->second); // replace with character code
+			}
 		}
 		else
 		{
