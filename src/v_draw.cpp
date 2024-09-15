@@ -163,14 +163,17 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 					}
 					else
 					{
-						string_.append("\x8D");
+						// string_.append("\x8D");
+						string_.push_back('\xEE');
 
 						if (bind == -1)
 							string_.append("[NOT BOUND]");
 						else
 							string_.append((G_KeynumToShortString(bind)));
 
-						string_.append("\x80");
+						string_.push_back('\xEE');
+
+						// string_.append("\x80");
 					}
 				}
 				else // This is a color code or some other generic glyph, treat it as is.

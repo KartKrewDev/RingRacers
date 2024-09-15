@@ -2272,6 +2272,7 @@ typedef struct
 	fixed_t    lfh;
 	fixed_t (*dim_fn)(fixed_t,fixed_t,INT32,INT32,fixed_t *);
 	UINT8 button_yofs;
+	UINT8 right_outline;
 } fontspec_t;
 
 static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
@@ -2284,6 +2285,8 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 	// All other properties are guaranteed to be set
 	result->chw = 0;
 	result->button_yofs = 0;
+
+	result->right_outline = 1;
 
 	const INT32 spacing = ( flags & V_SPACINGMASK );
 
@@ -2482,6 +2485,13 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 		result->button_yofs = 1;
 		break;
 	}
+
+	switch (fontno)
+	{
+		case MENU_FONT:
+			result->right_outline = 2;
+			break;
+	}
 }
 
 static UINT8 V_GetButtonCodeWidth(UINT8 c)
@@ -2540,6 +2550,9 @@ void V_DrawStringScaled(
 	INT32     dupx;
 	INT32     dupy;
 
+	const UINT8 outerbox = 26;
+	const UINT8 innerbox = 16;
+
 	fixed_t  right;
 	fixed_t    bot;
 
@@ -2547,6 +2560,7 @@ void V_DrawStringScaled(
 
 	boolean uppercase;
 	boolean notcolored;
+	boolean boxed;
 
 	boolean   dance;
 	boolean nodanceoverride;
@@ -2563,6 +2577,7 @@ void V_DrawStringScaled(
 
 	uppercase  = ((flags & V_FORCEUPPERCASE) == V_FORCEUPPERCASE);
 	flags	&= ~(V_FLIP);/* These two (V_FORCEUPPERCASE) share a bit. */
+	boxed = false;
 
 	dance           = (flags & V_STRINGDANCE) != 0;
 	nodanceoverride = !dance;
@@ -2642,6 +2657,19 @@ void V_DrawStringScaled(
 				if (cy >= bot)
 					return;
 				cx  =   x;
+				break;
+			case '\xEE':
+				boxed = !boxed;
+				if (boxed) // draw caps
+				{
+					V_DrawFill((cx)/FRACUNIT-2, (cy)/FRACUNIT-2, (fontspec.right_outline)+2, fontspec.lfh/FRACUNIT, flags|outerbox);
+					V_DrawFill((cx)/FRACUNIT-1, (cy)/FRACUNIT-1, (fontspec.right_outline)+1, fontspec.lfh/FRACUNIT-2, flags|innerbox);
+				}
+				else
+				{
+					//V_DrawFill((cx)/FRACUNIT+(fontspec.right_outline), (cy)/FRACUNIT-2, 2, fontspec.lfh/FRACUNIT, flags|outerbox);
+					//V_DrawFill((cx)/FRACUNIT+(fontspec.right_outline), (cy)/FRACUNIT-1, 1, fontspec.lfh/FRACUNIT-2, flags|innerbox);
+				}
 				break;
 			default:
 				if (( c & 0xF0 ) == 0x80)
@@ -2756,6 +2784,13 @@ void V_DrawStringScaled(
 						fixed_t patchxofs = SHORT (font->font[c]->leftoffset) * dupx * scale;
 						cw = SHORT (font->font[c]->width) * dupx;
 						cxoff = (*fontspec.dim_fn)(scale, fontspec.chw, hchw, dupx, &cw);
+
+						if (boxed)
+						{
+							V_DrawFill((cx)/FRACUNIT+(fontspec.right_outline), (cy)/FRACUNIT-2, (font->font[c]->width)-(fontspec.right_outline)+2, fontspec.lfh/FRACUNIT, flags|outerbox);
+							V_DrawFill((cx)/FRACUNIT+(fontspec.right_outline), (cy)/FRACUNIT-1, (font->font[c]->width)-(fontspec.right_outline)+1, fontspec.lfh/FRACUNIT-2, flags|innerbox);
+						}
+
 						V_DrawFixedPatch(cx + cxoff + patchxofs, cy + cyoff, scale,
 								flags, font->font[c], colormap);
 						cx += cw;
@@ -2839,6 +2874,8 @@ fixed_t V_StringScaledWidth(
 		{
 			case '\n':
 				cx  =   0;
+				break;
+			case '\xEE':
 				break;
 			default:
 				if (( c & 0xF0 ) == 0x80 || c == V_STRINGDANCE)

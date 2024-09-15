@@ -1281,24 +1281,89 @@ INT32 G_FindPlayerBindForGameControl(INT32 player, gamecontrols_e control)
 	INT32 bestbind = -1; // Bind that matches our input device
 	INT32 anybind = -1; // Bind that doesn't match, but is at least for this control
 
-	INT32 bindindex = 3;
+	INT32 bindindex = MAXINPUTMAPPING-1;
+
+	CONS_Printf("Searcrhing for gamecontrol %d on player %d device %d...\n", control, player, device);
 
 	while (bindindex >= 0) // Prefer earlier binds
 	{
 		INT32 possiblecontrol = ourProfile->controls[control][bindindex];
+
+		bindindex--;
+
+		if (possiblecontrol == 0)
+			continue;
 
 		// if (device is gamepad) == (bound control is in gamepad range) - e.g. if bind matches device
 		if ((device != KEYBOARD_MOUSE_DEVICE) == (possiblecontrol >= KEY_JOY1 && possiblecontrol < JOYINPUTEND))
 		{
 			bestbind = possiblecontrol;
 			anybind = possiblecontrol;
+			CONS_Printf("Matching control %s\n", G_KeynumToShortString(possiblecontrol));
 		}
 		else
 		{
 			anybind = possiblecontrol;
+			CONS_Printf("Speculative control %s\n", G_KeynumToShortString(possiblecontrol));
 		}
+	}
 
-		bindindex--;
+	// Still no matching device bind? Try defaults...
+	if (bestbind == -1)
+	{
+		bindindex = MAXINPUTMAPPING-1;
+
+		while (bindindex >= 0) // Prefer earlier binds
+		{
+			INT32 possiblecontrol = gamecontroldefault[control][bindindex];
+
+			bindindex--;
+
+			if (possiblecontrol == 0)
+				continue;
+
+			// if (device is gamepad) == (bound control is in gamepad range) - e.g. if bind matches device
+			if ((device != KEYBOARD_MOUSE_DEVICE) == (possiblecontrol >= KEY_JOY1 && possiblecontrol < JOYINPUTEND))
+			{
+				bestbind = possiblecontrol;
+				anybind = possiblecontrol;
+				CONS_Printf("Matching default control %s\n", G_KeynumToShortString(possiblecontrol));
+			}
+			else
+			{
+				anybind = possiblecontrol;
+				CONS_Printf("Speculative default control %s\n", G_KeynumToShortString(possiblecontrol));
+			}
+		}
+	}
+
+	// STILL no matching device bind? Try menu reserved!
+	if (bestbind == -1)
+	{
+		bindindex = MAXINPUTMAPPING-1;
+
+		while (bindindex >= 0) // Prefer earlier binds
+		{
+			INT32 possiblecontrol = menucontrolreserved[control][bindindex];
+
+			bindindex--;
+
+			if (possiblecontrol == 0)
+				continue;
+
+			// if (device is gamepad) == (bound control is in gamepad range) - e.g. if bind matches device
+			if ((device != KEYBOARD_MOUSE_DEVICE) == (possiblecontrol >= KEY_JOY1 && possiblecontrol < JOYINPUTEND))
+			{
+				bestbind = possiblecontrol;
+				anybind = possiblecontrol;
+				CONS_Printf("Matching reserved control %s\n", G_KeynumToShortString(possiblecontrol));
+			}
+			else
+			{
+				anybind = possiblecontrol;
+				CONS_Printf("Speculative reserved control %s\n", G_KeynumToShortString(possiblecontrol));
+			}
+		}
 	}
 
 	return (bestbind != -1) ? bestbind : anybind; // If we couldn't find a device-appropriate bind, try to at least use something	

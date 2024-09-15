@@ -6444,6 +6444,32 @@ void K_drawKartHUD(void)
 			K_drawEmeraldWin(false);
 	}
 
+	// In case of font debugging break glass
+#if 0
+	using srb2::Draw;
+
+	Draw::TextElement text = Draw::TextElement().parse("ABCxyz / 012 - Use <a> + <r> to <yellow>Krungle<white>!");
+
+	player_t *oldstplyr = stplyr;
+	stplyr = &players[0];
+	Draw(5, 5).align((srb2::Draw::Align)0).font(Draw::Font::kMenu).text(text);
+	stplyr = &players[1];
+	Draw(5, 15).align((srb2::Draw::Align)0).font(Draw::Font::kThin).text(text);
+	stplyr = &players[2];
+	Draw(5, 25).align((srb2::Draw::Align)0).font(Draw::Font::kConsole).text(text);
+	stplyr = &players[3];
+	Draw(5, 35).align((srb2::Draw::Align)0).font(Draw::Font::kMedium).text(text);
+	stplyr = &players[0];
+	Draw(5, 45).align((srb2::Draw::Align)0).font(Draw::Font::kGamemode).text(text);
+	Draw(5, 75).align((srb2::Draw::Align)0).font(Draw::Font::kFreeplay).text(text);
+	Draw(5, 95).align((srb2::Draw::Align)0).font(Draw::Font::kPing).text(text);
+	Draw(5, 105).align((srb2::Draw::Align)0).font(Draw::Font::kThinTimer).text(text);
+	Draw(5, 115).align((srb2::Draw::Align)0).font(Draw::Font::kTimer).text(text);
+	Draw(5, 145).align((srb2::Draw::Align)0).font(Draw::Font::kZVote).text(text);
+	stplyr = oldstplyr;
+#endif
+
+
 	if (!demo.attract)
 	{
 		// Draw the CHECK indicator before the other items, so it's overlapped by everything else

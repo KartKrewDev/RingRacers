@@ -833,8 +833,8 @@ void M_DrawMenuMessage(void)
 		if (standardbuttons)
 		{
 			workx -= K_DrawGameControl(
-				workx, worky,
-				0, "<b> / <x>", 2
+				workx+2, worky,
+				0, "<b_animated>  <x_animated>  ", 2
 			);
 		}
 		else
@@ -863,8 +863,8 @@ void M_DrawMenuMessage(void)
 		if (standardbuttons)
 		{
 			workx -= K_DrawGameControl(
-				workx, worky,
-				0, "<a>", 2
+				workx+2, worky,
+				0, "<a_animated>  ", 2
 			);
 		}
 		else
@@ -2458,12 +2458,17 @@ void M_DrawCharacterSelect(void)
 
 		if (!optionsmenu.profile) // Does nothing on this screen
 		{
-			K_drawButton((x += 22) * FRACUNIT, (kTop - 3) * FRACUNIT, 0, kp_button_r, M_MenuButtonPressed(pid, MBT_R));
-			V_DrawThinString((x += kButtonWidth), kTop, 0, "Info");
+			x += 22;
+			//K_drawButton((x += 22) * FRACUNIT, (kTop - 3) * FRACUNIT, 0, kp_button_r, M_MenuButtonPressed(pid, MBT_R));
+			x += K_DrawGameControl(x, kTop, 0, "<r>", 0);
+			V_DrawThinString((x), kTop, 0, "Info");
 		}
 
-		K_drawButton((x += 58) * FRACUNIT, (kTop - 1) * FRACUNIT, 0, kp_button_c[1], M_MenuButtonPressed(pid, MBT_C));
-		V_DrawThinString((x += kButtonWidth), kTop, 0, "Default");
+		x += 58;
+
+		// K_drawButton((x += 58) * FRACUNIT, (kTop - 1) * FRACUNIT, 0, kp_button_c[1], M_MenuButtonPressed(pid, MBT_C));
+		x += K_DrawGameControl(x, kTop, 0, "<c>", 0);
+		V_DrawThinString((x), kTop, 0, "Default");
 	}
 
 	// We have to loop twice -- first time to draw the drop shadows, a second time to draw the icons.
