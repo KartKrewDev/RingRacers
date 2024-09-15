@@ -446,12 +446,18 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 		// Reduce by the amount we needed to get to this waypoint
 		stepamt -= dist;
 
+		fixed_t oldx = player->mo->x;
+		fixed_t oldy = player->mo->y = dest.y;
+
 		// We've reached the destination point,
 		P_UnsetThingPosition(player->mo);
 		player->mo->x = dest.x;
 		player->mo->y = dest.y;
 		player->mo->z = dest.z;
 		P_SetThingPosition(player->mo);
+
+		// Did we cross a checkpoint during our last step?
+		Obj_CrossCheckpoints(player, oldx, oldy);
 
 		// We are no longer traveling from death location to 1st waypoint, so use standard timings
 		if (player->respawn.fast)

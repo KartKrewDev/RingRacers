@@ -3175,16 +3175,16 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff, Try
 				thing->player->pflags |= PF_FREEZEWAYPOINTS;
 			}
 		}
+	}
 
-		// Currently this just iterates all checkpoints.
-		// Pretty shitty way to do it, but only players can
-		// cross it, so it's good enough. Works as long as the
-		// move doesn't cross multiple -- it can only evaluate
-		// one.
-		if (thing->player)
-		{
-			Obj_CrossCheckpoints(thing->player, oldx, oldy);
-		}
+	// Currently this just iterates all checkpoints.
+	// Pretty shitty way to do it, but only players can
+	// cross it, so it's good enough. Works as long as the
+	// move doesn't cross multiple -- it can only evaluate
+	// one.
+	if (thing->player)
+	{
+		Obj_CrossCheckpoints(thing->player, oldx, oldy);
 	}
 
 	if (result != NULL)

@@ -4010,12 +4010,15 @@ static void P_PlayerMobjThinker(mobj_t *mobj)
 		|| mobj->player->loop.radius != 0)
 	{
 		P_HitSpecialLines(mobj, mobj->x, mobj->y, mobj->momx, mobj->momy);
+		fixed_t oldx = mobj->x;
+		fixed_t oldy = mobj->y;
 		P_UnsetThingPosition(mobj);
 		mobj->x += mobj->momx;
 		mobj->y += mobj->momy;
 		mobj->z += mobj->momz;
 		P_SetThingPosition(mobj);
 		P_CheckPosition(mobj, mobj->x, mobj->y, NULL);
+		Obj_CrossCheckpoints(mobj->player, oldx, oldy); // I would put this inside P_HitSpecialLines, but its wants a player reference with post-move coords instead of and old and new
 		mobj->floorz = g_tm.floorz;
 		mobj->ceilingz = g_tm.ceilingz;
 		mobj->terrain = NULL;
