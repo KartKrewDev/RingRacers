@@ -1613,6 +1613,9 @@ typedef enum
 	sfx_die02,
 	sfx_die03,
 
+	// Walltransfer fuck
+	sfx_ggfall,
+
 	// And LASTLY, Kart's skin sounds.
 	sfx_kwin,
 	sfx_klose,

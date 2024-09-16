@@ -5096,6 +5096,8 @@ void K_TumbleInterrupt(player_t *player)
 		player->pflags &= ~PF_TUMBLELASTBOUNCE;
 		//players->tumbleHeight = 20;
 
+		player->transfer = 0;
+
 		player->mo->rollangle = 0;
 		player->spinouttype = KSPIN_WIPEOUT;
 		player->spinouttimer = player->wipeoutslow = TICRATE+2;
@@ -6265,6 +6267,33 @@ void K_SpawnWipeoutTrail(mobj_t *mo)
 	dust->angle = K_MomentumAngle(mo);
 	dust->destscale = mo->scale;
 	P_SetScale(dust, mo->scale);
+	K_FlipFromObject(dust, mo);
+}
+
+void K_SpawnFireworkTrail(mobj_t *mo)
+{
+	mobj_t *dust;
+
+	I_Assert(mo != NULL);
+	I_Assert(!P_MobjWasRemoved(mo));
+
+	dust = P_SpawnMobjFromMobj(mo, 0, 0, 0, MT_WIPEOUTTRAIL);
+
+	P_SetTarget(&dust->target, mo);
+	dust->angle = K_MomentumAngle(mo);
+
+	P_SetMobjState(dust, S_FIREWORKTRAIL1);
+
+	if (mo->player)
+		dust->color = mo->player->skincolor;
+	else	
+		dust->color = mo->color;
+	dust->colorized = true;
+
+	P_InstaScale(dust, mo->scale/2);
+	dust->destscale = 2*mo->scale;
+	dust->scalespeed = mo->scale/2;
+
 	K_FlipFromObject(dust, mo);
 }
 
@@ -9014,6 +9043,50 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->itemtype == KITEM_NONE)
 		player->itemflags &= ~IF_HOLDREADY;
 
+	if (onground)
+		player->transfer = 0;
+
+	if (player->transfer)
+	{
+		if ((abs(player->mo->momz) < (2*abs(player->transfer)/4)) || (player->mo->momz > 0) != (player->transfer > 0))
+		{
+			fixed_t fuckfactor = FRACUNIT;
+			fixed_t transfergravity = 10*FRACUNIT/100;
+
+			fixed_t transferclamp = min(abs(player->transfer), (player->mo->scale*100));
+			if (player->transfer < 0)
+				transferclamp *= -1;
+
+			if ((player->mo->momz > 0) == (transferclamp > 0))
+			{
+				if (!S_SoundPlaying(player->mo, sfx_ggfall))
+					S_StartSound(player->mo, sfx_ggfall);
+
+				fuckfactor = FRACUNIT/2;
+			}
+
+			fixed_t sx, sy;
+			sx = P_RandomRange(PR_DECORATION, -48, 48)*FRACUNIT;
+			sy = P_RandomRange(PR_DECORATION, -48, 48)*FRACUNIT;
+
+			mobj_t *spdl = P_SpawnMobjFromMobj(player->mo, sx, sy, 0, MT_DOWNLINE);
+			spdl->colorized = true;
+			spdl->color = player->skincolor;
+			K_MatchGenericExtraFlags(spdl, player->mo);
+			P_SetTarget(&spdl->owner, player->mo);
+			spdl->renderflags |= RF_REDUCEVFX;
+			P_InstaScale(spdl, 4*player->mo->scale/2);
+
+			if (abs(player->mo->momz) < (3*transferclamp/2))
+				player->mo->momz -= FixedMul(transferclamp, FixedMul(fuckfactor, transfergravity));
+		}
+		else
+		{
+			if (leveltime % 2)
+				K_SpawnFireworkTrail(player->mo);
+		}
+	}
+
 	// DKR style camera for boosting
 	if (player->karthud[khud_boostcam] != 0 || player->karthud[khud_destboostcam] != 0)
 	{
@@ -10099,9 +10172,23 @@ void K_KartResetPlayerColor(player_t *player)
 		fullbright = true;
 		player->mo->color = player->skincolor;
 		goto finalise;
-
 	}
 	else if (player->overdrive)
+	{
+		player->mo->colorized = true;
+		fullbright = true;
+		player->mo->color = SKINCOLOR_WHITE;
+		goto finalise;
+	}
+
+	if (player->transfer && (leveltime & 1))
+	{
+		player->mo->colorized = true;
+		fullbright = true;
+		player->mo->color = player->skincolor;
+		goto finalise;
+	}
+	else if (player->transfer)
 	{
 		player->mo->colorized = true;
 		fullbright = true;
