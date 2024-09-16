@@ -2783,7 +2783,12 @@ fixed_t P_GetThingStepUp(mobj_t *thing, fixed_t destX, fixed_t destY)
 		slopemom.z = 0;
 		P_QuantizeMomentumToSlope(&slopemom, thing->standingslope);
 		fixed_t momentumzdelta = FixedDiv(slopemom.z, FixedHypot(slopemom.x, slopemom.y)); // so this lets us know what the zdelta is for the vector the player is travelling along, in addition to the slope's zdelta in its xydirection
+		if (thing->player)
+			CONS_Printf("%s P_GetThingStepUp %d +", player_names[thing->player-players], maxstep);
 		maxstep += abs(momentumzdelta);
+		if (thing->player)
+			CONS_Printf(" %d = %d\n", momentumzdelta, maxstep);
+		
 	}
 
 	return maxstep;
@@ -2804,13 +2809,6 @@ increment_move
 	fixed_t thingtop;
 	fixed_t stairjank = 0;
 	g_tm.floatok = false;
-	fixed_t oldfloorz = INT32_MAX; // Ramp detection
-	pslope_t *oldslope = NULL;
-	angle_t moveangle = R_PointToAngle2(thing->x,thing->y,x,y);
-
-	boolean samepos = false;
-	if (thing->x == x && thing->y == y)
-		samepos = true;
 
 	// reset this to 0 at the start of each trymove call as it's only used here
 	numspechitint = 0U;
@@ -2820,7 +2818,10 @@ increment_move
 	radius = max(radius, mapobjectscale);
 
 	// And Big Large (tm) movements can skip over slopes.
-	radius = min(radius, 16*mapobjectscale);
+	radius = min(radius, 8*mapobjectscale);
+
+	// if (thing->player)
+	// 	CONS_Printf("increment_move\n");
 
 	do {
 		// Sal 12/19/2022 -- PIT_CheckThing code now runs
@@ -2859,9 +2860,6 @@ increment_move
 		}
 
 		boolean move_ok = P_CheckPosition(thing, tryx, tryy, result);
-
-		oldslope = thing->standingslope;
-		oldfloorz = thing->floorz;
 
 		if (P_MobjWasRemoved(thing))
 		{
@@ -2944,6 +2942,9 @@ increment_move
 				{
 					// If the floor difference is MAXSTEPMOVE or less, and the sector isn't Section1:14, ALWAYS
 					// step down! Formerly required a Section1:13 sector for the full MAXSTEPMOVE, but no more.
+
+					// if (thing->player && !(thingtop == thing->ceilingz && g_tm.ceilingz > thingtop && g_tm.ceilingz - thingtop <= maxstep))
+					// 	CONS_Printf("%d == %d && %d < %d && %d - %d <= %d  %s\n", thing->z, thing->floorz, g_tm.floorz, thing->z, thing->z, g_tm.floorz, maxstep, thing->z == thing->floorz && g_tm.floorz < thing->z && thing->z - g_tm.floorz <= maxstep ? "True" : "False");
 
 					if (thingtop == thing->ceilingz && g_tm.ceilingz > thingtop && g_tm.ceilingz - thingtop <= maxstep)
 					{
