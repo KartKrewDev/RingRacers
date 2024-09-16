@@ -1002,7 +1002,7 @@ const char *G_KeynumToString(INT32 keynum)
 	// return a string with the ascii char if displayable
 	if (keynum > ' ' && keynum <= 'z' && keynum != KEY_CONSOLE)
 	{
-		keynamestr[0] = (char)(keynum - 32); // Uppercase looks better!
+		keynamestr[0] = toupper(keynum); // Uppercase looks better!
 		keynamestr[1] = '\0';
 		return keynamestr;
 	}
@@ -1026,7 +1026,7 @@ const char *G_KeynumToShortString(INT32 keynum)
 	// return a string with the ascii char if displayable
 	if (keynum > ' ' && keynum <= 'z' && keynum != KEY_CONSOLE)
 	{
-		keynamestr[0] = (char)(keynum - 32); // Uppercase looks better!
+		keynamestr[0] = toupper(keynum); // Uppercase looks better!
 		keynamestr[1] = '\0';
 		return keynamestr;
 	}

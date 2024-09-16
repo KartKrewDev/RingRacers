@@ -6425,7 +6425,7 @@ static void K_DrawMessageFeed(void)
 
 		text.font(Draw::Font::kMenu);
 
-		UINT8 x = 160;
+		UINT8 x = BASEVIDWIDTH/2;
 		UINT8 y = 10;
 		SINT8 shift = 0;
 		if (r_splitscreen >= 2)
@@ -6449,6 +6449,7 @@ static void K_DrawMessageFeed(void)
 			if (i >= 1)
 				y += BASEVIDHEIGHT / 2;
 		}
+
 		UINT16 sw = text.width();
 
 		K_DrawSticker(x - sw/2, y, sw, 0, true);
@@ -6502,7 +6503,7 @@ void K_drawKartHUD(void)
 	}	
 
 
-	if (1)
+	if (0)
 	{
 	Draw::TextElement text = Draw::TextElement().parse("\xEELEFTSPACE\xEE\n\xEESPC\xEE \xEETAB\xEE\nA \xEF\xA0 A\nB \xEF\xA1 B\nX \xEF\xA2 X\nY \xEF\xA3 Y\nLB \xEF\xA4 LB\nRB \xEF\xA5 RB\nLT \xEF\xA6 LT\nRT \xEF\xA7 RT\nST \xEF\xA8 ST\nBK \xEF\xA9 BK\nLS \xEF\xAA LS\nRS \xEF\xAB RS\n");
 
