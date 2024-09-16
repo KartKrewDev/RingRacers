@@ -29,6 +29,7 @@
 //
 // P_ClosestPointOnLine
 // Finds the closest point on a given line to the supplied point
+// Considers line length to be infinite, and can return results outside of the actual linedef bounds
 //
 void P_ClosestPointOnLine(fixed_t x, fixed_t y, const line_t *line, vertex_t *result)
 {
@@ -65,6 +66,27 @@ void P_ClosestPointOnLine(fixed_t x, fixed_t y, const line_t *line, vertex_t *re
 	//Add (&Line[0], &V, out);
 	result->x = startx + vx;
 	result->y = starty + vy;
+	return;
+}
+
+//
+// P_ClosestPointOnLineWithinLine
+// Finds the closest point on a given line to the supplied point
+// Like P_ClosestPointOnLine, except the result is constrained within the actual line
+//
+void P_ClosestPointOnLineWithinLine(fixed_t x, fixed_t y, line_t *line, vertex_t *result)
+{
+	P_ClosestPointOnLine(x, y, line, result);
+
+	// Determine max and min bounds of the line
+	fixed_t maxx = max(line->v1->x, line->v2->x);
+	fixed_t maxy = max(line->v1->y, line->v2->y);
+	fixed_t minx = min(line->v1->x, line->v2->x);
+	fixed_t miny = min(line->v1->y, line->v2->y);
+
+	// Constrain result to line by ensuring x and y don't go beyond the maximums
+	result->x = min(max(result->x, minx),maxx);
+	result->y = min(max(result->y, miny),maxy);
 	return;
 }
 
@@ -527,6 +549,107 @@ static boolean P_MidtextureIsSolid(line_t *linedef, mobj_t *mobj)
 	return ((linedef->flags & ML_MIDSOLID) == ML_MIDSOLID);
 }
 
+boolean P_FoFOpening(sector_t *sector, line_t *linedef, mobj_t *mobj, opening_t *open, fofopening_t *fofopen)
+{
+	fixed_t delta1, delta2;
+	fixed_t thingtop = mobj->z + mobj->height;
+	boolean ret = false; // DId we find any relevant FoFs?
+	// Check for frontsector's fake floors
+	for (ffloor_t *rover = sector->ffloors; rover; rover = rover->next)
+	{
+		fixed_t topheight, bottomheight, midheight;
+
+		if (!(rover->fofflags & FOF_EXISTS))
+			continue;
+
+		if (P_CheckSolidFFloorSurface(mobj, rover))
+			;
+		else if (!((rover->fofflags & FOF_BLOCKPLAYER && mobj->player)
+			|| (rover->fofflags & FOF_BLOCKOTHERS && !mobj->player)))
+			continue;
+
+		ret = true; // Found a FoF that matters
+
+		if (open->fofType != LO_FOF_ANY)
+		{
+			topheight = P_VeryTopOfFOF(rover);
+			bottomheight = P_VeryBottomOfFOF(rover);
+		}
+		else
+		{
+			topheight = P_GetFOFTopZ(mobj, sector, rover, g_tm.x, g_tm.y, linedef);
+			bottomheight = P_GetFOFBottomZ(mobj, sector, rover, g_tm.x, g_tm.y, linedef);
+		}
+
+		switch (open->fofType)
+		{
+			case LO_FOF_FLOORS:
+			{
+				if (mobj->z >= topheight)
+				{
+					if ((rover->fofflags & FOF_INTANGIBLEFLATS) != FOF_REVERSEPLATFORM)
+					{
+						if (topheight > fofopen->floor)
+						{
+							fofopen->floor = topheight;
+							fofopen->floorrover = rover;
+						}
+					}
+				}
+				break;
+			}
+			case LO_FOF_CEILINGS:
+			{
+				if (thingtop <= bottomheight)
+				{
+					if ((rover->fofflags & FOF_INTANGIBLEFLATS) != FOF_PLATFORM)
+					{
+						if (bottomheight < fofopen->ceiling)
+						{
+							fofopen->ceiling = bottomheight;
+							fofopen->ceilingrover = rover;
+						}
+					}
+				}
+				break;
+			}
+			default:
+			{
+				midheight = bottomheight + (topheight - bottomheight) / 2;
+				delta1 = abs(mobj->z - midheight);
+				delta2 = abs(thingtop - midheight);
+
+				if (delta1 > delta2)
+				{
+					// thing is below FOF
+					if ((rover->fofflags & FOF_INTANGIBLEFLATS) != FOF_PLATFORM)
+					{
+						if (bottomheight < fofopen->ceiling)
+						{
+							fofopen->ceiling = bottomheight;
+							fofopen->ceilingrover = rover;
+						}
+					}
+				}
+				else
+				{
+					// thing is above FOF
+					if ((rover->fofflags & FOF_INTANGIBLEFLATS) != FOF_REVERSEPLATFORM)
+					{
+						if (topheight > fofopen->floor)
+						{
+							fofopen->floor = topheight;
+							fofopen->floorrover = rover;
+						}
+					}
+				}
+				break;
+			}
+		}
+	}
+	return ret;
+}
+
 void P_LineOpening(line_t *linedef, mobj_t *mobj, opening_t *open)
 {
 	enum { FRONT, BACK };
@@ -589,7 +712,17 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj, opening_t *open)
 		height[FRONT] = P_GetCeilingZ(mobj, front, g_tm.x, g_tm.y, linedef);
 		height[BACK]  = P_GetCeilingZ(mobj, back,  g_tm.x, g_tm.y, linedef);
 
-		hi = ( height[0] < height[1] );
+		if (height[FRONT] == height[BACK] && (front->c_slope || back->c_slope))
+		{
+			fixed_t savedradius = mobj->radius; // forgive me. Perhaps it would be better to refactor these functions to take a radius of fixed_t instead? thats all they grab from the mobj
+			mobj->radius = 1; // I need the same calculation, but at the center of the mobj
+			hi = ( P_GetCeilingZ(mobj, front, g_tm.x, g_tm.y, linedef) < P_GetCeilingZ(mobj, back,  g_tm.x, g_tm.y, linedef) );
+			hi = !hi; // actually lets do a funny and flip these
+			mobj->radius = savedradius;
+		}
+		else
+			hi = ( height[FRONT] < height[BACK] );
+
 		lo = ! hi;
 
 		open->ceiling			= height[lo];
@@ -609,7 +742,17 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj, opening_t *open)
 		height[FRONT] = P_GetFloorZ(mobj, front, g_tm.x, g_tm.y, linedef);
 		height[BACK]  = P_GetFloorZ(mobj, back,  g_tm.x, g_tm.y, linedef);
 
-		hi = ( height[0] < height[1] );
+		if (height[FRONT] == height[BACK] && (front->f_slope || back->f_slope))
+		{
+			fixed_t savedradius = mobj->radius; // forgive me. Perhaps it would be better to refactor these functions to take a radius of fixed_t instead? thats all they grab from the mobj
+			mobj->radius = 1; // I need the same calculation, but at the center of the mobj
+			hi = ( P_GetFloorZ(mobj, front, g_tm.x, g_tm.y, linedef) < P_GetFloorZ(mobj, back,  g_tm.x, g_tm.y, linedef) );
+			hi = !hi; // actually lets do a funny and flip these
+			mobj->radius = savedradius;
+		}
+		else
+			hi = ( height[FRONT] < height[BACK] );
+		
 		lo = ! hi;
 
 		open->floor				= height[hi];
@@ -760,261 +903,104 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj, opening_t *open)
 			// Check for fake floors in the sector.
 			if (front->ffloors || back->ffloors)
 			{
-				ffloor_t *rover;
-				fixed_t delta1, delta2;
-
-				/* yuck */
-				struct
-				{
-					fixed_t ceiling;
-					fixed_t floor;
-					ffloor_t * ceilingrover;
-					ffloor_t *   floorrover;
-				} fofopen[2] = {
+				boolean anyfrontfofs, anybackfofs;
+				fofopening_t fofopen[2] = {
 					{ INT32_MAX, INT32_MIN, NULL, NULL },
 					{ INT32_MAX, INT32_MIN, NULL, NULL },
 				};
 
-				// Check for frontsector's fake floors
-				for (rover = front->ffloors; rover; rover = rover->next)
+				anyfrontfofs = P_FoFOpening(front, linedef, mobj, open, &fofopen[FRONT]);
+				anybackfofs = P_FoFOpening(back, linedef, mobj, open, &fofopen[BACK]);
+
+				if (anyfrontfofs || anybackfofs) // if all front and back fofs are irrelevant then skip
 				{
-					fixed_t topheight, bottomheight, midheight;
-
-					if (!(rover->fofflags & FOF_EXISTS))
-						continue;
-
-					if (P_CheckSolidFFloorSurface(mobj, rover))
-						;
-					else if (!((rover->fofflags & FOF_BLOCKPLAYER && mobj->player)
-						|| (rover->fofflags & FOF_BLOCKOTHERS && !mobj->player)))
-						continue;
-
-					if (open->fofType != LO_FOF_ANY)
+					if (fofopen[FRONT].ceiling == fofopen[BACK].ceiling && ((fofopen[FRONT].ceilingrover && *fofopen[FRONT].ceilingrover->b_slope) || (fofopen[BACK].ceilingrover && *fofopen[BACK].ceilingrover->b_slope)))
 					{
-						topheight = P_VeryTopOfFOF(rover);
-						bottomheight = P_VeryBottomOfFOF(rover);
+						fixed_t savedradius = mobj->radius; // forgive me. Perhaps it would be better to refactor these functions to take a radius of fixed_t instead? thats all they grabn from the mobj
+						mobj->radius = 1; // I need the same calculation, but at the center of the mobj
+						fofopening_t temp[2] = {
+							{ INT32_MAX, INT32_MIN, NULL, NULL },
+							{ INT32_MAX, INT32_MIN, NULL, NULL }
+						};
+						P_FoFOpening(front, linedef, mobj, open, &temp[FRONT]);
+						P_FoFOpening(back, linedef, mobj, open, &temp[BACK]);
+						hi = ( temp[FRONT].ceiling < temp[BACK].ceiling );
+						mobj->radius = savedradius;
 					}
 					else
-					{
-						topheight = P_GetFOFTopZ(mobj, front, rover, g_tm.x, g_tm.y, linedef);
-						bottomheight = P_GetFOFBottomZ(mobj, front, rover, g_tm.x, g_tm.y, linedef);
-					}
+						hi = ( fofopen[FRONT].ceiling < fofopen[BACK].ceiling );
 
-					switch (open->fofType)
-					{
-						case LO_FOF_FLOORS:
-						{
-							if (mobj->z >= topheight)
-							{
-								if ((rover->fofflags & FOF_INTANGIBLEFLATS) != FOF_REVERSEPLATFORM)
-								{
-									if (topheight > fofopen[FRONT].floor)
-									{
-										fofopen[FRONT].floor = topheight;
-										fofopen[FRONT].floorrover = rover;
-									}
-								}
-							}
-							break;
-						}
-						case LO_FOF_CEILINGS:
-						{
-							if (thingtop <= bottomheight)
-							{
-								if ((rover->fofflags & FOF_INTANGIBLEFLATS) != FOF_PLATFORM)
-								{
-									if (bottomheight < fofopen[FRONT].ceiling)
-									{
-										fofopen[FRONT].ceiling = bottomheight;
-										fofopen[FRONT].ceilingrover = rover;
-									}
-								}
-							}
-							break;
-						}
-						default:
-						{
-							midheight = bottomheight + (topheight - bottomheight) / 2;
-							delta1 = abs(mobj->z - midheight);
-							delta2 = abs(thingtop - midheight);
+					lo = ! hi;
 
-							if (delta1 > delta2)
-							{
-								// thing is below FOF
-								if ((rover->fofflags & FOF_INTANGIBLEFLATS) != FOF_PLATFORM)
-								{
-									if (bottomheight < fofopen[FRONT].ceiling)
-									{
-										fofopen[FRONT].ceiling = bottomheight;
-										fofopen[FRONT].ceilingrover = rover;
-									}
-								}
-							}
-							else
-							{
-								// thing is above FOF
-								if ((rover->fofflags & FOF_INTANGIBLEFLATS) != FOF_REVERSEPLATFORM)
-								{
-									if (topheight > fofopen[FRONT].floor)
-									{
-										fofopen[FRONT].floor = topheight;
-										fofopen[FRONT].floorrover = rover;
-									}
-								}
-							}
-							break;
+					if (fofopen[lo].ceiling <= open->ceiling)
+					{
+						topedge[lo] = P_GetFFloorBottomZAt(fofopen[lo].ceilingrover, cross.x, cross.y);
+
+						if (fofopen[hi].ceiling < open->ceiling)
+						{
+							topedge[hi] = P_GetFFloorBottomZAt(fofopen[hi].ceilingrover, cross.x, cross.y);
+						}
+
+						open->ceiling			= fofopen[lo].ceiling;
+						open->ceilingrover		= fofopen[lo].ceilingrover;
+						open->ceilingslope		= *fofopen[lo].ceilingrover->b_slope;
+						open->ceilingpic		= *fofopen[lo].ceilingrover->bottompic;
+						open->ceilingstep		= ( thingtop    - topedge[lo] );
+						open->ceilingdrop		= ( topedge[hi] - topedge[lo] );
+
+						if (fofopen[hi].ceiling < open->highceiling)
+						{
+							open->highceiling = fofopen[hi].ceiling;
 						}
 					}
-				}
-
-				// Check for backsectors fake floors
-				for (rover = back->ffloors; rover; rover = rover->next)
-				{
-					fixed_t topheight, bottomheight, midheight;
-
-					if (!(rover->fofflags & FOF_EXISTS))
-						continue;
-
-					if (P_CheckSolidFFloorSurface(mobj, rover))
-						;
-					else if (!((rover->fofflags & FOF_BLOCKPLAYER && mobj->player)
-						|| (rover->fofflags & FOF_BLOCKOTHERS && !mobj->player)))
-						continue;
-
-					if (open->fofType != LO_FOF_ANY)
+					else if (fofopen[lo].ceiling < open->highceiling)
 					{
-						topheight = P_VeryTopOfFOF(rover);
-						bottomheight = P_VeryBottomOfFOF(rover);
+						open->highceiling = fofopen[lo].ceiling;
+					}
+
+					if (fofopen[FRONT].floor == fofopen[BACK].floor && ((fofopen[FRONT].floorrover && *fofopen[FRONT].floorrover->t_slope) || (fofopen[BACK].floorrover && *fofopen[BACK].floorrover->t_slope)))
+					{
+						fixed_t savedradius = mobj->radius; // forgive me. Perhaps it would be better to refactor these functions to take a radius of fixed_t instead? thats all they grabn from the mobj
+						mobj->radius = 1; // I need the same calculation, but at the center of the mobj
+						fofopening_t temp[2] = {
+							{ INT32_MAX, INT32_MIN, NULL, NULL },
+							{ INT32_MAX, INT32_MIN, NULL, NULL }
+						};
+						P_FoFOpening(front, linedef, mobj, open, &temp[FRONT]);
+						P_FoFOpening(back, linedef, mobj, open, &temp[BACK]);
+						hi = ( temp[FRONT].ceiling < temp[BACK].ceiling );
+						mobj->radius = savedradius;
 					}
 					else
-					{
-						topheight = P_GetFOFTopZ(mobj, back, rover, g_tm.x, g_tm.y, linedef);
-						bottomheight = P_GetFOFBottomZ(mobj, back, rover, g_tm.x, g_tm.y, linedef);
-					}
+						hi = ( fofopen[FRONT].floor < fofopen[BACK].floor );
 
-					switch (open->fofType)
-					{
-						case LO_FOF_FLOORS:
-						{
-							if (mobj->z >= topheight)
-							{
-								if ((rover->fofflags & FOF_INTANGIBLEFLATS) != FOF_REVERSEPLATFORM)
-								{
-									if (topheight > fofopen[BACK].floor)
-									{
-										fofopen[BACK].floor = topheight;
-										fofopen[BACK].floorrover = rover;
-									}
-								}
-							}
-							break;
-						}
-						case LO_FOF_CEILINGS:
-						{
-							if (thingtop <= bottomheight)
-							{
-								if ((rover->fofflags & FOF_INTANGIBLEFLATS) != FOF_PLATFORM)
-								{
-									if (bottomheight < fofopen[BACK].ceiling)
-									{
-										fofopen[BACK].ceiling = bottomheight;
-										fofopen[BACK].ceilingrover = rover;
-									}
-								}
-							}
-							break;
-						}
-						default:
-						{
-							midheight = bottomheight + (topheight - bottomheight) / 2;
-							delta1 = abs(mobj->z - midheight);
-							delta2 = abs(thingtop - midheight);
+					lo = ! hi;
 
-							if (delta1 > delta2)
-							{
-								// thing is below FOF
-								if ((rover->fofflags & FOF_INTANGIBLEFLATS) != FOF_PLATFORM)
-								{
-									if (bottomheight < fofopen[BACK].ceiling)
-									{
-										fofopen[BACK].ceiling = bottomheight;
-										fofopen[BACK].ceilingrover = rover;
-									}
-								}
-							}
-							else
-							{
-								// thing is above FOF
-								if ((rover->fofflags & FOF_INTANGIBLEFLATS) != FOF_REVERSEPLATFORM)
-								{
-									if (topheight > fofopen[BACK].floor)
-									{
-										fofopen[BACK].floor = topheight;
-										fofopen[BACK].floorrover = rover;
-									}
-								}
-							}
-							break;
+					if (fofopen[hi].floor >= open->floor)
+					{
+						botedge[hi] = P_GetFFloorTopZAt(fofopen[hi].floorrover, cross.x, cross.y);
+
+						if (fofopen[lo].floor > open->floor)
+						{
+							botedge[lo] = P_GetFFloorTopZAt(fofopen[lo].floorrover, cross.x, cross.y);
+						}
+
+						open->floor				= fofopen[hi].floor;
+						open->floorrover		= fofopen[hi].floorrover;
+						open->floorslope		= *fofopen[hi].floorrover->t_slope;
+						open->floorpic			= *fofopen[hi].floorrover->toppic;
+						open->floorstep			= ( botedge[hi] - mobj->z );
+						open->floordrop			= ( botedge[hi] - botedge[lo] );
+
+						if (fofopen[lo].floor > open->lowfloor)
+						{
+							open->lowfloor = fofopen[lo].floor;
 						}
 					}
-				}
-
-				hi = ( fofopen[0].ceiling < fofopen[1].ceiling );
-				lo = ! hi;
-
-				if (fofopen[lo].ceiling <= open->ceiling)
-				{
-					topedge[lo] = P_GetFFloorBottomZAt(fofopen[lo].ceilingrover, cross.x, cross.y);
-
-					if (fofopen[hi].ceiling < open->ceiling)
+					else if (fofopen[hi].floor > open->lowfloor)
 					{
-						topedge[hi] = P_GetFFloorBottomZAt(fofopen[hi].ceilingrover, cross.x, cross.y);
+						open->lowfloor = fofopen[hi].floor;
 					}
-
-					open->ceiling			= fofopen[lo].ceiling;
-					open->ceilingrover		= fofopen[lo].ceilingrover;
-					open->ceilingslope		= *fofopen[lo].ceilingrover->b_slope;
-					open->ceilingpic		= *fofopen[lo].ceilingrover->bottompic;
-					open->ceilingstep		= ( thingtop    - topedge[lo] );
-					open->ceilingdrop		= ( topedge[hi] - topedge[lo] );
-
-					if (fofopen[hi].ceiling < open->highceiling)
-					{
-						open->highceiling = fofopen[hi].ceiling;
-					}
-				}
-				else if (fofopen[lo].ceiling < open->highceiling)
-				{
-					open->highceiling = fofopen[lo].ceiling;
-				}
-
-				hi = ( fofopen[0].floor < fofopen[1].floor );
-				lo = ! hi;
-
-				if (fofopen[hi].floor >= open->floor)
-				{
-					botedge[hi] = P_GetFFloorTopZAt(fofopen[hi].floorrover, cross.x, cross.y);
-
-					if (fofopen[lo].floor > open->floor)
-					{
-						botedge[lo] = P_GetFFloorTopZAt(fofopen[lo].floorrover, cross.x, cross.y);
-					}
-
-					open->floor				= fofopen[hi].floor;
-					open->floorrover		= fofopen[hi].floorrover;
-					open->floorslope		= *fofopen[hi].floorrover->t_slope;
-					open->floorpic			= *fofopen[hi].floorrover->toppic;
-					open->floorstep			= ( botedge[hi] - mobj->z );
-					open->floordrop			= ( botedge[hi] - botedge[lo] );
-
-					if (fofopen[lo].floor > open->lowfloor)
-					{
-						open->lowfloor = fofopen[lo].floor;
-					}
-				}
-				else if (fofopen[hi].floor > open->lowfloor)
-				{
-					open->lowfloor = fofopen[hi].floor;
 				}
 			}
 		}

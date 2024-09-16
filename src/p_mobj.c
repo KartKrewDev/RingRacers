@@ -1613,8 +1613,9 @@ boolean P_XYMovement(mobj_t *mo)
 	boolean moved;
 	pslope_t *oldslope = NULL;
 	vector3_t slopemom = {0,0,0};
-	fixed_t predictedz = 0;
+	fixed_t predictedz = INT32_MAX; // Need a sentinel value
 	TryMoveResult_t result = {0};
+	fixed_t momentumzdelta = INT32_MAX;
 
 	I_Assert(mo != NULL);
 	I_Assert(!P_MobjWasRemoved(mo));
@@ -1650,11 +1651,13 @@ boolean P_XYMovement(mobj_t *mo)
 	}
 
 	// adjust various things based on slope
-	if (mo->standingslope && abs(mo->standingslope->zdelta) > FRACUNIT>>8)
+	if (mo->standingslope && mo->standingslope->zdelta != 0)
 	{
 		if (!P_IsObjectOnGround(mo))
 		{
 			// We fell off at some point? Do the twisty thing!
+			// if (mo->player)
+			// 	CONS_Printf("Twisty thing launch?\n");
 			P_SlopeLaunch(mo);
 			xmove = mo->momx;
 			ymove = mo->momy;
@@ -1670,9 +1673,16 @@ boolean P_XYMovement(mobj_t *mo)
 			xmove = slopemom.x;
 			ymove = slopemom.y;
 
-			predictedz = mo->z + slopemom.z; // We'll use this later...
-
+			momentumzdelta = FixedDiv(slopemom.z, FixedHypot(xmove, ymove)); // so this lets us know what the zdelta is for the vector the player is travelling along, in addition to the slope's zdelta in its xydirection
 			oldslope = mo->standingslope;
+
+			// if (mo->player)
+			// 	CONS_Printf("%s zdelta %d momzdelta %d\n",player_names[mo->player-players], mo->standingslope->zdelta, momentumzdelta);
+			if (abs(momentumzdelta) >= FRACUNIT/6)
+				predictedz = mo->z + slopemom.z;
+			else
+				predictedz = mo->z;
+				
 		}
 	} else if (P_IsObjectOnGround(mo) && !mo->momz)
 		predictedz = mo->z;
@@ -1752,7 +1762,7 @@ boolean P_XYMovement(mobj_t *mo)
 				// Wall transfer part 1.
 				pslope_t *transferslope = NULL;
 				fixed_t transfermomz = 0;
-				if (oldslope && (P_MobjFlip(mo)*(predictedz - mo->z) > 0)) // Only for moving up (relative to gravity), otherwise there's a failed launch when going down slopes and hitting walls
+				if (oldslope && (P_MobjFlip(mo)*slopemom.z > 0)) // Only for moving up (relative to gravity), otherwise there's a failed launch when going down slopes and hitting walls
 				{
 					transferslope = ((mo->standingslope) ? mo->standingslope : oldslope);
 					if (((transferslope->zangle < ANGLE_180) ? transferslope->zangle : InvAngle(transferslope->zangle)) >= ANGLE_45) // Prevent some weird stuff going on on shallow slopes.
@@ -1906,27 +1916,34 @@ boolean P_XYMovement(mobj_t *mo)
 				mo->standingslope = oldslope;
 				P_SetPitchRollFromSlope(mo, mo->standingslope);
 				P_SlopeLaunch(mo);
-
-				//CONS_Printf("launched off of slope - ");
+				if (mo->player)
+					CONS_Printf("%s Slope change launch old angle %f - new angle %f = %f\n",
+						player_names[mo->player-players],
+						FIXED_TO_FLOAT(AngleFixed(oldangle)),
+						FIXED_TO_FLOAT(AngleFixed(newangle)),
+						FIXED_TO_FLOAT(AngleFixed(oldangle-newangle))
+					);
 			}
-
-			/*
-			CONS_Printf("old angle %f - new angle %f = %f\n",
-				FIXED_TO_FLOAT(AngleFixed(oldangle)),
-				FIXED_TO_FLOAT(AngleFixed(newangle)),
-				FIXED_TO_FLOAT(AngleFixed(oldangle-newangle))
-			);
-			*/
-
 		}
-		else if (predictedz - mo->z > abs(slopemom.z / 2))
+		else 
 		{
-			// Now check if we were supposed to stick to this slope
-			//CONS_Printf("%d-%d > %d\n", (predictedz), (mo->z), (slopemom.z/2));
-			P_SlopeLaunch(mo);
+			// if (mo->player)
+			// 	CONS_Printf("Ramp Launch %d %d+%d > 0 && %d-%d > %d ", mo->scale, FixedDiv(slopemom.z, mo->scale), P_GetMobjGravity(mo)*24, predictedz, mo->z, slopemom.z/2);
+			if ( // If slope aligned momz is more than gravity, and mobj clipped along ramp edge instead of following slope plane, then launch
+				   ( !(mo->eflags & MFE_VERTICALFLIP) && FixedDiv(slopemom.z, mo->scale) + P_GetMobjGravity(mo)*24 > 0 && predictedz - mo->z > slopemom.z*4/5 )
+				|| ( (mo->eflags & MFE_VERTICALFLIP) && FixedDiv(slopemom.z, mo->scale) + P_GetMobjGravity(mo)*24 < 0 && predictedz - mo->z < slopemom.z*4/5 )
+			)
+			{
+				if (mo->player)
+					CONS_Printf("%s Ramp Launch %d %d %d+%d > 0 && %d-%d > %d True\n", player_names[mo->player-players], mo->scale, momentumzdelta, FixedDiv(slopemom.z, mo->scale), P_GetMobjGravity(mo)*24, predictedz, mo->z, slopemom.z*4/5);
+				P_SlopeLaunch(mo);
+			}
+			// else
+				// if (mo->player)
+				// 	CONS_Printf("False\n");
 		}
 	}
-	else if (moved && mo->standingslope && predictedz)
+	else if (moved && mo->standingslope && predictedz != INT32_MAX) // Predicted z must be changed
 	{
 		angle_t moveangle = K_MomentumAngle(mo);
 		angle_t newangle = FixedMul((signed)mo->standingslope->zangle, FINECOSINE((moveangle - mo->standingslope->xydirection) >> ANGLETOFINESHIFT));
@@ -2264,7 +2281,11 @@ boolean P_ZMovement(mobj_t *mo)
 		if (mo->flags & MF_NOCLIPHEIGHT)
 			mo->standingslope = NULL;
 		else if (!onground)
+		{
+			if (mo->player)
+				// CONS_Printf("ZMovement launch?\n");
 			P_SlopeLaunch(mo);
+		}
 	}
 
 	switch (mo->type)
@@ -2798,6 +2819,20 @@ void P_PlayerZMovement(mobj_t *mo)
 		mo->eflags &= ~MFE_APPLYPMOMZ;
 	}
 
+	if (mo->eflags & MFE_JUSTSTEPPEDDOWN && abs(mo->momz) > 1)
+	{
+		CONS_Printf("%s Check Step up momz reset %d < %d + %d", player_names[mo->player-players], abs(mo->momz), P_GetThingStepUp(mo, mo->x, mo->y)/6, abs(P_GetMobjGravity(mo)*3));
+		if (abs(mo->momz) < P_GetThingStepUp(mo, mo->x, mo->y)/6 + abs(P_GetMobjGravity(mo)*3))
+		{
+			CONS_Printf(" True\n");
+			mo->momz = 0;
+		}
+		else 
+		{
+			CONS_Printf(" False\n");
+		}
+	}
+
 	mo->z += mo->momz;
 	onground = P_IsObjectOnGround(mo);
 
@@ -2811,7 +2846,11 @@ void P_PlayerZMovement(mobj_t *mo)
 		if (mo->flags & MF_NOCLIPHEIGHT)
 			mo->standingslope = NULL;
 		else if (!onground)
+		{
+			CONS_Printf("%s PlayerZMovement launch %d  ", player_names[mo->player-players], mo->momz);
 			P_SlopeLaunch(mo);
+			CONS_Printf("%d\n", mo->momz);
+		}
 	}
 
 	// clip movement

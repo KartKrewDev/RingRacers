@@ -2775,6 +2775,17 @@ fixed_t P_GetThingStepUp(mobj_t *thing, fixed_t destX, fixed_t destY)
 		maxstep = 0;
 	}
 
+	if (thing->standingslope)
+	{
+		vector3_t slopemom = {0,0,0};
+		slopemom.x = thing->momx;
+		slopemom.y = thing->momy;
+		slopemom.z = 0;
+		P_QuantizeMomentumToSlope(&slopemom, thing->standingslope);
+		fixed_t momentumzdelta = FixedDiv(slopemom.z, FixedHypot(slopemom.x, slopemom.y)); // so this lets us know what the zdelta is for the vector the player is travelling along, in addition to the slope's zdelta in its xydirection
+		maxstep += abs(momentumzdelta);
+	}
+
 	return maxstep;
 }
 
@@ -2793,6 +2804,13 @@ increment_move
 	fixed_t thingtop;
 	fixed_t stairjank = 0;
 	g_tm.floatok = false;
+	fixed_t oldfloorz = INT32_MAX; // Ramp detection
+	pslope_t *oldslope = NULL;
+	angle_t moveangle = R_PointToAngle2(thing->x,thing->y,x,y);
+
+	boolean samepos = false;
+	if (thing->x == x && thing->y == y)
+		samepos = true;
 
 	// reset this to 0 at the start of each trymove call as it's only used here
 	numspechitint = 0U;
@@ -2841,6 +2859,9 @@ increment_move
 		}
 
 		boolean move_ok = P_CheckPosition(thing, tryx, tryy, result);
+
+		oldslope = thing->standingslope;
+		oldfloorz = thing->floorz;
 
 		if (P_MobjWasRemoved(thing))
 		{
@@ -2956,7 +2977,7 @@ increment_move
 				}
 				else if (g_tm.floorz - g_tm.dropoffz > maxstep)
 					return false; // don't stand over a dropoff
-			}
+			}					
 		}
 	} while (tryx != x || tryy != y);
 

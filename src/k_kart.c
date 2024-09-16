@@ -12552,6 +12552,7 @@ boolean K_FastFallBounce(player_t *player)
 		}
 
 		player->mo->momz = bounce * P_MobjFlip(player->mo);
+		CONS_Printf("%s FastFallBounce %d\n", player_names[player-players], player->mo->momz);
 
 		return true;
 	}
