@@ -2783,11 +2783,11 @@ fixed_t P_GetThingStepUp(mobj_t *thing, fixed_t destX, fixed_t destY)
 		slopemom.z = 0;
 		P_QuantizeMomentumToSlope(&slopemom, thing->standingslope);
 		fixed_t momentumzdelta = FixedDiv(slopemom.z, FixedHypot(slopemom.x, slopemom.y)); // so this lets us know what the zdelta is for the vector the player is travelling along, in addition to the slope's zdelta in its xydirection
-		if (thing->player)
-			CONS_Printf("%s P_GetThingStepUp %d +", player_names[thing->player-players], maxstep);
+		// if (thing->player)
+		// 	CONS_Printf("%s P_GetThingStepUp %d +", player_names[thing->player-players], maxstep);
 		maxstep += abs(momentumzdelta);
-		if (thing->player)
-			CONS_Printf(" %d = %d\n", momentumzdelta, maxstep);
+		// if (thing->player)
+		// 	CONS_Printf(" %d = %d\n", momentumzdelta, maxstep);
 		
 	}
 

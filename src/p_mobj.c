@@ -1916,13 +1916,13 @@ boolean P_XYMovement(mobj_t *mo)
 				mo->standingslope = oldslope;
 				P_SetPitchRollFromSlope(mo, mo->standingslope);
 				P_SlopeLaunch(mo);
-				if (mo->player)
-					CONS_Printf("%s Slope change launch old angle %f - new angle %f = %f\n",
-						player_names[mo->player-players],
-						FIXED_TO_FLOAT(AngleFixed(oldangle)),
-						FIXED_TO_FLOAT(AngleFixed(newangle)),
-						FIXED_TO_FLOAT(AngleFixed(oldangle-newangle))
-					);
+				// if (mo->player)
+				// 	CONS_Printf("%s Slope change launch old angle %f - new angle %f = %f\n",
+				// 		player_names[mo->player-players],
+				// 		FIXED_TO_FLOAT(AngleFixed(oldangle)),
+				// 		FIXED_TO_FLOAT(AngleFixed(newangle)),
+				// 		FIXED_TO_FLOAT(AngleFixed(oldangle-newangle))
+				// 	);
 			}
 		}
 		else 
@@ -1934,8 +1934,8 @@ boolean P_XYMovement(mobj_t *mo)
 				|| ( (mo->eflags & MFE_VERTICALFLIP) && FixedDiv(slopemom.z, mo->scale) + P_GetMobjGravity(mo)*24 < 0 && predictedz - mo->z < slopemom.z*4/5 )
 			)
 			{
-				if (mo->player)
-					CONS_Printf("%s Ramp Launch %d %d %d+%d > 0 && %d-%d > %d True\n", player_names[mo->player-players], mo->scale, momentumzdelta, FixedDiv(slopemom.z, mo->scale), P_GetMobjGravity(mo)*24, predictedz, mo->z, slopemom.z*4/5);
+				// if (mo->player)
+				// 	CONS_Printf("%s Ramp Launch %d %d %d+%d > 0 && %d-%d > %d True\n", player_names[mo->player-players], mo->scale, momentumzdelta, FixedDiv(slopemom.z, mo->scale), P_GetMobjGravity(mo)*24, predictedz, mo->z, slopemom.z*4/5);
 				P_SlopeLaunch(mo);
 			}
 			// else
@@ -2282,8 +2282,8 @@ boolean P_ZMovement(mobj_t *mo)
 			mo->standingslope = NULL;
 		else if (!onground)
 		{
-			if (mo->player)
-				// CONS_Printf("ZMovement launch?\n");
+			// if (mo->player)
+			// 	 CONS_Printf("ZMovement launch?\n");
 			P_SlopeLaunch(mo);
 		}
 	}
@@ -2821,16 +2821,16 @@ void P_PlayerZMovement(mobj_t *mo)
 
 	if (mo->eflags & MFE_JUSTSTEPPEDDOWN && abs(mo->momz) > 1)
 	{
-		CONS_Printf("%s Check Step up momz reset %d < %d + %d", player_names[mo->player-players], abs(mo->momz), P_GetThingStepUp(mo, mo->x, mo->y)/6, abs(P_GetMobjGravity(mo)*3));
+		// CONS_Printf("%s Check Step up momz reset %d < %d + %d", player_names[mo->player-players], abs(mo->momz), P_GetThingStepUp(mo, mo->x, mo->y)/6, abs(P_GetMobjGravity(mo)*3));
 		if (abs(mo->momz) < P_GetThingStepUp(mo, mo->x, mo->y)/6 + abs(P_GetMobjGravity(mo)*3))
 		{
-			CONS_Printf(" True\n");
+			// CONS_Printf(" True\n");
 			mo->momz = 0;
 		}
-		else 
-		{
-			CONS_Printf(" False\n");
-		}
+		// else 
+		// {
+		// 	CONS_Printf(" False\n");
+		// }
 	}
 
 	mo->z += mo->momz;
@@ -2847,9 +2847,9 @@ void P_PlayerZMovement(mobj_t *mo)
 			mo->standingslope = NULL;
 		else if (!onground)
 		{
-			CONS_Printf("%s PlayerZMovement launch %d  ", player_names[mo->player-players], mo->momz);
+			// CONS_Printf("%s PlayerZMovement launch %d  ", player_names[mo->player-players], mo->momz);
 			P_SlopeLaunch(mo);
-			CONS_Printf("%d\n", mo->momz);
+			// CONS_Printf("%d\n", mo->momz);
 		}
 	}
 
