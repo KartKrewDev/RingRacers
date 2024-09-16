@@ -1283,8 +1283,6 @@ INT32 G_FindPlayerBindForGameControl(INT32 player, gamecontrols_e control)
 
 	INT32 bindindex = MAXINPUTMAPPING-1;
 
-	CONS_Printf("Searcrhing for gamecontrol %d on player %d device %d...\n", control, player, device);
-
 	while (bindindex >= 0) // Prefer earlier binds
 	{
 		INT32 possiblecontrol = ourProfile->controls[control][bindindex];
@@ -1299,12 +1297,10 @@ INT32 G_FindPlayerBindForGameControl(INT32 player, gamecontrols_e control)
 		{
 			bestbind = possiblecontrol;
 			anybind = possiblecontrol;
-			CONS_Printf("Matching control %s\n", G_KeynumToShortString(possiblecontrol));
 		}
 		else
 		{
 			anybind = possiblecontrol;
-			CONS_Printf("Speculative control %s\n", G_KeynumToShortString(possiblecontrol));
 		}
 	}
 
@@ -1327,12 +1323,10 @@ INT32 G_FindPlayerBindForGameControl(INT32 player, gamecontrols_e control)
 			{
 				bestbind = possiblecontrol;
 				anybind = possiblecontrol;
-				CONS_Printf("Matching default control %s\n", G_KeynumToShortString(possiblecontrol));
 			}
 			else
 			{
 				anybind = possiblecontrol;
-				CONS_Printf("Speculative default control %s\n", G_KeynumToShortString(possiblecontrol));
 			}
 		}
 	}
@@ -1356,12 +1350,10 @@ INT32 G_FindPlayerBindForGameControl(INT32 player, gamecontrols_e control)
 			{
 				bestbind = possiblecontrol;
 				anybind = possiblecontrol;
-				CONS_Printf("Matching reserved control %s\n", G_KeynumToShortString(possiblecontrol));
 			}
 			else
 			{
 				anybind = possiblecontrol;
-				CONS_Printf("Speculative reserved control %s\n", G_KeynumToShortString(possiblecontrol));
 			}
 		}
 	}

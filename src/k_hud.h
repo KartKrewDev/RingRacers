@@ -103,6 +103,19 @@ extern patch_t *kp_button_right[2];
 extern patch_t *kp_button_left[2];
 extern patch_t *kp_button_dpad[2];
 
+extern patch_t *gen_button_a[2][2];
+extern patch_t *gen_button_b[2][2];
+extern patch_t *gen_button_x[2][2];
+extern patch_t *gen_button_y[2][2];
+extern patch_t *gen_button_lb[2];
+extern patch_t *gen_button_rb[2];
+extern patch_t *gen_button_lt[2];
+extern patch_t *gen_button_rt[2];
+extern patch_t *gen_button_start[2];
+extern patch_t *gen_button_back[2];
+extern patch_t *gen_button_ls[2];
+extern patch_t *gen_button_rs[2];
+
 extern patch_t *kp_eggnum[6];
 extern patch_t *kp_facenum[MAXPLAYERS+1];
 

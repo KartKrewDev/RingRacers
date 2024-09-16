@@ -100,6 +100,7 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 	};
 
 	// What physical binds should always be rewritten as glyphs anyway?
+
 	static const std::unordered_map<INT32, char> prettyinputs = {
 		{KEY_UPARROW, 0x00},
 		{KEY_DOWNARROW, 0x01},
@@ -113,6 +114,21 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 		{KEY_AXIS1+1, 0x02}, // Right
 		{KEY_AXIS1+2, 0x00}, // Up
 		{KEY_AXIS1+3, 0x01}, // Down
+	};
+
+	static const std::unordered_map<INT32, char> genericinputs = {
+		{KEY_JOY1+0, 0x00},
+		{KEY_JOY1+1, 0x01},
+		{KEY_JOY1+2, 0x02},
+		{KEY_JOY1+3, 0x03},
+		{KEY_JOY1+9, 0x04},
+		{KEY_JOY1+10, 0x05},
+		{KEY_AXIS1+8, 0x06},
+		{KEY_AXIS1+9, 0x07},
+		{KEY_JOY1+6, 0x08},
+		{KEY_JOY1+4, 0x09},
+		{KEY_JOY1+7, 0x0A},
+		{KEY_JOY1+8, 0x0B},
 	};
 
 	string_.clear();
@@ -160,6 +176,11 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 					if (auto pretty = prettyinputs.find(bind); pretty != prettyinputs.end()) // Gamepad direction or keyboard arrow, use something nice-looking
 					{
 						string_.push_back(0xB0 | pretty->second); // take high bits from glyph invoked and low bits from control
+					}
+					else if (auto generic = genericinputs.find(bind); generic != genericinputs.end()) // Gamepad direction or keyboard arrow, use something nice-looking
+					{
+						string_.push_back(0xEF);
+						string_.push_back(0xB0 | generic->second); // take high bits from glyph invoked and low bits from control
 					}
 					else
 					{
@@ -285,6 +306,47 @@ patch_t** get_button_patch(Draw::Button type, int ver)
 }; // namespace
 
 void Chain::button_(Button type, int ver, std::optional<bool> press) const
+{
+	const auto _ = Clipper(*this);
+
+	if (press)
+	{
+		K_drawButton(FloatToFixed(x_), FloatToFixed(y_), flags_, get_button_patch(type, ver), *press);
+	}
+	else
+	{
+		K_drawButtonAnim(x_, y_, flags_, get_button_patch(type, ver), I_GetTime());
+	}
+}
+
+patch_t** get_button_patch(Draw::GenericButton type, int ver)
+{
+	switch (type)
+	{
+#define X(x) \
+	case Draw::GenericButton::x:\
+		return gen_button_ ## x
+
+	X(a)[ver];
+	X(b)[ver];
+	X(x)[ver];
+	X(y)[ver];
+	X(lb);
+	X(rb);
+	X(lt);
+	X(rt);
+	X(start);
+	X(back);
+	X(ls);
+	X(rs);
+
+#undef X
+	}
+
+	return nullptr;
+};
+
+void Chain::generic_button_(GenericButton type, int ver, std::optional<bool> press) const
 {
 	const auto _ = Clipper(*this);
 

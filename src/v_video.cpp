@@ -2534,6 +2534,48 @@ static UINT8 V_GetButtonCodeWidth(UINT8 c)
 	return x;
 }
 
+static UINT8 V_GetGenericButtonCodeWidth(UINT8 c)
+{
+	UINT8 x = 0;
+
+	switch (c & 0x0F)
+	{
+	case 0x00:
+	case 0x01:
+	case 0x02:
+	case 0x03:
+		// buttons
+		x = 14;
+		break;
+
+	case 0x04:
+	case 0x05:
+		// bumpers
+		x = 14;
+		break;
+
+	case 0x06:
+	case 0x07:
+		// triggers
+		x = 14;
+		break;
+
+	case 0x08:
+	case 0x09:
+		// nav
+		x = 16;
+		break;
+
+	case 0x0A:
+	case 0x0B:
+		// stick click
+		x = 18;
+		break;
+	}
+
+	return x;
+}
+
 void V_DrawStringScaled(
 		fixed_t    x,
 		fixed_t    y,
@@ -2561,6 +2603,7 @@ void V_DrawStringScaled(
 	boolean uppercase;
 	boolean notcolored;
 	boolean boxed;
+	boolean descriptive = false;
 
 	boolean   dance;
 	boolean nodanceoverride;
@@ -2658,7 +2701,11 @@ void V_DrawStringScaled(
 					return;
 				cx  =   x;
 				break;
+			case '\xEF':
+				descriptive = true;
+				break;
 			case '\xEE':
+				cx += FRACUNIT*dupx;
 				boxed = !boxed;
 				if (boxed) // draw caps
 				{
@@ -2716,6 +2763,122 @@ void V_DrawStringScaled(
 
 					if (( c & 0xB0 ) & 0x80) // button prompts
 					{
+						if (!descriptive)
+						{
+							using srb2::Draw;
+
+							struct BtConf
+							{
+								UINT8 x, y;
+								Draw::Button type;
+							};
+
+							auto bt_inst = [c]() -> std::optional<BtConf>
+							{
+								switch (c & 0x0F)
+								{
+								case 0x00: return {{0, 3, Draw::Button::up}};
+								case 0x01: return {{0, 3, Draw::Button::down}};
+								case 0x02: return {{0, 3, Draw::Button::right}};
+								case 0x03: return {{0, 3, Draw::Button::left}};
+
+								case 0x04: return {{0, 4, Draw::Button::dpad}};
+
+								case 0x07: return {{0, 2, Draw::Button::r}};
+								case 0x08: return {{0, 2, Draw::Button::l}};
+
+								case 0x09: return {{0, 1, Draw::Button::start}};
+
+								case 0x0A: return {{2, 1, Draw::Button::a}};
+								case 0x0B: return {{2, 1, Draw::Button::b}};
+								case 0x0C: return {{2, 1, Draw::Button::c}};
+
+								case 0x0D: return {{2, 1, Draw::Button::x}};
+								case 0x0E: return {{2, 1, Draw::Button::y}};
+								case 0x0F: return {{2, 1, Draw::Button::z}};
+
+								default: return {};
+								}
+							}();
+
+							if (bt_inst)
+							{
+								auto bt_translate_press = [c]() -> std::optional<bool>
+								{
+									switch (c & 0xB0)
+									{
+									default:
+									case 0x90: return true;
+									case 0xA0: return {};
+									case 0xB0: return false;
+									}
+								};
+
+								cw = V_GetButtonCodeWidth(c) * dupx;
+								cxoff = (*fontspec.dim_fn)(scale, fontspec.chw, hchw, dupx, &cw);
+								Draw(
+									FixedToFloat(cx + cxoff) - (bt_inst->x * dupx),
+									FixedToFloat(cy + cyoff) - ((bt_inst->y + fontspec.button_yofs) * dupy))
+									.flags(flags)
+									.small_button(bt_inst->type, bt_translate_press());
+								cx += cw;
+							}
+							break;
+						}
+						else
+						{
+							using srb2::Draw;
+
+							struct BtConf
+							{
+								UINT8 x, y;
+								Draw::GenericButton type;
+							};
+
+							auto bt_inst = [c]() -> std::optional<BtConf>
+							{
+								switch (c & 0x0F)
+								{
+								case 0x00: return {{0, 2, Draw::GenericButton::a}};
+								case 0x01: return {{0, 2, Draw::GenericButton::b}};
+								case 0x02: return {{0, 2, Draw::GenericButton::x}};
+								case 0x03: return {{0, 2, Draw::GenericButton::y}};
+								case 0x04: return {{1, 3, Draw::GenericButton::lb}};
+								case 0x05: return {{1, 3, Draw::GenericButton::rb}};
+								case 0x06: return {{1, 4, Draw::GenericButton::lt}};
+								case 0x07: return {{1, 4, Draw::GenericButton::rt}};
+								case 0x08: return {{1, 6, Draw::GenericButton::start}};
+								case 0x09: return {{1, 6, Draw::GenericButton::back}};
+								case 0x0A: return {{0, 5, Draw::GenericButton::ls}};
+								case 0x0B: return {{0, 5, Draw::GenericButton::rs}};
+								default: return {};
+								}
+							}();
+
+							if (bt_inst)
+							{
+								auto bt_translate_press = [c]() -> std::optional<bool>
+								{
+									switch (c & 0xB0)
+									{
+									default:
+									case 0x90: return true;
+									case 0xA0: return {};
+									case 0xB0: return false;
+									}
+								};
+
+								cw = V_GetGenericButtonCodeWidth(c) * dupx;
+								cxoff = (*fontspec.dim_fn)(scale, fontspec.chw, hchw, dupx, &cw);
+								Draw(
+									FixedToFloat(cx + cxoff) - (bt_inst->x * dupx),
+									FixedToFloat(cy + cyoff) - ((bt_inst->y + fontspec.button_yofs) * dupy))
+									.flags(flags)
+									.generic_small_button(bt_inst->type, bt_translate_press());
+								cx += cw;
+							}
+							break;
+						}
 						using srb2::Draw;
 
 						struct BtConf
@@ -2728,10 +2891,10 @@ void V_DrawStringScaled(
 						{
 							switch (c & 0x0F)
 							{
-							case 0x00: return {{0, 3, Draw::Button::up}};
-							case 0x01: return {{0, 3, Draw::Button::down}};
-							case 0x02: return {{0, 3, Draw::Button::right}};
-							case 0x03: return {{0, 3, Draw::Button::left}};
+							case 0x00: return {{1, 3, Draw::Button::up}};
+							case 0x01: return {{1, 3, Draw::Button::down}};
+							case 0x02: return {{1, 3, Draw::Button::right}};
+							case 0x03: return {{1, 3, Draw::Button::left}};
 
 							case 0x04: return {{0, 4, Draw::Button::dpad}};
 
@@ -2797,6 +2960,8 @@ void V_DrawStringScaled(
 					}
 					else
 						cx += fontspec.spacew;
+
+					descriptive = false;
 				}
 		}
 	}
@@ -2817,6 +2982,7 @@ fixed_t V_StringScaledWidth(
 	font_t   *font;
 
 	boolean uppercase;
+	boolean descriptive = false;;
 
 	fixed_t cx;
 	fixed_t right;
@@ -2875,7 +3041,11 @@ fixed_t V_StringScaledWidth(
 			case '\n':
 				cx  =   0;
 				break;
+			case '\xEF':
+				descriptive = true;
+				break;
 			case '\xEE':
+				cx += FRACUNIT*dupx;
 				break;
 			default:
 				if (( c & 0xF0 ) == 0x80 || c == V_STRINGDANCE)
@@ -2883,10 +3053,20 @@ fixed_t V_StringScaledWidth(
 
 				if (( c & 0xB0 ) & 0x80)
 				{
-					cw = V_GetButtonCodeWidth(c) * dupx;
-					cx += cw * scale;
-					right = cx;
-					break;
+					if (descriptive)
+					{
+						cw = V_GetGenericButtonCodeWidth(c) * dupx;
+						cx += cw * scale;
+						right = cx;
+						break;
+					}
+					else
+					{
+						cw = V_GetButtonCodeWidth(c) * dupx;
+						cx += cw * scale;
+						right = cx;
+						break;
+					}
 				}
 
 				if (uppercase)
@@ -2921,6 +3101,7 @@ fixed_t V_StringScaledWidth(
 				}
 				else
 					cx += fontspec.spacew;
+				descriptive = false;
 		}
 
 		fullwidth = std::max(right, std::max(cx, fullwidth));

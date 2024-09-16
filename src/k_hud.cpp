@@ -244,10 +244,29 @@ patch_t *kp_button_right[2];
 patch_t *kp_button_left[2];
 patch_t *kp_button_dpad[2];
 
+patch_t *gen_button_a[2][2];
+patch_t *gen_button_b[2][2];
+patch_t *gen_button_x[2][2];
+patch_t *gen_button_y[2][2];
+patch_t *gen_button_lb[2];
+patch_t *gen_button_rb[2];
+patch_t *gen_button_lt[2];
+patch_t *gen_button_rt[2];
+patch_t *gen_button_start[2];
+patch_t *gen_button_back[2];
+patch_t *gen_button_ls[2];
+patch_t *gen_button_rs[2];
+
 static void K_LoadButtonGraphics(patch_t *kp[2], int letter)
 {
 	HU_UpdatePatch(&kp[0], "TLB_%c", letter);
 	HU_UpdatePatch(&kp[1], "TLB_%cB", letter);
+}
+
+static void K_LoadGenericButtonGraphics(patch_t *kp[2], int letter)
+{
+	HU_UpdatePatch(&kp[0], "TLG_%c", letter);
+	HU_UpdatePatch(&kp[1], "TLG_%cB", letter);
 }
 
 void K_LoadKartHUDGraphics(void)
@@ -962,6 +981,28 @@ void K_LoadKartHUDGraphics(void)
 	K_LoadButtonGraphics(kp_button_right, 'L');
 	K_LoadButtonGraphics(kp_button_left, 'M');
 	K_LoadButtonGraphics(kp_button_dpad, 'T');
+
+	K_LoadGenericButtonGraphics(gen_button_a[0], 'A');
+	K_LoadGenericButtonGraphics(gen_button_b[0], 'B');
+	K_LoadGenericButtonGraphics(gen_button_x[0], 'D');
+	K_LoadGenericButtonGraphics(gen_button_y[0], 'E');
+
+	K_LoadGenericButtonGraphics(gen_button_a[1], 'K');
+	K_LoadGenericButtonGraphics(gen_button_b[1], 'M');
+	K_LoadGenericButtonGraphics(gen_button_x[1], 'L');
+	K_LoadGenericButtonGraphics(gen_button_y[1], 'J');
+
+	K_LoadGenericButtonGraphics(gen_button_lb, 'H');
+	K_LoadGenericButtonGraphics(gen_button_rb, 'I');
+
+	K_LoadGenericButtonGraphics(gen_button_lt, 'C');
+	K_LoadGenericButtonGraphics(gen_button_rt, 'F');
+
+	K_LoadGenericButtonGraphics(gen_button_start, 'G');
+	K_LoadGenericButtonGraphics(gen_button_back, 'G'); // FIXME
+
+	K_LoadGenericButtonGraphics(gen_button_ls, 'T');
+	K_LoadGenericButtonGraphics(gen_button_rs, 'U');
 }
 
 // For the item toggle menu
@@ -6445,16 +6486,35 @@ void K_drawKartHUD(void)
 	}
 
 	// In case of font debugging break glass
-#if 0
+#if 1
 	using srb2::Draw;
 
-	Draw::TextElement text = Draw::TextElement().parse("ABCxyz / 012 - Use <a> + <r> to <yellow>Krungle<white>!");
-
+	if (0)
+	{
+	Draw::TextElement text = Draw::TextElement().parse("A <a> B <b> C <c> X <x> Y <y> Z <z>\nST <start> L <l> R <r> U <up> D <down> L <left> R <right>");
+	
 	player_t *oldstplyr = stplyr;
 	stplyr = &players[0];
 	Draw(5, 5).align((srb2::Draw::Align)0).font(Draw::Font::kMenu).text(text);
 	stplyr = &players[1];
-	Draw(5, 15).align((srb2::Draw::Align)0).font(Draw::Font::kThin).text(text);
+	Draw(5, 35).align((srb2::Draw::Align)0).font(Draw::Font::kThin).text(text);
+	stplyr = oldstplyr;
+	}	
+
+
+	if (1)
+	{
+	Draw::TextElement text = Draw::TextElement().parse("A \xEF\xA0 A\nB \xEF\xA1 B\nX \xEF\xA2 X\nY \xEF\xA3 Y\nLB \xEF\xA4 LB\nRB \xEF\xA5 RB\nLT \xEF\xA6 LT\nRT \xEF\xA7 RT\nST \xEF\xA8 ST\nBK \xEF\xA9 BK\nLS \xEF\xAA LS\nRS \xEF\xAB RS\n");
+
+	player_t *oldstplyr = stplyr;
+	stplyr = &players[0];
+	Draw(160, 5).align((srb2::Draw::Align)0).font(Draw::Font::kMenu).text(text);
+	stplyr = &players[1];
+	Draw(55, 5).align((srb2::Draw::Align)0).font(Draw::Font::kThin).text(text);
+	stplyr = oldstplyr;
+	}
+
+	/*
 	stplyr = &players[2];
 	Draw(5, 25).align((srb2::Draw::Align)0).font(Draw::Font::kConsole).text(text);
 	stplyr = &players[3];
@@ -6466,7 +6526,7 @@ void K_drawKartHUD(void)
 	Draw(5, 105).align((srb2::Draw::Align)0).font(Draw::Font::kThinTimer).text(text);
 	Draw(5, 115).align((srb2::Draw::Align)0).font(Draw::Font::kTimer).text(text);
 	Draw(5, 145).align((srb2::Draw::Align)0).font(Draw::Font::kZVote).text(text);
-	stplyr = oldstplyr;
+	*/
 #endif
 
 
