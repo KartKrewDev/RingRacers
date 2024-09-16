@@ -301,6 +301,7 @@ TYPEDEF (BasicFF_t);
 TYPEDEF (divline_t);
 TYPEDEF (intercept_t);
 TYPEDEF (opening_t);
+TYPEDEF (fofopening_t);
 
 // p_mobj.h
 TYPEDEF (mobj_t);
