@@ -9043,8 +9043,11 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->itemtype == KITEM_NONE)
 		player->itemflags &= ~IF_HOLDREADY;
 
-	if (onground)
+	if (onground || player->transfer < 10*player->mo->scale)
+	{
 		player->transfer = 0;
+		player->transfersound = false;
+	}
 
 	if (player->transfer)
 	{
@@ -9059,10 +9062,12 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 			if ((player->mo->momz > 0) == (transferclamp > 0))
 			{
-				if (!S_SoundPlaying(player->mo, sfx_ggfall))
-					S_StartSound(player->mo, sfx_ggfall);
-
 				fuckfactor = FRACUNIT/2;
+			}
+			else if (!player->transfersound)
+			{
+				S_StartSound(player->mo, sfx_ggfall);
+				player->transfersound = true;
 			}
 
 			fixed_t sx, sy;
@@ -10174,21 +10179,6 @@ void K_KartResetPlayerColor(player_t *player)
 		goto finalise;
 	}
 	else if (player->overdrive)
-	{
-		player->mo->colorized = true;
-		fullbright = true;
-		player->mo->color = SKINCOLOR_WHITE;
-		goto finalise;
-	}
-
-	if (player->transfer && (leveltime & 1))
-	{
-		player->mo->colorized = true;
-		fullbright = true;
-		player->mo->color = player->skincolor;
-		goto finalise;
-	}
-	else if (player->transfer)
 	{
 		player->mo->colorized = true;
 		fullbright = true;

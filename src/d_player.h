@@ -1054,6 +1054,7 @@ struct player_t
 	fixed_t outrun; // Milky Way road effect
 
 	fixed_t transfer; // Tired of Ramp Park fastfalls
+	boolean transfersound;
 
 	uint8_t public_key[PUBKEYLENGTH];
 
