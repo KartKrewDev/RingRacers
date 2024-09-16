@@ -3700,3 +3700,10 @@ void VID_DisplaySoftwareScreen()
 	// Post-process blit to the 'default' framebuffer
 	hw_state->blit_postimg_screens->draw(*rhi, ctx);
 }
+
+char *V_ParseText(const char *rawText)
+{
+	using srb2::Draw;
+
+	return Z_StrDup(srb2::Draw::TextElement().parse(rawText).string().c_str());
+}

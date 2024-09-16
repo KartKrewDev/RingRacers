@@ -964,6 +964,21 @@ static int libd_stringWidth(lua_State *L)
 	return 1;
 }
 
+static int libd_parseText(lua_State *L)
+{
+	HUDONLY
+
+	const char *rawText = luaL_checkstring(L, 1);
+
+	if (!rawText)
+		return luaL_error(L, "no string provided to v.parseText");
+
+	char *newText = V_ParseText(rawText);
+	lua_pushstring(gL, newText);
+	Z_Free(newText);
+	return 1;
+}
+
 static int libd_getColormap(lua_State *L)
 {
 	INT32 skinnum = TC_DEFAULT;
@@ -1162,6 +1177,7 @@ static luaL_Reg lib_draw[] = {
 	// misc
 	{"stringWidth", libd_stringWidth},
 	{"titleCardStringWidth", libd_titleCardStringWidth},
+	{"parseText", libd_parseText},
 	// m_random
 	{"RandomFixed",libd_RandomFixed},
 	{"RandomByte",libd_RandomByte},
