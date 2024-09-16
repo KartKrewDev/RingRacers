@@ -834,7 +834,7 @@ void M_DrawMenuMessage(void)
 		{
 			workx -= K_DrawGameControl(
 				workx+2, worky,
-				0, "<b_animated><x_animated>", 2
+				0, "<b_animated> <x_animated> ", 2
 			);
 		}
 		else
@@ -864,7 +864,7 @@ void M_DrawMenuMessage(void)
 		{
 			workx -= K_DrawGameControl(
 				workx+2, worky,
-				0, "<a_animated>", 2
+				0, "<a_animated> ", 2
 			);
 		}
 		else

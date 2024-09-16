@@ -2705,7 +2705,6 @@ void V_DrawStringScaled(
 				descriptive = true;
 				break;
 			case '\xEE':
-				cx += FRACUNIT*dupx;
 				boxed = !boxed;
 				if (boxed) // draw caps
 				{
@@ -2714,6 +2713,7 @@ void V_DrawStringScaled(
 				}
 				else
 				{
+					cx += 3*scale;
 					//V_DrawFill((cx)/FRACUNIT+(fontspec.right_outline), (cy)/FRACUNIT-2, 2, fontspec.lfh/FRACUNIT, flags|outerbox);
 					//V_DrawFill((cx)/FRACUNIT+(fontspec.right_outline), (cy)/FRACUNIT-1, 1, fontspec.lfh/FRACUNIT-2, flags|innerbox);
 				}
@@ -2982,6 +2982,7 @@ fixed_t V_StringScaledWidth(
 	font_t   *font;
 
 	boolean uppercase;
+	boolean boxed = false;
 	boolean descriptive = false;;
 
 	fixed_t cx;
@@ -3045,7 +3046,9 @@ fixed_t V_StringScaledWidth(
 				descriptive = true;
 				break;
 			case '\xEE':
-				cx += FRACUNIT*dupx;
+				if (boxed)
+					cx += 3*scale;
+				boxed = !boxed;
 				break;
 			default:
 				if (( c & 0xF0 ) == 0x80 || c == V_STRINGDANCE)
