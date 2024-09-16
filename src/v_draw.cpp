@@ -99,8 +99,7 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 		{0x0F, gc_z},
 	};
 
-	// What physical binds should always be rewritten as glyphs anyway?
-
+	// What physical binds should be rewritten as base Saturn icons?
 	static const std::unordered_map<INT32, char> prettyinputs = {
 		{KEY_UPARROW, 0x00},
 		{KEY_DOWNARROW, 0x01},
@@ -116,18 +115,19 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 		{KEY_AXIS1+3, 0x01}, // Down
 	};
 
+	// What physical binds should be rewritten as generic icons?
 	static const std::unordered_map<INT32, char> genericinputs = {
-		{KEY_JOY1+0, 0x00},
+		{KEY_JOY1+0, 0x00}, // ABXY
 		{KEY_JOY1+1, 0x01},
 		{KEY_JOY1+2, 0x02},
 		{KEY_JOY1+3, 0x03},
-		{KEY_JOY1+9, 0x04},
+		{KEY_JOY1+9, 0x04}, // LBRB
 		{KEY_JOY1+10, 0x05},
-		{KEY_AXIS1+8, 0x06},
+		{KEY_AXIS1+8, 0x06}, // LTRT
 		{KEY_AXIS1+9, 0x07},
-		{KEY_JOY1+6, 0x08},
+		{KEY_JOY1+6, 0x08}, // NAV
 		{KEY_JOY1+4, 0x09},
-		{KEY_JOY1+7, 0x0A},
+		{KEY_JOY1+7, 0x0A}, // CLICK
 		{KEY_JOY1+8, 0x0B},
 	};
 
@@ -175,16 +175,15 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 
 					if (auto pretty = prettyinputs.find(bind); pretty != prettyinputs.end()) // Gamepad direction or keyboard arrow, use something nice-looking
 					{
-						string_.push_back(0xB0 | pretty->second); // take high bits from glyph invoked and low bits from control
+						string_.push_back((it->second & 0xF0) | pretty->second); // original invocation has the animation bits, but the glyph bits come from the table
 					}
-					else if (auto generic = genericinputs.find(bind); generic != genericinputs.end()) // Gamepad direction or keyboard arrow, use something nice-looking
+					else if (auto generic = genericinputs.find(bind); generic != genericinputs.end()) // Gamepad input, display it to the player as they are
 					{
 						string_.push_back(0xEF);
-						string_.push_back(0xB0 | generic->second); // take high bits from glyph invoked and low bits from control
+						string_.push_back((it->second & 0xF0) | generic->second); // original invocation has the animation bits, but the glyph bits come from the table
 					}
 					else
 					{
-						// string_.append("\x8D");
 						string_.push_back('\xEE');
 
 						if (bind == -1)
@@ -193,8 +192,6 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 							string_.append((G_KeynumToShortString(bind)));
 
 						string_.push_back('\xEE');
-
-						// string_.append("\x80");
 					}
 				}
 				else // This is a color code or some other generic glyph, treat it as is.
