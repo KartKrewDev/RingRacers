@@ -6360,12 +6360,7 @@ void K_AddMessageForPlayer(player_t *player, const char *msg, boolean interrupt,
 	if (interrupt)
 		state->clear();
 
-	// FIXME: SUPER BAD HACK. 
-	// Need a way to parse messages as a given player instead.
-	player_t *oldstplyr = stplyr;
-	stplyr = player;
-	std::string parsedmsg = srb2::Draw::TextElement().parse(msg).string();
-	stplyr = oldstplyr;
+	std::string parsedmsg = srb2::Draw::TextElement().as(player - players).parse(msg).string();
 
 	if (persist)
 		state->objective = parsedmsg;
@@ -6946,12 +6941,7 @@ INT32 K_DrawGameControl(UINT16 x, UINT16 y, UINT8 player, const char *str, UINT8
 {
 	using srb2::Draw;
 		
-	// FIXME: SUPER BAD HACK. 
-	// Need a way to parse messages as a given player instead.
-	player_t *oldstplyr = stplyr;
-	stplyr = &players[player];
-	Draw::TextElement text = Draw::TextElement().parse(str).font(Draw::Font::kMenu);
-	stplyr = oldstplyr;
+	Draw::TextElement text = Draw::TextElement().as(player).parse(str).font(Draw::Font::kMenu);
 
 	INT32 width = text.width();
 

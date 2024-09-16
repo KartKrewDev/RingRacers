@@ -169,22 +169,24 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 				if (auto id = inputdefinition.find(it->second & (~0xF0)); id != inputdefinition.end()) // This is a game control, do descriptive input translation!
 				{
 					// Grab our local controls
-					UINT8 localplayer = stplyr - players;
+					UINT8 targetplayer = as_.value_or(stplyr - players); // If not set in the call to parse(), use stplyr's controls
+					if (targetplayer >= MAXPLAYERS)
+						targetplayer = 0;
 
-					INT32 bind = G_FindPlayerBindForGameControl(localplayer, id->second);
+					INT32 bind = G_FindPlayerBindForGameControl(targetplayer, id->second);
 
 					if (auto pretty = prettyinputs.find(bind); pretty != prettyinputs.end()) // Gamepad direction or keyboard arrow, use something nice-looking
 					{
 						string_.push_back((it->second & 0xF0) | pretty->second); // original invocation has the animation bits, but the glyph bits come from the table
 					}
-					else if (auto generic = genericinputs.find(bind); generic != genericinputs.end()) // Gamepad input, display it to the player as they are
+					else if (auto generic = genericinputs.find(bind); generic != genericinputs.end()) // Non-directional gamepad input, display it to the player as they are
 					{
-						string_.push_back(0xEF);
+						string_.push_back(0xEF); // Control code: "switch to descriptive input mode" - Saturn buttons will draw as generic gamepad buttons
 						string_.push_back((it->second & 0xF0) | generic->second); // original invocation has the animation bits, but the glyph bits come from the table
 					}
 					else
 					{
-						string_.push_back('\xEE');
+						string_.push_back('\xEE'); // Control code: "toggle boxed drawing"
 
 						if (bind == -1)
 							string_.append("[NOT BOUND]");

@@ -113,6 +113,7 @@ public:
 		const std::string& string() const { return string_; }
 		std::optional<Font> font() const { return font_; }
 		std::optional<INT32> flags() const { return flags_; }
+		std::optional<UINT8> as() const { return as_; }
 
 		int width() const;
 
@@ -142,10 +143,16 @@ public:
 			return *this;
 		}
 
+		TextElement& as(UINT8 as)
+		{
+			as_ = as;
+			return *this;
+		}
 	private:
 		std::string string_;
 		std::optional<Font> font_;
 		std::optional<INT32> flags_;
+		std::optional<UINT8> as_;
 	};
 
 	class Chain

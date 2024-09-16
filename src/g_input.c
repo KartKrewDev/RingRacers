@@ -1270,7 +1270,7 @@ INT32 G_CheckDoubleUsage(INT32 keynum, INT32 playernum, boolean modify)
 
 INT32 G_FindPlayerBindForGameControl(INT32 player, gamecontrols_e control)
 {
-	profile_t *ourProfile = PR_GetLocalPlayerProfile(player);
+	profile_t *ourProfile = PR_GetPlayerProfile(&players[player]);
 	if (ourProfile == NULL)
 		ourProfile = PR_GetLocalPlayerProfile(0);
 
@@ -1283,6 +1283,7 @@ INT32 G_FindPlayerBindForGameControl(INT32 player, gamecontrols_e control)
 
 	INT32 bindindex = MAXINPUTMAPPING-1;
 
+	// PASS 1: Binds that are directly in our profile control mapping.
 	while (bindindex >= 0) // Prefer earlier binds
 	{
 		INT32 possiblecontrol = ourProfile->controls[control][bindindex];
@@ -1304,12 +1305,12 @@ INT32 G_FindPlayerBindForGameControl(INT32 player, gamecontrols_e control)
 		}
 	}
 
-	// Still no matching device bind? Try defaults...
+	// PASS 2: Binds that are in the default controls.
 	if (bestbind == -1)
 	{
 		bindindex = MAXINPUTMAPPING-1;
 
-		while (bindindex >= 0) // Prefer earlier binds
+		while (bindindex >= 0)
 		{
 			INT32 possiblecontrol = gamecontroldefault[control][bindindex];
 
@@ -1318,7 +1319,6 @@ INT32 G_FindPlayerBindForGameControl(INT32 player, gamecontrols_e control)
 			if (possiblecontrol == 0)
 				continue;
 
-			// if (device is gamepad) == (bound control is in gamepad range) - e.g. if bind matches device
 			if ((device != KEYBOARD_MOUSE_DEVICE) == (possiblecontrol >= KEY_JOY1 && possiblecontrol < JOYINPUTEND))
 			{
 				bestbind = possiblecontrol;
@@ -1331,12 +1331,12 @@ INT32 G_FindPlayerBindForGameControl(INT32 player, gamecontrols_e control)
 		}
 	}
 
-	// STILL no matching device bind? Try menu reserved!
+	// PASS 3: "Safety" binds that are reserved by the menu system.
 	if (bestbind == -1)
 	{
 		bindindex = MAXINPUTMAPPING-1;
 
-		while (bindindex >= 0) // Prefer earlier binds
+		while (bindindex >= 0)
 		{
 			INT32 possiblecontrol = menucontrolreserved[control][bindindex];
 
@@ -1345,7 +1345,6 @@ INT32 G_FindPlayerBindForGameControl(INT32 player, gamecontrols_e control)
 			if (possiblecontrol == 0)
 				continue;
 
-			// if (device is gamepad) == (bound control is in gamepad range) - e.g. if bind matches device
 			if ((device != KEYBOARD_MOUSE_DEVICE) == (possiblecontrol >= KEY_JOY1 && possiblecontrol < JOYINPUTEND))
 			{
 				bestbind = possiblecontrol;
