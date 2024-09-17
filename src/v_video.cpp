@@ -2713,7 +2713,7 @@ void V_DrawStringScaled(
 				}
 				else
 				{
-					cx += 3*scale;
+					cx += 2*scale;
 					//V_DrawFill((cx)/FRACUNIT+(fontspec.right_outline), (cy)/FRACUNIT-2, 2, fontspec.lfh/FRACUNIT, flags|outerbox);
 					//V_DrawFill((cx)/FRACUNIT+(fontspec.right_outline), (cy)/FRACUNIT-1, 1, fontspec.lfh/FRACUNIT-2, flags|innerbox);
 				}
@@ -3047,7 +3047,7 @@ fixed_t V_StringScaledWidth(
 				break;
 			case '\xEE':
 				if (boxed)
-					cx += 3*scale;
+					cx += 2*scale;
 				boxed = !boxed;
 				break;
 			default:
