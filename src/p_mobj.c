@@ -1791,6 +1791,12 @@ boolean P_XYMovement(mobj_t *mo)
 					if (P_MobjFlip(mo)*(transfermomz - mo->momz) > 2*FRACUNIT) // Do the actual launch!
 					{
 						mo->momz = transfermomz;
+						if (mo->player)
+						{
+							mo->player->transfer = transfermomz;
+							S_StartSound(mo, sfx_s3k98);
+						}
+
 						mo->standingslope = NULL;
 						mo->terrain = NULL;
 						P_SetPitchRoll(mo, ANGLE_90,

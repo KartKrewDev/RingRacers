@@ -1537,6 +1537,9 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"die02",  false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"die03",  false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
 
+  // Walltransfer
+  {"ggfall",  false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+
   // SRB2kart - Skin sounds
   {"kwin",   false,  64, 96, -1, NULL, 0,   SKSKWIN,  -1, LUMPERROR, ""},
   {"klose",  false,  64, 96, -1, NULL, 0,  SKSKLOSE,  -1, LUMPERROR, ""},

@@ -456,6 +456,8 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 
 			spring->reactiontime++;
 		}
+
+		object->player->transfer = 0;
 	}
 
 	P_SetMobjState(spring, raisestate);

@@ -262,6 +262,10 @@ static int player_get(lua_State *L)
 		lua_pushboolean(L, plr->flipDI);
 	else if (fastcmp(field,"analoginput"))
 		lua_pushboolean(L, plr->analoginput);
+	else if (fastcmp(field,"transfer"))
+		lua_pushboolean(L, plr->transfer);
+	else if (fastcmp(field,"transfersound"))
+		lua_pushboolean(L, plr->transfersound);
 	else if (fastcmp(field,"markedfordeath"))
 		lua_pushboolean(L, plr->markedfordeath);
 	else if (fastcmp(field,"incontrol"))
@@ -855,7 +859,11 @@ static int player_set(lua_State *L)
 	else if (fastcmp(field,"ringvisualwarning"))
 		plr->ringvisualwarning = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"analoginput"))
-		plr->markedfordeath = luaL_checkboolean(L, 3);
+		plr->analoginput = luaL_checkboolean(L, 3);
+	else if (fastcmp(field,"transfer"))
+		plr->transfer = luaL_checkboolean(L, 3);
+	else if (fastcmp(field,"transfersound"))
+		plr->transfersound = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"markedfordeath"))
 		plr->markedfordeath = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"dotrickfx"))

@@ -655,6 +655,8 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].itemflags);
 
 		WRITEFIXED(save->p, players[i].outrun);
+		WRITEFIXED(save->p, players[i].transfer);
+		WRITEUINT8(save->p, players[i].transfersound);
 
 		WRITEUINT8(save->p, players[i].rideroid);
 		WRITEUINT8(save->p, players[i].rdnodepull);
@@ -1279,6 +1281,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].itemflags = READUINT8(save->p);
 
 		players[i].outrun = READFIXED(save->p);
+		players[i].transfer = READFIXED(save->p);
+		players[i].transfersound = READUINT8(save->p);
 
 		players[i].rideroid = (boolean)READUINT8(save->p);
 		players[i].rdnodepull = (boolean)READUINT8(save->p);
