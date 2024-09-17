@@ -293,7 +293,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEINT32(save->p, players[i].cheatchecknum);
 		WRITEINT32(save->p, players[i].checkpointId);
 
-		WRITEUINT8(save->p, players[i].ctfteam);
+		WRITEUINT8(save->p, players[i].team);
 
 		WRITEUINT8(save->p, players[i].checkskip);
 
@@ -430,6 +430,8 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].position);
 		WRITEUINT8(save->p, players[i].oldposition);
 		WRITEUINT8(save->p, players[i].positiondelay);
+		WRITEUINT8(save->p, players[i].teamposition);
+		WRITEUINT8(save->p, players[i].teamimportance);
 		WRITEUINT32(save->p, players[i].distancetofinish);
 		WRITEUINT32(save->p, players[i].distancetofinishprev);
 		WRITEUINT32(save->p, players[i].lastpickupdistance);
@@ -971,7 +973,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].cheatchecknum = READINT32(save->p);
 		players[i].checkpointId = READINT32(save->p);
 
-		players[i].ctfteam = READUINT8(save->p); // 1 == Red, 2 == Blue
+		players[i].team = READUINT8(save->p);
 
 		players[i].checkskip = READUINT8(save->p);
 
@@ -1061,6 +1063,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].position = READUINT8(save->p);
 		players[i].oldposition = READUINT8(save->p);
 		players[i].positiondelay = READUINT8(save->p);
+		players[i].teamposition = READUINT8(save->p);
+		players[i].teamimportance = READUINT8(save->p);
 		players[i].distancetofinish = READUINT32(save->p);
 		players[i].distancetofinishprev = READUINT32(save->p);
 		players[i].lastpickupdistance = READUINT32(save->p);
@@ -6618,27 +6622,12 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 		WRITEUINT8(save->p, globools);
 	}
 
-	WRITEUINT32(save->p, bluescore);
-	WRITEUINT32(save->p, redscore);
-
-	WRITEUINT16(save->p, skincolor_redteam);
-	WRITEUINT16(save->p, skincolor_blueteam);
-	WRITEUINT16(save->p, skincolor_redring);
-	WRITEUINT16(save->p, skincolor_bluering);
+	for (i = 0; i < TEAM__MAX; i++)
+	{
+		WRITEUINT32(save->p, g_teamscores[i]);
+	}
 
 	WRITEINT32(save->p, modulothing);
-
-	WRITEINT16(save->p, autobalance);
-	WRITEINT16(save->p, teamscramble);
-
-	for (i = 0; i < MAXPLAYERS; i++)
-		WRITEINT16(save->p, scrambleplayers[i]);
-
-	for (i = 0; i < MAXPLAYERS; i++)
-		WRITEINT16(save->p, scrambleteams[i]);
-
-	WRITEINT16(save->p, scrambletotal);
-	WRITEINT16(save->p, scramblecount);
 
 	WRITEUINT32(save->p, racecountdown);
 	WRITEUINT32(save->p, exitcountdown);
@@ -6662,6 +6651,7 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 	WRITEUINT8(save->p, gamespeed);
 	WRITEUINT8(save->p, numlaps);
 	WRITEUINT8(save->p, franticitems);
+	WRITEUINT8(save->p, g_teamplay);
 
 	WRITESINT8(save->p, speedscramble);
 	WRITESINT8(save->p, encorescramble);
@@ -6824,27 +6814,12 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 		stoppedclock = !!(globools & (1<<1));
 	}
 
-	bluescore = READUINT32(save->p);
-	redscore = READUINT32(save->p);
-
-	skincolor_redteam = READUINT16(save->p);
-	skincolor_blueteam = READUINT16(save->p);
-	skincolor_redring = READUINT16(save->p);
-	skincolor_bluering = READUINT16(save->p);
+	for (i = 0; i < TEAM__MAX; i++)
+	{
+		g_teamscores[i] = READUINT32(save->p);
+	}
 
 	modulothing = READINT32(save->p);
-
-	autobalance = READINT16(save->p);
-	teamscramble = READINT16(save->p);
-
-	for (i = 0; i < MAXPLAYERS; i++)
-		scrambleplayers[i] = READINT16(save->p);
-
-	for (i = 0; i < MAXPLAYERS; i++)
-		scrambleteams[i] = READINT16(save->p);
-
-	scrambletotal = READINT16(save->p);
-	scramblecount = READINT16(save->p);
 
 	racecountdown = READUINT32(save->p);
 	exitcountdown = READUINT32(save->p);
@@ -6867,6 +6842,7 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 	gamespeed = READUINT8(save->p);
 	numlaps = READUINT8(save->p);
 	franticitems = (boolean)READUINT8(save->p);
+	g_teamplay = (boolean)READUINT8(save->p);
 
 	speedscramble = READSINT8(save->p);
 	encorescramble = READSINT8(save->p);

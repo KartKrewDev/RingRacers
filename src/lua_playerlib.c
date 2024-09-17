@@ -226,6 +226,10 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->oldposition);
 	else if (fastcmp(field,"positiondelay"))
 		lua_pushinteger(L, plr->positiondelay);
+	else if (fastcmp(field,"teamposition"))
+		lua_pushinteger(L, plr->teamposition);
+	else if (fastcmp(field,"teamimportance"))
+		lua_pushinteger(L, plr->teamimportance);
 	else if (fastcmp(field,"distancetofinish"))
 		lua_pushinteger(L, plr->distancetofinish);
 	else if (fastcmp(field,"distancetofinishprev"))
@@ -679,8 +683,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->laps);
 	else if (fastcmp(field,"latestlap"))
 		lua_pushinteger(L, plr->latestlap);
-	else if (fastcmp(field,"ctfteam"))
-		lua_pushinteger(L, plr->ctfteam);
+	else if (fastcmp(field,"team"))
+		lua_pushinteger(L, plr->team);
 	else if (fastcmp(field,"checkskip"))
 		lua_pushinteger(L, plr->checkskip);
 	else if (fastcmp(field,"cheatchecknum"))
@@ -824,6 +828,10 @@ static int player_set(lua_State *L)
 		plr->oldposition = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"positiondelay"))
 		plr->positiondelay = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"teamposition"))
+		plr->teamposition = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"teamimportance"))
+		plr->teamimportance = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"distancetofinish"))
 		return NOSET;
 	else if (fastcmp(field,"distancetofinishprev"))
@@ -1260,8 +1268,8 @@ static int player_set(lua_State *L)
 		plr->laps = (UINT8)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"latestlap"))
 		plr->latestlap = (UINT8)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"ctfteam"))
-		plr->ctfteam = (INT32)luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"team"))
+		G_AssignTeam(plr, (UINT8)luaL_checkinteger(L, 3));
 	else if (fastcmp(field,"checkskip"))
 		plr->checkskip = (INT32)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"cheatchecknum"))

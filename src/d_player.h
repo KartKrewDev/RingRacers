@@ -683,12 +683,19 @@ struct player_t
 	UINT8 position;			// Used for Kart positions, mostly for deterministic stuff
 	UINT8 oldposition;		// Used for taunting when you pass someone
 	UINT8 positiondelay;	// Used for position number, so it can grow when passing
+
+	UINT8 teamposition;		// Position, but only against other teams -- not your own.
+	UINT8 teamimportance;	// Opposite of team position x2, with +1 for being in 1st.
+
 	UINT32 distancetofinish;
 	UINT32 distancetofinishprev;
+
 	UINT32 lastpickupdistance; // Anti item set farming
 	UINT8 lastpickuptype;
+
 	waypoint_t *currentwaypoint;
 	waypoint_t *nextwaypoint;
+
 	respawnvars_t respawn;	// Respawn info
 	mobj_t *ringShooter;	// DEZ respawner object
 	tic_t airtime; 			// Used to track just air time, but has evolved over time into a general "karted" timer. Rename this variable?
@@ -931,7 +938,7 @@ struct player_t
 	INT32 cheatchecknum; // The number of the last cheatcheck you hit
 	INT32 checkpointId; // Players respawn here, objects/checkpoint.cpp
 
-	UINT8 ctfteam; // 0 == Spectator, 1 == Red, 2 == Blue
+	UINT8 team; // 0 == Spectator, 1 == Red, 2 == Blue
 
 	UINT8 checkskip; // Skipping checkpoints? Oh no no no
 

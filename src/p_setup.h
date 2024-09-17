@@ -30,7 +30,7 @@ extern unsigned char mapmd5[16];
 // Player spawn spots for deathmatch.
 #define MAX_DM_STARTS 64
 extern mapthing_t *deathmatchstarts[MAX_DM_STARTS];
-extern INT32 numdmstarts, numcoopstarts, numredctfstarts, numbluectfstarts, numfaultstarts;
+extern INT32 numdmstarts, numcoopstarts, numteamstarts[TEAM__MAX], numfaultstarts;
 
 extern boolean levelloading;
 extern boolean g_reloadinggamestate;

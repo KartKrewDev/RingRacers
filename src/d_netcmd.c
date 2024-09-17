@@ -102,7 +102,8 @@ static void Got_Addfilecmd(const UINT8 **cp, INT32 playernum);
 static void Got_Pause(const UINT8 **cp, INT32 playernum);
 static void Got_RandomSeed(const UINT8 **cp, INT32 playernum);
 static void Got_RunSOCcmd(const UINT8 **cp, INT32 playernum);
-static void Got_Teamchange(const UINT8 **cp, INT32 playernum);
+static void Got_Spectate(const UINT8 **cp, INT32 playernum);
+static void Got_TeamChange(const UINT8 **cp, INT32 playernum);
 static void Got_Clearscores(const UINT8 **cp, INT32 playernum);
 static void Got_DiscordInfo(const UINT8 **cp, INT32 playernum);
 static void Got_ScheduleTaskcmd(const UINT8 **cp, INT32 playernum);
@@ -154,11 +155,6 @@ static void Command_Displayplayer_f(void);
 static void Command_ExitLevel_f(void);
 static void Command_Showmap_f(void);
 static void Command_Mapmd5_f(void);
-
-static void Command_Teamchange_f(void);
-static void Command_Teamchange2_f(void);
-static void Command_Teamchange3_f(void);
-static void Command_Teamchange4_f(void);
 
 static void Command_ServerTeamChange_f(void);
 
@@ -293,7 +289,7 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"ADDFILE", // XD_ADDFILE
 	"PAUSE", // XD_PAUSE
 	"ADDPLAYER", // XD_ADDPLAYER
-	"TEAMCHANGE", // XD_TEAMCHANGE
+	"SPECTATE", // XD_SPECTATE
 	"CLEARSCORES", // XD_CLEARSCORES
 	"VERIFIED", // XD_VERIFIED
 	"RANDOMSEED", // XD_RANDOMSEED
@@ -325,6 +321,7 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"MAPQUEUE", // XD_MAPQUEUE
 	"CALLZVOTE", // XD_CALLZVOTE
 	"SETZVOTE", // XD_SETZVOTE
+	"TEAMCHANGE", // XD_TEAMCHANGE
 };
 
 // =========================================================================
@@ -388,7 +385,8 @@ void D_RegisterServerCommands(void)
 	COM_AddCommand("motd", Command_MotD_f);
 	RegisterNetXCmd(XD_SETMOTD, Got_MotD_f); // For remote admin
 
-	RegisterNetXCmd(XD_TEAMCHANGE, Got_Teamchange);
+	RegisterNetXCmd(XD_SPECTATE, Got_Spectate);
+	RegisterNetXCmd(XD_TEAMCHANGE, Got_TeamChange);
 	COM_AddCommand("serverchangeteam", Command_ServerTeamChange_f);
 
 	RegisterNetXCmd(XD_CLEARSCORES, Got_Clearscores);
@@ -503,11 +501,6 @@ void D_RegisterClientCommands(void)
 
 	if (dedicated)
 		return;
-
-	COM_AddCommand("changeteam", Command_Teamchange_f);
-	COM_AddCommand("changeteam2", Command_Teamchange2_f);
-	COM_AddCommand("changeteam3", Command_Teamchange3_f);
-	COM_AddCommand("changeteam4", Command_Teamchange4_f);
 
 	COM_AddCommand("invite", Command_Invite_f);
 	COM_AddCommand("cancelinvite", Command_CancelInvite_f);
@@ -1167,9 +1160,13 @@ static void Got_NameAndColor(const UINT8 **cp, INT32 playernum)
 	p->preffollowercolor = followercolor;
 	p->preffollower = follower;
 
-	if (p->jointime < 1)
+	if (
+		(p->jointime <= 1) // Just entered
+		|| (cv_restrictskinchange.value == 0 // Not restricted
+			&& !Y_IntermissionPlayerLock()) // Not start of intermission
+	)
 	{
-		// Just entered, update preferences immediately
+		// update preferences immediately
 		G_UpdatePlayerPreferences(p);
 	}
 }
@@ -3396,131 +3393,23 @@ static void Got_Clearscores(const UINT8 **cp, INT32 playernum)
 	CONS_Printf(M_GetText("Scores have been reset by the server.\n"));
 }
 
-// Team changing functions
-static void HandleTeamChangeCommand(UINT8 localplayer)
-{
-	const char *commandname = NULL;
-	changeteam_union NetPacket;
-	boolean error = false;
-	UINT16 usvalue;
-	NetPacket.value.l = NetPacket.value.b = 0;
-
-	switch (localplayer)
-	{
-		case 0:
-			commandname = "changeteam";
-			break;
-		default:
-			commandname = va("changeteam%d", localplayer+1);
-			break;
-	}
-
-	//      0         1
-	// changeteam  <color>
-
-	if (COM_Argc() <= 1)
-	{
-		if (G_GametypeHasTeams())
-			CONS_Printf(M_GetText("%s <team>: switch to a new team (%s)\n"), commandname, "red, blue or spectator");
-		else if (G_GametypeHasSpectators())
-			CONS_Printf(M_GetText("%s <team>: switch to a new team (%s)\n"), commandname, "spectator or playing");
-		else
-			CONS_Alert(CONS_NOTICE, M_GetText("This command cannot be used in this gametype.\n"));
-		return;
-	}
-
-	if (G_GametypeHasTeams())
-	{
-		if (!strcasecmp(COM_Argv(1), "red") || !strcasecmp(COM_Argv(1), "1"))
-			NetPacket.packet.newteam = 1;
-		else if (!strcasecmp(COM_Argv(1), "blue") || !strcasecmp(COM_Argv(1), "2"))
-			NetPacket.packet.newteam = 2;
-		else if (!strcasecmp(COM_Argv(1), "spectator") || !strcasecmp(COM_Argv(1), "0"))
-			NetPacket.packet.newteam = 0;
-		else
-			error = true;
-	}
-	else if (G_GametypeHasSpectators())
-	{
-		if (!strcasecmp(COM_Argv(1), "spectator") || !strcasecmp(COM_Argv(1), "0"))
-			NetPacket.packet.newteam = 0;
-		else if (!strcasecmp(COM_Argv(1), "playing") || !strcasecmp(COM_Argv(1), "1"))
-			NetPacket.packet.newteam = 3;
-		else
-			error = true;
-	}
-	else
-	{
-		CONS_Alert(CONS_NOTICE, M_GetText("This command cannot be used in this gametype.\n"));
-		return;
-	}
-
-	if (error)
-	{
-		if (G_GametypeHasTeams())
-			CONS_Printf(M_GetText("%s <team>: switch to a new team (%s)\n"), commandname, "red, blue or spectator");
-		else if (G_GametypeHasSpectators())
-			CONS_Printf(M_GetText("%s <team>: switch to a new team (%s)\n"), commandname, "spectator or playing");
-		return;
-	}
-
-	if (players[g_localplayers[localplayer]].spectator)
-		error = !(NetPacket.packet.newteam || (players[g_localplayers[localplayer]].pflags & PF_WANTSTOJOIN)); // :lancer:
-	else if (G_GametypeHasTeams())
-		error = (NetPacket.packet.newteam == players[g_localplayers[localplayer]].ctfteam);
-	else if (G_GametypeHasSpectators() && !players[g_localplayers[localplayer]].spectator)
-		error = (NetPacket.packet.newteam == 3);
-#ifdef PARANOIA
-	else
-		I_Error("Invalid gametype after initial checks!");
-#endif
-
-	if (error)
-	{
-		CONS_Alert(CONS_NOTICE, M_GetText("You're already on that team!\n"));
-		return;
-	}
-
-	if (!cv_allowteamchange.value && NetPacket.packet.newteam) // allow swapping to spectator even in locked teams.
-	{
-		CONS_Alert(CONS_NOTICE, M_GetText("The server is not allowing team changes at the moment.\n"));
-		return;
-	}
-
-	usvalue = SHORT(NetPacket.value.l|NetPacket.value.b);
-	SendNetXCmdForPlayer(localplayer, XD_TEAMCHANGE, &usvalue, sizeof(usvalue));
-}
-
-static void Command_Teamchange_f(void)
-{
-	HandleTeamChangeCommand(0);
-}
-
-static void Command_Teamchange2_f(void)
-{
-	HandleTeamChangeCommand(1);
-}
-
-static void Command_Teamchange3_f(void)
-{
-	HandleTeamChangeCommand(2);
-}
-
-static void Command_Teamchange4_f(void)
-{
-	HandleTeamChangeCommand(3);
-}
-
 static void Command_ServerTeamChange_f(void)
 {
-	changeteam_union NetPacket;
-	boolean error = false;
-	UINT16 usvalue;
-	NetPacket.value.l = NetPacket.value.b = 0;
+	UINT8 buf[2];
+	UINT8 *p = buf;
+
+	UINT8 new_team = TEAM_UNASSIGNED;
+	UINT8 player_num = consoleplayer;
 
 	if (!(server || (IsPlayerAdmin(consoleplayer))))
 	{
 		CONS_Printf(M_GetText("Only the server or a remote admin can use this.\n"));
+		return;
+	}
+
+	if (G_GametypeHasTeams() == false)
+	{
+		CONS_Alert(CONS_NOTICE, M_GetText("This command cannot be used currently.\n"));
 		return;
 	}
 
@@ -3529,91 +3418,52 @@ static void Command_ServerTeamChange_f(void)
 
 	if (COM_Argc() < 3)
 	{
-		if (G_GametypeHasTeams())
-			CONS_Printf(M_GetText("serverchangeteam <playernum> <team>: switch player to a new team (%s)\n"), "red, blue or spectator");
-		else if (G_GametypeHasSpectators())
-			CONS_Printf(M_GetText("serverchangeteam <playernum> <team>: switch player to a new team (%s)\n"), "spectator or playing");
-		else
-			CONS_Alert(CONS_NOTICE, M_GetText("This command cannot be used in this gametype.\n"));
+		CONS_Printf(M_GetText("serverchangeteam <playernum> <team>: switch player to a new team (%s)\n"), "orange, blue, or auto");
 		return;
 	}
 
-	if (G_GametypeHasTeams())
+	if (!strcasecmp(COM_Argv(2), "orange") || !strcasecmp(COM_Argv(2), "1"))
 	{
-		if (!strcasecmp(COM_Argv(2), "red") || !strcasecmp(COM_Argv(2), "1"))
-			NetPacket.packet.newteam = 1;
-		else if (!strcasecmp(COM_Argv(2), "blue") || !strcasecmp(COM_Argv(2), "2"))
-			NetPacket.packet.newteam = 2;
-		else if (!strcasecmp(COM_Argv(2), "spectator") || !strcasecmp(COM_Argv(2), "0"))
-			NetPacket.packet.newteam = 0;
-		else
-			error = true;
+		new_team = TEAM_ORANGE;
 	}
-	else if (G_GametypeHasSpectators())
+	else if (!strcasecmp(COM_Argv(2), "blue") || !strcasecmp(COM_Argv(2), "2"))
 	{
-		if (!strcasecmp(COM_Argv(2), "spectator") || !strcasecmp(COM_Argv(2), "0"))
-			NetPacket.packet.newteam = 0;
-		else if (!strcasecmp(COM_Argv(2), "playing") || !strcasecmp(COM_Argv(2), "1"))
-			NetPacket.packet.newteam = 3;
-		else
-			error = true;
+		new_team = TEAM_BLUE;
+	}
+	else if (!strcasecmp(COM_Argv(2), "auto") || !strcasecmp(COM_Argv(2), "0"))
+	{
+		new_team = TEAM_UNASSIGNED;
 	}
 	else
 	{
-		CONS_Alert(CONS_NOTICE, M_GetText("This command cannot be used in this gametype.\n"));
+		CONS_Printf(M_GetText("serverchangeteam <playernum> <team>: switch player to a new team (%s)\n"), "orange, blue, or auto");
 		return;
 	}
 
-	if (error)
+	player_num = atoi(COM_Argv(1));
+
+	if (playeringame[player_num] == false)
 	{
-		if (G_GametypeHasTeams())
-			CONS_Printf(M_GetText("serverchangeteam <playernum> <team>: switch player to a new team (%s)\n"), "red, blue or spectator");
-		else if (G_GametypeHasSpectators())
-			CONS_Printf(M_GetText("serverchangeteam <playernum> <team>: switch player to a new team (%s)\n"), "spectator or playing");
+		CONS_Alert(CONS_NOTICE, M_GetText("There is no player %d!\n"), player_num);
 		return;
 	}
 
-	NetPacket.packet.playernum = atoi(COM_Argv(1));
-
-	if (!playeringame[NetPacket.packet.playernum])
-	{
-		CONS_Alert(CONS_NOTICE, M_GetText("There is no player %d!\n"), NetPacket.packet.playernum);
-		return;
-	}
-
-	if (G_GametypeHasTeams())
-	{
-		if (NetPacket.packet.newteam == players[NetPacket.packet.playernum].ctfteam ||
-			(players[NetPacket.packet.playernum].spectator && !NetPacket.packet.newteam))
-			error = true;
-	}
-	else if (G_GametypeHasSpectators())
-	{
-		if ((players[NetPacket.packet.playernum].spectator && !NetPacket.packet.newteam) ||
-			(!players[NetPacket.packet.playernum].spectator && NetPacket.packet.newteam == 3))
-			error = true;
-	}
-#ifdef PARANOIA
-	else
-		I_Error("Invalid gametype after initial checks!");
-#endif
-
-	if (error)
+	if (new_team == players[player_num].team)
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("That player is already on that team!\n"));
 		return;
 	}
 
-	NetPacket.packet.verification = true; // This signals that it's a server change
+	WRITEUINT8(p, new_team);
+	WRITEUINT8(p, player_num);
 
-	usvalue = SHORT(NetPacket.value.l|NetPacket.value.b);
-	SendNetXCmd(XD_TEAMCHANGE, &usvalue, sizeof(usvalue));
+	SendNetXCmd(XD_TEAMCHANGE, &buf, p - buf);
 }
 
 void P_SetPlayerSpectator(INT32 playernum)
 {
 	//Make sure you're in the right gametype.
-	if (!G_GametypeHasTeams() && !G_GametypeHasSpectators())
+	if (!G_GametypeHasSpectators())
 		return;
 
 	// Don't duplicate efforts.
@@ -3622,148 +3472,96 @@ void P_SetPlayerSpectator(INT32 playernum)
 
 	players[playernum].spectator = true;
 	players[playernum].pflags &= ~PF_WANTSTOJOIN;
+	G_AssignTeam(&players[playernum], TEAM_UNASSIGNED);
 
 	players[playernum].playerstate = PST_REBORN;
 }
 
-//todo: This and the other teamchange functions are getting too long and messy. Needs cleaning.
-static void Got_Teamchange(const UINT8 **cp, INT32 playernum)
+static void Got_Spectate(const UINT8 **cp, INT32 playernum)
 {
-	changeteam_union NetPacket;
-	boolean error = false, wasspectator = false;
-	NetPacket.value.l = NetPacket.value.b = READINT16(*cp);
+	UINT8 edit_player = READUINT8(*cp);
 
-	if (!G_GametypeHasTeams() && !G_GametypeHasSpectators()) //Make sure you're in the right gametype.
+	if (playernum != serverplayer && IsPlayerAdmin(playernum) == false)
 	{
-		// this should never happen unless the client is hacked/buggy
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal team change received from player %s\n"), player_names[playernum]);
 		if (server)
+		{
 			SendKick(playernum, KICK_MSG_CON_FAIL);
-	}
-
-	if (NetPacket.packet.verification) // Special marker that the server sent the request
-	{
-		if (playernum != serverplayer && (!IsPlayerAdmin(playernum)))
-		{
-			CONS_Alert(CONS_WARNING, M_GetText("Illegal team change received from player %s\n"), player_names[playernum]);
-			if (server)
-				SendKick(playernum, KICK_MSG_CON_FAIL);
-			return;
-		}
-		playernum = NetPacket.packet.playernum;
-	}
-
-	// Prevent multiple changes in one go.
-	if (players[playernum].spectator && !(players[playernum].pflags & PF_WANTSTOJOIN) && !NetPacket.packet.newteam)
-		return;
-	else if (G_GametypeHasTeams())
-	{
-		if (NetPacket.packet.newteam && (NetPacket.packet.newteam == (unsigned)players[playernum].ctfteam))
-			return;
-	}
-	else if (G_GametypeHasSpectators())
-	{
-		if (!players[playernum].spectator && NetPacket.packet.newteam == 3)
-			return;
-	}
-	else
-	{
-		if (playernum != serverplayer && (!IsPlayerAdmin(playernum)))
-		{
-			CONS_Alert(CONS_WARNING, M_GetText("Illegal team change received from player %s\n"), player_names[playernum]);
-			if (server)
-				SendKick(playernum, KICK_MSG_CON_FAIL);
 		}
 		return;
 	}
 
-	// Don't switch team, just go away, please, go awaayyyy, aaauuauugghhhghgh
-	if (!LUA_HookTeamSwitch(&players[playernum], NetPacket.packet.newteam, players[playernum].spectator, NetPacket.packet.autobalance, NetPacket.packet.scrambled))
-		return;
-
-	//Make sure that the right team number is sent. Keep in mind that normal clients cannot change to certain teams in certain gametypes.
-#ifdef PARANOIA
-	if (!G_GametypeHasTeams() && !G_GametypeHasSpectators())
-		I_Error("Invalid gametype after initial checks!");
-#endif
-
-	if (!cv_allowteamchange.value)
+	if (G_GametypeHasSpectators() == false)
 	{
-		if (!NetPacket.packet.verification && NetPacket.packet.newteam)
-			error = true; //Only admin can change status, unless changing to spectator.
-	}
-
-	if (server && ((NetPacket.packet.newteam < 0 || NetPacket.packet.newteam > 3) || error))
-	{
-		CONS_Alert(CONS_WARNING, M_GetText("Illegal team change received from player %s\n"), player_names[playernum]);
-		SendKick(playernum, KICK_MSG_CON_FAIL);
 		return;
 	}
 
-	//Safety first!
+	player_t *const player = &players[edit_player];
+	if (player->spectator == true && (player->pflags & PF_WANTSTOJOIN) == 0)
+	{
+		// No change would occur.
+		return;
+	}
+
+	// Safety first!
 	// (not respawning spectators here...)
-	wasspectator = (players[playernum].spectator == true);
-
-	if (!wasspectator)
+	const boolean was_spectator = (player->spectator == true);
+	if (was_spectator == true)
 	{
-		if (gamestate == GS_LEVEL && players[playernum].mo)
+		if (gamestate == GS_LEVEL && player->mo != NULL)
 		{
 			// The following will call P_SetPlayerSpectator if successful
-			P_DamageMobj(players[playernum].mo, NULL, NULL, 1, DMG_SPECTATOR);
+			P_DamageMobj(player->mo, NULL, NULL, 1, DMG_SPECTATOR);
 		}
 
 		//...but because the above could return early under some contexts, we try again here
-		P_SetPlayerSpectator(playernum);
+		P_SetPlayerSpectator(edit_player);
+		HU_AddChatText(va("\x82*%s became a spectator.", player_names[edit_player]), false);
 	}
 
-	//Now that we've done our error checking and killed the player
-	//if necessary, put the player on the correct team/status.
+	player->pflags &= ~PF_WANTSTOJOIN;
 
-	// This serves us in both teamchange contexts.
-	if (NetPacket.packet.newteam != 0)
+	if (gamestate != GS_LEVEL || was_spectator == true)
 	{
-		players[playernum].pflags |= PF_WANTSTOJOIN;
-	}
-	else
-	{
-		players[playernum].pflags &= ~PF_WANTSTOJOIN;
-	}
-
-	if (G_GametypeHasTeams())
-	{
-		// This one is, of course, specific.
-		players[playernum].ctfteam = NetPacket.packet.newteam;
-	}
-
-	if (NetPacket.packet.autobalance)
-	{
-		if (NetPacket.packet.newteam == 1)
-			CONS_Printf(M_GetText("%s was autobalanced to the %c%s%c.\n"), player_names[playernum], '\x85', M_GetText("Red Team"), '\x80');
-		else if (NetPacket.packet.newteam == 2)
-			CONS_Printf(M_GetText("%s was autobalanced to the %c%s%c.\n"), player_names[playernum], '\x84', M_GetText("Blue Team"), '\x80');
-	}
-	else if (NetPacket.packet.scrambled)
-	{
-		if (NetPacket.packet.newteam == 1)
-			CONS_Printf(M_GetText("%s was scrambled to the %c%s%c.\n"), player_names[playernum], '\x85', M_GetText("Red Team"), '\x80');
-		else if (NetPacket.packet.newteam == 2)
-			CONS_Printf(M_GetText("%s was scrambled to the %c%s%c.\n"), player_names[playernum], '\x84', M_GetText("Blue Team"), '\x80');
-	}
-	else if (NetPacket.packet.newteam == 1)
-	{
-		CONS_Printf(M_GetText("%s switched to the %c%s%c.\n"), player_names[playernum], '\x85', M_GetText("Red Team"), '\x80');
-	}
-	else if (NetPacket.packet.newteam == 2)
-	{
-		CONS_Printf(M_GetText("%s switched to the %c%s%c.\n"), player_names[playernum], '\x84', M_GetText("Blue Team"), '\x80');
-	}
-	else if (NetPacket.packet.newteam == 0 && !wasspectator)
-		HU_AddChatText(va("\x82*%s became a spectator.", player_names[playernum]), false); // "entered the game" text was moved to P_SpectatorJoinGame
-
-	if (gamestate != GS_LEVEL || wasspectator == true)
 		return;
+	}
 
-	FinalisePlaystateChange(playernum);
+	FinalisePlaystateChange(edit_player);
+}
+
+static void Got_TeamChange(const UINT8 **cp, INT32 playernum)
+{
+	UINT8 new_team = READUINT8(*cp);
+	UINT8 edit_player = READUINT8(*cp);
+
+	if (playernum != serverplayer && IsPlayerAdmin(playernum) == false)
+	{
+		CONS_Alert(CONS_WARNING, M_GetText("Illegal team change received from player %s\n"), player_names[playernum]);
+		if (server)
+		{
+			SendKick(playernum, KICK_MSG_CON_FAIL);
+		}
+		return;
+	}
+
+	if (G_GametypeHasTeams() == false)
+	{
+		return;
+	}
+
+	if (new_team >= TEAM__MAX)
+	{
+		new_team = TEAM_UNASSIGNED;
+	}
+
+	player_t *const player = &players[edit_player];
+	G_AssignTeam(player, new_team);
+
+	if (player->team == TEAM_UNASSIGNED)
+	{
+		// auto assign
+		G_AutoAssignTeam(player);
+	}
 }
 
 //
@@ -5349,22 +5147,6 @@ void D_GameTypeChanged(INT32 lastgametype)
 		if (oldgt && newgt && (lastgametype != gametype))
 			CONS_Printf(M_GetText("Gametype was changed from %s to %s\n"), oldgt, newgt);
 	}
-
-	// don't retain teams in other modes or between changes from ctf to team match.
-	// also, stop any and all forms of team scrambling that might otherwise take place.
-	if (G_GametypeHasTeams())
-	{
-		INT32 i;
-		for (i = 0; i < MAXPLAYERS; i++)
-			if (playeringame[i])
-				players[i].ctfteam = 0;
-
-		if (server || (IsPlayerAdmin(consoleplayer)))
-		{
-			CV_StealthSetValue(&cv_teamscramble, 0);
-			teamscramble = 0;
-		}
-	}
 }
 
 void Gravity_OnChange(void);
@@ -5397,165 +5179,6 @@ void SoundTest_OnChange(void)
 
 	S_StopSounds();
 	S_StartSound(NULL, cv_soundtest.value);
-}
-
-void AutoBalance_OnChange(void);
-void AutoBalance_OnChange(void)
-{
-	autobalance = (INT16)cv_autobalance.value;
-}
-
-void TeamScramble_OnChange(void);
-void TeamScramble_OnChange(void)
-{
-	INT16 i = 0, j = 0, playercount = 0;
-	boolean repick = true;
-	INT32 blue = 0, red = 0;
-	INT32 maxcomposition = 0;
-	INT16 newteam = 0;
-	INT32 retries = 0;
-	boolean success = false;
-
-	// Don't trigger outside level or intermission!
-	if (!(gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_VOTING))
-		return;
-
-	if (!cv_teamscramble.value)
-		teamscramble = 0;
-
-	if (!G_GametypeHasTeams() && (server || IsPlayerAdmin(consoleplayer)))
-	{
-		CONS_Alert(CONS_NOTICE, M_GetText("This command cannot be used in this gametype.\n"));
-		CV_StealthSetValue(&cv_teamscramble, 0);
-		return;
-	}
-
-	// If a team scramble is already in progress, do not allow another one to be started!
-	if (teamscramble)
-		return;
-
-retryscramble:
-
-	// Clear related global variables. These will get used again in p_tick.c/y_inter.c as the teams are scrambled.
-	memset(&scrambleplayers, 0, sizeof(scrambleplayers));
-	memset(&scrambleteams, 0, sizeof(scrambleplayers));
-	scrambletotal = scramblecount = 0;
-	blue = red = maxcomposition = newteam = playercount = 0;
-	repick = true;
-
-	// Put each player's node in the array.
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (playeringame[i] && !players[i].spectator)
-		{
-			scrambleplayers[playercount] = i;
-			playercount++;
-		}
-	}
-
-	if (playercount < 2)
-	{
-		CV_StealthSetValue(&cv_teamscramble, 0);
-		return; // Don't scramble one or zero players.
-	}
-
-	// Randomly place players on teams.
-	if (cv_teamscramble.value == 1)
-	{
-		maxcomposition = playercount / 2;
-
-		// Now randomly assign players to teams.
-		// If the teams get out of hand, assign the rest to the other team.
-		for (i = 0; i < playercount; i++)
-		{
-			if (repick)
-				newteam = (INT16)((M_RandomByte() % 2) + 1);
-
-			// One team has the most players they can get, assign the rest to the other team.
-			if (red == maxcomposition || blue == maxcomposition)
-			{
-				if (red == maxcomposition)
-					newteam = 2;
-				else //if (blue == maxcomposition)
-					newteam = 1;
-
-				repick = false;
-			}
-
-			scrambleteams[i] = newteam;
-
-			if (newteam == 1)
-				red++;
-			else
-				blue++;
-		}
-	}
-	else if (cv_teamscramble.value == 2) // Same as before, except split teams based on current score.
-	{
-		// Now, sort the array based on points scored.
-		for (i = 1; i < playercount; i++)
-		{
-			for (j = i; j < playercount; j++)
-			{
-				INT16 tempplayer = 0;
-
-				if ((players[scrambleplayers[i-1]].score > players[scrambleplayers[j]].score))
-				{
-					tempplayer = scrambleplayers[i-1];
-					scrambleplayers[i-1] = scrambleplayers[j];
-					scrambleplayers[j] = tempplayer;
-				}
-			}
-		}
-
-		// Now assign players to teams based on score. Scramble in pairs.
-		// If there is an odd number, one team will end up with the unlucky slob who has no points. =(
-		for (i = 0; i < playercount; i++)
-		{
-			if (repick)
-			{
-				newteam = (INT16)((M_RandomByte() % 2) + 1);
-				repick = false;
-			}
-			// (i != 2) means it does ABBABABA, instead of ABABABAB.
-			// Team A gets 1st, 4th, 6th, 8th.
-			// Team B gets 2nd, 3rd, 5th, 7th.
-			// So 1st on one team, 2nd/3rd on the other, then alternates afterwards.
-			// Sounds strange on paper, but works really well in practice!
-			else if (i != 2)
-			{
-				// We will only randomly pick the team for the first guy.
-				// Otherwise, just alternate back and forth, distributing players.
-				newteam = 3 - newteam;
-			}
-
-			scrambleteams[i] = newteam;
-		}
-	}
-
-	// Check to see if our random selection actually
-	// changed anybody. If not, we run through and try again.
-	for (i = 0; i < playercount; i++)
-	{
-		if (players[scrambleplayers[i]].ctfteam != scrambleteams[i])
-			success = true;
-	}
-
-	if (!success && retries < 5)
-	{
-		retries++;
-		goto retryscramble; //try again
-	}
-
-	// Display a witty message, but only during scrambles specifically triggered by an admin.
-	if (cv_teamscramble.value)
-	{
-		scrambletotal = playercount;
-		teamscramble = (INT16)cv_teamscramble.value;
-
-		if (!(gamestate == GS_INTERMISSION && cv_scrambleonchange.value))
-			CONS_Printf(M_GetText("Teams will be scrambled next round.\n"));
-	}
 }
 
 static void Command_Showmap_f(void)

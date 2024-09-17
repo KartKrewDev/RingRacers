@@ -289,7 +289,7 @@ typedef enum
 
 typedef enum
 {
-	TMT_RED  = 0,
+	TMT_ORANGE = 0,
 	TMT_BLUE = 1,
 } textmapteam_t;
 

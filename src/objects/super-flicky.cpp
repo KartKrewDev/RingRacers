@@ -727,6 +727,12 @@ void Controller::search()
 			continue;
 		}
 
+		// Do not target someone on the same team as our owner.
+		if (G_SameTeam(player, source()->player) == true)
+		{
+			continue;
+		}
+
 		// Target is already being hunted.
 		if (player->flickyAttacker)
 		{

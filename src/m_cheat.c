@@ -290,6 +290,8 @@ struct debugFlagNames_s const debug_flag_names[] =
 	{"PowerLevel", DBG_PWRLV}, // alt name
 	{"Demo", DBG_DEMO},
 	{"Replay", DBG_DEMO}, // alt name
+	{"Teams", DBG_TEAMS},
+	{"Teamplay", DBG_TEAMS}, // alt name
 	{NULL, 0}
 };
 

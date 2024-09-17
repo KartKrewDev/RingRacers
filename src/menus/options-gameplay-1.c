@@ -14,15 +14,20 @@
 
 menuitem_t OPTIONS_Gameplay[] =
 {
+	{IT_HEADER, "Global...", NULL,
+		NULL, {NULL}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Teamplay", "Split the game between two teams!",
+		NULL, {.cvar = &cv_teamplay}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Frantic Items", "Make item odds crazier with more powerful items!",
+		NULL, {.cvar = &cv_kartfrantic}, 0, 0},
 
 	{IT_HEADER, "Race...", NULL,
 		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Game Speed", "Gear for the next map.",
 		NULL, {.cvar = &cv_kartspeed}, 0, 0},
-
-	{IT_STRING | IT_CVAR, "Frantic Items", "Make item odds crazier with more powerful items!",
-		NULL, {.cvar = &cv_kartfrantic}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Encore Mode", "Play in Encore Mode next map.",
 		NULL, {.cvar = &cv_kartencore}, 0, 0},

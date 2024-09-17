@@ -196,13 +196,12 @@ precipmobj_t **precipblocklinks;
 UINT8 *rejectmatrix;
 
 // Maintain single and multi player starting spots.
-INT32 numdmstarts, numcoopstarts, numredctfstarts, numbluectfstarts;
+INT32 numdmstarts, numcoopstarts, numteamstarts[TEAM__MAX];
 INT32 numfaultstarts;
 
 mapthing_t *deathmatchstarts[MAX_DM_STARTS];
 mapthing_t *playerstarts[MAXPLAYERS];
-mapthing_t *bluectfstarts[MAXPLAYERS];
-mapthing_t *redctfstarts[MAXPLAYERS];
+mapthing_t *teamstarts[TEAM__MAX][MAXPLAYERS];
 mapthing_t *faultstart;
 
 // Global state for PartialAddWadFile/MultiSetupWadFiles
@@ -5508,7 +5507,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 				lines[i].args[0] = (lines[i].flags & ML_NOTBOUNCY) ? TMT_EACHTIMEENTERANDEXIT : TMT_EACHTIMEENTER;
 			else
 				lines[i].args[0] = TMT_CONTINUOUS;
-			lines[i].args[1] = (lines[i].special > 310) ? TMT_BLUE : TMT_RED;
+			lines[i].args[1] = (lines[i].special > 310) ? TMT_BLUE : TMT_ORANGE;
 			lines[i].special = 309;
 			break;
 		case 313: //No more enemies - once
@@ -7684,6 +7683,7 @@ static void P_InitLevelSettings(void)
 	const boolean multi_speed = (gametypes[gametype]->speed == KARTSPEED_AUTO);
 	gamespeed = multi_speed ? KARTSPEED_EASY : gametypes[gametype]->speed;
 	franticitems = false;
+	g_teamplay = false;
 
 	if (K_PodiumSequence() == true)
 	{
@@ -7730,6 +7730,7 @@ static void P_InitLevelSettings(void)
 				gamespeed = (UINT8)cv_kartspeed.value;
 		}
 		franticitems = (boolean)cv_kartfrantic.value;
+		g_teamplay = (boolean)cv_teamplay.value; // we will overwrite this later if there is not enough players
 	}
 
 	memset(&battleovertime, 0, sizeof(struct battleovertime));
@@ -7780,16 +7781,12 @@ void P_RespawnThings(void)
 
 static void P_ResetSpawnpoints(void)
 {
-	UINT8 i;
-
-	numdmstarts = numredctfstarts = numbluectfstarts = 0;
-	numfaultstarts = 0;
-	faultstart = NULL;
+	UINT8 i, j;
 
 	// reset the player starts
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		playerstarts[i] = bluectfstarts[i] = redctfstarts[i] = NULL;
+		playerstarts[i] = NULL;
 
 		if (playeringame[i])
 		{
@@ -7798,8 +7795,22 @@ static void P_ResetSpawnpoints(void)
 		}
 	}
 
+	numfaultstarts = 0;
+	faultstart = NULL;
+
+	numdmstarts = 0;
 	for (i = 0; i < MAX_DM_STARTS; i++)
 		deathmatchstarts[i] = NULL;
+
+	for (i = 0; i < TEAM__MAX; i++)
+	{
+		numteamstarts[i] = 0;
+
+		for (j = 0; j < MAXPLAYERS; j++)
+		{
+			teamstarts[i][j] = NULL;
+		}
+	}
 
 	for (i = 0; i < 16; i++)
 		skyboxviewpnts[i] = skyboxcenterpnts[i] = NULL;
@@ -7968,6 +7979,75 @@ static void P_InitCamera(void)
 			//displayplayers[i] = g_localplayers[i]; // Start with your OWN view, please!
 			P_SetupCamera(displayplayers[i], &camera[i]);
 		}
+	}
+}
+
+static void P_ShuffleTeams(void)
+{
+	size_t i;
+
+	if (G_GametypeHasTeams() == false)
+	{
+		// Teams are not enabled, force to TEAM_UNASSIGNED
+
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			players[i].team = TEAM_UNASSIGNED;
+		}
+
+		return;
+	}
+
+	// The following will sort TEAM_UNASSIGNED players at random.
+	// In addition, you should know all players will have their team
+	// unset every round unless certain conditions are met.
+	// See Y_MidIntermission, G_InitNew (where resetplayer == true)
+
+	CONS_Debug(DBG_TEAMS, "Shuffling player teams...\n");
+
+	std::vector<UINT8> player_shuffle;
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i] == false || players[i].spectator == true)
+		{
+			continue;
+		}
+		player_shuffle.push_back(i);
+	}
+
+	size_t n = player_shuffle.size();
+	if (inDuel == true || n <= 2) // cv_teamplay_min.value
+	{
+		CONS_Debug(DBG_TEAMS, "Not enough players to support teams; forcing teamplay preference off.\n");
+
+		// Not enough players for teams.
+		// Turn off the preference for this match.
+		g_teamplay = false;
+
+		// But we may still be in a forced
+		// teams gametype, so only return false
+		// if our preference means anything.
+		if (G_GametypeHasTeams() == false)
+		{
+			return;
+		}
+	}
+
+	if (n > 1)
+	{
+		for (i = n - 1; i > 0; i--)
+		{
+			size_t j = P_RandomKey(PR_TEAMS, i + 1);
+
+			size_t temp = player_shuffle[i];
+			player_shuffle[i] = player_shuffle[j];
+			player_shuffle[j] = temp;
+		}
+	}
+
+	for (i = 0; i < n; i++)
+	{
+		G_AutoAssignTeam(&players[ player_shuffle[i] ]);
 	}
 }
 
@@ -8902,6 +8982,8 @@ void P_PostLoadLevel(void)
 			players[i].spectator = true;
 		}
 	}
+
+	P_ShuffleTeams();
 
 	K_TimerInit();
 

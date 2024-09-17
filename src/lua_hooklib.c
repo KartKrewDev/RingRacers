@@ -961,6 +961,7 @@ void LUA_HookPlayerQuit(player_t *plr, kickreason_t reason)
 	}
 }
 
+/*
 int LUA_HookTeamSwitch(player_t *player, int newteam, boolean fromspectators, boolean tryingautobalance, boolean tryingscramble)
 {
 	Hook_State hook;
@@ -975,6 +976,7 @@ int LUA_HookTeamSwitch(player_t *player, int newteam, boolean fromspectators, bo
 	}
 	return hook.status;
 }
+*/
 
 int LUA_HookViewpointSwitch(player_t *player, player_t *newdisplayplayer, boolean forced)
 {

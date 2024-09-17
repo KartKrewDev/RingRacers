@@ -182,11 +182,6 @@ char * podiummap = NULL; // map to load for podium
 char * tutorialchallengemap = NULL; // map to load for tutorial skip
 UINT8 tutorialchallenge = TUTORIALSKIP_NONE;
 
-UINT16 skincolor_redteam = SKINCOLOR_RED;
-UINT16 skincolor_blueteam = SKINCOLOR_BLUE;
-UINT16 skincolor_redring = SKINCOLOR_RASPBERRY;
-UINT16 skincolor_bluering = SKINCOLOR_PERIWINKLE;
-
 boolean exitfadestarted = false;
 
 cutscene_t *cutscenes[128];
@@ -222,7 +217,7 @@ INT32 luabanks[NUM_LUABANKS];
 // Temporary holding place for nights data for the current map
 //nightsdata_t ntemprecords;
 
-UINT32 bluescore, redscore; // CTF and Team Match team scores
+UINT32 g_teamscores[TEAM__MAX];
 
 // ring count... for PERFECT!
 INT32 nummaprings = 0;
@@ -289,13 +284,6 @@ fixed_t mapobjectscale;
 
 struct maplighting maplighting;
 
-INT16 autobalance; //for CTF team balance
-INT16 teamscramble; //for CTF team scramble
-INT16 scrambleplayers[MAXPLAYERS]; //for CTF team scramble
-INT16 scrambleteams[MAXPLAYERS]; //for CTF team scramble
-INT16 scrambletotal; //for CTF team scramble
-INT16 scramblecount; //for CTF team scramble
-
 // SRB2Kart
 // Cvars that we don't want changed mid-game
 UINT8 numlaps; // Removed from Cvar hell
@@ -303,6 +291,10 @@ UINT8 gamespeed; // Game's current speed (or difficulty, or cc, or etc); 0 for e
 boolean encoremode = false; // Encore Mode currently enabled?
 boolean prevencoremode;
 boolean franticitems; // Frantic items currently enabled?
+
+// Server wants to enable teams?
+// (Certain gametypes can override this -- prefer using G_GametypeHasTeams().)
+boolean g_teamplay;
 
 // Voting system
 UINT16 g_voteLevels[4][2]; // Levels that were rolled by the host
@@ -1545,7 +1537,7 @@ boolean G_CouldView(INT32 playernum)
 	// SRB2Kart: we have no team-based modes, YET...
 	if (G_GametypeHasTeams())
 	{
-		if (players[consoleplayer].ctfteam && player->ctfteam != players[consoleplayer].ctfteam)
+		if (players[consoleplayer].spectator == false && player->team != players[consoleplayer].team)
 			return false;
 	}
 
@@ -1800,6 +1792,11 @@ void G_UpdatePlayerPreferences(player_t *const player)
 		new_color = skins[player->skin].prefcolor;
 	}
 
+	if (G_GametypeHasTeams() == true && player->team != TEAM_UNASSIGNED)
+	{
+		new_color = g_teaminfo[player->team].color;
+	}
+
 	if (player->skincolor != new_color)
 	{
 		player->skincolor = new_color;
@@ -1930,7 +1927,7 @@ void G_Ticker(boolean run)
 			K_UpdateAllPlayerPositions();
 		}
 	}
-	else
+	else if (Playing() && !Y_IntermissionPlayerLock())
 	{
 		if (run)
 		{
@@ -2188,7 +2185,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	INT32 pflags;
 
-	UINT8 ctfteam;
+	UINT8 team;
 
 	INT32 cheatchecknum;
 	INT32 exiting;
@@ -2269,7 +2266,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	score = players[player].score;
 	lives = players[player].lives;
-	ctfteam = players[player].ctfteam;
+	team = players[player].team;
 
 	splitscreenindex = players[player].splitscreenindex;
 	spectator = players[player].spectator;
@@ -2525,7 +2522,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->roundscore = roundscore;
 	p->lives = lives;
 	p->pflags = pflags;
-	p->ctfteam = ctfteam;
+	p->team = team;
 	p->jointime = jointime;
 	p->splitscreenindex = splitscreenindex;
 	p->spectator = spectator;
@@ -2626,35 +2623,16 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	//p->follower = NULL;	// respawn a new one with you, it looks better.
 	// ^ Not necessary anyway since it will be respawned regardless considering it doesn't exist anymore.
 
+	if (G_GametypeHasTeams() == true
+		&& p->team == TEAM_UNASSIGNED
+		&& p->spectator == false)
+	{
+		// No team?
+		G_AutoAssignTeam(p);
+	}
+
 	p->playerstate = PST_LIVE;
 	p->panim = PA_STILL; // standing animation
-
-	// Check to make sure their color didn't change somehow...
-	if (G_GametypeHasTeams())
-	{
-		if (p->ctfteam == 1 && p->skincolor != skincolor_redteam)
-		{
-			for (i = 0; i <= splitscreen; i++)
-			{
-				if (p == &players[g_localplayers[i]])
-				{
-					CV_SetValue(&cv_playercolor[i], skincolor_redteam);
-					break;
-				}
-			}
-		}
-		else if (p->ctfteam == 2 && p->skincolor != skincolor_blueteam)
-		{
-			for (i = 0; i <= splitscreen; i++)
-			{
-				if (p == &players[g_localplayers[i]])
-				{
-					CV_SetValue(&cv_playercolor[i], skincolor_blueteam);
-					break;
-				}
-			}
-		}
-	}
 
 	if (p->spectator == false && !betweenmaps)
 	{
@@ -2765,56 +2743,78 @@ void G_MovePlayerToSpawnOrCheatcheck(INT32 playernum)
 
 mapthing_t *G_FindTeamStart(INT32 playernum)
 {
-	const boolean doprints = P_IsPartyPlayer(&players[playernum]);
-	INT32 i,j;
+	const boolean do_prints = P_IsPartyPlayer(&players[playernum]);
+	INT32 i, j;
 
-	if (!numredctfstarts && !numbluectfstarts) //why even bother, eh?
+	for (i = 0; i < TEAM__MAX; i++)
 	{
-		if ((gametyperules & GTR_TEAMSTARTS) && doprints)
-			CONS_Alert(CONS_WARNING, M_GetText("No CTF starts in this map!\n"));
+		if (numteamstarts[i] > 0)
+		{
+			break;
+		}
+	}
+
+	if (i == TEAM__MAX)
+	{
+		// No team starts are counted?
+		// Why even bother, eh?
+
+		if (do_prints == true && (gametyperules & GTR_TEAMSTARTS) == GTR_TEAMSTARTS)
+		{
+			CONS_Alert(CONS_WARNING, M_GetText("No team starts in this map!\n"));
+		}
+
 		return NULL;
 	}
 
-	if ((!players[playernum].ctfteam && numredctfstarts && (!numbluectfstarts || P_RandomChance(PR_PLAYERSTARTS, FRACUNIT/2))) || players[playernum].ctfteam == 1) //red
+	UINT8 use_team = players[playernum].team;
+	if (players[playernum].spectator == true)
 	{
-		if (!numredctfstarts)
+		// Spawn at any team start as a spectator.
+		i = P_RandomKey(PR_PLAYERSTARTS, TEAM__MAX);
+
+		for (j = 0; j < TEAM__MAX; j++)
 		{
-			if (doprints)
-				CONS_Alert(CONS_WARNING, M_GetText("No Red Team starts in this map!\n"));
-			return NULL;
+			if (numteamstarts[i] > 0)
+			{
+				break;
+			}
+
+			i++;
+			if (i >= TEAM__MAX)
+			{
+				i = 0;
+			}
 		}
 
-		for (j = 0; j < 32; j++)
+		use_team = i;
+	}
+
+	if (numteamstarts[use_team] <= 0)
+	{
+		if (do_prints == true)
 		{
-			i = P_RandomKey(PR_PLAYERSTARTS, numredctfstarts);
-			if (G_CheckSpot(playernum, redctfstarts[i]))
-				return redctfstarts[i];
+			CONS_Alert(CONS_WARNING, M_GetText("No %s Team starts in this map!\n"), g_teaminfo[use_team].name);
 		}
 
-		if (doprints)
-			CONS_Alert(CONS_WARNING, M_GetText("Could not spawn at any Red Team starts!\n"));
 		return NULL;
 	}
-	else if (!players[playernum].ctfteam || players[playernum].ctfteam == 2) //blue
-	{
-		if (!numbluectfstarts)
-		{
-			if (doprints)
-				CONS_Alert(CONS_WARNING, M_GetText("No Blue Team starts in this map!\n"));
-			return NULL;
-		}
 
-		for (j = 0; j < 32; j++)
+	for (j = 0; j < 32; j++)
+	{
+		i = P_RandomKey(PR_PLAYERSTARTS, numteamstarts[use_team]);
+
+		if (G_CheckSpot(playernum, teamstarts[use_team][i]))
 		{
-			i = P_RandomKey(PR_PLAYERSTARTS, numbluectfstarts);
-			if (G_CheckSpot(playernum, bluectfstarts[i]))
-				return bluectfstarts[i];
+			return teamstarts[use_team][i];
 		}
-		if (doprints)
-			CONS_Alert(CONS_WARNING, M_GetText("Could not spawn at any Blue Team starts!\n"));
-		return NULL;
 	}
-	//should never be reached but it gets stuff to shut up
+
+	if (do_prints == true)
+	{
+		CONS_Alert(CONS_WARNING, M_GetText("Could not spawn at any %s Team starts!\n"), g_teaminfo[use_team].name);
+	}
+
 	return NULL;
 }
 
@@ -3044,7 +3044,7 @@ mapthing_t *G_FindMapStart(INT32 playernum)
 
 	// -- CTF --
 	// Order: CTF->DM->Race
-	else if ((gametyperules & GTR_TEAMSTARTS) && players[playernum].ctfteam)
+	else if ((gametyperules & GTR_TEAMSTARTS) && players[playernum].spectator == false)
 		spawnpoint = G_FindTeamStartOrFallback(playernum);
 
 	// -- DM/Tag/CTF-spectator/etc --
@@ -3156,7 +3156,7 @@ void G_SpectatePlayerOnJoin(INT32 playernum)
 	// This is only ever called shortly after the above.
 	// That calls CL_ClearPlayer, so spectator is false by default
 
-	if (!netgame && !G_GametypeHasTeams() && !G_GametypeHasSpectators())
+	if (!netgame && !G_GametypeHasSpectators())
 		return;
 
 	// These are handled automatically elsewhere
@@ -3285,14 +3285,6 @@ void G_FinishExitLevel(void)
 
 		gameaction = ga_completed;
 		lastdraw = true;
-
-		// If you want your teams scrambled on map change, start the process now.
-		// The teams will scramble at the start of the next round.
-		if (cv_scrambleonchange.value && G_GametypeHasTeams())
-		{
-			if (server)
-				CV_SetValue(&cv_teamscramble, cv_scrambleonchange.value);
-		}
 
 		CON_LogMessage(M_GetText("The round has ended.\n"));
 
@@ -3592,19 +3584,20 @@ boolean G_GametypeAllowsRetrying(void)
 //
 boolean G_GametypeHasTeams(void)
 {
-	if (gametyperules & GTR_TEAMS)
+	const UINT32 rules = (gametyperules & (GTR_TEAMS|GTR_NOTEAMS));
+	if (rules == GTR_TEAMS)
 	{
 		// Teams forced on by this gametype
 		return true;
 	}
-	else if (gametyperules & GTR_NOTEAMS)
+	else if (rules == GTR_NOTEAMS)
 	{
 		// Teams forced off by this gametype
 		return false;
 	}
 
-	// Teams are determined by the "teamplay" modifier!
-	return false; // teamplay
+	// Teams are determined by the server's preference!
+	return g_teamplay;
 }
 
 //
@@ -4786,9 +4779,13 @@ static void G_DoCompleted(void)
 	{
 		Y_StartIntermission();
 	}
-	else if (grandprixinfo.gp == true)
+	else
 	{
-		K_UpdateGPRank(&grandprixinfo.rank);
+		Y_MidIntermission();
+		if (grandprixinfo.gp == true)
+		{
+			K_UpdateGPRank(&grandprixinfo.rank);
+		}
 	}
 
 	G_UpdateVisited();
@@ -5322,8 +5319,13 @@ void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skippr
 	}
 
 	// Clear a bunch of variables
-	redscore = bluescore = lastmap = 0;
+	lastmap = 0;
 	racecountdown = exitcountdown = musiccountdown = mapreset = exitfadestarted = 0;
+
+	for (i = 0; i < TEAM__MAX; i++)
+	{
+		g_teamscores[i] = 0;
+	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -5797,3 +5799,204 @@ INT32 G_TicsToMilliseconds(tic_t tics)
 {
 	return (INT32)((tics%TICRATE) * (1000.00f/TICRATE));
 }
+
+teaminfo_t g_teaminfo[TEAM__MAX] =
+{
+	// TEAM_UNASSIGNED
+	// These values should not be reached most of the time,
+	// but it is a necessary evil for this to exist.
+	{
+		"Unassigned",
+		SKINCOLOR_NONE,
+		0,
+	},
+	// TEAM_ORANGE
+	{
+		"Orange",
+		SKINCOLOR_TANGERINE,
+		V_ORANGEMAP,
+	},
+	// TEAM_BLUE
+	{
+		"Blue",
+		SKINCOLOR_SAPPHIRE,
+		V_BLUEMAP,
+	},
+};
+
+void G_AssignTeam(player_t *const p, UINT8 new_team)
+{
+	if (p->team != new_team)
+	{
+		CONS_Debug(DBG_TEAMS, "%s >> Changed from team %s to team %s.\n", player_names[p - players], g_teaminfo[p->team].name, g_teaminfo[new_team].name);
+	}
+
+	p->team = new_team;
+
+	if (new_team && p->skincolor != g_teaminfo[new_team].color)
+	{
+		p->skincolor = g_teaminfo[new_team].color;
+		if (G_GamestateUsesLevel())
+		{
+			K_KartResetPlayerColor(p);
+		}
+	}
+}
+
+boolean G_SameTeam(const player_t *a, const player_t *b)
+{
+	if (a == NULL || b == NULL)
+	{
+		return false;
+	}
+
+	if (G_GametypeHasTeams() == true)
+	{
+		if (a->team == TEAM_UNASSIGNED || b->team == TEAM_UNASSIGNED)
+		{
+			// Unassigned is not a real team.
+			// Treat them as lone wolves.
+			return false;
+		}
+
+		// You share a team!
+		return (a->team == b->team);
+	}
+
+	// Free for all.
+	return false; 
+}
+
+UINT8 G_CountTeam(UINT8 team)
+{
+	UINT8 count = 0;
+
+	for (UINT8 i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i] == false || players[i].spectator == true)
+		{
+			continue;
+		}
+
+		if (players[i].team == team)
+		{
+			count++;
+		}
+	}
+
+	return count;
+}
+
+void G_AutoAssignTeam(player_t *const p)
+{
+	if (G_GametypeHasTeams() == false)
+	{
+		CONS_Debug(DBG_TEAMS, "%s >> Teams are disabled.\n", player_names[p - players]);
+		G_AssignTeam(p, TEAM_UNASSIGNED);
+		return;
+	}
+
+	if (p->spectator == true)
+	{
+		CONS_Debug(DBG_TEAMS, "%s >> Why are you giving a spectator a team?\n", player_names[p - players]);
+		G_AssignTeam(p, TEAM_UNASSIGNED);
+		return;
+	}
+
+	if (p->team != TEAM_UNASSIGNED)
+	{
+		CONS_Debug(DBG_TEAMS, "%s >> Already assigned a team.\n", player_names[p - players]);
+		return;
+	}
+
+	const UINT8 orange_count = G_CountTeam(TEAM_ORANGE);
+	const UINT8 blue_count = G_CountTeam(TEAM_BLUE);
+
+	if (orange_count == blue_count)
+	{
+		CONS_Debug(DBG_TEAMS, "%s >> Team assigned randomly.\n", player_names[p - players]);
+		G_AssignTeam(p, (P_Random(PR_TEAMS) & 1) ? TEAM_BLUE : TEAM_ORANGE);
+		return;
+	}
+
+	CONS_Debug(DBG_TEAMS, "%s >> Team imbalance.\n", player_names[p - players]);
+
+	if (blue_count < orange_count)
+	{
+		G_AssignTeam(p, TEAM_BLUE);
+	}
+	else
+	{
+		G_AssignTeam(p, TEAM_ORANGE);
+	}
+}
+
+void G_AddTeamScore(UINT8 team, INT32 amount, player_t *source)
+{
+	if (team == TEAM_UNASSIGNED || G_GametypeHasTeams() == false)
+	{
+		return;
+	}
+
+	if ((gametyperules & GTR_POINTLIMIT) == 0)
+	{
+		return;
+	}
+
+#if 1
+	if (amount <= 0)
+	{
+		// Don't allow players to intentionally
+		// tank the team score. Might not be necessary?
+		return;
+	}
+#endif
+
+	(void)source; // Just included in case we need the scorer later.
+
+	// Don't underflow.
+	// Don't go above MAXSCORE.
+	if (amount < 0 && (UINT32)-amount > g_teamscores[team])
+	{
+		g_teamscores[team] = 0;
+	}
+	else if (g_teamscores[team] + amount < MAXSCORE)
+	{
+		if (g_teamscores[team] < g_pointlimit
+			&& g_pointlimit <= g_teamscores[team] + amount)
+		{
+			INT32 i;
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				player_t *const p = &players[i];
+
+				if (playeringame[i] == false || p->spectator == true)
+				{
+					continue;
+				}
+
+				if (p->team == team)
+				{
+					HU_DoTitlecardCEchoForDuration(p, "K.O. READY!", true, 5*TICRATE/2);
+				}
+			}
+		}
+
+		g_teamscores[team] += amount;
+	}
+	else
+	{
+		g_teamscores[team] = MAXSCORE;
+	}
+}
+
+UINT32 G_TeamOrIndividualScore(const player_t *player)
+{
+	if (G_GametypeHasTeams() == true && player->team != TEAM_UNASSIGNED)
+	{
+		return g_teamscores[player->team];
+	}
+
+	return player->roundscore;
+}
+
