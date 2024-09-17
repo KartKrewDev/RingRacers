@@ -19,6 +19,7 @@ Alpine 3 GCC:
       - "build.alpine3/src/config.h"
     expose_as: "Apline-3"
     name: "$CI_PROJECT_PATH_SLUG-$CI_COMMIT_REF_SLUG-$CI_COMMIT_SHORT_SHA-Apline-3"
+    expire_in: 1 day
 
   before_script:
     - - |

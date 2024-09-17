@@ -15,5 +15,3 @@ stages:
 
 default:
   interruptible: true
-  artifacts:
-    expire_in: 1 day

@@ -15,6 +15,9 @@
         - build/apt-cache
       unprotect: true
 
+  artifacts:
+    expire_in: 1 day
+
   before_script:
     - - |
          # debconf
