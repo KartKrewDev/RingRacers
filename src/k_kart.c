@@ -9051,7 +9051,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->transfer)
 	{
-		if ((abs(player->mo->momz) < (2*abs(player->transfer)/4)) || (player->mo->momz > 0) != (player->transfer > 0))
+		boolean eligible = (abs(player->mo->momz) < (2*abs(player->transfer)/4)) || (player->mo->momz > 0) != (player->transfer > 0);
+		if ((player->cmd.buttons & BT_ACCELERATE) && eligible)
 		{
 			fixed_t fuckfactor = FRACUNIT;
 			fixed_t transfergravity = 10*FRACUNIT/100;
