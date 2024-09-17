@@ -57,10 +57,6 @@ extern UINT32 timelimitintics, extratimeintics, secretextratime;
 extern UINT32 g_pointlimit;
 extern consvar_t cv_allowexitlevel;
 
-extern consvar_t cv_autobalance;
-extern consvar_t cv_teamscramble;
-extern consvar_t cv_scrambleonchange;
-
 extern consvar_t cv_netstat;
 
 extern consvar_t cv_countdowntime;
@@ -83,6 +79,7 @@ extern consvar_t cv_karthorns;
 extern consvar_t cv_kartbot;
 extern consvar_t cv_karteliminatelast;
 extern consvar_t cv_thunderdome;
+extern consvar_t cv_teamplay;
 extern consvar_t cv_kartusepwrlv;
 #ifdef DEVELOP
 	extern consvar_t cv_kartencoremap;
@@ -155,7 +152,7 @@ typedef enum
 	XD_ADDFILE,     // 8
 	XD_PAUSE,       // 9
 	XD_ADDPLAYER,   // 10
-	XD_TEAMCHANGE,  // 11
+	XD_SPECTATE,    // 11
 	XD_CLEARSCORES, // 12
 	XD_VERIFIED,    // 13
 	XD_RANDOMSEED,  // 14
@@ -187,51 +184,12 @@ typedef enum
 	XD_MAPQUEUE,	// 38
 	XD_CALLZVOTE,   // 39
 	XD_SETZVOTE,    // 40
+	XD_TEAMCHANGE,  // 41
 
 	MAXNETXCMD
 } netxcmd_t;
 
 extern const char *netxcmdnames[MAXNETXCMD - 1];
-
-#if defined(_MSC_VER)
-#pragma pack(1)
-#endif
-
-#ifdef _MSC_VER
-#pragma warning(disable :  4214)
-#endif
-
-//Packet composition for Command_TeamChange_f() ServerTeamChange, etc.
-//bitwise structs make packing bits a little easier, but byte alignment harder?
-//todo: decide whether to make the other netcommands conform, or just get rid of this experiment.
-struct changeteam_packet_t {
-	UINT32 playernum    : 5;  // value 0 to 31
-	UINT32 newteam      : 5;  // value 0 to 31
-	UINT32 verification : 1;  // value 0 to 1
-	UINT32 autobalance  : 1;  // value 0 to 1
-	UINT32 scrambled    : 1;  // value 0 to 1
-} ATTRPACK;
-
-#ifdef _MSC_VER
-#pragma warning(default : 4214)
-#endif
-
-struct changeteam_value_t {
-	UINT16 l; // liitle endian
-	UINT16 b; // big enian
-} ATTRPACK;
-
-//Since we do not want other files/modules to know about this data buffer we union it here with a Short Int.
-//Other files/modules will hand the INT16 back to us and we will decode it here.
-//We don't have to use a union, but we would then send four bytes instead of two.
-typedef union {
-	changeteam_packet_t packet;
-	changeteam_value_t value;
-} ATTRPACK changeteam_union;
-
-#if defined(_MSC_VER)
-#pragma pack()
-#endif
 
 // add game commands, needs cleanup
 void D_RegisterServerCommands(void);

@@ -753,6 +753,20 @@ static void M_HandleBackToChars(setup_player_t *p)
 static boolean M_HandleBeginningColors(setup_player_t *p)
 {
 	p->mdepth = CSSTEP_COLORS;
+
+	if (Playing() && G_GametypeHasTeams())
+	{
+		size_t pnum = (p - setup_player);
+		if (pnum <= splitscreen)
+		{
+			if (players[g_localplayers[pnum]].team != TEAM_UNASSIGNED)
+			{
+				p->color = g_teaminfo[players[g_localplayers[pnum]].team].color;
+				return false;
+			}
+		}
+	}
+
 	M_NewPlayerColors(p);
 	if (p->colors.listLen != 1)
 		return true;

@@ -12120,34 +12120,13 @@ void P_SpawnPlayer(INT32 playernum)
 		G_PlayerReborn(playernum, false);
 	}
 
-	if (G_GametypeHasTeams())
+	if (G_GametypeHasTeams() == true)
 	{
 		// If you're in a team game and you don't have a team assigned yet...
-		if (!p->spectator && p->ctfteam == 0)
+		if (p->spectator == false && p->team == TEAM_UNASSIGNED)
 		{
-			changeteam_union NetPacket;
-			UINT16 usvalue;
-			NetPacket.value.l = NetPacket.value.b = 0;
-
-			// Spawn as a spectator,
-			// yes even in splitscreen mode
-			p->spectator = true;
-
-			// but immediately send a team change packet.
-			NetPacket.packet.playernum = playernum;
-			NetPacket.packet.verification = true;
-			NetPacket.packet.newteam = !(playernum&1) + 1;
-
-			usvalue = SHORT(NetPacket.value.l|NetPacket.value.b);
-			SendNetXCmd(XD_TEAMCHANGE, &usvalue, sizeof(usvalue));
+			G_AssignTeam(p, !(playernum & 1) + 1);
 		}
-
-		// Fix team colors.
-		// This code isn't being done right somewhere else. Oh well.
-		if (p->ctfteam == 1)
-			p->skincolor = skincolor_redteam;
-		else if (p->ctfteam == 2)
-			p->skincolor = skincolor_blueteam;
 	}
 
 	if (leveltime > introtime && K_PodiumSequence() == false)
@@ -12557,23 +12536,23 @@ static boolean P_SpawnNonMobjMapThing(mapthing_t *mthing)
 		}
 		return true;
 	}
-	else if (mthing->type == 34) // Red CTF starts
+	else if (mthing->type == 34) // Orange team starts
 	{
-		if (numredctfstarts < MAXPLAYERS)
+		if (numteamstarts[TEAM_ORANGE] < MAXPLAYERS)
 		{
-			redctfstarts[numredctfstarts] = mthing;
+			teamstarts[TEAM_ORANGE][numteamstarts[TEAM_ORANGE]] = mthing;
 			mthing->type = 0;
-			numredctfstarts++;
+			numteamstarts[TEAM_ORANGE]++;
 		}
 		return true;
 	}
-	else if (mthing->type == 35) // Blue CTF starts
+	else if (mthing->type == 35) // Blue team starts
 	{
-		if (numbluectfstarts < MAXPLAYERS)
+		if (numteamstarts[TEAM_BLUE] < MAXPLAYERS)
 		{
-			bluectfstarts[numbluectfstarts] = mthing;
+			teamstarts[TEAM_BLUE][numteamstarts[TEAM_BLUE]] = mthing;
 			mthing->type = 0;
-			numbluectfstarts++;
+			numteamstarts[TEAM_BLUE]++;
 		}
 		return true;
 	}
@@ -14861,17 +14840,19 @@ mobj_t *P_SpawnMissile(mobj_t *source, mobj_t *dest, mobjtype_t type)
 //
 void P_ColorTeamMissile(mobj_t *missile, player_t *source)
 {
-	if (G_GametypeHasTeams())
+	if (missile == NULL || source == NULL)
 	{
-		if (source->ctfteam == 2)
-			missile->color = skincolor_bluering;
-		else if (source->ctfteam == 1)
-			missile->color = skincolor_redring;
+		return;
 	}
-	/*
+
+	if (source->team > TEAM_UNASSIGNED && source->team < TEAM__MAX)
+	{
+		missile->color = g_teaminfo[source->team].color;
+	}
 	else
-		missile->color = player->mo->color; //copy color
-	*/
+	{
+		missile->color = source->skincolor;
+	}
 }
 
 //

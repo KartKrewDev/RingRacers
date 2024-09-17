@@ -96,13 +96,11 @@ boolean ST_SameTeam(player_t *a, player_t *b)
 	if (G_GametypeHasTeams() == true)
 	{
 		// You get team messages if you're on the same team.
-		return (a->ctfteam == b->ctfteam);
+		return (a->team == b->team);
 	}
-	else
-	{
-		// Not that everyone's not on the same team, but team messages go to normal chat if everyone's not in the same team.
-		return true;
-	}
+
+	// Not that everyone's not on the same team, but team messages go to normal chat if everyone's not in the same team.
+	return true;
 }
 
 static boolean st_stopped = true;

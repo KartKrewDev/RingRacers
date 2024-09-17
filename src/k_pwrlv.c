@@ -245,6 +245,12 @@ void K_UpdatePowerLevels(player_t *player, UINT8 lap, boolean forfeit)
 			continue;
 		}
 
+		if (G_SameTeam(player, &players[i]) == true)
+		{
+			// You don't win/lose against your teammates.
+			continue;
+		}
+
 		CONS_Debug(DBG_PWRLV, "%s VS %s:\n", player_names[playerNum], player_names[i]);
 
 		theirPower = clientpowerlevels[i][powerType];

@@ -197,12 +197,6 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 	} else if (fastcmp(word,"paused")) {
 		lua_pushboolean(L, paused);
 		return 1;
-	} else if (fastcmp(word,"bluescore")) {
-		lua_pushinteger(L, bluescore);
-		return 1;
-	} else if (fastcmp(word,"redscore")) {
-		lua_pushinteger(L, redscore);
-		return 1;
 	} else if (fastcmp(word,"timelimit")) {
 		lua_pushinteger(L, timelimitintics);
 		return 1;
@@ -226,20 +220,6 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 		lua_pushstring(L, tutorialchallengemap);
 		return 1;
 	// end map vars
-	// begin CTF colors
-	} else if (fastcmp(word,"skincolor_redteam")) {
-		lua_pushinteger(L, skincolor_redteam);
-		return 1;
-	} else if (fastcmp(word,"skincolor_blueteam")) {
-		lua_pushinteger(L, skincolor_blueteam);
-		return 1;
-	} else if (fastcmp(word,"skincolor_redring")) {
-		lua_pushinteger(L, skincolor_redring);
-		return 1;
-	} else if (fastcmp(word,"skincolor_bluering")) {
-		lua_pushinteger(L, skincolor_bluering);
-		return 1;
-	// end CTF colors
 	// begin timers
 	} else if (fastcmp(word,"invulntics")) {
 		lua_pushinteger(L, invulntics);
@@ -351,6 +331,9 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 	} else if (fastcmp(word,"franticitems")) {
 		lua_pushboolean(L, franticitems);
 		return 1;
+	} else if (fastcmp(word,"teamplay")) {
+		lua_pushboolean(L, g_teamplay);
+		return 1;
 	} else if (fastcmp(word,"wantedcalcdelay")) {
 		lua_pushinteger(L, wantedcalcdelay);
 		return 1;
@@ -392,19 +375,7 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 // See the above.
 int LUA_WriteGlobals(lua_State *L, const char *word)
 {
-	if (fastcmp(word, "redscore"))
-		redscore = (UINT32)luaL_checkinteger(L, 2);
-	else if (fastcmp(word, "bluescore"))
-		bluescore = (UINT32)luaL_checkinteger(L, 2);
-	else if (fastcmp(word, "skincolor_redteam"))
-		skincolor_redteam = (UINT16)luaL_checkinteger(L, 2);
-	else if (fastcmp(word, "skincolor_blueteam"))
-		skincolor_blueteam = (UINT16)luaL_checkinteger(L, 2);
-	else if (fastcmp(word, "skincolor_redring"))
-		skincolor_redring = (UINT16)luaL_checkinteger(L, 2);
-	else if (fastcmp(word, "skincolor_bluering"))
-		skincolor_bluering = (UINT16)luaL_checkinteger(L, 2);
-	else if (fastcmp(word, "gravity"))
+	if (fastcmp(word, "gravity"))
 		gravity = (fixed_t)luaL_checkinteger(L, 2);
 	else if (fastcmp(word, "stoppedclock"))
 		stoppedclock = luaL_checkboolean(L, 2);

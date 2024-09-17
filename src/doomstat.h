@@ -277,9 +277,6 @@ extern UINT8 tutorialchallenge;
 #define TUTORIALSKIP_FAILED 1
 #define TUTORIALSKIP_INPROGRESS 2
 
-// CTF colors.
-extern UINT16 skincolor_redteam, skincolor_blueteam, skincolor_redring, skincolor_bluering;
-
 extern boolean exitfadestarted;
 
 struct scene_t
@@ -762,8 +759,24 @@ extern INT32 nummaprings; //keep track of spawned rings/coins
 extern UINT8 nummapspraycans;
 extern UINT16 numchallengedestructibles;
 
-extern UINT32 bluescore; ///< Blue Team Scores
-extern UINT32 redscore;  ///< Red Team Scores
+// Teamplay
+typedef enum
+{
+	TEAM_UNASSIGNED = 0,
+	TEAM_ORANGE,
+	TEAM_BLUE,
+	TEAM__MAX
+} team_e;
+
+struct teaminfo_t
+{
+	const char *name;
+	skincolornum_t color;
+	UINT32 chat_color;
+};
+
+extern teaminfo_t g_teaminfo[TEAM__MAX];
+extern UINT32 g_teamscores[TEAM__MAX];
 
 // Eliminates unnecessary searching.
 extern boolean CheckForBustableBlocks;
@@ -845,19 +858,12 @@ extern struct maplighting
 	angle_t angle;
 } maplighting;
 
-//for CTF balancing
-extern INT16 autobalance;
-extern INT16 teamscramble;
-extern INT16 scrambleplayers[MAXPLAYERS]; //for CTF team scramble
-extern INT16 scrambleteams[MAXPLAYERS]; //for CTF team scramble
-extern INT16 scrambletotal; //for CTF team scramble
-extern INT16 scramblecount; //for CTF team scramble
-
 // SRB2kart
 extern UINT8 numlaps;
 extern UINT8 gamespeed;
 extern boolean franticitems;
 extern boolean encoremode, prevencoremode;
+extern boolean g_teamplay;
 
 extern tic_t wantedcalcdelay;
 extern tic_t itemCooldowns[NUMKARTITEMS - 1];
@@ -891,8 +897,7 @@ extern tic_t gametic;
 
 // Player spawn spots.
 extern mapthing_t *playerstarts[MAXPLAYERS]; // Cooperative
-extern mapthing_t *bluectfstarts[MAXPLAYERS]; // CTF
-extern mapthing_t *redctfstarts[MAXPLAYERS]; // CTF
+extern mapthing_t *teamstarts[TEAM__MAX][MAXPLAYERS]; // Teamplay
 extern mapthing_t *faultstart; // Kart Fault
 
 #define TUBEWAYPOINTSEQUENCESIZE 256

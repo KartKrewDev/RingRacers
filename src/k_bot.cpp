@@ -634,6 +634,12 @@ static UINT32 K_BotRubberbandDistance(const player_t *player)
 			continue;
 		}
 
+		if (G_SameTeam(player, &players[i]) == true)
+		{
+			// Don't consider friendlies with your rubberbanding.
+			continue;
+		}
+
 		// First check difficulty levels, then score, then settle it with port priority!
 		if (player->botvars.difficulty < players[i].botvars.difficulty)
 		{
@@ -716,6 +722,12 @@ fixed_t K_BotRubberband(const player_t *player)
 
 		// Don't rubberband to ourselves...
 		if (player == &players[i])
+		{
+			continue;
+		}
+
+		// Don't rubberband to friendlies...
+		if (G_SameTeam(player, &players[i]) == true)
 		{
 			continue;
 		}

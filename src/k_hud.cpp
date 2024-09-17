@@ -2380,7 +2380,7 @@ struct PositionFacesInfo
 	void draw_4p_battle(int x, int y, INT32 flags);
 
 	player_t* top() const { return &players[rankplayer[0]]; }
-	UINT32 top_score() const { return top()->roundscore; }
+	UINT32 top_score() const { return G_TeamOrIndividualScore( top() ); }
 
 	bool near_goal() const
 	{
@@ -2500,7 +2500,7 @@ void PositionFacesInfo::draw_1p()
 		}
 
 		// Draw GOAL
-		bool skull = g_pointlimit && (g_pointlimit <= stplyr->roundscore);
+		bool skull = g_pointlimit && (g_pointlimit <= G_TeamOrIndividualScore(stplyr));
 		INT32 height = i*18;
 		INT32 GOAL_Y = Y-height;
 
@@ -2985,6 +2985,34 @@ INT32 K_GetTransFlagFromFixed(fixed_t value)
         case 0: return 0; // Fully opaque (farthest from 1.0)
         default: return V_90TRANS; // Shouldn't happen, but default to most transparent
     }
+}
+
+static void K_drawKartTeamScores(void)
+{
+	if (G_GametypeHasTeams() == false)
+	{
+		return;
+	}
+
+	for (INT32 i = TEAM_UNASSIGNED+1; i < TEAM__MAX; i++)
+	{
+		INT32 x = BASEVIDWIDTH/2; 
+
+		x += -12 + (24 * (i - 1));
+
+		V_DrawCenteredString(x, 5, g_teaminfo[i].chat_color, va("%d", g_teamscores[i]));
+
+		if (stplyr->team == i)
+		{
+			UINT32 individual_score = stplyr->teamimportance;
+			if (gametyperules & GTR_POINTLIMIT)
+			{
+				individual_score = stplyr->roundscore;
+			}
+
+			V_DrawCenteredString(x, 15, g_teaminfo[i].chat_color, va("+%d", individual_score));
+		}
+	}
 }
 
 static void K_drawKartLaps(void)
@@ -6636,7 +6664,14 @@ void K_drawKartHUD(void)
 						K_drawKartEmeralds();
 				}
 				else if (!islonesome && !K_Cooperative())
+				{
 					K_DrawKartPositionNum(stplyr->position);
+				}
+			}
+
+			if (G_GametypeHasTeams() == true)
+			{
+				K_drawKartTeamScores();
 			}
 
 			if (LUA_HudEnabled(hud_gametypeinfo))

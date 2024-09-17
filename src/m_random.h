@@ -90,6 +90,7 @@ typedef enum
 	PROLDDEMO, // The number of RNG classes in versions that didn't write down how many RNG classes they had in their replays.
 
 	PR_ITEM_SPAWNER = PROLDDEMO, // Battle mode item spawners
+	PR_TEAMS, // Teamplay shuffling
 
 	PRNUMSYNCED,
 

@@ -291,6 +291,13 @@ void G_AddMapToBuffer(UINT16 map);
 
 void G_UpdateVisited(void);
 
+boolean G_SameTeam(const player_t *a, const player_t *b);
+UINT8 G_CountTeam(UINT8 team);
+void G_AssignTeam(player_t *const p, UINT8 new_team);
+void G_AutoAssignTeam(player_t *const p);
+void G_AddTeamScore(UINT8 team, INT32 amount, player_t *source);
+UINT32 G_TeamOrIndividualScore(const player_t *player);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
