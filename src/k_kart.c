@@ -443,6 +443,9 @@ boolean K_IsPlayerLosing(player_t *player)
 // Some behavior should change if the player approaches the frontrunner unusually fast.
 boolean K_IsPlayerScamming(player_t *player)
 {
+	if (!M_NotFreePlay())
+		return false;
+
 	// "Why 8?" Consistency
 	// "Why 2000?" Vibes
 	return (K_GetItemRouletteDistance(player, 8) < 2000);
