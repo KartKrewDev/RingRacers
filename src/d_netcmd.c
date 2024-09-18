@@ -3506,7 +3506,7 @@ static void Got_Spectate(const UINT8 **cp, INT32 playernum)
 	// Safety first!
 	// (not respawning spectators here...)
 	const boolean was_spectator = (player->spectator == true);
-	if (was_spectator == true)
+	if (was_spectator == false)
 	{
 		if (gamestate == GS_LEVEL && player->mo != NULL)
 		{
