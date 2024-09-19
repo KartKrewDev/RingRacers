@@ -2710,6 +2710,7 @@ void V_DrawStringScaled(
 				if (boxed == 0) // Save our position and start no-op drawing
 				{
 					// TODO animate
+					cy -= 2*FRACUNIT;
 					Draw(FixedToFloat(cx), FixedToFloat(cy)-3).patch(gen_button_keyleft[0]);
 					cx += 3*FRACUNIT;
 					ssave = s;
@@ -2729,10 +2730,11 @@ void V_DrawStringScaled(
 					cx = cxsave;
 					boxed = 2;
 				}
-				else // Meeting the ending tag the second time, noop
+				else // Meeting the ending tag the second time, space away and resume standard parsing
 				{
 					boxed = 0;
-					cx += (4)*FRACUNIT;
+					cx += (3)*FRACUNIT;
+					cy += 2*FRACUNIT;
 				}
 
 				break;
@@ -2969,7 +2971,7 @@ void V_DrawStringScaled(
 						if (boxed != 1)
 						{
 							V_DrawFixedPatch(cx + cxoff + patchxofs, cy + cyoff, scale,
-								flags | ((boxed == 2) ? V_20TRANS : 0), font->font[c], colormap);
+								flags | ((boxed == 2) ? V_40TRANS : 0), font->font[c], colormap);
 						}
 
 						cx += cw;
@@ -3063,7 +3065,9 @@ fixed_t V_StringScaledWidth(
 				break;
 			case '\xEE':
 				if (boxed)
-					cx += 2*scale;
+					cx += 3*FRACUNIT;
+				else
+					cx += 3*FRACUNIT;
 				boxed = !boxed;
 				break;
 			default:
