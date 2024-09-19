@@ -257,6 +257,10 @@ patch_t *gen_button_back[2];
 patch_t *gen_button_ls[2];
 patch_t *gen_button_rs[2];
 
+patch_t *gen_button_keyleft[2];
+patch_t *gen_button_keyright[2];
+patch_t *gen_button_keycenter[2];
+
 static void K_LoadButtonGraphics(patch_t *kp[2], int letter)
 {
 	HU_UpdatePatch(&kp[0], "TLB_%c", letter);
@@ -999,10 +1003,17 @@ void K_LoadKartHUDGraphics(void)
 	K_LoadGenericButtonGraphics(gen_button_rt, 'F');
 
 	K_LoadGenericButtonGraphics(gen_button_start, 'G');
-	K_LoadGenericButtonGraphics(gen_button_back, 'G'); // FIXME
+	K_LoadGenericButtonGraphics(gen_button_back, 'V'); // FIXME
 
 	K_LoadGenericButtonGraphics(gen_button_ls, 'T');
 	K_LoadGenericButtonGraphics(gen_button_rs, 'U');
+
+	HU_UpdatePatch(&gen_button_keyleft[0], "TLK_L");
+	HU_UpdatePatch(&gen_button_keyleft[1], "TLK_R");
+	HU_UpdatePatch(&gen_button_keyright[0], "TLK_R");
+	HU_UpdatePatch(&gen_button_keyright[1], "TLK_RB");
+	HU_UpdatePatch(&gen_button_keycenter[0], "TLK_M");
+	HU_UpdatePatch(&gen_button_keycenter[1], "TLK_MB");
 }
 
 // For the item toggle menu
@@ -6498,15 +6509,17 @@ void K_drawKartHUD(void)
 	}	
 
 
-	if (0)
+	if (1)
 	{
 	Draw::TextElement text = Draw::TextElement().parse("\xEELEFTSPACE\xEE\n\xEESPC\xEE \xEETAB\xEE\nA \xEF\xA0 A\nB \xEF\xA1 B\nX \xEF\xA2 X\nY \xEF\xA3 Y\nLB \xEF\xA4 LB\nRB \xEF\xA5 RB\nLT \xEF\xA6 LT\nRT \xEF\xA7 RT\nST \xEF\xA8 ST\nBK \xEF\xA9 BK\nLS \xEF\xAA LS\nRS \xEF\xAB RS\n");
 
+	UINT8 offset = 0;
+
 	player_t *oldstplyr = stplyr;
 	stplyr = &players[0];
-	Draw(160, 5).align((srb2::Draw::Align)0).font(Draw::Font::kMenu).text(text);
+	Draw(160+offset, 5).align((srb2::Draw::Align)1).font(Draw::Font::kThin).text(text);
 	stplyr = &players[1];
-	Draw(55, 5).align((srb2::Draw::Align)0).font(Draw::Font::kThin).text(text);
+	Draw(55+offset, 5).align((srb2::Draw::Align)1).font(Draw::Font::kMenu).text(text);
 	stplyr = oldstplyr;
 	}
 
@@ -6937,11 +6950,11 @@ void K_DrawMarginSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean isS
 		V_DrawFixedPatch((x + width)*FRACUNIT, y*FRACUNIT, FRACUNIT, flags|V_FLIP, stickerEnd, NULL);
 }
 
-INT32 K_DrawGameControl(UINT16 x, UINT16 y, UINT8 player, const char *str, UINT8 alignment)
+INT32 K_DrawGameControl(UINT16 x, UINT16 y, UINT8 player, const char *str, UINT8 alignment, UINT8 font)
 {
 	using srb2::Draw;
 		
-	Draw::TextElement text = Draw::TextElement().as(player).parse(str).font(Draw::Font::kMenu);
+	Draw::TextElement text = Draw::TextElement().as(player).parse(str).font((Draw::Font)font);
 
 	INT32 width = text.width();
 

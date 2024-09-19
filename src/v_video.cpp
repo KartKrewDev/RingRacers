@@ -2592,9 +2592,6 @@ void V_DrawStringScaled(
 	INT32     dupx;
 	INT32     dupy;
 
-	const UINT8 outerbox = 26;
-	const UINT8 innerbox = 16;
-
 	fixed_t  right;
 	fixed_t    bot;
 
@@ -2602,7 +2599,7 @@ void V_DrawStringScaled(
 
 	boolean uppercase;
 	boolean notcolored;
-	boolean boxed;
+	int boxed = 0;
 	boolean descriptive = false;
 
 	boolean   dance;
@@ -2610,6 +2607,9 @@ void V_DrawStringScaled(
 	INT32     dancecounter;
 
 	fixed_t cx, cy;
+	fixed_t cxsave;
+
+	const char *ssave;
 
 	fixed_t cxoff, cyoff;
 	fixed_t cw;
@@ -2696,6 +2696,8 @@ void V_DrawStringScaled(
 		switch (c)
 		{
 			case '\n':
+				if (boxed)
+					continue;
 				cy += fontspec.lfh;
 				if (cy >= bot)
 					return;
@@ -2705,18 +2707,34 @@ void V_DrawStringScaled(
 				descriptive = true;
 				break;
 			case '\xEE':
-				boxed = !boxed;
-				if (boxed) // draw caps
+				if (boxed == 0) // Save our position and start no-op drawing
 				{
-					V_DrawFill((cx)/FRACUNIT-2, (cy)/FRACUNIT-2, (fontspec.right_outline)+2, fontspec.lfh/FRACUNIT, flags|outerbox);
-					V_DrawFill((cx)/FRACUNIT-1, (cy)/FRACUNIT-1, (fontspec.right_outline)+1, fontspec.lfh/FRACUNIT-2, flags|innerbox);
+					// TODO animate
+					Draw(FixedToFloat(cx), FixedToFloat(cy)-3).patch(gen_button_keyleft[0]);
+					cx += 3*FRACUNIT;
+					ssave = s;
+					cxsave = cx;
+					boxed = 1;
 				}
-				else
+				else if (boxed == 1) // Draw box from saved pos to current pos and roll back
 				{
-					cx += 2*scale;
-					//V_DrawFill((cx)/FRACUNIT+(fontspec.right_outline), (cy)/FRACUNIT-2, 2, fontspec.lfh/FRACUNIT, flags|outerbox);
-					//V_DrawFill((cx)/FRACUNIT+(fontspec.right_outline), (cy)/FRACUNIT-1, 1, fontspec.lfh/FRACUNIT-2, flags|innerbox);
+					cx += (fontspec.right_outline)*FRACUNIT;
+					fixed_t working = cxsave - 1*FRACUNIT;
+					// TODO animate
+					Draw(FixedToFloat(working), FixedToFloat(cy)-3)
+						.width(FixedToFloat(cx - working))
+						.stretch(Draw::Stretch::kWidth).patch(gen_button_keycenter[0]);
+					Draw(FixedToFloat(cx), FixedToFloat(cy)-3).patch(gen_button_keyright[0]);
+					s = ssave;
+					cx = cxsave;
+					boxed = 2;
 				}
+				else // Meeting the ending tag the second time, noop
+				{
+					boxed = 0;
+					cx += (4)*FRACUNIT;
+				}
+
 				break;
 			default:
 				if (( c & 0xF0 ) == 0x80)
@@ -2948,14 +2966,12 @@ void V_DrawStringScaled(
 						cw = SHORT (font->font[c]->width) * dupx;
 						cxoff = (*fontspec.dim_fn)(scale, fontspec.chw, hchw, dupx, &cw);
 
-						if (boxed)
+						if (boxed != 1)
 						{
-							V_DrawFill((cx)/FRACUNIT+(fontspec.right_outline), (cy)/FRACUNIT-2, (font->font[c]->width)-(fontspec.right_outline)+2, fontspec.lfh/FRACUNIT, flags|outerbox);
-							V_DrawFill((cx)/FRACUNIT+(fontspec.right_outline), (cy)/FRACUNIT-1, (font->font[c]->width)-(fontspec.right_outline)+1, fontspec.lfh/FRACUNIT-2, flags|innerbox);
+							V_DrawFixedPatch(cx + cxoff + patchxofs, cy + cyoff, scale,
+								flags | ((boxed == 2) ? V_20TRANS : 0), font->font[c], colormap);
 						}
 
-						V_DrawFixedPatch(cx + cxoff + patchxofs, cy + cyoff, scale,
-								flags, font->font[c], colormap);
 						cx += cw;
 					}
 					else

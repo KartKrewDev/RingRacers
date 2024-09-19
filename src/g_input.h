@@ -120,6 +120,7 @@ extern INT32 gamekeydown[MAXDEVICES][NUMINPUTS];
 // several key codes (or virtual key) per game control
 extern INT32 gamecontrol[MAXSPLITSCREENPLAYERS][num_gamecontrols][MAXINPUTMAPPING];
 extern UINT8 gamecontrolflags[MAXSPLITSCREENPLAYERS];
+extern UINT8 showgamepadprompts[MAXSPLITSCREENPLAYERS];
 extern INT32 gamecontroldefault[num_gamecontrols][MAXINPUTMAPPING]; // default control storage
 extern INT32 menucontrolreserved[num_gamecontrols][MAXINPUTMAPPING];
 

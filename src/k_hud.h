@@ -116,6 +116,10 @@ extern patch_t *gen_button_back[2];
 extern patch_t *gen_button_ls[2];
 extern patch_t *gen_button_rs[2];
 
+extern patch_t *gen_button_keyleft[2];
+extern patch_t *gen_button_keyright[2];
+extern patch_t *gen_button_keycenter[2];
+
 extern patch_t *kp_eggnum[6];
 extern patch_t *kp_facenum[MAXPLAYERS+1];
 
@@ -146,7 +150,7 @@ INT32 K_GetMinimapTransFlags(const boolean usingProgressBar);
 INT32 K_GetMinimapSplitFlags(const boolean usingProgressBar);
 position_t K_GetKartObjectPosToMinimapPos(fixed_t objx, fixed_t objy);
 
-INT32 K_DrawGameControl(UINT16 x, UINT16 y, UINT8 player, const char *str, UINT8 alignment);
+INT32 K_DrawGameControl(UINT16 x, UINT16 y, UINT8 player, const char *str, UINT8 alignment, UINT8 font);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -33,6 +33,7 @@ INT32 gamekeydown[MAXDEVICES][NUMINPUTS];
 // two key codes (or virtual key) per game control
 INT32 gamecontrol[MAXSPLITSCREENPLAYERS][num_gamecontrols][MAXINPUTMAPPING];
 UINT8 gamecontrolflags[MAXSPLITSCREENPLAYERS];
+UINT8 showgamepadprompts[MAXSPLITSCREENPLAYERS];
 INT32 gamecontroldefault[num_gamecontrols][MAXINPUTMAPPING]; // default control storage
 INT32 menucontrolreserved[num_gamecontrols][MAXINPUTMAPPING];
 
@@ -1274,9 +1275,12 @@ INT32 G_FindPlayerBindForGameControl(INT32 player, gamecontrols_e control)
 	if (ourProfile == NULL)
 		ourProfile = PR_GetLocalPlayerProfile(0);
 
+#if 0
 	INT32 device = G_GetDeviceForPlayer(player); // TODO: Respond to what device player is CURRENTLY using
 	if (device == -1) // No registered device = you can't possibly be using a gamepad
 		device = KEYBOARD_MOUSE_DEVICE;
+#endif
+	INT32 device = showgamepadprompts[player] ? 1 : KEYBOARD_MOUSE_DEVICE;
 
 	INT32 bestbind = -1; // Bind that matches our input device
 	INT32 anybind = -1; // Bind that doesn't match, but is at least for this control
@@ -1305,6 +1309,8 @@ INT32 G_FindPlayerBindForGameControl(INT32 player, gamecontrols_e control)
 		}
 	}
 
+// DUMBASS. Default controls aren't necessarily in use!
+#if 0
 	// PASS 2: Binds that are in the default controls.
 	if (bestbind == -1)
 	{
@@ -1330,6 +1336,7 @@ INT32 G_FindPlayerBindForGameControl(INT32 player, gamecontrols_e control)
 			}
 		}
 	}
+#endif
 
 	// PASS 3: "Safety" binds that are reserved by the menu system.
 	if (bestbind == -1)

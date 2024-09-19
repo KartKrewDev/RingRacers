@@ -833,8 +833,9 @@ void M_DrawMenuMessage(void)
 		if (standardbuttons)
 		{
 			workx -= K_DrawGameControl(
-				workx+2, worky,
-				0, "<b_animated> <x_animated> ", 2
+				workx+2, worky+2,
+				0, "<b_animated> <x_animated> ",
+				2, 8
 			);
 		}
 		else
@@ -863,8 +864,9 @@ void M_DrawMenuMessage(void)
 		if (standardbuttons)
 		{
 			workx -= K_DrawGameControl(
-				workx+2, worky,
-				0, "<a_animated> ", 2
+				workx+2, worky+2,
+				0, "<a_animated> ",
+				2, 8
 			);
 		}
 		else
@@ -2458,17 +2460,22 @@ void M_DrawCharacterSelect(void)
 
 		if (!optionsmenu.profile) // Does nothing on this screen
 		{
-			x += 22;
+			// x += 22;
 			//K_drawButton((x += 22) * FRACUNIT, (kTop - 3) * FRACUNIT, 0, kp_button_r, M_MenuButtonPressed(pid, MBT_R));
-			x += K_DrawGameControl(x, kTop, 0, "<r>", 0);
-			V_DrawThinString((x), kTop, 0, "Info");
+			// x += K_DrawGameControl(x, kTop, 0, "<r>", 0);
+			// V_DrawThinString((x), kTop, 0, "Info");
+			K_DrawGameControl(BASEVIDWIDTH/2, kTop, 0, "<r> Info   <c> Default", 1, 0);
+		}
+		else
+		{
+			K_DrawGameControl(BASEVIDWIDTH/2, kTop, 0, "<a> Accept  <x> Back  <c> Default", 1, 0);
 		}
 
 		x += 58;
 
 		// K_drawButton((x += 58) * FRACUNIT, (kTop - 1) * FRACUNIT, 0, kp_button_c[1], M_MenuButtonPressed(pid, MBT_C));
-		x += K_DrawGameControl(x, kTop, 0, "<c>", 0);
-		V_DrawThinString((x), kTop, 0, "Default");
+		// x += K_DrawGameControl(x, kTop, 0, "<c>", 0);
+		// V_DrawThinString((x), kTop, 0, "Default");
 	}
 
 	// We have to loop twice -- first time to draw the drop shadows, a second time to draw the icons.
@@ -2577,6 +2584,11 @@ void M_DrawCharacterSelect(void)
 	{
 		// Draw the priority player over the other ones
 		M_DrawCharSelectCursor(priority);
+	}
+
+	if (setup_numplayers > 1)
+	{
+		V_DrawCenteredThinString(BASEVIDWIDTH/2, BASEVIDHEIGHT-12, V_30TRANS, "\x85""Double-input problems?\x80 Close Steam, DS4Windows, and other controller wrappers!");
 	}
 }
 
