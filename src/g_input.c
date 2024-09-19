@@ -1271,27 +1271,19 @@ INT32 G_CheckDoubleUsage(INT32 keynum, INT32 playernum, boolean modify)
 
 INT32 G_FindPlayerBindForGameControl(INT32 player, gamecontrols_e control)
 {
-	UINT8 targetplayer = MAXSPLITSCREENPLAYERS;
-	for (UINT8 i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-	{
-		if (g_localplayers[i] == player)
-			targetplayer = i;
-	}
-
-	if (targetplayer == MAXSPLITSCREENPLAYERS)
-		targetplayer = 0;
-
-	INT32 device = showgamepadprompts[targetplayer] ? 1 : KEYBOARD_MOUSE_DEVICE;
+	INT32 device = showgamepadprompts[player] ? 1 : KEYBOARD_MOUSE_DEVICE;
 
 	INT32 bestbind = -1; // Bind that matches our input device
 	INT32 anybind = -1; // Bind that doesn't match, but is at least for this control
 
 	INT32 bindindex = MAXINPUTMAPPING-1;
 
+	// CONS_Printf("Check bind %d for player %d device %d\n", control, player, device);
+
 	// PASS 1: Binds that are directly in our active control mapping.
 	while (bindindex >= 0) // Prefer earlier binds
 	{
-		INT32 possiblecontrol = gamecontrol[targetplayer][control][bindindex];
+		INT32 possiblecontrol = gamecontrol[player][control][bindindex];
 
 		bindindex--;
 
@@ -1301,11 +1293,13 @@ INT32 G_FindPlayerBindForGameControl(INT32 player, gamecontrols_e control)
 		// if (device is gamepad) == (bound control is in gamepad range) - e.g. if bind matches device
 		if ((device != KEYBOARD_MOUSE_DEVICE) == (possiblecontrol >= KEY_JOY1 && possiblecontrol < JOYINPUTEND))
 		{
+			// CONS_Printf("PASS1 found %s\n", G_KeynumToShortString(possiblecontrol));
 			bestbind = possiblecontrol;
 			anybind = possiblecontrol;
 		}
 		else
 		{
+			// CONS_Printf("PASS1 considering %s\n", G_KeynumToShortString(possiblecontrol));
 			anybind = possiblecontrol;
 		}
 	}
@@ -1326,11 +1320,13 @@ INT32 G_FindPlayerBindForGameControl(INT32 player, gamecontrols_e control)
 
 			if ((device != KEYBOARD_MOUSE_DEVICE) == (possiblecontrol >= KEY_JOY1 && possiblecontrol < JOYINPUTEND))
 			{
+				// CONS_Printf("PASS2 found %s\n", G_KeynumToShortString(possiblecontrol));
 				bestbind = possiblecontrol;
 				anybind = possiblecontrol;
 			}
 			else
 			{
+				// CONS_Printf("PASS2 considering %s\n", G_KeynumToShortString(possiblecontrol));
 				anybind = possiblecontrol;
 			}
 		}

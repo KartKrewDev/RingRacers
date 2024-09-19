@@ -168,12 +168,19 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 			{
 				if (auto id = inputdefinition.find(it->second & (~0xF0)); id != inputdefinition.end()) // This is a game control, do descriptive input translation!
 				{
-					// Grab our local controls
-					UINT8 targetplayer = as_.value_or(stplyr - players); // If not set in the call to parse(), use stplyr's controls
-					if (targetplayer >= MAXPLAYERS)
-						targetplayer = 0;
+					// Grab our local controls  - if pid set in the call to parse(), use stplyr's controls
+					UINT8 localplayer = 0;
+					UINT8 indexedplayer = as_.value_or(stplyr - players);
+					for (UINT8 i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+					{
+						if (g_localplayers[i] == indexedplayer)
+						{
+							localplayer = i;
+							break;
+						}
+					}
 
-					INT32 bind = G_FindPlayerBindForGameControl(targetplayer, id->second);
+					INT32 bind = G_FindPlayerBindForGameControl(localplayer, id->second);
 
 					if (auto pretty = prettyinputs.find(bind); pretty != prettyinputs.end()) // Gamepad direction or keyboard arrow, use something nice-looking
 					{
