@@ -1271,26 +1271,27 @@ INT32 G_CheckDoubleUsage(INT32 keynum, INT32 playernum, boolean modify)
 
 INT32 G_FindPlayerBindForGameControl(INT32 player, gamecontrols_e control)
 {
-	profile_t *ourProfile = PR_GetPlayerProfile(&players[player]);
-	if (ourProfile == NULL)
-		ourProfile = PR_GetLocalPlayerProfile(0);
+	UINT8 targetplayer = MAXSPLITSCREENPLAYERS;
+	for (UINT8 i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		if (g_localplayers[i] == player)
+			targetplayer = i;
+	}
 
-#if 0
-	INT32 device = G_GetDeviceForPlayer(player); // TODO: Respond to what device player is CURRENTLY using
-	if (device == -1) // No registered device = you can't possibly be using a gamepad
-		device = KEYBOARD_MOUSE_DEVICE;
-#endif
-	INT32 device = showgamepadprompts[player] ? 1 : KEYBOARD_MOUSE_DEVICE;
+	if (targetplayer == MAXSPLITSCREENPLAYERS)
+		targetplayer = 0;
+
+	INT32 device = showgamepadprompts[targetplayer] ? 1 : KEYBOARD_MOUSE_DEVICE;
 
 	INT32 bestbind = -1; // Bind that matches our input device
 	INT32 anybind = -1; // Bind that doesn't match, but is at least for this control
 
 	INT32 bindindex = MAXINPUTMAPPING-1;
 
-	// PASS 1: Binds that are directly in our profile control mapping.
+	// PASS 1: Binds that are directly in our active control mapping.
 	while (bindindex >= 0) // Prefer earlier binds
 	{
-		INT32 possiblecontrol = ourProfile->controls[control][bindindex];
+		INT32 possiblecontrol = gamecontrol[targetplayer][control][bindindex];
 
 		bindindex--;
 
@@ -1308,35 +1309,6 @@ INT32 G_FindPlayerBindForGameControl(INT32 player, gamecontrols_e control)
 			anybind = possiblecontrol;
 		}
 	}
-
-// DUMBASS. Default controls aren't necessarily in use!
-#if 0
-	// PASS 2: Binds that are in the default controls.
-	if (bestbind == -1)
-	{
-		bindindex = MAXINPUTMAPPING-1;
-
-		while (bindindex >= 0)
-		{
-			INT32 possiblecontrol = gamecontroldefault[control][bindindex];
-
-			bindindex--;
-
-			if (possiblecontrol == 0)
-				continue;
-
-			if ((device != KEYBOARD_MOUSE_DEVICE) == (possiblecontrol >= KEY_JOY1 && possiblecontrol < JOYINPUTEND))
-			{
-				bestbind = possiblecontrol;
-				anybind = possiblecontrol;
-			}
-			else
-			{
-				anybind = possiblecontrol;
-			}
-		}
-	}
-#endif
 
 	// PASS 3: "Safety" binds that are reserved by the menu system.
 	if (bestbind == -1)
