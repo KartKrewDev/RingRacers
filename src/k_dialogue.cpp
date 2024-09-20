@@ -472,11 +472,35 @@ void Dialogue::Draw(void)
 		.flags(V_VFLIP|V_FLIP)
 		.patch(patchCache["TUTDIAGE"]);
 
+	std::string intertext = "<large>";
+
+	if (Dismissable() && typewriter.text.length() > 0)
+	{
+		if (TextDone())
+		{
+			drawer
+				.xy(-14, -7-5)
+				.patch(patchCache["TUTDIAG2"]);
+		}
+
+		intertext += "  <large>";
+
+		if (Held())
+			intertext += "<z_pressed>";	
+		else if (TextDone())
+			intertext += "<z_animated>";
+		else
+			intertext += "";
+	}
+
+	std::string fulltext = typewriter.text + srb2::Draw::TextElement().parse(intertext).string();
+
 	drawer
 		.xy(10 - BASEVIDWIDTH, -3-32)
 		.font(srb2::Draw::Font::kConsole)
-		.text( typewriter.text.c_str() );
+		.text( fulltext.c_str() );
 
+	/*
 	if (Dismissable())
 	{
 		if (TextDone())
@@ -495,7 +519,6 @@ void Dialogue::Draw(void)
 		else
 			ctrl += "<z>";
 
-		// FIXME: Old animation behavior (bt_translate_press above)
 		std::string parsedctrl = srb2::Draw::TextElement().parse(ctrl).string();
 
 		drawer
@@ -503,6 +526,7 @@ void Dialogue::Draw(void)
 			.font(Draw::Font::kMenu)
 			.text(parsedctrl);
 	}
+	*/
 }
 
 void Dialogue::Dismiss(void)
