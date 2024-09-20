@@ -6496,7 +6496,7 @@ void K_drawKartHUD(void)
 #if 1
 	using srb2::Draw;
 
-	if (1)
+	if (0)
 	{
 	// Draw::TextElement text = Draw::TextElement().parse("A <a> B <b> C <c> X <x> Y <y> Z <z>\nST <start> L <l> R <r> U <up> D <down> L <left> R <right>");
 	Draw::TextElement text = Draw::TextElement().parse("Unpressed <large><a> Pressed <x_pressed> Animated <large><start_animated>");

@@ -486,18 +486,22 @@ void Dialogue::Draw(void)
 				.patch(patchCache["TUTDIAG2"]);
 		}
 
-		auto bt_translate_press = [this]() -> std::optional<bool>
-		{
-			if (Held())
-				return true;
-			if (TextDone())
-				return {};
-			return false;
-		};
+		std::string ctrl = "<large>";
+
+		if (Held())
+			ctrl += "<z_pressed>";	
+		else if (TextDone())
+			ctrl += "<z_animated>";
+		else
+			ctrl += "<z>";
+
+		// FIXME: Old animation behavior (bt_translate_press above)
+		std::string parsedctrl = srb2::Draw::TextElement().parse(ctrl).string();
 
 		drawer
 			.xy(17-14 - BASEVIDWIDTH, -39-16)
-			.button(srb2::Draw::Button::z, bt_translate_press());
+			.font(Draw::Font::kMenu)
+			.text(parsedctrl);
 	}
 }
 

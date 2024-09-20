@@ -2862,11 +2862,16 @@ void V_DrawStringScaled(
 								};
 
 								cw = V_GetButtonCodeWidth(c) * dupx;
+
+								// FIXME do real widths
+								if (largebutton)
+									cw += 3*dupx;
+
 								cxoff = (*fontspec.dim_fn)(scale, fontspec.chw, hchw, dupx, &cw);
 
 								Draw bt = Draw(
 									FixedToFloat(cx + cxoff) - (bt_inst->x * dupx),
-									FixedToFloat(cy + cyoff) - ((bt_inst->y + fontspec.button_yofs) * dupy))
+									FixedToFloat(cy + cyoff) - ((bt_inst->y + fontspec.button_yofs) * dupy) - (largebutton ? 2*dupy : 0))
 									.flags(flags);
 
 								if (largebutton)
@@ -2924,11 +2929,16 @@ void V_DrawStringScaled(
 								};
 
 								cw = V_GetGenericButtonCodeWidth(c) * dupx;
+
+								// FIXME do real widths
+								if (largebutton)
+									cw += 3*dupx;
+
 								cxoff = (*fontspec.dim_fn)(scale, fontspec.chw, hchw, dupx, &cw);
 
 								Draw bt = Draw(
 									FixedToFloat(cx + cxoff) - (bt_inst->x * dupx),
-									FixedToFloat(cy + cyoff) - ((bt_inst->y + fontspec.button_yofs) * dupy))
+									FixedToFloat(cy + cyoff) - ((bt_inst->y + fontspec.button_yofs) * dupy) - (largebutton ? 2*dupy : 0))
 									.flags(flags);
 
 								if (largebutton)
