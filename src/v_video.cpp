@@ -2706,7 +2706,8 @@ void V_DrawStringScaled(
 				cx  =   x;
 				break;
 			case '\xEB':
-				largebutton = true;
+				if (fontno != TINY_FONT)
+					largebutton = true;
 				break;
 			case '\xEF':
 				descriptive = true;
@@ -3055,7 +3056,8 @@ fixed_t V_StringScaledWidth(
 				cx  =   0;
 				break;
 			case '\xEB':
-				largebutton = true;
+				if (fontno != TINY_FONT)
+					largebutton = true;
 			case '\xEF':
 				descriptive = true;
 				break;

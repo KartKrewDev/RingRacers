@@ -191,6 +191,7 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 					else if (auto generic = genericinputs.find(bind); generic != genericinputs.end()) // Non-directional gamepad input, display it to the player as they are
 					{
 						string_.push_back(0xEF); // Control code: "switch to descriptive input mode" - Saturn buttons will draw as generic gamepad buttons
+						string_.push_back(0xEB); // Control code: "large button"
 						string_.push_back((it->second & 0xF0) | generic->second); // original invocation has the animation bits, but the glyph bits come from the table
 					}
 					else
