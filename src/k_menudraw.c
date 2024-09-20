@@ -2464,11 +2464,11 @@ void M_DrawCharacterSelect(void)
 			//K_drawButton((x += 22) * FRACUNIT, (kTop - 3) * FRACUNIT, 0, kp_button_r, M_MenuButtonPressed(pid, MBT_R));
 			// x += K_DrawGameControl(x, kTop, 0, "<r>", 0);
 			// V_DrawThinString((x), kTop, 0, "Info");
-			K_DrawGameControl(BASEVIDWIDTH/2, kTop, 0, "<r> Info   <c> Default", 1, 0);
+			K_DrawGameControl(BASEVIDWIDTH/2, kTop, 0, "<r_animated> Info   <c_animated> Default", 1, 0);
 		}
 		else
 		{
-			K_DrawGameControl(BASEVIDWIDTH/2, kTop, 0, "<a> Accept  <x> Back  <c> Default", 1, 0);
+			K_DrawGameControl(BASEVIDWIDTH/2, kTop, 0, "<a_animated> Accept  <x_animated> Back  <c_animated> Default", 1, 0);
 		}
 
 		x += 58;

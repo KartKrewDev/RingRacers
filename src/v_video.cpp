@@ -2606,6 +2606,8 @@ void V_DrawStringScaled(
 	boolean nodanceoverride;
 	INT32     dancecounter;
 
+	boolean largebutton = false;
+
 	fixed_t cx, cy;
 	fixed_t cxsave;
 
@@ -2703,41 +2705,66 @@ void V_DrawStringScaled(
 					return;
 				cx  =   x;
 				break;
+			case '\xEB':
+				largebutton = true;
+				break;
 			case '\xEF':
 				descriptive = true;
 				break;
 			case '\xEE':
+			case '\xED':
+			case '\xEC':
+			{
+				UINT8 anim_duration = 16;
+				boolean anim = ((I_GetTime() % (anim_duration * 2)) < anim_duration);
+				if (c == '\xEE')
+					anim = false;
+				else if (c == '\xEC')
+					anim = true;
+
+				// For bullshit text outlining reasons, we cannot draw this background character-by-character.
+				// Thinking about doing string manipulation and calling out to V_StringWidth made me drink water.
+				// So instead, we just draw this section of the string twice—invisibly the first time, to measure the width.
+
 				if (boxed == 0) // Save our position and start no-op drawing
 				{
-					// TODO animate
 					cy -= 2*FRACUNIT;
-					Draw(FixedToFloat(cx), FixedToFloat(cy)-3).patch(gen_button_keyleft[0]);
+
+					Draw(FixedToFloat(cx), FixedToFloat(cy)-3).patch(gen_button_keyleft[anim]);
+
 					cx += 3*FRACUNIT;
 					ssave = s;
 					cxsave = cx;
+
 					boxed = 1;
 				}
 				else if (boxed == 1) // Draw box from saved pos to current pos and roll back
 				{
 					cx += (fontspec.right_outline)*FRACUNIT;
 					fixed_t working = cxsave - 1*FRACUNIT;
-					// TODO animate
-					Draw(FixedToFloat(working), FixedToFloat(cy)-3)
-						.width(FixedToFloat(cx - working))
-						.stretch(Draw::Stretch::kWidth).patch(gen_button_keycenter[0]);
-					Draw(FixedToFloat(cx), FixedToFloat(cy)-3).patch(gen_button_keyright[0]);
+
+					Draw(FixedToFloat(working)+1, FixedToFloat(cy)-3)
+						.width(FixedToFloat(cx - working)-1)
+						.stretch(Draw::Stretch::kWidth).patch(gen_button_keycenter[anim]);
+					Draw(FixedToFloat(cx), FixedToFloat(cy)-3).patch(gen_button_keyright[anim]);
+
 					s = ssave;
 					cx = cxsave;
-					boxed = 2;
+
+					// This is a little gross, but this is our way of smuggling text offset to
+					// the standard character drawing case. boxed=3 means we're drawing a pressed button.
+					boxed = 2 + anim;
 				}
 				else // Meeting the ending tag the second time, space away and resume standard parsing
 				{
 					boxed = 0;
+
 					cx += (3)*FRACUNIT;
 					cy += 2*FRACUNIT;
 				}
 
 				break;
+			}
 			default:
 				if (( c & 0xF0 ) == 0x80)
 				{
@@ -2836,13 +2863,21 @@ void V_DrawStringScaled(
 
 								cw = V_GetButtonCodeWidth(c) * dupx;
 								cxoff = (*fontspec.dim_fn)(scale, fontspec.chw, hchw, dupx, &cw);
-								Draw(
+
+								Draw bt = Draw(
 									FixedToFloat(cx + cxoff) - (bt_inst->x * dupx),
 									FixedToFloat(cy + cyoff) - ((bt_inst->y + fontspec.button_yofs) * dupy))
-									.flags(flags)
-									.small_button(bt_inst->type, bt_translate_press());
+									.flags(flags);
+
+								if (largebutton)
+									bt.button(bt_inst->type, bt_translate_press());
+								else
+									bt.small_button(bt_inst->type, bt_translate_press());
+
 								cx += cw;
 							}
+							descriptive = false;
+							largebutton = false;
 							break;
 						}
 						else
@@ -2890,72 +2925,22 @@ void V_DrawStringScaled(
 
 								cw = V_GetGenericButtonCodeWidth(c) * dupx;
 								cxoff = (*fontspec.dim_fn)(scale, fontspec.chw, hchw, dupx, &cw);
-								Draw(
+
+								Draw bt = Draw(
 									FixedToFloat(cx + cxoff) - (bt_inst->x * dupx),
 									FixedToFloat(cy + cyoff) - ((bt_inst->y + fontspec.button_yofs) * dupy))
-									.flags(flags)
-									.generic_small_button(bt_inst->type, bt_translate_press());
+									.flags(flags);
+
+								if (largebutton)
+									bt.generic_button(bt_inst->type, bt_translate_press());
+								else
+									bt.generic_small_button(bt_inst->type, bt_translate_press());
+
 								cx += cw;
 							}
+							descriptive = false;
+							largebutton = false;
 							break;
-						}
-						using srb2::Draw;
-
-						struct BtConf
-						{
-							UINT8 x, y;
-							Draw::Button type;
-						};
-
-						auto bt_inst = [c]() -> std::optional<BtConf>
-						{
-							switch (c & 0x0F)
-							{
-							case 0x00: return {{1, 3, Draw::Button::up}};
-							case 0x01: return {{1, 3, Draw::Button::down}};
-							case 0x02: return {{1, 3, Draw::Button::right}};
-							case 0x03: return {{1, 3, Draw::Button::left}};
-
-							case 0x04: return {{0, 4, Draw::Button::dpad}};
-
-							case 0x07: return {{0, 2, Draw::Button::r}};
-							case 0x08: return {{0, 2, Draw::Button::l}};
-
-							case 0x09: return {{0, 1, Draw::Button::start}};
-
-							case 0x0A: return {{2, 1, Draw::Button::a}};
-							case 0x0B: return {{2, 1, Draw::Button::b}};
-							case 0x0C: return {{2, 1, Draw::Button::c}};
-
-							case 0x0D: return {{2, 1, Draw::Button::x}};
-							case 0x0E: return {{2, 1, Draw::Button::y}};
-							case 0x0F: return {{2, 1, Draw::Button::z}};
-
-							default: return {};
-							}
-						}();
-
-						if (bt_inst)
-						{
-							auto bt_translate_press = [c]() -> std::optional<bool>
-							{
-								switch (c & 0xB0)
-								{
-								default:
-								case 0x90: return true;
-								case 0xA0: return {};
-								case 0xB0: return false;
-								}
-							};
-
-							cw = V_GetButtonCodeWidth(c) * dupx;
-							cxoff = (*fontspec.dim_fn)(scale, fontspec.chw, hchw, dupx, &cw);
-							Draw(
-								FixedToFloat(cx + cxoff) - (bt_inst->x * dupx),
-								FixedToFloat(cy + cyoff) - ((bt_inst->y + fontspec.button_yofs) * dupy))
-								.flags(flags)
-								.small_button(bt_inst->type, bt_translate_press());
-							cx += cw;
 						}
 						break;
 					}
@@ -2970,16 +2955,14 @@ void V_DrawStringScaled(
 
 						if (boxed != 1)
 						{
-							V_DrawFixedPatch(cx + cxoff + patchxofs, cy + cyoff, scale,
-								flags | ((boxed == 2) ? V_40TRANS : 0), font->font[c], colormap);
+							V_DrawFixedPatch(cx + cxoff + patchxofs, cy + cyoff + (boxed == 3 ? 2*FRACUNIT : 0), scale,
+								flags | ((!!boxed) ? V_40TRANS : 0), font->font[c], colormap);
 						}
 
 						cx += cw;
 					}
 					else
 						cx += fontspec.spacew;
-
-					descriptive = false;
 				}
 		}
 	}
@@ -3001,7 +2984,8 @@ fixed_t V_StringScaledWidth(
 
 	boolean uppercase;
 	boolean boxed = false;
-	boolean descriptive = false;;
+	boolean descriptive = false;
+	boolean largebutton = false;
 
 	fixed_t cx;
 	fixed_t right;
@@ -3060,10 +3044,14 @@ fixed_t V_StringScaledWidth(
 			case '\n':
 				cx  =   0;
 				break;
+			case '\xEB':
+				largebutton = true;
 			case '\xEF':
 				descriptive = true;
 				break;
 			case '\xEE':
+			case '\xED':
+			case '\xEC':
 				if (boxed)
 					cx += 3*FRACUNIT;
 				else
@@ -3081,15 +3069,17 @@ fixed_t V_StringScaledWidth(
 						cw = V_GetGenericButtonCodeWidth(c) * dupx;
 						cx += cw * scale;
 						right = cx;
-						break;
 					}
 					else
 					{
 						cw = V_GetButtonCodeWidth(c) * dupx;
 						cx += cw * scale;
 						right = cx;
-						break;
 					}
+
+					largebutton = false;
+					descriptive = false;
+					break;
 				}
 
 				if (uppercase)

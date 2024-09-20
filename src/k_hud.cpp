@@ -1009,7 +1009,7 @@ void K_LoadKartHUDGraphics(void)
 	K_LoadGenericButtonGraphics(gen_button_rs, 'U');
 
 	HU_UpdatePatch(&gen_button_keyleft[0], "TLK_L");
-	HU_UpdatePatch(&gen_button_keyleft[1], "TLK_R");
+	HU_UpdatePatch(&gen_button_keyleft[1], "TLK_LB");
 	HU_UpdatePatch(&gen_button_keyright[0], "TLK_R");
 	HU_UpdatePatch(&gen_button_keyright[1], "TLK_RB");
 	HU_UpdatePatch(&gen_button_keycenter[0], "TLK_M");
@@ -6496,16 +6496,14 @@ void K_drawKartHUD(void)
 #if 1
 	using srb2::Draw;
 
-	if (0)
+	if (1)
 	{
-	Draw::TextElement text = Draw::TextElement().parse("A <a> B <b> C <c> X <x> Y <y> Z <z>\nST <start> L <l> R <r> U <up> D <down> L <left> R <right>");
+	// Draw::TextElement text = Draw::TextElement().parse("A <a> B <b> C <c> X <x> Y <y> Z <z>\nST <start> L <l> R <r> U <up> D <down> L <left> R <right>");
+	Draw::TextElement text = Draw::TextElement().parse("Unpressed <large><a> Pressed <x_pressed> Animated <large><start_animated>");
 	
-	player_t *oldstplyr = stplyr;
-	stplyr = &players[0];
-	Draw(5, 5).align((srb2::Draw::Align)0).font(Draw::Font::kMenu).text(text);
-	stplyr = &players[1];
-	Draw(5, 35).align((srb2::Draw::Align)0).font(Draw::Font::kThin).text(text);
-	stplyr = oldstplyr;
+	UINT8 fakeoff = (stplyr - players)*40;
+	Draw(5, 5+fakeoff).align((srb2::Draw::Align)0).font(Draw::Font::kMenu).text(text);
+	Draw(5, 20+fakeoff).align((srb2::Draw::Align)0).font(Draw::Font::kThin).text(text);
 	}	
 
 
@@ -6514,13 +6512,8 @@ void K_drawKartHUD(void)
 	Draw::TextElement text = Draw::TextElement().parse("\xEELEFTSPACE\xEE\n\xEESPC\xEE \xEETAB\xEE\nA \xEF\xA0 A\nB \xEF\xA1 B\nX \xEF\xA2 X\nY \xEF\xA3 Y\nLB \xEF\xA4 LB\nRB \xEF\xA5 RB\nLT \xEF\xA6 LT\nRT \xEF\xA7 RT\nST \xEF\xA8 ST\nBK \xEF\xA9 BK\nLS \xEF\xAA LS\nRS \xEF\xAB RS\n");
 
 	UINT8 offset = 0;
-
-	player_t *oldstplyr = stplyr;
-	stplyr = &players[0];
 	Draw(160+offset, 5).align((srb2::Draw::Align)1).font(Draw::Font::kThin).text(text);
-	stplyr = &players[1];
 	Draw(55+offset, 5).align((srb2::Draw::Align)1).font(Draw::Font::kMenu).text(text);
-	stplyr = oldstplyr;
 	}
 
 	/*

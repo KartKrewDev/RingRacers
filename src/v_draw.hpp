@@ -218,7 +218,7 @@ public:
 		void button(Button type, std::optional<bool> press = {}) const { button_(type, 0, press); }
 		void small_button(Button type, std::optional<bool> press = {}) const { button_(type, 1, press); }
 
-		void generic_button(Button type, std::optional<bool> press = {}) const { button_(type, 0, press); }
+		void generic_button(GenericButton type, std::optional<bool> press = {}) const { generic_button_(type, 0, press); }
 		void generic_small_button(GenericButton type, std::optional<bool> press = {}) const { generic_button_(type, 1, press); }
 
 		void sticker(patch_t* end_graphic, UINT8 color) const;

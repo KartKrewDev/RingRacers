@@ -61,6 +61,8 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 
 #undef BUTTON
 
+		{"large", 0xEB},
+
 		{"white", 0x80},
 		{"purple", 0x81},
 		{"yellow", 0x82},
@@ -166,7 +168,7 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 			// FIXME: This isn't how v_video.cpp checks for buttons and I don't know why.
 			if (cv_descriptiveinput.value && ((it->second & 0xF0) != 0x80)) // Should we do game control translation?
 			{
-				if (auto id = inputdefinition.find(it->second & (~0xF0)); id != inputdefinition.end()) // This is a game control, do descriptive input translation!
+				if (auto id = inputdefinition.find(it->second & (~0xB0)); id != inputdefinition.end()) // This is a game control, do descriptive input translation!
 				{
 					// Grab our local controls  - if pid set in the call to parse(), use stplyr's controls
 					UINT8 localplayer = 0;
@@ -193,14 +195,22 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 					}
 					else
 					{
-						string_.push_back('\xEE'); // Control code: "toggle boxed drawing"
+						UINT8 fragment = (it->second & 0xB0);
+						UINT8 code = '\xEE'; // Control code: "toggle boxed drawing"
+
+						if (fragment == 0xA0)
+							code = '\xED'; // ... but animated
+						else if (fragment == 0x90)
+							code = '\xEC'; // ... but pressed
+
+						string_.push_back(code);
 
 						if (bind == -1)
 							string_.append("[NOT BOUND]");
 						else
 							string_.append((G_KeynumToShortString(bind)));
 
-						string_.push_back('\xEE');
+						string_.push_back(code);
 					}
 				}
 				else // This is a color code or some other generic glyph, treat it as is.
