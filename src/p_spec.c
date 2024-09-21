@@ -4156,8 +4156,7 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 			{
 				INT32 failureangle = FixedAngle((min(max(abs(args[1]), 0), 360))*FRACUNIT);
 				INT32 failuredelay = abs(args[2]);
-				INT32 failureexectag = args[3];
-				boolean persist = !!(args[4]);
+				boolean persist = !!(args[3]);
 				mobj_t *anchormo;
 
 				anchormo = P_FindObjectTypeFromTag(MT_ANGLEMAN, args[0]);
@@ -4168,7 +4167,6 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 				P_SetTarget(&mo->tracer, anchormo);
 				mo->lastlook = persist; // don't disable behavior after first failure
 				mo->extravalue1 = failureangle; // angle to exceed for failure state
-				mo->extravalue2 = failureexectag; // exec tag for failure state (angle is not within range)
 				mo->cusval = mo->cvmem = failuredelay; // cusval = tics to allow failure before line trigger; cvmem = decrement timer
 			}
 			break;
@@ -4178,7 +4176,7 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 			{
 				mo->eflags &= ~MFE_TRACERANGLE;
 				P_SetTarget(&mo->tracer, NULL);
-				mo->lastlook = mo->cvmem = mo->cusval = mo->extravalue1 = mo->extravalue2 = 0;
+				mo->lastlook = mo->cvmem = mo->cusval = mo->extravalue1 = 0;
 			}
 			break;
 
