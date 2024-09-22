@@ -101,7 +101,10 @@ extern patch_t *kp_button_up[2];
 extern patch_t *kp_button_down[2];
 extern patch_t *kp_button_right[2];
 extern patch_t *kp_button_left[2];
-extern patch_t *kp_button_dpad[2];
+// extern patch_t *kp_button_dpad[2];
+extern patch_t *kp_button_lua1[2];
+extern patch_t *kp_button_lua2[2];
+extern patch_t *kp_button_lua3[2];
 
 extern patch_t *gen_button_a[2][2];
 extern patch_t *gen_button_b[2][2];
@@ -115,6 +118,7 @@ extern patch_t *gen_button_start[2];
 extern patch_t *gen_button_back[2];
 extern patch_t *gen_button_ls[2];
 extern patch_t *gen_button_rs[2];
+extern patch_t *gen_button_dpad[2];
 
 extern patch_t *gen_button_keyleft[2];
 extern patch_t *gen_button_keyright[2];

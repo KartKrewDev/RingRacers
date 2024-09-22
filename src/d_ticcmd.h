@@ -42,8 +42,11 @@ typedef enum
 
 	// Lua garbage, replace with freeslottable buttons some day
 	BT_LUAA			= 1<<13,
+	BT_LUA1			= 1<<13,
 	BT_LUAB			= 1<<14,
+	BT_LUA2			= 1<<14,
 	BT_LUAC			= 1<<15,
+	BT_LUA3			= 1<<15,
 } buttoncode_t;
 
 // The data sampled per tick (single player)

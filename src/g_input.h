@@ -77,9 +77,9 @@ typedef enum
 
 	// special keys
 	gc_abc,
-	gc_luaa,
-	gc_luab,
-	gc_luac,
+	gc_lua1,
+	gc_lua2,
+	gc_lua3,
 	gc_console,
 	gc_talk,
 	gc_teamtalk,

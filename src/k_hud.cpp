@@ -242,7 +242,9 @@ patch_t *kp_button_up[2];
 patch_t *kp_button_down[2];
 patch_t *kp_button_right[2];
 patch_t *kp_button_left[2];
-patch_t *kp_button_dpad[2];
+patch_t *kp_button_lua1[2];
+patch_t *kp_button_lua2[2];
+patch_t *kp_button_lua3[2];
 
 patch_t *gen_button_a[2][2];
 patch_t *gen_button_b[2][2];
@@ -256,6 +258,7 @@ patch_t *gen_button_start[2];
 patch_t *gen_button_back[2];
 patch_t *gen_button_ls[2];
 patch_t *gen_button_rs[2];
+patch_t *gen_button_dpad[2];
 
 patch_t *gen_button_keyleft[2];
 patch_t *gen_button_keyright[2];
@@ -984,7 +987,14 @@ void K_LoadKartHUDGraphics(void)
 	K_LoadButtonGraphics(kp_button_down, 'K');
 	K_LoadButtonGraphics(kp_button_right, 'L');
 	K_LoadButtonGraphics(kp_button_left, 'M');
-	K_LoadButtonGraphics(kp_button_dpad, 'T');
+	// K_LoadButtonGraphics(kp_button_dpad, 'T');
+
+	HU_UpdatePatch(&kp_button_lua1[0], "TLG_L1");
+	HU_UpdatePatch(&kp_button_lua1[1], "TLG_L1B");
+	HU_UpdatePatch(&kp_button_lua2[0], "TLG_L2");
+	HU_UpdatePatch(&kp_button_lua2[1], "TLG_L2B");
+	HU_UpdatePatch(&kp_button_lua3[0], "TLG_L3");
+	HU_UpdatePatch(&kp_button_lua3[1], "TLG_L3B");
 
 	K_LoadGenericButtonGraphics(gen_button_a[0], 'A');
 	K_LoadGenericButtonGraphics(gen_button_b[0], 'B');
@@ -1007,6 +1017,9 @@ void K_LoadKartHUDGraphics(void)
 
 	K_LoadGenericButtonGraphics(gen_button_ls, 'T');
 	K_LoadGenericButtonGraphics(gen_button_rs, 'U');
+
+	HU_UpdatePatch(&gen_button_dpad[0], "TLB_T");
+	HU_UpdatePatch(&gen_button_dpad[1], "TLB_TB");
 
 	HU_UpdatePatch(&gen_button_keyleft[0], "TLK_L");
 	HU_UpdatePatch(&gen_button_keyleft[1], "TLK_LB");
@@ -6496,16 +6509,15 @@ void K_drawKartHUD(void)
 #if 1
 	using srb2::Draw;
 
-	if (0)
+	if (1)
 	{
 	// Draw::TextElement text = Draw::TextElement().parse("A <a> B <b> C <c> X <x> Y <y> Z <z>\nST <start> L <l> R <r> U <up> D <down> L <left> R <right>");
-	Draw::TextElement text = Draw::TextElement().parse("Unpressed <large><a> Pressed <x_pressed> Animated <large><start_animated>");
+	Draw::TextElement text = Draw::TextElement().parse("Unpressed <lua1> Pressed <lua2_pressed> Animated <lua3_animated>");
 	
 	UINT8 fakeoff = (stplyr - players)*40;
 	Draw(5, 5+fakeoff).align((srb2::Draw::Align)0).font(Draw::Font::kMenu).text(text);
 	Draw(5, 20+fakeoff).align((srb2::Draw::Align)0).font(Draw::Font::kThin).text(text);
 	}	
-
 
 	if (0)
 	{

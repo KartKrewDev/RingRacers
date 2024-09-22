@@ -78,7 +78,9 @@ public:
 		down,
 		right,
 		left,
-		dpad,
+		lua1,
+		lua2,
+		lua3,
 	};
 
 	enum class GenericButton
@@ -94,7 +96,8 @@ public:
 		start,
 		back,
 		ls,
-		rs
+		rs,
+		dpad
 	};
 
 	class TextElement

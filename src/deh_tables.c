@@ -5003,6 +5003,9 @@ struct int_const_s const INT_CONST[] = {
 	{"BT_LUAA",BT_LUAA}, // Lua customizable
 	{"BT_LUAB",BT_LUAB}, // Lua customizable
 	{"BT_LUAC",BT_LUAC}, // Lua customizable
+	{"BT_LUA1",BT_LUA1}, // Lua customizable
+	{"BT_LUA2",BT_LUA2}, // Lua customizable
+	{"BT_LUA3",BT_LUA3}, // Lua customizable
 
 	// Lua command registration flags
 	{"COM_ADMIN",COM_ADMIN},

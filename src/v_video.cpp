@@ -2516,8 +2516,10 @@ static UINT8 V_GetButtonCodeWidth(UINT8 c, boolean largebutton)
 		break;
 
 	case 0x04:
-		// dpad
-		x = 14;
+	case 0x05:
+	case 0x06:
+		// lua
+		x = 16;
 		break;
 
 	case 0x0A:
@@ -2570,6 +2572,11 @@ static UINT8 V_GetGenericButtonCodeWidth(UINT8 c, boolean largebutton)
 	case 0x0B:
 		// stick click
 		x = 18;
+		break;
+
+	case 0x0C:
+		// dpad
+		x = 14;
 		break;
 	}
 
@@ -2830,7 +2837,9 @@ void V_DrawStringScaled(
 								case 0x02: return {{0, 3, Draw::Button::right}};
 								case 0x03: return {{0, 3, Draw::Button::left}};
 
-								case 0x04: return {{0, 4, Draw::Button::dpad}};
+								case 0x04: return {{0, 4, Draw::Button::lua1}};
+								case 0x05: return {{0, 4, Draw::Button::lua2}};
+								case 0x06: return {{0, 4, Draw::Button::lua3}};
 
 								case 0x07: return {{0, 2, Draw::Button::r}};
 								case 0x08: return {{0, 2, Draw::Button::l}};
@@ -2908,6 +2917,7 @@ void V_DrawStringScaled(
 								case 0x09: return {{1, 6, Draw::GenericButton::back}};
 								case 0x0A: return {{0, 5, Draw::GenericButton::ls}};
 								case 0x0B: return {{0, 5, Draw::GenericButton::rs}};
+								case 0x0C: return {{0, 4, Draw::GenericButton::dpad}};
 								default: return {};
 								}
 							}();

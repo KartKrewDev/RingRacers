@@ -45,7 +45,9 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 		BUTTON("right", 0x02),
 		BUTTON("left", 0x03),
 
-		BUTTON("dpad", 0x04),
+		BUTTON("lua1", 0x04),
+		BUTTON("lua2", 0x05),
+		BUTTON("lua3", 0x06),
 
 		BUTTON("r", 0x07),
 		BUTTON("l", 0x08),
@@ -91,6 +93,10 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 		{0x01, gc_down},
 		{0x02, gc_right},
 		{0x03, gc_left},
+
+		{0x04, gc_lua1},
+		{0x05, gc_lua2},
+		{0x06, gc_lua3},
 
 		{0x07, gc_r},
 		{0x08, gc_l},
@@ -167,9 +173,24 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 
 		string_view code = raw.substr(1, p - 1);
 
-		if (auto it = translation.find(code); it != translation.end())
+		if (code == "dpad" || code == "dpad_pressed" || code == "dpad_animated")
 		{
-			// FIXME: This isn't how v_video.cpp checks for buttons and I don't know why.
+			// SPECIAL: Generic button that we invoke explicitly, not via gamecontrol reference.
+			// If we ever add anything else to this category, I promise I will create a real abstraction,
+			// but for now, just hardcode the character replacements and pray for forgiveness.
+			
+			string_.push_back(0xEF); // Control code: "switch to descriptive input mode"
+			string_.push_back(0xEB); // Control code: "large button"
+			if (code == "dpad")
+				string_.push_back(0xBC);
+			else if (code == "dpad_pressed")
+				string_.push_back(0x9C);
+			else
+				string_.push_back(0xAC);
+		}
+		else if (auto it = translation.find(code); it != translation.end()) // This represents a gamecontrol, turn into Saturn button or generic button.
+		{
+			// This isn't how v_video.cpp checks for buttons and I don't know why.
 			if (cv_descriptiveinput.value && ((it->second & 0xF0) != 0x80)) // Should we do game control translation?
 			{
 				if (auto id = inputdefinition.find(it->second & (~0xB0)); id != inputdefinition.end()) // This is a game control, do descriptive input translation!
@@ -211,7 +232,7 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 						string_.push_back(code);
 
 						if (bind == -1)
-							string_.append("[NOT BOUND]");
+							string_.append("N/A");
 						else
 							string_.append((G_KeynumToShortString(bind)));
 
@@ -316,7 +337,9 @@ patch_t** get_button_patch(Draw::Button type, int ver)
 	X(down);
 	X(right);
 	X(left);
-	X(dpad);
+	X(lua1);
+	X(lua2);
+	X(lua3);
 
 #undef X
 	}
@@ -360,6 +383,7 @@ patch_t** get_button_patch(Draw::GenericButton type, int ver)
 	X(back);
 	X(ls);
 	X(rs);
+	X(dpad);
 
 #undef X
 	}

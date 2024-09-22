@@ -81,14 +81,14 @@ menuitem_t OPTIONS_ProfileControls[] = {
 	{IT_CONTROL, "OPEN TEAM CHAT", "Opens team-only full chat for online games.",
 		NULL, {.routine = M_ProfileSetControl}, gc_teamtalk, 0},
 
-	{IT_CONTROL, "LUA/A", "May be used by add-ons.",
-		NULL, {.routine = M_ProfileSetControl}, gc_luaa, 0},
+	{IT_CONTROL, "LUA/1", "May be used by add-ons.",
+		NULL, {.routine = M_ProfileSetControl}, gc_lua1, 0},
 
-	{IT_CONTROL, "LUA/B", "May be used by add-ons.",
-		NULL, {.routine = M_ProfileSetControl}, gc_luab, 0},
+	{IT_CONTROL, "LUA/2", "May be used by add-ons.",
+		NULL, {.routine = M_ProfileSetControl}, gc_lua2, 0},
 
-	{IT_CONTROL, "LUA/C", "May be used by add-ons.",
-		NULL, {.routine = M_ProfileSetControl}, gc_luac, 0},
+	{IT_CONTROL, "LUA/3", "May be used by add-ons.",
+		NULL, {.routine = M_ProfileSetControl}, gc_lua3, 0},
 
 	{IT_CONTROL, "OPEN CONSOLE", "Opens the developer options console.",
 		NULL, {.routine = M_ProfileSetControl}, gc_console, 0},

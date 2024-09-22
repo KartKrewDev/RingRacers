@@ -408,9 +408,9 @@ class TiccmdBuilder
 		map(gc_vote, BT_VOTE); // mp general function button
 
 		// lua buttons a thru c
-		map(gc_luaa, BT_LUAA);
-		map(gc_luab, BT_LUAB);
-		map(gc_luac, BT_LUAC);
+		map(gc_lua1, BT_LUA1);
+		map(gc_lua2, BT_LUA2);
+		map(gc_lua3, BT_LUA3);
 	}
 
 public:
