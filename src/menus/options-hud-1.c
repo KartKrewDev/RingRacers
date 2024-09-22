@@ -39,7 +39,7 @@ menuitem_t OPTIONS_HUD[] =
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Use Button Names", "Show button/key names in help text? When off, show Saturn buttons.",
+	{IT_STRING | IT_CVAR, "Use Button Names", "Choose which controller prompts to show. \"Emulator\" = ignore your mapped controls.",
 		NULL, {.cvar = &cv_descriptiveinput}, 0, 0},
 
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
