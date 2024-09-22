@@ -6506,10 +6506,10 @@ void K_drawKartHUD(void)
 	}
 
 	// In case of font debugging break glass
-#if 1
+#if 0
 	using srb2::Draw;
 
-	if (1)
+	if (0)
 	{
 	// Draw::TextElement text = Draw::TextElement().parse("A <a> B <b> C <c> X <x> Y <y> Z <z>\nST <start> L <l> R <r> U <up> D <down> L <left> R <right>");
 	Draw::TextElement text = Draw::TextElement().parse("Unpressed <lua1> Pressed <lua2_pressed> Animated <lua3_animated>");
@@ -6536,21 +6536,6 @@ void K_drawKartHUD(void)
 	Draw(160+offset, 5).align((srb2::Draw::Align)1).font(Draw::Font::kThin).text(text);
 	Draw(55+offset, 5).align((srb2::Draw::Align)1).font(Draw::Font::kMenu).text(text);
 	}
-
-
-	/*
-	stplyr = &players[2];
-	Draw(5, 25).align((srb2::Draw::Align)0).font(Draw::Font::kConsole).text(text);
-	stplyr = &players[3];
-	Draw(5, 35).align((srb2::Draw::Align)0).font(Draw::Font::kMedium).text(text);
-	stplyr = &players[0];
-	Draw(5, 45).align((srb2::Draw::Align)0).font(Draw::Font::kGamemode).text(text);
-	Draw(5, 75).align((srb2::Draw::Align)0).font(Draw::Font::kFreeplay).text(text);
-	Draw(5, 95).align((srb2::Draw::Align)0).font(Draw::Font::kPing).text(text);
-	Draw(5, 105).align((srb2::Draw::Align)0).font(Draw::Font::kThinTimer).text(text);
-	Draw(5, 115).align((srb2::Draw::Align)0).font(Draw::Font::kTimer).text(text);
-	Draw(5, 145).align((srb2::Draw::Align)0).font(Draw::Font::kZVote).text(text);
-	*/
 #endif
 
 
