@@ -143,6 +143,45 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 		{KEY_JOY1+8, 0x0B},
 	};
 
+	// Saturn Type 1 - Retrobit Wired Dinput, RB RT LB LT
+	static const std::unordered_map<INT32, char> saturntype1 = {
+		{KEY_JOY1+0, 0x0A}, // ABXY
+		{KEY_JOY1+1, 0x0B},
+		{KEY_JOY1+2, 0x0D},
+		{KEY_JOY1+3, 0x0E},
+		{KEY_JOY1+9, 0x08}, // LBRB
+		{KEY_JOY1+10, 0x0C},
+		{KEY_AXIS1+8, 0x07}, // LTRT
+		{KEY_AXIS1+9, 0x0F},
+		{KEY_JOY1+6, 0x09}, // NAV
+	};
+
+	// Saturn Type 2 - Retrobit Wireless Dinput, LB RB LT RT
+	static const std::unordered_map<INT32, char> saturntype2 = {
+		{KEY_JOY1+0, 0x0A}, // ABXY
+		{KEY_JOY1+1, 0x0B},
+		{KEY_JOY1+2, 0x0D},
+		{KEY_JOY1+3, 0x0E},
+		{KEY_JOY1+9, 0x0C}, // LBRB
+		{KEY_JOY1+10, 0x0F},
+		{KEY_AXIS1+8, 0x08}, // LTRT
+		{KEY_AXIS1+9, 0x07},
+		{KEY_JOY1+6, 0x09}, // NAV
+	};
+
+	// Saturn Type 3 - Retrobit Wireless Xinput, RT LT LB RB
+	static const std::unordered_map<INT32, char> saturntype3 = {
+		{KEY_JOY1+0, 0x0A}, // ABXY
+		{KEY_JOY1+1, 0x0B},
+		{KEY_JOY1+2, 0x0D},
+		{KEY_JOY1+3, 0x0E},
+		{KEY_JOY1+9, 0x08}, // LBRB
+		{KEY_JOY1+10, 0x07},
+		{KEY_AXIS1+8, 0x0F}, // LTRT
+		{KEY_AXIS1+9, 0x0C},
+		{KEY_JOY1+6, 0x09}, // NAV
+	};
+
 	string_.clear();
 	string_.reserve(raw.size());
 
@@ -209,9 +248,29 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 
 					INT32 bind = G_FindPlayerBindForGameControl(localplayer, id->second);
 
+					// EXTRA: descriptiveinput values above 1 translate binds back to Saturn buttons,
+					// with various modes for various fucked up 6bt pads
+					std::unordered_map<INT32, char> saturnconfig = {};
+					switch (cv_descriptiveinput.value)
+					{
+						case 2:
+							saturnconfig = saturntype1;
+							break;
+						case 3:
+							saturnconfig = saturntype2;
+							break;
+						case 4:
+							saturnconfig = saturntype3;
+							break;
+					}
+
 					if (auto pretty = prettyinputs.find(bind); pretty != prettyinputs.end()) // Gamepad direction or keyboard arrow, use something nice-looking
 					{
 						string_.push_back((it->second & 0xF0) | pretty->second); // original invocation has the animation bits, but the glyph bits come from the table
+					}
+					else if (auto st = saturnconfig.find(bind); st != saturnconfig.end())
+					{
+						string_.push_back((it->second & 0xF0) | st->second); // original invocation has the animation bits, but the glyph bits come from the table
 					}
 					else if (auto generic = genericinputs.find(bind); generic != genericinputs.end()) // Non-directional gamepad input, display it to the player as they are
 					{

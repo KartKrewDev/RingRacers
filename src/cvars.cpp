@@ -334,7 +334,15 @@ consvar_t cv_soundvolume = Player("soundvolume", "80").min_max(0, 100);
 	consvar_t cv_discordstreamer = Player("discordstreamer", "Off").on_off();
 #endif
 
-consvar_t cv_descriptiveinput = Player("descriptiveinput", "Yes").yes_no(); // Display bound controls instead of Saturn buttons
+consvar_t cv_descriptiveinput = Player("descriptiveinput", "Modern")
+	.values({
+		{0, "Emulator"}, 
+		{1, "Modern"}, 
+		{2, "6Bt. (LB LT)"},
+		{3, "6Bt. (LT RT)"},
+		{4, "6bt. (LB RB)"},
+	}
+); // Display bound controls instead of Saturn buttons
 
 consvar_t cv_drawdist = Player("drawdist", "Normal").values({
 	{3072,  "Shortest"},
