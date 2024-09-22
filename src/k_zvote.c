@@ -1103,12 +1103,19 @@ void K_DrawMidVote(void)
 			V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN,
 			exc, NULL
 		);
+		K_DrawGameControl(
+			x - 4, y + exc->height - 12,
+			id, pressed ? "<z_pressed>" : "<z>",
+			0, 8, V_SNAPTOBOTTOM|V_SNAPTORIGHT
+		);
+		/*
 		K_drawButton(
 			x - (4 * FRACUNIT),
 			y + ((exc->height - kp_button_z[1][0]->height) * FRACUNIT),
 			V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN,
 			kp_button_z[1], pressed
 		);
+		*/
 	}
 	else
 	{
@@ -1219,12 +1226,19 @@ void K_DrawMidVote(void)
 
 		if (drawButton == true)
 		{
+			K_DrawGameControl(
+				x-20, y-2, id,
+				pressed ? "<z_pressed>" : "<z>",
+				0, 8, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN
+			);
+			/*
 			K_drawButton(
 				x - (20 * FRACUNIT),
 				y - (2 * FRACUNIT),
 				V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN,
 				kp_button_z[0], pressed
 			);
+			*/
 		}
 
 		// Vote count

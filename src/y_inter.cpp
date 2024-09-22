@@ -56,6 +56,8 @@
 #include "m_easing.h"
 #include "music.h"
 
+#include "v_draw.hpp"
+
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
 #endif
@@ -1474,6 +1476,13 @@ void Y_DrawIntermissionButton(INT32 startslide, INT32 through, boolean widescree
 			);
 		}
 
+		using srb2::Draw;
+
+		Draw::TextElement text = Draw::TextElement().parse(pressed ? "<a_pressed>" : "<a>");
+		Draw draw = Draw(FixedToFloat(2*FRACUNIT - offset), FixedToFloat((BASEVIDHEIGHT - 16)*FRACUNIT)).flags(widescreen ? (V_SNAPTOLEFT|V_SNAPTOBOTTOM) : 0);
+		draw.text(text.string());
+
+		/*
 		K_drawButton(
 			2*FRACUNIT - offset,
 			(BASEVIDHEIGHT - 16)*FRACUNIT,
@@ -1484,6 +1493,7 @@ void Y_DrawIntermissionButton(INT32 startslide, INT32 through, boolean widescree
 			kp_button_a[1],
 			pressed
 		);
+		*/
 	}
 }
 
