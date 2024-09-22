@@ -2613,6 +2613,8 @@ void V_DrawStringScaled(
 	boolean nodanceoverride;
 	INT32     dancecounter;
 
+	INT32 boxedflags = ((flags) & (~V_HUDTRANS)) | (V_40TRANS);
+
 	boolean largebutton = false;
 
 	fixed_t cx, cy;
@@ -2738,7 +2740,7 @@ void V_DrawStringScaled(
 				{
 					cy -= 2*FRACUNIT;
 
-					Draw(FixedToFloat(cx), FixedToFloat(cy)-3).patch(gen_button_keyleft[anim]);
+					Draw(FixedToFloat(cx), FixedToFloat(cy)-3).flags(flags).patch(gen_button_keyleft[anim]);
 
 					cx += 3*FRACUNIT;
 					ssave = s;
@@ -2753,8 +2755,9 @@ void V_DrawStringScaled(
 
 					Draw(FixedToFloat(working)+1, FixedToFloat(cy)-3)
 						.width(FixedToFloat(cx - working)-1)
+						.flags(flags)
 						.stretch(Draw::Stretch::kWidth).patch(gen_button_keycenter[anim]);
-					Draw(FixedToFloat(cx), FixedToFloat(cy)-3).patch(gen_button_keyright[anim]);
+					Draw(FixedToFloat(cx), FixedToFloat(cy)-3).flags(flags).patch(gen_button_keyright[anim]);
 
 					s = ssave;
 					cx = cxsave;
@@ -2969,7 +2972,7 @@ void V_DrawStringScaled(
 						if (boxed != 1)
 						{
 							V_DrawFixedPatch(cx + cxoff + patchxofs, cy + cyoff + (boxed == 3 ? 2*FRACUNIT : 0), scale,
-								flags | ((!!boxed) ? V_40TRANS : 0), font->font[c], colormap);
+								boxed ? boxedflags : flags, font->font[c], boxed ? 0 : colormap);
 						}
 
 						cx += cw;

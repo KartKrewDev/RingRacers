@@ -6512,7 +6512,7 @@ void K_drawKartHUD(void)
 	if (0)
 	{
 	// Draw::TextElement text = Draw::TextElement().parse("A <a> B <b> C <c> X <x> Y <y> Z <z>\nST <start> L <l> R <r> U <up> D <down> L <left> R <right>");
-	Draw::TextElement text = Draw::TextElement().parse("Unpressed <lua1> Pressed <lua2_pressed> Animated <lua3_animated>");
+	Draw::TextElement text = Draw::TextElement().parse("Unpressed <y> Pressed <y_pressed> Animated <y_animated>");
 	
 	UINT8 fakeoff = (stplyr - players)*40;
 	Draw(5, 5+fakeoff).align((srb2::Draw::Align)0).font(Draw::Font::kMenu).text(text);
