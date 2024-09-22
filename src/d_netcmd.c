@@ -3480,10 +3480,18 @@ void P_SetPlayerSpectator(INT32 playernum)
 static void Got_Spectate(const UINT8 **cp, INT32 playernum)
 {
 	UINT8 edit_player = READUINT8(*cp);
+	UINT8 desired_state = READUINT8(*cp);
 
-	if (playernum != serverplayer && IsPlayerAdmin(playernum) == false)
+	if (playeringame[edit_player] == false)
 	{
-		CONS_Alert(CONS_WARNING, M_GetText("Illegal team change received from player %s\n"), player_names[playernum]);
+		return;
+	}
+
+	if (playernum != playerconsole[edit_player]
+	&& playernum != serverplayer
+	&& IsPlayerAdmin(playernum) == false)
+	{
+		CONS_Alert(CONS_WARNING, M_GetText("Illegal spectate command received from player %s\n"), player_names[playernum]);
 		if (server)
 		{
 			SendKick(playernum, KICK_MSG_CON_FAIL);
@@ -3497,14 +3505,8 @@ static void Got_Spectate(const UINT8 **cp, INT32 playernum)
 	}
 
 	player_t *const player = &players[edit_player];
-	if (player->spectator == true && (player->pflags & PF_WANTSTOJOIN) == 0)
-	{
-		// No change would occur.
-		return;
-	}
 
 	// Safety first!
-	// (not respawning spectators here...)
 	const boolean was_spectator = (player->spectator == true);
 	if (was_spectator == false)
 	{
@@ -3519,7 +3521,14 @@ static void Got_Spectate(const UINT8 **cp, INT32 playernum)
 		HU_AddChatText(va("\x82*%s became a spectator.", player_names[edit_player]), false);
 	}
 
-	player->pflags &= ~PF_WANTSTOJOIN;
+	if (desired_state != 0)
+	{
+		player->pflags |= PF_WANTSTOJOIN;
+	}
+	else
+	{
+		player->pflags &= ~PF_WANTSTOJOIN;
+	}
 
 	if (gamestate != GS_LEVEL || was_spectator == true)
 	{

@@ -4866,10 +4866,11 @@ void P_CheckRaceGriefing(player_t *player, boolean dopunishment)
 			else
 			{
 				// Send spectate
-				UINT8 buf[1];
+				UINT8 buf[2];
 				UINT8 *p = buf;
 
 				WRITEUINT8(p, n);
+				WRITEUINT8(p, 0);
 
 				SendNetXCmd(XD_SPECTATE, &buf, p - buf);
 			}
