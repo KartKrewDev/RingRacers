@@ -1227,7 +1227,7 @@ void K_DrawMidVote(void)
 		if (drawButton == true)
 		{
 			K_DrawGameControl(
-				x-20, y-2, id,
+				x/FRACUNIT-20, y/FRACUNIT-2, id,
 				pressed ? "<z_pressed>" : "<z>",
 				0, 8, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN
 			);
