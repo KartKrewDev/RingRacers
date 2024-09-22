@@ -492,34 +492,6 @@ void Dialogue::Draw(void)
 
 		drawer.xy(-18 + 4 - 5, -7-8 - 14).align(Draw::Align::kCenter).font(Draw::Font::kMenu).text(srb2::Draw::TextElement().parse(intertext).string());
 	}
-
-	/*
-	if (Dismissable())
-	{
-		if (TextDone())
-		{
-			drawer
-				.xy(-14, -7-5)
-				.patch(patchCache["TUTDIAG2"]);
-		}
-
-		std::string ctrl = "<large>";
-
-		if (Held())
-			ctrl += "<z_pressed>";	
-		else if (TextDone())
-			ctrl += "<z_animated>";
-		else
-			ctrl += "<z>";
-
-		std::string parsedctrl = srb2::Draw::TextElement().parse(ctrl).string();
-
-		drawer
-			.xy(17-14 - BASEVIDWIDTH, -39-16)
-			.font(Draw::Font::kMenu)
-			.text(parsedctrl);
-	}
-	*/
 }
 
 void Dialogue::Dismiss(void)

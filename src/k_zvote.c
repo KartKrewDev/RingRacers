@@ -1104,7 +1104,7 @@ void K_DrawMidVote(void)
 			exc, NULL
 		);
 		K_DrawGameControl(
-			x - 4, y + exc->height - 12,
+			x/FRACUNIT - 4, y/FRACUNIT + exc->height/FRACUNIT - 12,
 			id, pressed ? "<z_pressed>" : "<z>",
 			0, 8, V_SNAPTOBOTTOM|V_SNAPTORIGHT
 		);
