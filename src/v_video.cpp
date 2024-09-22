@@ -2877,7 +2877,7 @@ void V_DrawStringScaled(
 
 								Draw bt = Draw(
 									FixedToFloat(cx + cxoff) - (bt_inst->x * dupx),
-									FixedToFloat(cy + cyoff) - ((bt_inst->y + fontspec.button_yofs) * dupy) - (largebutton ? 0*dupy : 0))
+									FixedToFloat(cy + cyoff) - ((bt_inst->y + fontspec.button_yofs) * dupy))
 									.flags(flags);
 
 								if (largebutton)
@@ -2941,7 +2941,7 @@ void V_DrawStringScaled(
 
 								Draw bt = Draw(
 									FixedToFloat(cx + cxoff) - (bt_inst->x * dupx),
-									FixedToFloat(cy + cyoff) - ((bt_inst->y + fontspec.button_yofs) * dupy) - (largebutton ? 0*dupy : 0))
+									FixedToFloat(cy + cyoff) - ((bt_inst->y + fontspec.button_yofs) * dupy))
 									.flags(flags);
 
 								if (largebutton)
