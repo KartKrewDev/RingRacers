@@ -2494,7 +2494,7 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 	}
 }
 
-static UINT8 V_GetButtonCodeWidth(UINT8 c)
+static UINT8 V_GetButtonCodeWidth(UINT8 c, boolean largebutton)
 {
 	UINT8 x = 0;
 
@@ -2527,14 +2527,14 @@ static UINT8 V_GetButtonCodeWidth(UINT8 c)
 	case 0x0E:
 	case 0x0F:
 		// faces
-		x = 10;
+		x = largebutton ? 13 : 10;
 		break;
 	}
 
 	return x;
 }
 
-static UINT8 V_GetGenericButtonCodeWidth(UINT8 c)
+static UINT8 V_GetGenericButtonCodeWidth(UINT8 c, boolean largebutton)
 {
 	UINT8 x = 0;
 
@@ -2545,7 +2545,7 @@ static UINT8 V_GetGenericButtonCodeWidth(UINT8 c)
 	case 0x02:
 	case 0x03:
 		// buttons
-		x = 14;
+		x = largebutton ? 17 : 14;
 		break;
 
 	case 0x04:
@@ -2563,7 +2563,7 @@ static UINT8 V_GetGenericButtonCodeWidth(UINT8 c)
 	case 0x08:
 	case 0x09:
 		// nav
-		x = 16;
+		x = 14;
 		break;
 
 	case 0x0A:
@@ -2706,7 +2706,7 @@ void V_DrawStringScaled(
 				cx  =   x;
 				break;
 			case '\xEB':
-				if (fontno != TINY_FONT)
+				if (fontno != TINY_FONT && fontno != HU_FONT)
 					largebutton = true;
 				break;
 			case '\xEF':
@@ -2862,17 +2862,13 @@ void V_DrawStringScaled(
 									}
 								};
 
-								cw = V_GetButtonCodeWidth(c) * dupx;
-
-								// FIXME do real widths
-								if (largebutton)
-									cw += 3*dupx;
+								cw = V_GetButtonCodeWidth(c, largebutton) * dupx;
 
 								cxoff = (*fontspec.dim_fn)(scale, fontspec.chw, hchw, dupx, &cw);
 
 								Draw bt = Draw(
 									FixedToFloat(cx + cxoff) - (bt_inst->x * dupx),
-									FixedToFloat(cy + cyoff) - ((bt_inst->y + fontspec.button_yofs) * dupy) - (largebutton ? 2*dupy : 0))
+									FixedToFloat(cy + cyoff) - ((bt_inst->y + fontspec.button_yofs) * dupy) - (largebutton ? 0*dupy : 0))
 									.flags(flags);
 
 								if (largebutton)
@@ -2929,17 +2925,13 @@ void V_DrawStringScaled(
 									}
 								};
 
-								cw = V_GetGenericButtonCodeWidth(c) * dupx;
-
-								// FIXME do real widths
-								if (largebutton)
-									cw += 3*dupx;
+								cw = V_GetGenericButtonCodeWidth(c, largebutton) * dupx;
 
 								cxoff = (*fontspec.dim_fn)(scale, fontspec.chw, hchw, dupx, &cw);
 
 								Draw bt = Draw(
 									FixedToFloat(cx + cxoff) - (bt_inst->x * dupx),
-									FixedToFloat(cy + cyoff) - ((bt_inst->y + fontspec.button_yofs) * dupy) - (largebutton ? 2*dupy : 0))
+									FixedToFloat(cy + cyoff) - ((bt_inst->y + fontspec.button_yofs) * dupy) - (largebutton ? 0*dupy : 0))
 									.flags(flags);
 
 								if (largebutton)
@@ -3056,7 +3048,7 @@ fixed_t V_StringScaledWidth(
 				cx  =   0;
 				break;
 			case '\xEB':
-				if (fontno != TINY_FONT)
+				if (fontno != TINY_FONT && fontno != HU_FONT)
 					largebutton = true;
 			case '\xEF':
 				descriptive = true;
@@ -3078,13 +3070,13 @@ fixed_t V_StringScaledWidth(
 				{
 					if (descriptive)
 					{
-						cw = V_GetGenericButtonCodeWidth(c) * dupx;
+						cw = V_GetGenericButtonCodeWidth(c, largebutton) * dupx;
 						cx += cw * scale;
 						right = cx;
 					}
 					else
 					{
-						cw = V_GetButtonCodeWidth(c) * dupx;
+						cw = V_GetButtonCodeWidth(c, largebutton) * dupx;
 						cx += cw * scale;
 						right = cx;
 					}
@@ -3152,6 +3144,9 @@ char * V_ScaledWordWrap(
 	font_t   *font;
 
 	boolean uppercase;
+	boolean largebutton = false;
+	boolean descriptive = false;
+	boolean boxed = false;
 
 	fixed_t cx;
 	fixed_t right;
@@ -3223,14 +3218,36 @@ char * V_ScaledWordWrap(
 				cxatstart = 0;
 				startwriter = 0;
 				break;
+			case '\xEB':
+				if (fontno != TINY_FONT && fontno != HU_FONT)
+					largebutton = true;
+			case '\xEF':
+				descriptive = true;
+				break;
+			case '\xEE':
+			case '\xED':
+			case '\xEC':
+				if (boxed)
+					cx += 3*FRACUNIT;
+				else
+					cx += 3*FRACUNIT;
+				boxed = !boxed;
+				break;
 			default:
 				if (( c & 0xF0 ) == 0x80 || c == V_STRINGDANCE)
 					;
 				else if (( c & 0xB0 ) & 0x80) // button prompts
 				{
-					cw = V_GetButtonCodeWidth(c) * dupx;
+					if (descriptive)
+						cw = V_GetGenericButtonCodeWidth(c, largebutton) * dupx;
+					else
+						cw = V_GetButtonCodeWidth(c, largebutton) * dupx;
+
 					cx += cw * scale;
 					right = cx;
+
+					descriptive = false;
+					boxed = false;
 				}
 				else
 				{

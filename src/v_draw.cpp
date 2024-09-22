@@ -63,6 +63,10 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 
 		{"large", 0xEB},
 
+		{"box", 0xEC},
+		{"box_pressed", 0xED},
+		{"box_animated", 0xEE},
+
 		{"white", 0x80},
 		{"purple", 0x81},
 		{"yellow", 0x82},

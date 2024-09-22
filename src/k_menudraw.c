@@ -6099,6 +6099,19 @@ void M_DrawPause(void)
 
 		Y_RoundQueueDrawer(&standings, offset/2, false, false);
 	}
+	else if (gametype == GT_TUTORIAL)
+	{
+		K_DrawGameControl(4, 184 - 60 + offset/2, 0, "<left> <right> <up> <down> Steering", 0, 0);
+		K_DrawGameControl(4, 184 - 45 + offset/2, 0, "<a> Accelerate", 0, 0);
+		K_DrawGameControl(4, 184 - 30 + offset/2, 0, "<b> Look Back", 0, 0);
+		K_DrawGameControl(4, 184 - 15 + offset/2, 0, "<c> Spindash", 0, 0);
+		K_DrawGameControl(4, 184 - 0 + offset/2, 0, "<l> Item", 0, 0);
+
+		K_DrawGameControl(90, 184 - 45 + offset/2, 0, "<x> Brake", 0, 0);
+		K_DrawGameControl(90, 184 - 30 + offset/2, 0, "<y> Respawn", 0, 0);
+		K_DrawGameControl(90, 184 - 15 + offset/2, 0, "<z> Dialogue / Action", 0, 0);
+		K_DrawGameControl(90, 184 - 0 + offset/2, 0, "<r> Drift", 0, 0);
+	}
 	else
 	{
 		V_DrawMenuString(4, 188 + offset/2, V_YELLOWMAP, M_GetGameplayMode());
