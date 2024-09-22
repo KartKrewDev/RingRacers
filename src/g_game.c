@@ -1772,6 +1772,9 @@ void G_FixCamera(UINT8 view)
 
 void G_UpdatePlayerPreferences(player_t *const player)
 {
+	if (demo.playback)
+		return;
+
 	// set skin
 	INT32 new_skin = player->prefskin;
 	if (K_CanChangeRules(true) == true && cv_forceskin.value >= 0)
