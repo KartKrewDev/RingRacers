@@ -136,7 +136,7 @@ static const std::unordered_map<INT32, char> saturntypeC = {
 	{nc_x, sb_x},
 	{nc_y, sb_y},
 	{nc_rt, sb_c},
-	{nc_lb, sb_z},
+	{nc_lt, sb_z},
 	{nc_lb, sb_l},
 	{nc_rb, sb_r},
 	{nc_start, gb_start},
