@@ -99,6 +99,9 @@ menuitem_t OPTIONS_ProfileControls[] = {
 	{IT_STRING | IT_CALL, "TRY MAPPINGS", "Test your controls.",
 		NULL, {.routine = M_ProfileTryController}, 0, 0},
 
+	{IT_STRING2 | IT_CVAR, "Show Button Names", "Change how help text displays your controls.",
+		NULL, {.cvar = &cv_dummyprofiledescriptiveinput}, 0, 0},
+
 	{IT_STRING | IT_CALL, "RESET TO DEFAULT", "Reset all controls back to default.",
 		NULL, {.routine = M_ProfileDefaultControls}, 0, 0},
 

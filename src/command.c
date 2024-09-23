@@ -102,6 +102,14 @@ CV_PossibleValue_t gpdifficulty_cons_t[] = {
 	{KARTGP_MASTER, "Master"},
 	{0, NULL}
 };
+CV_PossibleValue_t descriptiveinput_cons_t[] = {
+	{0, "Emulator"}, 
+	{1, "Modern"},
+	{2, "6Bt. (Match)"},
+	{3, "6Bt. (LB LT)"},
+	{4, "6Bt. (LT RT)"},
+	{5, "6bt. (LB RB)"},
+};
 
 // Filter consvars by EXECVERSION
 // First implementation is 2 (1.0.2), so earlier configs default at 1 (1.0.0)

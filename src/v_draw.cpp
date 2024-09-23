@@ -229,37 +229,65 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 		}
 		else if (auto it = translation.find(code); it != translation.end()) // This represents a gamecontrol, turn into Saturn button or generic button.
 		{
+
+			UINT8 localplayer = 0;
+			UINT8 indexedplayer = as_.value_or(stplyr - players);
+			for (UINT8 i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+			{
+				if (g_localplayers[i] == indexedplayer)
+				{
+					localplayer = i;
+					break;
+				}
+			}
+
 			// This isn't how v_video.cpp checks for buttons and I don't know why.
-			if (cv_descriptiveinput.value && ((it->second & 0xF0) != 0x80)) // Should we do game control translation?
+			if (cv_descriptiveinput[localplayer].value && ((it->second & 0xF0) != 0x80)) // Should we do game control translation?
 			{
 				if (auto id = inputdefinition.find(it->second & (~0xB0)); id != inputdefinition.end()) // This is a game control, do descriptive input translation!
 				{
 					// Grab our local controls  - if pid set in the call to parse(), use stplyr's controls
-					UINT8 localplayer = 0;
-					UINT8 indexedplayer = as_.value_or(stplyr - players);
-					for (UINT8 i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-					{
-						if (g_localplayers[i] == indexedplayer)
-						{
-							localplayer = i;
-							break;
-						}
-					}
-
 					INT32 bind = G_FindPlayerBindForGameControl(localplayer, id->second);
 
 					// EXTRA: descriptiveinput values above 1 translate binds back to Saturn buttons,
 					// with various modes for various fucked up 6bt pads
 					std::unordered_map<INT32, char> saturnconfig = {};
-					switch (cv_descriptiveinput.value)
+					switch (cv_descriptiveinput[localplayer].value)
 					{
 						case 2:
+						{
+							INT32 leftbumper = G_FindPlayerBindForGameControl(localplayer, gc_l);
+							INT32 rightbumper = G_FindPlayerBindForGameControl(localplayer, gc_r);
+
+							if (leftbumper == KEY_JOY1+9 && rightbumper == KEY_AXIS1+8)
+							{
+								saturnconfig = saturntype1; // LB LT
+								// CONS_Printf("Saturn type 1\n");
+							}
+							else if (leftbumper == KEY_AXIS1+8 && rightbumper == KEY_AXIS1+9)
+							{
+								saturnconfig = saturntype2; // LT RT
+								// CONS_Printf("Saturn type 2\n");
+							}
+							else if (leftbumper == KEY_JOY1+9 && rightbumper == KEY_JOY1+10)
+							{
+								saturnconfig = saturntype3; // LB RB
+								// CONS_Printf("Saturn type 3\n");
+							}
+							else
+							{
+								saturnconfig = saturntype1; // :( ???
+								// CONS_Printf("Unknown, falling back to type 1\n");
+							}
+							break;
+						}
+						case 3:
 							saturnconfig = saturntype1;
 							break;
-						case 3:
+						case 4:
 							saturnconfig = saturntype2;
 							break;
-						case 4:
+						case 5:
 							saturnconfig = saturntype3;
 							break;
 					}

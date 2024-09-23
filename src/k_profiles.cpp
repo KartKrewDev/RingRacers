@@ -82,6 +82,7 @@ profile_t* PR_MakeProfile(
 	newprofile->kickstartaccel = false;
 	newprofile->autoroulette = false;
 	newprofile->litesteer = false;
+	newprofile->descriptiveinput = 1;
 	newprofile->autoring = false;
 	newprofile->rumble = true;
 	newprofile->fov = atoi(cv_dummyprofilefov.defaultvalue);
@@ -104,6 +105,7 @@ profile_t* PR_MakeProfileFromPlayer(const char *prname, const char *pname, const
 	newprofile->kickstartaccel = cv_kickstartaccel[pnum].value;
 	newprofile->autoroulette = cv_autoroulette[pnum].value;
 	newprofile->litesteer = cv_litesteer[pnum].value;
+	newprofile->descriptiveinput = cv_descriptiveinput[pnum].value;
 	newprofile->autoring = cv_autoring[pnum].value;
 	newprofile->rumble = cv_rumble[pnum].value;
 	newprofile->fov = cv_fov[pnum].value / FRACUNIT;
@@ -301,6 +303,7 @@ void PR_SaveProfiles(void)
 		jsonprof.preferences.kickstartaccel = cprof->kickstartaccel;
 		jsonprof.preferences.autoroulette = cprof->autoroulette;
 		jsonprof.preferences.litesteer = cprof->litesteer;
+		jsonprof.preferences.descriptiveinput = cprof->descriptiveinput;
 		jsonprof.preferences.autoring = cprof->autoring;
 		jsonprof.preferences.rumble = cprof->rumble;
 		jsonprof.preferences.fov = cprof->fov;
@@ -486,6 +489,7 @@ void PR_LoadProfiles(void)
 		newprof->kickstartaccel = jsprof.preferences.kickstartaccel;
 		newprof->autoroulette = jsprof.preferences.autoroulette;
 		newprof->litesteer = jsprof.preferences.litesteer;
+		newprof->descriptiveinput = jsprof.preferences.descriptiveinput;
 		newprof->autoring = jsprof.preferences.autoring;
 		newprof->rumble = jsprof.preferences.rumble;
 		newprof->fov = jsprof.preferences.fov;
@@ -568,6 +572,7 @@ static void PR_ApplyProfile_Settings(profile_t *p, UINT8 playernum)
 	CV_StealthSetValue(&cv_kickstartaccel[playernum], p->kickstartaccel);
 	CV_StealthSetValue(&cv_autoroulette[playernum], p->autoroulette);
 	CV_StealthSetValue(&cv_litesteer[playernum], p->litesteer);
+	CV_StealthSetValue(&cv_descriptiveinput[playernum], p->descriptiveinput);
 	CV_StealthSetValue(&cv_autoring[playernum], p->autoring);
 	CV_StealthSetValue(&cv_rumble[playernum], p->rumble);
 	CV_StealthSetValue(&cv_fov[playernum], p->fov);
@@ -581,11 +586,16 @@ static void PR_ApplyProfile_Memory(UINT8 profilenum, UINT8 playernum)
 	// set memory cvar
 	CV_StealthSetValue(&cv_lastprofile[playernum], profilenum);
 
+	CONS_Printf("Applying profile memory %d to player %d", profilenum, playernum);
+
 	// If we're doing this on P1, also change current profile.
 	if (playernum == 0)
 	{
 		CV_StealthSetValue(&cv_currprofile, profilenum);
+		CONS_Printf(" and swapping currprofile");
 	}
+
+	CONS_Printf("\n");
 }
 
 void PR_ApplyProfile(UINT8 profilenum, UINT8 playernum)

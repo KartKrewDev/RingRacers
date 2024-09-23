@@ -24,8 +24,6 @@
 #include "typedef.h"
 #include "v_video.h"
 
-extern consvar_t cv_descriptiveinput;
-
 namespace srb2
 {
 

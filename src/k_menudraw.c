@@ -5094,7 +5094,7 @@ void M_DrawProfileControls(void)
 					V_DrawMenuString(x, y+2, (i == itemOn ? highlightflags : 0), currentMenu->menuitems[i].text);
 
 				if (currentMenu->menuitems[i].status & IT_CVAR)	// not the proper way to check but this menu only has normal onoff cvars.
-				{
+				{												// (bitch you thought - Tyron 2024-09-22)
 					INT32 w;
 					consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
 

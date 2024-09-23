@@ -334,16 +334,6 @@ consvar_t cv_soundvolume = Player("soundvolume", "80").min_max(0, 100);
 	consvar_t cv_discordstreamer = Player("discordstreamer", "Off").on_off();
 #endif
 
-consvar_t cv_descriptiveinput = Player("descriptiveinput", "Modern")
-	.values({
-		{0, "Emulator"}, 
-		{1, "Modern"}, 
-		{2, "6Bt. (LB LT)"},
-		{3, "6Bt. (LT RT)"},
-		{4, "6bt. (LB RB)"},
-	}
-); // Display bound controls instead of Saturn buttons
-
 consvar_t cv_drawdist = Player("drawdist", "Normal").values({
 	{3072,  "Shortest"},
 	{4096,  "Shorter"},
@@ -989,6 +979,7 @@ consvar_t cv_dummymenuplayer = MenuDummy("dummymenuplayer", "P1").onchange(Dummy
 consvar_t cv_dummyprofileautoroulette = MenuDummy("dummyprofileautoroulette", "Off").on_off();
 consvar_t cv_dummyprofilefov = MenuDummy("dummyprofilefov", "100").min_max(70, 110);
 consvar_t cv_dummyprofilelitesteer = MenuDummy("dummyprofilelitesteer", "Off").on_off();
+consvar_t cv_dummyprofiledescriptiveinput = Player("dummyprofiledescriptiveinput", "Modern").values(descriptiveinput_cons_t);
 consvar_t cv_dummyprofileautoring = MenuDummy("dummyprofileautoring", "Off").on_off();
 consvar_t cv_dummyprofilekickstart = MenuDummy("dummyprofilekickstart", "Off").on_off();
 consvar_t cv_dummyprofilename = MenuDummy("dummyprofilename", "");
@@ -1122,6 +1113,14 @@ consvar_t cv_cam_height[MAXSPLITSCREENPLAYERS] = {
 	Player("cam3_height", "95").floating_point(),
 	Player("cam4_height", "95").floating_point(),
 };
+
+consvar_t cv_descriptiveinput[MAXSPLITSCREENPLAYERS] = {
+	Player("descriptiveinput", "Modern").values(descriptiveinput_cons_t),
+	Player("descriptiveinput2", "Modern").values(descriptiveinput_cons_t),
+	Player("descriptiveinput3", "Modern").values(descriptiveinput_cons_t),
+	Player("descriptiveinput4", "Modern").values(descriptiveinput_cons_t),
+};
+
 
 void CV_CamRotate_OnChange(void);
 void CV_CamRotate2_OnChange(void);

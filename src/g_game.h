@@ -105,6 +105,8 @@ extern consvar_t cv_shrinkme[MAXSPLITSCREENPLAYERS];
 
 extern consvar_t cv_deadzone[MAXSPLITSCREENPLAYERS];
 
+extern consvar_t cv_descriptiveinput[MAXSPLITSCREENPLAYERS];
+
 extern consvar_t cv_ghost_besttime, cv_ghost_bestlap, cv_ghost_last, cv_ghost_guest, cv_ghost_staff;
 
 // mouseaiming (looking up/down with the mouse or keyboard)
