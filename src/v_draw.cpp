@@ -89,26 +89,26 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 
 	// When we encounter a Saturn button, what gamecontrol does it represent?
 	static const std::unordered_map<char, gamecontrols_e> inputdefinition = {
-		{0x00, gc_up},
-		{0x01, gc_down},
-		{0x02, gc_right},
-		{0x03, gc_left},
+		{sb_up, gc_up},
+		{sb_down, gc_down},
+		{sb_right, gc_right},
+		{sb_left, gc_left},
 
-		{0x04, gc_lua1},
-		{0x05, gc_lua2},
-		{0x06, gc_lua3},
+		{sb_lua1, gc_lua1},
+		{sb_lua2, gc_lua2},
+		{sb_lua3, gc_lua3},
 
-		{0x07, gc_r},
-		{0x08, gc_l},
-		{0x09, gc_start},
+		{sb_r, gc_r},
+		{sb_l, gc_l},
+		{sb_start, gc_start},
 
-		{0x0A, gc_a},
-		{0x0B, gc_b},
-		{0x0C, gc_c},
+		{sb_a, gc_a},
+		{sb_b, gc_b},
+		{sb_c, gc_c},
 
-		{0x0D, gc_x},
-		{0x0E, gc_y},
-		{0x0F, gc_z},
+		{sb_x, gc_x},
+		{sb_y, gc_y},
+		{sb_z, gc_z},
 	};
 
 	// What physical binds should appear as Saturn icons anyway?
