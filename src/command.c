@@ -103,12 +103,16 @@ CV_PossibleValue_t gpdifficulty_cons_t[] = {
 	{0, NULL}
 };
 CV_PossibleValue_t descriptiveinput_cons_t[] = {
-	{0, "Emulator"}, 
+	{0, "\"Emulator\""}, 
 	{1, "Modern"},
-	{2, "6Bt. (Match)"},
-	{3, "6Bt. (LB LT)"},
-	{4, "6Bt. (LT RT)"},
-	{5, "6bt. (LB RB)"},
+	{2, "Modern Flip"},
+	{3, "6Bt. (Auto)"},
+	{4, "6Bt. (A)"},
+	{5, "6Bt. (B)"},
+	{6, "6Bt. (C)"},
+	{7, "6Bt. (D)"},
+	{8, "6Bt. (E)"},
+	{0, NULL}
 };
 
 // Filter consvars by EXECVERSION

@@ -5099,7 +5099,7 @@ void M_DrawProfileControls(void)
 					consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
 
 					w = V_MenuStringWidth(cv->string, 0);
-					V_DrawMenuString(x + 12, y + 13, ((cv->flags & CV_CHEAT) && !CV_IsSetToDefault(cv) ? warningflags : highlightflags), cv->string);
+					V_DrawMenuString(x + 12, y + 13, (!CV_IsSetToDefault(cv) ? warningflags : highlightflags), cv->string);
 					if (i == itemOn)
 					{
 						V_DrawMenuString(x - (skullAnimCounter/5), y+12, highlightflags, "\x1C"); // left arrow
@@ -5288,7 +5288,45 @@ void M_DrawProfileControls(void)
 	if (currentMenu->menuitems[itemOn].tooltip != NULL)
 	{
 		INT32 ypos = BASEVIDHEIGHT + hintofs - 9 - 12;
-		V_DrawThinString(12, ypos, V_YELLOWMAP, currentMenu->menuitems[itemOn].tooltip);
+
+		if (!strcmp(currentMenu->menuitems[itemOn].tooltip, "DESCRIPTIVEINPUT-SENTINEL"))
+		{
+			char* help = va("Modern: Standard console controller prompts.");
+			switch (cv_dummyprofiledescriptiveinput.value)
+			{
+				case 0:
+					help = va("\"Emulator\": Display the default (Saturn) controls.");
+					break;
+				case 2:
+					help = va("Modern Flip: Swap A+X/B+Y. Use if Modern is wrong.");
+					break;
+				case 3:
+					help = va("6Bt. (Auto): Tries to guess your 6-button pad's layout.");
+					break;
+				case 4:
+					help = va("6Bt. (A): Saturn buttons, Retro-Bit Wired DInput layout.");
+					break;
+				case 5:
+					help = va("6Bt. (B): Saturn buttons, Retro-Bit Wireless DInput layout.");
+					break;
+				case 6:
+					help = va("6Bt. (C): Saturn buttons, Retro-Bit XInput layout.");
+					break;
+				case 7:
+					help = va("6Bt. (D): Saturn buttons, arcade/8BitDo layout. (C/Z = RT/RB)");
+					break;
+				case 8:
+					help = va("6Bt. (E): Saturn buttons, Hori/M30X layout. (LB/LT = LS/RS)");
+					break;
+			}
+
+			V_DrawThinString(12, ypos, V_YELLOWMAP, help);
+		}
+		else
+		{
+			V_DrawThinString(12, ypos, V_YELLOWMAP, currentMenu->menuitems[itemOn].tooltip);
+		}
+
 
 		boolean standardbuttons = gamedata->gonerlevel > GDGONER_PROFILE;
 		INT32 xpos = BASEVIDWIDTH - 12;

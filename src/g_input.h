@@ -56,6 +56,33 @@ typedef enum
 	NUMINPUTS = MOUSEINPUTEND,
 } key_input_e;
 
+// Helper to keep descriptive input setup slightly more readable
+typedef enum
+{
+	nc_a = KEY_JOY1,
+	nc_b,
+	nc_x,
+	nc_y,
+	nc_back,
+	nc_guide,
+	nc_start,
+	nc_ls,
+	nc_rs,
+	nc_lb,
+	nc_rb,
+	nc_hatup,
+	nc_hatdown,
+	nc_hatleft,
+	nc_hatright,
+	nc_touch = KEY_JOY1+20,
+	nc_lsleft = KEY_AXIS1+0,
+	nc_lsright,
+	nc_lsup,
+	nc_lsdown,
+	nc_lt = KEY_AXIS1+8,
+	nc_rt,
+} named_controls_e;
+
 typedef enum
 {
 	gc_null = 0, // a key/button mapped to gc_null has no effect

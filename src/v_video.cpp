@@ -2835,27 +2835,27 @@ void V_DrawStringScaled(
 							{
 								switch (c & 0x0F)
 								{
-								case 0x00: return {{0, 3, Draw::Button::up}};
-								case 0x01: return {{0, 3, Draw::Button::down}};
-								case 0x02: return {{0, 3, Draw::Button::right}};
-								case 0x03: return {{0, 3, Draw::Button::left}};
+								case sb_up: return {{0, 3, Draw::Button::up}};
+								case sb_down: return {{0, 3, Draw::Button::down}};
+								case sb_right: return {{0, 3, Draw::Button::right}};
+								case sb_left: return {{0, 3, Draw::Button::left}};
 
-								case 0x04: return {{0, 4, Draw::Button::lua1}};
-								case 0x05: return {{0, 4, Draw::Button::lua2}};
-								case 0x06: return {{0, 4, Draw::Button::lua3}};
+								case sb_lua1: return {{0, 4, Draw::Button::lua1}};
+								case sb_lua2: return {{0, 4, Draw::Button::lua2}};
+								case sb_lua3: return {{0, 4, Draw::Button::lua3}};
 
-								case 0x07: return {{0, 2, Draw::Button::r}};
-								case 0x08: return {{0, 2, Draw::Button::l}};
+								case sb_r: return {{0, 2, Draw::Button::r}};
+								case sb_l: return {{0, 2, Draw::Button::l}};
 
-								case 0x09: return {{0, 1, Draw::Button::start}};
+								case sb_start: return {{0, 1, Draw::Button::start}};
 
-								case 0x0A: return {{2, 1, Draw::Button::a}};
-								case 0x0B: return {{2, 1, Draw::Button::b}};
-								case 0x0C: return {{2, 1, Draw::Button::c}};
+								case sb_a: return {{2, 1, Draw::Button::a}};
+								case sb_b: return {{2, 1, Draw::Button::b}};
+								case sb_c: return {{2, 1, Draw::Button::c}};
 
-								case 0x0D: return {{2, 1, Draw::Button::x}};
-								case 0x0E: return {{2, 1, Draw::Button::y}};
-								case 0x0F: return {{2, 1, Draw::Button::z}};
+								case sb_x: return {{2, 1, Draw::Button::x}};
+								case sb_y: return {{2, 1, Draw::Button::y}};
+								case sb_z: return {{2, 1, Draw::Button::z}};
 
 								default: return {};
 								}
@@ -2906,21 +2906,21 @@ void V_DrawStringScaled(
 
 							auto bt_inst = [c]() -> std::optional<BtConf>
 							{
-								switch (c & 0x0F)
+								switch ((c & 0x0F) | gb_mask)
 								{
-								case 0x00: return {{0, 2, Draw::GenericButton::a}};
-								case 0x01: return {{0, 2, Draw::GenericButton::b}};
-								case 0x02: return {{0, 2, Draw::GenericButton::x}};
-								case 0x03: return {{0, 2, Draw::GenericButton::y}};
-								case 0x04: return {{1, 3, Draw::GenericButton::lb}};
-								case 0x05: return {{1, 3, Draw::GenericButton::rb}};
-								case 0x06: return {{1, 4, Draw::GenericButton::lt}};
-								case 0x07: return {{1, 4, Draw::GenericButton::rt}};
-								case 0x08: return {{1, 6, Draw::GenericButton::start}};
-								case 0x09: return {{1, 6, Draw::GenericButton::back}};
-								case 0x0A: return {{0, 5, Draw::GenericButton::ls}};
-								case 0x0B: return {{0, 5, Draw::GenericButton::rs}};
-								case 0x0C: return {{0, 4, Draw::GenericButton::dpad}};
+								case gb_a: return {{0, 2, Draw::GenericButton::a}};
+								case gb_b: return {{0, 2, Draw::GenericButton::b}};
+								case gb_x: return {{0, 2, Draw::GenericButton::x}};
+								case gb_y: return {{0, 2, Draw::GenericButton::y}};
+								case gb_lb: return {{1, 3, Draw::GenericButton::lb}};
+								case gb_rb: return {{1, 3, Draw::GenericButton::rb}};
+								case gb_lt: return {{1, 4, Draw::GenericButton::lt}};
+								case gb_rt: return {{1, 4, Draw::GenericButton::rt}};
+								case gb_start: return {{1, 6, Draw::GenericButton::start}};
+								case gb_back: return {{1, 6, Draw::GenericButton::back}};
+								case gb_ls: return {{0, 5, Draw::GenericButton::ls}};
+								case gb_rs: return {{0, 5, Draw::GenericButton::rs}};
+								case gb_dpad: return {{0, 4, Draw::GenericButton::dpad}};
 								default: return {};
 								}
 							}();

@@ -40,26 +40,26 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 		{str "_animated", 0xA0 | lower_bits},\
 		{str "_pressed",  0x90 | lower_bits}
 
-		BUTTON("up", 0x00),
-		BUTTON("down", 0x01),
-		BUTTON("right", 0x02),
-		BUTTON("left", 0x03),
+		BUTTON("up", sb_up),
+		BUTTON("down", sb_down),
+		BUTTON("right", sb_right),
+		BUTTON("left", sb_left),
 
-		BUTTON("lua1", 0x04),
-		BUTTON("lua2", 0x05),
-		BUTTON("lua3", 0x06),
+		BUTTON("lua1", sb_lua1),
+		BUTTON("lua2", sb_lua2),
+		BUTTON("lua3", sb_lua3),
 
-		BUTTON("r", 0x07),
-		BUTTON("l", 0x08),
-		BUTTON("start", 0x09),
+		BUTTON("r", sb_r),
+		BUTTON("l", sb_l),
+		BUTTON("start", sb_start),
 
-		BUTTON("a", 0x0A),
-		BUTTON("b", 0x0B),
-		BUTTON("c", 0x0C),
+		BUTTON("a", sb_a),
+		BUTTON("b", sb_b),
+		BUTTON("c", sb_c),
 
-		BUTTON("x", 0x0D),
-		BUTTON("y", 0x0E),
-		BUTTON("z", 0x0F),
+		BUTTON("x", sb_x),
+		BUTTON("y", sb_y),
+		BUTTON("z", sb_z),
 
 #undef BUTTON
 
@@ -87,7 +87,7 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 		{"tan", 0x8F},
 	};
 
-	// What glyphs should be rewritten as gamecontrols?
+	// When we encounter a Saturn button, what gamecontrol does it represent?
 	static const std::unordered_map<char, gamecontrols_e> inputdefinition = {
 		{0x00, gc_up},
 		{0x01, gc_down},
@@ -111,75 +111,22 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 		{0x0F, gc_z},
 	};
 
-	// What physical binds should be rewritten as base Saturn icons?
+	// What physical binds should appear as Saturn icons anyway?
+	// (We don't have generic binds for stick/dpad directions, so
+	// using the existing arrow graphics is the best thing here.)
 	static const std::unordered_map<INT32, char> prettyinputs = {
-		{KEY_UPARROW, 0x00},
-		{KEY_DOWNARROW, 0x01},
-		{KEY_RIGHTARROW, 0x02},
-		{KEY_LEFTARROW, 0x03},
-		{KEY_JOY1+11, 0x00},
-		{KEY_JOY1+12, 0x01},
-		{KEY_JOY1+14, 0x02},
-		{KEY_JOY1+13, 0x03},
-		{KEY_AXIS1+0, 0x03}, // Left
-		{KEY_AXIS1+1, 0x02}, // Right
-		{KEY_AXIS1+2, 0x00}, // Up
-		{KEY_AXIS1+3, 0x01}, // Down
-	};
-
-	// What physical binds should be rewritten as generic icons?
-	static const std::unordered_map<INT32, char> genericinputs = {
-		{KEY_JOY1+0, 0x00}, // ABXY
-		{KEY_JOY1+1, 0x01},
-		{KEY_JOY1+2, 0x02},
-		{KEY_JOY1+3, 0x03},
-		{KEY_JOY1+9, 0x04}, // LBRB
-		{KEY_JOY1+10, 0x05},
-		{KEY_AXIS1+8, 0x06}, // LTRT
-		{KEY_AXIS1+9, 0x07},
-		{KEY_JOY1+6, 0x08}, // NAV
-		{KEY_JOY1+4, 0x09},
-		{KEY_JOY1+7, 0x0A}, // CLICK
-		{KEY_JOY1+8, 0x0B},
-	};
-
-	// Saturn Type 1 - Retrobit Wired Dinput, RB RT LB LT
-	static const std::unordered_map<INT32, char> saturntype1 = {
-		{KEY_JOY1+0, 0x0A}, // ABXY
-		{KEY_JOY1+1, 0x0B},
-		{KEY_JOY1+2, 0x0D},
-		{KEY_JOY1+3, 0x0E},
-		{KEY_JOY1+9, 0x08}, // LBRB
-		{KEY_JOY1+10, 0x0C},
-		{KEY_AXIS1+8, 0x07}, // LTRT
-		{KEY_AXIS1+9, 0x0F},
-		{KEY_JOY1+6, 0x09}, // NAV
-	};
-
-	// Saturn Type 2 - Retrobit Wireless Dinput, LB RB LT RT
-	static const std::unordered_map<INT32, char> saturntype2 = {
-		{KEY_JOY1+0, 0x0A}, // ABXY
-		{KEY_JOY1+1, 0x0B},
-		{KEY_JOY1+2, 0x0D},
-		{KEY_JOY1+3, 0x0E},
-		{KEY_JOY1+9, 0x0C}, // LBRB
-		{KEY_JOY1+10, 0x0F},
-		{KEY_AXIS1+8, 0x08}, // LTRT
-		{KEY_AXIS1+9, 0x07},
-		{KEY_JOY1+6, 0x09}, // NAV
-	};
-
-	// Saturn Type 3 - Retrobit Wireless Xinput, RT LT LB RB
-	static const std::unordered_map<INT32, char> saturntype3 = {
-		{KEY_JOY1+0, 0x0A}, // ABXY
-		{KEY_JOY1+1, 0x0B},
-		{KEY_JOY1+2, 0x0D},
-		{KEY_JOY1+3, 0x0E},
-		{KEY_JOY1+9, 0x08}, // LBRB
-		{KEY_JOY1+10, 0x07},
-		{KEY_AXIS1+8, 0x0F}, // LTRT
-		{KEY_AXIS1+9, 0x0C},
-		{KEY_JOY1+6, 0x09}, // NAV
+		{KEY_UPARROW, sb_up},
+		{KEY_DOWNARROW, sb_down},
+		{KEY_LEFTARROW, sb_left},
+		{KEY_RIGHTARROW, sb_right},
+		{nc_hatup, sb_up},
+		{nc_hatdown, sb_down},
+		{nc_hatleft, sb_left},
+		{nc_hatright, sb_right},
+		{nc_lsup, sb_up},
+		{nc_lsdown, sb_down},
+		{nc_lsleft, sb_left},
+		{nc_lsright, sb_right},
 	};
 
 	string_.clear();
@@ -251,44 +198,65 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 
 					// EXTRA: descriptiveinput values above 1 translate binds back to Saturn buttons,
 					// with various modes for various fucked up 6bt pads
-					std::unordered_map<INT32, char> saturnconfig = {};
+					std::unordered_map<INT32, char> padconfig = {};
 					switch (cv_descriptiveinput[localplayer].value)
 					{
+						case 1:
+							padconfig = standardpad;
+							break;
 						case 2:
+							padconfig = flippedpad;
+							break;
+						case 3:
 						{
+							// Most players will map gc_L to their physical L button,
+							// and gc_R to their physical R button. Assuming this is
+							// true, try to guess their physical layout based on what
+							// they've chosen.
+
 							INT32 leftbumper = G_FindPlayerBindForGameControl(localplayer, gc_l);
 							INT32 rightbumper = G_FindPlayerBindForGameControl(localplayer, gc_r);
 
-							if (leftbumper == KEY_JOY1+9 && rightbumper == KEY_AXIS1+8)
+							if (leftbumper == nc_lb && rightbumper == nc_lt)
 							{
-								saturnconfig = saturntype1; // LB LT
-								// CONS_Printf("Saturn type 1\n");
+								padconfig = saturntypeA;
 							}
-							else if (leftbumper == KEY_AXIS1+8 && rightbumper == KEY_AXIS1+9)
+							else if (leftbumper == nc_lt && rightbumper == nc_rt)
 							{
-								saturnconfig = saturntype2; // LT RT
-								// CONS_Printf("Saturn type 2\n");
+								padconfig = saturntypeB;
 							}
-							else if (leftbumper == KEY_JOY1+9 && rightbumper == KEY_JOY1+10)
+							else if (leftbumper == nc_lb && rightbumper == nc_rb)
 							{
-								saturnconfig = saturntype3; // LB RB
-								// CONS_Printf("Saturn type 3\n");
+								padconfig = saturntypeC;
+							}
+							else if (leftbumper == nc_ls && rightbumper == nc_lb)
+							{
+								padconfig = saturntypeE;
+							}
+							else if (leftbumper == nc_rs && rightbumper == nc_lt)
+							{
+								padconfig = saturntypeE; // Not a typo! Users might bind a Hori layout pad to either bumpers or triggers
 							}
 							else
 							{
-								saturnconfig = saturntype1; // :( ???
-								// CONS_Printf("Unknown, falling back to type 1\n");
+								padconfig = saturntypeA; // :( ???
 							}
 							break;
 						}
-						case 3:
-							saturnconfig = saturntype1;
-							break;
 						case 4:
-							saturnconfig = saturntype2;
+							padconfig = saturntypeA;
 							break;
 						case 5:
-							saturnconfig = saturntype3;
+							padconfig = saturntypeB;
+							break;
+						case 6:
+							padconfig = saturntypeC;
+							break;
+						case 7:
+							padconfig = saturntypeD;
+							break;
+						case 8:
+							padconfig = saturntypeE;
 							break;
 					}
 
@@ -296,15 +264,20 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 					{
 						string_.push_back((it->second & 0xF0) | pretty->second); // original invocation has the animation bits, but the glyph bits come from the table
 					}
-					else if (auto st = saturnconfig.find(bind); st != saturnconfig.end())
+					else if (auto pad = padconfig.find(bind); pad != padconfig.end())
 					{
-						string_.push_back((it->second & 0xF0) | st->second); // original invocation has the animation bits, but the glyph bits come from the table
-					}
-					else if (auto generic = genericinputs.find(bind); generic != genericinputs.end()) // Non-directional gamepad input, display it to the player as they are
-					{
-						string_.push_back(0xEF); // Control code: "switch to descriptive input mode" - Saturn buttons will draw as generic gamepad buttons
-						string_.push_back(0xEB); // Control code: "large button"
-						string_.push_back((it->second & 0xF0) | generic->second); // original invocation has the animation bits, but the glyph bits come from the table
+						// If high bits are set, this is meant to be a generic button.
+						if (pad->second & 0xF0)
+						{
+							string_.push_back(0xEF); // Control code: "switch to descriptive input mode" - buttons will draw as generics
+							string_.push_back(0xEB); // Control code: "large button"
+						}
+
+						// Clear high bits so we can add animation bits back cleanly.
+						pad->second = pad->second & (0x0F);
+
+						// original invocation has the animation bits, but the glyph bits come from the table
+						string_.push_back((it->second & 0xF0) | pad->second); 
 					}
 					else
 					{

@@ -586,16 +586,11 @@ static void PR_ApplyProfile_Memory(UINT8 profilenum, UINT8 playernum)
 	// set memory cvar
 	CV_StealthSetValue(&cv_lastprofile[playernum], profilenum);
 
-	CONS_Printf("Applying profile memory %d to player %d", profilenum, playernum);
-
 	// If we're doing this on P1, also change current profile.
 	if (playernum == 0)
 	{
 		CV_StealthSetValue(&cv_currprofile, profilenum);
-		CONS_Printf(" and swapping currprofile");
 	}
-
-	CONS_Printf("\n");
 }
 
 void PR_ApplyProfile(UINT8 profilenum, UINT8 playernum)
