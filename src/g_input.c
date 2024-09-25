@@ -767,7 +767,7 @@ static keyname_t shortkeynames[] =
 	{KEY_ENTER, "ENTER"},
 	{KEY_TAB, "TAB"},
 	{KEY_ESCAPE, "ESC"},
-	{KEY_BACKSPACE, "BSPC"},
+	{KEY_BACKSPACE, "BKSP"},
 
 	{KEY_NUMLOCK, "NUMLOCK"},
 	{KEY_SCROLLLOCK, "SCRLOCK"},

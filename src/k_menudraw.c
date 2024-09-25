@@ -806,10 +806,6 @@ void M_DrawMenuMessage(void)
 		INT32 workx = x + menumessage.x;
 		INT32 worky = y + menumessage.y;
 
-		boolean standardbuttons = (
-			cv_currprofile.value != -1 || G_GetNumAvailableGamepads()
-		);
-
 		boolean push;
 
 		if (menumessage.closing)
@@ -830,18 +826,11 @@ void M_DrawMenuMessage(void)
 
 		workx -= 2;
 
-		if (standardbuttons)
-		{
-			workx -= K_DrawGameControl(
-				workx+2, worky+2,
-				0, "<b_animated> <x_animated> ",
-				2, 8, 0
-			);
-		}
-		else
-		{
-			M_DrawMediocreKeyboardKey("ESC", &workx, worky, push, true);
-		}
+		workx -= K_DrawGameControl(
+			workx+2, worky+2,
+			0, "<b_animated> <x_animated> ",
+			2, 8, 0
+		);
 
 		if (menumessage.confirmstr)
 		{
@@ -861,18 +850,11 @@ void M_DrawMenuMessage(void)
 			workx -= 2;
 		}
 
-		if (standardbuttons)
-		{
-			workx -= K_DrawGameControl(
-				workx+2, worky+2,
-				0, "<a_animated> ",
-				2, 8, 0
-			);
-		}
-		else
-		{
-			M_DrawMediocreKeyboardKey("ENTER", &workx, worky, push, true);
-		}
+		workx -= K_DrawGameControl(
+			workx+2, worky+2,
+			0, "<a_animated> ",
+			2, 8, 0
+		);
 	}
 
 	x -= 4;
@@ -5291,7 +5273,7 @@ void M_DrawProfileControls(void)
 
 		if (!strcmp(currentMenu->menuitems[itemOn].tooltip, "DESCRIPTIVEINPUT-SENTINEL"))
 		{
-			char* help = va("Modern: Standard console controller prompts.");
+			char* help = va("Modern: Standard console controller/keyboard prompts.");
 			switch (cv_dummyprofiledescriptiveinput.value)
 			{
 				case 0:
@@ -5327,12 +5309,11 @@ void M_DrawProfileControls(void)
 			V_DrawThinString(12, ypos, V_YELLOWMAP, currentMenu->menuitems[itemOn].tooltip);
 		}
 
-
-		boolean standardbuttons = gamedata->gonerlevel > GDGONER_PROFILE;
+		UINT16 oldsetting = cv_descriptiveinput->value;
+		CV_StealthSetValue(cv_descriptiveinput, cv_dummyprofiledescriptiveinput.value);
 		INT32 xpos = BASEVIDWIDTH - 12;
-		xpos = standardbuttons ?
-			M_DrawProfileLegend(xpos, ypos, "\xB2 / \xBC  Clear", NULL) :
-			M_DrawProfileLegend(xpos, ypos, "Clear", "BKSP");
+		xpos = K_DrawGameControl(xpos, ypos, 0, "<right> / <c>  Clear", 2, 0, 0);
+		CV_StealthSetValue(cv_descriptiveinput, oldsetting);
 	}
 
 	// Overlay for control binding
