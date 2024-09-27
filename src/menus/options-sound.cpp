@@ -29,12 +29,6 @@ using srb2::Draw;
 namespace
 {
 
-bool basic_options()
-{
-	// M_GameTrulyStarted
-	return gamedata && gamestartchallenge < MAXUNLOCKABLES && !netgame && gamedata->gonerlevel <= GDGONER_PROFILE;
-}
-
 int flip_delay = 0;
 
 struct Slider
@@ -68,11 +62,8 @@ struct Slider
 			arrows.x(-10 - ofs).text("\x1C");
 			arrows.x(kWidth + 2 + ofs).text("\x1D");
 
-			if (!basic_options())
-			{
-				Draw::TextElement tx = Draw::TextElement().parse("<z_animated>");
-				h.xy(kWidth + 9, -2).text(tx.string());
-			}
+			Draw::TextElement tx = Draw::TextElement().parse("<z_animated>");
+			h.xy(kWidth + 9, -2).text(tx.string());
 		}
 
 		h = h.y(1);
@@ -252,7 +243,7 @@ boolean input_routine(INT32)
 
 	const menuitem_t& it = currentMenu->menuitems[itemOn];
 
-	if (M_MenuButtonPressed(pid, MBT_Z) && (it.status & IT_TYPE) == IT_ARROWS && !basic_options())
+	if (M_MenuButtonPressed(pid, MBT_Z) && (it.status & IT_TYPE) == IT_ARROWS)
 	{
 		sliders.at(it.mvar2).toggle_(true);
 		return true;
