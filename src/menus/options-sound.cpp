@@ -70,7 +70,8 @@ struct Slider
 
 			if (!basic_options())
 			{
-				h.xy(kWidth + 9, -3).small_button(Draw::Button::z, false);
+				Draw::TextElement tx = Draw::TextElement().parse("<z_animated>");
+				h.xy(kWidth + 9, -2).text(tx.string());
 			}
 		}
 
