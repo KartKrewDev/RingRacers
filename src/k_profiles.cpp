@@ -545,6 +545,12 @@ void PR_LoadProfiles(void)
 			converted = true;
 		}
 
+		if (jsprof.version < 4)
+		{
+			newprof->descriptiveinput = 1;
+			converted = true;
+		}
+
 		if (converted)
 		{
 			CONS_Printf("Profile '%s' was converted from version %d to version %d\n",
