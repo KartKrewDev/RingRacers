@@ -385,6 +385,8 @@ patch_t *HU_UpdateOrBlankPatch(patch_t **user, boolean required, const char *for
 	vsnprintf(buffer, sizeof buffer, format, ap);
 	va_end   (ap);
 
+	CONS_Printf("%s\n", buffer);
+
 	if (user && partadd_earliestfile != UINT16_MAX)
 	{
 		UINT16 fileref = numwadfiles;

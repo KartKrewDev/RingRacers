@@ -235,45 +235,49 @@ patch_t *kp_button_c[2][2];
 patch_t *kp_button_x[2][2];
 patch_t *kp_button_y[2][2];
 patch_t *kp_button_z[2][2];
-patch_t *kp_button_start[2];
-patch_t *kp_button_l[2];
-patch_t *kp_button_r[2];
-patch_t *kp_button_up[2];
-patch_t *kp_button_down[2];
-patch_t *kp_button_right[2];
-patch_t *kp_button_left[2];
-patch_t *kp_button_lua1[2];
-patch_t *kp_button_lua2[2];
-patch_t *kp_button_lua3[2];
+patch_t *kp_button_start[2][2];
+patch_t *kp_button_l[2][2];
+patch_t *kp_button_r[2][2];
+patch_t *kp_button_up[2][2];
+patch_t *kp_button_down[2][2];
+patch_t *kp_button_right[2][2];
+patch_t *kp_button_left[2][2];
+patch_t *kp_button_lua1[2][2];
+patch_t *kp_button_lua2[2][2];
+patch_t *kp_button_lua3[2][2];
 
 patch_t *gen_button_a[2][2];
 patch_t *gen_button_b[2][2];
 patch_t *gen_button_x[2][2];
 patch_t *gen_button_y[2][2];
-patch_t *gen_button_lb[2];
-patch_t *gen_button_rb[2];
-patch_t *gen_button_lt[2];
-patch_t *gen_button_rt[2];
-patch_t *gen_button_start[2];
-patch_t *gen_button_back[2];
-patch_t *gen_button_ls[2];
-patch_t *gen_button_rs[2];
-patch_t *gen_button_dpad[2];
+patch_t *gen_button_lb[2][2];
+patch_t *gen_button_rb[2][2];
+patch_t *gen_button_lt[2][2];
+patch_t *gen_button_rt[2][2];
+patch_t *gen_button_start[2][2];
+patch_t *gen_button_back[2][2];
+patch_t *gen_button_ls[2][2];
+patch_t *gen_button_rs[2][2];
+patch_t *gen_button_dpad[2][2];
 
 patch_t *gen_button_keyleft[2];
 patch_t *gen_button_keyright[2];
 patch_t *gen_button_keycenter[2];
 
-static void K_LoadButtonGraphics(patch_t *kp[2], int letter)
+static void K_LoadButtonGraphics(patch_t *kp[2][2], const char* code)
 {
-	HU_UpdatePatch(&kp[0], "TLB_%c", letter);
-	HU_UpdatePatch(&kp[1], "TLB_%cB", letter);
+	HU_UpdatePatch(&kp[0][0], "TLB_%s", code);
+	HU_UpdatePatch(&kp[0][1], "TLB_%sB", code);
+	HU_UpdatePatch(&kp[1][0], "TLBS%s", code);
+	HU_UpdatePatch(&kp[1][1], "TLBS%sB", code);
 }
 
-static void K_LoadGenericButtonGraphics(patch_t *kp[2], int letter)
+static void K_LoadGenericButtonGraphics(patch_t *kp[2][2], const char* code)
 {
-	HU_UpdatePatch(&kp[0], "TLG_%c", letter);
-	HU_UpdatePatch(&kp[1], "TLG_%cB", letter);
+	HU_UpdatePatch(&kp[0][0], "TLG_%s", code);
+	HU_UpdatePatch(&kp[0][1], "TLG_%sB", code);
+	HU_UpdatePatch(&kp[1][0], "TLGS%s", code);
+	HU_UpdatePatch(&kp[1][1], "TLGS%sB", code);
 }
 
 void K_LoadKartHUDGraphics(void)
@@ -968,58 +972,23 @@ void K_LoadKartHUDGraphics(void)
 		HU_UpdatePatch(&kp_spraycantarget_near[1][i], "%s", buffer);
 	}
 
-	K_LoadButtonGraphics(kp_button_a[0], 'A');
-	K_LoadButtonGraphics(kp_button_a[1], 'N');
-	K_LoadButtonGraphics(kp_button_b[0], 'B');
-	K_LoadButtonGraphics(kp_button_b[1], 'O');
-	K_LoadButtonGraphics(kp_button_c[0], 'C');
-	K_LoadButtonGraphics(kp_button_c[1], 'P');
-	K_LoadButtonGraphics(kp_button_x[0], 'D');
-	K_LoadButtonGraphics(kp_button_x[1], 'Q');
-	K_LoadButtonGraphics(kp_button_y[0], 'E');
-	K_LoadButtonGraphics(kp_button_y[1], 'R');
-	K_LoadButtonGraphics(kp_button_z[0], 'F');
-	K_LoadButtonGraphics(kp_button_z[1], 'S');
-	K_LoadButtonGraphics(kp_button_start, 'G');
-	K_LoadButtonGraphics(kp_button_l, 'H');
-	K_LoadButtonGraphics(kp_button_r, 'I');
-	K_LoadButtonGraphics(kp_button_up, 'J');
-	K_LoadButtonGraphics(kp_button_down, 'K');
-	K_LoadButtonGraphics(kp_button_right, 'L');
-	K_LoadButtonGraphics(kp_button_left, 'M');
-	// K_LoadButtonGraphics(kp_button_dpad, 'T');
+	K_LoadButtonGraphics(kp_button_a, "A");
+	K_LoadButtonGraphics(kp_button_b, "B");
+	K_LoadButtonGraphics(kp_button_c, "C");
+	K_LoadButtonGraphics(kp_button_x, "X");
+	K_LoadButtonGraphics(kp_button_y, "Y");
+	K_LoadButtonGraphics(kp_button_z, "Z");
+	K_LoadButtonGraphics(kp_button_l, "L1");
+	K_LoadButtonGraphics(kp_button_r, "R1");
+	K_LoadButtonGraphics(kp_button_up, "ARU");
+	K_LoadButtonGraphics(kp_button_down, "ARD");
+	K_LoadButtonGraphics(kp_button_right, "ARR");
+	K_LoadButtonGraphics(kp_button_left, "ARL");
+	K_LoadButtonGraphics(kp_button_start, "S");
 
-	HU_UpdatePatch(&kp_button_lua1[0], "TLG_L1");
-	HU_UpdatePatch(&kp_button_lua1[1], "TLG_L1B");
-	HU_UpdatePatch(&kp_button_lua2[0], "TLG_L2");
-	HU_UpdatePatch(&kp_button_lua2[1], "TLG_L2B");
-	HU_UpdatePatch(&kp_button_lua3[0], "TLG_L3");
-	HU_UpdatePatch(&kp_button_lua3[1], "TLG_L3B");
-
-	K_LoadGenericButtonGraphics(gen_button_a[0], 'A');
-	K_LoadGenericButtonGraphics(gen_button_b[0], 'B');
-	K_LoadGenericButtonGraphics(gen_button_x[0], 'D');
-	K_LoadGenericButtonGraphics(gen_button_y[0], 'E');
-
-	K_LoadGenericButtonGraphics(gen_button_a[1], 'K');
-	K_LoadGenericButtonGraphics(gen_button_b[1], 'M');
-	K_LoadGenericButtonGraphics(gen_button_x[1], 'L');
-	K_LoadGenericButtonGraphics(gen_button_y[1], 'J');
-
-	K_LoadGenericButtonGraphics(gen_button_lb, 'H');
-	K_LoadGenericButtonGraphics(gen_button_rb, 'I');
-
-	K_LoadGenericButtonGraphics(gen_button_lt, 'C');
-	K_LoadGenericButtonGraphics(gen_button_rt, 'F');
-
-	K_LoadGenericButtonGraphics(gen_button_start, 'G');
-	K_LoadGenericButtonGraphics(gen_button_back, 'V'); // FIXME
-
-	K_LoadGenericButtonGraphics(gen_button_ls, 'T');
-	K_LoadGenericButtonGraphics(gen_button_rs, 'U');
-
-	HU_UpdatePatch(&gen_button_dpad[0], "TLB_T");
-	HU_UpdatePatch(&gen_button_dpad[1], "TLB_TB");
+	K_LoadGenericButtonGraphics(kp_button_lua1, "LU1");
+	K_LoadGenericButtonGraphics(kp_button_lua2, "LU2");
+	K_LoadGenericButtonGraphics(kp_button_lua3, "LU3");
 
 	HU_UpdatePatch(&gen_button_keyleft[0], "TLK_L");
 	HU_UpdatePatch(&gen_button_keyleft[1], "TLK_LB");
@@ -1027,6 +996,20 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&gen_button_keyright[1], "TLK_RB");
 	HU_UpdatePatch(&gen_button_keycenter[0], "TLK_M");
 	HU_UpdatePatch(&gen_button_keycenter[1], "TLK_MB");
+
+	K_LoadGenericButtonGraphics(gen_button_dpad, "DP");
+	K_LoadGenericButtonGraphics(gen_button_a, "A");
+	K_LoadGenericButtonGraphics(gen_button_b, "B");
+	K_LoadGenericButtonGraphics(gen_button_x, "X");
+	K_LoadGenericButtonGraphics(gen_button_y, "Y");
+	K_LoadGenericButtonGraphics(gen_button_lb, "L1");
+	K_LoadGenericButtonGraphics(gen_button_rb, "R1");
+	K_LoadGenericButtonGraphics(gen_button_lt, "L2");
+	K_LoadGenericButtonGraphics(gen_button_rt, "R2");
+	K_LoadGenericButtonGraphics(gen_button_ls, "L3");
+	K_LoadGenericButtonGraphics(gen_button_rs, "R3");
+	K_LoadGenericButtonGraphics(gen_button_start, "S");
+	K_LoadGenericButtonGraphics(gen_button_back, "I");
 }
 
 // For the item toggle menu
@@ -6509,14 +6492,14 @@ void K_drawKartHUD(void)
 #if 0
 	using srb2::Draw;
 
-	if (0)
+	if (1)
 	{
-	// Draw::TextElement text = Draw::TextElement().parse("A <a> B <b> C <c> X <x> Y <y> Z <z>\nST <start> L <l> R <r> U <up> D <down> L <left> R <right>");
-	Draw::TextElement text = Draw::TextElement().parse("Unpressed <y> Pressed <y_pressed> Animated <y_animated>");
+	CV_StealthSetValue(cv_descriptiveinput, 0);
+	Draw::TextElement text = Draw::TextElement().parse("Hamburger <a><b><c><x><y><z><l><r><lua1><lua2><lua3><start><left><up><right><down> Hamburger\n\nHamburger <large><a><large><b><large><c><large><x><large><y><large><z><large><l><large><r><large><lua1><large><lua2><large><lua3><large><start><large><left><large><up><large><right><large><down> Hamburger\n\nHamburger \xEB\xEF\xA0\xEB\xEF\xA1\xEB\xEF\xA2\xEB\xEF\xA3\xEB\xEF\xA4\xEB\xEF\xA5\xEB\xEF\xA6\xEB\xEF\xA7\xEB\xEF\xA8\xEB\xEF\xA9\xEB\xEF\xAA\xEB\xEF\xAB\xEB\xEF\xAC Hamburger");
 	
 	UINT8 fakeoff = (stplyr - players)*40;
 	Draw(5, 5+fakeoff).align((srb2::Draw::Align)0).font(Draw::Font::kMenu).text(text);
-	Draw(5, 20+fakeoff).align((srb2::Draw::Align)0).font(Draw::Font::kThin).text(text);
+	Draw(40, 80+fakeoff).align((srb2::Draw::Align)0).font(Draw::Font::kThin).text(text);
 	}	
 
 	if (0)

@@ -482,7 +482,7 @@ void Dialogue::Draw(void)
 	if (TextDone())
 	{
 		drawer
-			.xy(-18 - 5, -7-5)
+			.xy(-18 - 3, -7-5)
 			.patch(patchCache["TUTDIAG2"]);
 
 		if (Held())
@@ -490,7 +490,7 @@ void Dialogue::Draw(void)
 		else
 			intertext += "<z_animated>";
 
-		drawer.xy(-18 + 4 - 5, -7-8 - 14).align(Draw::Align::kCenter).font(Draw::Font::kMenu).text(srb2::Draw::TextElement().parse(intertext).string());
+		drawer.xy(-18, -7-8 - 14).align(Draw::Align::kCenter).font(Draw::Font::kMenu).text(srb2::Draw::TextElement().parse(intertext).string());
 	}
 }
 

@@ -390,16 +390,16 @@ patch_t** get_button_patch(Draw::Button type, int ver)
 	X(x)[ver];
 	X(y)[ver];
 	X(z)[ver];
-	X(start);
-	X(l);
-	X(r);
-	X(up);
-	X(down);
-	X(right);
-	X(left);
-	X(lua1);
-	X(lua2);
-	X(lua3);
+	X(start)[ver];
+	X(l)[ver];
+	X(r)[ver];
+	X(up)[ver];
+	X(down)[ver];
+	X(right)[ver];
+	X(left)[ver];
+	X(lua1)[ver];
+	X(lua2)[ver];
+	X(lua3)[ver];
 
 #undef X
 	}
@@ -435,15 +435,15 @@ patch_t** get_button_patch(Draw::GenericButton type, int ver)
 	X(b)[ver];
 	X(x)[ver];
 	X(y)[ver];
-	X(lb);
-	X(rb);
-	X(lt);
-	X(rt);
-	X(start);
-	X(back);
-	X(ls);
-	X(rs);
-	X(dpad);
+	X(lb)[ver];
+	X(rb)[ver];
+	X(lt)[ver];
+	X(rt)[ver];
+	X(start)[ver];
+	X(back)[ver];
+	X(ls)[ver];
+	X(rs)[ver];
+	X(dpad)[ver];
 
 #undef X
 	}

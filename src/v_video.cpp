@@ -2496,40 +2496,39 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 
 static UINT8 V_GetButtonCodeWidth(UINT8 c, boolean largebutton)
 {
-	UINT8 x = 0;
+	UINT8 x = 14;
 
 	switch (c & 0x0F)
 	{
-	case 0x00:
-	case 0x01:
-	case 0x02:
-	case 0x03:
-		// arrows
-		x = 12;
+	case sb_up:
+	case sb_down:
+	case sb_left:
+	case sb_right:
+		x -= largebutton ? 2 : 4;
 		break;
 
-	case 0x07:
-	case 0x08:
-	case 0x09:
-		// shoulders, start
-		x = 14;
+	case sb_l:
+	case sb_r:
+		x -= largebutton ? 1 : 4;
 		break;
 
-	case 0x04:
-	case 0x05:
-	case 0x06:
-		// lua
-		x = 16;
+	case sb_start:
+		x -= largebutton ? 0 : 4;
 		break;
 
-	case 0x0A:
-	case 0x0B:
-	case 0x0C:
-	case 0x0D:
-	case 0x0E:
-	case 0x0F:
-		// faces
-		x = largebutton ? 13 : 10;
+	case sb_lua1:
+	case sb_lua2:
+	case sb_lua3:
+		x -= largebutton ? 0 : 4;
+		break;
+
+	case sb_a:
+	case sb_b:
+	case sb_c:
+	case sb_x:
+	case sb_y:
+	case sb_z:
+		x -= largebutton ? 0 : 4;
 		break;
 	}
 
@@ -2538,45 +2537,42 @@ static UINT8 V_GetButtonCodeWidth(UINT8 c, boolean largebutton)
 
 static UINT8 V_GetGenericButtonCodeWidth(UINT8 c, boolean largebutton)
 {
-	UINT8 x = 0;
+	UINT8 x = 16;
 
-	switch (c & 0x0F)
+	switch ((c & 0x0F) | gb_mask)
 	{
-	case 0x00:
-	case 0x01:
-	case 0x02:
-	case 0x03:
-		// buttons
-		x = largebutton ? 17 : 14;
+	case gb_a:
+	case gb_b:
+	case gb_x:
+	case gb_y:
+		x -= largebutton ? 0 : 2;
 		break;
 
-	case 0x04:
-	case 0x05:
-		// bumpers
-		x = 14;
+	case gb_lb:
+	case gb_rb:
+		x -= largebutton ? 2 : 6;
 		break;
 
-	case 0x06:
-	case 0x07:
-		// triggers
-		x = 14;
+	case gb_lt:
+	case gb_rt:
+		x -= largebutton ? 2 : 6;
 		break;
 
-	case 0x08:
-	case 0x09:
-		// nav
-		x = 14;
+	case gb_start:
+		x -= largebutton ? 2 : 6;
 		break;
 
-	case 0x0A:
-	case 0x0B:
-		// stick click
-		x = 18;
+	case gb_back:
+		x -= largebutton ? 2 : 6;
 		break;
 
-	case 0x0C:
-		// dpad
-		x = 14;
+	case gb_ls:
+	case gb_rs:
+		x -= largebutton ? 1 : 4;
+		break;
+
+	case gb_dpad:
+		x -= largebutton ? 2 : 5;
 		break;
 	}
 
@@ -2608,6 +2604,10 @@ void V_DrawStringScaled(
 	boolean notcolored;
 	int boxed = 0;
 	boolean descriptive = false;
+
+	boolean debugalternation = false;
+	UINT8 debugcolor1 = 181;
+	UINT8 debugcolor2 = 96;
 
 	boolean   dance;
 	boolean nodanceoverride;
@@ -2835,31 +2835,64 @@ void V_DrawStringScaled(
 							{
 								switch (c & 0x0F)
 								{
-								case sb_up: return {{0, 3, Draw::Button::up}};
-								case sb_down: return {{0, 3, Draw::Button::down}};
-								case sb_right: return {{0, 3, Draw::Button::right}};
-								case sb_left: return {{0, 3, Draw::Button::left}};
+								case sb_up: return {{2, 2, Draw::Button::up}};
+								case sb_down: return {{2, 2, Draw::Button::down}};
+								case sb_right: return {{2, 2, Draw::Button::right}};
+								case sb_left: return {{2, 2, Draw::Button::left}};
 
-								case sb_lua1: return {{0, 4, Draw::Button::lua1}};
-								case sb_lua2: return {{0, 4, Draw::Button::lua2}};
-								case sb_lua3: return {{0, 4, Draw::Button::lua3}};
+								case sb_lua1: return {{2, 2, Draw::Button::lua1}};
+								case sb_lua2: return {{2, 2, Draw::Button::lua2}};
+								case sb_lua3: return {{2, 2, Draw::Button::lua3}};
 
-								case sb_r: return {{0, 2, Draw::Button::r}};
-								case sb_l: return {{0, 2, Draw::Button::l}};
+								case sb_r: return {{2, 2, Draw::Button::r}};
+								case sb_l: return {{2, 2, Draw::Button::l}};
 
-								case sb_start: return {{0, 1, Draw::Button::start}};
+								case sb_start: return {{2, 2, Draw::Button::start}};
 
-								case sb_a: return {{2, 1, Draw::Button::a}};
-								case sb_b: return {{2, 1, Draw::Button::b}};
-								case sb_c: return {{2, 1, Draw::Button::c}};
+								case sb_a: return {{2, 2, Draw::Button::a}};
+								case sb_b: return {{2, 2, Draw::Button::b}};
+								case sb_c: return {{2, 2, Draw::Button::c}};
 
-								case sb_x: return {{2, 1, Draw::Button::x}};
-								case sb_y: return {{2, 1, Draw::Button::y}};
-								case sb_z: return {{2, 1, Draw::Button::z}};
+								case sb_x: return {{2, 2, Draw::Button::x}};
+								case sb_y: return {{2, 2, Draw::Button::y}};
+								case sb_z: return {{2, 2, Draw::Button::z}};
 
 								default: return {};
 								}
 							}();
+
+							if (largebutton)
+							{
+								bt_inst = [c]() -> std::optional<BtConf>
+								{
+									switch (c & 0x0F)
+									{
+									case sb_up: return {{2, 4, Draw::Button::up}};
+									case sb_down: return {{2, 4, Draw::Button::down}};
+									case sb_right: return {{2, 4, Draw::Button::right}};
+									case sb_left: return {{2, 4, Draw::Button::left}};
+
+									case sb_lua1: return {{1, 4, Draw::Button::lua1}};
+									case sb_lua2: return {{1, 4, Draw::Button::lua2}};
+									case sb_lua3: return {{1, 4, Draw::Button::lua3}};
+
+									case sb_r: return {{1, 4, Draw::Button::r}};
+									case sb_l: return {{1, 4, Draw::Button::l}};
+
+									case sb_start: return {{1, 4, Draw::Button::start}};
+
+									case sb_a: return {{1, 4, Draw::Button::a}};
+									case sb_b: return {{1, 4, Draw::Button::b}};
+									case sb_c: return {{1, 4, Draw::Button::c}};
+
+									case sb_x: return {{1, 4, Draw::Button::x}};
+									case sb_y: return {{1, 4, Draw::Button::y}};
+									case sb_z: return {{1, 4, Draw::Button::z}};
+
+									default: return {};
+									}
+								}();
+							}
 
 							if (bt_inst)
 							{
@@ -2877,6 +2910,12 @@ void V_DrawStringScaled(
 								cw = V_GetButtonCodeWidth(c, largebutton) * dupx;
 
 								cxoff = (*fontspec.dim_fn)(scale, fontspec.chw, hchw, dupx, &cw);
+
+								if (cv_debugfonts.value)
+								{
+									V_DrawFill(cx/FRACUNIT, cy/FRACUNIT, cw/FRACUNIT, fontspec.lfh/FRACUNIT, debugalternation ? debugcolor1 : debugcolor2);
+									debugalternation = !debugalternation;
+								}
 
 								Draw bt = Draw(
 									FixedToFloat(cx + cxoff) - (bt_inst->x * dupx),
@@ -2908,22 +2947,46 @@ void V_DrawStringScaled(
 							{
 								switch ((c & 0x0F) | gb_mask)
 								{
-								case gb_a: return {{0, 2, Draw::GenericButton::a}};
-								case gb_b: return {{0, 2, Draw::GenericButton::b}};
-								case gb_x: return {{0, 2, Draw::GenericButton::x}};
-								case gb_y: return {{0, 2, Draw::GenericButton::y}};
-								case gb_lb: return {{1, 3, Draw::GenericButton::lb}};
-								case gb_rb: return {{1, 3, Draw::GenericButton::rb}};
-								case gb_lt: return {{1, 4, Draw::GenericButton::lt}};
-								case gb_rt: return {{1, 4, Draw::GenericButton::rt}};
-								case gb_start: return {{1, 6, Draw::GenericButton::start}};
-								case gb_back: return {{1, 6, Draw::GenericButton::back}};
-								case gb_ls: return {{0, 5, Draw::GenericButton::ls}};
-								case gb_rs: return {{0, 5, Draw::GenericButton::rs}};
-								case gb_dpad: return {{0, 4, Draw::GenericButton::dpad}};
+								case gb_a: return {{0, 1, Draw::GenericButton::a}};
+								case gb_b: return {{0, 1, Draw::GenericButton::b}};
+								case gb_x: return {{0, 1, Draw::GenericButton::x}};
+								case gb_y: return {{0, 1, Draw::GenericButton::y}};
+								case gb_lb: return {{2, 2, Draw::GenericButton::lb}};
+								case gb_rb: return {{2, 2, Draw::GenericButton::rb}};
+								case gb_lt: return {{2, 2, Draw::GenericButton::lt}};
+								case gb_rt: return {{2, 2, Draw::GenericButton::rt}};
+								case gb_start: return {{2, 2, Draw::GenericButton::start}};
+								case gb_back: return {{2, 2, Draw::GenericButton::back}};
+								case gb_ls: return {{1, 2, Draw::GenericButton::ls}};
+								case gb_rs: return {{1, 2, Draw::GenericButton::rs}};
+								case gb_dpad: return {{2, 2, Draw::GenericButton::dpad}};
 								default: return {};
 								}
 							}();
+
+							if (largebutton)
+							{
+								bt_inst = [c]() -> std::optional<BtConf>
+								{
+									switch ((c & 0x0F) | gb_mask)
+									{
+									case gb_a: return {{0, 3, Draw::GenericButton::a}};
+									case gb_b: return {{0, 3, Draw::GenericButton::b}};
+									case gb_x: return {{0, 3, Draw::GenericButton::x}};
+									case gb_y: return {{0, 3, Draw::GenericButton::y}};
+									case gb_lb: return {{1, 3, Draw::GenericButton::lb}};
+									case gb_rb: return {{1, 3, Draw::GenericButton::rb}};
+									case gb_lt: return {{1, 4, Draw::GenericButton::lt}};
+									case gb_rt: return {{1, 4, Draw::GenericButton::rt}};
+									case gb_start: return {{1, 6, Draw::GenericButton::start}};
+									case gb_back: return {{1, 6, Draw::GenericButton::back}};
+									case gb_ls: return {{1, 5, Draw::GenericButton::ls}};
+									case gb_rs: return {{1, 5, Draw::GenericButton::rs}};
+									case gb_dpad: return {{1, 4, Draw::GenericButton::dpad}};
+									default: return {};
+									}
+								}();	
+							}
 
 							if (bt_inst)
 							{
@@ -2941,6 +3004,12 @@ void V_DrawStringScaled(
 								cw = V_GetGenericButtonCodeWidth(c, largebutton) * dupx;
 
 								cxoff = (*fontspec.dim_fn)(scale, fontspec.chw, hchw, dupx, &cw);
+
+								if (cv_debugfonts.value)
+								{
+									V_DrawFill(cx/FRACUNIT, cy/FRACUNIT, cw/FRACUNIT, fontspec.lfh/FRACUNIT, debugalternation ? debugcolor1 : debugcolor2);
+									debugalternation = !debugalternation;
+								}
 
 								Draw bt = Draw(
 									FixedToFloat(cx + cxoff) - (bt_inst->x * dupx),
@@ -2968,6 +3037,12 @@ void V_DrawStringScaled(
 						fixed_t patchxofs = SHORT (font->font[c]->leftoffset) * dupx * scale;
 						cw = SHORT (font->font[c]->width) * dupx;
 						cxoff = (*fontspec.dim_fn)(scale, fontspec.chw, hchw, dupx, &cw);
+
+						if (cv_debugfonts.value)
+						{
+							V_DrawFill(cx/FRACUNIT, cy/FRACUNIT, cw/FRACUNIT, fontspec.lfh/FRACUNIT, debugalternation ? debugcolor1 : debugcolor2);
+							debugalternation = !debugalternation;
+						}
 
 						if (boxed != 1)
 						{
@@ -3063,6 +3138,7 @@ fixed_t V_StringScaledWidth(
 			case '\xEB':
 				if (fontno != TINY_FONT && fontno != HU_FONT)
 					largebutton = true;
+				break;
 			case '\xEF':
 				descriptive = true;
 				break;

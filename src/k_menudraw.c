@@ -6106,7 +6106,7 @@ void M_DrawPause(void)
 		K_DrawGameControl(4, 184 - 45 + offset/2, 0, "<a> Accelerate", 0, 0, 0);
 		K_DrawGameControl(4, 184 - 30 + offset/2, 0, "<b> Look Back", 0, 0, 0);
 		K_DrawGameControl(4, 184 - 15 + offset/2, 0, "<c> Spindash", 0, 0, 0);
-		K_DrawGameControl(4, 184 - 0 + offset/2, 0, "<l> Item", 0, 0, 0);
+		K_DrawGameControl(4, 184 - 0 + offset/2, 0, "<l> Item/Rings", 0, 0, 0);
 
 		K_DrawGameControl(90, 184 - 45 + offset/2, 0, "<x> Brake", 0, 0, 0);
 		K_DrawGameControl(90, 184 - 30 + offset/2, 0, "<y> Respawn", 0, 0, 0);
