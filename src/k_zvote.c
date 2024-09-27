@@ -1104,9 +1104,9 @@ void K_DrawMidVote(void)
 			exc, NULL
 		);
 		K_DrawGameControl(
-			x/FRACUNIT - 4, y/FRACUNIT + exc->height/FRACUNIT - 12,
+			x/FRACUNIT - 4, y/FRACUNIT + exc->height - 8,
 			id, pressed ? "<z_pressed>" : "<z>",
-			0, 8, V_SNAPTOBOTTOM|V_SNAPTORIGHT
+			0, 8, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN
 		);
 		/*
 		K_drawButton(
@@ -1227,7 +1227,7 @@ void K_DrawMidVote(void)
 		if (drawButton == true)
 		{
 			K_DrawGameControl(
-				x/FRACUNIT-20, y/FRACUNIT-2, id,
+				x/FRACUNIT-20, y/FRACUNIT + 2, id,
 				pressed ? "<z_pressed>" : "<z>",
 				0, 8, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN
 			);
