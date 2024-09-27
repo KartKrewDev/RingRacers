@@ -37,34 +37,34 @@ menuitem_t OPTIONS_ProfileControls[] = {
 		"TLB_C", {.routine = M_ProfileSetControl}, gc_c, 0},
 
 	{IT_CONTROL, "Brake / Go back", "Brake / Go back",
-		"TLB_D", {.routine = M_ProfileSetControl}, gc_x, 0},
+		"TLB_X", {.routine = M_ProfileSetControl}, gc_x, 0},
 
 	{IT_CONTROL, "Respawn", "Respawn",
-		"TLB_E", {.routine = M_ProfileSetControl}, gc_y, 0},
+		"TLB_Y", {.routine = M_ProfileSetControl}, gc_y, 0},
 
 	{IT_CONTROL, "Action", "Multiplayer quick-chat / quick-vote",
-		"TLB_F", {.routine = M_ProfileSetControl}, gc_z, 0},
+		"TLB_Z", {.routine = M_ProfileSetControl}, gc_z, 0},
 
 	{IT_CONTROL, "Use Item", "Use item",
-		"TLB_H", {.routine = M_ProfileSetControl}, gc_l, 0},
+		"TLB_L1", {.routine = M_ProfileSetControl}, gc_l, 0},
 
 	{IT_CONTROL, "Drift", "Drift",
-		"TLB_I", {.routine = M_ProfileSetControl}, gc_r, 0},
+		"TLB_R1", {.routine = M_ProfileSetControl}, gc_r, 0},
 
 	{IT_CONTROL, "Turn Left", "Turn left",
-		"TLB_M", {.routine = M_ProfileSetControl}, gc_left, 0},
+		"TLB_ARL", {.routine = M_ProfileSetControl}, gc_left, 0},
 
 	{IT_CONTROL, "Turn Right", "Turn right",
-		"TLB_L", {.routine = M_ProfileSetControl}, gc_right, 0},
+		"TLB_ARR", {.routine = M_ProfileSetControl}, gc_right, 0},
 
 	{IT_CONTROL, "Aim Forward", "Aim forwards",
-		"TLB_J", {.routine = M_ProfileSetControl}, gc_up, 0},
+		"TLB_ARU", {.routine = M_ProfileSetControl}, gc_up, 0},
 
 	{IT_CONTROL, "Aim Backwards", "Aim backwards",
-		"TLB_K", {.routine = M_ProfileSetControl}, gc_down, 0},
+		"TLB_ARD", {.routine = M_ProfileSetControl}, gc_down, 0},
 
 	{IT_CONTROL, "Open pause menu", "Open pause menu",
-		"TLB_G", {.routine = M_ProfileSetControl}, gc_start, 0},
+		"TLB_S", {.routine = M_ProfileSetControl}, gc_start, 0},
 
 	{IT_HEADER, "OPTIONAL CONTROLS", "Take a screenshot, chat...",
 		NULL, {NULL}, 0, 0},
