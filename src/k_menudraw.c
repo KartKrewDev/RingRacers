@@ -755,6 +755,8 @@ static void M_DrawMenuTyping(void)
 
 }
 
+// Largely replaced by boxed drawing mode in K_DrawGameControl and rich text
+/*
 static void M_DrawMediocreKeyboardKey(const char *text, INT32 *workx, INT32 worky, boolean push, boolean rightaligned)
 {
 	INT32 buttonwidth = V_StringWidth(text, 0) + 2;
@@ -779,6 +781,7 @@ static void M_DrawMediocreKeyboardKey(const char *text, INT32 *workx, INT32 work
 		0, text
 	);
 }
+*/
 
 // Draw the message popup submenu
 void M_DrawMenuMessage(void)
