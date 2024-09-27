@@ -4978,6 +4978,8 @@ static void M_DrawBindMediumString(INT32 y, INT32 flags, const char *string)
 	);
 }
 
+// largely replaced by K_DrawGameControl
+/*
 static INT32 M_DrawProfileLegend(INT32 x, INT32 y, const char *legend, const char *mediocre_key)
 {
 	INT32 w = V_ThinStringWidth(legend, 0);
@@ -4987,6 +4989,7 @@ static INT32 M_DrawProfileLegend(INT32 x, INT32 y, const char *legend, const cha
 		M_DrawMediocreKeyboardKey(mediocre_key, &x, y, false, true);
 	return x;
 }
+*/
 
 // the control stuff.
 // Dear god.
