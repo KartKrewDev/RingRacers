@@ -1240,7 +1240,7 @@ static INT32 M_DrawRejoinIP(INT32 x, INT32 y, INT32 tx)
 	V_DrawMenuString(x - 10 - (skullAnimCounter/5), y, f, "\x1C"); // left arrow
 	V_DrawMenuString(x + w + 2+ (skullAnimCounter/5), y, f, "\x1D"); // right arrow
 	V_DrawThinString(x, y, f, text);
-	V_DrawRightAlignedThinString(BASEVIDWIDTH + 4 + tx, y, V_ORANGEMAP, "\xAC Rejoin");
+	K_DrawGameControl(BASEVIDWIDTH + 4 + tx, y, 0, "<c> Rejoin", 2, 0, V_ORANGEMAP);
 
 	return shift;
 }

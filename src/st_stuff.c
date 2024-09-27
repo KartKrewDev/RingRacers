@@ -1498,10 +1498,10 @@ void ST_DrawServerSplash(boolean timelimited)
 
 void ST_DrawSaveReplayHint(INT32 flags)
 {
-	V_DrawRightAlignedThinString(
-		BASEVIDWIDTH - 2, 2,
-		flags|V_YELLOWMAP,
-		(demo.willsave && demo.titlename[0]) ? "Replay will be saved.  \xAB Change title" : "\xAB or \xAD Save replay"
+	K_DrawGameControl(
+		BASEVIDWIDTH - 2, 2, 0,
+		(demo.willsave && demo.titlename[0]) ? "Replay will be saved.  <b> Change title" : "<b> or <x> Save replay",
+		2, 0, flags|V_YELLOWMAP
 	);
 }
 

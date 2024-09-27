@@ -146,7 +146,7 @@ void list_commands()
 		if (flags & COM_NOSHOWHELP)
 			continue;
 
-		g_menu.push_back(menuitem_t {IT_STRING | IT_CALL, cmd->name, "Press \xAA to execute this command", nullptr, {.routine = call}, 0, 8});
+		g_menu.push_back(menuitem_t {IT_STRING | IT_CALL, cmd->name, "No information available for commands. Press to execute.", nullptr, {.routine = call}, 0, 8});
 	}
 }
 
