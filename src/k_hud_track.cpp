@@ -433,13 +433,18 @@ std::optional<TargetTracking::Tooltip> object_tooltip(const mobj_t* mobj)
 	case MT_GARDENTOP:
 		return conditional(
 			mobj->tracer == stplyr->mo && Obj_GardenTopPlayerNeedsHelp(mobj),
-			[&] { return TextElement("Try \xA7!").font(splitfont); }
+			[&] { return TextElement().parse("Try <r>!").font(splitfont); }
 		);
 
 	case MT_PLAYER:
 		return conditional(
 			mobj->player == stplyr && stplyr->icecube.frozen,
-			[&] { return Tooltip(TextElement("\xA7")).offset3d(0, 0, 64 * mobj->scale * P_MobjFlip(mobj)); }
+			[&] { return Tooltip(TextElement(
+				(leveltime/(TICRATE/2)%2) ? 
+					TextElement().parse("<r_animated>").font(Draw::Font::kMenu) : 
+					TextElement().parse("<a_animated>").font(Draw::Font::kMenu)
+				)).offset3d(0, 0, 64 * mobj->scale * P_MobjFlip(mobj)); }
+			// I will be trying to figure out why the return value didn't accept a straightforward call to parse() for the rest of my life (apprx. 15 seconds)
 		);
 
 	default:
