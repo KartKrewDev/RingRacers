@@ -441,8 +441,8 @@ std::optional<TargetTracking::Tooltip> object_tooltip(const mobj_t* mobj)
 			mobj->player == stplyr && stplyr->icecube.frozen,
 			[&] { return Tooltip(TextElement(
 				(leveltime/(TICRATE/2)%2) ? 
-					TextElement().parse("<r_animated>").font(Draw::Font::kMenu) : 
-					TextElement().parse("<a_animated>").font(Draw::Font::kMenu)
+					TextElement().parse("<r_animated>").font(splitfont) : 
+					TextElement().parse("<a_animated>").font(splitfont)
 				)).offset3d(0, 0, 64 * mobj->scale * P_MobjFlip(mobj)); }
 			// I will be trying to figure out why the return value didn't accept a straightforward call to parse() for the rest of my life (apprx. 15 seconds)
 		);
