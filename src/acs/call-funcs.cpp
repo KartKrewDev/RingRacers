@@ -1271,7 +1271,7 @@ bool CallFunc_EndPrintBold(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM
 bool CallFunc_PlayerTeam(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
 	auto info = &static_cast<Thread *>(thread)->info;
-	UINT8 teamID = 0;
+	UINT8 teamID = TEAM_UNASSIGNED;
 
 	(void)argV;
 	(void)argC;
@@ -1280,7 +1280,7 @@ bool CallFunc_PlayerTeam(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::
 		&& (info->mo != NULL && P_MobjWasRemoved(info->mo) == false)
 		&& (info->mo->player != NULL))
 	{
-		teamID = info->mo->player->ctfteam;
+		teamID = info->mo->player->team;
 	}
 
 	thread->dataStk.push(teamID);

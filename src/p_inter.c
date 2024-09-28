@@ -49,11 +49,6 @@
 #include "m_easing.h"
 #include "k_hud.h" // K_AddMessage
 
-
-// CTF player names
-#define CTFTEAMCODE(pl) pl->ctfteam ? (pl->ctfteam == 1 ? "\x85" : "\x84") : ""
-#define CTFTEAMENDCODE(pl) pl->ctfteam ? "\x80" : ""
-
 void P_ForceFeed(const player_t *player, INT32 attack, INT32 fade, tic_t duration, INT32 period)
 {
 	BasicFF_t Basicfeed;
@@ -1510,13 +1505,15 @@ void P_CheckPointLimit(void)
 		return;
 
 	// pointlimit is nonzero, check if it's been reached by this player
-	if (G_GametypeHasTeams())
+	if (G_GametypeHasTeams() == true)
 	{
-		// Just check both teams
-		if (g_pointlimit <= redscore || g_pointlimit <= bluescore)
+		for (i = 0; i < TEAM__MAX; i++)
 		{
-			if (server)
-				SendNetXCmd(XD_EXITLEVEL, NULL, 0);
+			if (g_pointlimit <= g_teamscores[i])
+			{
+				P_DoAllPlayersExit(0, false);
+				return;
+			}
 		}
 	}
 	else
@@ -1529,10 +1526,7 @@ void P_CheckPointLimit(void)
 			if (g_pointlimit <= players[i].roundscore)
 			{
 				P_DoAllPlayersExit(0, false);
-
-				/*if (server)
-					SendNetXCmd(XD_EXITLEVEL, NULL, 0);*/
-				return; // good thing we're leaving the function immediately instead of letting the loop get mangled!
+				return;
 			}
 		}
 	}
@@ -2506,12 +2500,11 @@ static boolean P_PlayerHitsPlayer(mobj_t *target, mobj_t *inflictor, mobj_t *sou
 		if (source == target)
 			return false;
 
-		if (G_GametypeHasTeams())
-		{
-			// Don't hurt your team, either!
-			if (source->player->ctfteam == target->player->ctfteam)
-				return false;
-		}
+#if 0
+		// Don't hurt your team, either!
+		if (G_SameTeam(source->player, target->player) == true)
+			return false;
+#endif
 	}
 
 	return true;

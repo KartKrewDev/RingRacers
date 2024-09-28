@@ -174,15 +174,19 @@ void K_SetBot(UINT8 newplayernum, UINT8 skinnum, UINT8 difficulty, botStyle_e st
 				break;
 		}
 	}
-	players[newplayernum].skincolor = color;
-	K_SetNameForBot(newplayernum, realname);
 
-	SetPlayerSkinByNum(newplayernum, skinnum);
+	K_SetNameForBot(newplayernum, realname);
 
 	for (UINT8 i = 0; i < PWRLV_NUMTYPES; i++)
 	{
 		clientpowerlevels[newplayernum][i] = 0;
 	}
+
+	players[newplayernum].prefcolor = color;
+	players[newplayernum].prefskin = skinnum;
+	players[newplayernum].preffollower = -1;
+	players[newplayernum].preffollowercolor = SKINCOLOR_NONE;
+	G_UpdatePlayerPreferences(&players[newplayernum]);
 
 	if (netgame)
 	{
@@ -630,6 +634,12 @@ static UINT32 K_BotRubberbandDistance(const player_t *player)
 			continue;
 		}
 
+		if (G_SameTeam(player, &players[i]) == true)
+		{
+			// Don't consider friendlies with your rubberbanding.
+			continue;
+		}
+
 		// First check difficulty levels, then score, then settle it with port priority!
 		if (player->botvars.difficulty < players[i].botvars.difficulty)
 		{
@@ -712,6 +722,12 @@ fixed_t K_BotRubberband(const player_t *player)
 
 		// Don't rubberband to ourselves...
 		if (player == &players[i])
+		{
+			continue;
+		}
+
+		// Don't rubberband to friendlies...
+		if (G_SameTeam(player, &players[i]) == true)
 		{
 			continue;
 		}

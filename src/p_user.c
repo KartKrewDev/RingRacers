@@ -73,6 +73,7 @@
 #include "k_hud.h" // K_AddMessage
 #include "m_easing.h"
 #include "acs/interface.h"
+#include "byteptr.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_light.h"
@@ -514,25 +515,44 @@ void P_GivePlayerLives(player_t *player, INT32 numlives)
 // Adds to the player's score
 void P_AddPlayerScore(player_t *player, INT32 amount)
 {
-	if (!((gametyperules & GTR_POINTLIMIT)))
+	if ((gametyperules & GTR_POINTLIMIT) == 0)
+	{
 		return;
+	}
 
 	if (player->exiting) // srb2kart
+	{
 		return;
+	}
+
+	const boolean teams = G_GametypeHasTeams();
 
 	// Don't underflow.
 	// Don't go above MAXSCORE.
 	if (amount < 0 && (UINT32)-amount > player->roundscore)
+	{
 		player->roundscore = 0;
+	}
 	else if (player->roundscore + amount < MAXSCORE)
 	{
-		if (player->roundscore < g_pointlimit && g_pointlimit <= player->roundscore + amount)
+		if (player->roundscore < g_pointlimit
+			&& g_pointlimit <= player->roundscore + amount
+			&& teams == false) // We want the normal scoring function to update roundscore, but this notification will be done by G_AddTeamScore.
+		{
 			HU_DoTitlecardCEchoForDuration(player, "K.O. READY!", true, 5*TICRATE/2);
+		}
 
 		player->roundscore += amount;
 	}
 	else
+	{
 		player->roundscore = MAXSCORE;
+	}
+
+	if (teams == true)
+	{
+		G_AddTeamScore(player->team, amount, player);
+	}
 }
 
 void P_PlayRinglossSound(mobj_t *source)
@@ -3742,49 +3762,9 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 boolean P_SpectatorJoinGame(player_t *player)
 {
-	INT32 changeto = 0;
 	const char *text = NULL;
 
-	// Team changing isn't allowed.
-	if (!cv_allowteamchange.value)
-		return false;
-
-	// Team changing in Team Match and CTF
-	// Pressing fire assigns you to a team that needs players if allowed.
-	// Partial code reproduction from p_tick.c autobalance code.
-	// a surprise tool that will help us later...
-	if (G_GametypeHasTeams() && player->ctfteam == 0)
-	{
-		INT32 z, numplayersred = 0, numplayersblue = 0;
-
-		//find a team by num players, score, or random if all else fails.
-		for (z = 0; z < MAXPLAYERS; ++z)
-			if (playeringame[z])
-			{
-				if (players[z].ctfteam == 1)
-					++numplayersred;
-				else if (players[z].ctfteam == 2)
-					++numplayersblue;
-			}
-		// for z
-
-		if (numplayersblue > numplayersred)
-			changeto = 1;
-		else if (numplayersred > numplayersblue)
-			changeto = 2;
-		else if (bluescore > redscore)
-			changeto = 1;
-		else if (redscore > bluescore)
-			changeto = 2;
-		else
-			changeto = (P_RandomFixed(PR_RULESCRAMBLE) & 1) + 1;
-
-		if (!LUA_HookTeamSwitch(player, changeto, true, false, false))
-			return false;
-	}
-
 	// no conditions that could cause the gamejoin to fail below this line
-
 	if (player->mo)
 	{
 		P_RemoveMobj(player->mo);
@@ -3793,7 +3773,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 	player->spectator = false;
 	player->pflags &= ~PF_WANTSTOJOIN;
 	player->spectatewait = 0;
-	player->ctfteam = changeto;
+	player->team = TEAM_UNASSIGNED; // We will auto-assign later.
 	player->playerstate = PST_REBORN;
 	player->enteredGame = true;
 
@@ -3805,12 +3785,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 	}
 
 	// a surprise tool that will help us later...
-	if (changeto == 1)
-		text = va("\x82*%s switched to the %c%s%c team.\n", player_names[player-players], '\x85', "RED", '\x82');
-	else if (changeto == 2)
-		text = va("\x82*%s switched to the %c%s%c team.\n", player_names[player-players], '\x85', "BLU", '\x82');
-	else
-		text = va("\x82*%s entered the game.", player_names[player-players]);
+	text = va("\x82*%s entered the game.", player_names[player-players]);
 
 	HU_AddChatText(text, false);
 	return true; // no more player->mo, cannot continue.
@@ -4891,16 +4866,13 @@ void P_CheckRaceGriefing(player_t *player, boolean dopunishment)
 			else
 			{
 				// Send spectate
-				changeteam_union NetPacket;
-				UINT16 usvalue;
+				UINT8 buf[2];
+				UINT8 *p = buf;
 
-				NetPacket.value.l = NetPacket.value.b = 0;
-				NetPacket.packet.newteam = 0;
-				NetPacket.packet.playernum = n;
-				NetPacket.packet.verification = true;
+				WRITEUINT8(p, n);
+				WRITEUINT8(p, 0);
 
-				usvalue = SHORT(NetPacket.value.l|NetPacket.value.b);
-				SendNetXCmd(XD_TEAMCHANGE, &usvalue, sizeof(usvalue));
+				SendNetXCmd(XD_SPECTATE, &buf, p - buf);
 			}
 		}
 	}

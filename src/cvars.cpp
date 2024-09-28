@@ -597,9 +597,6 @@ consvar_t cv_sleep = Server("cpusleep", "1").min_max(0, 1000/TICRATE);
 // There's a separate section for netvars that don't save...
 //
 
-void AutoBalance_OnChange(void);
-consvar_t cv_autobalance = NetVar("autobalance", "Off").on_off().onchange(AutoBalance_OnChange);
-
 consvar_t cv_blamecfail = NetVar("blamecfail", "Off").on_off();
 
 // Speed of file downloading (in packets per tic)
@@ -627,10 +624,6 @@ consvar_t cv_maxsend = NetVar("maxsend", "51200").min_max(0, 51200);
 consvar_t cv_noticedownload = NetVar("noticedownload", "Off").on_off();
 consvar_t cv_pingtimeout = NetVar("maxdelaytimeout", "10").min_max(8, 120);
 consvar_t cv_resynchattempts = NetVar("resynchattempts", "2").min_max(1, 20, {{0, "No"}});
-
-void TeamScramble_OnChange(void);
-consvar_t cv_scrambleonchange = NetVar("scrambleonchange", "Off").values({{0, "Off"}, {1, "Random"}, {2, "Points"}});
-consvar_t cv_teamscramble = NetVar("teamscramble", "Off").values({{0, "Off"}, {1, "Random"}, {2, "Points"}}).onchange_noinit(TeamScramble_OnChange);
 
 consvar_t cv_showjoinaddress = NetVar("showjoinaddress", "Off").on_off();
 consvar_t cv_zvote_delay = NetVar("zvote_delay", "20").values(CV_Unsigned);
@@ -735,6 +728,8 @@ consvar_t cv_kartfrantic = UnsavedNetVar("franticitems", "Off").on_off().onchang
 
 void KartSpeed_OnChange(void);
 consvar_t cv_kartspeed = UnsavedNetVar("gamespeed", "Auto Gear").values(kartspeed_cons_t).onchange_noinit(KartSpeed_OnChange);
+
+consvar_t cv_teamplay = UnsavedNetVar("teamplay", "Off").on_off();
 
 consvar_t cv_kartusepwrlv = UnsavedNetVar("usepwrlv", "Yes").yes_no();
 
@@ -996,9 +991,6 @@ consvar_t cv_dummyspectate = MenuDummy("dummyspectate", "Spectator").values({{0,
 
 extern CV_PossibleValue_t dummystaff_cons_t[];
 consvar_t cv_dummystaff = MenuDummy("dummystaff", "0").values(dummystaff_cons_t);
-
-consvar_t cv_dummyteam = MenuDummy("dummyteam", "Spectator").values({{0, "Spectator"}, {1, "Red"}, {2, "Blue"}});
-
 
 //
 // lastprofile

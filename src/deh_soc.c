@@ -3551,22 +3551,6 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 						COM_BufInsertText(W_CacheLumpNum(lumpnum, PU_CACHE));
 				}
 			}
-			else if (fastcmp(word, "REDTEAM"))
-			{
-				skincolor_redteam = (UINT16)get_number(word2);
-			}
-			else if (fastcmp(word, "BLUETEAM"))
-			{
-				skincolor_blueteam = (UINT16)get_number(word2);
-			}
-			else if (fastcmp(word, "REDRING"))
-			{
-				skincolor_redring = (UINT16)get_number(word2);
-			}
-			else if (fastcmp(word, "BLUERING"))
-			{
-				skincolor_bluering = (UINT16)get_number(word2);
-			}
 			else if (fastcmp(word, "INVULNTICS"))
 			{
 				invulntics = (UINT16)get_number(word2);

@@ -357,7 +357,7 @@ struct plrconfig
 	UINT16 color;
 	UINT32 pflags;
 	UINT32 score;
-	UINT8 ctfteam;
+	UINT8 team;
 } ATTRPACK;
 
 struct filesneededconfig_pak

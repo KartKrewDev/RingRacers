@@ -4030,6 +4030,12 @@ angle_t K_MomentumAngleReal(const mobj_t *mo)
 // Scale amp rewards for crab bucketing. Play ambitiously!
 boolean K_PvPAmpReward(UINT32 award, player_t *attacker, player_t *defender)
 {
+	if (G_SameTeam(attacker, defender) == true)
+	{
+		// Do not reward amps for friendly fire.
+		return 0;
+	}
+
 	UINT32 epsilon = FixedMul(2048/4, mapobjectscale); // How close is close enough that full reward seems fair, even if you're technically ahead?
 	UINT32 range = FixedMul(2048, mapobjectscale);
 	UINT32 atkdist = attacker->distancetofinish + epsilon;
@@ -4052,6 +4058,9 @@ boolean K_PvPAmpReward(UINT32 award, player_t *attacker, player_t *defender)
 void K_SpawnAmps(player_t *player, UINT8 amps, mobj_t *impact)
 {
 	if (gametyperules & GTR_SPHERES)
+		return;
+
+	if (amps == 0)
 		return;
 
 	UINT16 scaledamps = min(amps, amps * (10 + (9-player->kartspeed) - (9-player->kartweight)) / 10);
@@ -4317,6 +4326,12 @@ void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UIN
 		return;
 	}
 
+	if (G_SameTeam(player, victim) == true)
+	{
+		// No farming points off of teammates, either.
+		return;
+	}
+
 	if (player->exiting)
 	{
 		// The round has already ended, don't mess with points
@@ -4347,7 +4362,7 @@ void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UIN
 	}
 
 	// Check this before adding to player score
-	if ((gametyperules & GTR_BUMPERS) && finishOff && g_pointlimit <= player->roundscore)
+	if ((gametyperules & GTR_BUMPERS) && finishOff && g_pointlimit <= G_TeamOrIndividualScore(player))
 	{
 		K_EndBattleRound(player);
 
@@ -8294,7 +8309,7 @@ mobj_t *K_FindJawzTarget(mobj_t *actor, player_t *source, angle_t range)
 			continue;
 		}
 
-		if (G_GametypeHasTeams() && source != NULL && source->ctfteam == player->ctfteam)
+		if (G_SameTeam(source, player) == false)
 		{
 			// Don't home in on teammates.
 			continue;
@@ -10090,9 +10105,7 @@ void K_KartResetPlayerColor(player_t *player)
 
 	if (player->mo->health <= 0 || player->playerstate == PST_DEAD || (player->respawn.state == RESPAWNST_MOVE)) // Override everything
 	{
-		player->mo->colorized = (player->dye != 0);
-		player->mo->color = player->dye ? player->dye : player->skincolor;
-		goto finalise;
+		goto base;
 	}
 
 	if (player->eggmanexplode) // You're gonna diiiiie
@@ -10204,8 +10217,18 @@ void K_KartResetPlayerColor(player_t *player)
 		goto finalise;
 	}
 
-	player->mo->colorized = (player->dye != 0);
-	player->mo->color = player->dye ? player->dye : player->skincolor;
+base:
+
+	if (player->dye)
+	{
+		player->mo->colorized = true;
+		player->mo->color = player->dye;
+	}
+	else
+	{
+		player->mo->colorized = false;
+		player->mo->color = player->skincolor;
+	}
 
 finalise:
 
@@ -11740,13 +11763,18 @@ static void K_KartDrift(player_t *player, boolean onground)
 	else
 		player->pflags &= ~PF_BRAKEDRIFT;
 }
+
 //
 // K_KartUpdatePosition
 //
 void K_KartUpdatePosition(player_t *player)
 {
-	fixed_t position = 1;
-	fixed_t oldposition = player->position;
+	UINT8 position = 1;
+	UINT8 oldposition = player->position;
+
+	UINT8 team_position = 1;
+	UINT32 team_importance = 0;
+
 	fixed_t i;
 	INT32 realplayers = 0;
 
@@ -11755,6 +11783,8 @@ void K_KartUpdatePosition(player_t *player)
 		// Ensure these are reset for spectators
 		player->position = 0;
 		player->positiondelay = 0;
+		player->teamposition = 0;
+		player->teamimportance = 0;
 		return;
 	}
 
@@ -11779,23 +11809,40 @@ void K_KartUpdatePosition(player_t *player)
 
 			realplayers++;
 
+			const boolean same_team = G_SameTeam(player, &players[i]);
+
+#define increment_position(condition) \
+	if (condition) \
+	{ \
+		position++; \
+		if (!same_team) \
+		{ \
+			team_position++; \
+		} \
+	} \
+	else \
+	{ \
+		if (!same_team) \
+		{ \
+			team_importance++; \
+		} \
+	}
+
 			if (gametyperules & GTR_CIRCUIT)
 			{
 				if (player->exiting) // End of match standings
 				{
 					// Only time matters
-					if (players[i].realtime < player->realtime)
-						position++;
+					increment_position(players[i].realtime < player->realtime)
 				}
 				else
 				{
 					// I'm a lap behind this player OR
 					// My distance to the finish line is higher, so I'm behind
-					if ((players[i].laps > player->laps)
-						|| (players[i].distancetofinish < player->distancetofinish))
-					{
-						position++;
-					}
+					increment_position(
+						(players[i].laps > player->laps)
+						|| (players[i].distancetofinish < player->distancetofinish)
+					)
 				}
 			}
 			else
@@ -11803,8 +11850,7 @@ void K_KartUpdatePosition(player_t *player)
 				if (player->exiting) // End of match standings
 				{
 					// Only score matters
-					if (players[i].roundscore > player->roundscore)
-						position++;
+					increment_position(players[i].roundscore > player->roundscore)
 				}
 				else
 				{
@@ -11814,26 +11860,25 @@ void K_KartUpdatePosition(player_t *player)
 					// First compare all points
 					if (players[i].roundscore > player->roundscore)
 					{
-						position++;
+						increment_position(true)
 					}
 					else if (players[i].roundscore == player->roundscore)
 					{
 						// Emeralds are a tie breaker
 						if (yourEmeralds > myEmeralds)
 						{
-							position++;
+							increment_position(true)
 						}
 						else if (yourEmeralds == myEmeralds)
 						{
 							// Bumpers are the second tier tie breaker
-							if (K_Bumpers(&players[i]) > K_Bumpers(player))
-							{
-								position++;
-							}
+							increment_position(K_Bumpers(&players[i]) > K_Bumpers(player))
 						}
 					}
 				}
 			}
+
+#undef increment_position
 		}
 	}
 
@@ -11887,6 +11932,15 @@ void K_KartUpdatePosition(player_t *player)
 	}
 
 	player->position = position;
+	player->teamposition = team_position;
+
+	// "Team importance" is used for scoring
+	// in gametypes without scoring / point limit.
+	player->teamimportance = (team_importance * 2);
+	if (position == 1)
+	{
+		player->teamimportance++;
+	}
 }
 
 void K_UpdateAllPlayerPositions(void)
@@ -11925,6 +11979,26 @@ void K_UpdateAllPlayerPositions(void)
 		if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 		{
 			K_KartUpdatePosition(&players[i]);
+		}
+	}
+
+	// Team Race: Live update score.
+	if (G_GametypeHasTeams() == true && (gametyperules & GTR_POINTLIMIT) == 0)
+	{
+		for (i = 0; i < TEAM__MAX; i++)
+		{
+			g_teamscores[i] = 0;
+		}
+
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			const player_t *player = &players[i];
+			if (playeringame[i] == false || player->spectator == true || player->team == TEAM_UNASSIGNED)
+			{
+				continue;
+			}
+
+			g_teamscores[player->team] += player->teamimportance;
 		}
 	}
 }
@@ -14968,7 +15042,7 @@ UINT32 K_PointLimitForGametype(void)
 		// counted.
 		for (i = 0; i < MAXPLAYERS; ++i)
 		{
-			if (D_IsPlayerHumanAndGaming(i))
+			if (playeringame[i] == true && players[i].spectator == false)
 			{
 				ptsCap += 3;
 			}
@@ -14977,6 +15051,43 @@ UINT32 K_PointLimitForGametype(void)
 		if (ptsCap > 16)
 		{
 			ptsCap = 16;
+		}
+
+		if (G_GametypeHasTeams() == true)
+		{
+			// Scale up the point limit based on
+			// the team sizes. Based upon the smallest
+			// team, because it would make an uneven
+			// fucked up 1v15 possible to win, even
+			// if it was still unbalanced.
+			const UINT32 old_ptsCap = ptsCap;
+			UINT8 smallest_team = MAXPLAYERS;
+
+			for (i = TEAM_UNASSIGNED+1; i < TEAM__MAX; i++)
+			{
+				UINT8 countteam = G_CountTeam(i);
+				smallest_team = min( smallest_team, countteam );
+			}
+
+			if (smallest_team > 1)
+			{
+				UINT8 pts_accumulator = ptsCap / 2;
+				for (i = 0; i < smallest_team - 1; i++)
+				{
+					if (pts_accumulator == 0)
+					{
+						break;
+					}
+
+					ptsCap += pts_accumulator;
+					pts_accumulator /= 2;
+				}
+			}
+
+			CONS_Debug(
+				DBG_TEAMS, "Team Battle: points cap increased from %u to %u. (team size is %u)\n",
+				old_ptsCap, ptsCap, smallest_team
+			);
 		}
 	}
 
@@ -15081,12 +15192,18 @@ fixed_t K_GetExpAdjustment(player_t *player)
 	fixed_t exp_stablerate = 3*FRACUNIT/10; // how low is your placement before losing XP? 4*FRACUNIT/10 = top 40% of race will gain
 	fixed_t result = 0;
 
-	INT32 live_players = 0;
+	INT32 live_players = 0; // players we are competing against
 
 	for (INT32 i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i] || players[i].spectator || player == players+i)
 			continue;
+
+		if (G_SameTeam(player, &players[i]) == true)
+		{
+			// You don't win/lose against your teammates.
+			continue;
+		}
 
 		live_players++;
 	}
@@ -15101,6 +15218,12 @@ fixed_t K_GetExpAdjustment(player_t *player)
 	{
 		if (!playeringame[i] || players[i].spectator || player == players+i)
 			continue;
+
+		if (G_SameTeam(player, &players[i]) == true)
+		{
+			// You don't win/lose against your teammates.
+			continue;
+		}
 
 		if (player->position < players[i].position)
 			result += exp_power;

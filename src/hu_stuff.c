@@ -621,7 +621,7 @@ static void Command_Sayteam_f(void)
 		return;
 	}
 
-	if (G_GametypeHasTeams())	// revert to normal say if we don't have teams in this gametype.
+	if (G_GametypeHasTeams()) // revert to normal say if we don't have teams in this gametype.
 		DoSayPacketFromCommand(-1, 1, 0);
 	else
 		DoSayPacketFromCommand(0, 1, 0);
@@ -779,16 +779,8 @@ static void Got_Saycmd(const UINT8 **p, INT32 playernum)
 		}
 		else if (target == -1) // say team
 		{
-			if (players[playernum].ctfteam == 1)
-			{
-				// red text
-				cstart = textcolor = "\x85";
-			}
-			else
-			{
-				// blue text
-				cstart = textcolor = "\x84";
-			}
+			sprintf(color_prefix, "%c", '\x80' + (g_teaminfo[ players[playernum].team ].chat_color >> V_CHARCOLORSHIFT));
+			cstart = textcolor = color_prefix;
 		}
 		else
 		{
@@ -1593,12 +1585,7 @@ static void HU_DrawChat(void)
 	if (teamtalk)
 	{
 		talk = ttalk;
-#if 0
-		if (players[consoleplayer].ctfteam == 1)
-			t = '\0x85';  // Red
-		else if (players[consoleplayer].ctfteam == 2)
-			t = '\0x84'; // Blue
-#endif
+		//t = '\x80' + (g_teaminfo[ players[consoleplayer].team ].chat_color >> V_CHARCOLORSHIFT);
 	}
 
 	typelines = 1;
@@ -2569,8 +2556,6 @@ static void HU_DrawRankings(void)
 
 		completed[i] = true;
 
-		standings.character[standings.numplayers] = players[i].skin;
-		standings.color[standings.numplayers] = players[i].skincolor;
 		standings.pos[standings.numplayers] = players[i].position;
 
 #define strtime standings.strval[standings.numplayers]
@@ -2607,6 +2592,8 @@ static void HU_DrawRankings(void)
 
 		standings.numplayers++;
 	}
+
+	standings.halfway = (standings.numplayers-1)/2;
 
 	// Returns early if there's no players to draw
 	Y_PlayerStandingsDrawer(&standings, 0);

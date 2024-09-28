@@ -1535,7 +1535,7 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 			// Only red/blue team members can activate this.
 			if (!(actor && actor->player))
 				return false;
-			if (actor->player->ctfteam != ((triggerline->args[1] == TMT_RED) ? 1 : 2))
+			if (actor->player->team != ((triggerline->args[1] == TMT_ORANGE) ? TEAM_ORANGE : TEAM_BLUE))
 				return false;
 			break;
 		case 314:

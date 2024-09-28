@@ -144,6 +144,7 @@ TYPEDEF (unloaded_cupheader_t);
 TYPEDEF (exitcondition_t);
 TYPEDEF (darkness_t);
 TYPEDEF (musicfade_t);
+TYPEDEF (teaminfo_t);
 
 // font.h
 TYPEDEF (font_t);

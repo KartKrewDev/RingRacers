@@ -791,9 +791,13 @@ void K_RetireBots(void)
 			bot->botvars.difficulty = newDifficulty;
 			bot->botvars.diffincrease = 0;
 
-			SetPlayerSkinByNum(i, skinnum);
-			bot->skincolor = skins[skinnum].prefcolor;
 			K_SetNameForBot(i, skins[skinnum].realname);
+
+			bot->prefskin = skinnum;
+			bot->prefcolor = skins[skinnum].prefcolor;
+			bot->preffollower = -1;
+			bot->preffollowercolor = SKINCOLOR_NONE;
+			G_UpdatePlayerPreferences(bot);
 
 			bot->score = 0;
 			bot->pflags &= ~PF_NOCONTEST;

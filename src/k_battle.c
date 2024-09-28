@@ -985,7 +985,16 @@ boolean K_EndBattleRound(player_t *victor)
 		if (gametyperules & GTR_POINTLIMIT)
 		{
 			// Lock the winner in before the round ends.
+
+			// TODO: a "won the round" bool used for sorting
+			// position / intermission, so we aren't completely
+			// clobbering the individual scoring.
 			victor->roundscore = 100;
+
+			if (G_GametypeHasTeams() == true && victor->team != TEAM_UNASSIGNED)
+			{
+				g_teamscores[victor->team] = 100;
+			}
 		}
 	}
 
