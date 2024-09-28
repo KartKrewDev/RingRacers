@@ -6216,12 +6216,12 @@ void M_DrawKickHandler(void)
 	//V_DrawFill(32 + (playerkickmenu.player & 8), 32 + (playerkickmenu.player & 7)*8, 8, 8, playeringame[playerkickmenu.player] ? 0 : 16);
 
 	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
-	V_DrawCenteredThinString(
-		BASEVIDWIDTH/2, 12,
-		0,
+	K_DrawGameControl(
+		BASEVIDWIDTH/2, 12, 0,
 		(playerkickmenu.adminpowered)
-			? "You are using ""\x85""Admin Tools""\x80"", ""\x83""(A)""\x80"" to kick and ""\x84""(C)""\x80"" to ban"
-			: K_GetMidVoteLabel(menucallvote)
+			? "You are using <red>Admin Tools<white>.  <a> Kick  <c> Ban"
+			: K_GetMidVoteLabel(menucallvote),
+		1, 0, 0
 	);
 }
 
