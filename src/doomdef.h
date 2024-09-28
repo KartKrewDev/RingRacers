@@ -558,6 +558,9 @@ extern struct debugFlagNames_s const debug_flag_names[];
 // Misc stuff for later...
 // =======================
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 #define ANG2RAD(angle) ((float)((angle)*M_PI)/ANGLE_180)
 
 // Modifier key variables, accessible anywhere

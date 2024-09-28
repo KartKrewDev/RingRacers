@@ -258,7 +258,7 @@ enum {false = 0, true = 1};
 		#endif
 	#endif
 
-	#if defined (__MINGW32__) && ((__GNUC__ > 3) || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4)) // MinGW, >= GCC 3.4
+	#if defined (__MINGW32__) && ((__GNUC__ > 3) || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4)) && !defined(__clang__) // MinGW, >= GCC 3.4, not Clang
 		#define ATTRPACK __attribute__((packed, gcc_struct))
 	#else
 		#define ATTRPACK __attribute__((packed))
@@ -407,8 +407,12 @@ typedef UINT64 precise_t;
 // that struct and it's fine...
 
 // Cast function pointer to (void*)
-#define FUNCPTRCAST(p) ((union{void(*f)(void);void*v;})\
-		{(void(*)(void))p}).v
+typedef union {
+    void (*f)(void);
+    void *v;
+} func_ptr_cast_union;
+
+#define FUNCPTRCAST(p) (((func_ptr_cast_union){(void(*)(void))(p)}).v)
 
 #include "typedef.h"
 
