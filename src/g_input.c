@@ -769,17 +769,17 @@ static keyname_t shortkeynames[] =
 	{KEY_ESCAPE, "ESC"},
 	{KEY_BACKSPACE, "BKSP"},
 
-	{KEY_NUMLOCK, "NUMLOCK"},
-	{KEY_SCROLLLOCK, "SCRLOCK"},
+	{KEY_NUMLOCK, "NLOK"},
+	{KEY_SCROLLLOCK, "SLOK"},
 
 	// bill gates keys
 	{KEY_LEFTWIN, "LWIN"},
 	{KEY_RIGHTWIN, "RWIN"},
 	{KEY_MENU, "MENU"},
 
-	{KEY_LSHIFT, "LSHIFT"},
-	{KEY_RSHIFT, "RSHIFT"},
-	{KEY_LSHIFT, "SHIFT"},
+	{KEY_LSHIFT, "LSFT"},
+	{KEY_RSHIFT, "RSFT"},
+	{KEY_LSHIFT, "SFT"},
 	{KEY_LCTRL, "LCTRL"},
 	{KEY_RCTRL, "RCTRL"},
 	{KEY_LCTRL, "CTRL"},
@@ -788,20 +788,20 @@ static keyname_t shortkeynames[] =
 	{KEY_LALT, "ALT"},
 
 	// keypad keys
-	{KEY_KPADSLASH, "NUM/"},
-	{KEY_KEYPAD7, "NUM7"},
-	{KEY_KEYPAD8, "NUM8"},
-	{KEY_KEYPAD9, "NUM9"},
-	{KEY_MINUSPAD, "NUM-"},
-	{KEY_KEYPAD4, "NUM4"},
-	{KEY_KEYPAD5, "NUM5"},
-	{KEY_KEYPAD6, "NUM6"},
-	{KEY_PLUSPAD, "NUM+"},
-	{KEY_KEYPAD1, "NUM1"},
-	{KEY_KEYPAD2, "NUM2"},
-	{KEY_KEYPAD3, "NUM3"},
-	{KEY_KEYPAD0, "NUM0"},
-	{KEY_KPADDEL, "NUM ."},
+	{KEY_KPADSLASH, "/"},
+	{KEY_KEYPAD7, "7"},
+	{KEY_KEYPAD8, "8"},
+	{KEY_KEYPAD9, "9"},
+	{KEY_MINUSPAD, "-"},
+	{KEY_KEYPAD4, "4"},
+	{KEY_KEYPAD5, "5"},
+	{KEY_KEYPAD6, "6"},
+	{KEY_PLUSPAD, "+"},
+	{KEY_KEYPAD1, "1"},
+	{KEY_KEYPAD2, "2"},
+	{KEY_KEYPAD3, "3"},
+	{KEY_KEYPAD0, "0"},
+	{KEY_KPADDEL, "."},
 
 	// extended keys (not keypad)
 	{KEY_HOME, "HOME"},
@@ -831,7 +831,7 @@ static keyname_t shortkeynames[] =
 
 	// KEY_CONSOLE has an exception in the keyname code
 	{'`', "TILDE"},
-	{KEY_PAUSE, "PAUSE/BREAK"},
+	{KEY_PAUSE, "PAUSE"},
 
 	// virtual keys for mouse buttons and joystick buttons
 	{KEY_MOUSE1+0,"M1"},
