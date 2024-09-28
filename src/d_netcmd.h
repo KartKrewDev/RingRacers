@@ -153,7 +153,7 @@ typedef enum
 	XD_PAUSE,       // 9
 	XD_ADDPLAYER,   // 10
 	XD_SPECTATE,    // 11
-	XD_CLEARSCORES, // 12
+	XD_SETSCORE,    // 12
 	XD_VERIFIED,    // 13
 	XD_RANDOMSEED,  // 14
 	XD_RUNSOC,      // 15

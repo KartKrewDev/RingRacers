@@ -75,7 +75,7 @@ void Command_Savecheckpoint_f(void);
 void Command_Setrings_f(void);
 void Command_Setspheres_f(void);
 void Command_Setlives_f(void);
-void Command_Setscore_f(void);
+void Command_Setroundscore_f(void);
 void Command_Devmode_f(void);
 void Command_Scale_f(void);
 void Command_Gravflip_f(void);

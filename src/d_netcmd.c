@@ -104,7 +104,7 @@ static void Got_RandomSeed(const UINT8 **cp, INT32 playernum);
 static void Got_RunSOCcmd(const UINT8 **cp, INT32 playernum);
 static void Got_Spectate(const UINT8 **cp, INT32 playernum);
 static void Got_TeamChange(const UINT8 **cp, INT32 playernum);
-static void Got_Clearscores(const UINT8 **cp, INT32 playernum);
+static void Got_Setscore(const UINT8 **cp, INT32 playernum);
 static void Got_DiscordInfo(const UINT8 **cp, INT32 playernum);
 static void Got_ScheduleTaskcmd(const UINT8 **cp, INT32 playernum);
 static void Got_ScheduleClearcmd(const UINT8 **cp, INT32 playernum);
@@ -158,7 +158,7 @@ static void Command_Mapmd5_f(void);
 
 static void Command_ServerTeamChange_f(void);
 
-static void Command_Clearscores_f(void);
+static void Command_Setscore_f(void);
 
 // Remote Administration
 static void Command_Changepassword_f(void);
@@ -290,7 +290,7 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"PAUSE", // XD_PAUSE
 	"ADDPLAYER", // XD_ADDPLAYER
 	"SPECTATE", // XD_SPECTATE
-	"CLEARSCORES", // XD_CLEARSCORES
+	"SETSCORE", // XD_SETSCORE
 	"VERIFIED", // XD_VERIFIED
 	"RANDOMSEED", // XD_RANDOMSEED
 	"RUNSOC", // XD_RUNSOC
@@ -389,8 +389,8 @@ void D_RegisterServerCommands(void)
 	RegisterNetXCmd(XD_TEAMCHANGE, Got_TeamChange);
 	COM_AddCommand("serverchangeteam", Command_ServerTeamChange_f);
 
-	RegisterNetXCmd(XD_CLEARSCORES, Got_Clearscores);
-	COM_AddDebugCommand("clearscores", Command_Clearscores_f);
+	RegisterNetXCmd(XD_SETSCORE, Got_Setscore);
+	COM_AddDebugCommand("setscore", Command_Setscore_f);
 	COM_AddCommand("map", Command_Map_f);
 	COM_AddDebugCommand("randommap", Command_RandomMap);
 	COM_AddCommand("restartlevel", Command_RestartLevel);
@@ -555,7 +555,7 @@ void D_RegisterClientCommands(void)
 	COM_AddDebugCommand("setrings", Command_Setrings_f);
 	COM_AddDebugCommand("setspheres", Command_Setspheres_f);
 	COM_AddDebugCommand("setlives", Command_Setlives_f);
-	COM_AddDebugCommand("setscore", Command_Setscore_f);
+	COM_AddDebugCommand("setroundscore", Command_Setroundscore_f);
 	COM_AddDebugCommand("devmode", Command_Devmode_f);
 	COM_AddDebugCommand("savecheckpoint", Command_Savecheckpoint_f);
 	COM_AddDebugCommand("scale", Command_Scale_f);
@@ -3354,43 +3354,195 @@ static void Got_RandomSeed(const UINT8 **cp, INT32 playernum)
 /** Clears all players' scores in a netgame.
   * Only the server or a remote admin can use this command, for obvious reasons.
   *
-  * \sa XD_CLEARSCORES, Got_Clearscores
+  * \sa XD_SETSCORE, Got_Setscore
   * \author SSNTails <http://www.ssntails.org>
   */
-static void Command_Clearscores_f(void)
+static void Command_Setscore_f(void)
 {
-	if (!(server || (IsPlayerAdmin(consoleplayer))))
+	size_t option_add;
+	size_t option_clear;
+
+	UINT8 edit_player = UINT8_MAX;
+	UINT32 desired_score = 0;
+
+	UINT8 buf[1+4];
+	UINT8 *p = buf;
+
+	if (!Playing())
+	{
+		CONS_Printf(M_GetText("Scores can only be updated in-game.\n"));
+		return;
+	}
+
+	if (client && !IsPlayerAdmin(consoleplayer))
+	{
+		CONS_Printf(M_GetText("Only the server or a remote admin can use this.\n"));
+		return;
+	}
+
+	if (K_UsingPowerLevels() != PWRLV_DISABLED)
+	{
+		CONS_Printf("PWR is currently active - setscore has no effect.\n");
+		return;
+	}
+
+	if (!K_CanChangeRules(false) && !CV_CheatsEnabled())
+	{
+		CONS_Printf(M_GetText("Cheats must be enabled.\n"));
+		return;
+	}
+
+	option_clear = COM_CheckParm("-clear");
+
+	if (option_clear)
+	{
+		WRITEUINT8(p, edit_player);
+		WRITEUINT32(p, desired_score);
+
+		SendNetXCmd(XD_SETSCORE, &buf, p - buf);
+		return;
+	}
+
+	option_add = COM_CheckPartialParm("-a");
+
+	if (COM_Argc() < (option_add ? 3 : 2))
+	{
+		CONS_Printf("setscore <playernum> <value> [-add] / [-clear]\n");
+		return;
+	}
+
+	size_t work_option = 0;
+	if (++work_option == option_add)
+		work_option++;
+
+	{
+		const char *pid_string = COM_Argv(work_option);
+		INT32 pid = atoi(pid_string);
+
+		if (pid >= MAXPLAYERS
+			|| pid < 0
+			|| isdigit(pid_string[0]) == false)
+		{
+			CONS_Printf("playernum must be between 0 and %u\n", MAXPLAYERS-1);
+			return;
+		}
+
+		edit_player = pid;
+	}
+
+	if (++work_option == option_add)
+		work_option++;
+
+	{
+		const char *score_string = COM_Argv(work_option);
+		INT32 score = atoi(score_string);
+		INT32 min_score = (option_add ? -MAXSCORE : 0);
+
+		if (score >= MAXSCORE
+			|| score < min_score
+			|| isdigit(score_string[0]) == false)
+		{
+			CONS_Printf("score%s must be between %d and %u\n", (option_add ? " -add" : ""), min_score, MAXSCORE);
+			return;
+		}
+
+		if (option_add)
+		{
+			score += (INT32)players[edit_player].score;
+		}
+
+		if (score > MAXSCORE)
+		{
+			score = MAXSCORE;
+		}
+		else if (score < 0)
+		{
+			score = 0;
+		}
+
+		desired_score = score;
+	}
+
+	if (edit_player > MAXPLAYERS)
 		return;
 
-	SendNetXCmd(XD_CLEARSCORES, NULL, 1);
+	if (!playeringame[edit_player])
+	{
+		CONS_Printf("playernum must be a valid player\n");
+		return;
+	}
+
+	if (players[edit_player].spectator)
+	{
+		CONS_Printf("playernum must not be a spectator\n");
+		return;
+	}
+
+	WRITEUINT8(p, edit_player);
+	WRITEUINT32(p, desired_score);
+
+	SendNetXCmd(XD_SETSCORE, &buf, p - buf);
 }
 
-/** Handles an ::XD_CLEARSCORES message, which resets all players' scores in a
-  * netgame to zero.
+/** Handles an ::XD_SETSCORE message, which sets one (or all) player's score(s)
   *
   * \param cp        Data buffer.
   * \param playernum Player responsible for the message. Must be ::serverplayer
   *                  or ::adminplayer.
-  * \sa XD_CLEARSCORES, Command_Clearscores_f
+  * \sa XD_SETSCORE, Command_Setscore_f
   * \author SSNTails <http://www.ssntails.org>
   */
-static void Got_Clearscores(const UINT8 **cp, INT32 playernum)
+static void Got_Setscore(const UINT8 **cp, INT32 playernum)
 {
-	INT32 i;
+	UINT8 edit_player = READUINT8(*cp);
+	UINT32 desired_score = READUINT32(*cp);
 
-	(void)cp;
 	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
 	{
-		CONS_Alert(CONS_WARNING, M_GetText("Illegal clear scores command received from %s\n"), player_names[playernum]);
+		CONS_Alert(CONS_WARNING, M_GetText("Illegal setscore command received from %s\n"), player_names[playernum]);
 		if (server)
 			SendKick(playernum, KICK_MSG_CON_FAIL);
 		return;
 	}
 
-	for (i = 0; i < MAXPLAYERS; i++)
-		players[i].score = 0;
+	if (K_UsingPowerLevels() != PWRLV_DISABLED)
+	{
+		return;
+	}
 
-	CONS_Printf(M_GetText("Scores have been reset by the server.\n"));
+	if (edit_player == UINT8_MAX)
+	{
+		for (edit_player = 0; edit_player < MAXPLAYERS; edit_player++)
+		{
+			if (!playeringame[edit_player])
+				continue;
+
+			players[edit_player].score = 0;
+		}
+
+		HU_AddChatText("\x82*All scores have been reset.", false);
+
+		return;
+	}
+
+	if (edit_player >= MAXPLAYERS || !playeringame[edit_player])
+	{
+		CONS_Printf("Invalid player ID %u recieved a score set!\n", edit_player);
+		return;
+	}
+
+	if (players[edit_player].spectator)
+	{
+		CONS_Printf("%s recieved a score set but is a spectator!\n", player_names[edit_player]);
+		return;
+	}
+
+	players[edit_player].score = desired_score;
+
+	HU_AddChatText(va("\x82*%s had their score set to %u.", player_names[edit_player], desired_score), false);
+
+	if (server)
+		CONS_Printf("This setscore was done by %s (Player %u).\n", player_names[playernum], playernum);
 }
 
 static void Command_ServerTeamChange_f(void)
@@ -5755,7 +5907,7 @@ static void Got_Cheat(const UINT8 **cp, INT32 playernum)
 
 			player->roundscore = score;
 
-			CV_CheaterWarning(targetPlayer, va("score = %u", score));
+			CV_CheaterWarning(targetPlayer, va("roundscore = %u", score));
 			break;
 		}
 
