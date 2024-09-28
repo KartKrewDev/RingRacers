@@ -2602,7 +2602,7 @@ void V_DrawStringScaled(
 
 	boolean uppercase;
 	boolean notcolored;
-	int boxed = 0;
+	UINT8 boxed = 0;
 	boolean descriptive = false;
 
 	boolean debugalternation = false;
@@ -2631,7 +2631,6 @@ void V_DrawStringScaled(
 
 	uppercase  = ((flags & V_FORCEUPPERCASE) == V_FORCEUPPERCASE);
 	flags	&= ~(V_FLIP);/* These two (V_FORCEUPPERCASE) share a bit. */
-	boxed = false;
 
 	dance           = (flags & V_STRINGDANCE) != 0;
 	nodanceoverride = !dance;
@@ -2698,7 +2697,8 @@ void V_DrawStringScaled(
 	right      <<=               FRACBITS;
 	bot          = vid.height << FRACBITS;
 
-	cx = x;
+	ssave = s;
+	cx = cxsave = x;
 	cy = y;
 	cyoff = 0;
 
@@ -2726,11 +2726,12 @@ void V_DrawStringScaled(
 			case '\xEC':
 			{
 				UINT8 anim_duration = 16;
-				boolean anim = ((I_GetTime() % (anim_duration * 2)) < anim_duration);
-				if (c == '\xEE')
-					anim = false;
-				else if (c == '\xEC')
-					anim = true;
+				UINT8 anim = 0;
+
+				if (c == '\xEC') // Pressed
+					anim = 1;
+				else if (c != '\xEE') // Not lifted..?
+					anim = ((I_GetTime() % (anim_duration * 2)) < anim_duration) ? 1 : 0;
 
 				// For bullshit text outlining reasons, we cannot draw this background character-by-character.
 				// Thinking about doing string manipulation and calling out to V_StringWidth made me drink water.
