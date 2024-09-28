@@ -755,6 +755,8 @@ static void M_DrawMenuTyping(void)
 
 }
 
+// Largely replaced by boxed drawing mode in K_DrawGameControl and rich text
+/*
 static void M_DrawMediocreKeyboardKey(const char *text, INT32 *workx, INT32 worky, boolean push, boolean rightaligned)
 {
 	INT32 buttonwidth = V_StringWidth(text, 0) + 2;
@@ -779,6 +781,7 @@ static void M_DrawMediocreKeyboardKey(const char *text, INT32 *workx, INT32 work
 		0, text
 	);
 }
+*/
 
 // Draw the message popup submenu
 void M_DrawMenuMessage(void)
@@ -806,10 +809,6 @@ void M_DrawMenuMessage(void)
 		INT32 workx = x + menumessage.x;
 		INT32 worky = y + menumessage.y;
 
-		boolean standardbuttons = (
-			cv_currprofile.value != -1 || G_GetNumAvailableGamepads()
-		);
-
 		boolean push;
 
 		if (menumessage.closing)
@@ -830,26 +829,11 @@ void M_DrawMenuMessage(void)
 
 		workx -= 2;
 
-		if (standardbuttons)
-		{
-			workx -= SHORT(kp_button_x[1][0]->width);
-			K_drawButton(
-				workx * FRACUNIT, worky * FRACUNIT,
-				0, kp_button_x[1],
-				push
-			);
-
-			workx -= SHORT(kp_button_b[1][0]->width);
-			K_drawButton(
-				workx * FRACUNIT, worky * FRACUNIT,
-				0, kp_button_b[1],
-				push
-			);
-		}
-		else
-		{
-			M_DrawMediocreKeyboardKey("ESC", &workx, worky, push, true);
-		}
+		workx -= K_DrawGameControl(
+			workx+2, worky+2,
+			0, "<b_animated> <x_animated> ",
+			2, 8, 0
+		);
 
 		if (menumessage.confirmstr)
 		{
@@ -869,19 +853,11 @@ void M_DrawMenuMessage(void)
 			workx -= 2;
 		}
 
-		if (standardbuttons)
-		{
-			workx -= SHORT(kp_button_a[1][0]->width);
-			K_drawButton(
-				workx * FRACUNIT, worky * FRACUNIT,
-				0, kp_button_a[1],
-				push
-			);
-		}
-		else
-		{
-			M_DrawMediocreKeyboardKey("ENTER", &workx, worky, push, true);
-		}
+		workx -= K_DrawGameControl(
+			workx+2, worky+2,
+			0, "<a_animated> ",
+			2, 8, 0
+		);
 	}
 
 	x -= 4;
@@ -1264,7 +1240,7 @@ static INT32 M_DrawRejoinIP(INT32 x, INT32 y, INT32 tx)
 	V_DrawMenuString(x - 10 - (skullAnimCounter/5), y, f, "\x1C"); // left arrow
 	V_DrawMenuString(x + w + 2+ (skullAnimCounter/5), y, f, "\x1D"); // right arrow
 	V_DrawThinString(x, y, f, text);
-	V_DrawRightAlignedThinString(BASEVIDWIDTH + 4 + tx, y, V_ORANGEMAP, "\xAC Rejoin");
+	K_DrawGameControl(BASEVIDWIDTH + 4 + tx, y, 0, "<c> Rejoin", 2, 0, V_ORANGEMAP);
 
 	return shift;
 }
@@ -2462,19 +2438,16 @@ void M_DrawCharacterSelect(void)
 	}
 
 	{
-		const int kLeft = 76;
 		const int kTop = 6;
-		const int kButtonWidth = 16;
-		INT32 x = basex + kLeft;
 
 		if (!optionsmenu.profile) // Does nothing on this screen
 		{
-			K_drawButton((x += 22) * FRACUNIT, (kTop - 3) * FRACUNIT, 0, kp_button_r, M_MenuButtonPressed(pid, MBT_R));
-			V_DrawThinString((x += kButtonWidth), kTop, 0, "Info");
+			K_DrawGameControl(BASEVIDWIDTH/2, kTop, pid, "<r_animated> Info   <c_animated> Default", 1, 0, 0);
 		}
-
-		K_drawButton((x += 58) * FRACUNIT, (kTop - 1) * FRACUNIT, 0, kp_button_c[1], M_MenuButtonPressed(pid, MBT_C));
-		V_DrawThinString((x += kButtonWidth), kTop, 0, "Default");
+		else
+		{
+			K_DrawGameControl(BASEVIDWIDTH/2+62, kTop, pid, "<a_animated> Accept  <x_animated> Back  <c_animated> Default", 1, 0, 0);
+		}
 	}
 
 	// We have to loop twice -- first time to draw the drop shadows, a second time to draw the icons.
@@ -2583,6 +2556,11 @@ void M_DrawCharacterSelect(void)
 	{
 		// Draw the priority player over the other ones
 		M_DrawCharSelectCursor(priority);
+	}
+
+	if (setup_numplayers > 1)
+	{
+		V_DrawCenteredThinString(BASEVIDWIDTH/2, BASEVIDHEIGHT-12, V_30TRANS, "\x85""Double-input problems?\x80 Close Steam, DS4Windows, and other controller wrappers!");
 	}
 }
 
@@ -2744,20 +2722,15 @@ void M_DrawRaceDifficulty(void)
 					V_DrawMappedPatch(cx, cy, 0, W_CachePatchName("OFF_TOGG", PU_CACHE), NULL);
 				}
 
-				patch_t **bt = NULL;
 				switch (it->mvar2)
 				{
 					case MBT_Y:
-						bt = kp_button_y[1];
+						K_DrawGameControl(cx + 24, cy + 22, 0, activated ? "<y_pressed>" : "<y>", 0, 8, 0);
 						break;
 
 					case MBT_Z:
-						bt = kp_button_z[1];
+						K_DrawGameControl(cx + 24, cy + 22, 0, activated ? "<z_pressed>" : "<z>", 0, 8, 0);
 						break;
-				}
-				if (bt)
-				{
-					K_drawButton((cx + 24) * FRACUNIT, (cy + 22) * FRACUNIT, 0, bt, activated);
 				}
 				break;
 			}
@@ -3662,7 +3635,7 @@ void M_DrawTimeAttack(void)
 
 			if (M_EncoreAttackTogglePermitted())
 			{
-				K_drawButtonAnim(buttonx + 35, buttony - 3, 0, kp_button_r, timeattackmenu.ticker);
+				K_DrawGameControl(buttonx + 35, buttony - 3, 0, "<r_animated>", 0, 8, 0);
 			}
 
 			if ((timeattackmenu.spbflicker == 0 || timeattackmenu.ticker % 2) == (cv_dummyspbattack.value == 1))
@@ -5008,6 +4981,8 @@ static void M_DrawBindMediumString(INT32 y, INT32 flags, const char *string)
 	);
 }
 
+// largely replaced by K_DrawGameControl
+/*
 static INT32 M_DrawProfileLegend(INT32 x, INT32 y, const char *legend, const char *mediocre_key)
 {
 	INT32 w = V_ThinStringWidth(legend, 0);
@@ -5017,6 +4992,7 @@ static INT32 M_DrawProfileLegend(INT32 x, INT32 y, const char *legend, const cha
 		M_DrawMediocreKeyboardKey(mediocre_key, &x, y, false, true);
 	return x;
 }
+*/
 
 // the control stuff.
 // Dear god.
@@ -5106,12 +5082,12 @@ void M_DrawProfileControls(void)
 					V_DrawMenuString(x, y+2, (i == itemOn ? highlightflags : 0), currentMenu->menuitems[i].text);
 
 				if (currentMenu->menuitems[i].status & IT_CVAR)	// not the proper way to check but this menu only has normal onoff cvars.
-				{
+				{												// (bitch you thought - Tyron 2024-09-22)
 					INT32 w;
 					consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
 
 					w = V_MenuStringWidth(cv->string, 0);
-					V_DrawMenuString(x + 12, y + 13, ((cv->flags & CV_CHEAT) && !CV_IsSetToDefault(cv) ? warningflags : highlightflags), cv->string);
+					V_DrawMenuString(x + 12, y + 13, (!CV_IsSetToDefault(cv) ? warningflags : highlightflags), cv->string);
 					if (i == itemOn)
 					{
 						V_DrawMenuString(x - (skullAnimCounter/5), y+12, highlightflags, "\x1C"); // left arrow
@@ -5300,13 +5276,50 @@ void M_DrawProfileControls(void)
 	if (currentMenu->menuitems[itemOn].tooltip != NULL)
 	{
 		INT32 ypos = BASEVIDHEIGHT + hintofs - 9 - 12;
-		V_DrawThinString(12, ypos, V_YELLOWMAP, currentMenu->menuitems[itemOn].tooltip);
 
-		boolean standardbuttons = gamedata->gonerlevel > GDGONER_PROFILE;
+		if (!strcmp(currentMenu->menuitems[itemOn].tooltip, "DESCRIPTIVEINPUT-SENTINEL"))
+		{
+			char* help = va("Modern: Standard console controller/keyboard prompts.");
+			switch (cv_dummyprofiledescriptiveinput.value)
+			{
+				case 0:
+					help = va("\"Emulator\": Display the default (Saturn) controls.");
+					break;
+				case 2:
+					help = va("Modern Flip: Swap A+X/B+Y. Use if Modern is wrong.");
+					break;
+				case 3:
+					help = va("6Bt. (Auto): Tries to guess your 6-button pad's layout.");
+					break;
+				case 4:
+					help = va("6Bt. (A): Saturn buttons, Retro-Bit Wired DInput layout.");
+					break;
+				case 5:
+					help = va("6Bt. (B): Saturn buttons, Retro-Bit Wireless DInput layout.");
+					break;
+				case 6:
+					help = va("6Bt. (C): Saturn buttons, Retro-Bit XInput layout.");
+					break;
+				case 7:
+					help = va("6Bt. (D): Saturn buttons, arcade/8BitDo layout. (C/Z = RT/RB)");
+					break;
+				case 8:
+					help = va("6Bt. (E): Saturn buttons, Hori/M30X layout. (LB/LT = LS/RS)");
+					break;
+			}
+
+			V_DrawThinString(12, ypos, V_YELLOWMAP, help);
+		}
+		else
+		{
+			V_DrawThinString(12, ypos, V_YELLOWMAP, currentMenu->menuitems[itemOn].tooltip);
+		}
+
+		UINT16 oldsetting = cv_descriptiveinput->value;
+		CV_StealthSetValue(cv_descriptiveinput, cv_dummyprofiledescriptiveinput.value);
 		INT32 xpos = BASEVIDWIDTH - 12;
-		xpos = standardbuttons ?
-			M_DrawProfileLegend(xpos, ypos, "\xB2 / \xBC  Clear", NULL) :
-			M_DrawProfileLegend(xpos, ypos, "Clear", "BKSP");
+		xpos = K_DrawGameControl(xpos, ypos, 0, "<right> / <c>  Clear", 2, 0, 0);
+		CV_StealthSetValue(cv_descriptiveinput, oldsetting);
 	}
 
 	// Overlay for control binding
@@ -6093,6 +6106,19 @@ void M_DrawPause(void)
 
 		Y_RoundQueueDrawer(&standings, offset/2, false, false);
 	}
+	else if (gametype == GT_TUTORIAL)
+	{
+		K_DrawGameControl(4, 184 - 60 + offset/2, 0, "<left> <right> <up> <down> Steering", 0, 0, 0);
+		K_DrawGameControl(4, 184 - 45 + offset/2, 0, "<a> Accelerate", 0, 0, 0);
+		K_DrawGameControl(4, 184 - 30 + offset/2, 0, "<b> Look Back", 0, 0, 0);
+		K_DrawGameControl(4, 184 - 15 + offset/2, 0, "<c> Spindash", 0, 0, 0);
+		K_DrawGameControl(4, 184 - 0 + offset/2, 0, "<l> Item/Rings", 0, 0, 0);
+
+		K_DrawGameControl(90, 184 - 45 + offset/2, 0, "<x> Brake", 0, 0, 0);
+		K_DrawGameControl(90, 184 - 30 + offset/2, 0, "<y> Respawn", 0, 0, 0);
+		K_DrawGameControl(90, 184 - 15 + offset/2, 0, "<z> Dialogue / Action", 0, 0, 0);
+		K_DrawGameControl(90, 184 - 0 + offset/2, 0, "<r> Drift", 0, 0, 0);
+	}
 	else
 	{
 		V_DrawMenuString(4, 188 + offset/2, V_YELLOWMAP, M_GetGameplayMode());
@@ -6190,12 +6216,12 @@ void M_DrawKickHandler(void)
 	//V_DrawFill(32 + (playerkickmenu.player & 8), 32 + (playerkickmenu.player & 7)*8, 8, 8, playeringame[playerkickmenu.player] ? 0 : 16);
 
 	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
-	V_DrawCenteredThinString(
-		BASEVIDWIDTH/2, 12,
-		0,
+	K_DrawGameControl(
+		BASEVIDWIDTH/2, 12, 0,
 		(playerkickmenu.adminpowered)
-			? "You are using ""\x85""Admin Tools""\x80"", ""\x83""(A)""\x80"" to kick and ""\x84""(C)""\x80"" to ban"
-			: K_GetMidVoteLabel(menucallvote)
+			? "You are using <red>Admin Tools<white>.  <a> Kick  <c> Ban"
+			: K_GetMidVoteLabel(menucallvote),
+		1, 0, 0
 	);
 }
 
@@ -7262,9 +7288,10 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			y = BASEVIDHEIGHT-16;
 			V_DrawGamemodeString(x, y - 33, 0, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_MENUCACHE), M_UseAlternateTitleScreen() ? "On" : "Off");
 
-			K_drawButtonAnim(x, y, 0, kp_button_a[1], challengesmenu.ticker);
-			x += SHORT(kp_button_a[1][0]->width);
-			V_DrawThinString(x, y + 1, highlightflags, "Toggle");
+			K_DrawGameControl(x, y, 0, "<a_animated> Toggle", 0, 0, 0);
+			// K_drawButtonAnim(x, y, 0, kp_button_a[1], challengesmenu.ticker);
+			// x += SHORT(kp_button_a[1][0]->width);
+			// V_DrawThinString(x, y + 1, highlightflags, "Toggle");
 
 
 			break;
@@ -7327,9 +7354,13 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 					pushed = strcmp(song, mapheaderinfo[map]->encoremusname[musicid]) == 0;
 				}
 
-				K_drawButton(x&FRACUNIT, y*FRACUNIT, 0, kp_button_l, pushed);
-				x += SHORT(kp_button_l[0]->width);
-				V_DrawThinString(x, y + 1, (pushed ? V_GRAYMAP : highlightflags), "E Side");
+				if (!pushed)
+					K_DrawGameControl(x, y, 0, "<l> <sky>E Side", 0, 0, 0);
+				else
+					K_DrawGameControl(x, y, 0, "<l_pressed> <gray>E Side", 0, 0, 0);
+				// K_drawButton(x&FRACUNIT, y*FRACUNIT, 0, kp_button_l, pushed);
+				// x += SHORT(kp_button_l[0]->width);
+				// V_DrawThinString(x, y + 1, (pushed ? V_GRAYMAP : highlightflags), "E Side");
 
 				x = 8;
 				y -= 10;
@@ -7348,9 +7379,13 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 					pushed = strcmp(song, mapheaderinfo[map]->musname[musicid]) == 0;
 				}
 
-				K_drawButton(x*FRACUNIT, y*FRACUNIT, 0, kp_button_a[1], pushed);
-				x += SHORT(kp_button_a[1][0]->width);
-				V_DrawThinString(x, y + 1, (pushed ? V_GRAYMAP : highlightflags), "Play CD");
+				if (!pushed)
+					K_DrawGameControl(x, y, 0, "<a> <sky>Play CD", 0, 0, 0);
+				else
+					K_DrawGameControl(x, y, 0, "<a_pressed> <gray>Play CD", 0, 0, 0);
+				// K_drawButton(x*FRACUNIT, y*FRACUNIT, 0, kp_button_a[1], pushed);
+				// x += SHORT(kp_button_a[1][0]->width);
+				// V_DrawThinString(x, y + 1, (pushed ? V_GRAYMAP : highlightflags), "Play CD");
 			}
 		}
 		default:
@@ -7427,11 +7462,10 @@ static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 	const boolean keybuttonpress = (menumessage.active == false && M_MenuExtraHeld(pid) == true);
 
 	// Button prompt
-	K_drawButton(
-		24 << FRACBITS,
-		16 << FRACBITS,
-		0, kp_button_c[1],
-		keybuttonpress
+	K_DrawGameControl(
+		24, 16,
+		0, keybuttonpress ? "<c_pressed>" : "<c>",
+		0, 0, 0
 	);
 
 	// Metyr of rounds played that contribute to Chao Key generation
@@ -9092,8 +9126,6 @@ void M_DrawDiscordRequests(void)
 	patch_t *hand = NULL;
 
 	const char *wantText = "...would like to join!";
-	const char *acceptText = "Accept" ;
-	const char *declineText = "Decline";
 
 	INT32 x = 100;
 	INT32 y = 133;
@@ -9135,28 +9167,30 @@ void M_DrawDiscordRequests(void)
 	K_DrawSticker(x, y + 12, V_ThinStringWidth(wantText, 0), 0, true);
 	V_DrawThinString(x, y + 10, 0, wantText);
 
-	INT32 confirmButtonWidth = SHORT(kp_button_a[1][0]->width);
-	INT32 declineButtonWidth = SHORT(kp_button_b[1][0]->width);
-	INT32 altDeclineButtonWidth = SHORT(kp_button_x[1][0]->width);
-	INT32 acceptTextWidth =  V_ThinStringWidth(acceptText, 0);
-	INT32 declineTextWidth = V_ThinStringWidth(declineText, 0);
-	INT32 stickerWidth = (confirmButtonWidth + declineButtonWidth + altDeclineButtonWidth + acceptTextWidth + declineTextWidth);
-
+	/*
 	K_DrawSticker(x, y + 26, stickerWidth, 0, true);
-	K_drawButtonAnim(x, y + 22, V_SNAPTORIGHT, kp_button_a[1], discordrequestmenu.ticker);
+	K_DrawGameControl(x, y+22, 0, "<a_animated>", 0, 0, V_SNAPTORIGHT);
+	// K_drawButtonAnim(x, y + 22, V_SNAPTORIGHT, kp_button_a[1], discordrequestmenu.ticker);
+	*/
 
-	INT32 xoffs = confirmButtonWidth;
+	UINT32 bigwidth = K_DrawGameControl(x, y+22, 0, "<a_animated> Accept   <b_animated> <x_animated> Decline", 0, 0, V_SNAPTORIGHT);
+	K_DrawSticker(x, y + 26, bigwidth, 0, true);
+	K_DrawGameControl(x, y+22, 0, "<a_animated> Accept   <b_animated> <x_animated> Decline", 0, 0, V_SNAPTORIGHT);
 
+	/*
 	V_DrawThinString((x + xoffs), y + 24, 0, acceptText);
 	xoffs += acceptTextWidth;
 
 	K_drawButtonAnim((x + xoffs), y + 22, V_SNAPTORIGHT, kp_button_b[1], discordrequestmenu.ticker);
 	xoffs += declineButtonWidth;
 
+	xoffs += K_DrawGameControl(x + xoffs, y+22, 0, "<x_animated>", 0, 0, V_SNAPTORIGHT);
 	K_drawButtonAnim((x + xoffs), y + 22, V_SNAPTORIGHT, kp_button_x[1], discordrequestmenu.ticker);
 	xoffs += altDeclineButtonWidth;
 
 	V_DrawThinString((x + xoffs), y + 24, 0, declineText);
+
+	*/
 
 	y -= 18;
 

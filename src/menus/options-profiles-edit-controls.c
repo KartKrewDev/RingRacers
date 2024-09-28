@@ -18,6 +18,12 @@
 
 menuitem_t OPTIONS_ProfileControls[] = {
 
+	{IT_HEADER, "DEVICE SETTINGS", "",
+		NULL, {NULL}, 0, 0},
+
+	{IT_STRING2 | IT_CVAR, "Button Display", "DESCRIPTIVEINPUT-SENTINEL",
+		NULL, {.cvar = &cv_dummyprofiledescriptiveinput}, 0, 0},
+
 	{IT_HEADER, "MAIN CONTROLS", "That's the stuff on the controller!!",
 		NULL, {NULL}, 0, 0},
 
@@ -31,34 +37,34 @@ menuitem_t OPTIONS_ProfileControls[] = {
 		"TLB_C", {.routine = M_ProfileSetControl}, gc_c, 0},
 
 	{IT_CONTROL, "Brake / Go back", "Brake / Go back",
-		"TLB_D", {.routine = M_ProfileSetControl}, gc_x, 0},
+		"TLB_X", {.routine = M_ProfileSetControl}, gc_x, 0},
 
 	{IT_CONTROL, "Respawn", "Respawn",
-		"TLB_E", {.routine = M_ProfileSetControl}, gc_y, 0},
+		"TLB_Y", {.routine = M_ProfileSetControl}, gc_y, 0},
 
 	{IT_CONTROL, "Action", "Multiplayer quick-chat / quick-vote",
-		"TLB_F", {.routine = M_ProfileSetControl}, gc_z, 0},
+		"TLB_Z", {.routine = M_ProfileSetControl}, gc_z, 0},
 
 	{IT_CONTROL, "Use Item", "Use item",
-		"TLB_H", {.routine = M_ProfileSetControl}, gc_l, 0},
+		"TLB_L1", {.routine = M_ProfileSetControl}, gc_l, 0},
 
 	{IT_CONTROL, "Drift", "Drift",
-		"TLB_I", {.routine = M_ProfileSetControl}, gc_r, 0},
+		"TLB_R1", {.routine = M_ProfileSetControl}, gc_r, 0},
 
 	{IT_CONTROL, "Turn Left", "Turn left",
-		"TLB_M", {.routine = M_ProfileSetControl}, gc_left, 0},
+		"TLB_ARL", {.routine = M_ProfileSetControl}, gc_left, 0},
 
 	{IT_CONTROL, "Turn Right", "Turn right",
-		"TLB_L", {.routine = M_ProfileSetControl}, gc_right, 0},
+		"TLB_ARR", {.routine = M_ProfileSetControl}, gc_right, 0},
 
 	{IT_CONTROL, "Aim Forward", "Aim forwards",
-		"TLB_J", {.routine = M_ProfileSetControl}, gc_up, 0},
+		"TLB_ARU", {.routine = M_ProfileSetControl}, gc_up, 0},
 
 	{IT_CONTROL, "Aim Backwards", "Aim backwards",
-		"TLB_K", {.routine = M_ProfileSetControl}, gc_down, 0},
+		"TLB_ARD", {.routine = M_ProfileSetControl}, gc_down, 0},
 
 	{IT_CONTROL, "Open pause menu", "Open pause menu",
-		"TLB_G", {.routine = M_ProfileSetControl}, gc_start, 0},
+		"TLB_S", {.routine = M_ProfileSetControl}, gc_start, 0},
 
 	{IT_HEADER, "OPTIONAL CONTROLS", "Take a screenshot, chat...",
 		NULL, {NULL}, 0, 0},
@@ -81,14 +87,14 @@ menuitem_t OPTIONS_ProfileControls[] = {
 	{IT_CONTROL, "OPEN TEAM CHAT", "Opens team-only full chat for online games.",
 		NULL, {.routine = M_ProfileSetControl}, gc_teamtalk, 0},
 
-	{IT_CONTROL, "LUA/A", "May be used by add-ons.",
-		NULL, {.routine = M_ProfileSetControl}, gc_luaa, 0},
+	{IT_CONTROL, "LUA/1", "May be used by add-ons.",
+		NULL, {.routine = M_ProfileSetControl}, gc_lua1, 0},
 
-	{IT_CONTROL, "LUA/B", "May be used by add-ons.",
-		NULL, {.routine = M_ProfileSetControl}, gc_luab, 0},
+	{IT_CONTROL, "LUA/2", "May be used by add-ons.",
+		NULL, {.routine = M_ProfileSetControl}, gc_lua2, 0},
 
-	{IT_CONTROL, "LUA/C", "May be used by add-ons.",
-		NULL, {.routine = M_ProfileSetControl}, gc_luac, 0},
+	{IT_CONTROL, "LUA/3", "May be used by add-ons.",
+		NULL, {.routine = M_ProfileSetControl}, gc_lua3, 0},
 
 	{IT_CONTROL, "OPEN CONSOLE", "Opens the developer options console.",
 		NULL, {.routine = M_ProfileSetControl}, gc_console, 0},

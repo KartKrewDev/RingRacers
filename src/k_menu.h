@@ -1124,6 +1124,7 @@ extern consvar_t cv_dummyprofileplayername;
 extern consvar_t cv_dummyprofilekickstart;
 extern consvar_t cv_dummyprofileautoroulette;
 extern consvar_t cv_dummyprofilelitesteer;
+extern consvar_t cv_dummyprofiledescriptiveinput;
 extern consvar_t cv_dummyprofileautoring;
 extern consvar_t cv_dummyprofilerumble;
 extern consvar_t cv_dummyprofilefov;

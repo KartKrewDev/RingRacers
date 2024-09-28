@@ -233,7 +233,7 @@ extern CV_PossibleValue_t CV_TrueFalse[];
 
 // SRB2kart
 // the KARTSPEED and KARTGP were previously defined here, but moved to doomstat to avoid circular dependencies
-extern CV_PossibleValue_t kartspeed_cons_t[], dummykartspeed_cons_t[], gpdifficulty_cons_t[];
+extern CV_PossibleValue_t kartspeed_cons_t[], dummykartspeed_cons_t[], gpdifficulty_cons_t[], descriptiveinput_cons_t[];
 
 extern consvar_t cv_cheats;
 extern consvar_t cv_execversion;

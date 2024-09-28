@@ -914,6 +914,7 @@ consvar_t cv_debugvirtualkeyboard = PlayerCheat("debugvirtualkeyboard", "Off").o
 consvar_t cv_devmode_screen = PlayerCheat("devmode_screen", "1").min_max(1, 4).description("Choose which splitscreen player devmode applies to");
 consvar_t cv_drawpickups = PlayerCheat("drawpickups", "Yes").yes_no().description("Hide rings, spheres, item capsules, prison capsules (visual only)");
 consvar_t cv_drawtimer = PlayerCheat("drawtimer", "No").yes_no().description("Always draw the timer (race checkpoint timing, etc)");
+consvar_t cv_debugfonts = PlayerCheat("debugfonts", "No").yes_no().description("Draw font bounding boxes (integer precision, beware centered text!)");
 
 void lua_profile_OnChange(void);
 consvar_t cv_lua_profile = PlayerCheat("lua_profile", "0").values(CV_Unsigned).onchange(lua_profile_OnChange).description("Show hook timings over an average of N tics");
@@ -979,6 +980,7 @@ consvar_t cv_dummymenuplayer = MenuDummy("dummymenuplayer", "P1").onchange(Dummy
 consvar_t cv_dummyprofileautoroulette = MenuDummy("dummyprofileautoroulette", "Off").on_off();
 consvar_t cv_dummyprofilefov = MenuDummy("dummyprofilefov", "100").min_max(70, 110);
 consvar_t cv_dummyprofilelitesteer = MenuDummy("dummyprofilelitesteer", "Off").on_off();
+consvar_t cv_dummyprofiledescriptiveinput = Player("dummyprofiledescriptiveinput", "Modern").values(descriptiveinput_cons_t);
 consvar_t cv_dummyprofileautoring = MenuDummy("dummyprofileautoring", "Off").on_off();
 consvar_t cv_dummyprofilekickstart = MenuDummy("dummyprofilekickstart", "Off").on_off();
 consvar_t cv_dummyprofilename = MenuDummy("dummyprofilename", "");
@@ -1112,6 +1114,14 @@ consvar_t cv_cam_height[MAXSPLITSCREENPLAYERS] = {
 	Player("cam3_height", "95").floating_point(),
 	Player("cam4_height", "95").floating_point(),
 };
+
+consvar_t cv_descriptiveinput[MAXSPLITSCREENPLAYERS] = {
+	Player("descriptiveinput", "Modern").values(descriptiveinput_cons_t),
+	Player("descriptiveinput2", "Modern").values(descriptiveinput_cons_t),
+	Player("descriptiveinput3", "Modern").values(descriptiveinput_cons_t),
+	Player("descriptiveinput4", "Modern").values(descriptiveinput_cons_t),
+};
+
 
 void CV_CamRotate_OnChange(void);
 void CV_CamRotate2_OnChange(void);

@@ -235,19 +235,49 @@ patch_t *kp_button_c[2][2];
 patch_t *kp_button_x[2][2];
 patch_t *kp_button_y[2][2];
 patch_t *kp_button_z[2][2];
-patch_t *kp_button_start[2];
-patch_t *kp_button_l[2];
-patch_t *kp_button_r[2];
-patch_t *kp_button_up[2];
-patch_t *kp_button_down[2];
-patch_t *kp_button_right[2];
-patch_t *kp_button_left[2];
-patch_t *kp_button_dpad[2];
+patch_t *kp_button_start[2][2];
+patch_t *kp_button_l[2][2];
+patch_t *kp_button_r[2][2];
+patch_t *kp_button_up[2][2];
+patch_t *kp_button_down[2][2];
+patch_t *kp_button_right[2][2];
+patch_t *kp_button_left[2][2];
+patch_t *kp_button_lua1[2][2];
+patch_t *kp_button_lua2[2][2];
+patch_t *kp_button_lua3[2][2];
 
-static void K_LoadButtonGraphics(patch_t *kp[2], int letter)
+patch_t *gen_button_a[2][2];
+patch_t *gen_button_b[2][2];
+patch_t *gen_button_x[2][2];
+patch_t *gen_button_y[2][2];
+patch_t *gen_button_lb[2][2];
+patch_t *gen_button_rb[2][2];
+patch_t *gen_button_lt[2][2];
+patch_t *gen_button_rt[2][2];
+patch_t *gen_button_start[2][2];
+patch_t *gen_button_back[2][2];
+patch_t *gen_button_ls[2][2];
+patch_t *gen_button_rs[2][2];
+patch_t *gen_button_dpad[2][2];
+
+patch_t *gen_button_keyleft[2];
+patch_t *gen_button_keyright[2];
+patch_t *gen_button_keycenter[2];
+
+static void K_LoadButtonGraphics(patch_t *kp[2][2], const char* code)
 {
-	HU_UpdatePatch(&kp[0], "TLB_%c", letter);
-	HU_UpdatePatch(&kp[1], "TLB_%cB", letter);
+	HU_UpdatePatch(&kp[0][0], "TLB_%s", code);
+	HU_UpdatePatch(&kp[0][1], "TLB_%sB", code);
+	HU_UpdatePatch(&kp[1][0], "TLBS%s", code);
+	HU_UpdatePatch(&kp[1][1], "TLBS%sB", code);
+}
+
+static void K_LoadGenericButtonGraphics(patch_t *kp[2][2], const char* code)
+{
+	HU_UpdatePatch(&kp[0][0], "TLG_%s", code);
+	HU_UpdatePatch(&kp[0][1], "TLG_%sB", code);
+	HU_UpdatePatch(&kp[1][0], "TLGS%s", code);
+	HU_UpdatePatch(&kp[1][1], "TLGS%sB", code);
 }
 
 void K_LoadKartHUDGraphics(void)
@@ -942,26 +972,44 @@ void K_LoadKartHUDGraphics(void)
 		HU_UpdatePatch(&kp_spraycantarget_near[1][i], "%s", buffer);
 	}
 
-	K_LoadButtonGraphics(kp_button_a[0], 'A');
-	K_LoadButtonGraphics(kp_button_a[1], 'N');
-	K_LoadButtonGraphics(kp_button_b[0], 'B');
-	K_LoadButtonGraphics(kp_button_b[1], 'O');
-	K_LoadButtonGraphics(kp_button_c[0], 'C');
-	K_LoadButtonGraphics(kp_button_c[1], 'P');
-	K_LoadButtonGraphics(kp_button_x[0], 'D');
-	K_LoadButtonGraphics(kp_button_x[1], 'Q');
-	K_LoadButtonGraphics(kp_button_y[0], 'E');
-	K_LoadButtonGraphics(kp_button_y[1], 'R');
-	K_LoadButtonGraphics(kp_button_z[0], 'F');
-	K_LoadButtonGraphics(kp_button_z[1], 'S');
-	K_LoadButtonGraphics(kp_button_start, 'G');
-	K_LoadButtonGraphics(kp_button_l, 'H');
-	K_LoadButtonGraphics(kp_button_r, 'I');
-	K_LoadButtonGraphics(kp_button_up, 'J');
-	K_LoadButtonGraphics(kp_button_down, 'K');
-	K_LoadButtonGraphics(kp_button_right, 'L');
-	K_LoadButtonGraphics(kp_button_left, 'M');
-	K_LoadButtonGraphics(kp_button_dpad, 'T');
+	K_LoadButtonGraphics(kp_button_a, "A");
+	K_LoadButtonGraphics(kp_button_b, "B");
+	K_LoadButtonGraphics(kp_button_c, "C");
+	K_LoadButtonGraphics(kp_button_x, "X");
+	K_LoadButtonGraphics(kp_button_y, "Y");
+	K_LoadButtonGraphics(kp_button_z, "Z");
+	K_LoadButtonGraphics(kp_button_l, "L1");
+	K_LoadButtonGraphics(kp_button_r, "R1");
+	K_LoadButtonGraphics(kp_button_up, "ARU");
+	K_LoadButtonGraphics(kp_button_down, "ARD");
+	K_LoadButtonGraphics(kp_button_right, "ARR");
+	K_LoadButtonGraphics(kp_button_left, "ARL");
+	K_LoadButtonGraphics(kp_button_start, "S");
+
+	K_LoadGenericButtonGraphics(kp_button_lua1, "LU1");
+	K_LoadGenericButtonGraphics(kp_button_lua2, "LU2");
+	K_LoadGenericButtonGraphics(kp_button_lua3, "LU3");
+
+	HU_UpdatePatch(&gen_button_keyleft[0], "TLK_L");
+	HU_UpdatePatch(&gen_button_keyleft[1], "TLK_LB");
+	HU_UpdatePatch(&gen_button_keyright[0], "TLK_R");
+	HU_UpdatePatch(&gen_button_keyright[1], "TLK_RB");
+	HU_UpdatePatch(&gen_button_keycenter[0], "TLK_M");
+	HU_UpdatePatch(&gen_button_keycenter[1], "TLK_MB");
+
+	K_LoadGenericButtonGraphics(gen_button_dpad, "DP");
+	K_LoadGenericButtonGraphics(gen_button_a, "A");
+	K_LoadGenericButtonGraphics(gen_button_b, "B");
+	K_LoadGenericButtonGraphics(gen_button_x, "X");
+	K_LoadGenericButtonGraphics(gen_button_y, "Y");
+	K_LoadGenericButtonGraphics(gen_button_lb, "L1");
+	K_LoadGenericButtonGraphics(gen_button_rb, "R1");
+	K_LoadGenericButtonGraphics(gen_button_lt, "L2");
+	K_LoadGenericButtonGraphics(gen_button_rt, "R2");
+	K_LoadGenericButtonGraphics(gen_button_ls, "L3");
+	K_LoadGenericButtonGraphics(gen_button_rs, "R3");
+	K_LoadGenericButtonGraphics(gen_button_start, "S");
+	K_LoadGenericButtonGraphics(gen_button_back, "I");
 }
 
 // For the item toggle menu
@@ -6303,7 +6351,7 @@ void K_ClearPersistentMessages()
 }
 
 // Return value can be used for "paired" splitscreen messages, true = was displayed
-void K_AddMessageForPlayer(const player_t *player, const char *msg, boolean interrupt, boolean persist)
+void K_AddMessageForPlayer(player_t *player, const char *msg, boolean interrupt, boolean persist)
 {
 	if (!player)
 		return;
@@ -6319,7 +6367,7 @@ void K_AddMessageForPlayer(const player_t *player, const char *msg, boolean inte
 	if (interrupt)
 		state->clear();
 
-	std::string parsedmsg = srb2::Draw::TextElement().parse(msg).string();
+	std::string parsedmsg = srb2::Draw::TextElement().as(player - players).parse(msg).string();
 
 	if (persist)
 		state->objective = parsedmsg;
@@ -6379,7 +6427,7 @@ static void K_DrawMessageFeed(void)
 
 		text.font(Draw::Font::kMenu);
 
-		UINT8 x = 160;
+		UINT8 x = BASEVIDWIDTH/2;
 		UINT8 y = 10;
 		SINT8 shift = 0;
 		if (r_splitscreen >= 2)
@@ -6403,6 +6451,7 @@ static void K_DrawMessageFeed(void)
 			if (i >= 1)
 				y += BASEVIDHEIGHT / 2;
 		}
+
 		UINT16 sw = text.width();
 
 		K_DrawSticker(x - sw/2, y, sw, 0, true);
@@ -6438,6 +6487,40 @@ void K_drawKartHUD(void)
 		if (g_emeraldWin)
 			K_drawEmeraldWin(false);
 	}
+
+	// In case of font debugging break glass
+#if 0
+	using srb2::Draw;
+
+	if (1)
+	{
+	CV_StealthSetValue(cv_descriptiveinput, 0);
+	Draw::TextElement text = Draw::TextElement().parse("Hamburger <a><b><c><x><y><z><l><r><lua1><lua2><lua3><start><left><up><right><down> Hamburger\n\nHamburger <large><a><large><b><large><c><large><x><large><y><large><z><large><l><large><r><large><lua1><large><lua2><large><lua3><large><start><large><left><large><up><large><right><large><down> Hamburger\n\nHamburger \xEB\xEF\xA0\xEB\xEF\xA1\xEB\xEF\xA2\xEB\xEF\xA3\xEB\xEF\xA4\xEB\xEF\xA5\xEB\xEF\xA6\xEB\xEF\xA7\xEB\xEF\xA8\xEB\xEF\xA9\xEB\xEF\xAA\xEB\xEF\xAB\xEB\xEF\xAC Hamburger");
+	
+	UINT8 fakeoff = (stplyr - players)*40;
+	Draw(5, 5+fakeoff).align((srb2::Draw::Align)0).font(Draw::Font::kMenu).text(text);
+	Draw(40, 80+fakeoff).align((srb2::Draw::Align)0).font(Draw::Font::kThin).text(text);
+	}	
+
+	if (0)
+	{
+	Draw::TextElement text = Draw::TextElement().parse("\xEELEFTSPACE\xEE\n\xEESPC\xEE \xEETAB\xEE\nA \xEF\xA0 A\nB \xEF\xA1 B\nX \xEF\xA2 X\nY \xEF\xA3 Y\nLB \xEF\xA4 LB\nRB \xEF\xA5 RB\nLT \xEF\xA6 LT\nRT \xEF\xA7 RT\nST \xEF\xA8 ST\nBK \xEF\xA9 BK\nLS \xEF\xAA LS\nRS \xEF\xAB RS\n");
+
+	UINT8 offset = 0;
+	Draw(160+offset, 5).align((srb2::Draw::Align)1).font(Draw::Font::kThin).text(text);
+	Draw(55+offset, 5).align((srb2::Draw::Align)1).font(Draw::Font::kMenu).text(text);
+	}
+
+	if (0)
+	{
+	Draw::TextElement text = Draw::TextElement().parse("\xEELEFTSPACE\xEE\n\xEESPC\xEE \xEETAB\xEE\nA \xEB\xEF\xA0 A\nB \xEB\xEF\xA1 B\nX \xEB\xEF\xA2 X\nY \xEB\xEF\xA3 Y\nLB \xEB\xEF\xA4 LB\nRB \xEB\xEF\xA5 RB\nLT \xEB\xEF\xA6 LT\nRT \xEB\xEF\xA7 RT\nST \xEB\xEF\xA8 ST\nBK \xEB\xEF\xA9 BK\nLS \xEB\xEF\xAA LS\nRS \xEB\xEF\xAB RS\n");
+
+	UINT8 offset = 0;
+	Draw(160+offset, 5).align((srb2::Draw::Align)1).font(Draw::Font::kThin).text(text);
+	Draw(55+offset, 5).align((srb2::Draw::Align)1).font(Draw::Font::kMenu).text(text);
+	}
+#endif
+
 
 	if (!demo.attract)
 	{
@@ -6502,10 +6585,11 @@ void K_drawKartHUD(void)
 				if (ta)
 				{
 					using srb2::Draw;
+					Draw::TextElement text = Draw::TextElement().parse("<y> Restart");
 					Draw(BASEVIDWIDTH - 19, 2)
 						.flags(flags | V_YELLOWMAP)
 						.align(Draw::Align::kRight)
-						.text("\xBE Restart");
+						.text(text.string());
 				}
 				else
 				{
@@ -6848,4 +6932,18 @@ void K_DrawMarginSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean isS
 	V_DrawFill(x, y, width, height, 24|flags);
 	if (!leftedge)
 		V_DrawFixedPatch((x + width)*FRACUNIT, y*FRACUNIT, FRACUNIT, flags|V_FLIP, stickerEnd, NULL);
+}
+
+// common fonts: 0 = thin, 8 = menu. sorry we have to launder a C++ enum in here
+INT32 K_DrawGameControl(UINT16 x, UINT16 y, UINT8 player, const char *str, UINT8 alignment, UINT8 font, UINT32 flags)
+{
+	using srb2::Draw;
+		
+	Draw::TextElement text = Draw::TextElement().as(player).parse(str).font((Draw::Font)font);
+
+	INT32 width = text.width();
+
+	Draw(x, y).align((srb2::Draw::Align)alignment).flags(flags).text(text);
+
+	return width;
 }

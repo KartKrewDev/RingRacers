@@ -46,6 +46,7 @@ struct ProfilePreferencesJson
 	bool kickstartaccel;
 	bool autoroulette;
 	bool litesteer;
+	uint8_t descriptiveinput;
 	bool autoring;
 	bool rumble;
 	uint8_t fov;
@@ -56,6 +57,7 @@ struct ProfilePreferencesJson
 		kickstartaccel,
 		autoroulette,
 		litesteer,
+		descriptiveinput,
 		autoring,
 		rumble,
 		fov
@@ -116,7 +118,8 @@ extern "C" {
 // 2 - litesteer is off by default, old profiles litesteer
 // 3 - auto roulette is switched off again
 //     option is reset to default
-#define PROFILEVER 3
+// 4 - Descriptive Input - set everyone to Modern!
+#define PROFILEVER 4
 #define MAXPROFILES 16
 #define PROFILESFILE "ringprofiles.prf"
 #define PROFILE_GUEST 0
@@ -162,6 +165,7 @@ struct profile_t
 	boolean kickstartaccel;				// cv_kickstartaccel
 	boolean autoroulette;				// cv_autoroulette
 	boolean litesteer;					// cv_litesteer
+	UINT8 descriptiveinput;				// cv_descriptiveinput
 	boolean autoring;					// cv_autoring
 	boolean rumble;						// cv_rumble
 	UINT8 fov;							// cv_fov

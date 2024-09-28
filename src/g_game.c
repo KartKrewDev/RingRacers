@@ -848,6 +848,15 @@ static INT32 G_GetValueFromControlTable(INT32 deviceID, INT32 deadzone, INT32 *c
 	return failret;
 }
 
+static void G_SetGamepadPrompts(UINT8 p, boolean prompts)
+{
+	if (showgamepadprompts[p] != prompts)
+	{
+		// CONS_Printf("Setting player %d to gamepadprompts %d\n", p, prompts);
+		showgamepadprompts[p] = prompts;
+	}
+}
+
 INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
 {
 	const INT32 deadzone = (JOYAXISRANGE * cv_deadzone[p].value) / FRACUNIT;
@@ -879,6 +888,7 @@ INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
 			// This is only intended for P1.
 			if (main_player == true)
 			{
+				G_SetGamepadPrompts(p, false);
 				return value;
 			}
 			else
@@ -898,6 +908,7 @@ INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
 	value = G_GetValueFromControlTable(deviceID, deadzone, &(gamecontrol[p][gc][0]));
 	if (value > 0)
 	{
+		G_SetGamepadPrompts(p, (deviceID != KEYBOARD_MOUSE_DEVICE));
 		return value;
 	}
 	if (value != NO_BINDS_REACHABLE)
@@ -911,6 +922,7 @@ INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
 		value = G_GetValueFromControlTable(KEYBOARD_MOUSE_DEVICE, deadzone, &(gamecontrol[p][gc][0]));
 		if (value > 0)
 		{
+			G_SetGamepadPrompts(p, false);
 			return value;
 		}
 		if (value != NO_BINDS_REACHABLE)
@@ -951,6 +963,7 @@ INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
 					value = G_GetValueFromControlTable(tryDevice, deadzone, &(gamecontrol[p][gc][0]));
 					if (value > 0)
 					{
+						G_SetGamepadPrompts(p, (tryDevice != KEYBOARD_MOUSE_DEVICE));
 						return value;
 					}
 					if (value != NO_BINDS_REACHABLE)
@@ -967,6 +980,7 @@ INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
 			value = G_GetValueFromControlTable(deviceID, deadzone, &(gamecontroldefault[gc][0]));
 			if (value > 0)
 			{
+				G_SetGamepadPrompts(p, (deviceID != KEYBOARD_MOUSE_DEVICE));
 				return value;
 			}
 		}

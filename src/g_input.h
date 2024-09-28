@@ -56,6 +56,33 @@ typedef enum
 	NUMINPUTS = MOUSEINPUTEND,
 } key_input_e;
 
+// Helper to keep descriptive input setup slightly more readable
+typedef enum
+{
+	nc_a = KEY_JOY1,
+	nc_b,
+	nc_x,
+	nc_y,
+	nc_back,
+	nc_guide,
+	nc_start,
+	nc_ls,
+	nc_rs,
+	nc_lb,
+	nc_rb,
+	nc_hatup,
+	nc_hatdown,
+	nc_hatleft,
+	nc_hatright,
+	nc_touch = KEY_JOY1+20,
+	nc_lsleft = KEY_AXIS1+0,
+	nc_lsright,
+	nc_lsup,
+	nc_lsdown,
+	nc_lt = KEY_AXIS1+8,
+	nc_rt,
+} named_controls_e;
+
 typedef enum
 {
 	gc_null = 0, // a key/button mapped to gc_null has no effect
@@ -77,9 +104,9 @@ typedef enum
 
 	// special keys
 	gc_abc,
-	gc_luaa,
-	gc_luab,
-	gc_luac,
+	gc_lua1,
+	gc_lua2,
+	gc_lua3,
 	gc_console,
 	gc_talk,
 	gc_teamtalk,
@@ -120,6 +147,7 @@ extern INT32 gamekeydown[MAXDEVICES][NUMINPUTS];
 // several key codes (or virtual key) per game control
 extern INT32 gamecontrol[MAXSPLITSCREENPLAYERS][num_gamecontrols][MAXINPUTMAPPING];
 extern UINT8 gamecontrolflags[MAXSPLITSCREENPLAYERS];
+extern UINT8 showgamepadprompts[MAXSPLITSCREENPLAYERS];
 extern INT32 gamecontroldefault[num_gamecontrols][MAXINPUTMAPPING]; // default control storage
 extern INT32 menucontrolreserved[num_gamecontrols][MAXINPUTMAPPING];
 
@@ -187,6 +215,7 @@ void G_MapEventsToControls(event_t *ev);
 
 // returns the name of a key
 const char *G_KeynumToString(INT32 keynum);
+const char *G_KeynumToShortString(INT32 keynum);
 INT32 G_KeyStringtoNum(const char *keystr);
 
 boolean G_KeyBindIsNecessary(INT32 gc);
@@ -204,6 +233,8 @@ INT32 G_GetControlScheme(INT32 (*fromcontrols)[MAXINPUTMAPPING], const INT32 *gc
 void G_ApplyControlScheme(UINT8 splitplayer, INT32 (*fromcontrols)[MAXINPUTMAPPING]);
 void G_SaveKeySetting(FILE *f, INT32 (*fromcontrolsa)[MAXINPUTMAPPING], INT32 (*fromcontrolsb)[MAXINPUTMAPPING], INT32 (*fromcontrolsc)[MAXINPUTMAPPING], INT32 (*fromcontrolsd)[MAXINPUTMAPPING]);
 INT32 G_CheckDoubleUsage(INT32 keynum, INT32 playernum, boolean modify);
+
+INT32 G_FindPlayerBindForGameControl(INT32 player, gamecontrols_e control);
 
 #ifdef __cplusplus
 } // extern "C"

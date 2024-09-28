@@ -2406,6 +2406,8 @@ int W_VerifyNMUSlumps(const char *filename, boolean exit_on_error)
 		{"K_", 2}, // Kart graphic changes
 		{"MUSICDEF", 8}, // Kart song definitions
 
+		{"TLG_", 4}, // Generic button legends
+
 #ifdef HWRENDER
 		{"SHADERS", 7},
 		{"SH_", 3},

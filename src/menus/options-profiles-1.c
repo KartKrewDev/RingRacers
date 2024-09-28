@@ -102,6 +102,7 @@ void M_StartEditProfile(INT32 c)
 			CV_StealthSetValue(&cv_dummyprofilekickstart, optionsmenu.profile->kickstartaccel);
 			CV_StealthSetValue(&cv_dummyprofileautoroulette, optionsmenu.profile->autoroulette);
 			CV_StealthSetValue(&cv_dummyprofilelitesteer, optionsmenu.profile->litesteer);
+			CV_StealthSetValue(&cv_dummyprofiledescriptiveinput, optionsmenu.profile->descriptiveinput);
 			CV_StealthSetValue(&cv_dummyprofileautoring, optionsmenu.profile->autoring);
 			CV_StealthSetValue(&cv_dummyprofilerumble, optionsmenu.profile->rumble);
 			CV_StealthSetValue(&cv_dummyprofilefov, optionsmenu.profile->fov);
@@ -113,6 +114,7 @@ void M_StartEditProfile(INT32 c)
 			CV_StealthSetValue(&cv_dummyprofilekickstart, 0);	// off
 			CV_StealthSetValue(&cv_dummyprofileautoroulette, 0); // off
 			CV_StealthSetValue(&cv_dummyprofilelitesteer, 1); // on
+			CV_StealthSetValue(&cv_dummyprofiledescriptiveinput, 1); // Modern
 			CV_StealthSetValue(&cv_dummyprofileautoring, 0); // on
 			CV_StealthSetValue(&cv_dummyprofilerumble, 1);	// on
 			CV_StealthSetValue(&cv_dummyprofilefov, 90);

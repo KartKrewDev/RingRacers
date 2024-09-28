@@ -241,7 +241,7 @@ void Dialogue::NewText(std::string_view rawText)
 	Init();
 
 	char* newText = V_ScaledWordWrap(
-		290 << FRACBITS,
+		275 << FRACBITS,
 		FRACUNIT, FRACUNIT, FRACUNIT,
 		0, HU_FONT,
 		srb2::Draw::TextElement().parse(rawText).string().c_str() // parse special characters
@@ -472,32 +472,25 @@ void Dialogue::Draw(void)
 		.flags(V_VFLIP|V_FLIP)
 		.patch(patchCache["TUTDIAGE"]);
 
+	std::string intertext = "<large>";
+
 	drawer
 		.xy(10 - BASEVIDWIDTH, -3-32)
 		.font(srb2::Draw::Font::kConsole)
 		.text( typewriter.text.c_str() );
 
-	if (Dismissable())
+	if (TextDone())
 	{
-		if (TextDone())
-		{
-			drawer
-				.xy(-14, -7-5)
-				.patch(patchCache["TUTDIAG2"]);
-		}
-
-		auto bt_translate_press = [this]() -> std::optional<bool>
-		{
-			if (Held())
-				return true;
-			if (TextDone())
-				return {};
-			return false;
-		};
-
 		drawer
-			.xy(17-14 - BASEVIDWIDTH, -39-16)
-			.button(srb2::Draw::Button::z, bt_translate_press());
+			.xy(-18 - 3, -7-5)
+			.patch(patchCache["TUTDIAG2"]);
+
+		if (Held())
+			intertext += "<z_pressed>";	
+		else
+			intertext += "<z_animated>";
+
+		drawer.xy(-18, -7-8 - 14).align(Draw::Align::kCenter).font(Draw::Font::kMenu).text(srb2::Draw::TextElement().parse(intertext).string());
 	}
 }
 

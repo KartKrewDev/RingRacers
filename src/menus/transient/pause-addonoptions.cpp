@@ -146,7 +146,7 @@ void list_commands()
 		if (flags & COM_NOSHOWHELP)
 			continue;
 
-		g_menu.push_back(menuitem_t {IT_STRING | IT_CALL, cmd->name, "Press \xAA to execute this command", nullptr, {.routine = call}, 0, 8});
+		g_menu.push_back(menuitem_t {IT_STRING | IT_CALL, cmd->name, "No information available for commands. Press to execute.", nullptr, {.routine = call}, 0, 8});
 	}
 }
 
@@ -264,7 +264,8 @@ void draw_menu()
 
 	draw.x(BASEVIDWIDTH/2).font(Draw::Font::kGamemode).text(mode_strings[menu_mode()]);
 	if (server || IsPlayerAdmin(consoleplayer))
-		K_drawButton((draw.x() + 8) * FRACUNIT, (draw.y() + 8) * FRACUNIT, 0, kp_button_y[0], M_MenuButtonHeld(0, MBT_Y));
+		K_DrawGameControl(draw.x() + 8, draw.y()-6, 0, M_MenuButtonHeld(0, MBT_Y) ? "<y_pressed> Switch Page" : "<y> Switch Page", 0, 8, 0);
+	// K_drawButton((draw.x() + 8) * FRACUNIT, (draw.y() + 8) * FRACUNIT, 0, kp_button_y[0], M_MenuButtonHeld(0, MBT_Y));
 	draw = draw.y(32 + kMargin);
 
 	currentMenu->y = std::min(static_cast<INT32>(draw.y()), (BASEVIDHEIGHT/2) - g_menu_offsets[itemOn]);

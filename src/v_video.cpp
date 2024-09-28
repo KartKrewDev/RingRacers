@@ -2272,6 +2272,7 @@ typedef struct
 	fixed_t    lfh;
 	fixed_t (*dim_fn)(fixed_t,fixed_t,INT32,INT32,fixed_t *);
 	UINT8 button_yofs;
+	UINT8 right_outline;
 } fontspec_t;
 
 static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
@@ -2284,6 +2285,8 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 	// All other properties are guaranteed to be set
 	result->chw = 0;
 	result->button_yofs = 0;
+
+	result->right_outline = 1;
 
 	const INT32 spacing = ( flags & V_SPACINGMASK );
 
@@ -2482,42 +2485,94 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 		result->button_yofs = 1;
 		break;
 	}
+
+	switch (fontno)
+	{
+		case MENU_FONT:
+			result->right_outline = 2;
+			break;
+	}
 }
 
-static UINT8 V_GetButtonCodeWidth(UINT8 c)
+static UINT8 V_GetButtonCodeWidth(UINT8 c, boolean largebutton)
 {
-	UINT8 x = 0;
+	UINT8 x = 14;
 
 	switch (c & 0x0F)
 	{
-	case 0x00:
-	case 0x01:
-	case 0x02:
-	case 0x03:
-		// arrows
-		x = 12;
+	case sb_up:
+	case sb_down:
+	case sb_left:
+	case sb_right:
+		x -= largebutton ? 2 : 4;
 		break;
 
-	case 0x07:
-	case 0x08:
-	case 0x09:
-		// shoulders, start
-		x = 14;
+	case sb_l:
+	case sb_r:
+		x -= largebutton ? 1 : 4;
 		break;
 
-	case 0x04:
-		// dpad
-		x = 14;
+	case sb_start:
+		x -= largebutton ? 0 : 4;
 		break;
 
-	case 0x0A:
-	case 0x0B:
-	case 0x0C:
-	case 0x0D:
-	case 0x0E:
-	case 0x0F:
-		// faces
-		x = 10;
+	case sb_lua1:
+	case sb_lua2:
+	case sb_lua3:
+		x -= largebutton ? 0 : 4;
+		break;
+
+	case sb_a:
+	case sb_b:
+	case sb_c:
+	case sb_x:
+	case sb_y:
+	case sb_z:
+		x -= largebutton ? 0 : 4;
+		break;
+	}
+
+	return x;
+}
+
+static UINT8 V_GetGenericButtonCodeWidth(UINT8 c, boolean largebutton)
+{
+	UINT8 x = 16;
+
+	switch ((c & 0x0F) | gb_mask)
+	{
+	case gb_a:
+	case gb_b:
+	case gb_x:
+	case gb_y:
+		x -= largebutton ? 0 : 2;
+		break;
+
+	case gb_lb:
+	case gb_rb:
+		x -= largebutton ? 2 : 6;
+		break;
+
+	case gb_lt:
+	case gb_rt:
+		x -= largebutton ? 2 : 6;
+		break;
+
+	case gb_start:
+		x -= largebutton ? 2 : 6;
+		break;
+
+	case gb_back:
+		x -= largebutton ? 2 : 6;
+		break;
+
+	case gb_ls:
+	case gb_rs:
+		x -= largebutton ? 1 : 4;
+		break;
+
+	case gb_dpad:
+		x -= largebutton ? 2 : 5;
 		break;
 	}
 
@@ -2547,12 +2602,25 @@ void V_DrawStringScaled(
 
 	boolean uppercase;
 	boolean notcolored;
+	int boxed = 0;
+	boolean descriptive = false;
+
+	boolean debugalternation = false;
+	UINT8 debugcolor1 = 181;
+	UINT8 debugcolor2 = 96;
 
 	boolean   dance;
 	boolean nodanceoverride;
 	INT32     dancecounter;
 
+	INT32 boxedflags = ((flags) & (~V_HUDTRANS)) | (V_40TRANS);
+
+	boolean largebutton = false;
+
 	fixed_t cx, cy;
+	fixed_t cxsave;
+
+	const char *ssave;
 
 	fixed_t cxoff, cyoff;
 	fixed_t cw;
@@ -2563,6 +2631,7 @@ void V_DrawStringScaled(
 
 	uppercase  = ((flags & V_FORCEUPPERCASE) == V_FORCEUPPERCASE);
 	flags	&= ~(V_FLIP);/* These two (V_FORCEUPPERCASE) share a bit. */
+	boxed = false;
 
 	dance           = (flags & V_STRINGDANCE) != 0;
 	nodanceoverride = !dance;
@@ -2638,11 +2707,75 @@ void V_DrawStringScaled(
 		switch (c)
 		{
 			case '\n':
+				if (boxed)
+					continue;
 				cy += fontspec.lfh;
 				if (cy >= bot)
 					return;
 				cx  =   x;
 				break;
+			case '\xEB':
+				if (fontno != TINY_FONT && fontno != HU_FONT)
+					largebutton = true;
+				break;
+			case '\xEF':
+				descriptive = true;
+				break;
+			case '\xEE':
+			case '\xED':
+			case '\xEC':
+			{
+				UINT8 anim_duration = 16;
+				boolean anim = ((I_GetTime() % (anim_duration * 2)) < anim_duration);
+				if (c == '\xEE')
+					anim = false;
+				else if (c == '\xEC')
+					anim = true;
+
+				// For bullshit text outlining reasons, we cannot draw this background character-by-character.
+				// Thinking about doing string manipulation and calling out to V_StringWidth made me drink water.
+				// So instead, we just draw this section of the string twice—invisibly the first time, to measure the width.
+
+				if (boxed == 0) // Save our position and start no-op drawing
+				{
+					cy -= 2*FRACUNIT;
+
+					Draw(FixedToFloat(cx), FixedToFloat(cy)-3).flags(flags).patch(gen_button_keyleft[anim]);
+
+					cx += 3*FRACUNIT;
+					ssave = s;
+					cxsave = cx;
+
+					boxed = 1;
+				}
+				else if (boxed == 1) // Draw box from saved pos to current pos and roll back
+				{
+					cx += (fontspec.right_outline)*FRACUNIT;
+					fixed_t working = cxsave - 1*FRACUNIT;
+
+					Draw(FixedToFloat(working)+1, FixedToFloat(cy)-3)
+						.width(FixedToFloat(cx - working)-1)
+						.flags(flags)
+						.stretch(Draw::Stretch::kWidth).patch(gen_button_keycenter[anim]);
+					Draw(FixedToFloat(cx), FixedToFloat(cy)-3).flags(flags).patch(gen_button_keyright[anim]);
+
+					s = ssave;
+					cx = cxsave;
+
+					// This is a little gross, but this is our way of smuggling text offset to
+					// the standard character drawing case. boxed=3 means we're drawing a pressed button.
+					boxed = 2 + anim;
+				}
+				else // Meeting the ending tag the second time, space away and resume standard parsing
+				{
+					boxed = 0;
+
+					cx += (3)*FRACUNIT;
+					cy += 2*FRACUNIT;
+				}
+
+				break;
+			}
 			default:
 				if (( c & 0xF0 ) == 0x80)
 				{
@@ -2688,63 +2821,211 @@ void V_DrawStringScaled(
 
 					if (( c & 0xB0 ) & 0x80) // button prompts
 					{
-						using srb2::Draw;
-
-						struct BtConf
+						if (!descriptive)
 						{
-							UINT8 x, y;
-							Draw::Button type;
-						};
+							using srb2::Draw;
 
-						auto bt_inst = [c]() -> std::optional<BtConf>
-						{
-							switch (c & 0x0F)
+							struct BtConf
 							{
-							case 0x00: return {{0, 3, Draw::Button::up}};
-							case 0x01: return {{0, 3, Draw::Button::down}};
-							case 0x02: return {{0, 3, Draw::Button::right}};
-							case 0x03: return {{0, 3, Draw::Button::left}};
-
-							case 0x04: return {{0, 4, Draw::Button::dpad}};
-
-							case 0x07: return {{0, 2, Draw::Button::r}};
-							case 0x08: return {{0, 2, Draw::Button::l}};
-
-							case 0x09: return {{0, 1, Draw::Button::start}};
-
-							case 0x0A: return {{2, 1, Draw::Button::a}};
-							case 0x0B: return {{2, 1, Draw::Button::b}};
-							case 0x0C: return {{2, 1, Draw::Button::c}};
-
-							case 0x0D: return {{2, 1, Draw::Button::x}};
-							case 0x0E: return {{2, 1, Draw::Button::y}};
-							case 0x0F: return {{2, 1, Draw::Button::z}};
-
-							default: return {};
-							}
-						}();
-
-						if (bt_inst)
-						{
-							auto bt_translate_press = [c]() -> std::optional<bool>
-							{
-								switch (c & 0xB0)
-								{
-								default:
-								case 0x90: return true;
-								case 0xA0: return {};
-								case 0xB0: return false;
-								}
+								UINT8 x, y;
+								Draw::Button type;
 							};
 
-							cw = V_GetButtonCodeWidth(c) * dupx;
-							cxoff = (*fontspec.dim_fn)(scale, fontspec.chw, hchw, dupx, &cw);
-							Draw(
-								FixedToFloat(cx + cxoff) - (bt_inst->x * dupx),
-								FixedToFloat(cy + cyoff) - ((bt_inst->y + fontspec.button_yofs) * dupy))
-								.flags(flags)
-								.small_button(bt_inst->type, bt_translate_press());
-							cx += cw;
+							auto bt_inst = [c]() -> std::optional<BtConf>
+							{
+								switch (c & 0x0F)
+								{
+								case sb_up: return {{2, 2, Draw::Button::up}};
+								case sb_down: return {{2, 2, Draw::Button::down}};
+								case sb_right: return {{2, 2, Draw::Button::right}};
+								case sb_left: return {{2, 2, Draw::Button::left}};
+
+								case sb_lua1: return {{2, 2, Draw::Button::lua1}};
+								case sb_lua2: return {{2, 2, Draw::Button::lua2}};
+								case sb_lua3: return {{2, 2, Draw::Button::lua3}};
+
+								case sb_r: return {{2, 2, Draw::Button::r}};
+								case sb_l: return {{2, 2, Draw::Button::l}};
+
+								case sb_start: return {{2, 2, Draw::Button::start}};
+
+								case sb_a: return {{2, 2, Draw::Button::a}};
+								case sb_b: return {{2, 2, Draw::Button::b}};
+								case sb_c: return {{2, 2, Draw::Button::c}};
+
+								case sb_x: return {{2, 2, Draw::Button::x}};
+								case sb_y: return {{2, 2, Draw::Button::y}};
+								case sb_z: return {{2, 2, Draw::Button::z}};
+
+								default: return {};
+								}
+							}();
+
+							if (largebutton)
+							{
+								bt_inst = [c]() -> std::optional<BtConf>
+								{
+									switch (c & 0x0F)
+									{
+									case sb_up: return {{2, 4, Draw::Button::up}};
+									case sb_down: return {{2, 4, Draw::Button::down}};
+									case sb_right: return {{2, 4, Draw::Button::right}};
+									case sb_left: return {{2, 4, Draw::Button::left}};
+
+									case sb_lua1: return {{1, 4, Draw::Button::lua1}};
+									case sb_lua2: return {{1, 4, Draw::Button::lua2}};
+									case sb_lua3: return {{1, 4, Draw::Button::lua3}};
+
+									case sb_r: return {{1, 4, Draw::Button::r}};
+									case sb_l: return {{1, 4, Draw::Button::l}};
+
+									case sb_start: return {{1, 4, Draw::Button::start}};
+
+									case sb_a: return {{1, 4, Draw::Button::a}};
+									case sb_b: return {{1, 4, Draw::Button::b}};
+									case sb_c: return {{1, 4, Draw::Button::c}};
+
+									case sb_x: return {{1, 4, Draw::Button::x}};
+									case sb_y: return {{1, 4, Draw::Button::y}};
+									case sb_z: return {{1, 4, Draw::Button::z}};
+
+									default: return {};
+									}
+								}();
+							}
+
+							if (bt_inst)
+							{
+								auto bt_translate_press = [c]() -> std::optional<bool>
+								{
+									switch (c & 0xB0)
+									{
+									default:
+									case 0x90: return true;
+									case 0xA0: return {};
+									case 0xB0: return false;
+									}
+								};
+
+								cw = V_GetButtonCodeWidth(c, largebutton) * dupx;
+
+								cxoff = (*fontspec.dim_fn)(scale, fontspec.chw, hchw, dupx, &cw);
+
+								if (cv_debugfonts.value)
+								{
+									V_DrawFill(cx/FRACUNIT, cy/FRACUNIT, cw/FRACUNIT, fontspec.lfh/FRACUNIT, debugalternation ? debugcolor1 : debugcolor2);
+									debugalternation = !debugalternation;
+								}
+
+								Draw bt = Draw(
+									FixedToFloat(cx + cxoff) - (bt_inst->x * dupx),
+									FixedToFloat(cy + cyoff) - ((bt_inst->y + fontspec.button_yofs) * dupy))
+									.flags(flags);
+
+								if (largebutton)
+									bt.button(bt_inst->type, bt_translate_press());
+								else
+									bt.small_button(bt_inst->type, bt_translate_press());
+
+								cx += cw;
+							}
+							descriptive = false;
+							largebutton = false;
+							break;
+						}
+						else
+						{
+							using srb2::Draw;
+
+							struct BtConf
+							{
+								UINT8 x, y;
+								Draw::GenericButton type;
+							};
+
+							auto bt_inst = [c]() -> std::optional<BtConf>
+							{
+								switch ((c & 0x0F) | gb_mask)
+								{
+								case gb_a: return {{0, 1, Draw::GenericButton::a}};
+								case gb_b: return {{0, 1, Draw::GenericButton::b}};
+								case gb_x: return {{0, 1, Draw::GenericButton::x}};
+								case gb_y: return {{0, 1, Draw::GenericButton::y}};
+								case gb_lb: return {{2, 2, Draw::GenericButton::lb}};
+								case gb_rb: return {{2, 2, Draw::GenericButton::rb}};
+								case gb_lt: return {{2, 2, Draw::GenericButton::lt}};
+								case gb_rt: return {{2, 2, Draw::GenericButton::rt}};
+								case gb_start: return {{2, 2, Draw::GenericButton::start}};
+								case gb_back: return {{2, 2, Draw::GenericButton::back}};
+								case gb_ls: return {{1, 2, Draw::GenericButton::ls}};
+								case gb_rs: return {{1, 2, Draw::GenericButton::rs}};
+								case gb_dpad: return {{2, 2, Draw::GenericButton::dpad}};
+								default: return {};
+								}
+							}();
+
+							if (largebutton)
+							{
+								bt_inst = [c]() -> std::optional<BtConf>
+								{
+									switch ((c & 0x0F) | gb_mask)
+									{
+									case gb_a: return {{0, 3, Draw::GenericButton::a}};
+									case gb_b: return {{0, 3, Draw::GenericButton::b}};
+									case gb_x: return {{0, 3, Draw::GenericButton::x}};
+									case gb_y: return {{0, 3, Draw::GenericButton::y}};
+									case gb_lb: return {{1, 3, Draw::GenericButton::lb}};
+									case gb_rb: return {{1, 3, Draw::GenericButton::rb}};
+									case gb_lt: return {{1, 4, Draw::GenericButton::lt}};
+									case gb_rt: return {{1, 4, Draw::GenericButton::rt}};
+									case gb_start: return {{1, 6, Draw::GenericButton::start}};
+									case gb_back: return {{1, 6, Draw::GenericButton::back}};
+									case gb_ls: return {{1, 5, Draw::GenericButton::ls}};
+									case gb_rs: return {{1, 5, Draw::GenericButton::rs}};
+									case gb_dpad: return {{1, 4, Draw::GenericButton::dpad}};
+									default: return {};
+									}
+								}();	
+							}
+
+							if (bt_inst)
+							{
+								auto bt_translate_press = [c]() -> std::optional<bool>
+								{
+									switch (c & 0xB0)
+									{
+									default:
+									case 0x90: return true;
+									case 0xA0: return {};
+									case 0xB0: return false;
+									}
+								};
+
+								cw = V_GetGenericButtonCodeWidth(c, largebutton) * dupx;
+
+								cxoff = (*fontspec.dim_fn)(scale, fontspec.chw, hchw, dupx, &cw);
+
+								if (cv_debugfonts.value)
+								{
+									V_DrawFill(cx/FRACUNIT, cy/FRACUNIT, cw/FRACUNIT, fontspec.lfh/FRACUNIT, debugalternation ? debugcolor1 : debugcolor2);
+									debugalternation = !debugalternation;
+								}
+
+								Draw bt = Draw(
+									FixedToFloat(cx + cxoff) - (bt_inst->x * dupx),
+									FixedToFloat(cy + cyoff) - ((bt_inst->y + fontspec.button_yofs) * dupy))
+									.flags(flags);
+
+								if (largebutton)
+									bt.generic_button(bt_inst->type, bt_translate_press());
+								else
+									bt.generic_small_button(bt_inst->type, bt_translate_press());
+
+								cx += cw;
+							}
+							descriptive = false;
+							largebutton = false;
+							break;
 						}
 						break;
 					}
@@ -2756,8 +3037,19 @@ void V_DrawStringScaled(
 						fixed_t patchxofs = SHORT (font->font[c]->leftoffset) * dupx * scale;
 						cw = SHORT (font->font[c]->width) * dupx;
 						cxoff = (*fontspec.dim_fn)(scale, fontspec.chw, hchw, dupx, &cw);
-						V_DrawFixedPatch(cx + cxoff + patchxofs, cy + cyoff, scale,
-								flags, font->font[c], colormap);
+
+						if (cv_debugfonts.value)
+						{
+							V_DrawFill(cx/FRACUNIT, cy/FRACUNIT, cw/FRACUNIT, fontspec.lfh/FRACUNIT, debugalternation ? debugcolor1 : debugcolor2);
+							debugalternation = !debugalternation;
+						}
+
+						if (boxed != 1)
+						{
+							V_DrawFixedPatch(cx + cxoff + patchxofs, cy + cyoff + (boxed == 3 ? 2*FRACUNIT : 0), scale,
+								boxed ? boxedflags : flags, font->font[c], boxed ? 0 : colormap);
+						}
+
 						cx += cw;
 					}
 					else
@@ -2782,6 +3074,9 @@ fixed_t V_StringScaledWidth(
 	font_t   *font;
 
 	boolean uppercase;
+	boolean boxed = false;
+	boolean descriptive = false;
+	boolean largebutton = false;
 
 	fixed_t cx;
 	fixed_t right;
@@ -2840,15 +3135,43 @@ fixed_t V_StringScaledWidth(
 			case '\n':
 				cx  =   0;
 				break;
+			case '\xEB':
+				if (fontno != TINY_FONT && fontno != HU_FONT)
+					largebutton = true;
+				break;
+			case '\xEF':
+				descriptive = true;
+				break;
+			case '\xEE':
+			case '\xED':
+			case '\xEC':
+				if (boxed)
+					cx += 3*FRACUNIT;
+				else
+					cx += 3*FRACUNIT;
+				boxed = !boxed;
+				break;
 			default:
 				if (( c & 0xF0 ) == 0x80 || c == V_STRINGDANCE)
 					continue;
 
 				if (( c & 0xB0 ) & 0x80)
 				{
-					cw = V_GetButtonCodeWidth(c) * dupx;
-					cx += cw * scale;
-					right = cx;
+					if (descriptive)
+					{
+						cw = V_GetGenericButtonCodeWidth(c, largebutton) * dupx;
+						cx += cw * scale;
+						right = cx;
+					}
+					else
+					{
+						cw = V_GetButtonCodeWidth(c, largebutton) * dupx;
+						cx += cw * scale;
+						right = cx;
+					}
+
+					largebutton = false;
+					descriptive = false;
 					break;
 				}
 
@@ -2884,6 +3207,7 @@ fixed_t V_StringScaledWidth(
 				}
 				else
 					cx += fontspec.spacew;
+				descriptive = false;
 		}
 
 		fullwidth = std::max(right, std::max(cx, fullwidth));
@@ -2909,6 +3233,9 @@ char * V_ScaledWordWrap(
 	font_t   *font;
 
 	boolean uppercase;
+	boolean largebutton = false;
+	boolean descriptive = false;
+	boolean boxed = false;
 
 	fixed_t cx;
 	fixed_t right;
@@ -2980,14 +3307,36 @@ char * V_ScaledWordWrap(
 				cxatstart = 0;
 				startwriter = 0;
 				break;
+			case '\xEB':
+				if (fontno != TINY_FONT && fontno != HU_FONT)
+					largebutton = true;
+			case '\xEF':
+				descriptive = true;
+				break;
+			case '\xEE':
+			case '\xED':
+			case '\xEC':
+				if (boxed)
+					cx += 3*FRACUNIT;
+				else
+					cx += 3*FRACUNIT;
+				boxed = !boxed;
+				break;
 			default:
 				if (( c & 0xF0 ) == 0x80 || c == V_STRINGDANCE)
 					;
 				else if (( c & 0xB0 ) & 0x80) // button prompts
 				{
-					cw = V_GetButtonCodeWidth(c) * dupx;
+					if (descriptive)
+						cw = V_GetGenericButtonCodeWidth(c, largebutton) * dupx;
+					else
+						cw = V_GetButtonCodeWidth(c, largebutton) * dupx;
+
 					cx += cw * scale;
 					right = cx;
+
+					descriptive = false;
+					boxed = false;
 				}
 				else
 				{
@@ -3478,4 +3827,11 @@ void VID_DisplaySoftwareScreen()
 
 	// Post-process blit to the 'default' framebuffer
 	hw_state->blit_postimg_screens->draw(*rhi, ctx);
+}
+
+char *V_ParseText(const char *rawText)
+{
+	using srb2::Draw;
+
+	return Z_StrDup(srb2::Draw::TextElement().parse(rawText).string().c_str());
 }
