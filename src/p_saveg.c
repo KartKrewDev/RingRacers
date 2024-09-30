@@ -655,6 +655,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		WRITEUINT8(save->p, players[i].ringboxdelay);
 		WRITEUINT8(save->p, players[i].ringboxaward);
+		WRITEUINT32(save->p, players[i].lastringboost);
 
 		WRITEUINT8(save->p, players[i].amps);
 		WRITEUINT8(save->p, players[i].amppickup);
@@ -1289,6 +1290,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		players[i].ringboxdelay = READUINT8(save->p);
 		players[i].ringboxaward = READUINT8(save->p);
+		players[i].lastringboost = READUINT32(save->p);
 
 		players[i].amps =READUINT8(save->p);
 		players[i].amppickup =READUINT8(save->p);
