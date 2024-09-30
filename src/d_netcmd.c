@@ -2964,6 +2964,7 @@ static void Command_QueueMap_f(void)
 	size_t option_gametype;
 	size_t option_encore;
 	size_t option_clear;
+	size_t option_show;
 
 	boolean usingcheats;
 	boolean ischeating;
@@ -3007,7 +3008,21 @@ static void Command_QueueMap_f(void)
 			return;
 		}
 
-		Handle_MapQueueSend(0, ROUNDQUEUE_CLEAR, false);
+		Handle_MapQueueSend(0, ROUNDQUEUE_CMD_CLEAR, false);
+		return;
+	}
+
+	option_show = COM_CheckParm("-show");
+
+	if (option_show)
+	{
+		if (ischeating && !usingcheats)
+		{
+			CONS_Printf(M_GetText("Cheats must be enabled.\n"));
+			return;
+		}
+
+		Handle_MapQueueSend(0, ROUNDQUEUE_CMD_SHOW, false);
 		return;
 	}
 
@@ -3027,7 +3042,7 @@ static void Command_QueueMap_f(void)
 	if (first_option < 2)
 	{
 		/* I'm going over the fucking lines and I DON'T CAREEEEE */
-		CONS_Printf("queuemap <name / number> [-gametype <type>] [-force] / [-clear]:\n");
+		CONS_Printf("queuemap <name / number> [-gametype <type>] [-force] / [-clear] / [-spoil]:\n");
 		CONS_Printf(M_GetText(
 					"Queue up a map by its name, or by its number (though why would you).\n"
 					"All parameters are case-insensitive and may be abbreviated.\n"));
@@ -3134,7 +3149,7 @@ static void Got_MapQueuecmd(const UINT8 **cp, INT32 playernum)
 		return;
 	}
 
-	doclear = (setgametype == ROUNDQUEUE_CLEAR);
+	doclear = (setgametype == ROUNDQUEUE_CMD_CLEAR);
 
 	if (doclear == false && queueposition >= ROUNDQUEUE_MAX)
 	{

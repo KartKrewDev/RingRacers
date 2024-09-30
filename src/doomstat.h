@@ -38,7 +38,9 @@ extern "C" {
 // =============================
 
 #define ROUNDQUEUE_MAX 10 // sane max? maybe make dynamically allocated later
-#define ROUNDQUEUE_CLEAR UINT16_MAX // lives in gametype field of packets
+// These two live in gametype field of packets
+#define ROUNDQUEUE_CMD_CLEAR UINT16_MAX
+#define ROUNDQUEUE_CMD_SHOW UINT16_MAX-1
 // The roundqueue itself is resident in g_game.h
 
 // Selected by user.

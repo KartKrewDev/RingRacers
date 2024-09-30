@@ -4799,7 +4799,7 @@ static void PT_ReqMapQueue(int node)
 		}
 	}
 
-	const boolean doclear = (reqmapqueue.newgametype == ROUNDQUEUE_CLEAR);
+	const boolean doclear = (reqmapqueue.newgametype == ROUNDQUEUE_CMD_CLEAR);
 
 	// The following prints will only appear when multiple clients
 	// attempt to affect the round queue at similar time increments
@@ -4812,6 +4812,33 @@ static void PT_ReqMapQueue(int node)
 			//CONS_Alert(CONS_ERROR, "queuemap: Queue is already empty!\n");
 			return;
 		}
+	}
+	else if (reqmapqueue.newgametype == ROUNDQUEUE_CMD_SHOW)
+	{
+		char maprevealmsg[256];
+		if (roundqueue.size == 0)
+		{
+			strlcpy(maprevealmsg, "There are no Rounds queued.", 256);
+		}
+		else if (roundqueue.position >= roundqueue.size)
+		{
+			strlcpy(maprevealmsg, "There are no more Rounds queued!", 256);
+		}
+		else
+		{
+			char *title = G_BuildMapTitle(roundqueue.entries[roundqueue.position].mapnum + 1);
+
+			strlcpy(
+				maprevealmsg,
+				va("The next Round will be on \"%s\".", title),
+				256
+			);
+
+			Z_Free(title);
+		}
+		DoSayCommand(maprevealmsg, 0, HU_SHOUT, servernode);
+
+		return;
 	}
 	else if (roundqueue.size >= ROUNDQUEUE_MAX)
 	{
