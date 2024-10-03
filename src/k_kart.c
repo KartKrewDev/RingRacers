@@ -292,7 +292,7 @@ void K_TimerInit(void)
 
 	if (G_TimeAttackStart())
 	{
-		starttime = 6*TICRATE; // Longest permitted start. No half-laps in reverse.
+		starttime = 10*TICRATE; // Longest permitted start. No half-laps in reverse.
 		// (Changed on finish line cross later, don't worry.)
 	}
 
@@ -11583,6 +11583,11 @@ static void K_KartDrift(player_t *player, boolean onground)
 			|| (player->driftcharge < 0))
 		{
 			K_SpawnDriftSparks(player);
+		}
+
+		if ((player->driftcharge + driftadditive) >= dsfour && K_TimeAttackRules() && leveltime < starttime)
+		{
+			driftadditive = 0;
 		}
 
 		if ((player->driftcharge < dsone && player->driftcharge+driftadditive >= dsone)
