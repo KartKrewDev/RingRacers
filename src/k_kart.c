@@ -11585,9 +11585,10 @@ static void K_KartDrift(player_t *player, boolean onground)
 			K_SpawnDriftSparks(player);
 		}
 
-		if ((player->driftcharge + driftadditive) >= dsfour && K_TimeAttackRules() && leveltime < starttime)
+		// Magic numbers ahoy! Meant to allow purple drifts to progress past color transition.
+		if ((player->driftcharge + driftadditive) > (dsthree+(32*3)) && K_TimeAttackRules() && leveltime < starttime)
 		{
-			driftadditive = 0;
+			driftadditive = max(0, (dsthree+(32*3)) - player->driftcharge);
 		}
 
 		if ((player->driftcharge < dsone && player->driftcharge+driftadditive >= dsone)
