@@ -18410,7 +18410,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 
 	{           // MT_OVERTIME_PARTICLE
 	    -1,             // doomednum
-	    S_NULL,         // spawnstate
+	    S_INVISIBLE,    // spawnstate
 	    1000,           // spawnhealth
 	    S_NULL,         // seestate
 	    sfx_None,       // seesound
