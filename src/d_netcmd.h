@@ -63,7 +63,7 @@ extern consvar_t cv_countdowntime;
 extern consvar_t cv_mute;
 extern consvar_t cv_pause;
 
-extern consvar_t cv_restrictskinchange, cv_allowteamchange, cv_maxplayers;
+extern consvar_t cv_restrictskinchange, cv_allowteamchange, cv_maxplayers, cv_shuffleloser;
 extern consvar_t cv_spectatorreentry, cv_duelspectatorreentry, cv_antigrief;
 
 // SRB2kart items

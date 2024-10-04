@@ -742,6 +742,8 @@ void LiveStudioAudience_OnChange(void);
 
 consvar_t cv_maxplayers = NetVar("maxplayers", "8").min_max(1, MAXPLAYERS);
 
+consvar_t cv_shuffleloser = NetVar("shuffleloser", "On").on_off();
+
 // Scoring type options
 consvar_t cv_overtime = UnsavedNetVar("overtime", "Yes").yes_no();
 

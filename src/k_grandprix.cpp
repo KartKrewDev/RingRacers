@@ -853,7 +853,7 @@ void K_RetireBots(void)
 
 	boolean did_replacement = false;
 
-	if (G_GametypeHasSpectators() == true && grandprixinfo.gp == false) // Should this be put behind a cvar?
+	if (G_GametypeHasSpectators() == true && grandprixinfo.gp == false && cv_shuffleloser.value != 0)
 	{
 		// While joiners and players still exist, insert joiners.
 
