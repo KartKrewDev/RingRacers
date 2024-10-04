@@ -8309,7 +8309,7 @@ mobj_t *K_FindJawzTarget(mobj_t *actor, player_t *source, angle_t range)
 			continue;
 		}
 
-		if (G_SameTeam(source, player) == false)
+		if (G_SameTeam(source, player) == true)
 		{
 			// Don't home in on teammates.
 			continue;
