@@ -15,6 +15,7 @@
 #include <string_view>
 #include <optional>
 #include <utility>
+#include <unordered_map>
 
 #include <fmt/core.h>
 
