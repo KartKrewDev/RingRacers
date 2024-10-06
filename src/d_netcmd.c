@@ -2203,13 +2203,17 @@ void D_SetupVote(INT16 newgametype)
 {
 	const UINT32 rules = gametypes[newgametype]->rules;
 
-	UINT8 buf[(VOTE_NUM_LEVELS * 2) + 4];
+	UINT8 buf[(VOTE_NUM_LEVELS * 2) + 2 + 1 + 1];
 	UINT8 *p = buf;
 
 	INT32 i;
 
 	UINT16 votebuffer[VOTE_NUM_LEVELS + 1];
-	memset(votebuffer, UINT16_MAX, sizeof(votebuffer));
+	//memset(votebuffer, UINT16_MAX, sizeof(votebuffer));
+	for (i = 0; i < VOTE_NUM_LEVELS + 1; i++)
+	{
+		votebuffer[i] = UINT16_MAX;
+	}
 
 	WRITEINT16(p, newgametype);
 	WRITEUINT8(p, ((cv_kartencore.value == 1) && (rules & GTR_ENCORE)));
