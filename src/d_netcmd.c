@@ -2440,6 +2440,7 @@ static void Command_Map_f(void)
 	size_t option_force;
 	size_t option_gametype;
 	size_t option_encore;
+	size_t option_random;
 	size_t option_skill;
 	size_t option_server;
 	size_t option_match;
@@ -2451,7 +2452,7 @@ static void Command_Map_f(void)
 
 	INT32 newmapnum;
 
-	char   *    mapname;
+	char   *    mapname = NULL;
 	char   *realmapname = NULL;
 
 	INT32 newgametype = gametype;
@@ -2474,6 +2475,7 @@ static void Command_Map_f(void)
 	option_force    =   COM_CheckPartialParm("-f");
 	option_gametype =   COM_CheckPartialParm("-g");
 	option_encore   =   COM_CheckPartialParm("-e");
+	option_random   =   COM_CheckPartialParm("-r");
 	option_skill    =   COM_CheckParm("-skill");
 	option_server   =   COM_CheckParm("-server");
 	option_match    =   COM_CheckParm("-match");
@@ -2486,30 +2488,105 @@ static void Command_Map_f(void)
 	if (!( first_option = COM_FirstOption() ))
 		first_option = COM_Argc();
 
-	if (first_option < 2)
+	if (!option_random && first_option < 2)
 	{
 		/* I'm going over the fucking lines and I DON'T CAREEEEE */
-		CONS_Printf("map <name / number> [-gametype <type>] [-force]:\n");
+		CONS_Printf("map <name / number> [-gametype <type>] [-force] / [-random]:\n");
 		CONS_Printf(M_GetText(
 					"Warp to a map, by its name, two character code, with optional \"MAP\" prefix, or by its number (though why would you).\n"
 					"All parameters are case-insensitive and may be abbreviated.\n"));
 		return;
 	}
 
-	mapname = ConcatCommandArgv(1, first_option);
+	boolean getgametypefrommap = false;
 
-	newmapnum = G_FindMapByNameOrCode(mapname, &realmapname);
-
-	if (newmapnum == 0)
+	// new gametype value
+	// use current one by default
+	if (option_gametype)
 	{
-		CONS_Alert(CONS_ERROR, M_GetText("Could not find any map described as '%s'.\n"), mapname);
-		Z_Free(mapname);
-		return;
+		newgametype = GetGametypeParm(option_gametype);
+		if (newgametype == -1)
+		{
+			return;
+		}
+	}
+	else if (option_random)
+	{
+		if (!Playing())
+		{
+			CONS_Printf("Can't use -random from the menu without -gametype.\n");
+			return;
+		}
+	}
+	else if (!Playing() || (netgame == false && grandprixinfo.gp == true))
+	{
+		getgametypefrommap = true;
 	}
 
-	if (/*newmapnum != 1 &&*/ M_MapLocked(newmapnum))
+	// new encoremode value
+	if (option_encore)
 	{
-		ischeating = true;
+		newencoremode = !newencoremode;
+
+		if (!M_SecretUnlocked(SECRET_ENCORE, false) && newencoremode == true && !usingcheats)
+		{
+			CONS_Alert(CONS_NOTICE, M_GetText("You haven't unlocked Encore Mode yet!\n"));
+			Z_Free(realmapname);
+			Z_Free(mapname);
+			return;
+		}
+	}
+
+	if (option_random)
+	{
+		UINT8 numPlayers = 0;
+		UINT16 oldmapnum = UINT16_MAX;
+
+		if (Playing())
+		{
+			UINT8 i;
+			for (i = 0; i < MAXPLAYERS; ++i)
+			{
+				if (!playeringame[i] || players[i].spectator)
+				{
+					continue;
+				}
+
+				extern consvar_t cv_forcebots; // debug
+
+				if (!(gametypes[newgametype]->rules & GTR_BOTS) && players[i].bot && !cv_forcebots.value)
+				{
+					// Gametype doesn't support bots
+					continue;
+				}
+
+				numPlayers++;
+			}
+
+			oldmapnum = (gamestate == GS_LEVEL)
+				? (gamemap-1)
+				: prevmap;
+		}
+
+		newmapnum = G_RandMapPerPlayerCount(G_TOLFlag(newgametype), oldmapnum, false, false, NULL, numPlayers) + 1;
+	}
+	else
+	{
+		mapname = ConcatCommandArgv(1, first_option);
+
+		newmapnum = G_FindMapByNameOrCode(mapname, &realmapname);
+
+		if (newmapnum == 0)
+		{
+			CONS_Alert(CONS_ERROR, M_GetText("Could not find any map described as '%s'.\n"), mapname);
+			Z_Free(mapname);
+			return;
+		}
+
+		if (M_MapLocked(newmapnum))
+		{
+			ischeating = true;
+		}
 	}
 
 	if (ischeating && !usingcheats)
@@ -2520,21 +2597,8 @@ static void Command_Map_f(void)
 		return;
 	}
 
-	// new gametype value
-	// use current one by default
-	if (option_gametype)
+	if (getgametypefrommap)
 	{
-		newgametype = GetGametypeParm(option_gametype);
-		if (newgametype == -1)
-		{
-			Z_Free(realmapname);
-			Z_Free(mapname);
-			return;
-		}
-	}
-	else if (!Playing() || (netgame == false && grandprixinfo.gp == true))
-	{
-		newresetplayers = true;
 		if (mapheaderinfo[newmapnum-1])
 		{
 			// Let's just guess so we don't have to specify the gametype EVERY time...
@@ -2553,25 +2617,13 @@ static void Command_Map_f(void)
 		}
 	}
 
-	// new encoremode value
-	if (option_encore)
-	{
-		newencoremode = !newencoremode;
-
-		if (!M_SecretUnlocked(SECRET_ENCORE, false) && newencoremode == true && !usingcheats)
-		{
-			CONS_Alert(CONS_NOTICE, M_GetText("You haven't unlocked Encore Mode yet!\n"));
-			Z_Free(realmapname);
-			Z_Free(mapname);
-			return;
-		}
-	}
-
-	if (!option_force && newgametype == gametype && Playing()) // SRB2Kart
+	if (!Playing())
+		newresetplayers = true;
+	else if (!option_force && newgametype == gametype) // SRB2Kart
 		newresetplayers = false; // if not forcing and gametypes is the same
 
 	// don't use a gametype the map doesn't support
-	if (cht_debug || option_force || cv_skipmapcheck.value)
+	if (option_random || cht_debug || option_force || cv_skipmapcheck.value)
 	{
 		// The player wants us to trek on anyway.  Do so.
 	}
@@ -2853,54 +2905,7 @@ static void Got_Mapcmd(const UINT8 **cp, INT32 playernum)
 
 static void Command_RandomMap(void)
 {
-	INT32 oldmapnum;
-	INT32 newmapnum;
-	INT32 newgametype = (Playing() ? gametype : menugametype);
-	boolean newencore = false;
-	boolean newresetplayers;
-	size_t option_gametype;
-
-	if (client && !IsPlayerAdmin(consoleplayer))
-	{
-		CONS_Printf(M_GetText("Only the server or a remote admin can use this.\n"));
-		return;
-	}
-
-	if ((option_gametype = COM_CheckPartialParm("-g")))
-	{
-		newgametype = GetGametypeParm(option_gametype);
-		if (newgametype == -1)
-			return;
-	}
-
-	// TODO: Handle singleplayer conditions.
-	// The existing ones are way too annoyingly complicated and "anti-cheat" for my tastes.
-
-	if (Playing())
-	{
-		if (cv_kartencore.value == 1 && (gametypes[newgametype]->rules & GTR_ENCORE))
-		{
-			newencore = true;
-		}
-		newresetplayers = false;
-
-		if (gamestate == GS_LEVEL)
-		{
-			oldmapnum = gamemap-1;
-		}
-		else
-		{
-			oldmapnum = prevmap;
-		}
-	}
-	else
-	{
-		newresetplayers = true;
-		oldmapnum = -1;
-	}
-
-	newmapnum = G_RandMap(G_TOLFlag(newgametype), oldmapnum, false, false, NULL) + 1;
-	D_MapChange(newmapnum, newgametype, newencore, newresetplayers, 0, false, false);
+	CONS_Printf("randommap is deprecated, please use \"map -random\" instead.\n");
 }
 
 static void Command_RestartLevel(void)
@@ -2965,13 +2970,14 @@ static void Command_QueueMap_f(void)
 	size_t option_encore;
 	size_t option_clear;
 	size_t option_show;
+	size_t option_random;
 
 	boolean usingcheats;
 	boolean ischeating;
 
 	INT32 newmapnum;
 
-	char   *    mapname;
+	char   *    mapname = NULL;
 	char   *realmapname = NULL;
 
 	INT32 newgametype = gametype;
@@ -2992,16 +2998,17 @@ static void Command_QueueMap_f(void)
 	usingcheats = CV_CheatsEnabled();
 	ischeating = (!(netgame || multiplayer) || !K_CanChangeRules(false));
 
-	option_clear = COM_CheckParm("-clear");
+	// Early check, rather than multiple copypaste.
+	if (ischeating && !usingcheats)
+	{
+		CONS_Printf(M_GetText("Cheats must be enabled.\n"));
+		return;
+	}
+
+	option_clear = COM_CheckPartialParm("-c");
 
 	if (option_clear)
 	{
-		if (ischeating && !usingcheats)
-		{
-			CONS_Printf(M_GetText("Cheats must be enabled.\n"));
-			return;
-		}
-
 		if (roundqueue.size == 0)
 		{
 			CONS_Printf(M_GetText("Round queue is already empty!\n"));
@@ -3012,16 +3019,10 @@ static void Command_QueueMap_f(void)
 		return;
 	}
 
-	option_show = COM_CheckParm("-show");
+	option_show = COM_CheckPartialParm("-s");
 
 	if (option_show)
 	{
-		if (ischeating && !usingcheats)
-		{
-			CONS_Printf(M_GetText("Cheats must be enabled.\n"));
-			return;
-		}
-
 		Handle_MapQueueSend(0, ROUNDQUEUE_CMD_SHOW, false);
 		return;
 	}
@@ -3035,41 +3036,18 @@ static void Command_QueueMap_f(void)
 	option_force    =   COM_CheckPartialParm("-f");
 	option_gametype =   COM_CheckPartialParm("-g");
 	option_encore   =   COM_CheckPartialParm("-e");
+	option_random   =   COM_CheckPartialParm("-r");
 
 	if (!( first_option = COM_FirstOption() ))
 		first_option = COM_Argc();
 
-	if (first_option < 2)
+	if (!option_random && first_option < 2)
 	{
 		/* I'm going over the fucking lines and I DON'T CAREEEEE */
-		CONS_Printf("queuemap <name / number> [-gametype <type>] [-force] / [-clear] / [-spoil]:\n");
+		CONS_Printf("queuemap <name / number> [-gametype <type>] [-force] / [-random] / [-clear] / [-show]:\n");
 		CONS_Printf(M_GetText(
 					"Queue up a map by its name, or by its number (though why would you).\n"
 					"All parameters are case-insensitive and may be abbreviated.\n"));
-		return;
-	}
-
-	mapname = ConcatCommandArgv(1, first_option);
-
-	newmapnum = G_FindMapByNameOrCode(mapname, &realmapname);
-
-	if (newmapnum == 0)
-	{
-		CONS_Alert(CONS_ERROR, M_GetText("Could not find any map described as '%s'.\n"), mapname);
-		Z_Free(mapname);
-		return;
-	}
-
-	if (/*newmapnum != 1 &&*/ M_MapLocked(newmapnum))
-	{
-		ischeating = true;
-	}
-
-	if (ischeating && !usingcheats)
-	{
-		CONS_Printf(M_GetText("Cheats must be enabled.\n"));
-		Z_Free(realmapname);
-		Z_Free(mapname);
 		return;
 	}
 
@@ -3100,8 +3078,40 @@ static void Command_QueueMap_f(void)
 		}
 	}
 
+	if (option_random)
+	{
+		// Unlike map -random, this is a server side RNG roll
+		newmapnum = NEXTMAP_VOTING + 1;
+	}
+	else
+	{
+		mapname = ConcatCommandArgv(1, first_option);
+
+		newmapnum = G_FindMapByNameOrCode(mapname, &realmapname);
+
+		if (newmapnum == 0)
+		{
+			CONS_Alert(CONS_ERROR, M_GetText("Could not find any map described as '%s'.\n"), mapname);
+			Z_Free(mapname);
+			return;
+		}
+
+		if (M_MapLocked(newmapnum))
+		{
+			ischeating = true;
+		}
+	}
+
+	if (ischeating && !usingcheats)
+	{
+		CONS_Printf(M_GetText("Cheats must be enabled.\n"));
+		Z_Free(realmapname);
+		Z_Free(mapname);
+		return;
+	}
+
 	// don't use a gametype the map doesn't support
-	if (cht_debug || option_force || cv_skipmapcheck.value)
+	if (option_random || cht_debug || option_force || cv_skipmapcheck.value)
 	{
 		// The player wants us to trek on anyway.  Do so.
 	}
@@ -5296,25 +5306,139 @@ void SoundTest_OnChange(void)
 
 static void Command_Showmap_f(void)
 {
-	if (gamestate == GS_LEVEL)
+	UINT16 printmap = NEXTMAP_INVALID;
+
+	size_t first_option;
+	size_t option_random;
+	size_t option_gametype;
+
+	INT32 newgametype = gametype;
+
+	char   *    mapname = NULL;
+	char   *realmapname = NULL;
+
+	option_gametype =   COM_CheckPartialParm("-g");
+	option_random   =   COM_CheckPartialParm("-r");
+
+	if (!( first_option = COM_FirstOption() ))
+		first_option = COM_Argc();
+
+	if (option_gametype)
 	{
-		if (mapheaderinfo[gamemap-1]->zonttl[0] && !(mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE))
+		newgametype = GetGametypeParm(option_gametype);
+		if (newgametype == -1)
 		{
-			if (mapheaderinfo[gamemap-1]->actnum > 0)
-				CONS_Printf("%s (%d): %s %s %d\n", G_BuildMapName(gamemap), gamemap, mapheaderinfo[gamemap-1]->lvlttl, mapheaderinfo[gamemap-1]->zonttl, mapheaderinfo[gamemap-1]->actnum);
-			else
-				CONS_Printf("%s (%d): %s %s\n", G_BuildMapName(gamemap), gamemap, mapheaderinfo[gamemap-1]->lvlttl, mapheaderinfo[gamemap-1]->zonttl);
+			return;
+		}
+	}
+
+	if (option_random)
+	{
+		UINT8 numPlayers = 0;
+		UINT16 oldmapnum = UINT16_MAX;
+		if (Playing())
+		{
+			UINT8 i;
+			for (i = 0; i < MAXPLAYERS; ++i)
+			{
+				if (!playeringame[i] || players[i].spectator)
+				{
+					continue;
+				}
+
+				extern consvar_t cv_forcebots; // debug
+
+				if (!(gametypes[newgametype]->rules & GTR_BOTS) && players[i].bot && !cv_forcebots.value)
+				{
+					// Gametype doesn't support bots
+					continue;
+				}
+
+				numPlayers++;
+			}
+
+			oldmapnum = (gamestate == GS_LEVEL)
+				? (gamemap-1)
+				: prevmap;
+		}
+		else if (!option_gametype)
+		{
+			CONS_Printf("Can't use -random from the menu without -gametype.\n");
+			return;
+		}
+
+		printmap = G_RandMapPerPlayerCount(G_TOLFlag(newgametype), oldmapnum, false, false, NULL, numPlayers);
+	}
+	else if (first_option < 2)
+	{
+		if (!Playing())
+		{
+			CONS_Printf(M_GetText("You must be in a game to use this.\n"));
+			return;
+		}
+
+		printmap = (gamestate == GS_LEVEL)
+			? gamemap-1
+			: prevmap;
+	}
+	else
+	{
+		mapname = ConcatCommandArgv(1, first_option);
+
+		printmap = G_FindMapByNameOrCode(mapname, &realmapname);
+
+		if (printmap == 0)
+		{
+			CONS_Alert(CONS_ERROR, M_GetText("Could not find any map described as '%s'.\n"), mapname);
+			Z_Free(mapname);
+			return;
+		}
+
+		printmap--; // i hate the gamemap off-by-one system
+	}
+
+	if (printmap < nummapheaders && mapheaderinfo[printmap])
+	{
+		char *title = G_BuildMapTitle(printmap + 1);
+
+		if (mapheaderinfo[printmap]->menuttl[0])
+		{
+			CONS_Printf("%s (%d): %s / %s\n", mapheaderinfo[printmap]->lumpname, printmap, title, mapheaderinfo[printmap]->menuttl);
 		}
 		else
 		{
-			if (mapheaderinfo[gamemap-1]->actnum > 0)
-				CONS_Printf("%s (%d): %s %d\n", G_BuildMapName(gamemap), gamemap, mapheaderinfo[gamemap-1]->lvlttl, mapheaderinfo[gamemap-1]->actnum);
+			CONS_Printf("%s (%d): %s\n", mapheaderinfo[printmap]->lumpname, printmap, title);
+		}
+
+		Z_Free(title);
+
+		if ((option_random || first_option < 2) && !option_gametype)
+			;
+		else if (mapheaderinfo[printmap]->typeoflevel & G_TOLFlag(newgametype))
+		{
+			CONS_Printf(" compatible with this gametype\n");
+		}
+		else
+		{
+			newgametype = G_GuessGametypeByTOL(mapheaderinfo[printmap]->typeoflevel);
+
+			if (newgametype == -1)
+			{
+				CONS_Printf(" NOT compatible with any known gametype\n");
+			}
 			else
-				CONS_Printf("%s (%d): %s\n", G_BuildMapName(gamemap), gamemap, mapheaderinfo[gamemap-1]->lvlttl);
+			{
+				CONS_Printf(" NOT compatible with this gametype (try \"%s\" instead)\n", gametypes[newgametype]->name);
+			}
 		}
 	}
 	else
-		CONS_Printf(M_GetText("You must be in a level to use this.\n"));
+	{
+		CONS_Printf("Invalid map ID %u\n", printmap);
+	}
+
+	Z_Free(realmapname);
+	Z_Free(mapname);
 }
 
 static void Command_Mapmd5_f(void)
