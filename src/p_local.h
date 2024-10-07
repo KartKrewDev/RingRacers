@@ -258,6 +258,7 @@ mobjtype_t P_GetMobjtype(UINT16 mthingtype);
 void P_RespawnSpecials(void);
 
 fixed_t P_GetMobjDefaultScale(mobj_t *mobj);
+mobj_t *P_AllocateMobj(void);
 mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type);
 
 void P_CalculatePrecipFloor(precipmobj_t *mobj);

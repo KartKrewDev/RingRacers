@@ -10844,6 +10844,24 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 	}
 }
 
+mobj_t *P_AllocateMobj(void)
+{
+	mobj_t *mobj;
+
+	if (mobjcache != NULL)
+	{
+		mobj = mobjcache;
+		mobjcache = mobjcache->hnext;
+		memset(mobj, 0, sizeof(*mobj));
+	}
+	else
+	{
+		mobj = Z_Calloc(sizeof (*mobj), PU_LEVEL, NULL);
+	}
+
+	return mobj;
+}
+
 //
 // P_SpawnMobj
 //
@@ -10870,16 +10888,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		type = MT_RAY;
 	}
 
-	if (mobjcache != NULL)
-	{
-		mobj = mobjcache;
-		mobjcache = mobjcache->hnext;
-		memset(mobj, 0, sizeof(*mobj));
-	}
-	else
-	{
-		mobj = Z_Calloc(sizeof (*mobj), PU_LEVEL, NULL);
-	}
+	mobj = P_AllocateMobj();
 
 	// this is officially a mobj, declared as soon as possible.
 	mobj->thinker.function.acp1 = (actionf_p1)P_MobjThinker;

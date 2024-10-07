@@ -4511,13 +4511,13 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 			return NULL;
 		}
 
-		mobj = (mobj_t*)Z_Calloc(sizeof (*mobj), PU_LEVEL, NULL);
+		mobj = P_AllocateMobj();
 
 		mobj->spawnpoint = &mapthings[spawnpointnum];
 		mapthings[spawnpointnum].mobj = mobj;
 	}
 	else
-		mobj = (mobj_t*)Z_Calloc(sizeof (*mobj), PU_LEVEL, NULL);
+		mobj = P_AllocateMobj();
 
 	// declare this as a valid mobj as soon as possible.
 	mobj->thinker.function.acp1 = thinker;
