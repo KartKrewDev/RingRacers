@@ -60,7 +60,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	p_maputl.c
 	p_mobj.c
 	p_polyobj.c
-	p_saveg.c
+	p_saveg.cpp
 	p_setup.cpp
 	p_sight.c
 	p_spec.c
