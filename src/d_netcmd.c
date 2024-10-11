@@ -7051,22 +7051,90 @@ void DummyConsvar_OnChange(void)
 
 static void Command_ShowScores_f(void)
 {
-	UINT8 i;
-
 	if (!(netgame || multiplayer))
 	{
-		CONS_Printf(M_GetText("This only works in a netgame.\n"));
+		CONS_Printf("This only works with multiple players.\n");
 		return;
 	}
 
+	if (K_UsingPowerLevels() != PWRLV_DISABLED)
+	{
+		CONS_Printf("PWR is currently active - no scores to show!\n");
+		return;
+	}
+
+	UINT8 i, j, numplayers = 0;
+	UINT8 playerlist[MAXPLAYERS];
+	UINT8 pos[MAXPLAYERS];
+	UINT16 completed = 0;
+
+	memset(playerlist, 0, sizeof(playerlist));
+	memset(pos, 0, sizeof(pos));
+
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (playeringame[i])
-			// FIXME: %lu? what's wrong with %u? ~Callum (produces warnings...)
-			CONS_Printf(M_GetText("%s's score is %u\n"), player_names[i], players[i].score);
-	}
-	CONS_Printf(M_GetText("The pointlimit is %d\n"), g_pointlimit);
+		if (playeringame[i] && !players[i].spectator)
+		{
+			numplayers++;
+			continue;
+		}
 
+		completed |= (1 << i);
+	}
+
+	if (!numplayers)
+	{
+		CONS_Printf("No players are currently in-game.\n");
+		return;
+	}
+
+	// This is largely based off of Y_CalculateMatchData.
+
+	for (j = 0; j < numplayers; j++)
+	{
+		UINT8 workp = UINT8_MAX;
+
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (completed & (1 << i))
+				continue;
+			if (workp != UINT8_MAX && players[workp].score >= players[i].score)
+				continue;
+			workp = i;
+		}
+
+		completed |= (1 << workp);
+
+		playerlist[j] = workp;
+
+		if (j && players[workp].score == players[playerlist[j-1]].score)
+		{
+			pos[j] = pos[j-1];
+		}
+		else
+		{
+			pos[j] = j+1;
+		}
+	}
+
+	if (roundqueue.size && roundqueue.position)
+	{
+		CONS_Printf(
+			"Rankings %s Round %u:\n",
+			(gamestate == GS_LEVEL) ? "before" : "as of",
+			roundqueue.roundnum
+		);
+	}
+	else
+	{
+		CONS_Printf("Total Rankings:\n");
+	}
+
+	for (i = 0; i < numplayers; i++)
+	{
+		j = playerlist[i];
+		CONS_Printf(" %2u - %*s : %9d\n", pos[i], MAXPLAYERNAME-1, player_names[j], players[j].score); // 9 taken from MAXSCORE
+	}
 }
 
 static void Command_ShowTime_f(void)
