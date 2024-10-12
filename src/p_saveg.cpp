@@ -2476,7 +2476,7 @@ static void UnArchiveSectors(savebuffer_t *save)
 
 			// Add new entries.
 			for (j = 0; j < sectors[i].tags.count; j++)
-				Taggroup_Remove(tags_sectors, sectors[i].tags.tags[j], i);
+				Taggroup_Add(tags_sectors, sectors[i].tags.tags[j], i);
 		}
 
 
