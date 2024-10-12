@@ -119,6 +119,7 @@
 #include "k_endcam.h"
 #include "k_credits.h"
 #include "k_objects.h"
+#include "p_deepcopy.h"
 
 // Replay names have time
 #if !defined (UNDER_CE)
@@ -7535,7 +7536,6 @@ static boolean P_LoadMapFromFile(void)
 	TracyCZone(__zone, true);
 
 	virtlump_t *textmap = vres_Find(curmapvirt, "TEXTMAP");
-	size_t i;
 
 	udmf = textmap != NULL;
 	udmf_version = 0;
@@ -7563,17 +7563,9 @@ static boolean P_LoadMapFromFile(void)
 		P_WriteTextmap();
 
 	// Copy relevant map data for NetArchive purposes.
-	spawnsectors = static_cast<sector_t*>(Z_Calloc(numsectors * sizeof(*sectors), PU_LEVEL, NULL));
-	spawnlines = static_cast<line_t*>(Z_Calloc(numlines * sizeof(*lines), PU_LEVEL, NULL));
-	spawnsides = static_cast<side_t*>(Z_Calloc(numsides * sizeof(*sides), PU_LEVEL, NULL));
-
-	memcpy(spawnsectors, sectors, numsectors * sizeof(*sectors));
-	memcpy(spawnlines, lines, numlines * sizeof(*lines));
-	memcpy(spawnsides, sides, numsides * sizeof(*sides));
-
-	for (i = 0; i < numsectors; i++)
-		if (sectors[i].tags.count)
-			spawnsectors[i].tags.tags = static_cast<mtag_t*>(memcpy(Z_Malloc(sectors[i].tags.count*sizeof(mtag_t), PU_LEVEL, NULL), sectors[i].tags.tags, sectors[i].tags.count*sizeof(mtag_t)));
+	P_DeepCopySectors(&spawnsectors, &sectors, numsectors);
+	P_DeepCopyLines(&spawnlines, &lines, numlines);
+	P_DeepCopySides(&spawnsides, &sides, numsides);
 
 	P_MakeMapMD5(curmapvirt, &mapmd5);
 
