@@ -3142,9 +3142,9 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 	// not the default but the most probable
 	if (mobj->momx != 0 || mobj->momy != 0 || mobj->momz != 0 || mobj->pmomz != 0 || mobj->lastmomz != 0)
 		diff |= MD_MOM;
-	if (mobj->radius != mobj->info->radius)
+	if (mobj->radius != FixedMul(mapobjectscale, mobj->info->radius))
 		diff |= MD_RADIUS;
-	if (mobj->height != mobj->info->height)
+	if (mobj->height != FixedMul(mapobjectscale, mobj->info->height))
 		diff |= MD_HEIGHT;
 	if (mobj->flags != mobj->info->flags)
 		diff |= MD_FLAGS;
@@ -3188,11 +3188,11 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		diff |= MD_MOVEFACTOR;
 	if (mobj->fuse)
 		diff |= MD_FUSE;
-	if (mobj->watertop)
+	if (mobj->watertop != INT32_MAX)
 		diff |= MD_WATERTOP;
 	if (mobj->waterbottom)
 		diff |= MD_WATERBOTTOM;
-	if (mobj->scale != FRACUNIT)
+	if (mobj->scale != mapobjectscale)
 		diff |= MD_SCALE;
 	if (mobj->destscale != mobj->scale)
 		diff |= MD_DSCALE;
@@ -4595,11 +4595,11 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 	if (diff & MD_RADIUS)
 		mobj->radius = READFIXED(save->p);
 	else
-		mobj->radius = mobj->info->radius;
+		mobj->radius = FixedMul(mobj->info->radius, mapobjectscale);
 	if (diff & MD_HEIGHT)
 		mobj->height = READFIXED(save->p);
 	else
-		mobj->height = mobj->info->height;
+		mobj->height = FixedMul(mobj->info->height, mapobjectscale);
 	if (diff & MD_FLAGS)
 		mobj->flags = READUINT32(save->p);
 	else
@@ -4677,12 +4677,14 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 		mobj->fuse = READINT32(save->p);
 	if (diff & MD_WATERTOP)
 		mobj->watertop = READFIXED(save->p);
+	else
+		mobj->watertop = INT32_MAX;
 	if (diff & MD_WATERBOTTOM)
 		mobj->waterbottom = READFIXED(save->p);
 	if (diff & MD_SCALE)
 		mobj->scale = READFIXED(save->p);
 	else
-		mobj->scale = FRACUNIT;
+		mobj->scale = mapobjectscale;
 	if (diff & MD_DSCALE)
 		mobj->destscale = READFIXED(save->p);
 	else
