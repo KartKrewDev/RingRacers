@@ -1863,7 +1863,7 @@ static void K_UpdateBotGameplayVarsItemUsageMash(player_t *player)
 	else
 	{
 		botItemPriority_e currentPriority = K_GetBotItemPriority(
-			static_cast<kartitems_t>( player->itemRoulette.itemList[ player->itemRoulette.index ] )
+			static_cast<kartitems_t>( player->itemRoulette.itemList.items[ player->itemRoulette.index ] )
 		);
 
 		if (player->botvars.roulettePriority == currentPriority)
@@ -1877,7 +1877,7 @@ static void K_UpdateBotGameplayVarsItemUsageMash(player_t *player)
 			// reduce priority until we get to a valid one.
 			player->botvars.rouletteTimeout++;
 
-			if (player->botvars.rouletteTimeout > player->itemRoulette.itemListLen * player->itemRoulette.speed)
+			if (player->botvars.rouletteTimeout > player->itemRoulette.itemList.len * player->itemRoulette.speed)
 			{
 				player->botvars.roulettePriority--;
 				player->botvars.rouletteTimeout = 0;
@@ -1995,9 +1995,9 @@ void K_BotPickItemPriority(player_t *player)
 	player->botvars.rouletteTimeout = 0;
 
 	// Check for items that are extremely high priority.
-	for (i = 0; i < player->itemRoulette.itemListLen; i++)
+	for (i = 0; i < player->itemRoulette.itemList.len; i++)
 	{
-		botItemPriority_e priority = K_GetBotItemPriority( static_cast<kartitems_t>( player->itemRoulette.itemList[i] ) );
+		botItemPriority_e priority = K_GetBotItemPriority( static_cast<kartitems_t>( player->itemRoulette.itemList.items[i] ) );
 
 		if (priority < BOT_ITEM_PR__OVERRIDES)
 		{

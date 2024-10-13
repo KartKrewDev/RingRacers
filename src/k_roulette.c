@@ -773,23 +773,23 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 	size_t i;
 
 #ifndef ITEM_LIST_SIZE
-	if (roulette->itemList == NULL)
+	if (roulette->itemList.items == NULL)
 	{
-		roulette->itemListCap = 8;
-		roulette->itemList = Z_Calloc(
-			sizeof(SINT8) * roulette->itemListCap,
+		roulette->itemList.cap = 8;
+		roulette->itemList.items = Z_Calloc(
+			sizeof(SINT8) * roulette->itemList.cap,
 			PU_STATIC,
-			&roulette->itemList
+			&roulette->itemList.items
 		);
 
-		if (roulette->itemList == NULL)
+		if (roulette->itemList.items == NULL)
 		{
 			I_Error("Not enough memory for item roulette list\n");
 		}
 	}
 #endif
 
-	roulette->itemListLen = 0;
+	roulette->itemList.len = 0;
 	roulette->index = 0;
 
 	roulette->baseDist = roulette->dist = 0;
@@ -876,33 +876,33 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 static void K_PushToRouletteItemList(itemroulette_t *const roulette, INT32 item)
 {
 #ifdef ITEM_LIST_SIZE
-	if (roulette->itemListLen >= ITEM_LIST_SIZE)
+	if (roulette->itemList.len >= ITEM_LIST_SIZE)
 	{
 		I_Error("Out of space for item reel! Go and make ITEM_LIST_SIZE bigger I guess?\n");
 		return;
 	}
 #else
-	I_Assert(roulette->itemList != NULL);
+	I_Assert(roulette->itemList.items != NULL);
 
-	if (roulette->itemListLen >= roulette->itemListCap)
+	if (roulette->itemList.len >= roulette->itemList.cap)
 	{
-		roulette->itemListCap *= 2;
-		roulette->itemList = Z_Realloc(
-			roulette->itemList,
-			sizeof(SINT8) * roulette->itemListCap,
+		roulette->itemList.cap *= 2;
+		roulette->itemList.items = Z_Realloc(
+			roulette->itemList.items,
+			sizeof(SINT8) * roulette->itemList.cap,
 			PU_STATIC,
-			&roulette->itemList
+			&roulette->itemList.items
 		);
 
-		if (roulette->itemList == NULL)
+		if (roulette->itemList.items == NULL)
 		{
 			I_Error("Not enough memory for item roulette list\n");
 		}
 	}
 #endif
 
-	roulette->itemList[ roulette->itemListLen ] = item;
-	roulette->itemListLen++;
+	roulette->itemList.items[ roulette->itemList.len ] = item;
+	roulette->itemList.len++;
 }
 
 /*--------------------------------------------------
@@ -1767,7 +1767,7 @@ void K_StartItemRoulette(player_t *const player, boolean ringbox)
 	K_FillItemRouletteData(player, roulette, ringbox, false);
 
 	if (roulette->autoroulette)
-		roulette->index = P_RandomRange(PR_AUTOROULETTE, 0, roulette->itemListLen - 1);
+		roulette->index = P_RandomRange(PR_AUTOROULETTE, 0, roulette->itemList.len - 1);
 
 	if (K_PlayerUsesBotMovement(player) == true)
 	{
@@ -1776,9 +1776,9 @@ void K_StartItemRoulette(player_t *const player, boolean ringbox)
 
 	// Prevent further duplicates of items that
 	// are intended to only have one out at a time.
-	for (i = 0; i < roulette->itemListLen; i++)
+	for (i = 0; i < roulette->itemList.len; i++)
 	{
-		kartitems_t item = roulette->itemList[i];
+		kartitems_t item = roulette->itemList.items[i];
 		if (K_ItemSingularity(item) == true)
 		{
 			K_SetItemCooldown(item, TICRATE<<4);
@@ -1907,9 +1907,9 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 		return;
 	}
 
-	if (roulette->itemListLen == 0
+	if (roulette->itemList.len == 0
 #ifndef ITEM_LIST_SIZE
-		|| roulette->itemList == NULL
+		|| roulette->itemList.items == NULL
 #endif
 		)
 	{
@@ -1972,7 +1972,7 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 				if (fudgedDelay > gap) // Did the roulette tick over in-flight?
 				{
 					fudgedDelay = fudgedDelay - gap; // We're compensating for this gap's worth of delay, so cut it down.
-					roulette->index = roulette->index == 0 ? roulette->itemListLen - 1 : roulette->index - 1; // Roll the roulette index back...
+					roulette->index = roulette->index == 0 ? roulette->itemList.len - 1 : roulette->index - 1; // Roll the roulette index back...
 					roulette->tics = 0; // And just in case our delay is SO high that a fast roulette needs to roll back again...
 				}
 				else
@@ -1984,7 +1984,7 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 			// And one more nudge for the remaining delay.
 			roulette->tics = (roulette->tics + fudgedDelay) % roulette->speed;
 
-			INT32 finalItem = roulette->itemList[ roulette->index ];
+			INT32 finalItem = roulette->itemList.items[ roulette->index ];
 
 			if (roulette->ringbox == true)
 			{
@@ -2029,7 +2029,7 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 
 	if (roulette->tics == 0)
 	{
-		roulette->index = (roulette->index + 1) % roulette->itemListLen;
+		roulette->index = (roulette->index + 1) % roulette->itemList.len;
 		roulette->tics = roulette->speed;
 
 		// This makes the roulette produce the random noises.
