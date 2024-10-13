@@ -6794,6 +6794,197 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 			return false;
 		}
 	}
+	else
+	{
+		// Only reload stuff that can we modify in the save states themselves.
+		// This is still orders of magnitude faster than a full level reload.
+		// Considered memcpy, but it's complicated -- save that for local saves.
+
+		sector_t *ss = sectors;
+		sector_t *spawnss = spawnsectors;
+		for (i = 0; i < numsectors; i++, ss++, spawnss++)
+		{
+			ss->floorheight = spawnss->floorheight;
+			ss->ceilingheight = spawnss->ceilingheight;
+			ss->floorpic = spawnss->floorpic;
+			ss->ceilingpic = spawnss->ceilingpic;
+			ss->lightlevel = spawnss->lightlevel;
+			ss->special = spawnss->special;
+			ss->floor_xoffs = spawnss->floor_xoffs;
+			ss->floor_yoffs = spawnss->floor_yoffs;
+			ss->ceiling_xoffs = spawnss->ceiling_xoffs;
+			ss->ceiling_yoffs = spawnss->ceiling_yoffs;
+			ss->floorpic_angle = spawnss->floorpic_angle;
+			ss->ceilingpic_angle = spawnss->ceilingpic_angle;
+
+			if (Tag_Compare(&ss->tags, &spawnss->tags) == false)
+			{
+				if (spawnss->tags.count)
+				{
+					ss->tags.count = spawnss->tags.count;
+					ss->tags.tags = static_cast<mtag_t *>(
+						memcpy(
+							Z_Realloc(
+								ss->tags.tags,
+								spawnss->tags.count * sizeof(mtag_t),
+								PU_LEVEL,
+								nullptr
+							),
+							spawnss->tags.tags,
+							spawnss->tags.count * sizeof(mtag_t)
+						)
+					);
+					
+				}
+				else
+				{
+					ss->tags.count = 0;
+					Z_Free(ss->tags.tags);
+				}
+			}
+
+			ss->extra_colormap = ss->spawn_extra_colormap;
+			ss->crumblestate = CRUMBLE_NONE;
+			ss->floorlightlevel = spawnss->floorlightlevel;
+			ss->floorlightabsolute = spawnss->floorlightabsolute;
+			ss->ceilinglightlevel = spawnss->ceilinglightlevel;
+			ss->ceilinglightabsolute = spawnss->ceilinglightabsolute;
+			ss->flags = spawnss->flags;
+			ss->specialflags = spawnss->specialflags;
+			ss->damagetype = spawnss->damagetype;
+			ss->triggertag = spawnss->triggertag;
+			ss->triggerer = spawnss->triggerer;
+			ss->gravity = spawnss->gravity;
+			ss->action = spawnss->action;
+
+			memcpy(ss->args, spawnss->args, NUM_SCRIPT_ARGS * sizeof(*ss->args));
+
+			for (j = 0; j < NUM_SCRIPT_STRINGARGS; j++)
+			{
+				size_t len = 0;
+
+				if (spawnss->stringargs[j])
+				{
+					len = strlen(spawnss->stringargs[j]);
+				}
+
+				if (!len)
+				{
+					Z_Free(ss->stringargs[j]);
+					ss->stringargs[j] = nullptr;
+				}
+				else
+				{
+					ss->stringargs[j] = static_cast<char *>(Z_Realloc(ss->stringargs[j], len + 1, PU_LEVEL, nullptr));
+					M_Memcpy(ss->stringargs[j], spawnss->stringargs[j], len);
+					ss->stringargs[j][len] = '\0';
+				}
+			}
+
+			ss->activation = spawnss->activation;
+			ss->botController.trick = spawnss->botController.trick;
+			ss->botController.flags = spawnss->botController.flags;
+			ss->botController.forceAngle = spawnss->botController.forceAngle;
+
+			if (ss->ffloors)
+			{
+				ffloor_t *rover;
+				for (rover = ss->ffloors; rover; rover = rover->next)
+				{
+					rover->fofflags = rover->spawnflags;
+					rover->alpha = rover->spawnalpha;
+				}
+			}
+		}
+
+		line_t *li = lines;
+		line_t *spawnli = spawnlines;
+		side_t *si = nullptr;
+		side_t *spawnsi = nullptr;
+		for (i = 0; i < numlines; i++, spawnli++, li++)
+		{
+			li->flags = spawnli->flags;
+			li->special = spawnli->special;
+			li->callcount = 0;
+
+			if (Tag_Compare(&li->tags, &spawnli->tags) == false)
+			{
+				if (spawnli->tags.count)
+				{
+					li->tags.count = spawnli->tags.count;
+					li->tags.tags = static_cast<mtag_t *>(
+						memcpy(
+							Z_Realloc(
+								li->tags.tags,
+								spawnli->tags.count * sizeof(mtag_t),
+								PU_LEVEL,
+								nullptr
+							),
+							spawnli->tags.tags,
+							spawnli->tags.count * sizeof(mtag_t)
+						)
+					);
+					
+				}
+				else
+				{
+					li->tags.count = 0;
+					Z_Free(li->tags.tags);
+				}
+			}
+
+			memcpy(li->args, spawnli->args, NUM_SCRIPT_ARGS * sizeof(*li->args));
+
+			for (j = 0; j < NUM_SCRIPT_STRINGARGS; j++)
+			{
+				size_t len = 0;
+
+				if (spawnli->stringargs[j])
+				{
+					len = strlen(spawnli->stringargs[j]);
+				}
+
+				if (!len)
+				{
+					Z_Free(li->stringargs[j]);
+					li->stringargs[j] = nullptr;
+				}
+				else
+				{
+					li->stringargs[j] = static_cast<char *>(Z_Realloc(li->stringargs[j], len + 1, PU_LEVEL, nullptr));
+					M_Memcpy(li->stringargs[j], spawnli->stringargs[j], len);
+					li->stringargs[j][len] = '\0';
+				}
+			}
+
+			li->executordelay = spawnli->executordelay;
+			li->activation = spawnli->activation;
+
+			if (li->sidenum[0] != 0xffff)
+			{
+				si = &sides[li->sidenum[0]];
+				spawnsi = &spawnsides[li->sidenum[0]];
+
+				si->textureoffset = spawnsi->textureoffset;
+				si->toptexture = spawnsi->toptexture;
+				si->bottomtexture = spawnsi->bottomtexture;
+				si->midtexture = spawnsi->midtexture;
+			}
+
+			if (li->sidenum[1] != 0xffff)
+			{
+				si = &sides[li->sidenum[1]];
+				spawnsi = &spawnsides[li->sidenum[1]];
+
+				si->textureoffset = spawnsi->textureoffset;
+				si->toptexture = spawnsi->toptexture;
+				si->bottomtexture = spawnsi->bottomtexture;
+				si->midtexture = spawnsi->midtexture;
+			}
+		}
+
+		Taglist_InitGlobalTables();
+	}
 
 	// get the time
 	leveltime = READUINT32(save->p);
