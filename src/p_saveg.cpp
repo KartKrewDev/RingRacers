@@ -2000,7 +2000,7 @@ static void P_NetUnArchiveColormaps(savebuffer_t *save)
 #define SD_DIFF3     0x80
 
 // diff3 flags
-#define SD_TAGLIST   0x01
+#define SD__UNUSED   0x01
 #define SD_COLORMAP  0x02
 #define SD_CRUMBLESTATE 0x04
 #define SD_FLOORLIGHT 0x08
@@ -2050,7 +2050,7 @@ static boolean P_SectorStringArgsEqual(const sector_t *sc, const sector_t *spawn
 
 #define LD_FLAG     0x01
 #define LD_SPECIAL  0x02
-#define LD_CLLCOUNT 0x04
+#define LD_TAG      0x04
 #define LD_S1TEXOFF 0x08
 #define LD_S1TOPTEX 0x10
 #define LD_S1BOTTEX 0x20
@@ -2064,7 +2064,7 @@ static boolean P_SectorStringArgsEqual(const sector_t *sc, const sector_t *spawn
 #define LD_S2MIDTEX      0x08
 #define LD_ARGS          0x10
 #define LD_STRINGARGS    0x20
-#define LD_EXECUTORDELAY 0x40
+#define LD__UNUSED       0x40
 #define LD_DIFF3         0x80
 
 // diff3 flags
@@ -2553,7 +2553,7 @@ static void UnArchiveSectors(savebuffer_t *save)
 
 static void ArchiveLines(savebuffer_t *save)
 {
-	size_t i;
+	size_t i, j;
 	const line_t *li = lines;
 	const line_t *spawnli = spawnlines;
 	const side_t *si;
@@ -2570,17 +2570,14 @@ static void ArchiveLines(savebuffer_t *save)
 		if (li->special != spawnli->special)
 			diff |= LD_SPECIAL;
 
-		if (spawnli->special == 321 || spawnli->special == 322) // only reason li->callcount would be non-zero is if either of these are involved
-			diff |= LD_CLLCOUNT;
+		if (!Tag_Compare(&li->tags, &spawnli->tags))
+			diff |= LD_TAG;
 
 		if (!P_LineArgsEqual(li, spawnli))
 			diff2 |= LD_ARGS;
 
 		if (!P_LineStringArgsEqual(li, spawnli))
 			diff2 |= LD_STRINGARGS;
-
-		if (li->executordelay != spawnli->executordelay)
-			diff2 |= LD_EXECUTORDELAY;
 
 		if (li->activation != spawnli->activation)
 			diff3 |= LD_ACTIVATION;
@@ -2631,8 +2628,12 @@ static void ArchiveLines(savebuffer_t *save)
 				WRITEUINT32(save->p, li->flags);
 			if (diff & LD_SPECIAL)
 				WRITEINT16(save->p, li->special);
-			if (diff & LD_CLLCOUNT)
-				WRITEINT16(save->p, li->callcount);
+			if (diff & LD_TAG)
+			{
+				WRITEUINT32(save->p, li->tags.count);
+				for (j = 0; j < li->tags.count; j++)
+					WRITEINT16(save->p, li->tags.tags[j]);
+			}
 
 			si = &sides[li->sidenum[0]];
 			if (diff & LD_S1TEXOFF)
@@ -2678,8 +2679,6 @@ static void ArchiveLines(savebuffer_t *save)
 						WRITECHAR(save->p, li->stringargs[j][k]);
 				}
 			}
-			if (diff2 & LD_EXECUTORDELAY)
-				WRITEINT32(save->p, li->executordelay);
 			if (diff3 & LD_ACTIVATION)
 				WRITEUINT32(save->p, li->activation);
 		}
@@ -2689,7 +2688,7 @@ static void ArchiveLines(savebuffer_t *save)
 
 static void UnArchiveLines(savebuffer_t *save)
 {
-	UINT16 i;
+	UINT16 i, j;
 	line_t *li;
 	side_t *si;
 	UINT8 diff, diff2, diff3;
@@ -2720,8 +2719,28 @@ static void UnArchiveLines(savebuffer_t *save)
 			li->flags = READUINT32(save->p);
 		if (diff & LD_SPECIAL)
 			li->special = READINT16(save->p);
-		if (diff & LD_CLLCOUNT)
-			li->callcount = READINT16(save->p);
+		if (diff & LD_TAG)
+		{
+			size_t ncount = READUINT32(save->p);
+
+			// Remove entries from global lists.
+			for (j = 0; j < lines[i].tags.count; j++)
+				Taggroup_Remove(tags_lines, lines[i].tags.tags[j], i);
+
+			// Reallocate if size differs.
+			if (ncount != lines[i].tags.count)
+			{
+				lines[i].tags.count = ncount;
+				lines[i].tags.tags = (mtag_t*)Z_Realloc(lines[i].tags.tags, ncount*sizeof(mtag_t), PU_LEVEL, NULL);
+			}
+
+			for (j = 0; j < ncount; j++)
+				lines[i].tags.tags[j] = READINT16(save->p);
+
+			// Add new entries.
+			for (j = 0; j < lines[i].tags.count; j++)
+				Taggroup_Add(tags_lines, lines[i].tags.tags[j], i);
+		}
 
 		si = &sides[li->sidenum[0]];
 		if (diff & LD_S1TEXOFF)
@@ -2744,13 +2763,11 @@ static void UnArchiveLines(savebuffer_t *save)
 			si->midtexture = READINT32(save->p);
 		if (diff2 & LD_ARGS)
 		{
-			UINT8 j;
 			for (j = 0; j < NUM_SCRIPT_ARGS; j++)
 				li->args[j] = READINT32(save->p);
 		}
 		if (diff2 & LD_STRINGARGS)
 		{
-			UINT8 j;
 			for (j = 0; j < NUM_SCRIPT_STRINGARGS; j++)
 			{
 				size_t len = READINT32(save->p);
@@ -2769,8 +2786,6 @@ static void UnArchiveLines(savebuffer_t *save)
 				li->stringargs[j][len] = '\0';
 			}
 		}
-		if (diff2 & LD_EXECUTORDELAY)
-			li->executordelay = READINT32(save->p);
 		if (diff3 & LD_ACTIVATION)
 			li->activation = READUINT32(save->p);
 	}
