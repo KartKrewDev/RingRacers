@@ -438,10 +438,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->tripwireUnstuck);
 	else if (fastcmp(field,"bumpunstuck"))
 		lua_pushinteger(L, plr->bumpUnstuck);
-	/*
 	else if (fastcmp(field,"itemroulette"))
-		lua_pushinteger(L, plr->itemroulette);
-	*/
+		LUA_PushUserdata(L, &plr->itemRoulette, META_ITEMROULETTE);
 	else if (fastcmp(field,"itemtype"))
 		lua_pushinteger(L, plr->itemtype);
 	else if (fastcmp(field,"itemamount"))
@@ -1081,10 +1079,8 @@ static int player_set(lua_State *L)
 		plr->tripwireUnstuck = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"bumpunstuck"))
 		plr->bumpUnstuck = luaL_checkinteger(L, 3);
-	/*
 	else if (fastcmp(field,"itemroulette"))
-		plr->itemroulette = luaL_checkinteger(L, 3);
-	*/
+		return NOSET;
 	else if (fastcmp(field,"itemtype"))
 		plr->itemtype = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"itemamount"))

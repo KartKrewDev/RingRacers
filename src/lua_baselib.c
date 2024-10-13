@@ -232,6 +232,8 @@ static const struct {
 	{META_ACTIVATOR,    "activator_t"},
 	
 	{META_FOLLOWER,    "follower_t"},
+	{META_ITEMROULETTE, "itemroulette_t"},
+	{META_ITEMROULETTE_ITEMLIST, "itemroulette_t.itemlist_t"},
 	{NULL,              NULL}
 };
 
