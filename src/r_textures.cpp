@@ -9,8 +9,12 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  r_textures.c
+/// \file  r_textures.cpp
 /// \brief Texture generation.
+
+#include "r_textures.h"
+
+#include <algorithm>
 
 #include "doomdef.h"
 #include "g_game.h"
@@ -20,7 +24,6 @@
 #include "p_local.h"
 #include "m_misc.h"
 #include "r_data.h"
-#include "r_textures.h"
 #include "r_patch.h"
 #include "r_picformats.h"
 #include "w_wad.h"
@@ -256,7 +259,7 @@ static UINT8 *R_AllocateTextureBlock(size_t blocksize, UINT8 **user)
 {
 	texturememory += blocksize;
 
-	return Z_Malloc(blocksize, PU_LEVEL, user);
+	return (UINT8*)Z_Malloc(blocksize, PU_LEVEL, user);
 }
 
 static UINT8 *R_AllocateDummyTextureBlock(size_t width, UINT8 **user)
@@ -352,7 +355,7 @@ UINT8 *R_GenerateTexture(size_t texnum)
 			return block;
 		}
 
-		pdata = W_CacheLumpNumPwad(wadnum, lumpnum, PU_LEVEL);
+		pdata = (UINT8*)W_CacheLumpNumPwad(wadnum, lumpnum, PU_LEVEL);
 		realpatch = (softwarepatch_t *)pdata;
 
 #ifndef NO_PNG_LUMPS
@@ -393,7 +396,7 @@ UINT8 *R_GenerateTexture(size_t texnum)
 			texture->holes = true;
 			texture->flip = patch->flip;
 			blocksize = lumplength;
-			block = Z_Calloc(blocksize, PU_LEVEL, // will change tag at end of this function
+			block = (UINT8*)Z_Calloc(blocksize, PU_LEVEL, // will change tag at end of this function
 				&texturecache[texnum]);
 			M_Memcpy(block, realpatch, blocksize);
 			texturememory += blocksize;
@@ -424,7 +427,7 @@ UINT8 *R_GenerateTexture(size_t texnum)
 	texture->flip = 0;
 	blocksize = (texture->width * 4) + (texture->width * texture->height);
 	texturememory += blocksize;
-	block = Z_Malloc(blocksize+1, PU_LEVEL, &texturecache[texnum]);
+	block = (UINT8*)Z_Malloc(blocksize+1, PU_LEVEL, &texturecache[texnum]);
 
 	memset(block, TRANSPARENTPIXEL, blocksize+1); // Transparency hack
 
@@ -447,19 +450,19 @@ UINT8 *R_GenerateTexture(size_t texnum)
 
 		wadnum = patch->wad;
 		lumpnum = patch->lump;
-		pdata = W_CacheLumpNumPwad(wadnum, lumpnum, PU_LEVEL);
+		pdata = (UINT8*)W_CacheLumpNumPwad(wadnum, lumpnum, PU_LEVEL);
 		lumplength = W_LumpLengthPwad(wadnum, lumpnum);
 		realpatch = (softwarepatch_t *)pdata;
 		dealloc = true;
 
 #ifndef NO_PNG_LUMPS
 		if (Picture_IsLumpPNG((UINT8 *)realpatch, lumplength))
-			realpatch = (softwarepatch_t *)Picture_PNGConvert((UINT8 *)realpatch, PICFMT_DOOMPATCH, NULL, NULL, NULL, NULL, lumplength, NULL, 0);
+			realpatch = (softwarepatch_t *)Picture_PNGConvert((UINT8 *)realpatch, PICFMT_DOOMPATCH, NULL, NULL, NULL, NULL, lumplength, NULL, (pictureflags_t)0);
 		else
 #endif
 #ifdef WALLFLATS
 		if (texture->type == TEXTURETYPE_FLAT)
-			realpatch = (softwarepatch_t *)Picture_Convert(PICFMT_FLAT, pdata, PICFMT_DOOMPATCH, 0, NULL, texture->width, texture->height, 0, 0, 0);
+			realpatch = (softwarepatch_t *)Picture_Convert(PICFMT_FLAT, pdata, PICFMT_DOOMPATCH, 0, NULL, texture->width, texture->height, 0, 0, (pictureflags_t)0);
 		else
 #endif
 		{
@@ -542,7 +545,7 @@ UINT8 *R_GenerateTextureAsFlat(size_t texnum)
 		Z_Free(converted);
 	}
 
-	return texture->flat;
+	return (UINT8*)texture->flat;
 }
 
 // This function writes a column to p, using the posts from
@@ -595,7 +598,7 @@ static void R_ConvertBrightmapColumn(UINT8 *p, const column_t *tcol, const colum
 		// texture column, so pad it with black
 		// pixels.
 
-		n = max(0, min(btop, tbot) - y);
+		n = std::max(0, std::min(btop, tbot) - y);
 		memset(&p[y - ttop], TRANSPARENTPIXEL, n);
 		y += n;
 
@@ -607,7 +610,7 @@ static void R_ConvertBrightmapColumn(UINT8 *p, const column_t *tcol, const colum
 		// Copy parts of the brightmap column which
 		// line up with the texture column.
 
-		n = max(0, min(bbot, tbot) - y);
+		n = std::max(0, std::min(bbot, tbot) - y);
 		memcpy(&p[y - ttop], (const UINT8*)bcol + 3 + (y - btop), n);
 		y += n;
 
@@ -752,7 +755,7 @@ UINT8 *R_GenerateTextureBrightmap(size_t texnum)
 		INT32 wad = bright->patches[0].wad;
 		INT32 lump = bright->patches[0].lump;
 
-		bmap = W_CacheLumpNumPwad(wad, lump, PU_STATIC);
+		bmap = (softwarepatch_t*)W_CacheLumpNumPwad(wad, lump, PU_STATIC);
 		R_InitRawCheckColumn(&rchk, bmap, W_LumpLengthPwad(wad, lump), bright->name);
 	}
 	else
@@ -914,7 +917,7 @@ void *R_GetLevelFlat(drawspandata_t* ds, levelflat_t *levelflat)
 	{
 		if (texture->flat)
 		{
-			flatdata = texture->flat;
+			flatdata = (UINT8*)texture->flat;
 			ds->flatwidth = texture->width;
 			ds->flatheight = texture->height;
 			texturechanged = false;
@@ -940,7 +943,7 @@ void *R_GetLevelFlat(drawspandata_t* ds, levelflat_t *levelflat)
 			{
 				INT32 pngwidth, pngheight;
 
-				levelflat->picture = Picture_PNGConvert(W_CacheLumpNum(levelflat->u.flat.lumpnum, PU_LEVEL), PICFMT_FLAT, &pngwidth, &pngheight, NULL, NULL, W_LumpLength(levelflat->u.flat.lumpnum), NULL, 0);
+				levelflat->picture = (UINT8*)Picture_PNGConvert((UINT8*)W_CacheLumpNum(levelflat->u.flat.lumpnum, PU_LEVEL), PICFMT_FLAT, &pngwidth, &pngheight, NULL, NULL, W_LumpLength(levelflat->u.flat.lumpnum), NULL, (pictureflags_t)0);
 				levelflat->width = (UINT16)pngwidth;
 				levelflat->height = (UINT16)pngheight;
 
@@ -953,13 +956,13 @@ void *R_GetLevelFlat(drawspandata_t* ds, levelflat_t *levelflat)
 			{
 				UINT8 *converted;
 				size_t size;
-				softwarepatch_t *patch = W_CacheLumpNum(levelflat->u.flat.lumpnum, PU_LEVEL);
+				softwarepatch_t *patch = (softwarepatch_t*)W_CacheLumpNum(levelflat->u.flat.lumpnum, PU_LEVEL);
 
 				levelflat->width = ds->flatwidth = SHORT(patch->width);
 				levelflat->height = ds->flatheight = SHORT(patch->height);
 
-				levelflat->picture = Z_Malloc(levelflat->width * levelflat->height, PU_LEVEL, NULL);
-				converted = Picture_FlatConvert(PICFMT_DOOMPATCH, patch, PICFMT_FLAT, 0, &size, levelflat->width, levelflat->height, SHORT(patch->topoffset), SHORT(patch->leftoffset), 0);
+				levelflat->picture = (UINT8*)Z_Malloc(levelflat->width * levelflat->height, PU_LEVEL, NULL);
+				converted = (UINT8*)Picture_FlatConvert(PICFMT_DOOMPATCH, patch, PICFMT_FLAT, 0, &size, levelflat->width, levelflat->height, SHORT(patch->topoffset), SHORT(patch->leftoffset), (pictureflags_t)0);
 				M_Memcpy(levelflat->picture, converted, size);
 				Z_Free(converted);
 			}
@@ -1173,7 +1176,7 @@ Rloadflats (INT32 i, INT32 w)
 			flatsize = R_FlatDimensionsFromLumpSize(lumplength);
 
 			//CONS_Printf("\n\"%s\" is a flat, dimensions %d x %d",W_CheckNameForNumPwad((UINT16)w,texstart+j),flatsize,flatsize);
-			texture = textures[i] = Z_Calloc(sizeof(texture_t) + sizeof(texpatch_t), PU_STATIC, NULL);
+			texture = textures[i] = (texture_t*)Z_Calloc(sizeof(texture_t) + sizeof(texpatch_t), PU_STATIC, NULL);
 
 			// Set texture properties.
 			M_Memcpy(texture->name, W_CheckNameForNumPwad(wadnum, lumpnum), sizeof(texture->name));
@@ -1182,7 +1185,7 @@ Rloadflats (INT32 i, INT32 w)
 #ifndef NO_PNG_LUMPS
 			if (Picture_IsLumpPNG(header, lumplength))
 			{
-				UINT8 *flatlump = W_CacheLumpNumPwad(wadnum, lumpnum, PU_CACHE);
+				UINT8 *flatlump = (UINT8*)W_CacheLumpNumPwad(wadnum, lumpnum, PU_CACHE);
 				INT32 width, height;
 				Picture_PNGDimensions((UINT8 *)flatlump, &width, &height, NULL, NULL, lumplength);
 				texture->width = (INT16)width;
@@ -1276,7 +1279,7 @@ Rloadtextures (INT32 i, INT32 w)
 #ifndef NO_PNG_LUMPS
 			if (Picture_IsLumpPNG((UINT8 *)&patchlump, lumplength))
 			{
-				UINT8 *png = W_CacheLumpNumPwad(wadnum, lumpnum, PU_CACHE);
+				UINT8 *png = (UINT8*)W_CacheLumpNumPwad(wadnum, lumpnum, PU_CACHE);
 				Picture_PNGDimensions(png, &width, &height, NULL, NULL, lumplength);
 				width = (INT16)width;
 				height = (INT16)height;
@@ -1322,7 +1325,7 @@ Rloadtextures (INT32 i, INT32 w)
 			}
 
 			//CONS_Printf("\n\"%s\" is a single patch, dimensions %d x %d",W_CheckNameForNumPwad((UINT16)w,texstart+j),patchlump->width, patchlump->height);
-			texture = textures[i] = Z_Calloc(sizeof(texture_t) + sizeof(texpatch_t), PU_STATIC, NULL);
+			texture = textures[i] = (texture_t*)Z_Calloc(sizeof(texture_t) + sizeof(texpatch_t), PU_STATIC, NULL);
 
 			// Set texture properties.
 			M_Memcpy(texture->name, W_CheckNameForNumPwad(wadnum, lumpnum), sizeof(texture->name));
@@ -1433,13 +1436,13 @@ static void
 recallocuser
 (		void * user,
 		size_t old,
-		size_t new)
+		size_t newsize)
 {
-	char *p = Z_Realloc(*(void**)user,
-			new, PU_STATIC, user);
+	char *p = (char*)Z_Realloc(*(void**)user,
+			newsize, PU_STATIC, user);
 
-	if (new > old)
-		memset(&p[old], 0, (new - old));
+	if (newsize > old)
+		memset(&p[old], 0, (newsize - old));
 }
 
 static void R_AllocateTextures(INT32 add)
@@ -1895,7 +1898,7 @@ static texture_t *R_ParseTexture(boolean actuallyLoadTexture)
 					// Get that new patch
 					newPatch = R_ParsePatch(true);
 					// Make room for the new patch
-					resultTexture = Z_Realloc(resultTexture, sizeof(texture_t) + (resultTexture->patchcount+1)*sizeof(texpatch_t), PU_STATIC, NULL);
+					resultTexture = (texture_t*)Z_Realloc(resultTexture, sizeof(texture_t) + (resultTexture->patchcount+1)*sizeof(texpatch_t), PU_STATIC, NULL);
 					// Populate the uninitialized values in the new patch entry of our array
 					M_Memcpy(&resultTexture->patches[resultTexture->patchcount], newPatch, sizeof(texpatch_t));
 					// Account for the new number of patches in the texture

@@ -87,7 +87,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	r_spritefx.cpp
 	r_things.cpp
 	r_bbox.c
-	r_textures.c
+	r_textures.cpp
 	r_textures_dups.cpp
 	r_patch.cpp
 	r_patchrotation.c
