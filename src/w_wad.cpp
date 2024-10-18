@@ -2430,6 +2430,9 @@ int W_VerifyNMUSlumps(const char *filename, boolean exit_on_error)
 
 		{"TLG_", 4}, // Generic button legends
 
+		{"MODINFO", 7}, // Addon metadata
+		{"MODICON", 7}, // Addon icon
+
 #ifdef HWRENDER
 		{"SHADERS", 7},
 		{"SH_", 3},
