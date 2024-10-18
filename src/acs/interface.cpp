@@ -562,8 +562,10 @@ void ACS_Archive(savebuffer_t *save)
 	std::ostream stream{&buffer};
 	ACSVM::Serial serial{stream};
 
+#if 0
 	// Enable debug signatures.
 	serial.signs = true;
+#endif
 
 	try
 	{
