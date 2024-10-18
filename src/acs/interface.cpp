@@ -142,6 +142,13 @@ void ACS_LoadLevelScripts(size_t mapID)
 	map->active = true;
 
 	// Insert BEHAVIOR lump into the list.
+	virtres_t *vRes = vres_GetMap(mapheaderinfo[mapID]->lumpnum);
+	auto _ = srb2::finally([vRes]() { vres_Free(vRes); });
+
+	// Unlike Hexen, a BEHAVIOR lump is not required.
+	// Simply ignore in this instance.
+	virtlump_t *vLump = vres_Find(vRes, "BEHAVIOR");
+	if (vLump != nullptr && vLump->size > 0)
 	{
 		ACSVM::ModuleName name = ACSVM::ModuleName(
 			env->getString( mapheaderinfo[mapID]->lumpname ),
@@ -150,6 +157,7 @@ void ACS_LoadLevelScripts(size_t mapID)
 		);
 
 		modules.push_back(env->getModule(name));
+		CONS_Debug(DBG_SETUP, "Found BEHAVIOR lump.\n");
 	}
 
 	if (modules.empty() == false)
