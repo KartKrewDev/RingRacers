@@ -1352,7 +1352,7 @@ static void Y_TickVoteRoulette(void)
 	}
 }
 
-static void Y_TryMapAngerVote(void)
+static SINT8 Y_TryMapAngerVote(void)
 {
 	SINT8 angryMaps[VOTE_NUM_LEVELS] = { -1 };
 	size_t angryMapsCount = 0;
@@ -1381,7 +1381,7 @@ static void Y_TryMapAngerVote(void)
 	if (numPlayers < 3)
 	{
 		// Don't handle map anger if there's not enough players.
-		return;
+		return VOTE_NOT_PICKED;
 	}
 
 	for (i = 0; i < VOTE_NUM_LEVELS; i++)
@@ -1409,12 +1409,12 @@ static void Y_TryMapAngerVote(void)
 
 	if (angryMapsCount == 0)
 	{
-		return;
+		return VOTE_NOT_PICKED;
 	}
 
 	// Set the special vote to a random angry map.
 	pick = M_RandomKey(angryMapsCount);
-	D_ModifyClientVote(UINT8_MAX, angryMaps[pick]);
+	return angryMaps[pick];
 }
 
 static void Y_TickVoteSelection(void)
@@ -1542,8 +1542,7 @@ static void Y_TickVoteSelection(void)
 
 			if (server)
 			{
-				Y_TryMapAngerVote();
-				D_PickVote();
+				D_PickVote( Y_TryMapAngerVote() );
 			}
 		}
 	}
@@ -1593,7 +1592,7 @@ void Y_VoteTicker(void)
 
 	if (server && g_pickedVote != VOTE_NOT_PICKED && g_votes[g_pickedVote] == VOTE_NOT_PICKED) // Uh oh! The person who got picked left! Recalculate, quick!
 	{
-		D_PickVote();
+		D_PickVote( VOTE_NOT_PICKED );
 	}
 
 	if (vote.tic == 0)
@@ -1849,11 +1848,16 @@ enum
 	VOTE_END_NORMAL,
 };
 
-void Y_SetupVoteFinish(SINT8 pick, SINT8 level)
+void Y_SetupVoteFinish(SINT8 pick, SINT8 level, SINT8 anger)
 {
 	if (vote.loaded == false)
 	{
 		return;
+	}
+
+	if (anger != VOTE_NOT_PICKED)
+	{
+		Y_SetPlayersVote(VOTE_SPECIAL, anger);
 	}
 
 	if (pick == VOTE_NOT_PICKED || level == VOTE_NOT_PICKED) // No other votes? We gotta get out of here, then!

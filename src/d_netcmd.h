@@ -207,7 +207,7 @@ void D_GameTypeChanged(INT32 lastgametype); // not a real _OnChange function any
 void D_MapChange(UINT16 pmapnum, INT32 pgametype, boolean pencoremode, boolean presetplayers, INT32 pdelay, boolean pskipprecutscene, boolean pforcespecialstage);
 void D_SetupVote(INT16 newgametype);
 void D_ModifyClientVote(UINT8 player, SINT8 voted);
-void D_PickVote(void);
+void D_PickVote(SINT8 angry_map);
 void ObjectPlace_OnChange(void);
 void P_SetPlayerSpectator(INT32 playernum);
 boolean IsPlayerAdmin(INT32 playernum);

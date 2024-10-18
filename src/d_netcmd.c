@@ -2292,13 +2292,12 @@ void D_ModifyClientVote(UINT8 player, SINT8 voted)
 	SendNetXCmdForPlayer(sendPlayer, XD_MODIFYVOTE, buf, p - buf);
 }
 
-void D_PickVote(void)
+void D_PickVote(SINT8 angry_map)
 {
-	char buf[2];
+	char buf[3];
 	char* p = buf;
 	SINT8 temppicks[VOTE_TOTAL];
 	SINT8 templevels[VOTE_TOTAL];
-	SINT8 votecompare = VOTE_NOT_PICKED;
 	UINT8 numvotes = 0, key = 0;
 	INT32 i;
 
@@ -2309,16 +2308,23 @@ void D_PickVote(void)
 			continue;
 		}
 
+		if (i == VOTE_SPECIAL && angry_map != VOTE_NOT_PICKED)
+		{
+			// Anger map is going to change because of
+			// the vote ending. We need to account for this
+			// here because a net command would not be ready
+			// in time for this code.
+			temppicks[numvotes] = i;
+			templevels[numvotes] = angry_map;
+			numvotes++;
+			continue;
+		}
+
 		if (g_votes[i] != VOTE_NOT_PICKED)
 		{
 			temppicks[numvotes] = i;
 			templevels[numvotes] = g_votes[i];
 			numvotes++;
-
-			if (votecompare == VOTE_NOT_PICKED)
-			{
-				votecompare = g_votes[i];
-			}
 		}
 	}
 
@@ -2327,14 +2333,16 @@ void D_PickVote(void)
 		key = M_RandomKey(numvotes);
 		WRITESINT8(p, temppicks[key]);
 		WRITESINT8(p, templevels[key]);
+		WRITESINT8(p, angry_map);
 	}
 	else
 	{
 		WRITESINT8(p, VOTE_NOT_PICKED);
 		WRITESINT8(p, 0);
+		WRITESINT8(p, VOTE_NOT_PICKED);
 	}
 
-	SendNetXCmd(XD_PICKVOTE, &buf, 2);
+	SendNetXCmd(XD_PICKVOTE, &buf, 3);
 }
 
 static char *
@@ -5410,6 +5418,7 @@ static void Got_PickVotecmd(const UINT8 **cp, INT32 playernum)
 {
 	SINT8 pick = READSINT8(*cp);
 	SINT8 level = READSINT8(*cp);
+	SINT8 anger = READSINT8(*cp);
 
 	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
 	{
@@ -5419,7 +5428,7 @@ static void Got_PickVotecmd(const UINT8 **cp, INT32 playernum)
 		return;
 	}
 
-	Y_SetupVoteFinish(pick, level);
+	Y_SetupVoteFinish(pick, level, anger);
 }
 
 static void Got_ScheduleTaskcmd(const UINT8 **cp, INT32 playernum)
