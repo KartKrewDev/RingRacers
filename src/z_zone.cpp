@@ -8,7 +8,7 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  z_zone.c
+/// \file  z_zone.cpp
 /// \brief Zone memory allocation.
 ///        This file does zone memory allocation. Each allocation is done with a
 ///        tag, and this file keeps track of all the allocations made. Later, you
@@ -214,7 +214,7 @@ void *Z_Malloc2(size_t size, INT32 tag, void *user, INT32 alignbits,
 	CONS_Debug(DBG_MEMORY, "Z_Malloc %s:%d\n", file, line);
 #endif
 
-	block = xm(sizeof (memblock_t) + ALIGNPAD + size);
+	block = (memblock_t*)xm(sizeof (memblock_t) + ALIGNPAD + size);
 	TracyCAlloc(block, sizeof (memblock_t) + ALIGNPAD + size);
 	ptr = MEMORY(block);
 	I_Assert((intptr_t)ptr % alignof (max_align_t) == 0);
@@ -243,7 +243,7 @@ void *Z_Malloc2(size_t size, INT32 tag, void *user, INT32 alignbits,
 
 	if (user != NULL)
 	{
-		block->user = user;
+		block->user = (void**)user;
 		*(void **)user = ptr;
 	}
 	else if (tag >= PU_PURGELEVEL)
@@ -555,7 +555,7 @@ void Z_SetUser(void *ptr, void **newuser)
 		I_Error("Internal memory management error: "
 			"tried to make block purgable but it has no owner");
 
-	block->user = (void*)newuser;
+	block->user = (void**)newuser;
 	*newuser = ptr;
 }
 
@@ -650,7 +650,7 @@ static void Command_Memdump_f(void)
 	for (block = head.next; block != &head; block = block->next)
 		if (block->tag >= mintag && block->tag <= maxtag)
 		{
-			char *filename = strrchr(block->ownerfile, PATHSEP[0]);
+			const char *filename = strrchr(block->ownerfile, PATHSEP[0]);
 			CONS_Printf("[%3d] %s (%s) bytes @ %s:%d\n", block->tag, sizeu1(block->size), sizeu2(block->realsize), filename ? filename + 1 : block->ownerfile, block->ownerline);
 		}
 }
@@ -662,5 +662,5 @@ static void Command_Memdump_f(void)
   */
 char *Z_StrDup(const char *s)
 {
-	return strcpy(ZZ_Alloc(strlen(s) + 1), s);
+	return strcpy((char*)ZZ_Alloc(strlen(s) + 1), s);
 }
