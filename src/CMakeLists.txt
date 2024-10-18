@@ -167,6 +167,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	music.cpp
 	music_manager.cpp
 	sanitize.cpp
+	p_deepcopy.cpp
 )
 
 if(SRB2_CONFIG_ENABLE_WEBM_MOVIES)
