@@ -3358,7 +3358,7 @@ static void Command_Setscore_f(void)
 		return;
 	}
 
-	option_clear = COM_CheckParm("-clear");
+	option_clear = COM_CheckPartialParm("-c");
 
 	if (option_clear)
 	{
