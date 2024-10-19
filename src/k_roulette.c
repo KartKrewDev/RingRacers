@@ -860,20 +860,11 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 }
 
 /*--------------------------------------------------
-	static void K_PushToRouletteItemList(itemroulette_t *const roulette, INT32 item)
+	void K_PushToRouletteItemList(itemroulette_t *const roulette, INT32 item)
 
-		Pushes a new item to the end of the item
-		roulette's item list. Also accepts slot machine
-		values instead of items.
-
-	Input Arguments:-
-		roulette - The item roulette data to modify.
-		item - The item / slot machine index to push to the list.
-
-	Return:-
-		N/A
+		See header file for description.
 --------------------------------------------------*/
-static void K_PushToRouletteItemList(itemroulette_t *const roulette, INT32 item)
+void K_PushToRouletteItemList(itemroulette_t *const roulette, INT32 item)
 {
 #ifdef ITEM_LIST_SIZE
 	if (roulette->itemList.len >= ITEM_LIST_SIZE)
@@ -906,23 +897,11 @@ static void K_PushToRouletteItemList(itemroulette_t *const roulette, INT32 item)
 }
 
 /*--------------------------------------------------
-	static void K_AddItemToReel(const player_t *player, itemroulette_t *const roulette, kartitems_t item)
+	void K_AddItemToReel(const player_t *player, itemroulette_t *const roulette, kartitems_t item)
 
-		Adds an item to a player's item reel. Unlike
-		pushing directly with K_PushToRouletteItemList,
-		this function handles special behaviors (like
-		padding with extra Super Rings).
-
-	Input Arguments:-
-		player - The player to add to the item roulette.
-			This is valid to be NULL.
-		roulette - The player's item roulette data.
-		item - The item to push to the list.
-
-	Return:-
-		N/A
+		See header file for description.
 --------------------------------------------------*/
-static void K_AddItemToReel(const player_t *player, itemroulette_t *const roulette, kartitems_t item)
+void K_AddItemToReel(const player_t *player, itemroulette_t *const roulette, kartitems_t item)
 {
 	K_PushToRouletteItemList(roulette, item);
 
@@ -1270,7 +1249,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 		}
 			
 	}
-
+	
 	if (ringbox == true)
 	{
 		// If this is being invoked by a Ring Box, it should literally never produce items.

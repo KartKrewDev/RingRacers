@@ -76,6 +76,42 @@ boolean K_ItemSingularity(kartitems_t item);
 
 botItemPriority_e K_GetBotItemPriority(kartitems_t result);
 
+/*--------------------------------------------------
+	void K_PushToRouletteItemList(itemroulette_t *const roulette, INT32 item)
+
+		Pushes a new item to the end of the item
+		roulette's item list. Also accepts slot machine
+		values instead of items.
+
+	Input Arguments:-
+		roulette - The item roulette data to modify.
+		item - The item / slot machine index to push to the list.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
+
+void K_PushToRouletteItemList(itemroulette_t *const roulette, INT32 item);
+
+/*--------------------------------------------------
+	void K_AddItemToReel(const player_t *player, itemroulette_t *const roulette, kartitems_t item)
+
+		Adds an item to a player's item reel. Unlike
+		pushing directly with K_PushToRouletteItemList,
+		this function handles special behaviors (like
+		padding with extra Super Rings).
+
+	Input Arguments:-
+		player - The player to add to the item roulette.
+			This is valid to be NULL.
+		roulette - The player's item roulette data.
+		item - The item to push to the list.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
+
+void K_AddItemToReel(const player_t *player, itemroulette_t *const roulette, kartitems_t item);
 
 /*--------------------------------------------------
 	INT32 K_KartGetBattleOdds(const player_t *player, itemroulette_t *const roulette, UINT8 pos, kartitems_t item);

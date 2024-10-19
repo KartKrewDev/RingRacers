@@ -4081,6 +4081,128 @@ static int lib_kGetBotItemPriority(lua_State *L)
 	return 1;
 }
 
+static void getItemRouletteOrPlayerBasedOnFirstParam(lua_State *L, player_t **player, itemroulette_t **itemRoulette)
+{
+	/*
+	JugadorXEI @ 11/01/2024 (MM/DD/AAAA):
+	Ok, so.
+	I implemented luaL_testudata from Lua 5.2 because I wanted to test if an argument
+	was one userdata type or the other, and it worked. ...And then it didn't work, for some reason.
+	I was debugging this for 4 hours and couldn't figure it out.
+	So, raw-ass Lua funcs, here we go. THIS works.
+	Working with pointers gives me a headache.
+	*/
+	void *p = lua_touserdata(L, 1);
+	if (p != NULL)
+	{
+		if (lua_getmetatable(L, 1))
+		{
+			lua_getfield(L, LUA_REGISTRYINDEX, META_ITEMROULETTE);
+			if (lua_rawequal(L, -1, -2))
+			{
+				*itemRoulette = *(itemroulette_t **)p;
+			}
+			else 
+			{
+				lua_pop(L, 1);
+				lua_getfield(L, LUA_REGISTRYINDEX, META_PLAYER);
+				if (lua_rawequal(L, -1, -2))
+				{
+					*player = *(player_t **)p;
+					*itemRoulette = &(*player)->itemRoulette;
+				}
+				lua_pop(L, 2);
+			}
+		}
+    }
+}
+
+static int lib_kAddItemToReel(lua_State *L)
+{
+	player_t *player = NULL;
+	itemroulette_t *itemRoulette = NULL;
+	
+	getItemRouletteOrPlayerBasedOnFirstParam(L, &player, &itemRoulette);
+	
+	NOHUD
+	INLEVEL
+	if (!player && !itemRoulette)
+		return LUA_ErrInvalid(L, "player_t/itemroulette_t");
+	
+	if (lua_isnumber(L, 2))
+	{
+		kartitems_t item = luaL_checkinteger(L, 2);
+		K_AddItemToReel(player, itemRoulette, item);
+	}
+	else if (lua_istable(L, 2))
+	{
+		luaL_checktype(L, 2, LUA_TTABLE);
+		size_t size = luaL_getn(L, 2);
+		
+		for (size_t i = 1; i <= size; i++)
+		{
+			lua_rawgeti(L, 2, i);
+			if (lua_isnumber(L, -1))
+			{
+				kartitems_t item = luaL_checkinteger(L, -1);
+				K_AddItemToReel(player, itemRoulette, item);
+			}
+			else // Quit early, let the scripter know they messed up.
+			{
+				lua_pop(L, 1);
+				return luaL_error(L, "Non-integer value in table in index %d.", i);
+			}			
+			lua_pop(L, 1);
+		}
+	}
+	else return LUA_ErrInvalid(L, "integer/table");
+
+	return 0;
+}
+
+static int lib_kPushToRouletteItemList(lua_State *L)
+{
+	player_t *player = NULL;
+	itemroulette_t *itemRoulette = NULL;
+	
+	getItemRouletteOrPlayerBasedOnFirstParam(L, &player, &itemRoulette);
+	
+	NOHUD
+	INLEVEL
+	if (!player && !itemRoulette)
+		return LUA_ErrInvalid(L, "player_t/itemroulette_t");
+	
+	if (lua_isnumber(L, 2))
+	{
+		kartitems_t item = luaL_checkinteger(L, 2);
+		K_PushToRouletteItemList(itemRoulette, item);
+	}
+	else if (lua_istable(L, 2))
+	{
+		luaL_checktype(L, 2, LUA_TTABLE);
+		size_t size = luaL_getn(L, 2);
+		
+		for (size_t i = 1; i <= size; i++)
+		{
+			lua_rawgeti(L, 2, i);
+			if (lua_isnumber(L, -1))
+			{
+				kartitems_t item = luaL_checkinteger(L, -1);
+				K_PushToRouletteItemList(itemRoulette, item);
+			}
+			else // Quit early, let the scripter know they messed up.
+			{
+				lua_pop(L, 1);
+				return luaL_error(L, "Non-integer value in table in index %d.", i);
+			}			
+			lua_pop(L, 1);
+		}
+	}
+	else return LUA_ErrInvalid(L, "integer/table");
+	
+	return 0;
+}
+
 static int lib_getTimeMicros(lua_State *L)
 {
 	lua_pushinteger(L, I_GetPreciseTime() / (I_GetPrecisePrecision() / 1000000));
@@ -4371,6 +4493,8 @@ static luaL_Reg lib[] = {
 	{"K_ItemEnabled", lib_kItemEnabled},
 	{"K_ItemSingularity", lib_kItemSingularity},
 	{"K_GetBotItemPriority", lib_kGetBotItemPriority},
+	{"K_AddItemToReel", lib_kAddItemToReel},
+	{"K_PushToRouletteItemList", lib_kPushToRouletteItemList},
 
 	// hu_stuff technically?
 	{"HU_DoTitlecardCEcho", lib_startTitlecardCecho},
