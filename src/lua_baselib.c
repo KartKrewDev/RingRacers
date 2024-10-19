@@ -46,6 +46,7 @@
 #include "lua_hud.h" // hud_running errors
 #include "taglist.h" // P_FindSpecialLineFromTag
 #include "lua_hook.h" // hook_cmd_running errors
+#include "k_roulette.h"
 
 #define NOHUD if (hud_running)\
 return luaL_error(L, "HUD rendering code should not call this function!");\
@@ -4059,6 +4060,27 @@ static int lib_vsRandomPointOnArena(lua_State *L)
 	return 2;
 }
 
+static int lib_kItemEnabled(lua_State *L)
+{
+	kartitems_t item = luaL_checkinteger(L, 1);
+	lua_pushboolean(L, K_ItemEnabled(item));
+	return 1;
+}
+
+static int lib_kItemSingularity(lua_State *L)
+{
+	kartitems_t item = luaL_checkinteger(L, 1);
+	lua_pushboolean(L, K_ItemSingularity(item));
+	return 1;
+}
+
+static int lib_kGetBotItemPriority(lua_State *L)
+{
+	kartitems_t item = luaL_checkinteger(L, 1);
+	lua_pushinteger(L, K_GetBotItemPriority(item));
+	return 1;
+}
+
 static int lib_getTimeMicros(lua_State *L)
 {
 	lua_pushinteger(L, I_GetPreciseTime() / (I_GetPrecisePrecision() / 1000000));
@@ -4344,6 +4366,11 @@ static luaL_Reg lib[] = {
 	{"VS_GetArena", lib_vsGetArena},
 	{"VS_PredictAroundArena", lib_vsPredictAroundArena},
 	{"VS_RandomPointOnArena", lib_vsRandomPointOnArena},
+	
+	// k_roulette
+	{"K_ItemEnabled", lib_kItemEnabled},
+	{"K_ItemSingularity", lib_kItemSingularity},
+	{"K_GetBotItemPriority", lib_kGetBotItemPriority},
 
 	// hu_stuff technically?
 	{"HU_DoTitlecardCEcho", lib_startTitlecardCecho},
