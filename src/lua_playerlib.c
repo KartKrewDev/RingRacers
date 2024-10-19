@@ -25,6 +25,8 @@
 #include "lua_hook.h" // hook_cmd_running errors
 #include "k_profiles.h" // GetPrettyRRID
 
+boolean constplayer = false;
+
 static int lib_iteratePlayers(lua_State *L)
 {
 	INT32 i = -1;
@@ -795,6 +797,8 @@ static int player_set(lua_State *L)
 		return luaL_error(L, "Do not alter player_t in HUD rendering code!");
 	if (hook_cmd_running)
 		return luaL_error(L, "Do not alter player_t in CMD building code!");
+	if (constplayer)
+		return luaL_error(L, "Do not alter player_t while modifying the roulette!");
 
 	if (fastcmp(field,"mo")) {
 		mobj_t *newmo = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));

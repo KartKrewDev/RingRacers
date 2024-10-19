@@ -24,6 +24,7 @@
 #include "lua_hook.h"
 #include "lua_hud.h" // hud_running errors
 #include "lua_profile.h"
+#include "lua_playerlib.h" // constplayer
 
 #include "command.h"
 #include "m_perfstats.h"
@@ -1007,6 +1008,35 @@ int LUA_HookSeenPlayer(player_t *player, player_t *seenfriend)
 		hud_running = false;
 	}
 	return hook.status;
+}
+
+static int roulette_hook(
+	player_t *player,
+	itemroulette_t *const roulette,
+	boolean ringbox,
+	int hook_type,
+	Hook_Callback results_handler)
+{
+	Hook_State hook;
+	if (prepare_hook(&hook, false, hook_type))
+	{
+		if (player == NULL) {
+			lua_pushnil(gL);
+		} else {
+			LUA_PushUserdata(gL, player, META_PLAYER);
+		}
+		LUA_PushUserdata(gL, roulette, META_ITEMROULETTE);
+		lua_pushboolean(gL, ringbox);
+		constplayer = true; // Do not allow players to be modified.
+		call_hooks(&hook, 1, results_handler);
+		constplayer = false; // You're good.
+	}
+	return hook.status;
+}
+
+int LUA_HookPreFillItemRoulette(player_t *player, itemroulette_t *const roulette, boolean ringbox)
+{
+	return roulette_hook(player, roulette, ringbox, HOOK(PreFillItemRoulette), res_true);
 }
 
 boolean hook_cmd_running = false;
