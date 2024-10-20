@@ -3931,6 +3931,45 @@ static int lib_kGetShieldFromItem(lua_State *L)
 	return 1;
 }
 
+static int lib_kItemResultToType(lua_State *L)
+{
+	kartitems_t item = luaL_checkinteger(L, 1);
+	//HUDSAFE
+	lua_pushinteger(L, K_ItemResultToType(item));
+	return 1;
+}
+
+static int lib_kItemResultToAmount(lua_State *L)
+{
+	kartitems_t item = luaL_checkinteger(L, 1);
+	//HUDSAFE
+	lua_pushinteger(L, K_ItemResultToAmount(item));
+	return 1;
+}
+
+static int lib_kGetItemCooldown(lua_State *L)
+{
+	kartitems_t item = luaL_checkinteger(L, 1);
+	
+	NOHUD
+	INLEVEL
+	
+	lua_pushinteger(L, K_GetItemCooldown(item));
+	return 1;
+}
+
+static int lib_kSetItemCooldown(lua_State *L)
+{
+	kartitems_t item = luaL_checkinteger(L, 1);
+	tic_t time = luaL_checkinteger(L, 2);
+	
+	NOHUD
+	INLEVEL
+	
+	K_SetItemCooldown(item, time);
+	return 0;
+}
+
 static int lib_kGetCollideAngle(lua_State *L)
 {
 	mobj_t *t1 = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -4523,6 +4562,10 @@ static luaL_Reg lib[] = {
 	{"K_GetCollideAngle",lib_kGetCollideAngle},
 	{"K_AddHitLag",lib_kAddHitLag},
 	{"K_GetShieldFromItem",lib_kGetShieldFromItem},
+	{"K_ItemResultToType",lib_kItemResultToType},
+	{"K_ItemResultToAmount",lib_kItemResultToAmount},
+	{"K_GetItemCooldown",lib_kGetItemCooldown},
+	{"K_SetItemCooldown",lib_kSetItemCooldown},
 
 	// k_powerup
 	{"K_PowerUpRemaining",lib_kPowerUpRemaining},
