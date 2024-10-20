@@ -104,12 +104,11 @@ static void Got_RandomSeed(const UINT8 **cp, INT32 playernum);
 static void Got_RunSOCcmd(const UINT8 **cp, INT32 playernum);
 static void Got_Spectate(const UINT8 **cp, INT32 playernum);
 static void Got_TeamChange(const UINT8 **cp, INT32 playernum);
-static void Got_Clearscores(const UINT8 **cp, INT32 playernum);
+static void Got_Setscore(const UINT8 **cp, INT32 playernum);
 static void Got_DiscordInfo(const UINT8 **cp, INT32 playernum);
 static void Got_ScheduleTaskcmd(const UINT8 **cp, INT32 playernum);
 static void Got_ScheduleClearcmd(const UINT8 **cp, INT32 playernum);
 static void Got_Automatecmd(const UINT8 **cp, INT32 playernum);
-static void Got_RequestMapQueuecmd(const UINT8 **cp, INT32 playernum);
 static void Got_MapQueuecmd(const UINT8 **cp, INT32 playernum);
 static void Got_Cheat(const UINT8 **cp, INT32 playernum);
 
@@ -158,7 +157,7 @@ static void Command_Mapmd5_f(void);
 
 static void Command_ServerTeamChange_f(void);
 
-static void Command_Clearscores_f(void);
+static void Command_Setscore_f(void);
 
 // Remote Administration
 static void Command_Changepassword_f(void);
@@ -290,7 +289,7 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"PAUSE", // XD_PAUSE
 	"ADDPLAYER", // XD_ADDPLAYER
 	"SPECTATE", // XD_SPECTATE
-	"CLEARSCORES", // XD_CLEARSCORES
+	"SETSCORE", // XD_SETSCORE
 	"VERIFIED", // XD_VERIFIED
 	"RANDOMSEED", // XD_RANDOMSEED
 	"RUNSOC", // XD_RUNSOC
@@ -317,7 +316,7 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"SCHEDULETASK", // XD_SCHEDULETASK
 	"SCHEDULECLEAR", // XD_SCHEDULECLEAR
 	"AUTOMATE", // XD_AUTOMATE
-	"REQMAPQUEUE", // XD_REQMAPQUEUE
+	"",
 	"MAPQUEUE", // XD_MAPQUEUE
 	"CALLZVOTE", // XD_CALLZVOTE
 	"SETZVOTE", // XD_SETZVOTE
@@ -369,7 +368,6 @@ void D_RegisterServerCommands(void)
 	RegisterNetXCmd(XD_SCHEDULETASK, Got_ScheduleTaskcmd);
 	RegisterNetXCmd(XD_SCHEDULECLEAR, Got_ScheduleClearcmd);
 	RegisterNetXCmd(XD_AUTOMATE, Got_Automatecmd);
-	RegisterNetXCmd(XD_REQMAPQUEUE, Got_RequestMapQueuecmd);
 	RegisterNetXCmd(XD_MAPQUEUE, Got_MapQueuecmd);
 
 	RegisterNetXCmd(XD_CHEAT, Got_Cheat);
@@ -389,8 +387,8 @@ void D_RegisterServerCommands(void)
 	RegisterNetXCmd(XD_TEAMCHANGE, Got_TeamChange);
 	COM_AddCommand("serverchangeteam", Command_ServerTeamChange_f);
 
-	RegisterNetXCmd(XD_CLEARSCORES, Got_Clearscores);
-	COM_AddDebugCommand("clearscores", Command_Clearscores_f);
+	RegisterNetXCmd(XD_SETSCORE, Got_Setscore);
+	COM_AddDebugCommand("setscore", Command_Setscore_f);
 	COM_AddCommand("map", Command_Map_f);
 	COM_AddDebugCommand("randommap", Command_RandomMap);
 	COM_AddCommand("restartlevel", Command_RestartLevel);
@@ -555,7 +553,7 @@ void D_RegisterClientCommands(void)
 	COM_AddDebugCommand("setrings", Command_Setrings_f);
 	COM_AddDebugCommand("setspheres", Command_Setspheres_f);
 	COM_AddDebugCommand("setlives", Command_Setlives_f);
-	COM_AddDebugCommand("setscore", Command_Setscore_f);
+	COM_AddDebugCommand("setroundscore", Command_Setroundscore_f);
 	COM_AddDebugCommand("devmode", Command_Devmode_f);
 	COM_AddDebugCommand("savecheckpoint", Command_Savecheckpoint_f);
 	COM_AddDebugCommand("scale", Command_Scale_f);
@@ -2205,13 +2203,17 @@ void D_SetupVote(INT16 newgametype)
 {
 	const UINT32 rules = gametypes[newgametype]->rules;
 
-	UINT8 buf[(VOTE_NUM_LEVELS * 2) + 4];
+	UINT8 buf[(VOTE_NUM_LEVELS * 2) + 2 + 1 + 1];
 	UINT8 *p = buf;
 
 	INT32 i;
 
 	UINT16 votebuffer[VOTE_NUM_LEVELS + 1];
-	memset(votebuffer, UINT16_MAX, sizeof(votebuffer));
+	//memset(votebuffer, UINT16_MAX, sizeof(votebuffer));
+	for (i = 0; i < VOTE_NUM_LEVELS + 1; i++)
+	{
+		votebuffer[i] = UINT16_MAX;
+	}
 
 	WRITEINT16(p, newgametype);
 	WRITEUINT8(p, ((cv_kartencore.value == 1) && (rules & GTR_ENCORE)));
@@ -2450,6 +2452,7 @@ static void Command_Map_f(void)
 	size_t option_force;
 	size_t option_gametype;
 	size_t option_encore;
+	size_t option_random;
 	size_t option_skill;
 	size_t option_server;
 	size_t option_match;
@@ -2461,7 +2464,7 @@ static void Command_Map_f(void)
 
 	INT32 newmapnum;
 
-	char   *    mapname;
+	char   *    mapname = NULL;
 	char   *realmapname = NULL;
 
 	INT32 newgametype = gametype;
@@ -2484,6 +2487,7 @@ static void Command_Map_f(void)
 	option_force    =   COM_CheckPartialParm("-f");
 	option_gametype =   COM_CheckPartialParm("-g");
 	option_encore   =   COM_CheckPartialParm("-e");
+	option_random   =   COM_CheckPartialParm("-r");
 	option_skill    =   COM_CheckParm("-skill");
 	option_server   =   COM_CheckParm("-server");
 	option_match    =   COM_CheckParm("-match");
@@ -2496,30 +2500,105 @@ static void Command_Map_f(void)
 	if (!( first_option = COM_FirstOption() ))
 		first_option = COM_Argc();
 
-	if (first_option < 2)
+	if (!option_random && first_option < 2)
 	{
 		/* I'm going over the fucking lines and I DON'T CAREEEEE */
-		CONS_Printf("map <name / number> [-gametype <type>] [-force]:\n");
+		CONS_Printf("map <name / number> [-gametype <type>] [-force] / [-random]:\n");
 		CONS_Printf(M_GetText(
 					"Warp to a map, by its name, two character code, with optional \"MAP\" prefix, or by its number (though why would you).\n"
 					"All parameters are case-insensitive and may be abbreviated.\n"));
 		return;
 	}
 
-	mapname = ConcatCommandArgv(1, first_option);
+	boolean getgametypefrommap = false;
 
-	newmapnum = G_FindMapByNameOrCode(mapname, &realmapname);
-
-	if (newmapnum == 0)
+	// new gametype value
+	// use current one by default
+	if (option_gametype)
 	{
-		CONS_Alert(CONS_ERROR, M_GetText("Could not find any map described as '%s'.\n"), mapname);
-		Z_Free(mapname);
-		return;
+		newgametype = GetGametypeParm(option_gametype);
+		if (newgametype == -1)
+		{
+			return;
+		}
+	}
+	else if (option_random)
+	{
+		if (!Playing())
+		{
+			CONS_Printf("Can't use -random from the menu without -gametype.\n");
+			return;
+		}
+	}
+	else if (!Playing() || (netgame == false && grandprixinfo.gp == true))
+	{
+		getgametypefrommap = true;
 	}
 
-	if (/*newmapnum != 1 &&*/ M_MapLocked(newmapnum))
+	// new encoremode value
+	if (option_encore)
 	{
-		ischeating = true;
+		newencoremode = !newencoremode;
+
+		if (!M_SecretUnlocked(SECRET_ENCORE, false) && newencoremode == true && !usingcheats)
+		{
+			CONS_Alert(CONS_NOTICE, M_GetText("You haven't unlocked Encore Mode yet!\n"));
+			Z_Free(realmapname);
+			Z_Free(mapname);
+			return;
+		}
+	}
+
+	if (option_random)
+	{
+		UINT8 numPlayers = 0;
+		UINT16 oldmapnum = UINT16_MAX;
+
+		if (Playing())
+		{
+			UINT8 i;
+			for (i = 0; i < MAXPLAYERS; ++i)
+			{
+				if (!playeringame[i] || players[i].spectator)
+				{
+					continue;
+				}
+
+				extern consvar_t cv_forcebots; // debug
+
+				if (!(gametypes[newgametype]->rules & GTR_BOTS) && players[i].bot && !cv_forcebots.value)
+				{
+					// Gametype doesn't support bots
+					continue;
+				}
+
+				numPlayers++;
+			}
+
+			oldmapnum = (gamestate == GS_LEVEL)
+				? (gamemap-1)
+				: prevmap;
+		}
+
+		newmapnum = G_RandMapPerPlayerCount(G_TOLFlag(newgametype), oldmapnum, false, false, NULL, numPlayers) + 1;
+	}
+	else
+	{
+		mapname = ConcatCommandArgv(1, first_option);
+
+		newmapnum = G_FindMapByNameOrCode(mapname, &realmapname);
+
+		if (newmapnum == 0)
+		{
+			CONS_Alert(CONS_ERROR, M_GetText("Could not find any map described as '%s'.\n"), mapname);
+			Z_Free(mapname);
+			return;
+		}
+
+		if (M_MapLocked(newmapnum))
+		{
+			ischeating = true;
+		}
 	}
 
 	if (ischeating && !usingcheats)
@@ -2530,21 +2609,8 @@ static void Command_Map_f(void)
 		return;
 	}
 
-	// new gametype value
-	// use current one by default
-	if (option_gametype)
+	if (getgametypefrommap)
 	{
-		newgametype = GetGametypeParm(option_gametype);
-		if (newgametype == -1)
-		{
-			Z_Free(realmapname);
-			Z_Free(mapname);
-			return;
-		}
-	}
-	else if (!Playing() || (netgame == false && grandprixinfo.gp == true))
-	{
-		newresetplayers = true;
 		if (mapheaderinfo[newmapnum-1])
 		{
 			// Let's just guess so we don't have to specify the gametype EVERY time...
@@ -2563,25 +2629,13 @@ static void Command_Map_f(void)
 		}
 	}
 
-	// new encoremode value
-	if (option_encore)
-	{
-		newencoremode = !newencoremode;
-
-		if (!M_SecretUnlocked(SECRET_ENCORE, false) && newencoremode == true && !usingcheats)
-		{
-			CONS_Alert(CONS_NOTICE, M_GetText("You haven't unlocked Encore Mode yet!\n"));
-			Z_Free(realmapname);
-			Z_Free(mapname);
-			return;
-		}
-	}
-
-	if (!option_force && newgametype == gametype && Playing()) // SRB2Kart
+	if (!Playing())
+		newresetplayers = true;
+	else if (!option_force && newgametype == gametype) // SRB2Kart
 		newresetplayers = false; // if not forcing and gametypes is the same
 
 	// don't use a gametype the map doesn't support
-	if (cht_debug || option_force || cv_skipmapcheck.value)
+	if (option_random || cht_debug || option_force || cv_skipmapcheck.value)
 	{
 		// The player wants us to trek on anyway.  Do so.
 	}
@@ -2863,54 +2917,7 @@ static void Got_Mapcmd(const UINT8 **cp, INT32 playernum)
 
 static void Command_RandomMap(void)
 {
-	INT32 oldmapnum;
-	INT32 newmapnum;
-	INT32 newgametype = (Playing() ? gametype : menugametype);
-	boolean newencore = false;
-	boolean newresetplayers;
-	size_t option_gametype;
-
-	if (client && !IsPlayerAdmin(consoleplayer))
-	{
-		CONS_Printf(M_GetText("Only the server or a remote admin can use this.\n"));
-		return;
-	}
-
-	if ((option_gametype = COM_CheckPartialParm("-g")))
-	{
-		newgametype = GetGametypeParm(option_gametype);
-		if (newgametype == -1)
-			return;
-	}
-
-	// TODO: Handle singleplayer conditions.
-	// The existing ones are way too annoyingly complicated and "anti-cheat" for my tastes.
-
-	if (Playing())
-	{
-		if (cv_kartencore.value == 1 && (gametypes[newgametype]->rules & GTR_ENCORE))
-		{
-			newencore = true;
-		}
-		newresetplayers = false;
-
-		if (gamestate == GS_LEVEL)
-		{
-			oldmapnum = gamemap-1;
-		}
-		else
-		{
-			oldmapnum = prevmap;
-		}
-	}
-	else
-	{
-		newresetplayers = true;
-		oldmapnum = -1;
-	}
-
-	newmapnum = G_RandMap(G_TOLFlag(newgametype), oldmapnum, false, false, NULL) + 1;
-	D_MapChange(newmapnum, newgametype, newencore, newresetplayers, 0, false, false);
+	CONS_Printf("randommap is deprecated, please use \"map -random\" instead.\n");
 }
 
 static void Command_RestartLevel(void)
@@ -2945,42 +2952,26 @@ static void Command_RestartLevel(void)
 
 static void Handle_MapQueueSend(UINT16 newmapnum, UINT16 newgametype, boolean newencoremode)
 {
-	static char buf[1+2+2];
-	static char *buf_p = buf;
-
 	UINT8 flags = 0;
-	boolean doclear = (newgametype == ROUNDQUEUE_CLEAR);
 
 	CONS_Debug(DBG_GAMELOGIC, "Map queue: mapnum=%d newgametype=%d newencoremode=%d\n",
 	           newmapnum, newgametype, newencoremode);
 
-	buf_p = buf;
-
 	if (newencoremode)
 		flags |= 1;
 
-	WRITEUINT8(buf_p, flags);
-	WRITEUINT16(buf_p, newgametype);
+	netbuffer->packettype = PT_REQMAPQUEUE;
 
-	if (client)
-	{
-		WRITEUINT16(buf_p, newmapnum);
-		SendNetXCmd(XD_REQMAPQUEUE, buf, buf_p - buf);
-		return;
-	}
+	reqmapqueue_pak *reqmapqueue = &netbuffer->u.reqmapqueue;
 
-	WRITEUINT8(buf_p, roundqueue.size);
+	reqmapqueue->newmapnum = newmapnum;
+	reqmapqueue->flags = flags;
+	reqmapqueue->newgametype = newgametype;
+	reqmapqueue->source = consoleplayer;
 
-	if (doclear == true)
-	{
-		memset(&roundqueue, 0, sizeof(struct roundqueue));
-	}
-	else
-	{
-		G_MapIntoRoundQueue(newmapnum, newgametype, newencoremode, false);
-	}
+	HSendPacket(servernode, false, 0, sizeof(reqmapqueue_pak));
 
-	SendNetXCmd(XD_MAPQUEUE, buf, buf_p - buf);
+	// See PT_ReqMapQueue and Got_MapQueuecmd for the next stages
 }
 
 static void Command_QueueMap_f(void)
@@ -2990,13 +2981,15 @@ static void Command_QueueMap_f(void)
 	size_t option_gametype;
 	size_t option_encore;
 	size_t option_clear;
+	size_t option_show;
+	size_t option_random;
 
 	boolean usingcheats;
 	boolean ischeating;
 
 	INT32 newmapnum;
 
-	char   *    mapname;
+	char   *    mapname = NULL;
 	char   *realmapname = NULL;
 
 	INT32 newgametype = gametype;
@@ -3017,23 +3010,32 @@ static void Command_QueueMap_f(void)
 	usingcheats = CV_CheatsEnabled();
 	ischeating = (!(netgame || multiplayer) || !K_CanChangeRules(false));
 
-	option_clear = COM_CheckParm("-clear");
+	// Early check, rather than multiple copypaste.
+	if (ischeating && !usingcheats)
+	{
+		CONS_Printf(M_GetText("Cheats must be enabled.\n"));
+		return;
+	}
+
+	option_clear = COM_CheckPartialParm("-c");
 
 	if (option_clear)
 	{
-		if (ischeating && !usingcheats)
-		{
-			CONS_Printf(M_GetText("Cheats must be enabled.\n"));
-			return;
-		}
-
 		if (roundqueue.size == 0)
 		{
 			CONS_Printf(M_GetText("Round queue is already empty!\n"));
 			return;
 		}
 
-		Handle_MapQueueSend(0, ROUNDQUEUE_CLEAR, false);
+		Handle_MapQueueSend(0, ROUNDQUEUE_CMD_CLEAR, false);
+		return;
+	}
+
+	option_show = COM_CheckPartialParm("-s");
+
+	if (option_show)
+	{
+		Handle_MapQueueSend(0, ROUNDQUEUE_CMD_SHOW, false);
 		return;
 	}
 
@@ -3046,41 +3048,18 @@ static void Command_QueueMap_f(void)
 	option_force    =   COM_CheckPartialParm("-f");
 	option_gametype =   COM_CheckPartialParm("-g");
 	option_encore   =   COM_CheckPartialParm("-e");
+	option_random   =   COM_CheckPartialParm("-r");
 
 	if (!( first_option = COM_FirstOption() ))
 		first_option = COM_Argc();
 
-	if (first_option < 2)
+	if (!option_random && first_option < 2)
 	{
 		/* I'm going over the fucking lines and I DON'T CAREEEEE */
-		CONS_Printf("queuemap <name / number> [-gametype <type>] [-force] / [-clear]:\n");
+		CONS_Printf("queuemap <name / number> [-gametype <type>] [-force] / [-random] / [-clear] / [-show]:\n");
 		CONS_Printf(M_GetText(
 					"Queue up a map by its name, or by its number (though why would you).\n"
 					"All parameters are case-insensitive and may be abbreviated.\n"));
-		return;
-	}
-
-	mapname = ConcatCommandArgv(1, first_option);
-
-	newmapnum = G_FindMapByNameOrCode(mapname, &realmapname);
-
-	if (newmapnum == 0)
-	{
-		CONS_Alert(CONS_ERROR, M_GetText("Could not find any map described as '%s'.\n"), mapname);
-		Z_Free(mapname);
-		return;
-	}
-
-	if (/*newmapnum != 1 &&*/ M_MapLocked(newmapnum))
-	{
-		ischeating = true;
-	}
-
-	if (ischeating && !usingcheats)
-	{
-		CONS_Printf(M_GetText("Cheats must be enabled.\n"));
-		Z_Free(realmapname);
-		Z_Free(mapname);
 		return;
 	}
 
@@ -3111,8 +3090,40 @@ static void Command_QueueMap_f(void)
 		}
 	}
 
+	if (option_random)
+	{
+		// Unlike map -random, this is a server side RNG roll
+		newmapnum = NEXTMAP_VOTING + 1;
+	}
+	else
+	{
+		mapname = ConcatCommandArgv(1, first_option);
+
+		newmapnum = G_FindMapByNameOrCode(mapname, &realmapname);
+
+		if (newmapnum == 0)
+		{
+			CONS_Alert(CONS_ERROR, M_GetText("Could not find any map described as '%s'.\n"), mapname);
+			Z_Free(mapname);
+			return;
+		}
+
+		if (M_MapLocked(newmapnum))
+		{
+			ischeating = true;
+		}
+	}
+
+	if (ischeating && !usingcheats)
+	{
+		CONS_Printf(M_GetText("Cheats must be enabled.\n"));
+		Z_Free(realmapname);
+		Z_Free(mapname);
+		return;
+	}
+
 	// don't use a gametype the map doesn't support
-	if (cht_debug || option_force || cv_skipmapcheck.value)
+	if (option_random || cht_debug || option_force || cv_skipmapcheck.value)
 	{
 		// The player wants us to trek on anyway.  Do so.
 	}
@@ -3135,51 +3146,6 @@ static void Command_QueueMap_f(void)
 
 	Z_Free(realmapname);
 	Z_Free(mapname);
-}
-
-static void Got_RequestMapQueuecmd(const UINT8 **cp, INT32 playernum)
-{
-	UINT8 flags;
-	boolean setencore;
-	UINT16 mapnumber, setgametype;
-	boolean doclear = false;
-
-	flags = READUINT8(*cp);
-
-	setencore = ((flags & 1) != 0);
-
-	setgametype = READUINT16(*cp);
-
-	mapnumber = READUINT16(*cp);
-
-	if (!IsPlayerAdmin(playernum))
-	{
-		CONS_Alert(CONS_WARNING, M_GetText("Illegal request map queue command received from %s\n"), player_names[playernum]);
-		if (server && playernum != serverplayer)
-			SendKick(playernum, KICK_MSG_CON_FAIL);
-		return;
-	}
-
-	doclear = (setgametype == ROUNDQUEUE_CLEAR);
-
-	if (doclear == true)
-	{
-		if (roundqueue.size == 0)
-		{
-			CONS_Alert(CONS_ERROR, "queuemap: Queue is already empty!\n");
-			return;
-		}
-	}
-	else if (roundqueue.size >= ROUNDQUEUE_MAX)
-	{
-		CONS_Alert(CONS_ERROR, "queuemap: Unable to add map beyond %u\n", roundqueue.size);
-		return;
-	}
-
-	if (client)
-		return;
-
-	Handle_MapQueueSend(mapnumber, setgametype, setencore);
 }
 
 static void Got_MapQueuecmd(const UINT8 **cp, INT32 playernum)
@@ -3205,7 +3171,7 @@ static void Got_MapQueuecmd(const UINT8 **cp, INT32 playernum)
 		return;
 	}
 
-	doclear = (setgametype == ROUNDQUEUE_CLEAR);
+	doclear = (setgametype == ROUNDQUEUE_CMD_CLEAR);
 
 	if (doclear == false && queueposition >= ROUNDQUEUE_MAX)
 	{
@@ -3362,43 +3328,195 @@ static void Got_RandomSeed(const UINT8 **cp, INT32 playernum)
 /** Clears all players' scores in a netgame.
   * Only the server or a remote admin can use this command, for obvious reasons.
   *
-  * \sa XD_CLEARSCORES, Got_Clearscores
+  * \sa XD_SETSCORE, Got_Setscore
   * \author SSNTails <http://www.ssntails.org>
   */
-static void Command_Clearscores_f(void)
+static void Command_Setscore_f(void)
 {
-	if (!(server || (IsPlayerAdmin(consoleplayer))))
+	size_t option_add;
+	size_t option_clear;
+
+	UINT8 edit_player = UINT8_MAX;
+	UINT32 desired_score = 0;
+
+	UINT8 buf[1+4];
+	UINT8 *p = buf;
+
+	if (!Playing())
+	{
+		CONS_Printf(M_GetText("Scores can only be updated in-game.\n"));
+		return;
+	}
+
+	if (client && !IsPlayerAdmin(consoleplayer))
+	{
+		CONS_Printf(M_GetText("Only the server or a remote admin can use this.\n"));
+		return;
+	}
+
+	if (K_UsingPowerLevels() != PWRLV_DISABLED)
+	{
+		CONS_Printf("PWR is currently active - setscore has no effect.\n");
+		return;
+	}
+
+	if (!K_CanChangeRules(false) && !CV_CheatsEnabled())
+	{
+		CONS_Printf(M_GetText("Cheats must be enabled.\n"));
+		return;
+	}
+
+	option_clear = COM_CheckPartialParm("-c");
+
+	if (option_clear)
+	{
+		WRITEUINT8(p, edit_player);
+		WRITEUINT32(p, desired_score);
+
+		SendNetXCmd(XD_SETSCORE, &buf, p - buf);
+		return;
+	}
+
+	option_add = COM_CheckPartialParm("-a");
+
+	if (COM_Argc() < (option_add ? 3 : 2))
+	{
+		CONS_Printf("setscore <playernum> <value> [-add] / [-clear]\n");
+		return;
+	}
+
+	size_t work_option = 0;
+	if (++work_option == option_add)
+		work_option++;
+
+	{
+		const char *pid_string = COM_Argv(work_option);
+		INT32 pid = atoi(pid_string);
+
+		if (pid >= MAXPLAYERS
+			|| pid < 0
+			|| isdigit(pid_string[0]) == false)
+		{
+			CONS_Printf("playernum must be between 0 and %u\n", MAXPLAYERS-1);
+			return;
+		}
+
+		edit_player = pid;
+	}
+
+	if (++work_option == option_add)
+		work_option++;
+
+	{
+		const char *score_string = COM_Argv(work_option);
+		INT32 score = atoi(score_string);
+		INT32 min_score = (option_add ? -MAXSCORE : 0);
+
+		if (score >= MAXSCORE
+			|| score < min_score
+			|| isdigit(score_string[0]) == false)
+		{
+			CONS_Printf("score%s must be between %d and %u\n", (option_add ? " -add" : ""), min_score, MAXSCORE);
+			return;
+		}
+
+		if (option_add)
+		{
+			score += (INT32)players[edit_player].score;
+		}
+
+		if (score > MAXSCORE)
+		{
+			score = MAXSCORE;
+		}
+		else if (score < 0)
+		{
+			score = 0;
+		}
+
+		desired_score = score;
+	}
+
+	if (edit_player > MAXPLAYERS)
 		return;
 
-	SendNetXCmd(XD_CLEARSCORES, NULL, 1);
+	if (!playeringame[edit_player])
+	{
+		CONS_Printf("playernum must be a valid player\n");
+		return;
+	}
+
+	if (players[edit_player].spectator)
+	{
+		CONS_Printf("playernum must not be a spectator\n");
+		return;
+	}
+
+	WRITEUINT8(p, edit_player);
+	WRITEUINT32(p, desired_score);
+
+	SendNetXCmd(XD_SETSCORE, &buf, p - buf);
 }
 
-/** Handles an ::XD_CLEARSCORES message, which resets all players' scores in a
-  * netgame to zero.
+/** Handles an ::XD_SETSCORE message, which sets one (or all) player's score(s)
   *
   * \param cp        Data buffer.
   * \param playernum Player responsible for the message. Must be ::serverplayer
   *                  or ::adminplayer.
-  * \sa XD_CLEARSCORES, Command_Clearscores_f
+  * \sa XD_SETSCORE, Command_Setscore_f
   * \author SSNTails <http://www.ssntails.org>
   */
-static void Got_Clearscores(const UINT8 **cp, INT32 playernum)
+static void Got_Setscore(const UINT8 **cp, INT32 playernum)
 {
-	INT32 i;
+	UINT8 edit_player = READUINT8(*cp);
+	UINT32 desired_score = READUINT32(*cp);
 
-	(void)cp;
 	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
 	{
-		CONS_Alert(CONS_WARNING, M_GetText("Illegal clear scores command received from %s\n"), player_names[playernum]);
+		CONS_Alert(CONS_WARNING, M_GetText("Illegal setscore command received from %s\n"), player_names[playernum]);
 		if (server)
 			SendKick(playernum, KICK_MSG_CON_FAIL);
 		return;
 	}
 
-	for (i = 0; i < MAXPLAYERS; i++)
-		players[i].score = 0;
+	if (K_UsingPowerLevels() != PWRLV_DISABLED)
+	{
+		return;
+	}
 
-	CONS_Printf(M_GetText("Scores have been reset by the server.\n"));
+	if (edit_player == UINT8_MAX)
+	{
+		for (edit_player = 0; edit_player < MAXPLAYERS; edit_player++)
+		{
+			if (!playeringame[edit_player])
+				continue;
+
+			players[edit_player].score = 0;
+		}
+
+		HU_AddChatText("\x82*All scores have been reset.", false);
+
+		return;
+	}
+
+	if (edit_player >= MAXPLAYERS || !playeringame[edit_player])
+	{
+		CONS_Printf("Invalid player ID %u recieved a score set!\n", edit_player);
+		return;
+	}
+
+	if (players[edit_player].spectator)
+	{
+		CONS_Printf("%s recieved a score set but is a spectator!\n", player_names[edit_player]);
+		return;
+	}
+
+	players[edit_player].score = desired_score;
+
+	HU_AddChatText(va("\x82*%s had their score set to %u.", player_names[edit_player], desired_score), false);
+
+	if (server)
+		CONS_Printf("This setscore was done by %s (Player %u).\n", player_names[playernum], playernum);
 }
 
 static void Command_ServerTeamChange_f(void)
@@ -5200,25 +5318,139 @@ void SoundTest_OnChange(void)
 
 static void Command_Showmap_f(void)
 {
-	if (gamestate == GS_LEVEL)
+	UINT16 printmap = NEXTMAP_INVALID;
+
+	size_t first_option;
+	size_t option_random;
+	size_t option_gametype;
+
+	INT32 newgametype = gametype;
+
+	char   *    mapname = NULL;
+	char   *realmapname = NULL;
+
+	option_gametype =   COM_CheckPartialParm("-g");
+	option_random   =   COM_CheckPartialParm("-r");
+
+	if (!( first_option = COM_FirstOption() ))
+		first_option = COM_Argc();
+
+	if (option_gametype)
 	{
-		if (mapheaderinfo[gamemap-1]->zonttl[0] && !(mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE))
+		newgametype = GetGametypeParm(option_gametype);
+		if (newgametype == -1)
 		{
-			if (mapheaderinfo[gamemap-1]->actnum > 0)
-				CONS_Printf("%s (%d): %s %s %d\n", G_BuildMapName(gamemap), gamemap, mapheaderinfo[gamemap-1]->lvlttl, mapheaderinfo[gamemap-1]->zonttl, mapheaderinfo[gamemap-1]->actnum);
-			else
-				CONS_Printf("%s (%d): %s %s\n", G_BuildMapName(gamemap), gamemap, mapheaderinfo[gamemap-1]->lvlttl, mapheaderinfo[gamemap-1]->zonttl);
+			return;
+		}
+	}
+
+	if (option_random)
+	{
+		UINT8 numPlayers = 0;
+		UINT16 oldmapnum = UINT16_MAX;
+		if (Playing())
+		{
+			UINT8 i;
+			for (i = 0; i < MAXPLAYERS; ++i)
+			{
+				if (!playeringame[i] || players[i].spectator)
+				{
+					continue;
+				}
+
+				extern consvar_t cv_forcebots; // debug
+
+				if (!(gametypes[newgametype]->rules & GTR_BOTS) && players[i].bot && !cv_forcebots.value)
+				{
+					// Gametype doesn't support bots
+					continue;
+				}
+
+				numPlayers++;
+			}
+
+			oldmapnum = (gamestate == GS_LEVEL)
+				? (gamemap-1)
+				: prevmap;
+		}
+		else if (!option_gametype)
+		{
+			CONS_Printf("Can't use -random from the menu without -gametype.\n");
+			return;
+		}
+
+		printmap = G_RandMapPerPlayerCount(G_TOLFlag(newgametype), oldmapnum, false, false, NULL, numPlayers);
+	}
+	else if (first_option < 2)
+	{
+		if (!Playing())
+		{
+			CONS_Printf(M_GetText("You must be in a game to use this.\n"));
+			return;
+		}
+
+		printmap = (gamestate == GS_LEVEL)
+			? gamemap-1
+			: prevmap;
+	}
+	else
+	{
+		mapname = ConcatCommandArgv(1, first_option);
+
+		printmap = G_FindMapByNameOrCode(mapname, &realmapname);
+
+		if (printmap == 0)
+		{
+			CONS_Alert(CONS_ERROR, M_GetText("Could not find any map described as '%s'.\n"), mapname);
+			Z_Free(mapname);
+			return;
+		}
+
+		printmap--; // i hate the gamemap off-by-one system
+	}
+
+	if (printmap < nummapheaders && mapheaderinfo[printmap])
+	{
+		char *title = G_BuildMapTitle(printmap + 1);
+
+		if (mapheaderinfo[printmap]->menuttl[0])
+		{
+			CONS_Printf("%s (%d): %s / %s\n", mapheaderinfo[printmap]->lumpname, printmap, title, mapheaderinfo[printmap]->menuttl);
 		}
 		else
 		{
-			if (mapheaderinfo[gamemap-1]->actnum > 0)
-				CONS_Printf("%s (%d): %s %d\n", G_BuildMapName(gamemap), gamemap, mapheaderinfo[gamemap-1]->lvlttl, mapheaderinfo[gamemap-1]->actnum);
+			CONS_Printf("%s (%d): %s\n", mapheaderinfo[printmap]->lumpname, printmap, title);
+		}
+
+		Z_Free(title);
+
+		if ((option_random || first_option < 2) && !option_gametype)
+			;
+		else if (mapheaderinfo[printmap]->typeoflevel & G_TOLFlag(newgametype))
+		{
+			CONS_Printf(" compatible with this gametype\n");
+		}
+		else
+		{
+			newgametype = G_GuessGametypeByTOL(mapheaderinfo[printmap]->typeoflevel);
+
+			if (newgametype == -1)
+			{
+				CONS_Printf(" NOT compatible with any known gametype\n");
+			}
 			else
-				CONS_Printf("%s (%d): %s\n", G_BuildMapName(gamemap), gamemap, mapheaderinfo[gamemap-1]->lvlttl);
+			{
+				CONS_Printf(" NOT compatible with this gametype (try \"%s\" instead)\n", gametypes[newgametype]->name);
+			}
 		}
 	}
 	else
-		CONS_Printf(M_GetText("You must be in a level to use this.\n"));
+	{
+		CONS_Printf("Invalid map ID %u\n", printmap);
+	}
+
+	Z_Free(realmapname);
+	Z_Free(mapname);
 }
 
 static void Command_Mapmd5_f(void)
@@ -5764,7 +5996,7 @@ static void Got_Cheat(const UINT8 **cp, INT32 playernum)
 
 			player->roundscore = score;
 
-			CV_CheaterWarning(targetPlayer, va("score = %u", score));
+			CV_CheaterWarning(targetPlayer, va("roundscore = %u", score));
 			break;
 		}
 
@@ -6828,22 +7060,90 @@ void DummyConsvar_OnChange(void)
 
 static void Command_ShowScores_f(void)
 {
-	UINT8 i;
-
 	if (!(netgame || multiplayer))
 	{
-		CONS_Printf(M_GetText("This only works in a netgame.\n"));
+		CONS_Printf("This only works with multiple players.\n");
 		return;
 	}
 
+	if (K_UsingPowerLevels() != PWRLV_DISABLED)
+	{
+		CONS_Printf("PWR is currently active - no scores to show!\n");
+		return;
+	}
+
+	UINT8 i, j, numplayers = 0;
+	UINT8 playerlist[MAXPLAYERS];
+	UINT8 pos[MAXPLAYERS];
+	UINT16 completed = 0;
+
+	memset(playerlist, 0, sizeof(playerlist));
+	memset(pos, 0, sizeof(pos));
+
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (playeringame[i])
-			// FIXME: %lu? what's wrong with %u? ~Callum (produces warnings...)
-			CONS_Printf(M_GetText("%s's score is %u\n"), player_names[i], players[i].score);
-	}
-	CONS_Printf(M_GetText("The pointlimit is %d\n"), g_pointlimit);
+		if (playeringame[i] && !players[i].spectator)
+		{
+			numplayers++;
+			continue;
+		}
 
+		completed |= (1 << i);
+	}
+
+	if (!numplayers)
+	{
+		CONS_Printf("No players are currently in-game.\n");
+		return;
+	}
+
+	// This is largely based off of Y_CalculateMatchData.
+
+	for (j = 0; j < numplayers; j++)
+	{
+		UINT8 workp = UINT8_MAX;
+
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (completed & (1 << i))
+				continue;
+			if (workp != UINT8_MAX && players[workp].score >= players[i].score)
+				continue;
+			workp = i;
+		}
+
+		completed |= (1 << workp);
+
+		playerlist[j] = workp;
+
+		if (j && players[workp].score == players[playerlist[j-1]].score)
+		{
+			pos[j] = pos[j-1];
+		}
+		else
+		{
+			pos[j] = j+1;
+		}
+	}
+
+	if (roundqueue.size && roundqueue.position)
+	{
+		CONS_Printf(
+			"Rankings %s Round %u:\n",
+			(gamestate == GS_LEVEL) ? "before" : "as of",
+			roundqueue.roundnum
+		);
+	}
+	else
+	{
+		CONS_Printf("Total Rankings:\n");
+	}
+
+	for (i = 0; i < numplayers; i++)
+	{
+		j = playerlist[i];
+		CONS_Printf(" %2u - %*s : %9d\n", pos[i], MAXPLAYERNAME-1, player_names[j], players[j].score); // 9 taken from MAXSCORE
+	}
 }
 
 static void Command_ShowTime_f(void)

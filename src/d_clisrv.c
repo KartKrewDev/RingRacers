@@ -4772,6 +4772,149 @@ static void PT_Say(int node)
 	DoSayCommand(say.message, say.target, say.flags, say.source);
 }
 
+static void PT_ReqMapQueue(int node)
+{
+	if (client)
+		return; // Only sent to servers, why are we receiving this?
+
+	reqmapqueue_pak reqmapqueue = netbuffer->u.reqmapqueue;
+
+	// Check for a spoofed source.
+	if (reqmapqueue.source == serverplayer)
+	{
+		// Servers aren't guaranteed to have a playernode, dedis exist.
+		if (node != servernode)
+			return;
+	}
+	else
+	{
+		if (playernode[reqmapqueue.source] != node)
+			return;
+
+		if (!IsPlayerAdmin(reqmapqueue.source))
+		{
+			CONS_Debug(DBG_NETPLAY,"Received illegal request map queue cmd from Player %d (%s).\n", reqmapqueue.source+1, player_names[reqmapqueue.source]);
+			SendKick(reqmapqueue.source, KICK_MSG_CON_FAIL);
+			return;
+		}
+	}
+
+	const boolean doclear = (reqmapqueue.newgametype == ROUNDQUEUE_CMD_CLEAR);
+
+	// The following prints will only appear when multiple clients
+	// attempt to affect the round queue at similar time increments
+	if (doclear == true)
+	{
+		if (roundqueue.size == 0)
+		{
+			// therefore this one doesn't really need a error print
+			// because what both players wanted was done anyways
+			//CONS_Alert(CONS_ERROR, "queuemap: Queue is already empty!\n");
+			return;
+		}
+	}
+	else if (reqmapqueue.newgametype == ROUNDQUEUE_CMD_SHOW)
+	{
+		char maprevealmsg[256];
+		if (roundqueue.size == 0)
+		{
+			strlcpy(maprevealmsg, "There are no Rounds queued.", 256);
+		}
+		else if (roundqueue.position >= roundqueue.size)
+		{
+			strlcpy(maprevealmsg, "There are no more Rounds queued!", 256);
+		}
+		else
+		{
+			char *title = G_BuildMapTitle(roundqueue.entries[roundqueue.position].mapnum + 1);
+
+			strlcpy(
+				maprevealmsg,
+				va("The next Round will be on \"%s\".", title),
+				256
+			);
+
+			Z_Free(title);
+		}
+		DoSayCommand(maprevealmsg, 0, HU_SHOUT, servernode);
+
+		return;
+	}
+	else if (roundqueue.size >= ROUNDQUEUE_MAX)
+	{
+		CONS_Alert(CONS_ERROR, "Recieved REQMAPQUEUE, but unable to add map beyond %u\n", roundqueue.size);
+
+		// But this one does, because otherwise it's silent failure!
+		char rejectmsg[256];
+		strlcpy(rejectmsg, "The server couldn't queue your chosen map.", 256);
+		SendServerNotice(reqmapqueue.source, rejectmsg);
+
+		return;
+	}
+
+	if (reqmapqueue.newmapnum == NEXTMAP_VOTING)
+	{
+		UINT8 numPlayers = 0, i;
+		for (i = 0; i < MAXPLAYERS; ++i)
+		{
+			if (!playeringame[i] || players[i].spectator)
+			{
+				continue;
+			}
+
+			extern consvar_t cv_forcebots; // debug
+
+			if (!(gametypes[reqmapqueue.newgametype]->rules & GTR_BOTS) && players[i].bot && !cv_forcebots.value)
+			{
+				// Gametype doesn't support bots
+				continue;
+			}
+
+			numPlayers++;
+		}
+
+		reqmapqueue.newmapnum = G_RandMapPerPlayerCount(G_TOLFlag(reqmapqueue.newgametype), UINT16_MAX, false, false, NULL, numPlayers);
+	}
+
+	if (reqmapqueue.newmapnum >= nummapheaders)
+	{
+		CONS_Alert(CONS_ERROR, "Recieved REQMAPQUEUE, but unable to add map of invalid ID (%u)\n", reqmapqueue.newmapnum);
+
+		char rejectmsg[256];
+		strlcpy(rejectmsg, "The server couldn't queue your chosen map.", 256);
+		SendServerNotice(reqmapqueue.source, rejectmsg);
+
+		return;
+	}
+
+	G_AddMapToBuffer(reqmapqueue.newmapnum);
+
+	UINT8 buf[1+2+1];
+	UINT8 *buf_p = buf;
+
+	WRITEUINT8(buf_p, reqmapqueue.flags);
+	WRITEUINT16(buf_p, reqmapqueue.newgametype);
+
+	WRITEUINT8(buf_p, roundqueue.size);
+
+	// Match Got_MapQueuecmd, but with the addition of reqmapqueue.newmapnum available to us
+	if (doclear == true)
+	{
+		memset(&roundqueue, 0, sizeof(struct roundqueue));
+	}
+	else
+	{
+		G_MapIntoRoundQueue(
+			reqmapqueue.newmapnum,
+			reqmapqueue.newgametype,
+			((reqmapqueue.flags & 1) != 0),
+			false
+		);
+	}
+
+	SendNetXCmd(XD_MAPQUEUE, buf, buf_p - buf);
+}
+
 static char NodeToSplitPlayer(int node, int split)
 {
 	if (split == 0)
@@ -5116,6 +5259,9 @@ static void HandlePacketFromPlayer(SINT8 node)
 			break;
 		case PT_SAY:
 			PT_Say(node);
+			break;
+		case PT_REQMAPQUEUE:
+			PT_ReqMapQueue(node);
 			break;
 		case PT_LOGIN:
 			if (client)

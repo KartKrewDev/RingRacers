@@ -135,6 +135,8 @@ typedef enum
 
 	PT_SAY,				// "Hey server, please send this chat message to everyone via XD_SAY"
 
+	PT_REQMAPQUEUE,		// Client requesting a roundqueue operation
+
 	NUMPACKETTYPE
 } packettype_t;
 
@@ -401,6 +403,14 @@ struct say_pak
 	UINT8 source;
 } ATTRPACK;
 
+struct reqmapqueue_pak
+{
+	UINT16 newmapnum;
+	UINT16 newgametype;
+	UINT8 flags;
+	UINT8 source;
+} ATTRPACK;
+
 struct netinfo_pak
 {
 	UINT32 pingtable[MAXPLAYERS+1];
@@ -451,6 +461,7 @@ struct doomdata_t
 		responseall_pak responseall;			// 256 bytes
 		resultsall_pak resultsall;				// 1024 bytes. Also, you really shouldn't trust anything here.
 		say_pak say;							// I don't care anymore.
+		reqmapqueue_pak reqmapqueue;			// Formerly XD_REQMAPQUEUE
 	} u; // This is needed to pack diff packet types data together
 } ATTRPACK;
 

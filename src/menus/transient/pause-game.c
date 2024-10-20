@@ -353,7 +353,7 @@ void M_HandlePauseMenuGametype(INT32 choice)
 				}
 				else // ideally for "random" only, but no sane fallback for "same" and "next"
 				{
-					COM_ImmedExecute(va("randommap -gt %s", gametypes[menugametype]->name));
+					COM_ImmedExecute(va("map -random -gt %s", gametypes[menugametype]->name));
 				}
 			}
 			return;

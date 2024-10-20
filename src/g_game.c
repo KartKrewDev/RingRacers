@@ -4406,13 +4406,28 @@ void G_GetNextMap(void)
 
 	if (setalready == false)
 	{
+		UINT8 numPlayers = 0;
+
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (!playeringame[i] || players[i].spectator)
+			{
+				continue;
+			}
+			numPlayers++;
+		}
+
 		UINT32 tolflag = G_TOLFlag(gametype);
 		register INT16 cm;
 
-		if (!(gametyperules & GTR_NOCUPSELECT))
+		const boolean cupmode = (!(gametyperules & GTR_NOCUPSELECT));
+
+		nextmap = NEXTMAP_TITLE;
+
+		if (cupmode)
 		{
-			cupheader_t *cup = mapheaderinfo[gamemap-1]->cup;
-			UINT8 gettingresult = 0;
+			cupheader_t *cup = mapheaderinfo[prevmap]->cup;
+			boolean gettingresult = false;
 
 			while (cup)
 			{
@@ -4420,7 +4435,7 @@ void G_GetNextMap(void)
 				if (!marathonmode && M_CupLocked(cup))
 				{
 					cup = cup->next;
-					gettingresult = 1;
+					gettingresult = true;
 					continue;
 				}
 
@@ -4434,6 +4449,35 @@ void G_GetNextMap(void)
 						|| mapheaderinfo[cm]->lumpnum == LUMPERROR
 						|| !(mapheaderinfo[cm]->typeoflevel & tolflag))
 					{
+						continue;
+					}
+
+					// If the map is in multiple cups, only consider the first one valid.
+					if (mapheaderinfo[cm]->cup != cup)
+					{
+						continue;
+					}
+
+					if (!gettingresult)
+					{
+						// Not the map you're on?
+						if (cm == prevmap)
+						{
+							// Ok, this is the current map, time to get the next valid
+							gettingresult = true;
+						}
+						continue;
+					}
+
+					if ((mapheaderinfo[cm]->menuflags & LF2_HIDEINMENU) == LF2_HIDEINMENU)
+					{
+						// Not intended to be accessed in multiplayer.
+						continue;
+					}
+
+					if (numPlayers > mapheaderinfo[cm]->playerLimit)
+					{
+						// Too many players for this map.
 						continue;
 					}
 
@@ -4462,32 +4506,13 @@ void G_GetNextMap(void)
 						continue;
 					}
 
-					// If the map is in multiple cups, only consider the first one valid.
-					if (mapheaderinfo[cm]->cup != cup)
-					{
-						continue;
-					}
-
 					// Grab the first valid after the map you're on
-					if (gettingresult)
-					{
-						nextmap = cm;
-						gettingresult = 2;
-						break;
-					}
-
-					// Not the map you're on?
-					if (cm != prevmap)
-					{
-						continue;
-					}
-
-					// Ok, this is the current map, time to get the next
-					gettingresult = 1;
+					nextmap = cm;
+					break;
 				}
 
 				// We have a good nextmap?
-				if (gettingresult == 2)
+				if (nextmap < NEXTMAP_SPECIAL)
 				{
 					break;
 				}
@@ -4495,27 +4520,48 @@ void G_GetNextMap(void)
 				// Ok, iterate to the next
 				cup = cup->next;
 			}
-
-			// Didn't get a nextmap before reaching the end?
-			if (gettingresult != 2)
-			{
-				nextmap = NEXTMAP_CEREMONY; // ceremonymap
-			}
 		}
-		else
+
+		// Haven't grabbed a nextmap yet?
+		if (nextmap >= NEXTMAP_SPECIAL)
 		{
-			cm = prevmap;
-
-			do
+			if (cupmode && mapheaderinfo[prevmap]->cup)
 			{
-				if (++cm >= nummapheaders)
-					cm = 0;
+				// Special case - looking for Lost & Found #1.
+				// Could be anywhere in mapheaderinfo.
+				cm = 0;
+			}
+			else
+			{
+				// All subsequent courses in load order.
+				cm = prevmap+1;
+			}
 
+			for (; cm < nummapheaders; cm++)
+			{
 				if (!mapheaderinfo[cm]
 					|| mapheaderinfo[cm]->lumpnum == LUMPERROR
 					|| !(mapheaderinfo[cm]->typeoflevel & tolflag)
 					|| (mapheaderinfo[cm]->menuflags & LF2_HIDEINMENU))
 				{
+					continue;
+				}
+
+				if (cupmode && mapheaderinfo[cm]->cup)
+				{
+					// Only Lost & Found this loop around.
+					continue;
+				}
+
+				if ((mapheaderinfo[cm]->menuflags & LF2_HIDEINMENU) == LF2_HIDEINMENU)
+				{
+					// Not intended to be accessed in multiplayer.
+					continue;
+				}
+
+				if (numPlayers > mapheaderinfo[cm]->playerLimit)
+				{
+					// Too many players for this map.
 					continue;
 				}
 
@@ -4547,10 +4593,9 @@ void G_GetNextMap(void)
 					continue;
 				}
 
+				nextmap = cm;
 				break;
-			} while (cm != prevmap);
-
-			nextmap = cm;
+			}
 		}
 
 		if (K_CanChangeRules(true))
@@ -4563,24 +4608,14 @@ void G_GetNextMap(void)
 					nextmap = prevmap;
 					break;
 				case 3: // Voting screen.
+					if (numPlayers != 0)
 					{
-						for (i = 0; i < MAXPLAYERS; i++)
-						{
-							if (!playeringame[i])
-								continue;
-							if (players[i].spectator)
-								continue;
-							break;
-						}
-						if (i != MAXPLAYERS)
-						{
-							nextmap = NEXTMAP_VOTING;
-							break;
-						}
+						nextmap = NEXTMAP_VOTING;
+						break;
 					}
 					/* FALLTHRU */
 				case 2: // Go to random map.
-					nextmap = G_RandMap(G_TOLFlag(gametype), prevmap, false, false, NULL);
+					nextmap = G_RandMapPerPlayerCount(G_TOLFlag(gametype), prevmap, false, false, NULL, numPlayers);
 					break;
 				default:
 					if (nextmap >= NEXTMAP_SPECIAL) // Loop back around

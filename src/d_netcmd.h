@@ -153,7 +153,7 @@ typedef enum
 	XD_PAUSE,       // 9
 	XD_ADDPLAYER,   // 10
 	XD_SPECTATE,    // 11
-	XD_CLEARSCORES, // 12
+	XD_SETSCORE,    // 12
 	XD_VERIFIED,    // 13
 	XD_RANDOMSEED,  // 14
 	XD_RUNSOC,      // 15
@@ -180,8 +180,8 @@ typedef enum
 	XD_SCHEDULETASK, // 34
 	XD_SCHEDULECLEAR, // 35
 	XD_AUTOMATE,    // 36
-	XD_REQMAPQUEUE, // 37
-	XD_MAPQUEUE,	// 38
+	// 37 is free
+	XD_MAPQUEUE = XD_AUTOMATE+2, // 38
 	XD_CALLZVOTE,   // 39
 	XD_SETZVOTE,    // 40
 	XD_TEAMCHANGE,  // 41

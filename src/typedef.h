@@ -83,6 +83,7 @@ TYPEDEF (challengeall_pak);
 TYPEDEF (responseall_pak);
 TYPEDEF (resultsall_pak);
 TYPEDEF (say_pak);
+TYPEDEF (reqmapqueue_pak);
 TYPEDEF (netinfo_pak);
 
 // d_event.h
