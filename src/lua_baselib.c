@@ -3923,6 +3923,14 @@ static int lib_kGetItemPatch(lua_State *L)
 	return 1;
 }
 
+static int lib_kGetShieldFromItem(lua_State *L)
+{
+	kartitems_t item = luaL_checkinteger(L, 1);
+	//HUDSAFE
+	lua_pushinteger(L, K_GetShieldFromItem(item));
+	return 1;
+}
+
 static int lib_kGetCollideAngle(lua_State *L)
 {
 	mobj_t *t1 = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -4512,9 +4520,9 @@ static luaL_Reg lib[] = {
 	{"K_GetKartAccel",lib_kGetKartAccel},
 	{"K_GetKartFlashing",lib_kGetKartFlashing},
 	{"K_GetItemPatch",lib_kGetItemPatch},
-
 	{"K_GetCollideAngle",lib_kGetCollideAngle},
 	{"K_AddHitLag",lib_kAddHitLag},
+	{"K_GetShieldFromItem",lib_kGetShieldFromItem},
 
 	// k_powerup
 	{"K_PowerUpRemaining",lib_kPowerUpRemaining},
