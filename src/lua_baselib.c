@@ -3970,6 +3970,21 @@ static int lib_kSetItemCooldown(lua_State *L)
 	return 0;
 }
 
+static int lib_kTimeAttackRules(lua_State *L)
+{
+	//HUDSAFE
+	lua_pushboolean(L, K_TimeAttackRules());
+	return 1;
+}
+
+static int lib_kCapsuleTimeAttackRules(lua_State *L)
+{
+	//HUDSAFE
+	lua_pushboolean(L, K_CapsuleTimeAttackRules());
+	return 1;
+}
+
+
 static int lib_kGetCollideAngle(lua_State *L)
 {
 	mobj_t *t1 = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -4566,6 +4581,8 @@ static luaL_Reg lib[] = {
 	{"K_ItemResultToAmount",lib_kItemResultToAmount},
 	{"K_GetItemCooldown",lib_kGetItemCooldown},
 	{"K_SetItemCooldown",lib_kSetItemCooldown},
+	{"K_TimeAttackRules",lib_kTimeAttackRules},
+	{"K_CapsuleTimeAttackRules",lib_kCapsuleTimeAttackRules},
 
 	// k_powerup
 	{"K_PowerUpRemaining",lib_kPowerUpRemaining},
