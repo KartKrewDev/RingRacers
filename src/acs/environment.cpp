@@ -228,8 +228,7 @@ void Environment::loadModule(ACSVM::Module *module)
 	if (name->i == (size_t)LUMPERROR)
 	{
 		// No lump given for module.
-		CONS_Alert(CONS_WARNING, "Could not find ACS module \"%s\"; scripts will not function properly!\n", name->s->str);
-		return; //throw ACSVM::ReadError("file open failure");
+		throw ACSVM::ReadError("invalid lump");
 	}
 
 	lumpLen = W_LumpLength(name->i);
@@ -280,9 +279,7 @@ void Environment::loadModule(ACSVM::Module *module)
 	}
 	else
 	{
-		// Unlike Hexen, a BEHAVIOR lump is not required.
-		// Simply ignore in this instance.
-		CONS_Debug(DBG_SETUP, "ACS module has no data, ignoring...\n");
+		throw ACSVM::ReadError("file empty");
 	}
 }
 
