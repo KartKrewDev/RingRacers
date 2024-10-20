@@ -1,6 +1,6 @@
-# Tracy Profiler Client 0.10.0
+# Tracy Profiler Client 0.11.1
 # BSD 3-clause
-# Copyright (c) 2017-2023, Bartosz Taudul <wolf@nereid.pl>
+# Copyright (c) 2017-2024, Bartosz Taudul <wolf@nereid.pl>
 
 # includes libbacktrace
 # BSD 3-clause
