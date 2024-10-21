@@ -3393,6 +3393,8 @@ static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
 		V_DrawLSTitleLowString(x2, y+28, 0, word2);
 }
 
+static INT32 M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y, boolean allowtime, boolean allowencore, boolean allowspb, boolean allowbonus, boolean draw);
+
 static void M_DrawLevelSelectBlock(INT16 x, INT16 y, UINT16 map, boolean redblink, boolean greyscale)
 {
 	UINT8 *colormap = NULL;
@@ -3425,6 +3427,49 @@ static void M_DrawLevelSelectBlock(INT16 x, INT16 y, UINT16 map, boolean redblin
 				PU_CACHE
 			)
 		);
+	}
+	else if (!levellist.netgame)
+	{
+		x += 80+2;
+		y += 50-1;
+
+		const boolean allowencore = (
+			!levellist.levelsearch.timeattack
+			&& M_SecretUnlocked(SECRET_ENCORE, true)
+		);
+		const boolean allowspb = (
+			levellist.levelsearch.timeattack
+			&& M_SecretUnlocked(SECRET_SPBATTACK, true)
+		);
+
+		INT32 width = x - M_DrawMapMedals(map, x, y,
+			levellist.levelsearch.timeattack,
+			allowencore,
+			allowspb,
+			!levellist.levelsearch.timeattack,
+			false
+		);
+
+		if (width > 2)
+		{
+			width -= 2; // minor poke
+
+			V_DrawFill(x + 7 - width, y - 2, width, 9, 31);
+
+			UINT8 i;
+			for (i = 1; i < 7; i++)
+			{
+				V_DrawFill(x + 7 - width - i, y + i - 2, 1, 9 - i, 31);
+			}
+
+			M_DrawMapMedals(map, x, y,
+				levellist.levelsearch.timeattack,
+				allowencore,
+				allowspb,
+				!levellist.levelsearch.timeattack,
+				true
+			);
+		}
 	}
 }
 
@@ -8028,15 +8073,14 @@ challengedesc:
 
 #define STATSSTEP 10
 
-static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y, boolean allowtime, boolean allowencore, boolean allowspb)
+static INT32 M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y, boolean allowtime, boolean allowencore, boolean allowspb, boolean allowbonus, boolean draw)
 {
 	UINT8 lasttype = UINT8_MAX, curtype;
 
 	// M_GetLevelEmblems is ONE-indexed, urgh
 	emblem_t *emblem = M_GetLevelEmblems(mapnum+1);
 
-	const boolean hasmedals = (emblem != NULL);
-	boolean collected = false;
+	boolean collected = false, hasmedals = false;
 
 	while (emblem)
 	{
@@ -8083,11 +8127,19 @@ static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y, boolean allowtime, b
 		}
 
 		// Shift over if emblem is of a different discipline
-		if (lasttype != UINT8_MAX && lasttype != curtype)
-			x -= 4;
-		lasttype = curtype;
+		if (lasttype != curtype)
+		{
+			if (lasttype != UINT8_MAX)
+				x -= 4;
+			else
+				hasmedals = true;
 
-		if (collected)
+			lasttype = curtype;
+		}
+
+		if (!draw)
+			;
+		else if (collected)
 			V_DrawMappedPatch(x, y, 0, W_CachePatchName(M_GetEmblemPatch(emblem, false), PU_CACHE),
 				R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(emblem), GTC_MENUCACHE));
 		else
@@ -8097,6 +8149,9 @@ static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y, boolean allowtime, b
 		x -= 8;
 	}
 
+	if (!allowbonus)
+		return x;
+
 	if (hasmedals)
 		x -= 4;
 
@@ -8104,7 +8159,7 @@ static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y, boolean allowtime, b
 	{
 		UINT16 col = gamedata->spraycans[mapheaderinfo[mapnum]->cache_spraycan].col;
 
-		if (col < numskincolors)
+		if (draw && col < numskincolors)
 		{
 			V_DrawMappedPatch(x, y, 0, W_CachePatchName("GOTCAN", PU_CACHE),
 				R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE));
@@ -8115,9 +8170,13 @@ static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y, boolean allowtime, b
 
 	if (mapheaderinfo[mapnum]->records.mapvisited & MV_MYSTICMELODY)
 	{
-		V_DrawScaledPatch(x, y, 0, W_CachePatchName("GOTMEL", PU_CACHE));
+		if (draw)
+			V_DrawScaledPatch(x, y, 0, W_CachePatchName("GOTMEL", PU_CACHE));
+
 		x -= 8;
 	}
+
+	return x;
 }
 
 static void M_DrawStatsMaps(void)
@@ -8284,7 +8343,7 @@ static void M_DrawStatsMaps(void)
 			);
 		}
 
-		M_DrawMapMedals(mnum, medalspos - 8, y, allowtime, allowencore, allowspb);
+		M_DrawMapMedals(mnum, medalspos - 8, y, allowtime, allowencore, allowspb, true, true);
 
 		if (mapheaderinfo[mnum]->menuttl[0])
 		{
