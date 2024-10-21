@@ -4697,7 +4697,7 @@ preciptype_t get_precip(const char *word)
 			return i;
 	}
 	deh_warning("Couldn't find weather type named 'PRECIP_%s'",word);
-	return PRECIP_RAIN;
+	return PRECIP_NONE;
 }
 
 /// \todo Make ANY of this completely over-the-top math craziness obey the order of operations.

@@ -88,7 +88,7 @@ Environment::Environment()
 	addCodeDataACS0( 95, {"",        2, addCallFunc(CallFunc_AmbientSound)});
 
 	addCodeDataACS0( 97, {"",        4, addCallFunc(CallFunc_SetLineTexture)});
-
+	addCodeDataACS0( 98, {"",        2, addCallFunc(CallFunc_SetLineBlocking)});
 	addCodeDataACS0( 99, {"",        7, addCallFunc(CallFunc_SetLineSpecial)});
 	addCodeDataACS0(100, {"",        3, addCallFunc(CallFunc_ThingSound)});
 	addCodeDataACS0(101, {"",        0, addCallFunc(CallFunc_EndPrintBold)});
