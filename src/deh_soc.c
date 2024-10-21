@@ -3533,7 +3533,7 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 			else if (fastcmp(word, "EXECCFG"))
 			{
 				if (strchr(word2, '.'))
-					COM_BufAddText(va("exec %s\n", word2));
+					COM_BufAddText(va("exec \"%s\" -immediate\n", word2));
 				else
 				{
 					lumpnum_t lumpnum;

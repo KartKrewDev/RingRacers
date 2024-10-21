@@ -855,8 +855,19 @@ static void COM_Exec_f(void)
 	if (!COM_CheckParm("-silent"))
 		CONS_Printf(M_GetText("executing %s\n"), COM_Argv(1));
 
-	// insert text file into the command buffer
-	COM_ImmedExecute((char *)buf);
+	if (COM_CheckParm("-immediate"))
+	{
+		// immediately parses and executes all lines
+		// sidesteps wait from all sources, even self
+		COM_ImmedExecute((char *)buf);
+	}
+	else
+	{
+		// insert text file into the command buffer
+		// delays execution if interpreting wait cmd
+		COM_BufAddTextEx((char *)buf, com_flags);
+		COM_BufAddTextEx("\n", com_flags);
+	}
 
 	// free buffer
 	Z_Free(buf);
