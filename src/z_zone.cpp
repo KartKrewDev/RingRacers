@@ -31,6 +31,7 @@
 
 #include <tracy/tracy/TracyC.h>
 
+#include "core/memory.h"
 #include "doomdef.h"
 #include "doomstat.h"
 #include "r_patch.h"
@@ -53,7 +54,6 @@ static boolean Z_calloc = false;
 
 #define ZONEID 0xa441d13d
 
-
 typedef struct memblock_s
 {
 	void **user;
@@ -75,6 +75,16 @@ typedef struct memblock_s
 
 // both the head and tail of the zone memory block list
 static memblock_t head;
+
+static constexpr size_t kLevelLargePoolBlockSize = sizeof(mobj_t);
+static constexpr size_t kLevelMedPoolBlockSize = sizeof(precipmobj_t);
+static constexpr size_t kLevelSmallPoolBlockSize = 128;
+static constexpr size_t kLevelTinyPoolBlockSize = 64;
+
+static srb2::PoolAllocator g_level_large_pool { kLevelLargePoolBlockSize, 1024, PU_LEVEL };
+static srb2::PoolAllocator g_level_med_pool { kLevelMedPoolBlockSize, 32768, PU_LEVEL };
+static srb2::PoolAllocator g_level_small_pool { kLevelSmallPoolBlockSize, 4096, PU_LEVEL };
+static srb2::PoolAllocator g_level_tiny_pool { kLevelTinyPoolBlockSize, 8192, PU_LEVEL };
 
 //
 // Function prototypes
@@ -355,6 +365,16 @@ void Z_FreeTags(INT32 lowtag, INT32 hightag)
 	TracyCZone(__zone, true);
 
 	Z_CheckHeap(420);
+
+	// First, release all pools, since they can make allocations in zones.
+	if (PU_LEVEL >= lowtag && PU_LEVEL <= hightag)
+	{
+		g_level_large_pool.release();
+		g_level_med_pool.release();
+		g_level_small_pool.release();
+		g_level_tiny_pool.release();
+	}
+
 	for (block = head.next; block != &head; block = next)
 	{
 		next = block->next; // get link before freeing
@@ -663,4 +683,60 @@ static void Command_Memdump_f(void)
 char *Z_StrDup(const char *s)
 {
 	return strcpy((char*)ZZ_Alloc(strlen(s) + 1), s);
+}
+
+void* Z_LevelPoolMalloc(size_t size)
+{
+	void* p = nullptr;
+	if (size <= kLevelTinyPoolBlockSize)
+	{
+		p = g_level_tiny_pool.allocate();
+	}
+	else if (size <= kLevelSmallPoolBlockSize)
+	{
+		p = g_level_small_pool.allocate();
+	}
+	else if (size <= kLevelMedPoolBlockSize)
+	{
+		p = g_level_med_pool.allocate();
+	}
+	else if (size <= kLevelLargePoolBlockSize)
+	{
+		p = g_level_large_pool.allocate();
+	}
+
+	if (p == nullptr)
+	{
+		p = Z_Malloc(size, PU_LEVEL, nullptr);
+	}
+
+	return p;
+}
+
+void* Z_LevelPoolCalloc(size_t size)
+{
+	void* p = Z_LevelPoolMalloc(size);
+	memset(p, 0, size);
+	return p;
+}
+
+void Z_LevelPoolFree(void* p, size_t size)
+{
+	if (size <= kLevelTinyPoolBlockSize)
+	{
+		return g_level_tiny_pool.deallocate(p);
+	}
+	if (size <= kLevelSmallPoolBlockSize)
+	{
+		return g_level_small_pool.deallocate(p);
+	}
+	if (size <= kLevelMedPoolBlockSize)
+	{
+		return g_level_med_pool.deallocate(p);
+	}
+	if (size <= kLevelLargePoolBlockSize)
+	{
+		return g_level_large_pool.deallocate(p);
+	}
+	return Z_Free(p);
 }

@@ -38,6 +38,15 @@ typedef union
 	actionf_p1 acp1;
 } actionf_t;
 
+typedef enum
+{
+	/// The allocation is standard e.g. Z_Malloc
+	TAT_MALLOC,
+
+	/// The allocation is in the pool allocator (e.g. Z_LevelPoolCalloc)
+	TAT_LEVELPOOL
+} thinker_alloc_type_e;
+
 // Historically, "think_t" is yet another function pointer to a routine
 // to handle an actor.
 typedef actionf_t think_t;
@@ -52,7 +61,8 @@ struct thinker_t
 	// killough 11/98: count of how many other objects reference
 	// this one using pointers. Used for garbage collection.
 	INT32 references;
-	boolean cachable;
+	INT32 alloctype;
+	size_t size;
 
 #ifdef PARANOIA
 	INT32 debug_mobjtype;

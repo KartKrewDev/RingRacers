@@ -12,6 +12,7 @@
 /// \file  p_saveg.cpp
 /// \brief Archiving: SaveGame I/O
 
+#include "d_think.h"
 #include "doomdef.h"
 #include "byteptr.h"
 #include "d_main.h"
@@ -4928,7 +4929,9 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 
 static thinker_t* LoadNoEnemiesThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	noenemies_t *ht = (noenemies_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	noenemies_t *ht = (noenemies_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->sourceline = LoadLine(READUINT32(save->p));
 	return &ht->thinker;
@@ -4936,7 +4939,9 @@ static thinker_t* LoadNoEnemiesThinker(savebuffer_t *save, actionf_p1 thinker)
 
 static thinker_t* LoadBounceCheeseThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	bouncecheese_t *ht = (bouncecheese_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	bouncecheese_t *ht = (bouncecheese_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->sourceline = LoadLine(READUINT32(save->p));
 	ht->sector = LoadSector(READUINT32(save->p));
@@ -4954,7 +4959,9 @@ static thinker_t* LoadBounceCheeseThinker(savebuffer_t *save, actionf_p1 thinker
 
 static thinker_t* LoadContinuousFallThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	continuousfall_t *ht = (continuousfall_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	continuousfall_t *ht = (continuousfall_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->sector = LoadSector(READUINT32(save->p));
 	ht->speed = READFIXED(save->p);
@@ -4974,7 +4981,9 @@ static thinker_t* LoadContinuousFallThinker(savebuffer_t *save, actionf_p1 think
 
 static thinker_t* LoadMarioBlockThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	mariothink_t *ht = (mariothink_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	mariothink_t *ht = (mariothink_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->sector = LoadSector(READUINT32(save->p));
 	ht->speed = READFIXED(save->p);
@@ -4994,7 +5003,9 @@ static thinker_t* LoadMarioBlockThinker(savebuffer_t *save, actionf_p1 thinker)
 
 static thinker_t* LoadMarioCheckThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	mariocheck_t *ht = (mariocheck_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	mariocheck_t *ht = (mariocheck_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->sourceline = LoadLine(READUINT32(save->p));
 	ht->sector = LoadSector(READUINT32(save->p));
@@ -5003,7 +5014,9 @@ static thinker_t* LoadMarioCheckThinker(savebuffer_t *save, actionf_p1 thinker)
 
 static thinker_t* LoadThwompThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	thwomp_t *ht = (thwomp_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	thwomp_t *ht = (thwomp_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->sourceline = LoadLine(READUINT32(save->p));
 	ht->sector = LoadSector(READUINT32(save->p));
@@ -5027,7 +5040,9 @@ static thinker_t* LoadThwompThinker(savebuffer_t *save, actionf_p1 thinker)
 
 static thinker_t* LoadFloatThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	floatthink_t *ht = (floatthink_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	floatthink_t *ht = (floatthink_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->sourceline = LoadLine(READUINT32(save->p));
 	ht->sector = LoadSector(READUINT32(save->p));
@@ -5038,7 +5053,9 @@ static thinker_t* LoadFloatThinker(savebuffer_t *save, actionf_p1 thinker)
 static thinker_t* LoadEachTimeThinker(savebuffer_t *save, actionf_p1 thinker)
 {
 	size_t i;
-	eachtime_t *ht = (eachtime_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	eachtime_t *ht = (eachtime_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->sourceline = LoadLine(READUINT32(save->p));
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -5051,7 +5068,9 @@ static thinker_t* LoadEachTimeThinker(savebuffer_t *save, actionf_p1 thinker)
 
 static thinker_t* LoadRaiseThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	raise_t *ht = (raise_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	raise_t *ht = (raise_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->tag = READINT16(save->p);
 	ht->sector = LoadSector(READUINT32(save->p));
@@ -5066,7 +5085,9 @@ static thinker_t* LoadRaiseThinker(savebuffer_t *save, actionf_p1 thinker)
 
 static thinker_t* LoadCeilingThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	ceiling_t *ht = (ceiling_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	ceiling_t *ht = (ceiling_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->type = (ceiling_e)READUINT8(save->p);
 	ht->sector = LoadSector(READUINT32(save->p));
@@ -5091,7 +5112,9 @@ static thinker_t* LoadCeilingThinker(savebuffer_t *save, actionf_p1 thinker)
 
 static thinker_t* LoadFloormoveThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	floormove_t *ht = (floormove_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	floormove_t *ht = (floormove_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->type = (floor_e)READUINT8(save->p);
 	ht->crush = READUINT8(save->p);
@@ -5115,7 +5138,9 @@ static thinker_t* LoadFloormoveThinker(savebuffer_t *save, actionf_p1 thinker)
 
 static thinker_t* LoadLightflashThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	lightflash_t *ht = (lightflash_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	lightflash_t *ht = (lightflash_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->sector = LoadSector(READUINT32(save->p));
 	ht->maxlight = READINT32(save->p);
@@ -5127,7 +5152,9 @@ static thinker_t* LoadLightflashThinker(savebuffer_t *save, actionf_p1 thinker)
 
 static thinker_t* LoadStrobeThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	strobe_t *ht = (strobe_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	strobe_t *ht = (strobe_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->sector = LoadSector(READUINT32(save->p));
 	ht->count = READINT32(save->p);
@@ -5142,7 +5169,9 @@ static thinker_t* LoadStrobeThinker(savebuffer_t *save, actionf_p1 thinker)
 
 static thinker_t* LoadGlowThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	glow_t *ht = (glow_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	glow_t *ht = (glow_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->sector = LoadSector(READUINT32(save->p));
 	ht->minlight = READINT16(save->p);
@@ -5156,7 +5185,9 @@ static thinker_t* LoadGlowThinker(savebuffer_t *save, actionf_p1 thinker)
 
 static thinker_t* LoadFireflickerThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	fireflicker_t *ht = (fireflicker_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	fireflicker_t *ht = (fireflicker_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->sector = LoadSector(READUINT32(save->p));
 	ht->count = READINT32(save->p);
@@ -5170,7 +5201,9 @@ static thinker_t* LoadFireflickerThinker(savebuffer_t *save, actionf_p1 thinker)
 
 static thinker_t* LoadElevatorThinker(savebuffer_t *save, actionf_p1 thinker, boolean setplanedata)
 {
-	elevator_t *ht = (elevator_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	elevator_t *ht = (elevator_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->type = (elevator_e)READUINT8(save->p);
 	ht->sector = LoadSector(READUINT32(save->p));
@@ -5199,7 +5232,9 @@ static thinker_t* LoadElevatorThinker(savebuffer_t *save, actionf_p1 thinker, bo
 
 static thinker_t* LoadCrumbleThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	crumble_t *ht = (crumble_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	crumble_t *ht = (crumble_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->sourceline = LoadLine(READUINT32(save->p));
 	ht->sector = LoadSector(READUINT32(save->p));
@@ -5221,7 +5256,9 @@ static thinker_t* LoadCrumbleThinker(savebuffer_t *save, actionf_p1 thinker)
 
 static thinker_t* LoadScrollThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	scroll_t *ht = (scroll_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	scroll_t *ht = (scroll_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->dx = READFIXED(save->p);
 	ht->dy = READFIXED(save->p);
@@ -5238,7 +5275,9 @@ static thinker_t* LoadScrollThinker(savebuffer_t *save, actionf_p1 thinker)
 
 static inline thinker_t* LoadFrictionThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	friction_t *ht = (friction_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	friction_t *ht = (friction_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->friction = READINT32(save->p);
 	ht->movefactor = READINT32(save->p);
@@ -5250,7 +5289,9 @@ static inline thinker_t* LoadFrictionThinker(savebuffer_t *save, actionf_p1 thin
 
 static thinker_t* LoadPusherThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	pusher_t *ht = (pusher_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	pusher_t *ht = (pusher_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->type = (pushertype_e)READUINT8(save->p);
 	ht->x_mag = READFIXED(save->p);
@@ -5266,7 +5307,9 @@ static thinker_t* LoadPusherThinker(savebuffer_t *save, actionf_p1 thinker)
 
 static inline thinker_t* LoadLaserThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	laserthink_t *ht = (laserthink_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	laserthink_t *ht = (laserthink_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->tag = READINT16(save->p);
 	ht->sourceline = LoadLine(READUINT32(save->p));
@@ -5276,7 +5319,9 @@ static inline thinker_t* LoadLaserThinker(savebuffer_t *save, actionf_p1 thinker
 
 static inline thinker_t* LoadLightlevelThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	lightlevel_t *ht = (lightlevel_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	lightlevel_t *ht = (lightlevel_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->sector = LoadSector(READUINT32(save->p));
 	ht->sourcelevel = READINT16(save->p);
@@ -5291,7 +5336,9 @@ static inline thinker_t* LoadLightlevelThinker(savebuffer_t *save, actionf_p1 th
 
 static inline thinker_t* LoadExecutorThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	executor_t *ht = (executor_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	executor_t *ht = (executor_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->line = LoadLine(READUINT32(save->p));
 	ht->caller = LoadMobj(READUINT32(save->p));
@@ -5302,7 +5349,9 @@ static inline thinker_t* LoadExecutorThinker(savebuffer_t *save, actionf_p1 thin
 
 static inline thinker_t* LoadDisappearThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	disappear_t *ht = (disappear_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	disappear_t *ht = (disappear_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->appeartime = READUINT32(save->p);
 	ht->disappeartime = READUINT32(save->p);
@@ -5317,7 +5366,9 @@ static inline thinker_t* LoadDisappearThinker(savebuffer_t *save, actionf_p1 thi
 static inline thinker_t* LoadFadeThinker(savebuffer_t *save, actionf_p1 thinker)
 {
 	sector_t *ss;
-	fade_t *ht = (fade_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	fade_t *ht = (fade_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->dest_exc = GetNetColormapFromList(READUINT32(save->p));
 	ht->sectornum = READUINT32(save->p);
@@ -5358,7 +5409,9 @@ static inline thinker_t* LoadFadeThinker(savebuffer_t *save, actionf_p1 thinker)
 
 static inline thinker_t* LoadFadeColormapThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	fadecolormap_t *ht = (fadecolormap_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	fadecolormap_t *ht = (fadecolormap_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->sector = LoadSector(READUINT32(save->p));
 	ht->source_exc = GetNetColormapFromList(READUINT32(save->p));
@@ -5373,7 +5426,9 @@ static inline thinker_t* LoadFadeColormapThinker(savebuffer_t *save, actionf_p1 
 
 static inline thinker_t* LoadPlaneDisplaceThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	planedisplace_t *ht = (planedisplace_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	planedisplace_t *ht = (planedisplace_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 
 	ht->affectee = READINT32(save->p);
@@ -5386,7 +5441,9 @@ static inline thinker_t* LoadPlaneDisplaceThinker(savebuffer_t *save, actionf_p1
 
 static inline thinker_t* LoadDynamicLineSlopeThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	dynlineplanethink_t* ht = (dynlineplanethink_t*)Z_Malloc(sizeof(*ht), PU_LEVSPEC, NULL);
+	dynlineplanethink_t* ht = (dynlineplanethink_t*)Z_LevelPoolMalloc(sizeof(*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 
 	ht->type = (dynplanetype_t)READUINT8(save->p);
@@ -5399,7 +5456,9 @@ static inline thinker_t* LoadDynamicLineSlopeThinker(savebuffer_t *save, actionf
 static inline thinker_t* LoadDynamicVertexSlopeThinker(savebuffer_t *save, actionf_p1 thinker)
 {
 	size_t i;
-	dynvertexplanethink_t* ht = (dynvertexplanethink_t*)Z_Malloc(sizeof(*ht), PU_LEVSPEC, NULL);
+	dynvertexplanethink_t* ht = (dynvertexplanethink_t*)Z_LevelPoolMalloc(sizeof(*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 
 	ht->slope = LoadSlope(READUINT32(save->p));
@@ -5414,7 +5473,9 @@ static inline thinker_t* LoadDynamicVertexSlopeThinker(savebuffer_t *save, actio
 
 static inline thinker_t* LoadPolyrotatetThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	polyrotate_t *ht = (polyrotate_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	polyrotate_t *ht = (polyrotate_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->polyObjNum = READINT32(save->p);
 	ht->speed = READINT32(save->p);
@@ -5425,7 +5486,9 @@ static inline thinker_t* LoadPolyrotatetThinker(savebuffer_t *save, actionf_p1 t
 
 static thinker_t* LoadPolymoveThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	polymove_t *ht = (polymove_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	polymove_t *ht = (polymove_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->polyObjNum = READINT32(save->p);
 	ht->speed = READINT32(save->p);
@@ -5438,7 +5501,9 @@ static thinker_t* LoadPolymoveThinker(savebuffer_t *save, actionf_p1 thinker)
 
 static inline thinker_t* LoadPolywaypointThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	polywaypoint_t *ht = (polywaypoint_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	polywaypoint_t *ht = (polywaypoint_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->polyObjNum = READINT32(save->p);
 	ht->speed = READINT32(save->p);
@@ -5453,7 +5518,9 @@ static inline thinker_t* LoadPolywaypointThinker(savebuffer_t *save, actionf_p1 
 
 static inline thinker_t* LoadPolyslidedoorThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	polyslidedoor_t *ht = (polyslidedoor_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	polyslidedoor_t *ht = (polyslidedoor_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->polyObjNum = READINT32(save->p);
 	ht->delay = READINT32(save->p);
@@ -5473,7 +5540,9 @@ static inline thinker_t* LoadPolyslidedoorThinker(savebuffer_t *save, actionf_p1
 
 static inline thinker_t* LoadPolyswingdoorThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	polyswingdoor_t *ht = (polyswingdoor_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	polyswingdoor_t *ht = (polyswingdoor_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->polyObjNum = READINT32(save->p);
 	ht->delay = READINT32(save->p);
@@ -5488,7 +5557,9 @@ static inline thinker_t* LoadPolyswingdoorThinker(savebuffer_t *save, actionf_p1
 
 static inline thinker_t* LoadPolydisplaceThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	polydisplace_t *ht = (polydisplace_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	polydisplace_t *ht = (polydisplace_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->polyObjNum = READINT32(save->p);
 	ht->controlSector = LoadSector(READUINT32(save->p));
@@ -5500,7 +5571,9 @@ static inline thinker_t* LoadPolydisplaceThinker(savebuffer_t *save, actionf_p1 
 
 static inline thinker_t* LoadPolyrotdisplaceThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	polyrotdisplace_t *ht = (polyrotdisplace_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	polyrotdisplace_t *ht = (polyrotdisplace_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->polyObjNum = READINT32(save->p);
 	ht->controlSector = LoadSector(READUINT32(save->p));
@@ -5512,7 +5585,9 @@ static inline thinker_t* LoadPolyrotdisplaceThinker(savebuffer_t *save, actionf_
 
 static thinker_t* LoadPolyfadeThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	polyfade_t *ht = (polyfade_t*)Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	polyfade_t *ht = (polyfade_t*)Z_LevelPoolMalloc(sizeof (*ht));
+	ht->thinker.alloctype = TAT_LEVELPOOL;
+	ht->thinker.size = sizeof (*ht);
 	ht->thinker.function.acp1 = thinker;
 	ht->polyObjNum = READINT32(save->p);
 	ht->sourcevalue = READINT32(save->p);
@@ -5563,7 +5638,14 @@ static void P_NetUnArchiveThinkers(savebuffer_t *save)
 			{
 				(next->prev = currentthinker->prev)->next = next;
 				R_DestroyLevelInterpolators(currentthinker);
-				Z_Free(currentthinker);
+				if (currentthinker->alloctype == TAT_LEVELPOOL)
+				{
+					Z_LevelPoolFree(currentthinker, currentthinker->size);
+				}
+				else
+				{
+					Z_Free(currentthinker);
+				}
 			}
 		}
 	}
@@ -6876,7 +6958,7 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 							spawnss->tags.count * sizeof(mtag_t)
 						)
 					);
-					
+
 				}
 				else
 				{
@@ -6966,7 +7048,7 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 							spawnli->tags.count * sizeof(mtag_t)
 						)
 					);
-					
+
 				}
 				else
 				{

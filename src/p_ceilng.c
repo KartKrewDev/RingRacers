@@ -12,6 +12,7 @@
 /// \file  p_ceilng.c
 /// \brief Ceiling aninmation (lowering, crushing, raising)
 
+#include "d_think.h"
 #include "doomdef.h"
 #include "p_local.h"
 #include "r_fps.h"
@@ -273,7 +274,9 @@ static ceiling_t *CreateCeilingThinker(sector_t *sec)
 		return NULL;
 	}
 
-	ceiling = Z_Calloc(sizeof (*ceiling), PU_LEVSPEC, NULL);
+	ceiling = Z_LevelPoolCalloc(sizeof(*ceiling));
+	ceiling->thinker.alloctype = TAT_LEVELPOOL;
+	ceiling->thinker.size = sizeof(*ceiling);
 	P_AddThinker(THINK_MAIN, &ceiling->thinker);
 
 	sec->ceilingdata = ceiling;
@@ -597,7 +600,9 @@ static ceiling_t *CreateCrushThinker(sector_t *sec)
 		return NULL;
 	}
 
-	ceiling = Z_Calloc(sizeof (*ceiling), PU_LEVSPEC, NULL);
+	ceiling = Z_LevelPoolCalloc(sizeof(*ceiling));
+	ceiling->thinker.alloctype = TAT_LEVELPOOL;
+	ceiling->thinker.size = sizeof(*ceiling);
 	P_AddThinker(THINK_MAIN, &ceiling->thinker);
 
 	sec->ceilingdata = ceiling;
