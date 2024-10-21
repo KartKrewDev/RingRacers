@@ -31,9 +31,18 @@ taggroup_t* tags_lines[MAXTAGS + 1];
 /// \warning This does not rebuild the global taggroups, which are used for iteration.
 void Tag_Add (taglist_t* list, const mtag_t tag)
 {
+	mtag_t *oldlist;
+	mtag_t *newlist;
 	if (Tag_Find(list, tag))
 		return;
-	list->tags = Z_Realloc(list->tags, (list->count + 1) * sizeof(mtag_t), PU_LEVEL, NULL);
+	oldlist = list->tags;
+	newlist = Z_LevelPoolMalloc((list->count + 1) * sizeof(mtag_t));
+	if (oldlist)
+	{
+		memcpy(newlist, oldlist, list->count * sizeof(mtag_t));
+		Z_LevelPoolFree(oldlist, list->count * sizeof(mtag_t));
+	}
+	list->tags = newlist;
 	list->tags[list->count++] = tag;
 }
 
@@ -45,13 +54,17 @@ void Tag_Remove(taglist_t* list, const mtag_t tag)
 
 	for (i = 0; i < list->count; i++)
 	{
+		mtag_t *newlist;
 		if (list->tags[i] != tag)
 			continue;
 
 		for (; i+1 < list->count; i++)
 			list->tags[i] = list->tags[i+1];
 
-		list->tags = Z_Realloc(list->tags, (list->count - 1) * sizeof(mtag_t), PU_LEVEL, NULL);
+		newlist = Z_LevelPoolMalloc((list->count - 1) * sizeof(mtag_t));
+		memcpy(newlist, list->tags, (list->count) * sizeof(mtag_t));
+		Z_LevelPoolFree(list->tags, (list->count) * sizeof(mtag_t));
+		list->tags = newlist;
 		return;
 	}
 }
