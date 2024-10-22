@@ -3271,10 +3271,114 @@ void M_DrawCupSelect(void)
 	}
 
 	INT16 ty = M_EaseWithTransition(Easing_Linear, 5 * 24);
-	V_DrawFill(0, 146 + ty, BASEVIDWIDTH, 54, 31);
-	M_DrawCupPreview(146 + ty, &templevelsearch);
+	y = 146 + ty;
+	V_DrawFill(0, y, BASEVIDWIDTH, 54, 31);
+	M_DrawCupPreview(y, &templevelsearch);
 
 	M_DrawCupTitle(120 - ty, &templevelsearch);
+
+	if (templevelsearch.timeattack)
+	{
+		if (templevelsearch.cup != &dummy_lostandfound)
+		{
+			templevelsearch.checklocked = false;
+		}
+
+		// The following makes a HUGE assumption that we're
+		// never going to have more than ~9 Race Courses
+		// (with Medals) in Lost & Found. Which is almost
+		// certainly true for Krew, but is very likely to
+		// be violated by the long tail of modding. To those
+		// finding this eventually: I'M SORRY ~toast 221024
+
+		emblem_t *medal_array[CUPCACHE_MAX];
+
+		i = j = 0;
+
+		INT16 map = M_GetFirstLevelInList(&i, &templevelsearch);
+		emblem_t *emblem = NULL;
+
+		boolean incj;
+
+		while (map < nummapheaders && j < CUPCACHE_MAX)
+		{
+			if (map < basenummapheaders)
+			{
+				emblem = M_GetLevelEmblems(map+1);
+
+				medal_array[j] = NULL;
+				incj = false;
+
+				while (emblem)
+				{
+					if (emblem->type == ET_TIME)
+					{
+						incj = true;
+
+						if (gamedata->collected[emblem-emblemlocations])
+						{
+							if (!medal_array[j]
+							|| (
+								(medal_array[j]->type == ET_TIME)
+								&& (medal_array[j]->tag < emblem->tag)
+								)
+							)
+							{
+								medal_array[j] = emblem;
+							}
+						}
+					}
+					else if ((emblem->type == ET_MAP)
+						&& (emblem->flags & ME_SPBATTACK))
+					{
+						incj = true;
+
+						if ((gamedata->collected[emblem-emblemlocations])
+						&& (skullAnimCounter & 2))
+						{
+							medal_array[j] = emblem;
+						}
+					}
+
+					emblem = M_GetLevelEmblems(-1);
+				}
+
+				if (incj)
+					j++;
+			}
+
+			map = M_GetNextLevelInList(map, &i, &templevelsearch);
+		}
+
+		if (j)
+		{
+			x = (BASEVIDWIDTH - (j*10))/2 + 1;
+			y += 2;
+
+			V_DrawFill(x - 4, y, (j*10) + 6, 3, 31);
+			for (i = 1; i <= 6; i++)
+			{
+				V_DrawFill(x + i - 4, y+2+i, (j*10) + 6 - (i*2), 1, 31);
+			}
+
+			y--;
+
+			for (i = 0; i < j; i++)
+			{
+				if (medal_array[i])
+				{
+					V_DrawMappedPatch(x, y, 0, W_CachePatchName(M_GetEmblemPatch(medal_array[i], false), PU_CACHE),
+					R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(medal_array[i]), GTC_MENUCACHE));
+				}
+				else
+				{
+					V_DrawScaledPatch(x, y, 0, W_CachePatchName("NEEDIT", PU_CACHE));
+				}
+
+				x += 10;
+			}
+		}
+	}
 
 	if (cupgrid.numpages > 1)
 	{
