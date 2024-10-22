@@ -3871,7 +3871,7 @@ UINT16 M_UnlockableMapNum(unlockable_t *unlock)
 
 UINT16 M_EmblemMapNum(emblem_t *emblem)
 {
-	if (emblem->levelCache == NEXTMAP_INVALID)
+	if (emblem->levelCache == NEXTMAP_INVALID && emblem->level)
 	{
 		UINT16 result = G_MapNumber(emblem->level);
 
@@ -3879,6 +3879,8 @@ UINT16 M_EmblemMapNum(emblem_t *emblem)
 			return result;
 
 		emblem->levelCache = result;
+		Z_Free(emblem->level);
+		emblem->level = NULL;
 	}
 
 	return emblem->levelCache;
