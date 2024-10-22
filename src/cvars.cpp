@@ -244,10 +244,6 @@ X (cvlist_timer);
 
 X (cvlist_execversion);
 
-#ifdef DUMPCONSISTENCY
-	X (cvlist_dumpconsistency);
-#endif
-
 #undef X
 
 namespace
@@ -602,9 +598,10 @@ consvar_t cv_blamecfail = NetVar("blamecfail", "Off").on_off();
 // Speed of file downloading (in packets per tic)
 consvar_t cv_downloadspeed = NetVar("downloadspeed", "32").min_max(1, 300);
 
-#ifdef DUMPCONSISTENCY
-	consvar_t cv_dumpconsistency = NetVar(cvlist_dumpconsistency)("dumpconsistency", "Off").on_off();
-#endif
+// Dump gamestates to an external file when a resync occurs.
+// This is a cheat because enabling this can take up file storage
+// for connected players very fast.
+consvar_t cv_dumpconsistency = OnlineCheat("dumpconsistency", "Off").on_off();
 
 // Intermission time Tails 04-19-2002
 consvar_t cv_inttime = NetVar("inttime", "10").min_max(0, 3600);

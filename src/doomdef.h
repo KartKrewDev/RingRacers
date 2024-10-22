@@ -663,9 +663,6 @@ extern int
 // None of these that are disabled in the normal build are guaranteed to work perfectly
 // Compile them at your own risk!
 
-///	Dumps the contents of a network save game upon consistency failure for debugging.
-//#define DUMPCONSISTENCY
-
 ///	Who put weights on my recycler?  ... Inuyasha did.
 ///	\note	XMOD port.
 //#define WEIGHTEDRECYCLER

@@ -90,6 +90,8 @@ size_t FIL_ReadFileTag(char const *name, UINT8 **buffer, INT32 tag);
 
 boolean FIL_ConvertTextFileToBinary(const char *textfilename, const char *binfilename);
 
+boolean FIL_RenameFile(const char *old_name, const char *new_name);
+
 boolean FIL_FileExists(const char *name);
 boolean FIL_WriteFileOK(char const *name);
 boolean FIL_ReadFileOK(char const *name);
