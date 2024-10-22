@@ -554,7 +554,7 @@ extern boolean server_lagless;
 extern consvar_t cv_mindelay;
 
 extern consvar_t cv_netticbuffer, cv_allownewplayer, cv_maxconnections, cv_joindelay;
-extern consvar_t cv_pingtimeout, cv_resynchattempts, cv_blamecfail;
+extern consvar_t cv_pingtimeout, cv_blamecfail;
 extern consvar_t cv_maxsend, cv_noticedownload, cv_downloadspeed;
 
 #ifdef VANILLAJOINNEXTROUND

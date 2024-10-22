@@ -5008,32 +5008,21 @@ static void HandlePacketFromPlayer(SINT8 node)
 				&& !resendingsavegame[node] && savegameresendcooldown[node] <= I_GetTime()
 				&& !SV_ResendingSavegameToAnyone())
 			{
-				if (cv_resynchattempts.value)
-				{
-					// Tell the client we are about to resend them the gamestate
-					netbuffer->packettype = PT_WILLRESENDGAMESTATE;
-					HSendPacket(node, true, 0, 0);
+				// Tell the client we are about to resend them the gamestate
+				netbuffer->packettype = PT_WILLRESENDGAMESTATE;
+				HSendPacket(node, true, 0, 0);
 
-					resendingsavegame[node] = true;
+				resendingsavegame[node] = true;
 
-					if (cv_blamecfail.value)
-						CONS_Printf(M_GetText("Synch failure for player %d (%s); expected %hd, got %hd\n"),
-							netconsole+1, player_names[netconsole],
-							consistancy[realstart%BACKUPTICS],
-							SHORT(netbuffer->u.clientpak.consistancy));
-					DEBFILE(va("Restoring player %d (synch failure) [%update] %d!=%d\n",
-						netconsole, realstart, consistancy[realstart%BACKUPTICS],
-						SHORT(netbuffer->u.clientpak.consistancy)));
-					break;
-				}
-				else
-				{
-					SendKick(netconsole, KICK_MSG_CON_FAIL);
-					DEBFILE(va("player %d kicked (synch failure) [%u] %d!=%d\n",
-						netconsole, realstart, consistancy[realstart%BACKUPTICS],
-						SHORT(netbuffer->u.clientpak.consistancy)));
-					break;
-				}
+				if (cv_blamecfail.value)
+					CONS_Printf(M_GetText("Synch failure for player %d (%s); expected %hd, got %hd\n"),
+						netconsole+1, player_names[netconsole],
+						consistancy[realstart%BACKUPTICS],
+						SHORT(netbuffer->u.clientpak.consistancy));
+				DEBFILE(va("Restoring player %d (synch failure) [%update] %d!=%d\n",
+					netconsole, realstart, consistancy[realstart%BACKUPTICS],
+					SHORT(netbuffer->u.clientpak.consistancy)));
+				break;
 			}
 			break;
 		case PT_BASICKEEPALIVE:
