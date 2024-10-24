@@ -585,19 +585,6 @@ Gl2Rhi::Gl2Rhi(std::unique_ptr<Gl2Platform>&& platform, GlLoadFunc load_func) : 
 
 Gl2Rhi::~Gl2Rhi() = default;
 
-rhi::Handle<rhi::RenderPass> Gl2Rhi::create_render_pass(const rhi::RenderPassDesc& desc)
-{
-	// GL has no formal render pass object
-	Gl2RenderPass pass;
-	pass.desc = desc;
-	return render_pass_slab_.insert(std::move(pass));
-}
-
-void Gl2Rhi::destroy_render_pass(rhi::Handle<rhi::RenderPass> handle)
-{
-	render_pass_slab_.remove(handle);
-}
-
 rhi::Handle<rhi::Texture> Gl2Rhi::create_texture(const rhi::TextureDesc& desc)
 {
 	GLenum internal_format = map_internal_texture_format(desc.format);
@@ -1224,10 +1211,6 @@ void Gl2Rhi::begin_render_pass(const RenderPassBeginInfo& info)
 {
 	SRB2_ASSERT(current_render_pass_.has_value() == false);
 
-	SRB2_ASSERT(render_pass_slab_.is_valid(info.render_pass) == true);
-	auto& rp = render_pass_slab_[info.render_pass];
-	SRB2_ASSERT(rp.desc.use_depth_stencil == info.depth_stencil_attachment.has_value());
-
 	auto fb_itr = framebuffers_.find(Gl2FramebufferKey {info.color_attachment, info.depth_stencil_attachment});
 	if (fb_itr == framebuffers_.end())
 	{
@@ -1237,12 +1220,10 @@ void Gl2Rhi::begin_render_pass(const RenderPassBeginInfo& info)
 		GL_ASSERT;
 		gl_->BindFramebuffer(GL_FRAMEBUFFER, fb_name);
 		GL_ASSERT;
-		fb_itr = framebuffers_
-					 .insert(
-						 {Gl2FramebufferKey {info.color_attachment, info.depth_stencil_attachment},
-						  static_cast<uint32_t>(fb_name)}
-					 )
-					 .first;
+		fb_itr = framebuffers_.insert({
+			Gl2FramebufferKey {info.color_attachment, info.depth_stencil_attachment},
+			static_cast<uint32_t>(fb_name)
+		}).first;
 
 		SRB2_ASSERT(texture_slab_.is_valid(info.color_attachment));
 		auto& texture = texture_slab_[info.color_attachment];
@@ -1250,7 +1231,7 @@ void Gl2Rhi::begin_render_pass(const RenderPassBeginInfo& info)
 		gl_->FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.texture, 0);
 		GL_ASSERT;
 
-		if (rp.desc.use_depth_stencil && info.depth_stencil_attachment.has_value())
+		if (info.depth_stencil_attachment.has_value())
 		{
 			SRB2_ASSERT(renderbuffer_slab_.is_valid(*info.depth_stencil_attachment));
 			auto& renderbuffer = renderbuffer_slab_[*info.depth_stencil_attachment];
@@ -1270,24 +1251,21 @@ void Gl2Rhi::begin_render_pass(const RenderPassBeginInfo& info)
 	GL_ASSERT;
 
 	GLint clear_bits = 0;
-	if (rp.desc.color_load_op == rhi::AttachmentLoadOp::kClear)
+	if (info.color_load_op == rhi::AttachmentLoadOp::kClear)
 	{
 		gl_->ClearColor(info.clear_color.r, info.clear_color.g, info.clear_color.b, info.clear_color.a);
 		clear_bits |= GL_COLOR_BUFFER_BIT;
 	}
 
-	if (rp.desc.use_depth_stencil)
+	if (info.depth_load_op == rhi::AttachmentLoadOp::kClear)
 	{
-		if (rp.desc.depth_load_op == rhi::AttachmentLoadOp::kClear)
-		{
-			gl_->ClearDepth(1.f);
-			clear_bits |= GL_DEPTH_BUFFER_BIT;
-		}
-		if (rp.desc.stencil_load_op == rhi::AttachmentLoadOp::kClear)
-		{
-			gl_->ClearStencil(0);
-			clear_bits |= GL_STENCIL_BUFFER_BIT;
-		}
+		gl_->ClearDepth(1.f);
+		clear_bits |= GL_DEPTH_BUFFER_BIT;
+	}
+	if (info.stencil_load_op == rhi::AttachmentLoadOp::kClear)
+	{
+		gl_->ClearStencil(0);
+		clear_bits |= GL_STENCIL_BUFFER_BIT;
 	}
 
 	if (clear_bits != 0)

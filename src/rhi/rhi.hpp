@@ -42,10 +42,6 @@ struct Pipeline
 {
 };
 
-struct RenderPass
-{
-};
-
 /// @brief Depth-stencil image attachment.
 struct Renderbuffer
 {
@@ -461,17 +457,6 @@ struct PipelineDesc
 	glm::vec4 blend_color;
 };
 
-struct RenderPassDesc
-{
-	bool use_depth_stencil;
-	AttachmentLoadOp color_load_op;
-	AttachmentStoreOp color_store_op;
-	AttachmentLoadOp depth_load_op;
-	AttachmentStoreOp depth_store_op;
-	AttachmentLoadOp stencil_load_op;
-	AttachmentStoreOp stencil_store_op;
-};
-
 struct RenderbufferDesc
 {
 	uint32_t width;
@@ -511,10 +496,15 @@ struct BufferDesc
 
 struct RenderPassBeginInfo
 {
-	Handle<RenderPass> render_pass;
 	Handle<Texture> color_attachment;
 	std::optional<Handle<Renderbuffer>> depth_stencil_attachment;
 	glm::vec4 clear_color;
+	AttachmentLoadOp color_load_op;
+	AttachmentStoreOp color_store_op;
+	AttachmentLoadOp depth_load_op;
+	AttachmentStoreOp depth_store_op;
+	AttachmentLoadOp stencil_load_op;
+	AttachmentStoreOp stencil_store_op;
 };
 
 using UniformVariant = std::variant<
@@ -598,8 +588,6 @@ struct Rhi
 {
 	virtual ~Rhi();
 
-	virtual Handle<RenderPass> create_render_pass(const RenderPassDesc& desc) = 0;
-	virtual void destroy_render_pass(Handle<RenderPass> handle) = 0;
 	virtual Handle<Pipeline> create_pipeline(const PipelineDesc& desc) = 0;
 	virtual void destroy_pipeline(Handle<Pipeline> handle) = 0;
 

@@ -94,7 +94,6 @@ class TwodeeRenderer final
 	std::vector<MergedTwodeeCommandList> cmd_lists_;
 	std::vector<std::tuple<rhi::Handle<rhi::Buffer>, std::size_t>> vbos_;
 	std::vector<std::tuple<rhi::Handle<rhi::Buffer>, std::size_t>> ibos_;
-	rhi::Handle<rhi::RenderPass> render_pass_;
 	rhi::Handle<rhi::Texture> output_;
 	rhi::Handle<rhi::Texture> default_tex_;
 	std::unordered_map<TwodeePipelineKey, rhi::Handle<rhi::Pipeline>> pipelines_;

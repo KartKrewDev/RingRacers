@@ -119,21 +119,6 @@ void BlitPostimgScreens::draw(Rhi& rhi)
 
 void BlitPostimgScreens::prepass(Rhi& rhi)
 {
-	if (!renderpass_)
-	{
-		renderpass_ = rhi.create_render_pass(
-			{
-				false,
-				AttachmentLoadOp::kClear,
-				AttachmentStoreOp::kStore,
-				AttachmentLoadOp::kDontCare,
-				AttachmentStoreOp::kDontCare,
-				AttachmentLoadOp::kDontCare,
-				AttachmentStoreOp::kDontCare
-			}
-		);
-	}
-
 	if (!pipeline_)
 	{
 		pipeline_ = rhi.create_pipeline(kPostimgPipelineDesc);

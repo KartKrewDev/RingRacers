@@ -53,7 +53,6 @@ private:
 
 	rhi::Handle<rhi::Pipeline> pipeline_;
 	rhi::Handle<rhi::Pipeline> indexed_pipeline_;
-	rhi::Handle<rhi::RenderPass> renderpass_;
 	rhi::Handle<rhi::Buffer> quad_vbo_;
 	rhi::Handle<rhi::Buffer> quad_ibo_;
 	bool upload_quad_buffer_;

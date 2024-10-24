@@ -87,11 +87,6 @@ struct Gl2Buffer : public rhi::Buffer
 	rhi::BufferDesc desc;
 };
 
-struct Gl2RenderPass : public rhi::RenderPass
-{
-	rhi::RenderPassDesc desc;
-};
-
 struct Gl2Renderbuffer : public rhi::Renderbuffer
 {
 	uint32_t renderbuffer;
@@ -132,7 +127,6 @@ class Gl2Rhi final : public Rhi
 
 	std::unique_ptr<GladGLContext> gl_;
 
-	Slab<Gl2RenderPass> render_pass_slab_;
 	Slab<Gl2Texture> texture_slab_;
 	Slab<Gl2Buffer> buffer_slab_;
 	Slab<Gl2Renderbuffer> renderbuffer_slab_;
@@ -164,8 +158,6 @@ public:
 	Gl2Rhi(std::unique_ptr<Gl2Platform>&& platform, GlLoadFunc load_func);
 	virtual ~Gl2Rhi();
 
-	virtual Handle<RenderPass> create_render_pass(const RenderPassDesc& desc) override;
-	virtual void destroy_render_pass(Handle<RenderPass> handle) override;
 	virtual Handle<Pipeline> create_pipeline(const PipelineDesc& desc) override;
 	virtual void destroy_pipeline(Handle<Pipeline> handle) override;
 
