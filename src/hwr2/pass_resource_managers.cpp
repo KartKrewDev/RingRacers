@@ -21,7 +21,7 @@ using namespace srb2;
 using namespace srb2::hwr2;
 using namespace srb2::rhi;
 
-FramebufferManager::FramebufferManager() : Pass()
+FramebufferManager::FramebufferManager()
 {
 }
 

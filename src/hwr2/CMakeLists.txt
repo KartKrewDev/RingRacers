@@ -7,12 +7,8 @@ target_sources(SRB2SDL2 PRIVATE
 	hardware_state.hpp
 	pass_imgui.cpp
 	pass_imgui.hpp
-	pass_manager.cpp
-	pass_manager.hpp
 	pass_resource_managers.cpp
 	pass_resource_managers.hpp
-	pass.cpp
-	pass.hpp
 	patch_atlas.cpp
 	patch_atlas.hpp
 	postprocess_wipe.cpp

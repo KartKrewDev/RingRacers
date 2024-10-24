@@ -20,8 +20,8 @@
 
 #include <tcb/span.hpp>
 
-#include "pass.hpp"
 #include "../r_defs.h"
+#include "../rhi/rhi.hpp"
 
 extern "C"
 {

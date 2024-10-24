@@ -40,7 +40,7 @@ static const PipelineDesc kPipelineDesc = {
 	FaceWinding::kCounterClockwise,
 	{0.f, 0.f, 0.f, 1.f}};
 
-ImguiPass::ImguiPass() : Pass()
+ImguiPass::ImguiPass()
 {
 }
 

@@ -16,12 +16,12 @@
 #include <unordered_map>
 #include <vector>
 
-#include "pass.hpp"
+#include "../rhi/rhi.hpp"
 
 namespace srb2::hwr2
 {
 
-class FramebufferManager final : public Pass
+class FramebufferManager final
 {
 	rhi::Handle<rhi::Texture> main_color_;
 	std::array<rhi::Handle<rhi::Texture>, 2> post_colors_;
@@ -36,10 +36,10 @@ public:
 	FramebufferManager();
 	virtual ~FramebufferManager();
 
-	virtual void prepass(rhi::Rhi& rhi) override;
-	virtual void transfer(rhi::Rhi& rhi) override;
-	virtual void graphics(rhi::Rhi& rhi) override;
-	virtual void postpass(rhi::Rhi& rhi) override;
+	void prepass(rhi::Rhi& rhi);
+	void transfer(rhi::Rhi& rhi);
+	void graphics(rhi::Rhi& rhi);
+	void postpass(rhi::Rhi& rhi);
 
 	/// @brief Swap the current and previous postprocess FB textures. Use between pass prepass phases to alternate.
 	void swap_post() noexcept
@@ -70,7 +70,7 @@ public:
 	std::size_t height() const noexcept { return height_; }
 };
 
-class MainPaletteManager final : public Pass
+class MainPaletteManager final
 {
 	rhi::Handle<rhi::Texture> palette_;
 	rhi::Handle<rhi::Texture> lighttable_;
@@ -91,10 +91,10 @@ public:
 	MainPaletteManager();
 	virtual ~MainPaletteManager();
 
-	virtual void prepass(rhi::Rhi& rhi) override;
-	virtual void transfer(rhi::Rhi& rhi) override;
-	virtual void graphics(rhi::Rhi& rhi) override;
-	virtual void postpass(rhi::Rhi& rhi) override;
+	void prepass(rhi::Rhi& rhi);
+	void transfer(rhi::Rhi& rhi);
+	void graphics(rhi::Rhi& rhi);
+	void postpass(rhi::Rhi& rhi);
 
 	rhi::Handle<rhi::Texture> palette() const noexcept { return palette_; }
 	rhi::Handle<rhi::Texture> lighttable() const noexcept { return lighttable_; }
@@ -107,7 +107,7 @@ public:
 	rhi::Handle<rhi::Texture> find_extra_lighttable(srb2::NotNull<const uint8_t*> lighttable) const;
 };
 
-class CommonResourcesManager final : public Pass
+class CommonResourcesManager final
 {
 	bool init_ = false;
 	rhi::Handle<rhi::Texture> black_;
@@ -118,10 +118,10 @@ public:
 	CommonResourcesManager();
 	virtual ~CommonResourcesManager();
 
-	virtual void prepass(rhi::Rhi& rhi) override;
-	virtual void transfer(rhi::Rhi& rhi) override;
-	virtual void graphics(rhi::Rhi& rhi) override;
-	virtual void postpass(rhi::Rhi& rhi) override;
+	void prepass(rhi::Rhi& rhi);
+	void transfer(rhi::Rhi& rhi);
+	void graphics(rhi::Rhi& rhi);
+	void postpass(rhi::Rhi& rhi);
 
 	rhi::Handle<rhi::Texture> black() const noexcept { return black_; }
 	rhi::Handle<rhi::Texture> white() const noexcept { return white_; }

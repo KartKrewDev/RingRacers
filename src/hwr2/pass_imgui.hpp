@@ -14,12 +14,11 @@
 #include <vector>
 
 #include "../rhi/rhi.hpp"
-#include "pass.hpp"
 
 namespace srb2::hwr2
 {
 
-class ImguiPass final : public Pass
+class ImguiPass final
 {
 	struct DrawCmd
 	{
@@ -49,13 +48,10 @@ public:
 	ImguiPass();
 	virtual ~ImguiPass();
 
-	virtual void prepass(rhi::Rhi& rhi) override;
-
-	virtual void transfer(rhi::Rhi& rhi) override;
-
-	virtual void graphics(rhi::Rhi& rhi) override;
-
-	virtual void postpass(rhi::Rhi& rhi) override;
+	void prepass(rhi::Rhi& rhi);
+	void transfer(rhi::Rhi& rhi);
+	void graphics(rhi::Rhi& rhi);
+	void postpass(rhi::Rhi& rhi);
 };
 
 } // namespace srb2::hwr2
