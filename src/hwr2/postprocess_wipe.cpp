@@ -63,11 +63,11 @@ PostprocessWipePass::PostprocessWipePass()
 
 PostprocessWipePass::~PostprocessWipePass() = default;
 
-void PostprocessWipePass::draw(Rhi& rhi, Handle<GraphicsContext> ctx)
+void PostprocessWipePass::draw(Rhi& rhi)
 {
 	prepass(rhi);
-	transfer(rhi, ctx);
-	graphics(rhi, ctx);
+	transfer(rhi);
+	graphics(rhi);
 	postpass(rhi);
 }
 
@@ -169,7 +169,7 @@ void PostprocessWipePass::prepass(Rhi& rhi)
 	});
 }
 
-void PostprocessWipePass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
+void PostprocessWipePass::transfer(Rhi& rhi)
 {
 	if (wipe_tex_ == kNullHandle)
 	{
@@ -183,47 +183,47 @@ void PostprocessWipePass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 
 	if (upload_vbo_)
 	{
-		rhi.update_buffer(ctx, vbo_, 0, tcb::as_bytes(tcb::span(kPostprocessVerts)));
+		rhi.update_buffer(vbo_, 0, tcb::as_bytes(tcb::span(kPostprocessVerts)));
 		upload_vbo_ = false;
 	}
 
 	if (upload_ibo_)
 	{
-		rhi.update_buffer(ctx, ibo_, 0, tcb::as_bytes(tcb::span(kPostprocessIndices)));
+		rhi.update_buffer(ibo_, 0, tcb::as_bytes(tcb::span(kPostprocessIndices)));
 		upload_ibo_ = false;
 	}
 
 	tcb::span<const std::byte> data = tcb::as_bytes(tcb::span(mask_data_));
-	rhi.update_texture(ctx, wipe_tex_, {0, 0, mask_w_, mask_h_}, PixelFormat::kR8, data);
+	rhi.update_texture(wipe_tex_, {0, 0, mask_w_, mask_h_}, PixelFormat::kR8, data);
 
 	UniformVariant uniforms[] = {
 		glm::scale(glm::identity<glm::mat4>(), glm::vec3(2.f, 2.f, 1.f)),
 		static_cast<int32_t>(wipe_color_mode_),
 		static_cast<int32_t>(wipe_swizzle_)
 	};
-	us_ = rhi.create_uniform_set(ctx, {tcb::span(uniforms)});
+	us_ = rhi.create_uniform_set({tcb::span(uniforms)});
 
 	VertexAttributeBufferBinding vbos[] = {{0, vbo_}};
 	TextureBinding tx[] = {
 		{SamplerName::kSampler0, start_},
 		{SamplerName::kSampler1, end_},
 		{SamplerName::kSampler2, wipe_tex_}};
-	bs_ = rhi.create_binding_set(ctx, pipeline_, {vbos, tx});
+	bs_ = rhi.create_binding_set(pipeline_, {vbos, tx});
 }
 
-void PostprocessWipePass::graphics(Rhi& rhi, Handle<GraphicsContext> ctx)
+void PostprocessWipePass::graphics(Rhi& rhi)
 {
 	if (wipe_tex_ == kNullHandle)
 	{
 		return;
 	}
 
-	rhi.bind_pipeline(ctx, pipeline_);
-	rhi.set_viewport(ctx, {0, 0, width_, height_});
-	rhi.bind_uniform_set(ctx, 0, us_);
-	rhi.bind_binding_set(ctx, bs_);
-	rhi.bind_index_buffer(ctx, ibo_);
-	rhi.draw_indexed(ctx, 6, 0);
+	rhi.bind_pipeline(pipeline_);
+	rhi.set_viewport({0, 0, width_, height_});
+	rhi.bind_uniform_set(0, us_);
+	rhi.bind_binding_set(bs_);
+	rhi.bind_index_buffer(ibo_);
+	rhi.draw_indexed(6, 0);
 }
 
 void PostprocessWipePass::postpass(Rhi& rhi)

@@ -319,7 +319,7 @@ static fademask_t *F_GetFadeMask(UINT8 masknum, UINT8 scrnnum) {
 
 #endif
 
-static void refresh_wipe_screen_texture(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx, rhi::Handle<rhi::Texture>& tex)
+static void refresh_wipe_screen_texture(rhi::Rhi& rhi, rhi::Handle<rhi::Texture>& tex)
 {
 	bool recreate = false;
 	if (!tex)
@@ -371,24 +371,17 @@ void F_WipeStartScreen(void)
 		return;
 	}
 
-	rhi::Handle<rhi::GraphicsContext> ctx = srb2::sys::main_graphics_context();
-
-	if (!ctx)
-	{
-		return;
-	}
-
 	hwr2::HardwareState* hw_state = srb2::sys::main_hardware_state();
 
-	refresh_wipe_screen_texture(*rhi, ctx, hw_state->wipe_frames.start);
+	refresh_wipe_screen_texture(*rhi, hw_state->wipe_frames.start);
 
-	hw_state->twodee_renderer->flush(*rhi, ctx, g_2d);
+	hw_state->twodee_renderer->flush(*rhi, g_2d);
 
 	rhi::Rect dst_region = {0, 0, static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height)};
 	rhi::TextureDetails backbuf_deets = rhi->get_texture_details(hw_state->backbuffer->color());
 	dst_region.w = std::min(dst_region.w, backbuf_deets.width);
 	dst_region.h = std::min(dst_region.h, backbuf_deets.height);
-	rhi->copy_framebuffer_to_texture(ctx, hw_state->wipe_frames.start, dst_region, dst_region);
+	rhi->copy_framebuffer_to_texture(hw_state->wipe_frames.start, dst_region, dst_region);
 
 	I_FinishUpdate();
 #endif
@@ -414,29 +407,22 @@ void F_WipeEndScreen(void)
 		return;
 	}
 
-	rhi::Handle<rhi::GraphicsContext> ctx = srb2::sys::main_graphics_context();
-
-	if (!ctx)
-	{
-		return;
-	}
-
 	hwr2::HardwareState* hw_state = srb2::sys::main_hardware_state();
 
-	refresh_wipe_screen_texture(*rhi, ctx, hw_state->wipe_frames.end);
+	refresh_wipe_screen_texture(*rhi, hw_state->wipe_frames.end);
 
-	hw_state->twodee_renderer->flush(*rhi, ctx, g_2d);
+	hw_state->twodee_renderer->flush(*rhi, g_2d);
 
 	rhi::Rect dst_region = {0, 0, static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height)};
 	rhi::TextureDetails backbuf_deets = rhi->get_texture_details(hw_state->backbuffer->color());
 	dst_region.w = std::min(dst_region.w, backbuf_deets.width);
 	dst_region.h = std::min(dst_region.h, backbuf_deets.height);
-	rhi->copy_framebuffer_to_texture(ctx, hw_state->wipe_frames.end, dst_region, dst_region);
+	rhi->copy_framebuffer_to_texture(hw_state->wipe_frames.end, dst_region, dst_region);
 
 	hw_state->blit_rect->set_output(0, 0, dst_region.w, dst_region.h, false, true);
 	rhi::TextureDetails start_deets = rhi->get_texture_details(hw_state->wipe_frames.start);
 	hw_state->blit_rect->set_texture(hw_state->wipe_frames.start, start_deets.width, start_deets.height);
-	hw_state->blit_rect->draw(*rhi, ctx);
+	hw_state->blit_rect->draw(*rhi);
 
 	I_FinishUpdate();
 #endif
@@ -535,7 +521,6 @@ void F_RunWipe(UINT8 wipemode, UINT8 wipetype, boolean drawMenu, const char *col
 				g_wipeencorewiggle = 0;
 			}
 			rhi::Rhi* rhi = srb2::sys::get_rhi(srb2::sys::g_current_rhi);
-			rhi::Handle<rhi::GraphicsContext> ctx = srb2::sys::main_graphics_context();
 			hwr2::HardwareState* hw_state = srb2::sys::main_hardware_state();
 
 			if (reverse)
@@ -550,7 +535,7 @@ void F_RunWipe(UINT8 wipemode, UINT8 wipetype, boolean drawMenu, const char *col
 			}
 
 			hw_state->wipe->set_target_size(static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height));
-			hw_state->wipe->draw(*rhi, ctx);
+			hw_state->wipe->draw(*rhi);
 		}
 
 		I_OsPolling();

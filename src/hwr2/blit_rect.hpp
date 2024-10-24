@@ -52,8 +52,8 @@ private:
 	bool dot_pattern_needs_upload_ = false;
 
 	void prepass(rhi::Rhi& rhi);
-	void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
-	void graphics(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
+	void transfer(rhi::Rhi& rhi);
+	void graphics(rhi::Rhi& rhi);
 
 public:
 
@@ -61,7 +61,7 @@ public:
 	BlitRectPass();
 	~BlitRectPass();
 
-	void draw(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
+	void draw(rhi::Rhi& rhi);
 
 	/// @brief Set the next blit texture. Don't call during graphics phase!
 	/// @param texture the texture to use when blitting

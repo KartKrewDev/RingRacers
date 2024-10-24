@@ -37,8 +37,8 @@ public:
 	virtual ~FramebufferManager();
 
 	virtual void prepass(rhi::Rhi& rhi) override;
-	virtual void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
-	virtual void graphics(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
+	virtual void transfer(rhi::Rhi& rhi) override;
+	virtual void graphics(rhi::Rhi& rhi) override;
 	virtual void postpass(rhi::Rhi& rhi) override;
 
 	/// @brief Swap the current and previous postprocess FB textures. Use between pass prepass phases to alternate.
@@ -82,18 +82,18 @@ class MainPaletteManager final : public Pass
 	std::vector<const uint8_t*> colormaps_to_upload_;
 	std::vector<const uint8_t*> lighttables_to_upload_;
 
-	void upload_palette(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
-	void upload_lighttables(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
-	void upload_default_colormap(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
-	void upload_colormaps(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
+	void upload_palette(rhi::Rhi& rhi);
+	void upload_lighttables(rhi::Rhi& rhi);
+	void upload_default_colormap(rhi::Rhi& rhi);
+	void upload_colormaps(rhi::Rhi& rhi);
 
 public:
 	MainPaletteManager();
 	virtual ~MainPaletteManager();
 
 	virtual void prepass(rhi::Rhi& rhi) override;
-	virtual void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
-	virtual void graphics(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
+	virtual void transfer(rhi::Rhi& rhi) override;
+	virtual void graphics(rhi::Rhi& rhi) override;
 	virtual void postpass(rhi::Rhi& rhi) override;
 
 	rhi::Handle<rhi::Texture> palette() const noexcept { return palette_; }
@@ -119,8 +119,8 @@ public:
 	virtual ~CommonResourcesManager();
 
 	virtual void prepass(rhi::Rhi& rhi) override;
-	virtual void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
-	virtual void graphics(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
+	virtual void transfer(rhi::Rhi& rhi) override;
+	virtual void graphics(rhi::Rhi& rhi) override;
 	virtual void postpass(rhi::Rhi& rhi) override;
 
 	rhi::Handle<rhi::Texture> black() const noexcept { return black_; }

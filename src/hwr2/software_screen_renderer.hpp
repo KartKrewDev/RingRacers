@@ -34,7 +34,7 @@ public:
 	SoftwareScreenRenderer();
 	~SoftwareScreenRenderer();
 
-	void draw(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
+	void draw(rhi::Rhi& rhi);
 
 	rhi::Handle<rhi::Texture> screen() const { return screen_texture_; }
 };

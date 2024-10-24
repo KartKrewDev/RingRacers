@@ -31,7 +31,7 @@ public:
 	UpscaleBackbuffer& operator=(const UpscaleBackbuffer&) = delete;
 	UpscaleBackbuffer& operator=(UpscaleBackbuffer&&);
 
-	void begin_pass(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
+	void begin_pass(rhi::Rhi& rhi);
 	rhi::Handle<rhi::Texture> color() const noexcept { return color_; }
 };
 

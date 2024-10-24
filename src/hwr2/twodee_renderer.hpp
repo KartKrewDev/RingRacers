@@ -101,7 +101,7 @@ class TwodeeRenderer final
 
 	void rewrite_patch_quad_vertices(Draw2dList& list, const Draw2dPatchQuad& cmd) const;
 
-	void initialize(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
+	void initialize(rhi::Rhi& rhi);
 
 public:
 	TwodeeRenderer(
@@ -118,7 +118,7 @@ public:
 	/// @brief Flush accumulated Twodee state and perform draws.
 	/// @param rhi
 	/// @param ctx
-	void flush(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx, Twodee& twodee);
+	void flush(rhi::Rhi& rhi, Twodee& twodee);
 };
 
 } // namespace srb2::hwr2

@@ -31,7 +31,7 @@ public:
 	ScreenshotPass();
 	~ScreenshotPass();
 
-	void capture(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
+	void capture(rhi::Rhi& rhi);
 
 	void set_source(uint32_t width, uint32_t height)
 	{

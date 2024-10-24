@@ -99,21 +99,21 @@ BlitPostimgScreens::BlitPostimgScreens(PaletteManager* palette_mgr)
 {
 }
 
-void BlitPostimgScreens::draw(Rhi& rhi, Handle<GraphicsContext> ctx)
+void BlitPostimgScreens::draw(Rhi& rhi)
 {
 	prepass(rhi);
-	transfer(rhi, ctx);
+	transfer(rhi);
 
 	for (uint32_t i = 0; i < screens_; i++)
 	{
 		BlitPostimgScreens::ScreenData& data = screen_data_[i];
 
-		rhi.bind_pipeline(ctx, data.pipeline);
-		rhi.set_viewport(ctx, get_screen_viewport(i, screens_, target_width_, target_height_));
-		rhi.bind_uniform_set(ctx, 0, data.uniform_set);
-		rhi.bind_binding_set(ctx, data.binding_set);
-		rhi.bind_index_buffer(ctx, quad_ibo_);
-		rhi.draw_indexed(ctx, 6, 0);
+		rhi.bind_pipeline(data.pipeline);
+		rhi.set_viewport(get_screen_viewport(i, screens_, target_width_, target_height_));
+		rhi.bind_uniform_set(0, data.uniform_set);
+		rhi.bind_binding_set(data.binding_set);
+		rhi.bind_index_buffer(quad_ibo_);
+		rhi.draw_indexed(6, 0);
 	}
 }
 
@@ -159,13 +159,13 @@ void BlitPostimgScreens::prepass(Rhi& rhi)
 	screen_data_.clear();
 }
 
-void BlitPostimgScreens::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
+void BlitPostimgScreens::transfer(Rhi& rhi)
 {
 	// Upload needed buffers
 	if (upload_quad_buffer_)
 	{
-		rhi.update_buffer(ctx, quad_vbo_, 0, tcb::as_bytes(tcb::span(kVerts)));
-		rhi.update_buffer(ctx, quad_ibo_, 0, tcb::as_bytes(tcb::span(kIndices)));
+		rhi.update_buffer(quad_vbo_, 0, tcb::as_bytes(tcb::span(kVerts)));
+		rhi.update_buffer(quad_ibo_, 0, tcb::as_bytes(tcb::span(kIndices)));
 		upload_quad_buffer_ = false;
 	}
 
@@ -191,7 +191,6 @@ void BlitPostimgScreens::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 		};
 
 		data.binding_set = rhi.create_binding_set(
-			ctx,
 			data.pipeline,
 			{
 				vertex_bindings,
@@ -234,7 +233,7 @@ void BlitPostimgScreens::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 			screen_config.post.heat
 		};
 
-		data.uniform_set = rhi.create_uniform_set(ctx, {uniforms});
+		data.uniform_set = rhi.create_uniform_set({uniforms});
 
 		screen_data_[i] = std::move(data);
 	}

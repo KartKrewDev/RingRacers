@@ -56,7 +56,6 @@ using namespace srb2::rhi;
 
 static Rhi* g_last_known_rhi = nullptr;
 static bool g_imgui_frame_active = false;
-static Handle<GraphicsContext> g_main_graphics_context;
 static HardwareState g_hw_state;
 
 Handle<Rhi> srb2::sys::g_current_rhi = kNullHandle;
@@ -98,9 +97,7 @@ static void new_imgui_frame();
 
 static void preframe_update(Rhi& rhi)
 {
-	SRB2_ASSERT(g_main_graphics_context != kNullHandle);
-
-	g_hw_state.palette_manager->update(rhi, g_main_graphics_context);
+	g_hw_state.palette_manager->update(rhi);
 	new_twodee_frame();
 	new_imgui_frame();
 }
@@ -196,11 +193,6 @@ static void new_imgui_frame()
 	g_imgui_frame_active = true;
 }
 
-rhi::Handle<rhi::GraphicsContext> sys::main_graphics_context()
-{
-	return g_main_graphics_context;
-}
-
 HardwareState* sys::main_hardware_state()
 {
 	return &g_hw_state;
@@ -209,11 +201,10 @@ HardwareState* sys::main_hardware_state()
 void I_CaptureVideoFrame()
 {
 	rhi::Rhi* rhi = srb2::sys::get_rhi(srb2::sys::g_current_rhi);
-	rhi::Handle<rhi::GraphicsContext> ctx = srb2::sys::main_graphics_context();
 	hwr2::HardwareState* hw_state = srb2::sys::main_hardware_state();
 
 	hw_state->screen_capture->set_source(static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height));
-	hw_state->screen_capture->capture(*rhi, ctx);
+	hw_state->screen_capture->capture(*rhi);
 }
 
 void I_StartDisplayUpdate(void)
@@ -244,12 +235,9 @@ void I_StartDisplayUpdate(void)
 		reset_hardware_state(rhi);
 	}
 
-	rhi::Handle<rhi::GraphicsContext> ctx = rhi->begin_graphics();
 	HardwareState* hw_state = &g_hw_state;
 
-	hw_state->backbuffer->begin_pass(*rhi, ctx);
-
-	g_main_graphics_context = ctx;
+	hw_state->backbuffer->begin_pass(*rhi);
 
 	preframe_update(*rhi);
 }
@@ -283,68 +271,60 @@ void I_FinishUpdate(void)
 		return;
 	}
 
-	rhi::Handle<rhi::GraphicsContext> ctx = g_main_graphics_context;
+	// better hope the drawing code left the context in a render pass, I guess
+	g_hw_state.twodee_renderer->flush(*rhi, g_2d);
+	rhi->end_render_pass();
 
-	if (ctx != kNullHandle)
+	rhi->begin_default_render_pass(true);
+
+	// Upscale draw the backbuffer (with postprocessing maybe?)
+	if (cv_scr_scale.value != FRACUNIT)
 	{
-		// better hope the drawing code left the context in a render pass, I guess
-		g_hw_state.twodee_renderer->flush(*rhi, ctx, g_2d);
-		rhi->end_render_pass(ctx);
+		float f = std::max(FixedToFloat(cv_scr_scale.value), 0.f);
+		float w = vid.realwidth * f;
+		float h = vid.realheight * f;
+		float x = (vid.realwidth - w) * (0.5f + (FixedToFloat(cv_scr_x.value) * 0.5f));
+		float y = (vid.realheight - h) * (0.5f + (FixedToFloat(cv_scr_y.value) * 0.5f));
 
-		rhi->begin_default_render_pass(ctx, true);
-
-		// Upscale draw the backbuffer (with postprocessing maybe?)
-		if (cv_scr_scale.value != FRACUNIT)
-		{
-			float f = std::max(FixedToFloat(cv_scr_scale.value), 0.f);
-			float w = vid.realwidth * f;
-			float h = vid.realheight * f;
-			float x = (vid.realwidth - w) * (0.5f + (FixedToFloat(cv_scr_x.value) * 0.5f));
-			float y = (vid.realheight - h) * (0.5f + (FixedToFloat(cv_scr_y.value) * 0.5f));
-
-			g_hw_state.blit_rect->set_output(x, y, w, h, true, true);
-			g_hw_state.sharp_bilinear_blit_rect->set_output(x, y, w, h, true, true);
-			g_hw_state.crt_blit_rect->set_output(x, y, w, h, true, true);
-			g_hw_state.crtsharp_blit_rect->set_output(x, y, w, h, true, true);
-		}
-		else
-		{
-			g_hw_state.blit_rect->set_output(0, 0, vid.realwidth, vid.realheight, true, true);
-			g_hw_state.sharp_bilinear_blit_rect->set_output(0, 0, vid.realwidth, vid.realheight, true, true);
-			g_hw_state.crt_blit_rect->set_output(0, 0, vid.realwidth, vid.realheight, true, true);
-			g_hw_state.crtsharp_blit_rect->set_output(0, 0, vid.realwidth, vid.realheight, true, true);
-		}
-		g_hw_state.blit_rect->set_texture(g_hw_state.backbuffer->color(), static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height));
-		g_hw_state.sharp_bilinear_blit_rect->set_texture(g_hw_state.backbuffer->color(), static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height));
-		g_hw_state.crt_blit_rect->set_texture(g_hw_state.backbuffer->color(), static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height));
-		g_hw_state.crtsharp_blit_rect->set_texture(g_hw_state.backbuffer->color(), static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height));
-
-		switch (cv_scr_effect.value)
-		{
-		case 1:
-			rhi->update_texture_settings(ctx, g_hw_state.backbuffer->color(), TextureWrapMode::kClamp, TextureWrapMode::kClamp, TextureFilterMode::kLinear, TextureFilterMode::kLinear);
-			g_hw_state.sharp_bilinear_blit_rect->draw(*rhi, ctx);
-			break;
-		case 2:
-			rhi->update_texture_settings(ctx, g_hw_state.backbuffer->color(), TextureWrapMode::kClamp, TextureWrapMode::kClamp, TextureFilterMode::kLinear, TextureFilterMode::kLinear);
-			g_hw_state.crt_blit_rect->draw(*rhi, ctx);
-			break;
-		case 3:
-			rhi->update_texture_settings(ctx, g_hw_state.backbuffer->color(), TextureWrapMode::kClamp, TextureWrapMode::kClamp, TextureFilterMode::kLinear, TextureFilterMode::kLinear);
-			g_hw_state.crtsharp_blit_rect->draw(*rhi, ctx);
-			break;
-		default:
-			rhi->update_texture_settings(ctx, g_hw_state.backbuffer->color(), TextureWrapMode::kClamp, TextureWrapMode::kClamp, TextureFilterMode::kNearest, TextureFilterMode::kNearest);
-			g_hw_state.blit_rect->draw(*rhi, ctx);
-			break;
-		}
-		rhi->end_render_pass(ctx);
-
-		rhi->end_graphics(ctx);
-		g_main_graphics_context = kNullHandle;
-
-		postframe_update(*rhi);
+		g_hw_state.blit_rect->set_output(x, y, w, h, true, true);
+		g_hw_state.sharp_bilinear_blit_rect->set_output(x, y, w, h, true, true);
+		g_hw_state.crt_blit_rect->set_output(x, y, w, h, true, true);
+		g_hw_state.crtsharp_blit_rect->set_output(x, y, w, h, true, true);
 	}
+	else
+	{
+		g_hw_state.blit_rect->set_output(0, 0, vid.realwidth, vid.realheight, true, true);
+		g_hw_state.sharp_bilinear_blit_rect->set_output(0, 0, vid.realwidth, vid.realheight, true, true);
+		g_hw_state.crt_blit_rect->set_output(0, 0, vid.realwidth, vid.realheight, true, true);
+		g_hw_state.crtsharp_blit_rect->set_output(0, 0, vid.realwidth, vid.realheight, true, true);
+	}
+	g_hw_state.blit_rect->set_texture(g_hw_state.backbuffer->color(), static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height));
+	g_hw_state.sharp_bilinear_blit_rect->set_texture(g_hw_state.backbuffer->color(), static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height));
+	g_hw_state.crt_blit_rect->set_texture(g_hw_state.backbuffer->color(), static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height));
+	g_hw_state.crtsharp_blit_rect->set_texture(g_hw_state.backbuffer->color(), static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height));
+
+	switch (cv_scr_effect.value)
+	{
+	case 1:
+		rhi->update_texture_settings(g_hw_state.backbuffer->color(), TextureWrapMode::kClamp, TextureWrapMode::kClamp, TextureFilterMode::kLinear, TextureFilterMode::kLinear);
+		g_hw_state.sharp_bilinear_blit_rect->draw(*rhi);
+		break;
+	case 2:
+		rhi->update_texture_settings(g_hw_state.backbuffer->color(), TextureWrapMode::kClamp, TextureWrapMode::kClamp, TextureFilterMode::kLinear, TextureFilterMode::kLinear);
+		g_hw_state.crt_blit_rect->draw(*rhi);
+		break;
+	case 3:
+		rhi->update_texture_settings(g_hw_state.backbuffer->color(), TextureWrapMode::kClamp, TextureWrapMode::kClamp, TextureFilterMode::kLinear, TextureFilterMode::kLinear);
+		g_hw_state.crtsharp_blit_rect->draw(*rhi);
+		break;
+	default:
+		rhi->update_texture_settings(g_hw_state.backbuffer->color(), TextureWrapMode::kClamp, TextureWrapMode::kClamp, TextureFilterMode::kNearest, TextureFilterMode::kNearest);
+		g_hw_state.blit_rect->draw(*rhi);
+		break;
+	}
+	rhi->end_render_pass();
+
+	postframe_update(*rhi);
 
 	rhi->present();
 	rhi->finish();

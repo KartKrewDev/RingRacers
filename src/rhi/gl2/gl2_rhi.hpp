@@ -120,10 +120,6 @@ struct Gl2Pipeline : public rhi::Pipeline
 	rhi::PipelineDesc desc;
 };
 
-struct Gl2GraphicsContext : public rhi::GraphicsContext
-{
-};
-
 struct Gl2ActiveUniform
 {
 	uint32_t type;
@@ -155,8 +151,6 @@ class Gl2Rhi final : public Rhi
 	std::optional<RenderPassState> current_render_pass_;
 	std::optional<Handle<Pipeline>> current_pipeline_;
 	PrimitiveType current_primitive_type_ = PrimitiveType::kPoints;
-	bool graphics_context_active_ = false;
-	uint32_t graphics_context_generation_ = 1;
 	uint32_t index_buffer_offset_ = 0;
 
 	uint8_t stencil_front_reference_ = 0;
@@ -187,20 +181,17 @@ public:
 	virtual uint32_t get_buffer_size(Handle<Buffer> buffer) override;
 
 	virtual void update_buffer(
-		Handle<GraphicsContext> ctx,
 		Handle<Buffer> buffer,
 		uint32_t offset,
 		tcb::span<const std::byte> data
 	) override;
 	virtual void update_texture(
-		Handle<GraphicsContext> ctx,
 		Handle<Texture> texture,
 		Rect region,
 		srb2::rhi::PixelFormat data_format,
 		tcb::span<const std::byte> data
 	) override;
 	virtual void update_texture_settings(
-		Handle<GraphicsContext> ctx,
 		Handle<Texture> texture,
 		TextureWrapMode u_wrap,
 		TextureWrapMode v_wrap,
@@ -208,37 +199,33 @@ public:
 		TextureFilterMode mag
 	) override;
 	virtual Handle<UniformSet>
-	create_uniform_set(Handle<GraphicsContext> ctx, const CreateUniformSetInfo& info) override;
+	create_uniform_set(const CreateUniformSetInfo& info) override;
 	virtual Handle<BindingSet>
-	create_binding_set(Handle<GraphicsContext> ctx, Handle<Pipeline> pipeline, const CreateBindingSetInfo& info)
+	create_binding_set(Handle<Pipeline> pipeline, const CreateBindingSetInfo& info)
 		override;
 
-	virtual Handle<GraphicsContext> begin_graphics() override;
-	virtual void end_graphics(Handle<GraphicsContext> ctx) override;
-
 	// Graphics context functions
-	virtual void begin_default_render_pass(Handle<GraphicsContext> ctx, bool clear) override;
-	virtual void begin_render_pass(Handle<GraphicsContext> ctx, const RenderPassBeginInfo& info) override;
-	virtual void end_render_pass(Handle<GraphicsContext> ctx) override;
-	virtual void bind_pipeline(Handle<GraphicsContext> ctx, Handle<Pipeline> pipeline) override;
-	virtual void bind_uniform_set(Handle<GraphicsContext> ctx, uint32_t slot, Handle<UniformSet> set) override;
-	virtual void bind_binding_set(Handle<GraphicsContext> ctx, Handle<BindingSet> set) override;
-	virtual void bind_index_buffer(Handle<GraphicsContext> ctx, Handle<Buffer> buffer) override;
-	virtual void set_scissor(Handle<GraphicsContext> ctx, const Rect& rect) override;
-	virtual void set_viewport(Handle<GraphicsContext> ctx, const Rect& rect) override;
-	virtual void draw(Handle<GraphicsContext> ctx, uint32_t vertex_count, uint32_t first_vertex) override;
-	virtual void draw_indexed(Handle<GraphicsContext> ctx, uint32_t index_count, uint32_t first_index) override;
+	virtual void begin_default_render_pass(bool clear) override;
+	virtual void begin_render_pass(const RenderPassBeginInfo& info) override;
+	virtual void end_render_pass() override;
+	virtual void bind_pipeline(Handle<Pipeline> pipeline) override;
+	virtual void bind_uniform_set(uint32_t slot, Handle<UniformSet> set) override;
+	virtual void bind_binding_set(Handle<BindingSet> set) override;
+	virtual void bind_index_buffer(Handle<Buffer> buffer) override;
+	virtual void set_scissor(const Rect& rect) override;
+	virtual void set_viewport(const Rect& rect) override;
+	virtual void draw(uint32_t vertex_count, uint32_t first_vertex) override;
+	virtual void draw_indexed(uint32_t index_count, uint32_t first_index) override;
 	virtual void
-	read_pixels(Handle<GraphicsContext> ctx, const Rect& rect, PixelFormat format, tcb::span<std::byte> out) override;
+	read_pixels(const Rect& rect, PixelFormat format, tcb::span<std::byte> out) override;
 	virtual void copy_framebuffer_to_texture(
-		Handle<GraphicsContext> ctx,
 		Handle<Texture> dst_tex,
 		const Rect& dst_region,
 		const Rect& src_region
 	) override;
-	virtual void set_stencil_reference(Handle<GraphicsContext> ctx, CullMode face, uint8_t reference) override;
-	virtual void set_stencil_compare_mask(Handle<GraphicsContext> ctx, CullMode face, uint8_t mask) override;
-	virtual void set_stencil_write_mask(Handle<GraphicsContext> ctx, CullMode face, uint8_t mask) override;
+	virtual void set_stencil_reference(CullMode face, uint8_t reference) override;
+	virtual void set_stencil_compare_mask(CullMode face, uint8_t mask) override;
+	virtual void set_stencil_write_mask(CullMode face, uint8_t mask) override;
 
 	virtual void present() override;
 

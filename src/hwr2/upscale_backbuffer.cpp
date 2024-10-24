@@ -27,7 +27,7 @@ static bool size_equal(Rhi& rhi, Handle<Texture> tex, uint32_t width, uint32_t h
 	return deets.width == width && deets.height == height;
 }
 
-void UpscaleBackbuffer::begin_pass(Rhi& rhi, Handle<GraphicsContext> ctx)
+void UpscaleBackbuffer::begin_pass(Rhi& rhi)
 {
 	uint32_t vid_width = static_cast<uint32_t>(vid.width);
 	uint32_t vid_height = static_cast<uint32_t>(vid.height);
@@ -88,5 +88,5 @@ void UpscaleBackbuffer::begin_pass(Rhi& rhi, Handle<GraphicsContext> ctx)
 	begin_info.render_pass = remake ? renderpass_clear_ : renderpass_;
 	begin_info.clear_color = {0, 0, 0, 1};
 	begin_info.color_attachment = color_;
-	rhi.begin_render_pass(ctx, begin_info);
+	rhi.begin_render_pass(begin_info);
 }

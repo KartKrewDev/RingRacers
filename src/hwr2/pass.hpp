@@ -30,12 +30,12 @@ public:
 	/// @brief Upload contents for needed GPU resources. Passes must implement but this will be removed soon.
 	/// @param rhi
 	/// @param ctx
-	virtual void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) = 0;
+	virtual void transfer(rhi::Rhi& rhi) = 0;
 
 	/// @brief Issue draw calls.
 	/// @param rhi
 	/// @param ctx
-	virtual void graphics(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) = 0;
+	virtual void graphics(rhi::Rhi& rhi) = 0;
 
 	/// @brief Cleanup GPU resources. Transient resources should be cleaned up here.
 	/// @param rhi

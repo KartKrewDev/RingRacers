@@ -113,7 +113,7 @@ public:
 	void queue_patch(srb2::NotNull<const patch_t*> patch);
 
 	/// @brief Pack queued patches, allowing them to be looked up with find_patch.
-	void pack(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
+	void pack(rhi::Rhi& rhi);
 
 	/// @brief Find the atlas a patch belongs to, or nullopt if it is not cached.
 	/// This may not be called if there are still patches that need to be packed.

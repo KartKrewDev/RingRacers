@@ -231,7 +231,7 @@ void TwodeeRenderer::rewrite_patch_quad_vertices(Draw2dList& list, const Draw2dP
 	list.vertices[vtx_offs + 3].v = clipped_vmax;
 }
 
-void TwodeeRenderer::initialize(Rhi& rhi, Handle<GraphicsContext> ctx)
+void TwodeeRenderer::initialize(Rhi& rhi)
 {
 	{
 		TwodeePipelineKey alpha_transparent_tris = {BlendMode::kAlphaTransparent, false};
@@ -269,17 +269,17 @@ void TwodeeRenderer::initialize(Rhi& rhi, Handle<GraphicsContext> ctx)
 			TextureWrapMode::kClamp
 		});
 		std::array<uint8_t, 4> data = {0, 255, 0, 255};
-		rhi.update_texture(ctx, default_tex_, {0, 0, 2, 1}, PixelFormat::kRG8, tcb::as_bytes(tcb::span(data)));
+		rhi.update_texture(default_tex_, {0, 0, 2, 1}, PixelFormat::kRG8, tcb::as_bytes(tcb::span(data)));
 	}
 
 	initialized_ = true;
 }
 
-void TwodeeRenderer::flush(Rhi& rhi, Handle<GraphicsContext> ctx, Twodee& twodee)
+void TwodeeRenderer::flush(Rhi& rhi, Twodee& twodee)
 {
 	if (!initialized_)
 	{
-		initialize(rhi, ctx);
+		initialize(rhi);
 	}
 
 	// Stage 1 - command list patch detection
@@ -297,7 +297,7 @@ void TwodeeRenderer::flush(Rhi& rhi, Handle<GraphicsContext> ctx, Twodee& twodee
 					}
 					if (cmd.colormap != nullptr)
 					{
-						palette_manager_->find_or_create_colormap(rhi, ctx, cmd.colormap);
+						palette_manager_->find_or_create_colormap(rhi, cmd.colormap);
 					}
 				},
 				[&](const Draw2dVertices& cmd) {}};
@@ -309,7 +309,7 @@ void TwodeeRenderer::flush(Rhi& rhi, Handle<GraphicsContext> ctx, Twodee& twodee
 	{
 		patch_atlas_cache_->queue_patch(patch);
 	}
-	patch_atlas_cache_->pack(rhi, ctx);
+	patch_atlas_cache_->pack(rhi);
 
 	size_t list_index = 0;
 	for (auto& list : twodee)
@@ -445,7 +445,7 @@ void TwodeeRenderer::flush(Rhi& rhi, Handle<GraphicsContext> ctx, Twodee& twodee
 					{
 						if (cmd.flat_lump != LUMPERROR)
 						{
-							flat_manager_->find_or_create_indexed(rhi, ctx, cmd.flat_lump);
+							flat_manager_->find_or_create_indexed(rhi, cmd.flat_lump);
 							std::optional<MergedTwodeeCommand::Texture> t = MergedTwodeeCommandFlatTexture {cmd.flat_lump};
 							the_new_one.texture = t;
 						}
@@ -492,8 +492,8 @@ void TwodeeRenderer::flush(Rhi& rhi, Handle<GraphicsContext> ctx, Twodee& twodee
 
 		tcb::span<const std::byte> vertex_data = tcb::as_bytes(tcb::span(orig_list.vertices));
 		tcb::span<const std::byte> index_data = tcb::as_bytes(tcb::span(orig_list.indices));
-		rhi.update_buffer(ctx, merged_list.vbo, 0, vertex_data);
-		rhi.update_buffer(ctx, merged_list.ibo, 0, index_data);
+		rhi.update_buffer(merged_list.vbo, 0, vertex_data);
+		rhi.update_buffer(merged_list.ibo, 0, index_data);
 
 		// Update the binding sets for each individual merged command
 		VertexAttributeBufferBinding vbos[] = {{0, merged_list.vbo}};
@@ -508,7 +508,7 @@ void TwodeeRenderer::flush(Rhi& rhi, Handle<GraphicsContext> ctx, Twodee& twodee
 				},
 				[&](const MergedTwodeeCommandFlatTexture& tex)
 				{
-					Handle<Texture> th = flat_manager_->find_or_create_indexed(rhi, ctx, tex.lump);
+					Handle<Texture> th = flat_manager_->find_or_create_indexed(rhi, tex.lump);
 					SRB2_ASSERT(th != kNullHandle);
 					tx[0] = {SamplerName::kSampler0, th};
 					tx[1] = {SamplerName::kSampler1, palette_tex};
@@ -527,12 +527,12 @@ void TwodeeRenderer::flush(Rhi& rhi, Handle<GraphicsContext> ctx, Twodee& twodee
 			Handle<Texture> colormap_h = palette_manager_->default_colormap();
 			if (colormap)
 			{
-				colormap_h = palette_manager_->find_or_create_colormap(rhi, ctx, colormap);
+				colormap_h = palette_manager_->find_or_create_colormap(rhi, colormap);
 				SRB2_ASSERT(colormap_h != kNullHandle);
 			}
 			tx[2] = {SamplerName::kSampler2, colormap_h};
 			mcmd.binding_set =
-				rhi.create_binding_set(ctx, pipelines_[mcmd.pipeline_key], {tcb::span(vbos), tcb::span(tx)});
+				rhi.create_binding_set(pipelines_[mcmd.pipeline_key], {tcb::span(vbos), tcb::span(tx)});
 		}
 
 		ctx_list_itr++;
@@ -556,8 +556,8 @@ void TwodeeRenderer::flush(Rhi& rhi, Handle<GraphicsContext> ctx, Twodee& twodee
 		// Sampler 0 Is Indexed Alpha (yes, it always is)
 		static_cast<int32_t>(1)
 	};
-	Handle<UniformSet> us_1 = rhi.create_uniform_set(ctx, {tcb::span(g1_uniforms)});
-	Handle<UniformSet> us_2 = rhi.create_uniform_set(ctx, {tcb::span(g2_uniforms)});
+	Handle<UniformSet> us_1 = rhi.create_uniform_set({tcb::span(g1_uniforms)});
+	Handle<UniformSet> us_2 = rhi.create_uniform_set({tcb::span(g2_uniforms)});
 
 	// Presumably, we're already in a renderpass when flush is called
 	for (auto& list : cmd_lists_)
@@ -572,13 +572,13 @@ void TwodeeRenderer::flush(Rhi& rhi, Handle<GraphicsContext> ctx, Twodee& twodee
 			}
 			SRB2_ASSERT(pipelines_.find(cmd.pipeline_key) != pipelines_.end());
 			Handle<Pipeline> pl = pipelines_[cmd.pipeline_key];
-			rhi.bind_pipeline(ctx, pl);
-			rhi.set_viewport(ctx, {0, 0, static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height)});
-			rhi.bind_uniform_set(ctx, 0, us_1);
-			rhi.bind_uniform_set(ctx, 1, us_2);
-			rhi.bind_binding_set(ctx, cmd.binding_set);
-			rhi.bind_index_buffer(ctx, list.ibo);
-			rhi.draw_indexed(ctx, cmd.elements, cmd.index_offset);
+			rhi.bind_pipeline(pl);
+			rhi.set_viewport({0, 0, static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height)});
+			rhi.bind_uniform_set(0, us_1);
+			rhi.bind_uniform_set(1, us_2);
+			rhi.bind_binding_set(cmd.binding_set);
+			rhi.bind_index_buffer(list.ibo);
+			rhi.draw_indexed(cmd.elements, cmd.index_offset);
 		}
 	}
 

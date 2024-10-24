@@ -128,7 +128,7 @@ void ImguiPass::prepass(Rhi& rhi)
 	}
 }
 
-void ImguiPass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
+void ImguiPass::transfer(Rhi& rhi)
 {
 	ImGuiIO& io = ImGui::GetIO();
 
@@ -137,7 +137,6 @@ void ImguiPass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 		int width, height;
 		io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
 		rhi.update_texture(
-			ctx,
 			font_atlas_,
 			{0, 0, static_cast<uint32_t>(width), static_cast<uint32_t>(height)},
 			rhi::PixelFormat::kRGBA8,
@@ -162,10 +161,10 @@ void ImguiPass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 		}
 
 		tcb::span<ImDrawVert> vert_span = tcb::span(im_list->VtxBuffer.Data, im_list->VtxBuffer.size());
-		rhi.update_buffer(ctx, vbo, 0, tcb::as_bytes(vert_span));
+		rhi.update_buffer(vbo, 0, tcb::as_bytes(vert_span));
 
 		tcb::span<ImDrawIdx> index_span = tcb::span(im_list->IdxBuffer.Data, im_list->IdxBuffer.size());
-		rhi.update_buffer(ctx, ibo, 0, tcb::as_bytes(index_span));
+		rhi.update_buffer(ibo, 0, tcb::as_bytes(index_span));
 
 		// Uniform sets
 		std::array<UniformVariant, 1> g1_uniforms = {
@@ -192,8 +191,8 @@ void ImguiPass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 				glm::vec3(0.f, 0.f, 1.f)
 			)
 		};
-		Handle<UniformSet> us_1 = rhi.create_uniform_set(ctx, {g1_uniforms});
-		Handle<UniformSet> us_2 = rhi.create_uniform_set(ctx, {g2_uniforms});
+		Handle<UniformSet> us_1 = rhi.create_uniform_set({g1_uniforms});
+		Handle<UniformSet> us_2 = rhi.create_uniform_set({g2_uniforms});
 
 		draw_list.us_1 = us_1;
 		draw_list.us_2 = us_2;
@@ -203,29 +202,29 @@ void ImguiPass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 			// Binding set
 			std::array<rhi::VertexAttributeBufferBinding, 1> vbos = {{{0, vbo}}};
 			std::array<rhi::TextureBinding, 1> tbs = {{{rhi::SamplerName::kSampler0, draw_cmd.tex}}};
-			rhi::Handle<rhi::BindingSet> binding_set = rhi.create_binding_set(ctx, pipeline_, {vbos, tbs});
+			rhi::Handle<rhi::BindingSet> binding_set = rhi.create_binding_set(pipeline_, {vbos, tbs});
 			draw_cmd.binding_set = binding_set;
 		}
 	}
 }
 
-void ImguiPass::graphics(Rhi& rhi, Handle<GraphicsContext> ctx)
+void ImguiPass::graphics(Rhi& rhi)
 {
-	rhi.begin_default_render_pass(ctx, false);
-	rhi.bind_pipeline(ctx, pipeline_);
+	rhi.begin_default_render_pass(false);
+	rhi.bind_pipeline(pipeline_);
 	for (auto& draw_list : draw_lists_)
 	{
-		rhi.bind_uniform_set(ctx, 0, draw_list.us_1);
-		rhi.bind_uniform_set(ctx, 1, draw_list.us_2);
+		rhi.bind_uniform_set(0, draw_list.us_1);
+		rhi.bind_uniform_set(1, draw_list.us_2);
 		for (auto& cmd : draw_list.cmds)
 		{
-			rhi.bind_binding_set(ctx, cmd.binding_set);
-			rhi.bind_index_buffer(ctx, draw_list.ibo);
-			rhi.set_scissor(ctx, cmd.clip);
-			rhi.draw_indexed(ctx, cmd.elems, cmd.i_offset);
+			rhi.bind_binding_set(cmd.binding_set);
+			rhi.bind_index_buffer(draw_list.ibo);
+			rhi.set_scissor(cmd.clip);
+			rhi.draw_indexed(cmd.elems, cmd.i_offset);
 		}
 	}
-	rhi.end_render_pass(ctx);
+	rhi.end_render_pass();
 }
 
 void ImguiPass::postpass(Rhi& rhi)

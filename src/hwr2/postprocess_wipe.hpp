@@ -44,15 +44,15 @@ class PostprocessWipePass final
 	uint32_t mask_h_ = 0;
 
 	void prepass(rhi::Rhi& rhi);
-	void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
-	void graphics(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
+	void transfer(rhi::Rhi& rhi);
+	void graphics(rhi::Rhi& rhi);
 	void postpass(rhi::Rhi& rhi);
 
 public:
 	PostprocessWipePass();
 	virtual ~PostprocessWipePass();
 
-	void draw(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
+	void draw(rhi::Rhi& rhi);
 
 	void set_start(rhi::Handle<rhi::Texture> start) noexcept { start_ = start; }
 

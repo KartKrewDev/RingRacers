@@ -67,12 +67,12 @@ private:
 	PaletteManager* palette_mgr_;
 
 	void prepass(rhi::Rhi& rhi);
-	void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
+	void transfer(rhi::Rhi& rhi);
 
 public:
 	explicit BlitPostimgScreens(PaletteManager* palette_mgr);
 
-	void draw(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
+	void draw(rhi::Rhi& rhi);
 
 	void set_num_screens(uint32_t screens) noexcept
 	{

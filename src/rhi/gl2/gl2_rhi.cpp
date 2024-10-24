@@ -636,15 +636,12 @@ void Gl2Rhi::destroy_texture(rhi::Handle<rhi::Texture> handle)
 }
 
 void Gl2Rhi::update_texture(
-	Handle<GraphicsContext> ctx,
 	Handle<Texture> texture,
 	Rect region,
 	srb2::rhi::PixelFormat data_format,
 	tcb::span<const std::byte> data
 )
 {
-	SRB2_ASSERT(graphics_context_active_ == true);
-
 	if (data.empty())
 	{
 		return;
@@ -687,7 +684,6 @@ void Gl2Rhi::update_texture(
 }
 
 void Gl2Rhi::update_texture_settings(
-	Handle<GraphicsContext> ctx,
 	Handle<Texture> texture,
 	TextureWrapMode u_wrap,
 	TextureWrapMode v_wrap,
@@ -695,8 +691,6 @@ void Gl2Rhi::update_texture_settings(
 	TextureFilterMode mag
 )
 {
-	SRB2_ASSERT(graphics_context_active_ == true);
-
 	SRB2_ASSERT(texture_slab_.is_valid(texture) == true);
 	auto& t = texture_slab_[texture];
 
@@ -749,15 +743,11 @@ void Gl2Rhi::destroy_buffer(rhi::Handle<rhi::Buffer> handle)
 }
 
 void Gl2Rhi::update_buffer(
-	rhi::Handle<GraphicsContext> ctx,
 	rhi::Handle<rhi::Buffer> handle,
 	uint32_t offset,
 	tcb::span<const std::byte> data
 )
 {
-	SRB2_ASSERT(graphics_context_active_ == true);
-	SRB2_ASSERT(ctx.generation() == graphics_context_generation_);
-
 	if (data.empty())
 	{
 		return;
@@ -786,11 +776,8 @@ void Gl2Rhi::update_buffer(
 }
 
 rhi::Handle<rhi::UniformSet>
-Gl2Rhi::create_uniform_set(rhi::Handle<rhi::GraphicsContext> ctx, const rhi::CreateUniformSetInfo& info)
+Gl2Rhi::create_uniform_set(const rhi::CreateUniformSetInfo& info)
 {
-	SRB2_ASSERT(graphics_context_active_ == true);
-	SRB2_ASSERT(ctx.generation() == graphics_context_generation_);
-
 	Gl2UniformSet uniform_set;
 
 	for (auto& uniform : info.uniforms)
@@ -802,14 +789,10 @@ Gl2Rhi::create_uniform_set(rhi::Handle<rhi::GraphicsContext> ctx, const rhi::Cre
 }
 
 rhi::Handle<rhi::BindingSet> Gl2Rhi::create_binding_set(
-	rhi::Handle<rhi::GraphicsContext> ctx,
 	Handle<Pipeline> pipeline,
 	const rhi::CreateBindingSetInfo& info
 )
 {
-	SRB2_ASSERT(graphics_context_active_ == true);
-	SRB2_ASSERT(ctx.generation() == graphics_context_generation_);
-
 	SRB2_ASSERT(pipeline_slab_.is_valid(pipeline) == true);
 	auto& pl = pipeline_slab_[pipeline];
 
@@ -1204,39 +1187,16 @@ void Gl2Rhi::destroy_pipeline(rhi::Handle<rhi::Pipeline> handle)
 	GL_ASSERT;
 }
 
-rhi::Handle<rhi::GraphicsContext> Gl2Rhi::begin_graphics()
-{
-	SRB2_ASSERT(graphics_context_active_ == false);
-	graphics_context_active_ = true;
-	return rhi::Handle<rhi::GraphicsContext>(0, graphics_context_generation_);
-}
-
-void Gl2Rhi::end_graphics(rhi::Handle<rhi::GraphicsContext> handle)
-{
-	SRB2_ASSERT(graphics_context_active_ == true);
-	SRB2_ASSERT(current_pipeline_.has_value() == false && current_render_pass_.has_value() == false);
-	graphics_context_generation_ += 1;
-	if (graphics_context_generation_ == 0)
-	{
-		graphics_context_generation_ = 1;
-	}
-	graphics_context_active_ = false;
-	gl_->Flush();
-	GL_ASSERT;
-}
-
 void Gl2Rhi::present()
 {
 	SRB2_ASSERT(platform_ != nullptr);
-	SRB2_ASSERT(graphics_context_active_ == false);
 
 	platform_->present();
 }
 
-void Gl2Rhi::begin_default_render_pass(Handle<GraphicsContext> ctx, bool clear)
+void Gl2Rhi::begin_default_render_pass(bool clear)
 {
 	SRB2_ASSERT(platform_ != nullptr);
-	SRB2_ASSERT(graphics_context_active_ == true);
 	SRB2_ASSERT(current_render_pass_.has_value() == false);
 
 	const Rect fb_rect = platform_->get_default_framebuffer_dimensions();
@@ -1260,9 +1220,8 @@ void Gl2Rhi::begin_default_render_pass(Handle<GraphicsContext> ctx, bool clear)
 	current_render_pass_ = Gl2Rhi::DefaultRenderPassState {};
 }
 
-void Gl2Rhi::begin_render_pass(Handle<GraphicsContext> ctx, const RenderPassBeginInfo& info)
+void Gl2Rhi::begin_render_pass(const RenderPassBeginInfo& info)
 {
-	SRB2_ASSERT(graphics_context_active_ == true && graphics_context_generation_ == ctx.generation());
 	SRB2_ASSERT(current_render_pass_.has_value() == false);
 
 	SRB2_ASSERT(render_pass_slab_.is_valid(info.render_pass) == true);
@@ -1340,18 +1299,16 @@ void Gl2Rhi::begin_render_pass(Handle<GraphicsContext> ctx, const RenderPassBegi
 	current_render_pass_ = info;
 }
 
-void Gl2Rhi::end_render_pass(Handle<GraphicsContext> ctx)
+void Gl2Rhi::end_render_pass()
 {
-	SRB2_ASSERT(graphics_context_active_ == true && graphics_context_generation_ == ctx.generation());
 	SRB2_ASSERT(current_render_pass_.has_value() == true);
 
 	current_pipeline_ = std::nullopt;
 	current_render_pass_ = std::nullopt;
 }
 
-void Gl2Rhi::bind_pipeline(Handle<GraphicsContext> ctx, Handle<Pipeline> pipeline)
+void Gl2Rhi::bind_pipeline(Handle<Pipeline> pipeline)
 {
-	SRB2_ASSERT(graphics_context_active_ == true && graphics_context_generation_ == ctx.generation());
 	SRB2_ASSERT(current_render_pass_.has_value() == true);
 
 	SRB2_ASSERT(pipeline_slab_.is_valid(pipeline) == true);
@@ -1491,9 +1448,8 @@ void Gl2Rhi::bind_pipeline(Handle<GraphicsContext> ctx, Handle<Pipeline> pipelin
 	current_primitive_type_ = desc.primitive;
 }
 
-void Gl2Rhi::bind_uniform_set(Handle<GraphicsContext> ctx, uint32_t slot, Handle<UniformSet> set)
+void Gl2Rhi::bind_uniform_set(uint32_t slot, Handle<UniformSet> set)
 {
-	SRB2_ASSERT(graphics_context_active_ == true && graphics_context_generation_ == ctx.generation());
 	SRB2_ASSERT(current_render_pass_.has_value() == true && current_pipeline_.has_value() == true);
 
 	SRB2_ASSERT(pipeline_slab_.is_valid(*current_pipeline_));
@@ -1587,9 +1543,8 @@ void Gl2Rhi::bind_uniform_set(Handle<GraphicsContext> ctx, uint32_t slot, Handle
 	}
 }
 
-void Gl2Rhi::bind_binding_set(Handle<GraphicsContext> ctx, Handle<BindingSet> set)
+void Gl2Rhi::bind_binding_set(Handle<BindingSet> set)
 {
-	SRB2_ASSERT(graphics_context_active_ == true && graphics_context_generation_ == ctx.generation());
 	SRB2_ASSERT(current_render_pass_.has_value() == true && current_pipeline_.has_value() == true);
 
 	SRB2_ASSERT(pipeline_slab_.is_valid(*current_pipeline_));
@@ -1685,9 +1640,8 @@ void Gl2Rhi::bind_binding_set(Handle<GraphicsContext> ctx, Handle<BindingSet> se
 	}
 }
 
-void Gl2Rhi::bind_index_buffer(Handle<GraphicsContext> ctx, Handle<Buffer> buffer)
+void Gl2Rhi::bind_index_buffer(Handle<Buffer> buffer)
 {
-	SRB2_ASSERT(graphics_context_active_ == true && graphics_context_generation_ == ctx.generation());
 	SRB2_ASSERT(current_render_pass_.has_value() == true && current_pipeline_.has_value() == true);
 
 	SRB2_ASSERT(buffer_slab_.is_valid(buffer));
@@ -1700,37 +1654,32 @@ void Gl2Rhi::bind_index_buffer(Handle<GraphicsContext> ctx, Handle<Buffer> buffe
 	gl_->BindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib.buffer);
 }
 
-void Gl2Rhi::set_scissor(Handle<GraphicsContext> ctx, const Rect& rect)
+void Gl2Rhi::set_scissor(const Rect& rect)
 {
-	SRB2_ASSERT(graphics_context_active_ == true && graphics_context_generation_ == ctx.generation());
 	SRB2_ASSERT(current_render_pass_.has_value() == true && current_pipeline_.has_value() == true);
 
 	gl_->Enable(GL_SCISSOR_TEST);
 	gl_->Scissor(rect.x, rect.y, rect.w, rect.h);
 }
 
-void Gl2Rhi::set_viewport(Handle<GraphicsContext> ctx, const Rect& rect)
+void Gl2Rhi::set_viewport(const Rect& rect)
 {
-	SRB2_ASSERT(graphics_context_active_ == true && graphics_context_generation_ == ctx.generation());
 	SRB2_ASSERT(current_render_pass_.has_value() == true && current_pipeline_.has_value() == true);
 
 	gl_->Viewport(rect.x, rect.y, rect.w, rect.h);
 	GL_ASSERT;
 }
 
-void Gl2Rhi::draw(Handle<GraphicsContext> ctx, uint32_t vertex_count, uint32_t first_vertex)
+void Gl2Rhi::draw(uint32_t vertex_count, uint32_t first_vertex)
 {
-	SRB2_ASSERT(graphics_context_active_ == true && graphics_context_generation_ == ctx.generation());
 	SRB2_ASSERT(current_render_pass_.has_value() == true && current_pipeline_.has_value() == true);
 
 	gl_->DrawArrays(map_primitive_mode(current_primitive_type_), first_vertex, vertex_count);
 	GL_ASSERT;
 }
 
-void Gl2Rhi::draw_indexed(Handle<GraphicsContext> ctx, uint32_t index_count, uint32_t first_index)
+void Gl2Rhi::draw_indexed(uint32_t index_count, uint32_t first_index)
 {
-	SRB2_ASSERT(graphics_context_active_ == true && graphics_context_generation_ == ctx.generation());
-
 	SRB2_ASSERT(current_index_buffer_ != kNullHandle);
 #ifndef NDEBUG
 	{
@@ -1748,9 +1697,8 @@ void Gl2Rhi::draw_indexed(Handle<GraphicsContext> ctx, uint32_t index_count, uin
 	GL_ASSERT;
 }
 
-void Gl2Rhi::read_pixels(Handle<GraphicsContext> ctx, const Rect& rect, PixelFormat format, tcb::span<std::byte> out)
+void Gl2Rhi::read_pixels(const Rect& rect, PixelFormat format, tcb::span<std::byte> out)
 {
-	SRB2_ASSERT(graphics_context_active_ == true && graphics_context_generation_ == ctx.generation());
 	SRB2_ASSERT(current_render_pass_.has_value());
 
 	std::tuple<GLenum, GLenum, GLuint> gl_format = map_pixel_data_format(format);
@@ -1792,10 +1740,9 @@ void Gl2Rhi::read_pixels(Handle<GraphicsContext> ctx, const Rect& rect, PixelFor
 	GL_ASSERT;
 }
 
-void Gl2Rhi::set_stencil_reference(Handle<GraphicsContext> ctx, CullMode face, uint8_t reference)
+void Gl2Rhi::set_stencil_reference(CullMode face, uint8_t reference)
 {
 	SRB2_ASSERT(face != CullMode::kNone);
-	SRB2_ASSERT(graphics_context_active_ == true && graphics_context_generation_ == ctx.generation());
 	SRB2_ASSERT(current_render_pass_.has_value());
 	SRB2_ASSERT(current_pipeline_.has_value());
 
@@ -1823,10 +1770,9 @@ void Gl2Rhi::set_stencil_reference(Handle<GraphicsContext> ctx, CullMode face, u
 	}
 }
 
-void Gl2Rhi::set_stencil_compare_mask(Handle<GraphicsContext> ctx, CullMode face, uint8_t compare_mask)
+void Gl2Rhi::set_stencil_compare_mask(CullMode face, uint8_t compare_mask)
 {
 	SRB2_ASSERT(face != CullMode::kNone);
-	SRB2_ASSERT(graphics_context_active_ == true && graphics_context_generation_ == ctx.generation());
 	SRB2_ASSERT(current_render_pass_.has_value());
 	SRB2_ASSERT(current_pipeline_.has_value());
 
@@ -1854,10 +1800,9 @@ void Gl2Rhi::set_stencil_compare_mask(Handle<GraphicsContext> ctx, CullMode face
 	}
 }
 
-void Gl2Rhi::set_stencil_write_mask(Handle<GraphicsContext> ctx, CullMode face, uint8_t write_mask)
+void Gl2Rhi::set_stencil_write_mask(CullMode face, uint8_t write_mask)
 {
 	SRB2_ASSERT(face != CullMode::kNone);
-	SRB2_ASSERT(graphics_context_active_ == true && graphics_context_generation_ == ctx.generation());
 	SRB2_ASSERT(current_render_pass_.has_value());
 	SRB2_ASSERT(current_pipeline_.has_value());
 
@@ -1910,8 +1855,6 @@ uint32_t Gl2Rhi::get_buffer_size(Handle<Buffer> buffer)
 
 void Gl2Rhi::finish()
 {
-	SRB2_ASSERT(graphics_context_active_ == false);
-
 	binding_set_slab_.clear();
 	uniform_set_slab_.clear();
 
@@ -1925,13 +1868,11 @@ void Gl2Rhi::finish()
 }
 
 void Gl2Rhi::copy_framebuffer_to_texture(
-	Handle<GraphicsContext> ctx,
 	Handle<Texture> dst_tex,
 	const Rect& dst_region,
 	const Rect& src_region
 )
 {
-	SRB2_ASSERT(graphics_context_active_ == true);
 	SRB2_ASSERT(current_render_pass_.has_value());
 	SRB2_ASSERT(texture_slab_.is_valid(dst_tex));
 

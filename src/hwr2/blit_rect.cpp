@@ -98,11 +98,11 @@ BlitRectPass::BlitRectPass() : BlitRectPass(BlitRectPass::BlitMode::kNearest) {}
 BlitRectPass::BlitRectPass(BlitRectPass::BlitMode blit_mode) : blit_mode_(blit_mode) {}
 BlitRectPass::~BlitRectPass() = default;
 
-void BlitRectPass::draw(Rhi& rhi, Handle<GraphicsContext> ctx)
+void BlitRectPass::draw(Rhi& rhi)
 {
 	prepass(rhi);
-	transfer(rhi, ctx);
-	graphics(rhi, ctx);
+	transfer(rhi);
+	graphics(rhi);
 }
 
 void BlitRectPass::prepass(Rhi& rhi)
@@ -156,17 +156,17 @@ void BlitRectPass::prepass(Rhi& rhi)
 	}
 }
 
-void BlitRectPass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
+void BlitRectPass::transfer(Rhi& rhi)
 {
 	if (quad_vbo_needs_upload_ && quad_vbo_)
 	{
-		rhi.update_buffer(ctx, quad_vbo_, 0, tcb::as_bytes(tcb::span(kVerts)));
+		rhi.update_buffer(quad_vbo_, 0, tcb::as_bytes(tcb::span(kVerts)));
 		quad_vbo_needs_upload_ = false;
 	}
 
 	if (quad_ibo_needs_upload_ && quad_ibo_)
 	{
-		rhi.update_buffer(ctx, quad_ibo_, 0, tcb::as_bytes(tcb::span(kIndices)));
+		rhi.update_buffer(quad_ibo_, 0, tcb::as_bytes(tcb::span(kIndices)));
 		quad_ibo_needs_upload_ = false;
 	}
 
@@ -227,7 +227,7 @@ void BlitRectPass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 			0, 0, 255, 255,
 			0, 0, 0, 255,
 		};
-		rhi.update_texture(ctx, dot_pattern_, {0, 0, 12, 4}, PixelFormat::kRGBA8, tcb::as_bytes(tcb::span(kDotPattern)));
+		rhi.update_texture(dot_pattern_, {0, 0, 12, 4}, PixelFormat::kRGBA8, tcb::as_bytes(tcb::span(kDotPattern)));
 		dot_pattern_needs_upload_ = false;
 	}
 
@@ -250,7 +250,7 @@ void BlitRectPass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 		)
 	}};
 
-	uniform_sets_[0] = rhi.create_uniform_set(ctx, {g1_uniforms});
+	uniform_sets_[0] = rhi.create_uniform_set({g1_uniforms});
 
 	switch (blit_mode_)
 	{
@@ -271,11 +271,11 @@ void BlitRectPass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 			// Sampler 0 Size
 			glm::vec2(texture_details.width, texture_details.height)
 		};
-		uniform_sets_[1] = rhi.create_uniform_set(ctx, {g2_uniforms});
+		uniform_sets_[1] = rhi.create_uniform_set({g2_uniforms});
 
 		std::array<rhi::VertexAttributeBufferBinding, 1> vbs = {{{0, quad_vbo_}}};
 		std::array<rhi::TextureBinding, 2> tbs = {{{rhi::SamplerName::kSampler0, texture_}, {rhi::SamplerName::kSampler1, dot_pattern_}}};
-		binding_set_ = rhi.create_binding_set(ctx, pipeline_, {vbs, tbs});
+		binding_set_ = rhi.create_binding_set(pipeline_, {vbs, tbs});
 		break;
 	}
 	case BlitRectPass::BlitMode::kCrtSharp:
@@ -295,11 +295,11 @@ void BlitRectPass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 			// Sampler 0 Size
 			glm::vec2(texture_details.width, texture_details.height)
 		};
-		uniform_sets_[1] = rhi.create_uniform_set(ctx, {g2_uniforms});
+		uniform_sets_[1] = rhi.create_uniform_set({g2_uniforms});
 
 		std::array<rhi::VertexAttributeBufferBinding, 1> vbs = {{{0, quad_vbo_}}};
 		std::array<rhi::TextureBinding, 2> tbs = {{{rhi::SamplerName::kSampler0, texture_}, {rhi::SamplerName::kSampler1, dot_pattern_}}};
-		binding_set_ = rhi.create_binding_set(ctx, pipeline_, {vbs, tbs});
+		binding_set_ = rhi.create_binding_set(pipeline_, {vbs, tbs});
 		break;
 	}
 	case BlitRectPass::BlitMode::kSharpBilinear:
@@ -319,11 +319,11 @@ void BlitRectPass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 			// Sampler0 size
 			glm::vec2(texture_details.width, texture_details.height)
 		};
-		uniform_sets_[1] = rhi.create_uniform_set(ctx, {g2_uniforms});
+		uniform_sets_[1] = rhi.create_uniform_set({g2_uniforms});
 
 		std::array<rhi::VertexAttributeBufferBinding, 1> vbs = {{{0, quad_vbo_}}};
 		std::array<rhi::TextureBinding, 1> tbs = {{{rhi::SamplerName::kSampler0, texture_}}};
-		binding_set_ = rhi.create_binding_set(ctx, pipeline_, {vbs, tbs});
+		binding_set_ = rhi.create_binding_set(pipeline_, {vbs, tbs});
 		break;
 	}
 	default:
@@ -341,23 +341,23 @@ void BlitRectPass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 				glm::vec3(0.f, output_flip_ ? 1.f : 0.f, 1.f)
 			)
 		};
-		uniform_sets_[1] = rhi.create_uniform_set(ctx, {g2_uniforms});
+		uniform_sets_[1] = rhi.create_uniform_set({g2_uniforms});
 
 		std::array<rhi::VertexAttributeBufferBinding, 1> vbs = {{{0, quad_vbo_}}};
 		std::array<rhi::TextureBinding, 1> tbs = {{{rhi::SamplerName::kSampler0, texture_}}};
-		binding_set_ = rhi.create_binding_set(ctx, pipeline_, {vbs, tbs});
+		binding_set_ = rhi.create_binding_set(pipeline_, {vbs, tbs});
 		break;
 	}
 	}
 }
 
-void BlitRectPass::graphics(Rhi& rhi, Handle<GraphicsContext> ctx)
+void BlitRectPass::graphics(Rhi& rhi)
 {
-	rhi.bind_pipeline(ctx, pipeline_);
-	rhi.set_viewport(ctx, output_position_);
-	rhi.bind_uniform_set(ctx, 0, uniform_sets_[0]);
-	rhi.bind_uniform_set(ctx, 1, uniform_sets_[1]);
-	rhi.bind_binding_set(ctx, binding_set_);
-	rhi.bind_index_buffer(ctx, quad_ibo_);
-	rhi.draw_indexed(ctx, 6, 0);
+	rhi.bind_pipeline(pipeline_);
+	rhi.set_viewport(output_position_);
+	rhi.bind_uniform_set(0, uniform_sets_[0]);
+	rhi.bind_uniform_set(1, uniform_sets_[1]);
+	rhi.bind_binding_set(binding_set_);
+	rhi.bind_index_buffer(quad_ibo_);
+	rhi.draw_indexed(6, 0);
 }

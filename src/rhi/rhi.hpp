@@ -13,9 +13,7 @@
 
 #include <cstdint>
 #include <optional>
-#include <set>
 #include <variant>
-#include <vector>
 
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
@@ -584,10 +582,6 @@ struct BindingSet
 {
 };
 
-struct GraphicsContext
-{
-};
-
 struct TextureDetails
 {
 	uint32_t width;
@@ -621,56 +615,49 @@ struct Rhi
 	virtual uint32_t get_buffer_size(Handle<Buffer> buffer) = 0;
 
 	virtual void update_buffer(
-		Handle<GraphicsContext> ctx,
 		Handle<Buffer> buffer,
 		uint32_t offset,
 		tcb::span<const std::byte> data
 	) = 0;
 	virtual void update_texture(
-		Handle<GraphicsContext> ctx,
 		Handle<Texture> texture,
 		Rect region,
 		srb2::rhi::PixelFormat data_format,
 		tcb::span<const std::byte> data
 	) = 0;
 	virtual void update_texture_settings(
-		Handle<GraphicsContext> ctx,
 		Handle<Texture> texture,
 		TextureWrapMode u_wrap,
 		TextureWrapMode v_wrap,
 		TextureFilterMode min,
 		TextureFilterMode mag
 	) = 0;
-	virtual Handle<UniformSet> create_uniform_set(Handle<GraphicsContext> ctx, const CreateUniformSetInfo& info) = 0;
+	virtual Handle<UniformSet> create_uniform_set(const CreateUniformSetInfo& info) = 0;
 	virtual Handle<BindingSet>
-	create_binding_set(Handle<GraphicsContext> ctx, Handle<Pipeline> pipeline, const CreateBindingSetInfo& info) = 0;
-
-	virtual Handle<GraphicsContext> begin_graphics() = 0;
-	virtual void end_graphics(Handle<GraphicsContext> ctx) = 0;
+	create_binding_set(Handle<Pipeline> pipeline, const CreateBindingSetInfo& info) = 0;
 
 	// Graphics context functions
-	virtual void begin_default_render_pass(Handle<GraphicsContext> ctx, bool clear) = 0;
-	virtual void begin_render_pass(Handle<GraphicsContext> ctx, const RenderPassBeginInfo& info) = 0;
-	virtual void end_render_pass(Handle<GraphicsContext> ctx) = 0;
-	virtual void bind_pipeline(Handle<GraphicsContext> ctx, Handle<Pipeline> pipeline) = 0;
-	virtual void bind_uniform_set(Handle<GraphicsContext> ctx, uint32_t slot, Handle<UniformSet> set) = 0;
-	virtual void bind_binding_set(Handle<GraphicsContext> ctx, Handle<BindingSet> set) = 0;
-	virtual void bind_index_buffer(Handle<GraphicsContext> ctx, Handle<Buffer> buffer) = 0;
-	virtual void set_scissor(Handle<GraphicsContext> ctx, const Rect& rect) = 0;
-	virtual void set_viewport(Handle<GraphicsContext> ctx, const Rect& rect) = 0;
-	virtual void draw(Handle<GraphicsContext> ctx, uint32_t vertex_count, uint32_t first_vertex) = 0;
-	virtual void draw_indexed(Handle<GraphicsContext> ctx, uint32_t index_count, uint32_t first_index) = 0;
+	virtual void begin_default_render_pass(bool clear) = 0;
+	virtual void begin_render_pass(const RenderPassBeginInfo& info) = 0;
+	virtual void end_render_pass() = 0;
+	virtual void bind_pipeline(Handle<Pipeline> pipeline) = 0;
+	virtual void bind_uniform_set(uint32_t slot, Handle<UniformSet> set) = 0;
+	virtual void bind_binding_set(Handle<BindingSet> set) = 0;
+	virtual void bind_index_buffer(Handle<Buffer> buffer) = 0;
+	virtual void set_scissor(const Rect& rect) = 0;
+	virtual void set_viewport(const Rect& rect) = 0;
+	virtual void draw(uint32_t vertex_count, uint32_t first_vertex) = 0;
+	virtual void draw_indexed(uint32_t index_count, uint32_t first_index) = 0;
 	virtual void
-	read_pixels(Handle<GraphicsContext> ctx, const Rect& rect, PixelFormat format, tcb::span<std::byte> out) = 0;
+	read_pixels(const Rect& rect, PixelFormat format, tcb::span<std::byte> out) = 0;
 	virtual void copy_framebuffer_to_texture(
-		Handle<GraphicsContext> ctx,
 		Handle<Texture> dst_tex,
 		const Rect& dst_region,
 		const Rect& src_region
 	) = 0;
-	virtual void set_stencil_reference(Handle<GraphicsContext> ctx, CullMode face, uint8_t reference) = 0;
-	virtual void set_stencil_compare_mask(Handle<GraphicsContext> ctx, CullMode face, uint8_t mask) = 0;
-	virtual void set_stencil_write_mask(Handle<GraphicsContext> ctx, CullMode face, uint8_t mask) = 0;
+	virtual void set_stencil_reference(CullMode face, uint8_t reference) = 0;
+	virtual void set_stencil_compare_mask(CullMode face, uint8_t mask) = 0;
+	virtual void set_stencil_write_mask(CullMode face, uint8_t mask) = 0;
 
 	virtual void present() = 0;
 
