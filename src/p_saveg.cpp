@@ -2038,11 +2038,16 @@ static boolean P_SectorStringArgsEqual(const sector_t *sc, const sector_t *spawn
 	UINT8 i;
 	for (i = 0; i < NUM_SCRIPT_STRINGARGS; i++)
 	{
-		if (!sc->stringargs[i])
-			return !spawnsc->stringargs[i];
-
-		if (strcmp(sc->stringargs[i], spawnsc->stringargs[i]))
-			return false;
+		if (sc->stringargs[i] == NULL || spawnsc->stringargs[i] == NULL)
+		{
+			if (sc->stringargs[i] != spawnsc->stringargs[i])
+				return false;
+		}
+		else
+		{
+			if (strcmp(sc->stringargs[i], spawnsc->stringargs[i]))
+				return false;
+		}
 	}
 
 	return true;
@@ -2085,11 +2090,16 @@ static boolean P_LineStringArgsEqual(const line_t *li, const line_t *spawnli)
 	UINT8 i;
 	for (i = 0; i < NUM_SCRIPT_STRINGARGS; i++)
 	{
-		if (!li->stringargs[i])
-			return !spawnli->stringargs[i];
-
-		if (strcmp(li->stringargs[i], spawnli->stringargs[i]))
-			return false;
+		if (li->stringargs[i] == NULL || spawnli->stringargs[i] == NULL)
+		{
+			if (li->stringargs[i] != spawnli->stringargs[i])
+				return false;
+		}
+		else
+		{
+			if (strcmp(li->stringargs[i], spawnli->stringargs[i]))
+				return false;
+		}
 	}
 
 	return true;
@@ -2844,19 +2854,18 @@ static boolean P_ThingArgsEqual(const mobj_t *mobj, const mapthing_t *mapthing)
 		if (mobj->thing_args[i] != mapthing->thing_args[i])
 			return false;
 
-	return true;
-}
-
-static boolean P_ThingStringArgsEqual(const mobj_t *mobj, const mapthing_t *mapthing)
-{
-	UINT8 i;
 	for (i = 0; i < NUM_MAPTHING_STRINGARGS; i++)
 	{
-		if (!mobj->thing_stringargs[i])
-			return !mapthing->thing_stringargs[i];
-
-		if (strcmp(mobj->thing_stringargs[i], mapthing->thing_stringargs[i]))
-			return false;
+		if (mobj->thing_stringargs[i] == NULL || mapthing->thing_stringargs[i] == NULL)
+		{
+			if (mobj->thing_stringargs[i] != mapthing->thing_stringargs[i])
+				return false;
+		}
+		else
+		{
+			if (strcmp(mobj->thing_stringargs[i], mapthing->thing_stringargs[i]))
+				return false;
+		}
 	}
 
 	return true;
@@ -2874,11 +2883,16 @@ static boolean P_ThingScriptEqual(const mobj_t *mobj, const mapthing_t *mapthing
 
 	for (i = 0; i < NUM_SCRIPT_STRINGARGS; i++)
 	{
-		if (!mobj->script_stringargs[i])
-			return !mapthing->script_stringargs[i];
-
-		if (strcmp(mobj->script_stringargs[i], mapthing->script_stringargs[i]))
-			return false;
+		if (mobj->script_stringargs[i] == NULL || mapthing->script_stringargs[i] == NULL)
+		{
+			if (mobj->script_stringargs[i] != mapthing->script_stringargs[i])
+				return false;
+		}
+		else
+		{
+			if (strcmp(mobj->script_stringargs[i], mapthing->script_stringargs[i]))
+				return false;
+		}
 	}
 
 	return true;
@@ -2916,7 +2930,7 @@ typedef enum
 	MD_SCALE       = 1<<27,
 	MD_DSCALE      = 1<<28,
 	MD_ARGS        = 1<<29,
-	MD_STRINGARGS  = 1<<30,
+	MD__UNUSED     = 1<<30,
 	MD_MORE        = (INT32)(1U<<31)
 } mobj_diff_t;
 
@@ -3101,9 +3115,6 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		if (!P_ThingArgsEqual(mobj, mobj->spawnpoint))
 			diff |= MD_ARGS;
 
-		if (!P_ThingStringArgsEqual(mobj, mobj->spawnpoint))
-			diff |= MD_STRINGARGS;
-
 		if (!P_ThingScriptEqual(mobj, mobj->spawnpoint))
 			diff2 |= MD2_SPECIAL;
 	}
@@ -3125,7 +3136,7 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		{
 			if (mobj->thing_stringargs[j] != NULL)
 			{
-				diff |= MD_STRINGARGS;
+				diff |= MD_ARGS;
 				break;
 			}
 		}
@@ -3417,9 +3428,7 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 	{
 		for (j = 0; j < NUM_MAPTHING_ARGS; j++)
 			WRITEINT32(save->p, mobj->thing_args[j]);
-	}
-	if (diff & MD_STRINGARGS)
-	{
+
 		for (j = 0; j < NUM_MAPTHING_STRINGARGS; j++)
 		{
 			size_t len, k;
@@ -4712,9 +4721,7 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 	{
 		for (j = 0; j < NUM_MAPTHING_ARGS; j++)
 			mobj->thing_args[j] = READINT32(save->p);
-	}
-	if (diff & MD_STRINGARGS)
-	{
+
 		for (j = 0; j < NUM_MAPTHING_STRINGARGS; j++)
 		{
 			size_t len = READINT32(save->p);
@@ -4732,6 +4739,10 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 				mobj->thing_stringargs[j][k] = READCHAR(save->p);
 			mobj->thing_stringargs[j][len] = '\0';
 		}
+	}
+	else if (mobj->spawnpoint)
+	{
+		P_CopyMapThingBehaviorFieldsToMobj(mobj->spawnpoint, mobj);
 	}
 	if (diff2 & MD2_CUSVAL)
 		mobj->cusval = READINT32(save->p);

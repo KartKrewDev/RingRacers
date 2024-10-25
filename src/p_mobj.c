@@ -14102,11 +14102,9 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	return true;
 }
 
-void P_CopyMapThingSpecialFieldsToMobj(const mapthing_t *mthing, mobj_t *mobj)
+void P_CopyMapThingBehaviorFieldsToMobj(const mapthing_t *mthing, mobj_t *mobj)
 {
 	size_t arg = SIZE_MAX;
-
-	mobj->special = mthing->special;
 
 	for (arg = 0; arg < NUM_MAPTHING_ARGS; arg++)
 	{
@@ -14132,6 +14130,13 @@ void P_CopyMapThingSpecialFieldsToMobj(const mapthing_t *mthing, mobj_t *mobj)
 		mobj->thing_stringargs[arg] = Z_Realloc(mobj->thing_stringargs[arg], len + 1, PU_LEVEL, NULL);
 		M_Memcpy(mobj->thing_stringargs[arg], mthing->thing_stringargs[arg], len + 1);
 	}
+}
+
+void P_CopyMapThingSpecialFieldsToMobj(const mapthing_t *mthing, mobj_t *mobj)
+{
+	size_t arg = SIZE_MAX;
+
+	mobj->special = mthing->special;
 
 	for (arg = 0; arg < NUM_SCRIPT_ARGS; arg++)
 	{
@@ -14179,6 +14184,7 @@ static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y,
 	mobj->tid = mthing->tid;
 	P_AddThingTID(mobj);
 
+	P_CopyMapThingBehaviorFieldsToMobj(mthing, mobj);
 	P_CopyMapThingSpecialFieldsToMobj(mthing, mobj);
 
 	if (!P_SetupSpawnedMapThing(mthing, mobj))
