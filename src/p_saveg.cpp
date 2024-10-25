@@ -3569,7 +3569,7 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 	}
 	if (diff2 & MD2_TERRAIN)
 	{
-		WRITEUINT32(save->p, K_GetTerrainHeapIndex(mobj->terrain));
+		WRITEUINT32(save->p, K_GetTerrainHeapIndex(mobj->terrain) + 1);
 		WRITEUINT32(save->p, SaveMobjnum(mobj->terrainOverlay));
 	}
 
@@ -4876,7 +4876,9 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 	}
 	if (diff2 & MD2_TERRAIN)
 	{
-		mobj->terrain = (terrain_t *)(size_t)READUINT32(save->p);
+		UINT32 terrain_index = READUINT32(save->p);
+		if (terrain_index > 0)
+			mobj->terrain = K_GetTerrainByIndex(terrain_index - 1);
 		mobj->terrainOverlay = (mobj_t *)(size_t)READUINT32(save->p);
 	}
 	else
@@ -5967,15 +5969,6 @@ static void P_RelinkPointers(void)
 		{
 			if (!RelinkMobj(&mobj->itnext))
 				CONS_Debug(DBG_GAMELOGIC, "itnext not found on %d\n", mobj->type);
-		}
-		if (mobj->terrain)
-		{
-			temp = (UINT32)(size_t)mobj->terrain;
-			mobj->terrain = K_GetTerrainByIndex(temp);
-			if (mobj->terrain == NULL)
-			{
-				CONS_Debug(DBG_GAMELOGIC, "terrain not found on %d\n", mobj->type);
-			}
 		}
 		if (mobj->terrainOverlay)
 		{
