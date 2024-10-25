@@ -341,6 +341,12 @@ boolean FIL_ConvertTextFileToBinary(const char *textfilename, const char *binfil
 	return success;
 }
 
+boolean FIL_RenameFile(char const *old_name, char const *new_name)
+{
+	int result = rename(old_name, new_name);
+	return (result == 0);
+}
+
 /** Check if the filename exists
   *
   * \param name   Filename to check.
