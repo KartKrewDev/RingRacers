@@ -985,11 +985,8 @@ void Gl2Rhi::present()
 	platform_->present();
 }
 
-void Gl2Rhi::begin_default_render_pass(bool clear)
+void Gl2Rhi::apply_default_framebuffer(bool clear)
 {
-	SRB2_ASSERT(platform_ != nullptr);
-	SRB2_ASSERT(current_render_pass_.has_value() == false);
-
 	const Rect fb_rect = platform_->get_default_framebuffer_dimensions();
 
 	gl_->BindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -1007,14 +1004,10 @@ void Gl2Rhi::begin_default_render_pass(bool clear)
 		gl_->Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		GL_ASSERT;
 	}
-
-	current_render_pass_ = Gl2Rhi::DefaultRenderPassState {};
 }
 
-void Gl2Rhi::begin_render_pass(const RenderPassBeginInfo& info)
+void Gl2Rhi::apply_framebuffer(const RenderPassBeginInfo& info, bool allow_clear)
 {
-	SRB2_ASSERT(current_render_pass_.has_value() == false);
-
 	auto fb_itr = framebuffers_.find(Gl2FramebufferKey {info.color_attachment, info.depth_stencil_attachment});
 	if (fb_itr == framebuffers_.end())
 	{
@@ -1070,26 +1063,55 @@ void Gl2Rhi::begin_render_pass(const RenderPassBeginInfo& info)
 		clear_bits |= GL_STENCIL_BUFFER_BIT;
 	}
 
-	if (clear_bits != 0)
+	if (clear_bits != 0 && allow_clear)
 	{
 		gl_->Clear(clear_bits);
 		GL_ASSERT;
 	}
-
-	current_render_pass_ = info;
 }
 
-void Gl2Rhi::end_render_pass()
+void Gl2Rhi::push_default_render_pass(bool clear)
 {
-	SRB2_ASSERT(current_render_pass_.has_value() == true);
+	SRB2_ASSERT(platform_ != nullptr);
+
+	render_pass_stack_.emplace_back(Gl2Rhi::DefaultRenderPassState { clear });
+	apply_default_framebuffer(clear);
+}
+
+void Gl2Rhi::push_render_pass(const RenderPassBeginInfo& info)
+{
+	render_pass_stack_.push_back(info);
+	apply_framebuffer(info, false);
+}
+
+void Gl2Rhi::pop_render_pass()
+{
+	SRB2_ASSERT(render_pass_stack_.empty() == false);
 
 	current_program_ = std::nullopt;
-	current_render_pass_ = std::nullopt;
+
+	render_pass_stack_.pop_back();
+
+	if (!render_pass_stack_.empty())
+	{
+		RenderPassState& state = *render_pass_stack_.rbegin();
+		// We must not clear the framebuffer when restoring a previous framebuffer,
+		// even if the clear was previously requested.
+		auto visitor = srb2::Overload {
+			[this](const DefaultRenderPassState& s) {
+				apply_default_framebuffer(false);
+			},
+			[this](const RenderPassBeginInfo& info) {
+				apply_framebuffer(info, false);
+			}
+		};
+		std::visit(visitor, state);
+	}
 }
 
 void Gl2Rhi::bind_program(Handle<Program> program)
 {
-	SRB2_ASSERT(current_render_pass_.has_value() == true);
+	SRB2_ASSERT(render_pass_stack_.empty() == false);
 	Gl2Program& prog = program_slab_[program];
 
 	gl_->UseProgram(prog.program);
@@ -1276,7 +1298,7 @@ void Gl2Rhi::set_uniform(const char* name, glm::mat4 value)
 void Gl2Rhi::set_sampler(const char* name, uint32_t slot, Handle<Texture> texture)
 {
 	SRB2_ASSERT(slot >= 0 && slot < kMaxSamplers);
-	SRB2_ASSERT(current_program_.has_value() && current_render_pass_.has_value());
+	SRB2_ASSERT(current_program_.has_value() && render_pass_stack_.empty() == false);
 
 	Gl2Program& prog = program_slab_[*current_program_];
 	SRB2_ASSERT(texture_slab_.is_valid(texture));
@@ -1414,7 +1436,7 @@ void Gl2Rhi::set_rasterizer_state(const RasterizerStateDesc& desc)
 
 void Gl2Rhi::set_viewport(const Rect& rect)
 {
-	SRB2_ASSERT(current_render_pass_.has_value() == true);
+	SRB2_ASSERT(render_pass_stack_.empty() == false);
 
 	gl_->Viewport(rect.x, rect.y, rect.w, rect.h);
 	GL_ASSERT;
@@ -1422,7 +1444,7 @@ void Gl2Rhi::set_viewport(const Rect& rect)
 
 void Gl2Rhi::draw(uint32_t vertex_count, uint32_t first_vertex)
 {
-	SRB2_ASSERT(current_render_pass_.has_value() == true);
+	SRB2_ASSERT(render_pass_stack_.empty() == false);
 
 	gl_->DrawArrays(map_primitive_mode(current_primitive_type_), first_vertex, vertex_count);
 	GL_ASSERT;
@@ -1449,7 +1471,7 @@ void Gl2Rhi::draw_indexed(uint32_t index_count, uint32_t first_index)
 
 void Gl2Rhi::read_pixels(const Rect& rect, PixelFormat format, tcb::span<std::byte> out)
 {
-	SRB2_ASSERT(current_render_pass_.has_value());
+	SRB2_ASSERT(render_pass_stack_.empty() == false);
 
 	std::tuple<GLenum, GLenum, GLuint> gl_format = map_pixel_data_format(format);
 	GLenum layout = std::get<0>(gl_format);
@@ -1475,7 +1497,7 @@ void Gl2Rhi::read_pixels(const Rect& rect, PixelFormat format, tcb::span<std::by
 			src_dim = {0, 0, attach_tex.desc.width, attach_tex.desc.height};
 		}
 	};
-	std::visit(render_pass_visitor, *current_render_pass_);
+	std::visit(render_pass_visitor, *render_pass_stack_.rbegin());
 
 	SRB2_ASSERT(rect.x >= 0);
 	SRB2_ASSERT(rect.y >= 0);
@@ -1493,7 +1515,7 @@ void Gl2Rhi::read_pixels(const Rect& rect, PixelFormat format, tcb::span<std::by
 void Gl2Rhi::set_stencil_reference(CullMode face, uint8_t reference)
 {
 	SRB2_ASSERT(face != CullMode::kNone);
-	SRB2_ASSERT(current_render_pass_.has_value());
+	SRB2_ASSERT(render_pass_stack_.empty() == false);
 
 	if (face == CullMode::kFront)
 	{
@@ -1520,7 +1542,7 @@ void Gl2Rhi::set_stencil_reference(CullMode face, uint8_t reference)
 void Gl2Rhi::set_stencil_compare_mask(CullMode face, uint8_t compare_mask)
 {
 	SRB2_ASSERT(face != CullMode::kNone);
-	SRB2_ASSERT(current_render_pass_.has_value());
+	SRB2_ASSERT(render_pass_stack_.empty() == false);
 
 	if (face == CullMode::kFront)
 	{
@@ -1547,7 +1569,7 @@ void Gl2Rhi::set_stencil_compare_mask(CullMode face, uint8_t compare_mask)
 void Gl2Rhi::set_stencil_write_mask(CullMode face, uint8_t write_mask)
 {
 	SRB2_ASSERT(face != CullMode::kNone);
-	SRB2_ASSERT(current_render_pass_.has_value());
+	SRB2_ASSERT(render_pass_stack_.empty() == false);
 
 	if (face == CullMode::kFront)
 	{
@@ -1613,7 +1635,7 @@ void Gl2Rhi::copy_framebuffer_to_texture(
 	const Rect& src_region
 )
 {
-	SRB2_ASSERT(current_render_pass_.has_value());
+	SRB2_ASSERT(render_pass_stack_.empty() == false);
 	SRB2_ASSERT(texture_slab_.is_valid(dst_tex));
 
 	auto& tex = texture_slab_[dst_tex];
@@ -1638,7 +1660,7 @@ void Gl2Rhi::copy_framebuffer_to_texture(
 			src_dim = {0, 0, attach_tex.desc.width, attach_tex.desc.height};
 		}
 	};
-	std::visit(render_pass_visitor, *current_render_pass_);
+	std::visit(render_pass_visitor, *render_pass_stack_.rbegin());
 
 	SRB2_ASSERT(src_region.x >= 0);
 	SRB2_ASSERT(src_region.y >= 0);

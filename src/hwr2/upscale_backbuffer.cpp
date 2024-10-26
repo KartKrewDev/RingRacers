@@ -68,5 +68,5 @@ void UpscaleBackbuffer::begin_pass(Rhi& rhi)
 	begin_info.depth_store_op = rhi::AttachmentStoreOp::kStore;
 	begin_info.stencil_load_op = rhi::AttachmentLoadOp::kLoad;
 	begin_info.stencil_store_op = rhi::AttachmentStoreOp::kStore;
-	rhi.begin_render_pass(begin_info);
+	rhi.push_render_pass(begin_info);
 }

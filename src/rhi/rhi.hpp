@@ -606,9 +606,9 @@ struct Rhi
 	) = 0;
 
 	// Graphics context functions
-	virtual void begin_default_render_pass(bool clear) = 0;
-	virtual void begin_render_pass(const RenderPassBeginInfo& info) = 0;
-	virtual void end_render_pass() = 0;
+	virtual void push_default_render_pass(bool clear) = 0;
+	virtual void push_render_pass(const RenderPassBeginInfo& info) = 0;
+	virtual void pop_render_pass() = 0;
 	virtual void bind_program(Handle<Program> program) = 0;
 	virtual void bind_vertex_attrib(
 		const char* name,

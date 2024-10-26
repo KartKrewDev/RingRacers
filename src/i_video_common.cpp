@@ -273,9 +273,9 @@ void I_FinishUpdate(void)
 
 	// better hope the drawing code left the context in a render pass, I guess
 	g_hw_state.twodee_renderer->flush(*rhi, g_2d);
-	rhi->end_render_pass();
+	rhi->pop_render_pass();
 
-	rhi->begin_default_render_pass(true);
+	rhi->push_default_render_pass(true);
 
 	// Upscale draw the backbuffer (with postprocessing maybe?)
 	if (cv_scr_scale.value != FRACUNIT)
@@ -323,7 +323,7 @@ void I_FinishUpdate(void)
 		break;
 	}
 
-	rhi->end_render_pass();
+	rhi->pop_render_pass();
 
 	postframe_update(*rhi);
 

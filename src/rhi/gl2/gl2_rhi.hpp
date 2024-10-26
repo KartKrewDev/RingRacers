@@ -125,9 +125,10 @@ class Gl2Rhi final : public Rhi
 
 	struct DefaultRenderPassState
 	{
+		bool clear = false;
 	};
 	using RenderPassState = std::variant<DefaultRenderPassState, RenderPassBeginInfo>;
-	std::optional<RenderPassState> current_render_pass_;
+	std::vector<RenderPassState> render_pass_stack_;
 	std::optional<Handle<Program>> current_program_;
 	PrimitiveType current_primitive_type_ = PrimitiveType::kPoints;
 	uint32_t index_buffer_offset_ = 0;
@@ -140,6 +141,9 @@ class Gl2Rhi final : public Rhi
 	uint8_t stencil_back_write_mask_ = 0xFF;
 	CompareFunc stencil_front_func_;
 	CompareFunc stencil_back_func_;
+
+	void apply_default_framebuffer(bool clear);
+	void apply_framebuffer(const RenderPassBeginInfo& info, bool allow_clear);
 
 public:
 	Gl2Rhi(std::unique_ptr<Gl2Platform>&& platform, GlLoadFunc load_func);
@@ -179,9 +183,9 @@ public:
 	) override;
 
 	// Graphics context functions
-	virtual void begin_default_render_pass(bool clear) override;
-	virtual void begin_render_pass(const RenderPassBeginInfo& info) override;
-	virtual void end_render_pass() override;
+	virtual void push_default_render_pass(bool clear) override;
+	virtual void push_render_pass(const RenderPassBeginInfo& info) override;
+	virtual void pop_render_pass() override;
 	virtual void bind_program(Handle<Program> program) override;
 	virtual void bind_vertex_attrib(
 		const char* name,
