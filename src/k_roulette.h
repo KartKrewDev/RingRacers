@@ -260,6 +260,24 @@ fixed_t K_GetSlotOffset(itemroulette_t *const roulette, fixed_t renderDelta, UIN
 
 void K_KartItemRoulette(player_t *const player, ticcmd_t *cmd);
 
+/*--------------------------------------------------
+	void K_CreateAndShuffleItemReel(player_t *const player, itemroulette_t *const roulette, const boolean freeplay);
+
+		Adds items to the item reel based on the RNG seed,
+		item odds or whether it's free play or not.
+
+	Input Arguments:-
+		player - The player to add items to their reel to.
+		roulette - The player's roulette.
+		freeplay - Whether we should create the free play
+			roulette instead or not.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
+
+void K_KartGetItemResult(player_t *const player, kartitems_t getitem);
+
 UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers);
 
 #ifdef __cplusplus

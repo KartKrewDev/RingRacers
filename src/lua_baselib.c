@@ -4305,6 +4305,20 @@ static int lib_kStopRoulette(lua_State *L)
 	return 0;
 }
 
+static int lib_kKartGetItemResult(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	kartitems_t item = luaL_checkinteger(L, 2);
+	
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	
+	K_KartGetItemResult(player, item);
+	return 0;
+}
+
 static int lib_getTimeMicros(lua_State *L)
 {
 	lua_pushinteger(L, I_GetPreciseTime() / (I_GetPrecisePrecision() / 1000000));
@@ -4606,6 +4620,7 @@ static luaL_Reg lib[] = {
 	{"K_StartItemRoulette", lib_kStartItemRoulette},
 	{"K_StartEggmanRoulette", lib_kStartEggmanRoulette},
 	{"K_StopRoulette", lib_kStopRoulette},
+	{"K_KartGetItemResult", lib_kKartGetItemResult},
 
 	// hu_stuff technically?
 	{"HU_DoTitlecardCEcho", lib_startTitlecardCecho},

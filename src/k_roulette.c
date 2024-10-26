@@ -1845,19 +1845,11 @@ fixed_t K_GetSlotOffset(itemroulette_t *const roulette, fixed_t renderDelta, UIN
 }
 
 /*--------------------------------------------------
-	static void K_KartGetItemResult(player_t *const player, kartitems_t getitem)
+	void K_KartGetItemResult(player_t *const player, kartitems_t getitem)
 
-		Initializes a player's item to what was
-		received from the roulette.
-
-	Input Arguments:-
-		player - The player receiving the item.
-		getitem - The item to give to the player.
-
-	Return:-
-		N/A
+		See header file for description.
 --------------------------------------------------*/
-static void K_KartGetItemResult(player_t *const player, kartitems_t getitem)
+void K_KartGetItemResult(player_t *const player, kartitems_t getitem)
 {
 	if (K_ItemSingularity(getitem) == true)
 	{
