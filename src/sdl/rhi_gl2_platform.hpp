@@ -27,7 +27,7 @@ struct SdlGl2Platform final : public Gl2Platform
 
 	virtual void present() override;
 	virtual std::tuple<std::vector<std::string>, std::vector<std::string>>
-	find_shader_sources(PipelineProgram program) override;
+	find_shader_sources(const char* name) override;
 	virtual Rect get_default_framebuffer_dimensions() override;
 };
 

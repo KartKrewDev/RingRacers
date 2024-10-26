@@ -322,6 +322,7 @@ void I_FinishUpdate(void)
 		g_hw_state.blit_rect->draw(*rhi);
 		break;
 	}
+
 	rhi->end_render_pass();
 
 	postframe_update(*rhi);

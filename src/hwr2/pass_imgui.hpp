@@ -22,24 +22,23 @@ class ImguiPass final
 {
 	struct DrawCmd
 	{
-		rhi::Handle<rhi::Texture> tex;
 		uint32_t v_offset;
 		uint32_t elems;
 		uint32_t i_offset;
 		rhi::Rect clip;
-		rhi::Handle<rhi::BindingSet> binding_set;
+		rhi::Handle<rhi::Buffer> vbo;
+		rhi::Handle<rhi::Buffer> ibo;
+		rhi::Handle<rhi::Texture> tex;
 	};
 	struct DrawList
 	{
 		void* list;
 		rhi::Handle<rhi::Buffer> vbo;
 		rhi::Handle<rhi::Buffer> ibo;
-		rhi::Handle<rhi::UniformSet> us_1;
-		rhi::Handle<rhi::UniformSet> us_2;
 		std::vector<DrawCmd> cmds;
 	};
 
-	rhi::Handle<rhi::Pipeline> pipeline_;
+	rhi::Handle<rhi::Program> program_;
 	rhi::Handle<rhi::Texture> font_atlas_;
 
 	std::vector<DrawList> draw_lists_;

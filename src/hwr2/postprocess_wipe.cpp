@@ -41,22 +41,6 @@ static const uint16_t kPostprocessIndices[] = {0, 1, 2, 1, 3, 2};
 
 } // namespace
 
-static const PipelineDesc kWipePipelineDesc = {
-	PipelineProgram::kPostprocessWipe,
-	{{{sizeof(PostprocessVertex)}},
-	 {
-		 {VertexAttributeName::kPosition, 0, 0},
-		 {VertexAttributeName::kTexCoord0, 0, 12},
-	 }},
-	{{{{UniformName::kProjection, UniformName::kWipeColorizeMode, UniformName::kWipeEncoreSwizzle}}}},
-	{{SamplerName::kSampler0, SamplerName::kSampler1, SamplerName::kSampler2}},
-	std::nullopt,
-	{std::nullopt, {true, true, true, true}},
-	PrimitiveType::kTriangles,
-	CullMode::kNone,
-	FaceWinding::kCounterClockwise,
-	{0.f, 0.f, 0.f, 1.f}};
-
 PostprocessWipePass::PostprocessWipePass()
 {
 }
@@ -73,9 +57,12 @@ void PostprocessWipePass::draw(Rhi& rhi)
 
 void PostprocessWipePass::prepass(Rhi& rhi)
 {
-	if (!pipeline_)
+	if (!program_)
 	{
-		pipeline_ = rhi.create_pipeline(kWipePipelineDesc);
+		ProgramDesc desc;
+		desc.name = "postprocesswipe";
+		desc.defines = tcb::span<const char*>();
+		program_ = rhi.create_program(desc);
 	}
 
 	if (!vbo_)
@@ -195,20 +182,6 @@ void PostprocessWipePass::transfer(Rhi& rhi)
 
 	tcb::span<const std::byte> data = tcb::as_bytes(tcb::span(mask_data_));
 	rhi.update_texture(wipe_tex_, {0, 0, mask_w_, mask_h_}, PixelFormat::kR8, data);
-
-	UniformVariant uniforms[] = {
-		glm::scale(glm::identity<glm::mat4>(), glm::vec3(2.f, 2.f, 1.f)),
-		static_cast<int32_t>(wipe_color_mode_),
-		static_cast<int32_t>(wipe_swizzle_)
-	};
-	us_ = rhi.create_uniform_set({tcb::span(uniforms)});
-
-	VertexAttributeBufferBinding vbos[] = {{0, vbo_}};
-	TextureBinding tx[] = {
-		{SamplerName::kSampler0, start_},
-		{SamplerName::kSampler1, end_},
-		{SamplerName::kSampler2, wipe_tex_}};
-	bs_ = rhi.create_binding_set(pipeline_, {vbos, tx});
 }
 
 void PostprocessWipePass::graphics(Rhi& rhi)
@@ -218,10 +191,21 @@ void PostprocessWipePass::graphics(Rhi& rhi)
 		return;
 	}
 
-	rhi.bind_pipeline(pipeline_);
+	rhi.bind_program(program_);
+
+	RasterizerStateDesc desc {};
+	desc.cull = CullMode::kNone;
+
+	rhi.set_rasterizer_state(desc);
+	rhi.set_uniform("u_projection", glm::scale(glm::identity<glm::mat4>(), glm::vec3(2.f, 2.f, 1.f)));
+	rhi.set_uniform("u_wipe_colorize_mode", static_cast<int32_t>(wipe_color_mode_));
+	rhi.set_uniform("u_wipe_encore_swizzle", static_cast<int32_t>(wipe_swizzle_));
+	rhi.set_sampler("s_sampler0", 0, start_);
+	rhi.set_sampler("s_sampler1", 1, end_);
+	rhi.set_sampler("s_sampler2", 2, wipe_tex_);
+	rhi.bind_vertex_attrib("a_position", vbo_, VertexAttributeFormat::kFloat3, offsetof(PostprocessVertex, x), sizeof(PostprocessVertex));
+	rhi.bind_vertex_attrib("a_texcoord0", vbo_, VertexAttributeFormat::kFloat2, offsetof(PostprocessVertex, u), sizeof(PostprocessVertex));
 	rhi.set_viewport({0, 0, width_, height_});
-	rhi.bind_uniform_set(0, us_);
-	rhi.bind_binding_set(bs_);
 	rhi.bind_index_buffer(ibo_);
 	rhi.draw_indexed(6, 0);
 }

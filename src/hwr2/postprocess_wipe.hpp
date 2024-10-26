@@ -21,13 +21,11 @@ namespace srb2::hwr2
 class PostprocessWipePass final
 {
 	// Internal RHI resources
-	rhi::Handle<rhi::Pipeline> pipeline_;
+	rhi::Handle<rhi::Program> program_;
 	rhi::Handle<rhi::Buffer> vbo_;
 	bool upload_vbo_ = false;
 	rhi::Handle<rhi::Buffer> ibo_;
 	bool upload_ibo_ = false;
-	rhi::Handle<rhi::UniformSet> us_;
-	rhi::Handle<rhi::BindingSet> bs_;
 	rhi::Handle<rhi::Texture> wipe_tex_;
 	int wipe_color_mode_ = 0;
 	int wipe_swizzle_ = 0;

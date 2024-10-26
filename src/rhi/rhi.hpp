@@ -24,6 +24,7 @@
 #include <tcb/span.hpp>
 
 #include "../core/static_vec.hpp"
+#include "glm/ext/vector_float2.hpp"
 #include "handle.hpp"
 
 namespace srb2::rhi
@@ -38,7 +39,8 @@ struct Texture
 {
 };
 
-struct Pipeline
+/// @brief A linked rendering pipeline program combining a vertex shader and fragment shader.
+struct Program
 {
 };
 
@@ -397,16 +399,6 @@ struct ColorMask
 	bool a;
 };
 
-struct BlendDesc
-{
-	BlendFactor source_factor_color;
-	BlendFactor dest_factor_color;
-	BlendFunction color_function;
-	BlendFactor source_factor_alpha;
-	BlendFactor dest_factor_alpha;
-	BlendFunction alpha_function;
-};
-
 enum class StencilOp
 {
 	kKeep,
@@ -419,42 +411,41 @@ enum class StencilOp
 	kDecrementWrap
 };
 
-struct PipelineStencilOpStateDesc
+
+struct ProgramDesc
 {
-	StencilOp fail;
-	StencilOp pass;
-	StencilOp depth_fail;
-	CompareFunc stencil_compare;
+	const char* name;
+	tcb::span<const char*> defines;
 };
 
-struct PipelineDepthStencilStateDesc
+struct RasterizerStateDesc
 {
-	bool depth_test;
-	bool depth_write;
-	CompareFunc depth_func;
-	bool stencil_test;
-	PipelineStencilOpStateDesc front;
-	PipelineStencilOpStateDesc back;
-};
-
-struct PipelineColorStateDesc
-{
-	std::optional<BlendDesc> blend;
-	ColorMask color_mask;
-};
-
-struct PipelineDesc
-{
-	PipelineProgram program;
-	VertexInputDesc vertex_input;
-	UniformInputDesc uniform_input;
-	SamplerInputDesc sampler_input;
-	std::optional<PipelineDepthStencilStateDesc> depth_stencil_state;
-	PipelineColorStateDesc color_state;
-	PrimitiveType primitive;
-	CullMode cull;
-	FaceWinding winding;
-	glm::vec4 blend_color;
+	PrimitiveType primitive = PrimitiveType::kTriangles;
+	CullMode cull = CullMode::kBack;
+	FaceWinding winding = FaceWinding::kCounterClockwise;
+	ColorMask color_mask = {true, true, true, true};
+	bool blend_enabled = false;
+	glm::vec4 blend_color = {0.0, 0.0, 0.0, 0.0};
+	BlendFactor blend_source_factor_color = BlendFactor::kOne;
+	BlendFactor blend_dest_factor_color = BlendFactor::kZero;
+	BlendFunction blend_color_function = BlendFunction::kAdd;
+	BlendFactor blend_source_factor_alpha = BlendFactor::kOne;
+	BlendFactor blend_dest_factor_alpha = BlendFactor::kZero;
+	BlendFunction blend_alpha_function = BlendFunction::kAdd;
+	bool depth_test = false;
+	bool depth_write = true;
+	CompareFunc depth_func = CompareFunc::kLess;
+	bool stencil_test = false;
+	StencilOp front_fail = StencilOp::kKeep;
+	StencilOp front_pass = StencilOp::kKeep;
+	StencilOp front_depth_fail = StencilOp::kKeep;
+	CompareFunc front_stencil_compare = CompareFunc::kAlways;
+	StencilOp back_fail = StencilOp::kKeep;
+	StencilOp back_pass = StencilOp::kKeep;
+	StencilOp back_depth_fail = StencilOp::kKeep;
+	CompareFunc back_stencil_compare = CompareFunc::kAlways;
+	bool scissor_test = false;
+	Rect scissor = {};
 };
 
 struct RenderbufferDesc
@@ -565,13 +556,6 @@ struct CreateBindingSetInfo
 	tcb::span<TextureBinding> sampler_textures;
 };
 
-struct UniformSet
-{
-};
-struct BindingSet
-{
-};
-
 struct TextureDetails
 {
 	uint32_t width;
@@ -588,8 +572,8 @@ struct Rhi
 {
 	virtual ~Rhi();
 
-	virtual Handle<Pipeline> create_pipeline(const PipelineDesc& desc) = 0;
-	virtual void destroy_pipeline(Handle<Pipeline> handle) = 0;
+	virtual Handle<Program> create_program(const ProgramDesc& desc) = 0;
+	virtual void destroy_program(Handle<Program> handle) = 0;
 
 	virtual Handle<Texture> create_texture(const TextureDesc& desc) = 0;
 	virtual void destroy_texture(Handle<Texture> handle) = 0;
@@ -620,19 +604,33 @@ struct Rhi
 		TextureFilterMode min,
 		TextureFilterMode mag
 	) = 0;
-	virtual Handle<UniformSet> create_uniform_set(const CreateUniformSetInfo& info) = 0;
-	virtual Handle<BindingSet>
-	create_binding_set(Handle<Pipeline> pipeline, const CreateBindingSetInfo& info) = 0;
 
 	// Graphics context functions
 	virtual void begin_default_render_pass(bool clear) = 0;
 	virtual void begin_render_pass(const RenderPassBeginInfo& info) = 0;
 	virtual void end_render_pass() = 0;
-	virtual void bind_pipeline(Handle<Pipeline> pipeline) = 0;
-	virtual void bind_uniform_set(uint32_t slot, Handle<UniformSet> set) = 0;
-	virtual void bind_binding_set(Handle<BindingSet> set) = 0;
+	virtual void bind_program(Handle<Program> program) = 0;
+	virtual void bind_vertex_attrib(
+		const char* name,
+		Handle<Buffer> buffer,
+		VertexAttributeFormat format,
+		uint32_t offset,
+		uint32_t stride
+	) = 0;
 	virtual void bind_index_buffer(Handle<Buffer> buffer) = 0;
-	virtual void set_scissor(const Rect& rect) = 0;
+	virtual void set_uniform(const char* name, float value) = 0;
+	virtual void set_uniform(const char* name, int value) = 0;
+	virtual void set_uniform(const char* name, glm::vec2 value) = 0;
+	virtual void set_uniform(const char* name, glm::vec3 value) = 0;
+	virtual void set_uniform(const char* name, glm::vec4 value) = 0;
+	virtual void set_uniform(const char* name, glm::ivec2 value) = 0;
+	virtual void set_uniform(const char* name, glm::ivec3 value) = 0;
+	virtual void set_uniform(const char* name, glm::ivec4 value) = 0;
+	virtual void set_uniform(const char* name, glm::mat2 value) = 0;
+	virtual void set_uniform(const char* name, glm::mat3 value) = 0;
+	virtual void set_uniform(const char* name, glm::mat4 value) = 0;
+	virtual void set_sampler(const char* name, uint32_t slot, Handle<Texture> texture) = 0;
+	virtual void set_rasterizer_state(const RasterizerStateDesc& desc) = 0;
 	virtual void set_viewport(const Rect& rect) = 0;
 	virtual void draw(uint32_t vertex_count, uint32_t first_vertex) = 0;
 	virtual void draw_indexed(uint32_t index_count, uint32_t first_index) = 0;

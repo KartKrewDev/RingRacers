@@ -46,13 +46,11 @@ public:
 private:
 	struct ScreenData
 	{
-		rhi::Handle<rhi::Pipeline> pipeline;
-		rhi::Handle<rhi::BindingSet> binding_set;
-		rhi::Handle<rhi::UniformSet> uniform_set;
+		rhi::Handle<rhi::Program> program;
 	};
 
-	rhi::Handle<rhi::Pipeline> pipeline_;
-	rhi::Handle<rhi::Pipeline> indexed_pipeline_;
+	rhi::Handle<rhi::Program> program_;
+	rhi::Handle<rhi::Program> indexed_program_;
 	rhi::Handle<rhi::Buffer> quad_vbo_;
 	rhi::Handle<rhi::Buffer> quad_ibo_;
 	bool upload_quad_buffer_;

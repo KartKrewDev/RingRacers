@@ -10,11 +10,14 @@
 
 #include "blit_postimg_screens.hpp"
 
+#include <cstddef>
+
 #include <glm/mat3x3.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <tcb/span.hpp>
 
 #include "../p_tick.h"
 #include "../i_time.h"
@@ -35,34 +38,6 @@ struct BlitVertex
 	float v = 0.f;
 };
 } // namespace
-
-static const PipelineDesc kPostimgPipelineDesc =
-{
-	PipelineProgram::kPostimg,
-	{{{sizeof(BlitVertex)}}, {{VertexAttributeName::kPosition, 0, 0}, {VertexAttributeName::kTexCoord0, 0, 12}}},
-	{{{{UniformName::kTime, UniformName::kProjection, UniformName::kModelView, UniformName::kTexCoord0Transform, UniformName::kTexCoord0Min, UniformName::kTexCoord0Max, UniformName::kPostimgWater, UniformName::kPostimgHeat}}}},
-	{{SamplerName::kSampler0}},
-	std::nullopt,
-	{std::nullopt, {true, true, true, true}},
-	PrimitiveType::kTriangles,
-	CullMode::kNone,
-	FaceWinding::kCounterClockwise,
-	{0.0, 0.0, 0.0, 1.0}
-};
-
-static const PipelineDesc kPostimgIndexedPipelineDesc =
-{
-	PipelineProgram::kPostimg,
-	{{{sizeof(BlitVertex)}}, {{VertexAttributeName::kPosition, 0, 0}, {VertexAttributeName::kTexCoord0, 0, 12}}},
-	{{{{UniformName::kTime, UniformName::kProjection, UniformName::kModelView, UniformName::kTexCoord0Transform, UniformName::kTexCoord0Min, UniformName::kTexCoord0Max, UniformName::kPostimgWater, UniformName::kPostimgHeat}}}},
-	{{SamplerName::kSampler0, SamplerName::kSampler1}},
-	std::nullopt,
-	{std::nullopt, {true, true, true, true}},
-	PrimitiveType::kTriangles,
-	CullMode::kNone,
-	FaceWinding::kCounterClockwise,
-	{0.0, 0.0, 0.0, 1.0}
-};
 
 static const BlitVertex kVerts[] =
 	{{-.5f, -.5f, 0.f, 0.f, 0.f}, {.5f, -.5f, 0.f, 1.f, 0.f}, {-.5f, .5f, 0.f, 0.f, 1.f}, {.5f, .5f, 0.f, 1.f, 1.f}};
@@ -106,27 +81,81 @@ void BlitPostimgScreens::draw(Rhi& rhi)
 
 	for (uint32_t i = 0; i < screens_; i++)
 	{
+		BlitPostimgScreens::ScreenConfig& screen_config = screen_configs_[i];
 		BlitPostimgScreens::ScreenData& data = screen_data_[i];
 
-		rhi.bind_pipeline(data.pipeline);
+		glm::mat4 projection = glm::scale(glm::identity<glm::mat4>(), glm::vec3(2.f, -2.f, 1.f));
+		glm::mat4 modelview = glm::identity<glm::mat4>();
+
+		glm::vec2 flip_mirror_uv_displace {0.0, 0.0};
+		if (screen_config.post.mirror)
+		{
+			flip_mirror_uv_displace.x = 1 - (1 - screen_config.uv_size.x);
+		}
+		if (screen_config.post.flip)
+		{
+			flip_mirror_uv_displace.y = 1 - (1 - screen_config.uv_size.y);
+		}
+
+		glm::mat3 texcoord_transform =
+		{
+			glm::vec3(screen_config.uv_size.x * (screen_config.post.mirror ? -1 : 1), 0.0, 0.0),
+			glm::vec3(0.0, screen_config.uv_size.y * (screen_config.post.flip ? -1 : 1), 0.0),
+			glm::vec3(screen_config.uv_offset + flip_mirror_uv_displace, 1.0)
+		};
+
+		glm::vec2 texcoord_min = screen_config.uv_offset;
+		glm::vec2 texcoord_max = screen_config.uv_offset + screen_config.uv_size;
+
+		RasterizerStateDesc r_state {};
+		r_state.cull = CullMode::kNone;
+
+		rhi.bind_program(data.program);
+		rhi.set_rasterizer_state(r_state);
 		rhi.set_viewport(get_screen_viewport(i, screens_, target_width_, target_height_));
-		rhi.bind_uniform_set(0, data.uniform_set);
-		rhi.bind_binding_set(data.binding_set);
+		rhi.bind_vertex_attrib("a_position", quad_vbo_, rhi::VertexAttributeFormat::kFloat3, offsetof(BlitVertex, x), sizeof(BlitVertex));
+		rhi.bind_vertex_attrib("a_texcoord0", quad_vbo_, rhi::VertexAttributeFormat::kFloat2, offsetof(BlitVertex, u), sizeof(BlitVertex));
 		rhi.bind_index_buffer(quad_ibo_);
+		rhi.set_uniform("u_time", static_cast<float>(leveltime));
+		rhi.set_uniform("u_projection", projection);
+		rhi.set_uniform("u_modelview", modelview);
+		rhi.set_uniform("u_texcoord0_transform", texcoord_transform);
+		rhi.set_uniform("u_texcoord0_min", texcoord_min);
+		rhi.set_uniform("u_texcoord0_max", texcoord_max);
+		rhi.set_uniform("u_postimg_water", screen_config.post.water);
+		rhi.set_uniform("u_postimg_heat", screen_config.post.heat);
+		rhi.set_sampler("s_sampler0", 0, screen_config.source);
+		if (screen_config.indexed)
+		{
+			rhi.set_sampler("s_sampler1", 1, palette_mgr_->palette());
+		}
 		rhi.draw_indexed(6, 0);
 	}
 }
 
 void BlitPostimgScreens::prepass(Rhi& rhi)
 {
-	if (!pipeline_)
+	if (!program_)
 	{
-		pipeline_ = rhi.create_pipeline(kPostimgPipelineDesc);
+		static const char* defines[1] = {
+			"ENABLE_S_SAMPLER0"
+		};
+		ProgramDesc desc {};
+		desc.name = "postimg";
+		desc.defines = tcb::make_span(defines);
+		program_ = rhi.create_program(desc);
 	}
 
-	if (!indexed_pipeline_)
+	if (!indexed_program_)
 	{
-		indexed_pipeline_ = rhi.create_pipeline(kPostimgIndexedPipelineDesc);
+		static const char* defines[2] = {
+			"ENABLE_S_SAMPLER0",
+			"ENABLE_S_SAMPLER1"
+		};
+		ProgramDesc desc {};
+		desc.name = "postimg";
+		desc.defines = tcb::make_span(defines);
+		program_ = rhi.create_program(desc);
 	}
 
 	if (!quad_vbo_)
@@ -161,64 +190,12 @@ void BlitPostimgScreens::transfer(Rhi& rhi)
 
 		if (screen_config.indexed)
 		{
-			data.pipeline = indexed_pipeline_;
+			data.program = program_;
 		}
 		else
 		{
-			data.pipeline = pipeline_;
+			data.program = indexed_program_;
 		}
-
-		VertexAttributeBufferBinding vertex_bindings[] = {{0, quad_vbo_}};
-		TextureBinding sampler_bindings[] =
-		{
-			{SamplerName::kSampler0, screen_config.source},
-			{SamplerName::kSampler1, palette_mgr_->palette()}
-		};
-
-		data.binding_set = rhi.create_binding_set(
-			data.pipeline,
-			{
-				vertex_bindings,
-				tcb::span(sampler_bindings, screen_config.indexed ? 2 : 1)
-			}
-		);
-
-		glm::mat4 projection = glm::scale(glm::identity<glm::mat4>(), glm::vec3(2.f, -2.f, 1.f));
-		glm::mat4 modelview = glm::identity<glm::mat4>();
-
-		glm::vec2 flip_mirror_uv_displace {0.0, 0.0};
-		if (screen_config.post.mirror)
-		{
-			flip_mirror_uv_displace.x = 1 - (1 - screen_config.uv_size.x);
-		}
-		if (screen_config.post.flip)
-		{
-			flip_mirror_uv_displace.y = 1 - (1 - screen_config.uv_size.y);
-		}
-
-		glm::mat3 texcoord_transform =
-		{
-			glm::vec3(screen_config.uv_size.x * (screen_config.post.mirror ? -1 : 1), 0.0, 0.0),
-			glm::vec3(0.0, screen_config.uv_size.y * (screen_config.post.flip ? -1 : 1), 0.0),
-			glm::vec3(screen_config.uv_offset + flip_mirror_uv_displace, 1.0)
-		};
-
-		glm::vec2 texcoord_min = screen_config.uv_offset;
-		glm::vec2 texcoord_max = screen_config.uv_offset + screen_config.uv_size;
-
-		UniformVariant uniforms[] =
-		{
-			static_cast<float>(leveltime),
-			projection,
-			modelview,
-			texcoord_transform,
-			texcoord_min,
-			texcoord_max,
-			screen_config.post.water,
-			screen_config.post.heat
-		};
-
-		data.uniform_set = rhi.create_uniform_set({uniforms});
 
 		screen_data_[i] = std::move(data);
 	}
