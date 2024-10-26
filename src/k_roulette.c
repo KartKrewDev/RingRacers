@@ -1208,12 +1208,23 @@ static boolean K_TimingPermitsItem(kartitems_t item, const itemroulette_t *roule
 	return true;
 }
 
+static void K_LuaHookItemRoulette(player_t *player, itemroulette_t *const roulette)
+{
+	// Lua can override the final result.
+	LUA_HookFillItemRoulette(player, roulette);
+	
+	// If somehow there's no items, add sad.
+	if (roulette->itemList.len == 0) {
+		K_AddItemToReel(player, roulette, KITEM_SAD);
+	}
+}
+
 /*--------------------------------------------------
 	void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox, boolean dryrun)
 
 		See header file for description.
 --------------------------------------------------*/
-void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox, boolean dryrun)
+void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, boolean ringbox, boolean dryrun)
 {
 	UINT32 spawnChance[NUMKARTRESULTS] = {0};
 	UINT32 totalSpawnChance = 0;
@@ -1261,6 +1272,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 			K_PushToRouletteItemList(roulette, presetlist[i]);
 		}
 
+		K_LuaHookItemRoulette(player, roulette);
 		return;
 	}
 
@@ -1269,6 +1281,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	if (cv_kartdebugitem.value != KITEM_NONE)
 	{
 		K_PushToRouletteItemList(roulette, cv_kartdebugitem.value);
+		K_LuaHookItemRoulette(player, roulette);
 		return;
 	}
 
@@ -1282,6 +1295,8 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 			{
 				K_PushToRouletteItemList(roulette, K_KartItemReelSpecialEnd[i]);
 			}
+
+			K_LuaHookItemRoulette(player, roulette);
 			return;
 		}
 	}
@@ -1292,6 +1307,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 			K_PushToRouletteItemList(roulette, K_KartItemReelBoss[i]);
 		}
 
+		K_LuaHookItemRoulette(player, roulette);
 		return;
 	}
 	else if (K_TimeAttackRules() == true)
@@ -1358,6 +1374,8 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 			}
 		}
 
+		K_LuaHookItemRoulette(player, roulette);
+
 		return;
 	}
 
@@ -1366,6 +1384,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	if (K_ForcedSPB(player, roulette) == true)
 	{
 		K_AddItemToReel(player, roulette, KITEM_SPB);
+		K_LuaHookItemRoulette(player, roulette);
 		return;
 	}
 
@@ -1390,6 +1409,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 		// singleItem = KITEM_SAD by default,
 		// so it will be used when all items are turned off.
 		K_AddItemToReel(player, roulette, singleItem);
+		K_LuaHookItemRoulette(player, roulette);
 		return;
 	}
 
@@ -1745,6 +1765,8 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 
 		totalSpawnChance--;
 	}
+
+	K_LuaHookItemRoulette(player, roulette);
 }
 
 /*--------------------------------------------------
