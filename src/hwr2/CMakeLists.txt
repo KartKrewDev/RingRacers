@@ -5,8 +5,8 @@ target_sources(SRB2SDL2 PRIVATE
 	blit_rect.cpp
 	blit_rect.hpp
 	hardware_state.hpp
-	pass_imgui.cpp
-	pass_imgui.hpp
+	imgui_renderer.cpp
+	imgui_renderer.hpp
 	pass_resource_managers.cpp
 	pass_resource_managers.hpp
 	patch_atlas.cpp

@@ -87,6 +87,7 @@ static void reset_hardware_state(Rhi* rhi)
 	g_hw_state.crtsharp_blit_rect = std::make_unique<BlitRectPass>(BlitRectPass::BlitMode::kCrtSharp);
 	g_hw_state.screen_capture = std::make_unique<ScreenshotPass>();
 	g_hw_state.backbuffer = std::make_unique<UpscaleBackbuffer>();
+	g_hw_state.imgui_renderer = std::make_unique<ImguiRenderer>();
 	g_hw_state.wipe_frames = {};
 
 	g_last_known_rhi = rhi;
@@ -322,6 +323,8 @@ void I_FinishUpdate(void)
 		g_hw_state.blit_rect->draw(*rhi);
 		break;
 	}
+
+	g_hw_state.imgui_renderer->render(*rhi);
 
 	rhi->pop_render_pass();
 

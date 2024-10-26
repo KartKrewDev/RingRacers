@@ -18,7 +18,7 @@
 namespace srb2::hwr2
 {
 
-class ImguiPass final
+class ImguiRenderer final
 {
 	struct DrawCmd
 	{
@@ -40,17 +40,15 @@ class ImguiPass final
 
 	rhi::Handle<rhi::Program> program_;
 	rhi::Handle<rhi::Texture> font_atlas_;
+	rhi::Handle<rhi::Texture> default_tex_;
 
 	std::vector<DrawList> draw_lists_;
 
 public:
-	ImguiPass();
-	virtual ~ImguiPass();
+	ImguiRenderer();
+	virtual ~ImguiRenderer();
 
-	void prepass(rhi::Rhi& rhi);
-	void transfer(rhi::Rhi& rhi);
-	void graphics(rhi::Rhi& rhi);
-	void postpass(rhi::Rhi& rhi);
+	void render(rhi::Rhi& rhi);
 };
 
 } // namespace srb2::hwr2

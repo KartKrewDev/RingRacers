@@ -8,7 +8,7 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#include "pass_imgui.hpp"
+#include "imgui_renderer.hpp"
 
 #include <imgui.h>
 #include <tcb/span.hpp>
@@ -19,14 +19,15 @@ using namespace srb2;
 using namespace srb2::hwr2;
 using namespace srb2::rhi;
 
-ImguiPass::ImguiPass()
+ImguiRenderer::ImguiRenderer()
 {
 }
 
-ImguiPass::~ImguiPass() = default;
+ImguiRenderer::~ImguiRenderer() = default;
 
-void ImguiPass::prepass(Rhi& rhi)
+void ImguiRenderer::render(Rhi& rhi)
 {
+
 	if (!program_)
 	{
 		const char* defines[2] = {
@@ -59,6 +60,19 @@ void ImguiPass::prepass(Rhi& rhi)
 			TextureWrapMode::kRepeat
 		});
 		io.Fonts->SetTexID(font_atlas_);
+	}
+
+	if (!default_tex_)
+	{
+		uint32_t pixel = 0xFFFFFFFF;
+		default_tex_ = rhi.create_texture({
+			TextureFormat::kRGBA,
+			1,
+			1,
+			TextureWrapMode::kRepeat,
+			TextureWrapMode::kRepeat
+		});
+		rhi.update_texture(default_tex_, {0, 0, 1, 1}, rhi::PixelFormat::kRGBA8, tcb::as_bytes(tcb::span(&pixel, 1)));
 	}
 
 	ImGui::Render();
@@ -99,7 +113,14 @@ void ImguiPass::prepass(Rhi& rhi)
 
 			DrawCmd draw_cmd;
 			ImTextureID tex_id = cmd.GetTexID();
-			draw_cmd.tex = tex_id;
+			if (tex_id == 0)
+			{
+				draw_cmd.tex = default_tex_;
+			}
+			else
+			{
+				draw_cmd.tex = tex_id;
+			}
 			draw_cmd.v_offset = cmd.VtxOffset;
 			draw_cmd.i_offset = cmd.IdxOffset;
 			draw_cmd.elems = cmd.ElemCount;
@@ -112,11 +133,6 @@ void ImguiPass::prepass(Rhi& rhi)
 		}
 		draw_lists_.push_back(std::move(hwr2_list));
 	}
-}
-
-void ImguiPass::transfer(Rhi& rhi)
-{
-	ImGuiIO& io = ImGui::GetIO();
 
 	{
 		unsigned char* pixels;
@@ -159,10 +175,7 @@ void ImguiPass::transfer(Rhi& rhi)
 			draw_cmd.tex = draw_cmd.tex;
 		}
 	}
-}
 
-void ImguiPass::graphics(Rhi& rhi)
-{
 	rhi.bind_program(program_);
 	RasterizerStateDesc rs;
 
@@ -213,10 +226,7 @@ void ImguiPass::graphics(Rhi& rhi)
 			rhi.draw_indexed(cmd.elems, cmd.i_offset);
 		}
 	}
-}
 
-void ImguiPass::postpass(Rhi& rhi)
-{
 	for (auto& list : draw_lists_)
 	{
 		rhi.destroy_buffer(list.vbo);
