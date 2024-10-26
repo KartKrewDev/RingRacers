@@ -4320,6 +4320,36 @@ static int lib_kKartGetItemResult(lua_State *L)
 	return 0;
 }
 
+static int lib_kGetItemRouletteDistance(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	UINT8 numPlayers = luaL_checkinteger(L, 2);
+	INLEVEL
+	
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	
+	lua_pushinteger(L, K_GetItemRouletteDistance(player, numPlayers));
+	return 1;
+}
+
+static int lib_kCreateAndShuffleItemReel(lua_State *L)
+{
+	player_t *player = NULL;
+	itemroulette_t *itemRoulette = NULL;
+	
+	getItemRouletteOrPlayerBasedOnFirstParam(L, &player, &itemRoulette);
+	boolean freeplay = lua_optboolean(L, 2);
+	
+	NOHUD
+	INLEVEL
+	if (!player && !itemRoulette)
+		return LUA_ErrInvalid(L, "player_t/itemroulette_t");
+
+	K_CreateAndShuffleItemReel(player, itemRoulette, freeplay);
+	return 0;
+}
+
 static int lib_getTimeMicros(lua_State *L)
 {
 	lua_pushinteger(L, I_GetPreciseTime() / (I_GetPrecisePrecision() / 1000000));
@@ -4622,6 +4652,9 @@ static luaL_Reg lib[] = {
 	{"K_StartEggmanRoulette", lib_kStartEggmanRoulette},
 	{"K_StopRoulette", lib_kStopRoulette},
 	{"K_KartGetItemResult", lib_kKartGetItemResult},
+	{"K_GetItemRouletteDistance", lib_kGetItemRouletteDistance},
+	{"K_FindUseodds", lib_kFindUseodds},
+	{"K_CreateAndShuffleItemReel", lib_kCreateAndShuffleItemReel},
 
 	// hu_stuff technically?
 	{"HU_DoTitlecardCEcho", lib_startTitlecardCecho},

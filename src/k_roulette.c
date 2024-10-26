@@ -502,15 +502,7 @@ static UINT32 K_ScaleItemDistance(const player_t *player, UINT32 distance, UINT8
 /*--------------------------------------------------
 	static UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers)
 
-		Gets a player's distance used for the item
-		roulette, including all scaling factors.
-
-	Input Arguments:-
-		player - The player to get the distance of.
-		numPlayers - Number of players in the game.
-
-	Return:-
-		The player's finalized item distance.
+		See header file for description.
 --------------------------------------------------*/
 UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers)
 {

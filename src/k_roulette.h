@@ -278,7 +278,37 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *cmd);
 
 void K_KartGetItemResult(player_t *const player, kartitems_t getitem);
 
+/*--------------------------------------------------
+	static UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers)
+
+		Gets a player's distance used for the item
+		roulette, including all scaling factors.
+
+	Input Arguments:-
+		player - The player to get the distance of.
+		numPlayers - Number of players in the game.
+
+	Return:-
+		The player's finalized item distance.
+--------------------------------------------------*/
+
 UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers);
+
+/*--------------------------------------------------
+	static UINT8 K_FindUseodds(const player_t *player, itemroulette_t *const roulette)
+
+		Gets which item bracket the player is in.
+		This can be adjusted depending on which
+		items being turned off.
+
+	Input Arguments:-
+		player - The player the roulette is for.
+		roulette - The item roulette data.
+
+	Return:-
+		The item bracket the player is in, as an
+		index to the array.
+--------------------------------------------------*/
 
 #ifdef __cplusplus
 } // extern "C"
