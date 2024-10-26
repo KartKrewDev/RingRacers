@@ -4350,6 +4350,22 @@ static int lib_kFillItemRouletteData(lua_State *L)
 	return 0;
 }
 
+static int lib_kWipeItemsInReel(lua_State *L)
+{
+	player_t *player = NULL;
+	itemroulette_t *itemRoulette = NULL;
+	
+	getItemRouletteOrPlayerBasedOnFirstParam(L, &player, &itemRoulette);
+	
+	NOHUD
+	INLEVEL
+	if (!player && !itemRoulette)
+		return LUA_ErrInvalid(L, "player_t/itemroulette_t");
+	
+	itemRoulette->itemList.len = 0;
+	return 0;
+}
+
 static int lib_getTimeMicros(lua_State *L)
 {
 	lua_pushinteger(L, I_GetPreciseTime() / (I_GetPrecisePrecision() / 1000000));
@@ -4654,6 +4670,9 @@ static luaL_Reg lib[] = {
 	{"K_KartGetItemResult", lib_kKartGetItemResult},
 	{"K_GetItemRouletteDistance", lib_kGetItemRouletteDistance},
 	{"K_FillItemRouletteData", lib_kFillItemRouletteData},
+	// These are not real functions in k_roulette, but they allow
+	// encapsulation on how the scripter interacts with the item reel.
+	{"K_WipeItemsInReel", lib_kWipeItemsInReel},
 
 	// hu_stuff technically?
 	{"HU_DoTitlecardCEcho", lib_startTitlecardCecho},
