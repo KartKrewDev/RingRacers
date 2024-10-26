@@ -894,6 +894,12 @@ void D_SRB2Loop(void)
 	because I_FinishUpdate was called afterward
 	*/
 
+	// Make sure audio volume is initialized since S_UpdateSounds won't be called during the
+	// initial wipe.
+	S_SetMasterVolume();
+	S_SetMusicVolume();
+	S_SetSfxVolume();
+
 	for (;;)
 	{
 		// capbudget is the minimum precise_t duration of a single loop iteration
@@ -1800,15 +1806,15 @@ void D_SRB2Main(void)
 	S_RegisterSoundStuff();
 
 	I_RegisterSysCommands();
-	
+
 	CON_SetLoadingProgress(LOADED_HUINIT);
-	
+
 	CONS_Printf("W_InitMultipleFiles(): Adding external PWADs.\n");
-	
+
 	// HACK: Refer to https://git.do.srb2.org/KartKrew/RingRacers/-/merge_requests/29#note_61574
 	partadd_earliestfile = numwadfiles;
 	W_InitMultipleFiles(startuppwads, true);
-	
+
 	// Only search for pwad maps and reload graphics if we actually have a pwad added
 	if (startuppwads[0] != NULL)
 	{
@@ -1818,7 +1824,7 @@ void D_SRB2Main(void)
 		P_InitMapData();
 		HU_LoadGraphics();
 	}
-	
+
 	D_CleanFile(startuppwads);
 	partadd_earliestfile = UINT16_MAX;
 
