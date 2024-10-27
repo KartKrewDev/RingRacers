@@ -4366,6 +4366,134 @@ static int lib_kWipeItemsInReel(lua_State *L)
 	return 0;
 }
 
+static int lib_kSetItemInReelByIndex(lua_State *L)
+{
+	player_t *player = NULL;
+	itemroulette_t *itemRoulette = NULL;
+	
+	getItemRouletteOrPlayerBasedOnFirstParam(L, &player, &itemRoulette);
+	size_t index = luaL_checkinteger(L, 2) - 1;
+	kartitems_t item = luaL_checkinteger(L, 3);
+	
+	NOHUD
+	INLEVEL
+	if (!player && !itemRoulette)
+		return LUA_ErrInvalid(L, "player_t/itemroulette_t");
+	
+	if (itemRoulette->itemList.len == 0)
+		return luaL_error(L, "There are no items in the roulette to set.");
+	
+	if (index > itemRoulette->itemList.len - 1)
+		return luaL_error(L, "Roulette index %d out of bounds (should be between %d and %d).", index + 1, 1, itemRoulette->itemList.len);
+	
+	itemRoulette->itemList.items[index] = item;
+	return 0;
+}
+
+static void AddOrPushToItemReel(player_t *player, itemroulette_t *roulette, kartitems_t item, boolean addRings)
+{
+	if (addRings)
+		K_AddItemToReel(player, roulette, item);
+	else
+		K_PushToRouletteItemList(roulette, item);
+}
+
+static int lib_kAddItemToReelByIndex(lua_State *L)
+{
+	player_t *player = NULL;
+	itemroulette_t *itemRoulette = NULL;
+	
+	getItemRouletteOrPlayerBasedOnFirstParam(L, &player, &itemRoulette);
+	size_t index = luaL_checkinteger(L, 2) - 1;
+	kartitems_t item = luaL_checkinteger(L, 3);
+	boolean addRings = lua_optboolean(L, 4);
+	
+	NOHUD
+	INLEVEL
+	if (!player && !itemRoulette)
+		return LUA_ErrInvalid(L, "player_t/itemroulette_t");
+	
+	// If the list is empty, just add the item silently and leave.
+	if (itemRoulette->itemList.len == 0) {
+		AddOrPushToItemReel(player, itemRoulette, item, addRings);
+		return 0;
+	}
+	
+	if (index > itemRoulette->itemList.len - 1)
+		return luaL_error(L, "Roulette index %d out of bounds (should be between %d and %d).", index + 1, 1, itemRoulette->itemList.len);
+	
+	size_t latterItemList = itemRoulette->itemList.len - index;
+	kartitems_t *latterItems = Z_Calloc(
+		sizeof(kartitems_t) * latterItemList,
+		PU_STATIC,
+		NULL
+	);
+	
+	if (!latterItems)
+		I_Error("Out of memory during calloc for lib_kAddItemToReelByIndex.");
+	
+	for (size_t i = 0; i < latterItemList; i++)
+	{
+		latterItems[i] = itemRoulette->itemList.items[index + i];
+	}
+	
+	itemRoulette->itemList.len = index;
+	AddOrPushToItemReel(player, itemRoulette, item, addRings);
+	
+	for (size_t i = 0; i < latterItemList; i++)
+	{
+		AddOrPushToItemReel(player, itemRoulette, latterItems[i], addRings);
+	}
+	
+	Z_Free(latterItems);
+	
+	return 0;
+}
+
+static int lib_kRemoveItemFromReelByIndex(lua_State *L)
+{
+	player_t *player = NULL;
+	itemroulette_t *itemRoulette = NULL;
+	
+	getItemRouletteOrPlayerBasedOnFirstParam(L, &player, &itemRoulette);
+	size_t index = luaL_checkinteger(L, 2) - 1;
+	
+	NOHUD
+	INLEVEL
+	if (!player && !itemRoulette)
+		return LUA_ErrInvalid(L, "player_t/itemroulette_t");
+	
+	if (itemRoulette->itemList.len == 0)
+		return luaL_error(L, "There are no items in the roulette to delete.");
+	
+	if (index > itemRoulette->itemList.len - 1)
+		return luaL_error(L, "Roulette index %d out of bounds (should be between %d and %d).", index + 1, 1, itemRoulette->itemList.len);
+	
+	size_t latterItemList = itemRoulette->itemList.len - index - 1;
+	kartitems_t *latterItems = Z_Calloc(
+		sizeof(kartitems_t) * latterItemList,
+		PU_STATIC,
+		NULL
+	);
+	
+	if (!latterItems)
+		I_Error("Out of memory during calloc for lib_kRemoveItemFromReelByIndex.");
+	
+	for (size_t i = 0; i < latterItemList; i++)
+	{
+		latterItems[i] = itemRoulette->itemList.items[index + 1 + i];
+	}
+	
+	itemRoulette->itemList.len = index;
+
+	for (size_t i = 0; i < latterItemList; i++)
+		K_PushToRouletteItemList(itemRoulette, latterItems[i]);
+	
+	Z_Free(latterItems);
+	
+	return 0;
+}
+
 static int lib_getTimeMicros(lua_State *L)
 {
 	lua_pushinteger(L, I_GetPreciseTime() / (I_GetPrecisePrecision() / 1000000));
@@ -4673,6 +4801,9 @@ static luaL_Reg lib[] = {
 	// These are not real functions in k_roulette, but they allow
 	// encapsulation on how the scripter interacts with the item reel.
 	{"K_WipeItemsInReel", lib_kWipeItemsInReel},
+	{"K_SetItemInReelByIndex", lib_kSetItemInReelByIndex},
+	{"K_AddItemToReelByIndex", lib_kAddItemToReelByIndex},
+	{"K_RemoveItemFromReelByIndex", lib_kRemoveItemFromReelByIndex},
 
 	// hu_stuff technically?
 	{"HU_DoTitlecardCEcho", lib_startTitlecardCecho},
