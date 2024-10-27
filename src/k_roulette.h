@@ -77,6 +77,38 @@ boolean K_ItemSingularity(kartitems_t item);
 botItemPriority_e K_GetBotItemPriority(kartitems_t result);
 
 /*--------------------------------------------------
+	fixed_t K_ItemOddsScale(UINT8 playerCount)
+
+		A multiplier for odds and distances to scale
+		them with the player count.
+
+	Input Arguments:-
+		playerCount - Number of players in the game.
+
+	Return:-
+		Fixed point number, to multiply odds or
+		distances by.
+--------------------------------------------------*/
+
+fixed_t K_ItemOddsScale(UINT8 playerCount);
+
+/*--------------------------------------------------
+	UINT32 K_ScaleItemDistance(UINT32 distance, UINT8 numPlayers)
+
+		Adjust item distance for lobby-size scaling
+		as well as Frantic Items.
+
+	Input Arguments:-
+		distance - Original distance.
+		numPlayers - Number of players in the game.
+
+	Return:-
+		New distance after scaling.
+--------------------------------------------------*/
+
+UINT32 K_ScaleItemDistance(INT32 distance, UINT8 numPlayers);
+
+/*--------------------------------------------------
 	void K_PushToRouletteItemList(itemroulette_t *const roulette, INT32 item)
 
 		Pushes a new item to the end of the item

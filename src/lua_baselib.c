@@ -4411,6 +4411,21 @@ static int lib_kCalculateRouletteSpeed(lua_State *L)
 	return 0;
 }
 
+static int lib_kScaleItemDistance(lua_State *L)
+{
+	UINT32 distance = luaL_checkinteger(L, 1);
+	UINT8 numPlayers = luaL_checkinteger(L, 2);
+	lua_pushfixed(L, K_ScaleItemDistance(distance, numPlayers));
+	return 1;
+}
+
+static int lib_kItemOddsScale(lua_State *L)
+{
+	UINT8 playerCount = luaL_checkinteger(L, 1);
+	lua_pushfixed(L, K_ItemOddsScale(playerCount));
+	return 1;
+}
+
 static int lib_kWipeItemsInReel(lua_State *L)
 {
 	player_t *player = NULL;
@@ -4864,6 +4879,8 @@ static luaL_Reg lib[] = {
 	{"K_GetRouletteOffset", lib_kGetRouletteOffset},
 	{"K_GetSlotOffset", lib_kGetSlotOffset},
 	{"K_CalculateRouletteSpeed", lib_kCalculateRouletteSpeed},
+	{"K_ScaleItemDistance", lib_kScaleItemDistance},
+	{"K_ItemOddsScale", lib_kItemOddsScale},	
 	// These are not real functions in k_roulette, but they allow
 	// encapsulation on how the scripter interacts with the item reel.
 	{"K_WipeItemsInReel", lib_kWipeItemsInReel},

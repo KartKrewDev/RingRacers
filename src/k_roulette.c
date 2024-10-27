@@ -399,17 +399,9 @@ botItemPriority_e K_GetBotItemPriority(kartitems_t result)
 /*--------------------------------------------------
 	static fixed_t K_ItemOddsScale(UINT8 playerCount)
 
-		A multiplier for odds and distances to scale
-		them with the player count.
-
-	Input Arguments:-
-		playerCount - Number of players in the game.
-
-	Return:-
-		Fixed point number, to multiply odds or
-		distances by.
+		See header file for description.
 --------------------------------------------------*/
-static fixed_t K_ItemOddsScale(UINT8 playerCount)
+fixed_t K_ItemOddsScale(UINT8 playerCount)
 {
 	const UINT8 basePlayer = 8; // The player count we design most of the game around.
 	fixed_t playerScaling = 0;
@@ -462,7 +454,7 @@ static UINT32 K_UndoMapScaling(UINT32 distance)
 }
 
 /*--------------------------------------------------
-	static UINT32 K_ScaleItemDistance(UINT32 distance, UINT8 numPlayers)
+	UINT32 K_ScaleItemDistance(UINT32 distance, UINT8 numPlayers)
 
 		Adjust item distance for lobby-size scaling
 		as well as Frantic Items.
@@ -475,10 +467,8 @@ static UINT32 K_UndoMapScaling(UINT32 distance)
 	Return:-
 		New distance after scaling.
 --------------------------------------------------*/
-static UINT32 K_ScaleItemDistance(const player_t *player, UINT32 distance, UINT8 numPlayers)
+UINT32 K_ScaleItemDistance(INT32 distance, UINT8 numPlayers)
 {
-	(void)player;
-
 #if 0
 	if (franticitems == true)
 	{
@@ -492,9 +482,6 @@ static UINT32 K_ScaleItemDistance(const player_t *player, UINT32 distance, UINT8
 		distance,
 		FRACUNIT + (K_ItemOddsScale(numPlayers) / 2)
 	);
-
-	// Distance is reduced based on the player's gradingfactor
-	// distance = FixedMul(distance, player->gradingfactor);
 
 	return distance;
 }
@@ -554,7 +541,7 @@ UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers)
 	}
 
 	pdis = K_UndoMapScaling(pdis);
-	pdis = K_ScaleItemDistance(player, pdis, numPlayers);
+	pdis = K_ScaleItemDistance(pdis, numPlayers);
 
 	if (player->bot && (player->botvars.rival || cv_levelskull.value))
 	{
@@ -830,7 +817,7 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 		&& roulette->secondDist > roulette->firstDist)
 	{
 		roulette->secondToFirst = roulette->secondDist - roulette->firstDist;
-		roulette->secondToFirst = K_ScaleItemDistance(&players[i], roulette->secondToFirst, 16 - roulette->playing); // Reversed scaling
+		roulette->secondToFirst = K_ScaleItemDistance(roulette->secondToFirst, 16 - roulette->playing); // Reversed scaling
 	}
 }
 
