@@ -278,6 +278,39 @@ void K_KartGetItemResult(player_t *const player, kartitems_t getitem);
 
 UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers);
 
+/*--------------------------------------------------
+	boolean K_DenyShieldOdds(kartitems_t item)
+
+		Checks if this type of shield already exists in
+		another player's inventory.
+
+	Input Arguments:-
+		item - The item type of the shield.
+
+	Return:-
+		Whether this item is a shield and may not be awarded
+		at this time.
+--------------------------------------------------*/
+
+boolean K_DenyShieldOdds(kartitems_t item);
+
+/*--------------------------------------------------
+	boolean K_ForcedSPB(const player_t *player, itemroulette_t *const roulette)
+
+		Determines special conditions where we want
+		to forcefully give the player an SPB.
+
+	Input Arguments:-
+		player - The player the roulette is for.
+		roulette - The item roulette data.
+
+	Return:-
+		true if we want to give the player a forced SPB,
+		otherwise false.
+--------------------------------------------------*/
+
+boolean K_ForcedSPB(const player_t *player, itemroulette_t *const roulette);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
