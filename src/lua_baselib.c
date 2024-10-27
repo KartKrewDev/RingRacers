@@ -4370,6 +4370,34 @@ static int lib_kDenyShieldOdds(lua_State *L)
 	return 1;
 }
 
+static int lib_kGetRouletteOffset(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	fixed_t renderDelta = luaL_optnumber(L, 2, FRACUNIT);
+	UINT8 fudge = luaL_optnumber(L, 3, player ? player->cmd.latency : 0);
+	INLEVEL
+	
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	
+	lua_pushfixed(L, K_GetRouletteOffset(&player->itemRoulette, renderDelta, fudge));
+	return 1;
+}
+
+static int lib_kGetSlotOffset(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	fixed_t renderDelta = luaL_optnumber(L, 2, FRACUNIT);
+	UINT8 fudge = luaL_optnumber(L, 3, player ? player->cmd.latency : 0);
+	INLEVEL
+	
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	
+	lua_pushfixed(L, K_GetSlotOffset(&player->itemRoulette, renderDelta, fudge));
+	return 1;
+}
+
 static int lib_kWipeItemsInReel(lua_State *L)
 {
 	player_t *player = NULL;
@@ -4820,6 +4848,8 @@ static luaL_Reg lib[] = {
 	{"K_FillItemRouletteData", lib_kFillItemRouletteData},
 	{"K_ForcedSPB", lib_kForcedSPB},
 	{"K_DenyShieldOdds", lib_kDenyShieldOdds},
+	{"K_GetRouletteOffset", lib_kGetRouletteOffset},
+	{"K_GetSlotOffset", lib_kGetSlotOffset},
 	// These are not real functions in k_roulette, but they allow
 	// encapsulation on how the scripter interacts with the item reel.
 	{"K_WipeItemsInReel", lib_kWipeItemsInReel},
