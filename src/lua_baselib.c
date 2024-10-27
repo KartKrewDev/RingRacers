@@ -32,6 +32,7 @@
 #include "k_collide.h"
 #include "k_color.h"
 #include "k_hud.h"
+#include "k_grandprix.h"
 #include "d_netcmd.h" // IsPlayerAdmin
 #include "k_menu.h" // Player Setup menu color stuff
 #include "p_spec.h" // P_StartQuake
@@ -4080,6 +4081,12 @@ static int lib_kDeclareWeakspot(lua_State *L)
 	return 0;
 }
 
+static int lib_kCheckBossIntro(lua_State *L)
+{
+	lua_pushboolean(L, K_CheckBossIntro());
+	return 1;
+}
+
 static int lib_vsGetArena(lua_State *L)
 {
 	INT32 bossindex = luaL_checkinteger(L, 1);
@@ -4570,6 +4577,12 @@ static int lib_kRemoveItemFromReelByIndex(lua_State *L)
 	return 0;
 }
 
+static int lib_kCanChangeRules(lua_State *L)
+{
+	lua_pushboolean(L, K_CanChangeRules(true));
+	return 1;
+}
+
 static int lib_getTimeMicros(lua_State *L)
 {
 	lua_pushinteger(L, I_GetPreciseTime() / (I_GetPrecisePrecision() / 1000000));
@@ -4858,6 +4871,7 @@ static luaL_Reg lib[] = {
 	{"K_InitBossHealthBar", lib_kInitBossHealthBar},
 	{"K_UpdateBossHealthBar", lib_kUpdateBossHealthBar},
 	{"K_DeclareWeakspot", lib_kDeclareWeakspot},
+	{"K_CheckBossIntro", lib_kCheckBossIntro},
 	{"VS_GetArena", lib_vsGetArena},
 	{"VS_PredictAroundArena", lib_vsPredictAroundArena},
 	{"VS_RandomPointOnArena", lib_vsRandomPointOnArena},
@@ -4887,6 +4901,9 @@ static luaL_Reg lib[] = {
 	{"K_SetItemInReelByIndex", lib_kSetItemInReelByIndex},
 	{"K_AddItemToReelByIndex", lib_kAddItemToReelByIndex},
 	{"K_RemoveItemFromReelByIndex", lib_kRemoveItemFromReelByIndex},
+
+	// k_grandprix
+	{"K_CanChangeRules", lib_kCanChangeRules},
 
 	// hu_stuff technically?
 	{"HU_DoTitlecardCEcho", lib_startTitlecardCecho},
