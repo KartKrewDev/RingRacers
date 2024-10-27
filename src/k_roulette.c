@@ -897,19 +897,11 @@ void K_AddItemToReel(const player_t *player, itemroulette_t *const roulette, kar
 }
 
 /*--------------------------------------------------
-	static void K_CalculateRouletteSpeed(itemroulette_t *const roulette)
+	void K_CalculateRouletteSpeed(itemroulette_t *const roulette)
 
-		Determines the speed for the item roulette,
-		adjusted for progress in the race and front
-		running.
-
-	Input Arguments:-
-		roulette - The item roulette data to modify.
-
-	Return:-
-		N/A
+		See header file for description.
 --------------------------------------------------*/
-static void K_CalculateRouletteSpeed(itemroulette_t *const roulette)
+void K_CalculateRouletteSpeed(itemroulette_t *const roulette)
 {
 	fixed_t frontRun = 0;
 	fixed_t progress = 0;

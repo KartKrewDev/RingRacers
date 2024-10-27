@@ -4398,6 +4398,19 @@ static int lib_kGetSlotOffset(lua_State *L)
 	return 1;
 }
 
+static int lib_kCalculateRouletteSpeed(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	
+	K_CalculateRouletteSpeed(&player->itemRoulette);
+	return 0;
+}
+
 static int lib_kWipeItemsInReel(lua_State *L)
 {
 	player_t *player = NULL;
@@ -4850,6 +4863,7 @@ static luaL_Reg lib[] = {
 	{"K_DenyShieldOdds", lib_kDenyShieldOdds},
 	{"K_GetRouletteOffset", lib_kGetRouletteOffset},
 	{"K_GetSlotOffset", lib_kGetSlotOffset},
+	{"K_CalculateRouletteSpeed", lib_kCalculateRouletteSpeed},
 	// These are not real functions in k_roulette, but they allow
 	// encapsulation on how the scripter interacts with the item reel.
 	{"K_WipeItemsInReel", lib_kWipeItemsInReel},

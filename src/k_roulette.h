@@ -114,6 +114,22 @@ void K_PushToRouletteItemList(itemroulette_t *const roulette, INT32 item);
 void K_AddItemToReel(const player_t *player, itemroulette_t *const roulette, kartitems_t item);
 
 /*--------------------------------------------------
+	void K_CalculateRouletteSpeed(itemroulette_t *const roulette)
+
+		Determines the speed for the item roulette,
+		adjusted for progress in the race and front
+		running.
+
+	Input Arguments:-
+		roulette - The item roulette data to modify.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
+
+void K_CalculateRouletteSpeed(itemroulette_t *const roulette);
+
+/*--------------------------------------------------
 	INT32 K_KartGetBattleOdds(const player_t *player, itemroulette_t *const roulette, UINT8 pos, kartitems_t item);
 
 		Gets legacy item priority.
