@@ -2764,6 +2764,21 @@ fixed_t P_GetThingStepUp(mobj_t *thing, fixed_t destX, fixed_t destY)
 		maxstep += maxstepmove;
 	}
 
+	if (thing->standingslope && thing->standingslope->zdelta != 0)
+	{
+		vector3_t slopemom = {0,0,0};
+		slopemom.x = thing->momx;
+		slopemom.y = thing->momy;
+		P_QuantizeMomentumToSlope(&slopemom, thing->standingslope);
+		fixed_t momentumzdelta = FixedDiv(slopemom.z, FixedHypot(slopemom.x, slopemom.y)); // so this lets us know what the zdelta is for the vector the player is travelling along, in addition to the slope's zdelta in its xydirection
+		// if (thing->player)
+		// 	CONS_Printf("%s P_GetThingStepUp %d +", player_names[thing->player-players], maxstep);
+		maxstep += abs(momentumzdelta);
+		// if (thing->player)
+		// 	CONS_Printf(" %d = %d\n", momentumzdelta, maxstep);
+		
+	}
+
 	if (P_MobjTouchingSectorSpecialFlag(thing, SSF_DOUBLESTEPUP)
 		|| (R_PointInSubsector(destX, destY)->sector->specialflags & SSF_DOUBLESTEPUP))
 	{
@@ -2775,22 +2790,6 @@ fixed_t P_GetThingStepUp(mobj_t *thing, fixed_t destX, fixed_t destY)
 	{
 		// If using type Section1:12, no maxstep. For short walls, like Egg Zeppelin
 		maxstep = 0;
-	}
-
-	if (thing->standingslope)
-	{
-		vector3_t slopemom = {0,0,0};
-		slopemom.x = thing->momx;
-		slopemom.y = thing->momy;
-		slopemom.z = 0;
-		P_QuantizeMomentumToSlope(&slopemom, thing->standingslope);
-		fixed_t momentumzdelta = FixedDiv(slopemom.z, FixedHypot(slopemom.x, slopemom.y)); // so this lets us know what the zdelta is for the vector the player is travelling along, in addition to the slope's zdelta in its xydirection
-		// if (thing->player)
-		// 	CONS_Printf("%s P_GetThingStepUp %d +", player_names[thing->player-players], maxstep);
-		maxstep += abs(momentumzdelta);
-		// if (thing->player)
-		// 	CONS_Printf(" %d = %d\n", momentumzdelta, maxstep);
-		
 	}
 
 	return maxstep;
