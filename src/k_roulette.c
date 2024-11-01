@@ -737,11 +737,11 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 #ifndef ITEM_LIST_SIZE
 	if (roulette->itemList.items == NULL)
 	{
-		roulette->itemList.cap = 8;
+		roulette->itemList.cap = 32;
 		roulette->itemList.items = Z_Calloc(
 			sizeof(SINT8) * roulette->itemList.cap,
 			PU_STATIC,
-			&roulette->itemList.items
+			NULL
 		);
 
 		if (roulette->itemList.items == NULL)
@@ -844,7 +844,7 @@ void K_PushToRouletteItemList(itemroulette_t *const roulette, INT32 item)
 			roulette->itemList.items,
 			sizeof(SINT8) * roulette->itemList.cap,
 			PU_STATIC,
-			&roulette->itemList.items
+			NULL
 		);
 
 		if (roulette->itemList.items == NULL)

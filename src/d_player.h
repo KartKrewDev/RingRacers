@@ -506,9 +506,9 @@ struct skybox_t {
 };
 
 // player_t struct for item roulette variables
-// Doing this the right way is causing problems.
-// so FINE, it's a static length now.
-#define ITEM_LIST_SIZE (NUMKARTRESULTS << 3)
+
+// In case of dynamic alloc failure, break glass:
+// #define ITEM_LIST_SIZE (NUMKARTRESULTS << 3)
 
 typedef struct itemlist_t
 {
