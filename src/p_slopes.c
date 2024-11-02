@@ -11,6 +11,7 @@
 /// \file  p_slopes.c
 /// \brief ZDoom + Eternity Engine Slopes, ported and enhanced by Kalaron
 
+#include "d_think.h"
 #include "doomdef.h"
 #include "r_defs.h"
 #include "r_state.h"
@@ -300,7 +301,9 @@ void T_DynamicSlopeVert (dynvertexplanethink_t* th)
 
 static inline void P_AddDynLineSlopeThinker (pslope_t* slope, dynplanetype_t type, line_t* sourceline, fixed_t extent)
 {
-	dynlineplanethink_t* th = Z_Calloc(sizeof (*th), PU_LEVSPEC, NULL);
+	dynlineplanethink_t* th = Z_LevelPoolCalloc(sizeof (*th));
+	th->thinker.alloctype = TAT_LEVELPOOL;
+	th->thinker.size = sizeof(*th);
 	th->thinker.function.acp1 = (actionf_p1)T_DynamicSlopeLine;
 	th->slope = slope;
 	th->type = type;
@@ -314,7 +317,9 @@ static inline void P_AddDynLineSlopeThinker (pslope_t* slope, dynplanetype_t typ
 
 static inline void P_AddDynVertexSlopeThinker (pslope_t* slope, const INT16 tags[3], const vector3_t vx[3])
 {
-	dynvertexplanethink_t* th = Z_Calloc(sizeof (*th), PU_LEVSPEC, NULL);
+	dynvertexplanethink_t* th = Z_LevelPoolCalloc(sizeof (*th));
+	th->thinker.alloctype = TAT_LEVELPOOL;
+	th->thinker.size = sizeof(*th);
 	size_t i;
 	INT32 l;
 	th->thinker.function.acp1 = (actionf_p1)T_DynamicSlopeVert;
@@ -1091,7 +1096,7 @@ void P_HandleSlopeLanding(mobj_t *thing, pslope_t *slope)
 	vector3_t mom; // Ditto.
 
 	if (P_CanApplySlopePhysics(thing, slope) == false) // No physics, no need to make anything complicated.
-	{ 
+	{
 		if (P_MobjFlip(thing)*(thing->momz) < 0) // falling, land on slope
 		{
 			thing->standingslope = slope;
@@ -1151,7 +1156,7 @@ void P_ButteredSlope(mobj_t *mo)
 		{
 			// Allow the player to stand still on slopes below a certain steepness.
 			// 45 degree angle steep, to be exact.
-			return; 
+			return;
 		}
 	}
 

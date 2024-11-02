@@ -12,6 +12,7 @@
 /// \file  p_mobj.c
 /// \brief Moving object handling. Spawn functions
 
+#include "d_think.h"
 #include "dehacked.h"
 #include "doomdef.h"
 #include "g_game.h"
@@ -63,8 +64,6 @@ mobj_t *waypointcap = NULL;
 // AI, need HUD tracking or appear on the minimap. It's pretty
 // general purpose.
 mobj_t *trackercap = NULL;
-
-mobj_t *mobjcache = NULL;
 
 void P_InitCachedActions(void)
 {
@@ -1682,7 +1681,7 @@ boolean P_XYMovement(mobj_t *mo)
 				predictedz = mo->z + slopemom.z;
 			else
 				predictedz = mo->z;
-				
+
 		}
 	} else if (P_IsObjectOnGround(mo) && !mo->momz)
 		predictedz = mo->z;
@@ -1931,7 +1930,7 @@ boolean P_XYMovement(mobj_t *mo)
 				// 	);
 			}
 		}
-		else 
+		else
 		{
 			// if (mo->player)
 			// 	CONS_Printf("Ramp Launch %d %d+%d > 0 && %d-%d > %d ", mo->scale, FixedDiv(slopemom.z, mo->scale), P_GetMobjGravity(mo)*24, predictedz, mo->z, slopemom.z/2);
@@ -2833,7 +2832,7 @@ void P_PlayerZMovement(mobj_t *mo)
 			// CONS_Printf(" True\n");
 			mo->momz = 0;
 		}
-		// else 
+		// else
 		// {
 		// 	CONS_Printf(" False\n");
 		// }
@@ -8423,7 +8422,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + mobj->target->height/2);
 		// Taken from K_FlipFromObject. We just want to flip the visual according to its target, but that's it.
 		mobj->eflags = (mobj->eflags & ~MFE_VERTICALFLIP)|(mobj->target->eflags & MFE_VERTICALFLIP);
-		
+
 		break;
 	}
 	case MT_BUBBLESHIELD:
@@ -8529,7 +8528,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		mobj->extravalue2 = mobj->target->player->bubbleblowup;
 		P_SetScale(mobj, (mobj->destscale = scale));
-		
+
 		// For some weird reason, the Bubble Shield is the exception flip-wise, it has the offset baked into the sprite.
 		// So instead of simply flipping the object, we have to do a position offset.
 		fixed_t positionOffset = 0;
@@ -9031,7 +9030,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 					{
 						cur->skin = &skins[newplayer->skin];
 						cur->color = newplayer->skincolor;
-						
+
 						// Even if we didn't have the Perfect Sign to consider,
 						// it's still necessary to refresh SPR2 on skin changes.
 						P_SetMobjState(cur, (newperfect == true) ? S_KART_SIGL : S_KART_SIGN);
@@ -10846,19 +10845,9 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 
 mobj_t *P_AllocateMobj(void)
 {
-	mobj_t *mobj;
-
-	if (mobjcache != NULL)
-	{
-		mobj = mobjcache;
-		mobjcache = mobjcache->hnext;
-		memset(mobj, 0, sizeof(*mobj));
-	}
-	else
-	{
-		mobj = Z_Calloc(sizeof (*mobj), PU_LEVEL, NULL);
-	}
-
+	mobj_t* mobj = (mobj_t*)Z_LevelPoolCalloc(sizeof(mobj_t));
+	mobj->thinker.alloctype = TAT_LEVELPOOL;
+	mobj->thinker.size = sizeof(mobj_t);
 	return mobj;
 }
 
@@ -11375,7 +11364,9 @@ static precipmobj_t *P_SpawnPrecipMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype
 	const mobjinfo_t *info = &mobjinfo[type];
 	state_t *st;
 	fixed_t start_z = INT32_MIN;
-	precipmobj_t *mobj = Z_Calloc(sizeof (*mobj), PU_LEVEL, NULL);
+	precipmobj_t *mobj = Z_LevelPoolCalloc(sizeof(precipmobj_t));
+	mobj->thinker.alloctype = TAT_LEVELPOOL;
+	mobj->thinker.size = sizeof(precipmobj_t);
 
 	mobj->type = type;
 	mobj->info = info;
@@ -11657,13 +11648,6 @@ void P_RemoveMobj(mobj_t *mobj)
 	if (!mobj->thinker.next)
 	{ // Uh-oh, the mobj doesn't think, P_RemoveThinker would never go through!
 		INT32 prevreferences;
-		if (!mobj->thinker.references)
-		{
-			// no references, dump it directly in the mobj cache
-			mobj->hnext = mobjcache;
-			mobjcache = mobj;
-			return;
-		}
 
 		prevreferences = mobj->thinker.references;
 		P_AddThinker(THINK_MOBJ, (thinker_t *)mobj);
@@ -12263,7 +12247,7 @@ void P_SpawnPlayer(INT32 playernum)
 		P_SetScale(aring, p->mo->scale);
 		K_MatchGenericExtraFlags(aring, p->mo);
 		aring->renderflags |= RF_DONTDRAW;
-			
+
 		mobj_t *abody = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_AMPBODY);
 		P_SetTarget(&abody->target, p->mo);
 		P_SetScale(abody, p->mo->scale);
