@@ -28,7 +28,6 @@ extern rhi::Handle<rhi::Rhi> g_current_rhi;
 
 rhi::Rhi* get_rhi(rhi::Handle<rhi::Rhi> handle);
 
-rhi::Handle<rhi::GraphicsContext> main_graphics_context();
 hwr2::HardwareState* main_hardware_state();
 
 } // namespace srb2::sys

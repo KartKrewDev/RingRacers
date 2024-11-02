@@ -12,6 +12,7 @@
 /// \file
 /// \brief SRB2 graphics stuff for SDL
 
+#include <SDL_video.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <memory>

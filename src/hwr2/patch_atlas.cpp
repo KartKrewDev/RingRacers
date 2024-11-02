@@ -216,7 +216,7 @@ static PatchAtlas create_atlas(Rhi& rhi, uint32_t size)
 	return new_atlas;
 }
 
-void PatchAtlasCache::pack(Rhi& rhi, Handle<GraphicsContext> ctx)
+void PatchAtlasCache::pack(Rhi& rhi)
 {
 	// Prepare stbrp rects for patches to be loaded.
 	std::vector<stbrp_rect> rects;
@@ -310,7 +310,6 @@ void PatchAtlasCache::pack(Rhi& rhi, Handle<GraphicsContext> ctx)
 		convert_patch_to_trimmed_rg8_pixels(patch_to_upload, patch_data);
 
 		rhi.update_texture(
-			ctx,
 			atlas->tex_,
 			{static_cast<int32_t>(entry->x), static_cast<int32_t>(entry->y), entry->w, entry->h},
 			PixelFormat::kRG8,

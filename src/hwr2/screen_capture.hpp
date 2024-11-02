@@ -21,7 +21,6 @@ namespace srb2::hwr2
 
 class ScreenshotPass
 {
-	rhi::Handle<rhi::RenderPass> render_pass_;
 	std::vector<uint8_t> pixel_data_;
 	std::vector<uint8_t> packed_data_;
 	uint32_t width_ = 0;
@@ -31,7 +30,7 @@ public:
 	ScreenshotPass();
 	~ScreenshotPass();
 
-	void capture(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
+	void capture(rhi::Rhi& rhi);
 
 	void set_source(uint32_t width, uint32_t height)
 	{

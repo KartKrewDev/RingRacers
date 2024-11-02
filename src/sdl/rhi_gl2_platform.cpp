@@ -34,35 +34,10 @@ void SdlGl2Platform::present()
 	SDL_GL_SwapWindow(window);
 }
 
-static constexpr const char* pipeline_lump_slug(rhi::PipelineProgram program)
+static std::array<std::string, 2> glsllist_lump_names(const char* name)
 {
-	switch (program)
-	{
-	case rhi::PipelineProgram::kUnshaded:
-		return "unshaded";
-	case rhi::PipelineProgram::kUnshadedPaletted:
-		return "unshadedpaletted";
-	case rhi::PipelineProgram::kPostprocessWipe:
-		return "postprocesswipe";
-	case rhi::PipelineProgram::kPostimg:
-		return "postimg";
-	case rhi::PipelineProgram::kSharpBilinear:
-		return "sharpbilinear";
-	case rhi::PipelineProgram::kCrt:
-		return "crt";
-	case rhi::PipelineProgram::kCrtSharp:
-		return "crtsharp";
-	default:
-		return "";
-	}
-}
-
-static std::array<std::string, 2> glsllist_lump_names(rhi::PipelineProgram program)
-{
-	const char* pipeline_slug = pipeline_lump_slug(program);
-
-	std::string vertex_list_name = fmt::format("rhi_glsllist_{}_vertex", pipeline_slug);
-	std::string fragment_list_name = fmt::format("rhi_glsllist_{}_fragment", pipeline_slug);
+	std::string vertex_list_name = fmt::format("rhi_glsllist_{}_vertex", name);
+	std::string fragment_list_name = fmt::format("rhi_glsllist_{}_fragment", name);
 
 	return {std::move(vertex_list_name), std::move(fragment_list_name)};
 }
@@ -132,9 +107,9 @@ static std::vector<std::string> get_sources_from_glsllist_lump(const char* lumpn
 }
 
 std::tuple<std::vector<std::string>, std::vector<std::string>>
-SdlGl2Platform::find_shader_sources(rhi::PipelineProgram program)
+SdlGl2Platform::find_shader_sources(const char* name)
 {
-	std::array<std::string, 2> glsllist_names = glsllist_lump_names(program);
+	std::array<std::string, 2> glsllist_names = glsllist_lump_names(name);
 
 	std::vector<std::string> vertex_sources = get_sources_from_glsllist_lump(glsllist_names[0].c_str());
 	std::vector<std::string> fragment_sources = get_sources_from_glsllist_lump(glsllist_names[1].c_str());

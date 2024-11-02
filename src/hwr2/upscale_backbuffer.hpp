@@ -19,8 +19,6 @@ namespace srb2::hwr2
 class UpscaleBackbuffer
 {
 	rhi::Handle<rhi::Texture> color_;
-	rhi::Handle<rhi::RenderPass> renderpass_;
-	rhi::Handle<rhi::RenderPass> renderpass_clear_;
 
 public:
 	UpscaleBackbuffer();
@@ -31,7 +29,7 @@ public:
 	UpscaleBackbuffer& operator=(const UpscaleBackbuffer&) = delete;
 	UpscaleBackbuffer& operator=(UpscaleBackbuffer&&);
 
-	void begin_pass(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
+	void begin_pass(rhi::Rhi& rhi);
 	rhi::Handle<rhi::Texture> color() const noexcept { return color_; }
 };
 

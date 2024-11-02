@@ -45,11 +45,11 @@ public:
 #endif
 	rhi::Handle<rhi::Texture> default_colormap() const noexcept { return default_colormap_; }
 
-	void update(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
+	void update(rhi::Rhi& rhi);
 	void destroy_per_frame_resources(rhi::Rhi& rhi);
 
-	rhi::Handle<rhi::Texture> find_or_create_colormap(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx, srb2::NotNull<const uint8_t*> colormap);
-	rhi::Handle<rhi::Texture> find_or_create_extra_lighttable(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx, srb2::NotNull<const uint8_t*> lighttable);
+	rhi::Handle<rhi::Texture> find_or_create_colormap(rhi::Rhi& rhi, srb2::NotNull<const uint8_t*> colormap);
+	rhi::Handle<rhi::Texture> find_or_create_extra_lighttable(rhi::Rhi& rhi, srb2::NotNull<const uint8_t*> lighttable);
 };
 
 /*
@@ -79,7 +79,7 @@ public:
 	/// in prepass.
 	/// @param flat_lump
 	/// @return
-	rhi::Handle<rhi::Texture> find_or_create_indexed(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx, lumpnum_t flat_lump);
+	rhi::Handle<rhi::Texture> find_or_create_indexed(rhi::Rhi& rhi, lumpnum_t flat_lump);
 };
 
 } // namespace srb2::hwr2

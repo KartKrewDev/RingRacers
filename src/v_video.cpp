@@ -2986,7 +2986,7 @@ void V_DrawStringScaled(
 									case gb_dpad: return {{1, 4, Draw::GenericButton::dpad}};
 									default: return {};
 									}
-								}();	
+								}();
 							}
 
 							if (bt_inst)
@@ -3766,11 +3766,10 @@ void VID_DisplaySoftwareScreen()
 	// TODO implement
 	// upload framebuffer, bind pipeline, draw
 	rhi::Rhi* rhi = srb2::sys::get_rhi(srb2::sys::g_current_rhi);
-	rhi::Handle<rhi::GraphicsContext> ctx = srb2::sys::main_graphics_context();
 	hwr2::HardwareState* hw_state = srb2::sys::main_hardware_state();
 
 	// Misnomer; this just uploads the screen to the software indexed screen texture
-	hw_state->software_screen_renderer->draw(*rhi, ctx);
+	hw_state->software_screen_renderer->draw(*rhi);
 
 	const int screens = std::clamp(r_splitscreen + 1, 1, MAXSPLITSCREENPLAYERS);
 	hw_state->blit_postimg_screens->set_num_screens(screens);
@@ -3827,7 +3826,7 @@ void VID_DisplaySoftwareScreen()
 	}
 
 	// Post-process blit to the 'default' framebuffer
-	hw_state->blit_postimg_screens->draw(*rhi, ctx);
+	hw_state->blit_postimg_screens->draw(*rhi);
 }
 
 char *V_ParseText(const char *rawText)
