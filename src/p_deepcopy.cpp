@@ -123,6 +123,54 @@ static void copy_taglist_tags(taglist_t *target, taglist_t *source)
 }
 
 /*--------------------------------------------------
+	static void copy_stringarg(char **target, const char *source)
+
+		Make a deep copy of a string argument.
+
+	Input Arguments:-
+		target: Double pointer to the string to copy to.
+		source: The string to copy from.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
+
+static void copy_stringarg(char **target, const char *source)
+{
+	// stringarg memory is really freaking touchy,
+	// so I am being careful and being explicit
+	// on how it is copied over instead of just
+	// using strcpy or smth
+
+	if (*target != nullptr)
+	{
+		Z_Free(*target);
+	}
+
+	size_t len = 0;
+	if (source != nullptr)
+	{
+		len = strlen(source);
+	}
+
+	if (len > 0)
+	{
+		*target = static_cast<char *>(
+			memcpy(
+				Z_Malloc(
+					len + 1,
+					PU_LEVEL,
+					nullptr
+				),
+				source,
+				len
+			)
+		);
+		(*target)[len] = '\0';
+	}
+}
+
+/*--------------------------------------------------
 	static void copy_sector_callback(sector_t *target, sector_t *source)
 
 		Handles memory addresses after creating a shallow copy
@@ -140,6 +188,11 @@ static void copy_sector_callback(sector_t *target, sector_t *source)
 {
 	// (Not a true deep copy until all of the memory addresses are accounted for.)
 	copy_taglist_tags(&target->tags, &source->tags);
+
+	for (size_t i = 0; i < NUM_SCRIPT_STRINGARGS; i++)
+	{
+		copy_stringarg(&target->stringargs[i], source->stringargs[i]);
+	}
 }
 
 /*--------------------------------------------------
@@ -182,6 +235,11 @@ static void copy_line_callback(line_t *target, line_t *source)
 {
 	// (Not a true deep copy until all of the memory addresses are accounted for.)
 	copy_taglist_tags(&target->tags, &source->tags);
+
+	for (size_t i = 0; i < NUM_SCRIPT_STRINGARGS; i++)
+	{
+		copy_stringarg(&target->stringargs[i], source->stringargs[i]);
+	}
 }
 
 /*--------------------------------------------------
