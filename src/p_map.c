@@ -2776,7 +2776,7 @@ fixed_t P_GetThingStepUp(mobj_t *thing, fixed_t destX, fixed_t destY)
 		maxstep += abs(momentumzdelta);
 		// if (thing->player)
 		// 	CONS_Printf(" %d = %d\n", momentumzdelta, maxstep);
-		
+
 	}
 
 	if (P_MobjTouchingSectorSpecialFlag(thing, SSF_DOUBLESTEPUP)
@@ -2979,7 +2979,7 @@ increment_move
 				}
 				else if (g_tm.floorz - g_tm.dropoffz > maxstep)
 					return false; // don't stand over a dropoff
-			}					
+			}
 		}
 	} while (tryx != x || tryy != y);
 
@@ -4642,13 +4642,8 @@ boolean P_CheckSector(sector_t *sector, boolean crunch)
  Lots of new Boom functions that work faster and add functionality.
 */
 
-static msecnode_t *headsecnode = NULL;
-static mprecipsecnode_t *headprecipsecnode = NULL;
-
 void P_Initsecnode(void)
 {
-	headsecnode = NULL;
-	headprecipsecnode = NULL;
 }
 
 // P_GetSecnode() retrieves a node from the freelist. The calling routine
@@ -4656,45 +4651,25 @@ void P_Initsecnode(void)
 
 static msecnode_t *P_GetSecnode(void)
 {
-	msecnode_t *node;
-
-	if (headsecnode)
-	{
-		node = headsecnode;
-		headsecnode = headsecnode->m_thinglist_next;
-	}
-	else
-		node = Z_Calloc(sizeof (*node), PU_LEVEL, NULL);
-	return node;
+	return Z_LevelPoolCalloc(sizeof(msecnode_t));
 }
 
 static mprecipsecnode_t *P_GetPrecipSecnode(void)
 {
-	mprecipsecnode_t *node;
-
-	if (headprecipsecnode)
-	{
-		node = headprecipsecnode;
-		headprecipsecnode = headprecipsecnode->m_thinglist_next;
-	}
-	else
-		node = Z_Calloc(sizeof (*node), PU_LEVEL, NULL);
-	return node;
+	return Z_LevelPoolCalloc(sizeof(mprecipsecnode_t));
 }
 
 // P_PutSecnode() returns a node to the freelist.
 
 static inline void P_PutSecnode(msecnode_t *node)
 {
-	node->m_thinglist_next = headsecnode;
-	headsecnode = node;
+	Z_LevelPoolFree(node, sizeof(msecnode_t));
 }
 
 // Tails 08-25-2002
 static inline void P_PutPrecipSecnode(mprecipsecnode_t *node)
 {
-	node->m_thinglist_next = headprecipsecnode;
-	headprecipsecnode = node;
+	Z_LevelPoolFree(node, sizeof(mprecipsecnode_t));
 }
 
 // P_AddSecnode() searches the current list to see if this sector is
