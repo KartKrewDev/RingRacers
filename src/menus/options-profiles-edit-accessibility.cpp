@@ -137,6 +137,9 @@ menuitem_t OPTIONS_ProfileAccessibility[] = {
 
 	{IT_STRING | IT_CVAR, "Input Display", "Show virtual controller on the HUD.",
 		NULL, {.cvar = &cv_drawinput}, 0, 0},
+		
+	{IT_STRING | IT_CVAR, "It's a me", "Hi hi hello.",
+	NULL, {.cvar = &cv_globalsaturation}, 0, 0},
 };
 
 menu_t OPTIONS_ProfileAccessibilityDef = {
