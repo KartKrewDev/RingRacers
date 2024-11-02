@@ -462,6 +462,9 @@ extern menu_t OPTIONS_VideoDef;
 extern menuitem_t OPTIONS_VideoModes[];
 extern menu_t OPTIONS_VideoModesDef;
 
+extern menuitem_t OPTIONS_VideoColorProfile[];
+extern menu_t OPTIONS_VideoColorProfileDef;
+
 extern menuitem_t OPTIONS_VideoAdvanced[];
 extern menu_t OPTIONS_VideoAdvancedDef;
 
