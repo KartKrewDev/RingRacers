@@ -978,7 +978,7 @@ void M_Drawer(void)
 			{
 				M_DrawGonerBack();
 			}
-			else if (!WipeInAction && currentMenu != &PAUSE_PlaybackMenuDef)
+			else if (!WipeInAction && currentMenu != &PAUSE_PlaybackMenuDef && currentMenu != &OPTIONS_VideoColorProfileDef)
 			{
 				V_DrawFadeScreen(122, 3);
 			}
@@ -4409,6 +4409,7 @@ void M_DrawOptionsColorProfile(void)
 		}
 		c = R_GetTranslationColormap(TC_DEFAULT, optionsmenu.currcolour, GTC_CACHE);
 		V_DrawFixedPatch(0, 0, FRACUNIT, tflag, back, c);
+		//M_DrawCharSelectSprite( //figure this out later
 	}
 	// Given the need for accessibility, I don't want the background to be drawn transparent here - a clear color reference is needed for proper utilization. - Freaky Mutant Man
 	else
