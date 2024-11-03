@@ -22265,7 +22265,6 @@ skincolor_t skincolors[MAXSKINCOLORS] = {
 	{"Intermission 1", {  0,  80,  80,  80,  81,  81,  81,  84,  84,  85,  86,  86,  87,  87, 246, 248}, SKINCOLOR_NONE, 0, 0, false, UINT16_MAX}, // SKINCOLOR_INTERMISSION1
 	{"Intermission 2", {  0,  81,  81,  81,  88,  88,  88,  89,  89, 140, 140, 141, 141, 142, 142, 142}, SKINCOLOR_NONE, 0, 0, false, UINT16_MAX}, // SKINCOLOR_INTERMISSION2
 	{"Intermission 3", {  0, 144, 144, 144, 129, 129, 129, 130, 130, 146, 147, 147,  14,  16,  17,  19}, SKINCOLOR_NONE, 0, 0, false, UINT16_MAX}, // SKINCOLOR_INTERMISSION3
-	{"Color Profile", {  35, 35, 73, 73, 112, 112, 255, 255, 152, 152, 181, 181, 181, 181, 0, 0}, SKINCOLOR_NONE, 0, 0, false, UINT16_MAX}, // SKINCOLOR_COLORPROFILE
 };
 
 /** Patches the mobjinfo, state, and skincolor tables.

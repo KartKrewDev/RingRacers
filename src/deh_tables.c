@@ -4397,8 +4397,6 @@ const char *COLOR_ENUMS[] = {
 	"INTERMISSION1",
 	"INTERMISSION2",
 	"INTERMISSION3",
-	
-	"COLORPROFILE",
 };
 
 const char *const KARTHUD_LIST[] = {
