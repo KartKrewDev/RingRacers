@@ -24,8 +24,8 @@ menuitem_t OPTIONS_VideoColorProfile[] =
 	{IT_STRING | IT_CVAR, "Gamma", "Increase or decrease the brightness of the displayed image.",
 		NULL, {.cvar = &cv_globalgamma}, 0, 0},
 
-	{IT_NOTHING|IT_SPACE, NULL, NULL,
-		NULL, {NULL}, 0, 0},
+	{IT_STRING | IT_CALL, "Reset All", "Reset the color profile to default settings.",
+		NULL, {.routine = M_ColorProfileDefault}, 0, 0},
 		
 	{IT_HEADER, "Red...", NULL,
 		NULL, {NULL}, 0, 0},
@@ -118,3 +118,31 @@ menu_t OPTIONS_VideoColorProfileDef = {
 	NULL,
 	NULL,
 };
+
+// Set all color profile settings to the default values.
+void M_ColorProfileDefault(INT32 choice)
+{
+	(void)choice;
+	
+	// The set value army approaches - gotta be a better way to handle this.
+	CV_SetValue(&cv_globalsaturation, 10);
+	CV_SetValue(&cv_rsaturation, 10);
+	CV_SetValue(&cv_ysaturation, 10);
+	CV_SetValue(&cv_gsaturation, 10);
+	CV_SetValue(&cv_csaturation, 10);
+	CV_SetValue(&cv_bsaturation, 10);
+	CV_SetValue(&cv_msaturation, 10);
+	CV_SetValue(&cv_globalgamma, 0);
+	CV_SetValue(&cv_rgamma, 0);
+	CV_SetValue(&cv_ygamma, 0);
+	CV_SetValue(&cv_ggamma, 0);
+	CV_SetValue(&cv_cgamma, 0);
+	CV_SetValue(&cv_bgamma, 0);
+	CV_SetValue(&cv_mgamma, 0);
+	CV_SetValue(&cv_rhue, 0);
+	CV_SetValue(&cv_yhue, 4);
+	CV_SetValue(&cv_ghue, 8);
+	CV_SetValue(&cv_chue, 12);
+	CV_SetValue(&cv_bhue, 16);
+	CV_SetValue(&cv_mhue, 20);
+}

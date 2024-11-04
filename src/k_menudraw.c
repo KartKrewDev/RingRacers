@@ -4393,7 +4393,9 @@ void M_DrawOptionsColorProfile(void)
 	// the background isn't drawn outside of being in the main menu state.
 	if (gamestate == GS_MENU && solidbg)
 	{
-		patch_t *back = W_CachePatchName(va("OPT_BC%u", tick), PU_CACHE);
+		patch_t *back = W_CachePatchName(va("OPT_BG%u", tick), PU_CACHE);
+		patch_t *colorp_photo = W_CachePatchName("COL_PHO", PU_CACHE);
+		patch_t *colorp_bar = W_CachePatchName("COL_BAR", PU_CACHE);
 		INT32 tflag = 0;
 		UINT8 *c;
 		UINT8 *c2;	// colormap for the one we're changing
@@ -4409,6 +4411,8 @@ void M_DrawOptionsColorProfile(void)
 		}
 		c = R_GetTranslationColormap(TC_DEFAULT, optionsmenu.currcolour, GTC_CACHE);
 		V_DrawFixedPatch(0, 0, FRACUNIT, tflag, back, c);
+		V_DrawFixedPatch(243<<FRACBITS, 67<<FRACBITS, FRACUNIT, 0, colorp_bar, NULL);
+		V_DrawFixedPatch(0, 0, FRACUNIT, 0, colorp_photo, NULL);
 		//M_DrawCharSelectSprite( //figure this out later
 	}
 	// Given the need for accessibility, I don't want the background to be drawn transparent here - a clear color reference is needed for proper utilization. - Freaky Mutant Man
@@ -4419,12 +4423,12 @@ void M_DrawOptionsColorProfile(void)
 			M_DrawEggaChannelAlignable(true);
 		}
 
-		patch_t *back_pause = W_CachePatchName(va("OPT_BAC%u", tick), PU_CACHE);
-		V_DrawFixedPatch(0, 0, FRACUNIT, 0, back_pause, NULL);
+		patch_t *colorp_bar = W_CachePatchName("COL_BAR", PU_CACHE);
+		V_DrawFixedPatch(243<<FRACBITS, 67<<FRACBITS, FRACUNIT, 0, colorp_bar, NULL);
 
 		if (!solidbg)
 		{
-			V_DrawFixedPatch(0, 0, FRACUNIT, 0, back_pause, NULL);
+			V_DrawFixedPatch(243<<FRACBITS, 67<<FRACBITS, FRACUNIT, 0, colorp_bar, NULL);
 		}
 	}
 }

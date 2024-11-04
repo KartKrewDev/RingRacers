@@ -1148,6 +1148,7 @@ void M_RefreshAdvancedVideoOptions(void);
 void M_HandleItemToggles(INT32 choice);	// For item toggling
 void M_EraseData(INT32 choice);	// For data erasing
 void M_CheckProfileData(INT32 choice);	// check if we have profiles.
+void M_ColorProfileDefault(INT32 choice); // For the reset button in the color profile menu.
 
 // profile selection menu
 void M_ProfileSelectInit(INT32 choice);
