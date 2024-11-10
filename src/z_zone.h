@@ -154,6 +154,7 @@ char *Z_StrDup(const char *in);
 void *Z_LevelPoolMalloc(size_t size);
 void *Z_LevelPoolCalloc(size_t size);
 void Z_LevelPoolFree(void *p, size_t size);
+void *Z_LevelPoolRealloc(void *p, size_t orig_size, size_t size);
 
 #ifdef __cplusplus
 } // extern "C"
