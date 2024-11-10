@@ -155,7 +155,7 @@ void BlitPostimgScreens::prepass(Rhi& rhi)
 		ProgramDesc desc {};
 		desc.name = "postimg";
 		desc.defines = tcb::make_span(defines);
-		program_ = rhi.create_program(desc);
+		indexed_program_ = rhi.create_program(desc);
 	}
 
 	if (!quad_vbo_)
@@ -190,11 +190,11 @@ void BlitPostimgScreens::transfer(Rhi& rhi)
 
 		if (screen_config.indexed)
 		{
-			data.program = program_;
+			data.program = indexed_program_;
 		}
 		else
 		{
-			data.program = indexed_program_;
+			data.program = program_;
 		}
 
 		screen_data_[i] = std::move(data);
