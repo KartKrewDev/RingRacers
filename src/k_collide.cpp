@@ -1042,7 +1042,14 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 	}
 	else if (victim->type == MT_DROPTARGET || victim->type == MT_DROPTARGET_SHIELD)
 	{
-		K_DropTargetCollide(victim, shield);
+		if (K_TryPickMeUp(attacker, victim, true))
+		{
+			shield->hitlag = attacker->hitlag; // players hitlag is handled in K_TryPickMeUp, and we need to set for the shield too
+		}
+		else
+		{
+			K_DropTargetCollide(victim, shield);
+		}
 		return true;
 	}
 	else
@@ -1059,13 +1066,16 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 				shield->extravalue1 = 1;
 			}
 
-			if (!K_TryPickMeUp(attackerPlayer->mo, victim, true))
+			if (K_TryPickMeUp(attacker, victim, true))
+			{
+				shield->hitlag = attacker->hitlag; // players hitlag is handled in K_TryPickMeUp, and we need to set for the shield too
+			}
+			else
 			{
 				P_DamageMobj(victim, shield, attacker, 1, DMG_NORMAL);
+				K_AddHitLag(attacker, attackerHitlag, false);
+				shield->hitlag = attacker->hitlag;
 			}
-
-			K_AddHitLag(attacker, attackerHitlag, false);
-			shield->hitlag = attacker->hitlag;
 		}
 		return false;
 	}
