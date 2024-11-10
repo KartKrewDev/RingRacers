@@ -740,18 +740,3 @@ void Z_LevelPoolFree(void* p, size_t size)
 	}
 	return Z_Free(p);
 }
-
-void* Z_LevelPoolRealloc(void* ptr, size_t orig_size, size_t size)
-{
-	void* newptr = nullptr;
-	if (size > 0)
-	{
-		newptr = Z_LevelPoolCalloc(size);
-	}
-	if (orig_size > 0)
-	{
-		memcpy(newptr, ptr, orig_size);
-		Z_LevelPoolFree(ptr, orig_size);
-	}
-	return newptr;
-}

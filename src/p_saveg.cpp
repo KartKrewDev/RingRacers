@@ -2478,8 +2478,8 @@ static void UnArchiveSectors(savebuffer_t *save)
 			// Reallocate if size differs.
 			if (ncount != sectors[i].tags.count)
 			{
-				sectors[i].tags.tags = (mtag_t*)Z_LevelPoolRealloc(sectors[i].tags.tags, sectors[i].tags.count * sizeof(mtag_t), ncount*sizeof(mtag_t));
 				sectors[i].tags.count = ncount;
+				sectors[i].tags.tags = (mtag_t*)Z_Realloc(sectors[i].tags.tags, ncount*sizeof(mtag_t), PU_LEVEL, NULL);
 			}
 
 			for (j = 0; j < ncount; j++)
@@ -2741,8 +2741,8 @@ static void UnArchiveLines(savebuffer_t *save)
 			// Reallocate if size differs.
 			if (ncount != lines[i].tags.count)
 			{
-				lines[i].tags.tags = (mtag_t*)Z_LevelPoolRealloc(lines[i].tags.tags, lines[i].tags.count * sizeof(mtag_t), ncount*sizeof(mtag_t));
 				lines[i].tags.count = ncount;
+				lines[i].tags.tags = (mtag_t*)Z_Realloc(lines[i].tags.tags, ncount*sizeof(mtag_t), PU_LEVEL, NULL);
 			}
 
 			for (j = 0; j < ncount; j++)
@@ -6949,23 +6949,25 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 			{
 				if (spawnss->tags.count)
 				{
+					ss->tags.count = spawnss->tags.count;
 					ss->tags.tags = static_cast<mtag_t *>(
 						memcpy(
-							Z_LevelPoolRealloc(
+							Z_Realloc(
 								ss->tags.tags,
-								ss->tags.count * sizeof(mtag_t),
-								spawnss->tags.count * sizeof(mtag_t)
+								spawnss->tags.count * sizeof(mtag_t),
+								PU_LEVEL,
+								nullptr
 							),
 							spawnss->tags.tags,
 							spawnss->tags.count * sizeof(mtag_t)
 						)
 					);
-					ss->tags.count = spawnss->tags.count;
+
 				}
 				else
 				{
-					Z_LevelPoolFree(ss->tags.tags, ss->tags.count * sizeof(mtag_t));
 					ss->tags.count = 0;
+					Z_Free(ss->tags.tags);
 				}
 			}
 
@@ -7037,23 +7039,25 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 			{
 				if (spawnli->tags.count)
 				{
+					li->tags.count = spawnli->tags.count;
 					li->tags.tags = static_cast<mtag_t *>(
 						memcpy(
-							Z_LevelPoolRealloc(
+							Z_Realloc(
 								li->tags.tags,
-								li->tags.count * sizeof(mtag_t),
-								spawnli->tags.count * sizeof(mtag_t)
+								spawnli->tags.count * sizeof(mtag_t),
+								PU_LEVEL,
+								nullptr
 							),
 							spawnli->tags.tags,
 							spawnli->tags.count * sizeof(mtag_t)
 						)
 					);
-					li->tags.count = spawnli->tags.count;
+
 				}
 				else
 				{
-					Z_LevelPoolFree(li->tags.tags, li->tags.count * sizeof(mtag_t));
 					li->tags.count = 0;
+					Z_Free(li->tags.tags);
 				}
 			}
 
