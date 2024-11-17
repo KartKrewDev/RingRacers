@@ -6,7 +6,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	string.c
 	d_main.cpp
 	d_clisrv.c
-	d_net.c
+	d_net.cpp
 	d_netfil.c
 	d_netcmd.c
 	dehacked.c

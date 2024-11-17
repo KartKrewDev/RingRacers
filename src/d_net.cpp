@@ -9,13 +9,15 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  d_net.c
+/// \file  d_net.cpp
 /// \brief SRB2 network game communication and protocol, all OS independent parts.
 //
 ///        Implement a Sliding window protocol without receiver window
 ///        (out of order reception)
 ///        This protocol uses a mix of "goback n" and "selective repeat" implementation
 ///        The NOTHING packet is sent when connection is idle to acknowledge packets
+
+#include <algorithm>
 
 #include "doomdef.h"
 #include "g_game.h"
@@ -200,7 +202,7 @@ static netnode_t nodes[MAXNETNODES];
 // mnemonic: to use it compare to 0: cmpack(a,b)<0 is "a < b" ...
 FUNCMATH static INT32 cmpack(UINT8 a, UINT8 b)
 {
-	register INT32 d = a - b;
+	INT32 d = a - b;
 
 	if (d >= 127 || d < -128)
 		return -d;
@@ -757,7 +759,7 @@ static void fprintfstring(char *s, size_t len)
 	for (i = 0; i < len; i += 16)
 	{
 		fprintf(debugfile, "%10s:  ", sizeu1(i));
-		fprintfline(&s[i], min(len - i, 16));
+		fprintfline(&s[i], std::min<size_t>(len - i, 16));
 	}
 }
 
@@ -919,7 +921,7 @@ static void DebugPrintpacket(const char *header)
 			fprintf(debugfile, "    reason %s\n", netbuffer->u.serverrefuse.reason);
 			break;
 		case PT_FILEFRAGMENT: {
-			filetx_pak *pak = (void*)&netbuffer->u.filetxpak;
+			filetx_pak *pak = (filetx_pak*)&netbuffer->u.filetxpak;
 			fprintf(debugfile, "    fileid %d datasize %d position %u\n",
 				pak->fileid, (UINT16)SHORT(pak->size),
 				(UINT32)LONG(pak->position));
@@ -1052,14 +1054,14 @@ boolean HSendPacket(INT32 node, boolean reliable, UINT8 acknum, size_t packetlen
 
 #ifdef SIGNGAMETRAFFIC
 	if (IsPacketSigned(netbuffer->packettype))
-	{	
+	{
 		int i;
 
 		for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 		{
 			const void* message = &netbuffer->u;
 			//CONS_Printf("Signing packet type %d of length %d\n", netbuffer->packettype, packetlength);
-			if (PR_IsLocalPlayerGuest(i))	
+			if (PR_IsLocalPlayerGuest(i))
 				memset(netbuffer->signature[i], 0, sizeof(netbuffer->signature[i]));
 			else
 				crypto_eddsa_sign(netbuffer->signature[i], PR_GetLocalPlayerProfile(i)->secret_key, message, packetlength);
@@ -1308,7 +1310,7 @@ SINT8 I_NetMakeNode(const char *hostname)
 void D_SetDoomcom(void)
 {
 	if (doomcom) return;
-	doomcom = Z_Calloc(sizeof (doomcom_t), PU_STATIC, NULL);
+	doomcom = (doomcom_t*)Z_Calloc(sizeof (doomcom_t), PU_STATIC, NULL);
 	doomcom->id = DOOMCOM_ID;
 	doomcom->numslots = doomcom->numnodes = 1;
 	doomcom->gametype = 0;
@@ -1445,8 +1447,8 @@ struct pingcell
 static int pingcellcmp(const void *va, const void *vb)
 {
 	const struct pingcell *a, *b;
-	a = va;
-	b = vb;
+	a = (struct pingcell*)va;
+	b = (struct pingcell*)vb;
 	return ( a->ms - b->ms );
 }
 
