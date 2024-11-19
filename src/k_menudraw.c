@@ -1928,7 +1928,7 @@ static boolean M_DrawFollowerSprite(INT16 x, INT16 y, INT32 num, boolean charfli
 static void M_DrawCharSelectSprite(UINT8 num, INT16 x, INT16 y, boolean charflip)
 {
 	setup_player_t *p = &setup_player[num];
-	UINT8 color;
+	UINT16 color;
 	UINT8 *colormap;
 
 	if (p->skin < 0)
