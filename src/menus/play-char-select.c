@@ -288,7 +288,7 @@ static void M_SetupMidGameGridPos(setup_player_t *p, UINT8 num)
 
 void M_CharacterSelectInit(void)
 {
-	UINT8 i, j;
+	UINT16 i, j;
 	setup_maxpage = 0;
 
 	memset(setup_chargrid, -1, sizeof(setup_chargrid));
