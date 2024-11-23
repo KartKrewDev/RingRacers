@@ -562,7 +562,7 @@ extern boolean actionsoverridden[NUMACTIONS];
 
 // ratio of states to sprites to mobj types is roughly 6 : 1 : 1
 #define NUMMOBJFREESLOTS 1024
-#define NUMSPRITEFREESLOTS NUMMOBJFREESLOTS
+#define NUMSPRITEFREESLOTS (NUMMOBJFREESLOTS*2)
 #define NUMSTATEFREESLOTS (NUMMOBJFREESLOTS*8)
 
 // Hey, moron! If you change this table, don't forget about sprnames in info.c and the sprite lights in hw_light.c!
