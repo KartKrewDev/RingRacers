@@ -130,8 +130,8 @@ void HWR_ProcessPolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPt
 		polygonArray[polygonArraySize].vertsIndex = unsortedVertexArraySize;
 		polygonArray[polygonArraySize].numVerts = iNumPts;
 		polygonArray[polygonArraySize].polyFlags = PolyFlags;
-		polygonArray[polygonArraySize].texture = current_texture;
 		polygonArray[polygonArraySize].brightmap = current_brightmap;
+		polygonArray[polygonArraySize].texture = current_texture;
 		polygonArray[polygonArraySize].shader = shader;
 		polygonArray[polygonArraySize].horizonSpecial = horizonSpecial;
 		polygonArraySize++;
