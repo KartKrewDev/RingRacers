@@ -4178,6 +4178,8 @@ void M_DrawMPServerBrowser(void)
 		servpats[i] = W_CachePatchName(va("M_SERV%c", i + '1'), PU_CACHE);
 		gearpats[i] = W_CachePatchName(va("M_SGEAR%c", i + '1'), PU_CACHE);
 	}
+	patch_t *voicepat;
+	voicepat = W_CachePatchName("VOCRMU", PU_CACHE);
 
 	fixed_t text1loop = SHORT(text1->height)*FRACUNIT;
 	fixed_t text2loop = SHORT(text2->width)*FRACUNIT;
@@ -4278,6 +4280,12 @@ void M_DrawMPServerBrowser(void)
 				{
 					V_DrawFixedPatch((startx + 251)*FRACUNIT, (starty + ypos + 9)*FRACUNIT, FRACUNIT, transflag, gearpats[speed], NULL);
 				}
+			}
+
+			// voice chat enabled
+			if (serverlist[i].info.kartvars & SV_VOICEENABLED)
+			{
+				V_DrawFixedPatch((startx - 3) * FRACUNIT, (starty + 2) * FRACUNIT, FRACUNIT, 0, voicepat, NULL);
 			}
 		}
 		ypos += SERVERSPACE;

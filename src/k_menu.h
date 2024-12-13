@@ -346,6 +346,7 @@ typedef enum
 	mopt_profiles = 0,
 	mopt_video,
 	mopt_sound,
+	mopt_voice,
 	mopt_hud,
 	mopt_gameplay,
 	mopt_server,
@@ -467,6 +468,9 @@ extern menu_t OPTIONS_VideoAdvancedDef;
 
 extern menuitem_t OPTIONS_Sound[];
 extern menu_t OPTIONS_SoundDef;
+
+extern menuitem_t OPTIONS_Voice[];
+extern menu_t OPTIONS_VoiceDef;
 
 extern menuitem_t OPTIONS_HUD[];
 extern menu_t OPTIONS_HUDDef;

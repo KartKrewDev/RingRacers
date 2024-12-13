@@ -114,6 +114,8 @@ void I_UpdateSoundParams(INT32 handle, UINT8 vol, UINT8 sep, UINT8 pitch);
 */
 void I_SetSfxVolume(int volume);
 
+void I_SetVoiceVolume(int volume);
+
 /// ------------------------
 //  MUSIC SYSTEM
 /// ------------------------
@@ -245,6 +247,22 @@ boolean I_FadeSongFromVolume(UINT8 target_volume, UINT8 source_volume, UINT32 ms
 boolean I_FadeSong(UINT8 target_volume, UINT32 ms, void (*callback)(void));
 boolean I_FadeOutStopSong(UINT32 ms);
 boolean I_FadeInPlaySong(UINT32 ms, boolean looping);
+
+// AUDIO INPUT (Microphones)
+boolean I_SoundInputIsEnabled(void);
+boolean I_SoundInputSetEnabled(boolean enabled);
+UINT32 I_SoundInputDequeueSamples(void *data, UINT32 len);
+
+// VOICE CHAT
+
+/// Queue a frame of samples of voice data from a player. Voice format is MONO F32 SYSTEM ENDIANNESS.
+/// If there is too much data being queued, old samples will be truncated
+void I_QueueVoiceFrameFromPlayer(INT32 playernum, void *data, UINT32 len, boolean terminal);
+
+void I_SetPlayerVoiceProperties(INT32 playernum, float volume, float sep);
+
+/// Reset the voice queue for the given player. Use when server connection ends
+void I_ResetVoiceQueue(INT32 playernum);
 
 #ifdef __cplusplus
 } // extern "C"

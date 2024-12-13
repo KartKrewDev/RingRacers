@@ -53,6 +53,125 @@ using srb2::audio::Source;
 using namespace srb2;
 using namespace srb2::io;
 
+namespace
+{
+class SdlAudioStream final
+{
+	SDL_AudioStream* stream_;
+public:
+	SdlAudioStream(const SDL_AudioFormat format, const Uint8 channels, const int src_rate, const SDL_AudioFormat dst_format, const Uint8 dst_channels, const int dst_rate) noexcept
+	{
+		stream_ = SDL_NewAudioStream(format, channels, src_rate, dst_format, dst_channels, dst_rate);
+	}
+	SdlAudioStream(const SdlAudioStream&) = delete;
+	SdlAudioStream(SdlAudioStream&&) = default;
+	SdlAudioStream& operator=(const SdlAudioStream&) = delete;
+	SdlAudioStream& operator=(SdlAudioStream&&) = default;
+	~SdlAudioStream()
+	{
+		SDL_FreeAudioStream(stream_);
+	}
+
+	void put(tcb::span<const std::byte> buf)
+	{
+		int result = SDL_AudioStreamPut(stream_, buf.data(), buf.size_bytes());
+		if (result < 0)
+		{
+			char errbuf[512];
+			SDL_GetErrorMsg(errbuf, sizeof(errbuf));
+			throw std::runtime_error(errbuf);
+		}
+	}
+
+	size_t available() const
+	{
+		int result = SDL_AudioStreamAvailable(stream_);
+		if (result < 0)
+		{
+			char errbuf[512];
+			SDL_GetErrorMsg(errbuf, sizeof(errbuf));
+			throw std::runtime_error(errbuf);
+		}
+		return result;
+	}
+
+	size_t get(tcb::span<std::byte> out)
+	{
+		int result = SDL_AudioStreamGet(stream_, out.data(), out.size_bytes());
+		if (result < 0)
+		{
+			char errbuf[512];
+			SDL_GetErrorMsg(errbuf, sizeof(errbuf));
+			throw std::runtime_error(errbuf);
+		}
+		return result;
+	}
+
+	void clear() noexcept
+	{
+		SDL_AudioStreamClear(stream_);
+	}
+};
+
+class SdlVoiceStreamPlayer : public Source<2>
+{
+	SdlAudioStream stream_;
+	float volume_ = 1.0f;
+	float sep_ = 0.0f;
+	bool terminal_ = true;
+
+public:
+	SdlVoiceStreamPlayer() : stream_(AUDIO_F32SYS, 1, 48000, AUDIO_F32SYS, 2, 44100) {}
+	virtual ~SdlVoiceStreamPlayer() = default;
+
+	virtual std::size_t generate(tcb::span<Sample<2>> buffer) override
+	{
+		size_t written = stream_.get(tcb::as_writable_bytes(buffer)) / sizeof(Sample<2>);
+
+		for (size_t i = written; i < buffer.size(); i++)
+		{
+			buffer[i] = {0.f, 0.f};
+		}
+
+		// Apply gain de-popping if the last generation was terminal
+		if (terminal_)
+		{
+			for (size_t i = 0; i < std::min<size_t>(16, written); i++)
+			{
+				buffer[i].amplitudes[0] *= (float)(i) / 16;
+				buffer[i].amplitudes[1] *= (float)(i) / 16;
+			}
+			terminal_ = false;
+		}
+
+		if (written < buffer.size())
+		{
+			terminal_ = true;
+		}
+
+		for (size_t i = 0; i < written; i++)
+		{
+			float sep_pan = ((sep_ + 1.f) / 2.f) * (3.14159 / 2.f);
+
+			float left_scale = std::cos(sep_pan);
+			float right_scale = std::sin(sep_pan);
+			buffer[i] = {buffer[i].amplitudes[0] * volume_ * left_scale, buffer[i].amplitudes[1] * volume_ * right_scale};
+		}
+
+		return buffer.size();
+	};
+
+	SdlAudioStream& stream() noexcept { return stream_; }
+
+	void set_properties(float volume, float sep) noexcept
+	{
+		volume_ = volume;
+		sep_ = sep;
+	}
+};
+
+} // namespace
+
 // extern in i_sound.h
 UINT8 sound_started = false;
 
@@ -60,19 +179,26 @@ static unique_ptr<Gain<2>> master_gain;
 static shared_ptr<Mixer<2>> master;
 static shared_ptr<Mixer<2>> mixer_sound_effects;
 static shared_ptr<Mixer<2>> mixer_music;
+static shared_ptr<Mixer<2>> mixer_voice;
 static shared_ptr<MusicPlayer> music_player;
 static shared_ptr<Resampler<2>> resample_music_player;
 static shared_ptr<Gain<2>> gain_sound_effects;
 static shared_ptr<Gain<2>> gain_music_player;
 static shared_ptr<Gain<2>> gain_music_channel;
+static shared_ptr<Gain<2>> gain_voice_channel;
 
 static vector<shared_ptr<SoundEffectPlayer>> sound_effect_channels;
+static vector<shared_ptr<SdlVoiceStreamPlayer>> player_voice_channels;
 
 #ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 static shared_ptr<srb2::media::AVRecorder> av_recorder;
 #endif
 
 static void (*music_fade_callback)();
+
+static SDL_AudioDeviceID g_device_id;
+static SDL_AudioDeviceID g_input_device_id;
+static boolean g_input_device_paused;
 
 void* I_GetSfx(sfxinfo_t* sfx)
 {
@@ -120,8 +246,8 @@ namespace
 class SdlAudioLockHandle
 {
 public:
-	SdlAudioLockHandle() { SDL_LockAudio(); }
-	~SdlAudioLockHandle() { SDL_UnlockAudio(); }
+	SdlAudioLockHandle() { SDL_LockAudioDevice(g_device_id); }
+	~SdlAudioLockHandle() { SDL_UnlockAudioDevice(g_device_id); }
 };
 
 #ifdef TRACY_ENABLE
@@ -180,21 +306,21 @@ void initialize_sound()
 		return;
 	}
 
-	SDL_AudioSpec desired;
+	SDL_AudioSpec desired {};
 	desired.format = AUDIO_F32SYS;
 	desired.channels = 2;
 	desired.samples = cv_soundmixingbuffersize.value;
 	desired.freq = 44100;
 	desired.callback = audio_callback;
 
-	if (SDL_OpenAudio(&desired, NULL) < 0)
+	if ((g_device_id = SDL_OpenAudioDevice(NULL, SDL_FALSE, &desired, NULL, 0)) == 0)
 	{
 		CONS_Alert(CONS_ERROR, "Failed to open SDL Audio device: %s\n", SDL_GetError());
 		SDL_QuitSubSystem(SDL_INIT_AUDIO);
 		return;
 	}
 
-	SDL_PauseAudio(SDL_FALSE);
+	SDL_PauseAudioDevice(g_device_id, SDL_FALSE);
 
 	{
 		SdlAudioLockHandle _;
@@ -204,16 +330,20 @@ void initialize_sound()
 		master_gain->bind(master);
 		mixer_sound_effects = make_shared<Mixer<2>>();
 		mixer_music = make_shared<Mixer<2>>();
+		mixer_voice = make_shared<Mixer<2>>();
 		music_player = make_shared<MusicPlayer>();
 		resample_music_player = make_shared<Resampler<2>>(music_player, 1.f);
 		gain_sound_effects = make_shared<Gain<2>>();
 		gain_music_player = make_shared<Gain<2>>();
 		gain_music_channel = make_shared<Gain<2>>();
+		gain_voice_channel = make_shared<Gain<2>>();
 		gain_sound_effects->bind(mixer_sound_effects);
 		gain_music_player->bind(resample_music_player);
 		gain_music_channel->bind(mixer_music);
+		gain_voice_channel->bind(mixer_voice);
 		master->add_source(gain_sound_effects);
 		master->add_source(gain_music_channel);
+		master->add_source(gain_voice_channel);
 		mixer_music->add_source(gain_music_player);
 		sound_effect_channels.clear();
 		for (size_t i = 0; i < static_cast<size_t>(cv_numChannels.value); i++)
@@ -221,6 +351,13 @@ void initialize_sound()
 			shared_ptr<SoundEffectPlayer> player = make_shared<SoundEffectPlayer>();
 			sound_effect_channels.push_back(player);
 			mixer_sound_effects->add_source(player);
+		}
+		player_voice_channels.clear();
+		for (size_t i = 0; i < MAXPLAYERS; i++)
+		{
+			shared_ptr<SdlVoiceStreamPlayer> player = make_shared<SdlVoiceStreamPlayer>();
+			player_voice_channels.push_back(player);
+			mixer_voice->add_source(player);
 		}
 	}
 
@@ -237,7 +374,17 @@ void I_StartupSound(void)
 
 void I_ShutdownSound(void)
 {
-	SDL_CloseAudio();
+	if (g_device_id)
+	{
+		SDL_CloseAudioDevice(g_device_id);
+		g_device_id = 0;
+	}
+	if (g_input_device_id)
+	{
+		SDL_CloseAudioDevice(g_input_device_id);
+		g_input_device_id = 0;
+	}
+
 	SDL_QuitSubSystem(SDL_INIT_AUDIO);
 
 	sound_started = false;
@@ -377,6 +524,17 @@ void I_SetSfxVolume(int volume)
 	if (gain_sound_effects)
 	{
 		gain_sound_effects->gain(std::clamp(vol * vol * vol, 0.f, 1.f));
+	}
+}
+
+void I_SetVoiceVolume(int volume)
+{
+	SdlAudioLockHandle _;
+	float vol = static_cast<float>(volume) / 100.f;
+
+	if (gain_voice_channel)
+	{
+		gain_voice_channel->gain(std::clamp(vol * vol * vol, 0.f, 1.f));
 	}
 }
 
@@ -823,4 +981,94 @@ void I_UpdateAudioRecorder(void)
 
 	av_recorder = g_av_recorder;
 #endif
+}
+
+boolean I_SoundInputIsEnabled(void)
+{
+	return g_input_device_id != 0 && !g_input_device_paused;
+}
+
+boolean I_SoundInputSetEnabled(boolean enabled)
+{
+	if (g_input_device_id == 0 && enabled)
+	{
+		SDL_AudioSpec input_desired {};
+		input_desired.format = AUDIO_F32SYS;
+		input_desired.channels = 1;
+		input_desired.samples = 2048;
+		input_desired.freq = 48000;
+		SDL_AudioSpec input_obtained {};
+		g_input_device_id = SDL_OpenAudioDevice(nullptr, SDL_TRUE, &input_desired, &input_obtained, 0);
+		if (!g_input_device_id)
+		{
+			CONS_Alert(CONS_WARNING, "Failed to open input audio device: %s\n", SDL_GetError());
+			return false;
+		}
+		g_input_device_paused = true;
+	}
+
+	if (enabled && g_input_device_paused)
+	{
+		SDL_PauseAudioDevice(g_input_device_id, SDL_FALSE);
+		g_input_device_paused = false;
+	}
+	else if (!enabled && !g_input_device_paused)
+	{
+		SDL_PauseAudioDevice(g_input_device_id, SDL_TRUE);
+		SDL_ClearQueuedAudio(g_input_device_id);
+		g_input_device_paused = true;
+	}
+	return !g_input_device_paused;
+}
+
+UINT32 I_SoundInputDequeueSamples(void *data, UINT32 len)
+{
+	if (!g_input_device_id)
+	{
+		return 0;
+	}
+	UINT32 avail = SDL_GetQueuedAudioSize(g_input_device_id);
+	if (avail == 0)
+	{
+		return 0;
+	}
+
+	UINT32 ret = SDL_DequeueAudio(g_input_device_id, data, std::min(len, avail));
+	return ret;
+}
+
+void I_QueueVoiceFrameFromPlayer(INT32 playernum, void *data, UINT32 len, boolean terminal)
+{
+	if (!sound_started)
+	{
+		return;
+	}
+
+	SdlAudioLockHandle _;
+	SdlVoiceStreamPlayer* player = player_voice_channels.at(playernum).get();
+	player->stream().put(tcb::span((std::byte*)data, len));
+}
+
+void I_SetPlayerVoiceProperties(INT32 playernum, float volume, float sep)
+{
+	if (!sound_started)
+	{
+		return;
+	}
+
+	SdlAudioLockHandle _;
+	SdlVoiceStreamPlayer* player = player_voice_channels.at(playernum).get();
+	player->set_properties(volume * volume * volume, sep);
+}
+
+void I_ResetVoiceQueue(INT32 playernum)
+{
+	if (!sound_started)
+	{
+		return;
+	}
+
+	SdlAudioLockHandle _;
+	SdlVoiceStreamPlayer* player = player_voice_channels.at(playernum).get();
+	player->stream().clear();
 }

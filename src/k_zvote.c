@@ -59,6 +59,25 @@ static void K_MidVoteKick(void)
 }
 
 /*--------------------------------------------------
+	static void K_MidVoteMute(void)
+
+		MVT_MUTE's success function.
+--------------------------------------------------*/
+static void K_MidVoteMute(void)
+{
+	UINT8 buf[2];
+
+	if (g_midVote.victim == NULL)
+	{
+		return;
+	}
+
+	buf[0] = g_midVote.victim - players;
+	buf[1] = 1;
+	SendNetXCmd(XD_SERVERMUTEPLAYER, &buf, 2);
+}
+
+/*--------------------------------------------------
 	static void K_MidVoteRockTheVote(void)
 
 		MVT_RTV's success function.
@@ -99,6 +118,13 @@ static midVoteTypeDef_t g_midVoteTypeDefs[MVT__MAX] =
 		K_MidVoteKick
 	},
 
+	{ // MVT_MUTE
+		"MUTE",
+		"Mute Player?",
+		CVAR_INIT ("zvote_mute_allowed", "Yes", CV_SAVE|CV_NETVAR, CV_YesNo, NULL),
+		K_MidVoteMute
+	},
+
 	{ // MVT_RTV
 		"RTV",
 		"Skip Level?",
@@ -124,6 +150,10 @@ boolean K_MidVoteTypeUsesVictim(midVoteType_e voteType)
 	switch (voteType)
 	{
 		case MVT_KICK:
+		{
+			return true;
+		}
+		case MVT_MUTE:
 		{
 			return true;
 		}
@@ -1186,6 +1216,7 @@ void K_DrawMidVote(void)
 		switch (g_midVote.type)
 		{
 			case MVT_KICK:
+			case MVT_MUTE:
 			{
 				// Draw victim name
 				if (g_midVote.victim != NULL)

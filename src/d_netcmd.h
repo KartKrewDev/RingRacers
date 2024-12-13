@@ -61,6 +61,7 @@ extern consvar_t cv_netstat;
 
 extern consvar_t cv_countdowntime;
 extern consvar_t cv_mute;
+extern consvar_t cv_voice_servermute;
 extern consvar_t cv_pause;
 
 extern consvar_t cv_restrictskinchange, cv_allowteamchange, cv_maxplayers;
@@ -185,6 +186,8 @@ typedef enum
 	XD_CALLZVOTE,   // 39
 	XD_SETZVOTE,    // 40
 	XD_TEAMCHANGE,  // 41
+	XD_SERVERMUTEPLAYER, // 42
+	XD_SERVERDEAFENPLAYER, // 43
 
 	MAXNETXCMD
 } netxcmd_t;

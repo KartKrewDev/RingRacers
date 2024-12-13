@@ -1,0 +1,91 @@
+// DR. ROBOTNIK'S RING RACERS
+//-----------------------------------------------------------------------------
+// Copyright (C) 2024 by Kart Krew.
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+/// \file  menus/options-voice.cpp
+/// \brief Voice Options
+
+#include "../m_easing.h"
+#include "../k_menu.h"
+#include "../s_sound.h"	// sounds consvars
+#include "../v_video.h"
+
+menuitem_t OPTIONS_Voice[] =
+{
+	{IT_STRING | IT_CVAR, "Voice Chat", "Turn on or off all voice chat for yourself.",
+		NULL, {.cvar = &cv_voice_chat}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Voice Mode", "When to transmit your own voice.",
+		NULL, {.cvar = &cv_voice_mode}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Input Amplifier", "Amplify your voice, in decibels. Negative values are quieter.",
+		NULL, {.cvar = &cv_voice_inputamp}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Activation Threshold", "Voice higher than this threshold will transmit, in decibels.",
+		NULL, {.cvar = &cv_voice_activationthreshold}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Self Voice Mute", "Whether your voice is transmitted or not.",
+		NULL, {.cvar = &cv_voice_selfmute}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Voice Loopback", "Play your own recording voice back.",
+		NULL, {.cvar = &cv_voice_loopback}, 0, 0},
+
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, {NULL}, 0, 0},
+
+	{IT_HEADER, "Server Voice Options...",  NULL,
+		NULL, {NULL}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Server Voice Mute", "All voice chat will be disabled on your server.",
+		NULL, {.cvar = &cv_voice_servermute}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Proximity Effects", "Player voices will be adjusted relative to you.",
+		NULL, {.cvar = &cv_voice_proximity}, 0, 0},
+};
+
+static void draw_routine()
+{
+	M_DrawGenericOptions();
+
+	int x = currentMenu->x - M_EaseWithTransition(Easing_Linear, 5 * 48);
+	int y = currentMenu->y - 12;
+	int range = 220;
+	float last_peak = g_local_voice_last_peak * range;
+	boolean detected = g_local_voice_detected;
+	INT32 color = detected ? 65 : 23;
+
+	V_DrawFill(x, y, range + 2, 10, 31);
+	V_DrawFill(x + 1, y + 1, (int) last_peak, 8, color);
+}
+
+static void tick_routine()
+{
+	M_OptionsTick();
+}
+
+static boolean input_routine(INT32)
+{
+	return false;
+}
+
+menu_t OPTIONS_VoiceDef = {
+	sizeof (OPTIONS_Voice) / sizeof (menuitem_t),
+	&OPTIONS_MainDef,
+	0,
+	OPTIONS_Voice,
+	48, 80,
+	SKINCOLOR_ULTRAMARINE, 0,
+	MBF_DRAWBGWHILEPLAYING,
+	NULL,
+	2, 5,
+	draw_routine,
+	M_DrawOptionsCogs,
+	tick_routine,
+	NULL,
+	NULL,
+	input_routine,
+};

@@ -77,7 +77,7 @@ struct ProfileJson
 	std::string followercolorname;
 	ProfileRecordsJson records;
 	ProfilePreferencesJson preferences;
-	std::array<std::array<int32_t, MAXINPUTMAPPING>, gamecontrols_e::num_gamecontrols> controls = {{{{}}}};
+	std::vector<std::vector<int32_t>> controls = {};
 
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
 		ProfileJson,

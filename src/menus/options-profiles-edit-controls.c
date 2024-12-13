@@ -87,6 +87,9 @@ menuitem_t OPTIONS_ProfileControls[] = {
 	{IT_CONTROL, "OPEN TEAM CHAT", "Opens team-only full chat for online games.",
 		NULL, {.routine = M_ProfileSetControl}, gc_teamtalk, 0},
 
+	{IT_CONTROL, "PUSH-TO-TALK", "Activates voice chat transmission in Push-to-Talk (PTT) mode.",
+		NULL, {.routine = M_ProfileSetControl}, gc_voicepushtotalk, 0},
+
 	{IT_CONTROL, "LUA/1", "May be used by add-ons.",
 		NULL, {.routine = M_ProfileSetControl}, gc_lua1, 0},
 
@@ -310,14 +313,14 @@ boolean M_ProfileControlsInputs(INT32 ch)
 				S_StartSound(NULL, sfx_kc69);
 			if (newbuttons & MBT_R)
 				S_StartSound(NULL, sfx_s3ka2);
-			
+
 			if (newbuttons & MBT_A)
 				S_StartSound(NULL, sfx_kc3c);
 			if (newbuttons & MBT_B)
 				S_StartSound(NULL, sfx_3db09);
 			if (newbuttons & MBT_C)
 				S_StartSound(NULL, sfx_s1be);
-			
+
 			if (newbuttons & MBT_X)
 				S_StartSound(NULL, sfx_s1a4);
 			if (newbuttons & MBT_Y)

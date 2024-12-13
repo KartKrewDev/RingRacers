@@ -16,6 +16,8 @@
 #include <unistd.h> //for unlink
 #endif
 
+#include <opus.h>
+
 #include "i_time.h"
 #include "i_net.h"
 #include "i_system.h"
@@ -189,6 +191,17 @@ uint8_t priorKeys[MAXPLAYERS][PUBKEYLENGTH]; // Make a note of keys before consu
 
 boolean serverisfull = false; //lets us be aware if the server was full after we check files, but before downloading, so we can ask if the user still wants to download or not
 tic_t firstconnectattempttime = 0;
+
+static OpusDecoder *g_player_opus_decoders[MAXPLAYERS];
+static UINT64 g_player_opus_lastframe[MAXPLAYERS];
+static OpusEncoder *g_local_opus_encoder;
+static UINT64 g_local_opus_frame = 0;
+#define SRB2_VOICE_OPUS_FRAME_SIZE 480
+static float g_local_voice_buffer[SRB2_VOICE_OPUS_FRAME_SIZE];
+static INT32 g_local_voice_buffer_len = 0;
+static INT32 g_local_voice_threshold_time = 0;
+float g_local_voice_last_peak = 0;
+boolean g_local_voice_detected = false;
 
 // engine
 
@@ -1050,7 +1063,8 @@ static void SV_SendServerInfo(INT32 node, tic_t servertime)
 
 	netbuffer->u.serverinfo.kartvars = (UINT8) (
 		(gamespeed & SV_SPEEDMASK) |
-		(dedicated ? SV_DEDICATED : 0)
+		(dedicated ? SV_DEDICATED : 0) |
+		(!cv_voice_servermute.value ? SV_VOICEENABLED : 0)
 	);
 
 	D_ParseCarets(netbuffer->u.serverinfo.servername, cv_servername.string, MAXSERVERNAME);
@@ -2353,6 +2367,11 @@ static void CL_ConnectToServer(void)
 	}
 	SL_ClearServerList(servernode);
 
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		CL_ClearPlayer(i);
+	}
+
 	do
 	{
 		// If the connection was aborted for some reason, leave
@@ -2564,6 +2583,27 @@ void CL_ClearPlayer(INT32 playernum)
 
 	// Handle post-cleanup.
 	RemoveAdminPlayer(playernum); // don't stay admin after you're gone
+
+	// Clear voice chat data
+	S_ResetVoiceQueue(playernum);
+
+	{
+		// Destroy and recreate the opus decoder for this playernum
+		OpusDecoder *opusdecoder = g_player_opus_decoders[playernum];
+		if (opusdecoder)
+		{
+			opus_decoder_destroy(opusdecoder);
+			opusdecoder = NULL;
+		}
+		int error;
+		opusdecoder = opus_decoder_create(48000, 1, &error);
+		if (error != OPUS_OK)
+		{
+			CONS_Alert(CONS_WARNING, "Failed to create Opus decoder for player %d: opus error %d\n", playernum, error);
+			opusdecoder = NULL;
+		}
+		g_player_opus_decoders[playernum] = opusdecoder;
+	}
 }
 
 //
@@ -3242,9 +3282,123 @@ static void Command_ResendGamestate(void)
 	}
 }
 
+static void Command_ServerMute(void)
+{
+	SINT8 playernum;
+	UINT8 buf[2];
+
+	if (!netgame)
+	{
+		CONS_Printf(M_GetText("This only works in a netgame.\n"));
+		return;
+	}
+
+	if (COM_Argc() == 1)
+	{
+		CONS_Printf(M_GetText("servermute <playername/playernum>: server mute a player's voice\n"));
+		return;
+	}
+	else if (!(server || IsPlayerAdmin(consoleplayer)))
+	{
+		CONS_Printf(M_GetText("Only the server or an admin can use this.\n"));
+		return;
+	}
+
+	playernum = nametonum(COM_Argv(1));
+	if (playernum == -1)
+		return;
+
+	buf[0] = playernum;
+	buf[1] = 1;
+	SendNetXCmd(XD_SERVERMUTEPLAYER, buf, 2);
+}
+
+static void Command_ServerUnmute(void)
+{
+	SINT8 playernum;
+	UINT8 buf[2];
+
+	if (!netgame)
+	{
+		CONS_Printf(M_GetText("This only works in a netgame.\n"));
+		return;
+	}
+
+	if (COM_Argc() == 1)
+	{
+		CONS_Printf(M_GetText("serverunmute <playername/playernum>: server unmute a player's voice\n"));
+		return;
+	}
+	else if (!(server || IsPlayerAdmin(consoleplayer)))
+	{
+		CONS_Printf(M_GetText("Only the server or an admin can use this.\n"));
+		return;
+	}
+
+	playernum = nametonum(COM_Argv(1));
+	if (playernum == -1)
+		return;
+
+	buf[0] = playernum;
+	buf[1] = 0;
+	SendNetXCmd(XD_SERVERMUTEPLAYER, &buf, 2);
+}
+
+static void Command_ServerDeafen(void)
+{
+	SINT8 playernum;
+	UINT8 buf[2];
+
+	if (COM_Argc() == 1)
+	{
+		CONS_Printf(M_GetText("serverdeafen <playername/playernum>: server deafen a player\n"));
+		return;
+	}
+	else if (client)
+	{
+		CONS_Printf(M_GetText("Only the server can use this.\n"));
+		return;
+	}
+
+	playernum = nametonum(COM_Argv(1));
+	if (playernum == -1)
+		return;
+
+	buf[0] = playernum;
+	buf[1] = 1;
+	SendNetXCmd(XD_SERVERDEAFENPLAYER, &buf, 2);
+}
+
+static void Command_ServerUndeafen(void)
+{
+	SINT8 playernum;
+	UINT8 buf[2];
+
+	if (COM_Argc() == 1)
+	{
+		CONS_Printf(M_GetText("serverundeafen <playername/playernum>: server undeafen a player\n"));
+		return;
+	}
+	else if (client)
+	{
+		CONS_Printf(M_GetText("Only the server can use this.\n"));
+		return;
+	}
+
+	playernum = nametonum(COM_Argv(1));
+	if (playernum == -1)
+		return;
+
+	buf[0] = playernum;
+	buf[1] = 0;
+	SendNetXCmd(XD_SERVERDEAFENPLAYER, buf, 2);
+}
+
 static void Got_AddPlayer(const UINT8 **p, INT32 playernum);
 static void Got_RemovePlayer(const UINT8 **p, INT32 playernum);
 static void Got_AddBot(const UINT8 **p, INT32 playernum);
+static void Got_ServerMutePlayer(const UINT8 **p, INT32 playernum);
+static void Got_ServerDeafenPlayer(const UINT8 **p, INT32 playernum);
 
 void Joinable_OnChange(void);
 void Joinable_OnChange(void)
@@ -3294,6 +3448,13 @@ void D_ClientServerInit(void)
 	RegisterNetXCmd(XD_ADDPLAYER, Got_AddPlayer);
 	RegisterNetXCmd(XD_REMOVEPLAYER, Got_RemovePlayer);
 	RegisterNetXCmd(XD_ADDBOT, Got_AddBot);
+
+	COM_AddCommand("servermute", Command_ServerMute);
+	COM_AddCommand("serverunmute", Command_ServerUnmute);
+	COM_AddCommand("serverdeafen", Command_ServerDeafen);
+	COM_AddCommand("serverundeafen", Command_ServerUndeafen);
+	RegisterNetXCmd(XD_SERVERMUTEPLAYER, Got_ServerMutePlayer);
+	RegisterNetXCmd(XD_SERVERDEAFENPLAYER, Got_ServerDeafenPlayer);
 
 	gametic = 0;
 	localgametic = 0;
@@ -3484,6 +3645,27 @@ void D_QuitNetGame(void)
 #endif
 }
 
+static void InitializeLocalVoiceEncoder(void)
+{
+	// Reset voice opus encoder for local "player 1"
+	OpusEncoder *encoder = g_local_opus_encoder;
+	if (encoder != NULL)
+	{
+		opus_encoder_destroy(encoder);
+		encoder = NULL;
+	}
+	int error;
+	encoder = opus_encoder_create(48000, 1, OPUS_APPLICATION_VOIP, &error);
+	opus_encoder_ctl(encoder, OPUS_SET_VBR(0));
+	if (error != OPUS_OK)
+	{
+		CONS_Alert(CONS_WARNING, "Failed to create Opus voice encoder: opus error %d\n", error);
+		encoder = NULL;
+	}
+	g_local_opus_encoder = encoder;
+	g_local_opus_frame = 0;
+}
+
 // Adds a node to the game (player will follow at map change or at savegame....)
 static inline void SV_AddNode(INT32 node)
 {
@@ -3563,6 +3745,8 @@ static void Got_AddPlayer(const UINT8 **p, INT32 playernum)
 				g_localplayers[i] = newplayernum;
 			}
 			DEBFILE("spawning me\n");
+
+			InitializeLocalVoiceEncoder();
 		}
 
 		P_ForceLocalAngle(newplayer, newplayer->angleturn);
@@ -3660,6 +3844,56 @@ static void Got_AddBot(const UINT8 **p, INT32 playernum)
 	style = READUINT8(*p);
 
 	K_SetBot(newplayernum, skinnum, difficulty, style);
+}
+
+// Xcmd XD_SERVERMUTEPLAYER
+static void Got_ServerMutePlayer(const UINT8 **p, INT32 playernum)
+{
+	UINT8 forplayer = READUINT8(*p);
+	UINT8 muted = READUINT8(*p);
+	if (playernum != serverplayer)
+	{
+		CONS_Alert(CONS_WARNING, M_GetText("Illegal server mute player cmd from %s\n"), player_names[playernum]);
+		if (server)
+		{
+			SendKick(playernum, KICK_MSG_CON_FAIL);
+		}
+	}
+	if (muted && !(players[forplayer].pflags2 & PF2_SERVERMUTE))
+	{
+		players[forplayer].pflags2 |= PF2_SERVERMUTE;
+		HU_AddChatText(va("\x82* %s was server muted.", player_names[forplayer]), false);
+	}
+	else if (!muted && players[forplayer].pflags2 & PF2_SERVERMUTE)
+	{
+		players[forplayer].pflags2 &= ~PF2_SERVERMUTE;
+		HU_AddChatText(va("\x82* %s was server unmuted.", player_names[forplayer]), false);
+	}
+}
+
+// Xcmd XD_SERVERDEAFENPLAYER
+static void Got_ServerDeafenPlayer(const UINT8 **p, INT32 playernum)
+{
+	UINT8 forplayer = READUINT8(*p);
+	UINT8 deafened = READUINT8(*p);
+	if (playernum != serverplayer)
+	{
+		CONS_Alert(CONS_WARNING, M_GetText("Illegal server deafen player cmd from %s\n"), player_names[playernum]);
+		if (server)
+		{
+			SendKick(playernum, KICK_MSG_CON_FAIL);
+		}
+	}
+	if (deafened && !(players[forplayer].pflags2 & PF2_SERVERDEAFEN))
+	{
+		players[forplayer].pflags2 |= PF2_SERVERDEAFEN;
+		HU_AddChatText(va("\x82* %s was server deafened.", player_names[forplayer]), false);
+	}
+	else if (!deafened && players[forplayer].pflags2 & PF2_SERVERDEAFEN)
+	{
+		players[forplayer].pflags2 &= ~PF2_SERVERDEAFEN;
+		HU_AddChatText(va("\x82* %s was server undeafened.", player_names[forplayer]), false);
+	}
 }
 
 static boolean SV_AddWaitingPlayers(SINT8 node, UINT8 *availabilities,
@@ -4934,6 +5168,149 @@ static void PT_ReqMapQueue(int node)
 	SendNetXCmd(XD_MAPQUEUE, buf, buf_p - buf);
 }
 
+static void PT_HandleVoiceClient(SINT8 node, boolean isserver)
+{
+	if (!isserver && node != servernode)
+	{
+		// We should never receive voice packets from anything other than the server
+		return;
+	}
+
+	if (dedicated)
+	{
+		// don't bother decoding on dedicated
+		return;
+	}
+
+	doomdata_t *pak = (doomdata_t*)(doomcom->data);
+	voice_pak *pl = &pak->u.voice;
+
+	UINT64 framenum = (UINT64)LONGLONG(pl->frame);
+	INT32 playernum = pl->flags & VOICE_PAK_FLAGS_PLAYERNUM_BITS;
+	if (playernum >= MAXPLAYERS || playernum < 0)
+	{
+		// ignore
+		return;
+	}
+
+	boolean terminal = (pl->flags & VOICE_PAK_FLAGS_TERMINAL_BIT) > 0;
+	UINT32 framesize = doomcom->datalength - BASEPACKETSIZE - sizeof(voice_pak);
+	UINT8 *frame = (UINT8*)(pl) + sizeof(voice_pak);
+
+	OpusDecoder *decoder = g_player_opus_decoders[playernum];
+	if (decoder == NULL)
+	{
+		return;
+	}
+	float *decoded_out = Z_Malloc(sizeof(float) * SRB2_VOICE_OPUS_FRAME_SIZE, PU_STATIC, NULL);
+
+	INT32 decoded_samples = 0;
+	UINT64 missedframes = 0;
+	if (framenum > g_player_opus_lastframe[playernum])
+	{
+		missedframes = min((framenum - g_player_opus_lastframe[playernum]) - 1, 16);
+	}
+
+	for (UINT64 i = 0; i < missedframes; i++)
+	{
+		decoded_samples = opus_decode_float(decoder, NULL, 0, decoded_out, SRB2_VOICE_OPUS_FRAME_SIZE, 0);
+		if (decoded_samples < 0)
+		{
+			continue;
+		}
+		if (cv_voice_chat.value != 0 && playernum != g_localplayers[0])
+		{
+			S_QueueVoiceFrameFromPlayer(playernum, (void*)decoded_out, decoded_samples * sizeof(float), false);
+		}
+	}
+	g_player_opus_lastframe[playernum] = framenum;
+
+	decoded_samples = opus_decode_float(decoder, frame, framesize, decoded_out, SRB2_VOICE_OPUS_FRAME_SIZE, 0);
+	if (decoded_samples < 0)
+	{
+		Z_Free(decoded_out);
+		return;
+	}
+
+	if (cv_voice_chat.value != 0 && playernum != g_localplayers[0])
+	{
+		S_QueueVoiceFrameFromPlayer(playernum, (void*)decoded_out, decoded_samples * sizeof(float), terminal);
+	}
+	S_SetPlayerVoiceActive(playernum);
+
+	Z_Free(decoded_out);
+}
+
+static void PT_HandleVoiceServer(SINT8 node)
+{
+	// Relay to client nodes except the sender
+	doomdata_t *pak = (doomdata_t*)(doomcom->data);
+	voice_pak *pl = &pak->u.voice;
+	int playernum = -1;
+	player_t *player;
+
+	if (cv_voice_servermute.value != 0)
+	{
+		// Don't even relay voice packets if voice_servermute is on
+		return;
+	}
+
+	if ((pl->flags & VOICE_PAK_FLAGS_PLAYERNUM_BITS) > 0 || (pl->flags & VOICE_PAK_FLAGS_RESERVED_BITS) > 0)
+	{
+		// All bits except the terminal bit must be unset when sending to client
+		// Anything else is an illegal message
+		return;
+	}
+
+	playernum = nodetoplayer[node];
+	if (!(playernum >= 0 && playernum < MAXPLAYERS))
+	{
+		return;
+	}
+	player = &players[playernum];
+
+	if (player->pflags2 & (PF2_SELFMUTE | PF2_SELFDEAFEN | PF2_SERVERMUTE | PF2_SERVERDEAFEN))
+	{
+		// ignore, they should not be able to broadcast voice
+		return;
+	}
+
+	// Preserve terminal bit, blank all other bits
+	pl->flags &= VOICE_PAK_FLAGS_TERMINAL_BIT;
+	// Add playernum to lower bits
+	pl->flags |= (playernum & VOICE_PAK_FLAGS_PLAYERNUM_BITS);
+
+	for (int i = 0; i < MAXPLAYERS; i++)
+	{
+		UINT8 pnode = playernode[i];
+		if (pnode == UINT8_MAX)
+		{
+			continue;
+		}
+
+		// Is this node P1 on that node?
+		boolean isp1onnode = nodetoplayer[pnode] >= 0 && nodetoplayer[pnode] < MAXPLAYERS;
+
+		if (pnode != node && pnode != servernode && isp1onnode && !(players[i].pflags2 & (PF2_SELFDEAFEN | PF2_SERVERDEAFEN)))
+		{
+			HSendPacket(pnode, false, 0, doomcom->datalength - BASEPACKETSIZE);
+		}
+	}
+	PT_HandleVoiceClient(node, true);
+}
+
+static void PT_HandleVoice(SINT8 node)
+{
+	if (server)
+	{
+		PT_HandleVoiceServer(node);
+	}
+	else
+	{
+		PT_HandleVoiceClient(node, false);
+	}
+}
+
 static char NodeToSplitPlayer(int node, int split)
 {
 	if (split == 0)
@@ -5611,6 +5988,9 @@ static void HandlePacketFromPlayer(SINT8 node)
 			}
 			csprng(lastChallengeAll, sizeof(lastChallengeAll));
 			expectChallenge = false;
+			break;
+		case PT_VOICE:
+			PT_HandleVoice(node);
 			break;
 		default:
 			DEBFILE(va("UNKNOWN PACKET TYPE RECEIVED %d from host %d\n",
@@ -6759,6 +7139,9 @@ void NetKeepAlive(void)
 	Net_AckTicker();
 	HandleNodeTimeouts();
 	FileSendTicker();
+
+	// Update voice whenever possible.
+	NetVoiceUpdate();
 }
 
 // If a tree falls in the forest but nobody is around to hear it, does it make a tic?
@@ -6946,6 +7329,138 @@ void NetUpdate(void)
 	FileSendTicker();
 }
 
+void NetVoiceUpdate(void)
+{
+	UINT8 *encoded = NULL;
+
+	if (dedicated)
+	{
+		return;
+	}
+
+	// This necessarily runs every frame, not every tic
+	S_SoundInputSetEnabled(true);
+
+	UINT32 bytes_dequed = 0;
+	do
+	{
+		// We need to drain the input queue completely, so do this in a full loop
+
+		INT32 to_read = (SRB2_VOICE_OPUS_FRAME_SIZE - g_local_voice_buffer_len) * sizeof(float);
+		if (to_read > 0)
+		{
+			// Attempt to fill the voice frame buffer
+
+			bytes_dequed = S_SoundInputDequeueSamples((void*)(g_local_voice_buffer + g_local_voice_buffer_len), to_read);
+			g_local_voice_buffer_len += bytes_dequed / 4;
+		}
+		else
+		{
+			bytes_dequed = 0;
+		}
+
+		if (g_local_voice_buffer_len < SRB2_VOICE_OPUS_FRAME_SIZE)
+		{
+			continue;
+		}
+
+		// Amp of +10 dB is appromiately "twice as loud"
+		float ampfactor = powf(10, (float) cv_voice_inputamp.value / 20.f);
+		for (int i = 0; i < g_local_voice_buffer_len; i++)
+		{
+			g_local_voice_buffer[i] *= ampfactor;
+		}
+
+		float softmem = 0.f;
+		opus_pcm_soft_clip(g_local_voice_buffer, SRB2_VOICE_OPUS_FRAME_SIZE, 1, &softmem);
+
+		// Voice detection gate open/close
+		float maxamplitude = 0.f;
+		for (int i = 0; i < g_local_voice_buffer_len; i++)
+		{
+			maxamplitude = max(fabsf(g_local_voice_buffer[i]), maxamplitude);
+		}
+		// 20. * log_10(amplitude) -> decibels (up to 0)
+		// lower than -30 dB is usually inaudible
+		g_local_voice_last_peak = maxamplitude;
+		maxamplitude = 20.f * logf(maxamplitude);
+		if (maxamplitude > (float) cv_voice_activationthreshold.value)
+		{
+			g_local_voice_threshold_time = I_GetTime();
+			g_local_voice_detected = true;
+		}
+
+		switch (cv_voice_mode.value)
+		{
+		case 0:
+			if (I_GetTime() - g_local_voice_threshold_time > 15)
+			{
+				g_local_voice_buffer_len = 0;
+				g_local_voice_detected = false;
+				continue;
+			}
+			break;
+		case 1:
+			if (!g_voicepushtotalk_on)
+			{
+				g_local_voice_buffer_len = 0;
+				g_local_voice_detected = false;
+				continue;
+			}
+			g_local_voice_detected = true;
+			break;
+		default:
+			g_local_voice_buffer_len = 0;
+			continue;
+		}
+
+		if (cv_voice_chat.value == 0)
+		{
+			g_local_voice_buffer_len = 0;
+			continue;
+		}
+
+		if (!encoded)
+		{
+			encoded = Z_Malloc(sizeof(UINT8) * 1400, PU_STATIC, NULL);
+		}
+
+		if (g_local_opus_encoder == NULL)
+		{
+			InitializeLocalVoiceEncoder();
+		}
+		OpusEncoder *encoder = g_local_opus_encoder;
+
+		INT32 result = opus_encode_float(encoder, g_local_voice_buffer, SRB2_VOICE_OPUS_FRAME_SIZE, encoded, 1400);
+		if (result < 0)
+		{
+			continue;
+		}
+
+		// Only send a voice packet and set local player voice active if:
+		// 1. In a netgame,
+		// 2. Not self-muted by cvar
+		// 3. The consoleplayer is not server or self muted or deafened
+		if (netgame && !cv_voice_selfmute.value && !(players[consoleplayer].pflags2 & (PF2_SERVERMUTE | PF2_SELFMUTE | PF2_SELFDEAFEN | PF2_SERVERDEAFEN)))
+		{
+			DoVoicePacket(servernode, g_local_opus_frame, encoded, result);
+			S_SetPlayerVoiceActive(consoleplayer);
+		}
+
+		if (cv_voice_loopback.value)
+		{
+			result = opus_decode_float(g_player_opus_decoders[consoleplayer], encoded, result, g_local_voice_buffer, SRB2_VOICE_OPUS_FRAME_SIZE, 0);
+			S_QueueVoiceFrameFromPlayer(consoleplayer, g_local_voice_buffer, result * sizeof(float), false);
+		}
+
+		g_local_voice_buffer_len = 0;
+		g_local_opus_frame += 1;
+	} while (bytes_dequed > 0);
+
+	if (encoded) Z_Free(encoded);
+	return;
+}
+
 /** Returns the number of players playing.
   * \return Number of players. Can be zero if we're running a ::dedicated
   *         server.
@@ -7124,6 +7639,17 @@ void DoSayPacketFromCommand(SINT8 target, size_t usedargs, UINT8 flags)
 	}
 
 	DoSayPacket(target, flags, consoleplayer, msg);
+}
+
+void DoVoicePacket(SINT8 target, UINT64 frame, const UINT8* opusdata, size_t len)
+{
+	voice_pak *pl = &netbuffer->u.voice;
+	netbuffer->packettype = PT_VOICE;
+	pl->frame = (UINT64)LONGLONG(frame);
+	pl->flags = 0;
+	I_Assert(MAXPACKETLENGTH - sizeof(voice_pak) - BASEPACKETSIZE >= len);
+	memcpy((UINT8*)netbuffer + BASEPACKETSIZE + sizeof(voice_pak), opusdata, len);
+	HSendPacket(target, false, 0, sizeof(voice_pak) + len);
 }
 
 // This is meant to be targeted at player indices, not whatever the hell XD_SAY is doing with 1-indexed players.

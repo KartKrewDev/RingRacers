@@ -100,6 +100,7 @@ find_package(ZLIB REQUIRED)
 find_package(PNG REQUIRED)
 find_package(SDL2 CONFIG REQUIRED)
 find_package(CURL REQUIRED)
+find_package(Opus REQUIRED)
 # Use the one in thirdparty/fmt to guarantee a minimum version
 #find_package(FMT CONFIG REQUIRED)
 

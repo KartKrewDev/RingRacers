@@ -1015,6 +1015,23 @@ void Y_VoteDrawer(void)
 		);
 	}
 
+	// TODO better voice chat speaking indicator integration
+	{
+		char speakingstring[2048];
+		memset(speakingstring, 0, sizeof(speakingstring));
+
+		for (int i = 0; i < MAXPLAYERS; i++)
+		{
+			if (S_IsPlayerVoiceActive(i))
+			{
+				strcat(speakingstring, player_names[i]);
+				strcat(speakingstring, " ");
+			}
+		}
+
+		V_DrawThinString(0, 0, 0, speakingstring);
+	}
+
 	M_DrawMenuForeground();
 }
 
