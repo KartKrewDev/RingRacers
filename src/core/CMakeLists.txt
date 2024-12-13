@@ -5,4 +5,6 @@ target_sources(SRB2SDL2 PRIVATE
 	static_vec.hpp
 	thread_pool.cpp
 	thread_pool.h
+	vector.cpp
+	vector.hpp
 )
