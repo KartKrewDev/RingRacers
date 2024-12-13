@@ -52,8 +52,6 @@
 #endif
 #endif
 
-static unsigned char imgbuf[1<<26];
-
 #ifdef PICTURE_PNG_USELOOKUP
 static colorlookup_t png_colorlookup;
 #endif
@@ -119,6 +117,7 @@ void *Picture_PatchConvert(
 {
 	INT16 x, y;
 	UINT8 *img;
+	UINT8 *imgbuf = Z_Malloc(1<<26, PU_STATIC, NULL);
 	UINT8 *imgptr = imgbuf;
 	UINT8 *colpointers, *startofspan;
 	size_t size = 0;
@@ -352,6 +351,7 @@ void *Picture_PatchConvert(
 	size = imgptr-imgbuf;
 	img = Z_Malloc(size, PU_STATIC, NULL);
 	memcpy(img, imgbuf, size);
+	Z_Free(imgbuf);
 
 	if (Picture_IsInternalPatchFormat(outformat))
 	{
