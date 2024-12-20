@@ -27,6 +27,7 @@
 #include "../k_hud.h"
 #include "../p_local.h"
 #include "../r_fps.h"
+#include "../s_sound.h"
 
 extern "C" consvar_t cv_maxplayers;
 

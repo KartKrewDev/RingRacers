@@ -85,6 +85,7 @@ TYPEDEF (resultsall_pak);
 TYPEDEF (say_pak);
 TYPEDEF (reqmapqueue_pak);
 TYPEDEF (netinfo_pak);
+TYPEDEF (voice_pak);
 
 // d_event.h
 TYPEDEF (event_t);

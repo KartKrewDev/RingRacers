@@ -114,6 +114,7 @@ typedef enum
 	gc_screenshot,
 	gc_startmovie,
 	gc_startlossless,
+	gc_voicepushtotalk,
 
 	num_gamecontrols,
 

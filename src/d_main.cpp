@@ -161,6 +161,7 @@ INT32 postimgparam[MAXSPLITSCREENPLAYERS];
 
 boolean sound_disabled = false;
 boolean digital_disabled = false;
+boolean g_voice_disabled = false;
 
 #ifdef DEBUGFILE
 INT32 debugload = 0;
@@ -1079,6 +1080,7 @@ void D_SRB2Loop(void)
 
 		// consoleplayer -> displayplayers (hear sounds from viewpoint)
 		S_UpdateSounds(); // move positional sounds
+		NetVoiceUpdate(); // update voice recording whenever possible
 		if (realtics > 0 || singletics)
 		{
 			S_UpdateClosedCaptions();
@@ -1095,6 +1097,7 @@ void D_SRB2Loop(void)
 #endif
 
 		Music_Tick();
+		S_UpdateVoicePositionalProperties();
 
 		// Fully completed frame made.
 		finishprecise = I_GetPreciseTime();
@@ -1885,12 +1888,14 @@ void D_SRB2Main(void)
 	{
 		sound_disabled = true;
 		digital_disabled = true;
+		g_voice_disabled = true;
 	}
 
 	if (M_CheckParm("-noaudio")) // combines -nosound and -nomusic
 	{
 		sound_disabled = true;
 		digital_disabled = true;
+		g_voice_disabled = true;
 	}
 	else
 	{
@@ -1905,9 +1910,13 @@ void D_SRB2Main(void)
 			if (M_CheckParm("-nodigmusic"))
 				digital_disabled = true; // WARNING: DOS version initmusic in I_StartupSound
 		}
+		if (M_CheckParm("-novoice"))
+		{
+			g_voice_disabled = true;
+		}
 	}
 
-	if (!( sound_disabled && digital_disabled ))
+	if (!( sound_disabled && digital_disabled && g_voice_disabled ))
 	{
 		CONS_Printf("S_InitSfxChannels(): Setting up sound channels.\n");
 		I_StartupSound();

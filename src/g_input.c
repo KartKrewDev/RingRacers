@@ -910,6 +910,7 @@ static const char *gamecontrolname[num_gamecontrols] =
 	"screenshot",
 	"startmovie",
 	"startlossless",
+	"voicepushtotalk"
 };
 
 #define NUMKEYNAMES (sizeof (keynames)/sizeof (keyname_t))
@@ -1332,7 +1333,7 @@ INT32 G_FindPlayerBindForGameControl(INT32 player, gamecontrols_e control)
 		}
 	}
 
-	return (bestbind != -1) ? bestbind : anybind; // If we couldn't find a device-appropriate bind, try to at least use something	
+	return (bestbind != -1) ? bestbind : anybind; // If we couldn't find a device-appropriate bind, try to at least use something
 }
 
 static void setcontrol(UINT8 player)

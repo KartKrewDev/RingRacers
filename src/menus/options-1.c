@@ -31,6 +31,9 @@ menuitem_t OPTIONS_Main[] =
 	{IT_STRING | IT_CALL, "Sound Options", "Adjust the volume.",
 		NULL, {.routine = M_SoundOptions}, 0, 0},
 
+	{IT_STRING | IT_SUBMENU, "Voice Options", "Adjust voice chat.",
+		NULL, {.submenu = &OPTIONS_VoiceDef}, 0, 0},
+
 	{IT_STRING | IT_SUBMENU, "HUD Options", "Tweak the Heads-Up Display.",
 		NULL, {.submenu = &OPTIONS_HUDDef}, 0, 0},
 

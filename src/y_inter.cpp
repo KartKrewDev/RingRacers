@@ -799,6 +799,39 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 				player_names[pnum]
 			);
 
+			{
+				patch_t *voxpat;
+				int voxxoffs = 0;
+				int voxyoffs = 0;
+				if (players[pnum].pflags2 & (PF2_SELFDEAFEN | PF2_SERVERDEAFEN))
+				{
+					voxpat = (patch_t*) W_CachePatchName("VOXCRD", PU_HUDGFX);
+					voxxoffs = 1;
+					voxyoffs = -5;
+				}
+				else if (players[pnum].pflags2 & (PF2_SELFMUTE | PF2_SERVERMUTE))
+				{
+					voxpat = (patch_t*) W_CachePatchName("VOXCRM", PU_HUDGFX);
+					voxxoffs = 1;
+					voxyoffs = -6;
+				}
+				else if (S_IsPlayerVoiceActive(pnum))
+				{
+					voxpat = (patch_t*) W_CachePatchName("VOXCRA", PU_HUDGFX);
+					voxyoffs = -4;
+				}
+				else
+				{
+					voxpat = NULL;
+				}
+
+				if (voxpat)
+				{
+					int namewidth = V_ThinStringWidth(player_names[pnum], 0);
+					V_DrawFixedPatch((x + 27 + namewidth + voxxoffs) * FRACUNIT, (y + voxyoffs) * FRACUNIT, FRACUNIT, 0, voxpat, NULL);
+				}
+			}
+
 			V_DrawRightAlignedThinString(
 				x+118, y-2,
 				0,

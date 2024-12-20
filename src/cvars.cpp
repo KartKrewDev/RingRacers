@@ -322,6 +322,7 @@ consvar_t cv_controlperkey = Player("controlperkey", "One").values({{1, "One"}, 
 consvar_t cv_mastervolume = Player("volume", "80").min_max(0, 100);
 consvar_t cv_digmusicvolume = Player("musicvolume", "80").min_max(0, 100);
 consvar_t cv_soundvolume = Player("soundvolume", "80").min_max(0, 100);
+consvar_t cv_voicevolume = Player("voicevolume", "100").min_max(0, 100);
 
 #ifdef HAVE_DISCORDRPC
 	void DRPC_UpdatePresence(void);
@@ -1351,8 +1352,71 @@ consvar_t cv_chatwidth = Player("chatwidth", "150").min_max(64, 150);
 // old shit console chat. (mostly exists for stuff like terminal, not because I cared if anyone liked the old chat.)
 consvar_t cv_consolechat = Player("chatmode", "Yes").values({{0, "Yes"}, {2, "No"}});
 
+// When off, inbound voice packets are ignored
+void VoiceChat_OnChange(void);
+consvar_t cv_voice_chat = Player("voice_chat", "Off")
+	.on_off()
+	.onchange(VoiceChat_OnChange)
+	.description("Whether voice chat is played or not. Shown as self-deafen to others.");
+
+// When on, local player won't transmit voice
+consvar_t cv_voice_mode = Player("voice_mode", "Activity")
+	.values({{0, "Activity"}, {1, "PTT"}})
+	.description("How to activate voice transmission");
+
+consvar_t cv_voice_selfmute = Player("voice_selfmute", "Off")
+	.on_off()
+	.onchange(weaponPrefChange)
+	.description("Whether the local microphone is muted. Shown as self-mute to others.");
+
+consvar_t cv_voice_inputamp = Player("voice_inputamp", "14")
+	.min_max(-30, 30)
+	.description("How much louder or quieter to make voice input, in decibels.");
+
+consvar_t cv_voice_activationthreshold = Player("voice_activationthreshold", "-20")
+	.min_max(-30, 0)
+	.description("The voice activation threshold, in decibels from maximum amplitude.");
+
+// When on, local voice is played back out
+consvar_t cv_voice_loopback = Player("voice_loopback", "Off")
+	.on_off()
+	.dont_save()
+	.description("When on, plays the local player's voice");
+
+consvar_t cv_voice_proximity = NetVar("voice_proximity", "On")
+	.on_off()
+	.description("Whether proximity effects for voice chat are enabled on the server.");
+
+// The relative distance for maximum voice attenuation
+consvar_t cv_voice_distanceattenuation_distance = NetVar("voice_distanceattenuation_distance", "4096")
+	.floating_point()
+	.description("Voice speaker's distance from listener at which positional voice is fully attenuated");
+
+// The volume factor (scaled logarithmically, i.e. 0.5 = "half as loud") for voice distance attenuation
+consvar_t cv_voice_distanceattenuation_factor = NetVar("voice_distanceattenuation_factor", "0.2")
+	.floating_point()
+	.description("Maximum attenuation, in perceived loudness, when a voice speaker is at voice_distanceattenuation_distance units or further from the listener");
+
+// The scale factor applied to stereo separation for voice panning
+consvar_t cv_voice_stereopanning_factor = NetVar("voice_stereopanning_factor", "1.0")
+	.floating_point()
+	.description("Scale of stereo panning applied to a voice speaker relative to their in-game position, from 0.0-1.0");
+
+consvar_t cv_voice_concurrentattenuation_factor = NetVar("voice_concurrentattenuation_factor", "0.6")
+	.floating_point()
+	.description("The maximum attenuation factor, in perceived loudness, when at or exceeding voice_concurrentattenuation_max speakers");
+consvar_t cv_voice_concurrentattenuation_min = NetVar("voice_concurrentattenuation_min", "3")
+	.description("Minimum concurrent speakers before global attenuation starts");
+consvar_t cv_voice_concurrentattenuation_max = NetVar("voice_concurrentattenuation_max", "8")
+	.description("Maximum concurrent speakers at which full global attenuation is applied");
+
 void Mute_OnChange(void);
+void VoiceMute_OnChange(void);
 consvar_t cv_mute = UnsavedNetVar("mute", "Off").on_off().onchange(Mute_OnChange);
+consvar_t cv_voice_servermute = NetVar("voice_servermute", "On")
+	.on_off()
+	.onchange(VoiceMute_OnChange)
+	.description("If On, the server will not broadcast voice chat to clients");
 
 
 //

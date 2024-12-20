@@ -134,6 +134,14 @@ typedef enum
 
 typedef enum
 {
+	PF2_SELFMUTE = 1<<1,
+	PF2_SELFDEAFEN = 1<<2,
+	PF2_SERVERMUTE = 1<<3,
+	PF2_SERVERDEAFEN = 1<<4,
+} pflags2_t;
+
+typedef enum
+{
 	// Are animation frames playing?
 	PA_ETC=0,
 	PA_STILL,
@@ -634,6 +642,7 @@ struct player_t
 	// Bit flags.
 	// See pflags_t, above.
 	UINT32 pflags;
+	UINT32 pflags2;
 
 	// playing animation.
 	panim_t panim;
@@ -1054,7 +1063,7 @@ struct player_t
 	UINT8 amps;
 	UINT8 amppickup;
 	UINT8 ampspending;
-	
+
 	UINT16 overdrive;
 	UINT16 overshield;
 	fixed_t overdrivepower;

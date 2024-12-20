@@ -86,6 +86,7 @@ patch_t *frameslash;	// framerate stuff. Used in screen.c
 static player_t *plr;
 boolean hu_keystrokes; // :)
 boolean chat_on; // entering a chat message?
+boolean g_voicepushtotalk_on; // holding PTT?
 static char w_chat[HU_MAXMSGLEN + 1];
 static size_t c_input = 0; // let's try to make the chat input less shitty.
 static boolean headsupactive = false;
@@ -1102,6 +1103,24 @@ void HU_clearChatChars(void)
 //
 boolean HU_Responder(event_t *ev)
 {
+	// Handle Push-to-Talk
+	if (ev->data1 == gamecontrol[0][gc_voicepushtotalk][0]
+		|| ev->data1 == gamecontrol[0][gc_voicepushtotalk][1]
+		|| ev->data1 == gamecontrol[0][gc_voicepushtotalk][2]
+		|| ev->data1 == gamecontrol[0][gc_voicepushtotalk][3])
+	{
+		if (ev->type == ev_keydown)
+		{
+			g_voicepushtotalk_on = true;
+			return true;
+		}
+		else if (ev->type == ev_keyup)
+		{
+			g_voicepushtotalk_on = false;
+			return true;
+		}
+	}
+
 	if (ev->type != ev_keydown)
 		return false;
 
@@ -1912,25 +1931,25 @@ static void HU_DrawTitlecardCEcho(size_t num)
 		{
 			INT32 ofs;
 			INT32 timer = (INT32)(elapsed - timeroffset);
-			
+
 			if (timer <= 0)
 				return;	// we don't care.
-			
+
 			line = strchr(echoptr, '\\');
-			
+
 			if (line == NULL)
 				break;
 
 			*line = '\0';
-			
+
 			ofs = V_CenteredTitleCardStringOffset(echoptr, p4);
 			V_DrawTitleCardString(x - ofs, y, echoptr, 0, false, timer, fadeout, p4);
 
 			y += p4 ? 18 : 32;
-			
+
 			// offset the timer for the next line.
 			timeroffset += strlen(echoptr);
-			
+
 			// set the ptr to the \0 we made and advance it because we don't want an empty string.
 			echoptr = line;
 			echoptr++;

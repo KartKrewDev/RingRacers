@@ -310,10 +310,12 @@ void PR_SaveProfiles(void)
 
 		for (size_t j = 0; j < num_gamecontrols; j++)
 		{
+			std::vector<int32_t> mappings;
 			for (size_t k = 0; k < MAXINPUTMAPPING; k++)
 			{
-				jsonprof.controls[j][k] = cprof->controls[j][k];
+				mappings.push_back(cprof->controls[j][k]);
 			}
+			jsonprof.controls.emplace_back(std::move(mappings));
 		}
 
 		ng.profiles.emplace_back(std::move(jsonprof));
@@ -498,9 +500,24 @@ void PR_LoadProfiles(void)
 		{
 			for (size_t j = 0; j < num_gamecontrols; j++)
 			{
+				if (jsprof.controls.size() <= j)
+				{
+					for (size_t k = 0; k < MAXINPUTMAPPING; k++)
+					{
+						newprof->controls[j][k] = gamecontroldefault[j][k];
+					}
+					continue;
+				}
+
+				auto& mappings = jsprof.controls.at(j);
 				for (size_t k = 0; k < MAXINPUTMAPPING; k++)
 				{
-					newprof->controls[j][k] = jsprof.controls.at(j).at(k);
+					if (mappings.size() <= k)
+					{
+						newprof->controls[j][k] = 0;
+						continue;
+					}
+					newprof->controls[j][k] = mappings.at(k);
 				}
 			}
 		}

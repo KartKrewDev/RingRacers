@@ -125,6 +125,9 @@ void HU_AddChatText(const char *text, boolean playsound);
 // set true when entering a chat message
 extern boolean chat_on;
 
+// set true when push-to-talk is held
+extern boolean g_voicepushtotalk_on;
+
 // keystrokes in the console or chat window
 extern boolean hu_keystrokes;
 

@@ -2201,6 +2201,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	UINT32 followitem;
 
 	INT32 pflags;
+	INT32 pflags2;
 
 	UINT8 team;
 
@@ -2348,6 +2349,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	xtralife = players[player].xtralife;
 
 	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_KICKSTARTACCEL|PF_SHRINKME|PF_SHRINKACTIVE|PF_AUTOROULETTE|PF_ANALOGSTICK|PF_AUTORING));
+	pflags2 = (players[player].pflags2 & (PF2_SELFMUTE | PF2_SELFDEAFEN | PF2_SERVERMUTE | PF2_SERVERDEAFEN));
 
 	// SRB2kart
 	memcpy(&itemRoulette, &players[player].itemRoulette, sizeof (itemRoulette));
@@ -2539,6 +2541,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->roundscore = roundscore;
 	p->lives = lives;
 	p->pflags = pflags;
+	p->pflags2 = pflags2;
 	p->team = team;
 	p->jointime = jointime;
 	p->splitscreenindex = splitscreenindex;
@@ -5916,7 +5919,7 @@ boolean G_SameTeam(const player_t *a, const player_t *b)
 	}
 
 	// Free for all.
-	return false; 
+	return false;
 }
 
 UINT8 G_CountTeam(UINT8 team)

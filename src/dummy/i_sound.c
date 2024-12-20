@@ -224,3 +224,30 @@ boolean I_FadeInPlaySong(UINT32 ms, boolean looping)
         (void)looping;
         return false;
 }
+
+boolean I_SoundInputIsEnabled(void)
+{
+	return false;
+}
+
+boolean I_SoundInputSetEnabled(boolean enabled)
+{
+	return false;
+}
+
+UINT32 I_SoundInputDequeueSamples(void *data, UINT32 len)
+{
+	return 0;
+}
+
+void I_QueueVoiceFrameFromPlayer(INT32 playernum, void *data, UINT32 len, boolean terminal)
+{
+}
+
+void I_SetPlayerVoiceProperties(INT32 playernum, float volume, float sep)
+{
+}
+
+void I_ResetVoiceQueue(INT32 playernum)
+{
+}

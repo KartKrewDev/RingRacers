@@ -1175,6 +1175,8 @@ enum {
 	WP_AUTOROULETTE = 1<<2,
 	WP_ANALOGSTICK = 1<<3,
 	WP_AUTORING = 1<<4,
+	WP_SELFMUTE = 1<<5,
+	WP_SELFDEAFEN = 1<<6
 };
 
 void WeaponPref_Send(UINT8 ssplayer)
@@ -1195,6 +1197,15 @@ void WeaponPref_Send(UINT8 ssplayer)
 
 	if (cv_autoring[ssplayer].value)
 		prefs |= WP_AUTORING;
+
+	if (ssplayer == 0)
+	{
+		if (cv_voice_selfmute.value)
+			prefs |= WP_SELFMUTE;
+
+		if (!cv_voice_chat.value)
+			prefs |= WP_SELFDEAFEN;
+	}
 
 	UINT8 buf[2];
 	buf[0] = prefs;
@@ -1235,6 +1246,7 @@ size_t WeaponPref_Parse(const UINT8 *bufstart, INT32 playernum)
 	UINT8 prefs = READUINT8(p);
 
 	player->pflags &= ~(PF_KICKSTARTACCEL|PF_SHRINKME|PF_AUTOROULETTE|PF_AUTORING);
+	player->pflags2 &= ~(PF2_SELFMUTE | PF2_SELFDEAFEN);
 
 	if (prefs & WP_KICKSTARTACCEL)
 		player->pflags |= PF_KICKSTARTACCEL;
@@ -1252,6 +1264,12 @@ size_t WeaponPref_Parse(const UINT8 *bufstart, INT32 playernum)
 
 	if (prefs & WP_AUTORING)
 		player->pflags |= PF_AUTORING;
+
+	if (prefs & WP_SELFMUTE)
+		player->pflags2 |= PF2_SELFMUTE;
+
+	if (prefs & WP_SELFDEAFEN)
+		player->pflags2 |= PF2_SELFDEAFEN;
 
 	if (leveltime < 2)
 	{
@@ -7030,6 +7048,18 @@ void Mute_OnChange(void)
 		HU_AddChatText(M_GetText("\x82*Chat has been muted."), false);
 	else
 		HU_AddChatText(M_GetText("\x82*Chat is no longer muted."), false);
+}
+
+void VoiceMute_OnChange(void);
+void VoiceMute_OnChange(void)
+{
+	if (leveltime <= 1)
+		return; // avoid having this notification put in our console / log when we boot the server.
+
+	if (cv_voice_servermute.value)
+		HU_AddChatText(M_GetText("\x82*Voice chat has been muted."), false);
+	else
+		HU_AddChatText(M_GetText("\x82*Voice chat is no longer muted."), false);
 }
 
 /** Hack to clear all changed flags after game start.
