@@ -2,6 +2,8 @@ target_sources(SRB2SDL2 PRIVATE
 	hash_map.hpp
 	hash_set.cpp
 	hash_set.hpp
+	json.cpp
+	json.hpp
 	memory.cpp
 	memory.h
 	spmc_queue.hpp
