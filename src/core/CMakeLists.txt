@@ -1,4 +1,5 @@
 target_sources(SRB2SDL2 PRIVATE
+	hash_map.hpp
 	memory.cpp
 	memory.h
 	spmc_queue.hpp
