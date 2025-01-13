@@ -153,7 +153,7 @@ public:
 
 	friend struct std::hash<String>;
 
-	static const size_type npos = -1;
+	static constexpr const size_type npos = -1;
 
 	String() = default;
 	String(const String&);
@@ -173,7 +173,7 @@ public:
 
 	size_type size() const noexcept;
 	bool empty() const noexcept { return data_.empty(); }
-	const char* c_str() const noexcept { return reinterpret_cast<const char*>(data_.data()); }
+	const char* c_str() const;
 	uint8_t* data() noexcept { return data_.data(); }
 	const uint8_t* data() const noexcept { return data_.data(); }
 	void reserve(size_type capacity);

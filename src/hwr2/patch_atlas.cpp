@@ -72,7 +72,7 @@ rhi::Rect srb2::hwr2::trimmed_patch_dimensions(const patch_t* patch)
 	return {minx, miny, static_cast<uint32_t>(maxx - minx), static_cast<uint32_t>(maxy - miny)};
 }
 
-void srb2::hwr2::convert_patch_to_trimmed_rg8_pixels(const patch_t* patch, std::vector<uint8_t>& out)
+void srb2::hwr2::convert_patch_to_trimmed_rg8_pixels(const patch_t* patch, srb2::Vector<uint8_t>& out)
 {
 	Rect trimmed_rect = srb2::hwr2::trimmed_patch_dimensions(patch);
 	if (trimmed_rect.w % 2 > 0)
@@ -299,7 +299,7 @@ void PatchAtlasCache::pack(Rhi& rhi)
 	SRB2_ASSERT(ready_for_lookup());
 
 	// Upload atlased patches
-	std::vector<uint8_t> patch_data;
+	srb2::Vector<uint8_t> patch_data;
 	for (const patch_t* patch_to_upload : patches_to_upload_)
 	{
 		srb2::NotNull<PatchAtlas*> atlas = find_patch(patch_to_upload);

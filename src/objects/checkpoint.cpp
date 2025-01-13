@@ -9,13 +9,13 @@
 //-----------------------------------------------------------------------------
 
 #include <algorithm>
-#include <unordered_map>
-#include <vector>
 
 #include <fmt/format.h>
 
 #include "../mobj_list.hpp"
 
+#include "../core/hash_map.hpp"
+#include "../core/vector.hpp"
 #include "../doomdef.h"
 #include "../doomtype.h"
 #include "../info.h"
@@ -224,7 +224,7 @@ struct Checkpoint : mobj_t
 				speed(speed() - FixedDiv(speed() / 50, max<fixed_t>(speed_multiplier(), 1)));
 			}
 		}
-		
+
 		if (!top_half_has_passed())
 		{
 			sparkle_between(0);
@@ -506,7 +506,7 @@ struct CheckpointManager
 
 	auto count() { return list_.count(); }
 
-	const std::vector<line_t*>* lines_for(const Checkpoint* chk) const
+	const srb2::Vector<line_t*>* lines_for(const Checkpoint* chk) const
 	{
 		auto it = lines_.find(chk->linetag());
 		return it != lines_.end() ? &it->second : nullptr;
@@ -514,11 +514,11 @@ struct CheckpointManager
 
 private:
 	srb2::MobjList<Checkpoint, svg_checkpoints> list_;
-	std::unordered_map<INT32, std::vector<line_t*>> lines_;
+	srb2::HashMap<INT32, srb2::Vector<line_t*>> lines_;
 
-	static std::vector<line_t*> tagged_lines(INT32 tag)
+	static srb2::Vector<line_t*> tagged_lines(INT32 tag)
 	{
-		std::vector<line_t*> checklines;
+		srb2::Vector<line_t*> checklines;
 		INT32 li;
 		TAG_ITER_LINES(tag, li)
 		{
@@ -573,18 +573,18 @@ void __attribute__((optimize("O0"))) Obj_CrossCheckpoints(player_t* player, fixe
 			}
 
 			LineOnDemand* gate;
-			const std::vector<line_t*>* lines = g_checkpoints.lines_for(chk);
+			const srb2::Vector<line_t*>* lines = g_checkpoints.lines_for(chk);
 
 			if (!lines || lines->empty())
 			{
 				LineOnDemand dyngate = chk->crossing_line();
 				if (!ray.overlaps(dyngate))
 					return false;
-				gate = &dyngate;				
+				gate = &dyngate;
 			}
-			else 
+			else
 			{
-				auto it = find_if(
+				auto it = std::find_if(
 					lines->begin(),
 					lines->end(),
 					[&](const line_t* line)
@@ -592,7 +592,7 @@ void __attribute__((optimize("O0"))) Obj_CrossCheckpoints(player_t* player, fixe
 						return ray.overlaps(*line);
 					}
 				);
-				
+
 				if (it == lines->end())
 				{
 					return false;
@@ -615,7 +615,7 @@ void __attribute__((optimize("O0"))) Obj_CrossCheckpoints(player_t* player, fixe
 			{
 				// Did not cross.
 				return false;
-				
+
 			}
 
 			return true;

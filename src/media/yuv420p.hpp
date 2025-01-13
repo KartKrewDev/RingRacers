@@ -12,8 +12,8 @@
 #define __SRB2_MEDIA_YUV420P_HPP__
 
 #include <cstdint>
-#include <vector>
 
+#include "../core/vector.hpp"
 #include "video_frame.hpp"
 
 namespace srb2::media
@@ -40,7 +40,7 @@ public:
 		int width_ = 0;
 		int height_ = 0;
 
-		std::vector<uint8_t> vec_;
+		srb2::Vector<uint8_t> vec_;
 	};
 
 	YUV420pFrame(int pts, Buffer y, Buffer u, Buffer v, const BufferRGBA& rgba);

@@ -16,7 +16,6 @@
 #include <cstddef>
 
 #include <tcb/span.hpp>
-#include <nlohmann/json.hpp>
 
 #include "doomdef.h"
 #include "doomtype.h"
@@ -50,6 +49,7 @@
 #include "md5.h" // demo checksums
 #include "p_saveg.h" // savebuffer_t
 #include "g_party.h"
+#include "core/json.hpp"
 
 // SRB2Kart
 #include "d_netfil.h" // nameonly
@@ -2437,17 +2437,18 @@ void G_BeginRecording(void)
 void srb2::write_current_demo_standings(const srb2::StandingsJson& standings)
 {
 	using namespace srb2;
-	using json = nlohmann::json;
 
 	// TODO populate standings data
 
-	std::vector<uint8_t> ubjson = json::to_ubjson(standings);
+	JsonValue value { JsonObject() };
+	to_json(value, standings);
+	Vector<std::byte> ubjson = value.to_ubjson();
 	uint32_t bytes = ubjson.size();
 
 	WRITEUINT8(demobuf.p, DW_STANDING2);
 
 	WRITEUINT32(demobuf.p, bytes);
-	WRITEMEM(demobuf.p, ubjson.data(), bytes);
+	WRITEMEM(demobuf.p, (UINT8*)ubjson.data(), bytes);
 }
 
 void srb2::write_current_demo_end_marker()
@@ -2615,12 +2616,12 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 static bool load_ubjson_standing(menudemo_t* pdemo, tcb::span<std::byte> slice, tcb::span<democharlist_t> demoskins)
 {
 	using namespace srb2;
-	using json = nlohmann::json;
 
 	StandingsJson js;
 	try
 	{
-		js = json::from_ubjson(slice).template get<StandingsJson>();
+		JsonValue value { JsonValue::from_ubjson(tcb::as_bytes(slice)) };
+		from_json(value, js);
 	}
 	catch (...)
 	{

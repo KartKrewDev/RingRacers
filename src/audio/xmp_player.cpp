@@ -12,6 +12,8 @@
 
 #include <cmath>
 
+#include "../core/vector.hpp"
+
 using namespace srb2;
 using namespace srb2::audio;
 

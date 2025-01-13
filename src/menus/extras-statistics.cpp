@@ -11,6 +11,8 @@
 /// \file  menus/extras-challenges.c
 /// \brief Statistics menu
 
+#include <algorithm>
+
 #include "../k_menu.h"
 #include "../z_zone.h"
 #include "../m_cond.h" // Condition Sets
@@ -260,7 +262,7 @@ static void M_StatisticsPageInit(void)
 			M_StatisticsChars();
 			break;
 		}
-	
+
 		case statisticspage_gp:
 		{
 			M_StatisticsGP();

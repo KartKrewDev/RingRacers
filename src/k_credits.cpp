@@ -12,11 +12,8 @@
 
 #include "k_credits.h"
 
-#include <string>
-#include <vector>
 #include <algorithm>
 #include <fmt/format.h>
-#include <nlohmann/json.hpp>
 
 #include "doomdef.h"
 #include "doomstat.h"
@@ -59,7 +56,9 @@
 #include "r_main.h"
 #include "m_easing.h"
 
-using nlohmann::json;
+using srb2::JsonArray;
+using srb2::JsonObject;
+using srb2::JsonValue;
 
 enum credits_slide_types_e
 {
@@ -75,14 +74,14 @@ enum credits_slide_types_e
 struct credits_slide_s
 {
 	credits_slide_types_e type;
-	std::string label;
-	std::vector<std::string> strings;
+	srb2::String label;
+	srb2::Vector<srb2::String> strings;
 	size_t strings_height;
 	boolean play_demo_afterwards;
 	int fade_out_music;
 };
 
-static std::vector<struct credits_slide_s> g_credits_slides;
+static srb2::Vector<struct credits_slide_s> g_credits_slides;
 
 struct credits_star_s
 {
@@ -94,10 +93,10 @@ struct credits_star_s
 static struct credits_s
 {
 	size_t current_slide;
-	std::vector<UINT16> demo_maps;
+	srb2::Vector<UINT16> demo_maps;
 	boolean skip;
 
-	std::vector<struct credits_star_s> stars;
+	srb2::Vector<struct credits_star_s> stars;
 
 	fixed_t transition;
 	fixed_t transition_prev;
@@ -105,7 +104,7 @@ static struct credits_s
 
 	tic_t animation_timer;
 
-	std::vector<std::vector<std::string>> split_slide_strings;
+	srb2::Vector<srb2::Vector<srb2::String>> split_slide_strings;
 	size_t split_slide_id;
 	tic_t split_slide_delay;
 
@@ -142,12 +141,14 @@ void F_LoadCreditsDefinitions(void)
 	size_t credits_lump_len = W_LumpLength(credits_lump_id);
 	const char *credits_lump = static_cast<const char *>( W_CacheLumpNum(credits_lump_id, PU_CACHE) );
 
-	json credits_array = json::parse(credits_lump, credits_lump + credits_lump_len);
-	if (credits_array.is_array() == false)
+	srb2::String json_string { credits_lump, credits_lump_len };
+	JsonValue credits_parsed = JsonValue::from_json_string(json_string);
+	if (credits_parsed.is_array() == false)
 	{
 		I_Error("credits_def parse error: Not a JSON array");
 		return;
 	}
+	JsonArray credits_array = credits_parsed.as_array();
 
 	if (credits_array.size() == 0)
 	{
@@ -156,11 +157,11 @@ void F_LoadCreditsDefinitions(void)
 
 	try
 	{
-		for (json& slide_obj : credits_array)
+		for (JsonValue& slide_obj : credits_array)
 		{
 			struct credits_slide_s slide;
 
-			std::string type_str = slide_obj.value("type", "scroll");
+			srb2::String type_str = slide_obj.value("type", srb2::String("scroll"));
 
 			if (type_str == "scroll")
 			{
@@ -196,18 +197,19 @@ void F_LoadCreditsDefinitions(void)
 				throw std::runtime_error("unexpected type name '" + type_str + "'");
 			}
 
-			slide.label = slide_obj.value("label", "");
+			slide.label = slide_obj.value("label", srb2::String(""));
 
 			slide.strings_height = 0;
 
 			if (slide_obj.contains("strings"))
 			{
-				json strings_array = slide_obj.at("strings");
-				if (strings_array.is_array() == true)
+				JsonValue strings_value = slide_obj.at("strings");
+				if (strings_value.is_array() == true)
 				{
+					JsonArray& strings_array = strings_value.as_array();
 					for (size_t i = 0; i < strings_array.size(); i++)
 					{
-						slide.strings.push_back( strings_array.at(i) );
+						slide.strings.push_back( strings_array.at(i).get<srb2::String>() );
 
 						if (slide.type == CRED_TYPE_SCROLL)
 						{
@@ -289,7 +291,7 @@ static void F_InitCreditsSlide(void)
 			size_t max_strings_per_screen = (num_strings - 1) / num_sub_screens + 1;
 
 			size_t str_id = 0;
-			std::vector<std::string> screen_strings;
+			srb2::Vector<srb2::String> screen_strings;
 
 			if (max_strings_per_screen == kMaxSlideStrings
 				&& num_strings % kMaxSlideStrings == 1)
@@ -342,24 +344,24 @@ static void F_InitCreditsSlide(void)
 #endif
 			)
 			{
-				slide->strings.push_back("#" + std::string(def->title));
+				slide->strings.push_back("#" + srb2::String(def->title));
 				slide->strings_height += 12;
 
 				if (def->author)
 				{
-					slide->strings.push_back("by " + std::string(def->author));
+					slide->strings.push_back("by " + srb2::String(def->author));
 					slide->strings_height += 12;
 				}
 
 				if (def->source)
 				{
-					slide->strings.push_back("from " + std::string(def->source));
+					slide->strings.push_back("from " + srb2::String(def->source));
 					slide->strings_height += 12;
 				}
 
 				if (def->composers)
 				{
-					slide->strings.push_back("originally by " + std::string(def->composers));
+					slide->strings.push_back("originally by " + srb2::String(def->composers));
 					slide->strings_height += 12;
 				}
 
@@ -478,7 +480,7 @@ void F_ContinueCredits(void)
 
 static UINT16 F_PickRandomCreditsDemoMap(void)
 {
-	std::vector<UINT16> allowedMaps;
+	srb2::Vector<UINT16> allowedMaps;
 
 	for (INT32 i = 0; i < basenummapheaders; i++) // Only take from the base game.
 	{
@@ -911,7 +913,7 @@ static void F_DrawCreditsScroll(void)
 		}
 		else
 		{
-			std::string new_str = str;
+			srb2::String new_str = str;
 
 			if (new_str.at(0) == '*')
 			{
@@ -1017,7 +1019,7 @@ static void F_DrawCreditsSlide(void)
 		return;
 	}
 
-	const std::vector<std::string> *slide_strings = &g_credits.split_slide_strings[ g_credits.split_slide_id ];
+	const srb2::Vector<srb2::String> *slide_strings = &g_credits.split_slide_strings[ g_credits.split_slide_id ];
 	const fixed_t strings_height = slide_strings->size() * 30 * FRACUNIT;
 
 	fixed_t y = 0;
@@ -1113,7 +1115,7 @@ static void F_DrawCreditsTyler52(void)
 		V_DrawFadeScreen(0xFF00, 31 - (g_credits.tyler_fade * 4));
 	}
 
-	std::string memory_str = "In memory of";
+	srb2::String memory_str = "In memory of";
 	const fixed_t memory_width = V_StringScaledWidth(
 		FRACUNIT, FRACUNIT, FRACUNIT,
 		0, LSLOW_FONT,
@@ -1126,7 +1128,7 @@ static void F_DrawCreditsTyler52(void)
 		memory_str.c_str()
 	);
 
-	std::string tyler_str = "Tyler52";
+	srb2::String tyler_str = "Tyler52";
 	const fixed_t tyler_width = V_StringScaledWidth(
 		FRACUNIT, FRACUNIT, FRACUNIT,
 		0, LSHI_FONT,

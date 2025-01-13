@@ -14,6 +14,8 @@
 ///        while maintaining a per column clipping list only.
 ///        Moreover, the sky areas have to be determined.
 
+#include <algorithm>
+
 #include <tracy/tracy/Tracy.hpp>
 
 #include "command.h"

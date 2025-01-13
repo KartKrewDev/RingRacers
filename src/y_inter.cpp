@@ -322,9 +322,9 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 			{
 				srb2::StandingJson standing {};
 				standing.ranking = data.pos[data.numplayers];
-				standing.name = std::string(player_names[i]);
+				standing.name = srb2::String(player_names[i]);
 				standing.demoskin = players[i].skin;
-				standing.skincolor = std::string(skincolors[players[i].skincolor].name);
+				standing.skincolor = srb2::String(skincolors[players[i].skincolor].name);
 				standing.timeorscore = data.val[data.numplayers];
 				standings.standings.emplace_back(std::move(standing));
 			}

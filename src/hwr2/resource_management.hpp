@@ -11,9 +11,9 @@
 #ifndef __SRB2_HWR2_RESOURCE_MANAGEMENT_HPP__
 #define __SRB2_HWR2_RESOURCE_MANAGEMENT_HPP__
 
+#include "../core/hash_map.hpp"
+#include "../core/vector.hpp"
 #include "../rhi/rhi.hpp"
-
-#include <unordered_map>
 
 namespace srb2::hwr2
 {
@@ -27,8 +27,8 @@ class PaletteManager
 #endif
 	rhi::Handle<rhi::Texture> default_colormap_;
 
-	std::unordered_map<const uint8_t*, rhi::Handle<rhi::Texture>> colormaps_;
-	std::unordered_map<const uint8_t*, rhi::Handle<rhi::Texture>> lighttables_;
+	srb2::HashMap<const uint8_t*, rhi::Handle<rhi::Texture>> colormaps_;
+	srb2::HashMap<const uint8_t*, rhi::Handle<rhi::Texture>> lighttables_;
 
 public:
 	PaletteManager();
@@ -67,9 +67,9 @@ from patch_t.
 /// @brief Manages textures corresponding to specific flats indexed by lump number.
 class FlatTextureManager
 {
-	std::unordered_map<lumpnum_t, rhi::Handle<rhi::Texture>> flats_;
-	std::vector<lumpnum_t> to_upload_;
-	std::vector<rhi::Handle<rhi::Texture>> disposed_textures_;
+	srb2::HashMap<lumpnum_t, rhi::Handle<rhi::Texture>> flats_;
+	srb2::Vector<lumpnum_t> to_upload_;
+	srb2::Vector<rhi::Handle<rhi::Texture>> disposed_textures_;
 
 public:
 	FlatTextureManager();

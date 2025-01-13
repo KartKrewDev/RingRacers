@@ -60,6 +60,17 @@ uint32_t String::size() const noexcept
 	return data_.size() - 1;
 }
 
+static const char* kEmptyString = "";
+
+const char* String::c_str() const
+{
+	if (data_.empty())
+	{
+		return kEmptyString;
+	}
+	return reinterpret_cast<const char*>(data_.data());
+}
+
 void String::reserve(size_type capacity)
 {
 	if (capacity == 0)
@@ -432,12 +443,24 @@ String::size_type String::copy(char* dest, size_type count, size_type pos) const
 
 void String::resize(size_type count)
 {
-	data_.resize(count);
+	if (count == 0)
+	{
+		data_.clear();
+		return;
+	}
+	data_.resize(count + 1);
+	data_[count] = 0;
 }
 
 void String::resize(size_type count, uint8_t ch)
 {
-	data_.resize(count, ch);
+	if (count == 0)
+	{
+		data_.clear();
+		return;
+	}
+	data_.resize(count + 1, ch);
+	data_[count] = 0;
 }
 
 void String::swap(String& other) noexcept

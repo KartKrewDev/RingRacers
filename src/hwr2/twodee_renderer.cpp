@@ -11,11 +11,11 @@
 #include "twodee_renderer.hpp"
 
 #include <algorithm>
-#include <unordered_set>
 
 #include <stb_rect_pack.h>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "../core/hash_set.hpp"
 #include "blendmode.hpp"
 #include "../r_patch.h"
 #include "../v_video.h"
@@ -248,7 +248,7 @@ void TwodeeRenderer::flush(Rhi& rhi, Twodee& twodee)
 	}
 
 	// Stage 1 - command list patch detection
-	std::unordered_set<const patch_t*> found_patches;
+	srb2::HashSet<const patch_t*> found_patches;
 	for (const auto& list : twodee)
 	{
 		for (const auto& cmd : list.cmds)

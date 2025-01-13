@@ -14,10 +14,10 @@
 #ifndef __K_DIALOGUE_HPP__
 #define __K_DIALOGUE_HPP__
 
-#include <string>
 #include <string_view>
-#include <unordered_map>
 
+#include "core/hash_map.hpp"
+#include "core/string.h"
 #include "doomdef.h"
 #include "doomtype.h"
 #include "typedef.h"
@@ -33,8 +33,8 @@ public:
 	static constexpr fixed_t kSlideSpeed = FRACUNIT / (TICRATE / 5);
 
 	void SetSpeaker(void);
-	void SetSpeaker(std::string skinName, int portraitID);
-	void SetSpeaker(std::string name, patch_t *patch, UINT8 *colormap, sfxenum_t voice);
+	void SetSpeaker(srb2::String skinName, int portraitID);
+	void SetSpeaker(srb2::String name, patch_t *patch, UINT8 *colormap, sfxenum_t voice);
 
 	void NewText(std::string_view newText);
 
@@ -60,8 +60,8 @@ public:
 		static constexpr fixed_t kTextSpeedDefault = FRACUNIT;
 		static constexpr fixed_t kTextPunctPause = (FRACUNIT * TICRATE * 2) / 5;
 
-		std::string text;
-		std::string textDest;
+		srb2::String text;
+		srb2::String textDest;
 
 		fixed_t textTimer;
 		fixed_t textSpeed;
@@ -71,7 +71,7 @@ public:
 		sfxenum_t voiceSfx;
 		bool syllable;
 
-		void NewText(std::string newText);
+		void NewText(const srb2::String& newText);
 		void ClearText(void);
 
 		void WriteText(void);
@@ -86,11 +86,11 @@ private:
 	patch_t *bgPatch;
 	patch_t *confirmPatch;
 
-	std::string speaker;
+	srb2::String speaker;
 	patch_t *portrait;
 	UINT8 *portraitColormap;
 
-	std::unordered_map<std::string_view, patch_t*> patchCache;
+	srb2::HashMap<std::string_view, patch_t*> patchCache;
 
 	bool active;
 	fixed_t slide;

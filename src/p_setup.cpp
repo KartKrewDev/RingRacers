@@ -13,8 +13,6 @@
 /// \brief Do all the WAD I/O, get map description, set up initial state and misc. LUTs
 
 #include <algorithm>
-#include <string>
-#include <vector>
 
 #include <fmt/format.h>
 
@@ -96,6 +94,8 @@
 #include "taglist.h"
 
 // SRB2Kart
+#include "core/string.h"
+#include "core/vector.hpp"
 #include "k_kart.h"
 #include "k_race.h"
 #include "k_battle.h" // K_BattleInit
@@ -7854,7 +7854,7 @@ static void P_LoadRecordGhosts(void)
 			map(cv_ghost_last, value, kLast);
 	};
 
-	auto add_ghosts = [gpath](const std::string& base, UINT8 bits)
+	auto add_ghosts = [gpath](const srb2::String& base, UINT8 bits)
 	{
 		auto load = [base](const char* suffix) { P_TryAddExternalGhost(fmt::format("{}-{}.lmp", base, suffix).c_str()); };
 
@@ -7991,7 +7991,7 @@ static void P_ShuffleTeams(void)
 
 	CONS_Debug(DBG_TEAMS, "Shuffling player teams...\n");
 
-	std::vector<UINT8> player_shuffle;
+	srb2::Vector<UINT8> player_shuffle;
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (playeringame[i] == false || players[i].spectator == true)
@@ -9135,7 +9135,7 @@ static tic_t round_to_next_second(tic_t time)
 static void P_DeriveAutoMedalTimes(mapheader_t& map)
 {
 	// Gather staff ghost times
-	std::vector<tic_t> stafftimes;
+	srb2::Vector<tic_t> stafftimes;
 	for (int i = 0; i < map.ghostCount; i++)
 	{
 		tic_t time = map.ghostBrief[i]->time;
@@ -9325,7 +9325,7 @@ UINT8 P_InitMapData(void)
 				{
 					continue;
 				}
-				std::string ghostdirname = fmt::format("staffghosts/{}/", mapheaderinfo[i]->lumpname);
+				srb2::String ghostdirname = srb2::format("staffghosts/{}/", mapheaderinfo[i]->lumpname);
 
 				UINT16 lumpstart = W_CheckNumForFolderStartPK3(ghostdirname.c_str(), wadindex, 0);
 				if (lumpstart == INT16_MAX)

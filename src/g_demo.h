@@ -21,10 +21,9 @@
 
 #ifdef __cplusplus
 
-#include <string>
-#include <vector>
-
-#include <nlohmann/json.hpp>
+#include "core/json.hpp"
+#include "core/string.h"
+#include "core/vector.hpp"
 
 // Modern json formats
 namespace srb2
@@ -32,12 +31,12 @@ namespace srb2
 struct StandingJson
 {
 	uint8_t ranking;
-	std::string name;
+	String name;
 	uint8_t demoskin;
-	std::string skincolor;
+	String skincolor;
 	uint32_t timeorscore;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
+	SRB2_JSON_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
 		StandingJson,
 		ranking,
 		name,
@@ -48,9 +47,9 @@ struct StandingJson
 };
 struct StandingsJson
 {
-	std::vector<StandingJson> standings;
+	Vector<StandingJson> standings;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(StandingsJson, standings)
+	SRB2_JSON_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(StandingsJson, standings)
 };
 
 void write_current_demo_standings(const StandingsJson& standings);

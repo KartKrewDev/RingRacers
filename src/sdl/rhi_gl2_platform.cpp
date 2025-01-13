@@ -11,11 +11,13 @@
 #include "rhi_gl2_platform.hpp"
 
 #include <array>
+#include <string>
 #include <sstream>
 
 #include <SDL.h>
-#include <fmt/core.h>
 
+#include "../core/string.h"
+#include "../core/vector.hpp"
 #include "../cxxutil.hpp"
 #include "../doomstat.h" // mainwads
 #include "../w_wad.h"
@@ -34,22 +36,22 @@ void SdlGl2Platform::present()
 	SDL_GL_SwapWindow(window);
 }
 
-static std::array<std::string, 2> glsllist_lump_names(const char* name)
+static std::array<srb2::String, 2> glsllist_lump_names(const char* name)
 {
-	std::string vertex_list_name = fmt::format("rhi_glsllist_{}_vertex.txt", name);
-	std::string fragment_list_name = fmt::format("rhi_glsllist_{}_fragment.txt", name);
+	srb2::String vertex_list_name = fmt::format("rhi_glsllist_{}_vertex.txt", name);
+	srb2::String fragment_list_name = fmt::format("rhi_glsllist_{}_fragment.txt", name);
 
 	return {std::move(vertex_list_name), std::move(fragment_list_name)};
 }
 
-static std::vector<std::string> get_sources_from_glsllist_lump(const char* lumpname)
+static srb2::Vector<srb2::String> get_sources_from_glsllist_lump(const char* lumpname)
 {
 	size_t buffer_size;
 	if (!W_ReadShader(lumpname, &buffer_size, nullptr))
 	{
 		throw std::runtime_error(fmt::format("Unable to find glsllist lump {}", lumpname));
 	}
-	std::string glsllist_lump_data;
+	srb2::String glsllist_lump_data;
 	glsllist_lump_data.resize(buffer_size);
 	if (!W_ReadShader(lumpname, &buffer_size, glsllist_lump_data.data()))
 	{
@@ -57,7 +59,7 @@ static std::vector<std::string> get_sources_from_glsllist_lump(const char* lumpn
 	}
 
 	std::istringstream glsllist(glsllist_lump_data);
-	std::vector<std::string> sources;
+	srb2::Vector<srb2::String> sources;
 	for (std::string line; std::getline(glsllist, line); )
 	{
 		if (line.empty())
@@ -87,7 +89,7 @@ static std::vector<std::string> get_sources_from_glsllist_lump(const char* lumpn
 		{
 			throw std::runtime_error(fmt::format("Unable to find glsl source lump lump {}", line));
 		}
-		std::string source_lump;
+		srb2::String source_lump;
 		source_lump.resize(source_lump_size);
 		if (!W_ReadShader(line.c_str(), &source_lump_size, source_lump.data()))
 		{
@@ -100,13 +102,13 @@ static std::vector<std::string> get_sources_from_glsllist_lump(const char* lumpn
 	return sources;
 }
 
-std::tuple<std::vector<std::string>, std::vector<std::string>>
+std::tuple<srb2::Vector<srb2::String>, srb2::Vector<srb2::String>>
 SdlGl2Platform::find_shader_sources(const char* name)
 {
-	std::array<std::string, 2> glsllist_names = glsllist_lump_names(name);
+	std::array<srb2::String, 2> glsllist_names = glsllist_lump_names(name);
 
-	std::vector<std::string> vertex_sources = get_sources_from_glsllist_lump(glsllist_names[0].c_str());
-	std::vector<std::string> fragment_sources = get_sources_from_glsllist_lump(glsllist_names[1].c_str());
+	srb2::Vector<srb2::String> vertex_sources = get_sources_from_glsllist_lump(glsllist_names[0].c_str());
+	srb2::Vector<srb2::String> fragment_sources = get_sources_from_glsllist_lump(glsllist_names[1].c_str());
 
 	return std::make_tuple(std::move(vertex_sources), std::move(fragment_sources));
 }

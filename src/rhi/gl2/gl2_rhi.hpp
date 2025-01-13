@@ -14,11 +14,11 @@
 #include <functional>
 #include <memory>
 #include <optional>
-#include <string>
 #include <tuple>
-#include <unordered_map>
-#include <vector>
 
+#include "../../core/hash_map.hpp"
+#include "../../core/string.h"
+#include "../../core/vector.hpp"
 #include "../rhi.hpp"
 
 namespace srb2::rhi
@@ -71,7 +71,7 @@ struct Gl2Platform
 	virtual ~Gl2Platform();
 
 	virtual void present() = 0;
-	virtual std::tuple<std::vector<std::string>, std::vector<std::string>> find_shader_sources(const char* name) = 0;
+	virtual std::tuple<srb2::Vector<srb2::String>, srb2::Vector<srb2::String>> find_shader_sources(const char* name) = 0;
 	virtual Rect get_default_framebuffer_dimensions() = 0;
 };
 
@@ -98,8 +98,8 @@ struct Gl2Program : public rhi::Program
 	uint32_t vertex_shader = 0;
 	uint32_t fragment_shader = 0;
 	uint32_t program = 0;
-	std::unordered_map<std::string, uint32_t> attrib_locations;
-	std::unordered_map<std::string, uint32_t> uniform_locations;
+	srb2::HashMap<srb2::String, uint32_t> attrib_locations;
+	srb2::HashMap<srb2::String, uint32_t> uniform_locations;
 };
 
 struct Gl2ActiveUniform
@@ -121,14 +121,14 @@ class Gl2Rhi final : public Rhi
 
 	Handle<Buffer> current_index_buffer_;
 
-	std::unordered_map<Gl2FramebufferKey, uint32_t> framebuffers_ {16};
+	srb2::HashMap<Gl2FramebufferKey, uint32_t> framebuffers_ {16};
 
 	struct DefaultRenderPassState
 	{
 		bool clear = false;
 	};
 	using RenderPassState = std::variant<DefaultRenderPassState, RenderPassBeginInfo>;
-	std::vector<RenderPassState> render_pass_stack_;
+	srb2::Vector<RenderPassState> render_pass_stack_;
 	std::optional<Handle<Program>> current_program_;
 	PrimitiveType current_primitive_type_ = PrimitiveType::kPoints;
 	uint32_t index_buffer_offset_ = 0;

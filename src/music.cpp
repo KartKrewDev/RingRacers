@@ -174,7 +174,7 @@ void Music_Init(void)
 	{
 		Tune& tune = g_tunes.insert("credits");
 
-		tune.priority = 100;
+		tune.priority = 101;
 		tune.song = "_creds";
 		tune.credit = true;
 	}
@@ -182,7 +182,7 @@ void Music_Init(void)
 	{
 		Tune& tune = g_tunes.insert("shore");
 
-		tune.priority = 100;
+		tune.priority = 101;
 		tune.loop = false;
 	}
 

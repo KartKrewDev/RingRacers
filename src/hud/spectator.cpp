@@ -165,7 +165,7 @@ void K_drawSpectatorHUD(boolean director)
 
 	if (player)
 	{
-		std::string label = [player]
+		srb2::String label = [player]
 		{
 			if (player->flashing)
 			{
@@ -183,7 +183,7 @@ void K_drawSpectatorHUD(boolean director)
 
 		if (cv_maxplayers.value)
 		{
-			label += fmt::format(" [{}/{}]", numingame, cv_maxplayers.value);
+			label += srb2::format(" [{}/{}]", numingame, cv_maxplayers.value);
 		}
 
 		list.insert({{label.c_str(), "<l_animated>"}});

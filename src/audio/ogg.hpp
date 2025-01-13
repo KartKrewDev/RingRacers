@@ -35,19 +35,19 @@ public:
 
 struct OggComment
 {
-	std::string vendor;
-	std::vector<std::string> comments;
+	String vendor;
+	Vector<String> comments;
 };
 
 class Ogg final
 {
-	std::vector<std::byte> memory_data_;
+	Vector<std::byte> memory_data_;
 	stb_vorbis* instance_;
 
 public:
 	Ogg() noexcept;
 
-	explicit Ogg(std::vector<std::byte> data);
+	explicit Ogg(Vector<std::byte> data);
 	explicit Ogg(tcb::span<std::byte> data);
 
 	Ogg(const Ogg&) = delete;
@@ -77,7 +77,7 @@ private:
 template <typename I, typename std::enable_if_t<srb2::io::IsInputStreamV<I>, int> = 0>
 inline Ogg load_ogg(I& stream)
 {
-	std::vector<std::byte> data = srb2::io::read_to_vec(stream);
+	srb2::Vector<std::byte> data = srb2::io::read_to_vec(stream);
 	return Ogg {std::move(data)};
 }
 

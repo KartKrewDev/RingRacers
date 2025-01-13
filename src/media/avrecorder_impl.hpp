@@ -19,8 +19,8 @@
 #include <mutex>
 #include <optional>
 #include <thread>
-#include <vector>
 
+#include "../core/string.h"
 #include "../i_time.h"
 #include "avrecorder.hpp"
 #include "container.hpp"
@@ -57,7 +57,7 @@ public:
 			using frame_type = StagingVideoFrame::instance_t;
 		};
 
-		std::vector<typename Traits<T>::frame_type> vec_;
+		srb2::Vector<typename Traits<T>::frame_type> vec_;
 
 		// This number only decrements once a frame has
 		// actually been written to container.

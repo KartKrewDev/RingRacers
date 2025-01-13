@@ -11,11 +11,12 @@
 
 #include <algorithm>
 #include <array>
-#include <vector>
 #include <deque>
 
 #include <fmt/format.h>
 
+#include "core/string.h"
+#include "core/vector.hpp"
 #include "k_hud.h"
 #include "k_kart.h"
 #include "k_battle.h"
@@ -6332,21 +6333,21 @@ typedef enum
 
 typedef struct
 {
-	std::string text;
+	srb2::String text;
 	sfxenum_t sound;
 } message_t;
 
 struct messagestate_t
 {
-	std::deque<std::string> messages;
-	std::string objective = "";
+	std::deque<srb2::String> messages;
+	srb2::String objective = "";
 	tic_t timer = 0;
 	boolean persist = false;
 	messagemode_t mode = MM_IN;
 	const tic_t speedyswitch = 2*TICRATE;
 	const tic_t lazyswitch = 4*TICRATE;
 
-	void add(std::string msg)
+	void add(srb2::String msg)
 	{
 		messages.push_back(msg);
 	}
@@ -6384,7 +6385,7 @@ struct messagestate_t
 		switch (mode)
 		{
 			case MM_IN:
-				if (timer > messages[0].length())
+				if (timer > messages[0].size())
 					switch_mode(MM_HOLD);
 				break;
 			case MM_HOLD:
@@ -6394,7 +6395,7 @@ struct messagestate_t
 					switch_mode(MM_OUT);
 				break;
 			case MM_OUT:
-				if (timer > messages[0].length())
+				if (timer > messages[0].size())
 					next();
 				break;
 		}

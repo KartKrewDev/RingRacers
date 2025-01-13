@@ -14,8 +14,8 @@
 #include <chrono>
 #include <functional>
 #include <memory>
-#include <string>
 
+#include "../core/string.h"
 #include "audio_encoder.hpp"
 #include "video_encoder.hpp"
 
@@ -30,7 +30,7 @@ public:
 
 	struct Config
 	{
-		std::string file_name;
+		srb2::String file_name;
 		dtor_cb_t destructor_callback;
 	};
 

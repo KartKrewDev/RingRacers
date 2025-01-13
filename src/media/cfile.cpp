@@ -19,7 +19,7 @@
 
 using namespace srb2::media;
 
-CFile::CFile(const std::string file_name) : name_(file_name)
+CFile::CFile(const srb2::String& file_name) : name_(file_name)
 {
 	file_ = std::fopen(name(), "wb");
 
