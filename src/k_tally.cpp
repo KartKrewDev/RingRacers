@@ -243,10 +243,9 @@ INT32 level_tally_t::CalculateGrade(void)
 			case TALLY_BONUS_LAP:
 			{
 				// Use a special curve for this.
-				// The difference between 0 and 1 lap points is an important difference in skill,
-				// while the difference between 5 and 6 is not very notable.
-				const fixed_t frac = std::min(FRACUNIT, (laps * FRACUNIT) / std::max(1, static_cast<int>(totalLaps)));
-				ours += Easing_OutSine(frac, 0, bonusWeights[i]);
+				// Low Exp amounts are guaranteed, higher than half is where skill expression starts
+				const fixed_t frac = std::min(FRACUNIT, (laps * FRACUNIT) / std::max(1, static_cast<int>(totalLaps + 80))); // Magic number here is to ensure A ranks only go to those that can maintain positive EXP
+				ours += Easing_InCubic(frac, 0, bonusWeights[i]);
 				break;
 			}
 			case TALLY_BONUS_PRISON:
