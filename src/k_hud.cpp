@@ -6829,7 +6829,8 @@ void K_drawKartHUD(void)
 			{
 				if (gametyperules & GTR_CIRCUIT)
 				{
-					gametypeinfoshown = K_drawKartLaps();
+					K_drawKartLaps();
+					gametypeinfoshown = true;
 				}
 				else if (gametyperules & GTR_BUMPERS)
 				{
