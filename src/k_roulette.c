@@ -1380,8 +1380,10 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	roulette->preexpdist = K_GetItemRouletteDistance(player, roulette->playing);
 	roulette->dist = roulette->preexpdist;
 
-	if (gametyperules & GTR_CIRCUIT)
+	if ((gametyperules & GTR_CIRCUIT) && !K_Cooperative())
+	{
 		roulette->dist = FixedMul(roulette->preexpdist, max(player->exp, FRACUNIT/2));
+	}
 
 	// ===============================================================================
 	// Dynamic Roulette. Oh boy!

@@ -15237,8 +15237,34 @@ fixed_t K_GetExpAdjustment(player_t *player)
 	return result;
 }
 
+UINT16 K_GetDisplayEXP(player_t *player)
+{
+	UINT32 numgradingpoints = K_GetNumGradingPoints();
+
+	if (!numgradingpoints)
+		return UINT16_MAX;
+
+	fixed_t result = max(player->exp, FRACUNIT/2);
+	result = FixedMul(result, (500/numgradingpoints)*player->gradingpointnum);
+
+	// bro where is. bro where is std::clamp
+	if (result < 0)
+	{
+		result = 0;
+	}
+	else if (result > 999)
+	{
+		result = 999;
+	}
+
+	return result;
+}
+
 UINT32 K_GetNumGradingPoints(void)
 {
+	if (K_Cooperative())
+		return 0;
+
 	return numlaps * (1 + Obj_GetCheckpointCount());
 }
 
