@@ -24,6 +24,9 @@
 namespace srb2
 {
 
+template <typename V>
+class HashSet;
+
 template <typename K, typename V>
 class HashMap
 {
@@ -34,6 +37,8 @@ class HashMap
 
 public:
 	using Entry = std::pair<K, V>;
+
+	class ConstIter;
 
 	class Iter
 	{
@@ -47,7 +52,14 @@ public:
 			, cur_(cur)
 		{}
 
+		Iter(const ConstIter& r)
+			: self_(r.iter_.self_)
+			, bucket_(r.iter_.bucket_)
+			, cur_(r.iter_.cur_)
+		{}
+
 		friend class HashMap;
+		friend class HashSet<K>;
 		friend class ConstIter;
 
 	public:
