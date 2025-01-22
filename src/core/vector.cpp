@@ -14,6 +14,8 @@
 #include <cstddef>
 #include <memory>
 
+#include "string.h"
+
 namespace srb2
 {
 
@@ -54,5 +56,6 @@ template class Vector<int8_t>;
 template class Vector<int16_t>;
 template class Vector<int32_t>;
 template class Vector<int64_t>;
+template class Vector<String>;
 
 } // namespace srb2

@@ -347,6 +347,8 @@ public:
 	}
 };
 
+class String;
+
 extern template class Vector<bool>;
 extern template class Vector<std::byte>;
 extern template class Vector<uint8_t>;
@@ -357,6 +359,7 @@ extern template class Vector<int8_t>;
 extern template class Vector<int16_t>;
 extern template class Vector<int32_t>;
 extern template class Vector<int64_t>;
+extern template class Vector<String>;
 
 } // namespace srb2
 

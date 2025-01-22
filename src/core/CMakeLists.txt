@@ -6,6 +6,8 @@ target_sources(SRB2SDL2 PRIVATE
 	memory.h
 	spmc_queue.hpp
 	static_vec.hpp
+	string.cpp
+	string.h
 	thread_pool.cpp
 	thread_pool.h
 	vector.cpp
