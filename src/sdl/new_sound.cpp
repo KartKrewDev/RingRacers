@@ -992,6 +992,11 @@ boolean I_SoundInputSetEnabled(boolean enabled)
 {
 	if (g_input_device_id == 0 && enabled)
 	{
+		if (SDL_GetNumAudioDevices(true) == 0)
+		{
+			return false;
+		}
+
 		SDL_AudioSpec input_desired {};
 		input_desired.format = AUDIO_F32SYS;
 		input_desired.channels = 1;
