@@ -385,6 +385,20 @@ void I_ShutdownSound(void)
 		g_input_device_id = 0;
 	}
 
+	master_gain = nullptr;
+	master = nullptr;
+	mixer_sound_effects = nullptr;
+	mixer_music = nullptr;
+	mixer_voice = nullptr;
+	music_player = nullptr;
+	resample_music_player = nullptr;
+	gain_sound_effects = nullptr;
+	gain_music_player = nullptr;
+	gain_music_channel = nullptr;
+	gain_voice_channel = nullptr;
+	sound_effect_channels.clear();
+	player_voice_channels.clear();
+
 	SDL_QuitSubSystem(SDL_INIT_AUDIO);
 
 	sound_started = false;
