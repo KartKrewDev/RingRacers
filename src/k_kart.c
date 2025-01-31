@@ -15244,20 +15244,12 @@ UINT16 K_GetDisplayEXP(player_t *player)
 	if (!numgradingpoints)
 		return UINT16_MAX;
 
-	fixed_t result = max(player->exp, FRACUNIT/2);
-	result = FixedMul(result, (500/numgradingpoints)*player->gradingpointnum);
+	// target is where you should be if you're doing good and at a 1.0 mult
+	fixed_t clampedexp = max(FRACUNIT/2, min(FRACUNIT*7/5, player->exp));  // clamp between 0.5 and 1.4
+	fixed_t targetdisplayexp = (500*player->gradingpointnum/numgradingpoints)<<FRACBITS;
+	UINT16 displayexp = FixedMul(clampedexp, targetdisplayexp)>>FRACBITS;
 
-	// bro where is. bro where is std::clamp
-	if (result < 0)
-	{
-		result = 0;
-	}
-	else if (result > 999)
-	{
-		result = 999;
-	}
-
-	return result;
+	return displayexp;
 }
 
 UINT32 K_GetNumGradingPoints(void)
