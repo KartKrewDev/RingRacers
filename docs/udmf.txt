@@ -1,8 +1,8 @@
 ===============================================================================
 Universal Doom Map Format - Ring Racers extensions v1.0 - 20.09.2024
 
-	Copyright (c) 2024 Sally Cochenour.
-	Copyright (c) 2024 Kart Krew Dev.
+	Copyright (C) 2025 Sally Cochenour.
+	Copyright (C) 2025 Kart Krew Dev.
 
 	Permission is granted to copy, distribute and/or modify this document
 	under the terms of the GNU Free Documentation License, Version 1.2

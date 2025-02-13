@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -8937,7 +8937,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 								if (plistlen > 1)
 								{
 									// Pick another player in the server!
-									plistlen = P_RandomKey(PR_SPARKLE, plistlen+1);
+									plistlen = P_RandomKey(PR_SPARKLE, plistlen);
 								}
 								else
 								{

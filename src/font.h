@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by James Robert Roman.
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by James Robert Roman.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2018 by Sonic Team Junior.
 //
 // This program is free software distributed under the

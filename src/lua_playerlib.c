@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2016 by John "JTE" Muniz.
 //
@@ -310,7 +310,7 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->gateSound);
 	else if (fastcmp(field,"startboost"))
 		lua_pushinteger(L, plr->startboost);
-	else if (fastcmp(field,"aizdriftstraft"))
+	else if (fastcmp(field,"aizdriftstrat"))
 		lua_pushinteger(L, plr->aizdriftstrat);
 	else if (fastcmp(field,"aizdriftextend"))
 		lua_pushinteger(L, plr->aizdriftextend);
@@ -914,7 +914,7 @@ static int player_set(lua_State *L)
 		plr->gateSound = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"startboost"))
 		plr->startboost = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"aizdriftstraft"))
+	else if (fastcmp(field,"aizdriftstrat"))
 		plr->aizdriftstrat = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"aizdrifttilt"))
 		plr->aizdrifttilt = luaL_checkinteger(L, 3);
