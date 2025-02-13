@@ -1148,6 +1148,37 @@ bool CallFunc_SetLineTexture(ACSVM::Thread *thread, const ACSVM::Word *argV, ACS
 }
 
 /*--------------------------------------------------
+	bool CallFunc_SetLineBlocking(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Changes a linedef's blocking flag.
+--------------------------------------------------*/
+bool CallFunc_SetLineBlocking(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	mtag_t tag = 0;
+	UINT32 blocking = 0;
+	INT32 lineId = -1;
+
+	tag = argV[0];
+
+	if (argV[1] != 0)
+	{
+		blocking = ML_IMPASSABLE;
+	}
+
+	TAG_ITER_LINES(tag, lineId)
+	{
+		line_t *line = &lines[lineId];
+
+		if (line->flags & ML_TWOSIDED) // disallow changing this for 1-sided lines
+		{
+			line->flags = (line->flags & ~ML_IMPASSABLE) | blocking;
+		}
+	}
+
+	return false;
+}
+
+/*--------------------------------------------------
 	bool CallFunc_SetLineSpecial(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Changes a linedef's special and arguments.

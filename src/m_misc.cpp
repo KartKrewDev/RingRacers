@@ -595,7 +595,7 @@ void Command_LoadConfig_f(void)
 	CV_InitFilterVar();
 
 	// exec the config
-	COM_BufInsertText(va("exec \"%s\"\n", configfile));
+	COM_BufInsertText(va("exec \"%s\" -immediate\n", configfile));
 
 	// don't filter anymore vars and don't let this convsvar be changed
 	COM_BufInsertText(va("%s \"%d\"\n", cv_execversion.name, EXECVERSION));
@@ -656,7 +656,7 @@ void M_FirstLoadConfig(void)
 	CV_InitFilterVar();
 
 	// load config, make sure those commands doesnt require the screen...
-	COM_BufInsertText(va("exec \"%s\"\n", configfile));
+	COM_BufInsertText(va("exec \"%s\" -immediate\n", configfile));
 	// no COM_BufExecute() needed; that does it right away
 
 	// don't filter anymore vars and don't let this convsvar be changed

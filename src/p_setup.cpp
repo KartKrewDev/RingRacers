@@ -143,7 +143,7 @@ unsigned char mapmd5[16];
 //
 
 boolean udmf;
-static INT32 udmf_version;
+INT32 udmf_version;
 size_t numvertexes, numsegs, numsectors, numsubsectors, numnodes, numlines, numsides, nummapthings;
 size_t num_orig_vertexes;
 vertex_t *vertexes;

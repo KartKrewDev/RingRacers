@@ -801,6 +801,7 @@ char spr2names[NUMPLAYERSPRITES][5] =
 	"SIGN", "SIGL", "SSIG", // Finish signpost
 	"XTRA", // Three Faces of Darkness
 	"TALK", // Dialogue
+	"DKRT", // Kart husk
 };
 playersprite_t free_spr2 = SPR2_FIRSTFREESLOT;
 
@@ -845,13 +846,14 @@ playersprite_t spr2defaults[NUMPLAYERSPRITES] = {
 	SPR2_SIGN, // SPR2_SSIG
 	0, // SPR2_XTRA
 	0, // SPR2_TALK
+	0, // SPR2_DKRT
 };
 
 // Doesn't work with g++, needs actionf_p1 (don't modify this comment)
 state_t states[NUMSTATES] =
 {
 	// frame is masked through FF_FRAMEMASK
-	// FF_ANIMATE makes simple state animations (var1 #frames, var2 tic delay)
+	// FF_ANIMATE makes simple state animations (var1 #frames, var2 tic delay) (var1 is ignored in P_SetupStateAnimation() if sprite is SPR_PLAY)
 	// FF_FULLBRIGHT activates the fullbright colormap
 	// use FF_TRANS10 - FF_TRANS90 for easy translucency
 	// (or tr_trans10<<FF_TRANSSHIFT if you want to make it hard on yourself)
@@ -909,6 +911,7 @@ state_t states[NUMSTATES] =
 
 	{SPR_KART, 0, -1, {NULL}, 0, 0, S_NULL}, // S_KART_LEFTOVER
 	{SPR_DIEF, 0, -1, {NULL}, 0, 0, S_NULL}, // S_KART_LEFTOVER_NOTIRES
+	{SPR_PLAY, SPR2_DKRT,3,{NULL},0,0,S_KART_LEFTOVER_CUSTOM},// S_KART_LEFTOVER_CUSTOM
 
 	{SPR_TIRE, 0, -1, {NULL}, 0, 0, S_NULL}, // S_KART_TIRE1
 	{SPR_TIRE, 1, -1, {NULL}, 0, 0, S_NULL}, // S_KART_TIRE2
