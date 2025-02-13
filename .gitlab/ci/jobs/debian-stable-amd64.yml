@@ -12,6 +12,7 @@ Debian stable:amd64:
 
   variables:
     CC: x86_64-linux-gnu-gcc
+    CXX: x86_64-linux-gnu-g++
     LDFLAGS: -Wl,-fuse-ld=gold
     OBJCOPY: x86_64-linux-gnu-objcopy
     OBJDUMP: x86_64-linux-gnu-objdump
@@ -23,7 +24,7 @@ Debian stable:amd64:
     - - |
           # apt_toolchain
           echo -e "\e[0Ksection_start:`date +%s`:apt_toolchain[collapsed=true]\r\e[0KInstalling toolchain packages"
-      - apt-get install gcc-x86-64-linux-gnu || apt-get install gcc
+      - apt-get install g++-x86-64-linux-gnu || apt-get install g++
       - |
           # apt_toolchain
           echo -e "\e[0Ksection_end:`date +%s`:apt_toolchain\r\e[0K"
@@ -42,7 +43,6 @@ Debian stable:amd64:
       - |
           CCACHE=$(which ccache)
           cmake -B build.cmake \
-            -G "Unix Makefiles" \
             -DCMAKE_C_COMPILER_LAUNCHER=$CCACHE \
             -DCMAKE_CXX_COMPILER_LAUNCHER=$CCACHE \
             -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF
@@ -53,7 +53,7 @@ Debian stable:amd64:
     - - |
           # make
           echo -e "\e[0Ksection_start:`date +%s`:make[collapsed=false]\r\e[0KCompiling SRB2"
-      - make --directory=build.cmake --keep-going || make --directory=build.cmake --keep-going
+      - cmake --build build.cmake --parallel 1 --verbose
       - |
           # make
           echo -e "\e[0Ksection_end:`date +%s`:make\r\e[0K"
