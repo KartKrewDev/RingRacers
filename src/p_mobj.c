@@ -8844,7 +8844,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 								if (plistlen > 1)
 								{
 									// Pick another player in the server!
-									plistlen = P_RandomKey(PR_SPARKLE, plistlen+1);
+									plistlen = P_RandomKey(PR_SPARKLE, plistlen);
 								}
 								else
 								{
