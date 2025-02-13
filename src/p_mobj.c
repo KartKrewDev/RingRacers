@@ -2249,6 +2249,18 @@ boolean P_CheckSolidLava(mobj_t *mobj, ffloor_t *rover)
 	return false;
 }
 
+// Resets momz to 0 if the mo has just stepped up and is rising, but under a gravity and stepup derived momz threshold
+static void P_CheckStepUpReset(mobj_t *mo)
+{
+	if (mo->eflags & MFE_JUSTSTEPPEDDOWN && (mo->momz * P_MobjFlip(mo)) > 0)
+	{
+		if (abs(mo->momz) < P_GetThingStepUp(mo, mo->x, mo->y)/6 + abs(P_GetMobjGravity(mo)*3))
+		{
+			mo->momz = 0;
+		}
+	}
+}
+
 //
 // P_ZMovement
 // Returns false if the mobj was killed/exploded/removed, true otherwise.
@@ -2277,6 +2289,9 @@ boolean P_ZMovement(mobj_t *mo)
 		mo->pmomz = 0;
 		mo->eflags &= ~MFE_APPLYPMOMZ;
 	}
+
+	P_CheckStepUpReset(mo);
+
 	mo->z += mo->momz;
 
 	onground = P_IsObjectOnGround(mo);
@@ -2824,19 +2839,7 @@ void P_PlayerZMovement(mobj_t *mo)
 		mo->eflags &= ~MFE_APPLYPMOMZ;
 	}
 
-	if (mo->eflags & MFE_JUSTSTEPPEDDOWN && abs(mo->momz) > 1)
-	{
-		// CONS_Printf("%s Check Step up momz reset %d < %d + %d", player_names[mo->player-players], abs(mo->momz), P_GetThingStepUp(mo, mo->x, mo->y)/6, abs(P_GetMobjGravity(mo)*3));
-		if (abs(mo->momz) < P_GetThingStepUp(mo, mo->x, mo->y)/6 + abs(P_GetMobjGravity(mo)*3))
-		{
-			// CONS_Printf(" True\n");
-			mo->momz = 0;
-		}
-		// else
-		// {
-		// 	CONS_Printf(" False\n");
-		// }
-	}
+	P_CheckStepUpReset(mo);
 
 	mo->z += mo->momz;
 	onground = P_IsObjectOnGround(mo);
