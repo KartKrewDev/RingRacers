@@ -17,9 +17,12 @@ Debian testing GCC:
     name: "$CI_PROJECT_PATH_SLUG-$CI_COMMIT_REF_SLUG-$CI_COMMIT_SHORT_SHA-testing-gcc"
 
   variables:
-    CC: gcc
-    CXX: g++
-    LDFLAGS: -Wl,-fuse-ld=gold
+    CC: /usr/bin/x86_64-linux-gnu-gcc
+    CXX: /usr/bin/x86_64-linux-gnu-g++
+    OBJCOPY: /usr/bin/x86_64-linux-gnu-objcopy
+    OBJDUMP: /usr/bin/x86_64-linux-gnu-objdump
+    PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
+    LD: /usr/bin/x86_64-linux-gnu-ld
 
   script:
     - - |
