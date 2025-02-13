@@ -5,6 +5,8 @@ Windows x64:
 
   when: manual
 
+  timeout: 2h
+
   allow_failure: true
 
   artifacts:
