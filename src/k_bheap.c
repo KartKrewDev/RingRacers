@@ -394,7 +394,7 @@ boolean K_BHeapPush(bheap_t *const heap, void *const item, UINT32 value, updatei
 		if (heap->count >= heap->capacity)
 		{
 			size_t newarraycapacity = heap->capacity * 2;
-			heap->array = Z_Realloc(heap->array, newarraycapacity, PU_STATIC, NULL);
+			heap->array = Z_Realloc(heap->array, newarraycapacity * sizeof(bheapitem_t), PU_STATIC, NULL);
 
 			if (heap->array == NULL)
 			{
