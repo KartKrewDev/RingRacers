@@ -2764,7 +2764,7 @@ fixed_t P_GetThingStepUp(mobj_t *thing, fixed_t destX, fixed_t destY)
 		maxstep += maxstepmove;
 	}
 
-	if (thing->standingslope && thing->standingslope->zdelta != 0)
+	if (thing->standingslope && thing->standingslope->zdelta != 0 && (thing->momx || thing->momy))
 	{
 		vector3_t slopemom = {0,0,0};
 		slopemom.x = thing->momx;
