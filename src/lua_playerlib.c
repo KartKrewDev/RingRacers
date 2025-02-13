@@ -684,6 +684,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->griefWarned);		
 	else if (fastcmp(field,"splitscreenindex"))
 		lua_pushinteger(L, plr->splitscreenindex);
+	else if (fastcmp(field,"whip"))
+		LUA_PushUserdata(L, plr->whip, META_MOBJ);
 #ifdef HWRENDER
 	else if (fastcmp(field,"fovadd"))
 		lua_pushfixed(L, plr->fovadd);
@@ -1241,6 +1243,13 @@ static int player_set(lua_State *L)
 		plr->griefWarned = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"splitscreenindex"))
 		return NOSET;
+	else if (fastcmp(field,"whip"))
+	{
+		mobj_t *mo = NULL;
+		if (!lua_isnil(L, 3))
+			mo = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
+		P_SetTarget(&plr->whip, mo);
+	}
 #ifdef HWRENDER
 	else if (fastcmp(field,"fovadd"))
 		plr->fovadd = luaL_checkfixed(L, 3);
