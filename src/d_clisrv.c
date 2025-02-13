@@ -5311,7 +5311,7 @@ static void PT_HandleVoice(SINT8 node)
 	}
 }
 
-static char NodeToSplitPlayer(int node, int split)
+static int8_t NodeToSplitPlayer(int node, int split)
 {
 	if (split == 0)
 		return nodetoplayer[node];
