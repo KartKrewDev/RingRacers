@@ -202,7 +202,7 @@ add_custom_target(_SRB2_reconf ALL
 )
 add_dependencies(SRB2SDL2 _SRB2_reconf)
 
-if("${CMAKE_COMPILER_IS_GNUCC}" AND "${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
+if(("${CMAKE_COMPILER_IS_GNUCC}" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang") AND "${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
 	target_link_options(SRB2SDL2 PRIVATE "-Wl,--disable-dynamicbase")
 	if("${SRB2_CONFIG_STATIC_STDLIB}")
 		# On MinGW with internal libraries, link the standard library statically
@@ -611,16 +611,16 @@ endif()
 add_subdirectory(hud)
 add_subdirectory(modp_b64)
 
-# strip debug symbols into separate file when using gcc.
+# strip debug symbols into separate file when using gcc or clang.
 # to be consistent with Makefile, don't generate for OS X.
-if((CMAKE_COMPILER_IS_GNUCC) AND NOT ("${CMAKE_SYSTEM_NAME}" MATCHES Darwin))
+if((CMAKE_COMPILER_IS_GNUCC OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")  AND NOT ("${CMAKE_SYSTEM_NAME}" MATCHES Darwin))
 	if(${CMAKE_BUILD_TYPE} MATCHES RelWithDebInfo OR SRB2_CONFIG_ALWAYS_MAKE_DEBUGLINK)
 		message(STATUS "Will make separate debug symbols in *.debug")
 		add_custom_command(TARGET SRB2SDL2 POST_BUILD
-			COMMAND ${OBJCOPY} ${OBJCOPY_ONLY_KEEP_DEBUG} $<TARGET_FILE:SRB2SDL2> $<TARGET_FILE:SRB2SDL2>.debug
+			COMMAND ${CMAKE_OBJCOPY} ${OBJCOPY_ONLY_KEEP_DEBUG} $<TARGET_FILE:SRB2SDL2> $<TARGET_FILE:SRB2SDL2>.debug
 			# mold linker: .gnu_debuglink is present by default, so --add-gnu-debuglink would fail
-			COMMAND ${OBJCOPY} --strip-debug --remove-section=.gnu_debuglink $<TARGET_FILE:SRB2SDL2>
-			COMMAND ${OBJCOPY} --add-gnu-debuglink=$<TARGET_FILE:SRB2SDL2>.debug $<TARGET_FILE:SRB2SDL2>
+			COMMAND ${CMAKE_OBJCOPY} --strip-debug --remove-section=.gnu_debuglink $<TARGET_FILE:SRB2SDL2>
+			COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink=$<TARGET_FILE:SRB2SDL2>.debug $<TARGET_FILE:SRB2SDL2>
 		)
 	endif()
 endif()
@@ -628,14 +628,22 @@ endif()
 # copy DLLs to bin/ directory if building internal shared on windows
 if("${CMAKE_SYSTEM_NAME}" STREQUAL Windows AND NOT "${SRB2_CONFIG_INTERNAL_LIBRARIES}" AND "${SRB2_CONFIG_SHARED_INTERNAL_LIBRARIES}")
 	set(ADDITIONAL_DLLS "")
-	if("${CMAKE_C_COMPILER_ID}" STREQUAL GNU)
+	if("${CMAKE_C_COMPILER_ID}" STREQUAL GNU OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 		# also copy implicitly linked system libraries
 		get_filename_component(MINGW_BIN_PATH ${CMAKE_CXX_COMPILER} PATH)
-		list(APPEND ADDITIONAL_DLLS
-			"libgcc_s_dw2-1.dll"
-			"libstdc++-6.dll"
-			"libwinpthread-1.dll"
-		)
+		if("${CMAKE_C_COMPILER_ID}" STREQUAL GNU)
+			list(APPEND ADDITIONAL_DLLS
+				"libgcc_s_dw2-1.dll"
+				"libstdc++-6.dll"
+				"libwinpthread-1.dll"
+			)
+		else()
+			list(APPEND ADDITIONAL_DLLS
+				"libunwind.dll"
+				"libc++.dll"
+				"libwinpthread-1.dll"
+			)
+		endif()
 		list(TRANSFORM ADDITIONAL_DLLS PREPEND "${MINGW_BIN_PATH}/")
 	endif()
 	add_custom_command(TARGET SRB2SDL2 POST_BUILD
