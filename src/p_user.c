@@ -4091,6 +4091,9 @@ Quaketilt (player_t *player)
 static void
 DoABarrelRoll (player_t *player)
 {
+	UINT8 viewnum = R_GetViewNumber();
+	camera_t *cam = &camera[viewnum];
+
 	angle_t slope;
 	angle_t delta;
 
@@ -4119,9 +4122,17 @@ DoABarrelRoll (player_t *player)
 		slope = 0;
 	}
 
-	if (AbsAngle(slope) > ANGLE_45)
+	if (cam->chase)
 	{
-		slope = slope & ANGLE_180 ? InvAngle(ANGLE_45) : ANGLE_45;
+		if (AbsAngle(slope) > ANGLE_45)
+		{
+			slope = slope & ANGLE_180 ? InvAngle(ANGLE_45) : ANGLE_45;
+		}
+	} else {
+		if (AbsAngle(slope) > ANGLE_90)
+		{
+			slope = slope & ANGLE_180 ? InvAngle(ANGLE_90) : ANGLE_90;
+		}
 	}
 
 	slope -= Quaketilt(player);
@@ -4129,7 +4140,7 @@ DoABarrelRoll (player_t *player)
 	delta = slope - player->tilt;
 	smoothing = FixedDiv(AbsAngle(slope), ANGLE_45);
 
-	delta = FixedDiv(delta, 33 *
+	delta = FixedDiv(delta, (cam->chase ? 33 : 11) *
 			FixedDiv(FRACUNIT, FRACUNIT + smoothing));
 
 	if (delta)

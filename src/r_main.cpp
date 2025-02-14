@@ -308,8 +308,18 @@ angle_t R_PointToAnglePlayer(player_t *player, fixed_t x, fixed_t y)
 	{
 		refx = cam->x;
 		refy = cam->y;
-	}
 
+		// Bandaid for two very specific bugs that arise with chasecam off.
+		// 1: Camera tilt from slopes wouldn't apply correctly in first person.
+		// 2: Trick pies would appear strangely in first person.
+		if (player->mo)
+		{
+			if ((!cam->chase) && player->mo->x == x && player->mo->y == y)
+			{
+				return player->mo->angle;
+			}
+		}
+	}
 	return R_PointToAngle2(refx, refy, x, y);
 }
 

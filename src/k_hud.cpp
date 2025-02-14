@@ -5674,7 +5674,7 @@ static void K_drawKartFirstPerson(void)
 	fixed_t scale;
 	UINT8 *colmap = NULL;
 
-	if (stplyr->spectator || !stplyr->mo || (stplyr->mo->renderflags & RF_DONTDRAW))
+	if (stplyr->spectator || !stplyr->mo || (stplyr->mo->renderflags & RF_DONTDRAW || stplyr->mo->state == &states[S_KART_DEAD]))
 		return;
 
 	{
