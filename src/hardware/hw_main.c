@@ -1762,7 +1762,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 						if (rover->alpha < 256 || rover->blend)
 						{
 							blendmode = HWR_GetBlendModeFlag(rover->blend);
-							Surf.PolyColor.s.alpha = (UINT8)(rover->alpha-1);
+							Surf.PolyColor.s.alpha = max(0, min(rover->alpha, 255));
 						}
 					}
 
@@ -1891,7 +1891,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 						if (rover->alpha < 256 || rover->blend)
 						{
 							blendmode = HWR_GetBlendModeFlag(rover->blend);
-							Surf.PolyColor.s.alpha = (UINT8)(rover->alpha-1);
+							Surf.PolyColor.s.alpha = max(0, min(rover->alpha, 255));
 						}
 					}
 
@@ -2636,7 +2636,7 @@ static void HWR_Subsector(size_t num)
 										   false,
 					                       *rover->bottomheight,
 					                       *gl_frontsector->lightlist[light].lightlevel,
-					                       rover->alpha-1, rover->master->frontsector, blendmode,
+										   max(0, min(rover->alpha, 255)), rover->master->frontsector, blendmode,
 					                       false, *gl_frontsector->lightlist[light].extra_colormap);
 				}
 				else
@@ -2684,7 +2684,7 @@ static void HWR_Subsector(size_t num)
 											true,
 					                        *rover->topheight,
 					                        *gl_frontsector->lightlist[light].lightlevel,
-					                        rover->alpha-1, rover->master->frontsector, blendmode,
+											max(0, min(rover->alpha, 255)), rover->master->frontsector, blendmode,
 					                        false, *gl_frontsector->lightlist[light].extra_colormap);
 				}
 				else
