@@ -12,17 +12,18 @@
 
 /* https://tools.ietf.org/html/rfc5389 */
 
-#include <vector>
-
 #if defined (__linux__) || defined (__FreeBSD__)
 #include <sys/random.h>
 #elif defined (_WIN32)
 #define _CRT_RAND_S
+#include <cstdlib>
 #elif defined (__APPLE__)
 #include <CommonCrypto/CommonRandom.h>
 #else
 #error "Need CSPRNG."
 #endif
+
+#include <vector>
 
 #include "doomdef.h"
 #include "d_clisrv.h"
