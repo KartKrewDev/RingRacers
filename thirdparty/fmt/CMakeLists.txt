@@ -1,5 +1,5 @@
 # Update from https://github.com/fmtlib/fmt
-# fmt 11.1.0
+# fmt 11.1.3
 # License: MIT with object code exception
 
 add_library(fmt INTERFACE)
