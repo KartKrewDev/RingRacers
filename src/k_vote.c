@@ -1797,7 +1797,7 @@ static void Y_UnloadVoteData(void)
 
 	vote.loaded = false;
 
-	if (rendermode != render_soft)
+	if (rendermode == render_opengl)
 	{
 		return;
 	}

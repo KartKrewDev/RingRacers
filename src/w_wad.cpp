@@ -2001,7 +2001,7 @@ void *W_CachePatchNumPwad(UINT16 wad, UINT16 lump, INT32 tag)
 
 #ifdef HWRENDER
 	// Software-only compile cache the data without conversion
-	if (rendermode == render_soft || rendermode == render_none)
+	if (rendermode != render_opengl)
 #endif
 		return (void *)patch;
 

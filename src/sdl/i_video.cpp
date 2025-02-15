@@ -1220,8 +1220,8 @@ void I_UpdateNoVsync(void)
 //
 void I_ReadScreen(UINT8 *scr)
 {
-	if (rendermode != render_soft)
-		I_Error ("I_ReadScreen: called while in non-software mode");
+	if (rendermode == render_opengl)
+		I_Error ("I_ReadScreen: called while in Legacy GL mode");
 	else
 		VID_BlitLinearScreen(screens[0], scr,
 			vid.width*vid.bpp, vid.height,

@@ -1284,7 +1284,7 @@ void G_PreLevelTitleCard(void)
 			M_LegacySaveFrame();
 		else
 #endif
-		if (moviemode && rendermode != render_none)
+		if (moviemode && rendermode == render_soft)
 			I_CaptureVideoFrame();
 
 		while (!((nowtime = I_GetTime()) - lasttime))

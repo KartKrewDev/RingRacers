@@ -797,7 +797,6 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 		return;
 
 #ifdef HWRENDER
-	//if (rendermode != render_soft && !con_startup)		// Why?
 	if (rendermode == render_opengl)
 	{
 		HWR_DrawStretchyFixedPatch(patch, x, y, pscale, vscale, scrn, colormap);
@@ -1016,7 +1015,6 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 		return;
 
 #ifdef HWRENDER
-	//if (rendermode != render_soft && !con_startup)		// Not this again
 	if (rendermode == render_opengl)
 	{
 		HWR_DrawFill(x, y, w, h, c);
@@ -1600,7 +1598,7 @@ const UINT8 *V_OffsetIntoFadeMap(const lighttable_t *clm, UINT8 strength)
 void V_DrawCustomFadeScreen(const char *lump, UINT8 strength)
 {
 #ifdef HWRENDER
-	if (rendermode != render_soft && rendermode != render_none)
+	if (rendermode == render_opengl)
 	{
 		HWR_DrawCustomFadeScreen(
 			(strcmp(lump, "FADEMAP1") != 0
@@ -1664,7 +1662,7 @@ void V_DrawFadeConsBack(INT32 plines)
 void V_EncoreInvertScreen(void)
 {
 #ifdef HWRENDER
-	if (rendermode != render_soft && rendermode != render_none)
+	if (rendermode == render_opengl)
 	{
 		HWR_EncoreInvertScreen();
 		return;

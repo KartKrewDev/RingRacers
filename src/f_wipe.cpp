@@ -357,7 +357,7 @@ void F_WipeStartScreen(void)
 {
 #ifndef NOWIPE
 #ifdef HWRENDER
-	if(rendermode != render_soft)
+	if(rendermode == render_opengl)
 	{
 		HWR_StartScreenWipe();
 		return;
@@ -393,7 +393,7 @@ void F_WipeEndScreen(void)
 {
 #ifndef NOWIPE
 #ifdef HWRENDER
-	if(rendermode != render_soft)
+	if(rendermode == render_opengl)
 	{
 		HWR_EndScreenWipe();
 		return;
@@ -565,7 +565,7 @@ void F_RunWipe(UINT8 wipemode, UINT8 wipetype, boolean drawMenu, const char *col
 			M_LegacySaveFrame();
 		else
 #endif
-		if (moviemode && rendermode != render_none)
+		if (moviemode && rendermode == render_soft)
 			I_CaptureVideoFrame();
 
 		NetKeepAlive(); // Update the network so we don't cause timeouts

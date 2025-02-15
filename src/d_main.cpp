@@ -587,7 +587,7 @@ static bool D_Display(bool world)
 							HWR_RenderPlayerView();
 						else
 #endif
-						if (rendermode != render_none)
+						if (rendermode == render_soft)
 						{
 							if (i > 0) // Splitscreen-specific
 							{

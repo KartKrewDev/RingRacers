@@ -2523,7 +2523,7 @@ static void Y_UnloadData(void)
 {
 	// In hardware mode, don't Z_ChangeTag a pointer returned by W_CachePatchName().
 	// It doesn't work and is unnecessary.
-	if (rendermode != render_soft)
+	if (rendermode == render_opengl)
 		return;
 
 	// unload the background patches

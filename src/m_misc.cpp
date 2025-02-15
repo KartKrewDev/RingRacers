@@ -1462,7 +1462,7 @@ void M_LegacySaveFrame(void)
 #endif
 				M_PNGFrame(apng_ptr, apng_info_ptr, (png_bytep)linear);
 #ifdef HWRENDER
-				if (rendermode != render_soft && linear)
+				if (rendermode == render_opengl && linear)
 					free(linear);
 #endif
 

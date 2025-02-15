@@ -2784,7 +2784,7 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 	INT32 lightnum;
 	fixed_t limit_dist;
 
-	if (rendermode != render_soft)
+	if (rendermode == render_opengl)
 		return;
 
 	// BSP is traversed by subsector.
