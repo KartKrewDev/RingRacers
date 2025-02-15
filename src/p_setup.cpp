@@ -3683,9 +3683,7 @@ void P_UpdateSegLightOffset(seg_t *li)
 
 	// Between -2 and 2 for software, -16 and 16 for hardware
 	li->lightOffset = FixedFloor((extralight / 8) + (FRACUNIT / 2)) / FRACUNIT;
-#ifdef HWRENDER
 	li->hwLightOffset = FixedFloor(extralight + (FRACUNIT / 2)) / FRACUNIT;
-#endif
 }
 
 boolean P_SectorUsesDirectionalLighting(const sector_t *sector)
@@ -3790,9 +3788,7 @@ static void P_LoadSegs(UINT8 *data)
 		seg->linedef = &lines[SHORT(ms->linedef)];
 
 		seg->length = P_SegLength(seg);
-#ifdef HWRENDER
-		seg->flength = (rendermode == render_opengl) ? P_SegLengthFloat(seg) : 0;
-#endif
+		seg->flength = P_SegLengthFloat(seg);
 
 		seg->glseg = false;
 		P_InitializeSeg(seg);
@@ -4020,9 +4016,7 @@ static boolean P_LoadExtendedSubsectorsAndSegs(UINT8 **data, nodetype_t nodetype
 			segs[i].offset = FixedHypot(v1->x - v->x, v1->y - v->y);
 		}
 		seg->length = P_SegLength(seg);
-#ifdef HWRENDER
-		seg->flength = (rendermode == render_opengl) ? P_SegLengthFloat(seg) : 0;
-#endif
+		seg->flength = P_SegLengthFloat(seg);
 	}
 
 	return true;

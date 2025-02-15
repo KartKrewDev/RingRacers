@@ -91,9 +91,7 @@ void P_UpdateSlopeLightOffset(pslope_t *slope)
 
 	// Between -2 and 2 for software, -16 and 16 for hardware
 	slope->lightOffset = FixedFloor((extralight / 8) + (FRACUNIT / 2)) / FRACUNIT;
-#ifdef HWRENDER
 	slope->hwLightOffset = FixedFloor(extralight + (FRACUNIT / 2)) / FRACUNIT;
-#endif
 }
 
 // Calculate line normal
