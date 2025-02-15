@@ -410,7 +410,7 @@ endif()
 
 # Compatibility flag with later versions of GCC
 # We should really fix our code to not need this
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 	check_cxx_compiler_flag("-mno-ms-bitfields" HAS_NO_MS_BITFIELDS)
 	if(HAS_NO_MS_BITFIELDS)
 		target_compile_options(SRB2SDL2 PRIVATE -mno-ms-bitfields)
