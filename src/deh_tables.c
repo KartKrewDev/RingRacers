@@ -5234,6 +5234,12 @@ struct int_const_s const INT_CONST[] = {
 	{"KSM_SEVEN", KSM_SEVEN},
 	{"KSM_JACKPOT", KSM_JACKPOT},
 	{"KSM__MAX", KSM__MAX},
+	
+	// itemflags_t
+	{"IF_USERINGS", IF_USERINGS},
+	{"IF_ITEMOUT", IF_ITEMOUT},
+	{"IF_EGGMANOUT", IF_EGGMANOUT},
+	{"IF_HOLDREADY", IF_HOLDREADY},
 
 	// kartshields_t
 	{"KSHIELD_NONE",KSHIELD_NONE},
