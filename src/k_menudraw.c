@@ -3277,7 +3277,7 @@ void M_DrawCupSelect(void)
 
 	M_DrawCupTitle(120 - ty, &templevelsearch);
 
-	if (templevelsearch.timeattack)
+	if (templevelsearch.grandprix == false && templevelsearch.cup != NULL)
 	{
 		if (templevelsearch.cup != &dummy_lostandfound)
 		{
@@ -3291,56 +3291,83 @@ void M_DrawCupSelect(void)
 		// be violated by the long tail of modding. To those
 		// finding this eventually: I'M SORRY ~toast 221024
 
-		emblem_t *medal_array[CUPCACHE_MAX];
+		struct work_array_t {
+			emblem_t *medal;
+			UINT16 col;
+			UINT8 mapvisited;
+		} work_array[CUPCACHE_MAX];
+
+		boolean incj = false;
+		boolean showalternate = (skullAnimCounter & 4);
 
 		i = j = 0;
 
 		INT16 map = M_GetFirstLevelInList(&i, &templevelsearch);
 		emblem_t *emblem = NULL;
 
-		boolean incj;
-
 		while (map < nummapheaders && j < CUPCACHE_MAX)
 		{
 			if (map < basenummapheaders)
 			{
-				emblem = M_GetLevelEmblems(map+1);
-
-				medal_array[j] = NULL;
+				emblem = NULL;
 				incj = false;
 
-				while (emblem)
-				{
-					if (emblem->type == ET_TIME)
-					{
-						incj = true;
+				work_array[j].medal = NULL;
+				work_array[j].col = UINT16_MAX;
+				work_array[j].mapvisited = 0;
 
-						if (gamedata->collected[emblem-emblemlocations])
+				if (templevelsearch.timeattack)
+				{
+					emblem = M_GetLevelEmblems(map+1);
+
+					while (emblem)
+					{
+						if (emblem->type == ET_TIME)
 						{
-							if (!medal_array[j]
-							|| (
-								(medal_array[j]->type == ET_TIME)
-								&& (medal_array[j]->tag < emblem->tag)
-								)
-							)
+							incj = true;
+
+							if (gamedata->collected[emblem-emblemlocations])
 							{
-								medal_array[j] = emblem;
+								if (!work_array[j].medal
+								|| (
+									(work_array[j].medal->type == ET_TIME)
+									&& (work_array[j].medal->tag < emblem->tag)
+									)
+								)
+								{
+									work_array[j].medal = emblem;
+								}
 							}
 						}
-					}
-					else if ((emblem->type == ET_MAP)
-						&& (emblem->flags & ME_SPBATTACK))
-					{
-						incj = true;
-
-						if ((gamedata->collected[emblem-emblemlocations])
-						&& (skullAnimCounter & 2))
+						else if ((emblem->type == ET_MAP)
+							&& (emblem->flags & ME_SPBATTACK))
 						{
-							medal_array[j] = emblem;
+							incj = true;
+
+							if ((gamedata->collected[emblem-emblemlocations])
+							&& showalternate)
+							{
+								work_array[j].medal = emblem;
+							}
 						}
+
+						emblem = M_GetLevelEmblems(-1);
+					}
+				}
+				else
+				{
+					if (mapheaderinfo[map]->cache_spraycan < gamedata->numspraycans)
+					{
+						work_array[j].col = gamedata->spraycans[mapheaderinfo[map]->cache_spraycan].col;
+						incj = true;
 					}
 
-					emblem = M_GetLevelEmblems(-1);
+					if ((mapheaderinfo[map]->records.mapvisited & MV_MYSTICMELODY)
+						&& (incj == false || showalternate))
+					{
+						work_array[j].mapvisited |= MV_MYSTICMELODY;
+						incj = true;
+					}
 				}
 
 				if (incj)
@@ -3365,10 +3392,19 @@ void M_DrawCupSelect(void)
 
 			for (i = 0; i < j; i++)
 			{
-				if (medal_array[i])
+				if (work_array[i].medal)
 				{
-					V_DrawMappedPatch(x, y, 0, W_CachePatchName(M_GetEmblemPatch(medal_array[i], false), PU_CACHE),
-					R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(medal_array[i]), GTC_MENUCACHE));
+					V_DrawMappedPatch(x, y, 0, W_CachePatchName(M_GetEmblemPatch(work_array[i].medal, false), PU_CACHE),
+						R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(work_array[i].medal), GTC_MENUCACHE));
+				}
+				else if (work_array[i].mapvisited & MV_MYSTICMELODY)
+				{
+					V_DrawScaledPatch(x, y, 0, W_CachePatchName("GOTMEL", PU_CACHE));
+				}
+				else if (work_array[i].col < numskincolors)
+				{
+					V_DrawMappedPatch(x, y, 0, W_CachePatchName("GOTCAN", PU_CACHE),
+						R_GetTranslationColormap(TC_DEFAULT, work_array[i].col, GTC_MENUCACHE));
 				}
 				else
 				{
