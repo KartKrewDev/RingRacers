@@ -3417,7 +3417,7 @@ void M_DrawCupSelect(void)
 					{
 						// Need it!
 
-						V_DrawFill(x+3, y+3, 2, 2, 20);
+						V_DrawFill(x+3, y+3, 2, 2, 6);
 					}
 				}
 
