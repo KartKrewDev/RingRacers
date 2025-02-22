@@ -3294,11 +3294,10 @@ void M_DrawCupSelect(void)
 		struct work_array_t {
 			emblem_t *medal;
 			UINT16 col;
-			UINT8 mapvisited;
+			UINT16 dotcol;
 		} work_array[CUPCACHE_MAX];
 
 		boolean incj = false;
-		boolean showalternate = (skullAnimCounter & 4);
 
 		i = j = 0;
 
@@ -3313,8 +3312,7 @@ void M_DrawCupSelect(void)
 				incj = false;
 
 				work_array[j].medal = NULL;
-				work_array[j].col = UINT16_MAX;
-				work_array[j].mapvisited = 0;
+				work_array[j].col = work_array[j].dotcol = UINT16_MAX;
 
 				if (templevelsearch.timeattack)
 				{
@@ -3344,29 +3342,27 @@ void M_DrawCupSelect(void)
 						{
 							incj = true;
 
-							if ((gamedata->collected[emblem-emblemlocations])
-							&& showalternate)
+							if (gamedata->collected[emblem-emblemlocations])
 							{
-								work_array[j].medal = emblem;
+								work_array[j].dotcol = M_GetEmblemColor(emblem);
 							}
 						}
 
 						emblem = M_GetLevelEmblems(-1);
 					}
 				}
-				else
+				else if ((gamedata->gotspraycans > 0) && (mapheaderinfo[map]->typeoflevel & TOL_RACE))
 				{
+					incj = true;
+
 					if (mapheaderinfo[map]->cache_spraycan < gamedata->numspraycans)
 					{
 						work_array[j].col = gamedata->spraycans[mapheaderinfo[map]->cache_spraycan].col;
-						incj = true;
 					}
 
-					if ((mapheaderinfo[map]->records.mapvisited & MV_MYSTICMELODY)
-						&& (incj == false || showalternate))
+					if (mapheaderinfo[map]->records.mapvisited & MV_MYSTICMELODY)
 					{
-						work_array[j].mapvisited |= MV_MYSTICMELODY;
-						incj = true;
+						work_array[j].dotcol = SKINCOLOR_TURQUOISE;
 					}
 				}
 
@@ -3392,23 +3388,45 @@ void M_DrawCupSelect(void)
 
 			for (i = 0; i < j; i++)
 			{
-				if (work_array[i].medal)
+				if (templevelsearch.timeattack)
 				{
-					V_DrawMappedPatch(x, y, 0, W_CachePatchName(M_GetEmblemPatch(work_array[i].medal, false), PU_CACHE),
-						R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(work_array[i].medal), GTC_MENUCACHE));
-				}
-				else if (work_array[i].mapvisited & MV_MYSTICMELODY)
-				{
-					V_DrawScaledPatch(x, y, 0, W_CachePatchName("GOTMEL", PU_CACHE));
-				}
-				else if (work_array[i].col < numskincolors)
-				{
-					V_DrawMappedPatch(x, y, 0, W_CachePatchName("GOTCAN", PU_CACHE),
-						R_GetTranslationColormap(TC_DEFAULT, work_array[i].col, GTC_MENUCACHE));
+					if (work_array[i].medal)
+					{
+						// Primary Medal
+
+						V_DrawMappedPatch(x, y, 0, W_CachePatchName(M_GetEmblemPatch(work_array[i].medal, false), PU_CACHE),
+							R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(work_array[i].medal), GTC_MENUCACHE));
+					}
+					else
+					{
+						// Need it!
+
+						V_DrawScaledPatch(x, y, 0, W_CachePatchName("NEEDIT", PU_CACHE));
+					}
 				}
 				else
 				{
-					V_DrawScaledPatch(x, y, 0, W_CachePatchName("NEEDIT", PU_CACHE));
+					if (work_array[i].col < numskincolors)
+					{
+						// Spray Can
+
+						V_DrawMappedPatch(x, y, 0, W_CachePatchName("GOTCAN", PU_CACHE),
+							R_GetTranslationColormap(TC_DEFAULT, work_array[i].col, GTC_MENUCACHE));
+					}
+					else
+					{
+						// Need it!
+
+						V_DrawFill(x+3, y+3, 2, 2, 20);
+					}
+				}
+
+				if (work_array[i].dotcol < numskincolors)
+				{
+					// Bonus (Secondary Medal or Ancient Shrine)
+
+					V_DrawMappedPatch(x+4, y+7, 0, W_CachePatchName("COLORSP1", PU_CACHE),
+						R_GetTranslationColormap(TC_DEFAULT, work_array[i].dotcol, GTC_MENUCACHE));
 				}
 
 				x += 10;
