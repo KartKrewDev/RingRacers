@@ -519,23 +519,9 @@ void srb2::load_ng_gamedata()
 		gamedata->achieved[i] = js.conditionsets[i];
 	}
 
-	if (M_CheckParm("-resetchallengegrid"))
-	{
-		gamedata->challengegridwidth = 0;
-		if (gamedata->challengegrid)
-		{
-			Z_Free(gamedata->challengegrid);
-			gamedata->challengegrid = nullptr;
-		}
-	}
-	else
+	if (!M_CheckParm("-resetchallengegrid"))
 	{
 		gamedata->challengegridwidth = std::max(js.challengegrid.width, (uint32_t)0);
-		if (gamedata->challengegrid)
-		{
-			Z_Free(gamedata->challengegrid);
-			gamedata->challengegrid = nullptr;
-		}
 		if (gamedata->challengegridwidth)
 		{
 			gamedata->challengegrid = static_cast<uint16_t*>(Z_Malloc(
@@ -548,10 +534,6 @@ void srb2::load_ng_gamedata()
 			}
 
 			M_SanitiseChallengeGrid();
-		}
-		else
-		{
-			gamedata->challengegrid = nullptr;
 		}
 	}
 
@@ -666,10 +648,6 @@ void srb2::load_ng_gamedata()
 
 	gamedata->gotspraycans = 0;
 	gamedata->numspraycans = js.spraycans.size();
-	if (gamedata->spraycans)
-	{
-		Z_Free(gamedata->spraycans);
-	}
 	if (gamedata->numspraycans)
 	{
 		gamedata->spraycans = static_cast<candata_t*>(Z_Malloc(
@@ -730,10 +708,6 @@ void srb2::load_ng_gamedata()
 			mapheaderinfo[mapnum]->cache_spraycan = gamedata->gotspraycans;
 			gamedata->gotspraycans++;
 		}
-	}
-	else
-	{
-		gamedata->spraycans = nullptr;
 	}
 
 	for (auto& cuppair : js.cups)
