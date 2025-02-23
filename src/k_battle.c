@@ -105,6 +105,9 @@ void K_SpawnBattlePoints(player_t *source, player_t *victim, UINT8 amount)
 	if (!source || !source->mo)
 		return;
 
+	if (source->exiting)
+		return;
+
 	if (amount == 1)
 		st = S_BATTLEPOINT1A;
 	else if (amount == 2)
