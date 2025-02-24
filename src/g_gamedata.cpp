@@ -29,7 +29,9 @@
 namespace fs = std::filesystem;
 
 #define GD_VERSION_MAJOR (0xBA5ED321)
-#define GD_VERSION_MINOR (1)
+#define GD_VERSION_MINOR (2)
+
+#define GD_MINIMUM_SPRAYCANSV2 (2)
 
 void srb2::save_ng_gamedata()
 {
@@ -146,6 +148,18 @@ void srb2::save_ng_gamedata()
 		ng.skins[name] = std::move(skin);
 	}
 
+	for (int i = 0; i < gamedata->numspraycans; i++)
+	{
+		uint16_t col = gamedata->spraycans[i].col;
+
+		if (col >= SKINCOLOR_FIRSTFREESLOT)
+		{
+			col = SKINCOLOR_NONE;
+		}
+
+		ng.spraycans_v2.emplace_back(String(skincolors[col].name));
+	}
+
 	auto maptojson = [](recorddata_t *records)
 	{
 		srb2::GamedataMapJson map {};
@@ -167,6 +181,7 @@ void srb2::save_ng_gamedata()
 		map.stats.time.custom = records->modetimeplayed[GDGT_CUSTOM];
 		map.stats.time.timeattack = records->timeattacktimeplayed;
 		map.stats.time.spbattack = records->spbattacktimeplayed;
+		map.spraycan = records->spraycan;
 
 		return map;
 	};
@@ -182,38 +197,6 @@ void srb2::save_ng_gamedata()
 		auto map = maptojson(&unloadedmap->records);
 		srb2::String lumpname { unloadedmap->lumpname };
 		ng.maps[lumpname] = std::move(map);
-	}
-	for (int i = 0; i < gamedata->numspraycans; i++)
-	{
-		srb2::GamedataSprayCanJson spraycan {};
-
-		candata_t* can = &gamedata->spraycans[i];
-
-		if (can->col >= numskincolors)
-		{
-			continue;
-		}
-		spraycan.color = String(skincolors[can->col].name);
-
-		if (can->map == NEXTMAP_INVALID)
-		{
-			spraycan.map = "";
-			ng.spraycans.emplace_back(std::move(spraycan));
-			continue;
-		}
-
-		if (can->map >= nummapheaders)
-		{
-			continue;
-		}
-
-		mapheader_t* mapheader = mapheaderinfo[can->map];
-		if (!mapheader)
-		{
-			continue;
-		}
-		spraycan.map = String(mapheader->lumpname);
-		ng.spraycans.emplace_back(std::move(spraycan));
 	}
 
 	auto cuptojson = [](cupwindata_t *windata)
@@ -401,6 +384,7 @@ void srb2::load_ng_gamedata()
 	uint32_t majorversion;
 	uint8_t minorversion;
 	uint8_t dirty;
+	bool converted = false;
 	try
 	{
 		majorversion = srb2::io::read_uint32(bis);
@@ -591,6 +575,29 @@ void srb2::load_ng_gamedata()
 		}
 	}
 
+	std::vector<candata_t> tempcans;
+
+	for (auto& cancolor : js.spraycans_v2)
+	{
+		// Version 2 behaviour - spraycans_v2, not spraycans!
+
+		candata_t tempcan;
+		tempcan.col = SKINCOLOR_NONE;
+		tempcan.map = NEXTMAP_INVALID;
+
+		// Find the skin color index for the name
+		for (size_t i = 0; i < SKINCOLOR_FIRSTFREESLOT; i++)
+		{
+			if (cancolor != skincolors[i].name)
+				continue;
+
+			tempcan.col = i;
+			break;
+		}
+
+		tempcans.emplace_back(std::move(tempcan));
+	}
+
 	for (auto& mappair : js.maps)
 	{
 		UINT16 mapnum = G_MapNumber(mappair.first.c_str());
@@ -614,9 +621,20 @@ void srb2::load_ng_gamedata()
 		dummyrecord.timeattacktimeplayed = mappair.second.stats.time.timeattack;
 		dummyrecord.spbattacktimeplayed = mappair.second.stats.time.spbattack;
 
+		dummyrecord.spraycan = (minorversion >= GD_MINIMUM_SPRAYCANSV2)
+			? mappair.second.spraycan
+			: UINT16_MAX;
+
 		if (mapnum < nummapheaders && mapheaderinfo[mapnum])
 		{
 			// Valid mapheader, time to populate with record data.
+
+			// Infill Spray Can info
+			if (dummyrecord.spraycan < tempcans.size())
+			{
+				tempcans[dummyrecord.spraycan].map = mapnum;
+			}
+			dummyrecord.spraycan = UINT16_MAX; // We repopulate this later.
 
 			mapheaderinfo[mapnum]->records = dummyrecord;
 		}
@@ -641,72 +659,94 @@ void srb2::load_ng_gamedata()
 			unloadedmap->next = unloadedmapheaders;
 			unloadedmapheaders = unloadedmap;
 
+			// Invalidate can.
+			dummyrecord.spraycan = UINT16_MAX;
+
 			// Finally, copy into.
 			unloadedmap->records = dummyrecord;
 		}
 	}
 
-	gamedata->gotspraycans = 0;
-	gamedata->numspraycans = js.spraycans.size();
-	if (gamedata->numspraycans)
+	if ((minorversion < GD_MINIMUM_SPRAYCANSV2) && (js.spraycans.size() > 1))
 	{
-		gamedata->spraycans = static_cast<candata_t*>(Z_Malloc(
-			(gamedata->numspraycans * sizeof(candata_t)),
-			PU_STATIC, NULL));
+		// Deprecated behaviour! Look above for spraycans_v2 handling
 
-		for (size_t i = 0; i < gamedata->numspraycans; i++)
+		converted = true;
+
+		for (auto& deprecatedcan : js.spraycans)
 		{
-			auto& can = js.spraycans[i];
+			candata_t tempcan;
+			tempcan.col = SKINCOLOR_NONE;
 
 			// Find the skin color index for the name
-			bool foundcolor = false;
-			for (size_t j = 0; j < numskincolors; j++)
+			for (size_t i = 0; i < SKINCOLOR_FIRSTFREESLOT; i++)
 			{
-				if (can.color == skincolors[j].name)
-				{
-					gamedata->spraycans[i].col = j;
-					skincolors[j].cache_spraycan = i;
-					foundcolor = true;
-					break;
-				}
-			}
-			if (!foundcolor)
-			{
-				// Invalid color name? Ignore the spraycan
-				gamedata->numspraycans -= 1;
-				i -= 1;
-				continue;
-			}
+				if (deprecatedcan.color != skincolors[i].name)
+					continue;
 
-			gamedata->spraycans[i].map = NEXTMAP_INVALID;
+				tempcan.col = i;
+				break;
+			}
 
 			UINT16 mapnum = NEXTMAP_INVALID;
-			if (!can.map.empty())
+			if (!deprecatedcan.map.empty())
 			{
-				mapnum = G_MapNumber(can.map.c_str());
+				mapnum = G_MapNumber(deprecatedcan.map.c_str());
 			}
-			gamedata->spraycans[i].map = mapnum;
-			if (mapnum >= nummapheaders)
-			{
-				// Can has not been grabbed on any map, this is intentional.
+			tempcan.map = mapnum;
+
+			tempcans.emplace_back(std::move(tempcan));
+		}
+	}
+
+	{
+		// Post-process of Spray Cans - a component of both v1 and v2 spraycans behaviour
+
+		// Determine sizes.
+		for (auto& tempcan : tempcans)
+		{
+			if (tempcan.col == SKINCOLOR_NONE)
 				continue;
-			}
 
-			if (gamedata->gotspraycans != i)
-			{
-				//CONS_Printf("LOAD - Swapping gotten can %u, color %s with prior ungotten can %u\n", i, skincolors[col].name, gamedata->gotspraycans);
+			gamedata->numspraycans++;
 
-				// All grabbed cans should be at the head of the list.
-				// Let's swap with the can the disjoint occoured at.
-				// This will prevent a gap from occouring on reload.
-				candata_t copycan = gamedata->spraycans[gamedata->gotspraycans];
-				gamedata->spraycans[gamedata->gotspraycans] = gamedata->spraycans[i];
-				gamedata->spraycans[i] = copycan;
+			if (tempcan.map >= nummapheaders)
+				continue;
 
-				mapheaderinfo[copycan.map]->records.spraycan = i;
-			}
-			mapheaderinfo[mapnum]->records.spraycan = gamedata->gotspraycans;
 			gamedata->gotspraycans++;
+		}
+
+		if (gamedata->numspraycans)
+		{
+			// Arrange with collected first
+			std::stable_sort(tempcans.begin(), tempcans.end(), [ ]( auto& lhs, auto& rhs )
+			{
+			   return (rhs.map >= basenummapheaders && lhs.map < basenummapheaders);
+			});
+
+			gamedata->spraycans = static_cast<candata_t*>(Z_Malloc(
+				(gamedata->numspraycans * sizeof(candata_t)),
+				PU_STATIC, NULL));
+
+			// Finally, fill can data.
+			size_t i = 0;
+			for (auto& tempcan : tempcans)
+			{
+				if (tempcan.col == SKINCOLOR_NONE)
+					continue;
+
+				skincolors[tempcan.col].cache_spraycan = i;
+
+				if (tempcan.map < nummapheaders)
+					mapheaderinfo[tempcan.map]->records.spraycan = i;
+
+				gamedata->spraycans[i] = tempcan;
+
+				if (++i < gamedata->numspraycans)
+					continue;
+
+				break;
+			}
 		}
 	}
 
@@ -812,7 +852,6 @@ void srb2::load_ng_gamedata()
 		}
 	}
 
-	bool converted = false;
 	UINT32 chao_key_rounds = GDCONVERT_ROUNDSTOKEY;
 	UINT32 start_keys = GDINIT_CHAOKEYS;
 
