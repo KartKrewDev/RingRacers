@@ -1913,7 +1913,7 @@ bool CallFunc_GetGrabbedSprayCan(ACSVM::Thread *thread, const ACSVM::Word *argV,
 	&& gamemap-1 < basenummapheaders)
 	{
 		// See also P_SprayCanInit
-		UINT16 can_id = mapheaderinfo[gamemap-1]->cache_spraycan;
+		UINT16 can_id = mapheaderinfo[gamemap-1]->records.spraycan;
 
 		if (can_id < gamedata->numspraycans)
 		{

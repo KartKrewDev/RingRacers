@@ -3358,9 +3358,9 @@ void M_DrawCupSelect(void)
 				{
 					incj = true;
 
-					if (mapheaderinfo[map]->cache_spraycan < gamedata->numspraycans)
+					if (mapheaderinfo[map]->records.spraycan < gamedata->numspraycans)
 					{
-						work_array[j].col = gamedata->spraycans[mapheaderinfo[map]->cache_spraycan].col;
+						work_array[j].col = gamedata->spraycans[mapheaderinfo[map]->records.spraycan].col;
 					}
 
 					if (mapheaderinfo[map]->records.mapvisited & MV_MYSTICMELODY)
@@ -8324,9 +8324,9 @@ static INT32 M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y, boolean allowtime, 
 	if (hasmedals)
 		x -= 4;
 
-	if (mapheaderinfo[mapnum]->cache_spraycan < gamedata->numspraycans)
+	if (mapheaderinfo[mapnum]->records.spraycan < gamedata->numspraycans)
 	{
-		UINT16 col = gamedata->spraycans[mapheaderinfo[mapnum]->cache_spraycan].col;
+		UINT16 col = gamedata->spraycans[mapheaderinfo[mapnum]->records.spraycan].col;
 
 		if (draw && col < numskincolors)
 		{

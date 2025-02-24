@@ -703,9 +703,9 @@ void srb2::load_ng_gamedata()
 				gamedata->spraycans[gamedata->gotspraycans] = gamedata->spraycans[i];
 				gamedata->spraycans[i] = copycan;
 
-				mapheaderinfo[copycan.map]->cache_spraycan = i;
+				mapheaderinfo[copycan.map]->records.spraycan = i;
 			}
-			mapheaderinfo[mapnum]->cache_spraycan = gamedata->gotspraycans;
+			mapheaderinfo[mapnum]->records.spraycan = gamedata->gotspraycans;
 			gamedata->gotspraycans++;
 		}
 	}

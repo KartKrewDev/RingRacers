@@ -12915,7 +12915,7 @@ static boolean P_SetupEmblem(mapthing_t *mthing, mobj_t *mobj)
 void P_SprayCanInit(mobj_t* mobj)
 {
 	// See also P_TouchSpecialThing
-	UINT16 can_id = mapheaderinfo[gamemap-1]->cache_spraycan;
+	UINT16 can_id = mapheaderinfo[gamemap-1]->records.spraycan;
 
 	if (can_id < gamedata->numspraycans)
 	{

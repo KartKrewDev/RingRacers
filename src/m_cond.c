@@ -743,8 +743,7 @@ void M_ClearSecrets(void)
 			continue;
 
 		mapheaderinfo[i]->records.mapvisited = 0;
-
-		mapheaderinfo[i]->cache_spraycan = UINT16_MAX;
+		mapheaderinfo[i]->records.spraycan = UINT16_MAX;
 
 		mapheaderinfo[i]->cache_maplock = MAXUNLOCKABLES;
 

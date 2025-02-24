@@ -164,9 +164,10 @@ struct recordtimes_t
 
 struct recorddata_t
 {
-	UINT8 mapvisited;
+	UINT8 mapvisited; ///< Generalised flags
 	recordtimes_t timeattack; ///< Best times for Time Attack
 	recordtimes_t spbattack; ///< Best times for SPB Attack
+	UINT16 spraycan; ///< Associated spraycan id
 	UINT32 timeplayed;
 	UINT32 netgametimeplayed;
 	UINT32 modetimeplayed[GDGT_MAX];
@@ -575,7 +576,6 @@ struct mapheader_t
 	mobjtype_t destroyforchallenge[MAXDESTRUCTIBLES];	///< Assistive for UCRP_MAPDESTROYOBJECTS
 	UINT8 destroyforchallenge_size;						///< Number for above
 
-	UINT16 cache_spraycan;				///< Cached Spraycan ID
 	UINT16 cache_maplock;				///< Cached Unlockable ID
 
 	// Lua information

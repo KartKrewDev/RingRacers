@@ -779,7 +779,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				}
 
 				// See also P_SprayCanInit
-				UINT16 can_id = mapheaderinfo[gamemap-1]->cache_spraycan;
+				UINT16 can_id = mapheaderinfo[gamemap-1]->records.spraycan;
 
 				if (can_id < gamedata->numspraycans)
 				{
@@ -821,7 +821,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				if (gamedata->spraycans[can_id].map >= nummapheaders)
 				{
 					gamedata->spraycans[can_id].map = gamemap-1;
-					mapheaderinfo[gamemap-1]->cache_spraycan = can_id;
+					mapheaderinfo[gamemap-1]->records.spraycan = can_id;
 
 					if (gamedata->gotspraycans == 0
 					&& gametype == GT_TUTORIAL
