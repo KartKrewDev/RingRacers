@@ -3315,7 +3315,7 @@ void M_DrawCupSelect(void)
 				incj = false;
 
 				work_array[j].medal = NULL;
-				work_array[j].col = work_array[j].dotcol = UINT16_MAX;
+				work_array[j].col = work_array[j].dotcol = MCAN_INVALID;
 
 				if (templevelsearch.timeattack)
 				{
@@ -3354,11 +3354,15 @@ void M_DrawCupSelect(void)
 						emblem = M_GetLevelEmblems(-1);
 					}
 				}
-				else if ((gamedata->gotspraycans > 0) && (mapheaderinfo[map]->typeoflevel & TOL_RACE))
+				else if (mapheaderinfo[map]->typeoflevel & TOL_RACE)
 				{
 					incj = true;
 
-					if (mapheaderinfo[map]->records.spraycan < gamedata->numspraycans)
+					if (mapheaderinfo[map]->records.spraycan == MCAN_BONUS)
+					{
+						work_array[j].col = MCAN_BONUS;
+					}
+					else if (mapheaderinfo[map]->records.spraycan < gamedata->numspraycans)
 					{
 						work_array[j].col = gamedata->spraycans[mapheaderinfo[map]->records.spraycan].col;
 					}
@@ -3409,7 +3413,13 @@ void M_DrawCupSelect(void)
 				}
 				else
 				{
-					if (work_array[i].col < numskincolors)
+					if (work_array[i].col == MCAN_BONUS)
+					{
+						// Bonus in place of Spray Can
+
+						V_DrawScaledPatch(x, y, 0, W_CachePatchName("GOTBON", PU_CACHE));
+					}
+					else if (work_array[i].col < numskincolors)
 					{
 						// Spray Can
 
@@ -8324,7 +8334,14 @@ static INT32 M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y, boolean allowtime, 
 	if (hasmedals)
 		x -= 4;
 
-	if (mapheaderinfo[mapnum]->records.spraycan < gamedata->numspraycans)
+	if (mapheaderinfo[mapnum]->records.spraycan == MCAN_BONUS)
+	{
+		if (draw)
+			V_DrawScaledPatch(x, y, 0, W_CachePatchName("GOTBON", PU_CACHE));
+
+		x -= 8;
+	}
+	else if (mapheaderinfo[mapnum]->records.spraycan < gamedata->numspraycans)
 	{
 		UINT16 col = gamedata->spraycans[mapheaderinfo[mapnum]->records.spraycan].col;
 
@@ -8374,10 +8391,17 @@ static void M_DrawStatsMaps(void)
 	if (gamedata->numspraycans)
 	{
 		medalspos = 30 + V_ThinStringWidth(medalcountstr, 0);
-		medalcountstr = va("x %d/%d", gamedata->gotspraycans, gamedata->numspraycans);
+		medalcountstr = va("x %d/%d", gamedata->gotspraycans + statisticsmenu.numcanbonus, gamedata->numspraycans);
 		V_DrawThinString(20 + medalspos, 60, 0, medalcountstr);
 		V_DrawMappedPatch(10 + medalspos, 60, 0, W_CachePatchName("GOTCAN", PU_CACHE),
 										   R_GetTranslationColormap(TC_DEFAULT, gamedata->spraycans[0].col, GTC_MENUCACHE));
+	}
+	else if (statisticsmenu.numcanbonus)
+	{
+		medalspos = 30 + V_ThinStringWidth(medalcountstr, 0);
+		medalcountstr = va("x %d", statisticsmenu.numcanbonus);
+		V_DrawThinString(20 + medalspos, 60, 0, medalcountstr);
+		V_DrawScaledPatch(10 + medalspos, 60, 0, W_CachePatchName("GOTBON", PU_CACHE));
 	}
 
 	medalspos = BASEVIDWIDTH - 20;

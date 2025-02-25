@@ -1486,6 +1486,7 @@ extern struct statisticsmenu_s {
 	INT32 gotmedals;
 	INT32 nummedals;
 	INT32 numextramedals;
+	INT32 numcanbonus;
 	UINT32 statgridplayed[9][9];
 	INT32 maxscroll;
 	UINT16 *maplist;

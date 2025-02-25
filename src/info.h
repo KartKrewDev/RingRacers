@@ -589,6 +589,7 @@ typedef enum sprite
 	SPR_BSPH, // Sphere
 	SPR_EMBM,
 	SPR_SPCN, // Spray Can
+	SPR_SBON, // Spray Can replacement bonus
 	SPR_MMSH, // Ancient Shrine
 	SPR_MORB, // One Morbillion
 	SPR_EMRC, // Chaos Emeralds

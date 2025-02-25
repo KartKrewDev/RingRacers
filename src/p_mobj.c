@@ -12917,7 +12917,7 @@ void P_SprayCanInit(mobj_t* mobj)
 	// See also P_TouchSpecialThing
 	UINT16 can_id = mapheaderinfo[gamemap-1]->records.spraycan;
 
-	if (can_id < gamedata->numspraycans)
+	if (can_id < gamedata->numspraycans || can_id == MCAN_BONUS)
 	{
 		// Assigned to this level, has been grabbed
 		mobj->renderflags = (tr_trans50 << RF_TRANSSHIFT);
@@ -12925,19 +12925,38 @@ void P_SprayCanInit(mobj_t* mobj)
 	// Prevent footguns - these won't persist when custom levels are unloaded
 	else if (gamemap-1 < basenummapheaders)
 	{
-		// Unassigned, get the next grabbable colour (offset by threshold)
-		can_id = gamedata->gotspraycans;
+		if (gamedata->gotspraycans >= gamedata->numspraycans)
+		{
+			can_id = MCAN_BONUS;
+		}
+		else
+		{
+			// Unassigned, get the next grabbable colour (offset by threshold)
+			can_id = gamedata->gotspraycans;
 
-		// It's ok if this goes over gamedata->numspraycans, as they're
-		// capped below in this func... but NEVER let this go backwards!!
-		if (mobj->threshold != 0)
-			can_id += (mobj->threshold & UINT8_MAX);
+			// It's ok if this goes over gamedata->numspraycans, as they're
+			// capped below in this func... but NEVER let this go backwards!!
+			if (mobj->threshold != 0)
+				can_id += (mobj->threshold & UINT8_MAX);
+		}
 
 		mobj->renderflags = 0;
 	}
-
-	if (can_id < gamedata->numspraycans)
+	else
 	{
+		// Custom course, bonus only
+		can_id = MCAN_BONUS;
+	}
+
+	if (can_id == MCAN_BONUS && mobj->threshold == 0)
+	{
+		// Only one bonus possible
+		// We modify sprite instead of state for netsync reasons
+		mobj->sprite = SPR_SBON;
+	}
+	else if (can_id < gamedata->numspraycans)
+	{
+		mobj->sprite = mobj->state->sprite;
 		mobj->color = gamedata->spraycans[can_id].col;
 	}
 	else

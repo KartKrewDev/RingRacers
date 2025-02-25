@@ -1915,6 +1915,7 @@ bool CallFunc_GetGrabbedSprayCan(ACSVM::Thread *thread, const ACSVM::Word *argV,
 		// See also P_SprayCanInit
 		UINT16 can_id = mapheaderinfo[gamemap-1]->records.spraycan;
 
+		// Intentionally not affected by MCAN_BONUS
 		if (can_id < gamedata->numspraycans)
 		{
 			UINT16 col = gamedata->spraycans[can_id].col;

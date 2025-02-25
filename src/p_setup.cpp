@@ -498,7 +498,7 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 #endif
 
 	memset(&mapheaderinfo[num]->records, 0, sizeof(recorddata_t));
-	mapheaderinfo[num]->records.spraycan = UINT16_MAX;
+	mapheaderinfo[num]->records.spraycan = MCAN_INVALID;
 
 	mapheaderinfo[num]->justPlayed = 0;
 	mapheaderinfo[num]->anger = 0;

@@ -607,7 +607,7 @@ void srb2::load_ng_gamedata()
 
 	for (auto& mappair : js.maps)
 	{
-		UINT16 mapnum = G_MapNumber(mappair.first.c_str());
+		uint16_t mapnum = G_MapNumber(mappair.first.c_str());
 		recorddata_t dummyrecord {};
 		dummyrecord.mapvisited |= mappair.second.visited.visited ? MV_VISITED : 0;
 		dummyrecord.mapvisited |= mappair.second.visited.beaten ? MV_BEATEN : 0;
@@ -630,24 +630,35 @@ void srb2::load_ng_gamedata()
 
 		dummyrecord.spraycan = (minorversion >= GD_MINIMUM_SPRAYCANSV2)
 			? mappair.second.spraycan
-			: UINT16_MAX;
+			: MCAN_INVALID;
 
 		if (mapnum < nummapheaders && mapheaderinfo[mapnum])
 		{
 			// Valid mapheader, time to populate with record data.
 
 			// Infill Spray Can info
-			if (dummyrecord.spraycan < tempcans.size())
+			if (
+				dummyrecord.spraycan < tempcans.size()
+				&& (mapnum < basenummapheaders)
+				&& (tempcans[dummyrecord.spraycan].map >= basenummapheaders)
+			)
 			{
+				// Assign map ID.
 				tempcans[dummyrecord.spraycan].map = mapnum;
 			}
-			dummyrecord.spraycan = UINT16_MAX; // We repopulate this later.
+
+			if (dummyrecord.spraycan != MCAN_INVALID)
+			{
+				// Yes, even if it's valid. We reassign later.
+				dummyrecord.spraycan = MCAN_BONUS;
+			}
 
 			mapheaderinfo[mapnum]->records = dummyrecord;
 		}
 		else if (dummyrecord.mapvisited & MV_BEATEN
 		|| dummyrecord.timeattack.time != 0 || dummyrecord.timeattack.lap != 0
-		|| dummyrecord.spbattack.time != 0 || dummyrecord.spbattack.lap != 0)
+		|| dummyrecord.spbattack.time != 0 || dummyrecord.spbattack.lap != 0
+		|| dummyrecord.spraycan != MCAN_INVALID)
 		{
 			// Invalid, but we don't want to lose all the juicy statistics.
 			// Instead, update a FILO linked list of "unloaded mapheaders".
@@ -666,8 +677,11 @@ void srb2::load_ng_gamedata()
 			unloadedmap->next = unloadedmapheaders;
 			unloadedmapheaders = unloadedmap;
 
-			// Invalidate can.
-			dummyrecord.spraycan = UINT16_MAX;
+			if (dummyrecord.spraycan != MCAN_INVALID)
+			{
+				// Invalidate non-bonus spraycans.
+				dummyrecord.spraycan = MCAN_BONUS;
+			}
 
 			// Finally, copy into.
 			unloadedmap->records = dummyrecord;
@@ -744,7 +758,7 @@ void srb2::load_ng_gamedata()
 
 				skincolors[tempcan.col].cache_spraycan = i;
 
-				if (tempcan.map < nummapheaders)
+				if (tempcan.map < basenummapheaders)
 					mapheaderinfo[tempcan.map]->records.spraycan = i;
 
 				gamedata->spraycans[i] = tempcan;

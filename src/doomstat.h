@@ -156,6 +156,9 @@ struct skinreference_t
 #define MV_MYSTICMELODY		(1<<4)
 #define MV_MAX          	(MV_VISITED|MV_BEATEN|MV_ENCORE|MV_SPBATTACK|MV_MYSTICMELODY)
 
+#define MCAN_INVALID		(UINT16_MAX)
+#define MCAN_BONUS			(UINT16_MAX-1)
+
 struct recordtimes_t
 {
 	tic_t time; ///< Time in which the level was finished.

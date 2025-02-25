@@ -781,13 +781,25 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				// See also P_SprayCanInit
 				UINT16 can_id = mapheaderinfo[gamemap-1]->records.spraycan;
 
-				if (can_id < gamedata->numspraycans)
+				if (can_id < gamedata->numspraycans || can_id == MCAN_BONUS)
 				{
 					// Assigned to this level, has been grabbed
 					return;
 				}
-				// Prevent footguns - these won't persist when custom levels are unloaded
-				else if (gamemap-1 < basenummapheaders)
+
+				if (
+					(gamemap-1 >= basenummapheaders)
+					|| (gamedata->gotspraycans >= gamedata->numspraycans)
+				)
+				{
+					// Custom course OR we ran out of assignables.
+
+					if (special->threshold != 0)
+						return;
+
+					can_id = MCAN_BONUS;
+				}
+				else
 				{
 					// Unassigned, get the next grabbable colour
 					can_id = gamedata->gotspraycans;
@@ -810,18 +822,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 						skincolors[swapcol].cache_spraycan = can_id;
 					}
 
-				}
-
-				if (can_id >= gamedata->numspraycans)
-				{
-					// We've exhausted all the spraycans to grab.
-					return;
-				}
-
-				if (gamedata->spraycans[can_id].map >= nummapheaders)
-				{
 					gamedata->spraycans[can_id].map = gamemap-1;
-					mapheaderinfo[gamemap-1]->records.spraycan = can_id;
 
 					if (gamedata->gotspraycans == 0
 					&& gametype == GT_TUTORIAL
@@ -837,11 +838,13 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 					}
 
 					gamedata->gotspraycans++;
-
-					if (!M_UpdateUnlockablesAndExtraEmblems(true, true))
-						S_StartSound(NULL, sfx_ncitem);
-					gamedata->deferredsave = true;
 				}
+
+				mapheaderinfo[gamemap-1]->records.spraycan = can_id;
+
+				if (!M_UpdateUnlockablesAndExtraEmblems(true, true))
+					S_StartSound(NULL, sfx_ncitem);
+				gamedata->deferredsave = true;
 
 				{
 					mobj_t *canmo = NULL;

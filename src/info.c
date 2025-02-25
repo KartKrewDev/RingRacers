@@ -50,6 +50,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"BSPH", // Sphere
 	"EMBM",
 	"SPCN", // Spray Can
+	"SBON", // Spray Can replacement bonus
 	"MMSH", // Ancient Shrine
 	"MORB", // One Morbillion
 	"EMRC", // Chaos Emeralds
