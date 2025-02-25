@@ -503,7 +503,9 @@ void srb2::load_ng_gamedata()
 		gamedata->achieved[i] = js.conditionsets[i];
 	}
 
+#ifdef DEVELOP
 	if (!M_CheckParm("-resetchallengegrid"))
+#endif
 	{
 		gamedata->challengegridwidth = std::max(js.challengegrid.width, (uint32_t)0);
 		if (gamedata->challengegridwidth)
@@ -577,6 +579,11 @@ void srb2::load_ng_gamedata()
 
 	std::vector<candata_t> tempcans;
 
+#ifdef DEVELOP
+	if (M_CheckParm("-resetspraycans"))
+		;
+	else
+#endif
 	for (auto& cancolor : js.spraycans_v2)
 	{
 		// Version 2 behaviour - spraycans_v2, not spraycans!
