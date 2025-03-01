@@ -1105,7 +1105,7 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->spriteyoffset = mobj->spriteyoffset;
 
 	if (mobj->flags2 & MF2_OBJECTFLIP)
-		ghost->flags |= MF2_OBJECTFLIP;
+		ghost->flags2 |= MF2_OBJECTFLIP;
 
 	if (!(mobj->flags & MF_DONTENCOREMAP))
 		ghost->flags &= ~MF_DONTENCOREMAP;
