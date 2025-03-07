@@ -727,7 +727,7 @@ static void K_DropDashWait(player_t *player)
 		return;
 
 	// if player got trapped inside a ubble but lost its bubble object in a unintended way, remove no gravity flag
-	if ((P_MobjWasRemoved(player->bubbletrap) && player->gotbubbletrapped == true) && (player->mo->flags & MF_NOGRAVITY)
+	if ((P_MobjWasRemoved(player->bubbletrap) && player->gotbubbletrapped == true) && (player->mo->flags & MF_NOGRAVITY))
 	{
 		player->mo->flags &= ~MF_NOGRAVITY;
 	}
