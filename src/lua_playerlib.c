@@ -430,6 +430,10 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->bubblecool);
 	else if (fastcmp(field,"bubbleblowup"))
 		lua_pushinteger(L, plr->bubbleblowup);
+	else if (fastcmp(field,"bubbletrap"))
+		LUA_PushUserdata(L, plr->bubbletrap, META_MOBJ);
+	else if (fastcmp(field,"gotbubbletrapped"))
+		lua_pushboolean(L, plr->gotbubbletrapped);
 	else if (fastcmp(field,"flamedash"))
 		lua_pushinteger(L, plr->flamedash);
 	else if (fastcmp(field,"counterdash"))
@@ -994,6 +998,15 @@ static int player_set(lua_State *L)
 		plr->bubblecool = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"bubbleblowup"))
 		plr->bubbleblowup = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"bubbletrap"))
+	{
+		mobj_t *mo = NULL;
+		if (!lua_isnil(L, 3))
+			mo = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
+		P_SetTarget(&plr->bubbletrap, mo);
+	}
+	else if (fastcmp(field,"gotbubbletrapped"))
+		plr->gotbubbletrapped = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"flamedash"))
 		plr->flamedash = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"counterdash"))
