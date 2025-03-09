@@ -4551,7 +4551,7 @@ void P_PlayerThink(player_t *player)
 	}
 
 	// tic down the var normaly and remove the flag upon respawn so its guaranteed to be removed from the player
-	if (!player->nocontrol && player->respawn.state == RESPAWNST_DROP && (player->pflags & PF_FAULT))
+	if (!player->nocontrol && !player->respawn.timer && player->respawn.state == RESPAWNST_DROP &&  (player->pflags & PF_FAULT))
 	{
 		player->pflags &= ~PF_FAULT;
 		player->mo->renderflags &= ~RF_DONTDRAW;
