@@ -13,7 +13,6 @@ Debian stable:amd64:
   variables:
     CC: x86_64-linux-gnu-gcc
     CXX: x86_64-linux-gnu-g++
-    LDFLAGS: -Wl,-fuse-ld=gold
     OBJCOPY: x86_64-linux-gnu-objcopy
     OBJDUMP: x86_64-linux-gnu-objdump
     PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
@@ -32,7 +31,7 @@ Debian stable:amd64:
     - - |
           # apt_development
           echo -e "\e[0Ksection_start:`date +%s`:apt_development[collapsed=true]\r\e[0KInstalling development packages"
-      - apt-get install libsdl2-mixer-dev:amd64 libpng-dev:amd64 libcurl4-openssl-dev:amd64 libgme-dev:amd64 libopenmpt-dev:amd64 libminiupnpc-dev:amd64
+      - apt-get install libsdl2-dev:amd64 libpng-dev:amd64 libcurl4-openssl-dev:amd64 libyuv-dev:amd64 libminiupnpc-dev:amd64
       - |
           # apt_development
           echo -e "\e[0Ksection_end:`date +%s`:apt_development\r\e[0K"
@@ -41,10 +40,10 @@ Debian stable:amd64:
           # cmake
           echo -e "\e[0Ksection_start:`date +%s`:cmake[collapsed=false]\r\e[0KBuilding Makefiles"
       - |
-          CCACHE=$(which ccache)
-          cmake -B build.cmake \
-            -DCMAKE_C_COMPILER_LAUNCHER=$CCACHE \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=$CCACHE \
+          cmake \
+            --preset ninja-debug \
+            -B build.cmake \
+            -G "Unix Makefiles" \
             -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF
       - |
           # cmake
@@ -53,7 +52,7 @@ Debian stable:amd64:
     - - |
           # make
           echo -e "\e[0Ksection_start:`date +%s`:make[collapsed=false]\r\e[0KCompiling SRB2"
-      - cmake --build build.cmake --parallel 1 --verbose
+      - cmake --build build.cmake --parallel 1 --verbose -- --keep-going
       - |
           # make
           echo -e "\e[0Ksection_end:`date +%s`:make\r\e[0K"

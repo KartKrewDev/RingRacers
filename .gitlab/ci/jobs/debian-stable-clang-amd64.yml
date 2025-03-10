@@ -3,9 +3,9 @@ Debian stable Clang:
 
   stage: build
 
-  when: manual
+  when: on_success
 
-  allow_failure: true
+  allow_failure: false
 
   artifacts:
     paths:
@@ -16,10 +16,9 @@ Debian stable Clang:
 
   variables:
     CC: clang
-    CXX: clang
-    WFLAGS: -Wno-cast-align -Wno-implicit-const-int-float-conversion -Werror
-    CFLAGS: -Wno-cast-align -Wno-implicit-const-int-float-conversion -Werror
-    LDFLAGS: -Wl,-fuse-ld=gold
+    CXX: clang++
+    WFLAGS: -Wno-cast-align -Wno-implicit-const-int-float-conversion -Wno-error=parentheses-equality -Wno-error=misleading-indentation -Wno-error=fortify-source -Werror
+    CFLAGS: -Wno-cast-align -Wno-implicit-const-int-float-conversion -Wno-error=parentheses-equality -Wno-error=misleading-indentation -Wno-error=fortify-source -Werror
 
   script:
     - - |
@@ -33,7 +32,7 @@ Debian stable Clang:
     - - |
           # apt_development
           echo -e "\e[0Ksection_start:`date +%s`:apt_development[collapsed=true]\r\e[0KInstalling development packages"
-      - apt-get install libsdl2-mixer-dev libpng-dev libcurl4-openssl-dev libgme-dev libopenmpt-dev libminiupnpc-dev
+      - apt-get install libsdl2-dev libpng-dev libcurl4-openssl-dev libyuv-dev libminiupnpc-dev
       - |
           # apt_development
           echo -e "\e[0Ksection_end:`date +%s`:apt_development\r\e[0K"
@@ -41,7 +40,15 @@ Debian stable Clang:
     - - |
           # cmake
           echo -e "\e[0Ksection_start:`date +%s`:cmake[collapsed=false]\r\e[0KBuilding Makefiles"
-      - cmake -B build.cmake -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF
+      - |
+          cmake \
+            --preset ninja-debug \
+            -B build.cmake \
+            -G "Unix Makefiles" \
+            -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF \
+            -DCPM_USE_LOCAL_PACKAGES:BOOL=ON \
+            -DSRB2_CONFIG_ENABLE_TESTS:BOOL=OFF \
+            -DSRB2_CONFIG_SYSTEM_LIBRARIES:BOOL=ON
       - |
           # cmake
           echo -e "\e[0Ksection_end:`date +%s`:cmake\r\e[0K"
@@ -49,7 +56,7 @@ Debian stable Clang:
     - - |
           # make
           echo -e "\e[0Ksection_start:`date +%s`:make[collapsed=false]\r\e[0KCompiling SRB2"
-      - cmake --build build.cmake --parallel 1 --verbose
+      - cmake --build build.cmake --parallel 1 --verbose -- --keep-going
       - |
           # make
           echo -e "\e[0Ksection_end:`date +%s`:make\r\e[0K"
