@@ -101,88 +101,113 @@
 			"name": "ninja-debug",
 			"hidden": false,
 			"binaryDir": "build/${presetName}",
-			"inherits": ["__debug", "__ninja"]
+			"inherits": [ "__debug", "__ninja" ]
 		},
 		{
 			"name": "ninja-develop",
 			"hidden": false,
 			"binaryDir": "build/${presetName}",
-			"inherits": ["__develop", "__ninja"]
+			"inherits": [ "__develop", "__ninja" ]
 		},
 		{
 			"name": "ninja-release",
 			"hidden": false,
 			"binaryDir": "build/${presetName}",
-			"inherits": ["__release", "__ninja"]
+			"inherits": [ "__release", "__ninja" ]
 		},
 		{
 			"name": "ninja-testers",
 			"hidden": false,
 			"binaryDir": "build/${presetName}",
-			"inherits": ["__testers", "__ninja"]
+			"inherits": [ "__testers", "__ninja" ]
+		},
+
+		{
+			"name": "ninja-vcpkg-debug",
+			"hidden": false,
+			"binaryDir": "build/${presetName}",
+			"inherits": [ "__debug", "__ninja", "__vcpkg-toolchain" ]
+		},
+		{
+			"name": "ninja-vcpkg-develop",
+			"hidden": false,
+			"binaryDir": "build/${presetName}",
+			"inherits": [ "__develop", "__ninja", "__vcpkg-toolchain" ]
+		},
+		{
+			"name": "ninja-vcpkg-release",
+			"hidden": false,
+			"binaryDir": "build/${presetName}",
+			"inherits": [ "__release", "__ninja", "__vcpkg-toolchain" ]
+		},
+		{
+			"name": "ninja-vcpkg-testers",
+			"hidden": false,
+			"binaryDir": "build/${presetName}",
+			"inherits": [ "__testers", "__ninja", "__vcpkg-toolchain" ]
 		},
 
 		{
 			"name": "ninja-x86_mingw_static_vcpkg-debug",
 			"hidden": false,
 			"binaryDir": "build/${presetName}",
-			"inherits": ["__debug", "__compiler-mingw-w64-i686", "__ninja", "__vcpkg-toolchain", "__mingw-static"]
+			"inherits": [ "__debug", "__compiler-mingw-w64-i686", "__ninja", "__vcpkg-toolchain", "__mingw-static" ]
 		},
 		{
 			"name": "ninja-x86_mingw_static_vcpkg-develop",
 			"hidden": false,
 			"binaryDir": "build/${presetName}",
-			"inherits": ["__develop", "__compiler-mingw-w64-i686", "__ninja", "__vcpkg-toolchain", "__mingw-static"]
+			"inherits": [ "__develop", "__compiler-mingw-w64-i686", "__ninja", "__vcpkg-toolchain", "__mingw-static" ]
 		},
 		{
 			"name": "ninja-x86_mingw_static_vcpkg-release",
 			"hidden": false,
 			"binaryDir": "build/${presetName}",
-			"inherits": ["__release", "__compiler-mingw-w64-i686", "__ninja", "__vcpkg-toolchain", "__mingw-static"]
+			"inherits": [ "__release", "__compiler-mingw-w64-i686", "__ninja", "__vcpkg-toolchain", "__mingw-static" ]
 		},
 		{
 			"name": "ninja-x86_mingw_static_vcpkg-testers",
 			"hidden": false,
 			"binaryDir": "build/${presetName}",
-			"inherits": ["__testers", "__compiler-mingw-w64-i686", "__ninja", "__vcpkg-toolchain", "__mingw-static"]
+			"inherits": [ "__testers", "__compiler-mingw-w64-i686", "__ninja", "__vcpkg-toolchain", "__mingw-static" ]
 		},
 
 		{
 			"name": "ninja-x64_osx_vcpkg-debug",
 			"hidden": false,
 			"binaryDir": "build/${presetName}",
-			"inherits": ["__debug", "__ninja", "__vcpkg-toolchain", "__osx_x64"]
+			"inherits": [ "__debug", "__ninja", "__vcpkg-toolchain", "__osx_x64" ]
 		},
 		{
 			"name": "ninja-x64_osx_vcpkg-develop",
 			"hidden": false,
 			"binaryDir": "build/${presetName}",
-			"inherits": ["__develop", "__ninja", "__vcpkg-toolchain", "__osx_x64"]
+			"inherits": [ "__develop", "__ninja", "__vcpkg-toolchain", "__osx_x64" ]
 		},
 		{
 			"name": "ninja-x64_osx_vcpkg-release",
 			"hidden": false,
 			"binaryDir": "build/${presetName}",
-			"inherits": ["__release", "__ninja", "__vcpkg-toolchain", "__osx_x64"]
+			"inherits": [ "__release", "__ninja", "__vcpkg-toolchain", "__osx_x64" ]
 		},
 
 		{
 			"name": "ninja-arm64_osx_vcpkg-debug",
 			"hidden": false,
 			"binaryDir": "build/${presetName}",
-			"inherits": ["__debug", "__ninja", "__vcpkg-toolchain", "__osx_arm64"]
+			"inherits": [ "__debug", "__ninja", "__vcpkg-toolchain", "__osx_arm64" ]
 		},
 		{
 			"name": "ninja-arm64_osx_vcpkg-develop",
 			"hidden": false,
 			"binaryDir": "build/${presetName}",
-			"inherits": ["__develop", "__ninja", "__vcpkg-toolchain", "__osx_arm64"]
+			"inherits": [ "__develop", "__ninja", "__vcpkg-toolchain", "__osx_arm64" ]
 		},
 		{
 			"name": "ninja-arm64_osx_vcpkg-release",
 			"hidden": false,
 			"binaryDir": "build/${presetName}",
-			"inherits": ["__release", "__ninja", "__vcpkg-toolchain", "__osx_arm64"]
+			"inherits": [ "__release", "__ninja", "__vcpkg-toolchain", "__osx_arm64" ]
 		}
 	],
 
