@@ -142,11 +142,6 @@ static void copy_stringarg(char **target, const char *source)
 	// on how it is copied over instead of just
 	// using strcpy or smth
 
-	if (*target != nullptr)
-	{
-		Z_Free(*target);
-	}
-
 	size_t len = 0;
 	if (source != nullptr)
 	{
