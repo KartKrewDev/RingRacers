@@ -1616,7 +1616,7 @@ met:
    notice, this list of conditions and the following disclaimer in the
    documentation and/or other materials provided with the
    distribution.
-
+   
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -1641,13 +1641,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         - stb_vorbis + stb_rect_pack
           Copyright (c) 2017 Sean Barrett
           https://github.com/nothings/stb
-        - volk
-          Copyright (c) 2018-2025 Arseny Kapoulkine
-          https://github.com/zeux/volk
-        - VulkanMemoryAllocator
-          Copyright (c) 2017-2025 Advanced Micro Devices, Inc.
-          https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
-
 --------------------------------------------------------------------------------
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
