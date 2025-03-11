@@ -150,6 +150,7 @@ typedef enum
 	CR_SLIDING,
 	CR_ZOOMTUBE,
 	CR_DASHRING,
+	CR_TRAPBUBBLE,
 } carrytype_t; // carry
 
 /*
@@ -775,8 +776,6 @@ struct player_t
 	UINT8 curshield;	// see kartshields_t
 	UINT8 bubblecool;	// Bubble Shield use cooldown
 	UINT8 bubbleblowup;	// Bubble Shield usage blowup
-	mobj_t *bubbletrap; // Bubble player is trapped inside
-	boolean gotbubbletrapped; //to know if player was got trapped
 	UINT16 flamedash;	// Flame Shield dash power
 	UINT16 flamemeter;	// Flame Shield dash meter left
 	UINT8 flamelength;	// Flame Shield dash meter, number of segments

@@ -9387,7 +9387,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			{
 				S_StartSound(mobj->tracer, sfx_s3k77);
 				mobj->tracer->flags &= ~MF_NOGRAVITY;
-				mobj->tracer->player->gotbubbletrapped = false;
+				mobj->tracer->player->carry = CR_NONE;
 				P_KillMobj(mobj, mobj->tracer, mobj->tracer, DMG_NORMAL);
 				break;
 			}

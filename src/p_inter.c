@@ -642,8 +642,8 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			P_SetTarget(&special->tracer, toucher);
 			toucher->flags |= MF_NOGRAVITY;
 			toucher->momz = (8*toucher->scale) * P_MobjFlip(toucher);
-			toucher->player->gotbubbletrapped = true;
-			P_SetTarget(&toucher->player->bubbletrap, special); //allow it to access later on and to know if player is trapped
+			toucher->player->carry = CR_TRAPBUBBLE;
+			P_SetTarget(&toucher->tracer, special); //use tracer to acces the object 
 
 			// Snap to the unfortunate player and quit moving laterally, or we can end up quite far away
 			special->momx = 0;
