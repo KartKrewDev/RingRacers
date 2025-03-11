@@ -32,7 +32,7 @@ Debian stable:i386:
     - - |
           # apt_development
           echo -e "\e[0Ksection_start:`date +%s`:apt_development[collapsed=true]\r\e[0KInstalling development packages"
-      - apt-get install libsdl2-mixer-dev:i386 libpng-dev:i386 libcurl4-openssl-dev:i386 libgme-dev:i386 libopenmpt-dev:i386 libminiupnpc-dev:i386
+      - apt-get install libsdl2-dev:i386 libpng-dev:i386 libcurl4-openssl-dev:i386 libyuv-dev:i386 libminiupnpc-dev:i386
       - |
           # apt_development
           echo -e "\e[0Ksection_end:`date +%s`:apt_development\r\e[0K"
@@ -40,7 +40,12 @@ Debian stable:i386:
     - - |
           # cmake
           echo -e "\e[0Ksection_start:`date +%s`:cmake[collapsed=false]\r\e[0KBuilding Makefiles"
-      - cmake -B build.cmake -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF
+      - |
+          cmake \
+            --preset ninja-debug \
+            -B build.cmake \
+            -G "Unix Makefiles" \
+            -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF
       - |
           # cmake
           echo -e "\e[0Ksection_end:`date +%s`:cmake\r\e[0K"
@@ -48,7 +53,7 @@ Debian stable:i386:
     - - |
           # make
           echo -e "\e[0Ksection_start:`date +%s`:make[collapsed=false]\r\e[0KCompiling SRB2"
-      - cmake --build build.cmake --parallel 1 --verbose
+      - cmake --build build.cmake --parallel 1 --verbose -- --keep-going
       - |
           # make
           echo -e "\e[0Ksection_end:`date +%s`:make\r\e[0K"

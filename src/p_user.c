@@ -1105,7 +1105,7 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->spriteyoffset = mobj->spriteyoffset;
 
 	if (mobj->flags2 & MF2_OBJECTFLIP)
-		ghost->flags |= MF2_OBJECTFLIP;
+		ghost->flags2 |= MF2_OBJECTFLIP;
 
 	if (!(mobj->flags & MF_DONTENCOREMAP))
 		ghost->flags &= ~MF_DONTENCOREMAP;
@@ -1958,9 +1958,7 @@ static void P_3dMovement(player_t *player)
 	else if (player->onconveyor == 4 && !P_IsObjectOnGround(player->mo)) // Actual conveyor belt
 		player->cmomx = player->cmomy = 0;
 	else if (player->onconveyor != 2 && player->onconveyor != 4
-#ifdef POLYOBJECTS
 				&& player->onconveyor != 1
-#endif
 	)
 		player->cmomx = player->cmomy = 0;
 

@@ -20,6 +20,9 @@
 *.csproj* -crlf -whitespace
 *.vcxproj* -crlf -whitespace
 *.manifest -crlf -whitespace
+# vcpkg
+/vcpkg.json text=auto
+/vcpkg-configuration.json text=auto
 # Patches
 /tools/SDL-1.2.14-gc/SDL-1.2.14-gc.patch -whitespace
 #Appveyor

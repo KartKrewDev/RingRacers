@@ -1,16 +1,16 @@
 {
-    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
-    "name": "ringracers",
-    "version": "1.0.0",
-    "dependencies": [
-        "curl",
-        "sdl2",
-        "libpng",
-        "libogg",
-        "libvpx",
-        "libvorbis",
-        "libyuv",
-        "zlib"
-    ],
-    "builtin-baseline": "c591ac6466a55ef0a05a3d56bb1489ca36e50102"
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "ringracers",
+  "version": "1.0.0",
+  "builtin-baseline": "d5ec528843d29e3a52d745a64b469f810b2cedbf",
+  "dependencies": [
+    "curl",
+    "libogg",
+    "libpng",
+    "libvorbis",
+    "libvpx",
+    "libyuv",
+    "sdl2",
+    "zlib"
+  ]
 }
