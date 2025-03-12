@@ -9339,7 +9339,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		if (leveltime % 180 == 0)
 			S_StartSound(mobj, sfx_s3kbfl);
 
-		if (mobj->tracer && !P_MobjWasRemoved(mobj->tracer) && mobj->tracer->player)
+		if (mobj->tracer && !P_MobjWasRemoved(mobj->tracer) && mobj->tracer->tracer == mobj && mobj->tracer->player && mobj->tracer->player->carry == CR_TRAPBUBBLE)
 		{
 			player_t *player = mobj->tracer->player;
 			fixed_t destx, desty, curfz, destfz;
