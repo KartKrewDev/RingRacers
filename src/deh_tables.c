@@ -4670,7 +4670,9 @@ struct int_const_s const INT_CONST[] = {
 
 	// Carrying
 	{"CR_NONE",CR_NONE},
+	{"CR_SLIDING",CR_SLIDING},
 	{"CR_ZOOMTUBE",CR_ZOOMTUBE},
+	{"CR_DASHRING",CR_DASHRING},
 	{"CR_TRAPBUBBLE",CR_TRAPBUBBLE},
 
 	// Character flags (skinflags_t)
