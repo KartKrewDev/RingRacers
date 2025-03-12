@@ -724,14 +724,7 @@ static void K_DropDashWait(player_t *player)
 		player->respawn.timer--;
 
 	if (player->pflags & PF_FAULT)
-		return;
-
-	// if player got trapped inside a bubble but lost its bubble object in a unintended way, remove no gravity flag
-	if (((P_MobjWasRemoved(player->mo->tracer) || player->mo->tracer == NULL) && player->carry == CR_TRAPBUBBLE) && (player->mo->flags & MF_NOGRAVITY))
-	{
-		player->mo->flags &= ~MF_NOGRAVITY;
-		player->carry = CR_NONE;
-	}
+		return;	
 
 	if (leveltime % 8 == 0)
 	{
@@ -877,6 +870,12 @@ static void K_HandleDropDash(player_t *player)
 		else
 		{
 			player->mo->colorized = false;
+		}
+		// if player got trapped inside a bubble but lost its bubble object in a unintended way, remove no gravity flag
+		if (((P_MobjWasRemoved(player->mo->tracer) || player->mo->tracer == NULL || (!P_MobjWasRemoved(player->mo->tracer) && player->mo->tracer && player->mo->tracer->type != MT_BUBBLESHIELDTRAP)) && player->carry == CR_TRAPBUBBLE) && (player->mo->flags & MF_NOGRAVITY))
+		{
+			player->mo->flags &= ~MF_NOGRAVITY;
+			player->carry = CR_NONE;
 		}
 	}
 	else
