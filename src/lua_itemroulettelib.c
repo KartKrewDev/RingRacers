@@ -227,6 +227,9 @@ static int itemrouletteitemlist_get(lua_State *L)
 {
 	itemlist_t *itemlist = *((itemlist_t **)luaL_checkudata(L, 1, META_ITEMROULETTE_ITEMLIST));
 	size_t index = luaL_checkint(L, 2);
+	
+	if (!itemlist)
+		return LUA_ErrInvalid(L, "itemroulette_t.itemlist_t");
 
 	if (index == 0 || index > itemlist->len) {
 		return luaL_error(L, LUA_QL("itemroulette_t.itemlist_t") " index cannot be %d", index);
