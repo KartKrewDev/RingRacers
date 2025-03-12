@@ -276,6 +276,7 @@ void P_RunOverlays(void);
 #define OV_DONT3DOFFSET		1<<1
 #define OV_DONTXYSCALE		1<<2
 #define OV_DONTROLL			1<<3
+#define OV_DONTBAKEOFFSET	1<<4
 
 void P_HandleMinecartSegments(mobj_t *mobj);
 void P_MobjThinker(mobj_t *mobj);

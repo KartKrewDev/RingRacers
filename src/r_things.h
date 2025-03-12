@@ -96,6 +96,8 @@ boolean R_ThingModelUsesDirectionalLighting(mobj_t *thing);
 
 boolean R_ThingIsFlashing(mobj_t *thing);
 
+boolean R_ThingIsUsingBakedOffsets(mobj_t *thing);
+
 INT32 R_ThingLightLevel(mobj_t *thing);
 boolean R_SplatSlope(mobj_t *thing, vector3_t position, pslope_t *slope);
 boolean R_CustomShadowZ(mobj_t *thing, fixed_t *return_z, pslope_t **return_slope);

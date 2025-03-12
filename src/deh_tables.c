@@ -4756,6 +4756,7 @@ struct int_const_s const INT_CONST[] = {
 	{"OV_DONT3DOFFSET", OV_DONT3DOFFSET},
 	{"OV_DONTXYSCALE", OV_DONTXYSCALE},
 	{"OV_DONTROLL", OV_DONTROLL},
+	{"OV_DONTBAKEOFFSET", OV_DONTBAKEOFFSET},
 
 	// Player state (playerstate_t)
 	{"PST_LIVE",PST_LIVE}, // Playing or camping.
