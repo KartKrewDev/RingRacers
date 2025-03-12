@@ -418,7 +418,8 @@ void P_ResetPlayer(player_t *player)
 {
 	//player->pflags &= ~(PF_);
 
-	player->carry = CR_NONE;
+	if (player->carry != CR_TRAPBUBBLE)
+		player->carry = CR_NONE;
 	player->onconveyor = 0;
 
 	//player->drift = player->driftcharge = 0;

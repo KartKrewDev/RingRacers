@@ -2626,7 +2626,8 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 	K_DropEmeraldsFromPlayer(player, player->emeralds);
 	//K_SetHitLagForObjects(player->mo, inflictor, source, MAXHITLAGTICS, true);
 
-	player->carry = CR_NONE;
+	if (player->carry != CR_TRAPBUBBLE)
+		player->carry = CR_NONE;
 
 	K_KartResetPlayerColor(player);
 
