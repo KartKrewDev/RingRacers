@@ -11,7 +11,10 @@
     "libvpx",
     "libyuv",
     "opus",
-    "sdl2",
+    {
+      "name": "sdl2",
+      "features": ["vulkan"]
+    },
     "zlib"
   ]
 }
