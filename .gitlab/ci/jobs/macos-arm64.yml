@@ -65,6 +65,7 @@ osxcross arm64:
             --preset ninja-debug \
             -B build.arm64 \
             -G "Unix Makefiles" \
+            -DCMAKE_COLOR_DIAGNOSTICS=OFF \
             -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF \
             -DCPM_USE_LOCAL_PACKAGES:BOOL=ON \
             -DOPENMPT_INCLUDE_DIR:PATH="/osxcross/macports/pkgs/opt/local/include" \
@@ -82,7 +83,7 @@ osxcross arm64:
     - - |
           # make
           echo -e "\e[0Ksection_start:`date +%s`:make[collapsed=false]\r\e[0KCompiling SRB2"
-      - cmake --build build.arm64 --parallel 1 --verbose -- --keep-going
+      - cmake --build build.arm64 --parallel 1 -- --keep-going
       - |
           # make
           echo -e "\e[0Ksection_end:`date +%s`:make\r\e[0K"
@@ -91,7 +92,7 @@ osxcross arm64:
           # copy config.h
           echo -e "\e[0Ksection_start:`date +%s`:copy[collapsed=false]\r\e[0KCopying config.h"
       - mkdir --parents --verbose build.arm64/dist
-      - cp --reflink=auto --sparse=always --verbose build.arm64/src/config.h build.arm64/dist/arm64.h
+      - cp --reflink=auto --sparse=always build.arm64/src/config.h build.arm64/dist/arm64.h
       - |
           # make
           echo -e "\e[0Ksection_end:`date +%s`:copy\r\e[0K"
