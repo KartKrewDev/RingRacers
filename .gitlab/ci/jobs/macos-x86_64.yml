@@ -65,6 +65,7 @@ osxcross x86_64:
             --preset ninja-debug \
             -B build.x86_64 \
             -G "Unix Makefiles" \
+            -DCMAKE_COLOR_DIAGNOSTICS=OFF \
             -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF \
             -DCPM_USE_LOCAL_PACKAGES:BOOL=ON \
             -DOPENMPT_INCLUDE_DIR:PATH="/osxcross/macports/pkgs/opt/local/include" \
@@ -81,7 +82,7 @@ osxcross x86_64:
     - - |
           # make
           echo -e "\e[0Ksection_start:`date +%s`:make[collapsed=false]\r\e[0KCompiling SRB2"
-      - cmake --build build.x86_64 --parallel 1 --verbose -- --keep-going
+      - cmake --build build.x86_64 --parallel 1 -- --keep-going
       - |
           # make
           echo -e "\e[0Ksection_end:`date +%s`:make\r\e[0K"

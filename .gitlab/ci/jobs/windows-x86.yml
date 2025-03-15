@@ -74,6 +74,7 @@ Windows x86:
             --preset ninja-debug \
             -B build.cmake \
             -G "Unix Makefiles" \
+            -DCMAKE_COLOR_DIAGNOSTICS=OFF \
             -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/toolchains/mingw.cmake \
             -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF \
             -DSRB2_CONFIG_ENABLE_DISCORDRPC=OFF \
@@ -87,7 +88,7 @@ Windows x86:
     - - |
           # make
           echo -e "\e[0Ksection_start:`date +%s`:make[collapsed=false]\r\e[0KCompiling SRB2"
-      - cmake --build build.cmake --parallel 1 --verbose -- --keep-going
+      - cmake --build build.cmake --parallel 1 -- --keep-going
       - |
           # make
           echo -e "\e[0Ksection_end:`date +%s`:make\r\e[0K"
