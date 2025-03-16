@@ -1408,7 +1408,6 @@ static void IdentifyVersion(void)
 	D_AddFile(startupiwads, va(spandf,srb2waddir,"data","maps.pk3"));
 	D_AddFile(startupiwads, va(spandf,srb2waddir,"data","unlocks.pk3"));
 	D_AddFile(startupiwads, va(spandf,srb2waddir,"data","staffghosts.pk3"));
-	D_AddFile(startupiwads, va(spandf,srb2waddir,"data","shaders.pk3"));
 #ifdef USE_PATCH_FILE
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"patch.pk3"));
 #endif
@@ -1733,7 +1732,6 @@ void D_SRB2Main(void)
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_MAPS_PK3);						// maps.pk3
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_UNLOCKS_PK3);					// unlocks.pk3
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_STAFFGHOSTS_PK3);				// staffghosts.pk3
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_SHADERS_PK3);					// shaders.pk3
 #ifdef USE_PATCH_FILE
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_PATCH_PK3);					// patch.pk3
 #endif
@@ -1748,7 +1746,6 @@ void D_SRB2Main(void)
 	mainwads++;	// maps.pk3
 	mainwads++; // unlocks.pk3
 	mainwads++; // staffghosts.pk3
-	mainwads++; // shaders.pk3
 #ifdef USE_PATCH_FILE
 	mainwads++; // patch.pk3
 #endif
