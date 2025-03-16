@@ -221,6 +221,10 @@ void W_VerifyFileMD5(UINT16 wadfilenum, const char *matchmd5);
 
 int W_VerifyNMUSlumps(const char *filename, boolean exit_on_error);
 
+/// Initialize non-legacy GL shader lookup, which lives outside the lump management system.
+void W_InitShaderLookup(const char *filename);
+boolean W_ReadShader(const char *filename, size_t *size, void *dest);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

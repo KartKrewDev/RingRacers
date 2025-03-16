@@ -113,6 +113,10 @@ static UINT16 lumpnumcacheindex = 0;
 UINT16 numwadfiles = 0; // number of active wadfiles
 wadfile_t *wadfiles[MAX_WADFILES]; // 0 to numwadfiles-1 are valid
 
+static FILE *g_shaderspk3file;
+static UINT16 g_shaderspk3numlumps;
+static lumpinfo_t *g_shaderspk3lumps;
+
 // W_Shutdown
 // Closes all of the WAD files before quitting
 // If not done on a Mac then open wad files
@@ -137,6 +141,24 @@ void W_Shutdown(void)
 
 		Z_Free(wad->lumpinfo);
 		Z_Free(wad);
+	}
+
+	// Cleanup the separate shader lookup
+	if (g_shaderspk3file)
+	{
+		while (g_shaderspk3numlumps--)
+		{
+			lumpinfo_t *lump = &g_shaderspk3lumps[g_shaderspk3numlumps];
+			Z_Free(lump->longname);
+			if (lump->fullname != lump->longname)
+			{
+				Z_Free(lump->fullname);
+			}
+		}
+		Z_Free(g_shaderspk3lumps);
+		g_shaderspk3lumps = NULL;
+		fclose(g_shaderspk3file);
+		g_shaderspk3file = NULL;
 	}
 }
 
@@ -2421,6 +2443,197 @@ int W_VerifyNMUSlumps(const char *filename, boolean exit_on_error)
 		W_InitFileError(filename, exit_on_error);
 
 	return status;
+}
+
+void W_InitShaderLookup(const char *filename)
+{
+	I_Assert(g_shaderspk3file == NULL);
+
+	FILE* handle;
+	char filename_buf[2048];
+
+	g_shaderspk3file = NULL;
+	g_shaderspk3lumps = NULL;
+	g_shaderspk3numlumps = 0;
+
+	strncpy(filename_buf, filename, 2048);
+	filename_buf[2048 - 1] = '\0';
+
+	if ((handle = fopen(filename_buf, "rb")) == NULL)
+	{
+		nameonly(filename_buf);
+
+		if (findfile(filename_buf, NULL, true))
+		{
+			if ((handle = fopen(filename_buf, "rb")) == NULL)
+			{
+				return;
+			}
+		}
+		else
+		{
+			return;
+		}
+	}
+	else
+	{
+		return;
+	}
+
+	// It is acceptable to fail opening the pk3 lookup.
+	// The shader pk3 lookup is only needed to build a lookup directory of the zip
+	// for later. We always check for the flat file shader anyway.
+
+	UINT16 numlumps;
+	lumpinfo_t *shader_lumps = ResGetLumpsZip(handle, &numlumps);
+	if (shader_lumps == NULL)
+	{
+		return;
+	}
+	g_shaderspk3file = handle;
+	g_shaderspk3lumps = shader_lumps;
+	g_shaderspk3numlumps = numlumps;
+}
+
+static boolean ReadShaderFlatFile(const char *filename, size_t *size, void *dest)
+{
+	FILE* flat_handle = NULL;
+	char filename_buf[2048];
+	char filename_only_buf[512];
+
+	strncpy(filename_buf, filename, 2048);
+	filename_buf[2048 - 1] = '\0';
+
+	if ((flat_handle = fopen(filename_buf, "rb")) == NULL)
+	{
+		nameonly(filename_buf);
+		strncpy(filename_only_buf, filename_buf, 512);
+		filename_only_buf[512 - 1] = '\0';
+		sprintf(filename_buf, "shaders/%s", filename_only_buf);
+		if (findfile(filename_buf, NULL, true))
+		{
+			if ((flat_handle = fopen(filename_buf, "rb")) == NULL)
+			{
+				return false;
+			}
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	// idk, pray it's not >2gb. ansi c made mistakes
+	fseek(flat_handle, 0, SEEK_END);
+	*size = ftell(flat_handle);
+	fseek(flat_handle, 0, SEEK_SET);
+	if (dest)
+	{
+		fread(dest, *size, 1, flat_handle);
+	}
+
+	fclose(flat_handle);
+	return true;
+}
+
+boolean W_ReadShader(const char *filename, size_t *size, void *dest)
+{
+	I_Assert(filename != NULL);
+	I_Assert(size != NULL);
+
+	if (ReadShaderFlatFile(filename, size, dest))
+	{
+		return true;
+	}
+
+	UINT32 hash = quickncasehash(filename, 512);
+
+	lumpinfo_t* lump = NULL;
+	for (int i = 0 ; i < g_shaderspk3numlumps; ++i)
+	{
+		lump = &g_shaderspk3lumps[i];
+		UINT32 lumpnamehash = quickncasehash(lump->fullname, 512);
+		if (lumpnamehash == hash)
+		{
+			break;
+		}
+		lump = NULL;
+	}
+
+	if (lump == NULL)
+	{
+		return false;
+	}
+
+	size_t sizelocal = lump->size;
+	if (dest == NULL)
+	{
+		*size = sizelocal;
+		return true;
+	}
+
+	if (fseek(g_shaderspk3file, lump->position, SEEK_SET) != 0)
+		I_Error("Failed to seek shaders pk3 to offset of file: %s", strerror(errno));
+
+	switch (lump->compression)
+	{
+	case CM_NOCOMPRESSION:
+		if (fread(dest, sizelocal, 1, g_shaderspk3file) != 0)
+			I_Error("Failed to read file in shaders pk3: %s", strerror(errno));
+		break;
+#ifdef HAVE_ZLIB
+	case CM_DEFLATE:
+	{
+		UINT8 *rawData; // The lump's raw data.
+		UINT8 *decData; // Lump's decompressed real data.
+
+		int zErr; // Helper var.
+		z_stream strm;
+		unsigned long rawSize = lump->disksize;
+		unsigned long decSize = (unsigned long)size;
+
+		rawData = static_cast<UINT8*>(Z_Malloc(rawSize, PU_STATIC, NULL));
+		decData = static_cast<UINT8*>(dest);
+
+		if (fread(rawData, 1, rawSize, g_shaderspk3file) < rawSize)
+			I_Error("Failed to read compressed file in shaders pk3: %s", strerror(errno));
+
+		strm.zalloc = Z_NULL;
+		strm.zfree = Z_NULL;
+		strm.opaque = Z_NULL;
+
+		strm.total_in = strm.avail_in = rawSize;
+		strm.total_out = strm.avail_out = decSize;
+
+		strm.next_in = rawData;
+		strm.next_out = decData;
+
+		zErr = inflateInit2(&strm, -15);
+		if (zErr == Z_OK)
+		{
+			zErr = inflate(&strm, Z_SYNC_FLUSH);
+			if (zErr != Z_OK && zErr != Z_STREAM_END)
+			{
+				zerr(zErr);
+			}
+			(void)inflateEnd(&strm);
+		}
+		else
+		{
+			size = 0;
+			zerr(zErr);
+		}
+
+		Z_Free(rawData);
+	}
+		break;
+#endif
+	default:
+		return false;
+	}
+
+	*size = sizelocal;
+	return true;
 }
 
 /** \brief Generates a virtual resource used for level data loading.
