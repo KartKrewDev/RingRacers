@@ -366,10 +366,10 @@ static boolean IgnoreMouse(void)
 
 static void SDLdoGrabMouse(void)
 {
-	// SDL_ShowCursor(SDL_DISABLE);
-	// SDL_SetWindowGrab(window, SDL_TRUE);
-	// if (SDL_SetRelativeMouseMode(SDL_TRUE) == 0) // already warps mouse if successful
-	// 	wrapmouseok = SDL_TRUE; // TODO: is wrapmouseok or HalfWarpMouse needed anymore?
+	SDL_ShowCursor(SDL_DISABLE);
+	SDL_SetWindowGrab(window, SDL_TRUE);
+	if (SDL_SetRelativeMouseMode(SDL_TRUE) == 0) // already warps mouse if successful
+		wrapmouseok = SDL_TRUE; // TODO: is wrapmouseok or HalfWarpMouse needed anymore?
 }
 
 static void SDLdoUngrabMouse(void)
