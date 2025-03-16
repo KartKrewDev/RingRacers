@@ -1142,22 +1142,29 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 	if (!battleprisons)
 		return;
 
+	// Check to see if everyone's out.
+	{
+		UINT8 i = 0;
+
+		for (; i < MAXPLAYERS; i++)
+		{
+			if (!playeringame[i] || players[i].spectator || players[i].exiting)
+				continue;
+			break;
+		}
+
+		if (i == MAXPLAYERS)
+		{
+			// Nobody can claim credit for this just-too-late hit!
+			P_DoAllPlayersExit(0, false); // softlock prevention
+			return;
+		}
+	}
+
+	// If you CAN recieve points, get them!
 	if ((gametyperules & GTR_POINTLIMIT) && (source && source->player))
 	{
-		/*mobj_t * ring;
-		for (i = 0; i < 2; i++)
-		{
-			dir += (ANGLE_MAX/3);
-			ring = P_SpawnMobj(target->x, target->y, target->z, MT_RING);
-			ring->angle = dir;
-			P_InstaThrust(ring, dir, 16*ring->scale);
-			ring->momz = 8 * target->scale * P_MobjFlip(target);
-			P_SetTarget(&ring->tracer, source);
-			source->player->pickuprings++;
-		}*/
-
-		P_AddPlayerScore(source->player, 1);
-		K_SpawnBattlePoints(source->player, NULL, 1);
+		K_GivePointsToPlayer(source->player, NULL, 1);
 	}
 
 	targetdamaging_t targetdamaging = UFOD_GENERIC;
@@ -1202,13 +1209,18 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 		gamedata->prisoneggstothispickup--;
 	}
 
+	// Standard progression.
 	if (++numtargets >= maptargets)
 	{
+		// Yipue!
+
 		P_DoAllPlayersExit(0, true);
 	}
 	else
 	{
 		S_StartSound(NULL, sfx_s221);
+
+		// Time limit recovery
 		if (timelimitintics)
 		{
 			UINT16 bonustime = 10*TICRATE;
@@ -1255,7 +1267,7 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 			secretextratime = TICRATE/2;
 		}
 
-
+		// Prison Egg challenge drops (CDs, etc)
 #ifdef DEVELOP
 		extern consvar_t cv_debugprisoncd;
 #endif

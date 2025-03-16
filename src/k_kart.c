@@ -5337,8 +5337,8 @@ void K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount)
 
 void K_GivePointsToPlayer(player_t *player, player_t *victim, UINT8 amount)
 {
+	K_SpawnBattlePoints(player, victim, amount); // first just in case player score ends the game
 	P_AddPlayerScore(player, amount);
-	K_SpawnBattlePoints(player, victim, amount);
 }
 
 #define MINEQUAKEDIST 4096
