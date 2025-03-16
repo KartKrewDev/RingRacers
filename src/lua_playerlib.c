@@ -267,6 +267,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->ringboxaward);
 	else if (fastcmp(field,"itemflags"))
 		lua_pushinteger(L, plr->itemflags);
+	else if (fastcmp(field,"outrun"))
+		lua_pushinteger(L, plr->outrun);
 	else if (fastcmp(field,"drift"))
 		lua_pushinteger(L, plr->drift);
 	else if (fastcmp(field,"driftcharge"))
@@ -667,6 +669,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->griefStrikes);
 	else if (fastcmp(field,"griefwarned"))
 		lua_pushinteger(L, plr->griefWarned);		
+	else if (fastcmp(field,"stairjank"))
+		lua_pushinteger(L, plr->stairjank);
 	else if (fastcmp(field,"splitscreenindex"))
 		lua_pushinteger(L, plr->splitscreenindex);
 	else if (fastcmp(field,"whip"))
@@ -835,6 +839,8 @@ static int player_set(lua_State *L)
 		plr->ringboxaward = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"itemflags"))
 		plr->itemflags = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"outrun"))
+		plr->outrun = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"drift"))
 		plr->drift = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"driftcharge"))
@@ -1228,6 +1234,8 @@ static int player_set(lua_State *L)
 		plr->griefStrikes = (UINT8)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"griefwarned"))
 		plr->griefWarned = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"stairjank"))
+		plr->stairjank = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"splitscreenindex"))
 		return NOSET;
 	else if (fastcmp(field,"whip"))
