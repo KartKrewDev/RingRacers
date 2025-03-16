@@ -2442,10 +2442,12 @@ static const char *M_GetConditionString(condition_t *cn)
 
 		case UC_EMBLEM: // Requires emblem x to be obtained
 		{
-			INT32 checkLevel;
+			INT32 checkLevel = NEXTMAP_INVALID;
 
 			i = cn->requirement-1;
-			checkLevel = M_EmblemMapNum(&emblemlocations[i]);
+
+			if (i >= 0 && i < numemblems)
+				checkLevel = M_EmblemMapNum(&emblemlocations[i]);
 
 			if (checkLevel >= nummapheaders || !mapheaderinfo[checkLevel] || emblemlocations[i].type == ET_NONE)
 				return va("INVALID MEDAL MAP \"%d:%d\"", cn->requirement, checkLevel);
@@ -3869,7 +3871,7 @@ UINT16 M_UnlockableMapNum(unlockable_t *unlock)
 
 UINT16 M_EmblemMapNum(emblem_t *emblem)
 {
-	if (emblem->levelCache == NEXTMAP_INVALID)
+	if (emblem->levelCache == NEXTMAP_INVALID && emblem->level)
 	{
 		UINT16 result = G_MapNumber(emblem->level);
 
@@ -3877,6 +3879,8 @@ UINT16 M_EmblemMapNum(emblem_t *emblem)
 			return result;
 
 		emblem->levelCache = result;
+		Z_Free(emblem->level);
+		emblem->level = NULL;
 	}
 
 	return emblem->levelCache;
