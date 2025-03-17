@@ -2475,10 +2475,6 @@ void W_InitShaderLookup(const char *filename)
 			return;
 		}
 	}
-	else
-	{
-		return;
-	}
 
 	// It is acceptable to fail opening the pk3 lookup.
 	// The shader pk3 lookup is only needed to build a lookup directory of the zip
