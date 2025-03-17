@@ -14,8 +14,8 @@
 #include <algorithm>
 #include <cstdint>
 #include <optional>
-#include <string>
 
+#include "core/string.h"
 #include "doomdef.h"
 #include "doomtype.h"
 #include "k_boss.h"
@@ -29,7 +29,7 @@ class Tune
 public:
 	explicit Tune() {}
 
-	std::string song; // looks up the lump
+	srb2::String song; // looks up the lump
 
 	// Higher priority tunes play first.
 	int priority = 0;

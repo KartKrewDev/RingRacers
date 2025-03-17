@@ -181,7 +181,7 @@ Handle<Texture> FlatTextureManager::find_or_create_indexed(Rhi& rhi, lumpnum_t l
 	});
 	flats_.insert({lump, new_tex});
 
-	std::vector<std::array<uint8_t, 2>> flat_data;
+	srb2::Vector<std::array<uint8_t, 2>> flat_data;
 	std::size_t lump_length = W_LumpLength(lump);
 	flat_data.reserve(flat_size * flat_size);
 

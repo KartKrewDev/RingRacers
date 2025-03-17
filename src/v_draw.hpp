@@ -11,14 +11,14 @@
 #ifndef __V_DRAW_HPP__
 #define __V_DRAW_HPP__
 
-#include <string>
 #include <string_view>
 #include <optional>
 #include <utility>
-#include <unordered_map>
 
 #include <fmt/core.h>
 
+#include "core/hash_map.hpp"
+#include "core/string.h"
 #include "doomdef.h" // skincolornum_t
 #include "doomtype.h"
 #include "screen.h" // BASEVIDWIDTH
@@ -66,7 +66,7 @@ typedef enum
 } saturn_buttons_e;
 
 // Garden-variety standard gamepad
-static const std::unordered_map<INT32, char> standardpad = {
+static const srb2::HashMap<INT32, char> standardpad = {
 	{nc_a, gb_a},
 	{nc_b, gb_b},
 	{nc_x, gb_x},
@@ -83,7 +83,7 @@ static const std::unordered_map<INT32, char> standardpad = {
 
 // Standard gamepad, but evil Nintendo layout flip was applied by your
 // controller firmware or Steam Input—swap B/A and X/Y
-static const std::unordered_map<INT32, char> flippedpad = {
+static const srb2::HashMap<INT32, char> flippedpad = {
 	{nc_a, gb_b},
 	{nc_b, gb_a},
 	{nc_x, gb_y},
@@ -99,7 +99,7 @@ static const std::unordered_map<INT32, char> flippedpad = {
 };
 
 // Saturn Type A - Retrobit Wired Dinput, RB RT LB LT (CZLR)
-static const std::unordered_map<INT32, char> saturntypeA = {
+static const srb2::HashMap<INT32, char> saturntypeA = {
 	{nc_a, sb_a},
 	{nc_b, sb_b},
 	{nc_x, sb_x},
@@ -115,7 +115,7 @@ static const std::unordered_map<INT32, char> saturntypeA = {
 };
 
 // Saturn Type B - Retrobit Wireless Dinput, LB RB LT RT (CZLR)
-static const std::unordered_map<INT32, char> saturntypeB = {
+static const srb2::HashMap<INT32, char> saturntypeB = {
 	{nc_a, sb_a},
 	{nc_b, sb_b},
 	{nc_x, sb_x},
@@ -131,7 +131,7 @@ static const std::unordered_map<INT32, char> saturntypeB = {
 };
 
 // Saturn Type C - Retrobit Xinput, RT LT LB RB (CZLR)
-static const std::unordered_map<INT32, char> saturntypeC = {
+static const srb2::HashMap<INT32, char> saturntypeC = {
 	{nc_a, sb_a},
 	{nc_b, sb_b},
 	{nc_x, sb_x},
@@ -150,7 +150,7 @@ static const std::unordered_map<INT32, char> saturntypeC = {
 // This cannot be disambiguated (shares L/R with type 1)
 // but is more spatially correct w/r/t SDL expectations
 // and standard arcade mapping (Z on top, C on bottom)
-static const std::unordered_map<INT32, char> saturntypeD = {
+static const srb2::HashMap<INT32, char> saturntypeD = {
 	{nc_a, sb_a},
 	{nc_b, sb_b},
 	{nc_x, sb_x},
@@ -169,7 +169,7 @@ static const std::unordered_map<INT32, char> saturntypeD = {
 // The Hori layout is, to my knowledge, the only 6bt one that has fully
 // unique buttons in every slot while having both bumpers and triggers,
 // so there's no way to accurately portray it without using generics.
-static const std::unordered_map<INT32, char> saturntypeE = {
+static const srb2::HashMap<INT32, char> saturntypeE = {
 	{nc_a, sb_a},
 	{nc_b, sb_b},
 	{nc_x, sb_x},
@@ -263,7 +263,7 @@ public:
 	public:
 		explicit TextElement() {}
 
-		explicit TextElement(std::string string) : string_(string) {}
+		explicit TextElement(const srb2::String& string) : string_(string) {}
 
 		template <class... Args>
 		explicit TextElement(fmt::format_string<Args...> format, Args&&... args) :
@@ -271,14 +271,14 @@ public:
 		{
 		}
 
-		const std::string& string() const { return string_; }
+		const srb2::String& string() const { return string_; }
 		std::optional<Font> font() const { return font_; }
 		std::optional<INT32> flags() const { return flags_; }
 		std::optional<UINT8> as() const { return as_; }
 
 		int width() const;
 
-		TextElement& string(std::string string)
+		TextElement& string(srb2::String string)
 		{
 			string_ = string;
 			return *this;
@@ -310,7 +310,7 @@ public:
 			return *this;
 		}
 	private:
-		std::string string_;
+		srb2::String string_;
 		std::optional<Font> font_;
 		std::optional<INT32> flags_;
 		std::optional<UINT8> as_;
@@ -357,7 +357,7 @@ public:
 		Chain& colorize(UINT16 color);
 
 		void text(const char* str) const { string(str, flags_, font_); }
-		void text(const std::string& str) const { text(str.c_str()); }
+		void text(const srb2::String& str) const { text(str.c_str()); }
 		void text(const TextElement& elm) const
 		{
 			string(elm.string().c_str(), elm.flags().value_or(flags_), elm.font().value_or(font_));
@@ -370,7 +370,7 @@ public:
 
 		void patch(patch_t* patch) const;
 		void patch(const char* name) const { patch(Draw::cache_patch(name)); }
-		void patch(const std::string& name) const { patch(name.c_str()); }
+		void patch(const srb2::String& name) const { patch(name.c_str()); }
 
 		void thumbnail(UINT16 mapnum) const;
 

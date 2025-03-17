@@ -10,6 +10,8 @@
 /// \file  ballhog.cpp
 /// \brief Ballhog item code.
 
+#include <algorithm>
+
 #include "../doomdef.h"
 #include "../doomstat.h"
 #include "../info.h"

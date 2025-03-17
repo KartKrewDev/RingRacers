@@ -13,9 +13,9 @@
 
 #include <array>
 #include <cstddef>
-#include <unordered_map>
-#include <vector>
 
+#include "../core/hash_map.hpp"
+#include "../core/vector.hpp"
 #include "../rhi/rhi.hpp"
 
 namespace srb2::hwr2
@@ -77,10 +77,10 @@ class MainPaletteManager final
 	rhi::Handle<rhi::Texture> encore_lighttable_;
 	rhi::Handle<rhi::Texture> default_colormap_;
 
-	std::unordered_map<const uint8_t*, rhi::Handle<rhi::Texture>> colormaps_;
-	std::unordered_map<const uint8_t*, rhi::Handle<rhi::Texture>> lighttables_;
-	std::vector<const uint8_t*> colormaps_to_upload_;
-	std::vector<const uint8_t*> lighttables_to_upload_;
+	srb2::HashMap<const uint8_t*, rhi::Handle<rhi::Texture>> colormaps_;
+	srb2::HashMap<const uint8_t*, rhi::Handle<rhi::Texture>> lighttables_;
+	srb2::Vector<const uint8_t*> colormaps_to_upload_;
+	srb2::Vector<const uint8_t*> lighttables_to_upload_;
 
 	void upload_palette(rhi::Rhi& rhi);
 	void upload_lighttables(rhi::Rhi& rhi);

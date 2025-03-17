@@ -14,13 +14,13 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
-#include <string>
 
 #include <fmt/format.h>
 
 #include "music_manager.hpp"
 #include "music_tune.hpp"
 
+#include "core/string.h"
 #include "d_clisrv.h"
 #include "doomtype.h"
 #include "i_sound.h"
@@ -49,8 +49,8 @@ void TuneManager::tick()
 
 	Tune* tune = current_tune();
 
-	std::string old_song = current_song_;
-	current_song_ = tune && tune->playing() && !tune->suspend ? tune->song : std::string{};
+	srb2::String old_song = current_song_;
+	current_song_ = tune && tune->playing() && !tune->suspend ? tune->song : srb2::String{};
 
 	bool changed = current_song_ != old_song;
 
@@ -167,7 +167,8 @@ void TuneManager::pause_unpause() const
 
 bool TuneManager::load() const
 {
-	lumpnum_t lumpnum = W_CheckNumForLongName(fmt::format("O_{}", current_song_).c_str());
+	srb2::String lumpstring = srb2::format("O_{}", current_song_);
+	lumpnum_t lumpnum = W_CheckNumForLongName(lumpstring.c_str());
 
 	if (lumpnum == LUMPERROR)
 	{

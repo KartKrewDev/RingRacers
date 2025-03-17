@@ -19,6 +19,7 @@
 #include "EggTVData.hpp"
 #include "EggTVGraphics.hpp"
 
+#include "../../core/vector.hpp"
 #include "../../doomdef.h" // TICRATE
 #include "../../i_time.h"
 #include "../../k_menu.h"
@@ -197,7 +198,7 @@ private:
 	{
 	public:
 		using limiter_t = std::function<int()>;
-		using anims_t = std::vector<Animation*>;
+		using anims_t = srb2::Vector<Animation*>;
 
 		explicit Cursor(anims_t anims, limiter_t limiter) : limiter_(limiter), anims_(anims) {}
 

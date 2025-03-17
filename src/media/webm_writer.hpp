@@ -12,10 +12,10 @@
 #define __SRB2_MEDIA_WEBM_WRITER_HPP__
 
 #include <cstdio>
-#include <string>
 
 #include <mkvmuxer/mkvwriter.h>
 
+#include "../core/string.h"
 #include "cfile.hpp"
 
 namespace srb2::media
@@ -24,7 +24,7 @@ namespace srb2::media
 class WebmWriter : public CFile, public mkvmuxer::MkvWriter
 {
 public:
-	WebmWriter(const std::string file_name) : CFile(file_name), MkvWriter(static_cast<std::FILE*>(*this)) {}
+	WebmWriter(const srb2::String& file_name) : CFile(file_name), MkvWriter(static_cast<std::FILE*>(*this)) {}
 	~WebmWriter() { MkvWriter::Close(); }
 };
 

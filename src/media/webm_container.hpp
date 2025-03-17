@@ -13,11 +13,11 @@
 
 #include <cstddef>
 #include <mutex>
-#include <unordered_map>
 #include <vector>
 
 #include <mkvmuxer/mkvmuxer.h>
 
+#include "../core/hash_map.hpp"
 #include "container.hpp"
 #include "webm.hpp"
 #include "webm_writer.hpp"
@@ -88,7 +88,7 @@ private:
 
 	mutable std::recursive_mutex queue_mutex_;
 
-	std::unordered_map<webm::track, FrameQueue> queue_;
+	srb2::HashMap<webm::track, FrameQueue> queue_;
 
 	webm::timestamp latest_timestamp_ = 0;
 	std::size_t queue_size_ = 0;

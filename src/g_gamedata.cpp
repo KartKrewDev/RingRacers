@@ -27,7 +27,6 @@
 #include "z_zone.h"
 
 namespace fs = std::filesystem;
-using json = nlohmann::json;
 
 #define GD_VERSION_MAJOR (0xBA5ED321)
 #define GD_VERSION_MINOR (1)
@@ -137,13 +136,13 @@ void srb2::save_ng_gamedata()
 		skin_t& memskin = skins[i];
 
 		auto skin = skintojson(&memskin.records);
-		std::string name = std::string(memskin.name);
+		srb2::String name { memskin.name };
 		ng.skins[name] = std::move(skin);
 	}
 	for (auto unloadedskin = unloadedskins; unloadedskin; unloadedskin = unloadedskin->next)
 	{
 		auto skin = skintojson(&unloadedskin->records);
-		std::string name = std::string(unloadedskin->name);
+		srb2::String name { unloadedskin->name };
 		ng.skins[name] = std::move(skin);
 	}
 
@@ -175,13 +174,13 @@ void srb2::save_ng_gamedata()
 	for (int i = 0; i < nummapheaders; i++)
 	{
 		auto map = maptojson(&mapheaderinfo[i]->records);
-		std::string lumpname = std::string(mapheaderinfo[i]->lumpname);
+		srb2::String lumpname { mapheaderinfo[i]->lumpname };
 		ng.maps[lumpname] = std::move(map);
 	}
 	for (auto unloadedmap = unloadedmapheaders; unloadedmap; unloadedmap = unloadedmap->next)
 	{
 		auto map = maptojson(&unloadedmap->records);
-		std::string lumpname = std::string(unloadedmap->lumpname);
+		srb2::String lumpname { unloadedmap->lumpname };
 		ng.maps[lumpname] = std::move(map);
 	}
 	for (int i = 0; i < gamedata->numspraycans; i++)
@@ -194,7 +193,7 @@ void srb2::save_ng_gamedata()
 		{
 			continue;
 		}
-		spraycan.color = std::string(skincolors[can->col].name);
+		spraycan.color = String(skincolors[can->col].name);
 
 		if (can->map == NEXTMAP_INVALID)
 		{
@@ -213,7 +212,7 @@ void srb2::save_ng_gamedata()
 		{
 			continue;
 		}
-		spraycan.map = std::string(mapheader->lumpname);
+		spraycan.map = String(mapheader->lumpname);
 		ng.spraycans.emplace_back(std::move(spraycan));
 	}
 
@@ -230,11 +229,11 @@ void srb2::save_ng_gamedata()
 			skinreference_t& skinref = windata[i].best_skin;
 			if (skinref.unloaded)
 			{
-				newrecords.bestskin = std::string(skinref.unloaded->name);
+				newrecords.bestskin = String(skinref.unloaded->name);
 			}
 			else
 			{
-				newrecords.bestskin = std::string(skins[skinref.id].name);
+				newrecords.bestskin = String(skins[skinref.id].name);
 			}
 			newrecords.gotemerald = windata[i].got_emerald;
 
@@ -252,7 +251,7 @@ void srb2::save_ng_gamedata()
 		}
 
 		auto cupdata = cuptojson(cup->windata);
-		cupdata.name = std::string(cup->name);
+		cupdata.name = String(cup->name);
 		ng.cups[cupdata.name] = std::move(cupdata);
 	}
 	for (auto unloadedcup = unloadedcupheaders; unloadedcup; unloadedcup = unloadedcup->next)
@@ -263,7 +262,7 @@ void srb2::save_ng_gamedata()
 		}
 
 		auto cupdata = cuptojson(unloadedcup->windata);
-		cupdata.name = std::string(unloadedcup->name);
+		cupdata.name = String(unloadedcup->name);
 		ng.cups[cupdata.name] = std::move(cupdata);
 	}
 
@@ -273,17 +272,19 @@ void srb2::save_ng_gamedata()
 
 		cupheader_t* cup = gamedata->sealedswaps[i];
 
-		sealedswap.name = std::string(cup->name);
+		sealedswap.name = String(cup->name);
 
 		ng.sealedswaps.emplace_back(std::move(sealedswap));
 	}
 
-	std::string gamedataname_s {gamedatafilename};
-	fs::path savepath {fmt::format("{}/{}", srb2home, gamedataname_s)};
-	fs::path baksavepath {fmt::format("{}/{}.bak", srb2home, gamedataname_s)};
+	String gamedataname_s {gamedatafilename};
+	String savepath_string = srb2::format("{}/{}", srb2home, gamedataname_s);
+	String baksavepath_string = srb2::format("{}/{}.bak", srb2home, gamedataname_s);
+	fs::path savepath { static_cast<std::string_view>(savepath_string) };
+	fs::path baksavepath { static_cast<std::string_view>(srb2::format("{}/{}.bak", srb2home, gamedataname_s)) };
 
-	json ngdata_json = ng;
-
+	JsonValue ngdata_json { JsonObject() };
+	to_json(ngdata_json, ng);
 
 	if (fs::exists(savepath))
 	{
@@ -300,7 +301,7 @@ void srb2::save_ng_gamedata()
 
 	try
 	{
-		std::string savepathstring = savepath.string();
+		String savepathstring = savepath.string();
 		srb2::io::FileStream file {savepathstring, srb2::io::FileStreamMode::kWrite};
 
 		// The header is necessary to validate during loading.
@@ -308,7 +309,7 @@ void srb2::save_ng_gamedata()
 		srb2::io::write(static_cast<uint8_t>(GD_VERSION_MINOR), file); // minor/flags
 		srb2::io::write(static_cast<uint8_t>(gamedata->evercrashed), file); // dirty (crash recovery)
 
-		std::vector<uint8_t> ubjson = json::to_ubjson(ng);
+		srb2::Vector<std::byte> ubjson = ngdata_json.to_ubjson();
 		srb2::io::write_exact(file, tcb::as_bytes(tcb::make_span(ubjson)));
 		file.close();
 	}
@@ -382,7 +383,7 @@ void srb2::load_ng_gamedata()
 		return;
 	}
 
-	std::string datapath {fmt::format("{}/{}", srb2home, gamedatafilename)};
+	String datapath {srb2::format("{}/{}", srb2home, gamedatafilename)};
 
 	srb2::io::BufferedInputStream<srb2::io::FileStream> bis;
 	try
@@ -419,15 +420,13 @@ void srb2::load_ng_gamedata()
 		return;
 	}
 
-	std::vector<std::byte> remainder = srb2::io::read_to_vec(bis);
+	srb2::Vector<std::byte> remainder = srb2::io::read_to_vec(bis);
 
 	GamedataJson js;
 	try
 	{
-		// safety: std::byte repr is always uint8_t 1-byte aligned
-		tcb::span<uint8_t> remainder_as_u8 = tcb::span((uint8_t*)remainder.data(), remainder.size());
-		json parsed = json::from_ubjson(remainder_as_u8);
-		js = parsed.template get<GamedataJson>();
+		JsonValue parsed = JsonValue::from_ubjson(remainder);
+		from_json(parsed, js);
 	}
 	catch (const std::exception& ex)
 	{
@@ -542,7 +541,7 @@ void srb2::load_ng_gamedata()
 			gamedata->challengegrid = static_cast<uint16_t*>(Z_Malloc(
 				(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT * sizeof(UINT16)),
 				PU_STATIC, NULL));
-			for (size_t i = 0; i < std::min((size_t)(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT), js.challengegrid.grid.size()); i++)
+			for (size_t i = 0; i < std::min<size_t>((size_t)(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT), js.challengegrid.grid.size()); i++)
 			{
 				uint16_t gridvalue = js.challengegrid.grid[i];
 				gamedata->challengegrid[i] = gridvalue;
@@ -745,7 +744,7 @@ void srb2::load_ng_gamedata()
 		// Find the loaded cup
 		for (cup = kartcupheaders; cup; cup = cup->next)
 		{
-			std::string cupname = std::string(cup->name);
+			String cupname { cup->name };
 			if (cupname == cuppair.first)
 			{
 				break;
@@ -770,7 +769,7 @@ void srb2::load_ng_gamedata()
 			}
 			for (auto unloadedskin = unloadedskins; unloadedskin; unloadedskin = unloadedskin->next)
 			{
-				std::string skinname = std::string(unloadedskin->name);
+				String skinname { unloadedskin->name };
 				if (skinname == cuppair.second.records[j].bestskin)
 				{
 					skinreference_t ref {};
@@ -826,7 +825,7 @@ void srb2::load_ng_gamedata()
 				break;
 			}
 
-			std::string cupname = std::string(cup->name);
+			String cupname { cup->name };
 			if (cupname == js.sealedswaps[i].name)
 			{
 				break;

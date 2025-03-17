@@ -12,6 +12,7 @@
 
 #include "k_podium.h"
 
+#include "core/string.h"
 #include "doomdef.h"
 #include "d_main.h"
 #include "d_netcmd.h"
@@ -50,8 +51,6 @@
 #include "v_draw.hpp"
 
 #include "k_hud.h"
-
-#include <string>
 
 typedef enum
 {
@@ -652,7 +651,7 @@ void podiumData_s::Draw(void)
 								}
 
 								{
-									std::string emeraldName;
+									srb2::String emeraldName;
 									if (emeraldNum > 7)
 									{
 										emeraldName = (useWhiteFrame ? "K_SUPER2" : "K_SUPER1");

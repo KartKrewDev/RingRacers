@@ -11,11 +11,11 @@
 #include <algorithm>
 #include <cstddef>
 #include <memory>
-#include <string>
 
 #include <fmt/chrono.h>
 #include <fmt/format.h>
 
+#include "../../core/string.h"
 #include "../../cxxutil.hpp"
 #include "../../v_draw.hpp"
 #include "EggTV.hpp"
@@ -85,11 +85,11 @@ void draw_face(const Draw& draw, const EggTVData::Replay::Standing& player, face
 	}
 }
 
-std::string player_time_string(const EggTVData::Replay::Standing& player)
+srb2::String player_time_string(const EggTVData::Replay::Standing& player)
 {
 	if (player.time)
 	{
-		return fmt::format(
+		return srb2::format(
 			R"({}'{}"{})",
 			G_TicsToMinutes(*player.time, true),
 			G_TicsToSeconds(*player.time),
@@ -102,7 +102,7 @@ std::string player_time_string(const EggTVData::Replay::Standing& player)
 	}
 }
 
-std::string player_points_string(const EggTVData::Replay::Standing& player)
+srb2::String player_points_string(const EggTVData::Replay::Standing& player)
 {
 	return player.score ? fmt::format("{} PTS", *player.score) : "NO CONTEST";
 }

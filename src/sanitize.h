@@ -14,8 +14,9 @@
 #include "doomtype.h"
 
 #ifdef __cplusplus
-#include <string>
 #include <string_view>
+
+#include "core/string.h"
 
 namespace srb2::sanitize
 {
@@ -33,10 +34,10 @@ enum class ParseMode
 };
 
 // sanitizes string of all 0x80 codes
-std::string sanitize(std::string_view in, SanitizeMode mode);
+srb2::String sanitize(std::string_view in, SanitizeMode mode);
 
 // sanitizes string of all 0x80 codes then parses caret codes
-std::string parse_carets(std::string_view in, ParseMode mode);
+srb2::String parse_carets(std::string_view in, ParseMode mode);
 
 }; // namespace srb2
 

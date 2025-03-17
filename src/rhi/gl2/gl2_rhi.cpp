@@ -14,13 +14,13 @@
 #include <string>
 #include <string_view>
 #include <tuple>
-#include <unordered_map>
 #include <utility>
 
 #include <fmt/format.h>
 #include <glad/gl.h>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "../../core/vector.hpp"
 #include "../shader_load_context.hpp"
 
 using namespace srb2;
@@ -840,8 +840,8 @@ rhi::Handle<rhi::Program> Gl2Rhi::create_program(const ProgramDesc& desc)
 	// breaks the AMD driver's program linker in a bizarre way.
 
 	// Process shader sources
-	std::vector<const char*> vert_sources;
-	std::vector<const char*> frag_sources;
+	srb2::Vector<const char*> vert_sources;
+	srb2::Vector<const char*> frag_sources;
 	ShaderLoadContext vert_ctx;
 	ShaderLoadContext frag_ctx;
 	vert_ctx.set_version("120");
@@ -873,11 +873,11 @@ rhi::Handle<rhi::Program> Gl2Rhi::create_program(const ProgramDesc& desc)
 	{
 		GLint max_length = 0;
 		gl_->GetShaderiv(program.vertex_shader, GL_INFO_LOG_LENGTH, &max_length);
-		std::vector<GLchar> compile_error(max_length);
+		srb2::Vector<GLchar> compile_error(max_length);
 		gl_->GetShaderInfoLog(program.vertex_shader, max_length, &max_length, compile_error.data());
 
 		gl_->DeleteShader(program.vertex_shader);
-		throw std::runtime_error(fmt::format("Vertex shader compilation failed: {}", std::string(compile_error.data())));
+		throw std::runtime_error(fmt::format("Vertex shader compilation failed: {}", String(compile_error.data())));
 	}
 
 	program.fragment_shader = gl_->CreateShader(GL_FRAGMENT_SHADER);
@@ -889,11 +889,11 @@ rhi::Handle<rhi::Program> Gl2Rhi::create_program(const ProgramDesc& desc)
 	{
 		GLint max_length = 0;
 		gl_->GetShaderiv(program.fragment_shader, GL_INFO_LOG_LENGTH, &max_length);
-		std::vector<GLchar> compile_error(max_length);
+		srb2::Vector<GLchar> compile_error(max_length);
 		gl_->GetShaderInfoLog(program.fragment_shader, max_length, &max_length, compile_error.data());
 
 		gl_->DeleteShader(program.fragment_shader);
-		throw std::runtime_error(fmt::format("Fragment shader compilation failed: {}", std::string(compile_error.data())));
+		throw std::runtime_error(fmt::format("Fragment shader compilation failed: {}", String(compile_error.data())));
 	}
 
 	program.program = gl_->CreateProgram();
@@ -907,13 +907,13 @@ rhi::Handle<rhi::Program> Gl2Rhi::create_program(const ProgramDesc& desc)
 	{
 		GLint max_length = 0;
 		gl_->GetProgramiv(program.program, GL_INFO_LOG_LENGTH, &max_length);
-		std::vector<GLchar> link_error(max_length);
+		srb2::Vector<GLchar> link_error(max_length);
 		gl_->GetProgramInfoLog(program.program, max_length, &max_length, link_error.data());
 
 		gl_->DeleteProgram(program.program);
 		gl_->DeleteShader(program.fragment_shader);
 		gl_->DeleteShader(program.vertex_shader);
-		throw std::runtime_error(fmt::format("Pipeline program link failed: {}", std::string(link_error.data())));
+		throw std::runtime_error(fmt::format("Pipeline program link failed: {}", String(link_error.data())));
 	}
 
 	// get attribute information
@@ -936,7 +936,7 @@ rhi::Handle<rhi::Program> Gl2Rhi::create_program(const ProgramDesc& desc)
 		GL_ASSERT;
 		GLint location = gl_->GetAttribLocation(program.program, name);
 		GL_ASSERT;
-		program.attrib_locations[std::string(name)] = location;
+		program.attrib_locations[String(name)] = location;
 	}
 
 	// get uniform information
@@ -959,7 +959,7 @@ rhi::Handle<rhi::Program> Gl2Rhi::create_program(const ProgramDesc& desc)
 		GL_ASSERT;
 		GLint location = gl_->GetUniformLocation(program.program, name);
 		GL_ASSERT;
-		program.uniform_locations[std::string(name)] = location;
+		program.uniform_locations[String(name)] = location;
 	}
 
 	Handle<Program> program_handle = program_slab_.insert(std::move(program));

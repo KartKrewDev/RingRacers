@@ -10,12 +10,11 @@
 
 #include "postprocess_wipe.hpp"
 
-#include <string>
-
 #include <fmt/format.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <tcb/span.hpp>
 
+#include "../core/string.h"
 #include "../f_finale.h"
 #include "../w_wad.h"
 
@@ -106,7 +105,7 @@ void PostprocessWipePass::prepass(Rhi& rhi)
 		return;
 	}
 
-	std::string lumpname = fmt::format(FMT_STRING("FADE{:02d}{:02d}"), wipe_type, wipe_frame);
+	String lumpname = format(FMT_STRING("FADE{:02d}{:02d}"), wipe_type, wipe_frame);
 	lumpnum_t mask_lump = W_CheckNumForName(lumpname.c_str());
 	if (mask_lump == LUMPERROR)
 	{

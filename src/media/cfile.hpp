@@ -12,7 +12,8 @@
 #define __SRB2_MEDIA_CFILE_HPP__
 
 #include <cstdio>
-#include <string>
+
+#include "../core/string.h"
 
 namespace srb2::media
 {
@@ -20,7 +21,7 @@ namespace srb2::media
 class CFile
 {
 public:
-	CFile(const std::string file_name);
+	CFile(const srb2::String& file_name);
 	~CFile();
 
 	operator std::FILE*() const { return file_; }
@@ -28,7 +29,7 @@ public:
 	const char* name() const { return name_.c_str(); }
 
 private:
-	std::string name_;
+	srb2::String name_;
 	std::FILE* file_;
 };
 

@@ -9,12 +9,12 @@
 //-----------------------------------------------------------------------------
 
 #include <string_view>
-#include <unordered_map>
-#include <unordered_set>
 
 #include "r_debug.hpp"
 #include "v_draw.hpp"
 
+#include "core/hash_map.hpp"
+#include "core/hash_set.hpp"
 #include "doomdef.h"
 #include "doomtype.h"
 #include "r_textures.h"
@@ -25,7 +25,7 @@ using srb2::Draw;
 namespace
 {
 
-std::unordered_set<INT32> frame_list;
+srb2::HashSet<INT32> frame_list;
 
 }; // namespace
 

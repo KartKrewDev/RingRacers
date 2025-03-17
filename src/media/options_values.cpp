@@ -12,6 +12,7 @@
 
 #include <vpx/vpx_encoder.h>
 
+#include "../core/vector.hpp"
 #include "options.hpp"
 #include "vorbis.hpp"
 #include "vp8.hpp"
@@ -23,7 +24,7 @@ using namespace srb2::media;
 // to be defined in the same translation unit as
 // Options::cvars_ to guarantee initialization order.
 
-std::vector<consvar_t*> Options::cvars_;
+srb2::Vector<consvar_t*> Options::cvars_;
 
 // clang-format off
 const Options VorbisEncoder::options_("vorbis", {

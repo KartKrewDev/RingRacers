@@ -13,8 +13,8 @@
 
 #include <array>
 #include <string_view>
-#include <unordered_map>
 
+#include "../../core/hash_map.hpp"
 #include "../../doomdef.h" // skincolornum_t
 #include "../../v_draw.hpp"
 
@@ -90,7 +90,7 @@ public:
 
 		patch select		= "RHTVSQSL";
 
-		std::unordered_map<std::string_view, patch> gametype = {
+		srb2::HashMap<std::string_view, patch> gametype = {
 			{"Race",			"RHGT1"},
 			{"Battle",			"RHGT2"},
 			{"Prison Break",	"RHGT3"},

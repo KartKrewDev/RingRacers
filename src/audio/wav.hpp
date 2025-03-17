@@ -15,10 +15,10 @@
 #include <cstdint>
 #include <type_traits>
 #include <variant>
-#include <vector>
 
 #include <tcb/span.hpp>
 
+#include "../core/vector.hpp"
 #include "../io/streams.hpp"
 #include "sample.hpp"
 
@@ -27,7 +27,7 @@ namespace srb2::audio
 
 class Wav final
 {
-	std::variant<std::vector<uint8_t>, std::vector<int16_t>> interleaved_samples_;
+	std::variant<Vector<uint8_t>, Vector<int16_t>> interleaved_samples_;
 	std::size_t channels_ = 1;
 	std::size_t sample_rate_ = 44100;
 
@@ -46,7 +46,7 @@ public:
 template <typename I, typename std::enable_if_t<srb2::io::IsInputStreamV<I>, int> = 0>
 inline Wav load_wav(I& stream)
 {
-	std::vector<std::byte> data = srb2::io::read_to_vec(stream);
+	Vector<std::byte> data = srb2::io::read_to_vec(stream);
 	return Wav {data};
 }
 
