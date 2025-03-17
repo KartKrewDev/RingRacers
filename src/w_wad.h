@@ -222,8 +222,6 @@ void *W_CacheSoftwarePatchNum(lumpnum_t lumpnum, INT32 tag);
 
 void W_UnlockCachedPatch(void *patch);
 
-void W_VerifyFileMD5(UINT16 wadfilenum, const char *matchmd5);
-
 int W_VerifyNMUSlumps(const char *filename, boolean exit_on_error);
 
 /// Initialize non-legacy GL shader lookup, which lives outside the lump management system.

@@ -2148,57 +2148,6 @@ static void PrintMD5String(const UINT8 *md5, char *buf)
 		md5[12], md5[13], md5[14], md5[15]);
 }
 #endif
-/** Verifies a file's MD5 is as it should be.
-  * For releases, used as cheat prevention -- if the MD5 doesn't match, a
-  * fatal error is thrown. In debug mode, an MD5 mismatch only triggers a
-  * warning.
-  *
-  * \param wadfilenum Number of the loaded wad file to check.
-  * \param matchmd5   The MD5 sum this wad should have, expressed as a
-  *                   textual string.
-  * \author Graue <graue@oceanbase.org>
-  */
-void W_VerifyFileMD5(UINT16 wadfilenum, const char *matchmd5)
-{
-#ifdef NOMD5
-	(void)wadfilenum;
-	(void)matchmd5;
-#else
-	UINT8 realmd5[MD5_LEN];
-	INT32 ix;
-
-	I_Assert(strlen(matchmd5) == 2*MD5_LEN);
-	I_Assert(wadfilenum < numwadfiles);
-	// Convert an md5 string like "7d355827fa8f981482246d6c95f9bd48"
-	// into a real md5.
-	for (ix = 0; ix < 2*MD5_LEN; ix++)
-	{
-		INT32 n, c = matchmd5[ix];
-		if (isdigit(c))
-			n = c - '0';
-		else
-		{
-			I_Assert(isxdigit(c));
-			if (isupper(c)) n = c - 'A' + 10;
-			else n = c - 'a' + 10;
-		}
-		if (ix & 1) realmd5[ix>>1] = (UINT8)(realmd5[ix>>1]+n);
-		else realmd5[ix>>1] = (UINT8)(n<<4);
-	}
-
-	if (memcmp(realmd5, wadfiles[wadfilenum]->md5sum, 16))
-	{
-		char actualmd5text[2*MD5_LEN+1];
-		PrintMD5String(wadfiles[wadfilenum]->md5sum, actualmd5text);
-#ifdef _DEBUG
-		CONS_Printf
-#else
-		I_Error
-#endif
-			(M_GetText("File is old, is corrupt or has been modified: %s (found md5: %s, wanted: %s)\n"), wadfiles[wadfilenum]->filename, actualmd5text, matchmd5);
-	}
-#endif
-}
 
 // Verify versions for different archive
 // formats. checklist assumed to be valid.
