@@ -141,8 +141,10 @@ INT32 window_y;
 //
 // DEMO LOOP
 //
-static char *startupiwads[MAX_WADFILES];
-static char *startuppwads[MAX_WADFILES];
+static size_t num_startupiwads = 0;
+static initmultiplefilesentry_t startupiwads[MAX_WADFILES];
+static size_t num_startuppwads = 0;
+static initmultiplefilesentry_t startuppwads[MAX_WADFILES];
 
 boolean devparm = false; // started game with -devparm
 
@@ -1282,31 +1284,36 @@ boolean D_IsDeferredStartTitle(void)
 //
 // D_AddFile
 //
-static void D_AddFile(char **list, const char *file)
+static void D_AddFile(initmultiplefilesentry_t *list, size_t index, const char *file, const char *md5sum)
 {
-	size_t pnumwadfiles;
-	char *newfile;
-
-	for (pnumwadfiles = 0; list[pnumwadfiles]; pnumwadfiles++)
-		;
-
-	newfile = static_cast<char*>(malloc(strlen(file) + 1));
-	if (!newfile)
+	char *filecopy = NULL;
+	if (file)
 	{
-		I_Error("No more free memory to AddFile %s",file);
+		size_t len = strlen(file) + 1;
+		filecopy = (char*)malloc(len);
+		memcpy(filecopy, file, len);
 	}
-	strcpy(newfile, file);
-
-	list[pnumwadfiles] = newfile;
+	char *md5copy = NULL;
+	if (md5sum)
+	{
+		size_t len = strlen(md5sum) + 1;
+		md5copy = (char*)malloc(len);
+		memcpy(md5copy, md5sum, len);
+	}
+	list[index].filename = filecopy;
+	list[index].md5sum = md5copy;
 }
 
-static inline void D_CleanFile(char **list)
+static inline void D_CleanFile(initmultiplefilesentry_t *list, size_t count)
 {
-	size_t pnumwadfiles;
-	for (pnumwadfiles = 0; list[pnumwadfiles]; pnumwadfiles++)
+	for (INT32 i = 0; i < count; ++i)
 	{
-		free(list[pnumwadfiles]);
-		list[pnumwadfiles] = NULL;
+		if (list[i].filename != NULL)
+			free((void*)list[i].filename);
+		list[i].filename = NULL;
+		if (list[i].md5sum != NULL)
+			free((void*)list[i].md5sum);
+		list[i].md5sum = NULL;
 	}
 }
 
@@ -1354,7 +1361,7 @@ static boolean AddIWAD(void)
 
 	if (FIL_ReadFileOK(path))
 	{
-		D_AddFile(startupiwads, path);
+		D_AddFile(startupiwads, num_startupiwads++, path, ASSET_HASH_BIOS_PK3);
 		return true;
 	}
 	else
@@ -1395,21 +1402,18 @@ static void IdentifyVersion(void)
 	snprintf(configfile, sizeof configfile, "%s" PATHSEP CONFIGFILENAME, srb2waddir);
 	configfile[sizeof configfile - 1] = '\0';
 
-	// if you change the ordering of this or add/remove a file, be sure to update the md5
-	// checking in D_SRB2Main
-
-	D_AddFile(startupiwads, va(spandf,srb2waddir,"data","scripts.pk3"));
-	D_AddFile(startupiwads, va(spandf,srb2waddir,"data","gfx.pk3"));
-	D_AddFile(startupiwads, va(spandf,srb2waddir,"data","textures_general.pk3"));
-	D_AddFile(startupiwads, va(spandf,srb2waddir,"data","textures_segazones.pk3"));
-	D_AddFile(startupiwads, va(spandf,srb2waddir,"data","textures_originalzones.pk3"));
-	D_AddFile(startupiwads, va(spandf,srb2waddir,"data","chars.pk3"));
-	D_AddFile(startupiwads, va(spandf,srb2waddir,"data","followers.pk3"));
-	D_AddFile(startupiwads, va(spandf,srb2waddir,"data","maps.pk3"));
-	D_AddFile(startupiwads, va(spandf,srb2waddir,"data","unlocks.pk3"));
-	D_AddFile(startupiwads, va(spandf,srb2waddir,"data","staffghosts.pk3"));
+	D_AddFile(startupiwads, num_startupiwads++, va(spandf,srb2waddir,"data","scripts.pk3"), ASSET_HASH_SCRIPTS_PK3);
+	D_AddFile(startupiwads, num_startupiwads++, va(spandf,srb2waddir,"data","gfx.pk3"), ASSET_HASH_GFX_PK3);
+	D_AddFile(startupiwads, num_startupiwads++, va(spandf,srb2waddir,"data","textures_general.pk3"), ASSET_HASH_TEXTURES_GENERAL_PK3);
+	D_AddFile(startupiwads, num_startupiwads++, va(spandf,srb2waddir,"data","textures_segazones.pk3"), ASSET_HASH_TEXTURES_SEGAZONES_PK3);
+	D_AddFile(startupiwads, num_startupiwads++, va(spandf,srb2waddir,"data","textures_originalzones.pk3"), ASSET_HASH_TEXTURES_ORIGINALZONES_PK3);
+	D_AddFile(startupiwads, num_startupiwads++, va(spandf,srb2waddir,"data","chars.pk3"), ASSET_HASH_CHARS_PK3);
+	D_AddFile(startupiwads, num_startupiwads++, va(spandf,srb2waddir,"data","followers.pk3"), ASSET_HASH_FOLLOWERS_PK3);
+	D_AddFile(startupiwads, num_startupiwads++, va(spandf,srb2waddir,"data","maps.pk3"), ASSET_HASH_MAPS_PK3);
+	D_AddFile(startupiwads, num_startupiwads++, va(spandf,srb2waddir,"data","unlocks.pk3"), ASSET_HASH_UNLOCKS_PK3);
+	D_AddFile(startupiwads, num_startupiwads++, va(spandf,srb2waddir,"data","staffghosts.pk3"), ASSET_HASH_STAFFGHOSTS_PK3);
 #ifdef USE_PATCH_FILE
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"patch.pk3"));
+	D_AddFile(startupiwads, num_startupiwads++, va(pandf,srb2waddir,"patch.pk3"), ASSET_HASH_PATCH_PK3);
 #endif
 
 #define MUSICTEST(str) \
@@ -1418,7 +1422,7 @@ static void IdentifyVersion(void)
 		int ms = W_VerifyNMUSlumps(musicpath, false); \
 		if (ms == 1) \
 		{ \
-			D_AddFile(startupiwads, musicpath); \
+			D_AddFile(startupiwads, num_startupiwads++, musicpath, NULL); \
 			musicwads++; \
 		} \
 		else if (ms == 0) \
@@ -1687,7 +1691,7 @@ void D_SRB2Main(void)
 				const char *s = M_GetNextParm();
 
 				if (s) // Check for NULL?
-					D_AddFile(startuppwads, s);
+					D_AddFile(startuppwads, num_startuppwads++, s, NULL);
 			}
 		}
 	}
@@ -1713,44 +1717,10 @@ void D_SRB2Main(void)
 
 	// load wad, including the main wad file
 	CONS_Printf("W_InitMultipleFiles(): Adding IWAD and main PWADs.\n");
-	W_InitMultipleFiles(startupiwads, false);
-	D_CleanFile(startupiwads);
-
-	mainwads = 0;
-
-#ifndef DEVELOP
-	// Check MD5s of autoloaded files
-	// Note: Do not add any files that ignore MD5!
-	W_VerifyFileMD5(mainwads, ASSET_HASH_BIOS_PK3);									// bios.pk3
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_SCRIPTS_PK3);					// scripts.pk3
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_GFX_PK3);						// gfx.pk3
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_TEXTURES_GENERAL_PK3);			// textures_general.pk3
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_TEXTURES_SEGAZONES_PK3);		// textures_segazones.pk3
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_TEXTURES_ORIGINALZONES_PK3);	// textures_originalzones.pk3
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_CHARS_PK3);					// chars.pk3
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_FOLLOWERS_PK3);				// followers.pk3
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_MAPS_PK3);						// maps.pk3
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_UNLOCKS_PK3);					// unlocks.pk3
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_STAFFGHOSTS_PK3);				// staffghosts.pk3
-#ifdef USE_PATCH_FILE
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_PATCH_PK3);					// patch.pk3
-#endif
-#else
-	mainwads++;	// scripts.pk3
-	mainwads++;	// gfx.pk3
-	mainwads++;	// textures_general.pk3
-	mainwads++;	// textures_segazones.pk3
-	mainwads++;	// textures_originalzones.pk3
-	mainwads++;	// chars.pk3
-	mainwads++; // followers.pk3
-	mainwads++;	// maps.pk3
-	mainwads++; // unlocks.pk3
-	mainwads++; // staffghosts.pk3
-#ifdef USE_PATCH_FILE
-	mainwads++; // patch.pk3
-#endif
-
-#endif //ifndef DEVELOP
+	W_InitMultipleFiles(startupiwads, num_startupiwads, false);
+	mainwads = num_startupiwads - musicwads;
+	D_CleanFile(startupiwads, num_startupiwads);
+	num_startupiwads = 0;
 
 	// Load credits_def lump
 	F_LoadCreditsDefinitions();
@@ -1815,10 +1785,10 @@ void D_SRB2Main(void)
 
 	// HACK: Refer to https://git.do.srb2.org/KartKrew/RingRacers/-/merge_requests/29#note_61574
 	partadd_earliestfile = numwadfiles;
-	W_InitMultipleFiles(startuppwads, true);
+	W_InitMultipleFiles(startuppwads, num_startuppwads, true);
 
 	// Only search for pwad maps and reload graphics if we actually have a pwad added
-	if (startuppwads[0] != NULL)
+	if (num_startuppwads > 0)
 	{
 		//
 		// search for pwad maps
@@ -1827,7 +1797,8 @@ void D_SRB2Main(void)
 		HU_LoadGraphics();
 	}
 
-	D_CleanFile(startuppwads);
+	D_CleanFile(startuppwads, num_startuppwads);
+	num_startuppwads = 0;
 	partadd_earliestfile = UINT16_MAX;
 
 	CON_SetLoadingProgress(LOADED_PWAD);

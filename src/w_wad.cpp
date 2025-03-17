@@ -1038,24 +1038,25 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup, const
   * Each file is optional, but at least one file must be found or an error will
   * result. Lump names can appear multiple times. The name searcher looks
   * backwards, so a later file overrides all earlier ones.
-  *
-  * \param filenames A null-terminated list of files to use.
   */
-INT32 W_InitMultipleFiles(char **filenames, boolean addons)
+INT32 W_InitMultipleFiles(const initmultiplefilesentry_t *entries, INT32 count, boolean addons)
 {
+	INT32 i;
 	INT32 rc = 1;
 	INT32 overallrc = 1;
 
 	// will be realloced as lumps are added
-	for (; *filenames; filenames++)
+	for (i = 0; i < count; ++i)
 	{
-		if (addons && !W_VerifyNMUSlumps(*filenames, !addons))
+		const initmultiplefilesentry_t *entry = &entries[i];
+
+		if (addons && !W_VerifyNMUSlumps(entry->filename, !addons))
 			G_SetGameModified(true, false);
 
 		//CONS_Debug(DBG_SETUP, "Loading %s\n", *filenames);
-		rc = W_InitFile(*filenames, !addons, true, NULL);
+		rc = W_InitFile(entry->filename, !addons, true, entry->md5sum);
 		if (rc == INT16_MAX)
-			CONS_Printf(M_GetText("Errors occurred while loading %s; not added.\n"), *filenames);
+			CONS_Printf(M_GetText("Errors occurred while loading %s; not added.\n"), entry->filename);
 		overallrc &= (rc != INT16_MAX) ? 1 : 0;
 	}
 
