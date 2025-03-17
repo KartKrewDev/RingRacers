@@ -118,6 +118,10 @@ static FILE *g_shaderspk3file;
 static UINT16 g_shaderspk3numlumps;
 static lumpinfo_t *g_shaderspk3lumps;
 
+#ifndef NOMD5
+static void PrintMD5String(const UINT8 *md5, char *buf);
+#endif
+
 // W_Shutdown
 // Closes all of the WAD files before quitting
 // If not done on a Mac then open wad files
@@ -803,7 +807,7 @@ static UINT16 W_InitFileError (const char *filename, boolean exitworthy)
 //
 // Can now load dehacked files (.soc)
 //
-UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
+UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup, const char *md5expected)
 {
 	FILE *handle;
 	lumpinfo_t *lumpinfo = NULL;
@@ -861,6 +865,53 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 	// an MD5 of an already added WAD file!
 	//
 	W_MakeFileMD5(filename, md5sum);
+
+	if (md5expected)
+	{
+		// moved Graue's <graue@oceanbase.org> W_VerifyFileMD5 inline here
+		UINT8 realmd5[MD5_LEN];
+		INT32 ix;
+
+		I_Assert(strlen(md5expected) == 2*MD5_LEN);
+
+		// Convert an md5 string like "7d355827fa8f981482246d6c95f9bd48"
+		// into a real md5.
+		for (ix = 0; ix < 2*MD5_LEN; ix++)
+		{
+			INT32 n, c = md5expected[ix];
+			if (isdigit(c))
+				n = c - '0';
+			else
+			{
+				I_Assert(isxdigit(c));
+				if (isupper(c)) n = c - 'A' + 10;
+				else n = c - 'a' + 10;
+			}
+			if (ix & 1) realmd5[ix>>1] = (UINT8)(realmd5[ix>>1]+n);
+			else realmd5[ix>>1] = (UINT8)(n<<4);
+		}
+
+		if (memcmp(realmd5, md5sum, 16) != 0)
+		{
+			char actualmd5text[2*MD5_LEN+1];
+			PrintMD5String(md5sum, actualmd5text);
+#ifdef DEVELOP
+			CONS_Printf("File %s does not match expected md5\n", filename);
+#else
+			if (startup)
+			{
+				I_Error(M_GetText("File is old, is corrupt or has been modified: %s (found md5: %s, wanted: %s)\n"), filename, actualmd5text, md5expected);
+			}
+			else
+			{
+				CONS_Alert(CONS_ERROR, M_GetText("Did not load file %s because it did not match expected md5sum %s\n"), filename, md5expected);
+				if (handle)
+					fclose(handle);
+				return W_InitFileError(filename, false);
+			}
+#endif
+		}
+	}
 
 	for (i = 0; i < numwadfiles; i++)
 	{
@@ -1002,7 +1053,7 @@ INT32 W_InitMultipleFiles(char **filenames, boolean addons)
 			G_SetGameModified(true, false);
 
 		//CONS_Debug(DBG_SETUP, "Loading %s\n", *filenames);
-		rc = W_InitFile(*filenames, !addons, true);
+		rc = W_InitFile(*filenames, !addons, true, NULL);
 		if (rc == INT16_MAX)
 			CONS_Printf(M_GetText("Errors occurred while loading %s; not added.\n"), *filenames);
 		overallrc &= (rc != INT16_MAX) ? 1 : 0;
