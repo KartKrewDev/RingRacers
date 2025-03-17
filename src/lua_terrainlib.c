@@ -370,6 +370,79 @@ static int overlay_num(lua_State *L)
 	return 1;
 }
 
+static int lib_iterateOverlays(lua_State *L)
+{
+	size_t i;
+
+	if (lua_gettop(L) < 2)
+	{
+		lua_pushcfunction(L, lib_iterateOverlays);
+		return 1;
+	}
+
+	lua_settop(L, 2);
+	lua_remove(L, 1); // state is unused.
+
+	if (!lua_isnil(L, 1))
+		i = K_GetOverlayHeapIndex(*(t_overlay_t **)luaL_checkudata(L, 1, META_OVERLAY)) + 1;
+	else
+		i = 0;
+
+	// overlays are always valid, only added, never removed
+	if (i < K_GetNumOverlayDefs())
+	{
+		LUA_PushUserdata(L, K_GetOverlayByIndex(i), META_OVERLAY);
+		return 1;
+	}
+
+	return 0;
+}
+
+static int lib_getOverlay(lua_State *L)
+{
+	const char *field;
+	size_t i;
+
+	// find overlay by number
+	if (lua_type(L, 2) == LUA_TNUMBER)
+	{
+		// Making a special condition for this as the game contains no overlays by default.
+		if (K_GetNumOverlayDefs() == 0)
+			return luaL_error(L, "no overlays available in overlays[]");
+		
+		i = luaL_checkinteger(L, 2);
+		if (i >= K_GetNumOverlayDefs())
+			return luaL_error(L, "overlays[] index %d out of range (0 - %d)", i, K_GetNumOverlayDefs()-1);
+		LUA_PushUserdata(L, K_GetOverlayByIndex(i), META_OVERLAY);
+		return 1;
+	}
+
+	field = luaL_checkstring(L, 2);
+
+	// special function iterate
+	if (fastcmp(field,"iterate"))
+	{
+		lua_pushcfunction(L, lib_iterateOverlays);
+		return 1;
+	}
+
+	// find overlay by name
+	t_overlay_t *byname = K_GetOverlayByName(field);
+	if (byname != NULL)
+	{
+		LUA_PushUserdata(L, byname, META_OVERLAY);
+		return 1;
+	}
+
+	return 0;
+}
+
+static int lib_numOverlays(lua_State *L)
+{
+	lua_pushinteger(L, K_GetNumOverlayDefs());
+	return 1;
+}
+
 static int terrain_get(lua_State *L)
 {
 	terrain_t *terrain = *((terrain_t **)luaL_checkudata(L, 1, META_TERRAIN));
@@ -564,6 +637,16 @@ int LUA_TerrainLib(lua_State *L)
 		lua_pushcfunction(L, overlay_num);
 		lua_setfield(L, -2, "__len");
 	lua_pop(L,1);
+	
+	lua_newuserdata(L, 0);
+		lua_createtable(L, 0, 2);
+			lua_pushcfunction(L, lib_getOverlay);
+			lua_setfield(L, -2, "__index");
+
+			lua_pushcfunction(L, lib_numOverlays);
+			lua_setfield(L, -2, "__len");
+		lua_setmetatable(L, -2);
+	lua_setglobal(L, "overlays");
 
 	luaL_newmetatable(L, META_TERRAIN);
 		lua_pushcfunction(L, terrain_get);
