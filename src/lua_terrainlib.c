@@ -461,6 +461,75 @@ static int terrain_num(lua_State *L)
 	return 1;
 }
 
+static int lib_iterateTerrains(lua_State *L)
+{
+	size_t i;
+
+	if (lua_gettop(L) < 2)
+	{
+		lua_pushcfunction(L, lib_iterateTerrains);
+		return 1;
+	}
+
+	lua_settop(L, 2);
+	lua_remove(L, 1); // state is unused.
+
+	if (!lua_isnil(L, 1))
+		i = K_GetTerrainHeapIndex(*(terrain_t **)luaL_checkudata(L, 1, META_TERRAIN)) + 1;
+	else
+		i = 0;
+
+	// terrains are always valid, only added, never removed
+	if (i < K_GetNumTerrainDefs())
+	{
+		LUA_PushUserdata(L, K_GetTerrainByIndex(i), META_TERRAIN);
+		return 1;
+	}
+
+	return 0;
+}
+
+static int lib_getTerrain(lua_State *L)
+{
+	const char *field;
+	size_t i;
+
+	// find terrain by number
+	if (lua_type(L, 2) == LUA_TNUMBER)
+	{
+		i = luaL_checkinteger(L, 2);
+		if (i >= K_GetNumTerrainDefs())
+			return luaL_error(L, "terrains[] index %d out of range (0 - %d)", i, K_GetNumTerrainDefs()-1);
+		LUA_PushUserdata(L, K_GetTerrainByIndex(i), META_TERRAIN);
+		return 1;
+	}
+
+	field = luaL_checkstring(L, 2);
+
+	// special function iterate
+	if (fastcmp(field,"iterate"))
+	{
+		lua_pushcfunction(L, lib_iterateTerrains);
+		return 1;
+	}
+
+	// find terrain by name
+	terrain_t *byname = K_GetTerrainByName(field);
+	if (byname != NULL)
+	{
+		LUA_PushUserdata(L, byname, META_TERRAIN);
+		return 1;
+	}
+
+	return 0;
+}
+
+static int lib_numTerrains(lua_State *L)
+{
+	lua_pushinteger(L, K_GetNumTerrainDefs());
+	return 1;
+}
+
 int LUA_TerrainLib(lua_State *L)
 {	
 	luaL_newmetatable(L, META_SPLASH);
@@ -506,6 +575,16 @@ int LUA_TerrainLib(lua_State *L)
 		lua_pushcfunction(L, terrain_num);
 		lua_setfield(L, -2, "__len");
 	lua_pop(L,1);
+	
+	lua_newuserdata(L, 0);
+		lua_createtable(L, 0, 2);
+			lua_pushcfunction(L, lib_getTerrain);
+			lua_setfield(L, -2, "__index");
+
+			lua_pushcfunction(L, lib_numTerrains);
+			lua_setfield(L, -2, "__len");
+		lua_setmetatable(L, -2);
+	lua_setglobal(L, "terrains");
 
 	return 0;
 }
