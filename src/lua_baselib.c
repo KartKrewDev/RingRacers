@@ -4336,6 +4336,13 @@ static int lib_kGetTerrainForTextureName(lua_State *L)
 	return 1;
 }
 
+static int lib_kGetTerrainForTextureNum(lua_State *L)
+{
+	INT32 id = luaL_checkinteger(L, 1);
+	LUA_PushUserdata(L, K_GetTerrainForTextureNum(id), META_TERRAIN);
+	return 1;
+}
+
 static luaL_Reg lib[] = {
 	{"print", lib_print},
 	{"chatprint", lib_chatprint},
@@ -4653,6 +4660,7 @@ static luaL_Reg lib[] = {
 	// k_terrain
 	{"K_GetDefaultTerrain", lib_kGetDefaultTerrain},
 	{"K_GetTerrainForTextureName", lib_kGetTerrainForTextureName},
+	{"K_GetTerrainForTextureNum", lib_kGetTerrainForTextureNum},
 
 	{NULL, NULL}
 };
