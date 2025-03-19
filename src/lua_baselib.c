@@ -4371,6 +4371,21 @@ static int lib_kSetDefaultFriction(lua_State *L)
 	return 0;
 }
 
+static int lib_kSpawnSplashForMobj(lua_State *L)
+{
+	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	fixed_t impact = luaL_optinteger(L, 2, FRACUNIT);
+	
+	NOHUD
+	INLEVEL
+	
+	if (!mo)
+		return LUA_ErrInvalid(L, "mobj_t");
+	
+	K_SpawnSplashForMobj(mo, impact);
+	return 0;
+}
+
 static luaL_Reg lib[] = {
 	{"print", lib_print},
 	{"chatprint", lib_chatprint},
@@ -4691,6 +4706,7 @@ static luaL_Reg lib[] = {
 	{"K_GetTerrainForTextureNum", lib_kGetTerrainForTextureNum},
 	{"K_ProcessTerrainEffect", lib_kProcessTerrainEffect},
 	{"K_SetDefaultFriction", lib_kSetDefaultFriction},
+	{"K_SpawnSplashForMobj", lib_kSpawnSplashForMobj},
 
 	{NULL, NULL}
 };
