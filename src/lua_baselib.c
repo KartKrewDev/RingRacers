@@ -4343,6 +4343,20 @@ static int lib_kGetTerrainForTextureNum(lua_State *L)
 	return 1;
 }
 
+static int lib_kProcessTerrainEffect(lua_State *L)
+{
+	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	
+	NOHUD
+	INLEVEL
+	
+	if (!mo)
+		return LUA_ErrInvalid(L, "mobj_t");
+	
+	K_ProcessTerrainEffect(mo);
+	return 0;
+}
+
 static luaL_Reg lib[] = {
 	{"print", lib_print},
 	{"chatprint", lib_chatprint},
@@ -4661,6 +4675,7 @@ static luaL_Reg lib[] = {
 	{"K_GetDefaultTerrain", lib_kGetDefaultTerrain},
 	{"K_GetTerrainForTextureName", lib_kGetTerrainForTextureName},
 	{"K_GetTerrainForTextureNum", lib_kGetTerrainForTextureNum},
+	{"K_ProcessTerrainEffect", lib_kProcessTerrainEffect},
 
 	{NULL, NULL}
 };
