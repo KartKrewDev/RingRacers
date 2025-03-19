@@ -4386,6 +4386,20 @@ static int lib_kSpawnSplashForMobj(lua_State *L)
 	return 0;
 }
 
+static int lib_kHandleFootstepParticles(lua_State *L)
+{
+	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	
+	NOHUD
+	INLEVEL
+	
+	if (!mo)
+		return LUA_ErrInvalid(L, "mobj_t");
+	
+	K_HandleFootstepParticles(mo);
+	return 0;
+}
+
 static luaL_Reg lib[] = {
 	{"print", lib_print},
 	{"chatprint", lib_chatprint},
@@ -4707,6 +4721,7 @@ static luaL_Reg lib[] = {
 	{"K_ProcessTerrainEffect", lib_kProcessTerrainEffect},
 	{"K_SetDefaultFriction", lib_kSetDefaultFriction},
 	{"K_SpawnSplashForMobj", lib_kSpawnSplashForMobj},
+	{"K_HandleFootstepParticles", lib_kHandleFootstepParticles},
 
 	{NULL, NULL}
 };
