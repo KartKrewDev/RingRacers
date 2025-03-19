@@ -40,6 +40,7 @@
 #include "k_powerup.h"
 #include "k_hitlag.h"
 #include "music.h" // music functions necessary for lua integration
+#include "k_terrain.h"
 
 #include "lua_script.h"
 #include "lua_libs.h"
@@ -4322,6 +4323,12 @@ static int lib_startTitlecardCecho(lua_State *L)
 	return 1;
 }
 
+static int lib_kGetDefaultTerrain(lua_State *L)
+{
+	LUA_PushUserdata(L, K_GetDefaultTerrain(), META_TERRAIN);
+	return 1;
+}
+
 static luaL_Reg lib[] = {
 	{"print", lib_print},
 	{"chatprint", lib_chatprint},
@@ -4635,6 +4642,9 @@ static luaL_Reg lib[] = {
 	{"Music_UnPauseAll", lib_mMusicUnPauseAll},
 	{"Music_Loop", lib_mMusicLoop},
 	{"Music_BatchExempt", lib_mMusicBatchExempt},
+	
+	// k_terrain
+	{"K_GetDefaultTerrain", lib_kGetDefaultTerrain},
 
 	{NULL, NULL}
 };
