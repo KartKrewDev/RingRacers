@@ -4414,6 +4414,21 @@ static int lib_kUpdateTerrainOverlay(lua_State *L)
 	return 0;
 }
 
+static int lib_kTerrainHasAffect(lua_State *L)
+{
+	terrain_t *terrain = *((terrain_t **)luaL_checkudata(L, 1, META_TERRAIN));
+	boolean badonly = lua_optboolean(L, 2);
+	
+	NOHUD
+	INLEVEL
+	
+	if (!terrain)
+		return LUA_ErrInvalid(L, "terrain_t");
+	
+	lua_pushboolean(L, K_TerrainHasAffect(terrain, badonly));
+	return 1;
+}
+
 static luaL_Reg lib[] = {
 	{"print", lib_print},
 	{"chatprint", lib_chatprint},
@@ -4737,6 +4752,7 @@ static luaL_Reg lib[] = {
 	{"K_SpawnSplashForMobj", lib_kSpawnSplashForMobj},
 	{"K_HandleFootstepParticles", lib_kHandleFootstepParticles},
 	{"K_UpdateTerrainOverlay", lib_kUpdateTerrainOverlay},
+	{"K_TerrainHasAffect", lib_kTerrainHasAffect},
 
 	{NULL, NULL}
 };
