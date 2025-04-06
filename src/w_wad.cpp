@@ -2507,14 +2507,7 @@ static boolean ReadShaderFlatFile(const char *filename, size_t *size, void *dest
 		strncpy(filename_only_buf, filename_buf, 512);
 		filename_only_buf[512 - 1] = '\0';
 		sprintf(filename_buf, "%s/shaders/%s", srb2path, filename_only_buf);
-		if (findfile(filename_buf, NULL, true))
-		{
-			if ((flat_handle = fopen(filename_buf, "rb")) == NULL)
-			{
-				return false;
-			}
-		}
-		else
+		if ((flat_handle = fopen(filename_buf, "rb")) == NULL)
 		{
 			return false;
 		}
