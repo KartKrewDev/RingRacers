@@ -70,6 +70,7 @@
 #include "md5.h"
 #include "lua_script.h"
 #include "g_game.h" // G_SetGameModified
+#include "d_main.h"
 
 #include "k_terrain.h"
 
@@ -2505,7 +2506,7 @@ static boolean ReadShaderFlatFile(const char *filename, size_t *size, void *dest
 		nameonly(filename_buf);
 		strncpy(filename_only_buf, filename_buf, 512);
 		filename_only_buf[512 - 1] = '\0';
-		sprintf(filename_buf, "shaders/%s", filename_only_buf);
+		sprintf(filename_buf, "%s/shaders/%s", srb2path, filename_only_buf);
 		if (findfile(filename_buf, NULL, true))
 		{
 			if ((flat_handle = fopen(filename_buf, "rb")) == NULL)

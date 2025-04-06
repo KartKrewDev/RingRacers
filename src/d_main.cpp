@@ -1770,7 +1770,7 @@ void D_SRB2Main(void)
 
 	M_PasswordInit();
 
-	W_InitShaderLookup("shaders.pk3");
+	W_InitShaderLookup(va(spandf, srb2path, "data", "shaders.pk3"));
 
 	//---------------------------------------------------- READY SCREEN
 	// we need to check for dedicated before initialization of some subsystems
