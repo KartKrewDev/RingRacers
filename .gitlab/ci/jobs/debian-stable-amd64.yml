@@ -31,7 +31,7 @@ Debian stable:amd64:
     - - |
           # apt_development
           echo -e "\e[0Ksection_start:`date +%s`:apt_development[collapsed=true]\r\e[0KInstalling development packages"
-      - apt-get install libsdl2-dev:amd64 libpng-dev:amd64 libcurl4-openssl-dev:amd64 libyuv-dev:amd64 libminiupnpc-dev:amd64
+      - apt-get install libsdl2-dev:amd64 libpng-dev:amd64 libcurl4-openssl-dev:amd64 libyuv-dev:amd64
       - |
           # apt_development
           echo -e "\e[0Ksection_end:`date +%s`:apt_development\r\e[0K"

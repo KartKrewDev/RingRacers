@@ -32,7 +32,7 @@ Debian stable:i386:
     - - |
           # apt_development
           echo -e "\e[0Ksection_start:`date +%s`:apt_development[collapsed=true]\r\e[0KInstalling development packages"
-      - apt-get install libsdl2-dev:i386 libpng-dev:i386 libcurl4-openssl-dev:i386 libyuv-dev:i386 libminiupnpc-dev:i386
+      - apt-get install libsdl2-dev:i386 libpng-dev:i386 libcurl4-openssl-dev:i386 libyuv-dev:i386
       - |
           # apt_development
           echo -e "\e[0Ksection_end:`date +%s`:apt_development\r\e[0K"

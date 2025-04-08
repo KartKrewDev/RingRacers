@@ -26,7 +26,7 @@ batocera:arm64:
     - - |
           # apt_development
           echo -e "\e[0Ksection_start:`date +%s`:apt_development[collapsed=true]\r\e[0KInstalling development packages"
-      - apt-get install libsdl2-dev:arm64 libpng-dev:arm64 libcurl4-openssl-dev:arm64 libyuv-dev:arm64 libminiupnpc-dev:arm64
+      - apt-get install libsdl2-dev:arm64 libpng-dev:arm64 libcurl4-openssl-dev:arm64 libyuv-dev:arm64
       - |
           # apt_development
           echo -e "\e[0Ksection_end:`date +%s`:apt_development\r\e[0K"
