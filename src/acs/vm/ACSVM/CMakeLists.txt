@@ -75,6 +75,7 @@ add_library(acsvm ${ACSVM_SHARED_DECL}
    Types.hpp
    Vector.hpp
 )
+target_compile_features(acsvm PRIVATE cxx_std_17)
 
 ACSVM_INSTALL_LIB(acsvm)
 
