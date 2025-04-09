@@ -77,6 +77,14 @@ struct MobjList
 		}
 	}
 
+	void clear()
+	{
+		while (!empty())
+		{
+			erase(front());
+		}
+	}
+
 	auto begin() const { return view().begin(); }
 	auto end() const { return view().end(); }
 

@@ -502,7 +502,11 @@ struct CheckpointManager
 		chk->gingerbread();
 	}
 
-	void clear() { lines_.clear(); }
+	void clear() 
+	{ 
+		lines_.clear();
+		list_.clear(); 
+	}
 
 	auto count() { return list_.count(); }
 
@@ -558,7 +562,7 @@ void Obj_CheckpointThink(mobj_t* end)
 	chk->animate();
 }
 
-void __attribute__((optimize("O0"))) Obj_CrossCheckpoints(player_t* player, fixed_t old_x, fixed_t old_y)
+void Obj_CrossCheckpoints(player_t* player, fixed_t old_x, fixed_t old_y)
 {
 	LineOnDemand ray(old_x, old_y, player->mo->x, player->mo->y, player->mo->radius);
 
