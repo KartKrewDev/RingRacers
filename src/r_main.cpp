@@ -1441,7 +1441,13 @@ boolean R_ViewpointHasChasecam(player_t *player)
 
 boolean R_IsViewpointThirdPerson(player_t *player, boolean skybox)
 {
-	boolean chasecam = R_ViewpointHasChasecam(player);
+	boolean chasecam = false;
+
+	// Prevent game crash if player is ever invalid.
+	if (!player)
+		return false;
+		
+	chasecam = R_ViewpointHasChasecam(player);
 
 	// cut-away view stuff
 	if (player->awayview.tics || skybox)
