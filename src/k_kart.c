@@ -6638,6 +6638,10 @@ mobj_t *K_ThrowKartItemEx(player_t *player, boolean missile, mobjtype_t mapthing
 			mo->reactiontime = TICRATE/2;
 			P_SetMobjState(mo, mo->info->painstate);
 		}
+		else if (mapthing == MT_LANDMINE && mo)
+		{
+			mo->reactiontime = TICRATE/2;
+		}
 	}
 	else
 	{
@@ -13582,7 +13586,13 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
 							{
 								player->itemamount--;
-								K_ThrowLandMine(player);
+								if (player->throwdir > 0)
+								{
+									mobj_t *landmine = K_ThrowKartItem(player, true, MT_LANDMINE, -1, 0, 0);
+								}
+								else {
+									K_ThrowLandMine(player);
+								}
 								K_PlayAttackTaunt(player->mo);
 								player->botvars.itemconfirm = 0;
 							}
