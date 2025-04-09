@@ -270,8 +270,10 @@ static void P_ItemPop(mobj_t *actor)
 	actor->extravalue1 = 0;
 
 	// de-solidify
-	// (Nope! Handled in fusethink for item pickup leniency)
-	// actor->flags |= MF_NOCLIPTHING;
+	// Do not set item boxes intangible, those are handled in fusethink for item pickup leniency
+	// Sphere boxes still need to be set intangible here though
+	if (actor->type != MT_RANDOMITEM)
+		actor->flags |= MF_NOCLIPTHING;
 
 	// RF_DONTDRAW will flicker as the object's fuse gets
 	// closer to running out (see P_FuseThink)
