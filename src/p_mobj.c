@@ -7421,8 +7421,6 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			mobj->threshold--;
 		break;
 	case MT_LANDMINE:
-		mobj->friction = ORIG_FRICTION/4;
-
 		if (mobj->target && mobj->target->player)
 			mobj->color = mobj->target->player->skincolor;
 		else
@@ -7434,10 +7432,21 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			ghost->colorized = true; // already has color!
 		}
 
+		if (mobj->reactiontime > 0)
+		{
+			mobj->friction = ((2*ORIG_FRICTION)+FRACUNIT)/3; // too low still?
+			mobj->reactiontime--;
+		}
+		else
+		{
+			// Time to stop, ramp up the friction...
+			mobj->friction = ORIG_FRICTION/4; // too high still?
+		}
+
 		if (P_IsObjectOnGround(mobj) && mobj->health > 1)
 		{
 			S_StartSound(mobj, mobj->info->activesound);
-			mobj->momx = mobj->momy = 0;
+			// mobj->momx = mobj->momy = 0;
 			mobj->health = 1;
 		}
 
