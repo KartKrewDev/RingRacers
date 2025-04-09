@@ -137,7 +137,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	k_bot.cpp
 	k_botitem.cpp
 	k_botsearch.cpp
-	k_grandprix.c
+	k_grandprix.cpp
 	k_boss.c
 	k_hud.cpp
 	k_hud_track.cpp
