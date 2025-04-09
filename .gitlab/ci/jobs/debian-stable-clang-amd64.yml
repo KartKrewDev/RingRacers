@@ -17,8 +17,6 @@ Debian stable Clang:
   variables:
     CC: clang
     CXX: clang++
-    WFLAGS: -Wno-cast-align -Wno-implicit-const-int-float-conversion -Wno-error=parentheses-equality -Wno-error=misleading-indentation -Wno-error=fortify-source -Werror
-    CFLAGS: -Wno-cast-align -Wno-implicit-const-int-float-conversion -Wno-error=parentheses-equality -Wno-error=misleading-indentation -Wno-error=fortify-source -Werror
 
   script:
     - - |
