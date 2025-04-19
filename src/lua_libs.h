@@ -104,6 +104,9 @@ extern lua_State *gL;
 
 #define META_FOLLOWER "FOLLOWER_T*"
 
+#define META_SONICLOOPVARS "SONICLOOPVARS_T*"
+#define META_SONICLOOPCAMVARS "SONICLOOPCAMVARS_T*"
+
 boolean luaL_checkboolean(lua_State *L, int narg);
 
 int LUA_EnumLib(lua_State *L);
