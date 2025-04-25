@@ -158,6 +158,7 @@ typedef enum
 	CR_SLIDING,
 	CR_ZOOMTUBE,
 	CR_DASHRING,
+	CR_TRAPBUBBLE,
 } carrytype_t; // carry
 
 /*

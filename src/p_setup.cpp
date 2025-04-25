@@ -785,9 +785,13 @@ static int cmp_loopends(const void *a, const void *b)
 		*mt2 = *(const mapthing_t*const*)b;
 
 	// weighted sorting; tag takes precedence over type
-	return
-		intsign(mt1->tid - mt2->tid) * 2 +
+	const int maincomp = intsign(mt1->tid - mt2->tid) * 2 +
 		intsign(mt1->thing_args[0] - mt2->thing_args[0]);
+
+	// JugadorXEI (04/20/25): If a qsort comparison ends up with an equal result,
+	// it results in UNSPECIFIED BEHAVIOR, so assuming the previous two comparisons
+	// are equal, let's make it consistent with Linux behaviour (ascending order).
+	return maincomp != 0 ? maincomp : intsign((mt1 - mapthings) - (mt2 - mapthings));
 }
 
 static void P_SpawnMapThings(boolean spawnemblems)

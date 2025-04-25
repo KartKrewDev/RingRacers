@@ -419,7 +419,8 @@ void P_ResetPlayer(player_t *player)
 {
 	//player->pflags &= ~(PF_);
 
-	player->carry = CR_NONE;
+	if (player->carry != CR_TRAPBUBBLE)
+		player->carry = CR_NONE;
 	player->onconveyor = 0;
 
 	//player->drift = player->driftcharge = 0;
@@ -4545,17 +4546,17 @@ void P_PlayerThink(player_t *player)
 
 	if (player->nocontrol && player->nocontrol < UINT16_MAX)
 	{
-		if (!(--player->nocontrol))
-		{
-			if (player->pflags & PF_FAULT)
-			{
-				player->pflags &= ~PF_FAULT;
-				player->mo->renderflags &= ~RF_DONTDRAW;
-				player->mo->flags &= ~MF_NOCLIPTHING;
-			}
-		}
+		player->nocontrol--;
 	}
 
+	// tic down the var normaly and remove the flag upon respawn so its guaranteed to be removed from the player
+	if (!player->nocontrol && !player->respawn.timer && player->respawn.state == RESPAWNST_DROP &&  (player->pflags & PF_FAULT))
+	{
+		player->pflags &= ~PF_FAULT;
+		player->mo->renderflags &= ~RF_DONTDRAW;
+		player->mo->flags &= ~MF_NOCLIPTHING;
+	}
+	
 	boolean deathcontrolled = (player->respawn.state != RESPAWNST_NONE && player->respawn.truedeath == true)
 		|| (player->pflags & PF_NOCONTEST) || (player->karmadelay);
 	boolean powercontrolled = (player->hyudorotimer) || (player->growshrinktimer > 0);
