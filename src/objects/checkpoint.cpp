@@ -497,6 +497,7 @@ struct CheckpointManager
 			if (chk->linetag())
 				lines_.try_emplace(chk->linetag(), std::move(tagged_lines(chk->linetag())));
 			list_.push_front(chk);
+			count_ += 1; // Mobjlist can't have a count on it, so we keep it here
 		}
 
 		chk->gingerbread();
@@ -505,10 +506,11 @@ struct CheckpointManager
 	void clear() 
 	{ 
 		lines_.clear();
-		list_.clear(); 
+		list_.clear();
+		count_ = 0;
 	}
 
-	auto count() { return list_.count(); }
+	auto count() { return count_; }
 
 	const srb2::Vector<line_t*>* lines_for(const Checkpoint* chk) const
 	{
@@ -517,6 +519,7 @@ struct CheckpointManager
 	}
 
 private:
+	INT32 count_;
 	srb2::MobjList<Checkpoint, svg_checkpoints> list_;
 	srb2::HashMap<INT32, srb2::Vector<line_t*>> lines_;
 
