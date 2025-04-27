@@ -512,7 +512,7 @@ void gpRank_t::Update(void)
 
 	lvl->time = UINT32_MAX;
 
-	lvl->totalLapPoints = 500;
+	lvl->totalLapPoints = 100;
 	lvl->totalPrisons = maptargets;
 
 	UINT8 i;
