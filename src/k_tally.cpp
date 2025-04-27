@@ -244,8 +244,9 @@ INT32 level_tally_t::CalculateGrade(void)
 			{
 				// Use a special curve for this.
 				// Low Exp amounts are guaranteed, higher than half is where skill expression starts
-				const fixed_t frac = std::min(FRACUNIT, (laps * FRACUNIT) / std::max(1, static_cast<int>(totalLaps + 80))); // Magic number here is to ensure A ranks only go to those that can maintain positive EXP
-				ours += Easing_InCubic(frac, 0, bonusWeights[i]);
+				// Magic numbers here are to reduce the range from 50-125 to 0-75 and compare with a max of 58, 85% of which is 49.3, which should put an even 100 or higher displayexp at A rank
+				const fixed_t frac = std::min(FRACUNIT, ((laps-50) * FRACUNIT) / std::max(1, static_cast<int>(totalLaps-42)));
+				ours += Easing_Linear(frac, 0, bonusWeights[i]);
 				break;
 			}
 			case TALLY_BONUS_PRISON:
@@ -347,7 +348,7 @@ void level_tally_t::Init(player_t *player)
 			if (displayEXP != UINT16_MAX)
 			{
 				laps = displayEXP;
-				totalLaps = 500;
+				totalLaps = 100;
 			}
 		}
 
