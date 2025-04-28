@@ -136,10 +136,8 @@ void podiumData_s::Init(void)
 		rank.numLevels = 8;
 
 		constexpr INT32 numRaces = 5;
-		for (INT32 i = 0; i < rank.numPlayers; i++)
-		{
-			rank.totalPoints += numRaces * K_CalculateGPRankPoints(i + 1, rank.totalPlayers);
-		}
+
+		rank.totalPoints += numRaces * TARGETDISPLAYEXP;
 		rank.totalRings = numRaces * rank.numPlayers * 20;
 
 		// Randomized winnings
@@ -685,7 +683,7 @@ void podiumData_s::Draw(void)
 							{
 								drawer_gametype
 									.xy(0, 1)
-									.patch("K_SPTLAP");
+									.patch("K_SPTEXP");
 
 								drawer_gametype
 									.xy(22, 1)
@@ -823,7 +821,7 @@ void podiumData_s::Draw(void)
 			.text(va("%c%d", (rank.scorePrisons > 0 ? '+' : ' '), rank.scorePrisons));
 
 		drawer_totals_right
-			.patch("RANKLAPS");
+			.patch("K_STEXP");
 
 		drawer_totals_right
 			.xy(44.0, 0.0)

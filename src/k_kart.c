@@ -15500,7 +15500,7 @@ UINT16 K_GetDisplayEXP(player_t *player)
 
 	// target is where you should be if you're doing good and at a 1.0 mult
 	fixed_t clampedexp = max(FRACUNIT/2, min(FRACUNIT*5/4, player->exp));  // clamp between 0.5 and 1.25
-	fixed_t targetdisplayexp = (100*player->gradingpointnum/numgradingpoints)<<FRACBITS;
+	fixed_t targetdisplayexp = (TARGETDISPLAYEXP*player->gradingpointnum/numgradingpoints)<<FRACBITS;
 	UINT16 displayexp = FixedMul(clampedexp, targetdisplayexp)>>FRACBITS;
 
 	return displayexp;

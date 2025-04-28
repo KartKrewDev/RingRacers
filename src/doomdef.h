@@ -744,6 +744,11 @@ extern int
 // Amp scaling
 #define MAXAMPSCALINGDIST 18000
 
+// Exp
+#define MINDISPLAYEXP 50 // The min value target
+#define TARGETDISPLAYEXP 100 // The target value needed for A rank
+#define MAXDISPLAYEXP 125 // The max value displayed by the hud and in the tally screen and GP results screen
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

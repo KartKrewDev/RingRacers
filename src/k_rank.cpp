@@ -322,7 +322,7 @@ void gpRank_t::Init(void)
 	// (Should this account for all coop players?)
 	for (i = 0; i < numHumans; i++)
 	{
-		totalPoints += grandprixinfo.cup->numlevels * K_CalculateGPRankPoints(i + 1, totalPlayers);
+		totalPoints += grandprixinfo.cup->numlevels * TARGETDISPLAYEXP;
 	}
 
 	totalRings = grandprixinfo.cup->numlevels * numHumans * 20;
@@ -371,10 +371,7 @@ void gpRank_t::Rejigger(UINT16 removedmap, UINT16 removedgt, UINT16 addedmap, UI
 
 	if ((removedgt == GT_RACE) != (addedgt == GT_RACE))
 	{
-		for (i = 0; i < numPlayers; i++)
-		{
-			deltaPoints += K_CalculateGPRankPoints(i + 1, totalPlayers);
-		}
+		deltaPoints += TARGETDISPLAYEXP;
 
 		if (addedgt == GT_RACE)
 			totalPoints += deltaPoints;
@@ -512,7 +509,7 @@ void gpRank_t::Update(void)
 
 	lvl->time = UINT32_MAX;
 
-	lvl->totalLapPoints = 100;
+	lvl->totalLapPoints = TARGETDISPLAYEXP;
 	lvl->totalPrisons = maptargets;
 
 	UINT8 i;
