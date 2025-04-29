@@ -454,6 +454,9 @@ INT32 P_GivePlayerRings(player_t *player, INT32 num_rings)
 	if ((gametyperules & GTR_SPHERES)) // No rings in Battle Mode
 		return 0;
 
+	if (player->instaWhipCharge) // Even if a ring somehow makes contact with you, no it didn't
+		return 0;
+
 	if (gamedata && num_rings > 0 && P_IsPartyPlayer(player) && gamedata->totalrings <= GDMAX_RINGS)
 	{
 		gamedata->totalrings += num_rings;
