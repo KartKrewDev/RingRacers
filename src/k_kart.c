@@ -3648,16 +3648,47 @@ static void K_GetKartBoostPower(player_t *player)
 		ADDBOOST(player->vortexBoost/6, FRACUNIT/10, 0); // + ???% top speed, + 10% acceleration, +0% handling
 	}
 
-	if (player->neutraldash) // Neutral drifts are marginally faster
+	if (player->drift != 0) // Neutral drifts are marginally faster
 	{
-		ADDBOOST(
-			FRACUNIT/5, // + 20% top speed
-			FRACUNIT/4, // + 25% acceleration
-			0 // 0 handling
-		);
-		numboosts--; // No afterimage!
-	}
+		// Trying to emulate the old leniency timer being stat-based.
+		// I dunno if this is overkill because turning is already stat-based.
+		// Should this be a pure constant instead?
+		const INT16 max_steer_threshold = (KART_FULLTURN * 5) / 6;
+		INT32 steer_threshold = FixedMul((FRACUNIT * player->kartweight) / 9, max_steer_threshold);
 
+		INT32 steering = abs(player->steering);
+
+		fixed_t frac = 0;
+		if (steering < steer_threshold)
+		{
+			frac = FixedDiv(steer_threshold - steering, steer_threshold);
+		}
+
+		// Weaken the effect with drifts that were just started.
+		frac = (frac * abs(player->drift)) / 5;
+
+		if (frac > 0)
+		{
+			if (frac > FRACUNIT)
+			{
+				// Clamp between reasonable bounds.
+				frac = FRACUNIT;
+			}
+
+			// Get multiplier from easing function, to
+			// heavily reward being near exactly 0.
+			fixed_t multiplier = Easing_InExpo(frac, 0, FRACUNIT);
+			if (multiplier > 0)
+			{
+				ADDBOOST(
+					FixedMul(multiplier, FRACUNIT/5), // + 20% top speed
+					FixedMul(multiplier, FRACUNIT/4), // + 25% acceleration
+					0 // 0 handling
+				);
+				numboosts--; // No afterimage!
+			}
+		}
+	}
 
 	if (player->trickcharge)
 	{
@@ -9363,11 +9394,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->counterdash)
 		player->counterdash--;
-
-	if (abs(player->drift)==5 && player->cmd.turning == 0)
-		player->neutraldash = min(player->neutraldash + 1, 1 + player->kartweight/2);
-	else if (player->neutraldash)
-		player->neutraldash--;
 
 	if ((player->sneakertimer || player->panelsneakertimer) && player->wipeoutslow > 0 && player->wipeoutslow < wipeoutslowtime+1)
 		player->wipeoutslow = wipeoutslowtime+1;
