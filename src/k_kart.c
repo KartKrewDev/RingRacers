@@ -3681,8 +3681,8 @@ static void K_GetKartBoostPower(player_t *player)
 			if (multiplier > 0)
 			{
 				ADDBOOST(
-					FixedMul(multiplier, FRACUNIT/5), // + 20% top speed
-					FixedMul(multiplier, FRACUNIT/4), // + 25% acceleration
+					FixedMul(multiplier, 4*FRACUNIT/10), // + 40% top speed
+					FixedMul(multiplier, FRACUNIT/3), // + 33% acceleration
 					0 // 0 handling
 				);
 				numboosts--; // No afterimage!
