@@ -470,11 +470,11 @@ public:
 			regular_input();
 		}
 
+		angle_prediction();
+
 		cmd->angle = localangle[viewnum] >> TICCMD_REDUCE;
 
 		hook();
-
-		angle_prediction();
 	}
 };
 
