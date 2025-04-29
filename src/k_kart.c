@@ -3654,9 +3654,16 @@ static void K_GetKartBoostPower(player_t *player)
 		// I dunno if this is overkill because turning is already stat-based.
 		// Should this be a pure constant instead?
 		const INT16 max_steer_threshold = (KART_FULLTURN * 5) / 6;
+
+		// Even when not inputting a turn, drift prediction is hard.
+		// Turn solver will sometimes need to slightly turn to stay "aligned".
+		// Award full boost even if turn solver creates a fractional miniturn.
+		const INT16 inner_deadzone = KART_FULLTURN / 100; 
+
 		INT32 steer_threshold = FixedMul((FRACUNIT * player->kartweight) / 9, max_steer_threshold);
 
 		INT32 steering = abs(player->steering);
+		steering = max(steering - inner_deadzone, 0);
 
 		fixed_t frac = 0;
 		if (steering < steer_threshold)
