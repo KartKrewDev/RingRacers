@@ -136,8 +136,10 @@ void podiumData_s::Init(void)
 		rank.numLevels = 8;
 
 		constexpr INT32 numRaces = 5;
-
-		rank.totalPoints += numRaces * TARGETDISPLAYEXP;
+		for (INT32 i = 0; i < rank.numPlayers; i++)
+		{
+			rank.totalPoints += numRaces * K_CalculateGPRankPoints(MAXDISPLAYEXP, i+1, rank.totalPlayers);
+		}
 		rank.totalRings = numRaces * rank.numPlayers * 20;
 
 		// Randomized winnings
@@ -177,7 +179,7 @@ void podiumData_s::Init(void)
 				}
 				default:
 				{
-					lvl->totalLapPoints = M_RandomRange(2, 5) * 2;
+					lvl->totalLapPoints = TARGETDISPLAYEXP;
 					tlaps += lvl->totalLapPoints;
 					break;
 				}
@@ -196,7 +198,7 @@ void podiumData_s::Init(void)
 					dta->rings = M_RandomRange(0, 20);
 					rgs += dta->rings;
 
-					dta->lapPoints = M_RandomRange(0, lvl->totalLapPoints);
+					dta->lapPoints = M_RandomRange(MINDISPLAYEXP, MAXDISPLAYEXP);
 					plaps = std::max(plaps, dta->lapPoints);
 				}
 

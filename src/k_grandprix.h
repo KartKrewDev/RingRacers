@@ -73,7 +73,7 @@ UINT8 K_BotStartingDifficulty(SINT8 value);
 		Number of points to give.
 --------------------------------------------------*/
 
-INT16 K_CalculateGPRankPoints(player_t* player, UINT8 numplayers);
+INT16 K_CalculateGPRankPoints(UINT16 displayexp, UINT8 position, UINT8 numplayers);
 
 
 /*--------------------------------------------------
