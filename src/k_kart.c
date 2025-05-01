@@ -448,7 +448,7 @@ boolean K_IsPlayerScamming(player_t *player)
 
 	// "Why 8?" Consistency
 	// "Why 2000?" Vibes
-	return (K_GetItemRouletteDistance(player, 8) < 2000);
+	return (K_GetItemRouletteDistance(player, 8) < SCAMDIST);
 }
 
 fixed_t K_GetKartGameSpeedScalar(SINT8 value)
@@ -2997,6 +2997,18 @@ boolean K_SlopeResistance(const player_t *player)
 fixed_t K_PlayerTripwireSpeedThreshold(const player_t *player)
 {
 	fixed_t required_speed = 2 * K_GetKartSpeed(player, false, false); // 200%
+
+	UINT32 distance = K_GetItemRouletteDistance(player, 8);
+
+	if (gametype == GT_RACE)
+	{
+		if (distance < SCAMDIST) // Players near 1st need more speed!
+		{
+			fixed_t percentscam = FixedDiv(FRACUNIT*(SCAMDIST - distance), FRACUNIT*SCAMDIST);
+			required_speed += FixedMul(required_speed, percentscam);
+		}
+	}
+
 
 	if (player->offroad && K_ApplyOffroad(player))
 	{
@@ -8799,6 +8811,13 @@ static void K_UpdateTripwire(player_t *player)
 		{
 			mobj_t *front = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_TRIPWIREBOOST);
 			mobj_t *back = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_TRIPWIREBOOST);
+
+			if (P_IsDisplayPlayer(player))
+			{
+				S_StartSound(player->mo, sfx_s3k40);
+				S_StopSoundByID(player->mo, sfx_gshaf);
+			}
+				
 
 			P_SetTarget(&front->target, player->mo);
 			P_SetTarget(&back->target, player->mo);

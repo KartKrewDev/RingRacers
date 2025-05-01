@@ -7747,6 +7747,78 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 		}
 		break;
+	case MT_TRIPWIREAPPROACH: {
+		if (!mobj->target || !mobj->target->health || !mobj->target->player)
+		{
+			P_RemoveMobj(mobj);
+			return false;
+		}
+
+		mobj_t *target = mobj->target;
+		player_t *player = target->player;
+		fixed_t myspeed = (player->speed);
+
+		fixed_t maxspeed = K_PlayerTripwireSpeedThreshold(player); // Centered at this speed.
+		fixed_t minspeed = max(2 * maxspeed / 4, 16 * K_GetKartSpeed(player, false, false) / 10); // Starts appearing at this speed.
+		fixed_t alertspeed = 9 * maxspeed / 10; // When to flash?
+		fixed_t frontoffset = 5*target->scale; // How far in front?
+
+		fixed_t percentvisible = 0;
+		if (myspeed > minspeed)
+			percentvisible = min(FRACUNIT, FixedDiv(myspeed - minspeed, maxspeed - minspeed));
+		if (myspeed >= maxspeed || player->tripwireLeniency)
+			percentvisible = 0;
+
+#if 0
+		fixed_t hang = 85*FRACUNIT/100; // Dampen inward movement past a certain point
+		if (percentvisible > hang && percentvisible < (95*FRACUNIT/100))
+			percentvisible = (percentvisible + hang) / 2;
+#endif
+
+		fixed_t easedoffset = Easing_InOutCubic(percentvisible, 0, FRACUNIT);
+		fixed_t easedscale = FRACUNIT;
+
+		fixed_t dynamicoffset = FixedMul(target->scale * 100, FRACUNIT - easedoffset);
+
+		fixed_t xofs = (mobj->extravalue1) ? dynamicoffset : dynamicoffset * -1;
+		fixed_t zofs = (mobj->extravalue2) ? dynamicoffset : dynamicoffset * -1;
+
+		angle_t facing = K_MomentumAngle(mobj->target);
+		fixed_t sin = FINESINE(facing >> ANGLETOFINESHIFT);
+		fixed_t cos = FINECOSINE(facing >> ANGLETOFINESHIFT);
+
+		P_MoveOrigin(mobj,
+			target->x - FixedMul(xofs, sin) + FixedMul(frontoffset, cos),
+			target->y + FixedMul(xofs, cos) + FixedMul(frontoffset, sin), 
+			target->z + zofs + (target->height / 2));
+		mobj->angle = facing + ANGLE_90 + (mobj->extravalue1 ? ANGLE_45 : -1*ANGLE_45);
+		K_MatchGenericExtraFlags(mobj, target);
+		P_InstaScale(mobj, FixedMul(target->scale, easedscale));
+
+		UINT8 maxtranslevel = NUMTRANSMAPS - 2;
+		UINT8 trans = FixedInt(FixedMul(percentvisible, FRACUNIT*(maxtranslevel+1)));
+		if (trans > maxtranslevel)
+			trans = maxtranslevel;
+		trans = NUMTRANSMAPS - trans;
+
+		mobj->renderflags &= ~(RF_TRANSMASK);
+		if (trans != 0)
+		{
+			mobj->renderflags |= (trans << RF_TRANSSHIFT);
+		}
+
+		mobj->renderflags |= RF_PAPERSPRITE;
+
+		mobj->colorized = true;
+		if (myspeed > alertspeed)
+			mobj->color = (leveltime & 1) ? SKINCOLOR_LILAC : SKINCOLOR_JAWZ;
+		else
+			mobj->color = SKINCOLOR_WHITE;
+
+		mobj->renderflags |= (RF_DONTDRAW & ~K_GetPlayerDontDrawFlag(player));
+
+		break;
+	}
 	case MT_TRIPWIREBOOST: {
 		mobj_t *top;
 		fixed_t newHeight;
@@ -7755,12 +7827,18 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		if (!mobj->target || !mobj->target->health
 			|| !mobj->target->player || !mobj->target->player->tripwireLeniency)
 		{
+			if (mobj->target && mobj->target->player && P_IsDisplayPlayer(mobj->target->player))
+			{
+				S_StopSoundByID(mobj->target, sfx_s3k40);
+				S_StartSound(mobj->target, sfx_gshaf);
+			}
+
 			P_RemoveMobj(mobj);
 			return false;
 		}
 
 		newHeight = mobj->target->height;
-		newScale = mobj->target->scale;
+		newScale = 3 * mobj->target->scale / 2;
 
 		top = K_GetGardenTop(mobj->target->player);
 
@@ -12228,6 +12306,17 @@ void P_SpawnPlayer(INT32 playernum)
 	K_InitStumbleIndicator(p);
 	K_InitWavedashIndicator(p);
 	K_InitTrickIndicator(p);
+
+	for (UINT8 approaches = 0; approaches < 4; approaches++)
+	{
+		mobj_t *approach = P_SpawnMobjFromMobj(p->mo, 0, 0, 0, MT_TRIPWIREAPPROACH);
+		P_SetTarget(&approach->target, p->mo);
+		approach->extravalue1 = (approaches == 0 || approaches == 2) ? 1 : 0;
+		approach->extravalue2 = (approaches == 0 || approaches == 1) ? 1 : 0;
+		approach->renderflags |= approach->extravalue1 ? 0 : RF_HORIZONTALFLIP;
+		approach->renderflags |= approach->extravalue2 ? 0 : RF_VERTICALFLIP;
+	}
+
 
 	if ((gametyperules & GTR_BUMPERS) && !p->spectator)
 	{

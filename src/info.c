@@ -399,6 +399,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"BEXB", // Battle Bumper Explosion: Blast
 	"TWBS", // Tripwire Boost
 	"TWBT", // Tripwire BLASTER
+	"TWBP", // Tripwire approach
 	"SMLD", // Smooth landing
 
 	// Trick Effects
@@ -2686,6 +2687,8 @@ state_t states[NUMSTATES] =
 
 	{SPR_TWBT, FF_FULLBRIGHT|FF_ADD|FF_ANIMATE,                                   -1, {NULL}, 6, 2, S_NULL}, // S_TRIPWIREBOOST_BLAST_TOP
 	{SPR_TWBT, FF_FULLBRIGHT|FF_ADD|FF_ANIMATE|FF_VERTICALFLIP|FF_HORIZONTALFLIP, -1, {NULL}, 6, 2, S_NULL}, // S_TRIPWIREBOOST_BLAST_BOTTOM
+
+	{SPR_TWBP, FF_FULLBRIGHT|FF_ADD|FF_ANIMATE, -1, {NULL}, 11, 1, S_NULL}, // S_TRIPWIREAPPROACH
 
 	{SPR_SMLD, FF_FULLBRIGHT|FF_ADD|FF_ANIMATE, -1, {NULL}, 7, 2, S_NULL}, // S_SMOOTHLANDING
 
@@ -16047,6 +16050,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,        // painsound
 		S_TRIPWIREBOOST_BLAST_TOP,    // meleestate
 		S_TRIPWIREBOOST_BLAST_BOTTOM, // missilestate
+		S_NULL,          // deathstate
+		S_NULL,          // xdeathstate
+		sfx_None,        // deathsound
+		0,               // speed
+		8*FRACUNIT,      // radius
+		16*FRACUNIT,     // height
+		1,               // display offset
+		100,             // mass
+		0,               // damage
+		sfx_None,        // activesound
+		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_DONTENCOREMAP, // flags
+		S_NULL           // raisestate
+	},
+
+	{           // MT_TRIPWIREAPPROACH
+		-1,              // doomednum
+		S_TRIPWIREAPPROACH, // spawnstate
+		1000,            // spawnhealth
+		S_NULL, // seestate
+		sfx_None,        // seesound
+		8,               // reactiontime
+		sfx_None,        // attacksound
+		S_NULL,          // painstate
+		0,               // painchance
+		sfx_None,        // painsound
+		S_NULL,    // meleestate
+		S_NULL, // missilestate
 		S_NULL,          // deathstate
 		S_NULL,          // xdeathstate
 		sfx_None,        // deathsound

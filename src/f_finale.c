@@ -923,6 +923,16 @@ void F_IntroTicker(void)
 		S_StartSound(NULL, sfx_supflk);
 	}
 
+	if (skiptype == 5) // Quick Thunderdome
+	{
+		ResetSkipSequences();
+		CV_StealthSetValue(&cv_kartbot, 13);
+		CV_StealthSetValue(&cv_maxplayers, 8);
+		CV_StealthSetValue(&cv_thunderdome, 1);
+		D_MapChange(G_RandMap(TOL_RACE, UINT16_MAX-1, true, false, NULL), GT_RACE, (cv_kartencore.value == 1), true, 0, false, false);
+		return;
+	}
+
 	if (doskip && disclaimerskippable)
 	{
 		if (dc_state == DISCLAIMER_FINAL) {
@@ -1013,16 +1023,21 @@ static void AdvanceSkipSequences(UINT8 input)
 	UINT8 s2cheat[] = {1, 1, 1};
 	UINT8 s3cheat[] = {2, 2, 2};
 	UINT8 s3kcheat[] = {3, 3, 3};
+	UINT8 thundercheat[] = {4, 4, 4};
 #else
 	UINT8 s2cheat[] = {1, 1, 1, 3, 3, 3, 1};
 	UINT8 s3cheat[] = {1, 1, 3, 3, 1, 1, 1, 1};
 	UINT8 s3kcheat[] = {4, 4, 4, 2, 2, 2, 1, 1, 1};
+	UINT8 thundercheat[] = {2, 4, 2, 4, 3, 3, 1, 1};
 #endif
 	UINT8 nicetry[] = {1, 1, 3, 3, 4, 2, 4, 2};
-	UINT8 *cheats[4] = {s2cheat, s3cheat, s3kcheat, nicetry};
-	UINT8 cheatlengths[4] = {sizeof(s2cheat), sizeof(s3cheat), sizeof(s3kcheat), sizeof(nicetry)};
 
-	for (UINT8 i = 0; i < 4; i++) 	// for each cheat...
+	#define NUMCHEATSPLUSONE 5
+
+	UINT8 *cheats[NUMCHEATSPLUSONE] = {s2cheat, s3cheat, s3kcheat, nicetry, thundercheat};
+	UINT8 cheatlengths[NUMCHEATSPLUSONE] = {sizeof(s2cheat), sizeof(s3cheat), sizeof(s3kcheat), sizeof(nicetry), sizeof(thundercheat)};
+
+	for (UINT8 i = 0; i < NUMCHEATSPLUSONE; i++) 	// for each cheat...
 	{
 		UINT8 cheatsize = cheatlengths[i];
 		boolean matched = true;
@@ -1039,6 +1054,8 @@ static void AdvanceSkipSequences(UINT8 input)
 		if (matched) // if we made it through the whole cheat without a mismatch, we are now gaming
 			skiptype = i+1;
 	}
+
+	#undef NUMCHEATSPLUSONE
 
 	skipinputindex++;
 }

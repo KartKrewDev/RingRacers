@@ -448,7 +448,9 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (special->fuse) // This box is respawning, but was broken very recently (see P_FuseThink)
 			{
 				// What was this box broken as?
-				if (special->cvmem && !(special->flags2 & MF2_BOSSDEAD))
+				if (cv_thunderdome.value)
+					K_StartItemRoulette(player, true);
+				else if (special->cvmem && !(special->flags2 & MF2_BOSSDEAD))
 					K_StartItemRoulette(player, false);
 				else
 					K_StartItemRoulette(player, true);
