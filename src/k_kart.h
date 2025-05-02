@@ -44,6 +44,10 @@ Make sure this matches the actual number of states
 #define INSTAWHIP_TETHERBLOCK (TICRATE*4)
 #define PUNISHWINDOW (7*TICRATE/10)
 
+#define BAIL_DROP (FRACUNIT/2)
+#define BAIL_BOOST (FRACUNIT/4)
+#define BAIL_DROPFREQUENCY (3)
+
 #define MAXCOMBOTHRUST (mapobjectscale*20)
 #define MAXCOMBOFLOAT (mapobjectscale*10)
 #define MINCOMBOTHRUST (mapobjectscale*2)

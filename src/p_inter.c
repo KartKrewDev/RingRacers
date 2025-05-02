@@ -3612,7 +3612,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 #define RING_LAYER_SIDE_SIZE (3)
 #define RING_LAYER_SIZE (RING_LAYER_SIDE_SIZE * 2)
 
-static void P_FlingBurst
+void P_FlingBurst
 (		player_t *player,
 		angle_t fa,
 		mobjtype_t objType,

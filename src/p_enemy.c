@@ -3503,7 +3503,7 @@ void A_AttractChase(mobj_t *actor)
 
 	if (actor->extravalue1 && actor->type != MT_EMERALD) // SRB2Kart
 	{
-		if (!actor->target || P_MobjWasRemoved(actor->target) || !actor->target->player)
+		if (!actor->target || P_MobjWasRemoved(actor->target) || !actor->target->player || actor->target->player->baildrop)
 		{
 			P_RemoveMobj(actor);
 			return;

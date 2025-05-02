@@ -667,6 +667,8 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT16(save->p, players[i].progressivethrust);
 		WRITEUINT8(save->p, players[i].ringvisualwarning);
 
+		WRITEUINT32(save->p, players[i].baildrop);
+
 		WRITEUINT8(save->p, players[i].analoginput);
 
 		WRITEUINT8(save->p, players[i].markedfordeath);
@@ -1321,6 +1323,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].incontrol = READINT16(save->p);
 		players[i].progressivethrust = READUINT16(save->p);
 		players[i].ringvisualwarning = READUINT8(save->p);
+
+		players[i].baildrop = READUINT32(save->p);
 
 		players[i].analoginput = READUINT8(save->p);
 

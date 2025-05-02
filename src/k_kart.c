@@ -9998,6 +9998,16 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->cangrabitems && player->cangrabitems <= EARLY_ITEM_FLICKER)
 		player->cangrabitems++;
 
+	if (player->baildrop)
+	{
+		if ((player->baildrop % BAIL_DROPFREQUENCY) == 0)
+		{
+			P_FlingBurst(player, K_MomentumAngle(player->mo), MT_FLINGRING, 60*TICRATE, FRACUNIT, player->baildrop/BAIL_DROPFREQUENCY);
+			S_StartSound(player->mo, sfx_gshad);
+		}
+		player->baildrop--;
+	}
+
 	if (!player->invincibilitytimer)
 		player->invincibilityextensions = 0;
 
@@ -10147,7 +10157,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 		if (player->nextringaward >= ringrate)
 		{
-			if (player->instaWhipCharge)
+			if (player->instaWhipCharge || player->baildrop)
 			{
 				// Store award rings to do diabolical horseshit with later.
 				player->nextringaward = ringrate;
@@ -13886,6 +13896,60 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			player->instaWhipCharge = 0;
 	}
 	
+
+	if ((player->cmd.buttons & BT_VOTE) && !(player->oldcmd.buttons & BT_VOTE)
+		&& ((player->itemtype && player->itemamount) || (player->rings > 0) || player->superring > 0 || player->pickuprings > 0 || player->itemRoulette.active))
+	{
+		UINT32 totalrings = player->rings + player->superring + player->pickuprings;
+		totalrings = max(totalrings, 0);
+		UINT32 bailboost = FixedInt(FixedMul(totalrings*FRACUNIT, BAIL_BOOST));
+		UINT32 baildrop = FixedInt(FixedMul(totalrings*FRACUNIT, BAIL_DROP));
+
+		if (player->itemRoulette.active)
+		{
+			player->itemRoulette.active = false;
+		}
+
+		K_PopPlayerShield(player);
+
+		if (player->itemamount)
+		{
+			K_DropPaperItem(player, player->itemtype, player->itemamount);
+			player->itemtype = player->itemamount = 0;
+		}
+
+
+		player->rings = min(player->rings, 0);
+		player->superring = 0;
+		player->pickuprings = 0;
+		player->ringboxaward = 0;
+		player->ringboxdelay = 0;
+
+		player->superringdisplay = 0;
+		player->superringalert = 0;
+		player->superringpeak = 0;
+
+		player->counterdash += TICRATE/8;
+
+		player->ringboost += bailboost * (3+K_GetKartRingPower(player, true));
+		player->baildrop = baildrop * BAIL_DROPFREQUENCY + 1;
+
+		K_AddHitLag(player->mo, TICRATE/4, false);
+		mobj_t *broly = Obj_SpawnBrolyKi(player->mo, player->mo->hitlag);
+		broly->extravalue2 = 16*mapobjectscale;
+
+		INT32 fls = K_GetEffectiveFollowerSkin(player);
+		if (player->follower && fls >= 0 && fls < numfollowers)
+		{
+			const follower_t *fl = &followers[fls];
+			S_StartSound(NULL, fl->hornsound);
+		}
+
+		if (player->amps > 0)
+			K_DefensiveOverdrive(player);
+
+		S_StartSound(player->mo, sfx_gshdd);
+	}
 
 	if (player && player->mo && K_PlayerCanUseItem(player))
 	{
