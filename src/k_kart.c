@@ -13365,11 +13365,23 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					P_SetOrigin(ring, ring->x, ring->y, ring->z);
 					ring->extravalue1 = 1;
 
-					player->rings--;
+					UINT8 dumprate = 3;
+
+					// Allow players to spend out of pending payout to "dump" rings faster.
+					if (player->superring)
+					{
+						player->superring--;
+						dumprate = 2;
+					}
+					else
+					{
+						player->rings--;
+					}
+
 					if (player->autoring && !(cmd->buttons & BT_ATTACK))
 						player->ringdelay = tiereddelay;
 					else
-						player->ringdelay = 3;
+						player->ringdelay = dumprate;
 
 					if (player->rings == 0)
 						K_Overdrive(player);
