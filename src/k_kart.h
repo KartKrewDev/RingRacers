@@ -45,7 +45,7 @@ Make sure this matches the actual number of states
 #define PUNISHWINDOW (7*TICRATE/10)
 
 #define BAIL_DROP (FRACUNIT/2)
-#define BAIL_BOOST (FRACUNIT/4)
+#define BAIL_BOOST (FRACUNIT/3)
 #define BAIL_DROPFREQUENCY (3)
 
 #define MAXCOMBOTHRUST (mapobjectscale*20)

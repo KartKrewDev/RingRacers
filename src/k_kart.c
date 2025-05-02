@@ -7772,6 +7772,30 @@ void K_PopPlayerShield(player_t *player)
 	K_UnsetItemOut(player);
 }
 
+static void K_DeleteHnextList(player_t *player)
+{
+	mobj_t *work = player->mo, *nextwork;
+
+	if (work == NULL || P_MobjWasRemoved(work))
+	{
+		return;
+	}
+
+	nextwork = work->hnext;
+
+	while ((work = nextwork) && !(work == NULL || P_MobjWasRemoved(work)))
+	{
+		nextwork = work->hnext;
+
+		if (!work->health)
+			continue; // taking care of itself
+
+		K_SpawnLandMineExplosion(work, player->skincolor, player->mo->hitlag);
+
+		P_RemoveMobj(work);
+	}
+}
+
 void K_DropHnextList(player_t *player)
 {
 	mobj_t *work = player->mo, *nextwork, *dropwork;
@@ -10002,7 +10026,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	{
 		if ((player->baildrop % BAIL_DROPFREQUENCY) == 0)
 		{
-			P_FlingBurst(player, K_MomentumAngle(player->mo), MT_FLINGRING, 60*TICRATE, FRACUNIT, player->baildrop/BAIL_DROPFREQUENCY);
+			P_FlingBurst(player, K_MomentumAngle(player->mo), MT_FLINGRING, 10*TICRATE, FRACUNIT, player->baildrop/BAIL_DROPFREQUENCY);
 			S_StartSound(player->mo, sfx_gshad);
 		}
 		player->baildrop--;
@@ -13900,10 +13924,20 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	if ((player->cmd.buttons & BT_VOTE) && !(player->oldcmd.buttons & BT_VOTE)
 		&& ((player->itemtype && player->itemamount) || (player->rings > 0) || player->superring > 0 || player->pickuprings > 0 || player->itemRoulette.active))
 	{
+		CONS_Printf("rl %d it %d ia %d ri %d sr %d pr %d\n", player->itemRoulette.active, player->itemtype, player->itemamount, player->rings > 0, player->superring > 0, player->pickuprings > 0);
+
+
+		UINT32 debtrings = 20;
+		if (player->rings < 0)
+		{
+			debtrings -= player->rings;
+			player->rings = 0;
+		}
+
 		UINT32 totalrings = player->rings + player->superring + player->pickuprings;
 		totalrings = max(totalrings, 0);
 		UINT32 bailboost = FixedInt(FixedMul(totalrings*FRACUNIT, BAIL_BOOST));
-		UINT32 baildrop = FixedInt(FixedMul(totalrings*FRACUNIT, BAIL_DROP));
+		UINT32 baildrop = debtrings + FixedInt(FixedMul((totalrings)*FRACUNIT, BAIL_DROP));
 
 		if (player->itemRoulette.active)
 		{
@@ -13911,15 +13945,21 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		}
 
 		K_PopPlayerShield(player);
+		K_DeleteHnextList(player);
+		K_DropItems(player);
 
+		player->itemamount = 0;
+		player->itemtype = 0;
+
+		/*
 		if (player->itemamount)
 		{
 			K_DropPaperItem(player, player->itemtype, player->itemamount);
 			player->itemtype = player->itemamount = 0;
 		}
+		*/
 
-
-		player->rings = min(player->rings, 0);
+		player->rings = -20;
 		player->superring = 0;
 		player->pickuprings = 0;
 		player->ringboxaward = 0;
