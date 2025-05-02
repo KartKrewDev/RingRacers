@@ -938,6 +938,7 @@ typedef enum sprite
 	SPR_BEXB, // Battle Bumper Explosion: Blast
 	SPR_TWBS, // Tripwire Boost
 	SPR_TWBT, // Tripwire BLASTER
+	SPR_TWBP, // Tripwire approach
 	SPR_SMLD, // Smooth landing
 
 	// Trick Effects
@@ -3189,6 +3190,8 @@ typedef enum state
 	S_TRIPWIREBOOST_BLAST_TOP,
 	S_TRIPWIREBOOST_BLAST_BOTTOM,
 
+	S_TRIPWIREAPPROACH,
+
 	S_SMOOTHLANDING,
 
 	S_TRICKINDICATOR_OVERLAY,
@@ -4698,6 +4701,7 @@ typedef enum mobj_type
 	MT_BATTLEBUMPER_BLAST,
 
 	MT_TRIPWIREBOOST,
+	MT_TRIPWIREAPPROACH,
 
 	MT_SMOOTHLANDING,
 	MT_TRICKINDICATOR,
