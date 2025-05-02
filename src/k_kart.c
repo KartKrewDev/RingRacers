@@ -3648,6 +3648,55 @@ static void K_GetKartBoostPower(player_t *player)
 		ADDBOOST(player->vortexBoost/6, FRACUNIT/10, 0); // + ???% top speed, + 10% acceleration, +0% handling
 	}
 
+	if (player->drift != 0) // Neutral drifts are marginally faster
+	{
+		// Trying to emulate the old leniency timer being stat-based.
+		// I dunno if this is overkill because turning is already stat-based.
+		// Should this be a pure constant instead?
+		const INT16 max_steer_threshold = (KART_FULLTURN * 5) / 6;
+
+		// Even when not inputting a turn, drift prediction is hard.
+		// Turn solver will sometimes need to slightly turn to stay "aligned".
+		// Award full boost even if turn solver creates a fractional miniturn.
+		const INT16 inner_deadzone = KART_FULLTURN / 100; 
+
+		INT32 steer_threshold = FixedMul((FRACUNIT * player->kartweight) / 9, max_steer_threshold);
+
+		INT32 steering = abs(player->steering);
+		steering = max(steering - inner_deadzone, 0);
+
+		fixed_t frac = 0;
+		if (steering < steer_threshold)
+		{
+			frac = FixedDiv(steer_threshold - steering, steer_threshold);
+		}
+
+		// Weaken the effect with drifts that were just started.
+		frac = (frac * abs(player->drift)) / 5;
+
+		if (frac > 0)
+		{
+			if (frac > FRACUNIT)
+			{
+				// Clamp between reasonable bounds.
+				frac = FRACUNIT;
+			}
+
+			// Get multiplier from easing function, to
+			// heavily reward being near exactly 0.
+			fixed_t multiplier = Easing_InExpo(frac, 0, FRACUNIT);
+			if (multiplier > 0)
+			{
+				ADDBOOST(
+					FixedMul(multiplier, 4*FRACUNIT/10), // + 40% top speed
+					FixedMul(multiplier, FRACUNIT/3), // + 33% acceleration
+					0 // 0 handling
+				);
+				numboosts--; // No afterimage!
+			}
+		}
+	}
+
 	if (player->trickcharge)
 	{
 		// NB: This is an acceleration-only boost.
@@ -11162,6 +11211,14 @@ INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
 			}
 			else
 			{
+				if (player->driftcharge > 0 && (turnvalue > 0) == (player->drift > 0)) // If drifting and turning inward, then...
+				{
+					// Apply a progressive handling boost, stronger for higher weight,
+					// as you charge driftsparks. Reduces reliance on brakedrifting, especially G2!
+					fixed_t eggfactor = Easing_InCubic(player->kartweight * FRACUNIT / 9, 0, FRACUNIT/4);
+					turnfixed = FixedMul(turnfixed, FRACUNIT + (player->driftcharge * eggfactor / K_GetKartDriftSparkValue(player)));
+				}
+
 				// If we're drifting we have a completely different turning value
 				fixed_t countersteer = FixedDiv(turnfixed, KART_FULLTURN * FRACUNIT);
 				return K_GetKartDriftValue(player, countersteer);
