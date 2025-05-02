@@ -2998,6 +2998,9 @@ fixed_t K_PlayerTripwireSpeedThreshold(const player_t *player)
 {
 	fixed_t required_speed = 2 * K_GetKartSpeed(player, false, false); // 200%
 
+	if (specialstageinfo.valid)
+		required_speed = 3 * K_GetKartSpeed(player, false, false) / 2; // 150%
+
 	UINT32 distance = K_GetItemRouletteDistance(player, 8);
 
 	if (gametype == GT_RACE && M_NotFreePlay() && !modeattacking)
