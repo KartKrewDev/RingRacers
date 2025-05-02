@@ -4215,6 +4215,9 @@ void K_AwardPlayerRings(player_t *player, UINT16 rings, boolean overload)
 
 void K_CheckpointCrossAward(player_t *player)
 {
+	if (gametype != GT_RACE)
+		return;
+
 	player->exp += K_GetExpAdjustment(player);
 	K_AwardPlayerRings(player, (player->bot ? 20 : 10), true);
 }
@@ -9658,15 +9661,23 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		UINT8 ringrate = 3 - min(2, player->superring / 20); // Used to consume fat stacks of cash faster.
 		if (player->nextringaward >= ringrate)
 		{
-			mobj_t *ring = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_RING);
-			ring->extravalue1 = 1; // Ring collect animation timer
-			ring->angle = player->mo->angle; // animation angle
-			P_SetTarget(&ring->target, player->mo); // toucher for thinker
-			player->pickuprings++;
-			if (player->superring == 1)
-				ring->cvmem = 1; // play caching when collected
-			player->nextringaward = 0;
-			player->superring--;
+			if (player->instaWhipCharge)
+			{
+				// Store award rings to do diabolical horseshit with later.
+				player->nextringaward = ringrate;
+			}
+			else
+			{
+				mobj_t *ring = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_RING);
+				ring->extravalue1 = 1; // Ring collect animation timer
+				ring->angle = player->mo->angle; // animation angle
+				P_SetTarget(&ring->target, player->mo); // toucher for thinker
+				player->pickuprings++;
+				if (player->superring == 1)
+					ring->cvmem = 1; // play caching when collected
+				player->nextringaward = 0;
+				player->superring--;
+			}
 		}
 	}
 	else
