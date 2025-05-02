@@ -3034,8 +3034,7 @@ tripwirepass_t K_TripwirePassConditions(const player_t *player)
 {
 	if (
 			player->invincibilitytimer ||
-			player->sneakertimer ||
-			player->panelsneakertimer
+			player->sneakertimer
 		)
 		return TRIPWIRE_BLASTER;
 
@@ -7059,14 +7058,21 @@ void K_DoSneaker(player_t *player, INT32 type)
 {
 
 	fixed_t intendedboost = FRACUNIT/2;
+
+	// If you've already got an item sneaker type boost, panel sneakers will instead turn into item sneaker boosts
+	if (player->numsneakers && type == 0)
+	{
+		type = 1;
+	}
+
 	switch (type)
 	{
 		case 0: // Panel sneaker
 			intendedboost = FRACUNIT/2;
 			break;
 		case 1: // Single item sneaker
-		case 2: // ROcket sneaker
-			intendedboost = FRACUNIT;
+		case 2: // Rocket sneaker
+			intendedboost = 85*FRACUNIT/100;
 			break;
 	}
 
@@ -7140,22 +7146,19 @@ void K_DoSneaker(player_t *player, INT32 type)
 		}
 	}
 
-
-								
-
 	switch (type)
 	{
 		case 0:
 			player->panelsneakertimer = sneakertime;
-			player->overshield += 1; // TEMP prototype
+			player->overshield += 1;
 			break;
 		case 1:
 			player->sneakertimer = sneakertime;
-			player->overshield += TICRATE/2; // TEMP prototype
+			player->overshield += TICRATE/2;
 			break;
 		case 2:
 			player->sneakertimer = 3*sneakertime/4;
-			player->overshield += TICRATE/2; // TEMP prototype
+			player->overshield += TICRATE/2;
 			break;
 	}
 
