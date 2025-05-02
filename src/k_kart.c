@@ -4177,7 +4177,7 @@ void K_AwardPlayerAmps(player_t *player, UINT8 amps)
 		if (!player->overdrive && player->mo && !P_MobjWasRemoved(player->mo) && player->overdriveready == 0)
 		{
 			S_StartSound(player->mo, sfx_gshac);
-			player->amps *= 2;
+			player->amps += 10;
 		}
 		K_Overdrive(player);
 	}
