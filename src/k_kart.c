@@ -3000,7 +3000,7 @@ fixed_t K_PlayerTripwireSpeedThreshold(const player_t *player)
 
 	UINT32 distance = K_GetItemRouletteDistance(player, 8);
 
-	if (gametype == GT_RACE)
+	if (gametype == GT_RACE && M_NotFreePlay() && !modeattacking)
 	{
 		if (distance < SCAMDIST) // Players near 1st need more speed!
 		{
