@@ -741,6 +741,9 @@ extern int
 /// Other karma comeback modes
 //#define OTHERKARMAMODES
 
+// Amp scaling
+#define MAXAMPSCALINGDIST 18000
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
