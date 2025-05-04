@@ -2340,7 +2340,7 @@ static void P_UpdatePlayerAngle(player_t *player)
 		INT16 steeringRight = K_UpdateSteeringValue(player->steering, KART_FULLTURN);
 		INT16 steeringLeft = K_UpdateSteeringValue(player->steering, -KART_FULLTURN);
 
-#ifdef SOLVERANGLECHEATS
+#if 1
 		// When entering/leaving drifts, allow all legal turns with no easing.
 		// This is the hardest case for the turn solver, because your handling properties on
 		// client side are very different than your handling properties on server side—at least,
