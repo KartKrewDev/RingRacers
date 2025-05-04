@@ -2337,9 +2337,10 @@ static void P_UpdatePlayerAngle(player_t *player)
 	else
 	{
 		// With a full slam on the analog stick, how far could we steer in either direction?
-		INT16 steeringRight =  K_UpdateSteeringValue(player->steering, KART_FULLTURN);
-		INT16 steeringLeft =  K_UpdateSteeringValue(player->steering, -KART_FULLTURN);
+		INT16 steeringRight = K_UpdateSteeringValue(player->steering, KART_FULLTURN);
+		INT16 steeringLeft = K_UpdateSteeringValue(player->steering, -KART_FULLTURN);
 
+#if 1
 		// When entering/leaving drifts, allow all legal turns with no easing.
 		// This is the hardest case for the turn solver, because your handling properties on
 		// client side are very different than your handling properties on server side—at least,
@@ -2349,6 +2350,7 @@ static void P_UpdatePlayerAngle(player_t *player)
 			steeringRight = KART_FULLTURN;
 			steeringLeft = -KART_FULLTURN;
 		}
+#endif
 
 		angle_t maxTurnRight = K_GetKartTurnValue(player, steeringRight) << TICCMD_REDUCE;
 		angle_t maxTurnLeft = K_GetKartTurnValue(player, steeringLeft) << TICCMD_REDUCE;
@@ -2357,47 +2359,31 @@ static void P_UpdatePlayerAngle(player_t *player)
 		angle_t targetAngle = (player->cmd.angle) << TICCMD_REDUCE;
 		angle_t targetDelta = targetAngle - (player->mo->angle);
 
+#ifdef SOLVERANGLECHEATS
 		// Corrections via fake turn go through easing.
 		// That means undoing them takes the same amount of time as doing them.
 		// This can lead to oscillating death spiral states on a multi-tic correction, as we swing past the target angle.
 		// So before we go into death-spirals, if our predicton is _almost_ right...
-		angle_t leniency_base;
-		if (G_CompatLevel(0x000A))
-		{
-			// Compat level for 2.0 staff ghosts
-			leniency_base = 4 * ANG1 / 3;
-		}
-		else
-		{
-			leniency_base = 8 * ANG1 / 3;
-		}
-
-		// Gross. Take a look at sliptide starts properly for 2.4.
-		// Yell at Tyron!
-		if (!G_CompatLevel(0x000C))
-		{
-			leniency_base = 6 * ANG1 / 3;
-		}
-
+		angle_t leniency_base = 2 * ANG1;
 		angle_t leniency = leniency_base * min(player->cmd.latency, 6);
 		// Don't force another turning tic, just give them the desired angle!
+#endif
 
-#if 0 // Old sliptide preservation behavior
-		if (K_Sliptiding(player) && P_IsObjectOnGround(player->mo) && (player->cmd.turning != 0) && ((player->cmd.turning > 0) == (player->aizdriftstrat > 0)))
+		if (!(player->cmd.buttons & BT_DRIFT) && (abs(player->drift) == 1) && ((player->cmd.turning > 0) == (player->drift > 0)) && player->handleboost > SLIPTIDEHANDLING)
 		{
-			// Don't change handling direction if someone's inputs are sliptiding, you'll break the sliptide!
-			if (player->cmd.turning > 0)
+			// This drift release is eligible to start a sliptide. Don't do lag-compensation countersteer behavior that could destroy it!
+			if (player->cmd.turning >= 0)
 			{
 				steeringLeft = max(steeringLeft, 1);
 				steeringRight = max(steeringRight, steeringLeft);
 			}
-			else
+			else if (player->cmd.turning <= 0)
 			{
 				steeringRight = min(steeringRight, -1);
 				steeringLeft = min(steeringLeft, steeringRight);
 			}
 		}
-#else // Digital-friendly sliptide preservation behavior
+
 		if (K_Sliptiding(player) && P_IsObjectOnGround(player->mo))
 		{
 			// Unless someone explicitly inputs a turn that would break their sliptide, keep sliptiding.
@@ -2411,12 +2397,7 @@ static void P_UpdatePlayerAngle(player_t *player)
 				steeringRight = min(steeringRight, -1);
 				steeringLeft = min(steeringLeft, steeringRight);
 			}
-			else
-			{
-				// :V
-			}
 		}
-#endif
 
 		if (maxTurnRight == 0 && maxTurnLeft == 0)
 		{
@@ -2426,13 +2407,17 @@ static void P_UpdatePlayerAngle(player_t *player)
 		else
 		{
 			// We're off. Try to legally steer the player towards their camera.
-
 			player->steering = P_FindClosestTurningForAngle(player, targetDelta, steeringLeft, steeringRight);
+			//CONS_Printf("aiz %d - dr %d - hb %d\n", player->aizdriftstrat, player->drift, player->handleboost);
+			//CONS_Printf("st %d - ts %d - t %d\n", player->steering, targetsteering, player->cmd.turning);
+			//CONS_Printf("%d\n", player->steering - targetsteering);
 			angleChange = K_GetKartTurnValue(player, player->steering) << TICCMD_REDUCE;
 
+#ifdef SOLVERANGLECHEATS
 			// And if the resulting steering input is close enough, snap them exactly.
 			if (min(targetDelta - angleChange, angleChange - targetDelta) <= leniency)
 				angleChange = targetDelta;
+#endif
 		}
 	}
 

@@ -3451,10 +3451,6 @@ static fixed_t K_RingDurationBoost(const player_t *player)
 	return ret;
 }
 
-// v2 almost broke sliptiding when it fixed turning bugs!
-// This value is fine-tuned to feel like v1 again without reverting any of those changes.
-#define SLIPTIDEHANDLING 7*FRACUNIT/8
-
 // sets boostpower, speedboost, accelboost, and handleboost to whatever we need it to be
 static void K_GetKartBoostPower(player_t *player)
 {
@@ -3496,7 +3492,7 @@ static void K_GetKartBoostPower(player_t *player)
 		UINT8 i;
 		for (i = 0; i < player->numsneakers; i++)
 		{
-			ADDBOOST(FRACUNIT*85/100, 8*FRACUNIT, SLIPTIDEHANDLING+SLIPTIDEHANDLING/3); // + 50% top speed, + 800% acceleration, +50% handling
+			ADDBOOST(FRACUNIT*85/100, 8*FRACUNIT, HANDLESCALING+HANDLESCALING/3); // + 50% top speed, + 800% acceleration, +50% handling
 		}
 	}
 
@@ -3505,7 +3501,7 @@ static void K_GetKartBoostPower(player_t *player)
 		UINT8 i;
 		for (i = 0; i < player->numpanelsneakers; i++)
 		{
-			ADDBOOST(FRACUNIT/2, 8*FRACUNIT, SLIPTIDEHANDLING); // + 50% top speed, + 800% acceleration, +50% handling
+			ADDBOOST(FRACUNIT/2, 8*FRACUNIT, HANDLESCALING); // + 50% top speed, + 800% acceleration, +50% handling
 		}
 	}
 
@@ -3513,12 +3509,12 @@ static void K_GetKartBoostPower(player_t *player)
 	{
 		// S-Monitor: no extra %
 		fixed_t extra = FRACUNIT / 1400 * (player->invincibilitytimer - K_PowerUpRemaining(player, POWERUP_SMONITOR));
-		ADDBOOST(3*FRACUNIT/8 + extra, 3*FRACUNIT, SLIPTIDEHANDLING/2); // + 37.5 + ?% top speed, + 300% acceleration, +25% handling
+		ADDBOOST(3*FRACUNIT/8 + extra, 3*FRACUNIT, HANDLESCALING/2); // + 37.5 + ?% top speed, + 300% acceleration, +25% handling
 	}
 
 	if (player->growshrinktimer > 0) // Grow
 	{
-		ADDBOOST(0, 0, SLIPTIDEHANDLING/2); // + 0% top speed, + 0% acceleration, +25% handling
+		ADDBOOST(0, 0, HANDLESCALING/2); // + 0% top speed, + 0% acceleration, +25% handling
 	}
 
 	if (player->flamedash) // Flame Shield dash
@@ -3527,7 +3523,7 @@ static void K_GetKartBoostPower(player_t *player)
 		ADDBOOST(
 			dash, // + infinite top speed
 			3*FRACUNIT, // + 300% acceleration
-			FixedMul(FixedDiv(dash, FRACUNIT/2), SLIPTIDEHANDLING/2) // + infinite handling
+			FixedMul(FixedDiv(dash, FRACUNIT/2), HANDLESCALING/2) // + infinite handling
 		);
 	}
 
@@ -3537,13 +3533,13 @@ static void K_GetKartBoostPower(player_t *player)
 		ADDBOOST(
 			dash, // + infinite top speed
 			3*FRACUNIT, // + 300% acceleration
-			FixedMul(FixedDiv(dash, FRACUNIT/2), SLIPTIDEHANDLING/2) // + infinite handling
+			FixedMul(FixedDiv(dash, FRACUNIT/2), HANDLESCALING/2) // + infinite handling
 		);
 	}
 
 	if (player->wavedashboost)
 	{
-		// NB: This is intentionally under the 25% handleboost threshold required to initiate a sliptide
+		// NB: This is intentionally under the handleboost threshold required to initiate a sliptide
 		ADDBOOST(
 			Easing_InCubic(
 				player->wavedashpower,
@@ -3555,7 +3551,7 @@ static void K_GetKartBoostPower(player_t *player)
 				0,
 				4*FRACUNIT
 			),
-			2*SLIPTIDEHANDLING/5
+			2*HANDLESCALING/5
 		);  // + 80% top speed (peak), +400% acceleration (peak), +20% handling
 	}
 
@@ -3572,7 +3568,7 @@ static void K_GetKartBoostPower(player_t *player)
 				0,
 				3*FRACUNIT
 			),
-			1*SLIPTIDEHANDLING/5
+			1*HANDLESCALING/5
 		);  // + 80% top speed (peak), +400% acceleration (peak), +20% handling
 	}
 
@@ -3591,12 +3587,12 @@ static void K_GetKartBoostPower(player_t *player)
 
 	if (player->startboost) // Startup Boost
 	{
-		ADDBOOST(FRACUNIT, 4*FRACUNIT, SLIPTIDEHANDLING); // + 100% top speed, + 400% acceleration, +50% handling
+		ADDBOOST(FRACUNIT, 4*FRACUNIT, HANDLESCALING); // + 100% top speed, + 400% acceleration, +50% handling
 	}
 
 	if (player->dropdashboost) // Drop dash
 	{
-		ADDBOOST(FRACUNIT/3, 4*FRACUNIT, SLIPTIDEHANDLING); // + 33% top speed, + 400% acceleration, +50% handling
+		ADDBOOST(FRACUNIT/3, 4*FRACUNIT, HANDLESCALING); // + 33% top speed, + 400% acceleration, +50% handling
 	}
 
 	if (player->driftboost) // Drift Boost
@@ -3634,7 +3630,7 @@ static void K_GetKartBoostPower(player_t *player)
 
 	if (player->gateBoost) // SPB Juicebox boost
 	{
-		ADDBOOST(3*FRACUNIT/4, 4*FRACUNIT, SLIPTIDEHANDLING/2); // + 75% top speed, + 400% acceleration, +25% handling
+		ADDBOOST(3*FRACUNIT/4, 4*FRACUNIT, HANDLESCALING/2); // + 75% top speed, + 400% acceleration, +25% handling
 	}
 
 	if (player->ringboost) // Ring Boost
@@ -3648,7 +3644,7 @@ static void K_GetKartBoostPower(player_t *player)
 		ADDBOOST(
 			ringboost_base + FixedMul(FRACUNIT / 1750, rb),
 			4*FRACUNIT,
-			Easing_InCubic(min(FRACUNIT, rb / (TICRATE*12)), 0, 2*SLIPTIDEHANDLING/5)
+			Easing_InCubic(min(FRACUNIT, rb / (TICRATE*12)), 0, 2*HANDLESCALING/5)
 		); // + 20% + ???% top speed, + 400% acceleration, +???% handling
 	}
 
@@ -3715,7 +3711,7 @@ static void K_GetKartBoostPower(player_t *player)
 	{
 		// NB: This is an acceleration-only boost.
 		// If this is applied earlier in the chain, it will diminish real speed boosts.
-		ADDBOOST(0, FRACUNIT, 2*SLIPTIDEHANDLING/10); // 0% speed 100% accel 20% handle
+		ADDBOOST(0, FRACUNIT, 2*HANDLESCALING/10); // 0% speed 100% accel 20% handle
 	}
 
 	// This should always remain the last boost stack before tethering
@@ -11274,11 +11270,11 @@ INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
 		if (G_CompatLevel(0x000A))
 		{
 			// Compat level for 2.0 staff ghosts
-			sliptide_handle = 5 * SLIPTIDEHANDLING / 4;
+			sliptide_handle = 5 * HANDLESCALING / 4;
 		}
 		else
 		{
-			sliptide_handle = 3 * SLIPTIDEHANDLING / 4;
+			sliptide_handle = 3 * HANDLESCALING / 4;
 		}
 
 		finalhandleboost = FixedMul(sliptide_handle, FixedDiv(player->speed, topspeed));
@@ -11689,7 +11685,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 	boolean extendedSliptide = false;
 
 	// We don't meet sliptide conditions!
-	if ((player->handleboost < (SLIPTIDEHANDLING/2))
+	if ((player->handleboost < SLIPTIDEHANDLING)
 	|| (!player->steering)
 	|| (!player->aizdriftstrat)
 	|| (player->steering > 0) != (player->aizdriftstrat > 0))

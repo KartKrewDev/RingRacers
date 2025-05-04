@@ -81,6 +81,13 @@ Make sure this matches the actual number of states
 #define MAXTOPACCEL (12*FRACUNIT)
 #define TOPACCELREGEN (FRACUNIT/16)
 
+// Handling boosts and sliptide conditions got weird.
+// You must be under a handling boost of at least SLIPTIDEHANDLING to sliptide.
+// HANDLESCALING is used to adjust all handling boosts simultaneously (weight factors in the future?)
+// If you need to touch this in an involved way later, please just make sliptide eligibility a flag LMAO
+#define HANDLESCALING (7*FRACUNIT/8)
+#define SLIPTIDEHANDLING (HANDLESCALING/2)
+
 // Mispredicted turns can generate phantom sliptide inputs for a few tics.
 // Delay the wavedash visuals until we're reasonably sure that it's a deliberate turn.
 #define HIDEWAVEDASHCHARGE (60)
