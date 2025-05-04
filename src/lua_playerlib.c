@@ -370,6 +370,10 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->eggmanTransferDelay);
 	else if (fastcmp(field,"wavedash"))
 		lua_pushinteger(L, plr->wavedash);
+	else if (fastcmp(field,"wavedashleft"))
+		lua_pushinteger(L, plr->wavedashleft);
+	else if (fastcmp(field,"wavedashright"))
+		lua_pushinteger(L, plr->wavedashright);
 	else if (fastcmp(field,"wavedashdelay"))
 		lua_pushinteger(L, plr->wavedashdelay);
 	else if (fastcmp(field,"wavedashboost"))
@@ -974,6 +978,10 @@ static int player_set(lua_State *L)
 		plr->eggmanTransferDelay = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"wavedash"))
 		plr->wavedash = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"wavedashleft"))
+		plr->wavedashleft = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"wavedashright"))
+		plr->wavedashright = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"wavedashdelay"))
 		plr->wavedashdelay = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"wavedashboost"))

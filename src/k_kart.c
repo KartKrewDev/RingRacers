@@ -11583,6 +11583,8 @@ static void K_KartDrift(player_t *player, boolean onground)
 		player->pflags &= ~(PF_BRAKEDRIFT|PF_GETSPARKS);
 		// And take away wavedash properties: advanced cornering demands advanced finesse
 		player->wavedash = 0;
+		player->wavedashleft = 0;
+		player->wavedashright = 0;
 		player->wavedashboost = 0;
 		player->trickcharge = 0;
 	}
@@ -11735,7 +11737,12 @@ static void K_KartDrift(player_t *player, boolean onground)
 			// This makes wavedash charge noticeably slower on even modest delay, despite the magnitude of the turn seeming the same.
 			// So we only require 90% of a turn to get full charge strength.
 
-			player->wavedash += addCharge;
+			if (player->steering > 0)
+				player->wavedashleft += addCharge;
+			else
+				player->wavedashright += addCharge;
+
+			player->wavedash = max(player->wavedashleft, player->wavedashright) + min(player->wavedashleft, player->wavedashright)/4;
 
 			if (player->wavedash >= MIN_WAVEDASH_CHARGE && (player->wavedash - addCharge) < MIN_WAVEDASH_CHARGE)
 				S_StartSound(player->mo, sfx_waved5);
@@ -11816,6 +11823,8 @@ static void K_KartDrift(player_t *player, boolean onground)
 				S_StopSoundByID(player->mo, sfx_waved2);
 				S_StopSoundByID(player->mo, sfx_waved4);
 				player->wavedash = 0;
+				player->wavedashleft = 0;
+				player->wavedashright = 0;
 				player->wavedashdelay = 0;
 			}
 		}

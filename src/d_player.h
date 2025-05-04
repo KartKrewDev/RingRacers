@@ -1003,6 +1003,8 @@ struct player_t
 	UINT8 tripwireReboundDelay; // When failing Tripwire, brieftly lock out speed-based tripwire pass (anti-cheese)
 
 	UINT16 wavedash; // How long is our chained sliptide? Grant a proportional boost when it's over.
+	UINT16 wavedashleft;
+	UINT16 wavedashright;
 	UINT8 wavedashdelay; // How long since the last sliptide? Only boost once you've been straightened out for a bit.
 	UINT16 wavedashboost; // The actual boost granted from wavedash.
 	fixed_t wavedashpower; // Is this a bullshit "tap" wavedash? Weaken lower-charge wavedashes while keeping long sliptides fully rewarding.
