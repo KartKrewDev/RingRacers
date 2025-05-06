@@ -1307,7 +1307,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 			// every item in the game!
 
 			// Create the same item reel given the same inputs.
-			// P_SetRandSeed(PR_ITEM_ROULETTE, ITEM_REEL_SEED);
+			P_SetRandSeed(PR_ITEM_ROULETTE, ITEM_REEL_SEED);
 
 			for (i = 1; i < NUMKARTRESULTS; i++)
 			{
