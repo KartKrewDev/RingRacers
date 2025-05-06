@@ -1176,7 +1176,8 @@ enum {
 	WP_ANALOGSTICK = 1<<3,
 	WP_AUTORING = 1<<4,
 	WP_SELFMUTE = 1<<5,
-	WP_SELFDEAFEN = 1<<6
+	WP_SELFDEAFEN = 1<<6,
+	WP_STRICTFASTFALL = 1<<7,
 };
 
 void WeaponPref_Send(UINT8 ssplayer)
@@ -1206,6 +1207,9 @@ void WeaponPref_Send(UINT8 ssplayer)
 		if (!cv_voice_chat.value)
 			prefs |= WP_SELFDEAFEN;
 	}
+
+	if (cv_strictfastfall[ssplayer].value)
+		prefs |= WP_STRICTFASTFALL;
 
 	UINT8 buf[2];
 	buf[0] = prefs;
@@ -1246,7 +1250,7 @@ size_t WeaponPref_Parse(const UINT8 *bufstart, INT32 playernum)
 	UINT8 prefs = READUINT8(p);
 
 	player->pflags &= ~(PF_KICKSTARTACCEL|PF_SHRINKME|PF_AUTOROULETTE|PF_AUTORING);
-	player->pflags2 &= ~(PF2_SELFMUTE | PF2_SELFDEAFEN);
+	player->pflags2 &= ~(PF2_SELFMUTE | PF2_SELFDEAFEN | PF2_STRICTFASTFALL);
 
 	if (prefs & WP_KICKSTARTACCEL)
 		player->pflags |= PF_KICKSTARTACCEL;
@@ -1270,6 +1274,9 @@ size_t WeaponPref_Parse(const UINT8 *bufstart, INT32 playernum)
 
 	if (prefs & WP_SELFDEAFEN)
 		player->pflags2 |= PF2_SELFDEAFEN;
+
+	if (prefs & WP_STRICTFASTFALL)
+		player->pflags2 |= PF2_STRICTFASTFALL;
 
 	if (leveltime < 2)
 	{

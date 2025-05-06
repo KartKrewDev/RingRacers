@@ -34,11 +34,12 @@ typedef enum
 	BT_LOOKBACK		  = 1<<5,	// Look Backward
 	BT_RESPAWN		  = 1<<6,	// Respawn
 	BT_VOTE			  = 1<<7,	// Vote
+	BT_SPINDASH       = 1<<8,   // Spindash
 
-	BT_EBRAKEMASK	= (BT_ACCELERATE|BT_BRAKE),
-	BT_SPINDASHMASK	= (BT_ACCELERATE|BT_BRAKE|BT_DRIFT),
+	BT_EBRAKEMASK		= (BT_ACCELERATE|BT_BRAKE),
+	BT_SPINDASHMASK 	= (BT_ACCELERATE|BT_BRAKE|BT_DRIFT),
 
-	// free: 1<<8 to 1<<12
+	// free: 1<<9 to 1<<12
 
 	// Lua garbage, replace with freeslottable buttons some day
 	BT_LUAA			= 1<<13,

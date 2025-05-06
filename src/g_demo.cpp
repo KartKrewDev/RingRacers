@@ -207,6 +207,7 @@ boolean G_CompatLevel(UINT16 level)
 #define DEMO_BOT			0x08
 #define DEMO_AUTOROULETTE	0x10
 #define DEMO_AUTORING		0x20
+#define DEMO_STRICTFASTFALL 0x40
 
 // For demos
 #define ZT_FWD		0x0001
@@ -2336,6 +2337,8 @@ void G_BeginRecording(void)
 				i |= DEMO_SPECTATOR;
 			if (player->pflags & PF_KICKSTARTACCEL)
 				i |= DEMO_KICKSTART;
+			if (player->pflags & PF2_STRICTFASTFALL)
+				i |= DEMO_STRICTFASTFALL;
 			if (player->pflags & PF_AUTOROULETTE)
 				i |= DEMO_AUTOROULETTE;
 			if (player->pflags & PF_AUTORING)
@@ -3452,6 +3455,11 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 			players[p].pflags |= PF_KICKSTARTACCEL;
 		else
 			players[p].pflags &= ~PF_KICKSTARTACCEL;
+
+		if (flags & DEMO_STRICTFASTFALL)
+			players[p].pflags |= PF2_STRICTFASTFALL;
+		else
+			players[p].pflags &= ~PF2_STRICTFASTFALL;
 
 		if (flags & DEMO_AUTOROULETTE)
 			players[p].pflags |= PF_AUTOROULETTE;

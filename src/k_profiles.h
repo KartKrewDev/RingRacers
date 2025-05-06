@@ -46,6 +46,7 @@ struct ProfilePreferencesJson
 	bool kickstartaccel;
 	bool autoroulette;
 	bool litesteer;
+	bool strictfastfall;
 	uint8_t descriptiveinput;
 	bool autoring;
 	bool rumble;
@@ -56,6 +57,7 @@ struct ProfilePreferencesJson
 		kickstartaccel,
 		autoroulette,
 		litesteer,
+		strictfastfall,
 		descriptiveinput,
 		autoring,
 		rumble,
@@ -164,6 +166,7 @@ struct profile_t
 	boolean kickstartaccel;				// cv_kickstartaccel
 	boolean autoroulette;				// cv_autoroulette
 	boolean litesteer;					// cv_litesteer
+	boolean strictfastfall;				// cv_strictfastfall
 	UINT8 descriptiveinput;				// cv_descriptiveinput
 	boolean autoring;					// cv_autoring
 	boolean rumble;						// cv_rumble
