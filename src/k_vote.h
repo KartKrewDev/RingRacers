@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Sally "TehRealSalt" Cochenour
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Sally "TehRealSalt" Cochenour
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -31,7 +31,7 @@ void Y_VoteDrawer(void);
 void Y_VoteTicker(void);
 void Y_StartVote(void);
 void Y_EndVote(void);
-void Y_SetupVoteFinish(SINT8 pick, SINT8 level);
+void Y_SetupVoteFinish(SINT8 pick, SINT8 level, SINT8 anger);
 
 #ifdef __cplusplus
 } // extern "C"

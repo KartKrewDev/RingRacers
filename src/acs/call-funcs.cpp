@@ -1,8 +1,8 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
 // Copyright (C) 2016 by James Haley, David Hill, et al. (Team Eternity)
-// Copyright (C) 2024 by Sally "TehRealSalt" Cochenour
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Sally "TehRealSalt" Cochenour
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -1141,6 +1141,37 @@ bool CallFunc_SetLineTexture(ACSVM::Thread *thread, const ACSVM::Word *argV, ACS
 				side->toptexture = texId;
 				break;
 			}
+		}
+	}
+
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_SetLineBlocking(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Changes a linedef's blocking flag.
+--------------------------------------------------*/
+bool CallFunc_SetLineBlocking(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	mtag_t tag = 0;
+	UINT32 blocking = 0;
+	INT32 lineId = -1;
+
+	tag = argV[0];
+
+	if (argV[1] != 0)
+	{
+		blocking = ML_IMPASSABLE;
+	}
+
+	TAG_ITER_LINES(tag, lineId)
+	{
+		line_t *line = &lines[lineId];
+
+		if (line->flags & ML_TWOSIDED) // disallow changing this for 1-sided lines
+		{
+			line->flags = (line->flags & ~ML_IMPASSABLE) | blocking;
 		}
 	}
 

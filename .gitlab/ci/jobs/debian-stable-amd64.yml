@@ -12,7 +12,7 @@ Debian stable:amd64:
 
   variables:
     CC: x86_64-linux-gnu-gcc
-    LDFLAGS: -Wl,-fuse-ld=gold
+    CXX: x86_64-linux-gnu-g++
     OBJCOPY: x86_64-linux-gnu-objcopy
     OBJDUMP: x86_64-linux-gnu-objdump
     PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
@@ -23,7 +23,7 @@ Debian stable:amd64:
     - - |
           # apt_toolchain
           echo -e "\e[0Ksection_start:`date +%s`:apt_toolchain[collapsed=true]\r\e[0KInstalling toolchain packages"
-      - apt-get install gcc-x86-64-linux-gnu || apt-get install gcc
+      - apt-get install g++-x86-64-linux-gnu || apt-get install g++
       - |
           # apt_toolchain
           echo -e "\e[0Ksection_end:`date +%s`:apt_toolchain\r\e[0K"
@@ -31,7 +31,7 @@ Debian stable:amd64:
     - - |
           # apt_development
           echo -e "\e[0Ksection_start:`date +%s`:apt_development[collapsed=true]\r\e[0KInstalling development packages"
-      - apt-get install libsdl2-mixer-dev:amd64 libpng-dev:amd64 libcurl4-openssl-dev:amd64 libgme-dev:amd64 libopenmpt-dev:amd64 libminiupnpc-dev:amd64
+      - apt-get install libsdl2-dev:amd64 libpng-dev:amd64 libcurl4-openssl-dev:amd64 libyuv-dev:amd64
       - |
           # apt_development
           echo -e "\e[0Ksection_end:`date +%s`:apt_development\r\e[0K"
@@ -40,11 +40,11 @@ Debian stable:amd64:
           # cmake
           echo -e "\e[0Ksection_start:`date +%s`:cmake[collapsed=false]\r\e[0KBuilding Makefiles"
       - |
-          CCACHE=$(which ccache)
-          cmake -B build.cmake \
+          cmake \
+            --preset ninja-debug \
+            -B build.cmake \
             -G "Unix Makefiles" \
-            -DCMAKE_C_COMPILER_LAUNCHER=$CCACHE \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=$CCACHE \
+            -DCMAKE_COLOR_DIAGNOSTICS=OFF \
             -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF
       - |
           # cmake
@@ -53,7 +53,7 @@ Debian stable:amd64:
     - - |
           # make
           echo -e "\e[0Ksection_start:`date +%s`:make[collapsed=false]\r\e[0KCompiling SRB2"
-      - make --directory=build.cmake --keep-going || make --directory=build.cmake --keep-going
+      - cmake --build build.cmake --parallel 1 -- --keep-going
       - |
           # make
           echo -e "\e[0Ksection_end:`date +%s`:make\r\e[0K"

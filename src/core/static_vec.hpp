@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Ronald "Eidolon" Kinard
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Ronald "Eidolon" Kinard
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -238,11 +238,12 @@ bool operator!=(const srb2::StaticVec<T, L1>& lhs, const srb2::StaticVec<T, L2>&
 template <typename T, size_t Limit>
 struct std::hash<srb2::StaticVec<T, Limit>>
 {
-	uint64_t operator()(const srb2::StaticVec<T, Limit>& input) const
+	size_t operator()(const srb2::StaticVec<T, Limit>& input) const
 	{
-		constexpr const uint64_t prime {0x00000100000001B3};
-		std::size_t ret {0xcbf29ce484222325};
+		constexpr size_t prime = sizeof(size_t) == 8 ? 0x00000100000001B3 : 0x01000193;
+		constexpr size_t basis = sizeof(size_t) == 8 ? 0xcbf29ce484222325 : 0x811c9dc5;
 
+		size_t ret = basis;
 		for (auto itr = input.begin(); itr != input.end(); itr++)
 		{
 			ret = (ret * prime) ^ std::hash<T>(*itr);

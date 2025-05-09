@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -28,7 +28,6 @@ extern rhi::Handle<rhi::Rhi> g_current_rhi;
 
 rhi::Rhi* get_rhi(rhi::Handle<rhi::Rhi> handle);
 
-rhi::Handle<rhi::GraphicsContext> main_graphics_context();
 hwr2::HardwareState* main_hardware_state();
 
 } // namespace srb2::sys

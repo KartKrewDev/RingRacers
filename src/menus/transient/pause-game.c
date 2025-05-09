@@ -1,8 +1,8 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by "Lat'".
-// Copyright (C) 2024 by Vivian "toastergrl" Grannell.
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by "Lat'".
+// Copyright (C) 2025 by Vivian "toastergrl" Grannell.
+// Copyright (C) 2025 by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -353,7 +353,7 @@ void M_HandlePauseMenuGametype(INT32 choice)
 				}
 				else // ideally for "random" only, but no sane fallback for "same" and "next"
 				{
-					COM_ImmedExecute(va("randommap -gt %s", gametypes[menugametype]->name));
+					COM_ImmedExecute(va("map -random -gt %s", gametypes[menugametype]->name));
 				}
 			}
 			return;

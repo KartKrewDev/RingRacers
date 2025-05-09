@@ -29,6 +29,7 @@ target_sources(SRB2SDL2 PRIVATE
 	options-video-1.c
 	options-video-advanced.c
 	options-video-modes.c
+	options-voice.cpp
 	play-1.c
 	play-char-select.c
 	play-local-1.c

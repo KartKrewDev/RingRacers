@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -524,7 +524,7 @@ void R_FillBackScreen(void)
 	INT32 x, y, step, boff;
 
 	// quickfix, don't cache lumps in both modes
-	if (rendermode != render_soft)
+	if (rendermode == render_opengl)
 		return;
 
 	// draw pattern around the status bar too (when hires),
@@ -620,7 +620,7 @@ void R_DrawViewBorder(void)
 	if (rendermode == render_none)
 		return;
 #ifdef HWRENDER
-	if (rendermode != render_soft)
+	if (rendermode == render_opengl)
 	{
 		HWR_DrawViewBorder(0);
 		return;

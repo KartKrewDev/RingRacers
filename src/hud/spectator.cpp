@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -27,6 +27,7 @@
 #include "../k_hud.h"
 #include "../p_local.h"
 #include "../r_fps.h"
+#include "../s_sound.h"
 
 extern "C" consvar_t cv_maxplayers;
 
@@ -164,7 +165,7 @@ void K_drawSpectatorHUD(boolean director)
 
 	if (player)
 	{
-		std::string label = [player]
+		srb2::String label = [player]
 		{
 			if (player->flashing)
 			{
@@ -182,7 +183,7 @@ void K_drawSpectatorHUD(boolean director)
 
 		if (cv_maxplayers.value)
 		{
-			label += fmt::format(" [{}/{}]", numingame, cv_maxplayers.value);
+			label += srb2::format(" [{}/{}]", numingame, cv_maxplayers.value);
 		}
 
 		list.insert({{label.c_str(), "<l_animated>"}});

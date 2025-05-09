@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 //
@@ -369,6 +369,7 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 
 	"S_KART_LEFTOVER",
 	"S_KART_LEFTOVER_NOTIRES",
+	"S_KART_LEFTOVER_CUSTOM",
 
 	"S_KART_TIRE1",
 	"S_KART_TIRE2",
@@ -2161,6 +2162,8 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_TRIPWIREBOOST_BLAST_TOP",
 	"S_TRIPWIREBOOST_BLAST_BOTTOM",
 
+	"S_TRIPWIREAPPROACH",
+
 	"S_SMOOTHLANDING",
 
 	"S_TRICKINDICATOR_OVERLAY",
@@ -3643,6 +3646,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_BATTLEBUMPER_BLAST",
 
 	"MT_TRIPWIREBOOST",
+	"MT_TRIPWIREAPPROACH",
 
 	"MT_SMOOTHLANDING",
 	"MT_TRICKINDICATOR",
@@ -4699,7 +4703,10 @@ struct int_const_s const INT_CONST[] = {
 
 	// Carrying
 	{"CR_NONE",CR_NONE},
+	{"CR_SLIDING",CR_SLIDING},
 	{"CR_ZOOMTUBE",CR_ZOOMTUBE},
+	{"CR_DASHRING",CR_DASHRING},
+	{"CR_TRAPBUBBLE",CR_TRAPBUBBLE},
 
 	// Character flags (skinflags_t)
 	{"SF_MACHINE",SF_MACHINE},
@@ -5194,6 +5201,40 @@ struct int_const_s const INT_CONST[] = {
 	// followermode_t
 	{"FOLLOWERMODE_FLOAT",FOLLOWERMODE_FLOAT},
 	{"FOLLOWERMODE_GROUND",FOLLOWERMODE_GROUND},
+
+	// tripwirepass_t
+	{"TRIPWIRE_NONE",TRIPWIRE_NONE},
+	{"TRIPWIRE_IGNORE",TRIPWIRE_IGNORE},
+	{"TRIPWIRE_BOOST",TRIPWIRE_BOOST},
+	{"TRIPWIRE_BLASTER",TRIPWIRE_BLASTER},
+	{"TRIPWIRE_CONSUME",TRIPWIRE_CONSUME},
+
+	// trickstate_t
+	{"TRICKSTATE_NONE",TRICKSTATE_NONE},
+	{"TRICKSTATE_READY",TRICKSTATE_READY},
+	{"TRICKSTATE_FORWARD",TRICKSTATE_FORWARD},
+	{"TRICKSTATE_RIGHT",TRICKSTATE_RIGHT},
+	{"TRICKSTATE_LEFT",TRICKSTATE_LEFT},
+	{"TRICKSTATE_BACK",TRICKSTATE_BACK},
+
+	// items
+	{"GARDENTOP_MAXGRINDTIME",GARDENTOP_MAXGRINDTIME},
+	{"BALLHOGINCREMENT",BALLHOGINCREMENT},
+
+	// kickstart
+	{"ACCEL_KICKSTART",ACCEL_KICKSTART},
+
+	// tripwires
+	{"TRIPWIRETIME",TRIPWIRETIME},
+
+	// tricks
+	{"TRICKMOMZRAMP",TRICKMOMZRAMP},
+	{"TRICKLAG",TRICKLAG},
+	{"TRICKDELAY",TRICKDELAY},
+
+	// tumble
+	{"TUMBLEBOUNCES",TUMBLEBOUNCES},
+	{"TUMBLEGRAVITY",TUMBLEGRAVITY},
 
 	// tune flags
 	{"TN_INCLUSIVEFADE",TN_INCLUSIVEFADE},

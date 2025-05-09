@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by James Robert Roman.
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by James Robert Roman.
+// Copyright (C) 2025 by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -9,11 +9,12 @@
 //-----------------------------------------------------------------------------
 
 #include <string_view>
-#include <unordered_set>
 
 #include "r_debug.hpp"
 #include "v_draw.hpp"
 
+#include "core/hash_map.hpp"
+#include "core/hash_set.hpp"
 #include "doomdef.h"
 #include "doomtype.h"
 #include "r_textures.h"
@@ -24,7 +25,7 @@ using srb2::Draw;
 namespace
 {
 
-std::unordered_set<INT32> frame_list;
+srb2::HashSet<INT32> frame_list;
 
 }; // namespace
 

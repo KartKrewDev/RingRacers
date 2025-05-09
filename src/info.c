@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -399,6 +399,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"BEXB", // Battle Bumper Explosion: Blast
 	"TWBS", // Tripwire Boost
 	"TWBT", // Tripwire BLASTER
+	"TWBP", // Tripwire approach
 	"SMLD", // Smooth landing
 
 	// Trick Effects
@@ -801,6 +802,7 @@ char spr2names[NUMPLAYERSPRITES][5] =
 	"SIGN", "SIGL", "SSIG", // Finish signpost
 	"XTRA", // Three Faces of Darkness
 	"TALK", // Dialogue
+	"DKRT", // Kart husk
 };
 playersprite_t free_spr2 = SPR2_FIRSTFREESLOT;
 
@@ -845,13 +847,14 @@ playersprite_t spr2defaults[NUMPLAYERSPRITES] = {
 	SPR2_SIGN, // SPR2_SSIG
 	0, // SPR2_XTRA
 	0, // SPR2_TALK
+	0, // SPR2_DKRT
 };
 
 // Doesn't work with g++, needs actionf_p1 (don't modify this comment)
 state_t states[NUMSTATES] =
 {
 	// frame is masked through FF_FRAMEMASK
-	// FF_ANIMATE makes simple state animations (var1 #frames, var2 tic delay)
+	// FF_ANIMATE makes simple state animations (var1 #frames, var2 tic delay) (var1 is ignored in P_SetupStateAnimation() if sprite is SPR_PLAY)
 	// FF_FULLBRIGHT activates the fullbright colormap
 	// use FF_TRANS10 - FF_TRANS90 for easy translucency
 	// (or tr_trans10<<FF_TRANSSHIFT if you want to make it hard on yourself)
@@ -909,6 +912,7 @@ state_t states[NUMSTATES] =
 
 	{SPR_KART, 0, -1, {NULL}, 0, 0, S_NULL}, // S_KART_LEFTOVER
 	{SPR_DIEF, 0, -1, {NULL}, 0, 0, S_NULL}, // S_KART_LEFTOVER_NOTIRES
+	{SPR_PLAY, SPR2_DKRT,3,{NULL},0,0,S_KART_LEFTOVER_CUSTOM},// S_KART_LEFTOVER_CUSTOM
 
 	{SPR_TIRE, 0, -1, {NULL}, 0, 0, S_NULL}, // S_KART_TIRE1
 	{SPR_TIRE, 1, -1, {NULL}, 0, 0, S_NULL}, // S_KART_TIRE2
@@ -2684,6 +2688,8 @@ state_t states[NUMSTATES] =
 	{SPR_TWBT, FF_FULLBRIGHT|FF_ADD|FF_ANIMATE,                                   -1, {NULL}, 6, 2, S_NULL}, // S_TRIPWIREBOOST_BLAST_TOP
 	{SPR_TWBT, FF_FULLBRIGHT|FF_ADD|FF_ANIMATE|FF_VERTICALFLIP|FF_HORIZONTALFLIP, -1, {NULL}, 6, 2, S_NULL}, // S_TRIPWIREBOOST_BLAST_BOTTOM
 
+	{SPR_TWBP, FF_FULLBRIGHT|FF_ADD|FF_ANIMATE, -1, {NULL}, 11, 1, S_NULL}, // S_TRIPWIREAPPROACH
+
 	{SPR_SMLD, FF_FULLBRIGHT|FF_ADD|FF_ANIMATE, -1, {NULL}, 7, 2, S_NULL}, // S_SMOOTHLANDING
 
 	{SPR_TRK1, FF_FULLBRIGHT|FF_ANIMATE|FF_PAPERSPRITE|FF_ADD, -1, {NULL},  3, 3, S_NULL},      // S_TRICKINDICATOR_OVERLAY,
@@ -3192,7 +3198,7 @@ state_t states[NUMSTATES] =
 	{SPR_WAYP, 1|FF_FLOORSPRITE, 1, {NULL}, 0, 0, S_NULL}, // S_WAYPOINTSPLAT
 	{SPR_EGOO, 0, 1, {NULL}, 0, 0, S_NULL}, // S_EGOORB
 
-	{SPR_AMPA, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_AMPS
+	{SPR_AMPA, FF_FULLBRIGHT|FF_ANIMATE, -1, {NULL}, 41, 1, S_NULL}, // S_AMPS
 
 	// Water Trail
 	{SPR_WTRL, FF_PAPERSPRITE  , 2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAIL1
@@ -15048,7 +15054,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_LANDMINE_EXPLODE,		// deathstate
 		S_NULL,					// xdeathstate
 		sfx_None,				// deathsound
-		0,						// speed
+		128*FRACUNIT,			// speed
 		24*FRACUNIT,			// radius
 		32*FRACUNIT,			// height
 		0,						// display offset
@@ -16044,6 +16050,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,        // painsound
 		S_TRIPWIREBOOST_BLAST_TOP,    // meleestate
 		S_TRIPWIREBOOST_BLAST_BOTTOM, // missilestate
+		S_NULL,          // deathstate
+		S_NULL,          // xdeathstate
+		sfx_None,        // deathsound
+		0,               // speed
+		8*FRACUNIT,      // radius
+		16*FRACUNIT,     // height
+		1,               // display offset
+		100,             // mass
+		0,               // damage
+		sfx_None,        // activesound
+		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_DONTENCOREMAP, // flags
+		S_NULL           // raisestate
+	},
+
+	{           // MT_TRIPWIREAPPROACH
+		-1,              // doomednum
+		S_TRIPWIREAPPROACH, // spawnstate
+		1000,            // spawnhealth
+		S_NULL, // seestate
+		sfx_None,        // seesound
+		8,               // reactiontime
+		sfx_None,        // attacksound
+		S_NULL,          // painstate
+		0,               // painchance
+		sfx_None,        // painsound
+		S_NULL,    // meleestate
+		S_NULL, // missilestate
 		S_NULL,          // deathstate
 		S_NULL,          // xdeathstate
 		sfx_None,        // deathsound
@@ -18410,7 +18443,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 
 	{           // MT_OVERTIME_PARTICLE
 	    -1,             // doomednum
-	    S_NULL,         // spawnstate
+	    S_INVISIBLE,    // spawnstate
 	    1000,           // spawnhealth
 	    S_NULL,         // seestate
 	    sfx_None,       // seesound

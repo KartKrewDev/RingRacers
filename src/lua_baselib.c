@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2016 by John "JTE" Muniz.
 //
@@ -3407,7 +3407,7 @@ static int lib_kAddMessage(lua_State *L)
 	INLEVEL
 	if (msg == NULL)
 		return luaL_error(L, "argument #1 not given (expected string)");
-	K_AddMessage(msg, interrupt, persist);	
+	K_AddMessage(msg, interrupt, persist);
 	return 0;
 }
 

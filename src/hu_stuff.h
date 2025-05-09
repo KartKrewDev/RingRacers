@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -124,6 +124,9 @@ void HU_AddChatText(const char *text, boolean playsound);
 
 // set true when entering a chat message
 extern boolean chat_on;
+
+// set true when push-to-talk is held
+extern boolean g_voicepushtotalk_on;
 
 // keystrokes in the console or chat window
 extern boolean hu_keystrokes;

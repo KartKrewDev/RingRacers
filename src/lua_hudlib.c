@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2016 by John "JTE" Muniz.
 //
@@ -51,6 +51,7 @@ static const char *const hud_disable_options[] = {
 	"minimap",
 	"item",
 	"position",
+	"names",
 	"check",		// "CHECK" f-zero indicator
 	"minirankings",	// Gametype rankings to the left
 	"battlerankingsbumpers",	// bumper drawer for battle. Useful if you want to make a custom battle gamemode without bumpers being involved.

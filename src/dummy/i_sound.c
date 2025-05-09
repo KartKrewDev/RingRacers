@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -223,4 +223,31 @@ boolean I_FadeInPlaySong(UINT32 ms, boolean looping)
         (void)ms;
         (void)looping;
         return false;
+}
+
+boolean I_SoundInputIsEnabled(void)
+{
+	return false;
+}
+
+boolean I_SoundInputSetEnabled(boolean enabled)
+{
+	return false;
+}
+
+UINT32 I_SoundInputDequeueSamples(void *data, UINT32 len)
+{
+	return 0;
+}
+
+void I_QueueVoiceFrameFromPlayer(INT32 playernum, void *data, UINT32 len, boolean terminal)
+{
+}
+
+void I_SetPlayerVoiceProperties(INT32 playernum, float volume, float sep)
+{
+}
+
+void I_ResetVoiceQueue(INT32 playernum)
+{
 }

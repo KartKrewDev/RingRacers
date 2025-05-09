@@ -1,15 +1,14 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by James Robert Roman
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by James Robert Roman
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#include <unordered_map>
-
+#include "core/hash_map.hpp"
 #include "doomdef.h" // skincolornum_t
 #include "doomtype.h"
 #include "hu_stuff.h"
@@ -34,7 +33,7 @@ int Draw::TextElement::width() const
 
 Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 {
-	static const std::unordered_map<std::string_view, char> translation = {
+	static const srb2::HashMap<std::string_view, char> translation = {
 #define BUTTON(str, lower_bits) \
 		{str,             0xB0 | lower_bits},\
 		{str "_animated", 0xA0 | lower_bits},\
@@ -88,7 +87,7 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 	};
 
 	// When we encounter a Saturn button, what gamecontrol does it represent?
-	static const std::unordered_map<char, gamecontrols_e> inputdefinition = {
+	static const srb2::HashMap<char, gamecontrols_e> inputdefinition = {
 		{sb_up, gc_up},
 		{sb_down, gc_down},
 		{sb_right, gc_right},
@@ -114,7 +113,7 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 	// What physical binds should appear as Saturn icons anyway?
 	// (We don't have generic binds for stick/dpad directions, so
 	// using the existing arrow graphics is the best thing here.)
-	static const std::unordered_map<INT32, char> prettyinputs = {
+	static const srb2::HashMap<INT32, char> prettyinputs = {
 		{KEY_UPARROW, sb_up},
 		{KEY_DOWNARROW, sb_down},
 		{KEY_LEFTARROW, sb_left},
@@ -164,7 +163,7 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 			// SPECIAL: Generic button that we invoke explicitly, not via gamecontrol reference.
 			// If we ever add anything else to this category, I promise I will create a real abstraction,
 			// but for now, just hardcode the character replacements and pray for forgiveness.
-			
+
 			string_.push_back(0xEF); // Control code: "switch to descriptive input mode"
 			string_.push_back(0xEB); // Control code: "large button"
 			if (code == "dpad")
@@ -198,7 +197,7 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 
 					// EXTRA: descriptiveinput values above 1 translate binds back to Saturn buttons,
 					// with various modes for various fucked up 6bt pads
-					std::unordered_map<INT32, char> padconfig = {};
+					srb2::HashMap<INT32, char> padconfig = {};
 					switch (cv_descriptiveinput[localplayer].value)
 					{
 						case 1:
@@ -277,7 +276,7 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 						pad->second = pad->second & (0x0F);
 
 						// original invocation has the animation bits, but the glyph bits come from the table
-						string_.push_back((it->second & 0xF0) | pad->second); 
+						string_.push_back((it->second & 0xF0) | pad->second);
 					}
 					else
 					{
@@ -349,6 +348,11 @@ void Chain::fill(UINT8 color) const
 
 void Chain::string(const char* str, INT32 flags, Font font) const
 {
+	if (!str)
+	{
+		return;
+	}
+
 	const auto _ = Clipper(*this);
 
 	flags |= default_font_flags(font);
@@ -576,5 +580,10 @@ INT32 Draw::default_font_flags(Font font)
 
 fixed_t Draw::font_width(Font font, INT32 flags, const char* string)
 {
+	if (!string)
+	{
+		return 0;
+	}
+
 	return V_StringScaledWidth(FRACUNIT, FRACUNIT, FRACUNIT, flags, font_to_fontno(font), string);
 }

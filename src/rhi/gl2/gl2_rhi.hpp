@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Ronald "Eidolon" Kinard
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Ronald "Eidolon" Kinard
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -14,11 +14,11 @@
 #include <functional>
 #include <memory>
 #include <optional>
-#include <string>
 #include <tuple>
-#include <unordered_map>
-#include <vector>
 
+#include "../../core/hash_map.hpp"
+#include "../../core/string.h"
+#include "../../core/vector.hpp"
 #include "../rhi.hpp"
 
 namespace srb2::rhi
@@ -71,7 +71,7 @@ struct Gl2Platform
 	virtual ~Gl2Platform();
 
 	virtual void present() = 0;
-	virtual std::tuple<std::vector<std::string>, std::vector<std::string>> find_shader_sources(PipelineProgram program) = 0;
+	virtual std::tuple<srb2::Vector<srb2::String>, srb2::Vector<srb2::String>> find_shader_sources(const char* name) = 0;
 	virtual Rect get_default_framebuffer_dimensions() = 0;
 };
 
@@ -87,41 +87,19 @@ struct Gl2Buffer : public rhi::Buffer
 	rhi::BufferDesc desc;
 };
 
-struct Gl2RenderPass : public rhi::RenderPass
-{
-	rhi::RenderPassDesc desc;
-};
-
 struct Gl2Renderbuffer : public rhi::Renderbuffer
 {
 	uint32_t renderbuffer;
 	rhi::RenderbufferDesc desc;
 };
 
-struct Gl2UniformSet : public rhi::UniformSet
-{
-	std::vector<rhi::UniformVariant> uniforms;
-};
-
-struct Gl2BindingSet : public rhi::BindingSet
-{
-	std::vector<rhi::VertexAttributeBufferBinding> vertex_buffer_bindings;
-	std::unordered_map<rhi::SamplerName, uint32_t> textures {4};
-};
-
-struct Gl2Pipeline : public rhi::Pipeline
+struct Gl2Program : public rhi::Program
 {
 	uint32_t vertex_shader = 0;
 	uint32_t fragment_shader = 0;
 	uint32_t program = 0;
-	std::unordered_map<rhi::VertexAttributeName, uint32_t> attrib_locations {2};
-	std::unordered_map<rhi::UniformName, uint32_t> uniform_locations {2};
-	std::unordered_map<rhi::SamplerName, uint32_t> sampler_locations {2};
-	rhi::PipelineDesc desc;
-};
-
-struct Gl2GraphicsContext : public rhi::GraphicsContext
-{
+	srb2::HashMap<srb2::String, uint32_t> attrib_locations;
+	srb2::HashMap<srb2::String, uint32_t> uniform_locations;
 };
 
 struct Gl2ActiveUniform
@@ -136,27 +114,23 @@ class Gl2Rhi final : public Rhi
 
 	std::unique_ptr<GladGLContext> gl_;
 
-	Slab<Gl2RenderPass> render_pass_slab_;
 	Slab<Gl2Texture> texture_slab_;
 	Slab<Gl2Buffer> buffer_slab_;
 	Slab<Gl2Renderbuffer> renderbuffer_slab_;
-	Slab<Gl2Pipeline> pipeline_slab_;
-	Slab<Gl2UniformSet> uniform_set_slab_;
-	Slab<Gl2BindingSet> binding_set_slab_;
+	Slab<Gl2Program> program_slab_;
 
 	Handle<Buffer> current_index_buffer_;
 
-	std::unordered_map<Gl2FramebufferKey, uint32_t> framebuffers_ {16};
+	srb2::HashMap<Gl2FramebufferKey, uint32_t> framebuffers_ {16};
 
 	struct DefaultRenderPassState
 	{
+		bool clear = false;
 	};
 	using RenderPassState = std::variant<DefaultRenderPassState, RenderPassBeginInfo>;
-	std::optional<RenderPassState> current_render_pass_;
-	std::optional<Handle<Pipeline>> current_pipeline_;
+	srb2::Vector<RenderPassState> render_pass_stack_;
+	std::optional<Handle<Program>> current_program_;
 	PrimitiveType current_primitive_type_ = PrimitiveType::kPoints;
-	bool graphics_context_active_ = false;
-	uint32_t graphics_context_generation_ = 1;
 	uint32_t index_buffer_offset_ = 0;
 
 	uint8_t stencil_front_reference_ = 0;
@@ -165,15 +139,18 @@ class Gl2Rhi final : public Rhi
 	uint8_t stencil_back_reference_ = 0;
 	uint8_t stencil_back_compare_mask_ = 0xFF;
 	uint8_t stencil_back_write_mask_ = 0xFF;
+	CompareFunc stencil_front_func_;
+	CompareFunc stencil_back_func_;
+
+	void apply_default_framebuffer(bool clear);
+	void apply_framebuffer(const RenderPassBeginInfo& info, bool allow_clear);
 
 public:
 	Gl2Rhi(std::unique_ptr<Gl2Platform>&& platform, GlLoadFunc load_func);
 	virtual ~Gl2Rhi();
 
-	virtual Handle<RenderPass> create_render_pass(const RenderPassDesc& desc) override;
-	virtual void destroy_render_pass(Handle<RenderPass> handle) override;
-	virtual Handle<Pipeline> create_pipeline(const PipelineDesc& desc) override;
-	virtual void destroy_pipeline(Handle<Pipeline> handle) override;
+	virtual Handle<Program> create_program(const ProgramDesc& desc) override;
+	virtual void destroy_program(Handle<Program> handle) override;
 
 	virtual Handle<Texture> create_texture(const TextureDesc& desc) override;
 	virtual void destroy_texture(Handle<Texture> handle) override;
@@ -187,58 +164,63 @@ public:
 	virtual uint32_t get_buffer_size(Handle<Buffer> buffer) override;
 
 	virtual void update_buffer(
-		Handle<GraphicsContext> ctx,
 		Handle<Buffer> buffer,
 		uint32_t offset,
 		tcb::span<const std::byte> data
 	) override;
 	virtual void update_texture(
-		Handle<GraphicsContext> ctx,
 		Handle<Texture> texture,
 		Rect region,
 		srb2::rhi::PixelFormat data_format,
 		tcb::span<const std::byte> data
 	) override;
 	virtual void update_texture_settings(
-		Handle<GraphicsContext> ctx,
 		Handle<Texture> texture,
 		TextureWrapMode u_wrap,
 		TextureWrapMode v_wrap,
 		TextureFilterMode min,
 		TextureFilterMode mag
 	) override;
-	virtual Handle<UniformSet>
-	create_uniform_set(Handle<GraphicsContext> ctx, const CreateUniformSetInfo& info) override;
-	virtual Handle<BindingSet>
-	create_binding_set(Handle<GraphicsContext> ctx, Handle<Pipeline> pipeline, const CreateBindingSetInfo& info)
-		override;
-
-	virtual Handle<GraphicsContext> begin_graphics() override;
-	virtual void end_graphics(Handle<GraphicsContext> ctx) override;
 
 	// Graphics context functions
-	virtual void begin_default_render_pass(Handle<GraphicsContext> ctx, bool clear) override;
-	virtual void begin_render_pass(Handle<GraphicsContext> ctx, const RenderPassBeginInfo& info) override;
-	virtual void end_render_pass(Handle<GraphicsContext> ctx) override;
-	virtual void bind_pipeline(Handle<GraphicsContext> ctx, Handle<Pipeline> pipeline) override;
-	virtual void bind_uniform_set(Handle<GraphicsContext> ctx, uint32_t slot, Handle<UniformSet> set) override;
-	virtual void bind_binding_set(Handle<GraphicsContext> ctx, Handle<BindingSet> set) override;
-	virtual void bind_index_buffer(Handle<GraphicsContext> ctx, Handle<Buffer> buffer) override;
-	virtual void set_scissor(Handle<GraphicsContext> ctx, const Rect& rect) override;
-	virtual void set_viewport(Handle<GraphicsContext> ctx, const Rect& rect) override;
-	virtual void draw(Handle<GraphicsContext> ctx, uint32_t vertex_count, uint32_t first_vertex) override;
-	virtual void draw_indexed(Handle<GraphicsContext> ctx, uint32_t index_count, uint32_t first_index) override;
+	virtual void push_default_render_pass(bool clear) override;
+	virtual void push_render_pass(const RenderPassBeginInfo& info) override;
+	virtual void pop_render_pass() override;
+	virtual void bind_program(Handle<Program> program) override;
+	virtual void bind_vertex_attrib(
+		const char* name,
+		Handle<Buffer> buffer,
+		VertexAttributeFormat format,
+		uint32_t offset,
+		uint32_t stride
+	) override;
+	virtual void bind_index_buffer(Handle<Buffer> buffer) override;
+	virtual void set_uniform(const char* name, float value) override;
+	virtual void set_uniform(const char* name, int value) override;
+	virtual void set_uniform(const char* name, glm::vec2 value) override;
+	virtual void set_uniform(const char* name, glm::vec3 value) override;
+	virtual void set_uniform(const char* name, glm::vec4 value) override;
+	virtual void set_uniform(const char* name, glm::ivec2 value) override;
+	virtual void set_uniform(const char* name, glm::ivec3 value) override;
+	virtual void set_uniform(const char* name, glm::ivec4 value) override;
+	virtual void set_uniform(const char* name, glm::mat2 value) override;
+	virtual void set_uniform(const char* name, glm::mat3 value) override;
+	virtual void set_uniform(const char* name, glm::mat4 value) override;
+	virtual void set_sampler(const char* name, uint32_t slot, Handle<Texture> texture) override;
+	virtual void set_rasterizer_state(const RasterizerStateDesc& desc) override;
+	virtual void set_viewport(const Rect& rect) override;
+	virtual void draw(uint32_t vertex_count, uint32_t first_vertex) override;
+	virtual void draw_indexed(uint32_t index_count, uint32_t first_index) override;
 	virtual void
-	read_pixels(Handle<GraphicsContext> ctx, const Rect& rect, PixelFormat format, tcb::span<std::byte> out) override;
+	read_pixels(const Rect& rect, PixelFormat format, tcb::span<std::byte> out) override;
 	virtual void copy_framebuffer_to_texture(
-		Handle<GraphicsContext> ctx,
 		Handle<Texture> dst_tex,
 		const Rect& dst_region,
 		const Rect& src_region
 	) override;
-	virtual void set_stencil_reference(Handle<GraphicsContext> ctx, CullMode face, uint8_t reference) override;
-	virtual void set_stencil_compare_mask(Handle<GraphicsContext> ctx, CullMode face, uint8_t mask) override;
-	virtual void set_stencil_write_mask(Handle<GraphicsContext> ctx, CullMode face, uint8_t mask) override;
+	virtual void set_stencil_reference(CullMode face, uint8_t reference) override;
+	virtual void set_stencil_compare_mask(CullMode face, uint8_t mask) override;
+	virtual void set_stencil_write_mask(CullMode face, uint8_t mask) override;
 
 	virtual void present() override;
 

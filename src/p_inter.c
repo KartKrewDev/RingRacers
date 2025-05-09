@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -270,8 +270,10 @@ static void P_ItemPop(mobj_t *actor)
 	actor->extravalue1 = 0;
 
 	// de-solidify
-	// (Nope! Handled in fusethink for item pickup leniency)
-	// actor->flags |= MF_NOCLIPTHING;
+	// Do not set item boxes intangible, those are handled in fusethink for item pickup leniency
+	// Sphere boxes still need to be set intangible here though
+	if (actor->type != MT_RANDOMITEM)
+		actor->flags |= MF_NOCLIPTHING;
 
 	// RF_DONTDRAW will flicker as the object's fuse gets
 	// closer to running out (see P_FuseThink)
@@ -446,7 +448,9 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (special->fuse) // This box is respawning, but was broken very recently (see P_FuseThink)
 			{
 				// What was this box broken as?
-				if (special->cvmem && !(special->flags2 & MF2_BOSSDEAD))
+				if (cv_thunderdome.value)
+					K_StartItemRoulette(player, true);
+				else if (special->cvmem && !(special->flags2 & MF2_BOSSDEAD))
 					K_StartItemRoulette(player, false);
 				else
 					K_StartItemRoulette(player, true);
@@ -655,6 +659,8 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			P_SetTarget(&special->tracer, toucher);
 			toucher->flags |= MF_NOGRAVITY;
 			toucher->momz = (8*toucher->scale) * P_MobjFlip(toucher);
+			toucher->player->carry = CR_TRAPBUBBLE;
+			P_SetTarget(&toucher->tracer, special); //use tracer to acces the object 
 
 			// Snap to the unfortunate player and quit moving laterally, or we can end up quite far away
 			special->momx = 0;
@@ -1142,22 +1148,29 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 	if (!battleprisons)
 		return;
 
+	// Check to see if everyone's out.
+	{
+		UINT8 i = 0;
+
+		for (; i < MAXPLAYERS; i++)
+		{
+			if (!playeringame[i] || players[i].spectator || players[i].exiting)
+				continue;
+			break;
+		}
+
+		if (i == MAXPLAYERS)
+		{
+			// Nobody can claim credit for this just-too-late hit!
+			P_DoAllPlayersExit(0, false); // softlock prevention
+			return;
+		}
+	}
+
+	// If you CAN recieve points, get them!
 	if ((gametyperules & GTR_POINTLIMIT) && (source && source->player))
 	{
-		/*mobj_t * ring;
-		for (i = 0; i < 2; i++)
-		{
-			dir += (ANGLE_MAX/3);
-			ring = P_SpawnMobj(target->x, target->y, target->z, MT_RING);
-			ring->angle = dir;
-			P_InstaThrust(ring, dir, 16*ring->scale);
-			ring->momz = 8 * target->scale * P_MobjFlip(target);
-			P_SetTarget(&ring->tracer, source);
-			source->player->pickuprings++;
-		}*/
-
-		P_AddPlayerScore(source->player, 1);
-		K_SpawnBattlePoints(source->player, NULL, 1);
+		K_GivePointsToPlayer(source->player, NULL, 1);
 	}
 
 	targetdamaging_t targetdamaging = UFOD_GENERIC;
@@ -1202,13 +1215,18 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 		gamedata->prisoneggstothispickup--;
 	}
 
+	// Standard progression.
 	if (++numtargets >= maptargets)
 	{
+		// Yipue!
+
 		P_DoAllPlayersExit(0, true);
 	}
 	else
 	{
 		S_StartSound(NULL, sfx_s221);
+
+		// Time limit recovery
 		if (timelimitintics)
 		{
 			UINT16 bonustime = 10*TICRATE;
@@ -1255,7 +1273,7 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 			secretextratime = TICRATE/2;
 		}
 
-
+		// Prison Egg challenge drops (CDs, etc)
 #ifdef DEVELOP
 		extern consvar_t cv_debugprisoncd;
 #endif

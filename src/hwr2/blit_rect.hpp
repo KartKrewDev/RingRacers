@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Ronald "Eidolon" Kinard
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Ronald "Eidolon" Kinard
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -32,7 +32,7 @@ public:
 	};
 
 private:
-	rhi::Handle<rhi::Pipeline> pipeline_;
+	rhi::Handle<rhi::Program> program_;
 	rhi::Handle<rhi::Texture> texture_;
 	uint32_t texture_width_ = 0;
 	uint32_t texture_height_ = 0;
@@ -42,8 +42,6 @@ private:
 	bool output_flip_ = false;
 	rhi::Handle<rhi::Buffer> quad_vbo_;
 	rhi::Handle<rhi::Buffer> quad_ibo_;
-	std::array<rhi::Handle<rhi::UniformSet>, 2> uniform_sets_;
-	rhi::Handle<rhi::BindingSet> binding_set_;
 	BlitMode blit_mode_;
 	rhi::Handle<rhi::Texture> dot_pattern_;
 
@@ -52,8 +50,8 @@ private:
 	bool dot_pattern_needs_upload_ = false;
 
 	void prepass(rhi::Rhi& rhi);
-	void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
-	void graphics(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
+	void transfer(rhi::Rhi& rhi);
+	void graphics(rhi::Rhi& rhi);
 
 public:
 
@@ -61,7 +59,7 @@ public:
 	BlitRectPass();
 	~BlitRectPass();
 
-	void draw(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
+	void draw(rhi::Rhi& rhi);
 
 	/// @brief Set the next blit texture. Don't call during graphics phase!
 	/// @param texture the texture to use when blitting

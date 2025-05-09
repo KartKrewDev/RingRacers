@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by James Robert Roman.
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by James Robert Roman.
+// Copyright (C) 2025 by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -309,15 +309,34 @@ struct Kart : Mobj
 			return true;
 		}
 
+
 		if (health <= 1)
 		{
 			return false;
 		}
 
+		Mobj* p = player();
+		bool pValid = Mobj::valid(p) && p->player;
+		bool hasCustomHusk = pValid && skins[p->player->skin].sprites[SPR2_DKRT].numframes;
+
+		if(hasCustomHusk)
+		{
+			skin = (void*)(&skins[p->player->skin]);
+			frame = 0;
+		}
+
 		Particle::spew(this);
-		scale(3 * scale() / 2);
+		scale(3*scale()/2);
+
+		if(hasCustomHusk){
+			flags |= MF_NOSQUISH; //K_Squish() automates spritexscale/spriteyscale & this flag prevents that at the cost of no squish visual when the kart husk hits the ground
+			fixed_t huskScale = FixedDiv(mapobjectscale, scale());
+			spritexscale(FixedMul(spritexscale(), huskScale));
+			spriteyscale(FixedMul(spriteyscale(), huskScale));
+		}
+
 		health = 1;
-		state(S_KART_LEFTOVER_NOTIRES);
+		state(!hasCustomHusk ? S_KART_LEFTOVER_NOTIRES : S_KART_LEFTOVER_CUSTOM);
 		cooldown(20);
 		burning(burn_duration());
 
@@ -326,9 +345,9 @@ struct Kart : Mobj
 			voice(sfx_die00);
 		}
 
-		if (Mobj* p = player(); Mobj::valid(p))
+		if(pValid)
 		{
-			if (p->player && skins[p->player->skin].flags & SF_BADNIK)
+			if((skins[p->player->skin].flags & SF_BADNIK))
 			{
 				P_SpawnBadnikExplosion(p);
 				p->spritescale({2*FRACUNIT, 2*FRACUNIT});
@@ -446,7 +465,7 @@ private:
 			P_PlayDeathSound(p);
 		}
 
-		// First tick after hitlag: destroyed kart appears!
+		// First tick after hitlag: destroyed kart appears! State will change away from S_INVISIBLE inside destroy() where S_INVISIBLE was set in static spawn()
 		if (state()->num() == S_INVISIBLE)
 		{
 			destroy();

@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Ronald "Eidolon" Kinard
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Ronald "Eidolon" Kinard
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -126,9 +126,9 @@ void visit_tag(Visitor& visitor, io::SpanStream& stream, const TagHeader& header
 	stream.seek(io::SeekFrom::kStart, dest);
 }
 
-std::vector<uint8_t> read_uint8_samples_from_stream(io::SpanStream& stream, std::size_t count)
+Vector<uint8_t> read_uint8_samples_from_stream(io::SpanStream& stream, std::size_t count)
 {
-	std::vector<uint8_t> samples;
+	Vector<uint8_t> samples;
 	samples.reserve(count);
 	for (std::size_t i = 0; i < count; i++)
 	{
@@ -137,9 +137,9 @@ std::vector<uint8_t> read_uint8_samples_from_stream(io::SpanStream& stream, std:
 	return samples;
 }
 
-std::vector<int16_t> read_int16_samples_from_stream(io::SpanStream& stream, std::size_t count)
+Vector<int16_t> read_int16_samples_from_stream(io::SpanStream& stream, std::size_t count)
 {
-	std::vector<int16_t> samples;
+	Vector<int16_t> samples;
 	samples.reserve(count);
 	for (std::size_t i = 0; i < count; i++)
 	{
@@ -177,7 +177,7 @@ Wav::Wav(tcb::span<std::byte> data)
 	}
 
 	std::optional<FmtTag> read_fmt;
-	std::variant<std::vector<uint8_t>, std::vector<int16_t>> interleaved_samples;
+	std::variant<Vector<uint8_t>, Vector<int16_t>> interleaved_samples;
 
 	while (stream.seek(io::SeekFrom::kCurrent, 0) < riff_end)
 	{
@@ -247,7 +247,7 @@ template <typename T>
 std::size_t read_samples(
 	std::size_t channels,
 	std::size_t offset,
-	const std::vector<T>& samples,
+	const Vector<T>& samples,
 	tcb::span<audio::Sample<1>> buffer
 ) noexcept
 {
@@ -281,8 +281,8 @@ std::size_t read_samples(
 std::size_t Wav::get_samples(std::size_t offset, tcb::span<audio::Sample<1>> buffer) const noexcept
 {
 	auto samples_visitor = srb2::Overload {
-		[&](const std::vector<uint8_t>& samples) { return read_samples<uint8_t>(channels(), offset, samples, buffer); },
-		[&](const std::vector<int16_t>& samples)
+		[&](const Vector<uint8_t>& samples) { return read_samples<uint8_t>(channels(), offset, samples, buffer); },
+		[&](const Vector<int16_t>& samples)
 		{ return read_samples<int16_t>(channels(), offset, samples, buffer); }};
 
 	return std::visit(samples_visitor, interleaved_samples_);
@@ -291,7 +291,7 @@ std::size_t Wav::get_samples(std::size_t offset, tcb::span<audio::Sample<1>> buf
 std::size_t Wav::interleaved_length() const noexcept
 {
 	auto samples_visitor = srb2::Overload {
-		[](const std::vector<uint8_t>& samples) { return samples.size(); },
-		[](const std::vector<int16_t>& samples) { return samples.size(); }};
+		[](const Vector<uint8_t>& samples) { return samples.size(); },
+		[](const Vector<int16_t>& samples) { return samples.size(); }};
 	return std::visit(samples_visitor, interleaved_samples_);
 }

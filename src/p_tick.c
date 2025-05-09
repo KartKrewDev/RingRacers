@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -12,6 +12,7 @@
 /// \file  p_tick.c
 /// \brief Archiving: SaveGame I/O, Thinker, Ticker
 
+#include "d_think.h"
 #include "doomstat.h"
 #include "d_main.h"
 #include "g_game.h"
@@ -330,7 +331,6 @@ void P_AddThinker(const thinklistnum_t n, thinker_t *thinker)
 	thlist[n].prev = thinker;
 
 	thinker->references = 0;    // killough 11/98: init reference counter to 0
-	thinker->cachable = n == THINK_MOBJ;
 
 #ifdef PARANOIA
 	thinker->debug_mobjtype = MT_NULL;
@@ -448,11 +448,9 @@ void P_UnlinkThinker(thinker_t *thinker)
 	I_Assert(thinker->references == 0);
 
 	(next->prev = thinker->prev)->next = next;
-	if (thinker->cachable)
+	if (thinker->alloctype == TAT_LEVELPOOL)
 	{
-		// put cachable thinkers in the mobj cache, so we can avoid allocations
-		((mobj_t *)thinker)->hnext = mobjcache;
-		mobjcache = (mobj_t *)thinker;
+		Z_LevelPoolFree(thinker, thinker->size);
 	}
 	else
 	{

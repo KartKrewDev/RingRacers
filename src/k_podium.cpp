@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Sally "TehRealSalt" Cochenour
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Sally "TehRealSalt" Cochenour
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -12,6 +12,7 @@
 
 #include "k_podium.h"
 
+#include "core/string.h"
 #include "doomdef.h"
 #include "d_main.h"
 #include "d_netcmd.h"
@@ -50,8 +51,6 @@
 #include "v_draw.hpp"
 
 #include "k_hud.h"
-
-#include <string>
 
 typedef enum
 {
@@ -652,7 +651,7 @@ void podiumData_s::Draw(void)
 								}
 
 								{
-									std::string emeraldName;
+									srb2::String emeraldName;
 									if (emeraldNum > 7)
 									{
 										emeraldName = (useWhiteFrame ? "K_SUPER2" : "K_SUPER1");

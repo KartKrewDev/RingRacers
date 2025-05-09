@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Vivian "toastergrl" Grannell.
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Vivian "toastergrl" Grannell.
+// Copyright (C) 2025 by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -29,6 +29,8 @@
 
 #include <forward_list>
 
+#include "../core/string.h"
+
 static void M_GonerDrawer(void);
 static void M_GonerConclude(INT32 choice);
 static boolean M_GonerInputs(INT32 ch);
@@ -46,7 +48,7 @@ menuitem_t MAIN_Goner[] =
 		{.routine = M_VideoOptions}, 0, 0},
 
 	{IT_STRING | IT_CALL, "SOUND OPTIONS",
-		"CALIBRATE AURAL DATASTREAM.", NULL, 
+		"CALIBRATE AURAL DATASTREAM.", NULL,
 		{.routine = M_SoundOptions}, 0, 0},
 
 	{IT_STRING | IT_CALL, "PROFILE SETUP",
@@ -95,7 +97,7 @@ class GonerSpeaker
 public:
 	float offset = 0;
 
-	GonerSpeaker(std::string skinName, float offset)
+	GonerSpeaker(const srb2::String& skinName, float offset)
 	{
 		if (!skinName.empty())
 		{
@@ -144,11 +146,11 @@ class GonerChatLine
 {
 public:
 	gonerspeakers_t speaker;
-	std::string dialogue;
+	srb2::String dialogue;
 	int value; // Mutlipurpose.
 	void (*routine)(void);
 
-	GonerChatLine(gonerspeakers_t speaker, int delay, std::string dialogue)
+	GonerChatLine(gonerspeakers_t speaker, int delay, const srb2::String& dialogue)
 	{
 		char *newText = V_ScaledWordWrap(
 			(BASEVIDWIDTH/2 + 6) << FRACBITS,
@@ -158,7 +160,7 @@ public:
 		);
 
 		this->speaker = speaker;
-		this->dialogue = std::string(newText);
+		this->dialogue = srb2::String(newText);
 		this->value = delay;
 
 		this->routine = nullptr;
@@ -1142,7 +1144,7 @@ static void M_GonerDrawer(void)
 
 	for (auto & element : LinesOutput)
 	{
-		std::string text;
+		srb2::String text;
 		INT32 flags;
 
 		if (newy < 0) break;

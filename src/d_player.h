@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -134,6 +134,14 @@ typedef enum
 
 typedef enum
 {
+	PF2_SELFMUTE = 1<<1,
+	PF2_SELFDEAFEN = 1<<2,
+	PF2_SERVERMUTE = 1<<3,
+	PF2_SERVERDEAFEN = 1<<4,
+} pflags2_t;
+
+typedef enum
+{
 	// Are animation frames playing?
 	PA_ETC=0,
 	PA_STILL,
@@ -150,6 +158,7 @@ typedef enum
 	CR_SLIDING,
 	CR_ZOOMTUBE,
 	CR_DASHRING,
+	CR_TRAPBUBBLE,
 } carrytype_t; // carry
 
 /*
@@ -634,6 +643,7 @@ struct player_t
 	// Bit flags.
 	// See pflags_t, above.
 	UINT32 pflags;
+	UINT32 pflags2;
 
 	// playing animation.
 	panim_t panim;
@@ -993,6 +1003,8 @@ struct player_t
 	UINT8 tripwireReboundDelay; // When failing Tripwire, brieftly lock out speed-based tripwire pass (anti-cheese)
 
 	UINT16 wavedash; // How long is our chained sliptide? Grant a proportional boost when it's over.
+	UINT16 wavedashleft;
+	UINT16 wavedashright;
 	UINT8 wavedashdelay; // How long since the last sliptide? Only boost once you've been straightened out for a bit.
 	UINT16 wavedashboost; // The actual boost granted from wavedash.
 	fixed_t wavedashpower; // Is this a bullshit "tap" wavedash? Weaken lower-charge wavedashes while keeping long sliptides fully rewarding.
@@ -1055,7 +1067,7 @@ struct player_t
 	UINT8 amps;
 	UINT8 amppickup;
 	UINT8 ampspending;
-	
+
 	UINT16 overdrive;
 	UINT16 overshield;
 	fixed_t overdrivepower;

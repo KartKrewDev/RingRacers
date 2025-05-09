@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -38,6 +38,7 @@ struct Slider
 		kMasterVolume,
 		kMusicVolume,
 		kSfxVolume,
+		kVoiceVolume,
 		kNumSliders
 	};
 
@@ -120,6 +121,7 @@ std::array<Slider, Slider::kNumSliders> sliders{{
 				n = !n;
 				CV_SetValue(&cv_gamedigimusic, n);
 				CV_SetValue(&cv_gamesounds, n);
+				CV_SetValue(&cv_voice_chat, n);
 			}
 
 			return n;
@@ -149,6 +151,18 @@ std::array<Slider, Slider::kNumSliders> sliders{{
 			return !S_SoundDisabled();
 		},
 		cv_soundvolume,
+	},
+	{
+		[](bool toggle) -> bool
+		{
+			if (toggle)
+			{
+				CV_AddValue(&cv_voice_chat, 1);
+			}
+
+			return !S_VoiceDisabled();
+		},
+		cv_voicevolume,
 	},
 }};
 
@@ -265,6 +279,9 @@ menuitem_t OPTIONS_Sound[] =
 
 	{IT_STRING | IT_ARROWS | IT_CV_SLIDER, "Music Volume", "Loudness of music.",
 		NULL, {.routine = slider_routine}, 0, Slider::kMusicVolume},
+
+	{IT_STRING | IT_ARROWS | IT_CV_SLIDER, "Voice Volume", "Loudness of voice chat.",
+		NULL, {.routine = slider_routine}, 0, Slider::kVoiceVolume},
 
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},

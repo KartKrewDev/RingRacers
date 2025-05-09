@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -329,9 +329,7 @@ struct pslope_t
 
 	// Light offsets (see seg_t)
 	SINT8 lightOffset;
-#ifdef HWRENDER
 	INT16 hwLightOffset;
-#endif
 };
 
 // Per-sector bot controller override
@@ -762,14 +760,12 @@ struct seg_t
 	sector_t *backsector;
 
 	fixed_t length;	// precalculated seg length
-#ifdef HWRENDER
 	// new pointers so that AdjustSegs doesn't mess with v1/v2
 	void *pv1; // polyvertex_t
 	void *pv2; // polyvertex_t
 	float flength; // length of the seg, used by hardware renderer
 
 	lightmap_t *lightmaps; // for static lightmap
-#endif
 
 	// Why slow things down by calculating lightlists for every thick side?
 	size_t numlights;
@@ -780,9 +776,7 @@ struct seg_t
 
 	// Fake contrast calculated on level load
 	SINT8 lightOffset;
-#ifdef HWRENDER
 	INT16 hwLightOffset;
-#endif
 };
 
 //

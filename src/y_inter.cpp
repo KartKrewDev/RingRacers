@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Vivian "toastergrl" Grannell.
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Vivian "toastergrl" Grannell.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
@@ -322,9 +322,9 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 			{
 				srb2::StandingJson standing {};
 				standing.ranking = data.pos[data.numplayers];
-				standing.name = std::string(player_names[i]);
+				standing.name = srb2::String(player_names[i]);
 				standing.demoskin = players[i].skin;
-				standing.skincolor = std::string(skincolors[players[i].skincolor].name);
+				standing.skincolor = srb2::String(skincolors[players[i].skincolor].name);
 				standing.timeorscore = data.val[data.numplayers];
 				standings.standings.emplace_back(std::move(standing));
 			}
@@ -798,6 +798,39 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 				),
 				player_names[pnum]
 			);
+
+			{
+				patch_t *voxpat;
+				int voxxoffs = 0;
+				int voxyoffs = 0;
+				if (players[pnum].pflags2 & (PF2_SELFDEAFEN | PF2_SERVERDEAFEN))
+				{
+					voxpat = (patch_t*) W_CachePatchName("VOXCRD", PU_HUDGFX);
+					voxxoffs = 1;
+					voxyoffs = -5;
+				}
+				else if (players[pnum].pflags2 & (PF2_SELFMUTE | PF2_SERVERMUTE))
+				{
+					voxpat = (patch_t*) W_CachePatchName("VOXCRM", PU_HUDGFX);
+					voxxoffs = 1;
+					voxyoffs = -6;
+				}
+				else if (S_IsPlayerVoiceActive(pnum))
+				{
+					voxpat = (patch_t*) W_CachePatchName("VOXCRA", PU_HUDGFX);
+					voxyoffs = -4;
+				}
+				else
+				{
+					voxpat = NULL;
+				}
+
+				if (voxpat)
+				{
+					int namewidth = V_ThinStringWidth(player_names[pnum], 0);
+					V_DrawFixedPatch((x + 27 + namewidth + voxxoffs) * FRACUNIT, (y + voxyoffs) * FRACUNIT, FRACUNIT, 0, voxpat, NULL);
+				}
+			}
 
 			V_DrawRightAlignedThinString(
 				x+118, y-2,
@@ -2490,7 +2523,7 @@ static void Y_UnloadData(void)
 {
 	// In hardware mode, don't Z_ChangeTag a pointer returned by W_CachePatchName().
 	// It doesn't work and is unnecessary.
-	if (rendermode != render_soft)
+	if (rendermode == render_opengl)
 		return;
 
 	// unload the background patches

@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -938,6 +938,7 @@ typedef enum sprite
 	SPR_BEXB, // Battle Bumper Explosion: Blast
 	SPR_TWBS, // Tripwire Boost
 	SPR_TWBT, // Tripwire BLASTER
+	SPR_TWBP, // Tripwire approach
 	SPR_SMLD, // Smooth landing
 
 	// Trick Effects
@@ -1335,6 +1336,7 @@ typedef enum playersprite
 	SPR2_SIGN, SPR2_SIGL, SPR2_SSIG,
 	SPR2_XTRA,
 	SPR2_TALK,
+	SPR2_DKRT,
 
 	SPR2_FIRSTFREESLOT,
 	SPR2_LASTFREESLOT = 0x7f,
@@ -1395,6 +1397,7 @@ typedef enum state
 
 	S_KART_LEFTOVER,
 	S_KART_LEFTOVER_NOTIRES,
+	S_KART_LEFTOVER_CUSTOM,
 
 	S_KART_TIRE1,
 	S_KART_TIRE2,
@@ -3187,6 +3190,8 @@ typedef enum state
 	S_TRIPWIREBOOST_BLAST_TOP,
 	S_TRIPWIREBOOST_BLAST_BOTTOM,
 
+	S_TRIPWIREAPPROACH,
+
 	S_SMOOTHLANDING,
 
 	S_TRICKINDICATOR_OVERLAY,
@@ -4696,6 +4701,7 @@ typedef enum mobj_type
 	MT_BATTLEBUMPER_BLAST,
 
 	MT_TRIPWIREBOOST,
+	MT_TRIPWIREAPPROACH,
 
 	MT_SMOOTHLANDING,
 	MT_TRICKINDICATOR,

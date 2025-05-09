@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by "Lat'".
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by "Lat'".
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
@@ -30,6 +30,9 @@ menuitem_t OPTIONS_Main[] =
 
 	{IT_STRING | IT_CALL, "Sound Options", "Adjust the volume.",
 		NULL, {.routine = M_SoundOptions}, 0, 0},
+
+	{IT_STRING | IT_SUBMENU, "Voice Options", "Adjust voice chat.",
+		NULL, {.submenu = &OPTIONS_VoiceDef}, 0, 0},
 
 	{IT_STRING | IT_SUBMENU, "HUD Options", "Tweak the Heads-Up Display.",
 		NULL, {.submenu = &OPTIONS_HUDDef}, 0, 0},

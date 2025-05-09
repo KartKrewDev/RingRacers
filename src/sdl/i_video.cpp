@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -12,6 +12,7 @@
 /// \file
 /// \brief SRB2 graphics stuff for SDL
 
+#include <SDL_video.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <memory>
@@ -1219,8 +1220,8 @@ void I_UpdateNoVsync(void)
 //
 void I_ReadScreen(UINT8 *scr)
 {
-	if (rendermode != render_soft)
-		I_Error ("I_ReadScreen: called while in non-software mode");
+	if (rendermode == render_opengl)
+		I_Error ("I_ReadScreen: called while in Legacy GL mode");
 	else
 		VID_BlitLinearScreen(screens[0], scr,
 			vid.width*vid.bpp, vid.height,

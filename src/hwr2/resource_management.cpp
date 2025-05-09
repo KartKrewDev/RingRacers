@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Ronald "Eidolon" Kinard
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Ronald "Eidolon" Kinard
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -26,7 +26,7 @@ PaletteManager& PaletteManager::operator=(PaletteManager&&) = default;
 constexpr std::size_t kPaletteSize = 256;
 constexpr std::size_t kLighttableRows = LIGHTLEVELS;
 
-void PaletteManager::update(Rhi& rhi, Handle<GraphicsContext> ctx)
+void PaletteManager::update(Rhi& rhi)
 {
 	if (!palette_)
 	{
@@ -57,7 +57,7 @@ void PaletteManager::update(Rhi& rhi, Handle<GraphicsContext> ctx)
 		{
 			palette_32[i] = V_GetColor(i).s;
 		}
-		rhi.update_texture(ctx, palette_, {0, 0, kPaletteSize, 1}, PixelFormat::kRGBA8, tcb::as_bytes(tcb::span(palette_32)));
+		rhi.update_texture(palette_, {0, 0, kPaletteSize, 1}, PixelFormat::kRGBA8, tcb::as_bytes(tcb::span(palette_32)));
 	}
 
 #if 0
@@ -66,7 +66,7 @@ void PaletteManager::update(Rhi& rhi, Handle<GraphicsContext> ctx)
 		if (colormaps != nullptr)
 		{
 			tcb::span<const std::byte> colormap_bytes = tcb::as_bytes(tcb::span(colormaps, kPaletteSize * kLighttableRows));
-			rhi.update_texture(ctx, lighttable_, {0, 0, kPaletteSize, kLighttableRows}, PixelFormat::kR8, colormap_bytes);
+			rhi.update_texture(lighttable_, {0, 0, kPaletteSize, kLighttableRows}, PixelFormat::kR8, colormap_bytes);
 		}
 
 		// FIXME: This is broken, encoremap should not be used directly.
@@ -74,7 +74,7 @@ void PaletteManager::update(Rhi& rhi, Handle<GraphicsContext> ctx)
 		if (encoremap != nullptr)
 		{
 			tcb::span<const std::byte> encoremap_bytes = tcb::as_bytes(tcb::span(encoremap, kPaletteSize * kLighttableRows));
-			rhi.update_texture(ctx, encore_lighttable_, {0, 0, kPaletteSize, kLighttableRows}, PixelFormat::kR8, encoremap_bytes);
+			rhi.update_texture(encore_lighttable_, {0, 0, kPaletteSize, kLighttableRows}, PixelFormat::kR8, encoremap_bytes);
 		}
 	}
 #endif
@@ -86,7 +86,7 @@ void PaletteManager::update(Rhi& rhi, Handle<GraphicsContext> ctx)
 		{
 			data[i] = i;
 		}
-		rhi.update_texture(ctx, default_colormap_, {0, 0, kPaletteSize, 1}, PixelFormat::kR8, tcb::as_bytes(tcb::span(data)));
+		rhi.update_texture(default_colormap_, {0, 0, kPaletteSize, 1}, PixelFormat::kR8, tcb::as_bytes(tcb::span(data)));
 	}
 }
 
@@ -107,7 +107,7 @@ void PaletteManager::destroy_per_frame_resources(Rhi& rhi)
 	lighttables_.clear();
 }
 
-Handle<Texture> PaletteManager::find_or_create_colormap(Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx, srb2::NotNull<const uint8_t*> colormap)
+Handle<Texture> PaletteManager::find_or_create_colormap(Rhi& rhi, srb2::NotNull<const uint8_t*> colormap)
 {
 	if (colormaps_.find(colormap) != colormaps_.end())
 	{
@@ -117,13 +117,13 @@ Handle<Texture> PaletteManager::find_or_create_colormap(Rhi& rhi, rhi::Handle<rh
 	Handle<Texture> texture = rhi.create_texture({TextureFormat::kLuminance, kPaletteSize, 1, TextureWrapMode::kClamp, TextureWrapMode::kClamp});
 
 	tcb::span<const std::byte> map_bytes = tcb::as_bytes(tcb::span(colormap.get(), kPaletteSize));
-	rhi.update_texture(ctx, texture, {0, 0, kPaletteSize, 1}, PixelFormat::kR8, map_bytes);
+	rhi.update_texture(texture, {0, 0, kPaletteSize, 1}, PixelFormat::kR8, map_bytes);
 
 	colormaps_.insert_or_assign(colormap, texture);
 	return texture;
 }
 
-Handle<Texture> PaletteManager::find_or_create_extra_lighttable(Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx, srb2::NotNull<const uint8_t*> lighttable)
+Handle<Texture> PaletteManager::find_or_create_extra_lighttable(Rhi& rhi, srb2::NotNull<const uint8_t*> lighttable)
 {
 	if (lighttables_.find(lighttable) != lighttables_.end())
 	{
@@ -133,7 +133,7 @@ Handle<Texture> PaletteManager::find_or_create_extra_lighttable(Rhi& rhi, rhi::H
 	Handle<Texture> texture = rhi.create_texture({TextureFormat::kLuminance, kPaletteSize, kLighttableRows, TextureWrapMode::kClamp, TextureWrapMode::kClamp});
 
 	tcb::span<const std::byte> lighttable_bytes = tcb::as_bytes(tcb::span(lighttable.get(), kPaletteSize * kLighttableRows));
-	rhi.update_texture(ctx, texture, {0, 0, kPaletteSize, kLighttableRows}, PixelFormat::kR8, lighttable_bytes);
+	rhi.update_texture(texture, {0, 0, kPaletteSize, kLighttableRows}, PixelFormat::kR8, lighttable_bytes);
 	lighttables_.insert_or_assign(lighttable, texture);
 
 	return texture;
@@ -161,7 +161,7 @@ static uint32_t get_flat_size(lumpnum_t lump)
 	return lumpsize;
 }
 
-Handle<Texture> FlatTextureManager::find_or_create_indexed(Rhi& rhi, Handle<GraphicsContext> ctx, lumpnum_t lump)
+Handle<Texture> FlatTextureManager::find_or_create_indexed(Rhi& rhi, lumpnum_t lump)
 {
 	SRB2_ASSERT(lump != LUMPERROR);
 
@@ -181,7 +181,7 @@ Handle<Texture> FlatTextureManager::find_or_create_indexed(Rhi& rhi, Handle<Grap
 	});
 	flats_.insert({lump, new_tex});
 
-	std::vector<std::array<uint8_t, 2>> flat_data;
+	srb2::Vector<std::array<uint8_t, 2>> flat_data;
 	std::size_t lump_length = W_LumpLength(lump);
 	flat_data.reserve(flat_size * flat_size);
 
@@ -206,7 +206,7 @@ Handle<Texture> FlatTextureManager::find_or_create_indexed(Rhi& rhi, Handle<Grap
 	}
 
 	tcb::span<const std::byte> data_bytes = tcb::as_bytes(tcb::span(flat_data));
-	rhi.update_texture(ctx, new_tex, {0, 0, flat_size, flat_size}, rhi::PixelFormat::kRG8, data_bytes);
+	rhi.update_texture(new_tex, {0, 0, flat_size, flat_size}, rhi::PixelFormat::kRG8, data_bytes);
 
 	return new_tex;
 }

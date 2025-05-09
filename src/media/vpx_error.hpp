@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by James Robert Roman
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by James Robert Roman
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -11,22 +11,22 @@
 #ifndef __SRB2_MEDIA_VPX_ERROR_HPP__
 #define __SRB2_MEDIA_VPX_ERROR_HPP__
 
-#include <string>
-
 #include <fmt/format.h>
 #include <vpx/vpx_codec.h>
+
+#include "../core/string.h"
 
 class VpxError
 {
 public:
 	VpxError(vpx_codec_ctx_t& ctx) : ctx_(&ctx) {}
 
-	std::string description() const
+	srb2::String description() const
 	{
 		const char* error = vpx_codec_error(ctx_);
 		const char* detail = vpx_codec_error_detail(ctx_);
 
-		return detail ? fmt::format("{}: {}", error, detail) : error;
+		return detail ? srb2::format("{}: {}", error, detail) : error;
 	}
 
 private:
@@ -34,12 +34,12 @@ private:
 };
 
 template <>
-struct fmt::formatter<VpxError> : formatter<std::string>
+struct fmt::formatter<VpxError> : formatter<srb2::String>
 {
 	template <typename FormatContext>
 	auto format(const VpxError& error, FormatContext& ctx) const
 	{
-		return formatter<std::string>::format(error.description(), ctx);
+		return formatter<srb2::String>::format(error.description(), ctx);
 	}
 };
 

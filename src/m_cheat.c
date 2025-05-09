@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -372,7 +372,7 @@ void Command_Setlives_f(void)
 	D_Cheat(consoleplayer, CHEAT_LIVES, atoi(COM_Argv(1)));
 }
 
-void Command_Setscore_f(void)
+void Command_Setroundscore_f(void)
 {
 	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;

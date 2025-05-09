@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -1030,12 +1030,12 @@ static void AdvanceSkipSequences(UINT8 input)
 #endif
 	UINT8 nicetry[] = {1, 1, 3, 3, 4, 2, 4, 2};
 
-	#define NUMCHEATS 5
+	#define NUMCHEATSPLUSONE 5
 
-	UINT8 *cheats[NUMCHEATS] = {s2cheat, s3cheat, s3kcheat, nicetry, spincheat};
-	UINT8 cheatlengths[NUMCHEATS] = {sizeof(s2cheat), sizeof(s3cheat), sizeof(s3kcheat), sizeof(nicetry), sizeof(spincheat)};
+	UINT8 *cheats[NUMCHEATSPLUSONE] = {s2cheat, s3cheat, s3kcheat, nicetry, spincheat};
+	UINT8 cheatlengths[NUMCHEATSPLUSONE] = {sizeof(s2cheat), sizeof(s3cheat), sizeof(s3kcheat), sizeof(nicetry), sizeof(spincheat)};
 
-	for (UINT8 i = 0; i < NUMCHEATS; i++) 	// for each cheat...
+	for (UINT8 i = 0; i < NUMCHEATSPLUSONE; i++) 	// for each cheat...
 	{
 		UINT8 cheatsize = cheatlengths[i];
 		boolean matched = true;
@@ -1053,7 +1053,7 @@ static void AdvanceSkipSequences(UINT8 input)
 			skiptype = i+1;
 	}
 
-	#undef NUMCHEATS
+	#undef NUMCHEATSPLUSONE
 
 	skipinputindex++;
 }

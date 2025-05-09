@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by James Robert Roman
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by James Robert Roman
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -11,11 +11,11 @@
 #include <algorithm>
 #include <cstddef>
 #include <memory>
-#include <string>
 
 #include <fmt/chrono.h>
 #include <fmt/format.h>
 
+#include "../../core/string.h"
 #include "../../cxxutil.hpp"
 #include "../../v_draw.hpp"
 #include "EggTV.hpp"
@@ -85,11 +85,11 @@ void draw_face(const Draw& draw, const EggTVData::Replay::Standing& player, face
 	}
 }
 
-std::string player_time_string(const EggTVData::Replay::Standing& player)
+srb2::String player_time_string(const EggTVData::Replay::Standing& player)
 {
 	if (player.time)
 	{
-		return fmt::format(
+		return srb2::format(
 			R"({}'{}"{})",
 			G_TicsToMinutes(*player.time, true),
 			G_TicsToSeconds(*player.time),
@@ -102,7 +102,7 @@ std::string player_time_string(const EggTVData::Replay::Standing& player)
 	}
 }
 
-std::string player_points_string(const EggTVData::Replay::Standing& player)
+srb2::String player_points_string(const EggTVData::Replay::Standing& player)
 {
 	return player.score ? fmt::format("{} PTS", *player.score) : "NO CONTEST";
 }
@@ -460,6 +460,8 @@ void EggTV::erase()
 			replay->mark_for_deletion();
 		}
 	}
+
+	cache_ = cache_->folder().load();
 
 	if (cache_->folder().empty())
 	{

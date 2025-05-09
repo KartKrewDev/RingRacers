@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Ronald "Eidolon" Kinard
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Ronald "Eidolon" Kinard
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -21,13 +21,11 @@ namespace srb2::hwr2
 class PostprocessWipePass final
 {
 	// Internal RHI resources
-	rhi::Handle<rhi::Pipeline> pipeline_;
+	rhi::Handle<rhi::Program> program_;
 	rhi::Handle<rhi::Buffer> vbo_;
 	bool upload_vbo_ = false;
 	rhi::Handle<rhi::Buffer> ibo_;
 	bool upload_ibo_ = false;
-	rhi::Handle<rhi::UniformSet> us_;
-	rhi::Handle<rhi::BindingSet> bs_;
 	rhi::Handle<rhi::Texture> wipe_tex_;
 	int wipe_color_mode_ = 0;
 	int wipe_swizzle_ = 0;
@@ -44,15 +42,15 @@ class PostprocessWipePass final
 	uint32_t mask_h_ = 0;
 
 	void prepass(rhi::Rhi& rhi);
-	void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
-	void graphics(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
+	void transfer(rhi::Rhi& rhi);
+	void graphics(rhi::Rhi& rhi);
 	void postpass(rhi::Rhi& rhi);
 
 public:
 	PostprocessWipePass();
 	virtual ~PostprocessWipePass();
 
-	void draw(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
+	void draw(rhi::Rhi& rhi);
 
 	void set_start(rhi::Handle<rhi::Texture> start) noexcept { start_ = start; }
 

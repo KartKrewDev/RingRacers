@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -29,7 +29,7 @@ menuitem_t OPTIONS_Server[] =
 
 	{IT_HEADER, "Players...", NULL,
 		NULL, {NULL}, 0, 0},
-	
+
 	{IT_STRING | IT_CVAR, "Maximum Players", "How many players can play at once.",
 		NULL, {.cvar = &cv_maxplayers}, 0, 0},
 
@@ -40,7 +40,7 @@ menuitem_t OPTIONS_Server[] =
 		NULL, {.cvar = &cv_kartbot}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Use PWR.LV", "Should players should be rated on their performance?",
-		NULL, {.cvar = &cv_kartusepwrlv}, 0, 0},	
+		NULL, {.cvar = &cv_kartusepwrlv}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Antigrief Timer (seconds)", "How long can players stop progressing before they're removed?",
 		NULL, {.cvar = &cv_antigrief}, 0, 0},
@@ -77,6 +77,9 @@ menuitem_t OPTIONS_Server[] =
 
 	{IT_STRING | IT_CVAR, "Mute Chat", "Prevent everyone but admins from sending chat messages.",
 		NULL, {.cvar = &cv_mute}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Mute Voice Chat", "Prevent everyone from sending voice chat.",
+		NULL, {.cvar = &cv_voice_servermute}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Chat Spam Protection", "Prevent too many messages from a single player.",
 		NULL, {.cvar = &cv_chatspamprotection}, 0, 0},

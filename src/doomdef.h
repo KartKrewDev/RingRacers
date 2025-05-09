@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -559,6 +559,9 @@ extern struct debugFlagNames_s const debug_flag_names[];
 // Misc stuff for later...
 // =======================
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 #define ANG2RAD(angle) ((float)((angle)*M_PI)/ANGLE_180)
 
 // Modifier key variables, accessible anywhere
@@ -663,9 +666,6 @@ extern int
 // None of these that are disabled in the normal build are guaranteed to work perfectly
 // Compile them at your own risk!
 
-///	Dumps the contents of a network save game upon consistency failure for debugging.
-//#define DUMPCONSISTENCY
-
 ///	Who put weights on my recycler?  ... Inuyasha did.
 ///	\note	XMOD port.
 //#define WEIGHTEDRECYCLER
@@ -740,6 +740,9 @@ extern int
 
 /// Other karma comeback modes
 //#define OTHERKARMAMODES
+
+// Amp scaling
+#define MAXAMPSCALINGDIST 18000
 
 #ifdef __cplusplus
 } // extern "C"

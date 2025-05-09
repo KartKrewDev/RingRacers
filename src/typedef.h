@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -83,7 +83,9 @@ TYPEDEF (challengeall_pak);
 TYPEDEF (responseall_pak);
 TYPEDEF (resultsall_pak);
 TYPEDEF (say_pak);
+TYPEDEF (reqmapqueue_pak);
 TYPEDEF (netinfo_pak);
+TYPEDEF (voice_pak);
 
 // d_event.h
 TYPEDEF (event_t);

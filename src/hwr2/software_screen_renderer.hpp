@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Ronald "Eidolon" Kinard
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Ronald "Eidolon" Kinard
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -34,7 +34,7 @@ public:
 	SoftwareScreenRenderer();
 	~SoftwareScreenRenderer();
 
-	void draw(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
+	void draw(rhi::Rhi& rhi);
 
 	rhi::Handle<rhi::Texture> screen() const { return screen_texture_; }
 };

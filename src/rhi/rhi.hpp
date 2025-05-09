@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Ronald "Eidolon" Kinard
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Ronald "Eidolon" Kinard
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -13,9 +13,7 @@
 
 #include <cstdint>
 #include <optional>
-#include <set>
 #include <variant>
-#include <vector>
 
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
@@ -26,6 +24,7 @@
 #include <tcb/span.hpp>
 
 #include "../core/static_vec.hpp"
+#include "glm/ext/vector_float2.hpp"
 #include "handle.hpp"
 
 namespace srb2::rhi
@@ -40,11 +39,8 @@ struct Texture
 {
 };
 
-struct Pipeline
-{
-};
-
-struct RenderPass
+/// @brief A linked rendering pipeline program combining a vertex shader and fragment shader.
+struct Program
 {
 };
 
@@ -403,16 +399,6 @@ struct ColorMask
 	bool a;
 };
 
-struct BlendDesc
-{
-	BlendFactor source_factor_color;
-	BlendFactor dest_factor_color;
-	BlendFunction color_function;
-	BlendFactor source_factor_alpha;
-	BlendFactor dest_factor_alpha;
-	BlendFunction alpha_function;
-};
-
 enum class StencilOp
 {
 	kKeep,
@@ -425,53 +411,41 @@ enum class StencilOp
 	kDecrementWrap
 };
 
-struct PipelineStencilOpStateDesc
+
+struct ProgramDesc
 {
-	StencilOp fail;
-	StencilOp pass;
-	StencilOp depth_fail;
-	CompareFunc stencil_compare;
+	const char* name;
+	tcb::span<const char*> defines;
 };
 
-struct PipelineDepthStencilStateDesc
+struct RasterizerStateDesc
 {
-	bool depth_test;
-	bool depth_write;
-	CompareFunc depth_func;
-	bool stencil_test;
-	PipelineStencilOpStateDesc front;
-	PipelineStencilOpStateDesc back;
-};
-
-struct PipelineColorStateDesc
-{
-	std::optional<BlendDesc> blend;
-	ColorMask color_mask;
-};
-
-struct PipelineDesc
-{
-	PipelineProgram program;
-	VertexInputDesc vertex_input;
-	UniformInputDesc uniform_input;
-	SamplerInputDesc sampler_input;
-	std::optional<PipelineDepthStencilStateDesc> depth_stencil_state;
-	PipelineColorStateDesc color_state;
-	PrimitiveType primitive;
-	CullMode cull;
-	FaceWinding winding;
-	glm::vec4 blend_color;
-};
-
-struct RenderPassDesc
-{
-	bool use_depth_stencil;
-	AttachmentLoadOp color_load_op;
-	AttachmentStoreOp color_store_op;
-	AttachmentLoadOp depth_load_op;
-	AttachmentStoreOp depth_store_op;
-	AttachmentLoadOp stencil_load_op;
-	AttachmentStoreOp stencil_store_op;
+	PrimitiveType primitive = PrimitiveType::kTriangles;
+	CullMode cull = CullMode::kBack;
+	FaceWinding winding = FaceWinding::kCounterClockwise;
+	ColorMask color_mask = {true, true, true, true};
+	bool blend_enabled = false;
+	glm::vec4 blend_color = {0.0, 0.0, 0.0, 0.0};
+	BlendFactor blend_source_factor_color = BlendFactor::kOne;
+	BlendFactor blend_dest_factor_color = BlendFactor::kZero;
+	BlendFunction blend_color_function = BlendFunction::kAdd;
+	BlendFactor blend_source_factor_alpha = BlendFactor::kOne;
+	BlendFactor blend_dest_factor_alpha = BlendFactor::kZero;
+	BlendFunction blend_alpha_function = BlendFunction::kAdd;
+	bool depth_test = false;
+	bool depth_write = true;
+	CompareFunc depth_func = CompareFunc::kLess;
+	bool stencil_test = false;
+	StencilOp front_fail = StencilOp::kKeep;
+	StencilOp front_pass = StencilOp::kKeep;
+	StencilOp front_depth_fail = StencilOp::kKeep;
+	CompareFunc front_stencil_compare = CompareFunc::kAlways;
+	StencilOp back_fail = StencilOp::kKeep;
+	StencilOp back_pass = StencilOp::kKeep;
+	StencilOp back_depth_fail = StencilOp::kKeep;
+	CompareFunc back_stencil_compare = CompareFunc::kAlways;
+	bool scissor_test = false;
+	Rect scissor = {};
 };
 
 struct RenderbufferDesc
@@ -513,10 +487,15 @@ struct BufferDesc
 
 struct RenderPassBeginInfo
 {
-	Handle<RenderPass> render_pass;
 	Handle<Texture> color_attachment;
 	std::optional<Handle<Renderbuffer>> depth_stencil_attachment;
 	glm::vec4 clear_color;
+	AttachmentLoadOp color_load_op;
+	AttachmentStoreOp color_store_op;
+	AttachmentLoadOp depth_load_op;
+	AttachmentStoreOp depth_store_op;
+	AttachmentLoadOp stencil_load_op;
+	AttachmentStoreOp stencil_store_op;
 };
 
 using UniformVariant = std::variant<
@@ -577,17 +556,6 @@ struct CreateBindingSetInfo
 	tcb::span<TextureBinding> sampler_textures;
 };
 
-struct UniformSet
-{
-};
-struct BindingSet
-{
-};
-
-struct GraphicsContext
-{
-};
-
 struct TextureDetails
 {
 	uint32_t width;
@@ -604,10 +572,8 @@ struct Rhi
 {
 	virtual ~Rhi();
 
-	virtual Handle<RenderPass> create_render_pass(const RenderPassDesc& desc) = 0;
-	virtual void destroy_render_pass(Handle<RenderPass> handle) = 0;
-	virtual Handle<Pipeline> create_pipeline(const PipelineDesc& desc) = 0;
-	virtual void destroy_pipeline(Handle<Pipeline> handle) = 0;
+	virtual Handle<Program> create_program(const ProgramDesc& desc) = 0;
+	virtual void destroy_program(Handle<Program> handle) = 0;
 
 	virtual Handle<Texture> create_texture(const TextureDesc& desc) = 0;
 	virtual void destroy_texture(Handle<Texture> handle) = 0;
@@ -621,56 +587,63 @@ struct Rhi
 	virtual uint32_t get_buffer_size(Handle<Buffer> buffer) = 0;
 
 	virtual void update_buffer(
-		Handle<GraphicsContext> ctx,
 		Handle<Buffer> buffer,
 		uint32_t offset,
 		tcb::span<const std::byte> data
 	) = 0;
 	virtual void update_texture(
-		Handle<GraphicsContext> ctx,
 		Handle<Texture> texture,
 		Rect region,
 		srb2::rhi::PixelFormat data_format,
 		tcb::span<const std::byte> data
 	) = 0;
 	virtual void update_texture_settings(
-		Handle<GraphicsContext> ctx,
 		Handle<Texture> texture,
 		TextureWrapMode u_wrap,
 		TextureWrapMode v_wrap,
 		TextureFilterMode min,
 		TextureFilterMode mag
 	) = 0;
-	virtual Handle<UniformSet> create_uniform_set(Handle<GraphicsContext> ctx, const CreateUniformSetInfo& info) = 0;
-	virtual Handle<BindingSet>
-	create_binding_set(Handle<GraphicsContext> ctx, Handle<Pipeline> pipeline, const CreateBindingSetInfo& info) = 0;
-
-	virtual Handle<GraphicsContext> begin_graphics() = 0;
-	virtual void end_graphics(Handle<GraphicsContext> ctx) = 0;
 
 	// Graphics context functions
-	virtual void begin_default_render_pass(Handle<GraphicsContext> ctx, bool clear) = 0;
-	virtual void begin_render_pass(Handle<GraphicsContext> ctx, const RenderPassBeginInfo& info) = 0;
-	virtual void end_render_pass(Handle<GraphicsContext> ctx) = 0;
-	virtual void bind_pipeline(Handle<GraphicsContext> ctx, Handle<Pipeline> pipeline) = 0;
-	virtual void bind_uniform_set(Handle<GraphicsContext> ctx, uint32_t slot, Handle<UniformSet> set) = 0;
-	virtual void bind_binding_set(Handle<GraphicsContext> ctx, Handle<BindingSet> set) = 0;
-	virtual void bind_index_buffer(Handle<GraphicsContext> ctx, Handle<Buffer> buffer) = 0;
-	virtual void set_scissor(Handle<GraphicsContext> ctx, const Rect& rect) = 0;
-	virtual void set_viewport(Handle<GraphicsContext> ctx, const Rect& rect) = 0;
-	virtual void draw(Handle<GraphicsContext> ctx, uint32_t vertex_count, uint32_t first_vertex) = 0;
-	virtual void draw_indexed(Handle<GraphicsContext> ctx, uint32_t index_count, uint32_t first_index) = 0;
+	virtual void push_default_render_pass(bool clear) = 0;
+	virtual void push_render_pass(const RenderPassBeginInfo& info) = 0;
+	virtual void pop_render_pass() = 0;
+	virtual void bind_program(Handle<Program> program) = 0;
+	virtual void bind_vertex_attrib(
+		const char* name,
+		Handle<Buffer> buffer,
+		VertexAttributeFormat format,
+		uint32_t offset,
+		uint32_t stride
+	) = 0;
+	virtual void bind_index_buffer(Handle<Buffer> buffer) = 0;
+	virtual void set_uniform(const char* name, float value) = 0;
+	virtual void set_uniform(const char* name, int value) = 0;
+	virtual void set_uniform(const char* name, glm::vec2 value) = 0;
+	virtual void set_uniform(const char* name, glm::vec3 value) = 0;
+	virtual void set_uniform(const char* name, glm::vec4 value) = 0;
+	virtual void set_uniform(const char* name, glm::ivec2 value) = 0;
+	virtual void set_uniform(const char* name, glm::ivec3 value) = 0;
+	virtual void set_uniform(const char* name, glm::ivec4 value) = 0;
+	virtual void set_uniform(const char* name, glm::mat2 value) = 0;
+	virtual void set_uniform(const char* name, glm::mat3 value) = 0;
+	virtual void set_uniform(const char* name, glm::mat4 value) = 0;
+	virtual void set_sampler(const char* name, uint32_t slot, Handle<Texture> texture) = 0;
+	virtual void set_rasterizer_state(const RasterizerStateDesc& desc) = 0;
+	virtual void set_viewport(const Rect& rect) = 0;
+	virtual void draw(uint32_t vertex_count, uint32_t first_vertex) = 0;
+	virtual void draw_indexed(uint32_t index_count, uint32_t first_index) = 0;
 	virtual void
-	read_pixels(Handle<GraphicsContext> ctx, const Rect& rect, PixelFormat format, tcb::span<std::byte> out) = 0;
+	read_pixels(const Rect& rect, PixelFormat format, tcb::span<std::byte> out) = 0;
 	virtual void copy_framebuffer_to_texture(
-		Handle<GraphicsContext> ctx,
 		Handle<Texture> dst_tex,
 		const Rect& dst_region,
 		const Rect& src_region
 	) = 0;
-	virtual void set_stencil_reference(Handle<GraphicsContext> ctx, CullMode face, uint8_t reference) = 0;
-	virtual void set_stencil_compare_mask(Handle<GraphicsContext> ctx, CullMode face, uint8_t mask) = 0;
-	virtual void set_stencil_write_mask(Handle<GraphicsContext> ctx, CullMode face, uint8_t mask) = 0;
+	virtual void set_stencil_reference(CullMode face, uint8_t reference) = 0;
+	virtual void set_stencil_compare_mask(CullMode face, uint8_t mask) = 0;
+	virtual void set_stencil_write_mask(CullMode face, uint8_t mask) = 0;
 
 	virtual void present() = 0;
 

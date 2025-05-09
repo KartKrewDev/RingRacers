@@ -1,16 +1,20 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Sally "TehRealSalt" Cochenour
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Sally "TehRealSalt" Cochenour
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  k_grandprix.c
+/// \file  k_grandprix.cpp
 /// \brief Grand Prix mode game logic & bot behaviors
 
 #include "k_grandprix.h"
+
+#include <algorithm>
+#include <vector>
+
 #include "k_specialstage.h"
 #include "doomdef.h"
 #include "d_player.h"
@@ -108,7 +112,7 @@ UINT8 K_GetGPPlayerCount(UINT8 humans)
 	// 2P -> 8 total
 	// 3P -> 12 total
 	// 4P -> 16 total
-	return max(min(humans * 4, MAXPLAYERS), 8);
+	return std::clamp<UINT8>(humans * 4, 8, MAXPLAYERS);
 }
 
 /*--------------------------------------------------
@@ -160,22 +164,22 @@ void K_InitGrandPrixBots(void)
 	else
 	{
 		// init difficulty levels list
-		difficultylevels[0] = max(1, startingdifficulty);
-		difficultylevels[1] = max(1, startingdifficulty-1);
-		difficultylevels[2] = max(1, startingdifficulty-2);
-		difficultylevels[3] = max(1, startingdifficulty-3);
-		difficultylevels[4] = max(1, startingdifficulty-3);
-		difficultylevels[5] = max(1, startingdifficulty-4);
-		difficultylevels[6] = max(1, startingdifficulty-4);
-		difficultylevels[7] = max(1, startingdifficulty-4);
-		difficultylevels[8] = max(1, startingdifficulty-5);
-		difficultylevels[9] = max(1, startingdifficulty-5);
-		difficultylevels[10] = max(1, startingdifficulty-5);
-		difficultylevels[11] = max(1, startingdifficulty-6);
-		difficultylevels[12] = max(1, startingdifficulty-6);
-		difficultylevels[13] = max(1, startingdifficulty-7);
-		difficultylevels[14] = max(1, startingdifficulty-7);
-		difficultylevels[15] = max(1, startingdifficulty-8);
+		difficultylevels[ 0] = std::max<UINT8>(1, startingdifficulty);
+		difficultylevels[ 1] = std::max<UINT8>(1, startingdifficulty-1);
+		difficultylevels[ 2] = std::max<UINT8>(1, startingdifficulty-2);
+		difficultylevels[ 3] = std::max<UINT8>(1, startingdifficulty-3);
+		difficultylevels[ 4] = std::max<UINT8>(1, startingdifficulty-3);
+		difficultylevels[ 5] = std::max<UINT8>(1, startingdifficulty-4);
+		difficultylevels[ 6] = std::max<UINT8>(1, startingdifficulty-4);
+		difficultylevels[ 7] = std::max<UINT8>(1, startingdifficulty-4);
+		difficultylevels[ 8] = std::max<UINT8>(1, startingdifficulty-5);
+		difficultylevels[ 9] = std::max<UINT8>(1, startingdifficulty-5);
+		difficultylevels[10] = std::max<UINT8>(1, startingdifficulty-5);
+		difficultylevels[11] = std::max<UINT8>(1, startingdifficulty-6);
+		difficultylevels[12] = std::max<UINT8>(1, startingdifficulty-6);
+		difficultylevels[13] = std::max<UINT8>(1, startingdifficulty-7);
+		difficultylevels[14] = std::max<UINT8>(1, startingdifficulty-7);
+		difficultylevels[15] = std::max<UINT8>(1, startingdifficulty-8);
 	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -661,6 +665,42 @@ void K_IncreaseBotDifficulty(player_t *bot)
 	bot->botvars.diffincrease = increase;
 }
 
+static boolean CompareJoiners(player_t *a, player_t *b)
+{
+	if (a->spectatorReentry != b->spectatorReentry)
+	{
+		// Push low re-entry cooldown to the back.
+		return (a->spectatorReentry > b->spectatorReentry);
+	}
+
+	if (a->spectatewait != b->spectatewait)
+	{
+		// Push high waiting time to the back.
+		return (a->spectatewait < b->spectatewait);
+	}
+
+	// They are equals, so just randomize
+	return (P_Random(PR_BOTS) & 1);
+}
+
+static boolean CompareReplacements(player_t *a, player_t *b)
+{
+	if ((a->pflags & PF_NOCONTEST) != (b->pflags & PF_NOCONTEST))
+	{
+		// Push NO CONTEST to the back.
+		return ((a->pflags & PF_NOCONTEST) == 0);
+	}
+
+	if (a->position != b->position)
+	{
+		// Push bad position to the back.
+		return (a->position < b->position);
+	}
+
+	// They are equals, so just randomize
+	return (P_Random(PR_BOTS) & 1);
+}
+
 /*--------------------------------------------------
 	void K_RetireBots(void)
 
@@ -764,44 +804,145 @@ void K_RetireBots(void)
 		}
 	}
 
+	// Duel Shuffle:
+	// In games with limited player count, shuffle the NO CONTEST
+	// player with a spectator that wants to play. Intended for 1v1
+	// servers, but really this can help any server with a lower
+	// player count than connection count.
+	std::vector<player_t *> joining;
+	std::vector<player_t *> humans;
+	std::vector<player_t *> bots;
+
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		player_t *bot = NULL;
-
-		if (!playeringame[i] || !players[i].bot || players[i].spectator)
+		if (playeringame[i] == false)
 		{
 			continue;
 		}
 
-		bot = &players[i];
+		player_t *player = &players[i];
 
-		if (bot->pflags & PF_NOCONTEST)
+		if (player->spectator == true)
 		{
-			UINT8 skinnum = defaultbotskin;
-
-			if (usableskins > 0)
+			if (player->bot == false && (player->pflags & PF_WANTSTOJOIN) == PF_WANTSTOJOIN)
 			{
-				UINT8 index = P_RandomKey(PR_BOTS, usableskins);
-				skinnum = grabskins[index];
-				grabskins[index] = grabskins[--usableskins];
+				joining.push_back(player);
+			}
+		}
+		else
+		{
+			if (player->bot == true)
+			{
+				bots.push_back(player);
+			}
+			else
+			{
+				humans.push_back(player);
+			}
+		}
+	}
+
+	const size_t max_lobby_size = static_cast<size_t>(cv_maxplayers.value);
+
+	size_t num_joining = joining.size();
+	size_t num_playing = humans.size() + bots.size();
+
+	std::stable_sort(joining.begin(), joining.end(), CompareJoiners);
+	std::stable_sort(humans.begin(), humans.end(), CompareReplacements);
+	std::stable_sort(bots.begin(), bots.end(), CompareReplacements);
+
+	boolean did_replacement = false;
+
+	if (G_GametypeHasSpectators() == true && grandprixinfo.gp == false && cv_shuffleloser.value != 0)
+	{
+		// While joiners and players still exist, insert joiners.
+
+		//UINT8 replacements = max_lobby_size / 2; // Only replace bottom half
+		UINT8 replacements = 1; // Only replace a single player.
+
+		while (replacements > 0)
+		{
+			if (joining.size() == 0 || (humans.size() + bots.size()) == 0)
+			{
+				// No one to replace or to join.
+				break;
 			}
 
-			memcpy(&bot->availabilities, R_GetSkinAvailabilities(false, skinnum), MAXAVAILABILITY*sizeof(UINT8));
+			if (num_playing + num_joining <= max_lobby_size)
+			{
+				// We can fit everyone, so we don't need to do manual replacement.
+				break;
+			}
 
-			bot->botvars.difficulty = newDifficulty;
-			bot->botvars.diffincrease = 0;
+			player_t *joiner = joining.back();
+			joining.pop_back();
 
-			K_SetNameForBot(i, skins[skinnum].realname);
+			player_t *replace = nullptr;
+			if (bots.size() > 0)
+			{
+				replace = bots.back();
 
-			bot->prefskin = skinnum;
-			bot->prefcolor = skins[skinnum].prefcolor;
-			bot->preffollower = -1;
-			bot->preffollowercolor = SKINCOLOR_NONE;
-			G_UpdatePlayerPreferences(bot);
+				// A bot is taking up this slot? Remove it entirely.
+				CL_RemovePlayer(replace - players, KR_LEAVE);
 
-			bot->score = 0;
-			bot->pflags &= ~PF_NOCONTEST;
+				bots.pop_back();
+			}
+			else
+			{
+				replace = humans.back();
+
+				// A human is taking up this slot? Spectate them.
+				replace->spectator = true;
+				replace->pflags |= PF_WANTSTOJOIN; // We were are spectator against our will, we want to play ASAP.
+
+				humans.pop_back();
+			}
+
+			// Add our waiting-to-play spectator to the game.
+			P_SpectatorJoinGame(joiner);
+
+			did_replacement = true;
+			replacements--;
+			num_joining--;
 		}
+	}
+
+	if (did_replacement == true)
+	{
+		// No need to run the bot swapping code,
+		// we already replaced the loser.
+		return;
+	}
+
+	// Replace last place bot.
+	if (bots.size() > 0)
+	{
+		player_t *bot = bots.back();
+
+		UINT8 skinnum = defaultbotskin;
+
+		if (usableskins > 0)
+		{
+			UINT8 index = P_RandomKey(PR_BOTS, usableskins);
+			skinnum = grabskins[index];
+			grabskins[index] = grabskins[--usableskins];
+		}
+
+		memcpy(&bot->availabilities, R_GetSkinAvailabilities(false, skinnum), MAXAVAILABILITY*sizeof(UINT8));
+
+		bot->botvars.difficulty = newDifficulty;
+		bot->botvars.diffincrease = 0;
+
+		K_SetNameForBot(bot - players, skins[skinnum].realname);
+
+		bot->prefskin = skinnum;
+		bot->prefcolor = skins[skinnum].prefcolor;
+		bot->preffollower = -1;
+		bot->preffollowercolor = SKINCOLOR_NONE;
+		G_UpdatePlayerPreferences(bot);
+
+		bot->score = 0;
+		bot->pflags &= ~PF_NOCONTEST;
 	}
 }
 

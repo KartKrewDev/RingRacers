@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -797,7 +797,6 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 		return;
 
 #ifdef HWRENDER
-	//if (rendermode != render_soft && !con_startup)		// Why?
 	if (rendermode == render_opengl)
 	{
 		HWR_DrawStretchyFixedPatch(patch, x, y, pscale, vscale, scrn, colormap);
@@ -1016,7 +1015,6 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 		return;
 
 #ifdef HWRENDER
-	//if (rendermode != render_soft && !con_startup)		// Not this again
 	if (rendermode == render_opengl)
 	{
 		HWR_DrawFill(x, y, w, h, c);
@@ -1600,7 +1598,7 @@ const UINT8 *V_OffsetIntoFadeMap(const lighttable_t *clm, UINT8 strength)
 void V_DrawCustomFadeScreen(const char *lump, UINT8 strength)
 {
 #ifdef HWRENDER
-	if (rendermode != render_soft && rendermode != render_none)
+	if (rendermode == render_opengl)
 	{
 		HWR_DrawCustomFadeScreen(
 			(strcmp(lump, "FADEMAP1") != 0
@@ -1664,7 +1662,7 @@ void V_DrawFadeConsBack(INT32 plines)
 void V_EncoreInvertScreen(void)
 {
 #ifdef HWRENDER
-	if (rendermode != render_soft && rendermode != render_none)
+	if (rendermode == render_opengl)
 	{
 		HWR_EncoreInvertScreen();
 		return;
@@ -2986,7 +2984,7 @@ void V_DrawStringScaled(
 									case gb_dpad: return {{1, 4, Draw::GenericButton::dpad}};
 									default: return {};
 									}
-								}();	
+								}();
 							}
 
 							if (bt_inst)
@@ -3766,11 +3764,10 @@ void VID_DisplaySoftwareScreen()
 	// TODO implement
 	// upload framebuffer, bind pipeline, draw
 	rhi::Rhi* rhi = srb2::sys::get_rhi(srb2::sys::g_current_rhi);
-	rhi::Handle<rhi::GraphicsContext> ctx = srb2::sys::main_graphics_context();
 	hwr2::HardwareState* hw_state = srb2::sys::main_hardware_state();
 
 	// Misnomer; this just uploads the screen to the software indexed screen texture
-	hw_state->software_screen_renderer->draw(*rhi, ctx);
+	hw_state->software_screen_renderer->draw(*rhi);
 
 	const int screens = std::clamp(r_splitscreen + 1, 1, MAXSPLITSCREENPLAYERS);
 	hw_state->blit_postimg_screens->set_num_screens(screens);
@@ -3827,7 +3824,7 @@ void VID_DisplaySoftwareScreen()
 	}
 
 	// Post-process blit to the 'default' framebuffer
-	hw_state->blit_postimg_screens->draw(*rhi, ctx);
+	hw_state->blit_postimg_screens->draw(*rhi);
 }
 
 char *V_ParseText(const char *rawText)

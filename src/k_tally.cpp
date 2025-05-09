@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Sally "TehRealSalt" Cochenour
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Sally "TehRealSalt" Cochenour
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -243,10 +243,9 @@ INT32 level_tally_t::CalculateGrade(void)
 			case TALLY_BONUS_LAP:
 			{
 				// Use a special curve for this.
-				// The difference between 0 and 1 lap points is an important difference in skill,
-				// while the difference between 5 and 6 is not very notable.
-				const fixed_t frac = std::min(FRACUNIT, (laps * FRACUNIT) / std::max(1, static_cast<int>(totalLaps)));
-				ours += Easing_OutSine(frac, 0, bonusWeights[i]);
+				// Low Exp amounts are guaranteed, higher than half is where skill expression starts
+				const fixed_t frac = std::min(FRACUNIT, (laps * FRACUNIT) / std::max(1, static_cast<int>(totalLaps + 80))); // Magic number here is to ensure A ranks only go to those that can maintain positive EXP
+				ours += Easing_InCubic(frac, 0, bonusWeights[i]);
 				break;
 			}
 			case TALLY_BONUS_PRISON:
@@ -343,8 +342,13 @@ void level_tally_t::Init(player_t *player)
 
 		if ((gametypes[gt]->rules & GTR_CIRCUIT) == GTR_CIRCUIT)
 		{
-			laps = std::clamp(FixedMul(std::max(stplyr->exp, FRACUNIT/2), (500/K_GetNumGradingPoints())*player->gradingpointnum), 0, 999);
-			totalLaps = 500;
+			UINT16 displayEXP = K_GetDisplayEXP(player);
+
+			if (displayEXP != UINT16_MAX)
+			{
+				laps = displayEXP;
+				totalLaps = 500;
+			}
 		}
 
 		if (battleprisons)

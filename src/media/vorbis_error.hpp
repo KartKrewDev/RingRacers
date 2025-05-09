@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by James Robert Roman
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by James Robert Roman
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -11,10 +11,10 @@
 #ifndef __SRB2_MEDIA_VORBIS_ERROR_HPP__
 #define __SRB2_MEDIA_VORBIS_ERROR_HPP__
 
-#include <string>
-
 #include <fmt/format.h>
 #include <vorbis/codec.h>
+
+#include "../core/string.h"
 
 class VorbisError
 {
@@ -23,7 +23,7 @@ public:
 
 	operator int() const { return error_; }
 
-	std::string name() const
+	srb2::String name() const
 	{
 		switch (error_)
 		{
@@ -43,12 +43,12 @@ private:
 };
 
 template <>
-struct fmt::formatter<VorbisError> : formatter<std::string>
+struct fmt::formatter<VorbisError> : formatter<srb2::String>
 {
 	template <typename FormatContext>
 	auto format(const VorbisError& error, FormatContext& ctx) const
 	{
-		return formatter<std::string>::format(error.name(), ctx);
+		return formatter<srb2::String>::format(error.name(), ctx);
 	}
 };
 

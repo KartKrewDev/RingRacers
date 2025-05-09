@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -2764,6 +2764,21 @@ fixed_t P_GetThingStepUp(mobj_t *thing, fixed_t destX, fixed_t destY)
 		maxstep += maxstepmove;
 	}
 
+	if (thing->standingslope && thing->standingslope->zdelta != 0 && (thing->momx || thing->momy))
+	{
+		vector3_t slopemom = {0,0,0};
+		slopemom.x = thing->momx;
+		slopemom.y = thing->momy;
+		P_QuantizeMomentumToSlope(&slopemom, thing->standingslope);
+		fixed_t momentumzdelta = FixedDiv(slopemom.z, FixedHypot(slopemom.x, slopemom.y)); // so this lets us know what the zdelta is for the vector the player is travelling along, in addition to the slope's zdelta in its xydirection
+		// if (thing->player)
+		// 	CONS_Printf("%s P_GetThingStepUp %d +", player_names[thing->player-players], maxstep);
+		maxstep += abs(momentumzdelta);
+		// if (thing->player)
+		// 	CONS_Printf(" %d = %d\n", momentumzdelta, maxstep);
+
+	}
+
 	if (P_MobjTouchingSectorSpecialFlag(thing, SSF_DOUBLESTEPUP)
 		|| (R_PointInSubsector(destX, destY)->sector->specialflags & SSF_DOUBLESTEPUP))
 	{
@@ -2775,22 +2790,6 @@ fixed_t P_GetThingStepUp(mobj_t *thing, fixed_t destX, fixed_t destY)
 	{
 		// If using type Section1:12, no maxstep. For short walls, like Egg Zeppelin
 		maxstep = 0;
-	}
-
-	if (thing->standingslope)
-	{
-		vector3_t slopemom = {0,0,0};
-		slopemom.x = thing->momx;
-		slopemom.y = thing->momy;
-		slopemom.z = 0;
-		P_QuantizeMomentumToSlope(&slopemom, thing->standingslope);
-		fixed_t momentumzdelta = FixedDiv(slopemom.z, FixedHypot(slopemom.x, slopemom.y)); // so this lets us know what the zdelta is for the vector the player is travelling along, in addition to the slope's zdelta in its xydirection
-		// if (thing->player)
-		// 	CONS_Printf("%s P_GetThingStepUp %d +", player_names[thing->player-players], maxstep);
-		maxstep += abs(momentumzdelta);
-		// if (thing->player)
-		// 	CONS_Printf(" %d = %d\n", momentumzdelta, maxstep);
-		
 	}
 
 	return maxstep;
@@ -2980,7 +2979,7 @@ increment_move
 				}
 				else if (g_tm.floorz - g_tm.dropoffz > maxstep)
 					return false; // don't stand over a dropoff
-			}					
+			}
 		}
 	} while (tryx != x || tryy != y);
 
@@ -4643,13 +4642,8 @@ boolean P_CheckSector(sector_t *sector, boolean crunch)
  Lots of new Boom functions that work faster and add functionality.
 */
 
-static msecnode_t *headsecnode = NULL;
-static mprecipsecnode_t *headprecipsecnode = NULL;
-
 void P_Initsecnode(void)
 {
-	headsecnode = NULL;
-	headprecipsecnode = NULL;
 }
 
 // P_GetSecnode() retrieves a node from the freelist. The calling routine
@@ -4657,45 +4651,25 @@ void P_Initsecnode(void)
 
 static msecnode_t *P_GetSecnode(void)
 {
-	msecnode_t *node;
-
-	if (headsecnode)
-	{
-		node = headsecnode;
-		headsecnode = headsecnode->m_thinglist_next;
-	}
-	else
-		node = Z_Calloc(sizeof (*node), PU_LEVEL, NULL);
-	return node;
+	return Z_LevelPoolCalloc(sizeof(msecnode_t));
 }
 
 static mprecipsecnode_t *P_GetPrecipSecnode(void)
 {
-	mprecipsecnode_t *node;
-
-	if (headprecipsecnode)
-	{
-		node = headprecipsecnode;
-		headprecipsecnode = headprecipsecnode->m_thinglist_next;
-	}
-	else
-		node = Z_Calloc(sizeof (*node), PU_LEVEL, NULL);
-	return node;
+	return Z_LevelPoolCalloc(sizeof(mprecipsecnode_t));
 }
 
 // P_PutSecnode() returns a node to the freelist.
 
 static inline void P_PutSecnode(msecnode_t *node)
 {
-	node->m_thinglist_next = headsecnode;
-	headsecnode = node;
+	Z_LevelPoolFree(node, sizeof(msecnode_t));
 }
 
 // Tails 08-25-2002
 static inline void P_PutPrecipSecnode(mprecipsecnode_t *node)
 {
-	node->m_thinglist_next = headprecipsecnode;
-	headprecipsecnode = node;
+	Z_LevelPoolFree(node, sizeof(mprecipsecnode_t));
 }
 
 // P_AddSecnode() searches the current list to see if this sector is

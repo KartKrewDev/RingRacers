@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2018 by ZarroTsu.
 //
 // This program is free software distributed under the
@@ -58,6 +58,8 @@ Make sure this matches the actual number of states
 
 #define RR_PROJECTILE_FUSE (8*TICRATE)
 
+#define SCAMDIST (2000)
+
 // 2023-08-26 +ang20 to Sal's OG values to make them friendlier - Tyron
 #define STUMBLE_STEEP_VAL (ANG60 + ANG20)
 #define STUMBLE_STEEP_VAL_AIR (ANG30 + ANG10 + ANG20)
@@ -78,6 +80,13 @@ Make sure this matches the actual number of states
 
 #define MAXTOPACCEL (12*FRACUNIT)
 #define TOPACCELREGEN (FRACUNIT/16)
+
+// Handling boosts and sliptide conditions got weird.
+// You must be under a handling boost of at least SLIPTIDEHANDLING to sliptide.
+// HANDLESCALING is used to adjust all handling boosts simultaneously (weight factors in the future?)
+// If you need to touch this in an involved way later, please just make sliptide eligibility a flag LMAO
+#define HANDLESCALING (7*FRACUNIT/8)
+#define SLIPTIDEHANDLING (HANDLESCALING/2)
 
 // Mispredicted turns can generate phantom sliptide inputs for a few tics.
 // Delay the wavedash visuals until we're reasonably sure that it's a deliberate turn.
@@ -298,6 +307,8 @@ boolean K_ThunderDome(void);
 boolean K_PlayerCanUseItem(player_t *player);
 
 fixed_t K_GetExpAdjustment(player_t *player);
+
+UINT16 K_GetDisplayEXP(player_t *player);
 
 UINT32 K_GetNumGradingPoints(void);
 

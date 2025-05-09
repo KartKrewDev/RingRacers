@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2016 by Kay "Kaito" Sinclaire.
 // Copyright (C) 2020 by Sonic Team Junior.
 //
@@ -1904,7 +1904,7 @@ static boolean M_DrawFollowerSprite(INT16 x, INT16 y, INT32 num, boolean charfli
 static void M_DrawCharSelectSprite(UINT8 num, INT16 x, INT16 y, boolean charflip)
 {
 	setup_player_t *p = &setup_player[num];
-	UINT8 color;
+	UINT16 color;
 	UINT8 *colormap;
 
 	if (p->skin < 0)
@@ -3271,10 +3271,168 @@ void M_DrawCupSelect(void)
 	}
 
 	INT16 ty = M_EaseWithTransition(Easing_Linear, 5 * 24);
-	V_DrawFill(0, 146 + ty, BASEVIDWIDTH, 54, 31);
-	M_DrawCupPreview(146 + ty, &templevelsearch);
+	y = 146 + ty;
+	V_DrawFill(0, y, BASEVIDWIDTH, 54, 31);
+	M_DrawCupPreview(y, &templevelsearch);
 
 	M_DrawCupTitle(120 - ty, &templevelsearch);
+
+	if (templevelsearch.grandprix == false && templevelsearch.cup != NULL)
+	{
+		if (templevelsearch.cup != &dummy_lostandfound)
+		{
+			templevelsearch.checklocked = false;
+		}
+
+		// The following makes a HUGE assumption that we're
+		// never going to have more than ~9 Race Courses
+		// (with Medals) in Lost & Found. Which is almost
+		// certainly true for Krew, but is very likely to
+		// be violated by the long tail of modding. To those
+		// finding this eventually: I'M SORRY ~toast 221024
+
+		struct work_array_t {
+			emblem_t *medal;
+			UINT16 col;
+			UINT16 dotcol;
+		} work_array[CUPCACHE_MAX];
+
+		boolean incj = false;
+
+		i = j = 0;
+
+		INT16 map = M_GetFirstLevelInList(&i, &templevelsearch);
+		emblem_t *emblem = NULL;
+
+		while (map < nummapheaders && j < CUPCACHE_MAX)
+		{
+			if (map < basenummapheaders)
+			{
+				emblem = NULL;
+				incj = false;
+
+				work_array[j].medal = NULL;
+				work_array[j].col = work_array[j].dotcol = UINT16_MAX;
+
+				if (templevelsearch.timeattack)
+				{
+					emblem = M_GetLevelEmblems(map+1);
+
+					while (emblem)
+					{
+						if (emblem->type == ET_TIME)
+						{
+							incj = true;
+
+							if (gamedata->collected[emblem-emblemlocations])
+							{
+								if (!work_array[j].medal
+								|| (
+									(work_array[j].medal->type == ET_TIME)
+									&& (work_array[j].medal->tag < emblem->tag)
+									)
+								)
+								{
+									work_array[j].medal = emblem;
+								}
+							}
+						}
+						else if ((emblem->type == ET_MAP)
+							&& (emblem->flags & ME_SPBATTACK))
+						{
+							incj = true;
+
+							if (gamedata->collected[emblem-emblemlocations])
+							{
+								work_array[j].dotcol = M_GetEmblemColor(emblem);
+							}
+						}
+
+						emblem = M_GetLevelEmblems(-1);
+					}
+				}
+				else if ((gamedata->gotspraycans > 0) && (mapheaderinfo[map]->typeoflevel & TOL_RACE))
+				{
+					incj = true;
+
+					if (mapheaderinfo[map]->cache_spraycan < gamedata->numspraycans)
+					{
+						work_array[j].col = gamedata->spraycans[mapheaderinfo[map]->cache_spraycan].col;
+					}
+
+					if (mapheaderinfo[map]->records.mapvisited & MV_MYSTICMELODY)
+					{
+						work_array[j].dotcol = SKINCOLOR_TURQUOISE;
+					}
+				}
+
+				if (incj)
+					j++;
+			}
+
+			map = M_GetNextLevelInList(map, &i, &templevelsearch);
+		}
+
+		if (j)
+		{
+			x = (BASEVIDWIDTH - (j*10))/2 + 1;
+			y += 2;
+
+			V_DrawFill(x - 4, y, (j*10) + 6, 3, 31);
+			for (i = 1; i <= 6; i++)
+			{
+				V_DrawFill(x + i - 4, y+2+i, (j*10) + 6 - (i*2), 1, 31);
+			}
+
+			y--;
+
+			for (i = 0; i < j; i++)
+			{
+				if (templevelsearch.timeattack)
+				{
+					if (work_array[i].medal)
+					{
+						// Primary Medal
+
+						V_DrawMappedPatch(x, y, 0, W_CachePatchName(M_GetEmblemPatch(work_array[i].medal, false), PU_CACHE),
+							R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(work_array[i].medal), GTC_MENUCACHE));
+					}
+					else
+					{
+						// Need it!
+
+						V_DrawScaledPatch(x, y, 0, W_CachePatchName("NEEDIT", PU_CACHE));
+					}
+				}
+				else
+				{
+					if (work_array[i].col < numskincolors)
+					{
+						// Spray Can
+
+						V_DrawMappedPatch(x, y, 0, W_CachePatchName("GOTCAN", PU_CACHE),
+							R_GetTranslationColormap(TC_DEFAULT, work_array[i].col, GTC_MENUCACHE));
+					}
+					else
+					{
+						// Need it!
+
+						V_DrawFill(x+3, y+3, 2, 2, 6);
+					}
+				}
+
+				if (work_array[i].dotcol < numskincolors)
+				{
+					// Bonus (Secondary Medal or Ancient Shrine)
+
+					V_DrawMappedPatch(x+4, y+7, 0, W_CachePatchName("COLORSP1", PU_CACHE),
+						R_GetTranslationColormap(TC_DEFAULT, work_array[i].dotcol, GTC_MENUCACHE));
+				}
+
+				x += 10;
+			}
+		}
+	}
 
 	if (cupgrid.numpages > 1)
 	{
@@ -3393,6 +3551,8 @@ static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
 		V_DrawLSTitleLowString(x2, y+28, 0, word2);
 }
 
+static INT32 M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y, boolean allowtime, boolean allowencore, boolean allowspb, boolean allowbonus, boolean draw);
+
 static void M_DrawLevelSelectBlock(INT16 x, INT16 y, UINT16 map, boolean redblink, boolean greyscale)
 {
 	UINT8 *colormap = NULL;
@@ -3425,6 +3585,49 @@ static void M_DrawLevelSelectBlock(INT16 x, INT16 y, UINT16 map, boolean redblin
 				PU_CACHE
 			)
 		);
+	}
+	else if (!levellist.netgame)
+	{
+		x += 80+2;
+		y += 50-1;
+
+		const boolean allowencore = (
+			!levellist.levelsearch.timeattack
+			&& M_SecretUnlocked(SECRET_ENCORE, true)
+		);
+		const boolean allowspb = (
+			levellist.levelsearch.timeattack
+			&& M_SecretUnlocked(SECRET_SPBATTACK, true)
+		);
+
+		INT32 width = x - M_DrawMapMedals(map, x, y,
+			levellist.levelsearch.timeattack,
+			allowencore,
+			allowspb,
+			!levellist.levelsearch.timeattack,
+			false
+		);
+
+		if (width > 2)
+		{
+			width -= 2; // minor poke
+
+			V_DrawFill(x + 7 - width, y - 2, width, 9, 31);
+
+			UINT8 i;
+			for (i = 1; i < 7; i++)
+			{
+				V_DrawFill(x + 7 - width - i, y + i - 2, 1, 9 - i, 31);
+			}
+
+			M_DrawMapMedals(map, x, y,
+				levellist.levelsearch.timeattack,
+				allowencore,
+				allowspb,
+				!levellist.levelsearch.timeattack,
+				true
+			);
+		}
 	}
 }
 
@@ -4178,6 +4381,8 @@ void M_DrawMPServerBrowser(void)
 		servpats[i] = W_CachePatchName(va("M_SERV%c", i + '1'), PU_CACHE);
 		gearpats[i] = W_CachePatchName(va("M_SGEAR%c", i + '1'), PU_CACHE);
 	}
+	patch_t *voicepat;
+	voicepat = W_CachePatchName("VOCRMU", PU_CACHE);
 
 	fixed_t text1loop = SHORT(text1->height)*FRACUNIT;
 	fixed_t text2loop = SHORT(text2->width)*FRACUNIT;
@@ -4278,6 +4483,12 @@ void M_DrawMPServerBrowser(void)
 				{
 					V_DrawFixedPatch((startx + 251)*FRACUNIT, (starty + ypos + 9)*FRACUNIT, FRACUNIT, transflag, gearpats[speed], NULL);
 				}
+			}
+
+			// voice chat enabled
+			if (serverlist[i].info.kartvars & SV_VOICEENABLED)
+			{
+				V_DrawFixedPatch((startx - 3) * FRACUNIT, (starty + 2) * FRACUNIT, FRACUNIT, 0, voicepat, NULL);
 			}
 		}
 		ypos += SERVERSPACE;
@@ -8020,15 +8231,14 @@ challengedesc:
 
 #define STATSSTEP 10
 
-static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y, boolean allowtime, boolean allowencore, boolean allowspb)
+static INT32 M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y, boolean allowtime, boolean allowencore, boolean allowspb, boolean allowbonus, boolean draw)
 {
 	UINT8 lasttype = UINT8_MAX, curtype;
 
 	// M_GetLevelEmblems is ONE-indexed, urgh
 	emblem_t *emblem = M_GetLevelEmblems(mapnum+1);
 
-	const boolean hasmedals = (emblem != NULL);
-	boolean collected = false;
+	boolean collected = false, hasmedals = false;
 
 	while (emblem)
 	{
@@ -8075,11 +8285,19 @@ static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y, boolean allowtime, b
 		}
 
 		// Shift over if emblem is of a different discipline
-		if (lasttype != UINT8_MAX && lasttype != curtype)
-			x -= 4;
-		lasttype = curtype;
+		if (lasttype != curtype)
+		{
+			if (lasttype != UINT8_MAX)
+				x -= 4;
+			else
+				hasmedals = true;
 
-		if (collected)
+			lasttype = curtype;
+		}
+
+		if (!draw)
+			;
+		else if (collected)
 			V_DrawMappedPatch(x, y, 0, W_CachePatchName(M_GetEmblemPatch(emblem, false), PU_CACHE),
 				R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(emblem), GTC_MENUCACHE));
 		else
@@ -8089,6 +8307,9 @@ static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y, boolean allowtime, b
 		x -= 8;
 	}
 
+	if (!allowbonus)
+		return x;
+
 	if (hasmedals)
 		x -= 4;
 
@@ -8096,7 +8317,7 @@ static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y, boolean allowtime, b
 	{
 		UINT16 col = gamedata->spraycans[mapheaderinfo[mapnum]->cache_spraycan].col;
 
-		if (col < numskincolors)
+		if (draw && col < numskincolors)
 		{
 			V_DrawMappedPatch(x, y, 0, W_CachePatchName("GOTCAN", PU_CACHE),
 				R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE));
@@ -8107,9 +8328,13 @@ static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y, boolean allowtime, b
 
 	if (mapheaderinfo[mapnum]->records.mapvisited & MV_MYSTICMELODY)
 	{
-		V_DrawScaledPatch(x, y, 0, W_CachePatchName("GOTMEL", PU_CACHE));
+		if (draw)
+			V_DrawScaledPatch(x, y, 0, W_CachePatchName("GOTMEL", PU_CACHE));
+
 		x -= 8;
 	}
+
+	return x;
 }
 
 static void M_DrawStatsMaps(void)
@@ -8276,7 +8501,7 @@ static void M_DrawStatsMaps(void)
 			);
 		}
 
-		M_DrawMapMedals(mnum, medalspos - 8, y, allowtime, allowencore, allowspb);
+		M_DrawMapMedals(mnum, medalspos - 8, y, allowtime, allowencore, allowspb, true, true);
 
 		if (mapheaderinfo[mnum]->menuttl[0])
 		{

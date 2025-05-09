@@ -15,3 +15,7 @@ add_subdirectory(tracy)
 add_subdirectory(libwebm)
 
 add_subdirectory(fmt)
+
+add_subdirectory(vulkan-headers)
+add_subdirectory(volk)
+add_subdirectory(vma)

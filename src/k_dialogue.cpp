@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Sally "TehRealSalt" Cochenour
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Sally "TehRealSalt" Cochenour
+// Copyright (C) 2025 by Kart Krew
 // Copyright (C) 2020 by Sonic Team Junior
 //
 // This program is free software distributed under the
@@ -14,9 +14,10 @@
 #include "k_dialogue.hpp"
 #include "k_dialogue.h"
 
-#include <string>
 #include <algorithm>
+#include <string_view>
 
+#include "core/string.h"
 #include "info.h"
 #include "sounds.h"
 #include "g_game.h"
@@ -43,7 +44,7 @@ void Dialogue::Typewriter::ClearText(void)
 	textDest.clear();
 }
 
-void Dialogue::Typewriter::NewText(std::string newText)
+void Dialogue::Typewriter::NewText(const srb2::String& newText)
 {
 	text.clear();
 
@@ -174,7 +175,7 @@ void Dialogue::SetSpeaker(void)
 	typewriter.voiceSfx = sfx_ktalk;
 }
 
-void Dialogue::SetSpeaker(std::string skinName, int portraitID)
+void Dialogue::SetSpeaker(srb2::String skinName, int portraitID)
 {
 	Init();
 
@@ -215,7 +216,7 @@ void Dialogue::SetSpeaker(std::string skinName, int portraitID)
 	}
 }
 
-void Dialogue::SetSpeaker(std::string name, patch_t *patch, UINT8 *colormap, sfxenum_t voice)
+void Dialogue::SetSpeaker(srb2::String name, patch_t *patch, UINT8 *colormap, sfxenum_t voice)
 {
 	Init();
 
@@ -472,7 +473,7 @@ void Dialogue::Draw(void)
 		.flags(V_VFLIP|V_FLIP)
 		.patch(patchCache["TUTDIAGE"]);
 
-	std::string intertext = "<large>";
+	srb2::String intertext = "<large>";
 
 	drawer
 		.xy(10 - BASEVIDWIDTH, -3-32)
@@ -486,7 +487,7 @@ void Dialogue::Draw(void)
 			.patch(patchCache["TUTDIAG2"]);
 
 		if (Held())
-			intertext += "<z_pressed>";	
+			intertext += "<z_pressed>";
 		else
 			intertext += "<z_animated>";
 

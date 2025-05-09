@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Ronald "Eidolon" Kinard
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Ronald "Eidolon" Kinard
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -27,7 +27,7 @@ static bool size_equal(Rhi& rhi, Handle<Texture> tex, uint32_t width, uint32_t h
 	return deets.width == width && deets.height == height;
 }
 
-void UpscaleBackbuffer::begin_pass(Rhi& rhi, Handle<GraphicsContext> ctx)
+void UpscaleBackbuffer::begin_pass(Rhi& rhi)
 {
 	uint32_t vid_width = static_cast<uint32_t>(vid.width);
 	uint32_t vid_height = static_cast<uint32_t>(vid.height);
@@ -37,19 +37,6 @@ void UpscaleBackbuffer::begin_pass(Rhi& rhi, Handle<GraphicsContext> ctx)
 	{
 		remake = true;
 	}
-
-	auto new_renderpass = [&rhi = rhi](AttachmentLoadOp load_op, AttachmentStoreOp store_op)
-	{
-		RenderPassDesc desc {};
-		desc.use_depth_stencil = false;
-		desc.color_load_op = load_op;
-		desc.color_store_op = store_op;
-		desc.depth_load_op = load_op;
-		desc.depth_store_op = store_op;
-		desc.stencil_load_op = load_op;
-		desc.stencil_store_op = store_op;
-		return rhi.create_render_pass(desc);
-	};
 
 	if (remake)
 	{
@@ -70,23 +57,16 @@ void UpscaleBackbuffer::begin_pass(Rhi& rhi, Handle<GraphicsContext> ctx)
 		RenderbufferDesc depth_tex {};
 		depth_tex.width = vid_width;
 		depth_tex.height = vid_height;
-
-		if (!renderpass_clear_)
-		{
-			renderpass_clear_ = new_renderpass(AttachmentLoadOp::kClear, AttachmentStoreOp::kStore);
-		}
-	}
-	else
-	{
-		if (!renderpass_)
-		{
-			renderpass_ = new_renderpass(AttachmentLoadOp::kLoad, AttachmentStoreOp::kStore);
-		}
 	}
 
 	RenderPassBeginInfo begin_info {};
-	begin_info.render_pass = remake ? renderpass_clear_ : renderpass_;
 	begin_info.clear_color = {0, 0, 0, 1};
 	begin_info.color_attachment = color_;
-	rhi.begin_render_pass(ctx, begin_info);
+	begin_info.color_load_op = rhi::AttachmentLoadOp::kLoad;
+	begin_info.color_store_op = rhi::AttachmentStoreOp::kStore;
+	begin_info.depth_load_op = rhi::AttachmentLoadOp::kLoad;
+	begin_info.depth_store_op = rhi::AttachmentStoreOp::kStore;
+	begin_info.stencil_load_op = rhi::AttachmentLoadOp::kLoad;
+	begin_info.stencil_store_op = rhi::AttachmentStoreOp::kStore;
+	rhi.push_render_pass(begin_info);
 }

@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by James Robert Roman
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by James Robert Roman
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -17,14 +17,13 @@
 #include <filesystem>
 #include <memory>
 #include <optional>
-#include <string>
 #include <string_view>
 #include <utility>
 #include <variant>
 #include <vector>
 
-#include <nlohmann/json.hpp>
-
+#include "../../core/string.h"
+#include "../../core/json.hpp"
 #include "../../cxxutil.hpp"
 
 #include "../../d_main.h" // srb2home
@@ -40,10 +39,10 @@ private:
 	const std::filesystem::path root_ = std::filesystem::path{srb2home} / "media/replay/online";
 	const std::filesystem::path favoritesPath_ = root_ / "favorites.json";
 
-	nlohmann::json favoritesFile_ = cache_favorites();
-	nlohmann::json& favorites_;
+	JsonValue favoritesFile_ = cache_favorites();
+	JsonValue& favorites_;
 
-	nlohmann::json cache_favorites() const;
+	JsonValue cache_favorites() const;
 
 	void cache_folders();
 	void save_favorites() const;
@@ -91,20 +90,21 @@ public:
 					released_ = true;
 				}
 
-				bool favorited() const { return iterator_to_favorite() != favorites().end(); }
-				nlohmann::json& favorites() const { return cache().folder().tv().favorites_; }
+				bool favorited() const { return iterator_to_favorite() != favorites().as_array().end(); }
+				JsonValue& favorites() const { return cache().folder().tv().favorites_; }
 
-				std::string favorites_path() const
+				srb2::String favorites_path() const
 				{
 					// path::generic_string converts to forward
 					// slashes on Windows. This should suffice to make
 					// the JSON file portable across installations.
-					return (std::filesystem::path{cache().folder().name()} / filename()).generic_string();
+					return (std::filesystem::path{std::string_view(cache().folder().name())} / filename()).generic_string();
 				}
 
-				nlohmann::json::const_iterator iterator_to_favorite() const
+				JsonArray::const_iterator iterator_to_favorite() const
 				{
-					return std::find(favorites().begin(), favorites().end(), favorites_path());
+					srb2::String path = favorites_path();
+					return std::find(favorites().as_array().begin(), favorites().as_array().end(), static_cast<std::string_view>(path));
 				}
 
 			private:
@@ -134,13 +134,13 @@ public:
 		int y = 0;
 
 		bool empty() { return size() == 0; }
-		std::filesystem::path path() const { return tv_->root_ / name_; }
+		std::filesystem::path path() const { return tv_->root_ / std::string_view(name_); }
 
 		EggTVData& tv() const { return *tv_; }
 
 		std::size_t size() const { return size_; }
 		const time_point_t& time() const { return time_; }
-		const std::string& name() const { return name_; }
+		const srb2::String& name() const { return name_; }
 
 		std::unique_ptr<Cache> load() { return std::make_unique<Cache>(*this); };
 
@@ -150,7 +150,7 @@ public:
 		std::size_t size_;
 		time_point_t time_;
 		EggTVData* tv_;
-		std::string name_;
+		srb2::String name_;
 	};
 
 	class Replay
@@ -165,18 +165,18 @@ public:
 			{
 			}
 
-			const std::string& first() const { return first_; }
-			const std::string& second() const { return second_; }
+			const srb2::String& first() const { return first_; }
+			const srb2::String& second() const { return second_; }
 
-			operator const std::string() const;
+			operator const srb2::String() const;
 
 		private:
-			std::string first_, second_;
+			srb2::String first_, second_;
 		};
 
 		struct Standing
 		{
-			std::string name;
+			srb2::String name;
 			std::optional<std::size_t> skin;
 			std::size_t color;
 			std::optional<tic_t> time;
@@ -247,7 +247,7 @@ public:
 		void toggle_favorite() const;
 
 		bool invalid() const { return invalid_; }
-		bool favorited() const { return ref_->iterator_to_favorite() != ref_->favorites().end(); }
+		bool favorited() const { return ref_->iterator_to_favorite() != ref_->favorites().as_array().end(); }
 
 		std::filesystem::path path() const { return ref_->cache().folder().path() / ref_->filename(); }
 		const time_point_t& date() const { return ref_->time(); }

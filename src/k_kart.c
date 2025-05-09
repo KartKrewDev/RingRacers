@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2018 by ZarroTsu.
 //
 // This program is free software distributed under the
@@ -448,7 +448,7 @@ boolean K_IsPlayerScamming(player_t *player)
 
 	// "Why 8?" Consistency
 	// "Why 2000?" Vibes
-	return (K_GetItemRouletteDistance(player, 8) < 2000);
+	return (K_GetItemRouletteDistance(player, 8) < SCAMDIST);
 }
 
 fixed_t K_GetKartGameSpeedScalar(SINT8 value)
@@ -2998,6 +2998,21 @@ fixed_t K_PlayerTripwireSpeedThreshold(const player_t *player)
 {
 	fixed_t required_speed = 2 * K_GetKartSpeed(player, false, false); // 200%
 
+	if (specialstageinfo.valid)
+		required_speed = 3 * K_GetKartSpeed(player, false, false) / 2; // 150%
+
+	UINT32 distance = K_GetItemRouletteDistance(player, 8);
+
+	if (gametype == GT_RACE && M_NotFreePlay() && !modeattacking)
+	{
+		if (distance < SCAMDIST) // Players near 1st need more speed!
+		{
+			fixed_t percentscam = FixedDiv(FRACUNIT*(SCAMDIST - distance), FRACUNIT*SCAMDIST);
+			required_speed += FixedMul(required_speed, percentscam);
+		}
+	}
+
+
 	if (player->offroad && K_ApplyOffroad(player))
 	{
 		// Increase to 300% if you're lawnmowering.
@@ -3022,8 +3037,7 @@ tripwirepass_t K_TripwirePassConditions(const player_t *player)
 {
 	if (
 			player->invincibilitytimer ||
-			player->sneakertimer ||
-			player->panelsneakertimer
+			player->sneakertimer
 		)
 		return TRIPWIRE_BLASTER;
 
@@ -3437,10 +3451,6 @@ static fixed_t K_RingDurationBoost(const player_t *player)
 	return ret;
 }
 
-// v2 almost broke sliptiding when it fixed turning bugs!
-// This value is fine-tuned to feel like v1 again without reverting any of those changes.
-#define SLIPTIDEHANDLING 7*FRACUNIT/8
-
 // sets boostpower, speedboost, accelboost, and handleboost to whatever we need it to be
 static void K_GetKartBoostPower(player_t *player)
 {
@@ -3482,7 +3492,7 @@ static void K_GetKartBoostPower(player_t *player)
 		UINT8 i;
 		for (i = 0; i < player->numsneakers; i++)
 		{
-			ADDBOOST(FRACUNIT*85/100, 8*FRACUNIT, SLIPTIDEHANDLING+SLIPTIDEHANDLING/3); // + 50% top speed, + 800% acceleration, +50% handling
+			ADDBOOST(FRACUNIT*85/100, 8*FRACUNIT, HANDLESCALING+HANDLESCALING/3); // + 50% top speed, + 800% acceleration, +50% handling
 		}
 	}
 
@@ -3491,7 +3501,7 @@ static void K_GetKartBoostPower(player_t *player)
 		UINT8 i;
 		for (i = 0; i < player->numpanelsneakers; i++)
 		{
-			ADDBOOST(FRACUNIT/2, 8*FRACUNIT, SLIPTIDEHANDLING); // + 50% top speed, + 800% acceleration, +50% handling
+			ADDBOOST(FRACUNIT/2, 8*FRACUNIT, HANDLESCALING); // + 50% top speed, + 800% acceleration, +50% handling
 		}
 	}
 
@@ -3499,12 +3509,12 @@ static void K_GetKartBoostPower(player_t *player)
 	{
 		// S-Monitor: no extra %
 		fixed_t extra = FRACUNIT / 1400 * (player->invincibilitytimer - K_PowerUpRemaining(player, POWERUP_SMONITOR));
-		ADDBOOST(3*FRACUNIT/8 + extra, 3*FRACUNIT, SLIPTIDEHANDLING/2); // + 37.5 + ?% top speed, + 300% acceleration, +25% handling
+		ADDBOOST(3*FRACUNIT/8 + extra, 3*FRACUNIT, HANDLESCALING/2); // + 37.5 + ?% top speed, + 300% acceleration, +25% handling
 	}
 
 	if (player->growshrinktimer > 0) // Grow
 	{
-		ADDBOOST(0, 0, SLIPTIDEHANDLING/2); // + 0% top speed, + 0% acceleration, +25% handling
+		ADDBOOST(0, 0, HANDLESCALING/2); // + 0% top speed, + 0% acceleration, +25% handling
 	}
 
 	if (player->flamedash) // Flame Shield dash
@@ -3513,7 +3523,7 @@ static void K_GetKartBoostPower(player_t *player)
 		ADDBOOST(
 			dash, // + infinite top speed
 			3*FRACUNIT, // + 300% acceleration
-			FixedMul(FixedDiv(dash, FRACUNIT/2), SLIPTIDEHANDLING/2) // + infinite handling
+			FixedMul(FixedDiv(dash, FRACUNIT/2), HANDLESCALING/2) // + infinite handling
 		);
 	}
 
@@ -3523,13 +3533,13 @@ static void K_GetKartBoostPower(player_t *player)
 		ADDBOOST(
 			dash, // + infinite top speed
 			3*FRACUNIT, // + 300% acceleration
-			FixedMul(FixedDiv(dash, FRACUNIT/2), SLIPTIDEHANDLING/2) // + infinite handling
+			FixedMul(FixedDiv(dash, FRACUNIT/2), HANDLESCALING/2) // + infinite handling
 		);
 	}
 
 	if (player->wavedashboost)
 	{
-		// NB: This is intentionally under the 25% handleboost threshold required to initiate a sliptide
+		// NB: This is intentionally under the handleboost threshold required to initiate a sliptide
 		ADDBOOST(
 			Easing_InCubic(
 				player->wavedashpower,
@@ -3541,7 +3551,7 @@ static void K_GetKartBoostPower(player_t *player)
 				0,
 				4*FRACUNIT
 			),
-			2*SLIPTIDEHANDLING/5
+			2*HANDLESCALING/5
 		);  // + 80% top speed (peak), +400% acceleration (peak), +20% handling
 	}
 
@@ -3558,7 +3568,7 @@ static void K_GetKartBoostPower(player_t *player)
 				0,
 				3*FRACUNIT
 			),
-			1*SLIPTIDEHANDLING/5
+			1*HANDLESCALING/5
 		);  // + 80% top speed (peak), +400% acceleration (peak), +20% handling
 	}
 
@@ -3577,12 +3587,12 @@ static void K_GetKartBoostPower(player_t *player)
 
 	if (player->startboost) // Startup Boost
 	{
-		ADDBOOST(FRACUNIT, 4*FRACUNIT, SLIPTIDEHANDLING); // + 100% top speed, + 400% acceleration, +50% handling
+		ADDBOOST(FRACUNIT, 4*FRACUNIT, HANDLESCALING); // + 100% top speed, + 400% acceleration, +50% handling
 	}
 
 	if (player->dropdashboost) // Drop dash
 	{
-		ADDBOOST(FRACUNIT/3, 4*FRACUNIT, SLIPTIDEHANDLING); // + 33% top speed, + 400% acceleration, +50% handling
+		ADDBOOST(FRACUNIT/3, 4*FRACUNIT, HANDLESCALING); // + 33% top speed, + 400% acceleration, +50% handling
 	}
 
 	if (player->driftboost) // Drift Boost
@@ -3620,7 +3630,7 @@ static void K_GetKartBoostPower(player_t *player)
 
 	if (player->gateBoost) // SPB Juicebox boost
 	{
-		ADDBOOST(3*FRACUNIT/4, 4*FRACUNIT, SLIPTIDEHANDLING/2); // + 75% top speed, + 400% acceleration, +25% handling
+		ADDBOOST(3*FRACUNIT/4, 4*FRACUNIT, HANDLESCALING/2); // + 75% top speed, + 400% acceleration, +25% handling
 	}
 
 	if (player->ringboost) // Ring Boost
@@ -3634,7 +3644,7 @@ static void K_GetKartBoostPower(player_t *player)
 		ADDBOOST(
 			ringboost_base + FixedMul(FRACUNIT / 1750, rb),
 			4*FRACUNIT,
-			Easing_InCubic(min(FRACUNIT, rb / (TICRATE*12)), 0, 2*SLIPTIDEHANDLING/5)
+			Easing_InCubic(min(FRACUNIT, rb / (TICRATE*12)), 0, 2*HANDLESCALING/5)
 		); // + 20% + ???% top speed, + 400% acceleration, +???% handling
 	}
 
@@ -3648,11 +3658,60 @@ static void K_GetKartBoostPower(player_t *player)
 		ADDBOOST(player->vortexBoost/6, FRACUNIT/10, 0); // + ???% top speed, + 10% acceleration, +0% handling
 	}
 
+	if (player->drift != 0) // Neutral drifts are marginally faster
+	{
+		// Trying to emulate the old leniency timer being stat-based.
+		// I dunno if this is overkill because turning is already stat-based.
+		// Should this be a pure constant instead?
+		const INT16 max_steer_threshold = (KART_FULLTURN * 5) / 6;
+
+		// Even when not inputting a turn, drift prediction is hard.
+		// Turn solver will sometimes need to slightly turn to stay "aligned".
+		// Award full boost even if turn solver creates a fractional miniturn.
+		const INT16 inner_deadzone = KART_FULLTURN / 100; 
+
+		INT32 steer_threshold = FixedMul((FRACUNIT * player->kartweight) / 9, max_steer_threshold);
+
+		INT32 steering = abs(player->steering);
+		steering = max(steering - inner_deadzone, 0);
+
+		fixed_t frac = 0;
+		if (steering < steer_threshold)
+		{
+			frac = FixedDiv(steer_threshold - steering, steer_threshold);
+		}
+
+		// Weaken the effect with drifts that were just started.
+		frac = (frac * abs(player->drift)) / 5;
+
+		if (frac > 0)
+		{
+			if (frac > FRACUNIT)
+			{
+				// Clamp between reasonable bounds.
+				frac = FRACUNIT;
+			}
+
+			// Get multiplier from easing function, to
+			// heavily reward being near exactly 0.
+			fixed_t multiplier = Easing_InExpo(frac, 0, FRACUNIT);
+			if (multiplier > 0)
+			{
+				ADDBOOST(
+					FixedMul(multiplier, 4*FRACUNIT/10), // + 40% top speed
+					FixedMul(multiplier, FRACUNIT/3), // + 33% acceleration
+					0 // 0 handling
+				);
+				numboosts--; // No afterimage!
+			}
+		}
+	}
+
 	if (player->trickcharge)
 	{
 		// NB: This is an acceleration-only boost.
 		// If this is applied earlier in the chain, it will diminish real speed boosts.
-		ADDBOOST(0, FRACUNIT, 2*SLIPTIDEHANDLING/10); // 0% speed 100% accel 20% handle
+		ADDBOOST(0, FRACUNIT, 2*HANDLESCALING/10); // 0% speed 100% accel 20% handle
 	}
 
 	// This should always remain the last boost stack before tethering
@@ -4063,7 +4122,16 @@ void K_SpawnAmps(player_t *player, UINT8 amps, mobj_t *impact)
 	if (amps == 0)
 		return;
 
+	UINT32 itemdistance = max(0, min( FRACUNIT, K_GetItemRouletteDistance(player, D_NumPlayersInRace()))); // cap this to FRACUNIT, so it doesn't wrap when turning it into fixed_t
+	fixed_t itemdistmult = FRACUNIT + max( 0, min(FixedMul(FixedDiv(itemdistance<<FRACBITS, MAXAMPSCALINGDIST<<FRACBITS),FRACUNIT), FRACUNIT));
 	UINT16 scaledamps = min(amps, amps * (10 + (9-player->kartspeed) - (9-player->kartweight)) / 10);
+	// Debug print for scaledamps calculation
+	// CONS_Printf("K_SpawnAmps: player=%s, amps=%d, kartspeed=%d, kartweight=%d, itemdistance=%d, itemdistmult=%0.2f, statscaledamps=%d, distscaledamps=%d\n",
+	// 	player_names[player-players], amps, player->kartspeed, player->kartweight, 
+	// 	itemdistance, FixedToFloat(itemdistmult), 
+	// 	min(amps, amps * (10 + (9-player->kartspeed) - (9-player->kartweight)) / 10),
+	// 	FixedMul(scaledamps<<FRACBITS, itemdistmult)>>FRACBITS);
+	scaledamps = FixedMul(scaledamps<<FRACBITS, itemdistmult)>>FRACBITS;
 
 	/*
 	if (player->position <= 1)
@@ -4154,6 +4222,9 @@ void K_AwardPlayerRings(player_t *player, UINT16 rings, boolean overload)
 
 void K_CheckpointCrossAward(player_t *player)
 {
+	if (gametype != GT_RACE)
+		return;
+
 	player->exp += K_GetExpAdjustment(player);
 	K_AwardPlayerRings(player, (player->bot ? 20 : 10), true);
 }
@@ -5337,8 +5408,8 @@ void K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount)
 
 void K_GivePointsToPlayer(player_t *player, player_t *victim, UINT8 amount)
 {
+	K_SpawnBattlePoints(player, victim, amount); // first just in case player score ends the game
 	P_AddPlayerScore(player, amount);
-	K_SpawnBattlePoints(player, victim, amount);
 }
 
 #define MINEQUAKEDIST 4096
@@ -6638,6 +6709,10 @@ mobj_t *K_ThrowKartItemEx(player_t *player, boolean missile, mobjtype_t mapthing
 			mo->reactiontime = TICRATE/2;
 			P_SetMobjState(mo, mo->info->painstate);
 		}
+		else if (mapthing == MT_LANDMINE && mo)
+		{
+			mo->reactiontime = TICRATE/2;
+		}
 	}
 	else
 	{
@@ -6991,14 +7066,21 @@ void K_DoSneaker(player_t *player, INT32 type)
 {
 
 	fixed_t intendedboost = FRACUNIT/2;
+
+	// If you've already got an item sneaker type boost, panel sneakers will instead turn into item sneaker boosts
+	if (player->numsneakers && type == 0)
+	{
+		type = 1;
+	}
+
 	switch (type)
 	{
 		case 0: // Panel sneaker
 			intendedboost = FRACUNIT/2;
 			break;
 		case 1: // Single item sneaker
-		case 2: // ROcket sneaker
-			intendedboost = FRACUNIT;
+		case 2: // Rocket sneaker
+			intendedboost = 85*FRACUNIT/100;
 			break;
 	}
 
@@ -7072,22 +7154,19 @@ void K_DoSneaker(player_t *player, INT32 type)
 		}
 	}
 
-
-								
-
 	switch (type)
 	{
 		case 0:
 			player->panelsneakertimer = sneakertime;
-			player->overshield += 1; // TEMP prototype
+			player->overshield += 1;
 			break;
 		case 1:
 			player->sneakertimer = sneakertime;
-			player->overshield += TICRATE/2; // TEMP prototype
+			player->overshield += TICRATE/2;
 			break;
 		case 2:
 			player->sneakertimer = 3*sneakertime/4;
-			player->overshield += TICRATE/2; // TEMP prototype
+			player->overshield += TICRATE/2;
 			break;
 	}
 
@@ -8309,7 +8388,7 @@ mobj_t *K_FindJawzTarget(mobj_t *actor, player_t *source, angle_t range)
 			continue;
 		}
 
-		if (G_SameTeam(source, player) == false)
+		if (G_SameTeam(source, player) == true)
 		{
 			// Don't home in on teammates.
 			continue;
@@ -8795,6 +8874,13 @@ static void K_UpdateTripwire(player_t *player)
 		{
 			mobj_t *front = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_TRIPWIREBOOST);
 			mobj_t *back = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_TRIPWIREBOOST);
+
+			if (P_IsDisplayPlayer(player))
+			{
+				S_StartSound(player->mo, sfx_s3k40);
+				S_StopSoundByID(player->mo, sfx_gshaf);
+			}
+				
 
 			P_SetTarget(&front->target, player->mo);
 			P_SetTarget(&back->target, player->mo);
@@ -9599,15 +9685,23 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 		if (player->nextringaward >= ringrate)
 		{
-			mobj_t *ring = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_RING);
-			ring->extravalue1 = 1; // Ring collect animation timer
-			ring->angle = player->mo->angle; // animation angle
-			P_SetTarget(&ring->target, player->mo); // toucher for thinker
-			player->pickuprings++;
-			if (player->superring == 1)
-				ring->cvmem = 1; // play caching when collected
-			player->nextringaward = 0;
-			player->superring--;
+			if (player->instaWhipCharge)
+			{
+				// Store award rings to do diabolical horseshit with later.
+				player->nextringaward = ringrate;
+			}
+			else
+			{
+				mobj_t *ring = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_RING);
+				ring->extravalue1 = 1; // Ring collect animation timer
+				ring->angle = player->mo->angle; // animation angle
+				P_SetTarget(&ring->target, player->mo); // toucher for thinker
+				player->pickuprings++;
+				if (player->superring == 1)
+					ring->cvmem = 1; // play caching when collected
+				player->nextringaward = 0;
+				player->superring--;
+			}
 		}
 	}
 	else
@@ -11176,6 +11270,14 @@ INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
 			}
 			else
 			{
+				if (player->driftcharge > 0 && (turnvalue > 0) == (player->drift > 0)) // If drifting and turning inward, then...
+				{
+					// Apply a progressive handling boost, stronger for higher weight,
+					// as you charge driftsparks. Reduces reliance on brakedrifting, especially G2!
+					fixed_t eggfactor = Easing_InCubic(player->kartweight * FRACUNIT / 9, 0, FRACUNIT/4);
+					turnfixed = FixedMul(turnfixed, FRACUNIT + (player->driftcharge * eggfactor / K_GetKartDriftSparkValue(player)));
+				}
+
 				// If we're drifting we have a completely different turning value
 				fixed_t countersteer = FixedDiv(turnfixed, KART_FULLTURN * FRACUNIT);
 				return K_GetKartDriftValue(player, countersteer);
@@ -11195,11 +11297,11 @@ INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
 		if (G_CompatLevel(0x000A))
 		{
 			// Compat level for 2.0 staff ghosts
-			sliptide_handle = 5 * SLIPTIDEHANDLING / 4;
+			sliptide_handle = 5 * HANDLESCALING / 4;
 		}
 		else
 		{
-			sliptide_handle = 3 * SLIPTIDEHANDLING / 4;
+			sliptide_handle = 3 * HANDLESCALING / 4;
 		}
 
 		finalhandleboost = FixedMul(sliptide_handle, FixedDiv(player->speed, topspeed));
@@ -11508,6 +11610,8 @@ static void K_KartDrift(player_t *player, boolean onground)
 		player->pflags &= ~(PF_BRAKEDRIFT|PF_GETSPARKS);
 		// And take away wavedash properties: advanced cornering demands advanced finesse
 		player->wavedash = 0;
+		player->wavedashleft = 0;
+		player->wavedashright = 0;
 		player->wavedashboost = 0;
 		player->trickcharge = 0;
 	}
@@ -11616,7 +11720,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 	boolean extendedSliptide = false;
 
 	// We don't meet sliptide conditions!
-	if ((player->handleboost < (SLIPTIDEHANDLING/2))
+	if ((player->handleboost < SLIPTIDEHANDLING)
 	|| (!player->steering)
 	|| (!player->aizdriftstrat)
 	|| (player->steering > 0) != (player->aizdriftstrat > 0))
@@ -11666,7 +11770,12 @@ static void K_KartDrift(player_t *player, boolean onground)
 			// This makes wavedash charge noticeably slower on even modest delay, despite the magnitude of the turn seeming the same.
 			// So we only require 90% of a turn to get full charge strength.
 
-			player->wavedash += addCharge;
+			if (player->steering > 0)
+				player->wavedashleft += addCharge;
+			else
+				player->wavedashright += addCharge;
+
+			player->wavedash = max(player->wavedashleft, player->wavedashright) + min(player->wavedashleft, player->wavedashright)/4;
 
 			if (player->wavedash >= MIN_WAVEDASH_CHARGE && (player->wavedash - addCharge) < MIN_WAVEDASH_CHARGE)
 				S_StartSound(player->mo, sfx_waved5);
@@ -11747,6 +11856,8 @@ static void K_KartDrift(player_t *player, boolean onground)
 				S_StopSoundByID(player->mo, sfx_waved2);
 				S_StopSoundByID(player->mo, sfx_waved4);
 				player->wavedash = 0;
+				player->wavedashleft = 0;
+				player->wavedashright = 0;
 				player->wavedashdelay = 0;
 			}
 		}
@@ -13336,11 +13447,23 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					P_SetOrigin(ring, ring->x, ring->y, ring->z);
 					ring->extravalue1 = 1;
 
-					player->rings--;
+					UINT8 dumprate = 3;
+
+					// Allow players to spend out of pending payout to "dump" rings faster.
+					if (player->superring)
+					{
+						player->superring--;
+						dumprate = 2;
+					}
+					else
+					{
+						player->rings--;
+					}
+
 					if (player->autoring && !(cmd->buttons & BT_ATTACK))
 						player->ringdelay = tiereddelay;
 					else
-						player->ringdelay = 3;
+						player->ringdelay = dumprate;
 
 					if (player->rings == 0)
 						K_Overdrive(player);
@@ -13633,7 +13756,13 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
 							{
 								player->itemamount--;
-								K_ThrowLandMine(player);
+								if (player->throwdir > 0)
+								{
+									mobj_t *landmine = K_ThrowKartItem(player, true, MT_LANDMINE, -1, 0, 0);
+								}
+								else {
+									K_ThrowLandMine(player);
+								}
 								K_PlayAttackTaunt(player->mo);
 								player->botvars.itemconfirm = 0;
 							}
@@ -15288,8 +15417,26 @@ fixed_t K_GetExpAdjustment(player_t *player)
 	return result;
 }
 
+UINT16 K_GetDisplayEXP(player_t *player)
+{
+	UINT32 numgradingpoints = K_GetNumGradingPoints();
+
+	if (!numgradingpoints)
+		return UINT16_MAX;
+
+	// target is where you should be if you're doing good and at a 1.0 mult
+	fixed_t clampedexp = max(FRACUNIT/2, min(FRACUNIT*7/5, player->exp));  // clamp between 0.5 and 1.4
+	fixed_t targetdisplayexp = (500*player->gradingpointnum/numgradingpoints)<<FRACBITS;
+	UINT16 displayexp = FixedMul(clampedexp, targetdisplayexp)>>FRACBITS;
+
+	return displayexp;
+}
+
 UINT32 K_GetNumGradingPoints(void)
 {
+	if (K_Cooperative())
+		return 0;
+
 	return numlaps * (1 + Obj_GetCheckpointCount());
 }
 

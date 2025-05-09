@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by James Robert Roman
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by James Robert Roman
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -11,9 +11,9 @@
 #include <algorithm>
 #include <cctype>
 #include <iterator>
-#include <string>
 #include <string_view>
 
+#include "core/string.h"
 #include "doomtype.h"
 #include "sanitize.h"
 #include "v_draw.hpp"
@@ -34,7 +34,7 @@ bool color_filter(char c)
 }
 
 template <typename F>
-std::string& filter_out(std::string& out, const std::string_view& range, F filter)
+srb2::String& filter_out(srb2::String& out, const std::string_view& range, F filter)
 {
 	std::remove_copy_if(
 		range.begin(),
@@ -62,9 +62,9 @@ int hexconv(int c)
 namespace srb2::sanitize
 {
 
-std::string sanitize(std::string_view in, SanitizeMode mode)
+srb2::String sanitize(std::string_view in, SanitizeMode mode)
 {
-	std::string out;
+	srb2::String out;
 	return filter_out(out, in, [mode]
 		{
 			switch (mode)
@@ -78,9 +78,9 @@ std::string sanitize(std::string_view in, SanitizeMode mode)
 		}());
 }
 
-std::string parse_carets(std::string_view in, ParseMode mode)
+srb2::String parse_carets(std::string_view in, ParseMode mode)
 {
-	std::string out;
+	srb2::String out;
 
 	using std::size_t;
 	for (;;)

@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -103,6 +103,9 @@ void K_SpawnBattlePoints(player_t *source, player_t *victim, UINT8 amount)
 	mobj_t *pt;
 
 	if (!source || !source->mo)
+		return;
+
+	if (source->exiting)
 		return;
 
 	if (amount == 1)

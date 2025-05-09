@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2016 by Kay "Kaito" Sinclaire.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
@@ -346,6 +346,7 @@ typedef enum
 	mopt_profiles = 0,
 	mopt_video,
 	mopt_sound,
+	mopt_voice,
 	mopt_hud,
 	mopt_gameplay,
 	mopt_server,
@@ -467,6 +468,9 @@ extern menu_t OPTIONS_VideoAdvancedDef;
 
 extern menuitem_t OPTIONS_Sound[];
 extern menu_t OPTIONS_SoundDef;
+
+extern menuitem_t OPTIONS_Voice[];
+extern menu_t OPTIONS_VoiceDef;
 
 extern menuitem_t OPTIONS_HUD[];
 extern menu_t OPTIONS_HUDDef;

@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Ronald "Eidolon" Kinard
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Ronald "Eidolon" Kinard
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -21,7 +21,6 @@ namespace srb2::hwr2
 
 class ScreenshotPass
 {
-	rhi::Handle<rhi::RenderPass> render_pass_;
 	std::vector<uint8_t> pixel_data_;
 	std::vector<uint8_t> packed_data_;
 	uint32_t width_ = 0;
@@ -31,7 +30,7 @@ public:
 	ScreenshotPass();
 	~ScreenshotPass();
 
-	void capture(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
+	void capture(rhi::Rhi& rhi);
 
 	void set_source(uint32_t width, uint32_t height)
 	{

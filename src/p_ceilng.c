@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -12,6 +12,7 @@
 /// \file  p_ceilng.c
 /// \brief Ceiling aninmation (lowering, crushing, raising)
 
+#include "d_think.h"
 #include "doomdef.h"
 #include "p_local.h"
 #include "r_fps.h"
@@ -273,7 +274,9 @@ static ceiling_t *CreateCeilingThinker(sector_t *sec)
 		return NULL;
 	}
 
-	ceiling = Z_Calloc(sizeof (*ceiling), PU_LEVSPEC, NULL);
+	ceiling = Z_LevelPoolCalloc(sizeof(*ceiling));
+	ceiling->thinker.alloctype = TAT_LEVELPOOL;
+	ceiling->thinker.size = sizeof(*ceiling);
 	P_AddThinker(THINK_MAIN, &ceiling->thinker);
 
 	sec->ceilingdata = ceiling;
@@ -597,7 +600,9 @@ static ceiling_t *CreateCrushThinker(sector_t *sec)
 		return NULL;
 	}
 
-	ceiling = Z_Calloc(sizeof (*ceiling), PU_LEVSPEC, NULL);
+	ceiling = Z_LevelPoolCalloc(sizeof(*ceiling));
+	ceiling->thinker.alloctype = TAT_LEVELPOOL;
+	ceiling->thinker.size = sizeof(*ceiling);
 	P_AddThinker(THINK_MAIN, &ceiling->thinker);
 
 	sec->ceilingdata = ceiling;

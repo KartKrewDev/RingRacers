@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by James Robert Roman
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by James Robert Roman
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -14,8 +14,8 @@
 #include <algorithm>
 #include <cstdint>
 #include <optional>
-#include <string>
 
+#include "core/string.h"
 #include "doomdef.h"
 #include "doomtype.h"
 #include "k_boss.h"
@@ -29,7 +29,7 @@ class Tune
 public:
 	explicit Tune() {}
 
-	std::string song; // looks up the lump
+	srb2::String song; // looks up the lump
 
 	// Higher priority tunes play first.
 	int priority = 0;

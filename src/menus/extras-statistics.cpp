@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Vivian "toastergrl" Grannell.
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Vivian "toastergrl" Grannell.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
@@ -10,6 +10,8 @@
 //-----------------------------------------------------------------------------
 /// \file  menus/extras-challenges.c
 /// \brief Statistics menu
+
+#include <algorithm>
 
 #include "../k_menu.h"
 #include "../z_zone.h"
@@ -260,7 +262,7 @@ static void M_StatisticsPageInit(void)
 			M_StatisticsChars();
 			break;
 		}
-	
+
 		case statisticspage_gp:
 		{
 			M_StatisticsGP();

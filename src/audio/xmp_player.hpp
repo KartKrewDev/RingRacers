@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Ronald "Eidolon" Kinard
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Ronald "Eidolon" Kinard
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -14,6 +14,8 @@
 #include "source.hpp"
 #include "xmp.hpp"
 
+#include "../core/vector.hpp"
+
 namespace srb2::audio
 {
 
@@ -21,7 +23,7 @@ template <size_t C>
 class XmpPlayer final : public Source<C>
 {
 	Xmp<C> xmp_;
-	std::vector<std::array<int16_t, C>> buf_;
+	srb2::Vector<std::array<int16_t, C>> buf_;
 
 public:
 	XmpPlayer(Xmp<C>&& xmp);

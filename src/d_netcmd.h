@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 //
@@ -61,9 +61,10 @@ extern consvar_t cv_netstat;
 
 extern consvar_t cv_countdowntime;
 extern consvar_t cv_mute;
+extern consvar_t cv_voice_servermute;
 extern consvar_t cv_pause;
 
-extern consvar_t cv_restrictskinchange, cv_allowteamchange, cv_maxplayers;
+extern consvar_t cv_restrictskinchange, cv_allowteamchange, cv_maxplayers, cv_shuffleloser;
 extern consvar_t cv_spectatorreentry, cv_duelspectatorreentry, cv_antigrief;
 
 // SRB2kart items
@@ -153,7 +154,7 @@ typedef enum
 	XD_PAUSE,       // 9
 	XD_ADDPLAYER,   // 10
 	XD_SPECTATE,    // 11
-	XD_CLEARSCORES, // 12
+	XD_SETSCORE,    // 12
 	XD_VERIFIED,    // 13
 	XD_RANDOMSEED,  // 14
 	XD_RUNSOC,      // 15
@@ -180,11 +181,13 @@ typedef enum
 	XD_SCHEDULETASK, // 34
 	XD_SCHEDULECLEAR, // 35
 	XD_AUTOMATE,    // 36
-	XD_REQMAPQUEUE, // 37
-	XD_MAPQUEUE,	// 38
+	// 37 is free
+	XD_MAPQUEUE = XD_AUTOMATE+2, // 38
 	XD_CALLZVOTE,   // 39
 	XD_SETZVOTE,    // 40
 	XD_TEAMCHANGE,  // 41
+	XD_SERVERMUTEPLAYER, // 42
+	XD_SERVERDEAFENPLAYER, // 43
 
 	MAXNETXCMD
 } netxcmd_t;
@@ -207,7 +210,7 @@ void D_GameTypeChanged(INT32 lastgametype); // not a real _OnChange function any
 void D_MapChange(UINT16 pmapnum, INT32 pgametype, boolean pencoremode, boolean presetplayers, INT32 pdelay, boolean pskipprecutscene, boolean pforcespecialstage);
 void D_SetupVote(INT16 newgametype);
 void D_ModifyClientVote(UINT8 player, SINT8 voted);
-void D_PickVote(void);
+void D_PickVote(SINT8 angry_map);
 void ObjectPlace_OnChange(void);
 void P_SetPlayerSpectator(INT32 playernum);
 boolean IsPlayerAdmin(INT32 playernum);

@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 //
@@ -3533,7 +3533,7 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 			else if (fastcmp(word, "EXECCFG"))
 			{
 				if (strchr(word2, '.'))
-					COM_BufAddText(va("exec %s\n", word2));
+					COM_BufAddText(va("exec \"%s\" -immediate\n", word2));
 				else
 				{
 					lumpnum_t lumpnum;
@@ -4681,7 +4681,7 @@ preciptype_t get_precip(const char *word)
 			return i;
 	}
 	deh_warning("Couldn't find weather type named 'PRECIP_%s'",word);
-	return PRECIP_RAIN;
+	return PRECIP_NONE;
 }
 
 /// \todo Make ANY of this completely over-the-top math craziness obey the order of operations.

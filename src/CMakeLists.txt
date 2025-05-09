@@ -6,14 +6,14 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	string.c
 	d_main.cpp
 	d_clisrv.c
-	d_net.c
+	d_net.cpp
 	d_netfil.c
 	d_netcmd.c
 	dehacked.c
 	deh_soc.c
 	deh_lua.c
 	deh_tables.c
-	z_zone.c
+	z_zone.cpp
 	f_finale.c
 	f_wipe.cpp
 	g_build_ticcmd.cpp
@@ -60,7 +60,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	p_maputl.c
 	p_mobj.c
 	p_polyobj.c
-	p_saveg.c
+	p_saveg.cpp
 	p_setup.cpp
 	p_sight.c
 	p_spec.c
@@ -77,7 +77,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	r_debug_parser.cpp
 	r_debug_printer.cpp
 	r_draw.cpp
-	r_fps.c
+	r_fps.cpp
 	r_main.cpp
 	r_plane.cpp
 	r_segs.cpp
@@ -87,7 +87,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	r_spritefx.cpp
 	r_things.cpp
 	r_bbox.c
-	r_textures.c
+	r_textures.cpp
 	r_textures_dups.cpp
 	r_patch.cpp
 	r_patchrotation.c
@@ -137,7 +137,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	k_bot.cpp
 	k_botitem.cpp
 	k_botsearch.cpp
-	k_grandprix.c
+	k_grandprix.cpp
 	k_boss.c
 	k_hud.cpp
 	k_hud_track.cpp
@@ -167,6 +167,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	music.cpp
 	music_manager.cpp
 	sanitize.cpp
+	p_deepcopy.cpp
 )
 
 if(SRB2_CONFIG_ENABLE_WEBM_MOVIES)
@@ -201,11 +202,14 @@ add_custom_target(_SRB2_reconf ALL
 )
 add_dependencies(SRB2SDL2 _SRB2_reconf)
 
-if("${CMAKE_COMPILER_IS_GNUCC}" AND "${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
+if(("${CMAKE_COMPILER_IS_GNUCC}" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang") AND "${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
 	target_link_options(SRB2SDL2 PRIVATE "-Wl,--disable-dynamicbase")
 	if("${SRB2_CONFIG_STATIC_STDLIB}")
 		# On MinGW with internal libraries, link the standard library statically
-		target_link_options(SRB2SDL2 PRIVATE "-static")
+		target_link_options(SRB2SDL2 PRIVATE -Wl,--add-stdcall-alias -static-libgcc -static-libstdc++ -static -lpthread)
+		set(THREADS_PREFER_PTHREAD_FLAG TRUE)
+		find_package(Threads REQUIRED)
+		target_link_libraries(SRB2SDL2 PRIVATE Threads::Threads) 
 	endif()
 	if(CMAKE_SIZEOF_VOID_P EQUAL 4)
 		target_link_options(SRB2SDL2 PRIVATE "-Wl,--large-address-aware")
@@ -239,6 +243,10 @@ if (UNIX)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DUNIXCOMMON)
 endif()
 
+if (BSD MATCHES "FreeBSD")
+	target_compile_definitions(SRB2SDL2 PRIVATE -DFREEBSD)
+endif()
+
 if(CMAKE_COMPILER_IS_GNUCC)
 	find_program(OBJCOPY objcopy)
 endif()
@@ -250,6 +258,11 @@ if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
 	endif()
 endif()
 
+if("${CMAKE_SYSTEM_NAME}" MATCHES "Haiku")
+	target_compile_definitions(SRB2SDL2 PRIVATE -DNOEXECINFO)
+	target_link_libraries(SRB2SDL2 PRIVATE network)
+endif()
+
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
 	target_compile_definitions(SRB2SDL2 PRIVATE -DMACOSX)
 endif()
@@ -257,6 +270,7 @@ endif()
 target_link_libraries(SRB2SDL2 PRIVATE ZLIB::ZLIB)
 target_link_libraries(SRB2SDL2 PRIVATE PNG::PNG)
 target_link_libraries(SRB2SDL2 PRIVATE CURL::libcurl)
+target_link_libraries(SRB2SDL2 PRIVATE Opus::opus)
 if("${CMAKE_SYSTEM_NAME}" MATCHES "FreeBSD")
 	target_link_libraries(SRB2SDL2 PRIVATE -lexecinfo)
 	target_link_libraries(SRB2SDL2 PRIVATE -lpthread)
@@ -408,10 +422,12 @@ endif()
 
 # Compatibility flag with later versions of GCC
 # We should really fix our code to not need this
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-	check_cxx_compiler_flag("-mno-ms-bitfields" HAS_NO_MS_BITFIELDS)
-	if(HAS_NO_MS_BITFIELDS)
-		target_compile_options(SRB2SDL2 PRIVATE -mno-ms-bitfields)
+if (NOT SRB2_CONFIG_FORCE_NO_MS_BITFIELDS)
+  if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+	  check_cxx_compiler_flag("-mno-ms-bitfields" HAS_NO_MS_BITFIELDS)
+	  if(HAS_NO_MS_BITFIELDS)
+		  target_compile_options(SRB2SDL2 PRIVATE -mno-ms-bitfields)
+		endif()
 	endif()
 endif()
 
@@ -581,6 +597,11 @@ endif()
 if(SRB2_CONFIG_PACKETDROP)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DPACKETDROP)
 endif()
+if(SRB2_CONFIG_EXECINFO)
+else()
+	target_compile_definitions(SRB2SDL2 PRIVATE -DNOEXECINFO)
+	message(STATUS "You have disabled stack trace dump support")
+endif()
 if(SRB2_CONFIG_ZDEBUG)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DZDEBUG)
 endif()
@@ -609,32 +630,182 @@ endif()
 add_subdirectory(hud)
 add_subdirectory(modp_b64)
 
-# strip debug symbols into separate file when using gcc.
+# strip debug symbols into separate file when using gcc or clang.
 # to be consistent with Makefile, don't generate for OS X.
-if((CMAKE_COMPILER_IS_GNUCC) AND NOT ("${CMAKE_SYSTEM_NAME}" MATCHES Darwin))
+if((CMAKE_COMPILER_IS_GNUCC OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")  AND NOT ("${CMAKE_SYSTEM_NAME}" MATCHES Darwin))
 	if(${CMAKE_BUILD_TYPE} MATCHES RelWithDebInfo OR SRB2_CONFIG_ALWAYS_MAKE_DEBUGLINK)
 		message(STATUS "Will make separate debug symbols in *.debug")
 		add_custom_command(TARGET SRB2SDL2 POST_BUILD
-			COMMAND ${OBJCOPY} ${OBJCOPY_ONLY_KEEP_DEBUG} $<TARGET_FILE:SRB2SDL2> $<TARGET_FILE:SRB2SDL2>.debug
+			COMMAND ${CMAKE_OBJCOPY} ${OBJCOPY_ONLY_KEEP_DEBUG} $<TARGET_FILE:SRB2SDL2> $<TARGET_FILE:SRB2SDL2>.debug
 			# mold linker: .gnu_debuglink is present by default, so --add-gnu-debuglink would fail
-			COMMAND ${OBJCOPY} --strip-debug --remove-section=.gnu_debuglink $<TARGET_FILE:SRB2SDL2>
-			COMMAND ${OBJCOPY} --add-gnu-debuglink=$<TARGET_FILE:SRB2SDL2>.debug $<TARGET_FILE:SRB2SDL2>
+			COMMAND ${CMAKE_OBJCOPY} --strip-debug --remove-section=.gnu_debuglink $<TARGET_FILE:SRB2SDL2>
+			COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink=$<TARGET_FILE:SRB2SDL2>.debug $<TARGET_FILE:SRB2SDL2>
 		)
 	endif()
 endif()
 
 # copy DLLs to bin/ directory if building internal shared on windows
-if("${CMAKE_SYSTEM_NAME}" STREQUAL Windows AND NOT "${SRB2_CONFIG_INTERNAL_LIBRARIES}" AND "${SRB2_CONFIG_SHARED_INTERNAL_LIBRARIES}")
+if("${CMAKE_SYSTEM_NAME}" STREQUAL Windows AND NOT "${SRB2_CONFIG_INTERNAL_LIBRARIES}")
+	# also copy implicitly linked system libraries
 	set(ADDITIONAL_DLLS "")
-	if("${CMAKE_C_COMPILER_ID}" STREQUAL GNU)
-		# also copy implicitly linked system libraries
-		get_filename_component(MINGW_BIN_PATH ${CMAKE_CXX_COMPILER} PATH)
-		list(APPEND ADDITIONAL_DLLS
-			"libgcc_s_dw2-1.dll"
-			"libstdc++-6.dll"
-			"libwinpthread-1.dll"
+	if("${CMAKE_CXX_COMPILER_ID}" STREQUAL GNU)
+		string(CONCAT gcc_search_dirs_path "${CMAKE_BINARY_DIR}" /gcc_search_dirs.txt)
+		#message(STATUS gcc_search_dirs_path=${gcc_search_dirs_path})
+		execute_process(
+			COMMAND ${CMAKE_CXX_COMPILER} -print-search-dirs
+			OUTPUT_FILE "${gcc_search_dirs_path}"
+			#OUTPUT_VARIABLE gcc_search_dirs
 		)
-		list(TRANSFORM ADDITIONAL_DLLS PREPEND "${MINGW_BIN_PATH}/")
+
+		file(READ "${gcc_search_dirs_path}" gcc_search_dirs)
+		#message(STATUS gcc_search_dirs=${gcc_search_dirs})
+
+		#set(gcc_install_dir "${gcc_search_dirs}")
+		#string(REGEX MATCH "install: =[ \t]*([^\r\n]*)" gcc_install_dir "${gcc_install_dir}" )
+		#set(gcc_install_dir "${CMAKE_MATCH_1}")
+		#message(STATUS gcc_install_dir="${gcc_install_dir}")
+
+
+		string(CONCAT gcc_search_dirs_install_path_1 "${CMAKE_BINARY_DIR}" /gcc_search_dirs_install_1.txt)
+		#message(STATUS gcc_search_dirs_install_path_1=${gcc_search_dirs_install_path_1})
+		execute_process(
+			COMMAND grep "^install:"
+			INPUT_FILE "${gcc_search_dirs_path}"
+			OUTPUT_FILE "${gcc_search_dirs_install_path_1}"
+		)
+
+		string(CONCAT gcc_search_dirs_install_path_2 "${CMAKE_BINARY_DIR}" /gcc_search_dirs_install_2.txt)
+		#message(STATUS gcc_search_dirs_install_path_2=${gcc_search_dirs_install_path_2})
+		execute_process(
+			COMMAND sed -e "s/^install: //" -e "s,=/,/,g"
+			INPUT_FILE "${gcc_search_dirs_install_path_1}"
+			OUTPUT_FILE "${gcc_search_dirs_install_path_2}"
+		)
+
+		if(NOT ("${CMAKE_HOST_SYSTEM_NAME}" STREQUAL "Windows"))
+			string(REPLACE ":" ";" gcc_install_dir "${gcc_install_dir}")
+		endif()
+
+		file(READ ${gcc_search_dirs_install_path_2} gcc_install_dir)
+
+		#set(gcc_programs_dir "${gcc_search_dirs}")
+		#string(REGEX MATCH "programs: =[ \t]*([^\r\n]*)" gcc_programs_dir "${gcc_programs_dir}" )
+		#set(gcc_programs_dir "${CMAKE_MATCH_1}")
+		#message(STATUS gcc_programs_dir="${gcc_programs_dir}")
+
+		string(CONCAT gcc_search_dirs_programs_path_1 "${CMAKE_BINARY_DIR}" /gcc_search_dirs_programs_1.txt)
+		#message(STATUS gcc_search_dirs_programs_path_1=${gcc_search_dirs_programs_path_1})
+		execute_process(
+			COMMAND grep "^programs:"
+			INPUT_FILE "${gcc_search_dirs_path}"
+			OUTPUT_FILE "${gcc_search_dirs_programs_path_1}"
+		)
+
+		string(CONCAT gcc_search_dirs_programs_path_2 "${CMAKE_BINARY_DIR}" /gcc_search_dirs_programs_2.txt)
+		#message(STATUS gcc_search_dirs_programs_path_2=${gcc_search_dirs_programs_path_2})
+		execute_process(
+			COMMAND sed -e "s/^programs: =//" -e "s,=/,/,g"
+			INPUT_FILE "${gcc_search_dirs_programs_path_1}"
+			OUTPUT_FILE "${gcc_search_dirs_programs_path_2}"
+		)
+
+		file(READ ${gcc_search_dirs_programs_path_2} gcc_programs_dir)
+
+		if(NOT ("${CMAKE_HOST_SYSTEM_NAME}" STREQUAL "Windows"))
+			string(REPLACE ":" ";" gcc_programs_dir "${gcc_programs_dir}")
+		endif()
+
+		#set(gcc_libraries_dir "${gcc_search_dirs}")
+		#string(REGEX MATCH "libraries: =[ \t]*([^\r\n]*)" gcc_libraries_dir "${gcc_libraries_dir}" )
+		#set(gcc_libraries_dir "${CMAKE_MATCH_1}")
+		#message(STATUS gcc_libraries_dir="${gcc_libraries_dir}")
+
+		string(CONCAT gcc_search_dirs_libraries_path_1 "${CMAKE_BINARY_DIR}" /gcc_search_dirs_libraries_1.txt)
+		#message(STATUS gcc_search_dirs_libraries_path_1=${gcc_search_dirs_libraries_path_1})
+		execute_process(
+			COMMAND grep "^libraries:"
+			INPUT_FILE "${gcc_search_dirs_path}"
+			OUTPUT_FILE "${gcc_search_dirs_libraries_path_1}"
+		)
+
+		string(CONCAT gcc_search_dirs_libraries_path_2 "${CMAKE_BINARY_DIR}" /gcc_search_dirs_libraries_2.txt)
+		#message(STATUS gcc_search_dirs_libraries_path_2=${gcc_search_dirs_libraries_path_2})
+		execute_process(
+			COMMAND sed -e "s/^libraries: =//" -e "s,=/,/,g"
+			INPUT_FILE "${gcc_search_dirs_libraries_path_1}"
+			OUTPUT_FILE "${gcc_search_dirs_libraries_path_2}"
+		)
+
+		file(READ ${gcc_search_dirs_libraries_path_2} gcc_libraries_dir)
+
+		if(NOT ("${CMAKE_HOST_SYSTEM_NAME}" STREQUAL "Windows"))
+			string(REPLACE ":" ";" gcc_libraries_dir "${gcc_libraries_dir}")
+		endif()
+
+		#list(LENGTH gcc_install_dir gcc_install_dir_len)
+		#list(LENGTH gcc_programs_dir gcc_programs_dir_len)
+		#list(LENGTH gcc_libraries_dir gcc_libraries_dir_len)
+		#message(STATUS gcc_install_dir_len="${gcc_install_dir_len}")
+		#message(STATUS gcc_install_dir="${gcc_install_dir}")
+		#message(STATUS gcc_programs_dir_len="${gcc_programs_dir_len}")
+		#message(STATUS gcc_programs_dir="${gcc_programs_dir}")
+		#message(STATUS gcc_libraries_dir_len="${gcc_libraries_dir_len}")
+		#message(STATUS gcc_libraries_dir="${gcc_libraries_dir}")
+
+		get_filename_component(CMAKE_CXX_COMPILER_DIR ${CMAKE_CXX_COMPILER} DIRECTORY)
+		#message(STATUS CMAKE_CXX_COMPILER_DIR="${CMAKE_CXX_COMPILER_DIR}")
+
+		set(OLD_CMAKE_FIND_LIBRARY_SUFFIXES  ${CMAKE_FIND_LIBRARY_SUFFIXES})
+		set(CMAKE_FIND_LIBRARY_SUFFIXES "" ${CMAKE_FIND_LIBRARY_SUFFIXES})
+		set(OLD_CMAKE_FIND_LIBRARY_PREFIXES  ${CMAKE_FIND_LIBRARY_PREFIXES})
+		set(CMAKE_FIND_LIBRARY_PREFIXES "" ${CMAKE_FIND_LIBRARY_PREFIXES})
+
+		find_library(LIBUNWIND
+			NAMES "libunwind.dll"
+			PATHS ${gcc_programs_dir} ${CMAKE_CXX_COMPILER_DIR}
+		)
+		if (LIBUNWIND)
+			#message(STATUS LIBUNWIND="${LIBUNWIND}")
+			list(APPEND ADDITIONAL_DLLS ${LIBUNWIND})
+		endif()
+		unset(LIBUNWIND)
+		find_library(LIBGCC
+			NAMES "libgcc_s_dw2-1.dll" "libgcc_s_sjlj-1.dll" "libgcc_s_seh-1.dll"
+			PATHS ${gcc_programs_dir} ${CMAKE_CXX_COMPILER_DIR}
+		)
+		if (LIBGCC)
+			#message(STATUS LIBGCC="${LIBGCC}")
+			list(APPEND ADDITIONAL_DLLS ${LIBGCC})
+		endif()
+		unset(LIBGCC)
+		find_library(LIBSTDCPP
+			NAMES "libstdc++-6.dll" "libc++.dll"
+			PATHS ${gcc_programs_dir} ${CMAKE_CXX_COMPILER_DIR}
+		)
+		if (LIBSTDCPP)
+			#message(STATUS LIBSTDCPP="${LIBSTDCPP}")
+			list(APPEND ADDITIONAL_DLLS ${LIBSTDCPP})
+		endif()
+		unset(LIBSTDCPP)
+		find_library(LIBPTHREAD
+			NAMES "winpthread-1.dll" "libwinpthread-1.dll" "pthreadGC2.dll"
+			PATHS ${gcc_libraries_dir} ${CMAKE_CXX_COMPILER_DIR}
+		)
+		if(LIBPTHREAD)
+			#message(STATUS LIBPTHREAD="${LIBPTHREAD}")
+			list(APPEND ADDITIONAL_DLLS ${LIBPTHREAD})
+		endif()
+
+		set(CMAKE_FIND_LIBRARY_SUFFIXES ${OLD_CMAKE_FIND_LIBRARY_SUFFIXES})
+		set(CMAKE_FIND_LIBRARY_PREFIXES ${OLD_CMAKE_FIND_LIBRARY_PREFIXES})
+		unset(LIBPTHREAD)
+		unset(gcc_install_dir)
+		unset(gcc_programs_dir)
+		unset(gcc_libraries_dir)
+		unset(OLD_CMAKE_FIND_LIBRARY_SUFFIXES)
+		unset(OLD_CMAKE_FIND_LIBRARY_PREFIXES)
+
+		#message(STATUS ADDITIONAL_DLLS="${ADDITIONAL_DLLS}")
 	endif()
 	add_custom_command(TARGET SRB2SDL2 POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -645,4 +816,12 @@ if("${CMAKE_SYSTEM_NAME}" STREQUAL Windows AND NOT "${SRB2_CONFIG_INTERNAL_LIBRA
 		COMMAND_EXPAND_LISTS
 		COMMENT "Copying runtime DLLs"
 	)
+endif()
+
+# Setup clang-tidy
+if(SRB2_CONFIG_ENABLE_CLANG_TIDY_C)
+	target_set_default_clang_tidy(SRB2SDL2 C "-*,clang-analyzer-*,-clang-analyzer-cplusplus-*")
+endif()
+if(SRB2_CONFIG_ENABLE_CLANG_TIDY_CXX)
+	target_set_default_clang_tidy(SRB2SDL2 CXX "-*,clang-analyzer-*,modernize-*")
 endif()

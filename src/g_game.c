@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -1284,7 +1284,7 @@ void G_PreLevelTitleCard(void)
 			M_LegacySaveFrame();
 		else
 #endif
-		if (moviemode && rendermode != render_none)
+		if (moviemode && rendermode == render_soft)
 			I_CaptureVideoFrame();
 
 		while (!((nowtime = I_GetTime()) - lasttime))
@@ -2201,6 +2201,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	UINT32 followitem;
 
 	INT32 pflags;
+	INT32 pflags2;
 
 	UINT8 team;
 
@@ -2348,6 +2349,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	xtralife = players[player].xtralife;
 
 	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_KICKSTARTACCEL|PF_SHRINKME|PF_SHRINKACTIVE|PF_AUTOROULETTE|PF_ANALOGSTICK|PF_AUTORING));
+	pflags2 = (players[player].pflags2 & (PF2_SELFMUTE | PF2_SELFDEAFEN | PF2_SERVERMUTE | PF2_SERVERDEAFEN));
 
 	// SRB2kart
 	memcpy(&itemRoulette, &players[player].itemRoulette, sizeof (itemRoulette));
@@ -2539,6 +2541,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->roundscore = roundscore;
 	p->lives = lives;
 	p->pflags = pflags;
+	p->pflags2 = pflags2;
 	p->team = team;
 	p->jointime = jointime;
 	p->splitscreenindex = splitscreenindex;
@@ -4406,13 +4409,28 @@ void G_GetNextMap(void)
 
 	if (setalready == false)
 	{
+		UINT8 numPlayers = 0;
+
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (!playeringame[i] || players[i].spectator)
+			{
+				continue;
+			}
+			numPlayers++;
+		}
+
 		UINT32 tolflag = G_TOLFlag(gametype);
 		register INT16 cm;
 
-		if (!(gametyperules & GTR_NOCUPSELECT))
+		const boolean cupmode = (!(gametyperules & GTR_NOCUPSELECT));
+
+		nextmap = NEXTMAP_TITLE;
+
+		if (cupmode)
 		{
-			cupheader_t *cup = mapheaderinfo[gamemap-1]->cup;
-			UINT8 gettingresult = 0;
+			cupheader_t *cup = mapheaderinfo[prevmap]->cup;
+			boolean gettingresult = false;
 
 			while (cup)
 			{
@@ -4420,7 +4438,7 @@ void G_GetNextMap(void)
 				if (!marathonmode && M_CupLocked(cup))
 				{
 					cup = cup->next;
-					gettingresult = 1;
+					gettingresult = true;
 					continue;
 				}
 
@@ -4434,6 +4452,35 @@ void G_GetNextMap(void)
 						|| mapheaderinfo[cm]->lumpnum == LUMPERROR
 						|| !(mapheaderinfo[cm]->typeoflevel & tolflag))
 					{
+						continue;
+					}
+
+					// If the map is in multiple cups, only consider the first one valid.
+					if (mapheaderinfo[cm]->cup != cup)
+					{
+						continue;
+					}
+
+					if (!gettingresult)
+					{
+						// Not the map you're on?
+						if (cm == prevmap)
+						{
+							// Ok, this is the current map, time to get the next valid
+							gettingresult = true;
+						}
+						continue;
+					}
+
+					if ((mapheaderinfo[cm]->menuflags & LF2_HIDEINMENU) == LF2_HIDEINMENU)
+					{
+						// Not intended to be accessed in multiplayer.
+						continue;
+					}
+
+					if (numPlayers > mapheaderinfo[cm]->playerLimit)
+					{
+						// Too many players for this map.
 						continue;
 					}
 
@@ -4462,32 +4509,13 @@ void G_GetNextMap(void)
 						continue;
 					}
 
-					// If the map is in multiple cups, only consider the first one valid.
-					if (mapheaderinfo[cm]->cup != cup)
-					{
-						continue;
-					}
-
 					// Grab the first valid after the map you're on
-					if (gettingresult)
-					{
-						nextmap = cm;
-						gettingresult = 2;
-						break;
-					}
-
-					// Not the map you're on?
-					if (cm != prevmap)
-					{
-						continue;
-					}
-
-					// Ok, this is the current map, time to get the next
-					gettingresult = 1;
+					nextmap = cm;
+					break;
 				}
 
 				// We have a good nextmap?
-				if (gettingresult == 2)
+				if (nextmap < NEXTMAP_SPECIAL)
 				{
 					break;
 				}
@@ -4495,27 +4523,48 @@ void G_GetNextMap(void)
 				// Ok, iterate to the next
 				cup = cup->next;
 			}
-
-			// Didn't get a nextmap before reaching the end?
-			if (gettingresult != 2)
-			{
-				nextmap = NEXTMAP_CEREMONY; // ceremonymap
-			}
 		}
-		else
+
+		// Haven't grabbed a nextmap yet?
+		if (nextmap >= NEXTMAP_SPECIAL)
 		{
-			cm = prevmap;
-
-			do
+			if (cupmode && mapheaderinfo[prevmap]->cup)
 			{
-				if (++cm >= nummapheaders)
-					cm = 0;
+				// Special case - looking for Lost & Found #1.
+				// Could be anywhere in mapheaderinfo.
+				cm = 0;
+			}
+			else
+			{
+				// All subsequent courses in load order.
+				cm = prevmap+1;
+			}
 
+			for (; cm < nummapheaders; cm++)
+			{
 				if (!mapheaderinfo[cm]
 					|| mapheaderinfo[cm]->lumpnum == LUMPERROR
 					|| !(mapheaderinfo[cm]->typeoflevel & tolflag)
 					|| (mapheaderinfo[cm]->menuflags & LF2_HIDEINMENU))
 				{
+					continue;
+				}
+
+				if (cupmode && mapheaderinfo[cm]->cup)
+				{
+					// Only Lost & Found this loop around.
+					continue;
+				}
+
+				if ((mapheaderinfo[cm]->menuflags & LF2_HIDEINMENU) == LF2_HIDEINMENU)
+				{
+					// Not intended to be accessed in multiplayer.
+					continue;
+				}
+
+				if (numPlayers > mapheaderinfo[cm]->playerLimit)
+				{
+					// Too many players for this map.
 					continue;
 				}
 
@@ -4547,10 +4596,9 @@ void G_GetNextMap(void)
 					continue;
 				}
 
+				nextmap = cm;
 				break;
-			} while (cm != prevmap);
-
-			nextmap = cm;
+			}
 		}
 
 		if (K_CanChangeRules(true))
@@ -4563,24 +4611,14 @@ void G_GetNextMap(void)
 					nextmap = prevmap;
 					break;
 				case 3: // Voting screen.
+					if (numPlayers != 0)
 					{
-						for (i = 0; i < MAXPLAYERS; i++)
-						{
-							if (!playeringame[i])
-								continue;
-							if (players[i].spectator)
-								continue;
-							break;
-						}
-						if (i != MAXPLAYERS)
-						{
-							nextmap = NEXTMAP_VOTING;
-							break;
-						}
+						nextmap = NEXTMAP_VOTING;
+						break;
 					}
 					/* FALLTHRU */
 				case 2: // Go to random map.
-					nextmap = G_RandMap(G_TOLFlag(gametype), prevmap, false, false, NULL);
+					nextmap = G_RandMapPerPlayerCount(G_TOLFlag(gametype), prevmap, false, false, NULL, numPlayers);
 					break;
 				default:
 					if (nextmap >= NEXTMAP_SPECIAL) // Loop back around
@@ -5881,7 +5919,7 @@ boolean G_SameTeam(const player_t *a, const player_t *b)
 	}
 
 	// Free for all.
-	return false; 
+	return false;
 }
 
 UINT8 G_CountTeam(UINT8 team)

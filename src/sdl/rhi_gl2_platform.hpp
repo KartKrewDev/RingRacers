@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Ronald "Eidolon" Kinard
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Ronald "Eidolon" Kinard
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -11,6 +11,10 @@
 #ifndef __SRB2_SDL_RHI_GL2_PLATFORM_HPP__
 #define __SRB2_SDL_RHI_GL2_PLATFORM_HPP__
 
+#include <tuple>
+
+#include "../core/string.h"
+#include "../core/vector.hpp"
 #include "../rhi/gl2/gl2_rhi.hpp"
 #include "../rhi/rhi.hpp"
 
@@ -26,8 +30,8 @@ struct SdlGl2Platform final : public Gl2Platform
 	virtual ~SdlGl2Platform();
 
 	virtual void present() override;
-	virtual std::tuple<std::vector<std::string>, std::vector<std::string>>
-	find_shader_sources(PipelineProgram program) override;
+	virtual std::tuple<Vector<srb2::String>, Vector<srb2::String>>
+	find_shader_sources(const char* name) override;
 	virtual Rect get_default_framebuffer_dimensions() override;
 };
 

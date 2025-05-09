@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Ronald "Eidolon" Kinard
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Ronald "Eidolon" Kinard
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -21,7 +21,7 @@ using namespace srb2::rhi;
 ScreenshotPass::ScreenshotPass() = default;
 ScreenshotPass::~ScreenshotPass() = default;
 
-void ScreenshotPass::capture(Rhi& rhi, Handle<GraphicsContext> ctx)
+void ScreenshotPass::capture(Rhi& rhi)
 {
 	bool doing_screenshot = takescreenshot || moviemode != MM_OFF || g_takemapthumbnail != TMT_NO;
 
@@ -39,7 +39,7 @@ void ScreenshotPass::capture(Rhi& rhi, Handle<GraphicsContext> ctx)
 	packed_data_.resize(stride * height_);
 
 	tcb::span<std::byte> data_bytes = tcb::as_writable_bytes(tcb::span(pixel_data_));
-	rhi.read_pixels(ctx, {0, 0, width_, height_}, PixelFormat::kRGB8, data_bytes);
+	rhi.read_pixels({0, 0, width_, height_}, PixelFormat::kRGB8, data_bytes);
 
 	for (uint32_t row = 0; row < height_; row++)
 	{

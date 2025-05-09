@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -11,11 +11,12 @@
 
 #include <algorithm>
 #include <array>
-#include <vector>
 #include <deque>
 
-#include "v_draw.hpp"
+#include <fmt/format.h>
 
+#include "core/string.h"
+#include "core/vector.hpp"
 #include "k_hud.h"
 #include "k_kart.h"
 #include "k_battle.h"
@@ -54,6 +55,7 @@
 #include "k_dialogue.h"
 #include "f_finale.h"
 #include "m_easing.h"
+#include "v_draw.hpp"
 
 //{ 	Patch Definitions
 static patch_t *kp_nodraw;
@@ -214,6 +216,17 @@ static patch_t *kp_bossbar[8];
 static patch_t *kp_bossret[4];
 
 static patch_t *kp_trickcool[2];
+
+static patch_t *kp_voice_localactive[16];
+static patch_t *kp_voice_localactiveoverlay[16];
+static patch_t *kp_voice_localopen;
+static patch_t *kp_voice_localmuted;
+static patch_t *kp_voice_localdeafened;
+static patch_t *kp_voice_remoteactive;
+static patch_t *kp_voice_remoteopen;
+static patch_t *kp_voice_remotemuted;
+static patch_t *kp_voice_remotedeafened;
+static patch_t *kp_voice_tagactive[3];
 
 patch_t *kp_autoroulette;
 patch_t *kp_autoring;
@@ -465,7 +478,7 @@ void K_LoadKartHUDGraphics(void)
 				buffer[6] = '0'+((j) / 10);
 				buffer[7] = '0'+((j) % 10);
 				HU_UpdatePatch(&kp_amps[i][j], "%s", buffer);
-			}	
+			}
 		}
 
 		// Level 7
@@ -1010,6 +1023,23 @@ void K_LoadKartHUDGraphics(void)
 	K_LoadGenericButtonGraphics(gen_button_rs, "R3");
 	K_LoadGenericButtonGraphics(gen_button_start, "S");
 	K_LoadGenericButtonGraphics(gen_button_back, "I");
+
+	HU_UpdatePatch(&kp_voice_localopen, "VOXCLO");
+	for (i = 0; i < 16; i++)
+	{
+		HU_UpdatePatch(&kp_voice_localactive[i], "VOXCLA%d", i);
+		HU_UpdatePatch(&kp_voice_localactiveoverlay[i], "VOXCLB%d", i);
+	}
+	HU_UpdatePatch(&kp_voice_localmuted, "VOXCLM");
+	HU_UpdatePatch(&kp_voice_localdeafened, "VOXCLD");
+	HU_UpdatePatch(&kp_voice_remoteopen, "VOXCRO");
+	HU_UpdatePatch(&kp_voice_remoteactive, "VOXCRA");
+	HU_UpdatePatch(&kp_voice_remotemuted, "VOXCRM");
+	HU_UpdatePatch(&kp_voice_remotedeafened, "VOXCRD");
+	for (i = 0; i < 3; i++)
+	{
+		HU_UpdatePatch(&kp_voice_tagactive[i], "VOXCTA%d", i);
+	}
 }
 
 // For the item toggle menu
@@ -2711,6 +2741,30 @@ void PositionFacesInfo::draw_1p()
 			);
 		}
 
+		// Voice speaking indicator
+		if (netgame && !players[rankplayer[i]].bot && cv_voice_servermute.value == 0)
+		{
+			patch_t *voxmic;
+			if (S_IsPlayerVoiceActive(rankplayer[i]))
+			{
+				voxmic = kp_voice_remoteactive;
+			}
+			else if (players[rankplayer[i]].pflags2 & (PF2_SELFDEAFEN | PF2_SERVERDEAFEN))
+			{
+				voxmic = kp_voice_remotedeafened;
+			}
+			else if (players[rankplayer[i]].pflags2 & (PF2_SELFMUTE | PF2_SERVERMUTE))
+			{
+				voxmic = kp_voice_remotemuted;
+			}
+			else
+			{
+				voxmic = kp_voice_remoteopen;
+			}
+
+			V_DrawScaledPatch(FACE_X + 10, Y - 4, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, voxmic);
+		}
+
 		Y -= 18;
 	}
 }
@@ -3011,13 +3065,13 @@ static void K_drawKartEmeralds(void)
 INT32 K_GetTransFlagFromFixed(fixed_t value)
 {
     value = std::clamp(value, FRACUNIT/2, FRACUNIT*3/2);
-    
+
     // Calculate distance from 1.0
     fixed_t distance = abs(FRACUNIT - value);
-    
+
     // Map the distance to 0-10 range (10 = closest to 1.0, 0 = farthest from 1.0)
     INT32 transLevel = 10 - ((distance * 10) / (FRACUNIT/2));
-    
+
     // Map 0-10 to V_TRANS flags
     switch (transLevel) {
         case 10: return V_70TRANS; // Most transparent (closest to 1.0)
@@ -3044,7 +3098,7 @@ static void K_drawKartTeamScores(void)
 
 	for (INT32 i = TEAM_UNASSIGNED+1; i < TEAM__MAX; i++)
 	{
-		INT32 x = BASEVIDWIDTH/2; 
+		INT32 x = BASEVIDWIDTH/2;
 
 		x += -12 + (24 * (i - 1));
 
@@ -3063,17 +3117,19 @@ static void K_drawKartTeamScores(void)
 	}
 }
 
-static void K_drawKartLaps(void)
+static boolean K_drawKartLaps(void)
 {
 	INT32 splitflags = V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN;
 	INT32 bump = 0;
 	boolean drewsticker = false;
 
+	UINT16 displayEXP = K_GetDisplayEXP(stplyr);
+
 	// Jesus Christ.
 	// I do not understand the way this system of offsets is laid out at all,
 	// so it's probably going to be pretty bad to maintain. Sorry.
 
-	if (numlaps != 1)
+	if (numlaps != 1 && displayEXP != UINT16_MAX)
 	{
 		if (r_splitscreen > 1)
 			bump = 27;
@@ -3143,10 +3199,12 @@ static void K_drawKartLaps(void)
 		}
 	}
 
-	UINT16 displayEXP = std::clamp(FixedMul(std::max(stplyr->exp, FRACUNIT/2), (500/K_GetNumGradingPoints())*stplyr->gradingpointnum), 0, 999);
-
 	// EXP
-	if (r_splitscreen > 1)
+	if (displayEXP == UINT16_MAX)
+	{
+		;
+	}
+	else if (r_splitscreen > 1)
 	{
 		INT32 fx = 0, fy = 0, fr = 0;
 		INT32 flipflag = 0;
@@ -3210,6 +3268,8 @@ static void K_drawKartLaps(void)
 		Draw row = Draw(LAPS_X+23+bump, LAPS_Y+3).flags(V_HUDTRANS|V_SLIDEIN|splitflags).font(Draw::Font::kThinTimer);
 		row.text("{:03}", displayEXP);
 	}
+
+	return drewsticker;
 }
 
 #define RINGANIM_FLIPFRAME (RINGANIM_NUMFRAMES/2)
@@ -3379,7 +3439,7 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 			.align(Draw::Align::kCenter)
 			.width(uselives ? (stplyr->lives >= 10 ? 70 : 64) : 33)
 			.small_sticker();
-	
+
 		if (stplyr->overdrive)
 		{
 			V_DrawMappedPatch(LAPS_X+7-8, fy-5-8, V_HUDTRANS|V_SLIDEIN|splitflags, kp_overdrive[leveltime%32], R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(stplyr->skincolor), GTC_CACHE));
@@ -3425,7 +3485,7 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 			V_DrawScaledPatch(LAPS_X-5, fy-17, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringspblock[stplyr->karthud[khud_ringspblock]]);
 
 		UINT32 greyout = V_HUDTRANS;
-		
+
 		if (stplyr->superringdisplay)
 		{
 			greyout = V_HUDTRANSHALF;
@@ -4106,14 +4166,22 @@ static void K_DrawTypingDot(fixed_t x, fixed_t y, UINT8 duration, player_t *p, I
 
 static void K_DrawTypingNotifier(fixed_t x, fixed_t y, player_t *p, INT32 flags)
 {
-	if (p->cmd.flags & TICCMD_TYPING)
+	int playernum = p - players;
+	if (p->cmd.flags & TICCMD_TYPING || S_IsPlayerVoiceActive(playernum))
 	{
 		V_DrawFixedPatch(x, y, FRACUNIT, V_SPLITSCREEN|flags, kp_talk, NULL);
-
+	}
+	if (p->cmd.flags & TICCMD_TYPING)
+	{
 		/* spacing closer with the last two looks a better most of the time */
 		K_DrawTypingDot(x + 3*FRACUNIT,              y, 15, p, flags);
 		K_DrawTypingDot(x + 6*FRACUNIT - FRACUNIT/3, y, 31, p, flags);
 		K_DrawTypingDot(x + 9*FRACUNIT - FRACUNIT/3, y, 47, p, flags);
+	}
+	else if (S_IsPlayerVoiceActive(playernum))
+	{
+		patch_t* voxmic = kp_voice_tagactive[(leveltime / 3) % 3];
+		V_DrawFixedPatch(x + 6*FRACUNIT, y - 12*FRACUNIT, FRACUNIT, V_SPLITSCREEN|flags, voxmic, NULL);
 	}
 }
 
@@ -4132,7 +4200,7 @@ static void K_DrawNameTagItemSpy(INT32 x, INT32 y, player_t *p, INT32 flags)
 		flip = P_MobjFlip(p->mo);
 		flipboxoffset = 8;
 	}
-	
+
 	Draw bar = Draw(x, y).flags(V_NOSCALESTART|flags);
 	Draw box = tiny ? bar.xy(-22 * vid.dupx, (-17+flipboxoffset) * vid.dupy) : bar.xy(-40 * vid.dupx, (-26+flipboxoffset) * vid.dupy);
 
@@ -4397,8 +4465,8 @@ playertagtype_t K_WhichPlayerTag(player_t *p)
 
 void K_DrawPlayerTag(fixed_t x, fixed_t y, player_t *p, playertagtype_t type, boolean foreground)
 {
-	INT32 flags = P_IsObjectFlipped(p->mo) ? V_VFLIP : 0; 
-	
+	INT32 flags = P_IsObjectFlipped(p->mo) ? V_VFLIP : 0;
+
 	switch (type)
 	{
 		case PLAYERTAG_LOCAL:
@@ -4634,13 +4702,13 @@ static void K_drawKartProgressionMinimapIcon(UINT32 distancetofinish, INT32 hudx
 position_t K_GetKartObjectPosToMinimapPos(fixed_t objx, fixed_t objy)
 {
 	fixed_t amnumxpos, amnumypos;
-	
+
 	amnumxpos = (FixedMul(objx, minimapinfo.zoom) - minimapinfo.offs_x);
 	amnumypos = -(FixedMul(objy, minimapinfo.zoom) - minimapinfo.offs_y);
 
 	if (encoremode)
 		amnumxpos = -amnumxpos;
-	
+
 	return (position_t){amnumxpos, amnumypos};
 }
 
@@ -4652,10 +4720,10 @@ static void K_drawKartMinimapIcon(fixed_t objx, fixed_t objy, INT32 hudx, INT32 
 
 	// am xpos & ypos are the icon's starting position. Withouht
 	// it, they wouldn't 'spawn' on the top-right side of the HUD.
-	
+
 	position_t amnumpos;
 	INT32 amxpos, amypos;
-	
+
 	amnumpos = K_GetKartObjectPosToMinimapPos(objx, objy);
 
 	amxpos = amnumpos.x + ((hudx - (SHORT(icon->width))/2)<<FRACBITS);
@@ -4743,21 +4811,21 @@ INT32 K_GetMinimapTransFlags(const boolean usingProgressBar)
 	if (dofade)
 	{
 		minimaptrans = FixedMul(minimaptrans, (st_translucency * FRACUNIT) / 10);
-		
+
 		// If the minimap is fully transparent, just get your 0 back. Bail out with this.
 		if (!minimaptrans)
 			return minimaptrans;
 	}
 
 	minimaptrans = ((10-minimaptrans)<<V_ALPHASHIFT);
-	
+
 	return minimaptrans;
 }
 
 INT32 K_GetMinimapSplitFlags(const boolean usingProgressBar)
 {
 	INT32 splitflags = 0;
-	
+
 	if (usingProgressBar)
 		splitflags = (V_SLIDEIN|V_SNAPTOBOTTOM);
 	else
@@ -4770,12 +4838,12 @@ INT32 K_GetMinimapSplitFlags(const boolean usingProgressBar)
 		{
 			if (r_splitscreen == 1)
 				splitflags = V_SNAPTORIGHT; // 2P right aligned
-			
+
 			// 3P lives in the middle of the bottom right
 			// viewport and shouldn't fade in OR slide
 		}
 	}
-	
+
 	return splitflags;
 }
 
@@ -4823,10 +4891,10 @@ static void K_drawKartMinimap(void)
 		// distancetofinish for an arbitrary object. ~toast 070423
 		doprogressionbar = true;
 	}
-	
+
 	minimaptrans = K_GetMinimapTransFlags(doprogressionbar);
 	if (!minimaptrans) return; // Exit early if it wouldn't draw anyway.
-	
+
 	splitflags = K_GetMinimapSplitFlags(doprogressionbar);
 
 	if (doprogressionbar == false)
@@ -5607,7 +5675,7 @@ static void K_drawKartFirstPerson(void)
 	fixed_t scale;
 	UINT8 *colmap = NULL;
 
-	if (stplyr->spectator || !stplyr->mo || (stplyr->mo->renderflags & RF_DONTDRAW))
+	if (stplyr->spectator || !stplyr->mo || (stplyr->mo->renderflags & RF_DONTDRAW || stplyr->mo->state == &states[S_KART_DEAD]))
 		return;
 
 	{
@@ -6265,21 +6333,21 @@ typedef enum
 
 typedef struct
 {
-	std::string text;
+	srb2::String text;
 	sfxenum_t sound;
 } message_t;
 
 struct messagestate_t
 {
-	std::deque<std::string> messages;
-	std::string objective = "";
+	std::deque<srb2::String> messages;
+	srb2::String objective = "";
 	tic_t timer = 0;
 	boolean persist = false;
 	messagemode_t mode = MM_IN;
 	const tic_t speedyswitch = 2*TICRATE;
 	const tic_t lazyswitch = 4*TICRATE;
 
-	void add(std::string msg)
+	void add(srb2::String msg)
 	{
 		messages.push_back(msg);
 	}
@@ -6317,7 +6385,7 @@ struct messagestate_t
 		switch (mode)
 		{
 			case MM_IN:
-				if (timer > messages[0].length())
+				if (timer > messages[0].size())
 					switch_mode(MM_HOLD);
 				break;
 			case MM_HOLD:
@@ -6327,7 +6395,7 @@ struct messagestate_t
 					switch_mode(MM_OUT);
 				break;
 			case MM_OUT:
-				if (timer > messages[0].length())
+				if (timer > messages[0].size())
 					next();
 				break;
 		}
@@ -6524,11 +6592,11 @@ void K_drawKartHUD(void)
 	{
 	CV_StealthSetValue(cv_descriptiveinput, 0);
 	Draw::TextElement text = Draw::TextElement().parse("Hamburger <a><b><c><x><y><z><l><r><lua1><lua2><lua3><start><left><up><right><down> Hamburger\n\nHamburger <large><a><large><b><large><c><large><x><large><y><large><z><large><l><large><r><large><lua1><large><lua2><large><lua3><large><start><large><left><large><up><large><right><large><down> Hamburger\n\nHamburger \xEB\xEF\xA0\xEB\xEF\xA1\xEB\xEF\xA2\xEB\xEF\xA3\xEB\xEF\xA4\xEB\xEF\xA5\xEB\xEF\xA6\xEB\xEF\xA7\xEB\xEF\xA8\xEB\xEF\xA9\xEB\xEF\xAA\xEB\xEF\xAB\xEB\xEF\xAC Hamburger");
-	
+
 	UINT8 fakeoff = (stplyr - players)*40;
 	Draw(5, 5+fakeoff).align((srb2::Draw::Align)0).font(Draw::Font::kMenu).text(text);
 	Draw(40, 80+fakeoff).align((srb2::Draw::Align)0).font(Draw::Font::kThin).text(text);
-	}	
+	}
 
 	if (0)
 	{
@@ -6806,6 +6874,23 @@ void K_drawKartHUD(void)
 		}
 	}
 
+	// TODO better voice chat speaking indicator integration for spectators
+	{
+		char speakingstring[2048];
+		memset(speakingstring, 0, sizeof(speakingstring));
+
+		for (int i = 0; i < MAXPLAYERS; i++)
+		{
+			if (playeringame[i] && players[i].spectator && S_IsPlayerVoiceActive(i))
+			{
+				strcat(speakingstring, player_names[i]);
+				strcat(speakingstring, " ");
+			}
+		}
+
+		V_DrawThinString(0, 0, V_SNAPTOTOP|V_SNAPTOLEFT, speakingstring);
+	}
+
 	// Draw the countdowns after everything else.
 	if (stplyr->lives <= 0 && stplyr->playerstate == PST_DEAD)
 	{
@@ -6917,6 +7002,48 @@ void K_drawKartHUD(void)
 		}
 	}
 
+	if (netgame && cv_voice_servermute.value == 0)
+	{
+		if (players[consoleplayer].pflags2 & (PF2_SELFMUTE | PF2_SERVERMUTE | PF2_SELFDEAFEN | PF2_SERVERDEAFEN))
+		{
+			patch_t* micmuted = kp_voice_localmuted;
+			V_DrawFixedPatch(-1 * FRACUNIT, (BASEVIDHEIGHT - 21) << FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTOLEFT, micmuted, NULL);
+		}
+		else if (S_IsPlayerVoiceActive(consoleplayer))
+		{
+			patch_t* micactivebase = kp_voice_localactive[(leveltime / 2) % 16];
+			patch_t* micactivetop = kp_voice_localactiveoverlay[(leveltime / 2) % 16];
+
+			UINT8* micactivecolormap = NULL;
+			if (g_local_voice_last_peak < 0.7)
+			{
+				micactivecolormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_GREEN, GTC_CACHE);
+			}
+			else if (g_local_voice_last_peak < 0.95)
+			{
+				micactivecolormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_YELLOW, GTC_CACHE);
+			}
+			else
+			{
+				micactivecolormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_RED, GTC_CACHE);
+			}
+			V_DrawFixedPatch(-15 * FRACUNIT, (BASEVIDHEIGHT - 34) << FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTOLEFT, micactivebase, micactivecolormap);
+			V_DrawFixedPatch(-15 * FRACUNIT, (BASEVIDHEIGHT - 34) << FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTOLEFT, micactivetop, micactivecolormap);
+		}
+		else
+		{
+			patch_t* micopen = kp_voice_localopen;
+			V_DrawFixedPatch(-1 * FRACUNIT, (BASEVIDHEIGHT - 21) << FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTOLEFT, micopen, NULL);
+		}
+
+		// Deafen indicator
+		if (players[consoleplayer].pflags2 & (PF2_SELFDEAFEN | PF2_SERVERDEAFEN))
+		{
+			patch_t* deafened = kp_voice_localdeafened;
+			V_DrawFixedPatch(16 * FRACUNIT, (BASEVIDHEIGHT - 15) << FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTOLEFT, deafened, NULL);
+		}
+	}
+
 debug:
 	K_DrawWaypointDebugger();
 	K_DrawBotDebugger();
@@ -6973,7 +7100,7 @@ void K_DrawMarginSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean isS
 INT32 K_DrawGameControl(UINT16 x, UINT16 y, UINT8 player, const char *str, UINT8 alignment, UINT8 font, UINT32 flags)
 {
 	using srb2::Draw;
-		
+
 	Draw::TextElement text = Draw::TextElement().as(player).parse(str).font((Draw::Font)font);
 
 	INT32 width = text.width();

@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Ronald "Eidolon" Kinard
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Ronald "Eidolon" Kinard
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -133,9 +133,9 @@ public:
 	virtual void end_graphics(Handle<GraphicsContext>&& ctx) override;
 
 	// Graphics context functions
-	virtual void begin_default_render_pass(Handle<GraphicsContext> ctx) override;
-	virtual void begin_render_pass(Handle<GraphicsContext> ctx, const RenderPassBeginInfo& info) override;
-	virtual void end_render_pass(Handle<GraphicsContext> ctx) override;
+	virtual void push_default_render_pass(Handle<GraphicsContext> ctx) override;
+	virtual void push_render_pass(Handle<GraphicsContext> ctx, const RenderPassBeginInfo& info) override;
+	virtual void pop_render_pass(Handle<GraphicsContext> ctx) override;
 	virtual void bind_pipeline(Handle<GraphicsContext> ctx, Handle<Pipeline> pipeline) override;
 	virtual void update_bindings(Handle<GraphicsContext> ctx, const UpdateBindingsInfo& info) override;
 	virtual void update_uniforms(Handle<GraphicsContext> ctx, tcb::span<UniformUpdateData> uniforms) override;

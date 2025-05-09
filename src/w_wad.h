@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -145,12 +145,17 @@ void W_Shutdown(void);
 // Opens a WAD file. Returns the FILE * handle for the file, or NULL if not found or could not be opened
 FILE *W_OpenWadFile(const char **filename, boolean useerrors);
 // Load and add a wadfile to the active wad files, returns numbers of lumps, INT16_MAX on error
-UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup);
+UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup, const char *md5expected);
 
+typedef struct initmultiplefilesentry_t
+{
+	const char *filename;
+	const char *md5sum;
+} initmultiplefilesentry_t;
 // W_InitMultipleFiles returns 1 if all is okay, 0 otherwise,
 // so that it stops with a message if a file was not found, but not if all is okay.
 // W_InitMultipleFiles exits if a file was not found, but not if all is okay.
-INT32 W_InitMultipleFiles(char **filenames, boolean addons);
+INT32 W_InitMultipleFiles(const initmultiplefilesentry_t *entries, INT32 count, boolean addons);
 
 const char *W_CheckNameForNumPwad(UINT16 wad, UINT16 lump);
 const char *W_CheckNameForNum(lumpnum_t lumpnum);
@@ -217,9 +222,11 @@ void *W_CacheSoftwarePatchNum(lumpnum_t lumpnum, INT32 tag);
 
 void W_UnlockCachedPatch(void *patch);
 
-void W_VerifyFileMD5(UINT16 wadfilenum, const char *matchmd5);
-
 int W_VerifyNMUSlumps(const char *filename, boolean exit_on_error);
+
+/// Initialize non-legacy GL shader lookup, which lives outside the lump management system.
+void W_InitShaderLookup(const char *filename);
+boolean W_ReadShader(const char *filename, size_t *size, void *dest);
 
 #ifdef __cplusplus
 } // extern "C"

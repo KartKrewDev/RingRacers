@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -419,7 +419,8 @@ void P_ResetPlayer(player_t *player)
 {
 	//player->pflags &= ~(PF_);
 
-	player->carry = CR_NONE;
+	if (player->carry != CR_TRAPBUBBLE)
+		player->carry = CR_NONE;
 	player->onconveyor = 0;
 
 	//player->drift = player->driftcharge = 0;
@@ -1125,7 +1126,7 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->spriteyoffset = mobj->spriteyoffset;
 
 	if (mobj->flags2 & MF2_OBJECTFLIP)
-		ghost->flags |= MF2_OBJECTFLIP;
+		ghost->flags2 |= MF2_OBJECTFLIP;
 
 	if (!(mobj->flags & MF_DONTENCOREMAP))
 		ghost->flags &= ~MF_DONTENCOREMAP;
@@ -1978,9 +1979,7 @@ static void P_3dMovement(player_t *player)
 	else if (player->onconveyor == 4 && !P_IsObjectOnGround(player->mo)) // Actual conveyor belt
 		player->cmomx = player->cmomy = 0;
 	else if (player->onconveyor != 2 && player->onconveyor != 4
-#ifdef POLYOBJECTS
 				&& player->onconveyor != 1
-#endif
 	)
 		player->cmomx = player->cmomy = 0;
 
@@ -2338,9 +2337,10 @@ static void P_UpdatePlayerAngle(player_t *player)
 	else
 	{
 		// With a full slam on the analog stick, how far could we steer in either direction?
-		INT16 steeringRight =  K_UpdateSteeringValue(player->steering, KART_FULLTURN);
-		INT16 steeringLeft =  K_UpdateSteeringValue(player->steering, -KART_FULLTURN);
+		INT16 steeringRight = K_UpdateSteeringValue(player->steering, KART_FULLTURN);
+		INT16 steeringLeft = K_UpdateSteeringValue(player->steering, -KART_FULLTURN);
 
+#if 1
 		// When entering/leaving drifts, allow all legal turns with no easing.
 		// This is the hardest case for the turn solver, because your handling properties on
 		// client side are very different than your handling properties on server side—at least,
@@ -2350,6 +2350,7 @@ static void P_UpdatePlayerAngle(player_t *player)
 			steeringRight = KART_FULLTURN;
 			steeringLeft = -KART_FULLTURN;
 		}
+#endif
 
 		angle_t maxTurnRight = K_GetKartTurnValue(player, steeringRight) << TICCMD_REDUCE;
 		angle_t maxTurnLeft = K_GetKartTurnValue(player, steeringLeft) << TICCMD_REDUCE;
@@ -2358,47 +2359,31 @@ static void P_UpdatePlayerAngle(player_t *player)
 		angle_t targetAngle = (player->cmd.angle) << TICCMD_REDUCE;
 		angle_t targetDelta = targetAngle - (player->mo->angle);
 
+#ifdef SOLVERANGLECHEATS
 		// Corrections via fake turn go through easing.
 		// That means undoing them takes the same amount of time as doing them.
 		// This can lead to oscillating death spiral states on a multi-tic correction, as we swing past the target angle.
 		// So before we go into death-spirals, if our predicton is _almost_ right...
-		angle_t leniency_base;
-		if (G_CompatLevel(0x000A))
-		{
-			// Compat level for 2.0 staff ghosts
-			leniency_base = 4 * ANG1 / 3;
-		}
-		else
-		{
-			leniency_base = 8 * ANG1 / 3;
-		}
-
-		// Gross. Take a look at sliptide starts properly for 2.4.
-		// Yell at Tyron!
-		if (!G_CompatLevel(0x000C))
-		{
-			leniency_base = 6 * ANG1 / 3;
-		}
-
+		angle_t leniency_base = 2 * ANG1;
 		angle_t leniency = leniency_base * min(player->cmd.latency, 6);
 		// Don't force another turning tic, just give them the desired angle!
+#endif
 
-#if 0 // Old sliptide preservation behavior
-		if (K_Sliptiding(player) && P_IsObjectOnGround(player->mo) && (player->cmd.turning != 0) && ((player->cmd.turning > 0) == (player->aizdriftstrat > 0)))
+		if (!(player->cmd.buttons & BT_DRIFT) && (abs(player->drift) == 1) && ((player->cmd.turning > 0) == (player->drift > 0)) && player->handleboost > SLIPTIDEHANDLING)
 		{
-			// Don't change handling direction if someone's inputs are sliptiding, you'll break the sliptide!
-			if (player->cmd.turning > 0)
+			// This drift release is eligible to start a sliptide. Don't do lag-compensation countersteer behavior that could destroy it!
+			if (player->cmd.turning >= 0)
 			{
 				steeringLeft = max(steeringLeft, 1);
 				steeringRight = max(steeringRight, steeringLeft);
 			}
-			else
+			else if (player->cmd.turning <= 0)
 			{
 				steeringRight = min(steeringRight, -1);
 				steeringLeft = min(steeringLeft, steeringRight);
 			}
 		}
-#else // Digital-friendly sliptide preservation behavior
+
 		if (K_Sliptiding(player) && P_IsObjectOnGround(player->mo))
 		{
 			// Unless someone explicitly inputs a turn that would break their sliptide, keep sliptiding.
@@ -2412,12 +2397,7 @@ static void P_UpdatePlayerAngle(player_t *player)
 				steeringRight = min(steeringRight, -1);
 				steeringLeft = min(steeringLeft, steeringRight);
 			}
-			else
-			{
-				// :V
-			}
 		}
-#endif
 
 		if (maxTurnRight == 0 && maxTurnLeft == 0)
 		{
@@ -2427,13 +2407,17 @@ static void P_UpdatePlayerAngle(player_t *player)
 		else
 		{
 			// We're off. Try to legally steer the player towards their camera.
-
 			player->steering = P_FindClosestTurningForAngle(player, targetDelta, steeringLeft, steeringRight);
+			//CONS_Printf("aiz %d - dr %d - hb %d\n", player->aizdriftstrat, player->drift, player->handleboost);
+			//CONS_Printf("st %d - ts %d - t %d\n", player->steering, targetsteering, player->cmd.turning);
+			//CONS_Printf("%d\n", player->steering - targetsteering);
 			angleChange = K_GetKartTurnValue(player, player->steering) << TICCMD_REDUCE;
 
+#ifdef SOLVERANGLECHEATS
 			// And if the resulting steering input is close enough, snap them exactly.
 			if (min(targetDelta - angleChange, angleChange - targetDelta) <= leniency)
 				angleChange = targetDelta;
+#endif
 		}
 	}
 
@@ -4091,6 +4075,9 @@ Quaketilt (player_t *player)
 static void
 DoABarrelRoll (player_t *player)
 {
+	UINT8 viewnum = R_GetViewNumber();
+	camera_t *cam = &camera[viewnum];
+
 	angle_t slope;
 	angle_t delta;
 
@@ -4119,9 +4106,17 @@ DoABarrelRoll (player_t *player)
 		slope = 0;
 	}
 
-	if (AbsAngle(slope) > ANGLE_45)
+	if (cam->chase)
 	{
-		slope = slope & ANGLE_180 ? InvAngle(ANGLE_45) : ANGLE_45;
+		if (AbsAngle(slope) > ANGLE_45)
+		{
+			slope = slope & ANGLE_180 ? InvAngle(ANGLE_45) : ANGLE_45;
+		}
+	} else {
+		if (AbsAngle(slope) > ANGLE_90)
+		{
+			slope = slope & ANGLE_180 ? InvAngle(ANGLE_90) : ANGLE_90;
+		}
 	}
 
 	slope -= Quaketilt(player);
@@ -4129,7 +4124,7 @@ DoABarrelRoll (player_t *player)
 	delta = slope - player->tilt;
 	smoothing = FixedDiv(AbsAngle(slope), ANGLE_45);
 
-	delta = FixedDiv(delta, 33 *
+	delta = FixedDiv(delta, (cam->chase ? 33 : 11) *
 			FixedDiv(FRACUNIT, FRACUNIT + smoothing));
 
 	if (delta)
@@ -4536,17 +4531,17 @@ void P_PlayerThink(player_t *player)
 
 	if (player->nocontrol && player->nocontrol < UINT16_MAX)
 	{
-		if (!(--player->nocontrol))
-		{
-			if (player->pflags & PF_FAULT)
-			{
-				player->pflags &= ~PF_FAULT;
-				player->mo->renderflags &= ~RF_DONTDRAW;
-				player->mo->flags &= ~MF_NOCLIPTHING;
-			}
-		}
+		player->nocontrol--;
 	}
 
+	// tic down the var normaly and remove the flag upon respawn so its guaranteed to be removed from the player
+	if (!player->nocontrol && !player->respawn.timer && player->respawn.state == RESPAWNST_DROP &&  (player->pflags & PF_FAULT))
+	{
+		player->pflags &= ~PF_FAULT;
+		player->mo->renderflags &= ~RF_DONTDRAW;
+		player->mo->flags &= ~MF_NOCLIPTHING;
+	}
+	
 	boolean deathcontrolled = (player->respawn.state != RESPAWNST_NONE && player->respawn.truedeath == true)
 		|| (player->pflags & PF_NOCONTEST) || (player->karmadelay);
 	boolean powercontrolled = (player->hyudorotimer) || (player->growshrinktimer > 0);

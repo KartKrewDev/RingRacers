@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -38,7 +38,9 @@ extern "C" {
 // =============================
 
 #define ROUNDQUEUE_MAX 10 // sane max? maybe make dynamically allocated later
-#define ROUNDQUEUE_CLEAR UINT16_MAX // lives in gametype field of packets
+// These two live in gametype field of packets
+#define ROUNDQUEUE_CMD_CLEAR UINT16_MAX
+#define ROUNDQUEUE_CMD_SHOW UINT16_MAX-1
 // The roundqueue itself is resident in g_game.h
 
 // Selected by user.
@@ -237,6 +239,7 @@ extern boolean forceresetplayers, deferencoremode, forcespecialstage;
 
 extern boolean sound_disabled;
 extern boolean digital_disabled;
+extern boolean g_voice_disabled;
 
 // =========================
 // Status flags for refresh.

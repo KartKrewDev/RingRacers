@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by James Robert Roman
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by James Robert Roman
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -17,11 +17,11 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
-#include <string>
-#include <vector>
 
 #include <tcb/span.hpp>
 
+#include "../core/string.h"
+#include "../core/vector.hpp"
 #include "../audio/sample.hpp"
 
 namespace srb2::media
@@ -49,7 +49,7 @@ public:
 			int frame_rate;
 		};
 
-		std::string file_name;
+		srb2::String file_name;
 
 		std::optional<std::size_t> max_size; // file size limit
 		std::optional<std::chrono::duration<float>> max_duration;
@@ -63,7 +63,7 @@ public:
 	{
 		using instance_t = std::unique_ptr<StagingVideoFrame>;
 
-		std::vector<uint8_t> screen;
+		srb2::Vector<uint8_t> screen;
 		uint32_t width, height;
 		int pts;
 

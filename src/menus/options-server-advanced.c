@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -26,9 +26,6 @@ menuitem_t OPTIONS_ServerAdvanced[] =
 
 	{IT_HEADER, "Network Connection", NULL,
 		NULL, {NULL}, 0, 0},
-
-	{IT_STRING | IT_CVAR, "Resynch. Attempts", "How many times to attempt sending data to desynchronized players.",
-		NULL, {.cvar = &cv_resynchattempts}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Delay Limit (tics)", "Players above the delay limit will get kicked from the server.",
 		NULL, {.cvar = &cv_maxping}, 0, 0},

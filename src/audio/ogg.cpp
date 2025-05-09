@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Ronald "Eidolon" Kinard
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Ronald "Eidolon" Kinard
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -76,7 +76,7 @@ Ogg::Ogg() noexcept : memory_data_(), instance_(nullptr)
 {
 }
 
-Ogg::Ogg(std::vector<std::byte> data) : memory_data_(std::move(data)), instance_(nullptr)
+Ogg::Ogg(Vector<std::byte> data) : memory_data_(std::move(data)), instance_(nullptr)
 {
 	_init_with_data();
 }
@@ -153,8 +153,8 @@ OggComment Ogg::comment() const
 	stb_vorbis_comment c_comment = stb_vorbis_get_comment(instance_);
 
 	return OggComment {
-		std::string(c_comment.vendor),
-		std::vector<std::string>(c_comment.comment_list, c_comment.comment_list + c_comment.comment_list_length)};
+		String(c_comment.vendor),
+		Vector<String>(c_comment.comment_list, c_comment.comment_list + c_comment.comment_list_length)};
 }
 
 std::size_t Ogg::sample_rate() const

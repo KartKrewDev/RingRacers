@@ -1,8 +1,8 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by "Lat'".
-// Copyright (C) 2024 by AJ "Tyron" Martinez.
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by "Lat'".
+// Copyright (C) 2025 by AJ "Tyron" Martinez.
+// Copyright (C) 2025 by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -25,10 +25,10 @@
 
 #include <array>
 #include <cstdint>
-#include <string>
-#include <vector>
 
-#include <nlohmann/json.hpp>
+#include "core/json.hpp"
+#include "core/string.h"
+#include "core/vector.hpp"
 
 namespace srb2
 {
@@ -38,7 +38,7 @@ struct ProfileRecordsJson
 	uint32_t wins;
 	uint32_t rounds;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(ProfileRecordsJson, wins, rounds)
+	SRB2_JSON_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(ProfileRecordsJson, wins, rounds)
 };
 
 struct ProfilePreferencesJson
@@ -50,9 +50,8 @@ struct ProfilePreferencesJson
 	bool autoring;
 	bool rumble;
 	uint8_t fov;
-	tm test;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
+	SRB2_JSON_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
 		ProfilePreferencesJson,
 		kickstartaccel,
 		autoroulette,
@@ -67,19 +66,19 @@ struct ProfilePreferencesJson
 struct ProfileJson
 {
 	uint32_t version;
-	std::string profilename;
-	std::string playername;
+	String profilename;
+	String playername;
 	std::array<uint8_t, 32> publickey = {{}};
 	std::array<uint8_t, 64> secretkey = {{}};
-	std::string skinname;
-	std::string colorname;
-	std::string followername;
-	std::string followercolorname;
+	String skinname;
+	String colorname;
+	String followername;
+	String followercolorname;
 	ProfileRecordsJson records;
 	ProfilePreferencesJson preferences;
-	std::array<std::array<int32_t, MAXINPUTMAPPING>, gamecontrols_e::num_gamecontrols> controls = {{{{}}}};
+	Vector<Vector<int32_t>> controls = {};
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
+	SRB2_JSON_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
 		ProfileJson,
 		version,
 		profilename,
@@ -98,9 +97,9 @@ struct ProfileJson
 
 struct ProfilesJson
 {
-	std::vector<ProfileJson> profiles;
+	Vector<ProfileJson> profiles;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(ProfilesJson, profiles)
+	SRB2_JSON_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(ProfilesJson, profiles)
 };
 
 } // namespace srb2

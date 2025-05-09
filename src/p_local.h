@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -78,7 +78,6 @@ typedef enum
 	NUM_THINKERLISTS
 } thinklistnum_t; /**< Thinker lists. */
 extern thinker_t thlist[];
-extern mobj_t *mobjcache;
 
 void P_InitThinkers(void);
 void P_InvalidateThinkersWithoutInit(void);
@@ -258,6 +257,7 @@ mobjtype_t P_GetMobjtype(UINT16 mthingtype);
 void P_RespawnSpecials(void);
 
 fixed_t P_GetMobjDefaultScale(mobj_t *mobj);
+mobj_t *P_AllocateMobj(void);
 mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type);
 
 void P_CalculatePrecipFloor(precipmobj_t *mobj);

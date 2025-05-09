@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Ronald "Eidolon" Kinard
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Ronald "Eidolon" Kinard
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -11,10 +11,8 @@
 #ifndef __SRB2_HWR2_PASS_TWODEE_HPP__
 #define __SRB2_HWR2_PASS_TWODEE_HPP__
 
-#include <memory>
 #include <optional>
 #include <tuple>
-#include <unordered_map>
 #include <variant>
 #include <vector>
 
@@ -65,10 +63,13 @@ struct MergedTwodeeCommandFlatTexture
 struct MergedTwodeeCommand
 {
 	using Texture = std::variant<rhi::Handle<rhi::Texture>, MergedTwodeeCommandFlatTexture>;
-	TwodeePipelineKey pipeline_key = {};
-	rhi::Handle<rhi::BindingSet> binding_set = {};
+	rhi::PrimitiveType primitive;
+	BlendMode blend_mode;
 	std::optional<Texture> texture;
+	TwodeePipelineKey pipeline_key;
+	rhi::Handle<rhi::Texture> texture_handle;
 	const uint8_t* colormap;
+	rhi::Handle<rhi::Texture> colormap_handle;
 	uint32_t index_offset = 0;
 	uint32_t elements = 0;
 };
@@ -94,14 +95,13 @@ class TwodeeRenderer final
 	std::vector<MergedTwodeeCommandList> cmd_lists_;
 	std::vector<std::tuple<rhi::Handle<rhi::Buffer>, std::size_t>> vbos_;
 	std::vector<std::tuple<rhi::Handle<rhi::Buffer>, std::size_t>> ibos_;
-	rhi::Handle<rhi::RenderPass> render_pass_;
 	rhi::Handle<rhi::Texture> output_;
 	rhi::Handle<rhi::Texture> default_tex_;
-	std::unordered_map<TwodeePipelineKey, rhi::Handle<rhi::Pipeline>> pipelines_;
+	rhi::Handle<rhi::Program> program_;
 
 	void rewrite_patch_quad_vertices(Draw2dList& list, const Draw2dPatchQuad& cmd) const;
 
-	void initialize(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
+	void initialize(rhi::Rhi& rhi);
 
 public:
 	TwodeeRenderer(
@@ -118,7 +118,7 @@ public:
 	/// @brief Flush accumulated Twodee state and perform draws.
 	/// @param rhi
 	/// @param ctx
-	void flush(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx, Twodee& twodee);
+	void flush(rhi::Rhi& rhi, Twodee& twodee);
 };
 
 } // namespace srb2::hwr2

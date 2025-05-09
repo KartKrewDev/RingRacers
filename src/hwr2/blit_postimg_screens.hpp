@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Ronald "Eidolon" Kinard
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Ronald "Eidolon" Kinard
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -46,14 +46,11 @@ public:
 private:
 	struct ScreenData
 	{
-		rhi::Handle<rhi::Pipeline> pipeline;
-		rhi::Handle<rhi::BindingSet> binding_set;
-		rhi::Handle<rhi::UniformSet> uniform_set;
+		rhi::Handle<rhi::Program> program;
 	};
 
-	rhi::Handle<rhi::Pipeline> pipeline_;
-	rhi::Handle<rhi::Pipeline> indexed_pipeline_;
-	rhi::Handle<rhi::RenderPass> renderpass_;
+	rhi::Handle<rhi::Program> program_;
+	rhi::Handle<rhi::Program> indexed_program_;
 	rhi::Handle<rhi::Buffer> quad_vbo_;
 	rhi::Handle<rhi::Buffer> quad_ibo_;
 	bool upload_quad_buffer_;
@@ -67,12 +64,12 @@ private:
 	PaletteManager* palette_mgr_;
 
 	void prepass(rhi::Rhi& rhi);
-	void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
+	void transfer(rhi::Rhi& rhi);
 
 public:
 	explicit BlitPostimgScreens(PaletteManager* palette_mgr);
 
-	void draw(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
+	void draw(rhi::Rhi& rhi);
 
 	void set_num_screens(uint32_t screens) noexcept
 	{
