@@ -731,7 +731,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (player->instaWhipCharge)
 				return;
 
-			if (player->baildrop)
+			if (player->baildrop || player->bailcharge)
 				return;
 
 			// Don't immediately pick up spilled rings
