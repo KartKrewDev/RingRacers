@@ -13978,6 +13978,16 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		mobj_t *broly = Obj_SpawnBrolyKi(player->mo, player->mo->hitlag);
 		broly->extravalue2 = 16*mapobjectscale;
 
+		if (P_PlayerInPain(player))
+		{
+			player->spinouttimer = 0;
+			player->spinouttype = 0;
+			player->tumbleBounces = 0;
+			player->pflags &= ~PF_TUMBLELASTBOUNCE;
+			player->mo->rollangle = 0;
+			P_ResetPitchRoll(player->mo);
+		}
+
 		INT32 fls = K_GetEffectiveFollowerSkin(player);
 		if (player->follower && fls >= 0 && fls < numfollowers)
 		{
