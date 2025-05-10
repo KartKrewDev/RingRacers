@@ -10181,7 +10181,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 		if (player->nextringaward >= ringrate)
 		{
-			if (player->instaWhipCharge || player->baildrop)
+			if (player->instaWhipCharge || player->baildrop || player->bailcharge)
 			{
 				// Store award rings to do diabolical horseshit with later.
 				player->nextringaward = ringrate;
@@ -13921,11 +13921,25 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	}
 	
 
-	if ((player->cmd.buttons & BT_VOTE) && !(player->oldcmd.buttons & BT_VOTE)
-		&& ((player->itemtype && player->itemamount) || (player->rings > 0) || player->superring > 0 || player->pickuprings > 0 || player->itemRoulette.active))
+	if ((player->cmd.buttons & BT_VOTE) && ((player->itemtype && player->itemamount) || (player->rings > 0) || player->superring > 0 || player->pickuprings > 0 || player->itemRoulette.active))
+	{
+		player->bailcharge++;
+		if (player->bailcharge == 1)
+		{
+			mobj_t * bail = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, MT_BAILCHARGE);
+			P_SetTarget(&bail->target, player->mo);
+		}
+	}
+	else
+	{
+		player->bailcharge = 0;
+	}
+
+	if ((!P_PlayerInPain(player) && player->bailcharge >= BAIL_MAXCHARGE) || player->bailcharge >= BAIL_PAINMAXCHARGE)
 	{
 		CONS_Printf("rl %d it %d ia %d ri %d sr %d pr %d\n", player->itemRoulette.active, player->itemtype, player->itemamount, player->rings > 0, player->superring > 0, player->pickuprings > 0);
 
+		player->bailcharge = 0;
 
 		UINT32 debtrings = 20;
 		if (player->rings < 0)

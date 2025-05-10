@@ -875,6 +875,9 @@ typedef enum sprite
 	SPR_GRNG, // Guard ring
 	SPR_GBDY, // Guard body
 
+	SPR_BAIL, // Bail charge
+	SPR_TECH, // Bail tech charge
+
 	SPR_TRC1, // Charge aura
 	SPR_TRC2, // Charge fall
 	SPR_TRC3, // Charge flicker/sparks
@@ -2628,6 +2631,9 @@ typedef enum state
 	S_INSTAWHIP_REJECT,
 	S_BLOCKRING,
 	S_BLOCKBODY,
+
+	S_BAILCHARGE,
+	S_TECHCHARGE,
 
 	S_AMPRING,
 	S_AMPBODY,
@@ -4645,6 +4651,8 @@ typedef enum mobj_type
 	MT_INSTAWHIP_REJECT,
 	MT_BLOCKRING,
 	MT_BLOCKBODY,
+
+	MT_BAILCHARGE,
 
 	MT_AMPRING,
 	MT_AMPBODY,

@@ -334,6 +334,9 @@ char sprnames[NUMSPRITES + 1][5] =
 	"GRNG", // Guard ring
 	"GBDY", // Guard body
 
+	"BAIL", // Bail charge
+	"TECH", // Bail tech charge
+
 	"TRC1", // Charge aura
 	"TRC2", // Charge fall
 	"TRC3", // Charge flicker/sparks
@@ -2159,6 +2162,9 @@ state_t states[NUMSTATES] =
 	{SPR_WPRJ,                 FF_FULLBRIGHT|FF_ANIMATE, 9, {NULL}, 8, 1, S_INSTAWHIP_REJECT}, // S_INSTAWHIP_REJECT
 	{SPR_GRNG,                 FF_FULLBRIGHT|FF_PAPERSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_BLOCKRING
 	{SPR_GBDY,                 FF_FULLBRIGHT|FF_ANIMATE|0, -1, {NULL}, 4, 2, S_NULL}, // S_BLOCKBODY
+
+	{SPR_BAIL,                 FF_FULLBRIGHT|FF_ANIMATE|0, -1, {NULL}, 8, 1, S_NULL}, // S_BAILCHARGE
+	{SPR_TECH,                 FF_FULLBRIGHT|FF_ANIMATE|0, -1, {NULL}, 41, 1, S_NULL}, // S_TECHCHARGE
 
 	{SPR_AMPB,                 FF_FULLBRIGHT|FF_PAPERSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_AMPRING
 	{SPR_AMPC,                 FF_FULLBRIGHT|FF_ANIMATE|0, -1, {NULL}, 4, 2, S_NULL}, // S_AMPBODY
@@ -13738,6 +13744,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		67*FRACUNIT,    // radius
 		67*FRACUNIT,    // height
 		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_NOCLIPHEIGHT, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_BAILCHARGE
+		-1,             // doomednum
+		S_BAILCHARGE,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		67*FRACUNIT,    // radius
+		67*FRACUNIT,    // height
+		1,              // display offset
 		100,            // mass
 		0,              // damage
 		sfx_None,       // activesound
