@@ -22,6 +22,7 @@ extern "C" {
 
 #define MAXHITLAGTICS (30)
 #define HITLAGJITTERS (FRACUNIT / 20)
+#define HITLAGDIV (20)	// define this so we arent using a magic number for interp
 #define NUM_HITLAG_STATES (9)
 #define NUM_HITLAG_SOUNDS (4)
 

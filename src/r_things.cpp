@@ -1794,7 +1794,7 @@ static void R_ProjectSprite(mobj_t *thing)
 
 	this_scale = interp.scale;
 
-	// hitlag vibrating (todo: interp somehow?)
+	// hitlag vibrating
 	if (thing->hitlag > 0 && (thing->eflags & MFE_DAMAGEHITLAG))
 	{
 		fixed_t mul = thing->hitlag * HITLAGJITTERS;
@@ -2172,10 +2172,15 @@ static void R_ProjectSprite(mobj_t *thing)
 			R_InterpolateMobjState(thing, FRACUNIT, &tracer_interp);
 		}
 
-		// hitlag vibrating (todo: interp somehow?)
+		// hitlag vibrating
 		if (thing->hitlag > 0 && (thing->eflags & MFE_DAMAGEHITLAG))
 		{
-			fixed_t mul = thing->hitlag * (FRACUNIT / 10);
+			// previous code multiplied by (FRACUNIT / 10) instead of HITLAGJITTERS, um wadaflip
+			fixed_t jitters = HITLAGJITTERS;
+			if (R_UsingFrameInterpolation() && !paused)
+				jitters += (rendertimefrac / HITLAGDIV);
+			
+			fixed_t mul = thing->hitlag * jitters;
 
 			if (leveltime & 1)
 			{

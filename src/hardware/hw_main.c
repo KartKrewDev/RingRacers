@@ -3115,11 +3115,15 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 		R_InterpolateMobjState(thing, FRACUNIT, &interp);
 	}
 
-	// hitlag vibrating (todo: interp somehow?)
+	// hitlag vibrating
 	if (thing->hitlag > 0 && (thing->eflags & MFE_DAMAGEHITLAG))
 	{
-		fixed_t mul = thing->hitlag * HITLAGJITTERS;
+		fixed_t jitters = HITLAGJITTERS;
+		if (R_UsingFrameInterpolation() && !paused)
+			jitters += (rendertimefrac / HITLAGDIV);
+		fixed_t mul = thing->hitlag * jitters;
 
+		// perhaps there could be a way to interp this too?
 		if (leveltime & 1)
 		{
 			mul = -mul;
@@ -4685,10 +4689,14 @@ static void HWR_ProjectSprite(mobj_t *thing)
 
 	dispoffset = thing->dispoffset;
 
-	// hitlag vibrating (todo: interp somehow?)
+	// hitlag vibrating
 	if (thing->hitlag > 0 && (thing->eflags & MFE_DAMAGEHITLAG))
 	{
-		fixed_t mul = thing->hitlag * HITLAGJITTERS;
+		fixed_t jitters = HITLAGJITTERS;
+		if (R_UsingFrameInterpolation() && !paused)
+			jitters += (rendertimefrac / HITLAGDIV);
+			
+		fixed_t mul = thing->hitlag * jitters;
 
 		if (leveltime & 1)
 		{
