@@ -6560,6 +6560,7 @@ void K_drawKartHUD(void)
 	boolean islonesome = false;
 	UINT8 viewnum = R_GetViewNumber();
 	boolean freecam = camera[viewnum].freecam;	//disable some hud elements w/ freecam
+	INT32 flags = V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP|V_SNAPTORIGHT;
 
 	// Define the X and Y for each drawn object
 	// This is handled by console/menu values
@@ -6642,6 +6643,12 @@ void K_drawKartHUD(void)
 			K_drawKartMinimap();
 	}
 
+	if (!modeattacking && mapheaderinfo[gamemap-1]->menuttl[0] && (gametype == GT_TUTORIAL || gametype == GT_SPECIAL))
+	{
+		using srb2::Draw;
+		Draw(BASEVIDWIDTH - 4, 5).flags(flags|V_FORCEUPPERCASE).align(Draw::Align::kRight).font(Draw::Font::kMedium).text(mapheaderinfo[gamemap-1]->menuttl);
+	}
+
 	if (demo.attract)
 		;
 	else if (gametype == GT_TUTORIAL)
@@ -6654,7 +6661,6 @@ void K_drawKartHUD(void)
 		if (LUA_HudEnabled(hud_time))
 		{
 			bool ta = modeattacking && !demo.playback;
-			INT32 flags = V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP|V_SNAPTORIGHT;
 
 			tic_t realtime = stplyr->realtime;
 
