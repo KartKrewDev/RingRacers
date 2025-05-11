@@ -3519,7 +3519,7 @@ void A_AttractChase(mobj_t *actor)
 				angle_t offset = FixedAngle(18<<FRACBITS);
 
 				// Base add is 3 tics for 9,9, adds 1 tic for each point closer to the 1,1 end
-				actor->target->player->ringboost += K_GetKartRingPower(actor->target->player, true) + 3;
+				actor->target->player->ringboost += K_GetFullKartRingPower(actor->target->player, true);
 
 				S_ReducedVFXSoundAtVolume(actor->target, sfx_s1b5, actor->target->player->ringvolume, NULL);
 
@@ -3575,7 +3575,7 @@ void A_AttractChase(mobj_t *actor)
 			if (actor->extravalue1 >= 16)
 			{
 				if (!P_GivePlayerRings(actor->target->player, 1)) // returns 0 if addition failed
-					actor->target->player->ringboost += K_GetKartRingPower(actor->target->player, true) + 3;
+					actor->target->player->ringboost += K_GetFullKartRingPower(actor->target->player, true);
 
 				if (actor->cvmem) // caching
 					S_StartSound(actor->target, sfx_s1c5);

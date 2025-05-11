@@ -288,6 +288,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->ringboxdelay);
 	else if (fastcmp(field,"ringboxaward"))
 		lua_pushinteger(L, plr->ringboxaward);
+	else if (fastcmp(field,"lastringboost"))
+		lua_pushinteger(L, plr->lastringboost);
 	else if (fastcmp(field,"amps"))
 		lua_pushinteger(L, plr->amps);
 	else if (fastcmp(field,"amppickup"))
@@ -898,6 +900,8 @@ static int player_set(lua_State *L)
 		plr->ringboxdelay = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"ringboxaward"))
 		plr->ringboxaward = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"lastringboost"))
+		plr->lastringboost = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"amps"))
 		plr->amps = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"amppickup"))

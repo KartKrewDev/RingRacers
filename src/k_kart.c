@@ -292,7 +292,7 @@ void K_TimerInit(void)
 
 	if (G_TimeAttackStart())
 	{
-		starttime = 15*TICRATE; // Longest permitted start. No half-laps in reverse.
+		starttime = 10*TICRATE; // Longest permitted start. No half-laps in reverse.
 		// (Changed on finish line cross later, don't worry.)
 	}
 
@@ -9399,13 +9399,20 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		// extreme ringboost duration. Less aggressive for accel types, so they
 		// retain more speed for small payouts.
 
+		// 2.4: Even if it IS paying out, if the duration gets extreme,
+		// start applying decay anyway!
+
 		UINT8 roller = TICRATE*2;
 		roller += 4*(8-player->kartspeed);
+
+		// UINT16 oldringboost = player->ringboost;
 
 		if (player->superring == 0)
 			player->ringboost -= max((player->ringboost / roller), 1);
 		else
-			player->ringboost--;
+			player->ringboost -= min(K_GetFullKartRingPower(player, false) - 1, max(player->ringboost / 2 / roller, 1));
+
+		// CONS_Printf("%d - %d\n", player->ringboost, oldringboost - player->ringboost);
 	}
 
 	if (player->sneakertimer)
@@ -9678,7 +9685,13 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->superring)
 	{
 		player->nextringaward++;
-		UINT8 ringrate = 3 - min(2, player->superring / 20); // Used to consume fat stacks of cash faster.
+
+		UINT8 fastringscaler = (K_GetKartGameSpeedScalar(gamespeed) > FRACUNIT) ? 20 : 20; // If G3 / TA gets out of control, can speed up all ring box payout
+
+		UINT32 existing = (player->lastringboost / K_GetFullKartRingPower(player, true)); // How many rings (effectively) do we have boost credit for right now?
+
+		UINT8 ringrate = 3 - min(2, (player->superring + existing) / fastringscaler); // Used to consume fat stacks of cash faster.
+
 		if (player->nextringaward >= ringrate)
 		{
 			if (player->instaWhipCharge)
@@ -11001,6 +11014,11 @@ INT32 K_GetKartRingPower(const player_t *player, boolean boosted)
 	return max(ringPower / FRACUNIT, 1);
 }
 
+INT32 K_GetFullKartRingPower(const player_t *player, boolean boosted)
+{
+	return 3 + K_GetKartRingPower(player, boosted);
+}
+
 // Returns false if this player being placed here causes them to collide with any other player
 // Used in g_game.c for match etc. respawning
 // This does not check along the z because the z is not correctly set for the spawnee at this point
@@ -11678,6 +11696,12 @@ static void K_KartDrift(player_t *player, boolean onground)
 			|| (player->driftcharge < 0))
 		{
 			K_SpawnDriftSparks(player);
+		}
+
+		// Magic numbers ahoy! Meant to allow purple drifts to progress past color transition.
+		if ((player->driftcharge + driftadditive) > (dsthree+(32*3)) && K_TimeAttackRules() && leveltime < starttime)
+		{
+			driftadditive = max(0, (dsthree+(32*3)) - player->driftcharge);
 		}
 
 		if ((player->driftcharge < dsone && player->driftcharge+driftadditive >= dsone)
@@ -13144,6 +13168,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		player->ringboxdelay--;
 		if (player->ringboxdelay == 0)
 		{
+			player->lastringboost = player->ringboost;
 			UINT32 award = 5*player->ringboxaward + 10;
 			if (!K_ThunderDome())
 				award = 3 * award / 2;
@@ -13155,28 +13180,41 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			}
 			else if (modeattacking)
 			{
-				// At high distance values, the power of Ring Box is mainly an extra source of speed, to be
-				// stacked with power items (or itself!) during the payout period.
-				// Low-dist Ring Box follows some special rules, to somewhat normalize the reward between stat
-				// blocks that respond to rings differently; here, variance in payout period counts for a lot!
+				// TA has:
+				// - no one to tether from
+				// - no player damage
+				// - no player bumps
+				// ...which nullifies a lot of designed advantages for accel types and high-weight racers.
+				//
+				// In addition, it's at Gear 3 Thunderdome speed, which can make it hard for heavies to
+				// take strong lines without brakedrifting. 
+				//
+				// To try and help close this gap, we fudge Ring Box payouts to allow weaker characters
+				// better access to things that make them go fast, without changing core handling.
 
 				UINT8 accel = 10-player->kartspeed;
 				UINT8 weight = player->kartweight;
 
-				// Fixed point math can suck a dick.
+				// Relative stat power for bonus TA Ring Box awards.
+				// AP 1, WP 2 = weight is worth twice what accel is.
+				// 0 = stat not considered at all!
+				UINT8 accelPower = 0;
+				UINT8 weightPower = 4;
 
-				if (accel > weight)
-				{
-					accel *= 10;
-					weight *= 3;
-				}
-				else
-				{
-					accel *= 3;
-					weight *= 10;
-				}
+				UINT8 total = accelPower*accel + weightPower*weight;
+				UINT8 maxtotal = accelPower*9 + weightPower*9;
 
-				award = (110 + accel + weight) * award / 120;
+				// Scale from base payout at 9/1 to max payout at 1/9.
+				award = Easing_InCubic(FRACUNIT*total/maxtotal, 13*award/10, 18*award/10);
+
+				// And, because we don't have to give a damn about sandbagging, up the stakes the longer we progress! 
+				if (gametyperules & GTR_CIRCUIT)
+				{
+					UINT8 maxgrade = 10;
+					UINT8 margin = min(player->gradingpointnum, maxgrade);
+
+					award = Easing_Linear(FRACUNIT * margin / maxgrade, award, 2*award);
+				}
 			}
 			else
 			{
@@ -13186,6 +13224,19 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				behindMulti = min(behindMulti, 60);
 				award = award * (behindMulti + 10) / 10;
 			}
+
+			// Felt kinda arbitrary, replaced with G3+ fast payout. Sealed away for later...?
+
+			/*
+			// Stacked Ring Box is good. REALLY good. "Uncapped speed that feeds into itself" good.
+			// Keep highly unusual values under control, using the following core rule:
+			// If we already have more boost than we're about to be awarded, STOP!!!
+			UINT32 existing = (player->ringboost / K_GetFullKartRingPower(player, true)); // How many rings (effectively) do we have boost credit for right now?
+			UINT32 reduction = 8*existing/10; // Take an arbitrary percentage of those rings, and...
+			fixed_t reductionfactor = FixedDiv(FRACUNIT*reduction, FRACUNIT*award); // ...get a ratio to compare our potential award against it. 0 = no existing boost, 1+ = existing boost comparable to our award.
+			reductionfactor = min(reductionfactor, FRACUNIT); // Cap for easing function, and...
+			award = Easing_Linear(reductionfactor, award, award/4); // ...ease between unmodified and minimum award.
+			*/
 
 			K_AwardPlayerRings(player, award, true);
 			player->ringboxaward = 0;

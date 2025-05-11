@@ -923,13 +923,11 @@ void F_IntroTicker(void)
 		S_StartSound(NULL, sfx_supflk);
 	}
 
-	if (skiptype == 5) // Quick Thunderdome
+	if (skiptype == 5) // Quick Race Menu
 	{
 		ResetSkipSequences();
-		CV_StealthSetValue(&cv_kartbot, 13);
-		CV_StealthSetValue(&cv_maxplayers, 8);
-		CV_StealthSetValue(&cv_thunderdome, 1);
-		D_MapChange(G_RandMap(TOL_RACE, UINT16_MAX-1, true, false, NULL), GT_RACE, (cv_kartencore.value == 1), true, 0, false, false);
+		M_StartControlPanel();
+		currentMenu = &PLAY_RaceGamemodesDef;
 		return;
 	}
 
@@ -1023,19 +1021,19 @@ static void AdvanceSkipSequences(UINT8 input)
 	UINT8 s2cheat[] = {1, 1, 1};
 	UINT8 s3cheat[] = {2, 2, 2};
 	UINT8 s3kcheat[] = {3, 3, 3};
-	UINT8 thundercheat[] = {4, 4, 4};
+	UINT8 spincheat[] = {4, 4, 4};
 #else
 	UINT8 s2cheat[] = {1, 1, 1, 3, 3, 3, 1};
 	UINT8 s3cheat[] = {1, 1, 3, 3, 1, 1, 1, 1};
 	UINT8 s3kcheat[] = {4, 4, 4, 2, 2, 2, 1, 1, 1};
-	UINT8 thundercheat[] = {2, 4, 2, 4, 3, 3, 1, 1};
+	UINT8 spincheat[] = {1, 2, 3, 4, 3, 2, 1};
 #endif
 	UINT8 nicetry[] = {1, 1, 3, 3, 4, 2, 4, 2};
 
 	#define NUMCHEATSPLUSONE 5
 
-	UINT8 *cheats[NUMCHEATSPLUSONE] = {s2cheat, s3cheat, s3kcheat, nicetry, thundercheat};
-	UINT8 cheatlengths[NUMCHEATSPLUSONE] = {sizeof(s2cheat), sizeof(s3cheat), sizeof(s3kcheat), sizeof(nicetry), sizeof(thundercheat)};
+	UINT8 *cheats[NUMCHEATSPLUSONE] = {s2cheat, s3cheat, s3kcheat, nicetry, spincheat};
+	UINT8 cheatlengths[NUMCHEATSPLUSONE] = {sizeof(s2cheat), sizeof(s3cheat), sizeof(s3kcheat), sizeof(nicetry), sizeof(spincheat)};
 
 	for (UINT8 i = 0; i < NUMCHEATSPLUSONE; i++) 	// for each cheat...
 	{
