@@ -17,13 +17,13 @@
 #include "../k_kart.h"
 #include "../p_local.h"
 
-void Obj_BailChargeThink (mobj_t *aura)
+void Obj_BailThink (mobj_t *aura)
 {
     if (P_MobjWasRemoved(aura->target)
 		|| aura->target->health == 0
 		|| aura->target->destscale <= 1 // sealed star fall out
 		|| !aura->target->player
-        || !aura->target->player->bailcharge)
+        || !aura->target->hitlag)
     {
         P_RemoveMobj(aura);
     }

@@ -2163,7 +2163,7 @@ state_t states[NUMSTATES] =
 	{SPR_GRNG,                 FF_FULLBRIGHT|FF_PAPERSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_BLOCKRING
 	{SPR_GBDY,                 FF_FULLBRIGHT|FF_ANIMATE|0, -1, {NULL}, 4, 2, S_NULL}, // S_BLOCKBODY
 
-	{SPR_BAIL,                 FF_FULLBRIGHT|FF_ANIMATE|0, -1, {NULL}, 8, 1, S_NULL}, // S_BAILCHARGE
+	{SPR_BAIL,                 FF_FULLBRIGHT|FF_ANIMATE|0, -1, {NULL}, 8, 1, S_NULL}, // S_BAIL
 	{SPR_TECH,                 FF_FULLBRIGHT|FF_ANIMATE|0, -1, {NULL}, 41, 1, S_NULL}, // S_TECHCHARGE
 
 	{SPR_AMPB,                 FF_FULLBRIGHT|FF_PAPERSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_AMPRING
@@ -13751,9 +13751,9 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL          // raisestate
 	},
 
-	{           // MT_BAILCHARGE
+	{           // MT_BAIL
 		-1,             // doomednum
-		S_BAILCHARGE,    // spawnstate
+		S_BAIL,    // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound

@@ -13926,8 +13926,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		player->bailcharge++;
 		if (player->bailcharge == 1)
 		{
-			mobj_t * bail = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, MT_BAILCHARGE);
-			P_SetTarget(&bail->target, player->mo);
+			// Hi Ashnal
 		}
 	}
 	else
@@ -13935,11 +13934,14 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		player->bailcharge = 0;
 	}
 
-	if ((!P_PlayerInPain(player) && player->bailcharge >= BAIL_MAXCHARGE) || player->bailcharge >= BAIL_PAINMAXCHARGE)
+	if ((!P_PlayerInPain(player) && player->bailcharge >= BAIL_MAXCHARGE) || player->bailcharge)
 	{
 		CONS_Printf("rl %d it %d ia %d ri %d sr %d pr %d\n", player->itemRoulette.active, player->itemtype, player->itemamount, player->rings > 0, player->superring > 0, player->pickuprings > 0);
 
 		player->bailcharge = 0;
+
+		mobj_t * bail = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, MT_BAIL);
+		P_SetTarget(&bail->target, player->mo);
 
 		UINT32 debtrings = 20;
 		if (player->rings < 0)
@@ -13989,8 +13991,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		player->baildrop = baildrop * BAIL_DROPFREQUENCY + 1;
 
 		K_AddHitLag(player->mo, TICRATE/4, false);
-		mobj_t *broly = Obj_SpawnBrolyKi(player->mo, player->mo->hitlag);
-		broly->extravalue2 = 16*mapobjectscale;
 
 		if (P_PlayerInPain(player))
 		{

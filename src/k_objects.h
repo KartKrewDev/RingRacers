@@ -154,7 +154,7 @@ void Obj_ChargeReleaseThink(mobj_t *release);
 void Obj_ChargeExtraThink(mobj_t *extra);
 
 /* Bail VFX */
-void Obj_BailChargeThink(mobj_t *aura);
+void Obj_BailThink(mobj_t *aura);
 
 /* Ring Shooter */
 boolean Obj_RingShooterThinker(mobj_t *mo);

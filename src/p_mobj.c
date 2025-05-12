@@ -8923,9 +8923,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		Obj_BlockBodyThink(mobj);
 		break;
 	}
-	case MT_BAILCHARGE:
+	case MT_BAIL:
 	{
-		Obj_BailChargeThink(mobj);
+		Obj_BailThink(mobj);
 		break;
 	}
 	case MT_AMPRING:
