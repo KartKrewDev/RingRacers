@@ -379,6 +379,9 @@ engineclass_t R_GetEngineClass(SINT8 speed, SINT8 weight, skinflags_t flags)
 	if (flags & SF_IRONMAN)
 		return ENGINECLASS_J;
 
+	if (flags & SF_HIVOLT)
+		return ENGINECLASS_R;
+
 	speed = (speed - 1) / 3;
 	weight = (weight - 1) / 3;
 
@@ -874,6 +877,7 @@ static boolean R_ProcessPatchableFields(skin_t *skin, char *stoken, char *value)
 	GETFLAG(MACHINE)
 	GETFLAG(IRONMAN)
 	GETFLAG(BADNIK)
+	GETFLAG(HIVOLT)
 #undef GETFLAG
 
 	else // let's check if it's a sound, otherwise error out

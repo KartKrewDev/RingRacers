@@ -2098,6 +2098,7 @@ static void M_DrawCharSelectPreview(UINT8 num)
 	if (p->showextra == true)
 	{
 		INT32 randomskin = 0;
+		INT32 doping = 0;
 		switch (p->mdepth)
 		{
 			case CSSTEP_ALTS: // Select clone
@@ -2108,6 +2109,7 @@ static void M_DrawCharSelectPreview(UINT8 num)
 					V_DrawThinString(x-3, y+12, 0,
 						skins[setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum]].name);
 					randomskin = (skins[setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum]].flags & SF_IRONMAN);
+					doping = (skins[setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum]].flags & SF_HIVOLT);
 				}
 				else
 				{
@@ -2116,7 +2118,8 @@ static void M_DrawCharSelectPreview(UINT8 num)
 				/* FALLTHRU */
 			case CSSTEP_CHARS: // Character Select grid
 				V_DrawThinString(x-3, y+2, 0, va("Class %c (s %c - w %c)",
-					('A' + R_GetEngineClass(p->gridx+1, p->gridy+1, randomskin)),
+					(doping
+						? 'R' : ('A' + R_GetEngineClass(p->gridx+1, p->gridy+1, randomskin))),
 					(randomskin
 						? '?' : ('1'+p->gridx)),
 					(randomskin
@@ -7111,6 +7114,14 @@ void M_DrawCharacterIconAndEngine(INT32 x, INT32 y, UINT8 skin, UINT8 *colormap,
 				w = 2 - w;
 		}
 
+	}
+	else if (skins[baseskin].flags & SF_HIVOLT)
+	{
+		UINT32 fucktimer = (gamedata->totalmenutime/2)%8;
+		UINT8 sq[] = {0, 1, 2, 2, 2, 1, 0, 0};
+		UINT8 wq[] = {0, 0, 0, 1, 2, 2, 2, 1};
+		s = sq[fucktimer];
+		w = wq[fucktimer];
 	}
 	else
 	{

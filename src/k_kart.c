@@ -292,7 +292,7 @@ void K_TimerInit(void)
 
 	if (G_TimeAttackStart())
 	{
-		starttime = 10*TICRATE; // Longest permitted start. No half-laps in reverse.
+		starttime = TIMEATTACK_START; // Longest permitted start. No half-laps in reverse.
 		// (Changed on finish line cross later, don't worry.)
 	}
 
@@ -8844,6 +8844,19 @@ static inline BlockItReturn_t PIT_AttractingRings(mobj_t *thing)
 	return BMIT_CONTINUE; // find other rings
 }
 
+boolean K_LegacyRingboost(player_t *player)
+{
+	if (netgame)
+		return false;
+	if (modeattacking == ATTACKING_SPB)
+		return false;
+	if (!modeattacking)
+		return false;
+	if (!(skins[player->skin].flags & SF_HIVOLT))
+		return false;
+	return true;
+}
+
 /** Looks for rings near a player in the blockmap.
   *
   * \param pmo Player object looking for rings to attract
@@ -9409,6 +9422,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 		if (player->superring == 0)
 			player->ringboost -= max((player->ringboost / roller), 1);
+		else if (K_LegacyRingboost(player))
+			player->ringboost--;
 		else
 			player->ringboost -= min(K_GetFullKartRingPower(player, false) - 1, max(player->ringboost / 2 / roller, 1));
 
@@ -9689,6 +9704,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		UINT8 fastringscaler = (K_GetKartGameSpeedScalar(gamespeed) > FRACUNIT) ? 20 : 20; // If G3 / TA gets out of control, can speed up all ring box payout
 
 		UINT32 existing = (player->lastringboost / K_GetFullKartRingPower(player, true)); // How many rings (effectively) do we have boost credit for right now?
+
+		if (K_LegacyRingboost(player))
+			existing = 0;
 
 		UINT8 ringrate = 3 - min(2, (player->superring + existing) / fastringscaler); // Used to consume fat stacks of cash faster.
 
@@ -11698,11 +11716,13 @@ static void K_KartDrift(player_t *player, boolean onground)
 			K_SpawnDriftSparks(player);
 		}
 
+		/*
 		// Magic numbers ahoy! Meant to allow purple drifts to progress past color transition.
 		if ((player->driftcharge + driftadditive) > (dsthree+(32*3)) && K_TimeAttackRules() && leveltime < starttime)
 		{
 			driftadditive = max(0, (dsthree+(32*3)) - player->driftcharge);
 		}
+		*/
 
 		if ((player->driftcharge < dsone && player->driftcharge+driftadditive >= dsone)
 			|| (player->driftcharge < dstwo && player->driftcharge+driftadditive >= dstwo)
@@ -13177,6 +13197,26 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			{
 				// SPB Attack is hard.
 				award = award / 2;
+			}
+			else if (K_LegacyRingboost(player))
+			{
+				// An ancient power is revealed once more...
+				UINT8 accel = 10-player->kartspeed;
+				UINT8 weight = player->kartweight;
+
+				if (accel > weight)
+				{
+					accel *= 10;
+					weight *= 3;
+				}
+				else
+				{
+
+					accel *= 3;
+					weight *= 10;
+				}
+
+				award = (110 + accel + weight) * award / 120;
 			}
 			else if (modeattacking)
 			{

@@ -2038,7 +2038,21 @@ static void K_HandleLapIncrement(player_t *player)
 			{
 				linecrossed = leveltime;
 				if (starttime > leveltime) // Overlong starts shouldn't reset time on cross
+				{
+					// Award some Amps for a fast start, to counterbalance Obvious Rainbow Driftboost
+
+					tic_t starthaste = starttime - leveltime; // How much time we had left to cross
+					starthaste = TIMEATTACK_START - starthaste; // How much time we wasted before crossing
+
+					tic_t leniency = TICRATE*2; // How long we can take to cross with no penalty to amp payout
+					starthaste = max(0, starthaste - leniency);
+
+					fixed_t ampreward = Easing_OutQuart(starthaste*FRACUNIT/TIMEATTACK_START, 100*FRACUNIT, 0);					
+					K_SpawnAmps(player, ampreward/FRACUNIT, player->mo);
+
+					// And reset our time to 0.
 					starttime = leveltime;
+				}
 				if (demo.recording)
 					demo_extradata[player-players] |= DXD_START;
 				Music_Stop("position");

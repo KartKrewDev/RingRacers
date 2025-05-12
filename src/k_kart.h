@@ -50,6 +50,8 @@ Make sure this matches the actual number of states
 #define MINCOMBOFLOAT (mapobjectscale*1)
 #define MAXCOMBOTIME (TICRATE*4)
 
+#define TIMEATTACK_START (TICRATE*10)
+
 #define OVERDRIVE_STARTUP (0)
 
 #define AMPLEVEL (15)
@@ -311,6 +313,8 @@ fixed_t K_GetExpAdjustment(player_t *player);
 UINT16 K_GetDisplayEXP(player_t *player);
 
 UINT32 K_GetNumGradingPoints(void);
+
+boolean K_LegacyRingboost(player_t *player);
 
 #ifdef __cplusplus
 } // extern "C"
