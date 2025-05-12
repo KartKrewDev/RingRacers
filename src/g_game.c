@@ -2349,7 +2349,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	xtralife = players[player].xtralife;
 
 	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_KICKSTARTACCEL|PF_SHRINKME|PF_SHRINKACTIVE|PF_AUTOROULETTE|PF_ANALOGSTICK|PF_AUTORING));
-	pflags2 = (players[player].pflags2 & (PF2_SELFMUTE | PF2_SELFDEAFEN | PF2_SERVERMUTE | PF2_SERVERDEAFEN));
+	pflags2 = (players[player].pflags2 & (PF2_SELFMUTE | PF2_SELFDEAFEN | PF2_SERVERMUTE | PF2_SERVERDEAFEN | PF2_STRICTFASTFALL));
 
 	// SRB2kart
 	memcpy(&itemRoulette, &players[player].itemRoulette, sizeof (itemRoulette));

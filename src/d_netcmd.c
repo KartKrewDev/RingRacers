@@ -1178,6 +1178,12 @@ enum {
 	WP_SELFMUTE = 1<<5,
 	WP_SELFDEAFEN = 1<<6,
 	WP_STRICTFASTFALL = 1<<7,
+	// WARNING: STUPID LEGACY TIMEWASTER AHEAD
+	// IF YOU ARE ADDING OR MODIFYING WEAPONPREFS, YOU MUST
+	// PRESERVE THEM IN G_PlayerReborn -- OTHERWISE THEY
+	// WILL MYSTERIOUSLY VANISH AFTER ONE RACE
+	//
+	// HOURS LOST TO G_PlayerReborn: UNCOUNTABLE
 };
 
 void WeaponPref_Send(UINT8 ssplayer)
@@ -1238,6 +1244,9 @@ void WeaponPref_Save(UINT8 **cp, INT32 playernum)
 
 	if (player->pflags & PF_AUTORING)
 		prefs |= WP_AUTORING;
+
+	if (player->pflags & PF2_STRICTFASTFALL)
+		prefs |= WP_STRICTFASTFALL;
 
 	WRITEUINT8(*cp, prefs);
 }
