@@ -844,6 +844,8 @@ struct player_t
 	UINT8 trickboost;			// Trick boost. This one is weird and has variable speed. Dear god.
 	UINT8 tricklock;			// Input safety for 2.2 lenient tricks.
 
+	UINT8 bumpslow;
+
 	UINT8 dashRingPullTics; // Timer during which the player is pulled towards a dash ring
 	UINT8 dashRingPushTics; // Timer during which the player displays effects and has no gravity after being thrust by a dash ring
 

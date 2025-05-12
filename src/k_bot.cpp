@@ -806,6 +806,9 @@ fixed_t K_UpdateRubberband(player_t *player)
 	// Ease into the new value.
 	ret += (dest - player->botvars.rubberband) / 8;
 
+	if (player->bumpslow)
+		ret = FRACUNIT/2; // Magic number!
+
 	return ret;
 }
 

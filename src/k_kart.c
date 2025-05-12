@@ -9438,6 +9438,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->trickboost)
 		player->trickboost--;
 
+	if (player->bumpslow)
+		player->bumpslow--;
+
 	if (player->flamedash)
 	{
 		player->flamedash--;
@@ -10222,6 +10225,14 @@ void K_KartResetPlayerColor(player_t *player)
 	if (player->mo->health <= 0 || player->playerstate == PST_DEAD || (player->respawn.state == RESPAWNST_MOVE)) // Override everything
 	{
 		goto base;
+	}
+
+	if (player->bumpslow)
+	{
+		player->mo->colorized = true;
+		player->mo->color = SKINCOLOR_RED;
+		fullbright = true;
+		goto finalise;	
 	}
 
 	if (player->eggmanexplode) // You're gonna diiiiie

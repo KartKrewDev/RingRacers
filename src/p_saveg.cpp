@@ -569,6 +569,8 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].trickboost);
 		WRITEUINT8(save->p, players[i].tricklock);
 
+		WRITEUINT8(save->p, players[i].bumpslow);
+
 		WRITEUINT8(save->p, players[i].dashRingPullTics);
 		WRITEUINT8(save->p, players[i].dashRingPushTics);
 
@@ -1205,6 +1207,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].trickboostdecay = READUINT8(save->p);
 		players[i].trickboost = READUINT8(save->p);
 		players[i].tricklock = READUINT8(save->p);
+
+		players[i].bumpslow = READUINT8(save->p);
 
 		players[i].dashRingPullTics = READUINT8(save->p);
 		players[i].dashRingPushTics = READUINT8(save->p);
