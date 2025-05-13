@@ -67,6 +67,13 @@ void Obj_BailChargeThink (mobj_t *aura)
 		aura->flags |= MF_NOCLIPTHING;
         // aura->color = mo->color;
 
+        aura->extravalue1 = max(0, aura->extravalue1-1);
+        if (aura->extravalue1 == 0 && (!P_IsObjectOnGround(player->mo) || player->tumbleBounces != 0)) 
+        {
+            aura->anim_duration = 2; // hack the shit out of FF_ANIMATE hell yeah
+            aura->extravalue1 = 2;
+        }
+
         // aura->renderflags &= ~RF_DONTDRAW;
 
         fixed_t baseScale = 12*mo->scale/10;
