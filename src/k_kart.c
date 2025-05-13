@@ -10066,7 +10066,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	}
 
 	extern consvar_t cv_fuzz;
-	if (cv_fuzz.value && P_CanPickupItem(player, 1))
+	if (cv_fuzz.value && P_CanPickupItem(player, PICKUP_ITEMBOX))
 	{
 		K_StartItemRoulette(player, P_RandomRange(PR_FUZZ, 0, 1));
 	}
