@@ -803,11 +803,13 @@ fixed_t K_UpdateRubberband(player_t *player)
 	fixed_t dest = K_BotRubberband(player);
 	fixed_t ret = player->botvars.rubberband;
 
-	// Ease into the new value.
-	ret += (dest - player->botvars.rubberband) / 8;
+	UINT8 ease_soften = 8;
 
-	if (player->bumpslow)
-		ret = FRACUNIT/2; // Magic number!
+	if (player->bumpslow && dest > ret)
+		ease_soften *= 10;
+
+	// Ease into the new value.
+	ret += (dest - player->botvars.rubberband) / ease_soften;
 
 	return ret;
 }

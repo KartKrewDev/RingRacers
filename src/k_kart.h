@@ -312,6 +312,8 @@ UINT16 K_GetDisplayEXP(player_t *player);
 
 UINT32 K_GetNumGradingPoints(void);
 
+void K_BotHitPenalty(player_t *player);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

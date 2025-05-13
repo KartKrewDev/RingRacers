@@ -9438,7 +9438,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->trickboost)
 		player->trickboost--;
 
-	if (player->bumpslow)
+	if (player->bumpslow && player->incontrol)
 		player->bumpslow--;
 
 	if (player->flamedash)
@@ -10225,14 +10225,6 @@ void K_KartResetPlayerColor(player_t *player)
 	if (player->mo->health <= 0 || player->playerstate == PST_DEAD || (player->respawn.state == RESPAWNST_MOVE)) // Override everything
 	{
 		goto base;
-	}
-
-	if (player->bumpslow)
-	{
-		player->mo->colorized = true;
-		player->mo->color = SKINCOLOR_RED;
-		fullbright = true;
-		goto finalise;	
 	}
 
 	if (player->eggmanexplode) // You're gonna diiiiie
@@ -15458,6 +15450,15 @@ UINT32 K_GetNumGradingPoints(void)
 		return 0;
 
 	return numlaps * (1 + Obj_GetCheckpointCount());
+}
+
+void K_BotHitPenalty(player_t *player)
+{
+	if (K_PlayerUsesBotMovement(player))
+	{
+		player->botvars.rubberband = max(player->botvars.rubberband/2, FRACUNIT/2);
+		player->bumpslow = TICRATE*2;
+	}
 }
 
 //}
