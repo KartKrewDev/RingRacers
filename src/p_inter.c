@@ -125,13 +125,20 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 	// 2: Eggbox
 	// 3: Paperitem
 
-	if (weapon != 2 && player->instaWhipCharge)
+	if (weapon != PICKUP_EGGBOX && player->instaWhipCharge)
 		return false;
 
-	if (weapon)
+	if (weapon == PICKUP_RINGORSPHERE)
+	{
+		if (player->stunned > 0)
+		{
+			return false;
+		}
+	}
+	else
 	{
 		// Item slot already taken up
-		if (weapon == 2)
+		if (weapon == PICKUP_EGGBOX)
 		{
 			// Invulnerable
 			if (player->flashing > 0)
@@ -153,11 +160,11 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 			// Item slot already taken up
 			if (player->itemRoulette.active == true
 				|| player->ringboxdelay > 0
-				|| (weapon != 3 && player->itemamount)
+				|| (weapon != PICKUP_PAPERITEM && player->itemamount)
 				|| (player->itemflags & IF_ITEMOUT))
 				return false;
 
-			if (weapon == 3 && K_GetShieldFromItem(player->itemtype) != KSHIELD_NONE)
+			if (weapon == PICKUP_PAPERITEM && K_GetShieldFromItem(player->itemtype) != KSHIELD_NONE)
 				return false; // No stacking shields!
 		}
 	}
@@ -411,7 +418,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				if (special->scale < special->destscale/2)
 					return;
 
-				if (!P_CanPickupItem(player, 3) || (player->itemamount && player->itemtype != special->threshold))
+				if (!P_CanPickupItem(player, PICKUP_PAPERITEM) || (player->itemamount && player->itemtype != special->threshold))
 					return;
 
 				player->itemtype = special->threshold;
@@ -433,7 +440,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		case MT_RANDOMITEM: {
 			UINT8 cheesetype = (special->flags2 & MF2_BOSSDEAD) ? 2 : 1; // perma ring box
 
-			if (!P_CanPickupItem(player, 1))
+			if (!P_CanPickupItem(player, PICKUP_ITEMBOX))
 				return;
 			if (P_IsPickupCheesy(player, cheesetype))
 				return;
@@ -473,7 +480,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			return;
 		}
 		case MT_SPHEREBOX:
-			if (!P_CanPickupItem(player, 0))
+			if (!P_CanPickupItem(player, PICKUP_RINGORSPHERE))
 				return;
 
 			special->momx = special->momy = special->momz = 0;
@@ -499,7 +506,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 						return;
 					break;
 				default:
-					if (!P_CanPickupItem(player, 1))
+					if (!P_CanPickupItem(player, PICKUP_ITEMBOX))
 						return;
 					if (P_IsPickupCheesy(player, 3))
 						return;
@@ -558,7 +565,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				return;
 			}
 		case MT_EMERALD:
-			if (!P_CanPickupItem(player, 0) || P_PlayerInPain(player))
+			if (!P_CanPickupItem(player, PICKUP_RINGORSPHERE) || P_PlayerInPain(player))
 				return;
 
 			if (special->threshold > 0)
@@ -617,7 +624,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			return;
 
 		case MT_CDUFO: // SRB2kart
-			if (special->fuse || !P_CanPickupItem(player, 1))
+			if (special->fuse || !P_CanPickupItem(player, PICKUP_ITEMBOX))
 				return;
 
 			K_StartItemRoulette(player, false);
@@ -693,7 +700,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (special->threshold > 0 || P_PlayerInPain(player) || player->spindash) // player->spindash: Otherwise, players can pick up rings that are thrown out of them from invinc spindash penalty
 				return;
 
-			if (!(P_CanPickupItem(player, 0)))
+			if (!(P_CanPickupItem(player, PICKUP_RINGORSPHERE)))
 				return;
 
 			// Reached the cap, don't waste 'em!
@@ -715,7 +722,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			return;
 
 		case MT_BLUESPHERE:
-			if (!(P_CanPickupItem(player, 0)))
+			if (!(P_CanPickupItem(player, PICKUP_RINGORSPHERE)))
 				return;
 
 			P_GivePlayerSpheres(player, 1);
@@ -2301,6 +2308,9 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		case MT_EMFAUCET_DRIP:
 			Obj_EMZDripDeath(target);
 			break;
+		case MT_FLYBOT767:
+			Obj_FlybotDeath(target);
+			break;
 		default:
 			break;
 	}
@@ -3001,6 +3011,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			UINT8 type = (damagetype & DMG_TYPEMASK);
 			const boolean hardhit = (type == DMG_EXPLODE || type == DMG_KARMA || type == DMG_TUMBLE); // This damage type can do evil stuff like ALWAYS combo
 			INT16 ringburst = 5;
+			UINT16 stunTics = 0;
 
 			// Check if the player is allowed to be damaged!
 			// If not, then spawn the instashield effect instead.
@@ -3390,6 +3401,17 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			{
 				player->flipDI = true;
 			}
+
+			// <VelocitOni> I'm wondering if weight 9 should have it for 70 tics, while weight 1 would have it for like 280 (basically x4)
+			// <VelocitOni> It may be worth designing it LIKE a value that could be changed for the future though, we may want different things to give different multipliers of stun later imo
+			stunTics = 2*TICRATE + (6*TICRATE * (9 - player->kartweight) / 8);
+			stunTics >>= player->stunnedCombo; // consecutive hits add half as much stun as the previous hit
+
+			if (player->stunnedCombo < UINT8_MAX)
+			{
+				player->stunnedCombo++;
+			}
+			player->stunned = (player->stunned & 0x8000) | min(0x7FFF, (player->stunned & 0x7FFF) + stunTics);
 
 			K_DefensiveOverdrive(target->player);
 		}

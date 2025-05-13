@@ -557,6 +557,12 @@ void P_CheckTimeLimit(void);
 void P_CheckPointLimit(void);
 boolean P_CheckRacers(void);
 
+// Pickup types
+#define PICKUP_RINGORSPHERE 0
+#define PICKUP_ITEMBOX 1
+#define PICKUP_EGGBOX 2
+#define PICKUP_PAPERITEM 3
+
 boolean P_CanPickupItem(player_t *player, UINT8 weapon);
 boolean P_IsPickupCheesy(player_t *player, UINT8 type);
 void P_UpdateLastPickup(player_t *player, UINT8 type);

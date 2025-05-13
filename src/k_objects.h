@@ -435,6 +435,11 @@ boolean Obj_DestroyKart(mobj_t *kart);
 void Obj_DestroyedKartParticleThink(mobj_t *part);
 void Obj_DestroyedKartParticleLanding(mobj_t *part);
 
+/* Flybot767 (stun) */
+void Obj_SpawnFlybotsForPlayer(player_t *player);
+void Obj_FlybotThink(mobj_t *flybot);
+void Obj_FlybotDeath(mobj_t *flybot);
+
 /* Pulley */
 void Obj_PulleyThink(mobj_t *root);
 void Obj_PulleyHookTouch(mobj_t *special, mobj_t *toucher);
