@@ -32,11 +32,34 @@ void Obj_BailThink (mobj_t *aura)
         mobj_t *mo = aura->target;
         player_t *player = mo->player;
 
-        if (P_PlayerInPain(player) && aura->state != &states[S_TECHCHARGE])
-        {
-            P_SetMobjState(aura, S_TECHCHARGE);
-            player->bailcharge = 1;
-        }
+        // Follow player
+        aura->flags &= ~(MF_NOCLIPTHING);
+		P_MoveOrigin(aura, mo->x, mo->y, mo->z + mo->height/2);
+		aura->flags |= MF_NOCLIPTHING;
+        // aura->color = mo->color;
+
+        // aura->renderflags &= ~RF_DONTDRAW;
+
+        fixed_t baseScale = 12*mo->scale/10;
+
+        P_SetScale(aura, baseScale);
+    }
+}
+
+void Obj_BailChargeThink (mobj_t *aura)
+{
+    if (P_MobjWasRemoved(aura->target)
+		|| aura->target->health == 0
+		|| aura->target->destscale <= 1 // sealed star fall out
+		|| !aura->target->player
+        || !aura->target->player->bailcharge)
+    {
+        P_RemoveMobj(aura);
+    }
+    else
+    {
+        mobj_t *mo = aura->target;
+        player_t *player = mo->player;
 
         // Follow player
         aura->flags &= ~(MF_NOCLIPTHING);

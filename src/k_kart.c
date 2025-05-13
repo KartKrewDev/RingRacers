@@ -13924,9 +13924,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	if ((player->cmd.buttons & BT_VOTE) && ((player->itemtype && player->itemamount) || (player->rings > 0) || player->superring > 0 || player->pickuprings > 0 || player->itemRoulette.active))
 	{
 		player->bailcharge++;
-		if (player->bailcharge == 1)
+		if (P_PlayerInPain(player) && player->bailcharge == 1)
 		{
-			// Hi Ashnal
+			mobj_t *bail = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, MT_BAILCHARGE);
+			P_SetTarget(&bail->target, player->mo);
 		}
 	}
 	else
@@ -13934,13 +13935,13 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		player->bailcharge = 0;
 	}
 
-	if ((!P_PlayerInPain(player) && player->bailcharge >= BAIL_MAXCHARGE) || player->bailcharge)
+	if ((!P_PlayerInPain(player) && player->bailcharge) || player->bailcharge >= BAIL_MAXCHARGE)
 	{
 		CONS_Printf("rl %d it %d ia %d ri %d sr %d pr %d\n", player->itemRoulette.active, player->itemtype, player->itemamount, player->rings > 0, player->superring > 0, player->pickuprings > 0);
 
 		player->bailcharge = 0;
 
-		mobj_t * bail = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, MT_BAIL);
+		mobj_t *bail = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, MT_BAIL);
 		P_SetTarget(&bail->target, player->mo);
 
 		UINT32 debtrings = 20;

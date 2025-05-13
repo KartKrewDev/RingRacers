@@ -2633,7 +2633,7 @@ typedef enum state
 	S_BLOCKBODY,
 
 	S_BAIL,
-	S_TECHCHARGE,
+	S_BAILCHARGE,
 
 	S_AMPRING,
 	S_AMPBODY,
@@ -4653,6 +4653,7 @@ typedef enum mobj_type
 	MT_BLOCKBODY,
 
 	MT_BAIL,
+	MT_BAILCHARGE,
 
 	MT_AMPRING,
 	MT_AMPBODY,
