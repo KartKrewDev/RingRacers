@@ -112,17 +112,21 @@ void Obj_RandomItemVisuals(mobj_t *mobj)
 	ItemBoxScaling(mobj);
 	item_vfxtimer(mobj)++;
 
-	for (UINT8 i = 0; i <= r_splitscreen; i++)
-	{
-		UINT32 flag = K_GetPlayerDontDrawFlag(&players[displayplayers[i]]);
-		if (!players[displayplayers[i]].cangrabitems)
-			mobj->renderflags |= flag;
-		else
-			mobj->renderflags &= ~(flag);
-	}
-
 	if (mobj->type != MT_RANDOMITEM)
 		return;
+
+	if (!((mobj->flags & MF_NOCLIPTHING) || mobj->fuse))
+	{
+		for (UINT8 i = 0; i <= r_splitscreen; i++)
+		{
+			UINT32 flag = K_GetPlayerDontDrawFlag(&players[displayplayers[i]]);
+			if (!players[displayplayers[i]].cangrabitems)
+				mobj->renderflags |= flag;
+			else
+				mobj->renderflags &= ~(flag);
+		}
+	}
+
 
 	// Respawn flow, documented by a dumb asshole:
 	// P_TouchSpecialThing -> P_ItemPop sets fuse, NOCLIPTHING and DONTDRAW.
