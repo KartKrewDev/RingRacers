@@ -1099,7 +1099,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].justDI = READUINT8(save->p);
 		players[i].flipDI = (boolean)READUINT8(save->p);
 
-		players[i].cangrabitems = (boolean)READUINT8(save->p);
+		players[i].cangrabitems = READUINT8(save->p);
 
 		players[i].drift = READSINT8(save->p);
 		players[i].driftcharge = READFIXED(save->p);

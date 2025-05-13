@@ -4235,7 +4235,7 @@ void K_CheckpointCrossAward(player_t *player)
 		return;
 
 	player->exp += K_GetExpAdjustment(player);
-	player->cangrabitems = true;
+	player->cangrabitems = 1;
 	K_AwardPlayerRings(player, (player->bot ? 20 : 10), true);
 }
 
@@ -9579,6 +9579,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			player->invincibilitytimer--;
 	}
 
+	if (player->cangrabitems && player->cangrabitems <= EARLY_ITEM_FLICKER)
+		player->cangrabitems++;
 
 	if (!player->invincibilitytimer)
 		player->invincibilityextensions = 0;

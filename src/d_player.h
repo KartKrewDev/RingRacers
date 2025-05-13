@@ -727,7 +727,7 @@ struct player_t
 	UINT8 justDI;			// Turn-lockout timer to briefly prevent unintended turning after DI, resets when actionable or no input
 	boolean flipDI;			// Bananas flip the DI direction. Was a bug, but it made bananas much more interesting.
 
-	boolean cangrabitems;
+	UINT8 cangrabitems;
 
 	SINT8 drift;			// (-5 to 5) - Drifting Left or Right, plus a bigger counter = sharper turn
 	fixed_t driftcharge;	// Charge your drift so you can release a burst of speed

@@ -2429,7 +2429,13 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		bigwaypointgap = 0;
 
 		tallyactive = false;
-		cangrabitems = false;
+
+		cangrabitems = 0;
+		if (gametyperules & GTR_SPHERES
+			|| gametyperules & GTR_CATCHER
+			|| G_TimeAttackStart()
+			|| gametype == GT_TUTORIAL)
+			cangrabitems = EARLY_ITEM_FLICKER;
 	}
 	else
 	{
