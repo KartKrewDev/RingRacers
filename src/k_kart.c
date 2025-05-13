@@ -4235,6 +4235,7 @@ void K_CheckpointCrossAward(player_t *player)
 		return;
 
 	player->exp += K_GetExpAdjustment(player);
+	player->cangrabitems = true;
 	K_AwardPlayerRings(player, (player->bot ? 20 : 10), true);
 }
 

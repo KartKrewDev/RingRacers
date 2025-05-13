@@ -112,6 +112,15 @@ void Obj_RandomItemVisuals(mobj_t *mobj)
 	ItemBoxScaling(mobj);
 	item_vfxtimer(mobj)++;
 
+	for (UINT8 i = 0; i <= r_splitscreen; i++)
+	{
+		UINT32 flag = K_GetPlayerDontDrawFlag(&players[displayplayers[i]]);
+		if (!players[displayplayers[i]].cangrabitems)
+			mobj->renderflags |= flag;
+		else
+			mobj->renderflags &= ~(flag);
+	}
+
 	if (mobj->type != MT_RANDOMITEM)
 		return;
 
