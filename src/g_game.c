@@ -2429,6 +2429,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		bigwaypointgap = 0;
 
 		tallyactive = false;
+		cangrabitems = false;
 	}
 	else
 	{
