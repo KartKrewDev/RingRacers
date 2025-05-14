@@ -149,10 +149,10 @@ void TwodeeRenderer::rewrite_patch_quad_vertices(Draw2dList& list, const Draw2dP
 	const float cmd_xrange = cmd.xmax - cmd.xmin;
 	const float cmd_yrange = cmd.ymax - cmd.ymin;
 
-	const float clipped_xmin = cmd.clip ? std::clamp(cmd.xmin, cmd.clip_xmin, cmd.clip_xmax) : cmd.xmin;
-	const float clipped_xmax = cmd.clip ? std::clamp(cmd.xmax, cmd.clip_xmin, cmd.clip_xmax) : cmd.xmax;
-	const float clipped_ymin = cmd.clip ? std::clamp(cmd.ymin, cmd.clip_ymin, cmd.clip_ymax) : cmd.ymin;
-	const float clipped_ymax = cmd.clip ? std::clamp(cmd.ymax, cmd.clip_ymin, cmd.clip_ymax) : cmd.ymax;
+	const float clipped_xmin = cmd.clip ? std::clamp(cmd.xmin, cmd.clip_xmin, std::max(cmd.clip_xmax, cmd.clip_xmin)) : cmd.xmin;
+	const float clipped_xmax = cmd.clip ? std::clamp(cmd.xmax, cmd.clip_xmin, std::max(cmd.clip_xmax, cmd.clip_xmin)) : cmd.xmax;
+	const float clipped_ymin = cmd.clip ? std::clamp(cmd.ymin, cmd.clip_ymin, std::max(cmd.clip_ymax, cmd.clip_ymin)) : cmd.ymin;
+	const float clipped_ymax = cmd.clip ? std::clamp(cmd.ymax, cmd.clip_ymin, std::max(cmd.clip_ymax, cmd.clip_ymin)) : cmd.ymax;
 
 	const float trimmed_left = cmd.flip ? (1.f - trim_umax) : trim_umin;
 	const float trimmed_right = cmd.flip ? trim_umin : (1.f - trim_umax);
