@@ -562,6 +562,11 @@ boolean P_CheckRacers(void);
 #define PICKUP_ITEMBOX 1
 #define PICKUP_EGGBOX 2
 #define PICKUP_PAPERITEM 3
+#define PICKUP_ITEMCAPSULE 4
+
+#define CHEESE_ITEMBOX 1
+#define CHEESE_RINGBOX 2
+#define CHEESE_ITEMCAPSULE 3
 
 boolean P_CanPickupItem(player_t *player, UINT8 weapon);
 boolean P_IsPickupCheesy(player_t *player, UINT8 type);

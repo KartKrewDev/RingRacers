@@ -120,10 +120,7 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 	if (player->exiting || mapreset || (player->pflags & PF_ELIMINATED) || player->itemRoulette.reserved)
 		return false;
 
-	// 0: Sphere/Ring
-	// 1: Random Item / Capsule
-	// 2: Eggbox
-	// 3: Paperitem
+	// See p_local.h for pickup types
 
 	if (weapon != PICKUP_EGGBOX && player->instaWhipCharge)
 		return false;
@@ -133,6 +130,13 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 
 	if (weapon == PICKUP_RINGORSPHERE)
 	{
+		// No picking up rings while SPB is targetting you
+		if (player->pflags & PF_RINGLOCK)
+		{
+			return false;
+		}
+
+		// No picking up rings while stunned
 		if (player->stunned > 0)
 		{
 			return false;
@@ -178,7 +182,7 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 // Allow players to pick up only one pickup from each set of pickups.
 // Anticheese pickup types are different than-P_CanPickupItem weapon, because that system is
 // already slightly scary without introducing special cases for different types of the same pickup.
-// 1 = floating item, 2 = perma ring, 3 = capsule
+// See p_local.h for cheese types.
 boolean P_IsPickupCheesy(player_t *player, UINT8 type)
 {
 	extern consvar_t cv_debugcheese;
@@ -441,7 +445,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			special->flags &= ~MF_SPECIAL;
 			return;
 		case MT_RANDOMITEM: {
-			UINT8 cheesetype = (special->flags2 & MF2_BOSSDEAD) ? 2 : 1; // perma ring box
+			UINT8 cheesetype = (special->flags2 & MF2_BOSSDEAD) ? CHEESE_RINGBOX : CHEESE_ITEMBOX; // perma ring box
 
 			if (!P_CanPickupItem(player, PICKUP_ITEMBOX))
 				return;
@@ -503,15 +507,13 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 						return;
 					break;
 				case KITEM_SUPERRING:
-					if (player->pflags & PF_RINGLOCK) // no cheaty rings
-						return;
-					if (player->instaWhipCharge)
+					if (!P_CanPickupItem(player, PICKUP_RINGORSPHERE)) // no cheaty rings
 						return;
 					break;
 				default:
-					if (!P_CanPickupItem(player, PICKUP_ITEMBOX))
+					if (!P_CanPickupItem(player, PICKUP_ITEMCAPSULE))
 						return;
-					if (P_IsPickupCheesy(player, 3))
+					if (P_IsPickupCheesy(player, CHEESE_ITEMCAPSULE))
 						return;
 					break;
 			}
@@ -689,14 +691,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		case MT_RING:
 		case MT_FLINGRING:
 			if (special->extravalue1)
-				return;
-
-			// No picking up rings while SPB is targetting you
-			if (player->pflags & PF_RINGLOCK)
-				return;
-
-			// Prepping instawhip? Don't ruin it by collecting rings
-			if (player->instaWhipCharge)
 				return;
 
 			// Don't immediately pick up spilled rings
@@ -3405,16 +3399,26 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				player->flipDI = true;
 			}
 
-			// <VelocitOni> I'm wondering if weight 9 should have it for 70 tics, while weight 1 would have it for like 280 (basically x4)
-			// <VelocitOni> It may be worth designing it LIKE a value that could be changed for the future though, we may want different things to give different multipliers of stun later imo
-			stunTics = 2*TICRATE + (6*TICRATE * (9 - player->kartweight) / 8);
+			// Apply stun!
+			// Feel free to move these calculations higher up if different damage sources should apply variable stun in future
+			#define MIN_STUNTICS (8 * TICRATE)
+			#define MAX_STUNTICS (18 * TICRATE)
+			stunTics = Easing_Linear((player->kartweight - 1) * FRACUNIT / 8, MAX_STUNTICS, MIN_STUNTICS);
 			stunTics >>= player->stunnedCombo; // consecutive hits add half as much stun as the previous hit
+
+			// 1/3 base stun values in battle
+			if (gametyperules & GTR_SPHERES)
+			{
+				stunTics /= 3;
+			}
 
 			if (player->stunnedCombo < UINT8_MAX)
 			{
 				player->stunnedCombo++;
 			}
 			player->stunned = (player->stunned & 0x8000) | min(0x7FFF, (player->stunned & 0x7FFF) + stunTics);
+			#undef MIN_STUNTICS
+			#undef MAX_STUNTICS
 
 			K_DefensiveOverdrive(target->player);
 		}

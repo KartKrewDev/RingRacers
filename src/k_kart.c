@@ -8819,7 +8819,7 @@ static inline BlockItReturn_t PIT_AttractingRings(mobj_t *thing)
 		return BMIT_CONTINUE; // Too far away
 	}
 
-	if (RINGTOTAL(attractmo->player) >= 20 || (attractmo->player->pflags & PF_RINGLOCK))
+	if (RINGTOTAL(attractmo->player) >= 20 || !P_CanPickupItem(attractmo->player, PICKUP_RINGORSPHERE))
 	{
 		// Already reached max -- just joustle rings around.
 

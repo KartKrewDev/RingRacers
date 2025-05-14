@@ -541,7 +541,7 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 				break;
 			}
 
-			if ((RINGTOTAL(g_nudgeSearch.botmo->player) < 20 && !(g_nudgeSearch.botmo->player->pflags & PF_RINGLOCK)
+			if ((RINGTOTAL(g_nudgeSearch.botmo->player) < 20
 				&& P_CanPickupItem(g_nudgeSearch.botmo->player, PICKUP_RINGORSPHERE))
 				&& !thing->extravalue1
 				&& (g_nudgeSearch.botmo->player->itemtype != KITEM_LIGHTNINGSHIELD))
