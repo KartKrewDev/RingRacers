@@ -128,6 +128,9 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 	if (weapon != 2 && player->instaWhipCharge)
 		return false;
 
+	if (weapon == 1 && !player->cangrabitems)
+		return false;
+
 	if (weapon)
 	{
 		// Item slot already taken up

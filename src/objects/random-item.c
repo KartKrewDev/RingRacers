@@ -115,6 +115,38 @@ void Obj_RandomItemVisuals(mobj_t *mobj)
 	if (mobj->type != MT_RANDOMITEM)
 		return;
 
+	// Fade items in as we cross the first checkpoint, but don't touch their visibility otherwise!
+	if (!((mobj->flags & MF_NOCLIPTHING) || mobj->fuse))
+	{
+		UINT8 maxgrab = 0;
+
+		for (UINT8 i = 0; i <= r_splitscreen; i++)
+		{
+			maxgrab = max(maxgrab, players[displayplayers[i]].cangrabitems);
+		}
+
+		if (maxgrab == 0)
+			mobj->renderflags |= RF_DONTDRAW;
+		else
+			mobj->renderflags &= ~RF_DONTDRAW;
+
+		if (maxgrab > 0 && maxgrab <= EARLY_ITEM_FLICKER)
+		{
+			UINT8 maxtranslevel = NUMTRANSMAPS;
+
+			UINT8 trans = maxgrab;
+			if (trans > maxtranslevel)
+				trans = maxtranslevel;
+			trans = NUMTRANSMAPS - trans;
+
+			mobj->renderflags &= ~(RF_TRANSMASK);
+
+			if (trans != 0)
+				mobj->renderflags |= (trans << RF_TRANSSHIFT);
+		}
+	}
+
+
 	// Respawn flow, documented by a dumb asshole:
 	// P_TouchSpecialThing -> P_ItemPop sets fuse, NOCLIPTHING and DONTDRAW.
 	// P_FuseThink does visual flicker, and when fuse is 0, unsets NOCLIPTHING/DONTDRAW/etc...
