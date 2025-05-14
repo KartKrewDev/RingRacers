@@ -444,6 +444,10 @@ UINT8 K_HogChargeToHogCount(INT32 charge, UINT8 cap);
 void K_UpdateBallhogReticules(player_t *player, UINT8 num_hogs, boolean on_release);
 void K_DoBallhogAttack(player_t *player, UINT8 num_hogs);
 
+/* Bubble Shield */
+void Obj_SpawnBubbleShieldVisuals(mobj_t *source);
+boolean Obj_TickBubbleShieldVisual(mobj_t *mobj);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

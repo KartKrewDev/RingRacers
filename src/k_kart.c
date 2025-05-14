@@ -14021,6 +14021,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								P_SetTarget(&shield->target, player->mo);
 								S_StartSound(player->mo, sfx_s3k3f);
 								player->curshield = KSHIELD_BUBBLE;
+
+								Obj_SpawnBubbleShieldVisuals(shield);
 							}
 
 							if (!HOLDING_ITEM && NO_HYUDORO)
