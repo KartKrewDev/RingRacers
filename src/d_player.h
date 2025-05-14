@@ -406,6 +406,7 @@ struct botvars_t
 	// All entries above persist between rounds and must be recorded in demos
 
 	fixed_t rubberband; // Bot rubberband value
+	UINT8 bumpslow;
 
 	tic_t itemdelay; // Delay before using item at all
 	tic_t itemconfirm; // When high enough, they will use their item
@@ -843,8 +844,6 @@ struct player_t
 	UINT8 trickboostdecay;		// used to know how long you've waited
 	UINT8 trickboost;			// Trick boost. This one is weird and has variable speed. Dear god.
 	UINT8 tricklock;			// Input safety for 2.2 lenient tricks.
-
-	UINT8 bumpslow;
 
 	UINT8 dashRingPullTics; // Timer during which the player is pulled towards a dash ring
 	UINT8 dashRingPushTics; // Timer during which the player displays effects and has no gravity after being thrust by a dash ring

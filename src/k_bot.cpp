@@ -805,7 +805,7 @@ fixed_t K_UpdateRubberband(player_t *player)
 
 	UINT8 ease_soften = 8;
 
-	if (player->bumpslow && dest > ret)
+	if (player->botvars.bumpslow && dest > ret)
 		ease_soften *= 10;
 
 	// Ease into the new value.

@@ -526,8 +526,6 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->trickboost);
 	else if (fastcmp(field,"tricklock"))
 		lua_pushinteger(L, plr->tricklock);
-	else if (fastcmp(field,"bumpslow"))
-		lua_pushinteger(L, plr->bumpslow);
 	else if (fastcmp(field,"dashringpulltics"))
 		lua_pushinteger(L, plr->dashRingPullTics);
 	else if (fastcmp(field,"dashringpushtics"))
@@ -1138,8 +1136,6 @@ static int player_set(lua_State *L)
 		plr->trickboost = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"tricklock"))
 		plr->tricklock = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"bumpslow"))
-		plr->bumpslow = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"dashringpulltics"))
 		plr->dashRingPullTics = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"dashringpushtics"))

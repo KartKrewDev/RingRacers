@@ -569,8 +569,6 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].trickboost);
 		WRITEUINT8(save->p, players[i].tricklock);
 
-		WRITEUINT8(save->p, players[i].bumpslow);
-
 		WRITEUINT8(save->p, players[i].dashRingPullTics);
 		WRITEUINT8(save->p, players[i].dashRingPushTics);
 
@@ -733,6 +731,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].botvars.diffincrease);
 		WRITEUINT8(save->p, players[i].botvars.rival);
 		WRITEFIXED(save->p, players[i].botvars.rubberband);
+		WRITEUINT8(save->p, players[i].botvars.bumpslow);
 		WRITEUINT32(save->p, players[i].botvars.itemdelay);
 		WRITEUINT32(save->p, players[i].botvars.itemconfirm);
 		WRITESINT8(save->p, players[i].botvars.turnconfirm);
@@ -1208,8 +1207,6 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].trickboost = READUINT8(save->p);
 		players[i].tricklock = READUINT8(save->p);
 
-		players[i].bumpslow = READUINT8(save->p);
-
 		players[i].dashRingPullTics = READUINT8(save->p);
 		players[i].dashRingPushTics = READUINT8(save->p);
 
@@ -1372,6 +1369,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].botvars.diffincrease = READUINT8(save->p);
 		players[i].botvars.rival = (boolean)READUINT8(save->p);
 		players[i].botvars.rubberband = READFIXED(save->p);
+		players[i].botvars.bumpslow = READUINT8(save->p);
 		players[i].botvars.itemdelay = READUINT32(save->p);
 		players[i].botvars.itemconfirm = READUINT32(save->p);
 		players[i].botvars.turnconfirm = READSINT8(save->p);
