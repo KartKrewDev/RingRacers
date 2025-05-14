@@ -268,6 +268,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->justDI);
 	else if (fastcmp(field,"flipdi"))
 		lua_pushboolean(L, plr->flipDI);
+	else if (fastcmp(field,"cangrabitems"))
+		lua_pushinteger(L, plr->cangrabitems);
 	else if (fastcmp(field,"analoginput"))
 		lua_pushboolean(L, plr->analoginput);
 	else if (fastcmp(field,"transfer"))
@@ -884,6 +886,8 @@ static int player_set(lua_State *L)
 		plr->justDI = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"flipdi"))
 		plr->flipDI = luaL_checkboolean(L, 3);
+	else if (fastcmp(field,"cangrabitems"))
+		plr->cangrabitems = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"incontrol"))
 		plr->incontrol = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"progressivethrust"))

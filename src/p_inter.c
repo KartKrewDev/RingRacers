@@ -128,6 +128,9 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 	if (weapon != PICKUP_EGGBOX && player->instaWhipCharge)
 		return false;
 
+	if (weapon == PICKUP_ITEMBOX && !player->cangrabitems)
+		return false;
+
 	if (weapon == PICKUP_RINGORSPHERE)
 	{
 		if (player->stunned > 0)

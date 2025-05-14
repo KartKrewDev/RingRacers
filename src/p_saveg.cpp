@@ -461,6 +461,8 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].justDI);
 		WRITEUINT8(save->p, players[i].flipDI);
 
+		WRITEUINT8(save->p, players[i].cangrabitems);
+
 		WRITESINT8(save->p, players[i].drift);
 		WRITEFIXED(save->p, players[i].driftcharge);
 		WRITEUINT16(save->p, players[i].driftboost);
@@ -1100,6 +1102,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		players[i].justDI = READUINT8(save->p);
 		players[i].flipDI = (boolean)READUINT8(save->p);
+
+		players[i].cangrabitems = READUINT8(save->p);
 
 		players[i].drift = READSINT8(save->p);
 		players[i].driftcharge = READFIXED(save->p);

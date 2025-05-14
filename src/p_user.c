@@ -2359,6 +2359,8 @@ static void P_UpdatePlayerAngle(player_t *player)
 		angle_t targetAngle = (player->cmd.angle) << TICCMD_REDUCE;
 		angle_t targetDelta = targetAngle - (player->mo->angle);
 
+#define SOLVERANGLECHEATS
+
 #ifdef SOLVERANGLECHEATS
 		// Corrections via fake turn go through easing.
 		// That means undoing them takes the same amount of time as doing them.
