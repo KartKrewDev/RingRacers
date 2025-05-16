@@ -406,7 +406,7 @@ bool is_object_tracking_target(const mobj_t* mobj)
 		return (mobj->target && !P_MobjWasRemoved(mobj->target) && (
 			(mobj->target->player && stplyr == mobj->target->player)
 			|| (mobj->target->player && G_SameTeam(stplyr, mobj->target->player))
-		);
+		));
 
 	default:
 		return false;
