@@ -508,6 +508,8 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		WRITESINT8(save->p, players[i].itemtype);
 		WRITEUINT8(save->p, players[i].itemamount);
+		WRITESINT8(save->p, players[i].backupitemtype);
+		WRITEUINT8(save->p, players[i].backupitemamount);
 		WRITESINT8(save->p, players[i].throwdir);
 
 		WRITEUINT8(save->p, players[i].sadtimer);
@@ -1148,6 +1150,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		players[i].itemtype = READSINT8(save->p);
 		players[i].itemamount = READUINT8(save->p);
+		players[i].backupitemtype = READSINT8(save->p);
+		players[i].backupitemamount = READUINT8(save->p);
 		players[i].throwdir = READSINT8(save->p);
 
 		players[i].sadtimer = READUINT8(save->p);

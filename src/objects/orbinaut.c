@@ -190,6 +190,9 @@ boolean Obj_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		return true;
 	}
 
+	if (K_TryPickMeUp(t1, t2))
+		return true;
+
 	if (t1->type == MT_GARDENTOP)
 	{
 		tumbleitem = true;

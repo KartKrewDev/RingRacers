@@ -779,6 +779,8 @@ struct player_t
 	// Item held stuff
 	SINT8 itemtype;		// KITEM_ constant for item number
 	UINT8 itemamount;	// Amount of said item
+	SINT8 backupitemtype;
+	UINT8 backupitemamount;
 	SINT8 throwdir; 	// Held dir of controls; 1 = forward, 0 = none, -1 = backward (was "player->heldDir")
 	UINT8 itemscale;	// Item scale value, from when an item was taken out. (0 for normal, 1 for grow, 2 for shrink.)
 

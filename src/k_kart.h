@@ -314,6 +314,8 @@ UINT16 K_GetDisplayEXP(player_t *player);
 
 UINT32 K_GetNumGradingPoints(void);
 
+boolean K_TryPickMeUp(mobj_t *m1, mobj_t *m2);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
