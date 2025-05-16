@@ -15568,7 +15568,16 @@ boolean K_TryPickMeUp(mobj_t *m1, mobj_t *m2)
 		inflictor = m1;
 	}
 
-	if (inflictor->target != victim)
+	if (!victim->player)
+		return false;
+
+	boolean allied = (inflictor->target == victim);
+
+	if (!allied)
+		if (inflictor->target->player && G_SameTeam(inflictor->target->player, victim->player))
+			allied = true;
+
+	if (!allied)
 		return false;
 
 	// CONS_Printf("target check passed\n");

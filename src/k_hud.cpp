@@ -1962,14 +1962,14 @@ static void K_drawBackupItem(void)
 		fx += 26;
 		fy += 5;
 		tx += 10;
-		ty += 10;
+		ty += 18;
 	}
 	else if (tiny && (R_GetViewNumber() & 1)) // P2/P4 4P
 	{
 		fx += -4;
 		fy += 5;
-		tx += -5;
-		ty += 10;
+		tx += 1;
+		ty += 18;
 	}
 	else // 1P/2P
 	{
