@@ -167,15 +167,15 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 		return true;
 	}
 
-	if (K_TryPickMeUp(t1, t2))
-		return true;
-
 	if (t2->player)
 	{
 		if ((t1->target == t2 || t1->target == t2->target) && (t1->threshold > 0))
 			return true;
 
 		if (t1->health <= 0 || t2->health <= 0)
+			return true;
+
+		if (K_TryPickMeUp(t1, t2))
 			return true;
 
 		if (!P_CanPickupItem(t2->player, 2))
