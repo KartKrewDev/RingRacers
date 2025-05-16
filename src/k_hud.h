@@ -130,6 +130,8 @@ extern patch_t *gen_button_keycenter[2];
 extern patch_t *kp_eggnum[6];
 extern patch_t *kp_facenum[MAXPLAYERS+1];
 
+extern patch_t *kp_pickmeup[2];
+
 extern patch_t *kp_unknownminimap;
 
 void K_AddMessage(const char *msg, boolean interrupt, boolean persist);

@@ -278,6 +278,22 @@ private:
 				}},
 			};
 
+		case MT_JAWZ:
+		case MT_JAWZ_SHIELD:
+		case MT_ORBINAUT:
+		case MT_ORBINAUT_SHIELD:
+		case MT_DROPTARGET:
+		case MT_DROPTARGET_SHIELD:
+		case MT_LANDMINE:
+		case MT_BANANA:
+		case MT_BANANA_SHIELD:
+			return {
+				{ // Near
+					{2, TICRATE/2, {kp_pickmeup}, 0}, // 1P
+					{{2, TICRATE/2, {kp_pickmeup}, 0}}, // 4P
+				},
+			};
+
 		default:
 			return {
 				{ // Near
@@ -874,6 +890,31 @@ void K_drawTargetHUD(const vector3_t* origin, player_t* player)
 
 		if (tracking)
 		{
+			fixed_t itemOffset = 36*mobj->scale;
+			switch (mobj->type)
+			{
+				case MT_JAWZ:
+				case MT_JAWZ_SHIELD:
+				case MT_ORBINAUT:
+				case MT_ORBINAUT_SHIELD:
+				case MT_DROPTARGET:
+				case MT_DROPTARGET_SHIELD:
+				case MT_LANDMINE:
+				case MT_BANANA:
+				case MT_BANANA_SHIELD:
+					if (stplyr->mo->eflags & MFE_VERTICALFLIP)
+					{
+						pos.z -= itemOffset;
+					}
+					else
+					{
+						pos.z += itemOffset;
+					}
+					break;
+				default:
+					break;
+			}
+
 			K_ObjectTracking(&tr.result, &pos, false);
 			targetList.push_back(tr);
 		}

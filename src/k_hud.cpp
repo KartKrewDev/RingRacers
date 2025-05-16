@@ -209,6 +209,7 @@ static patch_t *kp_alagles[10];
 static patch_t *kp_blagles[6];
 
 static patch_t *kp_cpu[2];
+patch_t *kp_pickmeup[2];
 
 static patch_t *kp_nametagstem;
 
@@ -866,6 +867,9 @@ void K_LoadKartHUDGraphics(void)
 
 	HU_UpdatePatch(&kp_cpu[0], "K_CPU1");
 	HU_UpdatePatch(&kp_cpu[1], "K_CPU2");
+
+	HU_UpdatePatch(&kp_pickmeup[0], "K_PMU1");
+	HU_UpdatePatch(&kp_pickmeup[1], "K_PMU2");
 
 	HU_UpdatePatch(&kp_nametagstem, "K_NAMEST");
 
