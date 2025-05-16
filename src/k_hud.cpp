@@ -1889,6 +1889,179 @@ static void K_drawKartItem(void)
 	}
 }
 
+// So, like, we've already established that HUD code is unsavable, right?
+static void K_drawBackupItem(void)
+{
+	// ITEM_X = BASEVIDWIDTH-50;	// 270
+	// ITEM_Y = 24;					//  24
+
+	// Why write V_DrawScaledPatch calls over and over when they're all the same?
+	// Set to 'no item' just in case.
+	const UINT8 offset = 1;
+	patch_t *localpatch[3] = { kp_nodraw, kp_nodraw, kp_nodraw };
+	UINT8 localamt[3] = {0, 0, 0};
+	patch_t *localbg = ((offset) ? kp_itembg[2] : kp_itembg[0]);
+	patch_t *localinv = ((offset) ? kp_invincibility[((leveltime % (6*3)) / 3) + 7] : kp_invincibility[(leveltime % (7*3)) / 3]);
+	INT32 fx = 0, fy = 0, fflags = 0;	// final coords for hud and flags...
+	const INT32 numberdisplaymin = ((!offset && stplyr->itemtype == KITEM_ORBINAUT) ? 5 : 2);
+	skincolornum_t localcolor[3] = { static_cast<skincolornum_t>(stplyr->skincolor) };
+	SINT8 colormode[3] = { TC_RAINBOW };
+	boolean flipamount = false;	// Used for 3P/4P splitscreen to flip item amount stuff
+
+	fixed_t rouletteOffset = 0;
+	fixed_t rouletteSpace = ROULETTE_SPACING;
+	vector2_t rouletteCrop = {7, 7};
+
+	boolean flashOnOne = false;
+	boolean flashOnTwo = false;
+
+	if (stplyr->backupitemamount <= 0)
+		return;
+
+	switch (stplyr->backupitemtype)
+	{
+		case KITEM_INVINCIBILITY:
+			localpatch[1] = localinv;
+			localbg = kp_itembg[offset+1];
+			break;
+
+		case KITEM_ORBINAUT:
+			localpatch[1] = kp_orbinaut[(offset ? 4 : std::min(stplyr->itemamount-1, 3))];
+			break;
+
+		case KITEM_SPB:
+		case KITEM_LIGHTNINGSHIELD:
+		case KITEM_BUBBLESHIELD:
+		case KITEM_FLAMESHIELD:
+			localbg = kp_itembg[offset+1];
+			/*FALLTHRU*/
+
+		default:
+			localpatch[1] = K_GetCachedItemPatch(stplyr->backupitemtype, offset);
+
+			if (localpatch[1] == NULL)
+				localpatch[1] = kp_nodraw; // diagnose underflows
+			break;
+	}
+
+	// pain and suffering defined below
+	if (offset)
+	{
+		if (!(R_GetViewNumber() & 1)) // If we are P1 or P3...
+		{
+			fx = 0;
+			fy = 0;
+			fflags = V_SNAPTOLEFT|V_SNAPTOTOP|V_SPLITSCREEN;
+		}
+		else // else, that means we're P2 or P4.
+		{
+			fx = ITEM2_X*2;
+			fy = 0;
+			fflags = V_SNAPTORIGHT|V_SNAPTOTOP|V_SPLITSCREEN;
+			flipamount = true;
+		}
+
+		rouletteSpace = ROULETTE_SPACING_SPLITSCREEN;
+		rouletteOffset = FixedMul(rouletteOffset, FixedDiv(ROULETTE_SPACING_SPLITSCREEN, ROULETTE_SPACING));
+		rouletteCrop.x = 16;
+		rouletteCrop.y = 15;
+	}
+	else
+	{
+		fx = ITEM_X;
+		fy = ITEM_Y;
+		fflags = V_SNAPTOTOP|V_SNAPTOLEFT|V_SPLITSCREEN;
+	}
+
+	if (r_splitscreen == 1)
+	{
+		fy -= 5;
+	}
+
+	auto draw_item = [&](fixed_t y, int i)
+	{
+		const UINT8 *colormap = (localcolor[i] ? R_GetTranslationColormap(colormode[i], localcolor[i], GTC_CACHE) : NULL);
+		V_DrawFixedPatch(
+			fx<<FRACBITS, (fy<<FRACBITS) + rouletteOffset + y,
+			FRACUNIT, V_HUDTRANS|V_SLIDEIN|fflags,
+			localpatch[i], colormap
+		);
+		if (localamt[i] > 1)
+		{
+			using srb2::Draw;
+			Draw(
+				fx + rouletteCrop.x + FixedToFloat(rouletteSpace/2),
+				fy + rouletteCrop.y + FixedToFloat(rouletteOffset + y + rouletteSpace) - (r_splitscreen > 1 ? 15 : 33))
+				.font(r_splitscreen > 1 ? Draw::Font::kRollingNum4P : Draw::Font::kRollingNum)
+				.align(Draw::Align::kCenter)
+				.flags(V_HUDTRANS|V_SLIDEIN|fflags)
+				.colormap(colormap)
+				.text("{}", localamt[i]);
+		}
+	};
+
+	draw_item(rouletteSpace, 0);
+	draw_item(-rouletteSpace, 2);
+
+	if (false)
+	{
+		// Draw the item underneath the box.
+		draw_item(0, 1);
+		V_ClearClipRect();
+	}
+	else
+	{
+		// Draw the item above the box.
+		V_ClearClipRect();
+
+		boolean transflag = V_HUDTRANS;
+
+		if (cv_reducevfx.value && (flashOnOne || flashOnTwo))
+		{
+			transflag = V_HUDTRANSHALF;
+		}
+
+		if (stplyr->backupitemamount >= numberdisplaymin && stplyr->itemRoulette.active == false)
+		{
+			/*
+			// Then, the numbers:
+			V_DrawScaledPatch(
+				fx + (flipamount ? 48 : 0), fy,
+				V_HUDTRANS|V_SLIDEIN|fflags|(flipamount ? V_FLIP : 0),
+				kp_itemmulsticker[offset]
+			); // flip this graphic for p2 and p4 in split and shift it.
+			*/
+
+			V_DrawFixedPatch(
+				fx<<FRACBITS, (fy<<FRACBITS) + rouletteOffset,
+				FRACUNIT, transflag|V_SLIDEIN|fflags,
+				localpatch[1], (localcolor[1] ? R_GetTranslationColormap(colormode[1], localcolor[1], GTC_CACHE) : NULL)
+			);
+
+			if (offset)
+			{
+				if (flipamount) // reminder that this is for 3/4p's right end of the screen.
+					V_DrawString(fx+2, fy+31, V_HUDTRANS|V_SLIDEIN|fflags, va("x%d", stplyr->backupitemamount));
+				else
+					V_DrawString(fx+24, fy+31, V_HUDTRANS|V_SLIDEIN|fflags, va("x%d", stplyr->backupitemamount));
+			}
+			else
+			{
+				V_DrawScaledPatch(fy+28, fy+41, V_HUDTRANS|V_SLIDEIN|fflags, kp_itemx);
+				V_DrawTimerString(fx+38, fy+36, V_HUDTRANS|V_SLIDEIN|fflags, va("%d", stplyr->backupitemamount));
+			}
+		}
+		else
+		{
+			V_DrawFixedPatch(
+				fx<<FRACBITS, (fy<<FRACBITS) + rouletteOffset,
+				FRACUNIT, transflag|V_SLIDEIN|fflags,
+				localpatch[1], (localcolor[1] ? R_GetTranslationColormap(colormode[1], localcolor[1], GTC_CACHE) : NULL)
+			);
+		}
+	}
+}
+
 static void K_drawKartSlotMachine(void)
 {
 	// ITEM_X = BASEVIDWIDTH-50;	// 270
@@ -6876,6 +7049,9 @@ void K_drawKartHUD(void)
 				{
 					K_drawKartItem();
 				}
+
+				if (stplyr->backupitemtype)
+					K_drawBackupItem();
 			}
 		}
 	}

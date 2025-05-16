@@ -8349,6 +8349,21 @@ static void K_MoveHeldObjects(player_t *player)
 	}
 }
 
+// If we can move our backup item into main slots, do so.
+static void K_TryMoveBackupItem(player_t *player)
+{
+	if (player->itemtype == KITEM_NONE && player->backupitemtype)
+	{
+		player->itemtype = player->backupitemtype;
+		player->itemamount = player->backupitemamount;
+
+		player->backupitemtype = 0;
+		player->backupitemamount = 0;
+
+		S_StartSound(player->mo, sfx_mbs54);
+	}
+}
+
 mobj_t *K_FindJawzTarget(mobj_t *actor, player_t *source, angle_t range)
 {
 	fixed_t best = INT32_MAX;
@@ -9158,16 +9173,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->itemtype == KITEM_NONE)
 		player->itemflags &= ~IF_HOLDREADY;
 
-	if (player->itemtype == KITEM_NONE && player->backupitemtype)
-	{
-		player->itemtype = player->backupitemtype;
-		player->itemamount = player->backupitemamount;
-
-		player->backupitemtype = 0;
-		player->backupitemamount = 0;
-
-		S_StartSound(player->mo, sfx_mbs54);
-	}
+	K_TryMoveBackupItem(player);
 
 	if (onground || player->transfer < 10*player->mo->scale)
 	{
@@ -15464,7 +15470,7 @@ UINT32 K_GetNumGradingPoints(void)
 	return numlaps * (1 + Obj_GetCheckpointCount());
 }
 
-static SINT8 K_PickUp(player_t *player, mobj_t *picked)
+static void K_PickUp(player_t *player, mobj_t *picked)
 {
 	SINT8 type = -1;
 	SINT8 amount = 1;
@@ -15502,7 +15508,9 @@ static SINT8 K_PickUp(player_t *player, mobj_t *picked)
 			break;
 	}
 
-	if (player->itemtype == type && player->itemamount && !player->itemflags & IF_ITEMOUT)
+	// CONS_Printf("it %d ia %d t %d a %d\n", player->itemtype, player->itemamount, type, amount);
+
+	if (player->itemtype == type && player->itemamount && !(player->itemflags & IF_ITEMOUT))
 	{
 		// We have this item in main slot but not deployed, just add it
 		player->itemamount += amount;
@@ -15519,6 +15527,7 @@ static SINT8 K_PickUp(player_t *player, mobj_t *picked)
 			K_DropPaperItem(player, player->backupitemtype, player->backupitemamount);
 			player->backupitemtype = type;
 			player->backupitemamount = amount;
+			S_StartSound(player->mo, sfx_kc65);
 		}
 	}
 	else
@@ -15529,6 +15538,7 @@ static SINT8 K_PickUp(player_t *player, mobj_t *picked)
 	}
 
 	S_StartSound(player->mo, sfx_gsha7);
+	K_TryMoveBackupItem(player);
 }
 
 // ACHTUNG this destroys items when returning true, make sure to bail out
@@ -15546,7 +15556,7 @@ boolean K_TryPickMeUp(mobj_t *m1, mobj_t *m2)
 	if (m1->type == MT_PLAYER && m2->type == MT_PLAYER)
 		return false;
 
-	CONS_Printf("player check passed\n");
+	// CONS_Printf("player check passed\n");
 
 	mobj_t *victim = m1;
 	mobj_t *inflictor = m2;
@@ -15561,9 +15571,9 @@ boolean K_TryPickMeUp(mobj_t *m1, mobj_t *m2)
 	if (inflictor->target != victim)
 		return false;
 
-	CONS_Printf("target check passed\n");
+	// CONS_Printf("target check passed\n");
 
-	K_AddHitLag(victim, 2, false);
+	K_AddHitLag(victim, 3, false);
 	K_PickUp(victim->player, inflictor);
 
 	P_RemoveMobj(inflictor);
