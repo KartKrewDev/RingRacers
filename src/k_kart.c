@@ -4235,6 +4235,7 @@ void K_CheckpointCrossAward(player_t *player)
 		return;
 
 	player->gradingfactor += K_GetGradingMultAdjustment(player);
+	player->exp = K_GetEXP(player);
 	if (!player->cangrabitems)
 		player->cangrabitems = 1;
 	

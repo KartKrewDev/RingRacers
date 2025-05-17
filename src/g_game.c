@@ -4716,8 +4716,8 @@ static void G_DoCompleted(void)
 
 				if (grandprixinfo.eventmode == GPEVENT_NONE)
 				{
-					grandprixinfo.rank.winPoints += K_CalculateGPRankPoints(K_GetEXP(player), grandprixinfo.rank.position, grandprixinfo.rank.totalPlayers);
-					grandprixinfo.rank.exp += K_GetEXP(player);
+					grandprixinfo.rank.winPoints += K_CalculateGPRankPoints(player->exp, grandprixinfo.rank.position, grandprixinfo.rank.totalPlayers);
+					grandprixinfo.rank.exp += player->exp;
 				}
 				else if (grandprixinfo.eventmode == GPEVENT_SPECIAL)
 				{

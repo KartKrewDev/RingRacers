@@ -3246,7 +3246,7 @@ static boolean K_drawKartLaps(void)
 	INT32 bump = 0;
 	boolean drewsticker = false;
 
-	UINT16 displayEXP = K_GetEXP(stplyr);
+	UINT16 displayEXP = stplyr->exp;
 
 	// Jesus Christ.
 	// I do not understand the way this system of offsets is laid out at all,
