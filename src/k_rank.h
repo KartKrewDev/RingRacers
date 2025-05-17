@@ -91,7 +91,7 @@ extern "C" {
 
 #define RANK_WEIGHT_POSITION (150)
 #define RANK_WEIGHT_SCORE (100)
-#define RANK_WEIGHT_LAPS (100)
+#define RANK_WEIGHT_EXP (100)
 #define RANK_WEIGHT_PRISONS (100)
 #define RANK_WEIGHT_RINGS (50)
 

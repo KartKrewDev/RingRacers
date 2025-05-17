@@ -180,7 +180,7 @@ void podiumData_s::Init(void)
 				default:
 				{
 					lvl->totalExp = TARGETEXP;
-					texp += lvl->totalExp;
+					texp += lvl->totalExp * rank.numPlayers;
 					break;
 				}
 			}
@@ -199,7 +199,7 @@ void podiumData_s::Init(void)
 					rgs += dta->rings;
 
 					dta->exp = M_RandomRange(MINEXP, MAXEXP);
-					pexp = std::max(pexp, dta->exp);
+					pexp += dta->exp;
 				}
 
 				if (lvl->event == GPEVENT_BONUS)
@@ -510,22 +510,22 @@ void podiumData_s::Draw(void)
 			.font(srb2::Draw::Font::kZVote)
 			.text(va("%c%d", (rank.scorePosition > 0 ? '+' : ' '), rank.scorePosition));
 
-		drawer_winner
-			.xy(64, 19)
-			.patch("K_POINT4");
+		// drawer_winner
+		// 	.xy(64, 19)
+		// 	.patch("K_POINT4");
 
-		drawer_winner
-			.xy(88, 21)
-			.align(srb2::Draw::Align::kLeft)
-			.font(srb2::Draw::Font::kPing)
-			.colormap(TC_RAINBOW, SKINCOLOR_GOLD)
-			.text(va("%d", rank.winPoints));
+		// drawer_winner
+		// 	.xy(88, 21)
+		// 	.align(srb2::Draw::Align::kLeft)
+		// 	.font(srb2::Draw::Font::kPing)
+		// 	.colormap(TC_RAINBOW, SKINCOLOR_GOLD)
+		// 	.text(va("%d", rank.winPoints));
 
-		drawer_winner
-			.xy(75, 31)
-			.align(srb2::Draw::Align::kCenter)
-			.font(srb2::Draw::Font::kZVote)
-			.text(va("%c%d", (rank.scoreGPPoints > 0 ? '+' : ' '), rank.scoreGPPoints));
+		// drawer_winner
+		// 	.xy(75, 31)
+		// 	.align(srb2::Draw::Align::kCenter)
+		// 	.font(srb2::Draw::Font::kZVote)
+		// 	.text(va("%c%d", (rank.scoreGPPoints > 0 ? '+' : ' '), rank.scoreGPPoints));
 
 
 		srb2::Draw drawer_trophy = drawer.xy(272, 10);

@@ -332,7 +332,6 @@ void gpRank_t::Init(void)
 		const INT32 cupLevelNum = grandprixinfo.cup->cachedlevels[i];
 		if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum] != NULL)
 		{
-			//laps += K_RaceLapCount(cupLevelNum);
 			exp += TARGETEXP;
 		}
 	}
@@ -582,10 +581,10 @@ gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 	rankData->scoreContinues = 0;
 	rankData->scoreTotal = 0;
 
-	const INT32 expWeight = (rankData->totalExp > 0) ? RANK_WEIGHT_LAPS : 0;
+	const INT32 expWeight = (rankData->totalExp > 0) ? RANK_WEIGHT_EXP : 0;
 	const INT32 prisonsWeight = (rankData->totalPrisons > 0) ? RANK_WEIGHT_PRISONS : 0;
 
-	const INT32 total = RANK_WEIGHT_POSITION + RANK_WEIGHT_SCORE + expWeight + prisonsWeight + RANK_WEIGHT_RINGS;
+	const INT32 total = RANK_WEIGHT_POSITION + expWeight + prisonsWeight + RANK_WEIGHT_RINGS;
 	const INT32 continuesPenalty = total / RANK_CONTINUE_PENALTY_DIV;
 
 	if (rankData->position > 0)
@@ -619,7 +618,7 @@ gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 
 	rankData->scoreTotal = 
 		rankData->scorePosition +
-		rankData->scoreGPPoints +
+		// rankData->scoreGPPoints +
 		rankData->scoreExp + 
 		rankData->scorePrisons +
 		rankData->scoreRings +
