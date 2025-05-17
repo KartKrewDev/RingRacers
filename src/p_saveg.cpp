@@ -845,8 +845,8 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 			WRITEUINT8(save->p, players[i].tally.position);
 			WRITEUINT8(save->p, players[i].tally.numPlayers);
 			WRITEUINT8(save->p, players[i].tally.rings);
-			WRITEUINT16(save->p, players[i].tally.laps);
-			WRITEUINT16(save->p, players[i].tally.totalLaps);
+			WRITEUINT16(save->p, players[i].tally.exp);
+			WRITEUINT16(save->p, players[i].tally.totalExp);
 			WRITEUINT16(save->p, players[i].tally.prisons);
 			WRITEUINT16(save->p, players[i].tally.totalPrisons);
 			WRITEINT32(save->p, players[i].tally.points);
@@ -1503,8 +1503,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 			players[i].tally.position = READUINT8(save->p);
 			players[i].tally.numPlayers = READUINT8(save->p);
 			players[i].tally.rings = READUINT8(save->p);
-			players[i].tally.laps = READUINT16(save->p);
-			players[i].tally.totalLaps = READUINT16(save->p);
+			players[i].tally.exp = READUINT16(save->p);
+			players[i].tally.totalExp = READUINT16(save->p);
 			players[i].tally.prisons = READUINT16(save->p);
 			players[i].tally.totalPrisons = READUINT16(save->p);
 			players[i].tally.points = READINT32(save->p);
@@ -6357,8 +6357,8 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 		WRITEUINT32(save->p, rank->winPoints);
 		WRITEUINT32(save->p, rank->totalPoints);
 
-		WRITEUINT32(save->p, rank->laps);
-		WRITEUINT32(save->p, rank->totalLaps);
+		WRITEUINT32(save->p, rank->exp);
+		WRITEUINT32(save->p, rank->totalExp);
 
 		WRITEUINT32(save->p, (rank->continuesUsed + 1));
 
@@ -6372,7 +6372,7 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 
 		WRITEINT32(save->p, rank->scorePosition);
 		WRITEINT32(save->p, rank->scoreGPPoints);
-		WRITEINT32(save->p, rank->scoreLaps);
+		WRITEINT32(save->p, rank->scoreExp);
 		WRITEINT32(save->p, rank->scorePrisons);
 		WRITEINT32(save->p, rank->scoreRings);
 		WRITEINT32(save->p, rank->scoreContinues);
@@ -6619,8 +6619,8 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 		rank->winPoints = READUINT32(save->p);
 		rank->totalPoints = READUINT32(save->p);
 
-		rank->laps = READUINT32(save->p);
-		rank->totalLaps = READUINT32(save->p);
+		rank->exp = READUINT32(save->p);
+		rank->totalExp = READUINT32(save->p);
 
 		rank->continuesUsed = READUINT32(save->p);
 
@@ -6634,7 +6634,7 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 
 		rank->scorePosition = READINT32(save->p);
 		rank->scoreGPPoints = READINT32(save->p);
-		rank->scoreLaps = READINT32(save->p);
+		rank->scoreExp = READINT32(save->p);
 		rank->scorePrisons = READINT32(save->p);
 		rank->scoreRings = READINT32(save->p);
 		rank->scoreContinues = READINT32(save->p);

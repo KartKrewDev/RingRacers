@@ -92,11 +92,11 @@ void level_tally_t::DetermineBonuses(void)
 			}
 		}
 
-		if (totalLaps > 0)
+		if (totalExp > 0)
 		{
 			// Give circuit gamemodes a consolation bonus
 			// for getting good placements on each lap.
-			temp_bonuses.push_back(TALLY_BONUS_LAP);
+			temp_bonuses.push_back(TALLY_BONUS_EXP);
 		}
 
 		if (totalPrisons > 0)
@@ -203,7 +203,7 @@ INT32 level_tally_t::CalculateGrade(void)
 				bonusWeights[i] = ((pointLimit != 0) ? 100 : 0);
 				break;
 			}
-			case TALLY_BONUS_LAP:
+			case TALLY_BONUS_EXP:
 			case TALLY_BONUS_PRISON:
 			case TALLY_BONUS_POWERSTONES:
 			{
@@ -240,12 +240,12 @@ INT32 level_tally_t::CalculateGrade(void)
 				ours += (rings * bonusWeights[i]) / 20;
 				break;
 			}
-			case TALLY_BONUS_LAP:
+			case TALLY_BONUS_EXP:
 			{
 				// Use a special curve for this.
 				// Low Exp amounts are guaranteed, higher than half is where skill expression starts
 				// Magic numbers here are to reduce the range from 50-125 to 0-75 and compare with a max of 58, 85% of which is 49.3, which should put an even 100 or higher displayexp at A rank
-				const fixed_t frac = std::min(FRACUNIT, ((laps-50) * FRACUNIT) / std::max(1, static_cast<int>(totalLaps-42)));
+				const fixed_t frac = std::min(FRACUNIT, ((exp-50) * FRACUNIT) / std::max(1, static_cast<int>(totalExp-42)));
 				ours += Easing_Linear(frac, 0, bonusWeights[i]);
 				break;
 			}
@@ -310,7 +310,7 @@ void level_tally_t::Init(player_t *player)
 
 	position = numPlayers = 0;
 	rings = 0;
-	laps = totalLaps = 0;
+	exp = totalExp = 0;
 	points = pointLimit = 0;
 	powerStones = 0;
 	releasedFastForward = false;
@@ -347,8 +347,8 @@ void level_tally_t::Init(player_t *player)
 
 			if (displayEXP != UINT16_MAX)
 			{
-				laps = displayEXP;
-				totalLaps = 100;
+				exp = displayEXP;
+				totalExp = 100;
 			}
 		}
 
@@ -664,8 +664,8 @@ boolean level_tally_t::IncrementLine(void)
 				amount = 1;
 				freq = 1;
 				break;
-			case TALLY_BONUS_LAP:
-				dest = laps;
+			case TALLY_BONUS_EXP:
+				dest = exp;
 				amount = 20;
 				freq = 1;
 				break;
@@ -1190,7 +1190,7 @@ void level_tally_t::Draw(void)
 						case TALLY_BONUS_RING:
 							bonus_code = "RB";
 							break;
-						case TALLY_BONUS_LAP:
+						case TALLY_BONUS_EXP:
 							bonus_code = "LA";
 							break;
 						case TALLY_BONUS_PRISON:
@@ -1321,12 +1321,12 @@ void level_tally_t::Draw(void)
 								.text(va("%d / 20", displayBonus[i]));
 							break;
 						}
-						case TALLY_BONUS_LAP:
+						case TALLY_BONUS_EXP:
 						{
 							drawer_text
 								.x(197.0 * frac)
 								.align(srb2::Draw::Align::kCenter)
-								.text(va("%d / %d", displayBonus[i], totalLaps));
+								.text(va("%d / %d", displayBonus[i], totalExp));
 							break;
 						}
 						case TALLY_BONUS_PRISON:

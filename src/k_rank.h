@@ -49,8 +49,8 @@ struct gpRank_t
 	UINT32 winPoints;
 	UINT32 totalPoints;
 
-	UINT32 laps;
-	UINT32 totalLaps;
+	UINT32 exp;
+	UINT32 totalExp;
 
 	UINT32 continuesUsed;
 
@@ -64,7 +64,7 @@ struct gpRank_t
 
 	INT32 scorePosition;
 	INT32 scoreGPPoints;
-	INT32 scoreLaps;
+	INT32 scoreExp;
 	INT32 scorePrisons;
 	INT32 scoreRings;
 	INT32 scoreContinues;

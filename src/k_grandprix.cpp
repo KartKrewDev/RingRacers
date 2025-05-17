@@ -55,7 +55,7 @@ UINT8 K_BotStartingDifficulty(SINT8 value)
 
 		See header file for description.
 --------------------------------------------------*/
-INT16 K_CalculateGPRankPoints(UINT16 displayexp, UINT8 position, UINT8 numplayers)
+INT16 K_CalculateGPRankPoints(UINT16 exp, UINT8 position, UINT8 numplayers)
 {
 	INT16 points;
 
@@ -65,7 +65,7 @@ INT16 K_CalculateGPRankPoints(UINT16 displayexp, UINT8 position, UINT8 numplayer
 		return 0;
 	}
 
-	points = displayexp;
+	points = exp;
 
 	// Give bonus to high-ranking players, depending on player count
 	// This rounds out the point gain when you get 1st every race,

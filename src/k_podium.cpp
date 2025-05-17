@@ -144,8 +144,8 @@ void podiumData_s::Init(void)
 
 		// Randomized winnings
 		INT32 rgs = 0;
-		INT32 laps = 0;
-		INT32 tlaps = 0;
+		INT32 exp = 0;
+		INT32 texp = 0;
 		INT32 prs = 0;
 		INT32 tprs = 0;
 
@@ -180,7 +180,7 @@ void podiumData_s::Init(void)
 				default:
 				{
 					lvl->totalExp = TARGETEXP;
-					tlaps += lvl->totalExp;
+					texp += lvl->totalExp;
 					break;
 				}
 			}
@@ -223,13 +223,13 @@ void podiumData_s::Init(void)
 				}
 			}
 
-			laps += pexp;
+			exp += pexp;
 			prs += pprs;
 		}
 
 		rank.rings = rgs;
-		rank.laps = laps;
-		rank.totalLaps = tlaps;
+		rank.exp = exp;
+		rank.totalExp = texp;
 		rank.prisons = prs;
 		rank.totalPrisons = tprs;
 	}
@@ -829,13 +829,13 @@ void podiumData_s::Draw(void)
 			.xy(44.0, 0.0)
 			.align(srb2::Draw::Align::kCenter)
 			.font(srb2::Draw::Font::kThinTimer)
-			.text(va("%d / %d", rank.laps, rank.totalLaps));
+			.text(va("%d / %d", rank.exp, rank.totalExp));
 
 		drawer_totals_right
 			.xy(44.0, 14.0)
 			.align(srb2::Draw::Align::kCenter)
 			.font(srb2::Draw::Font::kZVote)
-			.text(va("%c%d", (rank.scoreLaps > 0 ? '+' : ' '), rank.scoreLaps));
+			.text(va("%c%d", (rank.scoreExp > 0 ? '+' : ' '), rank.scoreExp));
 	}
 
 	if ((state == PODIUM_ST_GRADE_APPEAR && delay == 0)

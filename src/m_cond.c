@@ -1817,8 +1817,8 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 				&& M_NotFreePlay()
 				&& (gamespeed != KARTSPEED_EASY)
 				&& (player->tally.active == true)
-				&& (player->tally.totalLaps > 0) // Only true if not Time Attack
-				&& (player->tally.laps >= player->tally.totalLaps));
+				&& (player->tally.totalExp > 0) // Only true if not Time Attack
+				&& (player->tally.exp >= player->tally.totalExp));
 		case UCRP_FINISHALLPRISONS:
 			return (battleprisons
 				&& !(player->pflags & PF_NOCONTEST)
