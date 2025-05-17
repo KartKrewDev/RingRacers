@@ -691,7 +691,7 @@ void podiumData_s::Draw(void)
 								// Colorize the crystal, just like we do for hud
 								fixed_t factor = FixedDiv(dta->exp*FRACUNIT, lvl->totalExp*FRACUNIT);
 								skincolornum_t overlaycolor = factor < FRACUNIT ? SKINCOLOR_RUBY : SKINCOLOR_ULTRAMARINE;
-								if (factor >= FRACUNIT) {factor *= 2;} // exaggerate the positive se, since reverse engineering the factor like this results in half the translucency range
+								if (factor >= FRACUNIT) {factor += factor-FRACUNIT;} // exaggerate the positive side, since reverse engineering the factor like this results in half the translucency range
 								auto transflag = K_GetTransFlagFromFixed(factor);
 								drawer_gametype
 									.xy(0, 1)
@@ -700,10 +700,10 @@ void podiumData_s::Draw(void)
 									.patch("K_SPTEXP");
 
 								drawer_gametype
-									.xy(22, 1)
+									.xy(23, 1)
 									.align(srb2::Draw::Align::kCenter)
 									.font(srb2::Draw::Font::kPing)
-									.text(va("%d/%d", dta->exp, lvl->totalExp));
+									.text(va("%d", dta->exp));
 								break;
 							}
 						}
@@ -838,9 +838,9 @@ void podiumData_s::Draw(void)
 			.colorize(static_cast<skincolornum_t>(SKINCOLOR_MUSTARD))
 			.patch("K_STEXP");
 		// Colorize the crystal for the totals, just like we do for in race hud
-		fixed_t factor = FixedDiv((rank.exp+(50*rank.numPlayers-1))*FRACUNIT, rank.totalExp*FRACUNIT); // bump the calc a bit, because its probably not possible for every human to get 125 on every race
+		fixed_t factor = FixedDiv((rank.exp+(35*rank.numPlayers-1))*FRACUNIT, rank.totalExp*FRACUNIT); // bump the calc a bit, because its probably not possible for every human to get 125 on every race
 		skincolornum_t overlaycolor = factor < FRACUNIT ? SKINCOLOR_RUBY : SKINCOLOR_ULTRAMARINE;
-		if (factor >= FRACUNIT) {factor *= 2;} // exaggerate the positive se, since reverse engineering the factor like this results in half the translucency range
+		if (factor >= FRACUNIT) {factor += factor-FRACUNIT;} // exaggerate the positive side, since reverse engineering the factor like this results in half the translucency range
 		auto transflag = K_GetTransFlagFromFixed(factor);
 		
 		drawer_totals_right
