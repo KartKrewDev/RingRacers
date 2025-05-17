@@ -683,8 +683,20 @@ void podiumData_s::Draw(void)
 							}
 							default:
 							{
+
 								drawer_gametype
 									.xy(0, 1)
+									.colorize(static_cast<skincolornum_t>(SKINCOLOR_MUSTARD))
+									.patch("K_SPTEXP");
+								// Colorize the crystal, just like we do for hud
+								fixed_t factor = FixedDiv(dta->exp*FRACUNIT, lvl->totalExp*FRACUNIT);
+								skincolornum_t overlaycolor = factor < FRACUNIT ? SKINCOLOR_RUBY : SKINCOLOR_ULTRAMARINE;
+								if (factor >= FRACUNIT) {factor *= 2;} // exaggerate the positive se, since reverse engineering the factor like this results in half the translucency range
+								auto transflag = K_GetTransFlagFromFixed(factor);
+								drawer_gametype
+									.xy(0, 1)
+									.colorize(static_cast<skincolornum_t>(overlaycolor))
+									.flags(transflag)
 									.patch("K_SPTEXP");
 
 								drawer_gametype
@@ -751,7 +763,7 @@ void podiumData_s::Draw(void)
 			.x(-144.0);
 
 		srb2::Draw drawer_totals_right = drawer_totals
-			.x(78.0);
+			.x(72.0);
 
 		if (state == PODIUM_ST_TOTALS_SLIDEIN)
 		{
@@ -807,32 +819,43 @@ void podiumData_s::Draw(void)
 			.text(va("%c%d", (rank.scoreRings > 0 ? '+' : ' '), rank.scoreRings));
 
 		drawer_totals_right
-			.xy(10.0, 46.0)
+			.xy(16.0, 49.0)
 			.patch("CAPS_ZB");
 
 		drawer_totals_right
-			.xy(44.0, 24.0)
+			.xy(50.0, 24.0)
 			.align(srb2::Draw::Align::kCenter)
 			.font(srb2::Draw::Font::kThinTimer)
 			.text(va("%d / %d", rank.prisons, rank.totalPrisons));
 
 		drawer_totals_right
-			.xy(44.0, 38.0)
+			.xy(50.0, 38.0)
 			.align(srb2::Draw::Align::kCenter)
 			.font(srb2::Draw::Font::kZVote)
 			.text(va("%c%d", (rank.scorePrisons > 0 ? '+' : ' '), rank.scorePrisons));
 
 		drawer_totals_right
+			.colorize(static_cast<skincolornum_t>(SKINCOLOR_MUSTARD))
+			.patch("K_STEXP");
+		// Colorize the crystal for the totals, just like we do for in race hud
+		fixed_t factor = FixedDiv((rank.exp+(50*rank.numPlayers-1))*FRACUNIT, rank.totalExp*FRACUNIT); // bump the calc a bit, because its probably not possible for every human to get 125 on every race
+		skincolornum_t overlaycolor = factor < FRACUNIT ? SKINCOLOR_RUBY : SKINCOLOR_ULTRAMARINE;
+		if (factor >= FRACUNIT) {factor *= 2;} // exaggerate the positive se, since reverse engineering the factor like this results in half the translucency range
+		auto transflag = K_GetTransFlagFromFixed(factor);
+		
+		drawer_totals_right
+			.colorize(static_cast<skincolornum_t>(overlaycolor))
+			.flags(transflag)
 			.patch("K_STEXP");
 
 		drawer_totals_right
-			.xy(44.0, 0.0)
+			.xy(50.0, 0.0)
 			.align(srb2::Draw::Align::kCenter)
 			.font(srb2::Draw::Font::kThinTimer)
 			.text(va("%d / %d", rank.exp, rank.totalExp));
 
 		drawer_totals_right
-			.xy(44.0, 14.0)
+			.xy(50.0, 14.0)
 			.align(srb2::Draw::Align::kCenter)
 			.font(srb2::Draw::Font::kZVote)
 			.text(va("%c%d", (rank.scoreExp > 0 ? '+' : ' '), rank.scoreExp));
