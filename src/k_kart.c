@@ -10481,7 +10481,7 @@ void K_KartPlayerAfterThink(player_t *player)
 		player->jawztargetdelay = 0;
 	}
 
-	if (player->itemtype == KITEM_LIGHTNINGSHIELD || ((gametyperules & GTR_POWERSTONES) && K_IsPlayerWanted(player)))
+	if (player->curshield == KSHIELD_LIGHTNING || ((gametyperules & GTR_POWERSTONES) && K_IsPlayerWanted(player)))
 	{
 		K_LookForRings(player->mo);
 	}
