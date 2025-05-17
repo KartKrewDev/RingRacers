@@ -486,8 +486,8 @@ static UINT32 K_ScaleItemDistance(const player_t *player, UINT32 distance, UINT8
 		FRACUNIT + (K_ItemOddsScale(numPlayers) / 2)
 	);
 
-	// Distance is reduced based on the player's exp
-	// distance = FixedMul(distance, player->exp);
+	// Distance is reduced based on the player's gradingfactor
+	// distance = FixedMul(distance, player->gradingfactor);
 
 	return distance;
 }
@@ -1382,7 +1382,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 
 	if ((gametyperules & GTR_CIRCUIT) && !K_Cooperative())
 	{
-		roulette->dist = FixedMul(roulette->preexpdist, max(player->exp, FRACUNIT/2));
+		roulette->dist = FixedMul(roulette->preexpdist, max(player->gradingfactor, FRACUNIT/2));
 	}
 
 	// ===============================================================================

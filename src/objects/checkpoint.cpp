@@ -669,11 +669,11 @@ void Obj_CrossCheckpoints(player_t* player, fixed_t old_x, fixed_t old_y)
 	{
 		if (player->position == 1)
 		{
-			player->lapPoints += 2;
+			player->exp += 2;
 		}
 		else
 		{
-			player->lapPoints += 1;
+			player->exp += 1;
 		}
 	}
 

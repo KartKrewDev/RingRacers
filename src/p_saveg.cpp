@@ -288,8 +288,8 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		}
 		WRITEUINT8(save->p, players[i].laps);
 		WRITEUINT8(save->p, players[i].latestlap);
-		WRITEUINT32(save->p, players[i].lapPoints);
-		WRITEINT32(save->p, players[i].exp);
+		WRITEUINT32(save->p, players[i].exp);
+		WRITEINT32(save->p, players[i].gradingfactor);
 		WRITEUINT16(save->p, players[i].gradingpointnum);
 		WRITEINT32(save->p, players[i].cheatchecknum);
 		WRITEINT32(save->p, players[i].checkpointId);
@@ -979,8 +979,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		}
 		players[i].laps = READUINT8(save->p); // Number of laps (optional)
 		players[i].latestlap = READUINT8(save->p);
-		players[i].lapPoints = READUINT32(save->p);
-		players[i].exp = READINT32(save->p);
+		players[i].exp = READUINT32(save->p);
+		players[i].gradingfactor = READINT32(save->p);
 		players[i].gradingpointnum = READUINT16(save->p);
 		players[i].cheatchecknum = READINT32(save->p);
 		players[i].checkpointId = READINT32(save->p);
@@ -6395,7 +6395,7 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 
 			WRITEINT32(save->p, lvl->event);
 			WRITEUINT32(save->p, lvl->time);
-			WRITEUINT16(save->p, lvl->totalLapPoints);
+			WRITEUINT16(save->p, lvl->totalExp);
 			WRITEUINT16(save->p, lvl->totalPrisons);
 
 			UINT8 j;
@@ -6405,7 +6405,7 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 
 				WRITEUINT8(save->p, plr->position);
 				WRITEUINT8(save->p, plr->rings);
-				WRITEUINT16(save->p, plr->lapPoints);
+				WRITEUINT16(save->p, plr->exp);
 				WRITEUINT16(save->p, plr->prisons);
 				WRITEUINT8(save->p, (UINT8)plr->gotSpecialPrize);
 				WRITESINT8(save->p, (SINT8)plr->grade);
@@ -6683,7 +6683,7 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 
 			lvl->event = READINT32(save->p);
 			lvl->time = READUINT32(save->p);
-			lvl->totalLapPoints = READUINT16(save->p);
+			lvl->totalExp = READUINT16(save->p);
 			lvl->totalPrisons = READUINT16(save->p);
 
 			for (j = 0; j < rank->numPlayers; j++)
@@ -6692,7 +6692,7 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 
 				plr->position = READUINT8(save->p);
 				plr->rings = READUINT8(save->p);
-				plr->lapPoints = READUINT16(save->p);
+				plr->exp = READUINT16(save->p);
 				plr->prisons = READUINT16(save->p);
 				plr->gotSpecialPrize = (boolean)READUINT8(save->p);
 				plr->grade = (gp_rank_e)READSINT8(save->p);

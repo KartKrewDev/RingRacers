@@ -2113,11 +2113,11 @@ static void K_HandleLapIncrement(player_t *player)
 					{
 						if (inDuel == false && player->position == 1) // 1st place in 1v1 uses thumbs up
 						{
-							player->lapPoints += 2;
+							player->exp += 2;
 						}
 						else
 						{
-							player->lapPoints++;
+							player->exp++;
 						}
 					}
 

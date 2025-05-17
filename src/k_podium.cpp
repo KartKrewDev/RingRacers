@@ -138,7 +138,7 @@ void podiumData_s::Init(void)
 		constexpr INT32 numRaces = 5;
 		for (INT32 i = 0; i < rank.numPlayers; i++)
 		{
-			rank.totalPoints += numRaces * K_CalculateGPRankPoints(MAXDISPLAYEXP, i+1, rank.totalPlayers);
+			rank.totalPoints += numRaces * K_CalculateGPRankPoints(MAXEXP, i+1, rank.totalPlayers);
 		}
 		rank.totalRings = numRaces * rank.numPlayers * 20;
 
@@ -156,7 +156,7 @@ void podiumData_s::Init(void)
 			gpRank_level_t *const lvl = &rank.levels[i];
 			UINT8 specialWinner = 0;
 			UINT16 pprs = 0;
-			UINT16 plaps = 0;
+			UINT16 pexp = 0;
 
 			lvl->id = M_RandomRange(4, nummapheaders);
 
@@ -179,8 +179,8 @@ void podiumData_s::Init(void)
 				}
 				default:
 				{
-					lvl->totalLapPoints = TARGETDISPLAYEXP;
-					tlaps += lvl->totalLapPoints;
+					lvl->totalExp = TARGETEXP;
+					tlaps += lvl->totalExp;
 					break;
 				}
 			}
@@ -198,8 +198,8 @@ void podiumData_s::Init(void)
 					dta->rings = M_RandomRange(0, 20);
 					rgs += dta->rings;
 
-					dta->lapPoints = M_RandomRange(MINDISPLAYEXP, MAXDISPLAYEXP);
-					plaps = std::max(plaps, dta->lapPoints);
+					dta->exp = M_RandomRange(MINEXP, MAXEXP);
+					pexp = std::max(pexp, dta->exp);
 				}
 
 				if (lvl->event == GPEVENT_BONUS)
@@ -223,7 +223,7 @@ void podiumData_s::Init(void)
 				}
 			}
 
-			laps += plaps;
+			laps += pexp;
 			prs += pprs;
 		}
 
@@ -691,7 +691,7 @@ void podiumData_s::Draw(void)
 									.xy(22, 1)
 									.align(srb2::Draw::Align::kCenter)
 									.font(srb2::Draw::Font::kPing)
-									.text(va("%d/%d", dta->lapPoints, lvl->totalLapPoints));
+									.text(va("%d/%d", dta->exp, lvl->totalExp));
 								break;
 							}
 						}

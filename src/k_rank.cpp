@@ -322,7 +322,7 @@ void gpRank_t::Init(void)
 	// (Should this account for all coop players?)
 	for (i = 0; i < numHumans; i++)
 	{
-		totalPoints += grandprixinfo.cup->numlevels * K_CalculateGPRankPoints(MAXDISPLAYEXP, i+1, totalPlayers);
+		totalPoints += grandprixinfo.cup->numlevels * K_CalculateGPRankPoints(MAXEXP, i+1, totalPlayers);
 	}
 
 	totalRings = grandprixinfo.cup->numlevels * numHumans * 20;
@@ -333,7 +333,7 @@ void gpRank_t::Init(void)
 		if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum] != NULL)
 		{
 			//laps += K_RaceLapCount(cupLevelNum);
-			laps += TARGETDISPLAYEXP;
+			laps += TARGETEXP;
 		}
 	}
 
@@ -373,7 +373,7 @@ void gpRank_t::Rejigger(UINT16 removedmap, UINT16 removedgt, UINT16 addedmap, UI
 	{
 		for (i = 0; i < numPlayers; i++)
 		{
-			deltaPoints += K_CalculateGPRankPoints(MAXDISPLAYEXP, i + 1, totalPlayers);
+			deltaPoints += K_CalculateGPRankPoints(MAXEXP, i + 1, totalPlayers);
 		}
 		if (addedgt == GT_RACE)
 			totalPoints += deltaPoints;
@@ -511,7 +511,7 @@ void gpRank_t::Update(void)
 
 	lvl->time = UINT32_MAX;
 
-	lvl->totalLapPoints = TARGETDISPLAYEXP;
+	lvl->totalExp = TARGETEXP;
 	lvl->totalPrisons = maptargets;
 
 	UINT8 i;
@@ -553,7 +553,7 @@ void gpRank_t::Update(void)
 
 		dta->position = player->tally.position;
 		dta->rings = player->tally.rings;
-		dta->lapPoints = player->tally.laps;
+		dta->exp = player->tally.laps;
 		dta->prisons = player->tally.prisons;
 		dta->gotSpecialPrize = !!!(player->pflags & PF_NOCONTEST);
 		dta->grade = static_cast<gp_rank_e>(player->tally.rank);

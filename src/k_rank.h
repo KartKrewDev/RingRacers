@@ -21,7 +21,7 @@ struct gpRank_level_perplayer_t
 {
 	UINT8 position;
 	UINT8 rings;
-	UINT16 lapPoints;
+	UINT16 exp;
 	UINT16 prisons;
 	boolean gotSpecialPrize;
 	gp_rank_e grade;
@@ -32,7 +32,7 @@ struct gpRank_level_t
 	UINT16 id;
 	INT32 event;
 	UINT32 time;
-	UINT16 totalLapPoints;
+	UINT16 totalExp;
 	UINT16 totalPrisons;
 	gpRank_level_perplayer_t perPlayer[MAXSPLITSCREENPLAYERS];
 };

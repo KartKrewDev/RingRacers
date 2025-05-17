@@ -4234,9 +4234,10 @@ void K_CheckpointCrossAward(player_t *player)
 	if (gametype != GT_RACE)
 		return;
 
-	player->exp += K_GetExpAdjustment(player);
+	player->gradingfactor += K_GetGradingMultAdjustment(player);
 	if (!player->cangrabitems)
 		player->cangrabitems = 1;
+	
 	K_AwardPlayerRings(player, (player->bot ? 20 : 10), true);
 }
 
@@ -13284,7 +13285,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			else
 			{
 				UINT32 behind = K_GetItemRouletteDistance(player, player->itemRoulette.playing);
-				behind = FixedMul(behind, max(player->exp, FRACUNIT/2));
+				behind = FixedMul(behind, max(player->gradingfactor, FRACUNIT/2));
 				UINT32 behindMulti = behind / 500;
 				behindMulti = min(behindMulti, 60);
 				award = award * (behindMulti + 10) / 10;
@@ -15440,10 +15441,10 @@ boolean K_PlayerCanUseItem(player_t *player)
 	return (player->mo->health > 0 && !player->spectator && !P_PlayerInPain(player) && !mapreset && leveltime > introtime);
 }
 
-fixed_t K_GetExpAdjustment(player_t *player)
+fixed_t K_GetGradingMultAdjustment(player_t *player)
 {
-	fixed_t exp_power = 3*FRACUNIT/100; // adjust to change overall xp volatility
-	fixed_t exp_stablerate = 3*FRACUNIT/10; // how low is your placement before losing XP? 4*FRACUNIT/10 = top 40% of race will gain
+	fixed_t power = 3*FRACUNIT/100; // adjust to change overall xp volatility
+	fixed_t stablerate = 3*FRACUNIT/10; // how low is your placement before losing XP? 4*FRACUNIT/10 = top 40% of race will gain
 	fixed_t result = 0;
 
 	INT32 live_players = 0; // players we are competing against
@@ -15464,7 +15465,7 @@ fixed_t K_GetExpAdjustment(player_t *player)
 
 	if (live_players < 8)
 	{
-		exp_power += (8 - live_players) * exp_power/4;
+		power += (8 - live_players) * power/4;
 	}
 
 	// Increase XP for each player you're beating...
@@ -15480,18 +15481,18 @@ fixed_t K_GetExpAdjustment(player_t *player)
 		}
 
 		if (player->position < players[i].position)
-			result += exp_power;
+			result += power;
 	}
 
 	// ...then take all of the XP you could possibly have earned,
 	// and lose it proportional to the stable rate. If you're below
 	// the stable threshold, this results in you losing XP.
-	result -= FixedMul(exp_power, FixedMul(live_players*FRACUNIT, FRACUNIT - exp_stablerate));
+	result -= FixedMul(power, FixedMul(live_players*FRACUNIT, FRACUNIT - stablerate));
 
 	return result;
 }
 
-UINT16 K_GetDisplayEXP(player_t *player)
+UINT16 K_GetEXP(player_t *player)
 {
 	UINT32 numgradingpoints = K_GetNumGradingPoints();
 
@@ -15499,9 +15500,9 @@ UINT16 K_GetDisplayEXP(player_t *player)
 		return UINT16_MAX;
 
 	// target is where you should be if you're doing good and at a 1.0 mult
-	fixed_t clampedexp = max(FRACUNIT/2, min(FRACUNIT*5/4, player->exp));  // clamp between 0.5 and 1.25
-	fixed_t targetdisplayexp = (TARGETDISPLAYEXP*player->gradingpointnum/max(1,numgradingpoints))<<FRACBITS;
-	UINT16 displayexp = FixedMul(clampedexp, targetdisplayexp)>>FRACBITS;
+	fixed_t clampedmult = max(FRACUNIT/2, min(FRACUNIT*5/4, player->gradingfactor));  // clamp between 0.5 and 1.25
+	fixed_t targetdisplayexp = (TARGETEXP*player->gradingpointnum/max(1,numgradingpoints))<<FRACBITS;
+	UINT16 displayexp = FixedMul(clampedmult, targetdisplayexp)>>FRACBITS;
 
 	return displayexp;
 }

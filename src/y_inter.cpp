@@ -309,7 +309,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 					if (data.pos[data.numplayers] < pointgetters
 					&& !(players[i].pflags & PF_NOCONTEST))
 					{
-						data.increase[i] = K_CalculateGPRankPoints(K_GetDisplayEXP(&players[i]), data.pos[data.numplayers], pointgetters);
+						data.increase[i] = K_CalculateGPRankPoints(K_GetEXP(&players[i]), data.pos[data.numplayers], pointgetters);
 					}
 				}
 
@@ -2196,7 +2196,7 @@ static UINT32 Y_EstimatePodiumScore(player_t *const player, UINT8 numPlaying)
 	UINT8 pos = Y_PlayersBestPossiblePosition(player);
 	UINT32 ourScore = player->score;
 
-	ourScore += K_CalculateGPRankPoints(K_GetDisplayEXP(player), pos, numPlaying);
+	ourScore += K_CalculateGPRankPoints(K_GetEXP(player), pos, numPlaying);
 
 	return ourScore;
 }
