@@ -495,7 +495,10 @@ void HWR_InitModels(void)
 	size_t i;
 	INT32 s;
 	FILE *f;
-	char name[24], filename[32];
+	char name[26], filename[32];
+	// name[24] is used to check for names in the models.dat file that match with sprites or player skins
+	// sprite names are always 4 characters long, and names is for player skins can be up to 19 characters long
+	// PLAYERMODELPREFIX is 6 characters long
 	float scale, offset;
 	size_t prefixlen;
 
