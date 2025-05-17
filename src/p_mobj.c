@@ -5410,6 +5410,7 @@ static boolean P_IsTrackerType(INT32 type)
 		case MT_LANDMINE:
 		case MT_BANANA:
 		case MT_BANANA_SHIELD:
+		case MT_GACHABOM:
 			return true;
 
 		default:

@@ -8352,7 +8352,17 @@ static void K_MoveHeldObjects(player_t *player)
 // If we can move our backup item into main slots, do so.
 static void K_TryMoveBackupItem(player_t *player)
 {
-	if (player->itemtype == KITEM_NONE && player->backupitemtype)
+	if (player->itemtype && player->itemtype == player->backupitemtype)
+	{
+		player->itemamount += player->backupitemamount;
+
+		player->backupitemtype = 0;
+		player->backupitemamount = 0;
+
+		S_StartSound(player->mo, sfx_mbs54);
+	}
+
+	if (player->itemtype == KITEM_NONE && player->backupitemtype && !(player->itemRoulette.active))
 	{
 		player->itemtype = player->backupitemtype;
 		player->itemamount = player->backupitemamount;
@@ -15503,6 +15513,9 @@ static void K_PickUp(player_t *player, mobj_t *picked)
 		case MT_DROPTARGET_SHIELD:
 			type = KITEM_DROPTARGET;
 			break;
+		case MT_GACHABOM:
+			type = KITEM_GACHABOM;
+			break;
 		default:
 			type = KITEM_SAD;
 			break;
@@ -15573,7 +15586,7 @@ boolean K_TryPickMeUp(mobj_t *m1, mobj_t *m2)
 
 	boolean allied = (inflictor->target == victim);
 
-	if (!allied)
+	if (!allied && inflictor->target && !P_MobjWasRemoved(inflictor->target))
 		if (inflictor->target->player && G_SameTeam(inflictor->target->player, victim->player))
 			allied = true;
 

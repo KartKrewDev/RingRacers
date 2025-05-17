@@ -403,10 +403,11 @@ bool is_object_tracking_target(const mobj_t* mobj)
 	case MT_LANDMINE:
 	case MT_BANANA:
 	case MT_BANANA_SHIELD:
+	case MT_GACHABOM:
 		return (mobj->target && !P_MobjWasRemoved(mobj->target) && (
 			(mobj->target->player && stplyr == mobj->target->player)
 			|| (mobj->target->player && G_SameTeam(stplyr, mobj->target->player))
-		));
+		) && P_CheckSight(stplyr->mo, const_cast<mobj_t*>(mobj)));
 
 	default:
 		return false;
