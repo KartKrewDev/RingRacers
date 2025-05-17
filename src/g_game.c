@@ -2241,6 +2241,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	UINT8 botdiffincrease;
 	boolean botrival;
 
+	boolean cangrabitems;
+
 	SINT8 xtralife;
 
 	uint8_t public_key[PUBKEYLENGTH];
@@ -2342,6 +2344,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	bot = players[player].bot;
 	botdifficulty = players[player].botvars.difficulty;
 
+	cangrabitems = players[player].cangrabitems;
+
 	botdiffincrease = players[player].botvars.diffincrease;
 	botrival = players[player].botvars.rival;
 
@@ -2349,7 +2353,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	xtralife = players[player].xtralife;
 
 	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_KICKSTARTACCEL|PF_SHRINKME|PF_SHRINKACTIVE|PF_AUTOROULETTE|PF_ANALOGSTICK|PF_AUTORING));
-	pflags2 = (players[player].pflags2 & (PF2_SELFMUTE | PF2_SELFDEAFEN | PF2_SERVERMUTE | PF2_SERVERDEAFEN));
+	pflags2 = (players[player].pflags2 & (PF2_SELFMUTE | PF2_SELFDEAFEN | PF2_SERVERMUTE | PF2_SERVERDEAFEN | PF2_STRICTFASTFALL));
 
 	// SRB2kart
 	memcpy(&itemRoulette, &players[player].itemRoulette, sizeof (itemRoulette));
@@ -2425,6 +2429,13 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		bigwaypointgap = 0;
 
 		tallyactive = false;
+
+		cangrabitems = 0;
+		if (gametyperules & GTR_SPHERES
+			|| gametyperules & GTR_CATCHER
+			|| G_TimeAttackStart()
+			|| gametype == GT_TUTORIAL)
+			cangrabitems = EARLY_ITEM_FLICKER;
 	}
 	else
 	{
@@ -2566,6 +2577,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->kartweight = kartweight;
 	p->charflags = charflags;
 	p->lastfakeskin = lastfakeskin;
+
+	p->cangrabitems = cangrabitems;
 
 	memcpy(players[player].availabilities, availabilities, sizeof(availabilities));
 	p->followitem = followitem;

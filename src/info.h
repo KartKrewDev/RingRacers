@@ -1311,6 +1311,9 @@ typedef enum sprite
 	SPR_DIEM, // smoke
 	SPR_DIEN, // explosion
 
+	// Flybot767 (stun)
+	SPR_STUN,
+
 	// Pulley
 	SPR_HCCH,
 	SPR_HCHK,
@@ -4131,6 +4134,9 @@ typedef enum state
 	S_BADNIK_EXPLOSION1,
 	S_BADNIK_EXPLOSION2,
 
+	// Flybot767 (stun)
+	S_FLYBOT767,
+
 	S_FIRSTFREESLOT,
 	S_LASTFREESLOT = S_FIRSTFREESLOT + NUMSTATEFREESLOTS - 1,
 	NUMSTATES
@@ -5046,6 +5052,8 @@ typedef enum mobj_type
 	MT_PULLUPHOOK,
 
 	MT_AMPS,
+
+	MT_FLYBOT767,
 
 	MT_FIRSTFREESLOT,
 	MT_LASTFREESLOT = MT_FIRSTFREESLOT + NUMMOBJFREESLOTS - 1,

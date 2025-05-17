@@ -455,9 +455,13 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].noEbrakeMagnet);
 		WRITEUINT8(save->p, players[i].tumbleBounces);
 		WRITEUINT16(save->p, players[i].tumbleHeight);
+		WRITEUINT16(save->p, players[i].stunned);
+		WRITEUINT8(save->p, players[i].stunnedCombo);
 
 		WRITEUINT8(save->p, players[i].justDI);
 		WRITEUINT8(save->p, players[i].flipDI);
+
+		WRITEUINT8(save->p, players[i].cangrabitems);
 
 		WRITESINT8(save->p, players[i].drift);
 		WRITEFIXED(save->p, players[i].driftcharge);
@@ -1093,9 +1097,13 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].noEbrakeMagnet = READUINT8(save->p);
 		players[i].tumbleBounces = READUINT8(save->p);
 		players[i].tumbleHeight = READUINT16(save->p);
+		players[i].stunned = READUINT16(save->p);
+		players[i].stunnedCombo = READUINT8(save->p);
 
 		players[i].justDI = READUINT8(save->p);
 		players[i].flipDI = (boolean)READUINT8(save->p);
+
+		players[i].cangrabitems = READUINT8(save->p);
 
 		players[i].drift = READSINT8(save->p);
 		players[i].driftcharge = READFIXED(save->p);

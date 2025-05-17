@@ -4235,6 +4235,8 @@ void K_CheckpointCrossAward(player_t *player)
 		return;
 
 	player->exp += K_GetExpAdjustment(player);
+	if (!player->cangrabitems)
+		player->cangrabitems = 1;
 	K_AwardPlayerRings(player, (player->bot ? 20 : 10), true);
 }
 
@@ -8817,7 +8819,7 @@ static inline BlockItReturn_t PIT_AttractingRings(mobj_t *thing)
 		return BMIT_CONTINUE; // Too far away
 	}
 
-	if (RINGTOTAL(attractmo->player) >= 20 || (attractmo->player->pflags & PF_RINGLOCK))
+	if (RINGTOTAL(attractmo->player) >= 20 || !P_CanPickupItem(attractmo->player, PICKUP_RINGORSPHERE))
 	{
 		// Already reached max -- just joustle rings around.
 
@@ -9377,6 +9379,33 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->ringdelay)
 		player->ringdelay--;
 
+	if ((player->stunned > 0)
+		&& (player->respawn.state == RESPAWNST_NONE)
+		&& !P_PlayerInPain(player)
+		&& P_IsObjectOnGround(player->mo)
+	)
+	{
+		// MEGA FUCKING HACK BECAUSE P_SAVEG MOBJS ARE FULL
+		// Would updating player_saveflags to 32 bits have any negative consequences?
+		// For now, player->stunned 16th bit is a flag to determine whether the flybots were spawned
+
+		// timer counts down at triple speed while spindashing
+		player->stunned = (player->stunned & 0x8000) | max(0, (player->stunned & 0x7FFF) - (player->spindash ? 3 : 1));
+
+		// when timer reaches 0, reset the flag and stun combo counter
+		if ((player->stunned & 0x7FFF) == 0)
+		{
+			player->stunned = 0;
+			player->stunnedCombo = 0;
+		}
+		// otherwise if the flybots aren't spawned, spawn them now!
+		else if ((player->stunned & 0x8000) == 0)
+		{
+			player->stunned |= 0x8000;
+			Obj_SpawnFlybotsForPlayer(player);
+		}
+	}
+
 	if (player->trickpanel == TRICKSTATE_READY)
 	{
 		if (!player->throwdir && !cmd->turning)
@@ -9578,6 +9607,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			player->invincibilitytimer--;
 	}
 
+	if (player->cangrabitems && player->cangrabitems <= EARLY_ITEM_FLICKER)
+		player->cangrabitems++;
 
 	if (!player->invincibilitytimer)
 		player->invincibilityextensions = 0;
@@ -10039,7 +10070,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	}
 
 	extern consvar_t cv_fuzz;
-	if (cv_fuzz.value && P_CanPickupItem(player, 1))
+	if (cv_fuzz.value && P_CanPickupItem(player, PICKUP_ITEMBOX))
 	{
 		K_StartItemRoulette(player, P_RandomRange(PR_FUZZ, 0, 1));
 	}
@@ -12649,6 +12680,10 @@ static void K_KartSpindash(player_t *player)
 
 		if (player->fastfall == 0)
 		{
+			if (player->pflags2 & PF2_STRICTFASTFALL)
+				if (!(player->cmd.buttons & BT_SPINDASH))
+					return;
+
 			// Factors 3D momentum.
 			player->fastfallBase = FixedHypot(player->speed, player->mo->momz);
 		}

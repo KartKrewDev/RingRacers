@@ -10084,6 +10084,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		break;
 	}
 
+	case MT_FLYBOT767:
+	{
+		Obj_FlybotThink(mobj);
+		break;
+	}
+
 	default:
 		// check mobj against possible water content, before movement code
 		P_MobjCheckWater(mobj);

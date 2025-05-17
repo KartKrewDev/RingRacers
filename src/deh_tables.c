@@ -3090,6 +3090,9 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_BADNIK_EXPLOSION_SHOCKWAVE2",
 	"S_BADNIK_EXPLOSION1",
 	"S_BADNIK_EXPLOSION2",
+
+	// Flybot767 (stun)
+	"S_FLYBOT767",
 };
 
 // RegEx to generate this from info.h: ^\tMT_([^,]+), --> \t"MT_\1",
@@ -3983,6 +3986,8 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_PULLUPHOOK",
 
 	"MT_AMPS",
+
+	"MT_FLYBOT767",
 };
 
 const char *const MOBJFLAG_LIST[] = {
@@ -5015,6 +5020,7 @@ struct int_const_s const INT_CONST[] = {
 	{"BT_LOOKBACK",BT_LOOKBACK},
 	{"BT_RESPAWN",BT_RESPAWN},
 	{"BT_VOTE",BT_VOTE},
+	{"BT_SPINDASH",BT_SPINDASH}, // Real button now, but triggers the macro same as always.
 	{"BT_EBRAKEMASK",BT_EBRAKEMASK}, // Macro button
 	{"BT_SPINDASHMASK",BT_SPINDASHMASK}, // Macro button
 	{"BT_LUAA",BT_LUAA}, // Lua customizable
@@ -5255,6 +5261,11 @@ struct int_const_s const INT_CONST[] = {
 	{"TN_NIGHTCOREABLE",TN_NIGHTCOREABLE},
 	{"TN_CHANGEPITCH",TN_CHANGEPITCH},
 	{"TN_LOOPING",TN_LOOPING},
+
+	{"PICKUP_RINGORSPHERE", PICKUP_RINGORSPHERE},
+	{"PICKUP_ITEMBOX", PICKUP_ITEMBOX},
+	{"PICKUP_EGGBOX", PICKUP_EGGBOX},
+	{"PICKUP_PAPERITEM", PICKUP_PAPERITEM},
 
 	{NULL,0}
 };

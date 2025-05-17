@@ -776,6 +776,9 @@ char sprnames[NUMSPRITES + 1][5] =
 	"DIEM", // smoke
 	"DIEN", // explosion
 
+	// Flybot767 (stun)
+	"STUN",
+
 	// Pulley
 	"HCCH",
 	"HCHK",
@@ -3646,6 +3649,9 @@ state_t states[NUMSTATES] =
 	{SPR_NULL, 0, 1, {A_PlaySound}, sfx_s3k3d, 1, S_BATTLEBUMPER_EXBLAST1}, // S_BADNIK_EXPLOSION_SHOCKWAVE2
 	{SPR_NULL, 0, 1, {NULL}, 0, 0, S_BADNIK_EXPLOSION2}, // S_BADNIK_EXPLOSION1
 	{SPR_WIPD, FF_FULLBRIGHT|FF_RANDOMANIM|FF_ANIMATE, 30, {NULL}, 9, 3, S_NULL}, // S_BADNIK_EXPLOSION2
+
+	// Flybot767 (stun)
+	{SPR_STUN, FF_FULLBRIGHT|FF_ANIMATE, -1, {NULL}, 4, 4, S_NULL}, // S_FLYBOT767
 };
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] =
@@ -22359,6 +22365,32 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,            // damage
 		sfx_None,     // activesound
 		MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_NOCLIP|MF_NOCLIPTHING, // flags
+		S_NULL        // raisestate
+	},
+	{           // MT_FLYBOT767
+		-1,           // doomednum
+		S_FLYBOT767,  // spawnstate
+		1000,         // spawnhealth
+		S_NULL,       // seestate
+		sfx_None,     // seesound
+		0,            // reactiontime
+		sfx_None,     // attacksound
+		S_NULL,       // painstate
+		0,            // painchance
+		sfx_None,     // painsound
+		S_NULL,       // meleestate
+		S_NULL,       // missilestate
+		S_NULL,       // deathstate
+		S_NULL,       // xdeathstate
+		sfx_pop,      // deathsound
+		4*FRACUNIT,   // speed
+		32*FRACUNIT,  // radius
+		15*FRACUNIT,  // height
+		0,            // dispoffset
+		0,            // mass
+		0,            // damage
+		sfx_None,     // activesound
+		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_NOCLIP|MF_NOCLIPTHING, // flags
 		S_NULL        // raisestate
 	},
 };
