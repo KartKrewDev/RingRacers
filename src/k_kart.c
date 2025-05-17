@@ -12680,6 +12680,10 @@ static void K_KartSpindash(player_t *player)
 
 		if (player->fastfall == 0)
 		{
+			if (player->pflags2 & PF2_STRICTFASTFALL)
+				if (!(player->cmd.buttons & BT_SPINDASH))
+					return;
+
 			// Factors 3D momentum.
 			player->fastfallBase = FixedHypot(player->speed, player->mo->momz);
 		}
