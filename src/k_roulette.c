@@ -1078,7 +1078,7 @@ static boolean K_IsItemUselessAlone(kartitems_t item)
 		case KRITEM_TRIPLEORBINAUT:
 		case KRITEM_QUADORBINAUT:
 		case KITEM_BALLHOG:
-		case KITEM_BUBBLESHIELD:
+		case KITEM_BUBBLESHIELD: // shhhhhh
 			return true;
 		default:
 			return false;

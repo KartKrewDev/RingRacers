@@ -697,7 +697,7 @@ static fixed_t K_PlayerWeight(mobj_t *mobj, mobj_t *against)
 	}
 	else if (against && !P_MobjWasRemoved(against) && against->player
 		&& ((!P_PlayerInPain(against->player) && P_PlayerInPain(mobj->player)) // You're hurt
-		|| (against->player->itemtype == KITEM_BUBBLESHIELD && mobj->player->itemtype != KITEM_BUBBLESHIELD))) // They have a Bubble Shield
+		|| (against->player->curshield == KSHIELD_BUBBLE && mobj->player->curshield != KSHIELD_BUBBLE))) // They have a Bubble Shield
 	{
 		weight = 0; // This player does not cause any bump action
 	}
@@ -721,7 +721,7 @@ static fixed_t K_PlayerWeight(mobj_t *mobj, mobj_t *against)
 		}
 		else
 		{
-			if (mobj->player->itemtype == KITEM_BUBBLESHIELD)
+			if (mobj->player->curshield == KSHIELD_BUBBLE)
 				weight += 9*FRACUNIT;
 		}
 
@@ -814,8 +814,8 @@ static void K_SpawnBumpForObjs(mobj_t *mobj1, mobj_t *mobj2)
 
 	P_SetScale(fx, (fx->destscale = avgScale));
 
-	if ((mobj1->player && mobj1->player->itemtype == KITEM_BUBBLESHIELD)
-	|| (mobj2->player && mobj2->player->itemtype == KITEM_BUBBLESHIELD))
+	if ((mobj1->player && mobj1->player->curshield == KSHIELD_BUBBLE)
+	|| (mobj2->player && mobj2->player->curshield == KSHIELD_BUBBLE))
 	{
 		S_StartSound(mobj1, sfx_s3k44);
 	}
@@ -7457,7 +7457,7 @@ void K_UpdateHnextList(player_t *player, boolean clean)
 // For getting hit!
 void K_PopPlayerShield(player_t *player)
 {
-	INT32 shield = K_GetShieldFromItem(player->itemtype);
+	INT32 shield = player->curshield;
 
 	// Doesn't apply if player is invalid.
 	if (player->mo == NULL || P_MobjWasRemoved(player->mo))
