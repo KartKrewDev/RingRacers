@@ -15581,7 +15581,7 @@ static void K_PickUp(player_t *player, mobj_t *picked)
 		player->backupitemamount = amount;
 	}
 
-	S_StartSound(player->mo, sfx_mbs54);
+	S_StartSound(player->mo, sfx_aple);
 	K_TryMoveBackupItem(player);
 }
 

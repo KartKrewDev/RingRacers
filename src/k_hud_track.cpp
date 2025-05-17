@@ -287,6 +287,7 @@ private:
 		case MT_LANDMINE:
 		case MT_BANANA:
 		case MT_BANANA_SHIELD:
+		case MT_GACHABOM:
 			return {
 				{ // Near
 					{2, TICRATE/2, {kp_pickmeup}, 0}, // 1P
@@ -906,6 +907,7 @@ void K_drawTargetHUD(const vector3_t* origin, player_t* player)
 				case MT_LANDMINE:
 				case MT_BANANA:
 				case MT_BANANA_SHIELD:
+				case MT_GACHABOM:
 					if (stplyr->mo->eflags & MFE_VERTICALFLIP)
 					{
 						pos.z -= itemOffset;
