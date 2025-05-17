@@ -667,6 +667,9 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (!player->mo || player->spectator)
 				return;
 
+			if (K_TryPickMeUp(special, toucher))
+				return;
+
 			// attach to player!
 			P_SetTarget(&special->tracer, toucher);
 			toucher->flags |= MF_NOGRAVITY;

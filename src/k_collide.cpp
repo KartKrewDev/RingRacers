@@ -851,9 +851,6 @@ boolean K_BubbleShieldReflect(mobj_t *t1, mobj_t *t2)
 
 boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 {
-	if (K_TryPickMeUp(t1, t2))
-		return true;
-
 	if (t2->type == MT_PLAYER)
 	{
 		// Counter desyncs

@@ -15547,6 +15547,9 @@ static void K_PickUp(player_t *player, mobj_t *picked)
 		case MT_GACHABOM:
 			type = KITEM_GACHABOM;
 			break;
+		case MT_BUBBLESHIELDTRAP:
+			type = KITEM_BUBBLESHIELD;
+			break;
 		default:
 			type = KITEM_SAD;
 			break;
