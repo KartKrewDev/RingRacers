@@ -95,7 +95,7 @@ void level_tally_t::DetermineBonuses(void)
 		if (totalExp > 0)
 		{
 			// Give circuit gamemodes a consolation bonus
-			// for getting good placements on each lap.
+			// for getting good placements on each grading point.
 			temp_bonuses.push_back(TALLY_BONUS_EXP);
 		}
 
@@ -244,7 +244,7 @@ INT32 level_tally_t::CalculateGrade(void)
 			{
 				// Use a special curve for this.
 				// Low Exp amounts are guaranteed, higher than half is where skill expression starts
-				// Magic numbers here are to reduce the range from 50-125 to 0-75 and compare with a max of 58, 85% of which is 49.3, which should put an even 100 or higher displayexp at A rank
+				// Magic numbers here are to reduce the range from 50-125 to 0-75 and compare with a max of 58, 85% of which is 49.3, which should put an even 100 or higher exp at A rank
 				const fixed_t frac = std::min(FRACUNIT, ((exp-50) * FRACUNIT) / std::max(1, static_cast<int>(totalExp-42)));
 				ours += Easing_Linear(frac, 0, bonusWeights[i]);
 				break;

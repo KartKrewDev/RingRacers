@@ -383,7 +383,7 @@ void gpRank_t::Rejigger(UINT16 removedmap, UINT16 removedgt, UINT16 addedmap, UI
 			totalPoints = 0;
 	}
 
-	INT32 deltaLaps = 0;
+	INT32 deltaExp = 0;
 	INT32 deltaPrisons = 0;
 	INT32 deltaRings = 0;
 
@@ -392,12 +392,7 @@ void gpRank_t::Rejigger(UINT16 removedmap, UINT16 removedgt, UINT16 addedmap, UI
 	{
 		if (removedgt == GT_RACE)
 		{
-			// AGH CAN'T USE, gametype already possibly not GT_RACE...
-			//deltaLaps -= K_RaceLapCount(removedmap);
-			if (cv_numlaps.value == -1)
-				deltaLaps -= mapheaderinfo[removedmap]->numlaps;
-			else
-				deltaLaps -= cv_numlaps.value;
+			deltaExp -= TARGETEXP;
 		}
 		if ((gametypes[removedgt]->rules & GTR_SPHERES) == 0)
 		{
@@ -414,7 +409,7 @@ void gpRank_t::Rejigger(UINT16 removedmap, UINT16 removedgt, UINT16 addedmap, UI
 	{
 		if (addedgt == GT_RACE)
 		{
-			deltaLaps += K_RaceLapCount(addedmap);
+			deltaExp += TARGETEXP;
 		}
 		if ((gametypes[addedgt]->rules & GTR_SPHERES) == 0)
 		{
@@ -426,26 +421,13 @@ void gpRank_t::Rejigger(UINT16 removedmap, UINT16 removedgt, UINT16 addedmap, UI
 		}
 	}
 
-	if (deltaLaps)
+	if (deltaExp)
 	{
-		INT32 workingTotalExp = totalExp;
-
-		// +1, since 1st place laps are worth 2 pts.
-		for (i = 0; i < numPlayers+1; i++)
-		{
-			workingTotalExp += deltaLaps;
-		}
-
-		if (workingTotalExp > 0)
-			totalExp = workingTotalExp;
+		deltaExp += totalExp;
+		if (deltaExp > 0)
+			totalExp = deltaExp;
 		else
 			totalExp = 0;
-
-		deltaLaps += exp;
-		if (deltaLaps > 0)
-			exp = deltaLaps;
-		else
-			exp = 0;
 	}
 
 	if (deltaPrisons)
