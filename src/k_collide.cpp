@@ -178,7 +178,7 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 		if (K_TryPickMeUp(t1, t2))
 			return true;
 
-		if (!P_CanPickupItem(t2->player, 2))
+		if (!P_CanPickupItem(t2->player, PICKUP_EGGBOX))
 			return true;
 
 		K_DropItems(t2->player);

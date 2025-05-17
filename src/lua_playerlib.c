@@ -260,6 +260,10 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->tumbleBounces);
 	else if (fastcmp(field,"tumbleheight"))
 		lua_pushinteger(L, plr->tumbleHeight);
+	else if (fastcmp(field,"stunned"))
+		lua_pushinteger(L, plr->stunned);
+	else if (fastcmp(field,"stunnedcombo"))
+		lua_pushinteger(L, plr->stunnedCombo);
 	else if (fastcmp(field,"justdi"))
 		lua_pushinteger(L, plr->justDI);
 	else if (fastcmp(field,"flipdi"))
@@ -878,6 +882,10 @@ static int player_set(lua_State *L)
 		plr->tumbleBounces = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"tumbleheight"))
 		plr->tumbleHeight = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"stunned"))
+		plr->stunned = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"stunnedcombo"))
+		plr->stunnedCombo = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"justdi"))
 		plr->justDI = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"flipdi"))

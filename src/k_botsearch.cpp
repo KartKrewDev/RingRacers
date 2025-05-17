@@ -497,7 +497,7 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 				break;
 			}
 
-			if (P_CanPickupItem(g_nudgeSearch.botmo->player, 1))
+			if (P_CanPickupItem(g_nudgeSearch.botmo->player, PICKUP_ITEMBOX))
 			{
 				K_AddAttackObject(thing, side, ((thing->extravalue1 < RINGBOX_TIME) ? 10 : 20));
 			}
@@ -508,7 +508,7 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 				break;
 			}
 
-			if (P_CanPickupItem(g_nudgeSearch.botmo->player, 1)) // Can pick up an actual item
+			if (P_CanPickupItem(g_nudgeSearch.botmo->player, PICKUP_ITEMBOX)) // Can pick up an actual item
 			{
 				const UINT8 stealth = K_EggboxStealth(thing->x, thing->y);
 				const UINT8 requiredstealth = (g_nudgeSearch.botmo->player->botvars.difficulty * g_nudgeSearch.botmo->player->botvars.difficulty);
@@ -529,7 +529,7 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 				break;
 			}
 
-			if (P_CanPickupItem(g_nudgeSearch.botmo->player, 3))
+			if (P_CanPickupItem(g_nudgeSearch.botmo->player, PICKUP_PAPERITEM))
 			{
 				K_AddAttackObject(thing, side, 20);
 			}
@@ -541,8 +541,8 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 				break;
 			}
 
-			if ((RINGTOTAL(g_nudgeSearch.botmo->player) < 20 && !(g_nudgeSearch.botmo->player->pflags & PF_RINGLOCK)
-				&& P_CanPickupItem(g_nudgeSearch.botmo->player, 0))
+			if ((RINGTOTAL(g_nudgeSearch.botmo->player) < 20
+				&& P_CanPickupItem(g_nudgeSearch.botmo->player, PICKUP_RINGORSPHERE))
 				&& !thing->extravalue1
 				&& (g_nudgeSearch.botmo->player->itemtype != KITEM_LIGHTNINGSHIELD))
 			{

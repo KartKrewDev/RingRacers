@@ -629,7 +629,7 @@ award_immediately (mobj_t *hyu)
 			return false;
 		}
 
-		if (!P_CanPickupItem(player, 1))
+		if (!P_CanPickupItem(player, PICKUP_ITEMBOX))
 			return false;
 
 		// Prevent receiving any more items or even stacked

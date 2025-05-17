@@ -123,6 +123,11 @@ static tic_t freezetimeout[MAXNETNODES]; // Until when can this node freeze the 
 // If higher than cv_joindelay * 2 (3 joins in a short timespan), joins are temporarily disabled.
 static tic_t joindelay = 0;
 
+// Set when the server requests a signature with an IP mismatch.
+// This is a common issue on Hamachi, Radmin, and other VPN software that does noncompliant IP remap horeseshit.
+// When ths is set, provide only blank signatures. If this is set while joining, the server will degrade us to a GUEST.
+static boolean forceGuest = false;
+
 UINT16 pingmeasurecount = 1;
 UINT32 realpingtable[MAXPLAYERS]; //the base table of ping where an average will be sent to everyone.
 UINT32 playerpingtable[MAXPLAYERS]; //table of player latency values.
@@ -276,9 +281,26 @@ shouldsign_t ShouldSignChallenge(uint8_t *message)
 	if ((max(now, then) - min(now, then)) > 60*15)
 		return SIGN_BADTIME;
 
+	//  ____ _____ ___  ____  _ 
+	// / ___|_   _/ _ \|  _ \| |
+	// \___ \ | || | | | |_) | |
+	//  ___) || || |_| |  __/|_|
+	// |____/ |_| \___/|_|   (_)
+	// =========================
+	// SIGN_BADIP MUST BE CHECKED LAST, AND RETURN ONLY IF ALL OTHER CHECKS HAVE ALREADY SUCCEEDED.
+	// We allow IP failures through for compatibility with shitty VPNs and fucked-beyond-belief home networks.
+	// If this is checked before other sign-safety conditons, bad actors can INTENTIONALLY SKIP CHECKS.
 	if (realIP != claimedIP && I_IsExternalAddress(&realIP))
 		return SIGN_BADIP;
-
+#ifdef DEVELOP
+	if (cv_badip.value)
+	{
+		CV_AddValue(&cv_badip, -1);
+		CONS_Alert(CONS_WARNING, "cv_badip enabled, intentionally failing checks\n");
+		return SIGN_BADIP;
+	}
+#endif
+	// Do NOT return SIGN_BADIP before doing all other available checks.
 	return SIGN_OK;
 }
 
@@ -951,17 +973,19 @@ static boolean CL_SendJoin(void)
 	// Don't leak old signatures from prior sessions.
 	memset(&netbuffer->u.clientcfg.challengeResponse, 0, sizeof(((clientconfig_pak *)0)->challengeResponse));
 
+	forceGuest = false;
+
 	if (client && netgame)
 	{
 		shouldsign_t safe = ShouldSignChallenge(awaitingChallenge);
 
-		if (safe != SIGN_OK)
+		if (safe == SIGN_BADIP)
 		{
-			if (safe == SIGN_BADIP)
-			{
-				I_Error("External server IP didn't match the message it sent.");
-			}
-			else if (safe == SIGN_BADTIME)
+			forceGuest = true;
+		}
+		else if (safe != SIGN_OK)
+		{
+			if (safe == SIGN_BADTIME)
 			{
 				I_Error("External server sent a message with an unusual timestamp.\nMake sure your system time is set correctly.");
 			}
@@ -978,7 +1002,7 @@ static boolean CL_SendJoin(void)
 		uint8_t signature[SIGNATURELENGTH];
 		profile_t *localProfile = PR_GetLocalPlayerProfile(i);
 
-		if (PR_IsLocalPlayerGuest(i)) // GUESTS don't have keys
+		if (PR_IsLocalPlayerGuest(i) || forceGuest) // GUESTS don't have keys
 		{
 			memset(signature, 0, sizeof(signature));
 		}
@@ -1450,6 +1474,9 @@ static void CL_LoadReceivedSavegame(boolean reloading)
 			}
 		}
 	}
+
+	if (forceGuest)
+		HU_AddChatText("\x85* This server uses a strange network configuration (VPN?). You have joined as a GUEST.", true);
 }
 
 static void CL_ReloadReceivedSavegame(void)
@@ -4436,8 +4463,19 @@ static void HandleConnect(SINT8 node)
 
 				if (netgame && sigcheck != 0)
 				{
-					SV_SendRefuse(node, M_GetText("Signature verification failed."));
-					return;
+					uint8_t allZero[SIGNATURELENGTH];
+					memset(allZero, 0, SIGNATURELENGTH);
+					if (memcmp(netbuffer->u.clientcfg.challengeResponse[i], allZero, SIGNATURELENGTH) == 0)
+					{
+						// The connecting client didn't even try to sign this, probably due to an IP mismatch.
+						// Let them in as a guest.
+						memset(lastReceivedKey[node][i], 0, PUBKEYLENGTH);
+					}
+					else
+					{
+						SV_SendRefuse(node, M_GetText("Signature verification failed."));
+						return;
+					}
 				}
 			}
 
@@ -5864,11 +5902,11 @@ static void HandlePacketFromPlayer(SINT8 node)
 			memcpy(lastChallengeAll, netbuffer->u.challengeall.secret, sizeof(lastChallengeAll));
 
 			shouldsign_t safe = ShouldSignChallenge(lastChallengeAll);
-			if (safe != SIGN_OK)
+			if (safe == SIGN_BADIP)
+				forceGuest = true;
+			else if (safe != SIGN_OK)
 			{
-				if (safe == SIGN_BADIP)
-					HandleSigfail("External server sent the wrong IP");
-				else if (safe == SIGN_BADTIME)
+				if (safe == SIGN_BADTIME)
 					HandleSigfail("Bad timestamp - is your time set correctly?");
 				else
 					HandleSigfail("Unknown auth error - contact a developer");
@@ -5893,7 +5931,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 			{
 				uint8_t signature[SIGNATURELENGTH];
 				profile_t *localProfile = PR_GetLocalPlayerProfile(challengeplayers);
-				if (!PR_IsLocalPlayerGuest(challengeplayers)) // GUESTS don't have keys
+				if (!PR_IsLocalPlayerGuest(challengeplayers) && !forceGuest) // GUESTS don't have keys
 				{
 					crypto_eddsa_sign(signature, localProfile->secret_key, lastChallengeAll, sizeof(lastChallengeAll));
 

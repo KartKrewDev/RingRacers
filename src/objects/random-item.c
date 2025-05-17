@@ -47,11 +47,11 @@ static player_t *GetItemBoxPlayer(mobj_t *mobj)
 			continue;
 		}
 
-		// Always use normal item box rules -- could pass in "2" for fakes but they blend in better like this
-		if (P_CanPickupItem(&players[i], 1))
+		// Always use normal item box rules -- could pass in "PICKUP_EGGBOX" for fakes but they blend in better like this
+		if (P_CanPickupItem(&players[i], PICKUP_ITEMBOX))
 		{
 			// Check for players who can take this pickup, but won't be allowed to (antifarming)
-			UINT8 mytype = (mobj->flags2 & MF2_BOSSDEAD) ? 2 : 1;
+			UINT8 mytype = (mobj->flags2 & MF2_BOSSDEAD) ? CHEESE_RINGBOX : CHEESE_ITEMBOX;
 			if (P_IsPickupCheesy(&players[i], mytype))
 				continue;
 

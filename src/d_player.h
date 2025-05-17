@@ -138,6 +138,7 @@ typedef enum
 	PF2_SELFDEAFEN = 1<<2,
 	PF2_SERVERMUTE = 1<<3,
 	PF2_SERVERDEAFEN = 1<<4,
+	PF2_STRICTFASTFALL = 1<<5,
 } pflags2_t;
 
 typedef enum
@@ -724,6 +725,8 @@ struct player_t
 	UINT8 noEbrakeMagnet;	// Briefly disable 2.2 responsive ebrake if you're bumped by another player.
 	UINT8 tumbleBounces;
 	UINT16 tumbleHeight;	// In *mobjscaled* fracunits, or mfu, not raw fu
+	UINT16 stunned;			// Number of tics during which rings cannot be picked up
+	UINT8 stunnedCombo;		// Number of hits sustained while stunned, reduces consecutive stun penalties
 	UINT8 justDI;			// Turn-lockout timer to briefly prevent unintended turning after DI, resets when actionable or no input
 	boolean flipDI;			// Bananas flip the DI direction. Was a bug, but it made bananas much more interesting.
 

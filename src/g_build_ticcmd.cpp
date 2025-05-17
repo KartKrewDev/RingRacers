@@ -400,7 +400,7 @@ class TiccmdBuilder
 		};
 
 		map(gc_drift, BT_DRIFT); // drift
-		map(gc_spindash, BT_SPINDASHMASK); // C
+		map(gc_spindash, BT_SPINDASH|BT_SPINDASHMASK); // C
 		map(gc_item, BT_ATTACK); // fire
 
 		map(gc_lookback, BT_LOOKBACK); // rear view
