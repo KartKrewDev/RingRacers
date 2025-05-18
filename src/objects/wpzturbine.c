@@ -206,11 +206,17 @@ void Obj_playerWPZTurbine(player_t *p)
 	fixed_t momz;
 
 
-	if (!t || P_MobjWasRemoved(t) || t->type != MT_WATERPALACETURBINE || !t->spawnpoint || p->respawn.state != RESPAWNST_NONE)
+	if (!t || P_MobjWasRemoved(t) || p->respawn.state != RESPAWNST_NONE)
 	{
 		p->turbine = false;
 		P_SetTarget(&pmo->tracer, NULL);
 		return;	// wtf happened
+	}
+
+	if (t->type != MT_WATERPALACETURBINE)
+	{
+		p->turbine = false;
+		return;
 	}
 
 	mt = t->spawnpoint;
