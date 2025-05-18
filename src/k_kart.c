@@ -9494,6 +9494,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->trickboost)
 		player->trickboost--;
 
+	if (K_PlayerUsesBotMovement(players) && player->botvars.bumpslow && player->incontrol)
+		player->botvars.bumpslow--;
+
 	if (player->flamedash)
 	{
 		player->flamedash--;
@@ -15512,6 +15515,15 @@ UINT32 K_GetNumGradingPoints(void)
 		return 0;
 
 	return numlaps * (1 + Obj_GetCheckpointCount());
+}
+
+void K_BotHitPenalty(player_t *player)
+{
+	if (K_PlayerUsesBotMovement(player))
+	{
+		player->botvars.rubberband = max(player->botvars.rubberband/2, FRACUNIT/2);
+		player->botvars.bumpslow = TICRATE*2;
+	}
 }
 
 static boolean K_PickUp(player_t *player, mobj_t *picked)
