@@ -9081,8 +9081,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				(newplayer != NULL)
 				&& (gamespeed != KARTSPEED_EASY)
 				&& (newplayer->tally.active == true)
-				&& (newplayer->tally.totalLaps > 0) // Only true if not Time Attack
-				&& (newplayer->tally.laps >= newplayer->tally.totalLaps)
+				&& (newplayer->tally.totalExp > 0) // Only true if not Time Attack
+				&& (newplayer->tally.exp >= newplayer->tally.totalExp)
 			)
 			{
 				UINT8 pnum = (newplayer-players);

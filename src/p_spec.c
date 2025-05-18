@@ -2109,20 +2109,7 @@ static void K_HandleLapIncrement(player_t *player)
 					// Update power levels for this lap.
 					K_UpdatePowerLevels(player, player->laps, false);
 
-					if (nump > 1 && K_IsPlayerLosing(player) == false)
-					{
-						if (inDuel == false && player->position == 1) // 1st place in 1v1 uses thumbs up
-						{
-							player->lapPoints += 2;
-						}
-						else
-						{
-							player->lapPoints++;
-						}
-					}
-
 					K_CheckpointCrossAward(player);
-					player->gradingpointnum++;
 
 					if (player->position == 1 && !(gametyperules & GTR_CHECKPOINTS))
 					{

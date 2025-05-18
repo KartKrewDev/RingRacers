@@ -138,14 +138,14 @@ void podiumData_s::Init(void)
 		constexpr INT32 numRaces = 5;
 		for (INT32 i = 0; i < rank.numPlayers; i++)
 		{
-			rank.totalPoints += numRaces * K_CalculateGPRankPoints(i + 1, rank.totalPlayers);
+			rank.totalPoints += numRaces * K_CalculateGPRankPoints(MAXEXP, i+1, rank.totalPlayers);
 		}
 		rank.totalRings = numRaces * rank.numPlayers * 20;
 
 		// Randomized winnings
 		INT32 rgs = 0;
-		INT32 laps = 0;
-		INT32 tlaps = 0;
+		INT32 exp = 0;
+		INT32 texp = 0;
 		INT32 prs = 0;
 		INT32 tprs = 0;
 
@@ -156,7 +156,7 @@ void podiumData_s::Init(void)
 			gpRank_level_t *const lvl = &rank.levels[i];
 			UINT8 specialWinner = 0;
 			UINT16 pprs = 0;
-			UINT16 plaps = 0;
+			UINT16 pexp = 0;
 
 			lvl->id = M_RandomRange(4, nummapheaders);
 
@@ -179,8 +179,8 @@ void podiumData_s::Init(void)
 				}
 				default:
 				{
-					lvl->totalLapPoints = M_RandomRange(2, 5) * 2;
-					tlaps += lvl->totalLapPoints;
+					lvl->totalExp = TARGETEXP;
+					texp += lvl->totalExp * rank.numPlayers;
 					break;
 				}
 			}
@@ -198,8 +198,8 @@ void podiumData_s::Init(void)
 					dta->rings = M_RandomRange(0, 20);
 					rgs += dta->rings;
 
-					dta->lapPoints = M_RandomRange(0, lvl->totalLapPoints);
-					plaps = std::max(plaps, dta->lapPoints);
+					dta->exp = M_RandomRange(MINEXP, MAXEXP);
+					pexp += dta->exp;
 				}
 
 				if (lvl->event == GPEVENT_BONUS)
@@ -223,13 +223,13 @@ void podiumData_s::Init(void)
 				}
 			}
 
-			laps += plaps;
+			exp += pexp;
 			prs += pprs;
 		}
 
 		rank.rings = rgs;
-		rank.laps = laps;
-		rank.totalLaps = tlaps;
+		rank.exp = exp;
+		rank.totalExp = texp;
 		rank.prisons = prs;
 		rank.totalPrisons = tprs;
 	}
@@ -510,22 +510,22 @@ void podiumData_s::Draw(void)
 			.font(srb2::Draw::Font::kZVote)
 			.text(va("%c%d", (rank.scorePosition > 0 ? '+' : ' '), rank.scorePosition));
 
-		drawer_winner
-			.xy(64, 19)
-			.patch("K_POINT4");
+		// drawer_winner
+		// 	.xy(64, 19)
+		// 	.patch("K_POINT4");
 
-		drawer_winner
-			.xy(88, 21)
-			.align(srb2::Draw::Align::kLeft)
-			.font(srb2::Draw::Font::kPing)
-			.colormap(TC_RAINBOW, SKINCOLOR_GOLD)
-			.text(va("%d", rank.winPoints));
+		// drawer_winner
+		// 	.xy(88, 21)
+		// 	.align(srb2::Draw::Align::kLeft)
+		// 	.font(srb2::Draw::Font::kPing)
+		// 	.colormap(TC_RAINBOW, SKINCOLOR_GOLD)
+		// 	.text(va("%d", rank.winPoints));
 
-		drawer_winner
-			.xy(75, 31)
-			.align(srb2::Draw::Align::kCenter)
-			.font(srb2::Draw::Font::kZVote)
-			.text(va("%c%d", (rank.scoreGPPoints > 0 ? '+' : ' '), rank.scoreGPPoints));
+		// drawer_winner
+		// 	.xy(75, 31)
+		// 	.align(srb2::Draw::Align::kCenter)
+		// 	.font(srb2::Draw::Font::kZVote)
+		// 	.text(va("%c%d", (rank.scoreGPPoints > 0 ? '+' : ' '), rank.scoreGPPoints));
 
 
 		srb2::Draw drawer_trophy = drawer.xy(272, 10);
@@ -683,15 +683,27 @@ void podiumData_s::Draw(void)
 							}
 							default:
 							{
-								drawer_gametype
-									.xy(0, 1)
-									.patch("K_SPTLAP");
 
 								drawer_gametype
-									.xy(22, 1)
+									.xy(0, 1)
+									.colorize(static_cast<skincolornum_t>(SKINCOLOR_MUSTARD))
+									.patch("K_SPTEXP");
+								// Colorize the crystal, just like we do for hud
+								fixed_t factor = FixedDiv(dta->exp*FRACUNIT, lvl->totalExp*FRACUNIT);
+								skincolornum_t overlaycolor = factor < FRACUNIT ? SKINCOLOR_RUBY : SKINCOLOR_ULTRAMARINE;
+								if (factor >= FRACUNIT) {factor += factor-FRACUNIT;} // exaggerate the positive side, since reverse engineering the factor like this results in half the translucency range
+								auto transflag = K_GetTransFlagFromFixed(factor);
+								drawer_gametype
+									.xy(0, 1)
+									.colorize(static_cast<skincolornum_t>(overlaycolor))
+									.flags(transflag)
+									.patch("K_SPTEXP");
+
+								drawer_gametype
+									.xy(23, 1)
 									.align(srb2::Draw::Align::kCenter)
 									.font(srb2::Draw::Font::kPing)
-									.text(va("%d/%d", dta->lapPoints, lvl->totalLapPoints));
+									.text(va("%d", dta->exp));
 								break;
 							}
 						}
@@ -751,7 +763,7 @@ void podiumData_s::Draw(void)
 			.x(-144.0);
 
 		srb2::Draw drawer_totals_right = drawer_totals
-			.x(78.0);
+			.x(72.0);
 
 		if (state == PODIUM_ST_TOTALS_SLIDEIN)
 		{
@@ -807,35 +819,46 @@ void podiumData_s::Draw(void)
 			.text(va("%c%d", (rank.scoreRings > 0 ? '+' : ' '), rank.scoreRings));
 
 		drawer_totals_right
-			.xy(10.0, 46.0)
+			.xy(16.0, 49.0)
 			.patch("CAPS_ZB");
 
 		drawer_totals_right
-			.xy(44.0, 24.0)
+			.xy(50.0, 24.0)
 			.align(srb2::Draw::Align::kCenter)
 			.font(srb2::Draw::Font::kThinTimer)
 			.text(va("%d / %d", rank.prisons, rank.totalPrisons));
 
 		drawer_totals_right
-			.xy(44.0, 38.0)
+			.xy(50.0, 38.0)
 			.align(srb2::Draw::Align::kCenter)
 			.font(srb2::Draw::Font::kZVote)
 			.text(va("%c%d", (rank.scorePrisons > 0 ? '+' : ' '), rank.scorePrisons));
 
 		drawer_totals_right
-			.patch("RANKLAPS");
+			.colorize(static_cast<skincolornum_t>(SKINCOLOR_MUSTARD))
+			.patch("K_STEXP");
+		// Colorize the crystal for the totals, just like we do for in race hud
+		fixed_t factor = FixedDiv((rank.exp+(35*rank.numPlayers-1))*FRACUNIT, rank.totalExp*FRACUNIT); // bump the calc a bit, because its probably not possible for every human to get 125 on every race
+		skincolornum_t overlaycolor = factor < FRACUNIT ? SKINCOLOR_RUBY : SKINCOLOR_ULTRAMARINE;
+		if (factor >= FRACUNIT) {factor += factor-FRACUNIT;} // exaggerate the positive side, since reverse engineering the factor like this results in half the translucency range
+		auto transflag = K_GetTransFlagFromFixed(factor);
+		
+		drawer_totals_right
+			.colorize(static_cast<skincolornum_t>(overlaycolor))
+			.flags(transflag)
+			.patch("K_STEXP");
 
 		drawer_totals_right
-			.xy(44.0, 0.0)
+			.xy(50.0, 0.0)
 			.align(srb2::Draw::Align::kCenter)
 			.font(srb2::Draw::Font::kThinTimer)
-			.text(va("%d / %d", rank.laps, rank.totalLaps));
+			.text(va("%d / %d", rank.exp, rank.totalExp));
 
 		drawer_totals_right
-			.xy(44.0, 14.0)
+			.xy(50.0, 14.0)
 			.align(srb2::Draw::Align::kCenter)
 			.font(srb2::Draw::Font::kZVote)
-			.text(va("%c%d", (rank.scoreLaps > 0 ? '+' : ' '), rank.scoreLaps));
+			.text(va("%c%d", (rank.scoreExp > 0 ? '+' : ' '), rank.scoreExp));
 	}
 
 	if ((state == PODIUM_ST_GRADE_APPEAR && delay == 0)

@@ -2211,8 +2211,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	INT16 totalring;
 	UINT8 laps;
 	UINT8 latestlap;
-	UINT32 lapPoints;
-	INT32 exp;
+	UINT32 exp;
+	INT32 gradingfactor;
 	UINT16 gradingpointnum;
 
 	UINT16 skincolor;
@@ -2417,8 +2417,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		khudfault = 0;
 		laps = 0;
 		latestlap = 0;
-		lapPoints = 0;
-		exp = FRACUNIT;
+		exp = 0;
+		gradingfactor = FRACUNIT;
 		gradingpointnum = 0;
 		roundscore = 0;
 		exiting = 0;
@@ -2463,8 +2463,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 		laps = players[player].laps;
 		latestlap = players[player].latestlap;
-		lapPoints = players[player].lapPoints;
 		exp = players[player].exp;
+		gradingfactor = players[player].gradingfactor;
 		gradingpointnum = players[player].gradingpointnum;
 
 		roundscore = players[player].roundscore;
@@ -2589,8 +2589,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	p->laps = laps;
 	p->latestlap = latestlap;
-	p->lapPoints = lapPoints;
 	p->exp = exp;
+	p->gradingfactor = gradingfactor;
 	p->gradingpointnum = gradingpointnum;
 	p->totalring = totalring;
 
@@ -4716,8 +4716,8 @@ static void G_DoCompleted(void)
 
 				if (grandprixinfo.eventmode == GPEVENT_NONE)
 				{
-					grandprixinfo.rank.winPoints += K_CalculateGPRankPoints(player->position, grandprixinfo.rank.totalPlayers);
-					grandprixinfo.rank.laps += player->lapPoints;
+					grandprixinfo.rank.winPoints += K_CalculateGPRankPoints(player->exp, grandprixinfo.rank.position, grandprixinfo.rank.totalPlayers);
+					grandprixinfo.rank.exp += player->exp;
 				}
 				else if (grandprixinfo.eventmode == GPEVENT_SPECIAL)
 				{

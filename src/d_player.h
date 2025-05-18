@@ -950,8 +950,8 @@ struct player_t
 	tic_t laptime[LAP__MAX];
 	UINT8 laps; // Number of laps (optional)
 	UINT8 latestlap;
-	UINT32 lapPoints; // Points given from laps
-	INT32 exp;
+	UINT32 exp; // Points given from laps and checkpoints
+	fixed_t gradingfactor;
 	UINT16 gradingpointnum; // how many grading points, checkpoint and finishline, you've passed
 	INT32 cheatchecknum; // The number of the last cheatcheck you hit
 	INT32 checkpointId; // Players respawn here, objects/checkpoint.cpp

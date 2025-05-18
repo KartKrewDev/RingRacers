@@ -37,7 +37,6 @@ struct MobjList
 	{
 		ptr->next(front());
 		front(ptr);
-		count_++;
 	}
 
 	void erase(T* node)
@@ -46,7 +45,6 @@ struct MobjList
 		{
 			front(node->next());
 			node->next(nullptr);
-			count_--;
 			return;
 		}
 
@@ -71,21 +69,25 @@ struct MobjList
 			{
 				prev->next(node->next());
 				node->next(nullptr);
-				count_--;
 				break;
 			}
+		}
+	}
+
+	void clear()
+	{
+		while (!empty())
+		{
+			erase(front());
 		}
 	}
 
 	auto begin() const { return view().begin(); }
 	auto end() const { return view().end(); }
 
-	auto count() { return count_; }
-
 private:
 	void front(T* ptr) { Mobj::ManagedPtr {Head} = ptr; }
 	auto view() const { return MobjListView(front(), [](T* node) { return node->next(); }); }
-	UINT32 count_ = 0;
 };
 
 }; // namespace srb2

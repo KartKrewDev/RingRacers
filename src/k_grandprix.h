@@ -60,7 +60,7 @@ UINT8 K_BotStartingDifficulty(SINT8 value);
 
 
 /*--------------------------------------------------
-	INT16 K_CalculateGPRankPoints(UINT8 position, UINT8 numplayers);
+	INT16 K_CalculateGPRankPoints(player_t* player, UINT8 numplayers);
 
 		Calculates the number of points that a player would
 		recieve if they won the round.
@@ -73,7 +73,7 @@ UINT8 K_BotStartingDifficulty(SINT8 value);
 		Number of points to give.
 --------------------------------------------------*/
 
-INT16 K_CalculateGPRankPoints(UINT8 position, UINT8 numplayers);
+INT16 K_CalculateGPRankPoints(UINT16 exp, UINT8 position, UINT8 numplayers);
 
 
 /*--------------------------------------------------

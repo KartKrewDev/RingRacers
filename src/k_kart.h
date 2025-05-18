@@ -308,9 +308,9 @@ boolean K_ThunderDome(void);
 
 boolean K_PlayerCanUseItem(player_t *player);
 
-fixed_t K_GetExpAdjustment(player_t *player);
+fixed_t K_GetGradingMultAdjustment(player_t *player);
 
-UINT16 K_GetDisplayEXP(player_t *player);
+UINT16 K_GetEXP(player_t *player);
 
 UINT32 K_GetNumGradingPoints(void);
 

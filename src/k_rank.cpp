@@ -289,7 +289,7 @@ static UINT32 RankCapsules_CountFromMap(const INT32 cupLevelNum)
 void gpRank_t::Init(void)
 {
 	UINT8 numHumans = 0;
-	UINT32 laps = 0;
+	UINT32 exp = 0;
 	INT32 i;
 
 	memset(this, 0, sizeof(gpRank_t));
@@ -322,7 +322,7 @@ void gpRank_t::Init(void)
 	// (Should this account for all coop players?)
 	for (i = 0; i < numHumans; i++)
 	{
-		totalPoints += grandprixinfo.cup->numlevels * K_CalculateGPRankPoints(i + 1, totalPlayers);
+		totalPoints += grandprixinfo.cup->numlevels * K_CalculateGPRankPoints(MAXEXP, i+1, totalPlayers);
 	}
 
 	totalRings = grandprixinfo.cup->numlevels * numHumans * 20;
@@ -332,14 +332,13 @@ void gpRank_t::Init(void)
 		const INT32 cupLevelNum = grandprixinfo.cup->cachedlevels[i];
 		if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum] != NULL)
 		{
-			laps += K_RaceLapCount(cupLevelNum);
+			exp += TARGETEXP;
 		}
 	}
 
-	// +1, since 1st place laps are worth 2 pts.
-	for (i = 0; i < numHumans+1; i++)
+	for (i = 0; i < numHumans; i++)
 	{
-		totalLaps += laps;
+		totalExp += exp;
 	}
 
 	// Search through all of the cup's bonus levels
@@ -373,9 +372,8 @@ void gpRank_t::Rejigger(UINT16 removedmap, UINT16 removedgt, UINT16 addedmap, UI
 	{
 		for (i = 0; i < numPlayers; i++)
 		{
-			deltaPoints += K_CalculateGPRankPoints(i + 1, totalPlayers);
+			deltaPoints += K_CalculateGPRankPoints(MAXEXP, i + 1, totalPlayers);
 		}
-
 		if (addedgt == GT_RACE)
 			totalPoints += deltaPoints;
 		else if (totalPoints > deltaPoints)
@@ -384,7 +382,7 @@ void gpRank_t::Rejigger(UINT16 removedmap, UINT16 removedgt, UINT16 addedmap, UI
 			totalPoints = 0;
 	}
 
-	INT32 deltaLaps = 0;
+	INT32 deltaExp = 0;
 	INT32 deltaPrisons = 0;
 	INT32 deltaRings = 0;
 
@@ -393,12 +391,7 @@ void gpRank_t::Rejigger(UINT16 removedmap, UINT16 removedgt, UINT16 addedmap, UI
 	{
 		if (removedgt == GT_RACE)
 		{
-			// AGH CAN'T USE, gametype already possibly not GT_RACE...
-			//deltaLaps -= K_RaceLapCount(removedmap);
-			if (cv_numlaps.value == -1)
-				deltaLaps -= mapheaderinfo[removedmap]->numlaps;
-			else
-				deltaLaps -= cv_numlaps.value;
+			deltaExp -= TARGETEXP;
 		}
 		if ((gametypes[removedgt]->rules & GTR_SPHERES) == 0)
 		{
@@ -415,7 +408,7 @@ void gpRank_t::Rejigger(UINT16 removedmap, UINT16 removedgt, UINT16 addedmap, UI
 	{
 		if (addedgt == GT_RACE)
 		{
-			deltaLaps += K_RaceLapCount(addedmap);
+			deltaExp += TARGETEXP;
 		}
 		if ((gametypes[addedgt]->rules & GTR_SPHERES) == 0)
 		{
@@ -427,26 +420,13 @@ void gpRank_t::Rejigger(UINT16 removedmap, UINT16 removedgt, UINT16 addedmap, UI
 		}
 	}
 
-	if (deltaLaps)
+	if (deltaExp)
 	{
-		INT32 workingTotalLaps = totalLaps;
-
-		// +1, since 1st place laps are worth 2 pts.
-		for (i = 0; i < numPlayers+1; i++)
-		{
-			workingTotalLaps += deltaLaps;
-		}
-
-		if (workingTotalLaps > 0)
-			totalLaps = workingTotalLaps;
+		deltaExp += totalExp;
+		if (deltaExp > 0)
+			totalExp = deltaExp;
 		else
-			totalLaps = 0;
-
-		deltaLaps += laps;
-		if (deltaLaps > 0)
-			laps = deltaLaps;
-		else
-			laps = 0;
+			totalExp = 0;
 	}
 
 	if (deltaPrisons)
@@ -512,7 +492,7 @@ void gpRank_t::Update(void)
 
 	lvl->time = UINT32_MAX;
 
-	lvl->totalLapPoints = 500;
+	lvl->totalExp = TARGETEXP;
 	lvl->totalPrisons = maptargets;
 
 	UINT8 i;
@@ -554,7 +534,7 @@ void gpRank_t::Update(void)
 
 		dta->position = player->tally.position;
 		dta->rings = player->tally.rings;
-		dta->lapPoints = player->tally.laps;
+		dta->exp = player->tally.exp;
 		dta->prisons = player->tally.prisons;
 		dta->gotSpecialPrize = !!!(player->pflags & PF_NOCONTEST);
 		dta->grade = static_cast<gp_rank_e>(player->tally.rank);
@@ -595,16 +575,16 @@ gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 
 	rankData->scorePosition = 0;
 	rankData->scoreGPPoints = 0;
-	rankData->scoreLaps = 0;
+	rankData->scoreExp = 0;
 	rankData->scorePrisons = 0;
 	rankData->scoreRings = 0;
 	rankData->scoreContinues = 0;
 	rankData->scoreTotal = 0;
 
-	const INT32 lapsWeight = (rankData->totalLaps > 0) ? RANK_WEIGHT_LAPS : 0;
+	const INT32 expWeight = (rankData->totalExp > 0) ? RANK_WEIGHT_EXP : 0;
 	const INT32 prisonsWeight = (rankData->totalPrisons > 0) ? RANK_WEIGHT_PRISONS : 0;
 
-	const INT32 total = RANK_WEIGHT_POSITION + RANK_WEIGHT_SCORE + lapsWeight + prisonsWeight + RANK_WEIGHT_RINGS;
+	const INT32 total = RANK_WEIGHT_POSITION + expWeight + prisonsWeight + RANK_WEIGHT_RINGS;
 	const INT32 continuesPenalty = total / RANK_CONTINUE_PENALTY_DIV;
 
 	if (rankData->position > 0)
@@ -619,9 +599,9 @@ gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 		rankData->scoreGPPoints += (rankData->winPoints * RANK_WEIGHT_SCORE) / rankData->totalPoints;
 	}
 
-	if (rankData->totalLaps > 0)
+	if (rankData->totalExp > 0)
 	{
-		rankData->scoreLaps += (rankData->laps * lapsWeight) / rankData->totalLaps;
+		rankData->scoreExp += (std::min(rankData->exp, rankData->totalExp) * expWeight) / rankData->totalExp;
 	}
 
 	if (rankData->totalPrisons > 0)
@@ -638,8 +618,8 @@ gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 
 	rankData->scoreTotal = 
 		rankData->scorePosition +
-		rankData->scoreGPPoints +
-		rankData->scoreLaps + 
+		// rankData->scoreGPPoints +
+		rankData->scoreExp + 
 		rankData->scorePrisons +
 		rankData->scoreRings +
 		rankData->scoreContinues;

@@ -50,6 +50,7 @@
 #include "k_hud.h" // K_DrawMapThumbnail
 #include "k_battle.h"
 #include "k_boss.h"
+#include "k_kart.h"
 #include "k_pwrlv.h"
 #include "k_grandprix.h"
 #include "k_serverstats.h" // SV_BumpMatchStats
@@ -308,7 +309,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 					if (data.pos[data.numplayers] < pointgetters
 					&& !(players[i].pflags & PF_NOCONTEST))
 					{
-						data.increase[i] = K_CalculateGPRankPoints(data.pos[data.numplayers], pointgetters);
+						data.increase[i] = K_CalculateGPRankPoints((&players[i])->exp, data.pos[data.numplayers], pointgetters);
 					}
 				}
 
@@ -2195,10 +2196,7 @@ static UINT32 Y_EstimatePodiumScore(player_t *const player, UINT8 numPlaying)
 	UINT8 pos = Y_PlayersBestPossiblePosition(player);
 	UINT32 ourScore = player->score;
 
-	if (pos < numPlaying)
-	{
-		ourScore += K_CalculateGPRankPoints(pos, numPlaying);
-	}
+	ourScore += K_CalculateGPRankPoints(player->exp, pos, numPlaying);
 
 	return ourScore;
 }
