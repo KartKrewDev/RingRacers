@@ -2600,20 +2600,20 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 				player->roundconditions.checkthisframe = true;
 			}
 
-			if (gametyperules & (GTR_BUMPERS|GTR_CHECKPOINTS))
+			if ((player->pitblame > -1) && (player->pitblame < MAXPLAYERS)
+				&& (playeringame[player->pitblame]) && (!players[player->pitblame].spectator)
+				&& (players[player->pitblame].mo) && (!P_MobjWasRemoved(players[player->pitblame].mo)))
 			{
-				if ((player->pitblame > -1) && (player->pitblame < MAXPLAYERS)
-					&& (playeringame[player->pitblame]) && (!players[player->pitblame].spectator)
-					&& (players[player->pitblame].mo) && (!P_MobjWasRemoved(players[player->pitblame].mo)))
-				{
+				if (gametyperules & (GTR_BUMPERS|GTR_CHECKPOINTS))
 					P_DamageMobj(player->mo, players[player->pitblame].mo, players[player->pitblame].mo, 1, DMG_KARMA);
-					player->pitblame = -1;
-				}
-				else if (player->mo->health > 1 || K_Cooperative())
-				{
+				else
+					K_SpawnAmps(&players[player->pitblame], 20, player->mo);
+				player->pitblame = -1;
+			}
+			else if (player->mo->health > 1 || K_Cooperative())
+			{
+				if (gametyperules & (GTR_BUMPERS|GTR_CHECKPOINTS))
 					player->mo->health--;
-				}
-				
 			}
 
 			if (modeattacking & ATTACKING_SPB)

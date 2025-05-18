@@ -9292,6 +9292,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			player->flashing = K_GetKartFlashing(player);
 	}
 
+	if (player->spinouttimer && player->respawn.state != RESPAWNST_NONE)
+		player->spinouttimer = 0;
+
 	if (player->spinouttimer)
 	{
 		if (((P_IsObjectOnGround(player->mo)
