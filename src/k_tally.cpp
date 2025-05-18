@@ -343,11 +343,9 @@ void level_tally_t::Init(player_t *player)
 
 		if ((gametypes[gt]->rules & GTR_CIRCUIT) == GTR_CIRCUIT)
 		{
-			UINT16 displayEXP = player->exp;
-
-			if (displayEXP != UINT16_MAX)
+			if (player->exp)
 			{
-				exp = displayEXP;
+				exp = player->exp;
 				totalExp = TARGETEXP;
 			}
 		}

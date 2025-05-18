@@ -4235,7 +4235,9 @@ void K_CheckpointCrossAward(player_t *player)
 		return;
 
 	player->gradingfactor += K_GetGradingMultAdjustment(player);
+	player->gradingpointnum++;
 	player->exp = K_GetEXP(player);
+	//CONS_Printf("player: %s factor: %.2f exp: %d\n", player_names[player-players], FIXED_TO_FLOAT(player->gradingfactor), player->exp);
 	if (!player->cangrabitems)
 		player->cangrabitems = 1;
 	
@@ -15493,19 +15495,14 @@ fixed_t K_GetGradingMultAdjustment(player_t *player)
 	return result;
 }
 
-UINT16 K_GetEXP(player_t *player)
+UINT16 __attribute__((optimize("O0"))) K_GetEXP(player_t *player)
 {
 	UINT32 numgradingpoints = K_GetNumGradingPoints();
-
-	if (!numgradingpoints)
-		return UINT16_MAX;
-
 	// target is where you should be if you're doing good and at a 1.0 mult
 	fixed_t clampedmult = max(FRACUNIT/2, min(FRACUNIT*5/4, player->gradingfactor));  // clamp between 0.5 and 1.25
-	fixed_t targetdisplayexp = (TARGETEXP*player->gradingpointnum/max(1,numgradingpoints))<<FRACBITS;
-	UINT16 displayexp = FixedMul(clampedmult, targetdisplayexp)>>FRACBITS;
-
-	return displayexp;
+	fixed_t targetexp = (TARGETEXP*player->gradingpointnum/max(1,numgradingpoints))<<FRACBITS;
+	UINT16 exp = FixedMul(clampedmult, targetexp)>>FRACBITS;
+	return exp;
 }
 
 UINT32 K_GetNumGradingPoints(void)

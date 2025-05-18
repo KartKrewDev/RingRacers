@@ -665,20 +665,7 @@ void Obj_CrossCheckpoints(player_t* player, fixed_t old_x, fixed_t old_y)
 
 	player->checkpointId = chk->id();
 
-	if (D_NumPlayersInRace() > 1 && !K_IsPlayerLosing(player))
-	{
-		if (player->position == 1)
-		{
-			player->exp += 2;
-		}
-		else
-		{
-			player->exp += 1;
-		}
-	}
-
 	K_CheckpointCrossAward(player);
-	player->gradingpointnum++;
 
 	K_UpdatePowerLevels(player, player->laps, false);
 }
