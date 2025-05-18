@@ -9601,6 +9601,11 @@ void P_DoQuakeOffset(UINT8 view, mappoint_t *viewPos, mappoint_t *offset)
 
 	fixed_t maxShake = FixedMul(cv_cam_height[view].value, mapobjectscale) * 3 / 4;
 
+	if (mapheaderinfo[gamemap-1]->cameraHeight >= 0)
+	{
+		maxShake = FixedMul(mapheaderinfo[gamemap-1]->cameraHeight, mapobjectscale) * 3 / 4;
+	}
+
 	if (battle)
 	{
 		addZ /= 2;

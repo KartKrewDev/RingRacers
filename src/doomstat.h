@@ -558,6 +558,8 @@ struct mapheader_t
 	mapheader_lighting_t lighting_encore;	///< Alternative lighting for Encore mode
 	boolean use_encore_lighting;			///< Whether to use separate Encore lighting
 
+	fixed_t cameraHeight;					///< Player camera height to use on this map
+
 	// Audience information
 	UINT8 numFollowers;					///< Internal. For audience support.
 	INT16 *followers;					///< List of audience followers in this level. Allocated dynamically for space reasons. Be careful.
