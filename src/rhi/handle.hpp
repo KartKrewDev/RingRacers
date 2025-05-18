@@ -44,20 +44,11 @@ public:
 
 	Handle(NullHandleType) noexcept : Handle() {}
 
-	Handle(const Handle&) = default;
-	Handle(Handle&& rhs) noexcept
-	{
-		id_ = std::exchange(rhs.id_, 0);
-		generation_ = std::exchange(rhs.generation_, 0);
-	};
+	Handle(const Handle&) noexcept = default;
+	Handle(Handle&&) noexcept = default;
 
-	Handle& operator=(const Handle&) = default;
-	Handle& operator=(Handle&& rhs) noexcept
-	{
-		id_ = std::exchange(rhs.id_, 0);
-		generation_ = std::exchange(rhs.generation_, 0);
-		return *this;
-	}
+	Handle& operator=(const Handle&) noexcept = default;
+	Handle& operator=(Handle&&) noexcept = default;
 
 	// Conversions from Handles of derived type U to base type T
 

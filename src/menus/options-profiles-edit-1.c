@@ -98,6 +98,7 @@ static void M_ProfileEditApply(void)
 	optionsmenu.profile->kickstartaccel = cv_dummyprofilekickstart.value;
 	optionsmenu.profile->autoroulette = cv_dummyprofileautoroulette.value;
 	optionsmenu.profile->litesteer = cv_dummyprofilelitesteer.value;
+	optionsmenu.profile->strictfastfall = cv_dummyprofilestrictfastfall.value;
 	optionsmenu.profile->descriptiveinput = cv_dummyprofiledescriptiveinput.value;
 	optionsmenu.profile->autoring = cv_dummyprofileautoring.value;
 	optionsmenu.profile->rumble = cv_dummyprofilerumble.value;
