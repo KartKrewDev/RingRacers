@@ -8362,7 +8362,7 @@ static void K_TryMoveBackupItem(player_t *player)
 		S_StartSound(player->mo, sfx_mbs54);
 	}
 
-	if (player->itemtype == KITEM_NONE && player->backupitemtype && !(player->itemRoulette.active))
+	if (player->itemtype == KITEM_NONE && player->backupitemtype && P_CanPickupItem(player, PICKUP_RINGORSPHERE))
 	{
 		player->itemtype = player->backupitemtype;
 		player->itemamount = player->backupitemamount;
@@ -15511,7 +15511,7 @@ UINT32 K_GetNumGradingPoints(void)
 	return numlaps * (1 + Obj_GetCheckpointCount());
 }
 
-static void K_PickUp(player_t *player, mobj_t *picked)
+static boolean K_PickUp(player_t *player, mobj_t *picked)
 {
 	SINT8 type = -1;
 	SINT8 amount = 1;
@@ -15550,10 +15550,16 @@ static void K_PickUp(player_t *player, mobj_t *picked)
 		case MT_BUBBLESHIELDTRAP:
 			type = KITEM_BUBBLESHIELD;
 			break;
+		case MT_SINK:
+			type = KITEM_KITCHENSINK;
+			break;
 		default:
 			type = KITEM_SAD;
 			break;
 	}
+
+	if (type == KITEM_SAD)
+		return false;
 
 	// CONS_Printf("it %d ia %d t %d a %d\n", player->itemtype, player->itemamount, type, amount);
 
@@ -15586,6 +15592,8 @@ static void K_PickUp(player_t *player, mobj_t *picked)
 
 	S_StartSound(player->mo, sfx_aple);
 	K_TryMoveBackupItem(player);
+
+	return true;
 }
 
 // ACHTUNG this destroys items when returning true, make sure to bail out
@@ -15629,8 +15637,10 @@ boolean K_TryPickMeUp(mobj_t *m1, mobj_t *m2)
 
 	// CONS_Printf("target check passed\n");
 
-	K_AddHitLag(victim, 3, false);
-	K_PickUp(victim->player, inflictor);
+	if (!K_PickUp(victim->player, inflictor))
+		return false;
+
+	K_AddHitLag(victim, 3, false);	
 
 	P_RemoveMobj(inflictor);
 	return true;
