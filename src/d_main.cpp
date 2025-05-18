@@ -1306,7 +1306,8 @@ static void D_AddFile(initmultiplefilesentry_t *list, size_t index, const char *
 
 static inline void D_CleanFile(initmultiplefilesentry_t *list, size_t count)
 {
-	for (INT32 i = 0; i < count; ++i)
+	size_t i;
+	for (i = 0; i < count; ++i)
 	{
 		if (list[i].filename != NULL)
 			free((void*)list[i].filename);
