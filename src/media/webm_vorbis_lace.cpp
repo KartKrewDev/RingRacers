@@ -61,7 +61,8 @@ std::vector<std::byte> WebmVorbisEncoder::make_vorbis_private_data()
 
 	// The first byte is the number of packets. Once again,
 	// the last packet is not counted.
-	v.emplace_back(std::byte {2});
+	v.resize(1);
+	v[0] = std::byte {2};
 
 	// Then the laced sizes for each packet.
 	lace(v, packets[0]);
