@@ -50,6 +50,7 @@ typedef enum
 	SF_MACHINE          = 1, // Beep boop. Are you a robot?
 	SF_IRONMAN			= 1<<1, // Pick a new skin during POSITION. I main Random!
 	SF_BADNIK			= 1<<2, // Explodes on death
+	SF_HIVOLT           = 1<<3, // High power TA ringboxes, like 2.0-2.3!
 	// free up to and including 1<<31
 } skinflags_t;
 

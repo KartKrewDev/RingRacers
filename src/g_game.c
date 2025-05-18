@@ -583,6 +583,11 @@ static void G_UpdateRecordReplays(void)
 		modeprefix = "spb-";
 	}
 
+	if (K_LegacyRingboost(&players[consoleplayer]))
+	{
+		modeprefix = "classr-";
+	}
+
 	if (players[consoleplayer].pflags & PF_NOCONTEST)
 	{
 		players[consoleplayer].realtime = UINT32_MAX;

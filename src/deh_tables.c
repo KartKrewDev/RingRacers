@@ -4727,6 +4727,7 @@ struct int_const_s const INT_CONST[] = {
 	{"SF_MACHINE",SF_MACHINE},
 	{"SF_IRONMAN",SF_IRONMAN},
 	{"SF_BADNIK",SF_BADNIK},
+	{"SF_HIVOLT",SF_HIVOLT},
 
 	// Sound flags
 	{"SF_TOTALLYSINGLE",SF_TOTALLYSINGLE},

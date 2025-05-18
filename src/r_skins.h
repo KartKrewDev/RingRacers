@@ -92,7 +92,8 @@ typedef enum {
 	ENGINECLASS_H,
 	ENGINECLASS_I,
 
-	ENGINECLASS_J
+	ENGINECLASS_J, 
+	ENGINECLASS_R = 17,
 	
 } engineclass_t;
 

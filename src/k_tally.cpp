@@ -1243,15 +1243,29 @@ void level_tally_t::Draw(void)
 									work_tics % 10
 								));
 
-							if (modeattacking && !demo.playback && (state == TALLY_ST_DONE || state == TALLY_ST_TEXT_PAUSE)
-								&& !K_IsPlayerLosing(&players[consoleplayer]) && players[consoleplayer].realtime < oldbest)
+							if (K_LegacyRingboost(&players[consoleplayer]))
 							{
 								drawer_text
 									.x(197.0 * frac)
 									.y(13.0 * frac)
 									.align(srb2::Draw::Align::kCenter)
 									.font(srb2::Draw::Font::kMenu)
-									.text((leveltime/2 % 2) ? "NEW RECORD!" : "\x82NEW RECORD!");
+									.flags(V_TRANSLUCENT)
+									.text("\"CLASS R\"");
+							}
+							else
+							{
+								if (modeattacking && !demo.playback && (state == TALLY_ST_DONE || state == TALLY_ST_TEXT_PAUSE)
+									&& !K_IsPlayerLosing(&players[consoleplayer]) && players[consoleplayer].realtime < oldbest)
+								{
+
+									drawer_text
+										.x(197.0 * frac)
+										.y(13.0 * frac)
+										.align(srb2::Draw::Align::kCenter)
+										.font(srb2::Draw::Font::kMenu)
+										.text((leveltime/2 % 2) ? "NEW RECORD!" : "\x82NEW RECORD!");
+								}
 							}
 							break;
 						}

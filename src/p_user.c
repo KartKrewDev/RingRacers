@@ -1331,7 +1331,7 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 
 	if (demo.playback == false)
 	{
-		if (modeattacking)
+		if (modeattacking && !K_LegacyRingboost(player))
 		{
 			G_UpdateRecords();
 		}

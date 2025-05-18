@@ -3441,6 +3441,11 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 		ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_CRIMSON, GTC_CACHE);
 		colorring = true;
 	}
+	else if (K_LegacyRingboost(stplyr) && (leveltime%2))
+	{
+		ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_BLUEBERRY, GTC_CACHE);
+		colorring = true;
+	}
 	else if (stplyr->hudrings >= 20) // Maxed out
 		ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_YELLOW, GTC_CACHE);
 
