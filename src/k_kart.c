@@ -13802,9 +13802,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								player->itemamount--;
 								if (player->throwdir > 0)
 								{
-									mobj_t *landmine = K_ThrowKartItem(player, true, MT_LANDMINE, -1, 0, 0);
+									K_ThrowKartItem(player, true, MT_LANDMINE, -1, 0, 0);
 								}
-								else {
+								else
+								{
 									K_ThrowLandMine(player);
 								}
 								K_PlayAttackTaunt(player->mo);
