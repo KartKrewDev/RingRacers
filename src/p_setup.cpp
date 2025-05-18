@@ -526,6 +526,7 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 	mapheaderinfo[num]->automedaltime[1] = 2;
 	mapheaderinfo[num]->automedaltime[2] = 3;
 	mapheaderinfo[num]->automedaltime[3] = 4;
+	mapheaderinfo[num]->cameraHeight = INT32_MIN;
 }
 
 /** Allocates a new map-header structure.

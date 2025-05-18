@@ -1494,6 +1494,18 @@ void readlevelheader(MYFILE *f, char * name)
 					deh_warning("Level header %d: invalid lobby size '%s'", num, word2);
 				}
 			}
+			else if (fastcmp(word, "CAMHEIGHT") || fastcmp(word, "CAMERAHEIGHT"))
+			{
+				fixed_t camheight = FloatToFixed(atof(word2));
+
+				if (camheight < 0)
+				{
+					deh_warning("Level header %d: invalid camera height %s", num, word2);
+					continue;
+				}
+
+				mapheaderinfo[num]->cameraHeight = camheight;;
+			}
 			else
 				deh_warning("Level header %d: unknown word '%s'", num, word);
 		}

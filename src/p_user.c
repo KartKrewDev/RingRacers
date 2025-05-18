@@ -3361,6 +3361,11 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	camdist = FixedMul(cv_cam_dist[num].value, cameraScale);
 	camheight = FixedMul(cv_cam_height[num].value, cameraScale);
 
+	if (mapheaderinfo[gamemap-1]->cameraHeight >= 0)
+	{
+		camheight = FixedMul(mapheaderinfo[gamemap-1]->cameraHeight, cameraScale);
+	}
+
 	if (loop_in < loop->zoom_in_speed)
 	{
 		fixed_t f = loop_out < loop->zoom_out_speed
@@ -4543,7 +4548,7 @@ void P_PlayerThink(player_t *player)
 		player->mo->renderflags &= ~RF_DONTDRAW;
 		player->mo->flags &= ~MF_NOCLIPTHING;
 	}
-	
+
 	boolean deathcontrolled = (player->respawn.state != RESPAWNST_NONE && player->respawn.truedeath == true)
 		|| (player->pflags & PF_NOCONTEST) || (player->karmadelay);
 	boolean powercontrolled = (player->hyudorotimer) || (player->growshrinktimer > 0);
