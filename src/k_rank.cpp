@@ -601,7 +601,7 @@ gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 
 	if (rankData->totalExp > 0)
 	{
-		rankData->scoreExp += (rankData->exp * expWeight) / rankData->totalExp;
+		rankData->scoreExp += (std::min(rankData->exp, rankData->totalExp) * expWeight) / rankData->totalExp;
 	}
 
 	if (rankData->totalPrisons > 0)
