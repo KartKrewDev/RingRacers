@@ -438,6 +438,10 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->itemtype);
 	else if (fastcmp(field,"itemamount"))
 		lua_pushinteger(L, plr->itemamount);
+	else if (fastcmp(field,"backupitemtype"))
+		lua_pushinteger(L, plr->backupitemtype);
+	else if (fastcmp(field,"backupitemamount"))
+		lua_pushinteger(L, plr->backupitemamount);
 	else if (fastcmp(field,"throwdir"))
 		lua_pushinteger(L, plr->throwdir);
 	else if (fastcmp(field,"sadtimer"))
