@@ -8362,7 +8362,7 @@ static void K_TryMoveBackupItem(player_t *player)
 		S_StartSound(player->mo, sfx_mbs54);
 	}
 
-	if (player->itemtype == KITEM_NONE && player->backupitemtype && P_CanPickupItem(player, PICKUP_RINGORSPHERE))
+	if (player->itemtype == KITEM_NONE && player->backupitemtype && P_CanPickupItem(player, PICKUP_PAPERITEM))
 	{
 		player->itemtype = player->backupitemtype;
 		player->itemamount = player->backupitemamount;
