@@ -4235,6 +4235,8 @@ void K_CheckpointCrossAward(player_t *player)
 		return;
 
 	player->exp += K_GetExpAdjustment(player);
+	if (!player->cangrabitems)
+		player->cangrabitems = 1;
 	K_AwardPlayerRings(player, (player->bot ? 20 : 10), true);
 }
 
@@ -8347,6 +8349,31 @@ static void K_MoveHeldObjects(player_t *player)
 	}
 }
 
+// If we can move our backup item into main slots, do so.
+static void K_TryMoveBackupItem(player_t *player)
+{
+	if (player->itemtype && player->itemtype == player->backupitemtype)
+	{
+		player->itemamount += player->backupitemamount;
+
+		player->backupitemtype = 0;
+		player->backupitemamount = 0;
+
+		S_StartSound(player->mo, sfx_mbs54);
+	}
+
+	if (player->itemtype == KITEM_NONE && player->backupitemtype && P_CanPickupItem(player, PICKUP_PAPERITEM))
+	{
+		player->itemtype = player->backupitemtype;
+		player->itemamount = player->backupitemamount;
+
+		player->backupitemtype = 0;
+		player->backupitemamount = 0;
+
+		S_StartSound(player->mo, sfx_mbs54);
+	}
+}
+
 mobj_t *K_FindJawzTarget(mobj_t *actor, player_t *source, angle_t range)
 {
 	fixed_t best = INT32_MAX;
@@ -8817,7 +8844,7 @@ static inline BlockItReturn_t PIT_AttractingRings(mobj_t *thing)
 		return BMIT_CONTINUE; // Too far away
 	}
 
-	if (RINGTOTAL(attractmo->player) >= 20 || (attractmo->player->pflags & PF_RINGLOCK))
+	if (RINGTOTAL(attractmo->player) >= 20 || !P_CanPickupItem(attractmo->player, PICKUP_RINGORSPHERE))
 	{
 		// Already reached max -- just joustle rings around.
 
@@ -9156,6 +9183,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->itemtype == KITEM_NONE)
 		player->itemflags &= ~IF_HOLDREADY;
 
+	K_TryMoveBackupItem(player);
+
 	if (onground || player->transfer < 10*player->mo->scale)
 	{
 		player->transfer = 0;
@@ -9377,6 +9406,33 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->ringdelay)
 		player->ringdelay--;
 
+	if ((player->stunned > 0)
+		&& (player->respawn.state == RESPAWNST_NONE)
+		&& !P_PlayerInPain(player)
+		&& P_IsObjectOnGround(player->mo)
+	)
+	{
+		// MEGA FUCKING HACK BECAUSE P_SAVEG MOBJS ARE FULL
+		// Would updating player_saveflags to 32 bits have any negative consequences?
+		// For now, player->stunned 16th bit is a flag to determine whether the flybots were spawned
+
+		// timer counts down at triple speed while spindashing
+		player->stunned = (player->stunned & 0x8000) | max(0, (player->stunned & 0x7FFF) - (player->spindash ? 3 : 1));
+
+		// when timer reaches 0, reset the flag and stun combo counter
+		if ((player->stunned & 0x7FFF) == 0)
+		{
+			player->stunned = 0;
+			player->stunnedCombo = 0;
+		}
+		// otherwise if the flybots aren't spawned, spawn them now!
+		else if ((player->stunned & 0x8000) == 0)
+		{
+			player->stunned |= 0x8000;
+			Obj_SpawnFlybotsForPlayer(player);
+		}
+	}
+
 	if (player->trickpanel == TRICKSTATE_READY)
 	{
 		if (!player->throwdir && !cmd->turning)
@@ -9407,7 +9463,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 		// UINT16 oldringboost = player->ringboost;
 
-		if (player->superring == 0)
+		if (player->superring == 0 || player->stunned)
 			player->ringboost -= max((player->ringboost / roller), 1);
 		else
 			player->ringboost -= min(K_GetFullKartRingPower(player, false) - 1, max(player->ringboost / 2 / roller, 1));
@@ -9581,6 +9637,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			player->invincibilitytimer--;
 	}
 
+	if (player->cangrabitems && player->cangrabitems <= EARLY_ITEM_FLICKER)
+		player->cangrabitems++;
 
 	if (!player->invincibilitytimer)
 		player->invincibilityextensions = 0;
@@ -9694,6 +9752,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		UINT32 existing = (player->lastringboost / K_GetFullKartRingPower(player, true)); // How many rings (effectively) do we have boost credit for right now?
 
 		UINT8 ringrate = 3 - min(2, (player->superring + existing) / fastringscaler); // Used to consume fat stacks of cash faster.
+
+		if (player->stunned)
+			ringrate = 6;
 
 		if (player->nextringaward >= ringrate)
 		{
@@ -10042,7 +10103,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	}
 
 	extern consvar_t cv_fuzz;
-	if (cv_fuzz.value && P_CanPickupItem(player, 1))
+	if (cv_fuzz.value && P_CanPickupItem(player, PICKUP_ITEMBOX))
 	{
 		K_StartItemRoulette(player, P_RandomRange(PR_FUZZ, 0, 1));
 	}
@@ -12652,6 +12713,10 @@ static void K_KartSpindash(player_t *player)
 
 		if (player->fastfall == 0)
 		{
+			if (player->pflags2 & PF2_STRICTFASTFALL)
+				if (!(player->cmd.buttons & BT_SPINDASH))
+					return;
+
 			// Factors 3D momentum.
 			player->fastfallBase = FixedHypot(player->speed, player->mo->momz);
 		}
@@ -15459,6 +15524,141 @@ void K_BotHitPenalty(player_t *player)
 		player->botvars.rubberband = max(player->botvars.rubberband/2, FRACUNIT/2);
 		player->botvars.bumpslow = TICRATE*2;
 	}
+}
+
+static boolean K_PickUp(player_t *player, mobj_t *picked)
+{
+	SINT8 type = -1;
+	SINT8 amount = 1;
+
+	switch (picked->type)
+	{
+		case MT_ORBINAUT:
+		case MT_ORBINAUT_SHIELD:
+			type = KITEM_ORBINAUT;
+			break;
+		case MT_JAWZ:
+		case MT_JAWZ_SHIELD:
+			type = KITEM_JAWZ;
+			break;
+		case MT_BALLHOG:
+			type = KITEM_BALLHOG;
+			break;
+		case MT_LANDMINE:
+			type = KITEM_LANDMINE;
+			break;
+		case MT_EGGMANITEM:
+		case MT_EGGMANITEM_SHIELD:
+			type = KITEM_EGGMAN;
+			break;
+		case MT_BANANA:
+		case MT_BANANA_SHIELD:
+			type = KITEM_BANANA;
+			break;
+		case MT_DROPTARGET:
+		case MT_DROPTARGET_SHIELD:
+			type = KITEM_DROPTARGET;
+			break;
+		case MT_GACHABOM:
+			type = KITEM_GACHABOM;
+			break;
+		case MT_BUBBLESHIELDTRAP:
+			type = KITEM_BUBBLESHIELD;
+			break;
+		case MT_SINK:
+			type = KITEM_KITCHENSINK;
+			break;
+		default:
+			type = KITEM_SAD;
+			break;
+	}
+
+	if (type == KITEM_SAD)
+		return false;
+
+	// CONS_Printf("it %d ia %d t %d a %d\n", player->itemtype, player->itemamount, type, amount);
+
+	if (player->itemtype == type && player->itemamount && !(player->itemflags & IF_ITEMOUT))
+	{
+		// We have this item in main slot but not deployed, just add it
+		player->itemamount += amount;
+	}
+	else if (player->backupitemamount && player->backupitemtype)
+	{
+		// We already have a backup item, stack it if it can be stacked or discard it
+		if (player->backupitemtype == type)
+		{
+			player->backupitemamount += amount;
+		}
+		else
+		{
+			K_DropPaperItem(player, player->backupitemtype, player->backupitemamount);
+			player->backupitemtype = type;
+			player->backupitemamount = amount;
+			S_StartSound(player->mo, sfx_kc65);
+		}
+	}
+	else
+	{
+		// We have no backup item, load one up
+		player->backupitemtype = type;
+		player->backupitemamount = amount;
+	}
+
+	S_StartSound(player->mo, sfx_aple);
+	K_TryMoveBackupItem(player);
+
+	return true;
+}
+
+// ACHTUNG this destroys items when returning true, make sure to bail out
+boolean K_TryPickMeUp(mobj_t *m1, mobj_t *m2)
+{
+	if (!m1 || P_MobjWasRemoved(m1))
+		return false;
+
+	if (!m2 || P_MobjWasRemoved(m2))
+		return false;
+
+	if (m1->type != MT_PLAYER && m2->type != MT_PLAYER)
+		return false;
+
+	if (m1->type == MT_PLAYER && m2->type == MT_PLAYER)
+		return false;
+
+	// CONS_Printf("player check passed\n");
+
+	mobj_t *victim = m1;
+	mobj_t *inflictor = m2;
+
+	// Convenience for collision functions where arg order is freaky
+	if (m2->type == MT_PLAYER)
+	{
+		victim = m2;
+		inflictor = m1;
+	}
+
+	if (!victim->player)
+		return false;
+
+	boolean allied = (inflictor->target == victim);
+
+	if (!allied && inflictor->target && !P_MobjWasRemoved(inflictor->target))
+		if (inflictor->target->player && G_SameTeam(inflictor->target->player, victim->player))
+			allied = true;
+
+	if (!allied)
+		return false;
+
+	// CONS_Printf("target check passed\n");
+
+	if (!K_PickUp(victim->player, inflictor))
+		return false;
+
+	K_AddHitLag(victim, 3, false);	
+
+	P_RemoveMobj(inflictor);
+	return true;
 }
 
 //}

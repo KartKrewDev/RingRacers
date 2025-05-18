@@ -931,6 +931,12 @@ void F_IntroTicker(void)
 		return;
 	}
 
+	if (skiptype == 6) // Dev Exec
+	{
+		ResetSkipSequences();
+		COM_ImmedExecute("exec devexec.cfg");
+	}
+
 	if (doskip && disclaimerskippable)
 	{
 		if (dc_state == DISCLAIMER_FINAL) {
@@ -1021,19 +1027,21 @@ static void AdvanceSkipSequences(UINT8 input)
 	UINT8 s2cheat[] = {1, 1, 1};
 	UINT8 s3cheat[] = {2, 2, 2};
 	UINT8 s3kcheat[] = {3, 3, 3};
-	UINT8 spincheat[] = {4, 4, 4};
+	UINT8 spincheat[] = {1, 3, 1};
+	UINT8 devcheat[] = {4, 4, 4};
 #else
 	UINT8 s2cheat[] = {1, 1, 1, 3, 3, 3, 1};
 	UINT8 s3cheat[] = {1, 1, 3, 3, 1, 1, 1, 1};
 	UINT8 s3kcheat[] = {4, 4, 4, 2, 2, 2, 1, 1, 1};
 	UINT8 spincheat[] = {1, 2, 3, 4, 3, 2, 1};
+	UINT8 devcheat[] = {4, 4, 4};
 #endif
 	UINT8 nicetry[] = {1, 1, 3, 3, 4, 2, 4, 2};
 
-	#define NUMCHEATSPLUSONE 5
+	#define NUMCHEATSPLUSONE 6
 
-	UINT8 *cheats[NUMCHEATSPLUSONE] = {s2cheat, s3cheat, s3kcheat, nicetry, spincheat};
-	UINT8 cheatlengths[NUMCHEATSPLUSONE] = {sizeof(s2cheat), sizeof(s3cheat), sizeof(s3kcheat), sizeof(nicetry), sizeof(spincheat)};
+	UINT8 *cheats[NUMCHEATSPLUSONE] = {s2cheat, s3cheat, s3kcheat, nicetry, spincheat, devcheat};
+	UINT8 cheatlengths[NUMCHEATSPLUSONE] = {sizeof(s2cheat), sizeof(s3cheat), sizeof(s3kcheat), sizeof(nicetry), sizeof(spincheat), sizeof(devcheat)};
 
 	for (UINT8 i = 0; i < NUMCHEATSPLUSONE; i++) 	// for each cheat...
 	{

@@ -35,6 +35,7 @@
 #include "k_terrain.h"
 #include "k_objects.h"
 #include "k_boss.h"
+#include "k_hitlag.h" // K_AddHitlag
 
 #include "r_splats.h"
 
@@ -4122,10 +4123,24 @@ static void P_BouncePlayerMove(mobj_t *mo, TryMoveResult_t *result)
 	// Combo avoidance!
 	if (mo->player && P_PlayerInPain(mo->player) && gametyperules & GTR_BUMPERS && mo->health == 1)
 	{
-		K_StumblePlayer(mo->player);
-		K_BumperInflate(mo->player);
-		mo->player->tumbleBounces = TUMBLEBOUNCES;
-		mo->hitlag = max(mo->hitlag, 6);
+		P_ResetPlayer(mo->player);
+		mo->player->spinouttimer = 0;
+		mo->player->wipeoutslow = 0;
+		mo->player->tumbleBounces = 0;
+
+		K_AddHitLag(mo, 3, false);
+
+		// "I dunno man, just fuckin' do it" - jart
+		S_StartSound(mo, sfx_mbs45);
+		S_StartSound(mo, sfx_mbs45);
+		S_StartSound(mo, sfx_mbs45);
+		S_StartSound(mo, sfx_mbs45);
+		S_StartSound(mo, sfx_mbv84);
+
+		if (mo->eflags & MFE_VERTICALFLIP)
+			mo->momz -= 40*mo->scale;
+		else
+			mo->momz += 40*mo->scale; 
 	}
 
 	mo->momx = tmxmove;

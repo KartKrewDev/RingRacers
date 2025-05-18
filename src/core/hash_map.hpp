@@ -240,7 +240,16 @@ public:
 
 	HashMap(HashMap&& r) noexcept
 	{
-		*this = std::move(r);
+		buckets_ = r.buckets_;
+		r.buckets_ = 0;
+		size_ = r.size_;
+		r.size_ = 0;
+		heads_ = r.heads_;
+		r.heads_ = nullptr;
+		hasher_ = r.hasher_;
+		r.hasher_ = {};
+		key_equal_ = r.key_equal_;
+		r.key_equal_ = {};
 	};
 
 	~HashMap()

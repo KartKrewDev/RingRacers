@@ -1616,6 +1616,9 @@ typedef enum
 	// Walltransfer fuck
 	sfx_ggfall,
 
+	// :apple:
+	sfx_aple,
+
 	// And LASTLY, Kart's skin sounds.
 	sfx_kwin,
 	sfx_klose,

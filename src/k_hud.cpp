@@ -209,6 +209,7 @@ static patch_t *kp_alagles[10];
 static patch_t *kp_blagles[6];
 
 static patch_t *kp_cpu[2];
+patch_t *kp_pickmeup[2];
 
 static patch_t *kp_nametagstem;
 
@@ -866,6 +867,9 @@ void K_LoadKartHUDGraphics(void)
 
 	HU_UpdatePatch(&kp_cpu[0], "K_CPU1");
 	HU_UpdatePatch(&kp_cpu[1], "K_CPU2");
+
+	HU_UpdatePatch(&kp_pickmeup[0], "K_PMU1");
+	HU_UpdatePatch(&kp_pickmeup[1], "K_PMU2");
 
 	HU_UpdatePatch(&kp_nametagstem, "K_NAMEST");
 
@@ -1886,6 +1890,125 @@ static void K_drawKartItem(void)
 				V_DrawScaledPatch(fx-xo, fy-yo, V_HUDTRANS|V_SLIDEIN|fflags|flip, kp_flameshieldmeter[ff][offset]);
 			}
 		}
+	}
+}
+
+// So, like, we've already established that HUD code is unsavable, right?
+// == SHITGARBAGE UNLIMITED 3: HACKS GONE WILD ==
+static void K_drawBackupItem(void)
+{
+	bool tiny = r_splitscreen > 1;
+	patch_t *localpatch[3] = { kp_nodraw, kp_nodraw, kp_nodraw };	
+	patch_t *localbg = (kp_itembg[2]);
+	patch_t *localinv = kp_invincibility[((leveltime % (6*3)) / 3) + 7 + tiny];
+	INT32 fx = 0, fy = 0, fflags = 0, tx = 0, ty = 0;	// final coords for hud and flags...
+	const INT32 numberdisplaymin = 2;
+	skincolornum_t localcolor[3] = { static_cast<skincolornum_t>(stplyr->skincolor) };
+	SINT8 colormode[3] = { TC_RAINBOW };
+	boolean flipamount = false;	// Used for 3P/4P splitscreen to flip item amount stuff
+
+	if (stplyr->backupitemamount <= 0)
+		return;
+
+	switch (stplyr->backupitemtype)
+	{
+		case KITEM_INVINCIBILITY:
+			localpatch[1] = localinv;
+			localbg = kp_itembg[2];
+			break;
+
+		case KITEM_ORBINAUT:
+			localpatch[1] = kp_orbinaut[tiny+4];
+			break;
+
+		case KITEM_SPB:
+		case KITEM_LIGHTNINGSHIELD:
+		case KITEM_BUBBLESHIELD:
+		case KITEM_FLAMESHIELD:
+			localbg = kp_itembg[2];
+			/*FALLTHRU*/
+
+		default:
+			localpatch[1] = K_GetCachedItemPatch(stplyr->backupitemtype, 1 + tiny);
+
+			if (localpatch[1] == NULL)
+				localpatch[1] = kp_nodraw; // diagnose underflows
+			break;
+	}
+
+	// pain and suffering defined below
+	if (!(R_GetViewNumber() & 1) || (!tiny)) // If we are P1 or P3...
+	{
+		fx = ITEM_X;
+		fy = ITEM_Y;
+		fflags = V_SNAPTOLEFT|V_SNAPTOTOP|V_SPLITSCREEN;
+	}
+	else // else, that means we're P2 or P4.
+	{
+		fx = ITEM2_X;
+		fy = ITEM2_Y;
+		fflags = V_SNAPTORIGHT|V_SNAPTOTOP|V_SPLITSCREEN;
+		flipamount = true;
+	}
+
+	if (r_splitscreen == 1)
+	{
+		fy -= 5;
+	}
+
+	// final fudge - vegeta 2025
+	if (tiny && !(R_GetViewNumber() & 1)) // P1/P3 4P
+	{
+		fx += 26;
+		fy += 5;
+		tx += 10;
+		ty += 18;
+	}
+	else if (tiny && (R_GetViewNumber() & 1)) // P2/P4 4P
+	{
+		fx += -4;
+		fy += 5;
+		tx += 1;
+		ty += 18;
+	}
+	else // 1P/2P
+	{
+		fx += 30;
+		fy += -10;
+		tx += 25;
+		ty += 30;
+	}
+
+	boolean transflag = V_HUDTRANS;
+
+	// I feel like the cardinal sin of all evolving HUDcode is, like, assuming the old offsets do something that makes sense.
+
+	if (stplyr->backupitemamount >= numberdisplaymin && stplyr->itemRoulette.active == false)
+	{
+		/*
+		// Then, the numbers:
+		V_DrawScaledPatch(
+			fx + (flipamount ? 48 : 0), fy,
+			V_HUDTRANS|V_SLIDEIN|fflags|(flipamount ? V_FLIP : 0),
+			kp_itemmulsticker[offset]
+		); // flip this graphic for p2 and p4 in split and shift it.
+		*/
+
+		V_DrawFixedPatch(
+			fx<<FRACBITS, (fy<<FRACBITS),
+			FRACUNIT, transflag|V_SLIDEIN|fflags,
+			localpatch[1], (localcolor[1] ? R_GetTranslationColormap(colormode[1], localcolor[1], GTC_CACHE) : NULL)
+		);
+
+		V_DrawString(fx+tx, fy+ty, V_HUDTRANS|V_SLIDEIN|fflags, va("x%d", stplyr->backupitemamount));
+	}
+	else
+	{
+		V_DrawFixedPatch(
+			fx<<FRACBITS, (fy<<FRACBITS),
+			FRACUNIT, transflag|V_SLIDEIN|fflags,
+			localpatch[1], (localcolor[1] ? R_GetTranslationColormap(colormode[1], localcolor[1], GTC_CACHE) : NULL)
+		);
 	}
 }
 
@@ -6876,6 +6999,9 @@ void K_drawKartHUD(void)
 				{
 					K_drawKartItem();
 				}
+
+				if (stplyr->backupitemtype)
+					K_drawBackupItem();
 			}
 		}
 	}

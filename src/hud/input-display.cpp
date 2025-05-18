@@ -111,7 +111,7 @@ void K_DrawInputDisplay(float x, float y, INT32 flags, char mode, UINT8 pid, boo
 	box.patch(gfx("PAD{}", analog ? "N" : dpad_suffix(dpad)));
 	box.patch(but('A', gc_a, BT_ACCELERATE));
 	box.patch(but('B', gc_b, BT_LOOKBACK));
-	box.patch(but('C', gc_c, BT_SPINDASHMASK));
+	box.patch(but('C', gc_c, BT_SPINDASH));
 	box.patch(but('X', gc_x, BT_BRAKE));
 	box.patch(but('Y', gc_y, BT_RESPAWN));
 	box.patch(but('Z', gc_z, BT_VOTE));

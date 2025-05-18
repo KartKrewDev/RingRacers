@@ -60,6 +60,8 @@ Make sure this matches the actual number of states
 
 #define SCAMDIST (2000)
 
+#define EARLY_ITEM_FLICKER (NUMTRANSMAPS)
+
 // 2023-08-26 +ang20 to Sal's OG values to make them friendlier - Tyron
 #define STUMBLE_STEEP_VAL (ANG60 + ANG20)
 #define STUMBLE_STEEP_VAL_AIR (ANG30 + ANG10 + ANG20)
@@ -313,6 +315,8 @@ UINT16 K_GetDisplayEXP(player_t *player);
 UINT32 K_GetNumGradingPoints(void);
 
 void K_BotHitPenalty(player_t *player);
+
+boolean K_TryPickMeUp(mobj_t *m1, mobj_t *m2);
 
 #ifdef __cplusplus
 } // extern "C"

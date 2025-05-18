@@ -85,6 +85,7 @@ profile_t* PR_MakeProfile(
 	newprofile->kickstartaccel = false;
 	newprofile->autoroulette = false;
 	newprofile->litesteer = false;
+	newprofile->strictfastfall = false;
 	newprofile->descriptiveinput = 1;
 	newprofile->autoring = false;
 	newprofile->rumble = true;
@@ -108,6 +109,7 @@ profile_t* PR_MakeProfileFromPlayer(const char *prname, const char *pname, const
 	newprofile->kickstartaccel = cv_kickstartaccel[pnum].value;
 	newprofile->autoroulette = cv_autoroulette[pnum].value;
 	newprofile->litesteer = cv_litesteer[pnum].value;
+	newprofile->strictfastfall = cv_strictfastfall[pnum].value;
 	newprofile->descriptiveinput = cv_descriptiveinput[pnum].value;
 	newprofile->autoring = cv_autoring[pnum].value;
 	newprofile->rumble = cv_rumble[pnum].value;
@@ -305,6 +307,7 @@ void PR_SaveProfiles(void)
 		jsonprof.preferences.kickstartaccel = cprof->kickstartaccel;
 		jsonprof.preferences.autoroulette = cprof->autoroulette;
 		jsonprof.preferences.litesteer = cprof->litesteer;
+		jsonprof.preferences.strictfastfall = cprof->strictfastfall;
 		jsonprof.preferences.descriptiveinput = cprof->descriptiveinput;
 		jsonprof.preferences.autoring = cprof->autoring;
 		jsonprof.preferences.rumble = cprof->rumble;
@@ -493,6 +496,7 @@ void PR_LoadProfiles(void)
 		newprof->kickstartaccel = jsprof.preferences.kickstartaccel;
 		newprof->autoroulette = jsprof.preferences.autoroulette;
 		newprof->litesteer = jsprof.preferences.litesteer;
+		newprof->strictfastfall = jsprof.preferences.strictfastfall;
 		newprof->descriptiveinput = jsprof.preferences.descriptiveinput;
 		newprof->autoring = jsprof.preferences.autoring;
 		newprof->rumble = jsprof.preferences.rumble;
@@ -597,6 +601,7 @@ static void PR_ApplyProfile_Settings(profile_t *p, UINT8 playernum)
 	CV_StealthSetValue(&cv_kickstartaccel[playernum], p->kickstartaccel);
 	CV_StealthSetValue(&cv_autoroulette[playernum], p->autoroulette);
 	CV_StealthSetValue(&cv_litesteer[playernum], p->litesteer);
+	CV_StealthSetValue(&cv_strictfastfall[playernum], p->strictfastfall);
 	CV_StealthSetValue(&cv_descriptiveinput[playernum], p->descriptiveinput);
 	CV_StealthSetValue(&cv_autoring[playernum], p->autoring);
 	CV_StealthSetValue(&cv_rumble[playernum], p->rumble);
