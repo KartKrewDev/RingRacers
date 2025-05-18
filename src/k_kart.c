@@ -9436,7 +9436,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 		// UINT16 oldringboost = player->ringboost;
 
-		if (player->superring == 0)
+		if (player->superring == 0 || player->stunned)
 			player->ringboost -= max((player->ringboost / roller), 1);
 		else
 			player->ringboost -= min(K_GetFullKartRingPower(player, false) - 1, max(player->ringboost / 2 / roller, 1));
@@ -9722,6 +9722,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		UINT32 existing = (player->lastringboost / K_GetFullKartRingPower(player, true)); // How many rings (effectively) do we have boost credit for right now?
 
 		UINT8 ringrate = 3 - min(2, (player->superring + existing) / fastringscaler); // Used to consume fat stacks of cash faster.
+
+		if (player->stunned)
+			ringrate = 6;
 
 		if (player->nextringaward >= ringrate)
 		{

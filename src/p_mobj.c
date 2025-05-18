@@ -12727,6 +12727,7 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 	switch (i)
 	{
 		case MT_RING:
+		case MT_RANDOMITEM:
 			if (modeattacking & ATTACKING_SPB)
 				return false;
 			break;
