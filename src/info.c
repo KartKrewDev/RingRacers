@@ -376,6 +376,11 @@ char sprnames[NUMSPRITES + 1][5] =
 	"TRNQ", // SPB Manta Ring loop
 	"THNS", // Lightning Shield
 	"BUBS", // Bubble Shield (not Bubs)
+	"BUBA", // Bubble Shield Outline
+	"BUBB", // Bubble Shield Top Wave
+	"BUBC", // Bubble Shield Bottom Wave
+	"BUBD", // Bubble Shield Reflection
+	"BUBE", // Bubble Shield Underline
 	"BWVE", // Bubble Shield waves
 	"FLMS", // Flame Shield
 	"FLMD", // Flame Shield dash
@@ -2563,6 +2568,15 @@ state_t states[NUMSTATES] =
 	{SPR_BWVE, FF_FULLBRIGHT|3,   1, {NULL}, 0, 0, S_BUBBLESHIELDWAVE5},	// S_BUBBLESHIELDWAVE4
 	{SPR_BWVE, FF_FULLBRIGHT|4,   1, {NULL}, 0, 0, S_BUBBLESHIELDWAVE6},	// S_BUBBLESHIELDWAVE5
 	{SPR_BWVE, FF_FULLBRIGHT|5,   1, {NULL}, 0, 0, S_NULL},					// S_BUBBLESHIELDWAVE6
+
+	// Bubble Shield Visuals
+	{SPR_BUBA, FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_BUBA1}, // S_BUBA1
+	{SPR_BUBB, FF_FULLBRIGHT|FF_ANIMATE, 36, {NULL}, 8, 4, S_BUBB1}, // S_BUBB1
+	{SPR_NULL, 0, 5, {NULL}, 0, 0, S_BUBB1}, // S_BUBB2
+	{SPR_BUBC, FF_FULLBRIGHT|FF_ANIMATE, 36, {NULL}, 8, 4, S_BUBC1}, // S_BUBC1
+	{SPR_NULL, 0, 5, {NULL}, 0, 0, S_BUBC1}, // S_BUBC2
+	{SPR_BUBD, FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_BUBD1}, // S_BUBD1
+	{SPR_BUBE, FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_BUBE1}, // S_BUBE1
 
 	{SPR_FLMS, FF_FULLBRIGHT,     2, {NULL}, 0, 0, S_FLAMESHIELD2},			// S_FLAMESHIELD1
 	{SPR_FLMS, FF_FULLBRIGHT|9,   2, {NULL}, 0, 0, S_FLAMESHIELD3},			// S_FLAMESHIELD2
@@ -15392,6 +15406,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_BUBBLESHIELD_VISUAL
+		-1,             // doomednum
+		S_INVISIBLE,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		8,              // speed
+		28*FRACUNIT,    // radius
+		56*FRACUNIT,    // height
+		1,              // display offset
+		16,             // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 

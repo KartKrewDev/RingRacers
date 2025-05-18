@@ -9305,6 +9305,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			player->flashing = K_GetKartFlashing(player);
 	}
 
+	if (player->spinouttimer && player->respawn.state != RESPAWNST_NONE)
+		player->spinouttimer = 0;
+
 	if (player->spinouttimer)
 	{
 		if (((P_IsObjectOnGround(player->mo)
@@ -9508,6 +9511,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->trickboost)
 		player->trickboost--;
+
+	if (K_PlayerUsesBotMovement(players) && player->botvars.bumpslow && player->incontrol)
+		player->botvars.bumpslow--;
 
 	if (player->flamedash)
 	{
@@ -14126,6 +14132,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								P_SetTarget(&shield->target, player->mo);
 								S_StartSound(player->mo, sfx_s3k3f);
 								player->curshield = KSHIELD_BUBBLE;
+
+								Obj_SpawnBubbleShieldVisuals(shield);
 							}
 
 							if (!HOLDING_ITEM && NO_HYUDORO)
@@ -15552,6 +15560,15 @@ UINT32 K_GetNumGradingPoints(void)
 		return 0;
 
 	return numlaps * (1 + Obj_GetCheckpointCount());
+}
+
+void K_BotHitPenalty(player_t *player)
+{
+	if (K_PlayerUsesBotMovement(player))
+	{
+		player->botvars.rubberband = max(player->botvars.rubberband/2, FRACUNIT/2);
+		player->botvars.bumpslow = TICRATE*2;
+	}
 }
 
 static boolean K_PickUp(player_t *player, mobj_t *picked)

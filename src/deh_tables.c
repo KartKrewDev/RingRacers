@@ -2028,6 +2028,15 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_BUBBLESHIELDWAVE5",
 	"S_BUBBLESHIELDWAVE6",
 
+	// Bubble Shield Visuals
+	"S_BUBA1",
+	"S_BUBB1",
+	"S_BUBB2",
+	"S_BUBC1",
+	"S_BUBC2",
+	"S_BUBD1",
+	"S_BUBE1",
+
 	// Flame Shield
 	"S_FLAMESHIELD1",
 	"S_FLAMESHIELD2",
@@ -3616,6 +3625,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_LIGHTNINGSHIELD", // Shields
 	"MT_BUBBLESHIELD",
+	"MT_BUBBLESHIELD_VISUAL",
 	"MT_FLAMESHIELD",
 	"MT_FLAMESHIELDUNDERLAY",
 	"MT_FLAMESHIELDPAPER",

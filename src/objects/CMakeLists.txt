@@ -60,6 +60,7 @@ target_sources(SRB2SDL2 PRIVATE
 	pulley.cpp
 	amps.c
 	ballhog.cpp
+	bubble-shield.cpp
 	flybot767.c
 )
 

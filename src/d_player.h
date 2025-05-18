@@ -408,6 +408,7 @@ struct botvars_t
 	// All entries above persist between rounds and must be recorded in demos
 
 	fixed_t rubberband; // Bot rubberband value
+	UINT8 bumpslow;
 
 	tic_t itemdelay; // Delay before using item at all
 	tic_t itemconfirm; // When high enough, they will use their item

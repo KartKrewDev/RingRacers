@@ -6658,6 +6658,14 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		Obj_PulleyThink(mobj);
 		return;
 	}
+	case MT_BUBBLESHIELD_VISUAL:
+	{
+		if (!Obj_TickBubbleShieldVisual(mobj))
+		{
+			return;
+		}
+		break;
+	}
 	default:
 		if (mobj->fuse)
 		{ // Scenery object fuse! Very basic!
@@ -8533,6 +8541,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			P_RemoveMobj(mobj);
 			return false;
 		}
+
+		// FIXME: Old Bubble Shield code is still running.
+		//        Some of it is visual, some gameplay.
+		//        I left it alone and just tell it to go invisible~
+		//        See objects/bubble-shield.cpp
+		mobj->renderflags |= RF_DONTDRAW;
 
 		scale = (5*mobj->target->scale)>>2;
 		curstate = ((mobj->tics == 1) ? (mobj->state->nextstate) : ((statenum_t)(mobj->state-states)));

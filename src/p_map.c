@@ -4118,6 +4118,8 @@ static void P_BouncePlayerMove(mobj_t *mo, TryMoveResult_t *result)
 	if (mo->player)
 		mo->player->bumpUnstuck += 5;
 
+	K_BotHitPenalty(mo->player);
+
 	// Combo avoidance!
 	if (mo->player && P_PlayerInPain(mo->player) && gametyperules & GTR_BUMPERS && mo->health == 1)
 	{
