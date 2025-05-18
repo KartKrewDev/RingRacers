@@ -927,7 +927,7 @@ static void K_AddItemToReel(const player_t *player, itemroulette_t *const roulet
 	// If we're in ring debt, pad out the reel with
 	// a BUNCH of Super Rings.
 	if (K_ItemEnabled(KITEM_SUPERRING) == true
-		&& player->rings <= 0
+		&& player->rings <= -10
 		&& player->position == 1
 		&& (gametyperules & GTR_SPHERES) == 0)
 	{
