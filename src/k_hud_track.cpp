@@ -288,6 +288,8 @@ private:
 		case MT_BANANA:
 		case MT_BANANA_SHIELD:
 		case MT_GACHABOM:
+		case MT_EGGMANITEM:
+		case MT_EGGMANITEM_SHIELD:
 		case MT_BUBBLESHIELDTRAP:
 			return {
 				{ // Near
@@ -407,6 +409,8 @@ bool is_object_tracking_target(const mobj_t* mobj)
 	case MT_BANANA_SHIELD:
 	case MT_GACHABOM:
 	case MT_BUBBLESHIELDTRAP:
+	case MT_EGGMANITEM:
+	case MT_EGGMANITEM_SHIELD:
 		return (mobj->target && !P_MobjWasRemoved(mobj->target) && (
 			(mobj->target->player && stplyr == mobj->target->player)
 			|| (mobj->target->player && G_SameTeam(stplyr, mobj->target->player))
@@ -911,6 +915,8 @@ void K_drawTargetHUD(const vector3_t* origin, player_t* player)
 				case MT_BANANA_SHIELD:
 				case MT_GACHABOM:
 				case MT_BUBBLESHIELDTRAP:
+				case MT_EGGMANITEM:
+				case MT_EGGMANITEM_SHIELD:
 					if (stplyr->mo->eflags & MFE_VERTICALFLIP)
 					{
 						pos.z -= itemOffset;

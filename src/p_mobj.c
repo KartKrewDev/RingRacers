@@ -5411,6 +5411,8 @@ static boolean P_IsTrackerType(INT32 type)
 		case MT_BANANA:
 		case MT_BANANA_SHIELD:
 		case MT_GACHABOM:
+		case MT_EGGMANITEM:
+		case MT_EGGMANITEM_SHIELD:
 			return true;
 
 		default:
