@@ -430,10 +430,6 @@ void Obj_PlayerUsedRingShooter(mobj_t *base, player_t *player)
 		return;
 	}
 
-	// The original player should no longer have control over it,
-	// if they are using it via releasing.
-	RemoveRingShooterPointer(base);
-
 	// Respawn using the respawner's karted value.
 	if (rs_base_karted(base) > 0)
 	{
