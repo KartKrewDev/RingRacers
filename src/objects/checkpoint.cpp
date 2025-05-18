@@ -495,7 +495,7 @@ struct CheckpointManager
 		else // Checkpoint isn't in the list, find any associated tagged lines and make the pair
 		{
 			if (chk->linetag())
-				lines_.try_emplace(chk->linetag(), std::move(tagged_lines(chk->linetag())));
+				lines_.try_emplace(chk->linetag(), tagged_lines(chk->linetag()));
 			list_.push_front(chk);
 		}
 
@@ -558,7 +558,7 @@ void Obj_CheckpointThink(mobj_t* end)
 	chk->animate();
 }
 
-void __attribute__((optimize("O0"))) Obj_CrossCheckpoints(player_t* player, fixed_t old_x, fixed_t old_y)
+void Obj_CrossCheckpoints(player_t* player, fixed_t old_x, fixed_t old_y)
 {
 	LineOnDemand ray(old_x, old_y, player->mo->x, player->mo->y, player->mo->radius);
 
