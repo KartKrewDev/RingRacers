@@ -2037,7 +2037,6 @@ static void K_HandleLapIncrement(player_t *player)
 			if (G_TimeAttackStart() && !linecrossed)
 			{
 				linecrossed = leveltime;
-				CONS_Printf("ta start\n");
 				if (starttime > leveltime) // Overlong starts shouldn't reset time on cross
 				{
 					// Award some Amps for a fast start, to counterbalance Obvious Rainbow Driftboost
