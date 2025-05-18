@@ -915,6 +915,11 @@ typedef enum sprite
 	SPR_TRNQ, // SPB Manta Ring loop
 	SPR_THNS, // Thunder Shield
 	SPR_BUBS, // Bubble Shield (not Bubs)
+	SPR_BUBA, // Bubble Shield Outline
+	SPR_BUBB, // Bubble Shield Top Wave
+	SPR_BUBC, // Bubble Shield Bottom Wave
+	SPR_BUBD, // Bubble Shield Reflection
+	SPR_BUBE, // Bubble Shield Underline
 	SPR_BWVE, // Bubble Shield waves
 	SPR_FLMS, // Flame Shield
 	SPR_FLMD, // Flame Shield dash
@@ -3059,6 +3064,15 @@ typedef enum state
 	S_BUBBLESHIELDWAVE5,
 	S_BUBBLESHIELDWAVE6,
 
+	// Bubble Shield Visuals
+	S_BUBA1,
+	S_BUBB1,
+	S_BUBB2,
+	S_BUBC1,
+	S_BUBC2,
+	S_BUBD1,
+	S_BUBE1,
+
 	// Flame Shield
 	S_FLAMESHIELD1,
 	S_FLAMESHIELD2,
@@ -4674,6 +4688,7 @@ typedef enum mobj_type
 
 	MT_LIGHTNINGSHIELD, // Shields
 	MT_BUBBLESHIELD,
+	MT_BUBBLESHIELD_VISUAL,
 	MT_FLAMESHIELD,
 	MT_FLAMESHIELDUNDERLAY,
 	MT_FLAMESHIELDPAPER,
