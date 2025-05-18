@@ -17,10 +17,11 @@
 #include <fmt/format.h>
 #include <tcb/span.hpp>
 
+#include "i_tcp_detail.h" // clientaddress
+
 #include "core/json.hpp"
 #include "core/string.h"
 #include "io/streams.hpp"
-#include "i_tcp_detail.h" // clientaddress
 #include "k_bans.h"
 #include "byteptr.h" // READ/WRITE macros
 #include "command.h"
