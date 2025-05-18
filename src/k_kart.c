@@ -15495,7 +15495,7 @@ fixed_t K_GetGradingMultAdjustment(player_t *player)
 	return result;
 }
 
-UINT16 __attribute__((optimize("O0"))) K_GetEXP(player_t *player)
+UINT16 K_GetEXP(player_t *player)
 {
 	UINT32 numgradingpoints = K_GetNumGradingPoints();
 	// target is where you should be if you're doing good and at a 1.0 mult
