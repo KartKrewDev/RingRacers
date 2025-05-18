@@ -667,7 +667,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (!player->mo || player->spectator)
 				return;
 
-			if (K_TryPickMeUp(special, toucher))
+			if (K_TryPickMeUp(special, toucher, false))
 				return;
 
 			// attach to player!

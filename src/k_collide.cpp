@@ -75,7 +75,7 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 	if (t1->type == MT_BALLHOGBOOM && t2->type == MT_BALLHOGBOOM)
 		return true; // Ballhogs don't collide with eachother
 
-	if (K_TryPickMeUp(t1, t2))
+	if (K_TryPickMeUp(t1, t2, false))
 		return true;
 
 	if (t2->player)
@@ -178,7 +178,7 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 		if (t1->health <= 0 || t2->health <= 0)
 			return true;
 
-		if (K_TryPickMeUp(t1, t2))
+		if (K_TryPickMeUp(t1, t2, false))
 			return true;
 
 		if (!P_CanPickupItem(t2->player, PICKUP_EGGBOX))
@@ -434,7 +434,7 @@ boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 	if (t1->health <= 0 || t2->health <= 0)
 		return true;
 
-	if (K_TryPickMeUp(t1, t2))
+	if (K_TryPickMeUp(t1, t2, false))
 		return true;
 
 	if (t2->player)
@@ -544,7 +544,7 @@ boolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2)
 	if (t2->player && (t2->player->hyudorotimer || t2->player->justbumped))
 		return true;
 
-	if (K_TryPickMeUp(t1, t2))
+	if (K_TryPickMeUp(t1, t2, false))
 		return true;
 
 	if (draggeddroptarget && P_MobjWasRemoved(draggeddroptarget))
@@ -1059,7 +1059,7 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 				shield->extravalue1 = 1;
 			}
 
-			if (!K_TryPickMeUp(attackerPlayer->mo, victim))
+			if (!K_TryPickMeUp(attackerPlayer->mo, victim, true))
 			{
 				P_DamageMobj(victim, shield, attacker, 1, DMG_NORMAL);
 			}
@@ -1076,7 +1076,7 @@ boolean K_KitchenSinkCollide(mobj_t *t1, mobj_t *t2)
 	if (((t1->target == t2) || (!(t2->flags & (MF_ENEMY|MF_BOSS)) && (t1->target == t2->target))) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
 
-	if (K_TryPickMeUp(t1, t2))
+	if (K_TryPickMeUp(t1, t2, false))
 		return true;
 
 	if (t2->player)
