@@ -579,15 +579,18 @@ void Obj_CrossCheckpoints(player_t* player, fixed_t old_x, fixed_t old_y)
 				return false;
 			}
 
-			LineOnDemand* gate;
 			const srb2::Vector<line_t*>* lines = g_checkpoints.lines_for(chk);
+			INT32 side;
+			INT32 oldside;
 
 			if (!lines || lines->empty())
 			{
 				LineOnDemand dyngate = chk->crossing_line();
 				if (!ray.overlaps(dyngate))
 					return false;
-				gate = &dyngate;
+
+				side = P_PointOnLineSide(player->mo->x, player->mo->y, &dyngate);
+				oldside = P_PointOnLineSide(old_x, old_y, &dyngate);
 			}
 			else
 			{
@@ -606,7 +609,8 @@ void Obj_CrossCheckpoints(player_t* player, fixed_t old_x, fixed_t old_y)
 				}
 
 				line_t* line = *it;
-				gate = static_cast<LineOnDemand*>(line);
+				side = P_PointOnLineSide(player->mo->x, player->mo->y, line);
+				oldside = P_PointOnLineSide(old_x, old_y, line);
 			}
 
 			// Check if the bounding boxes of the two lines
@@ -614,9 +618,6 @@ void Obj_CrossCheckpoints(player_t* player, fixed_t old_x, fixed_t old_y)
 			// being so large that it creates an oversized box,
 			// but thankfully that doesn't seem to happen, under
 			// normal circumstances.
-
-			INT32 side = P_PointOnLineSide(player->mo->x, player->mo->y, gate);
-			INT32 oldside = P_PointOnLineSide(old_x, old_y, gate);
 
 			if (side == oldside)
 			{
