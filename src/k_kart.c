@@ -15652,6 +15652,9 @@ static boolean K_PickUp(player_t *player, mobj_t *picked)
 	S_StartSound(player->mo, sfx_aple);
 	K_TryMoveBackupItem(player);
 
+	mobj_t *gotit = P_SpawnMobjFromMobj(player->mo, 0, 0, player->mo->height/2, MT_GOTIT);
+	P_SetTarget(&gotit->target, player->mo);
+
 	return true;
 }
 
