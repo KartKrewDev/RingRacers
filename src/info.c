@@ -375,6 +375,9 @@ char sprnames[NUMSPRITES + 1][5] =
 	"TRIS", // SPB Manta Ring start
 	"TRNQ", // SPB Manta Ring loop
 	"THNS", // Lightning Shield
+	"THNC", // Lightning Shield Top Flash
+	"THNA", // Lightning Shield Top Swoosh
+	"THNB", // Lightning Shield Bottom Swoosh
 	"BUBS", // Bubble Shield (not Bubs)
 	"BUBA", // Bubble Shield Outline
 	"BUBB", // Bubble Shield Top Wave
@@ -2534,6 +2537,12 @@ state_t states[NUMSTATES] =
 	{SPR_THNS, FF_FULLBRIGHT|2,  2, {NULL}, 0, 0, S_LIGHTNINGSHIELD23},		// S_LIGHTNINGSHIELD22
 	{SPR_THNS, FF_FULLBRIGHT|1,  2, {NULL}, 0, 0, S_LIGHTNINGSHIELD24},		// S_LIGHTNINGSHIELD23
 	{SPR_THNS, FF_FULLBRIGHT|0,  2, {NULL}, 0, 0, S_LIGHTNINGSHIELD1},		// S_LIGHTNINGSHIELD24
+																			//
+	// Lightning Shield Visuals
+	{SPR_THNC, FF_ADD|FF_FULLBRIGHT|FF_ANIMATE, 11, {NULL}, 10, 1, S_THNA1}, // S_THNC1
+	{SPR_THNA, FF_ADD|FF_FULLBRIGHT|FF_ANIMATE, 44, {NULL}, 43, 1, S_THNC2}, // S_THNA1
+	{SPR_THNC, FF_ADD|FF_FULLBRIGHT|FF_ANIMATE, 11, {NULL}, 10, 1, S_THNB1}, // S_THNC2
+	{SPR_THNB, FF_ADD|FF_FULLBRIGHT|FF_ANIMATE, 43, {NULL}, 42, 1, S_THNC1}, // S_THNB1
 
 	{SPR_BUBS, FF_FULLBRIGHT,     2, {NULL}, 0, 0, S_BUBBLESHIELD2},		// S_BUBBLESHIELD1
 	{SPR_BUBS, FF_FULLBRIGHT|13,  2, {NULL}, 0, 0, S_BUBBLESHIELD3},		// S_BUBBLESHIELD2
@@ -15379,6 +15388,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // damage
 		sfx_None,       // activesound
 		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_LIGHTNINGSHIELD_VISUAL
+		-1,             // doomednum
+		S_THNC1,        // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		8,              // speed
+		28*FRACUNIT,    // radius
+		56*FRACUNIT,    // height
+		1,              // display offset
+		16,             // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 

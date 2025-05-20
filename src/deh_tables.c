@@ -1993,6 +1993,12 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_LIGHTNINGSHIELD23",
 	"S_LIGHTNINGSHIELD24",
 
+	// Lightning Shield Visuals
+	"S_THNC1",
+	"S_THNA1",
+	"S_THNC2",
+	"S_THNB1",
+
 	// Bubble Shield
 	"S_BUBBLESHIELD1",
 	"S_BUBBLESHIELD2",
@@ -3624,6 +3630,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_MANTARING", // Juicebox for SPB
 
 	"MT_LIGHTNINGSHIELD", // Shields
+	"MT_LIGHTNINGSHIELD_VISUAL",
 	"MT_BUBBLESHIELD",
 	"MT_BUBBLESHIELD_VISUAL",
 	"MT_FLAMESHIELD",
