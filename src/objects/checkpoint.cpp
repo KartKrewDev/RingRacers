@@ -495,7 +495,7 @@ struct CheckpointManager
 		else // Checkpoint isn't in the list, find any associated tagged lines and make the pair
 		{
 			if (chk->linetag())
-				lines_.try_emplace(chk->linetag(), std::move(tagged_lines(chk->linetag())));
+				lines_.try_emplace(chk->linetag(), tagged_lines(chk->linetag()));
 			list_.push_front(chk);
 			count_ += 1; // Mobjlist can't have a count on it, so we keep it here
 		}

@@ -40,8 +40,6 @@ extern "C" {
 	#include <ws2tcpip.h>
 #endif
 
-#include "doomdef.h"
-
 #ifdef USE_WINSOCK1
 	#include <winsock.h>
 #else
@@ -115,9 +113,11 @@ extern "C" {
 	static UINT8 UPNP_support = TRUE;
 #endif // HAVE_MINIUPNC
 
-#include "d_net.h"
-#include "doomtype.h"
 #include "i_tcp.h"
+#include "d_net.h"
+
+#include "doomdef.h"
+#include "doomtype.h"
 
 union mysockaddr_t
 {
