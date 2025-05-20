@@ -7921,7 +7921,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				}
 				else if (mobj->target->player->curshield == KSHIELD_FLAME)
 				{
-					mobj->color = SKINCOLOR_KETCHUP;
+					mobj->color = SKINCOLOR_MAUVE;
 					mobj->colorized = true;
 				}
 				else
