@@ -1224,7 +1224,7 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 	// Ring sting, this is a bit more unique
 	auto doSting = [](mobj_t *t1, mobj_t *t2)
 	{
-		if (K_GetShieldFromItem(t2->player->itemtype) != KSHIELD_NONE)
+		if (t2->player->curshield != KSHIELD_NONE)
 		{
 			return false;
 		}
