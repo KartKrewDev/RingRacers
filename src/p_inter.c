@@ -3405,8 +3405,8 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 			// Apply stun!
 			// Feel free to move these calculations higher up if different damage sources should apply variable stun in future
-			#define MIN_STUNTICS (8 * TICRATE)
-			#define MAX_STUNTICS (18 * TICRATE)
+			#define MIN_STUNTICS (4 * TICRATE)
+			#define MAX_STUNTICS (10 * TICRATE)
 			stunTics = Easing_Linear((player->kartweight - 1) * FRACUNIT / 8, MAX_STUNTICS, MIN_STUNTICS);
 			stunTics >>= player->stunnedCombo; // consecutive hits add half as much stun as the previous hit
 
