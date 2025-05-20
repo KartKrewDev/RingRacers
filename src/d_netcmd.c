@@ -2635,6 +2635,9 @@ static void Command_Map_f(void)
 		}
 	}
 
+	if (grandprixinfo.gp)
+		ischeating = true;
+
 	if (ischeating && !usingcheats)
 	{
 		CONS_Printf(M_GetText("Cheats must be enabled.\n"));
