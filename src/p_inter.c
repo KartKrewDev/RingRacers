@@ -3343,6 +3343,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 						softenTumble = true;
 						break;
 					case DMG_NORMAL:
+					case DMG_WIPEOUT:
 						type = DMG_STUMBLE;
 						player->ringburst += 5; // THERE IS SIMPLY NO HOPE AT THIS POINT
 						K_PopPlayerShield(player);
