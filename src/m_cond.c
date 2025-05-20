@@ -743,8 +743,7 @@ void M_ClearSecrets(void)
 			continue;
 
 		mapheaderinfo[i]->records.mapvisited = 0;
-
-		mapheaderinfo[i]->cache_spraycan = UINT16_MAX;
+		mapheaderinfo[i]->records.spraycan = MCAN_INVALID;
 
 		mapheaderinfo[i]->cache_maplock = MAXUNLOCKABLES;
 
@@ -814,6 +813,30 @@ static void M_AssignSpraycans(void)
 	conditionset_t *c;
 	condition_t *cn;
 
+	UINT16 bonustocanmap = 0;
+
+	// First, turn outstanding bonuses into existing uncollected Spray Cans.
+	while (gamedata->gotspraycans < gamedata->numspraycans)
+	{
+		while (bonustocanmap < basenummapheaders)
+		{
+			if (mapheaderinfo[bonustocanmap]->records.spraycan != MCAN_BONUS)
+			{
+				bonustocanmap++;
+				continue;
+			}
+
+			break;
+		}
+
+		if (bonustocanmap == basenummapheaders)
+			break;
+
+		mapheaderinfo[bonustocanmap]->records.spraycan = gamedata->gotspraycans;
+		gamedata->spraycans[gamedata->gotspraycans].map = bonustocanmap;
+		gamedata->gotspraycans++;
+	}
+
 	const UINT16 prependoffset = MAXSKINCOLORS-1;
 
 	// None of the following accounts for cans being removed, only added...
@@ -829,7 +852,7 @@ static void M_AssignSpraycans(void)
 			if (cn->type != UC_SPRAYCAN)
 				continue;
 
-			// G_LoadGamedata, G_SaveGameData doesn't support custom skincolors right now.
+			// This will likely never support custom skincolors.
 			if (cn->requirement >= SKINCOLOR_FIRSTFREESLOT) //numskincolors)
 				continue;
 
@@ -891,7 +914,24 @@ static void M_AssignSpraycans(void)
 
 	for (i = 0; i < listlen; i++)
 	{
-		gamedata->spraycans[gamedata->numspraycans].map = NEXTMAP_INVALID;
+		// Convert bonus pickups into Spray Cans if new ones have been added.
+		while (bonustocanmap < basenummapheaders)
+		{
+			if (mapheaderinfo[bonustocanmap]->records.spraycan != MCAN_BONUS)
+			{
+				bonustocanmap++;
+				continue;
+			}
+
+			gamedata->gotspraycans++;
+			mapheaderinfo[bonustocanmap]->records.spraycan = gamedata->numspraycans;
+			break;
+		}
+		gamedata->spraycans[gamedata->numspraycans].map = (
+			(bonustocanmap == basenummapheaders)
+				? NEXTMAP_INVALID
+				: bonustocanmap
+		);
 		gamedata->spraycans[gamedata->numspraycans].col = tempcanlist[i];
 
 		skincolors[tempcanlist[i]].cache_spraycan = gamedata->numspraycans;

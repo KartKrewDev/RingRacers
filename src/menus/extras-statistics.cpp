@@ -290,9 +290,21 @@ void M_Statistics(INT32 choice)
 {
 	(void)choice;
 
+	UINT16 i;
+
 	statisticsmenu.gotmedals = M_CountMedals(false, false);
 	statisticsmenu.nummedals = M_CountMedals(true, false);
 	statisticsmenu.numextramedals = M_CountMedals(true, true);
+
+	statisticsmenu.numcanbonus = 0;
+	for (i = 0; i < basenummapheaders; i++)
+	{
+		if (!mapheaderinfo[i])
+			continue;
+		if (mapheaderinfo[i]->records.spraycan != MCAN_BONUS)
+			continue;
+		statisticsmenu.numcanbonus++;
+	}
 
 	M_StatisticsPageInit();
 

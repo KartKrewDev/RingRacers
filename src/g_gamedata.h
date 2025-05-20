@@ -243,10 +243,12 @@ struct GamedataMapJson final
 {
 	GamedataMapVisitedJson visited;
 	GamedataMapStatsJson stats;
+	uint16_t spraycan;
 
-	SRB2_JSON_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(GamedataMapJson, visited, stats)
+	SRB2_JSON_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(GamedataMapJson, visited, stats, spraycan)
 };
 
+// Deprecated
 struct GamedataSprayCanJson final
 {
 	String map;
@@ -296,8 +298,9 @@ struct GamedataJson final
 	GamedataChallengeGridJson challengegrid;
 	uint32_t timesBeaten;
 	HashMap<String, GamedataSkinJson> skins;
+	Vector<String> spraycans_v2;
 	HashMap<String, GamedataMapJson> maps;
-	Vector<GamedataSprayCanJson> spraycans;
+	Vector<GamedataSprayCanJson> spraycans; // Deprecated
 	HashMap<String, GamedataCupJson> cups;
 	Vector<GamedataSealedSwapJson> sealedswaps;
 
@@ -317,6 +320,7 @@ struct GamedataJson final
 		challengegrid,
 		timesBeaten,
 		skins,
+		spraycans_v2,
 		maps,
 		spraycans,
 		cups,

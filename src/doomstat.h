@@ -156,6 +156,9 @@ struct skinreference_t
 #define MV_MYSTICMELODY		(1<<4)
 #define MV_MAX          	(MV_VISITED|MV_BEATEN|MV_ENCORE|MV_SPBATTACK|MV_MYSTICMELODY)
 
+#define MCAN_INVALID		(UINT16_MAX)
+#define MCAN_BONUS			(UINT16_MAX-1)
+
 struct recordtimes_t
 {
 	tic_t time; ///< Time in which the level was finished.
@@ -164,9 +167,10 @@ struct recordtimes_t
 
 struct recorddata_t
 {
-	UINT8 mapvisited;
+	UINT8 mapvisited; ///< Generalised flags
 	recordtimes_t timeattack; ///< Best times for Time Attack
 	recordtimes_t spbattack; ///< Best times for SPB Attack
+	UINT16 spraycan; ///< Associated spraycan id
 	UINT32 timeplayed;
 	UINT32 netgametimeplayed;
 	UINT32 modetimeplayed[GDGT_MAX];
@@ -575,7 +579,6 @@ struct mapheader_t
 	mobjtype_t destroyforchallenge[MAXDESTRUCTIBLES];	///< Assistive for UCRP_MAPDESTROYOBJECTS
 	UINT8 destroyforchallenge_size;						///< Number for above
 
-	UINT16 cache_spraycan;				///< Cached Spraycan ID
 	UINT16 cache_maplock;				///< Cached Unlockable ID
 
 	// Lua information
