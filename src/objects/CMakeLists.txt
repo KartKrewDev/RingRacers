@@ -62,6 +62,8 @@ target_sources(SRB2SDL2 PRIVATE
 	ballhog.cpp
 	bubble-shield.cpp
 	flybot767.c
+	lightning-shield.cpp
+	flame-shield.cpp
 )
 
 add_subdirectory(versus)

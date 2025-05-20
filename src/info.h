@@ -914,6 +914,9 @@ typedef enum sprite
 	SPR_TRIS, // SPB Manta Ring start
 	SPR_TRNQ, // SPB Manta Ring loop
 	SPR_THNS, // Thunder Shield
+	SPR_THNC, // Lightning Shield Top Flash
+	SPR_THNA, // Lightning Shield Top Swoosh
+	SPR_THNB, // Lightning Shield Bottom Swoosh
 	SPR_BUBS, // Bubble Shield (not Bubs)
 	SPR_BUBA, // Bubble Shield Outline
 	SPR_BUBB, // Bubble Shield Top Wave
@@ -922,6 +925,8 @@ typedef enum sprite
 	SPR_BUBE, // Bubble Shield Underline
 	SPR_BWVE, // Bubble Shield waves
 	SPR_FLMS, // Flame Shield
+	SPR_FLMA, // Flame Shield Top Layer
+	SPR_FLMB, // Flame Shield Bottom Layer
 	SPR_FLMD, // Flame Shield dash
 	SPR_FLMP, // Flame Shield paper sprites
 	SPR_FLML, // Flame Shield speed lines
@@ -3029,6 +3034,12 @@ typedef enum state
 	S_LIGHTNINGSHIELD23,
 	S_LIGHTNINGSHIELD24,
 
+	// Lightning Shield Visuals
+	S_THNC1,
+	S_THNA1,
+	S_THNC2,
+	S_THNB1,
+
 	// Bubble Shield
 	S_BUBBLESHIELD1,
 	S_BUBBLESHIELD2,
@@ -3092,6 +3103,11 @@ typedef enum state
 	S_FLAMESHIELD16,
 	S_FLAMESHIELD17,
 	S_FLAMESHIELD18,
+
+	// Flame Shield Visuals
+	S_FLMA1,
+	S_FLMA2,
+	S_FLMB1,
 
 	S_FLAMESHIELDDASH1,
 	S_FLAMESHIELDDASH2,
@@ -4687,9 +4703,11 @@ typedef enum mobj_type
 	MT_MANTARING, // Juicebox for SPB
 
 	MT_LIGHTNINGSHIELD, // Shields
+	MT_LIGHTNINGSHIELD_VISUAL,
 	MT_BUBBLESHIELD,
 	MT_BUBBLESHIELD_VISUAL,
 	MT_FLAMESHIELD,
+	MT_FLAMESHIELD_VISUAL,
 	MT_FLAMESHIELDUNDERLAY,
 	MT_FLAMESHIELDPAPER,
 	MT_BUBBLESHIELDTRAP,
