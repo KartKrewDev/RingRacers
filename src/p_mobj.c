@@ -6674,6 +6674,14 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		}
 		break;
 	}
+	case MT_FLAMESHIELD_VISUAL:
+	{
+		if (!Obj_TickFlameShieldVisual(mobj))
+		{
+			return;
+		}
+		break;
+	}
 	default:
 		if (mobj->fuse)
 		{ // Scenery object fuse! Very basic!
@@ -8722,8 +8730,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		else
 		{
 			if (curstate >= S_FLAMESHIELDDASH1 && curstate <= S_FLAMESHIELDDASH12)
-				P_SetMobjState(mobj, S_FLAMESHIELD1);
-			mobj->dispoffset = ((curstate - S_FLAMESHIELD1) & 1) ? -1 : 1;
+				P_SetMobjState(mobj, S_INVISIBLE);
+			//mobj->dispoffset = ((curstate - S_FLAMESHIELD1) & 1) ? -1 : 1;
 		}
 
 		mobj->extravalue1 = mobj->target->player->flamedash;

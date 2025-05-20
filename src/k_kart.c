@@ -14193,6 +14193,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								P_SetTarget(&shield->target, player->mo);
 								S_StartSound(player->mo, sfx_s3k3e);
 								player->curshield = KSHIELD_FLAME;
+
+								Obj_SpawnFlameShieldVisuals(shield);
 							}
 
 							if (!HOLDING_ITEM && NO_HYUDORO)
