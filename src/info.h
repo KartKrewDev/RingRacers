@@ -1133,6 +1133,8 @@ typedef enum sprite
 	SPR_AMPC,
 	SPR_AMPD,
 
+	SPR_SOR_,
+
 	SPR_WTRL, // Water Trail
 
 	SPR_GCHA, // follower: generic chao
@@ -2616,6 +2618,8 @@ typedef enum state
 	S_AMPBODY,
 	S_AMPAURA,
 	S_AMPBURST,
+
+	S_GOTIT,
 
 	S_CHARGEAURA,
 	S_CHARGEFALL,
@@ -4626,6 +4630,8 @@ typedef enum mobj_type
 	MT_AMPBODY,
 	MT_AMPAURA,
 	MT_AMPBURST,
+
+	MT_GOTIT,
 
 	MT_CHARGEAURA,
 	MT_CHARGEFALL,

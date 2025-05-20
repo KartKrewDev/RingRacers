@@ -8546,6 +8546,18 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		break;
 	}
+	case MT_GOTIT:
+	{
+		if (!mobj->target || !mobj->target->health || !mobj->target->player)
+		{
+			P_RemoveMobj(mobj);
+			return false;
+		}
+		P_InstaScale(mobj, mobj->target->scale);
+		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + mobj->target->height/2);
+		K_MatchGenericExtraFlags(mobj, mobj->target);
+		break;
+	}
 	case MT_BUBBLESHIELD:
 	{
 		fixed_t scale;

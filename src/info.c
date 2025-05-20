@@ -594,6 +594,8 @@ char sprnames[NUMSPRITES + 1][5] =
 	"AMPC",
 	"AMPD",
 
+	"SOR_",
+
 	"WTRL", // Water Trail
 
 	"GCHA", // follower: generic chao
@@ -2149,6 +2151,8 @@ state_t states[NUMSTATES] =
 	{SPR_AMPC,                 FF_FULLBRIGHT|FF_ANIMATE|0, -1, {NULL}, 4, 2, S_NULL}, // S_AMPBODY
 	{SPR_AMPD,                 FF_FULLBRIGHT|FF_ANIMATE|0, -1, {NULL}, 4, 2, S_NULL}, // S_AMPAURA
 	{SPR_AMPB,                 FF_FULLBRIGHT|FF_ADD|FF_PAPERSPRITE|2, -1, {NULL}, 4, 2, S_NULL}, // S_AMPBURST
+
+	{SPR_SOR_,                 FF_FULLBRIGHT|FF_ANIMATE|0, 28, {NULL}, 27, 1, S_NULL}, // S_GOTIT
 
 	{SPR_TRC1,                 FF_FULLBRIGHT|FF_ANIMATE|0, -1, {NULL}, 4, 2, S_NULL}, // S_CHARGEAURA
 	{SPR_TRC2,                 FF_FULLBRIGHT|FF_ANIMATE|0, 20, {NULL}, 19, 1, S_NULL}, // S_CHARGEFALL
@@ -13798,6 +13802,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		67*FRACUNIT,    // radius
 		67*FRACUNIT,    // height
 		1,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_NOCLIPHEIGHT, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_GOIIT
+		-1,             // doomednum
+		S_GOTIT,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		67*FRACUNIT,    // radius
+		67*FRACUNIT,    // height
+		2,              // display offset
 		100,            // mass
 		0,              // damage
 		sfx_None,       // activesound
