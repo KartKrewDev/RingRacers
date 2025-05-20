@@ -72,6 +72,9 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 	if (t1->type == MT_BALLHOG && t2->type == MT_BALLHOG)
 		return true; // Ballhogs don't collide with eachother
 
+	if (t1->type == MT_BALLHOGBOOM && t2->type == MT_BALLHOGBOOM)
+		return true; // Ballhogs don't collide with eachother
+
 	if (K_TryPickMeUp(t1, t2))
 		return true;
 

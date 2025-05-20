@@ -12203,6 +12203,7 @@ void A_BallhogExplode(mobj_t *actor)
 	mo2 = P_SpawnMobj(actor->x, actor->y, actor->z, MT_BALLHOGBOOM);
 	P_SetScale(mo2, actor->scale*2);
 	mo2->destscale = mo2->scale;
+	P_SetTarget(&mo2->target, actor->target);
 	S_StartSound(mo2, actor->info->deathsound);
 	return;
 }
