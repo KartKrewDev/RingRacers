@@ -1103,6 +1103,18 @@ ATTRUNUSED static boolean K_IsItemSpeed(kartitems_t item)
 	}
 }
 
+static fixed_t K_RequiredXPForItem(kartitems_t item)
+{
+	switch (item)
+	{
+		case KITEM_GARDENTOP:
+		case KITEM_SHRINK:
+			return FRACUNIT; // "Base" item odds
+		default:
+			return 0;
+	}
+}
+
 // Which items are disallowed for this player's specific placement?
 static boolean K_ShouldPlayerAllowItem(kartitems_t item, const player_t *player)
 {
@@ -1118,6 +1130,11 @@ static boolean K_ShouldPlayerAllowItem(kartitems_t item, const player_t *player)
 		// A little inelegant: filter the most chaotic items from courses with early sets and tight layouts.
 		if (K_IsItemPower(item) && (leveltime < ((15*TICRATE) + starttime)))
 			return false;
+
+		// GIGA power items reserved only for players who were doing great and died.
+		if (player->gradingfactor < K_RequiredXPForItem(item))
+			return false;
+
 		return !K_IsItemFirstOnly(item);
 	}
 }
@@ -1555,7 +1572,8 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	if ((gametyperules & GTR_CIRCUIT) 
 		&& specialstageinfo.valid == false
 		&& (spb_odds > 0) & (spbplace == -1)
-		&& (roulette->preexpdist >= powers[KITEM_SPB])) // SPECIAL CASE: Check raw distance instead of EXP-influenced target distance.
+		&& (roulette->preexpdist >= powers[KITEM_SPB]) // SPECIAL CASE: Check raw distance instead of EXP-influenced target distance.
+		&& !K_GetItemCooldown(KITEM_SPB))
 	{
 		// When reenabling the SPB, we also adjust its delta to ensure that it has good odds of showing up.
 		// Players who are _seriously_ struggling are more likely to see Invinc or Rockets, since those items
@@ -2014,7 +2032,7 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 			else
 				S_StartSound(NULL, sfx_itrol1 + roulette->sound);
 			
-			if (roulette->index == 0)
+			if (roulette->index == 0 && roulette->itemListLen > 1)
 			{
 				S_StartSound(NULL, sfx_kc50);
 				S_StartSound(NULL, sfx_kc50);

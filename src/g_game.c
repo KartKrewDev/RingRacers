@@ -2439,7 +2439,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		if (gametyperules & GTR_SPHERES
 			|| gametyperules & GTR_CATCHER
 			|| G_TimeAttackStart()
-			|| gametype == GT_TUTORIAL)
+			|| gametype == GT_TUTORIAL
+			|| !M_NotFreePlay()
+			|| K_GetNumWaypoints() == 0)
 			cangrabitems = EARLY_ITEM_FLICKER;
 	}
 	else
