@@ -6666,6 +6666,14 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		}
 		break;
 	}
+	case MT_LIGHTNINGSHIELD_VISUAL:
+	{
+		if (!Obj_TickLightningShieldVisual(mobj))
+		{
+			return;
+		}
+		break;
+	}
 	default:
 		if (mobj->fuse)
 		{ // Scenery object fuse! Very basic!

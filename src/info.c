@@ -15373,7 +15373,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 
 	{           // MT_LIGHTNINGSHIELD
 		-1,             // doomednum
-		S_LIGHTNINGSHIELD1, // spawnstate
+		S_INVISIBLE,    // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound

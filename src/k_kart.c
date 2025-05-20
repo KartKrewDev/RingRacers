@@ -14059,6 +14059,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								P_SetTarget(&shield->target, player->mo);
 								S_StartSound(player->mo, sfx_s3k41);
 								player->curshield = KSHIELD_LIGHTNING;
+
+								Obj_SpawnLightningShieldVisuals(shield);
 							}
 
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
