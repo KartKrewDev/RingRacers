@@ -3190,7 +3190,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				damage = 0;
 			}
 
-			boolean hitFromInvinc = false;
+			boolean softenTumble = false;
 
 			// Sting and stumble shouldn't be rewarding Battle hits.
 			if (type == DMG_STING || type == DMG_STUMBLE)
@@ -3212,7 +3212,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					{
 						tic_t kinvextend;
 
-						hitFromInvinc = true;
+						softenTumble = true;
 
 						if (gametyperules & GTR_CLOSERPLAYERS)
 							kinvextend = 2*TICRATE;
@@ -3332,6 +3332,27 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				K_PopPlayerShield(player);
 			}
 
+			if (!(gametyperules & GTR_SPHERES) && player->tripwireLeniency)
+			{
+				switch (type)
+				{
+					case DMG_EXPLODE:
+						type = DMG_TUMBLE;
+						break;
+					case DMG_TUMBLE:
+						softenTumble = true;
+						break;
+					case DMG_NORMAL:
+					case DMG_WIPEOUT:
+						type = DMG_STUMBLE;
+						player->ringburst += 5; // THERE IS SIMPLY NO HOPE AT THIS POINT
+						K_PopPlayerShield(player);
+						break;
+					default:
+						break;
+				}
+			}
+
 			switch (type)
 			{
 				case DMG_STING:
@@ -3345,7 +3366,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					ringburst = 0;
 					break;
 				case DMG_TUMBLE:
-					K_TumblePlayer(player, inflictor, source, hitFromInvinc);
+					K_TumblePlayer(player, inflictor, source, softenTumble);
 					ringburst = 10;
 					break;
 				case DMG_EXPLODE:
@@ -3389,7 +3410,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			if (gametyperules & GTR_BUMPERS)
 				player->spheres = min(player->spheres + 10, 40);
 
-			if ((hardhit == true && !hitFromInvinc) || cv_kartdebughuddrop.value)
+			if ((hardhit == true && !softenTumble) || cv_kartdebughuddrop.value)
 			{
 				K_DropItems(player);
 			}
