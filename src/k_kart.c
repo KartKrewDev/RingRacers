@@ -15591,6 +15591,7 @@ static boolean K_PickUp(player_t *player, mobj_t *picked)
 			type = KITEM_JAWZ;
 			break;
 		case MT_BALLHOG:
+		case MT_BALLHOGBOOM:
 			type = KITEM_BALLHOG;
 			break;
 		case MT_LANDMINE:
