@@ -386,6 +386,8 @@ char sprnames[NUMSPRITES + 1][5] =
 	"BUBE", // Bubble Shield Underline
 	"BWVE", // Bubble Shield waves
 	"FLMS", // Flame Shield
+	"FLMA", // Flame Shield Top Layer
+	"FLMB", // Flame Shield Bottom Layer
 	"FLMD", // Flame Shield dash
 	"FLMP", // Flame Shield paper sprites
 	"FLML", // Flame Shield speed lines
@@ -2605,6 +2607,11 @@ state_t states[NUMSTATES] =
 	{SPR_FLMS, FF_FULLBRIGHT|16,  2, {NULL}, 0, 0, S_FLAMESHIELD17},		// S_FLAMESHIELD16
 	{SPR_FLMS, FF_FULLBRIGHT|8,   2, {NULL}, 0, 0, S_FLAMESHIELD18},		// S_FLAMESHIELD17
 	{SPR_FLMS, FF_FULLBRIGHT|17,  2, {NULL}, 0, 0, S_FLAMESHIELD1},			// S_FLAMESHIELD18
+																			//
+	// Flame Shield Visuals
+	{SPR_FLMA, FF_ADD|FF_FULLBRIGHT|FF_ANIMATE, 28, {NULL}, 27, 1, S_FLMA2}, // S_FLMA1
+	{SPR_NULL, 0, 16, {NULL}, 0, 0, S_FLMA1}, // S_FLMA2
+	{SPR_FLMB, FF_FULLBRIGHT|FF_ANIMATE, 44, {NULL}, 43, 1, S_FLMB1}, // S_FLMB1
 
 	{SPR_FLMD, FF_FULLBRIGHT|1, 1, {NULL},               0, 0, S_FLAMESHIELDDASH2},		// S_FLAMESHIELDDASH1
 	{SPR_FLMD, FF_FULLBRIGHT|5, 1, {NULL},               0, 0, S_FLAMESHIELDDASH3},		// S_FLAMESHIELDDASH2
@@ -15496,6 +15503,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // damage
 		sfx_None,       // activesound
 		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_FLAMESHIELD_VISUAL
+		-1,             // doomednum
+		S_INVISIBLE,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		8,              // speed
+		28*FRACUNIT,    // radius
+		56*FRACUNIT,    // height
+		1,              // display offset
+		16,             // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 

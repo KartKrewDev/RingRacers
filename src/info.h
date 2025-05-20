@@ -925,6 +925,8 @@ typedef enum sprite
 	SPR_BUBE, // Bubble Shield Underline
 	SPR_BWVE, // Bubble Shield waves
 	SPR_FLMS, // Flame Shield
+	SPR_FLMA, // Flame Shield Top Layer
+	SPR_FLMB, // Flame Shield Bottom Layer
 	SPR_FLMD, // Flame Shield dash
 	SPR_FLMP, // Flame Shield paper sprites
 	SPR_FLML, // Flame Shield speed lines
@@ -3102,6 +3104,11 @@ typedef enum state
 	S_FLAMESHIELD17,
 	S_FLAMESHIELD18,
 
+	// Flame Shield Visuals
+	S_FLMA1,
+	S_FLMA2,
+	S_FLMB1,
+
 	S_FLAMESHIELDDASH1,
 	S_FLAMESHIELDDASH2,
 	S_FLAMESHIELDDASH3,
@@ -4700,6 +4707,7 @@ typedef enum mobj_type
 	MT_BUBBLESHIELD,
 	MT_BUBBLESHIELD_VISUAL,
 	MT_FLAMESHIELD,
+	MT_FLAMESHIELD_VISUAL,
 	MT_FLAMESHIELDUNDERLAY,
 	MT_FLAMESHIELDPAPER,
 	MT_BUBBLESHIELDTRAP,
