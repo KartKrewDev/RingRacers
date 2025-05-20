@@ -1084,7 +1084,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		return Obj_OrbinautJawzCollide(thing, g_tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
 
-	if (g_tm.thing->type == MT_BANANA || g_tm.thing->type == MT_BANANA_SHIELD || g_tm.thing->type == MT_BALLHOG)
+	if (g_tm.thing->type == MT_BANANA || g_tm.thing->type == MT_BANANA_SHIELD || g_tm.thing->type == MT_BALLHOG || g_tm.thing->type == MT_BALLHOGBOOM)
 	{
 		// see if it went over / under
 		if (g_tm.thing->z > thing->z + thing->height)
@@ -1094,7 +1094,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 
 		return K_BananaBallhogCollide(g_tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
-	else if (thing->type == MT_BANANA || thing->type == MT_BANANA_SHIELD || thing->type == MT_BALLHOG)
+	else if (thing->type == MT_BANANA || thing->type == MT_BANANA_SHIELD || thing->type == MT_BALLHOG || thing->type == MT_BALLHOGBOOM)
 	{
 		// see if it went over / under
 		if (g_tm.thing->z > thing->z + thing->height)
