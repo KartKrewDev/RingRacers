@@ -229,6 +229,11 @@ static patch_t *kp_voice_remotemuted;
 static patch_t *kp_voice_remotedeafened;
 static patch_t *kp_voice_tagactive[3];
 
+static patch_t *kp_team_bar;
+static patch_t *kp_team_sticker;
+static patch_t *kp_team_underlay[2];
+static patch_t *kp_team_you;
+
 patch_t *kp_autoroulette;
 patch_t *kp_autoring;
 
@@ -1044,6 +1049,12 @@ void K_LoadKartHUDGraphics(void)
 	{
 		HU_UpdatePatch(&kp_voice_tagactive[i], "VOXCTA%d", i);
 	}
+
+	HU_UpdatePatch(&kp_team_bar, "TEAM_B");
+	HU_UpdatePatch(&kp_team_sticker, "TEAM_S");
+	HU_UpdatePatch(&kp_team_underlay[0], "TEAM_UL");
+	HU_UpdatePatch(&kp_team_underlay[1], "TEAM_UR");
+	HU_UpdatePatch(&kp_team_you, "TEAM_YOU");
 }
 
 // For the item toggle menu
@@ -3219,6 +3230,149 @@ static void K_drawKartTeamScores(void)
 		return;
 	}
 
+	if (TEAM__MAX != 3)
+		return; // "maybe someday" - the magic conch
+
+	// I get to write HUD code from scratch, so it's going to be horribly
+	// verbose and obnoxious.
+
+	INT32 basex = BASEVIDWIDTH/2 + 20;
+	INT32 basey = 0;
+	INT32 flags = V_HUDTRANS|V_SLIDEIN;
+	INT32 snapflags = V_SNAPTORIGHT|V_SNAPTOTOP;
+
+	// bar stuff, relative to base
+	INT32 barwidth = 124;
+	INT32 barheight = 4;
+	INT32 barx = 58;
+	INT32 bary = -8;
+
+	// team score stuff, relative to base
+	INT32 scorex = 67;
+	INT32 scorey = 20;
+	INT32 scoregap = 8;
+	INT32 scoreoffset = 1;
+
+	// your score, relative to base
+	INT32 youx = 108;
+	INT32 youy = 26; // youy you arrive at the rising sus
+
+	UINT8 allies = stplyr->team;
+	UINT8 enemies = (allies == TEAM_ORANGE) ? TEAM_BLUE : TEAM_ORANGE;
+
+	UINT8 *allycolor = R_GetTranslationColormap(TC_RAINBOW, g_teaminfo[allies].color, GTC_CACHE);
+	UINT8 *enemycolor = R_GetTranslationColormap(TC_RAINBOW, g_teaminfo[enemies].color, GTC_CACHE);
+
+	UINT16 allyscore = g_teamscores[allies];
+	UINT16 enemyscore = g_teamscores[enemies];
+	UINT16 totalscore = allyscore + enemyscore;
+
+	// minimap team leaders, relative to bars
+	INT32 facex = -56;
+	INT32 facey = 16;
+	INT32 faceoff = 7;
+	INT32 facesize = 2;
+
+	UINT32 youscore = stplyr->teamimportance;
+	if (gametyperules & GTR_POINTLIMIT)
+	{
+		youscore = stplyr->roundscore;
+	}
+
+	fixed_t enemypercent = FixedDiv(enemyscore*FRACUNIT, totalscore*FRACUNIT);
+	// fixed_t allypercent = FixedDiv(allyscore*FRACUNIT, totalscore*FRACUNIT);
+	INT32 enemywidth = FixedInt(FixedMul(enemypercent, barwidth*FRACUNIT));
+	INT32 allywidth = barwidth - enemywidth;
+
+	UINT8 ri = 6;
+	INT32 allyfill = skincolors[g_teaminfo[allies].color].ramp[ri];
+	INT32 enemyfill = skincolors[g_teaminfo[enemies].color].ramp[ri];
+
+	INT32 winning = 0;
+	if (allyscore > enemyscore)
+		winning = 1;
+	else if (enemyscore > allyscore)
+		winning = -1;
+
+	player_t *bestenemy = NULL;
+	INT32 bestenemyscore = -1;
+	player_t *bestally = NULL;
+	INT32 bestallyscore = -1;
+
+	boolean useroundscore = false;
+	if (gametyperules & GTR_POINTLIMIT)
+		useroundscore = true;
+
+	for (UINT8 i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i] || players[i].spectator || players[i].team == TEAM_UNASSIGNED)
+			continue;
+
+		INT32 score = useroundscore ? players[i].roundscore : players[i].teamimportance;
+
+		if (players[i].team == allies)
+		{
+			if (bestallyscore < score || (bestallyscore == score && useroundscore == false && players[i].teamposition < bestally->teamposition))
+			{
+				bestallyscore = score;
+				bestally = &players[i];
+			}
+		}
+		else
+		{
+			if (bestenemyscore < score || (bestenemyscore == score && useroundscore == false && players[i].teamposition < bestenemy->teamposition))
+			{
+				bestenemyscore = score;
+				bestenemy = &players[i];
+			}
+		}
+	}
+
+	flags |= snapflags;
+
+	V_DrawScaledPatch(basex, basey, flags, kp_team_sticker);
+	V_DrawMappedPatch(basex, basey, flags, kp_team_underlay[0], enemycolor);
+	V_DrawMappedPatch(basex, basey, flags, kp_team_underlay[1], allycolor);
+	V_DrawScaledPatch(basex, basey, flags, kp_team_bar);
+	V_DrawScaledPatch(basex, basey, flags, kp_team_you);
+
+	if (V_GetHUDTranslucency(0) != 10)
+		return;
+
+	V_DrawFill(basex+barx, basey+bary, enemywidth, barheight, enemyfill);
+	V_DrawFill(basex+barx+enemywidth, basey+bary, allywidth, barheight, allyfill);
+
+	using srb2::Draw;
+
+	Draw enemynum = Draw(basex+scorex-scoregap, basey+scorey).flags(flags).font(Draw::Font::kTimer).align(Draw::Align::kRight).colorize(g_teaminfo[enemies].color);
+	Draw allynum = Draw(basex+scorex+scoregap+scoreoffset, basey+scorey).flags(flags).font(Draw::Font::kTimer).align(Draw::Align::kLeft).colorize(g_teaminfo[allies].color);
+	enemynum.text("{:02}", enemyscore/2);
+	allynum.text("{:02}", allyscore/2);
+
+	// Goofy, but we want the winning team to draw on top
+	boolean drawally = (allyscore < enemyscore);
+	for (UINT8 drew = 0; drew < 2; drew++)
+	{
+		if (bestenemy && !drawally)
+		{
+			UINT8 *colormap = R_GetTranslationColormap(bestenemy->skin, static_cast<skincolornum_t>(bestenemy->skincolor), GTC_CACHE);
+			V_DrawMappedPatch(basex+barx+facex+enemywidth-faceoff-facesize, basey+bary+facey, flags, faceprefix[bestenemy->skin][FACE_MINIMAP], colormap);
+		}
+
+		if (bestally && drawally)
+		{
+			UINT8 *colormap = R_GetTranslationColormap(bestally->skin, static_cast<skincolornum_t>(bestally->skincolor), GTC_CACHE);
+			V_DrawMappedPatch(basex+barx+facex+enemywidth+facesize, basey+bary+facey, flags, faceprefix[bestally->skin][FACE_MINIMAP], colormap);
+		}
+
+		drawally = !drawally;
+	}
+
+	Draw you = Draw(basex+youx, basey+youy).flags(flags).font(Draw::Font::kZVote).colorize(g_teaminfo[allies].color);
+	you.text("{:02}", youscore/2);
+
+
+	/*
 	for (INT32 i = TEAM_UNASSIGNED+1; i < TEAM__MAX; i++)
 	{
 		INT32 x = BASEVIDWIDTH/2;
@@ -3238,6 +3392,7 @@ static void K_drawKartTeamScores(void)
 			V_DrawCenteredString(x, 15, g_teaminfo[i].chat_color, va("+%d", individual_score));
 		}
 	}
+	*/
 }
 
 static boolean K_drawKartLaps(void)
