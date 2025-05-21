@@ -3390,7 +3390,6 @@ static void K_drawKartTeamScores(void)
 	lastleveltime = leveltime;
 
 	fixed_t enemypercent = FixedDiv(enemyscore*FRACUNIT, totalscore*FRACUNIT);
-	enemypercent = FRACUNIT/2;
 	// fixed_t allypercent = FixedDiv(allyscore*FRACUNIT, totalscore*FRACUNIT);
 	INT32 enemywidth = FixedInt(FixedMul(enemypercent, barwidth*FRACUNIT));
 	INT32 allywidth = barwidth - enemywidth;
