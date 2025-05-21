@@ -229,9 +229,10 @@ static patch_t *kp_voice_remotemuted;
 static patch_t *kp_voice_remotedeafened;
 static patch_t *kp_voice_tagactive[3];
 
-static patch_t *kp_team_bar;
-static patch_t *kp_team_sticker;
-static patch_t *kp_team_underlay[2];
+static patch_t *kp_team_bar[2];
+static patch_t *kp_team_sticker[2];
+static patch_t *kp_team_underlay[2][2];
+static patch_t *kp_team_minihead;
 static patch_t *kp_team_you;
 
 patch_t *kp_autoroulette;
@@ -1050,10 +1051,15 @@ void K_LoadKartHUDGraphics(void)
 		HU_UpdatePatch(&kp_voice_tagactive[i], "VOXCTA%d", i);
 	}
 
-	HU_UpdatePatch(&kp_team_bar, "TEAM_B");
-	HU_UpdatePatch(&kp_team_sticker, "TEAM_S");
-	HU_UpdatePatch(&kp_team_underlay[0], "TEAM_UL");
-	HU_UpdatePatch(&kp_team_underlay[1], "TEAM_UR");
+	HU_UpdatePatch(&kp_team_bar[0], "TEAM_B");
+	HU_UpdatePatch(&kp_team_sticker[0], "TEAM_S");
+	HU_UpdatePatch(&kp_team_bar[1], "TEAM4B");
+	HU_UpdatePatch(&kp_team_sticker[1], "TEAM4S");
+	HU_UpdatePatch(&kp_team_underlay[0][0], "TEAM_UL");
+	HU_UpdatePatch(&kp_team_underlay[0][1], "TEAM_UR");
+	HU_UpdatePatch(&kp_team_underlay[1][0], "TEAM4UL");
+	HU_UpdatePatch(&kp_team_underlay[1][1], "TEAM4UR");
+	HU_UpdatePatch(&kp_team_minihead, "TEAM4H");
 	HU_UpdatePatch(&kp_team_you, "TEAM_YOU");
 }
 
@@ -3223,6 +3229,12 @@ INT32 K_GetTransFlagFromFixed(fixed_t value)
     }
 }
 
+static INT32 easedallyscore = 0;
+static tic_t scorechangecooldown = 0;
+// Mildly ugly. Don't want to export this to khud when it's so nicely handled here,
+// but HUD hooks run at variable timing based on your actual framerate.
+static tic_t lastleveltime = 0;
+
 static void K_drawKartTeamScores(void)
 {
 	if (G_GametypeHasTeams() == false)
@@ -3236,16 +3248,21 @@ static void K_drawKartTeamScores(void)
 	// I get to write HUD code from scratch, so it's going to be horribly
 	// verbose and obnoxious.
 
+	UINT8 use4p = (r_splitscreen > 1) ? 1 : 0;
+
 	INT32 basex = BASEVIDWIDTH/2 + 20;
 	INT32 basey = 0;
 	INT32 flags = V_HUDTRANS|V_SLIDEIN;
-	INT32 snapflags = V_SNAPTORIGHT|V_SNAPTOTOP;
+	INT32 snapflags = V_SNAPTOTOP|V_SNAPTORIGHT;
+	if (use4p)
+		snapflags = V_SNAPTOTOP;
+	flags |= snapflags;
 
 	// bar stuff, relative to base
 	INT32 barwidth = 124;
 	INT32 barheight = 4;
-	INT32 barx = 58;
-	INT32 bary = -8;
+	INT32 barx = 5; // 58
+	INT32 bary = 12; // -8
 
 	// team score stuff, relative to base
 	INT32 scorex = 67;
@@ -3257,6 +3274,30 @@ static void K_drawKartTeamScores(void)
 	INT32 youx = 108;
 	INT32 youy = 26; // youy you arrive at the rising sus
 
+	// minimap team leaders, relative to BARS
+	INT32 facex = -4;
+	INT32 facey = -4;
+	INT32 faceoff = 7;
+	INT32 facesize = 2;
+
+	if (use4p)
+	{
+		basex = 127;
+		basey = 5;
+
+		barwidth = 62;
+		barheight = 2;
+		barx = 2;
+		bary = 6;
+
+		scorex = 33;
+		scorey = 10;
+		scoregap = 2;
+
+		facey = -5;
+		faceoff = 4;
+	}
+
 	UINT8 allies = stplyr->team;
 	UINT8 enemies = (allies == TEAM_ORANGE) ? TEAM_BLUE : TEAM_ORANGE;
 
@@ -3267,11 +3308,26 @@ static void K_drawKartTeamScores(void)
 	UINT16 enemyscore = g_teamscores[enemies];
 	UINT16 totalscore = allyscore + enemyscore;
 
-	// minimap team leaders, relative to bars
-	INT32 facex = -56;
-	INT32 facey = 16;
-	INT32 faceoff = 7;
-	INT32 facesize = 2;
+	using srb2::Draw;
+	srb2::Draw::Font scorefont = Draw::Font::kTimer; 
+
+	if (totalscore > 99)
+	{
+		scorefont = Draw::Font::kThinTimer;
+		scoreoffset--;
+	}
+
+	if (use4p)
+	{
+		if (totalscore > 99)
+		{
+			scorefont = Draw::Font::kPing;
+		}
+		else
+		{
+			scorefont = Draw::Font::kZVote;
+		}			
+	}
 
 	UINT32 youscore = stplyr->teamimportance;
 	if (gametyperules & GTR_POINTLIMIT)
@@ -3279,12 +3335,7 @@ static void K_drawKartTeamScores(void)
 		youscore = stplyr->roundscore;
 	}
 
-	fixed_t enemypercent = FixedDiv(enemyscore*FRACUNIT, totalscore*FRACUNIT);
-	// fixed_t allypercent = FixedDiv(allyscore*FRACUNIT, totalscore*FRACUNIT);
-	INT32 enemywidth = FixedInt(FixedMul(enemypercent, barwidth*FRACUNIT));
-	INT32 allywidth = barwidth - enemywidth;
-
-	UINT8 ri = 6;
+	UINT8 ri = 6; // "ramp index", picks drawfill color from team skincolors
 	INT32 allyfill = skincolors[g_teaminfo[allies].color].ramp[ri];
 	INT32 enemyfill = skincolors[g_teaminfo[enemies].color].ramp[ri];
 
@@ -3293,6 +3344,54 @@ static void K_drawKartTeamScores(void)
 		winning = 1;
 	else if (enemyscore > allyscore)
 		winning = -1;
+
+	UINT8 *winnercolor = (winning == 1) ?
+		R_GetTranslationColormap(TC_RAINBOW, g_teaminfo[allies].color, GTC_CACHE) :
+		R_GetTranslationColormap(TC_RAINBOW, g_teaminfo[enemies].color, GTC_CACHE);
+
+	if (scorechangecooldown)
+		scorechangecooldown--;
+
+	// prevent giga flicker on team scoring
+	if (easedallyscore == allyscore)
+	{
+		// :O
+	}
+	else
+	{
+		if (lastleveltime != leveltime) // Timing consistency
+		{
+			INT32 delta = abs(easedallyscore - allyscore); // how wrong is display score?
+			
+			if (scorechangecooldown == 0)
+			{
+				if (allyscore > easedallyscore)
+				{
+					easedallyscore++;
+					if (!cv_reducevfx.value)
+						allycolor = R_GetTranslationColormap(TC_BLINK, SKINCOLOR_WHITE, GTC_CACHE);
+				}
+				else
+				{
+					easedallyscore--;
+					if (!cv_reducevfx.value)
+						enemycolor = R_GetTranslationColormap(TC_BLINK, SKINCOLOR_WHITE, GTC_CACHE);
+				}
+				scorechangecooldown = TICRATE/delta;
+			}	
+		}
+		
+		// replace scores with eased scores
+		allyscore = easedallyscore;
+		enemyscore = totalscore - allyscore;
+	}
+
+	lastleveltime = leveltime;
+
+	fixed_t enemypercent = FixedDiv(enemyscore*FRACUNIT, totalscore*FRACUNIT);
+	// fixed_t allypercent = FixedDiv(allyscore*FRACUNIT, totalscore*FRACUNIT);
+	INT32 enemywidth = FixedInt(FixedMul(enemypercent, barwidth*FRACUNIT));
+	INT32 allywidth = barwidth - enemywidth;
 
 	player_t *bestenemy = NULL;
 	INT32 bestenemyscore = -1;
@@ -3328,49 +3427,85 @@ static void K_drawKartTeamScores(void)
 		}
 	}
 
-	flags |= snapflags;
+	// Draw at the top and bottom of the screen in 4P.
+	boolean goagain = use4p;
 
-	V_DrawScaledPatch(basex, basey, flags, kp_team_sticker);
-	V_DrawMappedPatch(basex, basey, flags, kp_team_underlay[0], enemycolor);
-	V_DrawMappedPatch(basex, basey, flags, kp_team_underlay[1], allycolor);
-	V_DrawScaledPatch(basex, basey, flags, kp_team_bar);
-	V_DrawScaledPatch(basex, basey, flags, kp_team_you);
+	draw:
+
+	V_DrawScaledPatch(basex, basey, flags, kp_team_sticker[use4p]);
+	V_DrawMappedPatch(basex, basey, flags, kp_team_underlay[use4p][0], enemycolor);
+	V_DrawMappedPatch(basex, basey, flags, kp_team_underlay[use4p][1], allycolor);
+	V_DrawMappedPatch(basex, basey, flags, kp_team_bar[use4p], winnercolor);
+	if (!use4p)
+		V_DrawScaledPatch(basex, basey, flags, kp_team_you);
 
 	if (V_GetHUDTranslucency(0) != 10)
 		return;
 
-	V_DrawFill(basex+barx, basey+bary, enemywidth, barheight, enemyfill);
-	V_DrawFill(basex+barx+enemywidth, basey+bary, allywidth, barheight, allyfill);
-
-	using srb2::Draw;
-
-	Draw enemynum = Draw(basex+scorex-scoregap, basey+scorey).flags(flags).font(Draw::Font::kTimer).align(Draw::Align::kRight).colorize(g_teaminfo[enemies].color);
-	Draw allynum = Draw(basex+scorex+scoregap+scoreoffset, basey+scorey).flags(flags).font(Draw::Font::kTimer).align(Draw::Align::kLeft).colorize(g_teaminfo[allies].color);
-	enemynum.text("{:02}", enemyscore/2);
-	allynum.text("{:02}", allyscore/2);
+	V_DrawFill(basex+barx, basey+bary, enemywidth, barheight, enemyfill|flags);
+	V_DrawFill(basex+barx+enemywidth, basey+bary, allywidth, barheight, allyfill|flags);
 
 	// Goofy, but we want the winning team to draw on top
-	boolean drawally = (allyscore < enemyscore);
+	boolean drawally = (winning != 1);
 	for (UINT8 drew = 0; drew < 2; drew++)
 	{
-		if (bestenemy && !drawally)
+		if (use4p)
 		{
-			UINT8 *colormap = R_GetTranslationColormap(bestenemy->skin, static_cast<skincolornum_t>(bestenemy->skincolor), GTC_CACHE);
-			V_DrawMappedPatch(basex+barx+facex+enemywidth-faceoff-facesize, basey+bary+facey, flags, faceprefix[bestenemy->skin][FACE_MINIMAP], colormap);
+			if (bestenemy && !drawally)
+			{
+				V_DrawMappedPatch(basex+barx+facex+enemywidth-facesize+faceoff, basey+bary+facey, flags|V_FLIP, kp_team_minihead, enemycolor);
+			}
+			if (bestally && drawally)
+			{
+				V_DrawMappedPatch(basex+barx+facex+enemywidth+facesize, basey+bary+facey, flags, kp_team_minihead, allycolor);
+			}
+		}
+		else
+		{
+			if (bestenemy && !drawally)
+			{
+				UINT8 *colormap = R_GetTranslationColormap(bestenemy->skin, static_cast<skincolornum_t>(bestenemy->skincolor), GTC_CACHE);
+				V_DrawMappedPatch(basex+barx+facex+enemywidth-facesize+faceoff, basey+bary+facey, flags|V_FLIP, faceprefix[bestenemy->skin][FACE_MINIMAP], colormap);
+			}
+			if (bestally && drawally)
+			{
+				UINT8 *colormap = R_GetTranslationColormap(bestally->skin, static_cast<skincolornum_t>(bestally->skincolor), GTC_CACHE);
+				V_DrawMappedPatch(basex+barx+facex+enemywidth+facesize, basey+bary+facey, flags, faceprefix[bestally->skin][FACE_MINIMAP], colormap);
+			}
 		}
 
-		if (bestally && drawally)
-		{
-			UINT8 *colormap = R_GetTranslationColormap(bestally->skin, static_cast<skincolornum_t>(bestally->skincolor), GTC_CACHE);
-			V_DrawMappedPatch(basex+barx+facex+enemywidth+facesize, basey+bary+facey, flags, faceprefix[bestally->skin][FACE_MINIMAP], colormap);
-		}
 
 		drawally = !drawally;
 	}
 
-	Draw you = Draw(basex+youx, basey+youy).flags(flags).font(Draw::Font::kZVote).colorize(g_teaminfo[allies].color);
-	you.text("{:02}", youscore/2);
+	Draw enemynum = Draw(basex+scorex-scoregap, basey+scorey).flags(flags).font(scorefont).align(Draw::Align::kRight).colorize(g_teaminfo[enemies].color);
+	Draw allynum = Draw(basex+scorex+scoregap+scoreoffset, basey+scorey).flags(flags).font(scorefont).align(Draw::Align::kLeft).colorize(g_teaminfo[allies].color);
 
+	if (totalscore > 99)
+	{
+		enemynum.text("{:03}", enemyscore);
+		allynum.text("{:03}", allyscore);		
+	}
+	else
+	{
+		enemynum.text("{:02}", enemyscore);
+		allynum.text("{:02}", allyscore);
+	}
+
+	if (!use4p)
+	{
+		Draw you = Draw(basex+youx, basey+youy).flags(flags).font(Draw::Font::kZVote).colorize(g_teaminfo[allies].color);
+		you.text("{:02}", youscore);
+	}
+
+	if (goagain)
+	{
+		goagain = false;
+		flags |= V_SNAPTOBOTTOM;
+		flags &= ~V_SNAPTOTOP;
+		basey = 170;
+		goto draw;
+	}
 
 	/*
 	for (INT32 i = TEAM_UNASSIGNED+1; i < TEAM__MAX; i++)
@@ -7012,7 +7147,7 @@ void K_drawKartHUD(void)
 
 		if (r_splitscreen == 1)
 		{
-			if (LUA_HudEnabled(hud_time))
+			if (LUA_HudEnabled(hud_time) && ((gametyperules & GTR_TIMELIMIT) || cv_drawtimer.value))
 			{
 				K_drawKart2PTimestamp();
 			}
@@ -7024,7 +7159,7 @@ void K_drawKartHUD(void)
 		}
 		else if (viewnum == r_splitscreen)
 		{
-			if (LUA_HudEnabled(hud_time))
+			if (LUA_HudEnabled(hud_time) && ((gametyperules & GTR_TIMELIMIT) || cv_drawtimer.value))
 			{
 				K_drawKart4PTimestamp();
 			}

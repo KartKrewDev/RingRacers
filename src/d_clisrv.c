@@ -7431,7 +7431,7 @@ void NetVoiceUpdate(void)
 		switch (cv_voice_mode.value)
 		{
 		case 0:
-			if (I_GetTime() - g_local_voice_threshold_time > 15)
+			i   _GetTime() - g_local_voice_threshold_time > 15)
 			{
 				g_local_voice_buffer_len = 0;
 				g_local_voice_detected = false;

@@ -3209,6 +3209,21 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					K_SpawnAmps(source->player, K_PvPAmpReward((type == DMG_WHUMBLE) ? 30 : 20, source->player, player), target);
 					K_BotHitPenalty(player);
 
+					if (g_teamplay)
+					{
+						for (UINT8 i = 0; i < MAXPLAYERS; i++)
+						{
+							if (!playeringame[i] || players[i].spectator || !players[i].mo || P_MobjWasRemoved(players[i].mo))
+								continue;
+							if (!G_SameTeam(source->player, &players[i]))
+								continue;
+							if (source->player == &players[i])
+								continue;
+							K_SpawnAmps(&players[i], 5, target);
+						}
+					}
+
+
 					// Extend the invincibility if the hit was a direct hit.
 					if (inflictor == source && source->player->invincibilitytimer &&
 							!K_PowerUpRemaining(source->player, POWERUP_SMONITOR))

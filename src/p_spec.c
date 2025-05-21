@@ -2071,6 +2071,20 @@ static void K_HandleLapIncrement(player_t *player)
 				K_SpawnDriftElectricSparks(player, SKINCOLOR_SILVER, false);
 				K_SpawnAmps(player, 35, player->mo);
 
+				if (g_teamplay)
+				{
+					for (UINT8 j = 0; i < MAXPLAYERS; i++)
+					{
+						if (!playeringame[j] || players[j].spectator || !players[j].mo || P_MobjWasRemoved(players[j].mo))
+							continue;
+						if (!G_SameTeam(player, &players[j]))
+							continue;
+						if (player == &players[j])
+							continue;
+						K_SpawnAmps(&players[j], 10, player->mo);
+					}
+				}
+
 				rainbowstartavailable = false;
 			}
 

@@ -4147,7 +4147,9 @@ void K_SpawnAmps(player_t *player, UINT8 amps, mobj_t *impact)
 		scaledamps /= 2;
 	*/
 
-	for (int i = 0; i < (scaledamps/2); i++)
+	UINT16 finalreward = max(1, scaledamps/2);
+
+	for (int i = 0; i < finalreward; i++)
 	{
 		mobj_t *pickup = P_SpawnMobj(impact->x, impact->y, impact->z, MT_AMPS);
 		pickup->momx = P_RandomRange(PR_ITEM_DEBRIS, -40*mapobjectscale, 40*mapobjectscale);
