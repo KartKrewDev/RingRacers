@@ -3564,7 +3564,7 @@ static void K_GetKartBoostPower(player_t *player)
 			Easing_InCubic(
 				player->overdrivepower,
 				0,
-				5*FRACUNIT/10
+				65*FRACUNIT/100
 			),
 			Easing_InSine(
 				player->overdrivepower,
@@ -3640,7 +3640,7 @@ static void K_GetKartBoostPower(player_t *player)
 	{
 		fixed_t ringboost_base = FRACUNIT/4;
 		if (player->overdrive)
-			ringboost_base += FRACUNIT/2;
+			ringboost_base += FRACUNIT/4;
 		// This one's a little special: we add extra top speed per tic of ringboost stored up, to allow for Ring Box to really rocket away.
 		// (We compensate when decrementing ringboost to avoid runaway exponential scaling hell.)
 		fixed_t rb = FixedDiv(player->ringboost * FRACUNIT, max(FRACUNIT, K_RingDurationBoost(player)));
