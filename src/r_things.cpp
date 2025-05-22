@@ -3797,6 +3797,12 @@ boolean R_ThingVisible (mobj_t *thing)
 			case MT_BATTLECAPSULE_PIECE:
 			case MT_SPRAYCAN:
 			case MT_PLAYER:
+			case MT_LANDMINE:
+			case MT_SSMINE:
+			case MT_SSMINE_SHIELD:
+			case MT_CHECKPOINT_END:
+			case MT_SIGNSPARKLE:
+			case MT_THOK: // checkpoint parts
 				return false;
 
 			default:
