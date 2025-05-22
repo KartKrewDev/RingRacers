@@ -57,6 +57,8 @@ typedef enum
 	TALLY_ST_GAMEOVER_DONE,
 } tally_state_e;
 
+#define TALLY_DIRECTOR_TIME (2 * TICRATE)
+
 struct level_tally_t
 {
 	boolean active;
@@ -97,6 +99,7 @@ struct level_tally_t
 	boolean showGrade;
 	boolean done;
 	boolean releasedFastForward;
+	INT32 directorWait;
 
 #ifdef __cplusplus
 	boolean UseBonuses(void);

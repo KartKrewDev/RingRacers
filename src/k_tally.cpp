@@ -37,6 +37,7 @@
 #include "g_party.h"
 #include "g_input.h"
 #include "k_objects.h"
+#include "k_director.h"
 
 boolean level_tally_t::UseBonuses(void)
 {
@@ -779,6 +780,24 @@ void level_tally_t::Tick(void)
 	{
 		delay--;
 		return;
+	}
+
+	if (done == true)
+	{
+		if (directorWait < TALLY_DIRECTOR_TIME)
+		{
+			directorWait++;
+
+			if (directorWait == TALLY_DIRECTOR_TIME && G_IsPartyLocal(owner - players) == true)
+			{
+				// Finished tally, go to director while we wait for others to finish.
+				K_ToggleDirector(G_PartyPosition(owner - players), true);
+			}
+		}
+	}
+	else
+	{
+		directorWait = 0;
 	}
 
 	if (transition < FRACUNIT)
