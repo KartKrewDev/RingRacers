@@ -2321,6 +2321,9 @@ static void P_UpdatePlayerAngle(player_t *player)
 	{
 		// You're a bot. Go where you're supposed to go
 		player->steering = targetsteering;
+		// But the "angle" field of this ticcmd stores your prediction error,
+		// which we use to apply friction. Transfer it!
+		player->botvars.predictionError = player->cmd.angle << TICCMD_REDUCE;
 	}
 	else if ((!(player->cmd.flags & TICCMD_RECEIVED)) && (!!(player->oldcmd.flags && TICCMD_RECEIVED)))
 	{

@@ -6689,6 +6689,8 @@ static void K_DrawBotDebugger(void)
 
 	V_DrawSmallString(8, 66, 0, va("Complexity: %d", K_GetTrackComplexity()));
 	V_DrawSmallString(8, 70, 0, va("Bot modifier: %.2f", FixedToFloat(K_BotMapModifier())));
+
+	V_DrawSmallString(8, 76, 0, va("Prediction error: %d", bot->botvars.predictionError));
 }
 
 static void K_DrawGPRankDebugger(void)

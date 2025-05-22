@@ -1427,9 +1427,10 @@ static INT32 K_HandleBotTrack(const player_t *player, ticcmd_t *cmd, botpredicti
 	I_Assert(predict != nullptr);
 
 	destangle = K_BotSmoothLanding(player, destangle);
-
 	moveangle = player->mo->angle + K_GetUnderwaterTurnAdjust(player);
 	anglediff = AngleDeltaSigned(moveangle, destangle);
+
+	cmd->angle = std::min(destangle - moveangle, moveangle - destangle) >> TICCMD_REDUCE;
 
 	if (anglediff < 0)
 	{
@@ -1712,7 +1713,7 @@ static void K_BuildBotPodiumTiccmd(const player_t *player, ticcmd_t *cmd)
 
 		Build ticcmd for bots with a style of BOT_STYLE_NORMAL
 --------------------------------------------------*/
-static void K_BuildBotTiccmdNormal(const player_t *player, ticcmd_t *cmd)
+static void K_BuildBotTiccmdNormal(player_t *player, ticcmd_t *cmd)
 {
 	precise_t t = 0;
 
@@ -1723,6 +1724,9 @@ static void K_BuildBotTiccmdNormal(const player_t *player, ticcmd_t *cmd)
 	angle_t destangle = 0;
 	UINT8 spindash = 0;
 	INT32 turnamt = 0;
+
+	cmd->angle = 0; // For bots, this is used to transmit prediction error to gamelogic.
+	// Will be overwritten by K_HandleBotTrack if we have a destination.
 
 	if (!(gametyperules & GTR_BOTS) // No bot behaviors
 		|| K_GetNumWaypoints() == 0 // No waypoints

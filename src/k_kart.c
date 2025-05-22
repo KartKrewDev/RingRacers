@@ -13022,14 +13022,19 @@ fixed_t K_PlayerBaseFriction(const player_t *player, fixed_t original)
 
 			// A bit extra friction to help them without drifting.
 			// Remove this line once they can drift.
-			frict -= extraFriction;
+			// frict -= extraFriction;
+
+			angle_t MAXERROR = 45*ANG1;
+			fixed_t errorfrict = Easing_Linear(min(FRACUNIT, FixedDiv(player->botvars.predictionError, MAXERROR)), 0, FRACUNIT>>2);
+
+			frict -= errorfrict;
 
 			// Bots gain more traction as they rubberband.
 			const fixed_t traction_value = FixedMul(player->botvars.rubberband, max(FRACUNIT, K_BotMapModifier()));
 			if (traction_value > FRACUNIT)
 			{
 				const fixed_t traction_mul = traction_value - FRACUNIT;
-				frict -= FixedMul(extraFriction, traction_mul);
+				// frict -= FixedMul(extraFriction, traction_mul);
 			}
 		}
 	}
