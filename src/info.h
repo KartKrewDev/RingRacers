@@ -919,6 +919,7 @@ typedef enum sprite
 	SPR_THNA, // Lightning Shield Top Swoosh
 	SPR_THNB, // Lightning Shield Bottom Swoosh
 	SPR_BUBS, // Bubble Shield (not Bubs)
+	SPR_BUBT, // Bubble Shield trap
 	SPR_BUBA, // Bubble Shield Outline
 	SPR_BUBB, // Bubble Shield Top Wave
 	SPR_BUBC, // Bubble Shield Bottom Wave
