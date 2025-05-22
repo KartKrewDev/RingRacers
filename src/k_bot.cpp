@@ -1430,6 +1430,7 @@ static INT32 K_HandleBotTrack(const player_t *player, ticcmd_t *cmd, botpredicti
 	moveangle = player->mo->angle + K_GetUnderwaterTurnAdjust(player);
 	anglediff = AngleDeltaSigned(moveangle, destangle);
 
+	// predictionerror
 	cmd->angle = std::min(destangle - moveangle, moveangle - destangle) >> TICCMD_REDUCE;
 
 	if (anglediff < 0)
@@ -1725,7 +1726,7 @@ static void K_BuildBotTiccmdNormal(player_t *player, ticcmd_t *cmd)
 	UINT8 spindash = 0;
 	INT32 turnamt = 0;
 
-	cmd->angle = 0; // For bots, this is used to transmit prediction error to gamelogic.
+	cmd->angle = 0; // For bots, this is used to transmit predictionerror to gamelogic.
 	// Will be overwritten by K_HandleBotTrack if we have a destination.
 
 	if (!(gametyperules & GTR_BOTS) // No bot behaviors

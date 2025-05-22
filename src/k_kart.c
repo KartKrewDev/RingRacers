@@ -13017,8 +13017,8 @@ fixed_t K_PlayerBaseFriction(const player_t *player, fixed_t original)
 		}
 		else if (K_PlayerUsesBotMovement(player) == true)
 		{
-			const fixed_t speedPercent = min(FRACUNIT, FixedDiv(player->speed, K_GetKartSpeed(player, false, false)));
-			const fixed_t extraFriction = FixedMul(FixedMul(FRACUNIT >> 5, factor), speedPercent);
+			// const fixed_t speedPercent = min(FRACUNIT, FixedDiv(player->speed, K_GetKartSpeed(player, false, false)));
+			// const fixed_t extraFriction = FixedMul(FixedMul(FRACUNIT >> 5, factor), speedPercent);
 
 			// A bit extra friction to help them without drifting.
 			// Remove this line once they can drift.
@@ -13027,13 +13027,23 @@ fixed_t K_PlayerBaseFriction(const player_t *player, fixed_t original)
 			angle_t MAXERROR = 45*ANG1;
 			fixed_t errorfrict = Easing_Linear(min(FRACUNIT, FixedDiv(player->botvars.predictionError, MAXERROR)), 0, FRACUNIT>>2);
 
+			if (player->currentwaypoint && player->currentwaypoint->mobj)
+			{
+				fixed_t myradius = FixedInt(FixedDiv(player->currentwaypoint->mobj->radius, mapobjectscale));
+				
+				if (myradius < 400)
+					errorfrict += errorfrict/100 * (300 - myradius);
+			}
+
+			errorfrict = min(errorfrict, frict/4);
+
 			frict -= errorfrict;
 
 			// Bots gain more traction as they rubberband.
 			const fixed_t traction_value = FixedMul(player->botvars.rubberband, max(FRACUNIT, K_BotMapModifier()));
 			if (traction_value > FRACUNIT)
 			{
-				const fixed_t traction_mul = traction_value - FRACUNIT;
+				//const fixed_t traction_mul = traction_value - FRACUNIT;
 				// frict -= FixedMul(extraFriction, traction_mul);
 			}
 		}
