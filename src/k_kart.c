@@ -1478,6 +1478,9 @@ static boolean K_TryDraft(player_t *player, mobj_t *dest, fixed_t minDist, fixed
 		return false;
 	}
 
+	if (dest->player && G_SameTeam(player, dest->player))
+		draftdistance = FixedMul(draftdistance, K_TeamComebackMultiplier(player));
+
 	// Not close enough to draft.
 	if (dist > draftdistance && draftdistance > 0)
 	{
@@ -15505,6 +15508,9 @@ fixed_t K_GetGradingMultAdjustment(player_t *player)
 	fixed_t stablerate = 3*FRACUNIT/10; // how low is your placement before losing XP? 4*FRACUNIT/10 = top 40% of race will gain
 	fixed_t result = 0;
 
+	if (g_teamplay)
+		power = 3 * power / 4;
+
 	INT32 live_players = 0; // players we are competing against
 
 	for (INT32 i = 0; i < MAXPLAYERS; i++)
@@ -15714,6 +15720,35 @@ boolean K_TryPickMeUp(mobj_t *m1, mobj_t *m2)
 
 	P_RemoveMobj(inflictor);
 	return true;
+}
+
+fixed_t K_TeamComebackMultiplier(player_t *player)
+{
+	INT32 myteam = player->team;
+	INT32 theirteam = (myteam == TEAM_ORANGE) ? TEAM_BLUE : TEAM_ORANGE;
+
+	if (g_teamscores[myteam] >= g_teamscores[theirteam])
+		return FRACUNIT;
+
+	UINT32 ourdistance = 0;
+	UINT32 theirdistance = 0;
+
+	for (UINT8 i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i] || players[i].spectator)
+			continue;
+
+		if (players[i].team == myteam)
+			ourdistance += K_GetItemRouletteDistance(&players[i], players[i].itemRoulette.playing);
+		else
+			theirdistance += K_GetItemRouletteDistance(&players[i], players[i].itemRoulette.playing);
+	}
+	
+	fixed_t multiplier = FixedDiv(ourdistance, theirdistance);
+	multiplier = min(multiplier, 3*FRACUNIT);
+	multiplier = max(multiplier, FRACUNIT);
+
+	return multiplier;
 }
 
 //}

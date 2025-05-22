@@ -3209,7 +3209,12 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					K_SpawnAmps(source->player, K_PvPAmpReward((type == DMG_WHUMBLE) ? 30 : 20, source->player, player), target);
 					K_BotHitPenalty(player);
 
-					if (g_teamplay)
+					if (G_SameTeam(source->player, player))
+					{
+						if (type != DMG_EXPLODE)
+							type = DMG_STUMBLE;
+					}
+					else
 					{
 						for (UINT8 i = 0; i < MAXPLAYERS; i++)
 						{
@@ -3219,7 +3224,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 								continue;
 							if (source->player == &players[i])
 								continue;
-							K_SpawnAmps(&players[i], 5, target);
+							K_SpawnAmps(&players[i], FixedInt(FixedMul(5, K_TeamComebackMultiplier(player))), target);
 						}
 					}
 
