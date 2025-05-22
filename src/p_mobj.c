@@ -9585,7 +9585,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 			mobj->cvmem /= 2;
 			mobj->momz = 0;
-			mobj->destscale = ((5*mobj->tracer->scale)>>2) + (mobj->tracer->scale>>3);
+			mobj->destscale = ((8*mobj->tracer->scale)>>2) + (mobj->tracer->scale>>3);
 
 			mobj->tracer->momz = (8*mobj->tracer->scale) * P_MobjFlip(mobj->tracer);
 
@@ -9656,7 +9656,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 		else
 		{
-			mobj->destscale = (5*mapobjectscale)>>2;
+			mobj->destscale = (8*mapobjectscale)>>2;
 
 			if (mobj->threshold > 0)
 				mobj->threshold--;
