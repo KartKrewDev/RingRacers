@@ -12146,7 +12146,8 @@ void K_KartUpdatePosition(player_t *player)
 	/* except in FREE PLAY */
 	if (player->curshield == KSHIELD_TOP &&
 			(gametyperules & GTR_CIRCUIT) &&
-			realplayers > 1)
+			realplayers > 1 &&
+			!specialstageinfo.valid)
 	{
 		/* grace period so you don't fall off INSTANTLY */
 		if (K_GetItemRouletteDistance(player, 8) < 2000 && player->topinfirst < 2*TICRATE) // "Why 8?" Literally no reason, but since we intend for constant-ish distance we choose a fake fixed playercount.
