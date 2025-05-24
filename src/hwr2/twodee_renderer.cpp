@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Ronald "Eidolon" Kinard
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Ronald "Eidolon" Kinard
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -11,11 +11,11 @@
 #include "twodee_renderer.hpp"
 
 #include <algorithm>
-#include <unordered_set>
 
 #include <stb_rect_pack.h>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "../core/hash_set.hpp"
 #include "blendmode.hpp"
 #include "../r_patch.h"
 #include "../v_video.h"
@@ -43,78 +43,59 @@ static TwodeePipelineKey pipeline_key_for_cmd(const Draw2dCmd& cmd)
 	return {hwr2::get_blend_mode(cmd), hwr2::is_draw_lines(cmd)};
 }
 
-static PipelineDesc make_pipeline_desc(TwodeePipelineKey key)
+static void set_blend_state(RasterizerStateDesc& desc, BlendMode blend)
 {
-	constexpr const VertexInputDesc kTwodeeVertexInput = {
-		{{sizeof(TwodeeVertex)}},
-		{{VertexAttributeName::kPosition, 0, 0},
-		 {VertexAttributeName::kTexCoord0, 0, 12},
-		 {VertexAttributeName::kColor, 0, 20}}};
-	BlendDesc blend_desc;
-	switch (key.blend)
+	switch (blend)
 	{
 	case BlendMode::kAlphaTransparent:
-		blend_desc.source_factor_color = BlendFactor::kSourceAlpha;
-		blend_desc.dest_factor_color = BlendFactor::kOneMinusSourceAlpha;
-		blend_desc.color_function = BlendFunction::kAdd;
-		blend_desc.source_factor_alpha = BlendFactor::kOne;
-		blend_desc.dest_factor_alpha = BlendFactor::kOneMinusSourceAlpha;
-		blend_desc.alpha_function = BlendFunction::kAdd;
+		desc.blend_source_factor_color = BlendFactor::kSourceAlpha;
+		desc.blend_dest_factor_color = BlendFactor::kOneMinusSourceAlpha;
+		desc.blend_color_function = BlendFunction::kAdd;
+		desc.blend_source_factor_alpha = BlendFactor::kOne;
+		desc.blend_dest_factor_alpha = BlendFactor::kOneMinusSourceAlpha;
+		desc.blend_alpha_function = BlendFunction::kAdd;
 		break;
 	case BlendMode::kModulate:
-		blend_desc.source_factor_color = BlendFactor::kDest;
-		blend_desc.dest_factor_color = BlendFactor::kZero;
-		blend_desc.color_function = BlendFunction::kAdd;
-		blend_desc.source_factor_alpha = BlendFactor::kDestAlpha;
-		blend_desc.dest_factor_alpha = BlendFactor::kZero;
-		blend_desc.alpha_function = BlendFunction::kAdd;
+		desc.blend_source_factor_color = BlendFactor::kDest;
+		desc.blend_dest_factor_color = BlendFactor::kZero;
+		desc.blend_color_function = BlendFunction::kAdd;
+		desc.blend_source_factor_alpha = BlendFactor::kDestAlpha;
+		desc.blend_dest_factor_alpha = BlendFactor::kZero;
+		desc.blend_alpha_function = BlendFunction::kAdd;
 		break;
 	case BlendMode::kAdditive:
-		blend_desc.source_factor_color = BlendFactor::kSourceAlpha;
-		blend_desc.dest_factor_color = BlendFactor::kOne;
-		blend_desc.color_function = BlendFunction::kAdd;
-		blend_desc.source_factor_alpha = BlendFactor::kOne;
-		blend_desc.dest_factor_alpha = BlendFactor::kOneMinusSourceAlpha;
-		blend_desc.alpha_function = BlendFunction::kAdd;
+		desc.blend_source_factor_color = BlendFactor::kSourceAlpha;
+		desc.blend_dest_factor_color = BlendFactor::kOne;
+		desc.blend_color_function = BlendFunction::kAdd;
+		desc.blend_source_factor_alpha = BlendFactor::kOne;
+		desc.blend_dest_factor_alpha = BlendFactor::kOneMinusSourceAlpha;
+		desc.blend_alpha_function = BlendFunction::kAdd;
 		break;
 	case BlendMode::kSubtractive:
-		blend_desc.source_factor_color = BlendFactor::kSourceAlpha;
-		blend_desc.dest_factor_color = BlendFactor::kOne;
-		blend_desc.color_function = BlendFunction::kSubtract;
-		blend_desc.source_factor_alpha = BlendFactor::kOne;
-		blend_desc.dest_factor_alpha = BlendFactor::kOneMinusSourceAlpha;
-		blend_desc.alpha_function = BlendFunction::kAdd;
+		desc.blend_source_factor_color = BlendFactor::kSourceAlpha;
+		desc.blend_dest_factor_color = BlendFactor::kOne;
+		desc.blend_color_function = BlendFunction::kSubtract;
+		desc.blend_source_factor_alpha = BlendFactor::kOne;
+		desc.blend_dest_factor_alpha = BlendFactor::kOneMinusSourceAlpha;
+		desc.blend_alpha_function = BlendFunction::kAdd;
 		break;
 	case BlendMode::kReverseSubtractive:
-		blend_desc.source_factor_color = BlendFactor::kSourceAlpha;
-		blend_desc.dest_factor_color = BlendFactor::kOne;
-		blend_desc.color_function = BlendFunction::kReverseSubtract;
-		blend_desc.source_factor_alpha = BlendFactor::kOne;
-		blend_desc.dest_factor_alpha = BlendFactor::kOneMinusSourceAlpha;
-		blend_desc.alpha_function = BlendFunction::kAdd;
+		desc.blend_source_factor_color = BlendFactor::kSourceAlpha;
+		desc.blend_dest_factor_color = BlendFactor::kOne;
+		desc.blend_color_function = BlendFunction::kReverseSubtract;
+		desc.blend_source_factor_alpha = BlendFactor::kOne;
+		desc.blend_dest_factor_alpha = BlendFactor::kOneMinusSourceAlpha;
+		desc.blend_alpha_function = BlendFunction::kAdd;
 		break;
 	case BlendMode::kInvertDest:
-		blend_desc.source_factor_color = BlendFactor::kOne;
-		blend_desc.dest_factor_color = BlendFactor::kOne;
-		blend_desc.color_function = BlendFunction::kSubtract;
-		blend_desc.source_factor_alpha = BlendFactor::kZero;
-		blend_desc.dest_factor_alpha = BlendFactor::kDestAlpha;
-		blend_desc.alpha_function = BlendFunction::kAdd;
+		desc.blend_source_factor_color = BlendFactor::kOne;
+		desc.blend_dest_factor_color = BlendFactor::kOne;
+		desc.blend_color_function = BlendFunction::kSubtract;
+		desc.blend_source_factor_alpha = BlendFactor::kZero;
+		desc.blend_dest_factor_alpha = BlendFactor::kDestAlpha;
+		desc.blend_alpha_function = BlendFunction::kAdd;
 		break;
 	}
-
-	return {
-		PipelineProgram::kUnshadedPaletted,
-		kTwodeeVertexInput,
-		{{{UniformName::kProjection},
-		  {{UniformName::kModelView, UniformName::kTexCoord0Transform, UniformName::kSampler0IsIndexedAlpha}}}},
-		{{SamplerName::kSampler0, SamplerName::kSampler1, SamplerName::kSampler2}},
-		std::nullopt,
-		{blend_desc, {true, true, true, true}},
-		key.lines ? PrimitiveType::kLines : PrimitiveType::kTriangles,
-		CullMode::kNone,
-		FaceWinding::kCounterClockwise,
-		{0.f, 0.f, 0.f, 1.f}};
 }
 
 void TwodeeRenderer::rewrite_patch_quad_vertices(Draw2dList& list, const Draw2dPatchQuad& cmd) const
@@ -149,10 +130,10 @@ void TwodeeRenderer::rewrite_patch_quad_vertices(Draw2dList& list, const Draw2dP
 	const float cmd_xrange = cmd.xmax - cmd.xmin;
 	const float cmd_yrange = cmd.ymax - cmd.ymin;
 
-	const float clipped_xmin = cmd.clip ? std::clamp(cmd.xmin, cmd.clip_xmin, cmd.clip_xmax) : cmd.xmin;
-	const float clipped_xmax = cmd.clip ? std::clamp(cmd.xmax, cmd.clip_xmin, cmd.clip_xmax) : cmd.xmax;
-	const float clipped_ymin = cmd.clip ? std::clamp(cmd.ymin, cmd.clip_ymin, cmd.clip_ymax) : cmd.ymin;
-	const float clipped_ymax = cmd.clip ? std::clamp(cmd.ymax, cmd.clip_ymin, cmd.clip_ymax) : cmd.ymax;
+	const float clipped_xmin = cmd.clip ? std::clamp(cmd.xmin, cmd.clip_xmin, std::max(cmd.clip_xmax, cmd.clip_xmin)) : cmd.xmin;
+	const float clipped_xmax = cmd.clip ? std::clamp(cmd.xmax, cmd.clip_xmin, std::max(cmd.clip_xmax, cmd.clip_xmin)) : cmd.xmax;
+	const float clipped_ymin = cmd.clip ? std::clamp(cmd.ymin, cmd.clip_ymin, std::max(cmd.clip_ymax, cmd.clip_ymin)) : cmd.ymin;
+	const float clipped_ymax = cmd.clip ? std::clamp(cmd.ymax, cmd.clip_ymin, std::max(cmd.clip_ymax, cmd.clip_ymin)) : cmd.ymax;
 
 	const float trimmed_left = cmd.flip ? (1.f - trim_umax) : trim_umin;
 	const float trimmed_right = cmd.flip ? trim_umin : (1.f - trim_umax);
@@ -231,34 +212,18 @@ void TwodeeRenderer::rewrite_patch_quad_vertices(Draw2dList& list, const Draw2dP
 	list.vertices[vtx_offs + 3].v = clipped_vmax;
 }
 
-void TwodeeRenderer::initialize(Rhi& rhi, Handle<GraphicsContext> ctx)
+void TwodeeRenderer::initialize(Rhi& rhi)
 {
-	{
-		TwodeePipelineKey alpha_transparent_tris = {BlendMode::kAlphaTransparent, false};
-		TwodeePipelineKey modulate_tris = {BlendMode::kModulate, false};
-		TwodeePipelineKey additive_tris = {BlendMode::kAdditive, false};
-		TwodeePipelineKey subtractive_tris = {BlendMode::kSubtractive, false};
-		TwodeePipelineKey revsubtractive_tris = {BlendMode::kReverseSubtractive, false};
-		TwodeePipelineKey invertdest_tris = {BlendMode::kInvertDest, false};
-		TwodeePipelineKey alpha_transparent_lines = {BlendMode::kAlphaTransparent, true};
-		TwodeePipelineKey modulate_lines = {BlendMode::kModulate, true};
-		TwodeePipelineKey additive_lines = {BlendMode::kAdditive, true};
-		TwodeePipelineKey subtractive_lines = {BlendMode::kSubtractive, true};
-		TwodeePipelineKey revsubtractive_lines = {BlendMode::kReverseSubtractive, true};
-		TwodeePipelineKey invertdest_lines = {BlendMode::kInvertDest, true};
-		pipelines_.insert({alpha_transparent_tris, rhi.create_pipeline(make_pipeline_desc(alpha_transparent_tris))});
-		pipelines_.insert({modulate_tris, rhi.create_pipeline(make_pipeline_desc(modulate_tris))});
-		pipelines_.insert({additive_tris, rhi.create_pipeline(make_pipeline_desc(additive_tris))});
-		pipelines_.insert({subtractive_tris, rhi.create_pipeline(make_pipeline_desc(subtractive_tris))});
-		pipelines_.insert({revsubtractive_tris, rhi.create_pipeline(make_pipeline_desc(revsubtractive_tris))});
-		pipelines_.insert({invertdest_tris, rhi.create_pipeline(make_pipeline_desc(invertdest_tris))});
-		pipelines_.insert({alpha_transparent_lines, rhi.create_pipeline(make_pipeline_desc(alpha_transparent_lines))});
-		pipelines_.insert({modulate_lines, rhi.create_pipeline(make_pipeline_desc(modulate_lines))});
-		pipelines_.insert({additive_lines, rhi.create_pipeline(make_pipeline_desc(additive_lines))});
-		pipelines_.insert({subtractive_lines, rhi.create_pipeline(make_pipeline_desc(subtractive_lines))});
-		pipelines_.insert({revsubtractive_lines, rhi.create_pipeline(make_pipeline_desc(revsubtractive_lines))});
-		pipelines_.insert({invertdest_lines, rhi.create_pipeline(make_pipeline_desc(revsubtractive_lines))});
-	}
+	ProgramDesc prog_desc;
+	prog_desc.name = "unshadedpaletted";
+	const char* defines[] = {
+		"ENABLE_U_SAMPLER0_IS_INDEXED_ALPHA",
+		"ENABLE_S_SAMPLER2",
+		"ENABLE_VA_TEXCOORD0",
+		"ENABLE_VA_COLOR"
+	};
+	prog_desc.defines = tcb::make_span(defines);
+	program_ = rhi.create_program(prog_desc);
 
 	{
 		default_tex_ = rhi.create_texture({
@@ -269,21 +234,21 @@ void TwodeeRenderer::initialize(Rhi& rhi, Handle<GraphicsContext> ctx)
 			TextureWrapMode::kClamp
 		});
 		std::array<uint8_t, 4> data = {0, 255, 0, 255};
-		rhi.update_texture(ctx, default_tex_, {0, 0, 2, 1}, PixelFormat::kRG8, tcb::as_bytes(tcb::span(data)));
+		rhi.update_texture(default_tex_, {0, 0, 2, 1}, PixelFormat::kRG8, tcb::as_bytes(tcb::span(data)));
 	}
 
 	initialized_ = true;
 }
 
-void TwodeeRenderer::flush(Rhi& rhi, Handle<GraphicsContext> ctx, Twodee& twodee)
+void TwodeeRenderer::flush(Rhi& rhi, Twodee& twodee)
 {
 	if (!initialized_)
 	{
-		initialize(rhi, ctx);
+		initialize(rhi);
 	}
 
 	// Stage 1 - command list patch detection
-	std::unordered_set<const patch_t*> found_patches;
+	srb2::HashSet<const patch_t*> found_patches;
 	for (const auto& list : twodee)
 	{
 		for (const auto& cmd : list.cmds)
@@ -297,7 +262,7 @@ void TwodeeRenderer::flush(Rhi& rhi, Handle<GraphicsContext> ctx, Twodee& twodee
 					}
 					if (cmd.colormap != nullptr)
 					{
-						palette_manager_->find_or_create_colormap(rhi, ctx, cmd.colormap);
+						palette_manager_->find_or_create_colormap(rhi, cmd.colormap);
 					}
 				},
 				[&](const Draw2dVertices& cmd) {}};
@@ -309,7 +274,7 @@ void TwodeeRenderer::flush(Rhi& rhi, Handle<GraphicsContext> ctx, Twodee& twodee
 	{
 		patch_atlas_cache_->queue_patch(patch);
 	}
-	patch_atlas_cache_->pack(rhi, ctx);
+	patch_atlas_cache_->pack(rhi);
 
 	size_t list_index = 0;
 	for (auto& list : twodee)
@@ -377,6 +342,8 @@ void TwodeeRenderer::flush(Rhi& rhi, Handle<GraphicsContext> ctx, Twodee& twodee
 		new_cmd.colormap = nullptr;
 		// safety: a command list is required to have at least 1 command
 		new_cmd.pipeline_key = pipeline_key_for_cmd(list.cmds[0]);
+		new_cmd.primitive = new_cmd.pipeline_key.lines ? PrimitiveType::kLines : PrimitiveType::kTriangles;
+		new_cmd.blend_mode = new_cmd.pipeline_key.blend;
 		merged_list.cmds.push_back(std::move(new_cmd));
 
 		for (auto& cmd : list.cmds)
@@ -445,7 +412,7 @@ void TwodeeRenderer::flush(Rhi& rhi, Handle<GraphicsContext> ctx, Twodee& twodee
 					{
 						if (cmd.flat_lump != LUMPERROR)
 						{
-							flat_manager_->find_or_create_indexed(rhi, ctx, cmd.flat_lump);
+							flat_manager_->find_or_create_indexed(rhi, cmd.flat_lump);
 							std::optional<MergedTwodeeCommand::Texture> t = MergedTwodeeCommandFlatTexture {cmd.flat_lump};
 							the_new_one.texture = t;
 						}
@@ -458,6 +425,8 @@ void TwodeeRenderer::flush(Rhi& rhi, Handle<GraphicsContext> ctx, Twodee& twodee
 					}};
 				std::visit(tex_visitor_again, cmd);
 				the_new_one.pipeline_key = pipeline_key_for_cmd(cmd);
+				the_new_one.primitive = the_new_one.pipeline_key.lines ? PrimitiveType::kLines : PrimitiveType::kTriangles;
+				the_new_one.blend_mode = the_new_one.pipeline_key.blend;
 				merged_list.cmds.push_back(std::move(the_new_one));
 			}
 
@@ -492,26 +461,21 @@ void TwodeeRenderer::flush(Rhi& rhi, Handle<GraphicsContext> ctx, Twodee& twodee
 
 		tcb::span<const std::byte> vertex_data = tcb::as_bytes(tcb::span(orig_list.vertices));
 		tcb::span<const std::byte> index_data = tcb::as_bytes(tcb::span(orig_list.indices));
-		rhi.update_buffer(ctx, merged_list.vbo, 0, vertex_data);
-		rhi.update_buffer(ctx, merged_list.ibo, 0, index_data);
+		rhi.update_buffer(merged_list.vbo, 0, vertex_data);
+		rhi.update_buffer(merged_list.ibo, 0, index_data);
 
-		// Update the binding sets for each individual merged command
-		VertexAttributeBufferBinding vbos[] = {{0, merged_list.vbo}};
 		for (auto& mcmd : merged_list.cmds)
 		{
-			TextureBinding tx[3];
 			auto tex_visitor = srb2::Overload {
 				[&](Handle<Texture> texture)
 				{
-					tx[0] = {SamplerName::kSampler0, texture};
-					tx[1] = {SamplerName::kSampler1, palette_tex};
+					mcmd.texture_handle = texture;
 				},
 				[&](const MergedTwodeeCommandFlatTexture& tex)
 				{
-					Handle<Texture> th = flat_manager_->find_or_create_indexed(rhi, ctx, tex.lump);
+					Handle<Texture> th = flat_manager_->find_or_create_indexed(rhi, tex.lump);
 					SRB2_ASSERT(th != kNullHandle);
-					tx[0] = {SamplerName::kSampler0, th};
-					tx[1] = {SamplerName::kSampler1, palette_tex};
+					mcmd.texture_handle = th;
 				}};
 			if (mcmd.texture)
 			{
@@ -519,49 +483,39 @@ void TwodeeRenderer::flush(Rhi& rhi, Handle<GraphicsContext> ctx, Twodee& twodee
 			}
 			else
 			{
-				tx[0] = {SamplerName::kSampler0, default_tex_};
-				tx[1] = {SamplerName::kSampler1, palette_tex};
+				mcmd.texture_handle = default_tex_;
 			}
 
 			const uint8_t* colormap = mcmd.colormap;
 			Handle<Texture> colormap_h = palette_manager_->default_colormap();
 			if (colormap)
 			{
-				colormap_h = palette_manager_->find_or_create_colormap(rhi, ctx, colormap);
+				colormap_h = palette_manager_->find_or_create_colormap(rhi, colormap);
 				SRB2_ASSERT(colormap_h != kNullHandle);
 			}
-			tx[2] = {SamplerName::kSampler2, colormap_h};
-			mcmd.binding_set =
-				rhi.create_binding_set(ctx, pipelines_[mcmd.pipeline_key], {tcb::span(vbos), tcb::span(tx)});
+			mcmd.colormap_handle = colormap_h;
 		}
 
 		ctx_list_itr++;
 	}
 
-	// Uniform sets
-	std::array<UniformVariant, 1> g1_uniforms = {
-		// Projection
-		glm::mat4(
-			glm::vec4(2.f / vid.width, 0.f, 0.f, 0.f),
-			glm::vec4(0.f, -2.f / vid.height, 0.f, 0.f),
-			glm::vec4(0.f, 0.f, 1.f, 0.f),
-			glm::vec4(-1.f, 1.f, 0.f, 1.f)
-		),
-	};
-	std::array<UniformVariant, 3> g2_uniforms = {
-		// ModelView
-		glm::identity<glm::mat4>(),
-		// Texcoord0 Transform
-		glm::identity<glm::mat3>(),
-		// Sampler 0 Is Indexed Alpha (yes, it always is)
-		static_cast<int32_t>(1)
-	};
-	Handle<UniformSet> us_1 = rhi.create_uniform_set(ctx, {tcb::span(g1_uniforms)});
-	Handle<UniformSet> us_2 = rhi.create_uniform_set(ctx, {tcb::span(g2_uniforms)});
-
 	// Presumably, we're already in a renderpass when flush is called
+	rhi.bind_program(program_);
+	rhi.set_uniform("u_projection", glm::mat4(
+		glm::vec4(2.f / vid.width, 0.f, 0.f, 0.f),
+		glm::vec4(0.f, -2.f / vid.height, 0.f, 0.f),
+		glm::vec4(0.f, 0.f, 1.f, 0.f),
+		glm::vec4(-1.f, 1.f, 0.f, 1.f)
+	));
+	rhi.set_uniform("u_modelview", glm::identity<glm::mat4>());
+	rhi.set_uniform("u_texcoord0_transform", glm::identity<glm::mat3>());
+	rhi.set_uniform("u_sampler0_is_indexed_alpha", static_cast<int32_t>(1));
+	rhi.set_sampler("s_sampler1", 1, palette_tex);
 	for (auto& list : cmd_lists_)
 	{
+		rhi.bind_vertex_attrib("a_position", list.vbo, VertexAttributeFormat::kFloat3, offsetof(TwodeeVertex, x), sizeof(TwodeeVertex));
+		rhi.bind_vertex_attrib("a_texcoord0", list.vbo, VertexAttributeFormat::kFloat2, offsetof(TwodeeVertex, u), sizeof(TwodeeVertex));
+		rhi.bind_vertex_attrib("a_color", list.vbo, VertexAttributeFormat::kFloat4, offsetof(TwodeeVertex, r), sizeof(TwodeeVertex));
 		for (auto& cmd : list.cmds)
 		{
 			if (cmd.elements == 0)
@@ -570,15 +524,18 @@ void TwodeeRenderer::flush(Rhi& rhi, Handle<GraphicsContext> ctx, Twodee& twodee
 				// This shouldn't happen, but, just in case...
 				continue;
 			}
-			SRB2_ASSERT(pipelines_.find(cmd.pipeline_key) != pipelines_.end());
-			Handle<Pipeline> pl = pipelines_[cmd.pipeline_key];
-			rhi.bind_pipeline(ctx, pl);
-			rhi.set_viewport(ctx, {0, 0, static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height)});
-			rhi.bind_uniform_set(ctx, 0, us_1);
-			rhi.bind_uniform_set(ctx, 1, us_2);
-			rhi.bind_binding_set(ctx, cmd.binding_set);
-			rhi.bind_index_buffer(ctx, list.ibo);
-			rhi.draw_indexed(ctx, cmd.elements, cmd.index_offset);
+			RasterizerStateDesc desc;
+			desc.cull = CullMode::kNone;
+			desc.primitive = cmd.primitive;
+			desc.blend_enabled = true;
+			set_blend_state(desc, cmd.blend_mode);
+			// Set blend and primitives
+			rhi.set_rasterizer_state(desc);
+			rhi.set_viewport({0, 0, static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height)});
+			rhi.set_sampler("s_sampler0", 0, cmd.texture_handle);
+			rhi.set_sampler("s_sampler2", 2, cmd.colormap_handle);
+			rhi.bind_index_buffer(list.ibo);
+			rhi.draw_indexed(cmd.elements, cmd.index_offset);
 		}
 	}
 

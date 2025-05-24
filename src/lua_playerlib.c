@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2016 by John "JTE" Muniz.
 //
@@ -226,6 +226,10 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->oldposition);
 	else if (fastcmp(field,"positiondelay"))
 		lua_pushinteger(L, plr->positiondelay);
+	else if (fastcmp(field,"teamposition"))
+		lua_pushinteger(L, plr->teamposition);
+	else if (fastcmp(field,"teamimportance"))
+		lua_pushinteger(L, plr->teamimportance);
 	else if (fastcmp(field,"distancetofinish"))
 		lua_pushinteger(L, plr->distancetofinish);
 	else if (fastcmp(field,"distancetofinishprev"))
@@ -256,12 +260,22 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->tumbleBounces);
 	else if (fastcmp(field,"tumbleheight"))
 		lua_pushinteger(L, plr->tumbleHeight);
+	else if (fastcmp(field,"stunned"))
+		lua_pushinteger(L, plr->stunned);
+	else if (fastcmp(field,"stunnedcombo"))
+		lua_pushinteger(L, plr->stunnedCombo);
 	else if (fastcmp(field,"justdi"))
 		lua_pushinteger(L, plr->justDI);
 	else if (fastcmp(field,"flipdi"))
 		lua_pushboolean(L, plr->flipDI);
+	else if (fastcmp(field,"cangrabitems"))
+		lua_pushinteger(L, plr->cangrabitems);
 	else if (fastcmp(field,"analoginput"))
 		lua_pushboolean(L, plr->analoginput);
+	else if (fastcmp(field,"transfer"))
+		lua_pushboolean(L, plr->transfer);
+	else if (fastcmp(field,"transfersound"))
+		lua_pushboolean(L, plr->transfersound);
 	else if (fastcmp(field,"markedfordeath"))
 		lua_pushboolean(L, plr->markedfordeath);
 	else if (fastcmp(field,"incontrol"))
@@ -280,6 +294,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->ringboxdelay);
 	else if (fastcmp(field,"ringboxaward"))
 		lua_pushinteger(L, plr->ringboxaward);
+	else if (fastcmp(field,"lastringboost"))
+		lua_pushinteger(L, plr->lastringboost);
 	else if (fastcmp(field,"amps"))
 		lua_pushinteger(L, plr->amps);
 	else if (fastcmp(field,"amppickup"))
@@ -302,7 +318,7 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->gateSound);
 	else if (fastcmp(field,"startboost"))
 		lua_pushinteger(L, plr->startboost);
-	else if (fastcmp(field,"aizdriftstraft"))
+	else if (fastcmp(field,"aizdriftstrat"))
 		lua_pushinteger(L, plr->aizdriftstrat);
 	else if (fastcmp(field,"aizdriftextend"))
 		lua_pushinteger(L, plr->aizdriftextend);
@@ -362,6 +378,10 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->eggmanTransferDelay);
 	else if (fastcmp(field,"wavedash"))
 		lua_pushinteger(L, plr->wavedash);
+	else if (fastcmp(field,"wavedashleft"))
+		lua_pushinteger(L, plr->wavedashleft);
+	else if (fastcmp(field,"wavedashright"))
+		lua_pushinteger(L, plr->wavedashright);
 	else if (fastcmp(field,"wavedashdelay"))
 		lua_pushinteger(L, plr->wavedashdelay);
 	else if (fastcmp(field,"wavedashboost"))
@@ -418,6 +438,10 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->itemtype);
 	else if (fastcmp(field,"itemamount"))
 		lua_pushinteger(L, plr->itemamount);
+	else if (fastcmp(field,"backupitemtype"))
+		lua_pushinteger(L, plr->backupitemtype);
+	else if (fastcmp(field,"backupitemamount"))
+		lua_pushinteger(L, plr->backupitemamount);
 	else if (fastcmp(field,"throwdir"))
 		lua_pushinteger(L, plr->throwdir);
 	else if (fastcmp(field,"sadtimer"))
@@ -557,6 +581,14 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->followercolor);
 	else if (fastcmp(field,"follower"))
 		LUA_PushUserdata(L, plr->follower, META_MOBJ);
+	else if (fastcmp(field,"prefskin"))
+		lua_pushinteger(L, plr->prefskin);
+	else if (fastcmp(field,"prefcolor"))
+		lua_pushinteger(L, plr->prefcolor);
+	else if (fastcmp(field,"preffollower"))
+		lua_pushinteger(L, plr->preffollower);
+	else if (fastcmp(field,"preffollowercolor"))
+		lua_pushinteger(L, plr->preffollowercolor);
 	//
 
 	// rideroids
@@ -671,8 +703,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->laps);
 	else if (fastcmp(field,"latestlap"))
 		lua_pushinteger(L, plr->latestlap);
-	else if (fastcmp(field,"ctfteam"))
-		lua_pushinteger(L, plr->ctfteam);
+	else if (fastcmp(field,"team"))
+		lua_pushinteger(L, plr->team);
 	else if (fastcmp(field,"checkskip"))
 		lua_pushinteger(L, plr->checkskip);
 	else if (fastcmp(field,"cheatchecknum"))
@@ -710,6 +742,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->griefWarned);		
 	else if (fastcmp(field,"splitscreenindex"))
 		lua_pushinteger(L, plr->splitscreenindex);
+	else if (fastcmp(field,"whip"))
+		LUA_PushUserdata(L, plr->whip, META_MOBJ);
 #ifdef HWRENDER
 	else if (fastcmp(field,"fovadd"))
 		lua_pushfixed(L, plr->fovadd);
@@ -818,6 +852,10 @@ static int player_set(lua_State *L)
 		plr->oldposition = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"positiondelay"))
 		plr->positiondelay = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"teamposition"))
+		plr->teamposition = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"teamimportance"))
+		plr->teamimportance = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"distancetofinish"))
 		return NOSET;
 	else if (fastcmp(field,"distancetofinishprev"))
@@ -846,10 +884,16 @@ static int player_set(lua_State *L)
 		plr->tumbleBounces = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"tumbleheight"))
 		plr->tumbleHeight = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"stunned"))
+		plr->stunned = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"stunnedcombo"))
+		plr->stunnedCombo = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"justdi"))
 		plr->justDI = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"flipdi"))
 		plr->flipDI = luaL_checkboolean(L, 3);
+	else if (fastcmp(field,"cangrabitems"))
+		plr->cangrabitems = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"incontrol"))
 		plr->incontrol = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"progressivethrust"))
@@ -857,7 +901,11 @@ static int player_set(lua_State *L)
 	else if (fastcmp(field,"ringvisualwarning"))
 		plr->ringvisualwarning = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"analoginput"))
-		plr->markedfordeath = luaL_checkboolean(L, 3);
+		plr->analoginput = luaL_checkboolean(L, 3);
+	else if (fastcmp(field,"transfer"))
+		plr->transfer = luaL_checkboolean(L, 3);
+	else if (fastcmp(field,"transfersound"))
+		plr->transfersound = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"markedfordeath"))
 		plr->markedfordeath = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"dotrickfx"))
@@ -870,6 +918,8 @@ static int player_set(lua_State *L)
 		plr->ringboxdelay = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"ringboxaward"))
 		plr->ringboxaward = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"lastringboost"))
+		plr->lastringboost = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"amps"))
 		plr->amps = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"amppickup"))
@@ -892,7 +942,7 @@ static int player_set(lua_State *L)
 		plr->gateSound = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"startboost"))
 		plr->startboost = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"aizdriftstraft"))
+	else if (fastcmp(field,"aizdriftstrat"))
 		plr->aizdriftstrat = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"aizdrifttilt"))
 		plr->aizdrifttilt = luaL_checkinteger(L, 3);
@@ -950,6 +1000,10 @@ static int player_set(lua_State *L)
 		plr->eggmanTransferDelay = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"wavedash"))
 		plr->wavedash = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"wavedashleft"))
+		plr->wavedashleft = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"wavedashright"))
+		plr->wavedashright = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"wavedashdelay"))
 		plr->wavedashdelay = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"wavedashboost"))
@@ -1124,8 +1178,16 @@ static int player_set(lua_State *L)
 		plr->followercolor = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"followerready"))
 		plr->followerready = luaL_checkboolean(L, 3);
-	else if (fastcmp(field,"follower"))	// it's probably best we don't allow the follower mobj to change.
-		return NOSET;
+	else if (fastcmp(field,"follower"))
+		return NOSET; // it's probably best we don't allow the follower mobj to change.
+	else if (fastcmp(field,"prefskin"))
+		return NOSET; // don't allow changing user preferences
+	else if (fastcmp(field,"prefcolor"))
+		return NOSET; // don't allow changing user preferences
+	else if (fastcmp(field,"preffollower"))
+		return NOSET; // don't allow changing user preferences
+	else if (fastcmp(field,"preffollowercolor"))
+		return NOSET; // don't allow changing user preferences
 
 	// time to add to the endless elseif list!!!!
 	// rideroids
@@ -1246,8 +1308,8 @@ static int player_set(lua_State *L)
 		plr->laps = (UINT8)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"latestlap"))
 		plr->latestlap = (UINT8)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"ctfteam"))
-		plr->ctfteam = (INT32)luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"team"))
+		G_AssignTeam(plr, (UINT8)luaL_checkinteger(L, 3));
 	else if (fastcmp(field,"checkskip"))
 		plr->checkskip = (INT32)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"cheatchecknum"))
@@ -1293,6 +1355,13 @@ static int player_set(lua_State *L)
 		plr->griefWarned = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"splitscreenindex"))
 		return NOSET;
+	else if (fastcmp(field,"whip"))
+	{
+		mobj_t *mo = NULL;
+		if (!lua_isnil(L, 3))
+			mo = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
+		P_SetTarget(&plr->whip, mo);
+	}
 #ifdef HWRENDER
 	else if (fastcmp(field,"fovadd"))
 		plr->fovadd = luaL_checkfixed(L, 3);

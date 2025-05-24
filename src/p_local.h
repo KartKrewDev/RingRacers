@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -78,7 +78,6 @@ typedef enum
 	NUM_THINKERLISTS
 } thinklistnum_t; /**< Thinker lists. */
 extern thinker_t thlist[];
-extern mobj_t *mobjcache;
 
 void P_InitThinkers(void);
 void P_InvalidateThinkersWithoutInit(void);
@@ -258,6 +257,7 @@ mobjtype_t P_GetMobjtype(UINT16 mthingtype);
 void P_RespawnSpecials(void);
 
 fixed_t P_GetMobjDefaultScale(mobj_t *mobj);
+mobj_t *P_AllocateMobj(void);
 mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type);
 
 void P_CalculatePrecipFloor(precipmobj_t *mobj);
@@ -556,6 +556,17 @@ void P_TouchCheatcheck(mobj_t *cheatcheck, player_t *player, boolean snaptopost)
 void P_CheckTimeLimit(void);
 void P_CheckPointLimit(void);
 boolean P_CheckRacers(void);
+
+// Pickup types
+#define PICKUP_RINGORSPHERE 0
+#define PICKUP_ITEMBOX 1
+#define PICKUP_EGGBOX 2
+#define PICKUP_PAPERITEM 3
+#define PICKUP_ITEMCAPSULE 4
+
+#define CHEESE_ITEMBOX 1
+#define CHEESE_RINGBOX 2
+#define CHEESE_ITEMCAPSULE 3
 
 boolean P_CanPickupItem(player_t *player, UINT8 weapon);
 boolean P_IsPickupCheesy(player_t *player, UINT8 type);

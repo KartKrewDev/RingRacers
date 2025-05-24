@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Ronald "Eidolon" Kinard
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Ronald "Eidolon" Kinard
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -72,7 +72,7 @@ rhi::Rect srb2::hwr2::trimmed_patch_dimensions(const patch_t* patch)
 	return {minx, miny, static_cast<uint32_t>(maxx - minx), static_cast<uint32_t>(maxy - miny)};
 }
 
-void srb2::hwr2::convert_patch_to_trimmed_rg8_pixels(const patch_t* patch, std::vector<uint8_t>& out)
+void srb2::hwr2::convert_patch_to_trimmed_rg8_pixels(const patch_t* patch, srb2::Vector<uint8_t>& out)
 {
 	Rect trimmed_rect = srb2::hwr2::trimmed_patch_dimensions(patch);
 	if (trimmed_rect.w % 2 > 0)
@@ -216,7 +216,7 @@ static PatchAtlas create_atlas(Rhi& rhi, uint32_t size)
 	return new_atlas;
 }
 
-void PatchAtlasCache::pack(Rhi& rhi, Handle<GraphicsContext> ctx)
+void PatchAtlasCache::pack(Rhi& rhi)
 {
 	// Prepare stbrp rects for patches to be loaded.
 	std::vector<stbrp_rect> rects;
@@ -299,7 +299,7 @@ void PatchAtlasCache::pack(Rhi& rhi, Handle<GraphicsContext> ctx)
 	SRB2_ASSERT(ready_for_lookup());
 
 	// Upload atlased patches
-	std::vector<uint8_t> patch_data;
+	srb2::Vector<uint8_t> patch_data;
 	for (const patch_t* patch_to_upload : patches_to_upload_)
 	{
 		srb2::NotNull<PatchAtlas*> atlas = find_patch(patch_to_upload);
@@ -310,7 +310,6 @@ void PatchAtlasCache::pack(Rhi& rhi, Handle<GraphicsContext> ctx)
 		convert_patch_to_trimmed_rg8_pixels(patch_to_upload, patch_data);
 
 		rhi.update_texture(
-			ctx,
 			atlas->tex_,
 			{static_cast<int32_t>(entry->x), static_cast<int32_t>(entry->y), entry->w, entry->h},
 			PixelFormat::kRG8,

@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Ronald "Eidolon" Kinard
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Ronald "Eidolon" Kinard
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -11,9 +11,9 @@
 #ifndef __SRB2_HWR2_RESOURCE_MANAGEMENT_HPP__
 #define __SRB2_HWR2_RESOURCE_MANAGEMENT_HPP__
 
+#include "../core/hash_map.hpp"
+#include "../core/vector.hpp"
 #include "../rhi/rhi.hpp"
-
-#include <unordered_map>
 
 namespace srb2::hwr2
 {
@@ -27,8 +27,8 @@ class PaletteManager
 #endif
 	rhi::Handle<rhi::Texture> default_colormap_;
 
-	std::unordered_map<const uint8_t*, rhi::Handle<rhi::Texture>> colormaps_;
-	std::unordered_map<const uint8_t*, rhi::Handle<rhi::Texture>> lighttables_;
+	srb2::HashMap<const uint8_t*, rhi::Handle<rhi::Texture>> colormaps_;
+	srb2::HashMap<const uint8_t*, rhi::Handle<rhi::Texture>> lighttables_;
 
 public:
 	PaletteManager();
@@ -45,11 +45,11 @@ public:
 #endif
 	rhi::Handle<rhi::Texture> default_colormap() const noexcept { return default_colormap_; }
 
-	void update(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
+	void update(rhi::Rhi& rhi);
 	void destroy_per_frame_resources(rhi::Rhi& rhi);
 
-	rhi::Handle<rhi::Texture> find_or_create_colormap(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx, srb2::NotNull<const uint8_t*> colormap);
-	rhi::Handle<rhi::Texture> find_or_create_extra_lighttable(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx, srb2::NotNull<const uint8_t*> lighttable);
+	rhi::Handle<rhi::Texture> find_or_create_colormap(rhi::Rhi& rhi, srb2::NotNull<const uint8_t*> colormap);
+	rhi::Handle<rhi::Texture> find_or_create_extra_lighttable(rhi::Rhi& rhi, srb2::NotNull<const uint8_t*> lighttable);
 };
 
 /*
@@ -67,9 +67,9 @@ from patch_t.
 /// @brief Manages textures corresponding to specific flats indexed by lump number.
 class FlatTextureManager
 {
-	std::unordered_map<lumpnum_t, rhi::Handle<rhi::Texture>> flats_;
-	std::vector<lumpnum_t> to_upload_;
-	std::vector<rhi::Handle<rhi::Texture>> disposed_textures_;
+	srb2::HashMap<lumpnum_t, rhi::Handle<rhi::Texture>> flats_;
+	srb2::Vector<lumpnum_t> to_upload_;
+	srb2::Vector<rhi::Handle<rhi::Texture>> disposed_textures_;
 
 public:
 	FlatTextureManager();
@@ -79,7 +79,7 @@ public:
 	/// in prepass.
 	/// @param flat_lump
 	/// @return
-	rhi::Handle<rhi::Texture> find_or_create_indexed(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx, lumpnum_t flat_lump);
+	rhi::Handle<rhi::Texture> find_or_create_indexed(rhi::Rhi& rhi, lumpnum_t flat_lump);
 };
 
 } // namespace srb2::hwr2

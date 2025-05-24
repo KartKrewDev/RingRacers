@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by James Robert Roman
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by James Robert Roman
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -13,11 +13,11 @@
 
 #include <cstddef>
 #include <mutex>
-#include <unordered_map>
 #include <vector>
 
 #include <mkvmuxer/mkvmuxer.h>
 
+#include "../core/hash_map.hpp"
 #include "container.hpp"
 #include "webm.hpp"
 #include "webm_writer.hpp"
@@ -88,7 +88,7 @@ private:
 
 	mutable std::recursive_mutex queue_mutex_;
 
-	std::unordered_map<webm::track, FrameQueue> queue_;
+	srb2::HashMap<webm::track, FrameQueue> queue_;
 
 	webm::timestamp latest_timestamp_ = 0;
 	std::size_t queue_size_ = 0;

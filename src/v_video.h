@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -441,6 +441,9 @@ void VID_BlitLinearScreen(const UINT8 *srcptr, UINT8 *destptr, INT32 width, INT3
  * system.
  */
 void VID_DisplaySoftwareScreen(void);
+
+char *V_ParseText(const char *rawText); // Launder srb2::draw::TextElement.parse() through C code!
+
 
 #ifdef __cplusplus
 } // extern "C"

@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 //
@@ -826,10 +826,9 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 				}
 			}
 		}
-	}
 
-	if (translen > 0)
 		colorbrightnesses[translen] = colorbrightnesses[translen-1];
+	}
 
 	if (skinnum == TC_BLINK)
 		blendcolor = V_GetColor(skincolors[color].ramp[3]);

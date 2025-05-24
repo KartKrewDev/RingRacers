@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -184,7 +184,7 @@ void K_DoIngameRespawn(player_t *player)
 	player->gateBoost = 0;
 	player->trickcharge = 0;
 	player->infinitether = 0;
-	player->wavedash = player->wavedashboost = player->wavedashdelay = 0;
+	player->wavedash = player -> wavedashleft = player->wavedashright = player->wavedashboost = player->wavedashdelay = 0;
 
 	K_TumbleInterrupt(player);
 	P_ResetPlayer(player);
@@ -446,12 +446,18 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 		// Reduce by the amount we needed to get to this waypoint
 		stepamt -= dist;
 
+		fixed_t oldx = player->mo->x;
+		fixed_t oldy = player->mo->y = dest.y;
+
 		// We've reached the destination point,
 		P_UnsetThingPosition(player->mo);
 		player->mo->x = dest.x;
 		player->mo->y = dest.y;
 		player->mo->z = dest.z;
 		P_SetThingPosition(player->mo);
+
+		// Did we cross a checkpoint during our last step?
+		Obj_CrossCheckpoints(player, oldx, oldy);
 
 		// We are no longer traveling from death location to 1st waypoint, so use standard timings
 		if (player->respawn.fast)
@@ -724,7 +730,7 @@ static void K_DropDashWait(player_t *player)
 		player->respawn.timer--;
 
 	if (player->pflags & PF_FAULT)
-		return;
+		return;	
 
 	if (leveltime % 8 == 0)
 	{
@@ -870,6 +876,12 @@ static void K_HandleDropDash(player_t *player)
 		else
 		{
 			player->mo->colorized = false;
+		}
+		// if player got trapped inside a bubble but lost its bubble object in a unintended way, remove no gravity flag
+		if (((P_MobjWasRemoved(player->mo->tracer) || player->mo->tracer == NULL || (!P_MobjWasRemoved(player->mo->tracer) && player->mo->tracer && player->mo->tracer->type != MT_BUBBLESHIELDTRAP)) && player->carry == CR_TRAPBUBBLE) && (player->mo->flags & MF_NOGRAVITY))
+		{
+			player->mo->flags &= ~MF_NOGRAVITY;
+			player->carry = CR_NONE;
 		}
 	}
 	else

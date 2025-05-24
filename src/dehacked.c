@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 //
@@ -378,7 +378,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 				{
 					if (i == 0 && word2[0] != '0') // If word2 isn't a number
 						i = get_state(word2); // find a state by name
-					if (i < NUMSTATES && i >= 0)
+					if (i < NUMSTATES && i > 0)
 					{
 						if (i < (S_FIRSTFREESLOT+freeslotusage[0][1]))
 						{
@@ -389,7 +389,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 					}
 					else
 					{
-						deh_warning("Frame %d out of range (0 - %d)", i, NUMSTATES-1);
+						deh_warning("Frame %d out of range (1 - %d)", i, NUMSTATES-1);
 						ignorelines(f);
 					}
 				}

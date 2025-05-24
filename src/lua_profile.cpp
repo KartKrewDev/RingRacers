@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by James Robert Roman
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by James Robert Roman
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -10,10 +10,8 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <unordered_map>
 #include <string>
 #include <string_view>
-#include <vector>
 
 #include <fmt/format.h>
 
@@ -21,6 +19,9 @@ extern "C" {
 #include "blua/lua.h"
 };
 
+#include "core/hash_map.hpp"
+#include "core/string.h"
+#include "core/vector.hpp"
 #include "v_draw.hpp"
 
 #include "command.h"
@@ -58,7 +59,7 @@ struct lua_timer_t
 namespace
 {
 
-std::unordered_map<std::string, lua_timer_t> g_tic_timers;
+srb2::HashMap<srb2::String, lua_timer_t> g_tic_timers;
 
 }; // namespace
 
@@ -156,7 +157,7 @@ void LUA_RenderTimers(void)
 		return;
 	}
 
-	std::vector<decltype(g_tic_timers)::iterator> view;
+	srb2::Vector<decltype(g_tic_timers)::Iter> view;
 	view.reserve(g_tic_timers.size());
 
 	auto color_flag = [](double t)

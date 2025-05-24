@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 //
@@ -134,6 +134,10 @@ typedef enum
 	PT_RESULTSALL,		// Here's what everyone responded to PT_CHALLENGEALL with, if this is wrong or you don't receive it disconnect
 
 	PT_SAY,				// "Hey server, please send this chat message to everyone via XD_SAY"
+
+	PT_REQMAPQUEUE,		// Client requesting a roundqueue operation
+
+	PT_VOICE,           // Voice packet for either side
 
 	NUMPACKETTYPE
 } packettype_t;
@@ -281,6 +285,7 @@ struct clientconfig_pak
 
 #define SV_SPEEDMASK 0x03		// used to send kartspeed
 #define SV_DEDICATED 0x40		// server is dedicated
+#define SV_VOICEENABLED 0x80    // voice_mute is off/voice chat is enabled
 #define SV_LOTSOFADDONS 0x20	// flag used to ask for full file list in d_netfil
 
 #define MAXFILENEEDED 915
@@ -357,7 +362,7 @@ struct plrconfig
 	UINT16 color;
 	UINT32 pflags;
 	UINT32 score;
-	UINT8 ctfteam;
+	UINT8 team;
 } ATTRPACK;
 
 struct filesneededconfig_pak
@@ -401,12 +406,36 @@ struct say_pak
 	UINT8 source;
 } ATTRPACK;
 
+struct reqmapqueue_pak
+{
+	UINT16 newmapnum;
+	UINT16 newgametype;
+	UINT8 flags;
+	UINT8 source;
+} ATTRPACK;
+
 struct netinfo_pak
 {
 	UINT32 pingtable[MAXPLAYERS+1];
 	UINT32 packetloss[MAXPLAYERS+1];
 	UINT32 delay[MAXPLAYERS+1];
 } ATTRPACK;
+
+// Sent by both sides. Contains Opus-encoded voice packet
+// flags bitset map (left to right, low to high)
+// | PPPPPTRR | -- P = Player num, T = Terminal, R = Reserved (0)
+// Data following voice header is a single Opus frame
+struct voice_pak
+{
+	UINT64 frame;
+	UINT8 flags;
+} ATTRPACK;
+
+#define VOICE_PAK_FLAGS_PLAYERNUM_BITS 0x1F
+#define VOICE_PAK_FLAGS_TERMINAL_BIT 0x20
+#define VOICE_PAK_FLAGS_RESERVED0_BIT 0x40
+#define VOICE_PAK_FLAGS_RESERVED1_BIT 0x80
+#define VOICE_PAK_FLAGS_RESERVED_BITS (VOICE_PAK_FLAGS_RESERVED0_BIT | VOICE_PAK_FLAGS_RESERVED1_BIT)
 
 //
 // Network packet data
@@ -451,6 +480,8 @@ struct doomdata_t
 		responseall_pak responseall;			// 256 bytes
 		resultsall_pak resultsall;				// 1024 bytes. Also, you really shouldn't trust anything here.
 		say_pak say;							// I don't care anymore.
+		reqmapqueue_pak reqmapqueue;			// Formerly XD_REQMAPQUEUE
+		voice_pak voice;                        // Unreliable voice data, variable length
 	} u; // This is needed to pack diff packet types data together
 } ATTRPACK;
 
@@ -554,7 +585,7 @@ extern boolean server_lagless;
 extern consvar_t cv_mindelay;
 
 extern consvar_t cv_netticbuffer, cv_allownewplayer, cv_maxconnections, cv_joindelay;
-extern consvar_t cv_pingtimeout, cv_resynchattempts, cv_blamecfail;
+extern consvar_t cv_pingtimeout, cv_blamecfail;
 extern consvar_t cv_maxsend, cv_noticedownload, cv_downloadspeed;
 
 #ifdef VANILLAJOINNEXTROUND
@@ -595,6 +626,7 @@ void SendKick(UINT8 playernum, UINT8 msg);
 // Create any new ticcmds and broadcast to other players.
 void NetKeepAlive(void);
 void NetUpdate(void);
+void NetVoiceUpdate(void);
 
 void SV_StartSinglePlayerServer(INT32 dogametype, boolean donetgame);
 boolean SV_SpawnServer(void);
@@ -699,6 +731,7 @@ void HandleSigfail(const char *string);
 
 void DoSayPacket(SINT8 target, UINT8 flags, UINT8 source, char *message);
 void DoSayPacketFromCommand(SINT8 target, size_t usedargs, UINT8 flags);
+void DoVoicePacket(SINT8 target, UINT64 frame, const UINT8* opusdata, size_t len);
 void SendServerNotice(SINT8 target, char *message);
 
 #ifdef __cplusplus

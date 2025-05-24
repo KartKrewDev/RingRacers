@@ -1,8 +1,8 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by "Lat'".
-// Copyright (C) 2024 by Vivian "toastergrl" Grannell.
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by "Lat'".
+// Copyright (C) 2025 by Vivian "toastergrl" Grannell.
+// Copyright (C) 2025 by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -11,6 +11,7 @@
 /// \file  menus/transient/pause-game.c
 /// \brief In-game/pause menus
 
+#include "../../byteptr.h"
 #include "../../d_netcmd.h"
 #include "../../i_time.h"
 #include "../../k_menu.h"
@@ -352,7 +353,7 @@ void M_HandlePauseMenuGametype(INT32 choice)
 				}
 				else // ideally for "random" only, but no sane fallback for "same" and "next"
 				{
-					COM_ImmedExecute(va("randommap -gt %s", gametypes[menugametype]->name));
+					COM_ImmedExecute(va("map -random -gt %s", gametypes[menugametype]->name));
 				}
 			}
 			return;
@@ -478,50 +479,33 @@ void M_HandleSpectateToggle(INT32 choice)
 			return;
 		}
 
-		boolean tospectator = false;
+		// Identify relevant spectator state of pausemenu.splitscreenfocusid.
+		// See also M_DrawPause.
+
+		const UINT8 splitspecid =
+			g_localplayers[pausemenu.splitscreenfocusid];
+
+		const UINT8 joingame = (
+			players[splitspecid].spectator == true
+			&& ((players[splitspecid].pflags & PF_WANTSTOJOIN) == 0)
+		) ? 1 : 0;
+
+		if (joingame && !cv_allowteamchange.value)
 		{
-			// Identify relevant spectator state of pausemenu.splitscreenfocusid.
-			// See also M_DrawPause.
-
-			const UINT8 splitspecid =
-				g_localplayers[pausemenu.splitscreenfocusid];
-
-			tospectator = (
-				players[splitspecid].spectator == false
-				|| (players[splitspecid].pflags & PF_WANTSTOJOIN)
-			);
-		}
-
-		if (!tospectator && !cv_allowteamchange.value)
-		{
-			M_StartMessage("Team Change", M_GetText("The server is not allowing\nteam changes at this time.\n"), NULL, MM_NOTHING, NULL, NULL);
+			M_StartMessage("Joining Play", M_GetText("The server is not allowing\njoining play at this time.\n"), NULL, MM_NOTHING, NULL, NULL);
 			return;
 		}
 
 		M_QuitPauseMenu(-1);
 
-		const char *destinationstate = tospectator ? "spectator" : "playing";
+		// Send spectate
+		UINT8 buf[2];
+		UINT8 *p = buf;
 
-		// These console command names...
-		if (pausemenu.splitscreenfocusid == 0)
-		{
-			COM_ImmedExecute(
-				va(
-					"changeteam %s",
-					destinationstate
-				)
-			);
-		}
-		else
-		{
-			COM_ImmedExecute(
-				va(
-					"changeteam%u %s",
-					pausemenu.splitscreenfocusid + 1,
-					destinationstate
-				)
-			);
-		}
+		WRITEUINT8(p, splitspecid);
+		WRITEUINT8(p, joingame);
+
+		SendNetXCmd(XD_SPECTATE, &buf, p - buf);
 
 		return;
 	}

@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -13,6 +13,8 @@
 /// \brief Here is a core component: drawing the floors and ceilings,
 ///        while maintaining a per column clipping list only.
 ///        Moreover, the sky areas have to be determined.
+
+#include <algorithm>
 
 #include <tracy/tracy/Tracy.hpp>
 

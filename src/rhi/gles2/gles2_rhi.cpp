@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Ronald "Eidolon" Kinard
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Ronald "Eidolon" Kinard
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -923,7 +923,7 @@ void Gles2Rhi::present()
 	platform_->present();
 }
 
-void Gles2Rhi::begin_default_render_pass(Handle<GraphicsContext> ctx)
+void Gles2Rhi::push_default_render_pass(Handle<GraphicsContext> ctx)
 {
 	SRB2_ASSERT(platform_ != nullptr);
 	SRB2_ASSERT(graphics_context_active_ == true);
@@ -942,7 +942,7 @@ void Gles2Rhi::begin_default_render_pass(Handle<GraphicsContext> ctx)
 	current_render_pass_ = Gles2Rhi::DefaultRenderPassState {};
 }
 
-void Gles2Rhi::begin_render_pass(Handle<GraphicsContext> ctx, const RenderPassBeginInfo& info)
+void Gles2Rhi::push_render_pass(Handle<GraphicsContext> ctx, const RenderPassBeginInfo& info)
 {
 	SRB2_ASSERT(graphics_context_active_ == true && graphics_context_generation_ == ctx.generation());
 	SRB2_ASSERT(current_render_pass_.has_value() == false);
@@ -981,7 +981,7 @@ void Gles2Rhi::begin_render_pass(Handle<GraphicsContext> ctx, const RenderPassBe
 	current_render_pass_ = info;
 }
 
-void Gles2Rhi::end_render_pass(Handle<GraphicsContext> ctx)
+void Gles2Rhi::pop_render_pass(Handle<GraphicsContext> ctx)
 {
 	SRB2_ASSERT(graphics_context_active_ == true && graphics_context_generation_ == ctx.generation());
 	SRB2_ASSERT(current_render_pass_.has_value() == true);

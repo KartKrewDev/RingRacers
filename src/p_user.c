@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -73,6 +73,7 @@
 #include "k_hud.h" // K_AddMessage
 #include "m_easing.h"
 #include "acs/interface.h"
+#include "byteptr.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_light.h"
@@ -418,7 +419,8 @@ void P_ResetPlayer(player_t *player)
 {
 	//player->pflags &= ~(PF_);
 
-	player->carry = CR_NONE;
+	if (player->carry != CR_TRAPBUBBLE)
+		player->carry = CR_NONE;
 	player->onconveyor = 0;
 
 	//player->drift = player->driftcharge = 0;
@@ -514,25 +516,44 @@ void P_GivePlayerLives(player_t *player, INT32 numlives)
 // Adds to the player's score
 void P_AddPlayerScore(player_t *player, INT32 amount)
 {
-	if (!((gametyperules & GTR_POINTLIMIT)))
+	if ((gametyperules & GTR_POINTLIMIT) == 0)
+	{
 		return;
+	}
 
 	if (player->exiting) // srb2kart
+	{
 		return;
+	}
+
+	const boolean teams = G_GametypeHasTeams();
 
 	// Don't underflow.
 	// Don't go above MAXSCORE.
 	if (amount < 0 && (UINT32)-amount > player->roundscore)
+	{
 		player->roundscore = 0;
+	}
 	else if (player->roundscore + amount < MAXSCORE)
 	{
-		if (player->roundscore < g_pointlimit && g_pointlimit <= player->roundscore + amount)
+		if (player->roundscore < g_pointlimit
+			&& g_pointlimit <= player->roundscore + amount
+			&& teams == false) // We want the normal scoring function to update roundscore, but this notification will be done by G_AddTeamScore.
+		{
 			HU_DoTitlecardCEchoForDuration(player, "K.O. READY!", true, 5*TICRATE/2);
+		}
 
 		player->roundscore += amount;
 	}
 	else
+	{
 		player->roundscore = MAXSCORE;
+	}
+
+	if (teams == true)
+	{
+		G_AddTeamScore(player->team, amount, player);
+	}
 }
 
 void P_PlayRinglossSound(mobj_t *source)
@@ -1105,7 +1126,7 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->spriteyoffset = mobj->spriteyoffset;
 
 	if (mobj->flags2 & MF2_OBJECTFLIP)
-		ghost->flags |= MF2_OBJECTFLIP;
+		ghost->flags2 |= MF2_OBJECTFLIP;
 
 	if (!(mobj->flags & MF_DONTENCOREMAP))
 		ghost->flags &= ~MF_DONTENCOREMAP;
@@ -1310,7 +1331,7 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 
 	if (demo.playback == false)
 	{
-		if (modeattacking)
+		if (modeattacking && !K_LegacyRingboost(player))
 		{
 			G_UpdateRecords();
 		}
@@ -1958,9 +1979,7 @@ static void P_3dMovement(player_t *player)
 	else if (player->onconveyor == 4 && !P_IsObjectOnGround(player->mo)) // Actual conveyor belt
 		player->cmomx = player->cmomy = 0;
 	else if (player->onconveyor != 2 && player->onconveyor != 4
-#ifdef POLYOBJECTS
 				&& player->onconveyor != 1
-#endif
 	)
 		player->cmomx = player->cmomy = 0;
 
@@ -2318,18 +2337,20 @@ static void P_UpdatePlayerAngle(player_t *player)
 	else
 	{
 		// With a full slam on the analog stick, how far could we steer in either direction?
-		INT16 steeringRight =  K_UpdateSteeringValue(player->steering, KART_FULLTURN);
-		INT16 steeringLeft =  K_UpdateSteeringValue(player->steering, -KART_FULLTURN);
+		INT16 steeringRight = K_UpdateSteeringValue(player->steering, KART_FULLTURN);
+		INT16 steeringLeft = K_UpdateSteeringValue(player->steering, -KART_FULLTURN);
 
+#if 1
 		// When entering/leaving drifts, allow all legal turns with no easing.
 		// This is the hardest case for the turn solver, because your handling properties on
 		// client side are very different than your handling properties on server side—at least,
 		// until your drift status makes the full round-trip and is reflected in your gamestate.
-		if (player->drift && abs(player->drift) < 5)
+		if (player->drift && abs(player->drift) < 5 && player->cmd.latency)
 		{
 			steeringRight = KART_FULLTURN;
 			steeringLeft = -KART_FULLTURN;
 		}
+#endif
 
 		angle_t maxTurnRight = K_GetKartTurnValue(player, steeringRight) << TICCMD_REDUCE;
 		angle_t maxTurnLeft = K_GetKartTurnValue(player, steeringLeft) << TICCMD_REDUCE;
@@ -2338,47 +2359,33 @@ static void P_UpdatePlayerAngle(player_t *player)
 		angle_t targetAngle = (player->cmd.angle) << TICCMD_REDUCE;
 		angle_t targetDelta = targetAngle - (player->mo->angle);
 
+#define SOLVERANGLECHEATS
+
+#ifdef SOLVERANGLECHEATS
 		// Corrections via fake turn go through easing.
 		// That means undoing them takes the same amount of time as doing them.
 		// This can lead to oscillating death spiral states on a multi-tic correction, as we swing past the target angle.
 		// So before we go into death-spirals, if our predicton is _almost_ right...
-		angle_t leniency_base;
-		if (G_CompatLevel(0x000A))
-		{
-			// Compat level for 2.0 staff ghosts
-			leniency_base = 4 * ANG1 / 3;
-		}
-		else
-		{
-			leniency_base = 8 * ANG1 / 3;
-		}
-
-		// Gross. Take a look at sliptide starts properly for 2.4.
-		// Yell at Tyron!
-		if (!G_CompatLevel(0x000C))
-		{
-			leniency_base = 6 * ANG1 / 3;
-		}
-
+		angle_t leniency_base = 2 * ANG1;
 		angle_t leniency = leniency_base * min(player->cmd.latency, 6);
 		// Don't force another turning tic, just give them the desired angle!
+#endif
 
-#if 0 // Old sliptide preservation behavior
-		if (K_Sliptiding(player) && P_IsObjectOnGround(player->mo) && (player->cmd.turning != 0) && ((player->cmd.turning > 0) == (player->aizdriftstrat > 0)))
+		if (!(player->cmd.buttons & BT_DRIFT) && (abs(player->drift) == 1) && ((player->cmd.turning > 0) == (player->drift > 0)) && player->handleboost > SLIPTIDEHANDLING)
 		{
-			// Don't change handling direction if someone's inputs are sliptiding, you'll break the sliptide!
-			if (player->cmd.turning > 0)
+			// This drift release is eligible to start a sliptide. Don't do lag-compensation countersteer behavior that could destroy it!
+			if (player->cmd.turning >= 0)
 			{
 				steeringLeft = max(steeringLeft, 1);
 				steeringRight = max(steeringRight, steeringLeft);
 			}
-			else
+			else if (player->cmd.turning <= 0)
 			{
 				steeringRight = min(steeringRight, -1);
 				steeringLeft = min(steeringLeft, steeringRight);
 			}
 		}
-#else // Digital-friendly sliptide preservation behavior
+
 		if (K_Sliptiding(player) && P_IsObjectOnGround(player->mo))
 		{
 			// Unless someone explicitly inputs a turn that would break their sliptide, keep sliptiding.
@@ -2392,12 +2399,7 @@ static void P_UpdatePlayerAngle(player_t *player)
 				steeringRight = min(steeringRight, -1);
 				steeringLeft = min(steeringLeft, steeringRight);
 			}
-			else
-			{
-				// :V
-			}
 		}
-#endif
 
 		if (maxTurnRight == 0 && maxTurnLeft == 0)
 		{
@@ -2407,13 +2409,17 @@ static void P_UpdatePlayerAngle(player_t *player)
 		else
 		{
 			// We're off. Try to legally steer the player towards their camera.
-
 			player->steering = P_FindClosestTurningForAngle(player, targetDelta, steeringLeft, steeringRight);
+			//CONS_Printf("aiz %d - dr %d - hb %d\n", player->aizdriftstrat, player->drift, player->handleboost);
+			//CONS_Printf("st %d - ts %d - t %d\n", player->steering, targetsteering, player->cmd.turning);
+			//CONS_Printf("%d\n", player->steering - targetsteering);
 			angleChange = K_GetKartTurnValue(player, player->steering) << TICCMD_REDUCE;
 
+#ifdef SOLVERANGLECHEATS
 			// And if the resulting steering input is close enough, snap them exactly.
 			if (min(targetDelta - angleChange, angleChange - targetDelta) <= leniency)
 				angleChange = targetDelta;
+#endif
 		}
 	}
 
@@ -3355,6 +3361,11 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	camdist = FixedMul(cv_cam_dist[num].value, cameraScale);
 	camheight = FixedMul(cv_cam_height[num].value, cameraScale);
 
+	if (mapheaderinfo[gamemap-1]->cameraHeight >= 0)
+	{
+		camheight = FixedMul(mapheaderinfo[gamemap-1]->cameraHeight, cameraScale);
+	}
+
 	if (loop_in < loop->zoom_in_speed)
 	{
 		fixed_t f = loop_out < loop->zoom_out_speed
@@ -3742,49 +3753,9 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 boolean P_SpectatorJoinGame(player_t *player)
 {
-	INT32 changeto = 0;
 	const char *text = NULL;
 
-	// Team changing isn't allowed.
-	if (!cv_allowteamchange.value)
-		return false;
-
-	// Team changing in Team Match and CTF
-	// Pressing fire assigns you to a team that needs players if allowed.
-	// Partial code reproduction from p_tick.c autobalance code.
-	// a surprise tool that will help us later...
-	if (G_GametypeHasTeams() && player->ctfteam == 0)
-	{
-		INT32 z, numplayersred = 0, numplayersblue = 0;
-
-		//find a team by num players, score, or random if all else fails.
-		for (z = 0; z < MAXPLAYERS; ++z)
-			if (playeringame[z])
-			{
-				if (players[z].ctfteam == 1)
-					++numplayersred;
-				else if (players[z].ctfteam == 2)
-					++numplayersblue;
-			}
-		// for z
-
-		if (numplayersblue > numplayersred)
-			changeto = 1;
-		else if (numplayersred > numplayersblue)
-			changeto = 2;
-		else if (bluescore > redscore)
-			changeto = 1;
-		else if (redscore > bluescore)
-			changeto = 2;
-		else
-			changeto = (P_RandomFixed(PR_RULESCRAMBLE) & 1) + 1;
-
-		if (!LUA_HookTeamSwitch(player, changeto, true, false, false))
-			return false;
-	}
-
 	// no conditions that could cause the gamejoin to fail below this line
-
 	if (player->mo)
 	{
 		P_RemoveMobj(player->mo);
@@ -3793,7 +3764,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 	player->spectator = false;
 	player->pflags &= ~PF_WANTSTOJOIN;
 	player->spectatewait = 0;
-	player->ctfteam = changeto;
+	player->team = TEAM_UNASSIGNED; // We will auto-assign later.
 	player->playerstate = PST_REBORN;
 	player->enteredGame = true;
 
@@ -3805,12 +3776,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 	}
 
 	// a surprise tool that will help us later...
-	if (changeto == 1)
-		text = va("\x82*%s switched to the %c%s%c team.\n", player_names[player-players], '\x85', "RED", '\x82');
-	else if (changeto == 2)
-		text = va("\x82*%s switched to the %c%s%c team.\n", player_names[player-players], '\x85', "BLU", '\x82');
-	else
-		text = va("\x82*%s entered the game.", player_names[player-players]);
+	text = va("\x82*%s entered the game.", player_names[player-players]);
 
 	HU_AddChatText(text, false);
 	return true; // no more player->mo, cannot continue.
@@ -4116,6 +4082,9 @@ Quaketilt (player_t *player)
 static void
 DoABarrelRoll (player_t *player)
 {
+	UINT8 viewnum = R_GetViewNumber();
+	camera_t *cam = &camera[viewnum];
+
 	angle_t slope;
 	angle_t delta;
 
@@ -4144,9 +4113,17 @@ DoABarrelRoll (player_t *player)
 		slope = 0;
 	}
 
-	if (AbsAngle(slope) > ANGLE_45)
+	if (cam->chase)
 	{
-		slope = slope & ANGLE_180 ? InvAngle(ANGLE_45) : ANGLE_45;
+		if (AbsAngle(slope) > ANGLE_45)
+		{
+			slope = slope & ANGLE_180 ? InvAngle(ANGLE_45) : ANGLE_45;
+		}
+	} else {
+		if (AbsAngle(slope) > ANGLE_90)
+		{
+			slope = slope & ANGLE_180 ? InvAngle(ANGLE_90) : ANGLE_90;
+		}
 	}
 
 	slope -= Quaketilt(player);
@@ -4154,7 +4131,7 @@ DoABarrelRoll (player_t *player)
 	delta = slope - player->tilt;
 	smoothing = FixedDiv(AbsAngle(slope), ANGLE_45);
 
-	delta = FixedDiv(delta, 33 *
+	delta = FixedDiv(delta, (cam->chase ? 33 : 11) *
 			FixedDiv(FRACUNIT, FRACUNIT + smoothing));
 
 	if (delta)
@@ -4269,6 +4246,12 @@ void P_PlayerThink(player_t *player)
 	else
 	{
 		player->airtime++;
+	}
+
+	if ((player->pflags & PF_FAULT) || (player->pflags & PF_VOID))
+	{
+		player->lastairtime = 0;
+		player->airtime = 0;
 	}
 
 	cmd = &player->cmd;
@@ -4561,15 +4544,15 @@ void P_PlayerThink(player_t *player)
 
 	if (player->nocontrol && player->nocontrol < UINT16_MAX)
 	{
-		if (!(--player->nocontrol))
-		{
-			if (player->pflags & PF_FAULT)
-			{
-				player->pflags &= ~PF_FAULT;
-				player->mo->renderflags &= ~RF_DONTDRAW;
-				player->mo->flags &= ~MF_NOCLIPTHING;
-			}
-		}
+		player->nocontrol--;
+	}
+
+	// tic down the var normaly and remove the flag upon respawn so its guaranteed to be removed from the player
+	if (!player->nocontrol && !player->respawn.timer && player->respawn.state == RESPAWNST_DROP &&  (player->pflags & PF_FAULT))
+	{
+		player->pflags &= ~PF_FAULT;
+		player->mo->renderflags &= ~RF_DONTDRAW;
+		player->mo->flags &= ~MF_NOCLIPTHING;
 	}
 
 	boolean deathcontrolled = (player->respawn.state != RESPAWNST_NONE && player->respawn.truedeath == true)
@@ -4891,16 +4874,13 @@ void P_CheckRaceGriefing(player_t *player, boolean dopunishment)
 			else
 			{
 				// Send spectate
-				changeteam_union NetPacket;
-				UINT16 usvalue;
+				UINT8 buf[2];
+				UINT8 *p = buf;
 
-				NetPacket.value.l = NetPacket.value.b = 0;
-				NetPacket.packet.newteam = 0;
-				NetPacket.packet.playernum = n;
-				NetPacket.packet.verification = true;
+				WRITEUINT8(p, n);
+				WRITEUINT8(p, 0);
 
-				usvalue = SHORT(NetPacket.value.l|NetPacket.value.b);
-				SendNetXCmd(XD_TEAMCHANGE, &usvalue, sizeof(usvalue));
+				SendNetXCmd(XD_SPECTATE, &buf, p - buf);
 			}
 		}
 	}

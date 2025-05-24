@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Vivian "toastergrl" Grannell.
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Vivian "toastergrl" Grannell.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2016 by Kay "Kaito" Sinclaire.
 //
@@ -743,8 +743,7 @@ void M_ClearSecrets(void)
 			continue;
 
 		mapheaderinfo[i]->records.mapvisited = 0;
-
-		mapheaderinfo[i]->cache_spraycan = UINT16_MAX;
+		mapheaderinfo[i]->records.spraycan = MCAN_INVALID;
 
 		mapheaderinfo[i]->cache_maplock = MAXUNLOCKABLES;
 
@@ -814,6 +813,30 @@ static void M_AssignSpraycans(void)
 	conditionset_t *c;
 	condition_t *cn;
 
+	UINT16 bonustocanmap = 0;
+
+	// First, turn outstanding bonuses into existing uncollected Spray Cans.
+	while (gamedata->gotspraycans < gamedata->numspraycans)
+	{
+		while (bonustocanmap < basenummapheaders)
+		{
+			if (mapheaderinfo[bonustocanmap]->records.spraycan != MCAN_BONUS)
+			{
+				bonustocanmap++;
+				continue;
+			}
+
+			break;
+		}
+
+		if (bonustocanmap == basenummapheaders)
+			break;
+
+		mapheaderinfo[bonustocanmap]->records.spraycan = gamedata->gotspraycans;
+		gamedata->spraycans[gamedata->gotspraycans].map = bonustocanmap;
+		gamedata->gotspraycans++;
+	}
+
 	const UINT16 prependoffset = MAXSKINCOLORS-1;
 
 	// None of the following accounts for cans being removed, only added...
@@ -829,7 +852,7 @@ static void M_AssignSpraycans(void)
 			if (cn->type != UC_SPRAYCAN)
 				continue;
 
-			// G_LoadGamedata, G_SaveGameData doesn't support custom skincolors right now.
+			// This will likely never support custom skincolors.
 			if (cn->requirement >= SKINCOLOR_FIRSTFREESLOT) //numskincolors)
 				continue;
 
@@ -891,7 +914,24 @@ static void M_AssignSpraycans(void)
 
 	for (i = 0; i < listlen; i++)
 	{
-		gamedata->spraycans[gamedata->numspraycans].map = NEXTMAP_INVALID;
+		// Convert bonus pickups into Spray Cans if new ones have been added.
+		while (bonustocanmap < basenummapheaders)
+		{
+			if (mapheaderinfo[bonustocanmap]->records.spraycan != MCAN_BONUS)
+			{
+				bonustocanmap++;
+				continue;
+			}
+
+			gamedata->gotspraycans++;
+			mapheaderinfo[bonustocanmap]->records.spraycan = gamedata->numspraycans;
+			break;
+		}
+		gamedata->spraycans[gamedata->numspraycans].map = (
+			(bonustocanmap == basenummapheaders)
+				? NEXTMAP_INVALID
+				: bonustocanmap
+		);
 		gamedata->spraycans[gamedata->numspraycans].col = tempcanlist[i];
 
 		skincolors[tempcanlist[i]].cache_spraycan = gamedata->numspraycans;
@@ -1817,8 +1857,8 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 				&& M_NotFreePlay()
 				&& (gamespeed != KARTSPEED_EASY)
 				&& (player->tally.active == true)
-				&& (player->tally.totalLaps > 0) // Only true if not Time Attack
-				&& (player->tally.laps >= player->tally.totalLaps));
+				&& (player->tally.totalExp > 0) // Only true if not Time Attack
+				&& (player->tally.exp >= player->tally.totalExp));
 		case UCRP_FINISHALLPRISONS:
 			return (battleprisons
 				&& !(player->pflags & PF_NOCONTEST)
@@ -2442,10 +2482,12 @@ static const char *M_GetConditionString(condition_t *cn)
 
 		case UC_EMBLEM: // Requires emblem x to be obtained
 		{
-			INT32 checkLevel;
+			INT32 checkLevel = NEXTMAP_INVALID;
 
 			i = cn->requirement-1;
-			checkLevel = M_EmblemMapNum(&emblemlocations[i]);
+
+			if (i >= 0 && i < numemblems)
+				checkLevel = M_EmblemMapNum(&emblemlocations[i]);
 
 			if (checkLevel >= nummapheaders || !mapheaderinfo[checkLevel] || emblemlocations[i].type == ET_NONE)
 				return va("INVALID MEDAL MAP \"%d:%d\"", cn->requirement, checkLevel);
@@ -3869,7 +3911,7 @@ UINT16 M_UnlockableMapNum(unlockable_t *unlock)
 
 UINT16 M_EmblemMapNum(emblem_t *emblem)
 {
-	if (emblem->levelCache == NEXTMAP_INVALID)
+	if (emblem->levelCache == NEXTMAP_INVALID && emblem->level)
 	{
 		UINT16 result = G_MapNumber(emblem->level);
 
@@ -3877,6 +3919,8 @@ UINT16 M_EmblemMapNum(emblem_t *emblem)
 			return result;
 
 		emblem->levelCache = result;
+		Z_Free(emblem->level);
+		emblem->level = NULL;
 	}
 
 	return emblem->levelCache;

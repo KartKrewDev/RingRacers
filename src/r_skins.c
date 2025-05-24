@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Vivian "toastergrl" Grannell.
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Vivian "toastergrl" Grannell.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -379,6 +379,9 @@ engineclass_t R_GetEngineClass(SINT8 speed, SINT8 weight, skinflags_t flags)
 	if (flags & SF_IRONMAN)
 		return ENGINECLASS_J;
 
+	if (flags & SF_HIVOLT)
+		return ENGINECLASS_R;
+
 	speed = (speed - 1) / 3;
 	weight = (weight - 1) / 3;
 
@@ -407,22 +410,6 @@ static void SetSkin(player_t *player, INT32 skinnum)
 	player->kartspeed = skin->kartspeed;
 	player->kartweight = skin->kartweight;
 	player->charflags = skin->flags;
-
-#if 0
-	if (!CV_CheatsEnabled() && !(netgame || multiplayer || demo.playback))
-	{
-		for (i = 0; i <= r_splitscreen; i++)
-		{
-			if (playernum == g_localplayers[i])
-			{
-				CV_StealthSetValue(&cv_playercolor[i], skin->prefcolor);
-			}
-		}
-
-		player->skincolor = skin->prefcolor;
-		K_KartResetPlayerColor(player);
-	}
-#endif
 
 	if (player->followmobj)
 	{
@@ -890,6 +877,7 @@ static boolean R_ProcessPatchableFields(skin_t *skin, char *stoken, char *value)
 	GETFLAG(MACHINE)
 	GETFLAG(IRONMAN)
 	GETFLAG(BADNIK)
+	GETFLAG(HIVOLT)
 #undef GETFLAG
 
 	else // let's check if it's a sound, otherwise error out

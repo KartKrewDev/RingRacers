@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -30,7 +30,7 @@ extern unsigned char mapmd5[16];
 // Player spawn spots for deathmatch.
 #define MAX_DM_STARTS 64
 extern mapthing_t *deathmatchstarts[MAX_DM_STARTS];
-extern INT32 numdmstarts, numcoopstarts, numredctfstarts, numbluectfstarts, numfaultstarts;
+extern INT32 numdmstarts, numcoopstarts, numteamstarts[TEAM__MAX], numfaultstarts;
 
 extern boolean levelloading;
 extern boolean g_reloadinggamestate;

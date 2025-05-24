@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -400,7 +400,7 @@ class TiccmdBuilder
 		};
 
 		map(gc_drift, BT_DRIFT); // drift
-		map(gc_spindash, BT_SPINDASHMASK); // C
+		map(gc_spindash, BT_SPINDASH|BT_SPINDASHMASK); // C
 		map(gc_item, BT_ATTACK); // fire
 
 		map(gc_lookback, BT_LOOKBACK); // rear view
@@ -408,9 +408,9 @@ class TiccmdBuilder
 		map(gc_vote, BT_VOTE); // mp general function button
 
 		// lua buttons a thru c
-		map(gc_luaa, BT_LUAA);
-		map(gc_luab, BT_LUAB);
-		map(gc_luac, BT_LUAC);
+		map(gc_lua1, BT_LUA1);
+		map(gc_lua2, BT_LUA2);
+		map(gc_lua3, BT_LUA3);
 	}
 
 public:
@@ -470,11 +470,11 @@ public:
 			regular_input();
 		}
 
+		angle_prediction();
+
 		cmd->angle = localangle[viewnum] >> TICCMD_REDUCE;
 
 		hook();
-
-		angle_prediction();
 	}
 };
 

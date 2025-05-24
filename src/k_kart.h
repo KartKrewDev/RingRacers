@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2018 by ZarroTsu.
 //
 // This program is free software distributed under the
@@ -50,6 +50,8 @@ Make sure this matches the actual number of states
 #define MINCOMBOFLOAT (mapobjectscale*1)
 #define MAXCOMBOTIME (TICRATE*4)
 
+#define TIMEATTACK_START (TICRATE*10)
+
 #define OVERDRIVE_STARTUP (0)
 
 #define AMPLEVEL (15)
@@ -57,6 +59,10 @@ Make sure this matches the actual number of states
 #define FLAMESHIELD_MAX (120)
 
 #define RR_PROJECTILE_FUSE (8*TICRATE)
+
+#define SCAMDIST (2000)
+
+#define EARLY_ITEM_FLICKER (NUMTRANSMAPS)
 
 // 2023-08-26 +ang20 to Sal's OG values to make them friendlier - Tyron
 #define STUMBLE_STEEP_VAL (ANG60 + ANG20)
@@ -81,6 +87,13 @@ Make sure this matches the actual number of states
 
 #define MAXTOPACCEL (12*FRACUNIT)
 #define TOPACCELREGEN (FRACUNIT/16)
+
+// Handling boosts and sliptide conditions got weird.
+// You must be under a handling boost of at least SLIPTIDEHANDLING to sliptide.
+// HANDLESCALING is used to adjust all handling boosts simultaneously (weight factors in the future?)
+// If you need to touch this in an involved way later, please just make sliptide eligibility a flag LMAO
+#define HANDLESCALING (7*FRACUNIT/8)
+#define SLIPTIDEHANDLING (HANDLESCALING/2)
 
 // Mispredicted turns can generate phantom sliptide inputs for a few tics.
 // Delay the wavedash visuals until we're reasonably sure that it's a deliberate turn.
@@ -179,6 +192,7 @@ UINT16 K_DriftSparkColor(player_t *player, INT32 charge);
 void K_SpawnBoostTrail(player_t *player);
 void K_SpawnSparkleTrail(mobj_t *mo);
 void K_SpawnWipeoutTrail(mobj_t *mo);
+void K_SpawnFireworkTrail(mobj_t *mo);
 void K_SpawnDraftDust(mobj_t *mo);
 void K_SpawnMagicianParticles(mobj_t *mo, int spread);
 void K_DriftDustHandling(mobj_t *spawner);
@@ -196,6 +210,7 @@ void K_RepairOrbitChain(mobj_t *orbit);
 void K_CalculateBananaSlope(mobj_t *mobj, fixed_t x, fixed_t y, fixed_t z, fixed_t radius, fixed_t height, boolean flip, boolean player);
 mobj_t *K_FindJawzTarget(mobj_t *actor, player_t *source, angle_t range);
 INT32 K_GetKartRingPower(const player_t *player, boolean boosted);
+INT32 K_GetFullKartRingPower(const player_t *player, boolean boosted);
 boolean K_CheckPlayersRespawnColliding(INT32 playernum, fixed_t x, fixed_t y);
 INT16 K_UpdateSteeringValue(INT16 inputSteering, INT16 destSteering);
 INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue);
@@ -300,9 +315,19 @@ boolean K_ThunderDome(void);
 
 boolean K_PlayerCanUseItem(player_t *player);
 
-fixed_t K_GetExpAdjustment(player_t *player);
+fixed_t K_GetGradingMultAdjustment(player_t *player);
+
+UINT16 K_GetEXP(player_t *player);
 
 UINT32 K_GetNumGradingPoints(void);
+
+boolean K_LegacyRingboost(player_t *player);
+
+void K_BotHitPenalty(player_t *player);
+
+boolean K_TryPickMeUp(mobj_t *m1, mobj_t *m2);
+
+fixed_t K_TeamComebackMultiplier(player_t *player);
 
 #ifdef __cplusplus
 } // extern "C"

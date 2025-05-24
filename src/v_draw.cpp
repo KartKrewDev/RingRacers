@@ -1,15 +1,14 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by James Robert Roman
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by James Robert Roman
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#include <unordered_map>
-
+#include "core/hash_map.hpp"
 #include "doomdef.h" // skincolornum_t
 #include "doomtype.h"
 #include "hu_stuff.h"
@@ -21,6 +20,8 @@
 #include "v_video.h"
 #include "w_wad.h"
 #include "z_zone.h"
+#include "k_profiles.h" // controls
+#include "p_local.h" // stplyr
 
 using srb2::Draw;
 using Chain = Draw::Chain;
@@ -32,32 +33,40 @@ int Draw::TextElement::width() const
 
 Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 {
-	static const std::unordered_map<std::string_view, char> translation = {
+	static const srb2::HashMap<std::string_view, char> translation = {
 #define BUTTON(str, lower_bits) \
 		{str,             0xB0 | lower_bits},\
 		{str "_animated", 0xA0 | lower_bits},\
 		{str "_pressed",  0x90 | lower_bits}
 
-		BUTTON("up", 0x00),
-		BUTTON("down", 0x01),
-		BUTTON("right", 0x02),
-		BUTTON("left", 0x03),
+		BUTTON("up", sb_up),
+		BUTTON("down", sb_down),
+		BUTTON("right", sb_right),
+		BUTTON("left", sb_left),
 
-		BUTTON("dpad", 0x04),
+		BUTTON("lua1", sb_lua1),
+		BUTTON("lua2", sb_lua2),
+		BUTTON("lua3", sb_lua3),
 
-		BUTTON("r", 0x07),
-		BUTTON("l", 0x08),
-		BUTTON("start", 0x09),
+		BUTTON("r", sb_r),
+		BUTTON("l", sb_l),
+		BUTTON("start", sb_start),
 
-		BUTTON("a", 0x0A),
-		BUTTON("b", 0x0B),
-		BUTTON("c", 0x0C),
+		BUTTON("a", sb_a),
+		BUTTON("b", sb_b),
+		BUTTON("c", sb_c),
 
-		BUTTON("x", 0x0D),
-		BUTTON("y", 0x0E),
-		BUTTON("z", 0x0F),
+		BUTTON("x", sb_x),
+		BUTTON("y", sb_y),
+		BUTTON("z", sb_z),
 
 #undef BUTTON
+
+		{"large", 0xEB},
+
+		{"box", 0xEC},
+		{"box_pressed", 0xED},
+		{"box_animated", 0xEE},
 
 		{"white", 0x80},
 		{"purple", 0x81},
@@ -75,6 +84,48 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 		{"pink", 0x8D},
 		{"brown", 0x8E},
 		{"tan", 0x8F},
+	};
+
+	// When we encounter a Saturn button, what gamecontrol does it represent?
+	static const srb2::HashMap<char, gamecontrols_e> inputdefinition = {
+		{sb_up, gc_up},
+		{sb_down, gc_down},
+		{sb_right, gc_right},
+		{sb_left, gc_left},
+
+		{sb_lua1, gc_lua1},
+		{sb_lua2, gc_lua2},
+		{sb_lua3, gc_lua3},
+
+		{sb_r, gc_r},
+		{sb_l, gc_l},
+		{sb_start, gc_start},
+
+		{sb_a, gc_a},
+		{sb_b, gc_b},
+		{sb_c, gc_c},
+
+		{sb_x, gc_x},
+		{sb_y, gc_y},
+		{sb_z, gc_z},
+	};
+
+	// What physical binds should appear as Saturn icons anyway?
+	// (We don't have generic binds for stick/dpad directions, so
+	// using the existing arrow graphics is the best thing here.)
+	static const srb2::HashMap<INT32, char> prettyinputs = {
+		{KEY_UPARROW, sb_up},
+		{KEY_DOWNARROW, sb_down},
+		{KEY_LEFTARROW, sb_left},
+		{KEY_RIGHTARROW, sb_right},
+		{nc_hatup, sb_up},
+		{nc_hatdown, sb_down},
+		{nc_hatleft, sb_left},
+		{nc_hatright, sb_right},
+		{nc_lsup, sb_up},
+		{nc_lsdown, sb_down},
+		{nc_lsleft, sb_left},
+		{nc_lsright, sb_right},
 	};
 
 	string_.clear();
@@ -107,9 +158,155 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 
 		string_view code = raw.substr(1, p - 1);
 
-		if (auto it = translation.find(code); it != translation.end())
+		if (code == "dpad" || code == "dpad_pressed" || code == "dpad_animated")
 		{
-			string_.push_back(it->second); // replace with character code
+			// SPECIAL: Generic button that we invoke explicitly, not via gamecontrol reference.
+			// If we ever add anything else to this category, I promise I will create a real abstraction,
+			// but for now, just hardcode the character replacements and pray for forgiveness.
+
+			string_.push_back(0xEF); // Control code: "switch to descriptive input mode"
+			string_.push_back(0xEB); // Control code: "large button"
+			if (code == "dpad")
+				string_.push_back(0xBC);
+			else if (code == "dpad_pressed")
+				string_.push_back(0x9C);
+			else
+				string_.push_back(0xAC);
+		}
+		else if (auto it = translation.find(code); it != translation.end()) // This represents a gamecontrol, turn into Saturn button or generic button.
+		{
+
+			UINT8 localplayer = 0;
+			UINT8 indexedplayer = as_.value_or(stplyr - players);
+			for (UINT8 i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+			{
+				if (g_localplayers[i] == indexedplayer)
+				{
+					localplayer = i;
+					break;
+				}
+			}
+
+			// This isn't how v_video.cpp checks for buttons and I don't know why.
+			if (cv_descriptiveinput[localplayer].value && ((it->second & 0xF0) != 0x80)) // Should we do game control translation?
+			{
+				if (auto id = inputdefinition.find(it->second & (~0xB0)); id != inputdefinition.end()) // This is a game control, do descriptive input translation!
+				{
+					// Grab our local controls  - if pid set in the call to parse(), use stplyr's controls
+					INT32 bind = G_FindPlayerBindForGameControl(localplayer, id->second);
+
+					// EXTRA: descriptiveinput values above 1 translate binds back to Saturn buttons,
+					// with various modes for various fucked up 6bt pads
+					srb2::HashMap<INT32, char> padconfig = {};
+					switch (cv_descriptiveinput[localplayer].value)
+					{
+						case 1:
+							padconfig = standardpad;
+							break;
+						case 2:
+							padconfig = flippedpad;
+							break;
+						case 3:
+						{
+							// Most players will map gc_L to their physical L button,
+							// and gc_R to their physical R button. Assuming this is
+							// true, try to guess their physical layout based on what
+							// they've chosen.
+
+							INT32 leftbumper = G_FindPlayerBindForGameControl(localplayer, gc_l);
+							INT32 rightbumper = G_FindPlayerBindForGameControl(localplayer, gc_r);
+
+							if (leftbumper == nc_lb && rightbumper == nc_lt)
+							{
+								padconfig = saturntypeA;
+							}
+							else if (leftbumper == nc_lt && rightbumper == nc_rt)
+							{
+								padconfig = saturntypeB;
+							}
+							else if (leftbumper == nc_lb && rightbumper == nc_rb)
+							{
+								padconfig = saturntypeC;
+							}
+							else if (leftbumper == nc_ls && rightbumper == nc_lb)
+							{
+								padconfig = saturntypeE;
+							}
+							else if (leftbumper == nc_rs && rightbumper == nc_lt)
+							{
+								padconfig = saturntypeE; // Not a typo! Users might bind a Hori layout pad to either bumpers or triggers
+							}
+							else
+							{
+								padconfig = saturntypeA; // :( ???
+							}
+							break;
+						}
+						case 4:
+							padconfig = saturntypeA;
+							break;
+						case 5:
+							padconfig = saturntypeB;
+							break;
+						case 6:
+							padconfig = saturntypeC;
+							break;
+						case 7:
+							padconfig = saturntypeD;
+							break;
+						case 8:
+							padconfig = saturntypeE;
+							break;
+					}
+
+					if (auto pretty = prettyinputs.find(bind); pretty != prettyinputs.end()) // Gamepad direction or keyboard arrow, use something nice-looking
+					{
+						string_.push_back((it->second & 0xF0) | pretty->second); // original invocation has the animation bits, but the glyph bits come from the table
+					}
+					else if (auto pad = padconfig.find(bind); pad != padconfig.end())
+					{
+						// If high bits are set, this is meant to be a generic button.
+						if (pad->second & 0xF0)
+						{
+							string_.push_back(0xEF); // Control code: "switch to descriptive input mode" - buttons will draw as generics
+							string_.push_back(0xEB); // Control code: "large button"
+						}
+
+						// Clear high bits so we can add animation bits back cleanly.
+						pad->second = pad->second & (0x0F);
+
+						// original invocation has the animation bits, but the glyph bits come from the table
+						string_.push_back((it->second & 0xF0) | pad->second);
+					}
+					else
+					{
+						UINT8 fragment = (it->second & 0xB0);
+						UINT8 code = '\xEE'; // Control code: "toggle boxed drawing"
+
+						if (fragment == 0xA0)
+							code = '\xED'; // ... but animated
+						else if (fragment == 0x90)
+							code = '\xEC'; // ... but pressed
+
+						string_.push_back(code);
+
+						if (bind == -1)
+							string_.append("N/A");
+						else
+							string_.append((G_KeynumToShortString(bind)));
+
+						string_.push_back(code);
+					}
+				}
+				else // This is a color code or some other generic glyph, treat it as is.
+				{
+					string_.push_back(it->second); // replace with character code
+				}
+			}
+			else // We don't care whether this is a generic glyph, because input translation isn't on.
+			{
+				string_.push_back(it->second); // replace with character code
+			}
 		}
 		else
 		{
@@ -151,6 +348,11 @@ void Chain::fill(UINT8 color) const
 
 void Chain::string(const char* str, INT32 flags, Font font) const
 {
+	if (!str)
+	{
+		return;
+	}
+
 	const auto _ = Clipper(*this);
 
 	flags |= default_font_flags(font);
@@ -192,14 +394,16 @@ patch_t** get_button_patch(Draw::Button type, int ver)
 	X(x)[ver];
 	X(y)[ver];
 	X(z)[ver];
-	X(start);
-	X(l);
-	X(r);
-	X(up);
-	X(down);
-	X(right);
-	X(left);
-	X(dpad);
+	X(start)[ver];
+	X(l)[ver];
+	X(r)[ver];
+	X(up)[ver];
+	X(down)[ver];
+	X(right)[ver];
+	X(left)[ver];
+	X(lua1)[ver];
+	X(lua2)[ver];
+	X(lua3)[ver];
 
 #undef X
 	}
@@ -210,6 +414,48 @@ patch_t** get_button_patch(Draw::Button type, int ver)
 }; // namespace
 
 void Chain::button_(Button type, int ver, std::optional<bool> press) const
+{
+	const auto _ = Clipper(*this);
+
+	if (press)
+	{
+		K_drawButton(FloatToFixed(x_), FloatToFixed(y_), flags_, get_button_patch(type, ver), *press);
+	}
+	else
+	{
+		K_drawButtonAnim(x_, y_, flags_, get_button_patch(type, ver), I_GetTime());
+	}
+}
+
+patch_t** get_button_patch(Draw::GenericButton type, int ver)
+{
+	switch (type)
+	{
+#define X(x) \
+	case Draw::GenericButton::x:\
+		return gen_button_ ## x
+
+	X(a)[ver];
+	X(b)[ver];
+	X(x)[ver];
+	X(y)[ver];
+	X(lb)[ver];
+	X(rb)[ver];
+	X(lt)[ver];
+	X(rt)[ver];
+	X(start)[ver];
+	X(back)[ver];
+	X(ls)[ver];
+	X(rs)[ver];
+	X(dpad)[ver];
+
+#undef X
+	}
+
+	return nullptr;
+};
+
+void Chain::generic_button_(GenericButton type, int ver, std::optional<bool> press) const
 {
 	const auto _ = Clipper(*this);
 
@@ -334,5 +580,10 @@ INT32 Draw::default_font_flags(Font font)
 
 fixed_t Draw::font_width(Font font, INT32 flags, const char* string)
 {
+	if (!string)
+	{
+		return 0;
+	}
+
 	return V_StringScaledWidth(FRACUNIT, FRACUNIT, FRACUNIT, flags, font_to_fontno(font), string);
 }

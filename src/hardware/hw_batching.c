@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
@@ -130,8 +130,8 @@ void HWR_ProcessPolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPt
 		polygonArray[polygonArraySize].vertsIndex = unsortedVertexArraySize;
 		polygonArray[polygonArraySize].numVerts = iNumPts;
 		polygonArray[polygonArraySize].polyFlags = PolyFlags;
-		polygonArray[polygonArraySize].texture = current_texture;
 		polygonArray[polygonArraySize].brightmap = current_brightmap;
+		polygonArray[polygonArraySize].texture = current_texture;
 		polygonArray[polygonArraySize].shader = shader;
 		polygonArray[polygonArraySize].horizonSpecial = horizonSpecial;
 		polygonArraySize++;
@@ -203,9 +203,9 @@ static int comparePolygons(const void *p1, const void *p2)
 	diff = poly1->surf.LightInfo.fade_start - poly2->surf.LightInfo.fade_start;
 	if (diff != 0) return diff;
 	diff = poly1->surf.LightInfo.fade_end - poly2->surf.LightInfo.fade_end;
+	if (diff != 0) return diff;
 
 	diff = poly1->surf.LightInfo.directional - poly2->surf.LightInfo.directional;
-	if (diff != 0) return diff;
 
 	return diff;
 }

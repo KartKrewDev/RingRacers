@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by James Robert Roman
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by James Robert Roman
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -723,6 +723,12 @@ void Controller::search()
 
 		// Do not retarget existing target or owner.
 		if (mobj == chasing() || mobj == source())
+		{
+			continue;
+		}
+
+		// Do not target someone on the same team as our owner.
+		if (G_SameTeam(player, source()->player) == true)
 		{
 			continue;
 		}

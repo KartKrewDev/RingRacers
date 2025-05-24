@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by James Robert Roman.
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by James Robert Roman.
+// Copyright (C) 2025 by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -599,7 +599,8 @@ hyudoro_patrol_hit_player
 
 	P_SetTarget(&hyudoro_target(hyu), master);
 
-	K_SpawnAmps(master->player, K_PvPAmpReward(20, master->player, player), toucher);
+	if (master && !P_MobjWasRemoved(master))
+		K_SpawnAmps(master->player, K_PvPAmpReward(20, master->player, player), toucher);
 
 	if (center)
 		P_RemoveMobj(center);
@@ -629,7 +630,7 @@ award_immediately (mobj_t *hyu)
 			return false;
 		}
 
-		if (!P_CanPickupItem(player, 1))
+		if (!P_CanPickupItem(player, PICKUP_ITEMBOX))
 			return false;
 
 		// Prevent receiving any more items or even stacked

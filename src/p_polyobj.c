@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2006 by James Haley.
 //
@@ -1995,7 +1995,9 @@ boolean EV_DoPolyObjRotate(polyrotdata_t *prdata)
 		return false;
 
 	// create a new thinker
-	th = Z_Malloc(sizeof(polyrotate_t), PU_LEVSPEC, NULL);
+	th = Z_LevelPoolMalloc(sizeof(polyrotate_t));
+	th->thinker.alloctype = TAT_LEVELPOOL;
+	th->thinker.size = sizeof(polyrotate_t);
 	th->thinker.function.acp1 = (actionf_p1)T_PolyObjRotate;
 	P_AddThinker(THINK_POLYOBJ, &th->thinker);
 	po->thinker = &th->thinker;
@@ -2067,7 +2069,9 @@ boolean EV_DoPolyObjMove(polymovedata_t *pmdata)
 		return false;
 
 	// create a new thinker
-	th = Z_Malloc(sizeof(polymove_t), PU_LEVSPEC, NULL);
+	th = Z_LevelPoolMalloc(sizeof(polymove_t));
+	th->thinker.alloctype = TAT_LEVELPOOL;
+	th->thinker.size = sizeof(polymove_t);
 	th->thinker.function.acp1 = (actionf_p1)T_PolyObjMove;
 	P_AddThinker(THINK_POLYOBJ, &th->thinker);
 	po->thinker = &th->thinker;
@@ -2129,7 +2133,9 @@ boolean EV_DoPolyObjWaypoint(polywaypointdata_t *pwdata)
 		return false;
 
 	// create a new thinker
-	th = Z_Malloc(sizeof(polywaypoint_t), PU_LEVSPEC, NULL);
+	th = Z_LevelPoolMalloc(sizeof(polywaypoint_t));
+	th->thinker.alloctype = TAT_LEVELPOOL;
+	th->thinker.size = sizeof(polywaypoint_t);
 	th->thinker.function.acp1 = (actionf_p1)T_PolyObjWaypoint;
 	P_AddThinker(THINK_POLYOBJ, &th->thinker);
 	po->thinker = &th->thinker;
@@ -2197,7 +2203,9 @@ static void Polyobj_doSlideDoor(polyobj_t *po, polydoordata_t *doordata)
 	INT32 start;
 
 	// allocate and add a new slide door thinker
-	th = Z_Malloc(sizeof(polyslidedoor_t), PU_LEVSPEC, NULL);
+	th = Z_LevelPoolMalloc(sizeof(polyslidedoor_t));
+	th->thinker.alloctype = TAT_LEVELPOOL;
+	th->thinker.size = sizeof(polyslidedoor_t);
 	th->thinker.function.acp1 = (actionf_p1)T_PolyDoorSlide;
 	P_AddThinker(THINK_POLYOBJ, &th->thinker);
 
@@ -2248,7 +2256,9 @@ static void Polyobj_doSwingDoor(polyobj_t *po, polydoordata_t *doordata)
 	INT32 start;
 
 	// allocate and add a new swing door thinker
-	th = Z_Malloc(sizeof(polyswingdoor_t), PU_LEVSPEC, NULL);
+	th = Z_LevelPoolMalloc(sizeof(polyswingdoor_t));
+	th->thinker.alloctype = TAT_LEVELPOOL;
+	th->thinker.size = sizeof(polyswingdoor_t);
 	th->thinker.function.acp1 = (actionf_p1)T_PolyDoorSwing;
 	P_AddThinker(THINK_POLYOBJ, &th->thinker);
 
@@ -2333,7 +2343,9 @@ boolean EV_DoPolyObjDisplace(polydisplacedata_t *prdata)
 		return false;
 
 	// create a new thinker
-	th = Z_Malloc(sizeof(polydisplace_t), PU_LEVSPEC, NULL);
+	th = Z_LevelPoolMalloc(sizeof(polydisplace_t));
+	th->thinker.alloctype = TAT_LEVELPOOL;
+	th->thinker.size = sizeof(polydisplace_t);
 	th->thinker.function.acp1 = (actionf_p1)T_PolyObjDisplace;
 	P_AddThinker(THINK_POLYOBJ, &th->thinker);
 	po->thinker = &th->thinker;
@@ -2382,7 +2394,9 @@ boolean EV_DoPolyObjRotDisplace(polyrotdisplacedata_t *prdata)
 		return false;
 
 	// create a new thinker
-	th = Z_Malloc(sizeof(polyrotdisplace_t), PU_LEVSPEC, NULL);
+	th = Z_LevelPoolMalloc(sizeof(polyrotdisplace_t));
+	th->thinker.alloctype = TAT_LEVELPOOL;
+	th->thinker.size = sizeof(polyrotdisplace_t);
 	th->thinker.function.acp1 = (actionf_p1)T_PolyObjRotDisplace;
 	P_AddThinker(THINK_POLYOBJ, &th->thinker);
 	po->thinker = &th->thinker;
@@ -2483,7 +2497,9 @@ boolean EV_DoPolyObjFlag(polyflagdata_t *pfdata)
 	}
 
 	// create a new thinker
-	th = Z_Malloc(sizeof(polymove_t), PU_LEVSPEC, NULL);
+	th = Z_LevelPoolMalloc(sizeof(polymove_t));
+	th->thinker.alloctype = TAT_LEVELPOOL;
+	th->thinker.size = sizeof(polymove_t);
 	th->thinker.function.acp1 = (actionf_p1)T_PolyObjFlag;
 	P_AddThinker(THINK_POLYOBJ, &th->thinker);
 	po->thinker = &th->thinker;
@@ -2632,7 +2648,9 @@ boolean EV_DoPolyObjFade(polyfadedata_t *pfdata)
 		P_RemoveThinker(po->thinker);
 
 	// create a new thinker
-	th = Z_Malloc(sizeof(polyfade_t), PU_LEVSPEC, NULL);
+	th = Z_LevelPoolMalloc(sizeof(polyfade_t));
+	th->thinker.alloctype = TAT_LEVELPOOL;
+	th->thinker.size = sizeof(polyfade_t);
 	th->thinker.function.acp1 = (actionf_p1)T_PolyObjFade;
 	P_AddThinker(THINK_POLYOBJ, &th->thinker);
 	po->thinker = &th->thinker;

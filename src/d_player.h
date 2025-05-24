@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -50,6 +50,7 @@ typedef enum
 	SF_MACHINE          = 1, // Beep boop. Are you a robot?
 	SF_IRONMAN			= 1<<1, // Pick a new skin during POSITION. I main Random!
 	SF_BADNIK			= 1<<2, // Explodes on death
+	SF_HIVOLT           = 1<<3, // High power TA ringboxes, like 2.0-2.3!
 	// free up to and including 1<<31
 } skinflags_t;
 
@@ -134,6 +135,15 @@ typedef enum
 
 typedef enum
 {
+	PF2_SELFMUTE = 1<<1,
+	PF2_SELFDEAFEN = 1<<2,
+	PF2_SERVERMUTE = 1<<3,
+	PF2_SERVERDEAFEN = 1<<4,
+	PF2_STRICTFASTFALL = 1<<5,
+} pflags2_t;
+
+typedef enum
+{
 	// Are animation frames playing?
 	PA_ETC=0,
 	PA_STILL,
@@ -150,6 +160,7 @@ typedef enum
 	CR_SLIDING,
 	CR_ZOOMTUBE,
 	CR_DASHRING,
+	CR_TRAPBUBBLE,
 } carrytype_t; // carry
 
 /*
@@ -397,6 +408,7 @@ struct botvars_t
 	// All entries above persist between rounds and must be recorded in demos
 
 	fixed_t rubberband; // Bot rubberband value
+	UINT8 bumpslow;
 
 	tic_t itemdelay; // Delay before using item at all
 	tic_t itemconfirm; // When high enough, they will use their item
@@ -634,6 +646,7 @@ struct player_t
 	// Bit flags.
 	// See pflags_t, above.
 	UINT32 pflags;
+	UINT32 pflags2;
 
 	// playing animation.
 	panim_t panim;
@@ -671,6 +684,11 @@ struct player_t
 	UINT8 carry;
 	UINT16 dye;
 
+	INT32 prefskin; // Queued skin change
+	UINT16 prefcolor; // Queued color change
+	INT32 preffollower; // Queued follower change
+	UINT16 preffollowercolor; // Queued follower color change
+
 	// SRB2kart stuff
 	INT32 karthud[NUMKARTHUD];
 
@@ -678,12 +696,19 @@ struct player_t
 	UINT8 position;			// Used for Kart positions, mostly for deterministic stuff
 	UINT8 oldposition;		// Used for taunting when you pass someone
 	UINT8 positiondelay;	// Used for position number, so it can grow when passing
+
+	UINT8 teamposition;		// Position, but only against other teams -- not your own.
+	UINT8 teamimportance;	// Opposite of team position x2, with +1 for being in 1st.
+
 	UINT32 distancetofinish;
 	UINT32 distancetofinishprev;
+
 	UINT32 lastpickupdistance; // Anti item set farming
 	UINT8 lastpickuptype;
+
 	waypoint_t *currentwaypoint;
 	waypoint_t *nextwaypoint;
+
 	respawnvars_t respawn;	// Respawn info
 	mobj_t *ringShooter;	// DEZ respawner object
 	tic_t airtime; 			// Used to track just air time, but has evolved over time into a general "karted" timer. Rename this variable?
@@ -702,8 +727,12 @@ struct player_t
 	UINT8 noEbrakeMagnet;	// Briefly disable 2.2 responsive ebrake if you're bumped by another player.
 	UINT8 tumbleBounces;
 	UINT16 tumbleHeight;	// In *mobjscaled* fracunits, or mfu, not raw fu
+	UINT16 stunned;			// Number of tics during which rings cannot be picked up
+	UINT8 stunnedCombo;		// Number of hits sustained while stunned, reduces consecutive stun penalties
 	UINT8 justDI;			// Turn-lockout timer to briefly prevent unintended turning after DI, resets when actionable or no input
 	boolean flipDI;			// Bananas flip the DI direction. Was a bug, but it made bananas much more interesting.
+
+	UINT8 cangrabitems;
 
 	SINT8 drift;			// (-5 to 5) - Drifting Left or Right, plus a bigger counter = sharper turn
 	fixed_t driftcharge;	// Charge your drift so you can release a burst of speed
@@ -755,6 +784,8 @@ struct player_t
 	// Item held stuff
 	SINT8 itemtype;		// KITEM_ constant for item number
 	UINT8 itemamount;	// Amount of said item
+	SINT8 backupitemtype;
+	UINT8 backupitemamount;
 	SINT8 throwdir; 	// Held dir of controls; 1 = forward, 0 = none, -1 = backward (was "player->heldDir")
 	UINT8 itemscale;	// Item scale value, from when an item was taken out. (0 for normal, 1 for grow, 2 for shrink.)
 
@@ -920,15 +951,15 @@ struct player_t
 	tic_t laptime[LAP__MAX];
 	UINT8 laps; // Number of laps (optional)
 	UINT8 latestlap;
-	UINT32 lapPoints; // Points given from laps
-	INT32 exp;
+	UINT32 exp; // Points given from laps and checkpoints
+	fixed_t gradingfactor;
 	UINT16 gradingpointnum; // how many grading points, checkpoint and finishline, you've passed
 	INT32 cheatchecknum; // The number of the last cheatcheck you hit
 	INT32 checkpointId; // Players respawn here, objects/checkpoint.cpp
 
 	INT16 duelscore;
 
-	UINT8 ctfteam; // 0 == Spectator, 1 == Red, 2 == Blue
+	UINT8 team; // 0 == Spectator, 1 == Red, 2 == Blue
 
 	UINT8 checkskip; // Skipping checkpoints? Oh no no no
 
@@ -983,6 +1014,8 @@ struct player_t
 	UINT8 tripwireReboundDelay; // When failing Tripwire, brieftly lock out speed-based tripwire pass (anti-cheese)
 
 	UINT16 wavedash; // How long is our chained sliptide? Grant a proportional boost when it's over.
+	UINT16 wavedashleft;
+	UINT16 wavedashright;
 	UINT8 wavedashdelay; // How long since the last sliptide? Only boost once you've been straightened out for a bit.
 	UINT16 wavedashboost; // The actual boost granted from wavedash.
 	fixed_t wavedashpower; // Is this a bullshit "tap" wavedash? Weaken lower-charge wavedashes while keeping long sliptides fully rewarding.
@@ -1040,11 +1073,12 @@ struct player_t
 
 	UINT8 ringboxdelay; // Delay until Ring Box auto-activates
 	UINT8 ringboxaward; // Where did we stop?
+	UINT32 lastringboost; // What was our accumulated boost when locking the award?
 
 	UINT8 amps;
 	UINT8 amppickup;
 	UINT8 ampspending;
-	
+
 	UINT16 overdrive;
 	UINT16 overshield;
 	fixed_t overdrivepower;
@@ -1054,6 +1088,9 @@ struct player_t
 	UINT8 itemflags; 	// holds IF_ flags (see itemflags_t)
 
 	fixed_t outrun; // Milky Way road effect
+
+	fixed_t transfer; // Tired of Ramp Park fastfalls
+	boolean transfersound;
 
 	uint8_t public_key[PUBKEYLENGTH];
 

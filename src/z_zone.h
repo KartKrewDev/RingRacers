@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -147,6 +147,13 @@ size_t Z_TagsUsage(INT32 lowtag, INT32 hightag);
 //
 char *Z_StrDup(const char *in);
 #define Z_Unlock(p) (void)p // TODO: remove this now that NDS code has been removed
+
+//
+// Specialty allocation functions
+//
+void *Z_LevelPoolMalloc(size_t size);
+void *Z_LevelPoolCalloc(size_t size);
+void Z_LevelPoolFree(void *p, size_t size);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -1612,6 +1612,12 @@ typedef enum
 	sfx_die01,
 	sfx_die02,
 	sfx_die03,
+
+	// Walltransfer fuck
+	sfx_ggfall,
+
+	// :apple:
+	sfx_aple,
 
 	// And LASTLY, Kart's skin sounds.
 	sfx_kwin,

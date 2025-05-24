@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by AJ "Tyron" Martinez
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by AJ "Tyron" Martinez
+// Copyright (C) 2025 by Kart Krew
 // Copyright (C) 2020 by Sonic Team Junior
 // Copyright (C) 2000 by DooM Legacy Team
 //
@@ -12,14 +12,16 @@
 /// \file  k_bans.c
 /// \brief replacement for DooM Legacy ban system
 
-#include <fstream>
 #include <stdexcept>
-#include <vector>
 
 #include <fmt/format.h>
-#include <nlohmann/json.hpp>
+#include <tcb/span.hpp>
 
 #include "i_tcp_detail.h" // clientaddress
+
+#include "core/json.hpp"
+#include "core/string.h"
+#include "io/streams.hpp"
 #include "k_bans.h"
 #include "byteptr.h" // READ/WRITE macros
 #include "command.h"
@@ -34,7 +36,9 @@
 #include "z_zone.h"
 #include "i_addrinfo.h" // I_getaddrinfo
 
-using nlohmann::json;
+using srb2::JsonArray;
+using srb2::JsonObject;
+using srb2::JsonValue;
 
 static mysockaddr_t *DuplicateSockAddr(const mysockaddr_t *source)
 {
@@ -43,22 +47,22 @@ static mysockaddr_t *DuplicateSockAddr(const mysockaddr_t *source)
 	return dup;
 }
 
-static std::vector<banrecord_t> bans;
+static srb2::Vector<banrecord_t> bans;
 
 static uint8_t allZero[PUBKEYLENGTH];
 
-static void load_bans_array_v1(json& array)
+static void load_bans_array_v1(const JsonArray& array)
 {
-	for (json& object : array)
+	for (const JsonValue& object : array)
 	{
 		uint8_t public_key_bin[PUBKEYLENGTH];
 
-		std::string public_key = object.at("public_key");
-		std::string ip_address = object.at("ip_address");
-		time_t expires = object.at("expires");
-		UINT8 subnet_mask = object.at("subnet_mask");
-		std::string username = object.at("username");
-		std::string reason = object.at("reason");
+		srb2::String public_key = object.at("public_key").get<srb2::String>();
+		srb2::String ip_address = object.at("ip_address").get<srb2::String>();
+		time_t expires = object.at("expires").get<int64_t>();
+		UINT8 subnet_mask = object.at("subnet_mask").get<UINT8>();
+		srb2::String username = object.at("username").get<srb2::String>();
+		srb2::String reason = object.at("reason").get<srb2::String>();
 
 		if (!FromPrettyRRID(public_key_bin, public_key.c_str()))
 		{
@@ -86,16 +90,31 @@ void SV_LoadBans(void)
 	if (!server)
 		return;
 
-	json object;
+	JsonValue object;
+
+	srb2::String banspath { srb2::format("{}/{}", srb2home, BANFILE) };
+	srb2::io::BufferedInputStream<srb2::io::FileStream> bis;
+	try
+	{
+		srb2::io::FileStream fs { banspath, srb2::io::FileStreamMode::kRead };
+		bis = srb2::io::BufferedInputStream(std::move(fs));
+	}
+	catch (const srb2::io::FileStreamException& ex)
+	{
+		// file didn't open, likely doesn't exist
+		return;
+	}
 
 	try
 	{
-		std::ifstream f(va(pandf, srb2home, BANFILE));
-
-		if (f.is_open())
+		srb2::Vector<tcb::byte> data = srb2::io::read_to_vec(bis);
+		srb2::String data_s;
+		data_s.reserve(data.size());
+		for (auto b : data)
 		{
-			f >> object;
+			data_s.push_back(std::to_integer<char>(b));
 		}
+		object = JsonValue::from_json_string(data_s);
 	}
 	catch (const std::exception& ex)
 	{
@@ -115,11 +134,11 @@ void SV_LoadBans(void)
 	{
 		if (object.value("version", 1) == 1)
 		{
-			json& array = object.at("bans");
+			JsonValue& array = object.at("bans");
 
 			if (array.is_array())
 			{
-				load_bans_array_v1(array);
+				load_bans_array_v1(array.as_array());
 			}
 		}
 	}
@@ -131,31 +150,36 @@ void SV_LoadBans(void)
 
 void SV_SaveBans(void)
 {
-	json object = json::object();
+	JsonValue object = JsonValue(JsonObject());
 
 	object["version"] = 1;
-	json& array = object["bans"];
+	JsonValue& array_value = object["bans"];
 
-	array = json::array();
+	array_value = JsonValue(JsonArray());
+	JsonArray& array = array_value.as_array();
 
 	for (banrecord_t& ban : bans)
 	{
 		if (ban.deleted)
 			continue;
 
-		array.push_back({
+		array.push_back(JsonObject {
 			{"public_key", GetPrettyRRID(ban.public_key, false)},
 			{"ip_address", SOCK_AddrToStr(ban.address)},
 			{"subnet_mask", ban.mask},
-			{"expires", ban.expires},
+			{"expires", static_cast<int64_t>(ban.expires)},
 			{"username", ban.username},
 			{"reason", ban.reason},
 		});
 	}
 
+	srb2::String json_string = object.to_json_string();
+	srb2::String banfile_path = srb2::format("{}/{}", srb2home, BANFILE);
+
 	try
 	{
-		std::ofstream(va(pandf, srb2home, BANFILE)) << object;
+		srb2::io::FileStream fs { banfile_path, srb2::io::FileStreamMode::kWrite };
+		srb2::io::write_exact(fs, tcb::as_bytes(tcb::span(json_string)));
 	}
 	catch (const std::exception& ex)
 	{
@@ -345,10 +369,10 @@ static void SV_BanSearch(boolean remove)
 		const char* stringaddress = SOCK_AddrToStr(ban.address);
 		const char* stringkey = GetPrettyRRID(ban.public_key, true);
 
-		std::string recordprint = fmt::format(
+		srb2::String recordprint = srb2::format(
 			"{}{} - {} [{}] - {}",
 			stringaddress,
-			ban.mask && ban.mask != 32 ? fmt::format("/{}", ban.mask) : "",
+			ban.mask && ban.mask != 32 ? srb2::format("/{}", ban.mask) : "",
 			ban.username,
 			stringkey,
 			ban.reason
@@ -359,7 +383,7 @@ static void SV_BanSearch(boolean remove)
 			if (ban.expires < now)
 				recordprint += " - EXPIRED";
 			else
-				recordprint += fmt::format(" - expires {}m", (ban.expires - now)/60);
+				recordprint += srb2::format(" - expires {}m", (ban.expires - now)/60);
 		}
 
 		CONS_Printf("%s\n", recordprint.c_str());

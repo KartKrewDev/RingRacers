@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Ronald "Eidolon" Kinard
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Ronald "Eidolon" Kinard
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -12,15 +12,15 @@
 #define __SRB2_IO_STREAMS_HPP__
 
 #include <cstddef>
-#include <optional>
 #include <stdexcept>
-#include <string>
 #include <type_traits>
 #include <utility>
-#include <vector>
 
 #include <tcb/span.hpp>
 #include <zlib.h>
+
+#include "../core/string.h"
+#include "../core/vector.hpp"
 
 namespace srb2::io
 {
@@ -484,13 +484,13 @@ inline void read_exact(SpanStream& stream, tcb::span<std::byte> buffer)
 }
 
 class VecStream {
-	std::vector<std::byte> vec_;
+	srb2::Vector<std::byte> vec_;
 	std::size_t head_ {0};
 
 public:
 	VecStream() = default;
-	VecStream(const std::vector<std::byte>& vec) : vec_(vec) {}
-	VecStream(std::vector<std::byte>&& vec) : vec_(std::move(vec)) {}
+	VecStream(const srb2::Vector<std::byte>& vec) : vec_(vec) {}
+	VecStream(srb2::Vector<std::byte>&& vec) : vec_(std::move(vec)) {}
 	VecStream(const VecStream& rhs) = default;
 	VecStream(VecStream&& rhs) = default;
 
@@ -549,7 +549,7 @@ public:
 		return head_;
 	}
 
-	std::vector<std::byte>& vector() { return vec_; }
+	srb2::Vector<std::byte>& vector() { return vec_; }
 
 	friend void read_exact(VecStream& stream, tcb::span<std::byte> buffer);
 };
@@ -674,7 +674,7 @@ template <typename I,
 class ZlibInputStream {
 	I inner_;
 	z_stream stream_;
-	std::vector<std::byte> buf_;
+	srb2::Vector<std::byte> buf_;
 	std::size_t buf_head_;
 	bool zstream_initialized_;
 	bool zstream_ended_;
@@ -820,7 +820,7 @@ template <typename O,
 class BufferedOutputStream final
 {
 	O inner_;
-	std::vector<std::byte> buf_;
+	srb2::Vector<std::byte> buf_;
 	tcb::span<const std::byte>::size_type cap_;
 
 public:
@@ -872,7 +872,7 @@ template <typename I,
 class BufferedInputStream final
 {
 	I inner_;
-	std::vector<std::byte> buf_;
+	srb2::Vector<std::byte> buf_;
 	tcb::span<std::byte>::size_type cap_;
 
 public:
@@ -933,7 +933,7 @@ extern template class BufferedInputStream<FileStream>;
 
 template <typename I, typename O>
 StreamSize pipe_all(I& input, O& output) {
-	std::vector<std::byte> buf;
+	srb2::Vector<std::byte> buf;
 
 	StreamSize total_written = 0;
 	StreamSize read_this_time = 0;
@@ -951,7 +951,7 @@ StreamSize pipe_all(I& input, O& output) {
 }
 
 template <typename I>
-std::vector<std::byte> read_to_vec(I& input) {
+srb2::Vector<std::byte> read_to_vec(I& input) {
 	VecStream out;
 	pipe_all(input, out);
 	return std::move(out.vector());

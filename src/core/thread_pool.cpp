@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Ronald "Eidolon" Kinard
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Ronald "Eidolon" Kinard
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -14,12 +14,13 @@
 #include <condition_variable>
 #include <exception>
 #include <mutex>
-#include <string>
 #include <system_error>
 
 #include <fmt/format.h>
 #include <tracy/tracy/Tracy.hpp>
 
+#include "../core/string.h"
+#include "../core/vector.hpp"
 #include "../cxxutil.hpp"
 #include "../m_argv.h"
 
@@ -50,11 +51,11 @@ static void pool_executor(
 	std::shared_ptr<std::mutex> worker_ready_mutex,
 	std::shared_ptr<std::condition_variable> worker_ready_condvar,
 	std::shared_ptr<ThreadPool::Queue> my_wq,
-	std::vector<std::shared_ptr<ThreadPool::Queue>> other_wqs
+	srb2::Vector<std::shared_ptr<ThreadPool::Queue>> other_wqs
 )
 {
 	{
-		std::string thread_name = fmt::format("Thread Pool Thread {}", thread_index);
+		srb2::String thread_name = srb2::format("Thread Pool Thread {}", thread_index);
 		tracy::SetThreadName(thread_name.c_str());
 	}
 
@@ -133,7 +134,7 @@ ThreadPool::ThreadPool(size_t threads)
 	for (size_t i = 0; i < threads; i++)
 	{
 		std::shared_ptr<Queue> my_queue = work_queues_[i];
-		std::vector<std::shared_ptr<Queue>> other_queues;
+		srb2::Vector<std::shared_ptr<Queue>> other_queues;
 		for (size_t j = 0; j < threads; j++)
 		{
 			// Order the other queues starting from the next adjacent worker

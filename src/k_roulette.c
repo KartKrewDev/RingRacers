@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Sally "TehRealSalt" Cochenour
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Sally "TehRealSalt" Cochenour
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -486,8 +486,8 @@ static UINT32 K_ScaleItemDistance(const player_t *player, UINT32 distance, UINT8
 		FRACUNIT + (K_ItemOddsScale(numPlayers) / 2)
 	);
 
-	// Distance is reduced based on the player's exp
-	// distance = FixedMul(distance, player->exp);
+	// Distance is reduced based on the player's gradingfactor
+	// distance = FixedMul(distance, player->gradingfactor);
 
 	return distance;
 }
@@ -927,7 +927,7 @@ static void K_AddItemToReel(const player_t *player, itemroulette_t *const roulet
 	// If we're in ring debt, pad out the reel with
 	// a BUNCH of Super Rings.
 	if (K_ItemEnabled(KITEM_SUPERRING) == true
-		&& player->rings <= 0
+		&& player->rings <= -10
 		&& player->position == 1
 		&& (gametyperules & GTR_SPHERES) == 0)
 	{
@@ -1078,7 +1078,7 @@ static boolean K_IsItemUselessAlone(kartitems_t item)
 		case KRITEM_TRIPLEORBINAUT:
 		case KRITEM_QUADORBINAUT:
 		case KITEM_BALLHOG:
-		case KITEM_BUBBLESHIELD:
+		case KITEM_BUBBLESHIELD: // shhhhhh
 			return true;
 		default:
 			return false;
@@ -1103,6 +1103,18 @@ ATTRUNUSED static boolean K_IsItemSpeed(kartitems_t item)
 	}
 }
 
+static fixed_t K_RequiredXPForItem(kartitems_t item)
+{
+	switch (item)
+	{
+		case KITEM_GARDENTOP:
+		case KITEM_SHRINK:
+			return FRACUNIT; // "Base" item odds
+		default:
+			return 0;
+	}
+}
+
 // Which items are disallowed for this player's specific placement?
 static boolean K_ShouldPlayerAllowItem(kartitems_t item, const player_t *player)
 {
@@ -1118,6 +1130,11 @@ static boolean K_ShouldPlayerAllowItem(kartitems_t item, const player_t *player)
 		// A little inelegant: filter the most chaotic items from courses with early sets and tight layouts.
 		if (K_IsItemPower(item) && (leveltime < ((15*TICRATE) + starttime)))
 			return false;
+
+		// GIGA power items reserved only for players who were doing great and died.
+		if (player->gradingfactor < K_RequiredXPForItem(item))
+			return false;
+
 		return !K_IsItemFirstOnly(item);
 	}
 }
@@ -1307,7 +1324,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 			// every item in the game!
 
 			// Create the same item reel given the same inputs.
-			// P_SetRandSeed(PR_ITEM_ROULETTE, ITEM_REEL_SEED);
+			P_SetRandSeed(PR_ITEM_ROULETTE, ITEM_REEL_SEED);
 
 			for (i = 1; i < NUMKARTRESULTS; i++)
 			{
@@ -1380,8 +1397,10 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	roulette->preexpdist = K_GetItemRouletteDistance(player, roulette->playing);
 	roulette->dist = roulette->preexpdist;
 
-	if (gametyperules & GTR_CIRCUIT)
-		roulette->dist = FixedMul(roulette->preexpdist, max(player->exp, FRACUNIT/2));
+	if ((gametyperules & GTR_CIRCUIT) && !K_Cooperative())
+	{
+		roulette->dist = FixedMul(roulette->preexpdist, max(player->gradingfactor, FRACUNIT/2));
+	}
 
 	// ===============================================================================
 	// Dynamic Roulette. Oh boy!
@@ -1553,7 +1572,8 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	if ((gametyperules & GTR_CIRCUIT) 
 		&& specialstageinfo.valid == false
 		&& (spb_odds > 0) & (spbplace == -1)
-		&& (roulette->preexpdist >= powers[KITEM_SPB])) // SPECIAL CASE: Check raw distance instead of EXP-influenced target distance.
+		&& (roulette->preexpdist >= powers[KITEM_SPB]) // SPECIAL CASE: Check raw distance instead of EXP-influenced target distance.
+		&& !K_GetItemCooldown(KITEM_SPB))
 	{
 		// When reenabling the SPB, we also adjust its delta to ensure that it has good odds of showing up.
 		// Players who are _seriously_ struggling are more likely to see Invinc or Rockets, since those items
@@ -2012,7 +2032,7 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 			else
 				S_StartSound(NULL, sfx_itrol1 + roulette->sound);
 			
-			if (roulette->index == 0)
+			if (roulette->index == 0 && roulette->itemListLen > 1)
 			{
 				S_StartSound(NULL, sfx_kc50);
 				S_StartSound(NULL, sfx_kc50);

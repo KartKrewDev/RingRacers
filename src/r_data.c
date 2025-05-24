@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -1162,7 +1162,7 @@ void R_PrecacheLevel(void)
 		return;
 
 	// do not flush the memory, Z_Malloc twice with same user will cause error in Z_CheckHeap()
-	if (rendermode != render_soft)
+	if (rendermode == render_opengl)
 		return;
 
 	// Precache flats.

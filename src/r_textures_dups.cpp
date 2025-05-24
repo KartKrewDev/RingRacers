@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by James Robert Roman
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by James Robert Roman
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -13,14 +13,14 @@
 #include <cstdint>
 #include <filesystem>
 #include <map>
-#include <string>
 #include <string_view>
 #include <thread>
-#include <unordered_map>
-#include <vector>
 
 #include <fmt/format.h>
 
+#include "core/hash_map.hpp"
+#include "core/string.h"
+#include "core/vector.hpp"
 #include "cxxutil.hpp"
 #include "doomstat.h"
 #include "r_textures.h"
@@ -29,14 +29,14 @@
 namespace
 {
 
-std::unordered_map<std::string, std::vector<const texture_t*>> g_dups;
-std::map<std::string, std::vector<std::string>> g_warnings;
+srb2::HashMap<srb2::String, srb2::Vector<const texture_t*>> g_dups;
+std::map<srb2::String, srb2::Vector<srb2::String>> g_warnings;
 std::thread g_dups_thread;
 
-std::string key8char(const char cstr[8])
+srb2::String key8char(const char cstr[8])
 {
 	std::string_view view(cstr, 8);
-	std::string key;
+	srb2::String key;
 
 	view = view.substr(0, view.find('\0')); // terminate by '\0'
 	key.reserve(view.size());
@@ -50,7 +50,7 @@ std::string key8char(const char cstr[8])
 	return key;
 }
 
-std::string texture_location(const texture_t& tex)
+srb2::String texture_location(const texture_t& tex)
 {
 	if (tex.type == TEXTURETYPE_SINGLEPATCH)
 	{
@@ -59,7 +59,7 @@ std::string texture_location(const texture_t& tex)
 		const texpatch_t& texpat = tex.patches[0];
 		const wadfile_t& wad = *wadfiles[texpat.wad];
 
-		return fmt::format(
+		return srb2::format(
 			"'{}/{}'",
 			std::filesystem::path(wad.filename).filename().string(),
 			wad.lumpinfo[texpat.lump].fullname
@@ -108,7 +108,7 @@ void R_CheckTextureDuplicates(INT32 start, INT32 end)
 	auto collate_dups = [end, find_dup](int32_t start)
 	{
 		const texture_t* t1 = textures[start];
-		const std::string key = key8char(t1->name);
+		const srb2::String key = key8char(t1->name);
 
 		if (g_dups.find(key) != g_dups.end())
 		{
@@ -119,7 +119,7 @@ void R_CheckTextureDuplicates(INT32 start, INT32 end)
 
 		if (idx < end)
 		{
-			std::vector<const texture_t*>& v = g_dups[key];
+			srb2::Vector<const texture_t*>& v = g_dups[key];
 
 			v.push_back(textures[start]);
 
@@ -175,7 +175,7 @@ void R_PrintTextureWarnings(void)
 	{
 		CONS_Alert(CONS_WARNING, "\n%s", header.c_str());
 
-		for (const std::string& warning : v)
+		for (const srb2::String& warning : v)
 		{
 			CONS_Printf("%s\n", warning.c_str());
 		}

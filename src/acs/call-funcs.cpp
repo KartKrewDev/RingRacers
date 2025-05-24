@@ -1,8 +1,8 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
 // Copyright (C) 2016 by James Haley, David Hill, et al. (Team Eternity)
-// Copyright (C) 2024 by Sally "TehRealSalt" Cochenour
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Sally "TehRealSalt" Cochenour
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -1148,6 +1148,37 @@ bool CallFunc_SetLineTexture(ACSVM::Thread *thread, const ACSVM::Word *argV, ACS
 }
 
 /*--------------------------------------------------
+	bool CallFunc_SetLineBlocking(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Changes a linedef's blocking flag.
+--------------------------------------------------*/
+bool CallFunc_SetLineBlocking(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	mtag_t tag = 0;
+	UINT32 blocking = 0;
+	INT32 lineId = -1;
+
+	tag = argV[0];
+
+	if (argV[1] != 0)
+	{
+		blocking = ML_IMPASSABLE;
+	}
+
+	TAG_ITER_LINES(tag, lineId)
+	{
+		line_t *line = &lines[lineId];
+
+		if (line->flags & ML_TWOSIDED) // disallow changing this for 1-sided lines
+		{
+			line->flags = (line->flags & ~ML_IMPASSABLE) | blocking;
+		}
+	}
+
+	return false;
+}
+
+/*--------------------------------------------------
 	bool CallFunc_SetLineSpecial(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Changes a linedef's special and arguments.
@@ -1271,7 +1302,7 @@ bool CallFunc_EndPrintBold(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM
 bool CallFunc_PlayerTeam(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
 	auto info = &static_cast<Thread *>(thread)->info;
-	UINT8 teamID = 0;
+	UINT8 teamID = TEAM_UNASSIGNED;
 
 	(void)argV;
 	(void)argC;
@@ -1280,7 +1311,7 @@ bool CallFunc_PlayerTeam(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::
 		&& (info->mo != NULL && P_MobjWasRemoved(info->mo) == false)
 		&& (info->mo->player != NULL))
 	{
-		teamID = info->mo->player->ctfteam;
+		teamID = info->mo->player->team;
 	}
 
 	thread->dataStk.push(teamID);
@@ -1882,8 +1913,9 @@ bool CallFunc_GetGrabbedSprayCan(ACSVM::Thread *thread, const ACSVM::Word *argV,
 	&& gamemap-1 < basenummapheaders)
 	{
 		// See also P_SprayCanInit
-		UINT16 can_id = mapheaderinfo[gamemap-1]->cache_spraycan;
+		UINT16 can_id = mapheaderinfo[gamemap-1]->records.spraycan;
 
+		// Intentionally not affected by MCAN_BONUS
 		if (can_id < gamedata->numspraycans)
 		{
 			UINT16 col = gamedata->spraycans[can_id].col;

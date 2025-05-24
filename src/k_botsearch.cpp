@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Sally "TehRealSalt" Cochenour
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Sally "TehRealSalt" Cochenour
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -353,13 +353,14 @@ static void K_AddDodgeObject(mobj_t *thing, UINT8 side, UINT8 weight)
 }
 
 /*--------------------------------------------------
-	static boolean K_PlayerAttackSteer(mobj_t *thing, UINT8 side, UINT8 weight, boolean attackCond, boolean dodgeCond)
+	static boolean K_PlayerAttackSteer(mobj_t *thing, boolean friendly_fire, UINT8 side, UINT8 weight, boolean attackCond, boolean dodgeCond)
 
 		Checks two conditions to determine if the object should be
 		attacked or dodged.
 
 	Input Arguments:-
 		thing - Object to move towards/away from.
+		friendly_fire - If the attack would be against a friendly player.
 		side - Which side -- 0 for left, 1 for right
 		weight - How important this object is.
 		attackCond - If this is true, and dodgeCond isn't, then we go towards the object.
@@ -368,8 +369,15 @@ static void K_AddDodgeObject(mobj_t *thing, UINT8 side, UINT8 weight)
 	Return:-
 		true if either condition is successful.
 --------------------------------------------------*/
-static boolean K_PlayerAttackSteer(mobj_t *thing, UINT8 side, UINT8 weight, boolean attackCond, boolean dodgeCond)
+static boolean K_PlayerAttackSteer(mobj_t *thing, boolean friendly_fire, UINT8 side, UINT8 weight, boolean attackCond, boolean dodgeCond)
 {
+	if (friendly_fire == true && attackCond == true && dodgeCond == false)
+	{
+		// Dodge, don't attack.
+		attackCond = false;
+		dodgeCond = true;
+	}
+
 	if (attackCond == true && dodgeCond == false)
 	{
 		K_AddAttackObject(thing, side, weight);
@@ -489,7 +497,7 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 				break;
 			}
 
-			if (P_CanPickupItem(g_nudgeSearch.botmo->player, 1))
+			if (P_CanPickupItem(g_nudgeSearch.botmo->player, PICKUP_ITEMBOX))
 			{
 				K_AddAttackObject(thing, side, ((thing->extravalue1 < RINGBOX_TIME) ? 10 : 20));
 			}
@@ -500,7 +508,7 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 				break;
 			}
 
-			if (P_CanPickupItem(g_nudgeSearch.botmo->player, 1)) // Can pick up an actual item
+			if (P_CanPickupItem(g_nudgeSearch.botmo->player, PICKUP_ITEMBOX)) // Can pick up an actual item
 			{
 				const UINT8 stealth = K_EggboxStealth(thing->x, thing->y);
 				const UINT8 requiredstealth = (g_nudgeSearch.botmo->player->botvars.difficulty * g_nudgeSearch.botmo->player->botvars.difficulty);
@@ -521,7 +529,7 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 				break;
 			}
 
-			if (P_CanPickupItem(g_nudgeSearch.botmo->player, 3))
+			if (P_CanPickupItem(g_nudgeSearch.botmo->player, PICKUP_PAPERITEM))
 			{
 				K_AddAttackObject(thing, side, 20);
 			}
@@ -533,8 +541,8 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 				break;
 			}
 
-			if ((RINGTOTAL(g_nudgeSearch.botmo->player) < 20 && !(g_nudgeSearch.botmo->player->pflags & PF_RINGLOCK)
-				&& P_CanPickupItem(g_nudgeSearch.botmo->player, 0))
+			if ((RINGTOTAL(g_nudgeSearch.botmo->player) < 20
+				&& P_CanPickupItem(g_nudgeSearch.botmo->player, PICKUP_RINGORSPHERE))
 				&& !thing->extravalue1
 				&& (g_nudgeSearch.botmo->player->itemtype != KITEM_LIGHTNINGSHIELD))
 			{
@@ -547,9 +555,11 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 				&& !thing->player->hyudorotimer
 				&& !g_nudgeSearch.botmo->player->hyudorotimer)
 			{
+				const boolean same_team = G_SameTeam(g_nudgeSearch.botmo->player, thing->player);
+
 				// There REALLY ought to be a better way to handle this logic, right?!
 				// Squishing
-				if (K_PlayerAttackSteer(thing, side, 20,
+				if (K_PlayerAttackSteer(thing, same_team, side, 20,
 					K_IsBigger(g_nudgeSearch.botmo, thing),
 					K_IsBigger(thing, g_nudgeSearch.botmo)
 				))
@@ -557,7 +567,7 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 					break;
 				}
 				// Invincibility
-				else if (K_PlayerAttackSteer(thing, side, 20,
+				else if (K_PlayerAttackSteer(thing, same_team, side, 20,
 					g_nudgeSearch.botmo->player->invincibilitytimer,
 					thing->player->invincibilitytimer
 				))
@@ -565,7 +575,7 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 					break;
 				}
 				// Lightning Shield
-				else if (K_PlayerAttackSteer(thing, side, 20,
+				else if (K_PlayerAttackSteer(thing, same_team, side, 20,
 					g_nudgeSearch.botmo->player->itemtype == KITEM_LIGHTNINGSHIELD,
 					thing->player->itemtype == KITEM_LIGHTNINGSHIELD
 				))
@@ -573,7 +583,7 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 					break;
 				}
 				// Bubble Shield
-				else if (K_PlayerAttackSteer(thing, side, 20,
+				else if (K_PlayerAttackSteer(thing, same_team, side, 20,
 					g_nudgeSearch.botmo->player->itemtype == KITEM_BUBBLESHIELD,
 					thing->player->itemtype == KITEM_BUBBLESHIELD
 				))
@@ -581,7 +591,7 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 					break;
 				}
 				// Flame Shield
-				else if (K_PlayerAttackSteer(thing, side, 20,
+				else if (K_PlayerAttackSteer(thing, same_team, side, 20,
 					g_nudgeSearch.botmo->player->itemtype == KITEM_FLAMESHIELD,
 					thing->player->itemtype == KITEM_FLAMESHIELD
 				))
@@ -589,7 +599,7 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 					break;
 				}
 				// Has held item shield
-				else if (K_PlayerAttackSteer(thing, side, 20,
+				else if (K_PlayerAttackSteer(thing, same_team, side, 20,
 					(thing->player->itemflags & (IF_ITEMOUT|IF_EGGMANOUT)),
 					(g_nudgeSearch.botmo->player->itemflags & (IF_ITEMOUT|IF_EGGMANOUT))
 				))
@@ -597,7 +607,7 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 					break;
 				}
 				// Ring Sting
-				else if (K_PlayerAttackSteer(thing, side, 20,
+				else if (K_PlayerAttackSteer(thing, same_team, side, 20,
 					thing->player->rings <= 0,
 					g_nudgeSearch.botmo->player->rings <= 0
 				))
@@ -620,7 +630,7 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 						weightdiff = ourweight - theirweight;
 					}
 
-					if (weightdiff > mapobjectscale)
+					if (weightdiff > mapobjectscale && same_team == false)
 					{
 						K_AddAttackObject(thing, side, 20);
 					}

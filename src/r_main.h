@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -137,6 +137,8 @@ extern consvar_t cv_skybox;
 extern consvar_t cv_drawpickups;
 extern consvar_t cv_debugfinishline;
 extern consvar_t cv_drawinput;
+extern consvar_t cv_drawtimer;
+extern consvar_t cv_debugfonts;
 
 // debugging
 

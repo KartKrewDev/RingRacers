@@ -1,8 +1,8 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by "Lat'"
-// Copyright (C) 2024 by Lachlan "Lach" Wright
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by "Lat'"
+// Copyright (C) 2025 by Lachlan "Lach" Wright
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -188,6 +188,7 @@ static void DashRingLaunch(player_t *player, mobj_t *ring)
 	player->flashing = 0;
 	player->fastfall = 0;
 	K_TumbleInterrupt(player);
+	player->transfer = 0;
 
 	switch (ring->extravalue1)
 	{

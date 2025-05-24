@@ -1,8 +1,8 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
 // Copyright (C) 2016 by James Haley, David Hill, et al. (Team Eternity)
-// Copyright (C) 2024 by Sally "TehRealSalt" Cochenour
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Sally "TehRealSalt" Cochenour
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -142,6 +142,13 @@ void ACS_LoadLevelScripts(size_t mapID)
 	map->active = true;
 
 	// Insert BEHAVIOR lump into the list.
+	virtres_t *vRes = vres_GetMap(mapheaderinfo[mapID]->lumpnum);
+	auto _ = srb2::finally([vRes]() { vres_Free(vRes); });
+
+	// Unlike Hexen, a BEHAVIOR lump is not required.
+	// Simply ignore in this instance.
+	virtlump_t *vLump = vres_Find(vRes, "BEHAVIOR");
+	if (vLump != nullptr && vLump->size > 0)
 	{
 		ACSVM::ModuleName name = ACSVM::ModuleName(
 			env->getString( mapheaderinfo[mapID]->lumpname ),
@@ -150,6 +157,7 @@ void ACS_LoadLevelScripts(size_t mapID)
 		);
 
 		modules.push_back(env->getModule(name));
+		CONS_Debug(DBG_SETUP, "Found BEHAVIOR lump.\n");
 	}
 
 	if (modules.empty() == false)
@@ -562,8 +570,10 @@ void ACS_Archive(savebuffer_t *save)
 	std::ostream stream{&buffer};
 	ACSVM::Serial serial{stream};
 
+#if 0
 	// Enable debug signatures.
 	serial.signs = true;
+#endif
 
 	try
 	{

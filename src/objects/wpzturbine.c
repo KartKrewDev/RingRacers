@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by "Lat'"
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by "Lat'"
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -211,6 +211,12 @@ void Obj_playerWPZTurbine(player_t *p)
 		p->turbine = false;
 		P_SetTarget(&pmo->tracer, NULL);
 		return;	// wtf happened
+	}
+
+	if (t->type != MT_WATERPALACETURBINE)
+	{
+		p->turbine = false;
+		return;
 	}
 
 	mt = t->spawnpoint;

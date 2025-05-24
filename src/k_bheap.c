@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Sean "Sryder" Ryder
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Sean "Sryder" Ryder
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -394,7 +394,7 @@ boolean K_BHeapPush(bheap_t *const heap, void *const item, UINT32 value, updatei
 		if (heap->count >= heap->capacity)
 		{
 			size_t newarraycapacity = heap->capacity * 2;
-			heap->array = Z_Realloc(heap->array, newarraycapacity, PU_STATIC, NULL);
+			heap->array = Z_Realloc(heap->array, newarraycapacity * sizeof(bheapitem_t), PU_STATIC, NULL);
 
 			if (heap->array == NULL)
 			{

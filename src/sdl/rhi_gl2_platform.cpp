@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Ronald "Eidolon" Kinard
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Ronald "Eidolon" Kinard
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -11,11 +11,13 @@
 #include "rhi_gl2_platform.hpp"
 
 #include <array>
+#include <string>
 #include <sstream>
 
 #include <SDL.h>
-#include <fmt/core.h>
 
+#include "../core/string.h"
+#include "../core/vector.hpp"
 #include "../cxxutil.hpp"
 #include "../doomstat.h" // mainwads
 #include "../w_wad.h"
@@ -34,70 +36,30 @@ void SdlGl2Platform::present()
 	SDL_GL_SwapWindow(window);
 }
 
-static constexpr const char* pipeline_lump_slug(rhi::PipelineProgram program)
+static std::array<srb2::String, 2> glsllist_lump_names(const char* name)
 {
-	switch (program)
-	{
-	case rhi::PipelineProgram::kUnshaded:
-		return "unshaded";
-	case rhi::PipelineProgram::kUnshadedPaletted:
-		return "unshadedpaletted";
-	case rhi::PipelineProgram::kPostprocessWipe:
-		return "postprocesswipe";
-	case rhi::PipelineProgram::kPostimg:
-		return "postimg";
-	case rhi::PipelineProgram::kSharpBilinear:
-		return "sharpbilinear";
-	case rhi::PipelineProgram::kCrt:
-		return "crt";
-	case rhi::PipelineProgram::kCrtSharp:
-		return "crtsharp";
-	default:
-		return "";
-	}
-}
-
-static std::array<std::string, 2> glsllist_lump_names(rhi::PipelineProgram program)
-{
-	const char* pipeline_slug = pipeline_lump_slug(program);
-
-	std::string vertex_list_name = fmt::format("rhi_glsllist_{}_vertex", pipeline_slug);
-	std::string fragment_list_name = fmt::format("rhi_glsllist_{}_fragment", pipeline_slug);
+	srb2::String vertex_list_name = fmt::format("rhi_glsllist_{}_vertex.txt", name);
+	srb2::String fragment_list_name = fmt::format("rhi_glsllist_{}_fragment.txt", name);
 
 	return {std::move(vertex_list_name), std::move(fragment_list_name)};
 }
 
-static std::vector<std::string> get_sources_from_glsllist_lump(const char* lumpname)
+static srb2::Vector<srb2::String> get_sources_from_glsllist_lump(const char* lumpname)
 {
-	std::string shaderspk3 = "shaders.pk3";
-	INT32 shaderwadnum = -1;
-	for (INT32 wadnum = 0; wadnum <= mainwads; wadnum++)
-	{
-		std::string wadname = std::string(wadfiles[wadnum]->filename);
-		if (wadname.find(shaderspk3) != std::string::npos)
-		{
-			shaderwadnum = wadnum;
-			break;
-		}
-	}
-
-	if (shaderwadnum < 0)
-	{
-		throw std::runtime_error("Unable to identify the shaders.pk3 wadnum");
-	}
-
-	UINT16 glsllist_lump_num = W_CheckNumForLongNamePwad(lumpname, shaderwadnum, 0);
-	if (glsllist_lump_num == INT16_MAX)
+	size_t buffer_size;
+	if (!W_ReadShader(lumpname, &buffer_size, nullptr))
 	{
 		throw std::runtime_error(fmt::format("Unable to find glsllist lump {}", lumpname));
 	}
-
-	std::string glsllist_lump_data;
-	glsllist_lump_data.resize(W_LumpLengthPwad(shaderwadnum, glsllist_lump_num));
-	W_ReadLumpPwad(shaderwadnum, glsllist_lump_num, glsllist_lump_data.data());
+	srb2::String glsllist_lump_data;
+	glsllist_lump_data.resize(buffer_size);
+	if (!W_ReadShader(lumpname, &buffer_size, glsllist_lump_data.data()))
+	{
+		throw std::runtime_error(fmt::format("Unable to read glsllist lump {}", lumpname));
+	}
 
 	std::istringstream glsllist(glsllist_lump_data);
-	std::vector<std::string> sources;
+	srb2::Vector<srb2::String> sources;
 	for (std::string line; std::getline(glsllist, line); )
 	{
 		if (line.empty())
@@ -115,15 +77,24 @@ static std::vector<std::string> get_sources_from_glsllist_lump(const char* lumpn
 			line.pop_back();
 		}
 
-		UINT16 source_lump_num = W_CheckNumForLongNamePwad(line.c_str(), shaderwadnum, 0);
-		if (source_lump_num == INT16_MAX)
+		// Compat: entries not ending in .glsl should append, for new shader file lookup system
+		size_t glsl_pos = line.find(".glsl");
+		if (line.size() < 5 || glsl_pos == line.npos || glsl_pos != line.size() - 5)
 		{
-			throw std::runtime_error(fmt::format("Unable to find glsl source lump lump {}", lumpname));
+			line.append(".glsl");
 		}
 
-		std::string source_lump;
-		source_lump.resize(W_LumpLengthPwad(shaderwadnum, source_lump_num));
-		W_ReadLumpPwad(shaderwadnum, source_lump_num, source_lump.data());
+		size_t source_lump_size;
+		if (!W_ReadShader(line.c_str(), &source_lump_size, nullptr))
+		{
+			throw std::runtime_error(fmt::format("Unable to find glsl source lump lump {}", line));
+		}
+		srb2::String source_lump;
+		source_lump.resize(source_lump_size);
+		if (!W_ReadShader(line.c_str(), &source_lump_size, source_lump.data()))
+		{
+			throw std::runtime_error(fmt::format("Unable to read glsl source lump lump {}", line));
+		}
 
 		sources.emplace_back(source_lump);
 	}
@@ -131,13 +102,13 @@ static std::vector<std::string> get_sources_from_glsllist_lump(const char* lumpn
 	return sources;
 }
 
-std::tuple<std::vector<std::string>, std::vector<std::string>>
-SdlGl2Platform::find_shader_sources(rhi::PipelineProgram program)
+std::tuple<srb2::Vector<srb2::String>, srb2::Vector<srb2::String>>
+SdlGl2Platform::find_shader_sources(const char* name)
 {
-	std::array<std::string, 2> glsllist_names = glsllist_lump_names(program);
+	std::array<srb2::String, 2> glsllist_names = glsllist_lump_names(name);
 
-	std::vector<std::string> vertex_sources = get_sources_from_glsllist_lump(glsllist_names[0].c_str());
-	std::vector<std::string> fragment_sources = get_sources_from_glsllist_lump(glsllist_names[1].c_str());
+	srb2::Vector<srb2::String> vertex_sources = get_sources_from_glsllist_lump(glsllist_names[0].c_str());
+	srb2::Vector<srb2::String> fragment_sources = get_sources_from_glsllist_lump(glsllist_names[1].c_str());
 
 	return std::make_tuple(std::move(vertex_sources), std::move(fragment_sources));
 }

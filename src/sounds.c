@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -1536,6 +1536,12 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"die01",  false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"die02",  false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"die03",  false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+
+  // Walltransfer
+  {"ggfall",  false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+
+  // :apple:
+  {"aple",  false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
 
   // SRB2kart - Skin sounds
   {"kwin",   false,  64, 96, -1, NULL, 0,   SKSKWIN,  -1, LUMPERROR, ""},

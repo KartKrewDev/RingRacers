@@ -1,8 +1,8 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Vivian "toastergrl" Grannell.
-// Copyright (C) 2024 by Sally "TehRealSalt" Cochenour.
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Vivian "toastergrl" Grannell.
+// Copyright (C) 2025 by Sally "TehRealSalt" Cochenour.
+// Copyright (C) 2025 by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -674,6 +674,12 @@ void M_LevelSelectInit(INT32 choice)
 	if (gt == -1)
 	{
 		gt = menugametype;
+	}
+
+	if (levellist.levelsearch.timeattack && gt == GT_RACE && skins[R_SkinAvailableEx(cv_skin[0].string, false)].flags & SF_HIVOLT)
+	{
+		M_StartMessage("A long-forgotten power...", "You are using a \x82prototype engine\x80.\nRecords will not be saved.", NULL, MM_NOTHING, NULL, NULL);
+		S_StartSound(NULL, sfx_s3k81);
 	}
 
 	if (!M_LevelListFromGametype(gt))

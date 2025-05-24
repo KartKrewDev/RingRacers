@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Ronald "Eidolon" Kinard
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Ronald "Eidolon" Kinard
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -20,7 +20,7 @@ using namespace srb2::rhi;
 SoftwareScreenRenderer::SoftwareScreenRenderer() = default;
 SoftwareScreenRenderer::~SoftwareScreenRenderer() = default;
 
-void SoftwareScreenRenderer::draw(Rhi& rhi, Handle<GraphicsContext> ctx)
+void SoftwareScreenRenderer::draw(Rhi& rhi)
 {
 	// Render the player views... or not yet? Needs to be moved out of D_Display in d_main.c
 	// Assume it's already been done and vid.buffer contains the composited splitscreen view.
@@ -71,5 +71,5 @@ void SoftwareScreenRenderer::draw(Rhi& rhi, Handle<GraphicsContext> ctx)
 		screen_span = tcb::as_bytes(tcb::span(vid.buffer, width_ * height_));
 	}
 
-	rhi.update_texture(ctx, screen_texture_, {0, 0, width_, height_}, PixelFormat::kR8, screen_span);
+	rhi.update_texture(screen_texture_, {0, 0, width_, height_}, PixelFormat::kR8, screen_span);
 }

@@ -53,7 +53,19 @@ SET(CPACK_OUTPUT_FILE_PREFIX package)
 include(CPack)
 
 # Options
+if("${CMAKE_SYSTEM_NAME}" MATCHES Windows)
+	if(DEFINED VCPKG_TARGET_TRIPLET)
+		set(SRB2_CONFIG_SYSTEM_LIBRARIES_DEFAULT ON)
+	else()
+		set(SRB2_CONFIG_SYSTEM_LIBRARIES_DEFAULT OFF)
+	endif()
+else()
+	set(SRB2_CONFIG_SYSTEM_LIBRARIES_DEFAULT ON)
+endif()
 
+# Clang tidy options will be ignored if CMAKE_<LANG>_CLANG_TIDY are set.
+option(SRB2_CONFIG_ENABLE_CLANG_TIDY_C "Enable default clang-tidy check configuration for C" OFF)
+option(SRB2_CONFIG_ENABLE_CLANG_TIDY_CXX "Enable default clang-tidy check configuration for C++" OFF)
 option(
 	SRB2_CONFIG_STATIC_STDLIB
 	"Link static version of standard library. All dependencies must also be static"
@@ -70,8 +82,10 @@ option(SRB2_CONFIG_ALWAYS_MAKE_DEBUGLINK "Always make a debuglink .debug." OFF)
 option(SRB2_CONFIG_TESTERS "Compile a build for testers." OFF)
 option(SRB2_CONFIG_MOBJCONSISTANCY "Compile with MOBJCONSISTANCY defined." OFF)
 option(SRB2_CONFIG_PACKETDROP "Compile with PACKETDROP defined." OFF)
+option(SRB2_CONFIG_EXECINFO "Enable stack trace dump support." ON)
 option(SRB2_CONFIG_ZDEBUG "Compile with ZDEBUG defined." OFF)
 option(SRB2_CONFIG_SKIP_COMPTIME "Skip regenerating comptime. To speed up iterative debug builds in IDEs." OFF)
+option(SRB2_CONFIG_FORCE_NO_MS_BITFIELDS "Compile without -mno-ms-bitfields compiler flag" OFF)
 # SRB2_CONFIG_PROFILEMODE is probably superceded by some CMake setting.
 option(SRB2_CONFIG_PROFILEMODE "Compile for profiling (GCC only)." OFF)
 option(SRB2_CONFIG_TRACY "Compile with Tracy profiling enabled" OFF)
@@ -94,12 +108,23 @@ if("${CMAKE_HOST_SYSTEM_NAME}" STREQUAL Windows)
 	endif()
 endif()
 
+# Dependencies
 add_subdirectory(thirdparty)
+
+if(SRB2_CONFIG_SHARED_INTERNAL_LIBRARIES)
+	set(SRB2_INTERNAL_LIBRARY_TYPE SHARED)
+	set(NOT_SRB2_CONFIG_SHARED_INTERNAL_LIBRARIES OFF)
+else()
+	set(SRB2_INTERNAL_LIBRARY_TYPE STATIC)
+	set(NOT_SRB2_CONFIG_SHARED_INTERNAL_LIBRARIES ON)
+endif()
+
 
 find_package(ZLIB REQUIRED)
 find_package(PNG REQUIRED)
 find_package(SDL2 CONFIG REQUIRED)
 find_package(CURL REQUIRED)
+find_package(Opus REQUIRED)
 # Use the one in thirdparty/fmt to guarantee a minimum version
 #find_package(FMT CONFIG REQUIRED)
 

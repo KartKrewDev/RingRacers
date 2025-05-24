@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by James Robert Roman.
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by James Robert Roman.
+// Copyright (C) 2025 by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -114,6 +114,9 @@ menuitem_t OPTIONS_ProfileAccessibility[] = {
 	{IT_STRING | IT_CVAR, "Lite Steer", "Hold DOWN on d-pad/keyboard for shallow turns.",
 		NULL, {.cvar = &cv_dummyprofilelitesteer}, 0, 0},
 
+	{IT_STRING | IT_CVAR, "Strict Fastfall", "Fastfall only with the Spindash button.",
+		NULL, {.cvar = &cv_dummyprofilestrictfastfall}, 0, 0},
+
 	{IT_STRING | IT_CVAR, "Field of View", "Higher FOV lets you see more.",
 		NULL, {.cvar = &cv_dummyprofilefov}, 0, 0},
 
@@ -144,7 +147,7 @@ menu_t OPTIONS_ProfileAccessibilityDef = {
 	&OPTIONS_EditProfileDef,
 	0,
 	OPTIONS_ProfileAccessibility,
-	145, 41,
+	145, 31,
 	SKINCOLOR_ULTRAMARINE, 0,
 	MBF_DRAWBGWHILEPLAYING,
 	"FILE",

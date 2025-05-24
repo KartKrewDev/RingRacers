@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Sally "TehRealSalt" Cochenour.
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Sally "TehRealSalt" Cochenour.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2016 by Kay "Kaito" Sinclaire.
 // Copyright (C) 2000 by DooM Legacy Team.
@@ -90,6 +90,7 @@ typedef enum
 	PROLDDEMO, // The number of RNG classes in versions that didn't write down how many RNG classes they had in their replays.
 
 	PR_ITEM_SPAWNER = PROLDDEMO, // Battle mode item spawners
+	PR_TEAMS, // Teamplay shuffling
 
 	PRNUMSYNCED,
 

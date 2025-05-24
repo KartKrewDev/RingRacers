@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Sally "TehRealSalt" Cochenour
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Sally "TehRealSalt" Cochenour
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -27,6 +27,7 @@ extern "C" {
 typedef enum
 {
 	MVT_KICK,		// Kick another player in the server
+	MVT_MUTE,       // Mute another player in the server (Voice Chat)
 	MVT_RTV,		// Exit level early
 	MVT_RUNITBACK,	// Restart level fresh
 	MVT__MAX,		// Total number of vote types

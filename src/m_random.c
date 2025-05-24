@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Sally "TehRealSalt" Cochenour.
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Sally "TehRealSalt" Cochenour.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2016 by Kay "Kaito" Sinclaire.
 // Copyright (C) 2000 by DooM Legacy Team.
@@ -145,7 +145,7 @@ ATTRINLINE static UINT32 FUNCINLINE __internal_prng__(pr_class_t pr_class)
 
 /** Provides a random number within a specified range.
   *
-  * \return A random, uniformly distributed number from [0,bound].
+  * \return A random, uniformly distributed integer from [0,bound).
   */
 ATTRINLINE static UINT32 FUNCINLINE __internal_prng_bound__(pr_class_t pr_class, UINT32 bound)
 {

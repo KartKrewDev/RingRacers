@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -278,6 +278,26 @@ private:
 				}},
 			};
 
+		case MT_JAWZ:
+		case MT_JAWZ_SHIELD:
+		case MT_ORBINAUT:
+		case MT_ORBINAUT_SHIELD:
+		case MT_DROPTARGET:
+		case MT_DROPTARGET_SHIELD:
+		case MT_LANDMINE:
+		case MT_BANANA:
+		case MT_BANANA_SHIELD:
+		case MT_GACHABOM:
+		case MT_EGGMANITEM:
+		case MT_EGGMANITEM_SHIELD:
+		case MT_BUBBLESHIELDTRAP:
+			return {
+				{ // Near
+					{2, TICRATE/2, {kp_pickmeup}, 0}, // 1P
+					{{2, TICRATE/2, {kp_pickmeup}, 0}}, // 4P
+				},
+			};
+
 		default:
 			return {
 				{ // Near
@@ -378,6 +398,24 @@ bool is_object_tracking_target(const mobj_t* mobj)
 		return !(mobj->renderflags & (RF_TRANSMASK | RF_DONTDRAW)) && // the spraycan wasn't collected yet
 			P_CheckSight(stplyr->mo, const_cast<mobj_t*>(mobj));
 
+	case MT_JAWZ:
+	case MT_JAWZ_SHIELD:
+	case MT_ORBINAUT:
+	case MT_ORBINAUT_SHIELD:
+	case MT_DROPTARGET:
+	case MT_DROPTARGET_SHIELD:
+	case MT_LANDMINE:
+	case MT_BANANA:
+	case MT_BANANA_SHIELD:
+	case MT_GACHABOM:
+	case MT_BUBBLESHIELDTRAP:
+	case MT_EGGMANITEM:
+	case MT_EGGMANITEM_SHIELD:
+		return (mobj->target && !P_MobjWasRemoved(mobj->target) && (
+			(mobj->target->player && stplyr == mobj->target->player)
+			|| (mobj->target->player && G_SameTeam(stplyr, mobj->target->player))
+		) && P_CheckSight(stplyr->mo, const_cast<mobj_t*>(mobj)));
+
 	default:
 		return false;
 	}
@@ -433,13 +471,18 @@ std::optional<TargetTracking::Tooltip> object_tooltip(const mobj_t* mobj)
 	case MT_GARDENTOP:
 		return conditional(
 			mobj->tracer == stplyr->mo && Obj_GardenTopPlayerNeedsHelp(mobj),
-			[&] { return TextElement("Try \xA7!").font(splitfont); }
+			[&] { return TextElement().parse("Try <r>!").font(splitfont); }
 		);
 
 	case MT_PLAYER:
 		return conditional(
 			mobj->player == stplyr && stplyr->icecube.frozen,
-			[&] { return Tooltip(TextElement("\xA7")).offset3d(0, 0, 64 * mobj->scale * P_MobjFlip(mobj)); }
+			[&] { return Tooltip(TextElement(
+				(leveltime/(TICRATE/2)%2) ? 
+					TextElement().parse("<r_animated>").font(splitfont) : 
+					TextElement().parse("<a_animated>").font(splitfont)
+				)).offset3d(0, 0, 64 * mobj->scale * P_MobjFlip(mobj)); }
+			// I will be trying to figure out why the return value didn't accept a straightforward call to parse() for the rest of my life (apprx. 15 seconds)
 		);
 
 	default:
@@ -858,6 +901,35 @@ void K_drawTargetHUD(const vector3_t* origin, player_t* player)
 
 		if (tracking)
 		{
+			fixed_t itemOffset = 36*mobj->scale;
+			switch (mobj->type)
+			{
+				case MT_JAWZ:
+				case MT_JAWZ_SHIELD:
+				case MT_ORBINAUT:
+				case MT_ORBINAUT_SHIELD:
+				case MT_DROPTARGET:
+				case MT_DROPTARGET_SHIELD:
+				case MT_LANDMINE:
+				case MT_BANANA:
+				case MT_BANANA_SHIELD:
+				case MT_GACHABOM:
+				case MT_BUBBLESHIELDTRAP:
+				case MT_EGGMANITEM:
+				case MT_EGGMANITEM_SHIELD:
+					if (stplyr->mo->eflags & MFE_VERTICALFLIP)
+					{
+						pos.z -= itemOffset;
+					}
+					else
+					{
+						pos.z += itemOffset;
+					}
+					break;
+				default:
+					break;
+			}
+
 			K_ObjectTracking(&tr.result, &pos, false);
 			targetList.push_back(tr);
 		}

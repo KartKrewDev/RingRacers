@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by James Robert Roman
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by James Robert Roman
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -13,11 +13,11 @@
 
 #include <map>
 #include <optional>
-#include <string>
 #include <string_view>
-#include <unordered_map>
-#include <vector>
 
+#include "../core/hash_map.hpp"
+#include "../core/string.h"
+#include "../core/vector.hpp"
 #include "../command.h"
 
 namespace srb2::media
@@ -26,7 +26,7 @@ namespace srb2::media
 class Options
 {
 public:
-	using map_t = std::unordered_map<std::string, consvar_t>;
+	using map_t = srb2::HashMap<srb2::String, consvar_t>;
 
 	template <typename T>
 	struct Range
@@ -46,13 +46,18 @@ public:
 	static consvar_t values(const char* default_value, const Range<T> range, std::map<std::string_view, T> list = {});
 
 private:
-	static std::vector<consvar_t*> cvars_;
+	static srb2::Vector<consvar_t*> cvars_;
 
 	const char* prefix_;
 	map_t map_;
 
 	const consvar_t& cvar(const char* option) const;
 };
+
+// clang-format off
+extern template consvar_t Options::values(const char* default_value, const Range<int> range, std::map<std::string_view, int> list);
+extern template consvar_t Options::values(const char* default_value, const Range<float> range, std::map<std::string_view, float> list);
+// clang-format on
 
 }; // namespace srb2::media
 

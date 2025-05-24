@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Sally "TehRealSalt" Cochenour
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Sally "TehRealSalt" Cochenour
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -60,7 +60,7 @@ UINT8 K_BotStartingDifficulty(SINT8 value);
 
 
 /*--------------------------------------------------
-	INT16 K_CalculateGPRankPoints(UINT8 position, UINT8 numplayers);
+	INT16 K_CalculateGPRankPoints(player_t* player, UINT8 numplayers);
 
 		Calculates the number of points that a player would
 		recieve if they won the round.
@@ -73,7 +73,7 @@ UINT8 K_BotStartingDifficulty(SINT8 value);
 		Number of points to give.
 --------------------------------------------------*/
 
-INT16 K_CalculateGPRankPoints(UINT8 position, UINT8 numplayers);
+INT16 K_CalculateGPRankPoints(UINT16 exp, UINT8 position, UINT8 numplayers);
 
 
 /*--------------------------------------------------

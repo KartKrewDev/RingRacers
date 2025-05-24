@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 //
@@ -369,6 +369,7 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 
 	"S_KART_LEFTOVER",
 	"S_KART_LEFTOVER_NOTIRES",
+	"S_KART_LEFTOVER_CUSTOM",
 
 	"S_KART_TIRE1",
 	"S_KART_TIRE2",
@@ -1575,6 +1576,8 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_AMPAURA",
 	"S_AMPBURST",
 
+	"S_GOTIT",
+
 	"S_CHARGEAURA",
 	"S_CHARGEFALL",
 	"S_CHARGEFLICKER",
@@ -1771,6 +1774,19 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_WIPEOUTTRAIL9",
 	"S_WIPEOUTTRAIL10",
 	"S_WIPEOUTTRAIL11",
+
+	// "Firework" dust trail
+	"S_FIREWORKTRAIL",
+	"S_FIREWORKTRAIL2",
+	"S_FIREWORKTRAIL3",
+	"S_FIREWORKTRAIL4",
+	"S_FIREWORKTRAIL5",
+	"S_FIREWORKTRAIL6",
+	"S_FIREWORKTRAIL7",
+	"S_FIREWORKTRAIL8",
+	"S_FIREWORKTRAIL9",
+	"S_FIREWORKTRAIL10",
+	"S_FIREWORKTRAIL11",
 
 	// Rocket sneaker
 	"S_ROCKETSNEAKER_L",
@@ -1979,6 +1995,12 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_LIGHTNINGSHIELD23",
 	"S_LIGHTNINGSHIELD24",
 
+	// Lightning Shield Visuals
+	"S_THNC1",
+	"S_THNA1",
+	"S_THNC2",
+	"S_THNB1",
+
 	// Bubble Shield
 	"S_BUBBLESHIELD1",
 	"S_BUBBLESHIELD2",
@@ -2014,6 +2036,15 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_BUBBLESHIELDWAVE5",
 	"S_BUBBLESHIELDWAVE6",
 
+	// Bubble Shield Visuals
+	"S_BUBA1",
+	"S_BUBB1",
+	"S_BUBB2",
+	"S_BUBC1",
+	"S_BUBC2",
+	"S_BUBD1",
+	"S_BUBE1",
+
 	// Flame Shield
 	"S_FLAMESHIELD1",
 	"S_FLAMESHIELD2",
@@ -2033,6 +2064,11 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_FLAMESHIELD16",
 	"S_FLAMESHIELD17",
 	"S_FLAMESHIELD18",
+
+	// Flame Shield Visuals
+	"S_FLMA1",
+	"S_FLMA2",
+	"S_FLMB1",
 
 	"S_FLAMESHIELDDASH1",
 	"S_FLAMESHIELDDASH2",
@@ -2147,6 +2183,8 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_TRIPWIREBOOST_BOTTOM",
 	"S_TRIPWIREBOOST_BLAST_TOP",
 	"S_TRIPWIREBOOST_BLAST_BOTTOM",
+
+	"S_TRIPWIREAPPROACH",
 
 	"S_SMOOTHLANDING",
 
@@ -3065,6 +3103,9 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_BADNIK_EXPLOSION_SHOCKWAVE2",
 	"S_BADNIK_EXPLOSION1",
 	"S_BADNIK_EXPLOSION2",
+
+	// Flybot767 (stun)
+	"S_FLYBOT767",
 };
 
 // RegEx to generate this from info.h: ^\tMT_([^,]+), --> \t"MT_\1",
@@ -3520,6 +3561,8 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_AMPAURA",
 	"MT_AMPBURST",
 
+	"MT_GOTIT",
+
 	"MT_CHARGEAURA",
 	"MT_CHARGEFALL",
 	"MT_CHARGEFLICKER",
@@ -3596,8 +3639,11 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_MANTARING", // Juicebox for SPB
 
 	"MT_LIGHTNINGSHIELD", // Shields
+	"MT_LIGHTNINGSHIELD_VISUAL",
 	"MT_BUBBLESHIELD",
+	"MT_BUBBLESHIELD_VISUAL",
 	"MT_FLAMESHIELD",
+	"MT_FLAMESHIELD_VISUAL",
 	"MT_FLAMESHIELDUNDERLAY",
 	"MT_FLAMESHIELDPAPER",
 	"MT_BUBBLESHIELDTRAP",
@@ -3630,6 +3676,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_BATTLEBUMPER_BLAST",
 
 	"MT_TRIPWIREBOOST",
+	"MT_TRIPWIREAPPROACH",
 
 	"MT_SMOOTHLANDING",
 	"MT_TRICKINDICATOR",
@@ -3956,6 +4003,8 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_PULLUPHOOK",
 
 	"MT_AMPS",
+
+	"MT_FLYBOT767",
 };
 
 const char *const MOBJFLAG_LIST[] = {
@@ -4686,12 +4735,16 @@ struct int_const_s const INT_CONST[] = {
 
 	// Carrying
 	{"CR_NONE",CR_NONE},
+	{"CR_SLIDING",CR_SLIDING},
 	{"CR_ZOOMTUBE",CR_ZOOMTUBE},
+	{"CR_DASHRING",CR_DASHRING},
+	{"CR_TRAPBUBBLE",CR_TRAPBUBBLE},
 
 	// Character flags (skinflags_t)
 	{"SF_MACHINE",SF_MACHINE},
 	{"SF_IRONMAN",SF_IRONMAN},
 	{"SF_BADNIK",SF_BADNIK},
+	{"SF_HIVOLT",SF_HIVOLT},
 
 	// Sound flags
 	{"SF_TOTALLYSINGLE",SF_TOTALLYSINGLE},
@@ -4985,11 +5038,15 @@ struct int_const_s const INT_CONST[] = {
 	{"BT_LOOKBACK",BT_LOOKBACK},
 	{"BT_RESPAWN",BT_RESPAWN},
 	{"BT_VOTE",BT_VOTE},
+	{"BT_SPINDASH",BT_SPINDASH}, // Real button now, but triggers the macro same as always.
 	{"BT_EBRAKEMASK",BT_EBRAKEMASK}, // Macro button
 	{"BT_SPINDASHMASK",BT_SPINDASHMASK}, // Macro button
 	{"BT_LUAA",BT_LUAA}, // Lua customizable
 	{"BT_LUAB",BT_LUAB}, // Lua customizable
 	{"BT_LUAC",BT_LUAC}, // Lua customizable
+	{"BT_LUA1",BT_LUA1}, // Lua customizable
+	{"BT_LUA2",BT_LUA2}, // Lua customizable
+	{"BT_LUA3",BT_LUA3}, // Lua customizable
 
 	// Lua command registration flags
 	{"COM_ADMIN",COM_ADMIN},
@@ -5179,6 +5236,40 @@ struct int_const_s const INT_CONST[] = {
 	{"FOLLOWERMODE_FLOAT",FOLLOWERMODE_FLOAT},
 	{"FOLLOWERMODE_GROUND",FOLLOWERMODE_GROUND},
 
+	// tripwirepass_t
+	{"TRIPWIRE_NONE",TRIPWIRE_NONE},
+	{"TRIPWIRE_IGNORE",TRIPWIRE_IGNORE},
+	{"TRIPWIRE_BOOST",TRIPWIRE_BOOST},
+	{"TRIPWIRE_BLASTER",TRIPWIRE_BLASTER},
+	{"TRIPWIRE_CONSUME",TRIPWIRE_CONSUME},
+
+	// trickstate_t
+	{"TRICKSTATE_NONE",TRICKSTATE_NONE},
+	{"TRICKSTATE_READY",TRICKSTATE_READY},
+	{"TRICKSTATE_FORWARD",TRICKSTATE_FORWARD},
+	{"TRICKSTATE_RIGHT",TRICKSTATE_RIGHT},
+	{"TRICKSTATE_LEFT",TRICKSTATE_LEFT},
+	{"TRICKSTATE_BACK",TRICKSTATE_BACK},
+
+	// items
+	{"GARDENTOP_MAXGRINDTIME",GARDENTOP_MAXGRINDTIME},
+	{"BALLHOGINCREMENT",BALLHOGINCREMENT},
+
+	// kickstart
+	{"ACCEL_KICKSTART",ACCEL_KICKSTART},
+
+	// tripwires
+	{"TRIPWIRETIME",TRIPWIRETIME},
+
+	// tricks
+	{"TRICKMOMZRAMP",TRICKMOMZRAMP},
+	{"TRICKLAG",TRICKLAG},
+	{"TRICKDELAY",TRICKDELAY},
+
+	// tumble
+	{"TUMBLEBOUNCES",TUMBLEBOUNCES},
+	{"TUMBLEGRAVITY",TUMBLEGRAVITY},
+
 	// tune flags
 	{"TN_INCLUSIVEFADE",TN_INCLUSIVEFADE},
 	{"TN_USEMAPVOLUME",TN_USEMAPVOLUME},
@@ -5188,6 +5279,11 @@ struct int_const_s const INT_CONST[] = {
 	{"TN_NIGHTCOREABLE",TN_NIGHTCOREABLE},
 	{"TN_CHANGEPITCH",TN_CHANGEPITCH},
 	{"TN_LOOPING",TN_LOOPING},
+
+	{"PICKUP_RINGORSPHERE", PICKUP_RINGORSPHERE},
+	{"PICKUP_ITEMBOX", PICKUP_ITEMBOX},
+	{"PICKUP_EGGBOX", PICKUP_EGGBOX},
+	{"PICKUP_PAPERITEM", PICKUP_PAPERITEM},
 
 	{NULL,0}
 };

@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Ronald "Eidolon" Kinard
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Ronald "Eidolon" Kinard
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -13,6 +13,7 @@
 
 #include "blit_postimg_screens.hpp"
 #include "blit_rect.hpp"
+#include "imgui_renderer.hpp"
 #include "postprocess_wipe.hpp"
 #include "resource_management.hpp"
 #include "screen_capture.hpp"
@@ -44,6 +45,7 @@ struct HardwareState
 	std::unique_ptr<BlitRectPass> crtsharp_blit_rect;
 	std::unique_ptr<ScreenshotPass> screen_capture;
 	std::unique_ptr<UpscaleBackbuffer> backbuffer;
+	std::unique_ptr<ImguiRenderer> imgui_renderer;
 	WipeFrames wipe_frames;
 };
 

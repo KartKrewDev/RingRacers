@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2016 by John "JTE" Muniz.
 //
@@ -2572,6 +2572,8 @@ static int mapheaderinfo_get(lua_State *L)
 		lua_pushfixed(L, header->mobj_scale);
 	else if (fastcmp(field, "gravity"))
 		lua_pushfixed(L, header->gravity);
+	else if (fastcmp(field, "cameraheight"))
+		lua_pushfixed(L, header->cameraHeight);
 	else {
 		// Read custom vars now
 		// (note: don't include the "LUA." in your lua scripts!)

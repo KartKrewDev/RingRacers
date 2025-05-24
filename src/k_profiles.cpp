@@ -1,8 +1,8 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by "Lat'".
-// Copyright (C) 2024 by AJ "Tyron" Martinez.
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by "Lat'".
+// Copyright (C) 2025 by AJ "Tyron" Martinez.
+// Copyright (C) 2025 by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -12,10 +12,13 @@
 /// \brief implements methods for profiles etc.
 
 #include <algorithm>
+#include <filesystem>
 #include <exception>
 
 #include <fmt/format.h>
 
+#include "core/string.h"
+#include "core/vector.hpp"
 #include "io/streams.hpp"
 #include "doomtype.h"
 #include "d_main.h" // pandf
@@ -82,6 +85,8 @@ profile_t* PR_MakeProfile(
 	newprofile->kickstartaccel = false;
 	newprofile->autoroulette = false;
 	newprofile->litesteer = false;
+	newprofile->strictfastfall = false;
+	newprofile->descriptiveinput = 1;
 	newprofile->autoring = false;
 	newprofile->rumble = true;
 	newprofile->fov = atoi(cv_dummyprofilefov.defaultvalue);
@@ -104,6 +109,8 @@ profile_t* PR_MakeProfileFromPlayer(const char *prname, const char *pname, const
 	newprofile->kickstartaccel = cv_kickstartaccel[pnum].value;
 	newprofile->autoroulette = cv_autoroulette[pnum].value;
 	newprofile->litesteer = cv_litesteer[pnum].value;
+	newprofile->strictfastfall = cv_strictfastfall[pnum].value;
+	newprofile->descriptiveinput = cv_descriptiveinput[pnum].value;
 	newprofile->autoring = cv_autoring[pnum].value;
 	newprofile->rumble = cv_rumble[pnum].value;
 	newprofile->fov = cv_fov[pnum].value / FRACUNIT;
@@ -251,7 +258,6 @@ void PR_InitNewProfile(void)
 void PR_SaveProfiles(void)
 {
 	namespace fs = std::filesystem;
-	using json = nlohmann::json;
 	using namespace srb2;
 	namespace io = srb2::io;
 
@@ -269,13 +275,13 @@ void PR_SaveProfiles(void)
 		profile_t* cprof = profilesList[i];
 
 		jsonprof.version = PROFILEVER;
-		jsonprof.profilename = std::string(cprof->profilename);
+		jsonprof.profilename = String(cprof->profilename);
 		std::copy(std::begin(cprof->public_key), std::end(cprof->public_key), std::begin(jsonprof.publickey));
 		std::copy(std::begin(cprof->secret_key), std::end(cprof->secret_key), std::begin(jsonprof.secretkey));
-		jsonprof.playername = std::string(cprof->playername);
-		jsonprof.skinname = std::string(cprof->skinname);
-		jsonprof.colorname = std::string(skincolors[cprof->color].name);
-		jsonprof.followername = std::string(cprof->follower);
+		jsonprof.playername = String(cprof->playername);
+		jsonprof.skinname = String(cprof->skinname);
+		jsonprof.colorname = String(skincolors[cprof->color].name);
+		jsonprof.followername = String(cprof->follower);
 		if (cprof->followercolor == FOLLOWERCOLOR_MATCH)
 		{
 			jsonprof.followercolorname = "Match";
@@ -290,42 +296,48 @@ void PR_SaveProfiles(void)
 		}
 		else if (cprof->followercolor >= numskincolors)
 		{
-			jsonprof.followercolorname = std::string();
+			jsonprof.followercolorname = String();
 		}
 		else
 		{
-			jsonprof.followercolorname = std::string(skincolors[cprof->followercolor].name);
+			jsonprof.followercolorname = String(skincolors[cprof->followercolor].name);
 		}
 		jsonprof.records.wins = cprof->wins;
 		jsonprof.records.rounds = cprof->rounds;
 		jsonprof.preferences.kickstartaccel = cprof->kickstartaccel;
 		jsonprof.preferences.autoroulette = cprof->autoroulette;
 		jsonprof.preferences.litesteer = cprof->litesteer;
+		jsonprof.preferences.strictfastfall = cprof->strictfastfall;
+		jsonprof.preferences.descriptiveinput = cprof->descriptiveinput;
 		jsonprof.preferences.autoring = cprof->autoring;
 		jsonprof.preferences.rumble = cprof->rumble;
 		jsonprof.preferences.fov = cprof->fov;
 
 		for (size_t j = 0; j < num_gamecontrols; j++)
 		{
+			srb2::Vector<int32_t> mappings;
 			for (size_t k = 0; k < MAXINPUTMAPPING; k++)
 			{
-				jsonprof.controls[j][k] = cprof->controls[j][k];
+				mappings.push_back(cprof->controls[j][k]);
 			}
+			jsonprof.controls.emplace_back(std::move(mappings));
 		}
 
 		ng.profiles.emplace_back(std::move(jsonprof));
 	}
 
-	std::vector<uint8_t> ubjson = json::to_ubjson(ng);
+	JsonValue ngv;
+	to_json(ngv, ng);
+	Vector<std::byte> ubjson = ngv.to_ubjson();
 
-	std::string realpath = fmt::format("{}/{}", srb2home, PROFILESFILE);
-	std::string bakpath = fmt::format("{}.bak", realpath);
+	String realpath = srb2::format("{}/{}", srb2home, PROFILESFILE);
+	String bakpath = srb2::format("{}.bak", realpath);
 
-	if (fs::exists(realpath))
+	if (fs::exists(fs::path(static_cast<std::string_view>(realpath))))
 	{
 		try
 		{
-			fs::rename(realpath, bakpath);
+			fs::rename(fs::path(static_cast<std::string_view>(realpath)), fs::path(static_cast<std::string_view>(bakpath)));
 		}
 		catch (const fs::filesystem_error& ex)
 		{
@@ -344,7 +356,7 @@ void PR_SaveProfiles(void)
 		io::write(static_cast<uint8_t>(0), file); // reserved2
 		io::write(static_cast<uint8_t>(0), file); // reserved3
 		io::write(static_cast<uint8_t>(0), file); // reserved4
-		io::write_exact(file, tcb::as_bytes(tcb::make_span(ubjson)));
+		io::write_exact(file, ubjson);
 		file.close();
 	}
 	catch (const std::exception& ex)
@@ -362,7 +374,6 @@ void PR_LoadProfiles(void)
 	namespace fs = std::filesystem;
 	using namespace srb2;
 	namespace io = srb2::io;
-	using json = nlohmann::json;
 
 	profile_t *dprofile = PR_MakeProfile(
 		PROFILEDEFAULTNAME,
@@ -373,7 +384,7 @@ void PR_LoadProfiles(void)
 		true
 	);
 
-	std::string datapath {fmt::format("{}/{}", srb2home, PROFILESFILE)};
+	String datapath { srb2::format("{}/{}", srb2home, PROFILESFILE) };
 
 	io::BufferedInputStream<io::FileStream> bis;
 	try
@@ -408,11 +419,10 @@ void PR_LoadProfiles(void)
 			throw std::domain_error("Header is incompatible");
 		}
 
-		std::vector<std::byte> remainder = io::read_to_vec(bis);
+		Vector<std::byte> remainder = io::read_to_vec(bis);
 		// safety: std::byte repr is always uint8_t 1-byte aligned
-		tcb::span<uint8_t> remainder_as_u8 = tcb::span((uint8_t*)remainder.data(), remainder.size());
-		json parsed = json::from_ubjson(remainder_as_u8);
-		js = parsed.template get<ProfilesJson>();
+		JsonValue parsed = JsonValue::from_ubjson(remainder);
+		from_json(parsed, js);
 	}
 	catch (const std::exception& ex)
 	{
@@ -486,6 +496,8 @@ void PR_LoadProfiles(void)
 		newprof->kickstartaccel = jsprof.preferences.kickstartaccel;
 		newprof->autoroulette = jsprof.preferences.autoroulette;
 		newprof->litesteer = jsprof.preferences.litesteer;
+		newprof->strictfastfall = jsprof.preferences.strictfastfall;
+		newprof->descriptiveinput = jsprof.preferences.descriptiveinput;
 		newprof->autoring = jsprof.preferences.autoring;
 		newprof->rumble = jsprof.preferences.rumble;
 		newprof->fov = jsprof.preferences.fov;
@@ -494,9 +506,24 @@ void PR_LoadProfiles(void)
 		{
 			for (size_t j = 0; j < num_gamecontrols; j++)
 			{
+				if (jsprof.controls.size() <= j)
+				{
+					for (size_t k = 0; k < MAXINPUTMAPPING; k++)
+					{
+						newprof->controls[j][k] = gamecontroldefault[j][k];
+					}
+					continue;
+				}
+
+				auto& mappings = jsprof.controls.at(j);
 				for (size_t k = 0; k < MAXINPUTMAPPING; k++)
 				{
-					newprof->controls[j][k] = jsprof.controls.at(j).at(k);
+					if (mappings.size() <= k)
+					{
+						newprof->controls[j][k] = 0;
+						continue;
+					}
+					newprof->controls[j][k] = mappings.at(k);
 				}
 			}
 		}
@@ -541,6 +568,12 @@ void PR_LoadProfiles(void)
 			converted = true;
 		}
 
+		if (jsprof.version < 4)
+		{
+			newprof->descriptiveinput = 1;
+			converted = true;
+		}
+
 		if (converted)
 		{
 			CONS_Printf("Profile '%s' was converted from version %d to version %d\n",
@@ -568,6 +601,8 @@ static void PR_ApplyProfile_Settings(profile_t *p, UINT8 playernum)
 	CV_StealthSetValue(&cv_kickstartaccel[playernum], p->kickstartaccel);
 	CV_StealthSetValue(&cv_autoroulette[playernum], p->autoroulette);
 	CV_StealthSetValue(&cv_litesteer[playernum], p->litesteer);
+	CV_StealthSetValue(&cv_strictfastfall[playernum], p->strictfastfall);
+	CV_StealthSetValue(&cv_descriptiveinput[playernum], p->descriptiveinput);
 	CV_StealthSetValue(&cv_autoring[playernum], p->autoring);
 	CV_StealthSetValue(&cv_rumble[playernum], p->rumble);
 	CV_StealthSetValue(&cv_fov[playernum], p->fov);

@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -17,10 +17,10 @@
 #include "../d_main.h"
 #include "../m_misc.h"/* path shit */
 #include "../i_system.h"
+#include "../core/string.h"
 
 #include <exception>
 #include <stdexcept>
-#include <string>
 
 #include <tracy/tracy/Tracy.hpp>
 
@@ -227,14 +227,14 @@ ChDirToExe (void)
 }
 #endif
 
-static void walk_exception_stack(std::string& accum, bool nested) {
+static void walk_exception_stack(srb2::String& accum, bool nested) {
 	if (nested)
 		accum.append("\n  Caused by: Unknown exception");
 	else
 		accum.append("Uncaught exception: Unknown exception");
 }
 
-static void walk_exception_stack(std::string& accum, const std::exception& ex, bool nested) {
+static void walk_exception_stack(srb2::String& accum, const std::exception& ex, bool nested) {
 	if (nested)
 		accum.append("\n  Caused by: ");
 	else
@@ -331,11 +331,11 @@ int main(int argc, char **argv)
 	D_SRB2Loop();
 
 	} catch (const std::exception& ex) {
-		std::string exception;
+		srb2::String exception;
 		walk_exception_stack(exception, ex, false);
 		I_Error("%s", exception.c_str());
 	} catch (...) {
-		std::string exception;
+		srb2::String exception;
 		walk_exception_stack(exception, false);
 		I_Error("%s", exception.c_str());
 	}

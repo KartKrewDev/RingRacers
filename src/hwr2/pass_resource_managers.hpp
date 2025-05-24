@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Ronald "Eidolon" Kinard
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Ronald "Eidolon" Kinard
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -13,15 +13,15 @@
 
 #include <array>
 #include <cstddef>
-#include <unordered_map>
-#include <vector>
 
-#include "pass.hpp"
+#include "../core/hash_map.hpp"
+#include "../core/vector.hpp"
+#include "../rhi/rhi.hpp"
 
 namespace srb2::hwr2
 {
 
-class FramebufferManager final : public Pass
+class FramebufferManager final
 {
 	rhi::Handle<rhi::Texture> main_color_;
 	std::array<rhi::Handle<rhi::Texture>, 2> post_colors_;
@@ -36,10 +36,10 @@ public:
 	FramebufferManager();
 	virtual ~FramebufferManager();
 
-	virtual void prepass(rhi::Rhi& rhi) override;
-	virtual void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
-	virtual void graphics(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
-	virtual void postpass(rhi::Rhi& rhi) override;
+	void prepass(rhi::Rhi& rhi);
+	void transfer(rhi::Rhi& rhi);
+	void graphics(rhi::Rhi& rhi);
+	void postpass(rhi::Rhi& rhi);
 
 	/// @brief Swap the current and previous postprocess FB textures. Use between pass prepass phases to alternate.
 	void swap_post() noexcept
@@ -70,31 +70,31 @@ public:
 	std::size_t height() const noexcept { return height_; }
 };
 
-class MainPaletteManager final : public Pass
+class MainPaletteManager final
 {
 	rhi::Handle<rhi::Texture> palette_;
 	rhi::Handle<rhi::Texture> lighttable_;
 	rhi::Handle<rhi::Texture> encore_lighttable_;
 	rhi::Handle<rhi::Texture> default_colormap_;
 
-	std::unordered_map<const uint8_t*, rhi::Handle<rhi::Texture>> colormaps_;
-	std::unordered_map<const uint8_t*, rhi::Handle<rhi::Texture>> lighttables_;
-	std::vector<const uint8_t*> colormaps_to_upload_;
-	std::vector<const uint8_t*> lighttables_to_upload_;
+	srb2::HashMap<const uint8_t*, rhi::Handle<rhi::Texture>> colormaps_;
+	srb2::HashMap<const uint8_t*, rhi::Handle<rhi::Texture>> lighttables_;
+	srb2::Vector<const uint8_t*> colormaps_to_upload_;
+	srb2::Vector<const uint8_t*> lighttables_to_upload_;
 
-	void upload_palette(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
-	void upload_lighttables(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
-	void upload_default_colormap(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
-	void upload_colormaps(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
+	void upload_palette(rhi::Rhi& rhi);
+	void upload_lighttables(rhi::Rhi& rhi);
+	void upload_default_colormap(rhi::Rhi& rhi);
+	void upload_colormaps(rhi::Rhi& rhi);
 
 public:
 	MainPaletteManager();
 	virtual ~MainPaletteManager();
 
-	virtual void prepass(rhi::Rhi& rhi) override;
-	virtual void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
-	virtual void graphics(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
-	virtual void postpass(rhi::Rhi& rhi) override;
+	void prepass(rhi::Rhi& rhi);
+	void transfer(rhi::Rhi& rhi);
+	void graphics(rhi::Rhi& rhi);
+	void postpass(rhi::Rhi& rhi);
 
 	rhi::Handle<rhi::Texture> palette() const noexcept { return palette_; }
 	rhi::Handle<rhi::Texture> lighttable() const noexcept { return lighttable_; }
@@ -107,7 +107,7 @@ public:
 	rhi::Handle<rhi::Texture> find_extra_lighttable(srb2::NotNull<const uint8_t*> lighttable) const;
 };
 
-class CommonResourcesManager final : public Pass
+class CommonResourcesManager final
 {
 	bool init_ = false;
 	rhi::Handle<rhi::Texture> black_;
@@ -118,10 +118,10 @@ public:
 	CommonResourcesManager();
 	virtual ~CommonResourcesManager();
 
-	virtual void prepass(rhi::Rhi& rhi) override;
-	virtual void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
-	virtual void graphics(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
-	virtual void postpass(rhi::Rhi& rhi) override;
+	void prepass(rhi::Rhi& rhi);
+	void transfer(rhi::Rhi& rhi);
+	void graphics(rhi::Rhi& rhi);
+	void postpass(rhi::Rhi& rhi);
 
 	rhi::Handle<rhi::Texture> black() const noexcept { return black_; }
 	rhi::Handle<rhi::Texture> white() const noexcept { return white_; }

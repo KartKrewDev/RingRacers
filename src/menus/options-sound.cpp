@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -29,12 +29,6 @@ using srb2::Draw;
 namespace
 {
 
-bool basic_options()
-{
-	// M_GameTrulyStarted
-	return gamedata && gamestartchallenge < MAXUNLOCKABLES && !netgame && gamedata->gonerlevel <= GDGONER_PROFILE;
-}
-
 int flip_delay = 0;
 
 struct Slider
@@ -44,6 +38,7 @@ struct Slider
 		kMasterVolume,
 		kMusicVolume,
 		kSfxVolume,
+		kVoiceVolume,
 		kNumSliders
 	};
 
@@ -68,10 +63,8 @@ struct Slider
 			arrows.x(-10 - ofs).text("\x1C");
 			arrows.x(kWidth + 2 + ofs).text("\x1D");
 
-			if (!basic_options())
-			{
-				h.xy(kWidth + 9, -3).small_button(Draw::Button::z, false);
-			}
+			Draw::TextElement tx = Draw::TextElement().parse("<z_animated>");
+			h.xy(kWidth + 9, -2).text(tx.string());
 		}
 
 		h = h.y(1);
@@ -128,6 +121,7 @@ std::array<Slider, Slider::kNumSliders> sliders{{
 				n = !n;
 				CV_SetValue(&cv_gamedigimusic, n);
 				CV_SetValue(&cv_gamesounds, n);
+				CV_SetValue(&cv_voice_chat, n);
 			}
 
 			return n;
@@ -157,6 +151,18 @@ std::array<Slider, Slider::kNumSliders> sliders{{
 			return !S_SoundDisabled();
 		},
 		cv_soundvolume,
+	},
+	{
+		[](bool toggle) -> bool
+		{
+			if (toggle)
+			{
+				CV_AddValue(&cv_voice_chat, 1);
+			}
+
+			return !S_VoiceDisabled();
+		},
+		cv_voicevolume,
 	},
 }};
 
@@ -251,7 +257,7 @@ boolean input_routine(INT32)
 
 	const menuitem_t& it = currentMenu->menuitems[itemOn];
 
-	if (M_MenuButtonPressed(pid, MBT_Z) && (it.status & IT_TYPE) == IT_ARROWS && !basic_options())
+	if (M_MenuButtonPressed(pid, MBT_Z) && (it.status & IT_TYPE) == IT_ARROWS)
 	{
 		sliders.at(it.mvar2).toggle_(true);
 		return true;
@@ -273,6 +279,9 @@ menuitem_t OPTIONS_Sound[] =
 
 	{IT_STRING | IT_ARROWS | IT_CV_SLIDER, "Music Volume", "Loudness of music.",
 		NULL, {.routine = slider_routine}, 0, Slider::kMusicVolume},
+
+	{IT_STRING | IT_ARROWS | IT_CV_SLIDER, "Voice Volume", "Loudness of voice chat.",
+		NULL, {.routine = slider_routine}, 0, Slider::kVoiceVolume},
 
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},

@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by James Robert Roman
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by James Robert Roman
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -14,13 +14,14 @@
 #include <fstream>
 #include <iterator>
 #include <memory>
-#include <string>
 #include <string_view>
 
 #include <fmt/format.h>
 #include <fmt/std.h> // std::filesystem::path formatter
-#include <nlohmann/json.hpp>
 
+#include "../../core/string.h"
+#include "../../core/json.hpp"
+#include "../../io/streams.hpp"
 #include "../../cxxutil.hpp"
 #include "EggTVData.hpp"
 
@@ -34,15 +35,15 @@ using namespace srb2::menus::egg_tv;
 
 namespace fs = std::filesystem;
 
-using nlohmann::json;
+using srb2::JsonValue;
 
 template <>
-struct fmt::formatter<fs::filesystem_error> : formatter<std::string>
+struct fmt::formatter<fs::filesystem_error> : formatter<srb2::String>
 {
 	template <typename FormatContext>
 	auto format(const fs::filesystem_error& ex, FormatContext& ctx) const
 	{
-		return formatter<std::string>::format(
+		return formatter<srb2::String>::format(
 			fmt::format("{}, path1={}, path2={}", ex.what(), ex.path1(), ex.path2()),
 			ctx
 		);
@@ -65,13 +66,13 @@ To time_point_conv(From time)
 	return std::chrono::time_point_cast<typename To::duration>(To::clock::now() + (time - From::clock::now()));
 }
 
-json& ensure_array(json& object, const char* key)
+JsonValue& ensure_array(JsonValue& object, const char* key)
 {
-	json& array = object[key];
+	JsonValue& array = object[key];
 
 	if (!array.is_array())
 	{
-		array = json::array();
+		array = JsonValue::array();
 	}
 
 	return array;
@@ -91,18 +92,16 @@ EggTVData::EggTVData() : favorites_(ensure_array(favoritesFile_, "favorites"))
 	}
 }
 
-json EggTVData::cache_favorites() const
+JsonValue EggTVData::cache_favorites() const
 {
-	json object;
+	JsonValue object;
 
 	try
 	{
-		std::ifstream f(favoritesPath_);
-
-		if (f.is_open())
-		{
-			f >> object;
-		}
+		srb2::io::FileStream stream { favoritesPath_.generic_string() };
+		srb2::Vector<std::byte> f = srb2::io::read_to_vec(stream);
+		srb2::String json_string { (const char*)f.data(), f.size() };
+		object = JsonValue::from_json_string(json_string);
 	}
 	catch (const std::exception& ex)
 	{
@@ -199,9 +198,9 @@ EggTVData::Folder::Folder(EggTVData& tv, const fs::directory_entry& entry) :
 	}
 }
 
-EggTVData::Replay::Title::operator const std::string() const
+EggTVData::Replay::Title::operator const srb2::String() const
 {
-	return second().empty() ? first() : fmt::format("{} - {}", first(), second());
+	return second().empty() ? first() : srb2::format("{} - {}", first(), second());
 }
 
 EggTVData::Replay::Replay(Folder::Cache::ReplayRef& ref) : ref_(&ref)
@@ -230,7 +229,7 @@ EggTVData::Replay::Replay(Folder::Cache::ReplayRef& ref) : ref_(&ref)
 		const std::string_view str = info.title;
 		const std::size_t mid = str.find(kDelimiter);
 
-		title_ = Title(str.substr(0, mid), mid == std::string::npos ? "" : str.substr(mid + kDelimiter.size()));
+		title_ = Title(str.substr(0, mid), mid == srb2::String::npos ? "" : str.substr(mid + kDelimiter.size()));
 		//title_ = Title("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW", "WWWWWWWWWWWWWWWWWWWWWWWWWWW");
 	}
 
@@ -316,13 +315,13 @@ void EggTVData::Replay::toggle_favorite() const
 {
 	const auto& it = ref_->iterator_to_favorite();
 
-	if (it != ref_->favorites().end())
+	if (it != ref_->favorites().as_array().end())
 	{
-		ref_->favorites().erase(it);
+		ref_->favorites().as_array().erase(it);
 	}
 	else
 	{
-		ref_->favorites().emplace_back(ref_->favorites_path());
+		ref_->favorites().as_array().emplace_back(ref_->favorites_path());
 	}
 
 	ref_->cache().folder().tv().save_favorites();
@@ -382,7 +381,9 @@ void EggTVData::save_favorites() const
 {
 	try
 	{
-		std::ofstream(favoritesPath_) << favoritesFile_;
+		srb2::String json_string = favoritesFile_.to_json_string();
+		srb2::io::FileStream fs { favoritesPath_.generic_string(), srb2::io::FileStreamMode::kWrite };
+		srb2::io::write_exact(fs, tcb::as_bytes(tcb::span(json_string.data(), json_string.size())));
 	}
 	catch (const std::exception& ex)
 	{

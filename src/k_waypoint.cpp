@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Sean "Sryder" Ryder
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Sean "Sryder" Ryder
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -24,9 +24,11 @@
 #include "cxxutil.hpp"
 
 #include <algorithm>
-#include <vector>
 
 #include <fmt/format.h>
+
+#include "core/string.h"
+#include "core/vector.hpp"
 
 // The number of sparkles per waypoint connection in the waypoint visualisation
 static const UINT32 SPARKLES_PER_CONNECTION = 16U;
@@ -2377,8 +2379,8 @@ static BlockItReturn_t K_TrackWaypointNearOffroad(line_t *line)
 struct complexity_sneaker_s
 {
 	fixed_t bbox[4];
-	//std::vector<sector_t *> sectors;
-	//std::vector<mapthing_t *> things;
+	//srb2::Vector<sector_t *> sectors;
+	//srb2::Vector<mapthing_t *> things;
 
 	complexity_sneaker_s(sector_t *sec)
 	{
@@ -2631,7 +2633,7 @@ static INT32 K_CalculateTrackComplexity(void)
 
 			delta = FixedMul(delta, FixedMul(FixedMul(dist_factor, radius_factor), wall_factor));
 
-			std::string msg = fmt::format(
+			srb2::String msg = srb2::format(
 				"TURN [{}]: r: {:.2f}, d: {:.2f}, w: {:.2f}, r*d*w: {:.2f}, DELTA: {}\n",
 				turn_id,
 				FixedToFloat(radius_factor),
@@ -2644,7 +2646,7 @@ static INT32 K_CalculateTrackComplexity(void)
 			trackcomplexity += (delta / FRACUNIT);
 		}
 
-		std::vector<complexity_sneaker_s> sneaker_panels;
+		srb2::Vector<complexity_sneaker_s> sneaker_panels;
 
 		for (size_t i = 0; i < numsectors; i++)
 		{

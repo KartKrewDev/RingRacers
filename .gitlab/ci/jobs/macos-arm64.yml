@@ -3,26 +3,57 @@ osxcross arm64:
 
   stage: build
 
-  when: manual
+  cache:
+    - key: ccache-$CI_JOB_NAME_SLUG-$CI_COMMIT_REF_SLUG
+      fallback_keys:
+        - ccache-$CI_JOB_NAME_SLUG-$CI_DEFAULT_BRANCH
+        - ccache-$CI_JOB_NAME_SLUG-master
+      paths:
+        - build/ccache
+        - build/ccache_statslog
 
-  allow_failure: true
+    - key: apt-$CI_JOB_IMAGE
+      paths:
+        - build/apt-cache
+      unprotect: true
+
+    - key: vcpkg-binary-cache-arm64-osx
+      paths:
+        - build/vcpkg-binary-cache
+      unprotect: true
 
   artifacts:
     paths:
-      - "build.osxcross/bin/"
-      - "build.osxcross/src/config.h"
-    expose_as: "Mac arm64"
-    name: "$CI_PROJECT_PATH_SLUG-$CI_COMMIT_REF_SLUG-$CI_COMMIT_SHORT_SHA-clang"
+      - "build.arm64/bin/"
+      - "build.arm64/dist/arm64.h"
+      - "build.arm64/src/config.h"
+    name: "$CI_PROJECT_PATH_SLUG-$CI_COMMIT_REF_SLUG-$CI_COMMIT_SHORT_SHA-arm64-apple-darwin"
 
   variables:
-    OSXCROSS_HOST: arm64-apple-darwin21.4
-    LD: arm64-apple-darwin21.4-ld
+    CMAKE_TOOLCHAIN_FILE: /osxcross/toolchain.cmake
+    CCACHE_CPP2: yes
 
   script:
     - - |
+          # osxcross Config
+          echo -e "\e[0Ksection_start:`date +%s`:osxcross_Config[collapsed=true]\r\e[0Kosxcross Config"
+      - export VCPKG_CHAINLOAD_TOOLCHAIN_FILE=${OSXCROSS_TARGET_DIR}/toolchain.cmake
+      - export PATH="/opt/osxcross.arm64:${PATH}"
+      - $(osxcross-conf)
+      - export OSXCROSS_HOST=arm64-apple-${OSXCROSS_TARGET}
+      - export VCPKG_DEFAULT_TRIPLET=arm64-osx
+      - export CC=${OSXCROSS_TARGET_DIR}/bin/${OSXCROSS_HOST}-clang
+      - export CXX=${OSXCROSS_TARGET_DIR}/bin/${OSXCROSS_HOST}-clang++
+      - export SDKROOT=${OSXCROSS_SDK}
+      - |
+          # osxcross Config
+          echo -e "\e[0Ksection_end:`date +%s`:osxcross_Config\r\e[0K"
+
+    - - |
           # apt_development
           echo -e "\e[0Ksection_start:`date +%s`:macports_development[collapsed=true]\r\e[0KInstalling development packages"
-      - osxcross-macports install --arm64 curl libopenmpt libsdl2_mixer
+      - osxcross-macports install --static --arm64 curl || osxcross-macports install --verbose --static --arm64 curl || true
+      - osxcross-macports install --static --arm64 libpng libopus || osxcross-macports install --verbose --static --arm64 libpng libopus
       - |
           # apt_development
           echo -e "\e[0Ksection_end:`date +%s`:macports_development\r\e[0K"
@@ -30,7 +61,22 @@ osxcross arm64:
     - - |
           # cmake
           echo -e "\e[0Ksection_start:`date +%s`:cmake[collapsed=false]\r\e[0KBuilding Makefiles"
-      - cmake -B build.osxcross --toolchain /osxcross/toolchain.cmake -DCPM_USE_LOCAL_PACKAGES:BOOL=ON -DOPENMPT_INCLUDE_DIR:PATH="/osxcross/macports/pkgs/opt/local/include" -DSDL2_INCLUDE_DIR:PATH="/osxcross/macports/pkgs/opt/local/lib" -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF -G "Unix Makefiles"
+      - |
+          cmake \
+            --preset ninja-debug \
+            -B build.arm64 \
+            -G "Unix Makefiles" \
+            -DCMAKE_COLOR_DIAGNOSTICS=OFF \
+            -DSRB2_CONFIG_ENABLE_WEBM_MOVIES=OFF \
+            -DCPM_USE_LOCAL_PACKAGES:BOOL=ON \
+            -DOPENMPT_INCLUDE_DIR:PATH="/osxcross/macports/pkgs/opt/local/include" \
+            -DSDL2_INCLUDE_DIR:PATH="/osxcross/macports/pkgs/opt/local/lib" \
+            -DSRB2_CONFIG_ENABLE_TESTS:BOOL=OFF \
+            -DSRB2_CONFIG_SYSTEM_LIBRARIES:BOOL=ON \
+            -DSRB2_SDL2_EXE_NAME=ringracers_$CI_PIPELINE_ID \
+            -DSRB2_CONFIG_FORCE_NO_MS_BITFIELDS:BOOL=ON \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
       - |
           # make
           echo -e "\e[0Ksection_end:`date +%s`:make\r\e[0K"
@@ -38,7 +84,16 @@ osxcross arm64:
     - - |
           # make
           echo -e "\e[0Ksection_start:`date +%s`:make[collapsed=false]\r\e[0KCompiling SRB2"
-      - make --directory=build.osxcross --keep-going || make --directory=build.osxcross --keep-going
+      - cmake --build build.arm64 --parallel 1 -- --keep-going
       - |
           # make
           echo -e "\e[0Ksection_end:`date +%s`:make\r\e[0K"
+
+    - - |
+          # copy config.h
+          echo -e "\e[0Ksection_start:`date +%s`:copy[collapsed=false]\r\e[0KCopying config.h"
+      - mkdir --parents --verbose build.arm64/dist
+      - cp --reflink=auto --sparse=always build.arm64/src/config.h build.arm64/dist/arm64.h
+      - |
+          # make
+          echo -e "\e[0Ksection_end:`date +%s`:copy\r\e[0K"

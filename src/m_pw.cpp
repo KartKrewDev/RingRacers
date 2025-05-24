@@ -1,8 +1,8 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Vivian "toastergrl" Grannell.
-// Copyright (C) 2024 by James Robert Roman.
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Vivian "toastergrl" Grannell.
+// Copyright (C) 2025 by James Robert Roman.
+// Copyright (C) 2025 by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -14,13 +14,13 @@
 #include <cctype>
 #include <fstream>
 #include <stdexcept>
-#include <string>
 #include <utility>
 #include <variant>
-#include <vector>
 
 #include "modp_b64/modp_b64.h"
 
+#include "core/string.h"
+#include "core/vector.hpp"
 #include "cxxutil.hpp"
 
 #include "command.h"
@@ -43,12 +43,13 @@ namespace
 
 constexpr const UINT8 kRRSalt[17] = "0L4rlK}{9ay6'VJS";
 
-std::array<UINT8, M_PW_BUF_SIZE> decode_hash(std::string encoded)
+std::array<UINT8, M_PW_BUF_SIZE> decode_hash(srb2::String encoded)
 {
 	std::array<UINT8, M_PW_BUF_SIZE> decoded;
-	if (modp::b64_decode(encoded).size() != decoded.size())
+	std::string encoded_stl { static_cast<std::string_view>(encoded) };
+	if (modp::b64_decode(encoded_stl).size() != decoded.size())
 		throw std::invalid_argument("hash is incorrectly sized");
-	std::copy(encoded.begin(), encoded.end(), decoded.begin());
+	std::copy(encoded_stl.begin(), encoded_stl.end(), decoded.begin());
 	return decoded;
 }
 
@@ -60,7 +61,7 @@ struct Pw
 	const std::array<UINT8, M_PW_BUF_SIZE> hash_;
 };
 
-std::vector<Pw> passwords;
+srb2::Vector<Pw> passwords;
 
 // m_cond.c
 template <typename F>
@@ -629,8 +630,8 @@ try_password_e M_TryPassword(const char *password, boolean conditions)
 	using var = std::variant<std::monostate, condition_t*, Pw*>;
 
 	// Normalize input casing
-	std::string key = password;
-	strlwr(key.data());
+	srb2::String key = password;
+	strlwr((char*)key.data());
 
 	UINT8 key_hash[M_PW_HASH_SIZE];
 	M_HashPassword(key_hash, key.c_str(), kRRSalt);
@@ -684,8 +685,8 @@ try_password_e M_TryPassword(const char *password, boolean conditions)
 boolean M_TryExactPassword(const char *password, const char *encodedhash)
 {
 	// Normalize input casing
-	std::string key = password;
-	strlwr(key.data());
+	srb2::String key = password;
+	strlwr((char*)key.data());
 
 	UINT8 key_hash[M_PW_HASH_SIZE];
 	M_HashPassword(key_hash, key.c_str(), kRRSalt);

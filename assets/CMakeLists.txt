@@ -39,7 +39,6 @@ set(SRB2_ASSETS_GAME
 	"scripts.pk3"
 	"staffghosts.pk3"
 	"unlocks.pk3"
-	"shaders.pk3"
 )
 list(TRANSFORM SRB2_ASSETS_GAME PREPEND "/")
 list(TRANSFORM SRB2_ASSETS_GAME PREPEND "${SRB2_ASSET_DIRECTORY_ABSOLUTE}")

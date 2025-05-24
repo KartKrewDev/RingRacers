@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by James Robert Roman
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by James Robert Roman
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -14,6 +14,8 @@
 
 #include "../mobj_list.hpp"
 
+#include "../core/hash_map.hpp"
+#include "../core/vector.hpp"
 #include "../doomdef.h"
 #include "../doomtype.h"
 #include "../info.h"
@@ -35,8 +37,6 @@
 #include "../sounds.h"
 #include "../tables.h"
 
-using std::vector;
-using std::pair;
 using std::min;
 using std::max;
 using std::clamp;
@@ -45,7 +45,6 @@ extern mobj_t* svg_checkpoints;
 
 #define checkpoint_id(o) ((o)->thing_args[0])
 #define checkpoint_linetag(o) ((o)->thing_args[1])
-#define checkpoint_extralength(o) ((o)->thing_args[2])
 #define checkpoint_other(o) ((o)->target)
 #define checkpoint_orb(o) ((o)->tracer)
 #define checkpoint_arm(o) ((o)->hnext)
@@ -132,6 +131,7 @@ struct Checkpoint : mobj_t
 	struct Arm : mobj_t {};
 
 	INT32 id() const { return checkpoint_id(this); }
+	INT32 linetag() const { return checkpoint_linetag(this); }
 
 	Checkpoint* other() const { return static_cast<Checkpoint*>(checkpoint_other(this)); }
 	void other(Checkpoint* n) { P_SetTarget(&checkpoint_other(this), n); }
@@ -224,7 +224,7 @@ struct Checkpoint : mobj_t
 				speed(speed() - FixedDiv(speed() / 50, max<fixed_t>(speed_multiplier(), 1)));
 			}
 		}
-		
+
 		if (!top_half_has_passed())
 		{
 			sparkle_between(0);
@@ -453,39 +453,16 @@ struct CheckpointManager
 	auto begin() { return list_.begin(); }
 	auto end() { return list_.end(); }
 
-	auto find_checkpoint(INT32 id) {
-		auto it = find_if(list_.begin(), list_.end(), [id](auto pair) { return pair.first->id() == id; });
-		if (it != list_.end())
-		{
-			return it->first;
-		}
-		return static_cast<Checkpoint*>(nullptr);
-	}
-
-	// auto find_pair(Checkpoint* chk) {
-	// 	pair<Checkpoint*, vector<line_t*>> retpair;
-	// 	auto it = find_if(list_.begin(), list_.end(), [chk](auto pair) { return pair.first == chk; });
-	// 	if (it != list_.end())
-	// 	{
-	// 		retpair = *it;
-	// 		return retpair;
-	// 	}
-	// 	return static_cast<pair<Checkpoint*, vector<line_t*>>>(nullptr);
-	// }
-
-	void remove_checkpoint(mobj_t* end) 
-	{ 
-		auto chk = static_cast<Checkpoint*>(end);
-		auto it = find_if(list_.begin(), list_.end(), [&](auto pair) { return pair.first == chk; });
-		if (it != list_.end())
-		{
-			list_.erase(it);
-		}
-	}
-
-	void link_checkpoint(mobj_t* end)
+	auto find_checkpoint(INT32 id)
 	{
-		auto chk = static_cast<Checkpoint*>(end);
+		auto it = std::find_if(begin(), end(), [id](Checkpoint* chk) { return chk->id() == id; });
+		return it != end() ? *it : nullptr;
+	}
+
+	void remove_checkpoint(Checkpoint* end) { list_.erase(end); }
+
+	void link_checkpoint(Checkpoint* chk)
+	{
 		auto id = chk->id();
 		if (chk->spawnpoint && id == 0)
 			{
@@ -517,29 +494,46 @@ struct CheckpointManager
 		}
 		else // Checkpoint isn't in the list, find any associated tagged lines and make the pair
 		{
-			vector<line_t*> checklines;
-			if (checkpoint_linetag(chk))
-			{
-				INT32 li;
-				INT32 tag = checkpoint_linetag(chk);
-				TAG_ITER_LINES(tag, li)
-				{
-					line_t* line = lines + li;
-					checklines.push_back(line);
-				}
-			}
-			list_.emplace_back(chk, move(checklines));
+			if (chk->linetag())
+				lines_.try_emplace(chk->linetag(), tagged_lines(chk->linetag()));
+			list_.push_front(chk);
+			count_ += 1; // Mobjlist can't have a count on it, so we keep it here
 		}
 
 		chk->gingerbread();
 	}
 
-	void clear() { list_.clear(); }
+	void clear() 
+	{ 
+		lines_.clear();
+		list_.clear();
+		count_ = 0;
+	}
 
-	auto count() { return list_.size(); }
+	auto count() { return count_; }
+
+	const srb2::Vector<line_t*>* lines_for(const Checkpoint* chk) const
+	{
+		auto it = lines_.find(chk->linetag());
+		return it != lines_.end() ? &it->second : nullptr;
+	}
 
 private:
-	vector<pair<Checkpoint*, vector<line_t*>>> list_;
+	INT32 count_;
+	srb2::MobjList<Checkpoint, svg_checkpoints> list_;
+	srb2::HashMap<INT32, srb2::Vector<line_t*>> lines_;
+
+	static srb2::Vector<line_t*> tagged_lines(INT32 tag)
+	{
+		srb2::Vector<line_t*> checklines;
+		INT32 li;
+		TAG_ITER_LINES(tag, li)
+		{
+			line_t* line = lines + li;
+			checklines.push_back(line);
+		}
+		return checklines;
+	}
 };
 
 CheckpointManager g_checkpoints;
@@ -548,13 +542,13 @@ CheckpointManager g_checkpoints;
 
 void Obj_LinkCheckpoint(mobj_t* end)
 {
-	g_checkpoints.link_checkpoint(end);
+	g_checkpoints.link_checkpoint(static_cast<Checkpoint*>(end));
 }
 
 void Obj_UnlinkCheckpoint(mobj_t* end)
 {
 	auto chk = static_cast<Checkpoint*>(end);
-	g_checkpoints.remove_checkpoint(end);
+	g_checkpoints.remove_checkpoint(chk);
 	P_RemoveMobj(chk->orb());
 	P_RemoveMobj(chk->arm());
 }
@@ -571,48 +565,52 @@ void Obj_CheckpointThink(mobj_t* end)
 	chk->animate();
 }
 
-void __attribute__((optimize("O0"))) Obj_CrossCheckpoints(player_t* player, fixed_t old_x, fixed_t old_y)
+void Obj_CrossCheckpoints(player_t* player, fixed_t old_x, fixed_t old_y)
 {
 	LineOnDemand ray(old_x, old_y, player->mo->x, player->mo->y, player->mo->radius);
 
-	auto it = find_if(
+	auto it = std::find_if(
 		g_checkpoints.begin(),
 		g_checkpoints.end(),
-		[&](auto chkpair)
+		[&](Checkpoint* chk)
 		{
-			Checkpoint* chk = chkpair.first;
 			if (!chk->valid())
 			{
 				return false;
 			}
 
-			LineOnDemand* gate;
+			const srb2::Vector<line_t*>* lines = g_checkpoints.lines_for(chk);
+			INT32 side;
+			INT32 oldside;
 
-			if (chkpair.second.empty())
+			if (!lines || lines->empty())
 			{
 				LineOnDemand dyngate = chk->crossing_line();
 				if (!ray.overlaps(dyngate))
 					return false;
-				gate = &dyngate;				
+
+				side = P_PointOnLineSide(player->mo->x, player->mo->y, &dyngate);
+				oldside = P_PointOnLineSide(old_x, old_y, &dyngate);
 			}
-			else 
+			else
 			{
-				auto it = find_if(
-					chkpair.second.begin(),
-					chkpair.second.end(),
+				auto it = std::find_if(
+					lines->begin(),
+					lines->end(),
 					[&](const line_t* line)
 					{
 						return ray.overlaps(*line);
 					}
 				);
-				
-				if (it == chkpair.second.end())
+
+				if (it == lines->end())
 				{
 					return false;
 				}
 
 				line_t* line = *it;
-				gate = static_cast<LineOnDemand*>(line);
+				side = P_PointOnLineSide(player->mo->x, player->mo->y, line);
+				oldside = P_PointOnLineSide(old_x, old_y, line);
 			}
 
 			// Check if the bounding boxes of the two lines
@@ -621,14 +619,11 @@ void __attribute__((optimize("O0"))) Obj_CrossCheckpoints(player_t* player, fixe
 			// but thankfully that doesn't seem to happen, under
 			// normal circumstances.
 
-			INT32 side = P_PointOnLineSide(player->mo->x, player->mo->y, gate);
-			INT32 oldside = P_PointOnLineSide(old_x, old_y, gate);
-
 			if (side == oldside)
 			{
 				// Did not cross.
 				return false;
-				
+
 			}
 
 			return true;
@@ -640,7 +635,7 @@ void __attribute__((optimize("O0"))) Obj_CrossCheckpoints(player_t* player, fixe
 		return;
 	}
 
-	Checkpoint* chk = it->first;
+	Checkpoint* chk = *it;
 
 	if (player->checkpointId == chk->id())
 	{
@@ -657,9 +652,8 @@ void __attribute__((optimize("O0"))) Obj_CrossCheckpoints(player_t* player, fixe
 
 	if (gametyperules & GTR_CHECKPOINTS)
 	{
-		for (auto chkpair : g_checkpoints)
+		for (Checkpoint* chk : g_checkpoints)
 		{
-			Checkpoint* chk = chkpair.first;
 			if (chk->valid())
 			{
 				chk->untwirl();
@@ -672,20 +666,7 @@ void __attribute__((optimize("O0"))) Obj_CrossCheckpoints(player_t* player, fixe
 
 	player->checkpointId = chk->id();
 
-	if (D_NumPlayersInRace() > 1 && !K_IsPlayerLosing(player))
-	{
-		if (player->position == 1)
-		{
-			player->lapPoints += 2;
-		}
-		else
-		{
-			player->lapPoints += 1;
-		}
-	}
-
 	K_CheckpointCrossAward(player);
-	player->gradingpointnum++;
 
 	K_UpdatePowerLevels(player, player->laps, false);
 }
@@ -741,9 +722,8 @@ void Obj_ClearCheckpoints()
 
 void Obj_DeactivateCheckpoints()
 {
-	for (auto chkpair : g_checkpoints)
+	for (Checkpoint* chk : g_checkpoints)
 	{
-		Checkpoint* chk = chkpair.first;
 		if (chk->valid())
 		{
 			chk->untwirl();

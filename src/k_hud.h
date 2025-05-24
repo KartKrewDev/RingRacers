@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -63,6 +63,7 @@ void K_drawButton(fixed_t x, fixed_t y, INT32 flags, patch_t *button[2], boolean
 void K_drawButtonAnim(INT32 x, INT32 y, INT32 flags, patch_t *button[2], tic_t animtic);
 void K_DrawSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean isSmall);
 void K_DrawMarginSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean isSmall, boolean leftedge);
+INT32 K_GetTransFlagFromFixed(fixed_t value);
 
 void K_DrawKartPositionNumXY(
 	UINT8 num,
@@ -94,22 +95,48 @@ extern patch_t *kp_button_c[2][2];
 extern patch_t *kp_button_x[2][2];
 extern patch_t *kp_button_y[2][2];
 extern patch_t *kp_button_z[2][2];
-extern patch_t *kp_button_start[2];
-extern patch_t *kp_button_l[2];
-extern patch_t *kp_button_r[2];
-extern patch_t *kp_button_up[2];
-extern patch_t *kp_button_down[2];
-extern patch_t *kp_button_right[2];
-extern patch_t *kp_button_left[2];
-extern patch_t *kp_button_dpad[2];
+extern patch_t *kp_button_start[2][2];
+extern patch_t *kp_button_l[2][2];
+extern patch_t *kp_button_r[2][2];
+extern patch_t *kp_button_up[2][2];
+extern patch_t *kp_button_down[2][2];
+extern patch_t *kp_button_right[2][2];
+extern patch_t *kp_button_left[2][2];
+extern patch_t *kp_button_lua1[2][2];
+extern patch_t *kp_button_lua2[2][2];
+extern patch_t *kp_button_lua3[2][2];
+
+extern patch_t *gen_button_a[2][2];
+extern patch_t *gen_button_b[2][2];
+extern patch_t *gen_button_x[2][2];
+extern patch_t *gen_button_y[2][2];
+extern patch_t *gen_button_lb[2][2];
+extern patch_t *gen_button_rb[2][2];
+extern patch_t *gen_button_lt[2][2];
+extern patch_t *gen_button_rt[2][2];
+extern patch_t *gen_button_start[2][2];
+extern patch_t *gen_button_back[2][2];
+extern patch_t *gen_button_ls[2][2];
+extern patch_t *gen_button_rs[2][2];
+extern patch_t *gen_button_dpad[2][2];
+
+extern patch_t *gen_button_keyleft[2];
+extern patch_t *gen_button_keyright[2];
+extern patch_t *gen_button_keycenter[2];
+
+extern patch_t *gen_button_keyleft[2];
+extern patch_t *gen_button_keyright[2];
+extern patch_t *gen_button_keycenter[2];
 
 extern patch_t *kp_eggnum[6];
 extern patch_t *kp_facenum[MAXPLAYERS+1];
 
+extern patch_t *kp_pickmeup[2];
+
 extern patch_t *kp_unknownminimap;
 
 void K_AddMessage(const char *msg, boolean interrupt, boolean persist);
-void K_AddMessageForPlayer(const player_t *player, const char *msg, boolean interrupt, boolean persist);
+void K_AddMessageForPlayer(player_t *player, const char *msg, boolean interrupt, boolean persist);
 void K_ClearPersistentMessages(void);
 void K_ClearPersistentMessageForPlayer(player_t *player);
 void K_TickMessages(void);
@@ -132,6 +159,8 @@ void K_DrawPlayerTag(fixed_t x, fixed_t y, player_t *p, playertagtype_t type, bo
 INT32 K_GetMinimapTransFlags(const boolean usingProgressBar);
 INT32 K_GetMinimapSplitFlags(const boolean usingProgressBar);
 position_t K_GetKartObjectPosToMinimapPos(fixed_t objx, fixed_t objy);
+
+INT32 K_DrawGameControl(UINT16 x, UINT16 y, UINT8 player, const char *str, UINT8 alignment, UINT8 font, UINT32 flags);
 
 #ifdef __cplusplus
 } // extern "C"

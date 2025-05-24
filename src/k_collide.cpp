@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -71,6 +71,12 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 
 	if (t1->type == MT_BALLHOG && t2->type == MT_BALLHOG)
 		return true; // Ballhogs don't collide with eachother
+
+	if (t1->type == MT_BALLHOGBOOM && t2->type == MT_BALLHOGBOOM)
+		return true; // Ballhogs don't collide with eachother
+
+	if (K_TryPickMeUp(t1, t2))
+		return true;
 
 	if (t2->player)
 	{
@@ -172,7 +178,10 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 		if (t1->health <= 0 || t2->health <= 0)
 			return true;
 
-		if (!P_CanPickupItem(t2->player, 2))
+		if (K_TryPickMeUp(t1, t2))
+			return true;
+
+		if (!P_CanPickupItem(t2->player, PICKUP_EGGBOX))
 			return true;
 
 		K_DropItems(t2->player);
@@ -425,6 +434,9 @@ boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 	if (t1->health <= 0 || t2->health <= 0)
 		return true;
 
+	if (K_TryPickMeUp(t1, t2))
+		return true;
+
 	if (t2->player)
 	{
 		const INT32 oldhitlag = t2->hitlag;
@@ -530,6 +542,9 @@ boolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2)
 		return true;
 
 	if (t2->player && (t2->player->hyudorotimer || t2->player->justbumped))
+		return true;
+
+	if (K_TryPickMeUp(t1, t2))
 		return true;
 
 	if (draggeddroptarget && P_MobjWasRemoved(draggeddroptarget))
@@ -1053,6 +1068,9 @@ boolean K_KitchenSinkCollide(mobj_t *t1, mobj_t *t2)
 	if (((t1->target == t2) || (!(t2->flags & (MF_ENEMY|MF_BOSS)) && (t1->target == t2->target))) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
 
+	if (K_TryPickMeUp(t1, t2))
+		return true;
+
 	if (t2->player)
 	{
 		if (t2->player->flashing > 0 && t2->hitlag == 0)
@@ -1206,7 +1224,7 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 	// Ring sting, this is a bit more unique
 	auto doSting = [](mobj_t *t1, mobj_t *t2)
 	{
-		if (K_GetShieldFromItem(t2->player->itemtype) != KSHIELD_NONE)
+		if (t2->player->curshield != KSHIELD_NONE)
 		{
 			return false;
 		}

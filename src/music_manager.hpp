@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by James Robert Roman
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by James Robert Roman
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -11,11 +11,10 @@
 #ifndef MUSIC_MANAGER_HPP
 #define MUSIC_MANAGER_HPP
 
-#include <algorithm>
 #include <cstdlib>
-#include <string>
-#include <unordered_map>
 
+#include "core/hash_map.hpp"
+#include "core/string.h"
 #include "cxxutil.hpp"
 #include "music_tune.hpp"
 
@@ -25,7 +24,7 @@ namespace srb2::music
 class TuneManager
 {
 public:
-	const std::string& current_song() const { return current_song_; }
+	const srb2::String& current_song() const { return current_song_; }
 
 	Tune* current_tune() const
 	{
@@ -99,8 +98,8 @@ public:
 	}
 
 private:
-	std::unordered_map<std::string, Tune> map_;
-	std::string current_song_;
+	srb2::HashMap<srb2::String, Tune> map_;
+	srb2::String current_song_;
 
 	tic_t time_sync_;
 	tic_t time_local_;
@@ -113,11 +112,20 @@ private:
 
 	decltype(map_)::const_iterator current_iterator() const
 	{
-		return std::max_element(
-			map_.begin(),
-			map_.end(),
-			[](const auto& a, const auto& b) { return a.second < b.second; }
-		);
+		// Not using std::max_element due to buggy clang libc++ LegacyInputIterator assertion
+		auto first = map_.begin();
+		auto last = map_.end();
+		if (first == last) return first;
+
+		auto max = first;
+		while (++first != last)
+		{
+			if (max->second < first->second)
+			{
+				max = first;
+			}
+		}
+		return max;
 	}
 
 	bool load() const;

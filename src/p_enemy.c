@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -3519,7 +3519,7 @@ void A_AttractChase(mobj_t *actor)
 				angle_t offset = FixedAngle(18<<FRACBITS);
 
 				// Base add is 3 tics for 9,9, adds 1 tic for each point closer to the 1,1 end
-				actor->target->player->ringboost += K_GetKartRingPower(actor->target->player, true) + 3;
+				actor->target->player->ringboost += K_GetFullKartRingPower(actor->target->player, true);
 
 				S_ReducedVFXSoundAtVolume(actor->target, sfx_s1b5, actor->target->player->ringvolume, NULL);
 
@@ -3575,7 +3575,7 @@ void A_AttractChase(mobj_t *actor)
 			if (actor->extravalue1 >= 16)
 			{
 				if (!P_GivePlayerRings(actor->target->player, 1)) // returns 0 if addition failed
-					actor->target->player->ringboost += K_GetKartRingPower(actor->target->player, true) + 3;
+					actor->target->player->ringboost += K_GetFullKartRingPower(actor->target->player, true);
 
 				if (actor->cvmem) // caching
 					S_StartSound(actor->target, sfx_s1c5);
@@ -3640,7 +3640,7 @@ void A_AttractChase(mobj_t *actor)
 			if (
 				actor->tracer->player && actor->tracer->health
 				&& ((gametyperules & GTR_SPHERES)
-					|| (actor->tracer->player->itemtype == KITEM_LIGHTNINGSHIELD
+					|| (actor->tracer->player->curshield == KSHIELD_LIGHTNING
 					&& RINGTOTAL(actor->tracer->player) < 20
 					&& !(actor->tracer->player->pflags & PF_RINGLOCK)))
 				//&& P_CheckSight(actor, actor->tracer)
@@ -3883,7 +3883,7 @@ void A_OverlayThink(mobj_t *actor)
 	if (!actor->target)
 		return;
 
-	if (!r_splitscreen && rendermode != render_soft)
+	if (!r_splitscreen && rendermode == render_opengl)
 	{
 		angle_t viewingangle;
 
@@ -5128,10 +5128,7 @@ void A_OldRingExplode(mobj_t *actor) {
 
 		if (changecolor)
 		{
-			if (!(gametyperules & GTR_TEAMS))
-				mo->color = actor->target->color; //copy color
-			else if (actor->target->player->ctfteam == 2)
-				mo->color = skincolor_bluering;
+			P_ColorTeamMissile(mo, actor->target->player);
 		}
 	}
 
@@ -5144,10 +5141,7 @@ void A_OldRingExplode(mobj_t *actor) {
 
 	if (changecolor)
 	{
-		if (!(gametyperules & GTR_TEAMS))
-			mo->color = actor->target->color; //copy color
-		else if (actor->target->player->ctfteam == 2)
-			mo->color = skincolor_bluering;
+		P_ColorTeamMissile(mo, actor->target->player);
 	}
 
 	mo = P_SpawnMobj(actor->x, actor->y, actor->z, locvar1);
@@ -5159,10 +5153,7 @@ void A_OldRingExplode(mobj_t *actor) {
 
 	if (changecolor)
 	{
-		if (!(gametyperules & GTR_TEAMS))
-			mo->color = actor->target->color; //copy color
-		else if (actor->target->player->ctfteam == 2)
-			mo->color = skincolor_bluering;
+		P_ColorTeamMissile(mo, actor->target->player);
 	}
 }
 
@@ -12212,6 +12203,7 @@ void A_BallhogExplode(mobj_t *actor)
 	mo2 = P_SpawnMobj(actor->x, actor->y, actor->z, MT_BALLHOGBOOM);
 	P_SetScale(mo2, actor->scale*2);
 	mo2->destscale = mo2->scale;
+	P_SetTarget(&mo2->target, actor->target);
 	S_StartSound(mo2, actor->info->deathsound);
 	return;
 }

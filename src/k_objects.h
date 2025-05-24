@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -435,6 +435,11 @@ boolean Obj_DestroyKart(mobj_t *kart);
 void Obj_DestroyedKartParticleThink(mobj_t *part);
 void Obj_DestroyedKartParticleLanding(mobj_t *part);
 
+/* Flybot767 (stun) */
+void Obj_SpawnFlybotsForPlayer(player_t *player);
+void Obj_FlybotThink(mobj_t *flybot);
+void Obj_FlybotDeath(mobj_t *flybot);
+
 /* Pulley */
 void Obj_PulleyThink(mobj_t *root);
 void Obj_PulleyHookTouch(mobj_t *special, mobj_t *toucher);
@@ -443,6 +448,18 @@ void Obj_PulleyHookTouch(mobj_t *special, mobj_t *toucher);
 UINT8 K_HogChargeToHogCount(INT32 charge, UINT8 cap);
 void K_UpdateBallhogReticules(player_t *player, UINT8 num_hogs, boolean on_release);
 void K_DoBallhogAttack(player_t *player, UINT8 num_hogs);
+
+/* Bubble Shield */
+void Obj_SpawnBubbleShieldVisuals(mobj_t *source);
+boolean Obj_TickBubbleShieldVisual(mobj_t *mobj);
+
+/* Lightning Shield */
+void Obj_SpawnLightningShieldVisuals(mobj_t *source);
+boolean Obj_TickLightningShieldVisual(mobj_t *mobj);
+
+/* Flame Shield */
+void Obj_SpawnFlameShieldVisuals(mobj_t *source);
+boolean Obj_TickFlameShieldVisual(mobj_t *mobj);
 
 #ifdef __cplusplus
 } // extern "C"

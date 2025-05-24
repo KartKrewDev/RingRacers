@@ -1,8 +1,8 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
 // Copyright (C) 2016 by James Haley, David Hill, et al. (Team Eternity)
-// Copyright (C) 2024 by Sally "TehRealSalt" Cochenour
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Sally "TehRealSalt" Cochenour
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -88,7 +88,7 @@ Environment::Environment()
 	addCodeDataACS0( 95, {"",        2, addCallFunc(CallFunc_AmbientSound)});
 
 	addCodeDataACS0( 97, {"",        4, addCallFunc(CallFunc_SetLineTexture)});
-
+	addCodeDataACS0( 98, {"",        2, addCallFunc(CallFunc_SetLineBlocking)});
 	addCodeDataACS0( 99, {"",        7, addCallFunc(CallFunc_SetLineSpecial)});
 	addCodeDataACS0(100, {"",        3, addCallFunc(CallFunc_ThingSound)});
 	addCodeDataACS0(101, {"",        0, addCallFunc(CallFunc_EndPrintBold)});
@@ -228,8 +228,7 @@ void Environment::loadModule(ACSVM::Module *module)
 	if (name->i == (size_t)LUMPERROR)
 	{
 		// No lump given for module.
-		CONS_Alert(CONS_WARNING, "Could not find ACS module \"%s\"; scripts will not function properly!\n", name->s->str);
-		return; //throw ACSVM::ReadError("file open failure");
+		throw ACSVM::ReadError("invalid lump");
 	}
 
 	lumpLen = W_LumpLength(name->i);
@@ -280,9 +279,7 @@ void Environment::loadModule(ACSVM::Module *module)
 	}
 	else
 	{
-		// Unlike Hexen, a BEHAVIOR lump is not required.
-		// Simply ignore in this instance.
-		CONS_Debug(DBG_SETUP, "ACS module has no data, ignoring...\n");
+		throw ACSVM::ReadError("file empty");
 	}
 }
 

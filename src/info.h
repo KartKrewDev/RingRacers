@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -589,6 +589,7 @@ typedef enum sprite
 	SPR_BSPH, // Sphere
 	SPR_EMBM,
 	SPR_SPCN, // Spray Can
+	SPR_SBON, // Spray Can replacement bonus
 	SPR_MMSH, // Ancient Shrine
 	SPR_MORB, // One Morbillion
 	SPR_EMRC, // Chaos Emeralds
@@ -914,9 +915,20 @@ typedef enum sprite
 	SPR_TRIS, // SPB Manta Ring start
 	SPR_TRNQ, // SPB Manta Ring loop
 	SPR_THNS, // Thunder Shield
+	SPR_THNC, // Lightning Shield Top Flash
+	SPR_THNA, // Lightning Shield Top Swoosh
+	SPR_THNB, // Lightning Shield Bottom Swoosh
 	SPR_BUBS, // Bubble Shield (not Bubs)
+	SPR_BUBT, // Bubble Shield trap
+	SPR_BUBA, // Bubble Shield Outline
+	SPR_BUBB, // Bubble Shield Top Wave
+	SPR_BUBC, // Bubble Shield Bottom Wave
+	SPR_BUBD, // Bubble Shield Reflection
+	SPR_BUBE, // Bubble Shield Underline
 	SPR_BWVE, // Bubble Shield waves
 	SPR_FLMS, // Flame Shield
+	SPR_FLMA, // Flame Shield Top Layer
+	SPR_FLMB, // Flame Shield Bottom Layer
 	SPR_FLMD, // Flame Shield dash
 	SPR_FLMP, // Flame Shield paper sprites
 	SPR_FLML, // Flame Shield speed lines
@@ -938,6 +950,7 @@ typedef enum sprite
 	SPR_BEXB, // Battle Bumper Explosion: Blast
 	SPR_TWBS, // Tripwire Boost
 	SPR_TWBT, // Tripwire BLASTER
+	SPR_TWBP, // Tripwire approach
 	SPR_SMLD, // Smooth landing
 
 	// Trick Effects
@@ -1122,6 +1135,8 @@ typedef enum sprite
 	SPR_AMPC,
 	SPR_AMPD,
 
+	SPR_SOR_,
+
 	SPR_WTRL, // Water Trail
 
 	SPR_GCHA, // follower: generic chao
@@ -1305,6 +1320,9 @@ typedef enum sprite
 	SPR_DIEM, // smoke
 	SPR_DIEN, // explosion
 
+	// Flybot767 (stun)
+	SPR_STUN,
+
 	// Pulley
 	SPR_HCCH,
 	SPR_HCHK,
@@ -1335,6 +1353,7 @@ typedef enum playersprite
 	SPR2_SIGN, SPR2_SIGL, SPR2_SSIG,
 	SPR2_XTRA,
 	SPR2_TALK,
+	SPR2_DKRT,
 
 	SPR2_FIRSTFREESLOT,
 	SPR2_LASTFREESLOT = 0x7f,
@@ -1395,6 +1414,7 @@ typedef enum state
 
 	S_KART_LEFTOVER,
 	S_KART_LEFTOVER_NOTIRES,
+	S_KART_LEFTOVER_CUSTOM,
 
 	S_KART_TIRE1,
 	S_KART_TIRE2,
@@ -2601,6 +2621,8 @@ typedef enum state
 	S_AMPAURA,
 	S_AMPBURST,
 
+	S_GOTIT,
+
 	S_CHARGEAURA,
 	S_CHARGEFALL,
 	S_CHARGEFLICKER,
@@ -2797,6 +2819,19 @@ typedef enum state
 	S_WIPEOUTTRAIL9,
 	S_WIPEOUTTRAIL10,
 	S_WIPEOUTTRAIL11,
+
+	// "Firework"" dust trail
+	S_FIREWORKTRAIL1,
+	S_FIREWORKTRAIL2,
+	S_FIREWORKTRAIL3,
+	S_FIREWORKTRAIL4,
+	S_FIREWORKTRAIL5,
+	S_FIREWORKTRAIL6,
+	S_FIREWORKTRAIL7,
+	S_FIREWORKTRAIL8,
+	S_FIREWORKTRAIL9,
+	S_FIREWORKTRAIL10,
+	S_FIREWORKTRAIL11,
 
 	// Rocket sneaker
 	S_ROCKETSNEAKER_L,
@@ -3005,6 +3040,12 @@ typedef enum state
 	S_LIGHTNINGSHIELD23,
 	S_LIGHTNINGSHIELD24,
 
+	// Lightning Shield Visuals
+	S_THNC1,
+	S_THNA1,
+	S_THNC2,
+	S_THNB1,
+
 	// Bubble Shield
 	S_BUBBLESHIELD1,
 	S_BUBBLESHIELD2,
@@ -3040,6 +3081,15 @@ typedef enum state
 	S_BUBBLESHIELDWAVE5,
 	S_BUBBLESHIELDWAVE6,
 
+	// Bubble Shield Visuals
+	S_BUBA1,
+	S_BUBB1,
+	S_BUBB2,
+	S_BUBC1,
+	S_BUBC2,
+	S_BUBD1,
+	S_BUBE1,
+
 	// Flame Shield
 	S_FLAMESHIELD1,
 	S_FLAMESHIELD2,
@@ -3059,6 +3109,11 @@ typedef enum state
 	S_FLAMESHIELD16,
 	S_FLAMESHIELD17,
 	S_FLAMESHIELD18,
+
+	// Flame Shield Visuals
+	S_FLMA1,
+	S_FLMA2,
+	S_FLMB1,
 
 	S_FLAMESHIELDDASH1,
 	S_FLAMESHIELDDASH2,
@@ -3173,6 +3228,8 @@ typedef enum state
 	S_TRIPWIREBOOST_BOTTOM,
 	S_TRIPWIREBOOST_BLAST_TOP,
 	S_TRIPWIREBOOST_BLAST_BOTTOM,
+
+	S_TRIPWIREAPPROACH,
 
 	S_SMOOTHLANDING,
 
@@ -4099,6 +4156,9 @@ typedef enum state
 	S_BADNIK_EXPLOSION1,
 	S_BADNIK_EXPLOSION2,
 
+	// Flybot767 (stun)
+	S_FLYBOT767,
+
 	S_FIRSTFREESLOT,
 	S_LASTFREESLOT = S_FIRSTFREESLOT + NUMSTATEFREESLOTS - 1,
 	NUMSTATES
@@ -4573,6 +4633,8 @@ typedef enum mobj_type
 	MT_AMPAURA,
 	MT_AMPBURST,
 
+	MT_GOTIT,
+
 	MT_CHARGEAURA,
 	MT_CHARGEFALL,
 	MT_CHARGEFLICKER,
@@ -4649,8 +4711,11 @@ typedef enum mobj_type
 	MT_MANTARING, // Juicebox for SPB
 
 	MT_LIGHTNINGSHIELD, // Shields
+	MT_LIGHTNINGSHIELD_VISUAL,
 	MT_BUBBLESHIELD,
+	MT_BUBBLESHIELD_VISUAL,
 	MT_FLAMESHIELD,
+	MT_FLAMESHIELD_VISUAL,
 	MT_FLAMESHIELDUNDERLAY,
 	MT_FLAMESHIELDPAPER,
 	MT_BUBBLESHIELDTRAP,
@@ -4683,6 +4748,7 @@ typedef enum mobj_type
 	MT_BATTLEBUMPER_BLAST,
 
 	MT_TRIPWIREBOOST,
+	MT_TRIPWIREAPPROACH,
 
 	MT_SMOOTHLANDING,
 	MT_TRICKINDICATOR,
@@ -5012,6 +5078,8 @@ typedef enum mobj_type
 	MT_PULLUPHOOK,
 
 	MT_AMPS,
+
+	MT_FLYBOT767,
 
 	MT_FIRSTFREESLOT,
 	MT_LASTFREESLOT = MT_FIRSTFREESLOT + NUMMOBJFREESLOTS - 1,

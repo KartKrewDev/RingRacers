@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 //
@@ -1493,6 +1493,18 @@ void readlevelheader(MYFILE *f, char * name)
 				{
 					deh_warning("Level header %d: invalid lobby size '%s'", num, word2);
 				}
+			}
+			else if (fastcmp(word, "CAMHEIGHT") || fastcmp(word, "CAMERAHEIGHT"))
+			{
+				fixed_t camheight = FloatToFixed(atof(word2));
+
+				if (camheight < 0)
+				{
+					deh_warning("Level header %d: invalid camera height %s", num, word2);
+					continue;
+				}
+
+				mapheaderinfo[num]->cameraHeight = camheight;;
 			}
 			else
 				deh_warning("Level header %d: unknown word '%s'", num, word);
@@ -3533,7 +3545,7 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 			else if (fastcmp(word, "EXECCFG"))
 			{
 				if (strchr(word2, '.'))
-					COM_BufAddText(va("exec %s\n", word2));
+					COM_BufAddText(va("exec \"%s\" -immediate\n", word2));
 				else
 				{
 					lumpnum_t lumpnum;
@@ -3550,22 +3562,6 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 					else
 						COM_BufInsertText(W_CacheLumpNum(lumpnum, PU_CACHE));
 				}
-			}
-			else if (fastcmp(word, "REDTEAM"))
-			{
-				skincolor_redteam = (UINT16)get_number(word2);
-			}
-			else if (fastcmp(word, "BLUETEAM"))
-			{
-				skincolor_blueteam = (UINT16)get_number(word2);
-			}
-			else if (fastcmp(word, "REDRING"))
-			{
-				skincolor_redring = (UINT16)get_number(word2);
-			}
-			else if (fastcmp(word, "BLUERING"))
-			{
-				skincolor_bluering = (UINT16)get_number(word2);
 			}
 			else if (fastcmp(word, "INVULNTICS"))
 			{
@@ -4697,7 +4693,7 @@ preciptype_t get_precip(const char *word)
 			return i;
 	}
 	deh_warning("Couldn't find weather type named 'PRECIP_%s'",word);
-	return PRECIP_RAIN;
+	return PRECIP_NONE;
 }
 
 /// \todo Make ANY of this completely over-the-top math craziness obey the order of operations.

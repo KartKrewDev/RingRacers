@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2016 by Kay "Kaito" Sinclaire.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
@@ -346,6 +346,7 @@ typedef enum
 	mopt_profiles = 0,
 	mopt_video,
 	mopt_sound,
+	mopt_voice,
 	mopt_hud,
 	mopt_gameplay,
 	mopt_server,
@@ -468,6 +469,9 @@ extern menu_t OPTIONS_VideoAdvancedDef;
 extern menuitem_t OPTIONS_Sound[];
 extern menu_t OPTIONS_SoundDef;
 
+extern menuitem_t OPTIONS_Voice[];
+extern menu_t OPTIONS_VoiceDef;
+
 extern menuitem_t OPTIONS_HUD[];
 extern menu_t OPTIONS_HUDDef;
 
@@ -477,15 +481,17 @@ extern menu_t OPTIONS_HUDOnlineDef;
 typedef enum
 {
 	gopt_spacer0 = 0,
-	gopt_gamespeed,
+	gopt_teamplay,
 	gopt_frantic,
+	gopt_spacer1,
+	gopt_gamespeed,
 	gopt_encore,
 	gopt_exitcountdown,
-	gopt_spacer1,
+	gopt_spacer2,
 	gopt_timelimit,
 	gopt_pointlimit,
 	gopt_startingbumpers,
-	gopt_spacer2,
+	gopt_spacer3,
 	gopt_itemtoggles
 } gopt_e;
 
@@ -1124,6 +1130,8 @@ extern consvar_t cv_dummyprofileplayername;
 extern consvar_t cv_dummyprofilekickstart;
 extern consvar_t cv_dummyprofileautoroulette;
 extern consvar_t cv_dummyprofilelitesteer;
+extern consvar_t cv_dummyprofilestrictfastfall;
+extern consvar_t cv_dummyprofiledescriptiveinput;
 extern consvar_t cv_dummyprofileautoring;
 extern consvar_t cv_dummyprofilerumble;
 extern consvar_t cv_dummyprofilefov;
@@ -1478,6 +1486,7 @@ extern struct statisticsmenu_s {
 	INT32 gotmedals;
 	INT32 nummedals;
 	INT32 numextramedals;
+	INT32 numcanbonus;
 	UINT32 statgridplayed[9][9];
 	INT32 maxscroll;
 	UINT16 *maplist;

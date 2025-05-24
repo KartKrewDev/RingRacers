@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Ronald "Eidolon" Kinard
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Ronald "Eidolon" Kinard
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -50,7 +50,7 @@ Xmp<C>::Xmp() : data_(), instance_(nullptr), module_loaded_(false), looping_(fal
 }
 
 template <size_t C>
-Xmp<C>::Xmp(std::vector<std::byte> data)
+Xmp<C>::Xmp(Vector<std::byte> data)
 	: data_(std::move(data)), instance_(nullptr), module_loaded_(false), looping_(false)
 {
 	_init();

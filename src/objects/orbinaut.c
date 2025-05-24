@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Sally "TehRealSalt" Cochenour
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Sally "TehRealSalt" Cochenour
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -190,6 +190,9 @@ boolean Obj_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		return true;
 	}
 
+	if (K_TryPickMeUp(t1, t2))
+		return true;
+
 	if (t1->type == MT_GARDENTOP)
 	{
 		tumbleitem = true;
@@ -226,7 +229,8 @@ boolean Obj_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 			{
 				P_DamageMobj(t2, t1, t1->target, 1, DMG_WOMBO |
 					(tumbleitem ? DMG_TUMBLE : DMG_WIPEOUT));
-				K_KartBouncing(t2, t1);
+				if (tumbleitem || (gametyperules & GTR_SPHERES) || !t2->player->tripwireLeniency)
+					K_KartBouncing(t2, t1);
 			}
 
 			S_StartSound(t2, sfx_s3k7b);

@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 //
@@ -48,6 +48,7 @@ boolean P_PathTraverse(fixed_t px1, fixed_t py1, fixed_t px2, fixed_t py2,
 
 #define P_AproxDistance(dx, dy) FixedHypot(dx, dy)
 void P_ClosestPointOnLine(fixed_t x, fixed_t y, const line_t *line, vertex_t *result);
+void P_ClosestPointOnLineWithinLine(fixed_t x, fixed_t y, line_t *line, vertex_t *result);
 void P_ClosestPointOnLine3D(const vector3_t *p, const vector3_t *line, vector3_t *result);
 INT32 P_PointOnLineSide(fixed_t x, fixed_t y, const line_t *line);
 void P_MakeDivline(const line_t *li, divline_t *dl);
@@ -74,10 +75,19 @@ struct opening_t
 	UINT8 fofType; // LO_FOF_ types for forcing FOF collide
 };
 
+struct fofopening_t
+{
+	fixed_t ceiling;
+	fixed_t floor;
+	ffloor_t * ceilingrover;
+	ffloor_t *   floorrover;
+};
+
 #define LO_FOF_ANY		(0)
 #define LO_FOF_FLOORS	(1)
 #define LO_FOF_CEILINGS	(2)
 
+boolean P_FoFOpening(sector_t *sector, line_t *linedef, mobj_t *mobj, opening_t *open, fofopening_t *fofopen);
 void P_LineOpening(line_t *plinedef, mobj_t *mobj, opening_t *open);
 
 typedef enum

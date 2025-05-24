@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Sally "TehRealSalt" Cochenour
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Sally "TehRealSalt" Cochenour
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -89,6 +89,7 @@ static boolean K_BotUseItemNearPlayer(const player_t *player, ticcmd_t *cmd, fix
 
 		if (target->mo == NULL || P_MobjWasRemoved(target->mo)
 			|| player == target || target->spectator
+			|| G_SameTeam(player, target)
 			|| target->flashing)
 		{
 			continue;
@@ -144,6 +145,7 @@ static player_t *K_PlayerNearSpot(const player_t *player, fixed_t x, fixed_t y, 
 
 		if (target->mo == NULL || P_MobjWasRemoved(target->mo)
 			|| player == target || target->spectator
+			|| G_SameTeam(player, target)
 			|| target->flashing)
 		{
 			continue;
@@ -222,6 +224,7 @@ static player_t *K_PlayerInCone(const player_t *player, fixed_t radius, UINT16 c
 
 		if (target->mo == NULL || P_MobjWasRemoved(target->mo)
 			|| player == target || target->spectator
+			|| G_SameTeam(player, target)
 			|| target->flashing
 			|| !P_CheckSight(player->mo, target->mo))
 		{
@@ -1142,28 +1145,31 @@ static void K_BotItemJawz(const player_t *player, ticcmd_t *cmd)
 		&& players[lastTarg].mo != NULL
 		&& P_MobjWasRemoved(players[lastTarg].mo) == false)
 	{
-		mobj_t *targMo = players[lastTarg].mo;
-		mobj_t *mobj = NULL, *next = NULL;
-		boolean targettedAlready = false;
-
 		target = &players[lastTarg];
 
-		// Make sure no other Jawz are targetting this player.
-		for (mobj = trackercap; mobj; mobj = next)
+		if (G_SameTeam(player, target) == false)
 		{
-			next = mobj->itnext;
+			mobj_t *targMo = players[lastTarg].mo;
+			mobj_t *mobj = NULL, *next = NULL;
+			boolean targettedAlready = false;
 
-			if (mobj->type == MT_JAWZ && mobj->target == targMo)
+			// Make sure no other Jawz are targetting this player.
+			for (mobj = trackercap; mobj; mobj = next)
 			{
-				targettedAlready = true;
-				break;
-			}
-		}
+				next = mobj->itnext;
 
-		if (targettedAlready == false)
-		{
-			K_ItemConfirmForTarget(player, cmd, target, player->botvars.difficulty * snipeMul);
-			throwdir = 1;
+				if (mobj->type == MT_JAWZ && mobj->target == targMo)
+				{
+					targettedAlready = true;
+					break;
+				}
+			}
+
+			if (targettedAlready == false)
+			{
+				K_ItemConfirmForTarget(player, cmd, target, player->botvars.difficulty * snipeMul);
+				throwdir = 1;
+			}
 		}
 	}
 
@@ -1253,6 +1259,7 @@ static void K_BotItemBubble(const player_t *player, ticcmd_t *cmd)
 
 				if (target->mo == NULL || P_MobjWasRemoved(target->mo)
 					|| player == target || target->spectator
+					|| G_SameTeam(player, target)
 					|| target->flashing)
 				{
 					continue;
@@ -1528,6 +1535,7 @@ static void K_BotItemInstashield(const player_t *player, ticcmd_t *cmd)
 		if (P_MobjWasRemoved(target->mo) == true
 			|| player == target
 			|| target->spectator == true
+			|| G_SameTeam(player, target) == true
 			|| target->flashing != 0)
 		{
 			continue;

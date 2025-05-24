@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2016 by Kay "Kaito" Sinclaire.
 // Copyright (C) 2020 by Sonic Team Junior.
 //
@@ -755,6 +755,8 @@ static void M_DrawMenuTyping(void)
 
 }
 
+// Largely replaced by boxed drawing mode in K_DrawGameControl and rich text
+/*
 static void M_DrawMediocreKeyboardKey(const char *text, INT32 *workx, INT32 worky, boolean push, boolean rightaligned)
 {
 	INT32 buttonwidth = V_StringWidth(text, 0) + 2;
@@ -779,6 +781,7 @@ static void M_DrawMediocreKeyboardKey(const char *text, INT32 *workx, INT32 work
 		0, text
 	);
 }
+*/
 
 // Draw the message popup submenu
 void M_DrawMenuMessage(void)
@@ -806,10 +809,6 @@ void M_DrawMenuMessage(void)
 		INT32 workx = x + menumessage.x;
 		INT32 worky = y + menumessage.y;
 
-		boolean standardbuttons = (
-			cv_currprofile.value != -1 || G_GetNumAvailableGamepads()
-		);
-
 		boolean push;
 
 		if (menumessage.closing)
@@ -830,26 +829,11 @@ void M_DrawMenuMessage(void)
 
 		workx -= 2;
 
-		if (standardbuttons)
-		{
-			workx -= SHORT(kp_button_x[1][0]->width);
-			K_drawButton(
-				workx * FRACUNIT, worky * FRACUNIT,
-				0, kp_button_x[1],
-				push
-			);
-
-			workx -= SHORT(kp_button_b[1][0]->width);
-			K_drawButton(
-				workx * FRACUNIT, worky * FRACUNIT,
-				0, kp_button_b[1],
-				push
-			);
-		}
-		else
-		{
-			M_DrawMediocreKeyboardKey("ESC", &workx, worky, push, true);
-		}
+		workx -= K_DrawGameControl(
+			workx+2, worky+2,
+			0, "<b_animated> <x_animated> ",
+			2, 8, 0
+		);
 
 		if (menumessage.confirmstr)
 		{
@@ -869,19 +853,11 @@ void M_DrawMenuMessage(void)
 			workx -= 2;
 		}
 
-		if (standardbuttons)
-		{
-			workx -= SHORT(kp_button_a[1][0]->width);
-			K_drawButton(
-				workx * FRACUNIT, worky * FRACUNIT,
-				0, kp_button_a[1],
-				push
-			);
-		}
-		else
-		{
-			M_DrawMediocreKeyboardKey("ENTER", &workx, worky, push, true);
-		}
+		workx -= K_DrawGameControl(
+			workx+2, worky+2,
+			0, "<a_animated> ",
+			2, 8, 0
+		);
 	}
 
 	x -= 4;
@@ -1264,7 +1240,7 @@ static INT32 M_DrawRejoinIP(INT32 x, INT32 y, INT32 tx)
 	V_DrawMenuString(x - 10 - (skullAnimCounter/5), y, f, "\x1C"); // left arrow
 	V_DrawMenuString(x + w + 2+ (skullAnimCounter/5), y, f, "\x1D"); // right arrow
 	V_DrawThinString(x, y, f, text);
-	V_DrawRightAlignedThinString(BASEVIDWIDTH + 4 + tx, y, V_ORANGEMAP, "\xAC Rejoin");
+	K_DrawGameControl(BASEVIDWIDTH + 4 + tx, y, 0, "<c> Rejoin", 2, 0, V_ORANGEMAP);
 
 	return shift;
 }
@@ -1928,7 +1904,7 @@ static boolean M_DrawFollowerSprite(INT16 x, INT16 y, INT32 num, boolean charfli
 static void M_DrawCharSelectSprite(UINT8 num, INT16 x, INT16 y, boolean charflip)
 {
 	setup_player_t *p = &setup_player[num];
-	UINT8 color;
+	UINT16 color;
 	UINT8 *colormap;
 
 	if (p->skin < 0)
@@ -2122,6 +2098,7 @@ static void M_DrawCharSelectPreview(UINT8 num)
 	if (p->showextra == true)
 	{
 		INT32 randomskin = 0;
+		INT32 doping = 0;
 		switch (p->mdepth)
 		{
 			case CSSTEP_ALTS: // Select clone
@@ -2132,6 +2109,7 @@ static void M_DrawCharSelectPreview(UINT8 num)
 					V_DrawThinString(x-3, y+12, 0,
 						skins[setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum]].name);
 					randomskin = (skins[setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum]].flags & SF_IRONMAN);
+					doping = (skins[setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum]].flags & SF_HIVOLT);
 				}
 				else
 				{
@@ -2140,7 +2118,8 @@ static void M_DrawCharSelectPreview(UINT8 num)
 				/* FALLTHRU */
 			case CSSTEP_CHARS: // Character Select grid
 				V_DrawThinString(x-3, y+2, 0, va("Class %c (s %c - w %c)",
-					('A' + R_GetEngineClass(p->gridx+1, p->gridy+1, randomskin)),
+					(doping
+						? 'R' : ('A' + R_GetEngineClass(p->gridx+1, p->gridy+1, randomskin))),
 					(randomskin
 						? '?' : ('1'+p->gridx)),
 					(randomskin
@@ -2462,19 +2441,16 @@ void M_DrawCharacterSelect(void)
 	}
 
 	{
-		const int kLeft = 76;
 		const int kTop = 6;
-		const int kButtonWidth = 16;
-		INT32 x = basex + kLeft;
 
 		if (!optionsmenu.profile) // Does nothing on this screen
 		{
-			K_drawButton((x += 22) * FRACUNIT, (kTop - 3) * FRACUNIT, 0, kp_button_r, M_MenuButtonPressed(pid, MBT_R));
-			V_DrawThinString((x += kButtonWidth), kTop, 0, "Info");
+			K_DrawGameControl(BASEVIDWIDTH/2, kTop, pid, "<r_animated> Info   <c_animated> Default", 1, 0, 0);
 		}
-
-		K_drawButton((x += 58) * FRACUNIT, (kTop - 1) * FRACUNIT, 0, kp_button_c[1], M_MenuButtonPressed(pid, MBT_C));
-		V_DrawThinString((x += kButtonWidth), kTop, 0, "Default");
+		else
+		{
+			K_DrawGameControl(BASEVIDWIDTH/2+62, kTop, pid, "<a_animated> Accept  <x_animated> Back  <c_animated> Default", 1, 0, 0);
+		}
 	}
 
 	// We have to loop twice -- first time to draw the drop shadows, a second time to draw the icons.
@@ -2583,6 +2559,11 @@ void M_DrawCharacterSelect(void)
 	{
 		// Draw the priority player over the other ones
 		M_DrawCharSelectCursor(priority);
+	}
+
+	if (setup_numplayers > 1)
+	{
+		V_DrawCenteredThinString(BASEVIDWIDTH/2, BASEVIDHEIGHT-12, V_30TRANS, "\x85""Double-input problems?\x80 Close Steam, DS4Windows, and other controller wrappers!");
 	}
 }
 
@@ -2744,20 +2725,15 @@ void M_DrawRaceDifficulty(void)
 					V_DrawMappedPatch(cx, cy, 0, W_CachePatchName("OFF_TOGG", PU_CACHE), NULL);
 				}
 
-				patch_t **bt = NULL;
 				switch (it->mvar2)
 				{
 					case MBT_Y:
-						bt = kp_button_y[1];
+						K_DrawGameControl(cx + 24, cy + 22, 0, activated ? "<y_pressed>" : "<y>", 0, 8, 0);
 						break;
 
 					case MBT_Z:
-						bt = kp_button_z[1];
+						K_DrawGameControl(cx + 24, cy + 22, 0, activated ? "<z_pressed>" : "<z>", 0, 8, 0);
 						break;
-				}
-				if (bt)
-				{
-					K_drawButton((cx + 24) * FRACUNIT, (cy + 22) * FRACUNIT, 0, bt, activated);
 				}
 				break;
 			}
@@ -3298,10 +3274,178 @@ void M_DrawCupSelect(void)
 	}
 
 	INT16 ty = M_EaseWithTransition(Easing_Linear, 5 * 24);
-	V_DrawFill(0, 146 + ty, BASEVIDWIDTH, 54, 31);
-	M_DrawCupPreview(146 + ty, &templevelsearch);
+	y = 146 + ty;
+	V_DrawFill(0, y, BASEVIDWIDTH, 54, 31);
+	M_DrawCupPreview(y, &templevelsearch);
 
 	M_DrawCupTitle(120 - ty, &templevelsearch);
+
+	if (templevelsearch.grandprix == false && templevelsearch.cup != NULL)
+	{
+		if (templevelsearch.cup != &dummy_lostandfound)
+		{
+			templevelsearch.checklocked = false;
+		}
+
+		// The following makes a HUGE assumption that we're
+		// never going to have more than ~9 Race Courses
+		// (with Medals) in Lost & Found. Which is almost
+		// certainly true for Krew, but is very likely to
+		// be violated by the long tail of modding. To those
+		// finding this eventually: I'M SORRY ~toast 221024
+
+		struct work_array_t {
+			emblem_t *medal;
+			UINT16 col;
+			UINT16 dotcol;
+		} work_array[CUPCACHE_MAX];
+
+		boolean incj = false;
+
+		i = j = 0;
+
+		INT16 map = M_GetFirstLevelInList(&i, &templevelsearch);
+		emblem_t *emblem = NULL;
+
+		while (map < nummapheaders && j < CUPCACHE_MAX)
+		{
+			if (map < basenummapheaders)
+			{
+				emblem = NULL;
+				incj = false;
+
+				work_array[j].medal = NULL;
+				work_array[j].col = work_array[j].dotcol = MCAN_INVALID;
+
+				if (templevelsearch.timeattack)
+				{
+					emblem = M_GetLevelEmblems(map+1);
+
+					while (emblem)
+					{
+						if (emblem->type == ET_TIME)
+						{
+							incj = true;
+
+							if (gamedata->collected[emblem-emblemlocations])
+							{
+								if (!work_array[j].medal
+								|| (
+									(work_array[j].medal->type == ET_TIME)
+									&& (work_array[j].medal->tag < emblem->tag)
+									)
+								)
+								{
+									work_array[j].medal = emblem;
+								}
+							}
+						}
+						else if ((emblem->type == ET_MAP)
+							&& (emblem->flags & ME_SPBATTACK))
+						{
+							incj = true;
+
+							if (gamedata->collected[emblem-emblemlocations])
+							{
+								work_array[j].dotcol = M_GetEmblemColor(emblem);
+							}
+						}
+
+						emblem = M_GetLevelEmblems(-1);
+					}
+				}
+				else if (mapheaderinfo[map]->typeoflevel & TOL_RACE)
+				{
+					incj = true;
+
+					if (mapheaderinfo[map]->records.spraycan == MCAN_BONUS)
+					{
+						work_array[j].col = MCAN_BONUS;
+					}
+					else if (mapheaderinfo[map]->records.spraycan < gamedata->numspraycans)
+					{
+						work_array[j].col = gamedata->spraycans[mapheaderinfo[map]->records.spraycan].col;
+					}
+
+					if (mapheaderinfo[map]->records.mapvisited & MV_MYSTICMELODY)
+					{
+						work_array[j].dotcol = SKINCOLOR_TURQUOISE;
+					}
+				}
+
+				if (incj)
+					j++;
+			}
+
+			map = M_GetNextLevelInList(map, &i, &templevelsearch);
+		}
+
+		if (j)
+		{
+			x = (BASEVIDWIDTH - (j*10))/2 + 1;
+			y += 2;
+
+			V_DrawFill(x - 4, y, (j*10) + 6, 3, 31);
+			for (i = 1; i <= 6; i++)
+			{
+				V_DrawFill(x + i - 4, y+2+i, (j*10) + 6 - (i*2), 1, 31);
+			}
+
+			y--;
+
+			for (i = 0; i < j; i++)
+			{
+				if (templevelsearch.timeattack)
+				{
+					if (work_array[i].medal)
+					{
+						// Primary Medal
+
+						V_DrawMappedPatch(x, y, 0, W_CachePatchName(M_GetEmblemPatch(work_array[i].medal, false), PU_CACHE),
+							R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(work_array[i].medal), GTC_MENUCACHE));
+					}
+					else
+					{
+						// Need it!
+
+						V_DrawScaledPatch(x, y, 0, W_CachePatchName("NEEDIT", PU_CACHE));
+					}
+				}
+				else
+				{
+					if (work_array[i].col == MCAN_BONUS)
+					{
+						// Bonus in place of Spray Can
+
+						V_DrawScaledPatch(x, y, 0, W_CachePatchName("GOTBON", PU_CACHE));
+					}
+					else if (work_array[i].col < numskincolors)
+					{
+						// Spray Can
+
+						V_DrawMappedPatch(x, y, 0, W_CachePatchName("GOTCAN", PU_CACHE),
+							R_GetTranslationColormap(TC_DEFAULT, work_array[i].col, GTC_MENUCACHE));
+					}
+					else
+					{
+						// Need it!
+
+						V_DrawFill(x+3, y+3, 2, 2, 6);
+					}
+				}
+
+				if (work_array[i].dotcol < numskincolors)
+				{
+					// Bonus (Secondary Medal or Ancient Shrine)
+
+					V_DrawMappedPatch(x+4, y+7, 0, W_CachePatchName("COLORSP1", PU_CACHE),
+						R_GetTranslationColormap(TC_DEFAULT, work_array[i].dotcol, GTC_MENUCACHE));
+				}
+
+				x += 10;
+			}
+		}
+	}
 
 	if (cupgrid.numpages > 1)
 	{
@@ -3420,6 +3564,8 @@ static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
 		V_DrawLSTitleLowString(x2, y+28, 0, word2);
 }
 
+static INT32 M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y, boolean allowtime, boolean allowencore, boolean allowspb, boolean allowbonus, boolean draw);
+
 static void M_DrawLevelSelectBlock(INT16 x, INT16 y, UINT16 map, boolean redblink, boolean greyscale)
 {
 	UINT8 *colormap = NULL;
@@ -3452,6 +3598,49 @@ static void M_DrawLevelSelectBlock(INT16 x, INT16 y, UINT16 map, boolean redblin
 				PU_CACHE
 			)
 		);
+	}
+	else if (!levellist.netgame)
+	{
+		x += 80+2;
+		y += 50-1;
+
+		const boolean allowencore = (
+			!levellist.levelsearch.timeattack
+			&& M_SecretUnlocked(SECRET_ENCORE, true)
+		);
+		const boolean allowspb = (
+			levellist.levelsearch.timeattack
+			&& M_SecretUnlocked(SECRET_SPBATTACK, true)
+		);
+
+		INT32 width = x - M_DrawMapMedals(map, x, y,
+			levellist.levelsearch.timeattack,
+			allowencore,
+			allowspb,
+			!levellist.levelsearch.timeattack,
+			false
+		);
+
+		if (width > 2)
+		{
+			width -= 2; // minor poke
+
+			V_DrawFill(x + 7 - width, y - 2, width, 9, 31);
+
+			UINT8 i;
+			for (i = 1; i < 7; i++)
+			{
+				V_DrawFill(x + 7 - width - i, y + i - 2, 1, 9 - i, 31);
+			}
+
+			M_DrawMapMedals(map, x, y,
+				levellist.levelsearch.timeattack,
+				allowencore,
+				allowspb,
+				!levellist.levelsearch.timeattack,
+				true
+			);
+		}
 	}
 }
 
@@ -3662,7 +3851,7 @@ void M_DrawTimeAttack(void)
 
 			if (M_EncoreAttackTogglePermitted())
 			{
-				K_drawButtonAnim(buttonx + 35, buttony - 3, 0, kp_button_r, timeattackmenu.ticker);
+				K_DrawGameControl(buttonx + 35, buttony - 3, 0, "<r_animated>", 0, 8, 0);
 			}
 
 			if ((timeattackmenu.spbflicker == 0 || timeattackmenu.ticker % 2) == (cv_dummyspbattack.value == 1))
@@ -4205,6 +4394,8 @@ void M_DrawMPServerBrowser(void)
 		servpats[i] = W_CachePatchName(va("M_SERV%c", i + '1'), PU_CACHE);
 		gearpats[i] = W_CachePatchName(va("M_SGEAR%c", i + '1'), PU_CACHE);
 	}
+	patch_t *voicepat;
+	voicepat = W_CachePatchName("VOCRMU", PU_CACHE);
 
 	fixed_t text1loop = SHORT(text1->height)*FRACUNIT;
 	fixed_t text2loop = SHORT(text2->width)*FRACUNIT;
@@ -4305,6 +4496,12 @@ void M_DrawMPServerBrowser(void)
 				{
 					V_DrawFixedPatch((startx + 251)*FRACUNIT, (starty + ypos + 9)*FRACUNIT, FRACUNIT, transflag, gearpats[speed], NULL);
 				}
+			}
+
+			// voice chat enabled
+			if (serverlist[i].info.kartvars & SV_VOICEENABLED)
+			{
+				V_DrawFixedPatch((startx - 3) * FRACUNIT, (starty + 2) * FRACUNIT, FRACUNIT, 0, voicepat, NULL);
 			}
 		}
 		ypos += SERVERSPACE;
@@ -5008,6 +5205,8 @@ static void M_DrawBindMediumString(INT32 y, INT32 flags, const char *string)
 	);
 }
 
+// largely replaced by K_DrawGameControl
+/*
 static INT32 M_DrawProfileLegend(INT32 x, INT32 y, const char *legend, const char *mediocre_key)
 {
 	INT32 w = V_ThinStringWidth(legend, 0);
@@ -5017,6 +5216,7 @@ static INT32 M_DrawProfileLegend(INT32 x, INT32 y, const char *legend, const cha
 		M_DrawMediocreKeyboardKey(mediocre_key, &x, y, false, true);
 	return x;
 }
+*/
 
 // the control stuff.
 // Dear god.
@@ -5106,12 +5306,12 @@ void M_DrawProfileControls(void)
 					V_DrawMenuString(x, y+2, (i == itemOn ? highlightflags : 0), currentMenu->menuitems[i].text);
 
 				if (currentMenu->menuitems[i].status & IT_CVAR)	// not the proper way to check but this menu only has normal onoff cvars.
-				{
+				{												// (bitch you thought - Tyron 2024-09-22)
 					INT32 w;
 					consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
 
 					w = V_MenuStringWidth(cv->string, 0);
-					V_DrawMenuString(x + 12, y + 13, ((cv->flags & CV_CHEAT) && !CV_IsSetToDefault(cv) ? warningflags : highlightflags), cv->string);
+					V_DrawMenuString(x + 12, y + 13, (!CV_IsSetToDefault(cv) ? warningflags : highlightflags), cv->string);
 					if (i == itemOn)
 					{
 						V_DrawMenuString(x - (skullAnimCounter/5), y+12, highlightflags, "\x1C"); // left arrow
@@ -5300,13 +5500,50 @@ void M_DrawProfileControls(void)
 	if (currentMenu->menuitems[itemOn].tooltip != NULL)
 	{
 		INT32 ypos = BASEVIDHEIGHT + hintofs - 9 - 12;
-		V_DrawThinString(12, ypos, V_YELLOWMAP, currentMenu->menuitems[itemOn].tooltip);
 
-		boolean standardbuttons = gamedata->gonerlevel > GDGONER_PROFILE;
+		if (!strcmp(currentMenu->menuitems[itemOn].tooltip, "DESCRIPTIVEINPUT-SENTINEL"))
+		{
+			char* help = va("Modern: Standard console controller/keyboard prompts.");
+			switch (cv_dummyprofiledescriptiveinput.value)
+			{
+				case 0:
+					help = va("\"Emulator\": Display the default (Saturn) controls.");
+					break;
+				case 2:
+					help = va("Modern Flip: Swap A+X/B+Y. Use if Modern is wrong.");
+					break;
+				case 3:
+					help = va("6Bt. (Auto): Tries to guess your 6-button pad's layout.");
+					break;
+				case 4:
+					help = va("6Bt. (A): Saturn buttons, Retro-Bit Wired DInput layout.");
+					break;
+				case 5:
+					help = va("6Bt. (B): Saturn buttons, Retro-Bit Wireless DInput layout.");
+					break;
+				case 6:
+					help = va("6Bt. (C): Saturn buttons, Retro-Bit XInput layout.");
+					break;
+				case 7:
+					help = va("6Bt. (D): Saturn buttons, arcade/8BitDo layout. (C/Z = RT/RB)");
+					break;
+				case 8:
+					help = va("6Bt. (E): Saturn buttons, Hori/M30X layout. (LB/LT = LS/RS)");
+					break;
+			}
+
+			V_DrawThinString(12, ypos, V_YELLOWMAP, help);
+		}
+		else
+		{
+			V_DrawThinString(12, ypos, V_YELLOWMAP, currentMenu->menuitems[itemOn].tooltip);
+		}
+
+		UINT16 oldsetting = cv_descriptiveinput->value;
+		CV_StealthSetValue(cv_descriptiveinput, cv_dummyprofiledescriptiveinput.value);
 		INT32 xpos = BASEVIDWIDTH - 12;
-		xpos = standardbuttons ?
-			M_DrawProfileLegend(xpos, ypos, "\xB2 / \xBC  Clear", NULL) :
-			M_DrawProfileLegend(xpos, ypos, "Clear", "BKSP");
+		xpos = K_DrawGameControl(xpos, ypos, 0, "<right> / <c>  Clear", 2, 0, 0);
+		CV_StealthSetValue(cv_descriptiveinput, oldsetting);
 	}
 
 	// Overlay for control binding
@@ -6093,6 +6330,19 @@ void M_DrawPause(void)
 
 		Y_RoundQueueDrawer(&standings, offset/2, false, false);
 	}
+	else if (gametype == GT_TUTORIAL)
+	{
+		K_DrawGameControl(4, 184 - 60 + offset/2, 0, "<left> <right> <up> <down> Steering", 0, 0, 0);
+		K_DrawGameControl(4, 184 - 45 + offset/2, 0, "<a> Accelerate", 0, 0, 0);
+		K_DrawGameControl(4, 184 - 30 + offset/2, 0, "<b> Look Back", 0, 0, 0);
+		K_DrawGameControl(4, 184 - 15 + offset/2, 0, "<c> Spindash", 0, 0, 0);
+		K_DrawGameControl(4, 184 - 0 + offset/2, 0, "<l> Item/Rings", 0, 0, 0);
+
+		K_DrawGameControl(90, 184 - 45 + offset/2, 0, "<x> Brake", 0, 0, 0);
+		K_DrawGameControl(90, 184 - 30 + offset/2, 0, "<y> Respawn", 0, 0, 0);
+		K_DrawGameControl(90, 184 - 15 + offset/2, 0, "<z> Dialogue / Action", 0, 0, 0);
+		K_DrawGameControl(90, 184 - 0 + offset/2, 0, "<r> Drift", 0, 0, 0);
+	}
 	else
 	{
 		V_DrawMenuString(4, 188 + offset/2, V_YELLOWMAP, M_GetGameplayMode());
@@ -6190,12 +6440,12 @@ void M_DrawKickHandler(void)
 	//V_DrawFill(32 + (playerkickmenu.player & 8), 32 + (playerkickmenu.player & 7)*8, 8, 8, playeringame[playerkickmenu.player] ? 0 : 16);
 
 	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
-	V_DrawCenteredThinString(
-		BASEVIDWIDTH/2, 12,
-		0,
+	K_DrawGameControl(
+		BASEVIDWIDTH/2, 12, 0,
 		(playerkickmenu.adminpowered)
-			? "You are using ""\x85""Admin Tools""\x80"", ""\x83""(A)""\x80"" to kick and ""\x84""(C)""\x80"" to ban"
-			: K_GetMidVoteLabel(menucallvote)
+			? "You are using <red>Admin Tools<white>.  <a> Kick  <c> Ban"
+			: K_GetMidVoteLabel(menucallvote),
+		1, 0, 0
 	);
 }
 
@@ -6875,6 +7125,14 @@ void M_DrawCharacterIconAndEngine(INT32 x, INT32 y, UINT8 skin, UINT8 *colormap,
 		}
 
 	}
+	else if (skins[baseskin].flags & SF_HIVOLT)
+	{
+		UINT32 fucktimer = (gamedata->totalmenutime/2)%8;
+		UINT8 sq[] = {0, 1, 2, 2, 2, 1, 0, 0};
+		UINT8 wq[] = {0, 0, 0, 1, 2, 2, 2, 1};
+		s = sq[fucktimer];
+		w = wq[fucktimer];
+	}
 	else
 	{
 		// The following is a partial duplication of R_GetEngineClass
@@ -7262,9 +7520,10 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			y = BASEVIDHEIGHT-16;
 			V_DrawGamemodeString(x, y - 33, 0, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_MENUCACHE), M_UseAlternateTitleScreen() ? "On" : "Off");
 
-			K_drawButtonAnim(x, y, 0, kp_button_a[1], challengesmenu.ticker);
-			x += SHORT(kp_button_a[1][0]->width);
-			V_DrawThinString(x, y + 1, highlightflags, "Toggle");
+			K_DrawGameControl(x, y, 0, "<a_animated> Toggle", 0, 0, 0);
+			// K_drawButtonAnim(x, y, 0, kp_button_a[1], challengesmenu.ticker);
+			// x += SHORT(kp_button_a[1][0]->width);
+			// V_DrawThinString(x, y + 1, highlightflags, "Toggle");
 
 
 			break;
@@ -7327,9 +7586,13 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 					pushed = strcmp(song, mapheaderinfo[map]->encoremusname[musicid]) == 0;
 				}
 
-				K_drawButton(x&FRACUNIT, y*FRACUNIT, 0, kp_button_l, pushed);
-				x += SHORT(kp_button_l[0]->width);
-				V_DrawThinString(x, y + 1, (pushed ? V_GRAYMAP : highlightflags), "E Side");
+				if (!pushed)
+					K_DrawGameControl(x, y, 0, "<l> <sky>E Side", 0, 0, 0);
+				else
+					K_DrawGameControl(x, y, 0, "<l_pressed> <gray>E Side", 0, 0, 0);
+				// K_drawButton(x&FRACUNIT, y*FRACUNIT, 0, kp_button_l, pushed);
+				// x += SHORT(kp_button_l[0]->width);
+				// V_DrawThinString(x, y + 1, (pushed ? V_GRAYMAP : highlightflags), "E Side");
 
 				x = 8;
 				y -= 10;
@@ -7348,9 +7611,13 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 					pushed = strcmp(song, mapheaderinfo[map]->musname[musicid]) == 0;
 				}
 
-				K_drawButton(x*FRACUNIT, y*FRACUNIT, 0, kp_button_a[1], pushed);
-				x += SHORT(kp_button_a[1][0]->width);
-				V_DrawThinString(x, y + 1, (pushed ? V_GRAYMAP : highlightflags), "Play CD");
+				if (!pushed)
+					K_DrawGameControl(x, y, 0, "<a> <sky>Play CD", 0, 0, 0);
+				else
+					K_DrawGameControl(x, y, 0, "<a_pressed> <gray>Play CD", 0, 0, 0);
+				// K_drawButton(x*FRACUNIT, y*FRACUNIT, 0, kp_button_a[1], pushed);
+				// x += SHORT(kp_button_a[1][0]->width);
+				// V_DrawThinString(x, y + 1, (pushed ? V_GRAYMAP : highlightflags), "Play CD");
 			}
 		}
 		default:
@@ -7427,11 +7694,10 @@ static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 	const boolean keybuttonpress = (menumessage.active == false && M_MenuExtraHeld(pid) == true);
 
 	// Button prompt
-	K_drawButton(
-		24 << FRACBITS,
-		16 << FRACBITS,
-		0, kp_button_c[1],
-		keybuttonpress
+	K_DrawGameControl(
+		24, 16,
+		0, keybuttonpress ? "<c_pressed>" : "<c>",
+		0, 0, 0
 	);
 
 	// Metyr of rounds played that contribute to Chao Key generation
@@ -7986,15 +8252,14 @@ challengedesc:
 
 #define STATSSTEP 10
 
-static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y, boolean allowtime, boolean allowencore, boolean allowspb)
+static INT32 M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y, boolean allowtime, boolean allowencore, boolean allowspb, boolean allowbonus, boolean draw)
 {
 	UINT8 lasttype = UINT8_MAX, curtype;
 
 	// M_GetLevelEmblems is ONE-indexed, urgh
 	emblem_t *emblem = M_GetLevelEmblems(mapnum+1);
 
-	const boolean hasmedals = (emblem != NULL);
-	boolean collected = false;
+	boolean collected = false, hasmedals = false;
 
 	while (emblem)
 	{
@@ -8041,11 +8306,19 @@ static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y, boolean allowtime, b
 		}
 
 		// Shift over if emblem is of a different discipline
-		if (lasttype != UINT8_MAX && lasttype != curtype)
-			x -= 4;
-		lasttype = curtype;
+		if (lasttype != curtype)
+		{
+			if (lasttype != UINT8_MAX)
+				x -= 4;
+			else
+				hasmedals = true;
 
-		if (collected)
+			lasttype = curtype;
+		}
+
+		if (!draw)
+			;
+		else if (collected)
 			V_DrawMappedPatch(x, y, 0, W_CachePatchName(M_GetEmblemPatch(emblem, false), PU_CACHE),
 				R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(emblem), GTC_MENUCACHE));
 		else
@@ -8055,14 +8328,24 @@ static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y, boolean allowtime, b
 		x -= 8;
 	}
 
+	if (!allowbonus)
+		return x;
+
 	if (hasmedals)
 		x -= 4;
 
-	if (mapheaderinfo[mapnum]->cache_spraycan < gamedata->numspraycans)
+	if (mapheaderinfo[mapnum]->records.spraycan == MCAN_BONUS)
 	{
-		UINT16 col = gamedata->spraycans[mapheaderinfo[mapnum]->cache_spraycan].col;
+		if (draw)
+			V_DrawScaledPatch(x, y, 0, W_CachePatchName("GOTBON", PU_CACHE));
 
-		if (col < numskincolors)
+		x -= 8;
+	}
+	else if (mapheaderinfo[mapnum]->records.spraycan < gamedata->numspraycans)
+	{
+		UINT16 col = gamedata->spraycans[mapheaderinfo[mapnum]->records.spraycan].col;
+
+		if (draw && col < numskincolors)
 		{
 			V_DrawMappedPatch(x, y, 0, W_CachePatchName("GOTCAN", PU_CACHE),
 				R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE));
@@ -8073,9 +8356,13 @@ static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y, boolean allowtime, b
 
 	if (mapheaderinfo[mapnum]->records.mapvisited & MV_MYSTICMELODY)
 	{
-		V_DrawScaledPatch(x, y, 0, W_CachePatchName("GOTMEL", PU_CACHE));
+		if (draw)
+			V_DrawScaledPatch(x, y, 0, W_CachePatchName("GOTMEL", PU_CACHE));
+
 		x -= 8;
 	}
+
+	return x;
 }
 
 static void M_DrawStatsMaps(void)
@@ -8104,10 +8391,17 @@ static void M_DrawStatsMaps(void)
 	if (gamedata->numspraycans)
 	{
 		medalspos = 30 + V_ThinStringWidth(medalcountstr, 0);
-		medalcountstr = va("x %d/%d", gamedata->gotspraycans, gamedata->numspraycans);
+		medalcountstr = va("x %d/%d", gamedata->gotspraycans + statisticsmenu.numcanbonus, gamedata->numspraycans);
 		V_DrawThinString(20 + medalspos, 60, 0, medalcountstr);
 		V_DrawMappedPatch(10 + medalspos, 60, 0, W_CachePatchName("GOTCAN", PU_CACHE),
 										   R_GetTranslationColormap(TC_DEFAULT, gamedata->spraycans[0].col, GTC_MENUCACHE));
+	}
+	else if (statisticsmenu.numcanbonus)
+	{
+		medalspos = 30 + V_ThinStringWidth(medalcountstr, 0);
+		medalcountstr = va("x %d", statisticsmenu.numcanbonus);
+		V_DrawThinString(20 + medalspos, 60, 0, medalcountstr);
+		V_DrawScaledPatch(10 + medalspos, 60, 0, W_CachePatchName("GOTBON", PU_CACHE));
 	}
 
 	medalspos = BASEVIDWIDTH - 20;
@@ -8242,7 +8536,7 @@ static void M_DrawStatsMaps(void)
 			);
 		}
 
-		M_DrawMapMedals(mnum, medalspos - 8, y, allowtime, allowencore, allowspb);
+		M_DrawMapMedals(mnum, medalspos - 8, y, allowtime, allowencore, allowspb, true, true);
 
 		if (mapheaderinfo[mnum]->menuttl[0])
 		{
@@ -9092,8 +9386,6 @@ void M_DrawDiscordRequests(void)
 	patch_t *hand = NULL;
 
 	const char *wantText = "...would like to join!";
-	const char *acceptText = "Accept" ;
-	const char *declineText = "Decline";
 
 	INT32 x = 100;
 	INT32 y = 133;
@@ -9135,28 +9427,30 @@ void M_DrawDiscordRequests(void)
 	K_DrawSticker(x, y + 12, V_ThinStringWidth(wantText, 0), 0, true);
 	V_DrawThinString(x, y + 10, 0, wantText);
 
-	INT32 confirmButtonWidth = SHORT(kp_button_a[1][0]->width);
-	INT32 declineButtonWidth = SHORT(kp_button_b[1][0]->width);
-	INT32 altDeclineButtonWidth = SHORT(kp_button_x[1][0]->width);
-	INT32 acceptTextWidth =  V_ThinStringWidth(acceptText, 0);
-	INT32 declineTextWidth = V_ThinStringWidth(declineText, 0);
-	INT32 stickerWidth = (confirmButtonWidth + declineButtonWidth + altDeclineButtonWidth + acceptTextWidth + declineTextWidth);
-
+	/*
 	K_DrawSticker(x, y + 26, stickerWidth, 0, true);
-	K_drawButtonAnim(x, y + 22, V_SNAPTORIGHT, kp_button_a[1], discordrequestmenu.ticker);
+	K_DrawGameControl(x, y+22, 0, "<a_animated>", 0, 0, V_SNAPTORIGHT);
+	// K_drawButtonAnim(x, y + 22, V_SNAPTORIGHT, kp_button_a[1], discordrequestmenu.ticker);
+	*/
 
-	INT32 xoffs = confirmButtonWidth;
+	UINT32 bigwidth = K_DrawGameControl(x, y+22, 0, "<a_animated> Accept   <b_animated> <x_animated> Decline", 0, 0, V_SNAPTORIGHT);
+	K_DrawSticker(x, y + 26, bigwidth, 0, true);
+	K_DrawGameControl(x, y+22, 0, "<a_animated> Accept   <b_animated> <x_animated> Decline", 0, 0, V_SNAPTORIGHT);
 
+	/*
 	V_DrawThinString((x + xoffs), y + 24, 0, acceptText);
 	xoffs += acceptTextWidth;
 
 	K_drawButtonAnim((x + xoffs), y + 22, V_SNAPTORIGHT, kp_button_b[1], discordrequestmenu.ticker);
 	xoffs += declineButtonWidth;
 
+	xoffs += K_DrawGameControl(x + xoffs, y+22, 0, "<x_animated>", 0, 0, V_SNAPTORIGHT);
 	K_drawButtonAnim((x + xoffs), y + 22, V_SNAPTORIGHT, kp_button_x[1], discordrequestmenu.ticker);
 	xoffs += altDeclineButtonWidth;
 
 	V_DrawThinString((x + xoffs), y + 24, 0, declineText);
+
+	*/
 
 	y -= 18;
 

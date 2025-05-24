@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2016 by John "JTE" Muniz.
 //
@@ -51,6 +51,7 @@ static const char *const hud_disable_options[] = {
 	"minimap",
 	"item",
 	"position",
+	"names",
 	"check",		// "CHECK" f-zero indicator
 	"minirankings",	// Gametype rankings to the left
 	"battlerankingsbumpers",	// bumper drawer for battle. Useful if you want to make a custom battle gamemode without bumpers being involved.
@@ -964,6 +965,21 @@ static int libd_stringWidth(lua_State *L)
 	return 1;
 }
 
+static int libd_parseText(lua_State *L)
+{
+	HUDONLY
+
+	const char *rawText = luaL_checkstring(L, 1);
+
+	if (!rawText)
+		return luaL_error(L, "no string provided to v.parseText");
+
+	char *newText = V_ParseText(rawText);
+	lua_pushstring(gL, newText);
+	Z_Free(newText);
+	return 1;
+}
+
 static int libd_getColormap(lua_State *L)
 {
 	INT32 skinnum = TC_DEFAULT;
@@ -1162,6 +1178,7 @@ static luaL_Reg lib_draw[] = {
 	// misc
 	{"stringWidth", libd_stringWidth},
 	{"titleCardStringWidth", libd_titleCardStringWidth},
+	{"parseText", libd_parseText},
 	// m_random
 	{"RandomFixed",libd_RandomFixed},
 	{"RandomByte",libd_RandomByte},

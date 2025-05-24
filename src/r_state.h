@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -64,8 +64,9 @@ extern size_t numspritelumps, max_spritelumps;
 //
 // Lookup tables for map data.
 //
-#define UDMF_CURRENT_VERSION (1)
+#define UDMF_CURRENT_VERSION (2)
 extern boolean udmf;
+extern INT32 udmf_version;
 
 extern size_t numsprites;
 extern spritedef_t *sprites;

@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Ronald "Eidolon" Kinard
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Ronald "Eidolon" Kinard
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -10,12 +10,11 @@
 
 #include "postprocess_wipe.hpp"
 
-#include <string>
-
 #include <fmt/format.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <tcb/span.hpp>
 
+#include "../core/string.h"
 #include "../f_finale.h"
 #include "../w_wad.h"
 
@@ -41,41 +40,28 @@ static const uint16_t kPostprocessIndices[] = {0, 1, 2, 1, 3, 2};
 
 } // namespace
 
-static const PipelineDesc kWipePipelineDesc = {
-	PipelineProgram::kPostprocessWipe,
-	{{{sizeof(PostprocessVertex)}},
-	 {
-		 {VertexAttributeName::kPosition, 0, 0},
-		 {VertexAttributeName::kTexCoord0, 0, 12},
-	 }},
-	{{{{UniformName::kProjection, UniformName::kWipeColorizeMode, UniformName::kWipeEncoreSwizzle}}}},
-	{{SamplerName::kSampler0, SamplerName::kSampler1, SamplerName::kSampler2}},
-	std::nullopt,
-	{std::nullopt, {true, true, true, true}},
-	PrimitiveType::kTriangles,
-	CullMode::kNone,
-	FaceWinding::kCounterClockwise,
-	{0.f, 0.f, 0.f, 1.f}};
-
 PostprocessWipePass::PostprocessWipePass()
 {
 }
 
 PostprocessWipePass::~PostprocessWipePass() = default;
 
-void PostprocessWipePass::draw(Rhi& rhi, Handle<GraphicsContext> ctx)
+void PostprocessWipePass::draw(Rhi& rhi)
 {
 	prepass(rhi);
-	transfer(rhi, ctx);
-	graphics(rhi, ctx);
+	transfer(rhi);
+	graphics(rhi);
 	postpass(rhi);
 }
 
 void PostprocessWipePass::prepass(Rhi& rhi)
 {
-	if (!pipeline_)
+	if (!program_)
 	{
-		pipeline_ = rhi.create_pipeline(kWipePipelineDesc);
+		ProgramDesc desc;
+		desc.name = "postprocesswipe";
+		desc.defines = tcb::span<const char*>();
+		program_ = rhi.create_program(desc);
 	}
 
 	if (!vbo_)
@@ -119,7 +105,7 @@ void PostprocessWipePass::prepass(Rhi& rhi)
 		return;
 	}
 
-	std::string lumpname = fmt::format(FMT_STRING("FADE{:02d}{:02d}"), wipe_type, wipe_frame);
+	String lumpname = format(FMT_STRING("FADE{:02d}{:02d}"), wipe_type, wipe_frame);
 	lumpnum_t mask_lump = W_CheckNumForName(lumpname.c_str());
 	if (mask_lump == LUMPERROR)
 	{
@@ -169,7 +155,7 @@ void PostprocessWipePass::prepass(Rhi& rhi)
 	});
 }
 
-void PostprocessWipePass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
+void PostprocessWipePass::transfer(Rhi& rhi)
 {
 	if (wipe_tex_ == kNullHandle)
 	{
@@ -183,47 +169,44 @@ void PostprocessWipePass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 
 	if (upload_vbo_)
 	{
-		rhi.update_buffer(ctx, vbo_, 0, tcb::as_bytes(tcb::span(kPostprocessVerts)));
+		rhi.update_buffer(vbo_, 0, tcb::as_bytes(tcb::span(kPostprocessVerts)));
 		upload_vbo_ = false;
 	}
 
 	if (upload_ibo_)
 	{
-		rhi.update_buffer(ctx, ibo_, 0, tcb::as_bytes(tcb::span(kPostprocessIndices)));
+		rhi.update_buffer(ibo_, 0, tcb::as_bytes(tcb::span(kPostprocessIndices)));
 		upload_ibo_ = false;
 	}
 
 	tcb::span<const std::byte> data = tcb::as_bytes(tcb::span(mask_data_));
-	rhi.update_texture(ctx, wipe_tex_, {0, 0, mask_w_, mask_h_}, PixelFormat::kR8, data);
-
-	UniformVariant uniforms[] = {
-		glm::scale(glm::identity<glm::mat4>(), glm::vec3(2.f, 2.f, 1.f)),
-		static_cast<int32_t>(wipe_color_mode_),
-		static_cast<int32_t>(wipe_swizzle_)
-	};
-	us_ = rhi.create_uniform_set(ctx, {tcb::span(uniforms)});
-
-	VertexAttributeBufferBinding vbos[] = {{0, vbo_}};
-	TextureBinding tx[] = {
-		{SamplerName::kSampler0, start_},
-		{SamplerName::kSampler1, end_},
-		{SamplerName::kSampler2, wipe_tex_}};
-	bs_ = rhi.create_binding_set(ctx, pipeline_, {vbos, tx});
+	rhi.update_texture(wipe_tex_, {0, 0, mask_w_, mask_h_}, PixelFormat::kR8, data);
 }
 
-void PostprocessWipePass::graphics(Rhi& rhi, Handle<GraphicsContext> ctx)
+void PostprocessWipePass::graphics(Rhi& rhi)
 {
 	if (wipe_tex_ == kNullHandle)
 	{
 		return;
 	}
 
-	rhi.bind_pipeline(ctx, pipeline_);
-	rhi.set_viewport(ctx, {0, 0, width_, height_});
-	rhi.bind_uniform_set(ctx, 0, us_);
-	rhi.bind_binding_set(ctx, bs_);
-	rhi.bind_index_buffer(ctx, ibo_);
-	rhi.draw_indexed(ctx, 6, 0);
+	rhi.bind_program(program_);
+
+	RasterizerStateDesc desc {};
+	desc.cull = CullMode::kNone;
+
+	rhi.set_rasterizer_state(desc);
+	rhi.set_uniform("u_projection", glm::scale(glm::identity<glm::mat4>(), glm::vec3(2.f, 2.f, 1.f)));
+	rhi.set_uniform("u_wipe_colorize_mode", static_cast<int32_t>(wipe_color_mode_));
+	rhi.set_uniform("u_wipe_encore_swizzle", static_cast<int32_t>(wipe_swizzle_));
+	rhi.set_sampler("s_sampler0", 0, start_);
+	rhi.set_sampler("s_sampler1", 1, end_);
+	rhi.set_sampler("s_sampler2", 2, wipe_tex_);
+	rhi.bind_vertex_attrib("a_position", vbo_, VertexAttributeFormat::kFloat3, offsetof(PostprocessVertex, x), sizeof(PostprocessVertex));
+	rhi.bind_vertex_attrib("a_texcoord0", vbo_, VertexAttributeFormat::kFloat2, offsetof(PostprocessVertex, u), sizeof(PostprocessVertex));
+	rhi.set_viewport({0, 0, width_, height_});
+	rhi.bind_index_buffer(ibo_);
+	rhi.draw_indexed(6, 0);
 }
 
 void PostprocessWipePass::postpass(Rhi& rhi)

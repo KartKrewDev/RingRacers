@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by James Robert Roman
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by James Robert Roman
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -10,10 +10,10 @@
 
 #include <filesystem>
 #include <sstream>
-#include <string>
 
 #include <fmt/format.h>
 
+#include "../core/string.h"
 #include "../cxxutil.hpp"
 #include "avrecorder_impl.hpp"
 
@@ -39,7 +39,7 @@ void Impl::container_dtor_handler(const MediaContainer& container) const
 
 	if (max_size_ && container.size() > *max_size_)
 	{
-		const std::string line = fmt::format(
+		const srb2::String line = srb2::format(
 			"Video size has exceeded limit {} > {} ({}%)."
 			" This should not happen, please report this bug.\n",
 			container.size(),
@@ -100,7 +100,7 @@ void AVRecorder::draw_statistics() const
 {
 	SRB2_ASSERT(impl_->video_encoder_ != nullptr);
 
-	auto draw = [](int x, std::string text, int32_t flags = 0)
+	auto draw = [](int x, const srb2::String text, int32_t flags = 0)
 	{
 		V_DrawThinString(
 			x,
@@ -144,7 +144,7 @@ void AVRecorder::draw_statistics() const
 		return 0;
 	}();
 
-	draw(200, fmt::format("{:.0f}", fps), fps_color);
-	draw(230, fmt::format("{:.1f}s", impl_->container_->duration().count()));
-	draw(260, fmt::format("{:.1f} MB", size / kMb), mb_color);
+	draw(200, srb2::format("{:.0f}", fps), fps_color);
+	draw(230, srb2::format("{:.1f}s", impl_->container_->duration().count()));
+	draw(260, srb2::format("{:.1f} MB", size / kMb), mb_color);
 }

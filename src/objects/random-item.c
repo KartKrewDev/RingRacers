@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Sally "TehRealSalt" Cochenour
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Sally "TehRealSalt" Cochenour
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -47,11 +47,11 @@ static player_t *GetItemBoxPlayer(mobj_t *mobj)
 			continue;
 		}
 
-		// Always use normal item box rules -- could pass in "2" for fakes but they blend in better like this
-		if (P_CanPickupItem(&players[i], 1))
+		// Always use normal item box rules -- could pass in "PICKUP_EGGBOX" for fakes but they blend in better like this
+		if (P_CanPickupItem(&players[i], PICKUP_ITEMBOX))
 		{
 			// Check for players who can take this pickup, but won't be allowed to (antifarming)
-			UINT8 mytype = (mobj->flags2 & MF2_BOSSDEAD) ? 2 : 1;
+			UINT8 mytype = (mobj->flags2 & MF2_BOSSDEAD) ? CHEESE_RINGBOX : CHEESE_ITEMBOX;
 			if (P_IsPickupCheesy(&players[i], mytype))
 				continue;
 
@@ -114,6 +114,38 @@ void Obj_RandomItemVisuals(mobj_t *mobj)
 
 	if (mobj->type != MT_RANDOMITEM)
 		return;
+
+	// Fade items in as we cross the first checkpoint, but don't touch their visibility otherwise!
+	if (!((mobj->flags & MF_NOCLIPTHING) || mobj->fuse))
+	{
+		UINT8 maxgrab = 0;
+
+		for (UINT8 i = 0; i <= r_splitscreen; i++)
+		{
+			maxgrab = max(maxgrab, players[displayplayers[i]].cangrabitems);
+		}
+
+		if (maxgrab == 0)
+			mobj->renderflags |= RF_DONTDRAW;
+		else
+			mobj->renderflags &= ~RF_DONTDRAW;
+
+		if (maxgrab > 0 && maxgrab <= EARLY_ITEM_FLICKER)
+		{
+			UINT8 maxtranslevel = NUMTRANSMAPS;
+
+			UINT8 trans = maxgrab;
+			if (trans > maxtranslevel)
+				trans = maxtranslevel;
+			trans = NUMTRANSMAPS - trans;
+
+			mobj->renderflags &= ~(RF_TRANSMASK);
+
+			if (trans != 0)
+				mobj->renderflags |= (trans << RF_TRANSSHIFT);
+		}
+	}
+
 
 	// Respawn flow, documented by a dumb asshole:
 	// P_TouchSpecialThing -> P_ItemPop sets fuse, NOCLIPTHING and DONTDRAW.

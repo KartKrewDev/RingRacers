@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -96,13 +96,11 @@ boolean ST_SameTeam(player_t *a, player_t *b)
 	if (G_GametypeHasTeams() == true)
 	{
 		// You get team messages if you're on the same team.
-		return (a->ctfteam == b->ctfteam);
+		return (a->team == b->team);
 	}
-	else
-	{
-		// Not that everyone's not on the same team, but team messages go to normal chat if everyone's not in the same team.
-		return true;
-	}
+
+	// Not that everyone's not on the same team, but team messages go to normal chat if everyone's not in the same team.
+	return true;
 }
 
 static boolean st_stopped = true;
@@ -1498,10 +1496,10 @@ void ST_DrawServerSplash(boolean timelimited)
 
 void ST_DrawSaveReplayHint(INT32 flags)
 {
-	V_DrawRightAlignedThinString(
-		BASEVIDWIDTH - 2, 2,
-		flags|V_YELLOWMAP,
-		(demo.willsave && demo.titlename[0]) ? "Replay will be saved.  \xAB Change title" : "\xAB or \xAD Save replay"
+	K_DrawGameControl(
+		BASEVIDWIDTH - 2, 2, 0,
+		(demo.willsave && demo.titlename[0]) ? "Replay will be saved.  <b> Change title" : "<b> or <x> Save replay",
+		2, 0, flags|V_YELLOWMAP
 	);
 }
 

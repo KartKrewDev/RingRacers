@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Ronald "Eidolon" Kinard
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Ronald "Eidolon" Kinard
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -44,20 +44,11 @@ public:
 
 	Handle(NullHandleType) noexcept : Handle() {}
 
-	Handle(const Handle&) = default;
-	Handle(Handle&& rhs) noexcept
-	{
-		id_ = std::exchange(rhs.id_, 0);
-		generation_ = std::exchange(rhs.generation_, 0);
-	};
+	Handle(const Handle&) noexcept = default;
+	Handle(Handle&&) noexcept = default;
 
-	Handle& operator=(const Handle&) = default;
-	Handle& operator=(Handle&& rhs) noexcept
-	{
-		id_ = std::exchange(rhs.id_, 0);
-		generation_ = std::exchange(rhs.generation_, 0);
-		return *this;
-	}
+	Handle& operator=(const Handle&) noexcept = default;
+	Handle& operator=(Handle&&) noexcept = default;
 
 	// Conversions from Handles of derived type U to base type T
 

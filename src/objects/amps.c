@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by AJ "Tyron" Martinez.
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by AJ "Tyron" Martinez.
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -83,7 +83,7 @@ void Obj_AmpsThink (mobj_t *amps)
         amps->momz += FixedMul(FINECOSINE(vang>>ANGLETOFINESHIFT), speed);
 
         if (dist < (120 * amps->scale) && amps->extravalue2 && !player->amppickup)
-        {   
+        {
             K_AwardPlayerAmps(player, 2);
             P_RemoveMobj(amps);
         }

@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -89,6 +89,8 @@ size_t FIL_ReadFileTag(char const *name, UINT8 **buffer, INT32 tag);
 #define FIL_ReadFile(n, b) FIL_ReadFileTag(n, b, PU_STATIC)
 
 boolean FIL_ConvertTextFileToBinary(const char *textfilename, const char *binfilename);
+
+boolean FIL_RenameFile(const char *old_name, const char *new_name);
 
 boolean FIL_FileExists(const char *name);
 boolean FIL_WriteFileOK(char const *name);

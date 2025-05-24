@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by "Lat'".
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by "Lat'".
+// Copyright (C) 2025 by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -102,6 +102,8 @@ void M_StartEditProfile(INT32 c)
 			CV_StealthSetValue(&cv_dummyprofilekickstart, optionsmenu.profile->kickstartaccel);
 			CV_StealthSetValue(&cv_dummyprofileautoroulette, optionsmenu.profile->autoroulette);
 			CV_StealthSetValue(&cv_dummyprofilelitesteer, optionsmenu.profile->litesteer);
+			CV_StealthSetValue(&cv_dummyprofilestrictfastfall, optionsmenu.profile->strictfastfall);
+			CV_StealthSetValue(&cv_dummyprofiledescriptiveinput, optionsmenu.profile->descriptiveinput);
 			CV_StealthSetValue(&cv_dummyprofileautoring, optionsmenu.profile->autoring);
 			CV_StealthSetValue(&cv_dummyprofilerumble, optionsmenu.profile->rumble);
 			CV_StealthSetValue(&cv_dummyprofilefov, optionsmenu.profile->fov);
@@ -113,6 +115,8 @@ void M_StartEditProfile(INT32 c)
 			CV_StealthSetValue(&cv_dummyprofilekickstart, 0);	// off
 			CV_StealthSetValue(&cv_dummyprofileautoroulette, 0); // off
 			CV_StealthSetValue(&cv_dummyprofilelitesteer, 1); // on
+			CV_StealthSetValue(&cv_dummyprofilestrictfastfall, 0); // off
+			CV_StealthSetValue(&cv_dummyprofiledescriptiveinput, 1); // Modern
 			CV_StealthSetValue(&cv_dummyprofileautoring, 0); // on
 			CV_StealthSetValue(&cv_dummyprofilerumble, 1);	// on
 			CV_StealthSetValue(&cv_dummyprofilefov, 90);

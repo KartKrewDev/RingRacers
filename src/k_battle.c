@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -103,6 +103,9 @@ void K_SpawnBattlePoints(player_t *source, player_t *victim, UINT8 amount)
 	mobj_t *pt;
 
 	if (!source || !source->mo)
+		return;
+
+	if (source->exiting)
 		return;
 
 	if (amount == 1)
@@ -985,7 +988,16 @@ boolean K_EndBattleRound(player_t *victor)
 		if (gametyperules & GTR_POINTLIMIT)
 		{
 			// Lock the winner in before the round ends.
+
+			// TODO: a "won the round" bool used for sorting
+			// position / intermission, so we aren't completely
+			// clobbering the individual scoring.
 			victor->roundscore = 100;
+
+			if (G_GametypeHasTeams() == true && victor->team != TEAM_UNASSIGNED)
+			{
+				g_teamscores[victor->team] = 100;
+			}
 		}
 	}
 

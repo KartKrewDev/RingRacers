@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Sally "TehRealSalt" Cochenour
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Sally "TehRealSalt" Cochenour
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -1224,6 +1224,23 @@ void Y_VoteDrawer(void)
 		);
 	}
 
+	// TODO better voice chat speaking indicator integration
+	{
+		char speakingstring[2048];
+		memset(speakingstring, 0, sizeof(speakingstring));
+
+		for (int i = 0; i < MAXPLAYERS; i++)
+		{
+			if (S_IsPlayerVoiceActive(i))
+			{
+				strcat(speakingstring, player_names[i]);
+				strcat(speakingstring, " ");
+			}
+		}
+
+		V_DrawThinString(0, 0, 0, speakingstring);
+	}
+
 	M_DrawMenuForeground();
 }
 
@@ -2353,7 +2370,7 @@ static void Y_UnloadVoteData(void)
 
 	vote.loaded = false;
 
-	if (rendermode != render_soft)
+	if (rendermode == render_opengl)
 	{
 		return;
 	}

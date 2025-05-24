@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -561,6 +561,7 @@ fixed_t P_GetMobjSpawnHeight(const mobjtype_t mobjtype, const fixed_t x, const f
 fixed_t P_GetMapThingSpawnHeight(const mobjtype_t mobjtype, const mapthing_t* mthing, const fixed_t x, const fixed_t y);
 
 mobj_t *P_SpawnMapThing(mapthing_t *mthing);
+void P_CopyMapThingBehaviorFieldsToMobj(const mapthing_t *mthing, mobj_t *mobj);
 void P_CopyMapThingSpecialFieldsToMobj(const mapthing_t *mthing, mobj_t *mobj);
 void P_SpawnHoop(mapthing_t *mthing);
 void P_SpawnItemPattern(mapthing_t *mthing);

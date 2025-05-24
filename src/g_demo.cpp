@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -16,7 +16,6 @@
 #include <cstddef>
 
 #include <tcb/span.hpp>
-#include <nlohmann/json.hpp>
 
 #include "doomdef.h"
 #include "doomtype.h"
@@ -50,6 +49,7 @@
 #include "md5.h" // demo checksums
 #include "p_saveg.h" // savebuffer_t
 #include "g_party.h"
+#include "core/json.hpp"
 
 // SRB2Kart
 #include "d_netfil.h" // nameonly
@@ -207,6 +207,7 @@ boolean G_CompatLevel(UINT16 level)
 #define DEMO_BOT			0x08
 #define DEMO_AUTOROULETTE	0x10
 #define DEMO_AUTORING		0x20
+#define DEMO_STRICTFASTFALL 0x40
 
 // For demos
 #define ZT_FWD		0x0001
@@ -2336,6 +2337,8 @@ void G_BeginRecording(void)
 				i |= DEMO_SPECTATOR;
 			if (player->pflags & PF_KICKSTARTACCEL)
 				i |= DEMO_KICKSTART;
+			if (player->pflags & PF2_STRICTFASTFALL)
+				i |= DEMO_STRICTFASTFALL;
 			if (player->pflags & PF_AUTOROULETTE)
 				i |= DEMO_AUTOROULETTE;
 			if (player->pflags & PF_AUTORING)
@@ -2437,17 +2440,18 @@ void G_BeginRecording(void)
 void srb2::write_current_demo_standings(const srb2::StandingsJson& standings)
 {
 	using namespace srb2;
-	using json = nlohmann::json;
 
 	// TODO populate standings data
 
-	std::vector<uint8_t> ubjson = json::to_ubjson(standings);
+	JsonValue value { JsonObject() };
+	to_json(value, standings);
+	Vector<std::byte> ubjson = value.to_ubjson();
 	uint32_t bytes = ubjson.size();
 
 	WRITEUINT8(demobuf.p, DW_STANDING2);
 
 	WRITEUINT32(demobuf.p, bytes);
-	WRITEMEM(demobuf.p, ubjson.data(), bytes);
+	WRITEMEM(demobuf.p, (UINT8*)ubjson.data(), bytes);
 }
 
 void srb2::write_current_demo_end_marker()
@@ -2615,12 +2619,12 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 static bool load_ubjson_standing(menudemo_t* pdemo, tcb::span<std::byte> slice, tcb::span<democharlist_t> demoskins)
 {
 	using namespace srb2;
-	using json = nlohmann::json;
 
 	StandingsJson js;
 	try
 	{
-		js = json::from_ubjson(slice).template get<StandingsJson>();
+		JsonValue value { JsonValue::from_ubjson(tcb::as_bytes(slice)) };
+		from_json(value, js);
 	}
 	catch (...)
 	{
@@ -3452,6 +3456,11 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 		else
 			players[p].pflags &= ~PF_KICKSTARTACCEL;
 
+		if (flags & DEMO_STRICTFASTFALL)
+			players[p].pflags |= PF2_STRICTFASTFALL;
+		else
+			players[p].pflags &= ~PF2_STRICTFASTFALL;
+
 		if (flags & DEMO_AUTOROULETTE)
 			players[p].pflags |= PF_AUTOROULETTE;
 		else
@@ -3703,7 +3712,7 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 		p += 4;
 
 	UINT32 num_classes;
-	if (demo.version <= 0x000D)
+	if (ghostversion <= 0x000D)
 	{
 		num_classes = PROLDDEMO;
 	}
@@ -3943,7 +3952,7 @@ staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer)
 		temp.lap = READUINT32(p);
 
 	UINT32 num_classes;
-	if (demo.version <= 0x000D)
+	if (ghostversion <= 0x000D)
 	{
 		num_classes = PROLDDEMO;
 	}

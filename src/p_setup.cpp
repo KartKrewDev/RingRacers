@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -13,8 +13,6 @@
 /// \brief Do all the WAD I/O, get map description, set up initial state and misc. LUTs
 
 #include <algorithm>
-#include <string>
-#include <vector>
 
 #include <fmt/format.h>
 
@@ -96,6 +94,8 @@
 #include "taglist.h"
 
 // SRB2Kart
+#include "core/string.h"
+#include "core/vector.hpp"
 #include "k_kart.h"
 #include "k_race.h"
 #include "k_battle.h" // K_BattleInit
@@ -119,6 +119,7 @@
 #include "k_endcam.h"
 #include "k_credits.h"
 #include "k_objects.h"
+#include "p_deepcopy.h"
 
 // Replay names have time
 #if !defined (UNDER_CE)
@@ -142,7 +143,7 @@ unsigned char mapmd5[16];
 //
 
 boolean udmf;
-static INT32 udmf_version;
+INT32 udmf_version;
 size_t numvertexes, numsegs, numsectors, numsubsectors, numnodes, numlines, numsides, nummapthings;
 size_t num_orig_vertexes;
 vertex_t *vertexes;
@@ -196,13 +197,12 @@ precipmobj_t **precipblocklinks;
 UINT8 *rejectmatrix;
 
 // Maintain single and multi player starting spots.
-INT32 numdmstarts, numcoopstarts, numredctfstarts, numbluectfstarts;
+INT32 numdmstarts, numcoopstarts, numteamstarts[TEAM__MAX];
 INT32 numfaultstarts;
 
 mapthing_t *deathmatchstarts[MAX_DM_STARTS];
 mapthing_t *playerstarts[MAXPLAYERS];
-mapthing_t *bluectfstarts[MAXPLAYERS];
-mapthing_t *redctfstarts[MAXPLAYERS];
+mapthing_t *teamstarts[TEAM__MAX][MAXPLAYERS];
 mapthing_t *faultstart;
 
 // Global state for PartialAddWadFile/MultiSetupWadFiles
@@ -498,13 +498,12 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 #endif
 
 	memset(&mapheaderinfo[num]->records, 0, sizeof(recorddata_t));
+	mapheaderinfo[num]->records.spraycan = MCAN_INVALID;
 
 	mapheaderinfo[num]->justPlayed = 0;
 	mapheaderinfo[num]->anger = 0;
 
 	mapheaderinfo[num]->destroyforchallenge_size = 0;
-
-	mapheaderinfo[num]->cache_spraycan = UINT16_MAX;
 
 	mapheaderinfo[num]->cache_maplock = MAXUNLOCKABLES;
 
@@ -526,6 +525,7 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 	mapheaderinfo[num]->automedaltime[1] = 2;
 	mapheaderinfo[num]->automedaltime[2] = 3;
 	mapheaderinfo[num]->automedaltime[3] = 4;
+	mapheaderinfo[num]->cameraHeight = INT32_MIN;
 }
 
 /** Allocates a new map-header structure.
@@ -785,9 +785,13 @@ static int cmp_loopends(const void *a, const void *b)
 		*mt2 = *(const mapthing_t*const*)b;
 
 	// weighted sorting; tag takes precedence over type
-	return
-		intsign(mt1->tid - mt2->tid) * 2 +
+	const int maincomp = intsign(mt1->tid - mt2->tid) * 2 +
 		intsign(mt1->thing_args[0] - mt2->thing_args[0]);
+
+	// JugadorXEI (04/20/25): If a qsort comparison ends up with an equal result,
+	// it results in UNSPECIFIED BEHAVIOR, so assuming the previous two comparisons
+	// are equal, let's make it consistent with Linux behaviour (ascending order).
+	return maincomp != 0 ? maincomp : intsign((mt1 - mapthings) - (mt2 - mapthings));
 }
 
 static void P_SpawnMapThings(boolean spawnemblems)
@@ -3683,9 +3687,7 @@ void P_UpdateSegLightOffset(seg_t *li)
 
 	// Between -2 and 2 for software, -16 and 16 for hardware
 	li->lightOffset = FixedFloor((extralight / 8) + (FRACUNIT / 2)) / FRACUNIT;
-#ifdef HWRENDER
 	li->hwLightOffset = FixedFloor(extralight + (FRACUNIT / 2)) / FRACUNIT;
-#endif
 }
 
 boolean P_SectorUsesDirectionalLighting(const sector_t *sector)
@@ -3790,9 +3792,7 @@ static void P_LoadSegs(UINT8 *data)
 		seg->linedef = &lines[SHORT(ms->linedef)];
 
 		seg->length = P_SegLength(seg);
-#ifdef HWRENDER
-		seg->flength = (rendermode == render_opengl) ? P_SegLengthFloat(seg) : 0;
-#endif
+		seg->flength = P_SegLengthFloat(seg);
 
 		seg->glseg = false;
 		P_InitializeSeg(seg);
@@ -4020,9 +4020,7 @@ static boolean P_LoadExtendedSubsectorsAndSegs(UINT8 **data, nodetype_t nodetype
 			segs[i].offset = FixedHypot(v1->x - v->x, v1->y - v->y);
 		}
 		seg->length = P_SegLength(seg);
-#ifdef HWRENDER
-		seg->flength = (rendermode == render_opengl) ? P_SegLengthFloat(seg) : 0;
-#endif
+		seg->flength = P_SegLengthFloat(seg);
 	}
 
 	return true;
@@ -5508,7 +5506,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 				lines[i].args[0] = (lines[i].flags & ML_NOTBOUNCY) ? TMT_EACHTIMEENTERANDEXIT : TMT_EACHTIMEENTER;
 			else
 				lines[i].args[0] = TMT_CONTINUOUS;
-			lines[i].args[1] = (lines[i].special > 310) ? TMT_BLUE : TMT_RED;
+			lines[i].args[1] = (lines[i].special > 310) ? TMT_BLUE : TMT_ORANGE;
 			lines[i].special = 309;
 			break;
 		case 313: //No more enemies - once
@@ -7536,7 +7534,6 @@ static boolean P_LoadMapFromFile(void)
 	TracyCZone(__zone, true);
 
 	virtlump_t *textmap = vres_Find(curmapvirt, "TEXTMAP");
-	size_t i;
 
 	udmf = textmap != NULL;
 	udmf_version = 0;
@@ -7564,17 +7561,9 @@ static boolean P_LoadMapFromFile(void)
 		P_WriteTextmap();
 
 	// Copy relevant map data for NetArchive purposes.
-	spawnsectors = static_cast<sector_t*>(Z_Calloc(numsectors * sizeof(*sectors), PU_LEVEL, NULL));
-	spawnlines = static_cast<line_t*>(Z_Calloc(numlines * sizeof(*lines), PU_LEVEL, NULL));
-	spawnsides = static_cast<side_t*>(Z_Calloc(numsides * sizeof(*sides), PU_LEVEL, NULL));
-
-	memcpy(spawnsectors, sectors, numsectors * sizeof(*sectors));
-	memcpy(spawnlines, lines, numlines * sizeof(*lines));
-	memcpy(spawnsides, sides, numsides * sizeof(*sides));
-
-	for (i = 0; i < numsectors; i++)
-		if (sectors[i].tags.count)
-			spawnsectors[i].tags.tags = static_cast<mtag_t*>(memcpy(Z_Malloc(sectors[i].tags.count*sizeof(mtag_t), PU_LEVEL, NULL), sectors[i].tags.tags, sectors[i].tags.count*sizeof(mtag_t)));
+	P_DeepCopySectors(&spawnsectors, &sectors, numsectors);
+	P_DeepCopyLines(&spawnlines, &lines, numlines);
+	P_DeepCopySides(&spawnsides, &sides, numsides);
 
 	P_MakeMapMD5(curmapvirt, &mapmd5);
 
@@ -7684,6 +7673,7 @@ static void P_InitLevelSettings(void)
 	const boolean multi_speed = (gametypes[gametype]->speed == KARTSPEED_AUTO);
 	gamespeed = multi_speed ? KARTSPEED_EASY : gametypes[gametype]->speed;
 	franticitems = false;
+	g_teamplay = false;
 
 	if (K_PodiumSequence() == true)
 	{
@@ -7730,6 +7720,7 @@ static void P_InitLevelSettings(void)
 				gamespeed = (UINT8)cv_kartspeed.value;
 		}
 		franticitems = (boolean)cv_kartfrantic.value;
+		g_teamplay = (boolean)cv_teamplay.value; // we will overwrite this later if there is not enough players
 	}
 
 	memset(&battleovertime, 0, sizeof(struct battleovertime));
@@ -7780,16 +7771,12 @@ void P_RespawnThings(void)
 
 static void P_ResetSpawnpoints(void)
 {
-	UINT8 i;
-
-	numdmstarts = numredctfstarts = numbluectfstarts = 0;
-	numfaultstarts = 0;
-	faultstart = NULL;
+	UINT8 i, j;
 
 	// reset the player starts
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		playerstarts[i] = bluectfstarts[i] = redctfstarts[i] = NULL;
+		playerstarts[i] = NULL;
 
 		if (playeringame[i])
 		{
@@ -7798,8 +7785,22 @@ static void P_ResetSpawnpoints(void)
 		}
 	}
 
+	numfaultstarts = 0;
+	faultstart = NULL;
+
+	numdmstarts = 0;
 	for (i = 0; i < MAX_DM_STARTS; i++)
 		deathmatchstarts[i] = NULL;
+
+	for (i = 0; i < TEAM__MAX; i++)
+	{
+		numteamstarts[i] = 0;
+
+		for (j = 0; j < MAXPLAYERS; j++)
+		{
+			teamstarts[i][j] = NULL;
+		}
+	}
 
 	for (i = 0; i < 16; i++)
 		skyboxviewpnts[i] = skyboxcenterpnts[i] = NULL;
@@ -7857,7 +7858,7 @@ static void P_LoadRecordGhosts(void)
 			map(cv_ghost_last, value, kLast);
 	};
 
-	auto add_ghosts = [gpath](const std::string& base, UINT8 bits)
+	auto add_ghosts = [gpath](const srb2::String& base, UINT8 bits)
 	{
 		auto load = [base](const char* suffix) { P_TryAddExternalGhost(fmt::format("{}-{}.lmp", base, suffix).c_str()); };
 
@@ -7971,12 +7972,84 @@ static void P_InitCamera(void)
 	}
 }
 
+static void P_ShuffleTeams(void)
+{
+	size_t i;
+
+	if (G_GametypeHasTeams() == false)
+	{
+		// Teams are not enabled, force to TEAM_UNASSIGNED
+
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			players[i].team = TEAM_UNASSIGNED;
+		}
+
+		return;
+	}
+
+	// The following will sort TEAM_UNASSIGNED players at random.
+	// In addition, you should know all players will have their team
+	// unset every round unless certain conditions are met.
+	// See Y_MidIntermission, G_InitNew (where resetplayer == true)
+
+	CONS_Debug(DBG_TEAMS, "Shuffling player teams...\n");
+
+	srb2::Vector<UINT8> player_shuffle;
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i] == false || players[i].spectator == true)
+		{
+			continue;
+		}
+		player_shuffle.push_back(i);
+	}
+
+	size_t n = player_shuffle.size();
+	if (inDuel == true || n <= 2) // cv_teamplay_min.value
+	{
+		CONS_Debug(DBG_TEAMS, "Not enough players to support teams; forcing teamplay preference off.\n");
+
+		// Not enough players for teams.
+		// Turn off the preference for this match.
+		g_teamplay = false;
+
+		// But we may still be in a forced
+		// teams gametype, so only return false
+		// if our preference means anything.
+		if (G_GametypeHasTeams() == false)
+		{
+			return;
+		}
+	}
+
+	if (n > 1)
+	{
+		for (i = n - 1; i > 0; i--)
+		{
+			size_t j = P_RandomKey(PR_TEAMS, i + 1);
+
+			size_t temp = player_shuffle[i];
+			player_shuffle[i] = player_shuffle[j];
+			player_shuffle[j] = temp;
+		}
+	}
+
+	for (i = 0; i < n; i++)
+	{
+		G_AutoAssignTeam(&players[ player_shuffle[i] ]);
+	}
+}
+
 static void P_InitPlayers(void)
 {
 	INT32 i, skin = -1, follower = -1;
 
 	// Make sure objectplace is OFF when you first start the level!
 	OP_ResetObjectplace();
+
+	// Update skins / colors between levels.
+	G_UpdateAllPlayerPreferences();
 
 	// Are we forcing a character?
 	if (gametype == GT_TUTORIAL)
@@ -8391,7 +8464,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		lastwipetic = nowtime; \
 		if (moviemode && rendermode == render_opengl) \
 			M_LegacySaveFrame(); \
-		else if (moviemode && rendermode != render_none) \
+		else if (moviemode && rendermode == render_soft) \
 			I_CaptureVideoFrame(); \
 		NetKeepAlive(); \
 	} \
@@ -8608,7 +8681,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	Patch_FreeTag(PU_PATCH_LOWPRIORITY);
 	Patch_FreeTag(PU_PATCH_ROTATED);
 	Z_FreeTags(PU_LEVEL, PU_PURGELEVEL - 1);
-	mobjcache = NULL;
 
 	R_InitializeLevelInterpolators();
 
@@ -8900,6 +8972,8 @@ void P_PostLoadLevel(void)
 		}
 	}
 
+	P_ShuffleTeams();
+
 	K_TimerInit();
 
 	P_InitPlayers();
@@ -9065,7 +9139,7 @@ static tic_t round_to_next_second(tic_t time)
 static void P_DeriveAutoMedalTimes(mapheader_t& map)
 {
 	// Gather staff ghost times
-	std::vector<tic_t> stafftimes;
+	srb2::Vector<tic_t> stafftimes;
 	for (int i = 0; i < map.ghostCount; i++)
 	{
 		tic_t time = map.ghostBrief[i]->time;
@@ -9255,7 +9329,7 @@ UINT8 P_InitMapData(void)
 				{
 					continue;
 				}
-				std::string ghostdirname = fmt::format("staffghosts/{}/", mapheaderinfo[i]->lumpname);
+				srb2::String ghostdirname = srb2::format("staffghosts/{}/", mapheaderinfo[i]->lumpname);
 
 				UINT16 lumpstart = W_CheckNumForFolderStartPK3(ghostdirname.c_str(), wadindex, 0);
 				if (lumpstart == INT16_MAX)
@@ -9358,7 +9432,7 @@ UINT16 P_PartialAddWadFile(const char *wadfilename)
 //	UINT16 mapPos, mapNum = 0;
 
 	// Init file.
-	if ((numlumps = W_InitFile(wadfilename, false, false)) == INT16_MAX)
+	if ((numlumps = W_InitFile(wadfilename, false, false, nullptr)) == INT16_MAX)
 	{
 		refreshdirmenu |= REFRESHDIR_NOTLOADED;
 		return false;

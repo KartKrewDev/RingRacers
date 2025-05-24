@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2016 by John "JTE" Muniz.
 //
@@ -730,8 +730,8 @@ static int lib_getState(lua_State *L)
 	lua_remove(L, 1);
 
 	i = luaL_checkinteger(L, 1);
-	if (i >= NUMSTATES)
-		return luaL_error(L, "states[] index %d out of range (0 - %d)", i, NUMSTATES-1);
+	if (i == 0 || i >= NUMSTATES)
+		return luaL_error(L, "states[] index %d out of range (1 - %d)", i, NUMSTATES-1);
 	LUA_PushUserdata(L, &states[i], META_STATE);
 	return 1;
 }
@@ -743,8 +743,8 @@ static int lib_setState(lua_State *L)
 	lua_remove(L, 1); // don't care about states[] userdata.
 	{
 		UINT32 i = luaL_checkinteger(L, 1);
-		if (i >= NUMSTATES)
-			return luaL_error(L, "states[] index %d out of range (0 - %d)", i, NUMSTATES-1);
+		if (i == 0 || i >= NUMSTATES)
+			return luaL_error(L, "states[] index %d out of range (1 - %d)", i, NUMSTATES-1);
 		state = &states[i]; // get the state to assign to.
 	}
 	luaL_checktype(L, 2, LUA_TTABLE); // check that we've been passed a table.
@@ -1092,8 +1092,8 @@ static int lib_getMobjInfo(lua_State *L)
 	lua_remove(L, 1);
 
 	i = luaL_checkinteger(L, 1);
-	if (i >= NUMMOBJTYPES)
-		return luaL_error(L, "mobjinfo[] index %d out of range (0 - %d)", i, NUMMOBJTYPES-1);
+	if (i == 0 || i >= NUMMOBJTYPES)
+		return luaL_error(L, "mobjinfo[] index %d out of range (1 - %d)", i, NUMMOBJTYPES-1);
 	LUA_PushUserdata(L, &mobjinfo[i], META_MOBJINFO);
 	return 1;
 }
@@ -1105,8 +1105,8 @@ static int lib_setMobjInfo(lua_State *L)
 	lua_remove(L, 1); // don't care about mobjinfo[] userdata.
 	{
 		UINT32 i = luaL_checkinteger(L, 1);
-		if (i >= NUMMOBJTYPES)
-			return luaL_error(L, "mobjinfo[] index %d out of range (0 - %d)", i, NUMMOBJTYPES-1);
+		if (i == 0 || i >= NUMMOBJTYPES)
+			return luaL_error(L, "mobjinfo[] index %d out of range (1 - %d)", i, NUMMOBJTYPES-1);
 		info = &mobjinfo[i]; // get the mobjinfo to assign to.
 	}
 	luaL_checktype(L, 2, LUA_TTABLE); // check that we've been passed a table.
@@ -1355,6 +1355,8 @@ static int mobjinfo_set(lua_State *L)
 		info->flags = (INT32)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"raisestate"))
 		info->raisestate = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"string"))
+		return luaL_error(L, LUA_QL("mobjinfo_t") " field " LUA_QS " should not be set directly.", field);
 	else {
 		lua_getfield(L, LUA_REGISTRYINDEX, LREG_EXTVARS);
 		I_Assert(lua_istable(L, -1));

@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -48,11 +48,6 @@
 #include "k_collide.h"
 #include "m_easing.h"
 #include "k_hud.h" // K_AddMessage
-
-
-// CTF player names
-#define CTFTEAMCODE(pl) pl->ctfteam ? (pl->ctfteam == 1 ? "\x85" : "\x84") : ""
-#define CTFTEAMENDCODE(pl) pl->ctfteam ? "\x80" : ""
 
 void P_ForceFeed(const player_t *player, INT32 attack, INT32 fade, tic_t duration, INT32 period)
 {
@@ -125,18 +120,32 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 	if (player->exiting || mapreset || (player->pflags & PF_ELIMINATED) || player->itemRoulette.reserved)
 		return false;
 
-	// 0: Sphere/Ring
-	// 1: Random Item / Capsule
-	// 2: Eggbox
-	// 3: Paperitem
+	// See p_local.h for pickup types
 
-	if (weapon != 2 && player->instaWhipCharge)
+	if (weapon != PICKUP_EGGBOX && player->instaWhipCharge)
 		return false;
 
-	if (weapon)
+	if (weapon == PICKUP_ITEMBOX && !player->cangrabitems)
+		return false;
+
+	if (weapon == PICKUP_RINGORSPHERE)
+	{
+		// No picking up rings while SPB is targetting you
+		if (player->pflags & PF_RINGLOCK)
+		{
+			return false;
+		}
+
+		// No picking up rings while stunned
+		if (player->stunned > 0)
+		{
+			return false;
+		}
+	}
+	else
 	{
 		// Item slot already taken up
-		if (weapon == 2)
+		if (weapon == PICKUP_EGGBOX)
 		{
 			// Invulnerable
 			if (player->flashing > 0)
@@ -158,11 +167,11 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 			// Item slot already taken up
 			if (player->itemRoulette.active == true
 				|| player->ringboxdelay > 0
-				|| (weapon != 3 && player->itemamount)
+				|| (weapon != PICKUP_PAPERITEM && player->itemamount)
 				|| (player->itemflags & IF_ITEMOUT))
 				return false;
 
-			if (weapon == 3 && K_GetShieldFromItem(player->itemtype) != KSHIELD_NONE)
+			if (weapon == PICKUP_PAPERITEM && K_GetShieldFromItem(player->itemtype) != KSHIELD_NONE)
 				return false; // No stacking shields!
 		}
 	}
@@ -173,7 +182,7 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 // Allow players to pick up only one pickup from each set of pickups.
 // Anticheese pickup types are different than-P_CanPickupItem weapon, because that system is
 // already slightly scary without introducing special cases for different types of the same pickup.
-// 1 = floating item, 2 = perma ring, 3 = capsule
+// See p_local.h for cheese types.
 boolean P_IsPickupCheesy(player_t *player, UINT8 type)
 {
 	extern consvar_t cv_debugcheese;
@@ -275,8 +284,10 @@ static void P_ItemPop(mobj_t *actor)
 	actor->extravalue1 = 0;
 
 	// de-solidify
-	// (Nope! Handled in fusethink for item pickup leniency)
-	// actor->flags |= MF_NOCLIPTHING;
+	// Do not set item boxes intangible, those are handled in fusethink for item pickup leniency
+	// Sphere boxes still need to be set intangible here though
+	if (actor->type != MT_RANDOMITEM)
+		actor->flags |= MF_NOCLIPTHING;
 
 	// RF_DONTDRAW will flicker as the object's fuse gets
 	// closer to running out (see P_FuseThink)
@@ -414,7 +425,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				if (special->scale < special->destscale/2)
 					return;
 
-				if (!P_CanPickupItem(player, 3) || (player->itemamount && player->itemtype != special->threshold))
+				if (!P_CanPickupItem(player, PICKUP_PAPERITEM) || (player->itemamount && player->itemtype != special->threshold))
 					return;
 
 				player->itemtype = special->threshold;
@@ -434,9 +445,9 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			special->flags &= ~MF_SPECIAL;
 			return;
 		case MT_RANDOMITEM: {
-			UINT8 cheesetype = (special->flags2 & MF2_BOSSDEAD) ? 2 : 1; // perma ring box
+			UINT8 cheesetype = (special->flags2 & MF2_BOSSDEAD) ? CHEESE_RINGBOX : CHEESE_ITEMBOX; // perma ring box
 
-			if (!P_CanPickupItem(player, 1))
+			if (!P_CanPickupItem(player, PICKUP_ITEMBOX))
 				return;
 			if (P_IsPickupCheesy(player, cheesetype))
 				return;
@@ -451,7 +462,9 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (special->fuse) // This box is respawning, but was broken very recently (see P_FuseThink)
 			{
 				// What was this box broken as?
-				if (special->cvmem && !(special->flags2 & MF2_BOSSDEAD))
+				if (cv_thunderdome.value)
+					K_StartItemRoulette(player, true);
+				else if (special->cvmem && !(special->flags2 & MF2_BOSSDEAD))
 					K_StartItemRoulette(player, false);
 				else
 					K_StartItemRoulette(player, true);
@@ -474,7 +487,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			return;
 		}
 		case MT_SPHEREBOX:
-			if (!P_CanPickupItem(player, 0))
+			if (!P_CanPickupItem(player, PICKUP_RINGORSPHERE))
 				return;
 
 			special->momx = special->momy = special->momz = 0;
@@ -494,15 +507,13 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 						return;
 					break;
 				case KITEM_SUPERRING:
-					if (player->pflags & PF_RINGLOCK) // no cheaty rings
-						return;
-					if (player->instaWhipCharge)
+					if (!P_CanPickupItem(player, PICKUP_RINGORSPHERE)) // no cheaty rings
 						return;
 					break;
 				default:
-					if (!P_CanPickupItem(player, 1))
+					if (!P_CanPickupItem(player, PICKUP_ITEMCAPSULE))
 						return;
-					if (P_IsPickupCheesy(player, 3))
+					if (P_IsPickupCheesy(player, CHEESE_ITEMCAPSULE))
 						return;
 					break;
 			}
@@ -559,7 +570,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				return;
 			}
 		case MT_EMERALD:
-			if (!P_CanPickupItem(player, 0) || P_PlayerInPain(player))
+			if (!P_CanPickupItem(player, PICKUP_RINGORSPHERE) || P_PlayerInPain(player))
 				return;
 
 			if (special->threshold > 0)
@@ -618,7 +629,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			return;
 
 		case MT_CDUFO: // SRB2kart
-			if (special->fuse || !P_CanPickupItem(player, 1))
+			if (special->fuse || !P_CanPickupItem(player, PICKUP_ITEMBOX))
 				return;
 
 			K_StartItemRoulette(player, false);
@@ -656,10 +667,15 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (!player->mo || player->spectator)
 				return;
 
+			if (K_TryPickMeUp(special, toucher))
+				return;
+
 			// attach to player!
 			P_SetTarget(&special->tracer, toucher);
 			toucher->flags |= MF_NOGRAVITY;
 			toucher->momz = (8*toucher->scale) * P_MobjFlip(toucher);
+			toucher->player->carry = CR_TRAPBUBBLE;
+			P_SetTarget(&toucher->tracer, special); //use tracer to acces the object 
 
 			// Snap to the unfortunate player and quit moving laterally, or we can end up quite far away
 			special->momx = 0;
@@ -680,19 +696,11 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (special->extravalue1)
 				return;
 
-			// No picking up rings while SPB is targetting you
-			if (player->pflags & PF_RINGLOCK)
-				return;
-
-			// Prepping instawhip? Don't ruin it by collecting rings
-			if (player->instaWhipCharge)
-				return;
-
 			// Don't immediately pick up spilled rings
 			if (special->threshold > 0 || P_PlayerInPain(player) || player->spindash) // player->spindash: Otherwise, players can pick up rings that are thrown out of them from invinc spindash penalty
 				return;
 
-			if (!(P_CanPickupItem(player, 0)))
+			if (!(P_CanPickupItem(player, PICKUP_RINGORSPHERE)))
 				return;
 
 			// Reached the cap, don't waste 'em!
@@ -714,7 +722,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			return;
 
 		case MT_BLUESPHERE:
-			if (!(P_CanPickupItem(player, 0)))
+			if (!(P_CanPickupItem(player, PICKUP_RINGORSPHERE)))
 				return;
 
 			P_GivePlayerSpheres(player, 1);
@@ -771,15 +779,27 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				}
 
 				// See also P_SprayCanInit
-				UINT16 can_id = mapheaderinfo[gamemap-1]->cache_spraycan;
+				UINT16 can_id = mapheaderinfo[gamemap-1]->records.spraycan;
 
-				if (can_id < gamedata->numspraycans)
+				if (can_id < gamedata->numspraycans || can_id == MCAN_BONUS)
 				{
 					// Assigned to this level, has been grabbed
 					return;
 				}
-				// Prevent footguns - these won't persist when custom levels are unloaded
-				else if (gamemap-1 < basenummapheaders)
+
+				if (
+					(gamemap-1 >= basenummapheaders)
+					|| (gamedata->gotspraycans >= gamedata->numspraycans)
+				)
+				{
+					// Custom course OR we ran out of assignables.
+
+					if (special->threshold != 0)
+						return;
+
+					can_id = MCAN_BONUS;
+				}
+				else
 				{
 					// Unassigned, get the next grabbable colour
 					can_id = gamedata->gotspraycans;
@@ -802,18 +822,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 						skincolors[swapcol].cache_spraycan = can_id;
 					}
 
-				}
-
-				if (can_id >= gamedata->numspraycans)
-				{
-					// We've exhausted all the spraycans to grab.
-					return;
-				}
-
-				if (gamedata->spraycans[can_id].map >= nummapheaders)
-				{
 					gamedata->spraycans[can_id].map = gamemap-1;
-					mapheaderinfo[gamemap-1]->cache_spraycan = can_id;
 
 					if (gamedata->gotspraycans == 0
 					&& gametype == GT_TUTORIAL
@@ -829,11 +838,13 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 					}
 
 					gamedata->gotspraycans++;
-
-					if (!M_UpdateUnlockablesAndExtraEmblems(true, true))
-						S_StartSound(NULL, sfx_ncitem);
-					gamedata->deferredsave = true;
 				}
+
+				mapheaderinfo[gamemap-1]->records.spraycan = can_id;
+
+				if (!M_UpdateUnlockablesAndExtraEmblems(true, true))
+					S_StartSound(NULL, sfx_ncitem);
+				gamedata->deferredsave = true;
 
 				{
 					mobj_t *canmo = NULL;
@@ -1147,22 +1158,29 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 	if (!battleprisons)
 		return;
 
+	// Check to see if everyone's out.
+	{
+		UINT8 i = 0;
+
+		for (; i < MAXPLAYERS; i++)
+		{
+			if (!playeringame[i] || players[i].spectator || players[i].exiting)
+				continue;
+			break;
+		}
+
+		if (i == MAXPLAYERS)
+		{
+			// Nobody can claim credit for this just-too-late hit!
+			P_DoAllPlayersExit(0, false); // softlock prevention
+			return;
+		}
+	}
+
+	// If you CAN recieve points, get them!
 	if ((gametyperules & GTR_POINTLIMIT) && (source && source->player))
 	{
-		/*mobj_t * ring;
-		for (i = 0; i < 2; i++)
-		{
-			dir += (ANGLE_MAX/3);
-			ring = P_SpawnMobj(target->x, target->y, target->z, MT_RING);
-			ring->angle = dir;
-			P_InstaThrust(ring, dir, 16*ring->scale);
-			ring->momz = 8 * target->scale * P_MobjFlip(target);
-			P_SetTarget(&ring->tracer, source);
-			source->player->pickuprings++;
-		}*/
-
-		P_AddPlayerScore(source->player, 1);
-		K_SpawnBattlePoints(source->player, NULL, 1);
+		K_GivePointsToPlayer(source->player, NULL, 1);
 	}
 
 	targetdamaging_t targetdamaging = UFOD_GENERIC;
@@ -1207,13 +1225,18 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 		gamedata->prisoneggstothispickup--;
 	}
 
+	// Standard progression.
 	if (++numtargets >= maptargets)
 	{
+		// Yipue!
+
 		P_DoAllPlayersExit(0, true);
 	}
 	else
 	{
 		S_StartSound(NULL, sfx_s221);
+
+		// Time limit recovery
 		if (timelimitintics)
 		{
 			UINT16 bonustime = 10*TICRATE;
@@ -1260,7 +1283,7 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 			secretextratime = TICRATE/2;
 		}
 
-
+		// Prison Egg challenge drops (CDs, etc)
 #ifdef DEVELOP
 		extern consvar_t cv_debugprisoncd;
 #endif
@@ -1510,13 +1533,15 @@ void P_CheckPointLimit(void)
 		return;
 
 	// pointlimit is nonzero, check if it's been reached by this player
-	if (G_GametypeHasTeams())
+	if (G_GametypeHasTeams() == true)
 	{
-		// Just check both teams
-		if (g_pointlimit <= redscore || g_pointlimit <= bluescore)
+		for (i = 0; i < TEAM__MAX; i++)
 		{
-			if (server)
-				SendNetXCmd(XD_EXITLEVEL, NULL, 0);
+			if (g_pointlimit <= g_teamscores[i])
+			{
+				P_DoAllPlayersExit(0, false);
+				return;
+			}
 		}
 	}
 	else
@@ -1529,10 +1554,7 @@ void P_CheckPointLimit(void)
 			if (g_pointlimit <= players[i].roundscore)
 			{
 				P_DoAllPlayersExit(0, false);
-
-				/*if (server)
-					SendNetXCmd(XD_EXITLEVEL, NULL, 0);*/
-				return; // good thing we're leaving the function immediately instead of letting the loop get mangled!
+				return;
 			}
 		}
 	}
@@ -2289,6 +2311,9 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		case MT_EMFAUCET_DRIP:
 			Obj_EMZDripDeath(target);
 			break;
+		case MT_FLYBOT767:
+			Obj_FlybotDeath(target);
+			break;
 		default:
 			break;
 	}
@@ -2506,12 +2531,11 @@ static boolean P_PlayerHitsPlayer(mobj_t *target, mobj_t *inflictor, mobj_t *sou
 		if (source == target)
 			return false;
 
-		if (G_GametypeHasTeams())
-		{
-			// Don't hurt your team, either!
-			if (source->player->ctfteam == target->player->ctfteam)
-				return false;
-		}
+#if 0
+		// Don't hurt your team, either!
+		if (G_SameTeam(source->player, target->player) == true)
+			return false;
+#endif
 	}
 
 	return true;
@@ -2579,20 +2603,20 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 				player->roundconditions.checkthisframe = true;
 			}
 
-			if (gametyperules & (GTR_BUMPERS|GTR_CHECKPOINTS))
+			if ((player->pitblame > -1) && (player->pitblame < MAXPLAYERS)
+				&& (playeringame[player->pitblame]) && (!players[player->pitblame].spectator)
+				&& (players[player->pitblame].mo) && (!P_MobjWasRemoved(players[player->pitblame].mo)))
 			{
-				if ((player->pitblame > -1) && (player->pitblame < MAXPLAYERS)
-					&& (playeringame[player->pitblame]) && (!players[player->pitblame].spectator)
-					&& (players[player->pitblame].mo) && (!P_MobjWasRemoved(players[player->pitblame].mo)))
-				{
+				if (gametyperules & (GTR_BUMPERS|GTR_CHECKPOINTS))
 					P_DamageMobj(player->mo, players[player->pitblame].mo, players[player->pitblame].mo, 1, DMG_KARMA);
-					player->pitblame = -1;
-				}
-				else if (player->mo->health > 1 || K_Cooperative())
-				{
+				else
+					K_SpawnAmps(&players[player->pitblame], 20, player->mo);
+				player->pitblame = -1;
+			}
+			else if (player->mo->health > 1 || K_Cooperative())
+			{
+				if (gametyperules & (GTR_BUMPERS|GTR_CHECKPOINTS))
 					player->mo->health--;
-				}
-				
 			}
 
 			if (modeattacking & ATTACKING_SPB)
@@ -2990,6 +3014,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			UINT8 type = (damagetype & DMG_TYPEMASK);
 			const boolean hardhit = (type == DMG_EXPLODE || type == DMG_KARMA || type == DMG_TUMBLE); // This damage type can do evil stuff like ALWAYS combo
 			INT16 ringburst = 5;
+			UINT16 stunTics = 0;
 
 			// Check if the player is allowed to be damaged!
 			// If not, then spawn the instashield effect instead.
@@ -3168,7 +3193,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				damage = 0;
 			}
 
-			boolean hitFromInvinc = false;
+			boolean softenTumble = false;
 
 			// Sting and stumble shouldn't be rewarding Battle hits.
 			if (type == DMG_STING || type == DMG_STUMBLE)
@@ -3181,7 +3206,28 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 				if (source && source != player->mo && source->player)
 				{
-					K_SpawnAmps(source->player, K_PvPAmpReward(20, source->player, player), target);
+					K_SpawnAmps(source->player, K_PvPAmpReward((type == DMG_WHUMBLE) ? 30 : 20, source->player, player), target);
+					K_BotHitPenalty(player);
+
+					if (G_SameTeam(source->player, player))
+					{
+						if (type != DMG_EXPLODE)
+							type = DMG_STUMBLE;
+					}
+					else
+					{
+						for (UINT8 i = 0; i < MAXPLAYERS; i++)
+						{
+							if (!playeringame[i] || players[i].spectator || !players[i].mo || P_MobjWasRemoved(players[i].mo))
+								continue;
+							if (!G_SameTeam(source->player, &players[i]))
+								continue;
+							if (source->player == &players[i])
+								continue;
+							K_SpawnAmps(&players[i], FixedInt(FixedMul(5, K_TeamComebackMultiplier(player))), target);
+						}
+					}
+
 
 					// Extend the invincibility if the hit was a direct hit.
 					if (inflictor == source && source->player->invincibilitytimer &&
@@ -3189,7 +3235,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					{
 						tic_t kinvextend;
 
-						hitFromInvinc = true;
+						softenTumble = true;
 
 						if (gametyperules & GTR_CLOSERPLAYERS)
 							kinvextend = 2*TICRATE;
@@ -3309,6 +3355,27 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				K_PopPlayerShield(player);
 			}
 
+			if (!(gametyperules & GTR_SPHERES) && player->tripwireLeniency)
+			{
+				switch (type)
+				{
+					case DMG_EXPLODE:
+						type = DMG_TUMBLE;
+						break;
+					case DMG_TUMBLE:
+						softenTumble = true;
+						break;
+					case DMG_NORMAL:
+					case DMG_WIPEOUT:
+						type = DMG_STUMBLE;
+						player->ringburst += 5; // THERE IS SIMPLY NO HOPE AT THIS POINT
+						K_PopPlayerShield(player);
+						break;
+					default:
+						break;
+				}
+			}
+
 			switch (type)
 			{
 				case DMG_STING:
@@ -3322,7 +3389,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					ringburst = 0;
 					break;
 				case DMG_TUMBLE:
-					K_TumblePlayer(player, inflictor, source, hitFromInvinc);
+					K_TumblePlayer(player, inflictor, source, softenTumble);
 					ringburst = 10;
 					break;
 				case DMG_EXPLODE:
@@ -3366,7 +3433,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			if (gametyperules & GTR_BUMPERS)
 				player->spheres = min(player->spheres + 10, 40);
 
-			if ((hardhit == true && !hitFromInvinc) || cv_kartdebughuddrop.value)
+			if ((hardhit == true && !softenTumble) || cv_kartdebughuddrop.value)
 			{
 				K_DropItems(player);
 			}
@@ -3379,6 +3446,27 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			{
 				player->flipDI = true;
 			}
+
+			// Apply stun!
+			// Feel free to move these calculations higher up if different damage sources should apply variable stun in future
+			#define MIN_STUNTICS (4 * TICRATE)
+			#define MAX_STUNTICS (10 * TICRATE)
+			stunTics = Easing_Linear((player->kartweight - 1) * FRACUNIT / 8, MAX_STUNTICS, MIN_STUNTICS);
+			stunTics >>= player->stunnedCombo; // consecutive hits add half as much stun as the previous hit
+
+			// 1/3 base stun values in battle
+			if (gametyperules & GTR_SPHERES)
+			{
+				stunTics /= 3;
+			}
+
+			if (player->stunnedCombo < UINT8_MAX)
+			{
+				player->stunnedCombo++;
+			}
+			player->stunned = (player->stunned & 0x8000) | min(0x7FFF, (player->stunned & 0x7FFF) + stunTics);
+			#undef MIN_STUNTICS
+			#undef MAX_STUNTICS
 
 			K_DefensiveOverdrive(target->player);
 		}

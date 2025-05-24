@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Sally "TehRealSalt" Cochenour
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Sally "TehRealSalt" Cochenour
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -174,15 +174,19 @@ void K_SetBot(UINT8 newplayernum, UINT8 skinnum, UINT8 difficulty, botStyle_e st
 				break;
 		}
 	}
-	players[newplayernum].skincolor = color;
-	K_SetNameForBot(newplayernum, realname);
 
-	SetPlayerSkinByNum(newplayernum, skinnum);
+	K_SetNameForBot(newplayernum, realname);
 
 	for (UINT8 i = 0; i < PWRLV_NUMTYPES; i++)
 	{
 		clientpowerlevels[newplayernum][i] = 0;
 	}
+
+	players[newplayernum].prefcolor = color;
+	players[newplayernum].prefskin = skinnum;
+	players[newplayernum].preffollower = -1;
+	players[newplayernum].preffollowercolor = SKINCOLOR_NONE;
+	G_UpdatePlayerPreferences(&players[newplayernum]);
 
 	if (netgame)
 	{
@@ -630,6 +634,12 @@ static UINT32 K_BotRubberbandDistance(const player_t *player)
 			continue;
 		}
 
+		if (G_SameTeam(player, &players[i]) == true)
+		{
+			// Don't consider friendlies with your rubberbanding.
+			continue;
+		}
+
 		// First check difficulty levels, then score, then settle it with port priority!
 		if (player->botvars.difficulty < players[i].botvars.difficulty)
 		{
@@ -716,6 +726,12 @@ fixed_t K_BotRubberband(const player_t *player)
 			continue;
 		}
 
+		// Don't rubberband to friendlies...
+		if (G_SameTeam(player, &players[i]) == true)
+		{
+			continue;
+		}
+
 #if 0
 		// Only rubberband up to players.
 		if (players[i].bot)
@@ -787,8 +803,13 @@ fixed_t K_UpdateRubberband(player_t *player)
 	fixed_t dest = K_BotRubberband(player);
 	fixed_t ret = player->botvars.rubberband;
 
+	UINT8 ease_soften = 8;
+
+	if (player->botvars.bumpslow && dest > ret)
+		ease_soften *= 10;
+
 	// Ease into the new value.
-	ret += (dest - player->botvars.rubberband) / 8;
+	ret += (dest - player->botvars.rubberband) / ease_soften;
 
 	return ret;
 }

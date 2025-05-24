@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -83,7 +83,9 @@ TYPEDEF (challengeall_pak);
 TYPEDEF (responseall_pak);
 TYPEDEF (resultsall_pak);
 TYPEDEF (say_pak);
+TYPEDEF (reqmapqueue_pak);
 TYPEDEF (netinfo_pak);
+TYPEDEF (voice_pak);
 
 // d_event.h
 TYPEDEF (event_t);
@@ -144,6 +146,7 @@ TYPEDEF (unloaded_cupheader_t);
 TYPEDEF (exitcondition_t);
 TYPEDEF (darkness_t);
 TYPEDEF (musicfade_t);
+TYPEDEF (teaminfo_t);
 
 // font.h
 TYPEDEF (font_t);
@@ -301,6 +304,7 @@ TYPEDEF (BasicFF_t);
 TYPEDEF (divline_t);
 TYPEDEF (intercept_t);
 TYPEDEF (opening_t);
+TYPEDEF (fofopening_t);
 
 // p_mobj.h
 TYPEDEF (mobj_t);

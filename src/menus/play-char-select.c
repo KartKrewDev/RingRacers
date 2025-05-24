@@ -1,9 +1,9 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Sally "TehRealSalt" Cochenour.
-// Copyright (C) 2024 by "Lat'".
-// Copyright (C) 2024 by Vivian "toastergrl" Grannell.
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Sally "TehRealSalt" Cochenour.
+// Copyright (C) 2025 by "Lat'".
+// Copyright (C) 2025 by Vivian "toastergrl" Grannell.
+// Copyright (C) 2025 by Kart Krew.
 
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -288,7 +288,7 @@ static void M_SetupMidGameGridPos(setup_player_t *p, UINT8 num)
 
 void M_CharacterSelectInit(void)
 {
-	UINT8 i, j;
+	UINT16 i, j;
 	setup_maxpage = 0;
 
 	memset(setup_chargrid, -1, sizeof(setup_chargrid));
@@ -753,6 +753,20 @@ static void M_HandleBackToChars(setup_player_t *p)
 static boolean M_HandleBeginningColors(setup_player_t *p)
 {
 	p->mdepth = CSSTEP_COLORS;
+
+	if (Playing() && G_GametypeHasTeams())
+	{
+		size_t pnum = (p - setup_player);
+		if (pnum <= splitscreen)
+		{
+			if (players[g_localplayers[pnum]].team != TEAM_UNASSIGNED)
+			{
+				p->color = g_teaminfo[players[g_localplayers[pnum]].team].color;
+				return false;
+			}
+		}
+	}
+
 	M_NewPlayerColors(p);
 	if (p->colors.listLen != 1)
 		return true;

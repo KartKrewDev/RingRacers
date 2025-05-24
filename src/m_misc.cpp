@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -341,6 +341,12 @@ boolean FIL_ConvertTextFileToBinary(const char *textfilename, const char *binfil
 	return success;
 }
 
+boolean FIL_RenameFile(char const *old_name, char const *new_name)
+{
+	int result = rename(old_name, new_name);
+	return (result == 0);
+}
+
 /** Check if the filename exists
   *
   * \param name   Filename to check.
@@ -589,7 +595,7 @@ void Command_LoadConfig_f(void)
 	CV_InitFilterVar();
 
 	// exec the config
-	COM_BufInsertText(va("exec \"%s\"\n", configfile));
+	COM_BufInsertText(va("exec \"%s\" -immediate\n", configfile));
 
 	// don't filter anymore vars and don't let this convsvar be changed
 	COM_BufInsertText(va("%s \"%d\"\n", cv_execversion.name, EXECVERSION));
@@ -650,7 +656,7 @@ void M_FirstLoadConfig(void)
 	CV_InitFilterVar();
 
 	// load config, make sure those commands doesnt require the screen...
-	COM_BufInsertText(va("exec \"%s\"\n", configfile));
+	COM_BufInsertText(va("exec \"%s\" -immediate\n", configfile));
 	// no COM_BufExecute() needed; that does it right away
 
 	// don't filter anymore vars and don't let this convsvar be changed
@@ -1456,7 +1462,7 @@ void M_LegacySaveFrame(void)
 #endif
 				M_PNGFrame(apng_ptr, apng_info_ptr, (png_bytep)linear);
 #ifdef HWRENDER
-				if (rendermode != render_soft && linear)
+				if (rendermode == render_opengl && linear)
 					free(linear);
 #endif
 

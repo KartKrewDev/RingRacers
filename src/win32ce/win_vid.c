@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 //
@@ -233,8 +233,8 @@ void I_LoadingScreen(LPCSTR msg)
 void I_ReadScreen(UINT8 *scr)
 {
 	// DEBUGGING
-	if (rendermode != render_soft)
-		I_Error("I_ReadScreen: called while in non-software mode");
+	if (rendermode == render_opengl)
+		I_Error("I_ReadScreen: called while in Legacy GL mode");
 	VID_BlitLinearScreen(screens[0], scr, vid.width*vid.bpp, vid.height, vid.width*vid.bpp,
 		vid.rowbytes);
 }

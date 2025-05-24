@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -75,7 +75,7 @@ void Command_Savecheckpoint_f(void);
 void Command_Setrings_f(void);
 void Command_Setspheres_f(void);
 void Command_Setlives_f(void);
-void Command_Setscore_f(void);
+void Command_Setroundscore_f(void);
 void Command_Devmode_f(void);
 void Command_Scale_f(void);
 void Command_Gravflip_f(void);

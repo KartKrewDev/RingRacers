@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by James Robert Roman
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by James Robert Roman
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -11,18 +11,178 @@
 #ifndef __V_DRAW_HPP__
 #define __V_DRAW_HPP__
 
-#include <string>
 #include <string_view>
 #include <optional>
 #include <utility>
 
 #include <fmt/core.h>
 
+#include "core/hash_map.hpp"
+#include "core/string.h"
 #include "doomdef.h" // skincolornum_t
 #include "doomtype.h"
 #include "screen.h" // BASEVIDWIDTH
 #include "typedef.h"
 #include "v_video.h"
+#include "g_input.h"
+
+// Helpers for setting up pad napping nonsense
+typedef enum
+{
+	gb_mask = 0xF0,
+	gb_a = 0xF0,
+	gb_b,
+	gb_x,
+	gb_y,
+	gb_lb,
+	gb_rb,
+	gb_lt,
+	gb_rt,
+	gb_start,
+	gb_back,
+	gb_ls,
+	gb_rs,
+	gb_dpad
+} generic_buttons_e;
+
+typedef enum
+{
+	sb_up = 0x00,
+	sb_down,
+	sb_right,
+	sb_left,
+	sb_lua1,
+	sb_lua2,
+	sb_lua3,
+	sb_r,
+	sb_l,
+	sb_start,
+	sb_a,
+	sb_b,
+	sb_c,
+	sb_x,
+	sb_y,
+	sb_z
+} saturn_buttons_e;
+
+// Garden-variety standard gamepad
+static const srb2::HashMap<INT32, char> standardpad = {
+	{nc_a, gb_a},
+	{nc_b, gb_b},
+	{nc_x, gb_x},
+	{nc_y, gb_y},
+	{nc_lb, gb_lb},
+	{nc_rb, gb_rb},
+	{nc_lt, gb_lt},
+	{nc_rt, gb_rt},
+	{nc_start, gb_start},
+	{nc_back, gb_back},
+	{nc_ls, gb_ls},
+	{nc_rs, gb_rs},
+};
+
+// Standard gamepad, but evil Nintendo layout flip was applied by your
+// controller firmware or Steam Input—swap B/A and X/Y
+static const srb2::HashMap<INT32, char> flippedpad = {
+	{nc_a, gb_b},
+	{nc_b, gb_a},
+	{nc_x, gb_y},
+	{nc_y, gb_x},
+	{nc_lb, gb_lb},
+	{nc_rb, gb_rb},
+	{nc_lt, gb_lt},
+	{nc_rt, gb_rt},
+	{nc_start, gb_start},
+	{nc_back, gb_back},
+	{nc_ls, gb_ls},
+	{nc_rs, gb_rs},
+};
+
+// Saturn Type A - Retrobit Wired Dinput, RB RT LB LT (CZLR)
+static const srb2::HashMap<INT32, char> saturntypeA = {
+	{nc_a, sb_a},
+	{nc_b, sb_b},
+	{nc_x, sb_x},
+	{nc_y, sb_y},
+	{nc_rb, sb_c},
+	{nc_rt, sb_z},
+	{nc_lb, sb_l},
+	{nc_lt, sb_r},
+	{nc_start, gb_start},
+	{nc_back, gb_back},
+	{nc_ls, gb_ls},
+	{nc_rs, gb_rs},
+};
+
+// Saturn Type B - Retrobit Wireless Dinput, LB RB LT RT (CZLR)
+static const srb2::HashMap<INT32, char> saturntypeB = {
+	{nc_a, sb_a},
+	{nc_b, sb_b},
+	{nc_x, sb_x},
+	{nc_y, sb_y},
+	{nc_lb, sb_c},
+	{nc_rb, sb_z},
+	{nc_lt, sb_l},
+	{nc_rt, sb_r},
+	{nc_start, gb_start},
+	{nc_back, gb_back},
+	{nc_ls, gb_ls},
+	{nc_rs, gb_rs},
+};
+
+// Saturn Type C - Retrobit Xinput, RT LT LB RB (CZLR)
+static const srb2::HashMap<INT32, char> saturntypeC = {
+	{nc_a, sb_a},
+	{nc_b, sb_b},
+	{nc_x, sb_x},
+	{nc_y, sb_y},
+	{nc_rt, sb_c},
+	{nc_lt, sb_z},
+	{nc_lb, sb_l},
+	{nc_rb, sb_r},
+	{nc_start, gb_start},
+	{nc_back, gb_back},
+	{nc_ls, gb_ls},
+	{nc_rs, gb_rs},
+};
+
+// Saturn Type D - 8BitDo M30 / arcade, RT RB LB LT (CZLR)
+// This cannot be disambiguated (shares L/R with type 1)
+// but is more spatially correct w/r/t SDL expectations
+// and standard arcade mapping (Z on top, C on bottom)
+static const srb2::HashMap<INT32, char> saturntypeD = {
+	{nc_a, sb_a},
+	{nc_b, sb_b},
+	{nc_x, sb_x},
+	{nc_y, sb_y},
+	{nc_rt, sb_c},
+	{nc_rb, sb_z},
+	{nc_lb, sb_l},
+	{nc_lt, sb_r},
+	{nc_start, gb_start},
+	{nc_back, gb_back},
+	{nc_ls, gb_ls},
+	{nc_rs, gb_rs},
+};
+
+// Saturn Type E - Hori, RT RB (CZ) with some fucked up bumpers/triggers
+// The Hori layout is, to my knowledge, the only 6bt one that has fully
+// unique buttons in every slot while having both bumpers and triggers,
+// so there's no way to accurately portray it without using generics.
+static const srb2::HashMap<INT32, char> saturntypeE = {
+	{nc_a, sb_a},
+	{nc_b, sb_b},
+	{nc_x, sb_x},
+	{nc_y, sb_y},
+	{nc_rt, sb_c},
+	{nc_rb, sb_z},
+	{nc_lb, gb_rb},
+	{nc_lt, gb_rt},
+	{nc_ls, gb_lb},
+	{nc_rs, gb_lt},
+	{nc_start, gb_start},
+	{nc_back, gb_back},
+};
 
 namespace srb2
 {
@@ -76,7 +236,26 @@ public:
 		down,
 		right,
 		left,
-		dpad,
+		lua1,
+		lua2,
+		lua3,
+	};
+
+	enum class GenericButton
+	{
+		a,
+		b,
+		x,
+		y,
+		lb,
+		rb,
+		lt,
+		rt,
+		start,
+		back,
+		ls,
+		rs,
+		dpad
 	};
 
 	class TextElement
@@ -84,7 +263,7 @@ public:
 	public:
 		explicit TextElement() {}
 
-		explicit TextElement(std::string string) : string_(string) {}
+		explicit TextElement(const srb2::String& string) : string_(string) {}
 
 		template <class... Args>
 		explicit TextElement(fmt::format_string<Args...> format, Args&&... args) :
@@ -92,13 +271,14 @@ public:
 		{
 		}
 
-		const std::string& string() const { return string_; }
+		const srb2::String& string() const { return string_; }
 		std::optional<Font> font() const { return font_; }
 		std::optional<INT32> flags() const { return flags_; }
+		std::optional<UINT8> as() const { return as_; }
 
 		int width() const;
 
-		TextElement& string(std::string string)
+		TextElement& string(srb2::String string)
 		{
 			string_ = string;
 			return *this;
@@ -124,10 +304,16 @@ public:
 			return *this;
 		}
 
+		TextElement& as(UINT8 as)
+		{
+			as_ = as;
+			return *this;
+		}
 	private:
-		std::string string_;
+		srb2::String string_;
 		std::optional<Font> font_;
 		std::optional<INT32> flags_;
+		std::optional<UINT8> as_;
 	};
 
 	class Chain
@@ -171,7 +357,7 @@ public:
 		Chain& colorize(UINT16 color);
 
 		void text(const char* str) const { string(str, flags_, font_); }
-		void text(const std::string& str) const { text(str.c_str()); }
+		void text(const srb2::String& str) const { text(str.c_str()); }
 		void text(const TextElement& elm) const
 		{
 			string(elm.string().c_str(), elm.flags().value_or(flags_), elm.font().value_or(font_));
@@ -184,7 +370,7 @@ public:
 
 		void patch(patch_t* patch) const;
 		void patch(const char* name) const { patch(Draw::cache_patch(name)); }
-		void patch(const std::string& name) const { patch(name.c_str()); }
+		void patch(const srb2::String& name) const { patch(name.c_str()); }
 
 		void thumbnail(UINT16 mapnum) const;
 
@@ -192,6 +378,9 @@ public:
 
 		void button(Button type, std::optional<bool> press = {}) const { button_(type, 0, press); }
 		void small_button(Button type, std::optional<bool> press = {}) const { button_(type, 1, press); }
+
+		void generic_button(GenericButton type, std::optional<bool> press = {}) const { generic_button_(type, 0, press); }
+		void generic_small_button(GenericButton type, std::optional<bool> press = {}) const { generic_button_(type, 1, press); }
 
 		void sticker(patch_t* end_graphic, UINT8 color) const;
 		void sticker() const { sticker(Draw::cache_patch("K_STIKEN"), 24); }
@@ -234,6 +423,7 @@ public:
 
 		void string(const char* str, INT32 flags, Font font) const;
 		void button_(Button type, int ver, std::optional<bool> press = {}) const;
+		void generic_button_(GenericButton type, int ver, std::optional<bool> press = {}) const;
 
 		friend Draw;
 	};
@@ -283,6 +473,8 @@ public:
 	VOID_METHOD(fill);
 	VOID_METHOD(button);
 	VOID_METHOD(small_button);
+	VOID_METHOD(generic_button);
+	VOID_METHOD(generic_small_button);
 	VOID_METHOD(sticker);
 	VOID_METHOD(small_sticker);
 

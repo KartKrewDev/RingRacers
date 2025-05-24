@@ -3,7 +3,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
 //
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -1350,7 +1350,7 @@ static void I_SetupMumble(void)
 	if(shmfd < 0)
 		return;
 
-	mumble = mmap(NULL, sizeof(*mumble), PROT_READ | PROT_WRITE, MAP_SHARED, shmfd, 0);
+	mumble = static_cast<mumble_s*>(mmap(NULL, sizeof(*mumble), PROT_READ | PROT_WRITE, MAP_SHARED, shmfd, 0));
 	if (mumble == MAP_FAILED)
 		mumble = NULL;
 #endif
@@ -1366,7 +1366,7 @@ void I_UpdateMumble(const mobj_t *mobj, const listener_t listener)
 		return;
 
 	if(mumble->uiVersion != 2) {
-		wcsncpy(mumble->name, L"Dr. Robotnik's Ring Racers "VERSIONSTRINGW, 256);
+		wcsncpy(mumble->name, L"Dr. Robotnik's Ring Racers " VERSIONSTRINGW, 256);
 		wcsncpy(mumble->description, L"Dr. Robotnik's Ring Racers with integrated Mumble Link support.", 2048);
 		mumble->uiVersion = 2;
 	}
@@ -1639,6 +1639,11 @@ INT32 I_StartupSystem(void)
 	 SDLcompiled.major, SDLcompiled.minor, SDLcompiled.patch);
 	I_OutputMsg("Linked with SDL version: %d.%d.%d\n",
 	 SDLlinked.major, SDLlinked.minor, SDLlinked.patch);
+
+#if (SDL_VERSION_ATLEAST(2, 0, 18))
+	SDL_SetHint(SDL_HINT_APP_NAME, "Dr. Robotnik's Ring Racers");
+#endif
+
 	if (SDL_Init(0) < 0)
 		I_Error("Dr. Robotnik's Ring Racers: SDL System Error: %s", SDL_GetError()); //Alam: Oh no....
 #ifndef NOMUMBLE

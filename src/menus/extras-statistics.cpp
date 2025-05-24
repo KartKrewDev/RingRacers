@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Vivian "toastergrl" Grannell.
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Vivian "toastergrl" Grannell.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
@@ -10,6 +10,8 @@
 //-----------------------------------------------------------------------------
 /// \file  menus/extras-challenges.c
 /// \brief Statistics menu
+
+#include <algorithm>
 
 #include "../k_menu.h"
 #include "../z_zone.h"
@@ -260,7 +262,7 @@ static void M_StatisticsPageInit(void)
 			M_StatisticsChars();
 			break;
 		}
-	
+
 		case statisticspage_gp:
 		{
 			M_StatisticsGP();
@@ -288,9 +290,21 @@ void M_Statistics(INT32 choice)
 {
 	(void)choice;
 
+	UINT16 i;
+
 	statisticsmenu.gotmedals = M_CountMedals(false, false);
 	statisticsmenu.nummedals = M_CountMedals(true, false);
 	statisticsmenu.numextramedals = M_CountMedals(true, true);
+
+	statisticsmenu.numcanbonus = 0;
+	for (i = 0; i < basenummapheaders; i++)
+	{
+		if (!mapheaderinfo[i])
+			continue;
+		if (mapheaderinfo[i]->records.spraycan != MCAN_BONUS)
+			continue;
+		statisticsmenu.numcanbonus++;
+	}
 
 	M_StatisticsPageInit();
 

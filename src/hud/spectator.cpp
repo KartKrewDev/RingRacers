@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -27,6 +27,7 @@
 #include "../k_hud.h"
 #include "../p_local.h"
 #include "../r_fps.h"
+#include "../s_sound.h"
 
 extern "C" consvar_t cv_maxplayers;
 
@@ -39,10 +40,9 @@ struct List
 {
 	struct Field
 	{
-		Field(const char* label, Draw::Button button, std::optional<bool> pressed = {}) :
+		Field(const char* label, const char* button = {}) :
 			label_(Draw::TextElement(label).font(Draw::Font::kThin)),
-			button_(button),
-			pressed_(pressed)
+			btlabel_(Draw::TextElement().parse(button).font(Draw::Font::kThin))
 		{
 		}
 
@@ -55,29 +55,7 @@ struct List
 			col.text(label_);
 			col = col.x(left ? -(kButtonWidth + kButtonMargin) : width() - (kButtonWidth + kFieldSpacing));
 
-			//if (r_splitscreen)
-			{
-				auto small_button_offset = [&]
-				{
-					switch (button_)
-					{
-					case Draw::Button::l:
-					case Draw::Button::r:
-						return -4;
-
-					default:
-						return -2;
-					}
-				};
-
-				col.y(small_button_offset()).small_button(button_, pressed_);
-			}
-#if 0
-			else
-			{
-				col.y(-4).button(button_, pressed_);
-			}
-#endif
+			col.text(btlabel_);
 		}
 
 	private:
@@ -86,8 +64,7 @@ struct List
 		static constexpr int kFieldSpacing = 8;
 
 		Draw::TextElement label_;
-		Draw::Button button_;
-		std::optional<bool> pressed_;
+		Draw::TextElement btlabel_;
 	};
 
 	List(int x, int y) : row_(split_draw(x, y, left_)) {}
@@ -188,7 +165,7 @@ void K_drawSpectatorHUD(boolean director)
 
 	if (player)
 	{
-		std::string label = [player]
+		srb2::String label = [player]
 		{
 			if (player->flashing)
 			{
@@ -206,10 +183,10 @@ void K_drawSpectatorHUD(boolean director)
 
 		if (cv_maxplayers.value)
 		{
-			label += fmt::format(" [{}/{}]", numingame, cv_maxplayers.value);
+			label += srb2::format(" [{}/{}]", numingame, cv_maxplayers.value);
 		}
 
-		list.insert({{label.c_str(), Draw::Button::l}});
+		list.insert({{label.c_str(), "<l_animated>"}});
 	}
 
 	if (director || camera[viewnum].freecam)
@@ -217,14 +194,14 @@ void K_drawSpectatorHUD(boolean director)
 		// Not locked into freecam -- can toggle it.
 		if (director)
 		{
-			list.insert({{"Freecam", Draw::Button::c}});
+			list.insert({{"Freecam", "<c_animated>"}});
 		}
 		else
 		{
 			bool press = D_LocalTiccmd(viewnum)->buttons & BT_RESPAWN;
 			const char* label = (press && I_GetTime() % 16 < 8) ? "> <" : ">< ";
 
-			list.insert({{label, Draw::Button::y, press}, {"Exit", Draw::Button::c}});
+			list.insert({{label, press ? "<y_pressed>" : "<y>"}, {"Exit", "<c_animated>"}});
 		}
 	}
 
@@ -232,19 +209,19 @@ void K_drawSpectatorHUD(boolean director)
 	{
 		if (numingame > 1)
 		{
-			list.insert({{"+", Draw::Button::a}, {"-", Draw::Button::x}});
+			list.insert({{"+", "<a_animated>"}, {"-", "<x_animated>"}});
 		}
 
 		if (player)
 		{
-			list.insert({{K_DirectorIsEnabled(viewnum) ? "\x82" "Director" : "Director", Draw::Button::r}});
+			list.insert({{K_DirectorIsEnabled(viewnum) ? "\x82" "Director" : "Director", "<r_animated>"}});
 		}
 	}
 	else
 	{
 		auto bt = D_LocalTiccmd(viewnum)->buttons;
 
-		list.insert({{"", Draw::Button::r, bt & BT_DRIFT}, {"Pivot", Draw::Button::b, bt & BT_LOOKBACK}});
-		list.insert({{"+", Draw::Button::a, bt & BT_ACCELERATE}, {"-", Draw::Button::x, bt & BT_BRAKE}});
+		list.insert({{"", bt & BT_DRIFT ? "<r_pressed>" : "<r>"}, {"Pivot", bt & BT_LOOKBACK ? "<b_pressed>" : "<b>"}});
+		list.insert({{"+", bt & BT_ACCELERATE ? "<a_pressed>" : "<a>"}, {"-", bt & BT_BRAKE ? "<x_pressed>" : "<x>"}});
 	}
 }

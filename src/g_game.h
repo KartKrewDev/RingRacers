@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -100,10 +100,13 @@ extern consvar_t cv_pauseifunfocused;
 extern consvar_t cv_kickstartaccel[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_autoroulette[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_litesteer[MAXSPLITSCREENPLAYERS];
+extern consvar_t cv_strictfastfall[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_autoring[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_shrinkme[MAXSPLITSCREENPLAYERS];
 
 extern consvar_t cv_deadzone[MAXSPLITSCREENPLAYERS];
+
+extern consvar_t cv_descriptiveinput[MAXSPLITSCREENPLAYERS];
 
 extern consvar_t cv_ghost_besttime, cv_ghost_bestlap, cv_ghost_last, cv_ghost_guest, cv_ghost_staff;
 
@@ -232,6 +235,9 @@ void G_UpdateTimeStickerMedals(UINT16 map, boolean showownrecord);
 void G_TickTimeStickerMedals(void);
 void G_UpdateRecords(void);
 
+void G_UpdatePlayerPreferences(player_t *const player);
+void G_UpdateAllPlayerPreferences(void);
+
 void G_Ticker(boolean run);
 boolean G_Responder(event_t *ev);
 
@@ -287,6 +293,13 @@ UINT16 G_RandMap(UINT32 tolflags, UINT16 pprevmap, boolean ignoreBuffers, boolea
 void G_AddMapToBuffer(UINT16 map);
 
 void G_UpdateVisited(void);
+
+boolean G_SameTeam(const player_t *a, const player_t *b);
+UINT8 G_CountTeam(UINT8 team);
+void G_AssignTeam(player_t *const p, UINT8 new_team);
+void G_AutoAssignTeam(player_t *const p);
+void G_AddTeamScore(UINT8 team, INT32 amount, player_t *source);
+UINT32 G_TeamOrIndividualScore(const player_t *player);
 
 #ifdef __cplusplus
 } // extern "C"

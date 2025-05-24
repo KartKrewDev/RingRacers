@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -35,6 +35,7 @@
 #include "k_terrain.h"
 #include "k_objects.h"
 #include "k_boss.h"
+#include "k_hitlag.h" // K_AddHitlag
 
 #include "r_splats.h"
 
@@ -456,6 +457,8 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 
 			spring->reactiontime++;
 		}
+
+		object->player->transfer = 0;
 	}
 
 	P_SetMobjState(spring, raisestate);
@@ -1081,7 +1084,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		return Obj_OrbinautJawzCollide(thing, g_tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
 
-	if (g_tm.thing->type == MT_BANANA || g_tm.thing->type == MT_BANANA_SHIELD || g_tm.thing->type == MT_BALLHOG)
+	if (g_tm.thing->type == MT_BANANA || g_tm.thing->type == MT_BANANA_SHIELD || g_tm.thing->type == MT_BALLHOG || g_tm.thing->type == MT_BALLHOGBOOM)
 	{
 		// see if it went over / under
 		if (g_tm.thing->z > thing->z + thing->height)
@@ -1091,7 +1094,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 
 		return K_BananaBallhogCollide(g_tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
-	else if (thing->type == MT_BANANA || thing->type == MT_BANANA_SHIELD || thing->type == MT_BALLHOG)
+	else if (thing->type == MT_BANANA || thing->type == MT_BANANA_SHIELD || thing->type == MT_BALLHOG || thing->type == MT_BALLHOGBOOM)
 	{
 		// see if it went over / under
 		if (g_tm.thing->z > thing->z + thing->height)
@@ -2762,6 +2765,21 @@ fixed_t P_GetThingStepUp(mobj_t *thing, fixed_t destX, fixed_t destY)
 		maxstep += maxstepmove;
 	}
 
+	if (thing->standingslope && thing->standingslope->zdelta != 0 && (thing->momx || thing->momy))
+	{
+		vector3_t slopemom = {0,0,0};
+		slopemom.x = thing->momx;
+		slopemom.y = thing->momy;
+		P_QuantizeMomentumToSlope(&slopemom, thing->standingslope);
+		fixed_t momentumzdelta = FixedDiv(slopemom.z, FixedHypot(slopemom.x, slopemom.y)); // so this lets us know what the zdelta is for the vector the player is travelling along, in addition to the slope's zdelta in its xydirection
+		// if (thing->player)
+		// 	CONS_Printf("%s P_GetThingStepUp %d +", player_names[thing->player-players], maxstep);
+		maxstep += abs(momentumzdelta);
+		// if (thing->player)
+		// 	CONS_Printf(" %d = %d\n", momentumzdelta, maxstep);
+
+	}
+
 	if (P_MobjTouchingSectorSpecialFlag(thing, SSF_DOUBLESTEPUP)
 		|| (R_PointInSubsector(destX, destY)->sector->specialflags & SSF_DOUBLESTEPUP))
 	{
@@ -2802,7 +2820,10 @@ increment_move
 	radius = max(radius, mapobjectscale);
 
 	// And Big Large (tm) movements can skip over slopes.
-	radius = min(radius, 16*mapobjectscale);
+	radius = min(radius, 8*mapobjectscale);
+
+	// if (thing->player)
+	// 	CONS_Printf("increment_move\n");
 
 	do {
 		// Sal 12/19/2022 -- PIT_CheckThing code now runs
@@ -2923,6 +2944,9 @@ increment_move
 				{
 					// If the floor difference is MAXSTEPMOVE or less, and the sector isn't Section1:14, ALWAYS
 					// step down! Formerly required a Section1:13 sector for the full MAXSTEPMOVE, but no more.
+
+					// if (thing->player && !(thingtop == thing->ceilingz && g_tm.ceilingz > thingtop && g_tm.ceilingz - thingtop <= maxstep))
+					// 	CONS_Printf("%d == %d && %d < %d && %d - %d <= %d  %s\n", thing->z, thing->floorz, g_tm.floorz, thing->z, thing->z, g_tm.floorz, maxstep, thing->z == thing->floorz && g_tm.floorz < thing->z && thing->z - g_tm.floorz <= maxstep ? "True" : "False");
 
 					if (thingtop == thing->ceilingz && g_tm.ceilingz > thingtop && g_tm.ceilingz - thingtop <= maxstep)
 					{
@@ -3175,16 +3199,16 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff, Try
 				thing->player->pflags |= PF_FREEZEWAYPOINTS;
 			}
 		}
+	}
 
-		// Currently this just iterates all checkpoints.
-		// Pretty shitty way to do it, but only players can
-		// cross it, so it's good enough. Works as long as the
-		// move doesn't cross multiple -- it can only evaluate
-		// one.
-		if (thing->player)
-		{
-			Obj_CrossCheckpoints(thing->player, oldx, oldy);
-		}
+	// Currently this just iterates all checkpoints.
+	// Pretty shitty way to do it, but only players can
+	// cross it, so it's good enough. Works as long as the
+	// move doesn't cross multiple -- it can only evaluate
+	// one.
+	if (thing->player)
+	{
+		Obj_CrossCheckpoints(thing->player, oldx, oldy);
 	}
 
 	if (result != NULL)
@@ -4094,13 +4118,29 @@ static void P_BouncePlayerMove(mobj_t *mo, TryMoveResult_t *result)
 	if (mo->player)
 		mo->player->bumpUnstuck += 5;
 
+	K_BotHitPenalty(mo->player);
+
 	// Combo avoidance!
 	if (mo->player && P_PlayerInPain(mo->player) && gametyperules & GTR_BUMPERS && mo->health == 1)
 	{
-		K_StumblePlayer(mo->player);
-		K_BumperInflate(mo->player);
-		mo->player->tumbleBounces = TUMBLEBOUNCES;
-		mo->hitlag = max(mo->hitlag, 6);
+		P_ResetPlayer(mo->player);
+		mo->player->spinouttimer = 0;
+		mo->player->wipeoutslow = 0;
+		mo->player->tumbleBounces = 0;
+
+		K_AddHitLag(mo, 3, false);
+
+		// "I dunno man, just fuckin' do it" - jart
+		S_StartSound(mo, sfx_mbs45);
+		S_StartSound(mo, sfx_mbs45);
+		S_StartSound(mo, sfx_mbs45);
+		S_StartSound(mo, sfx_mbs45);
+		S_StartSound(mo, sfx_mbv84);
+
+		if (mo->eflags & MFE_VERTICALFLIP)
+			mo->momz -= 40*mo->scale;
+		else
+			mo->momz += 40*mo->scale; 
 	}
 
 	mo->momx = tmxmove;
@@ -4619,13 +4659,8 @@ boolean P_CheckSector(sector_t *sector, boolean crunch)
  Lots of new Boom functions that work faster and add functionality.
 */
 
-static msecnode_t *headsecnode = NULL;
-static mprecipsecnode_t *headprecipsecnode = NULL;
-
 void P_Initsecnode(void)
 {
-	headsecnode = NULL;
-	headprecipsecnode = NULL;
 }
 
 // P_GetSecnode() retrieves a node from the freelist. The calling routine
@@ -4633,45 +4668,25 @@ void P_Initsecnode(void)
 
 static msecnode_t *P_GetSecnode(void)
 {
-	msecnode_t *node;
-
-	if (headsecnode)
-	{
-		node = headsecnode;
-		headsecnode = headsecnode->m_thinglist_next;
-	}
-	else
-		node = Z_Calloc(sizeof (*node), PU_LEVEL, NULL);
-	return node;
+	return Z_LevelPoolCalloc(sizeof(msecnode_t));
 }
 
 static mprecipsecnode_t *P_GetPrecipSecnode(void)
 {
-	mprecipsecnode_t *node;
-
-	if (headprecipsecnode)
-	{
-		node = headprecipsecnode;
-		headprecipsecnode = headprecipsecnode->m_thinglist_next;
-	}
-	else
-		node = Z_Calloc(sizeof (*node), PU_LEVEL, NULL);
-	return node;
+	return Z_LevelPoolCalloc(sizeof(mprecipsecnode_t));
 }
 
 // P_PutSecnode() returns a node to the freelist.
 
 static inline void P_PutSecnode(msecnode_t *node)
 {
-	node->m_thinglist_next = headsecnode;
-	headsecnode = node;
+	Z_LevelPoolFree(node, sizeof(msecnode_t));
 }
 
 // Tails 08-25-2002
 static inline void P_PutPrecipSecnode(mprecipsecnode_t *node)
 {
-	node->m_thinglist_next = headprecipsecnode;
-	headprecipsecnode = node;
+	Z_LevelPoolFree(node, sizeof(mprecipsecnode_t));
 }
 
 // P_AddSecnode() searches the current list to see if this sector is

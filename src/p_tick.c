@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -12,6 +12,7 @@
 /// \file  p_tick.c
 /// \brief Archiving: SaveGame I/O, Thinker, Ticker
 
+#include "d_think.h"
 #include "doomstat.h"
 #include "d_main.h"
 #include "g_game.h"
@@ -330,7 +331,6 @@ void P_AddThinker(const thinklistnum_t n, thinker_t *thinker)
 	thlist[n].prev = thinker;
 
 	thinker->references = 0;    // killough 11/98: init reference counter to 0
-	thinker->cachable = n == THINK_MOBJ;
 
 #ifdef PARANOIA
 	thinker->debug_mobjtype = MT_NULL;
@@ -448,11 +448,9 @@ void P_UnlinkThinker(thinker_t *thinker)
 	I_Assert(thinker->references == 0);
 
 	(next->prev = thinker->prev)->next = next;
-	if (thinker->cachable)
+	if (thinker->alloctype == TAT_LEVELPOOL)
 	{
-		// put cachable thinkers in the mobj cache, so we can avoid allocations
-		((mobj_t *)thinker)->hnext = mobjcache;
-		mobjcache = (mobj_t *)thinker;
+		Z_LevelPoolFree(thinker, thinker->size);
 	}
 	else
 	{
@@ -583,146 +581,6 @@ static void P_RunThinkers(void)
 	ps_acs_time = I_GetPreciseTime();
 	ACS_Tick();
 	ps_acs_time = I_GetPreciseTime() - ps_acs_time;
-}
-
-//
-// P_DoAutobalanceTeams()
-//
-// Determine if the teams are unbalanced, and if so, move a player to the other team.
-//
-static void P_DoAutobalanceTeams(void)
-{
-	changeteam_union NetPacket;
-	UINT16 usvalue;
-	INT32 i=0;
-	INT32 red=0, blue=0;
-	INT32 redarray[MAXPLAYERS], bluearray[MAXPLAYERS];
-	//INT32 redflagcarrier = 0, blueflagcarrier = 0;
-	INT32 totalred = 0, totalblue = 0;
-
-	NetPacket.value.l = NetPacket.value.b = 0;
-	memset(redarray, 0, sizeof(redarray));
-	memset(bluearray, 0, sizeof(bluearray));
-
-	// Only do it if we have enough room in the net buffer to send it.
-	// Otherwise, come back next time and try again.
-	if (sizeof(usvalue) > GetFreeXCmdSize(0))
-		return;
-
-	//We have to store the players in an array with the rest of their team.
-	//We can then pick a random player to be forced to change teams.
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (playeringame[i] && players[i].ctfteam)
-		{
-			if (players[i].ctfteam == 1)
-			{
-				//if (!players[i].gotflag)
-				{
-					redarray[red] = i; //store the player's node.
-					red++;
-				}
-				/*else
-					redflagcarrier++;*/
-			}
-			else
-			{
-				//if (!players[i].gotflag)
-				{
-					bluearray[blue] = i; //store the player's node.
-					blue++;
-				}
-				/*else
-					blueflagcarrier++;*/
-			}
-		}
-	}
-
-	totalred = red;// + redflagcarrier;
-	totalblue = blue;// + blueflagcarrier;
-
-	if ((abs(totalred - totalblue) > max(1, (totalred + totalblue) / 8)))
-	{
-		if (totalred > totalblue)
-		{
-			i = M_RandomKey(red);
-			NetPacket.packet.newteam = 2;
-			NetPacket.packet.playernum = redarray[i];
-			NetPacket.packet.verification = true;
-			NetPacket.packet.autobalance = true;
-
-			usvalue  = SHORT(NetPacket.value.l|NetPacket.value.b);
-			SendNetXCmd(XD_TEAMCHANGE, &usvalue, sizeof(usvalue));
-		}
-		else //if (totalblue > totalred)
-		{
-			i = M_RandomKey(blue);
-			NetPacket.packet.newteam = 1;
-			NetPacket.packet.playernum = bluearray[i];
-			NetPacket.packet.verification = true;
-			NetPacket.packet.autobalance = true;
-
-			usvalue  = SHORT(NetPacket.value.l|NetPacket.value.b);
-			SendNetXCmd(XD_TEAMCHANGE, &usvalue, sizeof(usvalue));
-		}
-	}
-}
-
-//
-// P_DoTeamscrambling()
-//
-// If a team scramble has been started, scramble one person from the
-// pre-made scramble array. Said array is created in TeamScramble_OnChange()
-//
-void P_DoTeamscrambling(void)
-{
-	changeteam_union NetPacket;
-	UINT16 usvalue;
-	NetPacket.value.l = NetPacket.value.b = 0;
-
-	// Only do it if we have enough room in the net buffer to send it.
-	// Otherwise, come back next time and try again.
-	if (sizeof(usvalue) > GetFreeXCmdSize(0))
-		return;
-
-	if (scramblecount < scrambletotal)
-	{
-		if (players[scrambleplayers[scramblecount]].ctfteam != scrambleteams[scramblecount])
-		{
-			NetPacket.packet.newteam = scrambleteams[scramblecount];
-			NetPacket.packet.playernum = scrambleplayers[scramblecount];
-			NetPacket.packet.verification = true;
-			NetPacket.packet.scrambled = true;
-
-			usvalue = SHORT(NetPacket.value.l|NetPacket.value.b);
-			SendNetXCmd(XD_TEAMCHANGE, &usvalue, sizeof(usvalue));
-		}
-
-		scramblecount++; //Increment, and get to the next player when we come back here next time.
-	}
-	else
-		CV_SetValue(&cv_teamscramble, 0);
-}
-
-static inline void P_DoTeamStuff(void)
-{
-	// Automatic team balance for CTF and team match
-	if (leveltime % (TICRATE * 5) == 0) //only check once per five seconds for the sake of CPU conservation.
-	{
-		// Do not attempt to autobalance and scramble teams at the same time.
-		// Only the server should execute this. No verified admins, please.
-		if ((cv_autobalance.value && !cv_teamscramble.value) && cv_allowteamchange.value && server)
-			P_DoAutobalanceTeams();
-	}
-
-	// Team scramble code for team match and CTF.
-	if ((leveltime % (TICRATE/7)) == 0)
-	{
-		// If we run out of time in the level, the beauty is that
-		// the Y_Ticker() team scramble code will pick it up.
-		if (cv_teamscramble.value && server)
-			P_DoTeamscrambling();
-	}
 }
 
 static inline void P_DeviceRumbleTick(void)
@@ -1224,9 +1082,6 @@ void P_Ticker(boolean run)
 	{
 		timeinmap++;
 	}
-
-	if (G_GametypeHasTeams())
-		P_DoTeamStuff();
 
 	if (run)
 	{

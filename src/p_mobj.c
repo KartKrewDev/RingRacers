@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -12,6 +12,7 @@
 /// \file  p_mobj.c
 /// \brief Moving object handling. Spawn functions
 
+#include "d_think.h"
 #include "dehacked.h"
 #include "doomdef.h"
 #include "g_game.h"
@@ -63,8 +64,6 @@ mobj_t *waypointcap = NULL;
 // AI, need HUD tracking or appear on the minimap. It's pretty
 // general purpose.
 mobj_t *trackercap = NULL;
-
-mobj_t *mobjcache = NULL;
 
 void P_InitCachedActions(void)
 {
@@ -1613,8 +1612,9 @@ boolean P_XYMovement(mobj_t *mo)
 	boolean moved;
 	pslope_t *oldslope = NULL;
 	vector3_t slopemom = {0,0,0};
-	fixed_t predictedz = 0;
+	fixed_t predictedz = INT32_MAX; // Need a sentinel value
 	TryMoveResult_t result = {0};
+	fixed_t momentumzdelta = INT32_MAX;
 
 	I_Assert(mo != NULL);
 	I_Assert(!P_MobjWasRemoved(mo));
@@ -1650,11 +1650,13 @@ boolean P_XYMovement(mobj_t *mo)
 	}
 
 	// adjust various things based on slope
-	if (mo->standingslope && abs(mo->standingslope->zdelta) > FRACUNIT>>8)
+	if (mo->standingslope && mo->standingslope->zdelta != 0)
 	{
 		if (!P_IsObjectOnGround(mo))
 		{
 			// We fell off at some point? Do the twisty thing!
+			// if (mo->player)
+			// 	CONS_Printf("Twisty thing launch?\n");
 			P_SlopeLaunch(mo);
 			xmove = mo->momx;
 			ymove = mo->momy;
@@ -1670,9 +1672,16 @@ boolean P_XYMovement(mobj_t *mo)
 			xmove = slopemom.x;
 			ymove = slopemom.y;
 
-			predictedz = mo->z + slopemom.z; // We'll use this later...
-
+			momentumzdelta = FixedDiv(slopemom.z, FixedHypot(xmove, ymove)); // so this lets us know what the zdelta is for the vector the player is travelling along, in addition to the slope's zdelta in its xydirection
 			oldslope = mo->standingslope;
+
+			// if (mo->player)
+			// 	CONS_Printf("%s zdelta %d momzdelta %d\n",player_names[mo->player-players], mo->standingslope->zdelta, momentumzdelta);
+			if (abs(momentumzdelta) >= FRACUNIT/6)
+				predictedz = mo->z + slopemom.z;
+			else
+				predictedz = mo->z;
+
 		}
 	} else if (P_IsObjectOnGround(mo) && !mo->momz)
 		predictedz = mo->z;
@@ -1752,7 +1761,7 @@ boolean P_XYMovement(mobj_t *mo)
 				// Wall transfer part 1.
 				pslope_t *transferslope = NULL;
 				fixed_t transfermomz = 0;
-				if (oldslope && (P_MobjFlip(mo)*(predictedz - mo->z) > 0)) // Only for moving up (relative to gravity), otherwise there's a failed launch when going down slopes and hitting walls
+				if (oldslope && (P_MobjFlip(mo)*slopemom.z > 0)) // Only for moving up (relative to gravity), otherwise there's a failed launch when going down slopes and hitting walls
 				{
 					transferslope = ((mo->standingslope) ? mo->standingslope : oldslope);
 					if (((transferslope->zangle < ANGLE_180) ? transferslope->zangle : InvAngle(transferslope->zangle)) >= ANGLE_45) // Prevent some weird stuff going on on shallow slopes.
@@ -1781,6 +1790,12 @@ boolean P_XYMovement(mobj_t *mo)
 					if (P_MobjFlip(mo)*(transfermomz - mo->momz) > 2*FRACUNIT) // Do the actual launch!
 					{
 						mo->momz = transfermomz;
+						if (mo->player)
+						{
+							mo->player->transfer = transfermomz;
+							S_StartSound(mo, sfx_s3k98);
+						}
+
 						mo->standingslope = NULL;
 						mo->terrain = NULL;
 						P_SetPitchRoll(mo, ANGLE_90,
@@ -1906,27 +1921,34 @@ boolean P_XYMovement(mobj_t *mo)
 				mo->standingslope = oldslope;
 				P_SetPitchRollFromSlope(mo, mo->standingslope);
 				P_SlopeLaunch(mo);
-
-				//CONS_Printf("launched off of slope - ");
+				// if (mo->player)
+				// 	CONS_Printf("%s Slope change launch old angle %f - new angle %f = %f\n",
+				// 		player_names[mo->player-players],
+				// 		FIXED_TO_FLOAT(AngleFixed(oldangle)),
+				// 		FIXED_TO_FLOAT(AngleFixed(newangle)),
+				// 		FIXED_TO_FLOAT(AngleFixed(oldangle-newangle))
+				// 	);
 			}
-
-			/*
-			CONS_Printf("old angle %f - new angle %f = %f\n",
-				FIXED_TO_FLOAT(AngleFixed(oldangle)),
-				FIXED_TO_FLOAT(AngleFixed(newangle)),
-				FIXED_TO_FLOAT(AngleFixed(oldangle-newangle))
-			);
-			*/
-
 		}
-		else if (predictedz - mo->z > abs(slopemom.z / 2))
+		else
 		{
-			// Now check if we were supposed to stick to this slope
-			//CONS_Printf("%d-%d > %d\n", (predictedz), (mo->z), (slopemom.z/2));
-			P_SlopeLaunch(mo);
+			// if (mo->player)
+			// 	CONS_Printf("Ramp Launch %d %d+%d > 0 && %d-%d > %d ", mo->scale, FixedDiv(slopemom.z, mo->scale), P_GetMobjGravity(mo)*24, predictedz, mo->z, slopemom.z/2);
+			if ( // If slope aligned momz is more than gravity, and mobj clipped along ramp edge instead of following slope plane, then launch
+				   ( !(mo->eflags & MFE_VERTICALFLIP) && FixedDiv(slopemom.z, mo->scale) + P_GetMobjGravity(mo)*24 > 0 && predictedz - mo->z > slopemom.z*4/5 )
+				|| ( (mo->eflags & MFE_VERTICALFLIP) && FixedDiv(slopemom.z, mo->scale) + P_GetMobjGravity(mo)*24 < 0 && predictedz - mo->z < slopemom.z*4/5 )
+			)
+			{
+				// if (mo->player)
+				// 	CONS_Printf("%s Ramp Launch %d %d %d+%d > 0 && %d-%d > %d True\n", player_names[mo->player-players], mo->scale, momentumzdelta, FixedDiv(slopemom.z, mo->scale), P_GetMobjGravity(mo)*24, predictedz, mo->z, slopemom.z*4/5);
+				P_SlopeLaunch(mo);
+			}
+			// else
+				// if (mo->player)
+				// 	CONS_Printf("False\n");
 		}
 	}
-	else if (moved && mo->standingslope && predictedz)
+	else if (moved && mo->standingslope && predictedz != INT32_MAX) // Predicted z must be changed
 	{
 		angle_t moveangle = K_MomentumAngle(mo);
 		angle_t newangle = FixedMul((signed)mo->standingslope->zangle, FINECOSINE((moveangle - mo->standingslope->xydirection) >> ANGLETOFINESHIFT));
@@ -2227,6 +2249,18 @@ boolean P_CheckSolidLava(mobj_t *mobj, ffloor_t *rover)
 	return false;
 }
 
+// Resets momz to 0 if the mo has just stepped up and is rising, but under a gravity and stepup derived momz threshold
+static void P_CheckStepUpReset(mobj_t *mo)
+{
+	if (mo->eflags & MFE_JUSTSTEPPEDDOWN && (mo->momz * P_MobjFlip(mo)) > 0)
+	{
+		if (abs(mo->momz) < P_GetThingStepUp(mo, mo->x, mo->y)/6 + abs(P_GetMobjGravity(mo)*3))
+		{
+			mo->momz = 0;
+		}
+	}
+}
+
 //
 // P_ZMovement
 // Returns false if the mobj was killed/exploded/removed, true otherwise.
@@ -2255,6 +2289,9 @@ boolean P_ZMovement(mobj_t *mo)
 		mo->pmomz = 0;
 		mo->eflags &= ~MFE_APPLYPMOMZ;
 	}
+
+	P_CheckStepUpReset(mo);
+
 	mo->z += mo->momz;
 
 	onground = P_IsObjectOnGround(mo);
@@ -2264,7 +2301,11 @@ boolean P_ZMovement(mobj_t *mo)
 		if (mo->flags & MF_NOCLIPHEIGHT)
 			mo->standingslope = NULL;
 		else if (!onground)
+		{
+			// if (mo->player)
+			// 	 CONS_Printf("ZMovement launch?\n");
 			P_SlopeLaunch(mo);
+		}
 	}
 
 	switch (mo->type)
@@ -2798,6 +2839,8 @@ void P_PlayerZMovement(mobj_t *mo)
 		mo->eflags &= ~MFE_APPLYPMOMZ;
 	}
 
+	P_CheckStepUpReset(mo);
+
 	mo->z += mo->momz;
 	onground = P_IsObjectOnGround(mo);
 
@@ -2811,7 +2854,11 @@ void P_PlayerZMovement(mobj_t *mo)
 		if (mo->flags & MF_NOCLIPHEIGHT)
 			mo->standingslope = NULL;
 		else if (!onground)
+		{
+			// CONS_Printf("%s PlayerZMovement launch %d  ", player_names[mo->player-players], mo->momz);
 			P_SlopeLaunch(mo);
+			// CONS_Printf("%d\n", mo->momz);
+		}
 	}
 
 	// clip movement
@@ -4010,12 +4057,15 @@ static void P_PlayerMobjThinker(mobj_t *mobj)
 		|| mobj->player->loop.radius != 0)
 	{
 		P_HitSpecialLines(mobj, mobj->x, mobj->y, mobj->momx, mobj->momy);
+		fixed_t oldx = mobj->x;
+		fixed_t oldy = mobj->y;
 		P_UnsetThingPosition(mobj);
 		mobj->x += mobj->momx;
 		mobj->y += mobj->momy;
 		mobj->z += mobj->momz;
 		P_SetThingPosition(mobj);
 		P_CheckPosition(mobj, mobj->x, mobj->y, NULL);
+		Obj_CrossCheckpoints(mobj->player, oldx, oldy); // I would put this inside P_HitSpecialLines, but its wants a player reference with post-move coords instead of and old and new
 		mobj->floorz = g_tm.floorz;
 		mobj->ceilingz = g_tm.ceilingz;
 		mobj->terrain = NULL;
@@ -5352,6 +5402,19 @@ static boolean P_IsTrackerType(INT32 type)
 		case MT_GARDENTOP: // Frey
 			return true;
 
+		case MT_JAWZ_SHIELD: // Pick-me-up
+		case MT_ORBINAUT:
+		case MT_ORBINAUT_SHIELD:
+		case MT_DROPTARGET:
+		case MT_DROPTARGET_SHIELD:
+		case MT_LANDMINE:
+		case MT_BANANA:
+		case MT_BANANA_SHIELD:
+		case MT_GACHABOM:
+		case MT_EGGMANITEM:
+		case MT_EGGMANITEM_SHIELD:
+			return true;
+
 		default:
 			return false;
 	}
@@ -6595,6 +6658,30 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		Obj_PulleyThink(mobj);
 		return;
 	}
+	case MT_BUBBLESHIELD_VISUAL:
+	{
+		if (!Obj_TickBubbleShieldVisual(mobj))
+		{
+			return;
+		}
+		break;
+	}
+	case MT_LIGHTNINGSHIELD_VISUAL:
+	{
+		if (!Obj_TickLightningShieldVisual(mobj))
+		{
+			return;
+		}
+		break;
+	}
+	case MT_FLAMESHIELD_VISUAL:
+	{
+		if (!Obj_TickFlameShieldVisual(mobj))
+		{
+			return;
+		}
+		break;
+	}
 	default:
 		if (mobj->fuse)
 		{ // Scenery object fuse! Very basic!
@@ -6807,12 +6894,8 @@ static void P_TracerAngleThink(mobj_t *mobj)
 	if (!mobj->tracer)
 		return;
 
-	if (!mobj->extravalue2)
-		return;
-
 	// mobj->lastlook - Don't disable behavior after first failure
 	// mobj->extravalue1 - Angle tolerance
-	// mobj->extravalue2 - Exec tag upon failure
 	// mobj->cvval - Allowable failure delay
 	// mobj->cvmem - Failure timer
 
@@ -6835,8 +6918,6 @@ static void P_TracerAngleThink(mobj_t *mobj)
 			mobj->cvmem--;
 		else
 		{
-			INT32 exectag = mobj->extravalue2; // remember this before we erase the values
-
 			if (mobj->lastlook)
 				mobj->cvmem = mobj->cusval; // reset timer for next failure
 			else
@@ -6846,7 +6927,7 @@ static void P_TracerAngleThink(mobj_t *mobj)
 				mobj->lastlook = mobj->extravalue1 = mobj->extravalue2 = mobj->cvmem = mobj->cusval = 0;
 			}
 
-			P_LinedefExecute(exectag, mobj, NULL);
+			P_ActivateThingSpecial(mobj->tracer, mobj);
 		}
 	}
 	else
@@ -7377,8 +7458,6 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			mobj->threshold--;
 		break;
 	case MT_LANDMINE:
-		mobj->friction = ORIG_FRICTION/4;
-
 		if (mobj->target && mobj->target->player)
 			mobj->color = mobj->target->player->skincolor;
 		else
@@ -7390,10 +7469,21 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			ghost->colorized = true; // already has color!
 		}
 
+		if (mobj->reactiontime > 0)
+		{
+			mobj->friction = ((2*ORIG_FRICTION)+FRACUNIT)/3; // too low still?
+			mobj->reactiontime--;
+		}
+		else
+		{
+			// Time to stop, ramp up the friction...
+			mobj->friction = ORIG_FRICTION/4; // too high still?
+		}
+
 		if (P_IsObjectOnGround(mobj) && mobj->health > 1)
 		{
 			S_StartSound(mobj, mobj->info->activesound);
-			mobj->momx = mobj->momy = 0;
+			// mobj->momx = mobj->momy = 0;
 			mobj->health = 1;
 		}
 
@@ -7694,6 +7784,78 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 		}
 		break;
+	case MT_TRIPWIREAPPROACH: {
+		if (!mobj->target || !mobj->target->health || !mobj->target->player)
+		{
+			P_RemoveMobj(mobj);
+			return false;
+		}
+
+		mobj_t *target = mobj->target;
+		player_t *player = target->player;
+		fixed_t myspeed = (player->speed);
+
+		fixed_t maxspeed = K_PlayerTripwireSpeedThreshold(player); // Centered at this speed.
+		fixed_t minspeed = max(2 * maxspeed / 4, 16 * K_GetKartSpeed(player, false, false) / 10); // Starts appearing at this speed.
+		fixed_t alertspeed = 9 * maxspeed / 10; // When to flash?
+		fixed_t frontoffset = 5*target->scale; // How far in front?
+
+		fixed_t percentvisible = 0;
+		if (myspeed > minspeed)
+			percentvisible = min(FRACUNIT, FixedDiv(myspeed - minspeed, maxspeed - minspeed));
+		if (myspeed >= maxspeed || player->tripwireLeniency)
+			percentvisible = 0;
+
+#if 0
+		fixed_t hang = 85*FRACUNIT/100; // Dampen inward movement past a certain point
+		if (percentvisible > hang && percentvisible < (95*FRACUNIT/100))
+			percentvisible = (percentvisible + hang) / 2;
+#endif
+
+		fixed_t easedoffset = Easing_InOutCubic(percentvisible, 0, FRACUNIT);
+		fixed_t easedscale = FRACUNIT;
+
+		fixed_t dynamicoffset = FixedMul(target->scale * 100, FRACUNIT - easedoffset);
+
+		fixed_t xofs = (mobj->extravalue1) ? dynamicoffset : dynamicoffset * -1;
+		fixed_t zofs = (mobj->extravalue2) ? dynamicoffset : dynamicoffset * -1;
+
+		angle_t facing = K_MomentumAngle(mobj->target);
+		fixed_t sin = FINESINE(facing >> ANGLETOFINESHIFT);
+		fixed_t cos = FINECOSINE(facing >> ANGLETOFINESHIFT);
+
+		P_MoveOrigin(mobj,
+			target->x - FixedMul(xofs, sin) + FixedMul(frontoffset, cos),
+			target->y + FixedMul(xofs, cos) + FixedMul(frontoffset, sin), 
+			target->z + zofs + (target->height / 2));
+		mobj->angle = facing + ANGLE_90 + (mobj->extravalue1 ? ANGLE_45 : -1*ANGLE_45);
+		K_MatchGenericExtraFlags(mobj, target);
+		P_InstaScale(mobj, FixedMul(target->scale, easedscale));
+
+		UINT8 maxtranslevel = NUMTRANSMAPS - 2;
+		UINT8 trans = FixedInt(FixedMul(percentvisible, FRACUNIT*(maxtranslevel+1)));
+		if (trans > maxtranslevel)
+			trans = maxtranslevel;
+		trans = NUMTRANSMAPS - trans;
+
+		mobj->renderflags &= ~(RF_TRANSMASK);
+		if (trans != 0)
+		{
+			mobj->renderflags |= (trans << RF_TRANSSHIFT);
+		}
+
+		mobj->renderflags |= RF_PAPERSPRITE;
+
+		mobj->colorized = true;
+		if (myspeed > alertspeed)
+			mobj->color = (leveltime & 1) ? SKINCOLOR_LILAC : SKINCOLOR_JAWZ;
+		else
+			mobj->color = SKINCOLOR_WHITE;
+
+		mobj->renderflags |= (RF_DONTDRAW & ~K_GetPlayerDontDrawFlag(player));
+
+		break;
+	}
 	case MT_TRIPWIREBOOST: {
 		mobj_t *top;
 		fixed_t newHeight;
@@ -7702,12 +7864,18 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		if (!mobj->target || !mobj->target->health
 			|| !mobj->target->player || !mobj->target->player->tripwireLeniency)
 		{
+			if (mobj->target && mobj->target->player && P_IsDisplayPlayer(mobj->target->player))
+			{
+				S_StopSoundByID(mobj->target, sfx_s3k40);
+				S_StartSound(mobj->target, sfx_gshaf);
+			}
+
 			P_RemoveMobj(mobj);
 			return false;
 		}
 
 		newHeight = mobj->target->height;
-		newScale = mobj->target->scale;
+		newScale = 3 * mobj->target->scale / 2;
 
 		top = K_GetGardenTop(mobj->target->player);
 
@@ -7769,7 +7937,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				}
 				else if (mobj->target->player->curshield == KSHIELD_FLAME)
 				{
-					mobj->color = SKINCOLOR_KETCHUP;
+					mobj->color = SKINCOLOR_MAUVE;
 					mobj->colorized = true;
 				}
 				else
@@ -8375,7 +8543,19 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + mobj->target->height/2);
 		// Taken from K_FlipFromObject. We just want to flip the visual according to its target, but that's it.
 		mobj->eflags = (mobj->eflags & ~MFE_VERTICALFLIP)|(mobj->target->eflags & MFE_VERTICALFLIP);
-		
+
+		break;
+	}
+	case MT_GOTIT:
+	{
+		if (!mobj->target || !mobj->target->health || !mobj->target->player)
+		{
+			P_RemoveMobj(mobj);
+			return false;
+		}
+		P_InstaScale(mobj, mobj->target->scale);
+		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + mobj->target->height/2);
+		K_MatchGenericExtraFlags(mobj, mobj->target);
 		break;
 	}
 	case MT_BUBBLESHIELD:
@@ -8389,6 +8569,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			P_RemoveMobj(mobj);
 			return false;
 		}
+
+		// FIXME: Old Bubble Shield code is still running.
+		//        Some of it is visual, some gameplay.
+		//        I left it alone and just tell it to go invisible~
+		//        See objects/bubble-shield.cpp
+		mobj->renderflags |= RF_DONTDRAW;
 
 		scale = (5*mobj->target->scale)>>2;
 		curstate = ((mobj->tics == 1) ? (mobj->state->nextstate) : ((statenum_t)(mobj->state-states)));
@@ -8481,7 +8667,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		mobj->extravalue2 = mobj->target->player->bubbleblowup;
 		P_SetScale(mobj, (mobj->destscale = scale));
-		
+
 		// For some weird reason, the Bubble Shield is the exception flip-wise, it has the offset baked into the sprite.
 		// So instead of simply flipping the object, we have to do a position offset.
 		fixed_t positionOffset = 0;
@@ -8556,8 +8742,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		else
 		{
 			if (curstate >= S_FLAMESHIELDDASH1 && curstate <= S_FLAMESHIELDDASH12)
-				P_SetMobjState(mobj, S_FLAMESHIELD1);
-			mobj->dispoffset = ((curstate - S_FLAMESHIELD1) & 1) ? -1 : 1;
+				P_SetMobjState(mobj, S_INVISIBLE);
+			//mobj->dispoffset = ((curstate - S_FLAMESHIELD1) & 1) ? -1 : 1;
 		}
 
 		mobj->extravalue1 = mobj->target->player->flamedash;
@@ -8893,7 +9079,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 								if (plistlen > 1)
 								{
 									// Pick another player in the server!
-									plistlen = P_RandomKey(PR_SPARKLE, plistlen+1);
+									plistlen = P_RandomKey(PR_SPARKLE, plistlen);
 								}
 								else
 								{
@@ -8923,8 +9109,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				(newplayer != NULL)
 				&& (gamespeed != KARTSPEED_EASY)
 				&& (newplayer->tally.active == true)
-				&& (newplayer->tally.totalLaps > 0) // Only true if not Time Attack
-				&& (newplayer->tally.laps >= newplayer->tally.totalLaps)
+				&& (newplayer->tally.totalExp > 0) // Only true if not Time Attack
+				&& (newplayer->tally.exp >= newplayer->tally.totalExp)
 			)
 			{
 				UINT8 pnum = (newplayer-players);
@@ -8983,7 +9169,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 					{
 						cur->skin = &skins[newplayer->skin];
 						cur->color = newplayer->skincolor;
-						
+
 						// Even if we didn't have the Perfect Sign to consider,
 						// it's still necessary to refresh SPR2 on skin changes.
 						P_SetMobjState(cur, (newperfect == true) ? S_KART_SIGL : S_KART_SIGN);
@@ -9388,7 +9574,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		if (leveltime % 180 == 0)
 			S_StartSound(mobj, sfx_s3kbfl);
 
-		if (mobj->tracer && !P_MobjWasRemoved(mobj->tracer) && mobj->tracer->player)
+		if (mobj->tracer && !P_MobjWasRemoved(mobj->tracer) && mobj->tracer->tracer == mobj && mobj->tracer->player && mobj->tracer->player->carry == CR_TRAPBUBBLE)
 		{
 			player_t *player = mobj->tracer->player;
 			fixed_t destx, desty, curfz, destfz;
@@ -9399,7 +9585,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 			mobj->cvmem /= 2;
 			mobj->momz = 0;
-			mobj->destscale = ((5*mobj->tracer->scale)>>2) + (mobj->tracer->scale>>3);
+			mobj->destscale = ((8*mobj->tracer->scale)>>2) + (mobj->tracer->scale>>3);
 
 			mobj->tracer->momz = (8*mobj->tracer->scale) * P_MobjFlip(mobj->tracer);
 
@@ -9436,6 +9622,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			{
 				S_StartSound(mobj->tracer, sfx_s3k77);
 				mobj->tracer->flags &= ~MF_NOGRAVITY;
+				mobj->tracer->player->carry = CR_NONE;
 				P_KillMobj(mobj, mobj->tracer, mobj->tracer, DMG_NORMAL);
 				break;
 			}
@@ -9469,7 +9656,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 		else
 		{
-			mobj->destscale = (5*mapobjectscale)>>2;
+			mobj->destscale = (8*mapobjectscale)>>2;
 
 			if (mobj->threshold > 0)
 				mobj->threshold--;
@@ -9929,10 +10116,18 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_KART_LEFTOVER:
 	{
 		Obj_DestroyedKartThink(mobj);
+
 		if (P_MobjWasRemoved(mobj))
 		{
 			return false;
 		}
+		
+		break;
+	}
+
+	case MT_FLYBOT767:
+	{
+		Obj_FlybotThink(mobj);
 		break;
 	}
 
@@ -10796,6 +10991,14 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 	}
 }
 
+mobj_t *P_AllocateMobj(void)
+{
+	mobj_t* mobj = (mobj_t*)Z_LevelPoolCalloc(sizeof(mobj_t));
+	mobj->thinker.alloctype = TAT_LEVELPOOL;
+	mobj->thinker.size = sizeof(mobj_t);
+	return mobj;
+}
+
 //
 // P_SpawnMobj
 //
@@ -10822,16 +11025,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		type = MT_RAY;
 	}
 
-	if (mobjcache != NULL)
-	{
-		mobj = mobjcache;
-		mobjcache = mobjcache->hnext;
-		memset(mobj, 0, sizeof(*mobj));
-	}
-	else
-	{
-		mobj = Z_Calloc(sizeof (*mobj), PU_LEVEL, NULL);
-	}
+	mobj = P_AllocateMobj();
 
 	// this is officially a mobj, declared as soon as possible.
 	mobj->thinker.function.acp1 = (actionf_p1)P_MobjThinker;
@@ -11318,7 +11512,9 @@ static precipmobj_t *P_SpawnPrecipMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype
 	const mobjinfo_t *info = &mobjinfo[type];
 	state_t *st;
 	fixed_t start_z = INT32_MIN;
-	precipmobj_t *mobj = Z_Calloc(sizeof (*mobj), PU_LEVEL, NULL);
+	precipmobj_t *mobj = Z_LevelPoolCalloc(sizeof(precipmobj_t));
+	mobj->thinker.alloctype = TAT_LEVELPOOL;
+	mobj->thinker.size = sizeof(precipmobj_t);
 
 	mobj->type = type;
 	mobj->info = info;
@@ -11600,13 +11796,6 @@ void P_RemoveMobj(mobj_t *mobj)
 	if (!mobj->thinker.next)
 	{ // Uh-oh, the mobj doesn't think, P_RemoveThinker would never go through!
 		INT32 prevreferences;
-		if (!mobj->thinker.references)
-		{
-			// no references, dump it directly in the mobj cache
-			mobj->hnext = mobjcache;
-			mobjcache = mobj;
-			return;
-		}
 
 		prevreferences = mobj->thinker.references;
 		P_AddThinker(THINK_MOBJ, (thinker_t *)mobj);
@@ -12120,34 +12309,13 @@ void P_SpawnPlayer(INT32 playernum)
 		G_PlayerReborn(playernum, false);
 	}
 
-	if (G_GametypeHasTeams())
+	if (G_GametypeHasTeams() == true)
 	{
 		// If you're in a team game and you don't have a team assigned yet...
-		if (!p->spectator && p->ctfteam == 0)
+		if (p->spectator == false && p->team == TEAM_UNASSIGNED)
 		{
-			changeteam_union NetPacket;
-			UINT16 usvalue;
-			NetPacket.value.l = NetPacket.value.b = 0;
-
-			// Spawn as a spectator,
-			// yes even in splitscreen mode
-			p->spectator = true;
-
-			// but immediately send a team change packet.
-			NetPacket.packet.playernum = playernum;
-			NetPacket.packet.verification = true;
-			NetPacket.packet.newteam = !(playernum&1) + 1;
-
-			usvalue = SHORT(NetPacket.value.l|NetPacket.value.b);
-			SendNetXCmd(XD_TEAMCHANGE, &usvalue, sizeof(usvalue));
+			G_AssignTeam(p, !(playernum & 1) + 1);
 		}
-
-		// Fix team colors.
-		// This code isn't being done right somewhere else. Oh well.
-		if (p->ctfteam == 1)
-			p->skincolor = skincolor_redteam;
-		else if (p->ctfteam == 2)
-			p->skincolor = skincolor_blueteam;
 	}
 
 	if (leveltime > introtime && K_PodiumSequence() == false)
@@ -12200,6 +12368,17 @@ void P_SpawnPlayer(INT32 playernum)
 	K_InitWavedashIndicator(p);
 	K_InitTrickIndicator(p);
 
+	for (UINT8 approaches = 0; approaches < 4; approaches++)
+	{
+		mobj_t *approach = P_SpawnMobjFromMobj(p->mo, 0, 0, 0, MT_TRIPWIREAPPROACH);
+		P_SetTarget(&approach->target, p->mo);
+		approach->extravalue1 = (approaches == 0 || approaches == 2) ? 1 : 0;
+		approach->extravalue2 = (approaches == 0 || approaches == 1) ? 1 : 0;
+		approach->renderflags |= approach->extravalue1 ? 0 : RF_HORIZONTALFLIP;
+		approach->renderflags |= approach->extravalue2 ? 0 : RF_VERTICALFLIP;
+	}
+
+
 	if ((gametyperules & GTR_BUMPERS) && !p->spectator)
 	{
 		mobj->health = K_BumpersToHealth(K_StartingBumperCount());
@@ -12227,7 +12406,7 @@ void P_SpawnPlayer(INT32 playernum)
 		P_SetScale(aring, p->mo->scale);
 		K_MatchGenericExtraFlags(aring, p->mo);
 		aring->renderflags |= RF_DONTDRAW;
-			
+
 		mobj_t *abody = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_AMPBODY);
 		P_SetTarget(&abody->target, p->mo);
 		P_SetScale(abody, p->mo->scale);
@@ -12557,23 +12736,23 @@ static boolean P_SpawnNonMobjMapThing(mapthing_t *mthing)
 		}
 		return true;
 	}
-	else if (mthing->type == 34) // Red CTF starts
+	else if (mthing->type == 34) // Orange team starts
 	{
-		if (numredctfstarts < MAXPLAYERS)
+		if (numteamstarts[TEAM_ORANGE] < MAXPLAYERS)
 		{
-			redctfstarts[numredctfstarts] = mthing;
+			teamstarts[TEAM_ORANGE][numteamstarts[TEAM_ORANGE]] = mthing;
 			mthing->type = 0;
-			numredctfstarts++;
+			numteamstarts[TEAM_ORANGE]++;
 		}
 		return true;
 	}
-	else if (mthing->type == 35) // Blue CTF starts
+	else if (mthing->type == 35) // Blue team starts
 	{
-		if (numbluectfstarts < MAXPLAYERS)
+		if (numteamstarts[TEAM_BLUE] < MAXPLAYERS)
 		{
-			bluectfstarts[numbluectfstarts] = mthing;
+			teamstarts[TEAM_BLUE][numteamstarts[TEAM_BLUE]] = mthing;
 			mthing->type = 0;
-			numbluectfstarts++;
+			numteamstarts[TEAM_BLUE]++;
 		}
 		return true;
 	}
@@ -12603,6 +12782,7 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 	switch (i)
 	{
 		case MT_RING:
+		case MT_RANDOMITEM:
 			if (modeattacking & ATTACKING_SPB)
 				return false;
 			break;
@@ -12735,9 +12915,9 @@ static boolean P_SetupEmblem(mapthing_t *mthing, mobj_t *mobj)
 void P_SprayCanInit(mobj_t* mobj)
 {
 	// See also P_TouchSpecialThing
-	UINT16 can_id = mapheaderinfo[gamemap-1]->cache_spraycan;
+	UINT16 can_id = mapheaderinfo[gamemap-1]->records.spraycan;
 
-	if (can_id < gamedata->numspraycans)
+	if (can_id < gamedata->numspraycans || can_id == MCAN_BONUS)
 	{
 		// Assigned to this level, has been grabbed
 		mobj->renderflags = (tr_trans50 << RF_TRANSSHIFT);
@@ -12745,19 +12925,38 @@ void P_SprayCanInit(mobj_t* mobj)
 	// Prevent footguns - these won't persist when custom levels are unloaded
 	else if (gamemap-1 < basenummapheaders)
 	{
-		// Unassigned, get the next grabbable colour (offset by threshold)
-		can_id = gamedata->gotspraycans;
+		if (gamedata->gotspraycans >= gamedata->numspraycans)
+		{
+			can_id = MCAN_BONUS;
+		}
+		else
+		{
+			// Unassigned, get the next grabbable colour (offset by threshold)
+			can_id = gamedata->gotspraycans;
 
-		// It's ok if this goes over gamedata->numspraycans, as they're
-		// capped below in this func... but NEVER let this go backwards!!
-		if (mobj->threshold != 0)
-			can_id += (mobj->threshold & UINT8_MAX);
+			// It's ok if this goes over gamedata->numspraycans, as they're
+			// capped below in this func... but NEVER let this go backwards!!
+			if (mobj->threshold != 0)
+				can_id += (mobj->threshold & UINT8_MAX);
+		}
 
 		mobj->renderflags = 0;
 	}
-
-	if (can_id < gamedata->numspraycans)
+	else
 	{
+		// Custom course, bonus only
+		can_id = MCAN_BONUS;
+	}
+
+	if (can_id == MCAN_BONUS && mobj->threshold == 0)
+	{
+		// Only one bonus possible
+		// We modify sprite instead of state for netsync reasons
+		mobj->sprite = SPR_SBON;
+	}
+	else if (can_id < gamedata->numspraycans)
+	{
+		mobj->sprite = mobj->state->sprite;
 		mobj->color = gamedata->spraycans[can_id].col;
 	}
 	else
@@ -14066,11 +14265,9 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	return true;
 }
 
-void P_CopyMapThingSpecialFieldsToMobj(const mapthing_t *mthing, mobj_t *mobj)
+void P_CopyMapThingBehaviorFieldsToMobj(const mapthing_t *mthing, mobj_t *mobj)
 {
 	size_t arg = SIZE_MAX;
-
-	mobj->special = mthing->special;
 
 	for (arg = 0; arg < NUM_MAPTHING_ARGS; arg++)
 	{
@@ -14096,6 +14293,13 @@ void P_CopyMapThingSpecialFieldsToMobj(const mapthing_t *mthing, mobj_t *mobj)
 		mobj->thing_stringargs[arg] = Z_Realloc(mobj->thing_stringargs[arg], len + 1, PU_LEVEL, NULL);
 		M_Memcpy(mobj->thing_stringargs[arg], mthing->thing_stringargs[arg], len + 1);
 	}
+}
+
+void P_CopyMapThingSpecialFieldsToMobj(const mapthing_t *mthing, mobj_t *mobj)
+{
+	size_t arg = SIZE_MAX;
+
+	mobj->special = mthing->special;
 
 	for (arg = 0; arg < NUM_SCRIPT_ARGS; arg++)
 	{
@@ -14143,6 +14347,7 @@ static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y,
 	mobj->tid = mthing->tid;
 	P_AddThingTID(mobj);
 
+	P_CopyMapThingBehaviorFieldsToMobj(mthing, mobj);
 	P_CopyMapThingSpecialFieldsToMobj(mthing, mobj);
 
 	if (!P_SetupSpawnedMapThing(mthing, mobj))
@@ -14861,17 +15066,19 @@ mobj_t *P_SpawnMissile(mobj_t *source, mobj_t *dest, mobjtype_t type)
 //
 void P_ColorTeamMissile(mobj_t *missile, player_t *source)
 {
-	if (G_GametypeHasTeams())
+	if (missile == NULL || source == NULL)
 	{
-		if (source->ctfteam == 2)
-			missile->color = skincolor_bluering;
-		else if (source->ctfteam == 1)
-			missile->color = skincolor_redring;
+		return;
 	}
-	/*
+
+	if (source->team > TEAM_UNASSIGNED && source->team < TEAM__MAX)
+	{
+		missile->color = g_teaminfo[source->team].color;
+	}
 	else
-		missile->color = player->mo->color; //copy color
-	*/
+	{
+		missile->color = source->skincolor;
+	}
 }
 
 //

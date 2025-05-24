@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -2784,7 +2784,7 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 	INT32 lightnum;
 	fixed_t limit_dist;
 
-	if (rendermode != render_soft)
+	if (rendermode == render_opengl)
 		return;
 
 	// BSP is traversed by subsector.

@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Ronald "Eidolon" Kinard
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Ronald "Eidolon" Kinard
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -14,14 +14,14 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
-#include <unordered_map>
-#include <unordered_set>
-#include <vector>
 
 #include <tcb/span.hpp>
 
-#include "pass.hpp"
+#include "../core/hash_map.hpp"
+#include "../core/hash_set.hpp"
+#include "../core/vector.hpp"
 #include "../r_defs.h"
+#include "../rhi/rhi.hpp"
 
 extern "C"
 {
@@ -55,7 +55,7 @@ private:
 	rhi::Handle<rhi::Texture> tex_;
 	uint32_t size_;
 
-	std::unordered_map<const patch_t*, Entry> entries_;
+	srb2::HashMap<const patch_t*, Entry> entries_;
 
 	std::unique_ptr<stbrp_context> rp_ctx {nullptr};
 	std::unique_ptr<stbrp_node[]> rp_nodes {nullptr};
@@ -84,11 +84,11 @@ public:
 /// drawing things like sprites and 2D elements.
 class PatchAtlasCache
 {
-	std::vector<PatchAtlas> atlases_;
-	std::unordered_map<const patch_t*, size_t> patch_lookup_;
+	srb2::Vector<PatchAtlas> atlases_;
+	srb2::HashMap<const patch_t*, size_t> patch_lookup_;
 
-	std::unordered_set<const patch_t*> patches_to_pack_;
-	std::unordered_set<const patch_t*> patches_to_upload_;
+	srb2::HashSet<const patch_t*> patches_to_pack_;
+	srb2::HashSet<const patch_t*> patches_to_upload_;
 
 	uint32_t tex_size_ = 2048;
 	size_t max_textures_ = 2;
@@ -113,7 +113,7 @@ public:
 	void queue_patch(srb2::NotNull<const patch_t*> patch);
 
 	/// @brief Pack queued patches, allowing them to be looked up with find_patch.
-	void pack(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
+	void pack(rhi::Rhi& rhi);
 
 	/// @brief Find the atlas a patch belongs to, or nullopt if it is not cached.
 	/// This may not be called if there are still patches that need to be packed.
@@ -135,7 +135,7 @@ rhi::Rect trimmed_patch_dimensions(const patch_t* patch);
 /// during upload, but required for the RHI device's Unpack Alignment of 4 bytes.
 /// @param patch the patch to convert
 /// @param out the output vector, cleared before writing.
-void convert_patch_to_trimmed_rg8_pixels(const patch_t* patch, std::vector<uint8_t>& out);
+void convert_patch_to_trimmed_rg8_pixels(const patch_t* patch, srb2::Vector<uint8_t>& out);
 
 } // namespace srb2::hwr2
 

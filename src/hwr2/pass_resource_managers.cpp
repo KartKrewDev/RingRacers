@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Ronald "Eidolon" Kinard
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Ronald "Eidolon" Kinard
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -21,7 +21,7 @@ using namespace srb2;
 using namespace srb2::hwr2;
 using namespace srb2::rhi;
 
-FramebufferManager::FramebufferManager() : Pass()
+FramebufferManager::FramebufferManager()
 {
 }
 
@@ -120,11 +120,11 @@ void FramebufferManager::prepass(Rhi& rhi)
 	}
 }
 
-void FramebufferManager::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
+void FramebufferManager::transfer(Rhi& rhi)
 {
 }
 
-void FramebufferManager::graphics(Rhi& rhi, Handle<GraphicsContext> ctx)
+void FramebufferManager::graphics(Rhi& rhi)
 {
 }
 
@@ -161,28 +161,28 @@ void MainPaletteManager::prepass(Rhi& rhi)
 	}
 }
 
-void MainPaletteManager::upload_palette(Rhi& rhi, Handle<GraphicsContext> ctx)
+void MainPaletteManager::upload_palette(Rhi& rhi)
 {
 	std::array<byteColor_t, kPaletteSize> palette_32;
 	for (std::size_t i = 0; i < kPaletteSize; i++)
 	{
 		palette_32[i] = V_GetColor(i).s;
 	}
-	rhi.update_texture(ctx, palette_, {0, 0, kPaletteSize, 1}, PixelFormat::kRGBA8, tcb::as_bytes(tcb::span(palette_32)));
+	rhi.update_texture(palette_, {0, 0, kPaletteSize, 1}, PixelFormat::kRGBA8, tcb::as_bytes(tcb::span(palette_32)));
 }
 
-void MainPaletteManager::upload_lighttables(Rhi& rhi, Handle<GraphicsContext> ctx)
+void MainPaletteManager::upload_lighttables(Rhi& rhi)
 {
 	if (colormaps != nullptr)
 	{
 		tcb::span<const std::byte> colormap_bytes = tcb::as_bytes(tcb::span(colormaps, kPaletteSize * kLighttableRows));
-		rhi.update_texture(ctx, lighttable_, {0, 0, kPaletteSize, kLighttableRows}, PixelFormat::kR8, colormap_bytes);
+		rhi.update_texture(lighttable_, {0, 0, kPaletteSize, kLighttableRows}, PixelFormat::kR8, colormap_bytes);
 	}
 
 	if (encoremap != nullptr)
 	{
 		tcb::span<const std::byte> encoremap_bytes = tcb::as_bytes(tcb::span(encoremap, kPaletteSize * kLighttableRows));
-		rhi.update_texture(ctx, encore_lighttable_, {0, 0, kPaletteSize, kLighttableRows}, PixelFormat::kR8, encoremap_bytes);
+		rhi.update_texture(encore_lighttable_, {0, 0, kPaletteSize, kLighttableRows}, PixelFormat::kR8, encoremap_bytes);
 	}
 
 	if (!lighttables_to_upload_.empty())
@@ -192,23 +192,23 @@ void MainPaletteManager::upload_lighttables(Rhi& rhi, Handle<GraphicsContext> ct
 			Handle<Texture> lighttable_tex = find_extra_lighttable(lighttable);
 			SRB2_ASSERT(lighttable_tex != kNullHandle);
 			tcb::span<const std::byte> lighttable_bytes = tcb::as_bytes(tcb::span(lighttable, kPaletteSize * kLighttableRows));
-			rhi.update_texture(ctx, lighttable_tex, {0, 0, kPaletteSize, kLighttableRows}, PixelFormat::kR8, lighttable_bytes);
+			rhi.update_texture(lighttable_tex, {0, 0, kPaletteSize, kLighttableRows}, PixelFormat::kR8, lighttable_bytes);
 		}
 		lighttables_to_upload_.clear();
 	}
 }
 
-void MainPaletteManager::upload_default_colormap(Rhi& rhi, Handle<GraphicsContext> ctx)
+void MainPaletteManager::upload_default_colormap(Rhi& rhi)
 {
 	std::array<uint8_t, kPaletteSize> data;
 	for (std::size_t i = 0; i < kPaletteSize; i++)
 	{
 		data[i] = i;
 	}
-	rhi.update_texture(ctx, default_colormap_, {0, 0, kPaletteSize, 1}, PixelFormat::kR8, tcb::as_bytes(tcb::span(data)));
+	rhi.update_texture(default_colormap_, {0, 0, kPaletteSize, 1}, PixelFormat::kR8, tcb::as_bytes(tcb::span(data)));
 }
 
-void MainPaletteManager::upload_colormaps(Rhi& rhi, Handle<GraphicsContext> ctx)
+void MainPaletteManager::upload_colormaps(Rhi& rhi)
 {
 	for (auto to_upload : colormaps_to_upload_)
 	{
@@ -218,7 +218,7 @@ void MainPaletteManager::upload_colormaps(Rhi& rhi, Handle<GraphicsContext> ctx)
 		rhi::Handle<rhi::Texture> map_texture = colormaps_.at(to_upload);
 
 		tcb::span<const std::byte> map_bytes = tcb::as_bytes(tcb::span(to_upload, kPaletteSize));
-		rhi.update_texture(ctx, map_texture, {0, 0, kPaletteSize, 1}, PixelFormat::kR8, map_bytes);
+		rhi.update_texture(map_texture, {0, 0, kPaletteSize, 1}, PixelFormat::kR8, map_bytes);
 	}
 	colormaps_to_upload_.clear();
 }
@@ -271,15 +271,15 @@ rhi::Handle<rhi::Texture> MainPaletteManager::find_extra_lighttable(srb2::NotNul
 	return lighttables_.at(lighttable);
 }
 
-void MainPaletteManager::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
+void MainPaletteManager::transfer(Rhi& rhi)
 {
-	upload_palette(rhi, ctx);
-	upload_lighttables(rhi, ctx);
-	upload_default_colormap(rhi, ctx);
-	upload_colormaps(rhi, ctx);
+	upload_palette(rhi);
+	upload_lighttables(rhi);
+	upload_default_colormap(rhi);
+	upload_colormaps(rhi);
 }
 
-void MainPaletteManager::graphics(Rhi& rhi, Handle<GraphicsContext> ctx)
+void MainPaletteManager::graphics(Rhi& rhi)
 {
 }
 
@@ -319,7 +319,7 @@ void CommonResourcesManager::prepass(Rhi& rhi)
 	}
 }
 
-void CommonResourcesManager::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
+void CommonResourcesManager::transfer(Rhi& rhi)
 {
 	if (!init_)
 	{
@@ -330,13 +330,13 @@ void CommonResourcesManager::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 		uint8_t transparent[4] = {0, 0, 0, 0};
 		tcb::span<const std::byte> transparent_bytes = tcb::as_bytes(tcb::span(transparent, 4));
 
-		rhi.update_texture(ctx, black_, {0, 0, 1, 1}, PixelFormat::kRGBA8, black_bytes);
-		rhi.update_texture(ctx, white_, {0, 0, 1, 1}, PixelFormat::kRGBA8, white_bytes);
-		rhi.update_texture(ctx, transparent_, {0, 0, 1, 1}, PixelFormat::kRGBA8, transparent_bytes);
+		rhi.update_texture(black_, {0, 0, 1, 1}, PixelFormat::kRGBA8, black_bytes);
+		rhi.update_texture(white_, {0, 0, 1, 1}, PixelFormat::kRGBA8, white_bytes);
+		rhi.update_texture(transparent_, {0, 0, 1, 1}, PixelFormat::kRGBA8, transparent_bytes);
 	}
 }
 
-void CommonResourcesManager::graphics(Rhi& rhi, Handle<GraphicsContext> ctx)
+void CommonResourcesManager::graphics(Rhi& rhi)
 {
 }
 

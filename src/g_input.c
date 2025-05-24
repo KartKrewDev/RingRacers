@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 //
@@ -33,6 +33,7 @@ INT32 gamekeydown[MAXDEVICES][NUMINPUTS];
 // two key codes (or virtual key) per game control
 INT32 gamecontrol[MAXSPLITSCREENPLAYERS][num_gamecontrols][MAXINPUTMAPPING];
 UINT8 gamecontrolflags[MAXSPLITSCREENPLAYERS];
+UINT8 showgamepadprompts[MAXSPLITSCREENPLAYERS];
 INT32 gamecontroldefault[num_gamecontrols][MAXINPUTMAPPING]; // default control storage
 INT32 menucontrolreserved[num_gamecontrols][MAXINPUTMAPPING];
 
@@ -759,6 +760,129 @@ static keyname_t keynames[] =
 	{KEY_AXIS1+9, "R TRIGGER"},
 };
 
+static keyname_t shortkeynames[] =
+{
+	{KEY_SPACE, "SPC"},
+	{KEY_CAPSLOCK, "CAPS"},
+	{KEY_ENTER, "ENTER"},
+	{KEY_TAB, "TAB"},
+	{KEY_ESCAPE, "ESC"},
+	{KEY_BACKSPACE, "BKSP"},
+
+	{KEY_NUMLOCK, "NLOK"},
+	{KEY_SCROLLLOCK, "SLOK"},
+
+	// bill gates keys
+	{KEY_LEFTWIN, "LWIN"},
+	{KEY_RIGHTWIN, "RWIN"},
+	{KEY_MENU, "MENU"},
+
+	{KEY_LSHIFT, "LSFT"},
+	{KEY_RSHIFT, "RSFT"},
+	{KEY_LSHIFT, "SFT"},
+	{KEY_LCTRL, "LCTRL"},
+	{KEY_RCTRL, "RCTRL"},
+	{KEY_LCTRL, "CTRL"},
+	{KEY_LALT, "LALT"},
+	{KEY_RALT, "RALT"},
+	{KEY_LALT, "ALT"},
+
+	// keypad keys
+	{KEY_KPADSLASH, "/"},
+	{KEY_KEYPAD7, "7"},
+	{KEY_KEYPAD8, "8"},
+	{KEY_KEYPAD9, "9"},
+	{KEY_MINUSPAD, "-"},
+	{KEY_KEYPAD4, "4"},
+	{KEY_KEYPAD5, "5"},
+	{KEY_KEYPAD6, "6"},
+	{KEY_PLUSPAD, "+"},
+	{KEY_KEYPAD1, "1"},
+	{KEY_KEYPAD2, "2"},
+	{KEY_KEYPAD3, "3"},
+	{KEY_KEYPAD0, "0"},
+	{KEY_KPADDEL, "."},
+
+	// extended keys (not keypad)
+	{KEY_HOME, "HOME"},
+	{KEY_UPARROW, "UP"},
+	{KEY_PGUP, "PGUP"},
+	{KEY_LEFTARROW, "LEFT"},
+	{KEY_RIGHTARROW, "RIGHT"},
+	{KEY_END, "END"},
+	{KEY_DOWNARROW, "DOWN"},
+	{KEY_PGDN, "PGDN"},
+	{KEY_INS, "INS"},
+	{KEY_DEL, "DEL"},
+
+	// other keys
+	{KEY_F1, "F1"},
+	{KEY_F2, "F2"},
+	{KEY_F3, "F3"},
+	{KEY_F4, "F4"},
+	{KEY_F5, "F5"},
+	{KEY_F6, "F6"},
+	{KEY_F7, "F7"},
+	{KEY_F8, "F8"},
+	{KEY_F9, "F9"},
+	{KEY_F10, "F10"},
+	{KEY_F11, "F11"},
+	{KEY_F12, "F12"},
+
+	// KEY_CONSOLE has an exception in the keyname code
+	{'`', "TILDE"},
+	{KEY_PAUSE, "PAUSE"},
+
+	// virtual keys for mouse buttons and joystick buttons
+	{KEY_MOUSE1+0,"M1"},
+	{KEY_MOUSE1+1,"M2"},
+	{KEY_MOUSE1+2,"M3"},
+	{KEY_MOUSE1+3,"M4"},
+	{KEY_MOUSE1+4,"M5"},
+	{KEY_MOUSE1+5,"M6"},
+	{KEY_MOUSE1+6,"M7"},
+	{KEY_MOUSE1+7,"M8"},
+	{KEY_MOUSEMOVE+0,"Mouse Up"},
+	{KEY_MOUSEMOVE+1,"Mouse Down"},
+	{KEY_MOUSEMOVE+2,"Mouse Left"},
+	{KEY_MOUSEMOVE+3,"Mouse Right"},
+	{KEY_MOUSEWHEELUP, "Wheel Up"},
+	{KEY_MOUSEWHEELDOWN, "Wheel Down"},
+
+	{KEY_JOY1+0, "A"},
+	{KEY_JOY1+1, "B"},
+	{KEY_JOY1+2, "X"},
+	{KEY_JOY1+3, "Y"},
+	{KEY_JOY1+4, "BACK"},
+	{KEY_JOY1+5, "GUIDE"},
+	{KEY_JOY1+6, "START"},
+	{KEY_JOY1+7, "LS"},
+	{KEY_JOY1+8, "RS"},
+	{KEY_JOY1+9, "LB"},
+	{KEY_JOY1+10, "RB"},
+	{KEY_JOY1+11, "D-UP"},
+	{KEY_JOY1+12, "D-DOWN"},
+	{KEY_JOY1+13, "D-LEFT"},
+	{KEY_JOY1+14, "D-RIGHT"},
+	{KEY_JOY1+15, "MISC."},
+	{KEY_JOY1+16, "PADDLE1"},
+	{KEY_JOY1+17, "PADDLE2"},
+	{KEY_JOY1+18, "PADDLE3"},
+	{KEY_JOY1+19, "PADDLE4"},
+	{KEY_JOY1+20, "TOUCHPAD"},
+
+	{KEY_AXIS1+0, "LS LEFT"},
+	{KEY_AXIS1+1, "LS RIGHT"},
+	{KEY_AXIS1+2, "LS UP"},
+	{KEY_AXIS1+3, "LS DOWN"},
+	{KEY_AXIS1+4, "RS LEFT"},
+	{KEY_AXIS1+5, "RS RIGHT"},
+	{KEY_AXIS1+6, "RS UP"},
+	{KEY_AXIS1+7, "RS DOWN"},
+	{KEY_AXIS1+8, "LT"},
+	{KEY_AXIS1+9, "RT"},
+};
+
 static const char *gamecontrolname[num_gamecontrols] =
 {
 	"null", // a key/button mapped to gc_null has no effect
@@ -786,6 +910,7 @@ static const char *gamecontrolname[num_gamecontrols] =
 	"screenshot",
 	"startmovie",
 	"startlossless",
+	"voicepushtotalk"
 };
 
 #define NUMKEYNAMES (sizeof (keynames)/sizeof (keyname_t))
@@ -879,7 +1004,7 @@ const char *G_KeynumToString(INT32 keynum)
 	// return a string with the ascii char if displayable
 	if (keynum > ' ' && keynum <= 'z' && keynum != KEY_CONSOLE)
 	{
-		keynamestr[0] = (char)keynum;
+		keynamestr[0] = toupper(keynum); // Uppercase looks better!
 		keynamestr[1] = '\0';
 		return keynamestr;
 	}
@@ -888,6 +1013,30 @@ const char *G_KeynumToString(INT32 keynum)
 	for (j = 0; j < NUMKEYNAMES; j++)
 		if (keynames[j].keynum == keynum)
 			return keynames[j].name;
+
+	// create a name for unknown keys
+	sprintf(keynamestr, "KEY%d", keynum);
+	return keynamestr;
+}
+
+const char *G_KeynumToShortString(INT32 keynum)
+{
+	static char keynamestr[8];
+
+	UINT32 j;
+
+	// return a string with the ascii char if displayable
+	if (keynum > ' ' && keynum <= 'z' && keynum != KEY_CONSOLE)
+	{
+		keynamestr[0] = toupper(keynum); // Uppercase looks better!
+		keynamestr[1] = '\0';
+		return keynamestr;
+	}
+
+	// find a description for special keys
+	for (j = 0; j < NUMKEYNAMES; j++)
+		if (shortkeynames[j].keynum == keynum)
+			return shortkeynames[j].name;
 
 	// create a name for unknown keys
 	sprintf(keynamestr, "KEY%d", keynum);
@@ -1119,6 +1268,72 @@ INT32 G_CheckDoubleUsage(INT32 keynum, INT32 playernum, boolean modify)
 	}
 
 	return result;
+}
+
+INT32 G_FindPlayerBindForGameControl(INT32 player, gamecontrols_e control)
+{
+	INT32 device = showgamepadprompts[player] ? 1 : KEYBOARD_MOUSE_DEVICE;
+
+	INT32 bestbind = -1; // Bind that matches our input device
+	INT32 anybind = -1; // Bind that doesn't match, but is at least for this control
+
+	INT32 bindindex = MAXINPUTMAPPING-1;
+
+	// CONS_Printf("Check bind %d for player %d device %d\n", control, player, device);
+
+	// PASS 1: Binds that are directly in our active control mapping.
+	while (bindindex >= 0) // Prefer earlier binds
+	{
+		INT32 possiblecontrol = gamecontrol[player][control][bindindex];
+
+		bindindex--;
+
+		if (possiblecontrol == 0)
+			continue;
+
+		// if (device is gamepad) == (bound control is in gamepad range) - e.g. if bind matches device
+		if ((device != KEYBOARD_MOUSE_DEVICE) == (possiblecontrol >= KEY_JOY1 && possiblecontrol < JOYINPUTEND))
+		{
+			// CONS_Printf("PASS1 found %s\n", G_KeynumToShortString(possiblecontrol));
+			bestbind = possiblecontrol;
+			anybind = possiblecontrol;
+		}
+		else
+		{
+			// CONS_Printf("PASS1 considering %s\n", G_KeynumToShortString(possiblecontrol));
+			anybind = possiblecontrol;
+		}
+	}
+
+	// PASS 3: "Safety" binds that are reserved by the menu system.
+	if (bestbind == -1)
+	{
+		bindindex = MAXINPUTMAPPING-1;
+
+		while (bindindex >= 0)
+		{
+			INT32 possiblecontrol = menucontrolreserved[control][bindindex];
+
+			bindindex--;
+
+			if (possiblecontrol == 0)
+				continue;
+
+			if ((device != KEYBOARD_MOUSE_DEVICE) == (possiblecontrol >= KEY_JOY1 && possiblecontrol < JOYINPUTEND))
+			{
+				// CONS_Printf("PASS2 found %s\n", G_KeynumToShortString(possiblecontrol));
+				bestbind = possiblecontrol;
+				anybind = possiblecontrol;
+			}
+			else
+			{
+				// CONS_Printf("PASS2 considering %s\n", G_KeynumToShortString(possiblecontrol));
+				anybind = possiblecontrol;
+			}
+		}
+	}
+
+	return (bestbind != -1) ? bestbind : anybind; // If we couldn't find a device-appropriate bind, try to at least use something
 }
 
 static void setcontrol(UINT8 player)

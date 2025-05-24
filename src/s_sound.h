@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -35,6 +35,7 @@ extern "C" {
 
 extern consvar_t stereoreverse;
 extern consvar_t cv_soundvolume, cv_closedcaptioning, cv_digmusicvolume;
+extern consvar_t cv_voicevolume;
 
 extern consvar_t surround;
 extern consvar_t cv_numChannels;
@@ -46,6 +47,22 @@ extern consvar_t cv_gamedigimusic;
 extern consvar_t cv_gamesounds;
 extern consvar_t cv_bgaudio;
 extern consvar_t cv_streamersafemusic;
+
+extern consvar_t cv_voice_chat;
+extern consvar_t cv_voice_mode;
+extern consvar_t cv_voice_selfmute;
+extern consvar_t cv_voice_loopback;
+extern consvar_t cv_voice_inputamp;
+extern consvar_t cv_voice_activationthreshold;
+extern consvar_t cv_voice_proximity;
+extern consvar_t cv_voice_distanceattenuation_distance;
+extern consvar_t cv_voice_distanceattenuation_factor;
+extern consvar_t cv_voice_stereopanning_factor;
+extern consvar_t cv_voice_concurrentattenuation_factor;
+extern consvar_t cv_voice_concurrentattenuation_min;
+extern consvar_t cv_voice_concurrentattenuation_max;
+extern float g_local_voice_last_peak;
+extern boolean g_local_voice_detected;
 
 typedef enum
 {
@@ -121,6 +138,8 @@ lumpnum_t S_GetSfxLumpNum(sfxinfo_t *sfx);
 //
 
 boolean S_SoundDisabled(void);
+
+boolean S_VoiceDisabled(void);
 
 //
 // Start sound for thing at <origin> using <sound_id> from sounds.h
@@ -249,6 +268,7 @@ void S_AttemptToRestoreMusic(void);
 //
 void S_UpdateSounds(void);
 void S_UpdateClosedCaptions(void);
+void S_UpdateVoicePositionalProperties(void);
 
 FUNCMATH fixed_t S_CalculateSoundDistance(fixed_t px1, fixed_t py1, fixed_t pz1, fixed_t px2, fixed_t py2, fixed_t pz2);
 
@@ -257,6 +277,7 @@ INT32 S_GetSoundVolume(sfxinfo_t *sfx, INT32 volume);
 void S_SetSfxVolume(void);
 void S_SetMusicVolume(void);
 void S_SetMasterVolume(void);
+void S_SetVoiceVolume(void);
 
 INT32 S_OriginPlaying(void *origin);
 INT32 S_IdPlaying(sfxenum_t id);
@@ -269,6 +290,15 @@ void S_StopSoundByNum(sfxenum_t sfxnum);
 
 #define S_StartAttackSound S_StartSound
 #define S_StartScreamSound S_StartSound
+
+boolean S_SoundInputIsEnabled(void);
+boolean S_SoundInputSetEnabled(boolean enabled);
+UINT32 S_SoundInputDequeueSamples(void *data, UINT32 len);
+
+void S_QueueVoiceFrameFromPlayer(INT32 playernum, void *data, UINT32 len, boolean terminal);
+void S_SetPlayerVoiceActive(INT32 playernum);
+boolean S_IsPlayerVoiceActive(INT32 playernum);
+void S_ResetVoiceQueue(INT32 playernum);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -1,8 +1,8 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Sally "TehRealSalt" Cochenour
-// Copyright (C) 2024 by Lachlan "Lach" Wright
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Sally "TehRealSalt" Cochenour
+// Copyright (C) 2025 by Lachlan "Lach" Wright
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -429,10 +429,6 @@ void Obj_PlayerUsedRingShooter(mobj_t *base, player_t *player)
 	{
 		return;
 	}
-
-	// The original player should no longer have control over it,
-	// if they are using it via releasing.
-	RemoveRingShooterPointer(base);
 
 	// Respawn using the respawner's karted value.
 	if (rs_base_karted(base) > 0)

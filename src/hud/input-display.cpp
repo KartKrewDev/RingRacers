@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2025 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -85,8 +85,8 @@ void K_DrawInputDisplay(float x, float y, INT32 flags, char mode, UINT8 pid, boo
 
 	const ticcmd_t& cmd = players[displayplayers[pid]].cmd;
 	const boolean analog = (mode == '4' || mode == '5') ? players[displayplayers[pid]].analoginput : false;
-	const std::string prefix = fmt::format("PR{}", mode);
-	auto gfx = [&](auto format, auto&&... args) { return prefix + fmt::format(format, args...); };
+	srb2::String prefix = srb2::format("PR{}", mode);
+	auto gfx = [&](auto format, auto&&... args) { return prefix + srb2::format(format, args...); };
 	auto but = [&](char key, INT32 gc, UINT32 bt)
 	{
 		bool press = local ? G_PlayerInputAnalog(pid, gc, guessinput) : ((cmd.buttons & bt) == bt);
@@ -111,7 +111,7 @@ void K_DrawInputDisplay(float x, float y, INT32 flags, char mode, UINT8 pid, boo
 	box.patch(gfx("PAD{}", analog ? "N" : dpad_suffix(dpad)));
 	box.patch(but('A', gc_a, BT_ACCELERATE));
 	box.patch(but('B', gc_b, BT_LOOKBACK));
-	box.patch(but('C', gc_c, BT_SPINDASHMASK));
+	box.patch(but('C', gc_c, BT_SPINDASH));
 	box.patch(but('X', gc_x, BT_BRAKE));
 	box.patch(but('Y', gc_y, BT_RESPAWN));
 	box.patch(but('Z', gc_z, BT_VOTE));

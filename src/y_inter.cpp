@@ -1,7 +1,7 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Vivian "toastergrl" Grannell.
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Vivian "toastergrl" Grannell.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
@@ -50,11 +50,14 @@
 #include "k_hud.h" // K_DrawMapThumbnail
 #include "k_battle.h"
 #include "k_boss.h"
+#include "k_kart.h"
 #include "k_pwrlv.h"
 #include "k_grandprix.h"
 #include "k_serverstats.h" // SV_BumpMatchStats
 #include "m_easing.h"
 #include "music.h"
+
+#include "v_draw.hpp"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
@@ -99,6 +102,11 @@ static boolean Y_CanSkipIntermission(void)
 	}
 
 	return false;
+}
+
+boolean Y_IntermissionPlayerLock(void)
+{
+	return (gamestate == GS_INTERMISSION && data.rankingsmode == false);
 }
 
 static void Y_UnloadData(void);
@@ -189,8 +197,6 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 		numplayersingame++;
 	}
 
-	memset(data.color, 0, sizeof (data.color));
-	memset(data.character, 0, sizeof (data.character));
 	memset(completed, 0, sizeof (completed));
 	data.numplayers = 0;
 	data.showroundnum = false;
@@ -200,9 +206,63 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 	srb2::StandingsJson standings {};
 	bool savestandings = (!rankingsmode && demo.recording);
 
+	// Team stratification (this code only barely supports more than 2 teams)
+	data.winningteam = TEAM_UNASSIGNED;
+	data.halfway = UINT8_MAX;
+
+	UINT8 countteam[TEAM__MAX];
+	UINT8 smallestteam = UINT8_MAX;
+	memset(countteam, 0, sizeof(countteam));
+
+	if (rankingsmode == 0 && G_GametypeHasTeams())
+	{
+		for (i = data.winningteam+1; i < TEAM__MAX; i++)
+		{
+			countteam[i] = G_CountTeam(i);
+
+			if (g_teamscores[data.winningteam] < g_teamscores[i])
+			{
+				data.winningteam = i;
+			}
+
+			if (smallestteam > countteam[i])
+			{
+				smallestteam = countteam[i];
+			}
+		}
+
+		if (countteam[data.winningteam])
+		{
+			data.halfway = countteam[data.winningteam] - 1;
+		}
+	}
+
 	for (j = 0; j < numplayersingame; j++)
 	{
-		for (i = 0; i < MAXPLAYERS; i++)
+		i = 0;
+
+		if (data.winningteam != TEAM_UNASSIGNED)
+		{
+			for (; i < MAXPLAYERS; i++)
+			{
+				if (!playeringame[i] || players[i].spectator || completed[i])
+					continue;
+
+				if (players[i].team != data.winningteam)
+					continue;
+
+				comparison(i);
+			}
+
+			if (data.val[data.numplayers] == UINT32_MAX)
+			{
+				// Only run the un-teamed loop if everybody
+				// on the winning team was previously placed
+				i = 0;
+			}
+		}
+
+		for (; i < MAXPLAYERS; i++)
 		{
 			if (!playeringame[i] || players[i].spectator || completed[i])
 				continue;
@@ -214,9 +274,6 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 
 		completed[i] = true;
 		data.grade[i] = K_PlayerTallyActive(&players[i]) ? players[i].tally.rank : GRADE_INVALID;
-
-		data.color[data.numplayers] = players[i].skincolor;
-		data.character[data.numplayers] = players[i].skin;
 
 		if (data.numplayers && (data.val[data.numplayers] == data.val[data.numplayers-1]))
 		{
@@ -233,22 +290,42 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 
 		if (!rankingsmode)
 		{
-			if ((powertype == PWRLV_DISABLED)
-				&& !(players[i].pflags & PF_NOCONTEST)
-				&& (data.pos[data.numplayers] < (numplayersingame + spectateGriefed)))
+			// Online rank is handled further below in this file.
+			if (powertype == PWRLV_DISABLED)
 			{
-				// Online rank is handled further below in this file.
-				data.increase[i] = K_CalculateGPRankPoints(data.pos[data.numplayers], numplayersingame + spectateGriefed);
-				players[i].score += data.increase[i];
+				if (data.winningteam != TEAM_UNASSIGNED)
+				{
+					// TODO ASK TYRON
+					if (smallestteam != 0
+					&& players[i].team == data.winningteam)
+					{
+						data.increase[i] = 1;
+					}
+				}
+				else
+				{
+					UINT8 pointgetters = numplayersingame + spectateGriefed;
+
+					if (data.pos[data.numplayers] < pointgetters
+					&& !(players[i].pflags & PF_NOCONTEST))
+					{
+						data.increase[i] = K_CalculateGPRankPoints((&players[i])->exp, data.pos[data.numplayers], pointgetters);
+					}
+				}
+
+				if (data.increase[i] > 0)
+				{
+					players[i].score += data.increase[i];
+				}
 			}
 
 			if (savestandings)
 			{
 				srb2::StandingJson standing {};
 				standing.ranking = data.pos[data.numplayers];
-				standing.name = std::string(player_names[i]);
-				standing.demoskin = data.character[data.numplayers];
-				standing.skincolor = std::string(skincolors[data.color[data.numplayers]].name);
+				standing.name = srb2::String(player_names[i]);
+				standing.demoskin = players[i].skin;
+				standing.skincolor = srb2::String(skincolors[players[i].skincolor].name);
 				standing.timeorscore = data.val[data.numplayers];
 				standings.standings.emplace_back(std::move(standing));
 			}
@@ -286,6 +363,14 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 #undef strtime
 
 		data.numplayers++;
+	}
+
+	if (data.numplayers <= 2
+		|| data.halfway == UINT8_MAX
+		|| data.halfway >= 8
+		|| (data.numplayers - data.halfway) >= 8)
+	{
+		data.halfway = (data.numplayers-1)/2;
 	}
 
 	if (savestandings)
@@ -384,7 +469,19 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 		{
 			data.mainplayer = i;
 
-			if (!(players[i].pflags & PF_NOCONTEST))
+			if (data.winningteam != TEAM_UNASSIGNED
+			&& players[i].team != TEAM_UNASSIGNED)
+			{
+				data.gotthrough = true;
+
+				snprintf(data.headerstring,
+					sizeof data.headerstring,
+					"%s TEAM",
+					g_teaminfo[players[i].team].name);
+
+				data.showroundnum = true;
+			}
+			else if (!(players[i].pflags & PF_NOCONTEST))
 			{
 				data.gotthrough = true;
 
@@ -504,11 +601,13 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 		x2 -= 9;
 	}
 
-	if (standings->numplayers > 10)
+	UINT8 halfway = standings->halfway;
+
+	if (halfway > 4)
 	{
 		yspacing--;
 	}
-	else if (standings->numplayers <= 6)
+	else if (halfway <= 2)
 	{
 		yspacing++;
 		if (verticalresults)
@@ -543,7 +642,7 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 	);
 
 	i = 0;
-	UINT8 halfway = (standings->numplayers-1)/2;
+
 	if (doreverse)
 	{
 		i = standings->numplayers-1;
@@ -561,13 +660,13 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 		else
 		{
 			UINT8 *charcolormap = NULL;
-			if (!R_CanShowSkinInDemo(standings->character[i]))
+			if (!R_CanShowSkinInDemo(players[pnum].skin))
 			{
-				charcolormap = R_GetTranslationColormap(TC_BLINK, static_cast<skincolornum_t>(standings->color[i]), GTC_CACHE);
+				charcolormap = R_GetTranslationColormap(TC_BLINK, static_cast<skincolornum_t>(players[pnum].skincolor), GTC_CACHE);
 			}
-			else if (standings->color[i] != SKINCOLOR_NONE)
+			else
 			{
-				charcolormap = R_GetTranslationColormap(standings->character[i], static_cast<skincolornum_t>(standings->color[i]), GTC_CACHE);
+				charcolormap = R_GetTranslationColormap(players[pnum].skin, static_cast<skincolornum_t>(players[pnum].skincolor), GTC_CACHE);
 			}
 
 			if (standings->isduel)
@@ -586,7 +685,7 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 
 				M_DrawCharacterSprite(
 					duelx + 40, duely + 78,
-					standings->character[i],
+					players[pnum].skin,
 					spr2,
 					(datarightofcolumn ? 1 : 7),
 					0,
@@ -638,7 +737,7 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 
 			V_DrawRightAlignedThinString(x+13, y-2, 0, va("%d", standings->pos[i]));
 
-			if (standings->color[i] != SKINCOLOR_NONE)
+			//if (players[pnum].skincolor != SKINCOLOR_NONE)
 			{
 				if ((players[pnum].pflags & PF_NOCONTEST) && players[pnum].bot)
 				{
@@ -647,15 +746,15 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 						x+14, y-5,
 						0,
 						static_cast<patch_t*>(W_CachePatchName("MINIDEAD", PU_CACHE)),
-						R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(standings->color[i]), GTC_CACHE)
+						R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(players[pnum].skincolor), GTC_CACHE)
 					);
 				}
 				else
 				{
-					charcolormap = R_GetTranslationColormap(standings->character[i], static_cast<skincolornum_t>(standings->color[i]), GTC_CACHE);
+					charcolormap = R_GetTranslationColormap(players[pnum].skin, static_cast<skincolornum_t>(players[pnum].skincolor), GTC_CACHE);
 					V_DrawMappedPatch(x+14, y-5, 0,
-						R_CanShowSkinInDemo(standings->character[i]) ?
-						faceprefix[standings->character[i]][FACE_MINIMAP] : kp_unknownminimap,
+						R_CanShowSkinInDemo(players[pnum].skin) ?
+						faceprefix[players[pnum].skin][FACE_MINIMAP] : kp_unknownminimap,
 						charcolormap);
 				}
 			}
@@ -700,6 +799,39 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 				),
 				player_names[pnum]
 			);
+
+			{
+				patch_t *voxpat;
+				int voxxoffs = 0;
+				int voxyoffs = 0;
+				if (players[pnum].pflags2 & (PF2_SELFDEAFEN | PF2_SERVERDEAFEN))
+				{
+					voxpat = (patch_t*) W_CachePatchName("VOXCRD", PU_HUDGFX);
+					voxxoffs = 1;
+					voxyoffs = -5;
+				}
+				else if (players[pnum].pflags2 & (PF2_SELFMUTE | PF2_SERVERMUTE))
+				{
+					voxpat = (patch_t*) W_CachePatchName("VOXCRM", PU_HUDGFX);
+					voxxoffs = 1;
+					voxyoffs = -6;
+				}
+				else if (S_IsPlayerVoiceActive(pnum))
+				{
+					voxpat = (patch_t*) W_CachePatchName("VOXCRA", PU_HUDGFX);
+					voxyoffs = -4;
+				}
+				else
+				{
+					voxpat = NULL;
+				}
+
+				if (voxpat)
+				{
+					int namewidth = V_ThinStringWidth(player_names[pnum], 0);
+					V_DrawFixedPatch((x + 27 + namewidth + voxxoffs) * FRACUNIT, (y + voxyoffs) * FRACUNIT, FRACUNIT, 0, voxpat, NULL);
+				}
+			}
 
 			V_DrawRightAlignedThinString(
 				x+118, y-2,
@@ -1474,6 +1606,13 @@ void Y_DrawIntermissionButton(INT32 startslide, INT32 through, boolean widescree
 			);
 		}
 
+		using srb2::Draw;
+
+		Draw::TextElement text = Draw::TextElement().parse(pressed ? "<a_pressed>" : "<a>");
+		Draw draw = Draw(FixedToFloat(2*FRACUNIT - offset), FixedToFloat((BASEVIDHEIGHT - 16)*FRACUNIT)).flags(widescreen ? (V_SNAPTOLEFT|V_SNAPTOBOTTOM) : 0);
+		draw.text(text.string());
+
+		/*
 		K_drawButton(
 			2*FRACUNIT - offset,
 			(BASEVIDHEIGHT - 16)*FRACUNIT,
@@ -1484,6 +1623,7 @@ void Y_DrawIntermissionButton(INT32 startslide, INT32 through, boolean widescree
 			kp_button_a[1],
 			pressed
 		);
+		*/
 	}
 }
 
@@ -1810,13 +1950,15 @@ void Y_Ticker(void)
 
 	// Team scramble code for team match and CTF.
 	// Don't do this if we're going to automatically scramble teams next round.
-	/*if (G_GametypeHasTeams() && cv_teamscramble.value && !cv_scrambleonchange.value && server)
+	/*
+	if (G_GametypeHasTeams() && cv_teamscramble.value && !cv_scrambleonchange.value && server)
 	{
 		// If we run out of time in intermission, the beauty is that
 		// the P_Ticker() team scramble code will pick it up.
 		if ((intertic % (TICRATE/7)) == 0)
 			P_DoTeamscrambling();
-	}*/
+	}
+	*/
 
 	if ((timer < INFINITE_TIMER && --timer <= 0)
 		|| (intertic == endtic))
@@ -1882,8 +2024,7 @@ void Y_Ticker(void)
 		{
 			if (!data.rankingsmode && sorttic != -1 && (intertic >= sorttic + 8))
 			{
-				// Anything with post-intermission consequences here should also occur in Y_EndIntermission.
-				K_RetireBots();
+				Y_MidIntermission();
 				Y_CalculateMatchData(1, Y_CompareRank);
 			}
 
@@ -2070,10 +2211,7 @@ static UINT32 Y_EstimatePodiumScore(player_t *const player, UINT8 numPlaying)
 	UINT8 pos = Y_PlayersBestPossiblePosition(player);
 	UINT32 ourScore = player->score;
 
-	if (pos < numPlaying)
-	{
-		ourScore += K_CalculateGPRankPoints(pos, numPlaying);
-	}
+	ourScore += K_CalculateGPRankPoints(player->exp, pos, numPlaying);
 
 	return ourScore;
 }
@@ -2351,13 +2489,34 @@ void Y_StartIntermission(void)
 // ======
 
 //
+// Y_MidIntermission
+//
+void Y_MidIntermission(void)
+{
+	// Replacing bots that fail out of play
+	K_RetireBots();
+
+	// If tournament play is not in action...
+	if (roundqueue.position == 0)
+	{
+		// Unset player teams in anticipation of P_ShuffleTeams
+
+		UINT8 i;
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			players[i].team = TEAM_UNASSIGNED;
+		}
+	}
+}
+
+//
 // Y_EndIntermission
 //
 void Y_EndIntermission(void)
 {
 	if (!data.rankingsmode)
 	{
-		K_RetireBots();
+		Y_MidIntermission();
 	}
 
 	Y_UnloadData();
@@ -2377,7 +2536,7 @@ static void Y_UnloadData(void)
 {
 	// In hardware mode, don't Z_ChangeTag a pointer returned by W_CachePatchName().
 	// It doesn't work and is unnecessary.
-	if (rendermode != render_soft)
+	if (rendermode == render_opengl)
 		return;
 
 	// unload the background patches

@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 //
@@ -39,8 +39,6 @@ extern "C" {
 #ifdef USE_WINSOCK2
 	#include <ws2tcpip.h>
 #endif
-
-#include "doomdef.h"
 
 #ifdef USE_WINSOCK1
 	#include <winsock.h>
@@ -115,9 +113,11 @@ extern "C" {
 	static UINT8 UPNP_support = TRUE;
 #endif // HAVE_MINIUPNC
 
-#include "d_net.h"
-#include "doomtype.h"
 #include "i_tcp.h"
+#include "d_net.h"
+
+#include "doomdef.h"
+#include "doomtype.h"
 
 union mysockaddr_t
 {
