@@ -596,6 +596,9 @@ char sprnames[NUMSPRITES + 1][5] =
 	"AMPC",
 	"AMPD",
 
+	"TWOK",
+	"TW_L",
+
 	"SOR_",
 
 	"WTRL", // Water Trail
@@ -2153,6 +2156,9 @@ state_t states[NUMSTATES] =
 	{SPR_AMPC,                 FF_FULLBRIGHT|FF_ANIMATE|0, -1, {NULL}, 4, 2, S_NULL}, // S_AMPBODY
 	{SPR_AMPD,                 FF_FULLBRIGHT|FF_ANIMATE|0, -1, {NULL}, 4, 2, S_NULL}, // S_AMPAURA
 	{SPR_AMPB,                 FF_FULLBRIGHT|FF_ADD|FF_PAPERSPRITE|2, -1, {NULL}, 4, 2, S_NULL}, // S_AMPBURST
+
+	{SPR_TWOK,                 FF_FULLBRIGHT|FF_ANIMATE|0, 56, {NULL}, 55, 1, S_NULL}, // S_TRIPWIREOK
+	{SPR_TW_L,                 FF_FULLBRIGHT|FF_ANIMATE|0, 56, {NULL}, 55, 1, S_NULL}, // S_TRIPWIRELOCKOUT
 
 	{SPR_SOR_,                 FF_FULLBRIGHT|FF_ANIMATE|0, 28, {NULL}, 27, 1, S_NULL}, // S_GOTIT
 

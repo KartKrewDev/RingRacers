@@ -1135,6 +1135,9 @@ typedef enum sprite
 	SPR_AMPC,
 	SPR_AMPD,
 
+	SPR_TWOK, // Tripwire OK
+	SPR_TW_L, // Tripwire Lockout
+
 	SPR_SOR_,
 
 	SPR_WTRL, // Water Trail
@@ -2620,6 +2623,9 @@ typedef enum state
 	S_AMPBODY,
 	S_AMPAURA,
 	S_AMPBURST,
+
+	S_TRIPWIREOK,
+	S_TRIPWIRELOCKOUT,
 
 	S_GOTIT,
 
