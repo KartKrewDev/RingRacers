@@ -297,7 +297,7 @@ void K_TimerInit(void)
 				}
 
 				if (K_InRaceDuel())
-					numlaps = 1;
+					numlaps = 99;
 			}
 		}
 
@@ -9780,14 +9780,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->amppickup--;
 	}
 
-	// ACHTUNG TEMPORARY FUCKUP.
-	// Disable skip protection in Race Duel because of distance jumps in infinite-lap contexts.
-	// This shouldn't exist at all in release 2.4, so this is probably fine, right...?
-	if (K_InRaceDuel())
-	{
-		player->pflags |= PF_TRUSTWAYPOINTS;
-	}
-
 
 	// Don't tick down while in damage state.
 	// There may be some maps where the timer activates for
@@ -11081,28 +11073,15 @@ static void K_UpdateDistanceFromFinishLine(player_t *const player)
 				}
 				Z_Free(pathtofinish.array);
 
-				if (K_InRaceDuel() && player->position == 1)
+				// distancetofinish is currently a flat distance to the finish line, but in order to be fully
+				// correct we need to add to it the length of the entire circuit multiplied by the number of laps
+				// left after this one. This will give us the total distance to the finish line, and allow item
+				// distance calculation to work easily
+				const mapheader_t *mapheader = mapheaderinfo[gamemap - 1];
+				if ((mapheader->levelflags & LF_SECTIONRACE) == 0U)
 				{
-					// As far as we're concerned, the race starts and ends with our position.
-					// Don't care about laps at all!
-				}
-				else
-				{
-					// distancetofinish is currently a flat distance to the finish line, but in order to be fully
-					// correct we need to add to it the length of the entire circuit multiplied by the number of laps
-					// left after this one. This will give us the total distance to the finish line, and allow item
-					// distance calculation to work easily
-					const mapheader_t *mapheader = mapheaderinfo[gamemap - 1];
-					if ((mapheader->levelflags & LF_SECTIONRACE) == 0U)
-					{
-						UINT8 numfulllapsleft = ((UINT8)numlaps - player->laps) / mapheader->lapspersection;
-						if (K_InRaceDuel())
-						{
-							player_t *opp = K_DuelOpponent(player);
-							numfulllapsleft = opp->laps - player->laps;
-						}
-						player->distancetofinish += numfulllapsleft * K_GetCircuitLength();
-					}
+					UINT8 numfulllapsleft = ((UINT8)numlaps - player->laps) / mapheader->lapspersection;
+					player->distancetofinish += numfulllapsleft * K_GetCircuitLength();
 				}
 			}
 		}
