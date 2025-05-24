@@ -446,6 +446,9 @@ boolean K_IsPlayerScamming(player_t *player)
 	if (!M_NotFreePlay())
 		return false;
 
+	if (!(gametyperules & GTR_CIRCUIT))
+		return false;
+
 	// "Why 8?" Consistency
 	// "Why 2000?" Vibes
 	return (K_GetItemRouletteDistance(player, 8) < SCAMDIST);
