@@ -15265,8 +15265,17 @@ void K_EggmanTransfer(player_t *source, player_t *victim)
 	if (victim->eggmanexplode)
 		return;
 
+	boolean prank = false;
+
+	if (victim->itemRoulette.eggman)
+	{
+		K_StopRoulette(&source->itemRoulette);
+		prank = true; // Give the transferring player the victim's eggbox roulette?!
+	}
+
 	K_AddHitLag(victim->mo, 5, false);
 	K_DropItems(victim);
+
 	victim->eggmanexplode = 6*TICRATE;
 	victim->eggmanblame = (source - players);
 	K_StopRoulette(&victim->itemRoulette);
@@ -15275,9 +15284,20 @@ void K_EggmanTransfer(player_t *source, player_t *victim)
 		S_StartSound(NULL, sfx_itrole);
 
 	K_AddHitLag(source->mo, 5, false);
-	source->eggmanexplode = 0;
-	source->eggmanblame = -1;
-	K_StopRoulette(&source->itemRoulette);
+
+	if (prank)
+	{
+		source->eggmanexplode = 0;
+		source->eggmanblame = (victim - players);
+		K_StartEggmanRoulette(source);
+		S_StartSound(source->mo, sfx_s223);
+	}
+	else
+	{
+		source->eggmanexplode = 0;
+		source->eggmanblame = -1;
+		K_StopRoulette(&source->itemRoulette);
+	}
 
 	source->eggmanTransferDelay = 25;
 	victim->eggmanTransferDelay = 15;
