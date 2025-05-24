@@ -3564,7 +3564,7 @@ static void K_GetKartBoostPower(player_t *player)
 			Easing_InCubic(
 				player->overdrivepower,
 				0,
-				65*FRACUNIT/100
+				75*FRACUNIT/100
 			),
 			Easing_InSine(
 				player->overdrivepower,
