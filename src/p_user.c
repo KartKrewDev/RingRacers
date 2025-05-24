@@ -4248,6 +4248,12 @@ void P_PlayerThink(player_t *player)
 		player->airtime++;
 	}
 
+	if ((player->pflags & PF_FAULT) || (player->pflags & PF_VOID))
+	{
+		player->lastairtime = 0;
+		player->airtime = 0;
+	}
+
 	cmd = &player->cmd;
 
 	// SRB2kart
