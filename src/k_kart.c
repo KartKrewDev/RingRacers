@@ -11396,7 +11396,7 @@ INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
 	// If you're sliptiding, don't interact with handling boosts.
 	// You need turning power proportional to your speed, no matter what!
 	fixed_t topspeed = K_GetKartSpeed(player, false, false);
-	if (K_Sliptiding(player))
+	if (K_Sliptiding(player) || player->flamedash)
 	{
 		fixed_t sliptide_handle;
 
