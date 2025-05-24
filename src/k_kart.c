@@ -446,7 +446,7 @@ boolean K_IsPlayerScamming(player_t *player)
 	if (!M_NotFreePlay())
 		return false;
 
-	if (gametyperules & GTR_SPHERES)
+	if (!(gametyperules & GTR_CIRCUIT))
 		return false;
 
 	// "Why 8?" Consistency
