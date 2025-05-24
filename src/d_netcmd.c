@@ -2529,7 +2529,7 @@ static void Command_Map_f(void)
 	newforcespecialstage = COM_CheckParm("-forcespecialstage");
 
 	usingcheats = CV_CheatsEnabled();
-	ischeating = (!(netgame || multiplayer)) || (!newresetplayers);
+	ischeating = (!(netgame || multiplayer)) || (!newresetplayers) || (!K_CanChangeRules(false));
 
 	if (!( first_option = COM_FirstOption() ))
 		first_option = COM_Argc();
@@ -2634,9 +2634,6 @@ static void Command_Map_f(void)
 			ischeating = true;
 		}
 	}
-
-	if (grandprixinfo.gp)
-		ischeating = true;
 
 	if (ischeating && !usingcheats)
 	{
