@@ -235,6 +235,13 @@ static patch_t *kp_team_underlay[2][2];
 static patch_t *kp_team_minihead;
 static patch_t *kp_team_you;
 
+static patch_t *kp_duel_foe;
+static patch_t *kp_duel_you;
+static patch_t *kp_duel_sticker;
+static patch_t *kp_duel_under;
+static patch_t *kp_duel_over;
+static patch_t *kp_duel_margin[6];
+
 patch_t *kp_autoroulette;
 patch_t *kp_autoring;
 
@@ -1061,6 +1068,16 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_team_underlay[1][1], "TEAM4UR");
 	HU_UpdatePatch(&kp_team_minihead, "TEAM4H");
 	HU_UpdatePatch(&kp_team_you, "TEAM_YOU");
+
+	HU_UpdatePatch(&kp_duel_foe, "DUEL_FOE");
+	HU_UpdatePatch(&kp_duel_sticker, "DUEL_S");
+	HU_UpdatePatch(&kp_duel_under, "DUEL_B");
+	HU_UpdatePatch(&kp_duel_over, "DUEL_B2");
+	HU_UpdatePatch(&kp_duel_you, "DUEL_YOU");
+	for (i = 0; i < 6; i++)
+	{
+		HU_UpdatePatch(&kp_duel_margin[i], "DUELMB0%d", i);
+	}
 }
 
 // For the item toggle menu
@@ -2970,6 +2987,9 @@ static boolean K_drawKartPositionFaces(void)
 	if (!LUA_HudEnabled(hud_minirankings))
 		return false;	// Don't proceed but still return true for free play above if HUD is disabled.
 
+	if (K_InRaceDuel())
+		return false;
+
 	switch (r_splitscreen)
 	{
 	case 0:
@@ -3229,11 +3249,155 @@ INT32 K_GetTransFlagFromFixed(fixed_t value)
     }
 }
 
+static tic_t duel_lastleveltime = 0;
+static INT32 youheight = 0;
+
+static void K_drawKartDuelScores(void)
+{
+	if (!K_InRaceDuel())
+		return;
+
+	using srb2::Draw;
+
+	player_t *foe = K_DuelOpponent(stplyr);
+
+	INT32 basex = 0;
+	INT32 basey = 40;
+	INT32 flags = V_SNAPTOLEFT|V_HUDTRANS|V_SLIDEIN;
+
+	// score bars, here barheight is the size of bars at tied score
+	INT32 barx = 8;
+	INT32 bary = 61;
+	INT32 barheight = 48;
+	INT32 barwidth = 6;
+
+	// portraits
+	INT32 foex = 16;
+	INT32 foey = 21;
+	INT32 youx = 16;
+	INT32 youy = 85;
+
+	// scores
+	INT32 foescorex = 16;
+	INT32 foescorey = 38;
+	INT32 youscorex = 16;
+	INT32 youscorey = 69;
+
+	Draw::Font scorefont = Draw::Font::kThinTimer;
+
+	UINT8 ri = 6;
+	INT32 youfill = skincolors[stplyr->skincolor].ramp[ri];
+	INT32 foefill = skincolors[foe->skincolor].ramp[ri];
+
+	INT32 margin = std::min(overtimecheckpoints, (UINT8)5); // Absolutely what the fuck kind of cast.
+
+	V_DrawScaledPatch(basex, basey, flags, kp_duel_sticker);
+
+	INT32 scoredelta = stplyr->duelscore - foe->duelscore;
+	INT32 clutchscore = DUELWINNINGSCORE - 1; // we want the bar to be full when NEXT checkpoint wins...
+	INT32 savemargin = 3 + ((leveltime/2)%2); // ...minus a little bit.
+
+	INT32 targetyouheight = barheight*abs(clutchscore+scoredelta)/clutchscore;
+
+	if (targetyouheight == 0)
+	{
+		targetyouheight = savemargin;
+	}
+	else if (targetyouheight >= 2*barheight)
+	{
+		targetyouheight = 2*barheight - savemargin;
+	}
+
+	if (leveltime != duel_lastleveltime)
+	{
+		if (targetyouheight > youheight)
+			youheight++;
+		else if (targetyouheight < youheight)
+			youheight--;
+	}
+	duel_lastleveltime = leveltime;
+
+	INT32 foeheight = 2*barheight-youheight; // barheight is a single tied bar, so total height of the full gauge is 2x barheight
+
+	V_DrawFill(basex+barx, basey+bary-barheight, barwidth, foeheight, foefill|flags);
+	V_DrawFill(basex+barx, basey+bary-barheight+foeheight, barwidth, youheight, youfill|flags);
+
+	V_DrawScaledPatch(basex, basey, flags, kp_duel_under);
+	V_DrawScaledPatch(basex, basey-barheight+foeheight, flags, kp_duel_over);
+	V_DrawScaledPatch(basex, basey, flags, kp_duel_foe);
+	V_DrawScaledPatch(basex, basey, flags, kp_duel_you);
+
+	Draw foenum = Draw(basex+foescorex, basey+foescorey).flags(flags).font(scorefont).align(Draw::Align::kLeft);
+	Draw younum = Draw(basex+youscorex, basey+youscorey).flags(flags).font(scorefont).align(Draw::Align::kLeft);
+
+	if (abs(scoredelta) == clutchscore && ((leveltime % 2) || cv_reducevfx.value))
+	{
+		if (foe->duelscore > stplyr->duelscore)
+			foenum = foenum.colorize(SKINCOLOR_GOLD);
+		else
+			younum = younum.colorize(SKINCOLOR_GOLD);
+	}
+
+	foenum.text("{:01}", foe->duelscore%10);
+	younum.text("{:01}", stplyr->duelscore%10);	
+
+	// minirankings shamelessly copypasted because i know that shit works already
+	// and SURELY we will never need to use this somewhere else, right?
+
+	UINT8 workingskin;
+	UINT8 *colormap;
+	INT32 xoff, yoff, flipflag, skinflags;
+
+	for (UINT8 draw = 0; draw < 2; draw++)
+	{
+		UINT8 drawme = draw ? (stplyr - players) : (foe - players);
+		UINT8 drawx = basex + (draw ? youx : foex);
+		UINT8 drawy = basey + (draw ? youy : foey);
+	
+		if (!playeringame[drawme] || players[drawme].spectator)
+			continue;
+
+		if (!players[drawme].mo || P_MobjWasRemoved(players[drawme].mo))
+			continue;
+
+		skinflags = (demo.playback)
+			? demo.skinlist[demo.currentskinid[drawme]].flags
+			: skins[players[drawme].skin].flags;
+
+		// Flip SF_IRONMAN portraits, but only if they're transformed
+		if (skinflags & SF_IRONMAN
+			&& !(players[drawme].charflags & SF_IRONMAN) )
+		{
+			flipflag = V_FLIP|V_VFLIP; // blonic flip
+			xoff = yoff = 16;
+		} else
+		{
+			flipflag = 0;
+			xoff = yoff = 0;
+		}
+
+		if ((skin_t*)players[drawme].mo->skin)
+			workingskin = (skin_t*)players[drawme].mo->skin - skins;
+		else
+			workingskin = players[drawme].skin;
+
+		colormap = R_GetTranslationColormap(workingskin, static_cast<skincolornum_t>(players[drawme].mo->color), GTC_CACHE);
+		if (players[drawme].mo->colorized)
+			colormap = R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(players[drawme].mo->color), GTC_CACHE);
+		else
+			colormap = R_GetTranslationColormap(workingskin, static_cast<skincolornum_t>(players[drawme].mo->color), GTC_CACHE);
+
+		V_DrawMappedPatch(drawx+xoff, drawy+yoff, flags|flipflag, faceprefix[workingskin][FACE_RANK], colormap);
+	}
+
+	V_DrawScaledPatch(basex, basey, flags, kp_duel_margin[margin]);
+}
+
 static INT32 easedallyscore = 0;
 static tic_t scorechangecooldown = 0;
 // Mildly ugly. Don't want to export this to khud when it's so nicely handled here,
 // but HUD hooks run at variable timing based on your actual framerate.
-static tic_t lastleveltime = 0;
+static tic_t teams_lastleveltime = 0;
 
 static void K_drawKartTeamScores(void)
 {
@@ -3360,7 +3524,7 @@ static void K_drawKartTeamScores(void)
 	}
 	else
 	{
-		if (lastleveltime != leveltime) // Timing consistency
+		if (teams_lastleveltime != leveltime) // Timing consistency
 		{
 			INT32 delta = abs(easedallyscore - allyscore); // how wrong is display score?
 			
@@ -3387,7 +3551,7 @@ static void K_drawKartTeamScores(void)
 		enemyscore = totalscore - allyscore;
 	}
 
-	lastleveltime = leveltime;
+	teams_lastleveltime = leveltime;
 
 	fixed_t enemypercent = FixedDiv(enemyscore*FRACUNIT, totalscore*FRACUNIT);
 	// fixed_t allypercent = FixedDiv(allyscore*FRACUNIT, totalscore*FRACUNIT);
@@ -3542,19 +3706,6 @@ static boolean K_drawKartLaps(void)
 	// Jesus Christ.
 	// I do not understand the way this system of offsets is laid out at all,
 	// so it's probably going to be pretty bad to maintain. Sorry.
-
-	if (K_InRaceDuel())
-	{
-		UINT32 flashflag = (stplyr->duelscore >= 0) ? V_BLUEMAP : V_REDMAP;
-		if (leveltime % 2)
-			if (abs(stplyr->duelscore) >= 2)
-				flashflag = V_YELLOWMAP;
-
-		if (stplyr->duelscore >= 0)
-			V_DrawCenteredString(BASEVIDWIDTH/2, 5, flashflag, va("+%d", stplyr->duelscore));
-		else
-			V_DrawCenteredString(BASEVIDWIDTH/2, 5, flashflag, va("%d", stplyr->duelscore));
-	}
 
 	boolean drawinglaps = (numlaps != 1 && !K_InRaceDuel() && displayEXP != UINT16_MAX);
 
@@ -7266,9 +7417,14 @@ void K_drawKartHUD(void)
 				K_drawKartTeamScores();
 			}
 
+			if (K_InRaceDuel())
+			{
+				K_drawKartDuelScores();
+			}
+
 			if (LUA_HudEnabled(hud_gametypeinfo))
 			{
-				if (gametyperules & GTR_CIRCUIT)
+				if (gametyperules & GTR_CIRCUIT && !K_InRaceDuel())
 				{
 					K_drawKartLaps();
 					gametypeinfoshown = true;

@@ -4294,13 +4294,9 @@ void K_CheckpointCrossAward(player_t *player)
 			S_StartSound(NULL, sfx_gsha6);
 		}
 
-		for (UINT8 i = 0; i < MAXPLAYERS; i++)
-		{
-			if (playeringame[i] && !players[i].spectator && &players[i] != player)
-				players[i].duelscore -= 1;
-		}
+		player_t *opp = K_DuelOpponent(player);
 
-		if (player->duelscore == DUELWINNINGSCORE)
+		if (player->duelscore - opp->duelscore == DUELWINNINGSCORE)
 		{
 			player_t *opp = K_DuelOpponent(player);
 			opp->position = 2;
