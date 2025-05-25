@@ -214,6 +214,10 @@ void K_UpdatePowerLevels(player_t *player, UINT8 lap, boolean forfeit)
 	CONS_Debug(DBG_PWRLV, "========\n");
 
 	yourPower = clientpowerlevels[playerNum][powerType];
+
+	if (K_InRaceDuel())
+		yourPower += clientPowerAdd[playerNum];
+
 	if (yourPower == 0)
 	{
 		// Guests don't record power level changes.
@@ -257,6 +261,9 @@ void K_UpdatePowerLevels(player_t *player, UINT8 lap, boolean forfeit)
 		CONS_Debug(DBG_PWRLV, "%s VS %s:\n", player_names[playerNum], player_names[i]);
 
 		theirPower = clientpowerlevels[i][powerType];
+		if (K_InRaceDuel())
+			theirPower += clientPowerAdd[i];
+
 		if (theirPower == 0)
 		{
 			// No power level (splitscreen guests, bots)
@@ -302,14 +309,9 @@ void K_UpdatePowerLevels(player_t *player, UINT8 lap, boolean forfeit)
 		{
 			INT16 prevInc = inc;
 
-			// Long duels mean players were closer. Less PWR changes hands when there's a lot of back-and-forth.
-			INT32 winnerscore = (yourScore > theirScore) ? player->duelscore : players[i].duelscore;
-			INT32 divisor = 1;
-
-			if (winnerscore > DUELWINNINGSCORE) // Opponent scored at least one point.
-				divisor += (winnerscore - DUELWINNINGSCORE);
-
-			inc /= divisor;
+			// INT32 winnerscore = (yourScore > theirScore) ? player->duelscore : players[i].duelscore;
+			INT32 multiplier = 2;
+			inc *= multiplier;
 
 			if (inc == 0)
 			{
@@ -323,7 +325,9 @@ void K_UpdatePowerLevels(player_t *player, UINT8 lap, boolean forfeit)
 				}
 			}
 
-			CONS_Debug(DBG_PWRLV, "DUELING: Reduced (%d / %d = %d)\n", prevInc, divisor, inc);
+			// CONS_Printf("%s PWR UPDATE: %d\n", player_names[player - players], inc);
+
+			CONS_Debug(DBG_PWRLV, "DUELING: Boosted (%d * %d = %d)\n", prevInc, multiplier, inc);
 		}
 		else
 		{
@@ -431,7 +435,7 @@ INT16 K_FinalPowerIncrement(player_t *player, INT16 yourPower, INT16 baseInc)
 
 	if (inc <= 0)
 	{
-		if (player->position == 1 && numPlayers > 1)
+		if (player->position == 1 && numPlayers > 1 && !(K_InRaceDuel()))
 		{
 			// Won the whole match?
 			// Get at least one point.

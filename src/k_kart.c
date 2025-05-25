@@ -4283,7 +4283,6 @@ void K_CheckpointCrossAward(player_t *player)
 	if (K_InRaceDuel() && player->position == 1)
 	{
 		player->duelscore += 1;
-		K_UpdatePowerLevels(player, player->laps, false);
 
 		if (leveltime > (tic_t)(TICRATE*DUELOVERTIME))
 		{
@@ -11159,6 +11158,7 @@ static void K_UpdatePlayerWaypoints(player_t *const player)
 		player->respawn.state == RESPAWNST_NONE && // Respawning should be a full reset.
 		old_currentwaypoint != NULL && // So should touching the first waypoint ever.
 		player->laps != 0 && // POSITION rooms may have unorthodox waypoints to guide bots.
+		player->exiting == 0 && // What the fuck? Why do duels antiskip the bot?
 		!(player->pflags & PF_TRUSTWAYPOINTS)) // Special exception.
 	{
 		extern consvar_t cv_debuglapcheat;
