@@ -52,6 +52,17 @@ menuitem_t OPTIONS_Gameplay[] =
 		NULL, {.cvar = &cv_kartbumpers}, 0, 0},
 
 
+
+	{IT_HEADER, "Duel...", NULL,
+		NULL, {NULL}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Duel Time Limit", "How long it takes for Margin Boost to kick in (seconds).",
+		NULL, {.cvar = &cv_dueltimelimit}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Duel Score Limit", "How many points a player must be ahead to win a Duel.",
+		NULL, {.cvar = &cv_duelscorelimit}, 0, 0},
+
+
 	{IT_SPACE | IT_DYBIGSPACE, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 

@@ -297,9 +297,10 @@ boolean franticitems; // Frantic items currently enabled?
 boolean g_teamplay;
 
 // Voting system
-UINT16 g_voteLevels[4][2]; // Levels that were rolled by the host
+UINT16 g_voteLevels[VOTE_NUM_LEVELS][2]; // Levels that were rolled by the host
 SINT8 g_votes[VOTE_TOTAL]; // Each player's vote
 SINT8 g_pickedVote; // What vote the host rolls
+boolean g_votes_striked[VOTE_NUM_LEVELS]; // Which levels were striked from votes?
 
 // Server-sided, synched variables
 tic_t wantedcalcdelay; // Time before it recalculates WANTED
@@ -311,6 +312,7 @@ SINT8 spbplace; // SPB exists, give the person behind better items
 boolean rainbowstartavailable; // Boolean, keeps track of if the rainbow start was gotten
 tic_t linecrossed; // For Time Attack
 boolean inDuel; // Boolean, keeps track of if it is a 1v1
+UINT8 overtimecheckpoints; // Duel overtime speedups!
 
 // Client-sided, unsynched variables (NEVER use in anything that needs to be synced with other players)
 tic_t bombflashtimer = 0;	// Cooldown before another FlashPal can be intialized by a bomb exploding near a displayplayer. Avoids seizures.
@@ -3868,6 +3870,12 @@ tryAgain:
 		if (numPlayers > mapheaderinfo[i]->playerLimit)
 		{
 			// Too many players for this map.
+			continue;
+		}
+
+		if (numPlayers == 2 && gametype == GT_RACE && ((mapheaderinfo[i]->levelflags & LF_SECTIONRACE) == LF_SECTIONRACE))
+		{
+			// Duel doesn't support sprints.
 			continue;
 		}
 

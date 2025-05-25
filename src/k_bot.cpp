@@ -2067,6 +2067,11 @@ void K_UpdateBotGameplayVars(player_t *player)
 	if (cv_levelskull.value)
 		player->botvars.difficulty = MAXBOTDIFFICULTY;
 
+	if (K_InRaceDuel())
+		player->botvars.rival = true;
+	else if (grandprixinfo.gp != true)
+		player->botvars.rival = false;
+
 	player->botvars.rubberband = K_UpdateRubberband(player);
 
 	player->botvars.turnconfirm += player->cmd.bot.turnconfirm;

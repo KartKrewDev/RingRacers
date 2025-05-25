@@ -119,6 +119,27 @@ boolean K_DuelItemAlwaysSpawns(mapthing_t *mt)
 	return !!(mt->thing_args[0]);
 }
 
+boolean K_InRaceDuel(void)
+{
+	return (inDuel && (gametyperules & GTR_CIRCUIT) && !(mapheaderinfo[gamemap-1]->levelflags & LF_SECTIONRACE)) && !specialstageinfo.valid;
+}
+
+player_t *K_DuelOpponent(player_t *player)
+{
+	if (!K_InRaceDuel())
+		return player; // ????
+	else
+	{
+		for (UINT8 i = 0; i < MAXPLAYERS; i++)
+		{
+			if (playeringame[i] && !players[i].spectator && player - players != i)
+				return &players[i];
+		}
+	}
+
+	return player; // ????????????
+}
+
 static void K_SpawnDuelOnlyItems(void)
 {
 	mapthing_t *mt = NULL;
@@ -145,6 +166,7 @@ void K_TimerReset(void)
 	numbulbs = 1;
 	inDuel = rainbowstartavailable = false;
 	linecrossed = 0;
+	overtimecheckpoints = 0;
 	timelimitintics = extratimeintics = secretextratime = 0;
 	g_pointlimit = 0;
 }
@@ -273,6 +295,9 @@ void K_TimerInit(void)
 					introtime = (108) + 5; // 108 for rotation, + 5 for white fade
 					numbulbs += (numPlayers-2); // Extra POSITION!! time
 				}
+
+				if (K_InRaceDuel())
+					numlaps = 99;
 			}
 		}
 
@@ -471,7 +496,10 @@ fixed_t K_GetKartGameSpeedScalar(SINT8 value)
 	if (cv_4thgear.value && !netgame && (!demo.playback || !demo.netgame) && !modeattacking)
 		value = 3;
 
-	return ((13 + (3*value)) << FRACBITS) / 16;
+	fixed_t base = ((13 + (3*value)) << FRACBITS) / 16;
+	fixed_t duel = overtimecheckpoints*(1<<FRACBITS)/16;
+
+	return base + duel;
 }
 
 // Array of states to pick the starting point of the animation, based on the actual time left for invincibility.
@@ -4250,6 +4278,92 @@ void K_CheckpointCrossAward(player_t *player)
 		player->cangrabitems = 1;
 	
 	K_AwardPlayerRings(player, (player->bot ? 20 : 10), true);
+
+	// Update Duel scoring.
+	if (K_InRaceDuel() && player->position == 1)
+	{
+		player->duelscore += 1;
+
+		if (leveltime > (tic_t)(TICRATE*DUELOVERTIME))
+		{
+			overtimecheckpoints++;
+			if (overtimecheckpoints > 1)
+			{
+				K_AddMessage(va("Margin Boost x%d!", overtimecheckpoints), true, false);
+			}
+			else
+			{
+				K_AddMessage("Margin Boost!", true, false);
+				g_darkness.start = leveltime;
+				g_darkness.end = INT32_MAX;
+				for (UINT8 i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+				{
+					g_darkness.value[i] = FRACUNIT;
+				}
+			}
+
+			S_StartSound(NULL, sfx_gsha6);
+		}
+
+		player_t *opp = K_DuelOpponent(player);
+		boolean clutch = (player->duelscore - opp->duelscore == (DUELWINNINGSCORE-1));
+		boolean win = (player->duelscore - opp->duelscore == DUELWINNINGSCORE);
+
+		if (!win)
+		{
+			for (UINT8 i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+			{
+				player_t *check = &players[displayplayers[i]];
+				if (check == player)
+				{
+					S_StartSound(NULL, sfx_mbs45);
+					if (clutch)
+						S_StartSoundAtVolume(NULL, sfx_s3k9c, 170);
+				}
+
+				else if (check == opp)
+				{
+					S_StartSound(NULL, sfx_mbs60);
+					if (clutch)
+						S_StartSoundAtVolume(NULL, sfx_kc4b, 150);
+				}
+
+			}
+		}
+
+		if (player->duelscore - opp->duelscore == DUELWINNINGSCORE)
+		{
+			opp->position = 2;
+			player->position = 1;
+
+			if (opp->distancetofinish - player->distancetofinish < 200) // Setting player.exiting changes distance reporting, check these first!
+			{
+				K_StartRoundWinCamera(
+					player->mo,
+					player->angleturn + ANGLE_180,
+					400*mapobjectscale,
+					6*TICRATE,
+					FRACUNIT/16
+				);
+			}
+
+			S_StartSound(NULL, sfx_s3k6a);
+			P_DoPlayerExit(player, 0);
+			P_DoAllPlayersExit(PF_NOCONTEST, 0);
+		}
+		else
+		{
+			// Doing this here because duel exit is a weird path, and we don't want to transform for endcam.
+			UINT32 skinflags = (demo.playback)
+					? demo.skinlist[demo.currentskinid[(player-players)]].flags
+					: skins[player->skin].flags;
+			if (skinflags & SF_IRONMAN)
+			{
+				SetRandomFakePlayerSkin(player, true, false);
+			}
+		}
+	}
+
 }
 
 boolean K_Overdrive(player_t *player)
@@ -10996,7 +11110,7 @@ static void K_UpdateDistanceFromFinishLine(player_t *const player)
 				const mapheader_t *mapheader = mapheaderinfo[gamemap - 1];
 				if ((mapheader->levelflags & LF_SECTIONRACE) == 0U)
 				{
-					const UINT8 numfulllapsleft = ((UINT8)numlaps - player->laps) / mapheader->lapspersection;
+					UINT8 numfulllapsleft = ((UINT8)numlaps - player->laps) / mapheader->lapspersection;
 					player->distancetofinish += numfulllapsleft * K_GetCircuitLength();
 				}
 			}
@@ -11044,6 +11158,7 @@ static void K_UpdatePlayerWaypoints(player_t *const player)
 		player->respawn.state == RESPAWNST_NONE && // Respawning should be a full reset.
 		old_currentwaypoint != NULL && // So should touching the first waypoint ever.
 		player->laps != 0 && // POSITION rooms may have unorthodox waypoints to guide bots.
+		player->exiting == 0 && // What the fuck? Why do duels antiskip the bot?
 		!(player->pflags & PF_TRUSTWAYPOINTS)) // Special exception.
 	{
 		extern consvar_t cv_debuglapcheat;
@@ -12042,6 +12157,11 @@ void K_KartUpdatePosition(player_t *player)
 
 			realplayers++;
 		}
+	}
+	else if (K_InRaceDuel() && player->exiting)
+	{
+		// Positions directly set in K_CheckpointCrossAward, don't touch.
+		return;
 	}
 	else
 	{

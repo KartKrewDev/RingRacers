@@ -2212,6 +2212,35 @@ boolean Y_ShouldDoIntermission(void)
 }
 
 //
+// Y_GetIntermissionType
+//
+// Returns the intermission type from the current gametype.
+//
+intertype_t Y_GetIntermissionType(void)
+{
+	intertype_t ret = static_cast<intertype_t>(gametypes[gametype]->intermission);
+
+	if (ret == int_scoreortimeattack)
+	{
+		UINT8 i = 0, nump = 0;
+
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (!playeringame[i] || players[i].spectator)
+			{
+				continue;
+			}
+
+			nump++;
+		}
+
+		ret = (nump < 2 ? int_time : int_score);
+	}
+
+	return ret;
+}
+
+//
 // Y_DetermineIntermissionType
 //
 // Determines the intermission type from the current gametype.
@@ -2225,21 +2254,7 @@ void Y_DetermineIntermissionType(void)
 		return;
 	}
 
-	// set initially
-	intertype = static_cast<intertype_t>(gametypes[gametype]->intermission);
-
-	// special cases
-	if (intertype == int_scoreortimeattack)
-	{
-		UINT8 i = 0, nump = 0;
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (!playeringame[i] || players[i].spectator)
-				continue;
-			nump++;
-		}
-		intertype = (nump < 2 ? int_time : int_score);
-	}
+	intertype = Y_GetIntermissionType();
 }
 
 static UINT8 Y_PlayersBestPossiblePosition(player_t *const player)
