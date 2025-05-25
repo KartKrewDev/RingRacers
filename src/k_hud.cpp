@@ -3295,7 +3295,13 @@ static void K_drawKartDuelScores(void)
 
 	INT32 scoredelta = stplyr->duelscore - foe->duelscore;
 	INT32 clutchscore = DUELWINNINGSCORE - 1; // we want the bar to be full when NEXT checkpoint wins...
-	INT32 savemargin = 3 + ((leveltime/2)%2); // ...minus a little bit.
+	INT32 savemargin = 3; // ...minus a little bit.
+
+	if (leveltime/(TICRATE/2) % 2)
+		savemargin += ((leveltime/2)%2);
+
+	if (clutchscore == 0)
+		clutchscore = 1; // Fuck it, just don't crash
 
 	INT32 targetyouheight = barheight*abs(clutchscore+scoredelta)/clutchscore;
 
