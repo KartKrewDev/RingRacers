@@ -3345,7 +3345,7 @@ static void K_drawKartDuelScores(void)
 			younum = younum.colorize(SKINCOLOR_GOLD);
 	}
 
-	foenum.text("{}", foe->duelscore)
+	foenum.text("{}", foe->duelscore);
 	younum.text("{}", stplyr->duelscore);	
 
 	// minirankings shamelessly copypasted because i know that shit works already
