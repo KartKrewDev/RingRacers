@@ -3870,6 +3870,12 @@ tryAgain:
 			continue;
 		}
 
+		if (numPlayers == 2 && gametype == GT_RACE && ((mapheaderinfo[i]->levelflags & LF_SECTIONRACE) == LF_SECTIONRACE))
+		{
+			// Duel doesn't support sprints.
+			continue;
+		}
+
 		// Only care about restrictions if the host is a listen server.
 		if (!dedicated)
 		{

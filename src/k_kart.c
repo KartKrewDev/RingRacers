@@ -4288,9 +4288,20 @@ void K_CheckpointCrossAward(player_t *player)
 		{
 			overtimecheckpoints++;
 			if (overtimecheckpoints > 1)
+			{
 				K_AddMessage(va("Margin Boost x%d!", overtimecheckpoints), true, false);
+			}
 			else
+			{
 				K_AddMessage("Margin Boost!", true, false);
+				g_darkness.start = leveltime;
+				g_darkness.end = INT32_MAX;
+				for (UINT8 i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+				{
+					g_darkness.value[i] = FRACUNIT;
+				}
+			}
+
 			S_StartSound(NULL, sfx_gsha6);
 		}
 
