@@ -2175,7 +2175,9 @@ void Y_Ticker(void)
 						// Basic bitch points
 						if (data.increase[data.num[q]])
 						{
-							if (std::max(0,data.increase[data.num[q]]-3))
+							data.increase[data.num[q]] = std::max(data.increase[data.num[q]] - 3, 0);
+
+							if (data.increase[data.num[q]] != 0)
 								kaching = false;
 						}
 					}
