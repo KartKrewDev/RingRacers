@@ -1858,7 +1858,10 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 				&& (gamespeed != KARTSPEED_EASY)
 				&& (player->tally.active == true)
 				&& (player->tally.totalExp > 0) // Only true if not Time Attack
-				&& (player->tally.exp >= player->tally.totalExp));
+				&& (
+					(player->tally.exp >= player->tally.totalExp)
+					|| (K_InRaceDuel() && player->duelscore == DUELWINNINGSCORE)
+				);
 		case UCRP_FINISHALLPRISONS:
 			return (battleprisons
 				&& !(player->pflags & PF_NOCONTEST)
