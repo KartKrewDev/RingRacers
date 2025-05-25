@@ -2066,24 +2066,32 @@ static void K_HandleLapIncrement(player_t *player)
 
 			if (rainbowstartavailable == true && player->mo->hitlag == 0)
 			{
-				S_StartSound(player->mo, sfx_s23c);
-				player->startboost = 125;
-
-				K_SpawnDriftBoostExplosion(player, 4);
-				K_SpawnDriftElectricSparks(player, SKINCOLOR_SILVER, false);
-				K_SpawnAmps(player, (K_InRaceDuel()) ? 20 : 35, player->mo);
-
-				if (g_teamplay)
+				if (K_InRaceDuel())
 				{
-					for (UINT8 j = 0; i < MAXPLAYERS; i++)
+					K_SpawnDriftElectricSparks(player, player->skincolor, false);
+					K_SpawnAmps(player, 20, player->mo);
+				}
+				else
+				{
+					S_StartSound(player->mo, sfx_s23c);
+					player->startboost = 125;
+
+					K_SpawnDriftBoostExplosion(player, 4);
+					K_SpawnDriftElectricSparks(player, SKINCOLOR_SILVER, false);
+					K_SpawnAmps(player, (K_InRaceDuel()) ? 20 : 35, player->mo);
+
+					if (g_teamplay)
 					{
-						if (!playeringame[j] || players[j].spectator || !players[j].mo || P_MobjWasRemoved(players[j].mo))
-							continue;
-						if (!G_SameTeam(player, &players[j]))
-							continue;
-						if (player == &players[j])
-							continue;
-						K_SpawnAmps(&players[j], 10, player->mo);
+						for (UINT8 j = 0; i < MAXPLAYERS; i++)
+						{
+							if (!playeringame[j] || players[j].spectator || !players[j].mo || P_MobjWasRemoved(players[j].mo))
+								continue;
+							if (!G_SameTeam(player, &players[j]))
+								continue;
+							if (player == &players[j])
+								continue;
+							K_SpawnAmps(&players[j], 10, player->mo);
+						}
 					}
 				}
 
