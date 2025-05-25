@@ -584,6 +584,11 @@ void Obj_CheckpointThink(mobj_t* end)
 
 void Obj_CrossCheckpoints(player_t* player, fixed_t old_x, fixed_t old_y)
 {
+	if (player->exiting) // can't cross checkpoints when exiting
+	{
+		return;
+	}
+	
 	LineOnDemand ray(old_x, old_y, player->mo->x, player->mo->y, player->mo->radius);
 
 	auto it = std::find_if(
