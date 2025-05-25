@@ -19,6 +19,7 @@
 #include "k_grandprix.h"
 #include "k_profiles.h"
 #include "k_serverstats.h"
+#include "k_kart.h" // K_InRaceDuel
 
 // Client-sided calculations done for Power Levels.
 // This is done so that clients will never be able to hack someone else's score over the server.
@@ -225,6 +226,8 @@ void K_UpdatePowerLevels(player_t *player, UINT8 lap, boolean forfeit)
 	CONS_Debug(DBG_PWRLV, "%s's gametype score: %d\n", player_names[playerNum], yourScore);
 
 	CONS_Debug(DBG_PWRLV, "========\n");
+
+	boolean dueling = K_InRaceDuel();
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		UINT16 theirScore = 0;
@@ -295,11 +298,18 @@ void K_UpdatePowerLevels(player_t *player, UINT8 lap, boolean forfeit)
 			}
 		}
 
-		if (exitBonus == false)
+		if (dueling && !forfeit)
 		{
 			INT16 prevInc = inc;
 
-			inc /= max(numlaps-1, 1);
+			// Long duels mean players were closer. Less PWR changes hands when there's a lot of back-and-forth.
+			INT32 winnerscore = (yourScore > theirScore) ? player->duelscore : players[i].duelscore;
+			INT32 divisor = DUELWINNINGSCORE;
+
+			if (winnerscore > DUELWINNINGSCORE) // Opponent scored at least one point.
+				divisor += 2*(winnerscore - DUELWINNINGSCORE);
+
+			inc /= divisor;
 
 			if (inc == 0)
 			{
@@ -313,7 +323,30 @@ void K_UpdatePowerLevels(player_t *player, UINT8 lap, boolean forfeit)
 				}
 			}
 
-			CONS_Debug(DBG_PWRLV, "Reduced (%d / %d = %d) because it's not the end of the race\n", prevInc, numlaps, inc);
+			CONS_Debug(DBG_PWRLV, "DUELING: Reduced (%d / %d = %d)\n", prevInc, divisor, inc);
+		}
+		else
+		{
+			if (exitBonus == false)
+			{
+				INT16 prevInc = inc;
+
+				inc /= max(numlaps-1, 1);
+
+				if (inc == 0)
+				{
+					if (prevInc > 0)
+					{
+						inc = 1;
+					}
+					else if (prevInc < 0)
+					{
+						inc = -1;
+					}
+				}
+
+				CONS_Debug(DBG_PWRLV, "Reduced (%d / %d = %d) because it's not the end of the race\n", prevInc, numlaps, inc);
+			}
 		}
 
 		CONS_Debug(DBG_PWRLV, "========\n");
@@ -345,6 +378,10 @@ void K_UpdatePowerLevelsFinalize(player_t *player, boolean onForfeit)
 	// For spectate / quit / NO CONTEST
 	INT16 lapsLeft = 0;
 	UINT8 i;
+
+	// No remaining laps in Duel.
+	if (K_InRaceDuel())
+		return;
 
 	lapsLeft = (numlaps - player->latestlap) + 1;
 

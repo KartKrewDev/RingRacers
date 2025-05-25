@@ -4283,6 +4283,7 @@ void K_CheckpointCrossAward(player_t *player)
 	if (K_InRaceDuel() && player->position == 1)
 	{
 		player->duelscore += 1;
+		K_UpdatePowerLevels(player, player->laps, false);
 
 		if (leveltime > (tic_t)(TICRATE*DUELOVERTIME))
 		{
