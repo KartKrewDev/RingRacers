@@ -298,7 +298,7 @@ void K_UpdatePowerLevels(player_t *player, UINT8 lap, boolean forfeit)
 			}
 		}
 
-		if (dueling && !forfeit)
+		if (dueling)
 		{
 			INT16 prevInc = inc;
 

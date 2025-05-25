@@ -2151,7 +2151,8 @@ static void K_HandleLapIncrement(player_t *player)
 					player->laptime[LAP_CUR] = 0;
 
 					// Update power levels for this lap.
-					K_UpdatePowerLevels(player, player->laps, false);
+					if (!K_InRaceDuel) // we do this in K_CheckpointCrossAward instead
+						K_UpdatePowerLevels(player, player->laps, false);
 
 					K_CheckpointCrossAward(player);
 
