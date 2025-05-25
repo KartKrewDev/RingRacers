@@ -3310,10 +3310,11 @@ static void K_drawKartDuelScores(void)
 
 	if (leveltime != duel_lastleveltime)
 	{
+		INT32 slide = std::max(1, abs(targetyouheight - youheight)/3);
 		if (targetyouheight > youheight)
-			youheight++;
+			youheight += slide;
 		else if (targetyouheight < youheight)
-			youheight--;
+			youheight -= slide;
 	}
 	duel_lastleveltime = leveltime;
 
@@ -5028,7 +5029,7 @@ playertagtype_t K_WhichPlayerTag(player_t *p)
 	}
 	else if (p->bot)
 	{
-		if (p->botvars.rival == true || cv_levelskull.value)
+		if ((p->botvars.rival == true || cv_levelskull.value) && (!K_InRaceDuel()))
 		{
 			return PLAYERTAG_RIVAL;
 		}

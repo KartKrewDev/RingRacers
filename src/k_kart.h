@@ -80,8 +80,8 @@ Make sure this matches the actual number of states
 #define RINGVOLUMEREGEN 1
 #define RINGTRANSPARENCYREGEN 3
 
-#define DUELOVERTIME (3*60*TICRATE)
-#define DUELWINNINGSCORE (3)
+#define DUELOVERTIME (cv_dueltimelimit.value)
+#define DUELWINNINGSCORE (cv_duelscorelimit.value)
 
 #define MIN_WAVEDASH_CHARGE ((11*TICRATE/16)*9)
 

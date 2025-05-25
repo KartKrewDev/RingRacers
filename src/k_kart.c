@@ -4284,7 +4284,7 @@ void K_CheckpointCrossAward(player_t *player)
 	{
 		player->duelscore += 1;
 
-		if (leveltime > DUELOVERTIME)
+		if (leveltime > (tic_t)(TICRATE*DUELOVERTIME))
 		{
 			overtimecheckpoints++;
 			if (overtimecheckpoints > 1)
@@ -4298,7 +4298,6 @@ void K_CheckpointCrossAward(player_t *player)
 
 		if (player->duelscore - opp->duelscore == DUELWINNINGSCORE)
 		{
-			player_t *opp = K_DuelOpponent(player);
 			opp->position = 2;
 			player->position = 1;
 

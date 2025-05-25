@@ -52,6 +52,7 @@ extern consvar_t cv_joyscale[MAXSPLITSCREENPLAYERS];
 
 extern consvar_t cv_pointlimit;
 extern consvar_t cv_timelimit;
+extern consvar_t cv_dueltimelimit, cv_duelscorelimit;
 extern consvar_t cv_numlaps;
 extern UINT32 timelimitintics, extratimeintics, secretextratime;
 extern UINT32 g_pointlimit;
