@@ -304,10 +304,10 @@ void K_UpdatePowerLevels(player_t *player, UINT8 lap, boolean forfeit)
 
 			// Long duels mean players were closer. Less PWR changes hands when there's a lot of back-and-forth.
 			INT32 winnerscore = (yourScore > theirScore) ? player->duelscore : players[i].duelscore;
-			INT32 divisor = DUELWINNINGSCORE;
+			INT32 divisor = 1;
 
 			if (winnerscore > DUELWINNINGSCORE) // Opponent scored at least one point.
-				divisor += 2*(winnerscore - DUELWINNINGSCORE);
+				divisor += (winnerscore - DUELWINNINGSCORE);
 
 			inc /= divisor;
 

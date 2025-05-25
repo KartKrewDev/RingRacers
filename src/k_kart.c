@@ -4307,6 +4307,30 @@ void K_CheckpointCrossAward(player_t *player)
 		}
 
 		player_t *opp = K_DuelOpponent(player);
+		boolean clutch = (player->duelscore - opp->duelscore == (DUELWINNINGSCORE-1));
+		boolean win = (player->duelscore - opp->duelscore == DUELWINNINGSCORE);
+
+		if (!win)
+		{
+			for (UINT8 i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+			{
+				player_t *check = &players[displayplayers[i]];
+				if (check == player)
+				{
+					S_StartSound(NULL, sfx_mbs45);
+					if (clutch)
+						S_StartSoundAtVolume(NULL, sfx_s3k9c, 170);
+				}
+
+				else if (check == opp)
+				{
+					S_StartSound(NULL, sfx_s3k96);
+					if (clutch)
+						S_StartSound(NULL, sfx_s3kbes);
+				}
+
+			}
+		}
 
 		if (player->duelscore - opp->duelscore == DUELWINNINGSCORE)
 		{
