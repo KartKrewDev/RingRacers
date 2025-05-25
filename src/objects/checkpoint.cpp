@@ -495,7 +495,21 @@ struct CheckpointManager
 		else // Checkpoint isn't in the list, find any associated tagged lines and make the pair
 		{
 			if (chk->linetag())
-				lines_.try_emplace(chk->linetag(), tagged_lines(chk->linetag()));
+			{
+				auto lines = tagged_lines(chk->linetag());
+				if (lines.empty())
+				{
+					CONS_Alert(CONS_WARNING, "Checkpoint thing %d, has linetag %d, but no lines found. Please ensure all checkpoints have associated lines.\n", chk->spawnpoint - mapthings, chk->linetag());
+				}
+				else
+				{
+					lines_.try_emplace(chk->linetag(), lines);
+				}
+			}
+			else
+			{
+				CONS_Alert(CONS_WARNING, "Checkpoint thing %d, has no linetag. Please ensure all checkpoint things have a linetag.\n", chk->spawnpoint - mapthings, chk->spawnpoint->type);
+			}
 			list_.push_front(chk);
 			count_ += 1; // Mobjlist can't have a count on it, so we keep it here
 		}
