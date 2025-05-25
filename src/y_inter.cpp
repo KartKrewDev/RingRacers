@@ -951,6 +951,18 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 		i--;
 	}
 	while (true);
+
+	if (standings->rankingsmode)
+	{
+		if (standings->isduel)
+		{
+			Y_DrawRankMode(BASEVIDWIDTH / 2 + xoffset, BASEVIDHEIGHT - 19, true);
+		}
+		else
+		{
+			Y_DrawRankMode(x + 122, returny - yspacing + 7, false);
+		}
+	}
 }
 
 //
@@ -1625,6 +1637,88 @@ void Y_DrawIntermissionButton(INT32 startslide, INT32 through, boolean widescree
 		);
 		*/
 	}
+}
+
+//
+// Y_DrawRankMode
+//
+// Draws EXP or MOBIUMS label depending on context.
+// x and y designate the coordinates of the most bottom-right pixel to draw from (because it is the left extent and patch heights that vary),
+// or the bottom-center if center is true.
+//
+void Y_DrawRankMode(INT32 x, INT32 y, boolean center)
+{
+	boolean	useMobiums = (powertype != PWRLV_DISABLED);
+	INT32	textWidth, middleLeftEdge, middleRightEdge, middleWidth;
+
+	char	text[8];
+	char	iconPatchName[8];
+	UINT8	iconWidth; // the graphic paddings are inconsistent...
+	UINT8	*iconColormap;
+	UINT8	*stickerColormap;
+
+	patch_t	*iconPatch;
+	patch_t	*stickerTail = static_cast<patch_t*>(W_CachePatchName("INT_STK1", PU_CACHE));
+	patch_t	*stickerMiddle = static_cast<patch_t*>(W_CachePatchName("INT_STK2", PU_CACHE));
+	patch_t	*stickerHead = center ? stickerTail : static_cast<patch_t*>(W_CachePatchName("INT_STK3", PU_CACHE));
+	UINT32	stickerHeadFlags = 0;
+	UINT8	stickerHeadOffset = 0;
+
+	if (useMobiums)
+	{
+		snprintf(text, sizeof text, "MOBIUMS");
+		snprintf(iconPatchName, sizeof iconPatchName, "K_STMOB");
+		iconWidth = 22;
+		iconColormap = R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(SKINCOLOR_NONE), GTC_CACHE);
+		stickerColormap = R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(SKINCOLOR_TEA), GTC_CACHE);
+	}
+	else
+	{
+		snprintf(text, sizeof text, "EXP");
+		snprintf(iconPatchName, sizeof iconPatchName, "K_STEXP");
+		iconWidth = 16;
+		iconColormap = R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(SKINCOLOR_MUSTARD), GTC_CACHE);
+		stickerColormap = R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(SKINCOLOR_MUSTARD), GTC_CACHE);
+	}
+
+	iconPatch = static_cast<patch_t*>(W_CachePatchName(iconPatchName, PU_CACHE));
+	textWidth = (INT32)V_ThinStringWidth(text, 0);
+	middleLeftEdge = x - iconWidth - textWidth - 8;
+	middleRightEdge = x - stickerHead->width;
+	middleWidth = middleRightEdge - middleLeftEdge;
+
+	if (center)
+	{
+		// flip the right-hand sticker tail and keep it left-aligned
+		stickerHeadFlags |= V_FLIP;
+		stickerHeadOffset += stickerHead->width;
+
+		// sliiightly extend the right side of the sticker
+		middleWidth += 2;
+		middleRightEdge += 2;
+
+		// shift all components to the right so that our x coordinates are center-aligned
+		#define CENTER_SHIFT (stickerHead->width + middleWidth / 2)
+		x += CENTER_SHIFT;
+		middleLeftEdge += CENTER_SHIFT;
+		middleRightEdge += CENTER_SHIFT;
+		#undef CENTER_SHIFT
+	}
+
+	// draw sticker
+	V_DrawMappedPatch(middleRightEdge + stickerHeadOffset, y - stickerHead->height, stickerHeadFlags, stickerHead, stickerColormap);
+	V_DrawStretchyFixedPatch(
+		middleLeftEdge << FRACBITS,
+		(y - stickerMiddle->height) << FRACBITS,
+		(middleWidth << FRACBITS) / stickerMiddle->width + 1,
+		FRACUNIT,
+		0, stickerMiddle, stickerColormap
+	);
+	V_DrawMappedPatch(middleLeftEdge - stickerTail->width, y - stickerTail->height, 0, stickerTail, stickerColormap);
+
+	// draw icon and text
+	V_DrawMappedPatch(x - iconPatch->width - 6, y - iconPatch->height + 4, 0, iconPatch, iconColormap);
+	V_DrawThinString(middleLeftEdge - 1, y - 9, 0, text);
 }
 
 void Y_DrawIntermissionHeader(fixed_t x, fixed_t y, boolean gotthrough, const char *headerstring, boolean showroundnum, boolean small)

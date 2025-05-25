@@ -728,7 +728,7 @@ consvar_t cv_kartspeed = UnsavedNetVar("gamespeed", "Auto Gear").values(kartspee
 
 consvar_t cv_teamplay = UnsavedNetVar("teamplay", "Off").on_off();
 
-consvar_t cv_kartusepwrlv = UnsavedNetVar("usepwrlv", "Yes").yes_no();
+consvar_t cv_kartusepwrlv = UnsavedNetVar("mobiums", "Yes").yes_no();
 
 void LiveStudioAudience_OnChange(void);
 #ifdef DEVELOP
