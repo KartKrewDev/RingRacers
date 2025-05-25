@@ -9112,7 +9112,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				&& (newplayer->tally.totalExp > 0) // Only true if not Time Attack
 				&& (
 					(newplayer->tally.exp >= newplayer->tally.totalExp) ||
-					(K_InRaceDuel() && newplayer->duelscore = DUELWINNINGSCORE)
+					(K_InRaceDuel() && newplayer->duelscore == DUELWINNINGSCORE)
 				)
 			)
 			{

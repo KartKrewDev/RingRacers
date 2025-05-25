@@ -1861,7 +1861,7 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 				&& (
 					(player->tally.exp >= player->tally.totalExp)
 					|| (K_InRaceDuel() && player->duelscore == DUELWINNINGSCORE)
-				);
+				));
 		case UCRP_FINISHALLPRISONS:
 			return (battleprisons
 				&& !(player->pflags & PF_NOCONTEST)
