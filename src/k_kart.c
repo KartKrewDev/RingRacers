@@ -4324,9 +4324,9 @@ void K_CheckpointCrossAward(player_t *player)
 
 				else if (check == opp)
 				{
-					S_StartSound(NULL, sfx_s3k96);
+					S_StartSound(NULL, sfx_mbs60);
 					if (clutch)
-						S_StartSound(NULL, sfx_s3kbes);
+						S_StartSoundAtVolume(NULL, sfx_kc4b, 150);
 				}
 
 			}
