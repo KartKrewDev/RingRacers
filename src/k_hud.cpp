@@ -6715,10 +6715,8 @@ static void K_DrawGPRankDebugger(void)
 
 	V_DrawThinString(0, 0, V_SNAPTOTOP|V_SNAPTOLEFT,
 		va("POS: %d / %d", grandprixinfo.rank.position, RANK_NEUTRAL_POSITION));
-	V_DrawThinString(0, 10, V_SNAPTOTOP|V_SNAPTOLEFT,
-		va("PTS: %d / %d", grandprixinfo.rank.winPoints, grandprixinfo.rank.totalPoints));
 	V_DrawThinString(0, 20, V_SNAPTOTOP|V_SNAPTOLEFT,
-		va("LAPS: %d / %d", grandprixinfo.rank.exp, grandprixinfo.rank.totalExp));
+		va("EXP: %d / %d", grandprixinfo.rank.exp, grandprixinfo.rank.totalExp));
 	V_DrawThinString(0, 30, V_SNAPTOTOP|V_SNAPTOLEFT,
 		va("CONTINUES: %d", grandprixinfo.rank.continuesUsed));
 	V_DrawThinString(0, 40, V_SNAPTOTOP|V_SNAPTOLEFT,
