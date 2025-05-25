@@ -2262,6 +2262,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	INT32 kickstartaccel;
 	INT32 checkpointId;
 	boolean enteredGame;
+	tic_t spectatewait;
 	UINT8 lastsafelap;
 	UINT8 lastsafecheatcheck;
 	UINT16 bigwaypointgap;
@@ -2551,6 +2552,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	checkpointId = players[player].checkpointId;
 
 	enteredGame = players[player].enteredGame;
+	spectatewait = players[player].spectatewait;
 
 	p = &players[player];
 	memset(p, 0, sizeof (*p));
@@ -2624,6 +2626,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->karthud[khud_fault] = khudfault;
 	p->kickstartaccel = kickstartaccel;
 	p->checkpointId = checkpointId;
+	p->spectatewait = spectatewait;
 
 	p->ringvolume = 255;
 	p->ringtransparency = 255;
