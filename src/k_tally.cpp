@@ -218,7 +218,7 @@ INT32 level_tally_t::CalculateGrade(void)
 		}
 	}
 
-	const INT32 positionWeight = (position > 0 && numPlayers > 2) ? 50 : 0;
+	const INT32 positionWeight = (position > 0 && numPlayers > 2) ? 20 : 0;
 	const INT32 total = positionWeight + bonusWeights[0] + bonusWeights[1];
 
 	INT32 ours = 0;
@@ -242,10 +242,7 @@ INT32 level_tally_t::CalculateGrade(void)
 			}
 			case TALLY_BONUS_EXP:
 			{
-				// Use a special curve for this.
-				// Low Exp amounts are guaranteed, higher than half is where skill expression starts
-				// Magic numbers here are to reduce the range from 50-125 to 0-75 and compare with a max of 58, 85% of which is 49.3, which should put an even 100 or higher exp at A rank
-				const fixed_t frac = std::min(FRACUNIT, ((exp-50) * FRACUNIT) / std::max(1, static_cast<int>(totalExp-42)));
+				const fixed_t frac = std::min(FRACUNIT, ((exp-15) * FRACUNIT) / std::max(1, static_cast<int>(totalExp)));
 				ours += Easing_Linear(frac, 0, bonusWeights[i]);
 				break;
 			}
