@@ -9110,7 +9110,10 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				&& (gamespeed != KARTSPEED_EASY)
 				&& (newplayer->tally.active == true)
 				&& (newplayer->tally.totalExp > 0) // Only true if not Time Attack
-				&& (newplayer->tally.exp >= newplayer->tally.totalExp)
+				&& (
+					(newplayer->tally.exp >= newplayer->tally.totalExp) ||
+					(K_InRaceDuel() && newplayer->duelscore == DUELWINNINGSCORE)
+				)
 			)
 			{
 				UINT8 pnum = (newplayer-players);

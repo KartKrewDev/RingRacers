@@ -19,6 +19,7 @@
 #include "k_grandprix.h"
 #include "k_profiles.h"
 #include "k_serverstats.h"
+#include "k_kart.h" // K_InRaceDuel
 
 // Client-sided calculations done for Power Levels.
 // This is done so that clients will never be able to hack someone else's score over the server.
@@ -213,6 +214,10 @@ void K_UpdatePowerLevels(player_t *player, UINT8 lap, boolean forfeit)
 	CONS_Debug(DBG_PWRLV, "========\n");
 
 	yourPower = clientpowerlevels[playerNum][powerType];
+
+	if (K_InRaceDuel())
+		yourPower += clientPowerAdd[playerNum];
+
 	if (yourPower == 0)
 	{
 		// Guests don't record power level changes.
@@ -225,6 +230,8 @@ void K_UpdatePowerLevels(player_t *player, UINT8 lap, boolean forfeit)
 	CONS_Debug(DBG_PWRLV, "%s's gametype score: %d\n", player_names[playerNum], yourScore);
 
 	CONS_Debug(DBG_PWRLV, "========\n");
+
+	boolean dueling = K_InRaceDuel();
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		UINT16 theirScore = 0;
@@ -254,6 +261,9 @@ void K_UpdatePowerLevels(player_t *player, UINT8 lap, boolean forfeit)
 		CONS_Debug(DBG_PWRLV, "%s VS %s:\n", player_names[playerNum], player_names[i]);
 
 		theirPower = clientpowerlevels[i][powerType];
+		if (K_InRaceDuel())
+			theirPower += clientPowerAdd[i];
+
 		if (theirPower == 0)
 		{
 			// No power level (splitscreen guests, bots)
@@ -295,11 +305,13 @@ void K_UpdatePowerLevels(player_t *player, UINT8 lap, boolean forfeit)
 			}
 		}
 
-		if (exitBonus == false)
+		if (dueling)
 		{
 			INT16 prevInc = inc;
 
-			inc /= max(numlaps-1, 1);
+			// INT32 winnerscore = (yourScore > theirScore) ? player->duelscore : players[i].duelscore;
+			INT32 multiplier = 2;
+			inc *= multiplier;
 
 			if (inc == 0)
 			{
@@ -313,7 +325,32 @@ void K_UpdatePowerLevels(player_t *player, UINT8 lap, boolean forfeit)
 				}
 			}
 
-			CONS_Debug(DBG_PWRLV, "Reduced (%d / %d = %d) because it's not the end of the race\n", prevInc, numlaps, inc);
+			// CONS_Printf("%s PWR UPDATE: %d\n", player_names[player - players], inc);
+
+			CONS_Debug(DBG_PWRLV, "DUELING: Boosted (%d * %d = %d)\n", prevInc, multiplier, inc);
+		}
+		else
+		{
+			if (exitBonus == false)
+			{
+				INT16 prevInc = inc;
+
+				inc /= max(numlaps-1, 1);
+
+				if (inc == 0)
+				{
+					if (prevInc > 0)
+					{
+						inc = 1;
+					}
+					else if (prevInc < 0)
+					{
+						inc = -1;
+					}
+				}
+
+				CONS_Debug(DBG_PWRLV, "Reduced (%d / %d = %d) because it's not the end of the race\n", prevInc, numlaps, inc);
+			}
 		}
 
 		CONS_Debug(DBG_PWRLV, "========\n");
@@ -345,6 +382,10 @@ void K_UpdatePowerLevelsFinalize(player_t *player, boolean onForfeit)
 	// For spectate / quit / NO CONTEST
 	INT16 lapsLeft = 0;
 	UINT8 i;
+
+	// No remaining laps in Duel.
+	if (K_InRaceDuel())
+		return;
 
 	lapsLeft = (numlaps - player->latestlap) + 1;
 
@@ -394,7 +435,7 @@ INT16 K_FinalPowerIncrement(player_t *player, INT16 yourPower, INT16 baseInc)
 
 	if (inc <= 0)
 	{
-		if (player->position == 1 && numPlayers > 1)
+		if (player->position == 1 && numPlayers > 1 && !(K_InRaceDuel()))
 		{
 			// Won the whole match?
 			// Get at least one point.

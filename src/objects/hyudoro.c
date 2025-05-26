@@ -599,7 +599,8 @@ hyudoro_patrol_hit_player
 
 	P_SetTarget(&hyudoro_target(hyu), master);
 
-	K_SpawnAmps(master->player, K_PvPAmpReward(20, master->player, player), toucher);
+	if (master && !P_MobjWasRemoved(master))
+		K_SpawnAmps(master->player, K_PvPAmpReward(20, master->player, player), toucher);
 
 	if (center)
 		P_RemoveMobj(center);

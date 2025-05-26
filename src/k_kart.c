@@ -119,6 +119,27 @@ boolean K_DuelItemAlwaysSpawns(mapthing_t *mt)
 	return !!(mt->thing_args[0]);
 }
 
+boolean K_InRaceDuel(void)
+{
+	return (inDuel && (gametyperules & GTR_CIRCUIT) && !(mapheaderinfo[gamemap-1]->levelflags & LF_SECTIONRACE)) && !specialstageinfo.valid;
+}
+
+player_t *K_DuelOpponent(player_t *player)
+{
+	if (!K_InRaceDuel())
+		return player; // ????
+	else
+	{
+		for (UINT8 i = 0; i < MAXPLAYERS; i++)
+		{
+			if (playeringame[i] && !players[i].spectator && player - players != i)
+				return &players[i];
+		}
+	}
+
+	return player; // ????????????
+}
+
 static void K_SpawnDuelOnlyItems(void)
 {
 	mapthing_t *mt = NULL;
@@ -145,6 +166,7 @@ void K_TimerReset(void)
 	numbulbs = 1;
 	inDuel = rainbowstartavailable = false;
 	linecrossed = 0;
+	overtimecheckpoints = 0;
 	timelimitintics = extratimeintics = secretextratime = 0;
 	g_pointlimit = 0;
 }
@@ -273,6 +295,9 @@ void K_TimerInit(void)
 					introtime = (108) + 5; // 108 for rotation, + 5 for white fade
 					numbulbs += (numPlayers-2); // Extra POSITION!! time
 				}
+
+				if (K_InRaceDuel())
+					numlaps = 99;
 			}
 		}
 
@@ -446,6 +471,9 @@ boolean K_IsPlayerScamming(player_t *player)
 	if (!M_NotFreePlay())
 		return false;
 
+	if (!(gametyperules & GTR_CIRCUIT))
+		return false;
+
 	// "Why 8?" Consistency
 	// "Why 2000?" Vibes
 	return (K_GetItemRouletteDistance(player, 8) < SCAMDIST);
@@ -468,7 +496,10 @@ fixed_t K_GetKartGameSpeedScalar(SINT8 value)
 	if (cv_4thgear.value && !netgame && (!demo.playback || !demo.netgame) && !modeattacking)
 		value = 3;
 
-	return ((13 + (3*value)) << FRACBITS) / 16;
+	fixed_t base = ((13 + (3*value)) << FRACBITS) / 16;
+	fixed_t duel = overtimecheckpoints*(1<<FRACBITS)/16;
+
+	return base + duel;
 }
 
 // Array of states to pick the starting point of the animation, based on the actual time left for invincibility.
@@ -3564,7 +3595,7 @@ static void K_GetKartBoostPower(player_t *player)
 			Easing_InCubic(
 				player->overdrivepower,
 				0,
-				5*FRACUNIT/10
+				75*FRACUNIT/100
 			),
 			Easing_InSine(
 				player->overdrivepower,
@@ -3640,7 +3671,7 @@ static void K_GetKartBoostPower(player_t *player)
 	{
 		fixed_t ringboost_base = FRACUNIT/4;
 		if (player->overdrive)
-			ringboost_base += FRACUNIT/2;
+			ringboost_base += FRACUNIT/4;
 		// This one's a little special: we add extra top speed per tic of ringboost stored up, to allow for Ring Box to really rocket away.
 		// (We compensate when decrementing ringboost to avoid runaway exponential scaling hell.)
 		fixed_t rb = FixedDiv(player->ringboost * FRACUNIT, max(FRACUNIT, K_RingDurationBoost(player)));
@@ -4239,7 +4270,7 @@ void K_CheckpointCrossAward(player_t *player)
 	if (gametype != GT_RACE)
 		return;
 
-	player->gradingfactor += K_GetGradingMultAdjustment(player);
+	player->gradingfactor += K_GetGradingFactorAdjustment(player);
 	player->gradingpointnum++;
 	player->exp = K_GetEXP(player);
 	//CONS_Printf("player: %s factor: %.2f exp: %d\n", player_names[player-players], FIXED_TO_FLOAT(player->gradingfactor), player->exp);
@@ -4247,6 +4278,92 @@ void K_CheckpointCrossAward(player_t *player)
 		player->cangrabitems = 1;
 	
 	K_AwardPlayerRings(player, (player->bot ? 20 : 10), true);
+
+	// Update Duel scoring.
+	if (K_InRaceDuel() && player->position == 1)
+	{
+		player->duelscore += 1;
+
+		if (leveltime > (tic_t)(TICRATE*DUELOVERTIME))
+		{
+			overtimecheckpoints++;
+			if (overtimecheckpoints > 1)
+			{
+				K_AddMessage(va("Margin Boost x%d!", overtimecheckpoints), true, false);
+			}
+			else
+			{
+				K_AddMessage("Margin Boost!", true, false);
+				g_darkness.start = leveltime;
+				g_darkness.end = INT32_MAX;
+				for (UINT8 i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+				{
+					g_darkness.value[i] = FRACUNIT;
+				}
+			}
+
+			S_StartSound(NULL, sfx_gsha6);
+		}
+
+		player_t *opp = K_DuelOpponent(player);
+		boolean clutch = (player->duelscore - opp->duelscore == (DUELWINNINGSCORE-1));
+		boolean win = (player->duelscore - opp->duelscore == DUELWINNINGSCORE);
+
+		if (!win)
+		{
+			for (UINT8 i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+			{
+				player_t *check = &players[displayplayers[i]];
+				if (check == player)
+				{
+					S_StartSound(NULL, sfx_mbs45);
+					if (clutch)
+						S_StartSoundAtVolume(NULL, sfx_s3k9c, 170);
+				}
+
+				else if (check == opp)
+				{
+					S_StartSound(NULL, sfx_mbs60);
+					if (clutch)
+						S_StartSoundAtVolume(NULL, sfx_kc4b, 150);
+				}
+
+			}
+		}
+
+		if (player->duelscore - opp->duelscore == DUELWINNINGSCORE)
+		{
+			opp->position = 2;
+			player->position = 1;
+
+			if (opp->distancetofinish - player->distancetofinish < 200) // Setting player.exiting changes distance reporting, check these first!
+			{
+				K_StartRoundWinCamera(
+					player->mo,
+					player->angleturn + ANGLE_180,
+					400*mapobjectscale,
+					6*TICRATE,
+					FRACUNIT/16
+				);
+			}
+
+			S_StartSound(NULL, sfx_s3k6a);
+			P_DoPlayerExit(player, 0);
+			P_DoAllPlayersExit(PF_NOCONTEST, 0);
+		}
+		else
+		{
+			// Doing this here because duel exit is a weird path, and we don't want to transform for endcam.
+			UINT32 skinflags = (demo.playback)
+					? demo.skinlist[demo.currentskinid[(player-players)]].flags
+					: skins[player->skin].flags;
+			if (skinflags & SF_IRONMAN)
+			{
+				SetRandomFakePlayerSkin(player, true, false);
+			}
+		}
+	}
+
 }
 
 boolean K_Overdrive(player_t *player)
@@ -10993,7 +11110,7 @@ static void K_UpdateDistanceFromFinishLine(player_t *const player)
 				const mapheader_t *mapheader = mapheaderinfo[gamemap - 1];
 				if ((mapheader->levelflags & LF_SECTIONRACE) == 0U)
 				{
-					const UINT8 numfulllapsleft = ((UINT8)numlaps - player->laps) / mapheader->lapspersection;
+					UINT8 numfulllapsleft = ((UINT8)numlaps - player->laps) / mapheader->lapspersection;
 					player->distancetofinish += numfulllapsleft * K_GetCircuitLength();
 				}
 			}
@@ -11041,6 +11158,7 @@ static void K_UpdatePlayerWaypoints(player_t *const player)
 		player->respawn.state == RESPAWNST_NONE && // Respawning should be a full reset.
 		old_currentwaypoint != NULL && // So should touching the first waypoint ever.
 		player->laps != 0 && // POSITION rooms may have unorthodox waypoints to guide bots.
+		player->exiting == 0 && // What the fuck? Why do duels antiskip the bot?
 		!(player->pflags & PF_TRUSTWAYPOINTS)) // Special exception.
 	{
 		extern consvar_t cv_debuglapcheat;
@@ -11393,7 +11511,7 @@ INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
 	// If you're sliptiding, don't interact with handling boosts.
 	// You need turning power proportional to your speed, no matter what!
 	fixed_t topspeed = K_GetKartSpeed(player, false, false);
-	if (K_Sliptiding(player))
+	if (K_Sliptiding(player) || player->flamedash)
 	{
 		fixed_t sliptide_handle;
 
@@ -12040,6 +12158,11 @@ void K_KartUpdatePosition(player_t *player)
 			realplayers++;
 		}
 	}
+	else if (K_InRaceDuel() && player->exiting)
+	{
+		// Positions directly set in K_CheckpointCrossAward, don't touch.
+		return;
+	}
 	else
 	{
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -12146,7 +12269,9 @@ void K_KartUpdatePosition(player_t *player)
 	/* except in FREE PLAY */
 	if (player->curshield == KSHIELD_TOP &&
 			(gametyperules & GTR_CIRCUIT) &&
-			realplayers > 1)
+			realplayers > 1 &&
+			!specialstageinfo.valid
+			&& !K_Cooperative())
 	{
 		/* grace period so you don't fall off INSTANTLY */
 		if (K_GetItemRouletteDistance(player, 8) < 2000 && player->topinfirst < 2*TICRATE) // "Why 8?" Literally no reason, but since we intend for constant-ish distance we choose a fake fixed playercount.
@@ -15262,8 +15387,17 @@ void K_EggmanTransfer(player_t *source, player_t *victim)
 	if (victim->eggmanexplode)
 		return;
 
+	boolean prank = false;
+
+	if (victim->itemRoulette.eggman)
+	{
+		K_StopRoulette(&source->itemRoulette);
+		prank = true; // Give the transferring player the victim's eggbox roulette?!
+	}
+
 	K_AddHitLag(victim->mo, 5, false);
 	K_DropItems(victim);
+
 	victim->eggmanexplode = 6*TICRATE;
 	victim->eggmanblame = (source - players);
 	K_StopRoulette(&victim->itemRoulette);
@@ -15272,9 +15406,20 @@ void K_EggmanTransfer(player_t *source, player_t *victim)
 		S_StartSound(NULL, sfx_itrole);
 
 	K_AddHitLag(source->mo, 5, false);
-	source->eggmanexplode = 0;
-	source->eggmanblame = -1;
-	K_StopRoulette(&source->itemRoulette);
+
+	if (prank)
+	{
+		source->eggmanexplode = 0;
+		source->eggmanblame = (victim - players);
+		K_StartEggmanRoulette(source);
+		S_StartSound(source->mo, sfx_s223);
+	}
+	else
+	{
+		source->eggmanexplode = 0;
+		source->eggmanblame = -1;
+		K_StopRoulette(&source->itemRoulette);
+	}
 
 	source->eggmanTransferDelay = 25;
 	victim->eggmanTransferDelay = 15;
@@ -15502,7 +15647,7 @@ boolean K_PlayerCanUseItem(player_t *player)
 	return (player->mo->health > 0 && !player->spectator && !P_PlayerInPain(player) && !mapreset && leveltime > introtime);
 }
 
-fixed_t K_GetGradingMultAdjustment(player_t *player)
+fixed_t K_GetGradingFactorAdjustment(player_t *player)
 {
 	fixed_t power = 3*FRACUNIT/100; // adjust to change overall xp volatility
 	fixed_t stablerate = 3*FRACUNIT/10; // how low is your placement before losing XP? 4*FRACUNIT/10 = top 40% of race will gain
@@ -15556,13 +15701,57 @@ fixed_t K_GetGradingMultAdjustment(player_t *player)
 	return result;
 }
 
+fixed_t K_GetGradingFactorMinMax(UINT32 gradingpointnum, boolean max)
+{
+    // Create a dummy player structure for the theoretical last-place player
+    player_t dummy_player;
+    memset(&dummy_player, 0, sizeof(player_t));
+    dummy_player.gradingfactor = FRACUNIT; // Start at 1.0
+
+	if (G_GametypeHasTeams())
+	{
+		const UINT8 orange_count = G_CountTeam(TEAM_ORANGE);
+		const UINT8 blue_count = G_CountTeam(TEAM_BLUE);
+		if (orange_count <= blue_count)
+		{
+			dummy_player.team = TEAM_ORANGE;
+		}
+		else
+		{
+			dummy_player.team = TEAM_BLUE;
+		}
+		dummy_player.position = max ? 0 : D_NumPlayersInRace() + 1; // Ensures that all enemy players are counted, and our dummy won't overlap
+	}
+	else
+	{
+		dummy_player.position = max ? 1 : D_NumPlayersInRace();
+	}
+	
+    // Apply the adjustment for each grading point
+    for (UINT32 i = 0; i < gradingpointnum; i++)
+    {
+        dummy_player.gradingfactor += K_GetGradingFactorAdjustment(&dummy_player);
+    }
+    return dummy_player.gradingfactor;
+}
+
 UINT16 K_GetEXP(player_t *player)
 {
 	UINT32 numgradingpoints = K_GetNumGradingPoints();
-	// target is where you should be if you're doing good and at a 1.0 mult
-	fixed_t clampedmult = max(FRACUNIT/2, min(FRACUNIT*5/4, player->gradingfactor));  // clamp between 0.5 and 1.25
-	fixed_t targetexp = (TARGETEXP*player->gradingpointnum/max(1,numgradingpoints))<<FRACBITS;
-	UINT16 exp = FixedMul(clampedmult, targetexp)>>FRACBITS;
+	UINT16 targetminexp = (MINEXP*player->gradingpointnum/max(1,numgradingpoints)); // about what a last place player should be at this stage of the race
+	UINT16 targetexp = (MAXEXP*player->gradingpointnum/max(1,numgradingpoints)); // about what a 1.0 factor should be at this stage of the race
+	fixed_t factormin = K_GetGradingFactorMinMax(player->gradingpointnum, false);
+	fixed_t factormax = K_GetGradingFactorMinMax(player->gradingpointnum, true);
+	fixed_t clampedfactor = max(factormin, min(factormax, player->gradingfactor));
+	fixed_t range = factormax - factormin; 
+	fixed_t normalizedfactor = FixedDiv(clampedfactor - factormin, range);
+	fixed_t easedexp = Easing_Linear(normalizedfactor, targetminexp, targetexp);
+	// fixed_t easedexp = Easing_Linear(normalizedfactor, MINEXP*FRACUNIT, MAXEXP*FRACUNIT);
+	UINT16 exp = easedexp;
+	// CONS_Printf("Player %s numgradingpoints=%d targetminexp=%d targetexp=%d factormin=%.2f factormax=%.2f clampedfactor=%.2f normalizedfactor=%.2f easedexp=%d\n", 
+	// 	player_names[player - players], numgradingpoints, targetminexp, targetexp, FIXED_TO_FLOAT(factormin), FIXED_TO_FLOAT(factormax), 
+	// 	FIXED_TO_FLOAT(clampedfactor), FIXED_TO_FLOAT(normalizedfactor), easedexp);
+	// UINT16 exp = (player->gradingfactor*100)>>FRACBITS;
 	return exp;
 }
 

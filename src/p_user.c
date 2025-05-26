@@ -1389,7 +1389,7 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 void P_DoAllPlayersExit(pflags_t flags, boolean trygivelife)
 {
 	UINT8 i;
-	const boolean dofinishsound = (musiccountdown == 0);
+	const boolean dofinishsound = (musiccountdown == 0) && (!K_InRaceDuel());
 
 	if (grandprixinfo.gp == false
 		|| grandprixinfo.eventmode == GPEVENT_SPECIAL
@@ -2345,7 +2345,7 @@ static void P_UpdatePlayerAngle(player_t *player)
 		// This is the hardest case for the turn solver, because your handling properties on
 		// client side are very different than your handling properties on server side—at least,
 		// until your drift status makes the full round-trip and is reflected in your gamestate.
-		if (player->drift && abs(player->drift) < 5)
+		if (player->drift && abs(player->drift) < 5 && player->cmd.latency)
 		{
 			steeringRight = KART_FULLTURN;
 			steeringLeft = -KART_FULLTURN;
@@ -4246,6 +4246,12 @@ void P_PlayerThink(player_t *player)
 	else
 	{
 		player->airtime++;
+	}
+
+	if ((player->pflags & PF_FAULT) || (player->pflags & PF_VOID))
+	{
+		player->lastairtime = 0;
+		player->airtime = 0;
 	}
 
 	cmd = &player->cmd;

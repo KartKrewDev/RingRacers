@@ -291,6 +291,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT32(save->p, players[i].exp);
 		WRITEINT32(save->p, players[i].gradingfactor);
 		WRITEUINT16(save->p, players[i].gradingpointnum);
+		WRITEINT16(save->p, players[i].duelscore);
 		WRITEINT32(save->p, players[i].cheatchecknum);
 		WRITEINT32(save->p, players[i].checkpointId);
 
@@ -983,6 +984,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].exp = READUINT32(save->p);
 		players[i].gradingfactor = READINT32(save->p);
 		players[i].gradingpointnum = READUINT16(save->p);
+		players[i].duelscore = READINT16(save->p);
 		players[i].cheatchecknum = READINT32(save->p);
 		players[i].checkpointId = READINT32(save->p);
 
@@ -6757,6 +6759,7 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 	{
 		WRITEUINT16(save->p, g_voteLevels[i][0]);
 		WRITEUINT16(save->p, g_voteLevels[i][1]);
+		WRITEUINT8(save->p, g_votes_striked[i]);
 	}
 
 	for (i = 0; i < VOTE_TOTAL; i++)
@@ -6834,6 +6837,7 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 	WRITESINT8(save->p, spbplace);
 	WRITEUINT8(save->p, rainbowstartavailable);
 	WRITEUINT8(save->p, inDuel);
+	WRITEUINT8(save->p, overtimecheckpoints);
 
 	WRITEUINT32(save->p, introtime);
 	WRITEUINT32(save->p, starttime);
@@ -7143,6 +7147,7 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 	{
 		g_voteLevels[i][0] = READUINT16(save->p);
 		g_voteLevels[i][1] = READUINT16(save->p);
+		g_votes_striked[i] = (boolean)READUINT8(save->p);
 	}
 
 	for (i = 0; i < VOTE_TOTAL; i++)
@@ -7216,6 +7221,7 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 	spbplace = READSINT8(save->p);
 	rainbowstartavailable = (boolean)READUINT8(save->p);
 	inDuel = (boolean)READUINT8(save->p);
+	overtimecheckpoints = (boolean)READUINT8(save->p);
 
 	introtime = READUINT32(save->p);
 	starttime = READUINT32(save->p);
