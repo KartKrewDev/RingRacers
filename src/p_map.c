@@ -1552,7 +1552,19 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 
 			if (!K_PuntCollide(thing, g_tm.thing))
 			{
-				K_KartSolidBounce(g_tm.thing, thing);
+				state_t *st = &states[thing->info->spawnstate];
+
+				if (st->action.acp1 == A_GenericBumper)
+				{
+					P_SetTarget(&thing->target, g_tm.thing);
+
+					var1 = -1;
+					var2 = 0;
+					astate = st;
+					st->action.acp1(thing);
+				}
+				else
+					K_KartSolidBounce(g_tm.thing, thing);
 			}
 			return BMIT_CONTINUE;
 		}
