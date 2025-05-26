@@ -214,7 +214,7 @@ void srb2::save_ng_gamedata()
 			{
 				newrecords.bestskin = String(skinref.unloaded->name);
 			}
-			else
+			else if (skinref.id < numskins)
 			{
 				newrecords.bestskin = String(skins[skinref.id].name);
 			}
