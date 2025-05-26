@@ -497,7 +497,7 @@ fixed_t K_GetKartGameSpeedScalar(SINT8 value)
 		value = 3;
 
 	fixed_t base = ((13 + (3*value)) << FRACBITS) / 16;
-	fixed_t duel = overtimecheckpoints*(1<<FRACBITS)/16;
+	fixed_t duel = overtimecheckpoints*(1<<FRACBITS)/32;
 
 	return base + duel;
 }
@@ -11454,6 +11454,14 @@ INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
 	{
 		turnfixed = FixedMul(turnfixed, 2*FRACUNIT); // Base increase to turning
 	}
+
+	/*
+	if (overtimecheckpoints)
+	{
+		fixed_t assistpercent = FRACUNIT * overtimecheckpoints / 32;
+		turnfixed += FixedMul(Easing_Linear(assistpercent, 0, FRACUNIT/2), turnfixed);
+	}
+	*/
 
 	if (player->drift != 0 && P_IsObjectOnGround(player->mo))
 	{

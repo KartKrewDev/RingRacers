@@ -3289,8 +3289,6 @@ static void K_drawKartDuelScores(void)
 	INT32 youfill = skincolors[stplyr->skincolor].ramp[ri];
 	INT32 foefill = skincolors[foe->skincolor].ramp[ri];
 
-	INT32 margin = std::min(overtimecheckpoints, (UINT8)5); // Absolutely what the fuck kind of cast.
-
 	V_DrawScaledPatch(basex, basey, flags, kp_duel_sticker);
 
 	INT32 scoredelta = stplyr->duelscore - foe->duelscore;
@@ -3397,7 +3395,25 @@ static void K_drawKartDuelScores(void)
 		V_DrawMappedPatch(drawx+xoff, drawy+yoff, flags|flipflag, faceprefix[workingskin][FACE_RANK], colormap);
 	}
 
-	V_DrawScaledPatch(basex, basey, flags, kp_duel_margin[margin]);
+	UINT8 MARGINLEVELS = 6;
+	INT32 marginx = 0;
+	INT32 marginoffset = 6;
+
+	INT32 margin = 1 + overtimecheckpoints;
+	// margin = ((leveltime/10)%25)+1; // debug
+
+	INT32 margindigits = 1 + (margin-1)/MARGINLEVELS;
+
+	marginx -= (margindigits-1) * (marginoffset/2);
+
+	while (margindigits)
+	{
+		V_DrawScaledPatch(basex + marginx, basey, flags, kp_duel_margin[std::min(margin-1, MARGINLEVELS-1)]);
+
+		margindigits--;
+		margin -= MARGINLEVELS;
+		marginx += marginoffset;
+	}
 }
 
 static INT32 easedallyscore = 0;
