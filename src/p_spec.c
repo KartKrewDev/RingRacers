@@ -3275,8 +3275,13 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 					return false;
 				}
 
-				while ((targetThing = P_FindMobjFromTID(args[1], targetThing, mo)) != NULL)
+				mobj_t *next = P_FindMobjFromTID(args[1], targetThing, mo);
+
+				while ((targetThing = next) != NULL)
 				{
+					// First in case of deletion. (Can't check for state == S_NULL because of A_ calls, etc)
+					next = P_FindMobjFromTID(args[1], targetThing, mo);
+
 					if (targetThing->player != NULL)
 					{
 						continue;

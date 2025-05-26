@@ -612,6 +612,9 @@ void P_InitTIDHash(void);
 void P_AddThingTID(mobj_t *mo);
 void P_RemoveThingTID(mobj_t *mo);
 void P_SetThingTID(mobj_t *mo, mtag_t tid);
+
+// This function cannot be safely called after *i is removed!
+// Please call at start of loops if *i is to be mutated
 mobj_t *P_FindMobjFromTID(mtag_t tid, mobj_t *i, mobj_t *activator);
 
 void P_DeleteMobjStringArgs(mobj_t *mobj);
