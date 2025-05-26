@@ -67,31 +67,6 @@ INT16 K_CalculateGPRankPoints(UINT16 exp, UINT8 position, UINT8 numplayers)
 
 	points = exp;
 
-	// Give bonus to high-ranking players, depending on player count
-	// This rounds out the point gain when you get 1st every race,
-	// and gives bots able to catch up in points if a player gets an early lead.
-	// The maximum points you can get in a cup is: ((number of players - 1) + (max extra points)) * (number of races)
-	// 8P: (7 + 5) * 5 = 60 maximum points
-	// 12P: (11 + 5) * 5 = 80 maximum points
-	// 16P: (15 + 5) * 5 = 100 maximum points
-	switch (numplayers)
-	{
-		case 0: case 1: case 2: // 1v1
-			break; // No bonus needed.
-		case 3: case 4: // 3-4P
-			if (position == 1) { points += 5; } // 1st gets +1 extra point
-			break;
-		case 5: case 6: // 5-6P
-			if (position == 1) { points += 10; } // 1st gets +3 extra points
-			// else if (position == 2) { points += 4; } // 2nd gets +1 extra point
-			break;
-		default: // Normal matches
-			if (position == 1) { points += 10; } // 1st gets +5 extra points
-			// else if (position == 2) { points += 5; } // 2nd gets +3 extra points
-			// else if (position == 3) { points += 2; } // 3rd gets +1 extra point
-			break;
-	}
-
 	// somehow underflowed?
 	if (points < 0)
 	{

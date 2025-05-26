@@ -495,7 +495,24 @@ struct CheckpointManager
 		else // Checkpoint isn't in the list, find any associated tagged lines and make the pair
 		{
 			if (chk->linetag())
-				lines_.try_emplace(chk->linetag(), tagged_lines(chk->linetag()));
+			{
+				auto lines = tagged_lines(chk->linetag());
+				if (lines.empty() && gametype != GT_TUTORIAL)
+				{
+					CONS_Alert(CONS_WARNING, "Checkpoint thing %d, has linetag %d, but no lines found. Please ensure all checkpoints have associated lines.\n", chk->spawnpoint - mapthings, chk->linetag());
+				}
+				else
+				{
+					lines_.try_emplace(chk->linetag(), lines);
+				}
+			}
+			else
+			{
+				if (gametype != GT_TUTORIAL)
+				{
+					CONS_Alert(CONS_WARNING, "Checkpoint thing %d, has no linetag. Please ensure all checkpoint things have a linetag.\n", chk->spawnpoint - mapthings);
+				}
+			}
 			list_.push_front(chk);
 			count_ += 1; // Mobjlist can't have a count on it, so we keep it here
 		}
@@ -567,6 +584,11 @@ void Obj_CheckpointThink(mobj_t* end)
 
 void Obj_CrossCheckpoints(player_t* player, fixed_t old_x, fixed_t old_y)
 {
+	if (player->exiting) // can't cross checkpoints when exiting
+	{
+		return;
+	}
+	
 	LineOnDemand ray(old_x, old_y, player->mo->x, player->mo->y, player->mo->radius);
 
 	auto it = std::find_if(
