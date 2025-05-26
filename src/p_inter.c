@@ -1083,10 +1083,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			Obj_TrickBalloonTouchSpecial(special, toucher);
 			return;
 
-		case MT_SEALEDSTAR_BUMPER:
-			Obj_SSBumperTouchSpecial(special, toucher);
-			return;
-
 		case MT_PULLUPHOOK:
 			Obj_PulleyHookTouch(special, toucher);
 			return;
