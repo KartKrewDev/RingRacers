@@ -655,7 +655,7 @@ void srb2::load_ng_gamedata()
 
 			mapheaderinfo[mapnum]->records = dummyrecord;
 		}
-		else if (dummyrecord.mapvisited & MV_BEATEN
+		else if (dummyrecord.mapvisited & (MV_VISITED|MV_BEATEN)
 		|| dummyrecord.timeattack.time != 0 || dummyrecord.timeattack.lap != 0
 		|| dummyrecord.spbattack.time != 0 || dummyrecord.spbattack.lap != 0
 		|| dummyrecord.spraycan != MCAN_INVALID)
