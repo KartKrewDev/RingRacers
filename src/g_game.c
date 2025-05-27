@@ -2352,8 +2352,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	bot = players[player].bot;
 	botdifficulty = players[player].botvars.difficulty;
 
-	cangrabitems = players[player].cangrabitems;
-
 	botdiffincrease = players[player].botvars.diffincrease;
 	botrival = players[player].botvars.rival;
 
@@ -2439,13 +2437,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		tallyactive = false;
 
 		cangrabitems = 0;
-		if (gametyperules & GTR_SPHERES
-			|| gametyperules & GTR_CATCHER
-			|| G_TimeAttackStart()
-			|| gametype == GT_TUTORIAL
-			|| !M_NotFreePlay()
-			|| K_GetNumWaypoints() == 0)
-			cangrabitems = EARLY_ITEM_FLICKER;
 	}
 	else
 	{
@@ -2501,6 +2492,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		{
 			tally = players[player].tally;
 		}
+
+		cangrabitems = players[player].cangrabitems;
 	}
 
 	spectatorReentry = (betweenmaps ? 0 : players[player].spectatorReentry);
