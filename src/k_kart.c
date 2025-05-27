@@ -9783,7 +9783,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	// The precise ordering of start-of-level made me want to cut my head off,
 	// so let's try this instead. Whatever!
-	if (leveltime < introtime)
+	if (leveltime <= introtime)
 	{
 		if ((gametyperules & GTR_SPHERES)
 			|| (gametyperules & GTR_CATCHER)
