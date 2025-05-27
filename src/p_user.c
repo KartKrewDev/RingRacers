@@ -405,7 +405,7 @@ UINT8 P_FindHighestLap(void)
 //
 boolean P_PlayerInPain(const player_t *player)
 {
-	if (player->spinouttimer || (player->tumbleBounces > 0) || (player->pflags & PF_FAULT) || player->icecube.frozen)
+	if (player->spinouttimer || (player->tumbleBounces > 0) || (player->pflags & PF_FAULT))
 		return true;
 
 	return false;
