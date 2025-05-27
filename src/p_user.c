@@ -2539,9 +2539,19 @@ void P_MovePlayer(player_t *player)
 		player->glanceDir = 0;
 		player->pflags &= ~PF_GAINAX;
 	}
-	else if ((player->pflags & PF_FAULT) || (player->spinouttimer > 0))
+	else if ((player->pflags & PF_FAULT) || (player->spinouttimer > 0) || (player->turbine && (player->mo->flags & MF_NOCLIP)))
 	{
-		UINT16 speed = ((player->pflags & PF_FAULT) ? player->nocontrol : player->spinouttimer)/8;
+		tic_t timer = 0;
+
+		if ((player->pflags & PF_FAULT))
+			timer = player->nocontrol;
+		else if (player->spinouttimer > 0)
+			timer = player->spinouttimer;
+		else if (player->turbine && (player->mo->flags & MF_NOCLIP))
+			timer = TICRATE;
+
+		UINT16 speed = timer / 8;
+
 		if (speed > 8)
 			speed = 8;
 		else if (speed < 1)
