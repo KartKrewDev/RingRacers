@@ -30,7 +30,7 @@ void Obj_BailThink (mobj_t *aura)
     else
     {
         mobj_t *mo = aura->target;
-        player_t *player = mo->player;
+        ATTRUNUSED player_t *player = mo->player;
 
         // Follow player
         aura->flags &= ~(MF_NOCLIPTHING);

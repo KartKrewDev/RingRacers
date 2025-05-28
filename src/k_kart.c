@@ -13923,9 +13923,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 	if ((player->cmd.buttons & BT_VOTE) && ((player->itemtype && player->itemamount) || (player->rings > 0) || player->superring > 0 || player->pickuprings > 0 || player->itemRoulette.active))
 	{
-		boolean onground = P_IsObjectOnGround(player->mo);
+		boolean grounded = P_IsObjectOnGround(player->mo);
 		onground && player->tumbleBounces == 0 ?  player->bailcharge += 2 : player->bailcharge++; // charge twice as fast on the ground
-		if (P_PlayerInPain(player) && player->bailcharge == 1 || onground && P_PlayerInPain(player) && player->bailcharge == 2) // this is brittle ..
+		if ((P_PlayerInPain(player) && player->bailcharge == 1) || (grounded && P_PlayerInPain(player) && player->bailcharge == 2)) // this is brittle ..
 		{
 			mobj_t *bail = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, MT_BAILCHARGE);
 			P_SetTarget(&bail->target, player->mo);
