@@ -3721,6 +3721,11 @@ static void K_drawKartTeamScores(void)
 	*/
 }
 
+static boolean K_DrawingLaps()
+{
+	return (numlaps != 1 && !K_InRaceDuel() && (UINT16)stplyr->exp != UINT16_MAX);
+}
+
 static boolean K_drawKartLaps(void)
 {
 	INT32 splitflags = V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN;
@@ -4160,7 +4165,16 @@ static void K_drawKartAccessibilityIcons(boolean gametypeinfoshown, INT32 fx)
     }
     else
     {
-        fx = LAPS_X+44;
+        fx = LAPS_X + 33;
+
+		if ((gametyperules & (GTR_BUMPERS|GTR_CIRCUIT)) == GTR_BUMPERS)
+			fx -= 14;
+
+		if (K_DrawingLaps())
+		{
+			fx += 30;
+		}
+
         fy = LAPS_Y;
         if (R_GetViewNumber() & 1) // If we are not P1 or P3...
         {
