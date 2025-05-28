@@ -777,6 +777,12 @@ static inline BlockItReturn_t PIT_LightningShieldAttack(mobj_t *thing)
 		return BMIT_CONTINUE;
 	}
 
+	// see if it went over / under
+	if (lightningSource->z > thing->z + thing->height)
+		return BMIT_CONTINUE; // overhead
+	if (lightningSource->z + lightningSource->height < thing->z)
+		return BMIT_CONTINUE; // underneath
+
 #if 0
 	if (P_CheckSight(lightningSource, thing) == false)
 	{
