@@ -2368,6 +2368,8 @@ void G_BeginRecording(void)
 			WRITEUINT8(demobuf.p, player->skin);
 			WRITEUINT8(demobuf.p, player->lastfakeskin);
 
+			WRITEUINT8(demobuf.p, player->team);
+
 			// Color
 			demobuf.p += copy_fixed_buf(demobuf.p, skincolors[player->skincolor].name, g_buffer_sizes.color_name);
 
@@ -3500,6 +3502,8 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 			demo.currentskinid[p] = 0;
 		lastfakeskin[p] = READUINT8(demobuf.p);
 
+		players[p].team = READUINT8(demobuf.p);
+
 		// Color
 		demobuf.p += copy_fixed_buf(color, demobuf.p, g_buffer_sizes.color_name);
 		for (i = 0; i < numskincolors; i++)
@@ -3782,6 +3786,8 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	if (i < worknumskins)
 		ghskin = &skins[skinlist[i].mapping];
 	p++; // lastfakeskin
+
+	p++; // team
 
 	// Color
 	p += copy_fixed_buf(color, p, ghostsizes.color_name);

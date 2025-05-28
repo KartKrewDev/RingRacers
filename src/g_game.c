@@ -5419,6 +5419,8 @@ void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skippr
 			players[i].xtralife = 0;
 			players[i].totalring = 0;
 			players[i].score = 0;
+			if (roundqueue.position == 0) // Don't unassign teams in tournament play
+				players[i].team = TEAM_UNASSIGNED;
 		}
 
 		if (resetplayer || !(gametyperules & GTR_CHECKPOINTS && map == gamemap))
