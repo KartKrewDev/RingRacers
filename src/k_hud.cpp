@@ -3496,6 +3496,9 @@ static void K_drawKartTeamScores(void)
 	UINT16 enemyscore = g_teamscores[enemies];
 	UINT16 totalscore = allyscore + enemyscore;
 
+	if (totalscore == 0)
+		return;
+
 	using srb2::Draw;
 	srb2::Draw::Font scorefont = Draw::Font::kTimer; 
 
@@ -3551,7 +3554,7 @@ static void K_drawKartTeamScores(void)
 		{
 			INT32 delta = abs(easedallyscore - allyscore); // how wrong is display score?
 			
-			if (scorechangecooldown == 0)
+			if (scorechangecooldown == 0 && delta)
 			{
 				if (allyscore > easedallyscore)
 				{
