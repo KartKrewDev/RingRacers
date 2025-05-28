@@ -60,6 +60,7 @@ struct Visual : Mobj
 		}
 
 		move_origin(shield()->pos());
+		scale(5 * shield()->follow()->scale() / 4);
 
 		renderflags = (renderflags & ~RF_DONTDRAW) |
 			(shield()->state()->num() == S_INVISIBLE ? 0 : RF_DONTDRAW);
