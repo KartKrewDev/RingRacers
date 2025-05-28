@@ -1556,7 +1556,7 @@ boolean G_CouldView(INT32 playernum)
 		return false;
 
 	// SRB2Kart: we have no team-based modes, YET...
-	if (G_GametypeHasTeams())
+	if (G_GametypeHasTeams() && !demo.playback)
 	{
 		if (players[consoleplayer].spectator == false && player->team != players[consoleplayer].team)
 			return false;
