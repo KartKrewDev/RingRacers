@@ -15795,6 +15795,29 @@ void K_BotHitPenalty(player_t *player)
 	}
 }
 
+boolean K_IsPickMeUpItem(mobjtype_t type)
+{
+	switch (type)
+	{
+		case MT_JAWZ:
+		case MT_JAWZ_SHIELD:
+		case MT_ORBINAUT:
+		case MT_ORBINAUT_SHIELD:
+		case MT_DROPTARGET:
+		case MT_DROPTARGET_SHIELD:
+		case MT_LANDMINE:
+		case MT_BANANA:
+		case MT_BANANA_SHIELD:
+		case MT_GACHABOM:
+		case MT_EGGMANITEM:
+		case MT_EGGMANITEM_SHIELD:
+		case MT_BUBBLESHIELDTRAP:
+			return true;
+		default:
+			return false;
+	}
+}
+
 static boolean K_PickUp(player_t *player, mobj_t *picked)
 {
 	SINT8 type = -1;
