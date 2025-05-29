@@ -240,7 +240,7 @@ static patch_t *kp_duel_you;
 static patch_t *kp_duel_sticker;
 static patch_t *kp_duel_under;
 static patch_t *kp_duel_over;
-static patch_t *kp_duel_margin[6];
+static patch_t *kp_duel_margin[24];
 
 patch_t *kp_autoroulette;
 patch_t *kp_autoring;
@@ -1074,9 +1074,13 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_duel_under, "DUEL_B");
 	HU_UpdatePatch(&kp_duel_over, "DUEL_B2");
 	HU_UpdatePatch(&kp_duel_you, "DUEL_YOU");
-	for (i = 0; i < 6; i++)
+
+	sprintf(buffer, "DUELMBxx");
+	for (i = 0; i < MARGINLEVELS; i++)
 	{
-		HU_UpdatePatch(&kp_duel_margin[i], "DUELMB0%d", i);
+		buffer[6] = '0'+(i/10);
+		buffer[7] = '0'+(i%10);
+		HU_UpdatePatch(&kp_duel_margin[i], "%s", buffer);
 	}
 }
 
@@ -3250,6 +3254,8 @@ INT32 K_GetTransFlagFromFixed(fixed_t value)
 }
 
 static tic_t duel_lastleveltime = 0;
+static INT32 duel_marginanim = 0;
+static INT32 duel_lastmargin = 0;
 static INT32 youheight = 0;
 
 static void K_drawKartDuelScores(void)
@@ -3320,7 +3326,6 @@ static void K_drawKartDuelScores(void)
 		else if (targetyouheight < youheight)
 			youheight -= slide;
 	}
-	duel_lastleveltime = leveltime;
 
 	INT32 foeheight = 2*barheight-youheight; // barheight is a single tied bar, so total height of the full gauge is 2x barheight
 
@@ -3395,47 +3400,138 @@ static void K_drawKartDuelScores(void)
 		V_DrawMappedPatch(drawx+xoff, drawy+yoff, flags|flipflag, faceprefix[workingskin][FACE_RANK], colormap);
 	}
 
-	#define MARGINLEVELS (6)
+	// Dogshit. Should have just figured out how to do log base 5 in C++.
+	// However, I think this works anyway.
+	// I did my best to comment this but the algorithm is honestly just bad and hard to
+	// reason about. Please don't try to maintain this, just yell at me if it needs any
+	// adjustments. -Tyron 2025-05-29
 
-	INT32 marginvalues[MARGINLEVELS] = {1, 5, 7, 9, 11, 13};
+	// DESIGN INTENT: Create realistic-looking Puyo garbage stacks, while using the
+	// leading garbage symbol as an indicator of the current Margin Boost value.
 
-	INT32 margindigits[20];
+	INT32 rawmargin = overtimecheckpoints; // The actual Margin Boost value.
+	INT32 boostspersymbol = 3; // How many boosts should it take to see a new symbol?
+	// rawmargin = (leveltime/10)%(3*boostspersymbol);
+
+	if (duel_lastleveltime != leveltime) // Trigger the "slide" animation when rawmargin changes.
+	{
+		duel_marginanim = std::min(duel_marginanim + 1, 100); // not magic just arbitrary
+		if (duel_lastmargin != rawmargin)
+		{
+			duel_marginanim = 0;
+			duel_lastmargin = rawmargin;
+		}
+	}
+
+	duel_lastleveltime = leveltime;
+
+	// CONS_Printf("=== RAWMARGIN %d\n", rawmargin);
+
+	if (rawmargin == 0)
+		return;
+
+	rawmargin--; // Start at 0, idiot
+
+	// We're invoking the RNG to get a slightly chaotic symbol distribution,
+	// but we're a HUD hook, so we need to keep the results of the call consistent.
+	P_SetRandSeed(PR_NUISANCE, 69 + rawmargin);
+
+	INT32 highsymbol = rawmargin/boostspersymbol + 1; // Highest symbol that should appear.
+	INT32 symbolsperupgrade = 5; // What is each symbol worth relative to each other? Like, 5 Stars = 1 Moon, etc.
+
+	// Okay, so we would LOVE to do this in a way that isn't a big clusterfuck, like just
+	// doing rawmargin^3 and then subtracting powers of 5 out of that. Unfortunately, UINT64
+	// is too small for the values that feel intuitively right here, so we have to do some of
+	// the math on a limited set of symbols, then shift up. This is the concept of "symbol
+	// headroom" that's in use here.
+	//
+	// (Note that Puyo~n uses a super inconsistent symbol table, probably to avoid this problem,
+	// but we're assholes and want things to feel logically consistent I guess?
+	// I dunno. I sort of feel like I should have just directly used the Puyo~n garbage table and
+	// avoided most of this, LOL)
+
+	INT32 symbolheadroom = 5; // Maximum # symbols we can "step down".
+	INT32 frac = rawmargin % boostspersymbol; // Used in intermediate calculations.
+	INT32 minsymbol = std::max(1, highsymbol - symbolheadroom); // The lowest symbol that should appear.
+	INT32 symbolheadroominuse = highsymbol - minsymbol; // The # of symbols we are stepping down.
+	INT32 minscore = std::pow(symbolsperupgrade, symbolheadroominuse+1);
+	INT32 maxscore = std::pow(symbolsperupgrade, symbolheadroominuse+2) - 1;
+
+	// CONS_Printf("min %d max %d\n", minscore, maxscore);
+
+	// We show the player successive combos with the same leading symbol, but we
+	// waht them to feel intuitively like they're increasing each time.
+	// Maxscore and minscore have been mapped to the correct power-of-N, so any
+	// point we pick between them will lead with the correct symbol once we adjust
+	// for symbol headroom. Pick a point that's appropriate for how "far" into the
+	// current symbol we are.
+	fixed_t lobound = FRACUNIT * frac / boostspersymbol;
+	fixed_t hibound = FRACUNIT * (frac+1) / boostspersymbol;
+	fixed_t roll = P_RandomRange(PR_NUISANCE, lobound, hibound);
+
+	INT32 margin = Easing_Linear(roll, minscore, maxscore); // The score we're trying to draw a garbage stack for.
+
+	INT32 margindigits[5];
 	memset(margindigits, -1, sizeof(margindigits));
 
 	INT32 nummargindigits = 0;
 
-	INT32 margin = overtimecheckpoints;
-	margin = ((leveltime/20)%50)+1; // debug
+	// CONS_Printf("margin %d min %d max %d roll %d shiu %d ms %d\n", margin, minscore, maxscore, roll, symbolheadroominuse, minsymbol);
 
-	if (margin == 0)
-		return;
-
-	while (margin)
+	if (rawmargin/boostspersymbol >= (MARGINLEVELS-1))
 	{
-		UINT32 significant_margin = 0;
-		for (UINT8 i = MARGINLEVELS-1; i >= 0; i--)
+		// Capped out. Show 5 Chaos.
+		nummargindigits = 5;
+		for(UINT8 i = 0; i < nummargindigits; i++)
 		{
-			if (margin >= marginvalues[i])
-			{
-				significant_margin = i;
-				break;
-			}
+			margindigits[i] = MARGINLEVELS-1;
 		}
-		margindigits[nummargindigits] = significant_margin;
-		nummargindigits++;
-		margin -= marginvalues[significant_margin];
+	}
+	else
+	{
+		// Subtract powers of N from our chosen score to create a decent-enough-looking
+		// garbage stack, then queue up the right patches to be drawn, shifting all the math
+		// up by "minsymbol"—remember, once maxsymbol goes above symbolheadroom, we are doing
+		// a low-precision version of the math that ignores low enough symbols.
+		while (margin > 0)
+		{
+			INT32 significant_margin = 0;
+			for (UINT8 i = symbolheadroominuse+1; i >= 0; i--)
+			{
+				INT32 test = std::pow(symbolsperupgrade, i);
+				// CONS_Printf("testing %d (%d)\n", i, test);
+				if (margin >= test)
+				{
+					significant_margin = i;
+					break;
+				}
+			}
+
+			INT32 index = significant_margin;
+
+			margindigits[nummargindigits] = index + minsymbol - 1;
+			// CONS_Printf("digit %d %d\n", nummargindigits, margindigits[nummargindigits]);
+
+			nummargindigits++;
+
+			// CONS_Printf("margin was %d ", margin);
+			margin -= std::pow(symbolsperupgrade, index);
+			// CONS_Printf("is %d\n", margin);
+
+			if (nummargindigits >= 3 + frac)
+				break;
+		}
 	}
 
-	INT32 marginoffset = 6;
-	INT32 marginx = ((nummargindigits-1) * marginoffset)/2;
+	INT32 marginspacing = std::min(6, duel_marginanim);
+	INT32 marginx = ((nummargindigits-1) * marginspacing)/2;
 
 	for (INT32 i = nummargindigits - 1; i >= 0; i--)
 	{
+		// CONS_Printf("draw %d - %d\n", i, margindigits[i]);
 		V_DrawScaledPatch(basex + marginx, basey, flags, kp_duel_margin[margindigits[i]]);
-		marginx -= marginoffset;
+		marginx -= marginspacing;
 	}
-
-	#undef MARGINLEVELS
 }
 
 static INT32 easedallyscore = 0;
