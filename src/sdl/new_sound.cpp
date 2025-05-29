@@ -1005,7 +1005,7 @@ boolean I_SoundInputSetEnabled(boolean enabled)
 {
 	if (g_input_device_id == 0 && enabled)
 	{
-		if (SDL_GetNumAudioDevices(true) == 0)
+		if (!sound_started || SDL_GetNumAudioDevices(true) == 0)
 		{
 			return false;
 		}
