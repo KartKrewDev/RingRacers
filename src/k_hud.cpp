@@ -3395,25 +3395,47 @@ static void K_drawKartDuelScores(void)
 		V_DrawMappedPatch(drawx+xoff, drawy+yoff, flags|flipflag, faceprefix[workingskin][FACE_RANK], colormap);
 	}
 
-	UINT8 MARGINLEVELS = 6;
-	INT32 marginx = 0;
-	INT32 marginoffset = 6;
+	#define MARGINLEVELS (6)
 
-	INT32 margin = 1 + overtimecheckpoints;
-	// margin = ((leveltime/10)%25)+1; // debug
+	INT32 marginvalues[MARGINLEVELS] = {1, 5, 7, 9, 11, 13};
 
-	INT32 margindigits = 1 + (margin-1)/MARGINLEVELS;
+	INT32 margindigits[20];
+	memset(margindigits, -1, sizeof(margindigits));
 
-	marginx -= (margindigits-1) * (marginoffset/2);
+	INT32 nummargindigits = 0;
 
-	while (margindigits)
+	INT32 margin = overtimecheckpoints;
+	margin = ((leveltime/20)%50)+1; // debug
+
+	if (margin == 0)
+		return;
+
+	while (margin)
 	{
-		V_DrawScaledPatch(basex + marginx, basey, flags, kp_duel_margin[std::min(margin-1, MARGINLEVELS-1)]);
-
-		margindigits--;
-		margin -= MARGINLEVELS;
-		marginx += marginoffset;
+		UINT32 significant_margin = 0;
+		for (UINT8 i = MARGINLEVELS-1; i >= 0; i--)
+		{
+			if (margin >= marginvalues[i])
+			{
+				significant_margin = i;
+				break;
+			}
+		}
+		margindigits[nummargindigits] = significant_margin;
+		nummargindigits++;
+		margin -= marginvalues[significant_margin];
 	}
+
+	INT32 marginoffset = 6;
+	INT32 marginx = ((nummargindigits-1) * marginoffset)/2;
+
+	for (INT32 i = nummargindigits - 1; i >= 0; i--)
+	{
+		V_DrawScaledPatch(basex + marginx, basey, flags, kp_duel_margin[margindigits[i]]);
+		marginx -= marginoffset;
+	}
+
+	#undef MARGINLEVELS
 }
 
 static INT32 easedallyscore = 0;
