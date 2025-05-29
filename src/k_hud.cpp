@@ -7146,35 +7146,39 @@ static void K_DrawMessageFeed(void)
 
 		text.font(Draw::Font::kMenu);
 
-		UINT8 x = BASEVIDWIDTH/2;
-		UINT8 y = 10;
+		UINT32 vw = vid.width / vid.dupx;
+		UINT32 vh = vid.height / vid.dupy;
+
+		UINT32 x = vw / 2;
+		UINT32 y = 10;
+
 		SINT8 shift = 0;
 		if (r_splitscreen >= 2)
 		{
 			text.font(Draw::Font::kThin);
 			shift = -2;
 
-			x = BASEVIDWIDTH/4;
+			x = vw/4;
 			y = 5;
 
 			if (i % 2)
-				x += BASEVIDWIDTH/2;
+				x += vw / 2;
 
 			if (i >= 2)
-				y += BASEVIDHEIGHT / 2;
+				y += vh / 2;
 		}
 		else if (r_splitscreen >= 1)
 		{
 			y = 5;
 
 			if (i >= 1)
-				y += BASEVIDHEIGHT / 2;
+				y += vh / 2;
 		}
 
 		UINT16 sw = text.width();
 
-		K_DrawSticker(x - sw/2, y, sw, 0, true);
-		Draw(x, y+shift).align(Draw::Align::kCenter).text(text);
+		K_DrawSticker(x - sw/2, y, sw, V_SNAPTOTOP|V_SNAPTOLEFT, true);
+		Draw(x, y+shift).align(Draw::Align::kCenter).flags(V_SNAPTOTOP|V_SNAPTOLEFT).text(text);
 	}
 }
 
