@@ -198,7 +198,6 @@ static void (*music_fade_callback)();
 
 static SDL_AudioDeviceID g_device_id;
 static SDL_AudioDeviceID g_input_device_id;
-static boolean g_input_device_paused;
 
 void* I_GetSfx(sfxinfo_t* sfx)
 {
@@ -999,7 +998,7 @@ void I_UpdateAudioRecorder(void)
 
 boolean I_SoundInputIsEnabled(void)
 {
-	return g_input_device_id != 0 && !g_input_device_paused;
+	return g_input_device_id != 0;
 }
 
 boolean I_SoundInputSetEnabled(boolean enabled)
@@ -1023,21 +1022,17 @@ boolean I_SoundInputSetEnabled(boolean enabled)
 			CONS_Alert(CONS_WARNING, "Failed to open input audio device: %s\n", SDL_GetError());
 			return false;
 		}
-		g_input_device_paused = true;
-	}
-
-	if (enabled && g_input_device_paused)
-	{
 		SDL_PauseAudioDevice(g_input_device_id, SDL_FALSE);
-		g_input_device_paused = false;
 	}
-	else if (!enabled && !g_input_device_paused)
+	else if (g_input_device_id != 0 && !enabled)
 	{
 		SDL_PauseAudioDevice(g_input_device_id, SDL_TRUE);
 		SDL_ClearQueuedAudio(g_input_device_id);
-		g_input_device_paused = true;
+		SDL_CloseAudioDevice(g_input_device_id);
+		g_input_device_id = 0;
 	}
-	return !g_input_device_paused;
+
+	return enabled;
 }
 
 UINT32 I_SoundInputDequeueSamples(void *data, UINT32 len)
