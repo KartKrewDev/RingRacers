@@ -172,6 +172,8 @@ extern UINT8 demo_writerng;
 boolean G_CompatLevel(UINT16 level);
 
 // Record/playback tics
+boolean G_ConsiderEndingDemoRead(void);
+boolean G_ConsiderEndingDemoWrite(void);
 void G_ReadDemoExtraData(void);
 void G_WriteDemoExtraData(void);
 void G_ReadDemoTiccmd(ticcmd_t *cmd, INT32 playernum);

@@ -762,17 +762,23 @@ void P_Ticker(boolean run)
 
 		if (demo.recording)
 		{
-			G_WriteDemoExtraData();
-			for (i = 0; i < MAXPLAYERS; i++)
-				if (playeringame[i])
-					G_WriteDemoTiccmd(&players[i].cmd, i);
+			if (!G_ConsiderEndingDemoWrite())
+			{
+				G_WriteDemoExtraData();
+				for (i = 0; i < MAXPLAYERS; i++)
+					if (playeringame[i])
+						G_WriteDemoTiccmd(&players[i].cmd, i);
+			}
 		}
 		if (demo.playback && !demo.waitingfortally)
 		{
-			G_ReadDemoExtraData();
-			for (i = 0; i < MAXPLAYERS; i++)
-				if (playeringame[i])
-					G_ReadDemoTiccmd(&players[i].cmd, i);
+			if (!G_ConsiderEndingDemoRead())
+			{
+				G_ReadDemoExtraData();
+				for (i = 0; i < MAXPLAYERS; i++)
+					if (playeringame[i])
+						G_ReadDemoTiccmd(&players[i].cmd, i);
+			}
 		}
 
 		LUA_ResetTicTimers();
@@ -1168,14 +1174,21 @@ void P_Ticker(boolean run)
 
 		if (demo.recording)
 		{
-			G_WriteAllGhostTics();
-
 			if (cv_recordmultiplayerdemos.value && demo.savebutton && demo.savebutton + 3*TICRATE < leveltime)
 				G_CheckDemoTitleEntry();
+
+			if (!G_ConsiderEndingDemoWrite())
+			{
+				G_WriteAllGhostTics();
+			}
 		}
-		else if (demo.playback && !demo.waitingfortally) // Use Ghost data for consistency checks.
+		else if (demo.playback && !demo.waitingfortally)
 		{
-			G_ConsAllGhostTics();
+			if (!G_ConsiderEndingDemoRead())
+			{
+				// Use Ghost data for consistency checks.
+				G_ConsAllGhostTics();
+			}
 		}
 
 		if (modeattacking)

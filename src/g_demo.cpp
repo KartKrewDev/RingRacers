@@ -270,6 +270,26 @@ static ticcmd_t oldcmd[MAXPLAYERS];
 
 static mobj_t oldghost[MAXPLAYERS];
 
+boolean G_ConsiderEndingDemoWrite(void)
+{
+	// chill, we reserved extra memory so it's
+	// "safe" to have written a bit past the end
+	if (demobuf.p < demobuf.end)
+		return false;
+
+	G_CheckDemoStatus();
+	return true;
+}
+
+boolean G_ConsiderEndingDemoRead(void)
+{
+	if (*demobuf.p != DEMOMARKER)
+		return false;
+
+	G_CheckDemoStatus();
+	return true;
+}
+
 void G_ReadDemoExtraData(void)
 {
 	INT32 p, extradata, i;
@@ -460,13 +480,6 @@ void G_ReadDemoExtraData(void)
 
 		p = READUINT8(demobuf.p);
 	}
-
-	if (!(demoflags & DF_GHOST) && *demobuf.p == DEMOMARKER)
-	{
-		// end of demo data stream
-		G_CheckDemoStatus();
-		return;
-	}
 }
 
 void G_WriteDemoExtraData(void)
@@ -623,13 +636,6 @@ void G_ReadDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 	}
 
 	G_CopyTiccmd(cmd, &oldcmd[playernum], 1);
-
-	if (!(demoflags & DF_GHOST) && *demobuf.p == DEMOMARKER)
-	{
-		// end of demo data stream
-		G_CheckDemoStatus();
-		return;
-	}
 }
 
 void G_WriteDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
@@ -739,14 +745,6 @@ void G_WriteDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 
 		WRITEUINT16(botziptic_p, botziptic);
 	}
-
-	// attention here for the ticcmd size!
-	// latest demos with mouse aiming byte in ticcmd
-	if (!(demoflags & DF_GHOST) && ziptic_p > demobuf.end - 9)
-	{
-		G_CheckDemoStatus(); // no more space
-		return;
-	}
 }
 
 void G_GhostAddFlip(INT32 playernum)
@@ -794,8 +792,11 @@ void G_GhostAddHit(INT32 playernum, mobj_t *victim)
 
 void G_WriteAllGhostTics(void)
 {
-	boolean toobig = false;
 	INT32 i, counter = leveltime;
+
+	if (!demobuf.p || !(demoflags & DF_GHOST))
+		return; // No ghost data to write.
+
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i] || players[i].spectator)
@@ -811,22 +812,9 @@ void G_WriteAllGhostTics(void)
 
 		WRITEUINT8(demobuf.p, i);
 		G_WriteGhostTic(players[i].mo, i);
-
-		// attention here for the ticcmd size!
-		// latest demos with mouse aiming byte in ticcmd
-		if (demobuf.p >= demobuf.end - (13 + 9 + 9))
-		{
-			toobig = true;
-			break;
-		}
 	}
+
 	WRITEUINT8(demobuf.p, 0xFF);
-
-	if (toobig)
-	{
-		G_CheckDemoStatus(); // no more space
-		return;
-	}
 }
 
 void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
@@ -834,11 +822,6 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 	char ziptic = 0;
 	UINT8 *ziptic_p;
 	UINT32 i;
-
-	if (!demobuf.p)
-		return;
-	if (!(demoflags & DF_GHOST))
-		return; // No ghost data to write.
 
 	ziptic_p = demobuf.p++; // the ziptic, written at the end of this function
 
@@ -1061,7 +1044,7 @@ void G_ConsAllGhostTics(void)
 {
 	UINT8 p;
 
-	if (!demobuf.p || !demo.deferstart)
+	if (!demobuf.p || !(demoflags & DF_GHOST) || !demo.deferstart)
 		return;
 
 	p = READUINT8(demobuf.p);
@@ -1070,13 +1053,6 @@ void G_ConsAllGhostTics(void)
 	{
 		G_ConsGhostTic(p);
 		p = READUINT8(demobuf.p);
-	}
-
-	if (*demobuf.p == DEMOMARKER)
-	{
-		// end of demo data stream
-		G_CheckDemoStatus();
-		return;
 	}
 }
 
@@ -1088,9 +1064,6 @@ void G_ConsGhostTic(INT32 playernum)
 	INT32 px,py,pz,gx,gy,gz;
 	mobj_t *testmo;
 	UINT32 syncleeway;
-
-	if (!(demoflags & DF_GHOST))
-		return; // No ghost data to use.
 
 	testmo = players[playernum].mo;
 
@@ -1282,13 +1255,6 @@ void G_ConsGhostTic(INT32 playernum)
 			}
 		}
 	}
-
-	if (*demobuf.p == DEMOMARKER)
-	{
-		// end of demo data stream
-		G_CheckDemoStatus();
-		return;
-	}
 }
 
 void G_GhostTicker(void)
@@ -1309,10 +1275,30 @@ void G_GhostTicker(void)
 			continue;
 
 readghosttic:
+#define follow g->mo->tracer
 
 		// Skip normal demo data.
 		ziptic = READUINT8(g->p);
 		xziptic = 0;
+
+		// Demo ends after ghost data.
+		if (ziptic == DEMOMARKER)
+		{
+fadeghost:
+			g->mo->momx = g->mo->momy = g->mo->momz = 0;
+			g->mo->fuse = TICRATE;
+			if (follow)
+			{
+				follow->fuse = TICRATE;
+			}
+
+			g->done = true;
+			if (p)
+			{
+				p->next = g->next;
+			}
+			continue;
+		}
 
 		while (ziptic != DW_END) // Get rid of extradata stuff
 		{
@@ -1414,9 +1400,11 @@ readghosttic:
 		// Grab ghost data.
 		ziptic = READUINT8(g->p);
 
+		if (ziptic == DEMOMARKER) // Had to end early for some reason
+			goto fadeghost;
 		if (ziptic == 0xFF)
 			goto skippedghosttic; // Didn't write ghost info this frame
-		else if (ziptic != 0)
+		if (ziptic != 0)
 			I_Error("Ghost is not a record attack ghost ZIPTIC"); //@TODO lmao don't blow up like this
 		ziptic = READUINT8(g->p);
 
@@ -1530,7 +1518,6 @@ readghosttic:
 			g->mo->renderflags &= ~RF_DONTDRAW;
 		}
 
-#define follow g->mo->tracer
 		if (ziptic & GZT_FOLLOW)
 		{ // Even more...
 			UINT8 followtic = READUINT8(g->p);
@@ -1619,28 +1606,6 @@ skippedghosttic:
 
 		if (READUINT8(g->p) != 0xFF) // Make sure there isn't other ghost data here.
 			I_Error("Ghost is not a record attack ghost GHOSTEND"); //@TODO lmao don't blow up like this
-
-		// Demo ends after ghost data.
-		if (*g->p == DEMOMARKER)
-		{
-			g->mo->momx = g->mo->momy = g->mo->momz = 0;
-#if 0 // freeze frame (maybe more useful for time attackers) (2024-03-11: you leave it behind anyway!)
-			g->mo->colorized = true;
-			g->mo->fuse = 10*TICRATE;
-			if (follow)
-				follow->colorized = true;
-#else // dissapearing act
-			g->mo->fuse = TICRATE;
-			if (follow)
-				follow->fuse = TICRATE;
-#endif
-			g->done = true;
-			if (p)
-			{
-				p->next = g->next;
-			}
-			continue;
-		}
 
 		// If the timer started, skip ahead until the ghost starts too.
 		if (starttime <= leveltime && !g->linecrossed && G_TimeAttackStart())
@@ -1885,7 +1850,7 @@ void G_RecordDemo(const char *name)
 	functions will check if they overran the buffer, but it
 	should be safe enough because they'll think there's less
 	memory than there actually is and stop early. */
-	const size_t deadspace = 1024;
+	const size_t deadspace = 2048;
 	I_Assert(demobuf.size > deadspace);
 	demobuf.size -= deadspace;
 	demobuf.end -= deadspace;
@@ -3363,22 +3328,6 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 	// Load "mapmusrng" used for altmusic selection
 	mapmusrng = READUINT8(demobuf.p);
 
-	// Sigh ... it's an empty demo.
-	if (*demobuf.p == DEMOMARKER)
-	{
-		snprintf(msg, 1024, M_GetText("%s contains no data to be played.\n"), pdemoname);
-		CONS_Alert(CONS_ERROR, "%s", msg);
-		M_StartMessage("Demo Playback", msg, NULL, MM_NOTHING, NULL, "Return to Menu");
-		Z_Free(demo.skinlist);
-		demo.skinlist = NULL;
-		Z_Free(pdemoname);
-		Z_Free(demobuf.buffer);
-		demo.playback = false;
-		return;
-	}
-
-	Z_Free(pdemoname);
-
 	memset(&oldcmd,0,sizeof(oldcmd));
 	memset(&oldghost,0,sizeof(oldghost));
 	memset(&ghostext,0,sizeof(ghostext));
@@ -3607,6 +3556,22 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 		players[p].lastfakeskin = lastfakeskin[p];
 	}
 
+	// Sigh ... it's an empty demo.
+	if (*demobuf.p == DEMOMARKER)
+	{
+		snprintf(msg, 1024, M_GetText("%s contains no data to be played.\n"), pdemoname);
+		CONS_Alert(CONS_ERROR, "%s", msg);
+		M_StartMessage("Demo Playback", msg, NULL, MM_NOTHING, NULL, "Return to Menu");
+		Z_Free(demo.skinlist);
+		demo.skinlist = NULL;
+		Z_Free(pdemoname);
+		Z_Free(demobuf.buffer);
+		demo.playback = false;
+		return;
+	}
+
+	Z_Free(pdemoname);
+
 	demo.deferstart = true;
 
 	CV_StealthSetValue(&cv_playbackspeed, 1);
@@ -3756,14 +3721,6 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 
 	p++; // mapmusrng
 
-	if (*p == DEMOMARKER)
-	{
-		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Replay is empty.\n"), defdemoname);
-		Z_Free(skinlist);
-		P_SaveBufferFree(buffer);
-		return;
-	}
-
 	p++; // player number - doesn't really need to be checked, TODO maybe support adding multiple players' ghosts at once
 
 	// any invalidating flags?
@@ -3806,6 +3763,14 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	if (READUINT8(p) != 0xFF)
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Invalid player slot (bad terminator)\n"), defdemoname);
+		Z_Free(skinlist);
+		P_SaveBufferFree(buffer);
+		return;
+	}
+
+	if (*p == DEMOMARKER)
+	{
+		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Replay is empty.\n"), defdemoname);
 		Z_Free(skinlist);
 		P_SaveBufferFree(buffer);
 		return;
@@ -4173,7 +4138,7 @@ boolean G_CheckDemoStatus(void)
 		// Keep the demo open and don't boot to intermission
 		// YET, pause demo playback.
 		if (!demo.waitingfortally && modeattacking && exitcountdown)
-			demo.waitingfortally = true;
+			;
 		else if (!demo.attract)
 			G_FinishExitLevel();
 		else
@@ -4190,6 +4155,8 @@ boolean G_CheckDemoStatus(void)
 			else
 				D_SetDeferredStartTitle(true);
 		}
+
+		demo.waitingfortally = true; // if we've returned early for some reason...
 
 		return true;
 	}
@@ -4234,6 +4201,13 @@ void G_SaveDemo(void)
 
 	if (currentMenu == &TitleEntryDef)
 		M_ClearMenus(true);
+
+	if (!leveltime)
+	{
+		// Why would you save if nothing has been recorded
+		G_ResetDemoRecording();
+		return;
+	}
 
 	// Ensure extrainfo pointer is always available, even if no info is present.
 	if (demoinfo_p && *(UINT32 *)demoinfo_p == 0)
