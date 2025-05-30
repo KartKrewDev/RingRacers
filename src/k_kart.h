@@ -59,6 +59,9 @@ Make sure this matches the actual number of states
 
 #define TIMEATTACK_START (TICRATE*10)
 
+#define LIGHTNING_CHARGE (TICRATE*2)
+#define LIGHTNING_SOUND (sfx_s3k84)
+
 #define OVERDRIVE_STARTUP (0)
 
 #define AMPLEVEL (15)

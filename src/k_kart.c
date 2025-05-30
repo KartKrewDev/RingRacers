@@ -1480,6 +1480,9 @@ static boolean K_HasInfiniteTether(player_t *player)
 			return true;
 	}
 
+	if (player->lightningcharge)
+		return true;
+
 	if (player->eggmanexplode > 0)
 		return true;
 
@@ -1610,7 +1613,7 @@ static boolean K_TryDraft(player_t *player, mobj_t *dest, fixed_t minDist, fixed
 				player->draftpower -= 3*add/4;
 		}
 
-		if (gametyperules & GTR_CLOSERPLAYERS)
+		if (gametyperules & GTR_CLOSERPLAYERS || player->curshield == KSHIELD_LIGHTNING || player->lightningcharge)
 		{
 			// Double speed in smaller environments
 			player->draftpower += add;
@@ -10687,6 +10690,28 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			K_FlameDashLeftoverSmoke(player->mo);
 	}
 
+	if (player->lightningcharge)
+	{
+		player->lightningcharge++;
+
+		/*
+		if (onground)
+			P_Thrust(player->mo, player->mo->angle, player->mo->scale);
+		*/
+
+		if (player->lightningcharge == LIGHTNING_CHARGE)
+		{
+			K_DoLightningShield(player);
+			P_Thrust(player->mo, player->mo->angle, 100*player->mo->scale);
+			player->tiregrease = TICRATE/4;
+			player->lightningcharge = 0;
+		}
+	}
+	else
+	{
+		S_StopSoundByID(player->mo, LIGHTNING_SOUND);
+	}
+
 	if (P_IsObjectOnGround(player->mo) && player->trickpanel != TRICKSTATE_NONE)
 	{
 		if (P_MobjFlip(player->mo) * player->mo->momz <= 0)
@@ -14721,7 +14746,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
 							{
-								K_DoLightningShield(player);
+								// K_DoLightningShield(player);
+								player->lightningcharge = 1;
+								S_StartSound(player->mo, LIGHTNING_SOUND);
 								if (player->itemamount > 0)
 								{
 									// Why is this a conditional?

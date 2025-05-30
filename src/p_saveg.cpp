@@ -560,6 +560,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT16(save->p, players[i].counterdash);
 		WRITEUINT16(save->p, players[i].flamemeter);
 		WRITEUINT8(save->p, players[i].flamelength);
+		WRITEUINT8(save->p, players[i].lightningcharge);
 
 		WRITEUINT16(save->p, players[i].ballhogcharge);
 		WRITEUINT8(save->p, players[i].ballhogtap);
@@ -1225,6 +1226,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].counterdash = READUINT16(save->p);
 		players[i].flamemeter = READUINT16(save->p);
 		players[i].flamelength = READUINT8(save->p);
+		players[i].lightningcharge = READUINT8(save->p);
 
 		players[i].ballhogcharge = READUINT16(save->p);
 		players[i].ballhogtap = READUINT8(save->p);
