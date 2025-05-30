@@ -327,7 +327,7 @@ void K_BotHitPenalty(player_t *player);
 
 boolean K_IsPickMeUpItem(mobjtype_t type);
 
-boolean K_TryPickMeUp(mobj_t *m1, mobj_t *m2);
+boolean K_TryPickMeUp(mobj_t *m1, mobj_t *m2, boolean allowHostile);
 
 fixed_t K_TeamComebackMultiplier(player_t *player);
 

@@ -15908,7 +15908,7 @@ static boolean K_PickUp(player_t *player, mobj_t *picked)
 }
 
 // ACHTUNG this destroys items when returning true, make sure to bail out
-boolean K_TryPickMeUp(mobj_t *m1, mobj_t *m2)
+boolean K_TryPickMeUp(mobj_t *m1, mobj_t *m2, boolean allowHostile)
 {
 	if (!m1 || P_MobjWasRemoved(m1))
 		return false;
@@ -15943,7 +15943,7 @@ boolean K_TryPickMeUp(mobj_t *m1, mobj_t *m2)
 		if (inflictor->target->player && G_SameTeam(inflictor->target->player, victim->player))
 			allied = true;
 
-	if (!allied)
+	if (!allied && !allowHostile)
 		return false;
 
 	// CONS_Printf("target check passed\n");
