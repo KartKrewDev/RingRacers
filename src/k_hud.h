@@ -25,6 +25,8 @@ extern "C" {
 
 #define POS_DELAY_TIME 10
 
+#define MARGINLEVELS 24
+
 extern INT32 MINI_X, MINI_Y;
 
 struct trackingResult_t

@@ -3763,7 +3763,6 @@ boolean P_SpectatorJoinGame(player_t *player)
 	}
 	player->spectator = false;
 	player->pflags &= ~PF_WANTSTOJOIN;
-	player->spectatewait = 0;
 	player->team = TEAM_UNASSIGNED; // We will auto-assign later.
 	player->playerstate = PST_REBORN;
 	player->enteredGame = true;
@@ -3777,6 +3776,10 @@ boolean P_SpectatorJoinGame(player_t *player)
 
 	// a surprise tool that will help us later...
 	text = va("\x82*%s entered the game.", player_names[player-players]);
+
+	if (P_IsMachineLocalPlayer(player) && player->spectatewait > TICRATE)
+		S_StartSound(NULL, sfx_s3ka9);
+	player->spectatewait = 0;
 
 	HU_AddChatText(text, false);
 	return true; // no more player->mo, cannot continue.
