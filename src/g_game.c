@@ -1247,7 +1247,7 @@ void G_StartTitleCard(void)
 
 	// The title card has been disabled for this map.
 	// Oh well.
-	if (demo.rewinding || !G_IsTitleCardAvailable())
+	if (!G_IsTitleCardAvailable())
 	{
 		WipeStageTitle = false;
 		return;
@@ -1439,13 +1439,7 @@ boolean G_Responder(event_t *ev)
 		{
 			paused = !paused;
 
-			if (demo.rewinding)
-			{
-				G_ConfirmRewind(leveltime);
-				paused = true;
-				S_PauseAudio();
-			}
-			else if (paused)
+			if (paused)
 				S_PauseAudio();
 			else
 				S_ResumeAudio();

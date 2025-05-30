@@ -151,7 +151,7 @@ static void M_PlaybackTick(void)
 		playback_last_menu_interaction_leveltime = leveltime - 6*TICRATE;
 
 	// Toggle items
-	if (paused && !demo.rewinding)
+	if (paused)
 	{
 		PAUSE_PlaybackMenu[playback_pause].status = PAUSE_PlaybackMenu[playback_fastforward].status = PAUSE_PlaybackMenu[playback_rewind].status = IT_DISABLED;
 		PAUSE_PlaybackMenu[playback_resume].status = PAUSE_PlaybackMenu[playback_advanceframe].status = PAUSE_PlaybackMenu[playback_backframe].status = IT_CALL|IT_STRING;
@@ -204,34 +204,9 @@ void M_SetPlaybackMenuPointer(void)
 
 void M_PlaybackRewind(INT32 choice)
 {
-#if 0
-	static tic_t lastconfirmtime;
-
-	(void)choice;
-
-	if (!demo.rewinding)
-	{
-		if (paused)
-		{
-			G_ConfirmRewind(leveltime-1);
-			paused = true;
-			S_PauseAudio();
-		}
-		else
-			demo.rewinding = paused = true;
-	}
-	else if (lastconfirmtime + TICRATE/2 < I_GetTime())
-	{
-		lastconfirmtime = I_GetTime();
-		G_ConfirmRewind(leveltime);
-	}
-
-	CV_SetValue(&cv_playbackspeed, 1);
-#else
 	(void)choice;
 	G_DoPlayDemo(NULL); // Restart the current demo
 	M_ClearMenus(true);
-#endif
 }
 
 void M_PlaybackPause(INT32 choice)
@@ -240,13 +215,7 @@ void M_PlaybackPause(INT32 choice)
 
 	paused = !paused;
 
-	if (demo.rewinding)
-	{
-		G_ConfirmRewind(leveltime);
-		paused = true;
-		S_PauseAudio();
-	}
-	else if (paused)
+	if (paused)
 		S_PauseAudio();
 	else
 		S_ResumeAudio();
@@ -258,12 +227,6 @@ void M_PlaybackFastForward(INT32 choice)
 {
 	(void)choice;
 
-	if (demo.rewinding)
-	{
-		G_ConfirmRewind(leveltime);
-		paused = false;
-		S_ResumeAudio();
-	}
 	CV_SetValue(&cv_playbackspeed, cv_playbackspeed.value == 1 ? 4 : 1);
 }
 

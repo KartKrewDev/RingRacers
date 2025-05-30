@@ -739,15 +739,7 @@ void P_Ticker(boolean run)
 	// Check for pause or menu up in single player
 	if (paused || P_AutoPause())
 	{
-		if (demo.rewinding && leveltime > 0)
-		{
-			leveltime = (leveltime-1) & ~3;
-			if (timeinmap > 0)
-				timeinmap = (timeinmap-1) & ~3;
-			G_PreviewRewind(leveltime);
-		}
-		else
-			P_RunChaseCameras();	// special case: allow freecam to MOVE during pause!
+		P_RunChaseCameras(); // special case: allow freecam to MOVE during pause!
 		return;
 	}
 
@@ -1250,9 +1242,6 @@ void P_Ticker(boolean run)
 	}
 
 	P_MapEnd();
-
-	if (demo.playback)
-		G_StoreRewindInfo();
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{

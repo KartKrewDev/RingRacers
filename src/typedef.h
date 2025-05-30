@@ -76,7 +76,6 @@ TYPEDEF (plrconfig);
 TYPEDEF (filesneededconfig_pak);
 TYPEDEF (doomdata_t);
 TYPEDEF (serverelem_t);
-TYPEDEF (rewind_t);
 TYPEDEF (clientkey_pak);
 TYPEDEF (serverchallenge_pak);
 TYPEDEF (challengeall_pak);

@@ -84,7 +84,6 @@ struct demovars_s {
 	boolean recording, playback, timing;
 	UINT16 version; // Current file format of the demo being played
 	UINT8 attract; // Attract demo can be cancelled by any key
-	boolean rewinding; // Rewind in progress
 
 	boolean loadfiles, ignorefiles; // Demo file loading options
 	boolean quitafterplaying; // quit after playing a demo from cmdline
@@ -187,11 +186,6 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum);
 void G_ConsAllGhostTics(void);
 void G_ConsGhostTic(INT32 playernum);
 void G_GhostTicker(void);
-
-void G_InitDemoRewind(void);
-void G_StoreRewindInfo(void);
-void G_PreviewRewind(tic_t previewtime);
-void G_ConfirmRewind(tic_t rewindtime);
 
 struct DemoBufferSizes
 {
