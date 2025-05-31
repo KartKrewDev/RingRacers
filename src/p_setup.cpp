@@ -8513,7 +8513,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		wipegamestate = gamestate; // Don't fade if reloading the gamestate
 	// Encore mode fade to pink to white
 	// This is handled BEFORE sounds are stopped.
-	else if (encoremode && !prevencoremode && modeattacking == ATTACKING_NONE && !demo.simplerewind)
+	else if (encoremode && !prevencoremode && !demo.simplerewind)
 	{
 		if (rendermode != render_none)
 		{

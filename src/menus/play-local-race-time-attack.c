@@ -614,34 +614,19 @@ void M_StartTimeAttack(INT32 choice)
 		{
 			modeattacking |= ATTACKING_SPB;
 		}
+
+		if (gamestate == GS_MENU)
+		{
+			encoremode = true; // guarantees short wipe
+		}
+
 		modeprefix = "spb-";
 	}
 
 	// DON'T SOFTLOCK
 	CON_ToggleOff();
 
-	// Still need to reset devmode
-	cht_debug = 0;
-
-	if (demo.playback)
-		G_StopDemo();
-
-	splitscreen = 0;
-	SplitScreen_OnChange();
-
-	S_StartSound(NULL, sfx_s3k63);
-
-	paused = false;
-
-	S_StopMusicCredit();
-
-	// Early fadeout to let the sound finish playing
-	F_WipeStartScreen();
-	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
-	F_WipeEndScreen();
-	F_RunWipe(wipe_level_toblack, wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
-
-	SV_StartSinglePlayerServer(levellist.newgametype, false);
+	M_MenuToLevelPreamble(0, (gamestate != GS_MENU || cv_dummyspbattack.value == 1));
 
 	gpath = va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s",
 			srb2home, timeattackfolder);
@@ -659,8 +644,17 @@ void M_StartTimeAttack(INT32 choice)
 
 	restoreMenu = &PLAY_TimeAttackDef;
 
+	D_MapChange(
+		levellist.choosemap+1,
+		levellist.newgametype,
+		(cv_dummyspbattack.value == 1),
+		true,
+		1,
+		false,
+		false
+	);
+
 	M_ClearMenus(true);
-	D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_dummyspbattack.value == 1), 1, 1, false, false);
 
 	G_UpdateTimeStickerMedals(levellist.choosemap, true);
 }

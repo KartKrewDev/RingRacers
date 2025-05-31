@@ -657,6 +657,11 @@ void M_LevelSelectInit(INT32 choice)
 		case 0:
 			levellist.levelsearch.grandprix = false;
 			levellist.levelsearch.timeattack = false;
+
+			CV_StealthSet(&cv_kartbot, cv_dummymatchbots.string);
+			CV_StealthSet(&cv_kartencore, (cv_dummygpencore.value == 1) ? "On" : "Auto");
+			CV_StealthSet(&cv_kartspeed, (cv_dummykartspeed.value == KARTSPEED_NORMAL) ? "Auto Gear" : cv_dummykartspeed.string);
+
 			break;
 		case 1:
 			levellist.levelsearch.grandprix = false;
@@ -687,6 +692,40 @@ void M_LevelSelectInit(INT32 choice)
 		S_StartSound(NULL, sfx_s3kb2);
 		M_StartMessage("Offline Play", va("No levels available for\n%s Mode!\n", gametypes[gt]->name), NULL, MM_NOTHING, NULL, NULL);
 	}
+}
+
+void M_MenuToLevelPreamble(UINT8 ssplayers, boolean nowipe)
+{
+	cht_debug = 0;
+
+	if (demo.playback)
+		G_StopDemo();
+
+	if (cv_maxconnections.value < ssplayers+1)
+		CV_SetValue(&cv_maxconnections, ssplayers+1);
+
+	if (splitscreen != ssplayers)
+	{
+		splitscreen = ssplayers;
+		SplitScreen_OnChange();
+	}
+
+	paused = false;
+
+	S_StopMusicCredit();
+
+	if (!nowipe)
+	{
+		S_StartSound(NULL, sfx_s3k63);
+
+		// Early fadeout to let the sound finish playing
+		F_WipeStartScreen();
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+		F_WipeEndScreen();
+		F_RunWipe(wipe_level_toblack, wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
+	}
+
+	SV_StartSinglePlayerServer(levellist.newgametype, levellist.netgame);
 }
 
 void M_LevelSelected(INT16 add, boolean menuupdate)
@@ -733,70 +772,35 @@ void M_LevelSelected(INT16 add, boolean menuupdate)
 	{
 		if (gamestate == GS_MENU)
 		{
-			UINT8 ssplayers = levellist.levelsearch.tutorial ? 0 : cv_splitplayers.value-1;
-
-			netgame = false;
 			multiplayer = true;
 
-			strlcpy(connectedservername, cv_servername.string, MAXSERVERNAME);
+			M_MenuToLevelPreamble(
+				(levellist.levelsearch.tutorial
+					? 0
+					: cv_splitplayers.value-1
+				),
+				(
+					(cv_kartencore.value == 1)
+					&& (gametypes[levellist.newgametype]->rules & GTR_ENCORE)
+				)
+			);
 
-			// Still need to reset devmode
-			cht_debug = 0;
-
-			if (demo.playback)
-				G_StopDemo();
-
-				/*if (levellist.choosemap == 0)
-					levellist.choosemap = G_RandMap(G_TOLFlag(levellist.newgametype), -1, 0, 0, false, NULL);*/
-
-			if (cv_maxconnections.value < ssplayers+1)
-				CV_SetValue(&cv_maxconnections, ssplayers+1);
-
-			if (splitscreen != ssplayers)
-			{
-				splitscreen = ssplayers;
-				SplitScreen_OnChange();
-			}
-
-			S_StartSound(NULL, sfx_s3k63);
-
-			paused = false;
-
-			S_StopMusicCredit();
-
-			// Early fadeout to let the sound finish playing
-			F_WipeStartScreen();
-			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
-			F_WipeEndScreen();
-			F_RunWipe(wipe_level_toblack, wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
-
-			SV_StartSinglePlayerServer(levellist.newgametype, levellist.netgame);
-
-			if (!levellist.netgame)
-				CV_StealthSet(&cv_kartbot, cv_dummymatchbots.string);
-
-			CV_StealthSet(&cv_kartencore, (cv_dummygpencore.value == 1) ? "On" : "Auto");
-			CV_StealthSet(&cv_kartspeed, (cv_dummykartspeed.value == KARTSPEED_NORMAL) ? "Auto Gear" : cv_dummykartspeed.string);
-
-			D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_kartencore.value == 1), 1, 1, false, false);
-
-			if (levellist.netgame == true)
-			{
-				restoreMenu = &PLAY_MP_OptSelectDef;
-			}
-			else /*if (!M_GameTrulyStarted() ||
-				levellist.levelsearch.tutorial)*/
-			{
-				restoreMenu = currentMenu;
-			}
+			restoreMenu = (levellist.netgame)
+				? &PLAY_MP_OptSelectDef
+				: currentMenu;
 
 			restorelevellist = levellist;
 		}
-		else
-		{
-			// directly do the map change
-			D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_kartencore.value == 1), 1, 1, false, false);
-		}
+
+		D_MapChange(
+			levellist.choosemap+1,
+			levellist.newgametype,
+			(cv_kartencore.value == 1),
+			true,
+			1,
+			false,
+			false
+		);
 
 		M_ClearMenus(true);
 	}
