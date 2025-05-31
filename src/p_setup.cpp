@@ -8388,6 +8388,46 @@ void P_LoadLevelMusic(void)
 	Music_ResetLevelVolume();
 }
 
+void P_FreeLevelState(void)
+{
+	if (numsectors)
+	{
+		F_EndTextPrompt(false, true);
+		K_UnsetDialogue();
+
+		ACS_InvalidateMapScope();
+		LUA_InvalidateLevel();
+
+		Obj_ClearCheckpoints();
+
+		sector_t *ss;
+		for (ss = sectors; sectors+numsectors != ss; ss++)
+		{
+			Z_Free(ss->attached);
+			Z_Free(ss->attachedsolid);
+		}
+
+		// This is the simplest guard against double frees.
+		// No valid map has zero sectors. Or, come to think
+		// of it, less than two in general! ~toast 310525
+		numsectors = 0;
+	}
+
+	// Clear pointers that would be left dangling by the purge
+	R_FlushTranslationColormapCache();
+
+#ifdef HWRENDER
+	// Free GPU textures before freeing patches.
+	if (rendermode == render_opengl && (vid.glstate == VID_GL_LIBRARY_LOADED))
+		HWR_ClearAllTextures();
+#endif
+
+	G_FreeGhosts(); // ghosts are allocated with PU_LEVEL
+	Patch_FreeTag(PU_PATCH_LOWPRIORITY);
+	Patch_FreeTag(PU_PATCH_ROTATED);
+	Z_FreeTags(PU_LEVEL, PU_PURGELEVEL - 1);
+}
+
 /** Loads a level from a lump or external wad.
   *
   * \param fromnetsave If true, skip some stuff because we're loading a netgame snapshot.
@@ -8401,7 +8441,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	// 99% of the things already did, so.
 	// Map header should always be in place at this point
 	INT32 i, ranspecialwipe = 0;
-	sector_t *ss;
 	virtlump_t *encoreLump = NULL;
 
 	levelloading = true;
@@ -8645,41 +8684,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		}
 	}
 
-	/*
-	if (!titlemapinaction)
-		wipegamestate = GS_LEVEL;
-	*/
-
-	// Close text prompt before freeing the old level
-	F_EndTextPrompt(false, true);
-
-	K_UnsetDialogue();
-
-	ACS_InvalidateMapScope();
-
-	LUA_InvalidateLevel();
-
-	Obj_ClearCheckpoints();
-
-	for (ss = sectors; sectors+numsectors != ss; ss++)
-	{
-		Z_Free(ss->attached);
-		Z_Free(ss->attachedsolid);
-	}
-
-	// Clear pointers that would be left dangling by the purge
-	R_FlushTranslationColormapCache();
-
-#ifdef HWRENDER
-	// Free GPU textures before freeing patches.
-	if (rendermode == render_opengl && (vid.glstate == VID_GL_LIBRARY_LOADED))
-		HWR_ClearAllTextures();
-#endif
-
-	G_FreeGhosts(); // ghosts are allocated with PU_LEVEL
-	Patch_FreeTag(PU_PATCH_LOWPRIORITY);
-	Patch_FreeTag(PU_PATCH_ROTATED);
-	Z_FreeTags(PU_LEVEL, PU_PURGELEVEL - 1);
+	P_FreeLevelState();
 
 	R_InitializeLevelInterpolators();
 

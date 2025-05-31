@@ -1245,7 +1245,8 @@ void D_ClearState(void)
 	if (gamedata && gamedata->deferredsave)
 		G_SaveGameData();
 
-	K_UnsetDialogue();
+	P_FreeLevelState();
+	P_InvalidateThinkersWithoutInit();
 
 	G_SetGamestate(GS_NULL);
 	wipegamestate = GS_NULL;
