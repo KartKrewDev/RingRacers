@@ -21,6 +21,7 @@
 #include "../../v_video.h"
 #include "../../g_game.h" // G_GetBackupCupData
 #include "../../p_saveg.h" // cupsavedata
+#include "../../d_netcmd.h" // Handle_MapQueueSend
 
 cupheader_t dummy_lostandfound;
 
@@ -657,6 +658,7 @@ void M_LevelSelectInit(INT32 choice)
 		case 0:
 			levellist.levelsearch.grandprix = false;
 			levellist.levelsearch.timeattack = false;
+			levellist.canqueue = true;
 
 			CV_StealthSet(&cv_kartbot, cv_dummymatchbots.string);
 			CV_StealthSet(&cv_kartencore, (cv_dummygpencore.value == 1) ? "On" : "Auto");
@@ -666,10 +668,12 @@ void M_LevelSelectInit(INT32 choice)
 		case 1:
 			levellist.levelsearch.grandprix = false;
 			levellist.levelsearch.timeattack = true;
+			levellist.canqueue = false;
 			break;
 		case 2:
 			levellist.levelsearch.grandprix = true;
 			levellist.levelsearch.timeattack = false;
+			levellist.canqueue = false;
 			break;
 		default:
 			CONS_Alert(CONS_WARNING, "Bad level select init\n");
@@ -732,7 +736,7 @@ void M_MenuToLevelPreamble(UINT8 ssplayers, boolean nowipe)
 	SV_StartSinglePlayerServer(levellist.newgametype, levellist.netgame);
 }
 
-void M_LevelSelected(INT16 add, boolean menuupdate)
+INT16 M_LevelFromScrolledList(INT16 add)
 {
 	UINT8 i = 0;
 	INT16 map = M_GetFirstLevelInList(&i, &levellist.levelsearch);
@@ -748,6 +752,13 @@ void M_LevelSelected(INT16 add, boolean menuupdate)
 
 		add--;
 	}
+
+	return map;
+}
+
+void M_LevelSelected(INT16 add, boolean menuupdate)
+{
+	INT16 map = M_LevelFromScrolledList(add);
 
 	if (map >= nummapheaders)
 	{
@@ -807,6 +818,82 @@ void M_LevelSelected(INT16 add, boolean menuupdate)
 		);
 
 		M_ClearMenus(true);
+	}
+}
+
+static void M_MenuQueueStopSend(INT32 ch)
+{
+	(void)ch;
+
+	memset(&menuqueue, 0, sizeof(struct menuqueue));
+}
+
+static void M_MenuQueueSelectedLocal(void)
+{
+	UINT8 i = 0;
+
+	for (; i < menuqueue.size; i++)
+	{
+		G_MapIntoRoundQueue(
+			menuqueue.entries[i].mapnum,
+			menuqueue.entries[i].gametype,
+			menuqueue.entries[i].encore,
+			false
+		);
+	}
+
+	roundqueue.netcommunicate = true;
+
+	if (gamestate == GS_MENU)
+	{
+		levellist.choosemap = roundqueue.entries[0].mapnum;
+
+		multiplayer = true;
+
+		M_MenuToLevelPreamble(
+			cv_splitplayers.value-1,
+			(
+				roundqueue.entries[0].encore
+				&& (gametypes[roundqueue.entries[0].gametype]->rules & GTR_ENCORE)
+			)
+		);
+
+		restoreMenu = (levellist.netgame)
+			? &PLAY_MP_OptSelectDef
+			: currentMenu;
+
+		restorelevellist = levellist;
+
+		roundqueue.position = roundqueue.roundnum = 1;
+
+		D_MapChange(
+			roundqueue.entries[0].mapnum + 1,
+			roundqueue.entries[0].gametype,
+			roundqueue.entries[0].encore,
+			true,
+			1,
+			false,
+			roundqueue.entries[0].rankrestricted
+		);
+
+		M_MenuQueueStopSend(MA_NONE);
+
+		M_ClearMenus(true);
+	}
+	else
+	{
+		if (gamestate == GS_LEVEL && roundqueue.position == 0)
+		{
+			menuqueue.sending = UINT8_MAX;
+		}
+		else
+		{
+			S_StartSound(NULL, sfx_chchng);
+
+			M_MenuQueueStopSend(MA_NONE);
+
+			M_ClearMenus(true);
+		}
 	}
 }
 
@@ -891,6 +978,44 @@ boolean M_LevelSelectCupSwitch(boolean next, boolean skipones)
 	}
 }
 
+static void M_MenuQueueResponse(INT32 ch)
+{
+	M_ClearMenus(false);
+
+	if (ch != MA_YES)
+		return;
+
+	if (!(server || (IsPlayerAdmin(consoleplayer))))
+		return;
+
+	if (!(gamestate == GS_LEVEL && roundqueue.position == 0))
+		return;
+
+	SendNetXCmd(XD_EXITLEVEL, NULL, 0);
+}
+
+
+static void M_ClearQueueResponse(INT32 ch)
+{
+	if (ch != MA_YES)
+		return;
+
+	if (!(server || (IsPlayerAdmin(consoleplayer))))
+		return;
+
+	S_StartSound(NULL, sfx_slip);
+
+	if (netgame)
+	{
+		if (roundqueue.size)
+		{
+			Handle_MapQueueSend(0, ROUNDQUEUE_CMD_CLEAR, false);
+		}
+		return;
+	}
+
+	memset(&roundqueue, 0, sizeof(struct roundqueue));
+}
 void M_LevelSelectHandler(INT32 choice)
 {
 	const UINT8 pid = 0;
@@ -898,6 +1023,11 @@ void M_LevelSelectHandler(INT32 choice)
 	(void)choice;
 
 	if (I_GetTime() - levellist.slide.start < M_LEVELLIST_SLIDETIME)
+	{
+		return;
+	}
+
+	if (menuqueue.sending)
 	{
 		return;
 	}
@@ -934,10 +1064,96 @@ void M_LevelSelectHandler(INT32 choice)
 
 	M_LevelSelectScrollDest();
 
-	if (M_MenuConfirmPressed(pid) /*|| M_MenuButtonPressed(pid, MBT_START)*/)
+	if (M_MenuConfirmPressed(pid))
 	{
+		// Starting immediately OR importing queue
+
 		M_SetMenuDelay(pid);
-		M_LevelSelected(levellist.cursor, true);
+
+		while ((menuqueue.size + roundqueue.size) > ROUNDQUEUE_MAX)
+			menuqueue.size--;
+
+		if (!levellist.canqueue || !menuqueue.size)
+		{
+			M_LevelSelected(levellist.cursor, true);
+		}
+		else if (netgame)
+		{
+			menuqueue.anchor = roundqueue.size;
+			menuqueue.sending = 1;
+
+			M_StartMessage("Queueing Rounds",
+				va(M_GetText(
+				"Attempting to send %d Round%s...\n"
+				"\n"
+				"If this is taking longer than you\n"
+				"expect, exit out of this message.\n"
+				), menuqueue.size, (menuqueue.size == 1 ? "" : "s")
+				), &M_MenuQueueStopSend, MM_NOTHING,
+				NULL,
+				"This is taking too long..."
+			);
+		}
+		else
+		{
+			M_MenuQueueSelectedLocal();
+		}
+	}
+	else if (levellist.canqueue && M_MenuButtonPressed(pid, MBT_Z))
+	{
+		// Adding to queue
+
+		INT16 map = NEXTMAP_INVALID;
+
+		M_SetMenuDelay(pid);
+
+		if ((roundqueue.size + menuqueue.size) < ROUNDQUEUE_MAX)
+		{
+			map = M_LevelFromScrolledList(levellist.cursor);
+		}
+
+		if (map < nummapheaders)
+		{
+			memset(menuqueue.entries+menuqueue.size, 0, sizeof(roundentry_t));
+			menuqueue.entries[menuqueue.size].mapnum = map;
+			menuqueue.entries[menuqueue.size].gametype = levellist.newgametype;
+			menuqueue.entries[menuqueue.size].encore = (cv_kartencore.value == 1);
+
+			menuqueue.size++;
+
+			S_StartSound(NULL, sfx_s3k4a);
+		}
+		else
+		{
+			S_StartSound(NULL, sfx_s3kb2);
+		}
+	}
+	else if (levellist.canqueue && M_MenuExtraPressed(pid))
+	{
+		while ((menuqueue.size + roundqueue.size) > ROUNDQUEUE_MAX)
+			menuqueue.size--;
+
+		if (menuqueue.size)
+		{
+			S_StartSound(NULL, sfx_shldls);
+			menuqueue.size--;
+		}
+		else if (roundqueue.size)
+		{
+			M_StartMessage("Queue Clearing",
+				va(M_GetText(
+				"There %s %d Round%s of play queued.\n"
+				"\n"
+				"Do you want to empty the queue?\n"
+				),
+				(roundqueue.size == 1 ? "is" : "are"),
+				roundqueue.size,
+				(roundqueue.size == 1 ? "" : "s")
+				), &M_ClearQueueResponse, MM_YESNO,
+				"Time to start fresh",
+				"Not right now"
+			);
+		}
 	}
 	else if (M_MenuBackPressed(pid))
 	{
@@ -952,4 +1168,55 @@ void M_LevelSelectHandler(INT32 choice)
 
 void M_LevelSelectTick(void)
 {
+	if (!menuqueue.sending)
+		return;
+
+	if ((menuqueue.sending <= menuqueue.size) // Sending
+		&& (roundqueue.size >= menuqueue.anchor)) // Didn't get it wiped
+	{
+		if (!netgame)
+			return;
+
+		const UINT8 idcount = (roundqueue.size - menuqueue.anchor);
+
+		if (idcount == menuqueue.sending-1)
+		{
+			Handle_MapQueueSend(
+				menuqueue.entries[idcount].mapnum,
+				menuqueue.entries[idcount].gametype,
+				menuqueue.entries[idcount].encore
+			);
+		}
+		if (idcount >= menuqueue.sending-1)
+		{
+			menuqueue.sending++;
+		}
+		return;
+	}
+
+	if (menuqueue.size)
+	{
+		S_StartSound(NULL, sfx_chchng);
+
+		if (roundqueue.position)
+		{
+			M_StopMessage(MA_NONE);
+		}
+		else
+		{
+			M_StartMessage("Round Queue",
+				va(M_GetText(
+				"You just queued %d Round%s of play.\n"
+				"\n"
+				"Do you want to skip the current\n"
+				"course and start them immediately?\n"
+				), menuqueue.size, (menuqueue.size == 1 ? "" : "s")
+				), &M_MenuQueueResponse, MM_YESNO,
+				"Let's get going!",
+				"Not right now"
+			);
+		}
+	}
+
+	M_MenuQueueStopSend(MA_NONE);
 }

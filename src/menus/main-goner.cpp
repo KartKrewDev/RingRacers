@@ -1272,6 +1272,7 @@ void M_GonerTutorial(INT32 choice)
 
 	// Please also see M_LevelSelectInit as called in extras-1.c
 	levellist.netgame = false;
+	levellist.canqueue = false;
 	levellist.levelsearch.checklocked = true;
 	levellist.levelsearch.grandprix = false;
 	levellist.levelsearch.timeattack = false;

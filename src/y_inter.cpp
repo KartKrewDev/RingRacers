@@ -971,11 +971,15 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 // Handles drawing the bottom-of-screen progression.
 // Currently requires intermission y_data for animation only.
 //
-void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations, boolean widescreen)
+void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations, boolean widescreen, boolean adminmode)
 {
 	if (roundqueue.size == 0)
 	{
-		return;
+		if (!adminmode
+		|| menuqueue.size == 0)
+		{
+			return;
+		}
 	}
 
 	// The following is functionally a hack.
@@ -1041,6 +1045,10 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 	prize_dot[BPP_AHEAD] = static_cast<patch_t*>(W_CachePatchName("R_RRMRK4", PU_PATCH));
 	prize_dot[BPP_DONE] = static_cast<patch_t*>(W_CachePatchName("R_RRMRK6", PU_PATCH));
 
+	patch_t *rpmark[2];
+	rpmark[0] = static_cast<patch_t*>(W_CachePatchName("R_RPMARK", PU_PATCH));
+	rpmark[1] = static_cast<patch_t*>(W_CachePatchName("R_R2MARK", PU_PATCH));
+
 	UINT8 *colormap = NULL, *oppositemap = NULL;
 	fixed_t playerx = 0, playery = 0;
 	UINT8 pskin = MAXSKINS;
@@ -1079,10 +1087,37 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 			upwa = true;
 		}
 
-		workingqueuesize--;
+		if (!adminmode)
+		{
+			workingqueuesize--;
+		}
 	}
 
-	INT32 widthofroundqueue = 24*(workingqueuesize - 1);
+	INT32 widthofroundqueue, totalsteps;
+
+	INT32 menusendoffset = 0;
+	if (menuqueue.sending)
+	{
+		if (menuqueue.sending > menuqueue.size)
+		{
+			menusendoffset = menuqueue.size;
+		}
+		else
+		{
+			menusendoffset = menuqueue.sending-1;
+		}
+	}
+
+	if (adminmode)
+	{
+		totalsteps = std::min(workingqueuesize + (menuqueue.size - menusendoffset), ROUNDQUEUE_MAX);
+	}
+	else
+	{
+		totalsteps = workingqueuesize;
+	}
+
+	widthofroundqueue = (totalsteps - 1) * 24;
 
 	INT32 x = (BASEVIDWIDTH - widthofroundqueue) / 2;
 	INT32 y, basey = 167 + offset;
@@ -1091,7 +1126,7 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 
 	// The following block handles horizontal easing of the
 	// progression bar on the last non-rankrestricted round.
-	if (standings->showrank == true)
+	if (!adminmode && standings->showrank == true)
 	{
 		fixed_t percentslide = 0;
 		SINT8 deferxoffs = 0;
@@ -1151,12 +1186,22 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 		V_DrawMappedPatch(xiter, basey, baseflags, queuebg_upwa, greymap);
 	}
 
+	// Draw to left side of screen
 	while (xiter > -bufferspace)
 	{
 		xiter -= 24;
 		V_DrawMappedPatch(xiter, basey, baseflags, queuebg_flat, greymap);
 	}
 
+	// Draw to right side of screen
+	xiter = x + widthofroundqueue;
+	while (xiter < BASEVIDWIDTH + bufferspace)
+	{
+		xiter += 24;
+		V_DrawMappedPatch(xiter, basey, baseflags, queuebg_flat, greymap);
+	}
+
+	// Actually queued maps
 	for (i = 0; i < workingqueuesize; i++)
 	{
 		// Draw the background, and grab the appropriate line, to the right of the dot
@@ -1186,7 +1231,13 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 			}
 			else
 			{
-				V_DrawMappedPatch(x, basey, baseflags, queuebg_flat, greymap);
+				V_DrawMappedPatch(
+					x,
+					basey,
+					baseflags,
+					((workingqueuesize == totalsteps) ? queuebg_flat : queuebg_upwa),
+					greymap
+				);
 			}
 		}
 
@@ -1321,17 +1372,9 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 		}
 		else
 		{
-			// No more line! Fill in background to right edge of screen
-			xiter = x;
-			while (xiter < BASEVIDWIDTH + bufferspace)
-			{
-				xiter += 24;
-				V_DrawMappedPatch(xiter, basey, baseflags, queuebg_flat, greymap);
-			}
-
 			// Handle special entry on the end
 			// (has to be drawn before the semifinal dot due to overlap)
-			if (standings->showrank == true)
+			if (!adminmode && standings->showrank == true)
 			{
 				const fixed_t x2 = x + spacetospecial;
 
@@ -1342,7 +1385,7 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 				}
 				else if (
 					doanimations == true
-					&& roundqueue.position == roundqueue.size-1
+					&& roundqueue.position == workingqueuesize
 					&& timer - interpoffs <= 2*TICRATE
 				)
 				{
@@ -1522,13 +1565,62 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 		x += 24;
 	}
 
+	totalsteps -= i;
+
+	// Maps in the progress of being queued on the menu
+	if (adminmode && totalsteps)
+	{
+		for (i = menusendoffset; i < (totalsteps + menusendoffset); i++)
+		{
+			upwa ^= true;
+			if (upwa == false)
+			{
+				y = basey + 4;
+
+				V_DrawMappedPatch(x, basey, baseflags, queuebg_down, greymap);
+			}
+			else
+			{
+				y = basey + 12;
+
+				if (i+1 != menuqueue.size) // no more line?
+				{
+					V_DrawMappedPatch(x, basey, baseflags, queuebg_upwa, greymap);
+				}
+				else
+				{
+					V_DrawMappedPatch(x, basey, baseflags, queuebg_flat, greymap);
+				}
+			}
+
+			V_DrawMappedPatch(
+				x - 8, y,
+				baseflags,
+				level_dot[BPP_AHEAD],
+				NULL
+			);
+
+			V_DrawMappedPatch(
+				x - 10, y - 14,
+				baseflags,
+				rpmark[0],
+				NULL
+			);
+
+			K_DrawMapAsFace(
+				x - 9, y - 13,
+				(baseflags|((menuqueue.entries[i].encore) ? V_FLIP : 0)),
+				menuqueue.entries[i].mapnum,
+				NULL
+			);
+
+			x += 24;
+		}
+	}
+
 	// Draw the player position through the round queue!
 	if (playery != 0)
 	{
-		patch_t *rpmark[2];
-		rpmark[0] = static_cast<patch_t*>(W_CachePatchName("R_RPMARK", PU_PATCH));
-		rpmark[1] = static_cast<patch_t*>(W_CachePatchName("R_R2MARK", PU_PATCH));
-
 		// Change alignment
 		playerx -= (10 * FRACUNIT);
 		playery -= (14 * FRACUNIT);
@@ -1934,7 +2026,7 @@ skiptallydrawer:
 		goto finalcounter;
 
 	// Returns early if there's no roundqueue entries to draw
-	Y_RoundQueueDrawer(&data, 0, true, false);
+	Y_RoundQueueDrawer(&data, 0, true, false, false);
 
 	if (netgame)
 	{

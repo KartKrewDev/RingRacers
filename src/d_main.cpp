@@ -1213,6 +1213,7 @@ void D_ClearState(void)
 	// Reset GP and roundqueue
 	memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
 	memset(&roundqueue, 0, sizeof(struct roundqueue));
+	memset(&menuqueue, 0, sizeof(struct menuqueue));
 
 	// empty some other semi-important state
 	maptol = 0;

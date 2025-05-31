@@ -4106,6 +4106,7 @@ doremove:
 
 // Next map apparatus
 struct roundqueue roundqueue;
+struct menuqueue menuqueue;
 
 void G_MapSlipIntoRoundQueue(UINT8 position, UINT16 map, UINT8 setgametype, boolean setencore, boolean rankrestricted)
 {

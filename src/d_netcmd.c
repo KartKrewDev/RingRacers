@@ -2984,7 +2984,7 @@ static void Command_RestartLevel(void)
 	D_MapChange(gamemap, g_lastgametype, newencore, false, 0, false, false);
 }
 
-static void Handle_MapQueueSend(UINT16 newmapnum, UINT16 newgametype, boolean newencoremode)
+void Handle_MapQueueSend(UINT16 newmapnum, UINT16 newgametype, boolean newencoremode)
 {
 	UINT8 flags = 0;
 

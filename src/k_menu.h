@@ -923,6 +923,7 @@ typedef struct levellist_s {
 	UINT8 guessgt;
 	levelsearch_t levelsearch;
 	boolean netgame;	// Start the game in an actual server
+	boolean canqueue;
 	menu_t *backMenu;
 } levellist_t;
 
@@ -944,6 +945,7 @@ void M_CupSelectTick(void);
 void M_LevelSelectHandler(INT32 choice);
 void M_LevelSelectTick(void);
 
+INT16 M_LevelFromScrolledList(INT16 add);
 void M_MenuToLevelPreamble(UINT8 ssplayers, boolean nowipe);
 void M_LevelSelected(INT16 add, boolean menuupdate);
 boolean M_LevelSelectCupSwitch(boolean next, boolean skipones);
