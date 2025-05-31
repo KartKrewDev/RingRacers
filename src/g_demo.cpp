@@ -3364,7 +3364,8 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 
 	demo.deferstart = true;
 
-	CV_StealthSetValue(&cv_playbackspeed, 1);
+	if (demo.simplerewind == DEMO_REWIND_OFF)
+		CV_StealthSetValue(&cv_playbackspeed, 1);
 }
 
 void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)

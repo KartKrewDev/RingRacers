@@ -1247,7 +1247,7 @@ void G_StartTitleCard(void)
 
 	// The title card has been disabled for this map.
 	// Oh well.
-	if (!G_IsTitleCardAvailable())
+	if (demo.simplerewind || !G_IsTitleCardAvailable())
 	{
 		WipeStageTitle = false;
 		return;
@@ -2144,6 +2144,14 @@ void G_Ticker(boolean run)
 
 			if (g_fast_forward == 0)
 			{
+				// Not "rewinding" anymore.
+				if (demo.simplerewind == DEMO_REWIND_PAUSE)
+				{
+					paused = true;
+					S_PauseAudio();
+				}
+				demo.simplerewind = DEMO_REWIND_OFF;
+
 				// Next fast-forward is unlimited.
 				g_fast_forward_clock_stop = INFTICS;
 			}

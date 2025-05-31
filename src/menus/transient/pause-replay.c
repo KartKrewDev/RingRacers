@@ -39,21 +39,21 @@ menuitem_t PAUSE_PlaybackMenu[] =
 	{IT_CALL   | IT_STRING, "Hide Menu",			NULL, "M_PHIDE",	{.routine = M_SelectableClearMenus},	  0, 0},
 
 	{IT_CALL   | IT_STRING, "Restart",				NULL, "M_PRSTRT",	{.routine = M_PlaybackRewind},			 20, 0},
-	{IT_CALL   | IT_STRING, "Pause",				NULL, "M_PPAUSE",	{.routine = M_PlaybackPause},			 36, 0},
-	{IT_CALL   | IT_STRING, "Fast-Forward",			NULL, "M_PFFWD",	{.routine = M_PlaybackFastForward},		 52, 0},
-	{IT_CALL   | IT_STRING, "Restart",				NULL, "M_PRSTRT",	{.routine = M_PlaybackRewind},			 20, 0},
-	{IT_CALL   | IT_STRING, "Resume",				NULL, "M_PRESUM",	{.routine = M_PlaybackPause},			 36, 0},
-	{IT_CALL   | IT_STRING, "Advance Frame",		NULL, "M_PFADV",	{.routine = M_PlaybackAdvance},			 52, 0},
+	{IT_CALL   | IT_STRING, "Rewind 5 seconds",		NULL, "M_PREW",		{.routine = M_PlaybackRewind},			 36, 0},
+	{IT_CALL   | IT_STRING, "Pause",				NULL, "M_PPAUSE",	{.routine = M_PlaybackPause},			 52, 0},
+	{IT_CALL   | IT_STRING, "Fast-Forward",			NULL, "M_PFFWD",	{.routine = M_PlaybackFastForward},		 68, 0},
+	{IT_CALL   | IT_STRING, "Resume",				NULL, "M_PRESUM",	{.routine = M_PlaybackPause},			 52, 0},
+	{IT_CALL   | IT_STRING, "Advance Frame",		NULL, "M_PFADV",	{.routine = M_PlaybackAdvance},			 68, 0},
 
-	{IT_ARROWS | IT_STRING, "View Count",			NULL, "M_PVIEWS",	{.routine = M_PlaybackSetViews},		 72, 0},
-	{IT_ARROWS | IT_STRING, "Viewpoint",			NULL, "M_PNVIEW",	{.routine = M_PlaybackAdjustView},		 88, 0},
-	{IT_ARROWS | IT_STRING, "Viewpoint 2",			NULL, "M_PNVIEW",	{.routine = M_PlaybackAdjustView},		104, 0},
-	{IT_ARROWS | IT_STRING, "Viewpoint 3",			NULL, "M_PNVIEW",	{.routine = M_PlaybackAdjustView},		120, 0},
-	{IT_ARROWS | IT_STRING, "Viewpoint 4",			NULL, "M_PNVIEW",	{.routine = M_PlaybackAdjustView},		136, 0},
+	{IT_ARROWS | IT_STRING, "View Count",			NULL, "M_PVIEWS",	{.routine = M_PlaybackSetViews},		 88, 0},
+	{IT_ARROWS | IT_STRING, "Viewpoint",			NULL, "M_PNVIEW",	{.routine = M_PlaybackAdjustView},		104, 0},
+	{IT_ARROWS | IT_STRING, "Viewpoint 2",			NULL, "M_PNVIEW",	{.routine = M_PlaybackAdjustView},		120, 0},
+	{IT_ARROWS | IT_STRING, "Viewpoint 3",			NULL, "M_PNVIEW",	{.routine = M_PlaybackAdjustView},		136, 0},
+	{IT_ARROWS | IT_STRING, "Viewpoint 4",			NULL, "M_PNVIEW",	{.routine = M_PlaybackAdjustView},		152, 0},
 
-	{IT_CALL   | IT_STRING, "Toggle Director",		NULL, "UN_IC11A",	{.routine = M_PlaybackToggleDirector},	156, 0},
-	{IT_CALL   | IT_STRING, "Toggle Free Camera",	NULL, "M_PVIEWS",	{.routine = M_PlaybackToggleFreecam},	172, 0},
-	{IT_CALL   | IT_STRING, "Stop Playback",		NULL, "M_PEXIT",	{.routine = M_PlaybackQuit},			188, 0},
+	{IT_CALL   | IT_STRING, "Toggle Director",		NULL, "UN_IC11A",	{.routine = M_PlaybackToggleDirector},	172, 0},
+	{IT_CALL   | IT_STRING, "Toggle Free Camera",	NULL, "M_PVIEWS",	{.routine = M_PlaybackToggleFreecam},	188, 0},
+	{IT_CALL   | IT_STRING, "Stop Playback",		NULL, "M_PEXIT",	{.routine = M_PlaybackQuit},			204, 0},
 };
 
 menu_t PAUSE_PlaybackMenuDef = {
@@ -153,19 +153,19 @@ static void M_PlaybackTick(void)
 	// Toggle items
 	if (paused)
 	{
-		PAUSE_PlaybackMenu[playback_pause].status = PAUSE_PlaybackMenu[playback_fastforward].status = PAUSE_PlaybackMenu[playback_rewind].status = IT_DISABLED;
-		PAUSE_PlaybackMenu[playback_resume].status = PAUSE_PlaybackMenu[playback_advanceframe].status = PAUSE_PlaybackMenu[playback_backframe].status = IT_CALL|IT_STRING;
+		PAUSE_PlaybackMenu[playback_pause].status = PAUSE_PlaybackMenu[playback_fastforward].status = IT_DISABLED;
+		PAUSE_PlaybackMenu[playback_resume].status = PAUSE_PlaybackMenu[playback_advanceframe].status = IT_CALL|IT_STRING;
 
-		if (itemOn >= playback_rewind && itemOn <= playback_fastforward)
-			itemOn += playback_backframe - playback_rewind;
+		if (itemOn >= playback_pause && itemOn <= playback_fastforward)
+			itemOn += playback_resume - playback_pause;
 	}
 	else
 	{
-		PAUSE_PlaybackMenu[playback_pause].status = PAUSE_PlaybackMenu[playback_fastforward].status = PAUSE_PlaybackMenu[playback_rewind].status = IT_CALL|IT_STRING;
-		PAUSE_PlaybackMenu[playback_resume].status = PAUSE_PlaybackMenu[playback_advanceframe].status = PAUSE_PlaybackMenu[playback_backframe].status = IT_DISABLED;
+		PAUSE_PlaybackMenu[playback_pause].status = PAUSE_PlaybackMenu[playback_fastforward].status = IT_CALL|IT_STRING;
+		PAUSE_PlaybackMenu[playback_resume].status = PAUSE_PlaybackMenu[playback_advanceframe].status = IT_DISABLED;
 
-		if (itemOn >= playback_backframe && itemOn <= playback_advanceframe)
-			itemOn -= playback_backframe - playback_rewind;
+		if (itemOn >= playback_resume && itemOn <= playback_advanceframe)
+			itemOn -= playback_resume - playback_pause;
 	}
 
 	if (modeattacking)
@@ -173,10 +173,10 @@ static void M_PlaybackTick(void)
 		for (i = playback_viewcount; i <= playback_director; i++)
 			PAUSE_PlaybackMenu[i].status = IT_DISABLED;
 
-		PAUSE_PlaybackMenu[playback_freecam].mvar1 = 72;
-		PAUSE_PlaybackMenu[playback_quit].mvar1 = 88;
+		PAUSE_PlaybackMenu[playback_freecam].mvar1 = 88;
+		PAUSE_PlaybackMenu[playback_quit].mvar1 = 104;
 
-		currentMenu->x = BASEVIDWIDTH/2 - 52;
+		currentMenu->x = BASEVIDWIDTH/2 - 60;
 	}
 	else
 	{
@@ -189,11 +189,11 @@ static void M_PlaybackTick(void)
 		for (i = r_splitscreen+1; i < 4; i++)
 			PAUSE_PlaybackMenu[playback_view1+i].status = IT_DISABLED;
 
-		PAUSE_PlaybackMenu[playback_freecam].mvar1 = 172;
-		PAUSE_PlaybackMenu[playback_quit].mvar1 = 188;
+		PAUSE_PlaybackMenu[playback_freecam].mvar1 = 188;
+		PAUSE_PlaybackMenu[playback_quit].mvar1 = 204;
 
-		//currentMenu->x = BASEVIDWIDTH/2 - 94;
-		currentMenu->x = BASEVIDWIDTH/2 - 96;
+		//currentMenu->x = BASEVIDWIDTH/2 - 102;
+		currentMenu->x = BASEVIDWIDTH/2 - 104;
 	}
 }
 
@@ -204,9 +204,38 @@ void M_SetPlaybackMenuPointer(void)
 
 void M_PlaybackRewind(INT32 choice)
 {
-	(void)choice;
+	const tic_t curleveltime = leveltime;
+
+	if (choice == playback_rewind)
+	{
+		demo.simplerewind = (paused ? DEMO_REWIND_PAUSE : DEMO_REWIND_RESUME);
+		menuactive = false;
+	}
+
 	G_DoPlayDemo(NULL); // Restart the current demo
-	M_ClearMenus(true);
+
+	if (demo.simplerewind)
+	{
+		if (curleveltime > 5*TICRATE)
+		{
+			g_fast_forward = curleveltime - (5 * TICRATE);
+			g_fast_forward_clock_stop = INFTICS; //I_GetTime() + 2 * TICRATE; -- maybe?
+		}
+		else
+		{
+			if (demo.simplerewind == DEMO_REWIND_PAUSE)
+			{
+				paused = true;
+				S_PauseAudio();
+			}
+			demo.simplerewind = DEMO_REWIND_OFF;
+		}
+		menuactive = true;
+	}
+	else
+	{
+		M_ClearMenus(true);
+	}
 }
 
 void M_PlaybackPause(INT32 choice)

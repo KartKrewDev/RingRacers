@@ -8474,7 +8474,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		wipegamestate = gamestate; // Don't fade if reloading the gamestate
 	// Encore mode fade to pink to white
 	// This is handled BEFORE sounds are stopped.
-	else if (encoremode && !prevencoremode && modeattacking == ATTACKING_NONE)
+	else if (encoremode && !prevencoremode && modeattacking == ATTACKING_NONE && !demo.simplerewind)
 	{
 		if (rendermode != render_none)
 		{
@@ -8545,7 +8545,14 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	// Let's fade to white here
 	// But only if we didn't do the encore startup wipe
-	if (!reloadinggamestate)
+	if (demo.attract || demo.simplerewind)
+	{
+		// Leave the music alone! We're already playing what we want!
+		// Pull from RNG even though music will never change
+		// To silence playback has desynced warning
+		P_Random(PR_MUSICSELECT);
+	}
+	else if (!reloadinggamestate)
 	{
 		int wipetype = wipe_level_toblack;
 
@@ -8558,15 +8565,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 				FixedDiv((F_GetWipeLength(wipedefs[wipe_level_toblack])-2)*NEWTICRATERATIO, NEWTICRATE), MUSICRATE));
 #endif
 
-		if (demo.attract)
-		{
-			; // Leave the music alone! We're already playing what we want!
-
-			// Pull from RNG even though music will never change
-			// To silence playback has desynced warning
-			P_Random(PR_MUSICSELECT);
-		}
-		else if (K_PodiumSequence())
+		if (K_PodiumSequence())
 		{
 			// mapmusrng is set by local player position in K_ResetCeremony
 			P_LoadLevelMusic();

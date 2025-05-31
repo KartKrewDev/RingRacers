@@ -84,6 +84,7 @@ struct demovars_s {
 	boolean recording, playback, timing;
 	UINT16 version; // Current file format of the demo being played
 	UINT8 attract; // Attract demo can be cancelled by any key
+	UINT8 simplerewind;
 
 	boolean loadfiles, ignorefiles; // Demo file loading options
 	boolean quitafterplaying; // quit after playing a demo from cmdline
@@ -245,6 +246,13 @@ typedef enum
 	DEMO_ATTRACT_TITLE,
 	DEMO_ATTRACT_CREDITS
 } demoAttractMode_t;
+
+typedef enum
+{
+	DEMO_REWIND_OFF = 0,
+	DEMO_REWIND_RESUME,
+	DEMO_REWIND_PAUSE
+} demoRewindMode_t;
 
 void G_SyncDemoParty(INT32 rem, INT32 newsplitscreen);
 

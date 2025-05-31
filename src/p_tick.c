@@ -1076,7 +1076,7 @@ void P_Ticker(boolean run)
 		}
 	}
 
-	if (g_fast_forward == 0)
+	if (g_fast_forward == 0 || demo.simplerewind)
 	{
 		timeinmap++;
 	}

@@ -933,7 +933,7 @@ void D_SRB2Loop(void)
 		realtics = entertic - oldentertics;
 		oldentertics = entertic;
 
-		if (demo.playback && gamestate == GS_LEVEL)
+		if (demo.playback && gamestate == GS_LEVEL && demo.simplerewind == DEMO_REWIND_OFF)
 		{
 			// Nicer place to put this.
 			realtics = realtics * cv_playbackspeed.value;

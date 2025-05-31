@@ -593,10 +593,10 @@ extern menu_t PAUSE_PlaybackMenuDef;
 typedef enum
 {
 	playback_hide,
+	playback_restart,
 	playback_rewind,
 	playback_pause,
 	playback_fastforward,
-	playback_backframe,
 	playback_resume,
 	playback_advanceframe,
 	playback_viewcount,
