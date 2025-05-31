@@ -8681,6 +8681,38 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			}
 
 			F_RunWipe(wipetype, wipedefs[wipetype], false, ((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), false, false);
+
+			// Hold respawn to keep waiting until you're ready
+			if (G_IsModeAttackRetrying() && !demo.playback)
+			{
+				nowtime = lastwipetic;
+				while (G_PlayerInputDown(0, gc_respawn, splitscreen + 1) == true)
+				{
+					while (!((nowtime = I_GetTime()) - lastwipetic))
+					{
+						I_Sleep(cv_sleep.value);
+						I_UpdateTime();
+					} \
+
+					I_OsPolling();
+					G_ResetAllDeviceResponding();
+
+					for (; eventtail != eventhead; eventtail = (eventtail+1) & (MAXEVENTS-1))
+					{
+						HandleGamepadDeviceEvents(&events[eventtail]);
+						G_MapEventsToControls(&events[eventtail]);
+					}
+
+					lastwipetic = nowtime;
+					if (moviemode && rendermode == render_opengl)
+						M_LegacySaveFrame();
+					else if (moviemode && rendermode == render_soft)
+						I_CaptureVideoFrame();
+					NetKeepAlive();
+				}
+
+				//wipestyleflags |= (WSF_FADEOUT|WSF_TOWHITE);
+			}
 		}
 	}
 
