@@ -3526,7 +3526,7 @@ static void K_GetKartBoostPower(player_t *player)
 		UINT8 i;
 		for (i = 0; i < player->numsneakers; i++)
 		{
-			ADDBOOST(FRACUNIT*85/100, 8*FRACUNIT, HANDLESCALING+HANDLESCALING/3); // + 50% top speed, + 800% acceleration, +50% handling
+			ADDBOOST(FRACUNIT, 8*FRACUNIT, HANDLESCALING+HANDLESCALING/3); // + 100% top speed, + 800% acceleration, +50% handling
 		}
 	}
 
@@ -13841,7 +13841,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							{
 								UINT32 behind = K_GetItemRouletteDistance(player, player->itemRoulette.playing);
 								UINT32 behindScaled = behind * TICRATE / 4500;
-								behindScaled = min(behindScaled, 10*TICRATE);
+								behindScaled = min(behindScaled, 15*TICRATE);
 
 								K_DoInvincibility(player,
 									max(7u * TICRATE + behindScaled, player->invincibilitytimer + 5u*TICRATE));
@@ -14394,7 +14394,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									{
 										P_Thrust(
 											player->mo, player->mo->angle,
-											FixedMul((50*player->mo->scale), K_GetKartGameSpeedScalar(gamespeed))
+											FixedMul((80*player->mo->scale), K_GetKartGameSpeedScalar(gamespeed))
 										);
 
 										player->wavedashboost += TICRATE;
