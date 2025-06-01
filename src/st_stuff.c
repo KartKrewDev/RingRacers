@@ -737,6 +737,8 @@ void ST_startTitleCard(void)
 	lt_ticker = lt_exitticker = lt_lasttic = 0;
 	lt_endtime = 4*TICRATE;	// + (10*NEWTICRATERATIO);
 	lt_fade = 0;
+
+	WipeStageTitle = false;
 }
 
 //

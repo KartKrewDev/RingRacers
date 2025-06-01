@@ -75,6 +75,15 @@ extern struct roundqueue
 	roundentry_t entries[ROUNDQUEUE_MAX];	// Entries in the round queue
 } roundqueue;
 
+extern struct menuqueue
+{
+	// Degenerate version of roundqueue exclusively for menu use.
+	UINT8 size;
+	UINT8 sending;
+	UINT8 anchor;
+	roundentry_t entries[ROUNDQUEUE_MAX];
+} menuqueue;
+
 void G_MapSlipIntoRoundQueue(UINT8 position, UINT16 map, UINT8 setgametype, boolean setencore, boolean rankrestricted);
 void G_MapIntoRoundQueue(UINT16 map, UINT8 setgametype, boolean setencore, boolean rankrestricted);
 void G_GPCupIntoRoundQueue(cupheader_t *cup, UINT8 setgametype, boolean setencore);

@@ -466,7 +466,7 @@ boolean M_Responder(event_t *ev)
 			if (Playing() && !demo.playback)
 			{
 				// Quick Retry (Y in modeattacking)
-				if (modeattacking && G_PlayerInputDown(0, gc_y, splitscreen + 1) == true)
+				if (modeattacking && G_PlayerInputDown(0, gc_respawn, splitscreen + 1) == true)
 				{
 					M_TryAgain(0);
 					return true;

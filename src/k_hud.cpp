@@ -1536,6 +1536,46 @@ void K_DrawLikeMapThumbnail(fixed_t x, fixed_t y, fixed_t width, UINT32 flags, p
 	);
 }
 
+void K_DrawMapAsFace(INT32 x, INT32 y, UINT32 flags, UINT16 map, const UINT8 *colormap)
+{
+	const fixed_t iconHeight = (14 << FRACBITS);
+	const fixed_t iconWidth = (iconHeight * 320) / 200;
+	INT32 unit = 1;
+	fixed_t mul = FRACUNIT;
+	if (flags & V_NOSCALESTART)
+	{
+		unit = (vid.dupx < vid.dupy ? vid.dupx : vid.dupy);
+		mul = 1;
+	}
+
+	V_DrawFill(
+		x,
+		y,
+		16 * unit,
+		16 * unit,
+		(flags & ~V_FLIP)
+	);
+
+	V_SetClipRect(
+		(x + unit) * mul,
+		(y + unit) * mul,
+		(14 * unit) * mul,
+		(14 * unit) * mul,
+		(flags & ~V_FLIP)
+	);
+
+	K_DrawMapThumbnail(
+		((x + unit) * FRACUNIT) - (iconWidth - iconHeight)/2,
+		((y + unit) * FRACUNIT),
+		iconWidth,
+		flags,
+		map,
+		colormap
+	);
+
+	V_ClearClipRect();
+}
+
 // see also K_DrawNameTagItemSpy
 static void K_drawKartItem(void)
 {
