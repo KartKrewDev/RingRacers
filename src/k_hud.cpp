@@ -3540,7 +3540,7 @@ static tic_t scorechangecooldown = 0;
 // but HUD hooks run at variable timing based on your actual framerate.
 static tic_t teams_lastleveltime = 0;
 
-void K_drawKartTeamScores(boolean fromintermission)
+void K_drawKartTeamScores(boolean fromintermission, INT32 interoffset)
 {
 	if (G_GametypeHasTeams() == false)
 	{
@@ -3562,12 +3562,6 @@ void K_drawKartTeamScores(boolean fromintermission)
 
 	if (use4p)
 		snapflags = V_SNAPTOTOP;
-
-	if (fromintermission)
-	{
-		use4p = true;
-		snapflags = 0;
-	}
 
 	flags |= snapflags;
 
@@ -3610,6 +3604,14 @@ void K_drawKartTeamScores(boolean fromintermission)
 		facex = -2;
 		facey = -5;
 		faceoff = 4;
+	}
+
+	if (fromintermission)
+	{
+		use4p = true;
+		snapflags = 0;
+		flags = 0;
+		basex += interoffset;
 	}
 
 	UINT8 allies = stplyr->team;
@@ -3698,9 +3700,12 @@ void K_drawKartTeamScores(boolean fromintermission)
 			}	
 		}
 		
-		// replace scores with eased scores
-		allyscore = easedallyscore;
-		enemyscore = totalscore - allyscore;
+		if (!fromintermission)
+		{
+			// replace scores with eased scores
+			allyscore = easedallyscore;
+			enemyscore = totalscore - allyscore;
+		}
 	}
 
 	teams_lastleveltime = leveltime;
@@ -3756,8 +3761,8 @@ void K_drawKartTeamScores(boolean fromintermission)
 		if (!fromintermission)
 		{
 			flags |= V_SNAPTOBOTTOM;
+			flags &= ~V_SNAPTOTOP;
 		}
-		flags &= ~V_SNAPTOTOP;
 		basey = 170;
 	}
 
@@ -3768,8 +3773,10 @@ void K_drawKartTeamScores(boolean fromintermission)
 	if (!use4p)
 		V_DrawScaledPatch(basex, basey, flags, kp_team_you);
 
-	if (V_GetHUDTranslucency(0) != 10)
+	/*
+	if (V_GetHUDTranslucency(0) != 10 || fromintermission)
 		return;
+	*/
 
 	V_DrawFill(basex+barx, basey+bary, enemywidth, barheight, enemyfill|flags);
 	V_DrawFill(basex+barx+enemywidth, basey+bary, allywidth, barheight, allyfill|flags);
@@ -7589,7 +7596,7 @@ void K_drawKartHUD(void)
 				}
 			}
 
-			K_drawKartTeamScores(false);
+			K_drawKartTeamScores(false, 0);
 
 			if (K_InRaceDuel())
 			{

@@ -1928,6 +1928,9 @@ void Y_IntermissionDrawer(void)
 	// Returns early if there's no players to draw
 	Y_PlayerStandingsDrawer(&data, x);
 
+	if ((intertic - sorttic) < 8)
+		K_drawKartTeamScores(true, x);
+
 	// Draw bottom (and top) pieces
 skiptallydrawer:
 	if (!LUA_HudEnabled(hud_intermissionmessages))
@@ -1948,8 +1951,6 @@ skiptallydrawer:
 finalcounter:
 	if ((modeattacking == ATTACKING_NONE) && demo.recording)
 		ST_DrawSaveReplayHint(0);
-
-	K_drawKartTeamScores(true);
 
 	if (Y_CanSkipIntermission())
 	{
