@@ -67,14 +67,8 @@ void Obj_BailChargeThink (mobj_t *aura)
 		aura->flags |= MF_NOCLIPTHING;
         // aura->color = mo->color;
 
-        aura->extravalue1 = max(0, aura->extravalue1-1);
-        if (aura->extravalue1 == 0 && (!P_IsObjectOnGround(player->mo) || player->tumbleBounces != 0)) 
-        {
-            aura->anim_duration = 2; // hack the shit out of FF_ANIMATE hell yeah
-            aura->extravalue1 = 2;
-        }
-
-        // aura->renderflags &= ~RF_DONTDRAW;
+        aura->anim_duration = 999; // This prevents FF_ANIMATE from working, we're gonna animate manually ourselves here
+        aura->frame = ((player->bailcharge-1)/2); // By syncing the frame with the charge timer here
 
         fixed_t baseScale = 12*mo->scale/10;
 

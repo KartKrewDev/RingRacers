@@ -44,7 +44,7 @@ Make sure this matches the actual number of states
 #define INSTAWHIP_TETHERBLOCK (TICRATE*4)
 #define PUNISHWINDOW (7*TICRATE/10)
 
-#define BAIL_MAXCHARGE (84) // tics to bail when in painstate nad in air, on ground is half
+#define BAIL_MAXCHARGE (84) // tics to bail when in painstate nad in air, on ground is half, if you touch this, also update Obj_BailChargeThink synced animation logic
 #define BAIL_DROP (FRACUNIT/2)
 #define BAIL_BOOST (FRACUNIT)
 #define BAIL_DROPFREQUENCY (3)
