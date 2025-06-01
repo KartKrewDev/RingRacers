@@ -1198,7 +1198,7 @@ void M_LevelSelectTick(void)
 	{
 		S_StartSound(NULL, sfx_chchng);
 
-		if (roundqueue.position)
+		if (roundqueue.position || gamestate != GS_LEVEL)
 		{
 			M_StopMessage(MA_NONE);
 		}
