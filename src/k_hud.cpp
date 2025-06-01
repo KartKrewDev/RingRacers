@@ -3563,6 +3563,9 @@ void K_drawKartTeamScores(boolean fromintermission, INT32 interoffset)
 	if (use4p)
 		snapflags = V_SNAPTOTOP;
 
+	if (fromintermission)
+		use4p = true;
+
 	flags |= snapflags;
 
 	// bar stuff, relative to base
@@ -3608,7 +3611,6 @@ void K_drawKartTeamScores(boolean fromintermission, INT32 interoffset)
 
 	if (fromintermission)
 	{
-		use4p = true;
 		snapflags = 0;
 		flags = 0;
 		basex += interoffset;
