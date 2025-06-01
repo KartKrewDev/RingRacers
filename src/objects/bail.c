@@ -70,8 +70,12 @@ void Obj_BailChargeThink (mobj_t *aura)
         aura->anim_duration = 999; // This prevents FF_ANIMATE from working, we're gonna animate manually ourselves here
         aura->frame = ((player->bailcharge-1)/2); // By syncing the frame with the charge timer here
 
-        fixed_t baseScale = 12*mo->scale/10;
+        fixed_t baseScale = 13*mo->scale/10;
 
         P_SetScale(aura, baseScale);
+
+        mobj_t *ghost = P_SpawnGhostMobj(aura);
+        ghost->renderflags = (ghost->renderflags & ~RF_TRANSMASK)|RF_ADD;
+        ghost->fuse = 3;
     }
 }
