@@ -389,25 +389,12 @@ bool is_object_tracking_target(const mobj_t* mobj)
 		return !(mobj->renderflags & (RF_TRANSMASK | RF_DONTDRAW)) && // the spraycan wasn't collected yet
 			P_CheckSight(stplyr->mo, const_cast<mobj_t*>(mobj));
 
-	case MT_JAWZ:
-	case MT_JAWZ_SHIELD:
-	case MT_ORBINAUT:
-	case MT_ORBINAUT_SHIELD:
-	case MT_DROPTARGET:
-	case MT_DROPTARGET_SHIELD:
-	case MT_LANDMINE:
-	case MT_BANANA:
-	case MT_BANANA_SHIELD:
-	case MT_GACHABOM:
-	case MT_BUBBLESHIELDTRAP:
-	case MT_EGGMANITEM:
-	case MT_EGGMANITEM_SHIELD:
-		return (mobj->target && !P_MobjWasRemoved(mobj->target) && (
-			(mobj->target->player && stplyr == mobj->target->player)
-			|| (mobj->target->player && G_SameTeam(stplyr, mobj->target->player))
-		) && P_CheckSight(stplyr->mo, const_cast<mobj_t*>(mobj)));
-
 	default:
+		if (K_IsPickMeUpItem(mobj->type))
+			return (mobj->target && !P_MobjWasRemoved(mobj->target) && (
+				(mobj->target->player && stplyr == mobj->target->player)
+				|| (mobj->target->player && G_SameTeam(stplyr, mobj->target->player))
+			) && P_CheckSight(stplyr->mo, const_cast<mobj_t*>(mobj)));
 		return false;
 	}
 }

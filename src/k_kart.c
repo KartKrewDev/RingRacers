@@ -1102,6 +1102,12 @@ boolean K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2)
 		disty = FixedMul(minBump, normalisedy);
 	}
 
+	if (mobj1->player && mobj2->player && G_SameTeam(mobj1->player, mobj2->player))
+	{
+		distx /= 3;
+		disty /= 3;
+	}
+
 	if (mass2 > 0)
 	{
 		mobj1->momx = mobj1->momx - FixedMul(FixedDiv(2*mass2, mass1 + mass2), distx);
@@ -15812,6 +15818,8 @@ boolean K_IsPickMeUpItem(mobjtype_t type)
 		case MT_EGGMANITEM:
 		case MT_EGGMANITEM_SHIELD:
 		case MT_BUBBLESHIELDTRAP:
+		case MT_SSMINE:
+		case MT_SSMINE_SHIELD:
 			return true;
 		default:
 			return false;
@@ -15860,6 +15868,10 @@ static boolean K_PickUp(player_t *player, mobj_t *picked)
 			break;
 		case MT_SINK:
 			type = KITEM_KITCHENSINK;
+			break;
+		case MT_SSMINE:
+		case MT_SSMINE_SHIELD:
+			type = KITEM_MINE;
 			break;
 		default:
 			type = KITEM_SAD;

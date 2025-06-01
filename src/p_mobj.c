@@ -5402,20 +5402,9 @@ static boolean P_IsTrackerType(INT32 type)
 		case MT_GARDENTOP: // Frey
 			return true;
 
-		case MT_JAWZ_SHIELD: // Pick-me-up
-		case MT_ORBINAUT:
-		case MT_ORBINAUT_SHIELD:
-		case MT_DROPTARGET:
-		case MT_DROPTARGET_SHIELD:
-		case MT_LANDMINE:
-		case MT_BANANA:
-		case MT_BANANA_SHIELD:
-		case MT_GACHABOM:
-		case MT_EGGMANITEM:
-		case MT_EGGMANITEM_SHIELD:
-			return true;
-
 		default:
+			if (K_IsPickMeUpItem(type))
+				return true;
 			return false;
 	}
 }

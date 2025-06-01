@@ -3540,7 +3540,7 @@ static tic_t scorechangecooldown = 0;
 // but HUD hooks run at variable timing based on your actual framerate.
 static tic_t teams_lastleveltime = 0;
 
-static void K_drawKartTeamScores(void)
+void K_drawKartTeamScores(boolean fromintermission)
 {
 	if (G_GametypeHasTeams() == false)
 	{
@@ -3559,8 +3559,16 @@ static void K_drawKartTeamScores(void)
 	INT32 basey = 0;
 	INT32 flags = V_HUDTRANS|V_SLIDEIN;
 	INT32 snapflags = V_SNAPTOTOP|V_SNAPTORIGHT;
+
 	if (use4p)
 		snapflags = V_SNAPTOTOP;
+
+	if (fromintermission)
+	{
+		use4p = true;
+		snapflags = 0;
+	}
+
 	flags |= snapflags;
 
 	// bar stuff, relative to base
@@ -3737,9 +3745,21 @@ static void K_drawKartTeamScores(void)
 	}
 
 	// Draw at the top and bottom of the screen in 4P.
-	boolean goagain = use4p;
+	// Draw only at the bottom in intermission.
+	boolean shouldsecondpass = use4p;
+	boolean onsecondpass = fromintermission;
 
 	draw:
+
+	if (onsecondpass)
+	{
+		if (!fromintermission)
+		{
+			flags |= V_SNAPTOBOTTOM;
+		}
+		flags &= ~V_SNAPTOTOP;
+		basey = 170;
+	}
 
 	V_DrawScaledPatch(basex, basey, flags, kp_team_sticker[use4p]);
 	V_DrawMappedPatch(basex, basey, flags, kp_team_underlay[use4p][0], enemycolor);
@@ -3807,12 +3827,9 @@ static void K_drawKartTeamScores(void)
 		you.text("{:02}", youscore);
 	}
 
-	if (goagain)
+	if (shouldsecondpass && !onsecondpass)
 	{
-		goagain = false;
-		flags |= V_SNAPTOBOTTOM;
-		flags &= ~V_SNAPTOTOP;
-		basey = 170;
+		onsecondpass = true;
 		goto draw;
 	}
 
@@ -7572,10 +7589,7 @@ void K_drawKartHUD(void)
 				}
 			}
 
-			if (G_GametypeHasTeams() == true)
-			{
-				K_drawKartTeamScores();
-			}
+			K_drawKartTeamScores(false);
 
 			if (K_InRaceDuel())
 			{

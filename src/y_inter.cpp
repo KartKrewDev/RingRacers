@@ -1949,6 +1949,8 @@ finalcounter:
 	if ((modeattacking == ATTACKING_NONE) && demo.recording)
 		ST_DrawSaveReplayHint(0);
 
+	K_drawKartTeamScores(true);
+
 	if (Y_CanSkipIntermission())
 	{
 		const tic_t end = roundqueue.size != 0 ? 3*TICRATE : TICRATE;
