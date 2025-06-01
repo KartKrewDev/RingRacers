@@ -3589,13 +3589,15 @@ bool CallFunc_SetThingProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, A
 	INT32 value = 0;
 
 	tag = argV[0];
-	mobj = P_FindMobjFromTID(tag, mobj, info->mo);
+	mobj_t *next = P_FindMobjFromTID(tag, mobj, info->mo);
 
 	property = argV[1];
 	value = argV[2];
 
-	while (mobj != NULL)
+	while ((mobj = next) != NULL)
 	{
+		// First in case of deletion. (Can't check for value == S_NULL because of A_ calls, etc)
+		next = P_FindMobjFromTID(tag, mobj, info->mo);
 
 #define PROP_READONLY(x, y) \
 	case x: \
@@ -3829,8 +3831,6 @@ bool CallFunc_SetThingProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, A
 				break;
 			}
 		}
-
-		mobj = P_FindMobjFromTID(tag, mobj, info->mo);
 
 #undef PROP_FLAGS
 #undef PROP_SCALE

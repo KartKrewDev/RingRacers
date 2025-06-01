@@ -15417,6 +15417,8 @@ void P_SetThingTID(mobj_t *mo, mtag_t tid)
 //
 // P_FindMobjFromTID
 // Mobj tag search function.
+// This function cannot be safely called after *i is removed!
+// Please call at start of loops if *i is to be mutated
 //
 mobj_t *P_FindMobjFromTID(mtag_t tid, mobj_t *i, mobj_t *activator)
 {

@@ -149,6 +149,7 @@ public:
 
 	Vector& operator=(const Vector& rhs)
 	{
+		clear();
 		for (auto itr = rhs.begin(); itr != rhs.end(); itr++)
 		{
 			push_back(*itr);

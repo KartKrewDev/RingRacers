@@ -2544,8 +2544,9 @@ void Y_StartIntermission(void)
 		}
 
 		K_CashInPowerLevels();
-		SV_BumpMatchStats();
 	}
+
+	SV_BumpMatchStats();
 
 	if (!timer)
 	{

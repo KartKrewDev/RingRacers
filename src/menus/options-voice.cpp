@@ -72,6 +72,24 @@ static boolean input_routine(INT32)
 	return false;
 }
 
+static void init_routine(void)
+{
+	if (!netgame)
+	{
+		S_SoundInputSetEnabled(true);
+	}
+}
+
+static boolean quit_routine(void)
+{
+	if (!netgame)
+	{
+		S_SoundInputSetEnabled(false);
+	}
+
+	return true;
+}
+
 menu_t OPTIONS_VoiceDef = {
 	sizeof (OPTIONS_Voice) / sizeof (menuitem_t),
 	&OPTIONS_MainDef,
@@ -85,7 +103,7 @@ menu_t OPTIONS_VoiceDef = {
 	draw_routine,
 	M_DrawOptionsCogs,
 	tick_routine,
-	NULL,
-	NULL,
+	init_routine,
+	quit_routine,
 	input_routine,
 };

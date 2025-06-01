@@ -1556,7 +1556,7 @@ boolean G_CouldView(INT32 playernum)
 		return false;
 
 	// SRB2Kart: we have no team-based modes, YET...
-	if (G_GametypeHasTeams())
+	if (G_GametypeHasTeams() && !demo.playback)
 	{
 		if (players[consoleplayer].spectator == false && player->team != players[consoleplayer].team)
 			return false;
@@ -2352,8 +2352,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	bot = players[player].bot;
 	botdifficulty = players[player].botvars.difficulty;
 
-	cangrabitems = players[player].cangrabitems;
-
 	botdiffincrease = players[player].botvars.diffincrease;
 	botrival = players[player].botvars.rival;
 
@@ -2439,13 +2437,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		tallyactive = false;
 
 		cangrabitems = 0;
-		if (gametyperules & GTR_SPHERES
-			|| gametyperules & GTR_CATCHER
-			|| G_TimeAttackStart()
-			|| gametype == GT_TUTORIAL
-			|| !M_NotFreePlay()
-			|| K_GetNumWaypoints() == 0)
-			cangrabitems = EARLY_ITEM_FLICKER;
 	}
 	else
 	{
@@ -2501,6 +2492,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		{
 			tally = players[player].tally;
 		}
+
+		cangrabitems = players[player].cangrabitems;
 	}
 
 	spectatorReentry = (betweenmaps ? 0 : players[player].spectatorReentry);
@@ -5426,6 +5419,8 @@ void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skippr
 			players[i].xtralife = 0;
 			players[i].totalring = 0;
 			players[i].score = 0;
+			if (roundqueue.position == 0) // Don't unassign teams in tournament play
+				players[i].team = TEAM_UNASSIGNED;
 		}
 
 		if (resetplayer || !(gametyperules & GTR_CHECKPOINTS && map == gamemap))

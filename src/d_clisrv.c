@@ -281,7 +281,7 @@ shouldsign_t ShouldSignChallenge(uint8_t *message)
 	if ((max(now, then) - min(now, then)) > 60*15)
 		return SIGN_BADTIME;
 
-	//  ____ _____ ___  ____  _ 
+	//  ____ _____ ___  ____  _
 	// / ___|_   _/ _ \|  _ \| |
 	// \___ \ | || | | | |_) | |
 	//  ___) || || |_| |  __/|_|
@@ -2436,6 +2436,11 @@ static void CL_ConnectToServer(void)
 
 	joinedIP[0] = '\0';	// And empty this for good measure regardless of whether or not we actually used it.
 
+	// Enable sound input/microphone in netgames, activating the microphone device.
+	if (netgame)
+	{
+		S_SoundInputSetEnabled(true);
+	}
 }
 
 static void Command_connect(void)
@@ -2502,6 +2507,8 @@ static void Command_connect(void)
 			{
 				CONS_Alert(CONS_ERROR, M_GetText("There is no server identification with this network driver\n"));
 				D_CloseConnection();
+
+				S_SoundInputSetEnabled(false);
 				return;
 			}
 		}
@@ -3659,6 +3666,7 @@ void D_QuitNetGame(void)
 	K_ClearClientPowerLevels();
 	G_ObliterateParties();
 	K_ResetMidVote();
+	S_SoundInputSetEnabled(false);
 
 	DEBFILE("===========================================================================\n"
 	        "                         Log finish\n"
@@ -7375,9 +7383,6 @@ void NetVoiceUpdate(void)
 	{
 		return;
 	}
-
-	// This necessarily runs every frame, not every tic
-	S_SoundInputSetEnabled(true);
 
 	UINT32 bytes_dequed = 0;
 	do

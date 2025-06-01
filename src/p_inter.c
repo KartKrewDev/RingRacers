@@ -667,7 +667,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (!player->mo || player->spectator)
 				return;
 
-			if (K_TryPickMeUp(special, toucher))
+			if (K_TryPickMeUp(special, toucher, false))
 				return;
 
 			// attach to player!
@@ -1081,10 +1081,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		case MT_TRICKBALLOON_RED:
 		case MT_TRICKBALLOON_YELLOW:
 			Obj_TrickBalloonTouchSpecial(special, toucher);
-			return;
-
-		case MT_SEALEDSTAR_BUMPER:
-			Obj_SSBumperTouchSpecial(special, toucher);
 			return;
 
 		case MT_PULLUPHOOK:

@@ -497,7 +497,7 @@ fixed_t K_GetKartGameSpeedScalar(SINT8 value)
 		value = 3;
 
 	fixed_t base = ((13 + (3*value)) << FRACBITS) / 16;
-	fixed_t duel = overtimecheckpoints*(1<<FRACBITS)/16;
+	fixed_t duel = overtimecheckpoints*(1<<FRACBITS)/32;
 
 	return base + duel;
 }
@@ -9781,6 +9781,21 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			player->invincibilitytimer--;
 	}
 
+	// The precise ordering of start-of-level made me want to cut my head off,
+	// so let's try this instead. Whatever!
+	if (leveltime <= starttime || player->gradingpointnum == 0)
+	{
+		if ((gametyperules & GTR_SPHERES)
+			|| (gametyperules & GTR_CATCHER)
+			|| G_TimeAttackStart()
+			|| (gametype == GT_TUTORIAL)
+			|| !M_NotFreePlay()
+			|| (K_GetNumWaypoints() == 0))
+			player->cangrabitems = EARLY_ITEM_FLICKER;
+		else
+			player->cangrabitems = 0;
+	}
+
 	if (player->cangrabitems && player->cangrabitems <= EARLY_ITEM_FLICKER)
 		player->cangrabitems++;
 
@@ -11454,6 +11469,14 @@ INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
 	{
 		turnfixed = FixedMul(turnfixed, 2*FRACUNIT); // Base increase to turning
 	}
+
+	/*
+	if (overtimecheckpoints)
+	{
+		fixed_t assistpercent = FRACUNIT * overtimecheckpoints / 32;
+		turnfixed += FixedMul(Easing_Linear(assistpercent, 0, FRACUNIT/2), turnfixed);
+	}
+	*/
 
 	if (player->drift != 0 && P_IsObjectOnGround(player->mo))
 	{
@@ -15772,6 +15795,29 @@ void K_BotHitPenalty(player_t *player)
 	}
 }
 
+boolean K_IsPickMeUpItem(mobjtype_t type)
+{
+	switch (type)
+	{
+		case MT_JAWZ:
+		case MT_JAWZ_SHIELD:
+		case MT_ORBINAUT:
+		case MT_ORBINAUT_SHIELD:
+		case MT_DROPTARGET:
+		case MT_DROPTARGET_SHIELD:
+		case MT_LANDMINE:
+		case MT_BANANA:
+		case MT_BANANA_SHIELD:
+		case MT_GACHABOM:
+		case MT_EGGMANITEM:
+		case MT_EGGMANITEM_SHIELD:
+		case MT_BUBBLESHIELDTRAP:
+			return true;
+		default:
+			return false;
+	}
+}
+
 static boolean K_PickUp(player_t *player, mobj_t *picked)
 {
 	SINT8 type = -1;
@@ -15862,7 +15908,7 @@ static boolean K_PickUp(player_t *player, mobj_t *picked)
 }
 
 // ACHTUNG this destroys items when returning true, make sure to bail out
-boolean K_TryPickMeUp(mobj_t *m1, mobj_t *m2)
+boolean K_TryPickMeUp(mobj_t *m1, mobj_t *m2, boolean allowHostile)
 {
 	if (!m1 || P_MobjWasRemoved(m1))
 		return false;
@@ -15897,7 +15943,7 @@ boolean K_TryPickMeUp(mobj_t *m1, mobj_t *m2)
 		if (inflictor->target->player && G_SameTeam(inflictor->target->player, victim->player))
 			allied = true;
 
-	if (!allied)
+	if (!allied && !allowHostile)
 		return false;
 
 	// CONS_Printf("target check passed\n");

@@ -75,7 +75,7 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 	if (t1->type == MT_BALLHOGBOOM && t2->type == MT_BALLHOGBOOM)
 		return true; // Ballhogs don't collide with eachother
 
-	if (K_TryPickMeUp(t1, t2))
+	if (K_TryPickMeUp(t1, t2, false))
 		return true;
 
 	if (t2->player)
@@ -178,7 +178,7 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 		if (t1->health <= 0 || t2->health <= 0)
 			return true;
 
-		if (K_TryPickMeUp(t1, t2))
+		if (K_TryPickMeUp(t1, t2, false))
 			return true;
 
 		if (!P_CanPickupItem(t2->player, PICKUP_EGGBOX))
@@ -434,7 +434,7 @@ boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 	if (t1->health <= 0 || t2->health <= 0)
 		return true;
 
-	if (K_TryPickMeUp(t1, t2))
+	if (K_TryPickMeUp(t1, t2, false))
 		return true;
 
 	if (t2->player)
@@ -544,7 +544,7 @@ boolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2)
 	if (t2->player && (t2->player->hyudorotimer || t2->player->justbumped))
 		return true;
 
-	if (K_TryPickMeUp(t1, t2))
+	if (K_TryPickMeUp(t1, t2, false))
 		return true;
 
 	if (draggeddroptarget && P_MobjWasRemoved(draggeddroptarget))
@@ -776,6 +776,12 @@ static inline BlockItReturn_t PIT_LightningShieldAttack(mobj_t *thing)
 		// Too far away
 		return BMIT_CONTINUE;
 	}
+
+	// see if it went over / under
+	if (lightningSource->z - lightningDist > thing->z + thing->height)
+		return BMIT_CONTINUE; // overhead
+	if (lightningSource->z + lightningSource->height + lightningDist < thing->z)
+		return BMIT_CONTINUE; // underneath
 
 #if 0
 	if (P_CheckSight(lightningSource, thing) == false)
@@ -1036,7 +1042,14 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 	}
 	else if (victim->type == MT_DROPTARGET || victim->type == MT_DROPTARGET_SHIELD)
 	{
-		K_DropTargetCollide(victim, shield);
+		if (K_TryPickMeUp(attacker, victim, true))
+		{
+			shield->hitlag = attacker->hitlag; // players hitlag is handled in K_TryPickMeUp, and we need to set for the shield too
+		}
+		else
+		{
+			K_DropTargetCollide(victim, shield);
+		}
 		return true;
 	}
 	else
@@ -1053,8 +1066,13 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 				shield->extravalue1 = 1;
 			}
 
-			if (P_DamageMobj(victim, shield, attacker, 1, DMG_NORMAL))
+			if (K_TryPickMeUp(attacker, victim, true))
 			{
+				shield->hitlag = attacker->hitlag; // players hitlag is handled in K_TryPickMeUp, and we need to set for the shield too
+			}
+			else
+			{
+				P_DamageMobj(victim, shield, attacker, 1, DMG_NORMAL);
 				K_AddHitLag(attacker, attackerHitlag, false);
 				shield->hitlag = attacker->hitlag;
 			}
@@ -1068,7 +1086,7 @@ boolean K_KitchenSinkCollide(mobj_t *t1, mobj_t *t2)
 	if (((t1->target == t2) || (!(t2->flags & (MF_ENEMY|MF_BOSS)) && (t1->target == t2->target))) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
 
-	if (K_TryPickMeUp(t1, t2))
+	if (K_TryPickMeUp(t1, t2, false))
 		return true;
 
 	if (t2->player)
