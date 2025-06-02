@@ -84,7 +84,7 @@ struct demovars_s {
 	boolean recording, playback, timing;
 	UINT16 version; // Current file format of the demo being played
 	UINT8 attract; // Attract demo can be cancelled by any key
-	boolean rewinding; // Rewind in progress
+	UINT8 simplerewind;
 
 	boolean loadfiles, ignorefiles; // Demo file loading options
 	boolean quitafterplaying; // quit after playing a demo from cmdline
@@ -172,6 +172,8 @@ extern UINT8 demo_writerng;
 boolean G_CompatLevel(UINT16 level);
 
 // Record/playback tics
+boolean G_ConsiderEndingDemoRead(void);
+boolean G_ConsiderEndingDemoWrite(void);
 void G_ReadDemoExtraData(void);
 void G_WriteDemoExtraData(void);
 void G_ReadDemoTiccmd(ticcmd_t *cmd, INT32 playernum);
@@ -185,11 +187,6 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum);
 void G_ConsAllGhostTics(void);
 void G_ConsGhostTic(INT32 playernum);
 void G_GhostTicker(void);
-
-void G_InitDemoRewind(void);
-void G_StoreRewindInfo(void);
-void G_PreviewRewind(tic_t previewtime);
-void G_ConfirmRewind(tic_t rewindtime);
 
 struct DemoBufferSizes
 {
@@ -249,6 +246,13 @@ typedef enum
 	DEMO_ATTRACT_TITLE,
 	DEMO_ATTRACT_CREDITS
 } demoAttractMode_t;
+
+typedef enum
+{
+	DEMO_REWIND_OFF = 0,
+	DEMO_REWIND_RESUME,
+	DEMO_REWIND_PAUSE
+} demoRewindMode_t;
 
 void G_SyncDemoParty(INT32 rem, INT32 newsplitscreen);
 

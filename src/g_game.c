@@ -1245,26 +1245,36 @@ void G_StartTitleCard(void)
 	// prepare status bar
 	ST_startTitleCard(); // <-- always must be called to init some variables
 
-	// The title card has been disabled for this map.
-	// Oh well.
-	if (demo.rewinding || !G_IsTitleCardAvailable())
-	{
-		WipeStageTitle = false;
+	if (demo.simplerewind)
 		return;
+
+	sfxenum_t kstart = 0;
+
+	if (K_CheckBossIntro() == true)
+	{
+		kstart = sfx_ssa021;
 	}
+	else if (encoremode)
+	{
+		kstart = sfx_ruby2;
+	}
+
+	if (kstart)
+	{
+		// Play the guaranteed alt sounds
+		S_StartSound(NULL, kstart);
+	}
+
+	if (!G_IsTitleCardAvailable())
+		return;
 
 	// start the title card
 	WipeStageTitle = (gamestate == GS_LEVEL);
 
-	// play the sound
-	if (WipeStageTitle)
+	if (WipeStageTitle && !kstart)
 	{
-		sfxenum_t kstart = sfx_kstart;
-		if (K_CheckBossIntro() == true)
-			kstart = sfx_ssa021;
-		else if (encoremode == true)
-			kstart = sfx_ruby2;
-		S_StartSound(NULL, kstart);
+		// Play the standard titlecard sound
+		S_StartSound(NULL, sfx_kstart);
 	}
 }
 
@@ -1439,13 +1449,7 @@ boolean G_Responder(event_t *ev)
 		{
 			paused = !paused;
 
-			if (demo.rewinding)
-			{
-				G_ConfirmRewind(leveltime);
-				paused = true;
-				S_PauseAudio();
-			}
-			else if (paused)
+			if (paused)
 				S_PauseAudio();
 			else
 				S_ResumeAudio();
@@ -2150,6 +2154,14 @@ void G_Ticker(boolean run)
 
 			if (g_fast_forward == 0)
 			{
+				// Not "rewinding" anymore.
+				if (demo.simplerewind == DEMO_REWIND_PAUSE)
+				{
+					paused = true;
+					S_PauseAudio();
+				}
+				demo.simplerewind = DEMO_REWIND_OFF;
+
 				// Next fast-forward is unlimited.
 				g_fast_forward_clock_stop = INFTICS;
 			}
@@ -4094,6 +4106,7 @@ doremove:
 
 // Next map apparatus
 struct roundqueue roundqueue;
+struct menuqueue menuqueue;
 
 void G_MapSlipIntoRoundQueue(UINT8 position, UINT16 map, UINT8 setgametype, boolean setencore, boolean rankrestricted)
 {
@@ -5377,7 +5390,7 @@ void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skippr
 		S_ResumeAudio();
 	}
 
-	prevencoremode = ((!Playing()) ? false : encoremode);
+	prevencoremode = encoremode;
 	encoremode = pencoremode;
 
 	legitimateexit = false; // SRB2Kart
@@ -5829,7 +5842,7 @@ boolean G_GetExitGameFlag(void)
 // Same deal with retrying.
 void G_SetRetryFlag(void)
 {
-	if (retrying == false)
+	if (retrying == false && grandprixinfo.gp)
 	{
 		grandprixinfo.rank.continuesUsed++;
 	}

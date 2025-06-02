@@ -172,6 +172,7 @@ void M_MPSetupNetgameMapSelect(INT32 choice)
 
 	// Yep, we'll be starting a netgame.
 	levellist.netgame = true;
+	levellist.canqueue = true;
 	// Make sure we reset those
 	levellist.levelsearch.timeattack = false;
 	levellist.levelsearch.checklocked = true;

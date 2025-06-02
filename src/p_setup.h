@@ -107,6 +107,7 @@ extern mapthing_t *mapthings;
 
 void P_SetupLevelSky(const char *skytexname, boolean global);
 void P_RespawnThings(void);
+void P_FreeLevelState(void);
 void P_ResetLevelMusic(void);
 boolean P_UseContinuousLevelMusic(void);
 void P_LoadLevelMusic(void);

@@ -700,35 +700,13 @@ static void Y_DrawVoteThumbnail(fixed_t center_x, fixed_t center_y, fixed_t widt
 		}
 		else if (vote.stage_striking == false) // Angry map
 		{
-			const fixed_t iconHeight = (14 << FRACBITS);
-			const fixed_t iconWidth = (iconHeight * 320) / 200;
-
-			V_DrawFill(
+			K_DrawMapAsFace(
 				fx + fw - whiteSq + dupx,
 				fy + fh - whiteSq + dupy,
-				whiteSq,
-				whiteSq,
-				0|flags|V_NOSCALESTART
-			);
-
-			V_SetClipRect(
-				fx + fw - whiteSq + (2 * dupx),
-				fy + fh - whiteSq + (2 * dupy),
-				whiteSq - (2 * dupx),
-				whiteSq - (2 * dupy),
-				flags|V_NOSCALESTART
-			);
-
-			K_DrawMapThumbnail(
-				((fx + fw - whiteSq + (2 * dupx)) * FRACUNIT) - (iconWidth - iconHeight),
-				(fy + fh - whiteSq + (2 * dupy)) * FRACUNIT,
-				iconWidth,
 				flags | V_NOSCALESTART | ((encore == true) ? V_FLIP : 0),
 				g_voteLevels[v][0],
 				NULL
 			);
-
-			V_ClearClipRect();
 		}
 	}
 }
