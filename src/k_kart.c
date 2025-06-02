@@ -3012,7 +3012,7 @@ void K_MomentumToFacing(player_t *player)
 
 boolean K_ApplyOffroad(const player_t *player)
 {
-	if (player->invincibilitytimer || player->hyudorotimer || player->sneakertimer || player->panelsneakertimer)
+	if (player->invincibilitytimer || player->hyudorotimer || player->sneakertimer || player->panelsneakertimer|| player->weaksneakertimer)
 		return false;
 	if (K_IsRidingFloatingTop(player))
 		return false;
@@ -3021,7 +3021,7 @@ boolean K_ApplyOffroad(const player_t *player)
 
 boolean K_SlopeResistance(const player_t *player)
 {
-	if (player->invincibilitytimer || player->sneakertimer || player->panelsneakertimer || player->tiregrease || player->flamedash)
+	if (player->invincibilitytimer || player->sneakertimer || player->panelsneakertimer || player->weaksneakertimer || player->tiregrease || player->flamedash)
 		return true;
 	if (player->curshield == KSHIELD_TOP)
 		return true;
@@ -3162,6 +3162,7 @@ boolean K_WaterRun(mobj_t *mobj)
 			if (mobj->player->invincibilitytimer
 				|| mobj->player->sneakertimer
 				|| mobj->player->panelsneakertimer
+				|| mobj->player->weaksneakertimer
 				|| mobj->player->tiregrease
 				|| mobj->player->flamedash
 				|| mobj->player->speed > minspeed)
@@ -3526,18 +3527,28 @@ static void K_GetKartBoostPower(player_t *player)
 		UINT8 i;
 		for (i = 0; i < player->numsneakers; i++)
 		{
-			ADDBOOST(FRACUNIT, 8*FRACUNIT, HANDLESCALING+HANDLESCALING/3); // + 100% top speed, + 800% acceleration, +50% handling
+			ADDBOOST(FRACUNIT, 8*FRACUNIT, HANDLESCALING+HANDLESCALING/3); // + 100% top speed, + 800% acceleration, +50%(???) handling
 		}
 	}
 
-	if (player->panelsneakertimer) // Sneaker
+	if (player->panelsneakertimer) // Sneaker panel
 	{
 		UINT8 i;
 		for (i = 0; i < player->numpanelsneakers; i++)
 		{
-			ADDBOOST(FRACUNIT/2, 8*FRACUNIT, HANDLESCALING); // + 50% top speed, + 800% acceleration, +50% handling
+			ADDBOOST(FRACUNIT/2, 8*FRACUNIT, HANDLESCALING); // + 50% top speed, + 800% acceleration, +50%(???) handling
 		}
 	}
+
+	if (player->weaksneakertimer) // Rocket sneaker boost
+	{
+		UINT8 i;
+		for (i = 0; i < player->numweaksneakers; i++)
+		{
+			ADDBOOST((FRACUNIT*85)/100, 8*FRACUNIT, HANDLESCALING+HANDLESCALING/3); // + 85% top speed, + 800% acceleration, +50%(???) handling
+		}
+	}
+	//NOTE: The various sneaker booth strengths are also defined in K_DoSneaker()!
 
 	if (player->invincibilitytimer) // Invincibility
 	{
@@ -4002,7 +4013,7 @@ SINT8 K_GetForwardMove(const player_t *player)
 		return 0;
 	}
 
-	if (player->sneakertimer || player->panelsneakertimer || player->spindashboost
+	if (player->sneakertimer || player->panelsneakertimer || player->weaksneakertimer || player->spindashboost
 		|| (((gametyperules & (GTR_ROLLINGSTART|GTR_CIRCUIT)) == (GTR_ROLLINGSTART|GTR_CIRCUIT)) && (leveltime < TICRATE/2)))
 	{
 		return MAXPLMOVE;
@@ -5065,7 +5076,7 @@ static boolean K_IsLosingWavedash(player_t *player)
 	if (!K_Sliptiding(player) && player->wavedash < MIN_WAVEDASH_CHARGE)
 		return true;
 	if (!K_Sliptiding(player) && player->drift == 0
-		&& P_IsObjectOnGround(player->mo) && player->sneakertimer == 0 && player->panelsneakertimer == 0
+		&& P_IsObjectOnGround(player->mo) && player->sneakertimer == 0 && player->panelsneakertimer == 0 && player->weaksneakertimer == 0
 		&& player->driftboost == 0)
 		return true;
 	return false;
@@ -7204,8 +7215,14 @@ void K_DoSneaker(player_t *player, INT32 type)
 
 	fixed_t intendedboost = FRACUNIT/2;
 
-	// If you've already got an item sneaker type boost, panel sneakers will instead turn into item sneaker boosts
-	if (player->numsneakers && type == 0)
+	// If you've already got an rocket sneaker type boost, panel sneakers will instead turn into rocket sneaker boosts
+	if (player->numweaksneakers && type == 0)
+	{
+		type = 2;
+	}
+
+	// If you've already got an item sneaker type boost, other sneakers will instead turn into item sneaker boosts
+	if (player->numsneakers && type != 1)
 	{
 		type = 1;
 	}
@@ -7216,10 +7233,13 @@ void K_DoSneaker(player_t *player, INT32 type)
 			intendedboost = FRACUNIT/2;
 			break;
 		case 1: // Single item sneaker
-		case 2: // Rocket sneaker
+			intendedboost = 100*FRACUNIT/100;
+			break;
+		case 2: // Rocket sneaker (aka. weaksneaker)
 			intendedboost = 85*FRACUNIT/100;
 			break;
 	}
+	//NOTE: The various sneaker booth strengths are also defined in K_GetKartBoostPower()!
 
 	if (player->roundconditions.touched_sneakerpanel == false
 		&& !(player->exiting || (player->pflags & PF_NOCONTEST))
@@ -7235,7 +7255,7 @@ void K_DoSneaker(player_t *player, INT32 type)
 		const sfxenum_t smallsfx = sfx_cdfm40;
 		sfxenum_t sfx = normalsfx;
 
-		if (player->numsneakers || player->numpanelsneakers)
+		if (player->numsneakers || player->numpanelsneakers || player->numweaksneakers)
 		{
 			// Use a less annoying sound when stacking sneakers.
 			sfx = smallsfx;
@@ -7251,17 +7271,19 @@ void K_DoSneaker(player_t *player, INT32 type)
 
 		switch (type)
 		{
-			case 0:
+			case 0: // Panel sneaker
 				player->numpanelsneakers++;
 				break;
-			case 1:
-			case 2:
+			case 1: // Single item sneaker
 				player->numsneakers++;
+				break;
+			case 2: // Rocket sneaker (aka. weaksneaker)
+				player->numweaksneakers++;
 				break;
 		}
 	}
 
-	if (player->sneakertimer == 0 && player->panelsneakertimer == 0)
+	if (player->sneakertimer == 0 && player->panelsneakertimer == 0 && player->weaksneakertimer == 0)
 	{
 		if (type == 2)
 		{
@@ -7293,16 +7315,16 @@ void K_DoSneaker(player_t *player, INT32 type)
 
 	switch (type)
 	{
-		case 0:
+		case 0: // Panel sneaker
 			player->panelsneakertimer = sneakertime;
 			player->overshield += 1;
 			break;
-		case 1:
+		case 1: // Single item sneaker
 			player->sneakertimer = sneakertime;
 			player->overshield += TICRATE/2;
 			break;
-		case 2:
-			player->sneakertimer = 3*sneakertime/4;
+		case 2: // Rocket sneaker (aka. weaksneaker)
+			player->weaksneakertimer = 3*sneakertime/4;
 			player->overshield += TICRATE/2;
 			break;
 	}
@@ -7438,7 +7460,7 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 			}
 		}
 
-		if (mo->player->sneakertimer || mo->player->panelsneakertimer || mo->player->invincibilitytimer)
+		if (mo->player->sneakertimer || mo->player->panelsneakertimer || mo->player->weaksneakertimer || mo->player->invincibilitytimer)
 		{
 			thrust = FixedMul(thrust, (3*FRACUNIT)/2);
 		}
@@ -9198,7 +9220,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		if (player->speed > 0)
 		{
 			// Speed lines
-			if (player->sneakertimer || player->panelsneakertimer || player->ringboost
+			if (player->sneakertimer || player->panelsneakertimer || player->weaksneakertimer || player->ringboost
 				|| player->driftboost || player->startboost
 				|| player->eggmanexplode || player->trickboost
 				|| player->gateBoost || player->wavedashboost)
@@ -9439,7 +9461,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		if (((P_IsObjectOnGround(player->mo)
 			|| ( player->spinouttype & KSPIN_AIRTIMER ))
 			&& (!player->sneakertimer)
-			&& (!player->panelsneakertimer))
+			&& (!player->panelsneakertimer)
+			&& (!player->weaksneakertimer))
 		|| (player->respawn.state != RESPAWNST_NONE
 			&& player->spinouttimer > 1
 			&& (leveltime & 1)))
@@ -9635,6 +9658,16 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
+	if (player->weaksneakertimer)
+	{
+		player->weaksneakertimer--;
+
+		if (player->weaksneakertimer <= 0)
+		{
+			player->numweaksneakers = 0;
+		}
+	}
+
 	if (player->trickboost)
 		player->trickboost--;
 
@@ -9654,7 +9687,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->counterdash)
 		player->counterdash--;
 
-	if ((player->sneakertimer || player->panelsneakertimer) && player->wipeoutslow > 0 && player->wipeoutslow < wipeoutslowtime+1)
+	if ((player->sneakertimer || player->panelsneakertimer || player->weaksneakertimer) && player->wipeoutslow > 0 && player->wipeoutslow < wipeoutslowtime+1)
 		player->wipeoutslow = wipeoutslowtime+1;
 
 	if (player->floorboost > 0)
@@ -9958,6 +9991,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->tiregrease = 0;
 		player->sneakertimer = 0;
 		player->panelsneakertimer = 0;
+		player->weaksneakertimer = 0;
 		player->spindashboost = 0;
 		player->flashing = TICRATE/2;
 		player->ringboost = 0;

@@ -2618,7 +2618,7 @@ void P_MovePlayer(player_t *player)
 	////////////////////////////
 
 	// SRB2kart - Drifting smoke and fire
-	if ((player->sneakertimer || player->panelsneakertimer || player->flamedash)
+	if ((player->sneakertimer || player->panelsneakertimer || player->weaksneakertimer || player->flamedash)
 		&& onground && (leveltime & 1))
 		K_SpawnBoostTrail(player);
 
