@@ -10001,6 +10001,35 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		// Extra tripwire leniency for the end of invincibility
 		if (player->invincibilitytimer <= 0) {
 			player->tripwireLeniency = max( player->tripwireLeniency, TICRATE );
+	}
+
+	if (player->baildrop)
+	{
+		mobj_t *pmo = player->mo;
+		// particle spawn
+		#define BAILSPARKLE_MAXBAIL 61 // amount of bail rings needed for max sparkle spawn frequency
+		UINT32 baildropinversefreq = BAILSPARKLE_MAXBAIL - min(player->baildrop, BAILSPARKLE_MAXBAIL-6);
+		UINT32 baildropmodulo = baildropinversefreq *5/3 /10;
+		if ((leveltime % (1+baildropmodulo)) == 0)
+		{
+			mobj_t *sparkle = P_SpawnMobj(pmo->x + (P_RandomRange(PR_DECORATION, -40,40) * pmo->scale),
+				pmo->y + (P_RandomRange(PR_DECORATION, -40,40) * pmo->scale),
+				pmo->z + (pmo->height/2) + (P_RandomRange(PR_DECORATION, -40,40) * pmo->scale),
+				MT_BAILSPARKLE);
+
+			sparkle->scale = pmo->scale;
+			sparkle->angle = pmo->angle;
+			sparkle->momx = 3*pmo->momx/4;
+			sparkle->momy = 3*pmo->momy/4;
+			sparkle->momz = 3*P_GetMobjZMovement(pmo)/4;
+			K_MatchGenericExtraFlags(sparkle, pmo);
+			sparkle->renderflags = (pmo->renderflags & ~RF_TRANSMASK);//|RF_TRANS20|RF_ADD;
+		}
+
+		if ((player->baildrop % BAIL_DROPFREQUENCY) == 0)
+		{
+			P_FlingBurst(player, K_MomentumAngle(pmo), MT_FLINGRING, 10*TICRATE, FRACUNIT, player->baildrop/BAIL_DROPFREQUENCY);
+			S_StartSound(pmo, sfx_gshad);
 		}
 	}
 

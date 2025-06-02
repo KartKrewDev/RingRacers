@@ -336,6 +336,7 @@ char sprnames[NUMSPRITES + 1][5] =
 
 	"BAIL", // Bail charge
 	"BAIB", // Bail after effect
+	"BAIC", // Bail sparkle
 	"TECH", // Bail tech charge
 
 	"TRC1", // Charge aura
@@ -2166,6 +2167,7 @@ state_t states[NUMSTATES] =
 
 	{SPR_BAIL,                 FF_FULLBRIGHT|FF_ANIMATE|0, 8, {NULL}, 8, 1, S_BAIB}, // S_BAIL
 	{SPR_BAIB,                 FF_FULLBRIGHT|FF_ANIMATE|0, 10, {NULL}, 9, 1, S_NULL}, // S_BAIB
+	{SPR_BAIC,                 FF_FULLBRIGHT|FF_ANIMATE|0, 11, {NULL}, 10, 1, S_NULL}, // S_BAIC
 	{SPR_TECH,                 FF_FULLBRIGHT|FF_ANIMATE|0, -1, {NULL}, 41, 1, S_NULL}, // S_BAILCHARGE
 
 	{SPR_AMPB,                 FF_FULLBRIGHT|FF_PAPERSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_AMPRING
@@ -13776,7 +13778,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_NOGRAVITY|MF_NOCLIPHEIGHT, // flags
+		MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 
@@ -13803,7 +13805,34 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_NOGRAVITY|MF_NOCLIPHEIGHT, // flags
+		MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_BAILSPARKLE
+		-1,             // doomednum
+		S_BAIC,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		67*FRACUNIT,    // radius
+		67*FRACUNIT,    // height
+		1,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_DONTENCOREMAP|MF_SCENERY, // flags
 		S_NULL          // raisestate
 	},
 

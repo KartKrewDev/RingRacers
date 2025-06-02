@@ -877,6 +877,7 @@ typedef enum sprite
 
 	SPR_BAIL, // Bail charge
 	SPR_BAIB, // Bail after effect
+	SPR_BAIC, // Bail sparkle
 	SPR_TECH, // Bail tech charge
 
 	SPR_TRC1, // Charge aura
@@ -2635,6 +2636,7 @@ typedef enum state
 
 	S_BAIL,
 	S_BAIB,
+	S_BAIC,
 	S_BAILCHARGE,
 
 	S_AMPRING,
@@ -4656,6 +4658,7 @@ typedef enum mobj_type
 
 	MT_BAIL,
 	MT_BAILCHARGE,
+	MT_BAILSPARKLE,
 
 	MT_AMPRING,
 	MT_AMPBODY,
