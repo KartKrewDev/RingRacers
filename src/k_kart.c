@@ -9042,6 +9042,7 @@ static void K_UpdateTripwire(player_t *player)
 	boolean goodSpeed = (player->speed >= speedThreshold);
 	boolean boostExists = (player->tripwireLeniency > 0); // can't be checked later because of subtractions...
 	tripwirepass_t triplevel = K_TripwirePassConditions(player);
+	boolean mightplaysound = false;
 
 	if (triplevel != TRIPWIRE_NONE)
 	{
@@ -9050,12 +9051,7 @@ static void K_UpdateTripwire(player_t *player)
 			mobj_t *front = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_TRIPWIREBOOST);
 			mobj_t *back = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_TRIPWIREBOOST);
 
-			if (P_IsDisplayPlayer(player))
-			{
-				S_StartSound(player->mo, sfx_s3k40);
-				S_StopSoundByID(player->mo, sfx_gshaf);
-			}
-				
+			mightplaysound = true;
 
 			P_SetTarget(&front->target, player->mo);
 			P_SetTarget(&back->target, player->mo);
@@ -9074,6 +9070,12 @@ static void K_UpdateTripwire(player_t *player)
 
 		if (triplevel != TRIPWIRE_CONSUME)
 			player->tripwireLeniency = max(player->tripwireLeniency, TRIPWIRETIME);
+
+		if (P_IsDisplayPlayer(player) && player->tripwireLeniency && mightplaysound)
+		{
+			S_StartSound(player->mo, TRIPWIRE_OK_SOUND);
+			S_StopSoundByID(player->mo, TRIPWIRE_NG_SOUND);
+		}
 	}
 
 	// TRIPWIRE_CONSUME is only applied in very specific cases (currently, riding Garden Top)

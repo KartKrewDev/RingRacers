@@ -7864,10 +7864,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		if (!mobj->target || !mobj->target->health
 			|| !mobj->target->player || !mobj->target->player->tripwireLeniency)
 		{
-			if (mobj->target && mobj->target->player && P_IsDisplayPlayer(mobj->target->player))
+			if (mobj->target && mobj->target->player 
+				&& P_IsDisplayPlayer(mobj->target->player)
+				&& !(mobj->target->player->curshield == KSHIELD_TOP))
 			{
-				S_StopSoundByID(mobj->target, sfx_s3k40);
-				S_StartSound(mobj->target, sfx_gshaf);
+				S_StopSoundByID(mobj->target, TRIPWIRE_OK_SOUND);
+				S_StartSound(mobj->target, TRIPWIRE_NG_SOUND);
 			}
 
 			P_RemoveMobj(mobj);
