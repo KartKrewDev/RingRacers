@@ -1198,6 +1198,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].numsneakers = READUINT8(save->p);
 		players[i].panelsneakertimer = READUINT16(save->p);
 		players[i].numpanelsneakers = READUINT8(save->p);
+		players[i].weaksneakertimer = READUINT16(save->p);
 		players[i].numweaksneakers = READUINT8(save->p);
 		players[i].floorboost = READUINT8(save->p);
 
