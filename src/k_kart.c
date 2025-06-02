@@ -10166,9 +10166,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	else if (!(player->cmd.buttons & BT_ATTACK)) // Deliberate Item button release, no need to protect you from lockout
 		player->instaWhipChargeLockout = 0;
 
-	// OOPSIES FIXME pt.2: See OOPSIES FIXME pt.1.
-	// Don't draw attention to a useless, invisible whip charge!
-	if (player->instaWhipCharge && player->instaWhipCharge < INSTAWHIP_CHARGETIME && !player->itemRoulette.active)
+	if (player->instaWhipCharge && player->instaWhipCharge < INSTAWHIP_CHARGETIME)
 	{
 		if (!S_SoundPlaying(player->mo, sfx_wchrg1))
 			S_StartSoundAtVolume(player->mo, sfx_wchrg1, 255/2);
@@ -13553,7 +13551,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	// which is allowed during painstate as a last-ditch defensive option.
 	if (player && player->mo && player->mo->health > 0 && !player->spectator && !mapreset && leveltime > introtime)
 	{
-		boolean chargingwhip = (cmd->buttons & BT_ATTACK) && (player->rings <= 0) && (!player->instaWhipChargeLockout);
+		boolean chargingwhip = (cmd->buttons & BT_ATTACK) && (player->rings <= 0) && (!player->instaWhipChargeLockout) && (!player->itemRoulette.active);
 		boolean releasedwhip = (!(cmd->buttons & BT_ATTACK)) && (player->rings <= 0 && player->instaWhipCharge) && !(P_PlayerInPain(player));
 
 		if (K_PowerUpRemaining(player, POWERUP_BADGE))
@@ -13594,14 +13592,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		{
 			player->instaWhipCharge = min(player->instaWhipCharge + 1, INSTAWHIP_TETHERBLOCK + 1);
 
-			// OOPSIES FIXME pt.1: You can charge instawhip between picking up and confirming an item box.
-			// This is vanishingly rare in race and impossible in battle, but SUPER common in prisons!
-			//
-			// ...But this was discovered after staff ghost recording started, and charging whip prevents
-			// flingring pickup, meaning it has a small but desync-capable gameplay effect.
-			//
-			// So instead of stopping charge, we hide it. How embarrassing!
-			if (player->instaWhipCharge == 1 && !player->itemRoulette.active)
+			if (player->instaWhipCharge == 1)
 			{
 				Obj_SpawnInstaWhipRecharge(player, 0);
 				Obj_SpawnInstaWhipRecharge(player, ANGLE_120);
@@ -13627,9 +13618,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		{
 			if (player->instaWhipCharge < INSTAWHIP_CHARGETIME)
 			{
-				// OOPSIES FIXME pt.3: See OOPSIES FIXME pt.1.
-				if (!player->itemRoulette.active)
-					S_StartSound(player->mo, sfx_kc50);
+				S_StartSound(player->mo, sfx_kc50);
 				player->instaWhipCharge = 0;
 				player->botvars.itemconfirm = 0;
 			}
@@ -13662,17 +13651,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		else if (!(player->instaWhipCharge >= INSTAWHIP_CHARGETIME && P_PlayerInPain(player))) // Allow reversal whip
 			player->instaWhipCharge = 0;
 	}
-
-	// OOPSIES FIXME pt.4: This one is kind of esoteric and only theoretically abusable, but
-	// if a player picks up an item during the instawhip input safety window—the one that triggers
-	// after you burn to 0 rings—they can continue to hold the input, then charge a usable whip
-	// without stopping the roulette and acquiring an item, which cancels it.
-	//
-	// No ghosts use this technique, but your least favorite tournament player might.
-	if (player->itemRoulette.active)
-	{
-		player->instaWhipCharge = min(player->instaWhipCharge, INSTAWHIP_CHARGETIME - 2);
-	}
+	
 
 	if (player && player->mo && K_PlayerCanUseItem(player))
 	{
