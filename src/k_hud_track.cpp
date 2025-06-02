@@ -40,7 +40,7 @@
 
 using namespace srb2;
 
-extern "C" consvar_t cv_debughudtracker, cv_battleufotest, cv_kartdebugwaypoints;
+extern "C" consvar_t cv_debughudtracker, cv_battleufotest, cv_kartdebugwaypoints, cv_debugpickmeup;
 
 namespace
 {
@@ -402,6 +402,8 @@ bool is_object_tracking_target(const mobj_t* mobj)
 	case MT_BUBBLESHIELDTRAP:
 	case MT_EGGMANITEM:
 	case MT_EGGMANITEM_SHIELD:
+		if (cv_debugpickmeup.value)
+			return false;
 		return (mobj->target && !P_MobjWasRemoved(mobj->target) && (
 			(mobj->target->player && stplyr == mobj->target->player)
 			|| (mobj->target->player && G_SameTeam(stplyr, mobj->target->player))

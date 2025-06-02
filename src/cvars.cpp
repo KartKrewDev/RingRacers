@@ -809,6 +809,7 @@ consvar_t cv_debugencorevote = OnlineCheat("debugencorevote", "Off").on_off().de
 consvar_t cv_debuglapcheat = OnlineCheat("debuglapcheat", "Off").on_off().description("Permit far waypoint jumps and disable lap cheat prevention");
 consvar_t cv_debugnewchallenger = OnlineCheat("debugnewchallenger", "Off").on_off().description("Do not restart the map to toggle Duel mode");
 consvar_t cv_forcebots = OnlineCheat("forcebots", "No").yes_no().description("Force bots to appear, even in wrong game modes");
+consvar_t cv_debugpickmeup = OnlineCheat("debugpickmeup", "Off").on_off().description("Don't protect players from self/team damage");
 
 void ForceSkin_OnChange(void);
 consvar_t cv_forceskin = OnlineCheat("forcecharacter", "None").onchange(ForceSkin_OnChange).description("Force all players to use one character");
