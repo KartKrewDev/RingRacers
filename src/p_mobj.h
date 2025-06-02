@@ -450,6 +450,8 @@ struct mobj_t
 
 	INT32 po_movecount; // Polyobject carrying (NOT savegame, NOT Lua)
 
+	UINT8 relinkplayer; // reassociate kartitem target when it dies. ACHTUNG 1-INDEXED
+
 	// WARNING: New fields must be added separately to savegame and Lua.
 };
 

@@ -10355,9 +10355,24 @@ void P_MobjThinker(mobj_t *mobj)
 	I_Assert(mobj != NULL);
 	I_Assert(!P_MobjWasRemoved(mobj));
 
+	if (P_IsKartItem(mobj->type) && mobj->target && !P_MobjWasRemoved(mobj->target))
+	{
+		player_t *link = mobj->target->player;
+		if (link && playeringame[link-players] && !link->spectator)
+			mobj->relinkplayer = (link-players) + 1;
+	}
+
 	// Remove dead target/tracer.
 	if (mobj->target && P_MobjWasRemoved(mobj->target))
+	{
 		P_SetTarget(&mobj->target, NULL);
+		if (P_IsKartItem(mobj->type) && mobj->relinkplayer && mobj->relinkplayer <= MAXPLAYERS)
+		{
+			player_t *relink = &players[mobj->relinkplayer-1];
+			if (playeringame[relink-players] && !relink->spectator && relink->mo && !P_MobjWasRemoved(relink->mo))
+				P_SetTarget(&mobj->target, relink->mo);
+		}
+	}
 	if (mobj->tracer && P_MobjWasRemoved(mobj->tracer))
 		P_SetTarget(&mobj->tracer, NULL);
 	if (mobj->hnext && P_MobjWasRemoved(mobj->hnext))
