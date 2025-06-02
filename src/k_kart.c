@@ -9813,9 +9813,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 		// UINT16 oldringboost = player->ringboost;
 
-		if (player->superring == 0 || player->stunned)
+		if (!player->baildrop && (player->superring == 0 || player->stunned))
 			player->ringboost -= max((player->ringboost / roller), 1);
-		else if (K_LegacyRingboost(player))
+		else if (K_LegacyRingboost(player) || player->baildrop)
 			player->ringboost--;
 		else
 			player->ringboost -= min(K_GetFullKartRingPower(player, false) - 1, max(player->ringboost / 2 / roller, 1));
@@ -10005,6 +10005,11 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->baildrop)
 	{
+		if (player->stunned & 0x8000)
+			player->stunned = 0x8000 | BAILSTUN;
+		else
+			player->stunned = BAILSTUN;
+
 		mobj_t *pmo = player->mo;
 		// particle spawn
 		#define BAILSPARKLE_MAXBAIL 61 // amount of bail rings needed for max sparkle spawn frequency
@@ -13981,10 +13986,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			player->rings = 0;
 		}
 
-		UINT32 totalrings = player->rings + player->superring + player->pickuprings;
+		UINT32 totalrings = player->rings + player->superring + player->pickuprings + debtrings;
 		totalrings = max(totalrings, 0);
 		UINT32 bailboost = FixedInt(FixedMul(totalrings*FRACUNIT, BAIL_BOOST));
-		UINT32 baildrop = debtrings + FixedInt(FixedMul((totalrings)*FRACUNIT, BAIL_DROP));
+		UINT32 baildrop = FixedInt(FixedMul((totalrings)*FRACUNIT, BAIL_DROP));
 
 		if (player->itemRoulette.active)
 		{
