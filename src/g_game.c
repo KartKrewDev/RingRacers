@@ -2269,6 +2269,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	UINT8 lastsafecheatcheck;
 	UINT16 bigwaypointgap;
 
+	INT16 duelscore;
+
 	roundconditions_t roundconditions;
 	boolean saveroundconditions;
 
@@ -2433,6 +2435,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		lastsafelap = 0;
 		lastsafecheatcheck = 0;
 		bigwaypointgap = 0;
+		duelscore = 0;
 
 		tallyactive = false;
 
@@ -2494,6 +2497,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		}
 
 		cangrabitems = players[player].cangrabitems;
+
+		duelscore = players[player].duelscore;
 	}
 
 	spectatorReentry = (betweenmaps ? 0 : players[player].spectatorReentry);
@@ -2597,6 +2602,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->gradingfactor = gradingfactor;
 	p->gradingpointnum = gradingpointnum;
 	p->totalring = totalring;
+
+	p->duelscore = duelscore;
 
 	for (i = 0; i < LAP__MAX; i++)
 	{
