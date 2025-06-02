@@ -876,6 +876,7 @@ typedef enum sprite
 	SPR_GBDY, // Guard body
 
 	SPR_BAIL, // Bail charge
+	SPR_BAIB, // Bail after effect
 	SPR_TECH, // Bail tech charge
 
 	SPR_TRC1, // Charge aura
@@ -2633,6 +2634,7 @@ typedef enum state
 	S_BLOCKBODY,
 
 	S_BAIL,
+	S_BAIB,
 	S_BAILCHARGE,
 
 	S_AMPRING,

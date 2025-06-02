@@ -23,22 +23,17 @@ void Obj_BailThink (mobj_t *aura)
 		|| aura->target->health == 0
 		|| aura->target->destscale <= 1 // sealed star fall out
 		|| !aura->target->player
-        || !aura->target->hitlag)
+        || P_PlayerInPain(aura->target->player)) // if you got hit when starting to bail, cancel the VFX
     {
         P_RemoveMobj(aura);
     }
     else
     {
         mobj_t *mo = aura->target;
-        ATTRUNUSED player_t *player = mo->player;
 
-        // Follow player
         aura->flags &= ~(MF_NOCLIPTHING);
 		P_MoveOrigin(aura, mo->x, mo->y, mo->z + mo->height/2);
 		aura->flags |= MF_NOCLIPTHING;
-        // aura->color = mo->color;
-
-        // aura->renderflags &= ~RF_DONTDRAW;
 
         fixed_t baseScale = 12*mo->scale/10;
 

@@ -335,6 +335,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"GBDY", // Guard body
 
 	"BAIL", // Bail charge
+	"BAIB", // Bail after effect
 	"TECH", // Bail tech charge
 
 	"TRC1", // Charge aura
@@ -2163,7 +2164,8 @@ state_t states[NUMSTATES] =
 	{SPR_GRNG,                 FF_FULLBRIGHT|FF_PAPERSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_BLOCKRING
 	{SPR_GBDY,                 FF_FULLBRIGHT|FF_ANIMATE|0, -1, {NULL}, 4, 2, S_NULL}, // S_BLOCKBODY
 
-	{SPR_BAIL,                 FF_FULLBRIGHT|FF_ANIMATE|0, -1, {NULL}, 8, 1, S_NULL}, // S_BAIL
+	{SPR_BAIL,                 FF_FULLBRIGHT|FF_ANIMATE|0, 8, {NULL}, 8, 1, S_BAIB}, // S_BAIL
+	{SPR_BAIB,                 FF_FULLBRIGHT|FF_ANIMATE|0, 10, {NULL}, 9, 1, S_NULL}, // S_BAIB
 	{SPR_TECH,                 FF_FULLBRIGHT|FF_ANIMATE|0, -1, {NULL}, 41, 1, S_NULL}, // S_BAILCHARGE
 
 	{SPR_AMPB,                 FF_FULLBRIGHT|FF_PAPERSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_AMPRING
