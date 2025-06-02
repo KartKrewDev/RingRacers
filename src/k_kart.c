@@ -7317,15 +7317,17 @@ void K_DoSneaker(player_t *player, INT32 type)
 	{
 		case 0: // Panel sneaker
 			player->panelsneakertimer = sneakertime;
-			player->overshield += 1;
+			if (player->overshield > 0) {
+				player->overshield = min( player->overshield + TICRATE/3, max( TICRATE, player->overshield ));
+			}
 			break;
 		case 1: // Single item sneaker
 			player->sneakertimer = sneakertime;
-			player->overshield += TICRATE/2;
+			player->overshield = max( player->overshield, 25 );
 			break;
 		case 2: // Rocket sneaker (aka. weaksneaker)
 			player->weaksneakertimer = 3*sneakertime/4;
-			player->overshield += TICRATE/2;
+			player->overshield = max( player->overshield, TICRATE/2 );
 			break;
 	}
 
