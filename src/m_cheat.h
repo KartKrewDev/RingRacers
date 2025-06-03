@@ -80,6 +80,16 @@ void Command_Devmode_f(void);
 void Command_Scale_f(void);
 void Command_Gravflip_f(void);
 void Command_Hurtme_f(void);
+
+void Command_Stumble_f(void);
+void Command_Whumble_f(void);
+void Command_Tumble_f(void);
+void Command_Explode_f(void);
+void Command_Spinout_f(void);
+void Command_Wipeout_f(void);
+void Command_Sting_f(void);
+void Command_Kill_f(void);
+
 void Command_Teleport_f(void);
 void Command_RTeleport_f(void);
 void Command_Skynum_f(void);
