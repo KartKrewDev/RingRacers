@@ -1286,7 +1286,9 @@ static mobj_t *InitSpecialUFO(waypoint_t *start)
 	// Set specialDamage as early as possible, for glass ball's sake
 	if (grandprixinfo.gp && grandprixinfo.specialDamage)
 	{
-		ufo->health -= min(4*(UINT32)mobjinfo[MT_SPECIAL_UFO].spawnhealth/10, grandprixinfo.specialDamage/6);
+		ufo->health -= min(2*(UINT32)mobjinfo[MT_SPECIAL_UFO].spawnhealth/10, grandprixinfo.specialDamage/12);
+		// Use this if you want to spy on what the health ends up being:
+		//CONS_Printf("the UFO weeps: %d hp\n", ufo->health );
 	}
 
 	ufo_speed(ufo) = FixedMul(UFO_START_SPEED, K_GetKartGameSpeedScalar(gamespeed));
