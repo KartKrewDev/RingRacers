@@ -9816,6 +9816,11 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->invincibilitytimer--;
 		if (player->invincibilitytimer && K_IsPlayerScamming(player))
 			player->invincibilitytimer--;
+		
+		// Extra tripwire leniency for the end of invincibility
+		if (player->invincibilitytimer <= 0) {
+			player->tripwireLeniency = max( player->tripwireLeniency, TICRATE );
+		}
 	}
 
 	// The precise ordering of start-of-level made me want to cut my head off,
