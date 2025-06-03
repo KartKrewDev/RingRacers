@@ -57,7 +57,7 @@ typedef enum
 	TALLY_ST_GAMEOVER_DONE,
 } tally_state_e;
 
-#define TALLY_DIRECTOR_TIME (2 * TICRATE)
+#define TALLY_DIRECTOR_TIME (4 * TICRATE)
 
 struct level_tally_t
 {
