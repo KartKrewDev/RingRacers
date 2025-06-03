@@ -7213,6 +7213,7 @@ static void K_FlameDashLeftoverSmoke(mobj_t *src)
 void K_DoSneaker(player_t *player, INT32 type)
 {
 
+	INT32 originaltype = type;
 	fixed_t intendedboost = FRACUNIT/2;
 
 	// If you've already got an rocket sneaker type boost, panel sneakers will instead turn into rocket sneaker boosts
@@ -7317,16 +7318,27 @@ void K_DoSneaker(player_t *player, INT32 type)
 	{
 		case 0: // Panel sneaker
 			player->panelsneakertimer = sneakertime;
+			break;
+		case 1: // Single item sneaker
+			player->sneakertimer = sneakertime;
+			break;
+		case 2: // Rocket sneaker (aka. weaksneaker)
+			player->weaksneakertimer = 3*sneakertime/4;
+			break;
+	}
+
+	// Give invincibility based on the ACTUAL boost type used, not the "promoted" boost type
+	switch (originaltype)
+	{
+		case 0: // Panel sneaker
 			if (player->overshield > 0) {
 				player->overshield = min( player->overshield + TICRATE/3, max( TICRATE, player->overshield ));
 			}
 			break;
 		case 1: // Single item sneaker
-			player->sneakertimer = sneakertime;
 			player->overshield = max( player->overshield, 25 );
 			break;
 		case 2: // Rocket sneaker (aka. weaksneaker)
-			player->weaksneakertimer = 3*sneakertime/4;
 			player->overshield = max( player->overshield, TICRATE/2 );
 			break;
 	}
