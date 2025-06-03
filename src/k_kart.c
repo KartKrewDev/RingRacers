@@ -3071,7 +3071,8 @@ tripwirepass_t K_TripwirePassConditions(const player_t *player)
 {
 	if (
 			player->invincibilitytimer ||
-			player->sneakertimer
+			player->sneakertimer ||
+			player->weaksneakertimer
 		)
 		return TRIPWIRE_BLASTER;
 

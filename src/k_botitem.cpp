@@ -531,7 +531,7 @@ static void K_BotItemSneaker(const player_t *player, ticcmd_t *cmd)
 		|| player->speedboost > (FRACUNIT/8) // Have another type of boost (tethering)
 		|| player->botvars.itemconfirm > 4*TICRATE) // Held onto it for too long
 	{
-		if (player->sneakertimer == 0 && K_ItemButtonWasDown(player) == false)
+		if (player->sneakertimer == 0 && player->weaksneakertimer == 0 && K_ItemButtonWasDown(player) == false)
 		{
 			cmd->buttons |= BT_ATTACK;
 			//player->botvars.itemconfirm = 2*TICRATE;
@@ -567,7 +567,7 @@ static void K_BotItemRocketSneaker(const player_t *player, ticcmd_t *cmd)
 
 	if (player->botvars.itemconfirm > TICRATE)
 	{
-		if (player->sneakertimer == 0 && K_ItemButtonWasDown(player) == false)
+		if (player->sneakertimer == 0 && player->weaksneakertimer == 0 && K_ItemButtonWasDown(player) == false)
 		{
 			cmd->buttons |= BT_ATTACK;
 			//player->botvars.itemconfirm = 0;
@@ -1605,7 +1605,7 @@ static void K_BotItemIceCube(const player_t *player, ticcmd_t *cmd)
 		return;
 	}
 
-	if (player->sneakertimer)
+	if (player->sneakertimer || player->weaksneakertimer)
 	{
 		return;
 	}
