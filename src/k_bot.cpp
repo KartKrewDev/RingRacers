@@ -1944,6 +1944,9 @@ static void K_BuildBotTiccmdNormal(player_t *player, ticcmd_t *cmd)
 		ps_bots[player - players].item = I_GetPreciseTime() - t;
 	}
 
+	// Update turning quicker if we're moving at high speeds.
+	UINT8 turndelta = (player->speed > (7 * K_GetKartSpeed(player, false, false) / 4)) ? 2 : 1;
+
 	if (turnamt != 0)
 	{
 		if (turnamt > KART_FULLTURN)
@@ -1960,7 +1963,7 @@ static void K_BuildBotTiccmdNormal(player_t *player, ticcmd_t *cmd)
 			// Count up
 			if (player->botvars.turnconfirm < BOTTURNCONFIRM)
 			{
-				cmd->bot.turnconfirm++;
+				cmd->bot.turnconfirm += turndelta;
 			}
 		}
 		else if (turnamt < 0)
@@ -1968,7 +1971,7 @@ static void K_BuildBotTiccmdNormal(player_t *player, ticcmd_t *cmd)
 			// Count down
 			if (player->botvars.turnconfirm > -BOTTURNCONFIRM)
 			{
-				cmd->bot.turnconfirm--;
+				cmd->bot.turnconfirm -= turndelta;
 			}
 		}
 		else
