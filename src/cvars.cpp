@@ -728,7 +728,7 @@ consvar_t cv_kartspeed = UnsavedNetVar("gamespeed", "Auto Gear").values(kartspee
 
 consvar_t cv_teamplay = UnsavedNetVar("teamplay", "Off").on_off();
 
-consvar_t cv_kartusepwrlv = UnsavedNetVar("usepwrlv", "Yes").yes_no();
+consvar_t cv_kartusepwrlv = UnsavedNetVar("mobiums", "Yes").yes_no();
 
 void LiveStudioAudience_OnChange(void);
 #ifdef DEVELOP
@@ -783,6 +783,8 @@ consvar_t cv_timelimit = UnsavedNetVar("timelimit", "Default").min_max(1, 30*60,
 
 consvar_t cv_votetime = UnsavedNetVar("votetime", "20").min_max(10, 3600);
 
+consvar_t cv_dueltimelimit = UnsavedNetVar("dueltimelimit", "180").min_max(0, 3600);
+consvar_t cv_duelscorelimit = UnsavedNetVar("duelscorelimit", "4").min_max(1, 9);
 
 //
 // Online cheats - synced in netgames.

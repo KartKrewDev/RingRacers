@@ -7864,10 +7864,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		if (!mobj->target || !mobj->target->health
 			|| !mobj->target->player || !mobj->target->player->tripwireLeniency)
 		{
-			if (mobj->target && mobj->target->player && P_IsDisplayPlayer(mobj->target->player))
+			if (mobj->target && mobj->target->player 
+				&& P_IsDisplayPlayer(mobj->target->player)
+				&& !(mobj->target->player->curshield == KSHIELD_TOP))
 			{
-				S_StopSoundByID(mobj->target, sfx_s3k40);
-				S_StartSound(mobj->target, sfx_gshaf);
+				S_StopSoundByID(mobj->target, TRIPWIRE_OK_SOUND);
+				S_StartSound(mobj->target, TRIPWIRE_NG_SOUND);
 			}
 
 			P_RemoveMobj(mobj);
@@ -7989,7 +7991,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 			if (p)
 			{
-				UINT16 timer = max(p->sneakertimer, p->panelsneakertimer);
+				UINT16 timer = max(max(p->sneakertimer, p->panelsneakertimer), p->weaksneakertimer);
 				if (timer > mobj->movecount)
 					P_SetMobjState(mobj, S_BOOSTFLAME);
 				mobj->movecount = timer;
@@ -9110,7 +9112,10 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				&& (gamespeed != KARTSPEED_EASY)
 				&& (newplayer->tally.active == true)
 				&& (newplayer->tally.totalExp > 0) // Only true if not Time Attack
-				&& (newplayer->tally.exp >= newplayer->tally.totalExp)
+				&& (
+					(newplayer->tally.exp >= newplayer->tally.totalExp) ||
+					(K_InRaceDuel() && newplayer->duelscore == DUELWINNINGSCORE)
+				)
 			)
 			{
 				UINT8 pnum = (newplayer-players);
@@ -10350,9 +10355,24 @@ void P_MobjThinker(mobj_t *mobj)
 	I_Assert(mobj != NULL);
 	I_Assert(!P_MobjWasRemoved(mobj));
 
+	if (P_IsKartItem(mobj->type) && mobj->target && !P_MobjWasRemoved(mobj->target))
+	{
+		player_t *link = mobj->target->player;
+		if (link && playeringame[link-players] && !link->spectator)
+			mobj->relinkplayer = (link-players) + 1;
+	}
+
 	// Remove dead target/tracer.
 	if (mobj->target && P_MobjWasRemoved(mobj->target))
+	{
 		P_SetTarget(&mobj->target, NULL);
+		if (P_IsKartItem(mobj->type) && mobj->relinkplayer && mobj->relinkplayer <= MAXPLAYERS)
+		{
+			player_t *relink = &players[mobj->relinkplayer-1];
+			if (playeringame[relink-players] && !relink->spectator && relink->mo && !P_MobjWasRemoved(relink->mo))
+				P_SetTarget(&mobj->target, relink->mo);
+		}
+	}
 	if (mobj->tracer && P_MobjWasRemoved(mobj->tracer))
 		P_SetTarget(&mobj->tracer, NULL);
 	if (mobj->hnext && P_MobjWasRemoved(mobj->hnext))
@@ -15414,6 +15434,8 @@ void P_SetThingTID(mobj_t *mo, mtag_t tid)
 //
 // P_FindMobjFromTID
 // Mobj tag search function.
+// This function cannot be safely called after *i is removed!
+// Please call at start of loops if *i is to be mutated
 //
 mobj_t *P_FindMobjFromTID(mtag_t tid, mobj_t *i, mobj_t *activator)
 {

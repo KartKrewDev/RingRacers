@@ -53,6 +53,7 @@
 #include "m_easing.h"
 #include "music.h"
 #include "k_battle.h" // battleprisons
+#include "k_endcam.h" // K_EndCameraIsFreezing()
 
 // Not sure if this is necessary, but it was in w_wad.c, so I'm putting it here too -Shadow Hog
 #include <errno.h>
@@ -1995,7 +1996,7 @@ static void K_HandleLapIncrement(player_t *player)
 			}
 
 			// finished race exit setup
-			if (player->laps > numlaps)
+			if (player->laps > numlaps && !K_InRaceDuel())
 			{
 				pflags_t applyflags = 0;
 				if (specialstageinfo.valid == true)
@@ -2021,7 +2022,8 @@ static void K_HandleLapIncrement(player_t *player)
 					: skins[player->skin].flags;
 				if (skinflags & SF_IRONMAN)
 				{
-					SetRandomFakePlayerSkin(player, true, false);
+					if ((player->laps == 1 && lapisfresh) || !K_InRaceDuel()) // We'll do this in K_CheckpointCrossAward if necessary.
+						SetRandomFakePlayerSkin(player, true, false);
 				}
 
 				// Always trust waypoints entering the first lap.
@@ -2064,24 +2066,32 @@ static void K_HandleLapIncrement(player_t *player)
 
 			if (rainbowstartavailable == true && player->mo->hitlag == 0)
 			{
-				S_StartSound(player->mo, sfx_s23c);
-				player->startboost = 125;
-
-				K_SpawnDriftBoostExplosion(player, 4);
-				K_SpawnDriftElectricSparks(player, SKINCOLOR_SILVER, false);
-				K_SpawnAmps(player, 35, player->mo);
-
-				if (g_teamplay)
+				if (K_InRaceDuel())
 				{
-					for (UINT8 j = 0; i < MAXPLAYERS; i++)
+					K_SpawnDriftElectricSparks(player, player->skincolor, false);
+					K_SpawnAmps(player, 20, player->mo);
+				}
+				else
+				{
+					S_StartSound(player->mo, sfx_s23c);
+					player->startboost = 125;
+
+					K_SpawnDriftBoostExplosion(player, 4);
+					K_SpawnDriftElectricSparks(player, SKINCOLOR_SILVER, false);
+					K_SpawnAmps(player, (K_InRaceDuel()) ? 20 : 35, player->mo);
+
+					if (g_teamplay)
 					{
-						if (!playeringame[j] || players[j].spectator || !players[j].mo || P_MobjWasRemoved(players[j].mo))
-							continue;
-						if (!G_SameTeam(player, &players[j]))
-							continue;
-						if (player == &players[j])
-							continue;
-						K_SpawnAmps(&players[j], 10, player->mo);
+						for (UINT8 j = 0; i < MAXPLAYERS; i++)
+						{
+							if (!playeringame[j] || players[j].spectator || !players[j].mo || P_MobjWasRemoved(players[j].mo))
+								continue;
+							if (!G_SameTeam(player, &players[j]))
+								continue;
+							if (player == &players[j])
+								continue;
+							K_SpawnAmps(&players[j], 10, player->mo);
+						}
 					}
 				}
 
@@ -2105,7 +2115,9 @@ static void K_HandleLapIncrement(player_t *player)
 			}
 			else if (P_IsDisplayPlayer(player))
 			{
-				if (numlaps > 1 && player->laps == numlaps) // final lap
+				if (K_InRaceDuel())
+					S_StartSound(NULL, sfx_s221);
+				else if (numlaps > 1 && player->laps == numlaps) // final lap
 					S_StartSound(NULL, sfx_s3k68);
 				else if ((player->laps > 1) && (player->laps < numlaps)) // non-final lap
 					S_StartSound(NULL, sfx_s221);
@@ -2118,7 +2130,7 @@ static void K_HandleLapIncrement(player_t *player)
 			}
 			else
 			{
-				if ((player->laps > numlaps) && (player->position == 1))
+				if ((player->laps > numlaps) && (player->position == 1) && (!K_InRaceDuel()))
 				{
 					// opponent finished
 					S_StartSound(NULL, sfx_s253);
@@ -3263,8 +3275,13 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 					return false;
 				}
 
-				while ((targetThing = P_FindMobjFromTID(args[1], targetThing, mo)) != NULL)
+				mobj_t *next = P_FindMobjFromTID(args[1], targetThing, mo);
+
+				while ((targetThing = next) != NULL)
 				{
+					// First in case of deletion. (Can't check for state == S_NULL because of A_ calls, etc)
+					next = P_FindMobjFromTID(args[1], targetThing, mo);
+
 					if (targetThing->player != NULL)
 					{
 						continue;
@@ -4752,7 +4769,7 @@ void P_SetupSignExit(player_t *player, boolean tie)
 		return;
 
 	// SRB2Kart: FINALLY, add in an alternative if no place is found
-	if (player->mo && !P_MobjWasRemoved(player->mo))
+	if (player->mo && !P_MobjWasRemoved(player->mo) && !K_EndCameraIsFreezing())
 	{
 		thing = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->floorz, MT_SIGN);
 		thing->angle = bestAngle;

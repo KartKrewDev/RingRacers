@@ -289,6 +289,7 @@ enum actionnum
 	A_MAKESSCANDLE,
 	A_HOLOGRAMRANDOMTRANSLUCENCY,
 	A_SSCHAINSHATTER,
+	A_GENERICBUMPER,
 	NUMACTIONS
 };
 
@@ -557,6 +558,7 @@ void A_BlendEyePuyoHack();
 void A_MakeSSCandle();
 void A_HologramRandomTranslucency();
 void A_SSChainShatter();
+void A_GenericBumper();
 
 extern boolean actionsoverridden[NUMACTIONS];
 

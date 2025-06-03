@@ -297,6 +297,7 @@ actionpointer_t actionpointers[] =
 	{{A_MakeSSCandle},           "A_MAKESSCANDLE"},
 	{{A_HologramRandomTranslucency}, "A_HOLOGRAMRANDOMTRANSLUCENCY"},
 	{{A_SSChainShatter}, "A_SSCHAINSHATTER"},
+	{{A_GenericBumper}, "A_GENERICBUMPER"},
 
 	{{NULL},                     "NONE"},
 

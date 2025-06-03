@@ -57,26 +57,7 @@ static void M_StartCup(UINT8 entry)
 		entry = UINT8_MAX;
 	}
 
-	S_StartSound(NULL, sfx_s3k63);
-
-	paused = false;
-
-	S_StopMusicCredit();
-
-	// Early fadeout to let the sound finish playing
-	F_WipeStartScreen();
-	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
-	F_WipeEndScreen();
-	F_RunWipe(wipe_level_toblack, wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
-
-	if (cv_maxconnections.value < ssplayers+1)
-		CV_SetValue(&cv_maxconnections, ssplayers+1);
-
-	if (splitscreen != ssplayers)
-	{
-		splitscreen = ssplayers;
-		SplitScreen_OnChange();
-	}
+	M_MenuToLevelPreamble(ssplayers, false);
 
 	if (entry == UINT8_MAX)
 	{
@@ -134,10 +115,6 @@ static void M_StartCup(UINT8 entry)
 			entry = roundqueue.position-1;
 		}
 	}
-
-	paused = false;
-
-	SV_StartSinglePlayerServer(levellist.newgametype, levellist.netgame);
 
 	M_ClearMenus(true);
 

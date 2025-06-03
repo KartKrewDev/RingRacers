@@ -1389,7 +1389,7 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 void P_DoAllPlayersExit(pflags_t flags, boolean trygivelife)
 {
 	UINT8 i;
-	const boolean dofinishsound = (musiccountdown == 0);
+	const boolean dofinishsound = (musiccountdown == 0) && (!K_InRaceDuel());
 
 	if (grandprixinfo.gp == false
 		|| grandprixinfo.eventmode == GPEVENT_SPECIAL
@@ -2348,7 +2348,7 @@ static void P_UpdatePlayerAngle(player_t *player)
 		// This is the hardest case for the turn solver, because your handling properties on
 		// client side are very different than your handling properties on server side—at least,
 		// until your drift status makes the full round-trip and is reflected in your gamestate.
-		if (player->drift && abs(player->drift) < 5)
+		if (player->drift && abs(player->drift) < 5 && player->cmd.latency)
 		{
 			steeringRight = KART_FULLTURN;
 			steeringLeft = -KART_FULLTURN;
@@ -2621,7 +2621,7 @@ void P_MovePlayer(player_t *player)
 	////////////////////////////
 
 	// SRB2kart - Drifting smoke and fire
-	if ((player->sneakertimer || player->panelsneakertimer || player->flamedash)
+	if ((player->sneakertimer || player->panelsneakertimer || player->weaksneakertimer || player->flamedash)
 		&& onground && (leveltime & 1))
 		K_SpawnBoostTrail(player);
 
@@ -3766,7 +3766,6 @@ boolean P_SpectatorJoinGame(player_t *player)
 	}
 	player->spectator = false;
 	player->pflags &= ~PF_WANTSTOJOIN;
-	player->spectatewait = 0;
 	player->team = TEAM_UNASSIGNED; // We will auto-assign later.
 	player->playerstate = PST_REBORN;
 	player->enteredGame = true;
@@ -3780,6 +3779,10 @@ boolean P_SpectatorJoinGame(player_t *player)
 
 	// a surprise tool that will help us later...
 	text = va("\x82*%s entered the game.", player_names[player-players]);
+
+	if (P_IsMachineLocalPlayer(player) && player->spectatewait > TICRATE)
+		S_StartSound(NULL, sfx_s3ka9);
+	player->spectatewait = 0;
 
 	HU_AddChatText(text, false);
 	return true; // no more player->mo, cannot continue.
@@ -4249,6 +4252,12 @@ void P_PlayerThink(player_t *player)
 	else
 	{
 		player->airtime++;
+	}
+
+	if ((player->pflags & PF_FAULT) || (player->pflags & PF_VOID))
+	{
+		player->lastairtime = 0;
+		player->airtime = 0;
 	}
 
 	cmd = &player->cmd;

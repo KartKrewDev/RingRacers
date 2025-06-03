@@ -737,6 +737,8 @@ void ST_startTitleCard(void)
 	lt_ticker = lt_exitticker = lt_lasttic = 0;
 	lt_endtime = 4*TICRATE;	// + (10*NEWTICRATERATIO);
 	lt_fade = 0;
+
+	WipeStageTitle = false;
 }
 
 //
@@ -788,7 +790,7 @@ patch_t *ST_getRoundPicture(boolean small)
 //
 void ST_runTitleCard(void)
 {
-	boolean run = !(paused || P_AutoPause() || g_fast_forward > 0);
+	boolean run = !(paused || P_AutoPause() || (g_fast_forward > 0 && demo.simplerewind == DEMO_REWIND_OFF));
 	INT32 auxticker;
 	boolean doroundicon = (ST_getRoundPicture(false) != NULL);
 

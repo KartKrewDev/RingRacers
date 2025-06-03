@@ -235,6 +235,13 @@ static patch_t *kp_team_underlay[2][2];
 static patch_t *kp_team_minihead;
 static patch_t *kp_team_you;
 
+static patch_t *kp_duel_foe;
+static patch_t *kp_duel_you;
+static patch_t *kp_duel_sticker;
+static patch_t *kp_duel_under;
+static patch_t *kp_duel_over;
+static patch_t *kp_duel_margin[24];
+
 patch_t *kp_autoroulette;
 patch_t *kp_autoring;
 
@@ -1061,6 +1068,20 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_team_underlay[1][1], "TEAM4UR");
 	HU_UpdatePatch(&kp_team_minihead, "TEAM4H");
 	HU_UpdatePatch(&kp_team_you, "TEAM_YOU");
+
+	HU_UpdatePatch(&kp_duel_foe, "DUEL_FOE");
+	HU_UpdatePatch(&kp_duel_sticker, "DUEL_S");
+	HU_UpdatePatch(&kp_duel_under, "DUEL_B");
+	HU_UpdatePatch(&kp_duel_over, "DUEL_B2");
+	HU_UpdatePatch(&kp_duel_you, "DUEL_YOU");
+
+	sprintf(buffer, "DUELMBxx");
+	for (i = 0; i < MARGINLEVELS; i++)
+	{
+		buffer[6] = '0'+(i/10);
+		buffer[7] = '0'+(i%10);
+		HU_UpdatePatch(&kp_duel_margin[i], "%s", buffer);
+	}
 }
 
 // For the item toggle menu
@@ -1513,6 +1534,46 @@ void K_DrawLikeMapThumbnail(fixed_t x, fixed_t y, fixed_t width, UINT32 flags, p
 		patch,
 		colormap
 	);
+}
+
+void K_DrawMapAsFace(INT32 x, INT32 y, UINT32 flags, UINT16 map, const UINT8 *colormap)
+{
+	const fixed_t iconHeight = (14 << FRACBITS);
+	const fixed_t iconWidth = (iconHeight * 320) / 200;
+	INT32 unit = 1;
+	fixed_t mul = FRACUNIT;
+	if (flags & V_NOSCALESTART)
+	{
+		unit = (vid.dupx < vid.dupy ? vid.dupx : vid.dupy);
+		mul = 1;
+	}
+
+	V_DrawFill(
+		x,
+		y,
+		16 * unit,
+		16 * unit,
+		(flags & ~V_FLIP)
+	);
+
+	V_SetClipRect(
+		(x + unit) * mul,
+		(y + unit) * mul,
+		(14 * unit) * mul,
+		(14 * unit) * mul,
+		(flags & ~V_FLIP)
+	);
+
+	K_DrawMapThumbnail(
+		((x + unit) * FRACUNIT) - (iconWidth - iconHeight)/2,
+		((y + unit) * FRACUNIT),
+		iconWidth,
+		flags,
+		map,
+		colormap
+	);
+
+	V_ClearClipRect();
 }
 
 // see also K_DrawNameTagItemSpy
@@ -2970,6 +3031,9 @@ static boolean K_drawKartPositionFaces(void)
 	if (!LUA_HudEnabled(hud_minirankings))
 		return false;	// Don't proceed but still return true for free play above if HUD is disabled.
 
+	if (K_InRaceDuel())
+		return false;
+
 	switch (r_splitscreen)
 	{
 	case 0:
@@ -3229,11 +3293,292 @@ INT32 K_GetTransFlagFromFixed(fixed_t value)
     }
 }
 
+static tic_t duel_lastleveltime = 0;
+static INT32 duel_marginanim = 0;
+static INT32 duel_lastmargin = 0;
+static INT32 youheight = 0;
+
+static void K_drawKartDuelScores(void)
+{
+	if (!K_InRaceDuel())
+		return;
+
+	using srb2::Draw;
+
+	player_t *foe = K_DuelOpponent(stplyr);
+
+	INT32 basex = 0;
+	INT32 basey = 40;
+	INT32 flags = V_SNAPTOLEFT|V_HUDTRANS|V_SLIDEIN;
+
+	// score bars, here barheight is the size of bars at tied score
+	INT32 barx = 8;
+	INT32 bary = 61;
+	INT32 barheight = 48;
+	INT32 barwidth = 6;
+
+	// portraits
+	INT32 foex = 16;
+	INT32 foey = 21;
+	INT32 youx = 16;
+	INT32 youy = 85;
+
+	// scores
+	INT32 foescorex = 16;
+	INT32 foescorey = 38;
+	INT32 youscorex = 16;
+	INT32 youscorey = 69;
+
+	Draw::Font scorefont = Draw::Font::kThinTimer;
+
+	UINT8 ri = 6;
+	INT32 youfill = skincolors[stplyr->skincolor].ramp[ri];
+	INT32 foefill = skincolors[foe->skincolor].ramp[ri];
+
+	V_DrawScaledPatch(basex, basey, flags, kp_duel_sticker);
+
+	INT32 scoredelta = stplyr->duelscore - foe->duelscore;
+	INT32 clutchscore = DUELWINNINGSCORE - 1; // we want the bar to be full when NEXT checkpoint wins...
+	INT32 savemargin = 3; // ...minus a little bit.
+
+	if (leveltime/(TICRATE/2) % 2)
+		savemargin += ((leveltime/2)%2);
+
+	if (clutchscore == 0)
+		clutchscore = 1; // Fuck it, just don't crash
+
+	INT32 targetyouheight = barheight*abs(clutchscore+scoredelta)/clutchscore;
+
+	if (targetyouheight == 0)
+	{
+		targetyouheight = savemargin;
+	}
+	else if (targetyouheight >= 2*barheight)
+	{
+		targetyouheight = 2*barheight - savemargin;
+	}
+
+	if (leveltime != duel_lastleveltime)
+	{
+		INT32 slide = std::max(1, abs(targetyouheight - youheight)/3);
+		if (targetyouheight > youheight)
+			youheight += slide;
+		else if (targetyouheight < youheight)
+			youheight -= slide;
+	}
+
+	INT32 foeheight = 2*barheight-youheight; // barheight is a single tied bar, so total height of the full gauge is 2x barheight
+
+	V_DrawFill(basex+barx, basey+bary-barheight, barwidth, foeheight, foefill|flags);
+	V_DrawFill(basex+barx, basey+bary-barheight+foeheight, barwidth, youheight, youfill|flags);
+
+	V_DrawScaledPatch(basex, basey, flags, kp_duel_under);
+	V_DrawScaledPatch(basex, basey-barheight+foeheight, flags, kp_duel_over);
+	V_DrawScaledPatch(basex, basey, flags, kp_duel_foe);
+	V_DrawScaledPatch(basex, basey, flags, kp_duel_you);
+
+	Draw foenum = Draw(basex+foescorex, basey+foescorey).flags(flags).font(scorefont).align(Draw::Align::kLeft);
+	Draw younum = Draw(basex+youscorex, basey+youscorey).flags(flags).font(scorefont).align(Draw::Align::kLeft);
+
+	if (abs(scoredelta) == clutchscore && ((leveltime % 2) || cv_reducevfx.value))
+	{
+		if (foe->duelscore > stplyr->duelscore)
+			foenum = foenum.colorize(SKINCOLOR_GOLD);
+		else
+			younum = younum.colorize(SKINCOLOR_GOLD);
+	}
+
+	foenum.text("{}", foe->duelscore);
+	younum.text("{}", stplyr->duelscore);	
+
+	// minirankings shamelessly copypasted because i know that shit works already
+	// and SURELY we will never need to use this somewhere else, right?
+
+	UINT8 workingskin;
+	UINT8 *colormap;
+	INT32 xoff, yoff, flipflag, skinflags;
+
+	for (UINT8 draw = 0; draw < 2; draw++)
+	{
+		UINT8 drawme = draw ? (stplyr - players) : (foe - players);
+		UINT8 drawx = basex + (draw ? youx : foex);
+		UINT8 drawy = basey + (draw ? youy : foey);
+	
+		if (!playeringame[drawme] || players[drawme].spectator)
+			continue;
+
+		if (!players[drawme].mo || P_MobjWasRemoved(players[drawme].mo))
+			continue;
+
+		skinflags = (demo.playback)
+			? demo.skinlist[demo.currentskinid[drawme]].flags
+			: skins[players[drawme].skin].flags;
+
+		// Flip SF_IRONMAN portraits, but only if they're transformed
+		if (skinflags & SF_IRONMAN
+			&& !(players[drawme].charflags & SF_IRONMAN) )
+		{
+			flipflag = V_FLIP|V_VFLIP; // blonic flip
+			xoff = yoff = 16;
+		} else
+		{
+			flipflag = 0;
+			xoff = yoff = 0;
+		}
+
+		if ((skin_t*)players[drawme].mo->skin)
+			workingskin = (skin_t*)players[drawme].mo->skin - skins;
+		else
+			workingskin = players[drawme].skin;
+
+		colormap = R_GetTranslationColormap(workingskin, static_cast<skincolornum_t>(players[drawme].mo->color), GTC_CACHE);
+		if (players[drawme].mo->colorized)
+			colormap = R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(players[drawme].mo->color), GTC_CACHE);
+		else
+			colormap = R_GetTranslationColormap(workingskin, static_cast<skincolornum_t>(players[drawme].mo->color), GTC_CACHE);
+
+		V_DrawMappedPatch(drawx+xoff, drawy+yoff, flags|flipflag, faceprefix[workingskin][FACE_RANK], colormap);
+	}
+
+	// Dogshit. Should have just figured out how to do log base 5 in C++.
+	// However, I think this works anyway.
+	// I did my best to comment this but the algorithm is honestly just bad and hard to
+	// reason about. Please don't try to maintain this, just yell at me if it needs any
+	// adjustments. -Tyron 2025-05-29
+
+	// DESIGN INTENT: Create realistic-looking Puyo garbage stacks, while using the
+	// leading garbage symbol as an indicator of the current Margin Boost value.
+
+	INT32 rawmargin = overtimecheckpoints; // The actual Margin Boost value.
+	INT32 boostspersymbol = 3; // How many boosts should it take to see a new symbol?
+	// rawmargin = (leveltime/10)%(3*boostspersymbol);
+
+	if (duel_lastleveltime != leveltime) // Trigger the "slide" animation when rawmargin changes.
+	{
+		duel_marginanim = std::min(duel_marginanim + 1, 100); // not magic just arbitrary
+		if (duel_lastmargin != rawmargin)
+		{
+			duel_marginanim = 0;
+			duel_lastmargin = rawmargin;
+		}
+	}
+
+	duel_lastleveltime = leveltime;
+
+	// CONS_Printf("=== RAWMARGIN %d\n", rawmargin);
+
+	if (rawmargin == 0)
+		return;
+
+	rawmargin--; // Start at 0, idiot
+
+	// We're invoking the RNG to get a slightly chaotic symbol distribution,
+	// but we're a HUD hook, so we need to keep the results of the call consistent.
+	P_SetRandSeed(PR_NUISANCE, 69 + rawmargin);
+
+	INT32 highsymbol = rawmargin/boostspersymbol + 1; // Highest symbol that should appear.
+	INT32 symbolsperupgrade = 5; // What is each symbol worth relative to each other? Like, 5 Stars = 1 Moon, etc.
+
+	// Okay, so we would LOVE to do this in a way that isn't a big clusterfuck, like just
+	// doing rawmargin^3 and then subtracting powers of 5 out of that. Unfortunately, UINT64
+	// is too small for the values that feel intuitively right here, so we have to do some of
+	// the math on a limited set of symbols, then shift up. This is the concept of "symbol
+	// headroom" that's in use here.
+	//
+	// (Note that Puyo~n uses a super inconsistent symbol table, probably to avoid this problem,
+	// but we're assholes and want things to feel logically consistent I guess?
+	// I dunno. I sort of feel like I should have just directly used the Puyo~n garbage table and
+	// avoided most of this, LOL)
+
+	INT32 symbolheadroom = 5; // Maximum # symbols we can "step down".
+	INT32 frac = rawmargin % boostspersymbol; // Used in intermediate calculations.
+	INT32 minsymbol = std::max(1, highsymbol - symbolheadroom); // The lowest symbol that should appear.
+	INT32 symbolheadroominuse = highsymbol - minsymbol; // The # of symbols we are stepping down.
+	INT32 minscore = std::pow(symbolsperupgrade, symbolheadroominuse+1);
+	INT32 maxscore = std::pow(symbolsperupgrade, symbolheadroominuse+2) - 1;
+
+	// CONS_Printf("min %d max %d\n", minscore, maxscore);
+
+	// We show the player successive combos with the same leading symbol, but we
+	// waht them to feel intuitively like they're increasing each time.
+	// Maxscore and minscore have been mapped to the correct power-of-N, so any
+	// point we pick between them will lead with the correct symbol once we adjust
+	// for symbol headroom. Pick a point that's appropriate for how "far" into the
+	// current symbol we are.
+	fixed_t lobound = FRACUNIT * frac / boostspersymbol;
+	fixed_t hibound = FRACUNIT * (frac+1) / boostspersymbol;
+	fixed_t roll = P_RandomRange(PR_NUISANCE, lobound, hibound);
+
+	INT32 margin = Easing_Linear(roll, minscore, maxscore); // The score we're trying to draw a garbage stack for.
+
+	INT32 margindigits[5];
+	memset(margindigits, -1, sizeof(margindigits));
+
+	INT32 nummargindigits = 0;
+
+	// CONS_Printf("margin %d min %d max %d roll %d shiu %d ms %d\n", margin, minscore, maxscore, roll, symbolheadroominuse, minsymbol);
+
+	if (rawmargin/boostspersymbol >= (MARGINLEVELS-1))
+	{
+		// Capped out. Show 5 Chaos.
+		nummargindigits = 5;
+		for(UINT8 i = 0; i < nummargindigits; i++)
+		{
+			margindigits[i] = MARGINLEVELS-1;
+		}
+	}
+	else
+	{
+		// Subtract powers of N from our chosen score to create a decent-enough-looking
+		// garbage stack, then queue up the right patches to be drawn, shifting all the math
+		// up by "minsymbol"—remember, once maxsymbol goes above symbolheadroom, we are doing
+		// a low-precision version of the math that ignores low enough symbols.
+		while (margin > 0)
+		{
+			INT32 significant_margin = 0;
+			for (UINT8 i = symbolheadroominuse+1; i >= 0; i--)
+			{
+				INT32 test = std::pow(symbolsperupgrade, i);
+				// CONS_Printf("testing %d (%d)\n", i, test);
+				if (margin >= test)
+				{
+					significant_margin = i;
+					break;
+				}
+			}
+
+			INT32 index = significant_margin;
+
+			margindigits[nummargindigits] = index + minsymbol - 1;
+			// CONS_Printf("digit %d %d\n", nummargindigits, margindigits[nummargindigits]);
+
+			nummargindigits++;
+
+			// CONS_Printf("margin was %d ", margin);
+			margin -= std::pow(symbolsperupgrade, index);
+			// CONS_Printf("is %d\n", margin);
+
+			if (nummargindigits >= 3 + frac)
+				break;
+		}
+	}
+
+	INT32 marginspacing = std::min(6, duel_marginanim);
+	INT32 marginx = ((nummargindigits-1) * marginspacing)/2;
+
+	for (INT32 i = nummargindigits - 1; i >= 0; i--)
+	{
+		// CONS_Printf("draw %d - %d\n", i, margindigits[i]);
+		V_DrawScaledPatch(basex + marginx, basey, flags, kp_duel_margin[margindigits[i]]);
+		marginx -= marginspacing;
+	}
+}
+
 static INT32 easedallyscore = 0;
 static tic_t scorechangecooldown = 0;
 // Mildly ugly. Don't want to export this to khud when it's so nicely handled here,
 // but HUD hooks run at variable timing based on your actual framerate.
-static tic_t lastleveltime = 0;
+static tic_t teams_lastleveltime = 0;
 
 static void K_drawKartTeamScores(void)
 {
@@ -3309,6 +3654,9 @@ static void K_drawKartTeamScores(void)
 	UINT16 enemyscore = g_teamscores[enemies];
 	UINT16 totalscore = allyscore + enemyscore;
 
+	if (totalscore == 0)
+		return;
+
 	using srb2::Draw;
 	srb2::Draw::Font scorefont = Draw::Font::kTimer; 
 
@@ -3360,11 +3708,11 @@ static void K_drawKartTeamScores(void)
 	}
 	else
 	{
-		if (lastleveltime != leveltime) // Timing consistency
+		if (teams_lastleveltime != leveltime) // Timing consistency
 		{
 			INT32 delta = abs(easedallyscore - allyscore); // how wrong is display score?
 			
-			if (scorechangecooldown == 0)
+			if (scorechangecooldown == 0 && delta)
 			{
 				if (allyscore > easedallyscore)
 				{
@@ -3387,7 +3735,7 @@ static void K_drawKartTeamScores(void)
 		enemyscore = totalscore - allyscore;
 	}
 
-	lastleveltime = leveltime;
+	teams_lastleveltime = leveltime;
 
 	fixed_t enemypercent = FixedDiv(enemyscore*FRACUNIT, totalscore*FRACUNIT);
 	// fixed_t allypercent = FixedDiv(allyscore*FRACUNIT, totalscore*FRACUNIT);
@@ -3531,6 +3879,11 @@ static void K_drawKartTeamScores(void)
 	*/
 }
 
+static boolean K_DrawingLaps()
+{
+	return (numlaps != 1 && !K_InRaceDuel() && (UINT16)stplyr->exp != UINT16_MAX);
+}
+
 static boolean K_drawKartLaps(void)
 {
 	INT32 splitflags = V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN;
@@ -3543,7 +3896,9 @@ static boolean K_drawKartLaps(void)
 	// I do not understand the way this system of offsets is laid out at all,
 	// so it's probably going to be pretty bad to maintain. Sorry.
 
-	if (numlaps != 1 && displayEXP != UINT16_MAX)
+	boolean drawinglaps = (numlaps != 1 && !K_InRaceDuel() && displayEXP != UINT16_MAX);
+
+	if (drawinglaps)
 	{
 		if (r_splitscreen > 1)
 			bump = 27;
@@ -3551,7 +3906,7 @@ static boolean K_drawKartLaps(void)
 			bump = 40;
 	}
 
-	if (numlaps != 1)
+	if (drawinglaps)
 	{
 		if (r_splitscreen > 1)
 		{
@@ -3968,7 +4323,16 @@ static void K_drawKartAccessibilityIcons(boolean gametypeinfoshown, INT32 fx)
     }
     else
     {
-        fx = LAPS_X+44;
+        fx = LAPS_X + 33;
+
+		if ((gametyperules & (GTR_BUMPERS|GTR_CIRCUIT)) == GTR_BUMPERS)
+			fx -= 14;
+
+		if (K_DrawingLaps())
+		{
+			fx += 30;
+		}
+
         fy = LAPS_Y;
         if (R_GetViewNumber() & 1) // If we are not P1 or P3...
         {
@@ -4862,7 +5226,7 @@ playertagtype_t K_WhichPlayerTag(player_t *p)
 	}
 	else if (p->bot)
 	{
-		if (p->botvars.rival == true || cv_levelskull.value)
+		if ((p->botvars.rival == true || cv_levelskull.value) && (!K_InRaceDuel()))
 		{
 			return PLAYERTAG_RIVAL;
 		}
@@ -6717,10 +7081,8 @@ static void K_DrawGPRankDebugger(void)
 
 	V_DrawThinString(0, 0, V_SNAPTOTOP|V_SNAPTOLEFT,
 		va("POS: %d / %d", grandprixinfo.rank.position, RANK_NEUTRAL_POSITION));
-	V_DrawThinString(0, 10, V_SNAPTOTOP|V_SNAPTOLEFT,
-		va("PTS: %d / %d", grandprixinfo.rank.winPoints, grandprixinfo.rank.totalPoints));
 	V_DrawThinString(0, 20, V_SNAPTOTOP|V_SNAPTOLEFT,
-		va("LAPS: %d / %d", grandprixinfo.rank.exp, grandprixinfo.rank.totalExp));
+		va("EXP: %d / %d", grandprixinfo.rank.exp, grandprixinfo.rank.totalExp));
 	V_DrawThinString(0, 30, V_SNAPTOTOP|V_SNAPTOLEFT,
 		va("CONTINUES: %d", grandprixinfo.rank.continuesUsed));
 	V_DrawThinString(0, 40, V_SNAPTOTOP|V_SNAPTOLEFT,
@@ -6944,35 +7306,39 @@ static void K_DrawMessageFeed(void)
 
 		text.font(Draw::Font::kMenu);
 
-		UINT8 x = BASEVIDWIDTH/2;
-		UINT8 y = 10;
+		UINT32 vw = vid.width / vid.dupx;
+		UINT32 vh = vid.height / vid.dupy;
+
+		UINT32 x = vw / 2;
+		UINT32 y = 10;
+
 		SINT8 shift = 0;
 		if (r_splitscreen >= 2)
 		{
 			text.font(Draw::Font::kThin);
 			shift = -2;
 
-			x = BASEVIDWIDTH/4;
+			x = vw/4;
 			y = 5;
 
 			if (i % 2)
-				x += BASEVIDWIDTH/2;
+				x += vw / 2;
 
 			if (i >= 2)
-				y += BASEVIDHEIGHT / 2;
+				y += vh / 2;
 		}
 		else if (r_splitscreen >= 1)
 		{
 			y = 5;
 
 			if (i >= 1)
-				y += BASEVIDHEIGHT / 2;
+				y += vh / 2;
 		}
 
 		UINT16 sw = text.width();
 
-		K_DrawSticker(x - sw/2, y, sw, 0, true);
-		Draw(x, y+shift).align(Draw::Align::kCenter).text(text);
+		K_DrawSticker(x - sw/2, y, sw, V_SNAPTOTOP|V_SNAPTOLEFT, true);
+		Draw(x, y+shift).align(Draw::Align::kCenter).flags(V_SNAPTOTOP|V_SNAPTOLEFT).text(text);
 	}
 }
 
@@ -7253,9 +7619,14 @@ void K_drawKartHUD(void)
 				K_drawKartTeamScores();
 			}
 
+			if (K_InRaceDuel())
+			{
+				K_drawKartDuelScores();
+			}
+
 			if (LUA_HudEnabled(hud_gametypeinfo))
 			{
-				if (gametyperules & GTR_CIRCUIT)
+				if (gametyperules & GTR_CIRCUIT && !K_InRaceDuel())
 				{
 					K_drawKartLaps();
 					gametypeinfoshown = true;

@@ -52,6 +52,7 @@ extern consvar_t cv_joyscale[MAXSPLITSCREENPLAYERS];
 
 extern consvar_t cv_pointlimit;
 extern consvar_t cv_timelimit;
+extern consvar_t cv_dueltimelimit, cv_duelscorelimit;
 extern consvar_t cv_numlaps;
 extern UINT32 timelimitintics, extratimeintics, secretextratime;
 extern UINT32 g_pointlimit;
@@ -205,6 +206,7 @@ size_t WeaponPref_Parse(const UINT8 *p, INT32 playernum);
 void D_SendPlayerConfig(UINT8 n);
 void Command_ExitGame_f(void);
 void Command_Retry_f(void);
+void Handle_MapQueueSend(UINT16 newmapnum, UINT16 newgametype, boolean newencoremode);
 boolean G_GamestateUsesExitLevel(void);
 void D_GameTypeChanged(INT32 lastgametype); // not a real _OnChange function anymore
 void D_MapChange(UINT16 pmapnum, INT32 pgametype, boolean pencoremode, boolean presetplayers, INT32 pdelay, boolean pskipprecutscene, boolean pforcespecialstage);

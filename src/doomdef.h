@@ -745,7 +745,7 @@ extern int
 #define MAXAMPSCALINGDIST 18000
 
 // Exp
-#define MINEXP 50 // The min value target
+#define MINEXP 25 // The min value target
 #define TARGETEXP 100 // The target value needed for A rank
 #define MAXEXP 125 // The max value displayed by the hud and in the tally screen and GP results screen
 

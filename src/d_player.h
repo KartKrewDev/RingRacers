@@ -830,6 +830,8 @@ struct player_t
 	UINT8 numsneakers;		// Number of stacked sneaker effects
 	UINT16 panelsneakertimer;
 	UINT8 numpanelsneakers;
+	UINT16 weaksneakertimer;
+	UINT8 numweaksneakers;
 	UINT8 floorboost;		// (0 to 3) - Prevents Sneaker sounds for a brief duration when triggered by a floor panel
 
 	INT16 growshrinktimer;		// > 0 = Big, < 0 = small
@@ -958,6 +960,8 @@ struct player_t
 	UINT16 gradingpointnum; // how many grading points, checkpoint and finishline, you've passed
 	INT32 cheatchecknum; // The number of the last cheatcheck you hit
 	INT32 checkpointId; // Players respawn here, objects/checkpoint.cpp
+
+	INT16 duelscore;
 
 	UINT8 team; // 0 == Spectator, 1 == Red, 2 == Blue
 

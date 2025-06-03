@@ -55,6 +55,7 @@ struct Visual : Mobj
 		}
 
 		move_origin(shield()->pos());
+		scale(5 * shield()->follow()->scale() / 4);
 		dispoffset = state()->num() == S_THNB1 ? -1 : 1;
 
 		return true;

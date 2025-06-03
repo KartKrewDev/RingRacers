@@ -755,33 +755,40 @@ static void M_DrawMenuTyping(void)
 
 }
 
-// Largely replaced by boxed drawing mode in K_DrawGameControl and rich text
-/*
-static void M_DrawMediocreKeyboardKey(const char *text, INT32 *workx, INT32 worky, boolean push, boolean rightaligned)
+static void M_DrawPauseRoundQueue(INT16 offset, boolean canqueue)
 {
-	INT32 buttonwidth = V_StringWidth(text, 0) + 2;
+	y_data_t standings;
+	memset(&standings, 0, sizeof (standings));
 
-	if (rightaligned)
+	if (gamestate == GS_MENU)
 	{
-		(*workx) -= buttonwidth;
-	}
-
-	if (push)
-	{
-		worky += 2;
+		standings.mainplayer = MAXPLAYERS;
 	}
 	else
 	{
-		V_DrawFill((*workx)-1, worky+10, buttonwidth, 2, 24);
+		standings.mainplayer = (demo.playback ? displayplayers[0] : consoleplayer);
 	}
 
-	V_DrawFill((*workx)-1, worky, buttonwidth, 10, 16);
-	V_DrawString(
-		(*workx), worky + 1,
-		0, text
-	);
+	// See also G_GetNextMap, Y_CalculateMatchData
+	if (
+		canqueue == false
+		&& grandprixinfo.gp == true
+		&& netgame == false // TODO netgame Special Mode support
+		&& grandprixinfo.gamespeed >= KARTSPEED_NORMAL
+		&& roundqueue.size > 1
+		&& roundqueue.entries[roundqueue.size - 1].rankrestricted == true
+		&& (
+			gamedata->everseenspecial == true
+			|| roundqueue.position == roundqueue.size
+		)
+	)
+	{
+		// Additional cases in which it should always be shown.
+		standings.showrank = true;
+	}
+
+	Y_RoundQueueDrawer(&standings, offset, false, false, canqueue);
 }
-*/
 
 // Draw the message popup submenu
 void M_DrawMenuMessage(void)
@@ -991,6 +998,16 @@ void M_Drawer(void)
 
 		// Draw message overlay when needed
 		M_DrawMenuMessage();
+
+		if (
+			(
+				currentMenu == &PLAY_LevelSelectDef
+				|| currentMenu == &PLAY_CupSelectDef
+			) && levellist.canqueue
+		)
+		{
+			M_DrawPauseRoundQueue(0, true);
+		}
 	}
 
 	if (menuwipe)
@@ -6288,30 +6305,11 @@ void M_DrawPause(void)
 			V_DrawCenteredLSTitleLowString(220 + offset*2, 103, mainflags, word2);
 	}
 
+	const boolean rulescheck = (K_CanChangeRules(false) && (server || IsPlayerAdmin(consoleplayer)));
+	boolean drawqueue = (rulescheck && (menuqueue.size > 0));
+
 	if (gamestate != GS_INTERMISSION && roundqueue.size > 0)
 	{
-		y_data_t standings;
-		memset(&standings, 0, sizeof (standings));
-
-		standings.mainplayer = (demo.playback ? displayplayers[0] : consoleplayer);
-
-		// See also G_GetNextMap, Y_CalculateMatchData
-		if (
-			grandprixinfo.gp == true
-			&& netgame == false // TODO netgame Special Mode support
-			&& grandprixinfo.gamespeed >= KARTSPEED_NORMAL
-			&& roundqueue.size > 1
-			&& roundqueue.entries[roundqueue.size - 1].rankrestricted == true
-			&& (
-				gamedata->everseenspecial == true
-				|| roundqueue.position == roundqueue.size
-			)
-		)
-		{
-			// Additional cases in which it should always be shown.
-			standings.showrank = true;
-		}
-
 		if (roundqueue.position > 0 && roundqueue.position <= roundqueue.size)
 		{
 			patch_t *smallroundpatch = ST_getRoundPicture(true);
@@ -6328,7 +6326,7 @@ void M_DrawPause(void)
 
 		V_DrawCenteredMenuString(24, 167 + offset/2, V_YELLOWMAP, M_GetGameplayMode());
 
-		Y_RoundQueueDrawer(&standings, offset/2, false, false);
+		drawqueue = true;
 	}
 	else if (gametype == GT_TUTORIAL)
 	{
@@ -6346,6 +6344,11 @@ void M_DrawPause(void)
 	else
 	{
 		V_DrawMenuString(4, 188 + offset/2, V_YELLOWMAP, M_GetGameplayMode());
+	}
+
+	if (drawqueue)
+	{
+		M_DrawPauseRoundQueue(offset/2, rulescheck);
 	}
 }
 
@@ -6485,7 +6488,7 @@ void M_DrawPlaybackMenu(void)
 		else if (currentMenu->menuitems[i].patch && W_CheckNumForName(currentMenu->menuitems[i].patch) != LUMPERROR)
 			icon = W_CachePatchName(currentMenu->menuitems[i].patch, PU_CACHE);
 
-		if ((i == playback_fastforward && cv_playbackspeed.value > 1) || (i == playback_rewind && demo.rewinding))
+		if ((i == playback_fastforward && cv_playbackspeed.value > 1))
 			V_DrawMappedPatch(currentMenu->x + currentMenu->menuitems[i].mvar1, currentMenu->y, V_SNAPTOTOP, icon, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_JAWZ, GTC_MENUCACHE));
 		else
 			V_DrawMappedPatch(currentMenu->x + currentMenu->menuitems[i].mvar1, currentMenu->y, V_SNAPTOTOP, icon, (i == itemOn) ? activemap : inactivemap);

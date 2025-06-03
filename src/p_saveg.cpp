@@ -291,6 +291,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT32(save->p, players[i].exp);
 		WRITEINT32(save->p, players[i].gradingfactor);
 		WRITEUINT16(save->p, players[i].gradingpointnum);
+		WRITEINT16(save->p, players[i].duelscore);
 		WRITEINT32(save->p, players[i].cheatchecknum);
 		WRITEINT32(save->p, players[i].checkpointId);
 
@@ -549,6 +550,8 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].numsneakers);
 		WRITEUINT16(save->p, players[i].panelsneakertimer);
 		WRITEUINT8(save->p, players[i].numpanelsneakers);
+		WRITEUINT16(save->p, players[i].weaksneakertimer);
+		WRITEUINT8(save->p, players[i].numweaksneakers);
 
 		WRITEUINT8(save->p, players[i].floorboost);
 
@@ -983,6 +986,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].exp = READUINT32(save->p);
 		players[i].gradingfactor = READINT32(save->p);
 		players[i].gradingpointnum = READUINT16(save->p);
+		players[i].duelscore = READINT16(save->p);
 		players[i].cheatchecknum = READINT32(save->p);
 		players[i].checkpointId = READINT32(save->p);
 
@@ -1194,6 +1198,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].numsneakers = READUINT8(save->p);
 		players[i].panelsneakertimer = READUINT16(save->p);
 		players[i].numpanelsneakers = READUINT8(save->p);
+		players[i].weaksneakertimer = READUINT16(save->p);
+		players[i].numweaksneakers = READUINT8(save->p);
 		players[i].floorboost = READUINT8(save->p);
 
 		players[i].growshrinktimer = READINT16(save->p);
@@ -2997,6 +3003,7 @@ typedef enum
 	MD3_REAPPEAR		= 1<<1,
 	MD3_PUNT_REF		= 1<<2,
 	MD3_OWNER			= 1<<3,
+	MD3_RELINK_PLAYER	= 1<<4,
 } mobj_diff3_t;
 
 typedef enum
@@ -3320,6 +3327,8 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		diff3 |= MD3_PUNT_REF;
 	if (mobj->owner)
 		diff3 |= MD3_OWNER;
+	if (mobj->relinkplayer)
+		diff3 |= MD3_RELINK_PLAYER;
 
 	if (diff3 != 0)
 		diff2 |= MD2_MORE;
@@ -3609,6 +3618,10 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 	if (diff3 & MD3_OWNER)
 	{
 		WRITEUINT32(save->p, mobj->owner->mobjnum);
+	}
+	if (diff3 & MD3_RELINK_PLAYER)
+	{
+		WRITEUINT8(save->p, mobj->relinkplayer);
 	}
 
 	WRITEUINT32(save->p, mobj->mobjnum);
@@ -4922,6 +4935,10 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 	if (diff3 & MD3_OWNER)
 	{
 		mobj->owner = (mobj_t *)(size_t)READUINT32(save->p);
+	}
+	if (diff3 & MD3_OWNER)
+	{
+		mobj->relinkplayer = READUINT8(save->p);
 	}
 
 	// link tid set earlier
@@ -6757,6 +6774,7 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 	{
 		WRITEUINT16(save->p, g_voteLevels[i][0]);
 		WRITEUINT16(save->p, g_voteLevels[i][1]);
+		WRITEUINT8(save->p, g_votes_striked[i]);
 	}
 
 	for (i = 0; i < VOTE_TOTAL; i++)
@@ -6834,6 +6852,7 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 	WRITESINT8(save->p, spbplace);
 	WRITEUINT8(save->p, rainbowstartavailable);
 	WRITEUINT8(save->p, inDuel);
+	WRITEUINT8(save->p, overtimecheckpoints);
 
 	WRITEUINT32(save->p, introtime);
 	WRITEUINT32(save->p, starttime);
@@ -7143,6 +7162,7 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 	{
 		g_voteLevels[i][0] = READUINT16(save->p);
 		g_voteLevels[i][1] = READUINT16(save->p);
+		g_votes_striked[i] = (boolean)READUINT8(save->p);
 	}
 
 	for (i = 0; i < VOTE_TOTAL; i++)
@@ -7216,6 +7236,7 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 	spbplace = READSINT8(save->p);
 	rainbowstartavailable = (boolean)READUINT8(save->p);
 	inDuel = (boolean)READUINT8(save->p);
+	overtimecheckpoints = (boolean)READUINT8(save->p);
 
 	introtime = READUINT32(save->p);
 	starttime = READUINT32(save->p);

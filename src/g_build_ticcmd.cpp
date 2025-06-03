@@ -404,7 +404,10 @@ class TiccmdBuilder
 		map(gc_item, BT_ATTACK); // fire
 
 		map(gc_lookback, BT_LOOKBACK); // rear view
-		map(gc_respawn, BT_RESPAWN | (freecam() ? 0 : BT_EBRAKEMASK)); // respawn
+		if (!modeattacking)
+		{
+			map(gc_respawn, BT_RESPAWN | (freecam() ? 0 : BT_EBRAKEMASK)); // respawn
+		}
 		map(gc_vote, BT_VOTE); // mp general function button
 
 		// lua buttons a thru c

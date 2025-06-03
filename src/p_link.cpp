@@ -21,6 +21,7 @@
     svg_rocks
 
 
+
 using link = mobj_t*;
 using each_ref = std::initializer_list<std::reference_wrapper<mobj_t*>>;
 

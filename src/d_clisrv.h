@@ -712,21 +712,6 @@ extern boolean hu_stopped;
 // SRB2Kart
 //
 
-struct rewind_t {
-	UINT8 savebuffer[NETSAVEGAMESIZE];
-	tic_t leveltime;
-	size_t demopos;
-
-	ticcmd_t oldcmd[MAXPLAYERS];
-	mobj_t oldghost[MAXPLAYERS];
-
-	rewind_t *next;
-};
-
-void CL_ClearRewinds(void);
-rewind_t *CL_SaveRewindPoint(size_t demopos);
-rewind_t *CL_RewindToTime(tic_t time);
-
 void HandleSigfail(const char *string);
 
 void DoSayPacket(SINT8 target, UINT8 flags, UINT8 source, char *message);

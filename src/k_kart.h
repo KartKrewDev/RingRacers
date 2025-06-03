@@ -64,6 +64,9 @@ Make sure this matches the actual number of states
 
 #define EARLY_ITEM_FLICKER (NUMTRANSMAPS)
 
+#define TRIPWIRE_OK_SOUND (sfx_s3k40)
+#define TRIPWIRE_NG_SOUND (sfx_gshaf)
+
 // 2023-08-26 +ang20 to Sal's OG values to make them friendlier - Tyron
 #define STUMBLE_STEEP_VAL (ANG60 + ANG20)
 #define STUMBLE_STEEP_VAL_AIR (ANG30 + ANG10 + ANG20)
@@ -79,6 +82,9 @@ Make sure this matches the actual number of states
 #define RINGTRANSPARENCYUSEPENALTY 15
 #define RINGVOLUMEREGEN 1
 #define RINGTRANSPARENCYREGEN 3
+
+#define DUELOVERTIME (cv_dueltimelimit.value)
+#define DUELWINNINGSCORE (cv_duelscorelimit.value)
 
 #define MIN_WAVEDASH_CHARGE ((11*TICRATE/16)*9)
 
@@ -105,6 +111,8 @@ angle_t K_ReflectAngle(angle_t angle, angle_t against, fixed_t maxspeed, fixed_t
 
 boolean K_IsDuelItem(mobjtype_t type);
 boolean K_DuelItemAlwaysSpawns(mapthing_t *mt);
+boolean K_InRaceDuel(void);
+player_t *K_DuelOpponent(player_t *player);
 
 void K_TimerReset(void);
 void K_TimerInit(void);
@@ -310,8 +318,8 @@ boolean K_ThunderDome(void);
 
 boolean K_PlayerCanUseItem(player_t *player);
 
-fixed_t K_GetGradingMultAdjustment(player_t *player);
-
+fixed_t K_GetGradingFactorAdjustment(player_t *player);
+fixed_t K_GetGradingFactorMinMax(UINT32 gradingpointnum, boolean max);
 UINT16 K_GetEXP(player_t *player);
 
 UINT32 K_GetNumGradingPoints(void);
@@ -320,7 +328,9 @@ boolean K_LegacyRingboost(player_t *player);
 
 void K_BotHitPenalty(player_t *player);
 
-boolean K_TryPickMeUp(mobj_t *m1, mobj_t *m2);
+boolean K_IsPickMeUpItem(mobjtype_t type);
+
+boolean K_TryPickMeUp(mobj_t *m1, mobj_t *m2, boolean allowHostile);
 
 fixed_t K_TeamComebackMultiplier(player_t *player);
 

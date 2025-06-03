@@ -297,9 +297,10 @@ boolean franticitems; // Frantic items currently enabled?
 boolean g_teamplay;
 
 // Voting system
-UINT16 g_voteLevels[4][2]; // Levels that were rolled by the host
+UINT16 g_voteLevels[VOTE_NUM_LEVELS][2]; // Levels that were rolled by the host
 SINT8 g_votes[VOTE_TOTAL]; // Each player's vote
 SINT8 g_pickedVote; // What vote the host rolls
+boolean g_votes_striked[VOTE_NUM_LEVELS]; // Which levels were striked from votes?
 
 // Server-sided, synched variables
 tic_t wantedcalcdelay; // Time before it recalculates WANTED
@@ -311,6 +312,7 @@ SINT8 spbplace; // SPB exists, give the person behind better items
 boolean rainbowstartavailable; // Boolean, keeps track of if the rainbow start was gotten
 tic_t linecrossed; // For Time Attack
 boolean inDuel; // Boolean, keeps track of if it is a 1v1
+UINT8 overtimecheckpoints; // Duel overtime speedups!
 
 // Client-sided, unsynched variables (NEVER use in anything that needs to be synced with other players)
 tic_t bombflashtimer = 0;	// Cooldown before another FlashPal can be intialized by a bomb exploding near a displayplayer. Avoids seizures.
@@ -1243,26 +1245,36 @@ void G_StartTitleCard(void)
 	// prepare status bar
 	ST_startTitleCard(); // <-- always must be called to init some variables
 
-	// The title card has been disabled for this map.
-	// Oh well.
-	if (demo.rewinding || !G_IsTitleCardAvailable())
-	{
-		WipeStageTitle = false;
+	if (demo.simplerewind)
 		return;
+
+	sfxenum_t kstart = 0;
+
+	if (K_CheckBossIntro() == true)
+	{
+		kstart = sfx_ssa021;
 	}
+	else if (encoremode)
+	{
+		kstart = sfx_ruby2;
+	}
+
+	if (kstart)
+	{
+		// Play the guaranteed alt sounds
+		S_StartSound(NULL, kstart);
+	}
+
+	if (!G_IsTitleCardAvailable())
+		return;
 
 	// start the title card
 	WipeStageTitle = (gamestate == GS_LEVEL);
 
-	// play the sound
-	if (WipeStageTitle)
+	if (WipeStageTitle && !kstart)
 	{
-		sfxenum_t kstart = sfx_kstart;
-		if (K_CheckBossIntro() == true)
-			kstart = sfx_ssa021;
-		else if (encoremode == true)
-			kstart = sfx_ruby2;
-		S_StartSound(NULL, kstart);
+		// Play the standard titlecard sound
+		S_StartSound(NULL, sfx_kstart);
 	}
 }
 
@@ -1437,13 +1449,7 @@ boolean G_Responder(event_t *ev)
 		{
 			paused = !paused;
 
-			if (demo.rewinding)
-			{
-				G_ConfirmRewind(leveltime);
-				paused = true;
-				S_PauseAudio();
-			}
-			else if (paused)
+			if (paused)
 				S_PauseAudio();
 			else
 				S_ResumeAudio();
@@ -1554,7 +1560,7 @@ boolean G_CouldView(INT32 playernum)
 		return false;
 
 	// SRB2Kart: we have no team-based modes, YET...
-	if (G_GametypeHasTeams())
+	if (G_GametypeHasTeams() && !demo.playback)
 	{
 		if (players[consoleplayer].spectator == false && player->team != players[consoleplayer].team)
 			return false;
@@ -2148,6 +2154,14 @@ void G_Ticker(boolean run)
 
 			if (g_fast_forward == 0)
 			{
+				// Not "rewinding" anymore.
+				if (demo.simplerewind == DEMO_REWIND_PAUSE)
+				{
+					paused = true;
+					S_PauseAudio();
+				}
+				demo.simplerewind = DEMO_REWIND_OFF;
+
 				// Next fast-forward is unlimited.
 				g_fast_forward_clock_stop = INFTICS;
 			}
@@ -2262,6 +2276,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	INT32 kickstartaccel;
 	INT32 checkpointId;
 	boolean enteredGame;
+	tic_t spectatewait;
 	UINT8 lastsafelap;
 	UINT8 lastsafecheatcheck;
 	UINT16 bigwaypointgap;
@@ -2349,8 +2364,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	bot = players[player].bot;
 	botdifficulty = players[player].botvars.difficulty;
 
-	cangrabitems = players[player].cangrabitems;
-
 	botdiffincrease = players[player].botvars.diffincrease;
 	botrival = players[player].botvars.rival;
 
@@ -2436,13 +2449,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		tallyactive = false;
 
 		cangrabitems = 0;
-		if (gametyperules & GTR_SPHERES
-			|| gametyperules & GTR_CATCHER
-			|| G_TimeAttackStart()
-			|| gametype == GT_TUTORIAL
-			|| !M_NotFreePlay()
-			|| K_GetNumWaypoints() == 0)
-			cangrabitems = EARLY_ITEM_FLICKER;
 	}
 	else
 	{
@@ -2498,6 +2504,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		{
 			tally = players[player].tally;
 		}
+
+		cangrabitems = players[player].cangrabitems;
 	}
 
 	spectatorReentry = (betweenmaps ? 0 : players[player].spectatorReentry);
@@ -2551,6 +2559,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	checkpointId = players[player].checkpointId;
 
 	enteredGame = players[player].enteredGame;
+	spectatewait = players[player].spectatewait;
 
 	p = &players[player];
 	memset(p, 0, sizeof (*p));
@@ -2624,6 +2633,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->karthud[khud_fault] = khudfault;
 	p->kickstartaccel = kickstartaccel;
 	p->checkpointId = checkpointId;
+	p->spectatewait = spectatewait;
 
 	p->ringvolume = 255;
 	p->ringtransparency = 255;
@@ -3868,6 +3878,12 @@ tryAgain:
 			continue;
 		}
 
+		if (numPlayers == 2 && gametype == GT_RACE && ((mapheaderinfo[i]->levelflags & LF_SECTIONRACE) == LF_SECTIONRACE))
+		{
+			// Duel doesn't support sprints.
+			continue;
+		}
+
 		// Only care about restrictions if the host is a listen server.
 		if (!dedicated)
 		{
@@ -4090,6 +4106,7 @@ doremove:
 
 // Next map apparatus
 struct roundqueue roundqueue;
+struct menuqueue menuqueue;
 
 void G_MapSlipIntoRoundQueue(UINT8 position, UINT16 map, UINT8 setgametype, boolean setencore, boolean rankrestricted)
 {
@@ -5373,7 +5390,7 @@ void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skippr
 		S_ResumeAudio();
 	}
 
-	prevencoremode = ((!Playing()) ? false : encoremode);
+	prevencoremode = encoremode;
 	encoremode = pencoremode;
 
 	legitimateexit = false; // SRB2Kart
@@ -5415,6 +5432,8 @@ void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skippr
 			players[i].xtralife = 0;
 			players[i].totalring = 0;
 			players[i].score = 0;
+			if (roundqueue.position == 0) // Don't unassign teams in tournament play
+				players[i].team = TEAM_UNASSIGNED;
 		}
 
 		if (resetplayer || !(gametyperules & GTR_CHECKPOINTS && map == gamemap))
@@ -5823,7 +5842,7 @@ boolean G_GetExitGameFlag(void)
 // Same deal with retrying.
 void G_SetRetryFlag(void)
 {
-	if (retrying == false)
+	if (retrying == false && grandprixinfo.gp)
 	{
 		grandprixinfo.rank.continuesUsed++;
 	}

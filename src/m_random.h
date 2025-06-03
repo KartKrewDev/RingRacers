@@ -92,6 +92,8 @@ typedef enum
 	PR_ITEM_SPAWNER = PROLDDEMO, // Battle mode item spawners
 	PR_TEAMS, // Teamplay shuffling
 
+	PR_NUISANCE, // Margin Boost HUD
+
 	PRNUMSYNCED,
 
 	PR_INTERPHUDRANDOM = PRNUMSYNCED, // Interpolation-accomodating HUD randomisation

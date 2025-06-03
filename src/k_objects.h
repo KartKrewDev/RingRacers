@@ -411,7 +411,6 @@ void Obj_SSGobletMobjThink(mobj_t* mo);
 void Obj_SSLampMapThingSpawn(mobj_t* mo, mapthing_t* mt);
 void Obj_SSWindowMapThingSpawn(mobj_t* mo, mapthing_t* mt);
 void Obj_SLSTMaceMobjThink(mobj_t* mo);
-void Obj_SSBumperTouchSpecial(mobj_t* special, mobj_t* toucher);
 void Obj_SSBumperMobjSpawn(mobj_t* mo);
 void Obj_SSChainMobjThink(mobj_t* mo);
 void Obj_SSGachaTargetMobjSpawn(mobj_t* mo);

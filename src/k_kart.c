@@ -119,6 +119,27 @@ boolean K_DuelItemAlwaysSpawns(mapthing_t *mt)
 	return !!(mt->thing_args[0]);
 }
 
+boolean K_InRaceDuel(void)
+{
+	return (inDuel && (gametyperules & GTR_CIRCUIT) && !(mapheaderinfo[gamemap-1]->levelflags & LF_SECTIONRACE)) && !specialstageinfo.valid;
+}
+
+player_t *K_DuelOpponent(player_t *player)
+{
+	if (!K_InRaceDuel())
+		return player; // ????
+	else
+	{
+		for (UINT8 i = 0; i < MAXPLAYERS; i++)
+		{
+			if (playeringame[i] && !players[i].spectator && player - players != i)
+				return &players[i];
+		}
+	}
+
+	return player; // ????????????
+}
+
 static void K_SpawnDuelOnlyItems(void)
 {
 	mapthing_t *mt = NULL;
@@ -145,6 +166,7 @@ void K_TimerReset(void)
 	numbulbs = 1;
 	inDuel = rainbowstartavailable = false;
 	linecrossed = 0;
+	overtimecheckpoints = 0;
 	timelimitintics = extratimeintics = secretextratime = 0;
 	g_pointlimit = 0;
 }
@@ -273,6 +295,9 @@ void K_TimerInit(void)
 					introtime = (108) + 5; // 108 for rotation, + 5 for white fade
 					numbulbs += (numPlayers-2); // Extra POSITION!! time
 				}
+
+				if (K_InRaceDuel())
+					numlaps = 99;
 			}
 		}
 
@@ -446,6 +471,9 @@ boolean K_IsPlayerScamming(player_t *player)
 	if (!M_NotFreePlay())
 		return false;
 
+	if (!(gametyperules & GTR_CIRCUIT))
+		return false;
+
 	// "Why 8?" Consistency
 	// "Why 2000?" Vibes
 	return (K_GetItemRouletteDistance(player, 8) < SCAMDIST);
@@ -468,7 +496,10 @@ fixed_t K_GetKartGameSpeedScalar(SINT8 value)
 	if (cv_4thgear.value && !netgame && (!demo.playback || !demo.netgame) && !modeattacking)
 		value = 3;
 
-	return ((13 + (3*value)) << FRACBITS) / 16;
+	fixed_t base = ((13 + (3*value)) << FRACBITS) / 16;
+	fixed_t duel = overtimecheckpoints*(1<<FRACBITS)/32;
+
+	return base + duel;
 }
 
 // Array of states to pick the starting point of the animation, based on the actual time left for invincibility.
@@ -2981,7 +3012,7 @@ void K_MomentumToFacing(player_t *player)
 
 boolean K_ApplyOffroad(const player_t *player)
 {
-	if (player->invincibilitytimer || player->hyudorotimer || player->sneakertimer || player->panelsneakertimer)
+	if (player->invincibilitytimer || player->hyudorotimer || player->sneakertimer || player->panelsneakertimer|| player->weaksneakertimer)
 		return false;
 	if (K_IsRidingFloatingTop(player))
 		return false;
@@ -2990,7 +3021,7 @@ boolean K_ApplyOffroad(const player_t *player)
 
 boolean K_SlopeResistance(const player_t *player)
 {
-	if (player->invincibilitytimer || player->sneakertimer || player->panelsneakertimer || player->tiregrease || player->flamedash)
+	if (player->invincibilitytimer || player->sneakertimer || player->panelsneakertimer || player->weaksneakertimer || player->tiregrease || player->flamedash)
 		return true;
 	if (player->curshield == KSHIELD_TOP)
 		return true;
@@ -3131,6 +3162,7 @@ boolean K_WaterRun(mobj_t *mobj)
 			if (mobj->player->invincibilitytimer
 				|| mobj->player->sneakertimer
 				|| mobj->player->panelsneakertimer
+				|| mobj->player->weaksneakertimer
 				|| mobj->player->tiregrease
 				|| mobj->player->flamedash
 				|| mobj->player->speed > minspeed)
@@ -3495,18 +3527,28 @@ static void K_GetKartBoostPower(player_t *player)
 		UINT8 i;
 		for (i = 0; i < player->numsneakers; i++)
 		{
-			ADDBOOST(FRACUNIT*85/100, 8*FRACUNIT, HANDLESCALING+HANDLESCALING/3); // + 50% top speed, + 800% acceleration, +50% handling
+			ADDBOOST(FRACUNIT, 8*FRACUNIT, HANDLESCALING+HANDLESCALING/3); // + 100% top speed, + 800% acceleration, +50%(???) handling
 		}
 	}
 
-	if (player->panelsneakertimer) // Sneaker
+	if (player->panelsneakertimer) // Sneaker panel
 	{
 		UINT8 i;
 		for (i = 0; i < player->numpanelsneakers; i++)
 		{
-			ADDBOOST(FRACUNIT/2, 8*FRACUNIT, HANDLESCALING); // + 50% top speed, + 800% acceleration, +50% handling
+			ADDBOOST(FRACUNIT/2, 8*FRACUNIT, HANDLESCALING); // + 50% top speed, + 800% acceleration, +50%(???) handling
 		}
 	}
+
+	if (player->weaksneakertimer) // Rocket sneaker boost
+	{
+		UINT8 i;
+		for (i = 0; i < player->numweaksneakers; i++)
+		{
+			ADDBOOST((FRACUNIT*85)/100, 8*FRACUNIT, HANDLESCALING+HANDLESCALING/3); // + 85% top speed, + 800% acceleration, +50%(???) handling
+		}
+	}
+	//NOTE: The various sneaker booth strengths are also defined in K_DoSneaker()!
 
 	if (player->invincibilitytimer) // Invincibility
 	{
@@ -3564,7 +3606,7 @@ static void K_GetKartBoostPower(player_t *player)
 			Easing_InCubic(
 				player->overdrivepower,
 				0,
-				5*FRACUNIT/10
+				75*FRACUNIT/100
 			),
 			Easing_InSine(
 				player->overdrivepower,
@@ -3640,7 +3682,7 @@ static void K_GetKartBoostPower(player_t *player)
 	{
 		fixed_t ringboost_base = FRACUNIT/4;
 		if (player->overdrive)
-			ringboost_base += FRACUNIT/2;
+			ringboost_base += FRACUNIT/4;
 		// This one's a little special: we add extra top speed per tic of ringboost stored up, to allow for Ring Box to really rocket away.
 		// (We compensate when decrementing ringboost to avoid runaway exponential scaling hell.)
 		fixed_t rb = FixedDiv(player->ringboost * FRACUNIT, max(FRACUNIT, K_RingDurationBoost(player)));
@@ -3971,7 +4013,7 @@ SINT8 K_GetForwardMove(const player_t *player)
 		return 0;
 	}
 
-	if (player->sneakertimer || player->panelsneakertimer || player->spindashboost
+	if (player->sneakertimer || player->panelsneakertimer || player->weaksneakertimer || player->spindashboost
 		|| (((gametyperules & (GTR_ROLLINGSTART|GTR_CIRCUIT)) == (GTR_ROLLINGSTART|GTR_CIRCUIT)) && (leveltime < TICRATE/2)))
 	{
 		return MAXPLMOVE;
@@ -4134,8 +4176,8 @@ void K_SpawnAmps(player_t *player, UINT8 amps, mobj_t *impact)
 	if (amps == 0)
 		return;
 
-	UINT32 itemdistance = max(0, min( FRACUNIT, K_GetItemRouletteDistance(player, D_NumPlayersInRace()))); // cap this to FRACUNIT, so it doesn't wrap when turning it into fixed_t
-	fixed_t itemdistmult = FRACUNIT + max( 0, min(FixedMul(FixedDiv(itemdistance<<FRACBITS, MAXAMPSCALINGDIST<<FRACBITS),FRACUNIT), FRACUNIT));
+	UINT32 itemdistance = max(0, min( FRACUNIT-1, K_GetItemRouletteDistance(player, D_NumPlayersInRace()))); // cap this to FRACUNIT-1, so it doesn't wrap when turning it into fixed_t
+	fixed_t itemdistmult = FRACUNIT + max( 0, min( FRACUNIT, (itemdistance<<FRACBITS) / MAXAMPSCALINGDIST));
 	UINT16 scaledamps = min(amps, amps * (10 + (9-player->kartspeed) - (9-player->kartweight)) / 10);
 	// Debug print for scaledamps calculation
 	// CONS_Printf("K_SpawnAmps: player=%s, amps=%d, kartspeed=%d, kartweight=%d, itemdistance=%d, itemdistmult=%0.2f, statscaledamps=%d, distscaledamps=%d\n",
@@ -4239,7 +4281,7 @@ void K_CheckpointCrossAward(player_t *player)
 	if (gametype != GT_RACE)
 		return;
 
-	player->gradingfactor += K_GetGradingMultAdjustment(player);
+	player->gradingfactor += K_GetGradingFactorAdjustment(player);
 	player->gradingpointnum++;
 	player->exp = K_GetEXP(player);
 	//CONS_Printf("player: %s factor: %.2f exp: %d\n", player_names[player-players], FIXED_TO_FLOAT(player->gradingfactor), player->exp);
@@ -4247,6 +4289,92 @@ void K_CheckpointCrossAward(player_t *player)
 		player->cangrabitems = 1;
 	
 	K_AwardPlayerRings(player, (player->bot ? 20 : 10), true);
+
+	// Update Duel scoring.
+	if (K_InRaceDuel() && player->position == 1)
+	{
+		player->duelscore += 1;
+
+		if (leveltime > (tic_t)(TICRATE*DUELOVERTIME))
+		{
+			overtimecheckpoints++;
+			if (overtimecheckpoints > 1)
+			{
+				K_AddMessage(va("Margin Boost x%d!", overtimecheckpoints), true, false);
+			}
+			else
+			{
+				K_AddMessage("Margin Boost!", true, false);
+				g_darkness.start = leveltime;
+				g_darkness.end = INT32_MAX;
+				for (UINT8 i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+				{
+					g_darkness.value[i] = FRACUNIT;
+				}
+			}
+
+			S_StartSound(NULL, sfx_gsha6);
+		}
+
+		player_t *opp = K_DuelOpponent(player);
+		boolean clutch = (player->duelscore - opp->duelscore == (DUELWINNINGSCORE-1));
+		boolean win = (player->duelscore - opp->duelscore == DUELWINNINGSCORE);
+
+		if (!win)
+		{
+			for (UINT8 i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+			{
+				player_t *check = &players[displayplayers[i]];
+				if (check == player)
+				{
+					S_StartSound(NULL, sfx_mbs45);
+					if (clutch)
+						S_StartSoundAtVolume(NULL, sfx_s3k9c, 170);
+				}
+
+				else if (check == opp)
+				{
+					S_StartSound(NULL, sfx_mbs60);
+					if (clutch)
+						S_StartSoundAtVolume(NULL, sfx_kc4b, 150);
+				}
+
+			}
+		}
+
+		if (player->duelscore - opp->duelscore == DUELWINNINGSCORE)
+		{
+			opp->position = 2;
+			player->position = 1;
+
+			if (opp->distancetofinish - player->distancetofinish < 200) // Setting player.exiting changes distance reporting, check these first!
+			{
+				K_StartRoundWinCamera(
+					player->mo,
+					player->angleturn + ANGLE_180,
+					400*mapobjectscale,
+					6*TICRATE,
+					FRACUNIT/16
+				);
+			}
+
+			S_StartSound(NULL, sfx_s3k6a);
+			P_DoPlayerExit(player, 0);
+			P_DoAllPlayersExit(PF_NOCONTEST, 0);
+		}
+		else
+		{
+			// Doing this here because duel exit is a weird path, and we don't want to transform for endcam.
+			UINT32 skinflags = (demo.playback)
+					? demo.skinlist[demo.currentskinid[(player-players)]].flags
+					: skins[player->skin].flags;
+			if (skinflags & SF_IRONMAN)
+			{
+				SetRandomFakePlayerSkin(player, true, false);
+			}
+		}
+	}
+
 }
 
 boolean K_Overdrive(player_t *player)
@@ -4948,7 +5076,7 @@ static boolean K_IsLosingWavedash(player_t *player)
 	if (!K_Sliptiding(player) && player->wavedash < MIN_WAVEDASH_CHARGE)
 		return true;
 	if (!K_Sliptiding(player) && player->drift == 0
-		&& P_IsObjectOnGround(player->mo) && player->sneakertimer == 0 && player->panelsneakertimer == 0
+		&& P_IsObjectOnGround(player->mo) && player->sneakertimer == 0 && player->panelsneakertimer == 0 && player->weaksneakertimer == 0
 		&& player->driftboost == 0)
 		return true;
 	return false;
@@ -7087,8 +7215,14 @@ void K_DoSneaker(player_t *player, INT32 type)
 
 	fixed_t intendedboost = FRACUNIT/2;
 
-	// If you've already got an item sneaker type boost, panel sneakers will instead turn into item sneaker boosts
-	if (player->numsneakers && type == 0)
+	// If you've already got an rocket sneaker type boost, panel sneakers will instead turn into rocket sneaker boosts
+	if (player->numweaksneakers && type == 0)
+	{
+		type = 2;
+	}
+
+	// If you've already got an item sneaker type boost, other sneakers will instead turn into item sneaker boosts
+	if (player->numsneakers && type != 1)
 	{
 		type = 1;
 	}
@@ -7099,10 +7233,13 @@ void K_DoSneaker(player_t *player, INT32 type)
 			intendedboost = FRACUNIT/2;
 			break;
 		case 1: // Single item sneaker
-		case 2: // Rocket sneaker
+			intendedboost = 100*FRACUNIT/100;
+			break;
+		case 2: // Rocket sneaker (aka. weaksneaker)
 			intendedboost = 85*FRACUNIT/100;
 			break;
 	}
+	//NOTE: The various sneaker booth strengths are also defined in K_GetKartBoostPower()!
 
 	if (player->roundconditions.touched_sneakerpanel == false
 		&& !(player->exiting || (player->pflags & PF_NOCONTEST))
@@ -7118,7 +7255,7 @@ void K_DoSneaker(player_t *player, INT32 type)
 		const sfxenum_t smallsfx = sfx_cdfm40;
 		sfxenum_t sfx = normalsfx;
 
-		if (player->numsneakers || player->numpanelsneakers)
+		if (player->numsneakers || player->numpanelsneakers || player->numweaksneakers)
 		{
 			// Use a less annoying sound when stacking sneakers.
 			sfx = smallsfx;
@@ -7134,17 +7271,19 @@ void K_DoSneaker(player_t *player, INT32 type)
 
 		switch (type)
 		{
-			case 0:
+			case 0: // Panel sneaker
 				player->numpanelsneakers++;
 				break;
-			case 1:
-			case 2:
+			case 1: // Single item sneaker
 				player->numsneakers++;
+				break;
+			case 2: // Rocket sneaker (aka. weaksneaker)
+				player->numweaksneakers++;
 				break;
 		}
 	}
 
-	if (player->sneakertimer == 0 && player->panelsneakertimer == 0)
+	if (player->sneakertimer == 0 && player->panelsneakertimer == 0 && player->weaksneakertimer == 0)
 	{
 		if (type == 2)
 		{
@@ -7176,17 +7315,19 @@ void K_DoSneaker(player_t *player, INT32 type)
 
 	switch (type)
 	{
-		case 0:
+		case 0: // Panel sneaker
 			player->panelsneakertimer = sneakertime;
-			player->overshield += 1;
+			if (player->overshield > 0) {
+				player->overshield = min( player->overshield + TICRATE/3, max( TICRATE, player->overshield ));
+			}
 			break;
-		case 1:
+		case 1: // Single item sneaker
 			player->sneakertimer = sneakertime;
-			player->overshield += TICRATE/2;
+			player->overshield = max( player->overshield, 25 );
 			break;
-		case 2:
-			player->sneakertimer = 3*sneakertime/4;
-			player->overshield += TICRATE/2;
+		case 2: // Rocket sneaker (aka. weaksneaker)
+			player->weaksneakertimer = 3*sneakertime/4;
+			player->overshield = max( player->overshield, TICRATE/2 );
 			break;
 	}
 
@@ -7321,7 +7462,7 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 			}
 		}
 
-		if (mo->player->sneakertimer || mo->player->panelsneakertimer || mo->player->invincibilitytimer)
+		if (mo->player->sneakertimer || mo->player->panelsneakertimer || mo->player->weaksneakertimer || mo->player->invincibilitytimer)
 		{
 			thrust = FixedMul(thrust, (3*FRACUNIT)/2);
 		}
@@ -8925,6 +9066,7 @@ static void K_UpdateTripwire(player_t *player)
 	boolean goodSpeed = (player->speed >= speedThreshold);
 	boolean boostExists = (player->tripwireLeniency > 0); // can't be checked later because of subtractions...
 	tripwirepass_t triplevel = K_TripwirePassConditions(player);
+	boolean mightplaysound = false;
 
 	if (triplevel != TRIPWIRE_NONE)
 	{
@@ -8933,12 +9075,7 @@ static void K_UpdateTripwire(player_t *player)
 			mobj_t *front = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_TRIPWIREBOOST);
 			mobj_t *back = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_TRIPWIREBOOST);
 
-			if (P_IsDisplayPlayer(player))
-			{
-				S_StartSound(player->mo, sfx_s3k40);
-				S_StopSoundByID(player->mo, sfx_gshaf);
-			}
-				
+			mightplaysound = true;
 
 			P_SetTarget(&front->target, player->mo);
 			P_SetTarget(&back->target, player->mo);
@@ -8957,6 +9094,12 @@ static void K_UpdateTripwire(player_t *player)
 
 		if (triplevel != TRIPWIRE_CONSUME)
 			player->tripwireLeniency = max(player->tripwireLeniency, TRIPWIRETIME);
+
+		if (P_IsDisplayPlayer(player) && player->tripwireLeniency && mightplaysound)
+		{
+			S_StartSound(player->mo, TRIPWIRE_OK_SOUND);
+			S_StopSoundByID(player->mo, TRIPWIRE_NG_SOUND);
+		}
 	}
 
 	// TRIPWIRE_CONSUME is only applied in very specific cases (currently, riding Garden Top)
@@ -9081,7 +9224,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		if (player->speed > 0)
 		{
 			// Speed lines
-			if (player->sneakertimer || player->panelsneakertimer || player->ringboost
+			if (player->sneakertimer || player->panelsneakertimer || player->weaksneakertimer || player->ringboost
 				|| player->driftboost || player->startboost
 				|| player->eggmanexplode || player->trickboost
 				|| player->gateBoost || player->wavedashboost)
@@ -9322,7 +9465,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		if (((P_IsObjectOnGround(player->mo)
 			|| ( player->spinouttype & KSPIN_AIRTIMER ))
 			&& (!player->sneakertimer)
-			&& (!player->panelsneakertimer))
+			&& (!player->panelsneakertimer)
+			&& (!player->weaksneakertimer))
 		|| (player->respawn.state != RESPAWNST_NONE
 			&& player->spinouttimer > 1
 			&& (leveltime & 1)))
@@ -9518,6 +9662,16 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
+	if (player->weaksneakertimer)
+	{
+		player->weaksneakertimer--;
+
+		if (player->weaksneakertimer <= 0)
+		{
+			player->numweaksneakers = 0;
+		}
+	}
+
 	if (player->trickboost)
 		player->trickboost--;
 
@@ -9537,7 +9691,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->counterdash)
 		player->counterdash--;
 
-	if ((player->sneakertimer || player->panelsneakertimer) && player->wipeoutslow > 0 && player->wipeoutslow < wipeoutslowtime+1)
+	if ((player->sneakertimer || player->panelsneakertimer || player->weaksneakertimer) && player->wipeoutslow > 0 && player->wipeoutslow < wipeoutslowtime+1)
 		player->wipeoutslow = wipeoutslowtime+1;
 
 	if (player->floorboost > 0)
@@ -9662,6 +9816,26 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->invincibilitytimer--;
 		if (player->invincibilitytimer && K_IsPlayerScamming(player))
 			player->invincibilitytimer--;
+		
+		// Extra tripwire leniency for the end of invincibility
+		if (player->invincibilitytimer <= 0) {
+			player->tripwireLeniency = max( player->tripwireLeniency, TICRATE );
+		}
+	}
+
+	// The precise ordering of start-of-level made me want to cut my head off,
+	// so let's try this instead. Whatever!
+	if (leveltime <= starttime || player->gradingpointnum == 0)
+	{
+		if ((gametyperules & GTR_SPHERES)
+			|| (gametyperules & GTR_CATCHER)
+			|| G_TimeAttackStart()
+			|| (gametype == GT_TUTORIAL)
+			|| !M_NotFreePlay()
+			|| (K_GetNumWaypoints() == 0))
+			player->cangrabitems = EARLY_ITEM_FLICKER;
+		else
+			player->cangrabitems = 0;
 	}
 
 	if (player->cangrabitems && player->cangrabitems <= EARLY_ITEM_FLICKER)
@@ -9826,6 +10000,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->tiregrease = 0;
 		player->sneakertimer = 0;
 		player->panelsneakertimer = 0;
+		player->weaksneakertimer = 0;
 		player->spindashboost = 0;
 		player->flashing = TICRATE/2;
 		player->ringboost = 0;
@@ -10993,7 +11168,7 @@ static void K_UpdateDistanceFromFinishLine(player_t *const player)
 				const mapheader_t *mapheader = mapheaderinfo[gamemap - 1];
 				if ((mapheader->levelflags & LF_SECTIONRACE) == 0U)
 				{
-					const UINT8 numfulllapsleft = ((UINT8)numlaps - player->laps) / mapheader->lapspersection;
+					UINT8 numfulllapsleft = ((UINT8)numlaps - player->laps) / mapheader->lapspersection;
 					player->distancetofinish += numfulllapsleft * K_GetCircuitLength();
 				}
 			}
@@ -11041,6 +11216,7 @@ static void K_UpdatePlayerWaypoints(player_t *const player)
 		player->respawn.state == RESPAWNST_NONE && // Respawning should be a full reset.
 		old_currentwaypoint != NULL && // So should touching the first waypoint ever.
 		player->laps != 0 && // POSITION rooms may have unorthodox waypoints to guide bots.
+		player->exiting == 0 && // What the fuck? Why do duels antiskip the bot?
 		!(player->pflags & PF_TRUSTWAYPOINTS)) // Special exception.
 	{
 		extern consvar_t cv_debuglapcheat;
@@ -11337,6 +11513,14 @@ INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
 		turnfixed = FixedMul(turnfixed, 2*FRACUNIT); // Base increase to turning
 	}
 
+	/*
+	if (overtimecheckpoints)
+	{
+		fixed_t assistpercent = FRACUNIT * overtimecheckpoints / 32;
+		turnfixed += FixedMul(Easing_Linear(assistpercent, 0, FRACUNIT/2), turnfixed);
+	}
+	*/
+
 	if (player->drift != 0 && P_IsObjectOnGround(player->mo))
 	{
 		if (G_CompatLevel(0x000A))
@@ -11393,7 +11577,7 @@ INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
 	// If you're sliptiding, don't interact with handling boosts.
 	// You need turning power proportional to your speed, no matter what!
 	fixed_t topspeed = K_GetKartSpeed(player, false, false);
-	if (K_Sliptiding(player))
+	if (K_Sliptiding(player) || player->flamedash)
 	{
 		fixed_t sliptide_handle;
 
@@ -12040,6 +12224,11 @@ void K_KartUpdatePosition(player_t *player)
 			realplayers++;
 		}
 	}
+	else if (K_InRaceDuel() && player->exiting)
+	{
+		// Positions directly set in K_CheckpointCrossAward, don't touch.
+		return;
+	}
 	else
 	{
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -12146,7 +12335,9 @@ void K_KartUpdatePosition(player_t *player)
 	/* except in FREE PLAY */
 	if (player->curshield == KSHIELD_TOP &&
 			(gametyperules & GTR_CIRCUIT) &&
-			realplayers > 1)
+			realplayers > 1 &&
+			!specialstageinfo.valid
+			&& !K_Cooperative())
 	{
 		/* grace period so you don't fall off INSTANTLY */
 		if (K_GetItemRouletteDistance(player, 8) < 2000 && player->topinfirst < 2*TICRATE) // "Why 8?" Literally no reason, but since we intend for constant-ish distance we choose a fake fixed playercount.
@@ -13708,7 +13899,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							{
 								UINT32 behind = K_GetItemRouletteDistance(player, player->itemRoulette.playing);
 								UINT32 behindScaled = behind * TICRATE / 4500;
-								behindScaled = min(behindScaled, 10*TICRATE);
+								behindScaled = min(behindScaled, 15*TICRATE);
 
 								K_DoInvincibility(player,
 									max(7u * TICRATE + behindScaled, player->invincibilitytimer + 5u*TICRATE));
@@ -14261,7 +14452,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									{
 										P_Thrust(
 											player->mo, player->mo->angle,
-											FixedMul((50*player->mo->scale), K_GetKartGameSpeedScalar(gamespeed))
+											FixedMul((80*player->mo->scale), K_GetKartGameSpeedScalar(gamespeed))
 										);
 
 										player->wavedashboost += TICRATE;
@@ -15277,8 +15468,17 @@ void K_EggmanTransfer(player_t *source, player_t *victim)
 	if (victim->eggmanexplode)
 		return;
 
+	boolean prank = false;
+
+	if (victim->itemRoulette.eggman)
+	{
+		K_StopRoulette(&source->itemRoulette);
+		prank = true; // Give the transferring player the victim's eggbox roulette?!
+	}
+
 	K_AddHitLag(victim->mo, 5, false);
 	K_DropItems(victim);
+
 	victim->eggmanexplode = 6*TICRATE;
 	victim->eggmanblame = (source - players);
 	K_StopRoulette(&victim->itemRoulette);
@@ -15287,9 +15487,20 @@ void K_EggmanTransfer(player_t *source, player_t *victim)
 		S_StartSound(NULL, sfx_itrole);
 
 	K_AddHitLag(source->mo, 5, false);
-	source->eggmanexplode = 0;
-	source->eggmanblame = -1;
-	K_StopRoulette(&source->itemRoulette);
+
+	if (prank)
+	{
+		source->eggmanexplode = 0;
+		source->eggmanblame = (victim - players);
+		K_StartEggmanRoulette(source);
+		S_StartSound(source->mo, sfx_s223);
+	}
+	else
+	{
+		source->eggmanexplode = 0;
+		source->eggmanblame = -1;
+		K_StopRoulette(&source->itemRoulette);
+	}
 
 	source->eggmanTransferDelay = 25;
 	victim->eggmanTransferDelay = 15;
@@ -15517,7 +15728,7 @@ boolean K_PlayerCanUseItem(player_t *player)
 	return (player->mo->health > 0 && !player->spectator && !P_PlayerInPain(player) && !mapreset && leveltime > introtime);
 }
 
-fixed_t K_GetGradingMultAdjustment(player_t *player)
+fixed_t K_GetGradingFactorAdjustment(player_t *player)
 {
 	fixed_t power = 3*FRACUNIT/100; // adjust to change overall xp volatility
 	fixed_t stablerate = 3*FRACUNIT/10; // how low is your placement before losing XP? 4*FRACUNIT/10 = top 40% of race will gain
@@ -15571,13 +15782,57 @@ fixed_t K_GetGradingMultAdjustment(player_t *player)
 	return result;
 }
 
+fixed_t K_GetGradingFactorMinMax(UINT32 gradingpointnum, boolean max)
+{
+    // Create a dummy player structure for the theoretical last-place player
+    player_t dummy_player;
+    memset(&dummy_player, 0, sizeof(player_t));
+    dummy_player.gradingfactor = FRACUNIT; // Start at 1.0
+
+	if (G_GametypeHasTeams())
+	{
+		const UINT8 orange_count = G_CountTeam(TEAM_ORANGE);
+		const UINT8 blue_count = G_CountTeam(TEAM_BLUE);
+		if (orange_count <= blue_count)
+		{
+			dummy_player.team = TEAM_ORANGE;
+		}
+		else
+		{
+			dummy_player.team = TEAM_BLUE;
+		}
+		dummy_player.position = max ? 0 : D_NumPlayersInRace() + 1; // Ensures that all enemy players are counted, and our dummy won't overlap
+	}
+	else
+	{
+		dummy_player.position = max ? 1 : D_NumPlayersInRace();
+	}
+	
+    // Apply the adjustment for each grading point
+    for (UINT32 i = 0; i < gradingpointnum; i++)
+    {
+        dummy_player.gradingfactor += K_GetGradingFactorAdjustment(&dummy_player);
+    }
+    return dummy_player.gradingfactor;
+}
+
 UINT16 K_GetEXP(player_t *player)
 {
 	UINT32 numgradingpoints = K_GetNumGradingPoints();
-	// target is where you should be if you're doing good and at a 1.0 mult
-	fixed_t clampedmult = max(FRACUNIT/2, min(FRACUNIT*5/4, player->gradingfactor));  // clamp between 0.5 and 1.25
-	fixed_t targetexp = (TARGETEXP*player->gradingpointnum/max(1,numgradingpoints))<<FRACBITS;
-	UINT16 exp = FixedMul(clampedmult, targetexp)>>FRACBITS;
+	UINT16 targetminexp = (MINEXP*player->gradingpointnum/max(1,numgradingpoints)); // about what a last place player should be at this stage of the race
+	UINT16 targetexp = (MAXEXP*player->gradingpointnum/max(1,numgradingpoints)); // about what a 1.0 factor should be at this stage of the race
+	fixed_t factormin = K_GetGradingFactorMinMax(player->gradingpointnum, false);
+	fixed_t factormax = K_GetGradingFactorMinMax(player->gradingpointnum, true);
+	fixed_t clampedfactor = max(factormin, min(factormax, player->gradingfactor));
+	fixed_t range = factormax - factormin; 
+	fixed_t normalizedfactor = FixedDiv(clampedfactor - factormin, range);
+	fixed_t easedexp = Easing_Linear(normalizedfactor, targetminexp, targetexp);
+	// fixed_t easedexp = Easing_Linear(normalizedfactor, MINEXP*FRACUNIT, MAXEXP*FRACUNIT);
+	UINT16 exp = easedexp;
+	// CONS_Printf("Player %s numgradingpoints=%d targetminexp=%d targetexp=%d factormin=%.2f factormax=%.2f clampedfactor=%.2f normalizedfactor=%.2f easedexp=%d\n", 
+	// 	player_names[player - players], numgradingpoints, targetminexp, targetexp, FIXED_TO_FLOAT(factormin), FIXED_TO_FLOAT(factormax), 
+	// 	FIXED_TO_FLOAT(clampedfactor), FIXED_TO_FLOAT(normalizedfactor), easedexp);
+	// UINT16 exp = (player->gradingfactor*100)>>FRACBITS;
 	return exp;
 }
 
@@ -15595,6 +15850,29 @@ void K_BotHitPenalty(player_t *player)
 	{
 		player->botvars.rubberband = max(player->botvars.rubberband/2, FRACUNIT/2);
 		player->botvars.bumpslow = TICRATE*2;
+	}
+}
+
+boolean K_IsPickMeUpItem(mobjtype_t type)
+{
+	switch (type)
+	{
+		case MT_JAWZ:
+		case MT_JAWZ_SHIELD:
+		case MT_ORBINAUT:
+		case MT_ORBINAUT_SHIELD:
+		case MT_DROPTARGET:
+		case MT_DROPTARGET_SHIELD:
+		case MT_LANDMINE:
+		case MT_BANANA:
+		case MT_BANANA_SHIELD:
+		case MT_GACHABOM:
+		case MT_EGGMANITEM:
+		case MT_EGGMANITEM_SHIELD:
+		case MT_BUBBLESHIELDTRAP:
+			return true;
+		default:
+			return false;
 	}
 }
 
@@ -15688,7 +15966,7 @@ static boolean K_PickUp(player_t *player, mobj_t *picked)
 }
 
 // ACHTUNG this destroys items when returning true, make sure to bail out
-boolean K_TryPickMeUp(mobj_t *m1, mobj_t *m2)
+boolean K_TryPickMeUp(mobj_t *m1, mobj_t *m2, boolean allowHostile)
 {
 	if (!m1 || P_MobjWasRemoved(m1))
 		return false;
@@ -15723,7 +16001,7 @@ boolean K_TryPickMeUp(mobj_t *m1, mobj_t *m2)
 		if (inflictor->target->player && G_SameTeam(inflictor->target->player, victim->player))
 			allied = true;
 
-	if (!allied)
+	if (!allied && !allowHostile)
 		return false;
 
 	// CONS_Printf("target check passed\n");

@@ -3640,7 +3640,7 @@ state_t states[NUMSTATES] =
 	{SPR_S_SP, FF_ANIMATE|FF_SEMIBRIGHT, -1, {NULL}, 3, 2, S_NULL}, // S_SLSTMACE
 
 	// MT_SEALEDSTAR_BUMPER
-	{SPR_SBMP, 0|FF_FULLBRIGHT, -1, {NULL}, 2, 8, S_SEALEDSTAR_BUMPER}, // S_SEALEDSTAR_BUMPER
+	{SPR_SBMP, 0|FF_FULLBRIGHT, -1, {A_GenericBumper}, 0, 56, S_SEALEDSTAR_BUMPER}, // S_SEALEDSTAR_BUMPER
 	{SPR_SBMP, 1|FF_ANIMATE|FF_FULLBRIGHT, 8, {NULL}, 1, 2, S_SEALEDSTAR_BUMPER}, // S_SEALEDSTAR_BUMPERHIT
 
 	// MT_SSCHAIN_SPAWNER
@@ -13585,8 +13585,8 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,         // xdeathstate
 		sfx_None,       // deathsound
 		0,              // speed
-		95*FRACUNIT,    // radius
-		95*FRACUNIT,    // height
+		108*FRACUNIT,    // radius
+		50*FRACUNIT,    // height
 		0,              // display offset
 		100,            // mass
 		0,              // damage
@@ -22233,7 +22233,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,            // mass
 		0,            // damage
 		sfx_None,     // activesound
-		MF_SPECIAL|MF_NOGRAVITY, // flags
+		MF_NOGRAVITY|MF_SOLID, // flags
 		S_NULL        // raisestate
 	},
 	{           // MT_SSCHAIN_SPAWNER

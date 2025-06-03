@@ -270,22 +270,31 @@ static ticcmd_t oldcmd[MAXPLAYERS];
 
 static mobj_t oldghost[MAXPLAYERS];
 
+boolean G_ConsiderEndingDemoWrite(void)
+{
+	// chill, we reserved extra memory so it's
+	// "safe" to have written a bit past the end
+	if (demobuf.p < demobuf.end)
+		return false;
+
+	G_CheckDemoStatus();
+	return true;
+}
+
+boolean G_ConsiderEndingDemoRead(void)
+{
+	if (*demobuf.p != DEMOMARKER)
+		return false;
+
+	G_CheckDemoStatus();
+	return true;
+}
+
 void G_ReadDemoExtraData(void)
 {
 	INT32 p, extradata, i;
 	char name[64];
 	static_assert(sizeof name >= std::max({MAXPLAYERNAME+1u, SKINNAMESIZE+1u, MAXCOLORNAME+1u}));
-
-	if (leveltime > starttime)
-	{
-		rewind_t *rewind = CL_SaveRewindPoint(demobuf.p - demobuf.buffer);
-		if (rewind)
-		{
-			memcpy(rewind->oldcmd, oldcmd, sizeof (oldcmd));
-			memcpy(rewind->oldghost, oldghost, sizeof (oldghost));
-		}
-	}
-
 	memset(name, '\0', sizeof name);
 
 	p = READUINT8(demobuf.p);
@@ -460,13 +469,6 @@ void G_ReadDemoExtraData(void)
 
 		p = READUINT8(demobuf.p);
 	}
-
-	if (!(demoflags & DF_GHOST) && *demobuf.p == DEMOMARKER)
-	{
-		// end of demo data stream
-		G_CheckDemoStatus();
-		return;
-	}
 }
 
 void G_WriteDemoExtraData(void)
@@ -623,13 +625,6 @@ void G_ReadDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 	}
 
 	G_CopyTiccmd(cmd, &oldcmd[playernum], 1);
-
-	if (!(demoflags & DF_GHOST) && *demobuf.p == DEMOMARKER)
-	{
-		// end of demo data stream
-		G_CheckDemoStatus();
-		return;
-	}
 }
 
 void G_WriteDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
@@ -739,14 +734,6 @@ void G_WriteDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 
 		WRITEUINT16(botziptic_p, botziptic);
 	}
-
-	// attention here for the ticcmd size!
-	// latest demos with mouse aiming byte in ticcmd
-	if (!(demoflags & DF_GHOST) && ziptic_p > demobuf.end - 9)
-	{
-		G_CheckDemoStatus(); // no more space
-		return;
-	}
 }
 
 void G_GhostAddFlip(INT32 playernum)
@@ -794,8 +781,11 @@ void G_GhostAddHit(INT32 playernum, mobj_t *victim)
 
 void G_WriteAllGhostTics(void)
 {
-	boolean toobig = false;
 	INT32 i, counter = leveltime;
+
+	if (!demobuf.p || !(demoflags & DF_GHOST))
+		return; // No ghost data to write.
+
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i] || players[i].spectator)
@@ -811,22 +801,9 @@ void G_WriteAllGhostTics(void)
 
 		WRITEUINT8(demobuf.p, i);
 		G_WriteGhostTic(players[i].mo, i);
-
-		// attention here for the ticcmd size!
-		// latest demos with mouse aiming byte in ticcmd
-		if (demobuf.p >= demobuf.end - (13 + 9 + 9))
-		{
-			toobig = true;
-			break;
-		}
 	}
+
 	WRITEUINT8(demobuf.p, 0xFF);
-
-	if (toobig)
-	{
-		G_CheckDemoStatus(); // no more space
-		return;
-	}
 }
 
 void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
@@ -834,11 +811,6 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 	char ziptic = 0;
 	UINT8 *ziptic_p;
 	UINT32 i;
-
-	if (!demobuf.p)
-		return;
-	if (!(demoflags & DF_GHOST))
-		return; // No ghost data to write.
 
 	ziptic_p = demobuf.p++; // the ziptic, written at the end of this function
 
@@ -1061,7 +1033,7 @@ void G_ConsAllGhostTics(void)
 {
 	UINT8 p;
 
-	if (!demobuf.p || !demo.deferstart)
+	if (!demobuf.p || !(demoflags & DF_GHOST) || !demo.deferstart)
 		return;
 
 	p = READUINT8(demobuf.p);
@@ -1070,13 +1042,6 @@ void G_ConsAllGhostTics(void)
 	{
 		G_ConsGhostTic(p);
 		p = READUINT8(demobuf.p);
-	}
-
-	if (*demobuf.p == DEMOMARKER)
-	{
-		// end of demo data stream
-		G_CheckDemoStatus();
-		return;
 	}
 }
 
@@ -1088,9 +1053,6 @@ void G_ConsGhostTic(INT32 playernum)
 	INT32 px,py,pz,gx,gy,gz;
 	mobj_t *testmo;
 	UINT32 syncleeway;
-
-	if (!(demoflags & DF_GHOST))
-		return; // No ghost data to use.
 
 	testmo = players[playernum].mo;
 
@@ -1282,13 +1244,6 @@ void G_ConsGhostTic(INT32 playernum)
 			}
 		}
 	}
-
-	if (*demobuf.p == DEMOMARKER)
-	{
-		// end of demo data stream
-		G_CheckDemoStatus();
-		return;
-	}
 }
 
 void G_GhostTicker(void)
@@ -1309,10 +1264,30 @@ void G_GhostTicker(void)
 			continue;
 
 readghosttic:
+#define follow g->mo->tracer
 
 		// Skip normal demo data.
 		ziptic = READUINT8(g->p);
 		xziptic = 0;
+
+		// Demo ends after ghost data.
+		if (ziptic == DEMOMARKER)
+		{
+fadeghost:
+			g->mo->momx = g->mo->momy = g->mo->momz = 0;
+			g->mo->fuse = TICRATE;
+			if (follow)
+			{
+				follow->fuse = TICRATE;
+			}
+
+			g->done = true;
+			if (p)
+			{
+				p->next = g->next;
+			}
+			continue;
+		}
 
 		while (ziptic != DW_END) // Get rid of extradata stuff
 		{
@@ -1414,9 +1389,11 @@ readghosttic:
 		// Grab ghost data.
 		ziptic = READUINT8(g->p);
 
+		if (ziptic == DEMOMARKER) // Had to end early for some reason
+			goto fadeghost;
 		if (ziptic == 0xFF)
 			goto skippedghosttic; // Didn't write ghost info this frame
-		else if (ziptic != 0)
+		if (ziptic != 0)
 			I_Error("Ghost is not a record attack ghost ZIPTIC"); //@TODO lmao don't blow up like this
 		ziptic = READUINT8(g->p);
 
@@ -1530,7 +1507,6 @@ readghosttic:
 			g->mo->renderflags &= ~RF_DONTDRAW;
 		}
 
-#define follow g->mo->tracer
 		if (ziptic & GZT_FOLLOW)
 		{ // Even more...
 			UINT8 followtic = READUINT8(g->p);
@@ -1620,28 +1596,6 @@ skippedghosttic:
 		if (READUINT8(g->p) != 0xFF) // Make sure there isn't other ghost data here.
 			I_Error("Ghost is not a record attack ghost GHOSTEND"); //@TODO lmao don't blow up like this
 
-		// Demo ends after ghost data.
-		if (*g->p == DEMOMARKER)
-		{
-			g->mo->momx = g->mo->momy = g->mo->momz = 0;
-#if 0 // freeze frame (maybe more useful for time attackers) (2024-03-11: you leave it behind anyway!)
-			g->mo->colorized = true;
-			g->mo->fuse = 10*TICRATE;
-			if (follow)
-				follow->colorized = true;
-#else // dissapearing act
-			g->mo->fuse = TICRATE;
-			if (follow)
-				follow->fuse = TICRATE;
-#endif
-			g->done = true;
-			if (p)
-			{
-				p->next = g->next;
-			}
-			continue;
-		}
-
 		// If the timer started, skip ahead until the ghost starts too.
 		if (starttime <= leveltime && !g->linecrossed && G_TimeAttackStart())
 			goto readghosttic;
@@ -1649,203 +1603,6 @@ skippedghosttic:
 		p = g;
 #undef follow
 	}
-}
-
-// Demo rewinding functions
-typedef struct rewindinfo_s {
-	tic_t leveltime;
-
-	struct {
-		boolean ingame;
-		player_t player;
-		mobj_t mobj;
-	} playerinfo[MAXPLAYERS];
-
-	struct rewindinfo_s *prev;
-} rewindinfo_t;
-
-static tic_t currentrewindnum;
-static rewindinfo_t *rewindhead = NULL; // Reverse chronological order
-
-void G_InitDemoRewind(void)
-{
-	CL_ClearRewinds();
-
-	while (rewindhead)
-	{
-		rewindinfo_t *p = rewindhead->prev;
-		Z_Free(rewindhead);
-		rewindhead = p;
-	}
-
-	currentrewindnum = 0;
-}
-
-void G_StoreRewindInfo(void)
-{
-	static UINT8 timetolog = 8;
-	rewindinfo_t *info;
-	size_t i;
-
-	if (timetolog-- > 0)
-		return;
-	timetolog = 8;
-
-	info = static_cast<rewindinfo_t*>(Z_Calloc(sizeof(rewindinfo_t), PU_STATIC, NULL));
-
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (!playeringame[i] || players[i].spectator)
-		{
-			info->playerinfo[i].ingame = false;
-			continue;
-		}
-
-		info->playerinfo[i].ingame = true;
-		memcpy(&info->playerinfo[i].player, &players[i], sizeof(player_t));
-		if (players[i].mo)
-			memcpy(&info->playerinfo[i].mobj, players[i].mo, sizeof(mobj_t));
-	}
-
-	info->leveltime = leveltime;
-	info->prev = rewindhead;
-	rewindhead = info;
-}
-
-void G_PreviewRewind(tic_t previewtime)
-{
-	SINT8 i;
-	//size_t j;
-	fixed_t tweenvalue = 0;
-	rewindinfo_t *info = rewindhead, *next_info = rewindhead;
-
-	if (!info)
-		return;
-
-	while (info->leveltime > previewtime && info->prev)
-	{
-		next_info = info;
-		info = info->prev;
-	}
-	if (info != next_info)
-		tweenvalue = FixedDiv(previewtime - info->leveltime, next_info->leveltime - info->leveltime);
-
-
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (!playeringame[i] || players[i].spectator)
-		{
-			if (info->playerinfo[i].player.mo)
-			{
-				//@TODO spawn temp object to act as a player display
-			}
-
-			continue;
-		}
-
-		if (!info->playerinfo[i].ingame || !info->playerinfo[i].player.mo)
-		{
-			if (players[i].mo)
-				players[i].mo->renderflags |= RF_DONTDRAW;
-
-			continue;
-		}
-
-		if (!players[i].mo)
-			continue; //@TODO spawn temp object to act as a player display
-
-		players[i].mo->renderflags &= ~RF_DONTDRAW;
-
-		P_UnsetThingPosition(players[i].mo);
-#define TWEEN(pr) info->playerinfo[i].mobj.pr + FixedMul((INT32) (next_info->playerinfo[i].mobj.pr - info->playerinfo[i].mobj.pr), tweenvalue)
-		players[i].mo->x = TWEEN(x);
-		players[i].mo->y = TWEEN(y);
-		players[i].mo->z = TWEEN(z);
-		players[i].mo->angle = TWEEN(angle);
-#undef TWEEN
-		P_SetThingPosition(players[i].mo);
-
-		players[i].drawangle = info->playerinfo[i].player.drawangle + FixedMul((INT32) (next_info->playerinfo[i].player.drawangle - info->playerinfo[i].player.drawangle), tweenvalue);
-
-		players[i].mo->sprite = info->playerinfo[i].mobj.sprite;
-		players[i].mo->sprite2 = info->playerinfo[i].mobj.sprite2;
-		players[i].mo->frame = info->playerinfo[i].mobj.frame;
-
-		players[i].mo->hitlag = info->playerinfo[i].mobj.hitlag;
-
-		players[i].realtime = info->playerinfo[i].player.realtime;
-		// Genuinely CANNOT be fucked. I can redo lua and I can redo netsaves but I draw the line at this abysmal hack.
-		/*for (j = 0; j < NUMKARTSTUFF; j++)
-			players[i].kartstuff[j] = info->playerinfo[i].player.kartstuff[j];*/
-	}
-
-	for (i = splitscreen; i >= 0; i--)
-		P_ResetCamera(&players[displayplayers[i]], &camera[i]);
-}
-
-void G_ConfirmRewind(tic_t rewindtime)
-{
-	SINT8 i;
-	tic_t j;
-	boolean oldmenuactive = menuactive, oldsounddisabled = sound_disabled;
-
-	INT32 olddp1 = displayplayers[0], olddp2 = displayplayers[1], olddp3 = displayplayers[2], olddp4 = displayplayers[3];
-	UINT8 oldss = splitscreen;
-
-	menuactive = false; // Prevent loops
-
-	CV_StealthSetValue(&cv_renderview, 0);
-
-	if (rewindtime <= starttime)
-	{
-		demo.rewinding = true; // this doesn't APPEAR to cause any misery, and it allows us to prevent running all the wipes again
-		G_DoPlayDemo(NULL); // Restart the current demo
-	}
-	else
-	{
-		rewind_t *rewind;
-		sound_disabled = true; // Prevent sound spam
-		demo.rewinding = true;
-
-		rewind = CL_RewindToTime(rewindtime);
-
-		if (rewind)
-		{
-			demobuf.p = demobuf.buffer + rewind->demopos;
-			memcpy(oldcmd, rewind->oldcmd, sizeof (oldcmd));
-			memcpy(oldghost, rewind->oldghost, sizeof (oldghost));
-			paused = false;
-		}
-		else
-		{
-			demo.rewinding = true;
-			G_DoPlayDemo(NULL); // Restart the current demo
-		}
-	}
-
-	for (j = 0; j < rewindtime && leveltime < rewindtime; j++)
-	{
-		G_Ticker((j % NEWTICRATERATIO) == 0);
-	}
-
-	demo.rewinding = false;
-	menuactive = oldmenuactive; // Bring the menu back up
-	sound_disabled = oldsounddisabled; // Re-enable SFX
-
-	wipegamestate = gamestate; // No fading back in!
-
-	COM_BufInsertText("renderview on\n");
-
-	splitscreen = oldss;
-	displayplayers[0] = olddp1;
-	displayplayers[1] = olddp2;
-	displayplayers[2] = olddp3;
-	displayplayers[3] = olddp4;
-	R_ExecuteSetViewSize();
-	G_ResetViews();
-
-	for (i = splitscreen; i >= 0; i--)
-		P_ResetCamera(&players[displayplayers[i]], &camera[i]);
 }
 
 //
@@ -1885,7 +1642,7 @@ void G_RecordDemo(const char *name)
 	functions will check if they overran the buffer, but it
 	should be safe enough because they'll think there's less
 	memory than there actually is and stop early. */
-	const size_t deadspace = 1024;
+	const size_t deadspace = 2048;
 	I_Assert(demobuf.size > deadspace);
 	demobuf.size -= deadspace;
 	demobuf.end -= deadspace;
@@ -2367,6 +2124,8 @@ void G_BeginRecording(void)
 			// Skin (now index into demo.skinlist)
 			WRITEUINT8(demobuf.p, player->skin);
 			WRITEUINT8(demobuf.p, player->lastfakeskin);
+
+			WRITEUINT8(demobuf.p, player->team);
 
 			// Color
 			demobuf.p += copy_fixed_buf(demobuf.p, skincolors[player->skincolor].name, g_buffer_sizes.color_name);
@@ -2997,8 +2756,6 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 	boolean skiperrors = true;
 #endif
 
-	G_InitDemoRewind();
-
 	gtname[MAXGAMETYPELENGTH-1] = '\0';
 
 	if (deflumpnum != LUMPERROR)
@@ -3361,22 +3118,6 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 	// Load "mapmusrng" used for altmusic selection
 	mapmusrng = READUINT8(demobuf.p);
 
-	// Sigh ... it's an empty demo.
-	if (*demobuf.p == DEMOMARKER)
-	{
-		snprintf(msg, 1024, M_GetText("%s contains no data to be played.\n"), pdemoname);
-		CONS_Alert(CONS_ERROR, "%s", msg);
-		M_StartMessage("Demo Playback", msg, NULL, MM_NOTHING, NULL, "Return to Menu");
-		Z_Free(demo.skinlist);
-		demo.skinlist = NULL;
-		Z_Free(pdemoname);
-		Z_Free(demobuf.buffer);
-		demo.playback = false;
-		return;
-	}
-
-	Z_Free(pdemoname);
-
 	memset(&oldcmd,0,sizeof(oldcmd));
 	memset(&oldghost,0,sizeof(oldghost));
 	memset(&ghostext,0,sizeof(ghostext));
@@ -3500,6 +3241,8 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 			demo.currentskinid[p] = 0;
 		lastfakeskin[p] = READUINT8(demobuf.p);
 
+		players[p].team = READUINT8(demobuf.p);
+
 		// Color
 		demobuf.p += copy_fixed_buf(color, demobuf.p, g_buffer_sizes.color_name);
 		for (i = 0; i < numskincolors; i++)
@@ -3603,9 +3346,26 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 		players[p].lastfakeskin = lastfakeskin[p];
 	}
 
+	// Sigh ... it's an empty demo.
+	if (*demobuf.p == DEMOMARKER)
+	{
+		snprintf(msg, 1024, M_GetText("%s contains no data to be played.\n"), pdemoname);
+		CONS_Alert(CONS_ERROR, "%s", msg);
+		M_StartMessage("Demo Playback", msg, NULL, MM_NOTHING, NULL, "Return to Menu");
+		Z_Free(demo.skinlist);
+		demo.skinlist = NULL;
+		Z_Free(pdemoname);
+		Z_Free(demobuf.buffer);
+		demo.playback = false;
+		return;
+	}
+
+	Z_Free(pdemoname);
+
 	demo.deferstart = true;
 
-	CV_StealthSetValue(&cv_playbackspeed, 1);
+	if (demo.simplerewind == DEMO_REWIND_OFF)
+		CV_StealthSetValue(&cv_playbackspeed, 1);
 }
 
 void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
@@ -3752,14 +3512,6 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 
 	p++; // mapmusrng
 
-	if (*p == DEMOMARKER)
-	{
-		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Replay is empty.\n"), defdemoname);
-		Z_Free(skinlist);
-		P_SaveBufferFree(buffer);
-		return;
-	}
-
 	p++; // player number - doesn't really need to be checked, TODO maybe support adding multiple players' ghosts at once
 
 	// any invalidating flags?
@@ -3783,6 +3535,8 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 		ghskin = &skins[skinlist[i].mapping];
 	p++; // lastfakeskin
 
+	p++; // team
+
 	// Color
 	p += copy_fixed_buf(color, p, ghostsizes.color_name);
 
@@ -3800,6 +3554,14 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	if (READUINT8(p) != 0xFF)
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Invalid player slot (bad terminator)\n"), defdemoname);
+		Z_Free(skinlist);
+		P_SaveBufferFree(buffer);
+		return;
+	}
+
+	if (*p == DEMOMARKER)
+	{
+		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Replay is empty.\n"), defdemoname);
 		Z_Free(skinlist);
 		P_SaveBufferFree(buffer);
 		return;
@@ -4167,7 +3929,7 @@ boolean G_CheckDemoStatus(void)
 		// Keep the demo open and don't boot to intermission
 		// YET, pause demo playback.
 		if (!demo.waitingfortally && modeattacking && exitcountdown)
-			demo.waitingfortally = true;
+			;
 		else if (!demo.attract)
 			G_FinishExitLevel();
 		else
@@ -4184,6 +3946,8 @@ boolean G_CheckDemoStatus(void)
 			else
 				D_SetDeferredStartTitle(true);
 		}
+
+		demo.waitingfortally = true; // if we've returned early for some reason...
 
 		return true;
 	}
@@ -4228,6 +3992,13 @@ void G_SaveDemo(void)
 
 	if (currentMenu == &TitleEntryDef)
 		M_ClearMenus(true);
+
+	if (!leveltime)
+	{
+		// Why would you save if nothing has been recorded
+		G_ResetDemoRecording();
+		return;
+	}
 
 	// Ensure extrainfo pointer is always available, even if no info is present.
 	if (demoinfo_p && *(UINT32 *)demoinfo_p == 0)

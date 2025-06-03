@@ -599,9 +599,9 @@ static inline void P_DeviceRumbleTick(void)
 			{
 				low = high = 65536 / 2;
 			}
-			else if (player->sneakertimer > (sneakertime-(TICRATE/2)) || player->panelsneakertimer > (sneakertime-(TICRATE/2)))
+			else if (player->sneakertimer > (sneakertime-(TICRATE/2)) || player->panelsneakertimer > (sneakertime-(TICRATE/2)) || player->weaksneakertimer > (sneakertime-(TICRATE/2)))
 			{
-				low = high = 65536 / (3+player->numsneakers+player->numpanelsneakers);
+				low = high = 65536 / (3+player->numsneakers+player->numpanelsneakers+player->numweaksneakers);
 			}
 			else if (((player->boostpower < FRACUNIT) || (player->stairjank > 8))
 				&& P_IsObjectOnGround(player->mo) && player->speed != 0)
@@ -739,15 +739,7 @@ void P_Ticker(boolean run)
 	// Check for pause or menu up in single player
 	if (paused || P_AutoPause())
 	{
-		if (demo.rewinding && leveltime > 0)
-		{
-			leveltime = (leveltime-1) & ~3;
-			if (timeinmap > 0)
-				timeinmap = (timeinmap-1) & ~3;
-			G_PreviewRewind(leveltime);
-		}
-		else
-			P_RunChaseCameras();	// special case: allow freecam to MOVE during pause!
+		P_RunChaseCameras(); // special case: allow freecam to MOVE during pause!
 		return;
 	}
 
@@ -762,17 +754,23 @@ void P_Ticker(boolean run)
 
 		if (demo.recording)
 		{
-			G_WriteDemoExtraData();
-			for (i = 0; i < MAXPLAYERS; i++)
-				if (playeringame[i])
-					G_WriteDemoTiccmd(&players[i].cmd, i);
+			if (!G_ConsiderEndingDemoWrite())
+			{
+				G_WriteDemoExtraData();
+				for (i = 0; i < MAXPLAYERS; i++)
+					if (playeringame[i])
+						G_WriteDemoTiccmd(&players[i].cmd, i);
+			}
 		}
 		if (demo.playback && !demo.waitingfortally)
 		{
-			G_ReadDemoExtraData();
-			for (i = 0; i < MAXPLAYERS; i++)
-				if (playeringame[i])
-					G_ReadDemoTiccmd(&players[i].cmd, i);
+			if (!G_ConsiderEndingDemoRead())
+			{
+				G_ReadDemoExtraData();
+				for (i = 0; i < MAXPLAYERS; i++)
+					if (playeringame[i])
+						G_ReadDemoTiccmd(&players[i].cmd, i);
+			}
 		}
 
 		LUA_ResetTicTimers();
@@ -1078,7 +1076,7 @@ void P_Ticker(boolean run)
 		}
 	}
 
-	if (g_fast_forward == 0)
+	if (g_fast_forward == 0 || demo.simplerewind)
 	{
 		timeinmap++;
 	}
@@ -1168,14 +1166,21 @@ void P_Ticker(boolean run)
 
 		if (demo.recording)
 		{
-			G_WriteAllGhostTics();
-
 			if (cv_recordmultiplayerdemos.value && demo.savebutton && demo.savebutton + 3*TICRATE < leveltime)
 				G_CheckDemoTitleEntry();
+
+			if (!G_ConsiderEndingDemoWrite())
+			{
+				G_WriteAllGhostTics();
+			}
 		}
-		else if (demo.playback && !demo.waitingfortally) // Use Ghost data for consistency checks.
+		else if (demo.playback && !demo.waitingfortally)
 		{
-			G_ConsAllGhostTics();
+			if (!G_ConsiderEndingDemoRead())
+			{
+				// Use Ghost data for consistency checks.
+				G_ConsAllGhostTics();
+			}
 		}
 
 		if (modeattacking)
@@ -1237,9 +1242,6 @@ void P_Ticker(boolean run)
 	}
 
 	P_MapEnd();
-
-	if (demo.playback)
-		G_StoreRewindInfo();
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
