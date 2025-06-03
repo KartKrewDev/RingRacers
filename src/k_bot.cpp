@@ -587,7 +587,7 @@ fixed_t K_BotMapModifier(void)
 
 	const fixed_t complexity_value = std::clamp<fixed_t>(
 		FixedDiv(K_GetTrackComplexity(), complexity_scale),
-		-FixedDiv(FRACUNIT, modifier_max),
+		modifier_min,
 		modifier_max
 	);
 
@@ -679,7 +679,21 @@ fixed_t K_BotRubberband(const player_t *player)
 		return FRACUNIT;
 	}
 
-	fixed_t difficultyEase = ((player->botvars.difficulty - 1) * FRACUNIT) / (MAXBOTDIFFICULTY - 1);
+	fixed_t expreduce = 0;
+
+	// Allow the status quo to assert itself a bit. Bots get most of their speed from their
+	// mechanics adjustments, not from items, so kill some bot speed if they've got bad EXP.
+	if (player->gradingfactor < FRACUNIT)
+	{
+		UINT8 levelreduce = 2; // How much to drop the "effective level" of bots that are consistently behind
+		fixed_t effgradingfactor = std::max(FRACUNIT/2, player->gradingfactor);
+		expreduce = Easing_Linear(effgradingfactor * 2 - FRACUNIT, 0, levelreduce*FRACUNIT);
+	}
+
+	fixed_t difficultyEase = (((player->botvars.difficulty - 1) * FRACUNIT) - expreduce) / (MAXBOTDIFFICULTY - 1);
+
+	if (difficultyEase < 0)
+		difficultyEase = 0;
 
 	if (cv_levelskull.value)
 		difficultyEase = FRACUNIT;
