@@ -3686,7 +3686,7 @@ static void K_GetKartBoostPower(player_t *player)
 		// This one's a little special: we add extra top speed per tic of ringboost stored up, to allow for Ring Box to really rocket away.
 		// (We compensate when decrementing ringboost to avoid runaway exponential scaling hell.)
 		fixed_t rb = FixedDiv(player->ringboost * FRACUNIT, max(FRACUNIT, K_RingDurationBoost(player)));
-		fixed_t rp = ((9 - player->kartspeed) + (9 - player->kartweight)) * ((FRACUNIT/5)/16); 
+		fixed_t rp = ((9 - player->kartspeed) + (9 - player->kartweight)) * ((3*FRACUNIT/20)/16); 
 		ADDBOOST(
 			ringboost_base + FixedMul(FRACUNIT / 1750, rb) + rp,
 			4*FRACUNIT,
