@@ -87,6 +87,7 @@ static struct podiumData_s
 	boolean fastForward;
 
 	char header[64];
+	char difficulty[64];
 
 	void Init(void);
 	void NextLevel(void);
@@ -257,6 +258,27 @@ void podiumData_s::Init(void)
 			"CONGRATULATIONS"
 		);
 	}
+
+	switch(grandprixinfo.gamespeed)
+	{
+		case KARTSPEED_EASY:
+			snprintf(difficulty, sizeof difficulty, "Relaxed");
+			break;
+		case KARTSPEED_NORMAL:
+			snprintf(difficulty, sizeof difficulty, "Intense");
+			break;
+		case KARTSPEED_HARD:
+			snprintf(difficulty, sizeof difficulty, "Vicious");
+			break;
+		default:
+			snprintf(difficulty, sizeof difficulty, "?");
+	}
+
+	if (grandprixinfo.masterbots)
+		snprintf(difficulty, sizeof difficulty, "Master");
+
+	if (cv_4thgear.value || cv_levelskull.value)
+		snprintf(difficulty, sizeof difficulty, "Extra");
 
 	header[sizeof header - 1] = '\0';
 
@@ -503,6 +525,12 @@ void podiumData_s::Draw(void)
 		drawer_winner
 			.colormap(bestHuman->skin, static_cast<skincolornum_t>(bestHuman->skincolor))
 			.patch(faceprefix[bestHuman->skin][FACE_WANTED]);
+
+		drawer_winner
+			.xy(16, 28)
+			.align(srb2::Draw::Align::kCenter)
+			.font(srb2::Draw::Font::kMenu)
+			.text(difficulty);
 
 		drawer_winner
 			.xy(44, 31)
