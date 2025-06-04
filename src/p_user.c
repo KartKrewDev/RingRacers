@@ -405,7 +405,7 @@ UINT8 P_FindHighestLap(void)
 //
 boolean P_PlayerInPain(const player_t *player)
 {
-	if (player->spinouttimer || (player->tumbleBounces > 0) || (player->pflags & PF_FAULT) || player->icecube.frozen)
+	if (player->spinouttimer || (player->tumbleBounces > 0) || (player->pflags & PF_FAULT))
 		return true;
 
 	return false;
@@ -2371,15 +2371,15 @@ static void P_UpdatePlayerAngle(player_t *player)
 		// Don't force another turning tic, just give them the desired angle!
 #endif
 
-		if (!(player->cmd.buttons & BT_DRIFT) && (abs(player->drift) == 1) && ((player->cmd.turning > 0) == (player->drift > 0)) && player->handleboost > SLIPTIDEHANDLING)
+		if (!(player->cmd.buttons & BT_DRIFT) && (abs(player->drift) == 1) && ((player->cmd.turning > 0) == (player->drift > 0)) && player->handleboost >= SLIPTIDEHANDLING)
 		{
 			// This drift release is eligible to start a sliptide. Don't do lag-compensation countersteer behavior that could destroy it!
-			if (player->cmd.turning >= 0)
+			if (player->cmd.turning > 0)
 			{
 				steeringLeft = max(steeringLeft, 1);
 				steeringRight = max(steeringRight, steeringLeft);
 			}
-			else if (player->cmd.turning <= 0)
+			else if (player->cmd.turning < 0)
 			{
 				steeringRight = min(steeringRight, -1);
 				steeringLeft = min(steeringLeft, steeringRight);
@@ -2539,9 +2539,19 @@ void P_MovePlayer(player_t *player)
 		player->glanceDir = 0;
 		player->pflags &= ~PF_GAINAX;
 	}
-	else if ((player->pflags & PF_FAULT) || (player->spinouttimer > 0))
+	else if ((player->pflags & PF_FAULT) || (player->spinouttimer > 0) || (player->turbine && (player->mo->flags & MF_NOCLIP)))
 	{
-		UINT16 speed = ((player->pflags & PF_FAULT) ? player->nocontrol : player->spinouttimer)/8;
+		tic_t timer = 0;
+
+		if ((player->pflags & PF_FAULT))
+			timer = player->nocontrol;
+		else if (player->spinouttimer > 0)
+			timer = player->spinouttimer;
+		else if (player->turbine && (player->mo->flags & MF_NOCLIP))
+			timer = TICRATE;
+
+		UINT16 speed = timer / 8;
+
 		if (speed > 8)
 			speed = 8;
 		else if (speed < 1)

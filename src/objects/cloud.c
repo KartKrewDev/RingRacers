@@ -17,6 +17,7 @@
 #include "../s_sound.h"
 #include "../r_main.h"
 #include "../m_random.h"
+#include "../k_hitlag.h"
 
 
 #define BULB_ZTHRUST 96*FRACUNIT
@@ -143,7 +144,6 @@ void Obj_PlayerCloudThink(player_t *player)
 	if (player->cloud)
 	{
 		player->cloud--;
-		P_InstaThrust(mo, 0, 0);
 		mo->momz = 0;
 		player->fastfall = 0;
 
@@ -157,6 +157,7 @@ void Obj_PlayerCloudThink(player_t *player)
 			player->cloudlaunch = TICRATE;
 
 			P_InstaThrust(mo, mo->cusval, mo->cvmem);
+			K_AddHitLag(mo, 6, false);
 		}
 	}
 }

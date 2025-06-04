@@ -8159,6 +8159,15 @@ static void P_InitGametype(void)
 #else
 		strcpy(ver, VERSIONSTRING);
 #endif
+		// Replace path separators with hyphens
+		{
+			char *p = ver;
+			while ((p = strpbrk(p, "/\\")))
+			{
+				*p = '-';
+				p++;
+			}
+		}
 		sprintf(buf, "%s" PATHSEP "media" PATHSEP "replay" PATHSEP "online" PATHSEP "%s" PATHSEP "%d-%s",
 				srb2home, ver, (int) (time(NULL)), G_BuildMapName(gamemap));
 

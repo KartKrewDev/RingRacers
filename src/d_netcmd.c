@@ -73,6 +73,7 @@
 #include "k_bans.h"
 #include "k_director.h"
 #include "k_credits.h"
+#include "k_hud.h" // K_AddMessage
 
 #ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 #include "m_avrecorder.h"
@@ -179,6 +180,8 @@ static void Command_Archivetest_f(void);
 #endif
 
 static void Command_KartGiveItem_f(void);
+
+static void Command_DebugMessageFeed(void);
 
 static void Command_Schedule_Add(void);
 static void Command_Schedule_Clear(void);
@@ -434,6 +437,8 @@ void D_RegisterServerCommands(void)
 	COM_AddDebugCommand("give3", Command_KartGiveItem_f);
 	COM_AddDebugCommand("give4", Command_KartGiveItem_f);
 
+	COM_AddDebugCommand("debugmessagefeed", Command_DebugMessageFeed);
+
 	COM_AddCommand("schedule_add", Command_Schedule_Add);
 	COM_AddCommand("schedule_clear", Command_Schedule_Clear);
 	COM_AddCommand("schedule_list", Command_Schedule_List);
@@ -559,6 +564,14 @@ void D_RegisterClientCommands(void)
 	COM_AddDebugCommand("scale", Command_Scale_f);
 	COM_AddDebugCommand("gravflip", Command_Gravflip_f);
 	COM_AddDebugCommand("hurtme", Command_Hurtme_f);
+	COM_AddDebugCommand("stumble", Command_Stumble_f);
+	COM_AddDebugCommand("tumble", Command_Tumble_f);
+	COM_AddDebugCommand("whumble", Command_Whumble_f);
+	COM_AddDebugCommand("explode", Command_Explode_f);
+	COM_AddDebugCommand("spinout", Command_Spinout_f);
+	COM_AddDebugCommand("wipeout", Command_Wipeout_f);
+	COM_AddDebugCommand("sting", Command_Sting_f);
+	COM_AddDebugCommand("kill", Command_Kill_f);
 	COM_AddDebugCommand("teleport", Command_Teleport_f);
 	COM_AddDebugCommand("rteleport", Command_RTeleport_f);
 	COM_AddDebugCommand("skynum", Command_Skynum_f);
@@ -5924,10 +5937,13 @@ static void Got_Cheat(const UINT8 **cp, INT32 playernum)
 
 			if (!P_MobjWasRemoved(player->mo))
 			{
-				P_DamageMobj(player->mo, NULL, NULL, damage, DMG_NORMAL);
+				if (damage >= DMG_INSTAKILL)
+					P_KillMobj(player->mo, NULL, NULL, (UINT8)damage);
+				else
+					P_DamageMobj(player->mo, NULL, NULL, 1, (UINT8)damage);
 			}
 
-			CV_CheaterWarning(targetPlayer, va("%d damage to me", damage));
+			CV_CheaterWarning(targetPlayer, va("damage (flags=%d) to me", damage));
 			break;
 		}
 
@@ -6357,6 +6373,11 @@ static void Command_Archivetest_f(void)
 	CONS_Printf("Done. No crash.\n");
 }
 #endif
+
+static void Command_DebugMessageFeed(void)
+{
+	K_AddMessage("Hello world! A = <a>, Right = <right>", true, false);
+}
 
 /** Give yourself an, optional quantity or one of, an item.
 */

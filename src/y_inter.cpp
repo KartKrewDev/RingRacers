@@ -2020,6 +2020,9 @@ void Y_IntermissionDrawer(void)
 	// Returns early if there's no players to draw
 	Y_PlayerStandingsDrawer(&data, x);
 
+	if (sorttic == -1 || ((intertic - sorttic) < 8))
+		K_drawKartTeamScores(true, x);
+
 	// Draw bottom (and top) pieces
 skiptallydrawer:
 	if (!LUA_HudEnabled(hud_intermissionmessages))

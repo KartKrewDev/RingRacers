@@ -5337,6 +5337,39 @@ boolean P_IsKartFieldItem(INT32 type)
 	}
 }
 
+// This item keeps track of its owner by the mobj target
+boolean P_IsRelinkItem(INT32 type)
+{
+	switch (type)
+	{
+		case MT_POGOSPRING:
+		case MT_EGGMANITEM:
+		case MT_EGGMANITEM_SHIELD:
+		case MT_BANANA:
+		case MT_BANANA_SHIELD:
+		case MT_ORBINAUT:
+		case MT_ORBINAUT_SHIELD:
+		case MT_JAWZ:
+		case MT_JAWZ_SHIELD:
+		case MT_SSMINE:
+		case MT_SSMINE_SHIELD:
+		case MT_LANDMINE:
+		case MT_DROPTARGET:
+		case MT_DROPTARGET_SHIELD:
+		case MT_BALLHOG:
+		case MT_SPB:
+		case MT_BUBBLESHIELDTRAP:
+		case MT_GARDENTOP:
+		case MT_HYUDORO_CENTER:
+		case MT_SINK:
+		case MT_GACHABOM:
+			return true;
+
+		default:
+			return false;
+	}
+}
+
 boolean K_IsMissileOrKartItem(mobj_t *mo)
 {
 	if (mo->flags & MF_MISSILE)
@@ -5402,20 +5435,9 @@ static boolean P_IsTrackerType(INT32 type)
 		case MT_GARDENTOP: // Frey
 			return true;
 
-		case MT_JAWZ_SHIELD: // Pick-me-up
-		case MT_ORBINAUT:
-		case MT_ORBINAUT_SHIELD:
-		case MT_DROPTARGET:
-		case MT_DROPTARGET_SHIELD:
-		case MT_LANDMINE:
-		case MT_BANANA:
-		case MT_BANANA_SHIELD:
-		case MT_GACHABOM:
-		case MT_EGGMANITEM:
-		case MT_EGGMANITEM_SHIELD:
-			return true;
-
 		default:
+			if (K_IsPickMeUpItem(type))
+				return true;
 			return false;
 	}
 }
@@ -10355,7 +10377,7 @@ void P_MobjThinker(mobj_t *mobj)
 	I_Assert(mobj != NULL);
 	I_Assert(!P_MobjWasRemoved(mobj));
 
-	if (P_IsKartItem(mobj->type) && mobj->target && !P_MobjWasRemoved(mobj->target))
+	if (P_IsRelinkItem(mobj->type) && mobj->target && !P_MobjWasRemoved(mobj->target))
 	{
 		player_t *link = mobj->target->player;
 		if (link && playeringame[link-players] && !link->spectator)
@@ -10366,7 +10388,7 @@ void P_MobjThinker(mobj_t *mobj)
 	if (mobj->target && P_MobjWasRemoved(mobj->target))
 	{
 		P_SetTarget(&mobj->target, NULL);
-		if (P_IsKartItem(mobj->type) && mobj->relinkplayer && mobj->relinkplayer <= MAXPLAYERS)
+		if (P_IsRelinkItem(mobj->type) && mobj->relinkplayer && mobj->relinkplayer <= MAXPLAYERS)
 		{
 			player_t *relink = &players[mobj->relinkplayer-1];
 			if (playeringame[relink-players] && !relink->spectator && relink->mo && !P_MobjWasRemoved(relink->mo))

@@ -1102,6 +1102,12 @@ boolean K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2)
 		disty = FixedMul(minBump, normalisedy);
 	}
 
+	if (mobj1->player && mobj2->player && G_SameTeam(mobj1->player, mobj2->player))
+	{
+		distx /= 3;
+		disty /= 3;
+	}
+
 	if (mass2 > 0)
 	{
 		mobj1->momx = mobj1->momx - FixedMul(FixedDiv(2*mass2, mass1 + mass2), distx);
@@ -3071,7 +3077,8 @@ tripwirepass_t K_TripwirePassConditions(const player_t *player)
 {
 	if (
 			player->invincibilitytimer ||
-			player->sneakertimer
+			player->sneakertimer ||
+			player->weaksneakertimer
 		)
 		return TRIPWIRE_BLASTER;
 
@@ -4176,8 +4183,8 @@ void K_SpawnAmps(player_t *player, UINT8 amps, mobj_t *impact)
 	if (amps == 0)
 		return;
 
-	UINT32 itemdistance = max(0, min( FRACUNIT-1, K_GetItemRouletteDistance(player, D_NumPlayersInRace()))); // cap this to FRACUNIT-1, so it doesn't wrap when turning it into fixed_t
-	fixed_t itemdistmult = FRACUNIT + max( 0, min( FRACUNIT, (itemdistance<<FRACBITS) / MAXAMPSCALINGDIST));
+	UINT32 itemdistance = min(FRACUNIT-1, K_GetItemRouletteDistance(player, D_NumPlayersInRace())); // cap this to FRACUNIT-1, so it doesn't wrap when turning it into fixed_t
+	fixed_t itemdistmult = FRACUNIT + min(FRACUNIT, (itemdistance<<FRACBITS) / MAXAMPSCALINGDIST);
 	UINT16 scaledamps = min(amps, amps * (10 + (9-player->kartspeed) - (9-player->kartweight)) / 10);
 	// Debug print for scaledamps calculation
 	// CONS_Printf("K_SpawnAmps: player=%s, amps=%d, kartspeed=%d, kartweight=%d, itemdistance=%d, itemdistmult=%0.2f, statscaledamps=%d, distscaledamps=%d\n",
@@ -5460,7 +5467,7 @@ void K_DebtStingPlayer(player_t *player, mobj_t *source)
 {
 	INT32 length = TICRATE;
 
-	if (source->player)
+	if (source && !P_MobjWasRemoved(source) && source->player)
 	{
 		length += (4 * (source->player->kartweight - player->kartweight));
 	}
@@ -7213,6 +7220,7 @@ static void K_FlameDashLeftoverSmoke(mobj_t *src)
 void K_DoSneaker(player_t *player, INT32 type)
 {
 
+	INT32 originaltype = type;
 	fixed_t intendedboost = FRACUNIT/2;
 
 	// If you've already got an rocket sneaker type boost, panel sneakers will instead turn into rocket sneaker boosts
@@ -7317,16 +7325,27 @@ void K_DoSneaker(player_t *player, INT32 type)
 	{
 		case 0: // Panel sneaker
 			player->panelsneakertimer = sneakertime;
+			break;
+		case 1: // Single item sneaker
+			player->sneakertimer = sneakertime;
+			break;
+		case 2: // Rocket sneaker (aka. weaksneaker)
+			player->weaksneakertimer = 3*sneakertime/4;
+			break;
+	}
+
+	// Give invincibility based on the ACTUAL boost type used, not the "promoted" boost type
+	switch (originaltype)
+	{
+		case 0: // Panel sneaker
 			if (player->overshield > 0) {
 				player->overshield = min( player->overshield + TICRATE/3, max( TICRATE, player->overshield ));
 			}
 			break;
 		case 1: // Single item sneaker
-			player->sneakertimer = sneakertime;
 			player->overshield = max( player->overshield, 25 );
 			break;
 		case 2: // Rocket sneaker (aka. weaksneaker)
-			player->weaksneakertimer = 3*sneakertime/4;
 			player->overshield = max( player->overshield, TICRATE/2 );
 			break;
 	}
@@ -9816,6 +9835,11 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->invincibilitytimer--;
 		if (player->invincibilitytimer && K_IsPlayerScamming(player))
 			player->invincibilitytimer--;
+		
+		// Extra tripwire leniency for the end of invincibility
+		if (player->invincibilitytimer <= 0) {
+			player->tripwireLeniency = max( player->tripwireLeniency, TICRATE );
+		}
 	}
 
 	// The precise ordering of start-of-level made me want to cut my head off,
@@ -15705,6 +15729,12 @@ void K_MakeObjectReappear(mobj_t *mo)
 
 boolean K_PlayerCanUseItem(player_t *player)
 {
+	if (player->icecube.frozen)
+		return false;
+
+	if (player->turbine && (player->mo->flags & MF_NOCLIP))
+		return false;
+
 	return (player->mo->health > 0 && !player->spectator && !P_PlayerInPain(player) && !mapreset && leveltime > introtime);
 }
 
@@ -15854,6 +15884,8 @@ boolean K_IsPickMeUpItem(mobjtype_t type)
 		case MT_EGGMANITEM:
 		case MT_EGGMANITEM_SHIELD:
 		case MT_BUBBLESHIELDTRAP:
+		case MT_SSMINE:
+		case MT_SSMINE_SHIELD:
 			return true;
 		default:
 			return false;
@@ -15902,6 +15934,10 @@ static boolean K_PickUp(player_t *player, mobj_t *picked)
 			break;
 		case MT_SINK:
 			type = KITEM_KITCHENSINK;
+			break;
+		case MT_SSMINE:
+		case MT_SSMINE_SHIELD:
+			type = KITEM_MINE;
 			break;
 		default:
 			type = KITEM_SAD;

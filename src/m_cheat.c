@@ -115,11 +115,80 @@ void Command_Hurtme_f(void)
 
 	if (COM_Argc() < 2)
 	{
-		CONS_Printf(M_GetText("hurtme <damage>: Damage yourself by a specific amount\n"));
+		CONS_Printf(M_GetText("hurtme <damage>: Damage yourself with specific flags\n"));
+		CONS_Printf(M_GetText("Norm 0    Wipe 1    Expl 2    Tumb 3    Stng 4\n"));
+		CONS_Printf(M_GetText("Krma 5    Volt 6    Stmb 7    Whmb 8\n"));
+		CONS_Printf(M_GetText("Ikll 128  Dpit 129  Crsh 130  Spec 131  Time 132\n"));
+		CONS_Printf(M_GetText("Wmbo 16   Stel 32   Hslf 64\n"));
 		return;
 	}
 
 	D_Cheat(consoleplayer, CHEAT_HURT, atoi(COM_Argv(1)));
+}
+
+void Command_Spinout_f(void)
+{
+	REQUIRE_CHEATS;
+	REQUIRE_INLEVEL;
+
+	D_Cheat(consoleplayer, CHEAT_HURT, DMG_NORMAL);
+}
+
+void Command_Wipeout_f(void)
+{
+	REQUIRE_CHEATS;
+	REQUIRE_INLEVEL;
+
+	D_Cheat(consoleplayer, CHEAT_HURT, DMG_WIPEOUT);
+}
+
+void Command_Explode_f(void)
+{
+	REQUIRE_CHEATS;
+	REQUIRE_INLEVEL;
+
+	D_Cheat(consoleplayer, CHEAT_HURT, DMG_EXPLODE);
+}
+
+void Command_Sting_f(void)
+{
+	REQUIRE_CHEATS;
+	REQUIRE_INLEVEL;
+
+	D_Cheat(consoleplayer, CHEAT_HURT, DMG_STING);
+}
+
+
+void Command_Tumble_f(void)
+{
+	REQUIRE_CHEATS;
+	REQUIRE_INLEVEL;
+
+	D_Cheat(consoleplayer, CHEAT_HURT, DMG_TUMBLE);
+}
+
+void Command_Stumble_f(void)
+{
+	REQUIRE_CHEATS;
+	REQUIRE_INLEVEL;
+
+	D_Cheat(consoleplayer, CHEAT_HURT, DMG_STUMBLE);
+}
+
+void Command_Whumble_f(void)
+{
+	REQUIRE_CHEATS;
+	REQUIRE_INLEVEL;
+
+	D_Cheat(consoleplayer, CHEAT_HURT, DMG_WHUMBLE);
+}
+
+void Command_Kill_f(void)
+{
+	REQUIRE_CHEATS;
+	REQUIRE_INLEVEL;
+
+	D_Cheat(consoleplayer, CHEAT_HURT, DMG_INSTAKILL);
 }
 
 void Command_RTeleport_f(void)
