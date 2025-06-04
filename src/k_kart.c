@@ -15710,6 +15710,12 @@ void K_MakeObjectReappear(mobj_t *mo)
 
 boolean K_PlayerCanUseItem(player_t *player)
 {
+	if (player->icecube.frozen)
+		return false;
+
+	if (player->turbine && (player->mo->flags & MF_NOCLIP))
+		return false;
+
 	return (player->mo->health > 0 && !player->spectator && !P_PlayerInPain(player) && !mapreset && leveltime > introtime);
 }
 
