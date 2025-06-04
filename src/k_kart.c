@@ -741,6 +741,7 @@ static fixed_t K_PlayerWeight(mobj_t *mobj, mobj_t *against)
 		// Applies rubberbanding, to prevent rubberbanding bots
 		// from causing super crazy bumps.
 		fixed_t spd = K_GetKartSpeed(mobj->player, false, true);
+		fixed_t unmodifiedspd = K_GetKartSpeed(mobj->player, false, false);
 
 		fixed_t speedfactor = 8 * mapobjectscale;
 
@@ -757,7 +758,10 @@ static fixed_t K_PlayerWeight(mobj_t *mobj, mobj_t *against)
 		}
 
 		if (mobj->player->speed > spd)
-			weight += FixedDiv((mobj->player->speed - spd), speedfactor);
+			weight += FixedDiv(
+				FixedDiv((mobj->player->speed - spd), speedfactor),
+				FixedDiv(spd, unmodifiedspd)
+			);
 	}
 
 	return weight;
