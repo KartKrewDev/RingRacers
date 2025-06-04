@@ -2371,15 +2371,15 @@ static void P_UpdatePlayerAngle(player_t *player)
 		// Don't force another turning tic, just give them the desired angle!
 #endif
 
-		if (!(player->cmd.buttons & BT_DRIFT) && (abs(player->drift) == 1) && ((player->cmd.turning > 0) == (player->drift > 0)) && player->handleboost > SLIPTIDEHANDLING)
+		if (!(player->cmd.buttons & BT_DRIFT) && (abs(player->drift) == 1) && ((player->cmd.turning > 0) == (player->drift > 0)) && player->handleboost >= SLIPTIDEHANDLING)
 		{
 			// This drift release is eligible to start a sliptide. Don't do lag-compensation countersteer behavior that could destroy it!
-			if (player->cmd.turning >= 0)
+			if (player->cmd.turning > 0)
 			{
 				steeringLeft = max(steeringLeft, 1);
 				steeringRight = max(steeringRight, steeringLeft);
 			}
-			else if (player->cmd.turning <= 0)
+			else if (player->cmd.turning < 0)
 			{
 				steeringRight = min(steeringRight, -1);
 				steeringLeft = min(steeringLeft, steeringRight);
