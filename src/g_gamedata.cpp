@@ -32,6 +32,7 @@ namespace fs = std::filesystem;
 #define GD_VERSION_MINOR (2)
 
 #define GD_MINIMUM_SPRAYCANSV2 (2)
+#define GD_MINIMUM_TIMEATTACKV2 (2)
 
 void srb2::save_ng_gamedata()
 {
@@ -214,7 +215,7 @@ void srb2::save_ng_gamedata()
 			{
 				newrecords.bestskin = String(skinref.unloaded->name);
 			}
-			else
+			else if (skinref.id < numskins)
 			{
 				newrecords.bestskin = String(skins[skinref.id].name);
 			}
@@ -614,10 +615,22 @@ void srb2::load_ng_gamedata()
 		dummyrecord.mapvisited |= mappair.second.visited.encore ? MV_ENCORE : 0;
 		dummyrecord.mapvisited |= mappair.second.visited.spbattack ? MV_SPBATTACK : 0;
 		dummyrecord.mapvisited |= mappair.second.visited.mysticmelody ? MV_MYSTICMELODY : 0;
-		dummyrecord.timeattack.time = mappair.second.stats.timeattack.besttime;
-		dummyrecord.timeattack.lap = mappair.second.stats.timeattack.bestlap;
-		dummyrecord.spbattack.time = mappair.second.stats.spbattack.besttime;
-		dummyrecord.spbattack.lap = mappair.second.stats.spbattack.bestlap;
+
+		if (minorversion >= GD_MINIMUM_TIMEATTACKV2)
+		{
+			dummyrecord.timeattack.time = mappair.second.stats.timeattack.besttime;
+			dummyrecord.timeattack.lap = mappair.second.stats.timeattack.bestlap;
+			dummyrecord.spbattack.time = mappair.second.stats.spbattack.besttime;
+			dummyrecord.spbattack.lap = mappair.second.stats.spbattack.bestlap;
+		}
+		else
+		{
+			converted = true;
+
+			dummyrecord.timeattack.time = dummyrecord.timeattack.lap = \
+			dummyrecord.spbattack.time = dummyrecord.spbattack.lap = 0;
+		}
+
 		dummyrecord.timeplayed = mappair.second.stats.time.total;
 		dummyrecord.netgametimeplayed = mappair.second.stats.time.netgame;
 		dummyrecord.modetimeplayed[GDGT_RACE] = mappair.second.stats.time.race;
@@ -655,7 +668,7 @@ void srb2::load_ng_gamedata()
 
 			mapheaderinfo[mapnum]->records = dummyrecord;
 		}
-		else if (dummyrecord.mapvisited & MV_BEATEN
+		else if (dummyrecord.mapvisited & (MV_VISITED|MV_BEATEN)
 		|| dummyrecord.timeattack.time != 0 || dummyrecord.timeattack.lap != 0
 		|| dummyrecord.spbattack.time != 0 || dummyrecord.spbattack.lap != 0
 		|| dummyrecord.spraycan != MCAN_INVALID)
