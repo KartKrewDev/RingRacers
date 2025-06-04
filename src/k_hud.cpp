@@ -7204,17 +7204,19 @@ static std::vector<messagestate_t> messagestates{MAXSPLITSCREENPLAYERS};
 
 void K_AddMessage(const char *msg, boolean interrupt, boolean persist)
 {
-	for (auto &state : messagestates)
+	for (UINT8 i = 0; i <= r_splitscreen; i++)
 	{
-		if (interrupt)
-			state.clear();
+		messagestate_t *state = &messagestates[i];
 
-		std::string parsedmsg = srb2::Draw::TextElement().parse(msg).string();
+		if (interrupt)
+			state->clear();
+
+		std::string parsedmsg = srb2::Draw::TextElement().as(g_localplayers[i]).parse(msg).string();
 
 		if (persist)
-			state.objective = parsedmsg;
+			state->objective = parsedmsg;
 		else
-			state.add(parsedmsg);
+			state->add(parsedmsg);
 	}
 }
 

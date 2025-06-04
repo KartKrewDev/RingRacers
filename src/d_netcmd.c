@@ -73,6 +73,7 @@
 #include "k_bans.h"
 #include "k_director.h"
 #include "k_credits.h"
+#include "k_hud.h" // K_AddMessage
 
 #ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 #include "m_avrecorder.h"
@@ -179,6 +180,8 @@ static void Command_Archivetest_f(void);
 #endif
 
 static void Command_KartGiveItem_f(void);
+
+static void Command_DebugMessageFeed(void);
 
 static void Command_Schedule_Add(void);
 static void Command_Schedule_Clear(void);
@@ -433,6 +436,8 @@ void D_RegisterServerCommands(void)
 	COM_AddDebugCommand("give2", Command_KartGiveItem_f);
 	COM_AddDebugCommand("give3", Command_KartGiveItem_f);
 	COM_AddDebugCommand("give4", Command_KartGiveItem_f);
+
+	COM_AddDebugCommand("debugmessagefeed", Command_DebugMessageFeed);
 
 	COM_AddCommand("schedule_add", Command_Schedule_Add);
 	COM_AddCommand("schedule_clear", Command_Schedule_Clear);
@@ -6368,6 +6373,11 @@ static void Command_Archivetest_f(void)
 	CONS_Printf("Done. No crash.\n");
 }
 #endif
+
+static void Command_DebugMessageFeed(void)
+{
+	K_AddMessage("Hello world! A = <a>, Right = <right>", true, false);
+}
 
 /** Give yourself an, optional quantity or one of, an item.
 */
