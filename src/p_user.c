@@ -2313,6 +2313,8 @@ static void P_UpdatePlayerAngle(player_t *player)
 		}
 	}
 
+	player->botvars.predictionError = 0;
+
 	// Don't apply steering just yet. If we make a correction, we'll need to adjust it.
 	INT16 targetsteering = K_UpdateSteeringValue(player->steering, player->cmd.turning);
 	angleChange = K_GetKartTurnValue(player, targetsteering) << TICCMD_REDUCE;

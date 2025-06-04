@@ -13216,15 +13216,16 @@ fixed_t K_PlayerBaseFriction(const player_t *player, fixed_t original)
 			frict -= extraFriction;
 
 			// If bots are moving in the wrong direction relative to where they want to look, add some extra grip.
-			angle_t MAXERROR = 45*ANG1;
+			angle_t MAXERROR = ANGLE_45;
 			fixed_t errorfrict = Easing_Linear(min(FRACUNIT, FixedDiv(player->botvars.predictionError, MAXERROR)), 0, FRACUNIT>>2);
 
 			if (player->currentwaypoint && player->currentwaypoint->mobj)
 			{
-				fixed_t myradius = FixedInt(FixedDiv(player->currentwaypoint->mobj->radius, mapobjectscale));
+				INT16 myradius = FixedDiv(player->currentwaypoint->mobj->radius, mapobjectscale) / FRACUNIT;
+				INT16 SMALL_WAYPOINT = 450;
 				
-				if (myradius < 400)
-					errorfrict += errorfrict/100 * (300 - myradius);
+				if (myradius < SMALL_WAYPOINT)
+					errorfrict *= 2;
 			}
 
 			errorfrict = min(errorfrict, frict/4);
