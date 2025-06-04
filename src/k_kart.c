@@ -15844,6 +15844,10 @@ void K_BotHitPenalty(player_t *player)
 
 boolean K_IsPickMeUpItem(mobjtype_t type)
 {
+	extern consvar_t cv_debugpickmeup;
+	if (cv_debugpickmeup.value)
+		return false;
+	
 	switch (type)
 	{
 		case MT_JAWZ:
@@ -15963,6 +15967,10 @@ static boolean K_PickUp(player_t *player, mobj_t *picked)
 // ACHTUNG this destroys items when returning true, make sure to bail out
 boolean K_TryPickMeUp(mobj_t *m1, mobj_t *m2, boolean allowHostile)
 {
+	extern consvar_t cv_debugpickmeup;
+	if (cv_debugpickmeup.value)
+		return false;
+
 	if (!m1 || P_MobjWasRemoved(m1))
 		return false;
 

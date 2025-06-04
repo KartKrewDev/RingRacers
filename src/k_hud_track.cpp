@@ -40,7 +40,7 @@
 
 using namespace srb2;
 
-extern "C" consvar_t cv_debughudtracker, cv_battleufotest, cv_kartdebugwaypoints;
+extern "C" consvar_t cv_debughudtracker, cv_battleufotest, cv_kartdebugwaypoints, cv_debugpickmeup;
 
 namespace
 {
