@@ -7469,6 +7469,38 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				mobj->momx = mobj->momy = 0;
 				S_StartSound(mobj, mobj->info->activesound);
 				P_SetMobjState(mobj, S_SSMINE_DEPLOY1);
+
+				spritenum_t parts[4] = {SPR_SSMA, SPR_SSMB, SPR_SSMC, SPR_SSMD};
+
+				#define RADIUSCOPIES 6
+
+				UINT8 lowlight = 191;
+				UINT8 highlight = 255;
+				UINT8 lightpercopy = (highlight - lowlight) / RADIUSCOPIES;
+
+				angle_t increment = ANG1*10;
+
+				for (UINT8 i = 0; i < 4; i++)
+				{
+					for (UINT8 j = 0; j < RADIUSCOPIES; j++)
+					{
+						mobj_t *radius = P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_MINERADIUS);
+						radius->angle -= j*increment;
+						P_SetTarget(&radius->target, mobj);
+
+						P_InstaScale(radius, mobj->scale/4);
+						radius->destscale = mobj->scale * 6; // Matches SSMINE_DEPLOY8 radius, will scale down when thinking after
+						radius->scalespeed = mobj->scale;
+
+						radius->sprite = parts[i];
+
+						radius->renderflags |= RF_ABSOLUTELIGHTLEVEL;
+						radius->lightlevel = highlight - (lightpercopy * j);
+						radius->renderflags |= (cv_reducevfx.value) ? RF_TRANS90 : RF_TRANS50;
+					}
+				}
+
+				#undef RADIUSCOPIES
 			}
 		}
 
@@ -8395,6 +8427,44 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			P_MoveOrigin(mobj, destx, desty, mobj->target->z + zoff);
 		}
+		break;
+	}
+	case MT_MINERADIUS:
+	{
+		if (!mobj->target || P_MobjWasRemoved(mobj->target))
+		{
+			P_RemoveMobj(mobj);
+			return false;
+		}
+
+		statenum_t stateindex = mobj->target->state - states;
+
+		mobj->x = mobj->target->x;
+		mobj->y = mobj->target->y;
+		mobj->z = mobj->target->z + mobj->target->height/4;
+
+		K_MatchGenericExtraFlags(mobj, mobj->target);
+
+		mobj->color = mobj->target->color;
+		mobj->colorized = true;
+		mobj->angle += ANG1*5;
+
+		if (stateindex == S_SSMINE_DEPLOY8)
+		{
+			mobj->renderflags &= ~(RF_TRANSMASK);
+			if (cv_reducevfx.value)
+				mobj->renderflags |= RF_TRANS80;
+		}
+
+		if (stateindex == S_SSMINE_DEPLOY9) // Horseshit, see SSMineSearch
+		{
+			mobj->destscale = mobj->target->scale*4;
+		}
+
+
+		// mobj_t *ghost = P_SpawnGhostMobj(mobj);
+		// ghost->fuse = 12;
+
 		break;
 	}
 	case MT_SIDETRICK:

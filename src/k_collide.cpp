@@ -269,11 +269,17 @@ static inline BlockItReturn_t PIT_SSMineSearch(mobj_t *thing)
 		return BMIT_CONTINUE;
 	}
 
-	if (thing == grenade->target) // Don't blow up at your owner instantly.
-		return BMIT_CONTINUE;
+	extern consvar_t cv_debugpickmeup;
 
-	if (grenade->target->player && thing->player && G_SameTeam(grenade->target->player, thing->player))
-		return BMIT_CONTINUE;
+	if (!cv_debugpickmeup.value)
+	{
+		if (thing == grenade->target) // Don't blow up at your owner instantly.
+			return BMIT_CONTINUE;
+
+		if (grenade->target->player && thing->player && G_SameTeam(grenade->target->player, thing->player))
+			return BMIT_CONTINUE;
+	}
+
 
 	if (PIT_SSMineChecks(thing) == true)
 		return BMIT_CONTINUE;
