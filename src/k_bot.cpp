@@ -581,11 +581,13 @@ const botcontroller_t *K_GetBotController(const mobj_t *mobj)
 fixed_t K_BotMapModifier(void)
 {
 	constexpr INT32 complexity_scale = 10000;
-	constexpr fixed_t modifier_max = FRACUNIT * 2;
+	fixed_t modifier_max = FRACUNIT * 2;
+	fixed_t modifier_min = 3 * FRACUNIT / 10;
+	modifier_min -= FRACUNIT;
 
 	const fixed_t complexity_value = std::clamp<fixed_t>(
 		FixedDiv(K_GetTrackComplexity(), complexity_scale),
-		-FixedDiv(FRACUNIT, modifier_max),
+		modifier_min,
 		modifier_max
 	);
 
@@ -677,7 +679,21 @@ fixed_t K_BotRubberband(const player_t *player)
 		return FRACUNIT;
 	}
 
-	fixed_t difficultyEase = ((player->botvars.difficulty - 1) * FRACUNIT) / (MAXBOTDIFFICULTY - 1);
+	fixed_t expreduce = 0;
+
+	// Allow the status quo to assert itself a bit. Bots get most of their speed from their
+	// mechanics adjustments, not from items, so kill some bot speed if they've got bad EXP.
+	if (player->gradingfactor < FRACUNIT && !(player->botvars.rival))
+	{
+		UINT8 levelreduce = 3; // How much to drop the "effective level" of bots that are consistently behind
+		fixed_t effgradingfactor = std::max(FRACUNIT/2, player->gradingfactor);
+		expreduce = Easing_Linear((effgradingfactor - FRACUNIT/2) * 2, levelreduce*FRACUNIT, 0);
+	}
+
+	fixed_t difficultyEase = (((player->botvars.difficulty - 1) * FRACUNIT) - expreduce) / (MAXBOTDIFFICULTY - 1);
+
+	if (difficultyEase < 0)
+		difficultyEase = 0;
 
 	if (cv_levelskull.value)
 		difficultyEase = FRACUNIT;
@@ -1427,9 +1443,11 @@ static INT32 K_HandleBotTrack(const player_t *player, ticcmd_t *cmd, botpredicti
 	I_Assert(predict != nullptr);
 
 	destangle = K_BotSmoothLanding(player, destangle);
-
 	moveangle = player->mo->angle + K_GetUnderwaterTurnAdjust(player);
 	anglediff = AngleDeltaSigned(moveangle, destangle);
+
+	// predictionerror
+	cmd->angle = std::min(destangle - moveangle, moveangle - destangle) >> TICCMD_REDUCE;
 
 	if (anglediff < 0)
 	{
@@ -1712,7 +1730,7 @@ static void K_BuildBotPodiumTiccmd(const player_t *player, ticcmd_t *cmd)
 
 		Build ticcmd for bots with a style of BOT_STYLE_NORMAL
 --------------------------------------------------*/
-static void K_BuildBotTiccmdNormal(const player_t *player, ticcmd_t *cmd)
+static void K_BuildBotTiccmdNormal(player_t *player, ticcmd_t *cmd)
 {
 	precise_t t = 0;
 
@@ -1723,6 +1741,9 @@ static void K_BuildBotTiccmdNormal(const player_t *player, ticcmd_t *cmd)
 	angle_t destangle = 0;
 	UINT8 spindash = 0;
 	INT32 turnamt = 0;
+
+	cmd->angle = 0; // For bots, this is used to transmit predictionerror to gamelogic.
+	// Will be overwritten by K_HandleBotTrack if we have a destination.
 
 	if (!(gametyperules & GTR_BOTS) // No bot behaviors
 		|| K_GetNumWaypoints() == 0 // No waypoints
@@ -1939,6 +1960,9 @@ static void K_BuildBotTiccmdNormal(const player_t *player, ticcmd_t *cmd)
 		ps_bots[player - players].item = I_GetPreciseTime() - t;
 	}
 
+	// Update turning quicker if we're moving at high speeds.
+	UINT8 turndelta = (player->speed > (7 * K_GetKartSpeed(player, false, false) / 4)) ? 2 : 1;
+
 	if (turnamt != 0)
 	{
 		if (turnamt > KART_FULLTURN)
@@ -1955,7 +1979,7 @@ static void K_BuildBotTiccmdNormal(const player_t *player, ticcmd_t *cmd)
 			// Count up
 			if (player->botvars.turnconfirm < BOTTURNCONFIRM)
 			{
-				cmd->bot.turnconfirm++;
+				cmd->bot.turnconfirm += turndelta;
 			}
 		}
 		else if (turnamt < 0)
@@ -1963,7 +1987,7 @@ static void K_BuildBotTiccmdNormal(const player_t *player, ticcmd_t *cmd)
 			// Count down
 			if (player->botvars.turnconfirm > -BOTTURNCONFIRM)
 			{
-				cmd->bot.turnconfirm--;
+				cmd->bot.turnconfirm -= turndelta;
 			}
 		}
 		else

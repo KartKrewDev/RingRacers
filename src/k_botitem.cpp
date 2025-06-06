@@ -1201,7 +1201,7 @@ static void K_BotItemLightning(const player_t *player, ticcmd_t *cmd)
 	ZoneScoped;
 
 	fixed_t radius = 192 * player->mo->scale;
-	radius = Easing_Linear(FRACUNIT * player->botvars.difficulty / MAXBOTDIFFICULTY, 2*radius, radius);
+	radius = Easing_Linear(FRACUNIT * player->botvars.difficulty / MAXBOTDIFFICULTY, 2*radius, 4*radius/3);
 
 	if (K_BotUseItemNearPlayer(player, cmd, radius) == false)
 	{
@@ -1243,7 +1243,7 @@ static void K_BotItemBubble(const player_t *player, ticcmd_t *cmd)
 		if (player->bubblecool <= 0)
 		{
 			fixed_t radius = 192 * player->mo->scale;
-			radius = Easing_Linear(FRACUNIT * player->botvars.difficulty / MAXBOTDIFFICULTY, 2*radius, radius);
+			radius = Easing_Linear(FRACUNIT * player->botvars.difficulty / MAXBOTDIFFICULTY, 2*radius, 4*radius/3);
 
 			for (i = 0; i < MAXPLAYERS; i++)
 			{

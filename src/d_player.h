@@ -420,6 +420,8 @@ struct botvars_t
 
 	UINT8 roulettePriority; // What items to go for on the roulette
 	tic_t rouletteTimeout; // If it takes too long to decide, try lowering priority until we find something valid.
+
+	angle_t predictionError; // How bad is our momentum angle relative to where we're trying to go?
 };
 
 // player_t struct for round-specific condition tracking

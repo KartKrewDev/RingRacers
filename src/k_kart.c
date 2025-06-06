@@ -741,6 +741,7 @@ static fixed_t K_PlayerWeight(mobj_t *mobj, mobj_t *against)
 		// Applies rubberbanding, to prevent rubberbanding bots
 		// from causing super crazy bumps.
 		fixed_t spd = K_GetKartSpeed(mobj->player, false, true);
+		fixed_t unmodifiedspd = K_GetKartSpeed(mobj->player, false, false);
 
 		fixed_t speedfactor = 8 * mapobjectscale;
 
@@ -757,7 +758,10 @@ static fixed_t K_PlayerWeight(mobj_t *mobj, mobj_t *against)
 		}
 
 		if (mobj->player->speed > spd)
-			weight += FixedDiv((mobj->player->speed - spd), speedfactor);
+			weight += FixedDiv(
+				FixedDiv((mobj->player->speed - spd), speedfactor),
+				FixedDiv(spd, unmodifiedspd)
+			);
 	}
 
 	return weight;
@@ -13231,6 +13235,22 @@ fixed_t K_PlayerBaseFriction(const player_t *player, fixed_t original)
 			// A bit extra friction to help them without drifting.
 			// Remove this line once they can drift.
 			frict -= extraFriction;
+
+			// If bots are moving in the wrong direction relative to where they want to look, add some extra grip.
+			angle_t MAXERROR = ANGLE_45;
+			fixed_t errorfrict = Easing_Linear(min(FRACUNIT, FixedDiv(player->botvars.predictionError, MAXERROR)), 0, FRACUNIT>>2);
+
+			if (player->currentwaypoint && player->currentwaypoint->mobj)
+			{
+				INT16 myradius = FixedDiv(player->currentwaypoint->mobj->radius, mapobjectscale) / FRACUNIT;
+				INT16 SMALL_WAYPOINT = 450;
+				
+				if (myradius < SMALL_WAYPOINT)
+					errorfrict *= 2;
+			}
+
+			errorfrict = min(errorfrict, frict/4);
+			frict -= errorfrict;
 
 			// Bots gain more traction as they rubberband.
 			const fixed_t traction_value = FixedMul(player->botvars.rubberband, max(FRACUNIT, K_BotMapModifier()));
