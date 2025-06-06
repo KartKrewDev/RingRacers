@@ -8446,7 +8446,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		K_MatchGenericExtraFlags(mobj, mobj->target);
 
 		mobj->color = mobj->target->color;
-		mobj->colorized = false;
+		mobj->colorized = true;
 		mobj->angle += ANG1*5;
 
 		if (stateindex == S_SSMINE_DEPLOY8)
