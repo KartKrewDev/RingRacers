@@ -4936,7 +4936,7 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 	{
 		mobj->owner = (mobj_t *)(size_t)READUINT32(save->p);
 	}
-	if (diff3 & MD3_OWNER)
+	if (diff3 & MD3_RELINK_PLAYER)
 	{
 		mobj->relinkplayer = READUINT8(save->p);
 	}
