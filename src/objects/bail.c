@@ -62,7 +62,6 @@ void Obj_BailChargeThink (mobj_t *aura)
 		aura->flags |= MF_NOCLIPTHING;
         // aura->color = mo->color;
 
-        aura->anim_duration = 999; // This prevents FF_ANIMATE from working, we're gonna animate manually ourselves here
         aura->frame = ((player->bailcharge-1)/2); // By syncing the frame with the charge timer here
 
         fixed_t baseScale = 13*mo->scale/10;

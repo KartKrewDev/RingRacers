@@ -2168,7 +2168,7 @@ state_t states[NUMSTATES] =
 	{SPR_BAIL,                 FF_FULLBRIGHT|FF_ANIMATE|0, 8, {NULL}, 8, 1, S_BAIB}, // S_BAIL
 	{SPR_BAIB,                 FF_FULLBRIGHT|FF_ANIMATE|0, 10, {NULL}, 9, 1, S_NULL}, // S_BAIB
 	{SPR_BAIC,                 FF_FULLBRIGHT|FF_ANIMATE|0, 11, {NULL}, 10, 1, S_NULL}, // S_BAIC
-	{SPR_TECH,                 FF_FULLBRIGHT|FF_ANIMATE|0, -1, {NULL}, 41, 1, S_NULL}, // S_BAILCHARGE
+	{SPR_TECH,                 0, -1, {NULL}, 41, 1, S_NULL}, // S_BAILCHARGE
 
 	{SPR_AMPB,                 FF_FULLBRIGHT|FF_PAPERSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_AMPRING
 	{SPR_AMPC,                 FF_FULLBRIGHT|FF_ANIMATE|0, -1, {NULL}, 4, 2, S_NULL}, // S_AMPBODY

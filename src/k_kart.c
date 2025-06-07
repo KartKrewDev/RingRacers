@@ -13971,6 +13971,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		{
 			mobj_t *bail = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, MT_BAILCHARGE);
 			P_SetTarget(&bail->target, player->mo);
+			bail->renderflags |= RF_FULLBRIGHT; // set fullbright here, were gonna animate frames in the thinker and it saves us from setting FF_FULLBRIGHT every frame
 		}
 	}
 	else
