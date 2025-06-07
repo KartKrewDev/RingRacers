@@ -3308,7 +3308,7 @@ static void K_drawKartDuelScores(void)
 	player_t *foe = K_DuelOpponent(stplyr);
 
 	INT32 basex = 0;
-	INT32 basey = 40;
+	INT32 basey = 48;
 	INT32 flags = V_SNAPTOLEFT|V_HUDTRANS|V_SLIDEIN;
 
 	// score bars, here barheight is the size of bars at tied score

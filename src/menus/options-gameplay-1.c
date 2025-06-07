@@ -56,6 +56,9 @@ menuitem_t OPTIONS_Gameplay[] =
 	{IT_HEADER, "Duel...", NULL,
 		NULL, {NULL}, 0, 0},
 
+	{IT_STRING | IT_CVAR, "Duel", "A one-versus-one tug of war! Disable for standard racing.",
+		NULL, {.cvar = &cv_duel}, 0, 0},
+
 	{IT_STRING | IT_CVAR, "Duel Time Limit", "How long it takes for Margin Boost to kick in (seconds).",
 		NULL, {.cvar = &cv_dueltimelimit}, 0, 0},
 

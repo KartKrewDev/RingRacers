@@ -727,6 +727,7 @@ void KartSpeed_OnChange(void);
 consvar_t cv_kartspeed = UnsavedNetVar("gamespeed", "Auto Gear").values(kartspeed_cons_t).onchange_noinit(KartSpeed_OnChange);
 
 consvar_t cv_teamplay = UnsavedNetVar("teamplay", "Off").on_off();
+consvar_t cv_duel = UnsavedNetVar("duel", "On").on_off();
 
 consvar_t cv_kartusepwrlv = UnsavedNetVar("mobiums", "Yes").yes_no();
 

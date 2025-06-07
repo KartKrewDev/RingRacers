@@ -872,6 +872,7 @@ extern UINT8 gamespeed;
 extern boolean franticitems;
 extern boolean encoremode, prevencoremode;
 extern boolean g_teamplay;
+extern boolean g_duelpermitted;
 
 extern tic_t wantedcalcdelay;
 extern tic_t itemCooldowns[NUMKARTITEMS - 1];
