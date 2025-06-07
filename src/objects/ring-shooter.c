@@ -668,7 +668,7 @@ boolean Obj_PlayerRingShooterFreeze(const player_t *player)
 	const mobj_t *base = player->ringShooter;
 
 	if (AllowRingShooter(player) == true
-		&& (player->cmd.buttons & BT_RESPAWN) == BT_RESPAWN
+		&& (player->cmd.buttons & BT_RESPAWNMASK) == BT_RESPAWNMASK
 		&& P_MobjWasRemoved(base) == false)
 	{
 		return (rs_base_canceled(base) == 0);
@@ -682,7 +682,7 @@ void Obj_RingShooterInput(player_t *player)
 	mobj_t *const base = player->ringShooter;
 
 	if (AllowRingShooter(player) == true
-		&& (player->cmd.buttons & BT_RESPAWN) == BT_RESPAWN)
+		&& (player->cmd.buttons & BT_RESPAWNMASK) == BT_RESPAWNMASK)
 	{
 		// "Freeze" final-failsafe timer if we're eligible to ringshooter, but don't reset it.
 		if (player->finalfailsafe)

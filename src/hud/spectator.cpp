@@ -198,7 +198,7 @@ void K_drawSpectatorHUD(boolean director)
 		}
 		else
 		{
-			bool press = D_LocalTiccmd(viewnum)->buttons & BT_RESPAWN;
+			bool press = D_LocalTiccmd(viewnum)->buttons & BT_BAIL;
 			const char* label = (press && I_GetTime() % 16 < 8) ? "> <" : ">< ";
 
 			list.insert({{label, press ? "<y_pressed>" : "<y>"}, {"Exit", "<c_animated>"}});

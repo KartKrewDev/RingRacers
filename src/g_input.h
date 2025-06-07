@@ -123,7 +123,7 @@ typedef enum
 	gc_lookback = gc_b,
 	gc_spindash = gc_c,
 	gc_brake = gc_x,
-	gc_respawn = gc_y,
+	gc_bail = gc_y,
 	gc_vote = gc_z,
 	gc_item = gc_l,
 	gc_drift = gc_r,

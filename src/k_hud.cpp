@@ -4876,7 +4876,7 @@ static void K_drawKartPlayerCheck(void)
 		return;
 	}
 
-	if (stplyr->cmd.buttons & BT_LOOKBACK)
+	if (K_GetKartButtons(stplyr) & BT_LOOKBACK)
 	{
 		return;
 	}
@@ -7521,7 +7521,7 @@ void K_drawKartHUD(void)
 				if (ta)
 				{
 					using srb2::Draw;
-					Draw::TextElement text = Draw::TextElement().parse("<y> Restart");
+					Draw::TextElement text = Draw::TextElement().parse("<z> Restart");
 					Draw(BASEVIDWIDTH - 19, 2)
 						.flags(flags | V_YELLOWMAP)
 						.align(Draw::Align::kRight)

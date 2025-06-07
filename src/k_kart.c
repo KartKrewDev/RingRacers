@@ -4069,8 +4069,16 @@ boolean K_KartKickstart(const player_t *player)
 
 UINT16 K_GetKartButtons(const player_t *player)
 {
-	return (player->cmd.buttons |
-		(K_KartKickstart(player) ? BT_ACCELERATE : 0));
+	UINT16 buttons = player->cmd.buttons;
+	if ((buttons & BT_RESPAWNMASK) == BT_RESPAWNMASK)
+	{
+		buttons &= ~BT_LOOKBACK;
+	}
+	if (K_KartKickstart(player))
+	{
+		buttons = buttons | BT_ACCELERATE;
+	}
+	return buttons;
 }
 
 SINT8 K_GetForwardMove(const player_t *player)
@@ -10129,7 +10137,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			K_RemoveGrowShrink(player);
 	}
 
-	if (player->respawn.state != RESPAWNST_MOVE && (player->cmd.buttons & BT_RESPAWN) == BT_RESPAWN)
+	if (player->respawn.state != RESPAWNST_MOVE && (player->cmd.buttons & BT_RESPAWNMASK) == BT_RESPAWNMASK)
 	{
 		player->finalfailsafe++; // Decremented by ringshooter to "freeze" this timer
 		// Part-way through the auto-respawn timer, you can tap Ring Shooter to respawn early
@@ -13955,7 +13963,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	}
 	
 
-	if ((player->cmd.buttons & BT_VOTE) && ((player->itemtype && player->itemamount) || (player->rings > 0) || player->superring > 0 || player->pickuprings > 0 || player->itemRoulette.active))
+	if ((player->cmd.buttons & BT_BAIL) && (player->cmd.buttons & BT_RESPAWNMASK) != BT_RESPAWNMASK && ((player->itemtype && player->itemamount) || (player->rings > 0) || player->superring > 0 || player->pickuprings > 0 || player->itemRoulette.active))
 	{
 		boolean grounded = P_IsObjectOnGround(player->mo);
 		onground && player->tumbleBounces == 0 ?  player->bailcharge += 2 : player->bailcharge++; // charge twice as fast on the ground

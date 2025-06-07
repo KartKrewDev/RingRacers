@@ -5057,11 +5057,12 @@ struct int_const_s const INT_CONST[] = {
 	{"BT_BRAKE",BT_BRAKE},
 	{"BT_ATTACK",BT_ATTACK},
 	{"BT_LOOKBACK",BT_LOOKBACK},
-	{"BT_RESPAWN",BT_RESPAWN},
+	{"BT_BAIL",BT_BAIL},
 	{"BT_VOTE",BT_VOTE},
 	{"BT_SPINDASH",BT_SPINDASH}, // Real button now, but triggers the macro same as always.
 	{"BT_EBRAKEMASK",BT_EBRAKEMASK}, // Macro button
 	{"BT_SPINDASHMASK",BT_SPINDASHMASK}, // Macro button
+	{"BT_RESPAWNMASK",BT_RESPAWNMASK}, // Macro button
 	{"BT_LUAA",BT_LUAA}, // Lua customizable
 	{"BT_LUAB",BT_LUAB}, // Lua customizable
 	{"BT_LUAC",BT_LUAC}, // Lua customizable
