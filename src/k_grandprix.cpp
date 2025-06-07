@@ -389,7 +389,6 @@ void K_UpdateGrandPrixBots(void)
 
 		if (players[i].botvars.diffincrease)
 		{
-			CONS_Printf("in %d inc %d", players[i].botvars.difficulty, players[i].botvars.diffincrease);
 			if (players[i].botvars.diffincrease < 0)
 				players[i].botvars.difficulty = std::max(1, players[i].botvars.difficulty - players[i].botvars.diffincrease);
 			else
@@ -399,8 +398,6 @@ void K_UpdateGrandPrixBots(void)
 			{
 				players[i].botvars.difficulty = MAXBOTDIFFICULTY;
 			}
-
-			CONS_Printf(" out %d\n", players[i].botvars.difficulty);
 
 			players[i].botvars.diffincrease = 0;
 		}
@@ -641,8 +638,6 @@ void K_IncreaseBotDifficulty(player_t *bot)
 	}
 
 	increase += rankNudge;
-
-	CONS_Printf("raising %d by %d - %d\n", bot->botvars.difficulty, increase, bot->botvars.difficulty + increase);
 
 	if (increase <= 0)
 	{
