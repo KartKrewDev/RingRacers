@@ -117,6 +117,8 @@ void K_SetBot(UINT8 newplayernum, UINT8 skinnum, UINT8 difficulty, botStyle_e st
 
 	playernode[newplayernum] = servernode;
 
+	CONS_Printf("addbot diff %d\n", difficulty);
+
 	// this will permit unlocks
 	memcpy(&players[newplayernum].availabilities, R_GetSkinAvailabilities(false, skinnum), MAXAVAILABILITY*sizeof(UINT8));
 

@@ -90,6 +90,14 @@ UINT8 K_GetGPPlayerCount(UINT8 humans)
 	return std::clamp<UINT8>(humans * 4, 8, MAXPLAYERS);
 }
 
+// Kind of hate unsigned types
+static UINT8 K_GetOffsetStartingDifficulty(const UINT8 startingdifficulty, UINT8 offset)
+{
+	if (offset >= startingdifficulty)
+		return 1;
+	return startingdifficulty - offset;
+}
+
 /*--------------------------------------------------
 	void K_InitGrandPrixBots(void)
 
@@ -139,22 +147,22 @@ void K_InitGrandPrixBots(void)
 	else
 	{
 		// init difficulty levels list
-		difficultylevels[ 0] = std::max<UINT8>(1, startingdifficulty);
-		difficultylevels[ 1] = std::max<UINT8>(1, startingdifficulty-1);
-		difficultylevels[ 2] = std::max<UINT8>(1, startingdifficulty-2);
-		difficultylevels[ 3] = std::max<UINT8>(1, startingdifficulty-3);
-		difficultylevels[ 4] = std::max<UINT8>(1, startingdifficulty-3);
-		difficultylevels[ 5] = std::max<UINT8>(1, startingdifficulty-4);
-		difficultylevels[ 6] = std::max<UINT8>(1, startingdifficulty-4);
-		difficultylevels[ 7] = std::max<UINT8>(1, startingdifficulty-4);
-		difficultylevels[ 8] = std::max<UINT8>(1, startingdifficulty-5);
-		difficultylevels[ 9] = std::max<UINT8>(1, startingdifficulty-5);
-		difficultylevels[10] = std::max<UINT8>(1, startingdifficulty-5);
-		difficultylevels[11] = std::max<UINT8>(1, startingdifficulty-6);
-		difficultylevels[12] = std::max<UINT8>(1, startingdifficulty-6);
-		difficultylevels[13] = std::max<UINT8>(1, startingdifficulty-7);
-		difficultylevels[14] = std::max<UINT8>(1, startingdifficulty-7);
-		difficultylevels[15] = std::max<UINT8>(1, startingdifficulty-8);
+		difficultylevels[ 0] = startingdifficulty;
+		difficultylevels[ 1] = K_GetOffsetStartingDifficulty(startingdifficulty, 1);
+		difficultylevels[ 2] = K_GetOffsetStartingDifficulty(startingdifficulty, 2);
+		difficultylevels[ 3] = K_GetOffsetStartingDifficulty(startingdifficulty, 3);
+		difficultylevels[ 4] = K_GetOffsetStartingDifficulty(startingdifficulty, 3);
+		difficultylevels[ 5] = K_GetOffsetStartingDifficulty(startingdifficulty, 4);
+		difficultylevels[ 6] = K_GetOffsetStartingDifficulty(startingdifficulty, 4);
+		difficultylevels[ 7] = K_GetOffsetStartingDifficulty(startingdifficulty, 4);
+		difficultylevels[ 8] = K_GetOffsetStartingDifficulty(startingdifficulty, 5);
+		difficultylevels[ 9] = K_GetOffsetStartingDifficulty(startingdifficulty, 5);
+		difficultylevels[10] = K_GetOffsetStartingDifficulty(startingdifficulty, 5);
+		difficultylevels[11] = K_GetOffsetStartingDifficulty(startingdifficulty, 6);
+		difficultylevels[12] = K_GetOffsetStartingDifficulty(startingdifficulty, 6);
+		difficultylevels[13] = K_GetOffsetStartingDifficulty(startingdifficulty, 7);
+		difficultylevels[14] = K_GetOffsetStartingDifficulty(startingdifficulty, 7);
+		difficultylevels[15] = K_GetOffsetStartingDifficulty(startingdifficulty, 8);
 	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -381,12 +389,18 @@ void K_UpdateGrandPrixBots(void)
 
 		if (players[i].botvars.diffincrease)
 		{
-			players[i].botvars.difficulty += players[i].botvars.diffincrease;
+			CONS_Printf("in %d inc %d", players[i].botvars.difficulty, players[i].botvars.diffincrease);
+			if (players[i].botvars.diffincrease < 0)
+				players[i].botvars.difficulty = std::max(1, players[i].botvars.difficulty - players[i].botvars.diffincrease);
+			else
+				players[i].botvars.difficulty += players[i].botvars.diffincrease;
 
 			if (players[i].botvars.difficulty > MAXBOTDIFFICULTY)
 			{
 				players[i].botvars.difficulty = MAXBOTDIFFICULTY;
 			}
+
+			CONS_Printf(" out %d\n", players[i].botvars.difficulty);
 
 			players[i].botvars.diffincrease = 0;
 		}
@@ -627,6 +641,8 @@ void K_IncreaseBotDifficulty(player_t *bot)
 	}
 
 	increase += rankNudge;
+
+	CONS_Printf("raising %d by %d - %d\n", bot->botvars.difficulty, increase, bot->botvars.difficulty + increase);
 
 	if (increase <= 0)
 	{

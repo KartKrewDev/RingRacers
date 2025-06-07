@@ -2265,7 +2265,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	INT16 steering;
 	angle_t playerangleturn;
 
-	UINT8 botdiffincrease;
+	INT16 botdiffincrease;
 	boolean botrival;
 
 	boolean cangrabitems;
