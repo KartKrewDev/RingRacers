@@ -6416,6 +6416,7 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 			WRITEUINT32(save->p, lvl->time);
 			WRITEUINT16(save->p, lvl->totalExp);
 			WRITEUINT16(save->p, lvl->totalPrisons);
+			WRITEUINT16(save->p, lvl->continues);
 
 			UINT8 j;
 			for (j = 0; j < rank->numPlayers; j++)
@@ -6704,6 +6705,7 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 			lvl->time = READUINT32(save->p);
 			lvl->totalExp = READUINT16(save->p);
 			lvl->totalPrisons = READUINT16(save->p);
+			lvl->continues = READUINT16(save->p);
 
 			for (j = 0; j < rank->numPlayers; j++)
 			{

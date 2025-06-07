@@ -34,6 +34,7 @@ struct gpRank_level_t
 	UINT32 time;
 	UINT16 totalExp;
 	UINT16 totalPrisons;
+	UINT16 continues;
 	gpRank_level_perplayer_t perPlayer[MAXSPLITSCREENPLAYERS];
 };
 

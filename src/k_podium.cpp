@@ -188,6 +188,10 @@ void podiumData_s::Init(void)
 
 			lvl->time = M_RandomRange(50*TICRATE, 210*TICRATE);
 
+			lvl->continues = 0;
+			if (!M_RandomRange(0, 2))
+				lvl->continues = M_RandomRange(1, 3);
+
 			for (INT32 j = 0; j < rank.numPlayers; j++)
 			{
 				gpRank_level_perplayer_t *const dta = &lvl->perPlayer[j];
@@ -633,10 +637,13 @@ void podiumData_s::Draw(void)
 
 					if (lvl->event != GPEVENT_SPECIAL && dta->grade != GRADE_INVALID)
 					{
-						drawer_rank
-							.xy(0, -1)
-							.colormap( static_cast<skincolornum_t>(K_GetGradeColor(dta->grade)) )
-							.patch(va("R_CUPRN%c", K_GetGradeChar(dta->grade)));
+						if (lvl->continues)
+							drawer_rank.xy(2, 1).font(srb2::Draw::Font::kPing).colorize(SKINCOLOR_RED).text(va("-%d", lvl->continues));
+						else
+							drawer_rank
+								.xy(0, -1)
+								.colormap( static_cast<skincolornum_t>(K_GetGradeColor(dta->grade)) )
+								.patch(va("R_CUPRN%c", K_GetGradeChar(dta->grade)));
 					}
 
 					// Do not draw any stats for GAME OVERed player

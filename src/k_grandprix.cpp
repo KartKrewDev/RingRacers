@@ -611,12 +611,10 @@ void K_IncreaseBotDifficulty(player_t *bot)
 	switch(averageRank)
 	{
 		case GRADE_E:
-			rankNudge = -2;
-			break;
 		case GRADE_D:
+		case GRADE_C:
 			rankNudge = -1;
 			break;
-		case GRADE_C:
 		case GRADE_B:
 			rankNudge = 0;
 			break;
