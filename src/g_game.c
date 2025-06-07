@@ -3150,7 +3150,7 @@ void G_ChangePlayerReferences(mobj_t *oldmo, mobj_t *newmo)
 
 		mo2 = (mobj_t *)th;
 
-		if (!(mo2->flags & MF_MISSILE))
+		if (!((mo2->flags & MF_MISSILE) || P_IsRelinkItem(mo2->type)))
 			continue;
 
 		if (mo2->target == oldmo)
