@@ -10009,6 +10009,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		// Extra tripwire leniency for the end of invincibility
 		if (player->invincibilitytimer <= 0) {
 			player->tripwireLeniency = max( player->tripwireLeniency, TICRATE );
+		}
 	}
 
 	if (player->baildrop)
