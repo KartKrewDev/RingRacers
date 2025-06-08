@@ -10045,6 +10045,10 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			P_FlingBurst(player, K_MomentumAngle(pmo), MT_FLINGRING, 10*TICRATE, FRACUNIT, player->baildrop/BAIL_DROPFREQUENCY);
 			S_StartSound(pmo, sfx_gshad);
 		}
+
+		player->baildrop--;
+		if (player->baildrop == 0)
+			player->ringboost /= 3;
 	}
 
 	// The precise ordering of start-of-level made me want to cut my head off,
@@ -10064,16 +10068,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->cangrabitems && player->cangrabitems <= EARLY_ITEM_FLICKER)
 		player->cangrabitems++;
-
-	if (player->baildrop)
-	{
-		if ((player->baildrop % BAIL_DROPFREQUENCY) == 0)
-		{
-			P_FlingBurst(player, K_MomentumAngle(player->mo), MT_FLINGRING, 10*TICRATE, FRACUNIT, player->baildrop/BAIL_DROPFREQUENCY);
-			S_StartSound(player->mo, sfx_gshad);
-		}
-		player->baildrop--;
-	}
 
 	if (!player->invincibilitytimer)
 		player->invincibilityextensions = 0;
@@ -13982,8 +13976,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 	if ((!P_PlayerInPain(player) && player->bailcharge) || player->bailcharge >= BAIL_MAXCHARGE)
 	{
-		CONS_Printf("rl %d it %d ia %d ri %d sr %d pr %d\n", player->itemRoulette.active, player->itemtype, player->itemamount, player->rings > 0, player->superring > 0, player->pickuprings > 0);
-
 		player->bailcharge = 0;
 
 		mobj_t *bail = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, MT_BAIL);
@@ -13996,7 +13988,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			player->rings = 0;
 		}
 
-		UINT32 totalrings = player->rings + player->superring + player->pickuprings + debtrings;
+		UINT32 totalrings = player->rings + player->superring + player->pickuprings;
 		totalrings = max(totalrings, 0);
 		UINT32 bailboost = FixedInt(FixedMul(totalrings*FRACUNIT, BAIL_BOOST));
 		UINT32 baildrop = FixedInt(FixedMul((totalrings)*FRACUNIT, BAIL_DROP));
