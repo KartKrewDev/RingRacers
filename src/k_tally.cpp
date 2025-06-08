@@ -246,8 +246,8 @@ INT32 level_tally_t::CalculateGrade(void)
 			}
 			case TALLY_BONUS_EXP:
 			{
-				const fixed_t frac = std::min(FRACUNIT, ((exp-15) * FRACUNIT) / std::max(1, static_cast<int>(totalExp)));
-				ours += Easing_InQuint(frac, 0, bonusWeights[i]);
+				const fixed_t frac = std::min(FRACUNIT, ((exp) * FRACUNIT) / std::max(1, static_cast<int>(totalExp)));
+				ours += Easing_InCubic(frac, 0, bonusWeights[i]);
 				break;
 			}
 			case TALLY_BONUS_PRISON:
