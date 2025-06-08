@@ -7640,13 +7640,12 @@ void K_drawKartHUD(void)
 				{
 					K_DrawKartPositionNum(stplyr->position);
 				}
-			}
 
-			K_drawKartTeamScores(false, 0);
-
-			if (K_InRaceDuel())
-			{
-				K_drawKartDuelScores();
+				if (R_GetViewNumber() == 0)
+				{
+					K_drawKartTeamScores(false, 0);
+					K_drawKartDuelScores();
+				}
 			}
 
 			if (LUA_HudEnabled(hud_gametypeinfo))
