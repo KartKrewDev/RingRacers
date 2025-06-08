@@ -9823,7 +9823,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 		if (!player->baildrop && (player->superring == 0 || player->stunned))
 			player->ringboost -= max((player->ringboost / roller), 1);
-		else if (K_LegacyRingboost(player) || player->baildrop)
+		else if (K_LegacyRingboost(player))
 			player->ringboost--;
 		else
 			player->ringboost -= min(K_GetFullKartRingPower(player, false) - 1, max(player->ringboost / 2 / roller, 1));
@@ -13989,6 +13989,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		}
 
 		UINT32 totalrings = player->rings + player->superring + player->pickuprings;
+		if (BAIL_CREDIT_DEBTRINGS)
+			totalrings += debtrings;
 		totalrings = max(totalrings, 0);
 		UINT32 bailboost = FixedInt(FixedMul(totalrings*FRACUNIT, BAIL_BOOST));
 		UINT32 baildrop = FixedInt(FixedMul((totalrings)*FRACUNIT, BAIL_DROP));
