@@ -45,9 +45,9 @@ Make sure this matches the actual number of states
 #define PUNISHWINDOW (7*TICRATE/10)
 
 #define BAIL_MAXCHARGE (84) // tics to bail when in painstate nad in air, on ground is half, if you touch this, also update Obj_BailChargeThink synced animation logic
-#define BAIL_DROP (FRACUNIT/2)
-#define BAIL_BOOST (40*FRACUNIT/100)
-#define BAIL_DROPFREQUENCY (1)
+#define BAIL_DROP (2*FRACUNIT/3)
+#define BAIL_BOOST (80*FRACUNIT/100)
+#define BAIL_DROPFREQUENCY (2)
 #define BAILSTUN (TICRATE*10)
 
 #define MAXCOMBOTHRUST (mapobjectscale*20)
