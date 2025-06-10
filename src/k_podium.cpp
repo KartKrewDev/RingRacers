@@ -637,14 +637,14 @@ void podiumData_s::Draw(void)
 
 					if (lvl->event != GPEVENT_SPECIAL && dta->grade != GRADE_INVALID)
 					{
-						if (lvl->continues)
-							drawer_rank.xy(2, 1).font(srb2::Draw::Font::kPing).colorize(SKINCOLOR_RED).text(va("-%d", lvl->continues));
-						else
 							drawer_rank
-								.xy(0, -1)
+								.xy(0, -1).flags(lvl->continues ? V_TRANSLUCENT : 0)
 								.colormap( static_cast<skincolornum_t>(K_GetGradeColor(dta->grade)) )
 								.patch(va("R_CUPRN%c", K_GetGradeChar(dta->grade)));
 					}
+
+					if (lvl->continues)
+						drawer_rank.xy(7, 1).align(srb2::Draw::Align::kCenter).font(srb2::Draw::Font::kPing).colorize(SKINCOLOR_RED).text(va("-%d", lvl->continues));
 
 					// Do not draw any stats for GAME OVERed player
 					if (dta->grade != GRADE_INVALID || lvl->event == GPEVENT_SPECIAL)
