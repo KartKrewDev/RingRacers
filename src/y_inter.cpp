@@ -800,6 +800,7 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 				player_names[pnum]
 			);
 
+			if (netgame)
 			{
 				patch_t *voxpat;
 				int voxxoffs = 0;
