@@ -15446,6 +15446,10 @@ void K_UpdateMobjItemOverlay(mobj_t *part, SINT8 itemType, UINT8 itemCount)
 			part->sprite = SPR_ITEM;
 			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE;
 			break;
+		case KDROP_STONESHOETRAP:
+			part->sprite = SPR_STON;
+			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|4;
+			break;
 		default:
 			if (itemType >= FIRSTPOWERUP)
 			{
