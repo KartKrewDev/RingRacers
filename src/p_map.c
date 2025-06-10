@@ -1531,6 +1531,17 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			K_KartBouncing(g_tm.thing, thing);
 			return BMIT_CONTINUE;
 		}
+		else if (thing->type == MT_STONESHOE)
+		{
+			// see if it went over / under
+			if (g_tm.thing->z > thing->z + thing->height)
+				return BMIT_CONTINUE; // overhead
+			if (g_tm.thing->z + g_tm.thing->height < thing->z)
+				return BMIT_CONTINUE; // underneath
+
+			Obj_CollideStoneShoe(g_tm.thing, thing);
+			return BMIT_CONTINUE;
+		}
 		else if ((thing->flags & MF_SHOOTABLE) && K_PlayerCanPunt(g_tm.thing->player))
 		{
 			// see if it went over / under
