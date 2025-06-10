@@ -91,7 +91,7 @@ typedef enum
 	FLICKYCONTROLLER = 0x1000,
 	TRICKINDICATOR = 0x2000,
 	BARRIER = 0x4000,
-	BALLHOGRETICULE = 0x8000, // uh oh, we're full now...
+	BALLHOGRETICULE = 0x8000,
 } player_saveflags;
 
 static inline void P_ArchivePlayer(savebuffer_t *save)
@@ -204,7 +204,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 	TracyCZone(__zone, true);
 
 	INT32 i, j;
-	UINT16 flags;
+	UINT32 flags;
 	size_t q;
 
 	WRITEUINT32(save->p, ARCHIVEBLOCK_PLAYERS);
@@ -364,7 +364,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		if (players[i].powerup.barrier)
 			flags |= BARRIER;
 
-		WRITEUINT16(save->p, flags);
+		WRITEUINT32(save->p, flags);
 
 		if (flags & SKYBOXVIEW)
 			WRITEUINT32(save->p, players[i].skybox.viewpoint->mobjnum);
@@ -897,7 +897,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 	TracyCZone(__zone, true);
 
 	INT32 i, j;
-	UINT16 flags;
+	UINT32 flags;
 	size_t q;
 
 	if (READUINT32(save->p) != ARCHIVEBLOCK_PLAYERS)
@@ -1011,7 +1011,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		players[i].splitscreenindex = READUINT8(save->p);
 
-		flags = READUINT16(save->p);
+		flags = READUINT32(save->p);
 
 		if (flags & SKYBOXVIEW)
 			players[i].skybox.viewpoint = (mobj_t *)(size_t)READUINT32(save->p);
