@@ -91,7 +91,8 @@ typedef enum
 	FLICKYCONTROLLER = 0x1000,
 	TRICKINDICATOR = 0x2000,
 	BARRIER = 0x4000,
-	BALLHOGRETICULE = 0x8000, // uh oh, we're full now...
+	BALLHOGRETICULE = 0x8000,
+	STONESHOE = 0x10000,
 } player_saveflags;
 
 static inline void P_ArchivePlayer(savebuffer_t *save)
@@ -204,7 +205,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 	TracyCZone(__zone, true);
 
 	INT32 i, j;
-	UINT16 flags;
+	UINT32 flags;
 	size_t q;
 
 	WRITEUINT32(save->p, ARCHIVEBLOCK_PLAYERS);
@@ -364,7 +365,10 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		if (players[i].powerup.barrier)
 			flags |= BARRIER;
 
-		WRITEUINT16(save->p, flags);
+		if (players[i].stoneShoe)
+			flags |= STONESHOE;
+
+		WRITEUINT32(save->p, flags);
 
 		if (flags & SKYBOXVIEW)
 			WRITEUINT32(save->p, players[i].skybox.viewpoint->mobjnum);
@@ -410,6 +414,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		if (flags & BARRIER)
 			WRITEUINT32(save->p, players[i].powerup.barrier->mobjnum);
+
+		if (flags & STONESHOE)
+			WRITEUINT32(save->p, players[i].stoneShoe->mobjnum);
 
 		WRITEUINT32(save->p, (UINT32)players[i].followitem);
 
@@ -499,6 +506,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEFIXED(save->p, players[i].accelboost);
 		WRITEFIXED(save->p, players[i].handleboost);
 		WRITEANGLE(save->p, players[i].boostangle);
+		WRITEFIXED(save->p, players[i].stonedrag);
 
 		WRITEFIXED(save->p, players[i].draftpower);
 		WRITEUINT16(save->p, players[i].draftleeway);
@@ -897,7 +905,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 	TracyCZone(__zone, true);
 
 	INT32 i, j;
-	UINT16 flags;
+	UINT32 flags;
 	size_t q;
 
 	if (READUINT32(save->p) != ARCHIVEBLOCK_PLAYERS)
@@ -1011,7 +1019,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		players[i].splitscreenindex = READUINT8(save->p);
 
-		flags = READUINT16(save->p);
+		flags = READUINT32(save->p);
 
 		if (flags & SKYBOXVIEW)
 			players[i].skybox.viewpoint = (mobj_t *)(size_t)READUINT32(save->p);
@@ -1057,6 +1065,9 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		if (flags & BARRIER)
 			players[i].powerup.barrier = (mobj_t *)(size_t)READUINT32(save->p);
+
+		if (flags & STONESHOE)
+			players[i].stoneShoe = (mobj_t *)(size_t)READUINT32(save->p);
 
 		players[i].followitem = (mobjtype_t)READUINT32(save->p);
 
@@ -1147,6 +1158,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].accelboost = READFIXED(save->p);
 		players[i].handleboost = READFIXED(save->p);
 		players[i].boostangle = READANGLE(save->p);
+		players[i].stonedrag = READFIXED(save->p);
 
 		players[i].draftpower = READFIXED(save->p);
 		players[i].draftleeway = READUINT16(save->p);
@@ -6217,6 +6229,11 @@ static void P_RelinkPointers(void)
 		{
 			if (!RelinkMobj(&players[i].powerup.barrier))
 				CONS_Debug(DBG_GAMELOGIC, "powerup.barrier not found on player %d\n", i);
+		}
+		if (players[i].stoneShoe)
+		{
+			if (!RelinkMobj(&players[i].stoneShoe))
+				CONS_Debug(DBG_GAMELOGIC, "stoneShoe not found on player %d\n", i);
 		}
 	}
 }

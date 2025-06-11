@@ -389,6 +389,14 @@ bool is_object_tracking_target(const mobj_t* mobj)
 		return !(mobj->renderflags & (RF_TRANSMASK | RF_DONTDRAW)) && // the spraycan wasn't collected yet
 			P_CheckSight(stplyr->mo, const_cast<mobj_t*>(mobj));
 
+	case MT_FLOATINGITEM:
+		if (mobj->threshold != KDROP_STONESHOETRAP)
+			return false;
+
+		if (cv_debugpickmeup.value)
+			return false;
+
+		// FALLTHRU
 	default:
 		if (K_IsPickMeUpItem(mobj->type))
 			return (mobj->target && !P_MobjWasRemoved(mobj->target) && (

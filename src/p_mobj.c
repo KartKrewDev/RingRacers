@@ -1274,6 +1274,12 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 				gravityadd *= 6;
 				break;
 			case MT_FLOATINGITEM: {
+				if (mo->threshold == KDROP_STONESHOETRAP)
+				{
+					gravityadd = (5*gravityadd)/2;
+					break;
+				}
+
 				// Basically this accelerates gravity after
 				// the object reached its peak vertical
 				// momentum. It's a gradual acceleration up
@@ -1295,6 +1301,9 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 			case MT_KART_PARTICLE:
 				if (!mo->fuse)
 					gravityadd *= 2;
+				break;
+			case MT_STONESHOE:
+				gravityadd *= 4;
 				break;
 			default:
 				break;
@@ -6704,6 +6713,11 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		}
 		break;
 	}
+	case MT_STONESHOE_CHAIN:
+	{
+		Obj_TickStoneShoeChain(mobj);
+		return;
+	}
 	default:
 		if (mobj->fuse)
 		{ // Scenery object fuse! Very basic!
@@ -10228,6 +10242,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		break;
 	}
 
+	case MT_STONESHOE:
+		return Obj_TickStoneShoe(mobj);
+
 	default:
 		// check mobj against possible water content, before movement code
 		P_MobjCheckWater(mobj);
@@ -10293,6 +10310,12 @@ static boolean P_CanFlickerFuse(mobj_t *mobj)
 		case MT_BLENDEYE_PUYO:
 		case MT_KART_PARTICLE:
 			if (mobj->fuse <= TICRATE)
+			{
+				return true;
+			}
+			break;
+		case MT_STONESHOE:
+			if (mobj->fuse <= 3 * TICRATE)
 			{
 				return true;
 			}
@@ -11095,6 +11118,12 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_RANDOMAUDIENCE:
 			thing->shadowscale = FRACUNIT;
 			thing->whiteshadow = false;
+			break;
+		case MT_STONESHOE:
+			thing->shadowscale = 2*FRACUNIT/3;
+			break;
+		case MT_STONESHOE_CHAIN:
+			thing->shadowscale = FRACUNIT/5;
 			break;
 		default:
 			if (thing->flags & (MF_ENEMY|MF_BOSS))

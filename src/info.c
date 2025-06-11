@@ -792,6 +792,8 @@ char sprnames[NUMSPRITES + 1][5] =
 	// Flybot767 (stun)
 	"STUN",
 
+	"STON",
+
 	// Pulley
 	"HCCH",
 	"HCHK",
@@ -3680,6 +3682,8 @@ state_t states[NUMSTATES] =
 
 	// Flybot767 (stun)
 	{SPR_STUN, FF_FULLBRIGHT|FF_ANIMATE, -1, {NULL}, 4, 4, S_NULL}, // S_FLYBOT767
+
+	{SPR_STON, 0, -1, {NULL}, 0, 0, S_STON}, // S_STON
 };
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] =
@@ -13336,7 +13340,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_ITEMICON,     // spawnstate
 		1,              // spawnhealth
 		S_NULL,         // seestate
-		sfx_None,       // seesound
+		sfx_tossed,     // seesound
 		0,              // reactiontime
 		sfx_None,       // attacksound
 		S_NULL,         // painstate
@@ -22528,6 +22532,58 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,     // activesound
 		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_NOCLIP|MF_NOCLIPTHING, // flags
 		S_NULL        // raisestate
+	},
+	{           // MT_STONESHOE
+		-1,           // doomednum
+		S_STON,       // spawnstate
+		1000,         // spawnhealth
+		S_NULL,       // seestate
+		sfx_None,     // seesound
+		0,            // reactiontime
+		sfx_None,     // attacksound
+		S_NULL,       // painstate
+		0,            // painchance
+		sfx_None,     // painsound
+		S_NULL,       // meleestate
+		S_NULL,       // missilestate
+		S_NULL,       // deathstate
+		S_NULL,       // xdeathstate
+		sfx_pop,      // deathsound
+		4*FRACUNIT,   // speed
+		64*FRACUNIT,  // radius
+		64*FRACUNIT,  // height
+		0,            // dispoffset
+		0,            // mass
+		0,            // damage
+		sfx_None,     // activesound
+		MF_SOLID|MF_NOSQUISH|MF_NOHITLAGFORME|MF_DONTENCOREMAP, // flags
+		S_NULL        // raisestate
+	},
+	{           // MT_STONESHOE_CHAIN
+		-1,             // doomednum
+		S_SHRINK_CHAIN, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		32*FRACUNIT,    // radius
+		64*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SPECIAL|MF_SCENERY|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_PICKUPFROMBELOW|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
 	},
 };
 

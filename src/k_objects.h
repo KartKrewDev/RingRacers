@@ -460,6 +460,13 @@ boolean Obj_TickLightningShieldVisual(mobj_t *mobj);
 void Obj_SpawnFlameShieldVisuals(mobj_t *source);
 boolean Obj_TickFlameShieldVisual(mobj_t *mobj);
 
+/* Stone Shoe */
+mobj_t *Obj_SpawnStoneShoe(INT32 owner, mobj_t *victim);
+boolean Obj_TickStoneShoe(mobj_t *shoe);
+boolean Obj_TickStoneShoeChain(mobj_t *chain);
+player_t *Obj_StoneShoeOwnerPlayer(mobj_t *shoe);
+void Obj_CollideStoneShoe(mobj_t *mover, mobj_t *mobj);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

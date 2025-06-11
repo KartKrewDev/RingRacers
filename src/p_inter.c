@@ -425,14 +425,41 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				if (special->scale < special->destscale/2)
 					return;
 
-				if (!P_CanPickupItem(player, PICKUP_PAPERITEM) || (player->itemamount && player->itemtype != special->threshold))
+				if (!P_CanPickupItem(player, PICKUP_PAPERITEM))
 					return;
 
-				player->itemtype = special->threshold;
-				if ((UINT16)(player->itemamount) + special->movecount > 255)
-					player->itemamount = 255;
+				if (special->threshold == KDROP_STONESHOETRAP)
+				{
+					if (K_TryPickMeUp(special, toucher, false))
+						return;
+
+					if (!P_MobjWasRemoved(player->stoneShoe))
+					{
+						player->pflags |= PF_CASTSHADOW;
+						return;
+					}
+
+					P_SetTarget(&player->stoneShoe, Obj_SpawnStoneShoe(special->extravalue2, toucher));
+					K_AddHitLag(toucher, 8, false);
+
+					player_t *owner = Obj_StoneShoeOwnerPlayer(special);
+					if (owner)
+					{
+						K_SpawnAmps(player, K_PvPAmpReward(20, owner, player), toucher);
+						K_SpawnAmps(owner, K_PvPAmpReward(20, owner, player), toucher);
+					}
+				}
 				else
-					player->itemamount += special->movecount;
+				{
+					if (player->itemamount && player->itemtype != special->threshold)
+						return;
+
+					player->itemtype = special->threshold;
+					if ((UINT16)(player->itemamount) + special->movecount > 255)
+						player->itemamount = 255;
+					else
+						player->itemamount += special->movecount;
+				}
 			}
 
 			S_StartSound(special, special->info->deathsound);
@@ -1085,6 +1112,10 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 		case MT_PULLUPHOOK:
 			Obj_PulleyHookTouch(special, toucher);
+			return;
+
+		case MT_STONESHOE_CHAIN:
+			Obj_CollideStoneShoe(toucher, special);
 			return;
 
 		default: // SOC or script pickup
@@ -3202,7 +3233,9 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 				if (source && source != player->mo && source->player)
 				{
-					K_SpawnAmps(source->player, K_PvPAmpReward((type == DMG_WHUMBLE) ? 30 : 20, source->player, player), target);
+					// Stone Shoe handles amps on its own
+					if (inflictor->type != MT_STONESHOE && inflictor->type != MT_STONESHOE_CHAIN)
+						K_SpawnAmps(source->player, K_PvPAmpReward((type == DMG_WHUMBLE) ? 30 : 20, source->player, player), target);
 					K_BotHitPenalty(player);
 
 					if (G_SameTeam(source->player, player))

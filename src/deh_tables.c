@@ -3109,6 +3109,8 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 
 	// Flybot767 (stun)
 	"S_FLYBOT767",
+
+	"S_STON",
 };
 
 // RegEx to generate this from info.h: ^\tMT_([^,]+), --> \t"MT_\1",
@@ -4009,6 +4011,9 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_AMPS",
 
 	"MT_FLYBOT767",
+
+	"MT_STONESHOE",
+	"MT_STONESHOE_CHAIN",
 };
 
 const char *const MOBJFLAG_LIST[] = {
@@ -5194,6 +5199,7 @@ struct int_const_s const INT_CONST[] = {
 	{"KRITEM_DUALJAWZ",KRITEM_DUALJAWZ},
 	{"KRITEM_TRIPLEGACHABOM",KRITEM_TRIPLEGACHABOM},
 	{"NUMKARTRESULTS",NUMKARTRESULTS},
+	{"KDROP_STONESHOETRAP",KDROP_STONESHOETRAP},
 	{"FIRSTPOWERUP",FIRSTPOWERUP},
 	{"POWERUP_SMONITOR",POWERUP_SMONITOR},
 	{"POWERUP_BARRIER",POWERUP_BARRIER},

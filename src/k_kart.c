@@ -808,6 +808,7 @@ fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against)
 		case MT_ORBINAUT_SHIELD:
 		case MT_GACHABOM:
 		case MT_DUELBOMB:
+		case MT_STONESHOE:
 			if (against->player)
 				weight = K_PlayerWeight(against, NULL);
 			break;
@@ -933,6 +934,8 @@ static boolean K_JustBumpedException(mobj_t *mobj)
 			}
 			break;
 		}
+		case MT_STONESHOE:
+			return true;
 		default:
 			break;
 	}
@@ -3527,6 +3530,9 @@ static void K_GetKartBoostPower(player_t *player)
 	if (player->bananadrag > TICRATE)
 		boostpower = (4*boostpower)/5;
 
+	if (player->stonedrag)
+		boostpower = (4*boostpower)/5;
+
 	// Note: Handling will ONLY stack when sliptiding!
 	// > (NB 2023-03-06: This was previously unintentionally applied while drifting as well.)
 	// > (This only affected drifts where you were under the effect of multiple handling boosts.)
@@ -4669,7 +4675,7 @@ void K_RemoveGrowShrink(player_t *player)
 static boolean K_IsScaledItem(mobj_t *mobj)
 {
 	return mobj && !P_MobjWasRemoved(mobj) &&
-		(mobj->type == MT_ORBINAUT || mobj->type == MT_JAWZ || mobj->type == MT_GACHABOM
+		(mobj->type == MT_ORBINAUT || mobj->type == MT_JAWZ || mobj->type == MT_GACHABOM || mobj->type == MT_STONESHOE
 		|| mobj->type == MT_BANANA || mobj->type == MT_EGGMANITEM || mobj->type == MT_BALLHOG
 		|| mobj->type == MT_SSMINE || mobj->type == MT_LANDMINE || mobj->type == MT_SINK
 		|| mobj->type == MT_GARDENTOP || mobj->type == MT_DROPTARGET || mobj->type == MT_PLAYER);
@@ -6888,8 +6894,13 @@ mobj_t *K_ThrowKartItemEx(player_t *player, boolean missile, mobjtype_t mapthing
 		if (dir > 0)
 		{
 			// Shoot forward
-			mo = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, mapthing);
-			mo->angle = player->mo->angle;
+			if (mapthing == MT_FLOATINGITEM)
+				mo = K_CreatePaperItem(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, player->mo->angle, 0, 1, 0);
+			else
+			{
+				mo = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, mapthing);
+				mo->angle = player->mo->angle;
+			}
 
 			// These are really weird so let's make it a very specific case to make SURE it works...
 			if (player->mo->eflags & MFE_VERTICALFLIP)
@@ -6907,7 +6918,7 @@ mobj_t *K_ThrowKartItemEx(player_t *player, boolean missile, mobjtype_t mapthing
 			mo->extravalue2 = dir;
 
 			fixed_t HEIGHT = ((20 * FRACUNIT) + (dir * 10)) + (FixedDiv(player->mo->momz, mapobjectscale) * P_MobjFlip(player->mo)); // Also intentionally not player scale
-			P_SetObjectMomZ(mo, HEIGHT, false);
+			mo->momz = FixedMul(HEIGHT, mapobjectscale) * P_MobjFlip(mo);
 
 			angle_t fa = (player->mo->angle >> ANGLETOFINESHIFT);
 			mo->momx = player->mo->momx + FixedMul(FINECOSINE(fa), FixedMul(PROJSPEED, dir));
@@ -6936,8 +6947,11 @@ mobj_t *K_ThrowKartItemEx(player_t *player, boolean missile, mobjtype_t mapthing
 			if (mo->eflags & MFE_UNDERWATER)
 				mo->momz = (117 * mo->momz) / 200;
 
-			P_SetScale(mo, finalscale);
-			mo->destscale = finalscale;
+			if (mapthing != MT_FLOATINGITEM)
+			{
+				P_SetScale(mo, finalscale);
+				mo->destscale = finalscale;
+			}
 
 			switch (mapthing)
 			{
@@ -6984,6 +6998,13 @@ mobj_t *K_ThrowKartItemEx(player_t *player, boolean missile, mobjtype_t mapthing
 				newy = player->mo->y + player->mo->momy;
 				newz = player->mo->z;
 			}
+			else if (mapthing == MT_FLOATINGITEM)  // Stone Shoe
+			{
+				newangle = player->mo->angle;
+				newx = player->mo->x + player->mo->momx - FixedMul(2 * player->mo->radius + 40 * mapobjectscale, FCOS(newangle));
+				newy = player->mo->y + player->mo->momy - FixedMul(2 * player->mo->radius + 40 * mapobjectscale, FSIN(newangle));
+				newz = player->mo->z;
+			}
 			else if (lasttrail)
 			{
 				newangle = lasttrail->angle;
@@ -7003,14 +7024,23 @@ mobj_t *K_ThrowKartItemEx(player_t *player, boolean missile, mobjtype_t mapthing
 				newz = player->mo->z;
 			}
 
-			mo = P_SpawnMobj(newx, newy, newz, mapthing); // this will never return null because collision isn't processed here
+			if (mapthing == MT_FLOATINGITEM)
+				mo = K_CreatePaperItem(newx, newy, newz, newangle, 0, 1, 0);
+			else
+			{
+				mo = P_SpawnMobj(newx, newy, newz, mapthing); // this will never return null because collision isn't processed here
+				mo->angle = newangle;
+			}
 			K_FlipFromObject(mo, player->mo);
 
 			mo->threshold = 10;
 			P_SetTarget(&mo->target, player->mo);
 
-			P_SetScale(mo, finalscale);
-			mo->destscale = finalscale;
+			if (mapthing != MT_FLOATINGITEM)
+			{
+				P_SetScale(mo, finalscale);
+				mo->destscale = finalscale;
+			}
 
 			if (P_IsObjectOnGround(player->mo))
 			{
@@ -7038,8 +7068,6 @@ mobj_t *K_ThrowKartItemEx(player_t *player, boolean missile, mobjtype_t mapthing
 
 			if (player->mo->eflags & MFE_VERTICALFLIP)
 				mo->eflags |= MFE_VERTICALFLIP;
-
-			mo->angle = newangle;
 
 			if (mapthing == MT_SSMINE)
 				mo->extravalue1 = 49; // Pads the start-up length from 21 frames to a full 2 seconds
@@ -10506,6 +10534,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		// S_StartSound(NULL, sfx_s26d);
 		P_DamageMobj(player->mo, NULL, NULL, 1, DMG_INSTAKILL);
 	}
+
+	player->stonedrag = 0;
 }
 
 void K_KartResetPlayerColor(player_t *player)
@@ -14607,6 +14637,37 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								player->botvars.itemconfirm = 0;
 							}
 							break;
+						case KITEM_STONESHOE:
+							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
+							{
+								if (player->throwdir == -1)
+								{
+									// Do not spawn a shoe if you're already dragging one
+									if (!P_MobjWasRemoved(player->stoneShoe))
+										break;
+									P_SetTarget(&player->stoneShoe, Obj_SpawnStoneShoe(player - players, player->mo));
+									K_AddHitLag(player->mo, 8, false);
+								}
+								else
+								{
+									K_SetItemOut(player); // need this to set itemscale
+
+									mobj_t *drop = K_ThrowKartItem(player, false, MT_FLOATINGITEM, -1, 0, 0);
+									drop->threshold = KDROP_STONESHOETRAP;
+									drop->movecount = 1;
+									drop->extravalue2 = player - players;
+									drop->radius = 32 * drop->scale;
+									drop->flags |= MF_SHOOTABLE; // let it whip/lightning shield
+
+									K_UnsetItemOut(player);
+								}
+
+								player->itemamount--;
+								K_PlayAttackTaunt(player->mo);
+								K_UpdateHnextList(player, false);
+								player->botvars.itemconfirm = 0;
+							}
+							break;
 						case KITEM_SAD:
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO
 								&& !player->sadtimer)
@@ -15448,6 +15509,10 @@ void K_UpdateMobjItemOverlay(mobj_t *part, SINT8 itemType, UINT8 itemCount)
 			part->sprite = SPR_ITEM;
 			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE;
 			break;
+		case KDROP_STONESHOETRAP:
+			part->sprite = SPR_STON;
+			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|4;
+			break;
 		default:
 			if (itemType >= FIRSTPOWERUP)
 			{
@@ -15887,6 +15952,7 @@ boolean K_IsPickMeUpItem(mobjtype_t type)
 		case MT_BUBBLESHIELDTRAP:
 		case MT_SSMINE:
 		case MT_SSMINE_SHIELD:
+		case MT_FLOATINGITEM:  // Stone Shoe
 			return true;
 		default:
 			return false;
@@ -15930,6 +15996,9 @@ static boolean K_PickUp(player_t *player, mobj_t *picked)
 		case MT_GACHABOM:
 			type = KITEM_GACHABOM;
 			break;
+		case MT_STONESHOE:
+			type = KITEM_STONESHOE;
+			break;
 		case MT_BUBBLESHIELDTRAP:
 			type = KITEM_BUBBLESHIELD;
 			break;
@@ -15939,6 +16008,12 @@ static boolean K_PickUp(player_t *player, mobj_t *picked)
 		case MT_SSMINE:
 		case MT_SSMINE_SHIELD:
 			type = KITEM_MINE;
+			break;
+		case MT_FLOATINGITEM:
+			if (picked->threshold == KDROP_STONESHOETRAP)
+				type = KITEM_STONESHOE;
+			else
+				type = KITEM_SAD;
 			break;
 		default:
 			type = KITEM_SAD;
