@@ -233,6 +233,7 @@ private:
 					momz = 32 * mapobjectscale;
 					bouncing(true);
 					voice(sfx_s3k5f);
+					P_StartQuakeFromMobj(5, 40 * scale(), 512 * scale(), this);
 				}
 			}
 
