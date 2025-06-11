@@ -3015,7 +3015,6 @@ typedef enum
 	MD3_REAPPEAR		= 1<<1,
 	MD3_PUNT_REF		= 1<<2,
 	MD3_OWNER			= 1<<3,
-	MD3_RELINK_PLAYER	= 1<<4,
 } mobj_diff3_t;
 
 typedef enum
@@ -3339,8 +3338,6 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		diff3 |= MD3_PUNT_REF;
 	if (mobj->owner)
 		diff3 |= MD3_OWNER;
-	if (mobj->relinkplayer)
-		diff3 |= MD3_RELINK_PLAYER;
 
 	if (diff3 != 0)
 		diff2 |= MD2_MORE;
@@ -3630,10 +3627,6 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 	if (diff3 & MD3_OWNER)
 	{
 		WRITEUINT32(save->p, mobj->owner->mobjnum);
-	}
-	if (diff3 & MD3_RELINK_PLAYER)
-	{
-		WRITEUINT8(save->p, mobj->relinkplayer);
 	}
 
 	WRITEUINT32(save->p, mobj->mobjnum);
@@ -4947,10 +4940,6 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 	if (diff3 & MD3_OWNER)
 	{
 		mobj->owner = (mobj_t *)(size_t)READUINT32(save->p);
-	}
-	if (diff3 & MD3_RELINK_PLAYER)
-	{
-		mobj->relinkplayer = READUINT8(save->p);
 	}
 
 	// link tid set earlier
