@@ -5239,6 +5239,12 @@ static void PT_HandleVoiceClient(SINT8 node, boolean isserver)
 		return;
 	}
 
+	if (G_GamestateUsesLevel() && players[playernum].spectator)
+	{
+		// ignore spectators in levels
+		return;
+	}
+
 	boolean terminal = (pl->flags & VOICE_PAK_FLAGS_TERMINAL_BIT) > 0;
 	UINT32 framesize = doomcom->datalength - BASEPACKETSIZE - sizeof(voice_pak);
 	UINT8 *frame = (UINT8*)(pl) + sizeof(voice_pak);
@@ -5331,6 +5337,12 @@ static void PT_HandleVoiceServer(SINT8 node)
 		UINT8 pnode = playernode[i];
 		if (pnode == UINT8_MAX)
 		{
+			continue;
+		}
+
+		if (G_GamestateUsesLevel() && player->spectator)
+		{
+			// ignore spectators in levels
 			continue;
 		}
 
