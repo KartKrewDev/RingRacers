@@ -296,6 +296,9 @@ boolean franticitems; // Frantic items currently enabled?
 // (Certain gametypes can override this -- prefer using G_GametypeHasTeams().)
 boolean g_teamplay;
 
+// Server wants to allow Duel mode?
+boolean g_duelpermitted;
+
 // Voting system
 UINT16 g_voteLevels[VOTE_NUM_LEVELS][2]; // Levels that were rolled by the host
 SINT8 g_votes[VOTE_TOTAL]; // Each player's vote
