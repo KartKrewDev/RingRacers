@@ -129,6 +129,8 @@ struct Shoe : Mobj
 		shoe->chain(link);
 		shoe->chainLength(numLinks);
 
+		shoe->voice(sfx_s3k5d);
+
 		return shoe;
 	}
 
@@ -230,6 +232,7 @@ private:
 				{
 					momz = 32 * mapobjectscale;
 					bouncing(true);
+					voice(sfx_s3k5f);
 				}
 			}
 
@@ -240,6 +243,9 @@ private:
 
 			if (speed > maxSpeed)
 				instathrust(a, maxSpeed);
+
+			if (P_IsObjectOnGround(this) && leveltime % 5 == 0)
+				voice(sfx_s3k6f);
 		}
 		else
 		{

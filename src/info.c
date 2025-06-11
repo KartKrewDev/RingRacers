@@ -13340,7 +13340,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_ITEMICON,     // spawnstate
 		1,              // spawnhealth
 		S_NULL,         // seestate
-		sfx_None,       // seesound
+		sfx_tossed,     // seesound
 		0,              // reactiontime
 		sfx_None,       // attacksound
 		S_NULL,         // painstate
