@@ -165,6 +165,8 @@ position_t K_GetKartObjectPosToMinimapPos(fixed_t objx, fixed_t objy);
 
 INT32 K_DrawGameControl(UINT16 x, UINT16 y, UINT8 player, const char *str, UINT8 alignment, UINT8 font, UINT32 flags);
 
+void K_drawKartTeamScores(boolean fromintermission, INT32 interoffset);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

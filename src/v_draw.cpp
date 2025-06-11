@@ -22,6 +22,7 @@
 #include "z_zone.h"
 #include "k_profiles.h" // controls
 #include "p_local.h" // stplyr
+#include "r_fps.h" // R_GetViewNumber()
 
 using srb2::Draw;
 using Chain = Draw::Chain;
@@ -176,16 +177,21 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 		else if (auto it = translation.find(code); it != translation.end()) // This represents a gamecontrol, turn into Saturn button or generic button.
 		{
 
-			UINT8 localplayer = 0;
-			UINT8 indexedplayer = as_.value_or(stplyr - players);
-			for (UINT8 i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+			UINT8 localplayer = R_GetViewNumber();
+
+			if (as_.has_value())
 			{
-				if (g_localplayers[i] == indexedplayer)
+				UINT8 indexedplayer = as_.value();
+				for (UINT8 i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 				{
-					localplayer = i;
-					break;
+					if (g_localplayers[i] == indexedplayer)
+					{
+						localplayer = i;
+						break;
+					}
 				}
 			}
+
 
 			// This isn't how v_video.cpp checks for buttons and I don't know why.
 			if (cv_descriptiveinput[localplayer].value && ((it->second & 0xF0) != 0x80)) // Should we do game control translation?

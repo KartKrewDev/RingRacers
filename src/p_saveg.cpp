@@ -91,7 +91,8 @@ typedef enum
 	FLICKYCONTROLLER = 0x1000,
 	TRICKINDICATOR = 0x2000,
 	BARRIER = 0x4000,
-	BALLHOGRETICULE = 0x8000, // uh oh, we're full now...
+	BALLHOGRETICULE = 0x8000,
+	STONESHOE = 0x10000,
 } player_saveflags;
 
 static inline void P_ArchivePlayer(savebuffer_t *save)
@@ -204,7 +205,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 	TracyCZone(__zone, true);
 
 	INT32 i, j;
-	UINT16 flags;
+	UINT32 flags;
 	size_t q;
 
 	WRITEUINT32(save->p, ARCHIVEBLOCK_PLAYERS);
@@ -364,7 +365,10 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		if (players[i].powerup.barrier)
 			flags |= BARRIER;
 
-		WRITEUINT16(save->p, flags);
+		if (players[i].stoneShoe)
+			flags |= STONESHOE;
+
+		WRITEUINT32(save->p, flags);
 
 		if (flags & SKYBOXVIEW)
 			WRITEUINT32(save->p, players[i].skybox.viewpoint->mobjnum);
@@ -410,6 +414,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		if (flags & BARRIER)
 			WRITEUINT32(save->p, players[i].powerup.barrier->mobjnum);
+
+		if (flags & STONESHOE)
+			WRITEUINT32(save->p, players[i].stoneShoe->mobjnum);
 
 		WRITEUINT32(save->p, (UINT32)players[i].followitem);
 
@@ -499,6 +506,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEFIXED(save->p, players[i].accelboost);
 		WRITEFIXED(save->p, players[i].handleboost);
 		WRITEANGLE(save->p, players[i].boostangle);
+		WRITEFIXED(save->p, players[i].stonedrag);
 
 		WRITEFIXED(save->p, players[i].draftpower);
 		WRITEUINT16(save->p, players[i].draftleeway);
@@ -897,7 +905,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 	TracyCZone(__zone, true);
 
 	INT32 i, j;
-	UINT16 flags;
+	UINT32 flags;
 	size_t q;
 
 	if (READUINT32(save->p) != ARCHIVEBLOCK_PLAYERS)
@@ -1011,7 +1019,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		players[i].splitscreenindex = READUINT8(save->p);
 
-		flags = READUINT16(save->p);
+		flags = READUINT32(save->p);
 
 		if (flags & SKYBOXVIEW)
 			players[i].skybox.viewpoint = (mobj_t *)(size_t)READUINT32(save->p);
@@ -1057,6 +1065,9 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		if (flags & BARRIER)
 			players[i].powerup.barrier = (mobj_t *)(size_t)READUINT32(save->p);
+
+		if (flags & STONESHOE)
+			players[i].stoneShoe = (mobj_t *)(size_t)READUINT32(save->p);
 
 		players[i].followitem = (mobjtype_t)READUINT32(save->p);
 
@@ -1147,6 +1158,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].accelboost = READFIXED(save->p);
 		players[i].handleboost = READFIXED(save->p);
 		players[i].boostangle = READANGLE(save->p);
+		players[i].stonedrag = READFIXED(save->p);
 
 		players[i].draftpower = READFIXED(save->p);
 		players[i].draftleeway = READUINT16(save->p);
@@ -3003,7 +3015,6 @@ typedef enum
 	MD3_REAPPEAR		= 1<<1,
 	MD3_PUNT_REF		= 1<<2,
 	MD3_OWNER			= 1<<3,
-	MD3_RELINK_PLAYER	= 1<<4,
 } mobj_diff3_t;
 
 typedef enum
@@ -3327,8 +3338,6 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		diff3 |= MD3_PUNT_REF;
 	if (mobj->owner)
 		diff3 |= MD3_OWNER;
-	if (mobj->relinkplayer)
-		diff3 |= MD3_RELINK_PLAYER;
 
 	if (diff3 != 0)
 		diff2 |= MD2_MORE;
@@ -3618,10 +3627,6 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 	if (diff3 & MD3_OWNER)
 	{
 		WRITEUINT32(save->p, mobj->owner->mobjnum);
-	}
-	if (diff3 & MD3_RELINK_PLAYER)
-	{
-		WRITEUINT8(save->p, mobj->relinkplayer);
 	}
 
 	WRITEUINT32(save->p, mobj->mobjnum);
@@ -4936,10 +4941,6 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 	{
 		mobj->owner = (mobj_t *)(size_t)READUINT32(save->p);
 	}
-	if (diff3 & MD3_OWNER)
-	{
-		mobj->relinkplayer = READUINT8(save->p);
-	}
 
 	// link tid set earlier
 	P_AddThingTID(mobj);
@@ -6217,6 +6218,11 @@ static void P_RelinkPointers(void)
 		{
 			if (!RelinkMobj(&players[i].powerup.barrier))
 				CONS_Debug(DBG_GAMELOGIC, "powerup.barrier not found on player %d\n", i);
+		}
+		if (players[i].stoneShoe)
+		{
+			if (!RelinkMobj(&players[i].stoneShoe))
+				CONS_Debug(DBG_GAMELOGIC, "stoneShoe not found on player %d\n", i);
 		}
 	}
 }

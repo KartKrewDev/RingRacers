@@ -171,6 +171,7 @@ static patch_t *kp_kitchensink[3];
 static patch_t *kp_droptarget[3];
 static patch_t *kp_gardentop[3];
 static patch_t *kp_gachabom[3];
+static patch_t *kp_stoneshoe[3];
 static patch_t *kp_bar[2];
 static patch_t *kp_doublebar[2];
 static patch_t *kp_triplebar[2];
@@ -639,6 +640,7 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_droptarget[0], "K_ITDTRG");
 	HU_UpdatePatch(&kp_gardentop[0], "K_ITGTOP");
 	HU_UpdatePatch(&kp_gachabom[0], "K_ITGBOM");
+	HU_UpdatePatch(&kp_stoneshoe[0], "K_ITSTON");
 	HU_UpdatePatch(&kp_bar[0], "K_RBBAR");
 	HU_UpdatePatch(&kp_doublebar[0], "K_RBBAR2");
 	HU_UpdatePatch(&kp_triplebar[0], "K_RBBAR3");
@@ -699,6 +701,7 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_droptarget[1], "K_ISDTRG");
 	HU_UpdatePatch(&kp_gardentop[1], "K_ISGTOP");
 	HU_UpdatePatch(&kp_gachabom[1], "K_ISGBOM");
+	HU_UpdatePatch(&kp_stoneshoe[1], "K_ISSTON");
 	HU_UpdatePatch(&kp_bar[1], "K_SBBAR");
 	HU_UpdatePatch(&kp_doublebar[1], "K_SBBAR2");
 	HU_UpdatePatch(&kp_triplebar[1], "K_SBBAR3");
@@ -757,6 +760,7 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_droptarget[2], "ISPYDTRG");
 	HU_UpdatePatch(&kp_gardentop[2], "ISPYGTOP");
 	HU_UpdatePatch(&kp_gachabom[2], "ISPYGBOM");
+	HU_UpdatePatch(&kp_stoneshoe[2], "ISPYSTON");
 
 	// CHECK indicators
 	sprintf(buffer, "K_CHECKx");
@@ -1177,6 +1181,7 @@ static patch_t *K_GetCachedItemPatch(INT32 item, UINT8 offset)
 		kp_droptarget,
 		kp_gardentop,
 		kp_gachabom,
+		kp_stoneshoe,
 	};
 
 	if (item == KITEM_SAD || (item > KITEM_NONE && item < NUMKARTITEMS))
@@ -3308,7 +3313,7 @@ static void K_drawKartDuelScores(void)
 	player_t *foe = K_DuelOpponent(stplyr);
 
 	INT32 basex = 0;
-	INT32 basey = 40;
+	INT32 basey = 48;
 	INT32 flags = V_SNAPTOLEFT|V_HUDTRANS|V_SLIDEIN;
 
 	// score bars, here barheight is the size of bars at tied score
@@ -3580,7 +3585,7 @@ static tic_t scorechangecooldown = 0;
 // but HUD hooks run at variable timing based on your actual framerate.
 static tic_t teams_lastleveltime = 0;
 
-static void K_drawKartTeamScores(void)
+void K_drawKartTeamScores(boolean fromintermission, INT32 interoffset)
 {
 	if (G_GametypeHasTeams() == false)
 	{
@@ -3599,8 +3604,13 @@ static void K_drawKartTeamScores(void)
 	INT32 basey = 0;
 	INT32 flags = V_HUDTRANS|V_SLIDEIN;
 	INT32 snapflags = V_SNAPTOTOP|V_SNAPTORIGHT;
+
 	if (use4p)
 		snapflags = V_SNAPTOTOP;
+
+	if (fromintermission)
+		use4p = true;
+
 	flags |= snapflags;
 
 	// bar stuff, relative to base
@@ -3642,6 +3652,13 @@ static void K_drawKartTeamScores(void)
 		facex = -2;
 		facey = -5;
 		faceoff = 4;
+	}
+
+	if (fromintermission)
+	{
+		snapflags = 0;
+		flags = 0;
+		basex += interoffset;
 	}
 
 	UINT8 allies = stplyr->team;
@@ -3730,9 +3747,12 @@ static void K_drawKartTeamScores(void)
 			}	
 		}
 		
-		// replace scores with eased scores
-		allyscore = easedallyscore;
-		enemyscore = totalscore - allyscore;
+		if (!fromintermission)
+		{
+			// replace scores with eased scores
+			allyscore = easedallyscore;
+			enemyscore = totalscore - allyscore;
+		}
 	}
 
 	teams_lastleveltime = leveltime;
@@ -3777,9 +3797,21 @@ static void K_drawKartTeamScores(void)
 	}
 
 	// Draw at the top and bottom of the screen in 4P.
-	boolean goagain = use4p;
+	// Draw only at the bottom in intermission.
+	boolean shouldsecondpass = use4p;
+	boolean onsecondpass = fromintermission;
 
 	draw:
+
+	if (onsecondpass)
+	{
+		if (!fromintermission)
+		{
+			flags |= V_SNAPTOBOTTOM;
+			flags &= ~V_SNAPTOTOP;
+		}
+		basey = 170;
+	}
 
 	V_DrawScaledPatch(basex, basey, flags, kp_team_sticker[use4p]);
 	V_DrawMappedPatch(basex, basey, flags, kp_team_underlay[use4p][0], enemycolor);
@@ -3788,8 +3820,10 @@ static void K_drawKartTeamScores(void)
 	if (!use4p)
 		V_DrawScaledPatch(basex, basey, flags, kp_team_you);
 
-	if (V_GetHUDTranslucency(0) != 10)
+	/*
+	if (V_GetHUDTranslucency(0) != 10 || fromintermission)
 		return;
+	*/
 
 	V_DrawFill(basex+barx, basey+bary, enemywidth, barheight, enemyfill|flags);
 	V_DrawFill(basex+barx+enemywidth, basey+bary, allywidth, barheight, allyfill|flags);
@@ -3847,12 +3881,9 @@ static void K_drawKartTeamScores(void)
 		you.text("{:02}", youscore);
 	}
 
-	if (goagain)
+	if (shouldsecondpass && !onsecondpass)
 	{
-		goagain = false;
-		flags |= V_SNAPTOBOTTOM;
-		flags &= ~V_SNAPTOTOP;
-		basey = 170;
+		onsecondpass = true;
 		goto draw;
 	}
 
@@ -7053,6 +7084,8 @@ static void K_DrawBotDebugger(void)
 
 	V_DrawSmallString(8, 66, 0, va("Complexity: %d", K_GetTrackComplexity()));
 	V_DrawSmallString(8, 70, 0, va("Bot modifier: %.2f", FixedToFloat(K_BotMapModifier())));
+
+	V_DrawSmallString(8, 76, 0, va("Prediction error: %d", bot->botvars.predictionError));
 }
 
 static void K_DrawGPRankDebugger(void)
@@ -7204,17 +7237,19 @@ static std::vector<messagestate_t> messagestates{MAXSPLITSCREENPLAYERS};
 
 void K_AddMessage(const char *msg, boolean interrupt, boolean persist)
 {
-	for (auto &state : messagestates)
+	for (UINT8 i = 0; i <= r_splitscreen; i++)
 	{
-		if (interrupt)
-			state.clear();
+		messagestate_t *state = &messagestates[i];
 
-		std::string parsedmsg = srb2::Draw::TextElement().parse(msg).string();
+		if (interrupt)
+			state->clear();
+
+		std::string parsedmsg = srb2::Draw::TextElement().as(g_localplayers[i]).parse(msg).string();
 
 		if (persist)
-			state.objective = parsedmsg;
+			state->objective = parsedmsg;
 		else
-			state.add(parsedmsg);
+			state->add(parsedmsg);
 	}
 }
 
@@ -7610,16 +7645,12 @@ void K_drawKartHUD(void)
 				{
 					K_DrawKartPositionNum(stplyr->position);
 				}
-			}
 
-			if (G_GametypeHasTeams() == true)
-			{
-				K_drawKartTeamScores();
-			}
-
-			if (K_InRaceDuel())
-			{
-				K_drawKartDuelScores();
+				if (R_GetViewNumber() == 0)
+				{
+					K_drawKartTeamScores(false, 0);
+					K_drawKartDuelScores();
+				}
 			}
 
 			if (LUA_HudEnabled(hud_gametypeinfo))

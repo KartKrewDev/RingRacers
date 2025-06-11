@@ -7674,6 +7674,7 @@ static void P_InitLevelSettings(void)
 	gamespeed = multi_speed ? KARTSPEED_EASY : gametypes[gametype]->speed;
 	franticitems = false;
 	g_teamplay = false;
+	g_duelpermitted = false;
 
 	if (K_PodiumSequence() == true)
 	{
@@ -7721,6 +7722,8 @@ static void P_InitLevelSettings(void)
 		}
 		franticitems = (boolean)cv_kartfrantic.value;
 		g_teamplay = (boolean)cv_teamplay.value; // we will overwrite this later if there is not enough players
+		g_duelpermitted = (boolean)cv_duel.value; // Ignored if too many players, see K_InRaceDuel
+
 	}
 
 	memset(&battleovertime, 0, sizeof(struct battleovertime));
@@ -8159,6 +8162,15 @@ static void P_InitGametype(void)
 #else
 		strcpy(ver, VERSIONSTRING);
 #endif
+		// Replace path separators with hyphens
+		{
+			char *p = ver;
+			while ((p = strpbrk(p, "/\\")))
+			{
+				*p = '-';
+				p++;
+			}
+		}
 		sprintf(buf, "%s" PATHSEP "media" PATHSEP "replay" PATHSEP "online" PATHSEP "%s" PATHSEP "%d-%s",
 				srb2home, ver, (int) (time(NULL)), G_BuildMapName(gamemap));
 

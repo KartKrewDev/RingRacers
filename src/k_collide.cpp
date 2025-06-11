@@ -269,8 +269,19 @@ static inline BlockItReturn_t PIT_SSMineSearch(mobj_t *thing)
 		return BMIT_CONTINUE;
 	}
 
-	if (thing == grenade->target && grenade->threshold != 0) // Don't blow up at your owner instantly.
-		return BMIT_CONTINUE;
+	extern consvar_t cv_debugpickmeup;
+
+	if (!cv_debugpickmeup.value)
+	{
+		if (grenade->target && !P_MobjWasRemoved(grenade->target))
+		{
+			if (thing == grenade->target) // Don't blow up at your owner instantly.
+				return BMIT_CONTINUE;
+
+			if (grenade->target->player && thing->player && G_SameTeam(grenade->target->player, thing->player))
+				return BMIT_CONTINUE;
+		}
+	}
 
 	if (PIT_SSMineChecks(thing) == true)
 		return BMIT_CONTINUE;
@@ -386,6 +397,9 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 	if (t2->player)
 	{
 		if (t2->player->flashing > 0 && t2->hitlag == 0)
+			return true;
+
+		if (K_TryPickMeUp(t1, t2, false))
 			return true;
 
 		// Bomb punting
@@ -1138,6 +1152,11 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 	// What the fuck is calling this with stale refs? Whatever, validation's cheap.
 	if (P_MobjWasRemoved(t1) || P_MobjWasRemoved(t2) || !t1->player || !t2->player)
 		return false;
+
+	if (G_SameTeam(t1->player, t2->player))
+	{
+		return false;
+	}
 
 	// Clash instead of damage if both parties have any of these conditions
 	auto canClash = [](mobj_t *t1, mobj_t *t2)

@@ -82,6 +82,7 @@ extern consvar_t cv_kartbot;
 extern consvar_t cv_karteliminatelast;
 extern consvar_t cv_thunderdome;
 extern consvar_t cv_teamplay;
+extern consvar_t cv_duel;
 extern consvar_t cv_kartusepwrlv;
 #ifdef DEVELOP
 	extern consvar_t cv_kartencoremap;
@@ -182,7 +183,6 @@ typedef enum
 	XD_SCHEDULETASK, // 34
 	XD_SCHEDULECLEAR, // 35
 	XD_AUTOMATE,    // 36
-	// 37 is free
 	XD_MAPQUEUE = XD_AUTOMATE+2, // 38
 	XD_CALLZVOTE,   // 39
 	XD_SETZVOTE,    // 40

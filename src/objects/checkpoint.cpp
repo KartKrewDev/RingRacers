@@ -499,7 +499,7 @@ struct CheckpointManager
 				auto lines = tagged_lines(chk->linetag());
 				if (lines.empty() && gametype != GT_TUTORIAL)
 				{
-					CONS_Alert(CONS_WARNING, "Checkpoint thing %d, has linetag %d, but no lines found. Please ensure all checkpoints have associated lines.\n", chk->spawnpoint - mapthings, chk->linetag());
+					CONS_Alert(CONS_WARNING, "Checkpoint thing %s, has linetag %d, but no lines found. Please ensure all checkpoints have associated lines.\n", sizeu1(chk->spawnpoint - mapthings), chk->linetag());
 				}
 				else
 				{
@@ -510,7 +510,7 @@ struct CheckpointManager
 			{
 				if (gametype != GT_TUTORIAL)
 				{
-					CONS_Alert(CONS_WARNING, "Checkpoint thing %d, has no linetag. Please ensure all checkpoint things have a linetag.\n", chk->spawnpoint - mapthings);
+					CONS_Alert(CONS_WARNING, "Checkpoint thing %s, has no linetag. Please ensure all checkpoint things have a linetag.\n", sizeu1(chk->spawnpoint - mapthings));
 				}
 			}
 			list_.push_front(chk);

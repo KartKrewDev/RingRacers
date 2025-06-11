@@ -1274,6 +1274,12 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 				gravityadd *= 6;
 				break;
 			case MT_FLOATINGITEM: {
+				if (mo->threshold == KDROP_STONESHOETRAP)
+				{
+					gravityadd = (5*gravityadd)/2;
+					break;
+				}
+
 				// Basically this accelerates gravity after
 				// the object reached its peak vertical
 				// momentum. It's a gradual acceleration up
@@ -1295,6 +1301,9 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 			case MT_KART_PARTICLE:
 				if (!mo->fuse)
 					gravityadd *= 2;
+				break;
+			case MT_STONESHOE:
+				gravityadd *= 4;
 				break;
 			default:
 				break;
@@ -5337,6 +5346,39 @@ boolean P_IsKartFieldItem(INT32 type)
 	}
 }
 
+// This item keeps track of its owner by the mobj target
+boolean P_IsRelinkItem(INT32 type)
+{
+	switch (type)
+	{
+		case MT_POGOSPRING:
+		case MT_EGGMANITEM:
+		case MT_EGGMANITEM_SHIELD:
+		case MT_BANANA:
+		case MT_BANANA_SHIELD:
+		case MT_ORBINAUT:
+		case MT_ORBINAUT_SHIELD:
+		case MT_JAWZ:
+		case MT_JAWZ_SHIELD:
+		case MT_SSMINE:
+		case MT_SSMINE_SHIELD:
+		case MT_LANDMINE:
+		case MT_DROPTARGET:
+		case MT_DROPTARGET_SHIELD:
+		case MT_BALLHOG:
+		case MT_SPB:
+		case MT_BUBBLESHIELDTRAP:
+		case MT_GARDENTOP:
+		case MT_HYUDORO_CENTER:
+		case MT_SINK:
+		case MT_GACHABOM:
+			return true;
+
+		default:
+			return false;
+	}
+}
+
 boolean K_IsMissileOrKartItem(mobj_t *mo)
 {
 	if (mo->flags & MF_MISSILE)
@@ -5402,20 +5444,9 @@ static boolean P_IsTrackerType(INT32 type)
 		case MT_GARDENTOP: // Frey
 			return true;
 
-		case MT_JAWZ_SHIELD: // Pick-me-up
-		case MT_ORBINAUT:
-		case MT_ORBINAUT_SHIELD:
-		case MT_DROPTARGET:
-		case MT_DROPTARGET_SHIELD:
-		case MT_LANDMINE:
-		case MT_BANANA:
-		case MT_BANANA_SHIELD:
-		case MT_GACHABOM:
-		case MT_EGGMANITEM:
-		case MT_EGGMANITEM_SHIELD:
-			return true;
-
 		default:
+			if (K_IsPickMeUpItem(type))
+				return true;
 			return false;
 	}
 }
@@ -6682,6 +6713,11 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		}
 		break;
 	}
+	case MT_STONESHOE_CHAIN:
+	{
+		Obj_TickStoneShoeChain(mobj);
+		return;
+	}
 	default:
 		if (mobj->fuse)
 		{ // Scenery object fuse! Very basic!
@@ -7447,6 +7483,38 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				mobj->momx = mobj->momy = 0;
 				S_StartSound(mobj, mobj->info->activesound);
 				P_SetMobjState(mobj, S_SSMINE_DEPLOY1);
+
+				spritenum_t parts[4] = {SPR_SSMA, SPR_SSMB, SPR_SSMC, SPR_SSMD};
+
+				#define RADIUSCOPIES 6
+
+				UINT8 lowlight = 191;
+				UINT8 highlight = 255;
+				UINT8 lightpercopy = (highlight - lowlight) / RADIUSCOPIES;
+
+				angle_t increment = ANG1*10;
+
+				for (UINT8 i = 0; i < 4; i++)
+				{
+					for (UINT8 j = 0; j < RADIUSCOPIES; j++)
+					{
+						mobj_t *radius = P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_MINERADIUS);
+						radius->angle -= j*increment;
+						P_SetTarget(&radius->target, mobj);
+
+						P_InstaScale(radius, mobj->scale/4);
+						radius->destscale = mobj->scale * 6; // Matches SSMINE_DEPLOY8 radius, will scale down when thinking after
+						radius->scalespeed = mobj->scale;
+
+						radius->sprite = parts[i];
+
+						radius->renderflags |= RF_ABSOLUTELIGHTLEVEL;
+						radius->lightlevel = highlight - (lightpercopy * j);
+						radius->renderflags |= (cv_reducevfx.value) ? RF_TRANS90 : RF_TRANS50;
+					}
+				}
+
+				#undef RADIUSCOPIES
 			}
 		}
 
@@ -8373,6 +8441,44 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			P_MoveOrigin(mobj, destx, desty, mobj->target->z + zoff);
 		}
+		break;
+	}
+	case MT_MINERADIUS:
+	{
+		if (!mobj->target || P_MobjWasRemoved(mobj->target))
+		{
+			P_RemoveMobj(mobj);
+			return false;
+		}
+
+		statenum_t stateindex = mobj->target->state - states;
+
+		mobj->x = mobj->target->x;
+		mobj->y = mobj->target->y;
+		mobj->z = mobj->target->z + mobj->target->height/4;
+
+		K_MatchGenericExtraFlags(mobj, mobj->target);
+
+		mobj->color = mobj->target->color;
+		mobj->colorized = true;
+		mobj->angle += ANG1*5;
+
+		if (stateindex == S_SSMINE_DEPLOY8)
+		{
+			mobj->renderflags &= ~(RF_TRANSMASK);
+			if (cv_reducevfx.value)
+				mobj->renderflags |= RF_TRANS80;
+		}
+
+		if (stateindex == S_SSMINE_DEPLOY9) // Horseshit, see SSMineSearch
+		{
+			mobj->destscale = mobj->target->scale*4;
+		}
+
+
+		// mobj_t *ghost = P_SpawnGhostMobj(mobj);
+		// ghost->fuse = 12;
+
 		break;
 	}
 	case MT_SIDETRICK:
@@ -10136,6 +10242,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		break;
 	}
 
+	case MT_STONESHOE:
+		return Obj_TickStoneShoe(mobj);
+
 	default:
 		// check mobj against possible water content, before movement code
 		P_MobjCheckWater(mobj);
@@ -10201,6 +10310,12 @@ static boolean P_CanFlickerFuse(mobj_t *mobj)
 		case MT_BLENDEYE_PUYO:
 		case MT_KART_PARTICLE:
 			if (mobj->fuse <= TICRATE)
+			{
+				return true;
+			}
+			break;
+		case MT_STONESHOE:
+			if (mobj->fuse <= 3 * TICRATE)
 			{
 				return true;
 			}
@@ -10354,25 +10469,9 @@ void P_MobjThinker(mobj_t *mobj)
 {
 	I_Assert(mobj != NULL);
 	I_Assert(!P_MobjWasRemoved(mobj));
-
-	if (P_IsKartItem(mobj->type) && mobj->target && !P_MobjWasRemoved(mobj->target))
-	{
-		player_t *link = mobj->target->player;
-		if (link && playeringame[link-players] && !link->spectator)
-			mobj->relinkplayer = (link-players) + 1;
-	}
-
 	// Remove dead target/tracer.
 	if (mobj->target && P_MobjWasRemoved(mobj->target))
-	{
 		P_SetTarget(&mobj->target, NULL);
-		if (P_IsKartItem(mobj->type) && mobj->relinkplayer && mobj->relinkplayer <= MAXPLAYERS)
-		{
-			player_t *relink = &players[mobj->relinkplayer-1];
-			if (playeringame[relink-players] && !relink->spectator && relink->mo && !P_MobjWasRemoved(relink->mo))
-				P_SetTarget(&mobj->target, relink->mo);
-		}
-	}
 	if (mobj->tracer && P_MobjWasRemoved(mobj->tracer))
 		P_SetTarget(&mobj->tracer, NULL);
 	if (mobj->hnext && P_MobjWasRemoved(mobj->hnext))
@@ -11003,6 +11102,12 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_RANDOMAUDIENCE:
 			thing->shadowscale = FRACUNIT;
 			thing->whiteshadow = false;
+			break;
+		case MT_STONESHOE:
+			thing->shadowscale = 2*FRACUNIT/3;
+			break;
+		case MT_STONESHOE_CHAIN:
+			thing->shadowscale = FRACUNIT/5;
 			break;
 		default:
 			if (thing->flags & (MF_ENEMY|MF_BOSS))

@@ -1124,6 +1124,14 @@ static int player_set(lua_State *L)
 		plr->sneakertimer = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"numsneakers"))
 		plr->numsneakers = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"panelsneakertimer"))
+		plr->panelsneakertimer = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"numpanelsneakers"))
+		plr->numpanelsneakers = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"weaksneakertimer"))
+		plr->weaksneakertimer = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"numweaksneakers"))
+		plr->numweaksneakers = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"floorboost"))
 		plr->floorboost = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"growshrinktimer"))

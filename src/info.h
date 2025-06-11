@@ -858,6 +858,10 @@ typedef enum sprite
 	SPR_MGBX, // Heavy Magician transform box
 	SPR_MGBT, // Heavy Magician transform box top
 	SPR_MGBB, // Heavy Magician transform box bottom
+	SPR_SSMA, // Mine radius
+	SPR_SSMB,
+	SPR_SSMC,
+	SPR_SSMD,
 	SPR_MSHD, // Item Monitor Big Shard
 	SPR_IMDB, // Item Monitor Small Shard (Debris)
 	SPR_MTWK, // Item Monitor Glass Twinkle
@@ -1324,6 +1328,8 @@ typedef enum sprite
 
 	// Flybot767 (stun)
 	SPR_STUN,
+
+	SPR_STON,
 
 	// Pulley
 	SPR_HCCH,
@@ -2606,6 +2612,8 @@ typedef enum state
 	S_MAGICIANBOX,
 	S_MAGICIANBOX_TOP,
 	S_MAGICIANBOX_BOTTOM,
+
+	S_MINERADIUS,
 
 	S_WAVEDASH,
 
@@ -4161,6 +4169,8 @@ typedef enum state
 	// Flybot767 (stun)
 	S_FLYBOT767,
 
+	S_STON,
+
 	S_FIRSTFREESLOT,
 	S_LASTFREESLOT = S_FIRSTFREESLOT + NUMSTATEFREESLOTS - 1,
 	NUMSTATES
@@ -4622,6 +4632,7 @@ typedef enum mobj_type
 	MT_MONITOR_PART,
 	MT_MONITOR_SHARD,
 	MT_MAGICIANBOX,
+	MT_MINERADIUS,
 	MT_WAVEDASH,
 
 	MT_INSTAWHIP,
@@ -5082,6 +5093,9 @@ typedef enum mobj_type
 	MT_AMPS,
 
 	MT_FLYBOT767,
+
+	MT_STONESHOE,
+	MT_STONESHOE_CHAIN,
 
 	MT_FIRSTFREESLOT,
 	MT_LASTFREESLOT = MT_FIRSTFREESLOT + NUMMOBJFREESLOTS - 1,

@@ -686,6 +686,7 @@ consvar_t cv_items[] = {
 	UnsavedNetVar("droptarget",			"On").on_off(),
 	UnsavedNetVar("gardentop",			"On").on_off(),
 	UnsavedNetVar("gachabom",			"On").on_off(),
+	UnsavedNetVar("stoneshoe",			"On").on_off(),
 	UnsavedNetVar("dualsneaker",		"On").on_off(),
 	UnsavedNetVar("triplesneaker",		"On").on_off(),
 	UnsavedNetVar("triplebanana",		"On").on_off(),
@@ -727,6 +728,7 @@ void KartSpeed_OnChange(void);
 consvar_t cv_kartspeed = UnsavedNetVar("gamespeed", "Auto Gear").values(kartspeed_cons_t).onchange_noinit(KartSpeed_OnChange);
 
 consvar_t cv_teamplay = UnsavedNetVar("teamplay", "Off").on_off();
+consvar_t cv_duel = UnsavedNetVar("duel", "On").on_off();
 
 consvar_t cv_kartusepwrlv = UnsavedNetVar("mobiums", "Yes").yes_no();
 
@@ -809,6 +811,7 @@ consvar_t cv_debugencorevote = OnlineCheat("debugencorevote", "Off").on_off().de
 consvar_t cv_debuglapcheat = OnlineCheat("debuglapcheat", "Off").on_off().description("Permit far waypoint jumps and disable lap cheat prevention");
 consvar_t cv_debugnewchallenger = OnlineCheat("debugnewchallenger", "Off").on_off().description("Do not restart the map to toggle Duel mode");
 consvar_t cv_forcebots = OnlineCheat("forcebots", "No").yes_no().description("Force bots to appear, even in wrong game modes");
+consvar_t cv_debugpickmeup = OnlineCheat("debugpickmeup", "Off").on_off().description("Don't protect players from self/team damage");
 
 void ForceSkin_OnChange(void);
 consvar_t cv_forceskin = OnlineCheat("forcecharacter", "None").onchange(ForceSkin_OnChange).description("Force all players to use one character");

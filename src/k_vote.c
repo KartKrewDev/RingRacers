@@ -2238,7 +2238,7 @@ static boolean Y_DetermineStageStrike(void)
 		case int_score:
 		{
 			score_a = a->score;
-			score_b = b->realtime;
+			score_b = b->score;
 			break;
 		}
 		default:

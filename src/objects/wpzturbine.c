@@ -237,7 +237,6 @@ void Obj_playerWPZTurbine(player_t *p)
 	if (mode && !distreached)
 		p->turbineangle = (INT32)R_PointToAngle2(t->x, t->y, pmo->x, pmo->y);
 
-	p->spinouttimer = TICRATE;
 	pmo->pitch = 0;
 
 	// determine target x/y/z
@@ -344,7 +343,6 @@ void Obj_playerWPZTurbine(player_t *p)
 				pmo->momy = (pmo->momy*17)/10;
 			}
 
-			p->spinouttimer = 0;
 			pmo->flags &= ~MF_NOCLIP;
 		}
 	}

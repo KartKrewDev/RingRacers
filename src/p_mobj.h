@@ -450,8 +450,6 @@ struct mobj_t
 
 	INT32 po_movecount; // Polyobject carrying (NOT savegame, NOT Lua)
 
-	UINT8 relinkplayer; // reassociate kartitem target when it dies. ACHTUNG 1-INDEXED
-
 	// WARNING: New fields must be added separately to savegame and Lua.
 };
 
@@ -547,6 +545,7 @@ void P_AddCachedAction(mobj_t *mobj, INT32 statenum);
 
 boolean P_IsKartItem(INT32 type);
 boolean P_IsKartFieldItem(INT32 type);
+boolean P_IsRelinkItem(INT32 type);
 boolean K_IsMissileOrKartItem(mobj_t *mo);
 boolean P_CanDeleteKartItem(INT32 type);
 

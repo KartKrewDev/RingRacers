@@ -3046,7 +3046,7 @@ fixed_t M_DrawCupWinData(INT32 rankx, INT32 ranky, cupheader_t *cup, UINT8 diffi
 	patch_t *charPat = NULL;
 
 	if ((windata->best_skin.unloaded != NULL)
-		|| (windata->best_skin.id > numskins))
+		|| (windata->best_skin.id >= numskins))
 	{
 		colormap = NULL;
 

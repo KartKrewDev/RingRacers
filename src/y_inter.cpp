@@ -800,6 +800,7 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 				player_names[pnum]
 			);
 
+			if (netgame)
 			{
 				patch_t *voxpat;
 				int voxxoffs = 0;
@@ -2019,6 +2020,9 @@ void Y_IntermissionDrawer(void)
 
 	// Returns early if there's no players to draw
 	Y_PlayerStandingsDrawer(&data, x);
+
+	if (sorttic == -1 || ((intertic - sorttic) < 8))
+		K_drawKartTeamScores(true, x);
 
 	// Draw bottom (and top) pieces
 skiptallydrawer:

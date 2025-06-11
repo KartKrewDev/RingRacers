@@ -193,7 +193,8 @@ Run this macro, then #undef FOREACH afterward
 	FOREACH (KITCHENSINK,   20),\
 	FOREACH (DROPTARGET,    21),\
 	FOREACH (GARDENTOP,     22),\
-	FOREACH (GACHABOM,      23)
+	FOREACH (GACHABOM,      23),\
+	FOREACH (STONESHOE,     24)
 
 typedef enum
 {
@@ -213,6 +214,8 @@ typedef enum
 	KRITEM_TRIPLEGACHABOM,
 
 	NUMKARTRESULTS,
+
+	KDROP_STONESHOETRAP,
 
 	// Power-ups exist in the same enum as items so it's easy
 	// for paper items to be reused for them.
@@ -420,6 +423,8 @@ struct botvars_t
 
 	UINT8 roulettePriority; // What items to go for on the roulette
 	tic_t rouletteTimeout; // If it takes too long to decide, try lowering priority until we find something valid.
+
+	angle_t predictionError; // How bad is our momentum angle relative to where we're trying to go?
 };
 
 // player_t struct for round-specific condition tracking
@@ -769,6 +774,7 @@ struct player_t
 	fixed_t accelboost;		// Boost value smoothing for acceleration
 	fixed_t handleboost;	// Boost value smoothing for handling
 	angle_t boostangle;		// angle set when not spun out OR boosted to determine what direction you should keep going at if you're spun out and boosted.
+	fixed_t stonedrag;
 
 	fixed_t draftpower;		// (0 to FRACUNIT) - Drafting power, doubles your top speed & acceleration at max
 	UINT16 draftleeway;		// Leniency timer before removing draft power
@@ -1045,6 +1051,7 @@ struct player_t
 	mobj_t *whip;
 	mobj_t *hand;
 	mobj_t *flickyAttacker;
+	mobj_t *stoneShoe;
 
 	SINT8 pitblame; // Index of last player that hit you, resets after being in control for a bit. If you deathpit, credit the old attacker!
 
