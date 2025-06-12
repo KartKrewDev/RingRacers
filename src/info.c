@@ -600,6 +600,8 @@ char sprnames[NUMSPRITES + 1][5] =
 	"AMPC",
 	"AMPD",
 
+	"EXPC",
+
 	"SOR_",
 
 	"WTRL", // Water Trail
@@ -3246,6 +3248,7 @@ state_t states[NUMSTATES] =
 	{SPR_EGOO, 0, 1, {NULL}, 0, 0, S_NULL}, // S_EGOORB
 
 	{SPR_AMPA, FF_FULLBRIGHT|FF_ANIMATE, -1, {NULL}, 41, 1, S_NULL}, // S_AMPS
+	{SPR_EXPC, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_EXP
 
 	// Water Trail
 	{SPR_WTRL, FF_PAPERSPRITE  , 2, {NULL}, 0, 0, S_NULL}, // S_WATERTRAIL1
@@ -22482,8 +22485,34 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL        // raisestate
 	},
 	{           // MT_AMPS
-		3444,         // doomednum
+		-1,         // doomednum
 		S_AMPS,  	  // spawnstate
+		1000,         // spawnhealth
+		S_NULL,       // seestate
+		sfx_None,     // seesound
+		0,            // reactiontime
+		sfx_None,     // attacksound
+		S_NULL,       // painstate
+		0,            // painchance
+		sfx_None,     // painsound
+		S_NULL,       // meleestate
+		S_NULL,       // missilestate
+		S_NULL,       // deathstate
+		S_NULL,       // xdeathstate
+		sfx_None,     // deathsound
+		1,            // speed
+		32*FRACUNIT,  // radius
+		32*FRACUNIT,  // height
+		0,            // dispoffset
+		0,            // mass
+		0,            // damage
+		sfx_None,     // activesound
+		MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_NOCLIP|MF_NOCLIPTHING, // flags
+		S_NULL        // raisestate
+	},
+	{           // MT_EXP
+		-1,         // doomednum
+		S_EXP,  	  // spawnstate
 		1000,         // spawnhealth
 		S_NULL,       // seestate
 		sfx_None,     // seesound

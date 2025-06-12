@@ -8908,6 +8908,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		Obj_AmpsThink(mobj);
 		break;
 	}
+	case MT_EXP:
+	{
+		Obj_ExpThink(mobj);
+		break;
+	}
 	case MT_BLOCKRING:
 	{
 		Obj_BlockRingThink(mobj);

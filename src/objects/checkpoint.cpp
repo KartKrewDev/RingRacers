@@ -688,7 +688,16 @@ void Obj_CrossCheckpoints(player_t* player, fixed_t old_x, fixed_t old_y)
 
 	player->checkpointId = chk->id();
 
+	UINT16 oldexp = player->exp;
+
 	K_CheckpointCrossAward(player);
+
+	if (player->exp > oldexp)
+	{
+		UINT16 expdiff = (player->exp - oldexp);
+		K_SpawnEXP(player, expdiff, chk);
+		K_SpawnEXP(player, expdiff, chk->other());
+	}
 
 	K_UpdatePowerLevels(player, player->laps, false);
 }
