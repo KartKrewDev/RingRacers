@@ -8898,6 +8898,31 @@ void K_KartPlayerHUDUpdate(player_t *player)
 	if (player->positiondelay)
 		player->positiondelay--;
 
+	if (player->exp != (UINT32)player->karthud[khud_oldexp])
+	{
+		if (player->exp <= (UINT32)player->karthud[khud_oldexp])
+		{
+			player->karthud[khud_oldexp] = 0;
+			player->karthud[khud_exp] = 0;
+			player->karthud[khud_exptimer] = 0;
+		}
+		else
+		{
+			INT32 delta = player->exp - player->karthud[khud_exp];
+			INT32 speed = max(1, 10-delta);
+
+			player->karthud[khud_exptimer]++;
+
+			if (player->karthud[khud_exptimer] >= speed)
+			{
+				player->karthud[khud_exp]++;
+				player->karthud[khud_exptimer] = 0;
+				if (player->exp == (UINT32)player->karthud[khud_exp])
+					player->karthud[khud_oldexp] = player->exp;
+			}
+		}
+	}
+
 	if (!(player->pflags & PF_FAULT || player->pflags & PF_VOID))
 		player->karthud[khud_fault] = 0;
 	else if (player->karthud[khud_fault] > 0 && player->karthud[khud_fault] <= 2*TICRATE)

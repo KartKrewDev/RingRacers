@@ -3921,7 +3921,7 @@ static boolean K_drawKartLaps(void)
 	INT32 bump = 0;
 	boolean drewsticker = false;
 
-	UINT16 displayEXP = stplyr->exp;
+	UINT16 displayEXP = stplyr->karthud[khud_exp];
 
 	// Jesus Christ.
 	// I do not understand the way this system of offsets is laid out at all,
@@ -3999,6 +3999,10 @@ static boolean K_drawKartLaps(void)
 		}
 	}
 
+	boolean dance = (stplyr->exp > (UINT32)stplyr->karthud[khud_exp]);
+	INT32 danceflag = dance ? V_STRINGDANCE : 0;
+	UINT16 dancecolor = dance ? SKINCOLOR_AQUAMARINE : 0;
+
 	// EXP
 	if (displayEXP == UINT16_MAX)
 	{
@@ -4048,9 +4052,15 @@ static boolean K_drawKartLaps(void)
 		V_DrawMappedPatch(fr, fy, transflag|V_SLIDEIN|splitflags, kp_exp[1], colormap);
 
 		// EXP
-		V_DrawScaledPatch(fr+11, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[displayEXP/100]);
-		V_DrawScaledPatch(fr+15, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[displayEXP/10%10]);
-		V_DrawScaledPatch(fr+19, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[displayEXP%10]);
+
+		using srb2::Draw;
+
+		Draw row = Draw(fr+11, fy).flags(V_HUDTRANS|V_SLIDEIN|splitflags|danceflag).font(Draw::Font::kPing).colorize(dancecolor);
+		row.text("{:03}", displayEXP);
+
+		//V_DrawScaledPatch(fr+11, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[displayEXP/100]);
+		//V_DrawScaledPatch(fr+15, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[displayEXP/10%10]);
+		//V_DrawScaledPatch(fr+19, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[displayEXP%10]);
 	}
 	else
 	{
@@ -4065,7 +4075,7 @@ static boolean K_drawKartLaps(void)
 		V_DrawMappedPatch(LAPS_X+bump, LAPS_Y, transflag|V_SLIDEIN|splitflags, kp_exp[0], colormap);
 
 		using srb2::Draw;
-		Draw row = Draw(LAPS_X+23+bump, LAPS_Y+3).flags(V_HUDTRANS|V_SLIDEIN|splitflags).font(Draw::Font::kThinTimer);
+		Draw row = Draw(LAPS_X+23+bump, LAPS_Y+3).flags(V_HUDTRANS|V_SLIDEIN|splitflags|danceflag).font(Draw::Font::kThinTimer).colorize(dancecolor);
 		row.text("{:03}", displayEXP);
 	}
 

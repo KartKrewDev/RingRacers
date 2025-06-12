@@ -339,6 +339,11 @@ typedef enum
 	// Tricks
 	khud_trickcool,
 
+	// Exp
+	khud_oldexp,
+	khud_exp,
+	khud_exptimer,
+
 	NUMKARTHUD
 } karthudtype_t;
 
