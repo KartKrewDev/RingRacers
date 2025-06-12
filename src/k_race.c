@@ -471,7 +471,6 @@ UINT8 K_RaceLapCount(INT16 mapNum)
 
 void K_SpawnFinishEXP(player_t *player, UINT16 exp)
 {
-	CONS_Printf("finish\n");
 	if (finishBeamLine != NULL)
 	{
 		mobj_t *p1 = P_SpawnMobj(finishBeamLine->v1->x, finishBeamLine->v1->y, player->mo->z, MT_THOK);
