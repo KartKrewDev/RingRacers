@@ -15739,8 +15739,8 @@ boolean K_PlayerCanUseItem(player_t *player)
 
 fixed_t K_GetGradingFactorAdjustment(player_t *player)
 {
-	fixed_t power = 3*FRACUNIT/100; // adjust to change overall xp volatility
-	fixed_t stablerate = 3*FRACUNIT/10; // how low is your placement before losing XP? 4*FRACUNIT/10 = top 40% of race will gain
+	fixed_t power = EXP_POWER; // adjust to change overall xp volatility
+	const fixed_t stablerate = EXP_STABLERATE; // how low is your placement before losing XP? 4*FRACUNIT/10 = top 40% of race will gain
 	fixed_t result = 0;
 
 	if (g_teamplay)

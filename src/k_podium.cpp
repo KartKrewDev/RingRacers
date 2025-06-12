@@ -723,10 +723,28 @@ void podiumData_s::Draw(void)
 									.xy(0, 1)
 									.colorize(static_cast<skincolornum_t>(SKINCOLOR_MUSTARD))
 									.patch("K_SPTEXP");
+
 								// Colorize the crystal, just like we do for hud
-								fixed_t factor = FixedDiv(dta->exp*FRACUNIT, lvl->totalExp*FRACUNIT);
-								skincolornum_t overlaycolor = factor < FRACUNIT ? SKINCOLOR_RUBY : SKINCOLOR_ULTRAMARINE;
-								if (factor >= FRACUNIT) {factor += factor-FRACUNIT;} // exaggerate the positive side, since reverse engineering the factor like this results in half the translucency range
+								skincolornum_t overlaycolor = SKINCOLOR_MUSTARD;
+								fixed_t stablerateinverse = FRACUNIT - EXP_STABLERATE;
+								INT16 exp_range = MAXEXP-MINEXP;
+								INT16 exp_offset = dta->exp-MINEXP;
+								fixed_t factor = (exp_offset*FRACUNIT) / exp_range; // 0.0 to 1.0 in fixed
+								// amount of blue is how much factor is above EXP_STABLERATE, and amount of red is how much factor is below
+								// assume that EXP_STABLERATE is within 0.0 to 1.0 in fixed
+								if (factor <= stablerateinverse)
+								{
+									overlaycolor = SKINCOLOR_RUBY;
+									factor = FixedDiv(factor, stablerateinverse);
+								}
+								else
+								{
+									overlaycolor = SKINCOLOR_ULTRAMARINE;
+									fixed_t bluemaxoffset = EXP_STABLERATE;
+									factor = factor - stablerateinverse;
+									factor = FRACUNIT - FixedDiv(factor, bluemaxoffset);
+								}
+
 								auto transflag = K_GetTransFlagFromFixed(factor);
 								drawer_gametype
 									.xy(0, 1)
@@ -872,12 +890,32 @@ void podiumData_s::Draw(void)
 		drawer_totals_right
 			.colorize(static_cast<skincolornum_t>(SKINCOLOR_MUSTARD))
 			.patch("K_STEXP");
+
 		// Colorize the crystal for the totals, just like we do for in race hud
-		fixed_t factor = FixedDiv((rank.exp+(35*rank.numPlayers-1))*FRACUNIT, rank.totalExp*FRACUNIT); // bump the calc a bit, because its probably not possible for every human to get 125 on every race
-		skincolornum_t overlaycolor = factor < FRACUNIT ? SKINCOLOR_RUBY : SKINCOLOR_ULTRAMARINE;
-		if (factor >= FRACUNIT) {factor += factor-FRACUNIT;} // exaggerate the positive side, since reverse engineering the factor like this results in half the translucency range
+		fixed_t extraexpfactor = (MAXEXP*FRACUNIT) / TARGETEXP;
+		INT16 totalExpMax = FixedMul(rank.totalExp*FRACUNIT, extraexpfactor) / FRACUNIT; // im just going to calculate it from target lol
+		INT16 totalExpMin = rank.numPlayers*MINEXP;
+		skincolornum_t overlaycolor = SKINCOLOR_MUSTARD;
+		fixed_t stablerateinverse = FRACUNIT - EXP_STABLERATE;
+		INT16 exp_range = totalExpMax-totalExpMin;
+		INT16 exp_offset = rank.exp-totalExpMin;
+		fixed_t factor = (exp_offset*FRACUNIT) / exp_range; // 0.0 to 1.0 in fixed
+		// amount of blue is how much factor is above EXP_STABLERATE, and amount of red is how much factor is below
+		// assume that EXP_STABLERATE is within 0.0 to 1.0 in fixed
+		if (factor <= stablerateinverse)
+		{
+			overlaycolor = SKINCOLOR_RUBY;
+			factor = FixedDiv(factor, stablerateinverse);
+		}
+		else
+		{
+			overlaycolor = SKINCOLOR_ULTRAMARINE;
+			fixed_t bluemaxoffset = EXP_STABLERATE;
+			factor = factor - stablerateinverse;
+			factor = FRACUNIT - FixedDiv(factor, bluemaxoffset);
+		}
+
 		auto transflag = K_GetTransFlagFromFixed(factor);
-		
 		drawer_totals_right
 			.colorize(static_cast<skincolornum_t>(overlaycolor))
 			.flags(transflag)
