@@ -432,6 +432,11 @@ boolean K_PlayerUsesBotMovement(const player_t *player)
 	if (player->bot)
 		return true;
 
+#ifdef DEVELOP
+	if (cv_takeover.value)
+		return true;
+#endif
+
 	return false;
 }
 

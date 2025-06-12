@@ -800,6 +800,7 @@ consvar_t cv_battleufotest = OnlineCheat("battleufotest", "Off").on_off().descri
 
 #ifdef DEVELOP
 	consvar_t cv_botcontrol = OnlineCheat("botcontrol", "On").on_off().description("Toggle bot AI movement");
+	consvar_t cv_takeover = OnlineCheat("takeover", "Off").on_off().description("Human players use bot movement");
 #endif
 
 extern CV_PossibleValue_t capsuletest_cons_t[];

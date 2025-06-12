@@ -56,6 +56,9 @@ void Obj_ExpThink (mobj_t *exp)
 
         dist = P_AproxDistance(P_AproxDistance(exp->x - mo->x, exp->y - mo->y), exp->z - mo->z);
 
+        exp->renderflags |= RF_DONTDRAW;
+        exp->renderflags &= ~K_GetPlayerDontDrawFlag(player);
+
         // K_MatchGenericExtraFlags(exp, mo);
 
         exp->cusval++;

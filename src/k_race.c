@@ -475,10 +475,6 @@ void K_SpawnFinishEXP(player_t *player, UINT16 exp)
 	{
 		mobj_t *p1 = P_SpawnMobj(finishBeamLine->v1->x, finishBeamLine->v1->y, player->mo->z, MT_THOK);
 		mobj_t *p2 = P_SpawnMobj(finishBeamLine->v2->x, finishBeamLine->v2->y, player->mo->z, MT_THOK);
-		p1->fuse = 200;
-		p2->fuse = 200;
-		p1->tics = 200;
-		p2->tics = 200;
 		K_SpawnEXP(player, exp, p1);
 		K_SpawnEXP(player, exp, p2);
 	}
