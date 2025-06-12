@@ -3501,7 +3501,7 @@ void A_AttractChase(mobj_t *actor)
 	if (actor->flags2 & MF2_NIGHTSPULL || !actor->health)
 		return;
 
-	if (actor->extravalue1 && actor->type != MT_EMERALD && actor->type != MT_EXP) // SRB2Kart
+	if (actor->extravalue1 && actor->type != MT_EMERALD) // SRB2Kart
 	{
 		if (!actor->target || P_MobjWasRemoved(actor->target) || !actor->target->player)
 		{

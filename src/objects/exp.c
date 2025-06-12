@@ -23,8 +23,7 @@
 #include "../sounds.h"
 
 #define EXP_ARCTIME (8)
-#define EXP_ORBIT (240)
-#define EXP_COLLECT (100)
+#define EXP_ORBIT (100)
 
 void Obj_ExpThink (mobj_t *exp)
 {
@@ -45,28 +44,50 @@ void Obj_ExpThink (mobj_t *exp)
 
         dist = P_AproxDistance(P_AproxDistance(exp->x - mo->x, exp->y - mo->y), exp->z - mo->z);
 
-        exp->angle += ANGLE_45/4;
+        K_MatchGenericExtraFlags(exp, mo);
 
+        exp->cusval++;
+
+        if (exp->cusval%2)
+        {
+            mobj_t *ghost = P_SpawnGhostMobj(exp);
+            ghost->colorized = true;
+            ghost->color = player->skincolor;
+            ghost->renderflags |= RF_ADD;
+            ghost->fuse = 2;
+        }
+
+        // bullshit copypaste orbit behavior
         if (exp->threshold)
         {
-            A_AttractChase(exp);
+            fixed_t orbit = (4*mo->scale) * (16 - exp->extravalue1);
 
-            exp->threshold = min(exp->threshold, 1);
+            P_SetScale(exp, (exp->destscale = mapobjectscale - ((mapobjectscale/28) * exp->extravalue1)));
+            exp->z = exp->target->z;
+            P_MoveOrigin(exp,
+                mo->x + FixedMul(orbit, FINECOSINE(exp->angle >> ANGLETOFINESHIFT)),
+                mo->y + FixedMul(orbit, FINESINE(exp->angle >> ANGLETOFINESHIFT)),
+                exp->z + mo->scale * 24 * P_MobjFlip(exp));
 
-            dist = P_AproxDistance(P_AproxDistance(exp->x - mo->x, exp->y - mo->y), exp->z - mo->z);
+            exp->momx = 0;
+            exp->momy = 0;
+            exp->momz = 0;
 
-            if (dist < (EXP_COLLECT * exp->scale))
+            exp->angle += ANG30;
+            exp->extravalue1++;
+
+            if (exp->extravalue1 >= 16)
                 P_RemoveMobj(exp);
 
             return;
         }
 
+        exp->angle += ANGLE_45/4;
+
         UINT8 damper = 3;
 
         fixed_t vert = dist/3;
         fixed_t speed = 45*exp->scale;
-
-        exp->cusval++;
 
         if (exp->extravalue2) // Mode: going down, aim at the player and speed up / dampen stray movement
         {
@@ -102,18 +123,8 @@ void Obj_ExpThink (mobj_t *exp)
         exp->momy += FixedMul(FINESINE(vang>>ANGLETOFINESHIFT), FixedMul(FINESINE(hang>>ANGLETOFINESHIFT), speed));
         exp->momz += FixedMul(FINECOSINE(vang>>ANGLETOFINESHIFT), speed);
 
-        if (exp->cusval%2)
-        {
-            mobj_t *ghost = P_SpawnGhostMobj(exp);
-            ghost->colorized = true;
-            ghost->color = player->skincolor;
-            ghost->renderflags |= RF_ADD;
-            ghost->fuse = 1;
-        }
-
         if (dist < (EXP_ORBIT * exp->scale) && exp->extravalue2)
         {
-            P_SetTarget(&exp->tracer, exp->target);
             exp->threshold = TICRATE;
             exp->extravalue1 = 0;
             exp->extravalue2 = 0;
