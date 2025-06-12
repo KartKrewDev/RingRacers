@@ -54,6 +54,7 @@
 #include "music.h"
 #include "k_battle.h" // battleprisons
 #include "k_endcam.h" // K_EndCameraIsFreezing()
+#include "k_race.h" // K_SpawnFinishEXP
 
 // Not sure if this is necessary, but it was in w_wad.c, so I'm putting it here too -Shadow Hog
 #include <errno.h>
@@ -2153,7 +2154,13 @@ static void K_HandleLapIncrement(player_t *player)
 					// Update power levels for this lap.
 					K_UpdatePowerLevels(player, player->laps, false);
 
+					UINT16 oldexp = player->exp;
 					K_CheckpointCrossAward(player);
+
+					if (player->exp > oldexp)
+					{
+						K_SpawnFinishEXP(player, player->exp - oldexp);
+					}
 
 					if (player->position == 1 && !(gametyperules & GTR_CHECKPOINTS))
 					{

@@ -85,6 +85,8 @@ void K_RunFinishLineBeam(void);
 
 UINT8 K_RaceLapCount(INT16 mapNum);
 
+void K_SpawnFinishEXP(player_t *player, UINT16 exp);
+
 
 #ifdef __cplusplus
 } // extern "C"

@@ -25,6 +25,18 @@
 #define EXP_ARCTIME (8)
 #define EXP_ORBIT (100)
 
+static void ghostme(mobj_t *exp, player_t *player)
+{
+    if (exp->cusval%2)
+        return;
+
+    mobj_t *ghost = P_SpawnGhostMobj(exp);
+    ghost->colorized = true;
+    ghost->color = player->skincolor;
+    ghost->renderflags |= RF_ADD;
+    ghost->fuse = 2;
+}
+
 void Obj_ExpThink (mobj_t *exp)
 {
     if (P_MobjWasRemoved(exp->target)
@@ -44,18 +56,9 @@ void Obj_ExpThink (mobj_t *exp)
 
         dist = P_AproxDistance(P_AproxDistance(exp->x - mo->x, exp->y - mo->y), exp->z - mo->z);
 
-        K_MatchGenericExtraFlags(exp, mo);
+        // K_MatchGenericExtraFlags(exp, mo);
 
         exp->cusval++;
-
-        if (exp->cusval%2)
-        {
-            mobj_t *ghost = P_SpawnGhostMobj(exp);
-            ghost->colorized = true;
-            ghost->color = player->skincolor;
-            ghost->renderflags |= RF_ADD;
-            ghost->fuse = 2;
-        }
 
         // bullshit copypaste orbit behavior
         if (exp->threshold)
@@ -72,6 +75,8 @@ void Obj_ExpThink (mobj_t *exp)
             exp->momx = 0;
             exp->momy = 0;
             exp->momz = 0;
+
+            ghostme(exp, player);
 
             exp->angle += ANG30;
             exp->extravalue1++;
@@ -122,6 +127,8 @@ void Obj_ExpThink (mobj_t *exp)
         exp->momx += FixedMul(FINESINE(vang>>ANGLETOFINESHIFT), FixedMul(FINECOSINE(hang>>ANGLETOFINESHIFT), speed));
         exp->momy += FixedMul(FINESINE(vang>>ANGLETOFINESHIFT), FixedMul(FINESINE(hang>>ANGLETOFINESHIFT), speed));
         exp->momz += FixedMul(FINECOSINE(vang>>ANGLETOFINESHIFT), speed);
+
+        ghostme(exp, player);
 
         if (dist < (EXP_ORBIT * exp->scale) && exp->extravalue2)
         {
