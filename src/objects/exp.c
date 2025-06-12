@@ -90,12 +90,12 @@ void Obj_ExpThink (mobj_t *exp)
             return;
         }
 
-        exp->angle += ANGLE_45/4;
+        exp->angle += ANGLE_45/2;
 
         UINT8 damper = 3;
 
         fixed_t vert = dist/3;
-        fixed_t speed = 45*exp->scale;
+        fixed_t speed = 60*exp->scale;
 
         if (exp->extravalue2) // Mode: going down, aim at the player and speed up / dampen stray movement
         {
