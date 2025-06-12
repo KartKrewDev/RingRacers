@@ -474,7 +474,6 @@ void K_SpawnFinishEXP(player_t *player, UINT16 exp)
 	CONS_Printf("finish\n");
 	if (finishBeamLine != NULL)
 	{
-		CONS_Printf("fuck me %d\n", exp);
 		mobj_t *p1 = P_SpawnMobj(finishBeamLine->v1->x, finishBeamLine->v1->y, player->mo->z, MT_THOK);
 		mobj_t *p2 = P_SpawnMobj(finishBeamLine->v2->x, finishBeamLine->v2->y, player->mo->z, MT_THOK);
 		p1->fuse = 200;
@@ -486,7 +485,6 @@ void K_SpawnFinishEXP(player_t *player, UINT16 exp)
 	}
 	else
 	{
-		CONS_Printf("fuck you\n");
 		K_SpawnEXP(player, exp*2, player->mo);
 	}
 }
