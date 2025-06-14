@@ -909,7 +909,7 @@ static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png
 	 "Unknown";
 #endif
 	char rendermodetxt[9];
-	char maptext[8];
+	char maptext[MAXMAPLUMPNAME];
 	char lvlttltext[48];
 	char locationtxt[40];
 	char ctrevision[40];
@@ -929,12 +929,16 @@ static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png
 			break;
 	}
 
-#if 0
 	if (gamestate == GS_LEVEL)
-		snprintf(maptext, 8, "%s", G_BuildMapName(gamemap));
+	{
+		const char* mapname = G_BuildMapName(gamemap);
+		if (mapname)
+			snprintf(maptext, sizeof(maptext), "%s", mapname);
+		else
+			snprintf(maptext, sizeof(maptext), "Unknown");
+	}
 	else
-#endif
-		snprintf(maptext, 8, "Unknown");
+		snprintf(maptext, sizeof(maptext), "Unknown");
 
 	if (gamestate == GS_LEVEL && mapheaderinfo[gamemap-1]->lvlttl[0] != '\0')
 		snprintf(lvlttltext, 48, "%s%s%s",
