@@ -146,6 +146,8 @@ void Obj_AmpBurstThink(mobj_t *amp);
 
 void Obj_AmpsThink(mobj_t *amps);
 
+void Obj_ExpThink(mobj_t *exp);
+
 void Obj_ChargeAuraThink(mobj_t *aura);
 void Obj_ChargeFallThink(mobj_t *charge);
 void Obj_ChargeReleaseThink(mobj_t *release);

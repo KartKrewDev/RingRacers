@@ -24,6 +24,7 @@ extern "C" {
 
 #ifdef DEVELOP
 	extern consvar_t cv_botcontrol;
+	extern consvar_t cv_takeover;
 #endif
 
 // Maximum value of botvars.difficulty

@@ -468,3 +468,18 @@ UINT8 K_RaceLapCount(INT16 mapNum)
 
 	return cv_numlaps.value;
 }
+
+void K_SpawnFinishEXP(player_t *player, UINT16 exp)
+{
+	if (finishBeamLine != NULL)
+	{
+		mobj_t *p1 = P_SpawnMobj(finishBeamLine->v1->x, finishBeamLine->v1->y, player->mo->z, MT_THOK);
+		mobj_t *p2 = P_SpawnMobj(finishBeamLine->v2->x, finishBeamLine->v2->y, player->mo->z, MT_THOK);
+		K_SpawnEXP(player, exp, p1);
+		K_SpawnEXP(player, exp, p2);
+	}
+	else
+	{
+		K_SpawnEXP(player, exp*2, player->mo);
+	}
+}

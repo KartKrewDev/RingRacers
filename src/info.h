@@ -1141,6 +1141,8 @@ typedef enum sprite
 	SPR_AMPC,
 	SPR_AMPD,
 
+	SPR_EXPC,
+
 	SPR_SOR_,
 
 	SPR_WTRL, // Water Trail
@@ -3742,6 +3744,7 @@ typedef enum state
 	S_EGOORB,
 
 	S_AMPS,
+	S_EXP,
 
 	S_WATERTRAIL1,
 	S_WATERTRAIL2,
@@ -5091,6 +5094,7 @@ typedef enum mobj_type
 	MT_PULLUPHOOK,
 
 	MT_AMPS,
+	MT_EXP,
 
 	MT_FLYBOT767,
 

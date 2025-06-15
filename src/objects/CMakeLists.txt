@@ -65,6 +65,7 @@ target_sources(SRB2SDL2 PRIVATE
 	lightning-shield.cpp
 	flame-shield.cpp
 	stone-shoe.cpp
+	exp.c
 )
 
 add_subdirectory(versus)

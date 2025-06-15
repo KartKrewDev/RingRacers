@@ -159,6 +159,7 @@ angle_t K_MomentumAngleReal(const mobj_t *mo);
 #define K_MomentumAngle(mo) K_MomentumAngleEx(mo, 6 * mo->scale)
 boolean K_PvPAmpReward(UINT32 award, player_t *attacker, player_t *defender);
 void K_SpawnAmps(player_t *player, UINT8 amps, mobj_t *impact);
+void K_SpawnEXP(player_t *player, UINT8 exp, mobj_t *impact);
 void K_AwardPlayerAmps(player_t *player, UINT8 amps);
 void K_CheckpointCrossAward(player_t *player);
 void K_AwardPlayerRings(player_t *player, UINT16 rings, boolean overload);

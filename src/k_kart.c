@@ -4229,6 +4229,25 @@ void K_SpawnAmps(player_t *player, UINT8 amps, mobj_t *impact)
 	}
 }
 
+void K_SpawnEXP(player_t *player, UINT8 exp, mobj_t *impact)
+{
+	if (exp == 0)
+		return;
+
+	for (int i = 0; i < exp; i++)
+	{
+		mobj_t *pickup = P_SpawnMobj(impact->x, impact->y, impact->z, MT_EXP);
+		pickup->momx = impact->momx;
+		pickup->momy = impact->momy;
+		pickup->momz = impact->momz;
+		pickup->momx += P_RandomRange(PR_ITEM_DEBRIS, -20*mapobjectscale, 20*mapobjectscale);
+		pickup->momy += P_RandomRange(PR_ITEM_DEBRIS, -20*mapobjectscale, 20*mapobjectscale);
+		pickup->momz += P_RandomRange(PR_ITEM_DEBRIS, -20*mapobjectscale, 20*mapobjectscale);
+		// pickup->color = player->skincolor;
+		P_SetTarget(&pickup->target, player->mo);
+	}
+}
+
 void K_AwardPlayerAmps(player_t *player, UINT8 amps)
 {
 	UINT16 getamped = player->amps + amps;
@@ -8878,6 +8897,31 @@ void K_KartPlayerHUDUpdate(player_t *player)
 
 	if (player->positiondelay)
 		player->positiondelay--;
+
+	if (player->exp != (UINT32)player->karthud[khud_oldexp])
+	{
+		if (player->exp <= (UINT32)player->karthud[khud_oldexp])
+		{
+			player->karthud[khud_oldexp] = 0;
+			player->karthud[khud_exp] = 0;
+			player->karthud[khud_exptimer] = 0;
+		}
+		else
+		{
+			INT32 delta = player->exp - player->karthud[khud_exp];
+			INT32 speed = max(1, 10-delta);
+
+			player->karthud[khud_exptimer]++;
+
+			if (player->karthud[khud_exptimer] >= speed)
+			{
+				player->karthud[khud_exp]++;
+				player->karthud[khud_exptimer] = 0;
+				if (player->exp == (UINT32)player->karthud[khud_exp])
+					player->karthud[khud_oldexp] = player->exp;
+			}
+		}
+	}
 
 	if (!(player->pflags & PF_FAULT || player->pflags & PF_VOID))
 		player->karthud[khud_fault] = 0;
