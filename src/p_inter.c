@@ -3283,6 +3283,16 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 							S_StartSound(NULL, sfx_gsha7);
 					}
 
+					// if the inflictor is a landmine, its reactiontime will be non-zero if it is still moving
+					if (inflictor->type == MT_LANDMINE && inflictor->reactiontime > 0)
+					{
+						// reduce tumble severity to account for getting beaned point blank sometimes
+						softenTumble = true;
+						// make it more consistent with set landmines
+						inflictor->momx = 0;
+						inflictor->momy = 0;
+					}
+
 					K_TryHurtSoundExchange(target, source);
 
 					if (K_Cooperative() == false)
