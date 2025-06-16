@@ -13257,10 +13257,17 @@ fixed_t K_PlayerBaseFriction(const player_t *player, fixed_t original)
 			}
 
 			errorfrict = min(errorfrict, frict/4);
+
+			if (player->mo && !P_MobjWasRemoved(player->mo) && player->mo->movefactor < FRACUNIT)
+			{
+				// Reduce error friction on low-friction surfaces
+				errorfrict = FixedMul(errorfrict, player->mo->movefactor);
+			}
+
 			frict -= errorfrict;
 
 			// Bots gain more traction as they rubberband.
-			const fixed_t traction_value = FixedMul(player->botvars.rubberband, max(FRACUNIT, K_BotMapModifier()));
+			const fixed_t traction_value = FixedMul(player->botvars.rubberband, K_BotMapModifier());
 			if (traction_value > FRACUNIT)
 			{
 				const fixed_t traction_mul = traction_value - FRACUNIT;

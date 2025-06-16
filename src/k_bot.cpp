@@ -580,6 +580,9 @@ const botcontroller_t *K_GetBotController(const mobj_t *mobj)
 --------------------------------------------------*/
 fixed_t K_BotMapModifier(void)
 {
+	// fuck it we ball
+	return 60*FRACUNIT/100;
+
 	constexpr INT32 complexity_scale = 10000;
 	fixed_t modifier_max = (9 * FRACUNIT / 10) - FRACUNIT;
 	fixed_t modifier_min = (5 * FRACUNIT / 10) - FRACUNIT;
