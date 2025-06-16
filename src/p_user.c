@@ -3376,9 +3376,18 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	camdist = FixedMul(cv_cam_dist[num].value, cameraScale);
 	camheight = FixedMul(cv_cam_height[num].value, cameraScale);
 
+	// Map-specific camera height
 	if (mapheaderinfo[gamemap-1]->cameraHeight >= 0)
 	{
-		camheight = FixedMul(mapheaderinfo[gamemap-1]->cameraHeight, cameraScale);
+		if (r_splitscreen != 1)
+			camheight = FixedMul(mapheaderinfo[gamemap-1]->cameraHeight, cameraScale);
+		
+		// For 2p SPLITSCREEN SPECIFICALLY:
+		// The view is pretty narrow, so move it back 1/4th of the way towards default camera height.
+		else {
+			// CONS_Printf( "Camera values: %f / %f / %f \n", FixedToFloat(mapheaderinfo[gamemap-1]->cameraHeight), FixedToFloat(cv_cam_height[num].value), FixedToFloat(cameraScale) );
+			camheight = FixedMul((mapheaderinfo[gamemap-1]->cameraHeight*3 + cv_cam_height[num].value)/4, cameraScale);
+		}
 	}
 
 	if (loop_in < loop->zoom_in_speed)
