@@ -6431,6 +6431,9 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 				WRITESINT8(save->p, (SINT8)plr->grade);
 			}
 		}
+
+		const gpRank_level_t *lvl = &rank->levels[rank->numLevels];
+		WRITEUINT16(save->p, lvl->continues + 1);
 	}
 
 	// Marathon information
@@ -6719,6 +6722,9 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 				plr->grade = (gp_rank_e)READSINT8(save->p);
 			}
 		}
+
+		gpRank_level_t *const lvl = &rank->levels[rank->numLevels];
+		lvl->continues = READUINT16(save->p);
 	}
 
 	// Marathon information
