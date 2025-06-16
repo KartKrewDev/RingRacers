@@ -124,6 +124,13 @@ boolean K_InRaceDuel(void)
 	return (inDuel && (gametyperules & GTR_CIRCUIT) && !(mapheaderinfo[gamemap-1]->levelflags & LF_SECTIONRACE)) && !specialstageinfo.valid;
 }
 
+fixed_t K_EffectiveGradingFactor(const player_t *player)
+{
+	if (grandprixinfo.gp && grandprixinfo.masterbots && !K_PlayerUsesBotMovement(player))
+		return MINGRADINGFACTOR;
+	return max(MINGRADINGFACTOR, player->gradingfactor);
+}
+
 player_t *K_DuelOpponent(player_t *player)
 {
 	if (!K_InRaceDuel())
@@ -13567,7 +13574,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			else
 			{
 				UINT32 behind = K_GetItemRouletteDistance(player, player->itemRoulette.playing);
-				behind = FixedMul(behind, max(player->gradingfactor, FRACUNIT/2));
+				behind = FixedMul(behind, K_EffectiveGradingFactor(player));
 				UINT32 behindMulti = behind / 500;
 				behindMulti = min(behindMulti, 60);
 				award = award * (behindMulti + 10) / 10;
