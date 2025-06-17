@@ -4091,10 +4091,11 @@ fixed_t K_GetNewSpeed(const player_t *player)
 		p_speed = 15 * p_speed / 10;
 	}
 
-	if (K_PlayerUsesBotMovement(player) == true && player->botvars.rubberband > 0)
+	if (K_PlayerUsesBotMovement(player) == true && player->botvars.rubberband > FRACUNIT)
 	{
 		// Acceleration is tied to top speed...
 		// so if we want JUST a top speed boost, we have to do this...
+		// (But only do it if we're actually boosting from rubberbanding!)
 		p_accel = FixedDiv(p_accel, player->botvars.rubberband);
 	}
 
@@ -13245,6 +13246,7 @@ fixed_t K_PlayerBaseFriction(const player_t *player, fixed_t original)
 
 			// If bots are moving in the wrong direction relative to where they want to look, add some extra grip.
 			angle_t MAXERROR = ANGLE_45;
+			angle_t MINERROR = ANGLE_45;
 			fixed_t errorfrict = Easing_Linear(min(FRACUNIT, FixedDiv(player->botvars.predictionError, MAXERROR)), 0, FRACUNIT>>2);
 
 			if (player->currentwaypoint && player->currentwaypoint->mobj)
@@ -13264,7 +13266,12 @@ fixed_t K_PlayerBaseFriction(const player_t *player, fixed_t original)
 				errorfrict = FixedMul(errorfrict, player->mo->movefactor);
 			}
 
-			frict -= errorfrict;
+			if (player->botvars.predictionError >= MINERROR)
+			{
+				// CONS_Printf("%d: friction was %d, is ", leveltime, frict);
+				frict -= errorfrict;
+				// CONS_Printf("%d\n", frict);
+			}
 
 			// Bots gain more traction as they rubberband.
 			const fixed_t traction_value = FixedMul(player->botvars.rubberband, K_BotMapModifier());
