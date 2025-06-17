@@ -2326,11 +2326,6 @@ static void P_UpdatePlayerAngle(player_t *player)
 		// But the "angle" field of this ticcmd stores your prediction error,
 		// which we use to apply friction. Transfer it!
 		player->botvars.predictionError = player->cmd.angle << TICCMD_REDUCE;
-		if (player->botvars.predictionError >= ANGLE_45)
-		{
-			// Also slow bots down if they're about to do a weird 90.
-			player->botvars.bumpslow = TICRATE/2;
-		}
 	}
 	else if ((!(player->cmd.flags & TICCMD_RECEIVED)) && (!!(player->oldcmd.flags && TICCMD_RECEIVED)))
 	{
