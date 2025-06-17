@@ -4099,10 +4099,17 @@ fixed_t K_GetNewSpeed(const player_t *player)
 		p_accel = FixedDiv(p_accel, player->botvars.rubberband);
 	}
 
+	// WEIRD! Adjust speed cap when base friction is grippy (bots only), to make sure
+	// they don't drive really, really fast when we try to give them extra grip.
+	fixed_t frictiondelta = FRACUNIT + K_PlayerBaseFriction(player, ORIG_FRICTION) - ORIG_FRICTION;
+	fixed_t p_speed_cap = p_speed;
+	if (frictiondelta < FRACUNIT)
+		p_speed_cap = FixedMul(frictiondelta, p_speed);
+
 	oldspeed = R_PointToDist2(0, 0, player->rmomx, player->rmomy);
 	// Don't calculate the acceleration as ever being above top speed
-	if (oldspeed > p_speed)
-		oldspeed = p_speed;
+	if (oldspeed > p_speed_cap)
+		oldspeed = p_speed_cap;
 	newspeed = FixedDiv(FixedDiv(FixedMul(oldspeed, accelmax - p_accel) + FixedMul(p_speed, p_accel), accelmax), K_PlayerBaseFriction(player, ORIG_FRICTION));
 
 	finalspeed = newspeed - oldspeed;
@@ -13254,6 +13261,38 @@ fixed_t K_PlayerBaseFriction(const player_t *player, fixed_t original)
 		}
 	}
 
+	// If bots are moving in the wrong direction relative to where they want to look, add some extra grip.
+	angle_t MAXERROR = ANGLE_45;
+	angle_t MINERROR = 0;
+	fixed_t errorfrict = Easing_InCubic(min(FRACUNIT, FixedDiv(player->botvars.predictionError, MAXERROR)), 0, FRACUNIT>>2);
+
+	if (player->currentwaypoint && player->currentwaypoint->mobj)
+	{
+		INT16 myradius = FixedDiv(player->currentwaypoint->mobj->radius, mapobjectscale) / FRACUNIT;
+		INT16 SMALL_WAYPOINT = 450;
+		
+		if (myradius < SMALL_WAYPOINT)
+			errorfrict *= 2;
+	}
+
+	// errorfrict = min(errorfrict, frict/4);
+
+	if (player->mo && !P_MobjWasRemoved(player->mo) && player->mo->movefactor < FRACUNIT)
+	{
+		// Reduce error friction on low-friction surfaces
+		errorfrict = FixedMul(errorfrict, player->mo->movefactor);
+	}
+
+	if (player->botvars.predictionError >= MINERROR)
+	{
+		// CONS_Printf("%d: friction was %d, is ", leveltime, frict);
+		frict -= errorfrict;
+		// CONS_Printf("%d\n", frict);
+	}
+
+	if (player->cmd.buttons & BT_VOTE && false)
+		frict -= FRACUNIT/2;
+
 	if (frict > FRACUNIT) { frict = FRACUNIT; }
 	if (frict < 0) { frict = 0; }
 
@@ -13323,42 +13362,6 @@ void K_AdjustPlayerFriction(player_t *player)
 	if (player->icecube.frozen)
 	{
 		player->mo->friction = FRACUNIT;
-	}
-
-	if (K_PlayerUsesBotMovement(player))
-	{
-		fixed_t frict = 0;
-
-		// If bots are moving in the wrong direction relative to where they want to look, add some extra grip.
-		angle_t MAXERROR = ANGLE_45;
-		angle_t MINERROR = 0;
-		fixed_t errorfrict = Easing_InCubic(min(FRACUNIT, FixedDiv(player->botvars.predictionError, MAXERROR)), 0, FRACUNIT>>4);
-
-		if (player->currentwaypoint && player->currentwaypoint->mobj)
-		{
-			INT16 myradius = FixedDiv(player->currentwaypoint->mobj->radius, mapobjectscale) / FRACUNIT;
-			INT16 SMALL_WAYPOINT = 450;
-			
-			if (myradius < SMALL_WAYPOINT)
-				errorfrict *= 2;
-		}
-
-		// errorfrict = min(errorfrict, frict/4);
-
-		if (player->mo && !P_MobjWasRemoved(player->mo) && player->mo->movefactor < FRACUNIT)
-		{
-			// Reduce error friction on low-friction surfaces
-			errorfrict = FixedMul(errorfrict, player->mo->movefactor);
-		}
-
-		if (player->botvars.predictionError >= MINERROR)
-		{
-			// CONS_Printf("%d: friction was %d, is ", leveltime, frict);
-			frict -= errorfrict;
-			// CONS_Printf("%d\n", frict);
-		}
-
-		player->mo->friction += frict;
 	}
 
 	/*
