@@ -15871,7 +15871,8 @@ void K_BotHitPenalty(player_t *player)
 {
 	if (K_PlayerUsesBotMovement(player))
 	{
-		player->botvars.rubberband = max(player->botvars.rubberband/2, FRACUNIT/2);
+		if (!player->botvars.bumpslow)
+			player->botvars.rubberband = max(3*player->botvars.rubberband/4, FRACUNIT/2);
 		player->botvars.bumpslow = TICRATE*2;
 	}
 }
