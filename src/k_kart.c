@@ -13261,7 +13261,7 @@ fixed_t K_PlayerBaseFriction(const player_t *player, fixed_t original)
 			// If bots are moving in the wrong direction relative to where they want to look, add some extra grip.
 			angle_t MAXERROR = ANGLE_45;
 			angle_t MINERROR = 0;
-			fixed_t MAXERRORFRICTION = FRACUNIT>>3;
+			fixed_t MAXERRORFRICTION = FixedMul(FRACUNIT >> 3, factor);
 			fixed_t errorfrict = Easing_InCubic(min(FRACUNIT, FixedDiv(player->botvars.predictionError, MAXERROR)), 0, MAXERRORFRICTION);
 
 			if (player->currentwaypoint && player->currentwaypoint->mobj)
@@ -13273,13 +13273,13 @@ fixed_t K_PlayerBaseFriction(const player_t *player, fixed_t original)
 					errorfrict *= 2;
 			}
 
-			// errorfrict = min(errorfrict, frict/4);
-
+			/*
 			if (player->mo && !P_MobjWasRemoved(player->mo) && player->mo->movefactor < FRACUNIT)
 			{
 				// Reduce error friction on low-friction surfaces
 				errorfrict = FixedMul(errorfrict, player->mo->movefactor);
 			}
+			*/
 
 			if (player->botvars.predictionError >= MINERROR)
 			{
