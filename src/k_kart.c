@@ -11667,7 +11667,7 @@ INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
 				}
 
 				// If we're drifting we have a completely different turning value
-				fixed_t countersteer = FixedDiv(turnfixed, KART_FULLTURN * FRACUNIT);
+				fixed_t countersteer = FixedDiv(turnfixed, KART_FULLTURN * FixedDiv(FRACUNIT, max(FRACUNIT, K_GetKartGameSpeedScalar(gamespeed))));
 				return K_GetKartDriftValue(player, countersteer);
 			}
 		}
@@ -11729,7 +11729,7 @@ INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
 		}
 	}
 
-	return (turnfixed / FRACUNIT);
+	return (turnfixed / FixedDiv(FRACUNIT, max(FRACUNIT, K_GetKartGameSpeedScalar(gamespeed))));
 }
 
 INT32 K_GetUnderwaterTurnAdjust(const player_t *player)
