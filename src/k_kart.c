@@ -750,6 +750,14 @@ static fixed_t K_PlayerWeight(mobj_t *mobj, mobj_t *against)
 		fixed_t spd = K_GetKartSpeed(mobj->player, false, true);
 		fixed_t unmodifiedspd = K_GetKartSpeed(mobj->player, false, false);
 
+		fixed_t bumpfactor = FRACUNIT;
+		if (K_PlayerUsesBotMovement(mobj->player))
+		{
+			// Bot bumps are just a hard problem: lots going on.
+			// Treat bots as moving slower than they really are.
+			bumpfactor = max(bumpfactor, FixedDiv(spd, unmodifiedspd) * 2);
+		}
+
 		fixed_t speedfactor = 8 * mapobjectscale;
 
 		weight = (mobj->player->kartweight) * FRACUNIT;
@@ -767,7 +775,7 @@ static fixed_t K_PlayerWeight(mobj_t *mobj, mobj_t *against)
 		if (mobj->player->speed > spd)
 			weight += FixedDiv(
 				FixedDiv((mobj->player->speed - spd), speedfactor),
-				FixedDiv(spd, unmodifiedspd)
+				bumpfactor
 			);
 	}
 
@@ -3892,9 +3900,9 @@ fixed_t K_GetKartSpeed(const player_t *player, boolean doboostpower, boolean dor
 
 		if (K_PlayerUsesBotMovement(player))
 		{
-			// Increase bot speed by 0-10% depending on difficulty
+			// Increase bot speed by 0-20% depending on difficulty
 			const fixed_t modifier = K_BotMapModifier();
-			fixed_t add = ((player->botvars.difficulty-1) * FixedMul(FRACUNIT / 10, modifier)) / (DIFFICULTBOT-1);
+			fixed_t add = ((player->botvars.difficulty-1) * FixedMul(FRACUNIT / 5, modifier)) / (DIFFICULTBOT-1);
 			finalspeed = FixedMul(finalspeed, FRACUNIT + add);
 
 			if (player->bot && (player->botvars.rival || cv_levelskull.value))
@@ -4091,11 +4099,10 @@ fixed_t K_GetNewSpeed(const player_t *player)
 		p_speed = 15 * p_speed / 10;
 	}
 
-	if (K_PlayerUsesBotMovement(player) == true && player->botvars.rubberband > FRACUNIT)
+	if (K_PlayerUsesBotMovement(player) == true && player->botvars.rubberband > 0)
 	{
 		// Acceleration is tied to top speed...
 		// so if we want JUST a top speed boost, we have to do this...
-		// (But only do it if we're actually boosting from rubberbanding!)
 		p_accel = FixedDiv(p_accel, player->botvars.rubberband);
 	}
 
@@ -13251,6 +13258,36 @@ fixed_t K_PlayerBaseFriction(const player_t *player, fixed_t original)
 			// Remove this line once they can drift.
 			frict -= extraFriction;
 
+			// If bots are moving in the wrong direction relative to where they want to look, add some extra grip.
+			angle_t MAXERROR = ANGLE_45;
+			angle_t MINERROR = 0;
+			fixed_t MAXERRORFRICTION = FRACUNIT>>3;
+			fixed_t errorfrict = Easing_InCubic(min(FRACUNIT, FixedDiv(player->botvars.predictionError, MAXERROR)), 0, MAXERRORFRICTION);
+
+			if (player->currentwaypoint && player->currentwaypoint->mobj)
+			{
+				INT16 myradius = FixedDiv(player->currentwaypoint->mobj->radius, mapobjectscale) / FRACUNIT;
+				INT16 SMALL_WAYPOINT = 450;
+				
+				if (myradius < SMALL_WAYPOINT)
+					errorfrict *= 2;
+			}
+
+			// errorfrict = min(errorfrict, frict/4);
+
+			if (player->mo && !P_MobjWasRemoved(player->mo) && player->mo->movefactor < FRACUNIT)
+			{
+				// Reduce error friction on low-friction surfaces
+				errorfrict = FixedMul(errorfrict, player->mo->movefactor);
+			}
+
+			if (player->botvars.predictionError >= MINERROR)
+			{
+				// CONS_Printf("%d: friction was %d, is ", leveltime, frict);
+				frict -= min(errorfrict, MAXERRORFRICTION);
+				// CONS_Printf("%d\n", frict);
+			}
+
 			// Bots gain more traction as they rubberband.
 			const fixed_t traction_value = FixedMul(player->botvars.rubberband, K_BotMapModifier());
 			if (traction_value > FRACUNIT)
@@ -13260,38 +13297,6 @@ fixed_t K_PlayerBaseFriction(const player_t *player, fixed_t original)
 			}
 		}
 	}
-
-	// If bots are moving in the wrong direction relative to where they want to look, add some extra grip.
-	angle_t MAXERROR = ANGLE_45;
-	angle_t MINERROR = 0;
-	fixed_t errorfrict = Easing_InCubic(min(FRACUNIT, FixedDiv(player->botvars.predictionError, MAXERROR)), 0, FRACUNIT>>2);
-
-	if (player->currentwaypoint && player->currentwaypoint->mobj)
-	{
-		INT16 myradius = FixedDiv(player->currentwaypoint->mobj->radius, mapobjectscale) / FRACUNIT;
-		INT16 SMALL_WAYPOINT = 450;
-		
-		if (myradius < SMALL_WAYPOINT)
-			errorfrict *= 2;
-	}
-
-	// errorfrict = min(errorfrict, frict/4);
-
-	if (player->mo && !P_MobjWasRemoved(player->mo) && player->mo->movefactor < FRACUNIT)
-	{
-		// Reduce error friction on low-friction surfaces
-		errorfrict = FixedMul(errorfrict, player->mo->movefactor);
-	}
-
-	if (player->botvars.predictionError >= MINERROR)
-	{
-		// CONS_Printf("%d: friction was %d, is ", leveltime, frict);
-		frict -= errorfrict;
-		// CONS_Printf("%d\n", frict);
-	}
-
-	if (player->cmd.buttons & BT_VOTE && false)
-		frict -= FRACUNIT/2;
 
 	if (frict > FRACUNIT) { frict = FRACUNIT; }
 	if (frict < 0) { frict = 0; }
