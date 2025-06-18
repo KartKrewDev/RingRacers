@@ -13261,8 +13261,16 @@ fixed_t K_PlayerBaseFriction(const player_t *player, fixed_t original)
 			// If bots are moving in the wrong direction relative to where they want to look, add some extra grip.
 			angle_t MAXERROR = ANGLE_45;
 			angle_t MINERROR = 0;
+			angle_t BLINDSPOT = ANGLE_135;
 			fixed_t MAXERRORFRICTION = FixedMul(FRACUNIT >> 3, factor);
+
 			fixed_t errorfrict = Easing_InCubic(min(FRACUNIT, FixedDiv(player->botvars.predictionError, MAXERROR)), 0, MAXERRORFRICTION);
+
+			const botcontroller_t *botController = K_GetBotController(player->mo);
+			if (botController != NULL && (botController->flags & TMBOT_NORUBBERBAND) == TMBOT_NORUBBERBAND)
+				MAXERRORFRICTION = 0; // Don't grip to setpieces...
+			if (player->botvars.predictionError > BLINDSPOT)
+				MAXERRORFRICTION = 0; // ...or "tar pit" narrow waypoints.
 
 			if (player->currentwaypoint && player->currentwaypoint->mobj)
 			{
