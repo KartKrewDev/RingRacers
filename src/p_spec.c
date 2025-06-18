@@ -9666,7 +9666,7 @@ void P_DoQuakeOffset(UINT8 view, mappoint_t *viewPos, mappoint_t *offset)
 		// For 2p SPLITSCREEN SPECIFICALLY:
 		// The view is pretty narrow, so move it back 1/4th of the way towards default camera height.
 		else
-			maxShake = FixedMul((mapheaderinfo[gamemap-1]->cameraHeight*3 + cv_cam_height[view].value)/4, mapobjectscale) * 3 / 4;
+			maxShake = FixedMul((mapheaderinfo[gamemap-1]->cameraHeight*5 + cv_cam_height[view].value)/6, mapobjectscale) * 3 / 4;
 	}
 
 	if (battle)

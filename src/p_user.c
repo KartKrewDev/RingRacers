@@ -3386,7 +3386,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		// The view is pretty narrow, so move it back 1/4th of the way towards default camera height.
 		else {
 			// CONS_Printf( "Camera values: %f / %f / %f \n", FixedToFloat(mapheaderinfo[gamemap-1]->cameraHeight), FixedToFloat(cv_cam_height[num].value), FixedToFloat(cameraScale) );
-			camheight = FixedMul((mapheaderinfo[gamemap-1]->cameraHeight*3 + cv_cam_height[num].value)/4, cameraScale);
+			camheight = FixedMul((mapheaderinfo[gamemap-1]->cameraHeight*5 + cv_cam_height[num].value)/6, cameraScale);
 		}
 	}
 
