@@ -16307,4 +16307,30 @@ fixed_t K_TeamComebackMultiplier(player_t *player)
 	return multiplier;
 }
 
+void K_ApplyStun(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 damage, UINT8 damagetype)
+{
+	#define BASE_STUN_TICS_MIN (4 * TICRATE)
+	#define BASE_STUN_TICS_MAX (10 * TICRATE)
+	UINT16 stunTics = 0;
+
+	stunTics = Easing_Linear((player->kartweight - 1) * FRACUNIT / 8, BASE_STUN_TICS_MAX, BASE_STUN_TICS_MIN);
+	stunTics >>= player->stunnedCombo; // consecutive hits add half as much stun as the previous hit
+
+	// 1/3 base stun values in battle
+	if (gametyperules & GTR_SPHERES)
+	{
+		stunTics /= 3;
+	}
+
+	if (player->stunnedCombo < UINT8_MAX)
+	{
+		player->stunnedCombo++;
+	}
+	stunTics = min(player->stunned + stunTics, UINT16_MAX);
+	player->stunned = stunTics;
+
+	#undef BASE_STUN_TICS_MIN
+	#undef BASE_STUN_TICS_MAX
+}
+
 //}

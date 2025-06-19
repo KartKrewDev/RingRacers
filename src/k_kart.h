@@ -340,6 +340,8 @@ boolean K_TryPickMeUp(mobj_t *m1, mobj_t *m2, boolean allowHostile);
 
 fixed_t K_TeamComebackMultiplier(player_t *player);
 
+void K_ApplyStun(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 damage, UINT8 damagetype);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

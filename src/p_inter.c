@@ -3041,7 +3041,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			UINT8 type = (damagetype & DMG_TYPEMASK);
 			const boolean hardhit = (type == DMG_EXPLODE || type == DMG_KARMA || type == DMG_TUMBLE); // This damage type can do evil stuff like ALWAYS combo
 			INT16 ringburst = 5;
-			UINT16 stunTics = 0;
 
 			// Check if the player is allowed to be damaged!
 			// If not, then spawn the instashield effect instead.
@@ -3488,26 +3487,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			}
 
 			// Apply stun!
-			// Feel free to move these calculations higher up if different damage sources should apply variable stun in future
-			#define MIN_STUNTICS (4 * TICRATE)
-			#define MAX_STUNTICS (10 * TICRATE)
-			stunTics = Easing_Linear((player->kartweight - 1) * FRACUNIT / 8, MAX_STUNTICS, MIN_STUNTICS);
-			stunTics >>= player->stunnedCombo; // consecutive hits add half as much stun as the previous hit
-
-			// 1/3 base stun values in battle
-			if (gametyperules & GTR_SPHERES)
-			{
-				stunTics /= 3;
-			}
-
-			if (player->stunnedCombo < UINT8_MAX)
-			{
-				player->stunnedCombo++;
-			}
-			stunTics = min(player->stunned + stunTics, UINT16_MAX);
-			player->stunned = stunTics;
-			#undef MIN_STUNTICS
-			#undef MAX_STUNTICS
+			K_ApplyStun(player, inflictor, source, damage, damagetype);
 
 			K_DefensiveOverdrive(target->player);
 		}
