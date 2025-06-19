@@ -16311,12 +16311,30 @@ void K_ApplyStun(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 dama
 {
 	#define BASE_STUN_TICS_MIN (4 * TICRATE)
 	#define BASE_STUN_TICS_MAX (10 * TICRATE)
-	UINT16 stunTics = 0;
+	INT32 stunTics = 0;
+	UINT8 numPlayers = 0;
+	UINT8 i;
 
+	// calculate the number of players playing
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i] && !players[i].spectator)
+		{
+			numPlayers++;
+		}
+	}
+
+	// calculate base stun tics
 	stunTics = Easing_Linear((player->kartweight - 1) * FRACUNIT / 8, BASE_STUN_TICS_MAX, BASE_STUN_TICS_MIN);
 	stunTics >>= player->stunnedCombo; // consecutive hits add half as much stun as the previous hit
 
-	// 1/3 base stun values in battle
+	// reduce stun in games with more than 8 players
+	if (numPlayers > 8)
+	{
+		stunTics -= 17 * (numPlayers - 8);
+	}
+
+	// 1/3 stun values in battle
 	if (gametyperules & GTR_SPHERES)
 	{
 		stunTics /= 3;
@@ -16326,7 +16344,7 @@ void K_ApplyStun(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 dama
 	{
 		player->stunnedCombo++;
 	}
-	stunTics = min(player->stunned + stunTics, UINT16_MAX);
+	stunTics = min(max(player->stunned + stunTics, 0), UINT16_MAX);
 	player->stunned = stunTics;
 
 	#undef BASE_STUN_TICS_MIN
