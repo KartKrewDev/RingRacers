@@ -114,6 +114,9 @@ boolean K_DuelItemAlwaysSpawns(mapthing_t *mt);
 boolean K_InRaceDuel(void);
 player_t *K_DuelOpponent(player_t *player);
 
+fixed_t K_EffectiveGradingFactor(const player_t *player);
+#define MINGRADINGFACTOR (FRACUNIT/2)
+
 void K_TimerReset(void);
 void K_TimerInit(void);
 

@@ -130,6 +130,13 @@ boolean K_InRaceDuel(void)
 	);
 }
 
+fixed_t K_EffectiveGradingFactor(const player_t *player)
+{
+	if (grandprixinfo.gp && grandprixinfo.masterbots && !K_PlayerUsesBotMovement(player))
+		return MINGRADINGFACTOR;
+	return max(MINGRADINGFACTOR, player->gradingfactor);
+}
+
 player_t *K_DuelOpponent(player_t *player)
 {
 	if (!K_InRaceDuel())
@@ -749,6 +756,14 @@ static fixed_t K_PlayerWeight(mobj_t *mobj, mobj_t *against)
 		fixed_t spd = K_GetKartSpeed(mobj->player, false, true);
 		fixed_t unmodifiedspd = K_GetKartSpeed(mobj->player, false, false);
 
+		fixed_t bumpfactor = FRACUNIT;
+		if (K_PlayerUsesBotMovement(mobj->player))
+		{
+			// Bot bumps are just a hard problem: lots going on.
+			// Treat bots as moving slower than they really are.
+			bumpfactor = max(bumpfactor, FixedDiv(spd, unmodifiedspd) * 2);
+		}
+
 		fixed_t speedfactor = 8 * mapobjectscale;
 
 		weight = (mobj->player->kartweight) * FRACUNIT;
@@ -766,7 +781,7 @@ static fixed_t K_PlayerWeight(mobj_t *mobj, mobj_t *against)
 		if (mobj->player->speed > spd)
 			weight += FixedDiv(
 				FixedDiv((mobj->player->speed - spd), speedfactor),
-				FixedDiv(spd, unmodifiedspd)
+				bumpfactor
 			);
 	}
 
@@ -3897,9 +3912,9 @@ fixed_t K_GetKartSpeed(const player_t *player, boolean doboostpower, boolean dor
 
 		if (K_PlayerUsesBotMovement(player))
 		{
-			// Increase bot speed by 0-10% depending on difficulty
+			// Increase bot speed by 0-20% depending on difficulty
 			const fixed_t modifier = K_BotMapModifier();
-			fixed_t add = ((player->botvars.difficulty-1) * FixedMul(FRACUNIT / 10, modifier)) / (DIFFICULTBOT-1);
+			fixed_t add = ((player->botvars.difficulty-1) * FixedMul(FRACUNIT / 5, modifier)) / (DIFFICULTBOT-1);
 			finalspeed = FixedMul(finalspeed, FRACUNIT + add);
 
 			if (player->bot && (player->botvars.rival || cv_levelskull.value))
@@ -4103,10 +4118,17 @@ fixed_t K_GetNewSpeed(const player_t *player)
 		p_accel = FixedDiv(p_accel, player->botvars.rubberband);
 	}
 
+	// WEIRD! Adjust speed cap when base friction is grippy (bots only), to make sure
+	// they don't drive really, really fast when we try to give them extra grip.
+	fixed_t frictiondelta = FRACUNIT + K_PlayerBaseFriction(player, ORIG_FRICTION) - ORIG_FRICTION;
+	fixed_t p_speed_cap = p_speed;
+	if (frictiondelta < FRACUNIT)
+		p_speed_cap = FixedMul(frictiondelta, p_speed);
+
 	oldspeed = R_PointToDist2(0, 0, player->rmomx, player->rmomy);
 	// Don't calculate the acceleration as ever being above top speed
-	if (oldspeed > p_speed)
-		oldspeed = p_speed;
+	if (oldspeed > p_speed_cap)
+		oldspeed = p_speed_cap;
 	newspeed = FixedDiv(FixedDiv(FixedMul(oldspeed, accelmax - p_accel) + FixedMul(p_speed, p_accel), accelmax), K_PlayerBaseFriction(player, ORIG_FRICTION));
 
 	finalspeed = newspeed - oldspeed;
@@ -13318,7 +13340,17 @@ fixed_t K_PlayerBaseFriction(const player_t *player, fixed_t original)
 
 			// If bots are moving in the wrong direction relative to where they want to look, add some extra grip.
 			angle_t MAXERROR = ANGLE_45;
-			fixed_t errorfrict = Easing_Linear(min(FRACUNIT, FixedDiv(player->botvars.predictionError, MAXERROR)), 0, FRACUNIT>>2);
+			angle_t MINERROR = 0;
+			angle_t BLINDSPOT = ANGLE_135;
+			fixed_t MAXERRORFRICTION = FixedMul(FRACUNIT >> 3, factor);
+
+			fixed_t errorfrict = Easing_InCubic(min(FRACUNIT, FixedDiv(player->botvars.predictionError, MAXERROR)), 0, MAXERRORFRICTION);
+
+			const botcontroller_t *botController = K_GetBotController(player->mo);
+			if (botController != NULL && (botController->flags & TMBOT_NORUBBERBAND) == TMBOT_NORUBBERBAND)
+				MAXERRORFRICTION = 0; // Don't grip to setpieces...
+			if (player->botvars.predictionError > BLINDSPOT)
+				MAXERRORFRICTION = 0; // ...or "tar pit" narrow waypoints.
 
 			if (player->currentwaypoint && player->currentwaypoint->mobj)
 			{
@@ -13329,11 +13361,23 @@ fixed_t K_PlayerBaseFriction(const player_t *player, fixed_t original)
 					errorfrict *= 2;
 			}
 
-			errorfrict = min(errorfrict, frict/4);
-			frict -= errorfrict;
+			/*
+			if (player->mo && !P_MobjWasRemoved(player->mo) && player->mo->movefactor < FRACUNIT)
+			{
+				// Reduce error friction on low-friction surfaces
+				errorfrict = FixedMul(errorfrict, player->mo->movefactor);
+			}
+			*/
+
+			if (player->botvars.predictionError >= MINERROR)
+			{
+				// CONS_Printf("%d: friction was %d, is ", leveltime, frict);
+				frict -= min(errorfrict, MAXERRORFRICTION);
+				// CONS_Printf("%d\n", frict);
+			}
 
 			// Bots gain more traction as they rubberband.
-			const fixed_t traction_value = FixedMul(player->botvars.rubberband, max(FRACUNIT, K_BotMapModifier()));
+			const fixed_t traction_value = FixedMul(player->botvars.rubberband, K_BotMapModifier());
 			if (traction_value > FRACUNIT)
 			{
 				const fixed_t traction_mul = traction_value - FRACUNIT;
@@ -13412,6 +13456,11 @@ void K_AdjustPlayerFriction(player_t *player)
 	{
 		player->mo->friction = FRACUNIT;
 	}
+
+	/*
+	if (player->cmd.buttons & BT_ATTACK)
+		player->mo->friction -= FRACUNIT/2;
+	*/
 
 	// Cap between intended values
 	if (player->mo->friction > FRACUNIT)
@@ -13647,7 +13696,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			else
 			{
 				UINT32 behind = K_GetItemRouletteDistance(player, player->itemRoulette.playing);
-				behind = FixedMul(behind, max(player->gradingfactor, FRACUNIT/2));
+				behind = FixedMul(behind, K_EffectiveGradingFactor(player));
 				UINT32 behindMulti = behind / 500;
 				behindMulti = min(behindMulti, 60);
 				award = award * (behindMulti + 10) / 10;
@@ -15850,8 +15899,8 @@ boolean K_PlayerCanUseItem(player_t *player)
 
 fixed_t K_GetGradingFactorAdjustment(player_t *player)
 {
-	fixed_t power = 3*FRACUNIT/100; // adjust to change overall xp volatility
-	fixed_t stablerate = 3*FRACUNIT/10; // how low is your placement before losing XP? 4*FRACUNIT/10 = top 40% of race will gain
+	fixed_t power = EXP_POWER; // adjust to change overall xp volatility
+	const fixed_t stablerate = EXP_STABLERATE; // how low is your placement before losing XP? 4*FRACUNIT/10 = top 40% of race will gain
 	fixed_t result = 0;
 
 	if (g_teamplay)
@@ -15968,7 +16017,8 @@ void K_BotHitPenalty(player_t *player)
 {
 	if (K_PlayerUsesBotMovement(player))
 	{
-		player->botvars.rubberband = max(player->botvars.rubberband/2, FRACUNIT/2);
+		if (!player->botvars.bumpslow)
+			player->botvars.rubberband = max(3*player->botvars.rubberband/4, FRACUNIT/2);
 		player->botvars.bumpslow = TICRATE*2;
 	}
 }

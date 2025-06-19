@@ -1138,7 +1138,7 @@ static boolean K_ShouldPlayerAllowItem(kartitems_t item, const player_t *player)
 			return false;
 
 		// GIGA power items reserved only for players who were doing great and died.
-		if (player->gradingfactor < K_RequiredXPForItem(item))
+		if (K_EffectiveGradingFactor(player) < K_RequiredXPForItem(item))
 			return false;
 
 		return !K_IsItemFirstOnly(item);
@@ -1405,7 +1405,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 
 	if ((gametyperules & GTR_CIRCUIT) && !K_Cooperative())
 	{
-		roulette->dist = FixedMul(roulette->preexpdist, max(player->gradingfactor, FRACUNIT/2));
+		roulette->dist = FixedMul(roulette->preexpdist, K_EffectiveGradingFactor(player));
 	}
 
 	// ===============================================================================

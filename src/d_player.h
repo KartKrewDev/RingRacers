@@ -410,7 +410,7 @@ struct botvars_t
 	botStyle_e style; // Training mode-style CPU mode
 
 	UINT8 difficulty; // Bot's difficulty setting
-	UINT8 diffincrease; // In GP: bot difficulty will increase this much next round
+	INT16 diffincrease; // In GP: bot difficulty will increase this much next round
 	boolean rival; // If true, they're the GP rival
 
 	// All entries above persist between rounds and must be recorded in demos

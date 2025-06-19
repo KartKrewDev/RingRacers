@@ -188,7 +188,7 @@ INT32 level_tally_t::CalculateGrade(void)
 		 7*FRACUNIT/20,		// D: 35% or higher
 		10*FRACUNIT/20,		// C: 50% or higher
 		14*FRACUNIT/20,		// B: 70% or higher
-		17*FRACUNIT/20		// A: 85% or higher
+		18*FRACUNIT/20		// A: 90% or higher
 	};
 	INT32 retGrade = GRADE_E; // gp_rank_e
 
@@ -204,14 +204,14 @@ INT32 level_tally_t::CalculateGrade(void)
 			}
 			case TALLY_BONUS_SCORE:
 			{
-				bonusWeights[i] = ((pointLimit != 0) ? 100 : 0);
+				bonusWeights[i] = ((pointLimit != 0) ? 200 : 0);
 				break;
 			}
 			case TALLY_BONUS_EXP:
 			case TALLY_BONUS_PRISON:
 			case TALLY_BONUS_POWERSTONES:
 			{
-				bonusWeights[i] = 150;
+				bonusWeights[i] = 300;
 				break;
 			}
 			default:
@@ -222,7 +222,7 @@ INT32 level_tally_t::CalculateGrade(void)
 		}
 	}
 
-	const INT32 positionWeight = (position > 0 && numPlayers > 2) ? 20 : 0;
+	const INT32 positionWeight = (position > 0 && numPlayers > 2) ? 50 : 0;
 	const INT32 total = positionWeight + bonusWeights[0] + bonusWeights[1];
 
 	INT32 ours = 0;
@@ -246,7 +246,7 @@ INT32 level_tally_t::CalculateGrade(void)
 			}
 			case TALLY_BONUS_EXP:
 			{
-				const fixed_t frac = std::min(FRACUNIT, ((exp-15) * FRACUNIT) / std::max(1, static_cast<int>(totalExp)));
+				const fixed_t frac = std::min(FRACUNIT, ((exp) * FRACUNIT) / std::max(1, static_cast<int>(totalExp)));
 				ours += Easing_Linear(frac, 0, bonusWeights[i]);
 				break;
 			}

@@ -6422,6 +6422,7 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 			WRITEUINT32(save->p, lvl->time);
 			WRITEUINT16(save->p, lvl->totalExp);
 			WRITEUINT16(save->p, lvl->totalPrisons);
+			WRITEUINT16(save->p, lvl->continues);
 
 			UINT8 j;
 			for (j = 0; j < rank->numPlayers; j++)
@@ -6436,6 +6437,9 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 				WRITESINT8(save->p, (SINT8)plr->grade);
 			}
 		}
+
+		const gpRank_level_t *lvl = &rank->levels[rank->numLevels];
+		WRITEUINT16(save->p, lvl->continues + 1);
 	}
 
 	// Marathon information
@@ -6710,6 +6714,7 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 			lvl->time = READUINT32(save->p);
 			lvl->totalExp = READUINT16(save->p);
 			lvl->totalPrisons = READUINT16(save->p);
+			lvl->continues = READUINT16(save->p);
 
 			for (j = 0; j < rank->numPlayers; j++)
 			{
@@ -6723,6 +6728,9 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 				plr->grade = (gp_rank_e)READSINT8(save->p);
 			}
 		}
+
+		gpRank_level_t *const lvl = &rank->levels[rank->numLevels];
+		lvl->continues = READUINT16(save->p);
 	}
 
 	// Marathon information

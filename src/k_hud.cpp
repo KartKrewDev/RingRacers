@@ -4046,8 +4046,8 @@ static boolean K_drawKartLaps(void)
 										// WHAT IS THIS?
 										// WHAT ARE YOU FUCKING TALKING ABOUT?
 		V_DrawMappedPatch(fr, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_exp[1], R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_MUSTARD, GTC_CACHE));
-		auto transflag = K_GetTransFlagFromFixed(stplyr->gradingfactor);
-		skincolornum_t overlaycolor = stplyr->gradingfactor < FRACUNIT ? SKINCOLOR_RUBY : SKINCOLOR_ULTRAMARINE ;
+		auto transflag = K_GetTransFlagFromFixed(K_EffectiveGradingFactor(stplyr));
+		skincolornum_t overlaycolor = K_EffectiveGradingFactor(stplyr) < FRACUNIT ? SKINCOLOR_RUBY : SKINCOLOR_ULTRAMARINE ;
 		auto colormap = R_GetTranslationColormap(TC_RAINBOW, overlaycolor, GTC_CACHE);
 		V_DrawMappedPatch(fr, fy, transflag|V_SLIDEIN|splitflags, kp_exp[1], colormap);
 
@@ -4069,8 +4069,8 @@ static boolean K_drawKartLaps(void)
 
 		V_DrawMappedPatch(LAPS_X+bump, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_exp[0], R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_MUSTARD, GTC_CACHE));
 
-		auto transflag = K_GetTransFlagFromFixed(stplyr->gradingfactor);
-		skincolornum_t overlaycolor = stplyr->gradingfactor < FRACUNIT ? SKINCOLOR_RUBY : SKINCOLOR_ULTRAMARINE ;
+		auto transflag = K_GetTransFlagFromFixed(K_EffectiveGradingFactor(stplyr));
+		skincolornum_t overlaycolor = K_EffectiveGradingFactor(stplyr) < FRACUNIT ? SKINCOLOR_RUBY : SKINCOLOR_ULTRAMARINE ;
 		auto colormap = R_GetTranslationColormap(TC_RAINBOW, overlaycolor, GTC_CACHE);
 		V_DrawMappedPatch(LAPS_X+bump, LAPS_Y, transflag|V_SLIDEIN|splitflags, kp_exp[0], colormap);
 

@@ -319,7 +319,7 @@ void G_ReadDemoExtraData(void)
 			if (players[p].bot)
 			{
 				players[p].botvars.difficulty = READUINT8(demobuf.p);
-				players[p].botvars.diffincrease = READUINT8(demobuf.p); // needed to avoid having to duplicate logic
+				players[p].botvars.diffincrease = READINT16(demobuf.p); // needed to avoid having to duplicate logic
 				players[p].botvars.rival = (boolean)READUINT8(demobuf.p);
 			}
 		}
@@ -495,7 +495,7 @@ void G_WriteDemoExtraData(void)
 				if (players[i].bot)
 				{
 					WRITEUINT8(demobuf.p, players[i].botvars.difficulty);
-					WRITEUINT8(demobuf.p, players[i].botvars.diffincrease); // needed to avoid having to duplicate logic
+					WRITEINT16(demobuf.p, players[i].botvars.diffincrease); // needed to avoid having to duplicate logic
 					WRITEUINT8(demobuf.p, (UINT8)players[i].botvars.rival);
 				}
 			}
@@ -2109,7 +2109,7 @@ void G_BeginRecording(void)
 			if (i & DEMO_BOT)
 			{
 				WRITEUINT8(demobuf.p, player->botvars.difficulty);
-				WRITEUINT8(demobuf.p, player->botvars.diffincrease); // needed to avoid having to duplicate logic
+				WRITEINT16(demobuf.p, player->botvars.diffincrease); // needed to avoid having to duplicate logic
 				WRITEUINT8(demobuf.p, (UINT8)player->botvars.rival);
 			}
 
@@ -3220,7 +3220,7 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 		if ((players[p].bot = bot) == true)
 		{
 			players[p].botvars.difficulty = READUINT8(demobuf.p);
-			players[p].botvars.diffincrease = READUINT8(demobuf.p); // needed to avoid having to duplicate logic
+			players[p].botvars.diffincrease = READINT16(demobuf.p); // needed to avoid having to duplicate logic
 			players[p].botvars.rival = (boolean)READUINT8(demobuf.p);
 		}
 

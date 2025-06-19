@@ -585,10 +585,12 @@ const botcontroller_t *K_GetBotController(const mobj_t *mobj)
 --------------------------------------------------*/
 fixed_t K_BotMapModifier(void)
 {
+	// fuck it we ball
+	// return 10*FRACUNIT/10;
+
 	constexpr INT32 complexity_scale = 10000;
-	fixed_t modifier_max = FRACUNIT * 2;
-	fixed_t modifier_min = 3 * FRACUNIT / 10;
-	modifier_min -= FRACUNIT;
+	fixed_t modifier_max = (10 * FRACUNIT / 10) - FRACUNIT;
+	fixed_t modifier_min = (5 * FRACUNIT / 10) - FRACUNIT;
 
 	const fixed_t complexity_value = std::clamp<fixed_t>(
 		FixedDiv(K_GetTrackComplexity(), complexity_scale),
@@ -691,8 +693,7 @@ fixed_t K_BotRubberband(const player_t *player)
 	if (player->gradingfactor < FRACUNIT && !(player->botvars.rival))
 	{
 		UINT8 levelreduce = 3; // How much to drop the "effective level" of bots that are consistently behind
-		fixed_t effgradingfactor = std::max(FRACUNIT/2, player->gradingfactor);
-		expreduce = Easing_Linear((effgradingfactor - FRACUNIT/2) * 2, levelreduce*FRACUNIT, 0);
+		expreduce = Easing_Linear((K_EffectiveGradingFactor(player) - MINGRADINGFACTOR) * 2, levelreduce*FRACUNIT, 0);
 	}
 
 	fixed_t difficultyEase = (((player->botvars.difficulty - 1) * FRACUNIT) - expreduce) / (MAXBOTDIFFICULTY - 1);

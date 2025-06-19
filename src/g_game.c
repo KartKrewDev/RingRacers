@@ -1908,16 +1908,21 @@ void G_Ticker(boolean run)
 						&& grandprixinfo.gp == true
 						&& grandprixinfo.masterbots == false)
 					{
-						UINT8 bot_level_decrease = 3;
+						UINT8 bot_level_decrease = 2;
+						UINT8 min_lvl = 5;
 
 						if (grandprixinfo.gamespeed == KARTSPEED_EASY)
 						{
 							bot_level_decrease++;
+							min_lvl = 1;
 						}
 						else if (grandprixinfo.gamespeed == KARTSPEED_HARD)
 						{
 							bot_level_decrease--;
+							min_lvl = 9;
 						}
+
+						boolean already_min_lvl = (players[i].botvars.difficulty >= min_lvl);
 
 						if (players[i].botvars.difficulty <= bot_level_decrease)
 						{
@@ -1927,6 +1932,9 @@ void G_Ticker(boolean run)
 						{
 							players[i].botvars.difficulty -= bot_level_decrease;
 						}
+
+						if (already_min_lvl)
+							players[i].botvars.difficulty = max(players[i].botvars.difficulty, min_lvl);
 					}
 					else
 					{
@@ -2260,7 +2268,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	INT16 steering;
 	angle_t playerangleturn;
 
-	UINT8 botdiffincrease;
+	INT16 botdiffincrease;
 	boolean botrival;
 
 	boolean cangrabitems;
@@ -5855,6 +5863,7 @@ void G_SetRetryFlag(void)
 	if (retrying == false && grandprixinfo.gp)
 	{
 		grandprixinfo.rank.continuesUsed++;
+		grandprixinfo.rank.levels[grandprixinfo.rank.numLevels].continues++;
 	}
 
 	retrying = true;
