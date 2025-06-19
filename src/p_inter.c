@@ -3487,7 +3487,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			}
 
 			// Apply stun!
-			if (damagetype != DMG_STING)
+			if (type != DMG_STING)
 			{
 				K_ApplyStun(player, inflictor, source, damage, damagetype);
 			}
