@@ -188,7 +188,7 @@ INT32 level_tally_t::CalculateGrade(void)
 		 7*FRACUNIT/20,		// D: 35% or higher
 		10*FRACUNIT/20,		// C: 50% or higher
 		14*FRACUNIT/20,		// B: 70% or higher
-		17*FRACUNIT/20		// A: 85% or higher
+		18*FRACUNIT/20		// A: 90% or higher
 	};
 	INT32 retGrade = GRADE_E; // gp_rank_e
 
