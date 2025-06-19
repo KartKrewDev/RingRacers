@@ -11332,7 +11332,7 @@ static void K_UpdatePlayerWaypoints(player_t *const player)
 
 INT32 K_GetKartRingPower(const player_t *player, boolean boosted)
 {
-	fixed_t ringPower = ((9 - player->kartspeed) + (9 - player->kartweight)) * (FRACUNIT/2);
+	fixed_t ringPower = ((9 - player->kartspeed) + (9 - player->kartweight)) * (FRACUNIT/4);
 
 	if (boosted == true)
 	{
@@ -11344,7 +11344,7 @@ INT32 K_GetKartRingPower(const player_t *player, boolean boosted)
 
 INT32 K_GetFullKartRingPower(const player_t *player, boolean boosted)
 {
-	return 3 + K_GetKartRingPower(player, boosted);
+	return 7 + K_GetKartRingPower(player, boosted);
 }
 
 // Returns false if this player being placed here causes them to collide with any other player
