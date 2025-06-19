@@ -97,6 +97,13 @@ void Obj_FlybotThink(mobj_t *flybot)
 			P_KillMobj(flybot, NULL, NULL, 0);
 			return;
 		}
+
+		// If player is spindashing, spin faster to hint that stun is going down faster
+		else if (mo->player->spindash)
+		{
+			speed *= 2;
+			//flybot->movedir += FLYBOT_BOB_FREQUENCY;
+		}
 	}
 
 	flybot->frame = flybot->frame & ~FF_TRANSMASK;
