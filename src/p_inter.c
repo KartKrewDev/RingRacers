@@ -3487,7 +3487,10 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			}
 
 			// Apply stun!
-			K_ApplyStun(player, inflictor, source, damage, damagetype);
+			if (damagetype != DMG_STING)
+			{
+				K_ApplyStun(player, inflictor, source, damage, damagetype);
+			}
 
 			K_DefensiveOverdrive(target->player);
 		}
