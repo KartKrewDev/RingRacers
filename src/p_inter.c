@@ -3504,7 +3504,8 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			{
 				player->stunnedCombo++;
 			}
-			player->stunned = (player->stunned & 0x8000) | min(0x7FFF, (player->stunned & 0x7FFF) + stunTics);
+			stunTics = min(player->stunned + stunTics, UINT16_MAX);
+			player->stunned = stunTics;
 			#undef MIN_STUNTICS
 			#undef MAX_STUNTICS
 

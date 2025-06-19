@@ -11855,6 +11855,11 @@ void P_RemoveMobj(mobj_t *mobj)
 			Obj_UnlinkRocks(mobj);
 			break;
 		}
+		case MT_FLYBOT767:
+		{
+			Obj_FlybotRemoved(mobj);
+			break;
+		}
 		default:
 		{
 			break;
