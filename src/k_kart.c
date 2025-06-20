@@ -16334,6 +16334,22 @@ void K_ApplyStun(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 dama
 		stunTics /= 3;
 	}
 
+	if (source && source->player)
+	{
+		// hits scored by players apply full stun
+		;
+	}
+	else if (inflictor && (P_IsKartItem(inflictor->type) || P_IsKartFieldItem(inflictor->type)))
+	{
+		// items not thrown by a player apply half stun
+		stunTics /= 2;
+	}
+	else
+	{
+		// all other hazards apply 1/4 stun
+		stunTics /= 4;
+	}
+
 	player->stunned = max(stunTics, 0);
 
 	#undef BASE_STUN_TICS_MIN
