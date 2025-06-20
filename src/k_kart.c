@@ -508,6 +508,19 @@ fixed_t K_GetKartGameSpeedScalar(SINT8 value)
 	return base + duel;
 }
 
+static fixed_t K_GetKartHandlingAssistScalar(SINT8 value)
+{
+	fixed_t gamescale = K_GetKartGameSpeedScalar(value);
+
+	if (gamescale < K_GetKartGameSpeedScalar(KARTSPEED_NORMAL))
+		return K_GetKartGameSpeedScalar(KARTSPEED_NORMAL);
+
+	if (gamescale > K_GetKartGameSpeedScalar(KARTSPEED_HARD))
+		return K_GetKartGameSpeedScalar(KARTSPEED_HARD);
+
+	return gamescale;
+}
+
 // Array of states to pick the starting point of the animation, based on the actual time left for invincibility.
 static INT32 K_SparkleTrailStartStates[KART_NUMINVSPARKLESANIM][2] = {
 	{S_KARTINVULN12, S_KARTINVULNB12},
@@ -11667,7 +11680,7 @@ INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
 				}
 
 				// If we're drifting we have a completely different turning value
-				fixed_t countersteer = FixedDiv(turnfixed, KART_FULLTURN * FixedDiv(FRACUNIT, max(FRACUNIT, K_GetKartGameSpeedScalar(gamespeed))));
+				fixed_t countersteer = FixedDiv(turnfixed, KART_FULLTURN * FixedDiv(FRACUNIT, K_GetKartHandlingAssistScalar(gamespeed)));
 				return K_GetKartDriftValue(player, countersteer);
 			}
 		}
@@ -11729,7 +11742,7 @@ INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
 		}
 	}
 
-	return (turnfixed / FixedDiv(FRACUNIT, max(FRACUNIT, K_GetKartGameSpeedScalar(gamespeed))));
+	return (turnfixed / FixedDiv(FRACUNIT, K_GetKartHandlingAssistScalar(gamespeed)));
 }
 
 INT32 K_GetUnderwaterTurnAdjust(const player_t *player)
