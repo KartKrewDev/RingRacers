@@ -9741,13 +9741,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		// timer counts down at triple speed while spindashing
 		player->stunned = max(0, player->stunned - (player->spindash ? 3 : 1));
 
-		// when timer reaches 0, reset the stun combo counter
-		if (player->stunned == 0)
-		{
-			player->stunnedCombo = 0;
-		}
-		// otherwise if the flybots aren't spawned, spawn them now!
-		else if (P_MobjWasRemoved(player->flybot))
+		// if the flybots aren't spawned, spawn them now!
+		if (player->stunned != 0 && P_MobjWasRemoved(player->flybot))
 		{
 			Obj_SpawnFlybotsForPlayer(player);
 		}
@@ -16326,7 +16321,6 @@ void K_ApplyStun(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 dama
 
 	// calculate base stun tics
 	stunTics = Easing_Linear((player->kartweight - 1) * FRACUNIT / 8, BASE_STUN_TICS_MAX, BASE_STUN_TICS_MIN);
-	stunTics >>= player->stunnedCombo; // consecutive hits add half as much stun as the previous hit
 
 	// reduce stun in games with more than 8 players
 	if (numPlayers > 8)
@@ -16340,12 +16334,7 @@ void K_ApplyStun(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 dama
 		stunTics /= 3;
 	}
 
-	if (player->stunnedCombo < UINT8_MAX)
-	{
-		player->stunnedCombo++;
-	}
-	stunTics = min(max(player->stunned + stunTics, 0), UINT16_MAX);
-	player->stunned = stunTics;
+	player->stunned = max(stunTics, 0);
 
 	#undef BASE_STUN_TICS_MIN
 	#undef BASE_STUN_TICS_MAX
