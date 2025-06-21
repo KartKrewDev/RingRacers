@@ -91,6 +91,8 @@ Make sure this matches the actual number of states
 #define MAXTOPACCEL (12*FRACUNIT)
 #define TOPACCELREGEN (FRACUNIT/16)
 
+#define BUBBLESCAM (4)
+
 // Handling boosts and sliptide conditions got weird.
 // You must be under a handling boost of at least SLIPTIDEHANDLING to sliptide.
 // HANDLESCALING is used to adjust all handling boosts simultaneously (weight factors in the future?)

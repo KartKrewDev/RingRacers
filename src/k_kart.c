@@ -10083,7 +10083,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 		else
 		{
-			fixed_t scam = K_PlayerScamPercentage(player, 2);
+			fixed_t scam = K_PlayerScamPercentage(player, BUBBLESCAM);
 			fixed_t speed = R_PointToDist2(0, 0, player->mo->momx, player->mo->momy);
 			fixed_t basespeed = K_GetKartSpeed(player, false, false);
 
