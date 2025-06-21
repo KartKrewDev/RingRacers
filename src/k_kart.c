@@ -9751,7 +9751,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->tricklock = 0;
 	}
 
-	if (P_PlayerInPain(player))
+	if (P_PlayerInPain(player) || player->respawn.state != RESPAWNST_NONE)
 	{
 		player->ringboost = 0;
 	}
