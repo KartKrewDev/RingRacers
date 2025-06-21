@@ -400,14 +400,14 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 				if (roundqueue.position == roundqueue.size-1)
 				{
 					// On A rank pace? Then you get a chance for S rank!
-					gp_rank_e rankforline = K_CalculateGPGrade(&grandprixinfo.rank);
+					fixed_t rankforline = K_CalculateGPPercent(&grandprixinfo.rank);
 
-					data.showrank = (rankforline >= GRADE_A);
+					data.showrank = (rankforline >= SEALED_STAR_ENTRY);
 
 					data.linemeter =
-						(std::min(rankforline, GRADE_A)
+						(std::min(rankforline, SEALED_STAR_ENTRY)
 							* (2 * TICRATE)
-						) / GRADE_A;
+						) / SEALED_STAR_ENTRY;
 
 					// G_NextMap will float you to rank-restricted stages on Master wins.
 					// Fudge the rank display.

@@ -7119,6 +7119,7 @@ static void K_DrawGPRankDebugger(void)
 	}
 
 	grade = K_CalculateGPGrade(&grandprixinfo.rank);
+	fixed_t percent = K_CalculateGPPercent(&grandprixinfo.rank);
 
 	V_DrawThinString(0, 0, V_SNAPTOTOP|V_SNAPTOLEFT,
 		va("POS: %d / %d", grandprixinfo.rank.position, RANK_NEUTRAL_POSITION));
@@ -7132,6 +7133,8 @@ static void K_DrawGPRankDebugger(void)
 		va("RINGS: %d / %d", grandprixinfo.rank.rings, grandprixinfo.rank.totalRings));
 	V_DrawThinString(0, 60, V_SNAPTOTOP|V_SNAPTOLEFT,
 		va("EMERALD: %s", (grandprixinfo.rank.specialWon == true) ? "YES" : "NO"));
+	V_DrawThinString(0, 70, V_SNAPTOTOP|V_SNAPTOLEFT,
+		va("PERCENT: %.2f", FixedToFloat(percent)));
 
 	switch (grade)
 	{
