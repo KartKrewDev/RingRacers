@@ -2047,6 +2047,7 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_BUBC2",
 	"S_BUBD1",
 	"S_BUBE1",
+	"S_BUBG1", // F used by Nova Shore
 
 	// Flame Shield
 	"S_FLAMESHIELD1",

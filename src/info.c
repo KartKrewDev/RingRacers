@@ -390,6 +390,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"BUBC", // Bubble Shield Bottom Wave
 	"BUBD", // Bubble Shield Reflection
 	"BUBE", // Bubble Shield Underline
+	"BUBG", // Bubble Shield drag
 	"BWVE", // Bubble Shield waves
 	"FLMS", // Flame Shield
 	"FLMA", // Flame Shield Top Layer
@@ -2604,6 +2605,7 @@ state_t states[NUMSTATES] =
 	{SPR_NULL, 0, 5, {NULL}, 0, 0, S_BUBC1}, // S_BUBC2
 	{SPR_BUBD, FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_BUBD1}, // S_BUBD1
 	{SPR_BUBE, FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_BUBE1}, // S_BUBE1
+	{SPR_BUBG, FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_BUBG1}, // S_BUBG1
 
 	{SPR_FLMS, FF_FULLBRIGHT,     2, {NULL}, 0, 0, S_FLAMESHIELD2},			// S_FLAMESHIELD1
 	{SPR_FLMS, FF_FULLBRIGHT|9,   2, {NULL}, 0, 0, S_FLAMESHIELD3},			// S_FLAMESHIELD2

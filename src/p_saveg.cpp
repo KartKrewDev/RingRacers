@@ -641,6 +641,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].lastsafecheatcheck);
 
 		WRITEUINT8(save->p, players[i].ignoreAirtimeLeniency);
+		WRITEUINT8(save->p, players[i].bubbledrag);
 
 		WRITEFIXED(save->p, players[i].topAccel);
 		WRITEFIXED(save->p, players[i].vortexBoost);
@@ -1292,6 +1293,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].lastsafecheatcheck = READUINT8(save->p);
 
 		players[i].ignoreAirtimeLeniency = READUINT8(save->p);
+		players[i].bubbledrag = READUINT8(save->p);
 
 		players[i].topAccel = READFIXED(save->p);
 		players[i].vortexBoost = READFIXED(save->p);

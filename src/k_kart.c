@@ -72,6 +72,15 @@
 // comeback is Battle Mode's karma comeback, also bool
 // mapreset is set when enough players fill an empty server
 
+static void K_PopBubbleShield(player_t *player)
+{
+	S_StartSound(player->mo, sfx_kc31);
+	K_StripItems(player);
+	K_AddHitLag(player->mo, 4, false);
+	vector3_t offset = { 0, 0, 0 };
+	K_SpawnSingleHitLagSpark(player->mo, &offset, player->mo->scale*2, 4, 0, player->skincolor);	
+}
+
 boolean K_ThunderDome(void)
 {
 	if (K_CanChangeRules(true))
@@ -479,17 +488,24 @@ boolean K_IsPlayerLosing(player_t *player)
 }
 
 // Some behavior should change if the player approaches the frontrunner unusually fast.
-boolean K_IsPlayerScamming(player_t *player)
+fixed_t K_PlayerScamPercentage(player_t *player, UINT8 mult)
 {
 	if (!M_NotFreePlay())
-		return false;
+		return 0;
 
 	if (!(gametyperules & GTR_CIRCUIT))
-		return false;
+		return 0;
 
 	// "Why 8?" Consistency
 	// "Why 2000?" Vibes
-	return (K_GetItemRouletteDistance(player, 8) < SCAMDIST);
+
+	UINT32 distance = K_GetItemRouletteDistance(player, 8);
+	UINT32 scamdistance = mult * SCAMDIST;
+
+	if (distance >= scamdistance)
+		return 0;
+
+	return Easing_Linear((scamdistance - distance) * FRACUNIT / scamdistance, 0, FRACUNIT);
 }
 
 fixed_t K_GetKartGameSpeedScalar(SINT8 value)
@@ -9951,7 +9967,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->invincibilitytimer && (player->ignoreAirtimeLeniency > 0 || onground == true || K_PowerUpRemaining(player, POWERUP_SMONITOR)))
 	{
 		player->invincibilitytimer--;
-		if (player->invincibilitytimer && K_IsPlayerScamming(player))
+		if (player->invincibilitytimer && K_PlayerScamPercentage(player, 1))
 			player->invincibilitytimer--;
 		
 		// Extra tripwire leniency for the end of invincibility
@@ -10029,7 +10045,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		if (player->growshrinktimer > 0 && (onground == true || player->ignoreAirtimeLeniency > 0))
 		{
 			player->growshrinktimer--;
-			if (player->growshrinktimer && K_IsPlayerScamming(player))
+			if (player->growshrinktimer && K_PlayerScamPercentage(player, 1))
 				player->growshrinktimer--;
 		}
 
@@ -10059,6 +10075,34 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->ignoreAirtimeLeniency)
 		player->ignoreAirtimeLeniency--;
+
+	if (player->bubbledrag)
+	{
+		if (onground)
+		{
+			player->bubbledrag = false;
+		}
+		else
+		{
+			fixed_t scam = K_PlayerScamPercentage(player, BUBBLESCAM);
+			fixed_t speed = R_PointToDist2(0, 0, player->mo->momx, player->mo->momy);
+			fixed_t basespeed = K_GetKartSpeed(player, false, false);
+
+			fixed_t targetspeed = 4 * basespeed;
+			targetspeed -= FixedMul(scam, targetspeed);
+
+			// CONS_Printf("spd %d tspd %d psp %d\n", speed, targetspeed, scam);
+
+			fixed_t div = 12*FRACUNIT; // bigger number slower drag
+
+			if (speed > targetspeed)
+			{
+				fixed_t newspeed = speed - FixedDiv((speed - targetspeed), div);
+				player->mo->momx = FixedMul(FixedDiv(player->mo->momx, speed), newspeed);
+				player->mo->momy = FixedMul(FixedDiv(player->mo->momy, speed), newspeed);
+			}
+		}
+	}
 
 	if (player->freeRingShooterCooldown && !player->mo->hitlag)
 		player->freeRingShooterCooldown--;
@@ -13219,6 +13263,7 @@ boolean K_FastFallBounce(player_t *player)
 			P_InstaThrust(player->mo, player->mo->angle, 11*max(minspeed, fallspeed)/10);
 
 			player->ignoreAirtimeLeniency = max(player->ignoreAirtimeLeniency, TICRATE);
+			player->bubbledrag = true;
 
 			bounce += 3 * mapobjectscale;
 
@@ -13237,14 +13282,12 @@ boolean K_FastFallBounce(player_t *player)
 				numplayers = 1; // solo behavior
 			}
 
+			/*
 			if (player->position == 1 && player->positiondelay <= 0 && numplayers != 1)
 			{
-				S_StartSound(player->mo, sfx_kc31);
-				K_StripItems(player);
-				K_AddHitLag(player->mo, 4, false);
-				vector3_t offset = { 0, 0, 0 };
-				K_SpawnSingleHitLagSpark(player->mo, &offset, player->mo->scale*2, 4, 0, player->skincolor);
+				K_PopBubbleShield(player);
 			}
+			*/
 
 			if (player->tripwireReboundDelay)
 				bounce /= 2;
@@ -14513,14 +14556,20 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									if (player->bubbleblowup > bubbletime*2)
 									{
 										player->itemamount--;
-										K_ThrowKartItem(player, (player->throwdir > 0), MT_BUBBLESHIELDTRAP, -1, 0, 0);
+
 										if (player->throwdir == -1)
 										{
 											P_InstaThrust(player->mo, player->mo->angle, player->speed + (80 * mapobjectscale));
 											player->wavedashboost += TICRATE;
 											player->wavedashpower = FRACUNIT;
 											player->fakeBoost += TICRATE/2;
+											K_PopBubbleShield(player);
 										}
+										else
+										{
+											K_ThrowKartItem(player, (player->throwdir > 0), MT_BUBBLESHIELDTRAP, -1, 0, 0);
+										}
+
 										K_PlayAttackTaunt(player->mo);
 										player->bubbleblowup = 0;
 										player->bubblecool = 0;

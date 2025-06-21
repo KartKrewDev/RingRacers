@@ -1046,6 +1046,7 @@ struct player_t
 	UINT8 lastsafecheatcheck;
 
 	UINT8 ignoreAirtimeLeniency; // We bubblebounced or otherwise did an airtime thing with control, powerup timers should still count down
+	boolean bubbledrag; // Just bubblebounced, slow down!
 
 	fixed_t topAccel; // Reduced on straight wall collisions to give players extra recovery time
 	fixed_t vortexBoost;

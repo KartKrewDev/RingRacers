@@ -91,6 +91,8 @@ Make sure this matches the actual number of states
 #define MAXTOPACCEL (12*FRACUNIT)
 #define TOPACCELREGEN (FRACUNIT/16)
 
+#define BUBBLESCAM (4)
+
 // Handling boosts and sliptide conditions got weird.
 // You must be under a handling boost of at least SLIPTIDEHANDLING to sliptide.
 // HANDLESCALING is used to adjust all handling boosts simultaneously (weight factors in the future?)
@@ -124,7 +126,7 @@ UINT32 K_GetPlayerDontDrawFlag(player_t *player);
 void K_ReduceVFXForEveryone(mobj_t *mo);
 
 boolean K_IsPlayerLosing(player_t *player);
-boolean K_IsPlayerScamming(player_t *player);
+fixed_t K_PlayerScamPercentage(player_t *player, UINT8 mult);
 fixed_t K_GetKartGameSpeedScalar(SINT8 value);
 
 INT32 K_GetShieldFromItem(INT32 item);

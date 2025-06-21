@@ -412,6 +412,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->lastsafecheatcheck);
 	else if (fastcmp(field,"ignoreairtimeleniency"))
 		lua_pushinteger(L, plr->ignoreAirtimeLeniency);
+	else if (fastcmp(field,"bubbledrag"))
+		lua_pushinteger(L, plr->bubbledrag);
 	else if (fastcmp(field,"topaccel"))
 		lua_pushinteger(L, plr->topAccel);
 	else if (fastcmp(field,"vortexboost"))
@@ -1042,6 +1044,8 @@ static int player_set(lua_State *L)
 		plr->lastsafecheatcheck = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"ignoreairtimeleniency"))
 		plr->ignoreAirtimeLeniency = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"bubbledrag"))
+		plr->bubbledrag = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"topaccel"))
 		plr->topAccel = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"vortexboost"))
