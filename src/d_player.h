@@ -430,6 +430,7 @@ struct botvars_t
 	tic_t rouletteTimeout; // If it takes too long to decide, try lowering priority until we find something valid.
 
 	angle_t predictionError; // How bad is our momentum angle relative to where we're trying to go?
+	INT16 straightawayTime; // How long have we been going straight? (See k_bot.h)
 };
 
 // player_t struct for round-specific condition tracking

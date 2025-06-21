@@ -7096,6 +7096,7 @@ static void K_DrawBotDebugger(void)
 	V_DrawSmallString(8, 70, 0, va("Bot modifier: %.2f", FixedToFloat(K_BotMapModifier())));
 
 	V_DrawSmallString(8, 76, 0, va("Prediction error: %d", bot->botvars.predictionError));
+	V_DrawSmallString(8, 80, 0, va("Straight: %d", bot->botvars.straightawayTime));
 }
 
 static void K_DrawGPRankDebugger(void)

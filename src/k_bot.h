@@ -46,6 +46,10 @@ extern "C" {
 // How long it takes for a Lv.1 bot to decide to pick an item.
 #define BOT_ITEM_DECISION_TIME (2*TICRATE)
 
+#define BOTSTRAIGHTTIME (TICRATE/2)
+#define BOTSTRAIGHTSTRENGTH (85*FRACUNIT/100)
+#define BOTSTRAIGHTANGLE (ANG10)
+
 // Point for bots to aim for
 struct botprediction_t
 {

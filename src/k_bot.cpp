@@ -823,6 +823,7 @@ fixed_t K_BotRubberband(const player_t *player)
 fixed_t K_UpdateRubberband(player_t *player)
 {
 	fixed_t dest = K_BotRubberband(player);
+	dest = (player->botvars.straightawayTime > 0) ? FixedMul(BOTSTRAIGHTSTRENGTH, dest) : dest;
 	fixed_t ret = player->botvars.rubberband;
 
 	UINT8 ease_soften = 8;
@@ -2122,6 +2123,14 @@ void K_UpdateBotGameplayVars(player_t *player)
 			player->botvars.spindashconfirm += player->cmd.bot.spindashconfirm;
 		}
 	}
+
+	if (player->botvars.predictionError <= BOTSTRAIGHTANGLE)
+		player->botvars.straightawayTime++;
+	else
+		player->botvars.straightawayTime -= 5;
+
+	player->botvars.straightawayTime = std::min<INT16>(player->botvars.straightawayTime, BOTSTRAIGHTTIME);
+	player->botvars.straightawayTime = std::max<INT16>(player->botvars.straightawayTime, -1 * BOTSTRAIGHTTIME);
 
 	const botcontroller_t *botController = K_GetBotController(player->mo);
 	if (K_TryRingShooter(player, botController) == true)
