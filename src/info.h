@@ -931,6 +931,7 @@ typedef enum sprite
 	SPR_BUBC, // Bubble Shield Bottom Wave
 	SPR_BUBD, // Bubble Shield Reflection
 	SPR_BUBE, // Bubble Shield Underline
+	SPR_BUBG, // Bubble Shield drag
 	SPR_BWVE, // Bubble Shield waves
 	SPR_FLMS, // Flame Shield
 	SPR_FLMA, // Flame Shield Top Layer
@@ -3101,6 +3102,7 @@ typedef enum state
 	S_BUBC2,
 	S_BUBD1,
 	S_BUBE1,
+	S_BUBG1,
 
 	// Flame Shield
 	S_FLAMESHIELD1,

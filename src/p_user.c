@@ -428,6 +428,7 @@ void P_ResetPlayer(player_t *player)
 	player->glanceDir = 0;
 	player->fastfall = 0;
 	player->turbine = 0;
+	player->bubbledrag = false;
 	Obj_EndBungee(player);
 
 	if (player->mo != NULL && P_MobjWasRemoved(player->mo) == false)

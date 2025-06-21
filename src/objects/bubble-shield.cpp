@@ -15,6 +15,7 @@
 #include "../m_easing.h"
 #include "../m_fixed.h"
 #include "../tables.h"
+#include "../k_hud.h" // transflag
 
 using namespace srb2::objects;
 
@@ -89,6 +90,7 @@ struct Visual : Mobj
 
 		if (sprite != SPR_BUBB &&
 			sprite != SPR_BUBC &&
+			sprite != SPR_BUBG &&
 			bubble()->player()->bubblecool &&
 			f == 0) // base size
 			renderflags |= RF_DONTDRAW;
@@ -113,6 +115,19 @@ struct Visual : Mobj
 				spritescale({ FRACUNIT, FRACUNIT });
 		}
 
+		if (sprite == SPR_BUBG)
+		{
+			renderflags &= ~(RF_TRANSMASK|RF_DONTDRAW);
+			renderflags |= RF_ADD;
+
+			fixed_t transpercent = K_PlayerScamPercentage(bubble()->follow()->player, 2);
+			UINT8 transfactor = (transpercent * NUMTRANSMAPS) / FRACUNIT;
+
+			if (transfactor < 10)
+				renderflags |= ((10-transfactor) << RF_TRANSSHIFT);
+			// CONS_Printf("tp %d rf %d\n", transpercent, renderflags);
+		}
+
 		prev_scale(scale());
 
 		return true;
@@ -123,7 +138,8 @@ struct Visual : Mobj
 
 void Obj_SpawnBubbleShieldVisuals(mobj_t *bubble)
 {
-	Visual::spawn(static_cast<Bubble*>(bubble), S_BUBA1, 1, 2);
+	Visual::spawn(static_cast<Bubble*>(bubble), S_BUBA1, 1, 3);
+	Visual::spawn(static_cast<Bubble*>(bubble), S_BUBG1, 0, 2);
 	Visual::spawn(static_cast<Bubble*>(bubble), S_BUBB1, 0, 1);
 	Visual::spawn(static_cast<Bubble*>(bubble), S_BUBC1, 1, -1);
 	Visual::spawn(static_cast<Bubble*>(bubble), S_BUBD1, 0, -2);
