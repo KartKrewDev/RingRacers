@@ -586,7 +586,7 @@ const botcontroller_t *K_GetBotController(const mobj_t *mobj)
 fixed_t K_BotMapModifier(void)
 {
 	// fuck it we ball
-	// return 10*FRACUNIT/10;
+	return 5*FRACUNIT/10;
 
 	constexpr INT32 complexity_scale = 10000;
 	fixed_t modifier_max = (10 * FRACUNIT / 10) - FRACUNIT;
@@ -690,9 +690,9 @@ fixed_t K_BotRubberband(const player_t *player)
 
 	// Allow the status quo to assert itself a bit. Bots get most of their speed from their
 	// mechanics adjustments, not from items, so kill some bot speed if they've got bad EXP.
-	if (player->gradingfactor < FRACUNIT && !(player->botvars.rival))
+	if (player->gradingfactor < FRACUNIT && !(player->botvars.rival) && player->botvars.difficulty > 1)
 	{
-		UINT8 levelreduce = 3; // How much to drop the "effective level" of bots that are consistently behind
+		UINT8 levelreduce = std::min<UINT8>(3, player->botvars.difficulty); // How much to drop the "effective level" of bots that are consistently behind
 		expreduce = Easing_Linear((K_EffectiveGradingFactor(player) - MINGRADINGFACTOR) * 2, levelreduce*FRACUNIT, 0);
 	}
 
@@ -823,7 +823,17 @@ fixed_t K_BotRubberband(const player_t *player)
 fixed_t K_UpdateRubberband(player_t *player)
 {
 	fixed_t dest = K_BotRubberband(player);
-	dest = (player->botvars.straightawayTime > 0) ? FixedMul(BOTSTRAIGHTSTRENGTH, dest) : dest;
+	
+	fixed_t deflect = player->botvars.recentDeflection;
+	if (deflect > BOTMAXDEFLECTION)
+		deflect = BOTMAXDEFLECTION;
+
+	dest = FixedMul(dest, Easing_Linear(
+		FixedDiv(deflect, BOTMAXDEFLECTION),
+		BOTSTRAIGHTSPEED,
+		BOTTURNSPEED
+	));
+
 	fixed_t ret = player->botvars.rubberband;
 
 	UINT8 ease_soften = 8;
@@ -2124,13 +2134,20 @@ void K_UpdateBotGameplayVars(player_t *player)
 		}
 	}
 
-	if (player->botvars.predictionError <= BOTSTRAIGHTANGLE)
-		player->botvars.straightawayTime++;
+	angle_t mangle = K_MomentumAngleEx(player->mo, 5*mapobjectscale); // magic threshold
+	angle_t langle = player->botvars.lastAngle;
+	angle_t dangle = 0;
+	if (mangle >= langle)
+		dangle = mangle - langle;
 	else
-		player->botvars.straightawayTime -= 5;
+		dangle = langle - mangle;
+	// Writing this made me move my tongue around in my mouth
 
-	player->botvars.straightawayTime = std::min<INT16>(player->botvars.straightawayTime, BOTSTRAIGHTTIME);
-	player->botvars.straightawayTime = std::max<INT16>(player->botvars.straightawayTime, -1 * BOTSTRAIGHTTIME);
+	UINT32 smo = BOTANGLESAMPLES - 1;
+
+	player->botvars.recentDeflection = (smo * player->botvars.recentDeflection / BOTANGLESAMPLES) + (dangle / BOTANGLESAMPLES);
+
+	player->botvars.lastAngle = mangle;
 
 	const botcontroller_t *botController = K_GetBotController(player->mo);
 	if (K_TryRingShooter(player, botController) == true)

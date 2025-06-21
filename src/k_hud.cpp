@@ -7095,8 +7095,8 @@ static void K_DrawBotDebugger(void)
 	V_DrawSmallString(8, 66, 0, va("Complexity: %d", K_GetTrackComplexity()));
 	V_DrawSmallString(8, 70, 0, va("Bot modifier: %.2f", FixedToFloat(K_BotMapModifier())));
 
-	V_DrawSmallString(8, 76, 0, va("Prediction error: %d", bot->botvars.predictionError));
-	V_DrawSmallString(8, 80, 0, va("Straight: %d", bot->botvars.straightawayTime));
+	V_DrawSmallString(8, 76, 0, va("Prediction error: %.2fdeg", FIXED_TO_FLOAT(FixedDiv(bot->botvars.predictionError, ANG1))));
+	V_DrawSmallString(8, 80, 0, va("Recent deflection: %.2fdeg", FIXED_TO_FLOAT(FixedDiv(bot->botvars.recentDeflection, ANG1))));
 }
 
 static void K_DrawGPRankDebugger(void)
