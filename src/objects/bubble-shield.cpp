@@ -138,12 +138,12 @@ struct Visual : Mobj
 
 void Obj_SpawnBubbleShieldVisuals(mobj_t *bubble)
 {
-	Visual::spawn(static_cast<Bubble*>(bubble), S_BUBA1, 1, 3);
-	Visual::spawn(static_cast<Bubble*>(bubble), S_BUBG1, 0, 2);
-	Visual::spawn(static_cast<Bubble*>(bubble), S_BUBB1, 0, 1);
-	Visual::spawn(static_cast<Bubble*>(bubble), S_BUBC1, 1, -1);
-	Visual::spawn(static_cast<Bubble*>(bubble), S_BUBD1, 0, -2);
-	Visual::spawn(static_cast<Bubble*>(bubble), S_BUBE1, 1, -3);
+	Visual::spawn(static_cast<Bubble*>(bubble), S_BUBA1, 1, 3); //Top shine/outline
+	Visual::spawn(static_cast<Bubble*>(bubble), S_BUBB1, 0, 2); //Top wave
+	Visual::spawn(static_cast<Bubble*>(bubble), S_BUBG1, 0, 1); //Fog mechanic
+	Visual::spawn(static_cast<Bubble*>(bubble), S_BUBC1, 1, -1); //Back Wave
+	Visual::spawn(static_cast<Bubble*>(bubble), S_BUBD1, 0, -2); //Bottom Reflection
+	Visual::spawn(static_cast<Bubble*>(bubble), S_BUBE1, 1, -3); //Backlit outline
 }
 
 boolean Obj_TickBubbleShieldVisual(mobj_t *mobj)
