@@ -15964,22 +15964,32 @@ boolean K_PlayerCanUseItem(player_t *player)
 	return (player->mo->health > 0 && !player->spectator && !P_PlayerInPain(player) && !mapreset && leveltime > introtime);
 }
 
+// === 
+// THE EXP ZONE
+// ===
+
+static boolean K_IsValidOpponent(player_t *me, player_t *them)
+{
+	UINT8 i = (them - players);
+
+	if (!playeringame[i] || players[i].spectator)
+		return false;
+	if (me == them)
+		return false;
+	if (G_SameTeam(me, them))
+		return false;
+	
+	return true;
+}
+
 static UINT8 K_Opponents(player_t *player)
 {
 	UINT8 opponents = 0; // players we are competing against
 
 	for (UINT8 i = 0; i < MAXPLAYERS; i++)
 	{
-		if (!playeringame[i] || players[i].spectator || player == players+i)
-			continue;
-
-		if (G_SameTeam(player, &players[i]) == true)
-		{
-			// You don't win/lose against your teammates.
-			continue;
-		}
-
-		opponents++;
+		if (K_IsValidOpponent(player, &players[i]))
+			opponents++;
 	}
 
 	return opponents;
@@ -16019,14 +16029,8 @@ fixed_t K_GetGradingFactorAdjustment(player_t *player)
 	// Increase XP for each player you're beating...
 	for (INT32 i = 0; i < MAXPLAYERS; i++)
 	{
-		if (!playeringame[i] || players[i].spectator || player == players+i)
+		if (!K_IsValidOpponent(player, &players[i]))
 			continue;
-
-		if (G_SameTeam(player, &players[i]) == true)
-		{
-			// You don't win/lose against your teammates.
-			continue;
-		}
 
 		if (player->position < players[i].position)
 			result += K_EXPGainPerWin(player);
@@ -16083,6 +16087,10 @@ UINT32 K_GetNumGradingPoints(void)
 
 	return numlaps * (1 + Obj_GetCheckpointCount());
 }
+
+// === 
+// END EXP ZONE
+// ===
 
 void K_BotHitPenalty(player_t *player)
 {
