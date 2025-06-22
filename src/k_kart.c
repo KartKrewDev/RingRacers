@@ -5180,6 +5180,8 @@ void K_UpdateWavedashIndicator(player_t *player)
 {
 	mobj_t *mobj = NULL;
 
+	player->vortexBoost = 0;
+
 	if (player == NULL)
 	{
 		return;
@@ -5193,7 +5195,6 @@ void K_UpdateWavedashIndicator(player_t *player)
 	if (player->wavedashIndicator == NULL || P_MobjWasRemoved(player->wavedashIndicator) == true)
 	{
 		K_InitWavedashIndicator(player);
-		player->vortexBoost = 0;
 		return;
 	}
 
