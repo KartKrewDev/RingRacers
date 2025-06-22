@@ -836,10 +836,10 @@ fixed_t K_UpdateRubberband(player_t *player)
 
 	fixed_t ret = player->botvars.rubberband;
 
-	UINT8 ease_soften = 8;
+	UINT8 ease_soften = (ret > dest) ? 3 : 8;
 
 	if (player->botvars.bumpslow && dest > ret)
-		ease_soften *= 10;
+		ease_soften = 80;
 
 	// Ease into the new value.
 	ret += (dest - player->botvars.rubberband) / ease_soften;
@@ -2146,7 +2146,7 @@ void K_UpdateBotGameplayVars(player_t *player)
 	UINT32 smo = BOTANGLESAMPLES - 1;
 
 	player->botvars.recentDeflection = (smo * player->botvars.recentDeflection / BOTANGLESAMPLES) + (dangle / BOTANGLESAMPLES);
-
+	
 	player->botvars.lastAngle = mangle;
 
 	const botcontroller_t *botController = K_GetBotController(player->mo);

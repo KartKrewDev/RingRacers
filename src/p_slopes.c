@@ -1207,7 +1207,7 @@ void P_ButteredSlope(mobj_t *mo)
 	thrust = FixedMul(thrust, abs(P_GetMobjGravity(mo)));
 
 	fixed_t basefriction = ORIG_FRICTION;
-	if (mo->player && false)
+	if (mo->player)
 		basefriction = K_PlayerBaseFriction(mo->player, ORIG_FRICTION);
 
 	if (mo->friction != basefriction && basefriction != 0)
