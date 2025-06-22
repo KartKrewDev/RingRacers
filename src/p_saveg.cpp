@@ -756,7 +756,10 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT32(save->p, players[i].botvars.spindashconfirm);
 		WRITEUINT32(save->p, players[i].botvars.respawnconfirm);
 		WRITEUINT8(save->p, players[i].botvars.roulettePriority);
-		WRITEUINT32(save->p, players[i].botvars.rouletteTimeout);
+		WRITEINT32(save->p, players[i].botvars.rouletteTimeout);
+		WRITEUINT32(save->p, players[i].botvars.predictionError);
+		WRITEUINT32(save->p, players[i].botvars.recentDeflection);
+		WRITEUINT32(save->p, players[i].botvars.lastAngle);
 
 		// itemroulette_t
 		WRITEUINT8(save->p, players[i].itemRoulette.active);
@@ -1409,6 +1412,9 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].botvars.respawnconfirm = READUINT32(save->p);
 		players[i].botvars.roulettePriority = READUINT8(save->p);
 		players[i].botvars.rouletteTimeout = READUINT32(save->p);
+		players[i].botvars.predictionError = READUINT32(save->p);
+		players[i].botvars.recentDeflection = READUINT32(save->p);
+		players[i].botvars.lastAngle = READUINT32(save->p);
 
 		// itemroulette_t
 		players[i].itemRoulette.active = (boolean)READUINT8(save->p);

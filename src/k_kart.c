@@ -1607,13 +1607,16 @@ static boolean K_TryDraft(player_t *player, mobj_t *dest, fixed_t minDist, fixed
 	// How much this increments every tic biases toward acceleration! (min speed gets 1.5% per tic, max speed gets 0.5% per tic)
 	if (player->draftpower < FRACUNIT)
 	{
-		fixed_t add = (FRACUNIT/200) + ((9 - player->kartspeed) * ((3*FRACUNIT)/1600));;
+		fixed_t add = (FRACUNIT/200) + ((9 - player->kartspeed) * ((3*FRACUNIT)/1600));
 		player->draftpower += add;
 
-		if (player->bot && (player->botvars.rival || cv_levelskull.value))
+		if (player->bot)
 		{
 			// Double speed for the rival!
-			player->draftpower += add;
+			if (player->botvars.rival || cv_levelskull.value)
+				player->draftpower += add;
+			else if (dest->player->bot) // Reduce bot gluts.
+				player->draftpower -= 3*add/4;
 		}
 
 		if (gametyperules & GTR_CLOSERPLAYERS)
