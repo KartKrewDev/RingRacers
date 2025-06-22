@@ -1285,6 +1285,7 @@ static mobj_t *InitSpecialUFO(waypoint_t *start)
 
 	// Set specialDamage as early as possible, for glass ball's sake
 	if (grandprixinfo.gp && grandprixinfo.specialDamage)
+	if (grandprixinfo.masterbots == false)
 	{
 		ufo->health -= min(2*(UINT32)mobjinfo[MT_SPECIAL_UFO].spawnhealth/10, grandprixinfo.specialDamage/12);
 		// Use this if you want to spy on what the health ends up being:
