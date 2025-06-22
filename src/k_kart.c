@@ -78,7 +78,8 @@ static void K_PopBubbleShield(player_t *player)
 	K_StripItems(player);
 	K_AddHitLag(player->mo, 4, false);
 	vector3_t offset = { 0, 0, 0 };
-	K_SpawnSingleHitLagSpark(player->mo, &offset, player->mo->scale*2, 4, 0, player->skincolor);	
+	K_SpawnSingleHitLagSpark(player->mo, &offset, player->mo->scale*2, 4, 0, player->skincolor);
+	player->bubbledrag = false;
 }
 
 boolean K_ThunderDome(void)
