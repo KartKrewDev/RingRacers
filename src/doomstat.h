@@ -198,6 +198,8 @@ typedef enum
 	GRADE_S
 } gp_rank_e;
 
+#define SEALED_STAR_ENTRY (370*FRACUNIT/400)
+
 struct cupwindata_t
 {
 	UINT8 best_placement;

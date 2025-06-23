@@ -159,6 +159,7 @@ void K_UpdateGPRank(gpRank_t *rankData);
 --------------------------------------------------*/
 
 gp_rank_e K_CalculateGPGrade(gpRank_t *rankData);
+fixed_t K_CalculateGPPercent(gpRank_t *rankData);
 
 
 /*--------------------------------------------------

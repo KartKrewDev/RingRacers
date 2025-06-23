@@ -4381,7 +4381,7 @@ void G_GetNextMap(void)
 			&& grandprixinfo.gamespeed >= KARTSPEED_NORMAL)
 		{
 			// On A rank pace? Then you get a chance for S rank!
-			permitrank = (K_CalculateGPGrade(&grandprixinfo.rank) >= GRADE_A);
+			permitrank = (K_CalculateGPPercent(&grandprixinfo.rank) >= SEALED_STAR_ENTRY);
 
 			// If you're on Master, a win floats you to rank-restricted levels for free.
 			// (This is a different class of challenge!)
