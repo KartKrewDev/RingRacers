@@ -3753,13 +3753,6 @@ static void Got_AddPlayer(const UINT8 **p, INT32 playernum)
 	G_AddPlayer(newplayernum, console);
 	memcpy(players[newplayernum].public_key, public_key, PUBKEYLENGTH);
 
-	// Previously called at the top of this function, commented as
-	// "caused desyncs in this spot :(". But we can't do this in
-	// G_PlayerReborn, since that only runs for level contexts and
-	// allows people to party-crash the vote screen even when
-	// maxplayers is too low for them. Let's try it here...?
-	G_SpectatePlayerOnJoin(newplayernum);
-
 	for (i = 0; i < MAXAVAILABILITY; i++)
 	{
 		newplayer->availabilities[i] = READUINT8(*p);
@@ -3797,6 +3790,13 @@ static void Got_AddPlayer(const UINT8 **p, INT32 playernum)
 
 	players[newplayernum].splitscreenindex = splitscreenplayer;
 	players[newplayernum].bot = false;
+
+	// Previously called at the top of this function, commented as
+	// "caused desyncs in this spot :(". But we can't do this in
+	// G_PlayerReborn, since that only runs for level contexts and
+	// allows people to party-crash the vote screen even when
+	// maxplayers is too low for them. Let's try it here...?
+	G_SpectatePlayerOnJoin(newplayernum);
 
 	if (node == mynode && splitscreenplayer == 0)
 		S_AttemptToRestoreMusic(); // Earliest viable point
