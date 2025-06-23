@@ -2313,7 +2313,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	jointime = players[player].jointime;
 	if (jointime <= 1)
 	{
-		G_SpectatePlayerOnJoin(player);
+		// Now called in Got_AddPlayer. In case of weirdness, break glass.
+		// G_SpectatePlayerOnJoin(player);
 		betweenmaps = true;
 	}
 

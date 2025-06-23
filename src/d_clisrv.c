@@ -3738,8 +3738,6 @@ static void Got_AddPlayer(const UINT8 **p, INT32 playernum)
 
 	CONS_Debug(DBG_NETPLAY, "addplayer: %d %d\n", node, newplayernum);
 
-	//G_SpectatePlayerOnJoin(newplayernum); -- caused desyncs in this spot :(
-
 	if (newplayernum+1 > doomcom->numslots)
 		doomcom->numslots = (INT16)(newplayernum+1);
 
@@ -3754,6 +3752,13 @@ static void Got_AddPlayer(const UINT8 **p, INT32 playernum)
 
 	G_AddPlayer(newplayernum, console);
 	memcpy(players[newplayernum].public_key, public_key, PUBKEYLENGTH);
+
+	// Previously called at the top of this function, commented as
+	// "caused desyncs in this spot :(". But we can't do this in
+	// G_PlayerReborn, since that only runs for level contexts and
+	// allows people to party-crash the vote screen even when
+	// maxplayers is too low for them. Let's try it here...?
+	G_SpectatePlayerOnJoin(newplayernum);
 
 	for (i = 0; i < MAXAVAILABILITY; i++)
 	{
