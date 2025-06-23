@@ -15995,9 +15995,9 @@ static UINT8 K_Opponents(player_t *player)
 	return opponents;
 }
 
-static fixed_t K_EXPPower(player_t *player)
+static fixed_t K_GradingFactorPower(player_t *player)
 {
-	fixed_t power = EXP_POWER; // adjust to change overall xp volatility
+	fixed_t power = EXP_POWER; // adjust to change overall exp volatility
 	UINT8 opponents = K_Opponents(player);
 
 	if (g_teamplay)
@@ -16009,16 +16009,16 @@ static fixed_t K_EXPPower(player_t *player)
 	return power;
 }
 
-static fixed_t K_EXPGainPerWin(player_t *player)
+static fixed_t K_GradingFactorGainPerWin(player_t *player)
 {
-	return K_EXPPower(player);
+	return K_GradingFactorPower(player);
 }
 
-static fixed_t K_EXPDrainPerCheckpoint(player_t *player)
+static fixed_t K_GradingFactorDrainPerCheckpoint(player_t *player)
 {
-	// EXP_STABLERATE: How low do you have to place before losing XP? 4*FRACUNIT/10 = top 40% of race gains, 60% loses.
+	// EXP_STABLERATE: How low do you have to place before losing gradingfactor? 4*FRACUNIT/10 = top 40% of race gains, 60% loses.
 	UINT8 opponents = K_Opponents(player);
-	fixed_t power = K_EXPPower(player);
+	fixed_t power = K_GradingFactorPower(player);
 	return FixedMul(power, FixedMul(opponents*FRACUNIT, FRACUNIT - EXP_STABLERATE));
 }
 
@@ -16026,35 +16026,35 @@ fixed_t K_GetGradingFactorAdjustment(player_t *player)
 {
 	fixed_t result = 0;
 
-	// Increase XP for each player you're beating...
+	// Increase gradingfactor for each player you're beating...
 	for (INT32 i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!K_IsValidOpponent(player, &players[i]))
 			continue;
 
 		if (player->position < players[i].position)
-			result += K_EXPGainPerWin(player);
+			result += K_GradingFactorGainPerWin(player);
 	}
 
-	// ...then take all of the XP you could possibly have earned,
+	// ...then take all of the gradingfactor you could possibly have earned,
 	// and lose it proportional to the stable rate. If you're below
-	// the stable threshold, this results in you losing XP.
-	result -= K_EXPDrainPerCheckpoint(player);
+	// the stable threshold, this results in you losing gradingfactor
+	result -= K_GradingFactorDrainPerCheckpoint(player);
 
 	return result;
 }
 
 fixed_t K_GetGradingFactorMinMax(player_t *player, boolean max)
 {
-	fixed_t factor = FRACUNIT; // Starting EXP.
+	fixed_t factor = FRACUNIT; // Starting gradingfactor
 	UINT8 opponents = K_Opponents(player);
 	UINT8 winning = (max) ? opponents : 0;
 
 	for (UINT8 i = 0; i < player->gradingpointnum; i++) // For each gradingpoint you've reached...
 	{
 		for (UINT8 j = 0; j < winning; j++)
-			factor += K_EXPGainPerWin(player); // If max, increase EXP for each player you could have been beating.
-		factor -= K_EXPDrainPerCheckpoint(player); // Then, drain like usual.
+			factor += K_GradingFactorGainPerWin(player); // If max, increase gradingfactor for each player you could have been beating.
+		factor -= K_GradingFactorDrainPerCheckpoint(player); // Then, drain like usual.
 	}
 
 	return factor;
@@ -16063,8 +16063,8 @@ fixed_t K_GetGradingFactorMinMax(player_t *player, boolean max)
 UINT16 K_GetEXP(player_t *player)
 {
 	UINT32 numgradingpoints = K_GetNumGradingPoints();
-	fixed_t targetminexp = (MINEXP*player->gradingpointnum<<FRACBITS) / max(1,numgradingpoints); // about what a last place player should be at this stage of the race
-	fixed_t targetmaxexp = (MAXEXP*player->gradingpointnum<<FRACBITS) / max(1,numgradingpoints); // about what a 1.0 factor should be at this stage of the race
+	fixed_t targetminexp = (EXP_MIN*player->gradingpointnum<<FRACBITS) / max(1,numgradingpoints); // about what a last place player should be at this stage of the race
+	fixed_t targetmaxexp = (EXP_MAX*player->gradingpointnum<<FRACBITS) / max(1,numgradingpoints); // about what a 1.0 factor should be at this stage of the race
 	fixed_t factormin = K_GetGradingFactorMinMax(player, false);
 	fixed_t factormax = K_GetGradingFactorMinMax(player, true);
 

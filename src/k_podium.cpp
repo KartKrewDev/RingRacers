@@ -139,7 +139,7 @@ void podiumData_s::Init(void)
 		constexpr INT32 numRaces = 5;
 		for (INT32 i = 0; i < rank.numPlayers; i++)
 		{
-			rank.totalPoints += numRaces * K_CalculateGPRankPoints(MAXEXP, i+1, rank.totalPlayers);
+			rank.totalPoints += numRaces * K_CalculateGPRankPoints(EXP_MAX, i+1, rank.totalPlayers);
 		}
 		rank.totalRings = numRaces * rank.numPlayers * 20;
 
@@ -180,7 +180,7 @@ void podiumData_s::Init(void)
 				}
 				default:
 				{
-					lvl->totalExp = TARGETEXP;
+					lvl->totalExp = EXP_TARGET;
 					texp += lvl->totalExp * rank.numPlayers;
 					break;
 				}
@@ -203,7 +203,7 @@ void podiumData_s::Init(void)
 					dta->rings = M_RandomRange(0, 20);
 					rgs += dta->rings;
 
-					dta->exp = M_RandomRange(MINEXP, MAXEXP);
+					dta->exp = M_RandomRange(EXP_MIN, EXP_MAX);
 					pexp += dta->exp;
 				}
 
@@ -727,8 +727,8 @@ void podiumData_s::Draw(void)
 								// Colorize the crystal, just like we do for hud
 								skincolornum_t overlaycolor = SKINCOLOR_MUSTARD;
 								fixed_t stablerateinverse = FRACUNIT - EXP_STABLERATE;
-								INT16 exp_range = MAXEXP-MINEXP;
-								INT16 exp_offset = dta->exp-MINEXP;
+								INT16 exp_range = EXP_MAX-EXP_MIN;
+								INT16 exp_offset = dta->exp-EXP_MIN;
 								fixed_t factor = (exp_offset*FRACUNIT) / exp_range; // 0.0 to 1.0 in fixed
 								// amount of blue is how much factor is above EXP_STABLERATE, and amount of red is how much factor is below
 								// assume that EXP_STABLERATE is within 0.0 to 1.0 in fixed
@@ -892,9 +892,9 @@ void podiumData_s::Draw(void)
 			.patch("K_STEXP");
 
 		// Colorize the crystal for the totals, just like we do for in race hud
-		fixed_t extraexpfactor = (MAXEXP*FRACUNIT) / TARGETEXP;
+		fixed_t extraexpfactor = (EXP_MAX*FRACUNIT) / EXP_TARGET;
 		INT16 totalExpMax = FixedMul(rank.totalExp*FRACUNIT, extraexpfactor) / FRACUNIT; // im just going to calculate it from target lol
-		INT16 totalExpMin = rank.numPlayers*MINEXP;
+		INT16 totalExpMin = rank.numPlayers*EXP_MIN;
 		skincolornum_t overlaycolor = SKINCOLOR_MUSTARD;
 		fixed_t stablerateinverse = FRACUNIT - EXP_STABLERATE;
 		INT16 exp_range = totalExpMax-totalExpMin;

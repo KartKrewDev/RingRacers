@@ -347,7 +347,7 @@ void level_tally_t::Init(player_t *player)
 			if (player->exp)
 			{
 				exp = player->exp;
-				totalExp = TARGETEXP;
+				totalExp = EXP_TARGET;
 			}
 		}
 
