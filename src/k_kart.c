@@ -16063,20 +16063,16 @@ fixed_t K_GetGradingFactorMinMax(player_t *player, boolean max)
 UINT16 K_GetEXP(player_t *player)
 {
 	UINT32 numgradingpoints = K_GetNumGradingPoints();
-	UINT16 targetminexp = (MINEXP*player->gradingpointnum/max(1,numgradingpoints)); // about what a last place player should be at this stage of the race
-	UINT16 targetexp = (MAXEXP*player->gradingpointnum/max(1,numgradingpoints)); // about what a 1.0 factor should be at this stage of the race
+	fixed_t targetminexp = (MINEXP*player->gradingpointnum<<FRACBITS) / max(1,numgradingpoints); // about what a last place player should be at this stage of the race
+	fixed_t targetmaxexp = (MAXEXP*player->gradingpointnum<<FRACBITS) / max(1,numgradingpoints); // about what a 1.0 factor should be at this stage of the race
 	fixed_t factormin = K_GetGradingFactorMinMax(player, false);
 	fixed_t factormax = K_GetGradingFactorMinMax(player, true);
-	fixed_t clampedfactor = max(factormin, min(factormax, player->gradingfactor));
-	fixed_t range = factormax - factormin; 
-	fixed_t normalizedfactor = FixedDiv(clampedfactor - factormin, range);
-	fixed_t easedexp = Easing_Linear(normalizedfactor, targetminexp, targetexp);
-	// fixed_t easedexp = Easing_Linear(normalizedfactor, MINEXP*FRACUNIT, MAXEXP*FRACUNIT);
-	UINT16 exp = easedexp;
-	// CONS_Printf("Player %s numgradingpoints=%d targetminexp=%d targetexp=%d factormin=%.2f factormax=%.2f clampedfactor=%.2f normalizedfactor=%.2f easedexp=%d\n", 
-	// 	player_names[player - players], numgradingpoints, targetminexp, targetexp, FIXED_TO_FLOAT(factormin), FIXED_TO_FLOAT(factormax), 
-	// 	FIXED_TO_FLOAT(clampedfactor), FIXED_TO_FLOAT(normalizedfactor), easedexp);
-	// UINT16 exp = (player->gradingfactor*100)>>FRACBITS;
+
+	UINT16 exp = FixedRescale(player->gradingfactor, factormin, factormax, Easing_Linear, targetminexp, targetmaxexp)>>FRACBITS;
+
+	// CONS_Printf("Player %s numgradingpoints=%d gradingpoint=%d targetminexp=%d targetmaxexp=%d factor=%.2f factormin=%.2f factormax=%.2f exp=%d\n", 
+	// 	player_names[player - players], numgradingpoints, player->gradingpointnum, targetminexp, targetmaxexp, FIXED_TO_FLOAT(player->gradingfactor), FIXED_TO_FLOAT(factormin), FIXED_TO_FLOAT(factormax), exp);
+
 	return exp;
 }
 

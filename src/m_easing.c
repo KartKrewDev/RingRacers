@@ -430,3 +430,93 @@ const char *easing_funcnames[EASE_MAX] =
 
 #undef COMMA
 #undef EASINGFUNC
+
+// ==================
+//  FEATURE RESCALING
+// ==================
+
+/*--------------------------------------------------
+	fixed_t Rescale(fixed_t value, fixed_t inmin, fixed_t inmax, easingfunc_t easing_func, fixed_t outmin, fixed_t outmax)
+
+		Rescales a feature value from [min, max] to [start, end] using
+		a custom easing function pointer.
+
+	Input Arguments:-
+		value - The input value to rescale
+		inmin - Minimum value of the input range
+		inmax - Maximum value of the input range
+		easing_func - Pointer to the easing function to use
+		outmin - Start value of the output range
+		outmax - End value of the output range
+
+	Return:-
+		The rescaled value using the specified easing function.
+--------------------------------------------------*/
+fixed_t FixedRescale(fixed_t value, fixed_t inmin, fixed_t inmax, easingfunc_t easing_func, fixed_t outmin, fixed_t outmax)
+{
+	// Handle edge case where min == max
+	if (inmin == inmax)
+		return outmin;
+
+	// Clamp the input value to the range
+	max(inmin, min(inmax, value));
+
+	// Normalize the value to [0, FRACUNIT] range
+	fixed_t t = FixedDiv(value - inmin, inmax - inmin);
+
+	// Apply the easing function if provided
+	if (easing_func != NULL)
+	{
+		return easing_func(t, outmin, outmax);
+	}
+
+	// Fallback to linear if no function provided
+	return Easing_Linear(t, outmin, outmax);
+}
+
+/*--------------------------------------------------
+	INT16 IntRescale(INT16 value, INT16 inmin, INT16 inmax, easingfunc_t easing_func, INT16 outmin, INT16 outmax)
+
+		Rescales a feature value from [min, max] to [start, end] using
+		a custom easing function pointer.
+		Can only take in up to INT16 because it uses fixed_t internally
+
+	Input Arguments:-
+		value - The input value to rescale
+		inmin - Minimum value of the input range
+		inmax - Maximum value of the input range
+		easing_func - Pointer to the easing function to use
+		outmin - Start value of the output range
+		outmax - End value of the output range
+
+	Return:-
+		The rescaled value using the specified easing function.
+--------------------------------------------------*/
+INT16 IntRescale(INT16 value, INT16 inmin, INT16 inmax, easingfunc_t easing_func, INT16 outmin, INT16 outmax)
+{
+	// Handle edge case where min == max
+	if (inmin == inmax)
+		return outmin;
+
+	// Clamp the input value to the range
+	max(inmin, min(inmax, value));
+
+	// Conversion shit
+	value = value<<FRACBITS;
+	inmin = inmin<<FRACBITS;
+	inmax = inmax<<FRACBITS;
+	outmin = outmin<<FRACBITS;
+	outmax = outmax<<FRACBITS;
+
+	// Normalize the value to [0, FRACUNIT] range
+	fixed_t t = FixedDiv(value - inmin, inmax - inmin);
+
+	// Apply the easing function if provided
+	if (easing_func != NULL)
+	{
+		return easing_func(t, outmin, outmax)>>FRACBITS;
+	}
+
+	// Fallback to linear if no function provided
+	return Easing_Linear(t, outmin, outmax)>>FRACBITS;
+}
