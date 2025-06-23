@@ -13974,7 +13974,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		player->bailcharge = 0;
 	}
 
-	if ((!P_PlayerInPain(player) && player->bailcharge) || player->bailcharge >= BAIL_MAXCHARGE)
+	if ((!P_PlayerInPain(player) && player->bailcharge >= 5) || player->bailcharge >= BAIL_MAXCHARGE)
 	{
 		player->bailcharge = 0;
 
