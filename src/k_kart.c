@@ -15964,111 +15964,115 @@ boolean K_PlayerCanUseItem(player_t *player)
 	return (player->mo->health > 0 && !player->spectator && !P_PlayerInPain(player) && !mapreset && leveltime > introtime);
 }
 
-fixed_t K_GetGradingFactorAdjustment(player_t *player)
+// === 
+// THE EXP ZONE
+// ===
+
+static boolean K_IsValidOpponent(player_t *me, player_t *them)
 {
-	fixed_t power = EXP_POWER; // adjust to change overall xp volatility
-	const fixed_t stablerate = EXP_STABLERATE; // how low is your placement before losing XP? 4*FRACUNIT/10 = top 40% of race will gain
-	fixed_t result = 0;
+	UINT8 i = (them - players);
+
+	if (!playeringame[i] || players[i].spectator)
+		return false;
+	if (me == them)
+		return false;
+	if (G_SameTeam(me, them))
+		return false;
+	
+	return true;
+}
+
+static UINT8 K_Opponents(player_t *player)
+{
+	UINT8 opponents = 0; // players we are competing against
+
+	for (UINT8 i = 0; i < MAXPLAYERS; i++)
+	{
+		if (K_IsValidOpponent(player, &players[i]))
+			opponents++;
+	}
+
+	return opponents;
+}
+
+static fixed_t K_GradingFactorPower(player_t *player)
+{
+	fixed_t power = EXP_POWER; // adjust to change overall exp volatility
+	UINT8 opponents = K_Opponents(player);
 
 	if (g_teamplay)
 		power = 3 * power / 4;
 
-	INT32 live_players = 0; // players we are competing against
+	if (opponents < 8)
+		power += (8 - opponents) * power/4;
 
+	return power;
+}
+
+static fixed_t K_GradingFactorGainPerWin(player_t *player)
+{
+	return K_GradingFactorPower(player);
+}
+
+static fixed_t K_GradingFactorDrainPerCheckpoint(player_t *player)
+{
+	// EXP_STABLERATE: How low do you have to place before losing gradingfactor? 4*FRACUNIT/10 = top 40% of race gains, 60% loses.
+	UINT8 opponents = K_Opponents(player);
+	fixed_t power = K_GradingFactorPower(player);
+	return FixedMul(power, FixedMul(opponents*FRACUNIT, FRACUNIT - EXP_STABLERATE));
+}
+
+fixed_t K_GetGradingFactorAdjustment(player_t *player)
+{
+	fixed_t result = 0;
+
+	// Increase gradingfactor for each player you're beating...
 	for (INT32 i = 0; i < MAXPLAYERS; i++)
 	{
-		if (!playeringame[i] || players[i].spectator || player == players+i)
+		if (!K_IsValidOpponent(player, &players[i]))
 			continue;
-
-		if (G_SameTeam(player, &players[i]) == true)
-		{
-			// You don't win/lose against your teammates.
-			continue;
-		}
-
-		live_players++;
-	}
-
-	if (live_players < 8)
-	{
-		power += (8 - live_players) * power/4;
-	}
-
-	// Increase XP for each player you're beating...
-	for (INT32 i = 0; i < MAXPLAYERS; i++)
-	{
-		if (!playeringame[i] || players[i].spectator || player == players+i)
-			continue;
-
-		if (G_SameTeam(player, &players[i]) == true)
-		{
-			// You don't win/lose against your teammates.
-			continue;
-		}
 
 		if (player->position < players[i].position)
-			result += power;
+			result += K_GradingFactorGainPerWin(player);
 	}
 
-	// ...then take all of the XP you could possibly have earned,
+	// ...then take all of the gradingfactor you could possibly have earned,
 	// and lose it proportional to the stable rate. If you're below
-	// the stable threshold, this results in you losing XP.
-	result -= FixedMul(power, FixedMul(live_players*FRACUNIT, FRACUNIT - stablerate));
+	// the stable threshold, this results in you losing gradingfactor
+	result -= K_GradingFactorDrainPerCheckpoint(player);
 
 	return result;
 }
 
-fixed_t K_GetGradingFactorMinMax(UINT32 gradingpointnum, boolean max)
+fixed_t K_GetGradingFactorMinMax(player_t *player, boolean max)
 {
-    // Create a dummy player structure for the theoretical last-place player
-    player_t dummy_player;
-    memset(&dummy_player, 0, sizeof(player_t));
-    dummy_player.gradingfactor = FRACUNIT; // Start at 1.0
+	fixed_t factor = FRACUNIT; // Starting gradingfactor
+	UINT8 opponents = K_Opponents(player);
+	UINT8 winning = (max) ? opponents : 0;
 
-	if (G_GametypeHasTeams())
+	for (UINT8 i = 0; i < player->gradingpointnum; i++) // For each gradingpoint you've reached...
 	{
-		const UINT8 orange_count = G_CountTeam(TEAM_ORANGE);
-		const UINT8 blue_count = G_CountTeam(TEAM_BLUE);
-		if (orange_count <= blue_count)
-		{
-			dummy_player.team = TEAM_ORANGE;
-		}
-		else
-		{
-			dummy_player.team = TEAM_BLUE;
-		}
-		dummy_player.position = max ? 0 : D_NumPlayersInRace() + 1; // Ensures that all enemy players are counted, and our dummy won't overlap
+		for (UINT8 j = 0; j < winning; j++)
+			factor += K_GradingFactorGainPerWin(player); // If max, increase gradingfactor for each player you could have been beating.
+		factor -= K_GradingFactorDrainPerCheckpoint(player); // Then, drain like usual.
 	}
-	else
-	{
-		dummy_player.position = max ? 1 : D_NumPlayersInRace();
-	}
-	
-    // Apply the adjustment for each grading point
-    for (UINT32 i = 0; i < gradingpointnum; i++)
-    {
-        dummy_player.gradingfactor += K_GetGradingFactorAdjustment(&dummy_player);
-    }
-    return dummy_player.gradingfactor;
+
+	return factor;
 }
 
 UINT16 K_GetEXP(player_t *player)
 {
 	UINT32 numgradingpoints = K_GetNumGradingPoints();
-	UINT16 targetminexp = (MINEXP*player->gradingpointnum/max(1,numgradingpoints)); // about what a last place player should be at this stage of the race
-	UINT16 targetexp = (MAXEXP*player->gradingpointnum/max(1,numgradingpoints)); // about what a 1.0 factor should be at this stage of the race
-	fixed_t factormin = K_GetGradingFactorMinMax(player->gradingpointnum, false);
-	fixed_t factormax = K_GetGradingFactorMinMax(player->gradingpointnum, true);
-	fixed_t clampedfactor = max(factormin, min(factormax, player->gradingfactor));
-	fixed_t range = factormax - factormin; 
-	fixed_t normalizedfactor = FixedDiv(clampedfactor - factormin, range);
-	fixed_t easedexp = Easing_Linear(normalizedfactor, targetminexp, targetexp);
-	// fixed_t easedexp = Easing_Linear(normalizedfactor, MINEXP*FRACUNIT, MAXEXP*FRACUNIT);
-	UINT16 exp = easedexp;
-	// CONS_Printf("Player %s numgradingpoints=%d targetminexp=%d targetexp=%d factormin=%.2f factormax=%.2f clampedfactor=%.2f normalizedfactor=%.2f easedexp=%d\n", 
-	// 	player_names[player - players], numgradingpoints, targetminexp, targetexp, FIXED_TO_FLOAT(factormin), FIXED_TO_FLOAT(factormax), 
-	// 	FIXED_TO_FLOAT(clampedfactor), FIXED_TO_FLOAT(normalizedfactor), easedexp);
-	// UINT16 exp = (player->gradingfactor*100)>>FRACBITS;
+	fixed_t targetminexp = (EXP_MIN*player->gradingpointnum<<FRACBITS) / max(1,numgradingpoints); // about what a last place player should be at this stage of the race
+	fixed_t targetmaxexp = (EXP_MAX*player->gradingpointnum<<FRACBITS) / max(1,numgradingpoints); // about what a 1.0 factor should be at this stage of the race
+	fixed_t factormin = K_GetGradingFactorMinMax(player, false);
+	fixed_t factormax = K_GetGradingFactorMinMax(player, true);
+
+	UINT16 exp = FixedRescale(player->gradingfactor, factormin, factormax, Easing_Linear, targetminexp, targetmaxexp)>>FRACBITS;
+
+	// CONS_Printf("Player %s numgradingpoints=%d gradingpoint=%d targetminexp=%d targetmaxexp=%d factor=%.2f factormin=%.2f factormax=%.2f exp=%d\n", 
+	// 	player_names[player - players], numgradingpoints, player->gradingpointnum, targetminexp, targetmaxexp, FIXED_TO_FLOAT(player->gradingfactor), FIXED_TO_FLOAT(factormin), FIXED_TO_FLOAT(factormax), exp);
+
 	return exp;
 }
 
@@ -16079,6 +16083,10 @@ UINT32 K_GetNumGradingPoints(void)
 
 	return numlaps * (1 + Obj_GetCheckpointCount());
 }
+
+// === 
+// END EXP ZONE
+// ===
 
 void K_BotHitPenalty(player_t *player)
 {
