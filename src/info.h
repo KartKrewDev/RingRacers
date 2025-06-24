@@ -2635,7 +2635,9 @@ typedef enum state
 	S_BLOCKBODY,
 
 	S_BAIL,
-	S_BAIB,
+	S_BAIB1,
+	S_BAIB2,
+	S_BAIB3,
 	S_BAIC,
 	S_BAILCHARGE,
 

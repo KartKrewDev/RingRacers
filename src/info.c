@@ -2165,10 +2165,15 @@ state_t states[NUMSTATES] =
 	{SPR_GRNG,                 FF_FULLBRIGHT|FF_PAPERSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_BLOCKRING
 	{SPR_GBDY,                 FF_FULLBRIGHT|FF_ANIMATE|0, -1, {NULL}, 4, 2, S_NULL}, // S_BLOCKBODY
 
-	{SPR_BAIL,                 FF_FULLBRIGHT|FF_ANIMATE|0, 8, {NULL}, 8, 1, S_BAIB}, // S_BAIL
-	{SPR_BAIB,                 FF_FULLBRIGHT|FF_ANIMATE|0, 10, {NULL}, 9, 1, S_NULL}, // S_BAIB
+	// why can we not use actions on spawn? I'd love to fix it but I imagine all sorts of crazy pain if I change something fundamental like that
+	{SPR_BAIL,                 FF_FULLBRIGHT|FF_ANIMATE|0, 9, {NULL}, 8, 1, S_BAIB1}, // S_BAIL
+	{SPR_BAIB,                 0, 0, {A_PlaySound}, sfx_gshb2, 2, S_BAIB2}, // S_BAIB1
+	{SPR_BAIB,                 0, 0, {A_PlaySound}, sfx_gshbd, 2, S_BAIB3}, // S_BAIB2
+	{SPR_BAIB,                 FF_FULLBRIGHT|FF_ANIMATE|0, 10, {NULL}, 9, 1, S_NULL}, // S_BAIB3
+
 	{SPR_BAIC,                 FF_FULLBRIGHT|FF_ANIMATE|0, 11, {NULL}, 10, 1, S_NULL}, // S_BAIC
-	{SPR_TECH,                 0, -1, {NULL}, 41, 1, S_NULL}, // S_BAILCHARGE
+
+	{SPR_TECH,                 1, -1, {NULL}, 41, 1, S_NULL}, // S_BAILCHARGE
 
 	{SPR_AMPB,                 FF_FULLBRIGHT|FF_PAPERSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_AMPRING
 	{SPR_AMPC,                 FF_FULLBRIGHT|FF_ANIMATE|0, -1, {NULL}, 4, 2, S_NULL}, // S_AMPBODY

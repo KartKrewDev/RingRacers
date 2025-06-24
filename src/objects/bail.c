@@ -57,12 +57,6 @@ void Obj_BailChargeThink (mobj_t *aura)
         mobj_t *mo = aura->target;
         player_t *player = mo->player;
 
-        // play sound
-        if (aura->target->player->bailcharge == 34 || aura->target->player->bailcharge == 34)
-        {
-            S_StartSound(aura, sfx_kc4e);
-        }
-
         // Follow player
         aura->flags &= ~(MF_NOCLIPTHING);
 		P_MoveOrigin(aura, mo->x, mo->y, mo->z + mo->height/2);

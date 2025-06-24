@@ -13965,7 +13965,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		if ((P_PlayerInPain(player) && player->bailcharge == 1) || (grounded && P_PlayerInPain(player) && player->bailcharge == 2)) // this is brittle ..
 		{
 			mobj_t *bail = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, MT_BAILCHARGE);
-			S_StartSound(bail, sfx_gshb9);
+			S_StartSound(bail, sfx_gshb9); // I tried to use info.c, but you can't play sounds on mobjspawn via A_PlaySound
+			S_StartSound(bail, sfx_kc4e);
 			P_SetTarget(&bail->target, player->mo);
 			bail->renderflags |= RF_FULLBRIGHT; // set fullbright here, were gonna animate frames in the thinker and it saves us from setting FF_FULLBRIGHT every frame
 		}
@@ -13980,7 +13981,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		player->bailcharge = 0;
 
 		mobj_t *bail = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, MT_BAIL);
-		S_StartSound(bail, sfx_kc33);
 		P_SetTarget(&bail->target, player->mo);
 
 		UINT32 debtrings = 20;
@@ -14054,7 +14054,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		if (player->amps > 0)
 			K_DefensiveOverdrive(player);
 
-		S_StartSound(player->mo, sfx_gshdd);
+		S_StartSound(player->mo, sfx_kc33);
 	}
 
 	if (player && player->mo && K_PlayerCanUseItem(player))
