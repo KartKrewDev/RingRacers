@@ -9738,23 +9738,12 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		&& P_IsObjectOnGround(player->mo)
 	)
 	{
-		// MEGA FUCKING HACK BECAUSE P_SAVEG MOBJS ARE FULL
-		// Would updating player_saveflags to 32 bits have any negative consequences?
-		// For now, player->stunned 16th bit is a flag to determine whether the flybots were spawned
-
 		// timer counts down at triple speed while spindashing
-		player->stunned = (player->stunned & 0x8000) | max(0, (player->stunned & 0x7FFF) - (player->spindash ? 3 : 1));
+		player->stunned = max(0, player->stunned - (player->spindash ? 3 : 1));
 
-		// when timer reaches 0, reset the flag and stun combo counter
-		if ((player->stunned & 0x7FFF) == 0)
+		// if the flybots aren't spawned, spawn them now!
+		if (player->stunned != 0 && P_MobjWasRemoved(player->flybot))
 		{
-			player->stunned = 0;
-			player->stunnedCombo = 0;
-		}
-		// otherwise if the flybots aren't spawned, spawn them now!
-		else if ((player->stunned & 0x8000) == 0)
-		{
-			player->stunned |= 0x8000;
 			Obj_SpawnFlybotsForPlayer(player);
 		}
 	}
@@ -16311,6 +16300,72 @@ fixed_t K_TeamComebackMultiplier(player_t *player)
 	multiplier = max(multiplier, FRACUNIT);
 
 	return multiplier;
+}
+
+void K_ApplyStun(player_t *player, mobj_t *inflictor, mobj_t *source, ATTRUNUSED INT32 damage, ATTRUNUSED UINT8 damagetype)
+{
+	#define BASE_STUN_TICS_MIN (4 * TICRATE)
+	#define BASE_STUN_TICS_MAX (10 * TICRATE)
+	#define MAX_STUN_REDUCTION (FRACUNIT/2)
+	#define STUN_REDUCTION_DISTANCE (20000)
+	INT32 stunTics = 0;
+	UINT8 numPlayers = 0;
+	UINT8 i;
+
+	// calculate the number of players playing
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i] && !players[i].spectator)
+		{
+			numPlayers++;
+		}
+	}
+
+	// calculate base stun tics
+	stunTics = Easing_Linear((player->kartweight - 1) * FRACUNIT / 8, BASE_STUN_TICS_MAX, BASE_STUN_TICS_MIN);
+
+	// reduce stun in games with more than 8 players
+	if (numPlayers > 8)
+	{
+		stunTics -= 6 * (numPlayers - 8);
+	}
+
+	// 1/3 stun values in battle
+	if (gametyperules & GTR_SPHERES)
+	{
+		stunTics /= 3;
+	}
+
+	if (source && source->player)
+	{
+		// hits scored by players apply full stun
+		;
+	}
+	else if (inflictor && (P_IsKartItem(inflictor->type) || P_IsKartFieldItem(inflictor->type)))
+	{
+		// items not thrown by a player apply half stun
+		stunTics /= 2;
+	}
+	else
+	{
+		// all other hazards apply 1/4 stun
+		stunTics /= 4;
+	}
+
+	UINT32 dist = K_GetItemRouletteDistance(player, D_NumPlayersInRace());
+	if (dist > STUN_REDUCTION_DISTANCE)
+		dist = STUN_REDUCTION_DISTANCE;
+
+	fixed_t distfactor = FixedDiv(dist, STUN_REDUCTION_DISTANCE); // 0-1 as you approach STUN_REDUCTION_DISTANCE
+	fixed_t stunfactor = Easing_Linear(distfactor, FRACUNIT, MAX_STUN_REDUCTION);
+	stunTics = FixedMul(stunTics*FRACUNIT, stunfactor)/FRACUNIT;
+
+	player->stunned = max(stunTics, 0);
+
+	#undef BASE_STUN_TICS_MIN
+	#undef BASE_STUN_TICS_MAX
+	#undef MAX_STUN_REDUCTION
+	#undef STUN_REDUCTION_DISTANCE
 }
 
 //}

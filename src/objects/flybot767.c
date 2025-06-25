@@ -43,6 +43,7 @@ void Obj_SpawnFlybotsForPlayer(player_t *player)
 {
 	UINT8 i;
 	mobj_t *mo = player->mo;
+	mobj_t *hprev = mo;
 	fixed_t radius = mo->radius;
 
 	for (i = 0; i < FLYBOT_QUANTITY; i++)
@@ -61,6 +62,17 @@ void Obj_SpawnFlybotsForPlayer(player_t *player)
 		flybot->movedir = flybot->old_angle = flybot->angle = angle + ANGLE_90;
 		flybot->old_z = SetFlybotZ(flybot);
 		flybot->renderflags |= (i * RF_DONTDRAW);
+
+		if (hprev->player)
+		{
+			P_SetTarget(&player->flybot, flybot);
+		}
+		else
+		{
+			P_SetTarget(&hprev->hnext, flybot);
+			P_SetTarget(&flybot->hprev, hprev);
+		}
+		hprev = flybot;
 	}
 }
 
@@ -80,10 +92,17 @@ void Obj_FlybotThink(mobj_t *flybot)
 
 	if (mo->player)
 	{
-		if (((stunned = mo->player->stunned & 0x7FFF) == 0) || (mo->player->playerstate == PST_DEAD))
+		if (((stunned = mo->player->stunned) == 0) || (mo->player->playerstate == PST_DEAD))
 		{
 			P_KillMobj(flybot, NULL, NULL, 0);
 			return;
+		}
+
+		// If player is spindashing, spin faster to hint that stun is going down faster
+		else if (mo->player->spindash)
+		{
+			speed *= 2;
+			flybot->movedir += FLYBOT_BOB_FREQUENCY*2;
 		}
 	}
 
@@ -120,6 +139,11 @@ void Obj_FlybotDeath(mobj_t *flybot)
 
 	if (!P_MobjWasRemoved(mo))
 	{
+		if (mo->player && (flybot == mo->player->flybot))
+		{
+			P_SetTarget(&mo->player->flybot, NULL);
+		}
+
 		mom.x = mo->momx;
 		mom.y = mo->momy;
 		mom.z = mo->momz;
@@ -138,5 +162,14 @@ void Obj_FlybotDeath(mobj_t *flybot)
 		P_Thrust(mo, angle, hThrust);
 		vThrust *= -1;
 		angle += ANGLE_90;
+	}
+}
+
+void Obj_FlybotRemoved(mobj_t *flybot)
+{
+	mobj_t *mo = flybot->target;
+	if (!P_MobjWasRemoved(mo) && mo->player && (flybot == mo->player->flybot))
+	{
+		P_SetTarget(&mo->player->flybot, NULL);
 	}
 }

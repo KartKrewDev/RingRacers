@@ -740,7 +740,7 @@ struct player_t
 	UINT8 tumbleBounces;
 	UINT16 tumbleHeight;	// In *mobjscaled* fracunits, or mfu, not raw fu
 	UINT16 stunned;			// Number of tics during which rings cannot be picked up
-	UINT8 stunnedCombo;		// Number of hits sustained while stunned, reduces consecutive stun penalties
+	mobj_t *flybot;			// One Flybot767 circling the player while stunned
 	UINT8 justDI;			// Turn-lockout timer to briefly prevent unintended turning after DI, resets when actionable or no input
 	boolean flipDI;			// Bananas flip the DI direction. Was a bug, but it made bananas much more interesting.
 

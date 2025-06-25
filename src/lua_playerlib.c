@@ -262,8 +262,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->tumbleHeight);
 	else if (fastcmp(field,"stunned"))
 		lua_pushinteger(L, plr->stunned);
-	else if (fastcmp(field,"stunnedcombo"))
-		lua_pushinteger(L, plr->stunnedCombo);
+	else if (fastcmp(field,"flybot"))
+		LUA_PushUserdata(L, plr->flybot, META_MOBJ);
 	else if (fastcmp(field,"justdi"))
 		lua_pushinteger(L, plr->justDI);
 	else if (fastcmp(field,"flipdi"))
@@ -896,8 +896,13 @@ static int player_set(lua_State *L)
 		plr->tumbleHeight = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"stunned"))
 		plr->stunned = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"stunnedcombo"))
-		plr->stunnedCombo = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"flybot"))
+	{
+		mobj_t *mo = NULL;
+		if (!lua_isnil(L, 3))
+			mo = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
+		P_SetTarget(&plr->flybot, mo);
+	}
 	else if (fastcmp(field,"justdi"))
 		plr->justDI = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"flipdi"))
