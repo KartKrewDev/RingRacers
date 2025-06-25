@@ -9635,7 +9635,7 @@ void P_DoQuakeOffset(UINT8 view, mappoint_t *viewPos, mappoint_t *offset)
 		quake = quake->next;
 	}
 
-	// Add level-based effects, and local bailquake
+	// Add level-based effects
 	if (P_MobjWasRemoved(viewer->mo) == false
 		&& viewer->speed > viewer->mo->scale
 		&& P_IsObjectOnGround(viewer->mo) == true)
@@ -9653,8 +9653,6 @@ void P_DoQuakeOffset(UINT8 view, mappoint_t *viewPos, mappoint_t *offset)
 			ir = FixedMul((viewer->stairjank * FRACUNIT * 5) / 17, mapobjectscale);
 			addZ += ir;
 		}
-
-
 	}
 
 	fixed_t maxShake = FixedMul(cv_cam_height[view].value, mapobjectscale) * 3 / 4;

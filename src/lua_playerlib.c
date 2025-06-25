@@ -289,7 +289,7 @@ static int player_get(lua_State *L)
 	else if (fastcmp(field,"baildrop"))
 		lua_pushinteger(L, plr->baildrop);
 	else if (fastcmp(field,"bailquake"))
-		lua_pushinteger(L, plr->bailquake);
+		lua_pushboolean(L, plr->bailquake);
 	else if (fastcmp(field,"dotrickfx"))
 		lua_pushboolean(L, plr->dotrickfx);
 	else if (fastcmp(field,"stingfx"))
@@ -921,7 +921,7 @@ static int player_set(lua_State *L)
 	else if (fastcmp(field,"baildrop"))
 		plr->baildrop = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"bailquake"))
-		plr->bailquake = luaL_checkinteger(L, 3);
+		plr->bailquake = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"analoginput"))
 		plr->analoginput = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"transfer"))
