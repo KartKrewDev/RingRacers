@@ -9654,12 +9654,7 @@ void P_DoQuakeOffset(UINT8 view, mappoint_t *viewPos, mappoint_t *offset)
 			addZ += ir;
 		}
 
-		// add bail effect
-		if (viewer->bailquake > 0 && !viewer->mo->hitlag) // only start after hitlag ends
-		{
-			ir = FixedMul((viewer->bailquake * FRACUNIT * 5) / 17, mapobjectscale);
-			addZ += ir;
-		}
+
 	}
 
 	fixed_t maxShake = FixedMul(cv_cam_height[view].value, mapobjectscale) * 3 / 4;

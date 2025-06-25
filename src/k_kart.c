@@ -10054,6 +10054,14 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->bailquake)
 		player->bailquake--;
 
+	// bail camera shake
+	if (player->bailquake > 0 && !player->mo->hitlag) // only start after hitlag ends
+	{
+		P_StartQuakeFromMobj(1, 50 * player->mo->scale, 2048 * player->mo->scale, player->mo);	
+	}
+
+	
+
 	// The precise ordering of start-of-level made me want to cut my head off,
 	// so let's try this instead. Whatever!
 	if (leveltime <= starttime || player->gradingpointnum == 0)
@@ -14036,7 +14044,12 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		player->baildrop = baildrop * BAIL_DROPFREQUENCY + 1;
 
 		K_AddHitLag(player->mo, TICRATE/4, false);
-		player->bailquake = player->mo->hitlag + TICRATE; // the quake effect that uses this will ignore it during hitlag and trigger after, so it needs to be longer than the hitlag
+		player->bailquake = player->mo->hitlag; // the quake effect that uses this will ignore it during hitlag and trigger after, so it needs to be longer than the hitlag
+		
+		//if (player->mo->hitlag > 0) // bail blink; make the player invisible during the swish, like classic games.
+		//{
+		//player->mo->renderflags |= RF_DONTDRAW;
+		//}
 
 		if (P_PlayerInPain(player))
 		{
