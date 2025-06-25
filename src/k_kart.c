@@ -10051,6 +10051,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			player->ringboost /= 3;
 	}
 
+	if (player->bailquake)
+		player->bailquake--;
+
 	// The precise ordering of start-of-level made me want to cut my head off,
 	// so let's try this instead. Whatever!
 	if (leveltime <= starttime || player->gradingpointnum == 0)
@@ -14033,6 +14036,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		player->baildrop = baildrop * BAIL_DROPFREQUENCY + 1;
 
 		K_AddHitLag(player->mo, TICRATE/4, false);
+		player->bailquake = player->mo->hitlag + TICRATE; // the quake effect that uses this will ignore it during hitlag and trigger after, so it needs to be longer than the hitlag
 
 		if (P_PlayerInPain(player))
 		{

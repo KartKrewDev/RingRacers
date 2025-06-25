@@ -9635,7 +9635,7 @@ void P_DoQuakeOffset(UINT8 view, mappoint_t *viewPos, mappoint_t *offset)
 		quake = quake->next;
 	}
 
-	// Add level-based effects.
+	// Add level-based effects, and local bailquake
 	if (P_MobjWasRemoved(viewer->mo) == false
 		&& viewer->speed > viewer->mo->scale
 		&& P_IsObjectOnGround(viewer->mo) == true)
@@ -9651,6 +9651,13 @@ void P_DoQuakeOffset(UINT8 view, mappoint_t *viewPos, mappoint_t *offset)
 		if (viewer->stairjank > 0)
 		{
 			ir = FixedMul((viewer->stairjank * FRACUNIT * 5) / 17, mapobjectscale);
+			addZ += ir;
+		}
+
+		// add bail effect
+		if (viewer->bailquake > 0 && !viewer->mo->hitlag) // only start after hitlag ends
+		{
+			ir = FixedMul((viewer->bailquake * FRACUNIT * 5) / 17, mapobjectscale);
 			addZ += ir;
 		}
 	}
