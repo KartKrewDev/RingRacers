@@ -1185,6 +1185,11 @@ boolean K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2)
 		boolean guard1 = K_PlayerGuard(mobj1->player);
 		boolean guard2 = K_PlayerGuard(mobj2->player);
 
+		if (mobj1->player->bubbleblowup)
+			guard1 = false;
+		if (mobj2->player->bubbleblowup)
+			guard2 = false;
+
 		if (guard1 && guard2)
 			K_DoPowerClash(mobj1, mobj2);
 		else if (guard1)
@@ -4556,12 +4561,16 @@ void K_DoPowerClash(mobj_t *t1, mobj_t *t2) {
 	UINT8 lag1 = 5;
 	UINT8 lag2 = 5;
 
+	boolean stripbubble = (gametyperules & GTR_BUMPERS);
+
 	// short-circuit instashield for vfx visibility
 	if (t1->player)
 	{
 		t1->player->instashield = 1;
 		t1->player->speedpunt += 20;
 		lag1 -= min(lag1, t1->player->speedpunt/10);
+		if (stripbubble && t1->player->curshield == KSHIELD_BUBBLE)
+			K_PopBubbleShield(t1->player);
 	}
 
 	if (t2->player)
@@ -4569,6 +4578,8 @@ void K_DoPowerClash(mobj_t *t1, mobj_t *t2) {
 		t2->player->instashield = 1;
 		t2->player->speedpunt += 20;
 		lag2 -= min(lag1, t2->player->speedpunt/10);
+		if (stripbubble && t2->player->curshield == KSHIELD_BUBBLE)
+			K_PopBubbleShield(t2->player);
 	}
 
 	S_StartSound(t1, sfx_parry);
