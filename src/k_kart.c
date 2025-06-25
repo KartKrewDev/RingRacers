@@ -10051,11 +10051,11 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			player->ringboost /= 3;
 	}
 
-	if (player->bailquake) // quake as soon as we leave hitlag
+	if (player->bailquake && !player->mo->hitlag) // quake as soon as we leave hitlag
 	{
 		P_StartQuakeFromMobj(7, 50 * player->mo->scale, 2048 * player->mo->scale, player->mo);	
 		player->bailquake = false;
-	}	
+	}
 
 	// The precise ordering of start-of-level made me want to cut my head off,
 	// so let's try this instead. Whatever!
