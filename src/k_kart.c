@@ -16327,7 +16327,7 @@ void K_ApplyStun(player_t *player, mobj_t *inflictor, mobj_t *source, ATTRUNUSED
 	// reduce stun in games with more than 8 players
 	if (numPlayers > 8)
 	{
-		stunTics -= 17 * (numPlayers - 8);
+		stunTics -= 6 * (numPlayers - 8);
 	}
 
 	// 1/3 stun values in battle

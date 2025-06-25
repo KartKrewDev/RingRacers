@@ -102,7 +102,7 @@ void Obj_FlybotThink(mobj_t *flybot)
 		else if (mo->player->spindash)
 		{
 			speed *= 2;
-			//flybot->movedir += FLYBOT_BOB_FREQUENCY;
+			flybot->movedir += FLYBOT_BOB_FREQUENCY*2;
 		}
 	}
 
