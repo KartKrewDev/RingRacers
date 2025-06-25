@@ -16302,10 +16302,12 @@ fixed_t K_TeamComebackMultiplier(player_t *player)
 	return multiplier;
 }
 
-void K_ApplyStun(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 damage, UINT8 damagetype)
+void K_ApplyStun(player_t *player, mobj_t *inflictor, mobj_t *source, ATTRUNUSED INT32 damage, ATTRUNUSED UINT8 damagetype)
 {
 	#define BASE_STUN_TICS_MIN (4 * TICRATE)
 	#define BASE_STUN_TICS_MAX (10 * TICRATE)
+	#define MAX_STUN_REDUCTION (FRACUNIT/2)
+	#define STUN_REDUCTION_DISTANCE (20000)
 	INT32 stunTics = 0;
 	UINT8 numPlayers = 0;
 	UINT8 i;
@@ -16350,10 +16352,20 @@ void K_ApplyStun(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 dama
 		stunTics /= 4;
 	}
 
+	UINT32 dist = K_GetItemRouletteDistance(player, D_NumPlayersInRace());
+	if (dist > STUN_REDUCTION_DISTANCE)
+		dist = STUN_REDUCTION_DISTANCE;
+
+	fixed_t distfactor = FixedDiv(dist, STUN_REDUCTION_DISTANCE); // 0-1 as you approach STUN_REDUCTION_DISTANCE
+	fixed_t stunfactor = Easing_Linear(distfactor, FRACUNIT, MAX_STUN_REDUCTION);
+	stunTics = FixedMul(stunTics*FRACUNIT, stunfactor)/FRACUNIT;
+
 	player->stunned = max(stunTics, 0);
 
 	#undef BASE_STUN_TICS_MIN
 	#undef BASE_STUN_TICS_MAX
+	#undef MAX_STUN_REDUCTION
+	#undef STUN_REDUCTION_DISTANCE
 }
 
 //}
