@@ -39,6 +39,10 @@ void Obj_BailThink (mobj_t *aura)
         fixed_t baseScale = 12*mo->scale/10;
 
         P_SetScale(aura, baseScale);
+
+        // make target player invisible during the effect, like the retro games
+        if (aura->state == &states[S_BAIL])
+            mo->renderflags |= RF_DONTDRAW;
     }
 }
 
