@@ -1168,6 +1168,27 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 		return false;
 	}
 
+
+	boolean guard1 = K_PlayerGuard(t1->player);
+	boolean guard2 = K_PlayerGuard(t2->player);
+
+	// Bubble Shield physically extends past guard when inflated,
+	// makes some sense to suppress this behavior
+	if (t1->player->bubbleblowup)
+		guard1 = false;
+	if (t2->player->bubbleblowup)
+		guard2 = false;
+
+	if (guard1 && guard2)
+		K_DoPowerClash(t1, t2);
+	else if (guard1)
+		K_DoGuardBreak(t1, t2);
+	else if (guard2)
+		K_DoGuardBreak(t2, t1);
+
+	if (guard1 || guard2)
+		return false;
+
 	// Clash instead of damage if both parties have any of these conditions
 	auto canClash = [](mobj_t *t1, mobj_t *t2)
 	{

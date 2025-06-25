@@ -1182,25 +1182,6 @@ boolean K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2)
 
 	K_SpawnBumpForObjs(mobj1, mobj2);
 
-	if (mobj1->type == MT_PLAYER && mobj2->type == MT_PLAYER
-		&& !mobj1->player->powerupVFXTimer && !mobj2->player->powerupVFXTimer)
-	{
-		boolean guard1 = K_PlayerGuard(mobj1->player);
-		boolean guard2 = K_PlayerGuard(mobj2->player);
-
-		if (mobj1->player->bubbleblowup)
-			guard1 = false;
-		if (mobj2->player->bubbleblowup)
-			guard2 = false;
-
-		if (guard1 && guard2)
-			K_DoPowerClash(mobj1, mobj2);
-		else if (guard1)
-			K_DoGuardBreak(mobj1, mobj2);
-		else if (guard2)
-			K_DoGuardBreak(mobj2, mobj1);
-	}
-
 	K_PlayerJustBumped(mobj1->player);
 	K_PlayerJustBumped(mobj2->player);
 
@@ -4620,7 +4601,9 @@ void K_DoGuardBreak(mobj_t *t1, mobj_t *t2) {
 	angle_t thrangle = R_PointToAngle2(t2->x, t2->y, t1->x, t1->y);
 	P_Thrust(t1, thrangle, 7*mapobjectscale);
 
+	t1->player->pflags2 |= PF2_ALWAYSDAMAGED;
 	P_DamageMobj(t1, t2, t2, 1, DMG_TUMBLE);
+	t1->player->pflags2 &= ~PF2_ALWAYSDAMAGED;
 
 	clash = P_SpawnMobj((t1->x/2) + (t2->x/2), (t1->y/2) + (t2->y/2), (t1->z/2) + (t2->z/2), MT_GUARDBREAK);
 

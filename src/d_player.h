@@ -135,11 +135,12 @@ typedef enum
 
 typedef enum
 {
-	PF2_SELFMUTE = 1<<1,
-	PF2_SELFDEAFEN = 1<<2,
-	PF2_SERVERMUTE = 1<<3,
-	PF2_SERVERDEAFEN = 1<<4,
-	PF2_STRICTFASTFALL = 1<<5,
+	PF2_SELFMUTE 			= 1<<1,
+	PF2_SELFDEAFEN 			= 1<<2,
+	PF2_SERVERMUTE 			= 1<<3,
+	PF2_SERVERDEAFEN 		= 1<<4,
+	PF2_STRICTFASTFALL 		= 1<<5,
+	PF2_ALWAYSDAMAGED		= 1<<6,
 } pflags2_t;
 
 typedef enum
