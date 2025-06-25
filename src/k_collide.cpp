@@ -885,18 +885,28 @@ boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 		thing = oldthing;
 		P_SetTarget(&g_tm.thing, oldg_tm.thing);*/
 
+		boolean hit = false;
+
 		if (K_KartBouncing(t2, t1->target) == true)
 		{
 			if (t2->player && t1->target && t1->target->player)
 			{
-				K_PvPTouchDamage(t2, t1->target);
+				hit = K_PvPTouchDamage(t2, t1->target);
 			}
 
 			// Don't play from t1 else it gets cut out... for some reason.
 			S_StartSound(t2, sfx_s3k44);
 		}
 
-		return true;
+		if (hit && (gametyperules & GTR_BUMPERS))
+		{
+			K_PopBubbleShield(t1->target->player);
+			return false;
+		}
+		else
+		{
+			return true;
+		}
 	}
 
 	if (K_BubbleShieldCanReflect(t1, t2))

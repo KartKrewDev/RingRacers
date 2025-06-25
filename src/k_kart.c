@@ -72,8 +72,11 @@
 // comeback is Battle Mode's karma comeback, also bool
 // mapreset is set when enough players fill an empty server
 
-static void K_PopBubbleShield(player_t *player)
+void K_PopBubbleShield(player_t *player)
 {
+	if (player->curshield != KSHIELD_BUBBLE)
+		return;
+
 	S_StartSound(player->mo, sfx_kc31);
 	K_StripItems(player);
 	K_AddHitLag(player->mo, 4, false);
@@ -14566,7 +14569,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 										S_StartSound(player->mo, sfx_s3k75);
 
 									player->bubbleblowup++;
-									player->bubblecool = player->bubbleblowup*4;
+									player->bubblecool = player->bubbleblowup * (gametyperules & GTR_BUMPERS ? 6 : 4);
 
 									if (player->bubbleblowup > bubbletime*2)
 									{
