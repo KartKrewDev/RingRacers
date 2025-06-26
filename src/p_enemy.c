@@ -12206,6 +12206,8 @@ void A_BallhogExplode(mobj_t *actor)
 	mo2->destscale = mo2->scale;
 	P_SetTarget(&mo2->target, actor->target);
 	S_StartSound(mo2, actor->info->deathsound);
+	
+	actor->fuse = 1;
 	return;
 }
 
