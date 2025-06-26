@@ -723,6 +723,17 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (special->extravalue1)
 				return;
 
+			// No picking up rings while SPB is targetting you
+			if (player->pflags & PF_RINGLOCK)
+				return;
+
+			// Prepping instawhip? Don't ruin it by collecting rings
+			if (player->instaWhipCharge)
+				return;
+
+			if (player->baildrop || player->bailcharge)
+				return;
+
 			// Don't immediately pick up spilled rings
 			if (special->threshold > 0 || P_PlayerInPain(player) || player->spindash) // player->spindash: Otherwise, players can pick up rings that are thrown out of them from invinc spindash penalty
 				return;
@@ -3596,7 +3607,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 #define RING_LAYER_SIDE_SIZE (3)
 #define RING_LAYER_SIZE (RING_LAYER_SIDE_SIZE * 2)
 
-static void P_FlingBurst
+void P_FlingBurst
 (		player_t *player,
 		angle_t fa,
 		mobjtype_t objType,

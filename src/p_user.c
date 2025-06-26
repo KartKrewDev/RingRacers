@@ -3067,7 +3067,7 @@ void P_DemoCameraMovement(camera_t *cam, UINT8 num)
 	}
 
 	// if you hold Y, you will lock on to displayplayer. (The last player you were ""f12-ing"")
-	if (cam->freecam && cmd->buttons & BT_RESPAWN)
+	if (cam->freecam && cmd->buttons & BT_BAIL)
 	{
 		lastp = &players[displayplayers[0]];	// Fun fact, I was trying displayplayers[0]->mo as if it was Lua like an absolute idiot.
 		cam->angle = R_PointToAngle2(cam->x, cam->y, lastp->mo->x, lastp->mo->y);
@@ -3369,7 +3369,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	if (P_CameraThinker(player, thiscam, resetcalled))
 		return true;
 
-	lookback = ( player->cmd.buttons & BT_LOOKBACK );
+	lookback = K_GetKartButtons(player) & BT_LOOKBACK;
 
 	camspeed = cv_cam_speed[num].value;
 	camstill = cv_cam_still[num].value || player->seasaw;	// RR: seasaws lock the camera so that it isn't disorienting.

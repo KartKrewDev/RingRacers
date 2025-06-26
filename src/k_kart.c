@@ -4069,8 +4069,16 @@ boolean K_KartKickstart(const player_t *player)
 
 UINT16 K_GetKartButtons(const player_t *player)
 {
-	return (player->cmd.buttons |
-		(K_KartKickstart(player) ? BT_ACCELERATE : 0));
+	UINT16 buttons = player->cmd.buttons;
+	if ((buttons & BT_RESPAWNMASK) == BT_RESPAWNMASK)
+	{
+		buttons &= ~BT_LOOKBACK;
+	}
+	if (K_KartKickstart(player))
+	{
+		buttons = buttons | BT_ACCELERATE;
+	}
+	return buttons;
 }
 
 SINT8 K_GetForwardMove(const player_t *player)
@@ -7772,6 +7780,30 @@ void K_PopPlayerShield(player_t *player)
 	K_UnsetItemOut(player);
 }
 
+static void K_DeleteHnextList(player_t *player)
+{
+	mobj_t *work = player->mo, *nextwork;
+
+	if (work == NULL || P_MobjWasRemoved(work))
+	{
+		return;
+	}
+
+	nextwork = work->hnext;
+
+	while ((work = nextwork) && !(work == NULL || P_MobjWasRemoved(work)))
+	{
+		nextwork = work->hnext;
+
+		if (!work->health)
+			continue; // taking care of itself
+
+		K_SpawnLandMineExplosion(work, player->skincolor, player->mo->hitlag);
+
+		P_RemoveMobj(work);
+	}
+}
+
 void K_DropHnextList(player_t *player)
 {
 	mobj_t *work = player->mo, *nextwork, *dropwork;
@@ -9778,7 +9810,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 		// UINT16 oldringboost = player->ringboost;
 
-		if (player->superring == 0 || player->stunned)
+		if (!player->baildrop && (player->superring == 0 || player->stunned))
 			player->ringboost -= max((player->ringboost / roller), 1);
 		else if (K_LegacyRingboost(player))
 			player->ringboost--;
@@ -9969,6 +10001,51 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
+	if (player->baildrop)
+	{
+		if (player->stunned & 0x8000)
+			player->stunned = 0x8000 | BAILSTUN;
+		else
+			player->stunned = BAILSTUN;
+
+		mobj_t *pmo = player->mo;
+		// particle spawn
+		#define BAILSPARKLE_MAXBAIL 61 // amount of bail rings needed for max sparkle spawn frequency
+		UINT32 baildropinversefreq = BAILSPARKLE_MAXBAIL - min(player->baildrop, BAILSPARKLE_MAXBAIL-6);
+		UINT32 baildropmodulo = baildropinversefreq *5/3 /10;
+		if ((leveltime % (1+baildropmodulo)) == 0)
+		{
+			mobj_t *sparkle = P_SpawnMobj(pmo->x + (P_RandomRange(PR_DECORATION, -40,40) * pmo->scale),
+				pmo->y + (P_RandomRange(PR_DECORATION, -40,40) * pmo->scale),
+				pmo->z + (pmo->height/2) + (P_RandomRange(PR_DECORATION, -40,40) * pmo->scale),
+				MT_BAILSPARKLE);
+
+			sparkle->scale = pmo->scale;
+			sparkle->angle = pmo->angle;
+			sparkle->momx = 3*pmo->momx/4;
+			sparkle->momy = 3*pmo->momy/4;
+			sparkle->momz = 3*P_GetMobjZMovement(pmo)/4;
+			K_MatchGenericExtraFlags(sparkle, pmo);
+			sparkle->renderflags = (pmo->renderflags & ~RF_TRANSMASK);//|RF_TRANS20|RF_ADD;
+		}
+
+		if ((player->baildrop % BAIL_DROPFREQUENCY) == 0)
+		{
+			P_FlingBurst(player, K_MomentumAngle(pmo), MT_FLINGRING, 10*TICRATE, FRACUNIT, player->baildrop/BAIL_DROPFREQUENCY);
+			S_StartSound(pmo, sfx_gshad);
+		}
+
+		player->baildrop--;
+		if (player->baildrop == 0)
+			player->ringboost /= 3;
+	}
+
+	if (player->bailquake && !player->mo->hitlag) // quake as soon as we leave hitlag
+	{
+		P_StartQuakeFromMobj(7, 50 * player->mo->scale, 2048 * player->mo->scale, player->mo);	
+		player->bailquake = false;
+	}
+
 	// The precise ordering of start-of-level made me want to cut my head off,
 	// so let's try this instead. Whatever!
 	if (leveltime <= starttime || player->gradingpointnum == 0)
@@ -10050,7 +10127,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			K_RemoveGrowShrink(player);
 	}
 
-	if (player->respawn.state != RESPAWNST_MOVE && (player->cmd.buttons & BT_RESPAWN) == BT_RESPAWN)
+	if (player->respawn.state != RESPAWNST_MOVE && (player->cmd.buttons & BT_RESPAWNMASK) == BT_RESPAWNMASK)
 	{
 		player->finalfailsafe++; // Decremented by ringshooter to "freeze" this timer
 		// Part-way through the auto-respawn timer, you can tap Ring Shooter to respawn early
@@ -10136,7 +10213,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 		if (player->nextringaward >= ringrate)
 		{
-			if (player->instaWhipCharge)
+			if (player->instaWhipCharge || player->baildrop || player->bailcharge)
 			{
 				// Store award rings to do diabolical horseshit with later.
 				player->nextringaward = ringrate;
@@ -13875,6 +13952,106 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			player->instaWhipCharge = 0;
 	}
 	
+
+	if ((player->cmd.buttons & BT_BAIL) && (player->cmd.buttons & BT_RESPAWNMASK) != BT_RESPAWNMASK && ((player->itemtype && player->itemamount) || (player->rings > 0) || player->superring > 0 || player->pickuprings > 0 || player->itemRoulette.active))
+	{
+		boolean grounded = P_IsObjectOnGround(player->mo);
+		onground && player->tumbleBounces == 0 ?  player->bailcharge += 2 : player->bailcharge++; // charge twice as fast on the ground
+		if ((P_PlayerInPain(player) && player->bailcharge == 1) || (grounded && P_PlayerInPain(player) && player->bailcharge == 2)) // this is brittle ..
+		{
+			mobj_t *bail = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, MT_BAILCHARGE);
+			S_StartSound(bail, sfx_gshb9); // I tried to use info.c, but you can't play sounds on mobjspawn via A_PlaySound
+			S_StartSound(bail, sfx_kc4e);
+			P_SetTarget(&bail->target, player->mo);
+			bail->renderflags |= RF_FULLBRIGHT; // set fullbright here, were gonna animate frames in the thinker and it saves us from setting FF_FULLBRIGHT every frame
+		}
+	}
+	else
+	{
+		player->bailcharge = 0;
+	}
+
+	if ((!P_PlayerInPain(player) && player->bailcharge >= 5) || player->bailcharge >= BAIL_MAXCHARGE)
+	{
+		player->bailcharge = 0;
+
+		mobj_t *bail = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, MT_BAIL);
+		P_SetTarget(&bail->target, player->mo);
+
+		UINT32 debtrings = 20;
+		if (player->rings < 0)
+		{
+			debtrings -= player->rings;
+			player->rings = 0;
+		}
+
+		UINT32 totalrings = player->rings + player->superring + player->pickuprings;
+		if (BAIL_CREDIT_DEBTRINGS)
+			totalrings += debtrings;
+		totalrings = max(totalrings, 0);
+		UINT32 bailboost = FixedInt(FixedMul(totalrings*FRACUNIT, BAIL_BOOST));
+		UINT32 baildrop = FixedInt(FixedMul((totalrings)*FRACUNIT, BAIL_DROP));
+
+		if (player->itemRoulette.active)
+		{
+			player->itemRoulette.active = false;
+		}
+
+		K_PopPlayerShield(player);
+		K_DeleteHnextList(player);
+		K_DropItems(player);
+
+		player->itemamount = 0;
+		player->itemtype = 0;
+
+		/*
+		if (player->itemamount)
+		{
+			K_DropPaperItem(player, player->itemtype, player->itemamount);
+			player->itemtype = player->itemamount = 0;
+		}
+		*/
+
+		player->rings = -20;
+		player->superring = 0;
+		player->pickuprings = 0;
+		player->ringboxaward = 0;
+		player->ringboxdelay = 0;
+
+		player->superringdisplay = 0;
+		player->superringalert = 0;
+		player->superringpeak = 0;
+
+		player->counterdash += TICRATE/8;
+
+		player->ringboost += bailboost * (3+K_GetKartRingPower(player, true));
+		player->baildrop = baildrop * BAIL_DROPFREQUENCY + 1;
+
+		K_AddHitLag(player->mo, TICRATE/4, false);
+		player->bailquake = true; // set for a one time quake effect as soon as hitlag ends
+
+		if (P_PlayerInPain(player))
+		{
+			player->spinouttimer = 0;
+			player->spinouttype = 0;
+			player->tumbleBounces = 0;
+			player->pflags &= ~PF_TUMBLELASTBOUNCE;
+			player->mo->rollangle = 0;
+			P_ResetPitchRoll(player->mo);
+		}
+
+		INT32 fls = K_GetEffectiveFollowerSkin(player);
+		if (player->follower && fls >= 0 && fls < numfollowers)
+		{
+			const follower_t *fl = &followers[fls];
+			S_StartSound(NULL, fl->hornsound);
+		}
+
+		if (player->amps > 0)
+			K_DefensiveOverdrive(player);
+
+		S_StartSound(player->mo, sfx_kc33);
+	}
 
 	if (player && player->mo && K_PlayerCanUseItem(player))
 	{

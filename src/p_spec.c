@@ -9635,7 +9635,7 @@ void P_DoQuakeOffset(UINT8 view, mappoint_t *viewPos, mappoint_t *offset)
 		quake = quake->next;
 	}
 
-	// Add level-based effects.
+	// Add level-based effects
 	if (P_MobjWasRemoved(viewer->mo) == false
 		&& viewer->speed > viewer->mo->scale
 		&& P_IsObjectOnGround(viewer->mo) == true)

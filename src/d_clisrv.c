@@ -5397,7 +5397,7 @@ static void FuzzTiccmd(ticcmd_t* target)
 		{
 			target->buttons |= BT_ACCELERATE;
 			target->buttons &= ~BT_LOOKBACK;
-			target->buttons &= ~BT_RESPAWN;
+			target->buttons &= ~BT_BAIL;
 			target->buttons &= ~BT_BRAKE;
 		}
 	}

@@ -1803,7 +1803,7 @@ static void K_BuildBotTiccmdNormal(player_t *player, ticcmd_t *cmd)
 	if (K_TryRingShooter(player, botController) == true && player->botvars.respawnconfirm >= BOTRESPAWNCONFIRM)
 	{
 		// We want to respawn. Simply hold Y and stop here!
-		cmd->buttons |= (BT_RESPAWN | BT_EBRAKEMASK);
+		cmd->buttons |= BT_RESPAWNMASK;
 		return;
 	}
 

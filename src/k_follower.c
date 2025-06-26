@@ -546,7 +546,7 @@ void K_HandleFollower(player_t *player)
 		}
 
 		// Sal: Turn the follower around when looking backwards.
-		if ( player->cmd.buttons & BT_LOOKBACK )
+		if (K_GetKartButtons(player) & BT_LOOKBACK)
 		{
 			destAngle += ANGLE_180;
 		}

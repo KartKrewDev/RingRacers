@@ -1081,6 +1081,10 @@ struct player_t
 	UINT16 progressivethrust; // When getting beat up in GTR_BUMPERS, speed up the longer you've been out of control.
 	UINT8 ringvisualwarning; // Check with > 1, not >= 1! Set when put in debt, counts down and holds at 1 when still in debt.
 
+	UINT32 bailcharge;
+	UINT32 baildrop;
+	boolean bailquake;
+
 	boolean analoginput; // Has an input been recorded that requires analog usage? For input display.
 
 	boolean markedfordeath;
