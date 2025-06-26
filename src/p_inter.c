@@ -3191,6 +3191,12 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 						}
 					}
 
+					if (inflictor && !P_MobjWasRemoved(inflictor) && inflictor->momx == 0 && inflictor->momy == 0 && inflictor->momz == 0)
+					{
+						// Probably a map hazard.
+						allowcombo = false;
+					}
+
 					if (allowcombo == false && (target->eflags & MFE_PAUSED))
 					{
 						return false;
@@ -3405,18 +3411,22 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				K_PopPlayerShield(player);
 			}
 
-			if (!(gametyperules & GTR_SPHERES) && player->tripwireLeniency)
+			boolean downgraded = false;
+
+			if (!(gametyperules & GTR_SPHERES) && player->tripwireLeniency && !P_PlayerInPain(player))
 			{
 				switch (type)
 				{
 					case DMG_EXPLODE:
 						type = DMG_TUMBLE;
+						downgraded = true;
 						break;
 					case DMG_TUMBLE:
 						softenTumble = true;
 						break;
 					case DMG_NORMAL:
 					case DMG_WIPEOUT:
+						downgraded = true;
 						type = DMG_STUMBLE;
 						player->ringburst += 5; // THERE IS SIMPLY NO HOPE AT THIS POINT
 						K_PopPlayerShield(player);
@@ -3463,7 +3473,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				ringburst = 0;
 			}
 
-			if (type != DMG_STUMBLE && type != DMG_WHUMBLE)
+			if ((type != DMG_STUMBLE && type != DMG_WHUMBLE) || (type == DMG_STUMBLE && downgraded))
 			{
 				if (type != DMG_STING)
 					player->flashing = K_GetKartFlashing(player);
