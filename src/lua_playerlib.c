@@ -262,8 +262,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->tumbleHeight);
 	else if (fastcmp(field,"stunned"))
 		lua_pushinteger(L, plr->stunned);
-	else if (fastcmp(field,"stunnedcombo"))
-		lua_pushinteger(L, plr->stunnedCombo);
+	else if (fastcmp(field,"flybot"))
+		LUA_PushUserdata(L, plr->flybot, META_MOBJ);
 	else if (fastcmp(field,"justdi"))
 		lua_pushinteger(L, plr->justDI);
 	else if (fastcmp(field,"flipdi"))
@@ -284,6 +284,12 @@ static int player_get(lua_State *L)
 		lua_pushboolean(L, plr->progressivethrust);
 	else if (fastcmp(field,"ringvisualwarning"))
 		lua_pushboolean(L, plr->ringvisualwarning);
+	else if (fastcmp(field,"bailcharge"))
+		lua_pushinteger(L, plr->bailcharge);
+	else if (fastcmp(field,"baildrop"))
+		lua_pushinteger(L, plr->baildrop);
+	else if (fastcmp(field,"bailquake"))
+		lua_pushboolean(L, plr->bailquake);
 	else if (fastcmp(field,"dotrickfx"))
 		lua_pushboolean(L, plr->dotrickfx);
 	else if (fastcmp(field,"stingfx"))
@@ -896,8 +902,13 @@ static int player_set(lua_State *L)
 		plr->tumbleHeight = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"stunned"))
 		plr->stunned = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"stunnedcombo"))
-		plr->stunnedCombo = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"flybot"))
+	{
+		mobj_t *mo = NULL;
+		if (!lua_isnil(L, 3))
+			mo = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
+		P_SetTarget(&plr->flybot, mo);
+	}
 	else if (fastcmp(field,"justdi"))
 		plr->justDI = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"flipdi"))
@@ -910,6 +921,12 @@ static int player_set(lua_State *L)
 		plr->progressivethrust = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"ringvisualwarning"))
 		plr->ringvisualwarning = luaL_checkboolean(L, 3);
+	else if (fastcmp(field,"bailcharge"))
+		plr->bailcharge = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"baildrop"))
+		plr->baildrop = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"bailquake"))
+		plr->bailquake = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"analoginput"))
 		plr->analoginput = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"transfer"))

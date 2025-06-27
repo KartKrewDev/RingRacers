@@ -72,8 +72,7 @@ static savebuffer_t *current_savebuffer;
 #define ARCHIVEBLOCK_WAYPOINTS		0x7F46498F
 #define ARCHIVEBLOCK_RNG			0x7FAAB5BD
 
-// Note: This cannot be bigger
-// than an UINT16 (for now)
+// Note: This cannot have more than 32 entries
 typedef enum
 {
 	AWAYVIEW   = 0x0001,
@@ -93,6 +92,7 @@ typedef enum
 	BARRIER = 0x4000,
 	BALLHOGRETICULE = 0x8000,
 	STONESHOE = 0x10000,
+	FLYBOT = 0x20000,
 } player_saveflags;
 
 static inline void P_ArchivePlayer(savebuffer_t *save)
@@ -368,6 +368,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		if (players[i].stoneShoe)
 			flags |= STONESHOE;
 
+		if (players[i].flybot)
+			flags |= FLYBOT;
+
 		WRITEUINT32(save->p, flags);
 
 		if (flags & SKYBOXVIEW)
@@ -418,6 +421,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		if (flags & STONESHOE)
 			WRITEUINT32(save->p, players[i].stoneShoe->mobjnum);
 
+		if (flags & FLYBOT)
+			WRITEUINT32(save->p, players[i].flybot->mobjnum);
+
 		WRITEUINT32(save->p, (UINT32)players[i].followitem);
 
 		WRITEUINT32(save->p, players[i].charflags);
@@ -464,7 +470,6 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].tumbleBounces);
 		WRITEUINT16(save->p, players[i].tumbleHeight);
 		WRITEUINT16(save->p, players[i].stunned);
-		WRITEUINT8(save->p, players[i].stunnedCombo);
 
 		WRITEUINT8(save->p, players[i].justDI);
 		WRITEUINT8(save->p, players[i].flipDI);
@@ -667,6 +672,10 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT16(save->p, players[i].progressivethrust);
 		WRITEUINT8(save->p, players[i].ringvisualwarning);
 
+		WRITEUINT32(save->p, players[i].bailcharge);
+		WRITEUINT32(save->p, players[i].baildrop);
+		WRITEUINT8(save->p, players[i].bailquake);
+
 		WRITEUINT8(save->p, players[i].analoginput);
 
 		WRITEUINT8(save->p, players[i].markedfordeath);
@@ -756,7 +765,10 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT32(save->p, players[i].botvars.spindashconfirm);
 		WRITEUINT32(save->p, players[i].botvars.respawnconfirm);
 		WRITEUINT8(save->p, players[i].botvars.roulettePriority);
-		WRITEUINT32(save->p, players[i].botvars.rouletteTimeout);
+		WRITEINT32(save->p, players[i].botvars.rouletteTimeout);
+		WRITEUINT32(save->p, players[i].botvars.predictionError);
+		WRITEUINT32(save->p, players[i].botvars.recentDeflection);
+		WRITEUINT32(save->p, players[i].botvars.lastAngle);
 
 		// itemroulette_t
 		WRITEUINT8(save->p, players[i].itemRoulette.active);
@@ -1070,6 +1082,9 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		if (flags & STONESHOE)
 			players[i].stoneShoe = (mobj_t *)(size_t)READUINT32(save->p);
 
+		if (flags & FLYBOT)
+			players[i].flybot = (mobj_t *)(size_t)READUINT32(save->p);
+
 		players[i].followitem = (mobjtype_t)READUINT32(save->p);
 
 		//SetPlayerSkinByNum(i, players[i].skin);
@@ -1117,7 +1132,6 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].tumbleBounces = READUINT8(save->p);
 		players[i].tumbleHeight = READUINT16(save->p);
 		players[i].stunned = READUINT16(save->p);
-		players[i].stunnedCombo = READUINT8(save->p);
 
 		players[i].justDI = READUINT8(save->p);
 		players[i].flipDI = (boolean)READUINT8(save->p);
@@ -1319,6 +1333,10 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].progressivethrust = READUINT16(save->p);
 		players[i].ringvisualwarning = READUINT8(save->p);
 
+		players[i].bailcharge = READUINT32(save->p);
+		players[i].baildrop = READUINT32(save->p);
+		players[i].bailquake = READUINT8(save->p);
+
 		players[i].analoginput = READUINT8(save->p);
 
 		players[i].markedfordeath = READUINT8(save->p);
@@ -1409,6 +1427,9 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].botvars.respawnconfirm = READUINT32(save->p);
 		players[i].botvars.roulettePriority = READUINT8(save->p);
 		players[i].botvars.rouletteTimeout = READUINT32(save->p);
+		players[i].botvars.predictionError = READUINT32(save->p);
+		players[i].botvars.recentDeflection = READUINT32(save->p);
+		players[i].botvars.lastAngle = READUINT32(save->p);
 
 		// itemroulette_t
 		players[i].itemRoulette.active = (boolean)READUINT8(save->p);
@@ -6225,6 +6246,11 @@ static void P_RelinkPointers(void)
 		{
 			if (!RelinkMobj(&players[i].stoneShoe))
 				CONS_Debug(DBG_GAMELOGIC, "stoneShoe not found on player %d\n", i);
+		}
+		if (players[i].flybot)
+		{
+			if (!RelinkMobj(&players[i].flybot))
+				CONS_Debug(DBG_GAMELOGIC, "flybot not found on player %d\n", i);
 		}
 	}
 }

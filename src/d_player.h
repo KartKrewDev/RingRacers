@@ -135,11 +135,12 @@ typedef enum
 
 typedef enum
 {
-	PF2_SELFMUTE = 1<<1,
-	PF2_SELFDEAFEN = 1<<2,
-	PF2_SERVERMUTE = 1<<3,
-	PF2_SERVERDEAFEN = 1<<4,
-	PF2_STRICTFASTFALL = 1<<5,
+	PF2_SELFMUTE 			= 1<<1,
+	PF2_SELFDEAFEN 			= 1<<2,
+	PF2_SERVERMUTE 			= 1<<3,
+	PF2_SERVERDEAFEN 		= 1<<4,
+	PF2_STRICTFASTFALL 		= 1<<5,
+	PF2_ALWAYSDAMAGED		= 1<<6,
 } pflags2_t;
 
 typedef enum
@@ -430,6 +431,8 @@ struct botvars_t
 	tic_t rouletteTimeout; // If it takes too long to decide, try lowering priority until we find something valid.
 
 	angle_t predictionError; // How bad is our momentum angle relative to where we're trying to go?
+	angle_t recentDeflection; // How long have we been going straight? (See k_bot.h)
+	angle_t lastAngle;
 };
 
 // player_t struct for round-specific condition tracking
@@ -738,7 +741,7 @@ struct player_t
 	UINT8 tumbleBounces;
 	UINT16 tumbleHeight;	// In *mobjscaled* fracunits, or mfu, not raw fu
 	UINT16 stunned;			// Number of tics during which rings cannot be picked up
-	UINT8 stunnedCombo;		// Number of hits sustained while stunned, reduces consecutive stun penalties
+	mobj_t *flybot;			// One Flybot767 circling the player while stunned
 	UINT8 justDI;			// Turn-lockout timer to briefly prevent unintended turning after DI, resets when actionable or no input
 	boolean flipDI;			// Bananas flip the DI direction. Was a bug, but it made bananas much more interesting.
 
@@ -1078,6 +1081,10 @@ struct player_t
 	INT16 incontrol; // -1 to -175 when spinning out or tumbling, 1 to 175 when not. Use to check for combo hits or emergency inputs.
 	UINT16 progressivethrust; // When getting beat up in GTR_BUMPERS, speed up the longer you've been out of control.
 	UINT8 ringvisualwarning; // Check with > 1, not >= 1! Set when put in debt, counts down and holds at 1 when still in debt.
+
+	UINT32 bailcharge;
+	UINT32 baildrop;
+	boolean bailquake;
 
 	boolean analoginput; // Has an input been recorded that requires analog usage? For input display.
 

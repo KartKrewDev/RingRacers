@@ -322,7 +322,7 @@ void gpRank_t::Init(void)
 	// (Should this account for all coop players?)
 	for (i = 0; i < numHumans; i++)
 	{
-		totalPoints += grandprixinfo.cup->numlevels * K_CalculateGPRankPoints(MAXEXP, i+1, totalPlayers);
+		totalPoints += grandprixinfo.cup->numlevels * K_CalculateGPRankPoints(EXP_MAX, i+1, totalPlayers);
 	}
 
 	totalRings = grandprixinfo.cup->numlevels * numHumans * 20;
@@ -332,7 +332,7 @@ void gpRank_t::Init(void)
 		const INT32 cupLevelNum = grandprixinfo.cup->cachedlevels[i];
 		if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum] != NULL)
 		{
-			exp += TARGETEXP;
+			exp += EXP_TARGET;
 		}
 	}
 
@@ -372,7 +372,7 @@ void gpRank_t::Rejigger(UINT16 removedmap, UINT16 removedgt, UINT16 addedmap, UI
 	{
 		for (i = 0; i < numPlayers; i++)
 		{
-			deltaPoints += K_CalculateGPRankPoints(MAXEXP, i + 1, totalPlayers);
+			deltaPoints += K_CalculateGPRankPoints(EXP_MAX, i + 1, totalPlayers);
 		}
 		if (addedgt == GT_RACE)
 			totalPoints += deltaPoints;
@@ -391,7 +391,7 @@ void gpRank_t::Rejigger(UINT16 removedmap, UINT16 removedgt, UINT16 addedmap, UI
 	{
 		if (removedgt == GT_RACE)
 		{
-			deltaExp -= TARGETEXP;
+			deltaExp -= EXP_TARGET;
 		}
 		if ((gametypes[removedgt]->rules & GTR_SPHERES) == 0)
 		{
@@ -408,7 +408,7 @@ void gpRank_t::Rejigger(UINT16 removedmap, UINT16 removedgt, UINT16 addedmap, UI
 	{
 		if (addedgt == GT_RACE)
 		{
-			deltaExp += TARGETEXP;
+			deltaExp += EXP_TARGET;
 		}
 		if ((gametypes[addedgt]->rules & GTR_SPHERES) == 0)
 		{
@@ -492,7 +492,7 @@ void gpRank_t::Update(void)
 
 	lvl->time = UINT32_MAX;
 
-	lvl->totalExp = TARGETEXP;
+	lvl->totalExp = EXP_TARGET;
 	lvl->totalPrisons = maptargets;
 
 	UINT8 i;
@@ -548,13 +548,10 @@ void K_UpdateGPRank(gpRank_t *rankData)
 	rankData->Update();
 }
 
-/*--------------------------------------------------
-	gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
-
-		See header file for description.
---------------------------------------------------*/
 gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 {
+	INT32 retGrade = GRADE_E;
+
 	{
 		extern consvar_t cv_debugrank;
 
@@ -564,6 +561,8 @@ gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 		}
 	}
 
+	fixed_t percent = K_CalculateGPPercent(rankData);
+
 	static const fixed_t gradePercents[GRADE_A] = {
 		 7*FRACUNIT/20,		// D: 35% or higher
 		10*FRACUNIT/20,		// C: 50% or higher
@@ -571,8 +570,31 @@ gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 		17*FRACUNIT/20		// A: 85% or higher
 	};
 
-	INT32 retGrade = GRADE_E;
+	for (retGrade = GRADE_E; retGrade < GRADE_A; retGrade++)
+	{
+		if (percent < gradePercents[retGrade])
+		{
+			break;
+		}
+	}
 
+	if (rankData->specialWon == true)
+	{
+		// Winning the Special Stage gives you
+		// a free grade increase.
+		retGrade++;
+	}
+
+	return static_cast<gp_rank_e>(retGrade);
+}
+
+/*--------------------------------------------------
+	gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
+
+		See header file for description.
+--------------------------------------------------*/
+fixed_t K_CalculateGPPercent(gpRank_t *rankData)
+{
 	rankData->scorePosition = 0;
 	rankData->scoreGPPoints = 0;
 	rankData->scoreExp = 0;
@@ -625,22 +647,8 @@ gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 		rankData->scoreContinues;
 
 	const fixed_t percent = FixedDiv(rankData->scoreTotal, total);
-	for (retGrade = GRADE_E; retGrade < GRADE_A; retGrade++)
-	{
-		if (percent < gradePercents[retGrade])
-		{
-			break;
-		}
-	}
 
-	if (rankData->specialWon == true)
-	{
-		// Winning the Special Stage gives you
-		// a free grade increase.
-		retGrade++;
-	}
-
-	return static_cast<gp_rank_e>(retGrade);
+	return percent;
 }
 
 /*--------------------------------------------------

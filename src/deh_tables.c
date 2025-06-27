@@ -1574,6 +1574,13 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_BLOCKRING",
 	"S_BLOCKBODY",
 
+	"S_BAIL",
+	"S_BAIB1",
+	"S_BAIB2",
+	"S_BAIB3",
+	"S_BAIC",
+	"S_BAILCHARGE",
+
 	"S_AMPRING",
 	"S_AMPBODY",
 	"S_AMPAURA",
@@ -3564,6 +3571,10 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_BLOCKRING",
 	"MT_BLOCKBODY",
 
+	"MT_BAIL",
+	"MT_BAILCHARGE",
+	"MT_BAILSPARKLE",
+
 	"MT_AMPRING",
 	"MT_AMPBODY",
 	"MT_AMPAURA",
@@ -5048,11 +5059,12 @@ struct int_const_s const INT_CONST[] = {
 	{"BT_BRAKE",BT_BRAKE},
 	{"BT_ATTACK",BT_ATTACK},
 	{"BT_LOOKBACK",BT_LOOKBACK},
-	{"BT_RESPAWN",BT_RESPAWN},
+	{"BT_BAIL",BT_BAIL},
 	{"BT_VOTE",BT_VOTE},
 	{"BT_SPINDASH",BT_SPINDASH}, // Real button now, but triggers the macro same as always.
 	{"BT_EBRAKEMASK",BT_EBRAKEMASK}, // Macro button
 	{"BT_SPINDASHMASK",BT_SPINDASHMASK}, // Macro button
+	{"BT_RESPAWNMASK",BT_RESPAWNMASK}, // Macro button
 	{"BT_LUAA",BT_LUAA}, // Lua customizable
 	{"BT_LUAB",BT_LUAB}, // Lua customizable
 	{"BT_LUAC",BT_LUAC}, // Lua customizable

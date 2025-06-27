@@ -72,13 +72,17 @@
 // comeback is Battle Mode's karma comeback, also bool
 // mapreset is set when enough players fill an empty server
 
-static void K_PopBubbleShield(player_t *player)
+void K_PopBubbleShield(player_t *player)
 {
+	if (player->curshield != KSHIELD_BUBBLE)
+		return;
+
 	S_StartSound(player->mo, sfx_kc31);
 	K_StripItems(player);
 	K_AddHitLag(player->mo, 4, false);
 	vector3_t offset = { 0, 0, 0 };
-	K_SpawnSingleHitLagSpark(player->mo, &offset, player->mo->scale*2, 4, 0, player->skincolor);	
+	K_SpawnSingleHitLagSpark(player->mo, &offset, player->mo->scale*2, 4, 0, player->skincolor);
+	player->bubbledrag = false;
 }
 
 boolean K_ThunderDome(void)
@@ -1179,20 +1183,6 @@ boolean K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2)
 
 	K_SpawnBumpForObjs(mobj1, mobj2);
 
-	if (mobj1->type == MT_PLAYER && mobj2->type == MT_PLAYER
-		&& !mobj1->player->powerupVFXTimer && !mobj2->player->powerupVFXTimer)
-	{
-		boolean guard1 = K_PlayerGuard(mobj1->player);
-		boolean guard2 = K_PlayerGuard(mobj2->player);
-
-		if (guard1 && guard2)
-			K_DoPowerClash(mobj1, mobj2);
-		else if (guard1)
-			K_DoGuardBreak(mobj1, mobj2);
-		else if (guard2)
-			K_DoGuardBreak(mobj2, mobj1);
-	}
-
 	K_PlayerJustBumped(mobj1->player);
 	K_PlayerJustBumped(mobj2->player);
 
@@ -1607,13 +1597,16 @@ static boolean K_TryDraft(player_t *player, mobj_t *dest, fixed_t minDist, fixed
 	// How much this increments every tic biases toward acceleration! (min speed gets 1.5% per tic, max speed gets 0.5% per tic)
 	if (player->draftpower < FRACUNIT)
 	{
-		fixed_t add = (FRACUNIT/200) + ((9 - player->kartspeed) * ((3*FRACUNIT)/1600));;
+		fixed_t add = (FRACUNIT/200) + ((9 - player->kartspeed) * ((3*FRACUNIT)/1600));
 		player->draftpower += add;
 
-		if (player->bot && (player->botvars.rival || cv_levelskull.value))
+		if (player->bot)
 		{
 			// Double speed for the rival!
-			player->draftpower += add;
+			if (player->botvars.rival || cv_levelskull.value)
+				player->draftpower += add;
+			else if (dest->player->bot) // Reduce bot gluts.
+				player->draftpower -= 3*add/4;
 		}
 
 		if (gametyperules & GTR_CLOSERPLAYERS)
@@ -4066,8 +4059,16 @@ boolean K_KartKickstart(const player_t *player)
 
 UINT16 K_GetKartButtons(const player_t *player)
 {
-	return (player->cmd.buttons |
-		(K_KartKickstart(player) ? BT_ACCELERATE : 0));
+	UINT16 buttons = player->cmd.buttons;
+	if ((buttons & BT_RESPAWNMASK) == BT_RESPAWNMASK)
+	{
+		buttons &= ~BT_LOOKBACK;
+	}
+	if (K_KartKickstart(player))
+	{
+		buttons = buttons | BT_ACCELERATE;
+	}
+	return buttons;
 }
 
 SINT8 K_GetForwardMove(const player_t *player)
@@ -4553,12 +4554,16 @@ void K_DoPowerClash(mobj_t *t1, mobj_t *t2) {
 	UINT8 lag1 = 5;
 	UINT8 lag2 = 5;
 
+	boolean stripbubble = (gametyperules & GTR_BUMPERS);
+
 	// short-circuit instashield for vfx visibility
 	if (t1->player)
 	{
 		t1->player->instashield = 1;
 		t1->player->speedpunt += 20;
 		lag1 -= min(lag1, t1->player->speedpunt/10);
+		if (stripbubble && t1->player->curshield == KSHIELD_BUBBLE)
+			K_PopBubbleShield(t1->player);
 	}
 
 	if (t2->player)
@@ -4566,6 +4571,8 @@ void K_DoPowerClash(mobj_t *t1, mobj_t *t2) {
 		t2->player->instashield = 1;
 		t2->player->speedpunt += 20;
 		lag2 -= min(lag1, t2->player->speedpunt/10);
+		if (stripbubble && t2->player->curshield == KSHIELD_BUBBLE)
+			K_PopBubbleShield(t2->player);
 	}
 
 	S_StartSound(t1, sfx_parry);
@@ -4603,7 +4610,9 @@ void K_DoGuardBreak(mobj_t *t1, mobj_t *t2) {
 	angle_t thrangle = R_PointToAngle2(t2->x, t2->y, t1->x, t1->y);
 	P_Thrust(t1, thrangle, 7*mapobjectscale);
 
+	t1->player->pflags2 |= PF2_ALWAYSDAMAGED;
 	P_DamageMobj(t1, t2, t2, 1, DMG_TUMBLE);
+	t1->player->pflags2 &= ~PF2_ALWAYSDAMAGED;
 
 	clash = P_SpawnMobj((t1->x/2) + (t2->x/2), (t1->y/2) + (t2->y/2), (t1->z/2) + (t2->z/2), MT_GUARDBREAK);
 
@@ -5180,6 +5189,8 @@ void K_UpdateWavedashIndicator(player_t *player)
 {
 	mobj_t *mobj = NULL;
 
+	player->vortexBoost = 0;
+
 	if (player == NULL)
 	{
 		return;
@@ -5193,7 +5204,6 @@ void K_UpdateWavedashIndicator(player_t *player)
 	if (player->wavedashIndicator == NULL || P_MobjWasRemoved(player->wavedashIndicator) == true)
 	{
 		K_InitWavedashIndicator(player);
-		player->vortexBoost = 0;
 		return;
 	}
 
@@ -7768,6 +7778,30 @@ void K_PopPlayerShield(player_t *player)
 	K_UnsetItemOut(player);
 }
 
+static void K_DeleteHnextList(player_t *player)
+{
+	mobj_t *work = player->mo, *nextwork;
+
+	if (work == NULL || P_MobjWasRemoved(work))
+	{
+		return;
+	}
+
+	nextwork = work->hnext;
+
+	while ((work = nextwork) && !(work == NULL || P_MobjWasRemoved(work)))
+	{
+		nextwork = work->hnext;
+
+		if (!work->health)
+			continue; // taking care of itself
+
+		K_SpawnLandMineExplosion(work, player->skincolor, player->mo->hitlag);
+
+		P_RemoveMobj(work);
+	}
+}
+
 void K_DropHnextList(player_t *player)
 {
 	mobj_t *work = player->mo, *nextwork, *dropwork;
@@ -9734,23 +9768,12 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		&& P_IsObjectOnGround(player->mo)
 	)
 	{
-		// MEGA FUCKING HACK BECAUSE P_SAVEG MOBJS ARE FULL
-		// Would updating player_saveflags to 32 bits have any negative consequences?
-		// For now, player->stunned 16th bit is a flag to determine whether the flybots were spawned
-
 		// timer counts down at triple speed while spindashing
-		player->stunned = (player->stunned & 0x8000) | max(0, (player->stunned & 0x7FFF) - (player->spindash ? 3 : 1));
+		player->stunned = max(0, player->stunned - (player->spindash ? 3 : 1));
 
-		// when timer reaches 0, reset the flag and stun combo counter
-		if ((player->stunned & 0x7FFF) == 0)
+		// if the flybots aren't spawned, spawn them now!
+		if (player->stunned != 0 && P_MobjWasRemoved(player->flybot))
 		{
-			player->stunned = 0;
-			player->stunnedCombo = 0;
-		}
-		// otherwise if the flybots aren't spawned, spawn them now!
-		else if ((player->stunned & 0x8000) == 0)
-		{
-			player->stunned |= 0x8000;
 			Obj_SpawnFlybotsForPlayer(player);
 		}
 	}
@@ -9785,7 +9808,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 		// UINT16 oldringboost = player->ringboost;
 
-		if (player->superring == 0 || player->stunned)
+		if (!player->baildrop && (player->superring == 0 || player->stunned))
 			player->ringboost -= max((player->ringboost / roller), 1);
 		else if (K_LegacyRingboost(player))
 			player->ringboost--;
@@ -9976,6 +9999,51 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
+	if (player->baildrop)
+	{
+		if (player->stunned & 0x8000)
+			player->stunned = 0x8000 | BAILSTUN;
+		else
+			player->stunned = BAILSTUN;
+
+		mobj_t *pmo = player->mo;
+		// particle spawn
+		#define BAILSPARKLE_MAXBAIL 61 // amount of bail rings needed for max sparkle spawn frequency
+		UINT32 baildropinversefreq = BAILSPARKLE_MAXBAIL - min(player->baildrop, BAILSPARKLE_MAXBAIL-6);
+		UINT32 baildropmodulo = baildropinversefreq *5/3 /10;
+		if ((leveltime % (1+baildropmodulo)) == 0)
+		{
+			mobj_t *sparkle = P_SpawnMobj(pmo->x + (P_RandomRange(PR_DECORATION, -40,40) * pmo->scale),
+				pmo->y + (P_RandomRange(PR_DECORATION, -40,40) * pmo->scale),
+				pmo->z + (pmo->height/2) + (P_RandomRange(PR_DECORATION, -40,40) * pmo->scale),
+				MT_BAILSPARKLE);
+
+			sparkle->scale = pmo->scale;
+			sparkle->angle = pmo->angle;
+			sparkle->momx = 3*pmo->momx/4;
+			sparkle->momy = 3*pmo->momy/4;
+			sparkle->momz = 3*P_GetMobjZMovement(pmo)/4;
+			K_MatchGenericExtraFlags(sparkle, pmo);
+			sparkle->renderflags = (pmo->renderflags & ~RF_TRANSMASK);//|RF_TRANS20|RF_ADD;
+		}
+
+		if ((player->baildrop % BAIL_DROPFREQUENCY) == 0)
+		{
+			P_FlingBurst(player, K_MomentumAngle(pmo), MT_FLINGRING, 10*TICRATE, FRACUNIT, player->baildrop/BAIL_DROPFREQUENCY);
+			S_StartSound(pmo, sfx_gshad);
+		}
+
+		player->baildrop--;
+		if (player->baildrop == 0)
+			player->ringboost /= 3;
+	}
+
+	if (player->bailquake && !player->mo->hitlag) // quake as soon as we leave hitlag
+	{
+		P_StartQuakeFromMobj(7, 50 * player->mo->scale, 2048 * player->mo->scale, player->mo);	
+		player->bailquake = false;
+	}
+
 	// The precise ordering of start-of-level made me want to cut my head off,
 	// so let's try this instead. Whatever!
 	if (leveltime <= starttime || player->gradingpointnum == 0)
@@ -10057,7 +10125,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			K_RemoveGrowShrink(player);
 	}
 
-	if (player->respawn.state != RESPAWNST_MOVE && (player->cmd.buttons & BT_RESPAWN) == BT_RESPAWN)
+	if (player->respawn.state != RESPAWNST_MOVE && (player->cmd.buttons & BT_RESPAWNMASK) == BT_RESPAWNMASK)
 	{
 		player->finalfailsafe++; // Decremented by ringshooter to "freeze" this timer
 		// Part-way through the auto-respawn timer, you can tap Ring Shooter to respawn early
@@ -10143,7 +10211,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 		if (player->nextringaward >= ringrate)
 		{
-			if (player->instaWhipCharge)
+			if (player->instaWhipCharge || player->baildrop || player->bailcharge)
 			{
 				// Store award rings to do diabolical horseshit with later.
 				player->nextringaward = ringrate;
@@ -10309,6 +10377,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->powerupVFXTimer > 0)
 	{
 		player->powerupVFXTimer--;
+		if (player->powerupVFXTimer == 0)
+			player->mo->flags &= ~MF_NOCLIPTHING;
 	}
 
 	if (player->dotrickfx && !player->mo->hitlag)
@@ -13883,6 +13953,106 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	}
 	
 
+	if ((player->cmd.buttons & BT_BAIL) && (player->cmd.buttons & BT_RESPAWNMASK) != BT_RESPAWNMASK && ((player->itemtype && player->itemamount) || (player->rings > 0) || player->superring > 0 || player->pickuprings > 0 || player->itemRoulette.active))
+	{
+		boolean grounded = P_IsObjectOnGround(player->mo);
+		onground && player->tumbleBounces == 0 ?  player->bailcharge += 2 : player->bailcharge++; // charge twice as fast on the ground
+		if ((P_PlayerInPain(player) && player->bailcharge == 1) || (grounded && P_PlayerInPain(player) && player->bailcharge == 2)) // this is brittle ..
+		{
+			mobj_t *bail = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, MT_BAILCHARGE);
+			S_StartSound(bail, sfx_gshb9); // I tried to use info.c, but you can't play sounds on mobjspawn via A_PlaySound
+			S_StartSound(bail, sfx_kc4e);
+			P_SetTarget(&bail->target, player->mo);
+			bail->renderflags |= RF_FULLBRIGHT; // set fullbright here, were gonna animate frames in the thinker and it saves us from setting FF_FULLBRIGHT every frame
+		}
+	}
+	else
+	{
+		player->bailcharge = 0;
+	}
+
+	if ((!P_PlayerInPain(player) && player->bailcharge >= 5) || player->bailcharge >= BAIL_MAXCHARGE)
+	{
+		player->bailcharge = 0;
+
+		mobj_t *bail = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, MT_BAIL);
+		P_SetTarget(&bail->target, player->mo);
+
+		UINT32 debtrings = 20;
+		if (player->rings < 0)
+		{
+			debtrings -= player->rings;
+			player->rings = 0;
+		}
+
+		UINT32 totalrings = player->rings + player->superring + player->pickuprings;
+		if (BAIL_CREDIT_DEBTRINGS)
+			totalrings += debtrings;
+		totalrings = max(totalrings, 0);
+		UINT32 bailboost = FixedInt(FixedMul(totalrings*FRACUNIT, BAIL_BOOST));
+		UINT32 baildrop = FixedInt(FixedMul((totalrings)*FRACUNIT, BAIL_DROP));
+
+		if (player->itemRoulette.active)
+		{
+			player->itemRoulette.active = false;
+		}
+
+		K_PopPlayerShield(player);
+		K_DeleteHnextList(player);
+		K_DropItems(player);
+
+		player->itemamount = 0;
+		player->itemtype = 0;
+
+		/*
+		if (player->itemamount)
+		{
+			K_DropPaperItem(player, player->itemtype, player->itemamount);
+			player->itemtype = player->itemamount = 0;
+		}
+		*/
+
+		player->rings = -20;
+		player->superring = 0;
+		player->pickuprings = 0;
+		player->ringboxaward = 0;
+		player->ringboxdelay = 0;
+
+		player->superringdisplay = 0;
+		player->superringalert = 0;
+		player->superringpeak = 0;
+
+		player->counterdash += TICRATE/8;
+
+		player->ringboost += bailboost * (3+K_GetKartRingPower(player, true));
+		player->baildrop = baildrop * BAIL_DROPFREQUENCY + 1;
+
+		K_AddHitLag(player->mo, TICRATE/4, false);
+		player->bailquake = true; // set for a one time quake effect as soon as hitlag ends
+
+		if (P_PlayerInPain(player))
+		{
+			player->spinouttimer = 0;
+			player->spinouttype = 0;
+			player->tumbleBounces = 0;
+			player->pflags &= ~PF_TUMBLELASTBOUNCE;
+			player->mo->rollangle = 0;
+			P_ResetPitchRoll(player->mo);
+		}
+
+		INT32 fls = K_GetEffectiveFollowerSkin(player);
+		if (player->follower && fls >= 0 && fls < numfollowers)
+		{
+			const follower_t *fl = &followers[fls];
+			S_StartSound(NULL, fl->hornsound);
+		}
+
+		if (player->amps > 0)
+			K_DefensiveOverdrive(player);
+
+		S_StartSound(player->mo, sfx_kc33);
+	}
+
 	if (player && player->mo && K_PlayerCanUseItem(player))
 	{
 		// First, the really specific, finicky items that function without the item being directly in your item slot.
@@ -14551,7 +14721,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 										S_StartSound(player->mo, sfx_s3k75);
 
 									player->bubbleblowup++;
-									player->bubblecool = player->bubbleblowup*4;
+									player->bubblecool = player->bubbleblowup * (gametyperules & GTR_BUMPERS ? 6 : 4);
 
 									if (player->bubbleblowup > bubbletime*2)
 									{
@@ -15960,111 +16130,115 @@ boolean K_PlayerCanUseItem(player_t *player)
 	return (player->mo->health > 0 && !player->spectator && !P_PlayerInPain(player) && !mapreset && leveltime > introtime);
 }
 
-fixed_t K_GetGradingFactorAdjustment(player_t *player)
+// === 
+// THE EXP ZONE
+// ===
+
+static boolean K_IsValidOpponent(player_t *me, player_t *them)
 {
-	fixed_t power = EXP_POWER; // adjust to change overall xp volatility
-	const fixed_t stablerate = EXP_STABLERATE; // how low is your placement before losing XP? 4*FRACUNIT/10 = top 40% of race will gain
-	fixed_t result = 0;
+	UINT8 i = (them - players);
+
+	if (!playeringame[i] || players[i].spectator)
+		return false;
+	if (me == them)
+		return false;
+	if (G_SameTeam(me, them))
+		return false;
+	
+	return true;
+}
+
+static UINT8 K_Opponents(player_t *player)
+{
+	UINT8 opponents = 0; // players we are competing against
+
+	for (UINT8 i = 0; i < MAXPLAYERS; i++)
+	{
+		if (K_IsValidOpponent(player, &players[i]))
+			opponents++;
+	}
+
+	return opponents;
+}
+
+static fixed_t K_GradingFactorPower(player_t *player)
+{
+	fixed_t power = EXP_POWER; // adjust to change overall exp volatility
+	UINT8 opponents = K_Opponents(player);
 
 	if (g_teamplay)
 		power = 3 * power / 4;
 
-	INT32 live_players = 0; // players we are competing against
+	if (opponents < 8)
+		power += (8 - opponents) * power/4;
 
+	return power;
+}
+
+static fixed_t K_GradingFactorGainPerWin(player_t *player)
+{
+	return K_GradingFactorPower(player);
+}
+
+static fixed_t K_GradingFactorDrainPerCheckpoint(player_t *player)
+{
+	// EXP_STABLERATE: How low do you have to place before losing gradingfactor? 4*FRACUNIT/10 = top 40% of race gains, 60% loses.
+	UINT8 opponents = K_Opponents(player);
+	fixed_t power = K_GradingFactorPower(player);
+	return FixedMul(power, FixedMul(opponents*FRACUNIT, FRACUNIT - EXP_STABLERATE));
+}
+
+fixed_t K_GetGradingFactorAdjustment(player_t *player)
+{
+	fixed_t result = 0;
+
+	// Increase gradingfactor for each player you're beating...
 	for (INT32 i = 0; i < MAXPLAYERS; i++)
 	{
-		if (!playeringame[i] || players[i].spectator || player == players+i)
+		if (!K_IsValidOpponent(player, &players[i]))
 			continue;
-
-		if (G_SameTeam(player, &players[i]) == true)
-		{
-			// You don't win/lose against your teammates.
-			continue;
-		}
-
-		live_players++;
-	}
-
-	if (live_players < 8)
-	{
-		power += (8 - live_players) * power/4;
-	}
-
-	// Increase XP for each player you're beating...
-	for (INT32 i = 0; i < MAXPLAYERS; i++)
-	{
-		if (!playeringame[i] || players[i].spectator || player == players+i)
-			continue;
-
-		if (G_SameTeam(player, &players[i]) == true)
-		{
-			// You don't win/lose against your teammates.
-			continue;
-		}
 
 		if (player->position < players[i].position)
-			result += power;
+			result += K_GradingFactorGainPerWin(player);
 	}
 
-	// ...then take all of the XP you could possibly have earned,
+	// ...then take all of the gradingfactor you could possibly have earned,
 	// and lose it proportional to the stable rate. If you're below
-	// the stable threshold, this results in you losing XP.
-	result -= FixedMul(power, FixedMul(live_players*FRACUNIT, FRACUNIT - stablerate));
+	// the stable threshold, this results in you losing gradingfactor
+	result -= K_GradingFactorDrainPerCheckpoint(player);
 
 	return result;
 }
 
-fixed_t K_GetGradingFactorMinMax(UINT32 gradingpointnum, boolean max)
+fixed_t K_GetGradingFactorMinMax(player_t *player, boolean max)
 {
-    // Create a dummy player structure for the theoretical last-place player
-    player_t dummy_player;
-    memset(&dummy_player, 0, sizeof(player_t));
-    dummy_player.gradingfactor = FRACUNIT; // Start at 1.0
+	fixed_t factor = FRACUNIT; // Starting gradingfactor
+	UINT8 opponents = K_Opponents(player);
+	UINT8 winning = (max) ? opponents : 0;
 
-	if (G_GametypeHasTeams())
+	for (UINT8 i = 0; i < player->gradingpointnum; i++) // For each gradingpoint you've reached...
 	{
-		const UINT8 orange_count = G_CountTeam(TEAM_ORANGE);
-		const UINT8 blue_count = G_CountTeam(TEAM_BLUE);
-		if (orange_count <= blue_count)
-		{
-			dummy_player.team = TEAM_ORANGE;
-		}
-		else
-		{
-			dummy_player.team = TEAM_BLUE;
-		}
-		dummy_player.position = max ? 0 : D_NumPlayersInRace() + 1; // Ensures that all enemy players are counted, and our dummy won't overlap
+		for (UINT8 j = 0; j < winning; j++)
+			factor += K_GradingFactorGainPerWin(player); // If max, increase gradingfactor for each player you could have been beating.
+		factor -= K_GradingFactorDrainPerCheckpoint(player); // Then, drain like usual.
 	}
-	else
-	{
-		dummy_player.position = max ? 1 : D_NumPlayersInRace();
-	}
-	
-    // Apply the adjustment for each grading point
-    for (UINT32 i = 0; i < gradingpointnum; i++)
-    {
-        dummy_player.gradingfactor += K_GetGradingFactorAdjustment(&dummy_player);
-    }
-    return dummy_player.gradingfactor;
+
+	return factor;
 }
 
 UINT16 K_GetEXP(player_t *player)
 {
 	UINT32 numgradingpoints = K_GetNumGradingPoints();
-	UINT16 targetminexp = (MINEXP*player->gradingpointnum/max(1,numgradingpoints)); // about what a last place player should be at this stage of the race
-	UINT16 targetexp = (MAXEXP*player->gradingpointnum/max(1,numgradingpoints)); // about what a 1.0 factor should be at this stage of the race
-	fixed_t factormin = K_GetGradingFactorMinMax(player->gradingpointnum, false);
-	fixed_t factormax = K_GetGradingFactorMinMax(player->gradingpointnum, true);
-	fixed_t clampedfactor = max(factormin, min(factormax, player->gradingfactor));
-	fixed_t range = factormax - factormin; 
-	fixed_t normalizedfactor = FixedDiv(clampedfactor - factormin, range);
-	fixed_t easedexp = Easing_Linear(normalizedfactor, targetminexp, targetexp);
-	// fixed_t easedexp = Easing_Linear(normalizedfactor, MINEXP*FRACUNIT, MAXEXP*FRACUNIT);
-	UINT16 exp = easedexp;
-	// CONS_Printf("Player %s numgradingpoints=%d targetminexp=%d targetexp=%d factormin=%.2f factormax=%.2f clampedfactor=%.2f normalizedfactor=%.2f easedexp=%d\n", 
-	// 	player_names[player - players], numgradingpoints, targetminexp, targetexp, FIXED_TO_FLOAT(factormin), FIXED_TO_FLOAT(factormax), 
-	// 	FIXED_TO_FLOAT(clampedfactor), FIXED_TO_FLOAT(normalizedfactor), easedexp);
-	// UINT16 exp = (player->gradingfactor*100)>>FRACBITS;
+	fixed_t targetminexp = (EXP_MIN*player->gradingpointnum<<FRACBITS) / max(1,numgradingpoints); // about what a last place player should be at this stage of the race
+	fixed_t targetmaxexp = (EXP_MAX*player->gradingpointnum<<FRACBITS) / max(1,numgradingpoints); // about what a 1.0 factor should be at this stage of the race
+	fixed_t factormin = K_GetGradingFactorMinMax(player, false);
+	fixed_t factormax = K_GetGradingFactorMinMax(player, true);
+
+	UINT16 exp = FixedRescale(player->gradingfactor, factormin, factormax, Easing_Linear, targetminexp, targetmaxexp)>>FRACBITS;
+
+	// CONS_Printf("Player %s numgradingpoints=%d gradingpoint=%d targetminexp=%d targetmaxexp=%d factor=%.2f factormin=%.2f factormax=%.2f exp=%d\n", 
+	// 	player_names[player - players], numgradingpoints, player->gradingpointnum, targetminexp, targetmaxexp, FIXED_TO_FLOAT(player->gradingfactor), FIXED_TO_FLOAT(factormin), FIXED_TO_FLOAT(factormax), exp);
+
 	return exp;
 }
 
@@ -16075,6 +16249,10 @@ UINT32 K_GetNumGradingPoints(void)
 
 	return numlaps * (1 + Obj_GetCheckpointCount());
 }
+
+// === 
+// END EXP ZONE
+// ===
 
 void K_BotHitPenalty(player_t *player)
 {
@@ -16299,6 +16477,72 @@ fixed_t K_TeamComebackMultiplier(player_t *player)
 	multiplier = max(multiplier, FRACUNIT);
 
 	return multiplier;
+}
+
+void K_ApplyStun(player_t *player, mobj_t *inflictor, mobj_t *source, ATTRUNUSED INT32 damage, ATTRUNUSED UINT8 damagetype)
+{
+	#define BASE_STUN_TICS_MIN (4 * TICRATE)
+	#define BASE_STUN_TICS_MAX (10 * TICRATE)
+	#define MAX_STUN_REDUCTION (FRACUNIT/2)
+	#define STUN_REDUCTION_DISTANCE (20000)
+	INT32 stunTics = 0;
+	UINT8 numPlayers = 0;
+	UINT8 i;
+
+	// calculate the number of players playing
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i] && !players[i].spectator)
+		{
+			numPlayers++;
+		}
+	}
+
+	// calculate base stun tics
+	stunTics = Easing_Linear((player->kartweight - 1) * FRACUNIT / 8, BASE_STUN_TICS_MAX, BASE_STUN_TICS_MIN);
+
+	// reduce stun in games with more than 8 players
+	if (numPlayers > 8)
+	{
+		stunTics -= 6 * (numPlayers - 8);
+	}
+
+	// 1/3 stun values in battle
+	if (gametyperules & GTR_SPHERES)
+	{
+		stunTics /= 3;
+	}
+
+	if (source && source->player)
+	{
+		// hits scored by players apply full stun
+		;
+	}
+	else if (inflictor && (P_IsKartItem(inflictor->type) || P_IsKartFieldItem(inflictor->type)))
+	{
+		// items not thrown by a player apply half stun
+		stunTics /= 2;
+	}
+	else
+	{
+		// all other hazards apply 1/4 stun
+		stunTics /= 4;
+	}
+
+	UINT32 dist = K_GetItemRouletteDistance(player, D_NumPlayersInRace());
+	if (dist > STUN_REDUCTION_DISTANCE)
+		dist = STUN_REDUCTION_DISTANCE;
+
+	fixed_t distfactor = FixedDiv(dist, STUN_REDUCTION_DISTANCE); // 0-1 as you approach STUN_REDUCTION_DISTANCE
+	fixed_t stunfactor = Easing_Linear(distfactor, FRACUNIT, MAX_STUN_REDUCTION);
+	stunTics = FixedMul(stunTics*FRACUNIT, stunfactor)/FRACUNIT;
+
+	player->stunned = max(stunTics, 0);
+
+	#undef BASE_STUN_TICS_MIN
+	#undef BASE_STUN_TICS_MAX
+	#undef MAX_STUN_REDUCTION
+	#undef STUN_REDUCTION_DISTANCE
 }
 
 //}

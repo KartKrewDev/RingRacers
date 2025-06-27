@@ -3503,7 +3503,7 @@ void A_AttractChase(mobj_t *actor)
 
 	if (actor->extravalue1 && actor->type != MT_EMERALD) // SRB2Kart
 	{
-		if (!actor->target || P_MobjWasRemoved(actor->target) || !actor->target->player)
+		if (!actor->target || P_MobjWasRemoved(actor->target) || !actor->target->player || actor->target->player->baildrop || actor->target->player->bailcharge)
 		{
 			P_RemoveMobj(actor);
 			return;
@@ -12206,6 +12206,8 @@ void A_BallhogExplode(mobj_t *actor)
 	mo2->destscale = mo2->scale;
 	P_SetTarget(&mo2->target, actor->target);
 	S_StartSound(mo2, actor->info->deathsound);
+	
+	actor->fuse = 1;
 	return;
 }
 

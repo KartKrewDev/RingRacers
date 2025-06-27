@@ -3067,7 +3067,7 @@ void P_DemoCameraMovement(camera_t *cam, UINT8 num)
 	}
 
 	// if you hold Y, you will lock on to displayplayer. (The last player you were ""f12-ing"")
-	if (cam->freecam && cmd->buttons & BT_RESPAWN)
+	if (cam->freecam && cmd->buttons & BT_BAIL)
 	{
 		lastp = &players[displayplayers[0]];	// Fun fact, I was trying displayplayers[0]->mo as if it was Lua like an absolute idiot.
 		cam->angle = R_PointToAngle2(cam->x, cam->y, lastp->mo->x, lastp->mo->y);
@@ -3369,7 +3369,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	if (P_CameraThinker(player, thiscam, resetcalled))
 		return true;
 
-	lookback = ( player->cmd.buttons & BT_LOOKBACK );
+	lookback = K_GetKartButtons(player) & BT_LOOKBACK;
 
 	camspeed = cv_cam_speed[num].value;
 	camstill = cv_cam_still[num].value || player->seasaw;	// RR: seasaws lock the camera so that it isn't disorienting.
@@ -3384,10 +3384,10 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 			camheight = FixedMul(mapheaderinfo[gamemap-1]->cameraHeight, cameraScale);
 		
 		// For 2p SPLITSCREEN SPECIFICALLY:
-		// The view is pretty narrow, so move it back 1/4th of the way towards default camera height.
+		// The view is pretty narrow, so move it back 3/20 of the way towards default camera height.
 		else {
 			// CONS_Printf( "Camera values: %f / %f / %f \n", FixedToFloat(mapheaderinfo[gamemap-1]->cameraHeight), FixedToFloat(cv_cam_height[num].value), FixedToFloat(cameraScale) );
-			camheight = FixedMul((mapheaderinfo[gamemap-1]->cameraHeight*3 + cv_cam_height[num].value)/4, cameraScale);
+			camheight = FixedMul((mapheaderinfo[gamemap-1]->cameraHeight*17 + cv_cam_height[num].value*3)/20, cameraScale);
 		}
 	}
 
@@ -4564,9 +4564,7 @@ void P_PlayerThink(player_t *player)
 
 	// Strength counts up to diminish fade.
 	if (player->flashing && player->flashing < UINT16_MAX &&
-		(player->spectator || !P_PlayerInPain(player)) &&
-		// Battle: flashing tics do not decrease in the air
-		(!(gametyperules & GTR_BUMPERS) || P_IsObjectOnGround(player->mo)))
+		(player->spectator || !P_PlayerInPain(player)))
 	{
 		player->flashing--;
 	}

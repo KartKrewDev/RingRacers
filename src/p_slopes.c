@@ -1206,11 +1206,15 @@ void P_ButteredSlope(mobj_t *mo)
 	// Let's get the gravity strength for the object...
 	thrust = FixedMul(thrust, abs(P_GetMobjGravity(mo)));
 
-	if (mo->friction != ORIG_FRICTION)
+	fixed_t basefriction = ORIG_FRICTION;
+	if (mo->player)
+		basefriction = K_PlayerBaseFriction(mo->player, ORIG_FRICTION);
+
+	if (mo->friction != basefriction && basefriction != 0)
 	{
 		// ... and its friction against the ground for good measure.
 		// (divided by original friction to keep behaviour for normal slopes the same)
-		thrust = FixedMul(thrust, FixedDiv(mo->friction, ORIG_FRICTION));
+		thrust = FixedMul(thrust, FixedDiv(mo->friction, basefriction));
 
 		// Sal: Also consider movefactor of players.
 		// We want ice to make slopes *really* funnel you in a specific direction.

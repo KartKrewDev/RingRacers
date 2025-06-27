@@ -153,6 +153,10 @@ void Obj_ChargeFallThink(mobj_t *charge);
 void Obj_ChargeReleaseThink(mobj_t *release);
 void Obj_ChargeExtraThink(mobj_t *extra);
 
+/* Bail VFX */
+void Obj_BailThink(mobj_t *aura);
+void Obj_BailChargeThink(mobj_t *aura);
+
 /* Ring Shooter */
 boolean Obj_RingShooterThinker(mobj_t *mo);
 boolean Obj_PlayerRingShooterFreeze(const player_t *player);
@@ -440,6 +444,7 @@ void Obj_DestroyedKartParticleLanding(mobj_t *part);
 void Obj_SpawnFlybotsForPlayer(player_t *player);
 void Obj_FlybotThink(mobj_t *flybot);
 void Obj_FlybotDeath(mobj_t *flybot);
+void Obj_FlybotRemoved(mobj_t *flybot);
 
 /* Pulley */
 void Obj_PulleyThink(mobj_t *root);

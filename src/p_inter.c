@@ -723,6 +723,17 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (special->extravalue1)
 				return;
 
+			// No picking up rings while SPB is targetting you
+			if (player->pflags & PF_RINGLOCK)
+				return;
+
+			// Prepping instawhip? Don't ruin it by collecting rings
+			if (player->instaWhipCharge)
+				return;
+
+			if (player->baildrop || player->bailcharge)
+				return;
+
 			// Don't immediately pick up spilled rings
 			if (special->threshold > 0 || P_PlayerInPain(player) || player->spindash) // player->spindash: Otherwise, players can pick up rings that are thrown out of them from invinc spindash penalty
 				return;
@@ -3041,7 +3052,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			UINT8 type = (damagetype & DMG_TYPEMASK);
 			const boolean hardhit = (type == DMG_EXPLODE || type == DMG_KARMA || type == DMG_TUMBLE); // This damage type can do evil stuff like ALWAYS combo
 			INT16 ringburst = 5;
-			UINT16 stunTics = 0;
 
 			// Check if the player is allowed to be damaged!
 			// If not, then spawn the instashield effect instead.
@@ -3092,6 +3102,12 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				if (inflictor == target)
 				{
 					invincible = false;
+				}
+
+				if (player->pflags2 && PF2_ALWAYSDAMAGED)
+				{
+					invincible = false;
+					clash = false;
 				}
 
 				// TODO: doing this from P_DamageMobj limits punting to objects that damage the player.
@@ -3179,6 +3195,12 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 							allowcombo = false;
 						}
+					}
+
+					if (inflictor && !P_MobjWasRemoved(inflictor) && inflictor->momx == 0 && inflictor->momy == 0 && inflictor->momz == 0)
+					{
+						// Probably a map hazard.
+						allowcombo = false;
 					}
 
 					if (allowcombo == false && (target->eflags & MFE_PAUSED))
@@ -3395,18 +3417,22 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				K_PopPlayerShield(player);
 			}
 
-			if (!(gametyperules & GTR_SPHERES) && player->tripwireLeniency)
+			boolean downgraded = false;
+
+			if (!(gametyperules & GTR_SPHERES) && player->tripwireLeniency && !P_PlayerInPain(player))
 			{
 				switch (type)
 				{
 					case DMG_EXPLODE:
 						type = DMG_TUMBLE;
+						downgraded = true;
 						break;
 					case DMG_TUMBLE:
 						softenTumble = true;
 						break;
 					case DMG_NORMAL:
 					case DMG_WIPEOUT:
+						downgraded = true;
 						type = DMG_STUMBLE;
 						player->ringburst += 5; // THERE IS SIMPLY NO HOPE AT THIS POINT
 						K_PopPlayerShield(player);
@@ -3453,7 +3479,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				ringburst = 0;
 			}
 
-			if (type != DMG_STUMBLE && type != DMG_WHUMBLE)
+			if ((type != DMG_STUMBLE && type != DMG_WHUMBLE) || (type == DMG_STUMBLE && downgraded))
 			{
 				if (type != DMG_STING)
 					player->flashing = K_GetKartFlashing(player);
@@ -3488,25 +3514,10 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			}
 
 			// Apply stun!
-			// Feel free to move these calculations higher up if different damage sources should apply variable stun in future
-			#define MIN_STUNTICS (4 * TICRATE)
-			#define MAX_STUNTICS (10 * TICRATE)
-			stunTics = Easing_Linear((player->kartweight - 1) * FRACUNIT / 8, MAX_STUNTICS, MIN_STUNTICS);
-			stunTics >>= player->stunnedCombo; // consecutive hits add half as much stun as the previous hit
-
-			// 1/3 base stun values in battle
-			if (gametyperules & GTR_SPHERES)
+			if (type != DMG_STING)
 			{
-				stunTics /= 3;
+				K_ApplyStun(player, inflictor, source, damage, damagetype);
 			}
-
-			if (player->stunnedCombo < UINT8_MAX)
-			{
-				player->stunnedCombo++;
-			}
-			player->stunned = (player->stunned & 0x8000) | min(0x7FFF, (player->stunned & 0x7FFF) + stunTics);
-			#undef MIN_STUNTICS
-			#undef MAX_STUNTICS
 
 			K_DefensiveOverdrive(target->player);
 		}
@@ -3612,7 +3623,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 #define RING_LAYER_SIDE_SIZE (3)
 #define RING_LAYER_SIZE (RING_LAYER_SIDE_SIZE * 2)
 
-static void P_FlingBurst
+void P_FlingBurst
 (		player_t *player,
 		angle_t fa,
 		mobjtype_t objType,

@@ -8923,6 +8923,16 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		Obj_BlockBodyThink(mobj);
 		break;
 	}
+	case MT_BAIL:
+	{
+		Obj_BailThink(mobj);
+		break;
+	}
+	case MT_BAILCHARGE:
+	{
+		Obj_BailChargeThink(mobj);
+		break;
+	}
 	case MT_AMPRING:
 	{
 		Obj_AmpRingThink(mobj);
@@ -11853,6 +11863,11 @@ void P_RemoveMobj(mobj_t *mobj)
 		case MT_EMROCKS:
 		{
 			Obj_UnlinkRocks(mobj);
+			break;
+		}
+		case MT_FLYBOT767:
+		{
+			Obj_FlybotRemoved(mobj);
 			break;
 		}
 		default:

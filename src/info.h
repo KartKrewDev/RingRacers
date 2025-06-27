@@ -875,6 +875,11 @@ typedef enum sprite
 	SPR_GRNG, // Guard ring
 	SPR_GBDY, // Guard body
 
+	SPR_BAIL, // Bail charge
+	SPR_BAIB, // Bail after effect
+	SPR_BAIC, // Bail sparkle
+	SPR_TECH, // Bail tech charge
+
 	SPR_TRC1, // Charge aura
 	SPR_TRC2, // Charge fall
 	SPR_TRC3, // Charge flicker/sparks
@@ -2628,6 +2633,13 @@ typedef enum state
 	S_INSTAWHIP_REJECT,
 	S_BLOCKRING,
 	S_BLOCKBODY,
+
+	S_BAIL,
+	S_BAIB1,
+	S_BAIB2,
+	S_BAIB3,
+	S_BAIC,
+	S_BAILCHARGE,
 
 	S_AMPRING,
 	S_AMPBODY,
@@ -4645,6 +4657,10 @@ typedef enum mobj_type
 	MT_INSTAWHIP_REJECT,
 	MT_BLOCKRING,
 	MT_BLOCKBODY,
+
+	MT_BAIL,
+	MT_BAILCHARGE,
+	MT_BAILSPARKLE,
 
 	MT_AMPRING,
 	MT_AMPBODY,
