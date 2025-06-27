@@ -4564,9 +4564,7 @@ void P_PlayerThink(player_t *player)
 
 	// Strength counts up to diminish fade.
 	if (player->flashing && player->flashing < UINT16_MAX &&
-		(player->spectator || !P_PlayerInPain(player)) &&
-		// Battle: flashing tics do not decrease in the air
-		(!(gametyperules & GTR_BUMPERS) || P_IsObjectOnGround(player->mo)))
+		(player->spectator || !P_PlayerInPain(player)))
 	{
 		player->flashing--;
 	}

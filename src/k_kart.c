@@ -72,8 +72,11 @@
 // comeback is Battle Mode's karma comeback, also bool
 // mapreset is set when enough players fill an empty server
 
-static void K_PopBubbleShield(player_t *player)
+void K_PopBubbleShield(player_t *player)
 {
+	if (player->curshield != KSHIELD_BUBBLE)
+		return;
+
 	S_StartSound(player->mo, sfx_kc31);
 	K_StripItems(player);
 	K_AddHitLag(player->mo, 4, false);
@@ -1179,20 +1182,6 @@ boolean K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2)
 	}
 
 	K_SpawnBumpForObjs(mobj1, mobj2);
-
-	if (mobj1->type == MT_PLAYER && mobj2->type == MT_PLAYER
-		&& !mobj1->player->powerupVFXTimer && !mobj2->player->powerupVFXTimer)
-	{
-		boolean guard1 = K_PlayerGuard(mobj1->player);
-		boolean guard2 = K_PlayerGuard(mobj2->player);
-
-		if (guard1 && guard2)
-			K_DoPowerClash(mobj1, mobj2);
-		else if (guard1)
-			K_DoGuardBreak(mobj1, mobj2);
-		else if (guard2)
-			K_DoGuardBreak(mobj2, mobj1);
-	}
 
 	K_PlayerJustBumped(mobj1->player);
 	K_PlayerJustBumped(mobj2->player);
@@ -4565,12 +4554,16 @@ void K_DoPowerClash(mobj_t *t1, mobj_t *t2) {
 	UINT8 lag1 = 5;
 	UINT8 lag2 = 5;
 
+	boolean stripbubble = (gametyperules & GTR_BUMPERS);
+
 	// short-circuit instashield for vfx visibility
 	if (t1->player)
 	{
 		t1->player->instashield = 1;
 		t1->player->speedpunt += 20;
 		lag1 -= min(lag1, t1->player->speedpunt/10);
+		if (stripbubble && t1->player->curshield == KSHIELD_BUBBLE)
+			K_PopBubbleShield(t1->player);
 	}
 
 	if (t2->player)
@@ -4578,6 +4571,8 @@ void K_DoPowerClash(mobj_t *t1, mobj_t *t2) {
 		t2->player->instashield = 1;
 		t2->player->speedpunt += 20;
 		lag2 -= min(lag1, t2->player->speedpunt/10);
+		if (stripbubble && t2->player->curshield == KSHIELD_BUBBLE)
+			K_PopBubbleShield(t2->player);
 	}
 
 	S_StartSound(t1, sfx_parry);
@@ -4615,7 +4610,9 @@ void K_DoGuardBreak(mobj_t *t1, mobj_t *t2) {
 	angle_t thrangle = R_PointToAngle2(t2->x, t2->y, t1->x, t1->y);
 	P_Thrust(t1, thrangle, 7*mapobjectscale);
 
+	t1->player->pflags2 |= PF2_ALWAYSDAMAGED;
 	P_DamageMobj(t1, t2, t2, 1, DMG_TUMBLE);
+	t1->player->pflags2 &= ~PF2_ALWAYSDAMAGED;
 
 	clash = P_SpawnMobj((t1->x/2) + (t2->x/2), (t1->y/2) + (t2->y/2), (t1->z/2) + (t2->z/2), MT_GUARDBREAK);
 
@@ -10380,6 +10377,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->powerupVFXTimer > 0)
 	{
 		player->powerupVFXTimer--;
+		if (player->powerupVFXTimer == 0)
+			player->mo->flags &= ~MF_NOCLIPTHING;
 	}
 
 	if (player->dotrickfx && !player->mo->hitlag)
@@ -14722,7 +14721,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 										S_StartSound(player->mo, sfx_s3k75);
 
 									player->bubbleblowup++;
-									player->bubblecool = player->bubbleblowup*4;
+									player->bubblecool = player->bubbleblowup * (gametyperules & GTR_BUMPERS ? 6 : 4);
 
 									if (player->bubbleblowup > bubbletime*2)
 									{

@@ -885,18 +885,28 @@ boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 		thing = oldthing;
 		P_SetTarget(&g_tm.thing, oldg_tm.thing);*/
 
+		boolean hit = false;
+
 		if (K_KartBouncing(t2, t1->target) == true)
 		{
 			if (t2->player && t1->target && t1->target->player)
 			{
-				K_PvPTouchDamage(t2, t1->target);
+				hit = K_PvPTouchDamage(t2, t1->target);
 			}
 
 			// Don't play from t1 else it gets cut out... for some reason.
 			S_StartSound(t2, sfx_s3k44);
 		}
 
-		return true;
+		if (hit && (gametyperules & GTR_BUMPERS))
+		{
+			K_PopBubbleShield(t1->target->player);
+			return false;
+		}
+		else
+		{
+			return true;
+		}
 	}
 
 	if (K_BubbleShieldCanReflect(t1, t2))
@@ -1157,6 +1167,27 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 	{
 		return false;
 	}
+
+
+	boolean guard1 = K_PlayerGuard(t1->player);
+	boolean guard2 = K_PlayerGuard(t2->player);
+
+	// Bubble Shield physically extends past guard when inflated,
+	// makes some sense to suppress this behavior
+	if (t1->player->bubbleblowup)
+		guard1 = false;
+	if (t2->player->bubbleblowup)
+		guard2 = false;
+
+	if (guard1 && guard2)
+		K_DoPowerClash(t1, t2);
+	else if (guard1)
+		K_DoGuardBreak(t1, t2);
+	else if (guard2)
+		K_DoGuardBreak(t2, t1);
+
+	if (guard1 || guard2)
+		return false;
 
 	// Clash instead of damage if both parties have any of these conditions
 	auto canClash = [](mobj_t *t1, mobj_t *t2)
