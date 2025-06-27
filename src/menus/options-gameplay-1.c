@@ -20,7 +20,7 @@ menuitem_t OPTIONS_Gameplay[] =
 	{IT_STRING | IT_CVAR, "Teamplay", "Split the game between two teams!",
 		NULL, {.cvar = &cv_teamplay}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Frantic Items", "Make item odds crazier with more powerful items!",
+	{IT_STRING | IT_CVAR, "Frantic Items", "Stronger comebacks, even with low EXP. (Not recommended for even matches!)",
 		NULL, {.cvar = &cv_kartfrantic}, 0, 0},
 
 	{IT_HEADER, "Race...", NULL,
@@ -56,7 +56,7 @@ menuitem_t OPTIONS_Gameplay[] =
 	{IT_HEADER, "Duel...", NULL,
 		NULL, {NULL}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Duel", "A one-versus-one tug of war! Disable for standard racing.",
+	{IT_STRING | IT_CVAR, "Duel", "When only two players are racing, use tug-of-war rules!",
 		NULL, {.cvar = &cv_duel}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Duel Time Limit", "How long it takes for Margin Boost to kick in (seconds).",

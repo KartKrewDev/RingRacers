@@ -127,6 +127,7 @@ player_t *K_DuelOpponent(player_t *player);
 
 fixed_t K_EffectiveGradingFactor(const player_t *player);
 #define MINGRADINGFACTOR (FRACUNIT/2)
+#define MINFRANTICFACTOR (8*FRACUNIT/10)
 
 void K_TimerReset(void);
 void K_TimerInit(void);
