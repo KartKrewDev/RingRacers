@@ -1167,6 +1167,8 @@ void M_MapProfileControl(event_t *ev);
 void M_ProfileTryController(INT32 choice);
 void M_ProfileControlsConfirm(INT32 choice);
 
+boolean M_ProfileQuitHandle(void);
+
 // video modes menu (resolution)
 void M_HandleVideoModes(INT32 ch);
 

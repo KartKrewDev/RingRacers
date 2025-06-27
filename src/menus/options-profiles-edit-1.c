@@ -52,7 +52,7 @@ menu_t OPTIONS_EditProfileDef = {
 	M_DrawOptionsCogs,
 	M_HandleProfileEdit,
 	NULL,
-	NULL,
+	M_ProfileQuitHandle,
 	M_ProfileEditInputs,
 };
 
@@ -237,4 +237,14 @@ void M_ProfileDeviceSelect(INT32 choice)
 	optionsmenu.conty = optionsmenu.tconty = controlleroffsets[gc_a][1];
 
 	M_SetupNextMenu(&OPTIONS_ProfileControlsDef, false);	// Don't set device here anymore.
+}
+
+boolean M_ProfileQuitHandle(void)
+{
+	if (optionsmenu.profile != NULL)
+	{
+		M_ResetOptions();			// Reset all options variables otherwise things are gonna go reaaal bad lol.
+		optionsmenu.profile = NULL;	// Make sure to get rid of that, too.
+	}
+	return false;
 }
