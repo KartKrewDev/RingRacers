@@ -68,6 +68,7 @@ void K_GivePowerUp(player_t* player, kartitems_t powerup, tic_t time)
 	player->flashing = 3*TICRATE;
 	player->mo->hitlag += BATTLE_POWERUP_VFX_TIME;
 	player->powerupVFXTimer = BATTLE_POWERUP_VFX_TIME;
+	player->mo->flags |= MF_NOCLIPTHING;
 	Obj_SpawnPowerUpSpinner(player->mo, powerup, BATTLE_POWERUP_VFX_TIME);
 
 	g_darkness.start = leveltime;

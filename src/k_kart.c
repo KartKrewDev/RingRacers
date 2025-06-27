@@ -10310,6 +10310,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->powerupVFXTimer > 0)
 	{
 		player->powerupVFXTimer--;
+		if (player->powerupVFXTimer == 0)
+			player->mo->flags &= ~MF_NOCLIPTHING;
 	}
 
 	if (player->dotrickfx && !player->mo->hitlag)
