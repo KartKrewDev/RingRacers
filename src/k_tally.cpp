@@ -192,6 +192,9 @@ INT32 level_tally_t::CalculateGrade(void)
 	};
 	INT32 retGrade = GRADE_E; // gp_rank_e
 
+	if (K_InRaceDuel())
+		return GRADE_INVALID;
+
 	INT32 bonusWeights[TALLY_WINDOW_SIZE];
 	for (int i = 0; i < TALLY_WINDOW_SIZE; i++)
 	{
