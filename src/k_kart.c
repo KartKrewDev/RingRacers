@@ -10103,7 +10103,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		if (!player->bigwaypointgap)
 			K_DoIngameRespawn(player);
 		else if (player->bigwaypointgap == AUTORESPAWN_THRESHOLD)
-			K_AddMessageForPlayer(player, "Press <y> to respawn", true, false);
+			K_AddMessageForPlayer(player, "Press <a> + <x> + <y> to respawn", true, false);
 	}
 
 	if (player->tripwireUnstuck && !player->mo->hitlag)
