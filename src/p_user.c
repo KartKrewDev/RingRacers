@@ -1264,6 +1264,13 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 		K_UpdateAllPlayerPositions();
 	}
 
+	if (!(gametyperules & GTR_SPHERES) && (player->pflags & PF_RINGLOCK) && grandprixinfo.gp)
+	{
+		if (P_IsDisplayPlayer(player))
+			S_StartSound(NULL, sfx_s3kb0);
+		player->rings = max(20, player->rings + 20);
+	}		
+
 	const boolean losing = K_IsPlayerLosing(player); // HEY!!!! Set it AFTER K_UpdateAllPlayerPositions!!!!
 	const boolean specialout = (specialstageinfo.valid == true && losing == true);
 
