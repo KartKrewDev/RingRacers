@@ -1121,6 +1121,9 @@ boolean K_KitchenSinkCollide(mobj_t *t1, mobj_t *t2)
 
 		S_StartSound(NULL, sfx_bsnipe); // let all players hear it.
 
+		if (t1->target && !P_MobjWasRemoved(t1->target) && t1->target->player)
+			K_SpawnAmps(t1->target->player, 50, t2);
+
 		HU_SetCEchoFlags(0);
 		HU_SetCEchoDuration(5);
 		HU_DoCEcho(va("%s\\was hit by a kitchen sink.\\\\\\\\", player_names[t2->player-players]));

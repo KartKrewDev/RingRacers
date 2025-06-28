@@ -4253,6 +4253,9 @@ void K_SpawnAmps(player_t *player, UINT8 amps, mobj_t *impact)
 	if (amps == 0)
 		return;
 
+	if (!player->mo && P_MobjWasRemoved(player->mo))
+		return;
+
 	UINT32 itemdistance = min(FRACUNIT-1, K_GetItemRouletteDistance(player, D_NumPlayersInRace())); // cap this to FRACUNIT-1, so it doesn't wrap when turning it into fixed_t
 	fixed_t itemdistmult = FRACUNIT + min(FRACUNIT, (itemdistance<<FRACBITS) / MAXAMPSCALINGDIST);
 	UINT16 scaledamps = min(amps, amps * (10 + (9-player->kartspeed) - (9-player->kartweight)) / 10);
