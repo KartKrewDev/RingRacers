@@ -479,11 +479,13 @@ static UINT32 K_ScaleItemDistance(const player_t *player, UINT32 distance, UINT8
 {
 	(void)player;
 
+#if 0
 	if (franticitems == true)
 	{
 		// Frantic items pretends everyone's farther apart, for crazier items.
 		distance = FixedMul(distance, FRANTIC_ITEM_SCALE);
 	}
+#endif
 
 	// Items get crazier with the fewer players that you have.
 	distance = FixedMul(
@@ -1626,8 +1628,10 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 		// worse at selecting their item—but it always matters in frantic gameplay.)
 		if (K_IsItemPower(bestitem) && rival)
 			deltapenalty = 3 * deltapenalty / 4;
+#if 0
 		if (K_IsItemPower(bestitem) && franticitems)
 			deltapenalty = 3 * deltapenalty / 4;
+#endif
 
 		// Conversely, if we're lonely, try not to reselect an item that wouldn't be useful to us
 		// without any players to use it on.

@@ -145,9 +145,10 @@ boolean K_InRaceDuel(void)
 
 fixed_t K_EffectiveGradingFactor(const player_t *player)
 {
+	fixed_t min = (franticitems) ? MINFRANTICFACTOR : MINGRADINGFACTOR;
 	if (grandprixinfo.gp && grandprixinfo.masterbots && !K_PlayerUsesBotMovement(player))
-		return MINGRADINGFACTOR;
-	return max(MINGRADINGFACTOR, player->gradingfactor);
+		return min;
+	return max(min, player->gradingfactor);
 }
 
 player_t *K_DuelOpponent(player_t *player)
