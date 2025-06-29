@@ -9297,17 +9297,34 @@ static void K_UpdateTripwire(player_t *player)
 	{
 		if (boostExists)
 		{
-			player->tripwireLeniency--;
-			if (goodSpeed == false && player->tripwireLeniency > 0)
+			// If player is MOSTLY on the ground.
+			// Arbitrary number based on other code that claimed the player is often
+			// slightly aerial in ground-to-ground transitions and other such edge cases.
+			if (player->airtime < 2)
 			{
-				// Decrease at double speed when your speed is bad.
 				player->tripwireLeniency--;
+				if (goodSpeed == false && player->tripwireLeniency > 0)
+				{
+					// Decrease at double speed when your speed is bad.
+					player->tripwireLeniency--;
+				}
+			}
+			// ...Until they're NOT, in which case tripwire leniency is reduced at a decimal rate!
+			else
+			{
+				player->tripwireAirLeniency++;
+				if (player->tripwireAirLeniency >= 5) // Once every 5 tics
+				{
+					player->tripwireAirLeniency = 0;
+					player->tripwireLeniency--;
+				}
 			}
 		}
 
 		if (player->tripwireLeniency <= 0 && triplevel == TRIPWIRE_NONE)
 		{
 			player->tripwirePass = TRIPWIRE_NONE;
+			player->tripwireAirLeniency = 0;
 		}
 	}
 }
