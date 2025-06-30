@@ -9295,6 +9295,9 @@ static void K_UpdateTripwire(player_t *player)
 	// so that stripping Garden Top feels consistent.
 	if (triplevel == TRIPWIRE_NONE || triplevel == TRIPWIRE_CONSUME)
 	{
+		// Peek at the relevant values:
+		// CONS_Printf("airtime: %d,  twLen: %d,  twAirLen: %d\n", player->airtime, player->tripwireLeniency, player->tripwireAirLeniency);
+		
 		if (boostExists)
 		{
 			// If player is MOSTLY on the ground.
