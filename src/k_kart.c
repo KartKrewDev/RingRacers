@@ -9306,7 +9306,7 @@ static void K_UpdateTripwire(player_t *player)
 		if (boostExists)
 		{
 			// If player is MOSTLY on the ground.
-			// Takes 3 tics to kick in because this is NOT meant for twerking
+			// Takes 3 tics to be considered midair, because midair leniency is NOT meant for twerking
 			if (player->airtime < 3)
 			{
 				player->tripwireLeniency--;
