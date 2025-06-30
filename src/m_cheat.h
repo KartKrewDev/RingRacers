@@ -43,6 +43,7 @@ typedef enum {
 	CHEAT_GIVEPOWERUP,
 	CHEAT_SPHERES,
 	CHEAT_FREEZE,
+	CHEAT_AMPS,
 
 	NUMBER_OF_CHEATS
 } cheat_t;
@@ -74,6 +75,7 @@ void Command_CheatFreeze_f(void);
 void Command_Savecheckpoint_f(void);
 void Command_Setrings_f(void);
 void Command_Setspheres_f(void);
+void Command_Setamps_f(void);
 void Command_Setlives_f(void);
 void Command_Setroundscore_f(void);
 void Command_Devmode_f(void);

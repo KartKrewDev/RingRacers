@@ -557,6 +557,7 @@ void D_RegisterClientCommands(void)
 	COM_AddDebugCommand("freeze", Command_CheatFreeze_f);
 	COM_AddDebugCommand("setrings", Command_Setrings_f);
 	COM_AddDebugCommand("setspheres", Command_Setspheres_f);
+	COM_AddDebugCommand("setamps", Command_Setamps_f);
 	COM_AddDebugCommand("setlives", Command_Setlives_f);
 	COM_AddDebugCommand("setroundscore", Command_Setroundscore_f);
 	COM_AddDebugCommand("devmode", Command_Devmode_f);
@@ -1634,6 +1635,7 @@ void D_Cheat(INT32 playernum, INT32 cheat, ...)
 			break;
 
 		case CHEAT_SPHERES:
+		case CHEAT_AMPS:
 			COPY(WRITEINT16, int);
 			break;
 	}
@@ -6140,6 +6142,15 @@ static void Got_Cheat(const UINT8 **cp, INT32 playernum)
 			P_GivePlayerSpheres(player, spheres);
 
 			CV_CheaterWarning(targetPlayer, va("spheres = %d", spheres));
+			break;
+		}
+
+		case CHEAT_AMPS: {
+			INT16 amps = READINT16(*cp);
+
+			player->amps = amps;
+
+			CV_CheaterWarning(targetPlayer, va("amps = %d", amps));
 			break;
 		}
 
