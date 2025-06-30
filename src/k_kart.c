@@ -9296,14 +9296,18 @@ static void K_UpdateTripwire(player_t *player)
 	if (triplevel == TRIPWIRE_NONE || triplevel == TRIPWIRE_CONSUME)
 	{
 		// Peek at the relevant values:
-		// CONS_Printf("airtime: %d,  twLen: %d,  twAirLen: %d\n", player->airtime, player->tripwireLeniency, player->tripwireAirLeniency);
+		/*
+		if (player->airtime == 0)
+			CONS_Printf("airtime: ,  twLen: %d,  twAirLen: %d\n", player->tripwireLeniency, player->tripwireAirLeniency);
+		else
+			CONS_Printf("airtime: %d,  twLen: %d,  twAirLen: %d\n", player->airtime, player->tripwireLeniency, player->tripwireAirLeniency);
+		*/
 		
 		if (boostExists)
 		{
 			// If player is MOSTLY on the ground.
-			// Arbitrary number based on other code that claimed the player is often
-			// slightly aerial in ground-to-ground transitions and other such edge cases.
-			if (player->airtime < 2)
+			// Takes 3 tics to kick in because this is NOT meant for twerking
+			if (player->airtime < 3)
 			{
 				player->tripwireLeniency--;
 				if (goodSpeed == false && player->tripwireLeniency > 0)
