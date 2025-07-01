@@ -112,7 +112,7 @@ static patch_t *kp_ringspblock[16];
 static patch_t *kp_ringspblocksmall[16];
 static patch_t *kp_amps[7][12];
 static patch_t *kp_amps_underlay[12];
-static patch_t *kp_overdrive[32];
+static patch_t *kp_overdrive[2][32];
 
 static patch_t *kp_speedometersticker;
 static patch_t *kp_speedometerlabel[4];
@@ -519,7 +519,15 @@ void K_LoadKartHUDGraphics(void)
 	{
 		buffer[6] = '0'+((i) / 10);
 		buffer[7] = '0'+((i) % 10);
-		HU_UpdatePatch(&kp_overdrive[i], "%s", buffer);
+		HU_UpdatePatch(&kp_overdrive[0][i], "%s", buffer);
+	}
+	
+	sprintf(buffer, "bsOVRDxx");
+	for (i = 0; i < 32; i++)
+	{
+		buffer[6] = '0'+((i) / 10);
+		buffer[7] = '0'+((i) % 10);
+		HU_UpdatePatch(&kp_overdrive[1][i], "%s", buffer);
 	}
 
 	HU_UpdatePatch(&kp_ringdebtminus, "RDEBTMIN");
@@ -4188,7 +4196,32 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 		else
 			V_DrawScaledPatch(fx-2 + (flipflag ? (SHORT(kp_ringstickersplit[0]->width) - 3) : 0), fy, V_HUDTRANS|V_SLIDEIN|splitflags|flipflag, kp_ringstickersplit[0]);
 
-		V_DrawMappedPatch(fr+ringx, fy-3, V_HUDTRANS|V_SLIDEIN|splitflags|ringflip, kp_smallring[ringanim_realframe], (colorring ? ringmap : NULL));
+
+		UINT8 ampx = 2 + 8;
+		UINT8 ampy = 1 + 8;
+		UINT8 odx = 11;
+		UINT8 ody = 9;
+
+		if (stplyr->overdrive)
+		{
+			V_DrawMappedPatch(fr-odx, fy-3-ody, V_HUDTRANS|V_SLIDEIN|splitflags, kp_overdrive[1][leveltime%32], R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(stplyr->skincolor), GTC_CACHE));
+		}
+		else
+		{
+			V_DrawMappedPatch(fr+ringx, fy-3, V_HUDTRANS|V_SLIDEIN|splitflags|ringflip, kp_smallring[ringanim_realframe], (colorring ? ringmap : NULL));
+
+			if (stplyr->amps)
+			{
+				UINT8 amplevel = std::min(stplyr->amps / AMPLEVEL, 6);
+
+				V_DrawMappedPatch(fr-ampx, fy-3-ampy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_amps[amplevel][leveltime%12], R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(stplyr->skincolor), GTC_CACHE));
+				if (amplevel == 6)
+				{
+					V_DrawMappedPatch(fr-ampx, fy-3-ampy, V_ADD|V_HUDTRANS|V_SLIDEIN|splitflags, kp_amps_underlay[leveltime%12], R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(stplyr->skincolor), GTC_CACHE));
+				}
+			}
+		}
+
 
 		if (stplyr->hudrings < 0) // Draw the minus for ring debt
 		{
@@ -4257,7 +4290,7 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 
 		if (stplyr->overdrive)
 		{
-			V_DrawMappedPatch(LAPS_X+7-8, fy-5-8, V_HUDTRANS|V_SLIDEIN|splitflags, kp_overdrive[leveltime%32], R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(stplyr->skincolor), GTC_CACHE));
+			V_DrawMappedPatch(LAPS_X+7-8, fy-5-8, V_HUDTRANS|V_SLIDEIN|splitflags, kp_overdrive[0][leveltime%32], R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(stplyr->skincolor), GTC_CACHE));
 		}
 		else
 		{
@@ -7667,16 +7700,17 @@ void K_drawKartHUD(void)
 				}
 			}
 
+			// This sucks, but we need to draw rings before EXP because 4P amps
+			// are fuckhuge and cover gameplay info if we don't.
+			// Propagate any changes below.
 			if (LUA_HudEnabled(hud_gametypeinfo))
 			{
 				if (gametyperules & GTR_CIRCUIT && !K_InRaceDuel())
 				{
-					K_drawKartLaps();
 					gametypeinfoshown = true;
 				}
 				else if (gametyperules & GTR_BUMPERS)
 				{
-					K_drawKartBumpersOrKarma();
 					gametypeinfoshown = true;
 				}
 			}
@@ -7698,6 +7732,23 @@ void K_drawKartHUD(void)
 			else
 			{
 				K_drawRingCounter(gametypeinfoshown);
+			}
+
+			// This sucks, but we need to draw rings before EXP because 4P amps
+			// are fuckhuge and cover gameplay info if we don't.
+			// Propagate any changes above.
+			if (LUA_HudEnabled(hud_gametypeinfo))
+			{
+				if (gametyperules & GTR_CIRCUIT && !K_InRaceDuel())
+				{
+					K_drawKartLaps();
+					gametypeinfoshown = true;
+				}
+				else if (gametyperules & GTR_BUMPERS)
+				{
+					K_drawKartBumpersOrKarma();
+					gametypeinfoshown = true;
+				}
 			}
 
 			// Draw the item window
