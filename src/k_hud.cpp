@@ -7700,16 +7700,17 @@ void K_drawKartHUD(void)
 				}
 			}
 
+			// This sucks, but we need to draw rings before EXP because 4P amps
+			// are fuckhuge and cover gameplay info if we don't.
+			// Propagate any changes below.
 			if (LUA_HudEnabled(hud_gametypeinfo))
 			{
 				if (gametyperules & GTR_CIRCUIT && !K_InRaceDuel())
 				{
-					K_drawKartLaps();
 					gametypeinfoshown = true;
 				}
 				else if (gametyperules & GTR_BUMPERS)
 				{
-					K_drawKartBumpersOrKarma();
 					gametypeinfoshown = true;
 				}
 			}
@@ -7731,6 +7732,23 @@ void K_drawKartHUD(void)
 			else
 			{
 				K_drawRingCounter(gametypeinfoshown);
+			}
+
+			// This sucks, but we need to draw rings before EXP because 4P amps
+			// are fuckhuge and cover gameplay info if we don't.
+			// Propagate any changes above.
+			if (LUA_HudEnabled(hud_gametypeinfo))
+			{
+				if (gametyperules & GTR_CIRCUIT && !K_InRaceDuel())
+				{
+					K_drawKartLaps();
+					gametypeinfoshown = true;
+				}
+				else if (gametyperules & GTR_BUMPERS)
+				{
+					K_drawKartBumpersOrKarma();
+					gametypeinfoshown = true;
+				}
 			}
 
 			// Draw the item window
