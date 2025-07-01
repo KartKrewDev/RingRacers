@@ -287,3 +287,8 @@ INT32 Obj_BattleUFOSpawnerID(const mobj_t *spawner)
 {
 	return static_cast<const Spawner*>(spawner)->id();
 }
+
+mobj_t *Obj_GetNextUFOSpawner(void)
+{
+	return g_spawners.next(g_battleufo.previousId);
+}

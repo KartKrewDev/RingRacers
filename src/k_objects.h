@@ -213,6 +213,7 @@ void Obj_SpawnBattleUFOFromSpawner(void);
 INT32 Obj_RandomBattleUFOSpawnerID(void);
 void Obj_BattleUFOBeamThink(mobj_t *beam);
 INT32 Obj_BattleUFOSpawnerID(const mobj_t *spawner);
+mobj_t *Obj_GetNextUFOSpawner(void);
 
 /* Power-Up Aura */
 void Obj_SpawnPowerUpAura(player_t* player);
