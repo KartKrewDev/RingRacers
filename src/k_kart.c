@@ -12735,9 +12735,9 @@ void K_StripOther(player_t *player)
 static INT32 K_FlameShieldMax(player_t *player)
 {
 	UINT32 disttofinish = 0;
-	UINT32 distv = 1024*4; // Pre no-scams: 2048
+	UINT32 distv = 1024*2; // Pre no-scams: 2048
 	distv = distv * 16 / FLAMESHIELD_MAX; // Old distv was based on a 16-segment bar
-	UINT32 scamradius = 1500*4; // How close is close enough that we shouldn't be allowed to scam 1st?
+	UINT32 scamradius = 1500*2; // How close is close enough that we shouldn't be allowed to scam 1st?
 	UINT8 i;
 
 	disttofinish = K_GetItemRouletteDistance(player, 8);
