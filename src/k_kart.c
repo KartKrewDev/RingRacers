@@ -12735,27 +12735,14 @@ void K_StripOther(player_t *player)
 static INT32 K_FlameShieldMax(player_t *player)
 {
 	UINT32 disttofinish = 0;
-	UINT32 distv = 1024; // Pre no-scams: 2048
+	UINT32 distv = 1024*4; // Pre no-scams: 2048
 	distv = distv * 16 / FLAMESHIELD_MAX; // Old distv was based on a 16-segment bar
-	UINT8 numplayers = 0;
-	UINT32 scamradius = 1500; // How close is close enough that we shouldn't be allowed to scam 1st?
+	UINT32 scamradius = 1500*4; // How close is close enough that we shouldn't be allowed to scam 1st?
 	UINT8 i;
 
-	if (gametyperules & GTR_CIRCUIT)
-	{
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (playeringame[i] && !players[i].spectator)
-				numplayers++;
-			if (players[i].position == 1)
-				disttofinish = players[i].distancetofinish;
-		}
-	}
+	disttofinish = K_GetItemRouletteDistance(player, 8);
 
-	disttofinish = player->distancetofinish - disttofinish;
-	distv = FixedMul(distv, mapobjectscale);
-
-	if (numplayers <= 1)
+	if (D_NumPlayersInRace() <= 1)
 	{
 		return FLAMESHIELD_MAX; // max when alone, for testing
 		// and when in battle, for chaos
