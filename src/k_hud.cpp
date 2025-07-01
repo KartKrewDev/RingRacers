@@ -5706,6 +5706,49 @@ INT32 K_GetMinimapSplitFlags(const boolean usingProgressBar)
 
 #define ICON_DOT_RADIUS (10)
 
+// modified pick from blondedradio/RadioRacers (but there are like 57 things we don't want in the commit)
+// (so gogo gadget copypaste, thanks for a good feature and saving me work i was supposed to do anyway) 
+static void K_DrawKartUFOTimer(fixed_t objx, fixed_t objy, INT32 hudx, INT32 hudy, INT32 flags)
+{
+	fixed_t amnumxpos, amnumypos;
+	INT32 amxpos, amypos;
+
+	if (exitcountdown || leveltime > g_battleufo.due) 
+		return;
+
+	tic_t raw = g_battleufo.due - leveltime;
+	tic_t countdown = G_TicsToSeconds(raw) + 1;
+
+	if (countdown <= 5)
+	{
+		flags |= (raw / (TICRATE/2) % 2) ? V_YELLOWMAP : 0;
+	}
+	
+	if (countdown <= 10)
+	{
+		flags &= ~(V_HUDTRANS|V_HUDTRANSHALF);
+	}
+
+	amnumxpos = (FixedMul(objx, minimapinfo.zoom) - minimapinfo.offs_x);
+	amnumypos = -(FixedMul(objy, minimapinfo.zoom) - minimapinfo.offs_y);
+
+	if (encoremode)
+		amnumxpos = -amnumxpos;
+
+	fixed_t text_width = V_StringScaledWidth(FRACUNIT, FRACUNIT, FRACUNIT, 0, TINY_FONT, va("%d", countdown));
+	int16_t final_width = (kp_battleufominimap->width/2) - ((text_width/FRACUNIT)+3)/2;
+	if (countdown < 10)
+		final_width -= 3; // magic number
+
+	// magic number
+	int16_t text_height = (kp_battleufominimap->height/2) + 2;
+
+	amxpos = amnumxpos + ((hudx - (SHORT(final_width))/2)<<FRACBITS);
+	amypos = amnumypos + ((hudy - (SHORT(text_height))/2)<<FRACBITS);
+
+	V_DrawCenteredThinString(amxpos/FRACUNIT, amypos/FRACUNIT, flags, va("%d", countdown));
+}
+
 static void K_drawKartMinimap(void)
 {
 	patch_t *workingPic;
@@ -6200,6 +6243,16 @@ static void K_drawKartMinimap(void)
 		{
 			K_drawKartProgressionMinimapIcon(players[localplayers[i]].distancetofinish, x, y, splitflags, workingPic, colormap);
 		}
+	}
+
+	if (gametype == GT_BATTLE && Obj_GetNextUFOSpawner() != NULL)
+	{
+		const INT32 prevsplitflags = splitflags;
+		mobj_t *spawner = Obj_GetNextUFOSpawner();
+		splitflags &= ~V_HUDTRANS;
+		splitflags |= V_HUDTRANSHALF;
+		K_DrawKartUFOTimer(spawner->x, spawner->y, x, y, splitflags);
+		splitflags = prevsplitflags;
 	}
 
 	if (doprogressionbar == false && cv_kartdebugwaypoints.value != 0)
