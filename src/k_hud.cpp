@@ -4197,12 +4197,10 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 			V_DrawScaledPatch(fx-2 + (flipflag ? (SHORT(kp_ringstickersplit[0]->width) - 3) : 0), fy, V_HUDTRANS|V_SLIDEIN|splitflags|flipflag, kp_ringstickersplit[0]);
 
 
-		UINT8 ampx = 2;
-		UINT8 ampy = 1;
+		UINT8 ampx = 2 + 8;
+		UINT8 ampy = 1 + 8;
 		UINT8 odx = 11;
 		UINT8 ody = 9;
-
-		V_DrawString(0, 0, splitflags, va("%d %d", fr, fy));
 
 		if (stplyr->overdrive)
 		{
@@ -4216,10 +4214,10 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 			{
 				UINT8 amplevel = std::min(stplyr->amps / AMPLEVEL, 6);
 
-				V_DrawSmallMappedPatch(fr-ampx, fy-3-ampy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_amps[amplevel][leveltime%12], R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(stplyr->skincolor), GTC_CACHE));
+				V_DrawMappedPatch(fr-ampx, fy-3-ampy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_amps[amplevel][leveltime%12], R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(stplyr->skincolor), GTC_CACHE));
 				if (amplevel == 6)
 				{
-					V_DrawSmallMappedPatch(fr-ampx, fy-3-ampy, V_ADD|V_HUDTRANS|V_SLIDEIN|splitflags, kp_amps_underlay[leveltime%12], R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(stplyr->skincolor), GTC_CACHE));
+					V_DrawMappedPatch(fr-ampx, fy-3-ampy, V_ADD|V_HUDTRANS|V_SLIDEIN|splitflags, kp_amps_underlay[leveltime%12], R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(stplyr->skincolor), GTC_CACHE));
 				}
 			}
 		}
