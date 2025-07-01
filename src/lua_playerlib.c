@@ -378,6 +378,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->fakeBoost);
 	else if (fastcmp(field,"tripwireleniency"))
 		lua_pushinteger(L, plr->tripwireLeniency);
+	else if (fastcmp(field,"tripwireairleniency"))
+		lua_pushinteger(L, plr->tripwireAirLeniency);
 	else if (fastcmp(field,"tripwirerebounddelay"))
 		lua_pushinteger(L, plr->tripwireReboundDelay);
 	else if (fastcmp(field,"eggmantransferdelay"))
@@ -1021,6 +1023,8 @@ static int player_set(lua_State *L)
 		plr->fakeBoost = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"tripwireleniency"))
 		plr->tripwireLeniency = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"tripwireairleniency"))
+		plr->tripwireAirLeniency = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"tripwirerebounddelay"))
 		plr->tripwireReboundDelay = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"eggmantransferdelay"))

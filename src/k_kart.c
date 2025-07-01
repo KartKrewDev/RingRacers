@@ -9295,19 +9295,43 @@ static void K_UpdateTripwire(player_t *player)
 	// so that stripping Garden Top feels consistent.
 	if (triplevel == TRIPWIRE_NONE || triplevel == TRIPWIRE_CONSUME)
 	{
+		// Peek at the relevant values:
+		/*
+		if (player->airtime == 0)
+			CONS_Printf("airtime: ,  twLen: %d,  twAirLen: %d\n", player->tripwireLeniency, player->tripwireAirLeniency);
+		else
+			CONS_Printf("airtime: %d,  twLen: %d,  twAirLen: %d\n", player->airtime, player->tripwireLeniency, player->tripwireAirLeniency);
+		*/
+		
 		if (boostExists)
 		{
-			player->tripwireLeniency--;
-			if (goodSpeed == false && player->tripwireLeniency > 0)
+			// If player is MOSTLY on the ground.
+			// Takes 3 tics to be considered midair, because midair leniency is NOT meant for twerking
+			if (player->airtime < 3)
 			{
-				// Decrease at double speed when your speed is bad.
 				player->tripwireLeniency--;
+				if (goodSpeed == false && player->tripwireLeniency > 0)
+				{
+					// Decrease at double speed when your speed is bad.
+					player->tripwireLeniency--;
+				}
+			}
+			// ...Until they're NOT, in which case tripwire leniency is reduced at a decimal rate!
+			else
+			{
+				player->tripwireAirLeniency++;
+				if (player->tripwireAirLeniency >= 5) // Once every 5 tics
+				{
+					player->tripwireAirLeniency = 0;
+					player->tripwireLeniency--;
+				}
 			}
 		}
 
 		if (player->tripwireLeniency <= 0 && triplevel == TRIPWIRE_NONE)
 		{
 			player->tripwirePass = TRIPWIRE_NONE;
+			player->tripwireAirLeniency = 0;
 		}
 	}
 }
