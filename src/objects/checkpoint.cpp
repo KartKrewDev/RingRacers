@@ -664,14 +664,6 @@ void Obj_CrossCheckpoints(player_t* player, fixed_t old_x, fixed_t old_y)
 		return;
 	}
 
-	if (player->position <= 1)
-	{
-		angle_t direction = R_PointToAngle2(old_x, old_y, player->mo->x, player->mo->y);
-		fixed_t speed_multiplier = FixedDiv(player->speed, K_GetKartSpeed(player, false, false));
-		chk->twirl(direction, speed_multiplier);
-		chk->other()->twirl(direction, speed_multiplier);
-	}
-
 	if (gametyperules & GTR_CHECKPOINTS)
 	{
 		for (Checkpoint* chk : g_checkpoints)
@@ -682,6 +674,14 @@ void Obj_CrossCheckpoints(player_t* player, fixed_t old_x, fixed_t old_y)
 				chk->other()->untwirl();
 			}
 		}
+	}
+
+	if (player->position <= 1)
+	{
+		angle_t direction = R_PointToAngle2(old_x, old_y, player->mo->x, player->mo->y);
+		fixed_t speed_multiplier = FixedDiv(player->speed, K_GetKartSpeed(player, false, false));
+		chk->twirl(direction, speed_multiplier);
+		chk->other()->twirl(direction, speed_multiplier);
 	}
 
 	S_StartSound(player->mo, sfx_s3k63);
