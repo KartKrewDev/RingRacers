@@ -10627,6 +10627,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->bubblecool = 0;
 	}
 
+	if (player->bubbleblowup == 0)
+		player->pflags2 &= ~PF2_BUBBLECONTACT;
+
 	if (player->itemtype != KITEM_FLAMESHIELD)
 	{
 		if (player->flamedash)
