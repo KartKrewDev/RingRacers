@@ -139,9 +139,12 @@ typedef enum
 	PF2_SELFDEAFEN 			= 1<<2,
 	PF2_SERVERMUTE 			= 1<<3,
 	PF2_SERVERDEAFEN 		= 1<<4,
+
 	PF2_STRICTFASTFALL 		= 1<<5, // Fastfall only with C, never with A+X. Profile preference.
+
 	PF2_ALWAYSDAMAGED		= 1<<6, // Ignore invulnerability or clash conditions when evaulating damage (P_DamageMobj). Unset after use!
 	PF2_BUBBLECONTACT		= 1<<7, // ACHTUNG VERY BAD HACK - Don't allow Bubble Shield to contact certain objects unless this is a fresh blowup.
+	PF2_SUPERTRANSFERVFX	= 1<<8, // Don't respawn the "super transfer available" VFX.
 } pflags2_t;
 
 typedef enum
@@ -1114,7 +1117,6 @@ struct player_t
 	fixed_t outrun; // Milky Way road effect
 
 	fixed_t transfer; // Tired of Ramp Park fastfalls
-	boolean transfersound;
 
 	uint8_t public_key[PUBKEYLENGTH];
 

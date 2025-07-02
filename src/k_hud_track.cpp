@@ -461,6 +461,14 @@ std::optional<TargetTracking::Tooltip> object_tooltip(const mobj_t* mobj)
 		);
 
 	case MT_PLAYER:
+	{
+		if (stplyr->fastfall == 0 && K_CanSuperTransfer(stplyr))
+			return Tooltip(
+				TextElement(
+					TextElement().parse("<c_animated>").font(splitfont))
+				)
+			.offset3d(0, 0, 64 * mobj->scale * P_MobjFlip(mobj));
+		
 		return conditional(
 			mobj->player == stplyr && stplyr->icecube.frozen,
 			[&] { return Tooltip(TextElement(
@@ -470,6 +478,7 @@ std::optional<TargetTracking::Tooltip> object_tooltip(const mobj_t* mobj)
 				)).offset3d(0, 0, 64 * mobj->scale * P_MobjFlip(mobj)); }
 			// I will be trying to figure out why the return value didn't accept a straightforward call to parse() for the rest of my life (apprx. 15 seconds)
 		);
+	}
 
 	default:
 		return {};
