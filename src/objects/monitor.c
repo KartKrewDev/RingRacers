@@ -478,7 +478,7 @@ Obj_MonitorSpawnParts (mobj_t *monitor)
 	P_SetScale(monitor, (monitor->destscale *= 2));
 
 	monitor_itemcount(monitor) = 0;
-	monitor_rngseed(monitor) = P_GetRandSeed(PR_ITEM_ROULETTE);
+	monitor_rngseed(monitor) = P_GetRandSeed(PR_ITEM_SPAWNER);
 	monitor_spawntic(monitor) = leveltime;
 	monitor_emerald(monitor) = 0;
 
