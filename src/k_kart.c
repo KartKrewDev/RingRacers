@@ -10157,7 +10157,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	{
 		player->finalfailsafe++; // Decremented by ringshooter to "freeze" this timer
 		// Part-way through the auto-respawn timer, you can tap Ring Shooter to respawn early
-		if (player->finalfailsafe >= 4*TICRATE ||
+		if (player->finalfailsafe >= FAILSAFETIME ||
 			(player->bigwaypointgap && player->bigwaypointgap < AUTORESPAWN_THRESHOLD))
 		{
 			K_DoIngameRespawn(player);
