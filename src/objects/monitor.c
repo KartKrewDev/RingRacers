@@ -325,10 +325,10 @@ kill_monitor_part (mobj_t *part)
 static inline UINT32
 restore_item_rng (UINT32 seed)
 {
-	const UINT32 oldseed = P_GetRandSeed(PR_ITEM_ROULETTE);
+	const UINT32 oldseed = P_GetRandSeed(PR_ITEM_SPAWNER);
 
-	P_SetRandSeedNet(PR_ITEM_ROULETTE,
-			P_GetInitSeed(PR_ITEM_ROULETTE), seed);
+	P_SetRandSeedNet(PR_ITEM_SPAWNER,
+			P_GetInitSeed(PR_ITEM_SPAWNER), seed);
 
 	return oldseed;
 }
