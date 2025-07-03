@@ -1769,7 +1769,8 @@ void I_Error(const char *error, ...)
 			// Implement message box with SDL_ShowSimpleMessageBox,
 			// which should fail gracefully if it can't put a message box up
 			// on the target system
-			if (!M_CheckParm("-dedicated"))
+			extern consvar_t cv_fuzz;
+			if (!M_CheckParm("-dedicated") && !(cv_fuzz.value))
 				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
 					"Dr. Robotnik's Ring Racers " VERSIONSTRING " Recursive Error",
 					buffer, NULL);
@@ -1814,7 +1815,9 @@ void I_Error(const char *error, ...)
 	I_ShutdownGraphics();
 	I_ShutdownInput();
 
-	I_ShowErrorMessageBox(buffer, false);
+	extern consvar_t cv_fuzz;
+	if (!cv_fuzz.value)
+		I_ShowErrorMessageBox(buffer, false);
 
 	// We wait until now to do this so the funny sound can be heard
 	I_ShutdownSound();
