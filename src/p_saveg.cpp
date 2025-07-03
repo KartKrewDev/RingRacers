@@ -93,6 +93,7 @@ typedef enum
 	BALLHOGRETICULE = 0x8000,
 	STONESHOE = 0x10000,
 	FLYBOT = 0x20000,
+	TOXOMISTERCLOUD = 0x40000,
 } player_saveflags;
 
 static inline void P_ArchivePlayer(savebuffer_t *save)
@@ -368,6 +369,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		if (players[i].stoneShoe)
 			flags |= STONESHOE;
 
+		if (players[i].toxomisterCloud)
+			flags |= TOXOMISTERCLOUD;
+
 		if (players[i].flybot)
 			flags |= FLYBOT;
 
@@ -420,6 +424,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		if (flags & STONESHOE)
 			WRITEUINT32(save->p, players[i].stoneShoe->mobjnum);
+
+		if (flags & TOXOMISTERCLOUD)
+			WRITEUINT32(save->p, players[i].toxomisterCloud->mobjnum);
 
 		if (flags & FLYBOT)
 			WRITEUINT32(save->p, players[i].flybot->mobjnum);
@@ -1081,6 +1088,9 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		if (flags & STONESHOE)
 			players[i].stoneShoe = (mobj_t *)(size_t)READUINT32(save->p);
+
+		if (flags & TOXOMISTERCLOUD)
+			players[i].toxomisterCloud = (mobj_t *)(size_t)READUINT32(save->p);
 
 		if (flags & FLYBOT)
 			players[i].flybot = (mobj_t *)(size_t)READUINT32(save->p);
@@ -6246,6 +6256,11 @@ static void P_RelinkPointers(void)
 		{
 			if (!RelinkMobj(&players[i].stoneShoe))
 				CONS_Debug(DBG_GAMELOGIC, "stoneShoe not found on player %d\n", i);
+		}
+		if (players[i].toxomisterCloud)
+		{
+			if (!RelinkMobj(&players[i].toxomisterCloud))
+				CONS_Debug(DBG_GAMELOGIC, "toxomisterCloud not found on player %d\n", i);
 		}
 		if (players[i].flybot)
 		{

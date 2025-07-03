@@ -199,7 +199,8 @@ Run this macro, then #undef FOREACH afterward
 	FOREACH (DROPTARGET,    21),\
 	FOREACH (GARDENTOP,     22),\
 	FOREACH (GACHABOM,      23),\
-	FOREACH (STONESHOE,     24)
+	FOREACH (STONESHOE,     24),\
+	FOREACH (TOXOMISTER,    25)
 
 typedef enum
 {
@@ -1066,6 +1067,7 @@ struct player_t
 	mobj_t *hand;
 	mobj_t *flickyAttacker;
 	mobj_t *stoneShoe;
+	mobj_t *toxomisterCloud;
 
 	SINT8 pitblame; // Index of last player that hit you, resets after being in control for a bit. If you deathpit, credit the old attacker!
 

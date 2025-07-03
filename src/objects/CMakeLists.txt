@@ -67,6 +67,7 @@ target_sources(SRB2SDL2 PRIVATE
 	stone-shoe.cpp
 	exp.c
 	bail.c
+	toxomister.cpp
 )
 
 add_subdirectory(versus)

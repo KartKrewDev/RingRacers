@@ -687,6 +687,7 @@ consvar_t cv_items[] = {
 	UnsavedNetVar("gardentop",			"On").on_off(),
 	UnsavedNetVar("gachabom",			"On").on_off(),
 	UnsavedNetVar("stoneshoe",			"On").on_off(),
+	UnsavedNetVar("toxomister",			"On").on_off(),
 	UnsavedNetVar("dualsneaker",		"On").on_off(),
 	UnsavedNetVar("triplesneaker",		"On").on_off(),
 	UnsavedNetVar("triplebanana",		"On").on_off(),
