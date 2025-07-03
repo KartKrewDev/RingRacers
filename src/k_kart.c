@@ -14206,8 +14206,15 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					// really silly stupid dumb HACK to fix interp
 					// without needing to duplicate any code
 					A_AttractChase(ring);
-					P_SetOrigin(ring, ring->x, ring->y, ring->z);
-					ring->extravalue1 = 1;
+
+					// ring can be removed if the player is in a state that explicitly blocks ring pickup
+					// try not to go crazy for a week figuring out why bail randomly crashes :))))))
+					if (ring && !P_MobjWasRemoved(ring))
+					{
+						P_SetOrigin(ring, ring->x, ring->y, ring->z);
+						ring->extravalue1 = 1;
+					}
+
 
 					UINT8 dumprate = 3;
 
