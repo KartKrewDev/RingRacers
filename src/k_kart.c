@@ -12912,7 +12912,8 @@ void K_KartEbrakeVisuals(player_t *p)
 	mobj_t *spdl;
 	fixed_t sx, sy;
 
-	if (K_PlayerEBrake(p) == true)
+	// Don't show the bubble visual if you're fast transfer falling
+	if (K_PlayerEBrake(p) == true && !p->transfer)
 	{
 		if (p->ebrakefor % 20 == 0)
 		{
