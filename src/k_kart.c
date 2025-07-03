@@ -13351,7 +13351,7 @@ boolean K_FastFallBounce(player_t *player)
 	// Handle fastfall bounce.
 	if (player->fastfall != 0)
 	{
-		CONS_Printf("ffb\n");
+		//CONS_Printf("ffb\n");
 		const fixed_t maxBounce = mapobjectscale * 10;
 		const fixed_t minBounce = mapobjectscale;
 		fixed_t bounce = 2 * abs(player->fastfall) / 3;
