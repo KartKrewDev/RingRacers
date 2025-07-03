@@ -3104,7 +3104,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					invincible = false;
 				}
 
-				if (player->pflags2 && PF2_ALWAYSDAMAGED)
+				if (player->pflags2 & PF2_ALWAYSDAMAGED)
 				{
 					invincible = false;
 					clash = false;
