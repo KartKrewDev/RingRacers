@@ -1197,7 +1197,7 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 		{
 			gravityadd *= 3;
 		}
-		else if (mo->player->fastfall != 0)
+		else if (mo->player->fastfall != 0 && mo->player->transfer == 0)
 		{
 			// Fast falling
 
@@ -1801,8 +1801,15 @@ boolean P_XYMovement(mobj_t *mo)
 						mo->momz = transfermomz;
 						if (mo->player)
 						{
-							mo->player->transfer = transfermomz;
-							S_StartSound(mo, sfx_s3k98);
+							if (abs(transfermomz) > 10*mo->scale)
+							{
+								mo->player->transfer = transfermomz;
+								S_StartSound(mo, sfx_s3k98);
+							}
+							else
+							{
+								mo->player->transfer = 0;
+							}
 						}
 
 						mo->standingslope = NULL;
@@ -8211,25 +8218,52 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				mobj->z + (mobj->target->height * P_MobjFlip(mobj)));
 		break;
 	case MT_GAINAX:
+	{
+		boolean vfx = !!(mobj->flags2 & MF2_BOSSNOTRAP);
+
 		if (!mobj->target || P_MobjWasRemoved(mobj->target) // sanity
-			|| !mobj->target->player // ditto
-			|| !mobj->target->player->glanceDir // still glancing?
-			|| mobj->target->player->aizdriftturn // only other circumstance where can glance
-			|| ((K_GetKartButtons(mobj->target->player) & BT_LOOKBACK) != BT_LOOKBACK)) // it's a lookback indicator...
+			|| !mobj->target->player) // ditto
 		{
 			P_RemoveMobj(mobj);
 			return false;
+		}
+
+		if (!vfx)
+		{
+			if (!mobj->target->player->glanceDir // still glancing?
+			|| mobj->target->player->aizdriftturn // only other circumstance where can glance
+			|| ((K_GetKartButtons(mobj->target->player) & BT_LOOKBACK) != BT_LOOKBACK)) // it's a lookback indicator...
+			{
+				P_RemoveMobj(mobj);
+				return false;
+			}
+		}
+
+		if (vfx)
+		{
+			if (P_IsObjectOnGround(mobj->target) || mobj->target->player->fastfall 
+				|| !K_CanSuperTransfer(mobj->target->player))
+			{
+				P_RemoveMobj(mobj);
+				return false;
+			}
 		}
 
 		mobj->angle = mobj->target->player->drawangle;
 		mobj->z = mobj->target->z;
 
 		K_MatchGenericExtraFlags(mobj, mobj->target);
+
 		mobj->renderflags = (mobj->renderflags & ~RF_DONTDRAW)|K_GetPlayerDontDrawFlag(mobj->target->player);
+		if (vfx)
+			mobj->renderflags ^= INT32_MAX;
 
 		P_MoveOrigin(mobj, mobj->target->x + FixedMul(34 * mapobjectscale, FINECOSINE((mobj->angle + mobj->movedir) >> ANGLETOFINESHIFT)),
 				mobj->target->y + FixedMul(34 * mapobjectscale, FINESINE((mobj->angle + mobj->movedir) >> ANGLETOFINESHIFT)),
 				mobj->z + (32 * mapobjectscale * P_MobjFlip(mobj)));
+
+		if (vfx)
+			break;
 
 		{
 			statenum_t gainaxstate = mobj->state-states;
@@ -8254,6 +8288,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 
 		break;
+	}
 	case MT_FLAMESHIELDPAPER:
 		if (!mobj->target || P_MobjWasRemoved(mobj->target))
 		{

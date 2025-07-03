@@ -7635,6 +7635,13 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 	}
 }
 
+boolean K_CanSuperTransfer(player_t *player)
+{
+	if (!player->transfer)
+		return false;
+	return (abs(player->mo->momz) < (2*abs(player->transfer)/4)) || (player->mo->momz > 0) != (player->transfer > 0);
+}
+
 static void K_ThrowLandMine(player_t *player)
 {
 	mobj_t *landMine;
@@ -9565,16 +9572,16 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	K_TryMoveBackupItem(player);
 
-	if (onground || player->transfer < 10*player->mo->scale)
+	if (onground && player->transfer)
 	{
+		player->fastfall = 0;
 		player->transfer = 0;
-		player->transfersound = false;
+		player->pflags2 &= ~PF2_SUPERTRANSFERVFX;
 	}
 
 	if (player->transfer)
 	{
-		boolean eligible = (abs(player->mo->momz) < (2*abs(player->transfer)/4)) || (player->mo->momz > 0) != (player->transfer > 0);
-		if ((player->cmd.buttons & BT_ACCELERATE) && eligible)
+		if (player->fastfall)
 		{
 			fixed_t fuckfactor = FRACUNIT;
 			fixed_t transfergravity = 10*FRACUNIT/100;
@@ -9586,11 +9593,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			if ((player->mo->momz > 0) == (transferclamp > 0))
 			{
 				fuckfactor = FRACUNIT/2;
-			}
-			else if (!player->transfersound)
-			{
-				S_StartSound(player->mo, sfx_ggfall);
-				player->transfersound = true;
 			}
 
 			fixed_t sx, sy;
@@ -9612,6 +9614,18 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		{
 			if (leveltime % 2)
 				K_SpawnFireworkTrail(player->mo);
+
+			if (K_CanSuperTransfer(player) && !(player->pflags2 & PF2_SUPERTRANSFERVFX))
+			{
+				if (P_IsDisplayPlayer(player))
+					S_StartSound(player->mo, sfx_gshdc);
+				mobj_t *gainax = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_GAINAX);
+				gainax->movedir = 0;
+				P_SetTarget(&gainax->target, player->mo);
+				P_SetMobjState(gainax, S_GAINAX_MID1);
+				gainax->flags2 |= MF2_BOSSNOTRAP;
+				player->pflags2 |= PF2_SUPERTRANSFERVFX;
+			}
 		}
 	}
 
@@ -12800,6 +12814,13 @@ boolean K_PlayerEBrake(const player_t *player)
 		return false;
 	}
 
+	// A little gross, but when fastfalling from a transfer, we are "transferring" for 1 tic of landing.
+	// Prevents a single tic of ebrake friction janking everything out.
+	if (player->transfer && player->mo && !P_MobjWasRemoved(player->mo) && P_IsObjectOnGround(player->mo))
+	{
+		return false;
+	}
+
 	if (player->fastfall != 0)
 	{
 		return true;
@@ -13205,18 +13226,33 @@ static void K_KartSpindash(player_t *player)
 
 		if (player->fastfall == 0)
 		{
+			// Starting fastfall...
+			// ...unless this is a macro input with a strict profile.
+			// Then this is probably an attempted brakedrift or e-brake.
 			if (player->pflags2 & PF2_STRICTFASTFALL)
 				if (!(player->cmd.buttons & BT_SPINDASH))
 					return;
 
 			// Factors 3D momentum.
 			player->fastfallBase = FixedHypot(player->speed, player->mo->momz);
+
+			if (K_CanSuperTransfer(player))
+			{
+				S_StartSound(player->mo, sfx_ggfall);
+			}
+			else
+			{
+				player->transfer = 0;
+			}
 		}
 
 		// Update fastfall.
 		player->fastfall = player->mo->momz;
+
 		player->spindash = 0;
-		P_ResetPitchRoll(player->mo);
+
+		if (!player->transfer)
+			P_ResetPitchRoll(player->mo);
 
 		return;
 	}
@@ -13315,6 +13351,7 @@ boolean K_FastFallBounce(player_t *player)
 	// Handle fastfall bounce.
 	if (player->fastfall != 0)
 	{
+		//CONS_Printf("ffb\n");
 		const fixed_t maxBounce = mapobjectscale * 10;
 		const fixed_t minBounce = mapobjectscale;
 		fixed_t bounce = 2 * abs(player->fastfall) / 3;
@@ -13439,7 +13476,7 @@ static void K_AirFailsafe(player_t *player)
 
 	// Accel inputs queue air-failsafe for when they're released,
 	// as long as they're not part of a fastfall attempt.
-	if ((buttons & (BT_ACCELERATE|BT_BRAKE)) == BT_ACCELERATE || K_GetForwardMove(player) != 0)
+	if ((buttons & (BT_ACCELERATE|BT_BRAKE)) == BT_ACCELERATE || K_GetForwardMove(player) != 0 || (player->fastfall && player->transfer))
 	{
 		player->pflags |= PF_AIRFAILSAFE;
 		return;
