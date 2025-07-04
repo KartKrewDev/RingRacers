@@ -4333,20 +4333,20 @@ static int lib_kGetItemRouletteDistance(lua_State *L)
 	return 1;
 }
 
-static int lib_kCreateAndShuffleItemReel(lua_State *L)
+static int lib_kFillItemRouletteData(lua_State *L)
 {
 	player_t *player = NULL;
 	itemroulette_t *itemRoulette = NULL;
 	
 	getItemRouletteOrPlayerBasedOnFirstParam(L, &player, &itemRoulette);
-	boolean freeplay = lua_optboolean(L, 2);
+	boolean ringbox = lua_optboolean(L, 2);
 	
 	NOHUD
 	INLEVEL
 	if (!player && !itemRoulette)
 		return LUA_ErrInvalid(L, "player_t/itemroulette_t");
 
-	K_CreateAndShuffleItemReel(player, itemRoulette, freeplay);
+	K_FillItemRouletteData(player, itemRoulette, ringbox, false);
 	return 0;
 }
 
@@ -4653,8 +4653,7 @@ static luaL_Reg lib[] = {
 	{"K_StopRoulette", lib_kStopRoulette},
 	{"K_KartGetItemResult", lib_kKartGetItemResult},
 	{"K_GetItemRouletteDistance", lib_kGetItemRouletteDistance},
-	{"K_FindUseodds", lib_kFindUseodds},
-	{"K_CreateAndShuffleItemReel", lib_kCreateAndShuffleItemReel},
+	{"K_FillItemRouletteData", lib_kFillItemRouletteData},
 
 	// hu_stuff technically?
 	{"HU_DoTitlecardCEcho", lib_startTitlecardCecho},
