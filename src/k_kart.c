@@ -12782,7 +12782,6 @@ static INT32 K_FlameShieldMax(player_t *player)
 	UINT32 distv = 1024; // Pre no-scams: 2048
 	distv = distv * 16 / FLAMESHIELD_MAX; // Old distv was based on a 16-segment bar
 	UINT32 scamradius = 1500*4; // How close is close enough that we shouldn't be allowed to scam 1st?
-	UINT8 i;
 
 	disttofinish = K_GetItemRouletteDistance(player, 8);
 
@@ -12912,7 +12911,8 @@ void K_KartEbrakeVisuals(player_t *p)
 	mobj_t *spdl;
 	fixed_t sx, sy;
 
-	if (K_PlayerEBrake(p) == true)
+	// Don't show the bubble visual if you're fast transfer falling
+	if (K_PlayerEBrake(p) == true && !p->transfer)
 	{
 		if (p->ebrakefor % 20 == 0)
 		{
