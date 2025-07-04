@@ -5395,7 +5395,7 @@ static void FuzzTiccmd(ticcmd_t* target)
 		target->forwardmove = P_RandomRange(PR_FUZZ, -MAXPLMOVE, MAXPLMOVE);
 		target->turning = P_RandomRange(PR_FUZZ, -KART_FULLTURN, KART_FULLTURN);
 		target->throwdir = P_RandomRange(PR_FUZZ, -KART_FULLTURN, KART_FULLTURN);
-		target->buttons = P_RandomRange(PR_FUZZ, 0, 255);
+		target->buttons = P_RandomRange(PR_FUZZ, 0, 65535);
 
 		// Make fuzzed players more likely to do impactful things
 		if (P_RandomRange(PR_FUZZ, 0, 500))
