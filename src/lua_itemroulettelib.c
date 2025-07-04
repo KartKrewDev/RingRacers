@@ -26,7 +26,6 @@ enum itemroulette {
 	itemroulette_valid = 0,
 	itemroulette_active,
 	itemroulette_itemlist,
-	itemroulette_useodds,
 	itemroulette_playing,
 	itemroulette_exiting,
 	itemroulette_dist,
@@ -48,7 +47,6 @@ static const char *const itemroulette_opt[] = {
 	"valid",
 	"active",
 	"itemlist",
-	"useodds",
 	"playing",
 	"exiting",
 	"dist",
@@ -86,9 +84,6 @@ static int itemroulette_get(lua_State *L)
 		break;
 	case itemroulette_itemlist:
 		LUA_PushUserdata(L, &itemroulette->itemList, META_ITEMROULETTE_ITEMLIST);	
-		break;
-	case itemroulette_useodds:
-		lua_pushinteger(L, itemroulette->useOdds);
 		break;
 	case itemroulette_playing:
 		lua_pushinteger(L, itemroulette->playing);
@@ -171,9 +166,6 @@ static int itemroulette_set(lua_State *L)
 		break;
 	case itemroulette_itemlist:
 		return NOSETITEMLIST;
-	case itemroulette_useodds:
-		itemroulette->useOdds = luaL_checkinteger(L, 3);
-		break;
 	case itemroulette_playing:
 		itemroulette->playing = luaL_checkinteger(L, 3);
 		break;

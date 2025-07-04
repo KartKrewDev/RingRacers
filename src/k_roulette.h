@@ -134,7 +134,7 @@ INT32 K_KartGetBattleOdds(const player_t *player, UINT8 pos, kartitems_t item);
 
 
 /*--------------------------------------------------
-	void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox, boolean dryrun);
+	void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, boolean ringbox, boolean dryrun);
 
 		Fills out the item roulette struct when it is
 		initially created. This function needs to be
@@ -152,7 +152,7 @@ INT32 K_KartGetBattleOdds(const player_t *player, UINT8 pos, kartitems_t item);
 		N/A
 --------------------------------------------------*/
 
-void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox, boolean dryrun);
+void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, boolean ringbox, boolean dryrun);
 
 
 /*--------------------------------------------------
