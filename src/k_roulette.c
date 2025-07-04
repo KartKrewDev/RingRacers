@@ -1201,20 +1201,6 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 		K_CalculateRouletteSpeed(roulette);
 	}
 	
-	// The roulette should be init'd first, and the speed should be
-	// set if applicable before you can override anything.
-	{
-		if (LUA_HookPreFillItemRoulette(player, roulette, ringbox))
-		{
-			// If somehow there's no items, add sad.
-			if (roulette->itemList.len == 0) {
-				K_AddItemToReel(player, roulette, KITEM_SAD);
-			}
-			return;
-		}
-			
-	}
-	
 	if (ringbox == true)
 	{
 		// If this is being invoked by a Ring Box, it should literally never produce items.
