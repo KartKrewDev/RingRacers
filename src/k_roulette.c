@@ -2042,7 +2042,7 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 			else
 				S_StartSound(NULL, sfx_itrol1 + roulette->sound);
 			
-			if (roulette->index == 0 && roulette->itemListLen > 1)
+			if (roulette->index == 0 && roulette->itemList.len > 1)
 			{
 				S_StartSound(NULL, sfx_kc50);
 				S_StartSound(NULL, sfx_kc50);
