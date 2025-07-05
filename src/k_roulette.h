@@ -180,6 +180,24 @@ void K_CalculateRouletteSpeed(itemroulette_t *const roulette);
 
 INT32 K_KartGetBattleOdds(const player_t *player, UINT8 pos, kartitems_t item);
 
+/*--------------------------------------------------
+	void K_FillItemRoulette(player_t *player, itemroulette_t *const roulette, boolean ringbox);
+
+		Entry point for roulette builder.
+		Includes Lua hooks.
+
+	Input Arguments:-
+		player - The player this roulette data is for.
+			Can be NULL for generic use.
+		roulette - The roulette data struct to fill out.
+		ringbox - Is this roulette fill triggered by a just-respawned Ring Box?
+
+	Return:-
+		N/A
+--------------------------------------------------*/
+
+void K_FillItemRoulette(player_t *player, itemroulette_t *const roulette, boolean ringbox);
+
 
 /*--------------------------------------------------
 	void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, boolean ringbox, boolean dryrun);

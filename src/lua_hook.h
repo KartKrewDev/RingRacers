@@ -79,7 +79,8 @@ automatically.
 	X (GameQuit),\
 	X (PlayerCmd),/* building the player's ticcmd struct */\
 	X (VoteThinker),/* Y_VoteTicker */\
-	X (FillItemRoulette),/* K_FillItemRouletteData, right at the end */\
+	X (PreFillItemRoulette),/* K_FillItemRouletteData, before attempted reel build */\
+	X (FillItemRoulette),/* K_FillItemRouletteData, after built reel is in place */\
 
 #define STRING_HOOK_LIST(X) \
 	X (SpecialExecute),\
@@ -147,6 +148,7 @@ void LUA_HookPlayerQuit(player_t *, kickreason_t);
 //int  LUA_HookTeamSwitch(player_t *, int newteam, boolean fromspectators, boolean tryingautobalance, boolean tryingscramble);
 int  LUA_HookViewpointSwitch(player_t *player, player_t *newdisplayplayer, boolean forced);
 int  LUA_HookSeenPlayer(player_t *player, player_t *seenfriend);
+int  LUA_HookPreFillItemRoulette(player_t *player, itemroulette_t *const roulette);
 int  LUA_HookFillItemRoulette(player_t *player, itemroulette_t *const roulette);
 
 #ifdef __cplusplus

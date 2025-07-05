@@ -4167,17 +4167,21 @@ static void getItemRouletteOrPlayerBasedOnFirstParam(lua_State *L, player_t **pl
 	{
 		if (lua_getmetatable(L, 1))
 		{
+			CONS_Printf("case A\n");
 			lua_getfield(L, LUA_REGISTRYINDEX, META_ITEMROULETTE);
 			if (lua_rawequal(L, -1, -2))
 			{
+				CONS_Printf("case A2\n");
 				*itemRoulette = *(itemroulette_t **)p;
 			}
 			else 
 			{
+				CONS_Printf("case B\n");
 				lua_pop(L, 1);
 				lua_getfield(L, LUA_REGISTRYINDEX, META_PLAYER);
 				if (lua_rawequal(L, -1, -2))
 				{
+					CONS_Printf("case B2\n");
 					*player = *(player_t **)p;
 					*itemRoulette = &(*player)->itemRoulette;
 				}
