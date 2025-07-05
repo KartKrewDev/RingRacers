@@ -4151,57 +4151,16 @@ static int lib_kGetBotItemPriority(lua_State *L)
 	return 1;
 }
 
-static void getItemRouletteOrPlayerBasedOnFirstParam(lua_State *L, player_t **player, itemroulette_t **itemRoulette)
-{
-	/*
-	JugadorXEI @ 11/01/2024 (MM/DD/AAAA):
-	Ok, so.
-	I implemented luaL_testudata from Lua 5.2 because I wanted to test if an argument
-	was one userdata type or the other, and it worked. ...And then it didn't work, for some reason.
-	I was debugging this for 4 hours and couldn't figure it out.
-	So, raw-ass Lua funcs, here we go. THIS works.
-	Working with pointers gives me a headache.
-	*/
-	void *p = lua_touserdata(L, 1);
-	if (p != NULL)
-	{
-		if (lua_getmetatable(L, 1))
-		{
-			CONS_Printf("case A\n");
-			lua_getfield(L, LUA_REGISTRYINDEX, META_ITEMROULETTE);
-			if (lua_rawequal(L, -1, -2))
-			{
-				CONS_Printf("case A2\n");
-				*itemRoulette = *(itemroulette_t **)p;
-			}
-			else 
-			{
-				CONS_Printf("case B\n");
-				lua_pop(L, 1);
-				lua_getfield(L, LUA_REGISTRYINDEX, META_PLAYER);
-				if (lua_rawequal(L, -1, -2))
-				{
-					CONS_Printf("case B2\n");
-					*player = *(player_t **)p;
-					*itemRoulette = &(*player)->itemRoulette;
-				}
-				lua_pop(L, 2);
-			}
-		}
-    }
-}
-
 static int lib_kAddItemToReel(lua_State *L)
 {
-	player_t *player = NULL;
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	itemroulette_t *itemRoulette = NULL;
-	
-	getItemRouletteOrPlayerBasedOnFirstParam(L, &player, &itemRoulette);
 	
 	NOHUD
 	INLEVEL
-	if (!player && !itemRoulette)
-		return LUA_ErrInvalid(L, "player_t/itemroulette_t");
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	itemRoulette = &player->itemRoulette;
 	
 	if (lua_isnumber(L, 2))
 	{
@@ -4236,15 +4195,13 @@ static int lib_kAddItemToReel(lua_State *L)
 
 static int lib_kPushToRouletteItemList(lua_State *L)
 {
-	player_t *player = NULL;
-	itemroulette_t *itemRoulette = NULL;
-	
-	getItemRouletteOrPlayerBasedOnFirstParam(L, &player, &itemRoulette);
-	
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	itemroulette_t *itemRoulette = NULL;	
 	NOHUD
 	INLEVEL
-	if (!player && !itemRoulette)
-		return LUA_ErrInvalid(L, "player_t/itemroulette_t");
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	itemRoulette = &player->itemRoulette;
 	
 	if (lua_isnumber(L, 2))
 	{
@@ -4346,16 +4303,16 @@ static int lib_kGetItemRouletteDistance(lua_State *L)
 
 static int lib_kFillItemRouletteData(lua_State *L)
 {
-	player_t *player = NULL;
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	itemroulette_t *itemRoulette = NULL;
 	
-	getItemRouletteOrPlayerBasedOnFirstParam(L, &player, &itemRoulette);
 	boolean ringbox = lua_optboolean(L, 2);
 	
 	NOHUD
 	INLEVEL
-	if (!player && !itemRoulette)
-		return LUA_ErrInvalid(L, "player_t/itemroulette_t");
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	itemRoulette = &player->itemRoulette;
 
 	K_FillItemRouletteData(player, itemRoulette, ringbox, false);
 	return 0;
@@ -4439,15 +4396,14 @@ static int lib_kItemOddsScale(lua_State *L)
 
 static int lib_kWipeItemsInReel(lua_State *L)
 {
-	player_t *player = NULL;
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	itemroulette_t *itemRoulette = NULL;
-	
-	getItemRouletteOrPlayerBasedOnFirstParam(L, &player, &itemRoulette);
-	
+
 	NOHUD
 	INLEVEL
-	if (!player && !itemRoulette)
-		return LUA_ErrInvalid(L, "player_t/itemroulette_t");
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	itemRoulette = &player->itemRoulette;
 	
 	itemRoulette->itemList.len = 0;
 	return 0;
@@ -4455,17 +4411,17 @@ static int lib_kWipeItemsInReel(lua_State *L)
 
 static int lib_kSetItemInReelByIndex(lua_State *L)
 {
-	player_t *player = NULL;
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	itemroulette_t *itemRoulette = NULL;
 	
-	getItemRouletteOrPlayerBasedOnFirstParam(L, &player, &itemRoulette);
 	size_t index = luaL_checkinteger(L, 2) - 1;
 	kartitems_t item = luaL_checkinteger(L, 3);
 	
 	NOHUD
 	INLEVEL
-	if (!player && !itemRoulette)
-		return LUA_ErrInvalid(L, "player_t/itemroulette_t");
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	itemRoulette = &player->itemRoulette;
 	
 	if (itemRoulette->itemList.len == 0)
 		return luaL_error(L, "There are no items in the roulette to set.");
@@ -4487,18 +4443,18 @@ static void AddOrPushToItemReel(player_t *player, itemroulette_t *roulette, kart
 
 static int lib_kAddItemToReelByIndex(lua_State *L)
 {
-	player_t *player = NULL;
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	itemroulette_t *itemRoulette = NULL;
 	
-	getItemRouletteOrPlayerBasedOnFirstParam(L, &player, &itemRoulette);
 	size_t index = luaL_checkinteger(L, 2) - 1;
 	kartitems_t item = luaL_checkinteger(L, 3);
 	boolean addRings = lua_optboolean(L, 4);
 	
 	NOHUD
 	INLEVEL
-	if (!player && !itemRoulette)
-		return LUA_ErrInvalid(L, "player_t/itemroulette_t");
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	itemRoulette = &player->itemRoulette;
 	
 	// If the list is empty, just add the item silently and leave.
 	if (itemRoulette->itemList.len == 0) {
@@ -4539,16 +4495,16 @@ static int lib_kAddItemToReelByIndex(lua_State *L)
 
 static int lib_kRemoveItemFromReelByIndex(lua_State *L)
 {
-	player_t *player = NULL;
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	itemroulette_t *itemRoulette = NULL;
 	
-	getItemRouletteOrPlayerBasedOnFirstParam(L, &player, &itemRoulette);
 	size_t index = luaL_checkinteger(L, 2) - 1;
 	
 	NOHUD
 	INLEVEL
-	if (!player && !itemRoulette)
-		return LUA_ErrInvalid(L, "player_t/itemroulette_t");
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	itemRoulette = &player->itemRoulette;
 	
 	if (itemRoulette->itemList.len == 0)
 		return luaL_error(L, "There are no items in the roulette to delete.");
