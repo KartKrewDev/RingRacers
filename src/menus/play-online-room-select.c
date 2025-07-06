@@ -71,12 +71,13 @@ void M_MPRoomSelectInit(INT32 choice)
 	if (modifiedgame)
 	{
 		M_StartMessage("Server Browser & Add-Ons", M_GetText("You have add-ons loaded.\nYou won't be able to join netgames!\n\nTo play online, restart the game\nand don't load any addons.\n\n\"Dr. Robotnik's Ring Racers\" will\nautomatically add everything\nyou need when you join.\n"), NULL, MM_NOTHING, NULL, NULL);
-		return;
 	}
 
 	// The following behaviour is affected by modifiedgame despite the above restriction.
 	// It's a sanity check were that to be removed, wheither by us or by a modified client.
 	// "wheither"? That typo rules, I'm keeping that ~toast 280823
+
+	// thanks toaster - Tyron 2025-07-02
 
 	mpmenu.room = (modifiedgame == true) ? 1 : 0;
 	mpmenu.ticker = 0;
