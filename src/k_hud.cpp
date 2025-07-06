@@ -3328,6 +3328,9 @@ static void K_drawKartDuelScores(void)
 
 	player_t *foe = K_DuelOpponent(stplyr);
 
+	if (stplyr == foe)
+		return;
+
 	boolean use4p = (r_splitscreen) ? 1 : 0;
 
 	UINT8 vn = R_GetViewNumber();
@@ -3364,9 +3367,19 @@ static void K_drawKartDuelScores(void)
 
 		flags = V_SNAPTOTOP|V_HUDTRANS|V_SLIDEIN;
 
-		if (vn > 0 && r_splitscreen == 1)
+		if (r_splitscreen == 1)
 		{
-			basey += BASEVIDHEIGHT/2;
+			basex = BASEVIDWIDTH - 80;
+			if (vn == 0)
+			{
+				basey = 0;
+			}
+			else
+			{
+				basey = BASEVIDHEIGHT - 40;
+				flags &= ~V_SNAPTOTOP;
+				flags |= V_SNAPTOBOTTOM;
+			}
 		}
 
 		barx = 40;
@@ -3480,8 +3493,8 @@ static void K_drawKartDuelScores(void)
 	for (UINT8 draw = 0; draw < 2; draw++)
 	{
 		UINT8 drawme = draw ? (stplyr - players) : (foe - players);
-		UINT8 drawx = basex + (draw ? youx : foex);
-		UINT8 drawy = basey + (draw ? youy : foey);
+		UINT16 drawx = basex + (draw ? youx : foex);
+		UINT16 drawy = basey + (draw ? youy : foey);
 	
 		if (!playeringame[drawme] || players[drawme].spectator)
 			continue;
