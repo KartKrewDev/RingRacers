@@ -12782,6 +12782,7 @@ static INT32 K_FlameShieldMax(player_t *player)
 	UINT32 distv = 1024; // Pre no-scams: 2048
 	distv = distv * 16 / FLAMESHIELD_MAX; // Old distv was based on a 16-segment bar
 	UINT32 scamradius = 1500*4; // How close is close enough that we shouldn't be allowed to scam 1st?
+	// UINT8 i;
 
 	disttofinish = K_GetItemRouletteDistance(player, 8);
 
@@ -14007,23 +14008,35 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			player->instaWhipCharge = 0;
 	}
 	
-
-	if ((player->cmd.buttons & BT_BAIL) && (player->cmd.buttons & BT_RESPAWNMASK) != BT_RESPAWNMASK && ((player->itemtype && player->itemamount) || (player->rings > 0) || player->superring > 0 || player->pickuprings > 0 || player->itemRoulette.active))
+	if (player->cmd.buttons & BT_BAIL && (player->cmd.buttons & BT_RESPAWNMASK) != BT_RESPAWNMASK)
 	{
-		boolean grounded = P_IsObjectOnGround(player->mo);
-		onground && player->tumbleBounces == 0 ?  player->bailcharge += 2 : player->bailcharge++; // charge twice as fast on the ground
-		if ((P_PlayerInPain(player) && player->bailcharge == 1) || (grounded && P_PlayerInPain(player) && player->bailcharge == 2)) // this is brittle ..
+		if (leveltime < introtime || (gametyperules & GTR_SPHERES))
 		{
-			mobj_t *bail = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, MT_BAILCHARGE);
-			S_StartSound(bail, sfx_gshb9); // I tried to use info.c, but you can't play sounds on mobjspawn via A_PlaySound
-			S_StartSound(bail, sfx_kc4e);
-			P_SetTarget(&bail->target, player->mo);
-			bail->renderflags |= RF_FULLBRIGHT; // set fullbright here, were gonna animate frames in the thinker and it saves us from setting FF_FULLBRIGHT every frame
+			// No bailing in GTR_SPHERES because I cannot be fucked to do manual Last Chance right now.
+			// Maybe someday!
+			if (!(player->oldcmd.buttons & BT_BAIL))
+				if (P_IsDisplayPlayer(player))
+					S_StartSound(player->mo, sfx_s3k7b);
+			player->bailcharge = 0;
 		}
-	}
-	else
-	{
-		player->bailcharge = 0;
+		else if ((player->itemtype && player->itemamount) || player->rings > 0 || player->superring > 0 || player->pickuprings > 0 || player->itemRoulette.active)
+		{
+			// Set up bail charge, provided we have something to bail with (any rings or item resource).
+			boolean grounded = P_IsObjectOnGround(player->mo);
+			onground && player->tumbleBounces == 0 ?  player->bailcharge += 2 : player->bailcharge++; // charge twice as fast on the ground
+			if ((P_PlayerInPain(player) && player->bailcharge == 1) || (grounded && P_PlayerInPain(player) && player->bailcharge == 2)) // this is brittle ..
+			{
+				mobj_t *bail = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, MT_BAILCHARGE);
+				S_StartSound(bail, sfx_gshb9); // I tried to use info.c, but you can't play sounds on mobjspawn via A_PlaySound
+				S_StartSound(bail, sfx_kc4e);
+				P_SetTarget(&bail->target, player->mo);
+				bail->renderflags |= RF_FULLBRIGHT; // set fullbright here, were gonna animate frames in the thinker and it saves us from setting FF_FULLBRIGHT every frame
+			}
+		}
+		else
+		{
+			player->bailcharge = 0;
+		}
 	}
 
 	if ((!P_PlayerInPain(player) && player->bailcharge >= 5) || player->bailcharge >= BAIL_MAXCHARGE)
