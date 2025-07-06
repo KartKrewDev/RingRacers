@@ -239,8 +239,11 @@ static patch_t *kp_team_you;
 static patch_t *kp_duel_foe;
 static patch_t *kp_duel_you;
 static patch_t *kp_duel_sticker;
+static patch_t *kp_duel_4sticker;
 static patch_t *kp_duel_under;
+static patch_t *kp_duel_4under;
 static patch_t *kp_duel_over;
+static patch_t *kp_duel_4over;
 static patch_t *kp_duel_margin[24];
 
 patch_t *kp_autoroulette;
@@ -1083,8 +1086,11 @@ void K_LoadKartHUDGraphics(void)
 
 	HU_UpdatePatch(&kp_duel_foe, "DUEL_FOE");
 	HU_UpdatePatch(&kp_duel_sticker, "DUEL_S");
+	HU_UpdatePatch(&kp_duel_4sticker, "DUEL4_S");
 	HU_UpdatePatch(&kp_duel_under, "DUEL_B");
+	HU_UpdatePatch(&kp_duel_4under, "DUEL4_B");
 	HU_UpdatePatch(&kp_duel_over, "DUEL_B2");
+	HU_UpdatePatch(&kp_duel_4over, "DUEL4_B2");
 	HU_UpdatePatch(&kp_duel_you, "DUEL_YOU");
 
 	sprintf(buffer, "DUELMBxx");
@@ -3306,10 +3312,12 @@ INT32 K_GetTransFlagFromFixed(fixed_t value)
     }
 }
 
-static tic_t duel_lastleveltime = 0;
-static INT32 duel_marginanim = 0;
-static INT32 duel_lastmargin = 0;
-static INT32 youheight = 0;
+// Cannot allocate these arrays with MAXSPLITSCREENPLAYERS directly.
+// Are you trying 8P Virtua Racing splitscreen? Change me!
+static tic_t duel_lastleveltime[4];
+static INT32 duel_marginanim[4];
+static INT32 duel_lastmargin[4];
+static INT32 youheight[4];
 
 static void K_drawKartDuelScores(void)
 {
@@ -3319,6 +3327,10 @@ static void K_drawKartDuelScores(void)
 	using srb2::Draw;
 
 	player_t *foe = K_DuelOpponent(stplyr);
+
+	boolean use4p = (r_splitscreen) ? 1 : 0;
+
+	UINT8 vn = R_GetViewNumber();
 
 	INT32 basex = 0;
 	INT32 basey = 48;
@@ -3342,13 +3354,51 @@ static void K_drawKartDuelScores(void)
 	INT32 youscorex = 16;
 	INT32 youscorey = 69;
 
-	Draw::Font scorefont = Draw::Font::kThinTimer;
+	INT32 margx = 0;
+	INT32 margy = 0;
+
+	if (use4p)
+	{
+		basex = BASEVIDWIDTH/2 - 40;
+		basey = 0;
+
+		flags = V_SNAPTOTOP|V_HUDTRANS|V_SLIDEIN;
+
+		if (vn > 0 && r_splitscreen == 1)
+		{
+			basey += BASEVIDHEIGHT/2;
+		}
+
+		barx = 40;
+		bary = 7;
+		barheight = 35; // MOTHERFUCK FLIPPED IN 4P
+		barwidth = 4; // DITTO
+
+		foex = 6;
+		foey = 12;
+		youx = 63;
+		youy = 12;
+
+		foescorex = foex + 6;
+		foescorey = foey + 12;
+		youscorex = youx + 6;
+		youscorey = youy + 12;
+
+		margx = 15;
+		margy = -40;
+	}
+
+	Draw::Font scorefont = use4p ? Draw::Font::kZVote : Draw::Font::kThinTimer;
+	Draw::Align scorealign = use4p ? Draw::Align::kCenter : Draw::Align::kLeft;
 
 	UINT8 ri = 6;
 	INT32 youfill = skincolors[stplyr->skincolor].ramp[ri];
 	INT32 foefill = skincolors[foe->skincolor].ramp[ri];
 
-	V_DrawScaledPatch(basex, basey, flags, kp_duel_sticker);
+	if (use4p)
+		V_DrawScaledPatch(basex, basey, flags, kp_duel_4sticker);
+	else
+		V_DrawScaledPatch(basex, basey, flags, kp_duel_sticker);
 
 	INT32 scoredelta = stplyr->duelscore - foe->duelscore;
 	INT32 clutchscore = DUELWINNINGSCORE - 1; // we want the bar to be full when NEXT checkpoint wins...
@@ -3371,27 +3421,43 @@ static void K_drawKartDuelScores(void)
 		targetyouheight = 2*barheight - savemargin;
 	}
 
-	if (leveltime != duel_lastleveltime)
+	if (leveltime != duel_lastleveltime[vn])
 	{
-		INT32 slide = std::max(1, abs(targetyouheight - youheight)/3);
-		if (targetyouheight > youheight)
-			youheight += slide;
-		else if (targetyouheight < youheight)
-			youheight -= slide;
+		INT32 slide = std::max(1, abs(targetyouheight - youheight[vn])/3);
+		if (targetyouheight > youheight[vn])
+			youheight[vn] += slide;
+		else if (targetyouheight < youheight[vn])
+			youheight[vn] -= slide;
 	}
 
-	INT32 foeheight = 2*barheight-youheight; // barheight is a single tied bar, so total height of the full gauge is 2x barheight
+	INT32 foeheight = 2*barheight-youheight[vn]; // barheight is a single tied bar, so total height of the full gauge is 2x barheight
 
-	V_DrawFill(basex+barx, basey+bary-barheight, barwidth, foeheight, foefill|flags);
-	V_DrawFill(basex+barx, basey+bary-barheight+foeheight, barwidth, youheight, youfill|flags);
+	if (use4p)
+	{
+		V_DrawFill(basex+barx-barheight, basey+bary, foeheight, barwidth, foefill|flags);
+		V_DrawFill(basex+barx-barheight+foeheight, basey+bary, youheight[vn], barwidth, youfill|flags);
+	}
+	else
+	{
+		V_DrawFill(basex+barx, basey+bary-barheight, barwidth, foeheight, foefill|flags);
+		V_DrawFill(basex+barx, basey+bary-barheight+foeheight, barwidth, youheight[vn], youfill|flags);
+	}
 
-	V_DrawScaledPatch(basex, basey, flags, kp_duel_under);
-	V_DrawScaledPatch(basex, basey-barheight+foeheight, flags, kp_duel_over);
-	V_DrawScaledPatch(basex, basey, flags, kp_duel_foe);
-	V_DrawScaledPatch(basex, basey, flags, kp_duel_you);
+	V_DrawScaledPatch(basex, basey, flags, use4p ? kp_duel_4under : kp_duel_under);
 
-	Draw foenum = Draw(basex+foescorex, basey+foescorey).flags(flags).font(scorefont).align(Draw::Align::kLeft);
-	Draw younum = Draw(basex+youscorex, basey+youscorey).flags(flags).font(scorefont).align(Draw::Align::kLeft);
+	if (use4p)
+		V_DrawScaledPatch(basex-barheight+foeheight, basey, flags, kp_duel_4over);
+	else
+		V_DrawScaledPatch(basex, basey-barheight+foeheight, flags, kp_duel_over);
+	
+	if (!use4p)
+	{
+		V_DrawScaledPatch(basex, basey, flags, kp_duel_foe);
+		V_DrawScaledPatch(basex, basey, flags, kp_duel_you);
+	}
+
+	Draw foenum = Draw(basex+foescorex, basey+foescorey).flags(flags).font(scorefont).align(scorealign);
+	Draw younum = Draw(basex+youscorex, basey+youscorey).flags(flags).font(scorefont).align(scorealign);
 
 	if (abs(scoredelta) == clutchscore && ((leveltime % 2) || cv_reducevfx.value))
 	{
@@ -3450,7 +3516,7 @@ static void K_drawKartDuelScores(void)
 		else
 			colormap = R_GetTranslationColormap(workingskin, static_cast<skincolornum_t>(players[drawme].mo->color), GTC_CACHE);
 
-		V_DrawMappedPatch(drawx+xoff, drawy+yoff, flags|flipflag, faceprefix[workingskin][FACE_RANK], colormap);
+		V_DrawMappedPatch(drawx+xoff, drawy+yoff, flags|flipflag, faceprefix[workingskin][use4p ? FACE_MINIMAP : FACE_RANK], colormap);
 	}
 
 	// Dogshit. Should have just figured out how to do log base 5 in C++.
@@ -3464,19 +3530,19 @@ static void K_drawKartDuelScores(void)
 
 	INT32 rawmargin = overtimecheckpoints; // The actual Margin Boost value.
 	INT32 boostspersymbol = 3; // How many boosts should it take to see a new symbol?
-	// rawmargin = (leveltime/10)%(3*boostspersymbol);
+	rawmargin = (leveltime/10)%(3*boostspersymbol);
 
-	if (duel_lastleveltime != leveltime) // Trigger the "slide" animation when rawmargin changes.
+	if (duel_lastleveltime[vn] != leveltime) // Trigger the "slide" animation when rawmargin changes.
 	{
-		duel_marginanim = std::min(duel_marginanim + 1, 100); // not magic just arbitrary
-		if (duel_lastmargin != rawmargin)
+		duel_marginanim[vn] = std::min(duel_marginanim[vn] + 1, 100); // not magic just arbitrary
+		if (duel_lastmargin[vn] != rawmargin)
 		{
-			duel_marginanim = 0;
-			duel_lastmargin = rawmargin;
+			duel_marginanim[vn] = 0;
+			duel_lastmargin[vn] = rawmargin;
 		}
 	}
 
-	duel_lastleveltime = leveltime;
+	duel_lastleveltime[vn] = leveltime;
 
 	// CONS_Printf("=== RAWMARGIN %d\n", rawmargin);
 
@@ -3576,13 +3642,13 @@ static void K_drawKartDuelScores(void)
 		}
 	}
 
-	INT32 marginspacing = std::min(6, duel_marginanim);
+	INT32 marginspacing = std::min(6, duel_marginanim[vn]);
 	INT32 marginx = ((nummargindigits-1) * marginspacing)/2;
 
 	for (INT32 i = nummargindigits - 1; i >= 0; i--)
 	{
 		// CONS_Printf("draw %d - %d\n", i, margindigits[i]);
-		V_DrawScaledPatch(basex + marginx, basey, flags, kp_duel_margin[margindigits[i]]);
+		V_DrawScaledPatch(basex + margx + marginx, basey + margy, flags, kp_duel_margin[margindigits[i]]);
 		marginx -= marginspacing;
 	}
 }
@@ -7749,8 +7815,9 @@ void K_drawKartHUD(void)
 				if (R_GetViewNumber() == 0)
 				{
 					K_drawKartTeamScores(false, 0);
-					K_drawKartDuelScores();
 				}
+
+				K_drawKartDuelScores();
 			}
 
 			// This sucks, but we need to draw rings before EXP because 4P amps
