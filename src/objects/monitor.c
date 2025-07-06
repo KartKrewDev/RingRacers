@@ -325,10 +325,10 @@ kill_monitor_part (mobj_t *part)
 static inline UINT32
 restore_item_rng (UINT32 seed)
 {
-	const UINT32 oldseed = P_GetRandSeed(PR_ITEM_ROULETTE);
+	const UINT32 oldseed = P_GetRandSeed(PR_ITEM_SPAWNER);
 
-	P_SetRandSeedNet(PR_ITEM_ROULETTE,
-			P_GetInitSeed(PR_ITEM_ROULETTE), seed);
+	P_SetRandSeedNet(PR_ITEM_SPAWNER,
+			P_GetInitSeed(PR_ITEM_SPAWNER), seed);
 
 	return oldseed;
 }
@@ -478,7 +478,7 @@ Obj_MonitorSpawnParts (mobj_t *monitor)
 	P_SetScale(monitor, (monitor->destscale *= 2));
 
 	monitor_itemcount(monitor) = 0;
-	monitor_rngseed(monitor) = P_GetRandSeed(PR_ITEM_ROULETTE);
+	monitor_rngseed(monitor) = P_GetRandSeed(PR_ITEM_SPAWNER);
 	monitor_spawntic(monitor) = leveltime;
 	monitor_emerald(monitor) = 0;
 
