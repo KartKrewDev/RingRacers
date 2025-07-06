@@ -3264,7 +3264,7 @@ state_t states[NUMSTATES] =
 	{SPR_WAYP, 1|FF_FLOORSPRITE, 1, {NULL}, 0, 0, S_NULL}, // S_WAYPOINTSPLAT
 	{SPR_EGOO, 0, 1, {NULL}, 0, 0, S_NULL}, // S_EGOORB
 
-	{SPR_AMPA, FF_FULLBRIGHT|FF_ANIMATE, -1, {NULL}, 41, 1, S_NULL}, // S_AMPS
+	{SPR_AMPA, FF_FULLBRIGHT|FF_ANIMATE|FF_RANDOMANIM, -1, {NULL}, 41, 1, S_NULL}, // S_AMPS
 	{SPR_EXPC, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_EXP
 
 	// Water Trail
@@ -22605,7 +22605,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,            // mass
 		0,            // damage
 		sfx_None,     // activesound
-		MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_NOCLIP|MF_NOCLIPTHING|FF_RANDOMANIM, // flags
+		MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_NOCLIP|MF_NOCLIPTHING, // flags
 		S_NULL        // raisestate
 	},
 	{           // MT_EXP
