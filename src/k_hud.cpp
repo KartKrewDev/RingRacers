@@ -3312,6 +3312,25 @@ INT32 K_GetTransFlagFromFixed(fixed_t value)
     }
 }
 
+// We want to draw teams and duel HUD in a player context,
+// but also precisely control how often it's drawn, even if
+// some players have no view.
+static UINT8 K_FirstActiveDisplayPlayer(player_t *player)
+{
+	UINT8 i;
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		player_t *pl = &players[displayplayers[i]];
+		if (!pl->spectator && !camera[i].freecam)
+			break;
+	}
+
+	if (player == &players[displayplayers[i]])
+		return true;
+
+	return false;
+}
+
 // Cannot allocate these arrays with MAXSPLITSCREENPLAYERS directly.
 // Are you trying 8P Virtua Racing splitscreen? Change me!
 static tic_t duel_lastleveltime[4];
@@ -3322,6 +3341,9 @@ static INT32 youheight[4];
 static void K_drawKartDuelScores(void)
 {
 	if (!K_InRaceDuel())
+		return;
+
+	if (!K_FirstActiveDisplayPlayer(stplyr))
 		return;
 
 	using srb2::Draw;
@@ -3360,6 +3382,9 @@ static void K_drawKartDuelScores(void)
 	INT32 margx = 0;
 	INT32 margy = 0;
 
+	boolean redraw = false; // Draw a duplicate?
+	boolean redrawn = false;
+
 	if (use4p)
 	{
 		basex = BASEVIDWIDTH/2 - 40;
@@ -3367,19 +3392,12 @@ static void K_drawKartDuelScores(void)
 
 		flags = V_SNAPTOTOP|V_HUDTRANS|V_SLIDEIN;
 
+		redraw = true;
+
 		if (r_splitscreen == 1)
 		{
 			basex = BASEVIDWIDTH - 80;
-			if (vn == 0)
-			{
-				basey = 0;
-			}
-			else
-			{
-				basey = BASEVIDHEIGHT - 40;
-				flags &= ~V_SNAPTOTOP;
-				flags |= V_SNAPTOBOTTOM;
-			}
+			basey = 0;
 		}
 
 		barx = 40;
@@ -3400,6 +3418,8 @@ static void K_drawKartDuelScores(void)
 		margx = 15;
 		margy = -40;
 	}
+
+	redraw:
 
 	Draw::Font scorefont = use4p ? Draw::Font::kZVote : Draw::Font::kThinTimer;
 	Draw::Align scorealign = use4p ? Draw::Align::kCenter : Draw::Align::kLeft;
@@ -3559,110 +3579,119 @@ static void K_drawKartDuelScores(void)
 
 	// CONS_Printf("=== RAWMARGIN %d\n", rawmargin);
 
-	if (rawmargin == 0)
-		return;
-
-	rawmargin--; // Start at 0, idiot
-
-	// We're invoking the RNG to get a slightly chaotic symbol distribution,
-	// but we're a HUD hook, so we need to keep the results of the call consistent.
-	P_SetRandSeed(PR_NUISANCE, 69 + rawmargin);
-
-	INT32 highsymbol = rawmargin/boostspersymbol + 1; // Highest symbol that should appear.
-	INT32 symbolsperupgrade = 5; // What is each symbol worth relative to each other? Like, 5 Stars = 1 Moon, etc.
-
-	// Okay, so we would LOVE to do this in a way that isn't a big clusterfuck, like just
-	// doing rawmargin^3 and then subtracting powers of 5 out of that. Unfortunately, UINT64
-	// is too small for the values that feel intuitively right here, so we have to do some of
-	// the math on a limited set of symbols, then shift up. This is the concept of "symbol
-	// headroom" that's in use here.
-	//
-	// (Note that Puyo~n uses a super inconsistent symbol table, probably to avoid this problem,
-	// but we're assholes and want things to feel logically consistent I guess?
-	// I dunno. I sort of feel like I should have just directly used the Puyo~n garbage table and
-	// avoided most of this, LOL)
-
-	INT32 symbolheadroom = 5; // Maximum # symbols we can "step down".
-	INT32 frac = rawmargin % boostspersymbol; // Used in intermediate calculations.
-	INT32 minsymbol = std::max(1, highsymbol - symbolheadroom); // The lowest symbol that should appear.
-	INT32 symbolheadroominuse = highsymbol - minsymbol; // The # of symbols we are stepping down.
-	INT32 minscore = std::pow(symbolsperupgrade, symbolheadroominuse+1);
-	INT32 maxscore = std::pow(symbolsperupgrade, symbolheadroominuse+2) - 1;
-
-	// CONS_Printf("min %d max %d\n", minscore, maxscore);
-
-	// We show the player successive combos with the same leading symbol, but we
-	// waht them to feel intuitively like they're increasing each time.
-	// Maxscore and minscore have been mapped to the correct power-of-N, so any
-	// point we pick between them will lead with the correct symbol once we adjust
-	// for symbol headroom. Pick a point that's appropriate for how "far" into the
-	// current symbol we are.
-	fixed_t lobound = FRACUNIT * frac / boostspersymbol;
-	fixed_t hibound = FRACUNIT * (frac+1) / boostspersymbol;
-	fixed_t roll = P_RandomRange(PR_NUISANCE, lobound, hibound);
-
-	INT32 margin = Easing_Linear(roll, minscore, maxscore); // The score we're trying to draw a garbage stack for.
-
-	INT32 margindigits[5];
-	memset(margindigits, -1, sizeof(margindigits));
-
-	INT32 nummargindigits = 0;
-
-	// CONS_Printf("margin %d min %d max %d roll %d shiu %d ms %d\n", margin, minscore, maxscore, roll, symbolheadroominuse, minsymbol);
-
-	if (rawmargin/boostspersymbol >= (MARGINLEVELS-1))
+	if (rawmargin != 0)
 	{
-		// Capped out. Show 5 Chaos.
-		nummargindigits = 5;
-		for(UINT8 i = 0; i < nummargindigits; i++)
+		rawmargin--; // Start at 0, idiot
+
+		// We're invoking the RNG to get a slightly chaotic symbol distribution,
+		// but we're a HUD hook, so we need to keep the results of the call consistent.
+		P_SetRandSeed(PR_NUISANCE, 69 + rawmargin);
+
+		INT32 highsymbol = rawmargin/boostspersymbol + 1; // Highest symbol that should appear.
+		INT32 symbolsperupgrade = 5; // What is each symbol worth relative to each other? Like, 5 Stars = 1 Moon, etc.
+
+		// Okay, so we would LOVE to do this in a way that isn't a big clusterfuck, like just
+		// doing rawmargin^3 and then subtracting powers of 5 out of that. Unfortunately, UINT64
+		// is too small for the values that feel intuitively right here, so we have to do some of
+		// the math on a limited set of symbols, then shift up. This is the concept of "symbol
+		// headroom" that's in use here.
+		//
+		// (Note that Puyo~n uses a super inconsistent symbol table, probably to avoid this problem,
+		// but we're assholes and want things to feel logically consistent I guess?
+		// I dunno. I sort of feel like I should have just directly used the Puyo~n garbage table and
+		// avoided most of this, LOL)
+
+		INT32 symbolheadroom = 5; // Maximum # symbols we can "step down".
+		INT32 frac = rawmargin % boostspersymbol; // Used in intermediate calculations.
+		INT32 minsymbol = std::max(1, highsymbol - symbolheadroom); // The lowest symbol that should appear.
+		INT32 symbolheadroominuse = highsymbol - minsymbol; // The # of symbols we are stepping down.
+		INT32 minscore = std::pow(symbolsperupgrade, symbolheadroominuse+1);
+		INT32 maxscore = std::pow(symbolsperupgrade, symbolheadroominuse+2) - 1;
+
+		// CONS_Printf("min %d max %d\n", minscore, maxscore);
+
+		// We show the player successive combos with the same leading symbol, but we
+		// waht them to feel intuitively like they're increasing each time.
+		// Maxscore and minscore have been mapped to the correct power-of-N, so any
+		// point we pick between them will lead with the correct symbol once we adjust
+		// for symbol headroom. Pick a point that's appropriate for how "far" into the
+		// current symbol we are.
+		fixed_t lobound = FRACUNIT * frac / boostspersymbol;
+		fixed_t hibound = FRACUNIT * (frac+1) / boostspersymbol;
+		fixed_t roll = P_RandomRange(PR_NUISANCE, lobound, hibound);
+
+		INT32 margin = Easing_Linear(roll, minscore, maxscore); // The score we're trying to draw a garbage stack for.
+
+		INT32 margindigits[5];
+		memset(margindigits, -1, sizeof(margindigits));
+
+		INT32 nummargindigits = 0;
+
+		// CONS_Printf("margin %d min %d max %d roll %d shiu %d ms %d\n", margin, minscore, maxscore, roll, symbolheadroominuse, minsymbol);
+
+		if (rawmargin/boostspersymbol >= (MARGINLEVELS-1))
 		{
-			margindigits[i] = MARGINLEVELS-1;
-		}
-	}
-	else
-	{
-		// Subtract powers of N from our chosen score to create a decent-enough-looking
-		// garbage stack, then queue up the right patches to be drawn, shifting all the math
-		// up by "minsymbol"—remember, once maxsymbol goes above symbolheadroom, we are doing
-		// a low-precision version of the math that ignores low enough symbols.
-		while (margin > 0)
-		{
-			INT32 significant_margin = 0;
-			for (UINT8 i = symbolheadroominuse+1; i >= 0; i--)
+			// Capped out. Show 5 Chaos.
+			nummargindigits = 5;
+			for(UINT8 i = 0; i < nummargindigits; i++)
 			{
-				INT32 test = std::pow(symbolsperupgrade, i);
-				// CONS_Printf("testing %d (%d)\n", i, test);
-				if (margin >= test)
-				{
-					significant_margin = i;
-					break;
-				}
+				margindigits[i] = MARGINLEVELS-1;
 			}
+		}
+		else
+		{
+			// Subtract powers of N from our chosen score to create a decent-enough-looking
+			// garbage stack, then queue up the right patches to be drawn, shifting all the math
+			// up by "minsymbol"—remember, once maxsymbol goes above symbolheadroom, we are doing
+			// a low-precision version of the math that ignores low enough symbols.
+			while (margin > 0)
+			{
+				INT32 significant_margin = 0;
+				for (UINT8 i = symbolheadroominuse+1; i >= 0; i--)
+				{
+					INT32 test = std::pow(symbolsperupgrade, i);
+					// CONS_Printf("testing %d (%d)\n", i, test);
+					if (margin >= test)
+					{
+						significant_margin = i;
+						break;
+					}
+				}
 
-			INT32 index = significant_margin;
+				INT32 index = significant_margin;
 
-			margindigits[nummargindigits] = index + minsymbol - 1;
-			// CONS_Printf("digit %d %d\n", nummargindigits, margindigits[nummargindigits]);
+				margindigits[nummargindigits] = index + minsymbol - 1;
+				// CONS_Printf("digit %d %d\n", nummargindigits, margindigits[nummargindigits]);
 
-			nummargindigits++;
+				nummargindigits++;
 
-			// CONS_Printf("margin was %d ", margin);
-			margin -= std::pow(symbolsperupgrade, index);
-			// CONS_Printf("is %d\n", margin);
+				// CONS_Printf("margin was %d ", margin);
+				margin -= std::pow(symbolsperupgrade, index);
+				// CONS_Printf("is %d\n", margin);
 
-			if (nummargindigits >= 3 + frac)
-				break;
+				if (nummargindigits >= 3 + frac)
+					break;
+			}
+		}
+
+		INT32 marginspacing = std::min(6, duel_marginanim[vn]);
+		INT32 marginx = ((nummargindigits-1) * marginspacing)/2;
+
+		for (INT32 i = nummargindigits - 1; i >= 0; i--)
+		{
+			// CONS_Printf("draw %d - %d\n", i, margindigits[i]);
+			V_DrawScaledPatch(basex + margx + marginx, basey + margy, flags, kp_duel_margin[margindigits[i]]);
+			marginx -= marginspacing;
 		}
 	}
 
-	INT32 marginspacing = std::min(6, duel_marginanim[vn]);
-	INT32 marginx = ((nummargindigits-1) * marginspacing)/2;
-
-	for (INT32 i = nummargindigits - 1; i >= 0; i--)
+	if (redraw && !redrawn)
 	{
-		// CONS_Printf("draw %d - %d\n", i, margindigits[i]);
-		V_DrawScaledPatch(basex + margx + marginx, basey + margy, flags, kp_duel_margin[margindigits[i]]);
-		marginx -= marginspacing;
+		basey = BASEVIDHEIGHT - 40;
+		flags &= ~V_SNAPTOTOP;
+		flags |= V_SNAPTOBOTTOM;
+		redrawn = true;
+		goto redraw;
 	}
 }
 
@@ -3675,9 +3704,10 @@ static tic_t teams_lastleveltime = 0;
 void K_drawKartTeamScores(boolean fromintermission, INT32 interoffset)
 {
 	if (G_GametypeHasTeams() == false)
-	{
 		return;
-	}
+
+	if (!K_FirstActiveDisplayPlayer(stplyr))
+		return;
 
 	if (TEAM__MAX != 3)
 		return; // "maybe someday" - the magic conch
@@ -7825,11 +7855,7 @@ void K_drawKartHUD(void)
 					K_DrawKartPositionNum(stplyr->position);
 				}
 
-				if (R_GetViewNumber() == 0)
-				{
-					K_drawKartTeamScores(false, 0);
-				}
-
+				K_drawKartTeamScores(false, 0);
 				K_drawKartDuelScores();
 			}
 
