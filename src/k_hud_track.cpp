@@ -462,7 +462,7 @@ std::optional<TargetTracking::Tooltip> object_tooltip(const mobj_t* mobj)
 
 	case MT_PLAYER:
 	{
-		if (stplyr->fastfall == 0 && K_CanSuperTransfer(stplyr))
+		if (mobj->player == stplyr && stplyr->fastfall == 0 && K_CanSuperTransfer(stplyr))
 			return Tooltip(
 				TextElement(
 					TextElement().parse("<c_animated>").font(splitfont))
