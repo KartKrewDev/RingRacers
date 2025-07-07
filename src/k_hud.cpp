@@ -3331,12 +3331,10 @@ static UINT8 K_FirstActiveDisplayPlayer(player_t *player)
 	return false;
 }
 
-// Cannot allocate these arrays with MAXSPLITSCREENPLAYERS directly.
-// Are you trying 8P Virtua Racing splitscreen? Change me!
-static tic_t duel_lastleveltime[4];
-static INT32 duel_marginanim[4];
-static INT32 duel_lastmargin[4];
-static INT32 youheight[4];
+static tic_t duel_lastleveltime;
+static INT32 duel_marginanim;
+static INT32 duel_lastmargin;
+static INT32 youheight;
 
 static void K_drawKartDuelScores(void)
 {
@@ -3354,8 +3352,6 @@ static void K_drawKartDuelScores(void)
 		return;
 
 	boolean use4p = (r_splitscreen) ? 1 : 0;
-
-	UINT8 vn = R_GetViewNumber();
 
 	INT32 basex = 0;
 	INT32 basey = 48;
@@ -3454,26 +3450,26 @@ static void K_drawKartDuelScores(void)
 		targetyouheight = 2*barheight - savemargin;
 	}
 
-	if (leveltime != duel_lastleveltime[vn])
+	if (leveltime != duel_lastleveltime)
 	{
-		INT32 slide = std::max(1, abs(targetyouheight - youheight[vn])/3);
-		if (targetyouheight > youheight[vn])
-			youheight[vn] += slide;
-		else if (targetyouheight < youheight[vn])
-			youheight[vn] -= slide;
+		INT32 slide = std::max(1, abs(targetyouheight - youheight)/3);
+		if (targetyouheight > youheight)
+			youheight += slide;
+		else if (targetyouheight < youheight)
+			youheight -= slide;
 	}
 
-	INT32 foeheight = 2*barheight-youheight[vn]; // barheight is a single tied bar, so total height of the full gauge is 2x barheight
+	INT32 foeheight = 2*barheight-youheight; // barheight is a single tied bar, so total height of the full gauge is 2x barheight
 
 	if (use4p)
 	{
 		V_DrawFill(basex+barx-barheight, basey+bary, foeheight, barwidth, foefill|flags);
-		V_DrawFill(basex+barx-barheight+foeheight, basey+bary, youheight[vn], barwidth, youfill|flags);
+		V_DrawFill(basex+barx-barheight+foeheight, basey+bary, youheight, barwidth, youfill|flags);
 	}
 	else
 	{
 		V_DrawFill(basex+barx, basey+bary-barheight, barwidth, foeheight, foefill|flags);
-		V_DrawFill(basex+barx, basey+bary-barheight+foeheight, barwidth, youheight[vn], youfill|flags);
+		V_DrawFill(basex+barx, basey+bary-barheight+foeheight, barwidth, youheight, youfill|flags);
 	}
 
 	V_DrawScaledPatch(basex, basey, flags, use4p ? kp_duel_4under : kp_duel_under);
@@ -3565,17 +3561,17 @@ static void K_drawKartDuelScores(void)
 	INT32 boostspersymbol = 3; // How many boosts should it take to see a new symbol?
 	rawmargin = (leveltime/10)%(3*boostspersymbol);
 
-	if (duel_lastleveltime[vn] != leveltime) // Trigger the "slide" animation when rawmargin changes.
+	if (duel_lastleveltime != leveltime) // Trigger the "slide" animation when rawmargin changes.
 	{
-		duel_marginanim[vn] = std::min(duel_marginanim[vn] + 1, 100); // not magic just arbitrary
-		if (duel_lastmargin[vn] != rawmargin)
+		duel_marginanim = std::min(duel_marginanim + 1, 100); // not magic just arbitrary
+		if (duel_lastmargin != rawmargin)
 		{
-			duel_marginanim[vn] = 0;
-			duel_lastmargin[vn] = rawmargin;
+			duel_marginanim = 0;
+			duel_lastmargin = rawmargin;
 		}
 	}
 
-	duel_lastleveltime[vn] = leveltime;
+	duel_lastleveltime = leveltime;
 
 	// CONS_Printf("=== RAWMARGIN %d\n", rawmargin);
 
@@ -3674,7 +3670,7 @@ static void K_drawKartDuelScores(void)
 			}
 		}
 
-		INT32 marginspacing = std::min(6, duel_marginanim[vn]);
+		INT32 marginspacing = std::min(6, duel_marginanim);
 		INT32 marginx = ((nummargindigits-1) * marginspacing)/2;
 
 		for (INT32 i = nummargindigits - 1; i >= 0; i--)
@@ -3715,7 +3711,7 @@ void K_drawKartTeamScores(boolean fromintermission, INT32 interoffset)
 	// I get to write HUD code from scratch, so it's going to be horribly
 	// verbose and obnoxious.
 
-	UINT8 use4p = (r_splitscreen > 1) ? 1 : 0;
+	UINT8 use4p = !!(r_splitscreen);
 
 	INT32 basex = BASEVIDWIDTH/2 + 20;
 	INT32 basey = 0;
@@ -3769,6 +3765,11 @@ void K_drawKartTeamScores(boolean fromintermission, INT32 interoffset)
 		facex = -2;
 		facey = -5;
 		faceoff = 4;
+
+		if (r_splitscreen == 1 && !fromintermission)
+		{
+			basex += 110;
+		}
 	}
 
 	if (fromintermission)
