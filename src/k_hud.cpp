@@ -3396,6 +3396,7 @@ static void K_drawKartDuelScores(void)
 		if (r_splitscreen == 1)
 		{
 			redraw = false;
+			flags |= V_SNAPTORIGHT;
 			if (R_GetViewNumber() == 1)
 			{
 				flags |= V_SNAPTOBOTTOM;
@@ -3780,6 +3781,7 @@ void K_drawKartTeamScores(boolean fromintermission, INT32 interoffset)
 		if (r_splitscreen == 1 && !fromintermission)
 		{
 			basex += 110;
+			flags |= V_SNAPTORIGHT;
 			if (R_GetViewNumber() == 1)
 			{
 				flags |= V_SNAPTOBOTTOM;
