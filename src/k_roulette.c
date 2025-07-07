@@ -924,6 +924,9 @@ static void K_PushToRouletteItemList(itemroulette_t *const roulette, INT32 item)
 --------------------------------------------------*/
 static void K_AddItemToReel(const player_t *player, itemroulette_t *const roulette, kartitems_t item)
 {
+	if (player && K_PlayerUsesBotMovement(player) && !K_BotUnderstandsItem(item))
+		return;
+
 	K_PushToRouletteItemList(roulette, item);
 
 	if (player == NULL)
