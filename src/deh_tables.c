@@ -3122,6 +3122,7 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_STON",
 
 	"S_TOXAA",
+	"S_TOXAA_DEAD",
 	"S_TOXAB",
 	"S_TOXBA",
 };

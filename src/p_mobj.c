@@ -1246,8 +1246,11 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 				gravityadd /= 2;
 				break;
 			case MT_GACHABOM:
-			case MT_TOXOMISTER_POLE:
 				gravityadd = (5*gravityadd)/2;
+				break;
+			case MT_TOXOMISTER_POLE:
+				if (mo->health > 0)
+					gravityadd = (5*gravityadd)/2;
 				break;
 			case MT_BANANA:
 			case MT_BALLHOG:
@@ -6868,6 +6871,12 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 			P_SetMobjState(mobj, mobj->info->xdeathstate);
 		/* FALLTHRU */
 	case MT_JAWZ_SHIELD:
+		mobj->renderflags ^= RF_DONTDRAW;
+		break;
+	case MT_TOXOMISTER_POLE:
+		if (mobj->momz == 0 && P_IsObjectOnGround(mobj))
+			P_SetMobjState(mobj, mobj->info->xdeathstate);
+
 		mobj->renderflags ^= RF_DONTDRAW;
 		break;
 	case MT_SSMINE:

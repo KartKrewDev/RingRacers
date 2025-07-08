@@ -4191,6 +4191,7 @@ typedef enum state
 	S_STON,
 
 	S_TOXAA,
+	S_TOXAA_DEAD,
 	S_TOXAB,
 	S_TOXBA,
 

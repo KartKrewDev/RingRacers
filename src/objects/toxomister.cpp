@@ -75,7 +75,7 @@ struct Eye : Mobj
 {
 	static constexpr INT32 kOrbitRadius = 24;
 
-	bool valid() const { return Mobj::valid(owner()); }
+	bool valid() const { return Mobj::valid(owner()) && owner()->health > 0; }
 
 	bool tick()
 	{
@@ -230,8 +230,15 @@ struct Pole : Mobj
 		if (K_TryPickMeUp(this, toucher, false))
 			return false;
 
-		// TODO: spawn a puff of smoke?
-		remove();
+		// Adapted from P_XYMovement, MT_JAWZ
+		voice(info->deathsound);
+		P_KillMobj(this, NULL, NULL, DMG_NORMAL);
+
+		P_SetObjectMomZ(this, 24*FRACUNIT, false);
+		instathrust(R_PointToAngle2(toucher->x, toucher->y, x, y), 32 * mapobjectscale);
+
+		flags &= ~MF_NOGRAVITY;
+		hitlag(toucher, toucher, 8, true);
 
 		return false;
 	}
@@ -306,7 +313,7 @@ struct Cloud : Mobj
 
 	bool tick_patrol()
 	{
-		if (Mobj::valid(pole()))
+		if (Mobj::valid(pole()) && pole()->health > 0)
 		{
 			move_origin(pole()->pos());
 			instathrust(angle, 64 * mapobjectscale);

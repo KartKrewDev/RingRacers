@@ -3708,6 +3708,7 @@ state_t states[NUMSTATES] =
 	{SPR_STON, 0, -1, {NULL}, 0, 0, S_STON}, // S_STON
 											 //
 	{SPR_TOXA, 0, -1, {NULL}, 0, 0, S_TOXAA}, // S_TOXAA
+	{SPR_TOXA, 0, 175, {NULL}, 0, 0, S_NULL}, // S_TOXAA_DEAD
 	{SPR_TOXA, 1, -1, {NULL}, 0, 0, S_TOXAB}, // S_TOXAB
 	{SPR_TOXB, FF_ANIMATE|FF_RANDOMANIM, -1, {NULL}, 6, 5, S_TOXBA}, // S_TOXBA
 };
@@ -22731,7 +22732,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,       // painsound
 		S_NULL,         // meleestate
 		S_NULL,         // missilestate
-		S_NULL,         // deathstate
+		S_TOXAA_DEAD,   // deathstate
 		S_NULL,         // xdeathstate
 		sfx_None,       // deathsound
 		0,              // speed
