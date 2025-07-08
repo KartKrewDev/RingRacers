@@ -311,7 +311,7 @@ struct Cloud : Mobj
 
 		if (fuse < kMaxFuse && (kMaxFuse - fuse) % 20 == 0 && Mobj::valid(target()) && target()->player && follow()->player)
 		{
-			K_SpawnAmps(target()->player, K_PvPAmpReward(2, target()->player, follow()->player), this);
+			K_SpawnAmps(target()->player, K_PvPAmpReward(3, target()->player, follow()->player), this);
 		}
 
 		follow()->player->stunned = fuse; // stunned as long as cloud is here
