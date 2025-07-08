@@ -1057,6 +1057,7 @@ static boolean K_IsItemFirstOnly(kartitems_t item)
 		case KITEM_HYUDORO:
 		case KITEM_DROPTARGET:
 		case KITEM_STONESHOE:
+		case KITEM_TOXOMISTER:
 			return true;
 		default:
 			return false;
