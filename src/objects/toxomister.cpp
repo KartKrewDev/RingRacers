@@ -297,6 +297,12 @@ struct Cloud : Mobj
 
 		bob_in_place(this, 8, 64);
 		voice_loop(sfx_s3kcfl);
+		
+		if (leveltime % (TICRATE/3) == 0 && follow()->player->rings > -20) // toxomister ring drain
+		{
+			follow()->player->rings--;
+			S_StartSound(follow()->player->mo, sfx_antiri);
+		}
 
 		if (fuse < 3*TICRATE && leveltime % (1 + fuse / TICRATE) == 0)
 		{
@@ -308,6 +314,7 @@ struct Cloud : Mobj
 			K_SpawnAmps(target()->player, K_PvPAmpReward(2, target()->player, follow()->player), this);
 		}
 
+		follow()->player->stunned = fuse; // stunned as long as cloud is here
 		return true;
 	}
 
@@ -358,7 +365,7 @@ struct Cloud : Mobj
 		scale_to(destscale);
 		follow(toucher);
 		fuse = kMaxFuse;
-		voice(sfx_s3ka0);
+		voice(sfx_s3k8a);
 
 		return true;
 	}
