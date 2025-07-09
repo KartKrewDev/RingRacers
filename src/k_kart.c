@@ -14054,7 +14054,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		UINT32 debtrings = 20;
 		if (player->rings < 0)
 		{
-			debtrings -= player->rings;
+			debtrings += player->rings;
 			player->rings = 0;
 		}
 
