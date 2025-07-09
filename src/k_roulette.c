@@ -96,11 +96,11 @@ static UINT32 K_DynamicItemOddsRace[NUMKARTRESULTS-1][2] =
 	{1, 1}, // lightningshield
 	{25, 4}, // bubbleshield
 	{66, 9}, // flameshield
-	{1, 3}, // hyudoro
+	{1, 2}, // hyudoro
 	{0, 0}, // pogospring
 	{30, 8}, // superring (SPECIAL! distance value specifies when this can NO LONGER appear)
 	{0, 0}, // kitchensink
-	{1, 3}, // droptarget
+	{1, 2}, // droptarget
 	{43, 5}, // gardentop
 	{0, 0}, // gachabom
 	{1, 2}, // stoneshoe
