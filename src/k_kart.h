@@ -49,7 +49,7 @@ Make sure this matches the actual number of states
 #define BAIL_BOOST (FRACUNIT)
 #define BAIL_CREDIT_DEBTRINGS (true)
 #define BAIL_DROPFREQUENCY (2)
-#define BAILSTUN (TICRATE*10)
+#define BAILSTUN (TICRATE*7)
 
 #define MAXCOMBOTHRUST (mapobjectscale*20)
 #define MAXCOMBOFLOAT (mapobjectscale*10)
