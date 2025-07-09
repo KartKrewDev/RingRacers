@@ -230,7 +230,7 @@ private:
 
 				if (P_IsObjectOnGround(this))
 				{
-					momz = 32 * mapobjectscale;
+					momz = flip(32 * mapobjectscale);
 					bouncing(true);
 					voice(sfx_s3k5f);
 					P_StartQuakeFromMobj(5, 40 * scale(), 512 * scale(), this);
@@ -271,6 +271,11 @@ private:
 		follow()->player->stonedrag = dist > minDist();
 
 		sprzoff(30 * scale());
+
+		if (is_flipped() != follow()->is_flipped())
+		{
+			K_FlipFromObject(this, follow());
+		}
 	}
 
 	void move_chain()
@@ -292,6 +297,7 @@ private:
 		while (Mobj::valid(node))
 		{
 			node->move_origin({p, pz});
+			K_FlipFromObject(node, this);
 			node->sprzoff(sprzoff());
 
 			// Let chain flicker like shoe does
