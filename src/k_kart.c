@@ -4143,6 +4143,11 @@ fixed_t K_GetNewSpeed(const player_t *player)
 		p_speed = 15 * p_speed / 10;
 	}
 
+	if (!P_MobjWasRemoved(player->toxomisterCloud))
+	{
+		p_speed = FixedMul(p_speed, Obj_GetToxomisterCloudDrag(player->toxomisterCloud));
+	}
+
 	if (K_PlayerUsesBotMovement(player) == true && player->botvars.rubberband > 0)
 	{
 		// Acceleration is tied to top speed...
@@ -7076,7 +7081,7 @@ mobj_t *K_ThrowKartItemEx(player_t *player, boolean missile, mobjtype_t mapthing
 		{
 			mobj_t *lasttrail = K_FindLastTrailMobj(player);
 
-			if (mapthing == MT_BUBBLESHIELDTRAP) // Drop directly on top of you.
+			if (mapthing == MT_BUBBLESHIELDTRAP || mapthing == MT_TOXOMISTER_POLE) // Drop directly on top of you.
 			{
 				newangle = player->mo->angle;
 				newx = player->mo->x + player->mo->momx;
@@ -15069,6 +15074,21 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								player->botvars.itemconfirm = 0;
 							}
 							break;
+						case KITEM_TOXOMISTER:
+							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
+							{
+								K_SetItemOut(player); // need this to set itemscale
+
+								mobj_t *pole = K_ThrowKartItem(player, false, MT_TOXOMISTER_POLE, -1, 0, 0);
+								Obj_InitToxomisterPole(pole);
+
+								K_UnsetItemOut(player);
+
+								player->itemamount--;
+								K_PlayAttackTaunt(player->mo);
+								player->botvars.itemconfirm = 0;
+							}
+							break;
 						case KITEM_SAD:
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO
 								&& !player->sadtimer)
@@ -16363,6 +16383,7 @@ boolean K_IsPickMeUpItem(mobjtype_t type)
 		case MT_SSMINE:
 		case MT_SSMINE_SHIELD:
 		case MT_FLOATINGITEM:  // Stone Shoe
+		case MT_TOXOMISTER_POLE:
 			return true;
 		default:
 			return false;
@@ -16424,6 +16445,9 @@ static boolean K_PickUp(player_t *player, mobj_t *picked)
 				type = KITEM_STONESHOE;
 			else
 				type = KITEM_SAD;
+			break;
+		case MT_TOXOMISTER_POLE:
+			type = KITEM_TOXOMISTER;
 			break;
 		default:
 			type = KITEM_SAD;

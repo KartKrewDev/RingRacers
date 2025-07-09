@@ -3120,6 +3120,11 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_FLYBOT767",
 
 	"S_STON",
+
+	"S_TOXAA",
+	"S_TOXAA_DEAD",
+	"S_TOXAB",
+	"S_TOXBA",
 };
 
 // RegEx to generate this from info.h: ^\tMT_([^,]+), --> \t"MT_\1",
@@ -4028,6 +4033,10 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_STONESHOE",
 	"MT_STONESHOE_CHAIN",
+
+	"MT_TOXOMISTER_POLE",
+	"MT_TOXOMISTER_EYE",
+	"MT_TOXOMISTER_CLOUD",
 };
 
 const char *const MOBJFLAG_LIST[] = {

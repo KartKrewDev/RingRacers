@@ -172,6 +172,7 @@ static patch_t *kp_droptarget[3];
 static patch_t *kp_gardentop[3];
 static patch_t *kp_gachabom[3];
 static patch_t *kp_stoneshoe[3];
+static patch_t *kp_toxomister[3];
 static patch_t *kp_bar[2];
 static patch_t *kp_doublebar[2];
 static patch_t *kp_triplebar[2];
@@ -652,6 +653,7 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_gardentop[0], "K_ITGTOP");
 	HU_UpdatePatch(&kp_gachabom[0], "K_ITGBOM");
 	HU_UpdatePatch(&kp_stoneshoe[0], "K_ITSTON");
+	HU_UpdatePatch(&kp_toxomister[0], "K_ITTOX");
 	HU_UpdatePatch(&kp_bar[0], "K_RBBAR");
 	HU_UpdatePatch(&kp_doublebar[0], "K_RBBAR2");
 	HU_UpdatePatch(&kp_triplebar[0], "K_RBBAR3");
@@ -713,6 +715,7 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_gardentop[1], "K_ISGTOP");
 	HU_UpdatePatch(&kp_gachabom[1], "K_ISGBOM");
 	HU_UpdatePatch(&kp_stoneshoe[1], "K_ISSTON");
+	HU_UpdatePatch(&kp_toxomister[1], "K_ISTOX");
 	HU_UpdatePatch(&kp_bar[1], "K_SBBAR");
 	HU_UpdatePatch(&kp_doublebar[1], "K_SBBAR2");
 	HU_UpdatePatch(&kp_triplebar[1], "K_SBBAR3");
@@ -772,6 +775,7 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_gardentop[2], "ISPYGTOP");
 	HU_UpdatePatch(&kp_gachabom[2], "ISPYGBOM");
 	HU_UpdatePatch(&kp_stoneshoe[2], "ISPYSTON");
+	HU_UpdatePatch(&kp_toxomister[2], "ISPYTOX");
 
 	// CHECK indicators
 	sprintf(buffer, "K_CHECKx");
@@ -1196,6 +1200,7 @@ static patch_t *K_GetCachedItemPatch(INT32 item, UINT8 offset)
 		kp_gardentop,
 		kp_gachabom,
 		kp_stoneshoe,
+		kp_toxomister,
 	};
 
 	if (item == KITEM_SAD || (item > KITEM_NONE && item < NUMKARTITEMS))

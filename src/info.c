@@ -801,6 +801,8 @@ char sprnames[NUMSPRITES + 1][5] =
 	"STUN",
 
 	"STON",
+	"TOXA",
+	"TOXB",
 
 	// Pulley
 	"HCCH",
@@ -3704,6 +3706,11 @@ state_t states[NUMSTATES] =
 	{SPR_STUN, FF_FULLBRIGHT|FF_ANIMATE, -1, {NULL}, 4, 4, S_NULL}, // S_FLYBOT767
 
 	{SPR_STON, 0, -1, {NULL}, 0, 0, S_STON}, // S_STON
+											 //
+	{SPR_TOXA, 0, -1, {NULL}, 0, 0, S_TOXAA}, // S_TOXAA
+	{SPR_TOXA, 0, 175, {NULL}, 0, 0, S_NULL}, // S_TOXAA_DEAD
+	{SPR_TOXA, 1, -1, {NULL}, 0, 0, S_TOXAB}, // S_TOXAB
+	{SPR_TOXB, FF_ANIMATE|FF_RANDOMANIM, -1, {NULL}, 6, 5, S_TOXBA}, // S_TOXBA
 };
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] =
@@ -22710,6 +22717,84 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // damage
 		sfx_None,       // activesound
 		MF_SPECIAL|MF_SCENERY|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_PICKUPFROMBELOW|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+	{           // MT_TOXOMISTER_POLE
+		-1,             // doomednum
+		S_TOXAA,        // spawnstate
+		1,              // spawnhealth
+		S_NULL,         // seestate
+		sfx_tossed,     // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_TOXAA_DEAD,   // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		32*FRACUNIT,    // radius
+		64*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SHOOTABLE|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+	{           // MT_TOXOMISTER_EYE
+		-1,             // doomednum
+		S_TOXAB,        // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		32*FRACUNIT,    // radius
+		64*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+	{           // MT_TOXOMISTER_CLOUD
+		-1,             // doomednum
+		S_TOXBA,        // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		70*FRACUNIT,    // radius
+		70*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SPECIAL|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 };

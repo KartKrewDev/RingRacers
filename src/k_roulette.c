@@ -96,14 +96,15 @@ static UINT32 K_DynamicItemOddsRace[NUMKARTRESULTS-1][2] =
 	{1, 1}, // lightningshield
 	{25, 4}, // bubbleshield
 	{66, 9}, // flameshield
-	{1, 3}, // hyudoro
+	{1, 2}, // hyudoro
 	{0, 0}, // pogospring
 	{30, 8}, // superring (SPECIAL! distance value specifies when this can NO LONGER appear)
 	{0, 0}, // kitchensink
-	{1, 3}, // droptarget
+	{1, 2}, // droptarget
 	{43, 5}, // gardentop
 	{0, 0}, // gachabom
-	{1, 3}, // stoneshoe
+	{1, 2}, // stoneshoe
+	{1, 2}, // toxomister 
 	{45, 6}, // dualsneaker
 	{55, 8}, // triplesneaker
 	{25, 2}, // triplebanana
@@ -140,6 +141,7 @@ static UINT32 K_DynamicItemOddsBattle[NUMKARTRESULTS-1][2] =
 	{0, 0}, // gardentop
 	{10, 5}, // gachabom
 	{0, 0}, // stoneshoe
+	{0, 0}, // toxomister 
 	{0, 0}, // dualsneaker
 	{20, 1}, // triplesneaker
 	{0, 0}, // triplebanana
@@ -176,6 +178,7 @@ static UINT32 K_DynamicItemOddsSpecial[NUMKARTRESULTS-1][2] =
 	{0, 0}, // gardentop
 	{0, 0}, // gachabom
 	{0, 0}, // stoneshoe
+	{0, 0}, // toxomister 
 	{35, 2}, // dualsneaker
 	{0, 0}, // triplesneaker
 	{0, 0}, // triplebanana
@@ -212,6 +215,7 @@ static UINT8 K_KartLegacyBattleOdds[NUMKARTRESULTS-1][2] =
 	{ 0, 0 }, // Garden Top
 	{ 5, 0 }, // Gachabom
 	{ 0, 1 }, // Stone Shoe
+	{ 0, 1 }, // Toxomister
 	{ 0, 0 }, // Sneaker x2
 	{ 0, 1 }, // Sneaker x3
 	{ 0, 0 }, // Banana x3
@@ -373,6 +377,7 @@ botItemPriority_e K_GetBotItemPriority(kartitems_t result)
 		case KITEM_EGGMAN:
 		case KITEM_GACHABOM:
 		case KITEM_STONESHOE:
+		case KITEM_TOXOMISTER:
 		case KITEM_KITCHENSINK:
 		{
 			// Used when in 1st place and relatively far from players.
@@ -1052,6 +1057,7 @@ static boolean K_IsItemFirstOnly(kartitems_t item)
 		case KITEM_HYUDORO:
 		case KITEM_DROPTARGET:
 		case KITEM_STONESHOE:
+		case KITEM_TOXOMISTER:
 			return true;
 		default:
 			return false;

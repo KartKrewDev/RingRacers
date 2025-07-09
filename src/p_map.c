@@ -1025,6 +1025,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		|| g_tm.thing->type == MT_MONITOR
 		|| g_tm.thing->type == MT_BATTLECAPSULE
 		|| g_tm.thing->type == MT_KART_LEFTOVER
+		|| g_tm.thing->type == MT_TOXOMISTER_POLE
 		|| (g_tm.thing->type == MT_PLAYER)))
 	{
 		// see if it went over / under
@@ -1043,6 +1044,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		|| thing->type == MT_MONITOR
 		|| thing->type == MT_BATTLECAPSULE
 		|| thing->type == MT_KART_LEFTOVER
+		|| thing->type == MT_TOXOMISTER_POLE
 		|| (thing->type == MT_PLAYER)))
 	{
 		// see if it went over / under
