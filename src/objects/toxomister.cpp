@@ -365,6 +365,7 @@ struct Cloud : Mobj
 		scale_to(destscale);
 		follow(toucher);
 		fuse = kMaxFuse;
+		renderflags &= ~RF_DONTDRAW;
 		voice(sfx_s3k8a);
 
 		return true;
