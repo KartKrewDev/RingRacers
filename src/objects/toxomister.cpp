@@ -50,9 +50,6 @@ sine_bob
 {
 	hyu->sprzoff = FixedMul(height * hyu->scale,
 			sineofs + FINESINE(a >> ANGLETOFINESHIFT)) * P_MobjFlip(hyu);
-
-	if (P_IsObjectFlipped(hyu))
-		hyu->sprzoff -= hyu->height;
 }
 
 static void
