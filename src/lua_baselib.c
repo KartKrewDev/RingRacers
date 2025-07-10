@@ -3943,9 +3943,8 @@ static int lib_kItemResultToType(lua_State *L)
 static int lib_kItemResultToAmount(lua_State *L)
 {
 	kartitems_t item = luaL_checkinteger(L, 1);
-	itemroulette_t *roulette = *((itemroulette_t **)luaL_checkudata(L, 2, META_ITEMROULETTE));
 	//HUDSAFE
-	lua_pushinteger(L, K_ItemResultToAmount(item, roulette));
+	lua_pushinteger(L, K_ItemResultToAmount(item, NULL));
 	return 1;
 }
 
