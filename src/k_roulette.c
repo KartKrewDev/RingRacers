@@ -1164,18 +1164,39 @@ static boolean K_TimingPermitsItem(kartitems_t item, const itemroulette_t *roule
 
 void K_FillItemRoulette(player_t *const player, itemroulette_t *const roulette, boolean ringbox)
 {
+	K_InitRoulette(roulette);
+
+	if (player != NULL)
+	{
+		roulette->baseDist = K_UndoMapScaling(player->distancetofinish);
+		
+		if (player->pflags & PF_AUTOROULETTE)
+			roulette->autoroulette = true;
+
+		K_CalculateRouletteSpeed(roulette);
+	}
+
+	CONS_Printf("HC: prehook\n");
 	// Lua may want to intercept reelbuilder entirely.
 	LUA_HookPreFillItemRoulette(player, roulette);
+
+	CONS_Printf("HC: bail\n");
 	
 	// If prehook did something, no need to continue.
 	if (roulette->itemList.len != 0) {
 		return;
 	}
 
+	CONS_Printf("HC: fill\n");
+
 	K_FillItemRouletteData(player, roulette, ringbox, false);
+
+	CONS_Printf("HC: posthook\n");
 
 	// Lua can modify the final result.
 	LUA_HookFillItemRoulette(player, roulette);
+
+	CONS_Printf("HC: out\n");
 	
 	// If somehow there's no items, add sad.
 	if (roulette->itemList.len == 0) {
@@ -1198,18 +1219,6 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 	kartitems_t singleItem = KITEM_SAD;
 
 	size_t i, j;
-
-	K_InitRoulette(roulette);
-
-	if (player != NULL)
-	{
-		roulette->baseDist = K_UndoMapScaling(player->distancetofinish);
-		
-		if (player->pflags & PF_AUTOROULETTE)
-			roulette->autoroulette = true;
-
-		K_CalculateRouletteSpeed(roulette);
-	}
 	
 	if (ringbox == true)
 	{
