@@ -734,6 +734,8 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 {
 	size_t i;
 
+	CONS_Printf("HC: init\n");
+
 #ifndef ITEM_LIST_SIZE
 	if (roulette->itemList.items == NULL)
 	{
@@ -743,6 +745,8 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 			PU_STATIC,
 			NULL
 		);
+
+		CONS_Printf("HC: alloc init\n");
 
 		if (roulette->itemList.items == NULL)
 		{
@@ -847,6 +851,8 @@ void K_PushToRouletteItemList(itemroulette_t *const roulette, INT32 item)
 			NULL
 		);
 
+		CONS_Printf("HC: alloc double to %d\n", roulette->itemList.cap);
+
 		if (roulette->itemList.items == NULL)
 		{
 			I_Error("Not enough memory for item roulette list\n");
@@ -856,6 +862,8 @@ void K_PushToRouletteItemList(itemroulette_t *const roulette, INT32 item)
 
 	roulette->itemList.items[ roulette->itemList.len ] = item;
 	roulette->itemList.len++;
+
+	CONS_Printf("HC: adding item %d - %d\n", item, roulette->itemList.len);
 }
 
 /*--------------------------------------------------
@@ -1219,6 +1227,11 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 	kartitems_t singleItem = KITEM_SAD;
 
 	size_t i, j;
+
+	if (roulette->itemList.items == NULL)
+	{
+		K_InitRoulette(roulette);
+	}
 	
 	if (ringbox == true)
 	{
