@@ -932,14 +932,6 @@ void M_ClearMenus(boolean callexitmenufunc)
 		D_StartTitle();
 	}
 
-	// this is not a good place to put this i thinkMore actions
-	if (optionsmenu.profile)
-	{
-		M_ResetOptions();
-		optionsmenu.profile = NULL;
-	}
-
-	
 	M_AbortVirtualKeyboard();
 	menumessage.active = false;
 

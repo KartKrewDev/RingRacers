@@ -137,6 +137,10 @@ void M_EndModeAttackRun(void)
 	// Return to the menu.
 	D_ClearState();
 	M_StartControlPanel();
+	// This removes any lingering optionsmenu.profile pointers,
+	// so that when returning to char select, it will show the normal
+	// stat grid instead of the profile one (this is also most likely a bad way to fix this)
+	M_ResetOptions();
 }
 
 // Replay Playback Menu
