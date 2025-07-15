@@ -1095,7 +1095,7 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 
 	wasflip = (mo->eflags & MFE_VERTICALFLIP) != 0;
 
-	if (mo->type != MT_SPINFIRE)
+	if (mo->type != MT_SPINFIRE && mo->type != MT_STONESHOE)
 		mo->eflags &= ~MFE_VERTICALFLIP;
 
 	if (mo->subsector->sector->ffloors) // Check for 3D floor gravity too.
@@ -1307,7 +1307,7 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 					gravityadd *= 2;
 				break;
 			case MT_STONESHOE:
-				gravityadd *= 4;
+				gravityadd = -4 * abs(gravityadd) * P_MobjFlip(mo);
 				break;
 			default:
 				break;
@@ -15514,6 +15514,7 @@ boolean P_MobjCanChangeFlip(mobj_t *mobj)
 		case MT_SHRINK_CHAIN:
 		case MT_SHRINK_LASER:
 		case MT_SHRINK_PARTICLE:
+		case MT_STONESHOE:
 			return false;
 
 		default:
