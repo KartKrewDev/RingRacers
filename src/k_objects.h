@@ -475,6 +475,16 @@ boolean Obj_TickStoneShoeChain(mobj_t *chain);
 player_t *Obj_StoneShoeOwnerPlayer(mobj_t *shoe);
 void Obj_CollideStoneShoe(mobj_t *mover, mobj_t *mobj);
 
+/* Toxomister */
+void Obj_InitToxomisterPole(mobj_t *pole);
+boolean Obj_TickToxomisterPole(mobj_t *pole);
+boolean Obj_TickToxomisterEye(mobj_t *eye);
+boolean Obj_TickToxomisterCloud(mobj_t *cloud);
+boolean Obj_ToxomisterPoleCollide(mobj_t *pole, mobj_t *toucher);
+boolean Obj_ToxomisterCloudCollide(mobj_t *cloud, mobj_t *toucher);
+fixed_t Obj_GetToxomisterCloudDrag(mobj_t *cloud);
+
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

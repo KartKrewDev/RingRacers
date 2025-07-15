@@ -1248,6 +1248,10 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 			case MT_GACHABOM:
 				gravityadd = (5*gravityadd)/2;
 				break;
+			case MT_TOXOMISTER_POLE:
+				if (mo->health > 0)
+					gravityadd = (5*gravityadd)/2;
+				break;
 			case MT_BANANA:
 			case MT_BALLHOG:
 			case MT_BALLHOG_RETICULE_TEST:
@@ -2337,6 +2341,7 @@ boolean P_ZMovement(mobj_t *mo)
 		case MT_BIGTUMBLEWEED:
 		case MT_LITTLETUMBLEWEED:
 		case MT_EMERALD:
+		case MT_TOXOMISTER_POLE:
 			if (!(mo->flags & MF_NOCLIPHEIGHT) && P_CheckDeathPitCollide(mo))
 			{
 				P_RemoveMobj(mo);
@@ -5320,6 +5325,7 @@ boolean P_IsKartItem(INT32 type)
 		case MT_HYUDORO:
 		case MT_SINK:
 		case MT_GACHABOM:
+		case MT_TOXOMISTER_POLE:
 			return true;
 
 		default:
@@ -5346,6 +5352,7 @@ boolean P_IsKartFieldItem(INT32 type)
 		case MT_DROPTARGET:
 		case MT_DUELBOMB:
 		case MT_GACHABOM:
+		case MT_TOXOMISTER_POLE:
 			return true;
 
 		default:
@@ -5379,6 +5386,7 @@ boolean P_IsRelinkItem(INT32 type)
 		case MT_HYUDORO_CENTER:
 		case MT_SINK:
 		case MT_GACHABOM:
+		case MT_TOXOMISTER_POLE:
 		case MT_FLOATINGITEM:  // Stone Shoe Trap
 			return true;
 
@@ -6864,6 +6872,12 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 			P_SetMobjState(mobj, mobj->info->xdeathstate);
 		/* FALLTHRU */
 	case MT_JAWZ_SHIELD:
+		mobj->renderflags ^= RF_DONTDRAW;
+		break;
+	case MT_TOXOMISTER_POLE:
+		if (mobj->momz == 0 && P_IsObjectOnGround(mobj))
+			P_SetMobjState(mobj, mobj->info->xdeathstate);
+
 		mobj->renderflags ^= RF_DONTDRAW;
 		break;
 	case MT_SSMINE:
@@ -10296,6 +10310,15 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_STONESHOE:
 		return Obj_TickStoneShoe(mobj);
 
+	case MT_TOXOMISTER_POLE:
+		return Obj_TickToxomisterPole(mobj);
+
+	case MT_TOXOMISTER_EYE:
+		return Obj_TickToxomisterEye(mobj);
+
+	case MT_TOXOMISTER_CLOUD:
+		return Obj_TickToxomisterCloud(mobj);
+
 	default:
 		// check mobj against possible water content, before movement code
 		P_MobjCheckWater(mobj);
@@ -11159,6 +11182,9 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 			break;
 		case MT_STONESHOE_CHAIN:
 			thing->shadowscale = FRACUNIT/5;
+			break;
+		case MT_TOXOMISTER_POLE:
+			thing->shadowscale = FRACUNIT;
 			break;
 		default:
 			if (thing->flags & (MF_ENEMY|MF_BOSS))
