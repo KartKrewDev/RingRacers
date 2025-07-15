@@ -9584,6 +9584,11 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->pflags2 &= ~PF2_SUPERTRANSFERVFX;
 	}
 
+	if (K_PlayerUsesBotMovement(player) && !K_BotUnderstandsItem(player->itemtype) && player->itemamount)
+	{
+		K_DropItems(player);
+	}
+
 	if (player->transfer)
 	{
 		if (player->fastfall)

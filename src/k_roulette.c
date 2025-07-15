@@ -929,6 +929,9 @@ static void K_PushToRouletteItemList(itemroulette_t *const roulette, INT32 item)
 --------------------------------------------------*/
 static void K_AddItemToReel(const player_t *player, itemroulette_t *const roulette, kartitems_t item)
 {
+	if (player && K_PlayerUsesBotMovement(player) && !K_BotUnderstandsItem(item))
+		return;
+
 	K_PushToRouletteItemList(roulette, item);
 
 	if (player == NULL)
@@ -1235,6 +1238,17 @@ static boolean K_TimingPermitsItem(kartitems_t item, const itemroulette_t *roule
 	return true;
 }
 
+static void K_FixEmptyRoulette(const player_t *player, itemroulette_t *const roulette)
+{
+	if (roulette->itemListLen > 0)
+		return;
+
+	if (K_PlayerUsesBotMovement(player)) // Bots can't use certain items. Give them _something_.
+		K_PushToRouletteItemList(roulette, KITEM_SUPERRING);
+	else // Players can use all items, so this should never happen.
+		K_PushToRouletteItemList(roulette, KITEM_SAD);
+}
+
 /*--------------------------------------------------
 	void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox, boolean dryrun)
 
@@ -1379,6 +1393,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	if (K_ForcedSPB(player, roulette) == true)
 	{
 		K_AddItemToReel(player, roulette, KITEM_SPB);
+		K_FixEmptyRoulette(player, roulette);
 		return;
 	}
 
@@ -1403,6 +1418,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 		// singleItem = KITEM_SAD by default,
 		// so it will be used when all items are turned off.
 		K_AddItemToReel(player, roulette, singleItem);
+		K_FixEmptyRoulette(player, roulette);
 		return;
 	}
 
@@ -1758,6 +1774,8 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 
 		totalSpawnChance--;
 	}
+
+	K_FixEmptyRoulette(player, roulette);
 }
 
 /*--------------------------------------------------
