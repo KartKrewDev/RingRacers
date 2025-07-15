@@ -5387,6 +5387,7 @@ boolean P_IsRelinkItem(INT32 type)
 		case MT_SINK:
 		case MT_GACHABOM:
 		case MT_TOXOMISTER_POLE:
+		case MT_FLOATINGITEM:  // Stone Shoe Trap
 			return true;
 
 		default:
