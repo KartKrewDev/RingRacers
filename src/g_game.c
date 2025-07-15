@@ -3257,7 +3257,7 @@ void G_BeginLevelExit(void)
 	g_exit.losing = true;
 	g_exit.retry = false;
 
-	if (!G_GametypeAllowsRetrying() || skipstats != 0)
+	if (!G_GametypeAllowsRetrying() || skipstats != 0 || (grandprixinfo.gp && grandprixinfo.gamespeed == KARTSPEED_EASY))
 	{
 		g_exit.losing = false; // never force a retry
 	}
@@ -3618,7 +3618,7 @@ boolean G_GametypeUsesLives(void)
 	if (modeattacking) // NOT in Record Attack
 		return false;
 
-	if (grandprixinfo.gp == true) // In Grand Prix
+	if (grandprixinfo.gp == true && grandprixinfo.gamespeed != KARTSPEED_EASY) // In Grand Prix
 		return true;
 
 	return false;
@@ -4738,7 +4738,7 @@ static void G_DoCompleted(void)
 			}
 		}
 
-		if (grandprixinfo.gp == true && grandprixinfo.wonround == true && player->exiting && !retrying)
+		if (grandprixinfo.gp == true && grandprixinfo.wonround == true && player->exiting && (!retrying || grandprixinfo.gamespeed == KARTSPEED_EASY))
 		{
 			if (player->bot == true)
 			{

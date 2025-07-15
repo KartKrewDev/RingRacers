@@ -389,8 +389,9 @@ void K_UpdateGrandPrixBots(void)
 
 		if (players[i].botvars.diffincrease)
 		{
+			// CONS_Printf("in %d inc %d", players[i].botvars.difficulty, players[i].botvars.diffincrease);
 			if (players[i].botvars.diffincrease < 0)
-				players[i].botvars.difficulty = std::max(1, players[i].botvars.difficulty - players[i].botvars.diffincrease);
+				players[i].botvars.difficulty = std::max(1, players[i].botvars.difficulty + players[i].botvars.diffincrease);
 			else
 				players[i].botvars.difficulty += players[i].botvars.diffincrease;
 
@@ -400,6 +401,7 @@ void K_UpdateGrandPrixBots(void)
 			}
 
 			players[i].botvars.diffincrease = 0;
+			// CONS_Printf("out %d\n", players[i].botvars.difficulty);
 		}
 
 		if (players[i].botvars.rival)
@@ -630,12 +632,36 @@ void K_IncreaseBotDifficulty(player_t *bot)
 			rankNudge = 0;
 			break;
 		case GRADE_A:
-			if (grandprixinfo.gp && grandprixinfo.gamespeed == KARTSPEED_EASY)
-				rankNudge = 0;
-			else
-				rankNudge = 1;
+			rankNudge = 1;
 			break;
 	}
+
+	// RELAXED MODE:
+	// Continues don't drop bot difficulty, because we always advance.
+	// Bots will still level up from standard advancement; we need a
+	// much steeper rank nudge to keep difficulty at the right level.	
+	if (grandprixinfo.gamespeed == KARTSPEED_EASY)
+	{
+		switch(averageRank)
+		{
+			case GRADE_E:
+				rankNudge = -4;
+				break;
+			case GRADE_D:
+				rankNudge = -3;
+				break;
+			case GRADE_C:
+				rankNudge = -2;
+				break;
+			case GRADE_B:
+				rankNudge = -1;
+				break;
+			case GRADE_A:
+				rankNudge = 0;
+				break;
+		}
+	}
+
 
 	increase += rankNudge;
 
