@@ -14971,11 +14971,15 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
 							{
 								S_StartSound(player->mo, sfx_gsha7);
-								if (P_IsObjectOnGround(player->mo))
+								if (P_IsObjectOnGround(player->mo)) // facing angle blends w/ momentum angle for game-feel 
 								{
-									P_Thrust(player->mo, player->mo->angle, 25*player->mo->scale); // facing angle is ground only, blends w/ momentum angle (constant) for game-feel 
+									P_Thrust(player->mo, player->mo->angle, 25*player->mo->scale); 
+									P_Thrust(player->mo, K_MomentumAngle(player->mo), 25*player->mo->scale); 
 								}
-								P_Thrust(player->mo, K_MomentumAngle(player->mo), 25*player->mo->scale); // that consistent momentum angle thrust, done this way to reduce cheese 
+								else // air version is momentum angle only, reduces cheese, is twice as strong to compensate
+								{
+									P_Thrust(player->mo, K_MomentumAngle(player->mo), 50*player->mo->scale); 
+								}
 
 								UINT8 numsparks = 8;
 								for (UINT8 i = 0; i < numsparks; i++)
