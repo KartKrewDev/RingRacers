@@ -13005,12 +13005,12 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 	// spawn all the duel mode objects itself, which ends up
 	// calling this function again.
 	// So that's why this check is even here.
-	if (inDuel == false && (grandprixinfo.gp == false || grandprixinfo.eventmode != GPEVENT_BONUS))
+	if (inDuel == false && (grandprixinfo.gp == false || grandprixinfo.eventmode != GPEVENT_BONUS) && gametype != GT_TUTORIAL)
 	{
 		if (K_IsDuelItem(i) == true
 			&& K_DuelItemAlwaysSpawns(mthing) == false)
 		{
-			// Only spawns in Duels or GP bonus rounds.
+			// Only spawns in Duels, GP bonus rounds or Tutorials.
 			return false;
 		}
 	}
