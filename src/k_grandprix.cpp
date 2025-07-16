@@ -648,16 +648,16 @@ void K_IncreaseBotDifficulty(player_t *bot)
 				rankNudge = -4;
 				break;
 			case GRADE_D:
-				rankNudge = -3;
-				break;
-			case GRADE_C:
 				rankNudge = -2;
 				break;
-			case GRADE_B:
+			case GRADE_C:
 				rankNudge = -1;
 				break;
-			case GRADE_A:
+			case GRADE_B:
 				rankNudge = 0;
+				break;
+			case GRADE_A:
+				rankNudge = 1;
 				break;
 		}
 	}
