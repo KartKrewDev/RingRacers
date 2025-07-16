@@ -14973,9 +14973,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								S_StartSound(player->mo, sfx_gsha7);
 								if (P_IsObjectOnGround(player->mo))
 								{
-									P_Thrust(player->mo, K_MomentumAngle(player->mo), 25*player->mo->scale);
+									P_Thrust(player->mo, player->mo->angle, 25*player->mo->scale); // facing angle is ground only, blends w/ momentum angle (constant) for game-feel 
 								}
-								P_Thrust(player->mo, player->mo->angle, 25*player->mo->scale);
+								P_Thrust(player->mo, K_MomentumAngle(player->mo), 25*player->mo->scale); // that consistent momentum angle thrust, done this way to reduce cheese 
 
 								UINT8 numsparks = 8;
 								for (UINT8 i = 0; i < numsparks; i++)
