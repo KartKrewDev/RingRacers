@@ -1222,7 +1222,10 @@ void K_FillItemRoulette(player_t *const player, itemroulette_t *const roulette, 
 	
 	// If somehow there's no items, add sad.
 	if (roulette->itemList.len == 0) {
-		K_AddItemToReel(player, roulette, KITEM_SAD);
+		if (roulette->ringbox)
+			K_PushToRouletteItemList(roulette, KSM_BAR);
+		else
+			K_AddItemToReel(player, roulette, KITEM_SAD);
 	}
 }
 
