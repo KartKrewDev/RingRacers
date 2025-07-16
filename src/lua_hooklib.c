@@ -1034,15 +1034,15 @@ static int roulette_hook(
 	return hook.status;
 }
 
-int LUA_HookPreFillItemRoulette(player_t *player, itemroulette_t *const roulette)
+int LUA_HookPreFillItemRoulette(player_t *player, itemroulette_t *const roulette, boolean ringbox)
 {
-	return roulette_hook(player, roulette, false, HOOK(PreFillItemRoulette), res_true);
+	return roulette_hook(player, roulette, ringbox, HOOK(PreFillItemRoulette), res_true);
 }
 
 
-int LUA_HookFillItemRoulette(player_t *player, itemroulette_t *const roulette)
+int LUA_HookFillItemRoulette(player_t *player, itemroulette_t *const roulette, boolean ringbox)
 {
-	return roulette_hook(player, roulette, false, HOOK(FillItemRoulette), res_true);
+	return roulette_hook(player, roulette, ringbox, HOOK(FillItemRoulette), res_true);
 }
 
 boolean hook_cmd_running = false;

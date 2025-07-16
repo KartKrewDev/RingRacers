@@ -841,6 +841,20 @@ void K_PushToRouletteItemList(itemroulette_t *const roulette, INT32 item)
 #else
 	I_Assert(roulette->itemList.items != NULL);
 
+	CONS_Printf("HC: trying push %d\n", item);
+
+	if (!roulette->ringbox && item >= NUMKARTRESULTS)
+	{
+		CONS_Alert(CONS_WARNING, M_GetText("Item Roulette rejected an out-of-range item.\n"));
+		return;
+	}
+
+	if (roulette->ringbox && item >= KSM__MAX)
+	{
+		CONS_Alert(CONS_WARNING, M_GetText("Casino Roulette rejected an out-of-range item.\n"));
+		return;
+	}
+
 	if (roulette->itemList.len >= roulette->itemList.cap)
 	{
 		roulette->itemList.cap *= 2;
@@ -1186,7 +1200,7 @@ void K_FillItemRoulette(player_t *const player, itemroulette_t *const roulette, 
 
 	CONS_Printf("HC: prehook\n");
 	// Lua may want to intercept reelbuilder entirely.
-	LUA_HookPreFillItemRoulette(player, roulette);
+	LUA_HookPreFillItemRoulette(player, roulette, ringbox);
 
 	CONS_Printf("HC: bail\n");
 	
@@ -1202,7 +1216,7 @@ void K_FillItemRoulette(player_t *const player, itemroulette_t *const roulette, 
 	CONS_Printf("HC: posthook\n");
 
 	// Lua can modify the final result.
-	LUA_HookFillItemRoulette(player, roulette);
+	LUA_HookFillItemRoulette(player, roulette, ringbox);
 
 	CONS_Printf("HC: out\n");
 	
