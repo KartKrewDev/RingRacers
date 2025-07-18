@@ -618,7 +618,7 @@ boolean level_tally_t::IncrementLine(void)
 
 		value = &displayStat[i];
 		lives_check = (
-			grandprixinfo.gamespeed != KARTSPEED_EASY
+			G_GametypeUsesLives()
 			&& stats[i] == TALLY_STAT_TOTALRINGS // Rings also shows the Lives.
 			&& livesAdded < owner->xtralife // Don't check if we've maxxed out!
 		);
@@ -850,6 +850,7 @@ void level_tally_t::Tick(void)
 			if (IncrementLine() == true)
 			{
 				if (grandprixinfo.gp == true // In GP
+					&& G_GametypeUsesLives()
 					&& lines >= lineCount // Finished the bonuses
 					&& livesAdded < owner->xtralife // Didn't max out by other causes
 				)
