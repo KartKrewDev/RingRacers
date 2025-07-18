@@ -464,6 +464,10 @@ boolean Obj_TickBubbleShieldVisual(mobj_t *mobj);
 void Obj_SpawnLightningShieldVisuals(mobj_t *source);
 boolean Obj_TickLightningShieldVisual(mobj_t *mobj);
 
+/* Lightning Attack */
+void Obj_SpawnLightningAttackVisuals(mobj_t *source);
+boolean Obj_TickLightningAttackVisual(mobj_t *mobj);
+
 /* Flame Shield */
 void Obj_SpawnFlameShieldVisuals(mobj_t *source);
 boolean Obj_TickFlameShieldVisual(mobj_t *mobj);

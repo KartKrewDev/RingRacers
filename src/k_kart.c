@@ -10702,7 +10702,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		if (player->lightningcharge == LIGHTNING_CHARGE)
 		{
 			K_DoLightningShield(player);
-			P_Thrust(player->mo, player->mo->angle, 100*player->mo->scale);
+			P_Thrust(player->mo, onground ? player->mo->angle : K_MomentumAngle(player->mo), 100*player->mo->scale);
 			player->tiregrease = TICRATE/4;
 			player->lightningcharge = 0;
 		}
@@ -14748,6 +14748,22 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							{
 								// K_DoLightningShield(player);
 								player->lightningcharge = 1;
+
+								mobj_t *at1 = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_LIGHTNINGATTACK_VISUAL);
+								mobj_t *at2 = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_LIGHTNINGATTACK_VISUAL);
+								mobj_t *at3 = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_LIGHTNINGATTACK_VISUAL);
+								
+								P_SetMobjState(at1, S_THNG);
+								P_SetMobjState(at2, S_THND);
+								P_SetMobjState(at3, S_THNH);
+
+								at2->dispoffset = 2;
+								at3->dispoffset = -1;
+
+								P_SetTarget(&at1->target, player->mo);
+								P_SetTarget(&at2->target, player->mo);
+								P_SetTarget(&at3->target, player->mo);
+							
 								S_StartSound(player->mo, LIGHTNING_SOUND);
 								if (player->itemamount > 0)
 								{

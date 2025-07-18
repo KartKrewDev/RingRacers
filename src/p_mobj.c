@@ -6721,6 +6721,45 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		}
 		break;
 	}
+	case MT_LIGHTNINGATTACK_VISUAL:
+	{
+		if (!(mobj->target && !P_MobjWasRemoved(mobj->target)))
+		{
+			P_RemoveMobj(mobj);
+			return;
+		}
+
+		if (!mobj->target->player || !mobj->target->player->lightningcharge)
+		{
+			P_RemoveMobj(mobj);
+			return;
+		}
+
+		UINT8 timer = (LIGHTNING_CHARGE - mobj->target->player->lightningcharge);
+		UINT8 target = timer/10 + 1;
+
+		P_SetScale(mobj, (mobj->destscale = (5*mobj->target->scale)>>2));
+
+		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + mobj->target->height/2);
+		// Taken from K_FlipFromObject. We just want to flip the visual according to its target, but that's it.
+		mobj->eflags = (mobj->eflags & ~MFE_VERTICALFLIP)|(mobj->target->eflags & MFE_VERTICALFLIP);
+
+		mobj->extravalue1++;
+
+		if (mobj->extravalue1 > target)
+		{
+			mobj->color = SKINCOLOR_WHITE;
+			mobj->colorized = true;
+			mobj->extravalue1 = 0;
+		}
+		else
+		{
+			mobj->colorized = false;
+			mobj->renderflags &= ~RF_DONTDRAW;
+		}
+
+		break;
+	}
 	case MT_FLAMESHIELD_VISUAL:
 	{
 		if (!Obj_TickFlameShieldVisual(mobj))
