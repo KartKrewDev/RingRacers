@@ -6735,10 +6735,24 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			return;
 		}
 
+		UINT8 SHRINK = 5;
+
 		UINT8 timer = (LIGHTNING_CHARGE - mobj->target->player->lightningcharge);
 		UINT8 target = timer/10 + 1;
 
-		P_SetScale(mobj, (mobj->destscale = (5*mobj->target->scale)>>2));
+		fixed_t myscale = (5*mobj->target->scale)>>2;
+		if (timer <= SHRINK)
+		{
+			myscale = Easing_InSine(FRACUNIT*(SHRINK - timer)/SHRINK, myscale, 0);
+		}
+		else
+		{
+			UINT8 pretimer = LIGHTNING_CHARGE - SHRINK;
+			fixed_t scalefactor = FRACUNIT * (timer - SHRINK) / pretimer;
+			myscale = Easing_Linear(scalefactor, 5*myscale/4, myscale);
+		}
+
+		P_SetScale(mobj, (mobj->destscale = myscale));
 
 		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + mobj->target->height/2);
 		// Taken from K_FlipFromObject. We just want to flip the visual according to its target, but that's it.
