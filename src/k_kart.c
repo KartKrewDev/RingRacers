@@ -4270,6 +4270,9 @@ boolean K_PvPAmpReward(UINT32 award, player_t *attacker, player_t *defender)
 		award -= (delta * award / range / 2);
 	}
 
+	if (!K_PlayerUsesBotMovement(attacker) && K_PlayerUsesBotMovement(defender))
+		award /= 2;
+
 	return award;
 }
 
