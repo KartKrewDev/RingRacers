@@ -4259,6 +4259,7 @@ void P_PlayerThink(player_t *player)
 		PlayerPointerErase(player->ballhogreticule);
 		PlayerPointerErase(player->flickyAttacker);
 		PlayerPointerErase(player->stoneShoe);
+		PlayerPointerErase(player->toxomisterCloud);
 		PlayerPointerErase(player->powerup.flickyController);
 		PlayerPointerErase(player->powerup.barrier);
 

@@ -4146,6 +4146,11 @@ fixed_t K_GetNewSpeed(const player_t *player)
 		p_speed = 15 * p_speed / 10;
 	}
 
+	if (!P_MobjWasRemoved(player->toxomisterCloud))
+	{
+		p_speed = FixedMul(p_speed, Obj_GetToxomisterCloudDrag(player->toxomisterCloud));
+	}
+
 	if (K_PlayerUsesBotMovement(player) == true && player->botvars.rubberband > 0)
 	{
 		// Acceleration is tied to top speed...
@@ -7079,7 +7084,7 @@ mobj_t *K_ThrowKartItemEx(player_t *player, boolean missile, mobjtype_t mapthing
 		{
 			mobj_t *lasttrail = K_FindLastTrailMobj(player);
 
-			if (mapthing == MT_BUBBLESHIELDTRAP) // Drop directly on top of you.
+			if (mapthing == MT_BUBBLESHIELDTRAP || mapthing == MT_TOXOMISTER_POLE) // Drop directly on top of you.
 			{
 				newangle = player->mo->angle;
 				newx = player->mo->x + player->mo->momx;
@@ -9580,6 +9585,11 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->fastfall = 0;
 		player->transfer = 0;
 		player->pflags2 &= ~PF2_SUPERTRANSFERVFX;
+	}
+
+	if (K_PlayerUsesBotMovement(player) && !K_BotUnderstandsItem(player->itemtype) && player->itemamount)
+	{
+		K_DropItems(player);
 	}
 
 	if (player->transfer)
@@ -12785,6 +12795,7 @@ static INT32 K_FlameShieldMax(player_t *player)
 	UINT32 distv = 1024; // Pre no-scams: 2048
 	distv = distv * 16 / FLAMESHIELD_MAX; // Old distv was based on a 16-segment bar
 	UINT32 scamradius = 1500*4; // How close is close enough that we shouldn't be allowed to scam 1st?
+	// UINT8 i;
 
 	disttofinish = K_GetItemRouletteDistance(player, 8);
 
@@ -14010,23 +14021,35 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			player->instaWhipCharge = 0;
 	}
 	
-
-	if ((player->cmd.buttons & BT_BAIL) && (player->cmd.buttons & BT_RESPAWNMASK) != BT_RESPAWNMASK && ((player->itemtype && player->itemamount) || (player->rings > 0) || player->superring > 0 || player->pickuprings > 0 || player->itemRoulette.active))
+	if (player->cmd.buttons & BT_BAIL && (player->cmd.buttons & BT_RESPAWNMASK) != BT_RESPAWNMASK)
 	{
-		boolean grounded = P_IsObjectOnGround(player->mo);
-		onground && player->tumbleBounces == 0 ?  player->bailcharge += 2 : player->bailcharge++; // charge twice as fast on the ground
-		if ((P_PlayerInPain(player) && player->bailcharge == 1) || (grounded && P_PlayerInPain(player) && player->bailcharge == 2)) // this is brittle ..
+		if (leveltime < introtime || (gametyperules & GTR_SPHERES))
 		{
-			mobj_t *bail = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, MT_BAILCHARGE);
-			S_StartSound(bail, sfx_gshb9); // I tried to use info.c, but you can't play sounds on mobjspawn via A_PlaySound
-			S_StartSound(bail, sfx_kc4e);
-			P_SetTarget(&bail->target, player->mo);
-			bail->renderflags |= RF_FULLBRIGHT; // set fullbright here, were gonna animate frames in the thinker and it saves us from setting FF_FULLBRIGHT every frame
+			// No bailing in GTR_SPHERES because I cannot be fucked to do manual Last Chance right now.
+			// Maybe someday!
+			if (!(player->oldcmd.buttons & BT_BAIL))
+				if (P_IsDisplayPlayer(player))
+					S_StartSound(player->mo, sfx_s3k7b);
+			player->bailcharge = 0;
 		}
-	}
-	else
-	{
-		player->bailcharge = 0;
+		else if ((player->itemtype && player->itemamount) || player->rings > 0 || player->superring > 0 || player->pickuprings > 0 || player->itemRoulette.active)
+		{
+			// Set up bail charge, provided we have something to bail with (any rings or item resource).
+			boolean grounded = P_IsObjectOnGround(player->mo);
+			onground && player->tumbleBounces == 0 ?  player->bailcharge += 2 : player->bailcharge++; // charge twice as fast on the ground
+			if ((P_PlayerInPain(player) && player->bailcharge == 1) || (grounded && P_PlayerInPain(player) && player->bailcharge == 2)) // this is brittle ..
+			{
+				mobj_t *bail = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, MT_BAILCHARGE);
+				S_StartSound(bail, sfx_gshb9); // I tried to use info.c, but you can't play sounds on mobjspawn via A_PlaySound
+				S_StartSound(bail, sfx_kc4e);
+				P_SetTarget(&bail->target, player->mo);
+				bail->renderflags |= RF_FULLBRIGHT; // set fullbright here, were gonna animate frames in the thinker and it saves us from setting FF_FULLBRIGHT every frame
+			}
+		}
+		else
+		{
+			player->bailcharge = 0;
+		}
 	}
 
 	if ((!P_PlayerInPain(player) && player->bailcharge >= 5) || player->bailcharge >= BAIL_MAXCHARGE)
@@ -14039,7 +14062,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		UINT32 debtrings = 20;
 		if (player->rings < 0)
 		{
-			debtrings -= player->rings;
+			debtrings += player->rings;
 			player->rings = 0;
 		}
 
@@ -14951,8 +14974,15 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
 							{
 								S_StartSound(player->mo, sfx_gsha7);
-								P_Thrust(player->mo, K_MomentumAngle(player->mo), 25*player->mo->scale);
-								P_Thrust(player->mo, player->mo->angle, 25*player->mo->scale);
+								if (P_IsObjectOnGround(player->mo)) // facing angle blends w/ momentum angle for game-feel 
+								{
+									P_Thrust(player->mo, player->mo->angle, 25*player->mo->scale); 
+									P_Thrust(player->mo, K_MomentumAngle(player->mo), 25*player->mo->scale); 
+								}
+								else // air version is momentum angle only, reduces cheese, is twice as strong to compensate
+								{
+									P_Thrust(player->mo, K_MomentumAngle(player->mo), 50*player->mo->scale); 
+								}
 
 								UINT8 numsparks = 8;
 								for (UINT8 i = 0; i < numsparks; i++)
@@ -15056,6 +15086,21 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								player->itemamount--;
 								K_PlayAttackTaunt(player->mo);
 								K_UpdateHnextList(player, false);
+								player->botvars.itemconfirm = 0;
+							}
+							break;
+						case KITEM_TOXOMISTER:
+							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
+							{
+								K_SetItemOut(player); // need this to set itemscale
+
+								mobj_t *pole = K_ThrowKartItem(player, false, MT_TOXOMISTER_POLE, -1, 0, 0);
+								Obj_InitToxomisterPole(pole);
+
+								K_UnsetItemOut(player);
+
+								player->itemamount--;
+								K_PlayAttackTaunt(player->mo);
 								player->botvars.itemconfirm = 0;
 							}
 							break;
@@ -16353,6 +16398,7 @@ boolean K_IsPickMeUpItem(mobjtype_t type)
 		case MT_SSMINE:
 		case MT_SSMINE_SHIELD:
 		case MT_FLOATINGITEM:  // Stone Shoe
+		case MT_TOXOMISTER_POLE:
 			return true;
 		default:
 			return false;
@@ -16414,6 +16460,9 @@ static boolean K_PickUp(player_t *player, mobj_t *picked)
 				type = KITEM_STONESHOE;
 			else
 				type = KITEM_SAD;
+			break;
+		case MT_TOXOMISTER_POLE:
+			type = KITEM_TOXOMISTER;
 			break;
 		default:
 			type = KITEM_SAD;

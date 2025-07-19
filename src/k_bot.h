@@ -401,6 +401,7 @@ void K_BotItemUsage(const player_t *player, ticcmd_t *cmd, INT16 turnamt);
 
 void K_BotPickItemPriority(player_t *player);
 
+boolean K_BotUnderstandsItem(kartitems_t item);
 
 #ifdef __cplusplus
 } // extern "C"

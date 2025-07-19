@@ -8434,6 +8434,14 @@ void P_FreeLevelState(void)
 		HWR_ClearAllTextures();
 #endif
 
+	if (rendermode == render_soft)
+	{
+		// Queued draws might reference patches or colormaps about to be freed.
+		// Flush 2D to make sure no read-after-free occurs.
+		srb2::rhi::Rhi* rhi = srb2::sys::get_rhi(srb2::sys::g_current_rhi);
+		srb2::sys::main_hardware_state()->twodee_renderer->flush(*rhi, srb2::g_2d);
+	}
+
 	G_FreeGhosts(); // ghosts are allocated with PU_LEVEL
 	Patch_FreeTag(PU_PATCH_LOWPRIORITY);
 	Patch_FreeTag(PU_PATCH_ROTATED);

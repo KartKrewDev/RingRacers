@@ -2160,3 +2160,10 @@ void K_UpdateBotGameplayVars(player_t *player)
 
 	K_UpdateBotGameplayVarsItemUsage(player);
 }
+
+boolean K_BotUnderstandsItem(kartitems_t item)
+{
+	if (item == KITEM_BALLHOG)
+		return false; // Sorry. MRs welcome!
+	return true;
+}

@@ -1129,6 +1129,14 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			Obj_CollideStoneShoe(toucher, special);
 			return;
 
+		case MT_TOXOMISTER_POLE:
+			Obj_ToxomisterPoleCollide(special, toucher);
+			return;
+
+		case MT_TOXOMISTER_CLOUD:
+			Obj_ToxomisterCloudCollide(special, toucher);
+			return;
+
 		default: // SOC or script pickup
 			P_SetTarget(&special->target, toucher);
 			break;
