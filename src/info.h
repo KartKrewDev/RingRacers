@@ -929,6 +929,11 @@ typedef enum sprite
 	SPR_THNC, // Lightning Shield Top Flash
 	SPR_THNA, // Lightning Shield Top Swoosh
 	SPR_THNB, // Lightning Shield Bottom Swoosh
+	SPR_THND, // Lightning Attack
+	SPR_THNE, // Lightning Attack
+	SPR_THNH, // Lightning Attack
+	SPR_THNF, // Lightning Attack
+	SPR_THNG, // Lightning Attack
 	SPR_BUBS, // Bubble Shield (not Bubs)
 	SPR_BUBT, // Bubble Shield trap
 	SPR_BUBA, // Bubble Shield Outline
@@ -3073,6 +3078,12 @@ typedef enum state
 	S_THNC2,
 	S_THNB1,
 
+	S_THND,
+	S_THNE,
+	S_THNH,
+	S_THNF,
+	S_THNG,
+
 	// Bubble Shield
 	S_BUBBLESHIELD1,
 	S_BUBBLESHIELD2,
@@ -4753,6 +4764,7 @@ typedef enum mobj_type
 
 	MT_LIGHTNINGSHIELD, // Shields
 	MT_LIGHTNINGSHIELD_VISUAL,
+	MT_LIGHTNINGATTACK_VISUAL,
 	MT_BUBBLESHIELD,
 	MT_BUBBLESHIELD_VISUAL,
 	MT_FLAMESHIELD,

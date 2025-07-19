@@ -388,6 +388,11 @@ char sprnames[NUMSPRITES + 1][5] =
 	"THNC", // Lightning Shield Top Flash
 	"THNA", // Lightning Shield Top Swoosh
 	"THNB", // Lightning Shield Bottom Swoosh
+	"THND", // Lightning attack
+	"THNE", // Lightning attack
+	"THNH", // Lightning attack
+	"THNF", // Lightning attack
+	"THNG", // Lightning attack
 	"BUBS", // Bubble Shield (not Bubs)
 	"BUBT", // Bubble Shield trap
 	"BUBA", // Bubble Shield Outline
@@ -2579,6 +2584,12 @@ state_t states[NUMSTATES] =
 	{SPR_THNA, FF_ADD|FF_FULLBRIGHT|FF_ANIMATE, 44, {NULL}, 43, 1, S_THNC2}, // S_THNA1
 	{SPR_THNC, FF_ADD|FF_FULLBRIGHT|FF_ANIMATE, 11, {NULL}, 10, 1, S_THNB1}, // S_THNC2
 	{SPR_THNB, FF_ADD|FF_FULLBRIGHT|FF_ANIMATE, 43, {NULL}, 42, 1, S_THNC1}, // S_THNB1
+
+	{SPR_THND, FF_ADD|FF_FULLBRIGHT|FF_ANIMATE, -1, {NULL}, 10, 1, S_THND}, // S_THND
+	{SPR_THNE, FF_FULLBRIGHT|FF_ANIMATE, 34, {NULL}, 33, 1, S_THNH}, // S_THNE
+	{SPR_NULL, FF_FULLBRIGHT, 34, {NULL}, 33, 1, S_THNE}, // S_THNH
+	{SPR_THNF, FF_FULLBRIGHT|FF_ANIMATE, 4, {NULL}, 3, 1, S_THNG}, // S_THNF
+	{SPR_THNG, FF_FULLBRIGHT|FF_ANIMATE, 64, {NULL}, 63, 1, S_THNF}, // S_THNG
 
 	{SPR_BUBS, FF_FULLBRIGHT,     2, {NULL}, 0, 0, S_BUBBLESHIELD2},		// S_BUBBLESHIELD1
 	{SPR_BUBS, FF_FULLBRIGHT|13,  2, {NULL}, 0, 0, S_BUBBLESHIELD3},		// S_BUBBLESHIELD2
@@ -15579,6 +15590,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	{           // MT_LIGHTNINGSHIELD_VISUAL
 		-1,             // doomednum
 		S_THNC1,        // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		8,              // speed
+		28*FRACUNIT,    // radius
+		56*FRACUNIT,    // height
+		1,              // display offset
+		16,             // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_LIGHTNINGATTACK_VISUAL
+		-1,             // doomednum
+		S_THND,        // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound
