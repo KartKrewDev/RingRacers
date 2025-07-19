@@ -1409,6 +1409,10 @@ consvar_t cv_voice_distanceattenuation_distance = NetVar("voice_distanceattenuat
 	.floating_point()
 	.description("Voice speaker's distance from listener at which positional voice is fully attenuated");
 
+consvar_t cv_voice_distanceattenuation_teamdistance = NetVar("voice_distanceattenuation_teamdistance", "8192")
+	.floating_point()
+	.description("Teammate voice speaker's distance from listener at which positional voice is fully attenuated");
+
 // The volume factor (scaled logarithmically, i.e. 0.5 = "half as loud") for voice distance attenuation
 consvar_t cv_voice_distanceattenuation_factor = NetVar("voice_distanceattenuation_factor", "0.2")
 	.floating_point()
