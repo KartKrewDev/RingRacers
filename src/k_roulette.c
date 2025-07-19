@@ -739,8 +739,6 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 {
 	size_t i;
 
-	CONS_Printf("HC: init\n");
-
 #ifndef ITEM_LIST_SIZE
 	if (roulette->itemList.items == NULL)
 	{
@@ -750,8 +748,6 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 			PU_STATIC,
 			NULL
 		);
-
-		CONS_Printf("HC: alloc init\n");
 
 		if (roulette->itemList.items == NULL)
 		{
@@ -846,8 +842,6 @@ void K_PushToRouletteItemList(itemroulette_t *const roulette, INT32 item)
 #else
 	I_Assert(roulette->itemList.items != NULL);
 
-	CONS_Printf("HC: trying push %d\n", item);
-
 	if (!roulette->ringbox && item >= NUMKARTRESULTS)
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Item Roulette rejected an out-of-range item.\n"));
@@ -870,8 +864,6 @@ void K_PushToRouletteItemList(itemroulette_t *const roulette, INT32 item)
 			NULL
 		);
 
-		CONS_Printf("HC: alloc double to %d\n", roulette->itemList.cap);
-
 		if (roulette->itemList.items == NULL)
 		{
 			I_Error("Not enough memory for item roulette list\n");
@@ -881,8 +873,6 @@ void K_PushToRouletteItemList(itemroulette_t *const roulette, INT32 item)
 
 	roulette->itemList.items[ roulette->itemList.len ] = item;
 	roulette->itemList.len++;
-
-	CONS_Printf("HC: adding item %d - %d\n", item, roulette->itemList.len);
 }
 
 /*--------------------------------------------------
@@ -1223,27 +1213,18 @@ void K_FillItemRoulette(player_t *const player, itemroulette_t *const roulette, 
 		K_CalculateRouletteSpeed(roulette);
 	}
 
-	CONS_Printf("HC: prehook\n");
 	// Lua may want to intercept reelbuilder entirely.
 	LUA_HookPreFillItemRoulette(player, roulette, ringbox);
-
-	CONS_Printf("HC: bail\n");
 	
 	// If prehook did something, no need to continue.
 	if (roulette->itemList.len != 0) {
 		return;
 	}
 
-	CONS_Printf("HC: fill\n");
-
 	K_FillItemRouletteData(player, roulette, ringbox, false);
-
-	CONS_Printf("HC: posthook\n");
 
 	// Lua can modify the final result.
 	LUA_HookFillItemRoulette(player, roulette, ringbox);
-
-	CONS_Printf("HC: out\n");
 	
 	// If somehow there's no items, add sad.
 	if (roulette->itemList.len == 0) {
