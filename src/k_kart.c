@@ -10690,6 +10690,11 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			K_FlameDashLeftoverSmoke(player->mo);
 	}
 
+	if (player->curshield != KSHIELD_LIGHTNING)
+	{
+		player->lightningcharge = 0;
+	}
+
 	if (player->lightningcharge)
 	{
 		player->lightningcharge++;
@@ -10705,6 +10710,18 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			P_Thrust(player->mo, onground ? player->mo->angle : K_MomentumAngle(player->mo), 100*player->mo->scale);
 			player->tiregrease = TICRATE/4;
 			player->lightningcharge = 0;
+
+			if (player->itemamount > 0)
+			{
+				// Why is this a conditional?
+				// Lightning shield: the only item that allows you to
+				// activate a mine while you're out of its radius,
+				// the SAME tic it sets your itemamount to 0
+				// ...:dumbestass:
+				player->itemamount--;
+				K_PlayAttackTaunt(player->mo);
+				player->botvars.itemconfirm = 0;
+			}
 		}
 	}
 	else
@@ -14744,7 +14761,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								Obj_SpawnLightningShieldVisuals(shield);
 							}
 
-							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
+							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO && !player->lightningcharge)
 							{
 								// K_DoLightningShield(player);
 								player->lightningcharge = 1;
@@ -14765,17 +14782,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								P_SetTarget(&at3->target, player->mo);
 							
 								S_StartSound(player->mo, LIGHTNING_SOUND);
-								if (player->itemamount > 0)
-								{
-									// Why is this a conditional?
-									// Lightning shield: the only item that allows you to
-									// activate a mine while you're out of its radius,
-									// the SAME tic it sets your itemamount to 0
-									// ...:dumbestass:
-									player->itemamount--;
-									K_PlayAttackTaunt(player->mo);
-									player->botvars.itemconfirm = 0;
-								}
 							}
 							break;
 						case KITEM_GARDENTOP:
