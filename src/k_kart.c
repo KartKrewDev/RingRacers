@@ -10708,7 +10708,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		{
 			K_DoLightningShield(player);
 			P_Thrust(player->mo, onground ? player->mo->angle : K_MomentumAngle(player->mo), 100*player->mo->scale);
-			player->tiregrease = TICRATE/4;
+			// player->tiregrease = TICRATE/4;
 			player->lightningcharge = 0;
 
 			if (player->itemamount > 0)
