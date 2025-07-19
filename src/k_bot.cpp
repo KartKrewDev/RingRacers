@@ -692,7 +692,7 @@ fixed_t K_BotRubberband(const player_t *player)
 	// mechanics adjustments, not from items, so kill some bot speed if they've got bad EXP.
 	if (player->gradingfactor < FRACUNIT && !(player->botvars.rival) && player->botvars.difficulty > 1)
 	{
-		UINT8 levelreduce = std::min<UINT8>(3, player->botvars.difficulty); // How much to drop the "effective level" of bots that are consistently behind
+		UINT8 levelreduce = std::min<UINT8>(3, player->botvars.difficulty/4); // How much to drop the "effective level" of bots that are consistently behind
 		expreduce = Easing_Linear((K_EffectiveGradingFactor(player) - MINGRADINGFACTOR) * 2, levelreduce*FRACUNIT, 0);
 	}
 
@@ -704,11 +704,11 @@ fixed_t K_BotRubberband(const player_t *player)
 	if (cv_levelskull.value)
 		difficultyEase = FRACUNIT;
 
-	// Lv.   1: x0.65 avg
+	// Lv.   1: x0.75 avg
 	// Lv. MAX: x1.05 avg
 	const fixed_t rubberBase = Easing_OutSine(
 		difficultyEase,
-		FRACUNIT * 65 / 100,
+		FRACUNIT * 75 / 100,
 		FRACUNIT * 105 / 100
 	);
 

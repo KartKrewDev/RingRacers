@@ -716,7 +716,8 @@ void P_EndingMusic(void)
 	{
 		jingle = "_lose";
 
-		if (G_GametypeAllowsRetrying() == true)
+		// Sort of ugly, this composite check is effictively "does gametype force retry": Relaxed allows you to place low.
+		if (G_GametypeAllowsRetrying() == true && !(grandprixinfo.gp && grandprixinfo.gamespeed == KARTSPEED_EASY && gametyperules & GTR_CIRCUIT))
 		{
 			// A retry will be happening
 			nointer = true;

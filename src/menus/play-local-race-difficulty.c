@@ -188,10 +188,10 @@ void Dummygpdifficulty_OnChange(void)
 	switch (cv_dummygpdifficulty.value)
 	{
 		case KARTSPEED_EASY:
-			tooltip = "Low-stakes racing at \x83Gear 1""\x80"". Take a drive and \x83""enjoy the sights!";
+			tooltip = "Low-stakes racing at \x83Gear 1""\x80"". \x83No placement requirements\x80.";
 			break;
 		case KARTSPEED_NORMAL:
-			tooltip = "Aim for the prize at\x82 Gear 2\x80. Can you \x82surpass your limits?";
+			tooltip = "Aim for the prize at\x82 Gear 2\x80. Place \x82""4th or better\x80 to advance!";
 			break;
 		case KARTSPEED_HARD:
 			tooltip = "Challenge fierce competition at\x87 Gear 3\x80. For\x87 thrill-seekers!";

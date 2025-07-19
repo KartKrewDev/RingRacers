@@ -618,7 +618,8 @@ boolean level_tally_t::IncrementLine(void)
 
 		value = &displayStat[i];
 		lives_check = (
-			stats[i] == TALLY_STAT_TOTALRINGS // Rings also shows the Lives.
+			G_GametypeUsesLives()
+			&& stats[i] == TALLY_STAT_TOTALRINGS // Rings also shows the Lives.
 			&& livesAdded < owner->xtralife // Don't check if we've maxxed out!
 		);
 
@@ -849,6 +850,7 @@ void level_tally_t::Tick(void)
 			if (IncrementLine() == true)
 			{
 				if (grandprixinfo.gp == true // In GP
+					&& G_GametypeUsesLives()
 					&& lines >= lineCount // Finished the bonuses
 					&& livesAdded < owner->xtralife // Didn't max out by other causes
 				)
@@ -1294,41 +1296,44 @@ void level_tally_t::Draw(void)
 						case TALLY_STAT_TOTALRINGS:
 						{
 							drawer_text
-								.x(184.0 * frac)
+								.x((G_GametypeUsesLives() ? 184.0 : 200.0) * frac)
 								.align(srb2::Draw::Align::kCenter)
 								.text(va("%d", displayStat[i]));
 
-							srb2::Draw lives_drawer = drawer_text
-								.xy(221.0 * frac, -1.0 * frac);
-
-							const skincolornum_t color = static_cast<skincolornum_t>(owner->skincolor);
-							lives_drawer
-								.x(r_splitscreen ? -7.0 : -2.0)
-								.colormap(owner->skin, color)
-								.patch(faceprefix[owner->skin][r_splitscreen ? FACE_MINIMAP : FACE_RANK]);
-
-							UINT8 lives_num = std::min(owner->lives + livesAdded, 10);
-							if (xtraBlink > 0 && (xtraBlink & 1) == 0 && livesAdded > 0)
+							if (G_GametypeUsesLives())
 							{
-								lives_num = 0;
-							}
+								srb2::Draw lives_drawer = drawer_text
+									.xy(221.0 * frac, -1.0 * frac);
 
-							if (lives_num > 0)
-							{
-								if (r_splitscreen)
+								const skincolornum_t color = static_cast<skincolornum_t>(owner->skincolor);
+								lives_drawer
+									.x(r_splitscreen ? -7.0 : -2.0)
+									.colormap(owner->skin, color)
+									.patch(faceprefix[owner->skin][r_splitscreen ? FACE_MINIMAP : FACE_RANK]);
+
+								UINT8 lives_num = std::min(owner->lives + livesAdded, 10);
+								if (xtraBlink > 0 && (xtraBlink & 1) == 0 && livesAdded > 0)
 								{
-									lives_drawer = lives_drawer
-										.xy(6.0, 2.0)
-										.align(srb2::Draw::Align::kLeft);
-								}
-								else
-								{
-									lives_drawer = lives_drawer
-										.xy(17.0, 1.0)
-										.font(srb2::Draw::Font::kThinTimer);
+									lives_num = 0;
 								}
 
-								lives_drawer.text("{}", lives_num);
+								if (lives_num > 0)
+								{
+									if (r_splitscreen)
+									{
+										lives_drawer = lives_drawer
+											.xy(6.0, 2.0)
+											.align(srb2::Draw::Align::kLeft);
+									}
+									else
+									{
+										lives_drawer = lives_drawer
+											.xy(17.0, 1.0)
+											.font(srb2::Draw::Font::kThinTimer);
+									}
+
+									lives_drawer.text("{}", lives_num);
+								}
 							}
 
 							break;

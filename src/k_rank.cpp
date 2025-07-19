@@ -646,6 +646,9 @@ fixed_t K_CalculateGPPercent(gpRank_t *rankData)
 		rankData->scoreRings +
 		rankData->scoreContinues;
 
+	if (rankData->scoreTotal < 0)
+		rankData->scoreTotal = 0;
+
 	const fixed_t percent = FixedDiv(rankData->scoreTotal, total);
 
 	return percent;

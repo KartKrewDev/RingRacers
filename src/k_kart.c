@@ -533,6 +533,14 @@ fixed_t K_GetKartGameSpeedScalar(SINT8 value)
 	fixed_t base = ((13 + (3*value)) << FRACBITS) / 16;
 	fixed_t duel = overtimecheckpoints*(1<<FRACBITS)/32;
 
+	if (gametyperules & GTR_CIRCUIT && gametype != GT_TUTORIAL)
+	{
+		if (value == KARTSPEED_EASY)
+		{
+			base = 9*FRACUNIT/10;
+		}
+	}
+
 	return base + duel;
 }
 
@@ -3549,7 +3557,15 @@ static void K_GetKartBoostPower(player_t *player)
 {
 	// Light weights have stronger boost stacking -- aka, better metabolism than heavies XD
 	const fixed_t maxmetabolismincrease = FRACUNIT/2;
-	const fixed_t metabolism = FRACUNIT - ((9-player->kartweight) * maxmetabolismincrease / 8);
+	fixed_t metabolism = FRACUNIT - ((9-player->kartweight) * maxmetabolismincrease / 8);
+	fixed_t softboostcap = 0;
+	fixed_t boostcapfactor = 3*FRACUNIT/4;
+
+	if (gamespeed == KARTSPEED_EASY && gametype != GT_TUTORIAL)
+	{
+		metabolism *= 2;
+		softboostcap = FRACUNIT/2;
+	}
 
 	fixed_t boostpower = FRACUNIT;
 	fixed_t speedboost = 0, accelboost = 0, handleboost = 0;
@@ -3857,6 +3873,13 @@ static void K_GetKartBoostPower(player_t *player)
 	}
 
 	player->boostpower = boostpower;
+
+	// G1 race: Reduce high boosts
+	if (softboostcap && speedboost > softboostcap)
+	{
+		fixed_t leftover = speedboost - softboostcap;
+		speedboost = softboostcap + FixedMul(leftover, boostcapfactor);
+	}
 
 	// value smoothing
 	if (speedboost > player->speedboost)
@@ -4246,6 +4269,9 @@ boolean K_PvPAmpReward(UINT32 award, player_t *attacker, player_t *defender)
 		UINT32 delta = min(range, defdist - atkdist);
 		award -= (delta * award / range / 2);
 	}
+
+	if (!K_PlayerUsesBotMovement(attacker) && K_PlayerUsesBotMovement(defender))
+		award /= 2;
 
 	return award;
 }

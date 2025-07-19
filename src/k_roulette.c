@@ -1152,6 +1152,10 @@ static boolean K_ShouldPlayerAllowItem(kartitems_t item, const player_t *player)
 		if (K_EffectiveGradingFactor(player) < K_RequiredXPForItem(item))
 			return false;
 
+		// Expert items are G2+ only, no Top in Relaxed!
+		if (K_RequiredXPForItem(item) >= FRACUNIT && gamespeed == KARTSPEED_EASY)
+			return false;
+
 		return !K_IsItemFirstOnly(item);
 	}
 }
