@@ -529,7 +529,7 @@ void SetRandomFakePlayerSkin(player_t* player, boolean fast, boolean instant)
 
 	for (i = 0; i < maxskinpick; i++)
 	{
-		if (i == player->lastfakeskin)
+		if (i == player->lastfakeskin || i == player->fakeskin)
 			continue;
 		if (demo.playback)
 		{
