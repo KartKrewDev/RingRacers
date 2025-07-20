@@ -15740,6 +15740,15 @@ void K_CheckSpectateStatus(boolean considermapreset)
 			if (players[i].exiting)
 				return;
 
+			// Mid-race joins cause all kind of jank, including replay issues
+			// that literally none of us can figure out. Whoops.
+			if (numingame < 2 || leveltime == 0)
+				continue;
+
+			return;
+
+			// Unseal when someone feels like debugging.
+#if 0
 			// Allow if the match hasn't started yet
 			if (numingame < 2 || leveltime < starttime || mapreset)
 				continue;
@@ -15753,6 +15762,7 @@ void K_CheckSpectateStatus(boolean considermapreset)
 				return;
 
 			continue;
+#endif
 		}
 
 		if (players[i].bot)
