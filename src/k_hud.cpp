@@ -5847,7 +5847,7 @@ static void K_DrawKartUFOTimer(fixed_t objx, fixed_t objy, INT32 hudx, INT32 hud
 	fixed_t amnumxpos, amnumypos;
 	INT32 amxpos, amypos;
 
-	if (exitcountdown || leveltime > g_battleufo.due) 
+	if (exitcountdown || leveltime > g_battleufo.due || battleprisons) 
 		return;
 
 	tic_t raw = g_battleufo.due - leveltime;
