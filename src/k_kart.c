@@ -9625,7 +9625,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			fixed_t fuckfactor = FRACUNIT;
 			fixed_t transfergravity = 10*FRACUNIT/100;
 
-			fixed_t transferclamp = min(abs(player->transfer), (player->mo->scale*100));
+			fixed_t transferclamp = min(abs(player->transfer), player->mo->scale*100);
 			if (player->transfer < 0)
 				transferclamp *= -1;
 
@@ -9646,8 +9646,16 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			spdl->renderflags |= RF_REDUCEVFX;
 			P_InstaScale(spdl, 4*player->mo->scale/2);
 
-			if (abs(player->mo->momz) < (3*transferclamp/2))
-				player->mo->momz -= FixedMul(transferclamp, FixedMul(fuckfactor, transfergravity));
+			fixed_t diff = abs(transferclamp) - abs(player->mo->momz);
+
+			if (diff > 0) // we have room to speed up
+			{
+				fixed_t sub = FixedMul(transferclamp, FixedMul(fuckfactor, transfergravity));
+				if (abs(sub) > diff) // don't one-tic error to speed up beyond clamp
+					sub = diff * (sub > 0 ? 1 : -1);
+				player->mo->momz -= sub;
+			}
+				
 		}
 		else
 		{
@@ -13318,6 +13326,13 @@ static void K_KartSpindash(player_t *player)
 			if (K_CanSuperTransfer(player))
 			{
 				S_StartSound(player->mo, sfx_ggfall);
+				/*
+				fixed_t movepenalty = min(abs(player->transfer*3/4), abs(player->mo->momz));
+				if (player->transfer > 0)
+					player->transfer -= movepenalty;
+				else
+					player->transfer += movepenalty;
+				*/
 			}
 			else
 			{

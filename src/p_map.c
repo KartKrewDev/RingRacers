@@ -4127,7 +4127,8 @@ static void P_BouncePlayerMove(mobj_t *mo, TryMoveResult_t *result)
 	else
 	{
 		// Some walls aren't bouncy even if you are
-		if (bestslideline && (bestslideline->flags & ML_NOTBOUNCY))
+		if ((bestslideline && (bestslideline->flags & ML_NOTBOUNCY))
+			|| (mo->player && mo->player->transfer))
 		{
 			// SRB2Kart: Non-bouncy line!
 			P_SlideMove(mo, result);

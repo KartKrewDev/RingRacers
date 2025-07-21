@@ -1807,6 +1807,13 @@ boolean P_XYMovement(mobj_t *mo)
 						{
 							if (abs(transfermomz) > 10*mo->scale)
 							{
+								/*
+								fixed_t clamp = 3*K_GetKartSpeed(mo->player, false, false)/2;
+								if (transfermomz > 0)
+									mo->player->transfer = min(transfermomz, clamp);
+								else
+									mo->player->transfer = max(transfermomz, clamp);
+								*/
 								mo->player->transfer = transfermomz;
 								S_StartSound(mo, sfx_s3k98);
 							}
