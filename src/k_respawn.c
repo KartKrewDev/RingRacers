@@ -141,11 +141,15 @@ void K_DoIngameRespawn(player_t *player)
 		return;
 	}
 
-	if (player->respawn.state != RESPAWNST_NONE &&
-			( player->pflags & PF_FAULT ) == 0)
+	if (player->finalfailsafe < FAILSAFETIME)
 	{
-		return;
+		if (player->respawn.state != RESPAWNST_NONE &&
+				( player->pflags & PF_FAULT ) == 0)
+		{
+			return;
+		}
 	}
+
 
 	if (leveltime <= introtime)
 	{

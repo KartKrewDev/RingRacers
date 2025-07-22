@@ -93,6 +93,8 @@ Make sure this matches the actual number of states
 #define RINGVOLUMEREGEN 1
 #define RINGTRANSPARENCYREGEN 3
 
+#define FAILSAFETIME (4*TICRATE)
+
 #define DUELOVERTIME (cv_dueltimelimit.value)
 #define DUELWINNINGSCORE (cv_duelscorelimit.value)
 
