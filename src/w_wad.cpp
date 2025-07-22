@@ -993,6 +993,28 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup, const
 	wadfiles[numwadfiles] = wadfile;
 	numwadfiles++; // must come BEFORE W_LoadDehackedLumps, so any addfile called by COM_BufInsertText called by Lua doesn't overwrite what we just loaded
 
+	//
+	// fill out metadata
+	//
+	if (mainfile == false) // main files do not need a MODINFO
+	{
+		wadfile->metadata = new mod_metadata_t(numwadfiles - 1);
+
+		CONS_Printf(
+			"== %s (version %s) - by %s ==\n"
+			"%s\n"
+			"More @ %s\n"
+			"[ DESIGNED FOR RING RACERS %d.%d ]\n",
+			wadfile->metadata->name().c_str(),
+			wadfile->metadata->version().c_str(),
+			wadfile->metadata->author().c_str(),
+			wadfile->metadata->description().c_str(),
+			wadfile->metadata->info_url().c_str(),
+			wadfile->metadata->game_version(),
+			wadfile->metadata->game_subversion()
+		);
+	}
+
 #ifdef HWRENDER
 	// Read shaders from file
 	if (rendermode == render_opengl && (vid.glstate == VID_GL_LIBRARY_LOADED))
@@ -2431,6 +2453,9 @@ int W_VerifyNMUSlumps(const char *filename, boolean exit_on_error)
 		{"MUSICDEF", 8}, // Kart song definitions
 
 		{"TLG_", 4}, // Generic button legends
+
+		{"MODINFO", 7}, // Addon metadata
+		{"MODICON", 7}, // Addon icon
 
 #ifdef HWRENDER
 		{"SHADERS", 7},
