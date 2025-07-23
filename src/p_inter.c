@@ -3467,6 +3467,9 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					ringburst = 0;
 					break;
 				case DMG_TUMBLE:
+					if (inflictor->type == MT_STONESHOE || inflictor->type == MT_STONESHOE_CHAIN)
+						softenTumble = true;
+
 					K_TumblePlayer(player, inflictor, source, softenTumble);
 					ringburst = 10;
 					break;
