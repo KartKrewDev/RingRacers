@@ -18,6 +18,7 @@
 #include "../doomdef.h"
 #include "../doomtype.h"
 #include "../g_game.h"
+#include "../k_collide.h"
 #include "../k_hud.h" // transflag
 #include "../m_easing.h"
 #include "../m_fixed.h"
@@ -287,6 +288,12 @@ struct Cloud : Mobj
 			return false;
 		}
 
+		if (K_PuntCollide(this, follow()))
+		{
+			remove();
+			return false;
+		}
+
 		move_origin(follow()->pos());
 		momx = 0;
 		momy = 0;
@@ -324,16 +331,20 @@ struct Cloud : Mobj
 		}
 		else
 		{
-			if (!fuse)
+			if (FixedHypot(momx, momy) > 2 * mapobjectscale)
 			{
-				fuse = 3*TICRATE;
 				instathrust(angle, 2 * mapobjectscale);
 			}
 
-			if (leveltime & 1)
+			if (fuse > 3*TICRATE)
 			{
-				renderflags ^= RF_DONTDRAW;
+				fuse = 3*TICRATE;
 			}
+		}
+
+		if (fuse <= 3*TICRATE && (leveltime & 1))
+		{
+			renderflags ^= RF_DONTDRAW;
 		}
 
 		return true;
@@ -343,6 +354,9 @@ struct Cloud : Mobj
 	{
 		if (toucher == target())
 			return false;
+
+		if (K_PuntCollide(this, toucher))
+			return true;
 
 		if (toucher->player)
 		{
@@ -396,6 +410,7 @@ void Pole::spawn_clouds_in_orbit()
 		cloud->spriteyoffset(24*FRACUNIT);
 		cloud->hitlag(2 + i * 4);
 		cloud->scale_between(1, cloud->scale(), cloud->scale() / 5);
+		cloud->fuse = 15*TICRATE;
 
 		a += a_incr;
 	}
