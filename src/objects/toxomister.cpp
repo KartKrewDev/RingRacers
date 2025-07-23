@@ -18,6 +18,7 @@
 #include "../doomdef.h"
 #include "../doomtype.h"
 #include "../g_game.h"
+#include "../k_collide.h"
 #include "../k_hud.h" // transflag
 #include "../m_easing.h"
 #include "../m_fixed.h"
@@ -347,6 +348,9 @@ struct Cloud : Mobj
 	{
 		if (toucher == target())
 			return false;
+
+		if (K_PuntCollide(this, toucher))
+			return true;
 
 		if (toucher->player)
 		{
