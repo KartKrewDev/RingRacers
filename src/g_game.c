@@ -5130,6 +5130,13 @@ void G_EndGame(void)
 		return;
 	}
 
+	if (gametype == GT_TUTORIAL && M_GameTrulyStarted() && restoreMenu == NULL) 
+	{
+		 // Playground Hack
+		F_StartIntro();
+		return;
+	}
+
 	// Time to return to the menu.
 	Command_ExitGame_f();
 }

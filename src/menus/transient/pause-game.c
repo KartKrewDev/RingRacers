@@ -561,7 +561,8 @@ void M_EndGame(INT32 choice)
 	if (!Playing())
 		return;
 
-	if (M_GameTrulyStarted() == false)
+	if (M_GameTrulyStarted() == false
+	|| (gametype == GT_TUTORIAL && restoreMenu == NULL)) // Playground Hack
 	{
 		// No returning to the title screen.
 		M_QuitSRB2(-1);
