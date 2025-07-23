@@ -324,16 +324,20 @@ struct Cloud : Mobj
 		}
 		else
 		{
-			if (!fuse)
+			if (FixedHypot(momx, momy) > 2 * mapobjectscale)
 			{
-				fuse = 3*TICRATE;
 				instathrust(angle, 2 * mapobjectscale);
 			}
 
-			if (leveltime & 1)
+			if (fuse > 3*TICRATE)
 			{
-				renderflags ^= RF_DONTDRAW;
+				fuse = 3*TICRATE;
 			}
+		}
+
+		if (fuse <= 3*TICRATE && (leveltime & 1))
+		{
+			renderflags ^= RF_DONTDRAW;
 		}
 
 		return true;
@@ -396,6 +400,7 @@ void Pole::spawn_clouds_in_orbit()
 		cloud->spriteyoffset(24*FRACUNIT);
 		cloud->hitlag(2 + i * 4);
 		cloud->scale_between(1, cloud->scale(), cloud->scale() / 5);
+		cloud->fuse = 15*TICRATE;
 
 		a += a_incr;
 	}
