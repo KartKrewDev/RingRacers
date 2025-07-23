@@ -8209,6 +8209,11 @@ void K_DropItems(player_t *player)
 		K_DropPaperItem(player, player->itemtype, player->itemamount);
 	}
 
+	if (player->backupitemamount > 0)
+	{
+		K_DropPaperItem(player, player->backupitemtype, player->backupitemamount);
+	}
+
 	K_StripItems(player);
 }
 
@@ -12827,6 +12832,9 @@ void K_StripItems(player_t *player)
 	player->itemamount = 0;
 	player->itemflags &= ~(IF_ITEMOUT|IF_EGGMANOUT);
 
+	player->backupitemtype = KITEM_NONE;
+	player->backupitemamount = 0;
+
 	if (player->itemRoulette.eggman == false)
 	{
 		K_StopRoulette(&player->itemRoulette);
@@ -14186,7 +14194,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		player->counterdash += TICRATE/8;
 
 		player->ringboost += bailboost * (3+K_GetKartRingPower(player, true));
-		player->baildrop = baildrop * BAIL_DROPFREQUENCY + 1;
+		player->baildrop += baildrop * BAIL_DROPFREQUENCY + 1;
 
 		K_AddHitLag(player->mo, TICRATE/4, false);
 		player->bailquake = true; // set for a one time quake effect as soon as hitlag ends
