@@ -663,6 +663,7 @@ void M_ClearStats(void)
 	gamedata->finishedtutorialchallenge = false;
 	gamedata->sealedswapalerted = false;
 	gamedata->tutorialdone = false;
+	gamedata->playgroundroute = false;
 	gamedata->musicstate = GDMUSIC_NONE;
 
 	gamedata->importprofilewins = false;
@@ -1755,6 +1756,8 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			return (gamedata->finishedtutorialchallenge == true);
 		case UC_TUTORIALDONE:
 			return (gamedata->tutorialdone == true);
+		case UC_PLAYGROUND:
+			return (gamedata->playgroundroute == true);
 		case UC_PASSWORD:
 			return (cn->stringvar == NULL);
 
@@ -2641,6 +2644,8 @@ static const char *M_GetConditionString(condition_t *cn)
 			return "successfully skip the Tutorial";
 		case UC_TUTORIALDONE:
 			return "complete the Tutorial";
+		case UC_PLAYGROUND:
+			return "pick the Playground";
 		case UC_PASSWORD:
 			return "enter a secret password";
 

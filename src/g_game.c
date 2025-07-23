@@ -179,6 +179,7 @@ boolean looptitle = true;
 char * bootmap = NULL; //bootmap for loading a map on startup
 char * podiummap = NULL; // map to load for podium
 
+char * tutorialplaygroundmap = NULL; // map to load for playground
 char * tutorialchallengemap = NULL; // map to load for tutorial skip
 UINT8 tutorialchallenge = TUTORIALSKIP_NONE;
 
@@ -5076,7 +5077,7 @@ void G_EndGame(void)
 	// Only do evaluation and credits in singleplayer contexts
 	if (!netgame)
 	{
-		if (gametype == GT_TUTORIAL)
+		if (gametype == GT_TUTORIAL && gamedata->gonerlevel < GDGONER_DONE)
 		{
 			// Tutorial was finished
 			gamedata->tutorialdone = true;

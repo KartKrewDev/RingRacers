@@ -229,9 +229,12 @@ void M_GonerBGTick(void);
 void M_GonerBGImplyPassageOfTime(void);
 void M_DrawGonerBack(void);
 void M_GonerProfile(INT32 choice);
+void M_GonerChoice(INT32 choice);
 void M_GonerTutorial(INT32 choice);
+void M_GonerPlayground(INT32 choice);
 void M_GonerResetLooking(int type);
 void M_GonerCheckLooking(void);
+void M_GonerResetText(void);
 void M_GonerGDQ(boolean opinion);
 boolean M_GonerMusicPlayable(void);
 

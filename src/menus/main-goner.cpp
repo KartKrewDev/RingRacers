@@ -32,6 +32,7 @@
 #include "../core/string.h"
 
 static void M_GonerDrawer(void);
+static void M_GonerChoiceDrawer(void);
 static void M_GonerConclude(INT32 choice);
 static boolean M_GonerInputs(INT32 ch);
 
@@ -55,9 +56,9 @@ menuitem_t MAIN_Goner[] =
 		"ASSIGN VEHICLE INPUTS.", NULL,
 		{.routine = M_GonerProfile}, 0, 0},
 
-	{IT_STRING | IT_CALL, "BEGIN TUTORIAL",
-		"PREPARE FOR INTEGRATION.", NULL,
-		{.routine = M_GonerTutorial}, 0, 0},
+	{IT_STRING | IT_CALL, "MAKE CHOICE",
+		"PREPARE FOR INTEGRATION?", NULL,
+		{.routine = M_GonerChoice}, 0, 0},
 
 	{IT_STRING | IT_CALL, "START GAME",
 		"I WILL SUCCEED.", NULL,
@@ -82,8 +83,56 @@ menu_t MAIN_GonerDef = {
 	M_GonerInputs,
 };
 
+menuitem_t MAIN_GonerChoice[] =
+{
+	{IT_STRING | IT_CALL, "Tails' way",
+		"As a child scientist, Tails has recorded bits\n"
+		"and pieces of an adventure he and Eggman went\n"
+		"on while trying out their new Ring Racers.\n"
+		"\n"
+		"This is a structured, back-to-basics session\n"
+		"that will likely take ""\x88""10-20 minutes""\x80"" of your time.",
+		NULL, {.routine = M_GonerTutorial}, 0, 0},
+
+	//{IT_STRING, NULL, NULL, NULL, {.routine = M_QuitSRB2}, 0, 0}, // will be replaced
+
+	{IT_STRING | IT_CALL, "Eggman's way",
+		"As a childlike scientist, Eggman has turned the\n"
+		"wrecked Egg Carrier into a giant skatepark,\n"
+		"dotted with fun collectables to test drivers.\n"
+		"\n"
+		"You can ""\x88""exit immediately""\x80"" and get to racing...\n"
+		"or spend ""\x88""as long as you want""\x80"" in the playground!",
+		NULL, {.routine = M_GonerPlayground}, 0, 0},
+};
+
+menu_t MAIN_GonerChoiceDef = {
+	sizeof (MAIN_GonerChoice) / sizeof (menuitem_t),
+	&MAIN_GonerDef,
+	0,
+	MAIN_GonerChoice,
+	26, 160,
+	0, 0,
+	MBF_UD_LR_FLIPPED,
+	"_GONER",
+	0, 0,
+	M_GonerChoiceDrawer,
+	M_DrawGonerBack,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+};
+
 namespace
 {
+
+typedef enum
+{
+	GONERCHOICE_TAILS = 0,
+	//GONERCHOICE_NONEBINEY,
+	GONERCHOICE_EGGMAN
+} gonerchoices_t;
 
 typedef enum
 {
@@ -429,16 +478,6 @@ void Miles_Electric_Lower()
 int goner_levelworking = GDGONER_INIT;
 bool goner_gdq = false;
 
-void M_GonerResetText(void)
-{
-	goner_typewriter.ClearText();
-	LinesToDigest.clear();
-	LinesOutput.clear();
-
-	goner_scroll = 0;
-	goner_scrollend = -1;
-}
-
 static void Initial_Control_Info(void)
 {
 	if (cv_currprofile.value != -1)
@@ -669,11 +708,22 @@ void M_AddGonerLines(void)
 			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
 				"Now, Metal... it's important you pay attention.");
 			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/5,
-				"It's time to ""\x87""begin your Tutorial""\x80""!");
+				"We have a ""\x88""choice""\x80"" ready for you.");
 
 			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
-				"Remember, MS-1. Even when you move on from this setup, you "\
-				"can always change your ""\x87""Options""\x80"" at any time from the menu.");
+				"You can play back our testing data as a sort of ""\x82""tutorial""\x80"\
+				" and learn the core parts of driving in a safe environment...");
+
+			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/5,
+				"...or if you're too headstrong and want to figure things out"\
+				" for yourself, we can let you loose in our ""\x85""playground""\x80""!");
+			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/2,
+				"If you do run into trouble, the ""\x82""tutorial""\x80"" can"\
+				" always be found in the ""\x87""Extras""\x80"" menu later on.");
+
+			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
+				"Either way, MS-1. Even when you move on from this setup,"\
+				" you can always change your ""\x87""Options""\x80"" at any time.");
 			LinesToDigest.emplace_front(0, Miles_Look_Electric);
 
 			break;
@@ -704,8 +754,6 @@ void M_AddGonerLines(void)
 			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/2,
 				"But yes. Perhaps now you have a better appreciation of what "\
 				"we're building here, Metal.");
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/2,
-				"If you need to learn more, you can always come back to the Tutorial later in the ""\x87""Extras""\x80"" menu.");
 			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/5,
 				"Now, I'm willing to let bygones be bygones.");
 			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/2,
@@ -1218,6 +1266,123 @@ static void M_GonerDrawer(void)
 	M_DrawHorizontalMenu();
 }
 
+static void M_GonerChoiceDrawer(void)
+{
+	srb2::Draw drawer = srb2::Draw();
+
+	const INT32 lex = (24 + BASEVIDWIDTH/2)/2;
+
+	if (itemOn == GONERCHOICE_TAILS)
+	{
+		drawer
+			.size((BASEVIDWIDTH/2) + 25, BASEVIDHEIGHT)
+			.fill(60);
+
+		drawer
+			.xy((BASEVIDWIDTH/2) + 40 + 1, 28+3)
+			.colormap(SKINCOLOR_ORANGE)
+			.flags(V_FLIP)
+			.patch("MENUPLTR");
+
+		drawer
+			.xy(lex, 28)
+			.font(srb2::Draw::Font::kGamemode)
+			.align(srb2::Draw::Align::kCenter)
+			.text(currentMenu->menuitems[itemOn].text);
+
+		drawer
+			.xy(8, 72)
+			.font(srb2::Draw::Font::kThin)
+			.align(srb2::Draw::Align::kLeft)
+			.text(currentMenu->menuitems[itemOn].tooltip);
+
+		drawer
+			.xy(lex, 154)
+			.font(srb2::Draw::Font::kFreeplay)
+			.align(srb2::Draw::Align::kCenter)
+			.text("(unlocks 20     )");
+
+		drawer
+			.xy(lex, 154+14)
+			.font(srb2::Draw::Font::kThin)
+			.align(srb2::Draw::Align::kCenter)
+			.flags(V_TRANSLUCENT)
+			.text("+ more surprises to find");
+
+		drawer
+			.xy(lex + 26, 154-4)
+			.patch("UN_CHA00");
+	}
+	else if (itemOn == GONERCHOICE_EGGMAN)
+	{
+		drawer
+			.x((BASEVIDWIDTH/2) - 24)
+			.size((BASEVIDWIDTH/2) + 24, BASEVIDHEIGHT)
+			.fill(44);
+
+		drawer
+			.xy((BASEVIDWIDTH/2) - 40, 28+3)
+			.colormap(SKINCOLOR_RED)
+			.patch("MENUPLTR");
+
+		drawer
+			.xy(BASEVIDWIDTH - lex, 28)
+			.font(srb2::Draw::Font::kGamemode)
+			.align(srb2::Draw::Align::kCenter)
+			.text(currentMenu->menuitems[itemOn].text);
+
+		drawer
+			.xy(BASEVIDWIDTH - 8, 72)
+			.font(srb2::Draw::Font::kThin)
+			.align(srb2::Draw::Align::kRight)
+			.text(currentMenu->menuitems[itemOn].tooltip);
+
+		drawer
+			.xy(BASEVIDWIDTH - lex, 154)
+			.font(srb2::Draw::Font::kFreeplay)
+			.align(srb2::Draw::Align::kCenter)
+			.text("(unlocks Addons/Online)");
+	}
+
+	// Un-highlighteds done this weird way because of GONERCHOICE_NONEBINEY
+
+	if (itemOn != GONERCHOICE_TAILS)
+	{
+		drawer
+			.size(20, BASEVIDHEIGHT)
+			.fill(60);
+
+		drawer
+			.xy(25, 39)
+			.font(srb2::Draw::Font::kFreeplay)
+			.align(srb2::Draw::Align::kLeft)
+			.text(currentMenu->menuitems[GONERCHOICE_TAILS].text);
+
+		drawer
+			.xy(20 - 3 - (skullAnimCounter/5), 39+6)
+			.patch("CUPARROW");
+	}
+
+	if (itemOn != GONERCHOICE_EGGMAN)
+	{
+		drawer
+			.x(BASEVIDWIDTH - 20)
+			.size(20, BASEVIDHEIGHT)
+			.fill(44);
+
+		drawer
+			.xy(BASEVIDWIDTH - 25, 39)
+			.font(srb2::Draw::Font::kFreeplay)
+			.align(srb2::Draw::Align::kRight)
+			.text(currentMenu->menuitems[GONERCHOICE_EGGMAN].text);
+
+		drawer
+			.xy((BASEVIDWIDTH - 20 + 3) + (skullAnimCounter/5), 39+6)
+			.flags(V_FLIP)
+			.patch("CUPARROW");
+	}
+}
+
 // ---
 
 void M_GonerProfile(INT32 choice)
@@ -1245,19 +1410,16 @@ void M_GonerProfile(INT32 choice)
 	M_GonerResetLooking(GDGONER_PROFILE);
 }
 
-static void M_GonerSurveyResponse(INT32 ch)
+static void M_GonerTutorialResponse(INT32 ch)
 {
 	if (ch != MA_YES)
 		return;
 
-	if (gamedata->gonerlevel < GDGONER_OUTRO)
-		gamedata->gonerlevel = GDGONER_OUTRO;
+	M_GonerTutorial(0);
 }
 
-void M_GonerTutorial(INT32 choice)
+void M_GonerChoice(INT32 choice)
 {
-	(void)choice;
-
 	if (cv_currprofile.value == -1)
 	{
 		const INT32 maxp = PR_GetNumProfiles();
@@ -1270,6 +1432,43 @@ void M_GonerTutorial(INT32 choice)
 		PR_ApplyProfile(profilen, 0);
 	}
 
+	if (gamedata->gonerlevel >= GDGONER_OUTRO)
+	{
+		M_StartMessage("First Boot Tutorial",
+			"You've already played the Tutorial! Do you want to see it again?",
+			&M_GonerTutorialResponse, MM_YESNO, "I'd love to", "Not right now");
+		return;
+	}
+
+	M_SetupNextMenu(&MAIN_GonerChoiceDef, false);
+}
+
+static void M_GonerSurveyResponse(INT32 ch)
+{
+	if (ch != MA_YES)
+		return;
+
+	if (gamedata->gonerlevel < GDGONER_OUTRO)
+		gamedata->gonerlevel = GDGONER_OUTRO;
+
+	if (currentMenu == &MAIN_GonerChoiceDef)
+		M_GoBack(0);
+}
+
+static void M_GonerSurvey(INT32 choice)
+{
+	(void)choice;
+
+	// The game is incapable of progression, but I can't bring myself to put an I_Error here.
+	M_StartMessage("First Boot Error",
+		"YOU ACCEPT EVERYTHING THAT\nWILL HAPPEN FROM NOW ON.",
+		&M_GonerSurveyResponse, MM_YESNO, "I agree", "Cancel");
+}
+
+void M_GonerTutorial(INT32 choice)
+{
+	(void)choice;
+
 	// Please also see M_LevelSelectInit as called in extras-1.c
 	levellist.netgame = false;
 	levellist.canqueue = false;
@@ -1279,11 +1478,47 @@ void M_GonerTutorial(INT32 choice)
 
 	if (!M_LevelListFromGametype(GT_TUTORIAL) && gamedata->gonerlevel < GDGONER_OUTRO)
 	{
-		// The game is incapable of progression, but I can't bring myself to put an I_Error here.
-		M_StartMessage("Agreement",
-			"YOU ACCEPT EVERYTHING THAT WILL HAPPEN FROM NOW ON.",
-			&M_GonerSurveyResponse, MM_YESNO, "I agree", "Cancel");
+		M_GonerSurvey(0);
+		return;
 	}
+}
+
+void M_GonerPlayground(INT32 choice)
+{
+	(void)choice;
+
+	UINT16 playgroundmap = NEXTMAP_INVALID;
+	if (tutorialplaygroundmap)
+		playgroundmap = G_MapNumber(tutorialplaygroundmap);
+
+	if (playgroundmap >= nummapheaders)
+	{
+		M_GonerSurvey(0);
+		return;
+	}
+
+	multiplayer = true;
+
+	M_MenuToLevelPreamble(0, false);
+
+	D_MapChange(
+		playgroundmap+1,
+		GT_TUTORIAL,
+		false,
+		true,
+		0,
+		false,
+		false
+	);
+
+	M_ClearMenus(true);
+	restoreMenu = NULL; // Playground Hack
+
+	// need to do all this here because it will skip returning to goner and there are circumstances (game close) where DoCompleted won't be called
+	M_GonerResetText();
+	gamedata->gonerlevel = GDGONER_DONE;
+	gamedata->playgroundroute = true;
+	gamedata->deferredsave = true;
 }
 
 static void M_GonerConclude(INT32 choice)
@@ -1291,6 +1526,9 @@ static void M_GonerConclude(INT32 choice)
 	(void)choice;
 
 	gamedata->gonerlevel = GDGONER_DONE;
+
+	if (gamedata->chaokeys < 20)
+		gamedata->chaokeys = 20;
 
 	F_StartIntro();
 	M_ClearMenus(true);
@@ -1379,4 +1617,14 @@ static boolean M_GonerInputs(INT32 ch)
 	holdtime = 0;
 
 	return false;
+}
+
+void M_GonerResetText(void)
+{
+	goner_typewriter.ClearText();
+	LinesToDigest.clear();
+	LinesOutput.clear();
+
+	goner_scroll = 0;
+	goner_scrollend = -1;
 }

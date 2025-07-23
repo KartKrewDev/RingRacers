@@ -96,6 +96,7 @@ struct GamedataMilestonesJson final
 	bool enteredtutorialchallenge;
 	bool sealedswapalerted;
 	bool tutorialdone;
+	bool playgroundroute;
 
 	SRB2_JSON_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
 		GamedataMilestonesJson,
@@ -109,7 +110,8 @@ struct GamedataMilestonesJson final
 		finishedtutorialchallenge,
 		enteredtutorialchallenge,
 		sealedswapalerted,
-		tutorialdone
+		tutorialdone,
+		playgroundroute
 	)
 };
 
