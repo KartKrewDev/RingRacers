@@ -2950,7 +2950,8 @@ static void P_DeathThink(player_t *player)
 		}
 		else
 		{
-			player->playerstate = PST_REBORN;
+			if (!player->exiting)
+				player->playerstate = PST_REBORN;
 		}
 	}
 
