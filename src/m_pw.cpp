@@ -28,6 +28,7 @@
 #include "doomdef.h"
 #include "doomstat.h"
 #include "doomtype.h"
+#include "f_finale.h"
 #include "g_game.h"
 #include "k_menu.h"
 #include "m_cheat.h"
@@ -613,6 +614,7 @@ void f_devmode()
 
 void f_proceed()
 {
+#if 0
 	gamedata->gonerlevel = GDGONER_DONE;
 	gamedata->finishedtutorialchallenge = true;
 	M_UpdateUnlockablesAndExtraEmblems(true, true);
@@ -621,6 +623,11 @@ void f_proceed()
 	S_StartSound(0, sfx_kc42);
 
 	G_SaveGameData();
+#else
+	F_StartIntro();
+	M_ClearMenus(true);
+	M_GonerResetText();
+#endif
 }
 
 }; // namespace
