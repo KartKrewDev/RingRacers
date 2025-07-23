@@ -2606,7 +2606,7 @@ boolean W_ReadShader(const char *filename, size_t *size, void *dest)
 		int zErr; // Helper var.
 		z_stream strm;
 		unsigned long rawSize = lump->disksize;
-		unsigned long decSize = (unsigned long)size;
+		unsigned long decSize = (unsigned long)*size;
 
 		rawData = static_cast<UINT8*>(Z_Malloc(rawSize, PU_STATIC, NULL));
 		decData = static_cast<UINT8*>(dest);
