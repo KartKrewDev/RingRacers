@@ -8046,7 +8046,7 @@ static void P_ShuffleTeams(void)
 
 static void P_InitPlayers(void)
 {
-	INT32 i, skin = -1, follower = -1;
+	INT32 i, skin = -1, follower = -1, col = -1;
 
 	// Make sure objectplace is OFF when you first start the level!
 	OP_ResetObjectplace();
@@ -8060,7 +8060,19 @@ static void P_InitPlayers(void)
 		// Get skin from name.
 		if (mapheaderinfo[gamemap-1] && mapheaderinfo[gamemap-1]->relevantskin[0])
 		{
-			skin = R_SkinAvailable(mapheaderinfo[gamemap-1]->relevantskin);
+			if (strcmp(mapheaderinfo[gamemap-1]->relevantskin, "_PROFILE") == 0)
+			{
+				profile_t *p = PR_GetProfile(cv_ttlprofilen.value);
+				if (p)
+				{
+					skin = R_SkinAvailable(p->skinname);
+					col = p->color;
+				}
+			}
+			else
+			{
+				skin = R_SkinAvailable(mapheaderinfo[gamemap-1]->relevantskin);
+			}
 		}
 		else
 		{
@@ -8097,7 +8109,7 @@ static void P_InitPlayers(void)
 		if (skin != -1)
 		{
 			SetPlayerSkinByNum(i, skin);
-			players[i].skincolor = skins[skin].prefcolor;
+			players[i].skincolor = (col >= 0 && col < numskincolors) ? col : skins[skin].prefcolor;
 
 			players[i].followerskin = follower;
 			if (follower != -1)
