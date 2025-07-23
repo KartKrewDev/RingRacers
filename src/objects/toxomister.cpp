@@ -288,6 +288,12 @@ struct Cloud : Mobj
 			return false;
 		}
 
+		if (K_PuntCollide(this, follow()))
+		{
+			remove();
+			return false;
+		}
+
 		move_origin(follow()->pos());
 		momx = 0;
 		momy = 0;
