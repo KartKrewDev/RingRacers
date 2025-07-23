@@ -1452,7 +1452,20 @@ static void M_GonerSurveyResponse(INT32 ch)
 		gamedata->gonerlevel = GDGONER_OUTRO;
 
 	if (currentMenu == &MAIN_GonerChoiceDef)
+	{
+		if (itemOn == GONERCHOICE_EGGMAN)
+		{
+			gamedata->playgroundroute = true;
+			gamedata->gonerlevel = GDGONER_DONE;
+
+			F_StartIntro();
+			M_ClearMenus(true);
+			M_GonerResetText();
+			return;
+		}
+
 		M_GoBack(0);
+	}
 }
 
 static void M_GonerSurvey(INT32 choice)
