@@ -27,7 +27,7 @@
 #include "../m_pw.h"
 #include "../z_zone.h"
 
-#include <forward_list>
+#include <deque>
 
 #include "../core/string.h"
 
@@ -249,8 +249,8 @@ public:
 	};
 };
 
-std::forward_list<GonerChatLine> LinesToDigest;
-std::forward_list<GonerChatLine> LinesOutput;
+std::deque<GonerChatLine> LinesToDigest;
+std::deque<GonerChatLine> LinesOutput;
 
 class GonerBGData
 {
@@ -492,23 +492,12 @@ static void Initial_Control_Info(void)
 		)
 	);
 
-	if (LinesToDigest.empty())
-	{
-		LinesToDigest.emplace_front(line);
-		return;
-	}
-
-	LinesToDigest.emplace_after(
-		LinesToDigest.begin(),
-		line
-	);
+	LinesToDigest.push_back(line);
 }
 
 void M_AddGonerLines(void)
 {
 	SRB2_ASSERT(LinesToDigest.empty());
-
-	auto _ = srb2::finally([]() { LinesToDigest.reverse(); });
 
 	static bool leftoff = false;
 
@@ -519,7 +508,7 @@ void M_AddGonerLines(void)
 	{
 		if (!MAIN_Goner[0].mvar2)
 		{
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, 0,
 				"Metal Sonic. Are you online?");
 		}
 
@@ -527,10 +516,10 @@ void M_AddGonerLines(void)
 
 		if (leftoff)
 		{
-			LinesToDigest.emplace_front(0, Miles_Look_Camera);
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
+			LinesToDigest.emplace_back(0, Miles_Look_Camera);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, 0,
 				"It must have run into some sort of error...");
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, 0,
 				"Don't worry, your settings so far are saved. "\
 				"Let's pick up where we left off.");
 
@@ -545,40 +534,40 @@ void M_AddGonerLines(void)
 	{
 		case GDGONER_VIDEO:
 		{
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/2,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/2,
 				"Take a close look, Miles. Moments ago he was at my throat! "\
 				"Now he's docile as can be on that operating table.");
 
-			LinesToDigest.emplace_front(0, Miles_Look_Camera);
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
+			LinesToDigest.emplace_back(0, Miles_Look_Camera);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, 0,
 				"I don't feel very safe!");
-			LinesToDigest.emplace_front(0, Miles_Electric_Lower);
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/4,
+			LinesToDigest.emplace_back(0, Miles_Electric_Lower);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, TICRATE/4,
 				"But its programming is definitely locked down...");
 
-			LinesToDigest.emplace_front(0, Miles_Look_Electric);
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
+			LinesToDigest.emplace_back(0, Miles_Look_Electric);
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, 0,
 				"You've given me quite the headache, Metal. "\
 				"Thankfully, Tails caught you in the act.");
 
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/5,
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, TICRATE/5,
 				"Wait, I'm getting weird readings over the network.");
-			LinesToDigest.emplace_front(0, Miles_Look_Camera);
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
+			LinesToDigest.emplace_back(0, Miles_Look_Camera);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, 0,
 				"Metal Sonic is the unit labeled \"MS-1\", right?");
-			LinesToDigest.emplace_front(0, Miles_Look_Electric);
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE,
+			LinesToDigest.emplace_back(0, Miles_Look_Electric);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, TICRATE,
 				"The ""\x87""viewport""\x80"" and ""\x87""audio""\x80"" "\
 				"config looks like it got messed up.");
 
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, 0,
 				"So you're right. I wonder if it has anything to do with that outburst.");
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, 0,
 				"Alright, Metal! I don't remember your specifications offhand. "\
 				"First things first, go ahead and set up your "\
 				"\x87""Video Options""\x80"" yourself.");
 
-			LinesToDigest.emplace_front(0, Initial_Control_Info);
+			LinesToDigest.emplace_back(0, Initial_Control_Info);
 
 			break;
 		}
@@ -586,101 +575,101 @@ void M_AddGonerLines(void)
 		{
 			if (!leftoff)
 			{
-				LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
+				LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, 0,
 					"Ah, you can see us now. Good.");
 			}
-			LinesToDigest.emplace_front(0, Miles_Look_Camera);
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
+			LinesToDigest.emplace_back(0, Miles_Look_Camera);
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, 0,
 				"Now, calibrate your ""\x87""Sound Options""\x80"".");
 
-			LinesToDigest.emplace_front(0, Miles_Electric_Lower);
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
+			LinesToDigest.emplace_back(0, Miles_Electric_Lower);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, 0,
 				"You always make your stuff so loud by default, Eggman. It might need a moment.");
 
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, 0,
 				"Not Metal! He always needed to be stealthy. But go on, set your sliders.");
-			LinesToDigest.emplace_front(0, Miles_Look_Electric);
+			LinesToDigest.emplace_back(0, Miles_Look_Electric);
 			break;
 		}
 		case GDGONER_PROFILE:
 		{
 			if (!leftoff)
 			{
-				LinesToDigest.emplace_front(0, Miles_Look_Electric);
-				LinesToDigest.emplace_front(0, Miles_Look_Camera);
-				LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/2,
+				LinesToDigest.emplace_back(0, Miles_Look_Electric);
+				LinesToDigest.emplace_back(0, Miles_Look_Camera);
+				LinesToDigest.emplace_back(GONERSPEAKER_TAILS, TICRATE/2,
 					"Oh! Let's tell Metal about our project!");
 
-				LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
+				LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, 0,
 					"Of course. I and my lab assista-");
 
-				LinesToDigest.emplace_front(0, Miles_Electric_Lower);
-				LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
+				LinesToDigest.emplace_back(0, Miles_Electric_Lower);
+				LinesToDigest.emplace_back(GONERSPEAKER_TAILS, 0,
 					"Lab PARTNER.");
 
-				LinesToDigest.emplace_front(0, Miles_Look_Electric);
-				LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
+				LinesToDigest.emplace_back(0, Miles_Look_Electric);
+				LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, 0,
 					"Irrelevant!");
 			}
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/4,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/4,
 				"We made a machine together, Tails and I. "\
 				"It's called a \"""\x82""Ring Racer""\x80""\".");
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE,
 				"At its core, it is designed to utilise the boundless potential "\
 				"of the ""\x83""High Voltage Ring""\x80"".");
 
-			LinesToDigest.emplace_front(0, Miles_Look_Camera);
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE,
+			LinesToDigest.emplace_back(0, Miles_Look_Camera);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, TICRATE,
 				"We made this special ""\x83""Ring""\x80"" by combining the power of tens of "\
 				"thousands of ordinary ""\x82""Rings""\x80"".");
-			LinesToDigest.emplace_front(0, Miles_Electric_Lower);
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/2,
+			LinesToDigest.emplace_back(0, Miles_Electric_Lower);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, TICRATE/2,
 				"We recorded some of our testing for you, MS-1. Maybe your neural "\
 				"network could train on some less violent data for once.");
 
-			LinesToDigest.emplace_front(0, Miles_Look_Electric);
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/4,
+			LinesToDigest.emplace_back(0, Miles_Look_Electric);
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/4,
 				"While that's uploading, why don't you set up your ""\x87""Profile Card""\x80""?");
 
-			LinesToDigest.emplace_front(0, Miles_Electric_Lower);
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
+			LinesToDigest.emplace_back(0, Miles_Electric_Lower);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, 0,
 				"Yes! That's one of my contributions.");
 
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, 0,
 				"(I'm too used to my systems being designed for me alone...)");
 
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, 0,
 				"Every racer carries one, to contain their personal settings.");
-			LinesToDigest.emplace_front(0, Miles_Look_Electric);
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
+			LinesToDigest.emplace_back(0, Miles_Look_Electric);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, 0,
 				"It helps get your ""\x87""controls""\x80"" set up nice and quickly, "\
 				"when starting your vehicle and navigating the menu.");
-			LinesToDigest.emplace_front(0, Miles_Look_Camera);
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
+			LinesToDigest.emplace_back(0, Miles_Look_Camera);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, 0,
 				"And it helps track your wins, too.");
-			LinesToDigest.emplace_front(0, Miles_Look_Electric);
+			LinesToDigest.emplace_back(0, Miles_Look_Electric);
 
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/5,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/5,
 				"Bragging rights. My idea!");
 
-			LinesToDigest.emplace_front(0, Miles_Look_Camera);
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/2,
+			LinesToDigest.emplace_back(0, Miles_Look_Camera);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, TICRATE/2,
 				"You can make the ID and player tag on there anything you want.");
-			LinesToDigest.emplace_front(0, Miles_Electric_Lower);
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/2,
+			LinesToDigest.emplace_back(0, Miles_Electric_Lower);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, TICRATE/2,
 				"Mine says \"Nine Tails\". That's the name of my original character! "\
 				"He's like me if I never met my ""\x84""brother""\x80"". He'd use cool "\
 				"robotics, but be kind of mean to protect himself...");
 
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/5,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/5,
 				"Mine says \"Robotnik\". You can't beat a classic.");
 
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/2,
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, TICRATE/2,
 				"And I'm not sure if you'll need it, but we always tell new drivers to "\
 				"look at the ""\x87""Accessibility""\x80"" settings. Often there's some "\
 				"feature they're not expecting. Maybe you'd be surprised too?");
 
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, 0,
 				"So go on, do your ""\x87""Profile Setup""\x80""!");
 
 			break;
@@ -689,42 +678,42 @@ void M_AddGonerLines(void)
 		{
 			if (!leftoff)
 			{
-				LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/2,
+				LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/2,
 					"Now that that's been set up, you can use your ""\x87""Profile controls""\x80"" on menus from here on out, too.");
 
-				LinesToDigest.emplace_front(0, Miles_Look_Electric);
-				LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/5,
+				LinesToDigest.emplace_back(0, Miles_Look_Electric);
+				LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/5,
 					"Miles. How's the upload going?");
 
-				LinesToDigest.emplace_front(0, Miles_Look_Camera);
-				LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
+				LinesToDigest.emplace_back(0, Miles_Look_Camera);
+				LinesToDigest.emplace_back(GONERSPEAKER_TAILS, 0,
 					"Just finished.");
 
-				LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
+				LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, 0,
 					"Perfect.");
 			}
 
-			LinesToDigest.emplace_front(0, Miles_Electric_Lower);
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
+			LinesToDigest.emplace_back(0, Miles_Electric_Lower);
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, 0,
 				"Now, Metal... it's important you pay attention.");
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/5,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/5,
 				"We have a ""\x88""choice""\x80"" ready for you.");
 
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, 0,
 				"You can play back our testing data as a sort of ""\x82""tutorial""\x80"\
 				" and learn the core parts of driving in a safe environment...");
 
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/5,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/5,
 				"...or if you're too headstrong and want to figure things out"\
 				" for yourself, we can let you loose in our ""\x85""playground""\x80""!");
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/2,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/2,
 				"If you do run into trouble, the ""\x82""tutorial""\x80"" can"\
 				" always be found in the ""\x87""Extras""\x80"" menu later on.");
 
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, 0,
 				"Either way, MS-1. Even when you move on from this setup,"\
 				" you can always change your ""\x87""Options""\x80"" at any time.");
-			LinesToDigest.emplace_front(0, Miles_Look_Electric);
+			LinesToDigest.emplace_back(0, Miles_Look_Electric);
 
 			break;
 		}
@@ -732,35 +721,35 @@ void M_AddGonerLines(void)
 		{
 			if (!leftoff)
 			{
-				LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/3,
+				LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/3,
 					"And... the training data is completed.");
 			}
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/2,
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, TICRATE/2,
 				"It's kind of funny, actually.");
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/3,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/3,
 				"Oh? Care to elucidate, Prower?");
-			LinesToDigest.emplace_front(0, Miles_Look_Camera);
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/2,
+			LinesToDigest.emplace_back(0, Miles_Look_Camera);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, TICRATE/2,
 				"No matter how much time we took getting here, a machine like "\
 				"Metal can play it back in minutes.");
-			LinesToDigest.emplace_front(0, Miles_Electric_Lower);
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/2,
+			LinesToDigest.emplace_back(0, Miles_Electric_Lower);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, TICRATE/2,
 				"It could have been five days or five years of development on "\
 				"our ""\x82""Ring Racers""\x80"", and that would barely matter to it.");
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/4,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/4,
 				"Ha! As if. I'd like to think our partnership hasn't felt "\
 				"particularly protracted.");
-			LinesToDigest.emplace_front(0, Miles_Look_Electric);
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/2,
+			LinesToDigest.emplace_back(0, Miles_Look_Electric);
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/2,
 				"But yes. Perhaps now you have a better appreciation of what "\
 				"we're building here, Metal.");
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/5,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/5,
 				"Now, I'm willing to let bygones be bygones.");
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/2,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/2,
 				"As long as you keep your violence to the track, I'll be "\
 				"giving you your autonomy back in a moment.");
-			LinesToDigest.emplace_front(0, Miles_Electric_Lower);
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
+			LinesToDigest.emplace_back(0, Miles_Electric_Lower);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, 0,
 				"We've kept the keys from you long enough!");
 			break;
 		}
@@ -768,7 +757,7 @@ void M_AddGonerLines(void)
 			break;
 
 		default:
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, 0,
 				"I am error");
 	}
 
@@ -1568,24 +1557,23 @@ void M_GonerGDQ(boolean opinion)
 
 	if (opinion) // Save The Animals
 	{
-		LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/2,
+		LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/2,
 			"Why wouldn't you save the frames..?");
 
-		LinesToDigest.emplace_front(0, Miles_Look_Camera);
-		LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
+		LinesToDigest.emplace_back(0, Miles_Look_Camera);
+		LinesToDigest.emplace_back(GONERSPEAKER_TAILS, 0,
 			"Don't mind him. Good luck on the run!");
-		LinesToDigest.emplace_front(0, Miles_Look_Electric);
+		LinesToDigest.emplace_back(0, Miles_Look_Electric);
 	}
 	else // Save The Frames
 	{
-		LinesToDigest.emplace_front(0, Miles_Electric_Lower);
-		LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/2,
+		LinesToDigest.emplace_back(0, Miles_Electric_Lower);
+		LinesToDigest.emplace_back(GONERSPEAKER_TAILS, TICRATE/2,
 			"But what about all the little animals...");
 
-		LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
+		LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, 0,
 			"It's just logical. I know you'll conquer this run.");
 	}
-	LinesToDigest.reverse();
 
 	if (gamedata->gonerlevel <= GDGONER_TUTORIAL)
 	{
