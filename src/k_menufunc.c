@@ -829,17 +829,10 @@ void M_StartControlPanel(void)
 
 		if (gamedata != NULL
 		&& gamedata->gonerlevel < GDGONER_OUTRO
-		&& gamestartchallenge < MAXUNLOCKABLES)
+		&& M_GameAboutToStart())
 		{
-			// See M_GameTrulyStarted
-			if (
-				gamedata->unlockpending[gamestartchallenge]
-				|| gamedata->unlocked[gamestartchallenge]
-			)
-			{
-				gamedata->gonerlevel = GDGONER_OUTRO;
-				M_GonerBGImplyPassageOfTime();
-			}
+			gamedata->gonerlevel = GDGONER_OUTRO;
+			M_GonerBGImplyPassageOfTime();
 		}
 
 		if (M_GameTrulyStarted() == false)

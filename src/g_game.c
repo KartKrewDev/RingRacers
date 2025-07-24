@@ -5130,7 +5130,7 @@ void G_EndGame(void)
 		return;
 	}
 
-	if (gametype == GT_TUTORIAL && M_GameTrulyStarted() && restoreMenu == NULL) 
+	if (gametype == GT_TUTORIAL && M_GameAboutToStart() && restoreMenu == NULL) 
 	{
 		 // Playground Hack
 		F_StartIntro();

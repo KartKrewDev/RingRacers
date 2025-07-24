@@ -3475,6 +3475,27 @@ boolean M_GameTrulyStarted(void)
 	return (gamedata->gonerlevel == GDGONER_DONE);
 }
 
+boolean M_GameAboutToStart(void)
+{
+	// Fail safe
+	if (gamedata == NULL)
+		return false;
+
+	// Not set
+	if (gamestartchallenge >= MAXUNLOCKABLES)
+		return true;
+
+	// An unfortunate sidestep, but sync is important.
+	if (netgame)
+		return true;
+
+	// Pending unlocked, but not unlocked
+	return (
+		gamedata->unlockpending[gamestartchallenge]
+		&& !gamedata->unlocked[gamestartchallenge]
+	);
+}
+
 boolean M_CheckNetUnlockByID(UINT16 unlockid)
 {
 	if (unlockid >= MAXUNLOCKABLES
