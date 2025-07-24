@@ -120,6 +120,7 @@
 #include "k_credits.h"
 #include "k_objects.h"
 #include "p_deepcopy.h"
+#include "k_color.h" // K_ColorUsable
 
 // Replay names have time
 #if !defined (UNDER_CE)
@@ -8046,7 +8047,7 @@ static void P_ShuffleTeams(void)
 
 static void P_InitPlayers(void)
 {
-	INT32 i, skin = -1, follower = -1, col = -1;
+	INT32 i, skin = -1, follower = -1, col = SKINCOLOR_NONE;
 
 	// Make sure objectplace is OFF when you first start the level!
 	OP_ResetObjectplace();
@@ -8063,10 +8064,19 @@ static void P_InitPlayers(void)
 			if (strcmp(mapheaderinfo[gamemap-1]->relevantskin, "_PROFILE") == 0)
 			{
 				profile_t *p = PR_GetProfile(cv_ttlprofilen.value);
-				if (p)
+				if (p && !netgame)
 				{
 					skin = R_SkinAvailable(p->skinname);
-					col = p->color;
+
+					if (!R_SkinUsable(g_localplayers[0], skin, false))
+					{
+						skin = GetSkinNumClosestToStats(skins[skin].kartspeed, skins[skin].kartweight, skins[skin].flags, false);
+					}
+
+					if (K_ColorUsable(static_cast<skincolornum_t>(p->color), false, true) == true)
+					{
+						col = p->color;
+					}
 				}
 			}
 			else
@@ -8109,7 +8119,7 @@ static void P_InitPlayers(void)
 		if (skin != -1)
 		{
 			SetPlayerSkinByNum(i, skin);
-			players[i].skincolor = (col >= 0 && col < numskincolors) ? col : skins[skin].prefcolor;
+			players[i].skincolor = (col != SKINCOLOR_NONE) ? col : skins[skin].prefcolor;
 
 			players[i].followerskin = follower;
 			if (follower != -1)
