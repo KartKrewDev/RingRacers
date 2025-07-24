@@ -90,7 +90,7 @@ menuitem_t MAIN_GonerChoice[] =
 		"and pieces of an adventure he and Eggman went\n"
 		"on while trying out their new Ring Racers.\n"
 		"\n"
-		"This is a structured, back-to-basics session\n"
+		"This is a structured, back-to-basics tutorial\n"
 		"that will likely take ""\x88""10-20 minutes""\x80"" of your time.",
 		NULL, {.routine = M_GonerTutorial}, 0, 0},
 
@@ -113,7 +113,7 @@ menu_t MAIN_GonerChoiceDef = {
 	MAIN_GonerChoice,
 	26, 160,
 	0, 0,
-	MBF_UD_LR_FLIPPED,
+	MBF_UD_LR_FLIPPED|MBF_NOLOOPENTRIES,
 	"_GONER",
 	0, 0,
 	M_GonerChoiceDrawer,
@@ -1342,6 +1342,13 @@ static void M_GonerChoiceDrawer(void)
 			.font(srb2::Draw::Font::kFreeplay)
 			.align(srb2::Draw::Align::kCenter)
 			.text("(unlocks Addons/Online)");
+
+		drawer
+			.xy(BASEVIDWIDTH - lex, 154+14)
+			.font(srb2::Draw::Font::kThin)
+			.align(srb2::Draw::Align::kCenter)
+			.flags(V_TRANSLUCENT)
+			.text("the other way has these too, just later");
 	}
 
 	// Un-highlighteds done this weird way because of GONERCHOICE_NONEBINEY
