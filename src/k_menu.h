@@ -140,6 +140,7 @@ typedef enum
 	MBF_SOUNDLESS		 	= 1<<1, // do not play base menu sounds
 	MBF_NOLOOPENTRIES		= 1<<2, // do not loop M_NextOpt/M_PrevOpt
 	MBF_DRAWBGWHILEPLAYING	= 1<<3, // run backroutine() outside of GS_MENU
+	MBF_CANTRESTORE			= 1<<4, // Do not use in restoreMenu
 } menubehaviourflags_t;
 
 struct menuitem_t

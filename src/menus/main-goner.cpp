@@ -72,7 +72,7 @@ menu_t MAIN_GonerDef = {
 	MAIN_Goner,
 	26, 160,
 	0, sizeof (MAIN_Goner) / sizeof (menuitem_t), // extra2 is final width
-	MBF_UD_LR_FLIPPED,
+	MBF_CANTRESTORE|MBF_UD_LR_FLIPPED,
 	"_GONER",
 	0, 0,
 	M_GonerDrawer,
@@ -83,7 +83,7 @@ menu_t MAIN_GonerDef = {
 	M_GonerInputs,
 };
 
-menuitem_t MAIN_GonerChoice[] =
+static menuitem_t MAIN_GonerChoice[] =
 {
 	{IT_STRING | IT_CALL, "Tails' way",
 		"As a child scientist, Tails has recorded bits\n"
@@ -106,14 +106,14 @@ menuitem_t MAIN_GonerChoice[] =
 		NULL, {.routine = M_GonerPlayground}, 0, 0},
 };
 
-menu_t MAIN_GonerChoiceDef = {
+static menu_t MAIN_GonerChoiceDef = {
 	sizeof (MAIN_GonerChoice) / sizeof (menuitem_t),
 	&MAIN_GonerDef,
 	0,
 	MAIN_GonerChoice,
 	26, 160,
 	0, 0,
-	MBF_UD_LR_FLIPPED|MBF_NOLOOPENTRIES,
+	MBF_CANTRESTORE|MBF_UD_LR_FLIPPED|MBF_NOLOOPENTRIES,
 	"_GONER",
 	0, 0,
 	M_GonerChoiceDrawer,

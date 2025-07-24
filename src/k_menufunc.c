@@ -662,7 +662,7 @@ boolean M_ConsiderSealedSwapAlert(void)
 
 void M_ValidateRestoreMenu(void)
 {
-	if (restoreMenu == NULL || restoreMenu == &MAIN_GonerDef)
+	if (restoreMenu == NULL || (restoreMenu->behaviourflags & MBF_CANTRESTORE))
 		restoreMenu = &MainDef;
 }
 
