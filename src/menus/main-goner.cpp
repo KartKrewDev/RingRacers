@@ -1522,7 +1522,8 @@ void M_GonerChoice(INT32 choice)
 	if (gamedata->gonerlevel >= GDGONER_OUTRO)
 	{
 		M_StartMessage("First Boot Tutorial",
-			"You've already played the Tutorial! Do you want to see it again?",
+			"You've already played the Tutorial!\n"
+			"Do you want to see it again?",
 			&M_GonerTutorialResponse, MM_YESNO, "I'd love to", "Not right now");
 		return;
 	}
