@@ -36,9 +36,99 @@ static void M_GonerChoiceDrawer(void);
 static void M_GonerConclude(INT32 choice);
 static boolean M_GonerInputs(INT32 ch);
 
-menuitem_t MAIN_Goner[] =
+static menuitem_t MAIN_GonerAccessibility[] =
 {
-	{IT_STRING | IT_CALL, NULL, NULL, NULL, {.routine = M_QuitSRB2}, 0, 0}, // will be replaced
+	{IT_NOTHING, NULL, NULL, NULL, {NULL}, 0, 0},
+};
+
+static UINT32 goneraccessibilitytick = 0;
+
+//#define HANDSTRAIN
+
+#ifdef HANDSTRAIN
+static void M_GonerHandStrain(INT32 ch)
+{
+	if (ch != MA_YES)
+		return;
+
+	CV_StealthSet(&cv_kickstartaccel[0], "On");
+}
+#endif
+
+static void M_GonerPhotosensitivity(INT32 ch)
+{
+	if (ch == MA_YES)
+	{
+		CV_StealthSet(&cv_reducevfx, "Yes");
+		CV_StealthSet(&cv_screenshake, "Off");
+		CV_StealthSet(&cv_tilting, "Off");
+	}
+
+#ifdef HANDSTRAIN
+	M_StartMessage("Hand strain warning",
+		"You may be required to press many buttons\n"
+		"at once in order to control your Ring Racer.\n"
+		"\n"
+		"There is an option for your Accel input\n"
+		"to \"lock\" on after being held for 1 second.\n"
+		"Would you like to turn it on?\n"
+		, &M_GonerHandStrain, MM_YESNO, "Yes, I want Accel to \"lock\"", "No thanks");
+#endif
+}
+
+static void M_GonerAccessibilityTick(void)
+{
+	if (goneraccessibilitytick)
+	{
+		if (!menumessage.active && !menutransition.dest)
+		{
+			M_SetupNextMenu(&MAIN_GonerDef, true);
+		}
+
+		return;
+	}
+
+	goneraccessibilitytick++;
+
+	M_StartMessage("Photosensitivity warning",
+		"This game has ""\x87""flashing lights and high-contrast\n"
+		"patterns.""\x80"" Listen to your body, and\n"
+		"stop playing if you feel unwell.\n"
+		"\n"
+		"There is a ""\x88""special mode""\x80"" to reduce some\n"
+		"visual effects. Would you like to turn it on?\n"
+		, &M_GonerPhotosensitivity, MM_YESNO, "Yes, reduce effects", "No thanks");
+	return;
+}
+
+static void M_GonerAccessibilityDrawer(void)
+{
+	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+}
+
+menu_t MAIN_GonerAccessibilityDef = {
+	sizeof (MAIN_GonerAccessibility) / sizeof (menuitem_t),
+	NULL,
+	0,
+	MAIN_GonerAccessibility,
+	26, 160,
+	0, 0,
+	MBF_CANTRESTORE,
+	"_GONER",
+	0, 0,
+	M_GonerAccessibilityDrawer,
+	NULL,
+	M_GonerAccessibilityTick,
+	NULL,
+	NULL,
+	NULL,
+};
+
+static menuitem_t MAIN_Goner[] =
+{
+	{IT_STRING | IT_CVAR | IT_CV_STRING, "PASSWORD",
+		"ATTEMPT ADMINISTRATOR ACCESS.", NULL,
+		{.cvar = &cv_dummyextraspassword}, 0, 0},
 
 	{IT_STRING | IT_CALL, "EXIT PROGRAM",
 		"CONCLUDE OBSERVATIONS NOW.", NULL,
@@ -887,10 +977,12 @@ void M_GonerTick(void)
 
 		first = goner_gdq = false;
 
+#if 0
 		MAIN_Goner[0] =
 			{IT_STRING | IT_CVAR | IT_CV_STRING, "PASSWORD",
 				"ATTEMPT ADMINISTRATOR ACCESS.", NULL,
 				{.cvar = &cv_dummyextraspassword}, 0, 0};
+#endif
 
 		if (gamedata->gonerlevel < GDGONER_INTRO)
 			gamedata->gonerlevel = GDGONER_INTRO;

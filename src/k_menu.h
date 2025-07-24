@@ -222,7 +222,7 @@ typedef enum
 	quitkart
 } main_e;
 
-extern menuitem_t MAIN_Goner[];
+extern menu_t MAIN_GonerAccessibilityDef;
 extern menu_t MAIN_GonerDef;
 
 void M_GonerTick(void);

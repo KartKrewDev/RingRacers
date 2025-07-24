@@ -847,7 +847,7 @@ void M_StartControlPanel(void)
 			// Are you ready for the First Boot Experience?
 			M_ResetOptions();
 
-			currentMenu = &MAIN_GonerDef;
+			currentMenu = &MAIN_GonerAccessibilityDef;
 			restoreMenu = NULL;
 
 			M_PlayMenuJam();
