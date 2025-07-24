@@ -660,10 +660,7 @@ void M_ClearStats(void)
 	gamedata->chaokeytutorial = false;
 	gamedata->majorkeyskipattempted = false;
 	gamedata->enteredtutorialchallenge = false;
-	gamedata->finishedtutorialchallenge = false;
 	gamedata->sealedswapalerted = false;
-	gamedata->tutorialdone = false;
-	gamedata->playgroundroute = false;
 	gamedata->musicstate = GDMUSIC_NONE;
 
 	gamedata->importprofilewins = false;
@@ -777,6 +774,10 @@ void M_ClearSecrets(void)
 
 	gamedata->chaokeys = GDINIT_CHAOKEYS;
 	gamedata->prisoneggstothispickup = GDINIT_PRISONSTOPRIZE;
+
+	gamedata->tutorialdone = false;
+	gamedata->playgroundroute = false;
+	gamedata->finishedtutorialchallenge = false;
 
 	gamedata->gonerlevel = GDGONER_INIT;
 }

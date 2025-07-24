@@ -83,6 +83,7 @@ static void M_GonerAccessibilityTick(void)
 		if (!menumessage.active && !menutransition.dest)
 		{
 			M_SetupNextMenu(&MAIN_GonerDef, true);
+			M_GonerTick(); // tick once, for safety
 		}
 
 		return;
@@ -983,6 +984,8 @@ void M_GonerTick(void)
 				"ATTEMPT ADMINISTRATOR ACCESS.", NULL,
 				{.cvar = &cv_dummyextraspassword}, 0, 0};
 #endif
+
+		MAIN_Goner[0].mvar2 = 0;
 
 		if (gamedata->gonerlevel < GDGONER_INTRO)
 			gamedata->gonerlevel = GDGONER_INTRO;
