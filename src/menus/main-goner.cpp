@@ -887,16 +887,15 @@ void M_GonerTick(void)
 		first = true; // a lie, but only slightly...
 
 		// Handle rewinding if you clear your gamedata.
-		M_GonerResetText();
-		goner_background = GonerBGData();
-
-		goner_levelworking = GDGONER_INIT;
+		M_GonerResetText(true);
 	}
 
 	M_GonerResetLooking(GDGONER_INIT);
 
 	if (first)
 	{
+		goner_background = GonerBGData();
+
 		first = goner_gdq = false;
 
 		MAIN_Goner[0] =
@@ -1467,7 +1466,7 @@ static void M_GonerSurveyResponse(INT32 ch)
 
 			F_StartIntro();
 			M_ClearMenus(true);
-			M_GonerResetText();
+			M_GonerResetText(false);
 			return;
 		}
 
@@ -1535,10 +1534,10 @@ void M_GonerPlayground(INT32 choice)
 	restoreMenu = NULL; // Playground Hack
 
 	// need to do all this here because it will skip returning to goner and there are circumstances (game close) where DoCompleted won't be called
-	M_GonerResetText();
 	gamedata->gonerlevel = GDGONER_DONE;
 	gamedata->playgroundroute = true;
 	gamedata->deferredsave = true;
+	M_GonerResetText(true);
 }
 
 static void M_GonerConclude(INT32 choice)
@@ -1552,7 +1551,7 @@ static void M_GonerConclude(INT32 choice)
 
 	F_StartIntro();
 	M_ClearMenus(true);
-	M_GonerResetText();
+	M_GonerResetText(true);
 }
 
 void M_GonerGDQ(boolean opinion)
@@ -1639,7 +1638,7 @@ static boolean M_GonerInputs(INT32 ch)
 	return false;
 }
 
-void M_GonerResetText(void)
+void M_GonerResetText(boolean completely)
 {
 	goner_typewriter.ClearText();
 	LinesToDigest.clear();
@@ -1647,4 +1646,9 @@ void M_GonerResetText(void)
 
 	goner_scroll = 0;
 	goner_scrollend = -1;
+
+	if (!completely)
+		return;
+
+	goner_levelworking = GDGONER_INIT;
 }

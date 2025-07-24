@@ -626,7 +626,7 @@ void f_proceed()
 #else
 	F_StartIntro();
 	M_ClearMenus(true);
-	M_GonerResetText();
+	M_GonerResetText(true);
 #endif
 }
 
