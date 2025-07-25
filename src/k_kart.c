@@ -14125,8 +14125,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		{
 			// Set up bail charge, provided we have something to bail with (any rings or item resource).
 			boolean grounded = P_IsObjectOnGround(player->mo);
-			onground && player->tumbleBounces == 0 ?  player->bailcharge += 2 : player->bailcharge++; // charge twice as fast on the ground
-			if ((P_PlayerInPain(player) && player->bailcharge == 1) || (grounded && P_PlayerInPain(player) && player->bailcharge == 2)) // this is brittle ..
+			// onground && player->tumbleBounces == 0 ?  player->bailcharge += 2 : player->bailcharge++; // charge twice as fast on the ground
+			player->bailcharge += 2;
+			// if ((P_PlayerInPain(player) && player->bailcharge == 1) || (grounded && P_PlayerInPain(player) && player->bailcharge == 2)) // this is brittle ..
+			if (player->bailcharge == 2)
 			{
 				mobj_t *bail = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, MT_BAILCHARGE);
 				S_StartSound(bail, sfx_gshb9); // I tried to use info.c, but you can't play sounds on mobjspawn via A_PlaySound
