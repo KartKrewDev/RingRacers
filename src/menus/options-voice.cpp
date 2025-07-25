@@ -19,7 +19,7 @@ menuitem_t OPTIONS_Voice[] =
 	{IT_STRING | IT_CVAR, "Mute Self", "Whether your voice is transmitted or not.",
 		NULL, {.cvar = &cv_voice_selfmute}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Undeafen & Unmute", "Choose to opt-in to voice chat at all, for yourself.",
+	{IT_STRING | IT_CVAR, "Deafen Self", "Choose to opt-in to voice chat at all, for yourself.",
 		NULL, {.cvar = &cv_voice_chat}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Input Mode", "When to transmit your own voice.",
@@ -40,7 +40,7 @@ menuitem_t OPTIONS_Voice[] =
 	{IT_HEADER, "Server Voice Options...",  NULL,
 		NULL, {NULL}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "No Server Voice Chat", "All voice chat will be disabled on your server.",
+	{IT_STRING | IT_CVAR, "Server Voice Chat", "All voice chat will be disabled on your server.",
 		NULL, {.cvar = &cv_voice_servermute}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Proximity Effects", "Player voices will be adjusted relative to you.",

@@ -1371,7 +1371,7 @@ consvar_t cv_consolechat = Player("chatmode", "Yes").values({{0, "Yes"}, {2, "No
 
 // When off, inbound voice packets are ignored
 void VoiceChat_OnChange(void);
-consvar_t cv_voice_chat = Player("voice_chat", "Off")
+consvar_t cv_voice_chat = Player("voice_chat", "On")
 	.on_off()
 	.onchange(VoiceChat_OnChange)
 	.description("Whether voice chat is played or not. Shown as self-deafen to others.");
@@ -1434,7 +1434,7 @@ consvar_t cv_voice_concurrentattenuation_max = NetVar("voice_concurrentattenuati
 void Mute_OnChange(void);
 void VoiceMute_OnChange(void);
 consvar_t cv_mute = UnsavedNetVar("mute", "Off").on_off().onchange(Mute_OnChange);
-consvar_t cv_voice_servermute = NetVar("voice_servermute", "On")
+consvar_t cv_voice_servermute = NetVar("voice_servermute", "Off")
 	.on_off()
 	.onchange(VoiceMute_OnChange)
 	.description("If On, the server will not broadcast voice chat to clients");
