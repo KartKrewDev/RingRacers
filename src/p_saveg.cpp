@@ -683,7 +683,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		WRITEUINT32(save->p, players[i].bailcharge);
 		WRITEUINT32(save->p, players[i].baildrop);
-		WRITEUINT8(save->p, players[i].bailquake);
+		WRITEUINT8(save->p, players[i].bailhitlag);
 
 		WRITEUINT8(save->p, players[i].analoginput);
 
@@ -1348,7 +1348,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		players[i].bailcharge = READUINT32(save->p);
 		players[i].baildrop = READUINT32(save->p);
-		players[i].bailquake = READUINT8(save->p);
+		players[i].bailhitlag = READUINT8(save->p);
 
 		players[i].analoginput = READUINT8(save->p);
 

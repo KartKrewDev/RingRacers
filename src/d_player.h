@@ -1092,7 +1092,7 @@ struct player_t
 
 	UINT32 bailcharge;
 	UINT32 baildrop;
-	boolean bailquake;
+	boolean bailhitlag;
 
 	boolean analoginput; // Has an input been recorded that requires analog usage? For input display.
 

@@ -10132,10 +10132,10 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			player->ringboost /= 3;
 	}
 
-	if (player->bailquake && !player->mo->hitlag) // quake as soon as we leave hitlag
+	if (player->bailhitlag && !player->mo->hitlag) // quake as soon as we leave hitlag
 	{
 		P_StartQuakeFromMobj(7, 50 * player->mo->scale, 2048 * player->mo->scale, player->mo);	
-		player->bailquake = false;
+		player->bailhitlag = false;
 	}
 
 	// The precise ordering of start-of-level made me want to cut my head off,
@@ -14200,7 +14200,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		player->baildrop += baildrop * BAIL_DROPFREQUENCY + 1;
 
 		K_AddHitLag(player->mo, TICRATE/4, false);
-		player->bailquake = true; // set for a one time quake effect as soon as hitlag ends
+		player->bailhitlag = true; // set for a one time quake effect as soon as hitlag ends
 
 		if (P_PlayerInPain(player))
 		{
