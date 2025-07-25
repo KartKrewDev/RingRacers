@@ -1224,7 +1224,7 @@ void WeaponPref_Send(UINT8 ssplayer)
 		if (cv_voice_selfmute.value)
 			prefs |= WP_SELFMUTE;
 
-		if (!cv_voice_selfdeafen.value)
+		if (cv_voice_selfdeafen.value)
 			prefs |= WP_SELFDEAFEN;
 	}
 

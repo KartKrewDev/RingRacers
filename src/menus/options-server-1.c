@@ -89,7 +89,7 @@ menuitem_t OPTIONS_Server[] =
 	{IT_HEADER, "Voice Chat...",  NULL,
 		NULL, {NULL}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Server Voice Chat", "All voice chat will be disabled on your server.",
+	{IT_STRING | IT_CVAR, "Server Voice Chat", "All voice chat will be enabled on your server.",
 		NULL, {.cvar = &cv_voice_allowservervoice}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Proximity Effects", "Player voices will be adjusted relative to you.",
