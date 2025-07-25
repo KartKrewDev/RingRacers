@@ -1088,7 +1088,7 @@ static void SV_SendServerInfo(INT32 node, tic_t servertime)
 	netbuffer->u.serverinfo.kartvars = (UINT8) (
 		(gamespeed & SV_SPEEDMASK) |
 		(dedicated ? SV_DEDICATED : 0) |
-		(!cv_voice_servermute.value ? SV_VOICEENABLED : 0)
+		(!cv_voice_servermute.value ? SV_VOICEENABLED : 1)
 	);
 
 	D_ParseCarets(netbuffer->u.serverinfo.servername, cv_servername.string, MAXSERVERNAME);

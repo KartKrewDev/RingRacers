@@ -1437,7 +1437,7 @@ consvar_t cv_mute = UnsavedNetVar("mute", "Off").on_off().onchange(Mute_OnChange
 consvar_t cv_voice_servermute = NetVar("voice_servermute", "Off")
 	.on_off()
 	.onchange(VoiceMute_OnChange)
-	.description("If On, the server will not broadcast voice chat to clients");
+	.description("If Off, the server will not broadcast voice chat to clients");
 
 
 //

@@ -7110,9 +7110,9 @@ void VoiceMute_OnChange(void)
 		return; // avoid having this notification put in our console / log when we boot the server.
 
 	if (cv_voice_servermute.value)
-		HU_AddChatText(M_GetText("\x82*Voice chat has been muted."), false);
-	else
 		HU_AddChatText(M_GetText("\x82*Voice chat is no longer muted."), false);
+	else
+		HU_AddChatText(M_GetText("\x82*Voice chat has been muted."), false);
 }
 
 /** Hack to clear all changed flags after game start.

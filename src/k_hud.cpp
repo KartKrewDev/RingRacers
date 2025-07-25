@@ -8081,7 +8081,7 @@ void K_drawKartHUD(void)
 		}
 	}
 
-	if (netgame && cv_voice_servermute.value == 0)
+	if (netgame && cv_voice_servermute.value == 1)
 	{
 		if (players[consoleplayer].pflags2 & (PF2_SELFMUTE | PF2_SERVERMUTE | PF2_SELFDEAFEN | PF2_SERVERDEAFEN))
 		{
