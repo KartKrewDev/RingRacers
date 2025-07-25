@@ -13911,9 +13911,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		{
 			player->lastringboost = player->ringboost;
 			UINT32 award = 5*player->ringboxaward + 10;
-			award = 5 * award / 4; // 125% Payout Increase (as of 7/23/25)
+			award = 5 * award / 4; // 125% Payout Increase
 			if (!K_ThunderDome())
-				award = 5 * award / 4;
+				award = 3 * award / 2;
 
 			if (modeattacking & ATTACKING_SPB)
 			{
