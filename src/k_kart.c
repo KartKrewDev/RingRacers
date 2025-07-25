@@ -14044,26 +14044,30 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				// To try and help close this gap, we fudge Ring Box payouts to allow weaker characters
 				// better access to things that make them go fast, without changing core handling.
 
+				UINT8 speed = player->kartspeed;
 				UINT8 accel = 10-player->kartspeed;
 				UINT8 weight = player->kartweight;
 
 				// Relative stat power for bonus TA Ring Box awards.
 				// AP 1, WP 2 = weight is worth twice what accel is.
 				// 0 = stat not considered at all!
-				UINT8 accelPower = 0;
+				// UINT8 accelPower = 0;
+				UINT8 speedPower = 1;
 				UINT8 weightPower = 4;
 
-				UINT8 total = accelPower*accel + weightPower*weight;
-				UINT8 maxtotal = accelPower*9 + weightPower*9;
+				UINT8 total = speedPower*speed + weightPower*weight;
+				UINT8 maxtotal = speedPower*9 + weightPower*9;
+
+				UINT32 baseaward = award;
 
 				// Scale from base payout at 9/1 to max payout at 1/9.
-				award = Easing_InCubic(FRACUNIT*total/maxtotal, 10*award/10, 17*award/10);
+				award += Easing_InCubic(FRACUNIT*total/maxtotal, 0, 7*baseaward/10);
 
 				// And, because we don't have to give a damn about sandbagging, up the stakes the longer we progress! 
 				if (gametyperules & GTR_CIRCUIT)
 				{
 					if (K_GetNumGradingPoints())
-						award = Easing_Linear(FRACUNIT * player->gradingpointnum / K_GetNumGradingPoints(), award, 3*award/2);
+						award += Easing_Linear(FRACUNIT * player->gradingpointnum / K_GetNumGradingPoints(), 0, baseaward/2);
 				}
 			}
 			else
