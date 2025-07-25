@@ -2879,7 +2879,7 @@ void S_QueueVoiceFrameFromPlayer(INT32 playernum, void *data, UINT32 len, boolea
 	{
 		return;
 	}
-	if (cv_voice_chat.value != 0)
+	if (cv_voice_chat.value != 1)
 	{
 		I_QueueVoiceFrameFromPlayer(playernum, data, len, terminal);
 	}

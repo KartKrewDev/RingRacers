@@ -157,7 +157,7 @@ std::array<Slider, Slider::kNumSliders> sliders{{
 		{
 			if (toggle)
 			{
-				CV_AddValue(&cv_voice_chat, 1);
+				CV_AddValue(&cv_voice_chat, 0);
 			}
 
 			return !S_VoiceDisabled();
