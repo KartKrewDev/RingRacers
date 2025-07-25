@@ -21,6 +21,7 @@
 
 #include "d_event.h" // Screenshot responder
 #include "command.h"
+#include "w_wad.h"
 
 #ifdef __cplusplus
 
@@ -164,7 +165,6 @@ const char * M_Ftrim (double);
 // counting bits, for weapon ammo code, usually
 FUNCMATH UINT8 M_CountBits(UINT32 num, UINT8 size);
 
-#include "w_wad.h"
 extern char configfile[MAX_WADPATH];
 
 #ifdef __cplusplus
