@@ -46,7 +46,7 @@ static void draw_routine(void)
 		294 + tx,
 		98,
 		!CV_IsSetToDefault(&cv_advertise) ? warningflags : highlightflags,
-		va("(Advertise: %s)", cv_advertise.string)
+		va("(Public: %s)", cv_advertise.string)
 	);
 
 	M_DrawMasterServerReminder();
