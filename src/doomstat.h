@@ -280,6 +280,7 @@ extern boolean looptitle;
 extern char * bootmap; //bootmap for loading a map on startup
 extern char * podiummap; // map to load for podium
 
+extern char * tutorialplaygroundmap; // map to load for playground
 extern char * tutorialchallengemap; // map to load for tutorial skip
 extern UINT8 tutorialchallenge;
 #define TUTORIALSKIP_NONE 0

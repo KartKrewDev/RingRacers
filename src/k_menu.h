@@ -140,6 +140,7 @@ typedef enum
 	MBF_SOUNDLESS		 	= 1<<1, // do not play base menu sounds
 	MBF_NOLOOPENTRIES		= 1<<2, // do not loop M_NextOpt/M_PrevOpt
 	MBF_DRAWBGWHILEPLAYING	= 1<<3, // run backroutine() outside of GS_MENU
+	MBF_CANTRESTORE			= 1<<4, // Do not use in restoreMenu
 } menubehaviourflags_t;
 
 struct menuitem_t
@@ -221,7 +222,7 @@ typedef enum
 	quitkart
 } main_e;
 
-extern menuitem_t MAIN_Goner[];
+extern menu_t MAIN_GonerAccessibilityDef;
 extern menu_t MAIN_GonerDef;
 
 void M_GonerTick(void);
@@ -229,9 +230,12 @@ void M_GonerBGTick(void);
 void M_GonerBGImplyPassageOfTime(void);
 void M_DrawGonerBack(void);
 void M_GonerProfile(INT32 choice);
+void M_GonerChoice(INT32 choice);
 void M_GonerTutorial(INT32 choice);
+void M_GonerPlayground(INT32 choice);
 void M_GonerResetLooking(int type);
 void M_GonerCheckLooking(void);
+void M_GonerResetText(boolean completely);
 void M_GonerGDQ(boolean opinion);
 boolean M_GonerMusicPlayable(void);
 
