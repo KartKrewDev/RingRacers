@@ -83,6 +83,12 @@ void M_StartEditProfile(INT32 c)
 			PR_InitNewProfile();	// initialize the new profile.
 
 		optionsmenu.profile = PR_GetProfile(optionsmenu.profilen);
+		if (cv_kickstartaccel[0].value)
+		{
+			// Primarily for Goner but should help with standard set-up too
+			optionsmenu.profile->kickstartaccel = true;
+		}
+
 		// copy this profile's controls into optionsmenu so that we can edit controls without changing them directly.
 		// we do this so that we don't edit a profile's controls in real-time and end up doing really weird shit.
 		memcpy(&optionsmenu.tempcontrols, optionsmenu.profile->controls, sizeof(gamecontroldefault));

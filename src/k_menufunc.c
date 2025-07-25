@@ -662,7 +662,7 @@ boolean M_ConsiderSealedSwapAlert(void)
 
 void M_ValidateRestoreMenu(void)
 {
-	if (restoreMenu == NULL || restoreMenu == &MAIN_GonerDef)
+	if (restoreMenu == NULL || (restoreMenu->behaviourflags & MBF_CANTRESTORE))
 		restoreMenu = &MainDef;
 }
 
@@ -829,17 +829,10 @@ void M_StartControlPanel(void)
 
 		if (gamedata != NULL
 		&& gamedata->gonerlevel < GDGONER_OUTRO
-		&& gamestartchallenge < MAXUNLOCKABLES)
+		&& M_GameAboutToStart())
 		{
-			// See M_GameTrulyStarted
-			if (
-				gamedata->unlockpending[gamestartchallenge]
-				|| gamedata->unlocked[gamestartchallenge]
-			)
-			{
-				gamedata->gonerlevel = GDGONER_OUTRO;
-				M_GonerBGImplyPassageOfTime();
-			}
+			gamedata->gonerlevel = GDGONER_OUTRO;
+			M_GonerBGImplyPassageOfTime();
 		}
 
 		if (M_GameTrulyStarted() == false)
@@ -847,7 +840,7 @@ void M_StartControlPanel(void)
 			// Are you ready for the First Boot Experience?
 			M_ResetOptions();
 
-			currentMenu = &MAIN_GonerDef;
+			currentMenu = &MAIN_GonerAccessibilityDef;
 			restoreMenu = NULL;
 
 			M_PlayMenuJam();

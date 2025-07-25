@@ -27,17 +27,109 @@
 #include "../m_pw.h"
 #include "../z_zone.h"
 
-#include <forward_list>
+#include <deque>
 
 #include "../core/string.h"
 
 static void M_GonerDrawer(void);
+static void M_GonerChoiceDrawer(void);
 static void M_GonerConclude(INT32 choice);
 static boolean M_GonerInputs(INT32 ch);
 
-menuitem_t MAIN_Goner[] =
+static menuitem_t MAIN_GonerAccessibility[] =
 {
-	{IT_STRING | IT_CALL, NULL, NULL, NULL, {.routine = M_QuitSRB2}, 0, 0}, // will be replaced
+	{IT_NOTHING, NULL, NULL, NULL, {NULL}, 0, 0},
+};
+
+static UINT32 goneraccessibilitytick = 0;
+
+//#define HANDSTRAIN
+
+#ifdef HANDSTRAIN
+static void M_GonerHandStrain(INT32 ch)
+{
+	if (ch != MA_YES)
+		return;
+
+	CV_StealthSet(&cv_kickstartaccel[0], "On");
+}
+#endif
+
+static void M_GonerPhotosensitivity(INT32 ch)
+{
+	if (ch == MA_YES)
+	{
+		CV_StealthSet(&cv_reducevfx, "Yes");
+		CV_StealthSet(&cv_screenshake, "Off");
+		CV_StealthSet(&cv_tilting, "Off");
+	}
+
+#ifdef HANDSTRAIN
+	M_StartMessage("Hand strain warning",
+		"You may be required to press many buttons\n"
+		"at once in order to control your Ring Racer.\n"
+		"\n"
+		"There is an option for your Accel input\n"
+		"to \"lock\" on after being held for 1 second.\n"
+		"Would you like to turn it on?\n"
+		, &M_GonerHandStrain, MM_YESNO, "Yes, I want Accel to \"lock\"", "No thanks");
+#endif
+}
+
+static void M_GonerAccessibilityTick(void)
+{
+	if (goneraccessibilitytick)
+	{
+		if (!menumessage.active && !menutransition.dest)
+		{
+			M_SetupNextMenu(&MAIN_GonerDef, true);
+			M_GonerTick(); // tick once, for safety
+		}
+
+		return;
+	}
+
+	goneraccessibilitytick++;
+
+	M_StartMessage("Photosensitivity warning",
+		"This game has ""\x87""flashing lights and high-contrast\n"
+		"patterns.""\x80"" Listen to your body, and\n"
+		"stop playing if you feel unwell.\n"
+		"\n"
+		"There is a ""\x88""special mode""\x80"" to reduce some\n"
+		"visual effects. Would you like to turn it on?\n"
+		, &M_GonerPhotosensitivity, MM_YESNO, "Yes, reduce effects", "No thanks");
+	return;
+}
+
+static void M_GonerAccessibilityDrawer(void)
+{
+	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+}
+
+menu_t MAIN_GonerAccessibilityDef = {
+	sizeof (MAIN_GonerAccessibility) / sizeof (menuitem_t),
+	NULL,
+	0,
+	MAIN_GonerAccessibility,
+	26, 160,
+	0, 0,
+	MBF_CANTRESTORE,
+	"_GONER",
+	0, 0,
+	M_GonerAccessibilityDrawer,
+	NULL,
+	M_GonerAccessibilityTick,
+	NULL,
+	NULL,
+	NULL,
+};
+
+static menuitem_t MAIN_Goner[] =
+{
+	{IT_STRING | IT_CVAR | IT_CV_STRING, "PASSWORD",
+		"ATTEMPT ADMINISTRATOR ACCESS.", NULL,
+		{.cvar = &cv_dummyextraspassword}, 0, 0},
 
 	{IT_STRING | IT_CALL, "EXIT PROGRAM",
 		"CONCLUDE OBSERVATIONS NOW.", NULL,
@@ -55,9 +147,9 @@ menuitem_t MAIN_Goner[] =
 		"ASSIGN VEHICLE INPUTS.", NULL,
 		{.routine = M_GonerProfile}, 0, 0},
 
-	{IT_STRING | IT_CALL, "BEGIN TUTORIAL",
-		"PREPARE FOR INTEGRATION.", NULL,
-		{.routine = M_GonerTutorial}, 0, 0},
+	{IT_STRING | IT_CALL, "MAKE CHOICE",
+		"PREPARE FOR INTEGRATION?", NULL,
+		{.routine = M_GonerChoice}, 0, 0},
 
 	{IT_STRING | IT_CALL, "START GAME",
 		"I WILL SUCCEED.", NULL,
@@ -71,7 +163,7 @@ menu_t MAIN_GonerDef = {
 	MAIN_Goner,
 	26, 160,
 	0, sizeof (MAIN_Goner) / sizeof (menuitem_t), // extra2 is final width
-	MBF_UD_LR_FLIPPED,
+	MBF_CANTRESTORE|MBF_UD_LR_FLIPPED,
 	"_GONER",
 	0, 0,
 	M_GonerDrawer,
@@ -82,8 +174,56 @@ menu_t MAIN_GonerDef = {
 	M_GonerInputs,
 };
 
+static menuitem_t MAIN_GonerChoice[] =
+{
+	{IT_STRING | IT_CALL, "Tails' way",
+		"As a child scientist, Tails has recorded bits\n"
+		"and pieces of an adventure he and Eggman went\n"
+		"on while trying out their new Ring Racers.\n"
+		"\n"
+		"This is a structured, back-to-basics tutorial\n"
+		"that will likely take ""\x88""10-20 minutes""\x80"" of your time.",
+		NULL, {.routine = M_GonerTutorial}, 0, 0},
+
+	//{IT_STRING, NULL, NULL, NULL, {.routine = M_QuitSRB2}, 0, 0}, // will be replaced
+
+	{IT_STRING | IT_CALL, "Eggman's way",
+		"As a childlike scientist, Eggman has turned the\n"
+		"wrecked Egg Carrier into a giant skatepark,\n"
+		"dotted with fun collectables to test drivers.\n"
+		"\n"
+		"You can ""\x88""exit immediately""\x80"" and get to racing...\n"
+		"or spend ""\x88""as long as you want""\x80"" in the playground!",
+		NULL, {.routine = M_GonerPlayground}, 0, 0},
+};
+
+static menu_t MAIN_GonerChoiceDef = {
+	sizeof (MAIN_GonerChoice) / sizeof (menuitem_t),
+	&MAIN_GonerDef,
+	0,
+	MAIN_GonerChoice,
+	26, 160,
+	0, 0,
+	MBF_CANTRESTORE|MBF_UD_LR_FLIPPED|MBF_NOLOOPENTRIES,
+	"_GONER",
+	0, 0,
+	M_GonerChoiceDrawer,
+	M_DrawGonerBack,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+};
+
 namespace
 {
+
+typedef enum
+{
+	GONERCHOICE_TAILS = 0,
+	//GONERCHOICE_NONEBINEY,
+	GONERCHOICE_EGGMAN
+} gonerchoices_t;
 
 typedef enum
 {
@@ -200,8 +340,8 @@ public:
 	};
 };
 
-std::forward_list<GonerChatLine> LinesToDigest;
-std::forward_list<GonerChatLine> LinesOutput;
+std::deque<GonerChatLine> LinesToDigest;
+std::deque<GonerChatLine> LinesOutput;
 
 class GonerBGData
 {
@@ -429,16 +569,6 @@ void Miles_Electric_Lower()
 int goner_levelworking = GDGONER_INIT;
 bool goner_gdq = false;
 
-void M_GonerResetText(void)
-{
-	goner_typewriter.ClearText();
-	LinesToDigest.clear();
-	LinesOutput.clear();
-
-	goner_scroll = 0;
-	goner_scrollend = -1;
-}
-
 static void Initial_Control_Info(void)
 {
 	if (cv_currprofile.value != -1)
@@ -453,23 +583,12 @@ static void Initial_Control_Info(void)
 		)
 	);
 
-	if (LinesToDigest.empty())
-	{
-		LinesToDigest.emplace_front(line);
-		return;
-	}
-
-	LinesToDigest.emplace_after(
-		LinesToDigest.begin(),
-		line
-	);
+	LinesToDigest.push_back(line);
 }
 
 void M_AddGonerLines(void)
 {
 	SRB2_ASSERT(LinesToDigest.empty());
-
-	auto _ = srb2::finally([]() { LinesToDigest.reverse(); });
 
 	static bool leftoff = false;
 
@@ -480,7 +599,7 @@ void M_AddGonerLines(void)
 	{
 		if (!MAIN_Goner[0].mvar2)
 		{
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, 0,
 				"Metal Sonic. Are you online?");
 		}
 
@@ -488,10 +607,10 @@ void M_AddGonerLines(void)
 
 		if (leftoff)
 		{
-			LinesToDigest.emplace_front(0, Miles_Look_Camera);
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
+			LinesToDigest.emplace_back(0, Miles_Look_Camera);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, 0,
 				"It must have run into some sort of error...");
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, 0,
 				"Don't worry, your settings so far are saved. "\
 				"Let's pick up where we left off.");
 
@@ -506,40 +625,40 @@ void M_AddGonerLines(void)
 	{
 		case GDGONER_VIDEO:
 		{
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/2,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/2,
 				"Take a close look, Miles. Moments ago he was at my throat! "\
 				"Now he's docile as can be on that operating table.");
 
-			LinesToDigest.emplace_front(0, Miles_Look_Camera);
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
+			LinesToDigest.emplace_back(0, Miles_Look_Camera);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, 0,
 				"I don't feel very safe!");
-			LinesToDigest.emplace_front(0, Miles_Electric_Lower);
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/4,
+			LinesToDigest.emplace_back(0, Miles_Electric_Lower);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, TICRATE/4,
 				"But its programming is definitely locked down...");
 
-			LinesToDigest.emplace_front(0, Miles_Look_Electric);
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
+			LinesToDigest.emplace_back(0, Miles_Look_Electric);
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, 0,
 				"You've given me quite the headache, Metal. "\
 				"Thankfully, Tails caught you in the act.");
 
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/5,
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, TICRATE/5,
 				"Wait, I'm getting weird readings over the network.");
-			LinesToDigest.emplace_front(0, Miles_Look_Camera);
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
+			LinesToDigest.emplace_back(0, Miles_Look_Camera);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, 0,
 				"Metal Sonic is the unit labeled \"MS-1\", right?");
-			LinesToDigest.emplace_front(0, Miles_Look_Electric);
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE,
+			LinesToDigest.emplace_back(0, Miles_Look_Electric);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, TICRATE,
 				"The ""\x87""viewport""\x80"" and ""\x87""audio""\x80"" "\
 				"config looks like it got messed up.");
 
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, 0,
 				"So you're right. I wonder if it has anything to do with that outburst.");
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, 0,
 				"Alright, Metal! I don't remember your specifications offhand. "\
 				"First things first, go ahead and set up your "\
 				"\x87""Video Options""\x80"" yourself.");
 
-			LinesToDigest.emplace_front(0, Initial_Control_Info);
+			LinesToDigest.emplace_back(0, Initial_Control_Info);
 
 			break;
 		}
@@ -547,101 +666,101 @@ void M_AddGonerLines(void)
 		{
 			if (!leftoff)
 			{
-				LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
+				LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, 0,
 					"Ah, you can see us now. Good.");
 			}
-			LinesToDigest.emplace_front(0, Miles_Look_Camera);
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
+			LinesToDigest.emplace_back(0, Miles_Look_Camera);
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, 0,
 				"Now, calibrate your ""\x87""Sound Options""\x80"".");
 
-			LinesToDigest.emplace_front(0, Miles_Electric_Lower);
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
+			LinesToDigest.emplace_back(0, Miles_Electric_Lower);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, 0,
 				"You always make your stuff so loud by default, Eggman. It might need a moment.");
 
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, 0,
 				"Not Metal! He always needed to be stealthy. But go on, set your sliders.");
-			LinesToDigest.emplace_front(0, Miles_Look_Electric);
+			LinesToDigest.emplace_back(0, Miles_Look_Electric);
 			break;
 		}
 		case GDGONER_PROFILE:
 		{
 			if (!leftoff)
 			{
-				LinesToDigest.emplace_front(0, Miles_Look_Electric);
-				LinesToDigest.emplace_front(0, Miles_Look_Camera);
-				LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/2,
+				LinesToDigest.emplace_back(0, Miles_Look_Electric);
+				LinesToDigest.emplace_back(0, Miles_Look_Camera);
+				LinesToDigest.emplace_back(GONERSPEAKER_TAILS, TICRATE/2,
 					"Oh! Let's tell Metal about our project!");
 
-				LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
+				LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, 0,
 					"Of course. I and my lab assista-");
 
-				LinesToDigest.emplace_front(0, Miles_Electric_Lower);
-				LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
+				LinesToDigest.emplace_back(0, Miles_Electric_Lower);
+				LinesToDigest.emplace_back(GONERSPEAKER_TAILS, 0,
 					"Lab PARTNER.");
 
-				LinesToDigest.emplace_front(0, Miles_Look_Electric);
-				LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
+				LinesToDigest.emplace_back(0, Miles_Look_Electric);
+				LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, 0,
 					"Irrelevant!");
 			}
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/4,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/4,
 				"We made a machine together, Tails and I. "\
 				"It's called a \"""\x82""Ring Racer""\x80""\".");
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE,
 				"At its core, it is designed to utilise the boundless potential "\
 				"of the ""\x83""High Voltage Ring""\x80"".");
 
-			LinesToDigest.emplace_front(0, Miles_Look_Camera);
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE,
+			LinesToDigest.emplace_back(0, Miles_Look_Camera);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, TICRATE,
 				"We made this special ""\x83""Ring""\x80"" by combining the power of tens of "\
 				"thousands of ordinary ""\x82""Rings""\x80"".");
-			LinesToDigest.emplace_front(0, Miles_Electric_Lower);
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/2,
+			LinesToDigest.emplace_back(0, Miles_Electric_Lower);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, TICRATE/2,
 				"We recorded some of our testing for you, MS-1. Maybe your neural "\
 				"network could train on some less violent data for once.");
 
-			LinesToDigest.emplace_front(0, Miles_Look_Electric);
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/4,
+			LinesToDigest.emplace_back(0, Miles_Look_Electric);
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/4,
 				"While that's uploading, why don't you set up your ""\x87""Profile Card""\x80""?");
 
-			LinesToDigest.emplace_front(0, Miles_Electric_Lower);
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
+			LinesToDigest.emplace_back(0, Miles_Electric_Lower);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, 0,
 				"Yes! That's one of my contributions.");
 
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, 0,
 				"(I'm too used to my systems being designed for me alone...)");
 
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, 0,
 				"Every racer carries one, to contain their personal settings.");
-			LinesToDigest.emplace_front(0, Miles_Look_Electric);
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
+			LinesToDigest.emplace_back(0, Miles_Look_Electric);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, 0,
 				"It helps get your ""\x87""controls""\x80"" set up nice and quickly, "\
 				"when starting your vehicle and navigating the menu.");
-			LinesToDigest.emplace_front(0, Miles_Look_Camera);
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
+			LinesToDigest.emplace_back(0, Miles_Look_Camera);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, 0,
 				"And it helps track your wins, too.");
-			LinesToDigest.emplace_front(0, Miles_Look_Electric);
+			LinesToDigest.emplace_back(0, Miles_Look_Electric);
 
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/5,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/5,
 				"Bragging rights. My idea!");
 
-			LinesToDigest.emplace_front(0, Miles_Look_Camera);
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/2,
+			LinesToDigest.emplace_back(0, Miles_Look_Camera);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, TICRATE/2,
 				"You can make the ID and player tag on there anything you want.");
-			LinesToDigest.emplace_front(0, Miles_Electric_Lower);
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/2,
+			LinesToDigest.emplace_back(0, Miles_Electric_Lower);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, TICRATE/2,
 				"Mine says \"Nine Tails\". That's the name of my original character! "\
 				"He's like me if I never met my ""\x84""brother""\x80"". He'd use cool "\
 				"robotics, but be kind of mean to protect himself...");
 
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/5,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/5,
 				"Mine says \"Robotnik\". You can't beat a classic.");
 
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/2,
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, TICRATE/2,
 				"And I'm not sure if you'll need it, but we always tell new drivers to "\
 				"look at the ""\x87""Accessibility""\x80"" settings. Often there's some "\
 				"feature they're not expecting. Maybe you'd be surprised too?");
 
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, 0,
 				"So go on, do your ""\x87""Profile Setup""\x80""!");
 
 			break;
@@ -650,31 +769,42 @@ void M_AddGonerLines(void)
 		{
 			if (!leftoff)
 			{
-				LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/2,
+				LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/2,
 					"Now that that's been set up, you can use your ""\x87""Profile controls""\x80"" on menus from here on out, too.");
 
-				LinesToDigest.emplace_front(0, Miles_Look_Electric);
-				LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/5,
+				LinesToDigest.emplace_back(0, Miles_Look_Electric);
+				LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/5,
 					"Miles. How's the upload going?");
 
-				LinesToDigest.emplace_front(0, Miles_Look_Camera);
-				LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
+				LinesToDigest.emplace_back(0, Miles_Look_Camera);
+				LinesToDigest.emplace_back(GONERSPEAKER_TAILS, 0,
 					"Just finished.");
 
-				LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
+				LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, 0,
 					"Perfect.");
 			}
 
-			LinesToDigest.emplace_front(0, Miles_Electric_Lower);
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
+			LinesToDigest.emplace_back(0, Miles_Electric_Lower);
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, 0,
 				"Now, Metal... it's important you pay attention.");
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/5,
-				"It's time to ""\x87""begin your Tutorial""\x80""!");
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/5,
+				"We have a ""\x88""choice""\x80"" ready for you.");
 
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
-				"Remember, MS-1. Even when you move on from this setup, you "\
-				"can always change your ""\x87""Options""\x80"" at any time from the menu.");
-			LinesToDigest.emplace_front(0, Miles_Look_Electric);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, 0,
+				"You can play back our testing data as a sort of ""\x82""tutorial""\x80"\
+				" and learn the core parts of driving in a safe environment...");
+
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/5,
+				"...or if you're too headstrong and want to figure things out"\
+				" for yourself, we can let you loose in our ""\x85""playground""\x80""!");
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/2,
+				"If you do run into trouble, the ""\x82""tutorial""\x80"" can"\
+				" always be found in the ""\x87""Extras""\x80"" menu later on.");
+
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, 0,
+				"Either way, MS-1. Even when you move on from this setup,"\
+				" you can always change your ""\x87""Options""\x80"" at any time.");
+			LinesToDigest.emplace_back(0, Miles_Look_Electric);
 
 			break;
 		}
@@ -682,37 +812,35 @@ void M_AddGonerLines(void)
 		{
 			if (!leftoff)
 			{
-				LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/3,
+				LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/3,
 					"And... the training data is completed.");
 			}
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/2,
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, TICRATE/2,
 				"It's kind of funny, actually.");
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/3,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/3,
 				"Oh? Care to elucidate, Prower?");
-			LinesToDigest.emplace_front(0, Miles_Look_Camera);
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/2,
+			LinesToDigest.emplace_back(0, Miles_Look_Camera);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, TICRATE/2,
 				"No matter how much time we took getting here, a machine like "\
 				"Metal can play it back in minutes.");
-			LinesToDigest.emplace_front(0, Miles_Electric_Lower);
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/2,
+			LinesToDigest.emplace_back(0, Miles_Electric_Lower);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, TICRATE/2,
 				"It could have been five days or five years of development on "\
 				"our ""\x82""Ring Racers""\x80"", and that would barely matter to it.");
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/4,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/4,
 				"Ha! As if. I'd like to think our partnership hasn't felt "\
 				"particularly protracted.");
-			LinesToDigest.emplace_front(0, Miles_Look_Electric);
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/2,
+			LinesToDigest.emplace_back(0, Miles_Look_Electric);
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/2,
 				"But yes. Perhaps now you have a better appreciation of what "\
 				"we're building here, Metal.");
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/2,
-				"If you need to learn more, you can always come back to the Tutorial later in the ""\x87""Extras""\x80"" menu.");
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/5,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/5,
 				"Now, I'm willing to let bygones be bygones.");
-			LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/2,
+			LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/2,
 				"As long as you keep your violence to the track, I'll be "\
 				"giving you your autonomy back in a moment.");
-			LinesToDigest.emplace_front(0, Miles_Electric_Lower);
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
+			LinesToDigest.emplace_back(0, Miles_Electric_Lower);
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, 0,
 				"We've kept the keys from you long enough!");
 			break;
 		}
@@ -720,7 +848,7 @@ void M_AddGonerLines(void)
 			break;
 
 		default:
-			LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
+			LinesToDigest.emplace_back(GONERSPEAKER_TAILS, 0,
 				"I am error");
 	}
 
@@ -839,22 +967,25 @@ void M_GonerTick(void)
 		first = true; // a lie, but only slightly...
 
 		// Handle rewinding if you clear your gamedata.
-		M_GonerResetText();
-		goner_background = GonerBGData();
-
-		goner_levelworking = GDGONER_INIT;
+		M_GonerResetText(true);
 	}
 
 	M_GonerResetLooking(GDGONER_INIT);
 
 	if (first)
 	{
+		goner_background = GonerBGData();
+
 		first = goner_gdq = false;
 
+#if 0
 		MAIN_Goner[0] =
 			{IT_STRING | IT_CVAR | IT_CV_STRING, "PASSWORD",
 				"ATTEMPT ADMINISTRATOR ACCESS.", NULL,
 				{.cvar = &cv_dummyextraspassword}, 0, 0};
+#endif
+
+		MAIN_Goner[0].mvar2 = 0;
 
 		if (gamedata->gonerlevel < GDGONER_INTRO)
 			gamedata->gonerlevel = GDGONER_INTRO;
@@ -1218,6 +1349,130 @@ static void M_GonerDrawer(void)
 	M_DrawHorizontalMenu();
 }
 
+static void M_GonerChoiceDrawer(void)
+{
+	srb2::Draw drawer = srb2::Draw();
+
+	const INT32 lex = (24 + BASEVIDWIDTH/2)/2;
+
+	if (itemOn == GONERCHOICE_TAILS)
+	{
+		drawer
+			.size((BASEVIDWIDTH/2) + 25, BASEVIDHEIGHT)
+			.fill(60);
+
+		drawer
+			.xy((BASEVIDWIDTH/2) + 40 + 1, 28+3)
+			.colormap(SKINCOLOR_ORANGE)
+			.flags(V_FLIP)
+			.patch("MENUPLTR");
+
+		drawer
+			.xy(lex, 28)
+			.font(srb2::Draw::Font::kGamemode)
+			.align(srb2::Draw::Align::kCenter)
+			.text(currentMenu->menuitems[itemOn].text);
+
+		drawer
+			.xy(8, 72)
+			.font(srb2::Draw::Font::kThin)
+			.align(srb2::Draw::Align::kLeft)
+			.text(currentMenu->menuitems[itemOn].tooltip);
+
+		drawer
+			.xy(lex, 154)
+			.font(srb2::Draw::Font::kFreeplay)
+			.align(srb2::Draw::Align::kCenter)
+			.text("(unlocks 20     )");
+
+		drawer
+			.xy(lex, 154+14)
+			.font(srb2::Draw::Font::kThin)
+			.align(srb2::Draw::Align::kCenter)
+			.flags(V_TRANSLUCENT)
+			.text("+ more surprises to find");
+
+		drawer
+			.xy(lex + 26, 154-4)
+			.patch("UN_CHA00");
+	}
+	else if (itemOn == GONERCHOICE_EGGMAN)
+	{
+		drawer
+			.x((BASEVIDWIDTH/2) - 24)
+			.size((BASEVIDWIDTH/2) + 24, BASEVIDHEIGHT)
+			.fill(44);
+
+		drawer
+			.xy((BASEVIDWIDTH/2) - 40, 28+3)
+			.colormap(SKINCOLOR_RED)
+			.patch("MENUPLTR");
+
+		drawer
+			.xy(BASEVIDWIDTH - lex, 28)
+			.font(srb2::Draw::Font::kGamemode)
+			.align(srb2::Draw::Align::kCenter)
+			.text(currentMenu->menuitems[itemOn].text);
+
+		drawer
+			.xy(BASEVIDWIDTH - 8, 72)
+			.font(srb2::Draw::Font::kThin)
+			.align(srb2::Draw::Align::kRight)
+			.text(currentMenu->menuitems[itemOn].tooltip);
+
+		drawer
+			.xy(BASEVIDWIDTH - lex, 154)
+			.font(srb2::Draw::Font::kFreeplay)
+			.align(srb2::Draw::Align::kCenter)
+			.text("(unlocks Addons/Online)");
+
+		drawer
+			.xy(BASEVIDWIDTH - lex, 154+14)
+			.font(srb2::Draw::Font::kThin)
+			.align(srb2::Draw::Align::kCenter)
+			.flags(V_TRANSLUCENT)
+			.text("the other way has these too, just later");
+	}
+
+	// Un-highlighteds done this weird way because of GONERCHOICE_NONEBINEY
+
+	if (itemOn != GONERCHOICE_TAILS)
+	{
+		drawer
+			.size(20, BASEVIDHEIGHT)
+			.fill(60);
+
+		drawer
+			.xy(25, 39)
+			.font(srb2::Draw::Font::kFreeplay)
+			.align(srb2::Draw::Align::kLeft)
+			.text(currentMenu->menuitems[GONERCHOICE_TAILS].text);
+
+		drawer
+			.xy(20 - 3 - (skullAnimCounter/5), 39+6)
+			.patch("CUPARROW");
+	}
+
+	if (itemOn != GONERCHOICE_EGGMAN)
+	{
+		drawer
+			.x(BASEVIDWIDTH - 20)
+			.size(20, BASEVIDHEIGHT)
+			.fill(44);
+
+		drawer
+			.xy(BASEVIDWIDTH - 25, 39)
+			.font(srb2::Draw::Font::kFreeplay)
+			.align(srb2::Draw::Align::kRight)
+			.text(currentMenu->menuitems[GONERCHOICE_EGGMAN].text);
+
+		drawer
+			.xy((BASEVIDWIDTH - 20 + 3) + (skullAnimCounter/5), 39+6)
+			.flags(V_FLIP)
+			.patch("CUPARROW");
+	}
+}
+
 // ---
 
 void M_GonerProfile(INT32 choice)
@@ -1245,19 +1500,16 @@ void M_GonerProfile(INT32 choice)
 	M_GonerResetLooking(GDGONER_PROFILE);
 }
 
-static void M_GonerSurveyResponse(INT32 ch)
+static void M_GonerTutorialResponse(INT32 ch)
 {
 	if (ch != MA_YES)
 		return;
 
-	if (gamedata->gonerlevel < GDGONER_OUTRO)
-		gamedata->gonerlevel = GDGONER_OUTRO;
+	M_GonerTutorial(0);
 }
 
-void M_GonerTutorial(INT32 choice)
+void M_GonerChoice(INT32 choice)
 {
-	(void)choice;
-
 	if (cv_currprofile.value == -1)
 	{
 		const INT32 maxp = PR_GetNumProfiles();
@@ -1270,6 +1522,57 @@ void M_GonerTutorial(INT32 choice)
 		PR_ApplyProfile(profilen, 0);
 	}
 
+	if (gamedata->gonerlevel >= GDGONER_OUTRO)
+	{
+		M_StartMessage("First Boot Tutorial",
+			"You've already played the Tutorial!\n"
+			"Do you want to see it again?",
+			&M_GonerTutorialResponse, MM_YESNO, "I'd love to", "Not right now");
+		return;
+	}
+
+	M_SetupNextMenu(&MAIN_GonerChoiceDef, false);
+}
+
+static void M_GonerSurveyResponse(INT32 ch)
+{
+	if (ch != MA_YES)
+		return;
+
+	if (gamedata->gonerlevel < GDGONER_OUTRO)
+		gamedata->gonerlevel = GDGONER_OUTRO;
+
+	if (currentMenu == &MAIN_GonerChoiceDef)
+	{
+		if (itemOn == GONERCHOICE_EGGMAN)
+		{
+			gamedata->playgroundroute = true;
+			gamedata->gonerlevel = GDGONER_DONE;
+
+			F_StartIntro();
+			M_ClearMenus(true);
+			M_GonerResetText(false);
+			return;
+		}
+
+		M_GoBack(0);
+	}
+}
+
+static void M_GonerSurvey(INT32 choice)
+{
+	(void)choice;
+
+	// The game is incapable of progression, but I can't bring myself to put an I_Error here.
+	M_StartMessage("First Boot Error",
+		"YOU ACCEPT EVERYTHING THAT\nWILL HAPPEN FROM NOW ON.",
+		&M_GonerSurveyResponse, MM_YESNO, "I agree", "Cancel");
+}
+
+void M_GonerTutorial(INT32 choice)
+{
+	(void)choice;
+
 	// Please also see M_LevelSelectInit as called in extras-1.c
 	levellist.netgame = false;
 	levellist.canqueue = false;
@@ -1279,11 +1582,47 @@ void M_GonerTutorial(INT32 choice)
 
 	if (!M_LevelListFromGametype(GT_TUTORIAL) && gamedata->gonerlevel < GDGONER_OUTRO)
 	{
-		// The game is incapable of progression, but I can't bring myself to put an I_Error here.
-		M_StartMessage("Agreement",
-			"YOU ACCEPT EVERYTHING THAT WILL HAPPEN FROM NOW ON.",
-			&M_GonerSurveyResponse, MM_YESNO, "I agree", "Cancel");
+		M_GonerSurvey(0);
+		return;
 	}
+}
+
+void M_GonerPlayground(INT32 choice)
+{
+	(void)choice;
+
+	UINT16 playgroundmap = NEXTMAP_INVALID;
+	if (tutorialplaygroundmap)
+		playgroundmap = G_MapNumber(tutorialplaygroundmap);
+
+	if (playgroundmap >= nummapheaders)
+	{
+		M_GonerSurvey(0);
+		return;
+	}
+
+	multiplayer = true;
+
+	M_MenuToLevelPreamble(0, false);
+
+	D_MapChange(
+		playgroundmap+1,
+		GT_TUTORIAL,
+		false,
+		true,
+		0,
+		false,
+		false
+	);
+
+	M_ClearMenus(true);
+	restoreMenu = NULL; // Playground Hack
+
+	// need to do all this here because it will skip returning to goner and there are circumstances (game close) where DoCompleted won't be called
+	gamedata->gonerlevel = GDGONER_DONE;
+	gamedata->playgroundroute = true;
+	gamedata->deferredsave = true;
+	M_GonerResetText(true);
 }
 
 static void M_GonerConclude(INT32 choice)
@@ -1292,9 +1631,12 @@ static void M_GonerConclude(INT32 choice)
 
 	gamedata->gonerlevel = GDGONER_DONE;
 
+	if (gamedata->chaokeys < 20)
+		gamedata->chaokeys = 20;
+
 	F_StartIntro();
 	M_ClearMenus(true);
-	M_GonerResetText();
+	M_GonerResetText(true);
 }
 
 void M_GonerGDQ(boolean opinion)
@@ -1311,24 +1653,23 @@ void M_GonerGDQ(boolean opinion)
 
 	if (opinion) // Save The Animals
 	{
-		LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, TICRATE/2,
+		LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, TICRATE/2,
 			"Why wouldn't you save the frames..?");
 
-		LinesToDigest.emplace_front(0, Miles_Look_Camera);
-		LinesToDigest.emplace_front(GONERSPEAKER_TAILS, 0,
+		LinesToDigest.emplace_back(0, Miles_Look_Camera);
+		LinesToDigest.emplace_back(GONERSPEAKER_TAILS, 0,
 			"Don't mind him. Good luck on the run!");
-		LinesToDigest.emplace_front(0, Miles_Look_Electric);
+		LinesToDigest.emplace_back(0, Miles_Look_Electric);
 	}
 	else // Save The Frames
 	{
-		LinesToDigest.emplace_front(0, Miles_Electric_Lower);
-		LinesToDigest.emplace_front(GONERSPEAKER_TAILS, TICRATE/2,
+		LinesToDigest.emplace_back(0, Miles_Electric_Lower);
+		LinesToDigest.emplace_back(GONERSPEAKER_TAILS, TICRATE/2,
 			"But what about all the little animals...");
 
-		LinesToDigest.emplace_front(GONERSPEAKER_EGGMAN, 0,
+		LinesToDigest.emplace_back(GONERSPEAKER_EGGMAN, 0,
 			"It's just logical. I know you'll conquer this run.");
 	}
-	LinesToDigest.reverse();
 
 	if (gamedata->gonerlevel <= GDGONER_TUTORIAL)
 	{
@@ -1379,4 +1720,19 @@ static boolean M_GonerInputs(INT32 ch)
 	holdtime = 0;
 
 	return false;
+}
+
+void M_GonerResetText(boolean completely)
+{
+	goner_typewriter.ClearText();
+	LinesToDigest.clear();
+	LinesOutput.clear();
+
+	goner_scroll = 0;
+	goner_scrollend = -1;
+
+	if (!completely)
+		return;
+
+	goner_levelworking = GDGONER_INIT;
 }
