@@ -1224,7 +1224,7 @@ void WeaponPref_Send(UINT8 ssplayer)
 		if (cv_voice_selfmute.value)
 			prefs |= WP_SELFMUTE;
 
-		if (!cv_voice_chat.value)
+		if (!cv_voice_selfdeafen.value)
 			prefs |= WP_SELFDEAFEN;
 	}
 
@@ -7103,13 +7103,13 @@ void Mute_OnChange(void)
 		HU_AddChatText(M_GetText("\x82*Chat is no longer muted."), false);
 }
 
-void VoiceMute_OnChange(void);
-void VoiceMute_OnChange(void)
+void AllowServerVC_OnChange(void);
+void AllowServerVC_OnChange(void)
 {
 	if (leveltime <= 1)
 		return; // avoid having this notification put in our console / log when we boot the server.
 
-	if (cv_voice_servermute.value)
+	if (cv_voice_allowservervoice.value)
 		HU_AddChatText(M_GetText("\x82*Voice chat is no longer muted."), false);
 	else
 		HU_AddChatText(M_GetText("\x82*Voice chat has been muted."), false);

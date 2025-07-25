@@ -2967,7 +2967,7 @@ void PositionFacesInfo::draw_1p()
 		}
 
 		// Voice speaking indicator
-		if (netgame && !players[rankplayer[i]].bot && cv_voice_servermute.value == 0)
+		if (netgame && !players[rankplayer[i]].bot && cv_voice_allowservervoice.value == 0)
 		{
 			patch_t *voxmic;
 			if (S_IsPlayerVoiceActive(rankplayer[i]))
@@ -8081,7 +8081,7 @@ void K_drawKartHUD(void)
 		}
 	}
 
-	if (netgame && cv_voice_servermute.value == 1)
+	if (netgame && cv_voice_allowservervoice.value == 1)
 	{
 		if (players[consoleplayer].pflags2 & (PF2_SELFMUTE | PF2_SERVERMUTE | PF2_SELFDEAFEN | PF2_SERVERDEAFEN))
 		{

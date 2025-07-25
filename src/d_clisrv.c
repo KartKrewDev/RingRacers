@@ -1088,7 +1088,7 @@ static void SV_SendServerInfo(INT32 node, tic_t servertime)
 	netbuffer->u.serverinfo.kartvars = (UINT8) (
 		(gamespeed & SV_SPEEDMASK) |
 		(dedicated ? SV_DEDICATED : 0) |
-		(!cv_voice_servermute.value ? SV_VOICEENABLED : 1)
+		(!cv_voice_allowservervoice.value ? SV_VOICEENABLED : 1)
 	);
 
 	D_ParseCarets(netbuffer->u.serverinfo.servername, cv_servername.string, MAXSERVERNAME);
@@ -5275,7 +5275,7 @@ static void PT_HandleVoiceClient(SINT8 node, boolean isserver)
 		{
 			continue;
 		}
-		if (cv_voice_chat.value != 1 && playernum != g_localplayers[0])
+		if (cv_voice_selfdeafen.value != 1 && playernum != g_localplayers[0])
 		{
 			S_QueueVoiceFrameFromPlayer(playernum, (void*)decoded_out, decoded_samples * sizeof(float), false);
 		}
@@ -5289,7 +5289,7 @@ static void PT_HandleVoiceClient(SINT8 node, boolean isserver)
 		return;
 	}
 
-	if (cv_voice_chat.value != 1 && playernum != g_localplayers[0])
+	if (cv_voice_selfdeafen.value != 1 && playernum != g_localplayers[0])
 	{
 		S_QueueVoiceFrameFromPlayer(playernum, (void*)decoded_out, decoded_samples * sizeof(float), terminal);
 	}
@@ -5306,9 +5306,9 @@ static void PT_HandleVoiceServer(SINT8 node)
 	int playernum = -1;
 	player_t *player;
 
-	if (cv_voice_servermute.value != 0)
+	if (cv_voice_allowservervoice.value != 0)
 	{
-		// Don't even relay voice packets if voice_servermute is on
+		// Don't even relay voice packets if voice_allowservervoice is on
 		return;
 	}
 
@@ -7474,7 +7474,7 @@ void NetVoiceUpdate(void)
 			continue;
 		}
 
-		if (cv_voice_chat.value == 1)
+		if (cv_voice_selfdeafen.value == 1)
 		{
 			g_local_voice_buffer_len = 0;
 			continue;

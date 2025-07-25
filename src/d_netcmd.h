@@ -62,7 +62,7 @@ extern consvar_t cv_netstat;
 
 extern consvar_t cv_countdowntime;
 extern consvar_t cv_mute;
-extern consvar_t cv_voice_servermute;
+extern consvar_t cv_voice_allowservervoice;
 extern consvar_t cv_pause;
 
 extern consvar_t cv_restrictskinchange, cv_allowteamchange, cv_maxplayers, cv_shuffleloser;
