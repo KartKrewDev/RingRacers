@@ -2832,7 +2832,7 @@ void VoiceSelfDeafen_OnChange(void)
 	if (M_CheckParm("-novoice") || M_CheckParm("-noaudio"))
 		return;
 
-	g_voice_disabled = !cv_voice_selfdeafen.value;
+	g_voice_disabled = cv_voice_selfdeafen.value;
 
 	weaponPrefChange(0);
 }
