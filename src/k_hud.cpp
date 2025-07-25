@@ -2967,7 +2967,7 @@ void PositionFacesInfo::draw_1p()
 		}
 
 		// Voice speaking indicator
-		if (netgame && !players[rankplayer[i]].bot && cv_voice_allowservervoice.value == 0)
+		if (netgame && !players[rankplayer[i]].bot && cv_voice_allowservervoice.value == 1)
 		{
 			patch_t *voxmic;
 			if (S_IsPlayerVoiceActive(rankplayer[i]))
