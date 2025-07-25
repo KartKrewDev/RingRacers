@@ -16,22 +16,22 @@
 
 menuitem_t OPTIONS_Voice[] =
 {
-	{IT_STRING | IT_CVAR, "Voice Chat", "Turn on or off all voice chat for yourself.",
-		NULL, {.cvar = &cv_voice_chat}, 0, 0},
+	{IT_STRING | IT_CVAR, "Mute Self", "Whether your voice is transmitted or not.",
+		NULL, {.cvar = &cv_voice_selfmute}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Voice Mode", "When to transmit your own voice.",
+	{IT_STRING | IT_CVAR, "Deafen Self", "Choose to opt-in to voice chat at all, for yourself.",
+		NULL, {.cvar = &cv_voice_selfdeafen}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Input Mode", "When to transmit your own voice.",
 		NULL, {.cvar = &cv_voice_mode}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Input Amplifier", "Amplify your voice, in decibels. Negative values are quieter.",
 		NULL, {.cvar = &cv_voice_inputamp}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Activation Threshold", "Voice higher than this threshold will transmit, in decibels.",
+	{IT_STRING | IT_CVAR, "Input Sensitivity", "Voice higher than this threshold will transmit, in decibels.",
 		NULL, {.cvar = &cv_voice_activationthreshold}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Self Voice Mute", "Whether your voice is transmitted or not.",
-		NULL, {.cvar = &cv_voice_selfmute}, 0, 0},
-
-	{IT_STRING | IT_CVAR, "Voice Loopback", "Play your own recording voice back.",
+	{IT_STRING | IT_CVAR, "Voice Loopback", "Play your own voice back simultaneously.",
 		NULL, {.cvar = &cv_voice_loopback}, 0, 0},
 
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
@@ -40,8 +40,8 @@ menuitem_t OPTIONS_Voice[] =
 	{IT_HEADER, "Server Voice Options...",  NULL,
 		NULL, {NULL}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Server Voice Mute", "All voice chat will be disabled on your server.",
-		NULL, {.cvar = &cv_voice_servermute}, 0, 0},
+	{IT_STRING | IT_CVAR, "Server Voice Chat", "All voice chat will be enabled on your server.",
+		NULL, {.cvar = &cv_voice_allowservervoice}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Proximity Effects", "Player voices will be adjusted relative to you.",
 		NULL, {.cvar = &cv_voice_proximity}, 0, 0},

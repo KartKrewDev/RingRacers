@@ -1370,10 +1370,10 @@ consvar_t cv_chatwidth = Player("chatwidth", "150").min_max(64, 150);
 consvar_t cv_consolechat = Player("chatmode", "Yes").values({{0, "Yes"}, {2, "No"}});
 
 // When off, inbound voice packets are ignored
-void VoiceChat_OnChange(void);
-consvar_t cv_voice_chat = Player("voice_chat", "Off")
+void VoiceSelfDeafen_OnChange(void);
+consvar_t cv_voice_selfdeafen = Player("voice_selfdeafen", "On")
 	.on_off()
-	.onchange(VoiceChat_OnChange)
+	.onchange(VoiceSelfDeafen_OnChange)
 	.description("Whether voice chat is played or not. Shown as self-deafen to others.");
 
 // When on, local player won't transmit voice
@@ -1432,12 +1432,12 @@ consvar_t cv_voice_concurrentattenuation_max = NetVar("voice_concurrentattenuati
 	.description("Maximum concurrent speakers at which full global attenuation is applied");
 
 void Mute_OnChange(void);
-void VoiceMute_OnChange(void);
+void AllowServerVC_OnChange(void);
 consvar_t cv_mute = UnsavedNetVar("mute", "Off").on_off().onchange(Mute_OnChange);
-consvar_t cv_voice_servermute = NetVar("voice_servermute", "On")
+consvar_t cv_voice_allowservervoice = NetVar("voice_allowservervoice", "Off")
 	.on_off()
-	.onchange(VoiceMute_OnChange)
-	.description("If On, the server will not broadcast voice chat to clients");
+	.onchange(AllowServerVC_OnChange)
+	.description("If Off, the server will not broadcast voice chat to clients");
 
 
 //

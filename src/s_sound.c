@@ -2825,14 +2825,14 @@ void GameDigiMusic_OnChange(void)
 	}
 }
 
-void VoiceChat_OnChange(void);
+void VoiceSelfDeafen_OnChange(void);
 void weaponPrefChange(INT32 ssplayer);
-void VoiceChat_OnChange(void)
+void VoiceSelfDeafen_OnChange(void)
 {
 	if (M_CheckParm("-novoice") || M_CheckParm("-noaudio"))
 		return;
 
-	g_voice_disabled = !cv_voice_chat.value;
+	g_voice_disabled = cv_voice_selfdeafen.value;
 
 	weaponPrefChange(0);
 }
@@ -2879,7 +2879,7 @@ void S_QueueVoiceFrameFromPlayer(INT32 playernum, void *data, UINT32 len, boolea
 	{
 		return;
 	}
-	if (cv_voice_chat.value != 0)
+	if (cv_voice_selfdeafen.value != 1)
 	{
 		I_QueueVoiceFrameFromPlayer(playernum, data, len, terminal);
 	}

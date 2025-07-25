@@ -121,7 +121,7 @@ std::array<Slider, Slider::kNumSliders> sliders{{
 				n = !n;
 				CV_SetValue(&cv_gamedigimusic, n);
 				CV_SetValue(&cv_gamesounds, n);
-				CV_SetValue(&cv_voice_chat, n);
+				CV_SetValue(&cv_voice_selfdeafen, n);
 			}
 
 			return n;
@@ -157,7 +157,7 @@ std::array<Slider, Slider::kNumSliders> sliders{{
 		{
 			if (toggle)
 			{
-				CV_AddValue(&cv_voice_chat, 1);
+				CV_AddValue(&cv_voice_selfdeafen, 0);
 			}
 
 			return !S_VoiceDisabled();

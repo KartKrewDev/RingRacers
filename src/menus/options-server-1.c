@@ -10,11 +10,12 @@
 /// \brief Server Options
 
 #include "../k_menu.h"
+#include "../s_sound.h"
 
 menuitem_t OPTIONS_Server[] =
 {
 
-	{IT_HEADER, "Advertising...", NULL,
+	{IT_HEADER, "Broadcast...", NULL,
 		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_CVAR | IT_CV_STRING, "Server Name", "Name of your server.",
@@ -23,7 +24,7 @@ menuitem_t OPTIONS_Server[] =
 	{IT_STRING | IT_CVAR | IT_CV_STRING, "Server Contact", "How you should be contacted for Master Server moderation.",
 		NULL, {.cvar = &cv_server_contact}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Advertise", "Display your server in the Browser for other players to join.",
+	{IT_STRING | IT_CVAR, "Make Public", "Display your server in the Browser for other players to join.",
 		NULL, {.cvar = &cv_advertise}, 0, 0},
 
 
@@ -72,20 +73,27 @@ menuitem_t OPTIONS_Server[] =
 		NULL, {.cvar = &cv_pause}, 0, 0},
 
 
-	{IT_HEADER, "Chat...", NULL,
+	{IT_HEADER, "Text Chat...", NULL,
 		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Mute Chat", "Prevent everyone but admins from sending chat messages.",
 		NULL, {.cvar = &cv_mute}, 0, 0},
-
-	{IT_STRING | IT_CVAR, "Mute Voice Chat", "Prevent everyone from sending voice chat.",
-		NULL, {.cvar = &cv_voice_servermute}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Chat Spam Protection", "Prevent too many messages from a single player.",
 		NULL, {.cvar = &cv_chatspamprotection}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Rounds Needed To Chat", "How many rounds players must complete before they can chat. Good vs. ban evaders.",
 		NULL, {.cvar = &cv_gamestochat}, 0, 0},
+		
+
+	{IT_HEADER, "Voice Chat...",  NULL,
+		NULL, {NULL}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Server Voice Chat", "All voice chat will be enabled on your server.",
+		NULL, {.cvar = &cv_voice_allowservervoice}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Proximity Effects", "Player voices will be adjusted relative to you.",
+		NULL, {.cvar = &cv_voice_proximity}, 0, 0},
 
 	{IT_SPACE | IT_DYBIGSPACE, NULL,  NULL,
 		NULL, {NULL}, 0, 0},

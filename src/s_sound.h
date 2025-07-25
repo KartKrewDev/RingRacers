@@ -48,7 +48,7 @@ extern consvar_t cv_gamesounds;
 extern consvar_t cv_bgaudio;
 extern consvar_t cv_streamersafemusic;
 
-extern consvar_t cv_voice_chat;
+extern consvar_t cv_voice_selfdeafen;
 extern consvar_t cv_voice_mode;
 extern consvar_t cv_voice_selfmute;
 extern consvar_t cv_voice_loopback;
