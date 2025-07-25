@@ -2825,9 +2825,9 @@ void GameDigiMusic_OnChange(void)
 	}
 }
 
-void VoiceChat_OnChange(void);
+void VoiceSelfDeafen_OnChange(void);
 void weaponPrefChange(INT32 ssplayer);
-void VoiceChat_OnChange(void)
+void VoiceSelfDeafen_OnChange(void)
 {
 	if (M_CheckParm("-novoice") || M_CheckParm("-noaudio"))
 		return;

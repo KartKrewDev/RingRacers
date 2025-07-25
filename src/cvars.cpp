@@ -1370,10 +1370,10 @@ consvar_t cv_chatwidth = Player("chatwidth", "150").min_max(64, 150);
 consvar_t cv_consolechat = Player("chatmode", "Yes").values({{0, "Yes"}, {2, "No"}});
 
 // When off, inbound voice packets are ignored
-void VoiceChat_OnChange(void);
-consvar_t cv_voice_selfdeafen = Player("voice_chat", "On")
+void VoiceSelfDeafen_OnChange(void);
+consvar_t cv_voice_selfdeafen = Player("voice_selfdeafen", "On")
 	.on_off()
-	.onchange(VoiceChat_OnChange)
+	.onchange(VoiceSelfDeafen_OnChange)
 	.description("Whether voice chat is played or not. Shown as self-deafen to others.");
 
 // When on, local player won't transmit voice
