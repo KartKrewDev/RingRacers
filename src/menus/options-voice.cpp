@@ -16,7 +16,10 @@
 
 menuitem_t OPTIONS_Voice[] =
 {
-	{IT_STRING | IT_CVAR, "All Voice Chat", "Choose to opt-in to voice chat at all, for yourself.",
+	{IT_STRING | IT_CVAR, "Mute Self", "Whether your voice is transmitted or not.",
+		NULL, {.cvar = &cv_voice_selfmute}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Undeafen & Unmute", "Choose to opt-in to voice chat at all, for yourself.",
 		NULL, {.cvar = &cv_voice_chat}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Input Mode", "When to transmit your own voice.",
@@ -27,9 +30,6 @@ menuitem_t OPTIONS_Voice[] =
 
 	{IT_STRING | IT_CVAR, "Input Sensitivity", "Voice higher than this threshold will transmit, in decibels.",
 		NULL, {.cvar = &cv_voice_activationthreshold}, 0, 0},
-
-	{IT_STRING | IT_CVAR, "Mute Self", "Whether your voice is transmitted or not.",
-		NULL, {.cvar = &cv_voice_selfmute}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Voice Loopback", "Play your own voice back simultaneously.",
 		NULL, {.cvar = &cv_voice_loopback}, 0, 0},
