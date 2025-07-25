@@ -8049,7 +8049,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 
 		{
-			fixed_t convSpeed = (mobj->target->player->speed * 100) / K_GetKartSpeed(mobj->target->player, false, true);
+			fixed_t basespeed = K_GetKartSpeed(mobj->target->player, false, true);
+			fixed_t tripspeed = K_PlayerTripwireSpeedThreshold(mobj->target->player);
+			fixed_t myspeed = mobj->target->player->speed;
 			UINT8 trans = ((mobj->target->player->tripwireLeniency + 1) * (NUMTRANSMAPS+1)) / TRIPWIRETIME;
 
 			if (trans > NUMTRANSMAPS)
@@ -8058,7 +8060,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			trans = NUMTRANSMAPS - trans;
 
 			if ((trans >= NUMTRANSMAPS) // not a valid visibility
-				|| (convSpeed < 150 && (leveltime & 1)) // < 150% flickering
+				|| (myspeed < (tripspeed - basespeed/2) && (leveltime & 1)) // < 150% flickering
 				|| (mobj->target->player->tripwirePass < TRIPWIRE_BOOST) // Not strong enough to make an aura
 				|| mobj->target->player->flamedash) // Flameshield dash
 			{
@@ -8066,7 +8068,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 			else
 			{
-				boolean blastermode = (convSpeed >= 200) && (mobj->target->player->tripwirePass >= TRIPWIRE_BLASTER);
+				boolean blastermode = (myspeed >= tripspeed) && (mobj->target->player->tripwirePass >= TRIPWIRE_BLASTER);
 
 				mobj->renderflags &= ~(RF_TRANSMASK|RF_DONTDRAW);
 				if (trans != 0)
