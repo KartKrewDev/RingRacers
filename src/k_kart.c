@@ -3107,6 +3107,9 @@ fixed_t K_PlayerTripwireSpeedThreshold(const player_t *player)
 	if (specialstageinfo.valid)
 		required_speed = 3 * K_GetKartSpeed(player, false, false) / 2; // 150%
 
+	if (modeattacking && !(gametyperules & GTR_CATCHER))
+		required_speed = 4 * K_GetKartSpeed(player, false, false);
+
 	UINT32 distance = K_GetItemRouletteDistance(player, 8);
 
 	if (gametype == GT_RACE && M_NotFreePlay() && !modeattacking)
@@ -13996,7 +13999,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		{
 			player->lastringboost = player->ringboost;
 			UINT32 award = 5*player->ringboxaward + 10;
-			award = 23 * award / 20; // 115% Payout Increase
+
+			if (!modeattacking)
+				award = 23 * award / 20; // 115% Payout Increase
 			if (!K_ThunderDome())
 				award = 3 * award / 2;
 
@@ -14052,15 +14057,13 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				UINT8 maxtotal = accelPower*9 + weightPower*9;
 
 				// Scale from base payout at 9/1 to max payout at 1/9.
-				award = Easing_InCubic(FRACUNIT*total/maxtotal, 13*award/10, 18*award/10);
+				award = Easing_InCubic(FRACUNIT*total/maxtotal, 10*award/10, 17*award/10);
 
 				// And, because we don't have to give a damn about sandbagging, up the stakes the longer we progress! 
 				if (gametyperules & GTR_CIRCUIT)
 				{
-					UINT8 maxgrade = 10;
-					UINT8 margin = min(player->gradingpointnum, maxgrade);
-
-					award = Easing_Linear(FRACUNIT * margin / maxgrade, award, 2*award);
+					if (K_GetNumGradingPoints())
+						award = Easing_Linear(FRACUNIT * player->gradingpointnum / K_GetNumGradingPoints(), award, 3*award/2);
 				}
 			}
 			else
@@ -16460,6 +16463,9 @@ UINT16 K_GetEXP(player_t *player)
 	fixed_t factormax = K_GetGradingFactorMinMax(player, true);
 
 	UINT16 exp = FixedRescale(player->gradingfactor, factormin, factormax, Easing_Linear, targetminexp, targetmaxexp)>>FRACBITS;
+
+	if (modeattacking)
+		exp = 100 * player->gradingpointnum / numgradingpoints;
 
 	// CONS_Printf("Player %s numgradingpoints=%d gradingpoint=%d targetminexp=%d targetmaxexp=%d factor=%.2f factormin=%.2f factormax=%.2f exp=%d\n", 
 	// 	player_names[player - players], numgradingpoints, player->gradingpointnum, targetminexp, targetmaxexp, FIXED_TO_FLOAT(player->gradingfactor), FIXED_TO_FLOAT(factormin), FIXED_TO_FLOAT(factormax), exp);
