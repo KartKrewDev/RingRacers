@@ -1088,7 +1088,7 @@ static void SV_SendServerInfo(INT32 node, tic_t servertime)
 	netbuffer->u.serverinfo.kartvars = (UINT8) (
 		(gamespeed & SV_SPEEDMASK) |
 		(dedicated ? SV_DEDICATED : 0) |
-		(!cv_voice_allowservervoice.value ? SV_VOICEENABLED : 0)
+		(cv_voice_allowservervoice.value ? SV_VOICEENABLED : 0)
 	);
 
 	D_ParseCarets(netbuffer->u.serverinfo.servername, cv_servername.string, MAXSERVERNAME);
@@ -5306,7 +5306,7 @@ static void PT_HandleVoiceServer(SINT8 node)
 	int playernum = -1;
 	player_t *player;
 
-	if (cv_voice_allowservervoice.value != 0)
+	if (!cv_voice_allowservervoice.value)
 	{
 		// Don't even relay voice packets if voice_allowservervoice is off
 		return;
