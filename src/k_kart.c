@@ -10132,8 +10132,40 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			player->ringboost /= 3;
 	}
 
-	if (player->bailhitlag && !player->mo->hitlag) // quake as soon as we leave hitlag
+	if (player->bailhitlag && !player->mo->hitlag) // do the ring reduction and set boost as soon as we leave hitlag
 	{
+		UINT32 debtrings = 20;
+		if (player->rings < 0)
+		{
+			debtrings += player->rings;
+			player->rings = 0;
+		}
+
+		UINT32 totalrings = player->rings + player->superring + player->pickuprings;
+		if (BAIL_CREDIT_DEBTRINGS)
+			totalrings += debtrings;
+		totalrings = max(totalrings, 0);
+		UINT32 bailboost = FixedInt(FixedMul(totalrings*FRACUNIT, BAIL_BOOST));
+		UINT32 baildrop = FixedInt(FixedMul((totalrings)*FRACUNIT, BAIL_DROP));
+
+		player->rings = -20;
+		player->superring = 0;
+		player->pickuprings = 0;
+		player->ringboxaward = 0;
+		player->ringboxdelay = 0;
+
+		player->superringdisplay = 0;
+		player->superringalert = 0;
+		player->superringpeak = 0;
+
+		player->counterdash += TICRATE/8;
+
+		player->ringboost += bailboost * (3+K_GetKartRingPower(player, true));
+		player->baildrop += baildrop * BAIL_DROPFREQUENCY + 1;
+
+		if (player->amps > 0)
+			K_DefensiveOverdrive(player);
+
 		P_StartQuakeFromMobj(7, 50 * player->mo->scale, 2048 * player->mo->scale, player->mo);	
 		player->bailhitlag = false;
 	}
@@ -14150,20 +14182,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		mobj_t *bail = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, MT_BAIL);
 		P_SetTarget(&bail->target, player->mo);
 
-		UINT32 debtrings = 20;
-		if (player->rings < 0)
-		{
-			debtrings += player->rings;
-			player->rings = 0;
-		}
-
-		UINT32 totalrings = player->rings + player->superring + player->pickuprings;
-		if (BAIL_CREDIT_DEBTRINGS)
-			totalrings += debtrings;
-		totalrings = max(totalrings, 0);
-		UINT32 bailboost = FixedInt(FixedMul(totalrings*FRACUNIT, BAIL_BOOST));
-		UINT32 baildrop = FixedInt(FixedMul((totalrings)*FRACUNIT, BAIL_DROP));
-
 		if (player->itemRoulette.active)
 		{
 			player->itemRoulette.active = false;
@@ -14184,21 +14202,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		}
 		*/
 
-		player->rings = -20;
-		player->superring = 0;
-		player->pickuprings = 0;
-		player->ringboxaward = 0;
-		player->ringboxdelay = 0;
-
-		player->superringdisplay = 0;
-		player->superringalert = 0;
-		player->superringpeak = 0;
-
-		player->counterdash += TICRATE/8;
-
-		player->ringboost += bailboost * (3+K_GetKartRingPower(player, true));
-		player->baildrop += baildrop * BAIL_DROPFREQUENCY + 1;
-
 		K_AddHitLag(player->mo, TICRATE/4, false);
 		player->bailhitlag = true; // set for a one time quake effect as soon as hitlag ends
 
@@ -14218,9 +14221,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			const follower_t *fl = &followers[fls];
 			S_StartSound(NULL, fl->hornsound);
 		}
-
-		if (player->amps > 0)
-			K_DefensiveOverdrive(player);
 
 		S_StartSound(player->mo, sfx_kc33);
 	}
