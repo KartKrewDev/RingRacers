@@ -2055,8 +2055,23 @@ static void K_HandleLapIncrement(player_t *player)
 					else
 						starthaste -= leniency;
 
-					fixed_t ampreward = Easing_OutQuart(starthaste*FRACUNIT/TIMEATTACK_START, 60*FRACUNIT, 0);		
-					K_SpawnAmps(player, ampreward/FRACUNIT, player->mo);
+					// fixed_t ampreward = Easing_OutQuart(starthaste*FRACUNIT/TIMEATTACK_START, 60*FRACUNIT, 0);		
+					// K_SpawnAmps(player, ampreward/FRACUNIT, player->mo);
+
+					UINT8 baseboost = 125;
+
+					player->startboost = Easing_OutQuart(starthaste*FRACUNIT/TIMEATTACK_START, baseboost, 0);
+
+					if (player->startboost == baseboost)
+					{
+						K_SpawnDriftBoostExplosion(player, 4);
+						K_SpawnDriftElectricSparks(player, SKINCOLOR_SILVER, false);
+					}
+					else
+					{
+						K_SpawnDriftBoostExplosion(player, 3);
+						// K_SpawnDriftElectricSparks(player, SKINCOLOR_SILVER, false);						
+					}
 
 					// And reset our time to 0.
 					starttime = leveltime;
