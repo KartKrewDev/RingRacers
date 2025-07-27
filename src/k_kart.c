@@ -10157,7 +10157,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->superringpeak = 0;
 		player->counterdash += TICRATE/8;
 		// CONS_Printf("bailcharge: %d\n", player->bailcharge);
-		player->stunned = BAILSTUN - player->bailcharge; // note: bailcharge goes up by 2 every tic, not 1, so this is actually - charge duration *2
+		// Below: The stun the player gets from bailing is reduced as a pity if you did it out of Burst. Longer charge, shorter stun.
+		player->stunned = BAILSTUN - player->bailcharge*5/4; // note: bailcharge goes up by 2 every tic, not 1, so this is actually - charge duration *2
 		player->bailcharge = 0;
 
 		player->ringboost += bailboost * (3+K_GetKartRingPower(player, true));
