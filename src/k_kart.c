@@ -10156,7 +10156,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->superringalert = 0;
 		player->superringpeak = 0;
 		player->counterdash += TICRATE/8;
-		CONS_Printf("bailcharge: %d\n", player->bailcharge);
+		// CONS_Printf("bailcharge: %d\n", player->bailcharge);
 		player->stunned = BAILSTUN - player->bailcharge; // note: bailcharge goes up by 2 every tic, not 1, so this is actually - charge duration *2
 		player->bailcharge = 0;
 
