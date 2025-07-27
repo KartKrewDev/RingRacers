@@ -10095,10 +10095,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->baildrop)
 	{
-		if (player->stunned & 0x8000)
-			player->stunned = 0x8000 | BAILSTUN;
-		else
-			player->stunned = BAILSTUN;
+		// freeze the stunned timer while baildrop is active
+		// while retaining the value that was initially set
+		player->stunned++; 
 
 		mobj_t *pmo = player->mo;
 		// particle spawn
@@ -10153,12 +10152,13 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->pickuprings = 0;
 		player->ringboxaward = 0;
 		player->ringboxdelay = 0;
-
 		player->superringdisplay = 0;
 		player->superringalert = 0;
 		player->superringpeak = 0;
-
 		player->counterdash += TICRATE/8;
+		CONS_Printf("bailcharge: %d\n", player->bailcharge);
+		player->stunned = BAILSTUN - player->bailcharge; // note: bailcharge goes up by 2 every tic, not 1, so this is actually - charge duration *2
+		player->bailcharge = 0;
 
 		player->ringboost += bailboost * (3+K_GetKartRingPower(player, true));
 		player->baildrop += baildrop * BAIL_DROPFREQUENCY + 1;
@@ -10168,6 +10168,54 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 		P_StartQuakeFromMobj(7, 50 * player->mo->scale, 2048 * player->mo->scale, player->mo);	
 		player->bailhitlag = false;
+	}
+
+	if ((!P_PlayerInPain(player) && player->bailcharge >= 5) || player->bailcharge >= BAIL_MAXCHARGE)
+	{
+		mobj_t *bail = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, MT_BAIL);
+		P_SetTarget(&bail->target, player->mo);
+
+		if (player->itemRoulette.active)
+		{
+			player->itemRoulette.active = false;
+		}
+
+		K_PopPlayerShield(player);
+		K_DeleteHnextList(player);
+		K_DropItems(player);
+
+		player->itemamount = 0;
+		player->itemtype = 0;
+
+		/*
+		if (player->itemamount)
+		{
+			K_DropPaperItem(player, player->itemtype, player->itemamount);
+			player->itemtype = player->itemamount = 0;
+		}
+		*/
+
+		K_AddHitLag(player->mo, TICRATE/4, false);
+		player->bailhitlag = true; // set for a one time quake effect as soon as hitlag ends
+
+		if (P_PlayerInPain(player))
+		{
+			player->spinouttimer = 0;
+			player->spinouttype = 0;
+			player->tumbleBounces = 0;
+			player->pflags &= ~PF_TUMBLELASTBOUNCE;
+			player->mo->rollangle = 0;
+			P_ResetPitchRoll(player->mo);
+		}
+
+		INT32 fls = K_GetEffectiveFollowerSkin(player);
+		if (player->follower && fls >= 0 && fls < numfollowers)
+		{
+			const follower_t *fl = &followers[fls];
+			S_StartSound(NULL, fl->hornsound);
+		}
+
+		S_StartSound(player->mo, sfx_kc33);
 	}
 
 	// The precise ordering of start-of-level made me want to cut my head off,
@@ -14156,11 +14204,11 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		else if ((player->itemtype && player->itemamount) || player->rings > 0 || player->superring > 0 || player->pickuprings > 0 || player->itemRoulette.active)
 		{
 			// Set up bail charge, provided we have something to bail with (any rings or item resource).
-			boolean grounded = P_IsObjectOnGround(player->mo);
+			// boolean grounded = P_IsObjectOnGround(player->mo);
 			// onground && player->tumbleBounces == 0 ?  player->bailcharge += 2 : player->bailcharge++; // charge twice as fast on the ground
 			player->bailcharge += 2;
 			// if ((P_PlayerInPain(player) && player->bailcharge == 1) || (grounded && P_PlayerInPain(player) && player->bailcharge == 2)) // this is brittle ..
-			if (player->bailcharge == 2)
+			if (P_PlayerInPain(player) && player->bailcharge == 2)
 			{
 				mobj_t *bail = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, MT_BAILCHARGE);
 				S_StartSound(bail, sfx_gshb9); // I tried to use info.c, but you can't play sounds on mobjspawn via A_PlaySound
@@ -14174,55 +14222,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			player->bailcharge = 0;
 		}
 	}
-
-	if ((!P_PlayerInPain(player) && player->bailcharge >= 5) || player->bailcharge >= BAIL_MAXCHARGE)
+	else
 	{
 		player->bailcharge = 0;
-
-		mobj_t *bail = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, MT_BAIL);
-		P_SetTarget(&bail->target, player->mo);
-
-		if (player->itemRoulette.active)
-		{
-			player->itemRoulette.active = false;
-		}
-
-		K_PopPlayerShield(player);
-		K_DeleteHnextList(player);
-		K_DropItems(player);
-
-		player->itemamount = 0;
-		player->itemtype = 0;
-
-		/*
-		if (player->itemamount)
-		{
-			K_DropPaperItem(player, player->itemtype, player->itemamount);
-			player->itemtype = player->itemamount = 0;
-		}
-		*/
-
-		K_AddHitLag(player->mo, TICRATE/4, false);
-		player->bailhitlag = true; // set for a one time quake effect as soon as hitlag ends
-
-		if (P_PlayerInPain(player))
-		{
-			player->spinouttimer = 0;
-			player->spinouttype = 0;
-			player->tumbleBounces = 0;
-			player->pflags &= ~PF_TUMBLELASTBOUNCE;
-			player->mo->rollangle = 0;
-			P_ResetPitchRoll(player->mo);
-		}
-
-		INT32 fls = K_GetEffectiveFollowerSkin(player);
-		if (player->follower && fls >= 0 && fls < numfollowers)
-		{
-			const follower_t *fl = &followers[fls];
-			S_StartSound(NULL, fl->hornsound);
-		}
-
-		S_StartSound(player->mo, sfx_kc33);
 	}
 
 	if (player && player->mo && K_PlayerCanUseItem(player))
