@@ -9821,6 +9821,10 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			mobj->flags = MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_NOGRAVITY|MF_DONTENCOREMAP;
 			mobj->extravalue1 = 1;
 
+			// Mash speed limit
+			if (mobj->cusval)
+				mobj->cusval--;
+
 			mobj->cvmem /= 2;
 			mobj->momz = 0;
 			mobj->destscale = ((8*mobj->tracer->scale)>>2) + (mobj->tracer->scale>>3);
@@ -9856,7 +9860,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				mobj->tracer->y + P_ReturnThrustY(NULL, mobj->tracer->angle+ANGLE_90, (mobj->cvmem)<<FRACBITS),
 				mobj->tracer->z - (4*mobj->tracer->scale) + (P_RandomRange(PR_ITEM_BUBBLE, -abs(mobj->cvmem), abs(mobj->cvmem))<<FRACBITS));
 
-			if (mobj->movecount > 4*TICRATE)
+			if (mobj->movecount > 3*TICRATE)
 			{
 				S_StartSound(mobj->tracer, sfx_s3k77);
 				mobj->tracer->flags &= ~MF_NOGRAVITY;
@@ -9877,8 +9881,17 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				if ((player->cmd.turning > 0 && lastsign < 0)
 					|| (player->cmd.turning < 0 && lastsign > 0))
 				{
-					mobj->movecount += (TICRATE/2);
+					UINT8 mashpwr = TICRATE/2;
+					mobj->movecount += (mashpwr) - (mobj->cusval*2);
 					mobj->cvmem = 8*lastsign;
+					mobj->cusval = mashpwr/2; // Mash speed limit.
+					// The value of this var, as set here, is the highest useful speed
+					// (in tics) that you can mash out of bubble trap. As configured
+					// here, it's 4 inputs per second.
+					// If you're here to change this, make sure that when cusval = this
+					// value, the "movecount" line above adds 0. I would have hooked that
+					// math up before leaving, but integer precision is a drag here and
+					// you probably have to use even divisors of mashpwr.
 					S_StartSound(mobj, sfx_s3k7a);
 				}
 
