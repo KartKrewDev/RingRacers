@@ -14052,7 +14052,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				// AP 1, WP 2 = weight is worth twice what accel is.
 				// 0 = stat not considered at all!
 				// UINT8 accelPower = 0;
-				UINT8 speedPower = 1;
+				UINT8 speedPower = 0;
 				UINT8 weightPower = 6;
 
 				UINT8 total = speedPower*speed + weightPower*weight;
