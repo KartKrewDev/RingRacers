@@ -1481,7 +1481,7 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"gshda", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshdb", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshdc", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
-  {"gshdd", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"gshdd", false,  96, 8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, //New ballhog explosion
   {"gshde", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshdf", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshe0", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
