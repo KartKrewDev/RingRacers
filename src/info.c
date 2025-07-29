@@ -2511,7 +2511,7 @@ state_t states[NUMSTATES] =
 	{SPR_BHOG,               6, 1, {NULL}, 0, 0, S_BALLHOG8}, 				// S_BALLHOG7
 	{SPR_BHOG,               7, 1, {NULL}, 0, 0, S_BALLHOG1}, 				// S_BALLHOG8
 	{SPR_NULL,               0, 1, {A_BallhogExplode}, 0, 0, S_NULL},			// S_BALLHOG_DEAD
-	{SPR_BHBM, FF_ANIMATE|FF_FULLBRIGHT, 27, {NULL}, 26, 1, S_NULL}, // S_BALLHOG_BOOM
+	{SPR_BHBM, FF_ANIMATE|FF_FULLBRIGHT, 27, {NULL}, 26, 1, S_NULL}, // S_BALLHOGBOOM
 	{SPR_BHGR, FF_ANIMATE|FF_FULLBRIGHT|0, 2*TICRATE, {NULL}, 5, 3, S_NULL},	// S_BALLHOG_RETICULE
 
 	{SPR_SPBM, 0, 1, {NULL}, 0, 0,  S_SPB2}, // S_SPB1
@@ -15385,7 +15385,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 
 	{           // MT_BALLHOGBOOM
 		-1,             // doomednum
-		S_BALLHOGBOOM1, // spawnstate
+		S_BALLHOGBOOM, // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound
