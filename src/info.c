@@ -15128,7 +15128,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,					// missilestate
 		S_SSMINE_EXPLODE,		// deathstate
 		S_NULL,					// xdeathstate
-		sfx_None,				// deathsound
+		sfx_gshc5,				// deathsound
 		0,						// speed
 		16*FRACUNIT,			// radius
 		56*FRACUNIT,			// height
