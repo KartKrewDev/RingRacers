@@ -468,7 +468,20 @@ std::optional<TargetTracking::Tooltip> object_tooltip(const mobj_t* mobj)
 					TextElement().parse("<c_animated>").font(splitfont))
 				)
 			.offset3d(0, 0, 64 * mobj->scale * P_MobjFlip(mobj));
-		
+
+		if (mobj->player == stplyr && stplyr->ballhogburst >= (BALLHOG_BURST_FUSE/3))
+		{
+			UINT32 flag = 0;
+			if (stplyr->ballhogburst % 2)
+				flag = (stplyr->ballhogburst >= (2*BALLHOG_BURST_FUSE/3)) ? V_REDMAP : V_YELLOWMAP;
+
+			return Tooltip(
+				TextElement(
+					TextElement().parse("DANGER!").flags(V_20TRANS|flag).font(splitfont))
+				)
+			.offset3d(0, 0, 32 * mobj->scale * P_MobjFlip(mobj));
+		}
+
 		return conditional(
 			mobj->player == stplyr && stplyr->icecube.frozen,
 			[&] { return Tooltip(TextElement(

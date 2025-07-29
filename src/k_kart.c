@@ -5445,8 +5445,13 @@ static void K_HandleTumbleBounce(player_t *player)
 
 	S_StartSound(player->mo, (player->tumbleHeight < 40) ? sfx_s3k5d : sfx_s3k5f);	// s3k5d is bounce < 50, s3k5f otherwise!
 
-	player->mo->momx = player->mo->momx / 2;
-	player->mo->momy = player->mo->momy / 2;
+	if (!(player->pflags2 & PF2_FASTTUMBLEBOUNCE))
+	{
+		player->mo->momx = player->mo->momx / 2;
+		player->mo->momy = player->mo->momy / 2;
+	}
+
+	player->pflags2 &= ~PF2_FASTTUMBLEBOUNCE;
 
 	// and then modulate momz like that...
 	player->mo->momz = K_TumbleZ(player->mo, player->tumbleHeight * FRACUNIT);
@@ -10984,12 +10989,20 @@ void K_KartResetPlayerColor(player_t *player)
 		}
 	}
 
-	if (player->ballhogcharge && player->ballhogburst >= (BALLHOG_BURST_FUSE/2))
+	if (player->ballhogcharge && player->ballhogburst >= (2*BALLHOG_BURST_FUSE/3))
+	{
+		player->mo->colorized = true;
+		player->mo->color = (player->ballhogburst % 2) ? SKINCOLOR_CRIMSON : SKINCOLOR_BLACK;
+		fullbright = true;
+		goto finalise;		
+	}
+
+	if (player->ballhogcharge && player->ballhogburst >= (BALLHOG_BURST_FUSE/3))
 	{
 		if (player->ballhogburst % 2 == 0)
 		{
 			player->mo->colorized = true;
-			player->mo->color = SKINCOLOR_KETCHUP;
+			player->mo->color = SKINCOLOR_CRIMSON;
 			fullbright = true;
 			goto finalise;		
 		}
@@ -14729,8 +14742,12 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									{
 										player->ballhogburst++;
 
-										if (player->ballhogburst == BALLHOG_BURST_FUSE/2)
+										if (player->ballhogburst == 2*BALLHOG_BURST_FUSE/3)
 											S_StartSound(player->mo, sfx_gshb8);
+
+										if (player->ballhogburst == BALLHOG_BURST_FUSE/3)
+											S_StartSound(player->mo, sfx_gshda);
+
 										else if (player->ballhogburst == BALLHOG_BURST_FUSE)
 										{
 											K_PlayBoostTaunt(player->mo);
@@ -14739,26 +14756,33 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 												K_DoSneaker(player, 0);
 											}
 
+											S_StopSoundByID(player->mo, sfx_gshda);
+
 											mobj_t *boom = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_THOK);
 											P_SetMobjState(boom, S_BALLHOGBOOM);
 											boom->scale = player->mo->scale + (player->mo->scale / 4 * player->itemamount);
+
 											// boom->momx = player->mo->momx/2;
 											// boom->momy = player->mo->momy/2;
 											// boom->momz = player->mo->momz/2;
+
 											boom->color = player->skincolor;
 											boom->colorized = true;
 											S_StartSound(player->mo, mobjinfo[MT_BALLHOG].deathsound);
 
 											K_StumblePlayer(player);
 											K_AddHitLag(player->mo, TICRATE/4, false);
-											player->tumbleBounces = 10;
+											player->tumbleBounces = TUMBLEBOUNCES;
 
-											P_Thrust(player->mo, player->mo->angle, 240 * player->mo->scale);
+											P_Thrust(player->mo, player->mo->angle, (40 + 10 * player->itemamount) * player->mo->scale);
+											player->pflags2 |= PF2_FASTTUMBLEBOUNCE;
 											
+											/*
 											if (onground)
 												player->mo->momz += 10*player->mo->scale;
 											else
 												player->mo->momz -= 50*player->mo->scale;
+											*/
 
 											player->itemamount = 0;
 											player->botvars.itemconfirm = 0;

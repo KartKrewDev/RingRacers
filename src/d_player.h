@@ -145,6 +145,7 @@ typedef enum
 	PF2_ALWAYSDAMAGED		= 1<<6, // Ignore invulnerability or clash conditions when evaulating damage (P_DamageMobj). Unset after use!
 	PF2_BUBBLECONTACT		= 1<<7, // ACHTUNG VERY BAD HACK - Don't allow Bubble Shield to contact certain objects unless this is a fresh blowup.
 	PF2_SUPERTRANSFERVFX	= 1<<8, // Don't respawn the "super transfer available" VFX.
+	PF2_FASTTUMBLEBOUNCE	= 1<<9, // Don't lose speed when tumblebouncing.
 } pflags2_t;
 
 typedef enum
