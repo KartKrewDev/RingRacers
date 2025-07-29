@@ -10984,6 +10984,17 @@ void K_KartResetPlayerColor(player_t *player)
 		}
 	}
 
+	if (player->ballhogcharge && player->ballhogburst >= (BALLHOG_BURST_FUSE/2))
+	{
+		if (player->ballhogburst % 2 == 0)
+		{
+			player->mo->colorized = true;
+			player->mo->color = SKINCOLOR_KETCHUP;
+			fullbright = true;
+			goto finalise;		
+		}
+	}
+
 	if (player->invincibilitytimer) // You're gonna kiiiiill
 	{
 		const tic_t defaultTime = itemtime+(2*TICRATE);
@@ -14696,6 +14707,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								{
 									if (player->ballhogcharge < ballhogmax)
 									{
+										player->ballhogburst = 0;
 										player->ballhogcharge++;
 
 										if (player->ballhogcharge % BALLHOGINCREMENT == 0)
@@ -14711,6 +14723,47 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 											};
 											UINT8 chargesound = max(1, min(player->ballhogcharge / BALLHOGINCREMENT, 6));
 											S_StartSound(player->mo, hogsound[chargesound-1]);
+										}
+									}
+									else
+									{
+										player->ballhogburst++;
+
+										if (player->ballhogburst == BALLHOG_BURST_FUSE/2)
+											S_StartSound(player->mo, sfx_gshb8);
+										else if (player->ballhogburst == BALLHOG_BURST_FUSE)
+										{
+											K_PlayBoostTaunt(player->mo);
+											for (UINT8 j = 0; j < player->itemamount; j++)
+											{
+												K_DoSneaker(player, 0);
+											}
+
+											mobj_t *boom = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_THOK);
+											P_SetMobjState(boom, S_BALLHOGBOOM);
+											boom->scale = player->mo->scale + (player->mo->scale / 4 * player->itemamount);
+											// boom->momx = player->mo->momx/2;
+											// boom->momy = player->mo->momy/2;
+											// boom->momz = player->mo->momz/2;
+											boom->color = player->skincolor;
+											boom->colorized = true;
+											S_StartSound(player->mo, mobjinfo[MT_BALLHOG].deathsound);
+
+											K_StumblePlayer(player);
+											K_AddHitLag(player->mo, TICRATE/4, false);
+											player->tumbleBounces = 10;
+
+											P_Thrust(player->mo, player->mo->angle, 240 * player->mo->scale);
+											
+											if (onground)
+												player->mo->momz += 10*player->mo->scale;
+											else
+												player->mo->momz -= 50*player->mo->scale;
+
+											player->itemamount = 0;
+											player->botvars.itemconfirm = 0;
+											player->ballhogcharge = 0;
+											player->ballhogburst = 0;
 										}
 									}
 								}
@@ -16532,7 +16585,6 @@ static boolean K_PickUp(player_t *player, mobj_t *picked)
 			type = KITEM_JAWZ;
 			break;
 		case MT_BALLHOG:
-		case MT_BALLHOGBOOM:
 			type = KITEM_BALLHOG;
 			break;
 		case MT_LANDMINE:

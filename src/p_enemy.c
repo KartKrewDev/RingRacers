@@ -12206,6 +12206,12 @@ void A_BallhogExplode(mobj_t *actor)
 	mo2->destscale = mo2->scale;
 	P_SetTarget(&mo2->target, actor->target);
 	S_StartSound(mo2, actor->info->deathsound);
+
+	if (actor->target && !P_MobjWasRemoved(actor->target) && actor->target->player)
+	{
+		mo2->color = actor->target->color;
+		mo2->colorized = true;
+	}
 	
 	P_StartQuakeFromMobj(7, 50 * actor->scale, 1024 * actor->scale, actor);
 

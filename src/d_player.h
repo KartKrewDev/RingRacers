@@ -838,6 +838,7 @@ struct player_t
 	UINT16 counterdash;	// Flame Shield boost without the flame, largely. Used in places where awarding thrust would affect player control.
 
 	UINT16 ballhogcharge;	// Ballhog charge up -- the higher this value, the more projectiles
+	UINT8 ballhogburst;
 	boolean ballhogtap;		// Ballhog released during charge: used to allow semirapid tapfire
 	mobj_t *ballhogreticule;	// First ballhog reticule estimation object
 
