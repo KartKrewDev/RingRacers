@@ -471,9 +471,9 @@ std::optional<TargetTracking::Tooltip> object_tooltip(const mobj_t* mobj)
 
 		if (mobj->player == stplyr && stplyr->ballhogburst >= (BALLHOG_BURST_FUSE/3))
 		{
-			UINT32 flag = 0;
-			if (stplyr->ballhogburst % 2)
-				flag = (stplyr->ballhogburst >= (2*BALLHOG_BURST_FUSE/3)) ? V_REDMAP : V_YELLOWMAP;
+			UINT32 flag = (stplyr->ballhogburst >= (2*BALLHOG_BURST_FUSE/3)) ? V_REDMAP : V_YELLOWMAP;
+			if (stplyr->ballhogburst % 2 && !cv_reducevfx.value)
+				flag = 0;
 
 			return Tooltip(
 				TextElement(
