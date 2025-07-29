@@ -15371,7 +15371,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,         // missilestate
 		S_BALLHOG_DEAD, // deathstate
 		S_NULL,         // xdeathstate
-		sfx_hogbom,     // deathsound
+		sfx_gshdd,     // deathsound
 		0,              // speed
 		26*FRACUNIT,    // radius
 		64*FRACUNIT,    // height
@@ -15400,8 +15400,8 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,         // xdeathstate
 		sfx_None,       // deathsound
 		0,              // speed
-		32*FRACUNIT,    // radius
-		32*FRACUNIT,    // height
+		50*FRACUNIT,    // radius
+		50*FRACUNIT,    // height
 		0,              // display offset
 		100,            // mass
 		1,              // damage
