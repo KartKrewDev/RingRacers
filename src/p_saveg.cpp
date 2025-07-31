@@ -3469,7 +3469,7 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		WRITEUINT16(save->p, mobj->anim_duration);
 	}
 	if (diff & MD_EFLAGS)
-		WRITEUINT16(save->p, mobj->eflags);
+		WRITEUINT32(save->p, mobj->eflags);
 	if (diff & MD_PLAYER)
 		WRITEUINT8(save->p, mobj->player-players);
 	if (diff & MD_MOVEDIR)
@@ -4744,7 +4744,7 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 		mobj->anim_duration = (UINT16)mobj->state->var2;
 	}
 	if (diff & MD_EFLAGS)
-		mobj->eflags = READUINT16(save->p);
+		mobj->eflags = READUINT32(save->p);
 	if (diff & MD_PLAYER)
 	{
 		i = READUINT8(save->p);

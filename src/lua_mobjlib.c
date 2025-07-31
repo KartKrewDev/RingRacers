@@ -709,7 +709,7 @@ static int mobj_set(lua_State *L)
 		mo->flags2 = (UINT32)luaL_checkinteger(L, 3);
 		break;
 	case mobj_eflags:
-		mo->eflags = (UINT16)luaL_checkinteger(L, 3);
+		mo->eflags = (UINT32)luaL_checkinteger(L, 3);
 		break;
 	case mobj_renderflags:
 		mo->renderflags = (UINT32)luaL_checkinteger(L, 3);

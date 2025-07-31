@@ -262,6 +262,8 @@ typedef enum
 	MFE_SLOPELAUNCHED     = 1<<14,
 	// Thinker is paused due to hitlag
 	MFE_PAUSED            = 1<<15,
+	// Don't launch off of slopes
+	MFE_DONTSLOPELAUNCH   = 1<<16,
 } mobjeflag_t;
 
 //
@@ -339,7 +341,7 @@ struct mobj_t
 	state_t *state;
 	UINT32 flags; // flags from mobjinfo tables
 	UINT32 flags2; // MF2_ flags
-	UINT16 eflags; // extra flags
+	UINT32 eflags; // extra flags
 
 	mtag_t tid;
 	mobj_t *tid_next;

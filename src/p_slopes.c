@@ -989,6 +989,14 @@ boolean P_CanApplySlopeLaunch(mobj_t *mo, pslope_t *slope)
 		return false;
 	}
 
+	if (mo->eflags & MFE_DONTSLOPELAUNCH)
+	{
+		CONS_Printf("MFE_DONTSLOPELAUNCH\n");
+		mo->eflags &= ~MFE_DONTSLOPELAUNCH; // You get one cancelled launch
+		// Don't launch off of slopes.
+		return false;
+	}
+
 	// We can do slope launching.
 	return true;
 }

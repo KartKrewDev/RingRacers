@@ -4138,6 +4138,8 @@ static void P_PlayerMobjThinker(mobj_t *mobj)
 		mobj->eflags &= ~MFE_JUSTHITFLOOR;
 	}
 
+	mobj->eflags &= ~MFE_DONTSLOPELAUNCH;
+
 	P_SquishThink(mobj);
 	K_UpdateTerrainOverlay(mobj);
 
@@ -10909,6 +10911,7 @@ void P_MobjThinker(mobj_t *mobj)
 		P_ButteredSlope(mobj);
 	}
 
+	mobj->eflags &= ~MFE_DONTSLOPELAUNCH;
 	P_SquishThink(mobj);
 	K_UpdateTerrainOverlay(mobj);
 
