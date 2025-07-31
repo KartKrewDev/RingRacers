@@ -299,7 +299,7 @@ static boolean K_RivalBotAggression(const player_t *bot, const player_t *target)
 		return false;
 	}
 
-	if (bot->botvars.rival == false && !cv_levelskull.value)
+	if (!(bot->botvars.rival || bot->botvars.foe) && !cv_levelskull.value)
 	{
 		// Not the rival, we aren't self-aware.
 		return false;

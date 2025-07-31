@@ -1621,6 +1621,8 @@ static boolean K_TryDraft(player_t *player, mobj_t *dest, fixed_t minDist, fixed
 			// Double speed for the rival!
 			if (player->botvars.rival || cv_levelskull.value)
 				player->draftpower += add;
+			else if (player->botvars.foe)
+				player->draftpower += add/2;
 			else if (dest->player->bot) // Reduce bot gluts.
 				player->draftpower -= 3*add/4;
 		}
@@ -3554,6 +3556,10 @@ static fixed_t K_RingDurationBoost(const player_t *player)
 			// x2.0 for Rival
 			ret *= 2;
 		}
+		else if (player->botvars.foe)
+		{
+			ret = 3 * ret / 2;
+		}
 	}
 
 	return ret;
@@ -3975,6 +3981,11 @@ fixed_t K_GetKartSpeed(const player_t *player, boolean doboostpower, boolean dor
 			{
 				// +10% top speed for the rival
 				finalspeed = FixedMul(finalspeed, 11*FRACUNIT/10);
+			}
+			else if (player->bot && player->botvars.foe)
+			{
+				// +5% for foes
+				finalspeed = FixedMul(finalspeed, 21*FRACUNIT/20);
 			}
 		}
 	}
@@ -10963,6 +10974,13 @@ void K_KartResetPlayerColor(player_t *player)
 	if (player->mo->health <= 0 || player->playerstate == PST_DEAD || (player->respawn.state == RESPAWNST_MOVE)) // Override everything
 	{
 		goto base;
+	}
+
+	if (player->botvars.foe)
+	{
+		player->mo->colorized = true;
+		player->mo->color = SKINCOLOR_BLACK;
+		goto finalise;
 	}
 
 	if (player->eggmanexplode) // You're gonna diiiiie

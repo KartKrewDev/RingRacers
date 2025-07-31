@@ -2271,6 +2271,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	INT16 botdiffincrease;
 	boolean botrival;
+	boolean botfoe;
 
 	boolean cangrabitems;
 
@@ -2381,6 +2382,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	botdiffincrease = players[player].botvars.diffincrease;
 	botrival = players[player].botvars.rival;
+	botfoe = players[player].botvars.foe;
 
 	totalring = players[player].totalring;
 	xtralife = players[player].xtralife;
@@ -2641,6 +2643,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->spheres = spheres;
 	p->botvars.diffincrease = botdiffincrease;
 	p->botvars.rival = botrival;
+	p->botvars.foe = botfoe;
 	p->xtralife = xtralife;
 
 	// SRB2kart

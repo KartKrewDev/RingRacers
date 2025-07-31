@@ -620,7 +620,7 @@ static UINT32 K_BotRubberbandDistance(const player_t *player)
 	UINT8 pos = 1;
 	UINT8 i;
 
-	if (player->botvars.rival || cv_levelskull.value)
+	if (player->botvars.rival || player->botvars.foe || cv_levelskull.value)
 	{
 		// The rival should always try to be the front runner for the race.
 		return 0;
@@ -694,6 +694,8 @@ fixed_t K_BotRubberband(const player_t *player)
 	{
 		UINT8 levelreduce = std::min<UINT8>(3, player->botvars.difficulty/4); // How much to drop the "effective level" of bots that are consistently behind
 		expreduce = Easing_Linear((K_EffectiveGradingFactor(player) - MINGRADINGFACTOR) * 2, levelreduce*FRACUNIT, 0);
+		if (player->botvars.foe)
+			expreduce /= 2;
 	}
 
 	fixed_t difficultyEase = (((player->botvars.difficulty - 1) * FRACUNIT) - expreduce) / (MAXBOTDIFFICULTY - 1);
