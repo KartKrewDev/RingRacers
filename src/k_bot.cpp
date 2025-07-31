@@ -615,16 +615,19 @@ fixed_t K_BotMapModifier(void)
 --------------------------------------------------*/
 static UINT32 K_BotRubberbandDistance(const player_t *player)
 {
-	const UINT32 spacing = FixedDiv(640 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
+	UINT32 spacing = FixedDiv(640 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
 	const UINT8 portpriority = player - players;
 	UINT8 pos = 1;
 	UINT8 i;
 
-	if (player->botvars.rival || player->botvars.foe || cv_levelskull.value)
+	if (player->botvars.rival || cv_levelskull.value)
 	{
 		// The rival should always try to be the front runner for the race.
 		return 0;
 	}
+
+	if (player->botvars.foe)
+		spacing /= 2;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
