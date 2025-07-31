@@ -14777,6 +14777,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 											P_Thrust(player->mo, player->mo->angle, (40 + 10 * player->itemamount) * player->mo->scale);
 											player->pflags2 |= PF2_FASTTUMBLEBOUNCE;
 											
+											/*
 											if (onground)
 											{
 												P_SetObjectMomZ(player->mo, 10*FRACUNIT, true);
@@ -14786,6 +14787,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 											{
 												P_SetObjectMomZ(player->mo, -50*FRACUNIT, true);
 											}
+											*/
 
 											player->itemamount = 0;
 											player->botvars.itemconfirm = 0;
