@@ -97,7 +97,11 @@ struct IvoBall : Mobj
 		timer(kCooldown);
 
 		toucher->player->ringboost += 10;
-		K_AwardPlayerRings(toucher->player, 1, false);
+
+		if (P_CanPickupItem(toucher->player, PICKUP_RINGORSPHERE))
+		{
+			K_AwardPlayerRings(toucher->player, 1, false);
+		}
 
 		if (P_IsDisplayPlayer(toucher->player))
 		{
