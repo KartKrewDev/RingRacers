@@ -14813,6 +14813,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 										}
 
 										player->ballhogcharge = 0;
+										player->ballhogburst = 0;
+										S_StopSoundByID(player->mo, sfx_gshda);
 										player->itemflags &= ~IF_HOLDREADY;
 										player->botvars.itemconfirm = 0;
 									}
