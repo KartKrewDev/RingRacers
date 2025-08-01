@@ -6771,7 +6771,7 @@ void K_DriftDustHandling(mobj_t *spawner)
 	angle_t anglediff;
 	const INT16 spawnrange = spawner->radius >> FRACBITS;
 
-	if (!P_IsObjectOnGround(spawner) || leveltime % 2 != 0)
+	if (!P_IsObjectOnGround(spawner) || leveltime % 2 != 0 || spawner->destscale == 1)
 		return;
 
 	if (spawner->player)
@@ -10688,7 +10688,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	}
 
 
-	if (player->tumbleBounces > 0)
+	if (player->tumbleBounces > 0 && player->mo->destscale > 1)
 	{
 		K_HandleTumbleSound(player);
 		if (P_IsObjectOnGround(player->mo) && player->mo->momz * P_MobjFlip(player->mo) <= 0)
