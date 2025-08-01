@@ -5434,7 +5434,13 @@ playertagtype_t K_WhichPlayerTag(player_t *p)
 	}
 	else if (p->bot)
 	{
-		if ((p->botvars.rival == true || cv_levelskull.value) && (!K_InRaceDuel()))
+		if (gametype == GT_TUTORIAL)
+		{
+			return (skins[p->skin].flags & SF_MACHINE)
+				? PLAYERTAG_CPU
+				: PLAYERTAG_TUTORIALFAKELOCAL;
+		}
+		else if ((p->botvars.rival == true || cv_levelskull.value) && (!K_InRaceDuel()))
 		{
 			return PLAYERTAG_RIVAL;
 		}
@@ -5470,6 +5476,15 @@ void K_DrawPlayerTag(fixed_t x, fixed_t y, player_t *p, playertagtype_t type, bo
 			K_DrawRivalTagForPlayer(x, y, p, flags);
 			break;
 
+		case PLAYERTAG_TUTORIALFAKELOCAL:
+			if (p-players < 4)
+			{
+				flags |= V_SPLITSCREEN;
+				K_DrawLocalTagForPlayer(x, y, p, (p - players), flags);
+				break;
+			}
+
+			// FALLTHRU
 		case PLAYERTAG_CPU:
 			flags |= V_SPLITSCREEN;
 			flags |= foreground ? 0 : V_60TRANS;
