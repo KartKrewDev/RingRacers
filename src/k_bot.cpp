@@ -652,6 +652,11 @@ static UINT32 K_BotRubberbandDistance(const player_t *player)
 			continue;
 		}
 
+		if (player->botvars.foe && !players[i].botvars.foe)
+		{
+			continue;
+		}
+
 		// First check difficulty levels, then score, then settle it with port priority!
 		if (player->botvars.difficulty < players[i].botvars.difficulty)
 		{
