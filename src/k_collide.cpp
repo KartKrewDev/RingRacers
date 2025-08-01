@@ -87,7 +87,10 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 		if (t1->type == MT_BANANA && t1->health > 1)
 			S_StartSound(t2, sfx_bsnipe);
 
-		damageitem = true;
+		if (t1->type != MT_BALLHOGBOOM) // ballhog booms linger and expire after their anim is done
+		{
+			damageitem = true;
+		}
 
 		if (t2->player->flamedash && t2->player->itemtype == KITEM_FLAMESHIELD)
 		{
