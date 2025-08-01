@@ -272,22 +272,22 @@ P_DoSpringEx
 		return;
 	}
 
+	object->eflags |= MFE_SPRUNG; // apply this flag asap!
+
 	if (horizspeed < 0)
 	{
 		horizspeed = -(horizspeed);
 		finalAngle += ANGLE_180;
 	}
 
-	object->standingslope = NULL; // Okay, now we know it's not going to be relevant - no launching off at silly angles for you.
-	object->terrain = NULL;
-
-	object->eflags |= MFE_SPRUNG; // apply this flag asap!
-
-	if ((vertispeed < 0) ^ P_IsObjectFlipped(object))
-		vertispeed *= 2;
-
 	if (vertispeed)
 	{
+		object->standingslope = NULL; // Okay, now we know it's not going to be relevant - no launching off at silly angles for you.
+		object->terrain = NULL;
+
+		if ((vertispeed < 0) ^ P_IsObjectFlipped(object))
+			vertispeed *= 2;
+
 		object->momz = FixedMul(vertispeed, scaleVal);
 	}
 
