@@ -978,12 +978,9 @@ static boolean K_JustBumpedException(mobj_t *mobj)
 	{
 		case MT_SA2_CRATE:
 			return Obj_SA2CrateIsMetal(mobj);
-		case MT_WALLSPIKE:
-			return true;
 		case MT_BATTLECAPSULE:
 		{
-			if (gametype == GT_TUTORIAL // Remove gametype check whenever it's safe to break compatibility with ghosts in a post-release patch
-			&& mobj->momx == 0
+			if (mobj->momx == 0
 			&& mobj->momy == 0
 			&& mobj->momz == 0)
 			{
@@ -991,6 +988,7 @@ static boolean K_JustBumpedException(mobj_t *mobj)
 			}
 			break;
 		}
+		case MT_WALLSPIKE:
 		case MT_STONESHOE:
 			return true;
 		default:
