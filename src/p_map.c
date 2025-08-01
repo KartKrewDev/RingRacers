@@ -323,7 +323,7 @@ P_DoSpringEx
 		P_InstaThrust(object, finalAngle, finalSpeed);
 	}
 
-	if (object->player)
+	if (object->player && starcolor != SKINCOLOR_NONE)
 	{
 		K_TumbleInterrupt(object->player);
 		P_ResetPlayer(object->player);
@@ -1341,6 +1341,11 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 						thing->y,
 						g_tm.thing->z + (P_MobjFlip(thing) > 0 ? g_tm.thing->height : -thing->height)
 					);
+
+					if (g_tm.thing->type == MT_WALLSPIKE)
+					{
+						K_KartSolidBounce(thing, g_tm.thing);
+					}
 				}
 			}
 			else
@@ -1367,6 +1372,12 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		if (!P_IsObjectOnGround(g_tm.thing) && g_tm.thing->momz * P_MobjFlip(g_tm.thing) < 0) // fell into it
 		{
 			P_DamageMobj(g_tm.thing, thing, thing, 1, DMG_TUMBLE);
+
+			if (thing->type == MT_WALLSPIKE)
+			{
+				K_KartSolidBounce(g_tm.thing, thing);
+			}
+
 			return BMIT_CONTINUE;
 		}
 		else

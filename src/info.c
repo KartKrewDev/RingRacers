@@ -5016,7 +5016,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		14*FRACUNIT,    // height
 		0,              // display offset
 		4,              // mass
-		0,              // damage
+		45*FRACUNIT,    // damage
 		sfx_None,       // activesound
 		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_SCENERY|MF_NOCLIPHEIGHT|MF_PAPERCOLLISION|MF_NOHITLAGFORME|MF_DONTENCOREMAP,  // flags
 		S_NULL          // raisestate

@@ -1225,6 +1225,20 @@ boolean K_KartSolidBounce(mobj_t *bounceMobj, mobj_t *solidMobj)
 		return false;
 	}
 
+	if (solidMobj->type == MT_WALLSPIKE)
+	{
+		// Always thrust out towards the tip
+		// (...don't try to roll our own bad calculations,
+		// just make this behave like a wallspring...)
+
+		P_DoSpringEx(bounceMobj, mapobjectscale, 0, solidMobj->info->damage,
+			solidMobj->angle, SKINCOLOR_NONE);
+
+		K_PlayerJustBumped(bounceMobj->player);
+
+		return true;
+	}
+
 	// Adds the OTHER object's momentum times a bunch, for the best chance of getting the correct direction
 	{
 		distx = (bounceMobj->x + solidMobj->momx) - (solidMobj->x + bounceMobj->momx);
@@ -1251,16 +1265,6 @@ boolean K_KartSolidBounce(mobj_t *bounceMobj, mobj_t *solidMobj)
 
 		normalisedx = FixedDiv(distx, dist);
 		normalisedy = FixedDiv(disty, dist);
-
-		if (solidMobj->type == MT_WALLSPIKE)
-		{
-			fixed_t co = FCOS(solidMobj->angle);
-			fixed_t si = FSIN(solidMobj->angle);
-
-			// Always thrust out toward the tip
-			normalisedx = FixedMul(normalisedx, abs(si)) - co;
-			normalisedy = FixedMul(normalisedy, abs(co)) - si;
-		}
 
 		bounceSpeed = FixedHypot(bounceMobj->momx, bounceMobj->momy);
 		bounceSpeed = FixedMul(bounceSpeed, (FRACUNIT - (FRACUNIT>>2) - (FRACUNIT>>3)));
