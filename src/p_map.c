@@ -1382,6 +1382,20 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		}
 		else
 		{
+			if (
+				thing->type == MT_WALLSPIKE
+				&& g_tm.thing->health
+				&& g_tm.thing->player
+				&& (g_tm.thing->player->justbumped < bumptime-2)
+				&& (
+					g_tm.thing->player->flashing
+					|| P_PlayerInPain(g_tm.thing->player)
+				)
+			)
+			{
+				K_StumblePlayer(g_tm.thing->player);
+			}
+
 			// Do not return because solidity code comes below.
 			P_DamageMobj(g_tm.thing, thing, thing, 1, DMG_NORMAL);
 		}
