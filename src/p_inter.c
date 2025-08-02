@@ -2631,6 +2631,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 			// body shrinks into nothingness.
 			player->mo->destscale = 1;
 			player->mo->flags |= MF_NOCLIPTHING;
+			player->tumbleBounces = 0;
 
 			return false;
 		}

@@ -272,22 +272,22 @@ P_DoSpringEx
 		return;
 	}
 
+	object->eflags |= MFE_SPRUNG; // apply this flag asap!
+
 	if (horizspeed < 0)
 	{
 		horizspeed = -(horizspeed);
 		finalAngle += ANGLE_180;
 	}
 
-	object->standingslope = NULL; // Okay, now we know it's not going to be relevant - no launching off at silly angles for you.
-	object->terrain = NULL;
-
-	object->eflags |= MFE_SPRUNG; // apply this flag asap!
-
-	if ((vertispeed < 0) ^ P_IsObjectFlipped(object))
-		vertispeed *= 2;
-
 	if (vertispeed)
 	{
+		object->standingslope = NULL; // Okay, now we know it's not going to be relevant - no launching off at silly angles for you.
+		object->terrain = NULL;
+
+		if ((vertispeed < 0) ^ P_IsObjectFlipped(object))
+			vertispeed *= 2;
+
 		object->momz = FixedMul(vertispeed, scaleVal);
 	}
 
@@ -323,7 +323,7 @@ P_DoSpringEx
 		P_InstaThrust(object, finalAngle, finalSpeed);
 	}
 
-	if (object->player)
+	if (object->player && starcolor != SKINCOLOR_NONE)
 	{
 		K_TumbleInterrupt(object->player);
 		P_ResetPlayer(object->player);
@@ -1341,6 +1341,11 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 						thing->y,
 						g_tm.thing->z + (P_MobjFlip(thing) > 0 ? g_tm.thing->height : -thing->height)
 					);
+
+					if (g_tm.thing->type == MT_WALLSPIKE)
+					{
+						K_KartSolidBounce(thing, g_tm.thing);
+					}
 				}
 			}
 			else
@@ -1367,10 +1372,30 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		if (!P_IsObjectOnGround(g_tm.thing) && g_tm.thing->momz * P_MobjFlip(g_tm.thing) < 0) // fell into it
 		{
 			P_DamageMobj(g_tm.thing, thing, thing, 1, DMG_TUMBLE);
+
+			if (thing->type == MT_WALLSPIKE)
+			{
+				K_KartSolidBounce(g_tm.thing, thing);
+			}
+
 			return BMIT_CONTINUE;
 		}
 		else
 		{
+			if (
+				thing->type == MT_WALLSPIKE
+				&& g_tm.thing->health
+				&& g_tm.thing->player
+				&& (g_tm.thing->player->justbumped < bumptime-2)
+				&& (
+					g_tm.thing->player->flashing
+					|| P_PlayerInPain(g_tm.thing->player)
+				)
+			)
+			{
+				K_StumblePlayer(g_tm.thing->player);
+			}
+
 			// Do not return because solidity code comes below.
 			P_DamageMobj(g_tm.thing, thing, thing, 1, DMG_NORMAL);
 		}

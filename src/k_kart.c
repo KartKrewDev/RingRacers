@@ -1225,6 +1225,20 @@ boolean K_KartSolidBounce(mobj_t *bounceMobj, mobj_t *solidMobj)
 		return false;
 	}
 
+	if (solidMobj->type == MT_WALLSPIKE)
+	{
+		// Always thrust out towards the tip
+		// (...don't try to roll our own bad calculations,
+		// just make this behave like a wallspring...)
+
+		P_DoSpringEx(bounceMobj, mapobjectscale, 0, solidMobj->info->damage,
+			solidMobj->angle, SKINCOLOR_NONE);
+
+		K_PlayerJustBumped(bounceMobj->player);
+
+		return true;
+	}
+
 	// Adds the OTHER object's momentum times a bunch, for the best chance of getting the correct direction
 	{
 		distx = (bounceMobj->x + solidMobj->momx) - (solidMobj->x + bounceMobj->momx);
@@ -1251,16 +1265,6 @@ boolean K_KartSolidBounce(mobj_t *bounceMobj, mobj_t *solidMobj)
 
 		normalisedx = FixedDiv(distx, dist);
 		normalisedy = FixedDiv(disty, dist);
-
-		if (solidMobj->type == MT_WALLSPIKE)
-		{
-			fixed_t co = FCOS(solidMobj->angle);
-			fixed_t si = FSIN(solidMobj->angle);
-
-			// Always thrust out toward the tip
-			normalisedx = FixedMul(normalisedx, abs(si)) - co;
-			normalisedy = FixedMul(normalisedy, abs(co)) - si;
-		}
 
 		bounceSpeed = FixedHypot(bounceMobj->momx, bounceMobj->momy);
 		bounceSpeed = FixedMul(bounceSpeed, (FRACUNIT - (FRACUNIT>>2) - (FRACUNIT>>3)));
@@ -6767,7 +6771,7 @@ void K_DriftDustHandling(mobj_t *spawner)
 	angle_t anglediff;
 	const INT16 spawnrange = spawner->radius >> FRACBITS;
 
-	if (!P_IsObjectOnGround(spawner) || leveltime % 2 != 0)
+	if (!P_IsObjectOnGround(spawner) || leveltime % 2 != 0 || spawner->destscale == 1)
 		return;
 
 	if (spawner->player)
@@ -10684,7 +10688,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	}
 
 
-	if (player->tumbleBounces > 0)
+	if (player->tumbleBounces > 0 && player->mo->destscale > 1)
 	{
 		K_HandleTumbleSound(player);
 		if (P_IsObjectOnGround(player->mo) && player->mo->momz * P_MobjFlip(player->mo) <= 0)
