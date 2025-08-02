@@ -643,7 +643,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			toucher->flags |= MF_NOGRAVITY;
 			toucher->momz = (8*toucher->scale) * P_MobjFlip(toucher);
 			toucher->player->carry = CR_TRAPBUBBLE;
-			P_SetTarget(&toucher->tracer, special); //use tracer to acces the object 
+			P_SetTarget(&toucher->tracer, special); //use tracer to acces the object
 
 			// Snap to the unfortunate player and quit moving laterally, or we can end up quite far away
 			special->momx = 0;
@@ -2576,7 +2576,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 				{
 					player->mo->health--;
 				}
-				
+
 			}
 
 			if (modeattacking & ATTACKING_SPB)
@@ -2610,11 +2610,11 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 	{
 		UINT32 skinflags = (demo.playback)
 			? demo.skinlist[demo.currentskinid[(player-players)]].flags
-			: skins[player->skin].flags;
+			: skins[player->skin]->flags;
 
 		if (skinflags & SF_IRONMAN)
 		{
-			player->mo->skin = &skins[player->skin];
+			player->mo->skin = skins[player->skin];
 			player->charflags = skinflags;
 			K_SpawnMagicianParticles(player->mo, 5);
 			S_StartSound(player->mo, sfx_slip);
@@ -3234,7 +3234,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 			UINT32 hurtskinflags = (demo.playback)
 					? demo.skinlist[demo.currentskinid[(player-players)]].flags
-					: skins[player->skin].flags;
+					: skins[player->skin]->flags;
 			if (hurtskinflags & SF_IRONMAN)
 			{
 				if (gametyperules & GTR_BUMPERS)
@@ -3249,11 +3249,11 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			{
 				UINT32 skinflags = (demo.playback)
 					? demo.skinlist[demo.currentskinid[(player-players)]].flags
-					: skins[player->skin].flags;
+					: skins[player->skin]->flags;
 
 				if (skinflags & SF_IRONMAN)
 				{
-					player->mo->skin = &skins[player->skin];
+					player->mo->skin = skins[player->skin];
 					player->charflags = skinflags;
 					K_SpawnMagicianParticles(player->mo, 5);
 				}

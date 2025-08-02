@@ -131,16 +131,16 @@ static void M_StatisticsChars(void)
 
 		statisticsmenu.maplist[statisticsmenu.nummaps++] = i;
 
-		if (skins[i].records.wins == 0)
+		if (skins[i]->records.wins == 0)
 			continue;
 
 		// The following is a partial duplication of R_GetEngineClass
 		{
-			if (skins[i].flags & SF_IRONMAN)
+			if (skins[i]->flags & SF_IRONMAN)
 				continue; // does not add to any engine class
 
-			INT32 s = (skins[i].kartspeed - 1);
-			INT32 w = (skins[i].kartweight - 1);
+			INT32 s = (skins[i]->kartspeed - 1);
+			INT32 w = (skins[i]->kartweight - 1);
 
 			#define LOCKSTAT(stat) \
 				if (stat < 0) { continue; } \
@@ -150,12 +150,12 @@ static void M_StatisticsChars(void)
 			#undef LOCKSTAT
 
 			if (
-				statisticsmenu.statgridplayed[s][w] > skins[i].records.wins
-				&& (UINT32_MAX - statisticsmenu.statgridplayed[s][w]) < skins[i].records.wins
+				statisticsmenu.statgridplayed[s][w] > skins[i]->records.wins
+				&& (UINT32_MAX - statisticsmenu.statgridplayed[s][w]) < skins[i]->records.wins
 			)
 				continue; // overflow protection
 
-			statisticsmenu.statgridplayed[s][w] += skins[i].records.wins;
+			statisticsmenu.statgridplayed[s][w] += skins[i]->records.wins;
 
 			if (beststat >= statisticsmenu.statgridplayed[s][w])
 				continue;
@@ -170,9 +170,9 @@ static void M_StatisticsChars(void)
 		statisticsmenu.maplist,
 		statisticsmenu.maplist + statisticsmenu.nummaps,
 		[](UINT16 a, UINT16 b) {
-			if (skins[a].records.rounds > skins[b].records.rounds)
+			if (skins[a]->records.rounds > skins[b]->records.rounds)
 				return true;
-			if (skins[a].records.rounds != skins[b].records.rounds)
+			if (skins[a]->records.rounds != skins[b]->records.rounds)
 				return false;
 			// Stable for skin ID
 			return (a < b);
@@ -260,7 +260,7 @@ static void M_StatisticsPageInit(void)
 			M_StatisticsChars();
 			break;
 		}
-	
+
 		case statisticspage_gp:
 		{
 			M_StatisticsGP();

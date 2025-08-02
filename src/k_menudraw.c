@@ -359,7 +359,7 @@ UINT16 M_GetCvPlayerColor(UINT8 pnum)
 	if (skin == -1)
 		return SKINCOLOR_NONE;
 
-	return skins[skin].prefcolor;
+	return skins[skin]->prefcolor;
 }
 
 static void M_DrawMenuParty(void)
@@ -392,7 +392,7 @@ static void M_DrawMenuParty(void)
 		if (skin == -1) \
 			skin = 0; \
 		if (color == SKINCOLOR_NONE) \
-			color = skins[skin].prefcolor; \
+			color = skins[skin]->prefcolor; \
 		colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE); \
 	}
 
@@ -1618,7 +1618,7 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 
 				skin = setup_chargrid[p->gridx][p->gridy].skinlist[n];
 				patch = faceprefix[skin][FACE_RANK];
-				colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
+				colormap = R_GetTranslationColormap(skin, skins[skin]->prefcolor, GTC_MENUCACHE);
 				radius = 24<<FRACBITS;
 
 				cx -= (SHORT(patch->width) << FRACBITS) >> 1;
@@ -1643,7 +1643,7 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 					n = r = M_GetColorAfter(&p->colors, r, 1);
 				}
 
-				colormap = R_GetTranslationColormap(TC_DEFAULT, (n == SKINCOLOR_NONE) ? skins[p->skin].prefcolor : n, GTC_MENUCACHE);
+				colormap = R_GetTranslationColormap(TC_DEFAULT, (n == SKINCOLOR_NONE) ? skins[p->skin]->prefcolor : n, GTC_MENUCACHE);
 
 				diff = (numoptions - i) / 2;  // only 0 when i == numoptions-1
 
@@ -1742,7 +1742,7 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 					patch = W_CachePatchName(fl->icon, PU_CACHE);
 
 					colormap = R_GetTranslationColormap(TC_DEFAULT,
-						K_GetEffectiveFollowerColor(fl->defaultcolor, fl, p->color, &skins[p->skin]),
+						K_GetEffectiveFollowerColor(fl->defaultcolor, fl, p->color, skins[p->skin]),
 						GTC_MENUCACHE
 					);
 				}
@@ -1772,7 +1772,7 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 					n = r = M_GetColorAfter(&p->colors, r, 1);
 				}
 
-				col = K_GetEffectiveFollowerColor(n, &followers[p->followern], p->color, &skins[p->skin]);
+				col = K_GetEffectiveFollowerColor(n, &followers[p->followern], p->color, skins[p->skin]);
 
 				colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
 
@@ -1826,8 +1826,8 @@ boolean M_DrawCharacterSprite(INT16 x, INT16 y, INT16 skin, UINT8 spr2, UINT8 ro
 	spriteframe_t *sprframe;
 	patch_t *sprpatch;
 
-	spr = P_GetSkinSprite2(&skins[skin], spr2, NULL);
-	sprdef = &skins[skin].sprites[spr];
+	spr = P_GetSkinSprite2(skins[skin], spr2, NULL);
+	sprdef = &skins[skin]->sprites[spr];
 
 	if (!sprdef->numframes) // No frames ??
 		return false; // Can't render!
@@ -1842,11 +1842,11 @@ boolean M_DrawCharacterSprite(INT16 x, INT16 y, INT16 skin, UINT8 spr2, UINT8 ro
 		addflags ^= V_FLIP; // This sprite is left/right flipped!
 	}
 
-	if (skins[skin].highresscale != FRACUNIT)
+	if (skins[skin]->highresscale != FRACUNIT)
 	{
 		V_DrawFixedPatch(x<<FRACBITS,
 					y<<FRACBITS,
-					skins[skin].highresscale,
+					skins[skin]->highresscale,
 					addflags, sprpatch, colormap);
 	}
 	else
@@ -1914,7 +1914,7 @@ static boolean M_DrawFollowerSprite(INT16 x, INT16 y, INT32 num, boolean charfli
 			(p->mdepth < CSSTEP_FOLLOWERCOLORS && p->mdepth != CSSTEP_ASKCHANGES) ? fl->defaultcolor : p->followercolor,
 			fl,
 			p->color,
-			&skins[p->skin]
+			skins[p->skin]
 		);
 		sine = FixedMul(fl->bobamp, FINESINE(((FixedMul(4 * M_TAU_FIXED, fl->bobspeed) * p->follower_timer)>>ANGLETOFINESHIFT) & FINEMASK));
 		colormap = R_GetTranslationColormap(TC_DEFAULT, color, GTC_MENUCACHE);
@@ -1938,7 +1938,7 @@ static void M_DrawCharSelectSprite(UINT8 num, INT16 x, INT16 y, boolean charflip
 
 	if (p->mdepth < CSSTEP_COLORS && p->mdepth != CSSTEP_ASKCHANGES)
 	{
-		color = skins[p->skin].prefcolor;
+		color = skins[p->skin]->prefcolor;
 	}
 	else
 	{
@@ -1947,7 +1947,7 @@ static void M_DrawCharSelectSprite(UINT8 num, INT16 x, INT16 y, boolean charflip
 
 	if (color == SKINCOLOR_NONE)
 	{
-		color = skins[p->skin].prefcolor;
+		color = skins[p->skin]->prefcolor;
 	}
 
 	colormap = R_GetTranslationColormap(p->skin, color, GTC_MENUCACHE);
@@ -2130,8 +2130,8 @@ static void M_DrawCharSelectPreview(UINT8 num)
 					&& setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum] < numskins)
 				{
 					V_DrawThinString(x-3, y+12, 0,
-						skins[setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum]].name);
-					randomskin = (skins[setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum]].flags & SF_IRONMAN);
+						skins[setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum]]->name);
+					randomskin = (skins[setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum]]->flags & SF_IRONMAN);
 				}
 				else
 				{
@@ -2283,7 +2283,7 @@ static void M_DrawCharSelectCursor(UINT8 num)
 	{
 		if (p->skin >= 0)
 		{
-			color = skins[p->skin].prefcolor;
+			color = skins[p->skin]->prefcolor;
 		}
 		else
 		{
@@ -2347,7 +2347,7 @@ void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 	{
 		if (skinnum >= 0)
 		{
-			truecol = skins[skinnum].prefcolor;
+			truecol = skins[skinnum]->prefcolor;
 		}
 		else
 		{
@@ -2388,7 +2388,7 @@ void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 		{
 			if (M_DrawFollowerSprite(x-22 - 16, y+119, 0, false, 0, 0, sp))
 			{
-				UINT16 col = K_GetEffectiveFollowerColor(sp->followercolor, &followers[sp->followern], sp->color, &skins[sp->skin]);
+				UINT16 col = K_GetEffectiveFollowerColor(sp->followercolor, &followers[sp->followern], sp->color, skins[sp->skin]);
 				patch_t *ico = W_CachePatchName(followers[sp->followern].icon, PU_CACHE);
 				UINT8 *fcolormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
 				V_DrawMappedPatch(x+14+18, y+66, 0, ico, fcolormap);
@@ -2416,7 +2416,7 @@ void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 				p->followercolor,
 				&followers[fln],
 				p->color,
-				&skins[skinnum]
+				skins[skinnum]
 			);
 			UINT8 *fcolormap = R_GetTranslationColormap(
 			(K_FollowerUsable(fln) ? TC_DEFAULT : TC_BLINK),
@@ -2510,14 +2510,14 @@ void M_DrawCharacterSelect(void)
 	// Draw the icons now
 	for (i = 0; i < 9; i++)
 	{
-		if ((forceskin == true) && (i != skins[cv_forceskin.value].kartspeed-1))
+		if ((forceskin == true) && (i != skins[cv_forceskin.value]->kartspeed-1))
 			continue;
 
 		for (j = 0; j < 9; j++)
 		{
 			if (forceskin == true)
 			{
-				if (j != skins[cv_forceskin.value].kartweight-1)
+				if (j != skins[cv_forceskin.value]->kartweight-1)
 					continue;
 				skin = cv_forceskin.value;
 			}
@@ -2545,7 +2545,7 @@ void M_DrawCharacterSelect(void)
 				if (k == setup_numplayers)
 					colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_GREY, GTC_MENUCACHE);
 				else
-					colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
+					colormap = R_GetTranslationColormap(skin, skins[skin]->prefcolor, GTC_MENUCACHE);
 
 				V_DrawMappedPatch(basex + 82 + (i*16) + quadx, 22 + (j*16) + quady, 0, faceprefix[skin][FACE_RANK], colormap);
 
@@ -3063,7 +3063,7 @@ fixed_t M_DrawCupWinData(INT32 rankx, INT32 ranky, cupheader_t *cup, UINT8 diffi
 	{
 		UINT8 skin = windata->best_skin.id;
 
-		colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
+		colormap = R_GetTranslationColormap(skin, skins[skin]->prefcolor, GTC_MENUCACHE);
 
 		charPat = faceprefix[skin][FACE_MINIMAP];
 	}
@@ -6648,7 +6648,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flash
 				INT32 skin = M_UnlockableSkinNum(ref);
 				if (skin != -1)
 				{
-					colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
+					colormap = R_GetTranslationColormap(skin, skins[skin]->prefcolor, GTC_MENUCACHE);
 					pat = faceprefix[skin][(ref->majorunlock) ? FACE_WANTED : FACE_RANK];
 				}
 				break;
@@ -6659,7 +6659,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flash
 				if (skin != -1)
 				{
 					INT32 psk = R_SkinAvailableEx(cv_skin[0].string, false);
-					UINT16 col = K_GetEffectiveFollowerColor(followers[skin].defaultcolor, &followers[skin], cv_playercolor[0].value, (psk != -1) ? &skins[psk] : &skins[0]);
+					UINT16 col = K_GetEffectiveFollowerColor(followers[skin].defaultcolor, &followers[skin], cv_playercolor[0].value, (psk != -1) ? skins[psk] : skins[0]);
 					colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
 					pat = W_CachePatchName(followers[skin].icon, PU_CACHE);
 				}
@@ -6846,7 +6846,7 @@ void M_DrawCharacterIconAndEngine(INT32 x, INT32 y, UINT8 skin, UINT8 *colormap,
 
 	INT32 s, w;
 
-	if (skins[baseskin].flags & SF_IRONMAN)
+	if (skins[baseskin]->flags & SF_IRONMAN)
 	{
 		// this is the last thing i will do for rr pre-launhc ~toast 150424
 		// quoth tyron: "stat block rave holy shit"
@@ -6879,8 +6879,8 @@ void M_DrawCharacterIconAndEngine(INT32 x, INT32 y, UINT8 skin, UINT8 *colormap,
 	{
 		// The following is a partial duplication of R_GetEngineClass
 
-		s = (skins[skin].kartspeed - 1)/3;
-		w = (skins[skin].kartweight - 1)/3;
+		s = (skins[skin]->kartspeed - 1)/3;
+		w = (skins[skin]->kartweight - 1)/3;
 
 		#define LOCKSTAT(stat) \
 			if (stat < 0) { stat = 0; } \
@@ -6943,19 +6943,19 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			// Draw our character!
 			if (skin != -1)
 			{
-				colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
+				colormap = R_GetTranslationColormap(skin, skins[skin]->prefcolor, GTC_MENUCACHE);
 				M_DrawCharacterSprite(x, y, skin, SPR2_STIN, 7, 0, 0, colormap);
 
 				for (i = 0; i < skin; i++)
 				{
 					if (!R_SkinUsable(-1, i, false))
 						continue;
-					if (skins[i].kartspeed != skins[skin].kartspeed)
+					if (skins[i]->kartspeed != skins[skin]->kartspeed)
 						continue;
-					if (skins[i].kartweight != skins[skin].kartweight)
+					if (skins[i]->kartweight != skins[skin]->kartweight)
 						continue;
 
-					colormap = R_GetTranslationColormap(i, skins[i].prefcolor, GTC_MENUCACHE);
+					colormap = R_GetTranslationColormap(i, skins[i]->prefcolor, GTC_MENUCACHE);
 					break;
 				}
 
@@ -6977,7 +6977,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			// Draw follower next to them
 			if (fskin != -1)
 			{
-				UINT16 col = K_GetEffectiveFollowerColor(followers[fskin].defaultcolor, &followers[fskin], cv_playercolor[0].value, &skins[skin]);
+				UINT16 col = K_GetEffectiveFollowerColor(followers[fskin].defaultcolor, &followers[fskin], cv_playercolor[0].value, skins[skin]);
 				colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
 				M_DrawFollowerSprite(x - 16, y, fskin, false, 0, colormap, NULL);
 
@@ -8366,14 +8366,14 @@ static void M_DrawStatsChars(void)
 		}
 
 		{
-			UINT8 *colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
+			UINT8 *colormap = R_GetTranslationColormap(skin, skins[skin]->prefcolor, GTC_MENUCACHE);
 
 			M_DrawCharacterIconAndEngine(24, y, skin, colormap, skin);
 		}
 
-		V_DrawThinString(24+32+2, y+3, 0, skins[skin].realname);
+		V_DrawThinString(24+32+2, y+3, 0, skins[skin]->realname);
 
-		V_DrawRightAlignedThinString(BASEVIDWIDTH/2 + 30, y+3, 0, va("%d/%d", skins[skin].records.wins, skins[skin].records.rounds));
+		V_DrawRightAlignedThinString(BASEVIDWIDTH/2 + 30, y+3, 0, va("%d/%d", skins[skin]->records.wins, skins[skin]->records.rounds));
 
 		y += STATSSTEP;
 
@@ -8728,7 +8728,7 @@ static void M_DrawWrongPlayer(UINT8 i)
 	if (wrongpl.skin >= numskins)
 		return;
 
-	UINT8 *colormap = R_GetTranslationColormap(wrongpl.skin, skins[wrongpl.skin].prefcolor, GTC_MENUCACHE);
+	UINT8 *colormap = R_GetTranslationColormap(wrongpl.skin, skins[wrongpl.skin]->prefcolor, GTC_MENUCACHE);
 
 	M_DrawCharacterSprite(
 		wrongpl.across,

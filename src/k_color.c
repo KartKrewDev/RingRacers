@@ -147,7 +147,7 @@ void K_HitlagColormap(UINT8 *dest_colormap)
 		v = K_HitlagColorValue(color);
 
 		// Convert raw brightness value to an offset from the greyscale palette line
-		offset = (255 - v) / 8; 
+		offset = (255 - v) / 8;
 
 		dest_colormap[i] = offset; // Starts from 0, add it if greyscale moves.
 	}
@@ -163,7 +163,7 @@ static void K_IntermissionColormap(UINT8 *dest_colormap)
 	RGBA_t color;
 	INT32 i;
 
-	// for every colour in the palette, check its 
+	// for every colour in the palette, check its
 	for (i = 0; i < NUM_PALETTE_ENTRIES; i++)
 	{
 		color = V_GetColor(i);
@@ -264,7 +264,7 @@ void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, skincolornum_t 
 		return;
 	}
 
-	starttranscolor = (skinnum != TC_DEFAULT) ? skins[skinnum].starttranscolor : DEFAULT_STARTTRANSCOLOR;
+	starttranscolor = (skinnum != TC_DEFAULT) ? skins[skinnum]->starttranscolor : DEFAULT_STARTTRANSCOLOR;
 
 	// Fill in the entries of the palette that are fixed
 	for (i = 0; i < starttranscolor; i++)

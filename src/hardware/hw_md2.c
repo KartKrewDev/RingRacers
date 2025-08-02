@@ -632,7 +632,7 @@ void HWR_AddPlayerModel(INT32 skin) // For skins that were added after startup
 		if (!strnicmp(name, PLAYERMODELPREFIX, prefixlen) && (len > prefixlen))
 			skinname += prefixlen;
 
-		if (stricmp(skinname, skins[skin].name) == 0)
+		if (stricmp(skinname, skins[skin]->name) == 0)
 		{
 			md2_playermodels[skin].skin = skin;
 			md2_playermodels[skin].scale = scale;
@@ -1448,10 +1448,10 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 
 		// 1. load model+texture if not already loaded
 		// 2. draw model with correct position, rotation,...
-		if (spr->mobj->skin && spr->mobj->sprite == SPR_PLAY && !md2_playermodels[(skin_t*)spr->mobj->skin-skins].notfound) // Use the player MD2 list if the mobj has a skin and is using the player sprites
+		if (spr->mobj->skin && spr->mobj->sprite == SPR_PLAY && !md2_playermodels[((skin_t*)spr->mobj->skin)->skinnum].notfound) // Use the player MD2 list if the mobj has a skin and is using the player sprites
 		{
-			md2 = &md2_playermodels[(skin_t*)spr->mobj->skin-skins];
-			md2->skin = (skin_t*)spr->mobj->skin-skins;
+			md2 = &md2_playermodels[((skin_t*)spr->mobj->skin)->skinnum];
+			md2->skin = ((skin_t*)spr->mobj->skin)->skinnum;
 		}
 		else
 		{
@@ -1525,7 +1525,7 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 
 			if (spr->mobj->skin && spr->mobj->sprite == SPR_PLAY) // This thing is a player!
 			{
-				skinnum = (skin_t*)spr->mobj->skin-skins;
+				skinnum = ((skin_t*)spr->mobj->skin)->skinnum;
 			}
 
 			// Hide not-yet-unlocked characters in replays from other people

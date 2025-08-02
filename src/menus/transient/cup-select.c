@@ -119,7 +119,7 @@ static void M_StartCup(UINT8 entry)
 			// finally, call the skin[x] console command.
 			// This will call SendNameAndColor which will synch everything we sent here and apply the changes!
 
-			CV_StealthSet(&cv_skin[0], skins[savedata.skin].name);
+			CV_StealthSet(&cv_skin[0], skins[savedata.skin]->name);
 
 			// ...actually, let's do this last - Skin_OnChange has some return-early occasions
 			// follower color

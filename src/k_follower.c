@@ -273,7 +273,7 @@ UINT16 K_GetEffectiveFollowerColor(UINT16 followercolor, follower_t *follower, U
 		if (playerskin == NULL)
 		{
 			// Nothing from this line down is valid if playerskin is invalid, just guess Eggman?
-			playerskin = &skins[0];
+			playerskin = skins[0];
 		}
 
 		playercolor = playerskin->prefcolor;
@@ -424,7 +424,7 @@ void K_HandleFollower(player_t *player)
 	if (player->followerskin < 0) // using a fallback follower
 		color = fl->defaultcolor;
 	else
-		color = K_GetEffectiveFollowerColor(player->followercolor, fl, player->skincolor, &skins[player->skin]);
+		color = K_GetEffectiveFollowerColor(player->followercolor, fl, player->skincolor, skins[player->skin]);
 
 	if (player->follower == NULL || P_MobjWasRemoved(player->follower)) // follower doesn't exist / isn't valid
 	{

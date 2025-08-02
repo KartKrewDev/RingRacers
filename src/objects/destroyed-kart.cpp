@@ -317,11 +317,11 @@ struct Kart : Mobj
 
 		Mobj* p = player();
 		bool pValid = Mobj::valid(p) && p->player;
-		bool hasCustomHusk = pValid && skins[p->player->skin].sprites[SPR2_DKRT].numframes;
+		bool hasCustomHusk = pValid && skins[p->player->skin]->sprites[SPR2_DKRT].numframes;
 
 		if(hasCustomHusk)
 		{
-			skin = (void*)(&skins[p->player->skin]);
+			skin = (void*)(skins[p->player->skin]);
 			frame = 0;
 		}
 
@@ -347,7 +347,7 @@ struct Kart : Mobj
 
 		if(pValid)
 		{
-			if((skins[p->player->skin].flags & SF_BADNIK))
+			if((skins[p->player->skin]->flags & SF_BADNIK))
 			{
 				P_SpawnBadnikExplosion(p);
 				p->spritescale({2*FRACUNIT, 2*FRACUNIT});

@@ -105,7 +105,7 @@ static inline void P_ArchivePlayer(savebuffer_t *save)
 	if (skin > numskins)
 		skin = 0;
 
-	WRITESTRINGN(save->p, skins[skin].name, SKINNAMESIZE);
+	WRITESTRINGN(save->p, skins[skin]->name, SKINNAMESIZE);
 
 	if (player->followerskin < 0 || player->followerskin >= numfollowers)
 		WRITESTRINGN(save->p, "None", SKINNAMESIZE);
@@ -130,7 +130,7 @@ static inline void P_ArchivePlayer(savebuffer_t *save)
 		if (skin > numskins)
 			skin = 0;
 
-		WRITESTRINGN(save->p, skins[skin].name, SKINNAMESIZE);
+		WRITESTRINGN(save->p, skins[skin]->name, SKINNAMESIZE);
 
 		WRITEUINT8(save->p, players[i].botvars.difficulty);
 		WRITEUINT8(save->p, (UINT8)players[i].botvars.rival);
@@ -183,7 +183,7 @@ static boolean P_UnArchivePlayer(savebuffer_t *save)
 		{
 			// It is not worth destroying an otherwise good savedata over extra added skins.
 			// Let's just say they didn't show up to the rematch, so some Eggrobos subbed in.
-			CONS_Alert(CONS_WARNING, "P_UnArchivePlayer: Bot's character \"%s\" was not loaded, replacing with default \"%s\".\n", skinname, skins[defaultbotskin].name);
+			CONS_Alert(CONS_WARNING, "P_UnArchivePlayer: Bot's character \"%s\" was not loaded, replacing with default \"%s\".\n", skinname, skins[defaultbotskin]->name);
 			skin = defaultbotskin;
 		}
 
@@ -3361,7 +3361,7 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 	if (diff2 & MD2_CVMEM)
 		WRITEINT32(save->p, mobj->cvmem);
 	if (diff2 & MD2_SKIN)
-		WRITEUINT8(save->p, (UINT8)((skin_t *)mobj->skin - skins));
+		WRITEUINT8(save->p, (UINT8)((skin_t *)mobj->skin)->skinnum);
 	if (diff2 & MD2_COLOR)
 		WRITEUINT16(save->p, mobj->color);
 	if (diff2 & MD2_EXTVAL1)
@@ -4635,7 +4635,7 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 	if (diff2 & MD2_CVMEM)
 		mobj->cvmem = READINT32(save->p);
 	if (diff2 & MD2_SKIN)
-		mobj->skin = &skins[READUINT8(save->p)];
+		mobj->skin = skins[READUINT8(save->p)];
 	if (diff2 & MD2_COLOR)
 		mobj->color = READUINT16(save->p);
 	if (diff2 & MD2_EXTVAL1)

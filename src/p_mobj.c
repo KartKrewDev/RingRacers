@@ -8351,7 +8351,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + mobj->target->height/2);
 		// Taken from K_FlipFromObject. We just want to flip the visual according to its target, but that's it.
 		mobj->eflags = (mobj->eflags & ~MFE_VERTICALFLIP)|(mobj->target->eflags & MFE_VERTICALFLIP);
-		
+
 		break;
 	}
 	case MT_BUBBLESHIELD:
@@ -8457,7 +8457,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		mobj->extravalue2 = mobj->target->player->bubbleblowup;
 		P_SetScale(mobj, (mobj->destscale = scale));
-		
+
 		// For some weird reason, the Bubble Shield is the exception flip-wise, it has the offset baked into the sprite.
 		// So instead of simply flipping the object, we have to do a position offset.
 		fixed_t positionOffset = 0;
@@ -8881,7 +8881,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				UINT8 pnum = (newplayer-players);
 				UINT32 skinflags = (demo.playback)
 					? demo.skinlist[demo.currentskinid[pnum]].flags
-					: skins[newplayer->skin].flags;
+					: skins[newplayer->skin]->flags;
 
 				if (skinflags & SF_IRONMAN)
 				{
@@ -8932,15 +8932,15 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 					if (newplayer != NULL)
 					{
-						cur->skin = &skins[newplayer->skin];
+						cur->skin = skins[newplayer->skin];
 						cur->color = newplayer->skincolor;
-						
+
 						// Even if we didn't have the Perfect Sign to consider,
 						// it's still necessary to refresh SPR2 on skin changes.
 						P_SetMobjState(cur, (newperfect == true) ? S_KART_SIGL : S_KART_SIGN);
 
 						if (cv_shittysigns.value && cur->state != &states[S_KART_SIGL])
-							cur->sprite2 = P_GetSkinSprite2(&skins[newplayer->skin], SPR2_SSIG, NULL);;
+							cur->sprite2 = P_GetSkinSprite2(skins[newplayer->skin], SPR2_SSIG, NULL);;
 					}
 				}
 				else if (cur->state == &states[S_SIGN_ERROR])
@@ -9886,7 +9886,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			return false;
 		}
-		
+
 		break;
 	}
 
@@ -12102,7 +12102,7 @@ void P_SpawnPlayer(INT32 playernum)
 	// set 'spritedef' override in mobj for player skins.. (see ProjectSprite)
 	// (usefulness: when body mobj is detached from player (who respawns),
 	// the dead body mobj retains the skin through the 'spritedef' override).
-	mobj->skin = &skins[p->skin];
+	mobj->skin = skins[p->skin];
 	P_SetupStateAnimation(mobj, mobj->state);
 
 	mobj->health = 1;
@@ -12113,7 +12113,7 @@ void P_SpawnPlayer(INT32 playernum)
 		p->realtime = leveltime;
 	}
 
-	p->followitem = skins[p->skin].followitem;
+	p->followitem = skins[p->skin]->followitem;
 
 	if (p->jointime <= 1 || leveltime <= 1)
 	{
@@ -13685,7 +13685,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 				if (!playeringame[i] || players[i].spectator == true)
 					continue;
 
-				if (strcmp(skins[players[i].skin].name, "sakura") == 0)
+				if (strcmp(skins[players[i].skin]->name, "sakura") == 0)
 				{
 					state = mobj->info->spawnstate;
 					break;

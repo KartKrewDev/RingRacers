@@ -1793,15 +1793,15 @@ void D_SRB2Main(void)
 	S_RegisterSoundStuff();
 
 	I_RegisterSysCommands();
-	
+
 	CON_SetLoadingProgress(LOADED_HUINIT);
-	
+
 	CONS_Printf("W_InitMultipleFiles(): Adding external PWADs.\n");
-	
+
 	// HACK: Refer to https://git.do.srb2.org/KartKrew/RingRacers/-/merge_requests/29#note_61574
 	partadd_earliestfile = numwadfiles;
 	W_InitMultipleFiles(startuppwads, true);
-	
+
 	// Only search for pwad maps and reload graphics if we actually have a pwad added
 	if (startuppwads[0] != NULL)
 	{
@@ -1811,7 +1811,7 @@ void D_SRB2Main(void)
 		P_InitMapData();
 		HU_LoadGraphics();
 	}
-	
+
 	D_CleanFile(startuppwads);
 	partadd_earliestfile = UINT16_MAX;
 
@@ -2077,7 +2077,7 @@ void D_SRB2Main(void)
 				INT32 importskin = R_SkinAvailableEx(pr->skinname, false);
 				if (importskin != -1)
 				{
-					skins[importskin].records.wins = pr->wins;
+					skins[importskin]->records.wins = pr->wins;
 
 					cupheader_t *cup;
 					for (cup = kartcupheaders; cup; cup = cup->next)
@@ -2103,7 +2103,7 @@ void D_SRB2Main(void)
 						}
 					}
 
-					CONS_Printf(" Wins for profile \"%s\" imported onto character \"%s\"\n", pr->profilename, skins[importskin].name);
+					CONS_Printf(" Wins for profile \"%s\" imported onto character \"%s\"\n", pr->profilename, skins[importskin]->name);
 				}
 			}
 

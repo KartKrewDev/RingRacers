@@ -7882,7 +7882,7 @@ static void P_LoadRecordGhosts(void)
 	if (allGhosts)
 	{
 		for (i = 0; i < numskins; ++i)
-			add_ghosts(fmt::format("{}-{}{}", gpath, skins[i].name, modeprefix), allGhosts);
+			add_ghosts(fmt::format("{}-{}{}", gpath, skins[i]->name, modeprefix), allGhosts);
 	}
 
 	if (sameGhosts)
@@ -7890,7 +7890,7 @@ static void P_LoadRecordGhosts(void)
 		INT32 skin = R_SkinAvailableEx(cv_skin[0].string, false);
 		if (skin < 0 || !R_SkinUsable(-1, skin, false))
 			skin = 0; // use default skin
-		add_ghosts(fmt::format("{}-{}{}", gpath, skins[skin].name, modeprefix), sameGhosts);
+		add_ghosts(fmt::format("{}-{}{}", gpath, skins[skin]->name, modeprefix), sameGhosts);
 	}
 
 	// Guest ghost
@@ -8026,7 +8026,7 @@ static void P_InitPlayers(void)
 		if (skin != -1)
 		{
 			SetPlayerSkinByNum(i, skin);
-			players[i].skincolor = skins[skin].prefcolor;
+			players[i].skincolor = skins[skin]->prefcolor;
 
 			players[i].followerskin = follower;
 			if (follower != -1)

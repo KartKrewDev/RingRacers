@@ -431,9 +431,9 @@ static int libd_getSprite2Patch(lua_State *L)
 	if (super)
 		j |= FF_SPR2SUPER;
 
-	j = P_GetSkinSprite2(&skins[i], j, NULL); // feed skin and current sprite2 through to change sprite2 used if necessary
+	j = P_GetSkinSprite2(skins[i], j, NULL); // feed skin and current sprite2 through to change sprite2 used if necessary
 
-	sprdef = &skins[i].sprites[j];
+	sprdef = &skins[i]->sprites[j];
 
 	// set frame number
 	frame = luaL_optinteger(L, 2, 0);
@@ -461,7 +461,7 @@ static int libd_getSprite2Patch(lua_State *L)
 		INT32 rot = R_GetRollAngle(rollangle);
 
 		if (rot) {
-			patch_t *rotsprite = Patch_GetRotatedSprite(sprframe, frame, angle, sprframe->flip & (1<<angle), true, &skins[i].sprinfo[j], rot);
+			patch_t *rotsprite = Patch_GetRotatedSprite(sprframe, frame, angle, sprframe->flip & (1<<angle), true, &skins[i]->sprinfo[j], rot);
 			LUA_PushUserdata(L, rotsprite, META_PATCH);
 			lua_pushboolean(L, false);
 			lua_pushboolean(L, true);
@@ -604,7 +604,7 @@ static int libd_drawOnMinimap(lua_State *L)
 	if (!lua_isnoneornil(L, 5))
 		colormap = *((UINT8 **)luaL_checkudata(L, 5, META_COLORMAP));
 	centered = lua_optboolean(L, 6);
-	
+
 	// Draw the HUD only when playing in a level.
 	// hu_stuff needs this, unlike st_stuff.
 	if (gamestate != GS_LEVEL)
@@ -612,17 +612,17 @@ static int libd_drawOnMinimap(lua_State *L)
 
 	if (R_GetViewNumber() != 0)
 		return 0;
-	
+
 	AutomapPic = minimapinfo.minimap_pic;
 	if (!AutomapPic)
 	{
 		return 0; // no pic, just get outta here
 	}
-	
+
 	// Handle offsets and stuff.
 	mm_x = MINI_X;
 	mm_y = MINI_Y - SHORT(AutomapPic->topoffset);
-	
+
 	if (encoremode)
 	{
 		mm_x += SHORT(AutomapPic->leftoffset);
