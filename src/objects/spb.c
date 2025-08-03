@@ -202,35 +202,39 @@ static void SpawnSPBSliptide(mobj_t *spb, SINT8 dir)
 	angle_t travelangle;
 	fixed_t sz = spb->floorz;
 
-	if (spb->eflags & MFE_VERTICALFLIP)
-	{
-		sz = spb->ceilingz;
+	if ((spb_modetimer(spb) != SPB_HOTPOTATO) || (spb_swapcount(spb) > SPB_MAXSWAPS + 1)) // Tired of this thing whacking people when switching targets
+	 { 
+		if (spb->eflags & MFE_VERTICALFLIP)
+		{
+			sz = spb->ceilingz;
+		}
+
+		travelangle = K_MomentumAngle(spb);
+
+		if ((leveltime & 1) && abs(spb->z - sz) < FRACUNIT*64)
+		{
+			newx = P_ReturnThrustX(spb, travelangle - (dir*ANGLE_45), 24*FRACUNIT);
+			newy = P_ReturnThrustY(spb, travelangle - (dir*ANGLE_45), 24*FRACUNIT);
+
+			spark = P_SpawnMobjFromMobj(spb, newx, newy, 0, MT_SPBDUST);
+			spark->z = sz;
+
+			P_SetMobjState(spark, S_KARTAIZDRIFTSTRAT);
+			P_SetTarget(&spark->target, spb);
+
+			spark->colorized = true;
+			spark->color = SKINCOLOR_RED;
+
+			spark->angle = travelangle + (dir * ANGLE_90);
+			P_SetScale(spark, (spark->destscale = spb->scale*3/2));
+
+			spark->momx = (6*spb->momx)/5;
+			spark->momy = (6*spb->momy)/5;
+
+			K_MatchGenericExtraFlags(spark, spb);
+		}
 	}
-
-	travelangle = K_MomentumAngle(spb);
-
-	if ((leveltime & 1) && abs(spb->z - sz) < FRACUNIT*64)
-	{
-		newx = P_ReturnThrustX(spb, travelangle - (dir*ANGLE_45), 24*FRACUNIT);
-		newy = P_ReturnThrustY(spb, travelangle - (dir*ANGLE_45), 24*FRACUNIT);
-
-		spark = P_SpawnMobjFromMobj(spb, newx, newy, 0, MT_SPBDUST);
-		spark->z = sz;
-
-		P_SetMobjState(spark, S_KARTAIZDRIFTSTRAT);
-		P_SetTarget(&spark->target, spb);
-
-		spark->colorized = true;
-		spark->color = SKINCOLOR_RED;
-
-		spark->angle = travelangle + (dir * ANGLE_90);
-		P_SetScale(spark, (spark->destscale = spb->scale*3/2));
-
-		spark->momx = (6*spb->momx)/5;
-		spark->momy = (6*spb->momy)/5;
-
-		K_MatchGenericExtraFlags(spark, spb);
-	}
+	
 }
 
 // Used for seeking and when SPB is trailing its target from way too close!
