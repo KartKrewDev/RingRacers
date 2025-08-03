@@ -4893,7 +4893,7 @@ static void G_DoCompleted(void)
 	}
 	else
 	{
-		Y_MidIntermission();
+		//Y_MidIntermission(); -- we don't want bots retired or teams wiped
 		if (grandprixinfo.gp == true)
 		{
 			K_UpdateGPRank(&grandprixinfo.rank);
