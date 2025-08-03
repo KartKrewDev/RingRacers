@@ -118,7 +118,7 @@ size_t copy_fixed_buf(void* p, const void* s, size_t n)
 
 static char demoname[MAX_WADPATH];
 static savebuffer_t demobuf = {0};
-static UINT8 *demotime_p, *demoinfo_p;
+static UINT8 *demotime_p, *demoinfo_p, *demoattack_p;
 static UINT16 demoflags;
 boolean demosynced = true; // console warning message
 
@@ -1249,6 +1249,9 @@ void G_ConsGhostTic(INT32 playernum)
 void G_GhostTicker(void)
 {
 	demoghost *g,*p;
+
+	tic_t fastforward = 0;
+
 	for (g = ghosts, p = NULL; g; g = g->next)
 	{
 		UINT16 ziptic;
@@ -1258,10 +1261,11 @@ void G_GhostTicker(void)
 		{
 			continue;
 		}
-
 		// Pause jhosts that cross until the timer starts.
-		if (g->linecrossed && leveltime < starttime && G_TimeAttackStart())
+		if (g->attackstart != INT32_MAX && leveltime < starttime && leveltime >= g->attackstart && G_TimeAttackStart())
+		{
 			continue;
+		}
 
 readghosttic:
 #define follow g->mo->tracer
@@ -1327,8 +1331,6 @@ fadeghost:
 					g->p += g->sizes.skin_name + g->sizes.color_name;
 				if (ziptic & DXD_WEAPONPREF)
 					g->p++; // ditto
-				if (ziptic & DXD_START)
-					g->linecrossed = true;
 			}
 			else if (ziptic == DW_RNG)
 			{
@@ -1597,8 +1599,17 @@ skippedghosttic:
 			I_Error("Ghost is not a record attack ghost GHOSTEND"); //@TODO lmao don't blow up like this
 
 		// If the timer started, skip ahead until the ghost starts too.
-		if (starttime <= leveltime && !g->linecrossed && G_TimeAttackStart())
+		if (!fastforward && linecrossed && g->attackstart != INT32_MAX && leveltime < g->attackstart && G_TimeAttackStart())
+		{
+			fastforward = g->attackstart - leveltime;
+			g->attackstart = INT32_MAX;
+		}
+
+		if (fastforward)
+		{
+			fastforward--;
 			goto readghosttic;
+		}
 
 		p = g;
 #undef follow
@@ -2054,6 +2065,10 @@ void G_BeginRecording(void)
 	demoinfo_p = demobuf.p;
 	WRITEUINT32(demobuf.p, 0);
 
+	// If special attack-start timing applies, we need to know where to skip the ghost to
+	demoattack_p = demobuf.p;
+	WRITEUINT32(demobuf.p, INT32_MAX);
+
 	// Save netvar data
 	CV_SaveDemoVars(&demobuf.p);
 
@@ -2217,6 +2232,11 @@ void srb2::write_current_demo_end_marker()
 {
 	WRITEUINT8(demobuf.p, DEMOMARKER); // add the demo end marker
 	*(UINT32 *)demoinfo_p = demobuf.p - demobuf.buffer;
+}
+
+void G_SetDemoAttackTiming(tic_t time)
+{
+	*(UINT32 *)demoattack_p = time;
 }
 
 void G_SetDemoTime(UINT32 ptime, UINT32 plap)
@@ -2573,6 +2593,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo, boolean allownonmultiplayer)
 	}
 
 	extrainfo_p = info.buffer + READUINT32(info.p); // The extra UINT32 read is for a blank 4 bytes?
+	info.p += 4; // attack start
 
 	// Pared down version of CV_LoadNetVars to find the kart speed
 	pdemo->kartspeed = KARTSPEED_NORMAL; // Default to normal speed
@@ -3072,6 +3093,7 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 	}
 
 	demobuf.p += 4; // Extrainfo location
+	demobuf.p += 4; // Attack start
 
 	// ...*map* not loaded?
 	if (!gamemap || (gamemap > nummapheaders) || !mapheaderinfo[gamemap-1] || mapheaderinfo[gamemap-1]->lumpnum == LUMPERROR)
@@ -3487,6 +3509,7 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	}
 
 	p += 4; // Extra data location reference
+	UINT32 attackstart = READUINT32(p);
 
 	// net var data
 	count = READUINT16(p);
@@ -3577,6 +3600,8 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 
 	gh->numskins = worknumskins;
 	gh->skinlist = skinlist;
+
+	gh->attackstart = attackstart;
 
 	ghosts = gh;
 
@@ -3729,6 +3754,7 @@ staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer)
 	}
 
 	p += 4; // Extrainfo location marker
+	p += 4; // Attack start info
 
 	// Ehhhh don't need ghostversion here (?) so I'll reuse the var here
 	ghostversion = READUINT16(p);

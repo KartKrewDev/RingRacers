@@ -9673,9 +9673,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		*/
 
 		starttime = leveltime;
+		G_SetDemoAttackTiming(leveltime);
 
-		if (demo.recording)
-			demo_extradata[player-players] |= DXD_START;
 		Music_Stop("position");
 	}
 
