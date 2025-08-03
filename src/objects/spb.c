@@ -202,7 +202,7 @@ static void SpawnSPBSliptide(mobj_t *spb, SINT8 dir)
 	angle_t travelangle;
 	fixed_t sz = spb->floorz;
 
-	if ((spb_modetimer(spb) != SPB_HOTPOTATO) || (spb_swapcount(spb) < SPB_MAXSWAPS + 1)) // Tired of this thing whacking people when switching targets
+	if ((spb_modetimer(spb) != SPB_HOTPOTATO) || (spb_swapcount(spb) == SPB_MAXSWAPS + 1)) // Tired of this thing whacking people when switching targets
 	 { 
 		if (spb->eflags & MFE_VERTICALFLIP)
 		{
