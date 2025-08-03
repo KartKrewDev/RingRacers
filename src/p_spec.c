@@ -2038,49 +2038,6 @@ static void K_HandleLapIncrement(player_t *player)
 				K_UpdateAllPlayerPositions(); // P_DoPlayerExit calls this
 			}
 
-			if (G_TimeAttackStart() && !linecrossed)
-			{
-				linecrossed = leveltime;
-				if (starttime > leveltime) // Overlong starts shouldn't reset time on cross
-				{
-					// Award some Amps for a fast start, to counterbalance Obvious Rainbow Driftboost
-
-					tic_t starthaste = starttime - leveltime; // How much time we had left to cross
-					starthaste = TIMEATTACK_START - starthaste; // How much time we wasted before crossing
-
-					tic_t leniency = TICRATE*4; // How long we can take to cross with no penalty to amp payout
-
-					if (starthaste <= leniency)
-						starthaste = 0;
-					else
-						starthaste -= leniency;
-
-					// fixed_t ampreward = Easing_OutQuart(starthaste*FRACUNIT/TIMEATTACK_START, 60*FRACUNIT, 0);		
-					// K_SpawnAmps(player, ampreward/FRACUNIT, player->mo);
-
-					UINT8 baseboost = 125;
-
-					player->startboost = Easing_OutQuart(starthaste*FRACUNIT/TIMEATTACK_START, baseboost, 0);
-
-					if (player->startboost == baseboost)
-					{
-						K_SpawnDriftBoostExplosion(player, 4);
-						K_SpawnDriftElectricSparks(player, SKINCOLOR_SILVER, false);
-					}
-					else
-					{
-						K_SpawnDriftBoostExplosion(player, 3);
-						// K_SpawnDriftElectricSparks(player, SKINCOLOR_SILVER, false);						
-					}
-
-					// And reset our time to 0.
-					starttime = leveltime;
-				}
-				if (demo.recording)
-					demo_extradata[player-players] |= DXD_START;
-				Music_Stop("position");
-			}
-
 			if (rainbowstartavailable == true && player->mo->hitlag == 0)
 			{
 				if (K_InRaceDuel())
@@ -2097,7 +2054,8 @@ static void K_HandleLapIncrement(player_t *player)
 
 					K_SpawnDriftBoostExplosion(player, 4);
 					K_SpawnDriftElectricSparks(player, SKINCOLOR_SILVER, false);
-					K_SpawnAmps(player, (K_InRaceDuel()) ? 20 : 35, player->mo);
+					if (!G_TimeAttackStart())
+						K_SpawnAmps(player, (K_InRaceDuel()) ? 20 : 35, player->mo);
 
 					if (g_teamplay)
 					{
