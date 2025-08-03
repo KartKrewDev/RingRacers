@@ -321,6 +321,7 @@ void G_ReadDemoExtraData(void)
 				players[p].botvars.difficulty = READUINT8(demobuf.p);
 				players[p].botvars.diffincrease = READINT16(demobuf.p); // needed to avoid having to duplicate logic
 				players[p].botvars.rival = (boolean)READUINT8(demobuf.p);
+				players[p].botvars.foe = (boolean)READUINT8(demobuf.p);
 			}
 		}
 		if (extradata & DXD_PLAYSTATE)
@@ -497,6 +498,7 @@ void G_WriteDemoExtraData(void)
 					WRITEUINT8(demobuf.p, players[i].botvars.difficulty);
 					WRITEINT16(demobuf.p, players[i].botvars.diffincrease); // needed to avoid having to duplicate logic
 					WRITEUINT8(demobuf.p, (UINT8)players[i].botvars.rival);
+					WRITEUINT8(demobuf.p, (UINT8)players[i].botvars.foe);
 				}
 			}
 			if (demo_extradata[i] & DXD_PLAYSTATE)
@@ -2111,6 +2113,7 @@ void G_BeginRecording(void)
 				WRITEUINT8(demobuf.p, player->botvars.difficulty);
 				WRITEINT16(demobuf.p, player->botvars.diffincrease); // needed to avoid having to duplicate logic
 				WRITEUINT8(demobuf.p, (UINT8)player->botvars.rival);
+				WRITEUINT8(demobuf.p, (UINT8)player->botvars.foe);
 			}
 
 			// Name
@@ -3222,6 +3225,7 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 			players[p].botvars.difficulty = READUINT8(demobuf.p);
 			players[p].botvars.diffincrease = READINT16(demobuf.p); // needed to avoid having to duplicate logic
 			players[p].botvars.rival = (boolean)READUINT8(demobuf.p);
+			players[p].botvars.foe = (boolean)READUINT8(demobuf.p);
 		}
 
 		K_UpdateShrinkCheat(&players[p]);

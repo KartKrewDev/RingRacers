@@ -152,22 +152,16 @@ static INT16 K_RivalScore(player_t *bot)
 
 static boolean CompareRivals(player_t *a, player_t *b)
 {
-	CONS_Printf("compare foes\n");
 	if (a == NULL)
 		return false;
 	if (b == NULL)
 		return true;
 
-	CONS_Printf("%s %d VS %s %d\n", player_names[a-players], K_RivalScore(a), player_names[b-players], K_RivalScore(b));
-
 	if (K_RivalScore(a) != K_RivalScore(b))
 	{
 		// Push bad position to the back.
-		CONS_Printf("returning known\n");
 		return (K_RivalScore(a) > K_RivalScore(b));
 	}
-
-	CONS_Printf("returning shuffle\n");
 
 	// They are equals, so just randomize
 	return (P_Random(PR_BOTS) & 1);
@@ -176,7 +170,6 @@ static boolean CompareRivals(player_t *a, player_t *b)
 static void K_AssignFoes(void)
 {
 	std::vector<player_t *> bots;
-	CONS_Printf("foe assignment\n");
 	for (UINT8 i = 0; i < MAXPLAYERS; i++)
 	{
 		if (playeringame[i] == false)
@@ -186,20 +179,16 @@ static void K_AssignFoes(void)
 
 		if (!player->spectator && player->bot)
 		{
-			CONS_Printf("added %s\n", player_names[i]);
 			bots.push_back(player);
 			player->botvars.foe = false;
 		}
 	}
 
-	CONS_Printf("sort foes\n");
 	std::stable_sort(bots.begin(), bots.end(), CompareRivals);
 
 	UINT8 i = 0;
 	for (auto &bot : bots)
 	{  
-		CONS_Printf("assign foes\n");
-
 		if (bot != NULL)
 			bot->botvars.foe = true;
 
