@@ -154,6 +154,8 @@ static void SpawnSPBDust(mobj_t *spb)
 	angle_t sa = spb->angle - ANG1*60;
 	INT32 i;
 
+	if ((spb_intangible(spb) = SPB_FLASHING)) // If the SPB is intangible, don't spawn the "v" dust wave
+	{
 	if (spb->eflags & MFE_VERTICALFLIP)
 	{
 		sz = spb->ceilingz;
@@ -188,6 +190,7 @@ static void SpawnSPBDust(mobj_t *spb)
 		}
 	}
 }
+}
 
 // Spawns SPB slip tide. To be used when the SPB is turning.
 // Modified version of K_SpawnAIZDust. Maybe we could merge those to be cleaner?
@@ -202,7 +205,7 @@ static void SpawnSPBSliptide(mobj_t *spb, SINT8 dir)
 	angle_t travelangle;
 	fixed_t sz = spb->floorz;
 
-	if ((spb_modetimer(spb) != SPB_HOTPOTATO) || (spb_swapcount(spb) == SPB_MAXSWAPS + 1)) // Tired of this thing whacking people when switching targets
+	if ((spb_intangible(spb) = SPB_FLASHING)) // Tired of this thing whacking people when switching targets, don't sliptide if intangible either
 	 { 
 		if (spb->eflags & MFE_VERTICALFLIP)
 		{
