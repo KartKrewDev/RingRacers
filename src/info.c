@@ -13975,7 +13975,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 
 	{           // MT_TRIPWIREOK
 		-1,             // doomednum
-		S_CHARGEAURA,    // spawnstate
+		S_TRIPWIREOK,   // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound
@@ -14002,7 +14002,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 
 {           // MT_TRIPWIRELOCKOUT
 		-1,             // doomednum
-		S_CHARGEAURA,    // spawnstate
+		S_TRIPWIRELOCKOUT,// spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound
