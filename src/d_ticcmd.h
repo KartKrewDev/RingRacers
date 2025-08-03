@@ -32,12 +32,13 @@ typedef enum
 	BT_BRAKE		  = 1<<3,	// Brake
 	BT_ATTACK		  = 1<<4,	// Use Item
 	BT_LOOKBACK		  = 1<<5,	// Look Backward
-	BT_RESPAWN		  = 1<<6,	// Respawn
+	BT_BAIL			  = 1<<6,	// Bail
 	BT_VOTE			  = 1<<7,	// Vote
 	BT_SPINDASH       = 1<<8,   // Spindash
 
 	BT_EBRAKEMASK		= (BT_ACCELERATE|BT_BRAKE),
 	BT_SPINDASHMASK 	= (BT_ACCELERATE|BT_BRAKE|BT_DRIFT),
+	BT_RESPAWNMASK		= (BT_EBRAKEMASK|BT_BAIL),
 
 	// free: 1<<9 to 1<<12
 

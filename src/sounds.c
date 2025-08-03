@@ -534,7 +534,7 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"s3k81",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Burst"},
   {"s3k82",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Burst"},
   {"s3k83",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Collapsing"},
-  {"s3k84",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Powering up"},
+  {"s3k84",  false,  64,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, "Powering up"}, // Lightning Shield Charge
   {"s3k85",  false,  64, 24, -1, NULL, 0,        -1,  -1, LUMPERROR, "Powering down"},
   {"s3k86",  false, 128,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, "Alarm"},
   {"s3k87",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Bounce"},
@@ -778,7 +778,7 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"kc30",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"kc31",   false,  64, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"kc32",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
-  {"kc33",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"kc33",   false,  64,  16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, //x8away
   {"kc34",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"kc35",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"kc36",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
@@ -805,7 +805,7 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"kc4b",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"kc4c",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Pop-shot"},
   {"kc4d",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Power up"},
-  {"kc4e",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"kc4e",   false,  64,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, //x8away
   {"kc4f",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"kc50",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"kc51",   false,  64, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
@@ -1432,18 +1432,18 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"gshaf", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshb0", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshb1", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
-  {"gshb2", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"gshb2", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, //x8away
   {"gshb3", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshb4", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshb5", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshb6", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshb7", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshb8", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
-  {"gshb9", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"gshb9", false,  64, 8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, //x4away
   {"gshba", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshbb", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshbc", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
-  {"gshbd", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"gshbd", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, //x8away
   {"gshbe", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshbf", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshc0a", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},

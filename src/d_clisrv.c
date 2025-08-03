@@ -281,7 +281,7 @@ shouldsign_t ShouldSignChallenge(uint8_t *message)
 	if ((max(now, then) - min(now, then)) > 60*15)
 		return SIGN_BADTIME;
 
-	//  ____ _____ ___  ____  _ 
+	//  ____ _____ ___  ____  _
 	// / ___|_   _/ _ \|  _ \| |
 	// \___ \ | || | | | |_) | |
 	//  ___) || || |_| |  __/|_|
@@ -1088,7 +1088,7 @@ static void SV_SendServerInfo(INT32 node, tic_t servertime)
 	netbuffer->u.serverinfo.kartvars = (UINT8) (
 		(gamespeed & SV_SPEEDMASK) |
 		(dedicated ? SV_DEDICATED : 0) |
-		(!cv_voice_servermute.value ? SV_VOICEENABLED : 0)
+		(cv_voice_allowservervoice.value ? SV_VOICEENABLED : 0)
 	);
 
 	D_ParseCarets(netbuffer->u.serverinfo.servername, cv_servername.string, MAXSERVERNAME);
@@ -2436,6 +2436,11 @@ static void CL_ConnectToServer(void)
 
 	joinedIP[0] = '\0';	// And empty this for good measure regardless of whether or not we actually used it.
 
+	// Enable sound input/microphone in netgames, activating the microphone device.
+	if (netgame)
+	{
+		S_SoundInputSetEnabled(true);
+	}
 }
 
 static void Command_connect(void)
@@ -2502,6 +2507,8 @@ static void Command_connect(void)
 			{
 				CONS_Alert(CONS_ERROR, M_GetText("There is no server identification with this network driver\n"));
 				D_CloseConnection();
+
+				S_SoundInputSetEnabled(false);
 				return;
 			}
 		}
@@ -3659,6 +3666,7 @@ void D_QuitNetGame(void)
 	K_ClearClientPowerLevels();
 	G_ObliterateParties();
 	K_ResetMidVote();
+	S_SoundInputSetEnabled(false);
 
 	DEBFILE("===========================================================================\n"
 	        "                         Log finish\n"
@@ -3730,8 +3738,6 @@ static void Got_AddPlayer(const UINT8 **p, INT32 playernum)
 
 	CONS_Debug(DBG_NETPLAY, "addplayer: %d %d\n", node, newplayernum);
 
-	//G_SpectatePlayerOnJoin(newplayernum); -- caused desyncs in this spot :(
-
 	if (newplayernum+1 > doomcom->numslots)
 		doomcom->numslots = (INT16)(newplayernum+1);
 
@@ -3784,6 +3790,13 @@ static void Got_AddPlayer(const UINT8 **p, INT32 playernum)
 
 	players[newplayernum].splitscreenindex = splitscreenplayer;
 	players[newplayernum].bot = false;
+
+	// Previously called at the top of this function, commented as
+	// "caused desyncs in this spot :(". But we can't do this in
+	// G_PlayerReborn, since that only runs for level contexts and
+	// allows people to party-crash the vote screen even when
+	// maxplayers is too low for them. Let's try it here...?
+	G_SpectatePlayerOnJoin(newplayernum);
 
 	if (node == mynode && splitscreenplayer == 0)
 		S_AttemptToRestoreMusic(); // Earliest viable point
@@ -5231,6 +5244,12 @@ static void PT_HandleVoiceClient(SINT8 node, boolean isserver)
 		return;
 	}
 
+	if (G_GamestateUsesLevel() && players[playernum].spectator)
+	{
+		// ignore spectators in levels
+		return;
+	}
+
 	boolean terminal = (pl->flags & VOICE_PAK_FLAGS_TERMINAL_BIT) > 0;
 	UINT32 framesize = doomcom->datalength - BASEPACKETSIZE - sizeof(voice_pak);
 	UINT8 *frame = (UINT8*)(pl) + sizeof(voice_pak);
@@ -5256,7 +5275,7 @@ static void PT_HandleVoiceClient(SINT8 node, boolean isserver)
 		{
 			continue;
 		}
-		if (cv_voice_chat.value != 0 && playernum != g_localplayers[0])
+		if (cv_voice_selfdeafen.value != 1 && playernum != g_localplayers[0])
 		{
 			S_QueueVoiceFrameFromPlayer(playernum, (void*)decoded_out, decoded_samples * sizeof(float), false);
 		}
@@ -5270,7 +5289,7 @@ static void PT_HandleVoiceClient(SINT8 node, boolean isserver)
 		return;
 	}
 
-	if (cv_voice_chat.value != 0 && playernum != g_localplayers[0])
+	if (cv_voice_selfdeafen.value != 1 && playernum != g_localplayers[0])
 	{
 		S_QueueVoiceFrameFromPlayer(playernum, (void*)decoded_out, decoded_samples * sizeof(float), terminal);
 	}
@@ -5287,9 +5306,9 @@ static void PT_HandleVoiceServer(SINT8 node)
 	int playernum = -1;
 	player_t *player;
 
-	if (cv_voice_servermute.value != 0)
+	if (!cv_voice_allowservervoice.value)
 	{
-		// Don't even relay voice packets if voice_servermute is on
+		// Don't even relay voice packets if voice_allowservervoice is off
 		return;
 	}
 
@@ -5323,6 +5342,12 @@ static void PT_HandleVoiceServer(SINT8 node)
 		UINT8 pnode = playernode[i];
 		if (pnode == UINT8_MAX)
 		{
+			continue;
+		}
+
+		if (G_GamestateUsesLevel() && player->spectator)
+		{
+			// ignore spectators in levels
 			continue;
 		}
 
@@ -5370,14 +5395,14 @@ static void FuzzTiccmd(ticcmd_t* target)
 		target->forwardmove = P_RandomRange(PR_FUZZ, -MAXPLMOVE, MAXPLMOVE);
 		target->turning = P_RandomRange(PR_FUZZ, -KART_FULLTURN, KART_FULLTURN);
 		target->throwdir = P_RandomRange(PR_FUZZ, -KART_FULLTURN, KART_FULLTURN);
-		target->buttons = P_RandomRange(PR_FUZZ, 0, 255);
+		target->buttons = P_RandomRange(PR_FUZZ, 0, 65535);
 
 		// Make fuzzed players more likely to do impactful things
 		if (P_RandomRange(PR_FUZZ, 0, 500))
 		{
 			target->buttons |= BT_ACCELERATE;
 			target->buttons &= ~BT_LOOKBACK;
-			target->buttons &= ~BT_RESPAWN;
+			target->buttons &= ~BT_BAIL;
 			target->buttons &= ~BT_BRAKE;
 		}
 	}
@@ -7376,9 +7401,6 @@ void NetVoiceUpdate(void)
 		return;
 	}
 
-	// This necessarily runs every frame, not every tic
-	S_SoundInputSetEnabled(true);
-
 	UINT32 bytes_dequed = 0;
 	do
 	{
@@ -7452,7 +7474,7 @@ void NetVoiceUpdate(void)
 			continue;
 		}
 
-		if (cv_voice_chat.value == 0)
+		if (cv_voice_selfdeafen.value == 1)
 		{
 			g_local_voice_buffer_len = 0;
 			continue;
@@ -7553,66 +7575,6 @@ tic_t GetLag(INT32 node)
 	if (nettics[node] > gametic)
 		return 0;
 	return gametic - nettics[node];
-}
-
-#define REWIND_POINT_INTERVAL 4*TICRATE + 16
-rewind_t *rewindhead;
-
-void CL_ClearRewinds(void)
-{
-	rewind_t *head;
-	while ((head = rewindhead))
-	{
-		rewindhead = rewindhead->next;
-		free(head);
-	}
-}
-
-rewind_t *CL_SaveRewindPoint(size_t demopos)
-{
-	savebuffer_t save = {0};
-	rewind_t *rewind;
-
-	if (rewindhead && rewindhead->leveltime + REWIND_POINT_INTERVAL > leveltime)
-		return NULL;
-
-	rewind = (rewind_t *)malloc(sizeof (rewind_t));
-	if (!rewind)
-		return NULL;
-
-	P_SaveBufferFromExisting(&save, rewind->savebuffer, NETSAVEGAMESIZE);
-	P_SaveNetGame(&save, false);
-
-	rewind->leveltime = leveltime;
-	rewind->next = rewindhead;
-	rewind->demopos = demopos;
-	rewindhead = rewind;
-
-	return rewind;
-}
-
-rewind_t *CL_RewindToTime(tic_t time)
-{
-	savebuffer_t save = {0};
-	rewind_t *rewind;
-
-	while (rewindhead && rewindhead->leveltime > time)
-	{
-		rewind = rewindhead->next;
-		free(rewindhead);
-		rewindhead = rewind;
-	}
-
-	if (!rewindhead)
-		return NULL;
-
-	P_SaveBufferFromExisting(&save, rewindhead->savebuffer, NETSAVEGAMESIZE);
-	P_LoadNetGame(&save, false);
-
-	wipegamestate = gamestate; // No fading back in!
-	timeinmap = leveltime;
-
-	return rewindhead;
 }
 
 void D_MD5PasswordPass(const UINT8 *buffer, size_t len, const char *salt, void *dest)

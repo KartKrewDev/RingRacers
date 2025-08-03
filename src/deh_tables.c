@@ -297,6 +297,7 @@ actionpointer_t actionpointers[] =
 	{{A_MakeSSCandle},           "A_MAKESSCANDLE"},
 	{{A_HologramRandomTranslucency}, "A_HOLOGRAMRANDOMTRANSLUCENCY"},
 	{{A_SSChainShatter}, "A_SSCHAINSHATTER"},
+	{{A_GenericBumper}, "A_GENERICBUMPER"},
 
 	{{NULL},                     "NONE"},
 
@@ -1560,6 +1561,8 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_MAGICIANBOXTOP",
 	"S_MAGICIANBOXBOTTOM",
 
+	"S_MINERADIUS",
+
 	"S_WAVEDASH",
 
 	"S_INSTAWHIP",
@@ -1570,6 +1573,13 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_INSTAWHIP_REJECT",
 	"S_BLOCKRING",
 	"S_BLOCKBODY",
+
+	"S_BAIL",
+	"S_BAIB1",
+	"S_BAIB2",
+	"S_BAIB3",
+	"S_BAIC",
+	"S_BAILCHARGE",
 
 	"S_AMPRING",
 	"S_AMPBODY",
@@ -2004,6 +2014,12 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_THNC2",
 	"S_THNB1",
 
+	"S_THND",
+	"S_THNE",
+	"S_THNH",
+	"S_THNF",
+	"S_THNG",
+
 	// Bubble Shield
 	"S_BUBBLESHIELD1",
 	"S_BUBBLESHIELD2",
@@ -2047,6 +2063,7 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_BUBC2",
 	"S_BUBD1",
 	"S_BUBE1",
+	"S_BUBG1", // F used by Nova Shore
 
 	// Flame Shield
 	"S_FLAMESHIELD1",
@@ -2686,6 +2703,7 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_EGOORB",
 
 	"S_AMPS",
+	"S_EXP",
 
 	"S_WATERTRAIL1",
 	"S_WATERTRAIL2",
@@ -3109,6 +3127,13 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 
 	// Flybot767 (stun)
 	"S_FLYBOT767",
+
+	"S_STON",
+
+	"S_TOXAA",
+	"S_TOXAA_DEAD",
+	"S_TOXAB",
+	"S_TOXBA",
 };
 
 // RegEx to generate this from info.h: ^\tMT_([^,]+), --> \t"MT_\1",
@@ -3551,6 +3576,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_MONITOR_PART",
 	"MT_MONITOR_SHARD",
 	"MT_MAGICIANBOX",
+	"MT_MINERADIUS",
 	"MT_WAVEDASH",
 
 	"MT_INSTAWHIP",
@@ -3558,6 +3584,10 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_INSTAWHIP_REJECT",
 	"MT_BLOCKRING",
 	"MT_BLOCKBODY",
+
+	"MT_BAIL",
+	"MT_BAILCHARGE",
+	"MT_BAILSPARKLE",
 
 	"MT_AMPRING",
 	"MT_AMPBODY",
@@ -3643,6 +3673,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_LIGHTNINGSHIELD", // Shields
 	"MT_LIGHTNINGSHIELD_VISUAL",
+	"MT_LIGHTNINGATTACK_VISUAL",
 	"MT_BUBBLESHIELD",
 	"MT_BUBBLESHIELD_VISUAL",
 	"MT_FLAMESHIELD",
@@ -4006,8 +4037,16 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_PULLUPHOOK",
 
 	"MT_AMPS",
+	"MT_EXP",
 
 	"MT_FLYBOT767",
+
+	"MT_STONESHOE",
+	"MT_STONESHOE_CHAIN",
+
+	"MT_TOXOMISTER_POLE",
+	"MT_TOXOMISTER_EYE",
+	"MT_TOXOMISTER_CLOUD",
 };
 
 const char *const MOBJFLAG_LIST[] = {
@@ -5039,11 +5078,12 @@ struct int_const_s const INT_CONST[] = {
 	{"BT_BRAKE",BT_BRAKE},
 	{"BT_ATTACK",BT_ATTACK},
 	{"BT_LOOKBACK",BT_LOOKBACK},
-	{"BT_RESPAWN",BT_RESPAWN},
+	{"BT_BAIL",BT_BAIL},
 	{"BT_VOTE",BT_VOTE},
 	{"BT_SPINDASH",BT_SPINDASH}, // Real button now, but triggers the macro same as always.
 	{"BT_EBRAKEMASK",BT_EBRAKEMASK}, // Macro button
 	{"BT_SPINDASHMASK",BT_SPINDASHMASK}, // Macro button
+	{"BT_RESPAWNMASK",BT_RESPAWNMASK}, // Macro button
 	{"BT_LUAA",BT_LUAA}, // Lua customizable
 	{"BT_LUAB",BT_LUAB}, // Lua customizable
 	{"BT_LUAC",BT_LUAC}, // Lua customizable
@@ -5193,6 +5233,7 @@ struct int_const_s const INT_CONST[] = {
 	{"KRITEM_DUALJAWZ",KRITEM_DUALJAWZ},
 	{"KRITEM_TRIPLEGACHABOM",KRITEM_TRIPLEGACHABOM},
 	{"NUMKARTRESULTS",NUMKARTRESULTS},
+	{"KDROP_STONESHOETRAP",KDROP_STONESHOETRAP},
 	{"FIRSTPOWERUP",FIRSTPOWERUP},
 	{"POWERUP_SMONITOR",POWERUP_SMONITOR},
 	{"POWERUP_BARRIER",POWERUP_BARRIER},

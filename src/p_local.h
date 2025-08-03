@@ -549,6 +549,7 @@ void P_RampConstant(const BasicFF_t *FFInfo, INT32 Start, INT32 End);
 void P_SpecialStageDamage(player_t *player, mobj_t *inflictor, mobj_t *source);
 boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 damage, UINT8 damagetype);
 void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damagetype);
+void P_FlingBurst(player_t *player, angle_t fa, mobjtype_t objType, tic_t objFuse, fixed_t objScale, INT32 i);
 void P_PlayerRingBurst(player_t *player, INT32 num_rings); /// \todo better fit in p_user.c
 
 void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck);
@@ -612,6 +613,9 @@ void P_InitTIDHash(void);
 void P_AddThingTID(mobj_t *mo);
 void P_RemoveThingTID(mobj_t *mo);
 void P_SetThingTID(mobj_t *mo, mtag_t tid);
+
+// This function cannot be safely called after *i is removed!
+// Please call at start of loops if *i is to be mutated
 mobj_t *P_FindMobjFromTID(mtag_t tid, mobj_t *i, mobj_t *activator);
 
 void P_DeleteMobjStringArgs(mobj_t *mobj);

@@ -19,6 +19,8 @@
 #include "hardware/hw_data.h"
 #endif
 
+#include "k_modinfo.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -130,6 +132,8 @@ struct wadfile_t
 	UINT8 md5sum[16];
 
 	boolean important; // also network - !W_VerifyNMUSlumps
+
+	mod_metadata_t *metadata;
 };
 
 #define WADFILENUM(lumpnum) (UINT16)((lumpnum)>>16) // wad flumpnum>>16) // wad file number in upper word

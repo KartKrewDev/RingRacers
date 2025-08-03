@@ -289,6 +289,7 @@ enum actionnum
 	A_MAKESSCANDLE,
 	A_HOLOGRAMRANDOMTRANSLUCENCY,
 	A_SSCHAINSHATTER,
+	A_GENERICBUMPER,
 	NUMACTIONS
 };
 
@@ -557,6 +558,7 @@ void A_BlendEyePuyoHack();
 void A_MakeSSCandle();
 void A_HologramRandomTranslucency();
 void A_SSChainShatter();
+void A_GenericBumper();
 
 extern boolean actionsoverridden[NUMACTIONS];
 
@@ -856,6 +858,10 @@ typedef enum sprite
 	SPR_MGBX, // Heavy Magician transform box
 	SPR_MGBT, // Heavy Magician transform box top
 	SPR_MGBB, // Heavy Magician transform box bottom
+	SPR_SSMA, // Mine radius
+	SPR_SSMB,
+	SPR_SSMC,
+	SPR_SSMD,
 	SPR_MSHD, // Item Monitor Big Shard
 	SPR_IMDB, // Item Monitor Small Shard (Debris)
 	SPR_MTWK, // Item Monitor Glass Twinkle
@@ -868,6 +874,11 @@ typedef enum sprite
 	SPR_WPRJ, // Instawhip Reject
 	SPR_GRNG, // Guard ring
 	SPR_GBDY, // Guard body
+
+	SPR_BAIL, // Bail charge
+	SPR_BAIB, // Bail after effect
+	SPR_BAIC, // Bail sparkle
+	SPR_TECH, // Bail tech charge
 
 	SPR_TRC1, // Charge aura
 	SPR_TRC2, // Charge fall
@@ -918,6 +929,11 @@ typedef enum sprite
 	SPR_THNC, // Lightning Shield Top Flash
 	SPR_THNA, // Lightning Shield Top Swoosh
 	SPR_THNB, // Lightning Shield Bottom Swoosh
+	SPR_THND, // Lightning Attack
+	SPR_THNE, // Lightning Attack
+	SPR_THNH, // Lightning Attack
+	SPR_THNF, // Lightning Attack
+	SPR_THNG, // Lightning Attack
 	SPR_BUBS, // Bubble Shield (not Bubs)
 	SPR_BUBT, // Bubble Shield trap
 	SPR_BUBA, // Bubble Shield Outline
@@ -925,6 +941,7 @@ typedef enum sprite
 	SPR_BUBC, // Bubble Shield Bottom Wave
 	SPR_BUBD, // Bubble Shield Reflection
 	SPR_BUBE, // Bubble Shield Underline
+	SPR_BUBG, // Bubble Shield drag
 	SPR_BWVE, // Bubble Shield waves
 	SPR_FLMS, // Flame Shield
 	SPR_FLMA, // Flame Shield Top Layer
@@ -1135,6 +1152,8 @@ typedef enum sprite
 	SPR_AMPC,
 	SPR_AMPD,
 
+	SPR_EXPC,
+	
 	SPR_TWOK, // Tripwire OK
 	SPR_TW_L, // Tripwire Lockout
 
@@ -1325,6 +1344,10 @@ typedef enum sprite
 
 	// Flybot767 (stun)
 	SPR_STUN,
+
+	SPR_STON,
+	SPR_TOXA,
+	SPR_TOXB,
 
 	// Pulley
 	SPR_HCCH,
@@ -2608,6 +2631,8 @@ typedef enum state
 	S_MAGICIANBOX_TOP,
 	S_MAGICIANBOX_BOTTOM,
 
+	S_MINERADIUS,
+
 	S_WAVEDASH,
 
 	S_INSTAWHIP,
@@ -2618,6 +2643,13 @@ typedef enum state
 	S_INSTAWHIP_REJECT,
 	S_BLOCKRING,
 	S_BLOCKBODY,
+
+	S_BAIL,
+	S_BAIB1,
+	S_BAIB2,
+	S_BAIB3,
+	S_BAIC,
+	S_BAILCHARGE,
 
 	S_AMPRING,
 	S_AMPBODY,
@@ -3052,6 +3084,12 @@ typedef enum state
 	S_THNC2,
 	S_THNB1,
 
+	S_THND,
+	S_THNE,
+	S_THNH,
+	S_THNF,
+	S_THNG,
+
 	// Bubble Shield
 	S_BUBBLESHIELD1,
 	S_BUBBLESHIELD2,
@@ -3095,6 +3133,7 @@ typedef enum state
 	S_BUBC2,
 	S_BUBD1,
 	S_BUBE1,
+	S_BUBG1,
 
 	// Flame Shield
 	S_FLAMESHIELD1,
@@ -3738,6 +3777,7 @@ typedef enum state
 	S_EGOORB,
 
 	S_AMPS,
+	S_EXP,
 
 	S_WATERTRAIL1,
 	S_WATERTRAIL2,
@@ -4164,6 +4204,13 @@ typedef enum state
 
 	// Flybot767 (stun)
 	S_FLYBOT767,
+
+	S_STON,
+
+	S_TOXAA,
+	S_TOXAA_DEAD,
+	S_TOXAB,
+	S_TOXBA,
 
 	S_FIRSTFREESLOT,
 	S_LASTFREESLOT = S_FIRSTFREESLOT + NUMSTATEFREESLOTS - 1,
@@ -4626,6 +4673,7 @@ typedef enum mobj_type
 	MT_MONITOR_PART,
 	MT_MONITOR_SHARD,
 	MT_MAGICIANBOX,
+	MT_MINERADIUS,
 	MT_WAVEDASH,
 
 	MT_INSTAWHIP,
@@ -4633,6 +4681,10 @@ typedef enum mobj_type
 	MT_INSTAWHIP_REJECT,
 	MT_BLOCKRING,
 	MT_BLOCKBODY,
+
+	MT_BAIL,
+	MT_BAILCHARGE,
+	MT_BAILSPARKLE,
 
 	MT_AMPRING,
 	MT_AMPBODY,
@@ -4718,6 +4770,7 @@ typedef enum mobj_type
 
 	MT_LIGHTNINGSHIELD, // Shields
 	MT_LIGHTNINGSHIELD_VISUAL,
+	MT_LIGHTNINGATTACK_VISUAL,
 	MT_BUBBLESHIELD,
 	MT_BUBBLESHIELD_VISUAL,
 	MT_FLAMESHIELD,
@@ -5084,8 +5137,16 @@ typedef enum mobj_type
 	MT_PULLUPHOOK,
 
 	MT_AMPS,
+	MT_EXP,
 
 	MT_FLYBOT767,
+
+	MT_STONESHOE,
+	MT_STONESHOE_CHAIN,
+
+	MT_TOXOMISTER_POLE,
+	MT_TOXOMISTER_EYE,
+	MT_TOXOMISTER_CLOUD,
 
 	MT_FIRSTFREESLOT,
 	MT_LASTFREESLOT = MT_FIRSTFREESLOT + NUMMOBJFREESLOTS - 1,

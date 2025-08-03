@@ -87,6 +87,7 @@ static struct podiumData_s
 	boolean fastForward;
 
 	char header[64];
+	char difficulty[64];
 
 	void Init(void);
 	void NextLevel(void);
@@ -138,7 +139,7 @@ void podiumData_s::Init(void)
 		constexpr INT32 numRaces = 5;
 		for (INT32 i = 0; i < rank.numPlayers; i++)
 		{
-			rank.totalPoints += numRaces * K_CalculateGPRankPoints(MAXEXP, i+1, rank.totalPlayers);
+			rank.totalPoints += numRaces * K_CalculateGPRankPoints(EXP_MAX, i+1, rank.totalPlayers);
 		}
 		rank.totalRings = numRaces * rank.numPlayers * 20;
 
@@ -179,13 +180,17 @@ void podiumData_s::Init(void)
 				}
 				default:
 				{
-					lvl->totalExp = TARGETEXP;
+					lvl->totalExp = EXP_TARGET;
 					texp += lvl->totalExp * rank.numPlayers;
 					break;
 				}
 			}
 
 			lvl->time = M_RandomRange(50*TICRATE, 210*TICRATE);
+
+			lvl->continues = 0;
+			if (!M_RandomRange(0, 2))
+				lvl->continues = M_RandomRange(1, 3);
 
 			for (INT32 j = 0; j < rank.numPlayers; j++)
 			{
@@ -198,7 +203,7 @@ void podiumData_s::Init(void)
 					dta->rings = M_RandomRange(0, 20);
 					rgs += dta->rings;
 
-					dta->exp = M_RandomRange(MINEXP, MAXEXP);
+					dta->exp = M_RandomRange(EXP_MIN, EXP_MAX);
 					pexp += dta->exp;
 				}
 
@@ -257,6 +262,27 @@ void podiumData_s::Init(void)
 			"CONGRATULATIONS"
 		);
 	}
+
+	switch(grandprixinfo.gamespeed)
+	{
+		case KARTSPEED_EASY:
+			snprintf(difficulty, sizeof difficulty, "Relaxed");
+			break;
+		case KARTSPEED_NORMAL:
+			snprintf(difficulty, sizeof difficulty, "Intense");
+			break;
+		case KARTSPEED_HARD:
+			snprintf(difficulty, sizeof difficulty, "Vicious");
+			break;
+		default:
+			snprintf(difficulty, sizeof difficulty, "?");
+	}
+
+	if (grandprixinfo.masterbots)
+		snprintf(difficulty, sizeof difficulty, "Master");
+
+	if (cv_4thgear.value || cv_levelskull.value)
+		snprintf(difficulty, sizeof difficulty, "Extra");
 
 	header[sizeof header - 1] = '\0';
 
@@ -505,6 +531,12 @@ void podiumData_s::Draw(void)
 			.patch(faceprefix[bestHuman->skin][FACE_WANTED]);
 
 		drawer_winner
+			.xy(16, 28)
+			.align(srb2::Draw::Align::kCenter)
+			.font(srb2::Draw::Font::kMenu)
+			.text(difficulty);
+
+		drawer_winner
 			.xy(44, 31)
 			.align(srb2::Draw::Align::kCenter)
 			.font(srb2::Draw::Font::kZVote)
@@ -605,11 +637,14 @@ void podiumData_s::Draw(void)
 
 					if (lvl->event != GPEVENT_SPECIAL && dta->grade != GRADE_INVALID)
 					{
-						drawer_rank
-							.xy(0, -1)
-							.colormap( static_cast<skincolornum_t>(K_GetGradeColor(dta->grade)) )
-							.patch(va("R_CUPRN%c", K_GetGradeChar(dta->grade)));
+							drawer_rank
+								.xy(0, -1).flags(lvl->continues ? V_TRANSLUCENT : 0)
+								.colormap( static_cast<skincolornum_t>(K_GetGradeColor(dta->grade)) )
+								.patch(va("R_CUPRN%c", K_GetGradeChar(dta->grade)));
 					}
+
+					if (lvl->continues)
+						drawer_rank.xy(7, 1).align(srb2::Draw::Align::kCenter).font(srb2::Draw::Font::kPing).colorize(SKINCOLOR_RED).text(va("-%d", lvl->continues));
 
 					// Do not draw any stats for GAME OVERed player
 					if (dta->grade != GRADE_INVALID || lvl->event == GPEVENT_SPECIAL)
@@ -688,10 +723,28 @@ void podiumData_s::Draw(void)
 									.xy(0, 1)
 									.colorize(static_cast<skincolornum_t>(SKINCOLOR_MUSTARD))
 									.patch("K_SPTEXP");
+
 								// Colorize the crystal, just like we do for hud
-								fixed_t factor = FixedDiv(dta->exp*FRACUNIT, lvl->totalExp*FRACUNIT);
-								skincolornum_t overlaycolor = factor < FRACUNIT ? SKINCOLOR_RUBY : SKINCOLOR_ULTRAMARINE;
-								if (factor >= FRACUNIT) {factor += factor-FRACUNIT;} // exaggerate the positive side, since reverse engineering the factor like this results in half the translucency range
+								skincolornum_t overlaycolor = SKINCOLOR_MUSTARD;
+								fixed_t stablerateinverse = FRACUNIT - EXP_STABLERATE;
+								INT16 exp_range = EXP_MAX-EXP_MIN;
+								INT16 exp_offset = dta->exp-EXP_MIN;
+								fixed_t factor = (exp_offset*FRACUNIT) / exp_range; // 0.0 to 1.0 in fixed
+								// amount of blue is how much factor is above EXP_STABLERATE, and amount of red is how much factor is below
+								// assume that EXP_STABLERATE is within 0.0 to 1.0 in fixed
+								if (factor <= stablerateinverse)
+								{
+									overlaycolor = SKINCOLOR_RUBY;
+									factor = FixedDiv(factor, stablerateinverse);
+								}
+								else
+								{
+									overlaycolor = SKINCOLOR_ULTRAMARINE;
+									fixed_t bluemaxoffset = EXP_STABLERATE;
+									factor = factor - stablerateinverse;
+									factor = FRACUNIT - FixedDiv(factor, bluemaxoffset);
+								}
+
 								auto transflag = K_GetTransFlagFromFixed(factor);
 								drawer_gametype
 									.xy(0, 1)
@@ -837,12 +890,32 @@ void podiumData_s::Draw(void)
 		drawer_totals_right
 			.colorize(static_cast<skincolornum_t>(SKINCOLOR_MUSTARD))
 			.patch("K_STEXP");
+
 		// Colorize the crystal for the totals, just like we do for in race hud
-		fixed_t factor = FixedDiv((rank.exp+(35*rank.numPlayers-1))*FRACUNIT, rank.totalExp*FRACUNIT); // bump the calc a bit, because its probably not possible for every human to get 125 on every race
-		skincolornum_t overlaycolor = factor < FRACUNIT ? SKINCOLOR_RUBY : SKINCOLOR_ULTRAMARINE;
-		if (factor >= FRACUNIT) {factor += factor-FRACUNIT;} // exaggerate the positive side, since reverse engineering the factor like this results in half the translucency range
+		fixed_t extraexpfactor = (EXP_MAX*FRACUNIT) / EXP_TARGET;
+		INT16 totalExpMax = FixedMul(rank.totalExp*FRACUNIT, extraexpfactor) / FRACUNIT; // im just going to calculate it from target lol
+		INT16 totalExpMin = rank.numPlayers*EXP_MIN;
+		skincolornum_t overlaycolor = SKINCOLOR_MUSTARD;
+		fixed_t stablerateinverse = FRACUNIT - EXP_STABLERATE;
+		INT16 exp_range = totalExpMax-totalExpMin;
+		INT16 exp_offset = rank.exp-totalExpMin;
+		fixed_t factor = (exp_offset*FRACUNIT) / exp_range; // 0.0 to 1.0 in fixed
+		// amount of blue is how much factor is above EXP_STABLERATE, and amount of red is how much factor is below
+		// assume that EXP_STABLERATE is within 0.0 to 1.0 in fixed
+		if (factor <= stablerateinverse)
+		{
+			overlaycolor = SKINCOLOR_RUBY;
+			factor = FixedDiv(factor, stablerateinverse);
+		}
+		else
+		{
+			overlaycolor = SKINCOLOR_ULTRAMARINE;
+			fixed_t bluemaxoffset = EXP_STABLERATE;
+			factor = factor - stablerateinverse;
+			factor = FRACUNIT - FixedDiv(factor, bluemaxoffset);
+		}
+
 		auto transflag = K_GetTransFlagFromFixed(factor);
-		
 		drawer_totals_right
 			.colorize(static_cast<skincolornum_t>(overlaycolor))
 			.flags(transflag)

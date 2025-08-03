@@ -45,7 +45,8 @@ void ScreenshotPass::capture(Rhi& rhi)
 	{
 		// Read the aligned data into unaligned linear memory, flipping the rows in the process.
 		uint32_t pixel_data_row = (height_ - row) - 1;
-		std::move(&pixel_data_[pixel_data_row * read_stride], &pixel_data_[pixel_data_row * read_stride + stride], &packed_data_[row * stride]);
+		uint8_t* pixel_data_row_ptr = &pixel_data_[pixel_data_row * read_stride];
+		std::move(pixel_data_row_ptr, pixel_data_row_ptr + stride, &packed_data_[row * stride]);
 	}
 
 	if (g_takemapthumbnail != TMT_NO)

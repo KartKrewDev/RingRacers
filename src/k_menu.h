@@ -140,6 +140,7 @@ typedef enum
 	MBF_SOUNDLESS		 	= 1<<1, // do not play base menu sounds
 	MBF_NOLOOPENTRIES		= 1<<2, // do not loop M_NextOpt/M_PrevOpt
 	MBF_DRAWBGWHILEPLAYING	= 1<<3, // run backroutine() outside of GS_MENU
+	MBF_CANTRESTORE			= 1<<4, // Do not use in restoreMenu
 } menubehaviourflags_t;
 
 struct menuitem_t
@@ -221,7 +222,7 @@ typedef enum
 	quitkart
 } main_e;
 
-extern menuitem_t MAIN_Goner[];
+extern menu_t MAIN_GonerAccessibilityDef;
 extern menu_t MAIN_GonerDef;
 
 void M_GonerTick(void);
@@ -229,9 +230,12 @@ void M_GonerBGTick(void);
 void M_GonerBGImplyPassageOfTime(void);
 void M_DrawGonerBack(void);
 void M_GonerProfile(INT32 choice);
+void M_GonerChoice(INT32 choice);
 void M_GonerTutorial(INT32 choice);
+void M_GonerPlayground(INT32 choice);
 void M_GonerResetLooking(int type);
 void M_GonerCheckLooking(void);
+void M_GonerResetText(boolean completely);
 void M_GonerGDQ(boolean opinion);
 boolean M_GonerMusicPlayable(void);
 
@@ -593,10 +597,10 @@ extern menu_t PAUSE_PlaybackMenuDef;
 typedef enum
 {
 	playback_hide,
+	playback_restart,
 	playback_rewind,
 	playback_pause,
 	playback_fastforward,
-	playback_backframe,
 	playback_resume,
 	playback_advanceframe,
 	playback_viewcount,
@@ -923,6 +927,7 @@ typedef struct levellist_s {
 	UINT8 guessgt;
 	levelsearch_t levelsearch;
 	boolean netgame;	// Start the game in an actual server
+	boolean canqueue;
 	menu_t *backMenu;
 } levellist_t;
 
@@ -944,6 +949,8 @@ void M_CupSelectTick(void);
 void M_LevelSelectHandler(INT32 choice);
 void M_LevelSelectTick(void);
 
+INT16 M_LevelFromScrolledList(INT16 add);
+void M_MenuToLevelPreamble(UINT8 ssplayers, boolean nowipe);
 void M_LevelSelected(INT16 add, boolean menuupdate);
 boolean M_LevelSelectCupSwitch(boolean next, boolean skipones);
 

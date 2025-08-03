@@ -120,6 +120,7 @@
 #include "k_credits.h"
 #include "k_objects.h"
 #include "p_deepcopy.h"
+#include "k_color.h" // K_ColorUsable
 
 // Replay names have time
 #if !defined (UNDER_CE)
@@ -7674,6 +7675,7 @@ static void P_InitLevelSettings(void)
 	gamespeed = multi_speed ? KARTSPEED_EASY : gametypes[gametype]->speed;
 	franticitems = false;
 	g_teamplay = false;
+	g_duelpermitted = false;
 
 	if (K_PodiumSequence() == true)
 	{
@@ -7721,6 +7723,8 @@ static void P_InitLevelSettings(void)
 		}
 		franticitems = (boolean)cv_kartfrantic.value;
 		g_teamplay = (boolean)cv_teamplay.value; // we will overwrite this later if there is not enough players
+		g_duelpermitted = (boolean)cv_duel.value; // Ignored if too many players, see K_InRaceDuel
+
 	}
 
 	memset(&battleovertime, 0, sizeof(struct battleovertime));
@@ -8043,7 +8047,7 @@ static void P_ShuffleTeams(void)
 
 static void P_InitPlayers(void)
 {
-	INT32 i, skin = -1, follower = -1;
+	INT32 i, skin = -1, follower = -1, col = SKINCOLOR_NONE;
 
 	// Make sure objectplace is OFF when you first start the level!
 	OP_ResetObjectplace();
@@ -8057,7 +8061,28 @@ static void P_InitPlayers(void)
 		// Get skin from name.
 		if (mapheaderinfo[gamemap-1] && mapheaderinfo[gamemap-1]->relevantskin[0])
 		{
-			skin = R_SkinAvailable(mapheaderinfo[gamemap-1]->relevantskin);
+			if (strcmp(mapheaderinfo[gamemap-1]->relevantskin, "_PROFILE") == 0)
+			{
+				profile_t *p = PR_GetProfile(cv_ttlprofilen.value);
+				if (p && !netgame)
+				{
+					skin = R_SkinAvailable(p->skinname);
+
+					if (!R_SkinUsable(g_localplayers[0], skin, false))
+					{
+						skin = GetSkinNumClosestToStats(skins[skin].kartspeed, skins[skin].kartweight, skins[skin].flags, false);
+					}
+
+					if (K_ColorUsable(static_cast<skincolornum_t>(p->color), false, true) == true)
+					{
+						col = p->color;
+					}
+				}
+			}
+			else
+			{
+				skin = R_SkinAvailable(mapheaderinfo[gamemap-1]->relevantskin);
+			}
 		}
 		else
 		{
@@ -8094,7 +8119,7 @@ static void P_InitPlayers(void)
 		if (skin != -1)
 		{
 			SetPlayerSkinByNum(i, skin);
-			players[i].skincolor = skins[skin].prefcolor;
+			players[i].skincolor = (col != SKINCOLOR_NONE) ? col : skins[skin].prefcolor;
 
 			players[i].followerskin = follower;
 			if (follower != -1)
@@ -8159,6 +8184,15 @@ static void P_InitGametype(void)
 #else
 		strcpy(ver, VERSIONSTRING);
 #endif
+		// Replace path separators with hyphens
+		{
+			char *p = ver;
+			while ((p = strpbrk(p, "/\\")))
+			{
+				*p = '-';
+				p++;
+			}
+		}
 		sprintf(buf, "%s" PATHSEP "media" PATHSEP "replay" PATHSEP "online" PATHSEP "%s" PATHSEP "%d-%s",
 				srb2home, ver, (int) (time(NULL)), G_BuildMapName(gamemap));
 
@@ -8388,6 +8422,54 @@ void P_LoadLevelMusic(void)
 	Music_ResetLevelVolume();
 }
 
+void P_FreeLevelState(void)
+{
+	if (numsectors)
+	{
+		F_EndTextPrompt(false, true);
+		K_UnsetDialogue();
+
+		ACS_InvalidateMapScope();
+		LUA_InvalidateLevel();
+
+		Obj_ClearCheckpoints();
+
+		sector_t *ss;
+		for (ss = sectors; sectors+numsectors != ss; ss++)
+		{
+			Z_Free(ss->attached);
+			Z_Free(ss->attachedsolid);
+		}
+
+		// This is the simplest guard against double frees.
+		// No valid map has zero sectors. Or, come to think
+		// of it, less than two in general! ~toast 310525
+		numsectors = 0;
+	}
+
+	// Clear pointers that would be left dangling by the purge
+	R_FlushTranslationColormapCache();
+
+#ifdef HWRENDER
+	// Free GPU textures before freeing patches.
+	if (rendermode == render_opengl && (vid.glstate == VID_GL_LIBRARY_LOADED))
+		HWR_ClearAllTextures();
+#endif
+
+	if (rendermode == render_soft)
+	{
+		// Queued draws might reference patches or colormaps about to be freed.
+		// Flush 2D to make sure no read-after-free occurs.
+		srb2::rhi::Rhi* rhi = srb2::sys::get_rhi(srb2::sys::g_current_rhi);
+		srb2::sys::main_hardware_state()->twodee_renderer->flush(*rhi, srb2::g_2d);
+	}
+
+	G_FreeGhosts(); // ghosts are allocated with PU_LEVEL
+	Patch_FreeTag(PU_PATCH_LOWPRIORITY);
+	Patch_FreeTag(PU_PATCH_ROTATED);
+	Z_FreeTags(PU_LEVEL, PU_PURGELEVEL - 1);
+}
+
 /** Loads a level from a lump or external wad.
   *
   * \param fromnetsave If true, skip some stuff because we're loading a netgame snapshot.
@@ -8401,7 +8483,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	// 99% of the things already did, so.
 	// Map header should always be in place at this point
 	INT32 i, ranspecialwipe = 0;
-	sector_t *ss;
 	virtlump_t *encoreLump = NULL;
 
 	levelloading = true;
@@ -8474,7 +8555,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		wipegamestate = gamestate; // Don't fade if reloading the gamestate
 	// Encore mode fade to pink to white
 	// This is handled BEFORE sounds are stopped.
-	else if (encoremode && !prevencoremode && modeattacking == ATTACKING_NONE && !demo.rewinding)
+	else if (encoremode && !prevencoremode && !demo.simplerewind)
 	{
 		if (rendermode != render_none)
 		{
@@ -8545,7 +8626,14 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	// Let's fade to white here
 	// But only if we didn't do the encore startup wipe
-	if (!demo.rewinding && !reloadinggamestate)
+	if (demo.attract || demo.simplerewind)
+	{
+		// Leave the music alone! We're already playing what we want!
+		// Pull from RNG even though music will never change
+		// To silence playback has desynced warning
+		P_Random(PR_MUSICSELECT);
+	}
+	else if (!reloadinggamestate)
 	{
 		int wipetype = wipe_level_toblack;
 
@@ -8558,15 +8646,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 				FixedDiv((F_GetWipeLength(wipedefs[wipe_level_toblack])-2)*NEWTICRATERATIO, NEWTICRATE), MUSICRATE));
 #endif
 
-		if (demo.attract)
-		{
-			; // Leave the music alone! We're already playing what we want!
-
-			// Pull from RNG even though music will never change
-			// To silence playback has desynced warning
-			P_Random(PR_MUSICSELECT);
-		}
-		else if (K_PodiumSequence())
+		if (K_PodiumSequence())
 		{
 			// mapmusrng is set by local player position in K_ResetCeremony
 			P_LoadLevelMusic();
@@ -8643,44 +8723,42 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			}
 
 			F_RunWipe(wipetype, wipedefs[wipetype], false, ((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), false, false);
+
+			// Hold respawn to keep waiting until you're ready
+			if (G_IsModeAttackRetrying() && !demo.playback)
+			{
+				nowtime = lastwipetic;
+				while (G_PlayerInputDown(0, gc_vote, splitscreen + 1) == true)
+				{
+					while (!((nowtime = I_GetTime()) - lastwipetic))
+					{
+						I_Sleep(cv_sleep.value);
+						I_UpdateTime();
+					} \
+
+					I_OsPolling();
+					G_ResetAllDeviceResponding();
+
+					for (; eventtail != eventhead; eventtail = (eventtail+1) & (MAXEVENTS-1))
+					{
+						HandleGamepadDeviceEvents(&events[eventtail]);
+						G_MapEventsToControls(&events[eventtail]);
+					}
+
+					lastwipetic = nowtime;
+					if (moviemode && rendermode == render_opengl)
+						M_LegacySaveFrame();
+					else if (moviemode && rendermode == render_soft)
+						I_CaptureVideoFrame();
+					NetKeepAlive();
+				}
+
+				//wipestyleflags |= (WSF_FADEOUT|WSF_TOWHITE);
+			}
 		}
 	}
 
-	/*
-	if (!titlemapinaction)
-		wipegamestate = GS_LEVEL;
-	*/
-
-	// Close text prompt before freeing the old level
-	F_EndTextPrompt(false, true);
-
-	K_UnsetDialogue();
-
-	ACS_InvalidateMapScope();
-
-	LUA_InvalidateLevel();
-
-	Obj_ClearCheckpoints();
-
-	for (ss = sectors; sectors+numsectors != ss; ss++)
-	{
-		Z_Free(ss->attached);
-		Z_Free(ss->attachedsolid);
-	}
-
-	// Clear pointers that would be left dangling by the purge
-	R_FlushTranslationColormapCache();
-
-#ifdef HWRENDER
-	// Free GPU textures before freeing patches.
-	if (rendermode == render_opengl && (vid.glstate == VID_GL_LIBRARY_LOADED))
-		HWR_ClearAllTextures();
-#endif
-
-	G_FreeGhosts(); // ghosts are allocated with PU_LEVEL
-	Patch_FreeTag(PU_PATCH_LOWPRIORITY);
-	Patch_FreeTag(PU_PATCH_ROTATED);
-	Z_FreeTags(PU_LEVEL, PU_PURGELEVEL - 1);
+	P_FreeLevelState();
 
 	R_InitializeLevelInterpolators();
 

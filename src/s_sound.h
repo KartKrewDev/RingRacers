@@ -48,7 +48,7 @@ extern consvar_t cv_gamesounds;
 extern consvar_t cv_bgaudio;
 extern consvar_t cv_streamersafemusic;
 
-extern consvar_t cv_voice_chat;
+extern consvar_t cv_voice_selfdeafen;
 extern consvar_t cv_voice_mode;
 extern consvar_t cv_voice_selfmute;
 extern consvar_t cv_voice_loopback;
@@ -56,6 +56,7 @@ extern consvar_t cv_voice_inputamp;
 extern consvar_t cv_voice_activationthreshold;
 extern consvar_t cv_voice_proximity;
 extern consvar_t cv_voice_distanceattenuation_distance;
+extern consvar_t cv_voice_distanceattenuation_teamdistance;
 extern consvar_t cv_voice_distanceattenuation_factor;
 extern consvar_t cv_voice_stereopanning_factor;
 extern consvar_t cv_voice_concurrentattenuation_factor;

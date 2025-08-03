@@ -545,6 +545,7 @@ void P_AddCachedAction(mobj_t *mobj, INT32 statenum);
 
 boolean P_IsKartItem(INT32 type);
 boolean P_IsKartFieldItem(INT32 type);
+boolean P_IsRelinkItem(INT32 type);
 boolean K_IsMissileOrKartItem(mobj_t *mo);
 boolean P_CanDeleteKartItem(INT32 type);
 

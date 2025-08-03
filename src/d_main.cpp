@@ -742,9 +742,6 @@ static bool D_Display(bool world)
 	if (forcerefresh && G_GamestateUsesLevel() == false)
 		V_SetPalette(0);
 
-	if (demo.rewinding)
-		V_DrawFadeScreen(TC_RAINBOW, (leveltime & 0x20) ? SKINCOLOR_PASTEL : SKINCOLOR_MOONSET);
-
 	// vid size change is now finished if it was on...
 	vid.recalc = 0;
 
@@ -936,7 +933,7 @@ void D_SRB2Loop(void)
 		realtics = entertic - oldentertics;
 		oldentertics = entertic;
 
-		if (demo.playback && gamestate == GS_LEVEL)
+		if (demo.playback && gamestate == GS_LEVEL && demo.simplerewind == DEMO_REWIND_OFF)
 		{
 			// Nicer place to put this.
 			realtics = realtics * cv_playbackspeed.value;
@@ -1216,6 +1213,7 @@ void D_ClearState(void)
 	// Reset GP and roundqueue
 	memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
 	memset(&roundqueue, 0, sizeof(struct roundqueue));
+	memset(&menuqueue, 0, sizeof(struct menuqueue));
 
 	// empty some other semi-important state
 	maptol = 0;
@@ -1248,7 +1246,8 @@ void D_ClearState(void)
 	if (gamedata && gamedata->deferredsave)
 		G_SaveGameData();
 
-	K_UnsetDialogue();
+	P_FreeLevelState();
+	P_InvalidateThinkersWithoutInit();
 
 	G_SetGamestate(GS_NULL);
 	wipegamestate = GS_NULL;

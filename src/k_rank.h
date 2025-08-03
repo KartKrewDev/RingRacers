@@ -34,6 +34,7 @@ struct gpRank_level_t
 	UINT32 time;
 	UINT16 totalExp;
 	UINT16 totalPrisons;
+	UINT16 continues;
 	gpRank_level_perplayer_t perPlayer[MAXSPLITSCREENPLAYERS];
 };
 
@@ -95,8 +96,8 @@ extern "C" {
 #define RANK_WEIGHT_PRISONS (100)
 #define RANK_WEIGHT_RINGS (50)
 
-#define RANK_CONTINUE_PENALTY_DIV (20) // 5% of the total grade
-#define RANK_CONTINUE_PENALTY_START (2)
+#define RANK_CONTINUE_PENALTY_DIV (10) // 10% of the total grade
+#define RANK_CONTINUE_PENALTY_START (0)
 
 /*--------------------------------------------------
 	void K_InitGrandPrixRank(gpRank_t *rankData);
@@ -158,6 +159,7 @@ void K_UpdateGPRank(gpRank_t *rankData);
 --------------------------------------------------*/
 
 gp_rank_e K_CalculateGPGrade(gpRank_t *rankData);
+fixed_t K_CalculateGPPercent(gpRank_t *rankData);
 
 
 /*--------------------------------------------------

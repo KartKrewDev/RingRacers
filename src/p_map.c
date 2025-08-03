@@ -272,22 +272,22 @@ P_DoSpringEx
 		return;
 	}
 
+	object->eflags |= MFE_SPRUNG; // apply this flag asap!
+
 	if (horizspeed < 0)
 	{
 		horizspeed = -(horizspeed);
 		finalAngle += ANGLE_180;
 	}
 
-	object->standingslope = NULL; // Okay, now we know it's not going to be relevant - no launching off at silly angles for you.
-	object->terrain = NULL;
-
-	object->eflags |= MFE_SPRUNG; // apply this flag asap!
-
-	if ((vertispeed < 0) ^ P_IsObjectFlipped(object))
-		vertispeed *= 2;
-
 	if (vertispeed)
 	{
+		object->standingslope = NULL; // Okay, now we know it's not going to be relevant - no launching off at silly angles for you.
+		object->terrain = NULL;
+
+		if ((vertispeed < 0) ^ P_IsObjectFlipped(object))
+			vertispeed *= 2;
+
 		object->momz = FixedMul(vertispeed, scaleVal);
 	}
 
@@ -323,7 +323,7 @@ P_DoSpringEx
 		P_InstaThrust(object, finalAngle, finalSpeed);
 	}
 
-	if (object->player)
+	if (object->player && starcolor != SKINCOLOR_NONE)
 	{
 		K_TumbleInterrupt(object->player);
 		P_ResetPlayer(object->player);
@@ -1025,6 +1025,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		|| g_tm.thing->type == MT_MONITOR
 		|| g_tm.thing->type == MT_BATTLECAPSULE
 		|| g_tm.thing->type == MT_KART_LEFTOVER
+		|| g_tm.thing->type == MT_TOXOMISTER_POLE
 		|| (g_tm.thing->type == MT_PLAYER)))
 	{
 		// see if it went over / under
@@ -1043,6 +1044,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		|| thing->type == MT_MONITOR
 		|| thing->type == MT_BATTLECAPSULE
 		|| thing->type == MT_KART_LEFTOVER
+		|| thing->type == MT_TOXOMISTER_POLE
 		|| (thing->type == MT_PLAYER)))
 	{
 		// see if it went over / under
@@ -1339,6 +1341,11 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 						thing->y,
 						g_tm.thing->z + (P_MobjFlip(thing) > 0 ? g_tm.thing->height : -thing->height)
 					);
+
+					if (g_tm.thing->type == MT_WALLSPIKE)
+					{
+						K_KartSolidBounce(thing, g_tm.thing);
+					}
 				}
 			}
 			else
@@ -1365,10 +1372,30 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		if (!P_IsObjectOnGround(g_tm.thing) && g_tm.thing->momz * P_MobjFlip(g_tm.thing) < 0) // fell into it
 		{
 			P_DamageMobj(g_tm.thing, thing, thing, 1, DMG_TUMBLE);
+
+			if (thing->type == MT_WALLSPIKE)
+			{
+				K_KartSolidBounce(g_tm.thing, thing);
+			}
+
 			return BMIT_CONTINUE;
 		}
 		else
 		{
+			if (
+				thing->type == MT_WALLSPIKE
+				&& g_tm.thing->health
+				&& g_tm.thing->player
+				&& (g_tm.thing->player->justbumped < bumptime-2)
+				&& (
+					g_tm.thing->player->flashing
+					|| P_PlayerInPain(g_tm.thing->player)
+				)
+			)
+			{
+				K_StumblePlayer(g_tm.thing->player);
+			}
+
 			// Do not return because solidity code comes below.
 			P_DamageMobj(g_tm.thing, thing, thing, 1, DMG_NORMAL);
 		}
@@ -1531,6 +1558,17 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			K_KartBouncing(g_tm.thing, thing);
 			return BMIT_CONTINUE;
 		}
+		else if (thing->type == MT_STONESHOE)
+		{
+			// see if it went over / under
+			if (g_tm.thing->z > thing->z + thing->height)
+				return BMIT_CONTINUE; // overhead
+			if (g_tm.thing->z + g_tm.thing->height < thing->z)
+				return BMIT_CONTINUE; // underneath
+
+			Obj_CollideStoneShoe(g_tm.thing, thing);
+			return BMIT_CONTINUE;
+		}
 		else if ((thing->flags & MF_SHOOTABLE) && K_PlayerCanPunt(g_tm.thing->player))
 		{
 			// see if it went over / under
@@ -1552,7 +1590,19 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 
 			if (!K_PuntCollide(thing, g_tm.thing))
 			{
-				K_KartSolidBounce(g_tm.thing, thing);
+				state_t *st = &states[thing->info->spawnstate];
+
+				if (st->action.acp1 == A_GenericBumper)
+				{
+					P_SetTarget(&thing->target, g_tm.thing);
+
+					var1 = -1;
+					var2 = 0;
+					astate = st;
+					st->action.acp1(thing);
+				}
+				else
+					K_KartSolidBounce(g_tm.thing, thing);
 			}
 			return BMIT_CONTINUE;
 		}
@@ -4102,7 +4152,8 @@ static void P_BouncePlayerMove(mobj_t *mo, TryMoveResult_t *result)
 	else
 	{
 		// Some walls aren't bouncy even if you are
-		if (bestslideline && (bestslideline->flags & ML_NOTBOUNCY))
+		if ((bestslideline && (bestslideline->flags & ML_NOTBOUNCY))
+			|| (mo->player && mo->player->transfer))
 		{
 			// SRB2Kart: Non-bouncy line!
 			P_SlideMove(mo, result);

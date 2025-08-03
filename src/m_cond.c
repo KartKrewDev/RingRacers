@@ -660,9 +660,7 @@ void M_ClearStats(void)
 	gamedata->chaokeytutorial = false;
 	gamedata->majorkeyskipattempted = false;
 	gamedata->enteredtutorialchallenge = false;
-	gamedata->finishedtutorialchallenge = false;
 	gamedata->sealedswapalerted = false;
-	gamedata->tutorialdone = false;
 	gamedata->musicstate = GDMUSIC_NONE;
 
 	gamedata->importprofilewins = false;
@@ -776,6 +774,10 @@ void M_ClearSecrets(void)
 
 	gamedata->chaokeys = GDINIT_CHAOKEYS;
 	gamedata->prisoneggstothispickup = GDINIT_PRISONSTOPRIZE;
+
+	gamedata->tutorialdone = false;
+	gamedata->playgroundroute = false;
+	gamedata->finishedtutorialchallenge = false;
 
 	gamedata->gonerlevel = GDGONER_INIT;
 }
@@ -1755,6 +1757,8 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			return (gamedata->finishedtutorialchallenge == true);
 		case UC_TUTORIALDONE:
 			return (gamedata->tutorialdone == true);
+		case UC_PLAYGROUND:
+			return (gamedata->playgroundroute == true);
 		case UC_PASSWORD:
 			return (cn->stringvar == NULL);
 
@@ -1858,7 +1862,10 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 				&& (gamespeed != KARTSPEED_EASY)
 				&& (player->tally.active == true)
 				&& (player->tally.totalExp > 0) // Only true if not Time Attack
-				&& (player->tally.exp >= player->tally.totalExp));
+				&& (
+					(player->tally.exp >= player->tally.totalExp)
+					|| (K_InRaceDuel() && player->duelscore == DUELWINNINGSCORE)
+				));
 		case UCRP_FINISHALLPRISONS:
 			return (battleprisons
 				&& !(player->pflags & PF_NOCONTEST)
@@ -2638,6 +2645,8 @@ static const char *M_GetConditionString(condition_t *cn)
 			return "successfully skip the Tutorial";
 		case UC_TUTORIALDONE:
 			return "complete the Tutorial";
+		case UC_PLAYGROUND:
+			return "pick the Playground";
 		case UC_PASSWORD:
 			return "enter a secret password";
 
@@ -3465,6 +3474,27 @@ boolean M_GameTrulyStarted(void)
 	// Actually, on second thought, let's let the Goner Setup play one last time
 	// The above is used in M_StartControlPanel instead
 	return (gamedata->gonerlevel == GDGONER_DONE);
+}
+
+boolean M_GameAboutToStart(void)
+{
+	// Fail safe
+	if (gamedata == NULL)
+		return false;
+
+	// Not set
+	if (gamestartchallenge >= MAXUNLOCKABLES)
+		return true;
+
+	// An unfortunate sidestep, but sync is important.
+	if (netgame)
+		return true;
+
+	// Pending unlocked, but not unlocked
+	return (
+		gamedata->unlockpending[gamestartchallenge]
+		&& !gamedata->unlocked[gamestartchallenge]
+	);
 }
 
 boolean M_CheckNetUnlockByID(UINT16 unlockid)

@@ -66,7 +66,8 @@ static void RemoveRingShooterPointer(mobj_t *base)
 	if (playeringame[ rs_base_playerid(base) ])
 	{
 		player = &players[ rs_base_playerid(base) ];
-		P_SetTarget(&player->ringShooter, NULL);
+		if (player->ringShooter == base)
+			P_SetTarget(&player->ringShooter, NULL);
 	}
 
 	// Remove our player ID
@@ -439,6 +440,8 @@ void Obj_PlayerUsedRingShooter(mobj_t *base, player_t *player)
 	player->respawn.fromRingShooter = true;
 	K_DoIngameRespawn(player);
 
+	P_SetTarget(&player->ringShooter, NULL);
+
 	// Now other players can run into it!
 	base->flags |= MF_SPECIAL;
 
@@ -654,6 +657,7 @@ static boolean AllowRingShooter(const player_t *player)
 		&& player->nocontrol == 0
 		&& player->fastfall == 0
 		&& player->speed < minSpeed
+		&& player->freeRingShooterCooldown == 0
 		&& P_PlayerInPain(player) == false
 		&& P_IsObjectOnGround(player->mo) == true)
 	{
@@ -668,7 +672,7 @@ boolean Obj_PlayerRingShooterFreeze(const player_t *player)
 	const mobj_t *base = player->ringShooter;
 
 	if (AllowRingShooter(player) == true
-		&& (player->cmd.buttons & BT_RESPAWN) == BT_RESPAWN
+		&& (player->cmd.buttons & BT_RESPAWNMASK) == BT_RESPAWNMASK
 		&& P_MobjWasRemoved(base) == false)
 	{
 		return (rs_base_canceled(base) == 0);
@@ -682,7 +686,7 @@ void Obj_RingShooterInput(player_t *player)
 	mobj_t *const base = player->ringShooter;
 
 	if (AllowRingShooter(player) == true
-		&& (player->cmd.buttons & BT_RESPAWN) == BT_RESPAWN)
+		&& (player->cmd.buttons & BT_RESPAWNMASK) == BT_RESPAWNMASK)
 	{
 		// "Freeze" final-failsafe timer if we're eligible to ringshooter, but don't reset it.
 		if (player->finalfailsafe)
@@ -735,6 +739,7 @@ void Obj_RingShooterInput(player_t *player)
 		{
 			// We released during the intro animation.
 			// Cancel it entirely, prevent another one being created for a bit.
+			player->freeRingShooterCooldown = 2*TICRATE;
 			rs_base_canceled(base) = 1;
 
 			if (base->fuse > RS_FUSE_BLINK)

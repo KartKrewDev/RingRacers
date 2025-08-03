@@ -53,6 +53,7 @@ static uint8_t allZero[PUBKEYLENGTH];
 
 static void load_bans_array_v1(const JsonArray& array)
 {
+	int index = 0;
 	for (const JsonValue& object : array)
 	{
 		uint8_t public_key_bin[PUBKEYLENGTH];
@@ -80,8 +81,9 @@ static void load_bans_array_v1(const JsonArray& array)
 
 		if (!banned)
 		{
-			throw std::runtime_error(fmt::format("{}: IP address is invalid", ip_address));
+			CONS_Alert(CONS_WARNING, "IP address of ban entry %d invalid\n", index);
 		}
+		index++;
 	}
 }
 
@@ -163,14 +165,14 @@ void SV_SaveBans(void)
 		if (ban.deleted)
 			continue;
 
-		array.push_back(JsonObject {
-			{"public_key", GetPrettyRRID(ban.public_key, false)},
-			{"ip_address", SOCK_AddrToStr(ban.address)},
-			{"subnet_mask", ban.mask},
-			{"expires", static_cast<int64_t>(ban.expires)},
-			{"username", ban.username},
-			{"reason", ban.reason},
-		});
+		JsonObject ban_obj;
+		ban_obj["public_key"] = srb2::String(GetPrettyRRID(ban.public_key, false));
+		ban_obj["ip_address"] = srb2::String(SOCK_AddrToStr(ban.address));
+		ban_obj["subnet_mask"] = ban.mask;
+		ban_obj["expires"] = static_cast<int64_t>(ban.expires);
+		ban_obj["username"] = srb2::String(ban.username);
+		ban_obj["reason"] = srb2::String(ban.reason);
+		array.push_back(std::move(ban_obj));
 	}
 
 	srb2::String json_string = object.to_json_string();

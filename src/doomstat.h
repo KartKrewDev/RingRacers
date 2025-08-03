@@ -198,6 +198,8 @@ typedef enum
 	GRADE_S
 } gp_rank_e;
 
+#define SEALED_STAR_ENTRY (370*FRACUNIT/400)
+
 struct cupwindata_t
 {
 	UINT8 best_placement;
@@ -278,6 +280,7 @@ extern boolean looptitle;
 extern char * bootmap; //bootmap for loading a map on startup
 extern char * podiummap; // map to load for podium
 
+extern char * tutorialplaygroundmap; // map to load for playground
 extern char * tutorialchallengemap; // map to load for tutorial skip
 extern UINT8 tutorialchallenge;
 #define TUTORIALSKIP_NONE 0
@@ -872,6 +875,7 @@ extern UINT8 gamespeed;
 extern boolean franticitems;
 extern boolean encoremode, prevencoremode;
 extern boolean g_teamplay;
+extern boolean g_duelpermitted;
 
 extern tic_t wantedcalcdelay;
 extern tic_t itemCooldowns[NUMKARTITEMS - 1];
@@ -882,16 +886,24 @@ extern SINT8 spbplace;
 extern boolean rainbowstartavailable;
 extern tic_t linecrossed;
 extern boolean inDuel;
+extern UINT8 overtimecheckpoints;
 
 extern tic_t bombflashtimer;	// Used to avoid causing seizures if multiple mines explode close to you :)
 extern boolean legitimateexit;
 extern boolean comebackshowninfo;
 
+#define VOTE_NUM_LEVELS (4)
+#define VOTE_NOT_PICKED (-1)
 #define VOTE_SPECIAL (MAXPLAYERS)
 #define VOTE_TOTAL (MAXPLAYERS+1)
-extern UINT16 g_voteLevels[4][2];
+
+#define VOTE_TIMEOUT_LOSER (MAXPLAYERS+1) // not a real vote ID
+#define VOTE_TIMEOUT_WINNER (MAXPLAYERS+2) // ditto
+
+extern UINT16 g_voteLevels[VOTE_NUM_LEVELS][2];
 extern SINT8 g_votes[VOTE_TOTAL];
 extern SINT8 g_pickedVote;
+extern boolean g_votes_striked[VOTE_NUM_LEVELS];
 
 // ===========================
 // Internal parameters, fixed.

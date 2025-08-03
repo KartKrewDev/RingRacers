@@ -52,6 +52,7 @@ extern consvar_t cv_joyscale[MAXSPLITSCREENPLAYERS];
 
 extern consvar_t cv_pointlimit;
 extern consvar_t cv_timelimit;
+extern consvar_t cv_dueltimelimit, cv_duelscorelimit;
 extern consvar_t cv_numlaps;
 extern UINT32 timelimitintics, extratimeintics, secretextratime;
 extern UINT32 g_pointlimit;
@@ -61,7 +62,7 @@ extern consvar_t cv_netstat;
 
 extern consvar_t cv_countdowntime;
 extern consvar_t cv_mute;
-extern consvar_t cv_voice_servermute;
+extern consvar_t cv_voice_allowservervoice;
 extern consvar_t cv_pause;
 
 extern consvar_t cv_restrictskinchange, cv_allowteamchange, cv_maxplayers, cv_shuffleloser;
@@ -81,6 +82,7 @@ extern consvar_t cv_kartbot;
 extern consvar_t cv_karteliminatelast;
 extern consvar_t cv_thunderdome;
 extern consvar_t cv_teamplay;
+extern consvar_t cv_duel;
 extern consvar_t cv_kartusepwrlv;
 #ifdef DEVELOP
 	extern consvar_t cv_kartencoremap;
@@ -181,7 +183,6 @@ typedef enum
 	XD_SCHEDULETASK, // 34
 	XD_SCHEDULECLEAR, // 35
 	XD_AUTOMATE,    // 36
-	// 37 is free
 	XD_MAPQUEUE = XD_AUTOMATE+2, // 38
 	XD_CALLZVOTE,   // 39
 	XD_SETZVOTE,    // 40
@@ -205,6 +206,7 @@ size_t WeaponPref_Parse(const UINT8 *p, INT32 playernum);
 void D_SendPlayerConfig(UINT8 n);
 void Command_ExitGame_f(void);
 void Command_Retry_f(void);
+void Handle_MapQueueSend(UINT16 newmapnum, UINT16 newgametype, boolean newencoremode);
 boolean G_GamestateUsesExitLevel(void);
 void D_GameTypeChanged(INT32 lastgametype); // not a real _OnChange function anymore
 void D_MapChange(UINT16 pmapnum, INT32 pgametype, boolean pencoremode, boolean presetplayers, INT32 pdelay, boolean pskipprecutscene, boolean pforcespecialstage);

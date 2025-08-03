@@ -75,7 +75,7 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 	if (t1->type == MT_BALLHOGBOOM && t2->type == MT_BALLHOGBOOM)
 		return true; // Ballhogs don't collide with eachother
 
-	if (K_TryPickMeUp(t1, t2))
+	if (K_TryPickMeUp(t1, t2, false))
 		return true;
 
 	if (t2->player)
@@ -178,7 +178,7 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 		if (t1->health <= 0 || t2->health <= 0)
 			return true;
 
-		if (K_TryPickMeUp(t1, t2))
+		if (K_TryPickMeUp(t1, t2, false))
 			return true;
 
 		if (!P_CanPickupItem(t2->player, PICKUP_EGGBOX))
@@ -269,8 +269,19 @@ static inline BlockItReturn_t PIT_SSMineSearch(mobj_t *thing)
 		return BMIT_CONTINUE;
 	}
 
-	if (thing == grenade->target && grenade->threshold != 0) // Don't blow up at your owner instantly.
-		return BMIT_CONTINUE;
+	extern consvar_t cv_debugpickmeup;
+
+	if (!cv_debugpickmeup.value)
+	{
+		if (grenade->target && !P_MobjWasRemoved(grenade->target))
+		{
+			if (thing == grenade->target) // Don't blow up at your owner instantly.
+				return BMIT_CONTINUE;
+
+			if (grenade->target->player && thing->player && G_SameTeam(grenade->target->player, thing->player))
+				return BMIT_CONTINUE;
+		}
+	}
 
 	if (PIT_SSMineChecks(thing) == true)
 		return BMIT_CONTINUE;
@@ -388,6 +399,9 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 		if (t2->player->flashing > 0 && t2->hitlag == 0)
 			return true;
 
+		if (K_TryPickMeUp(t1, t2, false))
+			return true;
+
 		// Bomb punting
 		if ((t1->state >= &states[S_SSMINE1] && t1->state <= &states[S_SSMINE4])
 			|| (t1->state >= &states[S_SSMINE_DEPLOY8] && t1->state <= &states[S_SSMINE_EXPLODE2]))
@@ -434,7 +448,7 @@ boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 	if (t1->health <= 0 || t2->health <= 0)
 		return true;
 
-	if (K_TryPickMeUp(t1, t2))
+	if (K_TryPickMeUp(t1, t2, false))
 		return true;
 
 	if (t2->player)
@@ -544,7 +558,7 @@ boolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2)
 	if (t2->player && (t2->player->hyudorotimer || t2->player->justbumped))
 		return true;
 
-	if (K_TryPickMeUp(t1, t2))
+	if (K_TryPickMeUp(t1, t2, false))
 		return true;
 
 	if (draggeddroptarget && P_MobjWasRemoved(draggeddroptarget))
@@ -777,6 +791,12 @@ static inline BlockItReturn_t PIT_LightningShieldAttack(mobj_t *thing)
 		return BMIT_CONTINUE;
 	}
 
+	// see if it went over / under
+	if (lightningSource->z - lightningDist > thing->z + thing->height)
+		return BMIT_CONTINUE; // overhead
+	if (lightningSource->z + lightningSource->height + lightningDist < thing->z)
+		return BMIT_CONTINUE; // underneath
+
 #if 0
 	if (P_CheckSight(lightningSource, thing) == false)
 	{
@@ -865,18 +885,28 @@ boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 		thing = oldthing;
 		P_SetTarget(&g_tm.thing, oldg_tm.thing);*/
 
+		boolean hit = false;
+
 		if (K_KartBouncing(t2, t1->target) == true)
 		{
 			if (t2->player && t1->target && t1->target->player)
 			{
-				K_PvPTouchDamage(t2, t1->target);
+				hit = K_PvPTouchDamage(t2, t1->target);
 			}
 
 			// Don't play from t1 else it gets cut out... for some reason.
 			S_StartSound(t2, sfx_s3k44);
 		}
 
-		return true;
+		if (hit && (gametyperules & GTR_BUMPERS))
+		{
+			K_PopBubbleShield(t1->target->player);
+			return false;
+		}
+		else
+		{
+			return true;
+		}
 	}
 
 	if (K_BubbleShieldCanReflect(t1, t2))
@@ -967,6 +997,7 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 				attackerPlayer->spindashboost = 0;
 				attackerPlayer->sneakertimer = 0;
 				attackerPlayer->panelsneakertimer = 0;
+				attackerPlayer->weaksneakertimer = 0;
 				attackerPlayer->instaWhipCharge = 0;
 				attackerPlayer->flashing = 0;
 
@@ -1036,7 +1067,14 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 	}
 	else if (victim->type == MT_DROPTARGET || victim->type == MT_DROPTARGET_SHIELD)
 	{
-		K_DropTargetCollide(victim, shield);
+		if (K_TryPickMeUp(attacker, victim, true))
+		{
+			shield->hitlag = attacker->hitlag; // players hitlag is handled in K_TryPickMeUp, and we need to set for the shield too
+		}
+		else
+		{
+			K_DropTargetCollide(victim, shield);
+		}
 		return true;
 	}
 	else
@@ -1053,8 +1091,13 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 				shield->extravalue1 = 1;
 			}
 
-			if (P_DamageMobj(victim, shield, attacker, 1, DMG_NORMAL))
+			if (K_TryPickMeUp(attacker, victim, true))
 			{
+				shield->hitlag = attacker->hitlag; // players hitlag is handled in K_TryPickMeUp, and we need to set for the shield too
+			}
+			else
+			{
+				P_DamageMobj(victim, shield, attacker, 1, DMG_NORMAL);
 				K_AddHitLag(attacker, attackerHitlag, false);
 				shield->hitlag = attacker->hitlag;
 			}
@@ -1068,7 +1111,7 @@ boolean K_KitchenSinkCollide(mobj_t *t1, mobj_t *t2)
 	if (((t1->target == t2) || (!(t2->flags & (MF_ENEMY|MF_BOSS)) && (t1->target == t2->target))) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
 
-	if (K_TryPickMeUp(t1, t2))
+	if (K_TryPickMeUp(t1, t2, false))
 		return true;
 
 	if (t2->player)
@@ -1077,6 +1120,9 @@ boolean K_KitchenSinkCollide(mobj_t *t1, mobj_t *t2)
 			return true;
 
 		S_StartSound(NULL, sfx_bsnipe); // let all players hear it.
+
+		if (t1->target && !P_MobjWasRemoved(t1->target) && t1->target->player)
+			K_SpawnAmps(t1->target->player, 50, t2);
 
 		HU_SetCEchoFlags(0);
 		HU_SetCEchoDuration(5);
@@ -1118,6 +1164,32 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 
 	// What the fuck is calling this with stale refs? Whatever, validation's cheap.
 	if (P_MobjWasRemoved(t1) || P_MobjWasRemoved(t2) || !t1->player || !t2->player)
+		return false;
+
+	if (G_SameTeam(t1->player, t2->player))
+	{
+		return false;
+	}
+
+
+	boolean guard1 = K_PlayerGuard(t1->player);
+	boolean guard2 = K_PlayerGuard(t2->player);
+
+	// Bubble Shield physically extends past guard when inflated,
+	// makes some sense to suppress this behavior
+	if (t1->player->bubbleblowup)
+		guard1 = false;
+	if (t2->player->bubbleblowup)
+		guard2 = false;
+
+	if (guard1 && guard2)
+		K_DoPowerClash(t1, t2);
+	else if (guard1)
+		K_DoGuardBreak(t1, t2);
+	else if (guard2)
+		K_DoGuardBreak(t2, t1);
+
+	if (guard1 || guard2)
 		return false;
 
 	// Clash instead of damage if both parties have any of these conditions
@@ -1193,7 +1265,7 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 	{
 		auto shouldSteal = [](mobj_t *t1, mobj_t *t2)
 		{
-			return ((t1->player->sneakertimer > 0 || t1->player->panelsneakertimer > 0)
+			return ((t1->player->sneakertimer > 0 || t1->player->panelsneakertimer > 0 || t1->player->weaksneakertimer > 0)
 				&& !P_PlayerInPain(t1->player)
 				&& (t1->player->flashing == 0));
 		};

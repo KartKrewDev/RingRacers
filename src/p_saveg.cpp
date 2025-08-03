@@ -72,8 +72,7 @@ static savebuffer_t *current_savebuffer;
 #define ARCHIVEBLOCK_WAYPOINTS		0x7F46498F
 #define ARCHIVEBLOCK_RNG			0x7FAAB5BD
 
-// Note: This cannot be bigger
-// than an UINT16 (for now)
+// Note: This cannot have more than 32 entries
 typedef enum
 {
 	AWAYVIEW   = 0x0001,
@@ -91,7 +90,10 @@ typedef enum
 	FLICKYCONTROLLER = 0x1000,
 	TRICKINDICATOR = 0x2000,
 	BARRIER = 0x4000,
-	BALLHOGRETICULE = 0x8000, // uh oh, we're full now...
+	BALLHOGRETICULE = 0x8000,
+	STONESHOE = 0x10000,
+	FLYBOT = 0x20000,
+	TOXOMISTERCLOUD = 0x40000,
 } player_saveflags;
 
 static inline void P_ArchivePlayer(savebuffer_t *save)
@@ -204,7 +206,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 	TracyCZone(__zone, true);
 
 	INT32 i, j;
-	UINT16 flags;
+	UINT32 flags;
 	size_t q;
 
 	WRITEUINT32(save->p, ARCHIVEBLOCK_PLAYERS);
@@ -291,6 +293,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT32(save->p, players[i].exp);
 		WRITEINT32(save->p, players[i].gradingfactor);
 		WRITEUINT16(save->p, players[i].gradingpointnum);
+		WRITEINT16(save->p, players[i].duelscore);
 		WRITEINT32(save->p, players[i].cheatchecknum);
 		WRITEINT32(save->p, players[i].checkpointId);
 
@@ -363,7 +366,16 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		if (players[i].powerup.barrier)
 			flags |= BARRIER;
 
-		WRITEUINT16(save->p, flags);
+		if (players[i].stoneShoe)
+			flags |= STONESHOE;
+
+		if (players[i].toxomisterCloud)
+			flags |= TOXOMISTERCLOUD;
+
+		if (players[i].flybot)
+			flags |= FLYBOT;
+
+		WRITEUINT32(save->p, flags);
 
 		if (flags & SKYBOXVIEW)
 			WRITEUINT32(save->p, players[i].skybox.viewpoint->mobjnum);
@@ -409,6 +421,15 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		if (flags & BARRIER)
 			WRITEUINT32(save->p, players[i].powerup.barrier->mobjnum);
+
+		if (flags & STONESHOE)
+			WRITEUINT32(save->p, players[i].stoneShoe->mobjnum);
+
+		if (flags & TOXOMISTERCLOUD)
+			WRITEUINT32(save->p, players[i].toxomisterCloud->mobjnum);
+
+		if (flags & FLYBOT)
+			WRITEUINT32(save->p, players[i].flybot->mobjnum);
 
 		WRITEUINT32(save->p, (UINT32)players[i].followitem);
 
@@ -456,7 +477,6 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].tumbleBounces);
 		WRITEUINT16(save->p, players[i].tumbleHeight);
 		WRITEUINT16(save->p, players[i].stunned);
-		WRITEUINT8(save->p, players[i].stunnedCombo);
 
 		WRITEUINT8(save->p, players[i].justDI);
 		WRITEUINT8(save->p, players[i].flipDI);
@@ -498,6 +518,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEFIXED(save->p, players[i].accelboost);
 		WRITEFIXED(save->p, players[i].handleboost);
 		WRITEANGLE(save->p, players[i].boostangle);
+		WRITEFIXED(save->p, players[i].stonedrag);
 
 		WRITEFIXED(save->p, players[i].draftpower);
 		WRITEUINT16(save->p, players[i].draftleeway);
@@ -506,6 +527,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].tripwireState);
 		WRITEUINT8(save->p, players[i].tripwirePass);
 		WRITEUINT16(save->p, players[i].tripwireLeniency);
+		WRITEUINT8(save->p, players[i].tripwireAirLeniency);
 		WRITEUINT8(save->p, players[i].fakeBoost);
 
 		WRITESINT8(save->p, players[i].itemtype);
@@ -538,6 +560,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT16(save->p, players[i].counterdash);
 		WRITEUINT16(save->p, players[i].flamemeter);
 		WRITEUINT8(save->p, players[i].flamelength);
+		WRITEUINT8(save->p, players[i].lightningcharge);
 
 		WRITEUINT16(save->p, players[i].ballhogcharge);
 		WRITEUINT8(save->p, players[i].ballhogtap);
@@ -549,6 +572,8 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].numsneakers);
 		WRITEUINT16(save->p, players[i].panelsneakertimer);
 		WRITEUINT8(save->p, players[i].numpanelsneakers);
+		WRITEUINT16(save->p, players[i].weaksneakertimer);
+		WRITEUINT8(save->p, players[i].numweaksneakers);
 
 		WRITEUINT8(save->p, players[i].floorboost);
 
@@ -630,6 +655,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].lastsafecheatcheck);
 
 		WRITEUINT8(save->p, players[i].ignoreAirtimeLeniency);
+		WRITEUINT8(save->p, players[i].bubbledrag);
 
 		WRITEFIXED(save->p, players[i].topAccel);
 		WRITEFIXED(save->p, players[i].vortexBoost);
@@ -655,6 +681,10 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT16(save->p, players[i].progressivethrust);
 		WRITEUINT8(save->p, players[i].ringvisualwarning);
 
+		WRITEUINT32(save->p, players[i].bailcharge);
+		WRITEUINT32(save->p, players[i].baildrop);
+		WRITEUINT8(save->p, players[i].bailhitlag);
+
 		WRITEUINT8(save->p, players[i].analoginput);
 
 		WRITEUINT8(save->p, players[i].markedfordeath);
@@ -674,7 +704,6 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		WRITEFIXED(save->p, players[i].outrun);
 		WRITEFIXED(save->p, players[i].transfer);
-		WRITEUINT8(save->p, players[i].transfersound);
 
 		WRITEUINT8(save->p, players[i].rideroid);
 		WRITEUINT8(save->p, players[i].rdnodepull);
@@ -744,7 +773,10 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT32(save->p, players[i].botvars.spindashconfirm);
 		WRITEUINT32(save->p, players[i].botvars.respawnconfirm);
 		WRITEUINT8(save->p, players[i].botvars.roulettePriority);
-		WRITEUINT32(save->p, players[i].botvars.rouletteTimeout);
+		WRITEINT32(save->p, players[i].botvars.rouletteTimeout);
+		WRITEUINT32(save->p, players[i].botvars.predictionError);
+		WRITEUINT32(save->p, players[i].botvars.recentDeflection);
+		WRITEUINT32(save->p, players[i].botvars.lastAngle);
 
 		// itemroulette_t
 		WRITEUINT8(save->p, players[i].itemRoulette.active);
@@ -894,7 +926,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 	TracyCZone(__zone, true);
 
 	INT32 i, j;
-	UINT16 flags;
+	UINT32 flags;
 	size_t q;
 
 	if (READUINT32(save->p) != ARCHIVEBLOCK_PLAYERS)
@@ -983,6 +1015,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].exp = READUINT32(save->p);
 		players[i].gradingfactor = READINT32(save->p);
 		players[i].gradingpointnum = READUINT16(save->p);
+		players[i].duelscore = READINT16(save->p);
 		players[i].cheatchecknum = READINT32(save->p);
 		players[i].checkpointId = READINT32(save->p);
 
@@ -1007,7 +1040,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		players[i].splitscreenindex = READUINT8(save->p);
 
-		flags = READUINT16(save->p);
+		flags = READUINT32(save->p);
 
 		if (flags & SKYBOXVIEW)
 			players[i].skybox.viewpoint = (mobj_t *)(size_t)READUINT32(save->p);
@@ -1053,6 +1086,15 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		if (flags & BARRIER)
 			players[i].powerup.barrier = (mobj_t *)(size_t)READUINT32(save->p);
+
+		if (flags & STONESHOE)
+			players[i].stoneShoe = (mobj_t *)(size_t)READUINT32(save->p);
+
+		if (flags & TOXOMISTERCLOUD)
+			players[i].toxomisterCloud = (mobj_t *)(size_t)READUINT32(save->p);
+
+		if (flags & FLYBOT)
+			players[i].flybot = (mobj_t *)(size_t)READUINT32(save->p);
 
 		players[i].followitem = (mobjtype_t)READUINT32(save->p);
 
@@ -1101,7 +1143,6 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].tumbleBounces = READUINT8(save->p);
 		players[i].tumbleHeight = READUINT16(save->p);
 		players[i].stunned = READUINT16(save->p);
-		players[i].stunnedCombo = READUINT8(save->p);
 
 		players[i].justDI = READUINT8(save->p);
 		players[i].flipDI = (boolean)READUINT8(save->p);
@@ -1143,6 +1184,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].accelboost = READFIXED(save->p);
 		players[i].handleboost = READFIXED(save->p);
 		players[i].boostangle = READANGLE(save->p);
+		players[i].stonedrag = READFIXED(save->p);
 
 		players[i].draftpower = READFIXED(save->p);
 		players[i].draftleeway = READUINT16(save->p);
@@ -1151,6 +1193,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].tripwireState = READUINT8(save->p);
 		players[i].tripwirePass = READUINT8(save->p);
 		players[i].tripwireLeniency = READUINT16(save->p);
+		players[i].tripwireAirLeniency = READUINT8(save->p);
 		players[i].fakeBoost = READUINT8(save->p);
 
 		players[i].itemtype = READSINT8(save->p);
@@ -1183,6 +1226,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].counterdash = READUINT16(save->p);
 		players[i].flamemeter = READUINT16(save->p);
 		players[i].flamelength = READUINT8(save->p);
+		players[i].lightningcharge = READUINT8(save->p);
 
 		players[i].ballhogcharge = READUINT16(save->p);
 		players[i].ballhogtap = READUINT8(save->p);
@@ -1194,6 +1238,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].numsneakers = READUINT8(save->p);
 		players[i].panelsneakertimer = READUINT16(save->p);
 		players[i].numpanelsneakers = READUINT8(save->p);
+		players[i].weaksneakertimer = READUINT16(save->p);
+		players[i].numweaksneakers = READUINT8(save->p);
 		players[i].floorboost = READUINT8(save->p);
 
 		players[i].growshrinktimer = READINT16(save->p);
@@ -1274,6 +1320,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].lastsafecheatcheck = READUINT8(save->p);
 
 		players[i].ignoreAirtimeLeniency = READUINT8(save->p);
+		players[i].bubbledrag = READUINT8(save->p);
 
 		players[i].topAccel = READFIXED(save->p);
 		players[i].vortexBoost = READFIXED(save->p);
@@ -1299,6 +1346,10 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].progressivethrust = READUINT16(save->p);
 		players[i].ringvisualwarning = READUINT8(save->p);
 
+		players[i].bailcharge = READUINT32(save->p);
+		players[i].baildrop = READUINT32(save->p);
+		players[i].bailhitlag = READUINT8(save->p);
+
 		players[i].analoginput = READUINT8(save->p);
 
 		players[i].markedfordeath = READUINT8(save->p);
@@ -1318,7 +1369,6 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		players[i].outrun = READFIXED(save->p);
 		players[i].transfer = READFIXED(save->p);
-		players[i].transfersound = READUINT8(save->p);
 
 		players[i].rideroid = (boolean)READUINT8(save->p);
 		players[i].rdnodepull = (boolean)READUINT8(save->p);
@@ -1389,6 +1439,9 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].botvars.respawnconfirm = READUINT32(save->p);
 		players[i].botvars.roulettePriority = READUINT8(save->p);
 		players[i].botvars.rouletteTimeout = READUINT32(save->p);
+		players[i].botvars.predictionError = READUINT32(save->p);
+		players[i].botvars.recentDeflection = READUINT32(save->p);
+		players[i].botvars.lastAngle = READUINT32(save->p);
 
 		// itemroulette_t
 		players[i].itemRoulette.active = (boolean)READUINT8(save->p);
@@ -6201,6 +6254,21 @@ static void P_RelinkPointers(void)
 			if (!RelinkMobj(&players[i].powerup.barrier))
 				CONS_Debug(DBG_GAMELOGIC, "powerup.barrier not found on player %d\n", i);
 		}
+		if (players[i].stoneShoe)
+		{
+			if (!RelinkMobj(&players[i].stoneShoe))
+				CONS_Debug(DBG_GAMELOGIC, "stoneShoe not found on player %d\n", i);
+		}
+		if (players[i].toxomisterCloud)
+		{
+			if (!RelinkMobj(&players[i].toxomisterCloud))
+				CONS_Debug(DBG_GAMELOGIC, "toxomisterCloud not found on player %d\n", i);
+		}
+		if (players[i].flybot)
+		{
+			if (!RelinkMobj(&players[i].flybot))
+				CONS_Debug(DBG_GAMELOGIC, "flybot not found on player %d\n", i);
+		}
 	}
 }
 
@@ -6399,6 +6467,7 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 			WRITEUINT32(save->p, lvl->time);
 			WRITEUINT16(save->p, lvl->totalExp);
 			WRITEUINT16(save->p, lvl->totalPrisons);
+			WRITEUINT16(save->p, lvl->continues);
 
 			UINT8 j;
 			for (j = 0; j < rank->numPlayers; j++)
@@ -6413,6 +6482,9 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 				WRITESINT8(save->p, (SINT8)plr->grade);
 			}
 		}
+
+		const gpRank_level_t *lvl = &rank->levels[rank->numLevels];
+		WRITEUINT16(save->p, lvl->continues + 1);
 	}
 
 	// Marathon information
@@ -6687,6 +6759,7 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 			lvl->time = READUINT32(save->p);
 			lvl->totalExp = READUINT16(save->p);
 			lvl->totalPrisons = READUINT16(save->p);
+			lvl->continues = READUINT16(save->p);
 
 			for (j = 0; j < rank->numPlayers; j++)
 			{
@@ -6700,6 +6773,9 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 				plr->grade = (gp_rank_e)READSINT8(save->p);
 			}
 		}
+
+		gpRank_level_t *const lvl = &rank->levels[rank->numLevels];
+		lvl->continues = READUINT16(save->p);
 	}
 
 	// Marathon information
@@ -6757,6 +6833,7 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 	{
 		WRITEUINT16(save->p, g_voteLevels[i][0]);
 		WRITEUINT16(save->p, g_voteLevels[i][1]);
+		WRITEUINT8(save->p, g_votes_striked[i]);
 	}
 
 	for (i = 0; i < VOTE_TOTAL; i++)
@@ -6834,6 +6911,7 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 	WRITESINT8(save->p, spbplace);
 	WRITEUINT8(save->p, rainbowstartavailable);
 	WRITEUINT8(save->p, inDuel);
+	WRITEUINT8(save->p, overtimecheckpoints);
 
 	WRITEUINT32(save->p, introtime);
 	WRITEUINT32(save->p, starttime);
@@ -7143,6 +7221,7 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 	{
 		g_voteLevels[i][0] = READUINT16(save->p);
 		g_voteLevels[i][1] = READUINT16(save->p);
+		g_votes_striked[i] = (boolean)READUINT8(save->p);
 	}
 
 	for (i = 0; i < VOTE_TOTAL; i++)
@@ -7216,6 +7295,7 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 	spbplace = READSINT8(save->p);
 	rainbowstartavailable = (boolean)READUINT8(save->p);
 	inDuel = (boolean)READUINT8(save->p);
+	overtimecheckpoints = (boolean)READUINT8(save->p);
 
 	introtime = READUINT32(save->p);
 	starttime = READUINT32(save->p);

@@ -101,7 +101,7 @@ void M_QuitSRB2(INT32 choice)
 
 	(void)choice;
 
-	if (M_GameTrulyStarted())
+	if (!M_GameAboutToStart() && M_GameTrulyStarted())
 	{
 		INT32 mrand = M_RandomKey(sizeof(quitsounds) / sizeof(INT32));
 		if (quitsounds[mrand])

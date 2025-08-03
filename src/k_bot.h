@@ -24,6 +24,7 @@ extern "C" {
 
 #ifdef DEVELOP
 	extern consvar_t cv_botcontrol;
+	extern consvar_t cv_takeover;
 #endif
 
 // Maximum value of botvars.difficulty
@@ -34,7 +35,7 @@ extern "C" {
 
 // How many tics in a row do you need to turn in this direction before we'll let you turn.
 // Made it as small as possible without making it look like the bots are twitching constantly.
-#define BOTTURNCONFIRM 4
+#define BOTTURNCONFIRM 1
 
 // How many tics with only one spindash-viable condition before we'll let you spindash.
 #define BOTSPINDASHCONFIRM (4*TICRATE)
@@ -44,6 +45,11 @@ extern "C" {
 
 // How long it takes for a Lv.1 bot to decide to pick an item.
 #define BOT_ITEM_DECISION_TIME (2*TICRATE)
+
+#define BOTSTRAIGHTSPEED (80*FRACUNIT/100) // How fast we move when at 0 deflection.
+#define BOTTURNSPEED (100*FRACUNIT/100) // How fast we move when at MAXDEFLECTION deflection.
+#define BOTANGLESAMPLES (TICRATE) // Time period to average over. Higher values produce lower peaks that last longer.
+#define BOTMAXDEFLECTION (ANG1*3) // Measured in "degrees per tic" here, use debugbots.
 
 // Point for bots to aim for
 struct botprediction_t
@@ -395,6 +401,7 @@ void K_BotItemUsage(const player_t *player, ticcmd_t *cmd, INT16 turnamt);
 
 void K_BotPickItemPriority(player_t *player);
 
+boolean K_BotUnderstandsItem(kartitems_t item);
 
 #ifdef __cplusplus
 } // extern "C"

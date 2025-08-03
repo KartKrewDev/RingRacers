@@ -262,8 +262,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->tumbleHeight);
 	else if (fastcmp(field,"stunned"))
 		lua_pushinteger(L, plr->stunned);
-	else if (fastcmp(field,"stunnedcombo"))
-		lua_pushinteger(L, plr->stunnedCombo);
+	else if (fastcmp(field,"flybot"))
+		LUA_PushUserdata(L, plr->flybot, META_MOBJ);
 	else if (fastcmp(field,"justdi"))
 		lua_pushinteger(L, plr->justDI);
 	else if (fastcmp(field,"flipdi"))
@@ -274,8 +274,6 @@ static int player_get(lua_State *L)
 		lua_pushboolean(L, plr->analoginput);
 	else if (fastcmp(field,"transfer"))
 		lua_pushboolean(L, plr->transfer);
-	else if (fastcmp(field,"transfersound"))
-		lua_pushboolean(L, plr->transfersound);
 	else if (fastcmp(field,"markedfordeath"))
 		lua_pushboolean(L, plr->markedfordeath);
 	else if (fastcmp(field,"incontrol"))
@@ -284,6 +282,12 @@ static int player_get(lua_State *L)
 		lua_pushboolean(L, plr->progressivethrust);
 	else if (fastcmp(field,"ringvisualwarning"))
 		lua_pushboolean(L, plr->ringvisualwarning);
+	else if (fastcmp(field,"bailcharge"))
+		lua_pushinteger(L, plr->bailcharge);
+	else if (fastcmp(field,"baildrop"))
+		lua_pushinteger(L, plr->baildrop);
+	else if (fastcmp(field,"bailhitlag"))
+		lua_pushboolean(L, plr->bailhitlag);
 	else if (fastcmp(field,"dotrickfx"))
 		lua_pushboolean(L, plr->dotrickfx);
 	else if (fastcmp(field,"stingfx"))
@@ -372,6 +376,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->fakeBoost);
 	else if (fastcmp(field,"tripwireleniency"))
 		lua_pushinteger(L, plr->tripwireLeniency);
+	else if (fastcmp(field,"tripwireairleniency"))
+		lua_pushinteger(L, plr->tripwireAirLeniency);
 	else if (fastcmp(field,"tripwirerebounddelay"))
 		lua_pushinteger(L, plr->tripwireReboundDelay);
 	else if (fastcmp(field,"eggmantransferdelay"))
@@ -412,6 +418,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->lastsafecheatcheck);
 	else if (fastcmp(field,"ignoreairtimeleniency"))
 		lua_pushinteger(L, plr->ignoreAirtimeLeniency);
+	else if (fastcmp(field,"bubbledrag"))
+		lua_pushinteger(L, plr->bubbledrag);
 	else if (fastcmp(field,"topaccel"))
 		lua_pushinteger(L, plr->topAccel);
 	else if (fastcmp(field,"vortexboost"))
@@ -486,6 +494,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->flamemeter);
 	else if (fastcmp(field,"flamelength"))
 		lua_pushinteger(L, plr->flamelength);
+	else if (fastcmp(field,"lightningcharge"))
+		lua_pushinteger(L, plr->lightningcharge);
 	else if (fastcmp(field,"ballhogcharge"))
 		lua_pushinteger(L, plr->ballhogcharge);
 	else if (fastcmp(field,"ballhogtap"))
@@ -498,6 +508,14 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->sneakertimer);
 	else if (fastcmp(field,"numsneakers"))
 		lua_pushinteger(L, plr->numsneakers);
+	else if (fastcmp(field,"panelsneakertimer"))
+		lua_pushinteger(L, plr->panelsneakertimer);
+	else if (fastcmp(field,"numpanelsneakers"))
+		lua_pushinteger(L, plr->numpanelsneakers);
+	else if (fastcmp(field,"weaksneakertimer"))
+		lua_pushinteger(L, plr->weaksneakertimer);
+	else if (fastcmp(field,"numweaksneakers"))
+		lua_pushinteger(L, plr->numweaksneakers);
 	else if (fastcmp(field,"floorboost"))
 		lua_pushinteger(L, plr->floorboost);
 	else if (fastcmp(field,"growshrinktimer"))
@@ -709,6 +727,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->checkskip);
 	else if (fastcmp(field,"cheatchecknum"))
 		lua_pushinteger(L, plr->cheatchecknum);
+	else if (fastcmp(field,"duelscore"))
+		lua_pushinteger(L, plr->duelscore);
 	else if (fastcmp(field,"lastsidehit"))
 		lua_pushinteger(L, plr->lastsidehit);
 	else if (fastcmp(field,"lastlinehit"))
@@ -884,8 +904,13 @@ static int player_set(lua_State *L)
 		plr->tumbleHeight = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"stunned"))
 		plr->stunned = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"stunnedcombo"))
-		plr->stunnedCombo = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"flybot"))
+	{
+		mobj_t *mo = NULL;
+		if (!lua_isnil(L, 3))
+			mo = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
+		P_SetTarget(&plr->flybot, mo);
+	}
 	else if (fastcmp(field,"justdi"))
 		plr->justDI = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"flipdi"))
@@ -898,12 +923,16 @@ static int player_set(lua_State *L)
 		plr->progressivethrust = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"ringvisualwarning"))
 		plr->ringvisualwarning = luaL_checkboolean(L, 3);
+	else if (fastcmp(field,"bailcharge"))
+		plr->bailcharge = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"baildrop"))
+		plr->baildrop = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"bailhitlag"))
+		plr->bailhitlag = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"analoginput"))
 		plr->analoginput = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"transfer"))
 		plr->transfer = luaL_checkboolean(L, 3);
-	else if (fastcmp(field,"transfersound"))
-		plr->transfersound = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"markedfordeath"))
 		plr->markedfordeath = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"dotrickfx"))
@@ -992,6 +1021,8 @@ static int player_set(lua_State *L)
 		plr->fakeBoost = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"tripwireleniency"))
 		plr->tripwireLeniency = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"tripwireairleniency"))
+		plr->tripwireAirLeniency = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"tripwirerebounddelay"))
 		plr->tripwireReboundDelay = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"eggmantransferdelay"))
@@ -1032,6 +1063,8 @@ static int player_set(lua_State *L)
 		plr->lastsafecheatcheck = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"ignoreairtimeleniency"))
 		plr->ignoreAirtimeLeniency = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"bubbledrag"))
+		plr->bubbledrag = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"topaccel"))
 		plr->topAccel = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"vortexboost"))
@@ -1102,6 +1135,8 @@ static int player_set(lua_State *L)
 		plr->flamemeter = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"flamelength"))
 		plr->flamelength = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"lightningcharge"))
+		plr->lightningcharge = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"ballhogcharge"))
 		plr->ballhogcharge = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"ballhogtap"))
@@ -1114,6 +1149,14 @@ static int player_set(lua_State *L)
 		plr->sneakertimer = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"numsneakers"))
 		plr->numsneakers = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"panelsneakertimer"))
+		plr->panelsneakertimer = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"numpanelsneakers"))
+		plr->numpanelsneakers = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"weaksneakertimer"))
+		plr->weaksneakertimer = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"numweaksneakers"))
+		plr->numweaksneakers = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"floorboost"))
 		plr->floorboost = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"growshrinktimer"))
@@ -1312,6 +1355,8 @@ static int player_set(lua_State *L)
 		plr->checkskip = (INT32)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"cheatchecknum"))
 		plr->cheatchecknum = (INT32)luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"duelscore"))
+		plr->duelscore = (INT16)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"lastsidehit"))
 		plr->lastsidehit = (INT16)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"lastlinehit"))

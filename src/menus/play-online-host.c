@@ -46,7 +46,7 @@ static void draw_routine(void)
 		294 + tx,
 		98,
 		!CV_IsSetToDefault(&cv_advertise) ? warningflags : highlightflags,
-		va("(Advertise: %s)", cv_advertise.string)
+		va("(Public: %s)", cv_advertise.string)
 	);
 
 	M_DrawMasterServerReminder();
@@ -172,6 +172,7 @@ void M_MPSetupNetgameMapSelect(INT32 choice)
 
 	// Yep, we'll be starting a netgame.
 	levellist.netgame = true;
+	levellist.canqueue = true;
 	// Make sure we reset those
 	levellist.levelsearch.timeattack = false;
 	levellist.levelsearch.checklocked = true;

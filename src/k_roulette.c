@@ -96,13 +96,15 @@ static UINT32 K_DynamicItemOddsRace[NUMKARTRESULTS-1][2] =
 	{1, 1}, // lightningshield
 	{25, 4}, // bubbleshield
 	{66, 9}, // flameshield
-	{1, 3}, // hyudoro
+	{1, 2}, // hyudoro
 	{0, 0}, // pogospring
 	{30, 8}, // superring (SPECIAL! distance value specifies when this can NO LONGER appear)
 	{0, 0}, // kitchensink
-	{1, 3}, // droptarget
+	{1, 2}, // droptarget
 	{43, 5}, // gardentop
 	{0, 0}, // gachabom
+	{1, 2}, // stoneshoe
+	{1, 2}, // toxomister 
 	{45, 6}, // dualsneaker
 	{55, 8}, // triplesneaker
 	{25, 2}, // triplebanana
@@ -138,6 +140,8 @@ static UINT32 K_DynamicItemOddsBattle[NUMKARTRESULTS-1][2] =
 	{0, 0}, // droptarget
 	{0, 0}, // gardentop
 	{10, 5}, // gachabom
+	{0, 0}, // stoneshoe
+	{0, 0}, // toxomister 
 	{0, 0}, // dualsneaker
 	{20, 1}, // triplesneaker
 	{0, 0}, // triplebanana
@@ -173,6 +177,8 @@ static UINT32 K_DynamicItemOddsSpecial[NUMKARTRESULTS-1][2] =
 	{0, 0}, // droptarget
 	{0, 0}, // gardentop
 	{0, 0}, // gachabom
+	{0, 0}, // stoneshoe
+	{0, 0}, // toxomister 
 	{35, 2}, // dualsneaker
 	{0, 0}, // triplesneaker
 	{0, 0}, // triplebanana
@@ -208,6 +214,8 @@ static UINT8 K_KartLegacyBattleOdds[NUMKARTRESULTS-1][2] =
 	{ 0, 0 }, // Drop Target
 	{ 0, 0 }, // Garden Top
 	{ 5, 0 }, // Gachabom
+	{ 0, 1 }, // Stone Shoe
+	{ 0, 1 }, // Toxomister
 	{ 0, 0 }, // Sneaker x2
 	{ 0, 1 }, // Sneaker x3
 	{ 0, 0 }, // Banana x3
@@ -368,6 +376,8 @@ botItemPriority_e K_GetBotItemPriority(kartitems_t result)
 		case KITEM_DROPTARGET:
 		case KITEM_EGGMAN:
 		case KITEM_GACHABOM:
+		case KITEM_STONESHOE:
+		case KITEM_TOXOMISTER:
 		case KITEM_KITCHENSINK:
 		{
 			// Used when in 1st place and relatively far from players.
@@ -474,11 +484,13 @@ static UINT32 K_ScaleItemDistance(const player_t *player, UINT32 distance, UINT8
 {
 	(void)player;
 
+#if 0
 	if (franticitems == true)
 	{
 		// Frantic items pretends everyone's farther apart, for crazier items.
 		distance = FixedMul(distance, FRANTIC_ITEM_SCALE);
 	}
+#endif
 
 	// Items get crazier with the fewer players that you have.
 	distance = FixedMul(
@@ -917,6 +929,9 @@ static void K_PushToRouletteItemList(itemroulette_t *const roulette, INT32 item)
 --------------------------------------------------*/
 static void K_AddItemToReel(const player_t *player, itemroulette_t *const roulette, kartitems_t item)
 {
+	if (player && K_PlayerUsesBotMovement(player) && !K_BotUnderstandsItem(item))
+		return;
+
 	K_PushToRouletteItemList(roulette, item);
 
 	if (player == NULL)
@@ -1044,6 +1059,8 @@ static boolean K_IsItemFirstOnly(kartitems_t item)
 		case KITEM_LIGHTNINGSHIELD:
 		case KITEM_HYUDORO:
 		case KITEM_DROPTARGET:
+		case KITEM_STONESHOE:
+		case KITEM_TOXOMISTER:
 			return true;
 		default:
 			return false;
@@ -1132,7 +1149,11 @@ static boolean K_ShouldPlayerAllowItem(kartitems_t item, const player_t *player)
 			return false;
 
 		// GIGA power items reserved only for players who were doing great and died.
-		if (player->gradingfactor < K_RequiredXPForItem(item))
+		if (K_EffectiveGradingFactor(player) < K_RequiredXPForItem(item))
+			return false;
+
+		// Expert items are G2+ only, no Top in Relaxed!
+		if (K_RequiredXPForItem(item) >= FRACUNIT && gamespeed == KARTSPEED_EASY)
 			return false;
 
 		return !K_IsItemFirstOnly(item);
@@ -1219,6 +1240,17 @@ static boolean K_TimingPermitsItem(kartitems_t item, const itemroulette_t *roule
 		return false;
 
 	return true;
+}
+
+static void K_FixEmptyRoulette(const player_t *player, itemroulette_t *const roulette)
+{
+	if (roulette->itemListLen > 0)
+		return;
+
+	if (K_PlayerUsesBotMovement(player)) // Bots can't use certain items. Give them _something_.
+		K_PushToRouletteItemList(roulette, KITEM_SUPERRING);
+	else // Players can use all items, so this should never happen.
+		K_PushToRouletteItemList(roulette, KITEM_SAD);
 }
 
 /*--------------------------------------------------
@@ -1365,6 +1397,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	if (K_ForcedSPB(player, roulette) == true)
 	{
 		K_AddItemToReel(player, roulette, KITEM_SPB);
+		K_FixEmptyRoulette(player, roulette);
 		return;
 	}
 
@@ -1389,6 +1422,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 		// singleItem = KITEM_SAD by default,
 		// so it will be used when all items are turned off.
 		K_AddItemToReel(player, roulette, singleItem);
+		K_FixEmptyRoulette(player, roulette);
 		return;
 	}
 
@@ -1399,7 +1433,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 
 	if ((gametyperules & GTR_CIRCUIT) && !K_Cooperative())
 	{
-		roulette->dist = FixedMul(roulette->preexpdist, max(player->gradingfactor, FRACUNIT/2));
+		roulette->dist = FixedMul(roulette->preexpdist, K_EffectiveGradingFactor(player));
 	}
 
 	// ===============================================================================
@@ -1620,8 +1654,10 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 		// worse at selecting their item—but it always matters in frantic gameplay.)
 		if (K_IsItemPower(bestitem) && rival)
 			deltapenalty = 3 * deltapenalty / 4;
+#if 0
 		if (K_IsItemPower(bestitem) && franticitems)
 			deltapenalty = 3 * deltapenalty / 4;
+#endif
 
 		// Conversely, if we're lonely, try not to reselect an item that wouldn't be useful to us
 		// without any players to use it on.
@@ -1742,6 +1778,8 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 
 		totalSpawnChance--;
 	}
+
+	K_FixEmptyRoulette(player, roulette);
 }
 
 /*--------------------------------------------------

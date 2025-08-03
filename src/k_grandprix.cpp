@@ -67,31 +67,6 @@ INT16 K_CalculateGPRankPoints(UINT16 exp, UINT8 position, UINT8 numplayers)
 
 	points = exp;
 
-	// Give bonus to high-ranking players, depending on player count
-	// This rounds out the point gain when you get 1st every race,
-	// and gives bots able to catch up in points if a player gets an early lead.
-	// The maximum points you can get in a cup is: ((number of players - 1) + (max extra points)) * (number of races)
-	// 8P: (7 + 5) * 5 = 60 maximum points
-	// 12P: (11 + 5) * 5 = 80 maximum points
-	// 16P: (15 + 5) * 5 = 100 maximum points
-	switch (numplayers)
-	{
-		case 0: case 1: case 2: // 1v1
-			break; // No bonus needed.
-		case 3: case 4: // 3-4P
-			if (position == 1) { points += 5; } // 1st gets +1 extra point
-			break;
-		case 5: case 6: // 5-6P
-			if (position == 1) { points += 10; } // 1st gets +3 extra points
-			// else if (position == 2) { points += 4; } // 2nd gets +1 extra point
-			break;
-		default: // Normal matches
-			if (position == 1) { points += 10; } // 1st gets +5 extra points
-			// else if (position == 2) { points += 5; } // 2nd gets +3 extra points
-			// else if (position == 3) { points += 2; } // 3rd gets +1 extra point
-			break;
-	}
-
 	// somehow underflowed?
 	if (points < 0)
 	{
@@ -113,6 +88,14 @@ UINT8 K_GetGPPlayerCount(UINT8 humans)
 	// 3P -> 12 total
 	// 4P -> 16 total
 	return std::clamp<UINT8>(humans * 4, 8, MAXPLAYERS);
+}
+
+// Kind of hate unsigned types
+static UINT8 K_GetOffsetStartingDifficulty(const UINT8 startingdifficulty, UINT8 offset)
+{
+	if (offset >= startingdifficulty)
+		return 1;
+	return startingdifficulty - offset;
 }
 
 /*--------------------------------------------------
@@ -164,22 +147,22 @@ void K_InitGrandPrixBots(void)
 	else
 	{
 		// init difficulty levels list
-		difficultylevels[ 0] = std::max<UINT8>(1, startingdifficulty);
-		difficultylevels[ 1] = std::max<UINT8>(1, startingdifficulty-1);
-		difficultylevels[ 2] = std::max<UINT8>(1, startingdifficulty-2);
-		difficultylevels[ 3] = std::max<UINT8>(1, startingdifficulty-3);
-		difficultylevels[ 4] = std::max<UINT8>(1, startingdifficulty-3);
-		difficultylevels[ 5] = std::max<UINT8>(1, startingdifficulty-4);
-		difficultylevels[ 6] = std::max<UINT8>(1, startingdifficulty-4);
-		difficultylevels[ 7] = std::max<UINT8>(1, startingdifficulty-4);
-		difficultylevels[ 8] = std::max<UINT8>(1, startingdifficulty-5);
-		difficultylevels[ 9] = std::max<UINT8>(1, startingdifficulty-5);
-		difficultylevels[10] = std::max<UINT8>(1, startingdifficulty-5);
-		difficultylevels[11] = std::max<UINT8>(1, startingdifficulty-6);
-		difficultylevels[12] = std::max<UINT8>(1, startingdifficulty-6);
-		difficultylevels[13] = std::max<UINT8>(1, startingdifficulty-7);
-		difficultylevels[14] = std::max<UINT8>(1, startingdifficulty-7);
-		difficultylevels[15] = std::max<UINT8>(1, startingdifficulty-8);
+		difficultylevels[ 0] = startingdifficulty;
+		difficultylevels[ 1] = K_GetOffsetStartingDifficulty(startingdifficulty, 1);
+		difficultylevels[ 2] = K_GetOffsetStartingDifficulty(startingdifficulty, 2);
+		difficultylevels[ 3] = K_GetOffsetStartingDifficulty(startingdifficulty, 3);
+		difficultylevels[ 4] = K_GetOffsetStartingDifficulty(startingdifficulty, 3);
+		difficultylevels[ 5] = K_GetOffsetStartingDifficulty(startingdifficulty, 4);
+		difficultylevels[ 6] = K_GetOffsetStartingDifficulty(startingdifficulty, 4);
+		difficultylevels[ 7] = K_GetOffsetStartingDifficulty(startingdifficulty, 4);
+		difficultylevels[ 8] = K_GetOffsetStartingDifficulty(startingdifficulty, 5);
+		difficultylevels[ 9] = K_GetOffsetStartingDifficulty(startingdifficulty, 5);
+		difficultylevels[10] = K_GetOffsetStartingDifficulty(startingdifficulty, 5);
+		difficultylevels[11] = K_GetOffsetStartingDifficulty(startingdifficulty, 6);
+		difficultylevels[12] = K_GetOffsetStartingDifficulty(startingdifficulty, 6);
+		difficultylevels[13] = K_GetOffsetStartingDifficulty(startingdifficulty, 7);
+		difficultylevels[14] = K_GetOffsetStartingDifficulty(startingdifficulty, 7);
+		difficultylevels[15] = K_GetOffsetStartingDifficulty(startingdifficulty, 8);
 	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -406,7 +389,11 @@ void K_UpdateGrandPrixBots(void)
 
 		if (players[i].botvars.diffincrease)
 		{
-			players[i].botvars.difficulty += players[i].botvars.diffincrease;
+			// CONS_Printf("in %d inc %d", players[i].botvars.difficulty, players[i].botvars.diffincrease);
+			if (players[i].botvars.diffincrease < 0)
+				players[i].botvars.difficulty = std::max(1, players[i].botvars.difficulty + players[i].botvars.diffincrease);
+			else
+				players[i].botvars.difficulty += players[i].botvars.diffincrease;
 
 			if (players[i].botvars.difficulty > MAXBOTDIFFICULTY)
 			{
@@ -414,6 +401,7 @@ void K_UpdateGrandPrixBots(void)
 			}
 
 			players[i].botvars.diffincrease = 0;
+			// CONS_Printf("out %d\n", players[i].botvars.difficulty);
 		}
 
 		if (players[i].botvars.rival)
@@ -636,22 +624,44 @@ void K_IncreaseBotDifficulty(player_t *bot)
 	switch(averageRank)
 	{
 		case GRADE_E:
-			rankNudge = -2;
-			break;
 		case GRADE_D:
+		case GRADE_C:
 			rankNudge = -1;
 			break;
-		case GRADE_C:
 		case GRADE_B:
 			rankNudge = 0;
 			break;
 		case GRADE_A:
-			if (grandprixinfo.gp && grandprixinfo.gamespeed == KARTSPEED_EASY)
-				rankNudge = 0;
-			else
-				rankNudge = 1;
+			rankNudge = 1;
 			break;
 	}
+
+	// RELAXED MODE:
+	// Continues don't drop bot difficulty, because we always advance.
+	// Bots will still level up from standard advancement; we need a
+	// much steeper rank nudge to keep difficulty at the right level.	
+	if (grandprixinfo.gamespeed == KARTSPEED_EASY)
+	{
+		switch(averageRank)
+		{
+			case GRADE_E:
+				rankNudge = -4;
+				break;
+			case GRADE_D:
+				rankNudge = -2;
+				break;
+			case GRADE_C:
+				rankNudge = -1;
+				break;
+			case GRADE_B:
+				rankNudge = 0;
+				break;
+			case GRADE_A:
+				rankNudge = 1;
+				break;
+		}
+	}
+
 
 	increase += rankNudge;
 

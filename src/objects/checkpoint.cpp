@@ -495,7 +495,24 @@ struct CheckpointManager
 		else // Checkpoint isn't in the list, find any associated tagged lines and make the pair
 		{
 			if (chk->linetag())
-				lines_.try_emplace(chk->linetag(), tagged_lines(chk->linetag()));
+			{
+				auto lines = tagged_lines(chk->linetag());
+				if (lines.empty() && gametype != GT_TUTORIAL)
+				{
+					CONS_Alert(CONS_WARNING, "Checkpoint thing %s, has linetag %d, but no lines found. Please ensure all checkpoints have associated lines.\n", sizeu1(chk->spawnpoint - mapthings), chk->linetag());
+				}
+				else
+				{
+					lines_.try_emplace(chk->linetag(), lines);
+				}
+			}
+			else
+			{
+				if (gametype != GT_TUTORIAL)
+				{
+					CONS_Alert(CONS_WARNING, "Checkpoint thing %s, has no linetag. Please ensure all checkpoint things have a linetag.\n", sizeu1(chk->spawnpoint - mapthings));
+				}
+			}
 			list_.push_front(chk);
 			count_ += 1; // Mobjlist can't have a count on it, so we keep it here
 		}
@@ -567,6 +584,11 @@ void Obj_CheckpointThink(mobj_t* end)
 
 void Obj_CrossCheckpoints(player_t* player, fixed_t old_x, fixed_t old_y)
 {
+	if (player->exiting) // can't cross checkpoints when exiting
+	{
+		return;
+	}
+	
 	LineOnDemand ray(old_x, old_y, player->mo->x, player->mo->y, player->mo->radius);
 
 	auto it = std::find_if(
@@ -642,14 +664,6 @@ void Obj_CrossCheckpoints(player_t* player, fixed_t old_x, fixed_t old_y)
 		return;
 	}
 
-	if (player->position <= 1)
-	{
-		angle_t direction = R_PointToAngle2(old_x, old_y, player->mo->x, player->mo->y);
-		fixed_t speed_multiplier = FixedDiv(player->speed, K_GetKartSpeed(player, false, false));
-		chk->twirl(direction, speed_multiplier);
-		chk->other()->twirl(direction, speed_multiplier);
-	}
-
 	if (gametyperules & GTR_CHECKPOINTS)
 	{
 		for (Checkpoint* chk : g_checkpoints)
@@ -662,11 +676,28 @@ void Obj_CrossCheckpoints(player_t* player, fixed_t old_x, fixed_t old_y)
 		}
 	}
 
+	if (player->position <= 1)
+	{
+		angle_t direction = R_PointToAngle2(old_x, old_y, player->mo->x, player->mo->y);
+		fixed_t speed_multiplier = FixedDiv(player->speed, K_GetKartSpeed(player, false, false));
+		chk->twirl(direction, speed_multiplier);
+		chk->other()->twirl(direction, speed_multiplier);
+	}
+
 	S_StartSound(player->mo, sfx_s3k63);
 
 	player->checkpointId = chk->id();
 
+	UINT16 oldexp = player->exp;
+
 	K_CheckpointCrossAward(player);
+
+	if (player->exp > oldexp)
+	{
+		UINT16 expdiff = (player->exp - oldexp);
+		K_SpawnEXP(player, expdiff, chk);
+		K_SpawnEXP(player, expdiff, chk->other());
+	}
 
 	K_UpdatePowerLevels(player, player->laps, false);
 }

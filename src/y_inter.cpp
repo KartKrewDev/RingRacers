@@ -400,14 +400,14 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 				if (roundqueue.position == roundqueue.size-1)
 				{
 					// On A rank pace? Then you get a chance for S rank!
-					gp_rank_e rankforline = K_CalculateGPGrade(&grandprixinfo.rank);
+					fixed_t rankforline = K_CalculateGPPercent(&grandprixinfo.rank);
 
-					data.showrank = (rankforline >= GRADE_A);
+					data.showrank = (rankforline >= SEALED_STAR_ENTRY);
 
 					data.linemeter =
-						(std::min(rankforline, GRADE_A)
+						(std::min(rankforline, SEALED_STAR_ENTRY)
 							* (2 * TICRATE)
-						) / GRADE_A;
+						) / SEALED_STAR_ENTRY;
 
 					// G_NextMap will float you to rank-restricted stages on Master wins.
 					// Fudge the rank display.
@@ -800,6 +800,7 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 				player_names[pnum]
 			);
 
+			if (netgame)
 			{
 				patch_t *voxpat;
 				int voxxoffs = 0;
@@ -951,6 +952,18 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 		i--;
 	}
 	while (true);
+
+	if (standings->rankingsmode)
+	{
+		if (standings->isduel)
+		{
+			Y_DrawRankMode(BASEVIDWIDTH / 2 + xoffset, BASEVIDHEIGHT - 19, true);
+		}
+		else
+		{
+			Y_DrawRankMode(x + 122, returny - yspacing + 7, false);
+		}
+	}
 }
 
 //
@@ -959,11 +972,15 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 // Handles drawing the bottom-of-screen progression.
 // Currently requires intermission y_data for animation only.
 //
-void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations, boolean widescreen)
+void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations, boolean widescreen, boolean adminmode)
 {
 	if (roundqueue.size == 0)
 	{
-		return;
+		if (!adminmode
+		|| menuqueue.size == 0)
+		{
+			return;
+		}
 	}
 
 	// The following is functionally a hack.
@@ -1029,6 +1046,10 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 	prize_dot[BPP_AHEAD] = static_cast<patch_t*>(W_CachePatchName("R_RRMRK4", PU_PATCH));
 	prize_dot[BPP_DONE] = static_cast<patch_t*>(W_CachePatchName("R_RRMRK6", PU_PATCH));
 
+	patch_t *rpmark[2];
+	rpmark[0] = static_cast<patch_t*>(W_CachePatchName("R_RPMARK", PU_PATCH));
+	rpmark[1] = static_cast<patch_t*>(W_CachePatchName("R_R2MARK", PU_PATCH));
+
 	UINT8 *colormap = NULL, *oppositemap = NULL;
 	fixed_t playerx = 0, playery = 0;
 	UINT8 pskin = MAXSKINS;
@@ -1067,10 +1088,37 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 			upwa = true;
 		}
 
-		workingqueuesize--;
+		if (!adminmode)
+		{
+			workingqueuesize--;
+		}
 	}
 
-	INT32 widthofroundqueue = 24*(workingqueuesize - 1);
+	INT32 widthofroundqueue, totalsteps;
+
+	INT32 menusendoffset = 0;
+	if (menuqueue.sending)
+	{
+		if (menuqueue.sending > menuqueue.size)
+		{
+			menusendoffset = menuqueue.size;
+		}
+		else
+		{
+			menusendoffset = menuqueue.sending-1;
+		}
+	}
+
+	if (adminmode)
+	{
+		totalsteps = std::min(workingqueuesize + (menuqueue.size - menusendoffset), ROUNDQUEUE_MAX);
+	}
+	else
+	{
+		totalsteps = workingqueuesize;
+	}
+
+	widthofroundqueue = (totalsteps - 1) * 24;
 
 	INT32 x = (BASEVIDWIDTH - widthofroundqueue) / 2;
 	INT32 y, basey = 167 + offset;
@@ -1079,7 +1127,7 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 
 	// The following block handles horizontal easing of the
 	// progression bar on the last non-rankrestricted round.
-	if (standings->showrank == true)
+	if (!adminmode && standings->showrank == true)
 	{
 		fixed_t percentslide = 0;
 		SINT8 deferxoffs = 0;
@@ -1139,12 +1187,22 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 		V_DrawMappedPatch(xiter, basey, baseflags, queuebg_upwa, greymap);
 	}
 
+	// Draw to left side of screen
 	while (xiter > -bufferspace)
 	{
 		xiter -= 24;
 		V_DrawMappedPatch(xiter, basey, baseflags, queuebg_flat, greymap);
 	}
 
+	// Draw to right side of screen
+	xiter = x + widthofroundqueue;
+	while (xiter < BASEVIDWIDTH + bufferspace)
+	{
+		xiter += 24;
+		V_DrawMappedPatch(xiter, basey, baseflags, queuebg_flat, greymap);
+	}
+
+	// Actually queued maps
 	for (i = 0; i < workingqueuesize; i++)
 	{
 		// Draw the background, and grab the appropriate line, to the right of the dot
@@ -1174,7 +1232,13 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 			}
 			else
 			{
-				V_DrawMappedPatch(x, basey, baseflags, queuebg_flat, greymap);
+				V_DrawMappedPatch(
+					x,
+					basey,
+					baseflags,
+					((workingqueuesize == totalsteps) ? queuebg_flat : queuebg_upwa),
+					greymap
+				);
 			}
 		}
 
@@ -1309,17 +1373,9 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 		}
 		else
 		{
-			// No more line! Fill in background to right edge of screen
-			xiter = x;
-			while (xiter < BASEVIDWIDTH + bufferspace)
-			{
-				xiter += 24;
-				V_DrawMappedPatch(xiter, basey, baseflags, queuebg_flat, greymap);
-			}
-
 			// Handle special entry on the end
 			// (has to be drawn before the semifinal dot due to overlap)
-			if (standings->showrank == true)
+			if (!adminmode && standings->showrank == true)
 			{
 				const fixed_t x2 = x + spacetospecial;
 
@@ -1330,7 +1386,7 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 				}
 				else if (
 					doanimations == true
-					&& roundqueue.position == roundqueue.size-1
+					&& roundqueue.position == workingqueuesize
 					&& timer - interpoffs <= 2*TICRATE
 				)
 				{
@@ -1510,13 +1566,62 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 		x += 24;
 	}
 
+	totalsteps -= i;
+
+	// Maps in the progress of being queued on the menu
+	if (adminmode && totalsteps)
+	{
+		for (i = menusendoffset; i < (totalsteps + menusendoffset); i++)
+		{
+			upwa ^= true;
+			if (upwa == false)
+			{
+				y = basey + 4;
+
+				V_DrawMappedPatch(x, basey, baseflags, queuebg_down, greymap);
+			}
+			else
+			{
+				y = basey + 12;
+
+				if (i+1 != menuqueue.size) // no more line?
+				{
+					V_DrawMappedPatch(x, basey, baseflags, queuebg_upwa, greymap);
+				}
+				else
+				{
+					V_DrawMappedPatch(x, basey, baseflags, queuebg_flat, greymap);
+				}
+			}
+
+			V_DrawMappedPatch(
+				x - 8, y,
+				baseflags,
+				level_dot[BPP_AHEAD],
+				NULL
+			);
+
+			V_DrawMappedPatch(
+				x - 10, y - 14,
+				baseflags,
+				rpmark[0],
+				NULL
+			);
+
+			K_DrawMapAsFace(
+				x - 9, y - 13,
+				(baseflags|((menuqueue.entries[i].encore) ? V_FLIP : 0)),
+				menuqueue.entries[i].mapnum,
+				NULL
+			);
+
+			x += 24;
+		}
+	}
+
 	// Draw the player position through the round queue!
 	if (playery != 0)
 	{
-		patch_t *rpmark[2];
-		rpmark[0] = static_cast<patch_t*>(W_CachePatchName("R_RPMARK", PU_PATCH));
-		rpmark[1] = static_cast<patch_t*>(W_CachePatchName("R_R2MARK", PU_PATCH));
-
 		// Change alignment
 		playerx -= (10 * FRACUNIT);
 		playery -= (14 * FRACUNIT);
@@ -1625,6 +1730,88 @@ void Y_DrawIntermissionButton(INT32 startslide, INT32 through, boolean widescree
 		);
 		*/
 	}
+}
+
+//
+// Y_DrawRankMode
+//
+// Draws EXP or MOBIUMS label depending on context.
+// x and y designate the coordinates of the most bottom-right pixel to draw from (because it is the left extent and patch heights that vary),
+// or the bottom-center if center is true.
+//
+void Y_DrawRankMode(INT32 x, INT32 y, boolean center)
+{
+	boolean	useMobiums = (powertype != PWRLV_DISABLED);
+	INT32	textWidth, middleLeftEdge, middleRightEdge, middleWidth;
+
+	char	text[8];
+	char	iconPatchName[8];
+	UINT8	iconWidth; // the graphic paddings are inconsistent...
+	UINT8	*iconColormap;
+	UINT8	*stickerColormap;
+
+	patch_t	*iconPatch;
+	patch_t	*stickerTail = static_cast<patch_t*>(W_CachePatchName("INT_STK1", PU_CACHE));
+	patch_t	*stickerMiddle = static_cast<patch_t*>(W_CachePatchName("INT_STK2", PU_CACHE));
+	patch_t	*stickerHead = center ? stickerTail : static_cast<patch_t*>(W_CachePatchName("INT_STK3", PU_CACHE));
+	UINT32	stickerHeadFlags = 0;
+	UINT8	stickerHeadOffset = 0;
+
+	if (useMobiums)
+	{
+		snprintf(text, sizeof text, "MOBIUMS");
+		snprintf(iconPatchName, sizeof iconPatchName, "K_STMOB");
+		iconWidth = 22;
+		iconColormap = R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(SKINCOLOR_NONE), GTC_CACHE);
+		stickerColormap = R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(SKINCOLOR_TEA), GTC_CACHE);
+	}
+	else
+	{
+		snprintf(text, sizeof text, "EXP");
+		snprintf(iconPatchName, sizeof iconPatchName, "K_STEXP");
+		iconWidth = 16;
+		iconColormap = R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(SKINCOLOR_MUSTARD), GTC_CACHE);
+		stickerColormap = R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(SKINCOLOR_MUSTARD), GTC_CACHE);
+	}
+
+	iconPatch = static_cast<patch_t*>(W_CachePatchName(iconPatchName, PU_CACHE));
+	textWidth = (INT32)V_ThinStringWidth(text, 0);
+	middleLeftEdge = x - iconWidth - textWidth - 8;
+	middleRightEdge = x - stickerHead->width;
+	middleWidth = middleRightEdge - middleLeftEdge;
+
+	if (center)
+	{
+		// flip the right-hand sticker tail and keep it left-aligned
+		stickerHeadFlags |= V_FLIP;
+		stickerHeadOffset += stickerHead->width;
+
+		// sliiightly extend the right side of the sticker
+		middleWidth += 2;
+		middleRightEdge += 2;
+
+		// shift all components to the right so that our x coordinates are center-aligned
+		#define CENTER_SHIFT (stickerHead->width + middleWidth / 2)
+		x += CENTER_SHIFT;
+		middleLeftEdge += CENTER_SHIFT;
+		middleRightEdge += CENTER_SHIFT;
+		#undef CENTER_SHIFT
+	}
+
+	// draw sticker
+	V_DrawMappedPatch(middleRightEdge + stickerHeadOffset, y - stickerHead->height, stickerHeadFlags, stickerHead, stickerColormap);
+	V_DrawStretchyFixedPatch(
+		middleLeftEdge << FRACBITS,
+		(y - stickerMiddle->height) << FRACBITS,
+		(middleWidth << FRACBITS) / stickerMiddle->width + 1,
+		FRACUNIT,
+		0, stickerMiddle, stickerColormap
+	);
+	V_DrawMappedPatch(middleLeftEdge - stickerTail->width, y - stickerTail->height, 0, stickerTail, stickerColormap);
+
+	// draw icon and text
+	V_DrawMappedPatch(x - iconPatch->width - 6, y - iconPatch->height + 4, 0, iconPatch, iconColormap);
+	V_DrawThinString(middleLeftEdge - 1, y - 9, 0, text);
 }
 
 void Y_DrawIntermissionHeader(fixed_t x, fixed_t y, boolean gotthrough, const char *headerstring, boolean showroundnum, boolean small)
@@ -1834,13 +2021,16 @@ void Y_IntermissionDrawer(void)
 	// Returns early if there's no players to draw
 	Y_PlayerStandingsDrawer(&data, x);
 
+	if (sorttic == -1 || ((intertic - sorttic) < 8))
+		K_drawKartTeamScores(true, x);
+
 	// Draw bottom (and top) pieces
 skiptallydrawer:
 	if (!LUA_HudEnabled(hud_intermissionmessages))
 		goto finalcounter;
 
 	// Returns early if there's no roundqueue entries to draw
-	Y_RoundQueueDrawer(&data, 0, true, false);
+	Y_RoundQueueDrawer(&data, 0, true, false, false);
 
 	if (netgame)
 	{
@@ -2081,7 +2271,9 @@ void Y_Ticker(void)
 						// Basic bitch points
 						if (data.increase[data.num[q]])
 						{
-							if (--data.increase[data.num[q]])
+							data.increase[data.num[q]] = std::max(data.increase[data.num[q]] - 3, 0);
+
+							if (data.increase[data.num[q]] != 0)
 								kaching = false;
 						}
 					}
@@ -2118,6 +2310,35 @@ boolean Y_ShouldDoIntermission(void)
 }
 
 //
+// Y_GetIntermissionType
+//
+// Returns the intermission type from the current gametype.
+//
+intertype_t Y_GetIntermissionType(void)
+{
+	intertype_t ret = static_cast<intertype_t>(gametypes[gametype]->intermission);
+
+	if (ret == int_scoreortimeattack)
+	{
+		UINT8 i = 0, nump = 0;
+
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (!playeringame[i] || players[i].spectator)
+			{
+				continue;
+			}
+
+			nump++;
+		}
+
+		ret = (nump < 2 ? int_time : int_score);
+	}
+
+	return ret;
+}
+
+//
 // Y_DetermineIntermissionType
 //
 // Determines the intermission type from the current gametype.
@@ -2131,21 +2352,7 @@ void Y_DetermineIntermissionType(void)
 		return;
 	}
 
-	// set initially
-	intertype = static_cast<intertype_t>(gametypes[gametype]->intermission);
-
-	// special cases
-	if (intertype == int_scoreortimeattack)
-	{
-		UINT8 i = 0, nump = 0;
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (!playeringame[i] || players[i].spectator)
-				continue;
-			nump++;
-		}
-		intertype = (nump < 2 ? int_time : int_score);
-	}
+	intertype = Y_GetIntermissionType();
 }
 
 static UINT8 Y_PlayersBestPossiblePosition(player_t *const player)
@@ -2433,8 +2640,9 @@ void Y_StartIntermission(void)
 		}
 
 		K_CashInPowerLevels();
-		SV_BumpMatchStats();
 	}
+
+	SV_BumpMatchStats();
 
 	if (!timer)
 	{

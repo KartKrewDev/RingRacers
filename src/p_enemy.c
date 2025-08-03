@@ -321,6 +321,7 @@ void A_BlendEyePuyoHack(mobj_t *actor);
 void A_MakeSSCandle(mobj_t *actor);
 void A_HologramRandomTranslucency(mobj_t *actor);
 void A_SSChainShatter(mobj_t *actor);
+void A_GenericBumper(mobj_t *actor);
 
 //for p_enemy.c
 
@@ -3502,7 +3503,7 @@ void A_AttractChase(mobj_t *actor)
 
 	if (actor->extravalue1 && actor->type != MT_EMERALD) // SRB2Kart
 	{
-		if (!actor->target || P_MobjWasRemoved(actor->target) || !actor->target->player)
+		if (!actor->target || P_MobjWasRemoved(actor->target) || !actor->target->player || actor->target->player->baildrop || actor->target->player->bailcharge)
 		{
 			P_RemoveMobj(actor);
 			return;
@@ -12205,6 +12206,8 @@ void A_BallhogExplode(mobj_t *actor)
 	mo2->destscale = mo2->scale;
 	P_SetTarget(&mo2->target, actor->target);
 	S_StartSound(mo2, actor->info->deathsound);
+	
+	actor->fuse = 1;
 	return;
 }
 
@@ -12667,4 +12670,55 @@ void A_SSChainShatter(mobj_t* actor)
 	S_StartSound(NULL, sfx_chcrun);
 
 	actor->fuse = 1;
+}
+
+// var1 = If -1, triggered by collision event
+// var2 = Strength value
+//
+// mobjinfo dependencies:
+// - deathsound - bumper noise
+// - seestate - bumper flashing state
+//
+void A_GenericBumper(mobj_t* actor)
+{
+	if (var1 != -1)
+		return;
+
+	mobj_t *other = actor->target;
+
+	if (!other)
+		return;
+
+	// This code was ported from Lua
+	// Original was Balloon Park's bumpers?
+	INT32 hang = R_PointToAngle2(
+		actor->x, actor->y,
+		other->x, other->y
+	);
+
+	INT32 vang = 0;
+
+	if (!P_IsObjectOnGround(other))
+	{
+		vang = R_PointToAngle2(
+			FixedHypot(actor->x, actor->y), actor->z + (actor->height / 2),
+			FixedHypot(other->x, other->y), other->z + (other->height / 2)
+		);
+	}
+
+	INT32 baseStrength = abs(astate->var2);
+	fixed_t strength = (baseStrength * actor->scale) / 2;
+
+	other->momx = FixedMul(FixedMul(strength, FCOS(hang)), abs(FCOS(vang)));
+	other->momy = FixedMul(FixedMul(strength, FSIN(hang)), abs(FCOS(vang)));
+	other->momz = FixedMul(strength, FSIN(vang));
+
+	if (other->player)
+		K_SetTireGrease(other->player, max(other->player->tiregrease, 2*TICRATE));
+
+	if (actor->state != &states[actor->info->seestate])
+	{
+		S_StartSound(actor, actor->info->deathsound);
+		P_SetMobjState(actor, actor->info->seestate);
+	}
 }

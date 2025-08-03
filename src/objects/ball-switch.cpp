@@ -214,6 +214,13 @@ struct BallSwitch_Ball : mobj_t
 
 	void Hit(mobj_t *inflictor, mobj_t *source)
 	{
+		if (inflictor->type == MT_BUBBLESHIELD && source->player)
+		{
+			if (source->player->pflags2 & PF2_BUBBLECONTACT)
+				return;
+			source->player->pflags2 |= PF2_BUBBLECONTACT;
+		}
+
 		Push(inflictor, 64 << FRACBITS, 1 << FRACBITS);
 		K_SetHitLagForObjects(this, inflictor, source, 4, true);
 

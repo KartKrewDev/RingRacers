@@ -425,14 +425,41 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				if (special->scale < special->destscale/2)
 					return;
 
-				if (!P_CanPickupItem(player, PICKUP_PAPERITEM) || (player->itemamount && player->itemtype != special->threshold))
+				if (!P_CanPickupItem(player, PICKUP_PAPERITEM))
 					return;
 
-				player->itemtype = special->threshold;
-				if ((UINT16)(player->itemamount) + special->movecount > 255)
-					player->itemamount = 255;
+				if (special->threshold == KDROP_STONESHOETRAP)
+				{
+					if (K_TryPickMeUp(special, toucher, false))
+						return;
+
+					if (!P_MobjWasRemoved(player->stoneShoe))
+					{
+						player->pflags |= PF_CASTSHADOW;
+						return;
+					}
+
+					P_SetTarget(&player->stoneShoe, Obj_SpawnStoneShoe(special->extravalue2, toucher));
+					K_AddHitLag(toucher, 8, false);
+
+					player_t *owner = Obj_StoneShoeOwnerPlayer(special);
+					if (owner)
+					{
+						K_SpawnAmps(player, K_PvPAmpReward(20, owner, player), toucher);
+						K_SpawnAmps(owner, K_PvPAmpReward(20, owner, player), toucher);
+					}
+				}
 				else
-					player->itemamount += special->movecount;
+				{
+					if (player->itemamount && player->itemtype != special->threshold)
+						return;
+
+					player->itemtype = special->threshold;
+					if ((UINT16)(player->itemamount) + special->movecount > 255)
+						player->itemamount = 255;
+					else
+						player->itemamount += special->movecount;
+				}
 			}
 
 			S_StartSound(special, special->info->deathsound);
@@ -667,7 +694,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (!player->mo || player->spectator)
 				return;
 
-			if (K_TryPickMeUp(special, toucher))
+			if (K_TryPickMeUp(special, toucher, false))
 				return;
 
 			// attach to player!
@@ -694,6 +721,17 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		case MT_RING:
 		case MT_FLINGRING:
 			if (special->extravalue1)
+				return;
+
+			// No picking up rings while SPB is targetting you
+			if (player->pflags & PF_RINGLOCK)
+				return;
+
+			// Prepping instawhip? Don't ruin it by collecting rings
+			if (player->instaWhipCharge)
+				return;
+
+			if (player->baildrop || player->bailcharge)
 				return;
 
 			// Don't immediately pick up spilled rings
@@ -1083,12 +1121,20 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			Obj_TrickBalloonTouchSpecial(special, toucher);
 			return;
 
-		case MT_SEALEDSTAR_BUMPER:
-			Obj_SSBumperTouchSpecial(special, toucher);
-			return;
-
 		case MT_PULLUPHOOK:
 			Obj_PulleyHookTouch(special, toucher);
+			return;
+
+		case MT_STONESHOE_CHAIN:
+			Obj_CollideStoneShoe(toucher, special);
+			return;
+
+		case MT_TOXOMISTER_POLE:
+			Obj_ToxomisterPoleCollide(special, toucher);
+			return;
+
+		case MT_TOXOMISTER_CLOUD:
+			Obj_ToxomisterCloudCollide(special, toucher);
 			return;
 
 		default: // SOC or script pickup
@@ -1566,6 +1612,10 @@ boolean P_CheckRacers(void)
 	const boolean griefed = (spectateGriefed > 0);
 
 	boolean eliminateLast = (!K_CanChangeRules(true) || (cv_karteliminatelast.value != 0));
+
+	if (grandprixinfo.gp && grandprixinfo.gamespeed == KARTSPEED_EASY)
+		eliminateLast = false;
+
 	boolean allHumansDone = true;
 	//boolean allBotsDone = true;
 
@@ -2581,6 +2631,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 			// body shrinks into nothingness.
 			player->mo->destscale = 1;
 			player->mo->flags |= MF_NOCLIPTHING;
+			player->tumbleBounces = 0;
 
 			return false;
 		}
@@ -3014,7 +3065,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			UINT8 type = (damagetype & DMG_TYPEMASK);
 			const boolean hardhit = (type == DMG_EXPLODE || type == DMG_KARMA || type == DMG_TUMBLE); // This damage type can do evil stuff like ALWAYS combo
 			INT16 ringburst = 5;
-			UINT16 stunTics = 0;
 
 			// Check if the player is allowed to be damaged!
 			// If not, then spawn the instashield effect instead.
@@ -3065,6 +3115,12 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				if (inflictor == target)
 				{
 					invincible = false;
+				}
+
+				if (player->pflags2 & PF2_ALWAYSDAMAGED)
+				{
+					invincible = false;
+					clash = false;
 				}
 
 				// TODO: doing this from P_DamageMobj limits punting to objects that damage the player.
@@ -3154,6 +3210,12 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 						}
 					}
 
+					if (inflictor && !P_MobjWasRemoved(inflictor) && inflictor->momx == 0 && inflictor->momy == 0 && inflictor->momz == 0)
+					{
+						// Probably a map hazard.
+						allowcombo = false;
+					}
+
 					if (allowcombo == false && (target->eflags & MFE_PAUSED))
 					{
 						return false;
@@ -3206,7 +3268,9 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 				if (source && source != player->mo && source->player)
 				{
-					K_SpawnAmps(source->player, K_PvPAmpReward((type == DMG_WHUMBLE) ? 30 : 20, source->player, player), target);
+					// Stone Shoe handles amps on its own
+					if (inflictor->type != MT_STONESHOE && inflictor->type != MT_STONESHOE_CHAIN)
+						K_SpawnAmps(source->player, K_PvPAmpReward((type == DMG_WHUMBLE) ? 30 : 20, source->player, player), target);
 					K_BotHitPenalty(player);
 
 					if (G_SameTeam(source->player, player))
@@ -3254,6 +3318,16 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 							S_StartSound(NULL, sfx_gsha7);
 					}
 
+					// if the inflictor is a landmine, its reactiontime will be non-zero if it is still moving
+					if (inflictor->type == MT_LANDMINE && inflictor->reactiontime > 0)
+					{
+						// reduce tumble severity to account for getting beaned point blank sometimes
+						softenTumble = true;
+						// make it more consistent with set landmines
+						inflictor->momx = 0;
+						inflictor->momy = 0;
+					}
+
 					K_TryHurtSoundExchange(target, source);
 
 					if (K_Cooperative() == false)
@@ -3292,6 +3366,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 			player->sneakertimer = player->numsneakers = 0;
 			player->panelsneakertimer = player->numpanelsneakers = 0;
+			player->weaksneakertimer = player->numweaksneakers = 0;
 			player->driftboost = player->strongdriftboost = 0;
 			player->gateBoost = 0;
 			player->fastfall = 0;
@@ -3355,18 +3430,22 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				K_PopPlayerShield(player);
 			}
 
-			if (!(gametyperules & GTR_SPHERES) && player->tripwireLeniency)
+			boolean downgraded = false;
+
+			if (!(gametyperules & GTR_SPHERES) && player->tripwireLeniency && !P_PlayerInPain(player))
 			{
 				switch (type)
 				{
 					case DMG_EXPLODE:
 						type = DMG_TUMBLE;
+						downgraded = true;
 						break;
 					case DMG_TUMBLE:
 						softenTumble = true;
 						break;
 					case DMG_NORMAL:
 					case DMG_WIPEOUT:
+						downgraded = true;
 						type = DMG_STUMBLE;
 						player->ringburst += 5; // THERE IS SIMPLY NO HOPE AT THIS POINT
 						K_PopPlayerShield(player);
@@ -3389,6 +3468,9 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					ringburst = 0;
 					break;
 				case DMG_TUMBLE:
+					if (inflictor->type == MT_STONESHOE || inflictor->type == MT_STONESHOE_CHAIN)
+						softenTumble = true;
+
 					K_TumblePlayer(player, inflictor, source, softenTumble);
 					ringburst = 10;
 					break;
@@ -3413,7 +3495,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				ringburst = 0;
 			}
 
-			if (type != DMG_STUMBLE && type != DMG_WHUMBLE)
+			if ((type != DMG_STUMBLE && type != DMG_WHUMBLE) || (type == DMG_STUMBLE && downgraded))
 			{
 				if (type != DMG_STING)
 					player->flashing = K_GetKartFlashing(player);
@@ -3448,25 +3530,10 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			}
 
 			// Apply stun!
-			// Feel free to move these calculations higher up if different damage sources should apply variable stun in future
-			#define MIN_STUNTICS (4 * TICRATE)
-			#define MAX_STUNTICS (10 * TICRATE)
-			stunTics = Easing_Linear((player->kartweight - 1) * FRACUNIT / 8, MAX_STUNTICS, MIN_STUNTICS);
-			stunTics >>= player->stunnedCombo; // consecutive hits add half as much stun as the previous hit
-
-			// 1/3 base stun values in battle
-			if (gametyperules & GTR_SPHERES)
+			if (type != DMG_STING)
 			{
-				stunTics /= 3;
+				K_ApplyStun(player, inflictor, source, damage, damagetype);
 			}
-
-			if (player->stunnedCombo < UINT8_MAX)
-			{
-				player->stunnedCombo++;
-			}
-			player->stunned = (player->stunned & 0x8000) | min(0x7FFF, (player->stunned & 0x7FFF) + stunTics);
-			#undef MIN_STUNTICS
-			#undef MAX_STUNTICS
 
 			K_DefensiveOverdrive(target->player);
 		}
@@ -3572,7 +3639,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 #define RING_LAYER_SIDE_SIZE (3)
 #define RING_LAYER_SIZE (RING_LAYER_SIDE_SIZE * 2)
 
-static void P_FlingBurst
+void P_FlingBurst
 (		player_t *player,
 		angle_t fa,
 		mobjtype_t objType,

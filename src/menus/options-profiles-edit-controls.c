@@ -39,10 +39,10 @@ menuitem_t OPTIONS_ProfileControls[] = {
 	{IT_CONTROL, "Brake / Go back", "Brake / Go back",
 		"TLB_X", {.routine = M_ProfileSetControl}, gc_x, 0},
 
-	{IT_CONTROL, "Respawn", "Respawn",
+	{IT_CONTROL, "Ring Bail", "Ring Bail / Burst",
 		"TLB_Y", {.routine = M_ProfileSetControl}, gc_y, 0},
 
-	{IT_CONTROL, "Action", "Multiplayer quick-chat / quick-vote",
+	{IT_CONTROL, "Action", "Quick-vote / Quick-chat / Time Attack Quick Restart",
 		"TLB_Z", {.routine = M_ProfileSetControl}, gc_z, 0},
 
 	{IT_CONTROL, "Use Item", "Use item",

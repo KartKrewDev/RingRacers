@@ -25,6 +25,8 @@ extern "C" {
 
 #define POS_DELAY_TIME 10
 
+#define MARGINLEVELS 24
+
 extern INT32 MINI_X, MINI_Y;
 
 struct trackingResult_t
@@ -58,6 +60,7 @@ void K_drawKart4PTimestamp(void);
 void K_drawEmeraldWin(boolean overlay);
 void K_DrawMapThumbnail(fixed_t x, fixed_t y, fixed_t width, UINT32 flags, UINT16 map, const UINT8 *colormap);
 void K_DrawLikeMapThumbnail(fixed_t x, fixed_t y, fixed_t width, UINT32 flags, patch_t *patch, const UINT8 *colormap);
+void K_DrawMapAsFace(INT32 x, INT32 y, UINT32 flags, UINT16 map, const UINT8 *colormap);
 void K_drawTargetHUD(const vector3_t *origin, player_t *player);
 void K_drawButton(fixed_t x, fixed_t y, INT32 flags, patch_t *button[2], boolean pressed);
 void K_drawButtonAnim(INT32 x, INT32 y, INT32 flags, patch_t *button[2], tic_t animtic);
@@ -161,6 +164,8 @@ INT32 K_GetMinimapSplitFlags(const boolean usingProgressBar);
 position_t K_GetKartObjectPosToMinimapPos(fixed_t objx, fixed_t objy);
 
 INT32 K_DrawGameControl(UINT16 x, UINT16 y, UINT8 player, const char *str, UINT8 alignment, UINT8 font, UINT32 flags);
+
+void K_drawKartTeamScores(boolean fromintermission, INT32 interoffset);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -933,6 +933,7 @@ void S_UpdateVoicePositionalProperties(void)
 	// Positional voice audio
 	boolean voice_proximity_enabled = cv_voice_proximity.value == 1;
 	float voice_distanceattenuation_distance = FixedToFloat(cv_voice_distanceattenuation_distance.value) * FixedToFloat(mapheaderinfo[gamemap-1]->mobj_scale);
+	float voice_distanceattenuation_teamdistance = FixedToFloat(cv_voice_distanceattenuation_teamdistance.value) * FixedToFloat(mapheaderinfo[gamemap-1]->mobj_scale);
 	float voice_distanceattenuation_factor = FixedToFloat(cv_voice_distanceattenuation_factor.value);
 	float voice_stereopanning_factor = FixedToFloat(cv_voice_stereopanning_factor.value);
 	float voice_concurrentattenuation_min = max(0, min(MAXPLAYERS, cv_voice_concurrentattenuation_min.value));
@@ -946,9 +947,15 @@ void S_UpdateVoicePositionalProperties(void)
 	{
 		if (S_IsPlayerVoiceActive(i))
 		{
-			if (voice_distanceattenuation_distance > 0)
+			float attenuation_distance = voice_distanceattenuation_distance;
+			if (G_GametypeHasTeams() && players[i].team == players[consoleplayer].team)
 			{
-				speakingplayers += 1.f - (playerdistances[i] / voice_distanceattenuation_distance);
+				attenuation_distance = voice_distanceattenuation_teamdistance;
+			}
+
+			if (attenuation_distance > 0)
+			{
+				speakingplayers += 1.f - (playerdistances[i] / attenuation_distance);
 			}
 			else
 			{
@@ -1006,10 +1013,17 @@ void S_UpdateVoicePositionalProperties(void)
 		angle = PointIsLeft(ldirx, ldiry, pdirx, pdiry) ? -angle : angle;
 
 		float plrvolume = 1.0f;
-		if (voice_distanceattenuation_distance > 0 && voice_distanceattenuation_factor >= 0 && voice_distanceattenuation_factor <= 1.0f)
+
+		float attenuation_distance = voice_distanceattenuation_distance;
+		if (G_GametypeHasTeams() && players[i].team == players[consoleplayer].team)
+		{
+			attenuation_distance = voice_distanceattenuation_teamdistance;
+		}
+
+		if (attenuation_distance > 0 && voice_distanceattenuation_factor >= 0 && voice_distanceattenuation_factor <= 1.0f)
 		{
 			float invfactor = 1.0f - voice_distanceattenuation_factor;
-			float distfactor = max(0.f, min(voice_distanceattenuation_distance, pdistance)) / voice_distanceattenuation_distance;
+			float distfactor = max(0.f, min(attenuation_distance, pdistance)) / attenuation_distance;
 			plrvolume = max(0.0f, min(1.0f, 1.0f - (invfactor * distfactor)));
 		}
 
@@ -2811,14 +2825,14 @@ void GameDigiMusic_OnChange(void)
 	}
 }
 
-void VoiceChat_OnChange(void);
+void VoiceSelfDeafen_OnChange(void);
 void weaponPrefChange(INT32 ssplayer);
-void VoiceChat_OnChange(void)
+void VoiceSelfDeafen_OnChange(void)
 {
 	if (M_CheckParm("-novoice") || M_CheckParm("-noaudio"))
 		return;
 
-	g_voice_disabled = !cv_voice_chat.value;
+	g_voice_disabled = cv_voice_selfdeafen.value;
 
 	weaponPrefChange(0);
 }
@@ -2865,7 +2879,7 @@ void S_QueueVoiceFrameFromPlayer(INT32 playernum, void *data, UINT32 len, boolea
 	{
 		return;
 	}
-	if (cv_voice_chat.value != 0)
+	if (cv_voice_selfdeafen.value != 1)
 	{
 		I_QueueVoiceFrameFromPlayer(playernum, data, len, terminal);
 	}

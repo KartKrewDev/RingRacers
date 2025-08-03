@@ -531,7 +531,7 @@ static void K_BotItemSneaker(const player_t *player, ticcmd_t *cmd)
 		|| player->speedboost > (FRACUNIT/8) // Have another type of boost (tethering)
 		|| player->botvars.itemconfirm > 4*TICRATE) // Held onto it for too long
 	{
-		if (player->sneakertimer == 0 && K_ItemButtonWasDown(player) == false)
+		if (player->sneakertimer == 0 && player->weaksneakertimer == 0 && K_ItemButtonWasDown(player) == false)
 		{
 			cmd->buttons |= BT_ATTACK;
 			//player->botvars.itemconfirm = 2*TICRATE;
@@ -567,7 +567,7 @@ static void K_BotItemRocketSneaker(const player_t *player, ticcmd_t *cmd)
 
 	if (player->botvars.itemconfirm > TICRATE)
 	{
-		if (player->sneakertimer == 0 && K_ItemButtonWasDown(player) == false)
+		if (player->sneakertimer == 0 && player->weaksneakertimer == 0 && K_ItemButtonWasDown(player) == false)
 		{
 			cmd->buttons |= BT_ATTACK;
 			//player->botvars.itemconfirm = 0;
@@ -1201,7 +1201,7 @@ static void K_BotItemLightning(const player_t *player, ticcmd_t *cmd)
 	ZoneScoped;
 
 	fixed_t radius = 192 * player->mo->scale;
-	radius = Easing_Linear(FRACUNIT * player->botvars.difficulty / MAXBOTDIFFICULTY, 2*radius, radius);
+	radius = Easing_Linear(FRACUNIT * player->botvars.difficulty / MAXBOTDIFFICULTY, 2*radius, 4*radius/3);
 
 	if (K_BotUseItemNearPlayer(player, cmd, radius) == false)
 	{
@@ -1243,7 +1243,7 @@ static void K_BotItemBubble(const player_t *player, ticcmd_t *cmd)
 		if (player->bubblecool <= 0)
 		{
 			fixed_t radius = 192 * player->mo->scale;
-			radius = Easing_Linear(FRACUNIT * player->botvars.difficulty / MAXBOTDIFFICULTY, 2*radius, radius);
+			radius = Easing_Linear(FRACUNIT * player->botvars.difficulty / MAXBOTDIFFICULTY, 2*radius, 4*radius/3);
 
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
@@ -1605,7 +1605,7 @@ static void K_BotItemIceCube(const player_t *player, ticcmd_t *cmd)
 		return;
 	}
 
-	if (player->sneakertimer)
+	if (player->sneakertimer || player->weaksneakertimer)
 	{
 		return;
 	}

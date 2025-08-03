@@ -73,6 +73,7 @@
 #include "k_bans.h"
 #include "k_director.h"
 #include "k_credits.h"
+#include "k_hud.h" // K_AddMessage
 
 #ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 #include "m_avrecorder.h"
@@ -179,6 +180,8 @@ static void Command_Archivetest_f(void);
 #endif
 
 static void Command_KartGiveItem_f(void);
+
+static void Command_DebugMessageFeed(void);
 
 static void Command_Schedule_Add(void);
 static void Command_Schedule_Clear(void);
@@ -434,6 +437,8 @@ void D_RegisterServerCommands(void)
 	COM_AddDebugCommand("give3", Command_KartGiveItem_f);
 	COM_AddDebugCommand("give4", Command_KartGiveItem_f);
 
+	COM_AddDebugCommand("debugmessagefeed", Command_DebugMessageFeed);
+
 	COM_AddCommand("schedule_add", Command_Schedule_Add);
 	COM_AddCommand("schedule_clear", Command_Schedule_Clear);
 	COM_AddCommand("schedule_list", Command_Schedule_List);
@@ -552,6 +557,7 @@ void D_RegisterClientCommands(void)
 	COM_AddDebugCommand("freeze", Command_CheatFreeze_f);
 	COM_AddDebugCommand("setrings", Command_Setrings_f);
 	COM_AddDebugCommand("setspheres", Command_Setspheres_f);
+	COM_AddDebugCommand("setamps", Command_Setamps_f);
 	COM_AddDebugCommand("setlives", Command_Setlives_f);
 	COM_AddDebugCommand("setroundscore", Command_Setroundscore_f);
 	COM_AddDebugCommand("devmode", Command_Devmode_f);
@@ -559,6 +565,14 @@ void D_RegisterClientCommands(void)
 	COM_AddDebugCommand("scale", Command_Scale_f);
 	COM_AddDebugCommand("gravflip", Command_Gravflip_f);
 	COM_AddDebugCommand("hurtme", Command_Hurtme_f);
+	COM_AddDebugCommand("stumble", Command_Stumble_f);
+	COM_AddDebugCommand("tumble", Command_Tumble_f);
+	COM_AddDebugCommand("whumble", Command_Whumble_f);
+	COM_AddDebugCommand("explode", Command_Explode_f);
+	COM_AddDebugCommand("spinout", Command_Spinout_f);
+	COM_AddDebugCommand("wipeout", Command_Wipeout_f);
+	COM_AddDebugCommand("sting", Command_Sting_f);
+	COM_AddDebugCommand("kill", Command_Kill_f);
 	COM_AddDebugCommand("teleport", Command_Teleport_f);
 	COM_AddDebugCommand("rteleport", Command_RTeleport_f);
 	COM_AddDebugCommand("skynum", Command_Skynum_f);
@@ -1210,7 +1224,7 @@ void WeaponPref_Send(UINT8 ssplayer)
 		if (cv_voice_selfmute.value)
 			prefs |= WP_SELFMUTE;
 
-		if (!cv_voice_chat.value)
+		if (cv_voice_selfdeafen.value)
 			prefs |= WP_SELFDEAFEN;
 	}
 
@@ -1621,6 +1635,7 @@ void D_Cheat(INT32 playernum, INT32 cheat, ...)
 			break;
 
 		case CHEAT_SPHERES:
+		case CHEAT_AMPS:
 			COPY(WRITEINT16, int);
 			break;
 	}
@@ -2291,11 +2306,11 @@ void D_SetupVote(INT16 newgametype)
 
 void D_ModifyClientVote(UINT8 player, SINT8 voted)
 {
-	char buf[2];
+	char buf[3];
 	char *p = buf;
-	UINT8 sendPlayer = consoleplayer;
+	UINT8 sendPlayer = 0;
 
-	if (player == UINT8_MAX)
+	if (player >= MAXPLAYERS)
 	{
 		// Special game vote (map anger, duel)
 		if (!server)
@@ -2304,16 +2319,16 @@ void D_ModifyClientVote(UINT8 player, SINT8 voted)
 		}
 	}
 
-	if (player == UINT8_MAX)
-	{
-		// special vote
-		WRITEUINT8(p, UINT8_MAX);
-	}
-	else
-	{
-		INT32 i = 0;
-		WRITEUINT8(p, player);
+	// Context value -- if context has changed, then discard vote update.
+	// This is to prevent votes being registered from different vote types.
+	// Currently used for Duel vs Normal votes.
+	WRITEUINT8(p, Y_VoteContext());
 
+	WRITEUINT8(p, player);
+
+	if (player <= MAXPLAYERS)
+	{
+		INT32 i;
 		for (i = 0; i <= splitscreen; i++)
 		{
 			if (g_localplayers[i] == player)
@@ -2984,7 +2999,7 @@ static void Command_RestartLevel(void)
 	D_MapChange(gamemap, g_lastgametype, newencore, false, 0, false, false);
 }
 
-static void Handle_MapQueueSend(UINT16 newmapnum, UINT16 newgametype, boolean newencoremode)
+void Handle_MapQueueSend(UINT16 newmapnum, UINT16 newgametype, boolean newencoremode)
 {
 	UINT8 flags = 0;
 
@@ -5636,30 +5651,35 @@ static void Got_SetupVotecmd(const UINT8 **cp, INT32 playernum)
 
 static void Got_ModifyVotecmd(const UINT8 **cp, INT32 playernum)
 {
+	UINT8 context = READUINT8(*cp);
 	UINT8 targetID = READUINT8(*cp);
 	SINT8 vote = READSINT8(*cp);
 
-	if (targetID == UINT8_MAX)
+	if (context != Y_VoteContext())
 	{
-		if (playernum != serverplayer) // server-only special vote
+		// Silently discard. Server changed the
+		// vote type as we were sending our vote.
+		return;
+	}
+
+	if (targetID >= MAXPLAYERS)
+	{
+		// only the server is allowed to send these
+		if (playernum != serverplayer)
 		{
 			goto fail;
 		}
-
-		targetID = VOTE_SPECIAL;
 	}
 	else if (playeringame[targetID] == true && players[targetID].bot == true)
 	{
-		if (targetID >= MAXPLAYERS
-			|| playernum != serverplayer)
+		if (playernum != serverplayer)
 		{
 			goto fail;
 		}
 	}
 	else
 	{
-		if (targetID >= MAXPLAYERS
-			|| playernode[targetID] != playernode[playernum])
+		if (playernode[targetID] != playernode[playernum])
 		{
 			goto fail;
 		}
@@ -5919,10 +5939,13 @@ static void Got_Cheat(const UINT8 **cp, INT32 playernum)
 
 			if (!P_MobjWasRemoved(player->mo))
 			{
-				P_DamageMobj(player->mo, NULL, NULL, damage, DMG_NORMAL);
+				if (damage >= DMG_INSTAKILL)
+					P_KillMobj(player->mo, NULL, NULL, (UINT8)damage);
+				else
+					P_DamageMobj(player->mo, NULL, NULL, 1, (UINT8)damage);
 			}
 
-			CV_CheaterWarning(targetPlayer, va("%d damage to me", damage));
+			CV_CheaterWarning(targetPlayer, va("damage (flags=%d) to me", damage));
 			break;
 		}
 
@@ -6119,6 +6142,15 @@ static void Got_Cheat(const UINT8 **cp, INT32 playernum)
 			P_GivePlayerSpheres(player, spheres);
 
 			CV_CheaterWarning(targetPlayer, va("spheres = %d", spheres));
+			break;
+		}
+
+		case CHEAT_AMPS: {
+			INT16 amps = READINT16(*cp);
+
+			player->amps = amps;
+
+			CV_CheaterWarning(targetPlayer, va("amps = %d", amps));
 			break;
 		}
 
@@ -6352,6 +6384,11 @@ static void Command_Archivetest_f(void)
 	CONS_Printf("Done. No crash.\n");
 }
 #endif
+
+static void Command_DebugMessageFeed(void)
+{
+	K_AddMessage("Hello world! A = <a>, Right = <right>", true, false);
+}
 
 /** Give yourself an, optional quantity or one of, an item.
 */
@@ -7066,16 +7103,16 @@ void Mute_OnChange(void)
 		HU_AddChatText(M_GetText("\x82*Chat is no longer muted."), false);
 }
 
-void VoiceMute_OnChange(void);
-void VoiceMute_OnChange(void)
+void AllowServerVC_OnChange(void);
+void AllowServerVC_OnChange(void)
 {
 	if (leveltime <= 1)
 		return; // avoid having this notification put in our console / log when we boot the server.
 
-	if (cv_voice_servermute.value)
-		HU_AddChatText(M_GetText("\x82*Voice chat has been muted."), false);
-	else
+	if (cv_voice_allowservervoice.value)
 		HU_AddChatText(M_GetText("\x82*Voice chat is no longer muted."), false);
+	else
+		HU_AddChatText(M_GetText("\x82*Voice chat has been muted."), false);
 }
 
 /** Hack to clear all changed flags after game start.

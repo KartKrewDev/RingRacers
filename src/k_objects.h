@@ -146,10 +146,16 @@ void Obj_AmpBurstThink(mobj_t *amp);
 
 void Obj_AmpsThink(mobj_t *amps);
 
+void Obj_ExpThink(mobj_t *exp);
+
 void Obj_ChargeAuraThink(mobj_t *aura);
 void Obj_ChargeFallThink(mobj_t *charge);
 void Obj_ChargeReleaseThink(mobj_t *release);
 void Obj_ChargeExtraThink(mobj_t *extra);
+
+/* Bail VFX */
+void Obj_BailThink(mobj_t *aura);
+void Obj_BailChargeThink(mobj_t *aura);
 
 /* Ring Shooter */
 boolean Obj_RingShooterThinker(mobj_t *mo);
@@ -207,6 +213,7 @@ void Obj_SpawnBattleUFOFromSpawner(void);
 INT32 Obj_RandomBattleUFOSpawnerID(void);
 void Obj_BattleUFOBeamThink(mobj_t *beam);
 INT32 Obj_BattleUFOSpawnerID(const mobj_t *spawner);
+mobj_t *Obj_GetNextUFOSpawner(void);
 
 /* Power-Up Aura */
 void Obj_SpawnPowerUpAura(player_t* player);
@@ -411,7 +418,6 @@ void Obj_SSGobletMobjThink(mobj_t* mo);
 void Obj_SSLampMapThingSpawn(mobj_t* mo, mapthing_t* mt);
 void Obj_SSWindowMapThingSpawn(mobj_t* mo, mapthing_t* mt);
 void Obj_SLSTMaceMobjThink(mobj_t* mo);
-void Obj_SSBumperTouchSpecial(mobj_t* special, mobj_t* toucher);
 void Obj_SSBumperMobjSpawn(mobj_t* mo);
 void Obj_SSChainMobjThink(mobj_t* mo);
 void Obj_SSGachaTargetMobjSpawn(mobj_t* mo);
@@ -439,6 +445,7 @@ void Obj_DestroyedKartParticleLanding(mobj_t *part);
 void Obj_SpawnFlybotsForPlayer(player_t *player);
 void Obj_FlybotThink(mobj_t *flybot);
 void Obj_FlybotDeath(mobj_t *flybot);
+void Obj_FlybotRemoved(mobj_t *flybot);
 
 /* Pulley */
 void Obj_PulleyThink(mobj_t *root);
@@ -457,9 +464,30 @@ boolean Obj_TickBubbleShieldVisual(mobj_t *mobj);
 void Obj_SpawnLightningShieldVisuals(mobj_t *source);
 boolean Obj_TickLightningShieldVisual(mobj_t *mobj);
 
+/* Lightning Attack */
+void Obj_SpawnLightningAttackVisuals(mobj_t *source);
+boolean Obj_TickLightningAttackVisual(mobj_t *mobj);
+
 /* Flame Shield */
 void Obj_SpawnFlameShieldVisuals(mobj_t *source);
 boolean Obj_TickFlameShieldVisual(mobj_t *mobj);
+
+/* Stone Shoe */
+mobj_t *Obj_SpawnStoneShoe(INT32 owner, mobj_t *victim);
+boolean Obj_TickStoneShoe(mobj_t *shoe);
+boolean Obj_TickStoneShoeChain(mobj_t *chain);
+player_t *Obj_StoneShoeOwnerPlayer(mobj_t *shoe);
+void Obj_CollideStoneShoe(mobj_t *mover, mobj_t *mobj);
+
+/* Toxomister */
+void Obj_InitToxomisterPole(mobj_t *pole);
+boolean Obj_TickToxomisterPole(mobj_t *pole);
+boolean Obj_TickToxomisterEye(mobj_t *eye);
+boolean Obj_TickToxomisterCloud(mobj_t *cloud);
+boolean Obj_ToxomisterPoleCollide(mobj_t *pole, mobj_t *toucher);
+boolean Obj_ToxomisterCloudCollide(mobj_t *cloud, mobj_t *toucher);
+fixed_t Obj_GetToxomisterCloudDrag(mobj_t *cloud);
+
 
 #ifdef __cplusplus
 } // extern "C"

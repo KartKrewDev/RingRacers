@@ -135,11 +135,16 @@ typedef enum
 
 typedef enum
 {
-	PF2_SELFMUTE = 1<<1,
-	PF2_SELFDEAFEN = 1<<2,
-	PF2_SERVERMUTE = 1<<3,
-	PF2_SERVERDEAFEN = 1<<4,
-	PF2_STRICTFASTFALL = 1<<5,
+	PF2_SELFMUTE 			= 1<<1,
+	PF2_SELFDEAFEN 			= 1<<2,
+	PF2_SERVERMUTE 			= 1<<3,
+	PF2_SERVERDEAFEN 		= 1<<4,
+
+	PF2_STRICTFASTFALL 		= 1<<5, // Fastfall only with C, never with A+X. Profile preference.
+
+	PF2_ALWAYSDAMAGED		= 1<<6, // Ignore invulnerability or clash conditions when evaulating damage (P_DamageMobj). Unset after use!
+	PF2_BUBBLECONTACT		= 1<<7, // ACHTUNG VERY BAD HACK - Don't allow Bubble Shield to contact certain objects unless this is a fresh blowup.
+	PF2_SUPERTRANSFERVFX	= 1<<8, // Don't respawn the "super transfer available" VFX.
 } pflags2_t;
 
 typedef enum
@@ -193,7 +198,9 @@ Run this macro, then #undef FOREACH afterward
 	FOREACH (KITCHENSINK,   20),\
 	FOREACH (DROPTARGET,    21),\
 	FOREACH (GARDENTOP,     22),\
-	FOREACH (GACHABOM,      23)
+	FOREACH (GACHABOM,      23),\
+	FOREACH (STONESHOE,     24),\
+	FOREACH (TOXOMISTER,    25)
 
 typedef enum
 {
@@ -213,6 +220,8 @@ typedef enum
 	KRITEM_TRIPLEGACHABOM,
 
 	NUMKARTRESULTS,
+
+	KDROP_STONESHOETRAP,
 
 	// Power-ups exist in the same enum as items so it's easy
 	// for paper items to be reused for them.
@@ -336,6 +345,11 @@ typedef enum
 	// Tricks
 	khud_trickcool,
 
+	// Exp
+	khud_oldexp,
+	khud_exp,
+	khud_exptimer,
+
 	NUMKARTHUD
 } karthudtype_t;
 
@@ -402,7 +416,7 @@ struct botvars_t
 	botStyle_e style; // Training mode-style CPU mode
 
 	UINT8 difficulty; // Bot's difficulty setting
-	UINT8 diffincrease; // In GP: bot difficulty will increase this much next round
+	INT16 diffincrease; // In GP: bot difficulty will increase this much next round
 	boolean rival; // If true, they're the GP rival
 
 	// All entries above persist between rounds and must be recorded in demos
@@ -420,6 +434,10 @@ struct botvars_t
 
 	UINT8 roulettePriority; // What items to go for on the roulette
 	tic_t rouletteTimeout; // If it takes too long to decide, try lowering priority until we find something valid.
+
+	angle_t predictionError; // How bad is our momentum angle relative to where we're trying to go?
+	angle_t recentDeflection; // How long have we been going straight? (See k_bot.h)
+	angle_t lastAngle;
 };
 
 // player_t struct for round-specific condition tracking
@@ -728,7 +746,7 @@ struct player_t
 	UINT8 tumbleBounces;
 	UINT16 tumbleHeight;	// In *mobjscaled* fracunits, or mfu, not raw fu
 	UINT16 stunned;			// Number of tics during which rings cannot be picked up
-	UINT8 stunnedCombo;		// Number of hits sustained while stunned, reduces consecutive stun penalties
+	mobj_t *flybot;			// One Flybot767 circling the player while stunned
 	UINT8 justDI;			// Turn-lockout timer to briefly prevent unintended turning after DI, resets when actionable or no input
 	boolean flipDI;			// Bananas flip the DI direction. Was a bug, but it made bananas much more interesting.
 
@@ -769,6 +787,7 @@ struct player_t
 	fixed_t accelboost;		// Boost value smoothing for acceleration
 	fixed_t handleboost;	// Boost value smoothing for handling
 	angle_t boostangle;		// angle set when not spun out OR boosted to determine what direction you should keep going at if you're spun out and boosted.
+	fixed_t stonedrag;
 
 	fixed_t draftpower;		// (0 to FRACUNIT) - Drafting power, doubles your top speed & acceleration at max
 	UINT16 draftleeway;		// Leniency timer before removing draft power
@@ -777,6 +796,7 @@ struct player_t
 	UINT8 tripwireState; // see tripwirestate_t
 	UINT8 tripwirePass; // see tripwirepass_t
 	UINT16 tripwireLeniency;	// When reaching a state that lets you go thru tripwire, you get an extra second leniency after it ends to still go through it.
+	UINT8 tripwireAirLeniency;	// Timer that elongates tripwire leniency when in midair.
 	UINT8 fakeBoost;	// Some items need to grant tripwire pass briefly, even when their effect is thrust/instathrust. This is a fake boost type to control that.
 
 	itemroulette_t itemRoulette;	// Item roulette data
@@ -813,6 +833,7 @@ struct player_t
 	UINT16 flamedash;	// Flame Shield dash power
 	UINT16 flamemeter;	// Flame Shield dash meter left
 	UINT8 flamelength;	// Flame Shield dash meter, number of segments
+	UINT8 lightningcharge; // Lightning Shield attack timer
 
 	UINT16 counterdash;	// Flame Shield boost without the flame, largely. Used in places where awarding thrust would affect player control.
 
@@ -828,6 +849,8 @@ struct player_t
 	UINT8 numsneakers;		// Number of stacked sneaker effects
 	UINT16 panelsneakertimer;
 	UINT8 numpanelsneakers;
+	UINT16 weaksneakertimer;
+	UINT8 numweaksneakers;
 	UINT8 floorboost;		// (0 to 3) - Prevents Sneaker sounds for a brief duration when triggered by a floor panel
 
 	INT16 growshrinktimer;		// > 0 = Big, < 0 = small
@@ -957,6 +980,8 @@ struct player_t
 	INT32 cheatchecknum; // The number of the last cheatcheck you hit
 	INT32 checkpointId; // Players respawn here, objects/checkpoint.cpp
 
+	INT16 duelscore;
+
 	UINT8 team; // 0 == Spectator, 1 == Red, 2 == Blue
 
 	UINT8 checkskip; // Skipping checkpoints? Oh no no no
@@ -1031,6 +1056,7 @@ struct player_t
 	UINT8 lastsafecheatcheck;
 
 	UINT8 ignoreAirtimeLeniency; // We bubblebounced or otherwise did an airtime thing with control, powerup timers should still count down
+	boolean bubbledrag; // Just bubblebounced, slow down!
 
 	fixed_t topAccel; // Reduced on straight wall collisions to give players extra recovery time
 	fixed_t vortexBoost;
@@ -1041,6 +1067,8 @@ struct player_t
 	mobj_t *whip;
 	mobj_t *hand;
 	mobj_t *flickyAttacker;
+	mobj_t *stoneShoe;
+	mobj_t *toxomisterCloud;
 
 	SINT8 pitblame; // Index of last player that hit you, resets after being in control for a bit. If you deathpit, credit the old attacker!
 
@@ -1061,6 +1089,10 @@ struct player_t
 	INT16 incontrol; // -1 to -175 when spinning out or tumbling, 1 to 175 when not. Use to check for combo hits or emergency inputs.
 	UINT16 progressivethrust; // When getting beat up in GTR_BUMPERS, speed up the longer you've been out of control.
 	UINT8 ringvisualwarning; // Check with > 1, not >= 1! Set when put in debt, counts down and holds at 1 when still in debt.
+
+	UINT32 bailcharge;
+	UINT32 baildrop;
+	boolean bailhitlag;
 
 	boolean analoginput; // Has an input been recorded that requires analog usage? For input display.
 
@@ -1088,7 +1120,6 @@ struct player_t
 	fixed_t outrun; // Milky Way road effect
 
 	fixed_t transfer; // Tired of Ramp Park fastfalls
-	boolean transfersound;
 
 	uint8_t public_key[PUBKEYLENGTH];
 

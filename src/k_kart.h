@@ -44,6 +44,13 @@ Make sure this matches the actual number of states
 #define INSTAWHIP_TETHERBLOCK (TICRATE*4)
 #define PUNISHWINDOW (7*TICRATE/10)
 
+#define BAIL_MAXCHARGE (84) // tics to bail when in painstate nad in air, on ground is half, if you touch this, also update Obj_BailChargeThink synced animation logic
+#define BAIL_DROP (FRACUNIT)
+#define BAIL_BOOST (6*FRACUNIT/5) 
+#define BAIL_CREDIT_DEBTRINGS (true)
+#define BAIL_DROPFREQUENCY (2)
+#define BAILSTUN (TICRATE*6)
+
 #define MAXCOMBOTHRUST (mapobjectscale*20)
 #define MAXCOMBOFLOAT (mapobjectscale*10)
 #define MINCOMBOTHRUST (mapobjectscale*2)
@@ -51,6 +58,9 @@ Make sure this matches the actual number of states
 #define MAXCOMBOTIME (TICRATE*4)
 
 #define TIMEATTACK_START (TICRATE*10)
+
+#define LIGHTNING_CHARGE (TICRATE*2)
+#define LIGHTNING_SOUND (sfx_s3k84)
 
 #define OVERDRIVE_STARTUP (0)
 
@@ -63,6 +73,9 @@ Make sure this matches the actual number of states
 #define SCAMDIST (2000)
 
 #define EARLY_ITEM_FLICKER (NUMTRANSMAPS)
+
+#define TRIPWIRE_OK_SOUND (sfx_s3k40)
+#define TRIPWIRE_NG_SOUND (sfx_gshaf)
 
 // 2023-08-26 +ang20 to Sal's OG values to make them friendlier - Tyron
 #define STUMBLE_STEEP_VAL (ANG60 + ANG20)
@@ -80,10 +93,17 @@ Make sure this matches the actual number of states
 #define RINGVOLUMEREGEN 1
 #define RINGTRANSPARENCYREGEN 3
 
+#define FAILSAFETIME (4*TICRATE)
+
+#define DUELOVERTIME (cv_dueltimelimit.value)
+#define DUELWINNINGSCORE (cv_duelscorelimit.value)
+
 #define MIN_WAVEDASH_CHARGE ((11*TICRATE/16)*9)
 
 #define MAXTOPACCEL (12*FRACUNIT)
 #define TOPACCELREGEN (FRACUNIT/16)
+
+#define BUBBLESCAM (4)
 
 // Handling boosts and sliptide conditions got weird.
 // You must be under a handling boost of at least SLIPTIDEHANDLING to sliptide.
@@ -103,8 +123,16 @@ Make sure this matches the actual number of states
 
 angle_t K_ReflectAngle(angle_t angle, angle_t against, fixed_t maxspeed, fixed_t yourspeed);
 
+void K_PopBubbleShield(player_t *player);
+
 boolean K_IsDuelItem(mobjtype_t type);
 boolean K_DuelItemAlwaysSpawns(mapthing_t *mt);
+boolean K_InRaceDuel(void);
+player_t *K_DuelOpponent(player_t *player);
+
+fixed_t K_EffectiveGradingFactor(const player_t *player);
+#define MINGRADINGFACTOR (FRACUNIT/2)
+#define MINFRANTICFACTOR (8*FRACUNIT/10)
 
 void K_TimerReset(void);
 void K_TimerInit(void);
@@ -113,7 +141,7 @@ UINT32 K_GetPlayerDontDrawFlag(player_t *player);
 void K_ReduceVFXForEveryone(mobj_t *mo);
 
 boolean K_IsPlayerLosing(player_t *player);
-boolean K_IsPlayerScamming(player_t *player);
+fixed_t K_PlayerScamPercentage(player_t *player, UINT8 mult);
 fixed_t K_GetKartGameSpeedScalar(SINT8 value);
 
 INT32 K_GetShieldFromItem(INT32 item);
@@ -151,6 +179,7 @@ angle_t K_MomentumAngleReal(const mobj_t *mo);
 #define K_MomentumAngle(mo) K_MomentumAngleEx(mo, 6 * mo->scale)
 boolean K_PvPAmpReward(UINT32 award, player_t *attacker, player_t *defender);
 void K_SpawnAmps(player_t *player, UINT8 amps, mobj_t *impact);
+void K_SpawnEXP(player_t *player, UINT8 exp, mobj_t *impact);
 void K_AwardPlayerAmps(player_t *player, UINT8 amps);
 void K_CheckpointCrossAward(player_t *player);
 void K_AwardPlayerRings(player_t *player, UINT16 rings, boolean overload);
@@ -310,8 +339,8 @@ boolean K_ThunderDome(void);
 
 boolean K_PlayerCanUseItem(player_t *player);
 
-fixed_t K_GetGradingMultAdjustment(player_t *player);
-
+fixed_t K_GetGradingFactorAdjustment(player_t *player);
+fixed_t K_GetGradingFactorMinMax(player_t *player, boolean max);
 UINT16 K_GetEXP(player_t *player);
 
 UINT32 K_GetNumGradingPoints(void);
@@ -320,9 +349,15 @@ boolean K_LegacyRingboost(player_t *player);
 
 void K_BotHitPenalty(player_t *player);
 
-boolean K_TryPickMeUp(mobj_t *m1, mobj_t *m2);
+boolean K_IsPickMeUpItem(mobjtype_t type);
+
+boolean K_TryPickMeUp(mobj_t *m1, mobj_t *m2, boolean allowHostile);
 
 fixed_t K_TeamComebackMultiplier(player_t *player);
+
+void K_ApplyStun(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 damage, UINT8 damagetype);
+
+boolean K_CanSuperTransfer(player_t *player);
 
 #ifdef __cplusplus
 } // extern "C"

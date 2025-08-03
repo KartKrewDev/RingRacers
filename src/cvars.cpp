@@ -686,6 +686,8 @@ consvar_t cv_items[] = {
 	UnsavedNetVar("droptarget",			"On").on_off(),
 	UnsavedNetVar("gardentop",			"On").on_off(),
 	UnsavedNetVar("gachabom",			"On").on_off(),
+	UnsavedNetVar("stoneshoe",			"On").on_off(),
+	UnsavedNetVar("toxomister",			"On").on_off(),
 	UnsavedNetVar("dualsneaker",		"On").on_off(),
 	UnsavedNetVar("triplesneaker",		"On").on_off(),
 	UnsavedNetVar("triplebanana",		"On").on_off(),
@@ -727,8 +729,9 @@ void KartSpeed_OnChange(void);
 consvar_t cv_kartspeed = UnsavedNetVar("gamespeed", "Auto Gear").values(kartspeed_cons_t).onchange_noinit(KartSpeed_OnChange);
 
 consvar_t cv_teamplay = UnsavedNetVar("teamplay", "Off").on_off();
+consvar_t cv_duel = UnsavedNetVar("duel", "On").on_off();
 
-consvar_t cv_kartusepwrlv = UnsavedNetVar("usepwrlv", "Yes").yes_no();
+consvar_t cv_kartusepwrlv = UnsavedNetVar("mobiums", "Yes").yes_no();
 
 void LiveStudioAudience_OnChange(void);
 #ifdef DEVELOP
@@ -783,6 +786,8 @@ consvar_t cv_timelimit = UnsavedNetVar("timelimit", "Default").min_max(1, 30*60,
 
 consvar_t cv_votetime = UnsavedNetVar("votetime", "20").min_max(10, 3600);
 
+consvar_t cv_dueltimelimit = UnsavedNetVar("dueltimelimit", "180").min_max(0, 3600);
+consvar_t cv_duelscorelimit = UnsavedNetVar("duelscorelimit", "4").min_max(1, 9);
 
 //
 // Online cheats - synced in netgames.
@@ -796,6 +801,7 @@ consvar_t cv_battleufotest = OnlineCheat("battleufotest", "Off").on_off().descri
 
 #ifdef DEVELOP
 	consvar_t cv_botcontrol = OnlineCheat("botcontrol", "On").on_off().description("Toggle bot AI movement");
+	consvar_t cv_takeover = OnlineCheat("takeover", "Off").on_off().description("Human players use bot movement");
 #endif
 
 extern CV_PossibleValue_t capsuletest_cons_t[];
@@ -807,6 +813,7 @@ consvar_t cv_debugencorevote = OnlineCheat("debugencorevote", "Off").on_off().de
 consvar_t cv_debuglapcheat = OnlineCheat("debuglapcheat", "Off").on_off().description("Permit far waypoint jumps and disable lap cheat prevention");
 consvar_t cv_debugnewchallenger = OnlineCheat("debugnewchallenger", "Off").on_off().description("Do not restart the map to toggle Duel mode");
 consvar_t cv_forcebots = OnlineCheat("forcebots", "No").yes_no().description("Force bots to appear, even in wrong game modes");
+consvar_t cv_debugpickmeup = OnlineCheat("debugpickmeup", "Off").on_off().description("Don't protect players from self/team damage");
 
 void ForceSkin_OnChange(void);
 consvar_t cv_forceskin = OnlineCheat("forcecharacter", "None").onchange(ForceSkin_OnChange).description("Force all players to use one character");
@@ -1363,10 +1370,10 @@ consvar_t cv_chatwidth = Player("chatwidth", "150").min_max(64, 150);
 consvar_t cv_consolechat = Player("chatmode", "Yes").values({{0, "Yes"}, {2, "No"}});
 
 // When off, inbound voice packets are ignored
-void VoiceChat_OnChange(void);
-consvar_t cv_voice_chat = Player("voice_chat", "Off")
+void VoiceSelfDeafen_OnChange(void);
+consvar_t cv_voice_selfdeafen = Player("voice_selfdeafen", "On")
 	.on_off()
-	.onchange(VoiceChat_OnChange)
+	.onchange(VoiceSelfDeafen_OnChange)
 	.description("Whether voice chat is played or not. Shown as self-deafen to others.");
 
 // When on, local player won't transmit voice
@@ -1402,6 +1409,10 @@ consvar_t cv_voice_distanceattenuation_distance = NetVar("voice_distanceattenuat
 	.floating_point()
 	.description("Voice speaker's distance from listener at which positional voice is fully attenuated");
 
+consvar_t cv_voice_distanceattenuation_teamdistance = NetVar("voice_distanceattenuation_teamdistance", "8192")
+	.floating_point()
+	.description("Teammate voice speaker's distance from listener at which positional voice is fully attenuated");
+
 // The volume factor (scaled logarithmically, i.e. 0.5 = "half as loud") for voice distance attenuation
 consvar_t cv_voice_distanceattenuation_factor = NetVar("voice_distanceattenuation_factor", "0.2")
 	.floating_point()
@@ -1421,12 +1432,12 @@ consvar_t cv_voice_concurrentattenuation_max = NetVar("voice_concurrentattenuati
 	.description("Maximum concurrent speakers at which full global attenuation is applied");
 
 void Mute_OnChange(void);
-void VoiceMute_OnChange(void);
+void AllowServerVC_OnChange(void);
 consvar_t cv_mute = UnsavedNetVar("mute", "Off").on_off().onchange(Mute_OnChange);
-consvar_t cv_voice_servermute = NetVar("voice_servermute", "On")
+consvar_t cv_voice_allowservervoice = NetVar("voice_allowservervoice", "Off")
 	.on_off()
-	.onchange(VoiceMute_OnChange)
-	.description("If On, the server will not broadcast voice chat to clients");
+	.onchange(AllowServerVC_OnChange)
+	.description("If Off, the server will not broadcast voice chat to clients");
 
 
 //

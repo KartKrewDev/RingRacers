@@ -34,6 +34,9 @@ void K_AddHitLag(mobj_t *mo, INT32 tics, boolean fromDamage)
 		return;
 	}
 
+	if (mo->player && mo->player->overshield)
+		tics = min(tics, 3);
+
 	mo->hitlag += tics;
 	mo->hitlag = min(mo->hitlag, MAXHITLAGTICS);
 

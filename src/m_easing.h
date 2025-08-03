@@ -105,6 +105,9 @@ EASINGFUNC(InOutBackParameterized) /* Easing_InOutBackParameterized */
 
 #undef EASINGFUNC
 
+fixed_t FixedRescale(fixed_t value, fixed_t inmin, fixed_t inmax, easingfunc_t easing_func, fixed_t outmin, fixed_t outmax);
+INT16 IntRescale(INT16 value, INT16 inmin, INT16 inmax, easingfunc_t easing_func, INT16 outmin, INT16 outmax);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

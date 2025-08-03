@@ -64,6 +64,10 @@ target_sources(SRB2SDL2 PRIVATE
 	flybot767.c
 	lightning-shield.cpp
 	flame-shield.cpp
+	stone-shoe.cpp
+	exp.c
+	bail.c
+	toxomister.cpp
 )
 
 add_subdirectory(versus)

@@ -432,6 +432,11 @@ boolean K_PlayerUsesBotMovement(const player_t *player)
 	if (player->bot)
 		return true;
 
+#ifdef DEVELOP
+	if (cv_takeover.value)
+		return true;
+#endif
+
 	return false;
 }
 
@@ -580,12 +585,16 @@ const botcontroller_t *K_GetBotController(const mobj_t *mobj)
 --------------------------------------------------*/
 fixed_t K_BotMapModifier(void)
 {
+	// fuck it we ball
+	return 5*FRACUNIT/10;
+
 	constexpr INT32 complexity_scale = 10000;
-	constexpr fixed_t modifier_max = FRACUNIT * 2;
+	fixed_t modifier_max = (10 * FRACUNIT / 10) - FRACUNIT;
+	fixed_t modifier_min = (5 * FRACUNIT / 10) - FRACUNIT;
 
 	const fixed_t complexity_value = std::clamp<fixed_t>(
 		FixedDiv(K_GetTrackComplexity(), complexity_scale),
-		-FixedDiv(FRACUNIT, modifier_max),
+		modifier_min,
 		modifier_max
 	);
 
@@ -677,16 +686,29 @@ fixed_t K_BotRubberband(const player_t *player)
 		return FRACUNIT;
 	}
 
-	fixed_t difficultyEase = ((player->botvars.difficulty - 1) * FRACUNIT) / (MAXBOTDIFFICULTY - 1);
+	fixed_t expreduce = 0;
+
+	// Allow the status quo to assert itself a bit. Bots get most of their speed from their
+	// mechanics adjustments, not from items, so kill some bot speed if they've got bad EXP.
+	if (player->gradingfactor < FRACUNIT && !(player->botvars.rival) && player->botvars.difficulty > 1)
+	{
+		UINT8 levelreduce = std::min<UINT8>(3, player->botvars.difficulty/4); // How much to drop the "effective level" of bots that are consistently behind
+		expreduce = Easing_Linear((K_EffectiveGradingFactor(player) - MINGRADINGFACTOR) * 2, levelreduce*FRACUNIT, 0);
+	}
+
+	fixed_t difficultyEase = (((player->botvars.difficulty - 1) * FRACUNIT) - expreduce) / (MAXBOTDIFFICULTY - 1);
+
+	if (difficultyEase < 0)
+		difficultyEase = 0;
 
 	if (cv_levelskull.value)
 		difficultyEase = FRACUNIT;
 
-	// Lv.   1: x0.65 avg
+	// Lv.   1: x0.75 avg
 	// Lv. MAX: x1.05 avg
 	const fixed_t rubberBase = Easing_OutSine(
 		difficultyEase,
-		FRACUNIT * 65 / 100,
+		FRACUNIT * 75 / 100,
 		FRACUNIT * 105 / 100
 	);
 
@@ -801,12 +823,23 @@ fixed_t K_BotRubberband(const player_t *player)
 fixed_t K_UpdateRubberband(player_t *player)
 {
 	fixed_t dest = K_BotRubberband(player);
+	
+	fixed_t deflect = player->botvars.recentDeflection;
+	if (deflect > BOTMAXDEFLECTION)
+		deflect = BOTMAXDEFLECTION;
+
+	dest = FixedMul(dest, Easing_Linear(
+		FixedDiv(deflect, BOTMAXDEFLECTION),
+		BOTSTRAIGHTSPEED,
+		BOTTURNSPEED
+	));
+
 	fixed_t ret = player->botvars.rubberband;
 
-	UINT8 ease_soften = 8;
+	UINT8 ease_soften = (ret > dest) ? 3 : 8;
 
 	if (player->botvars.bumpslow && dest > ret)
-		ease_soften *= 10;
+		ease_soften = 80;
 
 	// Ease into the new value.
 	ret += (dest - player->botvars.rubberband) / ease_soften;
@@ -1427,9 +1460,11 @@ static INT32 K_HandleBotTrack(const player_t *player, ticcmd_t *cmd, botpredicti
 	I_Assert(predict != nullptr);
 
 	destangle = K_BotSmoothLanding(player, destangle);
-
 	moveangle = player->mo->angle + K_GetUnderwaterTurnAdjust(player);
 	anglediff = AngleDeltaSigned(moveangle, destangle);
+
+	// predictionerror
+	cmd->angle = std::min(destangle - moveangle, moveangle - destangle) >> TICCMD_REDUCE;
 
 	if (anglediff < 0)
 	{
@@ -1712,7 +1747,7 @@ static void K_BuildBotPodiumTiccmd(const player_t *player, ticcmd_t *cmd)
 
 		Build ticcmd for bots with a style of BOT_STYLE_NORMAL
 --------------------------------------------------*/
-static void K_BuildBotTiccmdNormal(const player_t *player, ticcmd_t *cmd)
+static void K_BuildBotTiccmdNormal(player_t *player, ticcmd_t *cmd)
 {
 	precise_t t = 0;
 
@@ -1723,6 +1758,9 @@ static void K_BuildBotTiccmdNormal(const player_t *player, ticcmd_t *cmd)
 	angle_t destangle = 0;
 	UINT8 spindash = 0;
 	INT32 turnamt = 0;
+
+	cmd->angle = 0; // For bots, this is used to transmit predictionerror to gamelogic.
+	// Will be overwritten by K_HandleBotTrack if we have a destination.
 
 	if (!(gametyperules & GTR_BOTS) // No bot behaviors
 		|| K_GetNumWaypoints() == 0 // No waypoints
@@ -1765,7 +1803,7 @@ static void K_BuildBotTiccmdNormal(const player_t *player, ticcmd_t *cmd)
 	if (K_TryRingShooter(player, botController) == true && player->botvars.respawnconfirm >= BOTRESPAWNCONFIRM)
 	{
 		// We want to respawn. Simply hold Y and stop here!
-		cmd->buttons |= (BT_RESPAWN | BT_EBRAKEMASK);
+		cmd->buttons |= BT_RESPAWNMASK;
 		return;
 	}
 
@@ -1939,6 +1977,9 @@ static void K_BuildBotTiccmdNormal(const player_t *player, ticcmd_t *cmd)
 		ps_bots[player - players].item = I_GetPreciseTime() - t;
 	}
 
+	// Update turning quicker if we're moving at high speeds.
+	UINT8 turndelta = (player->speed > (7 * K_GetKartSpeed(player, false, false) / 4)) ? 2 : 1;
+
 	if (turnamt != 0)
 	{
 		if (turnamt > KART_FULLTURN)
@@ -1955,7 +1996,7 @@ static void K_BuildBotTiccmdNormal(const player_t *player, ticcmd_t *cmd)
 			// Count up
 			if (player->botvars.turnconfirm < BOTTURNCONFIRM)
 			{
-				cmd->bot.turnconfirm++;
+				cmd->bot.turnconfirm += turndelta;
 			}
 		}
 		else if (turnamt < 0)
@@ -1963,7 +2004,7 @@ static void K_BuildBotTiccmdNormal(const player_t *player, ticcmd_t *cmd)
 			// Count down
 			if (player->botvars.turnconfirm > -BOTTURNCONFIRM)
 			{
-				cmd->bot.turnconfirm--;
+				cmd->bot.turnconfirm -= turndelta;
 			}
 		}
 		else
@@ -2067,6 +2108,11 @@ void K_UpdateBotGameplayVars(player_t *player)
 	if (cv_levelskull.value)
 		player->botvars.difficulty = MAXBOTDIFFICULTY;
 
+	if (K_InRaceDuel())
+		player->botvars.rival = true;
+	else if (grandprixinfo.gp != true)
+		player->botvars.rival = false;
+
 	player->botvars.rubberband = K_UpdateRubberband(player);
 
 	player->botvars.turnconfirm += player->cmd.bot.turnconfirm;
@@ -2088,6 +2134,21 @@ void K_UpdateBotGameplayVars(player_t *player)
 		}
 	}
 
+	angle_t mangle = K_MomentumAngleEx(player->mo, 5*mapobjectscale); // magic threshold
+	angle_t langle = player->botvars.lastAngle;
+	angle_t dangle = 0;
+	if (mangle >= langle)
+		dangle = mangle - langle;
+	else
+		dangle = langle - mangle;
+	// Writing this made me move my tongue around in my mouth
+
+	UINT32 smo = BOTANGLESAMPLES - 1;
+
+	player->botvars.recentDeflection = (smo * player->botvars.recentDeflection / BOTANGLESAMPLES) + (dangle / BOTANGLESAMPLES);
+	
+	player->botvars.lastAngle = mangle;
+
 	const botcontroller_t *botController = K_GetBotController(player->mo);
 	if (K_TryRingShooter(player, botController) == true)
 	{
@@ -2098,4 +2159,11 @@ void K_UpdateBotGameplayVars(player_t *player)
 	}
 
 	K_UpdateBotGameplayVarsItemUsage(player);
+}
+
+boolean K_BotUnderstandsItem(kartitems_t item)
+{
+	if (item == KITEM_BALLHOG)
+		return false; // Sorry. MRs welcome!
+	return true;
 }

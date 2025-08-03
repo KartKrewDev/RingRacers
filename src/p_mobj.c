@@ -1095,7 +1095,7 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 
 	wasflip = (mo->eflags & MFE_VERTICALFLIP) != 0;
 
-	if (mo->type != MT_SPINFIRE)
+	if (mo->type != MT_SPINFIRE && mo->type != MT_STONESHOE)
 		mo->eflags &= ~MFE_VERTICALFLIP;
 
 	if (mo->subsector->sector->ffloors) // Check for 3D floor gravity too.
@@ -1197,7 +1197,7 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 		{
 			gravityadd *= 3;
 		}
-		else if (mo->player->fastfall != 0)
+		else if (mo->player->fastfall != 0 && mo->player->transfer == 0)
 		{
 			// Fast falling
 
@@ -1248,6 +1248,10 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 			case MT_GACHABOM:
 				gravityadd = (5*gravityadd)/2;
 				break;
+			case MT_TOXOMISTER_POLE:
+				if (mo->health > 0)
+					gravityadd = (5*gravityadd)/2;
+				break;
 			case MT_BANANA:
 			case MT_BALLHOG:
 			case MT_BALLHOG_RETICULE_TEST:
@@ -1274,6 +1278,12 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 				gravityadd *= 6;
 				break;
 			case MT_FLOATINGITEM: {
+				if (mo->threshold == KDROP_STONESHOETRAP)
+				{
+					gravityadd = (5*gravityadd)/2;
+					break;
+				}
+
 				// Basically this accelerates gravity after
 				// the object reached its peak vertical
 				// momentum. It's a gradual acceleration up
@@ -1295,6 +1305,9 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 			case MT_KART_PARTICLE:
 				if (!mo->fuse)
 					gravityadd *= 2;
+				break;
+			case MT_STONESHOE:
+				gravityadd = -4 * abs(gravityadd) * P_MobjFlip(mo);
 				break;
 			default:
 				break;
@@ -1792,8 +1805,22 @@ boolean P_XYMovement(mobj_t *mo)
 						mo->momz = transfermomz;
 						if (mo->player)
 						{
-							mo->player->transfer = transfermomz;
-							S_StartSound(mo, sfx_s3k98);
+							if (abs(transfermomz) > 10*mo->scale)
+							{
+								/*
+								fixed_t clamp = 3*K_GetKartSpeed(mo->player, false, false)/2;
+								if (transfermomz > 0)
+									mo->player->transfer = min(transfermomz, clamp);
+								else
+									mo->player->transfer = max(transfermomz, clamp);
+								*/
+								mo->player->transfer = transfermomz;
+								S_StartSound(mo, sfx_s3k98);
+							}
+							else
+							{
+								mo->player->transfer = 0;
+							}
 						}
 
 						mo->standingslope = NULL;
@@ -2321,6 +2348,7 @@ boolean P_ZMovement(mobj_t *mo)
 		case MT_BIGTUMBLEWEED:
 		case MT_LITTLETUMBLEWEED:
 		case MT_EMERALD:
+		case MT_TOXOMISTER_POLE:
 			if (!(mo->flags & MF_NOCLIPHEIGHT) && P_CheckDeathPitCollide(mo))
 			{
 				P_RemoveMobj(mo);
@@ -5304,6 +5332,7 @@ boolean P_IsKartItem(INT32 type)
 		case MT_HYUDORO:
 		case MT_SINK:
 		case MT_GACHABOM:
+		case MT_TOXOMISTER_POLE:
 			return true;
 
 		default:
@@ -5330,6 +5359,42 @@ boolean P_IsKartFieldItem(INT32 type)
 		case MT_DROPTARGET:
 		case MT_DUELBOMB:
 		case MT_GACHABOM:
+		case MT_TOXOMISTER_POLE:
+			return true;
+
+		default:
+			return false;
+	}
+}
+
+// This item keeps track of its owner by the mobj target
+boolean P_IsRelinkItem(INT32 type)
+{
+	switch (type)
+	{
+		case MT_POGOSPRING:
+		case MT_EGGMANITEM:
+		case MT_EGGMANITEM_SHIELD:
+		case MT_BANANA:
+		case MT_BANANA_SHIELD:
+		case MT_ORBINAUT:
+		case MT_ORBINAUT_SHIELD:
+		case MT_JAWZ:
+		case MT_JAWZ_SHIELD:
+		case MT_SSMINE:
+		case MT_SSMINE_SHIELD:
+		case MT_LANDMINE:
+		case MT_DROPTARGET:
+		case MT_DROPTARGET_SHIELD:
+		case MT_BALLHOG:
+		case MT_SPB:
+		case MT_BUBBLESHIELDTRAP:
+		case MT_GARDENTOP:
+		case MT_HYUDORO_CENTER:
+		case MT_SINK:
+		case MT_GACHABOM:
+		case MT_TOXOMISTER_POLE:
+		case MT_FLOATINGITEM:  // Stone Shoe Trap
 			return true;
 
 		default:
@@ -5402,20 +5467,9 @@ static boolean P_IsTrackerType(INT32 type)
 		case MT_GARDENTOP: // Frey
 			return true;
 
-		case MT_JAWZ_SHIELD: // Pick-me-up
-		case MT_ORBINAUT:
-		case MT_ORBINAUT_SHIELD:
-		case MT_DROPTARGET:
-		case MT_DROPTARGET_SHIELD:
-		case MT_LANDMINE:
-		case MT_BANANA:
-		case MT_BANANA_SHIELD:
-		case MT_GACHABOM:
-		case MT_EGGMANITEM:
-		case MT_EGGMANITEM_SHIELD:
-			return true;
-
 		default:
+			if (K_IsPickMeUpItem(type))
+				return true;
 			return false;
 	}
 }
@@ -6674,6 +6728,59 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		}
 		break;
 	}
+	case MT_LIGHTNINGATTACK_VISUAL:
+	{
+		if (!(mobj->target && !P_MobjWasRemoved(mobj->target)))
+		{
+			P_RemoveMobj(mobj);
+			return;
+		}
+
+		if (!mobj->target->player || !mobj->target->player->lightningcharge)
+		{
+			P_RemoveMobj(mobj);
+			return;
+		}
+
+		UINT8 SHRINK = 5;
+
+		UINT8 timer = (LIGHTNING_CHARGE - mobj->target->player->lightningcharge);
+		UINT8 target = timer/10 + 1;
+
+		fixed_t myscale = (5*mobj->target->scale)>>2;
+		if (timer <= SHRINK)
+		{
+			myscale = Easing_InSine(FRACUNIT*(SHRINK - timer)/SHRINK, myscale, 0);
+		}
+		else
+		{
+			UINT8 pretimer = LIGHTNING_CHARGE - SHRINK;
+			fixed_t scalefactor = FRACUNIT * (timer - SHRINK) / pretimer;
+			myscale = Easing_Linear(scalefactor, 5*myscale/4, myscale);
+		}
+
+		P_SetScale(mobj, (mobj->destscale = myscale));
+
+		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + mobj->target->height/2);
+		// Taken from K_FlipFromObject. We just want to flip the visual according to its target, but that's it.
+		mobj->eflags = (mobj->eflags & ~MFE_VERTICALFLIP)|(mobj->target->eflags & MFE_VERTICALFLIP);
+
+		mobj->extravalue1++;
+
+		if (mobj->extravalue1 > target)
+		{
+			mobj->color = SKINCOLOR_WHITE;
+			mobj->colorized = true;
+			mobj->extravalue1 = 0;
+		}
+		else
+		{
+			mobj->colorized = false;
+			mobj->renderflags &= ~RF_DONTDRAW;
+		}
+
+		break;
+	}
 	case MT_FLAMESHIELD_VISUAL:
 	{
 		if (!Obj_TickFlameShieldVisual(mobj))
@@ -6681,6 +6788,11 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			return;
 		}
 		break;
+	}
+	case MT_STONESHOE_CHAIN:
+	{
+		Obj_TickStoneShoeChain(mobj);
+		return;
 	}
 	default:
 		if (mobj->fuse)
@@ -6820,6 +6932,12 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 			P_SetMobjState(mobj, mobj->info->xdeathstate);
 		/* FALLTHRU */
 	case MT_JAWZ_SHIELD:
+		mobj->renderflags ^= RF_DONTDRAW;
+		break;
+	case MT_TOXOMISTER_POLE:
+		if (mobj->momz == 0 && P_IsObjectOnGround(mobj))
+			P_SetMobjState(mobj, mobj->info->xdeathstate);
+
 		mobj->renderflags ^= RF_DONTDRAW;
 		break;
 	case MT_SSMINE:
@@ -7447,6 +7565,38 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				mobj->momx = mobj->momy = 0;
 				S_StartSound(mobj, mobj->info->activesound);
 				P_SetMobjState(mobj, S_SSMINE_DEPLOY1);
+
+				spritenum_t parts[4] = {SPR_SSMA, SPR_SSMB, SPR_SSMC, SPR_SSMD};
+
+				#define RADIUSCOPIES 6
+
+				UINT8 lowlight = 191;
+				UINT8 highlight = 255;
+				UINT8 lightpercopy = (highlight - lowlight) / RADIUSCOPIES;
+
+				angle_t increment = ANG1*10;
+
+				for (UINT8 i = 0; i < 4; i++)
+				{
+					for (UINT8 j = 0; j < RADIUSCOPIES; j++)
+					{
+						mobj_t *radius = P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_MINERADIUS);
+						radius->angle -= j*increment;
+						P_SetTarget(&radius->target, mobj);
+
+						P_InstaScale(radius, mobj->scale/4);
+						radius->destscale = mobj->scale * 6; // Matches SSMINE_DEPLOY8 radius, will scale down when thinking after
+						radius->scalespeed = mobj->scale;
+
+						radius->sprite = parts[i];
+
+						radius->renderflags |= RF_ABSOLUTELIGHTLEVEL;
+						radius->lightlevel = highlight - (lightpercopy * j);
+						radius->renderflags |= (cv_reducevfx.value) ? RF_TRANS90 : RF_TRANS50;
+					}
+				}
+
+				#undef RADIUSCOPIES
 			}
 		}
 
@@ -7864,10 +8014,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		if (!mobj->target || !mobj->target->health
 			|| !mobj->target->player || !mobj->target->player->tripwireLeniency)
 		{
-			if (mobj->target && mobj->target->player && P_IsDisplayPlayer(mobj->target->player))
+			if (mobj->target && mobj->target->player 
+				&& P_IsDisplayPlayer(mobj->target->player)
+				&& !(mobj->target->player->curshield == KSHIELD_TOP))
 			{
-				S_StopSoundByID(mobj->target, sfx_s3k40);
-				S_StartSound(mobj->target, sfx_gshaf);
+				S_StopSoundByID(mobj->target, TRIPWIRE_OK_SOUND);
+				S_StartSound(mobj->target, TRIPWIRE_NG_SOUND);
 			}
 
 			P_RemoveMobj(mobj);
@@ -7897,7 +8049,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 
 		{
-			fixed_t convSpeed = (mobj->target->player->speed * 100) / K_GetKartSpeed(mobj->target->player, false, true);
+			fixed_t basespeed = K_GetKartSpeed(mobj->target->player, false, true);
+			fixed_t tripspeed = K_PlayerTripwireSpeedThreshold(mobj->target->player);
+			fixed_t myspeed = mobj->target->player->speed;
 			UINT8 trans = ((mobj->target->player->tripwireLeniency + 1) * (NUMTRANSMAPS+1)) / TRIPWIRETIME;
 
 			if (trans > NUMTRANSMAPS)
@@ -7906,7 +8060,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			trans = NUMTRANSMAPS - trans;
 
 			if ((trans >= NUMTRANSMAPS) // not a valid visibility
-				|| (convSpeed < 150 && (leveltime & 1)) // < 150% flickering
+				|| (myspeed < (tripspeed - basespeed/2) && (leveltime & 1)) // < 150% flickering
 				|| (mobj->target->player->tripwirePass < TRIPWIRE_BOOST) // Not strong enough to make an aura
 				|| mobj->target->player->flamedash) // Flameshield dash
 			{
@@ -7914,7 +8068,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 			else
 			{
-				boolean blastermode = (convSpeed >= 200) && (mobj->target->player->tripwirePass >= TRIPWIRE_BLASTER);
+				boolean blastermode = (myspeed >= tripspeed) && (mobj->target->player->tripwirePass >= TRIPWIRE_BLASTER);
 
 				mobj->renderflags &= ~(RF_TRANSMASK|RF_DONTDRAW);
 				if (trans != 0)
@@ -7989,7 +8143,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 			if (p)
 			{
-				UINT16 timer = max(p->sneakertimer, p->panelsneakertimer);
+				UINT16 timer = max(max(p->sneakertimer, p->panelsneakertimer), p->weaksneakertimer);
 				if (timer > mobj->movecount)
 					P_SetMobjState(mobj, S_BOOSTFLAME);
 				mobj->movecount = timer;
@@ -8141,25 +8295,52 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				mobj->z + (mobj->target->height * P_MobjFlip(mobj)));
 		break;
 	case MT_GAINAX:
+	{
+		boolean vfx = !!(mobj->flags2 & MF2_BOSSNOTRAP);
+
 		if (!mobj->target || P_MobjWasRemoved(mobj->target) // sanity
-			|| !mobj->target->player // ditto
-			|| !mobj->target->player->glanceDir // still glancing?
-			|| mobj->target->player->aizdriftturn // only other circumstance where can glance
-			|| ((K_GetKartButtons(mobj->target->player) & BT_LOOKBACK) != BT_LOOKBACK)) // it's a lookback indicator...
+			|| !mobj->target->player) // ditto
 		{
 			P_RemoveMobj(mobj);
 			return false;
+		}
+
+		if (!vfx)
+		{
+			if (!mobj->target->player->glanceDir // still glancing?
+			|| mobj->target->player->aizdriftturn // only other circumstance where can glance
+			|| ((K_GetKartButtons(mobj->target->player) & BT_LOOKBACK) != BT_LOOKBACK)) // it's a lookback indicator...
+			{
+				P_RemoveMobj(mobj);
+				return false;
+			}
+		}
+
+		if (vfx)
+		{
+			if (P_IsObjectOnGround(mobj->target) || mobj->target->player->fastfall 
+				|| !K_CanSuperTransfer(mobj->target->player))
+			{
+				P_RemoveMobj(mobj);
+				return false;
+			}
 		}
 
 		mobj->angle = mobj->target->player->drawangle;
 		mobj->z = mobj->target->z;
 
 		K_MatchGenericExtraFlags(mobj, mobj->target);
+
 		mobj->renderflags = (mobj->renderflags & ~RF_DONTDRAW)|K_GetPlayerDontDrawFlag(mobj->target->player);
+		if (vfx)
+			mobj->renderflags ^= INT32_MAX;
 
 		P_MoveOrigin(mobj, mobj->target->x + FixedMul(34 * mapobjectscale, FINECOSINE((mobj->angle + mobj->movedir) >> ANGLETOFINESHIFT)),
 				mobj->target->y + FixedMul(34 * mapobjectscale, FINESINE((mobj->angle + mobj->movedir) >> ANGLETOFINESHIFT)),
 				mobj->z + (32 * mapobjectscale * P_MobjFlip(mobj)));
+
+		if (vfx)
+			break;
 
 		{
 			statenum_t gainaxstate = mobj->state-states;
@@ -8184,6 +8365,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 
 		break;
+	}
 	case MT_FLAMESHIELDPAPER:
 		if (!mobj->target || P_MobjWasRemoved(mobj->target))
 		{
@@ -8371,6 +8553,44 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			P_MoveOrigin(mobj, destx, desty, mobj->target->z + zoff);
 		}
+		break;
+	}
+	case MT_MINERADIUS:
+	{
+		if (!mobj->target || P_MobjWasRemoved(mobj->target))
+		{
+			P_RemoveMobj(mobj);
+			return false;
+		}
+
+		statenum_t stateindex = mobj->target->state - states;
+
+		mobj->x = mobj->target->x;
+		mobj->y = mobj->target->y;
+		mobj->z = mobj->target->z + mobj->target->height/4;
+
+		K_MatchGenericExtraFlags(mobj, mobj->target);
+
+		mobj->color = mobj->target->color;
+		mobj->colorized = true;
+		mobj->angle += ANG1*5;
+
+		if (stateindex == S_SSMINE_DEPLOY8)
+		{
+			mobj->renderflags &= ~(RF_TRANSMASK);
+			if (cv_reducevfx.value)
+				mobj->renderflags |= RF_TRANS80;
+		}
+
+		if (stateindex == S_SSMINE_DEPLOY9) // Horseshit, see SSMineSearch
+		{
+			mobj->destscale = mobj->target->scale*4;
+		}
+
+
+		// mobj_t *ghost = P_SpawnGhostMobj(mobj);
+		// ghost->fuse = 12;
+
 		break;
 	}
 	case MT_SIDETRICK:
@@ -8800,6 +9020,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		Obj_AmpsThink(mobj);
 		break;
 	}
+	case MT_EXP:
+	{
+		Obj_ExpThink(mobj);
+		break;
+	}
 	case MT_BLOCKRING:
 	{
 		Obj_BlockRingThink(mobj);
@@ -8808,6 +9033,16 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_BLOCKBODY:
 	{
 		Obj_BlockBodyThink(mobj);
+		break;
+	}
+	case MT_BAIL:
+	{
+		Obj_BailThink(mobj);
+		break;
+	}
+	case MT_BAILCHARGE:
+	{
+		Obj_BailChargeThink(mobj);
 		break;
 	}
 	case MT_AMPRING:
@@ -9110,7 +9345,10 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				&& (gamespeed != KARTSPEED_EASY)
 				&& (newplayer->tally.active == true)
 				&& (newplayer->tally.totalExp > 0) // Only true if not Time Attack
-				&& (newplayer->tally.exp >= newplayer->tally.totalExp)
+				&& (
+					(newplayer->tally.exp >= newplayer->tally.totalExp) ||
+					(K_InRaceDuel() && newplayer->duelscore == DUELWINNINGSCORE)
+				)
 			)
 			{
 				UINT8 pnum = (newplayer-players);
@@ -9583,6 +9821,15 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			mobj->flags = MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_NOGRAVITY|MF_DONTENCOREMAP;
 			mobj->extravalue1 = 1;
 
+			// Mash speed limit
+			UINT8 MASHPWR = TICRATE/2; // Amount to deduct from timer when mashing
+			UINT8 MAXMASHFREQUENCY = 6; // Nerf fast mashing: allow optimal decay with X inputs per second
+			
+			UINT8 ticsbetweenmashing = TICRATE/MAXMASHFREQUENCY;
+			UINT8 decaypertic = MASHPWR / ticsbetweenmashing;
+			if (mobj->cusval)
+				mobj->cusval = max(0, mobj->cusval - decaypertic);
+
 			mobj->cvmem /= 2;
 			mobj->momz = 0;
 			mobj->destscale = ((8*mobj->tracer->scale)>>2) + (mobj->tracer->scale>>3);
@@ -9618,7 +9865,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				mobj->tracer->y + P_ReturnThrustY(NULL, mobj->tracer->angle+ANGLE_90, (mobj->cvmem)<<FRACBITS),
 				mobj->tracer->z - (4*mobj->tracer->scale) + (P_RandomRange(PR_ITEM_BUBBLE, -abs(mobj->cvmem), abs(mobj->cvmem))<<FRACBITS));
 
-			if (mobj->movecount > 4*TICRATE)
+			if (mobj->movecount > 7*TICRATE/2)
 			{
 				S_StartSound(mobj->tracer, sfx_s3k77);
 				mobj->tracer->flags &= ~MF_NOGRAVITY;
@@ -9639,8 +9886,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				if ((player->cmd.turning > 0 && lastsign < 0)
 					|| (player->cmd.turning < 0 && lastsign > 0))
 				{
-					mobj->movecount += (TICRATE/2);
+					// CONS_Printf("%d -> ", mobj->movecount);
+					mobj->movecount += MASHPWR - mobj->cusval;
+					// CONS_Printf("%d\n", mobj->movecount);
 					mobj->cvmem = 8*lastsign;
+					mobj->cusval = MASHPWR; // Mash speed limit.
 					S_StartSound(mobj, sfx_s3k7a);
 				}
 
@@ -10131,6 +10381,18 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		break;
 	}
 
+	case MT_STONESHOE:
+		return Obj_TickStoneShoe(mobj);
+
+	case MT_TOXOMISTER_POLE:
+		return Obj_TickToxomisterPole(mobj);
+
+	case MT_TOXOMISTER_EYE:
+		return Obj_TickToxomisterEye(mobj);
+
+	case MT_TOXOMISTER_CLOUD:
+		return Obj_TickToxomisterCloud(mobj);
+
 	default:
 		// check mobj against possible water content, before movement code
 		P_MobjCheckWater(mobj);
@@ -10196,6 +10458,12 @@ static boolean P_CanFlickerFuse(mobj_t *mobj)
 		case MT_BLENDEYE_PUYO:
 		case MT_KART_PARTICLE:
 			if (mobj->fuse <= TICRATE)
+			{
+				return true;
+			}
+			break;
+		case MT_STONESHOE:
+			if (mobj->fuse <= 3 * TICRATE)
 			{
 				return true;
 			}
@@ -10349,7 +10617,6 @@ void P_MobjThinker(mobj_t *mobj)
 {
 	I_Assert(mobj != NULL);
 	I_Assert(!P_MobjWasRemoved(mobj));
-
 	// Remove dead target/tracer.
 	if (mobj->target && P_MobjWasRemoved(mobj->target))
 		P_SetTarget(&mobj->target, NULL);
@@ -10983,6 +11250,15 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_RANDOMAUDIENCE:
 			thing->shadowscale = FRACUNIT;
 			thing->whiteshadow = false;
+			break;
+		case MT_STONESHOE:
+			thing->shadowscale = 2*FRACUNIT/3;
+			break;
+		case MT_STONESHOE_CHAIN:
+			thing->shadowscale = FRACUNIT/5;
+			break;
+		case MT_TOXOMISTER_POLE:
+			thing->shadowscale = FRACUNIT;
 			break;
 		default:
 			if (thing->flags & (MF_ENEMY|MF_BOSS))
@@ -11723,6 +11999,11 @@ void P_RemoveMobj(mobj_t *mobj)
 		case MT_EMROCKS:
 		{
 			Obj_UnlinkRocks(mobj);
+			break;
+		}
+		case MT_FLYBOT767:
+		{
+			Obj_FlybotRemoved(mobj);
 			break;
 		}
 		default:
@@ -12798,12 +13079,12 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 	// spawn all the duel mode objects itself, which ends up
 	// calling this function again.
 	// So that's why this check is even here.
-	if (inDuel == false && (grandprixinfo.gp == false || grandprixinfo.eventmode != GPEVENT_BONUS))
+	if (inDuel == false && (grandprixinfo.gp == false || grandprixinfo.eventmode != GPEVENT_BONUS) && gametype != GT_TUTORIAL)
 	{
 		if (K_IsDuelItem(i) == true
 			&& K_DuelItemAlwaysSpawns(mthing) == false)
 		{
-			// Only spawns in Duels or GP bonus rounds.
+			// Only spawns in Duels, GP bonus rounds or Tutorials.
 			return false;
 		}
 	}
@@ -15307,6 +15588,7 @@ boolean P_MobjCanChangeFlip(mobj_t *mobj)
 		case MT_SHRINK_CHAIN:
 		case MT_SHRINK_LASER:
 		case MT_SHRINK_PARTICLE:
+		case MT_STONESHOE:
 			return false;
 
 		default:
@@ -15414,6 +15696,8 @@ void P_SetThingTID(mobj_t *mo, mtag_t tid)
 //
 // P_FindMobjFromTID
 // Mobj tag search function.
+// This function cannot be safely called after *i is removed!
+// Please call at start of loops if *i is to be mutated
 //
 mobj_t *P_FindMobjFromTID(mtag_t tid, mobj_t *i, mobj_t *activator)
 {

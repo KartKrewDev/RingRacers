@@ -895,7 +895,7 @@ static UINT8 GetUFODamage(mobj_t *inflictor, UINT8 damageType)
 			{
 				// Players deal damage relative to how many sneakers they used.
 				targetdamaging = UFOD_BOOST;
-				ret = 15 * max(1, inflictor->player->numsneakers + inflictor->player->numpanelsneakers);
+				ret = 15 * max(1, inflictor->player->numsneakers + inflictor->player->numpanelsneakers + inflictor->player->numweaksneakers);
 				break;
 			}
 			case MT_SPECIAL_UFO:
@@ -1056,6 +1056,8 @@ void Obj_PlayerUFOCollide(mobj_t *ufo, mobj_t *other)
 		other->player->numsneakers = 0;
 		other->player->panelsneakertimer = 0;
 		other->player->numpanelsneakers = 0;
+		other->player->weaksneakertimer = 0;
+		other->player->numweaksneakers = 0;
 
 		// Copied from Obj_OrbinautThrown
 		const ffloor_t *rover = P_IsObjectFlipped(other) ? other->ceilingrover : other->floorrover;
@@ -1282,9 +1284,12 @@ static mobj_t *InitSpecialUFO(waypoint_t *start)
 	}
 
 	// Set specialDamage as early as possible, for glass ball's sake
-	if (grandprixinfo.gp && grandprixinfo.specialDamage)
+	// (...Except if you're on Master difficulty!)
+	if (grandprixinfo.gp && grandprixinfo.specialDamage && grandprixinfo.masterbots == false)
 	{
-		ufo->health -= min(4*(UINT32)mobjinfo[MT_SPECIAL_UFO].spawnhealth/10, grandprixinfo.specialDamage/6);
+		ufo->health -= min(2*(UINT32)mobjinfo[MT_SPECIAL_UFO].spawnhealth/10, grandprixinfo.specialDamage/12);
+		// Use this if you want to spy on what the health ends up being:
+		//CONS_Printf("the UFO weeps: %d hp\n", ufo->health );
 	}
 
 	ufo_speed(ufo) = FixedMul(UFO_START_SPEED, K_GetKartGameSpeedScalar(gamespeed));
