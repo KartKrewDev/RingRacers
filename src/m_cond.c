@@ -2824,7 +2824,7 @@ static const char *M_GetConditionString(condition_t *cn)
 		case UCRP_FINISHCOOL:
 			return "finish in good standing";
 		case UCRP_FINISHPERFECT:
-			return "finish a perfect round";
+			return "finish a perfect round (excluding Gear 1)";
 		case UCRP_FINISHALLPRISONS:
 			return "break every Prison Egg";
 		case UCRP_SURVIVE:
