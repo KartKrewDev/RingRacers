@@ -154,8 +154,6 @@ static void SpawnSPBDust(mobj_t *spb)
 	angle_t sa = spb->angle - ANG1*60;
 	INT32 i;
 
-	if ((spb_intangible(spb) != SPB_FLASHING)) // If the SPB is intangible, don't spawn the "v" dust wave
-	{
 	if (spb->eflags & MFE_VERTICALFLIP)
 	{
 		sz = spb->ceilingz;
@@ -190,7 +188,6 @@ static void SpawnSPBDust(mobj_t *spb)
 		}
 	}
 }
-}
 
 // Spawns SPB slip tide. To be used when the SPB is turning.
 // Modified version of K_SpawnAIZDust. Maybe we could merge those to be cleaner?
@@ -205,8 +202,6 @@ static void SpawnSPBSliptide(mobj_t *spb, SINT8 dir)
 	angle_t travelangle;
 	fixed_t sz = spb->floorz;
 
-	if ((spb_intangible(spb) != SPB_FLASHING)) // Tired of this thing whacking people when switching targets, don't sliptide if intangible either
-	 { 
 		if (spb->eflags & MFE_VERTICALFLIP)
 		{
 			sz = spb->ceilingz;
@@ -237,8 +232,6 @@ static void SpawnSPBSliptide(mobj_t *spb, SINT8 dir)
 			K_MatchGenericExtraFlags(spark, spb);
 		}
 	}
-	
-}
 
 // Used for seeking and when SPB is trailing its target from way too close!
 static void SpawnSPBSpeedLines(mobj_t *spb)
@@ -633,16 +626,19 @@ static void SPBSeek(mobj_t *spb, mobj_t *bestMobj)
 		}
 	}
 
-	if (sliptide != 0)
-	{
-		// 1 if turning left, -1 if turning right.
-		// Angles work counterclockwise, remember!
-		SpawnSPBSliptide(spb, sliptide);
-	}
-	else
-	{
-		// if we're mostly going straight, then spawn the V dust cone!
-		SpawnSPBDust(spb);
+	if (spb_intangible(spb) != SPB_FLASHING || (spb_modetimer(spb) <= 0)) // Tired of this thing whacking people when switching targets
+	 { 
+		if (sliptide != 0)
+		{
+			// 1 if turning left, -1 if turning right.
+			// Angles work counterclockwise, remember!
+			SpawnSPBSliptide(spb, sliptide);
+		}
+		else
+		{
+			// if we're mostly going straight, then spawn the V dust cone!
+			SpawnSPBDust(spb);
+		}
 	}
 
 	// Always spawn speed lines while seeking
