@@ -735,7 +735,10 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 
 			V_DrawMappedPatch(x, y, 0, resbar, NULL);
 
-			V_DrawRightAlignedThinString(x+13, y-2, 0, va("%d", standings->pos[i]));
+			if (gametype != GT_TUTORIAL)
+			{
+				V_DrawRightAlignedThinString(x+13, y-2, 0, va("%d", standings->pos[i]));
+			}
 
 			//if (players[pnum].skincolor != SKINCOLOR_NONE)
 			{

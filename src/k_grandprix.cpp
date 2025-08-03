@@ -718,99 +718,29 @@ static boolean CompareReplacements(player_t *a, player_t *b)
 --------------------------------------------------*/
 void K_RetireBots(void)
 {
-	const UINT8 defaultbotskin = R_BotDefaultSkin();
-	SINT8 newDifficulty;
-
-	UINT8 usableskins, skincount = (demo.playback ? demo.numskins : numskins);
-	UINT8 grabskins[MAXSKINS+1];
-
 	UINT8 i;
 
 	if (grandprixinfo.gp == true
-		&& (grandprixinfo.eventmode != GPEVENT_NONE
-		|| (grandprixinfo.cup != NULL
-			&& roundqueue.size > 0
-			&& roundqueue.roundnum >= grandprixinfo.cup->numlevels)))
+		&& grandprixinfo.eventmode != GPEVENT_NONE)
 	{
-		// No replacement.
+		// Bots can't do anything here, replacement means they never get their spotlight.
 		return;
 	}
 
-	// Init usable bot skins list
-	for (usableskins = 0; usableskins < skincount; usableskins++)
+	if (roundqueue.size > 0)
 	{
-		grabskins[usableskins] = usableskins;
-	}
-	grabskins[usableskins] = MAXSKINS;
-
-	// Exclude player skins
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (!playeringame[i])
-			continue;
-		if (players[i].spectator)
-			continue;
-
-		grabskins[players[i].skin] = MAXSKINS;
-	}
-
-	// Rearrange usable bot skins list to prevent gaps for randomised selection
-	for (i = 0; i < usableskins; i++)
-	{
-		if (!(grabskins[i] == MAXSKINS || !R_SkinUsable(-1, grabskins[i], true)))
-			continue;
-		while (usableskins > i && (grabskins[usableskins] == MAXSKINS || !R_SkinUsable(-1, grabskins[usableskins], true)))
-			usableskins--;
-		grabskins[i] = grabskins[usableskins];
-		grabskins[usableskins] = MAXSKINS;
-	}
-
-	if (grandprixinfo.gp) // Sure, let's let this happen all the time :)
-	{
-		if (grandprixinfo.masterbots == true)
+		// Get the last non-special entry
+		i = roundqueue.size;
+		while (--i > roundqueue.position)
 		{
-			newDifficulty = MAXBOTDIFFICULTY;
-		}
-		else
-		{
-			const UINT8 startingdifficulty = K_BotStartingDifficulty(grandprixinfo.gamespeed);
-			newDifficulty = startingdifficulty - 4;
-			if (roundqueue.size > 0)
-			{
-				newDifficulty += roundqueue.roundnum;
-			}
-		}
-	}
-	else
-	{
-		newDifficulty = cv_kartbot.value;
-	}
-
-	if (newDifficulty > MAXBOTDIFFICULTY)
-	{
-		newDifficulty = MAXBOTDIFFICULTY;
-	}
-	else if (newDifficulty < 1)
-	{
-		newDifficulty = 1;
-	}
-
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		player_t *bot = NULL;
-
-		if (!playeringame[i] || !players[i].bot || players[i].spectator)
-		{
-			continue;
+			if (!roundqueue.entries[i].rankrestricted)
+				break;
 		}
 
-		bot = &players[i];
-
-		if (bot->pflags & PF_NOCONTEST)
+		if (roundqueue.position >= i)
 		{
-			// HACK!!!!! two days to end of cleanup period :)
-			// we do this so that any bot that's been removed doesn't count for K_SetNameForBot conflicts
-			player_names[i][0] = '0';
+			// Out of non-special entries, no replacement.
+			return;
 		}
 	}
 
@@ -861,8 +791,6 @@ void K_RetireBots(void)
 	std::stable_sort(humans.begin(), humans.end(), CompareReplacements);
 	std::stable_sort(bots.begin(), bots.end(), CompareReplacements);
 
-	boolean did_replacement = false;
-
 	if (G_GametypeHasSpectators() == true && grandprixinfo.gp == false && cv_shuffleloser.value != 0)
 	{
 		// While joiners and players still exist, insert joiners.
@@ -911,24 +839,113 @@ void K_RetireBots(void)
 			// Add our waiting-to-play spectator to the game.
 			P_SpectatorJoinGame(joiner);
 
-			did_replacement = true;
 			replacements--;
 			num_joining--;
 		}
 	}
 
-	if (did_replacement == true)
+	// No need to run any of this code if no bots afoot
+	if (bots.size() == 0)
 	{
-		// No need to run the bot swapping code,
-		// we already replaced the loser.
 		return;
 	}
 
-	// Replace last place bot.
-	if (bots.size() > 0)
-	{
-		player_t *bot = bots.back();
+	// Remove all still-in-contestors
+	bots.erase(std::remove_if(bots.begin(), bots.end(),
+		[](player_t *bot) {
+			return (
+				bot->spectator
+				|| !(bot->pflags & PF_NOCONTEST)
+			);
+		}
+	), bots.end());
 
+	// No need to run any of this code if no *NO-CONTESTORS* afoot
+	if (bots.size() == 0)
+	{
+		return;
+	}
+
+	// Okay, now this is essentially the original contents of K_RetireBots with cpp swag
+
+	const UINT8 defaultbotskin = R_BotDefaultSkin();
+	SINT8 newDifficulty;
+
+	UINT8 usableskins, skincount = (demo.playback ? demo.numskins : numskins);
+	UINT8 grabskins[MAXSKINS+1];
+
+	// Handle adjusting difficulty for new bots
+	{
+		if (grandprixinfo.gp) // Sure, let's let this happen all the time :)
+		{
+			if (grandprixinfo.masterbots == true)
+			{
+				newDifficulty = MAXBOTDIFFICULTY;
+			}
+			else
+			{
+				const UINT8 startingdifficulty = K_BotStartingDifficulty(grandprixinfo.gamespeed);
+				newDifficulty = startingdifficulty - 4;
+				if (roundqueue.size > 0)
+				{
+					newDifficulty += roundqueue.roundnum;
+				}
+			}
+		}
+		else
+		{
+			newDifficulty = cv_kartbot.value;
+		}
+
+		if (newDifficulty > MAXBOTDIFFICULTY)
+		{
+			newDifficulty = MAXBOTDIFFICULTY;
+		}
+		else if (newDifficulty < 1)
+		{
+			newDifficulty = 1;
+		}
+	}
+
+	// HACK!!!!! that survived allll the way since two days to end of cleanup period :)
+	// we do this so that any bot that's been removed doesn't count for K_SetNameForBot conflicts
+	for (player_t *bot : bots)
+	{
+		player_names[(bot-players)][0] = '0';
+	}
+
+	// Init usable bot skins list
+	for (usableskins = 0; usableskins < skincount; usableskins++)
+	{
+		grabskins[usableskins] = usableskins;
+	}
+	grabskins[usableskins] = MAXSKINS;
+
+	// Exclude player skins
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i])
+			continue;
+		if (players[i].spectator)
+			continue;
+
+		grabskins[players[i].skin] = MAXSKINS;
+	}
+
+	// Rearrange usable bot skins list to prevent gaps for randomised selection
+	for (i = 0; i < usableskins; i++)
+	{
+		if (!(grabskins[i] == MAXSKINS || !R_SkinUsable(-1, grabskins[i], true)))
+			continue;
+		while (usableskins > i && (grabskins[usableskins] == MAXSKINS || !R_SkinUsable(-1, grabskins[usableskins], true)))
+			usableskins--;
+		grabskins[i] = grabskins[usableskins];
+		grabskins[usableskins] = MAXSKINS;
+	}
+
+	// Replace nocontested bots.
+	for (player_t *bot : bots)
+	{
 		UINT8 skinnum = defaultbotskin;
 
 		if (usableskins > 0)
