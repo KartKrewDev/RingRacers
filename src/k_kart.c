@@ -13329,7 +13329,7 @@ static void K_KartSpindash(player_t *player)
 		// if spindash was charged enough, give a small thrust.
 		if (player->spindash >= SPINDASHTHRUSTTIME)
 		{
-			fixed_t thrust = FixedMul(player->mo->scale, player->spindash*FRACUNIT/5);
+			fixed_t thrust = FixedMul(player->mo->scale, min(player->spindash, MAXCHARGETIME)*FRACUNIT/5);
 
 			// Old behavior, before emergency zero-ring spindash
 			/*
