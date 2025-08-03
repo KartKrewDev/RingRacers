@@ -626,8 +626,10 @@ static UINT32 K_BotRubberbandDistance(const player_t *player)
 		return 0;
 	}
 
+	/*
 	if (player->botvars.foe)
 		spacing /= 2;
+	*/
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
