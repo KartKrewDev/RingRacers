@@ -392,6 +392,7 @@ static void SPBSeek(mobj_t *spb, mobj_t *bestMobj)
 		// Go past our target and explode instead.
 		if (spb->fuse == 0)
 		{
+			spb_intangible(spb) = SPB_FLASHING;
 			spb->fuse = 2*TICRATE;
 		}
 	}
@@ -626,7 +627,12 @@ static void SPBSeek(mobj_t *spb, mobj_t *bestMobj)
 		}
 	}
 
-	if (spb_intangible(spb) != SPB_FLASHING || (spb_modetimer(spb) <= 0)) // Tired of this thing whacking people when switching targets
+	//CONS_Printf("%d: leveltime %d: SPB intangibility %d: SPBModeTimer\n", leveltime, spb_intangible(spb), spb_modetimer(spb));
+
+	// Tired of this thing whacking people when switching targets. 
+	// I'm pretty sure checking mode timer doesn't work but, idk insurance!!
+
+	if (spb_intangible(spb) <= 0 || (spb_modetimer(spb) > 0)) 
 	 { 
 		if (sliptide != 0)
 		{
@@ -1041,6 +1047,7 @@ void Obj_SPBThink(mobj_t *spb)
 			spb->color = SKINCOLOR_NONE;
 			spb->colorized = false;
 		}
+		spb_intangible(spb) = SPB_FLASHING; // This is supposed to make it intangible when it's about to quit
 	}
 
 	// Clamp within level boundaries.
