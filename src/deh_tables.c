@@ -1586,6 +1586,10 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_AMPAURA",
 	"S_AMPBURST",
 
+	// Tripwire VFX on player for bumping it or passing it
+	"S_TRIPWIREOK",
+	"S_TRIPWIRELOCKOUT",
+
 	"S_GOTIT",
 
 	"S_CHARGEAURA",
@@ -3590,6 +3594,9 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_AMPBODY",
 	"MT_AMPAURA",
 	"MT_AMPBURST",
+
+	"MT_TRIPWIREOK",
+	"MT_TRIPWIRELOCKOUT",
 
 	"MT_GOTIT",
 
