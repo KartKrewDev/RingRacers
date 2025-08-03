@@ -235,8 +235,8 @@ static ticcmd_t oldcmd[MAXPLAYERS];
 #define DW_EXTRASTUFF 0xFE // Numbers below this are reserved for writing player slot data
 
 // Below consts are only used for demo extrainfo sections
-#define DW_STANDING 0x00
-#define DW_STANDING2 0x01
+#define DW_DEPRECATED	0x00
+#define DW_STANDINGS	0x01
 
 // For time attack ghosts
 #define GZT_XYZ    0x01
@@ -2188,7 +2188,7 @@ void srb2::write_current_demo_standings(const srb2::StandingsJson& standings)
 	Vector<std::byte> ubjson = value.to_ubjson();
 	uint32_t bytes = ubjson.size();
 
-	WRITEUINT8(demobuf.p, DW_STANDING2);
+	WRITEUINT8(demobuf.p, DW_STANDINGS);
 
 	WRITEUINT32(demobuf.p, bytes);
 	WRITEMEM(demobuf.p, (UINT8*)ubjson.data(), bytes);
@@ -2402,11 +2402,10 @@ void G_LoadDemoInfo(menudemo_t *pdemo, boolean allownonmultiplayer)
 {
 	savebuffer_t info = {0};
 	UINT8 *extrainfo_p;
-	UINT8 version, subversion, worknumskins, skinid;
+	UINT8 version, subversion, worknumskins;
 	UINT16 pdemoflags;
 	democharlist_t *skinlist = NULL;
 	UINT16 pdemoversion, count;
-	UINT16 legacystandingplayercount;
 	UINT32 num_classes;
 	char mapname[MAXMAPLUMPNAME],gtname[MAXGAMETYPELENGTH];
 	INT32 i;
@@ -2574,7 +2573,6 @@ void G_LoadDemoInfo(menudemo_t *pdemo, boolean allownonmultiplayer)
 		pdemo->gp = true;
 
 	// Read standings!
-	legacystandingplayercount = 0;
 
 	info.p = extrainfo_p;
 
@@ -2584,48 +2582,13 @@ void G_LoadDemoInfo(menudemo_t *pdemo, boolean allownonmultiplayer)
 
 		switch (extrainfotag)
 		{
-			case DW_STANDING:
+			case DW_DEPRECATED:
 			{
-				// This is the only extrainfo tag that is not length prefixed. All others must be.
-				constexpr size_t kLegacyStandingSize = 1+16+1+16+4;
-				if (P_SaveBufferRemaining(&info) < kLegacyStandingSize)
-				{
-					goto corrupt;
-				}
-				if (legacystandingplayercount >= MAXPLAYERS)
-				{
-					info.p += kLegacyStandingSize;
-					break; // switch
-				}
-				char temp[16+1];
-
-				pdemo->standings[legacystandingplayercount].ranking = READUINT8(info.p);
-
-				// Name
-				info.p += copy_fixed_buf(pdemo->standings[legacystandingplayercount].name, info.p, 16);
-
-				// Skin
-				skinid = READUINT8(info.p);
-				if (skinid > worknumskins)
-					skinid = 0;
-				pdemo->standings[legacystandingplayercount].skin = skinlist[skinid].mapping;
-
-				// Color
-				info.p += copy_fixed_buf(temp, info.p, 16);
-				for (i = 0; i < numskincolors; i++)
-					if (!stricmp(skincolors[i].name,temp))				// SRB2kart
-					{
-						pdemo->standings[legacystandingplayercount].color = i;
-						break;
-					}
-
-				// Score/time/whatever
-				pdemo->standings[legacystandingplayercount].timeorscore = READUINT32(info.p);
-
-				legacystandingplayercount++;
-				break;
+				// Because this isn't historically length-prefixed,
+				// we can't free this one value up. Sorry!
+				goto corrupt;
 			}
-			case DW_STANDING2:
+			case DW_STANDINGS:
 			{
 				if (P_SaveBufferRemaining(&info) < 4)
 				{
