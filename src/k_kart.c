@@ -10232,8 +10232,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 
 		S_StartSound(player->mo, sfx_kc33);
-		P_StartQuakeFromMobj(7, 50 * player->mo->scale, 2048 * player->mo->scale, player->mo);
-		player->bailquake = false;
 	}
 
 	// The precise ordering of start-of-level made me want to cut my head off,
