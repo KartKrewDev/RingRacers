@@ -202,36 +202,36 @@ static void SpawnSPBSliptide(mobj_t *spb, SINT8 dir)
 	angle_t travelangle;
 	fixed_t sz = spb->floorz;
 
-	if (spb->eflags & MFE_VERTICALFLIP)
-	{
-		sz = spb->ceilingz;
+		if (spb->eflags & MFE_VERTICALFLIP)
+		{
+			sz = spb->ceilingz;
+		}
+
+		travelangle = K_MomentumAngle(spb);
+
+		if ((leveltime & 1) && abs(spb->z - sz) < FRACUNIT*64)
+		{
+			newx = P_ReturnThrustX(spb, travelangle - (dir*ANGLE_45), 24*FRACUNIT);
+			newy = P_ReturnThrustY(spb, travelangle - (dir*ANGLE_45), 24*FRACUNIT);
+
+			spark = P_SpawnMobjFromMobj(spb, newx, newy, 0, MT_SPBDUST);
+			spark->z = sz;
+
+			P_SetMobjState(spark, S_KARTAIZDRIFTSTRAT);
+			P_SetTarget(&spark->target, spb);
+
+			spark->colorized = true;
+			spark->color = SKINCOLOR_RED;
+
+			spark->angle = travelangle + (dir * ANGLE_90);
+			P_SetScale(spark, (spark->destscale = spb->scale*3/2));
+
+			spark->momx = (6*spb->momx)/5;
+			spark->momy = (6*spb->momy)/5;
+
+			K_MatchGenericExtraFlags(spark, spb);
+		}
 	}
-
-	travelangle = K_MomentumAngle(spb);
-
-	if ((leveltime & 1) && abs(spb->z - sz) < FRACUNIT*64)
-	{
-		newx = P_ReturnThrustX(spb, travelangle - (dir*ANGLE_45), 24*FRACUNIT);
-		newy = P_ReturnThrustY(spb, travelangle - (dir*ANGLE_45), 24*FRACUNIT);
-
-		spark = P_SpawnMobjFromMobj(spb, newx, newy, 0, MT_SPBDUST);
-		spark->z = sz;
-
-		P_SetMobjState(spark, S_KARTAIZDRIFTSTRAT);
-		P_SetTarget(&spark->target, spb);
-
-		spark->colorized = true;
-		spark->color = SKINCOLOR_RED;
-
-		spark->angle = travelangle + (dir * ANGLE_90);
-		P_SetScale(spark, (spark->destscale = spb->scale*3/2));
-
-		spark->momx = (6*spb->momx)/5;
-		spark->momy = (6*spb->momy)/5;
-
-		K_MatchGenericExtraFlags(spark, spb);
-	}
-}
 
 // Used for seeking and when SPB is trailing its target from way too close!
 static void SpawnSPBSpeedLines(mobj_t *spb)
@@ -392,6 +392,7 @@ static void SPBSeek(mobj_t *spb, mobj_t *bestMobj)
 		// Go past our target and explode instead.
 		if (spb->fuse == 0)
 		{
+			spb_intangible(spb) = SPB_FLASHING;
 			spb->fuse = 2*TICRATE;
 		}
 	}
@@ -626,16 +627,24 @@ static void SPBSeek(mobj_t *spb, mobj_t *bestMobj)
 		}
 	}
 
-	if (sliptide != 0)
-	{
-		// 1 if turning left, -1 if turning right.
-		// Angles work counterclockwise, remember!
-		SpawnSPBSliptide(spb, sliptide);
-	}
-	else
-	{
-		// if we're mostly going straight, then spawn the V dust cone!
-		SpawnSPBDust(spb);
+	//CONS_Printf("%d: leveltime %d: SPB intangibility %d: SPBModeTimer\n", leveltime, spb_intangible(spb), spb_modetimer(spb));
+
+	// Tired of this thing whacking people when switching targets. 
+	// I'm pretty sure checking mode timer doesn't work but, idk insurance!!
+
+	if (spb_intangible(spb) <= 0 || (spb_modetimer(spb) > 0)) 
+	 { 
+		if (sliptide != 0)
+		{
+			// 1 if turning left, -1 if turning right.
+			// Angles work counterclockwise, remember!
+			SpawnSPBSliptide(spb, sliptide);
+		}
+		else
+		{
+			// if we're mostly going straight, then spawn the V dust cone!
+			SpawnSPBDust(spb);
+		}
 	}
 
 	// Always spawn speed lines while seeking
@@ -1038,6 +1047,7 @@ void Obj_SPBThink(mobj_t *spb)
 			spb->color = SKINCOLOR_NONE;
 			spb->colorized = false;
 		}
+		spb_intangible(spb) = SPB_FLASHING; // This is supposed to make it intangible when it's about to quit
 	}
 
 	// Clamp within level boundaries.
