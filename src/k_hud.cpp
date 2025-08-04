@@ -525,7 +525,7 @@ void K_LoadKartHUDGraphics(void)
 		buffer[7] = '0'+((i) % 10);
 		HU_UpdatePatch(&kp_overdrive[0][i], "%s", buffer);
 	}
-	
+
 	sprintf(buffer, "bsOVRDxx");
 	for (i = 0; i < 32; i++)
 	{
@@ -2000,7 +2000,7 @@ static void K_drawKartItem(void)
 static void K_drawBackupItem(void)
 {
 	bool tiny = r_splitscreen > 1;
-	patch_t *localpatch[3] = { kp_nodraw, kp_nodraw, kp_nodraw };	
+	patch_t *localpatch[3] = { kp_nodraw, kp_nodraw, kp_nodraw };
 	patch_t *localbg = (kp_itembg[2]);
 	patch_t *localinv = kp_invincibility[((leveltime % (6*3)) / 3) + 7 + tiny];
 	INT32 fx = 0, fy = 0, fflags = 0, tx = 0, ty = 0;	// final coords for hud and flags...
@@ -3406,7 +3406,7 @@ static void K_drawKartDuelScores(void)
 			{
 				flags |= V_SNAPTOBOTTOM;
 				flags &= ~V_SNAPTOTOP;
-				basey = BASEVIDHEIGHT - 40;		
+				basey = BASEVIDHEIGHT - 40;
 			}
 			basex = BASEVIDWIDTH - 80;
 		}
@@ -3493,7 +3493,7 @@ static void K_drawKartDuelScores(void)
 		V_DrawScaledPatch(basex-barheight+foeheight, basey, flags, kp_duel_4over);
 	else
 		V_DrawScaledPatch(basex, basey-barheight+foeheight, flags, kp_duel_over);
-	
+
 	if (!use4p)
 	{
 		V_DrawScaledPatch(basex, basey, flags, kp_duel_foe);
@@ -3512,7 +3512,7 @@ static void K_drawKartDuelScores(void)
 	}
 
 	foenum.text("{}", foe->duelscore);
-	younum.text("{}", stplyr->duelscore);	
+	younum.text("{}", stplyr->duelscore);
 
 	// minirankings shamelessly copypasted because i know that shit works already
 	// and SURELY we will never need to use this somewhere else, right?
@@ -3526,7 +3526,7 @@ static void K_drawKartDuelScores(void)
 		UINT8 drawme = draw ? (stplyr - players) : (foe - players);
 		UINT16 drawx = basex + (draw ? youx : foex);
 		UINT16 drawy = basey + (draw ? youy : foey);
-	
+
 		if (!playeringame[drawme] || players[drawme].spectator)
 			continue;
 
@@ -3790,8 +3790,8 @@ void K_drawKartTeamScores(boolean fromintermission, INT32 interoffset)
 			if (R_GetViewNumber() == 1)
 			{
 				flags |= V_SNAPTOBOTTOM;
-				flags &= ~V_SNAPTOTOP;			
-				basey = 170;	
+				flags &= ~V_SNAPTOTOP;
+				basey = 170;
 			}
 		}
 	}
@@ -3817,7 +3817,7 @@ void K_drawKartTeamScores(boolean fromintermission, INT32 interoffset)
 		return;
 
 	using srb2::Draw;
-	srb2::Draw::Font scorefont = Draw::Font::kTimer; 
+	srb2::Draw::Font scorefont = Draw::Font::kTimer;
 
 	if (totalscore > 99)
 	{
@@ -3834,7 +3834,7 @@ void K_drawKartTeamScores(boolean fromintermission, INT32 interoffset)
 		else
 		{
 			scorefont = Draw::Font::kZVote;
-		}			
+		}
 	}
 
 	UINT32 youscore = stplyr->teamimportance;
@@ -3870,7 +3870,7 @@ void K_drawKartTeamScores(boolean fromintermission, INT32 interoffset)
 		if (teams_lastleveltime[vn] != leveltime) // Timing consistency
 		{
 			INT32 delta = abs(easedallyscore[vn] - allyscore); // how wrong is display score?
-			
+
 			if (scorechangecooldown[vn] == 0 && delta)
 			{
 				if (allyscore > easedallyscore[vn])
@@ -3886,9 +3886,9 @@ void K_drawKartTeamScores(boolean fromintermission, INT32 interoffset)
 						enemycolor = R_GetTranslationColormap(TC_BLINK, SKINCOLOR_WHITE, GTC_CACHE);
 				}
 				scorechangecooldown[vn] = TICRATE/delta;
-			}	
+			}
 		}
-		
+
 		if (!fromintermission)
 		{
 			// replace scores with eased scores
@@ -4009,7 +4009,7 @@ void K_drawKartTeamScores(boolean fromintermission, INT32 interoffset)
 	if (totalscore > 99)
 	{
 		enemynum.text("{:03}", enemyscore);
-		allynum.text("{:03}", allyscore);		
+		allynum.text("{:03}", allyscore);
 	}
 	else
 	{
@@ -5346,8 +5346,10 @@ static void K_DrawCPUTagForPlayer(fixed_t x, fixed_t y, player_t *p, UINT32 flag
 		K_DrawNameTagItemSpy(barx, bary, p, flags);
 	}
 
+	UINT8 *foecol = R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(SKINCOLOR_RED), GTC_CACHE);
+
 	UINT8 blink = ((leveltime / 7) & 1);
-	V_DrawFixedPatch(x, y, FRACUNIT, flags, kp_cpu[blink], NULL);
+	V_DrawFixedPatch(x, y, FRACUNIT, flags, kp_cpu[blink], (p->botvars.foe) ? foecol : NULL);
 }
 
 static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p, UINT32 flags)
@@ -5856,13 +5858,13 @@ INT32 K_GetMinimapSplitFlags(const boolean usingProgressBar)
 #define ICON_DOT_RADIUS (10)
 
 // modified pick from blondedradio/RadioRacers (but there are like 57 things we don't want in the commit)
-// (so gogo gadget copypaste, thanks for a good feature and saving me work i was supposed to do anyway) 
+// (so gogo gadget copypaste, thanks for a good feature and saving me work i was supposed to do anyway)
 static void K_DrawKartUFOTimer(fixed_t objx, fixed_t objy, INT32 hudx, INT32 hudy, INT32 flags)
 {
 	fixed_t amnumxpos, amnumypos;
 	INT32 amxpos, amypos;
 
-	if (exitcountdown || leveltime > g_battleufo.due || battleprisons) 
+	if (exitcountdown || leveltime > g_battleufo.due || battleprisons)
 		return;
 
 	tic_t raw = g_battleufo.due - leveltime;
@@ -5872,7 +5874,7 @@ static void K_DrawKartUFOTimer(fixed_t objx, fixed_t objy, INT32 hudx, INT32 hud
 	{
 		flags |= (raw / (TICRATE/2) % 2) ? V_YELLOWMAP : 0;
 	}
-	
+
 	if (countdown <= 10)
 	{
 		flags &= ~(V_HUDTRANS|V_HUDTRANSHALF);

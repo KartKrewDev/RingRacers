@@ -170,6 +170,8 @@ static boolean CompareRivals(player_t *a, player_t *b)
 void K_AssignFoes(void)
 {
 	std::vector<player_t *> bots;
+	boolean addedplayer = false;
+
 	for (UINT8 i = 0; i < MAXPLAYERS; i++)
 	{
 		if (playeringame[i] == false)
@@ -179,16 +181,21 @@ void K_AssignFoes(void)
 
 		if (!player->spectator && player->bot)
 		{
+			addedplayer = true;
 			bots.push_back(player);
 			player->botvars.foe = false;
 		}
 	}
 
+	// Why the fuck is this blowing up sometimes
+	if (!addedplayer)
+		return;
+
 	std::stable_sort(bots.begin(), bots.end(), CompareRivals);
 
 	UINT8 i = 0;
 	for (auto &bot : bots)
-	{  
+	{
 		if (bot != NULL)
 			bot->botvars.foe = true;
 
@@ -425,12 +432,12 @@ void K_UpdateGrandPrixBots(void)
 		players[i].spectator = K_BotDefaultSpectator();
 	}
 
-	K_AssignFoes();
-
 	if (grandprixinfo.wonround == false)
 	{
 		return;
 	}
+
+	K_AssignFoes();
 
 	// Find the rival.
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -692,7 +699,7 @@ void K_IncreaseBotDifficulty(player_t *bot)
 	// RELAXED MODE:
 	// Continues don't drop bot difficulty, because we always advance.
 	// Bots will still level up from standard advancement; we need a
-	// much steeper rank nudge to keep difficulty at the right level.	
+	// much steeper rank nudge to keep difficulty at the right level.
 	if (grandprixinfo.gamespeed == KARTSPEED_EASY)
 	{
 		switch(averageRank)
