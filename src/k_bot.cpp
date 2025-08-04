@@ -408,6 +408,8 @@ void K_UpdateMatchRaceBots(void)
 		clear_bots(wantedbots);
 	}
 
+	K_AssignFoes();
+
 	// We should have enough bots now :)
 
 #ifdef HAVE_DISCORDRPC

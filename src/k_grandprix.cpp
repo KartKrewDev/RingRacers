@@ -159,7 +159,7 @@ static boolean CompareRivals(player_t *a, player_t *b)
 
 	if (K_RivalScore(a) != K_RivalScore(b))
 	{
-		// Push bad position to the back.
+		// Rival Score is HIGH when bots are strong. Sort them first!
 		return (K_RivalScore(a) > K_RivalScore(b));
 	}
 
@@ -167,7 +167,7 @@ static boolean CompareRivals(player_t *a, player_t *b)
 	return (P_Random(PR_BOTS) & 1);
 }
 
-static void K_AssignFoes(void)
+void K_AssignFoes(void)
 {
 	std::vector<player_t *> bots;
 	for (UINT8 i = 0; i < MAXPLAYERS; i++)
