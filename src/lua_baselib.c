@@ -3563,6 +3563,13 @@ static int lib_kGetPlayerDontDrawFlag(lua_State *L)
 	return 1;
 }
 
+static int lib_kGetKartGameSpeedScalar(lua_State *L)
+{
+	SINT8 value = luaL_optinteger(L, 1, gamespeed);
+	lua_pushfixed(L, K_GetKartGameSpeedScalar(value));
+	return 1;
+}
+
 static int lib_kIsPlayerWanted(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -4552,6 +4559,7 @@ static luaL_Reg lib[] = {
 	{"K_TryHurtSoundExchange", lib_kTryHurtSoundExchange},
 	{"K_GetPlayerDontDrawFlag", lib_kGetPlayerDontDrawFlag},
 	{"K_IsPlayerLosing",lib_kIsPlayerLosing},
+	{"K_GetKartGameSpeedScalar",lib_kGetKartGameSpeedScalar},
 	{"K_IsPlayerWanted",lib_kIsPlayerWanted},
 	{"K_GetMobjWeight",lib_kGetMobjWeight},
 	{"K_KartBouncing",lib_kKartBouncing},
