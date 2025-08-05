@@ -4207,6 +4207,18 @@ static int lib_kDoPogoSpring(lua_State *L)
 	return 0;
 }
 
+static int lib_kDoInvincibility(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	tic_t time = luaL_checkinteger(L, 2);
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	K_DoInvincibility(player, time);
+	return 0;
+}
+
 static int lib_kKillBananaChain(lua_State *L)
 {
 	mobj_t *banana = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -5602,6 +5614,7 @@ static luaL_Reg lib[] = {
 	{"K_Squish",lib_kSquish},
 	{"K_DoSneaker",lib_kDoSneaker},
 	{"K_DoPogoSpring",lib_kDoPogoSpring},
+	{"K_DoInvincibility",lib_kDoInvincibility},
 	{"K_KillBananaChain",lib_kKillBananaChain},
 	{"K_RepairOrbitChain",lib_kRepairOrbitChain},
 	{"K_FindJawzTarget",lib_kFindJawzTarget},
