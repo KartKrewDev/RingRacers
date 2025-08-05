@@ -163,8 +163,8 @@ static boolean CompareRivals(player_t *a, player_t *b)
 		return (K_RivalScore(a) > K_RivalScore(b));
 	}
 
-	// They are equals, so just randomize
-	return (P_Random(PR_BOTS) & 1);
+	// Fuck it
+	return a > b;
 }
 
 void K_AssignFoes(void)
@@ -749,8 +749,8 @@ static boolean CompareJoiners(player_t *a, player_t *b)
 		return (a->spectatewait < b->spectatewait);
 	}
 
-	// They are equals, so just randomize
-	return (P_Random(PR_BOTS) & 1);
+	// Fuck it
+	return a > b;
 }
 
 static boolean CompareReplacements(player_t *a, player_t *b)
@@ -767,8 +767,8 @@ static boolean CompareReplacements(player_t *a, player_t *b)
 		return (a->position < b->position);
 	}
 
-	// They are equals, so just randomize
-	return (P_Random(PR_BOTS) & 1);
+	// Fuck it
+	return a > b;
 }
 
 /*--------------------------------------------------
