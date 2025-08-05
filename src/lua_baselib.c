@@ -3573,6 +3573,19 @@ static int lib_kIsPlayerWanted(lua_State *L)
 	return 1;
 }
 
+static int lib_kGetMobjWeight(lua_State *L)
+{
+	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *against = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	INLEVEL
+	if (!mobj)
+		return LUA_ErrInvalid(L, "mobj_t");
+	if (!against)
+		return LUA_ErrInvalid(L, "mobj_t");
+	lua_pushfixed(L, K_GetMobjWeight(mobj, against));
+	return 1;
+}
+
 static int lib_kKartBouncing(lua_State *L)
 {
 	mobj_t *mobj1 = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -4539,6 +4552,7 @@ static luaL_Reg lib[] = {
 	{"K_GetPlayerDontDrawFlag", lib_kGetPlayerDontDrawFlag},
 	{"K_IsPlayerLosing",lib_kIsPlayerLosing},
 	{"K_IsPlayerWanted",lib_kIsPlayerWanted},
+	{"K_GetMobjWeight",lib_kGetMobjWeight},
 	{"K_KartBouncing",lib_kKartBouncing},
 	{"K_KartPainEnergyFling",lib_kKartPainEnergyFling},
 	{"K_MatchGenericExtraFlags",lib_kMatchGenericExtraFlags},
