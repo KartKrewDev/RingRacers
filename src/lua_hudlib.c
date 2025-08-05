@@ -59,6 +59,7 @@ static const char *const hud_disable_options[] = {
 	"speedometer",
 	"freeplay",
 	"rankings",
+	"rings",
 
 	"intermissiontally",
 	"intermissionmessages",
