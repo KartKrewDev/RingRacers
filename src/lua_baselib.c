@@ -32,6 +32,7 @@
 #include "k_collide.h"
 #include "k_color.h"
 #include "k_hud.h"
+#include "k_grandprix.h"
 #include "d_netcmd.h" // IsPlayerAdmin
 #include "k_menu.h" // Player Setup menu color stuff
 #include "p_spec.h" // P_StartQuake
@@ -46,6 +47,7 @@
 #include "lua_hud.h" // hud_running errors
 #include "taglist.h" // P_FindSpecialLineFromTag
 #include "lua_hook.h" // hook_cmd_running errors
+#include "k_roulette.h"
 
 #define NOHUD if (hud_running)\
 return luaL_error(L, "HUD rendering code should not call this function!");\
@@ -232,6 +234,8 @@ static const struct {
 	{META_ACTIVATOR,    "activator_t"},
 	
 	{META_FOLLOWER,    "follower_t"},
+	{META_ITEMROULETTE, "itemroulette_t"},
+	{META_ITEMROULETTE_ITEMLIST, "itemroulette_t.itemlist_t"},
 	{NULL,              NULL}
 };
 
@@ -3920,6 +3924,68 @@ static int lib_kGetItemPatch(lua_State *L)
 	return 1;
 }
 
+static int lib_kGetShieldFromItem(lua_State *L)
+{
+	kartitems_t item = luaL_checkinteger(L, 1);
+	//HUDSAFE
+	lua_pushinteger(L, K_GetShieldFromItem(item));
+	return 1;
+}
+
+static int lib_kItemResultToType(lua_State *L)
+{
+	kartitems_t item = luaL_checkinteger(L, 1);
+	//HUDSAFE
+	lua_pushinteger(L, K_ItemResultToType(item));
+	return 1;
+}
+
+static int lib_kItemResultToAmount(lua_State *L)
+{
+	kartitems_t item = luaL_checkinteger(L, 1);
+	//HUDSAFE
+	lua_pushinteger(L, K_ItemResultToAmount(item, NULL));
+	return 1;
+}
+
+static int lib_kGetItemCooldown(lua_State *L)
+{
+	kartitems_t item = luaL_checkinteger(L, 1);
+	
+	NOHUD
+	INLEVEL
+	
+	lua_pushinteger(L, K_GetItemCooldown(item));
+	return 1;
+}
+
+static int lib_kSetItemCooldown(lua_State *L)
+{
+	kartitems_t item = luaL_checkinteger(L, 1);
+	tic_t time = luaL_checkinteger(L, 2);
+	
+	NOHUD
+	INLEVEL
+	
+	K_SetItemCooldown(item, time);
+	return 0;
+}
+
+static int lib_kTimeAttackRules(lua_State *L)
+{
+	//HUDSAFE
+	lua_pushboolean(L, K_TimeAttackRules());
+	return 1;
+}
+
+static int lib_kCapsuleTimeAttackRules(lua_State *L)
+{
+	//HUDSAFE
+	lua_pushboolean(L, K_CapsuleTimeAttackRules());
+	return 1;
+}
+
+
 static int lib_kGetCollideAngle(lua_State *L)
 {
 	mobj_t *t1 = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -4014,6 +4080,12 @@ static int lib_kDeclareWeakspot(lua_State *L)
 	return 0;
 }
 
+static int lib_kCheckBossIntro(lua_State *L)
+{
+	lua_pushboolean(L, K_CheckBossIntro());
+	return 1;
+}
+
 static int lib_vsGetArena(lua_State *L)
 {
 	INT32 bossindex = luaL_checkinteger(L, 1);
@@ -4055,6 +4127,419 @@ static int lib_vsRandomPointOnArena(lua_State *L)
 	lua_pushfixed(L, result[0]);
 	lua_pushfixed(L, result[1]);
 	return 2;
+}
+
+static int lib_kItemEnabled(lua_State *L)
+{
+	kartitems_t item = luaL_checkinteger(L, 1);
+	lua_pushboolean(L, K_ItemEnabled(item));
+	return 1;
+}
+
+static int lib_kItemSingularity(lua_State *L)
+{
+	kartitems_t item = luaL_checkinteger(L, 1);
+	lua_pushboolean(L, K_ItemSingularity(item));
+	return 1;
+}
+
+static int lib_kGetBotItemPriority(lua_State *L)
+{
+	kartitems_t item = luaL_checkinteger(L, 1);
+	lua_pushinteger(L, K_GetBotItemPriority(item));
+	return 1;
+}
+
+static int lib_kAddItemToReel(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	itemroulette_t *itemRoulette = NULL;
+	
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	itemRoulette = &player->itemRoulette;
+	
+	if (lua_isnumber(L, 2))
+	{
+		kartitems_t item = luaL_checkinteger(L, 2);
+		K_AddItemToReel(player, itemRoulette, item);
+	}
+	else if (lua_istable(L, 2))
+	{
+		luaL_checktype(L, 2, LUA_TTABLE);
+		size_t size = luaL_getn(L, 2);
+		
+		for (size_t i = 1; i <= size; i++)
+		{
+			lua_rawgeti(L, 2, i);
+			if (lua_isnumber(L, -1))
+			{
+				kartitems_t item = luaL_checkinteger(L, -1);
+				K_AddItemToReel(player, itemRoulette, item);
+			}
+			else // Quit early, let the scripter know they messed up.
+			{
+				lua_pop(L, 1);
+				return luaL_error(L, "Non-integer value in table in index %d.", i);
+			}			
+			lua_pop(L, 1);
+		}
+	}
+	else return LUA_ErrInvalid(L, "integer/table");
+
+	return 0;
+}
+
+static int lib_kPushToRouletteItemList(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	itemroulette_t *itemRoulette = NULL;	
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	itemRoulette = &player->itemRoulette;
+	
+	if (lua_isnumber(L, 2))
+	{
+		kartitems_t item = luaL_checkinteger(L, 2);
+		K_PushToRouletteItemList(itemRoulette, item);
+	}
+	else if (lua_istable(L, 2))
+	{
+		luaL_checktype(L, 2, LUA_TTABLE);
+		size_t size = luaL_getn(L, 2);
+		
+		for (size_t i = 1; i <= size; i++)
+		{
+			lua_rawgeti(L, 2, i);
+			if (lua_isnumber(L, -1))
+			{
+				kartitems_t item = luaL_checkinteger(L, -1);
+				K_PushToRouletteItemList(itemRoulette, item);
+			}
+			else // Quit early, let the scripter know they messed up.
+			{
+				lua_pop(L, 1);
+				return luaL_error(L, "Non-integer value in table in index %d.", i);
+			}			
+			lua_pop(L, 1);
+		}
+	}
+	else return LUA_ErrInvalid(L, "integer/table");
+	
+	return 0;
+}
+
+static int lib_kStartItemRoulette(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	boolean ringbox = lua_optboolean(L, 2);
+	
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	
+	K_StartItemRoulette(player, ringbox);
+	return 0;
+}
+
+static int lib_kStartEggmanRoulette(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	
+	K_StartEggmanRoulette(player);
+	return 0;
+}
+
+static int lib_kStopRoulette(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	
+	K_StopRoulette(&player->itemRoulette);
+	return 0;
+}
+
+static int lib_kKartGetItemResult(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	kartitems_t item = luaL_checkinteger(L, 2);
+	
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	
+	K_KartGetItemResult(player, item);
+	return 0;
+}
+
+static int lib_kGetItemRouletteDistance(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	UINT8 numPlayers = luaL_checkinteger(L, 2);
+	INLEVEL
+	
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	
+	lua_pushinteger(L, K_GetItemRouletteDistance(player, numPlayers));
+	return 1;
+}
+
+static int lib_kFillItemRouletteData(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	itemroulette_t *itemRoulette = NULL;
+	
+	boolean ringbox = lua_optboolean(L, 2);
+	
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	itemRoulette = &player->itemRoulette;
+
+	K_FillItemRouletteData(player, itemRoulette, ringbox, false);
+	return 0;
+}
+
+static int lib_kForcedSPB(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	INLEVEL
+	
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	
+	lua_pushboolean(L, K_ForcedSPB(player, &player->itemRoulette));
+	return 1;
+}
+
+static int lib_kDenyShieldOdds(lua_State *L)
+{
+	kartitems_t item = luaL_checkinteger(L, 1);
+	INLEVEL
+	lua_pushboolean(L, K_DenyShieldOdds(item));
+	return 1;
+}
+
+static int lib_kGetRouletteOffset(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	fixed_t renderDelta = luaL_optnumber(L, 2, FRACUNIT);
+	UINT8 fudge = luaL_optnumber(L, 3, player ? player->cmd.latency : 0);
+	INLEVEL
+	
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	
+	lua_pushfixed(L, K_GetRouletteOffset(&player->itemRoulette, renderDelta, fudge));
+	return 1;
+}
+
+static int lib_kGetSlotOffset(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	fixed_t renderDelta = luaL_optnumber(L, 2, FRACUNIT);
+	UINT8 fudge = luaL_optnumber(L, 3, player ? player->cmd.latency : 0);
+	INLEVEL
+	
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	
+	lua_pushfixed(L, K_GetSlotOffset(&player->itemRoulette, renderDelta, fudge));
+	return 1;
+}
+
+static int lib_kCalculateRouletteSpeed(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	
+	K_CalculateRouletteSpeed(&player->itemRoulette);
+	return 0;
+}
+
+static int lib_kScaleItemDistance(lua_State *L)
+{
+	UINT32 distance = luaL_checkinteger(L, 1);
+	UINT8 numPlayers = luaL_checkinteger(L, 2);
+	lua_pushfixed(L, K_ScaleItemDistance(distance, numPlayers));
+	return 1;
+}
+
+static int lib_kItemOddsScale(lua_State *L)
+{
+	UINT8 playerCount = luaL_checkinteger(L, 1);
+	lua_pushfixed(L, K_ItemOddsScale(playerCount));
+	return 1;
+}
+
+static int lib_kWipeItemsInReel(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	itemroulette_t *itemRoulette = NULL;
+
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	itemRoulette = &player->itemRoulette;
+	
+	itemRoulette->itemList.len = 0;
+	return 0;
+}
+
+static int lib_kSetItemInReelByIndex(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	itemroulette_t *itemRoulette = NULL;
+	
+	size_t index = luaL_checkinteger(L, 2) - 1;
+	kartitems_t item = luaL_checkinteger(L, 3);
+	
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	itemRoulette = &player->itemRoulette;
+	
+	if (itemRoulette->itemList.len == 0)
+		return luaL_error(L, "There are no items in the roulette to set.");
+	
+	if (index > itemRoulette->itemList.len - 1)
+		return luaL_error(L, "Roulette index %d out of bounds (should be between %d and %d).", index + 1, 1, itemRoulette->itemList.len);
+	
+	itemRoulette->itemList.items[index] = item;
+	return 0;
+}
+
+static void AddOrPushToItemReel(player_t *player, itemroulette_t *roulette, kartitems_t item, boolean addRings)
+{
+	if (addRings)
+		K_AddItemToReel(player, roulette, item);
+	else
+		K_PushToRouletteItemList(roulette, item);
+}
+
+static int lib_kAddItemToReelByIndex(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	itemroulette_t *itemRoulette = NULL;
+	
+	size_t index = luaL_checkinteger(L, 2) - 1;
+	kartitems_t item = luaL_checkinteger(L, 3);
+	boolean addRings = lua_optboolean(L, 4);
+	
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	itemRoulette = &player->itemRoulette;
+	
+	// If the list is empty, just add the item silently and leave.
+	if (itemRoulette->itemList.len == 0) {
+		AddOrPushToItemReel(player, itemRoulette, item, addRings);
+		return 0;
+	}
+	
+	if (index > itemRoulette->itemList.len - 1)
+		return luaL_error(L, "Roulette index %d out of bounds (should be between %d and %d).", index + 1, 1, itemRoulette->itemList.len);
+	
+	size_t latterItemList = itemRoulette->itemList.len - index;
+	kartitems_t *latterItems = Z_Calloc(
+		sizeof(kartitems_t) * latterItemList,
+		PU_STATIC,
+		NULL
+	);
+	
+	if (!latterItems)
+		I_Error("Out of memory during calloc for lib_kAddItemToReelByIndex.");
+	
+	for (size_t i = 0; i < latterItemList; i++)
+	{
+		latterItems[i] = itemRoulette->itemList.items[index + i];
+	}
+	
+	itemRoulette->itemList.len = index;
+	AddOrPushToItemReel(player, itemRoulette, item, addRings);
+	
+	for (size_t i = 0; i < latterItemList; i++)
+	{
+		AddOrPushToItemReel(player, itemRoulette, latterItems[i], addRings);
+	}
+	
+	Z_Free(latterItems);
+	
+	return 0;
+}
+
+static int lib_kRemoveItemFromReelByIndex(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	itemroulette_t *itemRoulette = NULL;
+	
+	size_t index = luaL_checkinteger(L, 2) - 1;
+	
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	itemRoulette = &player->itemRoulette;
+	
+	if (itemRoulette->itemList.len == 0)
+		return luaL_error(L, "There are no items in the roulette to delete.");
+	
+	if (index > itemRoulette->itemList.len - 1)
+		return luaL_error(L, "Roulette index %d out of bounds (should be between %d and %d).", index + 1, 1, itemRoulette->itemList.len);
+	
+	size_t latterItemList = itemRoulette->itemList.len - index - 1;
+	kartitems_t *latterItems = Z_Calloc(
+		sizeof(kartitems_t) * latterItemList,
+		PU_STATIC,
+		NULL
+	);
+	
+	if (!latterItems)
+		I_Error("Out of memory during calloc for lib_kRemoveItemFromReelByIndex.");
+	
+	for (size_t i = 0; i < latterItemList; i++)
+	{
+		latterItems[i] = itemRoulette->itemList.items[index + 1 + i];
+	}
+	
+	itemRoulette->itemList.len = index;
+
+	for (size_t i = 0; i < latterItemList; i++)
+		K_PushToRouletteItemList(itemRoulette, latterItems[i]);
+	
+	Z_Free(latterItems);
+	
+	return 0;
+}
+
+static int lib_kCanChangeRules(lua_State *L)
+{
+	lua_pushboolean(L, K_CanChangeRules(true));
+	return 1;
 }
 
 static int lib_getTimeMicros(lua_State *L)
@@ -4326,9 +4811,15 @@ static luaL_Reg lib[] = {
 	{"K_GetKartAccel",lib_kGetKartAccel},
 	{"K_GetKartFlashing",lib_kGetKartFlashing},
 	{"K_GetItemPatch",lib_kGetItemPatch},
-
 	{"K_GetCollideAngle",lib_kGetCollideAngle},
 	{"K_AddHitLag",lib_kAddHitLag},
+	{"K_GetShieldFromItem",lib_kGetShieldFromItem},
+	{"K_ItemResultToType",lib_kItemResultToType},
+	{"K_ItemResultToAmount",lib_kItemResultToAmount},
+	{"K_GetItemCooldown",lib_kGetItemCooldown},
+	{"K_SetItemCooldown",lib_kSetItemCooldown},
+	{"K_TimeAttackRules",lib_kTimeAttackRules},
+	{"K_CapsuleTimeAttackRules",lib_kCapsuleTimeAttackRules},
 
 	// k_powerup
 	{"K_PowerUpRemaining",lib_kPowerUpRemaining},
@@ -4339,9 +4830,39 @@ static luaL_Reg lib[] = {
 	{"K_InitBossHealthBar", lib_kInitBossHealthBar},
 	{"K_UpdateBossHealthBar", lib_kUpdateBossHealthBar},
 	{"K_DeclareWeakspot", lib_kDeclareWeakspot},
+	{"K_CheckBossIntro", lib_kCheckBossIntro},
 	{"VS_GetArena", lib_vsGetArena},
 	{"VS_PredictAroundArena", lib_vsPredictAroundArena},
 	{"VS_RandomPointOnArena", lib_vsRandomPointOnArena},
+	
+	// k_roulette
+	{"K_ItemEnabled", lib_kItemEnabled},
+	{"K_ItemSingularity", lib_kItemSingularity},
+	{"K_GetBotItemPriority", lib_kGetBotItemPriority},
+	{"K_AddItemToReel", lib_kAddItemToReel},
+	{"K_PushToRouletteItemList", lib_kPushToRouletteItemList},
+	{"K_StartItemRoulette", lib_kStartItemRoulette},
+	{"K_StartEggmanRoulette", lib_kStartEggmanRoulette},
+	{"K_StopRoulette", lib_kStopRoulette},
+	{"K_KartGetItemResult", lib_kKartGetItemResult},
+	{"K_GetItemRouletteDistance", lib_kGetItemRouletteDistance},
+	{"K_FillItemRouletteData", lib_kFillItemRouletteData},
+	{"K_ForcedSPB", lib_kForcedSPB},
+	{"K_DenyShieldOdds", lib_kDenyShieldOdds},
+	{"K_GetRouletteOffset", lib_kGetRouletteOffset},
+	{"K_GetSlotOffset", lib_kGetSlotOffset},
+	{"K_CalculateRouletteSpeed", lib_kCalculateRouletteSpeed},
+	{"K_ScaleItemDistance", lib_kScaleItemDistance},
+	{"K_ItemOddsScale", lib_kItemOddsScale},	
+	// These are not real functions in k_roulette, but they allow
+	// encapsulation on how the scripter interacts with the item reel.
+	{"K_WipeItemsInReel", lib_kWipeItemsInReel},
+	{"K_SetItemInReelByIndex", lib_kSetItemInReelByIndex},
+	{"K_AddItemToReelByIndex", lib_kAddItemToReelByIndex},
+	{"K_RemoveItemFromReelByIndex", lib_kRemoveItemFromReelByIndex},
+
+	// k_grandprix
+	{"K_CanChangeRules", lib_kCanChangeRules},
 
 	// hu_stuff technically?
 	{"HU_DoTitlecardCEcho", lib_startTitlecardCecho},

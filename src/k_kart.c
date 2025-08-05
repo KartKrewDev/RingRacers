@@ -145,6 +145,9 @@ boolean K_InRaceDuel(void)
 
 fixed_t K_EffectiveGradingFactor(const player_t *player)
 {
+	if (player == NULL)
+		return FRACUNIT; // K_FillItemRouletteData can OSTENSIBLY call this with null player for "generic" use.
+
 	fixed_t min = (franticitems) ? MINFRANTICFACTOR : MINGRADINGFACTOR;
 	if (grandprixinfo.gp && grandprixinfo.masterbots && !K_PlayerUsesBotMovement(player))
 		return min;

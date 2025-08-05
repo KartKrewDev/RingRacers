@@ -25,6 +25,8 @@
 #include "lua_hook.h" // hook_cmd_running errors
 #include "k_profiles.h" // GetPrettyRRID
 
+boolean constplayer = false;
+
 static int lib_iteratePlayers(lua_State *L)
 {
 	INT32 i = -1;
@@ -438,10 +440,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->tripwireUnstuck);
 	else if (fastcmp(field,"bumpunstuck"))
 		lua_pushinteger(L, plr->bumpUnstuck);
-	/*
 	else if (fastcmp(field,"itemroulette"))
-		lua_pushinteger(L, plr->itemroulette);
-	*/
+		LUA_PushUserdata(L, &plr->itemRoulette, META_ITEMROULETTE);
 	else if (fastcmp(field,"itemtype"))
 		lua_pushinteger(L, plr->itemtype);
 	else if (fastcmp(field,"itemamount"))
@@ -799,6 +799,8 @@ static int player_set(lua_State *L)
 		return luaL_error(L, "Do not alter player_t in HUD rendering code!");
 	if (hook_cmd_running)
 		return luaL_error(L, "Do not alter player_t in CMD building code!");
+	if (constplayer)
+		return luaL_error(L, "Do not alter player_t while modifying the roulette!");
 
 	if (fastcmp(field,"mo")) {
 		mobj_t *newmo = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
@@ -1083,10 +1085,8 @@ static int player_set(lua_State *L)
 		plr->tripwireUnstuck = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"bumpunstuck"))
 		plr->bumpUnstuck = luaL_checkinteger(L, 3);
-	/*
 	else if (fastcmp(field,"itemroulette"))
-		plr->itemroulette = luaL_checkinteger(L, 3);
-	*/
+		return NOSET;
 	else if (fastcmp(field,"itemtype"))
 		plr->itemtype = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"itemamount"))

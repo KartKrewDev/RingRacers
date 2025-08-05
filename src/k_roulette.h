@@ -76,6 +76,90 @@ boolean K_ItemSingularity(kartitems_t item);
 
 botItemPriority_e K_GetBotItemPriority(kartitems_t result);
 
+/*--------------------------------------------------
+	fixed_t K_ItemOddsScale(UINT8 playerCount)
+
+		A multiplier for odds and distances to scale
+		them with the player count.
+
+	Input Arguments:-
+		playerCount - Number of players in the game.
+
+	Return:-
+		Fixed point number, to multiply odds or
+		distances by.
+--------------------------------------------------*/
+
+fixed_t K_ItemOddsScale(UINT8 playerCount);
+
+/*--------------------------------------------------
+	UINT32 K_ScaleItemDistance(UINT32 distance, UINT8 numPlayers)
+
+		Adjust item distance for lobby-size scaling
+		as well as Frantic Items.
+
+	Input Arguments:-
+		distance - Original distance.
+		numPlayers - Number of players in the game.
+
+	Return:-
+		New distance after scaling.
+--------------------------------------------------*/
+
+UINT32 K_ScaleItemDistance(INT32 distance, UINT8 numPlayers);
+
+/*--------------------------------------------------
+	void K_PushToRouletteItemList(itemroulette_t *const roulette, INT32 item)
+
+		Pushes a new item to the end of the item
+		roulette's item list. Also accepts slot machine
+		values instead of items.
+
+	Input Arguments:-
+		roulette - The item roulette data to modify.
+		item - The item / slot machine index to push to the list.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
+
+void K_PushToRouletteItemList(itemroulette_t *const roulette, INT32 item);
+
+/*--------------------------------------------------
+	void K_AddItemToReel(const player_t *player, itemroulette_t *const roulette, kartitems_t item)
+
+		Adds an item to a player's item reel. Unlike
+		pushing directly with K_PushToRouletteItemList,
+		this function handles special behaviors (like
+		padding with extra Super Rings).
+
+	Input Arguments:-
+		player - The player to add to the item roulette.
+			This is valid to be NULL.
+		roulette - The player's item roulette data.
+		item - The item to push to the list.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
+
+void K_AddItemToReel(const player_t *player, itemroulette_t *const roulette, kartitems_t item);
+
+/*--------------------------------------------------
+	void K_CalculateRouletteSpeed(itemroulette_t *const roulette)
+
+		Determines the speed for the item roulette,
+		adjusted for progress in the race and front
+		running.
+
+	Input Arguments:-
+		roulette - The item roulette data to modify.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
+
+void K_CalculateRouletteSpeed(itemroulette_t *const roulette);
 
 /*--------------------------------------------------
 	INT32 K_KartGetBattleOdds(const player_t *player, itemroulette_t *const roulette, UINT8 pos, kartitems_t item);
@@ -96,9 +180,27 @@ botItemPriority_e K_GetBotItemPriority(kartitems_t result);
 
 INT32 K_KartGetBattleOdds(const player_t *player, UINT8 pos, kartitems_t item);
 
+/*--------------------------------------------------
+	void K_FillItemRoulette(player_t *player, itemroulette_t *const roulette, boolean ringbox);
+
+		Entry point for roulette builder.
+		Includes Lua hooks.
+
+	Input Arguments:-
+		player - The player this roulette data is for.
+			Can be NULL for generic use.
+		roulette - The roulette data struct to fill out.
+		ringbox - Is this roulette fill triggered by a just-respawned Ring Box?
+
+	Return:-
+		N/A
+--------------------------------------------------*/
+
+void K_FillItemRoulette(player_t *player, itemroulette_t *const roulette, boolean ringbox);
+
 
 /*--------------------------------------------------
-	void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox, boolean dryrun);
+	void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, boolean ringbox, boolean dryrun);
 
 		Fills out the item roulette struct when it is
 		initially created. This function needs to be
@@ -116,7 +218,7 @@ INT32 K_KartGetBattleOdds(const player_t *player, UINT8 pos, kartitems_t item);
 		N/A
 --------------------------------------------------*/
 
-void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox, boolean dryrun);
+void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, boolean ringbox, boolean dryrun);
 
 
 /*--------------------------------------------------
@@ -224,7 +326,56 @@ fixed_t K_GetSlotOffset(itemroulette_t *const roulette, fixed_t renderDelta, UIN
 
 void K_KartItemRoulette(player_t *const player, ticcmd_t *cmd);
 
+void K_KartGetItemResult(player_t *const player, kartitems_t getitem);
+
+/*--------------------------------------------------
+	static UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers)
+
+		Gets a player's distance used for the item
+		roulette, including all scaling factors.
+
+	Input Arguments:-
+		player - The player to get the distance of.
+		numPlayers - Number of players in the game.
+
+	Return:-
+		The player's finalized item distance.
+--------------------------------------------------*/
+
 UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers);
+
+/*--------------------------------------------------
+	boolean K_DenyShieldOdds(kartitems_t item)
+
+		Checks if this type of shield already exists in
+		another player's inventory.
+
+	Input Arguments:-
+		item - The item type of the shield.
+
+	Return:-
+		Whether this item is a shield and may not be awarded
+		at this time.
+--------------------------------------------------*/
+
+boolean K_DenyShieldOdds(kartitems_t item);
+
+/*--------------------------------------------------
+	boolean K_ForcedSPB(const player_t *player, itemroulette_t *const roulette)
+
+		Determines special conditions where we want
+		to forcefully give the player an SPB.
+
+	Input Arguments:-
+		player - The player the roulette is for.
+		roulette - The item roulette data.
+
+	Return:-
+		true if we want to give the player a forced SPB,
+		otherwise false.
+--------------------------------------------------*/
+
+boolean K_ForcedSPB(const player_t *player, itemroulette_t *const roulette);
 
 #ifdef __cplusplus
 } // extern "C"

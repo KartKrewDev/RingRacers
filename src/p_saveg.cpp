@@ -782,33 +782,33 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].itemRoulette.active);
 
 #ifdef ITEM_LIST_SIZE
-		WRITEUINT32(save->p, players[i].itemRoulette.itemListLen);
+		WRITEUINT32(save->p, players[i].itemRoulette.itemList.len);
 
 		for (q = 0; q < ITEM_LIST_SIZE; q++)
 		{
-			if (q >= players[i].itemRoulette.itemListLen)
+			if (q >= players[i].itemRoulette.itemList.len)
 			{
 				WRITESINT8(save->p, KITEM_NONE);
 			}
 			else
 			{
-				WRITESINT8(save->p, players[i].itemRoulette.itemList[q]);
+				WRITESINT8(save->p, players[i].itemRoulette.itemList.items[q]);
 			}
 		}
 #else
-		if (players[i].itemRoulette.itemList == NULL)
+		if (players[i].itemRoulette.itemList.items == NULL)
 		{
 			WRITEUINT32(save->p, 0);
 			WRITEUINT32(save->p, 0);
 		}
 		else
 		{
-			WRITEUINT32(save->p, players[i].itemRoulette.itemListCap);
-			WRITEUINT32(save->p, players[i].itemRoulette.itemListLen);
+			WRITEUINT32(save->p, players[i].itemRoulette.itemList.cap);
+			WRITEUINT32(save->p, players[i].itemRoulette.itemList.len);
 
-			for (q = 0; q < players[i].itemRoulette.itemListLen; q++)
+			for (q = 0; q < players[i].itemRoulette.itemList.len; q++)
 			{
-				WRITESINT8(save->p, players[i].itemRoulette.itemList[q]);
+				WRITESINT8(save->p, players[i].itemRoulette.itemList.items[q]);
 			}
 		}
 #endif
@@ -1447,44 +1447,44 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].itemRoulette.active = (boolean)READUINT8(save->p);
 
 #ifdef ITEM_LIST_SIZE
-		players[i].itemRoulette.itemListLen = (size_t)READUINT32(save->p);
+		players[i].itemRoulette.itemList.len = (size_t)READUINT32(save->p);
 
 		for (q = 0; q < ITEM_LIST_SIZE; q++)
 		{
-			players[i].itemRoulette.itemList[q] = READSINT8(save->p);
+			players[i].itemRoulette.itemList.items[q] = READSINT8(save->p);
 		}
 #else
-		players[i].itemRoulette.itemListCap = (size_t)READUINT32(save->p);
-		players[i].itemRoulette.itemListLen = (size_t)READUINT32(save->p);
+		players[i].itemRoulette.itemList.cap = (size_t)READUINT32(save->p);
+		players[i].itemRoulette.itemList.len = (size_t)READUINT32(save->p);
 
-		if (players[i].itemRoulette.itemListCap > 0)
+		if (players[i].itemRoulette.itemList.cap > 0)
 		{
-			if (players[i].itemRoulette.itemList == NULL)
+			if (players[i].itemRoulette.itemList.items == NULL)
 			{
-				players[i].itemRoulette.itemList = Z_Calloc(
-					sizeof(SINT8) * players[i].itemRoulette.itemListCap,
+				players[i].itemRoulette.itemList.items = (SINT8*)Z_Calloc(
+					sizeof(SINT8) * players[i].itemRoulette.itemList.cap,
 					PU_STATIC,
-					&players[i].itemRoulette.itemList
+					NULL
 				);
 			}
 			else
 			{
-				players[i].itemRoulette.itemList = Z_Realloc(
-					players[i].itemRoulette.itemList,
-					sizeof(SINT8) * players[i].itemRoulette.itemListCap,
+				players[i].itemRoulette.itemList.items = (SINT8*)Z_Realloc(
+					players[i].itemRoulette.itemList.items,
+					sizeof(SINT8) * players[i].itemRoulette.itemList.cap,
 					PU_STATIC,
-					&players[i].itemRoulette.itemList
+					NULL
 				);
 			}
 
-			if (players[i].itemRoulette.itemList == NULL)
+			if (players[i].itemRoulette.itemList.items == NULL)
 			{
 				I_Error("Not enough memory for item roulette list\n");
 			}
 
-			for (q = 0; q < players[i].itemRoulette.itemListLen; q++)
+			for (q = 0; q < players[i].itemRoulette.itemList.len; q++)
 			{
-				players[i].itemRoulette.itemList[q] = READSINT8(save->p);
+				players[i].itemRoulette.itemList.items[q] = READSINT8(save->p);
 			}
 		}
 #endif

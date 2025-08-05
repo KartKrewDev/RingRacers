@@ -508,22 +508,24 @@ struct skybox_t {
 
 // player_t struct for item roulette variables
 
-// Doing this the right way is causing problems.
-// so FINE, it's a static length now.
-#define ITEM_LIST_SIZE (NUMKARTRESULTS << 3)
+// In case of dynamic alloc failure, break glass:
+// #define ITEM_LIST_SIZE (NUMKARTRESULTS << 3)
+
+typedef struct itemlist_t
+{
+	size_t len;
+#ifdef ITEM_LIST_SIZE
+	SINT8 items[ITEM_LIST_SIZE];
+#else
+	SINT8 *items;
+	size_t cap;
+#endif
+} itemlist_t;
 
 struct itemroulette_t
 {
 	boolean active;
-
-#ifdef ITEM_LIST_SIZE
-	size_t itemListLen;
-	SINT8 itemList[ITEM_LIST_SIZE];
-#else
-	size_t itemListCap;
-	size_t itemListLen;
-	SINT8 *itemList;
-#endif
+	itemlist_t itemList;
 
 	UINT8 playing, exiting;
 	UINT32 preexpdist, dist, baseDist;
