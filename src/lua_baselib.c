@@ -3591,12 +3591,13 @@ static int lib_kKartBouncing(lua_State *L)
 	mobj_t *mobj1 = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	mobj_t *mobj2 = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
 	NOHUD
+	INLEVEL
 	if (!mobj1)
 		return LUA_ErrInvalid(L, "mobj_t");
 	if (!mobj2)
 		return LUA_ErrInvalid(L, "mobj_t");
-	K_KartBouncing(mobj1, mobj2);
-	return 0;
+	lua_pushboolean(L, K_KartBouncing(mobj1, mobj2));
+	return 1;
 }
 
 static int lib_kKartPainEnergyFling(lua_State *L)
