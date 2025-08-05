@@ -13388,7 +13388,7 @@ static void K_KartSpindash(player_t *player)
 			if (G_TimeAttackStart() && leveltime < starttime)
 			{
 				thrust *= 2;
-				player->spindashspeed += FRACUNIT/2;
+				// player->spindashspeed += FRACUNIT/2;
 			}
 
 			// Old behavior, before emergency zero-ring spindash
@@ -14122,17 +14122,16 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				// Relative stat power for bonus TA Ring Box awards.
 				// AP 1, WP 2 = weight is worth twice what accel is.
 				// 0 = stat not considered at all!
-				// UINT8 accelPower = 0;
-				UINT8 speedPower = 0;
+				UINT8 accelPower = 1;
 				UINT8 weightPower = 6;
 
-				UINT8 total = speedPower*speed + weightPower*weight;
-				UINT8 maxtotal = speedPower*9 + weightPower*9;
+				UINT8 total = accelPower*accel + weightPower*weight;
+				UINT8 maxtotal = accelPower*9 + weightPower*9;
 
 				UINT32 baseaward = award;
 
 				// Scale from base payout at 9/1 to max payout at 1/9.
-				award += Easing_InCubic(FRACUNIT*total/maxtotal, 0, 9*baseaward/10);
+				award += Easing_Linear(FRACUNIT*total/maxtotal, 0, 11*baseaward/10);
 
 				// And, because we don't have to give a damn about sandbagging, up the stakes the longer we progress!
 				if (gametyperules & GTR_CIRCUIT)
