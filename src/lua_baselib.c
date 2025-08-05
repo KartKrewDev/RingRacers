@@ -4175,12 +4175,13 @@ static int lib_kFindJawzTarget(lua_State *L)
 {
 	mobj_t *actor = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	player_t *source = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
-	//HUDSAFE
+	angle_t angle = luaL_checkangle(L, 3);
+	INLEVEL
 	if (!actor)
 		return LUA_ErrInvalid(L, "mobj_t");
 	if (!source)
 		return LUA_ErrInvalid(L, "player_t");
-	LUA_PushUserdata(L, K_FindJawzTarget(actor, source, ANGLE_45), META_PLAYER);
+	LUA_PushUserdata(L, K_FindJawzTarget(actor, source, angle), META_MOBJ);
 	return 1;
 }
 
