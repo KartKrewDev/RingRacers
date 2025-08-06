@@ -168,6 +168,8 @@ extern UINT8 demo_writerng;
 #define DXD_PST_SPECTATING 0x02
 #define DXD_PST_LEFT       0x03
 
+#define MAXSPLITS (200)
+
 boolean G_CompatLevel(UINT16 level);
 
 // Record/playback tics
@@ -203,6 +205,7 @@ struct demoghost {
 	UINT16 version;
 	UINT8 numskins;
 	tic_t attackstart;
+	tic_t splits[MAXSPLITS];
 	boolean done;
 	democharlist_t *skinlist;
 	mobj_t oldmo, *mo;
@@ -238,6 +241,7 @@ void G_SaveDemo(void);
 void G_ResetDemoRecording(void);
 
 void G_SetDemoAttackTiming(tic_t time);
+void G_SetDemoCheckpointTiming(player_t *player, tic_t time, UINT8 checkpoint);
 
 boolean G_CheckDemoTitleEntry(void);
 

@@ -350,6 +350,13 @@ typedef enum
 	khud_exp,
 	khud_exptimer,
 
+	// Splits
+	khud_splittime,
+	khud_splitwin,
+	khud_splittimer,
+	khud_splitskin,
+	khud_splitcolor,
+
 	NUMKARTHUD
 } karthudtype_t;
 

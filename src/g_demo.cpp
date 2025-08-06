@@ -118,7 +118,7 @@ size_t copy_fixed_buf(void* p, const void* s, size_t n)
 
 static char demoname[MAX_WADPATH];
 static savebuffer_t demobuf = {0};
-static UINT8 *demotime_p, *demoinfo_p, *demoattack_p;
+static UINT8 *demotime_p, *demoinfo_p, *demoattack_p, *demosplits_p;
 static UINT16 demoflags;
 boolean demosynced = true; // console warning message
 
@@ -2068,6 +2068,13 @@ void G_BeginRecording(void)
 	demoattack_p = demobuf.p;
 	WRITEUINT32(demobuf.p, INT32_MAX);
 
+	demosplits_p = demobuf.p;
+	for (i = 0; i < MAXSPLITS; i++)
+	{
+		WRITEUINT32(demobuf.p, INT32_MAX);
+	}
+
+
 	// Save netvar data
 	CV_SaveDemoVars(&demobuf.p);
 
@@ -2235,8 +2242,57 @@ void srb2::write_current_demo_end_marker()
 
 void G_SetDemoAttackTiming(tic_t time)
 {
-	if (!demo.playback)
-		*(UINT32 *)demoattack_p = time;
+	if (demo.playback)
+		return;
+
+	*(UINT32 *)demoattack_p = time;
+}
+
+void G_SetDemoCheckpointTiming(player_t *player, tic_t time, UINT8 checkpoint)
+{
+	if (demo.playback)
+		return;
+	if (checkpoint >= MAXSPLITS || checkpoint < 0)
+		return;
+
+	UINT32 *splits = (UINT32 *)demosplits_p;
+	splits[checkpoint] = time;
+
+	CONS_Printf("%d / %d\n", checkpoint, time);
+
+	demoghost *g;
+	tic_t lowest = INT32_MAX;
+	UINT32 lowestskin = ((skin_t*)player->mo->skin) - skins;
+	UINT32 lowestcolor = player->skincolor;
+	for (g = ghosts; g; g = g->next)
+	{
+		if (lowest > g->splits[checkpoint])
+		{
+			lowest = g->splits[checkpoint];
+			lowestskin = ((skin_t*)g->mo->skin)-skins;
+			lowestcolor = g->mo->color;
+
+		}
+		CONS_Printf("->%d\n", g->splits[checkpoint]);
+	}
+
+	if (lowest != INT32_MAX)
+	{
+		player->karthud[khud_splittimer] = 1;
+		player->karthud[khud_splitskin] = lowestskin;
+		player->karthud[khud_splitcolor] = lowestcolor;
+
+		if (lowest < time)
+		{
+			player->karthud[khud_splittime] = time - lowest;
+			player->karthud[khud_splitwin] = false;
+		}
+		else
+		{
+			player->karthud[khud_splittime] = lowest - time;
+			player->karthud[khud_splitwin] = true;
+		}
+	}
 }
 
 void G_SetDemoTime(UINT32 ptime, UINT32 plap)
@@ -2594,6 +2650,8 @@ void G_LoadDemoInfo(menudemo_t *pdemo, boolean allownonmultiplayer)
 
 	extrainfo_p = info.buffer + READUINT32(info.p); // The extra UINT32 read is for a blank 4 bytes?
 	info.p += 4; // attack start
+	for (i = 0; i < MAXSPLITS; i++)
+		info.p += 4; // splits
 
 	// Pared down version of CV_LoadNetVars to find the kart speed
 	pdemo->kartspeed = KARTSPEED_NORMAL; // Default to normal speed
@@ -3509,7 +3567,13 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	}
 
 	p += 4; // Extra data location reference
-	UINT32 attackstart = READUINT32(p);
+	tic_t attackstart = READUINT32(p);
+
+	UINT8 *splits = p;
+	for (i = 0; i < MAXSPLITS; i++)
+	{
+		p += 4;
+	}
 
 	// net var data
 	count = READUINT16(p);
@@ -3602,6 +3666,7 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	gh->skinlist = skinlist;
 
 	gh->attackstart = attackstart;
+	std::memcpy(gh->splits, splits, sizeof(tic_t) * MAXSPLITS);
 
 	ghosts = gh;
 
@@ -3755,6 +3820,8 @@ staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer)
 
 	p += 4; // Extrainfo location marker
 	p += 4; // Attack start info
+	for (i = 0; i < MAXSPLITS; i++)
+		p += 4; // splits
 
 	// Ehhhh don't need ghostversion here (?) so I'll reuse the var here
 	ghostversion = READUINT16(p);
