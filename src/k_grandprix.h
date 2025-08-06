@@ -200,6 +200,8 @@ boolean K_CanChangeRules(boolean allowdemos);
 
 boolean K_BotDefaultSpectator(void);
 
+void K_AssignFoes(void);
+
 
 #ifdef __cplusplus
 } // extern "C"

@@ -408,6 +408,8 @@ void K_UpdateMatchRaceBots(void)
 		clear_bots(wantedbots);
 	}
 
+	K_AssignFoes();
+
 	// We should have enough bots now :)
 
 #ifdef HAVE_DISCORDRPC
@@ -615,7 +617,7 @@ fixed_t K_BotMapModifier(void)
 --------------------------------------------------*/
 static UINT32 K_BotRubberbandDistance(const player_t *player)
 {
-	const UINT32 spacing = FixedDiv(640 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
+	UINT32 spacing = FixedDiv(640 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
 	const UINT8 portpriority = player - players;
 	UINT8 pos = 1;
 	UINT8 i;
@@ -625,6 +627,11 @@ static UINT32 K_BotRubberbandDistance(const player_t *player)
 		// The rival should always try to be the front runner for the race.
 		return 0;
 	}
+
+	/*
+	if (player->botvars.foe)
+		spacing /= 2;
+	*/
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -646,6 +653,11 @@ static UINT32 K_BotRubberbandDistance(const player_t *player)
 		if (G_SameTeam(player, &players[i]) == true)
 		{
 			// Don't consider friendlies with your rubberbanding.
+			continue;
+		}
+
+		if (player->botvars.foe && !players[i].botvars.foe)
+		{
 			continue;
 		}
 
@@ -694,6 +706,8 @@ fixed_t K_BotRubberband(const player_t *player)
 	{
 		UINT8 levelreduce = std::min<UINT8>(3, player->botvars.difficulty/4); // How much to drop the "effective level" of bots that are consistently behind
 		expreduce = Easing_Linear((K_EffectiveGradingFactor(player) - MINGRADINGFACTOR) * 2, levelreduce*FRACUNIT, 0);
+		if (player->botvars.foe)
+			expreduce /= 2;
 	}
 
 	fixed_t difficultyEase = (((player->botvars.difficulty - 1) * FRACUNIT) - expreduce) / (MAXBOTDIFFICULTY - 1);
@@ -805,7 +819,13 @@ fixed_t K_BotRubberband(const player_t *player)
 		scaled_dist = FixedDiv(scaled_dist, mapobjectscale);
 	}
 
-	constexpr UINT32 END_DIST = 2048 * 14;
+	UINT32 END_DIST = 2048 * 14;
+
+	if (K_EffectiveGradingFactor(player) <= FRACUNIT)
+	{
+		END_DIST = Easing_Linear((K_EffectiveGradingFactor(player) - MINGRADINGFACTOR) * 2, END_DIST * 2, END_DIST);
+	}
+
 	if (scaled_dist < END_DIST)
 	{
 		// At the end of tracks, start slowing down.
@@ -823,7 +843,7 @@ fixed_t K_BotRubberband(const player_t *player)
 fixed_t K_UpdateRubberband(player_t *player)
 {
 	fixed_t dest = K_BotRubberband(player);
-	
+
 	fixed_t deflect = player->botvars.recentDeflection;
 	if (deflect > BOTMAXDEFLECTION)
 		deflect = BOTMAXDEFLECTION;
@@ -2146,7 +2166,7 @@ void K_UpdateBotGameplayVars(player_t *player)
 	UINT32 smo = BOTANGLESAMPLES - 1;
 
 	player->botvars.recentDeflection = (smo * player->botvars.recentDeflection / BOTANGLESAMPLES) + (dangle / BOTANGLESAMPLES);
-	
+
 	player->botvars.lastAngle = mangle;
 
 	const botcontroller_t *botController = K_GetBotController(player->mo);

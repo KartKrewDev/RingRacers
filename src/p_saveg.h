@@ -46,6 +46,7 @@ struct savedata_bot_s
 	UINT8 skin;
 	UINT8 difficulty;
 	boolean rival;
+	boolean foe;
 	UINT32 score;
 };
 

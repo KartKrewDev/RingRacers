@@ -138,6 +138,7 @@ static inline void P_ArchivePlayer(savebuffer_t *save)
 
 		WRITEUINT8(save->p, players[i].botvars.difficulty);
 		WRITEUINT8(save->p, (UINT8)players[i].botvars.rival);
+		WRITEUINT8(save->p, (UINT8)players[i].botvars.foe);
 
 		WRITEUINT32(save->p, players[i].score);
 	}
@@ -195,6 +196,7 @@ static boolean P_UnArchivePlayer(savebuffer_t *save)
 
 		savedata.bots[pid].difficulty = READUINT8(save->p);
 		savedata.bots[pid].rival = (boolean)READUINT8(save->p);
+		savedata.bots[pid].foe = (boolean)READUINT8(save->p);
 		savedata.bots[pid].score = READUINT32(save->p);
 	}
 
@@ -765,6 +767,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].botvars.difficulty);
 		WRITEUINT8(save->p, players[i].botvars.diffincrease);
 		WRITEUINT8(save->p, players[i].botvars.rival);
+		WRITEUINT8(save->p, players[i].botvars.foe);
 		WRITEFIXED(save->p, players[i].botvars.rubberband);
 		WRITEUINT8(save->p, players[i].botvars.bumpslow);
 		WRITEUINT32(save->p, players[i].botvars.itemdelay);
@@ -1430,6 +1433,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].botvars.difficulty = READUINT8(save->p);
 		players[i].botvars.diffincrease = READUINT8(save->p);
 		players[i].botvars.rival = (boolean)READUINT8(save->p);
+		players[i].botvars.foe = (boolean)READUINT8(save->p);
 		players[i].botvars.rubberband = READFIXED(save->p);
 		players[i].botvars.bumpslow = READUINT8(save->p);
 		players[i].botvars.itemdelay = READUINT32(save->p);

@@ -418,6 +418,7 @@ struct botvars_t
 	UINT8 difficulty; // Bot's difficulty setting
 	INT16 diffincrease; // In GP: bot difficulty will increase this much next round
 	boolean rival; // If true, they're the GP rival
+	boolean foe; // If true, in contention for top X
 
 	// All entries above persist between rounds and must be recorded in demos
 
