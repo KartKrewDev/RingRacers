@@ -819,7 +819,13 @@ fixed_t K_BotRubberband(const player_t *player)
 		scaled_dist = FixedDiv(scaled_dist, mapobjectscale);
 	}
 
-	constexpr UINT32 END_DIST = 2048 * 14;
+	UINT32 END_DIST = 2048 * 14;
+
+	if (K_EffectiveGradingFactor(player) <= FRACUNIT)
+	{
+		END_DIST = Easing_Linear((K_EffectiveGradingFactor(player) - MINGRADINGFACTOR) * 2, END_DIST * 2, END_DIST);
+	}
+
 	if (scaled_dist < END_DIST)
 	{
 		// At the end of tracks, start slowing down.
@@ -837,7 +843,7 @@ fixed_t K_BotRubberband(const player_t *player)
 fixed_t K_UpdateRubberband(player_t *player)
 {
 	fixed_t dest = K_BotRubberband(player);
-	
+
 	fixed_t deflect = player->botvars.recentDeflection;
 	if (deflect > BOTMAXDEFLECTION)
 		deflect = BOTMAXDEFLECTION;
@@ -2160,7 +2166,7 @@ void K_UpdateBotGameplayVars(player_t *player)
 	UINT32 smo = BOTANGLESAMPLES - 1;
 
 	player->botvars.recentDeflection = (smo * player->botvars.recentDeflection / BOTANGLESAMPLES) + (dangle / BOTANGLESAMPLES);
-	
+
 	player->botvars.lastAngle = mangle;
 
 	const botcontroller_t *botController = K_GetBotController(player->mo);
