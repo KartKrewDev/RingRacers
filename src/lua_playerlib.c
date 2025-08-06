@@ -97,44 +97,29 @@ static int lib_lenPlayer(lua_State *L)
 
 static int lib_iterateDisplayplayers(lua_State *L)
 {
-	INT32 i = -1;
-	INT32 temp = -1;
-	INT32 iter = 0;
+	INT32 i = lua_tonumber(L, lua_upvalueindex(1));
 
 	if (lua_gettop(L) < 2)
-	{
-		//return luaL_error(L, "Don't call displayplayers.iterate() directly, use it as 'for player in displayplayers.iterate do <block> end'.");
-		lua_pushcfunction(L, lib_iterateDisplayplayers);
+	{ 
+		lua_pushcclosure(L, lib_iterateDisplayplayers, 1);
 		return 1;
 	}
-	lua_settop(L, 2);
-	lua_remove(L, 1); // state is unused.
-	if (!lua_isnil(L, 1))
+		
+	if (i <= r_splitscreen)
 	{
-		temp = (INT32)(*((player_t **)luaL_checkudata(L, 1, META_PLAYER)) - players);	// get the player # of the last iterated player.
-
-		// @FIXME:
-		// I didn't quite find a better way for this; Here, we go back to which player in displayplayers we last iterated to resume the for loop below for this new function call
-		// I don't understand enough about how the Lua stacks work to get this to work in possibly a single line.
-		// So anyone feel free to correct this!
-
-		for (; iter < MAXSPLITSCREENPLAYERS; iter++)
-		{
-			if (displayplayers[iter] == temp)
-			{
-				i = iter;
-				break;
-			}
-		}
-	}
-
-	for (i++; i < MAXSPLITSCREENPLAYERS; i++)
-	{
-		if (i > r_splitscreen || !playeringame[displayplayers[i]])
-			return 0;	// Stop! There are no more players for us to go through. There will never be a player gap in displayplayers.
-
+		if (!playeringame[displayplayers[i]])
+			return 0;
+		
+		// Return player and splitscreen index.
 		LUA_PushUserdata(L, &players[displayplayers[i]], META_PLAYER);
-		lua_pushinteger(L, i);	// push this to recall what number we were on for the next function call. I suppose this also means you can retrieve the splitscreen player number with 'for p, n in displayplayers.iterate'!
+		lua_pushnumber(L, i);
+
+		// Update splitscreen index value for next iteration.
+		lua_pushnumber(L, i + 1);
+		lua_pushvalue(L, -1);
+		lua_replace(L, lua_upvalueindex(1));
+		lua_pop(L, 1);
+
 		return 2;
 	}
 	return 0;
@@ -160,7 +145,7 @@ static int lib_getDisplayplayers(lua_State *L)
 	field = luaL_checkstring(L, 2);
 	if (fastcmp(field,"iterate"))
 	{
-		lua_pushcfunction(L, lib_iterateDisplayplayers);
+		lua_pushcclosure(L, lib_iterateDisplayplayers, 1);
 		return 1;
 	}
 	return 0;
