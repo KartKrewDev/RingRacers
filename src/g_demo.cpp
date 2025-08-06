@@ -1250,12 +1250,11 @@ void G_GhostTicker(void)
 {
 	demoghost *g,*p;
 
-	tic_t fastforward = 0;
-
 	for (g = ghosts, p = NULL; g; g = g->next)
 	{
 		UINT16 ziptic;
 		UINT8 xziptic;
+		tic_t fastforward = 0;
 
 		if (g->done)
 		{
@@ -1599,7 +1598,7 @@ skippedghosttic:
 			I_Error("Ghost is not a record attack ghost GHOSTEND"); //@TODO lmao don't blow up like this
 
 		// If the timer started, skip ahead until the ghost starts too.
-		if (!fastforward && linecrossed && g->attackstart != INT32_MAX && leveltime < g->attackstart && G_TimeAttackStart())
+		if (!fastforward && attacktimingstarted && g->attackstart != INT32_MAX && leveltime < g->attackstart && G_TimeAttackStart())
 		{
 			fastforward = g->attackstart - leveltime;
 			g->attackstart = INT32_MAX;

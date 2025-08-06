@@ -314,7 +314,7 @@ boolean thwompsactive; // Thwomps activate on lap 2
 UINT8 lastLowestLap; // Last lowest lap, for activating race lap executors
 SINT8 spbplace; // SPB exists, give the person behind better items
 boolean rainbowstartavailable; // Boolean, keeps track of if the rainbow start was gotten
-tic_t linecrossed; // For Time Attack
+tic_t attacktimingstarted; // For Time Attack
 boolean inDuel; // Boolean, keeps track of if it is a 1v1
 UINT8 overtimecheckpoints; // Duel overtime speedups!
 
@@ -5130,7 +5130,7 @@ void G_EndGame(void)
 		return;
 	}
 
-	if (gametype == GT_TUTORIAL && M_GameAboutToStart() && restoreMenu == NULL) 
+	if (gametype == GT_TUTORIAL && M_GameAboutToStart() && restoreMenu == NULL)
 	{
 		 // Playground Hack
 		F_StartIntro();

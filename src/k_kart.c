@@ -192,7 +192,7 @@ void K_TimerReset(void)
 	memset(&g_musicfade, 0, sizeof g_musicfade);
 	numbulbs = 1;
 	inDuel = rainbowstartavailable = false;
-	linecrossed = 0;
+	attacktimingstarted = 0;
 	overtimecheckpoints = 0;
 	timelimitintics = extratimeintics = secretextratime = 0;
 	g_pointlimit = 0;
@@ -9631,9 +9631,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		K_DropItems(player);
 	}
 
-	if (G_TimeAttackStart() && !linecrossed && player->speed && leveltime > introtime)
+	if (G_TimeAttackStart() && !attacktimingstarted && player->speed && leveltime > introtime)
 	{
-		linecrossed = leveltime;
+		attacktimingstarted = leveltime;
 		/*
 		if (starttime > leveltime) // Overlong starts shouldn't reset time on cross
 		{
