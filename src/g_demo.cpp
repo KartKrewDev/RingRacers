@@ -2236,7 +2236,8 @@ void srb2::write_current_demo_end_marker()
 
 void G_SetDemoAttackTiming(tic_t time)
 {
-	*(UINT32 *)demoattack_p = time;
+	if (!demo.playback)
+		*(UINT32 *)demoattack_p = time;
 }
 
 void G_SetDemoTime(UINT32 ptime, UINT32 plap)
