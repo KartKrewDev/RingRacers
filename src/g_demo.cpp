@@ -118,7 +118,7 @@ size_t copy_fixed_buf(void* p, const void* s, size_t n)
 
 static char demoname[MAX_WADPATH];
 static savebuffer_t demobuf = {0};
-static UINT8 *demotime_p, *demoinfo_p, *demoattack_p;
+static UINT8 *demotime_p, *demoinfo_p, *demoattack_p, *demosplits_p;
 static UINT16 demoflags;
 boolean demosynced = true; // console warning message
 
@@ -2068,6 +2068,13 @@ void G_BeginRecording(void)
 	demoattack_p = demobuf.p;
 	WRITEUINT32(demobuf.p, INT32_MAX);
 
+	demosplits_p = demobuf.p;
+	for (i = 0; i < MAXSPLITS; i++)
+	{
+		WRITEUINT32(demobuf.p, INT32_MAX);
+	}
+
+
 	// Save netvar data
 	CV_SaveDemoVars(&demobuf.p);
 
@@ -2235,8 +2242,66 @@ void srb2::write_current_demo_end_marker()
 
 void G_SetDemoAttackTiming(tic_t time)
 {
-	if (!demo.playback)
-		*(UINT32 *)demoattack_p = time;
+	if (demo.playback)
+		return;
+
+	*(UINT32 *)demoattack_p = time;
+}
+
+void G_SetDemoCheckpointTiming(player_t *player, tic_t time, UINT8 checkpoint)
+{
+	if (demo.playback)
+		return;
+	if (checkpoint >= MAXSPLITS || checkpoint < 0)
+		return;
+
+	UINT32 *splits = (UINT32 *)demosplits_p;
+	splits[checkpoint] = time;
+
+	demoghost *g;
+	tic_t lowest = INT32_MAX;
+	UINT32 lowestskin = ((skin_t*)player->mo->skin) - skins;
+	UINT32 lowestcolor = player->skincolor;
+	for (g = ghosts; g; g = g->next)
+	{
+		if (lowest > g->splits[checkpoint])
+		{
+			lowest = g->splits[checkpoint];
+			lowestskin = ((skin_t*)g->mo->skin)-skins;
+			lowestcolor = g->mo->color;
+
+		}
+	}
+
+	if (lowest != INT32_MAX)
+	{
+		player->karthud[khud_splittimer] = 3*TICRATE;
+		player->karthud[khud_splitskin] = lowestskin;
+		player->karthud[khud_splitcolor] = lowestcolor;
+		player->karthud[khud_splittime] = (INT32)time - (INT32)lowest;
+
+		if (lowest < time)
+		{
+			player->karthud[khud_splitwin] = -2; // behind and losing
+		}
+		else
+		{
+			player->karthud[khud_splitwin] = 2; // ahead and gaining
+		}
+
+		INT32 last = player->karthud[khud_splitlast];
+		INT32 now = player->karthud[khud_splittime];
+
+		if (checkpoint != 0)
+		{
+			if (player->karthud[khud_splitwin] > 0 && now > last)
+				player->karthud[khud_splitwin] = 1; // ahead but losing
+			else if (player->karthud[khud_splitwin] < 0 && now < last)
+				player->karthud[khud_splitwin] = -1; // behind but gaining
+		}
+
+		player->karthud[khud_splitlast] = player->karthud[khud_splittime];
+	}
 }
 
 void G_SetDemoTime(UINT32 ptime, UINT32 plap)
@@ -2594,6 +2659,8 @@ void G_LoadDemoInfo(menudemo_t *pdemo, boolean allownonmultiplayer)
 
 	extrainfo_p = info.buffer + READUINT32(info.p); // The extra UINT32 read is for a blank 4 bytes?
 	info.p += 4; // attack start
+	for (i = 0; i < MAXSPLITS; i++)
+		info.p += 4; // splits
 
 	// Pared down version of CV_LoadNetVars to find the kart speed
 	pdemo->kartspeed = KARTSPEED_NORMAL; // Default to normal speed
@@ -3094,6 +3161,10 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 
 	demobuf.p += 4; // Extrainfo location
 	demobuf.p += 4; // Attack start
+	for (i = 0; i < MAXSPLITS; i++)
+	{
+		demobuf.p += 4; // Splits
+	}
 
 	// ...*map* not loaded?
 	if (!gamemap || (gamemap > nummapheaders) || !mapheaderinfo[gamemap-1] || mapheaderinfo[gamemap-1]->lumpnum == LUMPERROR)
@@ -3509,7 +3580,13 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	}
 
 	p += 4; // Extra data location reference
-	UINT32 attackstart = READUINT32(p);
+	tic_t attackstart = READUINT32(p);
+
+	UINT8 *splits = p;
+	for (i = 0; i < MAXSPLITS; i++)
+	{
+		p += 4;
+	}
 
 	// net var data
 	count = READUINT16(p);
@@ -3602,6 +3679,7 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	gh->skinlist = skinlist;
 
 	gh->attackstart = attackstart;
+	std::memcpy(gh->splits, splits, sizeof(tic_t) * MAXSPLITS);
 
 	ghosts = gh;
 
@@ -3755,6 +3833,8 @@ staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer)
 
 	p += 4; // Extrainfo location marker
 	p += 4; // Attack start info
+	for (i = 0; i < MAXSPLITS; i++)
+		p += 4; // splits
 
 	// Ehhhh don't need ghostversion here (?) so I'll reuse the var here
 	ghostversion = READUINT16(p);

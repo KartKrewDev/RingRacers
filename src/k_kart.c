@@ -4422,6 +4422,11 @@ void K_CheckpointCrossAward(player_t *player)
 	if (gametype != GT_RACE)
 		return;
 
+	if (!demo.playback && G_TimeAttackStart())
+	{
+		G_SetDemoCheckpointTiming(player, leveltime - starttime, player->gradingpointnum);
+	}
+
 	player->gradingfactor += K_GetGradingFactorAdjustment(player);
 	player->gradingpointnum++;
 	player->exp = K_GetEXP(player);
@@ -9038,6 +9043,11 @@ void K_KartPlayerHUDUpdate(player_t *player)
 
 	if (player->karthud[khud_trickcool])
 		player->karthud[khud_trickcool]--;
+
+	if (player->karthud[khud_splittimer] && !player->karthud[khud_lapanimation])
+	{
+		player->karthud[khud_splittimer]--;
+	}
 
 	if (player->positiondelay)
 		player->positiondelay--;
