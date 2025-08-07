@@ -356,6 +356,7 @@ typedef enum
 	khud_splittimer,
 	khud_splitskin,
 	khud_splitcolor,
+	khud_splitlast,
 
 	NUMKARTHUD
 } karthudtype_t;

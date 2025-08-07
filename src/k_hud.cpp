@@ -7764,41 +7764,68 @@ void K_drawKartHUD(void)
 
 					boolean debug_alwaysdraw = false;
 
-					if (stplyr->karthud[khud_splittimer] || debug_alwaysdraw)
+					if (
+						(
+							!stplyr->karthud[khud_lapanimation] &&
+							stplyr->karthud[khud_splittimer] &&
+							(stplyr->karthud[khud_splittimer] > TICRATE/3 || stplyr->karthud[khud_splittimer]%2 || cv_reducevfx.value)
+						)
+						|| debug_alwaysdraw
+					)
 					{
-						tic_t split = stplyr->karthud[khud_splittime];
-						UINT32 skin = stplyr->karthud[khud_splitskin];
-						UINT32 color = stplyr->karthud[khud_splitcolor];
-						boolean ahead = stplyr->karthud[khud_splitwin];
+						INT32 split = stplyr->karthud[khud_splittime];
+						INT32 skin = stplyr->karthud[khud_splitskin];
+						INT32 color = stplyr->karthud[khud_splitcolor];
+						INT32 ahead = stplyr->karthud[khud_splitwin];
 
 						// debug
 						if (!stplyr->karthud[khud_splittimer])
 						{
-							ahead = !!((leveltime/17)%2);
+							ahead = ((leveltime/17)%5) - 2;
 							split = leveltime;
 							skin = stplyr->skin;
 							color = stplyr->skincolor;
 						}
 
+						split = std::abs(split);
+
 						UINT8 *skincolor = R_GetTranslationColormap(skin, static_cast<skincolornum_t>(color), GTC_CACHE);
 
-						UINT8 textcolor = ahead ? SKINCOLOR_SAPPHIRE : SKINCOLOR_KETCHUP;
+						UINT8 textcolor = SKINCOLOR_WHITE;
+						switch (ahead)
+						{
+							case 2:
+								textcolor = SKINCOLOR_SAPPHIRE; // leading and gaining
+								break;
+							case 1:
+								textcolor = SKINCOLOR_PIGEON; // leading and losing
+								break;
+							case -1:
+								textcolor = SKINCOLOR_RUBY; // trailing and gaining
+								break;
+							case -2:
+								textcolor = SKINCOLOR_CRIMSON; // trailing and losing
+								break;
+						}
+
 
 						Draw row = Draw(BASEVIDWIDTH/2, BASEVIDHEIGHT/4).align(Draw::Align::kCenter)
 							.font(Draw::Font::kThinTimer).flags(V_30TRANS);
 
+						std::string arrow = (ahead == 1 || ahead == -2) ? "(" : ")";
+
 						// vibes offset
-						row.x(-32).colormap(skincolor).patch(R_CanShowSkinInDemo(skin) ? faceprefix[skin][FACE_MINIMAP] : kp_unknownminimap);
+						row.x(-35).colormap(skincolor).patch(R_CanShowSkinInDemo(skin) ? faceprefix[skin][FACE_MINIMAP] : kp_unknownminimap);
 
 						Draw::TextElement text = Draw::TextElement(
-							std::string(ahead ? "-" : "+") + "{:02}'{:02}\"{:02}",
+							std::string(ahead >= 0 ? "-" : "+") + " " + "{:02}'{:02}\"{:02} " + arrow,
 							G_TicsToMinutes(split, true),
 							G_TicsToSeconds(split),
 							G_TicsToCentiseconds(split)
 						);
 
 						// vibes offset TWO
-						row.colormap(textcolor).colorize(textcolor).x(8).text(text);
+						row.colormap(textcolor).colorize(textcolor).x(15).text(text);
 					}
 				}
 				else

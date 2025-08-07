@@ -9044,11 +9044,9 @@ void K_KartPlayerHUDUpdate(player_t *player)
 	if (player->karthud[khud_trickcool])
 		player->karthud[khud_trickcool]--;
 
-	if (player->karthud[khud_splittimer])
+	if (player->karthud[khud_splittimer] && !player->karthud[khud_lapanimation])
 	{
-		player->karthud[khud_splittimer]++;
-		if (player->karthud[khud_splittimer] > 2*TICRATE)
-			player->karthud[khud_splittimer] = 0;
+		player->karthud[khud_splittimer]--;
 	}
 
 	if (player->positiondelay)

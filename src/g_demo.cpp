@@ -2258,8 +2258,6 @@ void G_SetDemoCheckpointTiming(player_t *player, tic_t time, UINT8 checkpoint)
 	UINT32 *splits = (UINT32 *)demosplits_p;
 	splits[checkpoint] = time;
 
-	CONS_Printf("%d / %d\n", checkpoint, time);
-
 	demoghost *g;
 	tic_t lowest = INT32_MAX;
 	UINT32 lowestskin = ((skin_t*)player->mo->skin) - skins;
@@ -2273,25 +2271,36 @@ void G_SetDemoCheckpointTiming(player_t *player, tic_t time, UINT8 checkpoint)
 			lowestcolor = g->mo->color;
 
 		}
-		CONS_Printf("->%d\n", g->splits[checkpoint]);
 	}
 
 	if (lowest != INT32_MAX)
 	{
-		player->karthud[khud_splittimer] = 1;
+		player->karthud[khud_splittimer] = 3*TICRATE;
 		player->karthud[khud_splitskin] = lowestskin;
 		player->karthud[khud_splitcolor] = lowestcolor;
+		player->karthud[khud_splittime] = (INT32)time - (INT32)lowest;
 
 		if (lowest < time)
 		{
-			player->karthud[khud_splittime] = time - lowest;
-			player->karthud[khud_splitwin] = false;
+			player->karthud[khud_splitwin] = -2; // behind and losing
 		}
 		else
 		{
-			player->karthud[khud_splittime] = lowest - time;
-			player->karthud[khud_splitwin] = true;
+			player->karthud[khud_splitwin] = 2; // ahead and gaining
 		}
+
+		INT32 last = player->karthud[khud_splitlast];
+		INT32 now = player->karthud[khud_splittime];
+
+		if (checkpoint != 0)
+		{
+			if (player->karthud[khud_splitwin] > 0 && now > last)
+				player->karthud[khud_splitwin] = 1; // ahead but losing
+			else if (player->karthud[khud_splitwin] < 0 && now < last)
+				player->karthud[khud_splitwin] = -1; // behind but gaining
+		}
+
+		player->karthud[khud_splitlast] = player->karthud[khud_splittime];
 	}
 }
 
