@@ -4424,7 +4424,7 @@ void K_CheckpointCrossAward(player_t *player)
 
 	if (!demo.playback && G_TimeAttackStart())
 	{
-		G_SetDemoCheckpointTiming(player, leveltime, player->gradingpointnum);
+		G_SetDemoCheckpointTiming(player, leveltime - starttime, player->gradingpointnum);
 	}
 
 	player->gradingfactor += K_GetGradingFactorAdjustment(player);
