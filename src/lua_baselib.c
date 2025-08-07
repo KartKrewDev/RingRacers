@@ -1729,6 +1729,16 @@ static int lib_pDoPlayerExit(lua_State *L)
 	return 0;
 }
 
+static int lib_pDoAllPlayersExit(lua_State *L)
+{
+	pflags_t flags = luaL_checkinteger(L, 1);
+	boolean trygivelife = lua_optboolean(L, 2);
+	NOHUD
+	INLEVEL
+	P_DoAllPlayersExit(flags, trygivelife);
+	return 0;
+}
+
 static int lib_pInstaThrust(lua_State *L)
 {
 	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -5439,6 +5449,7 @@ static luaL_Reg lib[] = {
 	{"P_GivePlayerLives",lib_pGivePlayerLives},
 	{"P_MovePlayer",lib_pMovePlayer},
 	{"P_DoPlayerExit",lib_pDoPlayerExit},
+	{"P_DoAllPlayersExit",lib_pDoAllPlayersExit},
 	{"P_InstaThrust",lib_pInstaThrust},
 	{"P_ReturnThrustX",lib_pReturnThrustX},
 	{"P_ReturnThrustY",lib_pReturnThrustY},
