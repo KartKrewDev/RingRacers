@@ -3161,6 +3161,10 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 
 	demobuf.p += 4; // Extrainfo location
 	demobuf.p += 4; // Attack start
+	for (i = 0; i < MAXSPLITS; i++)
+	{
+		demobuf.p += 4; // Splits
+	}
 
 	// ...*map* not loaded?
 	if (!gamemap || (gamemap > nummapheaders) || !mapheaderinfo[gamemap-1] || mapheaderinfo[gamemap-1]->lumpnum == LUMPERROR)
