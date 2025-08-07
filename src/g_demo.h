@@ -168,7 +168,7 @@ extern UINT8 demo_writerng;
 #define DXD_PST_SPECTATING 0x02
 #define DXD_PST_LEFT       0x03
 
-#define MAXSPLITS (200)
+#define MAXSPLITS (32)
 
 boolean G_CompatLevel(UINT16 level);
 
