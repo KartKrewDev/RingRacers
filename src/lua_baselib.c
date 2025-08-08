@@ -3502,6 +3502,13 @@ static int lib_kStartRoundWinCamera(lua_State *L)
 	return 0;
 }
 
+static int lib_kEndCameraIsFreezing(lua_State *L)
+{
+	INLEVEL
+	lua_pushboolean(L, K_EndCameraIsFreezing());
+	return 1;
+}
+
 // K_HUD
 ////////////
 
@@ -5616,6 +5623,7 @@ static luaL_Reg lib[] = {
 
 	// k_endcam
 	{"K_StartRoundWinCamera",lib_kStartRoundWinCamera},
+	{"K_EndCameraIsFreezing",lib_kEndCameraIsFreezing},
 
 	// k_hud
 	{"K_AddMessage", lib_kAddMessage},
