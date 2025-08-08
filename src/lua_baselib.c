@@ -3874,6 +3874,17 @@ static int lib_kRemoveGrowShrink(lua_State *L)
 	return 0;
 }
 
+static int lib_kIsBigger(lua_State *L)
+{
+	mobj_t *compare = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *other = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	INLEVEL
+	if (!compare || !other)
+		return LUA_ErrInvalid(L, "mobj_t");
+	lua_pushboolean(L, K_IsBigger(compare, other));
+	return 1;
+}
+
 static int lib_kSpinPlayer(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -4729,6 +4740,7 @@ static luaL_Reg lib[] = {
 	{"K_DoInstashield",lib_kDoInstashield},
 	{"K_SpawnBattlePoints",lib_kSpawnBattlePoints},
 	{"K_RemoveGrowShrink",lib_kRemoveGrowShrink},
+	{"K_IsBigger",lib_kIsBigger},
 	{"K_SpinPlayer",lib_kSpinPlayer},
 	{"K_TumblePlayer",lib_kTumblePlayer},
 	{"K_StumblePlayer",lib_kStumblePlayer},
