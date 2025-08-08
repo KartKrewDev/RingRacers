@@ -3920,6 +3920,15 @@ static int lib_kTumblePlayer(lua_State *L)
 	return 0;
 }
 
+static int lib_kStumbleSlope(lua_State *L)
+{
+	angle_t angle = luaL_checkangle(L, 1);
+	angle_t pitch = luaL_checkangle(L, 2);
+	angle_t roll = luaL_checkangle(L, 3);
+	lua_pushangle(L, K_StumbleSlope(angle, pitch, roll));
+	return 1;
+}
+
 static int lib_kStumblePlayer(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -4743,6 +4752,7 @@ static luaL_Reg lib[] = {
 	{"K_IsBigger",lib_kIsBigger},
 	{"K_SpinPlayer",lib_kSpinPlayer},
 	{"K_TumblePlayer",lib_kTumblePlayer},
+	{"K_StumbleSlope",lib_kStumbleSlope},
 	{"K_StumblePlayer",lib_kStumblePlayer},
 	{"K_ExplodePlayer",lib_kExplodePlayer},
 	{"K_TakeBumpersFromPlayer",lib_kTakeBumpersFromPlayer},
