@@ -1513,6 +1513,13 @@ static int lib_pPlayerZMovement(lua_State *L)
 // P_TICK
 ////////////
 
+static int lib_pLevelIsFrozen(lua_State *L)
+{
+	INLEVEL
+	lua_pushboolean(L, P_LevelIsFrozen());
+	return 1;
+}
+
 static int lib_pSetFreezeLevel(lua_State *L)
 {
 	boolean value = luaL_checkboolean(L, 1);
@@ -4467,6 +4474,7 @@ static luaL_Reg lib[] = {
 	{"P_PlayerZMovement",lib_pPlayerZMovement},
 
 	// p_tick
+	{"P_LevelIsFrozen",lib_pLevelIsFrozen},
 	{"P_SetFreezeLevel",lib_pSetFreezeLevel},
 	{"P_MobjIsFrozen",lib_pMobjIsFrozen},
 
