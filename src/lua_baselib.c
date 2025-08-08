@@ -1510,6 +1510,21 @@ static int lib_pPlayerZMovement(lua_State *L)
 	return 0;
 }
 
+// P_TICK
+////////////
+
+static int lib_pMobjIsFrozen(lua_State *L)
+{
+	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	NOHUD
+	INLEVEL
+	if (!mobj)
+		return LUA_ErrInvalid(L, "mobj_t");
+	lua_pushboolean(L, P_MobjIsFrozen(mobj));
+	return 1;
+}
+
+
 // P_USER
 ////////////
 
@@ -4441,6 +4456,9 @@ static luaL_Reg lib[] = {
 	{"P_RingZMovement",lib_pRingZMovement},
 	{"P_SceneryZMovement",lib_pSceneryZMovement},
 	{"P_PlayerZMovement",lib_pPlayerZMovement},
+
+	// p_tick
+	{"P_MobjIsFrozen",lib_pMobjIsFrozen},
 
 	// p_user
 	{"P_AddPlayerScore",lib_pAddPlayerScore},
