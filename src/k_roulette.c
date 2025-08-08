@@ -404,17 +404,9 @@ botItemPriority_e K_GetBotItemPriority(kartitems_t result)
 /*--------------------------------------------------
 	static fixed_t K_ItemOddsScale(UINT8 playerCount)
 
-		A multiplier for odds and distances to scale
-		them with the player count.
-
-	Input Arguments:-
-		playerCount - Number of players in the game.
-
-	Return:-
-		Fixed point number, to multiply odds or
-		distances by.
+		See header file for description.
 --------------------------------------------------*/
-static fixed_t K_ItemOddsScale(UINT8 playerCount)
+fixed_t K_ItemOddsScale(UINT8 playerCount)
 {
 	const UINT8 basePlayer = 8; // The player count we design most of the game around.
 	fixed_t playerScaling = 0;
@@ -467,7 +459,7 @@ static UINT32 K_UndoMapScaling(UINT32 distance)
 }
 
 /*--------------------------------------------------
-	static UINT32 K_ScaleItemDistance(UINT32 distance, UINT8 numPlayers)
+	UINT32 K_ScaleItemDistance(UINT32 distance, UINT8 numPlayers)
 
 		Adjust item distance for lobby-size scaling
 		as well as Frantic Items.
@@ -480,10 +472,8 @@ static UINT32 K_UndoMapScaling(UINT32 distance)
 	Return:-
 		New distance after scaling.
 --------------------------------------------------*/
-static UINT32 K_ScaleItemDistance(const player_t *player, UINT32 distance, UINT8 numPlayers)
+UINT32 K_ScaleItemDistance(INT32 distance, UINT8 numPlayers)
 {
-	(void)player;
-
 #if 0
 	if (franticitems == true)
 	{
@@ -498,24 +488,13 @@ static UINT32 K_ScaleItemDistance(const player_t *player, UINT32 distance, UINT8
 		FRACUNIT + (K_ItemOddsScale(numPlayers) / 2)
 	);
 
-	// Distance is reduced based on the player's gradingfactor
-	// distance = FixedMul(distance, player->gradingfactor);
-
 	return distance;
 }
 
 /*--------------------------------------------------
 	static UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers)
 
-		Gets a player's distance used for the item
-		roulette, including all scaling factors.
-
-	Input Arguments:-
-		player - The player to get the distance of.
-		numPlayers - Number of players in the game.
-
-	Return:-
-		The player's finalized item distance.
+		See header file for description.
 --------------------------------------------------*/
 UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers)
 {
@@ -567,7 +546,7 @@ UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers)
 	}
 
 	pdis = K_UndoMapScaling(pdis);
-	pdis = K_ScaleItemDistance(player, pdis, numPlayers);
+	pdis = K_ScaleItemDistance(pdis, numPlayers);
 
 	if (player->bot && (player->botvars.rival || cv_levelskull.value))
 	{
@@ -579,19 +558,11 @@ UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers)
 }
 
 /*--------------------------------------------------
-	static boolean K_DenyShieldOdds(kartitems_t item)
+	boolean K_DenyShieldOdds(kartitems_t item)
 
-		Checks if this type of shield already exists in
-		another player's inventory.
-
-	Input Arguments:-
-		item - The item type of the shield.
-
-	Return:-
-		Whether this item is a shield and may not be awarded
-		at this time.
+		See header file for description.
 --------------------------------------------------*/
-static boolean K_DenyShieldOdds(kartitems_t item)
+boolean K_DenyShieldOdds(kartitems_t item)
 {
 	const INT32 shieldType = K_GetShieldFromItem(item);
 	size_t i;
@@ -704,18 +675,9 @@ INT32 K_KartGetBattleOdds(const player_t *player, UINT8 pos, kartitems_t item)
 /*--------------------------------------------------
 	static boolean K_ForcedSPB(const player_t *player, itemroulette_t *const roulette)
 
-		Determines special conditions where we want
-		to forcefully give the player an SPB.
-
-	Input Arguments:-
-		player - The player the roulette is for.
-		roulette - The item roulette data.
-
-	Return:-
-		true if we want to give the player a forced SPB,
-		otherwise false.
+		See header file for description.
 --------------------------------------------------*/
-static boolean K_ForcedSPB(const player_t *player, itemroulette_t *const roulette)
+boolean K_ForcedSPB(const player_t *player, itemroulette_t *const roulette)
 {
 	if (K_ItemEnabled(KITEM_SPB) == false)
 	{
@@ -778,23 +740,23 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 	size_t i;
 
 #ifndef ITEM_LIST_SIZE
-	if (roulette->itemList == NULL)
+	if (roulette->itemList.items == NULL)
 	{
-		roulette->itemListCap = 8;
-		roulette->itemList = Z_Calloc(
-			sizeof(SINT8) * roulette->itemListCap,
+		roulette->itemList.cap = 32;
+		roulette->itemList.items = Z_Calloc(
+			sizeof(SINT8) * roulette->itemList.cap,
 			PU_STATIC,
-			&roulette->itemList
+			NULL
 		);
 
-		if (roulette->itemList == NULL)
+		if (roulette->itemList.items == NULL)
 		{
 			I_Error("Not enough memory for item roulette list\n");
 		}
 	}
 #endif
 
-	roulette->itemListLen = 0;
+	roulette->itemList.len = 0;
 	roulette->index = 0;
 
 	roulette->baseDist = roulette->dist = 0;
@@ -860,74 +822,65 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 		&& roulette->secondDist > roulette->firstDist)
 	{
 		roulette->secondToFirst = roulette->secondDist - roulette->firstDist;
-		roulette->secondToFirst = K_ScaleItemDistance(&players[i], roulette->secondToFirst, 16 - roulette->playing); // Reversed scaling
+		roulette->secondToFirst = K_ScaleItemDistance(roulette->secondToFirst, 16 - roulette->playing); // Reversed scaling
 	}
 }
 
 /*--------------------------------------------------
-	static void K_PushToRouletteItemList(itemroulette_t *const roulette, INT32 item)
+	void K_PushToRouletteItemList(itemroulette_t *const roulette, INT32 item)
 
-		Pushes a new item to the end of the item
-		roulette's item list. Also accepts slot machine
-		values instead of items.
-
-	Input Arguments:-
-		roulette - The item roulette data to modify.
-		item - The item / slot machine index to push to the list.
-
-	Return:-
-		N/A
+		See header file for description.
 --------------------------------------------------*/
-static void K_PushToRouletteItemList(itemroulette_t *const roulette, INT32 item)
+void K_PushToRouletteItemList(itemroulette_t *const roulette, INT32 item)
 {
 #ifdef ITEM_LIST_SIZE
-	if (roulette->itemListLen >= ITEM_LIST_SIZE)
+	if (roulette->itemList.len >= ITEM_LIST_SIZE)
 	{
 		I_Error("Out of space for item reel! Go and make ITEM_LIST_SIZE bigger I guess?\n");
 		return;
 	}
 #else
-	I_Assert(roulette->itemList != NULL);
+	I_Assert(roulette->itemList.items != NULL);
 
-	if (roulette->itemListLen >= roulette->itemListCap)
+	if (!roulette->ringbox && item >= NUMKARTRESULTS)
 	{
-		roulette->itemListCap *= 2;
-		roulette->itemList = Z_Realloc(
-			roulette->itemList,
-			sizeof(SINT8) * roulette->itemListCap,
+		CONS_Alert(CONS_WARNING, M_GetText("Item Roulette rejected an out-of-range item.\n"));
+		return;
+	}
+
+	if (roulette->ringbox && item >= KSM__MAX)
+	{
+		CONS_Alert(CONS_WARNING, M_GetText("Casino Roulette rejected an out-of-range item.\n"));
+		return;
+	}
+
+	if (roulette->itemList.len >= roulette->itemList.cap)
+	{
+		roulette->itemList.cap *= 2;
+		roulette->itemList.items = Z_Realloc(
+			roulette->itemList.items,
+			sizeof(SINT8) * roulette->itemList.cap,
 			PU_STATIC,
-			&roulette->itemList
+			NULL
 		);
 
-		if (roulette->itemList == NULL)
+		if (roulette->itemList.items == NULL)
 		{
 			I_Error("Not enough memory for item roulette list\n");
 		}
 	}
 #endif
 
-	roulette->itemList[ roulette->itemListLen ] = item;
-	roulette->itemListLen++;
+	roulette->itemList.items[ roulette->itemList.len ] = item;
+	roulette->itemList.len++;
 }
 
 /*--------------------------------------------------
-	static void K_AddItemToReel(const player_t *player, itemroulette_t *const roulette, kartitems_t item)
+	void K_AddItemToReel(const player_t *player, itemroulette_t *const roulette, kartitems_t item)
 
-		Adds an item to a player's item reel. Unlike
-		pushing directly with K_PushToRouletteItemList,
-		this function handles special behaviors (like
-		padding with extra Super Rings).
-
-	Input Arguments:-
-		player - The player to add to the item roulette.
-			This is valid to be NULL.
-		roulette - The player's item roulette data.
-		item - The item to push to the list.
-
-	Return:-
-		N/A
+		See header file for description.
 --------------------------------------------------*/
-static void K_AddItemToReel(const player_t *player, itemroulette_t *const roulette, kartitems_t item)
+void K_AddItemToReel(const player_t *player, itemroulette_t *const roulette, kartitems_t item)
 {
 	if (player && K_PlayerUsesBotMovement(player) && !K_BotUnderstandsItem(item))
 		return;
@@ -951,19 +904,11 @@ static void K_AddItemToReel(const player_t *player, itemroulette_t *const roulet
 }
 
 /*--------------------------------------------------
-	static void K_CalculateRouletteSpeed(itemroulette_t *const roulette)
+	void K_CalculateRouletteSpeed(itemroulette_t *const roulette)
 
-		Determines the speed for the item roulette,
-		adjusted for progress in the race and front
-		running.
-
-	Input Arguments:-
-		roulette - The item roulette data to modify.
-
-	Return:-
-		N/A
+		See header file for description.
 --------------------------------------------------*/
-static void K_CalculateRouletteSpeed(itemroulette_t *const roulette)
+void K_CalculateRouletteSpeed(itemroulette_t *const roulette)
 {
 	fixed_t frontRun = 0;
 	fixed_t progress = 0;
@@ -1244,7 +1189,7 @@ static boolean K_TimingPermitsItem(kartitems_t item, const itemroulette_t *roule
 
 static void K_FixEmptyRoulette(const player_t *player, itemroulette_t *const roulette)
 {
-	if (roulette->itemListLen > 0)
+	if (roulette->itemList.len > 0)
 		return;
 
 	if (K_PlayerUsesBotMovement(player)) // Bots can't use certain items. Give them _something_.
@@ -1254,21 +1199,12 @@ static void K_FixEmptyRoulette(const player_t *player, itemroulette_t *const rou
 }
 
 /*--------------------------------------------------
-	void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox, boolean dryrun)
+	void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox)
 
 		See header file for description.
 --------------------------------------------------*/
-void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox, boolean dryrun)
+void K_FillItemRoulette(player_t *const player, itemroulette_t *const roulette, boolean ringbox)
 {
-	UINT32 spawnChance[NUMKARTRESULTS] = {0};
-	UINT32 totalSpawnChance = 0;
-	size_t rngRoll = 0;
-
-	UINT8 numItems = 0;
-	kartitems_t singleItem = KITEM_SAD;
-
-	size_t i, j;
-
 	K_InitRoulette(roulette);
 
 	if (player != NULL)
@@ -1281,6 +1217,49 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 		K_CalculateRouletteSpeed(roulette);
 	}
 
+	// Lua may want to intercept reelbuilder entirely.
+	LUA_HookPreFillItemRoulette(player, roulette, ringbox);
+	
+	// If prehook did something, no need to continue.
+	if (roulette->itemList.len != 0) {
+		return;
+	}
+
+	K_FillItemRouletteData(player, roulette, ringbox, false);
+
+	// Lua can modify the final result.
+	LUA_HookFillItemRoulette(player, roulette, ringbox);
+	
+	// If somehow there's no items, add sad.
+	if (roulette->itemList.len == 0) {
+		if (roulette->ringbox)
+			K_PushToRouletteItemList(roulette, KSM_BAR);
+		else
+			K_AddItemToReel(player, roulette, KITEM_SAD);
+	}
+}
+
+/*--------------------------------------------------
+	void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox, boolean dryrun)
+
+		See header file for description.
+--------------------------------------------------*/
+void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, boolean ringbox, boolean dryrun)
+{
+	UINT32 spawnChance[NUMKARTRESULTS] = {0};
+	UINT32 totalSpawnChance = 0;
+	size_t rngRoll = 0;
+
+	UINT8 numItems = 0;
+	kartitems_t singleItem = KITEM_SAD;
+
+	size_t i, j;
+
+	if (roulette->itemList.items == NULL)
+	{
+		K_InitRoulette(roulette);
+	}
+	
 	if (ringbox == true)
 	{
 		// If this is being invoked by a Ring Box, it should literally never produce items.
@@ -1313,6 +1292,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 			{
 				K_PushToRouletteItemList(roulette, K_KartItemReelSpecialEnd[i]);
 			}
+
 			return;
 		}
 	}
@@ -1792,10 +1772,10 @@ void K_StartItemRoulette(player_t *const player, boolean ringbox)
 	itemroulette_t *const roulette = &player->itemRoulette;
 	size_t i;
 
-	K_FillItemRouletteData(player, roulette, ringbox, false);
+	K_FillItemRoulette(player, roulette, ringbox);
 
 	if (roulette->autoroulette)
-		roulette->index = P_RandomRange(PR_AUTOROULETTE, 0, roulette->itemListLen - 1);
+		roulette->index = P_RandomRange(PR_AUTOROULETTE, 0, roulette->itemList.len - 1);
 
 	if (K_PlayerUsesBotMovement(player) == true)
 	{
@@ -1804,9 +1784,9 @@ void K_StartItemRoulette(player_t *const player, boolean ringbox)
 
 	// Prevent further duplicates of items that
 	// are intended to only have one out at a time.
-	for (i = 0; i < roulette->itemListLen; i++)
+	for (i = 0; i < roulette->itemList.len; i++)
 	{
-		kartitems_t item = roulette->itemList[i];
+		kartitems_t item = roulette->itemList.items[i];
 		if (K_ItemSingularity(item) == true)
 		{
 			K_SetItemCooldown(item, TICRATE<<4);
@@ -1880,19 +1860,11 @@ fixed_t K_GetSlotOffset(itemroulette_t *const roulette, fixed_t renderDelta, UIN
 }
 
 /*--------------------------------------------------
-	static void K_KartGetItemResult(player_t *const player, kartitems_t getitem)
+	void K_KartGetItemResult(player_t *const player, kartitems_t getitem)
 
-		Initializes a player's item to what was
-		received from the roulette.
-
-	Input Arguments:-
-		player - The player receiving the item.
-		getitem - The item to give to the player.
-
-	Return:-
-		N/A
+		See header file for description.
 --------------------------------------------------*/
-static void K_KartGetItemResult(player_t *const player, kartitems_t getitem)
+void K_KartGetItemResult(player_t *const player, kartitems_t getitem)
 {
 	if (K_ItemSingularity(getitem) == true)
 	{
@@ -1935,9 +1907,9 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 		return;
 	}
 
-	if (roulette->itemListLen == 0
+	if (roulette->itemList.len == 0
 #ifndef ITEM_LIST_SIZE
-		|| roulette->itemList == NULL
+		|| roulette->itemList.items == NULL
 #endif
 		)
 	{
@@ -2000,7 +1972,7 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 				if (fudgedDelay > gap) // Did the roulette tick over in-flight?
 				{
 					fudgedDelay = fudgedDelay - gap; // We're compensating for this gap's worth of delay, so cut it down.
-					roulette->index = roulette->index == 0 ? roulette->itemListLen - 1 : roulette->index - 1; // Roll the roulette index back...
+					roulette->index = roulette->index == 0 ? roulette->itemList.len - 1 : roulette->index - 1; // Roll the roulette index back...
 					roulette->tics = 0; // And just in case our delay is SO high that a fast roulette needs to roll back again...
 				}
 				else
@@ -2012,7 +1984,7 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 			// And one more nudge for the remaining delay.
 			roulette->tics = (roulette->tics + fudgedDelay) % roulette->speed;
 
-			INT32 finalItem = roulette->itemList[ roulette->index ];
+			INT32 finalItem = roulette->itemList.items[ roulette->index ];
 
 			if (roulette->ringbox == true)
 			{
@@ -2057,7 +2029,7 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 
 	if (roulette->tics == 0)
 	{
-		roulette->index = (roulette->index + 1) % roulette->itemListLen;
+		roulette->index = (roulette->index + 1) % roulette->itemList.len;
 		roulette->tics = roulette->speed;
 
 		// This makes the roulette produce the random noises.
@@ -2070,7 +2042,7 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 			else
 				S_StartSound(NULL, sfx_itrol1 + roulette->sound);
 			
-			if (roulette->index == 0 && roulette->itemListLen > 1)
+			if (roulette->index == 0 && roulette->itemList.len > 1)
 			{
 				S_StartSound(NULL, sfx_kc50);
 				S_StartSound(NULL, sfx_kc50);

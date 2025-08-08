@@ -99,6 +99,113 @@ static UINT8 K_GetOffsetStartingDifficulty(const UINT8 startingdifficulty, UINT8
 }
 
 /*--------------------------------------------------
+	static INT16 K_RivalScore(player_t *bot)
+
+		Creates a "rival score" for a bot, used to determine which bot is the
+		most deserving of the rival status.
+
+	Input Arguments:-
+		bot - Player to check.
+
+	Return:-
+		"Rival score" value.
+--------------------------------------------------*/
+static INT16 K_RivalScore(player_t *bot)
+{
+	const UINT16 difficulty = bot->botvars.difficulty;
+	const UINT16 score = bot->score;
+	SINT8 roundnum = 1, roundsleft = 1;
+	UINT16 lowestscore = UINT16_MAX;
+	UINT8 lowestdifficulty = MAXBOTDIFFICULTY;
+	UINT8 i;
+
+	if (grandprixinfo.cup != NULL && roundqueue.size > 0)
+	{
+		roundnum = roundqueue.roundnum;
+		roundsleft = grandprixinfo.cup->numlevels - roundnum;
+	}
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i] || players[i].spectator)
+		{
+			continue;
+		}
+
+		if (players[i].score < lowestscore)
+		{
+			lowestscore = players[i].score;
+		}
+
+		if (players[i].bot == true && players[i].botvars.difficulty < lowestdifficulty)
+		{
+			lowestdifficulty = players[i].botvars.difficulty;
+		}
+	}
+
+	// In the early game, difficulty is more important.
+	// This will try to influence the higher difficulty bots to get rival more often & get even more points.
+	// However, when we're running low on matches left, we need to focus more on raw score!
+
+	return ((difficulty - lowestdifficulty) * roundsleft) + ((score - lowestscore) * roundnum);
+}
+
+static boolean CompareRivals(player_t *a, player_t *b)
+{
+	if (a == NULL)
+		return false;
+	if (b == NULL)
+		return true;
+
+	if (K_RivalScore(a) != K_RivalScore(b))
+	{
+		// Rival Score is HIGH when bots are strong. Sort them first!
+		return (K_RivalScore(a) > K_RivalScore(b));
+	}
+
+	// Fuck it
+	return a > b;
+}
+
+void K_AssignFoes(void)
+{
+	std::vector<player_t *> bots;
+	boolean addedplayer = false;
+
+	for (UINT8 i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i] == false)
+			continue;
+
+		player_t *player = &players[i];
+
+		if (!player->spectator && player->bot)
+		{
+			addedplayer = true;
+			bots.push_back(player);
+			player->botvars.foe = false;
+		}
+	}
+
+	// Why the fuck is this blowing up sometimes
+	if (!addedplayer)
+		return;
+
+	std::stable_sort(bots.begin(), bots.end(), CompareRivals);
+
+	UINT8 i = 0;
+	for (auto &bot : bots)
+	{
+		if (bot != NULL)
+			bot->botvars.foe = true;
+
+		i++;
+		if (i > 2)
+			break;
+	}
+}
+
+/*--------------------------------------------------
 	void K_InitGrandPrixBots(void)
 
 		See header file for description.
@@ -254,6 +361,8 @@ void K_InitGrandPrixBots(void)
 		{
 			break;
 		}
+		if (i <= 2)
+			players[newplayernum-1].botvars.foe = true;
 	}
 }
 
@@ -289,62 +398,11 @@ void K_LoadGrandPrixSaveGame(void)
 		K_SetBot(i, savedata.bots[i].skin, savedata.bots[i].difficulty, BOT_STYLE_NORMAL);
 
 		players[i].botvars.rival = savedata.bots[i].rival;
+		players[i].botvars.foe = savedata.bots[i].foe;
 		players[i].score = savedata.bots[i].score;
 
 		players[i].spectator = K_BotDefaultSpectator();
 	}
-}
-
-/*--------------------------------------------------
-	static INT16 K_RivalScore(player_t *bot)
-
-		Creates a "rival score" for a bot, used to determine which bot is the
-		most deserving of the rival status.
-
-	Input Arguments:-
-		bot - Player to check.
-
-	Return:-
-		"Rival score" value.
---------------------------------------------------*/
-static INT16 K_RivalScore(player_t *bot)
-{
-	const UINT16 difficulty = bot->botvars.difficulty;
-	const UINT16 score = bot->score;
-	SINT8 roundnum = 1, roundsleft = 1;
-	UINT16 lowestscore = UINT16_MAX;
-	UINT8 lowestdifficulty = MAXBOTDIFFICULTY;
-	UINT8 i;
-
-	if (grandprixinfo.cup != NULL && roundqueue.size > 0)
-	{
-		roundnum = roundqueue.roundnum;
-		roundsleft = grandprixinfo.cup->numlevels - roundnum;
-	}
-
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (!playeringame[i] || players[i].spectator)
-		{
-			continue;
-		}
-
-		if (players[i].score < lowestscore)
-		{
-			lowestscore = players[i].score;
-		}
-
-		if (players[i].bot == true && players[i].botvars.difficulty < lowestdifficulty)
-		{
-			lowestdifficulty = players[i].botvars.difficulty;
-		}
-	}
-
-	// In the early game, difficulty is more important.
-	// This will try to influence the higher difficulty bots to get rival more often & get even more points.
-	// However, when we're running low on matches left, we need to focus more on raw score!
-
-	return ((difficulty - lowestdifficulty) * roundsleft) + ((score - lowestscore) * roundnum);
 }
 
 /*--------------------------------------------------
@@ -378,6 +436,8 @@ void K_UpdateGrandPrixBots(void)
 	{
 		return;
 	}
+
+	K_AssignFoes();
 
 	// Find the rival.
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -639,7 +699,7 @@ void K_IncreaseBotDifficulty(player_t *bot)
 	// RELAXED MODE:
 	// Continues don't drop bot difficulty, because we always advance.
 	// Bots will still level up from standard advancement; we need a
-	// much steeper rank nudge to keep difficulty at the right level.	
+	// much steeper rank nudge to keep difficulty at the right level.
 	if (grandprixinfo.gamespeed == KARTSPEED_EASY)
 	{
 		switch(averageRank)
@@ -689,8 +749,8 @@ static boolean CompareJoiners(player_t *a, player_t *b)
 		return (a->spectatewait < b->spectatewait);
 	}
 
-	// They are equals, so just randomize
-	return (P_Random(PR_BOTS) & 1);
+	// Fuck it
+	return a > b;
 }
 
 static boolean CompareReplacements(player_t *a, player_t *b)
@@ -707,8 +767,8 @@ static boolean CompareReplacements(player_t *a, player_t *b)
 		return (a->position < b->position);
 	}
 
-	// They are equals, so just randomize
-	return (P_Random(PR_BOTS) & 1);
+	// Fuck it
+	return a > b;
 }
 
 /*--------------------------------------------------

@@ -145,6 +145,9 @@ boolean K_InRaceDuel(void)
 
 fixed_t K_EffectiveGradingFactor(const player_t *player)
 {
+	if (player == NULL)
+		return FRACUNIT; // K_FillItemRouletteData can OSTENSIBLY call this with null player for "generic" use.
+
 	fixed_t min = (franticitems) ? MINFRANTICFACTOR : MINGRADINGFACTOR;
 	if (grandprixinfo.gp && grandprixinfo.masterbots && !K_PlayerUsesBotMovement(player))
 		return min;
@@ -1622,6 +1625,8 @@ static boolean K_TryDraft(player_t *player, mobj_t *dest, fixed_t minDist, fixed
 			// Double speed for the rival!
 			if (player->botvars.rival || cv_levelskull.value)
 				player->draftpower += add;
+			else if (player->botvars.foe)
+				player->draftpower += add/2;
 			else if (dest->player->bot) // Reduce bot gluts.
 				player->draftpower -= 3*add/4;
 		}
@@ -3558,6 +3563,10 @@ static fixed_t K_RingDurationBoost(const player_t *player)
 			// x2.0 for Rival
 			ret *= 2;
 		}
+		else if (player->botvars.foe)
+		{
+			ret = 3 * ret / 2;
+		}
 	}
 
 	return ret;
@@ -3979,6 +3988,11 @@ fixed_t K_GetKartSpeed(const player_t *player, boolean doboostpower, boolean dor
 			{
 				// +10% top speed for the rival
 				finalspeed = FixedMul(finalspeed, 11*FRACUNIT/10);
+			}
+			else if (player->bot && player->botvars.foe)
+			{
+				// +5% for foes
+				finalspeed = FixedMul(finalspeed, 21*FRACUNIT/20);
 			}
 		}
 	}

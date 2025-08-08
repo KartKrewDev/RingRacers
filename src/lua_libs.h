@@ -103,6 +103,8 @@ extern lua_State *gL;
 #define META_ACTIVATOR "ACTIVATOR_T*"
 
 #define META_FOLLOWER "FOLLOWER_T*"
+#define META_ITEMROULETTE "ITEMROULETTE_T"
+#define META_ITEMROULETTE_ITEMLIST "ITEMROULETTE_T.ITEMLIST"
 
 boolean luaL_checkboolean(lua_State *L, int narg);
 
@@ -123,6 +125,7 @@ int LUA_PolyObjLib(lua_State *L);
 int LUA_BlockmapLib(lua_State *L);
 int LUA_HudLib(lua_State *L);
 int LUA_FollowerLib(lua_State *L);
+int LUA_ItemRouletteLib(lua_State *L);
 
 #ifdef __cplusplus
 } // extern "C"

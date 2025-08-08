@@ -61,6 +61,7 @@ static lua_CFunction liblist[] = {
 	LUA_BlockmapLib, // blockmap stuff
 	LUA_HudLib, // HUD stuff
 	LUA_FollowerLib, // follower_t, followers[]
+	LUA_ItemRouletteLib, // itemroulette_t
 	NULL
 };
 
@@ -894,6 +895,7 @@ void LUA_InvalidatePlayer(player_t *player)
 	LUA_InvalidateUserdata(player);
 	LUA_InvalidateUserdata(player->karthud);
 	LUA_InvalidateUserdata(&player->cmd);
+	LUA_InvalidateUserdata(&player->itemRoulette.itemList);
 }
 
 enum

@@ -1630,15 +1630,15 @@ static void K_drawKartItem(void)
 	boolean flashOnOne = false;
 	boolean flashOnTwo = false;
 
-	if (stplyr->itemRoulette.itemListLen > 0)
+	if (stplyr->itemRoulette.itemList.len > 0)
 	{
 		// Init with item roulette stuff.
 		for (i = 0; i < 3; i++)
 		{
 			const SINT8 indexOfs = i-1;
-			const size_t index = (stplyr->itemRoulette.itemListLen + (stplyr->itemRoulette.index + indexOfs)) % stplyr->itemRoulette.itemListLen;
+			const size_t index = (stplyr->itemRoulette.itemList.len + (stplyr->itemRoulette.index + indexOfs)) % stplyr->itemRoulette.itemList.len;
 
-			const SINT8 result = stplyr->itemRoulette.itemList[index];
+			const SINT8 result = stplyr->itemRoulette.itemList.items[index];
 			const SINT8 item = K_ItemResultToType(result);
 			const boolean usingDebugItemAmount = cv_kartdebugitem.value != KITEM_NONE && cv_kartdebugitem.value == item && cv_kartdebugamount.value > 1;
 			const UINT8 amt = usingDebugItemAmount ? cv_kartdebugamount.value : K_ItemResultToAmount(result, &stplyr->itemRoulette);
@@ -1825,7 +1825,7 @@ static void K_drawKartItem(void)
 	}
 
 	UINT8 *boxmap = NULL;
-	if (stplyr->itemRoulette.active && (stplyr->itemRoulette.speed - stplyr->itemRoulette.tics < 3) && stplyr->itemRoulette.index == 0 && stplyr->itemRoulette.itemListLen > 1)
+	if (stplyr->itemRoulette.active && (stplyr->itemRoulette.speed - stplyr->itemRoulette.tics < 3) && stplyr->itemRoulette.index == 0 && stplyr->itemRoulette.itemList.len > 1)
 	{
 		boxmap = R_GetTranslationColormap(TC_ALLWHITE, SKINCOLOR_WHITE, GTC_CACHE);
 	}
@@ -2144,15 +2144,15 @@ static void K_drawKartSlotMachine(void)
 	vector2_t rouletteCrop = {10, 10};
 	INT32 i;
 
-	if (stplyr->itemRoulette.itemListLen > 0)
+	if (stplyr->itemRoulette.itemList.len > 0)
 	{
 		// Init with item roulette stuff.
 		for (i = 0; i < 3; i++)
 		{
 			const SINT8 indexOfs = i-1;
-			const size_t index = (stplyr->itemRoulette.itemListLen + (stplyr->itemRoulette.index + indexOfs)) % stplyr->itemRoulette.itemListLen;
+			const size_t index = (stplyr->itemRoulette.itemList.len + (stplyr->itemRoulette.index + indexOfs)) % stplyr->itemRoulette.itemList.len;
 
-			const SINT8 result = stplyr->itemRoulette.itemList[index];
+			const SINT8 result = stplyr->itemRoulette.itemList.items[index];
 
 			localpatch[i] = K_GetCachedSlotMachinePatch(result, offset);
 		}
@@ -5346,8 +5346,10 @@ static void K_DrawCPUTagForPlayer(fixed_t x, fixed_t y, player_t *p, UINT32 flag
 		K_DrawNameTagItemSpy(barx, bary, p, flags);
 	}
 
+	UINT8 *foecol = R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(SKINCOLOR_RED), GTC_CACHE);
+
 	UINT8 blink = ((leveltime / 7) & 1);
-	V_DrawFixedPatch(x, y, FRACUNIT, flags, kp_cpu[blink], NULL);
+	V_DrawFixedPatch(x, y, FRACUNIT, flags, kp_cpu[blink], (p->botvars.foe) ? foecol : NULL);
 }
 
 static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p, UINT32 flags)
@@ -7202,7 +7204,7 @@ static void K_drawDistributionDebugger(void)
 	V_DrawRightAlignedThinString(320-(x >> FRACBITS), 100+58, V_SNAPTOTOP|V_SNAPTORIGHT, va("secondToFirst = %u", rouletteData.secondToFirst));
 
 #ifndef ITEM_LIST_SIZE
-	Z_Free(rouletteData.itemList);
+	Z_Free(rouletteData.itemList.items);
 #endif
 }
 
@@ -7314,7 +7316,7 @@ static void K_DrawBotDebugger(void)
 
 	V_DrawSmallString(8, 14, 0, va("Difficulty: %d / %d", bot->botvars.difficulty, MAXBOTDIFFICULTY));
 	V_DrawSmallString(8, 18, 0, va("Difficulty increase: %d", bot->botvars.diffincrease));
-	V_DrawSmallString(8, 22, 0, va("Rival: %d", (UINT8)(bot->botvars.rival == true)));
+	V_DrawSmallString(8, 22, 0, va("Rival / Foe: %d / %d", (UINT8)(bot->botvars.rival == true), (UINT8)(bot->botvars.foe == true)));
 	V_DrawSmallString(8, 26, 0, va("Rubberbanding: %.02f", FIXED_TO_FLOAT(bot->botvars.rubberband) * 100.0f));
 
 	V_DrawSmallString(8, 32, 0, va("Item delay: %d", bot->botvars.itemdelay));
