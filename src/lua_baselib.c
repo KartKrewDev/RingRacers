@@ -4137,6 +4137,21 @@ static int lib_kDebtStingPlayer(lua_State *L)
 	return 0;
 }
 
+static int lib_kGiveBumpersToPlayer(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	player_t *victim = NULL;
+	UINT8 amount = (UINT8)luaL_optinteger(L, 3, 1);
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
+		victim = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
+	K_GiveBumpersToPlayer(player, victim, amount);
+	return 0;
+}
+
 static int lib_kTakeBumpersFromPlayer(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -5711,6 +5726,7 @@ static luaL_Reg lib[] = {
 	{"K_CheckStumble",lib_kCheckStumble},
 	{"K_ExplodePlayer",lib_kExplodePlayer},
 	{"K_DebtStingPlayer",lib_kDebtStingPlayer},
+	{"K_GiveBumpersToPlayer",lib_kGiveBumpersToPlayer},
 	{"K_TakeBumpersFromPlayer",lib_kTakeBumpersFromPlayer},
 	{"K_MineFlashScreen",lib_kMineFlashScreen},
 	{"K_SpawnMineExplosion",lib_kSpawnMineExplosion},
