@@ -2544,6 +2544,9 @@ void Y_StartIntermission(void)
 		I_Error("endtic is dirty");
 #endif
 
+	extern boolean blockreset;
+	blockreset = false;
+
 	// set player Power Level type
 	powertype = K_UsingPowerLevels();
 

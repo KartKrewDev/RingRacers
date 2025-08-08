@@ -59,6 +59,9 @@ struct menutransition_s menutransition; // Menu transition properties
 INT32 menuKey = -1; // keyboard key pressed for menu
 menucmd_t menucmd[MAXSPLITSCREENPLAYERS];
 
+// Prevent early resetting in Attack modes when setting a new best time.
+// I can't make demos save at the correct time, but I can do this!
+boolean blockreset = false;
 
 // finish wipes between screens
 boolean menuwipe = false;
@@ -468,8 +471,11 @@ boolean M_Responder(event_t *ev)
 				// Quick Retry (Z in modeattacking)
 				if (modeattacking && G_PlayerInputDown(0, gc_vote, splitscreen + 1) == true)
 				{
-					M_TryAgain(0);
-					return true;
+					if (!blockreset)
+					{
+						M_TryAgain(0);
+						return true;
+					}
 				}
 
 				// Quick Spectate (L+R+A+Start online)

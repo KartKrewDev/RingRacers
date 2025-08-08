@@ -7618,6 +7618,8 @@ static void P_InitLevelSettings(void)
 
 	leveltime = 0;
 	modulothing = 0;
+	extern boolean blockreset;
+	blockreset = 0;
 
 	P_SetFreezeLevel(false);
 	P_SetFreezeCheat(false);
