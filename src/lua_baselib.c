@@ -3976,6 +3976,22 @@ static int lib_kDoGuardBreak(lua_State *L)
 	return 0;
 }
 
+static int lib_kBattleAwardHit(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	player_t *victim = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));;
+	mobj_t *inflictor = NULL;
+	INT32 damage = (INT32)luaL_optinteger(L, 4, 0);
+	NOHUD
+	INLEVEL
+	if (!player || !victim)
+		return LUA_ErrInvalid(L, "player_t");
+	if (!lua_isnone(L, 3) && lua_isuserdata(L, 3))
+		inflictor = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
+	K_BattleAwardHit(player, victim, inflictor, damage);
+	return 0;
+}
+
 static int lib_kSpawnBattlePoints(lua_State *L)
 {
 	player_t *source = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -5683,6 +5699,7 @@ static luaL_Reg lib[] = {
 	{"K_DoInstashield",lib_kDoInstashield},
 	{"K_DoPowerClash",lib_kDoPowerClash},
 	{"K_DoGuardBreak",lib_kDoGuardBreak},
+	{"K_BattleAwardHit",lib_kBattleAwardHit},
 	{"K_SpawnBattlePoints",lib_kSpawnBattlePoints},
 	{"K_RemoveGrowShrink",lib_kRemoveGrowShrink},
 	{"K_IsBigger",lib_kIsBigger},
