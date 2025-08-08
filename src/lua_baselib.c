@@ -3863,6 +3863,17 @@ static int lib_kSpawnBattlePoints(lua_State *L)
 	return 0;
 }
 
+static int lib_kRemoveGrowShrink(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	K_RemoveGrowShrink(player);
+	return 0;
+}
+
 static int lib_kSpinPlayer(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -4717,6 +4728,7 @@ static luaL_Reg lib[] = {
 	{"K_MomentumAngle",lib_kMomentumAngle},
 	{"K_DoInstashield",lib_kDoInstashield},
 	{"K_SpawnBattlePoints",lib_kSpawnBattlePoints},
+	{"K_RemoveGrowShrink",lib_kRemoveGrowShrink},
 	{"K_SpinPlayer",lib_kSpinPlayer},
 	{"K_TumblePlayer",lib_kTumblePlayer},
 	{"K_StumblePlayer",lib_kStumblePlayer},
