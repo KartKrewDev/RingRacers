@@ -5028,6 +5028,20 @@ static int lib_kAddHitLag(lua_State *L)
 	return 0;
 }
 
+static int lib_kSetHitLagForObjects(lua_State *L)
+{
+	mobj_t *victim = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *inflictor = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	mobj_t *source = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
+	tic_t tics = (tic_t)luaL_checkinteger(L, 4);
+	boolean fromdamage = lua_opttrueboolean(L, 5);
+	INLEVEL
+	NOHUD
+	if (!victim || !inflictor || !source)
+		return LUA_ErrInvalid(L, "mobj_t");
+	K_SetHitLagForObjects(victim, inflictor, source, tics, fromdamage);
+	return 0;
+}
 
 static int lib_kPowerUpRemaining(lua_State *L)
 {
@@ -5766,7 +5780,10 @@ static luaL_Reg lib[] = {
 	{"K_SetTireGrease",lib_kSetTireGrease},
 
 	{"K_GetCollideAngle",lib_kGetCollideAngle},
+	
+	// k_hitlag
 	{"K_AddHitLag",lib_kAddHitLag},
+	{"K_SetHitLagForObjects",lib_kSetHitLagForObjects},
 
 	// k_powerup
 	{"K_PowerUpRemaining",lib_kPowerUpRemaining},
