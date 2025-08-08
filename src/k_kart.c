@@ -195,7 +195,7 @@ void K_TimerReset(void)
 	memset(&g_musicfade, 0, sizeof g_musicfade);
 	numbulbs = 1;
 	inDuel = rainbowstartavailable = false;
-	linecrossed = 0;
+	attacktimingstarted = 0;
 	overtimecheckpoints = 0;
 	timelimitintics = extratimeintics = secretextratime = 0;
 	g_pointlimit = 0;
@@ -348,6 +348,7 @@ void K_TimerInit(void)
 	if (G_TimeAttackStart())
 	{
 		starttime = TIMEATTACK_START; // Longest permitted start. No half-laps in reverse.
+		rainbowstartavailable = true;
 		// (Changed on finish line cross later, don't worry.)
 	}
 
@@ -3112,6 +3113,9 @@ fixed_t K_PlayerTripwireSpeedThreshold(const player_t *player)
 	if (specialstageinfo.valid)
 		required_speed = 3 * K_GetKartSpeed(player, false, false) / 2; // 150%
 
+	if (modeattacking && !(gametyperules & GTR_CATCHER))
+		required_speed = 4 * K_GetKartSpeed(player, false, false);
+
 	UINT32 distance = K_GetItemRouletteDistance(player, 8);
 
 	if (gametype == GT_RACE && M_NotFreePlay() && !modeattacking)
@@ -4431,6 +4435,11 @@ void K_CheckpointCrossAward(player_t *player)
 {
 	if (gametype != GT_RACE)
 		return;
+
+	if (!demo.playback && G_TimeAttackStart())
+	{
+		G_SetDemoCheckpointTiming(player, leveltime - starttime, player->gradingpointnum);
+	}
 
 	player->gradingfactor += K_GetGradingFactorAdjustment(player);
 	player->gradingpointnum++;
@@ -9049,6 +9058,11 @@ void K_KartPlayerHUDUpdate(player_t *player)
 	if (player->karthud[khud_trickcool])
 		player->karthud[khud_trickcool]--;
 
+	if (player->karthud[khud_splittimer] && !player->karthud[khud_lapanimation])
+	{
+		player->karthud[khud_splittimer]--;
+	}
+
 	if (player->positiondelay)
 		player->positiondelay--;
 
@@ -9639,6 +9653,53 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (K_PlayerUsesBotMovement(player) && !K_BotUnderstandsItem(player->itemtype) && player->itemamount)
 	{
 		K_DropItems(player);
+	}
+
+	if (G_TimeAttackStart() && !attacktimingstarted && player->speed && leveltime > introtime)
+	{
+		attacktimingstarted = leveltime;
+		/*
+		if (starttime > leveltime) // Overlong starts shouldn't reset time on cross
+		{
+			// Award some Amps for a fast start, to counterbalance Obvious Rainbow Driftboost
+
+			tic_t starthaste = starttime - leveltime; // How much time we had left to cross
+			starthaste = TIMEATTACK_START - starthaste; // How much time we wasted before crossing
+
+			tic_t leniency = TICRATE*4; // How long we can take to cross with no penalty to amp payout
+
+			if (starthaste <= leniency)
+				starthaste = 0;
+			else
+				starthaste -= leniency;
+
+			// fixed_t ampreward = Easing_OutQuart(starthaste*FRACUNIT/TIMEATTACK_START, 60*FRACUNIT, 0);
+			// K_SpawnAmps(player, ampreward/FRACUNIT, player->mo);
+
+			UINT8 baseboost = 125;
+
+			player->startboost = Easing_OutQuart(starthaste*FRACUNIT/TIMEATTACK_START, baseboost, 0);
+
+			if (player->startboost == baseboost)
+			{
+				K_SpawnDriftBoostExplosion(player, 4);
+				K_SpawnDriftElectricSparks(player, SKINCOLOR_SILVER, false);
+			}
+			else
+			{
+				K_SpawnDriftBoostExplosion(player, 3);
+				// K_SpawnDriftElectricSparks(player, SKINCOLOR_SILVER, false);
+			}
+
+			// And reset our time to 0.
+			starttime = leveltime;
+		}
+		*/
+
+		starttime = leveltime;
+		G_SetDemoAttackTiming(leveltime);
+
+		Music_Stop("position");
 	}
 
 	if (player->transfer)
@@ -13283,6 +13344,9 @@ static void K_KartSpindashDust(mobj_t *parent)
 		);
 		flip = P_MobjFlip(dust);
 
+		if (G_TimeAttackStart() && leveltime < starttime)
+			dust->scale = 3 * dust->scale / 2;
+
 		dust->momx = FixedMul(hmomentum, FINECOSINE(ang >> ANGLETOFINESHIFT));
 		dust->momy = FixedMul(hmomentum, FINESINE(ang >> ANGLETOFINESHIFT));
 		dust->momz = vmomentum * flip;
@@ -13344,6 +13408,12 @@ static void K_KartSpindash(player_t *player)
 		if (player->spindash >= SPINDASHTHRUSTTIME)
 		{
 			fixed_t thrust = FixedMul(player->mo->scale, min(player->spindash, MAXCHARGETIME)*FRACUNIT/5);
+
+			if (G_TimeAttackStart() && leveltime < starttime)
+			{
+				thrust *= 2;
+				// player->spindashspeed += FRACUNIT/2;
+			}
 
 			// Old behavior, before emergency zero-ring spindash
 			/*
@@ -13478,14 +13548,28 @@ static void K_KartSpindash(player_t *player)
 		{
 			UINT8 ringdropframes = 2 + (player->kartspeed + player->kartweight);
 			boolean spawnOldEffect = true;
+			boolean normalsound = true;
 
 			INT16 chargetime = MAXCHARGETIME - ++player->spindash;
 
 			if (player->rings <= 0 && chargetime >= 0) // Desperation spindash
 			{
 				player->spindash++;
+				normalsound = false;
 				if (!S_SoundPlaying(player->mo, sfx_kc38))
 					S_StartSound(player->mo, sfx_kc38);
+			}
+
+			if (G_TimeAttackStart() && leveltime < starttime && chargetime >= 0)
+			{
+				if (player->spindash == 1)
+				{
+					S_ReducedVFXSound(player->mo, sfx_s3kab, player);
+					S_ReducedVFXSound(player->mo, sfx_s3k9c, player);
+				}
+
+				normalsound = false;
+				player->spindash += 4;
 			}
 
 			if (player->spindash >= SPINDASHTHRUSTTIME)
@@ -13525,7 +13609,7 @@ static void K_KartSpindash(player_t *player)
 
 				while ((soundcharge += ++add) < chargetime);
 
-				if (soundcharge == chargetime)
+				if (soundcharge == chargetime && normalsound)
 				{
 					if (spawnOldEffect == true)
 						K_SpawnDashDustRelease(player);
@@ -14010,7 +14094,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		{
 			player->lastringboost = player->ringboost;
 			UINT32 award = 5*player->ringboxaward + 10;
-			award = 23 * award / 20; // 115% Payout Increase
+
+			if (!modeattacking)
+				award = 23 * award / 20; // 115% Payout Increase
 			if (!K_ThunderDome())
 				award = 3 * award / 2;
 
@@ -14053,28 +14139,29 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				// To try and help close this gap, we fudge Ring Box payouts to allow weaker characters
 				// better access to things that make them go fast, without changing core handling.
 
+				UINT8 speed = player->kartspeed;
 				UINT8 accel = 10-player->kartspeed;
 				UINT8 weight = player->kartweight;
 
 				// Relative stat power for bonus TA Ring Box awards.
 				// AP 1, WP 2 = weight is worth twice what accel is.
 				// 0 = stat not considered at all!
-				UINT8 accelPower = 0;
-				UINT8 weightPower = 4;
+				UINT8 accelPower = 1;
+				UINT8 weightPower = 6;
 
 				UINT8 total = accelPower*accel + weightPower*weight;
 				UINT8 maxtotal = accelPower*9 + weightPower*9;
 
+				UINT32 baseaward = award;
+
 				// Scale from base payout at 9/1 to max payout at 1/9.
-				award = Easing_InCubic(FRACUNIT*total/maxtotal, 13*award/10, 18*award/10);
+				award += Easing_Linear(FRACUNIT*total/maxtotal, 0, 11*baseaward/10);
 
 				// And, because we don't have to give a damn about sandbagging, up the stakes the longer we progress!
 				if (gametyperules & GTR_CIRCUIT)
 				{
-					UINT8 maxgrade = 10;
-					UINT8 margin = min(player->gradingpointnum, maxgrade);
-
-					award = Easing_Linear(FRACUNIT * margin / maxgrade, award, 2*award);
+					if (K_GetNumGradingPoints())
+						award += Easing_Linear(FRACUNIT * player->gradingpointnum / K_GetNumGradingPoints(), 0, baseaward/2);
 				}
 			}
 			else
@@ -16474,6 +16561,9 @@ UINT16 K_GetEXP(player_t *player)
 	fixed_t factormax = K_GetGradingFactorMinMax(player, true);
 
 	UINT16 exp = FixedRescale(player->gradingfactor, factormin, factormax, Easing_Linear, targetminexp, targetmaxexp)>>FRACBITS;
+
+	if (modeattacking)
+		exp = 100 * player->gradingpointnum / numgradingpoints;
 
 	// CONS_Printf("Player %s numgradingpoints=%d gradingpoint=%d targetminexp=%d targetmaxexp=%d factor=%.2f factormin=%.2f factormax=%.2f exp=%d\n",
 	// 	player_names[player - players], numgradingpoints, player->gradingpointnum, targetminexp, targetmaxexp, FIXED_TO_FLOAT(player->gradingfactor), FIXED_TO_FLOAT(factormin), FIXED_TO_FLOAT(factormax), exp);

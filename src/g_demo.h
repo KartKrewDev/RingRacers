@@ -159,7 +159,6 @@ extern UINT8 demo_writerng;
 #define DXD_NAME       0x08 // name changed
 #define DXD_COLOR      0x10 // color changed
 #define DXD_FOLLOWER   0x20 // follower was changed
-#define DXD_START      0x40 // Crossed the line in TA
 
 #define DXD_ADDPLAYER (DXD_JOINDATA|DXD_PLAYSTATE|DXD_COLOR|DXD_NAME|DXD_SKIN|DXD_FOLLOWER)
 
@@ -168,6 +167,8 @@ extern UINT8 demo_writerng;
 #define DXD_PST_PLAYING    0x01
 #define DXD_PST_SPECTATING 0x02
 #define DXD_PST_LEFT       0x03
+
+#define MAXSPLITS (32)
 
 boolean G_CompatLevel(UINT16 level);
 
@@ -203,7 +204,8 @@ struct demoghost {
 	UINT8 fadein;
 	UINT16 version;
 	UINT8 numskins;
-	boolean linecrossed;
+	tic_t attackstart;
+	tic_t splits[MAXSPLITS];
 	boolean done;
 	democharlist_t *skinlist;
 	mobj_t oldmo, *mo;
@@ -237,6 +239,9 @@ void G_DeferedPlayDemo(const char *demo);
 
 void G_SaveDemo(void);
 void G_ResetDemoRecording(void);
+
+void G_SetDemoAttackTiming(tic_t time);
+void G_SetDemoCheckpointTiming(player_t *player, tic_t time, UINT8 checkpoint);
 
 boolean G_CheckDemoTitleEntry(void);
 

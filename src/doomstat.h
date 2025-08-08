@@ -884,7 +884,7 @@ extern boolean thwompsactive;
 extern UINT8 lastLowestLap;
 extern SINT8 spbplace;
 extern boolean rainbowstartavailable;
-extern tic_t linecrossed;
+extern tic_t attacktimingstarted;
 extern boolean inDuel;
 extern UINT8 overtimecheckpoints;
 
