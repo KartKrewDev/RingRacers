@@ -5008,7 +5008,7 @@ void K_DebtStingPlayer(player_t *player, mobj_t *source)
 {
 	INT32 length = TICRATE;
 
-	if (source->player)
+	if (source && source->player)
 	{
 		length += (4 * (source->player->kartweight - player->kartweight));
 	}

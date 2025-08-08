@@ -4083,6 +4083,20 @@ static int lib_kExplodePlayer(lua_State *L)
 	return 1;
 }
 
+static int lib_kDebtStingPlayer(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	mobj_t *source = NULL;
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
+		source = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	K_DebtStingPlayer(player, source);
+	return 0;
+}
+
 static int lib_kTakeBumpersFromPlayer(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -5637,6 +5651,7 @@ static luaL_Reg lib[] = {
 	{"K_StumblePlayer",lib_kStumblePlayer},
 	{"K_CheckStumble",lib_kCheckStumble},
 	{"K_ExplodePlayer",lib_kExplodePlayer},
+	{"K_DebtStingPlayer",lib_kDebtStingPlayer},
 	{"K_TakeBumpersFromPlayer",lib_kTakeBumpersFromPlayer},
 	{"K_MineFlashScreen",lib_kMineFlashScreen},
 	{"K_SpawnMineExplosion",lib_kSpawnMineExplosion},
