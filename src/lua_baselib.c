@@ -31,6 +31,7 @@
 #include "k_boss.h"
 #include "k_collide.h"
 #include "k_color.h"
+#include "k_endcam.h"
 #include "k_hud.h"
 #include "d_netcmd.h" // IsPlayerAdmin
 #include "k_menu.h" // Player Setup menu color stuff
@@ -3485,6 +3486,22 @@ static int lib_gTicsToMilliseconds(lua_State *L)
 	return 1;
 }
 
+// K_ENDCAM
+////////////
+
+static int lib_kStartRoundWinCamera(lua_State *L)
+{
+	mobj_t *origin = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	angle_t focusAngle = luaL_checkangle(L, 2);
+	fixed_t finalRadius = luaL_checkfixed(L, 3);
+	tic_t panDuration = luaL_checkinteger(L, 4);
+	fixed_t panSpeed = luaL_checkfixed(L, 5);
+	NOHUD
+	INLEVEL
+	K_StartRoundWinCamera(origin, focusAngle, finalRadius, panDuration, panSpeed);
+	return 0;
+}
+
 // K_HUD
 ////////////
 
@@ -5596,6 +5613,9 @@ static luaL_Reg lib[] = {
 	{"G_TicsToCentiseconds",lib_gTicsToCentiseconds},
 	{"G_TicsToMilliseconds",lib_gTicsToMilliseconds},
 	{"getTimeMicros",lib_getTimeMicros},
+
+	// k_endcam
+	{"K_StartRoundWinCamera",lib_kStartRoundWinCamera},
 
 	// k_hud
 	{"K_AddMessage", lib_kAddMessage},
