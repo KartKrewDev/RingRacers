@@ -1728,6 +1728,18 @@ static int lib_pNukeEnemies(lua_State *L)
 	return 0;
 }
 
+static int lib_pSetPlayerAngle(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	angle_t angle = luaL_checkangle(L, 2);
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	P_SetPlayerAngle(player, angle);
+	return 0;
+}
+
 // P_MAP
 ///////////
 
@@ -4437,6 +4449,7 @@ static luaL_Reg lib[] = {
 	{"P_ReturnThrustX",lib_pReturnThrustX},
 	{"P_ReturnThrustY",lib_pReturnThrustY},
 	{"P_NukeEnemies",lib_pNukeEnemies},
+	{"P_SetPlayerAngle",lib_pSetPlayerAngle},
 	{"K_GetEffectiveFollowerColor",lib_pGetEffectiveFollowerColor},
 
 	// p_map
