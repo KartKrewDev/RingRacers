@@ -3939,6 +3939,20 @@ static int lib_kStumblePlayer(lua_State *L)
 	return 0;
 }
 
+static int lib_kCheckStumble(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	angle_t oldPitch = luaL_checkangle(L, 2);
+	angle_t oldRoll = luaL_checkangle(L, 3);
+	boolean fromAir = lua_optboolean(L, 4);
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	lua_pushboolean(L, K_CheckStumble(player, oldPitch, oldRoll, fromAir));
+	return 1;
+}
+
 static int lib_kExplodePlayer(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -4754,6 +4768,7 @@ static luaL_Reg lib[] = {
 	{"K_TumblePlayer",lib_kTumblePlayer},
 	{"K_StumbleSlope",lib_kStumbleSlope},
 	{"K_StumblePlayer",lib_kStumblePlayer},
+	{"K_CheckStumble",lib_kCheckStumble},
 	{"K_ExplodePlayer",lib_kExplodePlayer},
 	{"K_TakeBumpersFromPlayer",lib_kTakeBumpersFromPlayer},
 	{"K_MineFlashScreen",lib_kMineFlashScreen},
