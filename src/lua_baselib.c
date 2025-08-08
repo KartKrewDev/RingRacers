@@ -1513,6 +1513,15 @@ static int lib_pPlayerZMovement(lua_State *L)
 // P_TICK
 ////////////
 
+static int lib_pSetFreezeLevel(lua_State *L)
+{
+	boolean value = luaL_checkboolean(L, 1);
+	NOHUD
+	INLEVEL
+	P_SetFreezeLevel(value);
+	return 0;
+}
+
 static int lib_pMobjIsFrozen(lua_State *L)
 {
 	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -4458,6 +4467,7 @@ static luaL_Reg lib[] = {
 	{"P_PlayerZMovement",lib_pPlayerZMovement},
 
 	// p_tick
+	{"P_SetFreezeLevel",lib_pSetFreezeLevel},
 	{"P_MobjIsFrozen",lib_pMobjIsFrozen},
 
 	// p_user
