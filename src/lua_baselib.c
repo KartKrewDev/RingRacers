@@ -4751,6 +4751,17 @@ static int lib_kMakeObjectReappear(lua_State *L)
 	return 0;
 }
 
+static int lib_kBumperInflate(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	K_BumperInflate(player);
+	return 0;
+}
+
 static int lib_kGetCollideAngle(lua_State *L)
 {
 	mobj_t *t1 = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -5238,6 +5249,7 @@ static luaL_Reg lib[] = {
 	{"K_IsPlayingDisplayPlayer",lib_kIsPlayingDisplayPlayer},
 	{"K_PlayerCanPunt",lib_kPlayerCanPunt},
 	{"K_MakeObjectReappear",lib_kMakeObjectReappear},
+	{"K_BumperInflate",lib_kBumperInflate},
 
 	{"K_GetCollideAngle",lib_kGetCollideAngle},
 	{"K_AddHitLag",lib_kAddHitLag},
