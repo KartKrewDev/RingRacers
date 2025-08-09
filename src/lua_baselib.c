@@ -33,6 +33,7 @@
 #include "k_color.h"
 #include "k_endcam.h"
 #include "k_hud.h"
+#include "k_specialstage.h"
 #include "d_netcmd.h" // IsPlayerAdmin
 #include "k_menu.h" // Player Setup menu color stuff
 #include "p_spec.h" // P_StartQuake
@@ -4538,6 +4539,22 @@ static int lib_kUpdateAllPlayerPositions(lua_State *L)
 	return 0;
 }
 
+static int lib_kGetTotallyRandomResult(lua_State *L)
+{
+	UINT32 useodds = luaL_optinteger(L, 1, 0);
+	NOHUD
+	INLEVEL
+	// useodds can't be higher than these values to prevent an assert:
+	useodds = min(7, useodds); // race
+	if (gametype == GT_BATTLE) // battle
+		useodds = min(1, useodds);
+	else if (specialstageinfo.valid == true) // special
+		useodds = min(3, useodds);
+	
+	lua_pushinteger(L, K_GetTotallyRandomResult(useodds));
+	return 1;
+}
+
 static int lib_kCreatePaperItem(lua_State *L)
 {
 	fixed_t x = luaL_checkfixed(L, 1);
@@ -5858,6 +5875,7 @@ static luaL_Reg lib[] = {
 	{"K_KartUpdatePosition",lib_kKartUpdatePosition},
 	{"K_DropPaperItem",lib_kDropPaperItem},
 	{"K_UpdateAllPlayerPositions",lib_kUpdateAllPlayerPositions},
+	{"K_GetTotallyRandomResult",lib_kGetTotallyRandomResult},
 	{"K_CreatePaperItem",lib_kCreatePaperItem},
 	{"K_FlingPaperItem",lib_kFlingPaperItem},
 	{"K_PopPlayerShield",lib_kPopPlayerShield},
