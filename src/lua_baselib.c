@@ -4468,6 +4468,19 @@ static int lib_kGetSpindashChargeSpeed(lua_State *L)
 	return 1;
 }
 
+static int lib_kGrowShrinkSpeedMul(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	if (player->mo)
+		lua_pushfixed(L, K_GrowShrinkSpeedMul(player));
+	else
+		lua_pushnil(L);
+	return 1;
+}
+
 static int lib_kGetKartSpeed(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -4994,6 +5007,7 @@ static luaL_Reg lib[] = {
 	{"K_GetGardenTop",lib_kGetGardenTop},
 	{"K_GetSpindashChargeTime",lib_kGetSpindashChargeTime},
 	{"K_GetSpindashChargeSpeed",lib_kGetSpindashChargeSpeed},
+	{"K_GrowShrinkSpeedMul",lib_kGrowShrinkSpeedMul},
 	{"K_GetKartSpeed",lib_kGetKartSpeed},
 	{"K_GetKartAccel",lib_kGetKartAccel},
 	{"K_GetKartFlashing",lib_kGetKartFlashing},
