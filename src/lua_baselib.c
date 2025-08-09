@@ -4378,6 +4378,16 @@ static int lib_kTripwirePassConditions(lua_State *L)
 	return 1;
 }
 
+static int lib_kTripwirePass(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	lua_pushboolean(L, K_TripwirePass(player));
+	return 1;
+}
+
 static int lib_kGetKartSpeed(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -4895,6 +4905,7 @@ static luaL_Reg lib[] = {
 	{"K_SlopeResistance",lib_kSlopeResistance},
 	{"K_PlayerTripwireSpeedThreshold",lib_kPlayerTripwireSpeedThreshold},
 	{"K_TripwirePassConditions",lib_kTripwirePassConditions},
+	{"K_TripwirePass",lib_kTripwirePass},
 	{"K_GetKartSpeed",lib_kGetKartSpeed},
 	{"K_GetKartAccel",lib_kGetKartAccel},
 	{"K_GetKartFlashing",lib_kGetKartFlashing},
