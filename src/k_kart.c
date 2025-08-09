@@ -982,12 +982,9 @@ static boolean K_JustBumpedException(mobj_t *mobj)
 	{
 		case MT_SA2_CRATE:
 			return Obj_SA2CrateIsMetal(mobj);
-		case MT_WALLSPIKE:
-			return true;
 		case MT_BATTLECAPSULE:
 		{
-			if (gametype == GT_TUTORIAL // Remove gametype check whenever it's safe to break compatibility with ghosts in a post-release patch
-			&& mobj->momx == 0
+			if (mobj->momx == 0
 			&& mobj->momy == 0
 			&& mobj->momz == 0)
 			{
@@ -995,6 +992,7 @@ static boolean K_JustBumpedException(mobj_t *mobj)
 			}
 			break;
 		}
+		case MT_WALLSPIKE:
 		case MT_STONESHOE:
 			return true;
 		default:
@@ -3535,7 +3533,6 @@ fixed_t K_GetSpindashChargeSpeed(const player_t *player)
 	fixed_t val = (10*FRACUNIT/277) + (((player->kartspeed + player->kartweight) + 2) * FRACUNIT) / 45;
 
 	// 2.2 - Improved Spindash
-	if (!G_CompatLevel(0x000A))
 	{
 		if (gametyperules & GTR_CIRCUIT)
 			val = 5 * val / 4;
@@ -11994,12 +11991,6 @@ static INT16 K_GetKartDriftValue(const player_t *player, fixed_t countersteer)
 	}
 #endif
 
-	// Compat level for 2.0 staff ghosts
-	if (G_CompatLevel(0x000A))
-	{
-		return basedrift + (FixedMul(driftadjust * FRACUNIT, countersteer) / FRACUNIT);
-	}
-	else
 	{
 		return basedrift + FixedMul(driftadjust, countersteer);
 	}
@@ -12084,7 +12075,7 @@ INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
 	}
 
 	// Staff ghosts - direction-only trickpanel behavior
-	if (G_CompatLevel(0x000A) || K_PlayerUsesBotMovement(player))
+	if (K_PlayerUsesBotMovement(player))
 	{
 		if (player->trickpanel == TRICKSTATE_READY || player->trickpanel == TRICKSTATE_FORWARD)
 		{
@@ -12126,12 +12117,6 @@ INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
 	}
 	else
 	{
-		if (G_CompatLevel(0x000A))
-		{
-			// Compat level for 2.0 staff ghosts
-			p_speed = min(currentSpeed, p_maxspeed * 2);
-		}
-		else
 		{
 			// Turning dampens as you go faster, but at extremely high speeds, keeping some control is important.
 			// Dampening is applied in two stages, one harsh and one soft.
@@ -12172,19 +12157,6 @@ INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
 
 	if (player->drift != 0 && P_IsObjectOnGround(player->mo))
 	{
-		if (G_CompatLevel(0x000A))
-		{
-			// Compat level for 2.0 staff ghosts
-			fixed_t countersteer = FixedDiv(turnfixed, KART_FULLTURN * FRACUNIT);
-
-			if (player->pflags & PF_DRIFTEND)
-			{
-				countersteer = FRACUNIT;
-			}
-
-			return K_GetKartDriftValue(player, countersteer);
-		}
-		else
 		{
 			if (player->pflags & PF_DRIFTEND)
 			{
@@ -12230,12 +12202,6 @@ INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
 	{
 		fixed_t sliptide_handle;
 
-		if (G_CompatLevel(0x000A))
-		{
-			// Compat level for 2.0 staff ghosts
-			sliptide_handle = 5 * HANDLESCALING / 4;
-		}
-		else
 		{
 			sliptide_handle = 3 * HANDLESCALING / 4;
 		}
@@ -12266,7 +12232,7 @@ INT16 K_GetKartTurnValue(const player_t *player, INT16 turnvalue)
 	}
 
 	// 2.2 - Presteering allowed in trickpanels
-	if (!G_CompatLevel(0x000A) && !K_PlayerUsesBotMovement(player))
+	if (!K_PlayerUsesBotMovement(player))
 	{
 		if (player->trickpanel == TRICKSTATE_READY || player->trickpanel == TRICKSTATE_FORWARD)
 		{
@@ -12469,15 +12435,6 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 			if (player->trickcharge && dokicker)
 			{
-				// 2.2 - Egg-friendly trick stuff
-				if (G_CompatLevel(0x000B))
-				{
-					player->driftboost += 20;
-					player->wavedashboost += 10;
-					player->wavedashpower = FRACUNIT;
-					P_Thrust(player->mo, pushdir, player->speed / 2);
-				}
-				else
 				{
 					player->driftboost += TICRATE;
 					player->counterdash += TICRATE/2;
@@ -13551,7 +13508,6 @@ static void K_KartSpindash(player_t *player)
 	}
 
 	// 2.2 - Driftbrake slideoff fastfall prevention
-	if (!G_CompatLevel(0x000A))
 	{
 		if (player->drift && onGround && player->cmd.buttons & BT_BRAKE)
 		{
@@ -13569,7 +13525,6 @@ static void K_KartSpindash(player_t *player)
 	else
 	{
 		// 2.2 - More responsive ebrake
-		if (!G_CompatLevel(0x000A))
 		{
 			if (onGround && player->noEbrakeMagnet == 0 && (FixedHypot(player->mo->momx, player->mo->momy) < 20*player->mo->scale))
 			{
@@ -13692,11 +13647,6 @@ static void K_KartSpindash(player_t *player)
 				// Funky Kong's Ring Racers.
 
 				// 2.2 - No extended ring debt for recovery spindash
-				if (G_CompatLevel(0x000A))
-				{
-					P_PlayerRingBurst(player, 1);
-				}
-				else
 				{
 					if (player->rings > 0)
 						P_PlayerRingBurst(player, 1);
@@ -13817,7 +13767,6 @@ boolean K_FastFallBounce(player_t *player)
 		player->fastfall = 0;
 
 		// 2.2 - More lenient fastfall
-		if (!G_CompatLevel(0x000A))
 		{
 			if (player->curshield != KSHIELD_BUBBLE)
 			{
@@ -15592,8 +15541,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			if (player->tricktime <= TRICKDELAY)
 			{
 				// 2.3 - Prevent accidental fastfalls during trickdelay
-				if (!G_CompatLevel(0x000C))
-					player->pflags |= PF_NOFASTFALL;
+				player->pflags |= PF_NOFASTFALL;
 
 				player->tricktime++;
 			}
@@ -15631,8 +15579,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				UINT16 buttons = player->cmd.buttons;
 				INT16 TRICKTHRESHOLD = 2*KART_FULLTURN/3;
 
-				// 2.3 - aimingcompare
-				if (!G_CompatLevel(0x000C))
 				{
 					TRICKTHRESHOLD = KART_FULLTURN/2;
 					INT16 aimingcompare = abs(cmd->throwdir) - abs(cmd->turning);
@@ -15641,14 +15587,14 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				}
 
 				// 2.2 - Pre-steering trickpanels
-				if (!G_CompatLevel(0x000A) && !K_PlayerUsesBotMovement(player))
+				if (!K_PlayerUsesBotMovement(player))
 				{
 					if (!(buttons & BT_ACCELERATE))
 					{
 						cantrick = false;
 					}
 					// 2.3 - also allow tricking with the Spindash button
-					else if (!G_CompatLevel(0x000C) && ((buttons & BT_SPINDASHMASK) == BT_SPINDASHMASK))
+					else if ((buttons & BT_SPINDASHMASK) == BT_SPINDASHMASK)
 					{
 						player->pflags |= PF_NOFASTFALL;
 					}
@@ -15883,7 +15829,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		}
 
 		// 2.2 - Lenient trickpanels
-		if (G_CompatLevel(0x000A) || K_PlayerUsesBotMovement(player))
+		if (K_PlayerUsesBotMovement(player))
 		{
 			// Wait until we let go off the control stick to remove the delay
 			// buttons must be neutral after the initial trick delay. This prevents weirdness where slight nudges after blast off would send you flying.
@@ -15894,14 +15840,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		}
 		else
 		{
-			if (G_CompatLevel(0x000C))
-			{
-				if ((player->pflags & PF_TRICKDELAY) && !(player->cmd.buttons & BT_ACCELERATE) && (player->tricktime >= TRICKDELAY))
-				{
-					player->pflags &= ~PF_TRICKDELAY;
-				}
-			}
-			else
 			// 2.3 - Spindash to trick
 			{
 				// Ignore pre-existing Accel inputs if not pressing Spindash. Always ignore pre-existing Spindash inputs to prevent accidental tricking.

@@ -201,7 +201,7 @@ boolean P_BBoxInsidePolyobj(polyobj_t *po, fixed_t *bbox)
 	{
 		if (P_BoxOnLineSide(bbox, po->lines[i]) == 0)
 			return false;
-		if (g_tm.sweep && !G_CompatLevel(0x000A))
+		if (g_tm.sweep)
 		{
 			P_TestLine(po->lines[i]);
 		}

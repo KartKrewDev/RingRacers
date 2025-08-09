@@ -14095,9 +14095,8 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 			mobj->scalespeed <<= 1;
 		}
 
-		if (gametype == GT_SPECIAL)
 		{
-			// TODO: When we invalidate replays, permit manual size changes everywhere
+			// Now we're invalidating replays, permit manual size changes everywhere
 			mobj->extravalue1 = FixedMul(mthing->scale, mobj->extravalue1);
 			mobj->scalespeed = FixedMul(mthing->scale, mobj->scalespeed);
 		}

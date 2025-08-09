@@ -97,9 +97,6 @@ tic_t demostarttime; // for comparative timing purposes
 
 static constexpr DemoBufferSizes get_buffer_sizes(UINT16 version)
 {
-	if (version < 0x000A) // old staff ghost support
-		return {16, 16, 16};
-
 	// These sizes are compatible as of version 0x000A
 	static_assert(MAXPLAYERNAME == 21);
 	static_assert(SKINNAMESIZE == 16);
@@ -158,7 +155,7 @@ demoghost *ghosts = NULL;
 // DEMO RECORDING
 //
 
-// Also supported:
+// Formerly supported:
 // - 0x0009 (older staff ghosts)
 //   - Player names, skin names and color names were 16
 //     bytes. See get_buffer_sizes().
@@ -238,8 +235,8 @@ static ticcmd_t oldcmd[MAXPLAYERS];
 #define DW_EXTRASTUFF 0xFE // Numbers below this are reserved for writing player slot data
 
 // Below consts are only used for demo extrainfo sections
-#define DW_STANDING 0x00
-#define DW_STANDING2 0x01
+#define DW_DEPRECATED	0x00
+#define DW_STANDINGS	0x01
 
 // For time attack ghosts
 #define GZT_XYZ    0x01
@@ -441,15 +438,7 @@ void G_ReadDemoExtraData(void)
 		{
 			case DW_RNG:
 			{
-				UINT32 num_classes;
-				if (demo.version <= 0x000D)
-				{
-					num_classes = PROLDDEMO;
-				}
-				else
-				{
-					num_classes = READUINT32(demobuf.p);
-				}
+				UINT32 num_classes = READUINT32(demobuf.p);
 
 				for (i = 0; i < (signed)num_classes; i++)
 				{
@@ -1337,15 +1326,7 @@ fadeghost:
 			{
 				INT32 i;
 
-				UINT32 num_classes = PROLDDEMO;
-				if (g->version <= 0x000D)
-				{
-					num_classes = PROLDDEMO;
-				}
-				else
-				{
-					num_classes = READUINT32(g->p);
-				}
+				UINT32 num_classes = READUINT32(g->p);
 
 				for (i = 0; i < (signed)num_classes; i++)
 				{
@@ -1543,11 +1524,11 @@ fadeghost:
 					P_SetScale(follow, follow->destscale);
 
 				P_UnsetThingPosition(follow);
-				temp = (g->version < 0x000e) ? READINT16(g->p)<<8 : READFIXED(g->p);
+				temp = READFIXED(g->p);
 				follow->x = g->mo->x + temp;
-				temp = (g->version < 0x000e) ? READINT16(g->p)<<8 : READFIXED(g->p);
+				temp = READFIXED(g->p);
 				follow->y = g->mo->y + temp;
-				temp = (g->version < 0x000e) ? READINT16(g->p)<<8 : READFIXED(g->p);
+				temp = READFIXED(g->p);
 				follow->z = g->mo->z + temp;
 				P_SetThingPosition(follow);
 				if (followtic & FZT_SKIN)
@@ -2231,7 +2212,7 @@ void srb2::write_current_demo_standings(const srb2::StandingsJson& standings)
 	Vector<std::byte> ubjson = value.to_ubjson();
 	uint32_t bytes = ubjson.size();
 
-	WRITEUINT8(demobuf.p, DW_STANDING2);
+	WRITEUINT8(demobuf.p, DW_STANDINGS);
 
 	WRITEUINT32(demobuf.p, bytes);
 	WRITEMEM(demobuf.p, (UINT8*)ubjson.data(), bytes);
@@ -2402,10 +2383,6 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	switch(oldversion) // demoversion
 	{
 	case DEMOVERSION: // latest always supported
-	case 0x0009: // older staff ghosts
-	case 0x000A: // 2.0, 2.1
-	case 0x000B: // 2.2 indev (staff ghosts)
-	case 0x000C: // 2.2
 		break;
 	// too old, cannot support.
 	default:
@@ -2513,11 +2490,11 @@ void G_LoadDemoInfo(menudemo_t *pdemo, boolean allownonmultiplayer)
 {
 	savebuffer_t info = {0};
 	UINT8 *extrainfo_p;
-	UINT8 version, subversion, worknumskins, skinid;
+	UINT8 version, subversion, worknumskins;
 	UINT16 pdemoflags;
 	democharlist_t *skinlist = NULL;
 	UINT16 pdemoversion, count;
-	UINT16 legacystandingplayercount;
+	UINT32 num_classes;
 	char mapname[MAXMAPLUMPNAME],gtname[MAXGAMETYPELENGTH];
 	INT32 i;
 
@@ -2554,10 +2531,6 @@ void G_LoadDemoInfo(menudemo_t *pdemo, boolean allownonmultiplayer)
 	switch(pdemoversion)
 	{
 	case DEMOVERSION: // latest always supported
-	case 0x0009: // older staff ghosts
-	case 0x000A: // 2.0, 2.1
-	case 0x000B: // 2.2 indev (staff ghosts)
-	case 0x000C: // 2.2
 		if (P_SaveBufferRemaining(&info) < 64)
 		{
 			goto corrupt;
@@ -2640,15 +2613,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo, boolean allownonmultiplayer)
 		}
 	}
 
-	UINT32 num_classes;
-	if (pdemoversion <= 0x000D)
-	{
-		num_classes = PROLDDEMO;
-	}
-	else
-	{
-		num_classes = READUINT32(info.p);
-	}
+	num_classes = READUINT32(info.p);
 
 	for (i = 0; i < (signed)num_classes; i++)
 	{
@@ -2699,7 +2664,6 @@ void G_LoadDemoInfo(menudemo_t *pdemo, boolean allownonmultiplayer)
 		pdemo->gp = true;
 
 	// Read standings!
-	legacystandingplayercount = 0;
 
 	info.p = extrainfo_p;
 
@@ -2709,48 +2673,13 @@ void G_LoadDemoInfo(menudemo_t *pdemo, boolean allownonmultiplayer)
 
 		switch (extrainfotag)
 		{
-			case DW_STANDING:
+			case DW_DEPRECATED:
 			{
-				// This is the only extrainfo tag that is not length prefixed. All others must be.
-				constexpr size_t kLegacyStandingSize = 1+16+1+16+4;
-				if (P_SaveBufferRemaining(&info) < kLegacyStandingSize)
-				{
-					goto corrupt;
-				}
-				if (legacystandingplayercount >= MAXPLAYERS)
-				{
-					info.p += kLegacyStandingSize;
-					break; // switch
-				}
-				char temp[16+1];
-
-				pdemo->standings[legacystandingplayercount].ranking = READUINT8(info.p);
-
-				// Name
-				info.p += copy_fixed_buf(pdemo->standings[legacystandingplayercount].name, info.p, 16);
-
-				// Skin
-				skinid = READUINT8(info.p);
-				if (skinid > worknumskins)
-					skinid = 0;
-				pdemo->standings[legacystandingplayercount].skin = skinlist[skinid].mapping;
-
-				// Color
-				info.p += copy_fixed_buf(temp, info.p, 16);
-				for (i = 0; i < numskincolors; i++)
-					if (!stricmp(skincolors[i].name,temp))				// SRB2kart
-					{
-						pdemo->standings[legacystandingplayercount].color = i;
-						break;
-					}
-
-				// Score/time/whatever
-				pdemo->standings[legacystandingplayercount].timeorscore = READUINT32(info.p);
-
-				legacystandingplayercount++;
-				break;
+				// Because this isn't historically length-prefixed,
+				// we can't free this one value up. Sorry!
+				goto corrupt;
 			}
-			case DW_STANDING2:
+			case DW_STANDINGS:
 			{
 				if (P_SaveBufferRemaining(&info) < 4)
 				{
@@ -2834,6 +2763,7 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 	UINT8 availabilities[MAXPLAYERS][MAXAVAILABILITY];
 	UINT8 version,subversion;
 	UINT32 randseed[PRNUMSYNCED];
+	UINT32 num_classes;
 	char msg[1024];
 
 	boolean spectator, bot;
@@ -2995,10 +2925,6 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 	switch(demo.version)
 	{
 	case DEMOVERSION: // latest always supported
-	case 0x0009: // older staff ghosts
-	case 0x000A: // 2.0, 2.1
-	case 0x000B: // 2.2 indev (staff ghosts)
-	case 0x000C: // 2.2
 		break;
 	// too old, cannot support.
 	default:
@@ -3136,15 +3062,7 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 		hu_demolap = READUINT32(demobuf.p);
 
 	// Random seed
-	UINT32 num_classes;
-	if (demo.version <= 0x000D)
-	{
-		num_classes = PROLDDEMO;
-	}
-	else
-	{
-		num_classes = READUINT32(demobuf.p);
-	}
+	num_classes = READUINT32(demobuf.p);
 
 	for (i = 0; i < PRNUMSYNCED; i++)
 	{
@@ -3193,10 +3111,7 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 		grandprixinfo.gamespeed = READUINT8(demobuf.p);
 		grandprixinfo.masterbots = READUINT8(demobuf.p) != 0;
 		grandprixinfo.eventmode = static_cast<gpEvent_e>(READUINT8(demobuf.p));
-		if (demo.version >= 0x000D)
-		{
-			grandprixinfo.specialDamage = READUINT32(demobuf.p);
-		}
+		grandprixinfo.specialDamage = READUINT32(demobuf.p);
 	}
 
 	// Load unlocks into netUnlocked
@@ -3476,6 +3391,7 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	UINT16 count, ghostversion;
 	skin_t *ghskin = &skins[0];
 	UINT8 worknumskins;
+	UINT32 num_classes;
 	democharlist_t *skinlist = NULL;
 
 	p = buffer->buffer;
@@ -3495,10 +3411,6 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	switch(ghostversion)
 	{
 	case DEMOVERSION: // latest always supported
-	case 0x0009: // older staff ghosts
-	case 0x000A: // 2.0, 2.1
-	case 0x000B: // 2.2 indev (staff ghosts)
-	case 0x000C: // 2.2
 		break;
 	// too old, cannot support.
 	default:
@@ -3568,15 +3480,7 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	if (flags & ATTACKING_LAP)
 		p += 4;
 
-	UINT32 num_classes;
-	if (ghostversion <= 0x000D)
-	{
-		num_classes = PROLDDEMO;
-	}
-	else
-	{
-		num_classes = READUINT32(p);
-	}
+	num_classes = READUINT32(p);
 
 	for (i = 0; i < (signed)num_classes; i++)
 	{
@@ -3603,9 +3507,7 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 
 	if ((flags & DF_GRANDPRIX))
 	{
-		p += 3;
-		if (ghostversion >= 0x000D)
-			p++;
+		p += 4;
 	}
 
 	// Skip unlockables
@@ -3759,6 +3661,7 @@ staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer)
 	UINT8 *p = buffer;
 	UINT16 ghostversion;
 	UINT16 flags;
+	UINT32 num_classes;
 	INT32 i;
 	staffbrief_t temp = {0};
 	staffbrief_t *ret = NULL;
@@ -3780,10 +3683,6 @@ staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer)
 	switch(ghostversion)
 	{
 		case DEMOVERSION: // latest always supported
-		case 0x0009: // older staff ghosts
-		case 0x000A: // 2.0, 2.1
-		case 0x000B: // 2.2 indev (staff ghosts)
-		case 0x000C: // 2.2
 			break;
 
 		// too old, cannot support.
@@ -3820,15 +3719,7 @@ staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer)
 	if (flags & ATTACKING_LAP)
 		temp.lap = READUINT32(p);
 
-	UINT32 num_classes;
-	if (ghostversion <= 0x000D)
-	{
-		num_classes = PROLDDEMO;
-	}
-	else
-	{
-		num_classes = READUINT32(p);
-	}
+	num_classes = READUINT32(p);
 
 	for (i = 0; i < (signed)num_classes; i++)
 	{
@@ -3851,9 +3742,7 @@ staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer)
 
 	if ((flags & DF_GRANDPRIX))
 	{
-		p += 3;
-		if (ghostversion >= 0x000D)
-			p++;
+		p += 4;
 	}
 
 	// Skip unlockables

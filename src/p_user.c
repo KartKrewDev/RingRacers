@@ -1952,10 +1952,7 @@ static void P_3dMovement(player_t *player)
 
 	totalthrust.x = totalthrust.y = 0; // I forget if this is needed
 
-	if (G_CompatLevel(0x000B)) // Ring Racers 2.1 behavior
-		totalthrust.z = FRACUNIT*P_MobjFlip(player->mo)/3; // A bit of extra push-back on slopes
-	else
-		totalthrust.z = FixedMul(mapobjectscale, K_GrowShrinkSpeedMul(player))*P_MobjFlip(player->mo)/3; // A bit of extra push-back on slopes, but scaled for mapobject and player size
+	totalthrust.z = FixedMul(mapobjectscale, K_GrowShrinkSpeedMul(player))*P_MobjFlip(player->mo)/3; // A bit of extra push-back on slopes, but scaled for mapobject and player size
 
 	if (K_SlopeResistance(player) == true)
 	{
