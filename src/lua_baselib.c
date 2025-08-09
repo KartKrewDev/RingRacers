@@ -4231,6 +4231,19 @@ static int lib_kKartUpdatePosition(lua_State *L)
 	return 0;
 }
 
+static int lib_kDropPaperItem(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	UINT8 itemtype = luaL_optinteger(L, 2, 0);
+	UINT16 itemamount = luaL_optinteger(L, 3, 1);
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	K_DropPaperItem(player, itemtype, itemamount);
+	return 0;
+}
+
 static int lib_kPopPlayerShield(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -4805,6 +4818,7 @@ static luaL_Reg lib[] = {
 	{"K_SpawnDriftBoostExplosion",lib_kSpawnDriftBoostExplosion},
 	{"K_SpawnDriftElectricSparks",lib_kSpawnDriftElectricSparks},
 	{"K_KartUpdatePosition",lib_kKartUpdatePosition},
+	{"K_DropPaperItem",lib_kDropPaperItem},
 	{"K_PopPlayerShield",lib_kPopPlayerShield},
 	{"K_DropHnextList",lib_kDropHnextList},
 	{"K_DropItems",lib_kDropItems},
