@@ -4348,6 +4348,16 @@ static int lib_kApplyOffroad(lua_State *L)
 	return 1;
 }
 
+static int lib_kSlopeResistance(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	lua_pushboolean(L, K_SlopeResistance(player));
+	return 1;
+}
+
 static int lib_kGetKartSpeed(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -4862,6 +4872,7 @@ static luaL_Reg lib[] = {
 	{"K_MomentumToFacing",lib_kMomentumToFacing},
 	{"K_SpawnWaterRunParticles",lib_kSpawnWaterRunParticles},
 	{"K_ApplyOffroad",lib_kApplyOffroad},
+	{"K_SlopeResistance",lib_kSlopeResistance},
 	{"K_GetKartSpeed",lib_kGetKartSpeed},
 	{"K_GetKartAccel",lib_kGetKartAccel},
 	{"K_GetKartFlashing",lib_kGetKartFlashing},
