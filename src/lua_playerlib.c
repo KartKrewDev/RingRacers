@@ -498,6 +498,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->lightningcharge);
 	else if (fastcmp(field,"ballhogcharge"))
 		lua_pushinteger(L, plr->ballhogcharge);
+	else if (fastcmp(field,"ballhogburst"))
+		lua_pushinteger(L, plr->ballhogburst);
 	else if (fastcmp(field,"ballhogtap"))
 		lua_pushinteger(L, plr->ballhogtap);
 	else if (fastcmp(field,"hyudorotimer"))
@@ -1139,6 +1141,8 @@ static int player_set(lua_State *L)
 		plr->lightningcharge = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"ballhogcharge"))
 		plr->ballhogcharge = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"ballhogburst"))
+		plr->ballhogburst = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"ballhogtap"))
 		plr->ballhogtap = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"hyudorotimer"))

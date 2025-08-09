@@ -2517,22 +2517,7 @@ state_t states[NUMSTATES] =
 	{SPR_BHOG,               6, 1, {NULL}, 0, 0, S_BALLHOG8}, 				// S_BALLHOG7
 	{SPR_BHOG,               7, 1, {NULL}, 0, 0, S_BALLHOG1}, 				// S_BALLHOG8
 	{SPR_NULL,               0, 1, {A_BallhogExplode}, 0, 0, S_NULL},			// S_BALLHOG_DEAD
-	{SPR_BHBM, FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_BALLHOGBOOM2},				// S_BALLHOGBOOM1
-	{SPR_BHBM, FF_FULLBRIGHT|1, 1, {NULL}, 0, 0, S_BALLHOGBOOM3},				// S_BALLHOGBOOM2
-	{SPR_BHBM, FF_FULLBRIGHT|2, 1, {NULL}, 0, 0, S_BALLHOGBOOM4},				// S_BALLHOGBOOM3
-	{SPR_BHBM, FF_FULLBRIGHT|3, 1, {NULL}, 0, 0, S_BALLHOGBOOM5},				// S_BALLHOGBOOM4
-	{SPR_BHBM, FF_FULLBRIGHT|4, 1, {NULL}, 0, 0, S_BALLHOGBOOM6},				// S_BALLHOGBOOM5
-	{SPR_BHBM, FF_FULLBRIGHT|5, 1, {NULL}, 0, 0, S_BALLHOGBOOM7},				// S_BALLHOGBOOM6
-	{SPR_BHBM, FF_FULLBRIGHT|6, 1, {NULL}, 0, 0, S_BALLHOGBOOM8},				// S_BALLHOGBOOM7
-	{SPR_BHBM, FF_FULLBRIGHT|7, 1, {NULL}, 0, 0, S_BALLHOGBOOM9},				// S_BALLHOGBOOM8
-	{SPR_BHBM, FF_FULLBRIGHT|8, 1, {NULL}, 0, 0, S_BALLHOGBOOM10},			// S_BALLHOGBOOM9
-	{SPR_BHBM, FF_FULLBRIGHT|9, 1, {NULL}, 0, 0, S_BALLHOGBOOM11},			// S_BALLHOGBOOM10
-	{SPR_BHBM, FF_FULLBRIGHT|10, 1, {NULL}, 0, 0, S_BALLHOGBOOM12},			// S_BALLHOGBOOM11
-	{SPR_BHBM, FF_FULLBRIGHT|11, 1, {NULL}, 0, 0, S_BALLHOGBOOM13},			// S_BALLHOGBOOM12
-	{SPR_BHBM, FF_FULLBRIGHT|12, 1, {NULL}, 0, 0, S_BALLHOGBOOM14},			// S_BALLHOGBOOM13
-	{SPR_BHBM, FF_FULLBRIGHT|13, 1, {NULL}, 0, 0, S_BALLHOGBOOM15},			// S_BALLHOGBOOM14
-	{SPR_BHBM, FF_FULLBRIGHT|14, 1, {NULL}, 0, 0, S_BALLHOGBOOM16},			// S_BALLHOGBOOM15
-	{SPR_BHBM, FF_FULLBRIGHT|15, 1, {NULL}, 0, 0, S_NULL},					// S_BALLHOGBOOM16
+	{SPR_BHBM, FF_ANIMATE|FF_FULLBRIGHT, 27, {NULL}, 26, 1, S_NULL}, // S_BALLHOGBOOM
 	{SPR_BHGR, FF_ANIMATE|FF_FULLBRIGHT|0, 2*TICRATE, {NULL}, 5, 3, S_NULL},	// S_BALLHOG_RETICULE
 
 	{SPR_SPBM, 0, 1, {NULL}, 0, 0,  S_SPB2}, // S_SPB1
@@ -15203,7 +15188,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,					// missilestate
 		S_SSMINE_EXPLODE,		// deathstate
 		S_NULL,					// xdeathstate
-		sfx_None,				// deathsound
+		sfx_gshc5,				// deathsound
 		0,						// speed
 		16*FRACUNIT,			// radius
 		56*FRACUNIT,			// height
@@ -15446,7 +15431,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,         // missilestate
 		S_BALLHOG_DEAD, // deathstate
 		S_NULL,         // xdeathstate
-		sfx_hogbom,     // deathsound
+		sfx_gshdd,     // deathsound
 		0,              // speed
 		26*FRACUNIT,    // radius
 		64*FRACUNIT,    // height
@@ -15460,7 +15445,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 
 	{           // MT_BALLHOGBOOM
 		-1,             // doomednum
-		S_BALLHOGBOOM1, // spawnstate
+		S_BALLHOGBOOM, // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound
@@ -15475,8 +15460,8 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,         // xdeathstate
 		sfx_None,       // deathsound
 		0,              // speed
-		32*FRACUNIT,    // radius
-		32*FRACUNIT,    // height
+		50*FRACUNIT,    // radius
+		50*FRACUNIT,    // height
 		0,              // display offset
 		100,            // mass
 		1,              // damage

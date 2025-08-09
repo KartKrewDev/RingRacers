@@ -1457,7 +1457,7 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"gshc2", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshc3", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshc4", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
-  {"gshc5", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"gshc5", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, //x8away, ProxMineBOOM!
   {"gshc6", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshc7", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, //x8away
   {"gshc8", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
@@ -1481,7 +1481,7 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"gshda", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshdb", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshdc", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
-  {"gshdd", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"gshdd", false,  96, 8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, //New ballhog explosion
   {"gshde", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshdf", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gshe0", false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},

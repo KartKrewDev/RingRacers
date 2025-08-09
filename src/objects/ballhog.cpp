@@ -61,7 +61,7 @@ static void CalculateHogAngles(UINT8 n)
 
 	if (total_hogs > 1)
 	{
-		const fixed_t base_radius = mobjinfo[MT_BALLHOG].radius * 6;
+		const fixed_t base_radius = mobjinfo[MT_BALLHOG].radius * 12;
 		fixed_t radius = base_radius;
 		UINT8 max_points = 6;
 		angle_t circle_offset = 0;

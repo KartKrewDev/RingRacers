@@ -1719,11 +1719,13 @@ boolean P_XYMovement(mobj_t *mo)
 
 		P_PushSpecialLine(result.line, mo);
 
+		/*
 		if (mo->type == MT_BALLHOG || mo->type == MT_BALLHOG_RETICULE_TEST)
 		{
 			P_ExplodeMissile(mo);
 			return false;
 		}
+		*/
 
 		if (mo->flags & MF_MISSILE)
 		{
@@ -2011,7 +2013,7 @@ boolean P_XYMovement(mobj_t *mo)
 		return moved;
 
 	//{ SRB2kart stuff
-	if (mo->type == MT_FLINGRING || mo->type == MT_BALLHOG || mo->type == MT_BALLHOG_RETICULE_TEST || mo->type == MT_BUBBLESHIELDTRAP)
+	if (mo->type == MT_FLINGRING || mo->type == MT_BUBBLESHIELDTRAP)
 		return moved;
 
 	if (player && (player->spinouttimer && !player->wipeoutslow)
@@ -2390,7 +2392,7 @@ boolean P_ZMovement(mobj_t *mo)
 			break;
 		case MT_BALLHOG:
 		case MT_BALLHOG_RETICULE_TEST:
-			if (mo->z <= mo->floorz || mo->z + mo->height >= mo->ceilingz)
+			if (mo->z <= mo->floorz)
 			{
 				P_ExplodeMissile(mo);
 				return false;
@@ -4135,6 +4137,8 @@ static void P_PlayerMobjThinker(mobj_t *mobj)
 	{
 		mobj->eflags &= ~MFE_JUSTHITFLOOR;
 	}
+
+	mobj->eflags &= ~MFE_DONTSLOPELAUNCH;
 
 	P_SquishThink(mobj);
 	K_UpdateTerrainOverlay(mobj);
@@ -10919,6 +10923,7 @@ void P_MobjThinker(mobj_t *mobj)
 		P_ButteredSlope(mobj);
 	}
 
+	mobj->eflags &= ~MFE_DONTSLOPELAUNCH;
 	P_SquishThink(mobj);
 	K_UpdateTerrainOverlay(mobj);
 

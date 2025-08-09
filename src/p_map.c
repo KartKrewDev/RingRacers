@@ -2800,11 +2800,17 @@ fixed_t P_BaseStepUp(void)
 
 fixed_t P_GetThingStepUp(mobj_t *thing, fixed_t destX, fixed_t destY)
 {
+
+	// I have no idea why this check caused Ballhog to step up on EVERYTHING,
+	// but it sure did step up on everything.
+
+	/*
 	if (thing->type == MT_BALLHOG || thing->type == MT_BALLHOG_RETICULE_TEST)
 	{
 		// these should explode, not go up stairs
 		return 0;
 	}
+	*/
 
 	const fixed_t maxstepmove = P_BaseStepUp();
 	fixed_t maxstep = maxstepmove;

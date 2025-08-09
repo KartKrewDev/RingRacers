@@ -147,6 +147,7 @@ typedef enum
 	PF2_ALWAYSDAMAGED		= 1<<6, // Ignore invulnerability or clash conditions when evaulating damage (P_DamageMobj). Unset after use!
 	PF2_BUBBLECONTACT		= 1<<7, // ACHTUNG VERY BAD HACK - Don't allow Bubble Shield to contact certain objects unless this is a fresh blowup.
 	PF2_SUPERTRANSFERVFX	= 1<<8, // Don't respawn the "super transfer available" VFX.
+	PF2_FASTTUMBLEBOUNCE	= 1<<9, // Don't lose speed when tumblebouncing.
 } pflags2_t;
 
 typedef enum
@@ -850,6 +851,7 @@ struct player_t
 	UINT16 counterdash;	// Flame Shield boost without the flame, largely. Used in places where awarding thrust would affect player control.
 
 	UINT16 ballhogcharge;	// Ballhog charge up -- the higher this value, the more projectiles
+	UINT8 ballhogburst;
 	boolean ballhogtap;		// Ballhog released during charge: used to allow semirapid tapfire
 	mobj_t *ballhogreticule;	// First ballhog reticule estimation object
 

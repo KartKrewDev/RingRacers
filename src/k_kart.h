@@ -68,6 +68,8 @@ Make sure this matches the actual number of states
 
 #define FLAMESHIELD_MAX (120)
 
+#define BALLHOG_BURST_FUSE (TICRATE*2)
+
 #define RR_PROJECTILE_FUSE (8*TICRATE)
 
 #define SCAMDIST (2000)

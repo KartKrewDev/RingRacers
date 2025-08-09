@@ -75,6 +75,9 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 	if (t1->type == MT_BALLHOGBOOM && t2->type == MT_BALLHOGBOOM)
 		return true; // Ballhogs don't collide with eachother
 
+	if (t1->type == MT_BALLHOGBOOM && t2->type == MT_PLAYER && t1->target == t2 )
+		return true; // Allied hog explosion, not snatchable but shouldn't damage
+
 	if (K_TryPickMeUp(t1, t2, false))
 		return true;
 
@@ -87,7 +90,10 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 		if (t1->type == MT_BANANA && t1->health > 1)
 			S_StartSound(t2, sfx_bsnipe);
 
-		damageitem = true;
+		if (t1->type != MT_BALLHOGBOOM) // ballhog booms linger and expire after their anim is done
+		{
+			damageitem = true;
+		}
 
 		if (t2->player->flamedash && t2->player->itemtype == KITEM_FLAMESHIELD)
 		{
