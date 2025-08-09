@@ -4636,6 +4636,17 @@ static int lib_kSliptiding(lua_State *L)
 	return 1;
 }
 
+static int lib_kPlayerBaseFriction(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	fixed_t friction = luaL_optinteger(L, 2, ORIG_FRICTION);
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	lua_pushfixed(L, K_PlayerBaseFriction(player, friction));
+	return 1;
+}
+
 static int lib_kGetCollideAngle(lua_State *L)
 {
 	mobj_t *t1 = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -5111,6 +5122,7 @@ static luaL_Reg lib[] = {
 	{"K_UpdateMobjItemOverlay",lib_kUpdateMobjItemOverlay},
 	{"K_PlayerEBrake",lib_kPlayerEBrake},
 	{"K_Sliptiding",lib_kSliptiding},
+	{"K_PlayerBaseFriction",lib_kPlayerBaseFriction},
 
 	{"K_GetCollideAngle",lib_kGetCollideAngle},
 	{"K_AddHitLag",lib_kAddHitLag},
