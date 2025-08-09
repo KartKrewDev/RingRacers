@@ -2309,6 +2309,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	UINT16 preffollowercolor;
 	INT32 preffollower;
 
+	tic_t splits[MAXRACESPLITS];
+
 	INT32 i;
 
 	// This needs to be first, to permit it to wipe extra information
@@ -2337,6 +2339,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	prefskin = players[player].prefskin;
 	preffollower = players[player].preffollower;
 	preffollowercolor = players[player].preffollowercolor;
+
+	memcpy(&splits, &players[player].splits, sizeof(splits));
 
 	if (betweenmaps)
 	{
@@ -2675,6 +2679,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	memcpy(&p->respawn, &respawn, sizeof (p->respawn));
 
 	memcpy(&p->public_key, &public_key, sizeof(p->public_key));
+
+	memcpy(&p->splits, &splits, sizeof(p->splits));
 
 	if (saveroundconditions)
 		memcpy(&p->roundconditions, &roundconditions, sizeof (p->roundconditions));

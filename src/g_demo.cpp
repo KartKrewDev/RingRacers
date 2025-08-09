@@ -2292,7 +2292,7 @@ void G_SetDemoCheckpointTiming(player_t *player, tic_t time, UINT8 checkpoint)
 			player->karthud[khud_splitwin] = 2; // ahead and gaining
 		}
 
-		INT32 last = player->karthud[khud_splitlast];
+		INT32 last = player->pace;
 		INT32 now = player->karthud[khud_splittime];
 
 		if (checkpoint != 0)
@@ -2303,7 +2303,7 @@ void G_SetDemoCheckpointTiming(player_t *player, tic_t time, UINT8 checkpoint)
 				player->karthud[khud_splitwin] = -1; // behind but gaining
 		}
 
-		player->karthud[khud_splitlast] = player->karthud[khud_splittime];
+		player->pace = player->karthud[khud_splittime];
 	}
 }
 

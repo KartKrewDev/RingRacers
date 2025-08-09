@@ -4431,6 +4431,80 @@ void K_AwardPlayerRings(player_t *player, UINT16 rings, boolean overload)
 	}
 }
 
+static void K_SetupSplitForPlayer(player_t *us, player_t *them, tic_t ourtime, tic_t theirtime)
+{
+	us->karthud[khud_splittimer] = 3*TICRATE;
+
+	INT32 delta = (INT32)theirtime - (INT32)ourtime; 	// how ahead are we? bigger number = more ahead, negative = behind
+	us->karthud[khud_splittime] = -1 * delta; 			// (HUD expects this to be backwards, but this is how i felt today!)
+
+	INT32 winning = 0;
+
+	if (delta > 0)
+		winning = 2; // winning aid gaining
+	else if (delta < 0)
+		winning = -2; // behind and falling
+
+	if (winning > 0 && delta < us->pace)
+		winning = 1; // winning but falling
+	else if (winning < 0 && delta > us->pace)
+		winning = -1; // behind but gaiming
+
+	us->pace = delta;
+
+	us->karthud[khud_splitwin] = winning;
+	us->karthud[khud_splitskin] = them->skin;
+	us->karthud[khud_splitcolor] = them->skincolor;
+}
+
+static void K_HandleRaceSplits(player_t *player, tic_t time, UINT8 checkpoint)
+{
+	if (checkpoint >= MAXRACESPLITS)
+		return;
+
+	player->splits[checkpoint] = time;
+
+	player_t *lowest = player;
+	UINT8 numrealsplits = 0;
+
+	// find fastest player for this checkpoint and # players who have already crossed
+	for (UINT8 i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i])
+			continue;
+
+		player_t *check = &players[i];
+
+		if (check == player)
+			continue;
+		if (check->spectator)
+			continue;
+		if (check->splits[checkpoint] == 0)
+			continue;
+
+		numrealsplits++;
+
+		if (check->splits[checkpoint] < lowest->splits[checkpoint])
+			lowest = check;
+	}
+
+	// no one to compare against yet
+	if (lowest == player || numrealsplits == 0)
+		return;
+
+	// if there's exactly one player ahead of us, they need a blue split generated
+	// so they can see how far behind we are
+	if (lowest != player && numrealsplits == 1)
+	{
+		K_SetupSplitForPlayer(lowest, player, lowest->splits[checkpoint], player->splits[checkpoint]);
+	}
+
+	if (numrealsplits)
+	{
+		K_SetupSplitForPlayer(player, lowest, player->splits[checkpoint], lowest->splits[checkpoint]);
+	}
+}
+
 void K_CheckpointCrossAward(player_t *player)
 {
 	if (gametype != GT_RACE)
@@ -4439,6 +4513,10 @@ void K_CheckpointCrossAward(player_t *player)
 	if (!demo.playback && G_TimeAttackStart())
 	{
 		G_SetDemoCheckpointTiming(player, leveltime - starttime, player->gradingpointnum);
+	}
+	else if (player->gradingpointnum < MAXRACESPLITS)
+	{
+		K_HandleRaceSplits(player, leveltime - starttime, player->gradingpointnum);
 	}
 
 	player->gradingfactor += K_GetGradingFactorAdjustment(player);
