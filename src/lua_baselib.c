@@ -4667,6 +4667,17 @@ static int lib_kItemScaleForPlayer(lua_State *L)
 	return 1;
 }
 
+static int lib_kSetItemOut(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	K_SetItemOut(player);
+	return 0;
+}
+
 static int lib_kGetCollideAngle(lua_State *L)
 {
 	mobj_t *t1 = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -5145,6 +5156,7 @@ static luaL_Reg lib[] = {
 	{"K_PlayerBaseFriction",lib_kPlayerBaseFriction},
 	{"K_DefaultPlayerRadius",lib_kDefaultPlayerRadius},
 	{"K_ItemScaleForPlayer",lib_kItemScaleForPlayer},
+	{"K_SetItemOut",lib_kSetItemOut},
 
 	{"K_GetCollideAngle",lib_kGetCollideAngle},
 	{"K_AddHitLag",lib_kAddHitLag},
