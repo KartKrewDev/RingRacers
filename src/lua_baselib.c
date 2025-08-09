@@ -4274,6 +4274,18 @@ static int lib_kDropItems(lua_State *L)
 	return 0;
 }
 
+
+static int lib_kDropRocketSneaker(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	K_DropRocketSneaker(player);
+	return 0;
+}
+
 static int lib_kStripItems(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -4822,6 +4834,7 @@ static luaL_Reg lib[] = {
 	{"K_PopPlayerShield",lib_kPopPlayerShield},
 	{"K_DropHnextList",lib_kDropHnextList},
 	{"K_DropItems",lib_kDropItems},
+	{"K_DropRocketSneaker",lib_kDropRocketSneaker},
 	{"K_StripItems",lib_kStripItems},
 	{"K_StripOther",lib_kStripOther},
 	{"K_MomentumToFacing",lib_kMomentumToFacing},
