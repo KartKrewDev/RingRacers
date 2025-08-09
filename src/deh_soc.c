@@ -3294,7 +3294,8 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 	||        (++offset && fastcmp(params[0], "HITMIDAIR"))
 	||        (++offset && fastcmp(params[0], "HITDRAFTERLOOKBACK"))
 	||        (++offset && fastcmp(params[0], "GIANTRACERSHRUNKENORBI"))
-	||        (++offset && fastcmp(params[0], "RETURNMARKTOSENDER")))
+	||        (++offset && fastcmp(params[0], "RETURNMARKTOSENDER"))
+	||        (++offset && fastcmp(params[0], "ALLANCIENTGEARS")))
 	{
 		//PARAMCHECK(1);
 		ty = UCRP_TRIPWIREHYUU + offset;

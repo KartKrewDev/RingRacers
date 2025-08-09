@@ -68,6 +68,7 @@ target_sources(SRB2SDL2 PRIVATE
 	exp.c
 	bail.c
 	toxomister.cpp
+	ancient-gear.c
 )
 
 add_subdirectory(versus)

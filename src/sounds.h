@@ -1619,6 +1619,9 @@ typedef enum
 	// :apple:
 	sfx_aple,
 
+	// Ancient Gear
+	sfx_gotgea,
+
 	// And LASTLY, Kart's skin sounds.
 	sfx_kwin,
 	sfx_klose,

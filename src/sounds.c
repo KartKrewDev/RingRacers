@@ -1543,6 +1543,9 @@ sfxinfo_t S_sfx[NUMSFX] =
   // :apple:
   {"aple",  false,  64, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
 
+  // Ancient Gear
+  {"gotgea", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+
   // SRB2kart - Skin sounds
   {"kwin",   false,  64, 96, -1, NULL, 0,   SKSKWIN,  -1, LUMPERROR, ""},
   {"klose",  false,  64, 96, -1, NULL, 0,  SKSKLOSE,  -1, LUMPERROR, ""},

@@ -8038,6 +8038,17 @@ void K_drawKartHUD(void)
 		}
 	}
 
+	if (stplyr == Obj_GetAncientGearCollectingPlayer())
+	{
+		srb2::Draw(BASEVIDWIDTH / 2, 130)
+			.flags(V_SNAPTOBOTTOM)
+			.font(srb2::Draw::Font::kGamemode)
+			.align(srb2::Draw::Align::kCenter)
+			.scale(0.80f)
+			.text("YOU GOT AN ANCIENT GEAR")
+		;
+	}
+
 	// TODO better voice chat speaking indicator integration for spectators
 	{
 		char speakingstring[2048];

@@ -33,6 +33,7 @@
 #include "k_podium.h"
 #include "k_pwrlv.h"
 #include "k_profiles.h"
+#include "k_objects.h" // Obj_AllAncientGearsCollected
 
 gamedata_t *gamedata = NULL;
 boolean netUnlocked[MAXUNLOCKABLES];
@@ -2035,6 +2036,8 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			return (player->roundconditions.giant_foe_shrunken_orbi);
 		case UCRP_RETURNMARKTOSENDER:
 			return (player->roundconditions.returntosender_mark);
+		case UCRP_ALLANCIENTGEARS:
+			return Obj_AllAncientGearsCollected();
 
 		case UCRP_TRACKHAZARD:
 		{
@@ -2948,6 +2951,8 @@ static const char *M_GetConditionString(condition_t *cn)
 			return "hit a giant racer with a shrunken Orbinaut";
 		case UCRP_RETURNMARKTOSENDER:
 			return "when cursed with Eggmark, blow up the racer responsible";
+		case UCRP_ALLANCIENTGEARS:
+			return "collect all Ancient Gears";
 
 		case UCRP_TRACKHAZARD:
 		{
