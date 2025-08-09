@@ -4408,6 +4408,16 @@ static int lib_kWaterRun(lua_State *L)
 	return 1;
 }
 
+static int lib_kWaterSkip(lua_State *L)
+{
+	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	INLEVEL
+	if (!mobj)
+		return LUA_ErrInvalid(L, "mobj_t");
+	lua_pushboolean(L, K_WaterSkip(mobj));
+	return 1;
+}
+
 static int lib_kGetKartSpeed(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -4928,6 +4938,7 @@ static luaL_Reg lib[] = {
 	{"K_TripwirePass",lib_kTripwirePass},
 	{"K_MovingHorizontally",lib_kMovingHorizontally},
 	{"K_WaterRun",lib_kWaterRun},
+	{"K_WaterSkip",lib_kWaterSkip},
 	{"K_GetKartSpeed",lib_kGetKartSpeed},
 	{"K_GetKartAccel",lib_kGetKartAccel},
 	{"K_GetKartFlashing",lib_kGetKartFlashing},
