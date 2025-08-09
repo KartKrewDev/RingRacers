@@ -4762,6 +4762,13 @@ static int lib_kBumperInflate(lua_State *L)
 	return 0;
 }
 
+static int lib_kThunderDome(lua_State *L)
+{
+	INLEVEL
+	lua_pushboolean(L, K_ThunderDome());
+	return 1;
+}
+
 static int lib_kGetCollideAngle(lua_State *L)
 {
 	mobj_t *t1 = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -5250,6 +5257,7 @@ static luaL_Reg lib[] = {
 	{"K_PlayerCanPunt",lib_kPlayerCanPunt},
 	{"K_MakeObjectReappear",lib_kMakeObjectReappear},
 	{"K_BumperInflate",lib_kBumperInflate},
+	{"K_ThunderDome",lib_kThunderDome},
 
 	{"K_GetCollideAngle",lib_kGetCollideAngle},
 	{"K_AddHitLag",lib_kAddHitLag},
