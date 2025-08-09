@@ -3628,6 +3628,15 @@ static int lib_kReflectAngle(lua_State *L)
 	return 1;
 }
 
+static int lib_kIsDuelItem(lua_State *L)
+{	
+	mobjtype_t type = luaL_checkinteger(L, 1);
+	if (type >= NUMMOBJTYPES)
+		return luaL_error(L, "mobj type %d out of range (0 - %d)", type, NUMMOBJTYPES-1);
+	lua_pushboolean(L, K_IsDuelItem(type));
+	return 1;
+}
+
 static int lib_kGetKartGameSpeedScalar(lua_State *L)
 {
 	SINT8 value = luaL_optinteger(L, 1, gamespeed);
@@ -5161,6 +5170,7 @@ static luaL_Reg lib[] = {
 	{"K_TryHurtSoundExchange", lib_kTryHurtSoundExchange},
 	{"K_GetPlayerDontDrawFlag", lib_kGetPlayerDontDrawFlag},
 	{"K_ReflectAngle",lib_kReflectAngle},
+	{"K_IsDuelItem",lib_kIsDuelItem},
 	{"K_IsPlayerLosing",lib_kIsPlayerLosing},
 	{"K_GetKartGameSpeedScalar",lib_kGetKartGameSpeedScalar},
 	{"K_IsPlayerWanted",lib_kIsPlayerWanted},
