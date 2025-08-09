@@ -1342,6 +1342,9 @@ typedef enum
 	// Tutorial Hint
 	sfx_hint,
 
+	// EXP Crystal
+	sfx_exp,
+
 	// Damage sounds
 	sfx_dmga1,
 	sfx_dmga2,
