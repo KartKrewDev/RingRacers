@@ -4520,6 +4520,16 @@ static int lib_kGetKartFlashing(lua_State *L)
 	return 1;
 }
 
+static int lib_kPlayerShrinkCheat(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	lua_pushboolean(L, K_PlayerShrinkCheat(player));
+	return 1;
+}
+
 static int lib_kGetItemPatch(lua_State *L)
 {
 	UINT8 item = (UINT8)luaL_optinteger(L, 1, KITEM_NONE);
@@ -5019,6 +5029,7 @@ static luaL_Reg lib[] = {
 	{"K_GetKartSpeed",lib_kGetKartSpeed},
 	{"K_GetKartAccel",lib_kGetKartAccel},
 	{"K_GetKartFlashing",lib_kGetKartFlashing},
+	{"K_PlayerShrinkCheat",lib_kPlayerShrinkCheat},
 	{"K_GetItemPatch",lib_kGetItemPatch},
 	{"K_GetInvincibilityItemFrame",lib_kGetInvincibilityItemFrame},
 	{"K_GetOrbinautItemFrame",lib_kGetOrbinautItemFrame},
