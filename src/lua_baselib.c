@@ -4429,6 +4429,17 @@ static int lib_kUpdateSteeringValue(lua_State *L)
 	return 1;
 }
 
+static int lib_kGetKartTurnValue(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	INT16 turnvalue = luaL_checkinteger(L, 2);
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	lua_pushinteger(L, K_GetKartTurnValue(player, turnvalue));
+	return 1;
+}
+
 static int lib_kGetKartDriftSparkValue(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -5805,6 +5816,7 @@ static luaL_Reg lib[] = {
 	{"K_CheckPlayersRespawnColliding",lib_kCheckPlayersRespawnColliding},
 	{"K_GetKartRingPower",lib_kGetKartRingPower},
 	{"K_UpdateSteeringValue",lib_kUpdateSteeringValue},
+	{"K_GetKartTurnValue",lib_kGetKartTurnValue},
 	{"K_GetKartDriftSparkValue",lib_kGetKartDriftSparkValue},
 	{"K_StairJankFlip",lib_kStairJankFlip},
 	{"K_SpawnDriftBoostExplosion",lib_kSpawnDriftBoostExplosion},
