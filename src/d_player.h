@@ -44,6 +44,8 @@ extern "C" {
 // (done here as p_local.h, the previous host, has this as a dependency - but we must use it here)
 #define MAX_LAPS 99
 
+#define MAXRACESPLITS 32
+
 // Extra abilities/settings for skins (combinable stuff)
 typedef enum
 {
@@ -351,12 +353,11 @@ typedef enum
 	khud_exptimer,
 
 	// Splits
-	khud_splittime,
-	khud_splitwin,
-	khud_splittimer,
-	khud_splitskin,
-	khud_splitcolor,
-	khud_splitlast,
+	khud_splittime, // Delta between you and highest split
+	khud_splitwin, // How to color/flag the split based on gaining/losing | ahead/behind
+	khud_splittimer, // How long to show splits HUD
+	khud_splitskin, // Skin index of the leading player
+	khud_splitcolor, // Skincolor of the leading player
 
 	NUMKARTHUD
 } karthudtype_t;
@@ -1131,6 +1132,9 @@ struct player_t
 	fixed_t outrun; // Milky Way road effect
 
 	fixed_t transfer; // Tired of Ramp Park fastfalls
+
+	tic_t splits[MAXRACESPLITS]; // Times we crossed checkpoint
+	INT32 pace; // Last split delta, used for checking whether gaining or losing time
 
 	uint8_t public_key[PUBKEYLENGTH];
 

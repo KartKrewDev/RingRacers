@@ -2309,6 +2309,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	UINT16 preffollowercolor;
 	INT32 preffollower;
 
+	tic_t splits[MAXRACESPLITS];
+
 	INT32 i;
 
 	// This needs to be first, to permit it to wipe extra information
@@ -2467,6 +2469,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		tallyactive = false;
 
 		cangrabitems = 0;
+
+		memset(&splits, 0, sizeof(splits));
 	}
 	else
 	{
@@ -2526,6 +2530,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		cangrabitems = players[player].cangrabitems;
 
 		duelscore = players[player].duelscore;
+		memcpy(&splits, &players[player].splits, sizeof(splits));
 	}
 
 	spectatorReentry = (betweenmaps ? 0 : players[player].spectatorReentry);
@@ -2675,6 +2680,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	memcpy(&p->respawn, &respawn, sizeof (p->respawn));
 
 	memcpy(&p->public_key, &public_key, sizeof(p->public_key));
+
+	memcpy(&p->splits, &splits, sizeof(p->splits));
 
 	if (saveroundconditions)
 		memcpy(&p->roundconditions, &roundconditions, sizeof (p->roundconditions));

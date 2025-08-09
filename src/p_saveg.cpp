@@ -664,6 +664,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		WRITEMEM(save->p, players[i].public_key, PUBKEYLENGTH);
 
+		WRITEMEM(save->p, players[i].splits, sizeof(players[i].splits));
+		WRITEINT32(save->p, players[i].pace);
+
 		WRITESINT8(save->p, players[i].pitblame);
 
 		WRITEUINT8(save->p, players[i].instaWhipCharge);
@@ -1329,6 +1332,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].vortexBoost = READFIXED(save->p);
 
 		READMEM(save->p, players[i].public_key, PUBKEYLENGTH);
+		READMEM(save->p, players[i].splits, sizeof(players[i].splits));
+		players[i].pace = READINT32(save->p);
 
 		players[i].pitblame = READSINT8(save->p);
 
