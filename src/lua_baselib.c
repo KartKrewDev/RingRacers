@@ -4440,6 +4440,19 @@ static int lib_kGetKartTurnValue(lua_State *L)
 	return 1;
 }
 
+static int lib_kGetUnderwaterTurnAdjust(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	if (player->mo) // the function itself doesn't do this check.
+		lua_pushinteger(L, K_GetUnderwaterTurnAdjust(player));
+	else
+		lua_pushinteger(L, 0);
+	return 1;
+}
+
 static int lib_kGetKartDriftSparkValue(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -5817,6 +5830,7 @@ static luaL_Reg lib[] = {
 	{"K_GetKartRingPower",lib_kGetKartRingPower},
 	{"K_UpdateSteeringValue",lib_kUpdateSteeringValue},
 	{"K_GetKartTurnValue",lib_kGetKartTurnValue},
+	{"K_GetUnderwaterTurnAdjust",lib_kGetUnderwaterTurnAdjust},
 	{"K_GetKartDriftSparkValue",lib_kGetKartDriftSparkValue},
 	{"K_StairJankFlip",lib_kStairJankFlip},
 	{"K_SpawnDriftBoostExplosion",lib_kSpawnDriftBoostExplosion},
