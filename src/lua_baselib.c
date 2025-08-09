@@ -4710,6 +4710,16 @@ static int lib_kCooperative(lua_State *L)
 	return 1;
 }
 
+static int lib_kIsPlayerInSpecialState(lua_State *L)
+{
+	player_t *p = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	INLEVEL
+	if (!p)
+		return LUA_ErrInvalid(L, "player_t");
+	lua_pushboolean(L, K_isPlayerInSpecialState(p));
+	return 1;
+}
+
 static int lib_kGetCollideAngle(lua_State *L)
 {
 	mobj_t *t1 = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -5193,6 +5203,7 @@ static luaL_Reg lib[] = {
 	{"K_TimeLimitForGametype",lib_kTimeLimitForGametype},
 	{"K_PointLimitForGametype",lib_kPointLimitForGametype},
 	{"K_Cooperative",lib_kCooperative},
+	{"K_isPlayerInSpecialState",lib_kIsPlayerInSpecialState},
 
 	{"K_GetCollideAngle",lib_kGetCollideAngle},
 	{"K_AddHitLag",lib_kAddHitLag},
