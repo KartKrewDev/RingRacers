@@ -2340,8 +2340,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	preffollower = players[player].preffollower;
 	preffollowercolor = players[player].preffollowercolor;
 
-	memcpy(&splits, &players[player].splits, sizeof(splits));
-
 	if (betweenmaps)
 	{
 		fakeskin = MAXSKINS;
@@ -2471,6 +2469,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		tallyactive = false;
 
 		cangrabitems = 0;
+
+		memset(&splits, 0, sizeof(splits));
 	}
 	else
 	{
@@ -2530,6 +2530,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		cangrabitems = players[player].cangrabitems;
 
 		duelscore = players[player].duelscore;
+		memcpy(&splits, &players[player].splits, sizeof(splits));
 	}
 
 	spectatorReentry = (betweenmaps ? 0 : players[player].spectatorReentry);
