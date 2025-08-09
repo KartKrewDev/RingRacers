@@ -4481,6 +4481,13 @@ static int lib_kGrowShrinkSpeedMul(lua_State *L)
 	return 1;
 }
 
+static int lib_kGetKartSpeedFromStat(lua_State *L)
+{
+	INT32 kartspeed = luaL_checkinteger(L, 1);
+	lua_pushfixed(L, K_GetKartSpeedFromStat(kartspeed));
+	return 1;
+}
+
 static int lib_kGetKartSpeed(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -5008,6 +5015,7 @@ static luaL_Reg lib[] = {
 	{"K_GetSpindashChargeTime",lib_kGetSpindashChargeTime},
 	{"K_GetSpindashChargeSpeed",lib_kGetSpindashChargeSpeed},
 	{"K_GrowShrinkSpeedMul",lib_kGrowShrinkSpeedMul},
+	{"K_GetKartSpeedFromStat",lib_kGetKartSpeedFromStat},
 	{"K_GetKartSpeed",lib_kGetKartSpeed},
 	{"K_GetKartAccel",lib_kGetKartAccel},
 	{"K_GetKartFlashing",lib_kGetKartFlashing},
