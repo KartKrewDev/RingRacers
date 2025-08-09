@@ -4696,6 +4696,13 @@ static int lib_kTimeLimitForGametype(lua_State *L)
 	return 1;
 }
 
+static int lib_kPointLimitForGametype(lua_State *L)
+{
+	INLEVEL
+	lua_pushinteger(L, K_PointLimitForGametype());
+	return 1;
+}
+
 static int lib_kGetCollideAngle(lua_State *L)
 {
 	mobj_t *t1 = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -5177,6 +5184,7 @@ static luaL_Reg lib[] = {
 	{"K_SetItemOut",lib_kSetItemOut},
 	{"K_UnsetItemOut",lib_kUnsetItemOut},
 	{"K_TimeLimitForGametype",lib_kTimeLimitForGametype},
+	{"K_PointLimitForGametype",lib_kPointLimitForGametype},
 
 	{"K_GetCollideAngle",lib_kGetCollideAngle},
 	{"K_AddHitLag",lib_kAddHitLag},
