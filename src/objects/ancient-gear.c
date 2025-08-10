@@ -16,6 +16,7 @@
 #include "../k_endcam.h"
 #include "../k_hud.h"
 #include "../m_cond.h"
+#include "../g_game.h"
 
 #define DEATH_FREEZE_TIME (5*TICRATE)
 #define DEATH_TIME (2*TICRATE)
@@ -29,7 +30,11 @@ static const fixed_t DELTA_SPRITEXSCALE = ((FRACUNIT/4 - FRACUNIT) / DEATH_TIME)
 static const fixed_t DELTA_SPRITEYSCALE = ((FRACUNIT*3 - FRACUNIT) / DEATH_TIME);
 static const tic_t TRANS_SHIFT_RATE = (DEATH_TIME / 10);
 
-static UINT16 numGears = 0;
+#define MAX_GEARS 32
+
+static UINT8 numGears = 0;
+static UINT32 gearBank = 0;
+static UINT8 gearBankIndex = 0;
 static boolean allGearsCollected = false;
 static player_t *collectingPlayer = NULL;
 
@@ -46,8 +51,6 @@ static void UpdateAncientGearPart(mobj_t *part)
 		gear->y + yOffset,
 		gear->z + gear->height / 2
 	);
-	part->angle += gear->extravalue1;
-	part->rollangle += gear->extravalue2 * part->extravalue1;
 	part->spritexscale = gear->spritexscale;
 	part->spriteyscale = gear->spriteyscale;
 }
@@ -106,11 +109,14 @@ void Obj_AncientGearSpawn(mobj_t *gear)
 
 void Obj_AncientGearPartThink(mobj_t *part)
 {
-	if (P_MobjWasRemoved(part->target))
+	mobj_t *gear = part->target;
+	if (P_MobjWasRemoved(gear))
 	{
 		P_RemoveMobj(part);
 		return;
 	}
+	part->angle += gear->extravalue1;
+	part->rollangle += gear->extravalue2 * part->extravalue1;
 	UpdateAncientGearPart(part);
 }
 
@@ -133,6 +139,12 @@ void Obj_AncientGearDeath(mobj_t *gear, mobj_t *source)
 	{
 		allGearsCollected = true;
 		M_UpdateUnlockablesAndExtraEmblems(true, true);
+	}
+
+	// if this gear has a bank account, mark it as collected so that it doesn't respawn upon retrying the map
+	if (gear->threshold != 0)
+	{
+		gearBank |= (1 << (gear->threshold - 1));
 	}
 
 	gear->fuse = DEATH_TIME;
@@ -219,10 +231,53 @@ void Obj_AncientGearDeadThink(mobj_t *gear)
 	gear->shadowscale = gear->spritexscale;
 }
 
+boolean Obj_AllowNextAncientGearSpawn(void)
+{
+	// always allow gears spawned by objectplace
+	if (objectplacing)
+	{
+		return true;
+	}
+
+	// don't allow the map to spawn more gears than we can bank
+	if (gearBankIndex >= MAX_GEARS)
+	{
+		CONS_Alert(CONS_WARNING, "Map exceeds maximum possible number of Ancient Gears (%d)!\n", MAX_GEARS);
+		return false;
+	}
+
+	// don't spawn a gear that was already collected prior to retrying
+	if (gearBank & (1 << gearBankIndex++))
+	{
+		return false;
+	}
+
+	return true;
+}
+
+void Obj_AncientGearSetup(mobj_t *gear, mapthing_t *mt)
+{
+	mobj_t *part = gear;
+	while ((part = part->hnext))
+	{
+		UpdateAncientGearPart(part); // update part scales to apply mapthing scales
+	}
+
+	if (!objectplacing)
+	{
+		gear->threshold = gearBankIndex; // allocate this gear a bank account slot
+	}
+}
+
 void Obj_AncientGearLevelInit(void)
 {
+	if (!G_GetRetryFlag() || G_IsModeAttackRetrying())
+	{
+		gearBank = 0;
+		allGearsCollected = false;
+	}
+	gearBankIndex = 0;
 	numGears = 0;
-	allGearsCollected = false;
 	collectingPlayer = NULL;
 }
 

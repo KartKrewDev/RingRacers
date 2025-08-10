@@ -13095,6 +13095,12 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 			break;
 		case MT_CHECKPOINT_END:
 			break;
+		case MT_ANCIENTGEAR:
+			if (!Obj_AllowNextAncientGearSpawn())
+			{
+				return false;
+			}
+			break;
 		default:
 			break;
 	}
@@ -14543,6 +14549,11 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	case MT_SCRIPT_THING:
 	{
 		Obj_TalkPointInit(mobj);
+		break;
+	}
+	case MT_ANCIENTGEAR:
+	{
+		Obj_AncientGearSetup(mobj, mthing);
 		break;
 	}
 	default:
