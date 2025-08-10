@@ -22908,7 +22908,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_SPECIAL|MF_NOGRAVITY|MF_DONTENCOREMAP|MF_NOSQUISH, // flags
+		MF_SPECIAL|MF_NOGRAVITY|MF_DONTENCOREMAP|MF_NOSQUISH|MF_DRAWFROMFARAWAY, // flags
 		S_NULL          // raisestate
 	},
 	{           // MT_ANCIENTGEAR_PART
@@ -22934,7 +22934,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_SCENERY|MF_NOGRAVITY|MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP|MF_NOSQUISH, // flags
+		MF_SCENERY|MF_NOGRAVITY|MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP|MF_NOSQUISH|MF_DRAWFROMFARAWAY, // flags
 		S_NULL          // raisestate
 	},
 };
