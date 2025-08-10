@@ -488,6 +488,17 @@ boolean Obj_ToxomisterPoleCollide(mobj_t *pole, mobj_t *toucher);
 boolean Obj_ToxomisterCloudCollide(mobj_t *cloud, mobj_t *toucher);
 fixed_t Obj_GetToxomisterCloudDrag(mobj_t *cloud);
 
+/* Ancient Gear */
+void Obj_AncientGearSpawn(mobj_t *gear);
+void Obj_AncientGearPartThink(mobj_t *part);
+void Obj_AncientGearRemoved(mobj_t *gear);
+void Obj_AncientGearTouch(mobj_t *gear, mobj_t *toucher);
+void Obj_AncientGearDeath(mobj_t *gear, mobj_t *source);
+void Obj_AncientGearDeadThink(mobj_t *gear);
+void Obj_AncientGearLevelInit(void);
+player_t *Obj_GetAncientGearCollectingPlayer(void);
+boolean Obj_AllAncientGearsCollected(void);
+
 
 #ifdef __cplusplus
 } // extern "C"

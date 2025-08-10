@@ -1137,6 +1137,10 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			Obj_ToxomisterCloudCollide(special, toucher);
 			return;
 
+		case MT_ANCIENTGEAR:
+			Obj_AncientGearTouch(special, toucher);
+			return;
+
 		default: // SOC or script pickup
 			P_SetTarget(&special->target, toucher);
 			break;
@@ -2363,6 +2367,9 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			break;
 		case MT_FLYBOT767:
 			Obj_FlybotDeath(target);
+			break;
+		case MT_ANCIENTGEAR:
+			Obj_AncientGearDeath(target, source);
 			break;
 		default:
 			break;

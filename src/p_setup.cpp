@@ -7634,6 +7634,8 @@ static void P_InitLevelSettings(void)
 	nummapspraycans = 0;
 	numchallengedestructibles = 0;
 
+	Obj_AncientGearLevelInit();
+
 	// circuit, race and competition stuff
 	numcheatchecks = 0;
 

@@ -60,7 +60,10 @@ extern endcam_t g_endcam;
 void K_CommitEndCamera(void);
 
 // Automatically set up a cool camera in one-shot.
-void K_StartRoundWinCamera(mobj_t *origin, angle_t focusAngle, fixed_t finalRadius, tic_t panDuration, fixed_t panSpeed);
+void K_StartRoundWinCamera(mobj_t *origin, angle_t focusAngle, fixed_t finalRadius, tic_t panDuration, fixed_t panSpeed, tic_t swirlDuration);
+
+// Stop the end camera
+void K_StopRoundWinCamera(void);
 
 /// ...
 

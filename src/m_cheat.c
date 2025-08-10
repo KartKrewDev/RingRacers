@@ -668,7 +668,9 @@ static mapthing_t *OP_CreateNewMapThing(player_t *player, UINT16 type, boolean c
 	mt->angle = (INT16)(FixedInt(AngleFixed(player->mo->angle)));
 
 	mt->options = (mt->z << ZSHIFT) | (UINT16)cv_opflags.value;
-	mt->scale = player->mo->scale;
+	mt->scale = FixedDiv(player->mo->scale, mapobjectscale);
+	mt->spritexscale = FRACUNIT;
+	mt->spriteyscale = FRACUNIT;
 	memset(mt->thing_args, 0, NUM_MAPTHING_ARGS*sizeof(*mt->thing_args));
 	memset(mt->thing_stringargs, 0x00, NUM_MAPTHING_STRINGARGS*sizeof(*mt->thing_stringargs));
 	mt->special = 0;

@@ -148,6 +148,7 @@ typedef enum
 	UCRP_HITDRAFTERLOOKBACK, // Hit a player that's behind you, while looking back at them, and they're drafting off you
 	UCRP_GIANTRACERSHRUNKENORBI, // Hit a giant racer with a shrunken Orbinaut
 	UCRP_RETURNMARKTOSENDER, // Hit the player responsible for Eggman Marking you with that explosion
+	UCRP_ALLANCIENTGEARS, // Collect all Ancient Gears in a map
 
 	UCRP_TRACKHAZARD, // (Don't) get hit by a track hazard (maybe specific lap)
 

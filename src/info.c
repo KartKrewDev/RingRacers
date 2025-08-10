@@ -812,6 +812,8 @@ char sprnames[NUMSPRITES + 1][5] =
 	"TOXA",
 	"TOXB",
 
+	"GEAR",
+
 	// Pulley
 	"HCCH",
 	"HCHK",
@@ -3713,6 +3715,9 @@ state_t states[NUMSTATES] =
 	{SPR_TOXA, 0, 175, {NULL}, 0, 0, S_NULL}, // S_TOXAA_DEAD
 	{SPR_TOXA, 1, -1, {NULL}, 0, 0, S_TOXAB}, // S_TOXAB
 	{SPR_TOXB, FF_ANIMATE|FF_RANDOMANIM, -1, {NULL}, 6, 5, S_TOXBA}, // S_TOXBA
+
+	{SPR_GEAR,                0, -1, {NULL}, 0, 0, S_NULL}, // S_ANCIENTGEAR
+	{SPR_GEAR, FF_PAPERSPRITE|1, -1, {NULL}, 0, 0, S_NULL}, // S_ANCIENTGEAR_PART
 };
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] =
@@ -22878,6 +22883,58 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // damage
 		sfx_None,       // activesound
 		MF_SPECIAL|MF_NOGRAVITY|MF_DONTENCOREMAP|MF_ELEMENTAL, // flags
+		S_NULL          // raisestate
+	},
+	{           // MT_ANCIENTGEAR
+		323,            // doomednum
+		S_ANCIENTGEAR,  // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_gotgea,     // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_ANCIENTGEAR,  // deathstate
+		S_NULL,         // xdeathstate
+		sfx_gshc4,      // deathsound
+		0,              // speed
+		64*FRACUNIT,    // radius
+		128*FRACUNIT,   // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SPECIAL|MF_NOGRAVITY|MF_DONTENCOREMAP|MF_NOSQUISH, // flags
+		S_NULL          // raisestate
+	},
+	{           // MT_ANCIENTGEAR_PART
+		-1,             // doomednum
+		S_ANCIENTGEAR_PART, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		64*FRACUNIT,    // radius
+		32*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SCENERY|MF_NOGRAVITY|MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP|MF_NOSQUISH, // flags
 		S_NULL          // raisestate
 	},
 };

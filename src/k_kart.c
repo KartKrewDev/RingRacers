@@ -4589,7 +4589,8 @@ void K_CheckpointCrossAward(player_t *player)
 					player->angleturn + ANGLE_180,
 					400*mapobjectscale,
 					6*TICRATE,
-					FRACUNIT/16
+					FRACUNIT/16,
+					3*TICRATE
 				);
 			}
 
@@ -4835,7 +4836,8 @@ void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UIN
 			R_PointToAngle2(source->x, source->y, victim->mo->x, victim->mo->y) + ANGLE_135,
 			200*mapobjectscale,
 			8*TICRATE,
-			FRACUNIT/512
+			FRACUNIT/512,
+			3*TICRATE
 		);
 	}
 

@@ -233,7 +233,8 @@ void K_CheckEmeralds(player_t *player)
 			player->angleturn + ANGLE_180,
 			400*mapobjectscale,
 			6*TICRATE,
-			FRACUNIT/16
+			FRACUNIT/16,
+			3*TICRATE
 		);
 
 		g_emeraldWin += g_endcam.swirlDuration;

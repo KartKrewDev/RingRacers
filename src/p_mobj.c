@@ -6798,6 +6798,11 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		Obj_TickStoneShoeChain(mobj);
 		return;
 	}
+	case MT_ANCIENTGEAR_PART:
+	{
+		Obj_AncientGearPartThink(mobj);
+		return;
+	}
 	default:
 		if (mobj->fuse)
 		{ // Scenery object fuse! Very basic!
@@ -6998,6 +7003,11 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 	case MT_BLENDEYE_GENERATOR:
 	{
 		VS_BlendEye_Generator_DeadThinker(mobj);
+		break;
+	}
+	case MT_ANCIENTGEAR:
+	{
+		Obj_AncientGearDeadThink(mobj);
 		break;
 	}
 	default:
@@ -11179,6 +11189,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_BATTLEUFO:
 		case MT_SPRAYCAN:
 		case MT_CHECKPOINT_END:
+		case MT_ANCIENTGEAR:
 			thing->shadowscale = FRACUNIT;
 			break;
 		case MT_SMALLMACE:
@@ -11724,6 +11735,9 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		case MT_CABOTRON:
 			Obj_SSCabotronMobjSpawn(mobj);
 			break;
+		case MT_ANCIENTGEAR:
+			Obj_AncientGearSpawn(mobj);
+			break;
 		default:
 			break;
 	}
@@ -12009,6 +12023,11 @@ void P_RemoveMobj(mobj_t *mobj)
 		case MT_FLYBOT767:
 		{
 			Obj_FlybotRemoved(mobj);
+			break;
+		}
+		case MT_ANCIENTGEAR:
+		{
+			Obj_AncientGearRemoved(mobj);
 			break;
 		}
 		default:
