@@ -11167,6 +11167,8 @@ fixed_t P_GetMobjDefaultScale(mobj_t *mobj)
 			return 2*FRACUNIT;
 		case MT_PULLUPHOOK:
 			return 2*FRACUNIT;
+		case MT_ANCIENTGEAR:
+			return 3*FRACUNIT/2;
 		default:
 			break;
 	}
