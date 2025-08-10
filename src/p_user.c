@@ -1915,6 +1915,26 @@ static inline boolean P_IsMomentumAngleLocked(player_t *player)
 	// animation should continue for a bit after the physics
 	// stop.
 
+	fixed_t myspeed = player->speed;
+
+	// Stairjank soften tuning constants
+	fixed_t BASE_SPEED = K_GetKartSpeed(player, false, true);
+	fixed_t TOP_SPEED = 5*BASE_SPEED/2;
+	fixed_t BASE_ANGLE_CHECK = ANGLE_45; // Higher values = need more deflection to soften stairjank
+	fixed_t FAST_ANGLE_CHECK = BASE_ANGLE_CHECK/3;
+
+	fixed_t speedrange = TOP_SPEED - BASE_SPEED;
+
+	if (myspeed < BASE_SPEED)
+		myspeed = BASE_SPEED;
+	if (myspeed > TOP_SPEED)
+		myspeed = TOP_SPEED;
+
+	myspeed -= BASE_SPEED; // normalize lowest checked speed to 0
+	fixed_t speedrate = FixedDiv(myspeed, speedrange); // ...and highest checked speed to FRACUNIT
+
+	fixed_t anglecheck = Easing_Linear(speedrate, BASE_ANGLE_CHECK, FAST_ANGLE_CHECK);
+
 	if (player->stairjank > 8)
 	{
 		const angle_t th = K_MomentumAngle(player->mo);
@@ -1927,7 +1947,7 @@ static inline boolean P_IsMomentumAngleLocked(player_t *player)
 		//  >90 deg: 1/4 tics
 		// >135 deg: 0/4 tics
 
-		if ((leveltime & 3) > (d / ANGLE_45))
+		if ((leveltime & 3) > (d / anglecheck))
 		{
 			return true;
 		}
