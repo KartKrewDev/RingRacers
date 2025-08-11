@@ -495,6 +495,8 @@ void Obj_AncientGearRemoved(mobj_t *gear);
 void Obj_AncientGearTouch(mobj_t *gear, mobj_t *toucher);
 void Obj_AncientGearDeath(mobj_t *gear, mobj_t *source);
 void Obj_AncientGearDeadThink(mobj_t *gear);
+boolean Obj_AllowNextAncientGearSpawn(void);
+void Obj_AncientGearSetup(mobj_t *gear, mapthing_t *mt);
 void Obj_AncientGearLevelInit(void);
 player_t *Obj_GetAncientGearCollectingPlayer(void);
 boolean Obj_AllAncientGearsCollected(void);
