@@ -14199,7 +14199,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				// To try and help close this gap, we fudge Ring Box payouts to allow weaker characters
 				// better access to things that make them go fast, without changing core handling.
 
-				UINT8 speed = player->kartspeed;
 				UINT8 accel = 10-player->kartspeed;
 				UINT8 weight = player->kartweight;
 

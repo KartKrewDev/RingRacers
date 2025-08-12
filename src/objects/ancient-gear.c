@@ -257,6 +257,8 @@ boolean Obj_AllowNextAncientGearSpawn(void)
 
 void Obj_AncientGearSetup(mobj_t *gear, mapthing_t *mt)
 {
+	(void)mt;
+
 	mobj_t *part = gear;
 	while ((part = part->hnext))
 	{
