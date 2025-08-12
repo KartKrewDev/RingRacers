@@ -376,6 +376,7 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 		challengesmenu.requestnew = false;
 		challengesmenu.chaokeyadd = false;
 		challengesmenu.keywasadded = false;
+		challengesmenu.tutorialfound = NEXTMAP_INVALID;
 		challengesmenu.chaokeyhold = 0;
 		challengesmenu.unlockcondition = NULL;
 
@@ -479,6 +480,7 @@ boolean M_CanKeyHiliTile(void)
 enum {
 	CCTUTORIAL_KEYGEN = 0,
 	CCTUTORIAL_MAJORSKIP,
+	CCTUTORIAL_TUTORIAL, // I heard you like tutorials, so I...
 } cctutorial_e;
 
 static void M_ChallengesTutorial(UINT8 option)
@@ -510,6 +512,23 @@ static void M_ChallengesTutorial(UINT8 option)
 				"any surrounding small tiles first.\n"
 				), NULL, MM_NOTHING, NULL, NULL);
 			gamedata->majorkeyskipattempted = true;
+			break;
+		}
+		case CCTUTORIAL_TUTORIAL:
+		{
+			M_StartMessage("New Tutorial Data",
+				va(M_GetText(
+				"A new piece of Eggman and Tails'\n"
+				"short adventure has been decrypted.\n"
+				"\n"
+				"You can find \"""\x87""%s""\x80""\" on\n"
+				"the Tutorials menu under Extras!\n"
+				), (challengesmenu.tutorialfound < nummapheaders
+				&& mapheaderinfo[challengesmenu.tutorialfound]
+					? mapheaderinfo[challengesmenu.tutorialfound]->menuttl
+					: "ERROR!?"
+				)), NULL, MM_NOTHING, NULL, "Got it!");
+			challengesmenu.tutorialfound = NEXTMAP_INVALID;
 			break;
 		}
 		default:
@@ -725,6 +744,28 @@ void M_ChallengesTick(void)
 			gamedata->unlocked[challengesmenu.currentunlock] = true;
 			M_UpdateUnlockablesAndExtraEmblems(true, true);
 
+			if (challengesmenu.tutorialfound == NEXTMAP_INVALID
+			&& ref->type == SECRET_MAP)
+			{
+				// Map exists...
+				UINT16 mapnum = M_UnlockableMapNum(ref);
+				if (mapnum < nummapheaders && mapheaderinfo[mapnum])
+				{
+					// is tutorial...
+					INT32 guessgt = G_GuessGametypeByTOL(mapheaderinfo[mapnum]->typeoflevel);
+					if (guessgt == GT_TUTORIAL)
+					{
+						// and isn't the playground?
+						if (!tutorialplaygroundmap
+						|| strcmp(tutorialplaygroundmap, mapheaderinfo[mapnum]->lumpname))
+						{
+							// Pop an alert up!
+							challengesmenu.tutorialfound = mapnum;
+						}
+					}
+				}
+			}
+
 			// Update shown description just in case..?
 			if (challengesmenu.unlockcondition)
 				Z_Free(challengesmenu.unlockcondition);
@@ -800,6 +841,11 @@ void M_ChallengesTick(void)
 					// No keygen tutorial in this case...
 					// not ideal but at least unlikely to
 					// get at same time?? :V
+				}
+				else if (challengesmenu.tutorialfound != NEXTMAP_INVALID)
+				{
+					M_ChallengesTutorial(CCTUTORIAL_TUTORIAL);
+					// Also no keygen, but that can come later.
 				}
 				else if (gamedata->chaokeytutorial == false
 				&& challengesmenu.keywasadded == true)
