@@ -2906,6 +2906,7 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 	// read demo header
 	gameaction = ga_nothing;
 	demo.playback = true;
+	demo.waitingfortally = false;
 	demo.buffer = &demobuf;
 	if (memcmp(demobuf.p, DEMOHEADER, 12))
 	{
