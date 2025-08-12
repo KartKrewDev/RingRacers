@@ -294,11 +294,11 @@ void podiumData_s::Init(void)
 	// but not this close to release
 	if (rank.position > RANK_NEUTRAL_POSITION || grade < GRADE_C)
 	{
-		gradeVoice = skins[rank.skin].soundsid[S_sfx[sfx_klose].skinsound];
+		gradeVoice = skins[rank.skin]->soundsid[S_sfx[sfx_klose].skinsound];
 	}
 	else
 	{
-		gradeVoice = skins[rank.skin].soundsid[S_sfx[sfx_kwin].skinsound];
+		gradeVoice = skins[rank.skin]->soundsid[S_sfx[sfx_kwin].skinsound];
 	}
 }
 

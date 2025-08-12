@@ -1368,7 +1368,7 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 			// Skin records (saved to gamedata)
 			if (player->skin < numskins)
 			{
-				skin_t *playerskin = &skins[player->skin];
+				skin_t *playerskin = skins[player->skin];
 				if (!losing)
 				{
 					playerskin->records.wins++;
@@ -4640,7 +4640,7 @@ void P_PlayerThink(player_t *player)
 	{
 		UINT32 skinflags = (demo.playback)
 			? demo.skinlist[demo.currentskinid[playeri]].flags
-			: skins[player->skin].flags;
+			: skins[player->skin]->flags;
 
 		if (skinflags & SF_IRONMAN) // we are Heavy Magician
 		{

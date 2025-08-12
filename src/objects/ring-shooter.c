@@ -234,7 +234,7 @@ static void RingShooterCountdown(mobj_t *mo)
 				if (playeringame[rs_base_playerface(mo)] == true)
 				{
 					player_t *player = &players[ rs_base_playerid(mo) ];
-					part->skin = &skins[player->skin];
+					part->skin = skins[player->skin];
 				}
 			}
 
@@ -780,9 +780,9 @@ void Obj_UpdateRingShooterFace(mobj_t *part)
 
 	// it's a good idea to set the actor's skin *before* it uses this action,
 	// but just in case, if it doesn't have the player's skin, set its skin then call the state again to get the correct sprite
-	if (part->skin != &skins[player->skin])
+	if (part->skin != skins[player->skin])
 	{
-		part->skin = &skins[player->skin];
+		part->skin = skins[player->skin];
 		P_SetMobjState(part, (statenum_t)(part->state - states));
 		return;
 	}

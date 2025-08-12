@@ -2069,7 +2069,7 @@ void D_SRB2Main(void)
 				INT32 importskin = R_SkinAvailableEx(pr->skinname, false);
 				if (importskin != -1)
 				{
-					skins[importskin].records.wins = pr->wins;
+					skins[importskin]->records.wins = pr->wins;
 
 					cupheader_t *cup;
 					for (cup = kartcupheaders; cup; cup = cup->next)
@@ -2095,7 +2095,7 @@ void D_SRB2Main(void)
 						}
 					}
 
-					CONS_Printf(" Wins for profile \"%s\" imported onto character \"%s\"\n", pr->profilename, skins[importskin].name);
+					CONS_Printf(" Wins for profile \"%s\" imported onto character \"%s\"\n", pr->profilename, skins[importskin]->name);
 				}
 			}
 

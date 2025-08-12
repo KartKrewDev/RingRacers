@@ -429,7 +429,7 @@ void level_tally_t::Init(player_t *player)
 			{
 				snprintf(
 					header, sizeof header,
-					"%s", R_CanShowSkinInDemo(player->skin) ? skins[player->skin].realname : "???"
+					"%s", R_CanShowSkinInDemo(player->skin) ? skins[player->skin]->realname : "???"
 				);
 			}
 
@@ -527,11 +527,11 @@ void level_tally_t::Init(player_t *player)
 			;
 		else if (rank < GRADE_C)
 		{
-			gradeVoice = skins[skinid].soundsid[S_sfx[sfx_klose].skinsound];
+			gradeVoice = skins[skinid]->soundsid[S_sfx[sfx_klose].skinsound];
 		}
 		else
 		{
-			gradeVoice = skins[skinid].soundsid[S_sfx[sfx_kwin].skinsound];
+			gradeVoice = skins[skinid]->soundsid[S_sfx[sfx_kwin].skinsound];
 		}
 	}
 

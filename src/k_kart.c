@@ -2871,7 +2871,7 @@ static UINT8 K_ObjectToSkinIDForSounds(mobj_t *source)
 	if (!source->skin)
 		return MAXSKINS;
 
-	return ((skin_t *)source->skin)-skins;
+	return ((skin_t *)source->skin)->skinnum;
 }
 
 static void K_PlayGenericTastefulTaunt(mobj_t *source, sfxenum_t sfx_id)
@@ -2958,7 +2958,7 @@ static void K_PlayGenericCombatSound(mobj_t *source, mobj_t *other, sfxenum_t sf
 	{
 		S_StartSound(
 			alwaysHear ? NULL : source,
-			skins[skinid].soundsid[S_sfx[sfx_id].skinsound]
+			skins[skinid]->soundsid[S_sfx[sfx_id].skinsound]
 		);
 	}
 
@@ -4610,7 +4610,7 @@ void K_CheckpointCrossAward(player_t *player)
 			// Doing this here because duel exit is a weird path, and we don't want to transform for endcam.
 			UINT32 skinflags = (demo.playback)
 					? demo.skinlist[demo.currentskinid[(player-players)]].flags
-					: skins[player->skin].flags;
+					: skins[player->skin]->flags;
 			if (skinflags & SF_IRONMAN)
 			{
 				SetRandomFakePlayerSkin(player, true, false);
@@ -9285,7 +9285,7 @@ void K_KartPlayerHUDUpdate(player_t *player)
 			if (player->skin >= 0 && player->skin < numskins)
 			{
 				skin_t *playerskin;
-				playerskin = &skins[player->skin];
+				playerskin = skins[player->skin];
 				playerskin->records.tumbletime++;
 			}
 		}
@@ -9387,7 +9387,7 @@ boolean K_LegacyRingboost(player_t *player)
 		return false;
 	if (!modeattacking)
 		return false;
-	if (!(skins[player->skin].flags & SF_HIVOLT))
+	if (!(skins[player->skin]->flags & SF_HIVOLT))
 		return false;
 	return true;
 }

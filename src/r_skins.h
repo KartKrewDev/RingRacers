@@ -38,7 +38,8 @@ extern "C" {
 /// The skin_t struct
 struct skin_t
 {
-	char name[SKINNAMESIZE+1]; // descriptive name of the skin
+	char name[SKINNAMESIZE+1]; // name of skin
+	UINT8 skinnum;
 	UINT32 namehash; // quickncasehash(->name, SKINNAMESIZE)
 	UINT16 wadnum;
 	skinflags_t flags;
@@ -92,16 +93,15 @@ typedef enum {
 	ENGINECLASS_H,
 	ENGINECLASS_I,
 
-	ENGINECLASS_J, 
+	ENGINECLASS_J,
 	ENGINECLASS_R = 17,
-	
 } engineclass_t;
 
 engineclass_t R_GetEngineClass(SINT8 speed, SINT8 weight, skinflags_t flags);
 
 /// Externs
 extern INT32 numskins;
-extern skin_t skins[MAXSKINS];
+extern skin_t **skins;
 
 extern CV_PossibleValue_t Forceskin_cons_t[];
 

@@ -188,7 +188,7 @@ void Dialogue::SetSpeaker(srb2::String skinName, int portraitID)
 
 	if (skinID >= 0 && skinID < numskins)
 	{
-		const skin_t *skin = &skins[skinID];
+		const skin_t *skin = skins[skinID];
 		const spritedef_t *sprdef = &skin->sprites[SPR2_TALK];
 
 		if (sprdef->numframes > 0)

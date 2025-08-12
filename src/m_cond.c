@@ -670,7 +670,7 @@ void M_ClearStats(void)
 
 	for (i = 0; i < numskins; i++)
 	{
-		memset(&skins[i].records, 0, sizeof(skins[i].records));
+		memset(&skins[i]->records, 0, sizeof(skins[i]->records));
 	}
 
 	unloaded_skin_t *unloadedskin, *nextunloadedskin = NULL;
@@ -1596,7 +1596,7 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			if (cn->requirement < 0)
 				return false;
 
-			return (skins[cn->requirement].records.wins >= (UINT32)cn->extrainfo1);
+			return (skins[cn->requirement]->records.wins >= (UINT32)cn->extrainfo1);
 
 		case UC_ALLCUPRECORDS:
 		{
@@ -1810,9 +1810,9 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			return (player->roundconditions.switched_skin == false
 				&& player->skin < numskins
 				&& R_GetEngineClass(
-					skins[player->skin].kartspeed,
-					skins[player->skin].kartweight,
-					skins[player->skin].flags
+					skins[player->skin]->kartspeed,
+					skins[player->skin]->kartweight,
+					skins[player->skin]->flags
 				) == (unsigned)cn->requirement);
 		case UCRP_HASFOLLOWER:
 			return (cn->requirement != -1 && player->followerskin == cn->requirement);
@@ -2234,7 +2234,7 @@ static const char *M_GetConditionCharacter(INT32 skin, boolean directlyrequires)
 
 			for (j = 0; j < SKINRIVALS; j++)
 			{
-				const char *rivalname = skins[i].rivals[j];
+				const char *rivalname = skins[i]->rivals[j];
 				INT32 rivalnum = R_SkinAvailableEx(rivalname, false);
 
 				if (rivalnum != skin)
@@ -2257,7 +2257,7 @@ static const char *M_GetConditionCharacter(INT32 skin, boolean directlyrequires)
 	}
 
 	return (permitname)
-		? skins[skin].realname
+		? skins[skin]->realname
 		: "???";
 }
 
@@ -2396,7 +2396,7 @@ static const char *M_GetConditionString(condition_t *cn)
 
 		case UC_CHARACTERWINS:
 		{
-			if (cn->requirement < 0 || !skins[cn->requirement].realname[0])
+			if (cn->requirement < 0 || !skins[cn->requirement]->realname[0])
 				return va("INVALID CHAR CONDITION \"%d:%d:%d\"", cn->type, cn->requirement, cn->extrainfo1);
 			work = M_GetConditionCharacter(cn->requirement, true);
 			return va("win %d Round%s as %s",
@@ -2721,7 +2721,7 @@ static const char *M_GetConditionString(condition_t *cn)
 			Z_Free(title);
 			return work;
 		case UCRP_ISCHARACTER:
-			if (cn->requirement < 0 || !skins[cn->requirement].realname[0])
+			if (cn->requirement < 0 || !skins[cn->requirement]->realname[0])
 				return va("INVALID CHAR CONDITION \"%d:%d\"", cn->type, cn->requirement);
 			work = M_GetConditionCharacter(cn->requirement, true);
 			return va("as %s", work);
@@ -2854,7 +2854,7 @@ static const char *M_GetConditionString(condition_t *cn)
 
 		case UCRP_MAKERETIRE:
 		{
-			if (cn->requirement < 0 || !skins[cn->requirement].realname[0])
+			if (cn->requirement < 0 || !skins[cn->requirement]->realname[0])
 				return va("INVALID CHAR CONDITION \"%d:%d\"", cn->type, cn->requirement);
 
 			work = M_GetConditionCharacter(cn->requirement, false);

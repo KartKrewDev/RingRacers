@@ -255,7 +255,7 @@ public:
 			return sfx_ktalk;
 
 		return skins[ skinID ]
-			.soundsid[ S_sfx[sfx_ktalk].skinsound ];
+			->soundsid[ S_sfx[sfx_ktalk].skinsound ];
 	};
 
 	int GetSkinID(void)
@@ -1319,7 +1319,7 @@ static void M_GonerDrawer(void)
 		{
 			line = line
 				.xy(-16, -2)
-				.colormap(skinID, static_cast<skincolornum_t>(skins[skinID].prefcolor));
+				.colormap(skinID, static_cast<skincolornum_t>(skins[skinID]->prefcolor));
 			if (gamedata->gonerlevel > GDGONER_VIDEO)
 				line.patch(faceprefix[skinID][FACE_MINIMAP]);
 			else

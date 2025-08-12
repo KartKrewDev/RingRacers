@@ -1519,7 +1519,7 @@ void F_GameEvaluationDrawer(void)
 		const char *rtatext, *cuttext;
 		rtatext = (marathonmode & MA_INGAME) ? "In-game timer" : "RTA timer";
 		cuttext = (marathonmode & MA_NOCUTSCENES) ? "" : " w/ cutscenes";
-		endingtext = va("%s, %s%s", skins[players[consoleplayer].skin].realname, rtatext, cuttext);
+		endingtext = va("%s, %s%s", skins[players[consoleplayer].skin]->realname, rtatext, cuttext);
 		V_DrawCenteredString(BASEVIDWIDTH/2, 182, V_SNAPTOBOTTOM|(ultimatemode ? V_REDMAP : V_YELLOWMAP), endingtext);
 	}
 
@@ -2034,13 +2034,13 @@ void F_TitleScreenDrawer(void)
 
 				if (eggSkin != -1)
 				{
-					eggColor = skins[eggSkin].prefcolor;
+					eggColor = skins[eggSkin]->prefcolor;
 				}
 				eggColormap = R_GetTranslationColormap(TC_DEFAULT, eggColor, GTC_MENUCACHE);
 
 				if (tailsSkin != -1)
 				{
-					tailsColor = skins[tailsSkin].prefcolor;
+					tailsColor = skins[tailsSkin]->prefcolor;
 				}
 				tailsColormap = R_GetTranslationColormap(TC_DEFAULT, tailsColor, GTC_MENUCACHE);
 
@@ -2391,9 +2391,9 @@ void F_StartWaitingPlayers(void)
 	if (waitcolormap)
 		Z_Free(waitcolormap);
 
-	waitcolormap = R_GetTranslationColormap(randskin, skins[randskin].prefcolor, 0);
+	waitcolormap = R_GetTranslationColormap(randskin, skins[randskin]->prefcolor, 0);
 
-	sprdef = &skins[randskin].sprites[P_GetSkinSprite2(&skins[randskin], SPR2_FSTN, NULL)];
+	sprdef = &skins[randskin]->sprites[P_GetSkinSprite2(skins[randskin], SPR2_FSTN, NULL)];
 
 	for (i = 0; i < 2; i++)
 	{

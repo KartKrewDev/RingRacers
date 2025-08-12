@@ -841,7 +841,7 @@ void P_Ticker(boolean run)
 					continue;
 				}
 
-				playerskin = &skins[players[i].skin];
+				playerskin = skins[players[i].skin];
 
 				playerskin->records.timeplayed++;
 			}
@@ -901,7 +901,7 @@ void P_Ticker(boolean run)
 						continue;
 					}
 
-					playerskin = &skins[players[i].skin];
+					playerskin = skins[players[i].skin];
 					playerskin->records.modetimeplayed[mode]++;
 				}
 			}

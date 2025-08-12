@@ -752,7 +752,7 @@ void M_ChallengesTick(void)
 						INT32 skin = M_UnlockableSkinNum(ref);
 						if (skin != -1)
 						{
-							bombcolor = skins[skin].prefcolor;
+							bombcolor = skins[skin]->prefcolor;
 						}
 						break;
 					}
@@ -764,7 +764,7 @@ void M_ChallengesTick(void)
 							INT32 psk = R_SkinAvailableEx(cv_skin[0].string, false);
 							if (psk == -1)
 								psk = 0;
-							bombcolor = K_GetEffectiveFollowerColor(followers[fskin].defaultcolor, &followers[fskin], cv_playercolor[0].value, &skins[psk]);
+							bombcolor = K_GetEffectiveFollowerColor(followers[fskin].defaultcolor, &followers[fskin], cv_playercolor[0].value, skins[psk]);
 						}
 						break;
 					}

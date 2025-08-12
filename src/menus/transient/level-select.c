@@ -688,7 +688,7 @@ void M_LevelSelectInit(INT32 choice)
 	if (levellist.levelsearch.timeattack && gt == GT_RACE)
 	{
 		const INT32 skinid = R_SkinAvailableEx(cv_skin[0].string, false);
-		if (skinid >= 0 && (skins[skinid].flags & SF_HIVOLT))
+		if (skinid >= 0 && (skins[skinid]->flags & SF_HIVOLT))
 		{
 			M_StartMessage("A long-forgotten power...", "You are using a \x82prototype engine\x80.\nRecords will not be saved.", NULL, MM_NOTHING, NULL, NULL);
 			S_StartSound(NULL, sfx_s3k81);

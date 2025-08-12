@@ -899,14 +899,14 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 	}
 
 	if (ghost->player && (
-			ghostext[playernum].skinid != (UINT8)(((skin_t *)ghost->skin)-skins) ||
+			ghostext[playernum].skinid != (UINT8)(((skin_t *)ghost->skin)->skinnum) ||
 			ghostext[playernum].kartspeed != ghost->player->kartspeed ||
 			ghostext[playernum].kartweight != ghost->player->kartweight ||
 			ghostext[playernum].charflags != ghost->player->charflags
 		))
 	{
 		ghostext[playernum].flags |= EZT_STATDATA;
-		ghostext[playernum].skinid = (UINT8)(((skin_t *)ghost->skin)-skins);
+		ghostext[playernum].skinid = (UINT8)(((skin_t *)ghost->skin)->skinnum);
 		ghostext[playernum].kartspeed = ghost->player->kartspeed;
 		ghostext[playernum].kartweight = ghost->player->kartweight;
 		ghostext[playernum].charflags = ghost->player->charflags;
@@ -990,7 +990,7 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 			if (ghost->player->followmobj->colorized)
 				followtic |= FZT_COLORIZED;
 			if (followtic & FZT_SKIN)
-				WRITEUINT8(demobuf.p,(UINT8)(((skin_t *)(ghost->player->followmobj->skin))-skins));
+				WRITEUINT8(demobuf.p,(UINT8)(((skin_t *)(ghost->player->followmobj->skin))->skinnum));
 			oldghost[playernum].flags2 |= MF2_AMBUSH;
 		}
 
@@ -1214,13 +1214,13 @@ void G_ConsGhostTic(INT32 playernum)
 		if (players[playernum].kartspeed != ghostext[playernum].kartspeed
 			|| players[playernum].kartweight != ghostext[playernum].kartweight
 			|| players[playernum].charflags != ghostext[playernum].charflags ||
-			demo.skinlist[ghostext[playernum].skinid].mapping != (UINT8)(((skin_t *)testmo->skin)-skins))
+			demo.skinlist[ghostext[playernum].skinid].mapping != (UINT8)(((skin_t *)testmo->skin)->skinnum))
 		{
 			if (demosynced)
 				CONS_Alert(CONS_WARNING, M_GetText("Demo playback has desynced (Character/stats)!\n"));
 			demosynced = false;
 
-			testmo->skin = &skins[demo.skinlist[ghostext[playernum].skinid].mapping];
+			testmo->skin = skins[demo.skinlist[ghostext[playernum].skinid].mapping];
 			players[playernum].kartspeed = ghostext[playernum].kartspeed;
 			players[playernum].kartweight = ghostext[playernum].kartweight;
 			players[playernum].charflags = ghostext[playernum].charflags;
@@ -1477,7 +1477,7 @@ fadeghost:
 				UINT8 skinid = READUINT8(g->p);
 				if (skinid >= g->numskins)
 					skinid = 0;
-				g->mo->skin = &skins[g->skinlist[skinid].mapping];
+				g->mo->skin = skins[g->skinlist[skinid].mapping];
 				g->p += 6; // kartspeed, kartweight, charflags
 			}
 		}
@@ -1512,7 +1512,7 @@ fadeghost:
 					follow->colorized = true;
 
 				if (followtic & FZT_SKIN)
-					follow->skin = &skins[READUINT8(g->p)];
+					follow->skin = skins[READUINT8(g->p)];
 			}
 			if (follow)
 			{
@@ -1841,12 +1841,12 @@ static void G_SaveDemoSkins(UINT8 **pp, const DemoBufferSizes &psizes)
 	for (i = 0; i < numskins; i++)
 	{
 		// Skinname, for first attempt at identification.
-		(*pp) += copy_fixed_buf((*pp), skins[i].name, psizes.skin_name);
+		(*pp) += copy_fixed_buf((*pp), skins[i]->name, psizes.skin_name);
 
 		// Backup information for second pass.
-		WRITEUINT8((*pp), skins[i].kartspeed);
-		WRITEUINT8((*pp), skins[i].kartweight);
-		WRITEUINT32((*pp), skins[i].flags);
+		WRITEUINT8((*pp), skins[i]->kartspeed);
+		WRITEUINT8((*pp), skins[i]->kartweight);
+		WRITEUINT32((*pp), skins[i]->flags);
 	}
 
 	for (i = 0; i < MAXAVAILABILITY; i++)
@@ -2244,14 +2244,14 @@ void G_SetDemoCheckpointTiming(player_t *player, tic_t time, UINT8 checkpoint)
 
 	demoghost *g;
 	tic_t lowest = INT32_MAX;
-	UINT32 lowestskin = ((skin_t*)player->mo->skin) - skins;
+	UINT32 lowestskin = ((skin_t*)player->mo->skin)->skinnum;
 	UINT32 lowestcolor = player->skincolor;
 	for (g = ghosts; g; g = g->next)
 	{
 		if (lowest > g->splits[checkpoint])
 		{
 			lowest = g->splits[checkpoint];
-			lowestskin = ((skin_t*)g->mo->skin)-skins;
+			lowestskin = ((skin_t*)g->mo->skin)->skinnum;
 			lowestcolor = g->mo->color;
 
 		}
@@ -3389,7 +3389,7 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	UINT8 *p;
 	mapthing_t *mthing;
 	UINT16 count, ghostversion;
-	skin_t *ghskin = &skins[0];
+	skin_t *ghskin = skins[0];
 	UINT8 worknumskins;
 	UINT32 num_classes;
 	democharlist_t *skinlist = NULL;
@@ -3538,7 +3538,7 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	// Skin
 	i = READUINT8(p);
 	if (i < worknumskins)
-		ghskin = &skins[skinlist[i].mapping];
+		ghskin = skins[skinlist[i].mapping];
 	p++; // lastfakeskin
 
 	p++; // team

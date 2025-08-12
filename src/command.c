@@ -2138,7 +2138,7 @@ static void CV_SetValueMaybeStealth(consvar_t *var, INT32 value, boolean stealth
 		if ((value < 0) || (value >= numskins))
 			tmpskin = "None";
 		else
-			tmpskin = skins[value].name;
+			tmpskin = skins[value]->name;
 		strlcpy(val, tmpskin, SKINNAMESIZE+1);
 	}
 	else

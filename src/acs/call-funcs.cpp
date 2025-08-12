@@ -1646,7 +1646,7 @@ bool CallFunc_PlayerSkin(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::
 		&& (info->mo->player != NULL))
 	{
 		UINT8 skin = info->mo->player->skin;
-		thread->dataStk.push(~env->getString( skins[skin].name )->idx);
+		thread->dataStk.push(~env->getString( skins[skin]->name )->idx);
 		return false;
 	}
 
@@ -3701,11 +3701,11 @@ bool CallFunc_SetThingProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, A
 #define PROP_SKIN(x, y) \
 	case x: \
 	{ \
-		INT32 newSkin = (mobj->skin != NULL) ? (static_cast<skin_t *>(mobj->skin)) - skins : -1; \
+		INT32 newSkin = (mobj->skin != NULL) ? (static_cast<skin_t *>(mobj->skin)->skinnum) : -1; \
 		bool success = ACS_GetSkinFromString(thread->scopeMap->getString( value )->str, &newSkin); \
 		if (success == true) \
 		{ \
-			mobj->y = (newSkin >= 0 && newSkin < numskins) ? &skins[ newSkin ] : NULL; \
+			mobj->y = (newSkin >= 0 && newSkin < numskins) ? skins[ newSkin ] : NULL; \
 		} \
 		break; \
 	}

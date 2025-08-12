@@ -235,12 +235,12 @@ static void M_SetupProfileGridPos(setup_player_t *p)
 
 	if (!R_SkinUsable(g_localplayers[0], i, false))
 	{
-		i = GetSkinNumClosestToStats(skins[i].kartspeed, skins[i].kartweight, skins[i].flags, false);
+		i = GetSkinNumClosestToStats(skins[i]->kartspeed, skins[i]->kartweight, skins[i]->flags, false);
 	}
 
 	// Now position the grid for skin
-	p->gridx = skins[i].kartspeed-1;
-	p->gridy = skins[i].kartweight-1;
+	p->gridx = skins[i]->kartspeed-1;
+	p->gridy = skins[i]->kartweight-1;
 
 	// Now this put our cursor on the good alt
 	while (alt < setup_chargrid[p->gridx][p->gridy].numskins && setup_chargrid[p->gridx][p->gridy].skinlist[alt] != i)
@@ -253,7 +253,7 @@ static void M_SetupProfileGridPos(setup_player_t *p)
 	{
 		p->color = SKINCOLOR_NONE;
 	}
-		
+
 }
 
 static void M_SetupMidGameGridPos(setup_player_t *p, UINT8 num)
@@ -273,8 +273,8 @@ static void M_SetupMidGameGridPos(setup_player_t *p, UINT8 num)
 		p->followern = -1;
 
 	// Now position the grid for skin
-	p->gridx = skins[i].kartspeed-1;
-	p->gridy = skins[i].kartweight-1;
+	p->gridx = skins[i]->kartspeed-1;
+	p->gridy = skins[i]->kartweight-1;
 
 	// Now this put our cursor on the good alt
 	while (alt < setup_chargrid[p->gridx][p->gridy].numskins && setup_chargrid[p->gridx][p->gridy].skinlist[alt] != i)
@@ -347,8 +347,8 @@ void M_CharacterSelectInit(void)
 
 	for (i = 0; i < numskins; i++)
 	{
-		UINT8 x = skins[i].kartspeed-1;
-		UINT8 y = skins[i].kartweight-1;
+		UINT8 x = skins[i]->kartspeed-1;
+		UINT8 y = skins[i]->kartweight-1;
 
 		if (!R_SkinUsable(g_localplayers[0], i, false))
 			continue;
@@ -792,7 +792,7 @@ static void M_HandleBeginningFollowers(setup_player_t *p)
 static void M_HandleBeginningColorsOrFollowers(setup_player_t *p)
 {
 	if (p->skin != -1)
-		S_StartSound(NULL, skins[p->skin].soundsid[S_sfx[sfx_kattk1].skinsound]);
+		S_StartSound(NULL, skins[p->skin]->soundsid[S_sfx[sfx_kattk1].skinsound]);
 	if (M_HandleBeginningColors(p))
 		S_StartSound(NULL, sfx_s3k63);
 	else
@@ -865,8 +865,8 @@ static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 	{
 		if (forceskin)
 		{
-			if ((p->gridx != skins[cv_forceskin.value].kartspeed-1)
-				|| (p->gridy != skins[cv_forceskin.value].kartweight-1))
+			if ((p->gridx != skins[cv_forceskin.value]->kartspeed-1)
+				|| (p->gridy != skins[cv_forceskin.value]->kartweight-1))
 			{
 				S_StartSound(NULL, sfx_s3k7b); //sfx_s3kb2
 			}
@@ -1346,8 +1346,8 @@ boolean M_CharacterSelectHandler(INT32 choice)
 		// Just makes it easier to access later
 		if (forceskin)
 		{
-			if (p->gridx != skins[cv_forceskin.value].kartspeed-1
-				|| p->gridy != skins[cv_forceskin.value].kartweight-1)
+			if (p->gridx != skins[cv_forceskin.value]->kartspeed-1
+				|| p->gridy != skins[cv_forceskin.value]->kartweight-1)
 				p->skin = -1;
 			else
 				p->skin = cv_forceskin.value;
@@ -1400,7 +1400,7 @@ static void M_MPConfirmCharacterSelection(void)
 		// finally, call the skin[x] console command.
 		// This will call SendNameAndColor which will synch everything we sent here and apply the changes!
 
-		CV_StealthSet(&cv_skin[i], skins[setup_player[i].skin].name);
+		CV_StealthSet(&cv_skin[i], skins[setup_player[i].skin]->name);
 
 		// ...actually, let's do this last - Skin_OnChange has some return-early occasions
 		// follower color
@@ -1454,7 +1454,7 @@ void M_CharacterSelectTick(void)
 			if (optionsmenu.profile)
 			{
 				// save player
-				strcpy(optionsmenu.profile->skinname, skins[setup_player[0].skin].name);
+				strcpy(optionsmenu.profile->skinname, skins[setup_player[0].skin]->name);
 				optionsmenu.profile->color = setup_player[0].color;
 
 				// save follower
@@ -1472,7 +1472,7 @@ void M_CharacterSelectTick(void)
 			{
 				for (i = 0; i < setup_numplayers; i++)
 				{
-					CV_StealthSet(&cv_skin[i], skins[setup_player[i].skin].name);
+					CV_StealthSet(&cv_skin[i], skins[setup_player[i].skin]->name);
 					CV_StealthSetValue(&cv_playercolor[i], setup_player[i].color);
 
 					if (setup_player[i].followern < 0)

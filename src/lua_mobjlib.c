@@ -725,7 +725,7 @@ static int mobj_set(lua_State *L)
 			{
 				if (demo.playback)
 					skin = demo.skinlist[skin].mapping;
-				mo->skin = &skins[skin];
+				mo->skin = skins[skin];
 			}
 
 			return 0;

@@ -7886,7 +7886,7 @@ static void P_LoadRecordGhosts(void)
 	if (allGhosts)
 	{
 		for (i = 0; i < numskins; ++i)
-			add_ghosts(fmt::format("{}-{}{}", gpath, skins[i].name, modeprefix), allGhosts);
+			add_ghosts(fmt::format("{}-{}{}", gpath, skins[i]->name, modeprefix), allGhosts);
 	}
 
 	if (sameGhosts)
@@ -7894,7 +7894,7 @@ static void P_LoadRecordGhosts(void)
 		INT32 skin = R_SkinAvailableEx(cv_skin[0].string, false);
 		if (skin < 0 || !R_SkinUsable(-1, skin, false))
 			skin = 0; // use default skin
-		add_ghosts(fmt::format("{}-{}{}", gpath, skins[skin].name, modeprefix), sameGhosts);
+		add_ghosts(fmt::format("{}-{}{}", gpath, skins[skin]->name, modeprefix), sameGhosts);
 	}
 
 	// Guest ghost
@@ -8074,7 +8074,7 @@ static void P_InitPlayers(void)
 
 					if (!R_SkinUsable(g_localplayers[0], skin, false))
 					{
-						skin = GetSkinNumClosestToStats(skins[skin].kartspeed, skins[skin].kartweight, skins[skin].flags, false);
+						skin = GetSkinNumClosestToStats(skins[skin]->kartspeed, skins[skin]->kartweight, skins[skin]->flags, false);
 					}
 
 					if (K_ColorUsable(static_cast<skincolornum_t>(p->color), false, true) == true)
@@ -8123,7 +8123,7 @@ static void P_InitPlayers(void)
 		if (skin != -1)
 		{
 			SetPlayerSkinByNum(i, skin);
-			players[i].skincolor = (col != SKINCOLOR_NONE) ? col : skins[skin].prefcolor;
+			players[i].skincolor = (col != SKINCOLOR_NONE) ? col : skins[skin]->prefcolor;
 
 			players[i].followerskin = follower;
 			if (follower != -1)

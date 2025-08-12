@@ -307,7 +307,7 @@ void K_InitGrandPrixBots(void)
 			for (j = 0; j < numplayers; j++)
 			{
 				player_t *p = &players[competitors[j]];
-				const char *rivalname = skins[p->skin].rivals[i];
+				const char *rivalname = skins[p->skin]->rivals[i];
 				INT32 rivalnum = R_SkinAvailable(rivalname);
 
 				// Intentionally referenced before (currently dummied out) unlock check. Such a tease!
@@ -1020,10 +1020,10 @@ void K_RetireBots(void)
 		bot->botvars.difficulty = newDifficulty;
 		bot->botvars.diffincrease = 0;
 
-		K_SetNameForBot(bot - players, skins[skinnum].realname);
+		K_SetNameForBot(bot - players, skins[skinnum]->realname);
 
 		bot->prefskin = skinnum;
-		bot->prefcolor = skins[skinnum].prefcolor;
+		bot->prefcolor = skins[skinnum]->prefcolor;
 		bot->preffollower = -1;
 		bot->preffollowercolor = SKINCOLOR_NONE;
 		G_UpdatePlayerPreferences(bot);

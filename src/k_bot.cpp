@@ -133,8 +133,8 @@ void K_SetBot(UINT8 newplayernum, UINT8 skinnum, UINT8 difficulty, botStyle_e st
 	// For each subsequent round of GP, K_UpdateGrandPrixBots will handle this.
 	players[newplayernum].spectator = grandprixinfo.gp && grandprixinfo.initalize && K_BotDefaultSpectator();
 
-	skincolornum_t color = static_cast<skincolornum_t>(skins[skinnum].prefcolor);
-	const char *realname = skins[skinnum].realname;
+	skincolornum_t color = static_cast<skincolornum_t>(skins[skinnum]->prefcolor);
+	const char *realname = skins[skinnum]->realname;
 	if (tutorialchallenge == TUTORIALSKIP_INPROGRESS)
 	{
 		// The ROYGBIV Rangers

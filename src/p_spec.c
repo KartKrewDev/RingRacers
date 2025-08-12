@@ -1592,7 +1592,7 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 				return false;
 			if (!triggerline->stringargs[0])
 				return false;
-			if (!(stricmp(triggerline->stringargs[0], skins[actor->player->skin].name) == 0) ^ !!(triggerline->args[1]))
+			if (!(stricmp(triggerline->stringargs[0], skins[actor->player->skin]->name) == 0) ^ !!(triggerline->args[1]))
 				return false;
 			break;
 		case 334: // object dye
@@ -2021,7 +2021,7 @@ static void K_HandleLapIncrement(player_t *player)
 			{
 				UINT32 skinflags = (demo.playback)
 					? demo.skinlist[demo.currentskinid[(player-players)]].flags
-					: skins[player->skin].flags;
+					: skins[player->skin]->flags;
 				if (skinflags & SF_IRONMAN)
 				{
 					if ((player->laps == 1 && lapisfresh) || !K_InRaceDuel()) // We'll do this in K_CheckpointCrossAward if necessary.

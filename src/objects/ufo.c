@@ -968,7 +968,7 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 	{
 		UINT32 skinflags = (demo.playback)
 			? demo.skinlist[demo.currentskinid[(source->player-players)]].flags
-			: skins[source->player->skin].flags;
+			: skins[source->player->skin]->flags;
 		if (skinflags & SF_IRONMAN)
 			SetRandomFakePlayerSkin(source->player, true, false);
 	}

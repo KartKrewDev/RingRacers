@@ -7990,7 +7990,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		P_MoveOrigin(mobj,
 			target->x - FixedMul(xofs, sin) + FixedMul(frontoffset, cos),
-			target->y + FixedMul(xofs, cos) + FixedMul(frontoffset, sin), 
+			target->y + FixedMul(xofs, cos) + FixedMul(frontoffset, sin),
 			target->z + zofs + (target->height / 2));
 		mobj->angle = facing + ANGLE_90 + (mobj->extravalue1 ? ANGLE_45 : -1*ANGLE_45);
 		K_MatchGenericExtraFlags(mobj, target);
@@ -8028,7 +8028,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		if (!mobj->target || !mobj->target->health
 			|| !mobj->target->player || !mobj->target->player->tripwireLeniency)
 		{
-			if (mobj->target && mobj->target->player 
+			if (mobj->target && mobj->target->player
 				&& P_IsDisplayPlayer(mobj->target->player)
 				&& !(mobj->target->player->curshield == KSHIELD_TOP))
 			{
@@ -8332,7 +8332,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		if (vfx)
 		{
-			if (P_IsObjectOnGround(mobj->target) || mobj->target->player->fastfall 
+			if (P_IsObjectOnGround(mobj->target) || mobj->target->player->fastfall
 				|| !K_CanSuperTransfer(mobj->target->player))
 			{
 				P_RemoveMobj(mobj);
@@ -8790,6 +8790,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		P_InstaScale(mobj, mobj->target->scale);
 		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + mobj->target->height/2);
 		K_MatchGenericExtraFlags(mobj, mobj->target);
+
 		break;
 	}
 	case MT_BUBBLESHIELD:
@@ -9368,7 +9369,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				UINT8 pnum = (newplayer-players);
 				UINT32 skinflags = (demo.playback)
 					? demo.skinlist[demo.currentskinid[pnum]].flags
-					: skins[newplayer->skin].flags;
+					: skins[newplayer->skin]->flags;
 
 				if (skinflags & SF_IRONMAN)
 				{
@@ -9419,7 +9420,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 					if (newplayer != NULL)
 					{
-						cur->skin = &skins[newplayer->skin];
+						cur->skin = skins[newplayer->skin];
 						cur->color = newplayer->skincolor;
 
 						// Even if we didn't have the Perfect Sign to consider,
@@ -9427,7 +9428,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 						P_SetMobjState(cur, (newperfect == true) ? S_KART_SIGL : S_KART_SIGN);
 
 						if (cv_shittysigns.value && cur->state != &states[S_KART_SIGL])
-							cur->sprite2 = P_GetSkinSprite2(&skins[newplayer->skin], SPR2_SSIG, NULL);;
+							cur->sprite2 = P_GetSkinSprite2(skins[newplayer->skin], SPR2_SSIG, NULL);;
 					}
 				}
 				else if (cur->state == &states[S_SIGN_ERROR])
@@ -9838,7 +9839,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			// Mash speed limit
 			UINT8 MASHPWR = TICRATE/2; // Amount to deduct from timer when mashing
 			UINT8 MAXMASHFREQUENCY = 6; // Nerf fast mashing: allow optimal decay with X inputs per second
-			
+
 			UINT8 ticsbetweenmashing = TICRATE/MAXMASHFREQUENCY;
 			UINT8 decaypertic = MASHPWR / ticsbetweenmashing;
 			if (mobj->cusval)
@@ -10385,7 +10386,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			return false;
 		}
-		
+
 		break;
 	}
 
@@ -12641,7 +12642,7 @@ void P_SpawnPlayer(INT32 playernum)
 	// set 'spritedef' override in mobj for player skins.. (see ProjectSprite)
 	// (usefulness: when body mobj is detached from player (who respawns),
 	// the dead body mobj retains the skin through the 'spritedef' override).
-	mobj->skin = &skins[p->skin];
+	mobj->skin = skins[p->skin];
 	P_SetupStateAnimation(mobj, mobj->state);
 
 	mobj->health = 1;
@@ -12652,7 +12653,7 @@ void P_SpawnPlayer(INT32 playernum)
 		p->realtime = leveltime;
 	}
 
-	p->followitem = skins[p->skin].followitem;
+	p->followitem = skins[p->skin]->followitem;
 
 	if (p->jointime <= 1 || leveltime <= 1)
 	{
@@ -14276,7 +14277,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 				if (!playeringame[i] || players[i].spectator == true)
 					continue;
 
-				if (strcmp(skins[players[i].skin].name, "sakura") == 0)
+				if (strcmp(skins[players[i].skin]->name, "sakura") == 0)
 				{
 					state = mobj->info->spawnstate;
 					break;

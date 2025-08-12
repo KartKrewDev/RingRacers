@@ -848,7 +848,7 @@ UINT8 *R_GetSpriteTranslation(vissprite_t *vis)
 
 	if (vis->mobj->skin && vis->mobj->sprite == SPR_PLAY) // This thing is a player!
 	{
-		skinnum = (skin_t*)vis->mobj->skin-skins;
+		skinnum = ((skin_t*)vis->mobj->skin)->skinnum;
 
 		// Hide not-yet-unlocked characters in replays from other people
 		if (!R_CanShowSkinInDemo(skinnum))

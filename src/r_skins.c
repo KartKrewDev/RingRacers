@@ -42,7 +42,7 @@
 #endif
 
 INT32 numskins = 0;
-skin_t skins[MAXSKINS];
+skin_t **skins;
 
 unloaded_skin_t *unloadedskins = NULL;
 
@@ -111,7 +111,7 @@ static void Sk_SetDefaultValue(skin_t *skin)
 	//
 	memset(skin, 0, sizeof (skin_t));
 	snprintf(skin->name,
-		sizeof skin->name, "skin %u", (UINT32)(skin-skins));
+		sizeof skin->name, "skin %u", skin->skinnum);
 	skin->name[sizeof skin->name - 1] = '\0';
 	skin->wadnum = INT16_MAX;
 
@@ -167,16 +167,6 @@ UINT8 R_BotDefaultSkin(void)
 void R_InitSkins(void)
 {
 	size_t i;
-
-	// it can be is do before loading config for skin cvar possible value
-	// (... what the fuck did you just say to me? "it can be is do"?)
-#ifdef SKINVALUES
-	for (i = 0; i <= MAXSKINS; i++)
-	{
-		skin_cons_t[i].value = 0;
-		skin_cons_t[i].strvalue = NULL;
-	}
-#endif
 
 	// no default skin!
 	numskins = 0;
@@ -334,7 +324,7 @@ UINT32 R_GetLocalRandomSkin(void)
 	return grabskins[M_RandomKey(usableskins)];
 }
 
-// returns true if the skin name is found (loaded from pwad)
+// returns the skin number if the skin name is found (loaded from pwad)
 // warning return -1 if not found
 INT32 R_SkinAvailable(const char *name)
 {
@@ -362,10 +352,10 @@ INT32 R_SkinAvailableEx(const char *name, boolean demoskins)
 
 	for (i = 0; i < numskins; i++)
 	{
-		if (skins[i].namehash != hash)
+		if (skins[i]->namehash != hash)
 			continue;
 
-		if (stricmp(skins[i].name,name)!=0)
+		if (stricmp(skins[i]->name,name)!=0)
 			continue;
 
 		return i;
@@ -401,7 +391,7 @@ static void SetSkin(player_t *player, INT32 skinnum)
 	if (demo.playback)
 		skinnum = demo.skinlist[skinnum].mapping;
 
-	skin_t *skin = &skins[skinnum];
+	skin_t *skin = skins[skinnum];
 
 	player->skin = skinnum;
 
@@ -510,9 +500,9 @@ void SetFakePlayerSkin(player_t* player, INT32 skinid)
 	}
 	else
 	{
-		player->kartspeed = skins[skinid].kartspeed;
-		player->kartweight = skins[skinid].kartweight;
-		player->charflags = skins[skinid].flags;
+		player->kartspeed = skins[skinid]->kartspeed;
+		player->kartweight = skins[skinid]->kartweight;
+		player->charflags = skins[skinid]->flags;
 	}
 
 	player->mo->skin = &skins[skinid];
@@ -536,7 +526,7 @@ void SetRandomFakePlayerSkin(player_t* player, boolean fast, boolean instant)
 			if (demo.skinlist[i].flags & SF_IRONMAN)
 				continue;
 		}
-		else if (skins[i].flags & SF_IRONMAN)
+		else if (skins[i]->flags & SF_IRONMAN)
 			continue;
 		if (!R_SkinUsable(player-players, i, true))
 			continue;
@@ -615,7 +605,7 @@ void ClearFakePlayerSkin(player_t* player)
 	else
 	{
 		skinid = player->skin;
-		flags = skins[player->skin].flags;
+		flags = skins[player->skin]->flags;
 	}
 
 	if ((flags & SF_IRONMAN) && !P_MobjWasRemoved(player->mo))
@@ -648,8 +638,8 @@ flaglessretry:
 		{
 			continue;
 		}
-		stat_diff = abs(skins[i].kartspeed - kartspeed) + abs(skins[i].kartweight - kartweight);
-		if (doflagcheck && (skins[i].flags & flagcheck) != flagcheck)
+		stat_diff = abs(skins[i]->kartspeed - kartspeed) + abs(skins[i]->kartweight - kartweight);
+		if (doflagcheck && (skins[i]->flags & flagcheck) != flagcheck)
 		{
 			continue;
 		}
@@ -957,8 +947,10 @@ void R_AddSkins(UINT16 wadnum, boolean mainfile)
 		buf2[size] = '\0';
 
 		// set defaults
-		skin = &skins[numskins];
+		skins = Z_Realloc(skins, sizeof(skin_t*) * (numskins + 1), PU_STATIC, NULL);
+		skin = skins[numskins] = Z_Calloc(sizeof(skin_t), PU_STATIC, NULL);
 		Sk_SetDefaultValue(skin);
+		skin->skinnum = numskins;
 		skin->wadnum = wadnum;
 		realname = false;
 		// parse
@@ -1033,14 +1025,9 @@ next_token:
 		if (mainfile == false)
 			CONS_Printf(M_GetText("Added skin '%s'\n"), skin->name);
 
-#ifdef SKINVALUES
-		skin_cons_t[numskins].value = numskins;
-		skin_cons_t[numskins].strvalue = skin->name;
-#endif
-
 		// Update the forceskin possiblevalues
 		Forceskin_cons_t[numskins+1].value = numskins;
-		Forceskin_cons_t[numskins+1].strvalue = skins[numskins].name;
+		Forceskin_cons_t[numskins+1].strvalue = skins[numskins]->name;
 
 #ifdef HWRENDER
 		if (rendermode == render_opengl)
@@ -1178,7 +1165,7 @@ void R_PatchSkins(UINT16 wadnum, boolean mainfile)
 					strlwr(value);
 					skinnum = R_SkinAvailableEx(value, false);
 					if (skinnum != -1)
-						skin = &skins[skinnum];
+						skin = skins[skinnum];
 					else
 					{
 						CONS_Debug(DBG_SETUP, "R_PatchSkins: unknown skin name in P_SKIN lump# %d(%s) in WAD %s\n", lump, W_CheckNameForNumPwad(wadnum,lump), wadfiles[wadnum]->filename);
