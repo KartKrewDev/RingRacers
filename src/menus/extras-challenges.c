@@ -523,6 +523,8 @@ static void M_ChallengesTutorial(UINT8 option)
 				"\n"
 				"You can find \"""\x87""%s""\x80""\" on\n"
 				"the Tutorials menu under Extras!\n"
+				"\n"
+				"These may sometimes be needed for progression.\n"
 				), (challengesmenu.tutorialfound < nummapheaders
 				&& mapheaderinfo[challengesmenu.tutorialfound]
 					? mapheaderinfo[challengesmenu.tutorialfound]->menuttl
