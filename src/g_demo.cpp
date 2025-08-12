@@ -3397,6 +3397,8 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 
 	p = buffer->buffer;
 
+	demo.waitingfortally = false;
+
 	// read demo header
 	if (memcmp(p, DEMOHEADER, 12))
 	{
