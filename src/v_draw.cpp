@@ -541,6 +541,9 @@ int Draw::font_to_fontno(Font font)
 	case Font::kGamemode:
 		return GM_FONT;
 
+	case Font::kGenesis:
+		return GENESIS_FONT;
+
 	case Font::kConsole:
 		return HU_FONT;
 

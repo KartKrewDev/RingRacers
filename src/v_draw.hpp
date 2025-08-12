@@ -194,6 +194,7 @@ public:
 	{
 		kThin,
 		kGamemode,
+		kGenesis,
 		kConsole,
 		kFreeplay,
 		kZVote,

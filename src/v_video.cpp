@@ -2350,6 +2350,10 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 		case GM_FONT:
 			result->spacew = 6;
 			break;
+		case GENESIS_FONT:
+			result->spacew = 8;
+			result->right_outline = 0;
+			break;
 		case FILE_FONT:
 			result->spacew = 0;
 			break;
@@ -2389,6 +2393,9 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 			break;
 		case GM_FONT:
 			result->lfh    = 32;
+			break;
+		case GENESIS_FONT:
+			result->lfh    = 36;
 			break;
 		case LSHI_FONT:
 			result->lfh    = 56;
