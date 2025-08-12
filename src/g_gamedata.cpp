@@ -118,7 +118,7 @@ void srb2::save_ng_gamedata()
 	for (int i = 0; i < numskins; i++)
 	{
 		srb2::GamedataSkinJson skin {};
-		skin_t& memskin = skins[i];
+		skin_t& memskin = *skins[i];
 
 		std::string name = std::string(memskin.name);
 		skin.records.wins = memskin.records.wins;
@@ -239,7 +239,7 @@ void srb2::save_ng_gamedata()
 			}
 			else
 			{
-				newrecords.bestskin = std::string(skins[skinref.id].name);
+				newrecords.bestskin = std::string(skins[skinref.id]->name);
 			}
 			newrecords.gotemerald = cup->windata[i].got_emerald;
 			cupdata.records.emplace_back(std::move(newrecords));
@@ -266,7 +266,7 @@ void srb2::save_ng_gamedata()
 			}
 			else
 			{
-				newrecords.bestskin = std::string(skins[skinref.id].name);
+				newrecords.bestskin = std::string(skins[skinref.id]->name);
 			}
 			newrecords.gotemerald = unloadedcup->windata[i].got_emerald;
 			cupdata.records.emplace_back(std::move(newrecords));
@@ -591,7 +591,7 @@ void srb2::load_ng_gamedata()
 
 		if (skin != -1)
 		{
-			skins[skin].records = dummyrecord;
+			skins[skin]->records = dummyrecord;
 		}
 		else if (dummyrecord.wins)
 		{

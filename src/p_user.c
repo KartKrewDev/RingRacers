@@ -1335,7 +1335,7 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 			// Skin records (saved to gamedata)
 			if (player->skin < numskins)
 			{
-				skin_t *playerskin = &skins[player->skin];
+				skin_t *playerskin = skins[player->skin];
 				if (!losing)
 				{
 					playerskin->records.wins++;
@@ -4556,7 +4556,7 @@ void P_PlayerThink(player_t *player)
 		player->mo->renderflags &= ~RF_DONTDRAW;
 		player->mo->flags &= ~MF_NOCLIPTHING;
 	}
-	
+
 	boolean deathcontrolled = (player->respawn.state != RESPAWNST_NONE && player->respawn.truedeath == true)
 		|| (player->pflags & PF_NOCONTEST) || (player->karmadelay);
 	boolean powercontrolled = (player->hyudorotimer) || (player->growshrinktimer > 0);
@@ -4584,7 +4584,7 @@ void P_PlayerThink(player_t *player)
 	{
 		UINT32 skinflags = (demo.playback)
 			? demo.skinlist[demo.currentskinid[playeri]].flags
-			: skins[player->skin].flags;
+			: skins[player->skin]->flags;
 
 		if (skinflags & SF_IRONMAN) // we are Heavy Magician
 		{

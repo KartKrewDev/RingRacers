@@ -2738,7 +2738,7 @@ static UINT8 K_ObjectToSkinIDForSounds(mobj_t *source)
 	if (!source->skin)
 		return MAXSKINS;
 
-	return ((skin_t *)source->skin)-skins;
+	return ((skin_t *)source->skin)->skinnum;
 }
 
 static void K_PlayGenericTastefulTaunt(mobj_t *source, sfxenum_t sfx_id)
@@ -2825,7 +2825,7 @@ static void K_PlayGenericCombatSound(mobj_t *source, mobj_t *other, sfxenum_t sf
 	{
 		S_StartSound(
 			alwaysHear ? NULL : source,
-			skins[skinid].soundsid[S_sfx[sfx_id].skinsound]
+			skins[skinid]->soundsid[S_sfx[sfx_id].skinsound]
 		);
 	}
 
@@ -8316,7 +8316,7 @@ void K_KartPlayerHUDUpdate(player_t *player)
 			if (player->skin >= 0 && player->skin < numskins)
 			{
 				skin_t *playerskin;
-				playerskin = &skins[player->skin];
+				playerskin = skins[player->skin];
 				playerskin->records.tumbletime++;
 			}
 		}
@@ -8648,13 +8648,13 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			for (doubler = 0; doubler < 2; doubler++)
 			{
 				fixed_t heightOffset = player->mo->height + (24*player->mo->scale);
-				if (P_IsObjectFlipped(player->mo)) 
+				if (P_IsObjectFlipped(player->mo))
 				{
 					// This counteracts the offset added by K_FlipFromObject so it looks seamless from non-flipped.
 					heightOffset += player->mo->height - FixedMul(player->mo->scale, player->mo->height);
 					heightOffset *= P_MobjFlip(player->mo); // Fleep.
 				}
-				
+
 				mobj_t *debtflag = P_SpawnMobj(player->mo->x + player->mo->momx, player->mo->y + player->mo->momy,
 					player->mo->z + P_GetMobjZMovement(player->mo) + heightOffset, MT_THOK);
 
@@ -13285,7 +13285,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							if (player->curshield != KSHIELD_BUBBLE)
 							{
 								mobj_t *shield = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_BUBBLESHIELD);
-								// MT_BUBBLESHIELD doesn't have MF_NOBLOCKMAP so we need to remove this manually.	
+								// MT_BUBBLESHIELD doesn't have MF_NOBLOCKMAP so we need to remove this manually.
 								// Otherwise if you roll a bubble shield while flipped, the visuals look too mismatched.
 								shield->eflags &= ~MFE_VERTICALFLIP;
 								P_SetScale(shield, (shield->destscale = (5*shield->destscale)>>2));

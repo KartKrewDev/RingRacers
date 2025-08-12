@@ -881,7 +881,7 @@ static void ForceAllSkins(INT32 forcedskin)
 		if (!playeringame[g_localplayers[i]])
 			continue;
 
-		CV_StealthSet(&cv_skin[i], skins[forcedskin].name);
+		CV_StealthSet(&cv_skin[i], skins[forcedskin]->name);
 	}
 }
 
@@ -975,7 +975,7 @@ static void SendNameAndColor(const UINT8 n)
 	// Don't change skin if the server doesn't want you to.
 	if (!CanChangeSkin(playernum))
 	{
-		CV_StealthSet(&cv_skin[n], skins[player->skin].name);
+		CV_StealthSet(&cv_skin[n], skins[player->skin]->name);
 	}
 
 	// check if player has the skin loaded (cv_skin may have
@@ -996,7 +996,7 @@ static void SendNameAndColor(const UINT8 n)
 
 	if (sendColor == SKINCOLOR_NONE)
 	{
-		sendColor = skins[cv_skin[n].value].prefcolor;
+		sendColor = skins[cv_skin[n].value]->prefcolor;
 	}
 
 	if (sendFollowerColor == SKINCOLOR_NONE)
@@ -1014,7 +1014,7 @@ static void SendNameAndColor(const UINT8 n)
 	// Don't send if everything was identical.
 	if (!strcmp(cv_playername[n].string, player_names[playernum])
 		&& sendColor == player->skincolor
-		&& !stricmp(cv_skin[n].string, skins[player->skin].name)
+		&& !stricmp(cv_skin[n].string, skins[player->skin]->name)
 		&& !stricmp(cv_follower[n].string,
 			(player->followerskin < 0 ? "None" : followers[player->followerskin].name))
 		&& sendFollowerColor == player->followercolor)
@@ -1194,7 +1194,7 @@ static void Got_NameAndColor(const UINT8 **cp, INT32 playernum)
 		SetPlayerSkinByNum(playernum, forcedskin);
 
 		if (localplayer != -1)
-			CV_StealthSet(&cv_skin[localplayer], skins[forcedskin].name);
+			CV_StealthSet(&cv_skin[localplayer], skins[forcedskin]->name);
 	}
 	else
 	{
@@ -7038,7 +7038,7 @@ static void Skin_OnChange(const UINT8 p)
 	if (!CV_CheatsEnabled() && !(netgame || K_CanChangeRules(false))
 		&& (gamestate != GS_WAITINGPLAYERS)) // allows command line -warp x +skin y
 	{
-		CV_StealthSet(&cv_skin[p], skins[players[g_localplayers[p]].skin].name);
+		CV_StealthSet(&cv_skin[p], skins[players[g_localplayers[p]].skin]->name);
 		return;
 	}
 
@@ -7049,7 +7049,7 @@ static void Skin_OnChange(const UINT8 p)
 	else
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment.\n"));
-		CV_StealthSet(&cv_skin[p], skins[players[g_localplayers[p]].skin].name);
+		CV_StealthSet(&cv_skin[p], skins[players[g_localplayers[p]].skin]->name);
 	}
 }
 

@@ -1448,7 +1448,7 @@ static void R_ParseSpriteInfoSkin(struct ParseSpriteInfoState *parser)
 
 static void copy_to_skin (struct ParseSpriteInfoState *parser, INT32 skinnum)
 {
-	skin_t *skin = &skins[skinnum];
+	skin_t *skin = skins[skinnum];
 	spriteinfo_t *sprinfo = skin->sprinfo;
 
 	if (parser->any)

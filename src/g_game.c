@@ -2205,9 +2205,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	if (betweenmaps)
 	{
 		fakeskin = MAXSKINS;
-		kartspeed = skins[players[player].skin].kartspeed;
-		kartweight = skins[players[player].skin].kartweight;
-		charflags = skins[players[player].skin].flags;
+		kartspeed = skins[players[player].skin]->kartspeed;
+		kartweight = skins[players[player].skin]->kartweight;
+		charflags = skins[players[player].skin]->flags;
 
 		for (i = 0; i < LAP__MAX; i++)
 		{
@@ -2218,7 +2218,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	{
 		UINT32 skinflags = (demo.playback)
 			? demo.skinlist[demo.currentskinid[player]].flags
-			: skins[players[player].skin].flags;
+			: skins[players[player].skin]->flags;
 
 		fakeskin = players[player].fakeskin;
 		kartspeed = players[player].kartspeed;
@@ -5179,7 +5179,7 @@ void G_DeferedInitNew(boolean pencoremode, INT32 map, INT32 pickedchar, UINT8 ss
 	}
 
 	SetPlayerSkinByNum(consoleplayer, pickedchar);
-	CV_StealthSet(&cv_skin[0], skins[pickedchar].name);
+	CV_StealthSet(&cv_skin[0], skins[pickedchar]->name);
 
 	if (color != SKINCOLOR_NONE)
 	{

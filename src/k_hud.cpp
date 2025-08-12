@@ -2508,7 +2508,7 @@ void PositionFacesInfo::draw_1p()
 
 		skinflags = (demo.playback)
 			? demo.skinlist[demo.currentskinid[rankplayer[i]]].flags
-			: skins[players[rankplayer[i]].skin].flags;
+			: skins[players[rankplayer[i]].skin]->flags;
 
 		// Flip SF_IRONMAN portraits, but only if they're transformed
 		if (skinflags & SF_IRONMAN
@@ -2525,7 +2525,7 @@ void PositionFacesInfo::draw_1p()
 		if (players[rankplayer[i]].mo->color)
 		{
 			if ((skin_t*)players[rankplayer[i]].mo->skin)
-				workingskin = (skin_t*)players[rankplayer[i]].mo->skin - skins;
+				workingskin = ((skin_t*)players[rankplayer[i]].mo->skin)->skinnum;
 			else
 				workingskin = players[rankplayer[i]].skin;
 
@@ -4569,7 +4569,7 @@ static void K_drawKartMinimap(void)
 		{
 			if (g->mo && !P_MobjWasRemoved(g->mo) && g->mo->skin)
 			{
-				skin = ((skin_t*)g->mo->skin)-skins;
+				skin = ((skin_t*)g->mo->skin)->skinnum;
 
 				workingPic = R_CanShowSkinInDemo(skin) ? faceprefix[skin][FACE_MINIMAP] : kp_unknownminimap;
 
@@ -4646,7 +4646,7 @@ static void K_drawKartMinimap(void)
 			}
 			else
 			{
-				skin = ((skin_t*)mobj->skin)-skins;
+				skin = ((skin_t*)mobj->skin)->skinnum;
 
 				workingPic = R_CanShowSkinInDemo(skin) ? faceprefix[skin][FACE_MINIMAP] : kp_unknownminimap;
 
@@ -4846,7 +4846,7 @@ static void K_drawKartMinimap(void)
 		}
 		else
 		{
-			skin = ((skin_t*)mobj->skin)-skins;
+			skin = ((skin_t*)mobj->skin)->skinnum;
 
 			workingPic = R_CanShowSkinInDemo(skin) ? faceprefix[skin][FACE_MINIMAP] : kp_unknownminimap;
 
@@ -4882,7 +4882,7 @@ static void K_drawKartMinimap(void)
 					ang = ANGLE_180 - ang;
 
 				if (skin && mobj->color && !mobj->colorized // relevant to redo
-				&& skins[skin].starttranscolor != skins[0].starttranscolor) // redoing would have an affect
+				&& skins[skin]->starttranscolor != skins[0]->starttranscolor) // redoing would have an affect
 				{
 					colormap = R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(mobj->color), GTC_CACHE);
 				}

@@ -393,7 +393,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 					snprintf(data.headerstring,
 						sizeof data.headerstring,
 						"%s",
-						R_CanShowSkinInDemo(players[i].skin) ? skins[players[i].skin].realname : "???");
+						R_CanShowSkinInDemo(players[i].skin) ? skins[players[i].skin]->realname : "???");
 				}
 
 				data.showroundnum = true;
