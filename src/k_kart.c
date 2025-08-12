@@ -4128,6 +4128,13 @@ SINT8 K_GetForwardMove(const player_t *player)
 		return 0;
 	}
 
+	// Prevent 1-tic movment when missing same-frame E-brake shortcut trying to TA spindash
+	// (Movement starts the timer in TA, so this is the only context where this matters)
+	if (G_TimeAttackStart() && leveltime < starttime && (player->oldcmd.buttons & BT_EBRAKEMASK) == 0)
+	{
+		return 0;
+	}
+
 	if (player->sneakertimer || player->panelsneakertimer || player->weaksneakertimer || player->spindashboost
 		|| (((gametyperules & (GTR_ROLLINGSTART|GTR_CIRCUIT)) == (GTR_ROLLINGSTART|GTR_CIRCUIT)) && (leveltime < TICRATE/2)))
 	{
@@ -11150,7 +11157,7 @@ void K_KartResetPlayerColor(player_t *player)
 		player->mo->colorized = true;
 		player->mo->color = (player->ballhogburst % 2) ? SKINCOLOR_CRIMSON : SKINCOLOR_BLACK;
 		fullbright = true;
-		goto finalise;		
+		goto finalise;
 	}
 
 	if (player->ballhogcharge && player->ballhogburst >= (BALLHOG_BURST_FUSE/3))
@@ -11160,7 +11167,7 @@ void K_KartResetPlayerColor(player_t *player)
 			player->mo->colorized = true;
 			player->mo->color = SKINCOLOR_CRIMSON;
 			fullbright = true;
-			goto finalise;		
+			goto finalise;
 		}
 	}
 
@@ -14910,7 +14917,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 											P_Thrust(player->mo, player->mo->angle, (40 + 10 * player->itemamount) * player->mo->scale);
 											player->pflags2 |= PF2_FASTTUMBLEBOUNCE;
-											
+
 											/*
 											if (onground)
 											{
