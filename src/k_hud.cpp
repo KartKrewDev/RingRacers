@@ -8296,16 +8296,17 @@ void K_DrawMarginSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean isS
 		V_DrawFixedPatch((x + width)*FRACUNIT, y*FRACUNIT, FRACUNIT, flags|V_FLIP, stickerEnd, NULL);
 }
 
-// common fonts: 0 = thin, 8 = menu. sorry we have to launder a C++ enum in here
 INT32 K_DrawGameControl(UINT16 x, UINT16 y, UINT8 player, const char *str, UINT8 alignment, UINT8 font, UINT32 flags)
 {
 	using srb2::Draw;
 
-	Draw::TextElement text = Draw::TextElement().as(player).parse(str).font((Draw::Font)font);
+	Draw draw = Draw(x, y).align((Draw::Align)alignment).flags(flags);
+
+	Draw::TextElement text = Draw::TextElement().as(player).parse(str).font(draw.fontno_to_font(font));
 
 	INT32 width = text.width();
 
-	Draw(x, y).align((srb2::Draw::Align)alignment).flags(flags).text(text);
+	draw.text(text);
 
 	return width;
 }
