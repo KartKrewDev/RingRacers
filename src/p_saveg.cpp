@@ -4834,7 +4834,7 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 	if (diff2 & MD2_CVMEM)
 		mobj->cvmem = READINT32(save->p);
 	if (diff2 & MD2_SKIN)
-		mobj->skin = &skins[READUINT8(save->p)];
+		mobj->skin = skins[READUINT8(save->p)];
 	if (diff2 & MD2_COLOR)
 		mobj->color = READUINT16(save->p);
 	if (diff2 & MD2_EXTVAL1)
