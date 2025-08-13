@@ -7346,6 +7346,8 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			const char *gtname = "Find your prize...";
 			UINT16 mapnum = M_UnlockableMapNum(ref);
 
+			y = BASEVIDHEIGHT-(9+3);
+
 			if (mapnum >= nummapheaders
 				|| mapheaderinfo[mapnum] == NULL
 				|| mapheaderinfo[mapnum]->menuflags & LF2_HIDEINMENU)
@@ -7389,7 +7391,17 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 						guessgt = GT_SPECIAL;
 					}
 
-					if (guessgt == GT_SPECIAL && !M_SecretUnlocked(SECRET_SPECIALATTACK, true))
+					if (setup_numplayers <= 1 && guessgt == GT_TUTORIAL)
+					{
+						// Only for 1p
+						K_DrawGameControl(
+							1, y, 0,
+							"<a_animated> <orange>Play Tutorial",
+							0, TINY_FONT, 0
+						);
+						gtname = NULL;
+					}
+					else if (guessgt == GT_SPECIAL && !M_SecretUnlocked(SECRET_SPECIALATTACK, true))
 					{
 						gtname = "???";
 					}
@@ -7409,7 +7421,10 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 					NULL);
 			}
 
-			V_DrawThinString(1, BASEVIDHEIGHT-(9+3), 0, gtname);
+			if (gtname)
+			{
+				V_DrawThinString(1, y, 0, gtname);
+			}
 
 			break;
 		}
@@ -7589,13 +7604,13 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 					pushed = strcmp(song, mapheaderinfo[map]->encoremusname[musicid]) == 0;
 				}
 
-				if (!pushed)
-					K_DrawGameControl(x, y, 0, "<l> <sky>E Side", 0, TINY_FONT, 0);
-				else
-					K_DrawGameControl(x, y, 0, "<l_pressed> <gray>E Side", 0, TINY_FONT, 0);
-				// K_drawButton(x&FRACUNIT, y*FRACUNIT, 0, kp_button_l, pushed);
-				// x += SHORT(kp_button_l[0]->width);
-				// V_DrawThinString(x, y + 1, (pushed ? V_GRAYMAP : highlightflags), "E Side");
+				K_DrawGameControl(
+					x, y, 0,
+					(!pushed)
+						? "<l> <magenta>E Side"
+						: "<l_pressed> <gray>E Side",
+					0, TINY_FONT, 0
+				);
 
 				x = 8;
 				y -= 10;
@@ -7614,13 +7629,13 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 					pushed = strcmp(song, mapheaderinfo[map]->musname[musicid]) == 0;
 				}
 
-				if (!pushed)
-					K_DrawGameControl(x, y, 0, "<a> <sky>Play CD", 0, TINY_FONT, 0);
-				else
-					K_DrawGameControl(x, y, 0, "<a_pressed> <gray>Play CD", 0, TINY_FONT, 0);
-				// K_drawButton(x*FRACUNIT, y*FRACUNIT, 0, kp_button_a[1], pushed);
-				// x += SHORT(kp_button_a[1][0]->width);
-				// V_DrawThinString(x, y + 1, (pushed ? V_GRAYMAP : highlightflags), "Play CD");
+				K_DrawGameControl(
+					x, y, 0,
+					(!pushed)
+						? "<a> <sky>Play CD"
+						: "<a_pressed> <gray>Play CD",
+					0, TINY_FONT, 0
+				);
 			}
 		}
 		default:

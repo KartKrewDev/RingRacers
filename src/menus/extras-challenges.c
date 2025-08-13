@@ -1155,8 +1155,51 @@ boolean M_ChallengesInputs(INT32 ch)
 		if (challengesmenu.currentunlock < MAXUNLOCKABLES
 			&& gamedata->unlocked[challengesmenu.currentunlock])
 		{
+			unlockable_t *ref = &unlockables[challengesmenu.currentunlock];
 			switch (unlockables[challengesmenu.currentunlock].type)
 			{
+				case SECRET_MAP:
+				{
+					// Only for 1p
+					if (setup_numplayers <= 1 && M_MenuConfirmPressed(pid))
+					{
+						// Map exists...
+						UINT16 mapnum = M_UnlockableMapNum(ref);
+						if (mapnum < nummapheaders && mapheaderinfo[mapnum])
+						{
+							// is tutorial...
+							INT32 guessgt = G_GuessGametypeByTOL(mapheaderinfo[mapnum]->typeoflevel);
+							if (guessgt == GT_TUTORIAL)
+							{
+								M_SetMenuDelay(pid);
+
+								multiplayer = true;
+
+								restoreMenu = currentMenu;
+								restorelevellist = levellist;
+
+								// mild hack
+								levellist.newgametype = guessgt;
+								levellist.netgame = false;
+								M_MenuToLevelPreamble(0, false);
+
+								D_MapChange(
+									mapnum+1,
+									guessgt,
+									false,
+									true,
+									1,
+									false,
+									false
+								);
+
+								M_CloseChallenges();
+								M_ClearMenus(true);
+							}
+						}
+					}
+					break;
+				}
 				case SECRET_ALTTITLE:
 				{
 					if (M_MenuConfirmPressed(pid))
@@ -1185,7 +1228,7 @@ boolean M_ChallengesInputs(INT32 ch)
 					{
 						const char *trymusname = NULL;
 
-						UINT16 map = M_UnlockableMapNum(&unlockables[challengesmenu.currentunlock]);
+						UINT16 map = M_UnlockableMapNum(ref);
 						if (map >= nummapheaders
 							|| !mapheaderinfo[map])
 						{
