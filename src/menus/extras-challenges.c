@@ -1211,6 +1211,31 @@ boolean M_ChallengesInputs(INT32 ch)
 					}
 					break;
 				}
+				case SECRET_COLOR:
+				{
+					if (setup_numplayers <= 1 && cv_lastprofile[0].value != PROFILE_GUEST && M_MenuConfirmPressed(pid))
+					{
+						INT32 colorid = M_UnlockableColorNum(ref);
+						if (colorid != SKINCOLOR_NONE)
+						{
+							profile_t *pr = PR_GetProfile(cv_lastprofile[0].value);
+
+							if (pr && pr->color != colorid)
+							{
+								pr->color = colorid;
+								CV_SetValue(&cv_playercolor[0], colorid);
+								if (setup_numplayers)
+								{
+									G_SetPlayerGamepadIndicatorToPlayerColor(0);
+								}
+
+								S_StartSound(NULL, sfx_s3k63);
+								M_SetMenuDelay(pid);
+							}
+						}
+					}
+					break;
+				}
 				case SECRET_ALTMUSIC:
 				{
 					UINT8 trymus = 0, musicid = MAXMUSNAMES;

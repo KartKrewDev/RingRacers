@@ -7264,6 +7264,23 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 
 			// Draw reference for character bathed in coloured slime
 			M_DrawCharacterSprite(x, y, skin, SPR2_STIN, 7, 0, 0, colormap);
+
+			if (setup_numplayers <= 1 && cv_lastprofile[0].value != PROFILE_GUEST)
+			{
+				profile_t *pr = PR_GetProfile(cv_lastprofile[0].value);
+
+				if (pr)
+				{
+					K_DrawGameControl(
+						8, BASEVIDHEIGHT-16, 0,
+						(pr->color != colorid)
+							? "<a> <sky>Set on Profile"
+							: "<a_pressed> <gray>Set on Profile",
+						0, TINY_FONT, 0
+					);
+				}
+			}
+
 			break;
 		}
 		case SECRET_CUP:
