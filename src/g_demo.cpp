@@ -2253,7 +2253,6 @@ void G_SetDemoCheckpointTiming(player_t *player, tic_t time, UINT8 checkpoint)
 			lowest = g->splits[checkpoint];
 			lowestskin = g->initialskin;
 			lowestcolor = g->initialcolor;
-			CONS_Printf("Found ghost with lowestskin %d lowestcolor %d\n", lowestskin, lowestcolor);
 		}
 	}
 
@@ -3648,8 +3647,6 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 
 	gh->initialskin = initialskin;
 	gh->initialcolor = initialcolor;
-
-	CONS_Printf("Adding ghost with initialskin %d initialcolor %d\n", gh->initialskin, gh->initialcolor);
 
 	CONS_Printf(M_GetText("Added ghost %s from %s\n"), name, defdemoname);
 }
