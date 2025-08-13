@@ -1251,6 +1251,8 @@ void D_ClearState(void)
 
 	G_SetGamestate(GS_NULL);
 	wipegamestate = GS_NULL;
+
+	demo.waitingfortally = false;
 }
 
 static boolean g_deferredtitle = false;
