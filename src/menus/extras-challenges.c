@@ -375,10 +375,13 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 	if ((challengesmenu.pending = (newunlock != MAXUNLOCKABLES)))
 	{
 		Music_StopAll();
-		MISC_ChallengesDef.prevMenu = desiredmenu;
+		if (desiredmenu && desiredmenu != &MISC_ChallengesDef)
+		{
+			MISC_ChallengesDef.prevMenu = desiredmenu;
+		}
 	}
 
-	if (challengesmenu.pending || desiredmenu == NULL)
+	if (challengesmenu.pending || desiredmenu == &MISC_ChallengesDef)
 	{
 		static boolean firstopen = true;
 
@@ -413,9 +416,14 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 
 		if (challengesmenu.pending)
 			M_ChallengesAutoFocus(newunlock, true);
-		else if (newunlock >= MAXUNLOCKABLES && gamedata->pendingkeyrounds > 0
-			&& (gamedata->chaokeys < GDMAX_CHAOKEYS))
-			challengesmenu.chaokeyadd = true;
+		else
+		{
+			if (newunlock >= MAXUNLOCKABLES && gamedata->pendingkeyrounds > 0
+				&& (gamedata->chaokeys < GDMAX_CHAOKEYS))
+				challengesmenu.chaokeyadd = true;
+
+			M_ChallengesAutoFocus(UINT16_MAX, true);
+		}
 
 		M_CacheChallengeTiles();
 
@@ -429,15 +437,21 @@ void M_Challenges(INT32 choice)
 {
 	(void)choice;
 
-	M_InterruptMenuWithChallenges(NULL);
+	M_InterruptMenuWithChallenges(&MISC_ChallengesDef);
 	MISC_ChallengesDef.prevMenu = currentMenu;
 
-	if (gamedata->challengegrid != NULL && !challengesmenu.pending)
-	{
-		M_ChallengesAutoFocus(UINT16_MAX, true);
-	}
-
 	M_SetupNextMenu(&MISC_ChallengesDef, false);
+}
+
+static void M_CloseChallenges(void)
+{
+	Music_Stop("challenge_altmusic");
+
+	Z_Free(challengesmenu.extradata);
+	challengesmenu.extradata = NULL;
+
+	Z_Free(challengesmenu.unlockcondition);
+	challengesmenu.unlockcondition = NULL;
 }
 
 boolean M_CanKeyHiliTile(void)
@@ -954,19 +968,12 @@ boolean M_ChallengesInputs(INT32 ch)
 	{
 		if (M_MenuBackPressed(pid) || start)
 		{
-			Music_Stop("challenge_altmusic");
-
 			currentMenu->prevMenu = M_SpecificMenuRestore(currentMenu->prevMenu);
 
 			M_GoBack(0);
 			M_SetMenuDelay(pid);
 
-			Z_Free(challengesmenu.extradata);
-			challengesmenu.extradata = NULL;
-
-			if (challengesmenu.unlockcondition)
-				Z_Free(challengesmenu.unlockcondition);
-			challengesmenu.unlockcondition = NULL;
+			M_CloseChallenges();
 
 			return true;
 		}
