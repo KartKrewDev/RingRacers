@@ -7654,6 +7654,31 @@ void K_drawKartHUD(void)
 	{
 		if (g_emeraldWin)
 			K_drawEmeraldWin(false);
+
+		// Tacitcal Normie Countermeasure
+		INT32 dfade = K_GetDialogueFade();
+		if (dfade)
+		{
+			V_DrawFadeScreen(31, dfade); // Fade out
+
+			srb2::Draw normiedraw = srb2::Draw()
+					.clipx(0.f, BASEVIDWIDTH)
+					.y((BASEVIDHEIGHT - 36)/2)
+					.flags((10 - dfade)<<FF_TRANSSHIFT)
+					.font(srb2::Draw::Font::kGenesis);
+
+			const char *normietext = "COMMUNICATION IN PROGRESS!! ";
+			INT32 normiew = srb2::Draw::TextElement(normietext).font(srb2::Draw::Font::kGenesis).width();
+			INT32 normiex = -((static_cast<INT32>(timeinmap)) % normiew);
+
+			while (normiex < BASEVIDWIDTH)
+			{
+				normiedraw
+					.x(normiex)
+					.text(normietext);
+				normiex += normiew;
+			}
+		}
 	}
 
 	// In case of font debugging break glass

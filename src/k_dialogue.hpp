@@ -47,6 +47,7 @@ public:
 	void Draw(void);
 
 	INT32 SlideAmount(fixed_t multiplier);
+	INT32 FadeAmount(void);
 
 	void Dismiss(void);
 	void Unset(void);
@@ -94,6 +95,7 @@ private:
 
 	bool active;
 	fixed_t slide;
+	INT32 fade;
 
 	bool dismissable;
 	bool freeze;
