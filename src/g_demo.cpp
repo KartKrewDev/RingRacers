@@ -2251,9 +2251,9 @@ void G_SetDemoCheckpointTiming(player_t *player, tic_t time, UINT8 checkpoint)
 		if (lowest > g->splits[checkpoint])
 		{
 			lowest = g->splits[checkpoint];
-			lowestskin = ((skin_t*)g->mo->skin)->skinnum;
-			lowestcolor = g->mo->color;
-
+			lowestskin = g->initialskin;
+			lowestcolor = g->initialcolor;
+			CONS_Printf("Found ghost with lowestskin %d lowestcolor %d\n", lowestskin, lowestcolor);
 		}
 	}
 
@@ -3389,6 +3389,8 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	UINT8 *p;
 	mapthing_t *mthing;
 	UINT16 count, ghostversion;
+	UINT16 initialskin = 0;
+	UINT16 initialcolor = 0;
 	skin_t *ghskin = skins[0];
 	UINT8 worknumskins;
 	UINT32 num_classes;
@@ -3538,7 +3540,11 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	// Skin
 	i = READUINT8(p);
 	if (i < worknumskins)
+	{
 		ghskin = skins[skinlist[i].mapping];
+		initialskin = skinlist[i].mapping;
+	}
+
 	p++; // lastfakeskin
 
 	p++; // team
@@ -3630,14 +3636,20 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	gh->mo->skin = gh->oldmo.skin = ghskin;
 
 	// Set color
-	gh->mo->color = ((skin_t*)gh->mo->skin)->prefcolor;
+	gh->mo->color = initialcolor = ((skin_t*)gh->mo->skin)->prefcolor;
 	for (i = 0; i < numskincolors; i++)
 		if (!stricmp(skincolors[i].name,color))
 		{
 			gh->mo->color = (UINT16)i;
+			initialcolor = (UINT16)i;
 			break;
 		}
 	gh->oldmo.color = gh->mo->color;
+
+	gh->initialskin = initialskin;
+	gh->initialcolor = initialcolor;
+
+	CONS_Printf("Adding ghost with initialskin %d initialcolor %d\n", gh->initialskin, gh->initialcolor);
 
 	CONS_Printf(M_GetText("Added ghost %s from %s\n"), name, defdemoname);
 }

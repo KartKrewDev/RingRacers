@@ -201,6 +201,8 @@ struct DemoBufferSizes
 struct demoghost {
 	UINT8 checksum[16];
 	UINT8 *buffer, *p, color;
+	UINT16 initialskin;
+	UINT16 initialcolor;
 	UINT8 fadein;
 	UINT16 version;
 	UINT8 numskins;
