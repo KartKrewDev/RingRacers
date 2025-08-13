@@ -518,7 +518,7 @@ void SetFakePlayerSkin(player_t* player, INT32 skinid)
 		player->charflags = skins[skinid]->flags;
 	}
 
-	player->mo->skin = &skins[skinid];
+	player->mo->skin = skins[skinid];
 }
 
 // Loudly rerandomize
