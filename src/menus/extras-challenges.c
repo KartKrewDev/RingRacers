@@ -82,6 +82,10 @@ static void M_UpdateChallengeGridVisuals(void)
 
 	challengesmenu.unlockcount[CMC_UNLOCKED] = 0;
 	challengesmenu.unlockcount[CMC_TOTAL] = 0;
+	challengesmenu.unlockcount[CMC_KEYED] = 0;
+	challengesmenu.unlockcount[CMC_MAJORSKIPPED] = 0;
+
+//#define MAJORDISTINCTION -- The "basic" medal is basically never seen because Major challenges are usually completed last before 101%. Correct that with this
 
 	for (i = 0; i < MAXUNLOCKABLES; i++)
 	{
@@ -106,12 +110,14 @@ static void M_UpdateChallengeGridVisuals(void)
 
 		challengesmenu.unlockcount[CMC_KEYED]++;
 
+#ifdef MAJORDISTINCTION
 		if (unlockables[i].majorunlock == false)
 		{
 			continue;
 		}
 
 		challengesmenu.unlockcount[CMC_MAJORSKIPPED]++;
+#endif
 	}
 
 	challengesmenu.unlockcount[CMC_PERCENT] =
@@ -125,7 +131,9 @@ static void M_UpdateChallengeGridVisuals(void)
 	challengesmenu.unlockcount[CMC_MEDALFILLED] =
 		(medalheight * (
 			challengesmenu.unlockcount[CMC_UNLOCKED]
+#ifdef MAJORDISTINCTION
 			- challengesmenu.unlockcount[CMC_MAJORSKIPPED]
+#endif
 		)) / challengesmenu.unlockcount[CMC_TOTAL];
 
 	if (challengesmenu.unlockcount[CMC_PERCENT] == 100)
@@ -135,7 +143,10 @@ static void M_UpdateChallengeGridVisuals(void)
 			challengesmenu.unlockcount[CMC_MEDALID] = 2;
 			challengesmenu.unlockcount[CMC_PERCENT]++; // 101%
 		}
-		else if (challengesmenu.unlockcount[CMC_MAJORSKIPPED] == 0)
+		else
+#ifdef MAJORDISTINCTION
+			if (challengesmenu.unlockcount[CMC_MAJORSKIPPED] == 0)
+#endif
 		{
 			challengesmenu.unlockcount[CMC_MEDALID] = 1;
 		}

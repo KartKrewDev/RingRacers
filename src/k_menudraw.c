@@ -7914,11 +7914,6 @@ static void M_DrawChallengeScrollBar(UINT8 *flashmap)
 	V_DrawFill(barx + hilix, bary-1,    hiliw, 1, 0);
 	V_DrawFill(barx + hilix, bary+barh, hiliw, 1, 0);
 
-	INT32 mindiscouragement = 2; // skipping major unlocks is just a LITTLE cringe
-	if (challengesmenu.unlockcount[CMC_PERCENT] == 100
-	&& challengesmenu.unlockcount[CMC_MAJORSKIPPED] == 0)
-		mindiscouragement = 1; // so someone looking for 101% isn't hunting forever
-
 	// unbounded so that we can do the last remaining completionamount draw
 	nextstep = numincolumn = completionamount = skiplevel = 0;
 	for (i = 0; ; i++)
@@ -7932,7 +7927,7 @@ static void M_DrawChallengeScrollBar(UINT8 *flashmap)
 				if (completionamount >= numincolumn)
 				{
 					// If any have been skipped, we subtract a little for awareness...
-					completionamount = (skiplevel >= mindiscouragement) ? 9 : 10;
+					completionamount = skiplevel ? 9 : 10;
 				}
 				else
 				{
@@ -7978,9 +7973,9 @@ static void M_DrawChallengeScrollBar(UINT8 *flashmap)
 
 			unlockable_t *ref = &unlockables[gamedata->challengegrid[i]];
 
-			if (skiplevel < 2 && M_Achieved(ref->conditionset - 1) == false)
+			if (!skiplevel && M_Achieved(ref->conditionset - 1) == false)
 			{
-				skiplevel = ref->majorunlock ? 2 : 1;
+				skiplevel = 1;
 			}
 		}
 
