@@ -6933,8 +6933,42 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flash
 			}
 
 			case SECRET_MAP:
-				iconid = 14;
+			{
+				UINT16 mapnum = M_UnlockableMapNum(ref);
+				if (mapnum < nummapheaders && mapheaderinfo[mapnum]
+					&& (
+					( // Check for visitation
+						(mapheaderinfo[mapnum]->menuflags & LF2_NOVISITNEEDED)
+						|| (mapheaderinfo[mapnum]->records.mapvisited & MV_VISITED)
+					) && ( // Check for completion
+						!(mapheaderinfo[mapnum]->menuflags & LF2_FINISHNEEDED)
+						|| (mapheaderinfo[mapnum]->records.mapvisited & MV_BEATEN)
+					)
+				))
+				{
+					if (ref->majorunlock)
+					{
+						K_DrawMapAsFace(
+							(x + 5) + (32*(FRACUNIT-accordion))/(2*FRACUNIT), (y + 5),
+							tileflags,
+							mapnum,
+							NULL, accordion, 2
+						);
+					}
+					else
+					{
+						K_DrawMapAsFace(
+							(x + 2) + (16*(FRACUNIT-accordion))/(2*FRACUNIT), (y + 2),
+							tileflags,
+							mapnum,
+							NULL, accordion, 1
+						);
+					}
+					pat = NULL;
+				}
+				iconid = 0; //14; -- This one suits a little better for "go complete this level normally"
 				break;
+			}
 			case SECRET_ALTMUSIC:
 				iconid = 16;
 				break;
@@ -7004,29 +7038,32 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flash
 		}
 	}
 
-	siz = (SHORT(pat->width) << FRACBITS);
+	if (pat)
+	{
+		siz = (SHORT(pat->width) << FRACBITS);
 
-	if (!siz)
-		; // prevent div/0
-	else if (ref->majorunlock)
-	{
-		V_DrawStretchyFixedPatch(
-			((x + 5)*FRACUNIT) + (32*(FRACUNIT-accordion)/2), (y + 5)*FRACUNIT,
-			FixedDiv(32*accordion, siz),
-			FixedDiv(32 << FRACBITS, siz),
-			tileflags, pat,
-			colormap
-		);
-	}
-	else
-	{
-		V_DrawStretchyFixedPatch(
-			((x + 2)*FRACUNIT) + (16*(FRACUNIT-accordion)/2), (y + 2)*FRACUNIT,
-			FixedDiv(16*accordion, siz),
-			FixedDiv(16 << FRACBITS, siz),
-			tileflags, pat,
-			colormap
-		);
+		if (!siz)
+			; // prevent div/0
+		else if (ref->majorunlock)
+		{
+			V_DrawStretchyFixedPatch(
+				((x + 5)*FRACUNIT) + (32*(FRACUNIT-accordion))/2, (y + 5)*FRACUNIT,
+				FixedDiv(32*accordion, siz),
+				FixedDiv(32 << FRACBITS, siz),
+				tileflags, pat,
+				colormap
+			);
+		}
+		else
+		{
+			V_DrawStretchyFixedPatch(
+				((x + 2)*FRACUNIT) + (16*(FRACUNIT-accordion))/2, (y + 2)*FRACUNIT,
+				FixedDiv(16*accordion, siz),
+				FixedDiv(16 << FRACBITS, siz),
+				tileflags, pat,
+				colormap
+			);
+		}
 	}
 
 drawborder:
