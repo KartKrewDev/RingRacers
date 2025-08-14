@@ -7207,6 +7207,25 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 				colormap = R_GetTranslationColormap(skin, skins[skin]->prefcolor, GTC_MENUCACHE);
 				M_DrawCharacterSprite(x, y, skin, SPR2_STIN, 7, 0, 0, colormap);
 
+				y = (BASEVIDHEIGHT-14);
+
+				if (setup_numplayers <= 1 && cv_lastprofile[0].value != PROFILE_GUEST)
+				{
+					profile_t *pr = PR_GetProfile(cv_lastprofile[0].value);
+
+					if (pr)
+					{
+						K_DrawGameControl(
+							4, y, 0,
+							strcmp(pr->skinname, skins[skin]->name)
+								? "<a> <sky>Set on Profile"
+								: "<a_pressed> <gray>Set on Profile",
+							0, TINY_FONT, 0
+						);
+						y -= 14;
+					}
+				}
+
 				for (i = 0; i < skin; i++)
 				{
 					if (!R_SkinUsable(-1, i, false))
@@ -7220,7 +7239,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 					break;
 				}
 
-				M_DrawCharacterIconAndEngine(4, BASEVIDHEIGHT-(4+16), i, colormap, skin);
+				M_DrawCharacterIconAndEngine(4, y-6, i, colormap, skin);
 			}
 			break;
 		}
@@ -7242,9 +7261,28 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 				colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
 				M_DrawFollowerSprite(x - 16, y, fskin, false, 0, colormap, NULL);
 
+				y = (BASEVIDHEIGHT-14);
+
+				if (setup_numplayers <= 1 && cv_lastprofile[0].value != PROFILE_GUEST)
+				{
+					profile_t *pr = PR_GetProfile(cv_lastprofile[0].value);
+
+					if (pr)
+					{
+						K_DrawGameControl(
+							4, y, 0,
+							strcmp(pr->follower, followers[fskin].name)
+								? "<a> <sky>Set on Profile"
+								: "<a_pressed> <gray>Set on Profile",
+							0, TINY_FONT, 0
+						);
+						y -= 14;
+					}
+				}
+
 				if (followers[fskin].category < numfollowercategories)
 				{
-					V_DrawFixedPatch(4*FRACUNIT, (BASEVIDHEIGHT-(4+16))*FRACUNIT,
+					V_DrawFixedPatch(4*FRACUNIT, (y - 6)*FRACUNIT,
 						FRACUNIT,
 						0, W_CachePatchName(followercategories[followers[fskin].category].icon, PU_CACHE),
 						NULL);
@@ -7272,7 +7310,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 				if (pr)
 				{
 					K_DrawGameControl(
-						8, BASEVIDHEIGHT-16, 0,
+						4, (BASEVIDHEIGHT-14), 0,
 						(pr->color != colorid)
 							? "<a> <sky>Set on Profile"
 							: "<a_pressed> <gray>Set on Profile",
@@ -7363,7 +7401,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			const char *gtname = "Find your prize...";
 			UINT16 mapnum = M_UnlockableMapNum(ref);
 
-			y = BASEVIDHEIGHT-(9+3);
+			y = (BASEVIDHEIGHT-14);
 
 			if (mapnum >= nummapheaders
 				|| mapheaderinfo[mapnum] == NULL
@@ -7412,7 +7450,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 					{
 						// Only for 1p
 						K_DrawGameControl(
-							1, y, 0,
+							4, y, 0,
 							"<a_animated> <orange>Play Tutorial",
 							0, TINY_FONT, 0
 						);
@@ -7440,7 +7478,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 
 			if (gtname)
 			{
-				V_DrawThinString(1, y, 0, gtname);
+				V_DrawThinString(4, y, 0, gtname);
 			}
 
 			break;
@@ -7551,8 +7589,8 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 		}
 		case SECRET_ALTTITLE:
 		{
-			x = 8;
-			y = BASEVIDHEIGHT-16;
+			x = 4;
+			y = BASEVIDHEIGHT-14;
 			V_DrawGamemodeString(x, y - 33, 0, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_MENUCACHE), M_UseAlternateTitleScreen() ? "On" : "Off");
 
 			K_DrawGameControl(x, y, 0, "<a_animated> Toggle", 0, TINY_FONT, 0);
@@ -7605,8 +7643,8 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 				V_DrawFixedPatch(x*FRACUNIT, (y+2)*FRACUNIT, FRACUNIT/2, addflags, patch, NULL);
 			}
 
-			x = 8;
-			y = BASEVIDHEIGHT-16;
+			x = 4;
+			y = (BASEVIDHEIGHT-14);
 
 			const boolean thismusplaying = Music_Playing("challenge_altmusic");
 			boolean pushed = false;
@@ -7629,8 +7667,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 					0, TINY_FONT, 0
 				);
 
-				x = 8;
-				y -= 10;
+				y -= 14;
 			}
 
 			if (musicid < mapheaderinfo[map]->musname_size)

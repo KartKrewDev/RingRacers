@@ -1211,6 +1211,48 @@ boolean M_ChallengesInputs(INT32 ch)
 					}
 					break;
 				}
+				case SECRET_SKIN:
+				{
+					if (setup_numplayers <= 1 && cv_lastprofile[0].value != PROFILE_GUEST && M_MenuConfirmPressed(pid))
+					{
+						INT32 skin = M_UnlockableSkinNum(ref);
+						if (skin != -1)
+						{
+							profile_t *pr = PR_GetProfile(cv_lastprofile[0].value);
+
+							if (pr && strcmp(pr->skinname, skins[skin]->name))
+							{
+								strcpy(pr->skinname, skins[skin]->name);
+								CV_Set(&cv_skin[0], skins[skin]->name);
+
+								S_StartSound(NULL, sfx_s3k63);
+								M_SetMenuDelay(pid);
+							}
+						}
+					}
+					break;
+				}
+				case SECRET_FOLLOWER:
+				{
+					if (setup_numplayers <= 1 && cv_lastprofile[0].value != PROFILE_GUEST && M_MenuConfirmPressed(pid))
+					{
+						INT32 fskin = M_UnlockableFollowerNum(ref);
+						if (fskin != -1)
+						{
+							profile_t *pr = PR_GetProfile(cv_lastprofile[0].value);
+
+							if (pr && strcmp(pr->follower, followers[fskin].name))
+							{
+								strcpy(pr->follower, followers[fskin].name);
+								CV_Set(&cv_follower[0], followers[fskin].name);
+
+								S_StartSound(NULL, sfx_s3k63);
+								M_SetMenuDelay(pid);
+							}
+						}
+					}
+					break;
+				}
 				case SECRET_COLOR:
 				{
 					if (setup_numplayers <= 1 && cv_lastprofile[0].value != PROFILE_GUEST && M_MenuConfirmPressed(pid))
