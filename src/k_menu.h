@@ -1467,6 +1467,8 @@ extern struct challengesmenu_s {
 
 	UINT8 fade;
 
+	UINT8 hornposting;
+
 	boolean cache_secondrowlocked;
 
 	patch_t *tile_category[10][2];

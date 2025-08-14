@@ -7303,22 +7303,49 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 
 				y = (BASEVIDHEIGHT-14);
 
+				const char *actiontext = NULL;
+
 				if (setup_numplayers <= 1 && cv_lastprofile[0].value != PROFILE_GUEST)
 				{
 					profile_t *pr = PR_GetProfile(cv_lastprofile[0].value);
 
-					if (pr)
+					if (pr && strcmp(pr->follower, followers[fskin].name))
 					{
-						K_DrawGameControl(
-							4, y, 0,
-							strcmp(pr->follower, followers[fskin].name)
-								? "<a> <sky>Set on Profile"
-								: "<a_pressed> <gray>Set on Profile",
-							0, TINY_FONT, 0
-						);
-						y -= 14;
+						actiontext = (followers[fskin].hornsound == sfx_melody)
+							? "<a> <aqua>Set on Profile"
+							: "<a> <sky>Set on Profile";
 					}
 				}
+
+				if (!actiontext)
+				{
+					if (followers[fskin].hornsound == sfx_melody)
+					{
+						actiontext = "<a_animated> <aqua>Play Ancient Melody?";
+					}
+					else switch (challengesmenu.hornposting % 4)
+					{
+						default:
+							actiontext = "<a_animated> <sky>Say hello";
+							break;
+						case 1:
+							actiontext = "<a_animated> <sky>Express your feelings";
+							break;
+						case 2:
+							actiontext = "<a_animated> <sky>Celebrate victory";
+							break;
+						case 3:
+							actiontext = "<a_animated> <sky>Announce you are pressing horn";
+							break;
+					}
+				}
+
+				K_DrawGameControl(
+					4, y, 0,
+					actiontext,
+					0, TINY_FONT, 0
+				);
+				y -= 14;
 
 				if (followers[fskin].category < numfollowercategories)
 				{

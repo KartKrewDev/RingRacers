@@ -393,6 +393,7 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 		challengesmenu.tutorialfound = NEXTMAP_INVALID;
 		challengesmenu.chaokeyhold = 0;
 		challengesmenu.unlockcondition = NULL;
+		challengesmenu.hornposting = 0;
 
 		if (firstopen)
 		{
@@ -1251,24 +1252,36 @@ boolean M_ChallengesInputs(INT32 ch)
 				}
 				case SECRET_FOLLOWER:
 				{
-					if (setup_numplayers <= 1 && cv_lastprofile[0].value != PROFILE_GUEST && M_MenuConfirmPressed(pid))
+					if (M_MenuConfirmPressed(pid))
 					{
 						INT32 fskin = M_UnlockableFollowerNum(ref);
 						if (fskin != -1)
 						{
-							profile_t *pr = PR_GetProfile(cv_lastprofile[0].value);
-
-							if (pr && strcmp(pr->follower, followers[fskin].name))
+							if (setup_numplayers <= 1 && cv_lastprofile[0].value != PROFILE_GUEST)
 							{
-								strcpy(pr->follower, followers[fskin].name);
-								CV_Set(&cv_follower[0], followers[fskin].name);
+								profile_t *pr = PR_GetProfile(cv_lastprofile[0].value);
 
-								S_StartSound(NULL, sfx_s3k63);
-								S_StartSound(NULL, followers[fskin].hornsound);
-								M_SetMenuDelay(pid);
+								if (pr && strcmp(pr->follower, followers[fskin].name))
+								{
+									strcpy(pr->follower, followers[fskin].name);
+									CV_Set(&cv_follower[0], followers[fskin].name);
 
-								forceflip = true;
+									challengesmenu.hornposting = 0;
+
+									S_StartSound(NULL, sfx_s3k63);
+									forceflip = true;
+								}
 							}
+
+							if (!forceflip)
+							{
+								challengesmenu.hornposting++;
+							}
+
+							S_StartSound(NULL, followers[fskin].hornsound);
+							M_SetMenuDelay(pid);
+
+							forceflip = true;
 						}
 					}
 					break;
