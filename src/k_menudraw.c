@@ -7622,48 +7622,78 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 				return;
 			}
 
-			spritedef_t *sprdef = &sprites[SPR_ALTM];
-			spriteframe_t *sprframe;
-			patch_t *patch;
-			UINT32 addflags = 0;
+			const char *tune = "challenge_altmusic";
 
-			x -= 10;
-			y += 15;
+			SINT8 pushed = 0;
+			const boolean epossible = (M_SecretUnlocked(SECRET_ENCORE, true)
+				&& musicid < mapheaderinfo[map]->encoremusname_size);
 
-			if (sprdef->numframes)
+			if (challengesmenu.nowplayingtile == ((challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy)
+			&& Music_Playing(tune))
 			{
-				sprframe = &sprdef->spriteframes[0];
-				patch = W_CachePatchNum(sprframe->lumppat[0], PU_CACHE);
+				const char *song = Music_Song(tune);
+				if (epossible
+				&& strcmp(song, mapheaderinfo[map]->encoremusname[musicid]) == 0)
+					pushed = -1;
+				else if (musicid < mapheaderinfo[map]->musname_size
+				&& strcmp(song, mapheaderinfo[map]->musname[musicid]) == 0)
+					pushed = 1;
+			}
 
-				if (sprframe->flip & 1) // Only for first sprite
+			// Draw CD
+			{
+				spritedef_t *sprdef = &sprites[SPR_ALTM];
+				spriteframe_t *sprframe;
+				patch_t *patch = NULL;
+				UINT32 addflags = 0;
+
+				x -= 10;
+				y += 15;
+
+				if (sprdef->numframes)
 				{
-					addflags ^= V_FLIP; // This sprite is left/right flipped!
-				}
+#ifdef ROTSPRITE
+					spriteinfo_t *sprinfo = &spriteinfo[SPR_ALTM];
+					INT32 rollangle = 0;
+					if (pushed != 0)
+					{
+						rollangle = (Music_Elapsed(tune) % (ROTANGLES/2))*2;
+						if (pushed > 0)
+							rollangle = ((ROTANGLES-1) - rollangle);
+					}
+#endif
 
-				V_DrawFixedPatch(x*FRACUNIT, (y+2)*FRACUNIT, FRACUNIT/2, addflags, patch, NULL);
+					sprframe = &sprdef->spriteframes[0];
+
+#ifdef ROTSPRITE
+					if (rollangle)
+					{
+						patch = Patch_GetRotatedSprite(sprframe, 0, 0, (sprframe->flip & 1), false, sprinfo, rollangle);
+					}
+#endif
+					if (!patch)
+					{
+						patch = W_CachePatchNum(sprframe->lumppat[0], PU_CACHE);
+						if (sprframe->flip & 1) // Only for first sprite
+						{
+							addflags ^= V_FLIP; // This sprite is left/right flipped!
+						}
+					}
+
+					V_DrawFixedPatch(x*FRACUNIT, (y+2)*FRACUNIT, FRACUNIT/2, addflags, patch, NULL);
+				}
 			}
 
 			x = 4;
 			y = (BASEVIDHEIGHT-14);
 
-			const boolean thismusplaying = Music_Playing("challenge_altmusic");
-			boolean pushed = false;
-			const char *song = NULL;
-
-			if (M_SecretUnlocked(SECRET_ENCORE, true)
-				&& musicid < mapheaderinfo[map]->encoremusname_size)
+			if (epossible)
 			{
-				if (thismusplaying)
-				{
-					song = Music_Song("challenge_altmusic");
-					pushed = strcmp(song, mapheaderinfo[map]->encoremusname[musicid]) == 0;
-				}
-
 				K_DrawGameControl(
 					x, y, 0,
-					(!pushed)
-						? "<l> <magenta>E Side"
-						: "<l_pressed> <gray>E Side",
+					(pushed < 0)
+						? "<l_pressed> <gray>E Stop"
+						: "<l> <magenta>E Side",
 					0, TINY_FONT, 0
 				);
 
@@ -7672,22 +7702,11 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 
 			if (musicid < mapheaderinfo[map]->musname_size)
 			{
-				if (pushed || !thismusplaying)
-				{
-					pushed = false;
-				}
-				else
-				{
-					if (!song)
-						song = Music_Song("challenge_altmusic");
-					pushed = strcmp(song, mapheaderinfo[map]->musname[musicid]) == 0;
-				}
-
 				K_DrawGameControl(
 					x, y, 0,
-					(!pushed)
-						? "<a> <sky>Play CD"
-						: "<a_pressed> <gray>Play CD",
+					(pushed > 0)
+						? "<a_pressed> <gray>Stop CD"
+						: "<a> <sky>Play CD",
 					0, TINY_FONT, 0
 				);
 			}
@@ -8032,6 +8051,14 @@ static void M_DrawChallengeScrollBar(UINT8 *flashmap)
 			completionamount = -1;
 		}
 #endif
+
+		if (i == challengesmenu.nowplayingtile && Music_Playing("challenge_altmusic"))
+		{
+			V_DrawFill(barx + hilix, bary, hiliw, barh, (challengesmenu.ticker & 2) ? 177 : 122);
+
+			// The now-playing fill overrides everything else.
+			completionamount = -1;
+		}
 
 		if (completionamount == -1)
 			continue;

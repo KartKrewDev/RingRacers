@@ -397,6 +397,7 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 		if (firstopen)
 		{
 			challengesmenu.currentunlock = MAXUNLOCKABLES;
+			challengesmenu.nowplayingtile = UINT16_MAX;
 			firstopen = false;
 		}
 
@@ -446,6 +447,7 @@ void M_Challenges(INT32 choice)
 static void M_CloseChallenges(void)
 {
 	Music_Stop("challenge_altmusic");
+	challengesmenu.nowplayingtile = UINT16_MAX;
 
 	Z_Free(challengesmenu.extradata);
 	challengesmenu.extradata = NULL;
@@ -599,8 +601,8 @@ void M_ChallengesTick(void)
 		for (i = 0; i < (CHALLENGEGRIDHEIGHT * gamedata->challengegridwidth); i++)
 		{
 			allthewaythrough = (!seeeveryone && !challengesmenu.pending && i != id);
-			maxflip = ((seeeveryone || !allthewaythrough) ? (TILEFLIP_MAX/2) : TILEFLIP_MAX);
-			if ((seeeveryone || (i == id) || (challengesmenu.extradata[i].flip > 0))
+			maxflip = (allthewaythrough ? TILEFLIP_MAX : (TILEFLIP_MAX/2));
+			if ((seeeveryone || (i == id) || (i == challengesmenu.nowplayingtile) || (challengesmenu.extradata[i].flip > 0))
 				&& (challengesmenu.extradata[i].flip != maxflip))
 			{
 				challengesmenu.extradata[i].flip++;
@@ -1324,15 +1326,18 @@ boolean M_ChallengesInputs(INT32 ch)
 
 						if (trymusname)
 						{
-							if (!Music_Playing("challenge_altmusic")
-								|| strcmp(Music_Song("challenge_altmusic"), trymusname))
+							const char *tune = "challenge_altmusic";
+							if (!Music_Playing(tune)
+								|| strcmp(Music_Song(tune), trymusname))
 							{
-								Music_Remap("challenge_altmusic", trymusname);
-								Music_Play("challenge_altmusic");
+								Music_Remap(tune, trymusname);
+								Music_Play(tune);
+								challengesmenu.nowplayingtile = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
 							}
 							else
 							{
-								Music_Stop("challenge_altmusic");
+								Music_Stop(tune);
+								challengesmenu.nowplayingtile = UINT16_MAX;
 							}
 
 							M_SetMenuDelay(pid);
