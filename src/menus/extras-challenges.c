@@ -1165,6 +1165,9 @@ boolean M_ChallengesInputs(INT32 ch)
 			&& gamedata->unlocked[challengesmenu.currentunlock])
 		{
 			unlockable_t *ref = &unlockables[challengesmenu.currentunlock];
+
+			boolean forceflip = false;
+
 			switch (unlockables[challengesmenu.currentunlock].type)
 			{
 				case SECRET_MAP:
@@ -1217,6 +1220,8 @@ boolean M_ChallengesInputs(INT32 ch)
 						CV_AddValue(&cv_alttitle, 1);
 						S_StartSound(NULL, sfx_s3kc3s);
 						M_SetMenuDelay(pid);
+
+						forceflip = true;
 					}
 					break;
 				}
@@ -1235,7 +1240,10 @@ boolean M_ChallengesInputs(INT32 ch)
 								CV_Set(&cv_skin[0], skins[skin]->name);
 
 								S_StartSound(NULL, sfx_s3k63);
+								S_StartSound(NULL, skins[skin]->soundsid[S_sfx[sfx_kattk1].skinsound]);
 								M_SetMenuDelay(pid);
+
+								forceflip = true;
 							}
 						}
 					}
@@ -1256,7 +1264,10 @@ boolean M_ChallengesInputs(INT32 ch)
 								CV_Set(&cv_follower[0], followers[fskin].name);
 
 								S_StartSound(NULL, sfx_s3k63);
+								S_StartSound(NULL, followers[fskin].hornsound);
 								M_SetMenuDelay(pid);
+
+								forceflip = true;
 							}
 						}
 					}
@@ -1282,6 +1293,8 @@ boolean M_ChallengesInputs(INT32 ch)
 
 								S_StartSound(NULL, sfx_s3k63);
 								M_SetMenuDelay(pid);
+
+								forceflip = true;
 							}
 						}
 					}
@@ -1355,6 +1368,16 @@ boolean M_ChallengesInputs(INT32 ch)
 				}
 				default:
 					break;
+			}
+
+			if (forceflip)
+			{
+				UINT16 id = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
+				// This construction helps pressing too early
+				if (challengesmenu.extradata[id].flip <= TILEFLIP_MAX/2)
+				{
+					challengesmenu.extradata[id].flip = 1 + (TILEFLIP_MAX/2);
+				}
 			}
 
 			return true;
