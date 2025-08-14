@@ -6722,7 +6722,6 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flash
 	fixed_t siz, accordion;
 	UINT16 id, num;
 	boolean unlockedyet;
-	boolean categoryside;
 
 	id = (i * CHALLENGEGRIDHEIGHT) + j;
 	num = gamedata->challengegrid[id];
@@ -6797,13 +6796,20 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flash
 
 	accordion = FRACUNIT;
 
-	if (challengesmenu.extradata[id].flip != 0
+	boolean categoryside = (challengesmenu.extradata[id].flip == 0);
+
+	if (!categoryside // optimised, this is not the true value with anything but instaflip
 		&& challengesmenu.extradata[id].flip != (TILEFLIP_MAX/2))
 	{
-		angle_t bad = (FixedAngle(FixedMul(challengesmenu.extradata[id].flip * FRACUNIT + rendertimefrac, 360*FRACUNIT/TILEFLIP_MAX)) >> ANGLETOFINESHIFT) & FINEMASK;
-		accordion = FINECOSINE(bad);
+		fixed_t bad = challengesmenu.extradata[id].flip * FRACUNIT + rendertimefrac;
+		angle_t worse = (FixedAngle(FixedMul(bad, 360*FRACUNIT/TILEFLIP_MAX)) >> ANGLETOFINESHIFT) & FINEMASK;
+		accordion = FINECOSINE(worse);
 		if (accordion < 0)
 			accordion = -accordion;
+
+		// NOW we set it in an interp-friendly way
+		categoryside = (bad <= FRACUNIT*TILEFLIP_MAX/4
+			|| bad > (3*FRACUNIT*TILEFLIP_MAX)/4);
 	}
 
 	pat = W_CachePatchName(
@@ -6821,9 +6827,6 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flash
 	);
 
 	pat = missingpat;
-
-	categoryside = (challengesmenu.extradata[id].flip <= TILEFLIP_MAX/4
-		|| challengesmenu.extradata[id].flip > (3*TILEFLIP_MAX)/4);
 
 #ifdef DEVELOP
 	if (cv_debugchallenges.value)
