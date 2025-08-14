@@ -7698,8 +7698,15 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 					if (pushed != 0)
 					{
 						rollangle = (Music_Elapsed(tune) % (ROTANGLES/2))*2;
+						if (rendertimefrac >= FRACUNIT/2)
+						{
+							// A fun interp ability: inbetweens
+							rollangle++;
+						}
 						if (pushed > 0)
+						{
 							rollangle = ((ROTANGLES-1) - rollangle);
+						}
 					}
 #endif
 
@@ -7732,8 +7739,8 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 				K_DrawGameControl(
 					x, y, 0,
 					(pushed < 0)
-						? "<l_pressed> <gray>E Stop"
-						: "<l> <magenta>E Side",
+						? "<l_animated> <magenta>E Stop"
+						: "<l_animated> <magenta>E Side",
 					0, TINY_FONT, 0
 				);
 
@@ -7745,8 +7752,8 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 				K_DrawGameControl(
 					x, y, 0,
 					(pushed > 0)
-						? "<a_pressed> <gray>Stop CD"
-						: "<a> <sky>Play CD",
+						? "<a_animated> <sky>Stop CD"
+						: "<a_animated> <sky>Play CD",
 					0, TINY_FONT, 0
 				);
 			}

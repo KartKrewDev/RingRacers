@@ -596,12 +596,19 @@ void M_ChallengesTick(void)
 	{
 		UINT16 id = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
 		boolean seeeveryone = challengesmenu.requestflip;
-		boolean allthewaythrough;
+		boolean allthewaythrough = allthewaythrough = (!seeeveryone && !challengesmenu.pending);
+
 		UINT8 maxflip;
+
+		if (id == challengesmenu.nowplayingtile)
+		{
+			// Don't permit the active song to stop spinning
+			id = UINT16_MAX;
+		}
+
 		for (i = 0; i < (CHALLENGEGRIDHEIGHT * gamedata->challengegridwidth); i++)
 		{
-			allthewaythrough = (!seeeveryone && !challengesmenu.pending && i != id);
-			maxflip = (allthewaythrough ? TILEFLIP_MAX : (TILEFLIP_MAX/2));
+			maxflip = ((allthewaythrough && i != id) ? TILEFLIP_MAX : (TILEFLIP_MAX/2));
 			if ((seeeveryone || (i == id) || (i == challengesmenu.nowplayingtile) || (challengesmenu.extradata[i].flip > 0))
 				&& (challengesmenu.extradata[i].flip != maxflip))
 			{
