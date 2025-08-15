@@ -2570,6 +2570,10 @@ static const char *M_GetConditionString(condition_t *cn)
 			Z_Free(title);
 			return work;
 		}
+
+		case UC_CONDITIONSET:
+			return va("INVALID CN RECURSION \"%d\"", cn->requirement);
+
 		case UC_UNLOCKABLE: // Requires unlockable x to be obtained
 			return va("get %s",
 				gamedata->unlocked[cn->requirement-1]
@@ -3015,20 +3019,17 @@ static const char *M_GetConditionString(condition_t *cn)
 		default:
 			break;
 	}
-	// UC_MAPTRIGGER and UC_CONDITIONSET are explicitly very hard to support proper descriptions for
+	// UC_MAPTRIGGER and the like are explicitly very hard to support proper descriptions for
 	return va("UNSUPPORTED CONDITION \"%d\"", cn->type);
 }
 
 char *M_BuildConditionSetString(UINT16 unlockid)
 {
-	conditionset_t *c = NULL;
-	UINT32 lastID = 0;
 	condition_t *cn;
 	size_t len = 1024, worklen;
 	static char message[1024] = "";
 	const char *work = NULL;
 	size_t i;
-	UINT8 stopasap = 0;
 
 	message[0] = '\0';
 
@@ -3049,61 +3050,102 @@ char *M_BuildConditionSetString(UINT16 unlockid)
 		len--;
 	}
 
-	c = &conditionSets[unlockables[unlockid].conditionset-1];
+	struct conditionset_traverser_s {
+		conditionset_t *c;
+		size_t i;
+		UINT32 lastID;
+		UINT8 stopasap;
+	};
 
-	for (i = 0; i < c->numconditions; ++i)
-	{
-		cn = &c->condition[i];
+	struct conditionset_traverser_s current = {0};
+	current.c = &conditionSets[unlockables[unlockid].conditionset-1];
+	current.i = current.lastID = current.stopasap = 0;
 
-		if (i > 0)
+	struct conditionset_traverser_s restore = {0};
+	restore.c = NULL;
+
+	do {
+		if (current.stopasap == UINT8_MAX)
 		{
-			worklen = 0;
-			if (lastID != cn->id)
+			// Sentinel value for recursion
+			current.stopasap = 0;
+		}
+		else if (restore.c)
+		{
+			// De-recur
+			current = restore;
+			current.i++;
+
+			restore.c = NULL;
+		}
+
+		for (; current.i < current.c->numconditions; ++current.i)
+		{
+			cn = &current.c->condition[current.i];
+
+			if (current.i > 0)
 			{
-				stopasap = 0;
-				worklen = 6;
-				strncat(message, " - OR ", len);
+				worklen = 0;
+				if (current.lastID != cn->id)
+				{
+					current.stopasap = 0;
+					worklen = 6;
+					strncat(message, " - OR ", len);
+				}
+				else if (current.stopasap == 0 && cn->type != UC_COMMA)
+				{
+					worklen = 1;
+					strncat(message, " ", len);
+				}
+				len -= worklen;
 			}
-			else if (stopasap == 0 && cn->type != UC_COMMA)
+
+			current.lastID = cn->id;
+
+			if (current.stopasap == 1)
 			{
-				worklen = 1;
-				strncat(message, " ", len);
+				// Secret challenge -- show unrelated condition IDs
+				continue;
 			}
+
+			if (cn->type == UC_CONDITIONSET
+			&& restore.c == NULL
+			&& cn->requirement
+			&& cn->requirement <= MAXCONDITIONSETS)
+			{
+				// Conditionset description! Can only recursion once at a time
+				restore = current;
+				current.c = &conditionSets[cn->requirement-1];
+				current.i = current.lastID = 0;
+				current.stopasap = UINT8_MAX;
+				break;
+			}
+
+			work = M_GetConditionString(cn);
+			if (work == NULL)
+			{
+				current.stopasap = 1;
+				if (message[0] && message[1])
+					work = "???";
+				else
+					work = "(Find other secrets to learn about this...)";
+			}
+			else if (cn->type == UC_DESCRIPTIONOVERRIDE)
+			{
+				current.stopasap = 2;
+			}
+			worklen = strlen(work);
+
+			strncat(message, work, len);
 			len -= worklen;
-		}
 
-		lastID = cn->id;
-
-		if (stopasap == 1)
-		{
-			// Secret challenge -- show unrelated condition IDs
-			continue;
+			if (current.stopasap == 2)
+			{
+				// Description override - hide all further ones
+				break;
+			}
 		}
-
-		work = M_GetConditionString(cn);
-		if (work == NULL)
-		{
-			stopasap = 1;
-			if (message[0] && message[1])
-				work = "???";
-			else
-				work = "(Find other secrets to learn about this...)";
-		}
-		else if (cn->type == UC_DESCRIPTIONOVERRIDE)
-		{
-			stopasap = 2;
-		}
-		worklen = strlen(work);
-
-		strncat(message, work, len);
-		len -= worklen;
-
-		if (stopasap == 2)
-		{
-			// Description override - hide all further ones
-			break;
-		}
-	}
+	} while (restore.c);
 
 	if (message[0] == '\0')
 	{

@@ -305,6 +305,10 @@ void HU_Init(void)
 		PR   ("4GTFN");
 		REG;
 
+		DIG  (2);
+		PR   ("GENEFN");
+		REG;
+
 		DIG  (1);
 
 		DIM  (0, 10);

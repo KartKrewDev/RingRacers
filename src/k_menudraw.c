@@ -839,7 +839,7 @@ void M_DrawMenuMessage(void)
 		workx -= K_DrawGameControl(
 			workx+2, worky+2,
 			0, "<b_animated> <x_animated> ",
-			2, 8, 0
+			2, MENU_FONT, 0
 		);
 
 		if (menumessage.confirmstr)
@@ -863,7 +863,7 @@ void M_DrawMenuMessage(void)
 		workx -= K_DrawGameControl(
 			workx+2, worky+2,
 			0, "<a_animated> ",
-			2, 8, 0
+			2, MENU_FONT, 0
 		);
 	}
 
@@ -1257,7 +1257,7 @@ static INT32 M_DrawRejoinIP(INT32 x, INT32 y, INT32 tx)
 	V_DrawMenuString(x - 10 - (skullAnimCounter/5), y, f, "\x1C"); // left arrow
 	V_DrawMenuString(x + w + 2+ (skullAnimCounter/5), y, f, "\x1D"); // right arrow
 	V_DrawThinString(x, y, f, text);
-	K_DrawGameControl(BASEVIDWIDTH + 4 + tx, y, 0, "<c> Rejoin", 2, 0, V_ORANGEMAP);
+	K_DrawGameControl(BASEVIDWIDTH + 4 + tx, y, 0, "<c> Rejoin", 2, TINY_FONT, V_ORANGEMAP);
 
 	return shift;
 }
@@ -2462,11 +2462,11 @@ void M_DrawCharacterSelect(void)
 
 		if (!optionsmenu.profile) // Does nothing on this screen
 		{
-			K_DrawGameControl(BASEVIDWIDTH/2, kTop, pid, "<r_animated> Info   <c_animated> Default", 1, 0, 0);
+			K_DrawGameControl(BASEVIDWIDTH/2, kTop, pid, "<r_animated> Info   <c_animated> Default", 1, TINY_FONT, 0);
 		}
 		else
 		{
-			K_DrawGameControl(BASEVIDWIDTH/2+62, kTop, pid, "<a_animated> Accept  <x_animated> Back  <c_animated> Default", 1, 0, 0);
+			K_DrawGameControl(BASEVIDWIDTH/2+62, kTop, pid, "<a_animated> Accept  <x_animated> Back  <c_animated> Default", 1, TINY_FONT, 0);
 		}
 	}
 
@@ -2745,11 +2745,11 @@ void M_DrawRaceDifficulty(void)
 				switch (it->mvar2)
 				{
 					case MBT_Y:
-						K_DrawGameControl(cx + 24, cy + 22, 0, activated ? "<y_pressed>" : "<y>", 0, 8, 0);
+						K_DrawGameControl(cx + 24, cy + 22, 0, activated ? "<y_pressed>" : "<y>", 0, MENU_FONT, 0);
 						break;
 
 					case MBT_Z:
-						K_DrawGameControl(cx + 24, cy + 22, 0, activated ? "<z_pressed>" : "<z>", 0, 8, 0);
+						K_DrawGameControl(cx + 24, cy + 22, 0, activated ? "<z_pressed>" : "<z>", 0, MENU_FONT, 0);
 						break;
 				}
 				break;
@@ -3868,7 +3868,7 @@ void M_DrawTimeAttack(void)
 
 			if (M_EncoreAttackTogglePermitted())
 			{
-				K_DrawGameControl(buttonx + 35, buttony - 3, 0, "<r_animated>", 0, 8, 0);
+				K_DrawGameControl(buttonx + 35, buttony - 3, 0, "<r_animated>", 0, MENU_FONT, 0);
 			}
 
 			if ((timeattackmenu.spbflicker == 0 || timeattackmenu.ticker % 2) == (cv_dummyspbattack.value == 1))
@@ -5559,7 +5559,7 @@ void M_DrawProfileControls(void)
 		UINT16 oldsetting = cv_descriptiveinput->value;
 		CV_StealthSetValue(cv_descriptiveinput, cv_dummyprofiledescriptiveinput.value);
 		INT32 xpos = BASEVIDWIDTH - 12;
-		xpos = K_DrawGameControl(xpos, ypos, 0, "<right> / <c>  Clear", 2, 0, 0);
+		xpos = K_DrawGameControl(xpos, ypos, 0, "<right> / <c>  Clear", 2, TINY_FONT, 0);
 		CV_StealthSetValue(cv_descriptiveinput, oldsetting);
 	}
 
@@ -6330,16 +6330,16 @@ void M_DrawPause(void)
 	}
 	else if (gametype == GT_TUTORIAL)
 	{
-		K_DrawGameControl(4, 184 - 60 + offset/2, 0, "<left> <right> <up> <down> Steering", 0, 0, 0);
-		K_DrawGameControl(4, 184 - 45 + offset/2, 0, "<a> Accelerate", 0, 0, 0);
-		K_DrawGameControl(4, 184 - 30 + offset/2, 0, "<b> Look Back", 0, 0, 0);
-		K_DrawGameControl(4, 184 - 15 + offset/2, 0, "<c> Spindash", 0, 0, 0);
-		K_DrawGameControl(4, 184 - 0 + offset/2, 0, "<l> Item/Rings", 0, 0, 0);
+		K_DrawGameControl(4, 184 - 60 + offset/2, 0, "<left> <right> <up> <down> Steering", 0, TINY_FONT, 0);
+		K_DrawGameControl(4, 184 - 45 + offset/2, 0, "<a> Accelerate", 0, TINY_FONT, 0);
+		K_DrawGameControl(4, 184 - 30 + offset/2, 0, "<b> Look Back", 0, TINY_FONT, 0);
+		K_DrawGameControl(4, 184 - 15 + offset/2, 0, "<c> Spindash", 0, TINY_FONT, 0);
+		K_DrawGameControl(4, 184 - 0 + offset/2, 0, "<l> Item/Rings", 0, TINY_FONT, 0);
 
-		K_DrawGameControl(90, 184 - 45 + offset/2, 0, "<x> Brake", 0, 0, 0);
-		K_DrawGameControl(90, 184 - 30 + offset/2, 0, "<y> Respawn", 0, 0, 0);
-		K_DrawGameControl(90, 184 - 15 + offset/2, 0, "<z> Dialogue / Action", 0, 0, 0);
-		K_DrawGameControl(90, 184 - 0 + offset/2, 0, "<r> Drift", 0, 0, 0);
+		K_DrawGameControl(90, 184 - 45 + offset/2, 0, "<x> Brake", 0, TINY_FONT, 0);
+		K_DrawGameControl(90, 184 - 30 + offset/2, 0, "<y> Respawn", 0, TINY_FONT, 0);
+		K_DrawGameControl(90, 184 - 15 + offset/2, 0, "<z> Dialogue / Action", 0, TINY_FONT, 0);
+		K_DrawGameControl(90, 184 - 0 + offset/2, 0, "<r> Drift", 0, TINY_FONT, 0);
 	}
 	else
 	{
@@ -6448,7 +6448,7 @@ void M_DrawKickHandler(void)
 		(playerkickmenu.adminpowered)
 			? "You are using <red>Admin Tools<white>.  <a> Kick  <c> Ban"
 			: K_GetMidVoteLabel(menucallvote),
-		1, 0, 0
+		1, TINY_FONT, 0
 	);
 }
 
@@ -7523,7 +7523,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			y = BASEVIDHEIGHT-16;
 			V_DrawGamemodeString(x, y - 33, 0, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_MENUCACHE), M_UseAlternateTitleScreen() ? "On" : "Off");
 
-			K_DrawGameControl(x, y, 0, "<a_animated> Toggle", 0, 0, 0);
+			K_DrawGameControl(x, y, 0, "<a_animated> Toggle", 0, TINY_FONT, 0);
 			// K_drawButtonAnim(x, y, 0, kp_button_a[1], challengesmenu.ticker);
 			// x += SHORT(kp_button_a[1][0]->width);
 			// V_DrawThinString(x, y + 1, highlightflags, "Toggle");
@@ -7590,9 +7590,9 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 				}
 
 				if (!pushed)
-					K_DrawGameControl(x, y, 0, "<l> <sky>E Side", 0, 0, 0);
+					K_DrawGameControl(x, y, 0, "<l> <sky>E Side", 0, TINY_FONT, 0);
 				else
-					K_DrawGameControl(x, y, 0, "<l_pressed> <gray>E Side", 0, 0, 0);
+					K_DrawGameControl(x, y, 0, "<l_pressed> <gray>E Side", 0, TINY_FONT, 0);
 				// K_drawButton(x&FRACUNIT, y*FRACUNIT, 0, kp_button_l, pushed);
 				// x += SHORT(kp_button_l[0]->width);
 				// V_DrawThinString(x, y + 1, (pushed ? V_GRAYMAP : highlightflags), "E Side");
@@ -7615,9 +7615,9 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 				}
 
 				if (!pushed)
-					K_DrawGameControl(x, y, 0, "<a> <sky>Play CD", 0, 0, 0);
+					K_DrawGameControl(x, y, 0, "<a> <sky>Play CD", 0, TINY_FONT, 0);
 				else
-					K_DrawGameControl(x, y, 0, "<a_pressed> <gray>Play CD", 0, 0, 0);
+					K_DrawGameControl(x, y, 0, "<a_pressed> <gray>Play CD", 0, TINY_FONT, 0);
 				// K_drawButton(x*FRACUNIT, y*FRACUNIT, 0, kp_button_a[1], pushed);
 				// x += SHORT(kp_button_a[1][0]->width);
 				// V_DrawThinString(x, y + 1, (pushed ? V_GRAYMAP : highlightflags), "Play CD");
@@ -7700,7 +7700,7 @@ static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 	K_DrawGameControl(
 		24, 16,
 		0, keybuttonpress ? "<c_pressed>" : "<c>",
-		0, 0, 0
+		0, TINY_FONT, 0
 	);
 
 	// Metyr of rounds played that contribute to Chao Key generation
@@ -9432,13 +9432,13 @@ void M_DrawDiscordRequests(void)
 
 	/*
 	K_DrawSticker(x, y + 26, stickerWidth, 0, true);
-	K_DrawGameControl(x, y+22, 0, "<a_animated>", 0, 0, V_SNAPTORIGHT);
+	K_DrawGameControl(x, y+22, 0, "<a_animated>", 0, TINY_FONT, V_SNAPTORIGHT);
 	// K_drawButtonAnim(x, y + 22, V_SNAPTORIGHT, kp_button_a[1], discordrequestmenu.ticker);
 	*/
 
-	UINT32 bigwidth = K_DrawGameControl(x, y+22, 0, "<a_animated> Accept   <b_animated> <x_animated> Decline", 0, 0, V_SNAPTORIGHT);
+	UINT32 bigwidth = K_DrawGameControl(x, y+22, 0, "<a_animated> Accept   <b_animated> <x_animated> Decline", 0, TINY_FONT, V_SNAPTORIGHT);
 	K_DrawSticker(x, y + 26, bigwidth, 0, true);
-	K_DrawGameControl(x, y+22, 0, "<a_animated> Accept   <b_animated> <x_animated> Decline", 0, 0, V_SNAPTORIGHT);
+	K_DrawGameControl(x, y+22, 0, "<a_animated> Accept   <b_animated> <x_animated> Decline", 0, TINY_FONT, V_SNAPTORIGHT);
 
 	/*
 	V_DrawThinString((x + xoffs), y + 24, 0, acceptText);
@@ -9447,7 +9447,7 @@ void M_DrawDiscordRequests(void)
 	K_drawButtonAnim((x + xoffs), y + 22, V_SNAPTORIGHT, kp_button_b[1], discordrequestmenu.ticker);
 	xoffs += declineButtonWidth;
 
-	xoffs += K_DrawGameControl(x + xoffs, y+22, 0, "<x_animated>", 0, 0, V_SNAPTORIGHT);
+	xoffs += K_DrawGameControl(x + xoffs, y+22, 0, "<x_animated>", 0, TINY_FONT, V_SNAPTORIGHT);
 	K_drawButtonAnim((x + xoffs), y + 22, V_SNAPTORIGHT, kp_button_x[1], discordrequestmenu.ticker);
 	xoffs += altDeclineButtonWidth;
 

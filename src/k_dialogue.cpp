@@ -294,9 +294,26 @@ void Dialogue::Tick(void)
 		{
 			slide += kSlideSpeed;
 		}
+
+		if (P_LevelIsFrozen())
+		{
+			if (fade > 0)
+			{
+				fade--;
+			}
+		}
+		else if (fade < 5)
+		{
+			fade++;
+		}
 	}
 	else
 	{
+		if (fade > 0)
+		{
+			fade--;
+		}
+
 		if (slide > 0)
 		{
 			slide -= kSlideSpeed;
@@ -340,6 +357,11 @@ INT32 Dialogue::SlideAmount(fixed_t multiplier)
 	if (slide == FRACUNIT)
 		return multiplier;
 	return Easing_OutCubic(slide, 0, multiplier);
+}
+
+INT32 Dialogue::FadeAmount(void)
+{
+	return fade;
 }
 
 void Dialogue::Draw(void)
@@ -516,6 +538,7 @@ void Dialogue::Unset(void)
 	Dismiss();
 	SetSpeaker();
 	slide = 0;
+	fade = 0;
 	current_era = 0;
 }
 
@@ -546,4 +569,9 @@ void K_TickDialogue(void)
 INT32 K_GetDialogueSlide(fixed_t multiplier)
 {
 	return g_dialogue.SlideAmount(multiplier);
+}
+
+INT32 K_GetDialogueFade(void)
+{
+	return g_dialogue.FadeAmount();
 }

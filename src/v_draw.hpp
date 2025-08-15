@@ -194,6 +194,7 @@ public:
 	{
 		kThin,
 		kGamemode,
+		kGenesis,
 		kConsole,
 		kFreeplay,
 		kZVote,
@@ -205,6 +206,7 @@ public:
 		kRollingNum,
 		kRollingNum4P,
 	};
+	Font fontno_to_font(int font);
 
 	enum class Align
 	{

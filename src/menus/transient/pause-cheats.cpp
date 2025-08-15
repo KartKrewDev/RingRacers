@@ -208,7 +208,7 @@ void draw_menu()
 	draw = draw.y(27 + kMargin);
 
 	draw.x(BASEVIDWIDTH/2).font(Draw::Font::kGamemode).text(mode_strings[menu_mode()]);
-	K_DrawGameControl(draw.x() + 8, draw.y()-6, 0, M_MenuButtonHeld(0, MBT_Y) ? "<y_pressed> Switch Page" : "<y> Switch Page", 0, 8, 0);
+	K_DrawGameControl(draw.x() + 8, draw.y()-6, 0, M_MenuButtonHeld(0, MBT_Y) ? "<y_pressed> Switch Page" : "<y> Switch Page", 0, MENU_FONT, 0);
 	// K_drawButton((draw.x() + 8) * FRACUNIT, (draw.y() + 8) * FRACUNIT, 0, kp_button_y[0], M_MenuButtonHeld(0, MBT_Y));
 	draw = draw.y(32 + kMargin);
 

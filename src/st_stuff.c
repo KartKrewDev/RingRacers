@@ -1501,7 +1501,7 @@ void ST_DrawSaveReplayHint(INT32 flags)
 	K_DrawGameControl(
 		BASEVIDWIDTH - 2, 2, 0,
 		(demo.willsave && demo.titlename[0]) ? "Replay will be saved.  <b> Change title" : "<b> or <x> Save replay",
-		2, 0, flags|V_YELLOWMAP
+		2, TINY_FONT, flags|V_YELLOWMAP
 	);
 }
 

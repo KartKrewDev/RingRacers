@@ -531,15 +531,65 @@ patch_t* Draw::cache_patch(const char* name)
 	return static_cast<patch_t*>(W_CachePatchName(name, PU_CACHE));
 }
 
+Draw::Font Draw::fontno_to_font(int font)
+{
+	switch (font)
+	{
+	case TINY_FONT:
+	default:
+		return Font::kThin;
+
+	case GM_FONT:
+		return Font::kGamemode;
+
+	case GENESIS_FONT:
+		return Font::kGenesis;
+
+	case HU_FONT:
+		return Font::kConsole;
+
+	case KART_FONT:
+		return Font::kFreeplay;
+
+	case OPPRF_FONT:
+		return Font::kZVote;
+
+	case PINGF_FONT:
+		return Font::kPing;
+
+	case TIMER_FONT:
+		return Font::kTimer;
+
+	case TINYTIMER_FONT:
+		return Font::kThinTimer;
+
+	case MENU_FONT:
+		return Font::kMenu;
+
+	case MED_FONT:
+		return Font::kMedium;
+
+	case ROLNUM_FONT:
+		return Font::kRollingNum;
+
+	case RO4NUM_FONT:
+		return Font::kRollingNum4P;
+	}
+};
+
 int Draw::font_to_fontno(Font font)
 {
 	switch (font)
 	{
 	case Font::kThin:
+	default:
 		return TINY_FONT;
 
 	case Font::kGamemode:
 		return GM_FONT;
+
+	case Font::kGenesis:
+		return GENESIS_FONT;
 
 	case Font::kConsole:
 		return HU_FONT;
@@ -571,8 +621,6 @@ int Draw::font_to_fontno(Font font)
 	case Font::kRollingNum4P:
 		return RO4NUM_FONT;
 	}
-
-	return TINY_FONT;
 };
 
 INT32 Draw::default_font_flags(Font font)
