@@ -6816,7 +6816,61 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flash
 		(ref->majorunlock ? "UN_BORDB" : "UN_BORDA"),
 		PU_CACHE);
 
-	bgmap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_SILVER, GTC_MENUCACHE);
+	UINT8 iconid = 0;
+
+	{
+		UINT16 bcol = SKINCOLOR_SILVER;
+		switch (ref->type)
+		{
+			case SECRET_SKIN:
+				bcol = SKINCOLOR_NOVA;
+				iconid = 1;
+				break;
+			case SECRET_FOLLOWER:
+				bcol = SKINCOLOR_SAPPHIRE;
+				iconid = 2;
+				break;
+			case SECRET_COLOR:
+				//bcol = SKINCOLOR_SILVER;
+				iconid = 3;
+				break;
+			case SECRET_CUP:
+				bcol = SKINCOLOR_GOLD;
+				iconid = 4;
+				break;
+			case SECRET_MAP:
+				bcol = SKINCOLOR_PURPLE;
+				iconid = 8;
+				break;
+			case SECRET_HARDSPEED:
+			case SECRET_MASTERMODE:
+			case SECRET_ENCORE:
+				bcol = SKINCOLOR_RUBY;
+				iconid = 5;
+				break;
+			case SECRET_ONLINE:
+			case SECRET_ADDONS:
+			case SECRET_EGGTV:
+			case SECRET_SOUNDTEST:
+			case SECRET_ALTTITLE:
+				bcol = SKINCOLOR_BLUEBERRY;
+				iconid = 6;
+				break;
+			case SECRET_TIMEATTACK:
+			case SECRET_PRISONBREAK:
+			case SECRET_SPECIALATTACK:
+			case SECRET_SPBATTACK:
+				bcol = SKINCOLOR_PERIDOT;
+				iconid = 7;
+				break;
+			case SECRET_ALTMUSIC:
+				bcol = SKINCOLOR_MAGENTA;
+				iconid = 9;
+				break;
+		}
+
+		bgmap = R_GetTranslationColormap(TC_DEFAULT, bcol, GTC_MENUCACHE);
+	}
 
 	V_DrawStretchyFixedPatch(
 		(x*FRACUNIT) + (SHORT(pat->width)*(FRACUNIT-accordion)/2), y*FRACUNIT,
@@ -6831,59 +6885,20 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flash
 #ifdef DEVELOP
 	if (cv_debugchallenges.value)
 	{
-		// Show the content of every tile without needing to
-		// flip them.
+		// Show the content of every tile without needing to flip them.
 		categoryside = false;
 	}
 #endif
 
 	if (categoryside)
 	{
-		char categoryid = '0';
-		colormap = bgmap;
-		switch (ref->type)
-		{
-			case SECRET_SKIN:
-				categoryid = '1';
-				break;
-			case SECRET_FOLLOWER:
-				categoryid = '2';
-				break;
-			case SECRET_COLOR:
-				categoryid = '3';
-				break;
-			case SECRET_CUP:
-				categoryid = '4';
-				break;
-			case SECRET_MAP:
-				categoryid = '8';
-				break;
-			case SECRET_HARDSPEED:
-			case SECRET_MASTERMODE:
-			case SECRET_ENCORE:
-				categoryid = '5';
-				break;
-			case SECRET_ONLINE:
-			case SECRET_ADDONS:
-			case SECRET_EGGTV:
-			case SECRET_SOUNDTEST:
-			case SECRET_ALTTITLE:
-				categoryid = '6';
-				break;
-			case SECRET_TIMEATTACK:
-			case SECRET_PRISONBREAK:
-			case SECRET_SPECIALATTACK:
-			case SECRET_SPBATTACK:
-				categoryid = '7';
-				break;
-			case SECRET_ALTMUSIC:
-				categoryid = '9';
-				break;
-		}
-		pat = challengesmenu.tile_category[categoryid - '0'][ref->majorunlock ? 1 : 0];
+		colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_SILVER, GTC_MENUCACHE);
+
+		// iconid is already prepopulated because we had to draw the border
+		pat = challengesmenu.tile_category[iconid][ref->majorunlock ? 1 : 0];
 		if (pat == missingpat)
 		{
-			pat = challengesmenu.tile_category[categoryid - '0'][ref->majorunlock ? 0 : 1];
+			pat = challengesmenu.tile_category[iconid][ref->majorunlock ? 0 : 1];
 		}
 	}
 	else if (ref->icon != NULL && ref->icon[0])
@@ -6896,7 +6911,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flash
 	}
 	else
 	{
-		UINT8 iconid = 0;
+		iconid = 0; // reuse
 		switch (ref->type)
 		{
 			case SECRET_SKIN:
