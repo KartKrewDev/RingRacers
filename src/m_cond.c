@@ -3204,7 +3204,7 @@ static boolean M_CheckUnlockConditions(player_t *player)
 {
 	UINT32 i;
 	conditionset_t *c;
-	boolean ret;
+	boolean ret = false;
 
 	for (i = 0; i < MAXCONDITIONSETS; ++i)
 	{
