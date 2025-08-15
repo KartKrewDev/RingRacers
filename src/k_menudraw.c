@@ -7194,7 +7194,7 @@ void M_DrawCharacterIconAndEngine(INT32 x, INT32 y, UINT8 skin, UINT8 *colormap,
 	V_DrawFill(x+16 + (s*5), y + (w*5), 6, 6, 0);
 }
 
-static void M_DrawChallengePreview(INT32 x, INT32 y)
+static const char* M_DrawChallengePreview(INT32 x, INT32 y)
 {
 	unlockable_t *ref = NULL;
 	UINT8 *colormap = NULL;
@@ -7202,11 +7202,8 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 
 	if (challengesmenu.currentunlock >= MAXUNLOCKABLES)
 	{
-		return;
+		return NULL;
 	}
-
-	// Okay, this is what we want to draw.
-	ref = &unlockables[challengesmenu.currentunlock];
 
 	// Funny question mark?
 	if (!gamedata->unlocked[challengesmenu.currentunlock])
@@ -7219,7 +7216,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 
 		if (!sprdef->numframes)
 		{
-			return;
+			return NULL;
 		}
 
 		useframe = (challengesmenu.ticker / 2) % sprdef->numframes;
@@ -7233,8 +7230,13 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 		}
 
 		V_DrawFixedPatch(x*FRACUNIT, (y+2)*FRACUNIT, FRACUNIT, addflags, patch, NULL);
-		return;
+		return NULL;
 	}
+
+	// Okay, this is what we want to draw.
+	ref = &unlockables[challengesmenu.currentunlock];
+
+	const char *actiontext = NULL;
 
 	switch (ref->type)
 	{
@@ -7253,17 +7255,11 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 				{
 					profile_t *pr = PR_GetProfile(cv_lastprofile[0].value);
 
-					if (pr)
-					{
-						K_DrawGameControl(
-							4, y, 0,
-							strcmp(pr->skinname, skins[skin]->name)
-								? "<a> <sky>Set on Profile"
-								: "<a_pressed> <gray>Set on Profile",
-							0, TINY_FONT, 0
-						);
-						y -= 14;
-					}
+					actiontext = (pr && strcmp(pr->skinname, skins[skin]->name))
+						? "<a> <sky>Set on Profile"
+						: "<a_pressed> <gray>Set on Profile";
+
+					y -= 14;
 				}
 
 				for (i = 0; i < skin; i++)
@@ -7303,8 +7299,6 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 
 				y = (BASEVIDHEIGHT-14);
 
-				const char *actiontext = NULL;
-
 				if (setup_numplayers <= 1 && cv_lastprofile[0].value != PROFILE_GUEST)
 				{
 					profile_t *pr = PR_GetProfile(cv_lastprofile[0].value);
@@ -7340,11 +7334,6 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 					}
 				}
 
-				K_DrawGameControl(
-					4, y, 0,
-					actiontext,
-					0, TINY_FONT, 0
-				);
 				y -= 14;
 
 				if (followers[fskin].category < numfollowercategories)
@@ -7374,16 +7363,9 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			{
 				profile_t *pr = PR_GetProfile(cv_lastprofile[0].value);
 
-				if (pr)
-				{
-					K_DrawGameControl(
-						4, (BASEVIDHEIGHT-14), 0,
-						(pr->color != colorid)
-							? "<a> <sky>Set on Profile"
-							: "<a_pressed> <gray>Set on Profile",
-						0, TINY_FONT, 0
-					);
-				}
+				actiontext = (pr && pr->color != colorid)
+					? "<a> <sky>Set on Profile"
+					: "<a_pressed> <gray>Set on Profile";
 			}
 
 			break;
@@ -7516,11 +7498,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 					if (setup_numplayers <= 1 && guessgt == GT_TUTORIAL)
 					{
 						// Only for 1p
-						K_DrawGameControl(
-							4, y, 0,
-							"<a_animated> <orange>Play Tutorial",
-							0, TINY_FONT, 0
-						);
+						actiontext = "<a_animated> <orange>Play Tutorial";
 						gtname = NULL;
 					}
 					else if (guessgt == GT_SPECIAL && !M_SecretUnlocked(SECRET_SPECIALATTACK, true))
@@ -7674,7 +7652,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			if (map >= nummapheaders
 				|| !mapheaderinfo[map])
 			{
-				return;
+				break;
 			}
 
 			UINT8 musicid;
@@ -7686,7 +7664,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 
 			if (musicid == MAXMUSNAMES)
 			{
-				return;
+				break;
 			}
 
 			const char *tune = "challenge_altmusic";
@@ -7758,31 +7736,32 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 				}
 			}
 
-			x = 4;
-			y = (BASEVIDHEIGHT-14);
+			if (musicid < mapheaderinfo[map]->musname_size)
+			{
+				actiontext = (pushed > 0)
+					? "<a_animated> <sky>Stop CD"
+					: "<a_animated> <sky>Play CD";
+			}
 
 			if (epossible)
 			{
-				K_DrawGameControl(
-					x, y, 0,
-					(pushed < 0)
-						? "<l_animated> <magenta>E Stop"
-						: "<l_animated> <magenta>E Side",
-					0, TINY_FONT, 0
-				);
-
-				y -= 14;
-			}
-
-			if (musicid < mapheaderinfo[map]->musname_size)
-			{
-				K_DrawGameControl(
-					x, y, 0,
-					(pushed > 0)
-						? "<a_animated> <sky>Stop CD"
-						: "<a_animated> <sky>Play CD",
-					0, TINY_FONT, 0
-				);
+				const char *secondtext = (pushed < 0)
+					? "<l_animated> <magenta>E Stop"
+					: "<l_animated> <magenta>E Side";
+				if (actiontext)
+				{
+					// weird encoded height
+					actiontext = va("\x1""%s\n%s",
+						(pushed < 0)
+							? "<l_animated> <magenta>E Stop"
+							: "<l_animated> <magenta>E Side",
+						actiontext
+					);
+				}
+				else
+				{
+					actiontext = secondtext;
+				}
 			}
 		}
 		default:
@@ -7792,7 +7771,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 	}
 
 	if (specialmap == NEXTMAP_INVALID || !ref)
-		return;
+		return actiontext;
 
 	x -= 50;
 	y = 146+2;
@@ -7840,6 +7819,8 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			W_CachePatchName("K_LAPE02", PU_CACHE),
 			colormap);
 	}
+
+	return actiontext;
 }
 
 #define challengesgridstep 22
@@ -8396,9 +8377,10 @@ challengedesc:
 	y = BASEVIDHEIGHT-16;
 
 	// Unlock preview
-	M_DrawChallengePreview(x, y);
+	const char *actiontext = M_DrawChallengePreview(x, y);
 
 	// Conditions for unlock
+	// { -- please don't call va() anywhere between here...
 	i = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
 
 	if (challengesmenu.unlockcondition != NULL
@@ -8410,6 +8392,25 @@ challengedesc:
 	)
 	{
 		V_DrawCenteredThinString(BASEVIDWIDTH/2, 120 + 32, 0, challengesmenu.unlockcondition);
+	}
+
+	// Extracted from M_DrawCharSelectPreview for ordering reasons
+	if (actiontext && actiontext[0])
+	{
+		x = 4;
+		y = (BASEVIDHEIGHT-14);
+		if (actiontext[0] < '\x5')
+		{
+			// weird encoded height, supports max 5 rows
+			y -= (13 * actiontext[0]);
+			actiontext++;
+		}
+		K_DrawGameControl(
+			x, y, 0,
+			actiontext,
+			0, TINY_FONT, 0
+		);
+		// } -- ...and here (since actiontext needs it)
 	}
 }
 
