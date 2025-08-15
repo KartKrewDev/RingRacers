@@ -777,7 +777,7 @@ static boolean M_HandleBeginningColors(setup_player_t *p)
 
 static void M_HandleBeginningFollowers(setup_player_t *p)
 {
-	if (setup_numfollowercategories == 0)
+	if (horngoner || setup_numfollowercategories == 0)
 	{
 		p->followern = -1;
 		M_HandlePlayerFinalise(p);
@@ -1392,7 +1392,9 @@ static void M_MPConfirmCharacterSelection(void)
 		CV_StealthSetValue(&cv_playercolor[i], col);
 
 		// follower
-		if (setup_player[i].followern < 0)
+		if (horngoner)
+			;
+		else if (setup_player[i].followern < 0)
 			CV_StealthSet(&cv_follower[i], "None");
 		else
 			CV_StealthSet(&cv_follower[i], followers[setup_player[i].followern].name);
@@ -1457,9 +1459,12 @@ void M_CharacterSelectTick(void)
 				strcpy(optionsmenu.profile->skinname, skins[setup_player[0].skin]->name);
 				optionsmenu.profile->color = setup_player[0].color;
 
-				// save follower
-				strcpy(optionsmenu.profile->follower, followers[setup_player[0].followern].name);
-				optionsmenu.profile->followercolor = setup_player[0].followercolor;
+				if (!horngoner) // so you don't lose your choice after annoying the game
+				{
+					// save follower
+					strcpy(optionsmenu.profile->follower, followers[setup_player[0].followern].name);
+					optionsmenu.profile->followercolor = setup_player[0].followercolor;
+				}
 
 				// reset setup_player
 				memset(setup_player, 0, sizeof(setup_player));
@@ -1475,7 +1480,9 @@ void M_CharacterSelectTick(void)
 					CV_StealthSet(&cv_skin[i], skins[setup_player[i].skin]->name);
 					CV_StealthSetValue(&cv_playercolor[i], setup_player[i].color);
 
-					if (setup_player[i].followern < 0)
+					if (horngoner)
+						;
+					else if (setup_player[i].followern < 0)
 						CV_StealthSet(&cv_follower[i], "None");
 					else
 						CV_StealthSet(&cv_follower[i], followers[setup_player[i].followern].name);

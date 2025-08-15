@@ -115,6 +115,8 @@ struct followercategory_t
 extern INT32 numfollowercategories;
 extern followercategory_t followercategories[MAXFOLLOWERCATEGORIES];
 
+extern boolean horngoner;
+
 /*--------------------------------------------------
 	INT32 K_FollowerAvailable(const char *name)
 

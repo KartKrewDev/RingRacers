@@ -1048,7 +1048,14 @@ static void SendNameAndColor(const UINT8 n)
 	WRITESTRINGN(p, cv_playername[n].zstring, MAXPLAYERNAME);
 	WRITEUINT16(p, sendColor);
 	WRITEUINT8(p, (UINT8)cv_skin[n].value);
-	WRITEINT16(p, (INT16)cv_follower[n].value);
+	if (horngoner)
+	{
+		WRITEINT16(p, (-1));
+	}
+	else
+	{
+		WRITEINT16(p, (INT16)cv_follower[n].value);
+	}
 	//CONS_Printf("Sending follower id %d\n", (INT16)cv_follower[n].value);
 	WRITEUINT16(p, sendFollowerColor);
 

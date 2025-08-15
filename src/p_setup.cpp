@@ -8099,7 +8099,7 @@ static void P_InitPlayers(void)
 			skin = 0;
 		}
 
-		if (netgame)
+		if (netgame || horngoner)
 			; // shouldn't happen but at least attempt to sync if it does
 		else for (i = 0; i < numfollowers; i++)
 		{

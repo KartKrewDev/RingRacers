@@ -1252,7 +1252,7 @@ boolean M_ChallengesInputs(INT32 ch)
 				}
 				case SECRET_FOLLOWER:
 				{
-					if (M_MenuConfirmPressed(pid))
+					if (!horngoner && M_MenuConfirmPressed(pid))
 					{
 						INT32 fskin = M_UnlockableFollowerNum(ref);
 						if (fskin != -1)
@@ -1274,11 +1274,19 @@ boolean M_ChallengesInputs(INT32 ch)
 							}
 
 							if (!forceflip)
-							{
 								challengesmenu.hornposting++;
+
+							if (challengesmenu.hornposting > EASEOFFHORN)
+							{
+								challengesmenu.hornposting = 0;
+								horngoner = true;
+								S_StartSound(NULL, sfx_s3k72);
+							}
+							else
+							{
+								S_StartSound(NULL, followers[fskin].hornsound);
 							}
 
-							S_StartSound(NULL, followers[fskin].hornsound);
 							M_SetMenuDelay(pid);
 
 							forceflip = true;

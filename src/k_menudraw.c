@@ -1862,6 +1862,9 @@ static boolean M_DrawFollowerSprite(INT16 x, INT16 y, INT32 num, boolean charfli
 	follower_t *fl;
 	UINT8 rotation = (charflip ? 1 : 7);
 
+	if (horngoner)
+		return false;
+
 	if (p != NULL)
 		followernum = p->followern;
 	else
@@ -2406,7 +2409,7 @@ void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 			V_DrawMappedPatch(x+14, y+66, 0, faceprefix[skinnum][FACE_RANK], ccolormap);
 		}
 
-		if (fln >= 0)
+		if (!horngoner && fln >= 0)
 		{
 			UINT16 fcol = K_GetEffectiveFollowerColor(
 				p->followercolor,
@@ -6827,8 +6830,15 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flash
 				iconid = 1;
 				break;
 			case SECRET_FOLLOWER:
-				bcol = SKINCOLOR_SAPPHIRE;
-				iconid = 2;
+				if (horngoner)
+				{
+					bcol = SKINCOLOR_BLACK;
+				}
+				else
+				{
+					bcol = SKINCOLOR_SAPPHIRE;
+					iconid = 2;
+				}
 				break;
 			case SECRET_COLOR:
 				//bcol = SKINCOLOR_SILVER;
@@ -6890,7 +6900,9 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flash
 	}
 #endif
 
-	if (categoryside)
+	if (horngoner && ref->type == SECRET_FOLLOWER)
+		goto drawborder;
+	else if (categoryside)
 	{
 		colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_SILVER, GTC_MENUCACHE);
 
@@ -7305,6 +7317,11 @@ static const char* M_DrawChallengePreview(INT32 x, INT32 y)
 			colormap = R_GetTranslationColormap(TC_BLINK, SKINCOLOR_BLACK, GTC_MENUCACHE);
 			M_DrawCharacterSprite(x, y, skin, SPR2_STIN, 7, 0, 0, colormap);
 
+			if (horngoner)
+			{
+				return "<a_pressed> <gray>MISSING.";
+			}
+
 			// Draw follower next to them
 			if (fskin != -1)
 			{
@@ -7331,6 +7348,27 @@ static const char* M_DrawChallengePreview(INT32 x, INT32 y)
 					if (followers[fskin].hornsound == sfx_melody)
 					{
 						actiontext = "<a_animated> <aqua>Play Ancient Melody?";
+					}
+					else if (challengesmenu.hornposting >= EASEOFFHORN)
+						actiontext = "<a> <red>Time to die";
+					else if (challengesmenu.hornposting >= (EASEOFFHORN-5))
+					{
+						if (challengesmenu.hornposting == EASEOFFHORN)
+							actiontext = "Time to die";
+						else
+							actiontext = "I asked politely";
+						actiontext = va("%s%s",
+							(M_MenuConfirmPressed(0)
+								? "<a_pressed> <yellow>"
+								: "<a> <red>"
+							), actiontext
+						);
+					}
+					else if (challengesmenu.hornposting >= (EASEOFFHORN-10))
+					{
+						actiontext = M_MenuConfirmPressed(0)
+							? "<a_pressed> <yellow>Ease off the horn"
+							: "<a> <orange>Ease off the horn";
 					}
 					else switch (challengesmenu.hornposting % 4)
 					{

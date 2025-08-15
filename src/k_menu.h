@@ -1428,6 +1428,8 @@ typedef enum
 #define CHAOHOLD_END (3)
 #define CHAOHOLD_PADDING (CHAOHOLD_BEGIN + CHAOHOLD_END)
 
+#define EASEOFFHORN 50
+
 extern struct timeattackmenu_s {
 
 	tic_t ticker;		// How long the menu's been open for
