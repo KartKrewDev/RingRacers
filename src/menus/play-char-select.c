@@ -304,47 +304,6 @@ void M_CharacterSelectInit(void)
 	memset(setup_explosions, 0, sizeof(setup_explosions));
 	setup_animcounter = 0;
 
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-	{
-		// Default to no follower / match colour.
-		setup_player[i].followern = -1;
-		setup_player[i].followercategory = -1;
-		setup_player[i].followercolor = SKINCOLOR_NONE;
-
-		setup_player[i].profilen_slide.start = 0;
-		setup_player[i].profilen_slide.dist = 0;
-
-		// If we're on prpfile select, skip straight to CSSTEP_CHARS
-		// do the same if we're midgame, but make sure to consider splitscreen properly.
-		if (optionsmenu.profile && i == 0)
-		{
-			setup_player[i].profilen = optionsmenu.profilen;
-			//PR_ApplyProfileLight(setup_player[i].profilen, 0);
-			M_SetupProfileGridPos(&setup_player[i]);
-			setup_player[i].mdepth = CSSTEP_CHARS;
-		}
-		else
-		{
-			// Set default selected profile to the last used profile for each player:
-			// (Make sure we don't overshoot it somehow if we deleted profiles or whatnot)
-			setup_player[i].profilen = min(cv_lastprofile[i].value, PR_GetNumProfiles());
-
-			if (gamestate != GS_MENU && i <= splitscreen)
-			{
-				M_SetupMidGameGridPos(&setup_player[i], i);
-				setup_player[i].mdepth = CSSTEP_CHARS;
-			}
-			else
-			{
-				// Un-set devices
-				G_SetDeviceForPlayer(i, -1);
-#ifdef CHARSELECT_DEVICEDEBUG
-				CONS_Printf("M_CharacterSelectInit: Device for %d set to %d\n", i, -1);
-#endif
-			}
-		}
-	}
-
 	for (i = 0; i < numskins; i++)
 	{
 		UINT8 x = skins[i]->kartspeed-1;
@@ -391,6 +350,47 @@ void M_CharacterSelectInit(void)
 	}
 
 	setup_page = 0;
+
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		// Default to no follower / match colour.
+		setup_player[i].followern = -1;
+		setup_player[i].followercategory = -1;
+		setup_player[i].followercolor = SKINCOLOR_NONE;
+
+		setup_player[i].profilen_slide.start = 0;
+		setup_player[i].profilen_slide.dist = 0;
+
+		// If we're on prpfile select, skip straight to CSSTEP_CHARS
+		// do the same if we're midgame, but make sure to consider splitscreen properly.
+		if (optionsmenu.profile && i == 0)
+		{
+			setup_player[i].profilen = optionsmenu.profilen;
+			//PR_ApplyProfileLight(setup_player[i].profilen, 0);
+			M_SetupProfileGridPos(&setup_player[i]);
+			setup_player[i].mdepth = CSSTEP_CHARS;
+		}
+		else
+		{
+			// Set default selected profile to the last used profile for each player:
+			// (Make sure we don't overshoot it somehow if we deleted profiles or whatnot)
+			setup_player[i].profilen = min(cv_lastprofile[i].value, PR_GetNumProfiles());
+
+			if (gamestate != GS_MENU && i <= splitscreen)
+			{
+				M_SetupMidGameGridPos(&setup_player[i], i);
+				setup_player[i].mdepth = CSSTEP_CHARS;
+			}
+			else
+			{
+				// Un-set devices
+				G_SetDeviceForPlayer(i, -1);
+#ifdef CHARSELECT_DEVICEDEBUG
+				CONS_Printf("M_CharacterSelectInit: Device for %d set to %d\n", i, -1);
+#endif
+			}
+		}
+	}
 }
 
 

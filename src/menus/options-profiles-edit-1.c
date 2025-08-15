@@ -109,6 +109,11 @@ static void M_ProfileEditApply(void)
 	if (belongsto > -1 && belongsto < MAXSPLITSCREENPLAYERS)
 	{
 		PR_ApplyProfileToggles(optionsmenu.profilen, belongsto);
+		if (gamestate == GS_MENU)
+		{
+			// Safe to apply skin, etc here.
+			PR_ApplyProfileLight(optionsmenu.profilen, belongsto);
+		}
 	}
 
 	// Reapply player 1's real profile ID.
