@@ -1655,7 +1655,12 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 		case UC_TOTALMEDALS: // Requires number of emblems >= x
 			return (M_GotEnoughMedals(cn->requirement));
 		case UC_EMBLEM: // Requires emblem x to be obtained
-			return gamedata->collected[cn->requirement-1];
+		{
+			INT32 i = cn->requirement-1;
+			if (i >= 0 && i < numemblems && emblemlocations[i].type != ET_NONE)
+				return gamedata->collected[cn->requirement-1];
+			return false;
+		}
 		case UC_UNLOCKABLE: // Requires unlockable x to be obtained
 			return gamedata->unlocked[cn->requirement-1];
 		case UC_CONDITIONSET: // requires condition set x to already be achieved
