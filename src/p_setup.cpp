@@ -9472,6 +9472,54 @@ UINT8 P_InitMapData(void)
 	return ret;
 }
 
+void Command_dumprrautomedaltimes(void)
+{
+	FILE* out;
+	char outname[512];
+	memset(outname, 0, sizeof(outname));
+	sprintf(outname, "%s/rrautomedaltimes.csv", srb2home);
+	out = fopen(outname, "wb");
+	if (out == NULL)
+	{
+		CONS_Alert(CONS_ERROR, "Failed to dump rrautomedaltimes.csv\n");
+		return;
+	}
+	fprintf(out, "Name,Bronze,Silver,Gold,Platinum\n");
+	for (int i = 0; i < nummapheaders; ++i)
+	{
+		fprintf(out, "%s,", mapheaderinfo[i]->lvlttl);
+		fprintf(
+			out,
+			"%d'%d\"%02d,",
+			G_TicsToMinutes(mapheaderinfo[i]->automedaltime[3], true),
+			G_TicsToSeconds(mapheaderinfo[i]->automedaltime[3]),
+			G_TicsToCentiseconds(mapheaderinfo[i]->automedaltime[3])
+		);
+		fprintf(
+			out,
+			"%d'%d\"%02d,",
+			G_TicsToMinutes(mapheaderinfo[i]->automedaltime[2], true),
+			G_TicsToSeconds(mapheaderinfo[i]->automedaltime[2]),
+			G_TicsToCentiseconds(mapheaderinfo[i]->automedaltime[2])
+		);
+		fprintf(
+			out,
+			"%d'%d\"%02d,",
+			G_TicsToMinutes(mapheaderinfo[i]->automedaltime[1], true),
+			G_TicsToSeconds(mapheaderinfo[i]->automedaltime[1]),
+			G_TicsToCentiseconds(mapheaderinfo[i]->automedaltime[1])
+		);
+		fprintf(
+			out,
+			"%d'%d\"%02d\n",
+			G_TicsToMinutes(mapheaderinfo[i]->automedaltime[0], true),
+			G_TicsToSeconds(mapheaderinfo[i]->automedaltime[0]),
+			G_TicsToCentiseconds(mapheaderinfo[i]->automedaltime[0])
+		);
+	}
+	fclose(out);
+}
+
 //
 // Add a wadfile to the active wad files,
 // replace sounds, musics, patches, textures, sprites and maps
