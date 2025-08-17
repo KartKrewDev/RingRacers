@@ -535,6 +535,7 @@ void D_RegisterClientCommands(void)
 	COM_AddCommand("startlossless", Command_StartLossless_f);
 	COM_AddCommand("stopmovie", Command_StopMovie_f);
 	COM_AddDebugCommand("minigen", M_MinimapGenerate);
+	COM_AddDebugCommand("dumprrautomedaltimes", Command_dumprrautomedaltimes);
 
 #ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 	M_AVRecorder_AddCommands();
