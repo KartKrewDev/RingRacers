@@ -64,8 +64,6 @@ extern SDLJoyInfo_t JoyInfo[MAXSPLITSCREENPLAYERS];
 
 void I_GetConsoleEvents(void);
 
-void SDLforceUngrabMouse(void);
-
 // Needed for some WIN32 functions
 extern SDL_Window *window;
 

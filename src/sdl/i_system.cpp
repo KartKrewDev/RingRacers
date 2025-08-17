@@ -1661,7 +1661,7 @@ void I_Quit(void)
 
 	/* prevent recursive I_Quit() */
 	if (quiting) goto death;
-	SDLforceUngrabMouse();
+	SDL_ShowCursor(SDL_TRUE);
 	quiting = SDL_FALSE;
 	M_SaveConfig(NULL); //save game config, cvars..
 	M_SaveJoinedIPs();
@@ -1744,8 +1744,6 @@ void I_Error(const char *error, ...)
 	if (shutdowning)
 	{
 		errorcount++;
-		if (errorcount == 1)
-			SDLforceUngrabMouse();
 		// try to shutdown each subsystem separately
 		if (errorcount == 2)
 			I_ShutdownMusic();

@@ -132,7 +132,6 @@ static      SDL_Color    localPalette[256];
 Uint16      realwidth = BASEVIDWIDTH;
 Uint16      realheight = BASEVIDHEIGHT;
 static       SDL_bool    mousegrabok = SDL_TRUE;
-static       SDL_bool    wrapmouseok = SDL_FALSE;
 static       SDL_bool    exposevideo = SDL_FALSE;
 static       SDL_bool    borderlesswindow = SDL_FALSE;
 
@@ -364,34 +363,8 @@ static boolean IgnoreMouse(void)
 	return false;
 }
 
-static void SDLdoGrabMouse(void)
-{
-	SDL_ShowCursor(SDL_DISABLE);
-	SDL_SetWindowGrab(window, SDL_TRUE);
-	if (SDL_SetRelativeMouseMode(SDL_TRUE) == 0) // already warps mouse if successful
-		wrapmouseok = SDL_TRUE; // TODO: is wrapmouseok or HalfWarpMouse needed anymore?
-}
-
-static void SDLdoUngrabMouse(void)
-{
-	SDL_ShowCursor(SDL_ENABLE);
-	SDL_SetWindowGrab(window, SDL_FALSE);
-	wrapmouseok = SDL_FALSE;
-	SDL_SetRelativeMouseMode(SDL_FALSE);
-}
-
-void SDLforceUngrabMouse(void)
-{
-	if (SDL_WasInit(SDL_INIT_VIDEO)==SDL_INIT_VIDEO && window != NULL)
-		SDLdoUngrabMouse();
-}
-
 void I_UpdateMouseGrab(void)
 {
-	if (SDL_WasInit(SDL_INIT_VIDEO) == SDL_INIT_VIDEO && window != NULL
-	&& SDL_GetMouseFocus() == window && SDL_GetKeyboardFocus() == window
-	&& USE_MOUSEINPUT && !IgnoreMouse())
-		SDLdoGrabMouse();
 }
 
 static void VID_Command_NumModes_f (void)
@@ -514,10 +487,12 @@ static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 		case SDL_WINDOWEVENT_FOCUS_GAINED:
 			kbfocus = SDL_TRUE;
 			mousefocus = SDL_TRUE;
+			SDL_ShowCursor(SDL_FALSE);
 			break;
 		case SDL_WINDOWEVENT_FOCUS_LOST:
 			kbfocus = SDL_FALSE;
 			mousefocus = SDL_FALSE;
+			SDL_ShowCursor(SDL_TRUE);
 			break;
 		case SDL_WINDOWEVENT_MAXIMIZED:
 			break;
@@ -550,10 +525,6 @@ static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 		{
 			if (cv_usemouse.value) I_StartupMouse();
 		}
-		//else firsttimeonmouse = SDL_FALSE;
-
-		if (USE_MOUSEINPUT && !IgnoreMouse())
-			SDLdoGrabMouse();
 	}
 	else if (!mousefocus && !kbfocus)
 	{
@@ -564,17 +535,8 @@ static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 		if (!(cv_bgaudio.value & 2))
 			S_StopSounds();
 
-		if (!disable_mouse)
-		{
-			SDLforceUngrabMouse();
-		}
 		G_ResetAllDeviceGameKeyDown();
 		G_ResetAllDeviceResponding();
-
-		if (MOUSE_MENU)
-		{
-			SDLdoUngrabMouse();
-		}
 	}
 #undef FOCUSUNION
 }
@@ -604,50 +566,6 @@ static void Impl_HandleKeyboardEvent(SDL_KeyboardEvent evt, Uint32 type)
 
 static void Impl_HandleMouseMotionEvent(SDL_MouseMotionEvent evt)
 {
-	static boolean firstmove = true;
-
-	if (USE_MOUSEINPUT)
-	{
-		if ((SDL_GetMouseFocus() != window && SDL_GetKeyboardFocus() != window) || (IgnoreMouse() && !firstmove))
-		{
-			SDLdoUngrabMouse();
-			firstmove = false;
-			return;
-		}
-
-		// If using relative mouse mode, don't post an event_t just now,
-		// add on the offsets so we can make an overall event later.
-		if (SDL_GetRelativeMouseMode())
-		{
-			if (SDL_GetMouseFocus() == window && SDL_GetKeyboardFocus() == window)
-			{
-				mousemovex +=  evt.xrel;
-				mousemovey += -evt.yrel;
-				SDL_SetWindowGrab(window, SDL_TRUE);
-			}
-			firstmove = false;
-			return;
-		}
-
-		// If the event is from warping the pointer to middle
-		// of the screen then ignore it.
-		if ((evt.x == realwidth/2) && (evt.y == realheight/2))
-		{
-			firstmove = false;
-			return;
-		}
-
-		// Don't send an event_t if not in relative mouse mode anymore,
-		// just grab and set relative mode
-		// this fixes the stupid camera jerk on mouse entering bug
-		// -- Monster Iestyn
-		if (SDL_GetMouseFocus() == window && SDL_GetKeyboardFocus() == window)
-		{
-			SDLdoGrabMouse();
-		}
-	}
-
-	firstmove = false;
 }
 
 static void Impl_HandleMouseButtonEvent(SDL_MouseButtonEvent evt, Uint32 type)
@@ -1126,30 +1044,12 @@ void I_GetEvent(void)
 	G_GetDeviceGameKeyDownArray(0)[KEY_MOUSEWHEELDOWN] = G_GetDeviceGameKeyDownArray(0)[KEY_MOUSEWHEELUP] = 0;
 }
 
-static void half_warp_mouse(uint16_t x, uint16_t y) {
-	if (wrapmouseok)
-	{
-		SDL_WarpMouseInWindow(window, (Uint16)(x/2),(Uint16)(y/2));
-	}
-}
-
 void I_StartupMouse(void)
 {
-	static SDL_bool firsttimeonmouse = SDL_TRUE;
-
 	if (disable_mouse)
 		return;
 
-	if (!firsttimeonmouse)
-	{
-		half_warp_mouse(realwidth, realheight); // warp to center
-	}
-	else
-		firsttimeonmouse = SDL_FALSE;
-	if (cv_usemouse.value && !IgnoreMouse())
-		SDLdoGrabMouse();
-	else
-		SDLdoUngrabMouse();
+	SDL_ShowCursor(SDL_FALSE);
 }
 
 //
@@ -1540,8 +1440,6 @@ static UINT32 VID_GetRefreshRate(void)
 
 INT32 VID_SetMode(INT32 modeNum)
 {
-	SDLdoUngrabMouse();
-
 	vid.recalc = 1;
 	vid.bpp = 1;
 
@@ -1721,12 +1619,8 @@ void I_StartupGraphics(void)
 	realheight = (Uint16)vid.height;
 
 	VID_Command_Info_f();
-	SDLdoUngrabMouse();
 
 	SDL_RaiseWindow(window);
-
-	if (mousegrabok && !disable_mouse)
-		SDLdoGrabMouse();
 
 	graphics_started = true;
 }
