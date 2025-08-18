@@ -3785,21 +3785,31 @@ boolean R_ThingVisible (mobj_t *thing)
 	{
 		switch (thing->type)
 		{
+			// Players
+			case MT_PLAYER:
+			case MT_FOLLOWER:
+			// Individual pickups
 			case MT_RING:
 			case MT_FLINGRING:
 			case MT_BLUESPHERE:
+			case MT_SPRAYCAN:
+			// Item Boxes and Capsules
+			case MT_EXPLODE:
 			case MT_RANDOMITEM:
 			case MT_SPHEREBOX:
 			case MT_ITEMCAPSULE:
 			case MT_ITEMCAPSULE_PART:
 			case MT_OVERLAY: // mostly capsule numbers :)))
+			// Prison Eggs
 			case MT_BATTLECAPSULE:
 			case MT_BATTLECAPSULE_PIECE:
-			case MT_SPRAYCAN:
-			case MT_PLAYER:
+			// Duel hazards
+			case MT_DUELBOMB:
 			case MT_LANDMINE:
 			case MT_SSMINE:
 			case MT_SSMINE_SHIELD:
+			case MT_MINERADIUS:
+			// Checkpoints
 			case MT_CHECKPOINT_END:
 			case MT_SIGNSPARKLE:
 			case MT_THOK: // checkpoint parts
