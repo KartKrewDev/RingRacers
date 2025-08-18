@@ -1208,6 +1208,8 @@ boolean M_ChallengesInputs(INT32 ch)
 
 								M_CloseChallenges();
 								M_ClearMenus(true);
+
+								return false; // DO NOT
 							}
 						}
 					}
