@@ -1563,47 +1563,54 @@ void K_DrawLikeMapThumbnail(fixed_t x, fixed_t y, fixed_t width, UINT32 flags, p
 	);
 }
 
-void K_DrawMapAsFace(INT32 x, INT32 y, UINT32 flags, UINT16 map, const UINT8 *colormap, fixed_t accordion, INT32 unit)
+void K_DrawMapAsFace(INT32 x, INT32 y, UINT32 flags, UINT16 map, const UINT8 *colormap, fixed_t accordion, INT32 scalefactor)
 {
-	const fixed_t iconHeight = (14 * unit) << FRACBITS;
+	const fixed_t iconHeight = ((16 * scalefactor) - 2) << FRACBITS;
 	const fixed_t iconWidth = (iconHeight * 320) / 200;
 	fixed_t mul = FRACUNIT;
+
+	INT32 dup = 1;
 	if (flags & V_NOSCALESTART)
 	{
-		unit *= (vid.dupx < vid.dupy ? vid.dupx : vid.dupy);
+		dup = (vid.dupx < vid.dupy ? vid.dupx : vid.dupy);
 		mul = 1;
 	}
 
-	INT32 hunit = (unit * accordion);
+	INT32 hdup = (dup * accordion);
 
 	V_DrawFill(
 		x,
 		y,
-		(16 * hunit)/FRACUNIT,
-		16 * unit,
+		(16 * scalefactor * hdup)/FRACUNIT,
+		16 * scalefactor * dup,
 		(flags & ~V_FLIP)
 	);
 
+	INT32 xclip = ((16 * scalefactor) - 2) * dup * mul;
+
 	if (flags & V_NOSCALESTART)
 	{
-		hunit /= FRACUNIT;
+		hdup /= FRACUNIT;
 	}
 	else
 	{
-		hunit = FixedMul(hunit, mul);
+		hdup = FixedMul(hdup, mul);
+		xclip = FixedMul(xclip, accordion);
 	}
 
+	dup *= mul;
+
 	V_SetClipRect(
-		(x * mul) + hunit,
-		(y + unit) * mul,
-		(14 * hunit),
-		(14 * unit) * mul,
+		(x * mul) + hdup,
+		(y * mul) + dup,
+		xclip,
+		((16 * scalefactor) - 2) * dup,
 		(flags & ~V_FLIP)
 	);
 
 	K_DrawMapThumbnail2(
-		(x * FRACUNIT) + hunit - FixedMul(iconWidth - iconHeight, accordion)/2,
-		((y + unit) * FRACUNIT),
+		(x * mul) + hdup - FixedMul(iconWidth - iconHeight, accordion)/2,
+		(y * mul) + dup,
 		iconWidth,
 		flags,
 		map,
