@@ -18,7 +18,7 @@ menuitem_t OPTIONS_GameplayItems[] =
 	// Mostly handled by the drawing function.
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Super Ring",			NULL, {.routine = M_HandleItemToggles}, KITEM_SUPERRING, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Self-Propelled Bomb",	NULL, {.routine = M_HandleItemToggles}, KITEM_SPB, 0},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, NULL, NULL, {.routine = M_HandleItemToggles}, 255, 0}, // maybe KITEM_PUYO eventually?
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Eggmark",				NULL, {.routine = M_HandleItemToggles}, KITEM_EGGMAN, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Toggle All / Ring Box Only", NULL, {.routine = M_HandleItemToggles}, 0, 0},
 
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Sneaker",				NULL, {.routine = M_HandleItemToggles}, KITEM_SNEAKER, 0},
@@ -28,7 +28,7 @@ menuitem_t OPTIONS_GameplayItems[] =
 
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Banana",				NULL, {.routine = M_HandleItemToggles}, KITEM_BANANA, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Banana x3",				NULL, {.routine = M_HandleItemToggles}, KRITEM_TRIPLEBANANA, 0},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Eggmark",				NULL, {.routine = M_HandleItemToggles}, KITEM_EGGMAN, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Stone Shoe",		 	NULL, {.routine = M_HandleItemToggles}, KITEM_STONESHOE, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Gachabom",				NULL, {.routine = M_HandleItemToggles}, KITEM_GACHABOM, 0},
 
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Orbinaut",				NULL, {.routine = M_HandleItemToggles}, KITEM_ORBINAUT, 0},
@@ -41,10 +41,10 @@ menuitem_t OPTIONS_GameplayItems[] =
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Proximity Mine",		NULL, {.routine = M_HandleItemToggles}, KITEM_MINE, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Ballhog",				NULL, {.routine = M_HandleItemToggles}, KITEM_BALLHOG, 0},
 
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Hyudoro",				NULL, {.routine = M_HandleItemToggles}, KITEM_HYUDORO, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Toxomister",			NULL, {.routine = M_HandleItemToggles}, KITEM_TOXOMISTER, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Drop Target",			NULL, {.routine = M_HandleItemToggles}, KITEM_DROPTARGET, sfx_s258},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Land Mine",				NULL, {.routine = M_HandleItemToggles}, KITEM_LANDMINE, 0},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Pogo Spring",		 	NULL, {.routine = M_HandleItemToggles}, KITEM_POGOSPRING, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Hyudoro",				NULL, {.routine = M_HandleItemToggles}, KITEM_HYUDORO, 0},
 
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Invincibility",			NULL, {.routine = M_HandleItemToggles}, KITEM_INVINCIBILITY, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Grow",					NULL, {.routine = M_HandleItemToggles}, KITEM_GROW, 0},
@@ -54,7 +54,12 @@ menuitem_t OPTIONS_GameplayItems[] =
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Lightning Shield",		NULL, {.routine = M_HandleItemToggles}, KITEM_LIGHTNINGSHIELD, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Bubble Shield",			NULL, {.routine = M_HandleItemToggles}, KITEM_BUBBLESHIELD, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Flame Shield",			NULL, {.routine = M_HandleItemToggles}, KITEM_FLAMESHIELD, 0},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Kitchen Sink",			NULL, {.routine = M_HandleItemToggles}, KITEM_KITCHENSINK, 0}
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Pogo Spring",		 	NULL, {.routine = M_HandleItemToggles}, KITEM_POGOSPRING, 0},
+
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Kitchen Sink",			NULL, {.routine = M_HandleItemToggles}, KITEM_KITCHENSINK, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, NULL, NULL, {.routine = M_HandleItemToggles}, 255, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, NULL, NULL, {.routine = M_HandleItemToggles}, 255, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, NULL, NULL, {.routine = M_HandleItemToggles}, 255, 0},
 };
 
 static void init_routine(void)
@@ -69,7 +74,7 @@ menu_t OPTIONS_GameplayItemsDef = {
 	&OPTIONS_GameplayDef,
 	0,
 	OPTIONS_GameplayItems,
-	14, 40,
+	0, 40,
 	SKINCOLOR_SCARLET, 0,
 	MBF_DRAWBGWHILEPLAYING,
 	NULL,
@@ -100,7 +105,7 @@ static void M_ToggleThunderdome(void)
 
 void M_HandleItemToggles(INT32 choice)
 {
-	const INT32 width = 8, height = 4;
+	const INT32 width = 9, height = 4;
 	INT32 column = itemOn/height, row = itemOn%height;
 	INT16 next;
 	UINT8 i;

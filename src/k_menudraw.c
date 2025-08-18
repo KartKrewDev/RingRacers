@@ -5714,17 +5714,20 @@ void M_DrawItemToggles(void)
 	static UINT8 black[256];
 	memset(black, 16, 256);
 
-	const INT32 edges = 8;
+	const INT32 edges = 9;
 	const INT32 height = 4;
-	const INT32 spacing = 35;
+	const INT32 spacing = 34;
 	const INT32 column = itemOn/height;
 	//const INT32 row = itemOn%height;
 	INT32 leftdraw, rightdraw, totaldraw;
-	INT32 x = currentMenu->x + M_EaseWithTransition(Easing_Linear, 5 * 64), y = currentMenu->y;
+	INT32 x, y = currentMenu->y;
 	INT32 onx = 0, ony = 0;
 	consvar_t *cv;
 	INT32 i, drawnum;
 	patch_t *pat;
+
+	x = currentMenu->x
+		+ M_EaseWithTransition(Easing_Linear, 5 * 64);
 
 	M_DrawMenuTooltips();
 	M_DrawOptionsMovingButton();

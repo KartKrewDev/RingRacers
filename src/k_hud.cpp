@@ -1166,6 +1166,10 @@ const char *K_GetItemPatch(UINT8 item, boolean tiny)
 			return (tiny ? "K_ISORBN" : "K_ITORB3");
 		case KRITEM_QUADORBINAUT:
 			return (tiny ? "K_ISORBN" : "K_ITORB4");
+		case KITEM_TOXOMISTER:
+			return (tiny ? "K_ISTOX" : "K_ITTOX");
+		case KITEM_STONESHOE:
+			return (tiny ? "K_ISSTON" : "K_ITSTON");
 		default:
 			return (tiny ? "K_ISSAD" : "K_ITSAD");
 	}
