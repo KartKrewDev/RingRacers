@@ -151,81 +151,6 @@ get_binary_direction
 	}
 }
 
-static std::optional<vector2_t>
-intersect
-(		const mobj_t * anchor,
-		const mobj_t * toucher)
-{
-	struct Line
-	{
-		angle_t a;
-		vector2_t o;
-
-		angle_t k = AbsAngle(a);
-
-		Line(vector2_t o_, angle_t a_) : a(a_), o(o_) {}
-
-		bool vertical() const { return k == ANGLE_90; }
-
-		fixed_t m() const
-		{
-			// tangent table is offset 90 degrees
-			return FTAN(a - ANGLE_90);
-		}
-
-		fixed_t b() const
-		{
-			return o.y - FixedMul(o.x, m());
-		}
-
-		fixed_t y(fixed_t x) const
-		{
-			return FixedMul(m(), x) + b();
-		}
-	};
-
-	if (toucher->momx == 0 && toucher->momy == 0)
-	{
-		// undefined angle
-		return {};
-	}
-
-	Line a({toucher->x, toucher->y},
-		R_PointToAngle2(0, 0, toucher->momx, toucher->momy));
-
-	Line b({anchor->x, anchor->y}, anchor->angle + ANGLE_90);
-
-	if (a.k == b.k)
-	{
-		// parallel lines do not intersect
-		return {};
-	}
-
-	vector2_t v;
-
-	auto v_intersect = [&v](Line &a, Line &b)
-	{
-		if (a.vertical())
-		{
-			return false;
-		}
-
-		v.x = b.o.x;
-		v.y = a.y(v.x);
-
-		return true;
-	};
-
-	if (!v_intersect(a, b) && !v_intersect(b, a))
-	{
-		// untested!
-		v.x = FixedDiv(a.b() - b.b(), b.m() - a.m());
-		v.y = a.y(v.x);
-	}
-
-	return v;
-}
-
 mobj_t *
 Obj_FindLoopCenter (const mtag_t tag)
 {
@@ -330,10 +255,12 @@ Obj_LoopEndpointCollide
 	{
 		set_shiftxy(player, anchor);
 
-		vector2_t i = intersect(anchor, toucher)
-			.value_or(vector2_t {px, py});
-
-		s->origin_shift = {i.x - px, i.y - py};
+		const fixed_t magnitude = R_PointToDist2(0, 0, px, py);
+		const fixed_t newX = FixedDiv(px, magnitude);
+		const fixed_t newY = FixedDiv(py, magnitude);
+		
+		s->origin_shift = {FixedMul(newX, FCOS(anchor->angle)),
+			FixedMul(newY, FSIN(anchor->angle))};
 	}
 
 	flip = get_binary_direction(pitch, toucher);

@@ -843,7 +843,7 @@ void LUA_HookSpecialExecute(activator_t *activator, INT32 *args, char **stringar
 	}
 }
 
-int LUA_HookPlayerMsg(int source, int target, int flags, char *msg, int mute)
+int LUA_HookPlayerMsg(int source, int target, int flags, char *msg)
 {
 	Hook_State hook;
 	if (prepare_hook(&hook, false, HOOK(PlayerMsg)))
@@ -863,7 +863,6 @@ int LUA_HookPlayerMsg(int source, int target, int flags, char *msg, int mute)
 			LUA_PushUserdata(gL, &players[target-1], META_PLAYER); // target
 		}
 		lua_pushstring(gL, msg); // msg
-		lua_pushboolean(gL, mute); // the message was supposed to be eaten by spamprotecc.
 
 		call_hooks(&hook, 1, res_true);
 	}
