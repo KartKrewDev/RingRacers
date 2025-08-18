@@ -101,7 +101,7 @@ boolean P_PlayerOrbit(player_t *player)
 	fixed_t r, xy, z;
 	fixed_t xs, ys;
 
-	fixed_t step, th, left;
+	fixed_t step, left;
 
 	fixed_t grav;
 
@@ -136,16 +136,12 @@ boolean P_PlayerOrbit(player_t *player)
 
 	// XY shift is transformed on wave scale; less movement
 	// at start and end of rotation, more halfway.
-	th = FSIN(pitch_normal - ANGLE_90);
-
-	xs = FixedMul(s->shift.x, th);
-	ys = FixedMul(s->shift.y, th);
+	xs = FixedMul(s->shift.x, FCOS(pitch_normal));
+	ys = FixedMul(s->shift.y, FSIN(pitch_normal - ANGLE_90));
 
 	// Interpolate 0-1 over entire rotation.
-	th = FSIN(pitch_normal / 2);
-
-	xs += FixedMul(s->origin_shift.x, th);
-	ys += FixedMul(s->origin_shift.y, th);
+	xs += FixedMul(s->origin_shift.x, FCOS(pitch_normal));
+	ys += FixedMul(s->origin_shift.y, FSIN(pitch_normal - ANGLE_90));
 
 	xs += FixedMul(xy, FCOS(s->yaw));
 	ys += FixedMul(xy, FSIN(s->yaw));
