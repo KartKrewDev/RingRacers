@@ -255,7 +255,13 @@ void Command_CountMobjs_f(void)
 					count++;
 			}
 
-			CONS_Printf(M_GetText("There are %d objects of type %d currently in the level.\n"), count, i);
+			const char *name;
+			if (i >= MT_FIRSTFREESLOT)
+				name = FREE_MOBJS[i-MT_FIRSTFREESLOT];
+			else
+				name = MOBJTYPE_LIST[i];
+
+			CONS_Printf(M_GetText("There are %d objects of type %d (%s) currently in the level.\n"), count, i, name);
 		}
 		return;
 	}
@@ -276,7 +282,14 @@ void Command_CountMobjs_f(void)
 		}
 
 		if (count > 0) // Don't bother displaying if there are none of this type!
-			CONS_Printf(" * %d: %d\n", i, count);
+		{
+			const char *name;
+			if (i >= MT_FIRSTFREESLOT)
+				name = FREE_MOBJS[i-MT_FIRSTFREESLOT];
+			else
+				name = MOBJTYPE_LIST[i];
+			CONS_Printf(" * %d (%s): %d\n", i, name, count);
+		}
 	}
 }
 
