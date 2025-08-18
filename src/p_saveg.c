@@ -4912,6 +4912,7 @@ static thinker_t* LoadThwompThinker(savebuffer_t *save, actionf_p1 thinker)
 	ht->delay = READINT32(save->p);
 	ht->tag = READINT16(save->p);
 	ht->sound = READUINT16(save->p);
+	ht->initDelay = READINT32(save->p);
 
 	if (ht->sector)
 	{
