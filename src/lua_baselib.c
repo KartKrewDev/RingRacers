@@ -2832,7 +2832,7 @@ static int lib_sStartSound(lua_State *L)
 	if (!player || P_IsPartyPlayer(player))
 	{
 		if (hud_running || hook_cmd_running)
-			origin = NULL;	// HUD rendering and CMD building startsound shouldn't have an origin, just remove it instead of having a retarded error.
+			origin = NULL;	// HUD rendering and CMD building startsound shouldn't have an origin, just remove it instead of having a [Hyperlink Blocked] error.
 
 		S_StartSound(origin, sound_id);
 	}
