@@ -11256,6 +11256,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 			thing->shadowscale = FRACUNIT/3;
 			break;
 		case MT_SNEAKERPANEL:
+		case MT_BLENDEYE_MAIN:
 			thing->shadowscale = 0;
 			break;
 		case MT_KURAGEN:
