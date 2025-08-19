@@ -448,7 +448,9 @@ void D_RegisterServerCommands(void)
 	COM_AddDebugCommand("eval", Command_Eval);
 
 	COM_AddCommand("writetextmap", Command_WriteTextmap);
-	COM_AddCommand("snapshotmaps", Command_SnapshotMaps);
+
+	COM_AddCommand("snapshotmap", Command_SnapshotMaps);
+	COM_AddCommand("snapshotmaps", Command_SnapshotMaps); // alias
 
 	// for master server connection
 	AddMServCommands();
@@ -6694,8 +6696,8 @@ static void Command_SnapshotMaps(void)
 	if (COM_Argc() < 2)
 	{
 		CONS_Printf(
-			"snapshotmaps <map> [map2...]: Create a thumbnail screenshot for the specified levels.\n"
-			"- Use the full map name, e.g. RR_TestRun.\n"
+			"snapshotmap <map> [map2...]: Create a thumbnail screenshot for the specified levels.\n"
+			"- You can do partial names, but no spaces (without \"quotes around them\").\n"
 			"- You can give this command UP TO %d map names and it will create images for all of them.\n"
 			"- This command generates two images -- one 320x200 for the PICTURE lump, another 1024x1024 for rich presence.\n"
 			"- The map requires a \"snapshot camera\" object to have been placed.\n"
@@ -6735,23 +6737,31 @@ static void Command_SnapshotMaps(void)
 	roundqueue.snapshotmaps = true;
 
 	size_t i;
+	INT32 map;
+	const char *mapname;
+	char *realmapname;
 
 	for (i = 1; i < COM_Argc(); ++i)
 	{
-		INT32 map = G_MapNumber(COM_Argv(i));
+		mapname = COM_Argv(i);
+		map = G_FindMapByNameOrCode(COM_Argv(i), &realmapname); // G_MapNumber(COM_Argv(i));
 
-		if (map < 0 || map >= nummapheaders)
+		if (map == 0)
 		{
-			CONS_Alert(CONS_WARNING, "%s: Map doesn't exist. Not doing anything.\n", COM_Argv(i));
+			CONS_Alert(CONS_ERROR, M_GetText("Could not find any map described as '%s'.\nNot snapshotting any maps."), mapname);
 
 			// clear round queue (to be safe)
 			memset(&roundqueue, 0, sizeof(struct roundqueue));
 			return;
 		}
 
+		map--;
+
 		INT32 gt = G_GuessGametypeByTOL(mapheaderinfo[map]->typeoflevel);
 
 		G_MapIntoRoundQueue(map, gt != -1 ? gt : GT_RACE, false, false);
+
+		Z_Free(realmapname);
 	}
 
 	D_MapChange(1 + roundqueue.entries[0].mapnum, roundqueue.entries[0].gametype, false, true, 1, false, false);

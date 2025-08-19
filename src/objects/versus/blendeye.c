@@ -53,6 +53,73 @@ typedef enum
 
 /// - MAIN BODY - ///
 
+static void VS_BlendEye_Eye_Parts(mobj_t *mobj, INT32 angledelta)
+{
+	fixed_t x, y;
+
+	// Before angle update, move the shield.
+	if (mobj->tracer && mobj->tracer->hnext && mobj->movedir < BLENDEYE_EXPLODING)
+	{
+		mobj_t *ref = mobj->tracer->hnext;
+		while (ref)
+		{
+			x = mobj->x + P_ReturnThrustX(mobj, mobj->tracer->movedir + ref->movedir, 40*mobj->scale);
+			y = mobj->y + P_ReturnThrustY(mobj, mobj->tracer->movedir + ref->movedir, 40*mobj->scale);
+			P_MoveOrigin(ref, x, y, mobj->z);
+			ref->angle = mobj->tracer->movedir + ref->movedir - ANGLE_90;
+			ref = ref->hnext;
+		}
+		mobj->tracer->movedir = mobj->angle;
+	}
+
+	if (mobj->movedir != BLENDEYE_PINCH_DRILLING || mobj->movecount > TICRATE/2)
+		mobj->angle += angledelta;
+
+	// And after, move the eye.
+	if (mobj->tracer)
+	{
+		x = mobj->x + P_ReturnThrustX(mobj, mobj->angle, 38*mobj->scale);
+		y = mobj->y + P_ReturnThrustY(mobj, mobj->angle, 38*mobj->scale);
+		P_MoveOrigin(mobj->tracer, x, y, mobj->z + (mobj->height - mobj->tracer->height)/2);
+		mobj->tracer->angle = mobj->angle - ANGLE_90;
+		if (mobj->tracer->hprev)
+		{
+			P_MoveOrigin(mobj->tracer->hprev, mobj->x, mobj->y, max(mobj->floorz, mobj->z - (mobj->tracer->hprev->height)));
+		}
+	}
+}
+
+static mobj_t *VS_BlendEye_LoadAmmo(mobj_t *mobj, INT32 id)
+{
+	angle_t ang = mobj->tracer->cusval + FixedAngle(id*360*FRACUNIT/3);
+	fixed_t h = mobj->z + mobj->height - 4*mapobjectscale;
+	fixed_t dist = mobj->cvmem - 2*FRACUNIT;
+	if (id <= 3)
+		ang += ANGLE_180;
+
+	mobj_t *ammo = P_SpawnMobjFromMobj(mobj,
+		P_ReturnThrustX(mobj, ang, dist),
+		P_ReturnThrustY(mobj, ang, dist),
+		256*FRACUNIT,
+		MT_BLENDEYE_PUYO);
+	P_SetScale(ammo, (ammo->destscale *= 2));
+
+	if (id <= 3)
+		h += ammo->height;
+	else
+		ammo->cusval = (id-3)*TICRATE;
+
+	P_SetObjectMomZ(ammo, -10*FRACUNIT, false);
+	ammo->angle = ang;
+	ammo->cvmem = dist;
+	ammo->movefactor = (TICRATE/2) + P_RandomKey(PR_MOVINGTARGET, TICRATE/8);
+	P_SetTarget(&ammo->tracer, mobj);
+	ammo->extravalue1 = h;
+	ammo->flags2 |= MF2_STRONGBOX;
+
+	return ammo;
+}
+
 void VS_BlendEye_Init(mobj_t *mobj)
 {
 	UINT8 i;
@@ -137,6 +204,10 @@ void VS_BlendEye_Init(mobj_t *mobj)
 
 	mobj->reactiontime = mobj->z + (3*mobj->height)/2;
 
+	mobj->cvmem = 24*FRACUNIT;
+
+	VS_BlendEye_Eye_Parts(mobj, 0);
+
 	{
 		const char *enemyname, *subtitle;
 		if (!encoremode)
@@ -152,6 +223,23 @@ void VS_BlendEye_Init(mobj_t *mobj)
 
 		K_InitBossHealthBar(enemyname, subtitle, 0, mobj->tracer->health*(FRACUNIT/mobj->health), mobj->tracer->cvmem);
 		K_DeclareWeakspot(mobj, SPOT_NONE, EYECOLOR, true);
+	}
+
+	if (roundqueue.snapshotmaps)
+	{
+		mobj->tracer->cusval = ANGLE_45/2; // chosen by dice roll guaranteed to be random
+
+		// Test load
+		for (i = 6; i > 0; i--)
+		{
+			mobj_t *ammo = VS_BlendEye_LoadAmmo(mobj, i);
+			ammo->momz = 0;
+			ammo->z = ammo->extravalue1;
+			ammo->flags |= MF_NOGRAVITY;
+			P_SetMobjState(ammo, S_BLENDEYE_PUYO);
+			if (i != 6) // one random
+				ammo->sprite = mobj->movedir = SPR_PUYA + i - 1;
+		}
 	}
 }
 
@@ -240,32 +328,7 @@ void VS_BlendEye_Thinker(mobj_t *mobj)
 			// SPAWN YOUR AMMO
 			if ((mobj->movecount % 5) == 0)
 			{
-				i = (mobj->movecount/5);
-				angle_t ang = mobj->tracer->cusval + FixedAngle(i*360*FRACUNIT/3);
-				fixed_t h = mobj->z + mobj->height - 4*mapobjectscale;
-				fixed_t dist = mobj->cvmem - 2*FRACUNIT;
-				if (i <= 3)
-					ang += ANGLE_180;
-
-				mobj_t *ammo = P_SpawnMobjFromMobj(mobj,
-					P_ReturnThrustX(mobj, ang, dist),
-					P_ReturnThrustY(mobj, ang, dist),
-					256*FRACUNIT,
-					MT_BLENDEYE_PUYO);
-				P_SetScale(ammo, (ammo->destscale *= 2));
-
-				if (i <= 3)
-					h += ammo->height;
-				else
-					ammo->cusval = (i-3)*TICRATE;
-
-				P_SetObjectMomZ(ammo, -10*FRACUNIT, false);
-				ammo->angle = ang;
-				ammo->cvmem = dist;
-				ammo->movefactor = (TICRATE/2) + P_RandomKey(PR_MOVINGTARGET, TICRATE/8);
-				P_SetTarget(&ammo->tracer, mobj);
-				ammo->extravalue1 = h;
-				ammo->flags2 |= MF2_STRONGBOX;
+				VS_BlendEye_LoadAmmo(mobj, (mobj->movecount/5));
 			}
 
 			if ((--mobj->movecount) == 0)
@@ -327,6 +390,7 @@ void VS_BlendEye_Thinker(mobj_t *mobj)
 			{
 				// PINCH TRANSITION BEGIN !
 				mobj->rollangle = 0;
+				mobj->shadowscale = FRACUNIT;
 				mobj->movedir = BLENDEYE_PINCH_THROWN;
 				mobj_t *ref = mobj->hnext;
 				mobj_t *refnext = NULL;
@@ -880,7 +944,6 @@ void VS_BlendEye_Thinker(mobj_t *mobj)
 				mobj->movedir = BLENDEYE_LOADAMMO;
 				mobj->movecount = 6*5;
 				mobj->tracer->cusval = FixedAngle(P_RandomKey(PR_MOVINGTARGET, 360)*FRACUNIT);
-				mobj->cvmem = 24*FRACUNIT;
 			}
 			else if (mobj->movecount == TICRATE)
 			{
@@ -900,7 +963,6 @@ void VS_BlendEye_Thinker(mobj_t *mobj)
 	// Look around.
 	if (mobj->target) // !deathwatch
 	{
-		fixed_t x, y;
 		INT32 angledelta = AngleDeltaSigned(R_PointToAngle2(mobj->x, mobj->y, mobj->target->x, mobj->target->y), mobj->angle)/4;
 		const INT32 maxdelta = (ANGLE_45/2);
 
@@ -909,36 +971,7 @@ void VS_BlendEye_Thinker(mobj_t *mobj)
 		else if (angledelta < -maxdelta)
 			angledelta = -maxdelta;
 
-		// Before angle update, move the shield.
-		if (mobj->tracer && mobj->tracer->hnext && mobj->movedir < BLENDEYE_EXPLODING)
-		{
-			mobj_t *ref = mobj->tracer->hnext;
-			while (ref)
-			{
-				x = mobj->x + P_ReturnThrustX(mobj, mobj->tracer->movedir + ref->movedir, 40*mobj->scale);
-				y = mobj->y + P_ReturnThrustY(mobj, mobj->tracer->movedir + ref->movedir, 40*mobj->scale);
-				P_MoveOrigin(ref, x, y, mobj->z);
-				ref->angle = mobj->tracer->movedir + ref->movedir - ANGLE_90;
-				ref = ref->hnext;
-			}
-			mobj->tracer->movedir = mobj->angle;
-		}
-
-		if (mobj->movedir != BLENDEYE_PINCH_DRILLING || mobj->movecount > TICRATE/2)
-			mobj->angle += angledelta;
-
-		// And after, move the eye.
-		if (mobj->tracer)
-		{
-			x = mobj->x + P_ReturnThrustX(mobj, mobj->angle, 38*mobj->scale);
-			y = mobj->y + P_ReturnThrustY(mobj, mobj->angle, 38*mobj->scale);
-			P_MoveOrigin(mobj->tracer, x, y, mobj->z + (mobj->height - mobj->tracer->height)/2);
-			mobj->tracer->angle = mobj->angle - ANGLE_90;
-			if (mobj->tracer->hprev)
-			{
-				P_MoveOrigin(mobj->tracer->hprev, mobj->x, mobj->y, max(mobj->floorz, mobj->z - (mobj->tracer->hprev->height)));
-			}
-		}
+		VS_BlendEye_Eye_Parts(mobj, angledelta);
 	}
 }
 

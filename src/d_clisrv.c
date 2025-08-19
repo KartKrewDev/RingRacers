@@ -6743,6 +6743,36 @@ boolean TryRunTics(tic_t realtics)
 					P_PostLoadLevel();
 				}
 
+				// Complete dipshit location for this code, but we do sort of need to
+				// delay snapshotmaps to cover for elements that are set up on tic 0
+				if (roundqueue.snapshotmaps == true && leveltime == 5)
+				{
+					if (roundqueue.size > 0)
+					{
+						D_TakeMapSnapshots();
+
+						G_GetNextMap();
+
+						// roundqueue is wiped after the last round, but
+						// preserve this to track state into the Podium!
+						roundqueue.snapshotmaps = true;
+
+						G_NextLevel();
+					}
+					else
+					{
+						// Podium: snapshotmaps is finished. Yay!
+						HU_DoTitlecardCEcho(NULL, va("Congratulations,\\%s!\\Check the console!", cv_playername[0].string), true);
+
+						livestudioaudience_timer = 0;
+						LiveStudioAudience();
+
+						CONS_Printf("\n\n\x83""snapshotmaps: Find your images in %s\n", srb2home);
+
+						roundqueue.snapshotmaps = false;
+					}
+				}
+
 				boolean run = (gametic % NEWTICRATERATIO) == 0;
 
 				if (run && tickInterp)
